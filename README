@@ -1,0 +1,5 @@
+README (jinyuntang@lbl.gov)
+direcotries:
+code/src contains model code
+code/bld contains makefile and configuration scripts
+scripts contains scripts to create run directories
