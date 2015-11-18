@@ -28,12 +28,12 @@ contains
     ! !USES:
     use BGCReactionsMod             , only : bgc_reaction_type
     use BGCReactionsMockRunType     , only : bgc_reaction_mock_run_type
-    use BGCReactionsCenturyType     , only : bgc_reaction_CENTURY_type
-    use BGCReactionsCenturyCLMType  , only : bgc_reaction_CENTURY_clm_type
-    use BGCReactionsCenturyECAType  , only : bgc_reaction_CENTURY_ECA_type
-    use BGCReactionsSminNType       , only : bgc_reaction_sminn_type
-    use BGCReactionsCenturyCLM3Type , only : bgc_reaction_CENTURY_clm3_type
-    use BGCReactionsCenturyCLMOType , only : bgc_reaction_CENTURY_clmo_type
+!    use BGCReactionsCenturyType     , only : bgc_reaction_CENTURY_type
+!    use BGCReactionsCenturyCLMType  , only : bgc_reaction_CENTURY_clm_type
+!    use BGCReactionsCenturyECAType  , only : bgc_reaction_CENTURY_ECA_type
+!    use BGCReactionsSminNType       , only : bgc_reaction_sminn_type
+!    use BGCReactionsCenturyCLM3Type , only : bgc_reaction_CENTURY_clm3_type
+!    use BGCReactionsCenturyCLMOType , only : bgc_reaction_CENTURY_clmo_type
     use abortutils                  , only : endrun
     use clm_varctl                  , only : iulog
     use tracer_varcon               , only : is_active_betr_bgc, do_betr_leaching
@@ -48,19 +48,19 @@ contains
        allocate(bgc_reaction, source=bgc_reaction_mock_run_type())
     case ("century_bgc")
        is_active_betr_bgc = .true.
-       allocate(bgc_reaction, source=bgc_reaction_CENTURY_type())
+!       allocate(bgc_reaction, source=bgc_reaction_CENTURY_type())
     case ("century_bgcclm")
        is_active_betr_bgc = .true.
-       allocate(bgc_reaction, source=bgc_reaction_CENTURY_clm_type())
+!       allocate(bgc_reaction, source=bgc_reaction_CENTURY_clm_type())
     case ("century_bgcECA")
        is_active_betr_bgc = .true.
-       allocate(bgc_reaction, source=bgc_reaction_CENTURY_ECA_type())
+!       allocate(bgc_reaction, source=bgc_reaction_CENTURY_ECA_type())
     case ("century_bgcclm3")
        is_active_betr_bgc=.true.
-       allocate(bgc_reaction, source=bgc_reaction_CENTURY_clm3_type())
+!       allocate(bgc_reaction, source=bgc_reaction_CENTURY_clm3_type())
     case ("century_bgcclmo")
        is_active_betr_bgc=.true.
-       allocate(bgc_reaction, source=bgc_reaction_CENTURY_clmo_type())
+!       allocate(bgc_reaction, source=bgc_reaction_CENTURY_clmo_type())
     case ("betr_sminn")
        !this must be used together with clm45bgc
        do_betr_leaching = .true.

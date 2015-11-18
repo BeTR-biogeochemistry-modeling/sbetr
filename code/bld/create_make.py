@@ -41,12 +41,95 @@ def grep_use(file):
     import subprocess
     process=subprocess.Popen(bashcommand.split(),stdout=subprocess.PIPE)
     output=process.communicate()[0]
-    print output
+    outputs=output.split('\n')
+    mods=[]
+    for line in outputs:
+        tline=line.strip()
+        loc=tline.find("use")
+        if loc == 0:
+            stuff=tline.split(' ')
+            stuff_low=stuff[1].lower()
+            #determine if it is a netcdf lib
+            loc1=stuff_low.find("netcdf")
+            loc2=stuff_low.find("intrinsic")
+            if loc1 == -1 and loc2==-1 :
+                mods.append(stuff_low.replace(",","")+".o")
+    return mods
+
+
+#get the stem of the obj file
+def get_objstem(obj):
+    stuff=obj.split(".")
+    stem=stuff[0]
+    return stem
 
 #now create the cross-dependency using the backward tracing method
 #First: set the main file
-#file1="sbetr.o"
+obj_main="sbetr.o"
+def find_fname(obj, srcfiles):
+    stem=get_objstem(obj)
+    srcfl=""
+    for srcf in srcfiles:
+        srcf_low=srcf.lower()
+        loc=srcf_low.find(stem)
+        if loc > 0:
+            srcfl=srcf
+            break
+    if len(srcfl) == 0:
+        import sys
+        sys.exit("source file not found for " + obj)
+    return srcfl
+#remove duplicates from a list of strings
+def remove_listdup(inlist):
+    list1=set(inlist)
+    oulist=[]
+    seen=set()
+    for item in list1:
+        if item not in seen:
+            seen.add(item)
+            oulist.append(item)
+    return oulist
 
+
+
+#start from the main file
+objs=[]
+objs.append(obj_main)
+var=1
+while var == 1:
+    lens=len(objs)
+    if lens==0:
+        break
+    #get all use mods
+    all_mods=[]
+    for obj in objs:
+        obj_file=find_fname(obj,full_file_paths)
+        print "grep mod for %s" % obj
+        use_mods=grep_use(obj_file)
+        all_mods.extend(use_mods)
+    #remove duplicate mods
+    all_mods=remove_listdup(all_mods)
+
+    #determine if an obj is in the next layer
+    result=[]
+    all_mods=set(all_mods)
+    for obj in objs:
+        if obj not in all_mods:
+            result.append(obj)
+
+    objs=list(all_mods)
+    print "RESULT"
+    print result
+    print "NEXT"
+    print objs
+    import time
+    time.sleep(1)
+    #go to the next loop
+
+
+obj_file=find_fname(obj_main,full_file_paths)
+use_mods=grep_use(obj_file)
+print use_mods
 #def get_nextnodes(file1, srcfiles_lower, srcfiles):
     #get the actual location of the file
     #get stem of the obj file
