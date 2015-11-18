@@ -19,12 +19,13 @@ module ncdio_pio
   use shr_sys_mod,  only : shr_sys_abort
   use shr_kind_mod, only : r8 => shr_kind_r8, i4 => shr_kind_i4
   use shr_log_mod , only : errMsg => shr_log_errMsg
+  use shr_assert_mod
   use clm_varctl  , only : single_column, iulog
   use spmdMod     , only : masterproc
   implicit none
   private
   save
-    
+
   public :: check_ret          ! checks return status of netcdf calls
   public :: check_var          ! determine if variable is on netcdf file
   public :: check_dim          ! validity check on dimension
@@ -40,16 +41,16 @@ module ncdio_pio
   public :: ncd_inqdid         ! inquire dimension id
   public :: ncd_inqdname       ! inquire dimension name
   public :: ncd_inqdlen        ! inquire dimension length
-  public :: ncd_inqfdims       ! inquire file dimnesions 
+  public :: ncd_inqfdims       ! inquire file dimnesions
   public :: ncd_defvar         ! define variables
-  
-  public :: ncd_inqvid         ! inquire variable id  
+
+  public :: ncd_inqvid         ! inquire variable id
   public :: ncd_inqvname       ! inquire variable name
   public :: ncd_putvar         ! write local data
   public :: ncd_getvar         ! read data
 
 
-  
+
   interface ncd_putvar
     module procedure ncd_putvar_int
     module procedure ncd_putvar_real_sp
@@ -61,13 +62,13 @@ module ncdio_pio
     module procedure ncd_putvar_int_3d
     module procedure ncd_putvar_real_sp_3d
   end interface ncd_putvar
-  
+
   interface ncd_getvar
     module procedure ncd_getvar_int
     module procedure ncd_getvar_real_sp
     module procedure ncd_getvar_int_1d
     module procedure ncd_getvar_real_sp_1d
-    
+
     module procedure ncd_getvar_int_2d
     module procedure ncd_getvar_real_sp_2d
     module procedure ncd_getvar_int_3d
@@ -85,22 +86,22 @@ module ncdio_pio
      module procedure ncd_putatt_real
      module procedure ncd_putatt_char
   end interface
-  
+
   interface ncd_getatt
      module procedure ncd_getatt_char
   end interface ncd_getatt
-  
+
   type, public :: file_desc_t
     integer(i4) :: fh
   end type file_desc_t
-  
+
   type, public :: Var_desc_t
     integer(i4) :: varID
     integer(i4) :: rec     ! this is a record number or pointer into the unlim dimension of the netcdf file
     integer(i4) :: type
   end type
   integer, parameter :: ncd_int =  nf90_int
-  integer, parameter :: ncd_log = -nf90_int  
+  integer, parameter :: ncd_log = -nf90_int
 !
 
 ! !PRIVATE METHODS:
@@ -142,13 +143,13 @@ module ncdio_pio
 !-----------------------------------------------------------------------
 
   call check_ret(nf90_inq_dimid (ncid%fh, trim(dimname), dimid), 'check_dim')
-  
+
   call check_ret(nf90_inquire_dimension (ncid%fh, dimid, name, dimlen), 'check_dim')
-  
+
   if (dimlen /= value) then
     write (iulog,*) 'CHECK_DIM error: mismatch of input dimension ',dimlen, &
       ' with expected value ',value,' for variable ', trim(dimname)
-    
+
     call shr_sys_abort(errMsg(__FILE__,__LINE__))
   end if
 
@@ -175,7 +176,7 @@ module ncdio_pio
   class(Var_desc_t)     , intent(out) :: vardesc   ! Output variable descriptor
   logical               , intent(out) :: readvar   ! If variable exists or not
   logical, optional      , intent(in) :: print_err ! If should print about error
-    
+
 !
 ! !REVISION HISTORY:
 !
@@ -192,11 +193,11 @@ module ncdio_pio
   else
     log_err = .true.
   end if
-    
+
   readvar = .true.
 
   ret = nf90_inq_varid (ncid%fh, varname, vardesc%varid)
-  
+
   if (ret/=nf90_noerr) then
     readvar = .false.
     if(log_err)then
@@ -205,7 +206,7 @@ module ncdio_pio
   end if
 
   end subroutine check_var
-!-----------------------------------------------------------------------  
+!-----------------------------------------------------------------------
   subroutine check_att(ncid, varid, attrib, att_found)
     !
     ! !DESCRIPTION:
@@ -226,7 +227,7 @@ module ncdio_pio
 
     character(len=*), parameter :: subname = 'check_att'
     !-----------------------------------------------------------------------
-    
+
     att_found = .true.
 
     status = nf90_inquire_attribute(ncid%fh, varid, trim(attrib), att_type, att_len)
@@ -253,7 +254,7 @@ module ncdio_pio
   implicit none
   integer, intent(in) :: ret
   character(len=*) :: calling
-  
+
 ! local variable
   character(len=255) :: msg
 ! !REVISION HISTORY:
@@ -285,7 +286,7 @@ module ncdio_pio
 !
   use netcdf
   use abortutils, only : endrun
-  use shr_kind_mod, only : r8 => shr_kind_r8  
+  use shr_kind_mod, only : r8 => shr_kind_r8
 ! !ARGUMENTS:
   implicit none
   class(file_desc_t)     , intent(inout)  :: ncid                    ! input unit
@@ -334,18 +335,18 @@ module ncdio_pio
   if (present(dim1name)) then
     call check_ret(nf90_inq_dimid(ncid_local, dim1name, dimid(1)), subname//' dim1: '//dim1name)
   endif
-  
+
   if (present(dim2name)) then
     call check_ret(nf90_inq_dimid(ncid_local, dim2name, dimid(2)), subname//' dim2: '//dim2name)
-  endif  
+  endif
 
   if (present(dim3name)) then
     call check_ret(nf90_inq_dimid(ncid_local, dim3name, dimid(3)), subname//' dim3: '//dim3name)
-  endif  
+  endif
 
   if (present(dim4name)) then
     call check_ret(nf90_inq_dimid(ncid_local, dim4name, dimid(4)), subname//' dim4: '//dim4name)
-  endif  
+  endif
 
   if (present(dim5name)) then
     call check_ret(nf90_inq_dimid(ncid_local, dim5name, dimid(5)), subname//' dim5: '//dim5name)
@@ -397,7 +398,7 @@ module ncdio_pio
   !
   !DESCRIPTION
   !put an integer scalar to file
-  
+
   use netcdf
 !**********************************************************************
   implicit none
@@ -410,7 +411,7 @@ module ncdio_pio
   logical :: readvar
   type(Var_desc_t)  :: vardesc
 
-  call check_var(ncid, trim(varname), vardesc, readvar)       
+  call check_var(ncid, trim(varname), vardesc, readvar)
 
   call check_ret( nf90_put_var(ncid%fh, vardesc%varid, data, start = (/rec/)),'ncd_putvar_int')
 
@@ -421,7 +422,7 @@ module ncdio_pio
   !DESCRIPTION
   !put a real scalar to file
   use netcdf
-  use shr_kind_mod, only : r8 => shr_kind_r8   
+  use shr_kind_mod, only : r8 => shr_kind_r8
 !**********************************************************************
   implicit none
   class(file_desc_t), intent(in) :: ncid
@@ -432,8 +433,8 @@ module ncdio_pio
   integer :: xtype, ndims, varid
   logical :: readvar
   type(Var_desc_t)  :: vardesc
-  
-  call check_var(ncid, trim(varname), vardesc, readvar)       
+
+  call check_var(ncid, trim(varname), vardesc, readvar)
   call check_ret( nf90_put_var(ncid%fh, vardesc%varid, data,  start = (/rec/)),'ncd_putvar_real_sp')
 
   end subroutine ncd_putvar_real_sp
@@ -443,7 +444,7 @@ module ncdio_pio
   ! DESCRIPTION
   ! put 1d integer array to file
   use netcdf
- 
+
 !**********************************************************************
   implicit none
   class(file_desc_t), intent(in) :: ncid
@@ -453,8 +454,8 @@ module ncdio_pio
   integer :: varid
   logical :: readvar
   type(Var_desc_t)  :: vardesc
-  
-  call check_var(ncid, trim(varname), vardesc, readvar)       
+
+  call check_var(ncid, trim(varname), vardesc, readvar)
 
   call check_ret( nf90_put_var(ncid%fh, vardesc%varid, data, start = (/1,rec/)),'ncd_putvar_int_1d')
 
@@ -465,7 +466,7 @@ module ncdio_pio
   ! DESCRIPTIONS
   ! put 1d real array to file
   use netcdf
-  use shr_kind_mod, only : r8 => shr_kind_r8   
+  use shr_kind_mod, only : r8 => shr_kind_r8
 !**********************************************************************
   implicit none
   class(file_desc_t), intent(in) :: ncid
@@ -476,8 +477,8 @@ module ncdio_pio
   integer :: varid
   logical :: readvar
   type(Var_desc_t)  :: vardesc
-  
-  call check_var(ncid, trim(varname), vardesc, readvar)       
+
+  call check_var(ncid, trim(varname), vardesc, readvar)
 
   call check_ret( nf90_put_var(ncid%fh, vardesc%varid, data, &
      start = (/1,rec/)),'ncd_putvar_real_sp_1d')
@@ -499,8 +500,8 @@ module ncdio_pio
   integer :: varid
   logical :: readvar
   type(Var_desc_t)  :: vardesc
-  
-  call check_var(ncid, trim(varname), vardesc, readvar)       
+
+  call check_var(ncid, trim(varname), vardesc, readvar)
 
   call check_ret( nf90_put_var(ncid%fh, vardesc%varid, data, &
     start = (/1,1,rec/)),'ncd_putvar_int_2d')
@@ -512,7 +513,7 @@ module ncdio_pio
   ! DESCRIPTION
   ! put 2d real array to file
   use netcdf
-  use shr_kind_mod, only : r8 => shr_kind_r8   
+  use shr_kind_mod, only : r8 => shr_kind_r8
 
 !**********************************************************************
   implicit none
@@ -524,8 +525,8 @@ module ncdio_pio
   integer :: varid
   logical :: readvar
   type(Var_desc_t)  :: vardesc
-  
-  call check_var(ncid, trim(varname), vardesc, readvar)       
+
+  call check_var(ncid, trim(varname), vardesc, readvar)
 
   call check_ret( nf90_put_var(ncid%fh, vardesc%varid, data,  &
      start = (/1,1,rec/)),'ncd_putvar_real_sp_2d')
@@ -548,8 +549,8 @@ module ncdio_pio
   integer :: varid
   logical :: readvar
   type(Var_desc_t)  :: vardesc
-  
-  call check_var(ncid, trim(varname), vardesc, readvar)       
+
+  call check_var(ncid, trim(varname), vardesc, readvar)
 
   call check_ret( nf90_put_var(ncid%fh, vardesc%varid, data,  &
    start = (/1,1,1,rec/)),'ncd_putvar_int_2d')
@@ -561,7 +562,7 @@ module ncdio_pio
   ! DESCRIPTION
   ! put 3d real array to file
   use netcdf
-  use shr_kind_mod, only : r8 => shr_kind_r8 
+  use shr_kind_mod, only : r8 => shr_kind_r8
 !**********************************************************************
   implicit none
   class(file_desc_t), intent(in) :: ncid
@@ -572,8 +573,8 @@ module ncdio_pio
   integer :: varid
   logical :: readvar
   type(Var_desc_t)  :: vardesc
-  
-  call check_var(ncid, trim(varname), vardesc, readvar)       
+
+  call check_var(ncid, trim(varname), vardesc, readvar)
 
   call check_ret( nf90_put_var(ncid%fh, vardesc%varid, data,  &
      start = (/1,1,1,rec/)),'ncd_putvar_real_sp_2d')
@@ -595,8 +596,8 @@ module ncdio_pio
   integer :: xtype, ndims, varid
   logical :: readvar
   type(Var_desc_t)  :: vardesc
-  
-  call check_var(ncid, trim(varname), vardesc, readvar)       
+
+  call check_var(ncid, trim(varname), vardesc, readvar)
 
   call check_ret( nf90_get_var(ncid%fh, vardesc%varid, data, &
     start = (/rec/)),'ncd_getvar_int')
@@ -609,19 +610,19 @@ module ncdio_pio
   !DESCRIPTION
   ! read a real scalar
   use netcdf
-  use shr_kind_mod, only : r8 => shr_kind_r8   
+  use shr_kind_mod, only : r8 => shr_kind_r8
 !**********************************************************************
   implicit none
   class(file_desc_t), intent(in) :: ncid
   integer,           intent(in) :: rec
   character(len=*),intent(in) :: varname
   REAL(r8), intent(out) :: data
-      
+
   integer :: varid
   logical :: readvar
   type(Var_desc_t)  :: vardesc
-  
-  call check_var(ncid, trim(varname), vardesc, readvar)       
+
+  call check_var(ncid, trim(varname), vardesc, readvar)
 
   call check_ret( nf90_get_var(ncid%fh, vardesc%varid, data, &
     start = (/rec/)),'ncd_getvar_real_sp')
@@ -644,8 +645,8 @@ module ncdio_pio
   integer :: varid
   logical :: readvar
   type(Var_desc_t)  :: vardesc
-  
-  call check_var(ncid, trim(varname), vardesc, readvar)       
+
+  call check_var(ncid, trim(varname), vardesc, readvar)
 
   call check_ret( nf90_get_var(ncid%fh, vardesc%varid, data,  &
      start = (/1,rec/)),'ncd_getvar_int_1d')
@@ -657,7 +658,7 @@ module ncdio_pio
   ! DESCRIPTION
   ! read 1d real array
   use netcdf
-  use shr_kind_mod, only : r8 => shr_kind_r8 
+  use shr_kind_mod, only : r8 => shr_kind_r8
 !**********************************************************************
   implicit none
   class(file_desc_t), intent(in) :: ncid
@@ -668,8 +669,8 @@ module ncdio_pio
   integer :: varid
   logical :: readvar
   type(Var_desc_t)  :: vardesc
-  
-  call check_var(ncid, trim(varname), vardesc, readvar)       
+
+  call check_var(ncid, trim(varname), vardesc, readvar)
 
   call check_ret( nf90_get_var(ncid%fh, vardesc%varid, data,  &
      start = (/1,rec/)),'ncd_getvar_real_sp_1d')
@@ -684,7 +685,7 @@ module ncdio_pio
   ! read 2d integer array
   !
   use netcdf
-  
+
 !**********************************************************************
   implicit none
   class(file_desc_t), intent(in) :: ncid
@@ -694,8 +695,8 @@ module ncdio_pio
   integer :: varid
   logical :: readvar
   type(Var_desc_t)  :: vardesc
-  
-  call check_var(ncid, trim(varname), vardesc, readvar)       
+
+  call check_var(ncid, trim(varname), vardesc, readvar)
 
   call check_ret( nf90_get_var(ncid%fh, vardesc%varid, data,  &
       start = (/1,1,rec/)),'ncd_getvar_int_2d')
@@ -707,7 +708,7 @@ module ncdio_pio
   ! DESCRIPTION
   ! read 2d real array
   use netcdf
-  use shr_kind_mod, only : r8 => shr_kind_r8  
+  use shr_kind_mod, only : r8 => shr_kind_r8
 !**********************************************************************
   implicit none
   class(file_desc_t), intent(in) :: ncid
@@ -718,8 +719,8 @@ module ncdio_pio
   integer :: varid
   logical :: readvar
   type(Var_desc_t)  :: vardesc
-  
-  call check_var(ncid, trim(varname), vardesc, readvar)       
+
+  call check_var(ncid, trim(varname), vardesc, readvar)
 
   call check_ret( nf90_get_var(ncid%fh, vardesc%varid, data,  &
     start = (/1,1,rec/)),'ncd_getvar_real_sp_2d')
@@ -741,8 +742,8 @@ module ncdio_pio
   integer :: varid
   logical :: readvar
   type(Var_desc_t)  :: vardesc
-  
-  call check_var(ncid, trim(varname), vardesc, readvar)       
+
+  call check_var(ncid, trim(varname), vardesc, readvar)
 
   call check_ret( nf90_get_var(ncid%fh, vardesc%varid, data,  &
      start = (/1,1,1,rec/)),'ncd_getvar_int_3d')
@@ -754,7 +755,7 @@ module ncdio_pio
   ! DESCRIPTION
   ! read 3d real array
   use netcdf
-  use shr_kind_mod, only : r8 => shr_kind_r8   
+  use shr_kind_mod, only : r8 => shr_kind_r8
 !**********************************************************************
   implicit none
   class(file_desc_t), intent(in) :: ncid
@@ -765,15 +766,15 @@ module ncdio_pio
   integer :: varid
   logical :: readvar
   type(Var_desc_t)  :: vardesc
-  
-  call check_var(ncid, trim(varname), vardesc, readvar)       
+
+  call check_var(ncid, trim(varname), vardesc, readvar)
 
   call check_ret( nf90_get_var(ncid%fh, vardesc%varid, data,  &
     start = (/1,1,1,rec/)),'ncd_getvar_real_sp_2d')
 
   end subroutine ncd_getvar_real_sp_3d
 
-!------------------------------------------------------  
+!------------------------------------------------------
   function get_dim_len_idn(ncid, dimname ) result(dimlen)
 !
 ! !DESCRIPTION:
@@ -820,7 +821,7 @@ module ncdio_pio
      NF90_NOWRITE, ncid_local),'open file '//trim(fname))
    ncid%fh=ncid_local
    ans = get_dim_len_idn(ncid,trim(dim_name))
-      
+
    call check_ret(nf90_close(ncid_local),'close file'//trim(fname))
    end function get_dim_len_fl
 !-----------------------------------------------------------------------
@@ -837,11 +838,11 @@ module ncdio_pio
     !-----------------------------------------------------------------------
 
     call check_ret(nf90_create(fname, nf90_clobber, file%fh), 'create file '//fname)
-    
+
     write(iulog,*) 'Opened file ', trim(fname),  ' to write', file%fh
-    
+
   end subroutine ncd_pio_createfile
-!-----------------------------------------------------------------------  
+!-----------------------------------------------------------------------
   subroutine ncd_pio_closefile(file)
     !
     ! !DESCRIPTION:
@@ -855,7 +856,7 @@ module ncdio_pio
 
   end subroutine ncd_pio_closefile
 
-!-----------------------------------------------------------------------  
+!-----------------------------------------------------------------------
   subroutine ncd_pio_openfile(file, fname, mode)
     !
     ! !DESCRIPTION:
@@ -872,7 +873,7 @@ module ncdio_pio
 
 
     call check_ret(nf90_open(fname, mode, file%fh),'open file '//trim(fname))
-     
+
     write(iulog,*) 'Opened existing file ', trim(fname), file%fh
 
   end subroutine ncd_pio_openfile
@@ -895,7 +896,7 @@ module ncdio_pio
 
   end subroutine ncd_pio_openfile_for_write
 
-!-----------------------------------------------------------------------  
+!-----------------------------------------------------------------------
   subroutine ncd_enddef(ncid)
     !
     ! !DESCRIPTION:
@@ -912,7 +913,7 @@ module ncdio_pio
 
   end subroutine ncd_enddef
 
-!-----------------------------------------------------------------------  
+!-----------------------------------------------------------------------
 
   subroutine ncd_putatt_int(ncid,varid,attrib,value,xtype)
     !
@@ -934,7 +935,7 @@ module ncdio_pio
 
   end subroutine ncd_putatt_int
 
-!-----------------------------------------------------------------------  
+!-----------------------------------------------------------------------
 
   subroutine ncd_putatt_real(ncid,varid,attrib,value,xtype)
     !
@@ -999,10 +1000,10 @@ module ncdio_pio
     !
     ! !LOCAL VARIABLES:
     integer :: status
-    
+
     character(len=*), parameter :: subname = 'ncd_getatt_char'
     !-----------------------------------------------------------------------
-    
+
     status = nf90_get_att(ncid%fh,varid,trim(attrib),value)
 
   end subroutine ncd_getatt_char
@@ -1114,7 +1115,7 @@ module ncdio_pio
     !
     ! !LOCAL VARIABLES:
     integer  :: dimid                                ! netCDF id
-    integer  :: ier                                  ! error status 
+    integer  :: ier                                  ! error status
     character(len=32) :: subname = 'ncd_inqfdims' ! subroutine name
     !-----------------------------------------------------------------------
 
@@ -1134,26 +1135,26 @@ module ncdio_pio
 
     ier = nf90_inq_dimid (ncid%fh, 'lat', dimid)
     if (ier == nf90_noerr) ier = nf90_inquire_dimension(ncid%fh, dimid, len=nj)
-    
+
     ier = nf90_inq_dimid (ncid%fh, 'lsmlon', dimid)
     if (ier == nf90_noerr) ier = nf90_inquire_dimension(ncid%fh, dimid, len=ni)
 
 
-    ier = nf90_inq_dimid (ncid%fh, 'lsmlat', dimid) 
+    ier = nf90_inq_dimid (ncid%fh, 'lsmlat', dimid)
     if (ier == nf90_noerr) ier = nf90_inquire_dimension(ncid%fh, dimid, len=nj)
 
 
-    ier = nf90_inq_dimid (ncid%fh, 'ni', dimid) 
+    ier = nf90_inq_dimid (ncid%fh, 'ni', dimid)
     if (ier == nf90_noerr) ier = nf90_inquire_dimension(ncid%fh, dimid, len=ni)
 
-    ier = nf90_inq_dimid (ncid%fh, 'nj', dimid) 
+    ier = nf90_inq_dimid (ncid%fh, 'nj', dimid)
     if (ier == nf90_noerr) ier = nf90_inquire_dimension(ncid%fh, dimid, len=nj)
 
-    ier = nf90_inq_dimid (ncid%fh, 'gridcell', dimid) 
+    ier = nf90_inq_dimid (ncid%fh, 'gridcell', dimid)
     if (ier == nf90_noerr) then
       ier = nf90_inquire_dimension(ncid%fh, dimid, len=ni)
       if(ier == nf90_noerr) nj = 1
-    endif  
+    endif
 
 
     if (ni == 0 .or. nj == 0) then
@@ -1170,8 +1171,8 @@ module ncdio_pio
     ns = ni*nj
 
   end subroutine ncd_inqfdims
-  
-  
+
+
   subroutine ncd_inqvname(ncid,varid,vname,vardesc)
     !
     ! !DESCRIPTION:
@@ -1195,8 +1196,8 @@ module ncdio_pio
       vardesc%type  = xtype
     endif
   end subroutine ncd_inqvname
-  
-  
+
+
   subroutine ncd_inqvid(ncid,name,varid,vardesc,readvar)
     !
     ! !DESCRIPTION:
@@ -1228,5 +1229,5 @@ module ncdio_pio
     endif
     vardesc%varid = varid
   end subroutine ncd_inqvid
-  
+
   end module ncdio_pio

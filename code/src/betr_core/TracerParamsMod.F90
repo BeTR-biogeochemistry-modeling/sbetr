@@ -166,7 +166,7 @@ contains
   end subroutine calc_aqueous_diffusion_soil_tortuosity
 
   !--------------------------------------------------------------------------------------------------------------
-  
+
   subroutine calc_bulk_diffusivity(bounds, lbj, ubj, jtops, numf, filter, bunsencef_col, &
        canopystate_vars, waterstate_vars, tau_soi, betrtracer_vars, t_soisno,  bulkdiffus)
     !
@@ -1098,7 +1098,7 @@ contains
    use ChemStateType      , only : chemstate_type
    use BeTRTracerType     , only : betrtracer_type
    use CanopyStateType    , only : canopystate_type
-
+   use SurfaceResistanceMod
    type(bounds_type)       , intent(in) :: bounds  ! bounds
    integer                 , intent(in) :: lbj, ubj             ! lower and upper bounds, make sure they are > 0
    integer                 , intent(in) :: jtops(bounds%begc: ) ! top label of each column
@@ -1880,7 +1880,7 @@ contains
          annavg_agnpp    =>    carbonflux_vars%annavg_agnpp_patch  , & ! Output: [real(r8) (:) ]  annual average above-ground NPP (gC/m2/s)
          tempavg_bgnpp   =>    carbonflux_vars%tempavg_bgnpp_patch , & ! Output: [real(r8) (:) ]  temporary average below-ground NPP (gC/m2/s)
          annavg_bgnpp    =>    carbonflux_vars%annavg_bgnpp_patch  , & ! Output: [real(r8) (:) ]  annual average below-ground NPP (gC/m2/s)
-         
+
 
          annsum_counter  =>    tracercoeff_vars%annsum_counter_col   & ! Output: [real(r8) (:) ]  seconds since last annual accumulator turnover
          !finundated    =>    ch4_vars%finundated_col             , & ! Input:  [real(r8) (:) ]  fractional inundated area in soil column

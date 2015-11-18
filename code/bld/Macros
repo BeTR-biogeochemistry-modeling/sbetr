@@ -1,0 +1,13 @@
+LKFLAG = -O2 -o
+LKFLAG = -fdefault-real-8 -g -o
+FCPFLAG = -fdefault-real-8 -c
+
+CCPFLAG = -c
+CPPDEFS+=  -DCPRGNU -DHIDE_MPI
+F90 = $(FCOMP) $(CPPDEFS)
+INCS =
+
+FFLAGS = $(FFLAGS_IN) $(LKFLAG) #-r8
+
+F90C=$(F90) $(FCPFLAG)
+F90L=$(F90) $(FFLAGS)

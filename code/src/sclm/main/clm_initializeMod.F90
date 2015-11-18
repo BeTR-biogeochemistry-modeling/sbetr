@@ -10,6 +10,7 @@ module clm_initializeMod
   use ChemStateType      , only : chemstate_type
   use SoilHydrologyType  , only : soilhydrology_type
   use atm2lndType        , only : atm2lnd_type
+  use SoilWaterRetentionCurveFactoryMod, only : create_soil_water_retention_curve
   implicit none
   save
   public

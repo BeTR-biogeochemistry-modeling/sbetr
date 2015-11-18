@@ -34,6 +34,7 @@ contains
 !    use BGCReactionsSminNType       , only : bgc_reaction_sminn_type
 !    use BGCReactionsCenturyCLM3Type , only : bgc_reaction_CENTURY_clm3_type
 !    use BGCReactionsCenturyCLMOType , only : bgc_reaction_CENTURY_clmo_type
+    use BGCReactionsCentECACNPType   , only : bgc_reaction_CENTURY_ECACNP_type
     use abortutils                  , only : endrun
     use clm_varctl                  , only : iulog
     use tracer_varcon               , only : is_active_betr_bgc, do_betr_leaching

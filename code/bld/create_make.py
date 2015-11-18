@@ -3,7 +3,15 @@
 #This script generates a Makefile based on the contents in the src code directory
 #however some modification is necessary to have the correct cross-dependency figured out in the source files
 
-print "list all contents in src"
+#open the Makefile to write
+ofile=open("Makefile","w")
+#empty the file
+ofile.truncate()
+
+#write headers
+ofile.write("#This is an automatically generated Makefile from the script create_make.py\n")
+ofile.write("shell=/bin/sh\n")
+ofile.write("include Macros\n")
 
 import os
 def list_files(mypath):
@@ -15,24 +23,32 @@ def list_files(mypath):
             file_paths.append(filepath)
     return file_paths
 
-curdir=os.path.dirname(os.path.realpath(__file__))
-print "Current directory is:"
-print curdir
-print ' '
+curdir=os.path.dirname(os.path.realpath("../src/"))
+print 'source code directory is'
+ofile.write("#define source code directory\n")
+ofile.write("SRCDIR="+curdir+"\n")
+
+#define F90CC
+ofile.write("F90CC=$(F90C) -I $(SRCDIR)/"+"src/esmf_wrf_timemgr\n")
 #list all source codes
 print "source codes:"
 mypath="../src"
+
+#list all directories
+
 full_file_paths=list_files(mypath)
 objs=[]
 file_lowercase=[]
+
 for file in full_file_paths:
     stuff=file.split('/')
-    file_new=file.replace("..","$SRCDIR")
+    file_new=file.replace("..","$(SRCDIR)")
     file_lowercase.append(file.lower())
     obj=stuff[-1].replace(".F90",".o")
     objs.append(obj)
-    print "%s : %s"  % (obj,file_new)
-    print "\t$(F90C) %s " % file_new
+
+
+
 
 #define the grep function
 
@@ -42,9 +58,18 @@ def grep_use(file):
     process=subprocess.Popen(bashcommand.split(),stdout=subprocess.PIPE)
     output=process.communicate()[0]
     outputs=output.split('\n')
+    #try upper case
+
+    bashcommand="grep USE "+file
+    process=subprocess.Popen(bashcommand.split(),stdout=subprocess.PIPE)
+    output=process.communicate()[0]
+    outputs1=output.split('\n')
+    outputs.extend(outputs1)
+
     mods=[]
     for line in outputs:
         tline=line.strip()
+        tline=tline.lower()
         loc=tline.find("use")
         if loc == 0:
             stuff=tline.split(' ')
@@ -54,6 +79,7 @@ def grep_use(file):
             loc2=stuff_low.find("intrinsic")
             if loc1 == -1 and loc2==-1 :
                 mods.append(stuff_low.replace(",","")+".o")
+
     return mods
 
 
@@ -93,18 +119,19 @@ def remove_listdup(inlist):
 
 
 #start from the main file
-objs=[]
-objs.append(obj_main)
+tobjs=[]
+tobjs.append(obj_main)
 var=1
+objsf=[]
 while var == 1:
-    lens=len(objs)
+    lens=len(tobjs)
     if lens==0:
         break
     #get all use mods
     all_mods=[]
-    for obj in objs:
+    for obj in tobjs:
         obj_file=find_fname(obj,full_file_paths)
-        print "grep mod for %s" % obj
+#        print "grep mod for %s" % obj
         use_mods=grep_use(obj_file)
         all_mods.extend(use_mods)
     #remove duplicate mods
@@ -113,43 +140,58 @@ while var == 1:
     #determine if an obj is in the next layer
     result=[]
     all_mods=set(all_mods)
-    for obj in objs:
+    for obj in tobjs:
         if obj not in all_mods:
             result.append(obj)
+            objsf.append(obj)
 
-    objs=list(all_mods)
-    print "RESULT"
-    print result
-    print "NEXT"
-    print objs
-    import time
-    time.sleep(1)
-    #go to the next loop
+    tobjs=list(all_mods)
+
+#now add files that are not in objsf
+objs1=set(objsf)
+objs2=objsf
+objs3=[]
+for obj in objs:
+    if obj.lower() not in objs1:
+        objs2.append(obj)
+        objs3.append(obj)
+ofile.write("\n\n\n")
+ofile.write("# define OBJS\n")
+ofile.write("OBJS=")
+cnt=0
+for obj in reversed(objs2):
+    loc=obj.find(".o")
+    if loc < 0:
+        continue
+    #find its corresponding entry in objs
+    for objj in objs:
+        if obj == objj.lower():
+            ofile.write(" "+objj)
+            break
+    cnt=cnt+1
+    if cnt%7 == 0:
+        ofile.write(" \\")
+        ofile.write("\n")
+        ofile.write("\t")
+
+ofile.write("\n\n\n")
+ofile.write("# define dependence\n")
+for file in full_file_paths:
+    stuff=file.split('/')
+    file_new=file.replace("..","$(SRCDIR)")
+    obj=stuff[-1].replace(".F90",".o")
+    ofile.write(obj+": "+file_new+"\n")
+    ofile.write("\t$(F90CC) "+file_new+"\n")
+
+ofile.write("#define executable\n")
+ofile.write(".PHONY : clean\n")
+ofile.write("all: sbetr.exe\n")
+ofile.write("sbetr.exe: $(OBJS)\n")
+ofile.write("\t$(F90L) sbetr.exe $(OBJS)\n")
+ofile.write("clean:\n")
+ofile.write("\t@rm -rf build/*.o build/*.mod build/*.exe")
+ofile.close()
 
 
-obj_file=find_fname(obj_main,full_file_paths)
-use_mods=grep_use(obj_file)
-print use_mods
-#def get_nextnodes(file1, srcfiles_lower, srcfiles):
-    #get the actual location of the file
-    #get stem of the obj file
-#    stuff=file1.split('.')
-#    for file in srcfiles_lower:
-#        loc=file.find(stuff[1])
-#        if loc > 0:
-#            print "do something"
-    #grep all use commands
-#    print "do sth else"
-    #remove duplicating files
-
-    #return
-
-#grep all use commands in the source file and create a non-duplicating file list
-
-#walk through the new list of files, if there's cross-dependency, put it as next, repeat untill the end of the tree
-
-#find all files that have not been included in the tree
-
-#rerverse and output
 
 #now creates the actual makefile,

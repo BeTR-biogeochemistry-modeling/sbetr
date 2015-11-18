@@ -1,0 +1,21 @@
+#!/bin/bash
+
+
+#create a case and build the code
+
+
+#define compiler
+
+export FCOMP=gfortran
+#generate make file
+
+mkdir -p build
+
+cd ../code/bld
+python create_make.py
+
+cp Makefile ../../scripts/build
+cp Macros ../../scripts/build
+cd ../../scripts/build
+
+make all

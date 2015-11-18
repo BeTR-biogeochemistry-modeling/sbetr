@@ -82,6 +82,7 @@ contains
     use CNNitrogenFluxType           , only          : nitrogenflux_type
     use CanopyStateType              , only          : canopystate_type
     use CNCarbonStateType            , only          : carbonstate_type
+
     !
     ! !ARGUMENTS :
     type(bounds_type)                , intent(in)    :: bounds                     ! bounds
@@ -581,7 +582,7 @@ contains
     enddo
 
   end subroutine tracer_gw_transport
-  
+
   !-------------------------------------------------------------------------------
   subroutine do_tracer_advection(bounds, lbj, ubj, jtops, num_soilc, filter_soilc, &
        betrtracer_vars, dz, zi, dtime,  h2osoi_liqvol, waterflux_vars,             &
@@ -1537,7 +1538,7 @@ contains
          tracer_conc_mobile    => tracerstate_vars%tracer_conc_mobile_col     , & !
          aqu2bulkcef_mobile    => tracercoeff_vars%aqu2bulkcef_mobile_col     , & !
          tracer_flx_surfrun    => tracerflux_vars%tracer_flx_surfrun_col        & !Output[real(r8) (:,:)] tracer loss through surface runoff
-         
+
          )
 
       dtime = get_step_size()
@@ -1773,7 +1774,7 @@ contains
          is_volatile              => betrtracer_vars%is_volatile            , &
          is_isotope               => betrtracer_vars%is_isotope             , &
          is_h2o                   => betrtracer_vars%is_h2o                   &
-         
+
          )
 
       do fc = 1, num_soilc
