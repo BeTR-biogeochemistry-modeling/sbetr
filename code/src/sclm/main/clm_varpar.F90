@@ -7,4 +7,5 @@ module clm_varpar
   integer  :: nlevtrc_soil = 10
   integer  :: nlevsoi = 10
   integer  :: nlevgrnd = 15
+  integer  :: maxpatch_glcmec= -1    !some dumb number for stand alone betr
 end module clm_varpar

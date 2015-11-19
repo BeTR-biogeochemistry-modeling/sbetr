@@ -1,0 +1,11 @@
+#!/bin/bash
+
+#generate make file
+
+mkdir -p build
+
+cd ../code/bld
+python create_make.py
+
+cp Makefile ../../scripts/build
+cp Macros ../../scripts/build
