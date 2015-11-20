@@ -1,5 +1,7 @@
 module CNNitrogenFluxType
   use clm_varcon     , only : spval, ispval, c14ratio
+  use shr_kind_mod       , only : r8 => shr_kind_r8
+  use decompMod      , only : bounds_type
 implicit none
 
   type, public :: nitrogenflux_type
@@ -8,9 +10,10 @@ implicit none
 
     procedure, public  :: Init
     procedure, private :: InitCold
+    procedure, private :: InitAllocate    
   end type nitrogenflux_type
 
-
+contains
 
   !------------------------------------------------------------------------
   subroutine Init(this, bounds)

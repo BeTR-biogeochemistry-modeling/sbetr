@@ -48,7 +48,7 @@ module ncdio_pio
   public :: ncd_inqvname       ! inquire variable name
   public :: ncd_putvar         ! write local data
   public :: ncd_getvar         ! read data
-
+  public :: ncd_io
 
 
   interface ncd_putvar
@@ -91,6 +91,73 @@ module ncdio_pio
      module procedure ncd_getatt_char
   end interface ncd_getatt
 
+  interface ncd_io
+     module procedure ncd_io_char_var0_start_glob
+
+     !DIMS 0,1
+     module procedure ncd_io_0d_log_glob
+     !DIMS 0,1
+     module procedure ncd_io_1d_log_glob
+
+     !TYPE int,double
+     !DIMS 0,1,2,3
+     module procedure ncd_io_0d_int_glob
+     !TYPE int,double
+     !DIMS 0,1,2,3
+     module procedure ncd_io_1d_int_glob
+     !TYPE int,double
+     !DIMS 0,1,2,3
+     module procedure ncd_io_2d_int_glob
+     !TYPE int,double
+     !DIMS 0,1,2,3
+     module procedure ncd_io_3d_int_glob
+     !TYPE int,double
+     !DIMS 0,1,2,3
+     module procedure ncd_io_0d_double_glob
+     !TYPE int,double
+     !DIMS 0,1,2,3
+     module procedure ncd_io_1d_double_glob
+     !TYPE int,double
+     !DIMS 0,1,2,3
+     module procedure ncd_io_2d_double_glob
+     !TYPE int,double
+     !DIMS 0,1,2,3
+     module procedure ncd_io_3d_double_glob
+
+     !TYPE text
+     !DIMS 0,1,2
+     module procedure ncd_io_0d_text_glob
+     !TYPE text
+     !DIMS 0,1,2
+     module procedure ncd_io_1d_text_glob
+     !TYPE text
+     !DIMS 0,1,2
+     module procedure ncd_io_2d_text_glob
+
+     !TYPE int,double
+     !DIMS 1,2,3
+     module procedure ncd_io_1d_int
+     !TYPE int,double
+     !DIMS 1,2,3
+     module procedure ncd_io_2d_int
+     !TYPE int,double
+     !DIMS 1,2,3
+     module procedure ncd_io_3d_int
+     !TYPE int,double
+     !DIMS 1,2,3
+     module procedure ncd_io_1d_double
+     !TYPE int,double
+     !DIMS 1,2,3
+     module procedure ncd_io_2d_double
+     !TYPE int,double
+     !DIMS 1,2,3
+     module procedure ncd_io_3d_double
+
+     !TYPE logical
+     !DIMS 1
+     module procedure ncd_io_1d_logical
+  end interface
+
   type, public :: file_desc_t
     integer(i4) :: fh
   end type file_desc_t
@@ -100,7 +167,30 @@ module ncdio_pio
     integer(i4) :: rec     ! this is a record number or pointer into the unlim dimension of the netcdf file
     integer(i4) :: type
   end type
-  integer, parameter :: ncd_int =  nf90_int
+
+  type IO_desc_t
+    integer :: sth_dump
+  end type IO_desc_t
+
+  type iodesc_plus_type
+     character(len=64) :: name
+     type(IO_desc_t)   :: iodesc
+     integer           :: type
+     integer           :: ndims
+     integer           :: dims(4)
+     integer           :: dimids(4)
+  end type iodesc_plus_type
+  integer, public, parameter :: ncd_int =  nf90_int
+  integer,parameter,public :: ncd_float     = nf90_float
+  integer,parameter,public :: ncd_double    = nf90_double
+  integer,parameter,public :: ncd_char      = nf90_char
+  integer,parameter,public :: ncd_global    = nf90_global
+  integer,parameter,public :: ncd_write     = nf90_write
+  integer,parameter,public :: ncd_nowrite   = nf90_nowrite
+  integer,parameter,public :: ncd_clobber   = nf90_clobber
+  integer,parameter,public :: ncd_noclobber = nf90_noclobber
+  integer,parameter,public :: ncd_nofill    = nf90_nofill
+  integer,parameter,public :: ncd_unlimited = nf90_unlimited
   integer, parameter :: ncd_log = -nf90_int
 !
 
@@ -1229,5 +1319,594 @@ module ncdio_pio
     endif
     vardesc%varid = varid
   end subroutine ncd_inqvid
+
+
+
+  subroutine ncd_io_char_var0_start_glob(vardesc, data, flag, ncid, start )
+    !
+    ! !DESCRIPTION:
+    ! netcdf I/O of global character array with start indices input
+    !
+    ! !ARGUMENTS:
+    class(file_desc_t),intent(inout) :: ncid             ! netcdf file id
+    character(len=*) , intent(in)    :: flag             ! 'read' or 'write'
+    type(var_desc_t) , intent(in)    :: vardesc          ! local vardesc pointer
+    character(len=*) , intent(inout) :: data             ! raw data for this index
+    integer          , intent(in)    :: start(:)         ! output bounds
+    !
+    ! !LOCAL VARIABLES:
+    integer :: status               ! error code
+    character(len=*),parameter :: subname='ncd_io_char_var0_start_glob'
+
+  end subroutine ncd_io_char_var0_start_glob
+
+  subroutine ncd_io_0d_log_glob(varname, data, flag, ncid, readvar, nt, posNOTonfile)
+    !
+    ! !DESCRIPTION:
+    ! netcdf I/O of global integer variable
+    !
+    ! !ARGUMENTS:
+    class(file_desc_t) , intent(inout) :: ncid      ! netcdf file id
+    character(len=*)   , intent(in)    :: flag      ! 'read' or 'write'
+    character(len=*)   , intent(in)    :: varname   ! variable name
+    logical            , intent(inout) :: data ! raw data
+    logical, optional  , intent(out)   :: readvar   ! was var read?
+    integer, optional  , intent(in)    :: nt        ! time sample index
+    logical            , optional, intent(in) :: posNOTonfile ! position is NOT on this file
+    !
+    ! !LOCAL VARIABLES:
+    integer           :: varid              ! netCDF variable id
+    integer           :: start(2), count(2) ! output bounds
+    integer           :: status             ! error code
+    logical           :: varpresent         ! if true, variable is on tape
+    integer           :: idata
+    integer, pointer  :: idata1d(:)         ! Temporary integer data to send to file
+    character(len=32) :: vname              ! variable error checking
+    type(var_desc_t)  :: vardesc            ! local vardesc pointer
+    character(len=*),parameter :: subname='ncd_io_0d_log_glob'
+  end subroutine ncd_io_0d_log_glob
+
+
+  subroutine ncd_io_1d_log_glob(varname, data, flag, ncid, readvar, nt, posNOTonfile)
+    !
+    ! !DESCRIPTION:
+    ! netcdf I/O of global integer variable
+    !
+    ! !ARGUMENTS:
+    class(file_desc_t) , intent(inout) :: ncid      ! netcdf file id
+    character(len=*)   , intent(in)    :: flag      ! 'read' or 'write'
+    character(len=*)   , intent(in)    :: varname   ! variable name
+    logical            , intent(inout) :: data(:) ! raw data
+    logical, optional  , intent(out)   :: readvar   ! was var read?
+    integer, optional  , intent(in)    :: nt        ! time sample index
+    logical            , optional, intent(in) :: posNOTonfile ! position is NOT on this file
+    !
+    ! !LOCAL VARIABLES:
+    integer           :: varid              ! netCDF variable id
+    integer           :: start(2), count(2) ! output bounds
+    integer           :: status             ! error code
+    logical           :: varpresent         ! if true, variable is on tape
+    integer           :: idata
+    integer, pointer  :: idata1d(:)         ! Temporary integer data to send to file
+    character(len=32) :: vname              ! variable error checking
+    type(var_desc_t)  :: vardesc            ! local vardesc pointer
+    character(len=*),parameter :: subname='ncd_io_1d_log_glob'
+  end subroutine ncd_io_1d_log_glob
+
+  subroutine ncd_io_0d_int_glob(varname, data, flag, ncid, readvar, nt, posNOTonfile)
+    !
+    ! !DESCRIPTION:
+    ! netcdf I/O of global variable
+    !
+    ! !ARGUMENTS:
+    class(file_desc_t),         intent(inout) :: ncid         ! netcdf file id
+    character(len=*),           intent(in)    :: flag         ! 'read' or 'write'
+    character(len=*),           intent(in)    :: varname      ! variable name
+    integer(i4)         ,           intent(inout) :: data ! raw data
+    logical         , optional, intent(out)   :: readvar      ! was var read?
+    integer         , optional, intent(in)    :: nt           ! time sample index
+    logical         , optional, intent(in)    :: posNOTonfile ! position is NOT on this file
+    !
+    ! !LOCAL VARIABLES:
+    integer           :: m
+    integer           :: varid              ! netCDF variable id
+    integer           :: start(4), count(4) ! output bounds
+    integer           :: status             ! error code
+    logical           :: varpresent         ! if true, variable is on tape
+    logical           :: found              ! if true, found lat/lon dims on file
+    character(len=32) :: vname              ! variable error checking
+    character(len=1)  :: tmpString(128)     ! temp for manipulating output string
+    type(var_desc_t)  :: vardesc            ! local vardesc pointer
+    integer(i4) :: temp(1)
+    character(len=*),parameter :: subname='ncd_io_0d_int_glob'
+  end subroutine ncd_io_0d_int_glob
+
+  subroutine ncd_io_1d_int_glob(varname, data, flag, ncid, readvar, nt, posNOTonfile)
+    !
+    ! !DESCRIPTION:
+    ! netcdf I/O of global variable
+    !
+    ! !ARGUMENTS:
+    class(file_desc_t),         intent(inout) :: ncid         ! netcdf file id
+    character(len=*),           intent(in)    :: flag         ! 'read' or 'write'
+    character(len=*),           intent(in)    :: varname      ! variable name
+    integer(i4)         ,           intent(inout) :: data(:) ! raw data
+    logical         , optional, intent(out)   :: readvar      ! was var read?
+    integer         , optional, intent(in)    :: nt           ! time sample index
+    logical         , optional, intent(in)    :: posNOTonfile ! position is NOT on this file
+    !
+    ! !LOCAL VARIABLES:
+    integer           :: m
+    integer           :: varid              ! netCDF variable id
+    integer           :: start(4), count(4) ! output bounds
+    integer           :: status             ! error code
+    logical           :: varpresent         ! if true, variable is on tape
+    logical           :: found              ! if true, found lat/lon dims on file
+    character(len=32) :: vname              ! variable error checking
+    character(len=1)  :: tmpString(128)     ! temp for manipulating output string
+    type(var_desc_t)  :: vardesc            ! local vardesc pointer
+    integer(i4) :: temp(1)
+    character(len=*),parameter :: subname='ncd_io_1d_int_glob'
+  end subroutine ncd_io_1d_int_glob
+
+
+  subroutine ncd_io_2d_int_glob(varname, data, flag, ncid, readvar, nt, posNOTonfile)
+    !
+    ! !DESCRIPTION:
+    ! netcdf I/O of global variable
+    !
+    ! !ARGUMENTS:
+    class(file_desc_t),         intent(inout) :: ncid         ! netcdf file id
+    character(len=*),           intent(in)    :: flag         ! 'read' or 'write'
+    character(len=*),           intent(in)    :: varname      ! variable name
+    integer(i4)         ,           intent(inout) :: data(:,:) ! raw data
+    logical         , optional, intent(out)   :: readvar      ! was var read?
+    integer         , optional, intent(in)    :: nt           ! time sample index
+    logical         , optional, intent(in)    :: posNOTonfile ! position is NOT on this file
+    !
+    ! !LOCAL VARIABLES:
+    integer           :: m
+    integer           :: varid              ! netCDF variable id
+    integer           :: start(4), count(4) ! output bounds
+    integer           :: status             ! error code
+    logical           :: varpresent         ! if true, variable is on tape
+    logical           :: found              ! if true, found lat/lon dims on file
+    character(len=32) :: vname              ! variable error checking
+    character(len=1)  :: tmpString(128)     ! temp for manipulating output string
+    type(var_desc_t)  :: vardesc            ! local vardesc pointer
+    integer(i4) :: temp(1)
+    character(len=*),parameter :: subname='ncd_io_2d_int_glob'
+  end subroutine ncd_io_2d_int_glob
+
+
+  subroutine ncd_io_3d_int_glob(varname, data, flag, ncid, readvar, nt, posNOTonfile)
+    !
+    ! !DESCRIPTION:
+    ! netcdf I/O of global variable
+    !
+    ! !ARGUMENTS:
+    class(file_desc_t),         intent(inout) :: ncid         ! netcdf file id
+    character(len=*),           intent(in)    :: flag         ! 'read' or 'write'
+    character(len=*),           intent(in)    :: varname      ! variable name
+    integer(i4)         ,           intent(inout) :: data(:,:,:) ! raw data
+    logical         , optional, intent(out)   :: readvar      ! was var read?
+    integer         , optional, intent(in)    :: nt           ! time sample index
+    logical         , optional, intent(in)    :: posNOTonfile ! position is NOT on this file
+    !
+    ! !LOCAL VARIABLES:
+    integer           :: m
+    integer           :: varid              ! netCDF variable id
+    integer           :: start(4), count(4) ! output bounds
+    integer           :: status             ! error code
+    logical           :: varpresent         ! if true, variable is on tape
+    logical           :: found              ! if true, found lat/lon dims on file
+    character(len=32) :: vname              ! variable error checking
+    character(len=1)  :: tmpString(128)     ! temp for manipulating output string
+    type(var_desc_t)  :: vardesc            ! local vardesc pointer
+    integer(i4) :: temp(1)
+    character(len=*),parameter :: subname='ncd_io_3d_int_glob'
+  end subroutine ncd_io_3d_int_glob
+
+  subroutine ncd_io_0d_double_glob(varname, data, flag, ncid, readvar, nt, posNOTonfile)
+    !
+    ! !DESCRIPTION:
+    ! netcdf I/O of global variable
+    !
+    ! !ARGUMENTS:
+    class(file_desc_t),         intent(inout) :: ncid         ! netcdf file id
+    character(len=*),           intent(in)    :: flag         ! 'read' or 'write'
+    character(len=*),           intent(in)    :: varname      ! variable name
+    real(r8)         ,           intent(inout) :: data ! raw data
+    logical         , optional, intent(out)   :: readvar      ! was var read?
+    integer         , optional, intent(in)    :: nt           ! time sample index
+    logical         , optional, intent(in)    :: posNOTonfile ! position is NOT on this file
+    !
+    ! !LOCAL VARIABLES:
+    integer           :: m
+    integer           :: varid              ! netCDF variable id
+    integer           :: start(4), count(4) ! output bounds
+    integer           :: status             ! error code
+    logical           :: varpresent         ! if true, variable is on tape
+    logical           :: found              ! if true, found lat/lon dims on file
+    character(len=32) :: vname              ! variable error checking
+    character(len=1)  :: tmpString(128)     ! temp for manipulating output string
+    type(var_desc_t)  :: vardesc            ! local vardesc pointer
+    real(r8) :: temp(1)
+    character(len=*),parameter :: subname='ncd_io_0d_double_glob'
+  end subroutine ncd_io_0d_double_glob
+
+  subroutine ncd_io_1d_double_glob(varname, data, flag, ncid, readvar, nt, posNOTonfile)
+    !
+    ! !DESCRIPTION:
+    ! netcdf I/O of global variable
+    !
+    ! !ARGUMENTS:
+    class(file_desc_t),         intent(inout) :: ncid         ! netcdf file id
+    character(len=*),           intent(in)    :: flag         ! 'read' or 'write'
+    character(len=*),           intent(in)    :: varname      ! variable name
+    real(r8)         ,           intent(inout) :: data(:) ! raw data
+    logical         , optional, intent(out)   :: readvar      ! was var read?
+    integer         , optional, intent(in)    :: nt           ! time sample index
+    logical         , optional, intent(in)    :: posNOTonfile ! position is NOT on this file
+    !
+    ! !LOCAL VARIABLES:
+    integer           :: m
+    integer           :: varid              ! netCDF variable id
+    integer           :: start(4), count(4) ! output bounds
+    integer           :: status             ! error code
+    logical           :: varpresent         ! if true, variable is on tape
+    logical           :: found              ! if true, found lat/lon dims on file
+    character(len=32) :: vname              ! variable error checking
+    character(len=1)  :: tmpString(128)     ! temp for manipulating output string
+    type(var_desc_t)  :: vardesc            ! local vardesc pointer
+    real(r8) :: temp(1)
+    character(len=*),parameter :: subname='ncd_io_1d_double_glob'
+  end subroutine ncd_io_1d_double_glob
+
+  subroutine ncd_io_2d_double_glob(varname, data, flag, ncid, readvar, nt, posNOTonfile)
+    !
+    ! !DESCRIPTION:
+    ! netcdf I/O of global variable
+    !
+    ! !ARGUMENTS:
+    class(file_desc_t),         intent(inout) :: ncid         ! netcdf file id
+    character(len=*),           intent(in)    :: flag         ! 'read' or 'write'
+    character(len=*),           intent(in)    :: varname      ! variable name
+    real(r8)         ,           intent(inout) :: data(:,:) ! raw data
+    logical         , optional, intent(out)   :: readvar      ! was var read?
+    integer         , optional, intent(in)    :: nt           ! time sample index
+    logical         , optional, intent(in)    :: posNOTonfile ! position is NOT on this file
+    !
+    ! !LOCAL VARIABLES:
+    integer           :: m
+    integer           :: varid              ! netCDF variable id
+    integer           :: start(4), count(4) ! output bounds
+    integer           :: status             ! error code
+    logical           :: varpresent         ! if true, variable is on tape
+    logical           :: found              ! if true, found lat/lon dims on file
+    character(len=32) :: vname              ! variable error checking
+    character(len=1)  :: tmpString(128)     ! temp for manipulating output string
+    type(var_desc_t)  :: vardesc            ! local vardesc pointer
+    real(r8) :: temp(1)
+    character(len=*),parameter :: subname='ncd_io_2d_double_glob'
+  end subroutine ncd_io_2d_double_glob
+
+  subroutine ncd_io_3d_double_glob(varname, data, flag, ncid, readvar, nt, posNOTonfile)
+    !
+    ! !DESCRIPTION:
+    ! netcdf I/O of global variable
+    !
+    ! !ARGUMENTS:
+    class(file_desc_t),         intent(inout) :: ncid         ! netcdf file id
+    character(len=*),           intent(in)    :: flag         ! 'read' or 'write'
+    character(len=*),           intent(in)    :: varname      ! variable name
+    real(r8)         ,           intent(inout) :: data(:,:,:) ! raw data
+    logical         , optional, intent(out)   :: readvar      ! was var read?
+    integer         , optional, intent(in)    :: nt           ! time sample index
+    logical         , optional, intent(in)    :: posNOTonfile ! position is NOT on this file
+    !
+    ! !LOCAL VARIABLES:
+    integer           :: m
+    integer           :: varid              ! netCDF variable id
+    integer           :: start(4), count(4) ! output bounds
+    integer           :: status             ! error code
+    logical           :: varpresent         ! if true, variable is on tape
+    logical           :: found              ! if true, found lat/lon dims on file
+    character(len=32) :: vname              ! variable error checking
+    character(len=1)  :: tmpString(128)     ! temp for manipulating output string
+    type(var_desc_t)  :: vardesc            ! local vardesc pointer
+    real(r8) :: temp(1)
+    character(len=*),parameter :: subname='ncd_io_3d_double_glob'
+  end subroutine ncd_io_3d_double_glob
+
+  subroutine ncd_io_0d_text_glob(varname, data, flag, ncid, readvar, nt, posNOTonfile)
+    !
+    ! !DESCRIPTION:
+    ! netcdf I/O of global variable
+    !
+    ! !ARGUMENTS:
+    class(file_desc_t),         intent(inout) :: ncid         ! netcdf file id
+    character(len=*),           intent(in)    :: flag         ! 'read' or 'write'
+    character(len=*),           intent(in)    :: varname      ! variable name
+    character(len=*)         ,           intent(inout) :: data ! raw data
+    logical         , optional, intent(out)   :: readvar      ! was var read?
+    integer         , optional, intent(in)    :: nt           ! time sample index
+    logical         , optional, intent(in)    :: posNOTonfile ! position is NOT on this file
+    !
+    ! !LOCAL VARIABLES:
+    integer           :: m
+    integer           :: varid              ! netCDF variable id
+    integer           :: start(4), count(4) ! output bounds
+    integer           :: status             ! error code
+    logical           :: varpresent         ! if true, variable is on tape
+    character(len=1)  :: tmpString(128)     ! temp for manipulating output string
+    type(var_desc_t)  :: vardesc            ! local vardesc pointer
+    character(len=*),parameter :: subname='ncd_io_0d_text_glob'
+  end subroutine ncd_io_0d_text_glob
+
+  subroutine ncd_io_1d_text_glob(varname, data, flag, ncid, readvar, nt, posNOTonfile)
+    !
+    ! !DESCRIPTION:
+    ! netcdf I/O of global variable
+    !
+    ! !ARGUMENTS:
+    class(file_desc_t),         intent(inout) :: ncid         ! netcdf file id
+    character(len=*),           intent(in)    :: flag         ! 'read' or 'write'
+    character(len=*),           intent(in)    :: varname      ! variable name
+    character(len=*)         ,           intent(inout) :: data(:) ! raw data
+    logical         , optional, intent(out)   :: readvar      ! was var read?
+    integer         , optional, intent(in)    :: nt           ! time sample index
+    logical         , optional, intent(in)    :: posNOTonfile ! position is NOT on this file
+    !
+    ! !LOCAL VARIABLES:
+    integer           :: m
+    integer           :: varid              ! netCDF variable id
+    integer           :: start(4), count(4) ! output bounds
+    integer           :: status             ! error code
+    logical           :: varpresent         ! if true, variable is on tape
+    character(len=1)  :: tmpString(128)     ! temp for manipulating output string
+    type(var_desc_t)  :: vardesc            ! local vardesc pointer
+    character(len=*),parameter :: subname='ncd_io_1d_text_glob'
+  end subroutine ncd_io_1d_text_glob
+
+  subroutine ncd_io_2d_text_glob(varname, data, flag, ncid, readvar, nt, posNOTonfile)
+    !
+    ! !DESCRIPTION:
+    ! netcdf I/O of global variable
+    !
+    ! !ARGUMENTS:
+    class(file_desc_t),         intent(inout) :: ncid         ! netcdf file id
+    character(len=*),           intent(in)    :: flag         ! 'read' or 'write'
+    character(len=*),           intent(in)    :: varname      ! variable name
+    character(len=*)         ,           intent(inout) :: data(:,:) ! raw data
+    logical         , optional, intent(out)   :: readvar      ! was var read?
+    integer         , optional, intent(in)    :: nt           ! time sample index
+    logical         , optional, intent(in)    :: posNOTonfile ! position is NOT on this file
+    !
+    ! !LOCAL VARIABLES:
+    integer           :: m
+    integer           :: varid              ! netCDF variable id
+    integer           :: start(4), count(4) ! output bounds
+    integer           :: status             ! error code
+    logical           :: varpresent         ! if true, variable is on tape
+    character(len=1)  :: tmpString(128)     ! temp for manipulating output string
+    type(var_desc_t)  :: vardesc            ! local vardesc pointer
+    character(len=*),parameter :: subname='ncd_io_2d_text_glob'
+  end subroutine ncd_io_2d_text_glob
+
+  subroutine ncd_io_1d_int(varname, data, dim1name, flag, ncid, nt, readvar, cnvrtnan2fill)
+    !
+    ! !DESCRIPTION:
+    ! netcdf I/O for 1d
+    !
+    ! !ARGUMENTS:
+    class(file_desc_t), intent(inout)        :: ncid          ! netcdf file id
+    character(len=*) , intent(in)            :: flag          ! 'read' or 'write'
+    character(len=*) , intent(in)            :: varname       ! variable name
+    integer(i4)          , pointer               :: data(:)       ! local decomposition data
+    character(len=*) , intent(in)            :: dim1name      ! dimension name
+    integer          , optional, intent(in)  :: nt            ! time sample index
+    logical          , optional, intent(out) :: readvar       ! true => variable is on initial dataset (read only)
+    logical          , optional, intent(in)  :: cnvrtnan2fill ! true => convert any NaN's to _FillValue (spval)
+    !
+    ! Local Variables
+    character(len=8)                 :: clmlevel   ! clmlevel
+    character(len=32)                :: dimname    ! temporary
+    integer                          :: n          ! index
+    integer                          :: iodnum     ! iodesc num in list
+    integer                          :: varid      ! varid
+    integer                          :: ndims      ! ndims for var
+    integer                          :: ndims_iod  ! ndims iodesc for var
+    integer                          :: dims(4)    ! dim sizes
+    integer                          :: dids(4)    ! dim ids
+    integer                          :: start(3)   ! netcdf start index
+    integer                          :: count(3)   ! netcdf count index
+    integer                          :: status     ! error code
+    logical                          :: varpresent ! if true, variable is on tape
+    integer                , pointer :: idata(:)   ! Temporary integer data to send to file
+    integer                , pointer :: compDOF(:)
+    type(iodesc_plus_type) , pointer :: iodesc_plus
+    type(var_desc_t)                 :: vardesc
+    character(len=*),parameter       :: subname='ncd_io_1d_int' ! subroutine name
+  end subroutine ncd_io_1d_int
+
+  subroutine ncd_io_1d_double(varname, data, dim1name, flag, ncid, nt, readvar, cnvrtnan2fill)
+    !
+    ! !DESCRIPTION:
+    ! netcdf I/O for 1d
+    !
+    ! !ARGUMENTS:
+    class(file_desc_t), intent(inout)        :: ncid          ! netcdf file id
+    character(len=*) , intent(in)            :: flag          ! 'read' or 'write'
+    character(len=*) , intent(in)            :: varname       ! variable name
+    real(r8)          , pointer               :: data(:)       ! local decomposition data
+    character(len=*) , intent(in)            :: dim1name      ! dimension name
+    integer          , optional, intent(in)  :: nt            ! time sample index
+    logical          , optional, intent(out) :: readvar       ! true => variable is on initial dataset (read only)
+    logical          , optional, intent(in)  :: cnvrtnan2fill ! true => convert any NaN's to _FillValue (spval)
+    !
+    ! Local Variables
+    character(len=8)                 :: clmlevel   ! clmlevel
+    character(len=32)                :: dimname    ! temporary
+    integer                          :: n          ! index
+    integer                          :: iodnum     ! iodesc num in list
+    integer                          :: varid      ! varid
+    integer                          :: ndims      ! ndims for var
+    integer                          :: ndims_iod  ! ndims iodesc for var
+    integer                          :: dims(4)    ! dim sizes
+    integer                          :: dids(4)    ! dim ids
+    integer                          :: start(3)   ! netcdf start index
+    integer                          :: count(3)   ! netcdf count index
+    integer                          :: status     ! error code
+    logical                          :: varpresent ! if true, variable is on tape
+    integer                , pointer :: idata(:)   ! Temporary integer data to send to file
+    integer                , pointer :: compDOF(:)
+    type(iodesc_plus_type) , pointer :: iodesc_plus
+    type(var_desc_t)                 :: vardesc
+    character(len=*),parameter       :: subname='ncd_io_1d_double' ! subroutine name
+  end subroutine ncd_io_1d_double
+
+  subroutine ncd_io_1d_logical(varname, data, dim1name, flag, ncid, nt, readvar, cnvrtnan2fill)
+    !
+    ! !DESCRIPTION:
+    ! netcdf I/O for 1d
+    !
+    ! !ARGUMENTS:
+    class(file_desc_t), intent(inout)        :: ncid          ! netcdf file id
+    character(len=*) , intent(in)            :: flag          ! 'read' or 'write'
+    character(len=*) , intent(in)            :: varname       ! variable name
+    logical          , pointer               :: data(:)       ! local decomposition data
+    character(len=*) , intent(in)            :: dim1name      ! dimension name
+    integer          , optional, intent(in)  :: nt            ! time sample index
+    logical          , optional, intent(out) :: readvar       ! true => variable is on initial dataset (read only)
+    logical          , optional, intent(in)  :: cnvrtnan2fill ! true => convert any NaN's to _FillValue (spval)
+    !
+    ! Local Variables
+    character(len=8)                 :: clmlevel   ! clmlevel
+    character(len=32)                :: dimname    ! temporary
+    integer                          :: n          ! index
+    integer                          :: iodnum     ! iodesc num in list
+    integer                          :: varid      ! varid
+    integer                          :: ndims      ! ndims for var
+    integer                          :: ndims_iod  ! ndims iodesc for var
+    integer                          :: dims(4)    ! dim sizes
+    integer                          :: dids(4)    ! dim ids
+    integer                          :: start(3)   ! netcdf start index
+    integer                          :: count(3)   ! netcdf count index
+    integer                          :: status     ! error code
+    logical                          :: varpresent ! if true, variable is on tape
+    integer                , pointer :: idata(:)   ! Temporary integer data to send to file
+    integer                , pointer :: compDOF(:)
+    type(iodesc_plus_type) , pointer :: iodesc_plus
+    type(var_desc_t)                 :: vardesc
+    character(len=*),parameter       :: subname='ncd_io_1d_logical' ! subroutine name
+  end subroutine ncd_io_1d_logical
+
+  subroutine ncd_io_2d_int(varname, data, dim1name, lowerb2, upperb2, &
+       flag, ncid, nt, readvar, switchdim, cnvrtnan2fill)
+    !
+    ! !DESCRIPTION:
+    ! Netcdf i/o of 2d
+    !
+    ! !ARGUMENTS:
+    class(file_desc_t), intent(inout) :: ncid         ! netcdf file id
+    character(len=*) , intent(in)  :: flag            ! 'read' or 'write'
+    character(len=*) , intent(in)  :: varname         ! variable name
+    integer(i4)          , pointer     :: data(:,:)       ! local decomposition input data
+    character(len=*) , intent(in)  :: dim1name        ! dimension 1 name
+    integer, optional, intent(in)  :: nt              ! time sample index
+    integer, optional, intent(in)  :: lowerb2,upperb2 ! lower and upper bounds of second dimension
+    logical, optional, intent(out) :: readvar         ! true => variable is on initial dataset (read only)
+    logical, optional, intent(in)  :: switchdim       ! true=> permute dim1 and dim2 for output
+    logical, optional, intent(in)  :: cnvrtnan2fill   ! true => convert any NaN's to _FillValue (spval)
+  end subroutine ncd_io_2d_int
+
+  subroutine ncd_io_2d_double(varname, data, dim1name, lowerb2, upperb2, &
+       flag, ncid, nt, readvar, switchdim, cnvrtnan2fill)
+    !
+    ! !DESCRIPTION:
+    ! Netcdf i/o of 2d
+    !
+    ! !ARGUMENTS:
+    class(file_desc_t), intent(inout) :: ncid         ! netcdf file id
+    character(len=*) , intent(in)  :: flag            ! 'read' or 'write'
+    character(len=*) , intent(in)  :: varname         ! variable name
+    real(r8)          , pointer     :: data(:,:)       ! local decomposition input data
+    character(len=*) , intent(in)  :: dim1name        ! dimension 1 name
+    integer, optional, intent(in)  :: nt              ! time sample index
+    integer, optional, intent(in)  :: lowerb2,upperb2 ! lower and upper bounds of second dimension
+    logical, optional, intent(out) :: readvar         ! true => variable is on initial dataset (read only)
+    logical, optional, intent(in)  :: switchdim       ! true=> permute dim1 and dim2 for output
+    logical, optional, intent(in)  :: cnvrtnan2fill   ! true => convert any NaN's to _FillValue (spval)
+  end subroutine ncd_io_2d_double
+
+  subroutine ncd_io_3d_int(varname, data, dim1name, flag, ncid, nt, readvar)
+    !
+    ! !DESCRIPTION:
+    ! Netcdf i/o of 3d
+    !
+    ! !ARGUMENTS:
+    class(file_desc_t), intent(inout) :: ncid         ! netcdf file id
+    character(len=*) , intent(in)  :: flag            ! 'read' or 'write'
+    character(len=*) , intent(in)  :: varname         ! variable name
+    integer(i4)          , pointer     :: data(:,:,:)     ! local decomposition input data
+    character(len=*) , intent(in)  :: dim1name        ! dimension 1 name
+    integer, optional, intent(in)  :: nt              ! time sample index
+    logical, optional, intent(out) :: readvar         ! true => variable is on initial dataset (read only)
+    !
+    ! !LOCAL VARIABLES:
+    integer                          :: ndim1,ndim2
+    character(len=8)                 :: clmlevel   ! clmlevel
+    character(len=32)                :: dimname    ! temporary
+    integer                          :: status     ! error status
+    integer                          :: ndims      ! ndims total for var
+    integer                          :: ndims_iod  ! ndims iodesc for var
+    integer                          :: varid      ! varid
+    integer                          :: n          ! index
+    integer                          :: dims(4)    ! dim sizes
+    integer                          :: dids(4)    ! dim ids
+    integer                          :: iodnum     ! iodesc num in list
+    integer                          :: start(5)   ! netcdf start index
+    integer                          :: count(5)   ! netcdf count index
+    logical                          :: varpresent ! if true, variable is on tape
+    type(iodesc_plus_type) , pointer :: iodesc_plus
+    type(var_desc_t)                 :: vardesc
+    character(len=*),parameter :: subname='ncd_io_3d_int' ! subroutine name
+  end subroutine ncd_io_3d_int
+
+  subroutine ncd_io_3d_double(varname, data, dim1name, flag, ncid, nt, readvar)
+    !
+    ! !DESCRIPTION:
+    ! Netcdf i/o of 3d
+    !
+    ! !ARGUMENTS:
+    class(file_desc_t), intent(inout) :: ncid         ! netcdf file id
+    character(len=*) , intent(in)  :: flag            ! 'read' or 'write'
+    character(len=*) , intent(in)  :: varname         ! variable name
+    real(r8)          , pointer     :: data(:,:,:)     ! local decomposition input data
+    character(len=*) , intent(in)  :: dim1name        ! dimension 1 name
+    integer, optional, intent(in)  :: nt              ! time sample index
+    logical, optional, intent(out) :: readvar         ! true => variable is on initial dataset (read only)
+    !
+    ! !LOCAL VARIABLES:
+    integer                          :: ndim1,ndim2
+    character(len=8)                 :: clmlevel   ! clmlevel
+    character(len=32)                :: dimname    ! temporary
+    integer                          :: status     ! error status
+    integer                          :: ndims      ! ndims total for var
+    integer                          :: ndims_iod  ! ndims iodesc for var
+    integer                          :: varid      ! varid
+    integer                          :: n          ! index
+    integer                          :: dims(4)    ! dim sizes
+    integer                          :: dids(4)    ! dim ids
+    integer                          :: iodnum     ! iodesc num in list
+    integer                          :: start(5)   ! netcdf start index
+    integer                          :: count(5)   ! netcdf count index
+    logical                          :: varpresent ! if true, variable is on tape
+    type(iodesc_plus_type) , pointer :: iodesc_plus
+    type(var_desc_t)                 :: vardesc
+    character(len=*),parameter :: subname='ncd_io_3d_double' ! subroutine name
+  end subroutine ncd_io_3d_double
+
 
   end module ncdio_pio

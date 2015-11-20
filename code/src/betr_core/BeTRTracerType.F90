@@ -200,12 +200,17 @@ module BeTRTracerType
   allocate(this%tracernames        (this%ntracers));             this%tracernames(:)     = ''
   allocate(this%vtrans_scal        (this%ngwmobile_tracers));    this%vtrans_scal(:)     = 0._r8   !no transport through xylem transpiration
 
-  allocate(this%tracer_solid_passive_diffus_scal_group(this%nsolid_passive_tracer_groups)); this%tracer_solid_passive_diffus_scal_group(:) = 1._r8
-  allocate(this%tracer_solid_passive_diffus_thc_group (this%nsolid_passive_tracer_groups)); this%tracer_solid_passive_diffus_thc_group(:) = 1e-4_r8 / (86400._r8 * 365._r8) * 1.e-36_r8
+  allocate(this%tracer_solid_passive_diffus_scal_group(this%nsolid_passive_tracer_groups));
+  this%tracer_solid_passive_diffus_scal_group(:) = 1._r8
 
-  allocate(this%tracer_group_memid(this%ntracer_groups, this%nmem_max)); this%tracer_group_memid(:,:) = nanid
+  allocate(this%tracer_solid_passive_diffus_thc_group (this%nsolid_passive_tracer_groups));
+  this%tracer_solid_passive_diffus_thc_group(:) = 1e-4_r8 / (86400._r8 * 365._r8) * 1.e-36_r8
 
-  allocate(this%solid_passive_tracer_groupid(this%nsolid_passive_tracer_groups, 1:this%nmem_max)); this%solid_passive_tracer_groupid(:,:) = nanid
+  allocate(this%tracer_group_memid(this%ntracer_groups, this%nmem_max));
+  this%tracer_group_memid(:,:) = nanid
+
+  allocate(this%solid_passive_tracer_groupid(this%nsolid_passive_tracer_groups, 1:this%nmem_max));
+  this%solid_passive_tracer_groupid(:,:) = nanid
 
   allocate(this%groupid(this%ntracers)); this%groupid(:) = nanid
 

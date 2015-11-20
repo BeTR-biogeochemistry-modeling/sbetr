@@ -77,7 +77,7 @@ contains
 
   end subroutine init_boundary_condition_type
 
-  !-------------------------------------------------------------------------------  
+  !-------------------------------------------------------------------------------
   subroutine Init_betrbgc(this, bounds, lbj, ubj, betrtracer_vars)
     !
     ! DESCRIPTION:
@@ -180,9 +180,9 @@ contains
     ! !LOCAL VARIABLES:
     integer            :: fc, c
     character(len=255) :: subname = 'set_boundary_conditions'
-
+#ifndef SBETR
     SHR_ASSERT_ALL((ubound(dz_top)                == (/bounds%endc/)),   errMsg(__FILE__,__LINE__))
-
+#endif
     associate(                                     &
          groupid  => betrtracer_vars%groupid       &
          )
@@ -250,7 +250,7 @@ contains
     type(carbonstate_type)              , intent(in)    :: carbonstate_vars           !
     type(carbonflux_type)               , intent(inout) :: carbonflux_vars            !
     type(nitrogenstate_type)            , intent(inout) :: nitrogenstate_vars         !
-    type(nitrogenflux_type)             , intent(inout) :: nitrogenflux_vars          ! 
+    type(nitrogenflux_type)             , intent(inout) :: nitrogenflux_vars          !
     type(chemstate_type)                , intent(in)    :: chemstate_vars             !
     type(betrtracer_type)               , intent(in)    :: betrtracer_vars            ! betr configuration information
     type(tracercoeff_type)              , intent(in)    :: tracercoeff_vars           !
@@ -291,9 +291,9 @@ contains
     type(tracerstate_type), intent(inout) :: tracerstate_vars
     character(len=255) :: subname = 'do_tracer_equilibration'
 
-
+#ifndef SBETR
     SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(__FILE__,__LINE__))
-
+#endif
     !depending on the simulation type, an implementation of aqueous chemistry will be
     !employed to separate out the adsorbed phase
     !It should be noted that this formulation excludes the use of linear isotherm, which
@@ -301,7 +301,7 @@ contains
 
 
   end subroutine do_tracer_equilibration
-  
+
   !-----------------------------------------------------------------------
   subroutine InitCold(this, bounds, betrtracer_vars, waterstate_vars, tracerstate_vars)
     !
@@ -452,7 +452,7 @@ contains
     type(bounds_type)                  , intent(in)    :: bounds             !
     type(tracerstate_type)             , intent(inout) :: tracerstate_vars   !
     type(betrtracer_type)              , intent(in)    :: betrtracer_vars    ! betr configuration information
-    type(carbonstate_type)             , intent(in)    :: carbonstate_vars   ! 
+    type(carbonstate_type)             , intent(in)    :: carbonstate_vars   !
     type(nitrogenstate_type)           , intent(in)    :: nitrogenstate_vars !
 
   end subroutine init_betr_alm_bgc_coupler

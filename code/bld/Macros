@@ -1,13 +1,18 @@
 LKFLAG = -O2 -o
 LKFLAG = -fdefault-real-8 -g -o
-FCPFLAG = -fdefault-real-8 -c
+FCPFLAG = -fdefault-real-8 -c -cpp
 
 CCPFLAG = -c
-CPPDEFS+=  -DCPRGNU -DHIDE_MPI
+CPPDEFS+=  -DCPRGNU -DHIDE_MPI -DSBETR
 F90 = $(FCOMP) $(CPPDEFS)
-INCS =
+NETCDF_PATH = /opt/local/
+NETCDFLIB    =-L $(NETCDF_PATH)/lib -lnetcdff -i_dynamic
+NETCDFINC    =-I $(NETCDF_PATH)/include
+
+INCS = $(NETCDFINC)
+LIBS = $(NETCDFLIB)
 
 FFLAGS = $(FFLAGS_IN) $(LKFLAG) #-r8
 
-F90C=$(F90) $(FCPFLAG)
-F90L=$(F90) $(FFLAGS)
+F90C=$(F90) $(FCPFLAG) $(INCS)
+F90L=$(F90) $(FFLAGS)  $(LIBS)

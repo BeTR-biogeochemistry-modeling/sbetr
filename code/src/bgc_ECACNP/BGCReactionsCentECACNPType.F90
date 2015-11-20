@@ -154,8 +154,10 @@ contains
     n1 = size(cn_r)
     n2 = size(cp_r)
     n3 = size(k_d)
+#ifndef SBETR
     SHR_ASSERT_ALL((n1              == n2),        errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((n3              == this%nr),   errMsg(__FILE__,__LINE__))
+#endif
     this%cn_ratios(1:n1) = cn_r
     this%cp_ratios(1:n2) = cp_r
 
@@ -465,9 +467,9 @@ contains
     ! !LOCAL VARIABLES:
     character(len=255) :: subname = 'set_boundary_conditions'
     integer :: fc, c
-
+#ifndef SBETR
     SHR_ASSERT_ALL((ubound(dz_top)                == (/bounds%endc/)),   errMsg(__FILE__,__LINE__))
-
+#endif
     associate(                                     &
          groupid  => betrtracer_vars%groupid          &
          )
@@ -569,9 +571,9 @@ contains
     real(r8)                     :: nh4_no3_ratio(bounds%begc:bounds%endc, lbj:ubj)
     real(r8)                     :: nuptake_prof(bounds%begc:bounds%endc,1:ubj)
     real(r8)                     :: pscal
-
+#ifndef SBETR
     SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(__FILE__,__LINE__))
-
+#endif
     call Extra_inst%Init_Allocate(centurybgc_vars%nom_pools, centurybgc_vars%nreactions, centurybgc_vars%nprimvars)
 
     call set_reaction_order( centurybgc_vars%nreactions, centurybgc_vars, Extra_inst%is_zero_order)
@@ -745,9 +747,9 @@ contains
     !
     ! !LOCAL VARIABLES:
     character(len=255) :: subname = 'do_tracer_equilibration'
-
+#ifndef SBETR
     SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(__FILE__,__LINE__))
-
+#endif
   end subroutine do_tracer_equilibration
 
   !-----------------------------------------------------------------------

@@ -51,9 +51,9 @@ contains
 
     character(len=*), parameter :: subname = 'icemec_class_to_col_itype'
     !-----------------------------------------------------------------------
-
+#ifndef SBETR
     SHR_ASSERT((1 <= icemec_class .and. icemec_class <= maxpatch_glcmec), errMsg(__FILE__, __LINE__))
-
+#endif
     col_itype = istice_mec*100 + icemec_class
 
   end function icemec_class_to_col_itype
@@ -81,8 +81,9 @@ contains
 
     ! The following assertion is here to ensure that col_itype is really from an
     ! istice_mec landunit
+#ifndef SBETR
     SHR_ASSERT((1 <= icemec_class .and. icemec_class <= maxpatch_glcmec), errMsg(__FILE__, __LINE__))
-
+#endif
   end function col_itype_to_icemec_class
 
 end module column_varcon

@@ -1,5 +1,7 @@
 module CNNitrogenStateType
   use clm_varcon     , only : spval, ispval, c14ratio
+  use shr_kind_mod       , only : r8 => shr_kind_r8
+  use decompMod      , only : bounds_type
 implicit none
 
   type, public :: nitrogenstate_type
@@ -8,10 +10,11 @@ implicit none
 
     procedure, public  :: Init
     procedure, private :: InitCold
+    procedure, private :: InitAllocate    
   end type nitrogenstate_type
 
 
-
+contains
   !------------------------------------------------------------------------
   subroutine Init(this, bounds)
 

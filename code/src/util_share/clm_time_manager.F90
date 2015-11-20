@@ -78,7 +78,7 @@ module clm_time_manager
         ref_ymd       = uninit_int,  &! reference date for time coordinate in yearmmdd format
         ref_tod       = 0             ! reference time of day for time coordinate in seconds
    type(ESMF_Calendar), target, save   :: tm_cal       ! calendar
-   type(ESMF_Clock),    save   :: tm_clock     ! model clock   
+   type(ESMF_Clock),    save   :: tm_clock     ! model clock
    type(ESMF_Time),     save   :: tm_perp_date ! perpetual date
 
    ! Data required to restart time manager:
@@ -98,7 +98,7 @@ module clm_time_manager
    integer, save :: nestep                = uninit_int ! ending time-step
    !
    ! Next short-wave radiation calendar day
-   ! 
+   !
    real(r8) :: nextsw_cday = uninit_r8 ! calday from clock of next radiation computation
 
    ! Private module methods
@@ -119,7 +119,7 @@ contains
 
     !---------------------------------------------------------------------------------
     ! get time manager startup default values
-    ! 
+    !
     ! Arguments
     character(len=*), optional, intent(OUT) :: calendar_out       ! Calendar type
     integer         , optional, intent(OUT) :: nelapse_out        ! Number of step (or days) to advance
@@ -154,7 +154,7 @@ contains
 
     !---------------------------------------------------------------------------------
     ! set time manager startup values
-    ! 
+    !
     ! Arguments
     character(len=*), optional, intent(IN) :: calendar_in       ! Calendar type
     integer         , optional, intent(IN) :: nelapse_in        ! Number of step (or days) to advance
@@ -197,7 +197,7 @@ contains
 
     !---------------------------------------------------------------------------------
     ! Initialize the ESMF time manager from the sync clock
-    ! 
+    !
     ! Arguments
     !
     character(len=*), parameter :: sub = 'clm::timemgr_init'
@@ -213,7 +213,7 @@ contains
     type(ESMF_TimeInterval) :: step_size     ! timestep size
     !---------------------------------------------------------------------------------
 
-    ! Initalize calendar 
+    ! Initalize calendar
 
     call init_calendar()
 
@@ -261,7 +261,7 @@ contains
        call shr_sys_abort (sub//': Must specify stop_ymd or nelapse')
     end if
 
-    ! Error check 
+    ! Error check
 
     if ( stop_date <= start_date ) then
        write(iulog,*)sub, ': stop date must be specified later than start date: '
@@ -408,9 +408,9 @@ contains
   subroutine timemgr_restart_io( ncid, flag )
 
     !---------------------------------------------------------------------------------
-    ! Read/Write information needed on restart to a netcdf file. 
+    ! Read/Write information needed on restart to a netcdf file.
     use ncdio_pio, only: ncd_int
-    use pio,       only: var_desc_t, file_desc_t
+    use ncdio_pio, only: var_desc_t, file_desc_t
     use restUtilMod
     !
     ! Arguments
@@ -610,11 +610,11 @@ contains
 
     ref_date = TimeSetymd( rst_ref_ymd, rst_ref_tod, "ref_date" )
 
-    ! Initialize clock 
+    ! Initialize clock
 
     call init_clock( start_date, ref_date, curr_date, stop_date )
 
-    ! Advance the timestep.  
+    ! Advance the timestep.
     ! Data from the restart file corresponds to the last timestep of the previous run.
 
     call advance_timestep()
@@ -849,12 +849,12 @@ contains
   subroutine update_rad_dtime(doalb)
     !---------------------------------------------------------------------------------
     ! called only on doalb timesteps to save off radiation nsteps
-    ! 
+    !
     ! Local Arguments
     logical,intent(in) ::  doalb
     integer :: dtime,nstep
 
-    if (doalb) then 
+    if (doalb) then
 
        dtime=get_step_size()
        nstep = get_nstep()
@@ -913,7 +913,7 @@ contains
          tod     ! time of day (seconds past 0Z)
 
     integer, optional, intent(in) :: offset  ! Offset from current time in seconds.
-    ! Positive for future times, negative 
+    ! Positive for future times, negative
     ! for previous times.
 
     character(len=*), parameter :: sub = 'clm::get_curr_date'
@@ -957,7 +957,7 @@ contains
          tod     ! time of day (seconds past 0Z)
 
     integer, optional, intent(in) :: offset  ! Offset from current time in seconds.
-    ! Positive for future times, negative 
+    ! Positive for future times, negative
     ! for previous times.
 
     character(len=*), parameter :: sub = 'clm::get_perp_date'
@@ -1172,7 +1172,7 @@ contains
 
     ! Arguments
     integer, optional, intent(in) :: offset  ! Offset from current time in seconds.
-    ! Positive for future times, negative 
+    ! Positive for future times, negative
     ! for previous times.
     ! Return value
     real(r8) :: get_curr_calday
@@ -1296,7 +1296,7 @@ contains
     !
     ! Arguments
     integer, optional, intent(in) :: offset  ! Offset from current time in seconds.
-    ! Positive for future times, negative 
+    ! Positive for future times, negative
     ! for previous times.
 
     character(len=*), parameter :: sub = 'clm::get_days_per_year'
@@ -1327,9 +1327,9 @@ contains
     !
     ! Arguments
     real(r8) :: get_curr_yearfrac  ! function result
-    
+
     integer, optional, intent(in) :: offset  ! Offset from current time in seconds.
-    ! Positive for future times, negative 
+    ! Positive for future times, negative
     ! for previous times.
 
     character(len=*), parameter :: sub = 'clm::get_curr_yearfrac'
@@ -1352,7 +1352,7 @@ contains
     !
     ! Currently just returns the year (because the month & day are harder to extract, and
     ! currently aren't needed).
-    use pio,       only: file_desc_t
+    use ncdio_pio, only: file_desc_t
     use ncdio_pio, only: ncd_io
     !
     ! Arguments
@@ -1361,12 +1361,12 @@ contains
 
     integer :: ymd     ! yyyymmdd from the restart file
     logical :: readvar ! whether the variable was read from the file
-    
+
     integer, parameter :: year_mask = 10000  ! divide by this to get year from ymd
 
     character(len=*), parameter :: subname = 'get_rest_date'
     !-----------------------------------------------------------------------
-    
+
     ! Get the date (yyyymmdd) from restart file.
     ! Note that we cannot simply use the rst_curr_ymd module variable, because that isn't
     ! set under some circumstances
@@ -1375,7 +1375,7 @@ contains
     if (.not. readvar) then
        call shr_sys_abort(subname//' ERROR: timemgr_rst_curr_ymd not found on restart file')
     end if
-    
+
     ! Extract the year
     yr = ymd / year_mask
   end subroutine get_rest_date
@@ -1396,24 +1396,24 @@ contains
   end subroutine set_nextsw_cday
 
   !=========================================================================================
- 
+
   function is_beg_curr_day()
- 
+
      ! Return true if current timestep is first timestep in current day.
-     
+
      ! Return value
      logical :: is_beg_curr_day
-  
+
      ! Local variables
      integer ::&
         yr,    &! year
         mon,   &! month
         day,   &! day of month
         tod     ! time of day (seconds past 0Z)
- 
+
      call get_curr_date(yr, mon, day, tod)
      is_beg_curr_day = ( tod == dtime )
- 
+
   end function is_beg_curr_day
 
   !=========================================================================================

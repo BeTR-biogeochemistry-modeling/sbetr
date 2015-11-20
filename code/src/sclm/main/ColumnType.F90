@@ -3,13 +3,13 @@ module ColumnType
   !-----------------------------------------------------------------------
   ! !DESCRIPTION:
   ! Column data type allocation and initialization
-  ! -------------------------------------------------------- 
+  ! --------------------------------------------------------
   ! column types can have values of
-  ! -------------------------------------------------------- 
+  ! --------------------------------------------------------
   !   1  => (istsoil)          soil (vegetated or bare soil)
   !   2  => (istcrop)          crop (only for crop configuration)
   !   3  => (istice)           land ice
-  !   4  => (istice_mec)       land ice (multiple elevation classes)   
+  !   4  => (istice_mec)       land ice (multiple elevation classes)
   !   5  => (istdlak)          deep lake
   !   6  => (istwet)           wetland
   !   71 => (icol_roof)        urban roof
@@ -33,28 +33,38 @@ module ColumnType
   ! column data type
   !----------------------------------------------------
 
-  type, public :: column_type  
+  type, public :: column_type
     integer , pointer :: snl(:)                !number of snow layers
-    real(r8), pointer :: zi(:,:)               !interface level below a "z" level (m) (-nlevsno+0:nlevgrnd) 
-    real(r8), pointer :: dz(:,:)               !layer thickness (m)  (-nlevsno+1:nlevgrnd) 
+    real(r8), pointer :: zi(:,:)               !interface level below a "z" level (m) (-nlevsno+0:nlevgrnd)
+    real(r8), pointer :: dz(:,:)               !layer thickness (m)  (-nlevsno+1:nlevgrnd)
     real(r8), pointer :: z(:,:)                !layer depth (m) (-nlevsno+1:nlevgrnd)
+
+    integer , pointer :: pfti                 (:)   ! beginning pft index for each column
+    integer , pointer :: pftf                 (:)   ! ending pft index for each column  
+    real(r8), pointer :: wtgcell              (:)   ! weight (relative to gridcell)
+    integer , pointer :: gridcell             (:)   ! index into gridcell level quantities
+
+     logical , pointer :: active               (:)   ! true=>do computations on this column
+     integer , pointer :: landunit             (:)   ! index into landunit level quantities
+     integer , pointer :: itype                (:)   ! column type
+     real(r8), pointer :: wtlunit              (:)   ! weight (relative to landunit)
   contains
     procedure          :: Init
-    procedure, private :: InitAllocate        
+    procedure, private :: InitAllocate
   end type column_type
-  type(column_type), public, target :: col !column data structure (soil/snow/canopy columns)  
+  type(column_type), public, target :: col !column data structure (soil/snow/canopy columns)
   contains
-  
+
   !------------------------------------------------------------------------
   subroutine Init(this, bounds)
 
     class(column_type) :: this
-    type(bounds_type), intent(in) :: bounds  
+    type(bounds_type), intent(in) :: bounds
 
     call this%InitAllocate(bounds)
 
   end subroutine Init
-  
+
   !------------------------------------------------------------------------
   subroutine InitAllocate(this, bounds)
     !
@@ -63,7 +73,7 @@ module ColumnType
     !
     ! !ARGUMENTS:
     class(column_type) :: this
-    type(bounds_type), intent(in) :: bounds  
+    type(bounds_type), intent(in) :: bounds
     !
     ! !LOCAL VARIABLES:
     integer :: begp, endp
@@ -74,11 +84,11 @@ module ColumnType
 
     begc = bounds%begc; endc= bounds%endc
     lbj  = bounds%lbj; ubj = bounds%ubj
-  
+
     allocate(this%snl(begc:endc))
     allocate(this%dz(begc:endc, lbj:ubj))
     allocate(this%zi(begc:endc,lbj-1:ubj))
     allocate(this%z(begc:endc,lbj:ubj))
-    
-  end subroutine InitAllocate  
-end module ColumnType  
+
+  end subroutine InitAllocate
+end module ColumnType

@@ -19,7 +19,7 @@ module clm_varcon
                            SHR_CONST_PDB, SHR_CONST_PI, SHR_CONST_CDAY,       &
                            SHR_CONST_RGAS
 
-  
+
   !
   ! !PUBLIC TYPES:
   implicit none
@@ -43,7 +43,7 @@ module clm_varcon
   real(r8), parameter :: n_melt=0.7     !fsca shape parameter
   real(r8), parameter :: e_ice=6.0      !soil ice impedance factor
   real(r8), parameter :: pc = 0.4       !threshold probability
-  real(r8), parameter :: mu = 0.13889   !connectivity exponent 
+  real(r8), parameter :: mu = 0.13889   !connectivity exponent
   real(r8) :: grav   = SHR_CONST_G      !gravity constant [m/s2]
   real(r8) :: sb     = SHR_CONST_STEBOL !stefan-boltzmann constant  [W/m2/K4]
   real(r8) :: vkc    = SHR_CONST_KARMAN !von Karman constant [-]
@@ -92,7 +92,7 @@ module clm_varcon
   real(r8) :: pondmx = 0.0_r8     !Ponding depth (mm)
   real(r8) :: pondmx_urban = 1.0_r8  !Ponding depth for urban roof and impervious road (mm)
 
-  real(r8) :: thk_bedrock = 3.0_r8      ! thermal conductivity of 'typical' saturated granitic rock 
+  real(r8) :: thk_bedrock = 3.0_r8      ! thermal conductivity of 'typical' saturated granitic rock
                                         ! (Clauser and Huenges, 1995)(W/m/K)
 
   !!! C13
@@ -112,7 +112,7 @@ module clm_varcon
 
   real(r8), parameter :: h2osno_max = 1000._r8    ! max allowed snow thickness (mm H2O)
   real(r8), parameter :: lapse_glcmec = 0.006_r8  ! surface temperature lapse rate (deg m-1)
-                                                  ! Pritchard et al. (GRL, 35, 2008) use 0.006  
+                                                  ! Pritchard et al. (GRL, 35, 2008) use 0.006
   real(r8), parameter :: glcmec_rain_snow_threshold = SHR_CONST_TKFRZ  ! temperature dividing rain & snow in downscaling (K)
 
   integer, private :: i  ! loop index
@@ -120,7 +120,7 @@ module clm_varcon
   !  real(r8), parameter :: nitrif_n2o_loss_frac = 0.02_r8   !fraction of N lost as N2O in nitrification (Parton et al., 2001)
   real(r8), parameter :: nitrif_n2o_loss_frac = 6.e-4_r8   !fraction of N lost as N2O in nitrification (Li et al., 2000)
   real(r8), parameter :: frac_minrlztn_to_no3 = 0.2_r8   !fraction of N mineralized that is dieverted to the nitrification stream (Parton et al., 2001)
-  
+
   !------------------------------------------------------------------
   ! Initialize landunit & column type constants
   !------------------------------------------------------------------
@@ -144,6 +144,10 @@ module clm_varcon
   integer, parameter                   :: landunit_name_length = 12  ! max length of landunit names
   character(len=landunit_name_length)  :: landunit_names(max_lunit)  ! name of each landunit type
 
+
+  real(r8), parameter :: catomw = 12.011_r8     ! molar mass of C atoms (g/mol)
+  real(r8), parameter :: natomw = 14.007_r8     ! molar mass of N atoms (g/mol)
+  
   ! urban column types
 
   integer, parameter :: icol_roof        = 71
@@ -157,7 +161,9 @@ module clm_varcon
   integer, parameter :: numurbl = isturb_MAX - isturb_MIN + 1   ! number of urban landunits
 
 
-  
-
-
+  character(len=16), parameter :: grlnd  = 'lndgrid'      ! name of lndgrid
+  character(len=16), parameter :: nameg  = 'gridcell'     ! name of gridcells
+  character(len=16), parameter :: namel  = 'landunit'     ! name of landunits
+  character(len=16), parameter :: namec  = 'column'       ! name of columns
+  character(len=16), parameter :: namep  = 'pft'          ! name of patches
 end module clm_varcon

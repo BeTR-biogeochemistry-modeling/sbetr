@@ -115,37 +115,44 @@ contains
     !
     tString='k_nitr_max'
     call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
+      //errMsg(__FILE__, __LINE__))
     CNNitrifDenitrifParamsInst%k_nitr_max=tempr
 
     tString='surface_tension_water'
     call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
+      //errMsg(__FILE__, __LINE__))
     CNNitrifDenitrifParamsInst%surface_tension_water=tempr
 
     tString='rij_kro_a'
     call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
+      //errMsg(__FILE__, __LINE__))
     CNNitrifDenitrifParamsInst%rij_kro_a=tempr
 
     tString='rij_kro_alpha'
     call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
+      //errMsg(__FILE__, __LINE__))
     CNNitrifDenitrifParamsInst%rij_kro_alpha=tempr
 
     tString='rij_kro_beta'
     call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
+      //errMsg(__FILE__, __LINE__))
     CNNitrifDenitrifParamsInst%rij_kro_beta=tempr
 
     tString='rij_kro_gamma'
     call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
+      //errMsg(__FILE__, __LINE__))
     CNNitrifDenitrifParamsInst%rij_kro_gamma=tempr
 
     tString='rij_kro_delta'
     call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
+      //errMsg(__FILE__, __LINE__))
     CNNitrifDenitrifParamsInst%rij_kro_delta=tempr
 
   end subroutine readCentNitrifDenitrifParams
@@ -220,107 +227,128 @@ contains
     ! Read off of netcdf file
     tString='tau_l1'
     call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
+      //errMsg(__FILE__, __LINE__))
     CNDecompBgcParamsInst%tau_l1_bgc=tempr
 
     tString='tau_l2_l3'
     call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
+      //errMsg(__FILE__, __LINE__))
     CNDecompBgcParamsInst%tau_l2_l3_bgc=tempr
 
     tString='tau_s1'
     call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
+      //errMsg(__FILE__, __LINE__))
     CNDecompBgcParamsInst%tau_s1_bgc=tempr
 
     tString='tau_s2'
     call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
+      //errMsg(__FILE__, __LINE__))
     CNDecompBgcParamsInst%tau_s2_bgc=tempr
 
     tString='tau_s3'
     call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
+      //errMsg(__FILE__, __LINE__))
     CNDecompBgcParamsInst%tau_s3_bgc=tempr
 
     tString='tau_cwd'
     call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
+      //errMsg(__FILE__, __LINE__))
     CNDecompBgcParamsInst%tau_cwd_bgc=tempr
 
     tString='cn_s1_bgc'
     call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
+      //errMsg(__FILE__, __LINE__))
     CNDecompBgcParamsInst%cn_s1_bgc=tempr
 
     tString='cn_s2_bgc'
     call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
+      //errMsg(__FILE__, __LINE__))
     CNDecompBgcParamsInst%cn_s2_bgc=tempr
 
     tString='cn_s3_bgc'
     call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
+      //errMsg(__FILE__, __LINE__))
     CNDecompBgcParamsInst%cn_s3_bgc=tempr
 
     tString='rf_l1s1_bgc'
     call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
+      //errMsg(__FILE__, __LINE__))
     CNDecompBgcParamsInst%rf_l1s1_bgc=tempr
 
     tString='rf_l2s1_bgc'
     call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
+      //errMsg(__FILE__, __LINE__))
     CNDecompBgcParamsInst%rf_l2s1_bgc=tempr
 
     tString='rf_l3s2_bgc'
     call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
+      //errMsg(__FILE__, __LINE__))
     CNDecompBgcParamsInst%rf_l3s2_bgc=tempr
 
     tString='rf_s2s1_bgc'
     call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
+      //errMsg(__FILE__, __LINE__))
     CNDecompBgcParamsInst%rf_s2s1_bgc=tempr
 
     tString='rf_s2s3_bgc'
     call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
+      //errMsg(__FILE__, __LINE__))
     CNDecompBgcParamsInst%rf_s2s3_bgc=tempr
 
     tString='rf_s3s1_bgc'
     call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
+      //errMsg(__FILE__, __LINE__))
     CNDecompBgcParamsInst%rf_s3s1_bgc=tempr
 
     tString='rf_cwdl2_bgc'
     call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
+      //errMsg(__FILE__, __LINE__))
     CNDecompBgcParamsInst%rf_cwdl2_bgc=tempr
 
     tString='rf_cwdl3_bgc'
     call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
+      //errMsg(__FILE__, __LINE__))
     CNDecompBgcParamsInst%rf_cwdl3_bgc=tempr
 
     tString='cwd_fcel'
     call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
+      //errMsg(__FILE__, __LINE__))
     CNDecompBgcParamsInst%cwd_fcel_bgc=tempr
 
     tString='k_frag'
     call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
+      //errMsg(__FILE__, __LINE__))
     CNDecompBgcParamsInst%k_frag_bgc=tempr
 
     tString='minpsi_hr'
     call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
+      //errMsg(__FILE__, __LINE__))
     CNDecompBgcParamsInst%minpsi_bgc=tempr
 
     tString='cwd_flig'
     call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
+      //errMsg(__FILE__, __LINE__))
     CNDecompBgcParamsInst%cwd_flig_bgc=tempr
 
     !------- time-constant coefficients ---------- !
@@ -522,32 +550,38 @@ subroutine readCentCNAllocParams ( ncid )
 
   tString='compet_plant_no3'
   call ncd_io(varname=trim(tString),data=tempr, flag='read', ncid=ncid, readvar=readv)
-  if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+  if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
+    //errMsg(__FILE__, __LINE__))
   NutrientCompetitionParamsInst%compet_plant_no3=tempr
 
   tString='compet_plant_nh4'
   call ncd_io(varname=trim(tString),data=tempr, flag='read', ncid=ncid, readvar=readv)
-  if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+  if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
+    //errMsg(__FILE__, __LINE__))
   NutrientCompetitionParamsInst%compet_plant_nh4=tempr
 
   tString='compet_decomp_no3'
   call ncd_io(varname=trim(tString),data=tempr, flag='read', ncid=ncid, readvar=readv)
-  if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+  if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
+    //errMsg(__FILE__, __LINE__))
   NutrientCompetitionParamsInst%compet_decomp_no3=tempr
 
   tString='compet_decomp_nh4'
   call ncd_io(varname=trim(tString),data=tempr, flag='read', ncid=ncid, readvar=readv)
-  if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+  if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
+    //errMsg(__FILE__, __LINE__))
   NutrientCompetitionParamsInst%compet_decomp_nh4=tempr
 
   tString='compet_denit'
   call ncd_io(varname=trim(tString),data=tempr, flag='read', ncid=ncid, readvar=readv)
-  if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+  if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
+    //errMsg(__FILE__, __LINE__))
   NutrientCompetitionParamsInst%compet_denit=tempr
 
   tString='compet_nit'
   call ncd_io(varname=trim(tString),data=tempr, flag='read', ncid=ncid, readvar=readv)
-  if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+  if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
+    //errMsg(__FILE__, __LINE__))
   NutrientCompetitionParamsInst%compet_nit=tempr
 
 

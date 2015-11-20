@@ -271,7 +271,7 @@ ofile.write("all: sbetr.exe\n")
 ofile.write("sbetr.exe: $(OBJS)\n")
 ofile.write("\t$(F90L) sbetr.exe $(OBJS)\n")
 ofile.write("clean:\n")
-ofile.write("\t@rm -rf *.o *.mod *.exe")
+ofile.write("\t@rm -rf *.o *.*mod *.exe")
 ofile.close()
 
 

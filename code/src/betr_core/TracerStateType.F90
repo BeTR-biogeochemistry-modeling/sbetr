@@ -72,7 +72,7 @@ contains
     call this%InitHistory(bounds, betrtracer_vars)
 
   end subroutine Init
-  
+
   !-----------------------------------------------------------------------
   subroutine InitAllocate(this, bounds, lbj, ubj, betrtracer_vars)
     !
@@ -112,10 +112,17 @@ contains
     allocate(this%tracer_soi_molarmass_col      (begc:endc, 1:ntracers))          ; this%tracer_soi_molarmass_col (:,:) = nan
     allocate(this%errtracer_col                 (begc:endc, 1:ntracers))          ; this%errtracer_col            (:,:) = nan
     allocate(this%tracer_conc_atm_col           (begc:endc, 1:nvolatile_tracers)) ; this%tracer_conc_atm_col      (:,:) = nan
-    allocate(this%tracer_conc_mobile_col        (begc:endc, lbj:ubj, 1:ngwmobile_tracers))     ; this%tracer_conc_mobile_col       (:,:,:) =  nan
-    allocate(this%tracer_conc_solid_equil_col   (begc:endc, lbj:ubj, 1:nsolid_equil_tracers))  ; this%tracer_conc_solid_equil_col  (:,:,:) = nan
-    allocate(this%tracer_conc_solid_passive_col (begc:endc, lbj:ubj, 1:nsolid_passive_tracers)); this%tracer_conc_solid_passive_col(:,:,:) = nan
-    allocate(this%tracer_P_gas_frac_col         (begc:endc, lbj:ubj, 1:nvolatile_tracers))     ; this%tracer_P_gas_frac_col        (:,:,:) = nan
+    allocate(this%tracer_conc_mobile_col        (begc:endc, lbj:ubj, 1:ngwmobile_tracers))     ;
+    this%tracer_conc_mobile_col       (:,:,:) =  nan
+
+    allocate(this%tracer_conc_solid_equil_col   (begc:endc, lbj:ubj, 1:nsolid_equil_tracers))  ;
+    this%tracer_conc_solid_equil_col  (:,:,:) = nan
+
+    allocate(this%tracer_conc_solid_passive_col (begc:endc, lbj:ubj, 1:nsolid_passive_tracers));
+    this%tracer_conc_solid_passive_col(:,:,:) = nan
+
+    allocate(this%tracer_P_gas_frac_col         (begc:endc, lbj:ubj, 1:nvolatile_tracers))     ;
+    this%tracer_P_gas_frac_col        (:,:,:) = nan
 
     allocate(this%beg_tracer_molarmass_col      (begc:endc, 1:ntracers)); this%beg_tracer_molarmass_col(:,:) = nan
     allocate(this%end_tracer_molarmass_col      (begc:endc, 1:ntracers)); this%end_tracer_molarmass_col(:,:) = nan
@@ -271,8 +278,8 @@ contains
          if(jj<= ngwmobile_tracers)then
 
             ptr1d => this%tracer_conc_aquifer_col(:, jj)
-            call restartvar(ncid=ncid, flag=flag, varname=trim(tracernames(jj))//'_TRACER_CONC_AQUIFER', xtype=ncd_double,  &
-                 dim1name='column', long_name='',  units='', &
+            call restartvar(ncid=ncid, flag=flag, varname=trim(tracernames(jj))//'_TRACER_CONC_AQUIFER', &
+                 xtype=ncd_double,  dim1name='column', long_name='',  units='', &
                  interpinic_flag='interp' , readvar=readvar, data=ptr1d)
 
             ptr2d => this%tracer_conc_mobile_col(:, :, jj)

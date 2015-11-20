@@ -7,7 +7,7 @@ module ChemStateType
   use shr_infnan_mod  , only : nan => shr_infnan_nan, assignment(=)
   use decompMod       , only : bounds_type
   use abortutils      , only : endrun
-  
+
   implicit none
   save
   private
@@ -16,24 +16,24 @@ module ChemStateType
   !----------------------------------------------------
   type, public :: chemstate_type
     real(r8), pointer :: soil_pH(:,:)    ! soil pH (-nlevsno+1:nlevgrnd)
-    
+
   contains
-    procedure, public  :: Init         
-    procedure, private :: InitAllocate   
+    procedure, public  :: Init
+    procedure, private :: InitAllocate
   end type chemstate_type
-  
+
   contains
-  
+
   !------------------------------------------------------------------------
   subroutine Init(this, bounds)
 
     class(chemstate_type) :: this
-    type(bounds_type), intent(in) :: bounds  
+    type(bounds_type), intent(in) :: bounds
 
     call this%InitAllocate(bounds)
 
   end subroutine Init
-  
+
   !------------------------------------------------------------------------
   subroutine InitAllocate(this, bounds)
     !
@@ -42,7 +42,7 @@ module ChemStateType
     !
     ! !ARGUMENTS:
     class(chemstate_type) :: this
-    type(bounds_type), intent(in) :: bounds  
+    type(bounds_type), intent(in) :: bounds
     !
     ! !LOCAL VARIABLES:
     integer :: begp, endp
@@ -52,8 +52,8 @@ module ChemStateType
     !------------------------------------------------------------------------
     begc = bounds%begc; endc= bounds%endc
     lbj  = bounds%lbj; ubj = bounds%ubj
-    
+
     allocate(this%soil_pH(begc:endc, lbj:ubj))
-    
+
   end subroutine InitAllocate
 end module ChemStateType

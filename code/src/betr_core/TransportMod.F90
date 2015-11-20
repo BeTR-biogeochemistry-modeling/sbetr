@@ -58,7 +58,7 @@ contains
 
   end subroutine InitAllocate
   !-------------------------------------------------------------------------------
-  
+
   subroutine DDeallocate(this)
     !
     ! !DESCRIPTION:
@@ -73,7 +73,7 @@ contains
   end subroutine DDeallocate
 
   !-------------------------------------------------------------------------------
-  
+
   subroutine AAssign(this, zi_t,us_t)
     !
     ! !DESCRIPTION:
@@ -90,7 +90,9 @@ contains
 
     n1 = size(zi_t)
     n2 = size(us_t)
+#ifndef SBETR
     SHR_ASSERT_ALL((n1              == n2),        errMsg(__FILE__,__LINE__))
+#endif
     this%zi(1:n1) = zi_t
     this%us(1:n2) = us_t
     this%nlen = n1
@@ -129,7 +131,7 @@ contains
 
   end subroutine init_transportmod
   !-------------------------------------------------------------------------------
-  
+
   subroutine calc_interface_conductance(bounds, lbj, ubj, jtop, numfl, filter, bulkdiffus, dz, hmconductance)
     !
     ! !DESCRIPTION:
@@ -153,12 +155,12 @@ contains
 
     ! !LOCAL VARIABLES:
     integer :: n, c, fc
-
+#ifndef SBETR
     SHR_ASSERT_ALL((ubound(jtop)              == (/bounds%endc/)),        errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(dz)                == (/bounds%endc, ubj/)),   errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(bulkdiffus)        == (/bounds%endc, ubj/)),     errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(hmconductance)     == (/bounds%endc, ubj-1/)),   errMsg(__FILE__,__LINE__))
-
+#endif
     do n=lbj, ubj-1
        do fc = 1, numfl
           c = filter(fc)
@@ -218,6 +220,7 @@ contains
     real(r8) ::Fl, Fr
     character(len=255) :: subname='DiffusTransp_gw'
 
+#ifndef SBETR
     SHR_ASSERT_ALL((ubound(jtop)            == (/bounds%endc/)),        errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(Rfactor)         == (/bounds%endc, ubj/)),   errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(hmconductance)   == (/bounds%endc, ubj-1/)), errMsg(__FILE__,__LINE__))
@@ -238,11 +241,14 @@ contains
        SHR_ASSERT_ALL((ubound(bt)            == (/bounds%endc, ubj/)),   errMsg(__FILE__,__LINE__))
        SHR_ASSERT_ALL((ubound(ct)            == (/bounds%endc, ubj/)),   errMsg(__FILE__,__LINE__))
     endif
+#endif
     !unless specified explicitly, the bottom boundary condition is given as flux
     if(present(botbc_type))then
        botbc_ltype = botbc_type
        if(botbc_type==bndcond_as_conc)then
+#ifndef SBETR
           SHR_ASSERT_ALL((ubound(condc_botlay)    == (/bounds%endc/)),        errMsg(__FILE__,__LINE__))
+#endif
        endif
     else
        botbc_ltype = bndcond_as_flux
@@ -365,7 +371,7 @@ contains
    real(r8) :: dtracer1(bounds%begc:bounds%endc, lbj:ubj)
    character(len=255) :: subname = 'DiffusTransp_gw'
    integer :: kk, fc, c
-
+#ifndef SBETR
    SHR_ASSERT_ALL((ubound(jtop)              == (/bounds%endc/))       , errMsg(__FILE__,__LINE__))
    SHR_ASSERT_ALL((ubound(dtime)             == (/bounds%endc/))       , errMsg(__FILE__,__LINE__))
    SHR_ASSERT_ALL((ubound(update_col)        == (/bounds%endc/))       , errMsg(__FILE__,__LINE__))
@@ -379,11 +385,12 @@ contains
    SHR_ASSERT_ALL(((/ubound(trcin_mobile , 1) , ubound(trcin_mobile , 2), size(trcin_mobile , 3)/)   == (/bounds%endc, ubj, ntrcs/)) , errMsg(__FILE__,__LINE__))
    SHR_ASSERT_ALL(((/ubound(bot_flux     , 1) , ubound(bot_flux     , 2), size(bot_flux     , 3)/)   == (/bounds%endc, 2, ntrcs/))   , errMsg(__FILE__,__LINE__))
    SHR_ASSERT_ALL(((/ubound(trc_concflx_air, 1), ubound(trc_concflx_air,2),size(trc_concflx_air,3)/) == (/bounds%endc, 2, ntrcs/))   , errMsg(__FILE__,__LINE__))
-
+#endif
    !assemble the tridiagonal maxtrix
    if(present(botbc_type))then
+#ifndef SBETR
      SHR_ASSERT_ALL((ubound(condc_botlay)    == (/bounds%endc/)),        errMsg(__FILE__,__LINE__))
-
+#endif
      call DiffusTransp_gw_tridiag(bounds, lbj, ubj, jtop, numfl, filter, ntrcs, trcin_mobile, &
         Rfactor, hmconductance, dtime, dz, source, trc_concflx_air,&
         condc_toplay, topbc_type, bot_flux, update_col, source_only=.false.,&
@@ -437,7 +444,7 @@ contains
      real(r8) :: Fl, Fr
      real(r8) :: dtime
      character(len=255) :: subname='DiffusTransp_solid_tridiag'
-
+#ifndef SBETR
      SHR_ASSERT_ALL((ubound(lbn)           == (/bounds%endc/))       , errMsg(__FILE__,__LINE__))
      SHR_ASSERT_ALL((ubound(hmconductance) == (/bounds%endc, ubj-1/)), errMsg(__FILE__,__LINE__))
      SHR_ASSERT_ALL((ubound(dz)            == (/bounds%endc, ubj/))  , errMsg(__FILE__,__LINE__))
@@ -450,7 +457,7 @@ contains
      SHR_ASSERT_ALL((ubound(source)        == (/bounds%endc, ubj, ntrcs/)), errMsg(__FILE__,__LINE__))
 
      SHR_ASSERT_ALL(((/ubound(trcin,1),ubound(trcin,2),size(trcin,3)/)           == (/bounds%endc, ubj, ntrcs/)), errMsg(__FILE__,__LINE__))
-
+#endif
 
 
      !zero flux is imposed both at the top and bottom boundaries
@@ -497,7 +504,7 @@ contains
 
    end subroutine DiffusTransp_solid_tridiag
    !-------------------------------------------------------------------------------
-   
+
    subroutine DiffusTransp_solid(bounds, lbj, ubj, lbn, numfl, filter, ntrcs, trcin,&
         hmconductance,  dtime_col, dz, source, update_col, dtracer)
      !
@@ -532,6 +539,7 @@ contains
      real(r8) :: rt(bounds%begc:bounds%endc, lbj:ubj, 1:ntrcs)             !returning tridiagonal r matrix
      character(len=255) :: subname = 'DiffusTransp_solid'
 
+#ifndef SBETR
      SHR_ASSERT_ALL((ubound(lbn)           == (/bounds%endc/)),        errMsg(__FILE__,__LINE__))
      SHR_ASSERT_ALL((ubound(hmconductance) == (/bounds%endc, ubj-1/)), errMsg(__FILE__,__LINE__))
      SHR_ASSERT_ALL((ubound(dz)            == (/bounds%endc, ubj/)),   errMsg(__FILE__,__LINE__))
@@ -541,7 +549,7 @@ contains
      SHR_ASSERT_ALL((ubound(source)        == (/bounds%endc, ubj, ntrcs/)),   errMsg(__FILE__,__LINE__))
 
      SHR_ASSERT_ALL(((/ubound(trcin,1),ubound(trcin,2),size(trcin,3)/)   == (/bounds%endc, ubj,ntrcs/)),   errMsg(__FILE__,__LINE__))
-
+#endif
 
      !assemble the tridiagonal matrix
      call Diffustransp_solid_tridiag(bounds, lbj, ubj, lbn, numfl, filter, ntrcs, trcin,&
@@ -569,10 +577,10 @@ contains
      real(r8) :: cfl
      integer  :: len, j
      character(len=32) :: subname ='calc_col_CFL'
-
+#ifndef SBETR
      SHR_ASSERT_ALL((ubound(us)         == (/ubj+1/)),        errMsg(__FILE__,__LINE__))
      SHR_ASSERT_ALL((ubound(dx)         == (/ubj/)),   errMsg(__FILE__,__LINE__))
-
+#endif
      cfl = 0._r8
      !the column cfl number is defined as the maximum over the whole domain
      do j = lbj, ubj
@@ -648,6 +656,7 @@ contains
      real(r8) :: dinfl_mass
      character(len=32) :: subname='semi_lagrange_adv_backward'
 
+#ifndef SBETR
      SHR_ASSERT_ALL((ubound(lbn)        == (/bounds%endc/)),         errMsg(__FILE__,__LINE__))
      SHR_ASSERT_ALL((ubound(dtime)      == (/bounds%endc/)),         errMsg(__FILE__,__LINE__))
      SHR_ASSERT_ALL((ubound(dz)         == (/bounds%endc, ubj/)),    errMsg(__FILE__,__LINE__))
@@ -659,7 +668,7 @@ contains
      SHR_ASSERT_ALL((ubound(leaching_mass)  == (/bounds%endc,ntrcs/)), errMsg(__FILE__,__LINE__))
      SHR_ASSERT_ALL((ubound(trcou)      == (/bounds%endc, ubj,ntrcs/)),    errMsg(__FILE__,__LINE__))
      SHR_ASSERT_ALL(((/ubound(trcin,1),ubound(trcin,2),size(trcin,3)/)      == (/bounds%endc, ubj,ntrcs/)),    errMsg(__FILE__,__LINE__))
-
+#endif
      call Extra_inst%InitAllocate(1,ubj-lbj+6)
      halfdt_col(:) = .false.
      do fc = 1, numfl
@@ -787,7 +796,7 @@ contains
      enddo
    end subroutine cmass_mono_smoother
    !-------------------------------------------------------------------------------
-   
+
    function is_ascending_vec(zcor)result(ans)
      !
      ! DESCRIPTION:
@@ -853,19 +862,19 @@ contains
      integer :: neq  ! number of equations
      real(r8):: time
      character(len=32) :: subname = 'backward_advection'
-
+#ifndef SBETR
      SHR_ASSERT_ALL((size(zi)        == size(us)),            errMsg(__FILE__,__LINE__))
      SHR_ASSERT_ALL((size(zi)        == size(zold)+4),        errMsg(__FILE__,__LINE__))
-
+#endif
      neq = size(zold)
      call Extra_inst%AAssign(zi,us)
      time =0._r8
      call ode_rk2(trajectory, zi(3:neq+2), neq, time, dtime, zold)
 
    end subroutine backward_advection
-   
+
    !-------------------------------------------------------------------------------
-   
+
    subroutine trajectory(y0, dt, ti, neq, dxdt)
      !
      ! !DESCRIPTION:

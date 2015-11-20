@@ -234,7 +234,7 @@ contains
   ! DESCRIPTIONS
   ! create history file and define output variables
   use netcdf
-  use shistFileMod, only : hist_file_create, hist_def_fld1d, hist_def_fld2d
+  use histFileMod, only : hist_file_create, hist_def_fld1d, hist_def_fld2d
   use ncdio_pio,   only : file_desc_t, ncd_pio_createfile,  &
                           ncd_pio_closefile, ncd_enddef, ncd_putvar
   use BeTRTracerType, only: BeTRTracer_Type

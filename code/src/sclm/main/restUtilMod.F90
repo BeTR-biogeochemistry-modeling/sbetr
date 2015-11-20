@@ -1,4 +1,7 @@
+#include "dtypes.h"
 module restUtilMod
+  use shr_kind_mod, only: r8=>shr_kind_r8, r4 => shr_kind_r4, i4=>shr_kind_i4
+  use ncdio_pio, only : file_desc_t
 implicit none
 save
 private
@@ -95,19 +98,15 @@ contains
     integer           , intent(in), optional :: nvalid_range(2)  ! attribute for int
     !
     ! Local variables
-    integer          :: ivalue
-    type(var_desc_t) :: vardesc  ! local vardesc
-    integer          :: status   ! return error code
-    integer          :: varid
-    integer          :: lxtype   ! local external type (in case logical variable)
 
-    end subroutine restartvar_0d_int
 
-    subroutine restartvar_0d_double(&
-         ncid, flag, varname, xtype, &
-         long_name, units, interpinic_flag, data, readvar, &
-         comment, flag_meanings, missing_value, fill_value, &
-         imissing_value, ifill_value, flag_values, nvalid_range )
+  end subroutine restartvar_0d_int
+
+  subroutine restartvar_0d_double(&
+      ncid, flag, varname, xtype, &
+     long_name, units, interpinic_flag, data, readvar, &
+     comment, flag_meanings, missing_value, fill_value, &
+     imissing_value, ifill_value, flag_values, nvalid_range )
 
       !----------------------------------------------------
       ! Arguments
@@ -130,22 +129,19 @@ contains
       integer           , intent(in), optional :: nvalid_range(2)  ! attribute for int
       !
       ! Local variables
-      integer          :: ivalue
-      type(var_desc_t) :: vardesc  ! local vardesc
-      integer          :: status   ! return error code
-      integer          :: varid
-      integer          :: lxtype   ! local external type (in case logical variable)
 
-      end subroutine restartvar_0d_double
+
+
+  end subroutine restartvar_0d_double
 
 
 
 
-      subroutine restartvar_1d_text(&
-         ncid, flag, varname, xtype, dim1name, dim2name, &
-         long_name, units, interpinic_flag, data, readvar, &
-         comment, flag_meanings, missing_value, fill_value, &
-         imissing_value, ifill_value, flag_values, nvalid_range )
+  subroutine restartvar_1d_text(&
+     ncid, flag, varname, xtype, dim1name, dim2name, &
+     long_name, units, interpinic_flag, data, readvar, &
+     comment, flag_meanings, missing_value, fill_value, &
+     imissing_value, ifill_value, flag_values, nvalid_range )
 
       !----------------------------------------------------
       ! Arguments
@@ -170,21 +166,17 @@ contains
       integer           , intent(in), optional :: nvalid_range(2)  ! attribute for int
       !
       ! Local variables
-      integer          :: ivalue
-      type(var_desc_t) :: vardesc  ! local vardesc
-      integer          :: status   ! return error code
-      integer          :: varid
-      integer          :: lxtype   ! local external type (in case logical variable)
 
-      end subroutine restartvar_1d_text
+
+  end subroutine restartvar_1d_text
 
 
 
-      subroutine restartvar_2d_text(&
-           ncid, flag, varname, xtype, dim1name, dim2name, &
-           long_name, units, interpinic_flag, data, readvar, &
-           comment, flag_meanings, missing_value, fill_value, &
-           imissing_value, ifill_value, flag_values, nvalid_range )
+  subroutine restartvar_2d_text(&
+       ncid, flag, varname, xtype, dim1name, dim2name, &
+       long_name, units, interpinic_flag, data, readvar, &
+       comment, flag_meanings, missing_value, fill_value, &
+       imissing_value, ifill_value, flag_values, nvalid_range )
 
         !----------------------------------------------------
         ! Arguments
@@ -208,22 +200,17 @@ contains
         integer           , intent(in), optional :: flag_values(:)   ! attribute for int
         integer           , intent(in), optional :: nvalid_range(2)  ! attribute for int
         !
-        ! Local variables
-        integer          :: ivalue
-        type(var_desc_t) :: vardesc  ! local vardesc
-        integer          :: status   ! return error code
-        integer          :: varid
-        integer          :: lxtype   ! local external type (in case logical variable)
 
-        end subroutine restartvar_2d_text
+
+  end subroutine restartvar_2d_text
 
 
 
-        subroutine restartvar_1d_int(&
-             ncid, flag, varname, xtype, dim1name, dim2name, &
-             long_name, units, interpinic_flag, data, readvar, &
-             comment, flag_meanings, missing_value, fill_value, &
-             imissing_value, ifill_value, flag_values, nvalid_range )
+  subroutine restartvar_1d_int(&
+         ncid, flag, varname, xtype, dim1name, dim2name, &
+         long_name, units, interpinic_flag, data, readvar, &
+         comment, flag_meanings, missing_value, fill_value, &
+         imissing_value, ifill_value, flag_values, nvalid_range )
 
           !----------------------------------------------------
           ! Arguments
@@ -248,11 +235,7 @@ contains
           integer           , intent(in), optional :: nvalid_range(2)  ! attribute for int
           !
           ! Local variables
-          integer          :: ivalue
-          type(var_desc_t) :: vardesc  ! local vardesc
-          integer          :: status   ! return error code
-          integer          :: varid
-          integer          :: lxtype   ! local external type (in case logical variable)
+
 
   end subroutine restartvar_1d_int
 
@@ -285,12 +268,7 @@ contains
     integer           , intent(in), optional :: flag_values(:)   ! attribute for int
     integer           , intent(in), optional :: nvalid_range(2)  ! attribute for int
     !
-    ! Local variables
-    integer          :: ivalue
-    type(var_desc_t) :: vardesc  ! local vardesc
-    integer          :: status   ! return error code
-    integer          :: varid
-    integer          :: lxtype   ! local external type (in case logical variable)
+
 
 
   end subroutine restartvar_2d_int
