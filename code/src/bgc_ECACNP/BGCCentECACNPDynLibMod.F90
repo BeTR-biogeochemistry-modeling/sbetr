@@ -780,7 +780,7 @@ contains
     real(r8)                            :: g_per_m3_sec__to__ug_per_gsoil_day
     real(r8)                            :: k_nitr_max
     integer                             :: fc, c, j
-#ifndef SBETR
+
     SHR_ASSERT_ALL((ubound(jtops)              == (/bounds%endc/))      , errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(pH)                 == (/bounds%endc, ubj/)) , errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(t_soisno)           == (/bounds%endc, ubj/)) , errMsg(__FILE__,__LINE__))
@@ -792,7 +792,7 @@ contains
     SHR_ASSERT_ALL((ubound(nh4_no3_ratio)      == (/bounds%endc, ubj/)) , errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(decay_nh4)          == (/bounds%endc, ubj/)) , errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(decay_no3)          == (/bounds%endc, ubj/)) , errMsg(__FILE__,__LINE__))
-#endif
+
     associate(                                                                &
          bd                            =>    soilstate_vars%bd_col          , & !
          watsat                        =>    soilstate_vars%watsat_col      , & !
@@ -951,14 +951,14 @@ contains
     real(r8) :: anaerobic_frac_sat
     real(r8) :: ratio_diffusivity_water_gas(bounds%begc:bounds%endc, lbj:ubj)
     integer  :: fc, c, j
-#ifndef SBETR
+
     SHR_ASSERT_ALL((ubound(jtops)                 == (/bounds%endc/))      , errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(t_soisno)              == (/bounds%endc, ubj/)) , errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(o2_decomp_depth_unsat) == (/bounds%endc, ubj/)) , errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(conc_o2_unsat)         == (/bounds%endc, ubj/)) , errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(anaerobic_frac)        == (/bounds%endc, ubj/)) , errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(h2osoi_vol)            == (/bounds%endc, ubj/)) , errMsg(__FILE__,__LINE__))
-#endif
+
     associate(                                                            &
          watsat                        =>    soilstate_vars%watsat_col  , &
          watfc                         =>    soilstate_vars%watfc_col   , &
@@ -1282,14 +1282,14 @@ contains
     integer :: fc, j, c      ! indices
     real(r8):: sminn_tot(bounds%begc:bounds%endc)  !vertically integrated mineral nitrogen
 
-#ifndef SBETR
+
     SHR_ASSERT_ALL((ubound(dzsoi)          == (/bounds%endc, nlevdecomp/)), errMsg(__FILE__, __LINE__))
     SHR_ASSERT_ALL((ubound(sminn_nh4_vr)   == (/bounds%endc, nlevdecomp/)), errMsg(__FILE__, __LINE__))
     SHR_ASSERT_ALL((ubound(sminn_no3_vr)   == (/bounds%endc, nlevdecomp/)), errMsg(__FILE__, __LINE__))
     SHR_ASSERT_ALL((ubound(nfixation_prof) == (/bounds%endc, nlevdecomp/)), errMsg(__FILE__, __LINE__))
     SHR_ASSERT_ALL((ubound(dzsoi)          == (/bounds%endc, nlevdecomp/)), errMsg(__FILE__, __LINE__))
     SHR_ASSERT_ALL((ubound(nuptake_prof)   == (/bounds%endc, nlevdecomp/)), errMsg(__FILE__, __LINE__))
-#endif
+
     ! init sminn_tot
     do fc=1,num_soilc
        c = filter_soilc(fc)
@@ -1587,13 +1587,13 @@ contains
     ! !LOCAL VARIABLES:
     integer :: j, fc, c
     real(r8):: tot_demand
-#ifndef SBETR
+
     SHR_ASSERT_ALL((ubound(k_nit)            == (/bounds%endc, ubj/)), errMsg(__FILE__, __LINE__))
     SHR_ASSERT_ALL((ubound(decomp_nh4_immob) == (/bounds%endc, ubj/)), errMsg(__FILE__, __LINE__))
     SHR_ASSERT_ALL((ubound(plant_ndemand)    == (/bounds%endc, ubj/)), errMsg(__FILE__, __LINE__))
     SHR_ASSERT_ALL((ubound(smin_nh4_vr)      == (/bounds%endc, ubj/)), errMsg(__FILE__, __LINE__))
     SHR_ASSERT_ALL((ubound(nh4_compet)       == (/bounds%endc, ubj/)), errMsg(__FILE__, __LINE__))
-#endif
+
     do j = 1, ubj
        do fc = 1, num_soilc
           c = filter_soilc(fc)

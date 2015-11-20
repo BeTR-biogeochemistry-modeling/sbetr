@@ -363,10 +363,10 @@ contains
          tracer_flx_netpro_vr          => tracerflux_vars%tracer_flx_netpro_vr_col            , & !
          tracer_conc_solid_passive_col =>   tracerstate_vars%tracer_conc_solid_passive_col      &
          )
-#ifndef SBETR
+
       SHR_ASSERT_ALL((ubound(hmconductance_col) == (/bounds%endc, ubj-1, betrtracer_vars%ntracer_groups/)), errMsg(__FILE__,__LINE__))
       SHR_ASSERT_ALL((ubound(dz)                == (/bounds%endc, ubj/)), errMsg(__FILE__,__LINE__))
-#endif
+
       allocate (difs_trc_group (nmem_max                                   ))
       allocate (dtracer        (bounds%begc:bounds%endc, lbj:ubj, nmem_max ))
       allocate (err_tracer     (bounds%begc:bounds%endc, nmem_max          ))
@@ -525,13 +525,13 @@ contains
     integer ::  kk
     integer :: jtops0(bounds%begc:bounds%endc)
     character(len=255) :: subname = 'tracer_gw_transport'
-#ifndef SBETR
+
     SHR_ASSERT_ALL((ubound(jtops)         == (/bounds%endc/)), errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(dz)            == (/bounds%endc, ubj/)), errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(zi)            == (/bounds%endc, ubj/)), errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(h2osoi_liqvol) == (/bounds%endc, ubj/)), errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(Rfactor)       == (/bounds%endc, ubj, betrtracer_vars%ngwmobile_tracer_groups/)), errMsg(__FILE__,__LINE__))
-#endif
+
     !
     !Exclude solid phase tracers, by doing tracer equilibration
     !This is equivalent to do aqueous chemistry without biological production/consumption
@@ -649,12 +649,12 @@ contains
     real(r8)             :: mass0
     character(len=255)   :: subname = 'do_tracer_advection'
 
-#ifndef SBETR
+
     SHR_ASSERT_ALL((ubound(jtops)         == (/bounds%endc/))      , errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(dz)            == (/bounds%endc, ubj/)) , errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(h2osoi_liqvol) == (/bounds%endc, ubj/)) , errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(zi)            == (/bounds%endc, ubj/)) , errMsg(__FILE__,__LINE__))
-#endif
+
     associate(&
          qflx_adv                 => waterflux_vars%qflx_adv_col                    , & !real(r8) (:,:)[intent(in)], advective velocity defined at layer interfatemperature_vars
          qflx_rootsoi             => waterflux_vars%qflx_rootsoi_col                , & !real(r8) (:,:)[intent(in)], water flux between plant and soil at different layers
@@ -910,12 +910,12 @@ contains
     real(r8)              :: mass0,mass1
     real(r8), parameter   :: err_relative_threshold=1.e-2_r8 !relative error threshold
     real(r8), parameter   :: err_dif_min = 1.e-12_r8  !minimum absolute error
-#ifndef SBETR
+
     SHR_ASSERT_ALL((ubound(jtops)             == (/bounds%endc/))                                               , errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(dz)                == (/bounds%endc, ubj/))                                          , errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(hmconductance_col) == (/bounds%endc, ubj-1, betrtracer_vars%ntracer_groups/))        , errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(Rfactor)           == (/bounds%endc, ubj, betrtracer_vars%ngwmobile_tracer_groups/)) , errMsg(__FILE__,__LINE__))
-#endif
+
     associate(&
          is_volatile              =>  betrtracer_vars%is_volatile                            , & !
          is_mobile                =>  betrtracer_vars%is_mobile                              , & !
@@ -1166,10 +1166,10 @@ contains
     ! !LOCAL VARIABLES:
     integer            :: j, fc, c, k, kk, trcid
     character(len=255) :: subname = 'set_gwdif_Rfactor'
-#ifndef SBETR
+
     SHR_ASSERT_ALL((ubound(jtops)   == (/bounds%endc/))                                               , errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(Rfactor) == (/bounds%endc, ubj, betrtracer_vars%ngwmobile_tracer_groups/)) , errMsg(__FILE__,__LINE__))
-#endif
+
     associate(                                                                       &  !
          ngwmobile_tracer_groups =>    betrtracer_vars%ngwmobile_tracer_groups     , &  !
          tracer_group_memid      =>    betrtracer_vars%tracer_group_memid          , &  !
@@ -1243,14 +1243,14 @@ contains
     real(r8)            :: frac
     integer             :: vid
     integer             :: fc, c, j, kk
-#ifndef SBETR
+
     SHR_ASSERT_ALL((ubound(jtops)     == (/bounds%endc/))      , errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(forc_psrf) == (/bounds%endc/))      , errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(fracice)   == (/bounds%endc, ubj/)) , errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(dz)        == (/bounds%endc, ubj/)) , errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(zi)        == (/bounds%endc, ubj/)) , errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(zwt)       == (/bounds%endc/))      , errMsg(__FILE__,__LINE__))
-#endif
+
     associate(                                                                &
          tracer_conc_mobile_col   => tracerstate_vars%tracer_conc_mobile_col, &
          aqu2bulkcef_mobile_col   => tracercoeff_vars%aqu2bulkcef_mobile_col, &
@@ -1384,14 +1384,14 @@ contains
     ! !LOCAL VARIABLES:
     real(r8) :: tracer_conc_new
     integer  :: fc, c, j
-#ifndef SBETR
+
     SHR_ASSERT_ALL((ubound(dz)           == (/bounds%endc, ubj/)) , errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(update_col)   == (/bounds%endc/))      , errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(dtime_loc)    == (/bounds%endc/))      , errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(tracer_conc)  == (/bounds%endc, ubj/)) , errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(qflx_rootsoi) == (/bounds%endc, ubj/)) , errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(transp_mass)  == (/bounds%endc/))      , errMsg(__FILE__,__LINE__))
-#endif
+
     transp_mass(:) = 0._r8
     do fc = 1, num_soilc
        c = filter_soilc(fc)
@@ -1438,10 +1438,10 @@ contains
     ! !LOCAL VARIABLES:
     real(r8) :: aqucon
     integer  :: fc, c, j, k
-#ifndef SBETR
+
     SHR_ASSERT_ALL((ubound(qflx_drain_vr) == (/bounds%endc, ubj/)) , errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(jtops)         == (/bounds%endc/))      , errMsg(__FILE__,__LINE__))
-#endif
+
     associate(                                                                   & !
          ngwmobile_tracers        => betrtracer_vars%ngwmobile_tracers         , & !
          groupid                  => betrtracer_vars%groupid                   , & !

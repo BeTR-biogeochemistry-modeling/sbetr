@@ -3,7 +3,7 @@ LKFLAG = -fdefault-real-8 -g -o
 FCPFLAG = -fdefault-real-8 -c -cpp
 
 CCPFLAG = -c
-CPPDEFS+=  -DCPRGNU -DHIDE_MPI -DSBETR
+CPPDEFS+=  -DCPRGNU -DHIDE_MPI -ffree-line-length-0
 F90 = $(FCOMP) $(CPPDEFS)
 NETCDF_PATH = /opt/local/
 NETCDFLIB    =-L $(NETCDF_PATH)/lib -lnetcdff -i_dynamic

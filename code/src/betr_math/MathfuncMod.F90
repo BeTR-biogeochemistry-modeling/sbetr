@@ -150,9 +150,9 @@ contains
     ! !LOCAL VARIABLES:
     integer :: n
     integer :: j
-#ifndef SBETR
+
     SHR_ASSERT_ALL((size(x)   == size(y)),        errMsg(__FILE__,__LINE__))
-#endif
+
     n = size(x)
 
     y(1)=x(1)
@@ -178,10 +178,10 @@ contains
     integer :: idim_loc
 
     if(present(idim))idim_loc=idim
-#ifndef SBETR
+
     SHR_ASSERT_ALL((size(x,1)   == size(y,1)),        errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((size(x,2)   == size(y,2)),        errMsg(__FILE__,__LINE__))
-#endif
+
     if(idim_loc == 1)then
        !summation along dimension 1
        n = size(x,2)
@@ -213,9 +213,9 @@ contains
     ! !LOCAL VARIABLES:
     integer :: n
     integer :: j
-#ifndef SBETR
+
     SHR_ASSERT_ALL((size(x)   == size(y)),        errMsg(__FILE__,__LINE__))
-#endif
+
     n = size(x)
     call diff(x,y(2:n))
     y(1)=x(1)
@@ -235,9 +235,9 @@ contains
 
     integer :: n
     integer :: j
-#ifndef SBETR
+
     SHR_ASSERT_ALL((size(x)   == size(y)+1),        errMsg(__FILE__,__LINE__))
-#endif
+
     n = size(x)
     do j = 2, n
        y(j-1) = x(j)-x(j-1)
@@ -286,9 +286,9 @@ contains
     ! !LOCAL VARIABLES:
     integer  :: n, j
     real(r8) :: ans
-#ifndef SBETR
+
     SHR_ASSERT_ALL((size(x)           == size(y)), errMsg(__FILE__,__LINE__))
-#endif
+
     n = size(x)
     ! use subroutine from blas
     !DOUBLE PRECISION FUNCTION ddot(N,DX,INCX,DY,INCY)
@@ -372,9 +372,9 @@ contains
     ! !LOCAL VARIABLES:
     integer  :: j, sz
     real(r8) :: ans      !(<=1._r8)
-#ifndef SBETR
+
     SHR_ASSERT_ALL((size(p)           == size(v)), errMsg(__FILE__,__LINE__))
-#endif
+
     sz = size(p)
     ans = 1._r8
     do j = 1, sz
@@ -401,11 +401,11 @@ contains
     ! !LOCAL VARIABLES:
     integer :: i, j
 
-#ifndef SBETR
+
     SHR_ASSERT_ALL((ubound(A)           == (/m,n/)), errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(AP)          == (/m,n/)), errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(AD)          == (/m,n/)), errMsg(__FILE__,__LINE__))
-#endif
+
     AP(:,:) = 0._r8
     AD(:,:) = 0._r8
 

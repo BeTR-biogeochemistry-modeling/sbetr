@@ -101,10 +101,10 @@ contains
     !------------------------------------------------------------------------
 
     ! Enforce expected array sizes
-#ifndef SBETR
+
     SHR_ASSERT_ALL((ubound(parr) == (/bounds%endp/)), errMsg(__FILE__, __LINE__))
     SHR_ASSERT_ALL((ubound(carr) == (/bounds%endc/)), errMsg(__FILE__, __LINE__))
-#endif
+
     if (p2c_scale_type == 'unity') then
        do p = bounds%begp,bounds%endp
           scale_p2c(p) = 1.0_r8
@@ -165,10 +165,10 @@ contains
     !------------------------------------------------------------------------
 
     ! Enforce expected array sizes
-#ifndef SBETR
+
     SHR_ASSERT_ALL((ubound(parr) == (/bounds%endp, num2d/)), errMsg(__FILE__, __LINE__))
     SHR_ASSERT_ALL((ubound(carr) == (/bounds%endc, num2d/)), errMsg(__FILE__, __LINE__))
-#endif
+
     if (p2c_scale_type == 'unity') then
        do p = bounds%begp,bounds%endp
           scale_p2c(p) = 1.0_r8
@@ -226,10 +226,10 @@ contains
     !-----------------------------------------------------------------------
 
     ! Enforce expected array sizes
-#ifndef SBETR
+
     SHR_ASSERT_ALL((ubound(pftarr) == (/bounds%endp/)), errMsg(__FILE__, __LINE__))
     SHR_ASSERT_ALL((ubound(colarr) == (/bounds%endc/)), errMsg(__FILE__, __LINE__))
-#endif
+
     do fc = 1,numfc
        c = filterc(fc)
        colarr(c) = 0._r8
@@ -292,10 +292,10 @@ contains
     !------------------------------------------------------------------------
 
     ! Enforce expected array sizes
-#ifndef SBETR
+
     SHR_ASSERT_ALL((ubound(parr) == (/bounds%endp/)), errMsg(__FILE__, __LINE__))
     SHR_ASSERT_ALL((ubound(larr) == (/bounds%endl/)), errMsg(__FILE__, __LINE__))
-#endif
+
     if (c2l_scale_type == 'unity') then
        do c = bounds%begc,bounds%endc
           scale_c2l(c) = 1.0_r8
@@ -402,10 +402,10 @@ contains
     !------------------------------------------------------------------------
 
     ! Enforce expected array sizes
-#ifndef SBETR
+
     SHR_ASSERT_ALL((ubound(parr) == (/bounds%endp, num2d/)), errMsg(__FILE__, __LINE__))
     SHR_ASSERT_ALL((ubound(larr) == (/bounds%endl, num2d/)), errMsg(__FILE__, __LINE__))
-#endif
+
     if (c2l_scale_type == 'unity') then
        do c = bounds%begc,bounds%endc
           scale_c2l(c) = 1.0_r8
@@ -515,10 +515,10 @@ contains
     !------------------------------------------------------------------------
 
     ! Enforce expected array sizes
-#ifndef SBETR
+
     SHR_ASSERT_ALL((ubound(parr) == (/bounds%endp/)), errMsg(__FILE__, __LINE__))
     SHR_ASSERT_ALL((ubound(garr) == (/bounds%endg/)), errMsg(__FILE__, __LINE__))
-#endif
+
     call build_scale_l2g(bounds, l2g_scale_type, &
          scale_l2g(bounds%begl:bounds%endl))
 
@@ -633,10 +633,10 @@ contains
     !------------------------------------------------------------------------
 
     ! Enforce expected array sizes
-#ifndef SBETR
+
     SHR_ASSERT_ALL((ubound(parr) == (/bounds%endp, num2d/)), errMsg(__FILE__, __LINE__))
     SHR_ASSERT_ALL((ubound(garr) == (/bounds%endg, num2d/)), errMsg(__FILE__, __LINE__))
-#endif
+
     call build_scale_l2g(bounds, l2g_scale_type, &
          scale_l2g(bounds%begl:bounds%endl))
 
@@ -746,10 +746,10 @@ contains
     !------------------------------------------------------------------------
 
     ! Enforce expected array sizes
-#ifndef SBETR
+
     SHR_ASSERT_ALL((ubound(carr) == (/bounds%endc/)), errMsg(__FILE__, __LINE__))
     SHR_ASSERT_ALL((ubound(larr) == (/bounds%endl/)), errMsg(__FILE__, __LINE__))
-#endif
+
     if (c2l_scale_type == 'unity') then
        do c = bounds%begc,bounds%endc
           scale_c2l(c) = 1.0_r8
@@ -844,10 +844,10 @@ contains
     !------------------------------------------------------------------------
 
     ! Enforce expected array sizes
-#ifndef SBETR
+
     SHR_ASSERT_ALL((ubound(carr) == (/bounds%endc, num2d/)), errMsg(__FILE__, __LINE__))
     SHR_ASSERT_ALL((ubound(larr) == (/bounds%endl, num2d/)), errMsg(__FILE__, __LINE__))
-#endif
+
     if (c2l_scale_type == 'unity') then
        do c = bounds%begc,bounds%endc
           scale_c2l(c) = 1.0_r8
@@ -945,10 +945,10 @@ contains
     !------------------------------------------------------------------------
 
     ! Enforce expected array sizes
-#ifndef SBETR
+
     SHR_ASSERT_ALL((ubound(carr) == (/bounds%endc/)), errMsg(__FILE__, __LINE__))
     SHR_ASSERT_ALL((ubound(garr) == (/bounds%endg/)), errMsg(__FILE__, __LINE__))
-#endif
+
     call build_scale_l2g(bounds, l2g_scale_type, &
          scale_l2g(bounds%begl:bounds%endl))
 
@@ -1049,10 +1049,10 @@ contains
     !------------------------------------------------------------------------
 
     ! Enforce expected array sizes
-#ifndef SBETR
+
     SHR_ASSERT_ALL((ubound(carr) == (/bounds%endc, num2d/)), errMsg(__FILE__, __LINE__))
     SHR_ASSERT_ALL((ubound(garr) == (/bounds%endg, num2d/)), errMsg(__FILE__, __LINE__))
-#endif
+
     call build_scale_l2g(bounds, l2g_scale_type, &
          scale_l2g(bounds%begl:bounds%endl))
 
@@ -1152,10 +1152,10 @@ contains
     !------------------------------------------------------------------------
 
     ! Enforce expected array sizes
-#ifndef SBETR
+
     SHR_ASSERT_ALL((ubound(larr) == (/bounds%endl/)), errMsg(__FILE__, __LINE__))
     SHR_ASSERT_ALL((ubound(garr) == (/bounds%endg/)), errMsg(__FILE__, __LINE__))
-#endif
+
     call build_scale_l2g(bounds, l2g_scale_type, &
          scale_l2g(bounds%begl:bounds%endl))
 
@@ -1211,10 +1211,10 @@ contains
     !------------------------------------------------------------------------
 
     ! Enforce expected array sizes
-#ifndef SBETR
+
     SHR_ASSERT_ALL((ubound(larr) == (/bounds%endl, num2d/)), errMsg(__FILE__, __LINE__))
     SHR_ASSERT_ALL((ubound(garr) == (/bounds%endg, num2d/)), errMsg(__FILE__, __LINE__))
-#endif
+
     call build_scale_l2g(bounds, l2g_scale_type, &
          scale_l2g(bounds%begl:bounds%endl))
 
@@ -1268,9 +1268,9 @@ contains
     real(r8) :: scale_lookup(max_lunit) ! scale factor for each landunit type
     integer  :: l                       ! index
     !-----------------------------------------------------------------------
-#ifndef SBETR
+
     SHR_ASSERT_ALL((ubound(scale_l2g) == (/bounds%endl/)), errMsg(__FILE__, __LINE__))
-#endif
+
      call create_scale_l2g_lookup(l2g_scale_type, scale_lookup)
 
      do l = bounds%begl,bounds%endl

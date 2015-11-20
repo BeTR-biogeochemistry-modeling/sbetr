@@ -34,11 +34,11 @@ contains
     ! !LOCAL VARIABLES:
     integer :: k, ni, nx
     integer :: pos, disp, disp1
-#ifndef SBETR
+
     SHR_ASSERT_ALL((ubound(x) == ubound(y)), errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(xi) == ubound(yi)), errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(x) >= pn+1), errMsg(__FILE__,__LINE__))
-#endif
+
     ni  = size(xi)
     nx = size(x)
     disp=int((pn+1)*0.5_r8+1.e-8_r8)
@@ -88,10 +88,10 @@ contains
     integer   :: i, j, n
     real(r8)  :: L(pn+1)    ! Lagrange cardinal function
     real(r8)  :: Pz    ! target value
-#ifndef SBETR
+
     SHR_ASSERT_ALL((size(xvect) == size(yvect)), errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((size(xvect) == pn+1), errMsg(__FILE__,__LINE__))
-#endif
+
     ! n = number of data points:length of each data vector
     n = size(xvect)
     ! Initializations of Pz and L
@@ -170,10 +170,10 @@ contains
     real(r8) :: alpha, beta, tao, rr
     integer :: region_loc
     integer :: n, j
-#ifndef SBETR
+
     SHR_ASSERT_ALL((size(x) == size(fx)), errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((size(x) == size(di)), errMsg(__FILE__,__LINE__))
-#endif
+
     region_loc=2
     if(present(region))region_loc=region
 
@@ -311,11 +311,11 @@ contains
     real(r8) :: h1x, h2x, h3x, h4x
     integer  :: n, j
     integer  :: id
-#ifndef SBETR
+
     SHR_ASSERT_ALL((size(x) == size(fx)),  errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((size(x) == size(di)),  errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((size(xi) == size(yi)), errMsg(__FILE__,__LINE__))
-#endif
+
     n=size(xi)  !total number of points to be interpolated
 
     yi(:)=0._r8

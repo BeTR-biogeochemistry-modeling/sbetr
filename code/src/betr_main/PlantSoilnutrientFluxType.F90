@@ -331,9 +331,9 @@ module PlantSoilnutrientFluxType
   real(r8) :: Vmax_minn = 1.e-6_r8  ! gN/gC/s
   integer  :: fp, p, fc, c
   real(r8) :: nscal = 1._r8
-#ifndef SBETR
+
   SHR_ASSERT_ALL((ubound(frootc_patch) == (/bounds%endp/)), errMsg(__FILE__,__LINE__))
-#endif  
+
   !calculate root nitrogen uptake potential
 
   !default approach

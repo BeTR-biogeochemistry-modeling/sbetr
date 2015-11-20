@@ -180,9 +180,9 @@ contains
     ! !LOCAL VARIABLES:
     integer            :: fc, c
     character(len=255) :: subname = 'set_boundary_conditions'
-#ifndef SBETR
+
     SHR_ASSERT_ALL((ubound(dz_top)                == (/bounds%endc/)),   errMsg(__FILE__,__LINE__))
-#endif
+
     associate(                                     &
          groupid  => betrtracer_vars%groupid       &
          )
@@ -291,9 +291,9 @@ contains
     type(tracerstate_type), intent(inout) :: tracerstate_vars
     character(len=255) :: subname = 'do_tracer_equilibration'
 
-#ifndef SBETR
+
     SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(__FILE__,__LINE__))
-#endif
+
     !depending on the simulation type, an implementation of aqueous chemistry will be
     !employed to separate out the adsorbed phase
     !It should be noted that this formulation excludes the use of linear isotherm, which
