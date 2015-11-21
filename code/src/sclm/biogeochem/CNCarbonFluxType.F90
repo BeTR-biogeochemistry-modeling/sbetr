@@ -2,15 +2,24 @@ module CNCarbonFluxType
   use clm_varcon     , only : spval, ispval, c14ratio
   use shr_kind_mod       , only : r8 => shr_kind_r8
   use decompMod      , only : bounds_type
+  use clm_varcon             , only : spval
+  use clm_varpar             , only : nlevdecomp_full, ndecomp_pools
 implicit none
 
   type, public :: carbonflux_type
-     real(r8), pointer :: rc14_atm_patch               (:)     ! patch C14O2/C12O2 in atmosphere
+    real(r8), pointer :: o_scalar_col                              (:,:)   ! fraction by which decomposition is limited by anoxia
+    real(r8), pointer :: w_scalar_col                              (:,:)   ! fraction by which decomposition is limited by moisture availability
+    real(r8), pointer :: t_scalar_col                              (:,:)   ! fraction by which decomposition is limited by temperature
+    real(r8), pointer :: hr_vr_col                                 (:,:)   ! total vertically-resolved het. resp. from decomposing C pools (gC/m3/s)
+    real(r8), pointer :: bgc_cpool_ext_loss_vr_col                 (:, :, :)  ! col-level extneral organic carbon loss gC/m3 /time step
+    real(r8), pointer :: bgc_cpool_ext_inputs_vr_col               (:, :, :)  ! col-level extneral organic carbon input gC/m3 /time step
+    real(r8), pointer :: rr_col                                    (:)     ! column (gC/m2/s) root respiration (fine root MR + total root GR) (p2c)
+
   contains
 
     procedure, public  :: Init
     procedure, private :: InitCold
-    procedure, private :: InitAllocate    
+    procedure, private :: InitAllocate
   end type carbonflux_type
 
 
@@ -45,7 +54,15 @@ contains
     !------------------------------------------------------------------------
 
     begp = bounds%begp; endp= bounds%endp
-    allocate(this%rc14_atm_patch              (begp:endp)) ;    this%rc14_atm_patch              (:) = nan
+    begc = bounds%begc; endc= bounds%endc
+
+    allocate(this%t_scalar_col                      (begc:endc,1:nlevdecomp_full)); this%t_scalar_col (:,:)=spval
+    allocate(this%w_scalar_col                      (begc:endc,1:nlevdecomp_full)); this%w_scalar_col (:,:)=spval
+    allocate(this%o_scalar_col                      (begc:endc,1:nlevdecomp_full)); this%o_scalar_col (:,:)=spval
+    allocate(this%hr_vr_col                         (begc:endc,1:nlevdecomp_full)); this%hr_vr_col    (:,:)=nan
+    allocate(this%bgc_cpool_ext_inputs_vr_col       (begc:endc, 1:nlevdecomp_full,ndecomp_pools));this%bgc_cpool_ext_inputs_vr_col (:,:,:) = nan
+    allocate(this%bgc_cpool_ext_loss_vr_col         (begc:endc, 1:nlevdecomp_full,ndecomp_pools));this%bgc_cpool_ext_loss_vr_col   (:,:,:) = nan
+    allocate(this%rr_col                            (begc:endc))                  ; this%rr_col                    (:)  =nan
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------
@@ -77,9 +94,6 @@ contains
     integer               :: begg, endg
 
 
-    do p = bounds%begp,bounds%endp
-      this%rc14_atm_patch(p)              = c14ratio
-    enddo
 
   end subroutine initCold
 

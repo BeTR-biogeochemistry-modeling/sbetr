@@ -19,6 +19,7 @@ module clm_varcon
                            SHR_CONST_PDB, SHR_CONST_PI, SHR_CONST_CDAY,       &
                            SHR_CONST_RGAS
 
+  use clm_varpar, only : ngases
 
   !
   ! !PUBLIC TYPES:
@@ -147,7 +148,7 @@ module clm_varcon
 
   real(r8), parameter :: catomw = 12.011_r8     ! molar mass of C atoms (g/mol)
   real(r8), parameter :: natomw = 14.007_r8     ! molar mass of N atoms (g/mol)
-  
+
   ! urban column types
 
   integer, parameter :: icol_roof        = 71
@@ -166,4 +167,29 @@ module clm_varcon
   character(len=16), parameter :: namel  = 'landunit'     ! name of landunits
   character(len=16), parameter :: namec  = 'column'       ! name of columns
   character(len=16), parameter :: namep  = 'pft'          ! name of patches
+
+  real(r8) :: d_con_g(ngases,2)    ! gas diffusivity constants (spp, #) (cm^2/s) (mult. by 10^-9)
+  data (d_con_g(1,i),i=1,2) /0.1875_r8, 0.0013_r8/ ! CH4
+  data (d_con_g(2,i),i=1,2) /0.1759_r8, 0.00117_r8/ ! O2
+  data (d_con_g(3,i),i=1,2) /0.1325_r8, 0.0009_r8/ ! CO2
+
+  real(r8) :: d_con_w(ngases,3)    ! water diffusivity constants (spp, #)  (mult. by 10^-4)
+  data (d_con_w(1,i),i=1,3) /0.9798_r8, 0.02986_r8, 0.0004381_r8/ ! CH4
+  data (d_con_w(2,i),i=1,3) /1.172_r8, 0.03443_r8, 0.0005048_r8/ ! O2
+  data (d_con_w(3,i),i=1,3) /0.939_r8, 0.02671_r8, 0.0004095_r8/ ! CO2
+
+  real(r8), allocatable :: zisoi(:)        !soil zi (interfaces)
+
+contains
+
+
+!------------------------------------------------------------------------------
+  subroutine clm_varcon_init()
+  use clm_varpar, only: nlevgrnd
+
+  implicit none
+
+
+    allocate( zisoi(0:nlevgrnd               ))
+  end subroutine clm_varcon_init
 end module clm_varcon

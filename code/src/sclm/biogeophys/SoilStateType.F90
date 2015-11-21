@@ -6,24 +6,31 @@ module SoilStateType
   use shr_infnan_mod  , only : nan => shr_infnan_nan, assignment(=)
   use decompMod       , only : bounds_type
   use abortutils      , only : endrun
-  
+  use clm_varcon      , only : spval
   implicit none
   save
-  private  
-  
+  private
+
   !----------------------------------------------------
   ! column physical state variables structure
   !----------------------------------------------------
   type, public :: soilstate_type
-    real(r8), pointer :: bsw(:,:)              !Clapp and Hornberger "b" (nlevgrnd)  
-    real(r8), pointer :: watsat(:,:)           !volumetric soil water at saturation (porosity) (nlevgrnd)
-    real(r8), pointer :: eff_porosity(:,:)     !effective porosity = porosity - vol_ice (nlevgrnd)
-    
+    real(r8), pointer :: bsw_col(:,:)              !Clapp and Hornberger "b" (nlevgrnd)
+    real(r8), pointer :: watsat_col(:,:)           !volumetric soil water at saturation (porosity) (nlevgrnd)
+    real(r8), pointer :: eff_porosity_col(:,:)     !effective porosity = porosity - vol_ice (nlevgrnd)
+    real(r8), pointer :: soilpsi_col          (:,:) ! col soil water potential in each soil layer (MPa) (CN)
+    real(r8), pointer :: cellorg_col          (:,:) ! col organic matter for gridcell containing column (1:nlevsoi)
+    real(r8), pointer :: cellclay_col         (:,:) ! clay value for gridcell containing column (1:nlevsoi)
+    real(r8), pointer :: cellsand_col         (:,:) ! sand value for gridcell containing column (1:nlevsoi)
+    real(r8), pointer :: bd_col               (:,:) ! col bulk density of dry soil material [kg/m^3] (CN)
+    real(r8), pointer :: watfc_col            (:,:) ! col volumetric soil water at field capacity (nlevsoi)
+    real(r8), pointer :: sucsat_col           (:,:) ! col minimum soil suction (mm) (nlevgrnd)
+
   contains
-    procedure, public  :: Init         
-    procedure, private :: InitAllocate 
+    procedure, public  :: Init
+    procedure, private :: InitAllocate
   end type soilstate_type
-  
+
   contains
 
 
@@ -31,12 +38,12 @@ module SoilStateType
   subroutine Init(this, bounds)
 
     class(soilstate_type) :: this
-    type(bounds_type), intent(in) :: bounds  
+    type(bounds_type), intent(in) :: bounds
 
     call this%InitAllocate(bounds)
 
   end subroutine Init
-  
+
   !------------------------------------------------------------------------
   subroutine InitAllocate(this, bounds)
     !
@@ -45,7 +52,7 @@ module SoilStateType
     !
     ! !ARGUMENTS:
     class(soilstate_type) :: this
-    type(bounds_type), intent(in) :: bounds  
+    type(bounds_type), intent(in) :: bounds
     !
     ! !LOCAL VARIABLES:
     integer :: begp, endp
@@ -57,9 +64,15 @@ module SoilStateType
     begc = bounds%begc; endc= bounds%endc
     lbj  = bounds%lbj; ubj = bounds%ubj
 
-    allocate(this%bsw(begc:endc, lbj:ubj))
-    allocate(this%watsat(begc:endc, lbj:ubj))
-    allocate(this%eff_porosity(begc:endc, lbj:ubj))
-    
-  end subroutine InitAllocate    
+    allocate(this%bsw_col(begc:endc, lbj:ubj))         ; this%bsw_col(:,:) = nan
+    allocate(this%watsat_col(begc:endc, lbj:ubj))  ; this%watsat_col(:,:) = nan
+    allocate(this%eff_porosity_col(begc:endc, lbj:ubj)); this%eff_porosity_col(:,:) = nan
+    allocate(this%soilpsi_col          (begc:endc,lbj:ubj))            ; this%soilpsi_col          (:,:) = nan
+    allocate(this%cellorg_col          (begc:endc,lbj:ubj))            ; this%cellorg_col          (:,:) = nan
+    allocate(this%cellclay_col         (begc:endc,lbj:ubj))            ; this%cellclay_col         (:,:) = nan
+    allocate(this%cellsand_col         (begc:endc,lbj:ubj))            ; this%cellsand_col         (:,:) = nan    
+    allocate(this%bd_col               (begc:endc,lbj:ubj))            ; this%bd_col               (:,:) = nan
+    allocate(this%watfc_col            (begc:endc,lbj:ubj))            ; this%watfc_col            (:,:) = nan
+    allocate(this%sucsat_col           (begc:endc,lbj:ubj))           ; this%sucsat_col           (:,:) = spval
+  end subroutine InitAllocate
 end module SoilStateType

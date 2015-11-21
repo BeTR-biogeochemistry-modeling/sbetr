@@ -16,12 +16,12 @@ module TemperatureType
 ! column energy state variables structure
 !----------------------------------------------------
   type, public :: temperature_type
-    real(r8), pointer :: t_soisno(:,:)         !soil temperature (Kelvin)  (-nlevsno+1:nlevgrnd) 
+    real(r8), pointer :: t_soisno_col(:,:)         !soil temperature (Kelvin)  (-nlevsno+1:nlevgrnd)
     real(r8), pointer :: t_soi_10cm(:)         !soil temperature in top 10cm of soil (Kelvin)
   contains
-     procedure, public  :: Init         
+     procedure, public  :: Init
      procedure, private :: InitAllocate
-     
+
   end type temperature_type
 
   contains
@@ -31,12 +31,12 @@ module TemperatureType
   subroutine Init(this, bounds)
 
     class(temperature_type) :: this
-    type(bounds_type), intent(in) :: bounds  
+    type(bounds_type), intent(in) :: bounds
 
     call this%InitAllocate(bounds)
 
   end subroutine Init
-  
+
   !------------------------------------------------------------------------
   subroutine InitAllocate(this, bounds)
     !
@@ -45,7 +45,7 @@ module TemperatureType
     !
     ! !ARGUMENTS:
     class(temperature_type) :: this
-    type(bounds_type), intent(in) :: bounds  
+    type(bounds_type), intent(in) :: bounds
     !
     ! !LOCAL VARIABLES:
     integer :: begp, endp
@@ -56,9 +56,9 @@ module TemperatureType
 
     begc = bounds%begc; endc= bounds%endc
     lbj  = bounds%lbj;  ubj = bounds%ubj
-    
-    allocate(this%t_soisno(begc:endc, lbj:ubj))
+
+    allocate(this%t_soisno_col(begc:endc, lbj:ubj))
     allocate(this%t_soi_10cm(begc:endc))
-    
-  end subroutine InitAllocate  
-end module TemperatureType  
+
+  end subroutine InitAllocate
+end module TemperatureType

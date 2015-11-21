@@ -2,15 +2,21 @@ module CNNitrogenStateType
   use clm_varcon     , only : spval, ispval, c14ratio
   use shr_kind_mod       , only : r8 => shr_kind_r8
   use decompMod      , only : bounds_type
+  use clm_varpar     , only : ndecomp_pools, nlevdecomp_full
 implicit none
 
   type, public :: nitrogenstate_type
-     real(r8), pointer :: rc14_atm_patch               (:)     ! patch C14O2/C12O2 in atmosphere
+    real(r8), pointer :: decomp_npools_vr_col         (:,:,:) ! col (gN/m3) vertically-resolved decomposing (litter, cwd, soil) N pools
+    real(r8), pointer :: smin_no3_vr_col              (:,:)   ! col (gN/m3) vertically-resolved soil mineral NO3
+    real(r8), pointer :: smin_no3_col                 (:)     ! col (gN/m2) soil mineral NO3 pool
+    real(r8), pointer :: smin_nh4_vr_col              (:,:)   ! col (gN/m3) vertically-resolved soil mineral NH4
+    real(r8), pointer :: smin_nh4_col                 (:)     ! col (gN/m2) soil mineral NH4 pool
+    real(r8), pointer :: sminn_vr_col                 (:,:)   ! col (gN/m3) vertically-resolved soil mineral N
   contains
 
     procedure, public  :: Init
     procedure, private :: InitCold
-    procedure, private :: InitAllocate    
+    procedure, private :: InitAllocate
   end type nitrogenstate_type
 
 
@@ -45,7 +51,13 @@ contains
     !------------------------------------------------------------------------
 
     begp = bounds%begp; endp= bounds%endp
-    allocate(this%rc14_atm_patch              (begp:endp)) ;    this%rc14_atm_patch              (:) = nan
+    allocate(this%decomp_npools_vr_col(begc:endc,1:nlevdecomp_full,1:ndecomp_pools));
+    this%decomp_npools_vr_col(:,:,:)= nan
+    allocate(this%smin_no3_vr_col          (begc:endc,1:nlevdecomp_full)) ; this%smin_no3_vr_col          (:,:) = nan
+    allocate(this%smin_nh4_vr_col          (begc:endc,1:nlevdecomp_full)) ; this%smin_nh4_vr_col          (:,:) = nan
+    allocate(this%smin_no3_col             (begc:endc))                   ; this%smin_no3_col             (:)   = nan
+    allocate(this%smin_nh4_col             (begc:endc))                   ; this%smin_nh4_col             (:)   = nan
+    allocate(this%sminn_vr_col             (begc:endc,1:nlevdecomp_full)) ; this%sminn_vr_col             (:,:) = nan    
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------
@@ -76,10 +88,6 @@ contains
     integer               :: begc, endc
     integer               :: begg, endg
 
-
-    do p = bounds%begp,bounds%endp
-      this%rc14_atm_patch(p)              = c14ratio
-    enddo
 
   end subroutine initCold
 

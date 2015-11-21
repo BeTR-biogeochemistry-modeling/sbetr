@@ -2,10 +2,12 @@ module CNStateType
   use clm_varcon     , only : spval, ispval, c14ratio
   use shr_kind_mod       , only : r8 => shr_kind_r8
   use decompMod      , only : bounds_type
+  use clm_varpar     , only : nlevdecomp_full
 implicit none
 
   type, public :: cnstate_type
      real(r8), pointer :: rc14_atm_patch               (:)     ! patch C14O2/C12O2 in atmosphere
+     real(r8) , pointer :: nfixation_prof_col          (:,:)   ! col (1/m) profile for N fixation additions
   contains
 
     procedure, public  :: Init
@@ -46,6 +48,7 @@ contains
 
     begp = bounds%begp; endp= bounds%endp
     allocate(this%rc14_atm_patch              (begp:endp)) ;    this%rc14_atm_patch              (:) = nan
+    allocate(this%nfixation_prof_col  (begc:endc,1:nlevdecomp_full)) ; this%nfixation_prof_col  (:,:) = spval
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------

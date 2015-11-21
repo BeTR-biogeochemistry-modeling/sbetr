@@ -2,15 +2,17 @@ module CNCarbonStateType
   use clm_varcon     , only : spval, ispval, c14ratio
   use shr_kind_mod       , only : r8 => shr_kind_r8
   use decompMod      , only : bounds_type
+  use clm_varpar             , only : nlevdecomp_full, ndecomp_pools
 implicit none
 
   type, public :: carbonstate_type
-     real(r8), pointer :: rc14_atm_patch               (:)     ! patch C14O2/C12O2 in atmosphere
+    real(r8), pointer :: decomp_cpools_vr_col    (:,:,:)  ! col (gC/m3) vertically-resolved decomposing (litter, cwd, soil) c pools
+    real(r8), pointer :: frootc_patch             (:)     ! (gC/m2) fine root C
   contains
 
     procedure, public  :: Init
     procedure, private :: InitCold
-    procedure, private :: InitAllocate    
+    procedure, private :: InitAllocate
   end type carbonstate_type
 
 contains
@@ -45,7 +47,10 @@ contains
     !------------------------------------------------------------------------
 
     begp = bounds%begp; endp= bounds%endp
-    allocate(this%rc14_atm_patch              (begp:endp)) ;    this%rc14_atm_patch              (:) = nan
+    begc = bounds%begc; endc= bounds%endc
+    allocate(this%decomp_cpools_vr_col(begc:endc,1:nlevdecomp_full,1:ndecomp_pools))
+    this%decomp_cpools_vr_col(:,:,:)= nan
+    allocate(this%frootc_patch             (begp :endp))                   ;     this%frootc_patch             (:)   = nan
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------
@@ -77,9 +82,7 @@ contains
     integer               :: begg, endg
 
 
-    do p = bounds%begp,bounds%endp
-      this%rc14_atm_patch(p)              = c14ratio
-    enddo
+
 
   end subroutine initCold
 

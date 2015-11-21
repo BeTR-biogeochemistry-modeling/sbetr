@@ -359,7 +359,7 @@ contains
     use BetrTracerType     , only          : betrtracer_type
     use tracerstatetype    , only          : tracerstate_type
     use BeTRTracerType     , only          : betrtracer_type
-    use BGCCentECACNPParMod   , only          : CNDecompBgcParamsInst
+    use BGCCentECACNPParMod   , only       : CNDecompBgcParamsInst
     use CNCarbonFluxType   , only          : carbonflux_type
     integer                , intent(in)    :: nom_pools
     type(bounds_type)      , intent(in)    :: bounds

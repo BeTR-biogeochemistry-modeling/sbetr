@@ -4,13 +4,18 @@ module clm_varpar
   save
 
   integer, parameter :: nlevsno     =   5     ! maximum number of snow layers
-  integer  :: nlevtrc_soil = 10
+  integer, parameter :: nlevtrc_soil = 10
   integer  :: nlevsoi = 10
   integer  :: nlevgrnd = 15
   integer  :: maxpatch_glcmec= -1    !some dumb number for stand alone betr
+  integer            :: nlevlak               ! number of lake layers
+  integer, parameter :: numrad      =   2     ! number of solar radiation bands: vis, nir
+  integer, parameter :: ngases      =   3     ! CH4, O2, & CO2, this is for centurybgc
 
-
- logical :: crop_prog   = .false.  ! If prognostic crops is turned on
+  integer :: natpft_size        ! Number of Patches on natural veg landunit (including bare ground)
+  integer  :: nlevdecomp_full = nlevtrc_soil
+  integer :: cft_size           ! Number of Patches on crop landunit
+  logical :: crop_prog   = .false.  ! If prognostic crops is turned on
 
   integer :: ndecomp_pools
   integer :: ndecomp_cascade_transitions
