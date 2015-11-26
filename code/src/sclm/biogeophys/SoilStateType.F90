@@ -25,7 +25,7 @@ module SoilStateType
     real(r8), pointer :: bd_col               (:,:) ! col bulk density of dry soil material [kg/m^3] (CN)
     real(r8), pointer :: watfc_col            (:,:) ! col volumetric soil water at field capacity (nlevsoi)
     real(r8), pointer :: sucsat_col           (:,:) ! col minimum soil suction (mm) (nlevgrnd)
-
+    real(r8), pointer :: rootfr_patch         (:,:) ! patch fraction of roots in each soil layer (nlevgrnd)
   contains
     procedure, public  :: Init
     procedure, private :: InitAllocate
@@ -70,9 +70,10 @@ module SoilStateType
     allocate(this%soilpsi_col          (begc:endc,lbj:ubj))            ; this%soilpsi_col          (:,:) = nan
     allocate(this%cellorg_col          (begc:endc,lbj:ubj))            ; this%cellorg_col          (:,:) = nan
     allocate(this%cellclay_col         (begc:endc,lbj:ubj))            ; this%cellclay_col         (:,:) = nan
-    allocate(this%cellsand_col         (begc:endc,lbj:ubj))            ; this%cellsand_col         (:,:) = nan    
+    allocate(this%cellsand_col         (begc:endc,lbj:ubj))            ; this%cellsand_col         (:,:) = nan
     allocate(this%bd_col               (begc:endc,lbj:ubj))            ; this%bd_col               (:,:) = nan
     allocate(this%watfc_col            (begc:endc,lbj:ubj))            ; this%watfc_col            (:,:) = nan
-    allocate(this%sucsat_col           (begc:endc,lbj:ubj))           ; this%sucsat_col           (:,:) = spval
+    allocate(this%sucsat_col           (begc:endc,lbj:ubj))            ; this%sucsat_col           (:,:) = spval
+    allocate(this%rootfr_patch         (begp:endp,lbj:ubj))            ; this%rootfr_patch         (:,:) = nan    
   end subroutine InitAllocate
 end module SoilStateType

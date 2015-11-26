@@ -62,10 +62,10 @@ contains
     case ("century_bgcclmo")
        is_active_betr_bgc=.true.
 !       allocate(bgc_reaction, source=bgc_reaction_CENTURY_clmo_type())
-    case ("betr_sminn")
+!    case ("betr_sminn")
        !this must be used together with clm45bgc
-       do_betr_leaching = .true.
-       allocate(bgc_reaction, source=bgc_reaction_sminn_type())
+!       do_betr_leaching = .true.
+!       allocate(bgc_reaction, source=bgc_reaction_sminn_type())
        !case ("o18_istope")    ! on hold
        !  allocate(bgc_reaction, source=bgc_reaction_O18ISO_type())
     case default

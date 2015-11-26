@@ -26,6 +26,8 @@ module WaterstateType
     real(r8), pointer :: finundated_col         (:)   ! fraction of column that is inundated, this is for bgc caclulation in betr
     real(r8), pointer :: rho_vap(:,:)                !concentration of bulk water vapor, assume in equilibrium with the liquid water
     real(r8), pointer :: rhvap_soi(:,:)                 !soil relative humidity
+    real(r8), pointer :: smp_l_col              (:,:) ! col liquid phase soil matric potential, mm
+    real(r8), pointer :: frac_h2osfc_col        (:)   ! col fractional area with surface water greater than zero
   contains
     procedure          :: Init
     procedure, private :: InitAllocate
@@ -73,7 +75,9 @@ module WaterstateType
     allocate(this%air_vol_col(begc:endc, lbj:ubj))        ; this%air_vol_col(:,:) = nan
     allocate(this%rho_vap(begc:endc, lbj:ubj))        ; this%air_vol_col(:,:) = nan
     allocate(this%rhvap_soi(begc:endc, lbj:ubj))      ; this%rhvap_soi(:,:) = nan
+    allocate(this%smp_l_col  (begc:endc,lbj:ubj)) ; this%smp_l_col              (:,:) = nan
     allocate(this%finundated_col         (begc:endc))                     ; this%finundated_col         (:)   = nan
+    allocate(this%frac_h2osfc_col        (begc:endc))                     ; this%frac_h2osfc_col        (:)   = nan     
   end subroutine InitAllocate
 
 end module WaterstateType

@@ -18,6 +18,7 @@ module TemperatureType
   type, public :: temperature_type
     real(r8), pointer :: t_soisno_col(:,:)         !soil temperature (Kelvin)  (-nlevsno+1:nlevgrnd)
     real(r8), pointer :: t_soi_10cm(:)         !soil temperature in top 10cm of soil (Kelvin)
+    real(r8), pointer :: t_veg_patch              (:)   ! patch vegetation temperature (Kelvin)
   contains
      procedure, public  :: Init
      procedure, private :: InitAllocate
@@ -59,6 +60,6 @@ module TemperatureType
 
     allocate(this%t_soisno_col(begc:endc, lbj:ubj))
     allocate(this%t_soi_10cm(begc:endc))
-
+    allocate(this%t_veg_patch              (begp:endp))                      ; this%t_veg_patch              (:)   = nan
   end subroutine InitAllocate
 end module TemperatureType

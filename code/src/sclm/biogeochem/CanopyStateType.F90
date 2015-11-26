@@ -5,12 +5,15 @@ module CanopyStateType
 implicit none
 
   type, public :: canopystate_type
-     real(r8), pointer :: rc14_atm_patch               (:)     ! patch C14O2/C12O2 in atmosphere
+     real(r8) , pointer :: altmax_col               (:)   ! col maximum annual depth of thaw
+     real(r8) , pointer :: altmax_lastyear_col      (:)   ! col prior year maximum annual depth of thaw
+     real(r8),  pointer :: lbl_rsc_h2o_patch        (:)   ! laminar boundary layer resistance for water over dry leaf (s/m)
+     real(r8) , pointer :: elai_patch               (:)   ! patch canopy one-sided leaf area index with burying by snow
   contains
 
     procedure, public  :: Init
     procedure, private :: InitCold
-    procedure, private :: InitAllocate    
+    procedure, private :: InitAllocate
   end type canopystate_type
 
 contains
@@ -45,7 +48,11 @@ contains
     !------------------------------------------------------------------------
 
     begp = bounds%begp; endp= bounds%endp
-    allocate(this%rc14_atm_patch              (begp:endp)) ;    this%rc14_atm_patch              (:) = nan
+    begc = bounds%begc; endc= bounds%endc
+    allocate(this%altmax_col               (begc:endc))           ; this%altmax_col               (:)   = spval
+    allocate(this%altmax_lastyear_col      (begc:endc))           ; this%altmax_lastyear_col      (:)   = spval
+    allocate(this%lbl_rsc_h2o_patch        (begp:endp))           ; this%lbl_rsc_h2o_patch        (:)   = nan
+    allocate(this%elai_patch               (begp:endp))           ; this%elai_patch               (:)   = nan    
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------
@@ -77,9 +84,6 @@ contains
     integer               :: begg, endg
 
 
-    do p = bounds%begp,bounds%endp
-      this%rc14_atm_patch(p)              = c14ratio
-    enddo
 
   end subroutine initCold
 

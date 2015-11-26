@@ -19,6 +19,7 @@ module accumulMod
   !   the accumulation to zero.
   !
   ! !USES:
+  use netcdf  
   use shr_kind_mod, only: r8 => shr_kind_r8
   use shr_sys_mod , only: shr_sys_abort
   use clm_varctl  , only: iulog
@@ -183,7 +184,7 @@ contains
     else
        accum(nf)%type2d = ' '
     end if
-    
+
     ! Allocate and initialize accumulation field
 
     allocate(accum(nf)%val(beg1d:end1d,numlev))
@@ -576,7 +577,7 @@ contains
     use clm_time_manager, only : is_restart
     use clm_varcon      , only : ispval
     use ncdio_pio
-    use pio
+    !use pio
     !
     ! !ARGUMENTS:
     implicit none
@@ -604,13 +605,13 @@ contains
           if (accum(nf)%numlev == 1) then
              call ncd_defvar(ncid=ncid, varname=varname, xtype=ncd_double,  &
                   dim1name=accum(nf)%type1d, &
-                  long_name=accum(nf)%desc, units=accum(nf)%units) 
-             ier = PIO_inq_varid(ncid, trim(varname), vardesc)
-             ier = PIO_put_att(ncid, vardesc%varid, 'interpinic_flag', iflag_interp)
+                  long_name=accum(nf)%desc, units=accum(nf)%units)
+             ier = nf90_inq_varid(ncid%fh, trim(varname), vardesc%varid)
+             ier = nf90_put_att(ncid%fh, vardesc%varid, 'interpinic_flag', iflag_interp)
           else
              call ncd_defvar(ncid=ncid, varname=varname, xtype=ncd_double,  &
                   dim1name=accum(nf)%type1d, dim2name=accum(nf)%type2d, &
-                  long_name=accum(nf)%desc, units=accum(nf)%units) 
+                  long_name=accum(nf)%desc, units=accum(nf)%units)
           end if
        else if (flag == 'read' .or. flag == 'write') then
           if (accum(nf)%numlev == 1) then
@@ -618,7 +619,7 @@ contains
              end1d = accum(nf)%end1d
              allocate(rbuf1d(beg1d:end1d))
              if (flag == 'write') then
-                rbuf1d(beg1d:end1d) = accum(nf)%val(beg1d:end1d,1) 
+                rbuf1d(beg1d:end1d) = accum(nf)%val(beg1d:end1d,1)
              end if
              call ncd_io(varname=varname, data=rbuf1d, &
                   dim1name=accum(nf)%type1d, ncid=ncid, flag=flag, readvar=readvar)
@@ -640,8 +641,8 @@ contains
           call ncd_defvar(ncid=ncid, varname=varname, xtype=ncd_int,  &
                long_name='', units='time steps', imissing_value=ispval, &
                ifill_value=huge(1))
-          ier = PIO_inq_varid(ncid, trim(varname), vardesc)
-          ier = PIO_put_att(ncid, vardesc%varid, 'interpinic_flag', iflag_copy)
+          ier = nf90_inq_varid(ncid%fh, trim(varname), vardesc%varid)
+          ier = nf90_put_att(ncid%fh, vardesc%varid, 'interpinic_flag', iflag_copy)
        else if (flag == 'read' .or. flag == 'write') then
           call ncd_io(varname=varname, data=accum(nf)%period, ncid=ncid, flag=flag, readvar=readvar)
           if (flag=='read' .and. .not. readvar) then

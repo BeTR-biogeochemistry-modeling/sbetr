@@ -11,32 +11,41 @@ module WaterfluxType
   implicit none
   save
   private
-  
+
   !----------------------------------------------------
   ! column water flux variables structure
   !----------------------------------------------------
   type, public :: waterflux_type
-    real(r8), pointer :: qflx_adv(:,:)         !advection velocity from one layer to another, (0:nlevgrnd)
-    real(r8), pointer :: qflx_infl(:)	       !infiltration (mm H2O /s)
-    real(r8), pointer :: qflx_surf(:)	       !surface runoff (mm H2O /s)
+    real(r8), pointer :: qflx_adv_col(:,:)         !advection velocity from one layer to another, (0:nlevgrnd)
+    real(r8), pointer :: qflx_infl_col(:)	       !infiltration (mm H2O /s)
+    real(r8), pointer :: qflx_surf_col(:)	       !surface runoff (mm H2O /s)
     real(r8), pointer :: h2oliq_vol_tendency(:,:)         !temporal change of water during the solution of soil water movement
     real(r8), pointer :: qflx_rootsoi(:,:)     ! water flux between root and soil [m/s]
+    real(r8), pointer :: qflx_gross_evap_soil_col (:)   ! col gross infiltration from soil, this satisfies the relationship qflx_infl_col = qflx_gross_infl_soil_col-qflx_gross_evap_soil_col
+    real(r8), pointer :: qflx_gross_infl_soil_col (:)   ! col gross infiltration, before considering the evaporation
+    real(r8), pointer :: qflx_rootsoi_col         (:,:) ! col root and soil water exchange [mm H2O/s] [+ into root]
+    real(r8), pointer :: qflx_drain_vr_col        (:,:) ! col liquid water losted as drainage (m /time step)
+    real(r8), pointer :: qflx_dew_grnd_col        (:)   ! col ground surface dew formation (mm H2O /s) [+] (+ = to atm); usually eflx_bot >= 0)
+    real(r8), pointer :: qflx_dew_snow_col        (:)   ! col surface dew added to snow pack (mm H2O /s) [+]
+    real(r8), pointer :: qflx_sub_snow_col        (:)   ! col sublimation rate from snow pack (mm H2O /s) [+]
+    real(r8), pointer :: qflx_h2osfc2topsoi_col   (:)   ! col liquid water coming from surface standing water top soil (mm H2O/s)
+    real(r8), pointer :: qflx_snow2topsoi_col     (:)   ! col liquid water coming from residual snow to topsoil (mm H2O/s)
   contains
     procedure          :: Init
     procedure, private :: InitAllocate
   end type waterflux_type
-  
+
   contains
   !------------------------------------------------------------------------
   subroutine Init(this, bounds)
 
     class(waterflux_type) :: this
-    type(bounds_type), intent(in) :: bounds  
+    type(bounds_type), intent(in) :: bounds
 
     call this%InitAllocate(bounds)
 
   end subroutine Init
-  
+
   !------------------------------------------------------------------------
   subroutine InitAllocate(this, bounds)
     !
@@ -45,7 +54,7 @@ module WaterfluxType
     !
     ! !ARGUMENTS:
     class(waterflux_type) :: this
-    type(bounds_type), intent(in) :: bounds  
+    type(bounds_type), intent(in) :: bounds
     !
     ! !LOCAL VARIABLES:
     integer :: begp, endp
@@ -55,16 +64,25 @@ module WaterfluxType
     !------------------------------------------------------------------------
 
     begc = bounds%begc; endc= bounds%endc
-   
+
     lbj  = bounds%lbj; ubj = bounds%ubj
-    
-    allocate(this%qflx_adv(begc:endc, lbj-1:ubj))
-    allocate(this%qflx_infl(begc:endc))
-    allocate(this%qflx_surf(begc:endc))
-    allocate(this%qflx_rootsoi(begc:endc,lbj:ubj)) 
+
+    allocate(this%qflx_adv_col(begc:endc, lbj-1:ubj))
+    allocate(this%qflx_infl_col(begc:endc))
+    allocate(this%qflx_surf_col(begc:endc))
+    allocate(this%qflx_rootsoi(begc:endc,lbj:ubj))
+    allocate(this%qflx_gross_evap_soil_col (begc:endc))              ; this%qflx_gross_evap_soil_col (:)   = nan
+    allocate(this%qflx_gross_infl_soil_col (begc:endc))              ; this%qflx_gross_infl_soil_col (:)   = nan
+    allocate(this%qflx_rootsoi_col         (begc:endc,lbj:ubj))    ; this%qflx_rootsoi_col         (:,:) = nan
+    allocate(this%qflx_drain_vr_col        (begc:endc,lbj:ubj))    ; this%qflx_drain_vr_col        (:,:) = nan
+    allocate(this%qflx_dew_grnd_col        (begc:endc))              ; this%qflx_dew_grnd_col        (:)   = nan
+    allocate(this%qflx_dew_snow_col        (begc:endc))              ; this%qflx_dew_snow_col        (:)   = nan
+    allocate(this%qflx_sub_snow_col        (begc:endc))              ; this%qflx_sub_snow_col        (:)   = 0.0_r8
+    allocate(this%qflx_snow2topsoi_col     (begc:endc))              ; this%qflx_snow2topsoi_col     (:)   = nan
+    allocate(this%qflx_h2osfc2topsoi_col   (begc:endc))              ; this%qflx_h2osfc2topsoi_col   (:)   = nan    
   end subroutine InitAllocate
 
 
-  
+
 
 end module WaterfluxType

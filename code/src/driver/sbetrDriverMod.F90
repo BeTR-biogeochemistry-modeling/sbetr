@@ -39,7 +39,6 @@ contains
   use TracerParamsMod     , only : tracer_param_init
   use ncdio_pio           , only : file_desc_t, ncd_pio_closefile
   use spmdMod             , only : spmd_init
-  use getdatetime
   use accumulMod
   use TracerBalanceMod
   implicit none
