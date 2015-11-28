@@ -642,7 +642,7 @@ contains
      integer  :: length, lengthp2
      real(r8) :: mass_curve(0:ubj-lbj+5 , ntrcs) !total number of nodes + two ghost cells at each boundary
      real(r8) :: cmass_curve(0:ubj-lbj+5, ntrcs)
-     real(r8) :: mass_new(1:ubj-lbj+1   , ntrcs)
+     real(r8) :: mass_new(0:ubj-lbj+1   , ntrcs)
      real(r8) :: cmass_new(0:ubj-lbj+1  , ntrcs)
      real(r8) :: zold(0:ubj-lbj+1)
      real(r8) :: di(0:ubj-lbj+5)
@@ -732,7 +732,7 @@ contains
            endif
         enddo
         !compute cumulative mass curve
-        call cumsum(mass_curve(0:lengthp2,1:ntr), cmass_curve(0:lengthp2, 1:ntr),idim=1)
+        call cumsum(mass_curve(0:lengthp2,1:ntrcs), cmass_curve(0:lengthp2, 1:ntrcs),idim=1)
 
         !do mass interpolation
         do ntr = 1, ntrcs

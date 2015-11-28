@@ -38,4 +38,4 @@ implicit none
 
   call sbetrBGC_driver(bounds, numf, filter, ttime)
 
-end main
+end program main

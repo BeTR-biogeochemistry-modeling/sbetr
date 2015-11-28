@@ -3,7 +3,7 @@ shell=/bin/sh
 include Macros
 #define source code directory
 SRCDIR=/Users/jinyuntang/work/sbetr/code
-F90CC=$(F90C) -I $(SRCDIR)/src/esmf_wrf_timemgr -I $(SRCDIR)/src/shr/
+F90CC=$(F90C) -I$(SRCDIR)/src/esmf_wrf_timemgr -I$(SRCDIR)/src/shr/
 
 
 
@@ -20,9 +20,9 @@ OBJS= ESMF_BaseMod.o ESMF_BaseTimeMod.o ESMF_CalendarMod.o ESMF_FractionMod.o ES
 	 CNStateType.o InterpolationMod.o shr_timer_mod.o SurfaceResistanceMod.o BGCCentECACNPDynMod.o TransportMod.o pftvarcon.o \
 	 BGCReactionsMod.o QSatMod.o SOMStateVarUpdateMod.o KineticsMod.o SoilWaterRetentionCurveMod.o BGCReactionsCentECACNPType.o TracerParamsMod.o \
 	 SoilHydrologyType.o SoilWaterRetentionCurveClappHornberg1978Mod.o atm2lndType.o shr_string_mod.o BGCReactionsMockRunType.o SoilWaterRetentionCurveFactoryMod.o BetrBGCMod.o \
-	 BGCReactionsFactoryMod.o shr_nl_mod.o shr_mpi_mod.o betr_initializeMod.o getdatetime.o clm_initializeMod.o \
-	 accumulMod.o TracerBalanceMod.o clmgridMod.o sbetrDriverMod.o debuginfoMod.o wrf_message.o wrf_error_fatal.o \
-	 sbetr.o
+	 BGCReactionsFactoryMod.o shr_nl_mod.o shr_mpi_mod.o betr_initializeMod.o clm_initializeMod.o accumulMod.o TracerBalanceMod.o \
+	 clmgridMod.o sbetrDriverMod.o getdatetime.o debuginfoMod.o wrf_message.o wrf_error_fatal.o sbetr.o \
+	
 
 
 # define dependence
@@ -190,6 +190,8 @@ subgridAveMod.o: $(SRCDIR)/src/sclm/main/subgridAveMod.F90
 	$(F90CC) $(SRCDIR)/src/sclm/main/subgridAveMod.F90
 dtypes.h: $(SRCDIR)/src/shr/dtypes.h
 	$(F90CC) $(SRCDIR)/src/shr/dtypes.h
+mpif.h: $(SRCDIR)/src/shr/mpif.h
+	$(F90CC) $(SRCDIR)/src/shr/mpif.h
 shr_assert.h: $(SRCDIR)/src/shr/shr_assert.h
 	$(F90CC) $(SRCDIR)/src/shr/shr_assert.h
 shr_assert.h.gch: $(SRCDIR)/src/shr/shr_assert.h.gch

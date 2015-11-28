@@ -232,7 +232,7 @@ ofile.write("#define source code directory\n")
 ofile.write("SRCDIR="+curdir+"\n")
 
 #define F90CC as a dirty hack for the inc problem
-ofile.write("F90CC=$(F90C) -I $(SRCDIR)/src/esmf_wrf_timemgr -I $(SRCDIR)/src/shr/\n")
+ofile.write("F90CC=$(F90C) -I$(SRCDIR)/src/esmf_wrf_timemgr -I$(SRCDIR)/src/shr/\n")
 
 ofile.write("\n\n\n")
 ofile.write("# define OBJS\n")

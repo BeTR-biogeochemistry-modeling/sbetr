@@ -21,8 +21,8 @@ module spmdMod
 
   private
 
-#include <mpif.h>
-  save
+#include "mpif.h"
+
 
   ! Default settings valid even if there is no spmd
 

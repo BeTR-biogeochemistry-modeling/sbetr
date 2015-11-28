@@ -20,7 +20,7 @@ implicit none
   character(len=255), parameter :: histfilename="betr_output.nc"      !this will be changed
 contains
 
-  subroutine sbetrBGC_driver(bounds, numf, filter,time_vars)
+  subroutine sbetrBGC_driver(bounds, num_soilc, filter_soilc,time_vars)
   !
   !DESCRIPTION
   !driver subroutine for sbetrBGC
@@ -31,10 +31,12 @@ contains
   use clm_varpar          , only : nlevtrc_soil
   use decompMod           , only : bounds_type
   use clm_initializeMod   , only : soilstate_vars, waterstate_vars, temperature_vars, &
-                                   waterflux_vars, chemstate_vars, atm2lnd_vars, soilhydrology_vars
+                                   waterflux_vars, chemstate_vars, atm2lnd_vars, soilhydrology_vars, &
+                                   canopystate_vars, carbonflux_vars, carbonstate_vars, cnstate_vars, &
+                                   nitrogenflux_vars, nitrogenstate_vars
   use ColumnType          , only : col
   use betr_initializeMod  , only : betr_initialize, betrtracer_vars, tracercoeff_vars,  bgc_reaction, &
-                                    tracerflux_vars, tracerState_vars, tracerboundarycond_vars
+                                    tracerflux_vars, tracerState_vars, tracerboundarycond_vars, plantsoilnutrientflux_vars
   use BetrBGCMod          , only : run_betr_one_step_without_drainage, betrbgc_init
   use TracerParamsMod     , only : tracer_param_init
   use ncdio_pio           , only : file_desc_t, ncd_pio_closefile
@@ -43,25 +45,27 @@ contains
   use TracerBalanceMod
   implicit none
   type(bounds_type),        intent(in) :: bounds                                ! bounds
-  integer,                  intent(in) :: numf                                  ! number of columns in column filter
-  integer,                  intent(in) :: filter(:)                             ! column filter
+  integer,                  intent(in) :: num_soilc                                  ! number of columns in column filter
+  integer,                  intent(in) :: filter_soilc(:)                             ! column filter
+
   type(time_type),       intent(inout) :: time_vars
 
   !local variables
 
   real(r8) :: dtime    !model time step
   real(r8) :: dtime2   !half of the model time step
-  integer  :: ncol      !number of columns
   integer  :: record
 
   character(len=80) :: subname = 'sbetrBGC_driver'
 
+  integer :: num_soilp
+  integer, allocatable :: filter_soilp(:)
   integer :: lbj, ubj
   integer :: jtops(bounds%begc:bounds%endc)
 
 
   dtime = 1800._r8
-  ncol = numf     !set number of columns
+
 
   jtops(:) = 999  !this will be replaced with nan when I figured out how to do it, Jinyun Tang, June 17, 2014
 
@@ -70,7 +74,7 @@ contains
 
   call spmd_init
   !initialize parameters
-  call betr_initialize(bounds, lbj, ubj)
+  call betr_initialize(bounds, lbj, ubj, waterstate_vars)
 
   !initialize the betr parameterization module
   call tracer_param_init(bounds)
@@ -85,21 +89,22 @@ contains
 
   !create output file
 
-  call hist_htapes_create(histfilename,nlevtrc_soil, ncol, betrtracer_vars)
+  call hist_htapes_create(histfilename,nlevtrc_soil, num_soilc, betrtracer_vars)
 
   record = 0
   do
     !set envrionmental forcing by reading foring data: temperature, moisture, atmospheric resistance
     !from either user specified file or clm history file
     !and advective velocity at interfatemperature_vars
-    call read_betrforcing(bounds, lbj, ubj, numf, filter, time_vars, col, &
+    call read_betrforcing(bounds, lbj, ubj, num_soilc, filter_soilc, time_vars, col, &
        atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars,  &
       waterflux_vars, temperature_vars, chemstate_vars, jtops)
 
-    call run_betr_one_step_without_drainage(bounds, lbj, ubj, jtops, numf, filter, dtime, soilhydrology_vars%zwts_col, col, &
-       atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, &
-       temperature_vars, waterflux_vars, chemstate_vars, betrtracer_vars, bgc_reaction, tracerboundarycond_vars, &
-       tracercoeff_vars, tracerstate_vars, tracerflux_vars)
+    call run_betr_one_step_without_drainage(bounds, lbj, ubj, num_soilc, filter_soilc, num_soilp, filter_soilp, col ,   &
+         atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, temperature_vars, waterflux_vars, chemstate_vars, &
+         cnstate_vars, canopystate_vars, carbonstate_vars, carbonflux_vars,nitrogenstate_vars, nitrogenflux_vars,             &
+         betrtracer_vars, bgc_reaction, tracerboundarycond_vars, tracercoeff_vars, tracerstate_vars, tracerflux_vars,         &
+         plantsoilnutrientflux_vars)
 
     !do mass balance check
     !update time stamp
@@ -335,22 +340,22 @@ contains
     do fc = 1, numf
       c = filter(fc)
       if(j>=jtops(c))then
-        waterstate_vars%h2osoi_liqvol(c,j) = 0.3_r8
-        waterstate_vars%air_vol(c,j) = 0.2_r8
-        soilstate_vars%eff_porosity(c,j)  = 0.5_r8
-        soilstate_vars%bsw(c,j) = 3._r8
+        waterstate_vars%h2osoi_liqvol_col(c,j) = 0.3_r8
+        waterstate_vars%air_vol_col(c,j) = 0.2_r8
+        soilstate_vars%eff_porosity_col(c,j)  = 0.5_r8
+        soilstate_vars%bsw_col(c,j) = 3._r8
         col%dz(c,j) = dzsoi(j)
         col%zi(c,j) = zisoi(j)
-        temperature_vars%t_soisno(c,j) = 298._r8
+        temperature_vars%t_soisno_col(c,j) = 298._r8
         chemstate_vars%soil_pH(c,j)=7._r8
         soilhydrology_vars%fracice_col(c,j) = 0._r8                             !no ice
-        waterflux_vars%qflx_adv(c,j) = 1.e-6_r8                                 !advective tracer flux, m H2O/s
-        waterflux_vars%qflx_rootsoi(c,j) = 0._r8                                !water exchange between soil and root
+        waterflux_vars%qflx_adv_col(c,j) = 1.e-6_r8                                 !advective tracer flux, m H2O/s
+        waterflux_vars%qflx_rootsoi_col(c,j) = 0._r8                                !water exchange between soil and root
       endif
     enddo
   enddo
   do fc = 1, numf
-      waterflux_vars%qflx_infl(c)  = 1.e-3_r8                                 !infiltration flux, mm H2O/s
+      waterflux_vars%qflx_infl_col(c)  = 1.e-3_r8                                 !infiltration flux, mm H2O/s
       col%zi(c,0) = zisoi(0)
   enddo
 

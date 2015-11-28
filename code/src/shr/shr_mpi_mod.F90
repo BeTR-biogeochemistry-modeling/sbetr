@@ -97,7 +97,9 @@ Module shr_mpi_mod
      shr_mpi_maxr1
    end interface
 
-#include <mpif.h>         ! mpi library include file
+   ! mpi library include file
+
+#include "mpif.h"
 
 !===============================================================================
 CONTAINS
@@ -121,11 +123,7 @@ SUBROUTINE shr_mpi_chkerr(rcode,string)
 ! PURPOSE: layer on MPI error checking
 !-------------------------------------------------------------------------------
 
-   if (rcode /= MPI_SUCCESS) then
-     call MPI_ERROR_STRING(rcode,lstring,len,ierr)
-     write(s_logunit,*) trim(subName),":",lstring(1:len)
-     call shr_mpi_abort(string,rcode)
-   endif
+
 
 END SUBROUTINE shr_mpi_chkerr
 
@@ -154,12 +152,7 @@ SUBROUTINE shr_mpi_sendi0(lvec,pid,tag,comm,string)
 
    lsize = 1
 
-   call MPI_SEND(lvec,lsize,MPI_INTEGER,pid,tag,comm,ierr)
-   if (present(string)) then
-     call shr_mpi_chkerr(ierr,subName//trim(string))
-   else
-     call shr_mpi_chkerr(ierr,subName)
-   endif
+
 
 END SUBROUTINE shr_mpi_sendi0
 
@@ -186,14 +179,7 @@ SUBROUTINE shr_mpi_sendi1(lvec,pid,tag,comm,string)
 ! PURPOSE: Send a vector of integers
 !-------------------------------------------------------------------------------
 
-   lsize = size(lvec)
 
-   call MPI_SEND(lvec,lsize,MPI_INTEGER,pid,tag,comm,ierr)
-   if (present(string)) then
-     call shr_mpi_chkerr(ierr,subName//trim(string))
-   else
-     call shr_mpi_chkerr(ierr,subName)
-   endif
 
 END SUBROUTINE shr_mpi_sendi1
 
@@ -220,14 +206,7 @@ SUBROUTINE shr_mpi_sendr0(lvec,pid,tag,comm,string)
 ! PURPOSE: Send a real scalar
 !-------------------------------------------------------------------------------
 
-   lsize = 1
 
-   call MPI_SEND(lvec,lsize,MPI_REAL8,pid,tag,comm,ierr)
-   if (present(string)) then
-     call shr_mpi_chkerr(ierr,subName//trim(string))
-   else
-     call shr_mpi_chkerr(ierr,subName)
-   endif
 
 END SUBROUTINE shr_mpi_sendr0
 
@@ -254,14 +233,7 @@ SUBROUTINE shr_mpi_sendr1(lvec,pid,tag,comm,string)
 ! PURPOSE: Send a vector of reals
 !-------------------------------------------------------------------------------
 
-   lsize = size(lvec)
 
-   call MPI_SEND(lvec,lsize,MPI_REAL8,pid,tag,comm,ierr)
-   if (present(string)) then
-     call shr_mpi_chkerr(ierr,subName//trim(string))
-   else
-     call shr_mpi_chkerr(ierr,subName)
-   endif
 
 END SUBROUTINE shr_mpi_sendr1
 
@@ -288,14 +260,7 @@ SUBROUTINE shr_mpi_sendr3(array,pid,tag,comm,string)
 ! PURPOSE: Send a vector of reals
 !-------------------------------------------------------------------------------
 
-   lsize = size(array)
 
-   call MPI_SEND(array,lsize,MPI_REAL8,pid,tag,comm,ierr)
-   if (present(string)) then
-     call shr_mpi_chkerr(ierr,subName//trim(string))
-   else
-     call shr_mpi_chkerr(ierr,subName)
-   endif
 
 END SUBROUTINE shr_mpi_sendr3
 
@@ -323,14 +288,6 @@ SUBROUTINE shr_mpi_recvi0(lvec,pid,tag,comm,string)
 ! PURPOSE: Recv a vector of reals
 !-------------------------------------------------------------------------------
 
-   lsize = 1
-
-   call MPI_RECV(lvec,lsize,MPI_INTEGER,pid,tag,comm,status,ierr)
-   if (present(string)) then
-     call shr_mpi_chkerr(ierr,subName//trim(string))
-   else
-     call shr_mpi_chkerr(ierr,subName)
-   endif
 
 END SUBROUTINE shr_mpi_recvi0
 
@@ -358,14 +315,6 @@ SUBROUTINE shr_mpi_recvi1(lvec,pid,tag,comm,string)
 ! PURPOSE: Recv a vector of reals
 !-------------------------------------------------------------------------------
 
-   lsize = size(lvec)
-
-   call MPI_RECV(lvec,lsize,MPI_INTEGER,pid,tag,comm,status,ierr)
-   if (present(string)) then
-     call shr_mpi_chkerr(ierr,subName//trim(string))
-   else
-     call shr_mpi_chkerr(ierr,subName)
-   endif
 
 END SUBROUTINE shr_mpi_recvi1
 
@@ -393,14 +342,6 @@ SUBROUTINE shr_mpi_recvr0(lvec,pid,tag,comm,string)
 ! PURPOSE: Recv a vector of reals
 !-------------------------------------------------------------------------------
 
-   lsize = 1
-
-   call MPI_RECV(lvec,lsize,MPI_REAL8,pid,tag,comm,status,ierr)
-   if (present(string)) then
-     call shr_mpi_chkerr(ierr,subName//trim(string))
-   else
-     call shr_mpi_chkerr(ierr,subName)
-   endif
 
 END SUBROUTINE shr_mpi_recvr0
 
@@ -428,14 +369,6 @@ SUBROUTINE shr_mpi_recvr1(lvec,pid,tag,comm,string)
 ! PURPOSE: Recv a vector of reals
 !-------------------------------------------------------------------------------
 
-   lsize = size(lvec)
-
-   call MPI_RECV(lvec,lsize,MPI_REAL8,pid,tag,comm,status,ierr)
-   if (present(string)) then
-     call shr_mpi_chkerr(ierr,subName//trim(string))
-   else
-     call shr_mpi_chkerr(ierr,subName)
-   endif
 
 END SUBROUTINE shr_mpi_recvr1
 
@@ -463,14 +396,7 @@ SUBROUTINE shr_mpi_recvr3(array,pid,tag,comm,string)
 ! PURPOSE: Recv a vector of reals
 !-------------------------------------------------------------------------------
 
-   lsize = size(array)
 
-   call MPI_RECV(array,lsize,MPI_REAL8,pid,tag,comm,status,ierr)
-   if (present(string)) then
-     call shr_mpi_chkerr(ierr,subName//trim(string))
-   else
-     call shr_mpi_chkerr(ierr,subName)
-   endif
 
 END SUBROUTINE shr_mpi_recvr3
 
@@ -497,16 +423,7 @@ SUBROUTINE shr_mpi_bcasti0(vec,comm,string,pebcast)
 ! PURPOSE: Broadcast an integer
 !-------------------------------------------------------------------------------
 
-   lsize = 1
-   lpebcast = 0
-   if (present(pebcast)) lpebcast = pebcast
 
-   call MPI_BCAST(vec,lsize,MPI_INTEGER,lpebcast,comm,ierr)
-   if (present(string)) then
-     call shr_mpi_chkerr(ierr,subName//trim(string))
-   else
-     call shr_mpi_chkerr(ierr,subName)
-   endif
 
 END SUBROUTINE shr_mpi_bcasti0
 
@@ -530,16 +447,7 @@ SUBROUTINE shr_mpi_bcasti80(vec,comm,string,pebcast)
   ! PURPOSE: Broadcast an integer
   !-------------------------------------------------------------------------------
 
-  lsize = 1
-  lpebcast = 0
-  if (present(pebcast)) lpebcast = pebcast
 
-  call MPI_BCAST(vec,lsize,MPI_INTEGER8,lpebcast,comm,ierr)
-  if (present(string)) then
-     call shr_mpi_chkerr(ierr,subName//trim(string))
-  else
-     call shr_mpi_chkerr(ierr,subName)
-  endif
 
 END SUBROUTINE shr_mpi_bcasti80
 
@@ -566,16 +474,6 @@ SUBROUTINE shr_mpi_bcastl0(vec,comm,string,pebcast)
 ! PURPOSE: Broadcast a logical
 !-------------------------------------------------------------------------------
 
-   lsize = 1
-   lpebcast = 0
-   if (present(pebcast)) lpebcast = pebcast
-
-   call MPI_BCAST(vec,lsize,MPI_LOGICAL,lpebcast,comm,ierr)
-   if (present(string)) then
-     call shr_mpi_chkerr(ierr,subName//trim(string))
-   else
-     call shr_mpi_chkerr(ierr,subName)
-   endif
 
 END SUBROUTINE shr_mpi_bcastl0
 
@@ -602,16 +500,7 @@ SUBROUTINE shr_mpi_bcastc0(vec,comm,string,pebcast)
 ! PURPOSE: Broadcast a character string
 !-------------------------------------------------------------------------------
 
-   lsize = len(vec)
-   lpebcast = 0
-   if (present(pebcast)) lpebcast = pebcast
 
-   call MPI_BCAST(vec,lsize,MPI_CHARACTER,lpebcast,comm,ierr)
-   if (present(string)) then
-     call shr_mpi_chkerr(ierr,subName//trim(string))
-   else
-     call shr_mpi_chkerr(ierr,subName)
-   endif
 
 END SUBROUTINE shr_mpi_bcastc0
 
@@ -638,16 +527,6 @@ SUBROUTINE shr_mpi_bcastc1(vec,comm,string,pebcast)
 ! PURPOSE: Broadcast a character string
 !-------------------------------------------------------------------------------
 
-   lsize = size(vec)*len(vec)
-   lpebcast = 0
-   if (present(pebcast)) lpebcast = pebcast
-
-   call MPI_BCAST(vec,lsize,MPI_CHARACTER,lpebcast,comm,ierr)
-   if (present(string)) then
-     call shr_mpi_chkerr(ierr,subName//trim(string))
-   else
-     call shr_mpi_chkerr(ierr,subName)
-   endif
 
 END SUBROUTINE shr_mpi_bcastc1
 
@@ -674,16 +553,7 @@ SUBROUTINE shr_mpi_bcastr0(vec,comm,string,pebcast)
 ! PURPOSE: Broadcast a real
 !-------------------------------------------------------------------------------
 
-   lsize = 1
-   lpebcast = 0
-   if (present(pebcast)) lpebcast = pebcast
 
-   call MPI_BCAST(vec,lsize,MPI_REAL8,lpebcast,comm,ierr)
-   if (present(string)) then
-     call shr_mpi_chkerr(ierr,subName//trim(string))
-   else
-     call shr_mpi_chkerr(ierr,subName)
-   endif
 
 END SUBROUTINE shr_mpi_bcastr0
 
@@ -710,16 +580,6 @@ SUBROUTINE shr_mpi_bcasti1(vec,comm,string,pebcast)
 ! PURPOSE: Broadcast a vector of integers
 !-------------------------------------------------------------------------------
 
-   lsize = size(vec)
-   lpebcast = 0
-   if (present(pebcast)) lpebcast = pebcast
-
-   call MPI_BCAST(vec,lsize,MPI_INTEGER,lpebcast,comm,ierr)
-   if (present(string)) then
-     call shr_mpi_chkerr(ierr,subName//trim(string))
-   else
-     call shr_mpi_chkerr(ierr,subName)
-   endif
 
 END SUBROUTINE shr_mpi_bcasti1
 
@@ -743,16 +603,7 @@ SUBROUTINE shr_mpi_bcasti81(vec,comm,string,pebcast)
   ! PURPOSE: Broadcast a vector of integers
   !-------------------------------------------------------------------------------
 
-  lsize = size(vec)
-  lpebcast = 0
-  if (present(pebcast)) lpebcast = pebcast
 
-  call MPI_BCAST(vec,lsize,MPI_INTEGER8,lpebcast,comm,ierr)
-  if (present(string)) then
-     call shr_mpi_chkerr(ierr,subName//trim(string))
-  else
-     call shr_mpi_chkerr(ierr,subName)
-  endif
 
 END SUBROUTINE shr_mpi_bcasti81
 
@@ -779,16 +630,7 @@ SUBROUTINE shr_mpi_bcastl1(vec,comm,string,pebcast)
 ! PURPOSE: Broadcast a logical
 !-------------------------------------------------------------------------------
 
-   lsize = size(vec)
-   lpebcast = 0
-   if (present(pebcast)) lpebcast = pebcast
 
-   call MPI_BCAST(vec,lsize,MPI_LOGICAL,lpebcast,comm,ierr)
-   if (present(string)) then
-     call shr_mpi_chkerr(ierr,subName//trim(string))
-   else
-     call shr_mpi_chkerr(ierr,subName)
-   endif
 
 END SUBROUTINE shr_mpi_bcastl1
 
@@ -815,16 +657,6 @@ SUBROUTINE shr_mpi_bcastr1(vec,comm,string,pebcast)
 ! PURPOSE: Broadcast a vector of reals
 !-------------------------------------------------------------------------------
 
-   lsize = size(vec)
-   lpebcast = 0
-   if (present(pebcast)) lpebcast = pebcast
-
-   call MPI_BCAST(vec,lsize,MPI_REAL8,lpebcast,comm,ierr)
-   if (present(string)) then
-     call shr_mpi_chkerr(ierr,subName//trim(string))
-   else
-     call shr_mpi_chkerr(ierr,subName)
-   endif
 
 END SUBROUTINE shr_mpi_bcastr1
 
@@ -853,16 +685,6 @@ SUBROUTINE shr_mpi_bcastr2(arr,comm,string,pebcast)
 ! PURPOSE: Broadcast a 2d array of reals
 !-------------------------------------------------------------------------------
 
-   lsize = size(arr)
-   lpebcast = 0
-   if (present(pebcast)) lpebcast = pebcast
-
-   call MPI_BCAST(arr,lsize,MPI_REAL8,lpebcast,comm,ierr)
-   if (present(string)) then
-     call shr_mpi_chkerr(ierr,subName//trim(string))
-   else
-     call shr_mpi_chkerr(ierr,subName)
-   endif
 
 END SUBROUTINE shr_mpi_bcastr2
 
@@ -891,16 +713,7 @@ SUBROUTINE shr_mpi_bcasti2(arr,comm,string,pebcast)
 ! PURPOSE: Broadcast a 2d array of integers
 !-------------------------------------------------------------------------------
 
-   lsize = size(arr)
-   lpebcast = 0
-   if (present(pebcast)) lpebcast = pebcast
 
-   call MPI_BCAST(arr,lsize,MPI_INTEGER,lpebcast,comm,ierr)
-   if (present(string)) then
-     call shr_mpi_chkerr(ierr,subName//trim(string))
-   else
-     call shr_mpi_chkerr(ierr,subName)
-   endif
 
 END SUBROUTINE shr_mpi_bcasti2
 
@@ -929,16 +742,7 @@ SUBROUTINE shr_mpi_bcastr3(arr,comm,string,pebcast)
 ! PURPOSE: Broadcast a 3d array of reals
 !-------------------------------------------------------------------------------
 
-   lsize = size(arr)
-   lpebcast = 0
-   if (present(pebcast)) lpebcast = pebcast
 
-   call MPI_BCAST(arr,lsize,MPI_REAL8,lpebcast,comm,ierr)
-   if (present(string)) then
-     call shr_mpi_chkerr(ierr,subName//trim(string))
-   else
-     call shr_mpi_chkerr(ierr,subName)
-   endif
 
 END SUBROUTINE shr_mpi_bcastr3
 
@@ -977,51 +781,6 @@ SUBROUTINE shr_mpi_gathScatvInitr1(comm, rootid, locArr, glob1DArr, globSize, &
 ! PURPOSE: Setup arrays for a gatherv/scatterv operation
 !-------------------------------------------------------------------------------
 
-   locSize = size(locarr)
-   call shr_mpi_commsize( comm, npes )
-   call shr_mpi_commrank( comm, rank )
-   allocate( globSize(npes) )
-   !
-   ! --- Gather the send global sizes from each MPI task -----------------------
-   !
-   allocate( sendSize(npes) )
-   sendSize(:) = 1
-   globSize(:) = 1
-   call MPI_GATHER( locSize, 1, MPI_INTEGER, globSize, sendSize, &
-                    MPI_INTEGER, rootid, comm, ierr )
-   if (present(string)) then
-     call shr_mpi_chkerr(ierr,subName//trim(string))
-   else
-     call shr_mpi_chkerr(ierr,subName)
-   endif
-   deallocate( sendSize )
-   !
-   ! --- Prepare the displacement and allocate arrays -------------------------
-   !
-   allocate( displs(npes) )
-   displs(1) = 0
-   if ( rootid /= rank )then
-      maxSize = 1
-      globSize = 1
-   else
-      maxSize = maxval(globSize)
-   end if
-   nsiz1D  = min(maxSize,globSize(1))
-   do i = 2, npes
-      nSize = min(maxSize,globSize(i-1))
-      displs(i) = displs(i-1) + nSize
-      nsiz1D = nsiz1D + min(maxSize,globSize(i))
-   end do
-   allocate( glob1DArr(nsiz1D) )
-   !----- Do some error checking for the root task arrays computed ----
-   if ( rootid == rank )then
-      if ( nsiz1D /= sum(globSize) ) &
-         call shr_mpi_abort( subName//" : Error, size of global array not right" )
-      if ( any(displs < 0) .or. any(displs >= nsiz1D) ) &
-         call shr_mpi_abort( subName//" : Error, displacement array not right" )
-      if ( (displs(npes)+globSize(npes)) /= nsiz1D ) &
-         call shr_mpi_abort( subName//" : Error, displacement array values too big" )
-   end if
 
 END SUBROUTINE shr_mpi_gathScatvInitr1
 
@@ -1053,13 +812,6 @@ SUBROUTINE shr_mpi_gathervr1(locarr, locSize, glob1DArr, globSize, displs, rooti
 ! PURPOSE: Gather a 1D array of reals
 !-------------------------------------------------------------------------------
 
-   call MPI_GATHERV( locarr, locSize, MPI_REAL8, glob1Darr, globSize, displs, &
-                     MPI_REAL8, rootid, comm, ierr )
-   if (present(string)) then
-     call shr_mpi_chkerr(ierr,subName//trim(string))
-   else
-     call shr_mpi_chkerr(ierr,subName)
-   endif
 
 END SUBROUTINE shr_mpi_gathervr1
 
@@ -1092,13 +844,7 @@ SUBROUTINE shr_mpi_scattervr1(locarr, locSize, glob1Darr, globSize, displs, root
 !-------------------------------------------------------------------------------
 
 
-   call MPI_SCATTERV( glob1Darr, globSize, displs, MPI_REAL8, locarr, locSize, &
-                      MPI_REAL8, rootid, comm, ierr )
-   if (present(string)) then
-     call shr_mpi_chkerr(ierr,subName//trim(string))
-   else
-     call shr_mpi_chkerr(ierr,subName)
-   endif
+
 
 END SUBROUTINE shr_mpi_scattervr1
 
@@ -1131,32 +877,7 @@ SUBROUTINE shr_mpi_sumi0(lvec,gvec,comm,string,all)
 !          already computed
 !-------------------------------------------------------------------------------
 
-   reduce_type = MPI_SUM
-   if (present(all)) then
-     lall = all
-   else
-     lall = .false.
-   endif
-   if (present(string)) then
-     lstring = trim(subName)//":"//trim(string)
-   else
-     lstring = trim(subName)
-   endif
 
-   lsize = 1
-   gsize = 1
-
-   if (lsize /= gsize) then
-     call shr_mpi_abort(subName//" lsize,gsize incompatable "//trim(string))
-   endif
-
-   if (lall) then
-     call MPI_ALLREDUCE(lvec,gvec,gsize,MPI_INTEGER,reduce_type,comm,ierr)
-     call shr_mpi_chkerr(ierr,trim(lstring)//" MPI_ALLREDUCE")
-   else
-     call MPI_REDUCE(lvec,gvec,gsize,MPI_INTEGER,reduce_type,0,comm,ierr)
-     call shr_mpi_chkerr(ierr,trim(lstring)//" MPI_REDUCE")
-   endif
 
 END SUBROUTINE shr_mpi_sumi0
 
@@ -1188,32 +909,6 @@ SUBROUTINE shr_mpi_sumi1(lvec,gvec,comm,string,all)
 !          already computed
 !-------------------------------------------------------------------------------
 
-   reduce_type = MPI_SUM
-   if (present(all)) then
-     lall = all
-   else
-     lall = .false.
-   endif
-   if (present(string)) then
-     lstring = trim(subName)//":"//trim(string)
-   else
-     lstring = trim(subName)
-   endif
-
-   lsize = size(lvec)
-   gsize = size(gvec)
-
-   if (lsize /= gsize) then
-     call shr_mpi_abort(subName//" lsize,gsize incompatable "//trim(string))
-   endif
-
-   if (lall) then
-     call MPI_ALLREDUCE(lvec,gvec,gsize,MPI_INTEGER,reduce_type,comm,ierr)
-     call shr_mpi_chkerr(ierr,trim(lstring)//" MPI_ALLREDUCE")
-   else
-     call MPI_REDUCE(lvec,gvec,gsize,MPI_INTEGER,reduce_type,0,comm,ierr)
-     call shr_mpi_chkerr(ierr,trim(lstring)//" MPI_REDUCE")
-   endif
 
 END SUBROUTINE shr_mpi_sumi1
 
@@ -1245,32 +940,6 @@ SUBROUTINE shr_mpi_sumb0(lvec,gvec,comm,string,all)
 !          already computed
 !-------------------------------------------------------------------------------
 
-   reduce_type = MPI_SUM
-   if (present(all)) then
-     lall = all
-   else
-     lall = .false.
-   endif
-   if (present(string)) then
-     lstring = trim(subName)//":"//trim(string)
-   else
-     lstring = trim(subName)
-   endif
-
-   lsize = 1
-   gsize = 1
-
-   if (lsize /= gsize) then
-     call shr_mpi_abort(subName//" lsize,gsize incompatable "//trim(string))
-   endif
-
-   if (lall) then
-     call MPI_ALLREDUCE(lvec,gvec,gsize,MPI_INTEGER8,reduce_type,comm,ierr)
-     call shr_mpi_chkerr(ierr,trim(lstring)//" MPI_ALLREDUCE")
-   else
-     call MPI_REDUCE(lvec,gvec,gsize,MPI_INTEGER8,reduce_type,0,comm,ierr)
-     call shr_mpi_chkerr(ierr,trim(lstring)//" MPI_REDUCE")
-   endif
 
 END SUBROUTINE shr_mpi_sumb0
 
@@ -1302,32 +971,6 @@ SUBROUTINE shr_mpi_sumb1(lvec,gvec,comm,string,all)
 !          already computed
 !-------------------------------------------------------------------------------
 
-   reduce_type = MPI_SUM
-   if (present(all)) then
-     lall = all
-   else
-     lall = .false.
-   endif
-   if (present(string)) then
-     lstring = trim(subName)//":"//trim(string)
-   else
-     lstring = trim(subName)
-   endif
-
-   lsize = size(lvec)
-   gsize = size(gvec)
-
-   if (lsize /= gsize) then
-     call shr_mpi_abort(subName//" lsize,gsize incompatable "//trim(string))
-   endif
-
-   if (lall) then
-     call MPI_ALLREDUCE(lvec,gvec,gsize,MPI_INTEGER8,reduce_type,comm,ierr)
-     call shr_mpi_chkerr(ierr,trim(lstring)//" MPI_ALLREDUCE")
-   else
-     call MPI_REDUCE(lvec,gvec,gsize,MPI_INTEGER8,reduce_type,0,comm,ierr)
-     call shr_mpi_chkerr(ierr,trim(lstring)//" MPI_REDUCE")
-   endif
 
 END SUBROUTINE shr_mpi_sumb1
 
@@ -1359,32 +1002,7 @@ SUBROUTINE shr_mpi_sumr0(lvec,gvec,comm,string,all)
 !          already computed
 !-------------------------------------------------------------------------------
 
-   reduce_type = MPI_SUM
-   if (present(all)) then
-     lall = all
-   else
-     lall = .false.
-   endif
-   if (present(string)) then
-     lstring = trim(subName)//":"//trim(string)
-   else
-     lstring = trim(subName)
-   endif
 
-   lsize = 1
-   gsize = 1
-
-   if (lsize /= gsize) then
-     call shr_mpi_abort(subName//" lsize,gsize incompatable "//trim(string))
-   endif
-
-   if (lall) then
-     call MPI_ALLREDUCE(lvec,gvec,gsize,MPI_REAL8,reduce_type,comm,ierr)
-     call shr_mpi_chkerr(ierr,trim(lstring)//" MPI_ALLREDUCE")
-   else
-     call MPI_REDUCE(lvec,gvec,gsize,MPI_REAL8,reduce_type,0,comm,ierr)
-     call shr_mpi_chkerr(ierr,trim(lstring)//" MPI_REDUCE")
-   endif
 
 END SUBROUTINE shr_mpi_sumr0
 
@@ -1416,32 +1034,7 @@ SUBROUTINE shr_mpi_sumr1(lvec,gvec,comm,string,all)
 !          already computed
 !-------------------------------------------------------------------------------
 
-   reduce_type = MPI_SUM
-   if (present(all)) then
-     lall = all
-   else
-     lall = .false.
-   endif
-   if (present(string)) then
-     lstring = trim(subName)//":"//trim(string)
-   else
-     lstring = trim(subName)
-   endif
 
-   lsize = size(lvec)
-   gsize = size(gvec)
-
-   if (lsize /= gsize) then
-     call shr_mpi_abort(subName//" lsize,gsize incompatable "//trim(string))
-   endif
-
-   if (lall) then
-     call MPI_ALLREDUCE(lvec,gvec,gsize,MPI_REAL8,reduce_type,comm,ierr)
-     call shr_mpi_chkerr(ierr,trim(lstring)//" MPI_ALLREDUCE")
-   else
-     call MPI_REDUCE(lvec,gvec,gsize,MPI_REAL8,reduce_type,0,comm,ierr)
-     call shr_mpi_chkerr(ierr,trim(lstring)//" MPI_REDUCE")
-   endif
 
 END SUBROUTINE shr_mpi_sumr1
 
@@ -1473,32 +1066,7 @@ SUBROUTINE shr_mpi_sumr2(lvec,gvec,comm,string,all)
 !          already computed
 !-------------------------------------------------------------------------------
 
-   reduce_type = MPI_SUM
-   if (present(all)) then
-     lall = all
-   else
-     lall = .false.
-   endif
-   if (present(string)) then
-     lstring = trim(subName)//":"//trim(string)
-   else
-     lstring = trim(subName)
-   endif
 
-   lsize = size(lvec)
-   gsize = size(gvec)
-
-   if (lsize /= gsize) then
-     call shr_mpi_abort(subName//" lsize,gsize incompatable "//trim(string))
-   endif
-
-   if (lall) then
-     call MPI_ALLREDUCE(lvec,gvec,gsize,MPI_REAL8,reduce_type,comm,ierr)
-     call shr_mpi_chkerr(ierr,trim(lstring)//" MPI_ALLREDUCE")
-   else
-     call MPI_REDUCE(lvec,gvec,gsize,MPI_REAL8,reduce_type,0,comm,ierr)
-     call shr_mpi_chkerr(ierr,trim(lstring)//" MPI_REDUCE")
-   endif
 
 END SUBROUTINE shr_mpi_sumr2
 
@@ -1530,32 +1098,7 @@ SUBROUTINE shr_mpi_sumr3(lvec,gvec,comm,string,all)
 !          already computed
 !-------------------------------------------------------------------------------
 
-   reduce_type = MPI_SUM
-   if (present(all)) then
-     lall = all
-   else
-     lall = .false.
-   endif
-   if (present(string)) then
-     lstring = trim(subName)//":"//trim(string)
-   else
-     lstring = trim(subName)
-   endif
 
-   lsize = size(lvec)
-   gsize = size(gvec)
-
-   if (lsize /= gsize) then
-     call shr_mpi_abort(subName//" lsize,gsize incompatable "//trim(string))
-   endif
-
-   if (lall) then
-     call MPI_ALLREDUCE(lvec,gvec,gsize,MPI_REAL8,reduce_type,comm,ierr)
-     call shr_mpi_chkerr(ierr,trim(lstring)//" MPI_ALLREDUCE")
-   else
-     call MPI_REDUCE(lvec,gvec,gsize,MPI_REAL8,reduce_type,0,comm,ierr)
-     call shr_mpi_chkerr(ierr,trim(lstring)//" MPI_REDUCE")
-   endif
 
 END SUBROUTINE shr_mpi_sumr3
 
@@ -1587,32 +1130,6 @@ SUBROUTINE shr_mpi_mini0(lvec,gvec,comm,string,all)
 !          already computed
 !-------------------------------------------------------------------------------
 
-   reduce_type = MPI_MIN
-   if (present(all)) then
-     lall = all
-   else
-     lall = .false.
-   endif
-   if (present(string)) then
-     lstring = trim(subName)//":"//trim(string)
-   else
-     lstring = trim(subName)
-   endif
-
-   lsize = 1
-   gsize = 1
-
-   if (lsize /= gsize) then
-     call shr_mpi_abort(subName//" lsize,gsize incompatable "//trim(string))
-   endif
-
-   if (lall) then
-     call MPI_ALLREDUCE(lvec,gvec,gsize,MPI_INTEGER,reduce_type,comm,ierr)
-     call shr_mpi_chkerr(ierr,trim(lstring)//" MPI_ALLREDUCE")
-   else
-     call MPI_REDUCE(lvec,gvec,gsize,MPI_INTEGER,reduce_type,0,comm,ierr)
-     call shr_mpi_chkerr(ierr,trim(lstring)//" MPI_REDUCE")
-   endif
 
 END SUBROUTINE shr_mpi_mini0
 
@@ -1644,32 +1161,6 @@ SUBROUTINE shr_mpi_mini1(lvec,gvec,comm,string,all)
 !          already computed
 !-------------------------------------------------------------------------------
 
-   reduce_type = MPI_MIN
-   if (present(all)) then
-     lall = all
-   else
-     lall = .false.
-   endif
-   if (present(string)) then
-     lstring = trim(subName)//":"//trim(string)
-   else
-     lstring = trim(subName)
-   endif
-
-   lsize = size(lvec)
-   gsize = size(gvec)
-
-   if (lsize /= gsize) then
-     call shr_mpi_abort(subName//" lsize,gsize incompatable "//trim(string))
-   endif
-
-   if (lall) then
-     call MPI_ALLREDUCE(lvec,gvec,gsize,MPI_INTEGER,reduce_type,comm,ierr)
-     call shr_mpi_chkerr(ierr,trim(lstring)//" MPI_ALLREDUCE")
-   else
-     call MPI_REDUCE(lvec,gvec,gsize,MPI_INTEGER,reduce_type,0,comm,ierr)
-     call shr_mpi_chkerr(ierr,trim(lstring)//" MPI_REDUCE")
-   endif
 
 END SUBROUTINE shr_mpi_mini1
 
@@ -1701,32 +1192,7 @@ SUBROUTINE shr_mpi_minr0(lvec,gvec,comm,string,all)
 !          already computed
 !-------------------------------------------------------------------------------
 
-   reduce_type = MPI_MIN
-   if (present(all)) then
-     lall = all
-   else
-     lall = .false.
-   endif
-   if (present(string)) then
-     lstring = trim(subName)//":"//trim(string)
-   else
-     lstring = trim(subName)
-   endif
 
-   lsize = 1
-   gsize = 1
-
-   if (lsize /= gsize) then
-     call shr_mpi_abort(subName//" lsize,gsize incompatable "//trim(string))
-   endif
-
-   if (lall) then
-     call MPI_ALLREDUCE(lvec,gvec,gsize,MPI_REAL8,reduce_type,comm,ierr)
-     call shr_mpi_chkerr(ierr,trim(lstring)//" MPI_ALLREDUCE")
-   else
-     call MPI_REDUCE(lvec,gvec,gsize,MPI_REAL8,reduce_type,0,comm,ierr)
-     call shr_mpi_chkerr(ierr,trim(lstring)//" MPI_REDUCE")
-   endif
 
 END SUBROUTINE shr_mpi_minr0
 
@@ -1758,32 +1224,7 @@ SUBROUTINE shr_mpi_minr1(lvec,gvec,comm,string,all)
 !          already computed
 !-------------------------------------------------------------------------------
 
-   reduce_type = MPI_MIN
-   if (present(all)) then
-     lall = all
-   else
-     lall = .false.
-   endif
-   if (present(string)) then
-     lstring = trim(subName)//":"//trim(string)
-   else
-     lstring = trim(subName)
-   endif
 
-   lsize = size(lvec)
-   gsize = size(gvec)
-
-   if (lsize /= gsize) then
-     call shr_mpi_abort(subName//" lsize,gsize incompatable "//trim(string))
-   endif
-
-   if (lall) then
-     call MPI_ALLREDUCE(lvec,gvec,gsize,MPI_REAL8,reduce_type,comm,ierr)
-     call shr_mpi_chkerr(ierr,trim(lstring)//" MPI_ALLREDUCE")
-   else
-     call MPI_REDUCE(lvec,gvec,gsize,MPI_REAL8,reduce_type,0,comm,ierr)
-     call shr_mpi_chkerr(ierr,trim(lstring)//" MPI_REDUCE")
-   endif
 
 END SUBROUTINE shr_mpi_minr1
 
@@ -1815,32 +1256,7 @@ SUBROUTINE shr_mpi_maxi0(lvec,gvec,comm,string,all)
 !          already computed
 !-------------------------------------------------------------------------------
 
-   reduce_type = MPI_MAX
-   if (present(all)) then
-     lall = all
-   else
-     lall = .false.
-   endif
-   if (present(string)) then
-     lstring = trim(subName)//":"//trim(string)
-   else
-     lstring = trim(subName)
-   endif
 
-   lsize = 1
-   gsize = 1
-
-   if (lsize /= gsize) then
-     call shr_mpi_abort(subName//" lsize,gsize incompatable "//trim(string))
-   endif
-
-   if (lall) then
-     call MPI_ALLREDUCE(lvec,gvec,gsize,MPI_INTEGER,reduce_type,comm,ierr)
-     call shr_mpi_chkerr(ierr,trim(lstring)//" MPI_ALLREDUCE")
-   else
-     call MPI_REDUCE(lvec,gvec,gsize,MPI_INTEGER,reduce_type,0,comm,ierr)
-     call shr_mpi_chkerr(ierr,trim(lstring)//" MPI_REDUCE")
-   endif
 
 END SUBROUTINE shr_mpi_maxi0
 
@@ -1872,32 +1288,7 @@ SUBROUTINE shr_mpi_maxi1(lvec,gvec,comm,string,all)
 !          already computed
 !-------------------------------------------------------------------------------
 
-   reduce_type = MPI_MAX
-   if (present(all)) then
-     lall = all
-   else
-     lall = .false.
-   endif
-   if (present(string)) then
-     lstring = trim(subName)//":"//trim(string)
-   else
-     lstring = trim(subName)
-   endif
 
-   lsize = size(lvec)
-   gsize = size(gvec)
-
-   if (lsize /= gsize) then
-     call shr_mpi_abort(subName//" lsize,gsize incompatable "//trim(string))
-   endif
-
-   if (lall) then
-     call MPI_ALLREDUCE(lvec,gvec,gsize,MPI_INTEGER,reduce_type,comm,ierr)
-     call shr_mpi_chkerr(ierr,trim(lstring)//" MPI_ALLREDUCE")
-   else
-     call MPI_REDUCE(lvec,gvec,gsize,MPI_INTEGER,reduce_type,0,comm,ierr)
-     call shr_mpi_chkerr(ierr,trim(lstring)//" MPI_REDUCE")
-   endif
 
 END SUBROUTINE shr_mpi_maxi1
 
@@ -1929,32 +1320,6 @@ SUBROUTINE shr_mpi_maxr0(lvec,gvec,comm,string,all)
 !          already computed
 !-------------------------------------------------------------------------------
 
-   reduce_type = MPI_MAX
-   if (present(all)) then
-     lall = all
-   else
-     lall = .false.
-   endif
-   if (present(string)) then
-     lstring = trim(subName)//":"//trim(string)
-   else
-     lstring = trim(subName)
-   endif
-
-   lsize = 1
-   gsize = 1
-
-   if (lsize /= gsize) then
-     call shr_mpi_abort(subName//" lsize,gsize incompatable "//trim(string))
-   endif
-
-   if (lall) then
-     call MPI_ALLREDUCE(lvec,gvec,gsize,MPI_REAL8,reduce_type,comm,ierr)
-     call shr_mpi_chkerr(ierr,trim(lstring)//" MPI_ALLREDUCE")
-   else
-     call MPI_REDUCE(lvec,gvec,gsize,MPI_REAL8,reduce_type,0,comm,ierr)
-     call shr_mpi_chkerr(ierr,trim(lstring)//" MPI_REDUCE")
-   endif
 
 END SUBROUTINE shr_mpi_maxr0
 
@@ -1986,32 +1351,7 @@ SUBROUTINE shr_mpi_maxr1(lvec,gvec,comm,string,all)
 !          already computed
 !-------------------------------------------------------------------------------
 
-   reduce_type = MPI_MAX
-   if (present(all)) then
-     lall = all
-   else
-     lall = .false.
-   endif
-   if (present(string)) then
-     lstring = trim(subName)//":"//trim(string)
-   else
-     lstring = trim(subName)
-   endif
 
-   lsize = size(lvec)
-   gsize = size(gvec)
-
-   if (lsize /= gsize) then
-     call shr_mpi_abort(subName//" lsize,gsize incompatable "//trim(string))
-   endif
-
-   if (lall) then
-     call MPI_ALLREDUCE(lvec,gvec,gsize,MPI_REAL8,reduce_type,comm,ierr)
-     call shr_mpi_chkerr(ierr,trim(lstring)//" MPI_ALLREDUCE")
-   else
-     call MPI_REDUCE(lvec,gvec,gsize,MPI_REAL8,reduce_type,0,comm,ierr)
-     call shr_mpi_chkerr(ierr,trim(lstring)//" MPI_REDUCE")
-   endif
 
 END SUBROUTINE shr_mpi_maxr1
 
@@ -2035,12 +1375,6 @@ SUBROUTINE shr_mpi_commsize(comm,size,string)
 ! PURPOSE: MPI commsize
 !-------------------------------------------------------------------------------
 
-   call MPI_COMM_SIZE(comm,size,ierr)
-   if (present(string)) then
-     call shr_mpi_chkerr(ierr,subName//trim(string))
-   else
-     call shr_mpi_chkerr(ierr,subName)
-   endif
 
 END SUBROUTINE shr_mpi_commsize
 
@@ -2064,13 +1398,6 @@ SUBROUTINE shr_mpi_commrank(comm,rank,string)
 ! PURPOSE: MPI commrank
 !-------------------------------------------------------------------------------
 
-   call MPI_COMM_RANK(comm,rank,ierr)
-   if (present(string)) then
-     call shr_mpi_chkerr(ierr,subName//trim(string))
-   else
-     call shr_mpi_chkerr(ierr,subName)
-   endif
-
 END SUBROUTINE shr_mpi_commrank
 
 !===============================================================================
@@ -2092,12 +1419,6 @@ SUBROUTINE shr_mpi_initialized(flag,string)
 ! PURPOSE: MPI initialized
 !-------------------------------------------------------------------------------
 
-   call MPI_INITIALIZED(flag,ierr)
-   if (present(string)) then
-     call shr_mpi_chkerr(ierr,subName//trim(string))
-   else
-     call shr_mpi_chkerr(ierr,subName)
-   endif
 
 END SUBROUTINE shr_mpi_initialized
 
@@ -2121,15 +1442,6 @@ SUBROUTINE shr_mpi_abort(string,rcode)
 ! PURPOSE: MPI abort
 !-------------------------------------------------------------------------------
 
-   if ( present(string) .and. present(rcode) ) then
-      write(s_logunit,*) trim(subName),":",trim(string),rcode
-   endif
-   if ( present(rcode) )then
-      rc = rcode
-   else
-      rc = 1001
-   end if
-   call MPI_ABORT(MPI_COMM_WORLD,rc,ierr)
 
 END SUBROUTINE shr_mpi_abort
 
@@ -2152,12 +1464,7 @@ SUBROUTINE shr_mpi_barrier(comm,string)
 ! PURPOSE: MPI barrier
 !-------------------------------------------------------------------------------
 
-   call MPI_BARRIER(comm,ierr)
-   if (present(string)) then
-     call shr_mpi_chkerr(ierr,subName//trim(string))
-   else
-     call shr_mpi_chkerr(ierr,subName)
-   endif
+
 
 END SUBROUTINE shr_mpi_barrier
 
@@ -2179,12 +1486,7 @@ SUBROUTINE shr_mpi_init(string)
 ! PURPOSE: MPI init
 !-------------------------------------------------------------------------------
 
-   call MPI_INIT(ierr)
-   if (present(string)) then
-     call shr_mpi_chkerr(ierr,subName//trim(string))
-   else
-     call shr_mpi_chkerr(ierr,subName)
-   endif
+
 
 END SUBROUTINE shr_mpi_init
 
@@ -2206,13 +1508,7 @@ SUBROUTINE shr_mpi_finalize(string)
 ! PURPOSE: MPI finalize
 !-------------------------------------------------------------------------------
 
-   call MPI_BARRIER(MPI_COMM_WORLD,ierr)
-   call MPI_FINALIZE(ierr)
-   if (present(string)) then
-     call shr_mpi_chkerr(ierr,subName//trim(string))
-   else
-     call shr_mpi_chkerr(ierr,subName)
-   endif
+
 
 END SUBROUTINE shr_mpi_finalize
 

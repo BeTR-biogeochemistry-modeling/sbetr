@@ -10,6 +10,12 @@ module clm_initializeMod
   use ChemStateType      , only : chemstate_type
   use SoilHydrologyType  , only : soilhydrology_type
   use atm2lndType        , only : atm2lnd_type
+  use CNCarbonFluxType       , only : carbonflux_type
+  use CNCarbonStateType      , only : carbonstate_type
+  use CNStateType            , only : cnstate_type
+  use CNNitrogenFluxType     , only : nitrogenflux_type
+  use CNNitrogenStateType    , only : nitrogenstate_type
+  use CanopyStateType        , only : canopystate_type  
   use SoilWaterRetentionCurveFactoryMod, only : create_soil_water_retention_curve
   implicit none
   save
@@ -23,6 +29,12 @@ module clm_initializeMod
   type(chemstate_type)    :: chemstate_vars    !column chemical state variables
   type(soilhydrology_type):: soilhydrology_vars!
   type(atm2lnd_type)      :: atm2lnd_vars
+  type(carbonstate_type)      :: carbonstate_vars
+  type(carbonflux_type)       :: carbonflux_vars
+  type(nitrogenstate_type)    :: nitrogenstate_vars
+  type(nitrogenflux_type)     :: nitrogenflux_vars
+  type(cnstate_type)          :: cnstate_vars
+  type(canopystate_type)      :: canopystate_vars
   contains
 
   subroutine initialize1(bounds)
