@@ -16,6 +16,8 @@ module clm_initializeMod
   use CNNitrogenFluxType     , only : nitrogenflux_type
   use CNNitrogenStateType    , only : nitrogenstate_type
   use CanopyStateType        , only : canopystate_type
+  use PhosphorusFluxType     , only : phosphorusflux_type
+  use PhosphorusStateType    , only : phosphorusstate_type
   use SoilWaterRetentionCurveFactoryMod, only : create_soil_water_retention_curve
   implicit none
   save
@@ -35,6 +37,8 @@ module clm_initializeMod
   type(nitrogenflux_type)     :: nitrogenflux_vars
   type(cnstate_type)          :: cnstate_vars
   type(canopystate_type)      :: canopystate_vars
+  type(phosphorusstate_type)    :: phosphorusstate_vars
+  type(phosphorusflux_type)     :: phosphorusflux_vars
   contains
 
   subroutine initialize1(bounds)
@@ -79,5 +83,8 @@ module clm_initializeMod
 
   call carbonstate_vars%Init(bounds)
 
+  call phosphorusstate_vars%Init(bounds)
+
+  call phosphorusflux_vars%Init(bounds)
   end subroutine initialize2
 end module clm_initializeMod

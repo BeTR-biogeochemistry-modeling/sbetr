@@ -46,7 +46,7 @@ contains
   integer                   , intent(in) :: numf                                 ! number of columns in column filter
   integer                   , intent(in) :: filter(:)                            ! column filter
   integer                   , intent(in) :: lbj, ubj                             ! lower and upper bounds
-  integer,                  , intent(in) :: jtop(:)                              !indices
+  integer                   , intent(in) :: jtop(:)                              !indices
   type(column_type)         , intent(in) :: col                                  !column type
   real(r8)                  , intent(in) :: t_soisno(bounds%begc:bounds%endc,lbj:ubj)  !soil temperature
   type(betrtracer_type)     , intent(in) :: betrtracer_vars        ! betr configuration information

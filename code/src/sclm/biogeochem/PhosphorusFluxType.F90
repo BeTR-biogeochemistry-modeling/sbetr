@@ -1,31 +1,29 @@
-module CNNitrogenStateType
-  use clm_varcon     , only : spval, ispval, c14ratio
-  use shr_kind_mod       , only : r8 => shr_kind_r8
-  use decompMod      , only : bounds_type
-  use clm_varpar     , only : ndecomp_pools, nlevdecomp_full
+module PhosphorusFluxType
+  use clm_varcon             , only : spval, ispval
+  use shr_kind_mod           , only : r8 => shr_kind_r8
+  use decompMod              , only : bounds_type
+  use clm_varpar             , only : nlevdecomp_full, ndecomp_pools
 implicit none
 
-  type, public :: nitrogenstate_type
-    real(r8), pointer :: decomp_npools_vr_col         (:,:,:) ! col (gN/m3) vertically-resolved decomposing (litter, cwd, soil) N pools
-    real(r8), pointer :: smin_no3_vr_col              (:,:)   ! col (gN/m3) vertically-resolved soil mineral NO3
-    real(r8), pointer :: smin_no3_col                 (:)     ! col (gN/m2) soil mineral NO3 pool
-    real(r8), pointer :: smin_nh4_vr_col              (:,:)   ! col (gN/m3) vertically-resolved soil mineral NH4
-    real(r8), pointer :: smin_nh4_col                 (:)     ! col (gN/m2) soil mineral NH4 pool
-    real(r8), pointer :: sminn_vr_col                 (:,:)   ! col (gN/m3) vertically-resolved soil mineral N
+  type, public :: phosphorusflux_type
+    real(r8), pointer :: bgc_ppool_ext_inputs_vr_col               (:,:,:) !col organic nitrogen input, gN/m3/time step
+    real(r8), pointer :: bgc_ppool_ext_loss_vr_col                 (:,:,:) !col extneral organic nitrogen loss, gN/m3/time step
+
+    real(r8), pointer :: bgc_ppool_inputs_col                      (:,:)   !col organic N input, gN/m2/time step
 
   contains
 
     procedure, public  :: Init
     procedure, private :: InitCold
     procedure, private :: InitAllocate
-  end type nitrogenstate_type
-
+  end type phosphorusflux_type
 
 contains
+
   !------------------------------------------------------------------------
   subroutine Init(this, bounds)
 
-    class(nitrogenstate_type) :: this
+    class(phosphorusflux_type) :: this
     type(bounds_type), intent(in) :: bounds
 
     call this%InitAllocate ( bounds )
@@ -43,7 +41,7 @@ contains
     use shr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
     !
     ! !ARGUMENTS:
-    class(nitrogenstate_type) :: this
+    class(phosphorusflux_type) :: this
     type(bounds_type), intent(in) :: bounds
     !
     ! !LOCAL VARIABLES:
@@ -52,14 +50,12 @@ contains
     !------------------------------------------------------------------------
 
     begp = bounds%begp; endp= bounds%endp
-    allocate(this%decomp_npools_vr_col(begc:endc,1:nlevdecomp_full,1:ndecomp_pools));
-    this%decomp_npools_vr_col(:,:,:)= nan
-    allocate(this%smin_no3_vr_col          (begc:endc,1:nlevdecomp_full)) ; this%smin_no3_vr_col          (:,:) = nan
-    allocate(this%smin_nh4_vr_col          (begc:endc,1:nlevdecomp_full)) ; this%smin_nh4_vr_col          (:,:) = nan
-    allocate(this%smin_no3_col             (begc:endc))                   ; this%smin_no3_col             (:)   = nan
-    allocate(this%smin_nh4_col             (begc:endc))                   ; this%smin_nh4_col             (:)   = nan
-    allocate(this%sminn_vr_col             (begc:endc,1:nlevdecomp_full)) ; this%sminn_vr_col             (:,:) = nan
+    begc = bounds%begc; endc= bounds%endc
 
+    allocate(this%bgc_ppool_ext_inputs_vr_col (begc:endc,1:nlevdecomp_full,ndecomp_pools)) ;this%bgc_ppool_ext_inputs_vr_col    (:,:,:) = nan
+    allocate(this%bgc_ppool_ext_loss_vr_col   (begc:endc,1:nlevdecomp_full,ndecomp_pools)) ;this%bgc_ppool_ext_loss_vr_col      (:,:,:) = nan
+
+    allocate(this%bgc_ppool_inputs_col        (begc:endc,ndecomp_pools))     ;this%bgc_ppool_inputs_col              (:,:) = nan
 
   end subroutine InitAllocate
 
@@ -73,7 +69,7 @@ contains
     use ncdio_pio
     !
     ! !ARGUMENTS:
-    class(nitrogenstate_type) :: this
+    class(phosphorusflux_type) :: this
     type(bounds_type), intent(in) :: bounds
     !
     ! !LOCAL VARIABLES:
@@ -92,6 +88,35 @@ contains
     integer               :: begg, endg
 
 
+
+
   end subroutine initCold
 
-end module CNNitrogenStateType
+
+  !-----------------------------------------------------------------------
+  subroutine SetValues ( this, &
+       num_patch, filter_patch, value_patch, &
+       num_column, filter_column, value_column)
+    !
+    ! !DESCRIPTION:
+    ! Set nitrogen flux variables
+    !
+    use tracer_varcon , only : is_active_betr_bgc
+    ! !ARGUMENTS:
+    ! !ARGUMENTS:
+    class (phosphorusflux_type) :: this
+    integer , intent(in) :: num_patch
+    integer , intent(in) :: filter_patch(:)
+    real(r8), intent(in) :: value_patch
+    integer , intent(in) :: num_column
+    integer , intent(in) :: filter_column(:)
+    real(r8), intent(in) :: value_column
+
+    integer :: fi, i
+
+    do fi = 1,num_column
+       i = filter_column(fi)
+
+    enddo
+  end subroutine SetValues
+end module PhosphorusFluxType
