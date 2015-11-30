@@ -65,7 +65,7 @@ module SoilStateType
     lbj  = bounds%lbj; ubj = bounds%ubj
 
     allocate(this%bsw_col(begc:endc, lbj:ubj))         ; this%bsw_col(:,:) = nan
-    allocate(this%watsat_col(begc:endc, lbj:ubj))  ; this%watsat_col(:,:) = nan
+    allocate(this%watsat_col(begc:endc, lbj:ubj))      ; this%watsat_col(:,:) = nan
     allocate(this%eff_porosity_col(begc:endc, lbj:ubj)); this%eff_porosity_col(:,:) = nan
     allocate(this%soilpsi_col          (begc:endc,lbj:ubj))            ; this%soilpsi_col          (:,:) = nan
     allocate(this%cellorg_col          (begc:endc,lbj:ubj))            ; this%cellorg_col          (:,:) = nan
@@ -74,6 +74,6 @@ module SoilStateType
     allocate(this%bd_col               (begc:endc,lbj:ubj))            ; this%bd_col               (:,:) = nan
     allocate(this%watfc_col            (begc:endc,lbj:ubj))            ; this%watfc_col            (:,:) = nan
     allocate(this%sucsat_col           (begc:endc,lbj:ubj))            ; this%sucsat_col           (:,:) = spval
-    allocate(this%rootfr_patch         (begp:endp,lbj:ubj))            ; this%rootfr_patch         (:,:) = nan    
+    allocate(this%rootfr_patch         (begp:endp,lbj:ubj))            ; this%rootfr_patch         (:,:) = nan
   end subroutine InitAllocate
 end module SoilStateType

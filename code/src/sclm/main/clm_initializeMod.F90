@@ -15,7 +15,7 @@ module clm_initializeMod
   use CNStateType            , only : cnstate_type
   use CNNitrogenFluxType     , only : nitrogenflux_type
   use CNNitrogenStateType    , only : nitrogenstate_type
-  use CanopyStateType        , only : canopystate_type  
+  use CanopyStateType        , only : canopystate_type
   use SoilWaterRetentionCurveFactoryMod, only : create_soil_water_retention_curve
   implicit none
   save
@@ -68,6 +68,16 @@ module clm_initializeMod
   call atm2lnd_vars%Init(bounds)
 
   call soilhydrology_vars%Init(bounds)
+
+  call carbonflux_vars%Init(bounds)
+
+  call nitrogenstate_vars%Init(bounds)
+
+  call cnstate_vars%Init(bounds)
+
+  call canopystate_vars%Init(bounds)
+
+  call carbonstate_vars%Init(bounds)
 
   end subroutine initialize2
 end module clm_initializeMod

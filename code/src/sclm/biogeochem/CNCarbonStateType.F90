@@ -48,8 +48,7 @@ contains
 
     begp = bounds%begp; endp= bounds%endp
     begc = bounds%begc; endc= bounds%endc
-    allocate(this%decomp_cpools_vr_col(begc:endc,1:nlevdecomp_full,1:ndecomp_pools))
-    this%decomp_cpools_vr_col(:,:,:)= nan
+    allocate(this%decomp_cpools_vr_col(begc:endc,1:nlevdecomp_full,1:ndecomp_pools)); this%decomp_cpools_vr_col(:,:,:)= nan
     allocate(this%frootc_patch             (begp :endp))                   ;     this%frootc_patch             (:)   = nan
   end subroutine InitAllocate
 

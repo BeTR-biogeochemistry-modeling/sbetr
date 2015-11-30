@@ -42,20 +42,20 @@ contains
   use WaterStateType        , only : Waterstate_Type
   use ColumnType            , only : column_type
   implicit none
-  type(bounds_type),        intent(in) :: bounds                               ! bounds
-  integer,                  intent(in) :: numf                                 ! number of columns in column filter
-  integer,                  intent(in) :: filter(:)                            ! column filter
-  integer,                  intent(in) :: lbj, ubj                             ! lower and upper bounds
-  integer,                  intent(in) :: jtop(:)                              !indices
-  type(column_type),        intent(in) :: col                                  !column type
-  real(r8),                 intent(in) :: t_soisno(bounds%begc:bounds%endc,lbj:ubj)  !soil temperature
-  type(betrtracer_type),   intent(in) :: betrtracer_vars        ! betr configuration information
-  real(r8),                 intent(in) :: bulkdif_sno(bounds%begc:bounds%endc, lbj:ubj, 1:betrtracer_vars%ngwmobile_tracers)
-  real(r8),                 intent(in) :: pondwdiff(bounds%begc:bounds%endc,1:betrtracer_vars%ngwmobile_tracers) ! tracer diffusivity in ponded water
-  logical,                  intent(in) :: islake  ! logical indicate
-  type(Waterstate_Type),    intent(in) :: waterstate_vars        ! water state variables
-  type(soilstate_type),     intent(in) :: soilstate_vars        ! column physics variable
-  real(r8),               intent(inout):: grnd_res(bounds%begc:bounds%endc, 1:betrtracer_vars%ngwmobile_tracers)
+  type(bounds_type)         , intent(in) :: bounds                               ! bounds
+  integer                   , intent(in) :: numf                                 ! number of columns in column filter
+  integer                   , intent(in) :: filter(:)                            ! column filter
+  integer                   , intent(in) :: lbj, ubj                             ! lower and upper bounds
+  integer,                  , intent(in) :: jtop(:)                              !indices
+  type(column_type)         , intent(in) :: col                                  !column type
+  real(r8)                  , intent(in) :: t_soisno(bounds%begc:bounds%endc,lbj:ubj)  !soil temperature
+  type(betrtracer_type)     , intent(in) :: betrtracer_vars        ! betr configuration information
+  real(r8)                  , intent(in) :: bulkdif_sno(bounds%begc:bounds%endc, lbj:ubj, 1:betrtracer_vars%ngwmobile_tracers)
+  real(r8)                  , intent(in) :: pondwdiff(bounds%begc:bounds%endc,1:betrtracer_vars%ngwmobile_tracers) ! tracer diffusivity in ponded water
+  logical                   , intent(in) :: islake  ! logical indicate
+  type(Waterstate_Type)     , intent(in) :: waterstate_vars        ! water state variables
+  type(soilstate_type)      , intent(in) :: soilstate_vars        ! column physics variable
+  real(r8)                  , intent(inout):: grnd_res(bounds%begc:bounds%endc, 1:betrtracer_vars%ngwmobile_tracers)
 
   !local varibles
   real(r8) :: pondz                            !ponding depth, m
@@ -69,7 +69,7 @@ contains
    h2osoi_liq    =>   waterstate_vars%h2osoi_liq_col              , & !Input [real(r8)(:,:)] volumetric liquid water content
    h2osoi_ice    =>   waterstate_vars%h2osoi_ice_col              , & !Input [real(r8)(:,:)] volumetric ice content
    watsat        =>   soilstate_vars%watsat_col                   , & !Input [real(r8)(:,:)] saturated water content
-   dz            =>   col%dz                        & !Input [real(r8)(:,:)] layer thickness
+   dz            =>   col%dz                                        & !Input [real(r8)(:,:)] layer thickness
   )
 
   do kk = 1, betrtracer_vars%ngwmobile_tracers

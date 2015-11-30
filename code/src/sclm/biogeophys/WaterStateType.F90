@@ -65,19 +65,19 @@ module WaterstateType
     begc = bounds%begc; endc= bounds%endc
     lbj  = bounds%lbj;  ubj = bounds%ubj
 
-    allocate(this%h2osoi_liq_col(begc:endc, lbj:ubj)) ; this%h2osoi_liq_col(:,:) = nan
+    allocate(this%h2osoi_liq_col(begc:endc, lbj:ubj))     ; this%h2osoi_liq_col(:,:) = nan
     allocate(this%h2osoi_ice_col(begc:endc, lbj:ubj))     ; this%h2osoi_ice_col(:,:) = nan
-    allocate(this%h2osoi_liq_old(begc:endc, lbj:ubj)) ; this%h2osoi_liq_old(:,:) = nan
-    allocate(this%h2osoi_ice_old(begc:endc, lbj:ubj)) ; this%h2osoi_ice_old(:,:) = nan
+    allocate(this%h2osoi_liq_old(begc:endc, lbj:ubj))     ; this%h2osoi_liq_old(:,:) = nan
+    allocate(this%h2osoi_ice_old(begc:endc, lbj:ubj))     ; this%h2osoi_ice_old(:,:) = nan
     allocate(this%h2osoi_liqvol_col(begc:endc, lbj:ubj))  ; this%h2osoi_liqvol_col(:,:) = nan
     allocate(this%h2osoi_icevol_col(begc:endc, lbj:ubj))  ; this%h2osoi_icevol_col(:,:) = nan
-    allocate(this%h2osoi_vol_col(begc:endc, lbj:ubj)) ; this%h2osoi_vol_col(:,:) = nan
+    allocate(this%h2osoi_vol_col(begc:endc, lbj:ubj))     ; this%h2osoi_vol_col(:,:) = nan
     allocate(this%air_vol_col(begc:endc, lbj:ubj))        ; this%air_vol_col(:,:) = nan
-    allocate(this%rho_vap(begc:endc, lbj:ubj))        ; this%air_vol_col(:,:) = nan
-    allocate(this%rhvap_soi(begc:endc, lbj:ubj))      ; this%rhvap_soi(:,:) = nan
-    allocate(this%smp_l_col  (begc:endc,lbj:ubj)) ; this%smp_l_col              (:,:) = nan
+    allocate(this%rho_vap(begc:endc, lbj:ubj))            ; this%air_vol_col(:,:) = nan
+    allocate(this%rhvap_soi(begc:endc, lbj:ubj))          ; this%rhvap_soi(:,:) = nan
+    allocate(this%smp_l_col  (begc:endc,lbj:ubj))         ; this%smp_l_col              (:,:) = nan
     allocate(this%finundated_col         (begc:endc))                     ; this%finundated_col         (:)   = nan
-    allocate(this%frac_h2osfc_col        (begc:endc))                     ; this%frac_h2osfc_col        (:)   = nan     
+    allocate(this%frac_h2osfc_col        (begc:endc))                     ; this%frac_h2osfc_col        (:)   = nan
   end subroutine InitAllocate
 
 end module WaterstateType

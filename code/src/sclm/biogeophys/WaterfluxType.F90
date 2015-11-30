@@ -73,13 +73,13 @@ module WaterfluxType
     allocate(this%qflx_rootsoi(begc:endc,lbj:ubj))
     allocate(this%qflx_gross_evap_soil_col (begc:endc))              ; this%qflx_gross_evap_soil_col (:)   = nan
     allocate(this%qflx_gross_infl_soil_col (begc:endc))              ; this%qflx_gross_infl_soil_col (:)   = nan
-    allocate(this%qflx_rootsoi_col         (begc:endc,lbj:ubj))    ; this%qflx_rootsoi_col         (:,:) = nan
-    allocate(this%qflx_drain_vr_col        (begc:endc,lbj:ubj))    ; this%qflx_drain_vr_col        (:,:) = nan
+    allocate(this%qflx_rootsoi_col         (begc:endc,lbj:ubj))      ; this%qflx_rootsoi_col         (:,:) = nan
+    allocate(this%qflx_drain_vr_col        (begc:endc,lbj:ubj))      ; this%qflx_drain_vr_col        (:,:) = nan
     allocate(this%qflx_dew_grnd_col        (begc:endc))              ; this%qflx_dew_grnd_col        (:)   = nan
     allocate(this%qflx_dew_snow_col        (begc:endc))              ; this%qflx_dew_snow_col        (:)   = nan
     allocate(this%qflx_sub_snow_col        (begc:endc))              ; this%qflx_sub_snow_col        (:)   = 0.0_r8
     allocate(this%qflx_snow2topsoi_col     (begc:endc))              ; this%qflx_snow2topsoi_col     (:)   = nan
-    allocate(this%qflx_h2osfc2topsoi_col   (begc:endc))              ; this%qflx_h2osfc2topsoi_col   (:)   = nan    
+    allocate(this%qflx_h2osfc2topsoi_col   (begc:endc))              ; this%qflx_h2osfc2topsoi_col   (:)   = nan
   end subroutine InitAllocate
 
 

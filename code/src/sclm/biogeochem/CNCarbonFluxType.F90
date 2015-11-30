@@ -72,8 +72,8 @@ contains
     allocate(this%annsum_npp_patch      (begp:endp)) ; this%annsum_npp_patch      (:) = nan
     allocate(this%annavg_agnpp_patch                (begp:endp))                  ; this%annavg_agnpp_patch  (:) = spval ! To detect first year
     allocate(this%annavg_bgnpp_patch                (begp:endp))                  ; this%annavg_bgnpp_patch  (:) = spval ! To detect first year
-    allocate(this%agnpp_patch                               (begp:endp)) ; this%agnpp_patch                               (:) = nan
-    allocate(this%bgnpp_patch                               (begp:endp)) ; this%bgnpp_patch                               (:) = nan
+    allocate(this%agnpp_patch                       (begp:endp)) ; this%agnpp_patch                               (:) = nan
+    allocate(this%bgnpp_patch                       (begp:endp)) ; this%bgnpp_patch                               (:) = nan
     allocate(this%tempavg_agnpp_patch               (begp:endp))                  ; this%tempavg_agnpp_patch (:) = spval
     allocate(this%tempavg_bgnpp_patch               (begp:endp))                  ; this%tempavg_bgnpp_patch (:) = spval
   end subroutine InitAllocate

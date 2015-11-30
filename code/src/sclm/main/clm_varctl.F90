@@ -13,7 +13,7 @@ module clm_varctl
   real(r8), parameter, public ::  rundef = -9999999._r8
   integer, public :: iulog = 6        ! "stdout" log file unit number, default is 6
   logical, public :: single_column = .true. !do single column run
-  logical, public :: use_cn              = .false.  
+  logical, public :: use_cn              = .false.
 
   ! Type of run
   integer, public :: nsrest             = iundef
@@ -31,7 +31,7 @@ module clm_varctl
   public :: CNAllocate_Carbon_only
   public :: cnallocate_carbon_only_set
  contains
-
+  !------------------------------------------------------------
   ! Set module carbon_only flag
   subroutine cnallocate_carbon_only_set(carbon_only_in)
     logical, optional, intent(in) :: carbon_only_in

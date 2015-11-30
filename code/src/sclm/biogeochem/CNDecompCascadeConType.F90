@@ -19,9 +19,6 @@ module CNDecompCascadeConType
   !
   type, public :: decomp_cascade_type
      !-- properties of each pathway along decomposition cascade
-     character(len=8)  , pointer :: cascade_step_name(:)               ! name of transition
-     integer           , pointer :: cascade_donor_pool(:)              ! which pool is C taken from for a given decomposition step
-     integer           , pointer :: cascade_receiver_pool(:)           ! which pool is C added to for a given decomposition step
 
      !-- properties of each decomposing pool
      logical           , pointer  :: floating_cn_ratio_decomp_pools(:) ! TRUE => pool has fixed C:N ratio
@@ -55,9 +52,6 @@ contains
     !------------------------------------------------------------------------
 
     !-- properties of each pathway along decomposition cascade
-    allocate(decomp_cascade_con%cascade_step_name(1:ndecomp_cascade_transitions))
-    allocate(decomp_cascade_con%cascade_donor_pool(1:ndecomp_cascade_transitions))
-    allocate(decomp_cascade_con%cascade_receiver_pool(1:ndecomp_cascade_transitions))
 
     !-- properties of each decomposing pool
     allocate(decomp_cascade_con%floating_cn_ratio_decomp_pools(0:ndecomp_pools))
@@ -78,9 +72,6 @@ contains
     allocate(decomp_cascade_con%spinup_factor(0:ndecomp_pools))
 
     !-- properties of each pathway along decomposition cascade
-    decomp_cascade_con%cascade_step_name(1:ndecomp_cascade_transitions) = ''
-    decomp_cascade_con%cascade_donor_pool(1:ndecomp_cascade_transitions) = 0
-    decomp_cascade_con%cascade_receiver_pool(1:ndecomp_cascade_transitions) = 0
 
     !-- first initialization of properties of each decomposing pool
     decomp_cascade_con%floating_cn_ratio_decomp_pools(0:ndecomp_pools) = .false.
