@@ -96,7 +96,7 @@ contains
          lid_p_solution => centurybgc_vars%lid_p_solution                , & !
          lid_p_secondary => centurybgc_vars%lid_p_secondary              , & !
          lid_p_occlude =>  centurybgc_vars%lid_p_occlude                 , & !
-         lid_minp_plant => centurybgc_vars%lid_minp_plant                , & !
+         lid_plant_minp => centurybgc_vars%lid_plant_mip                 , & !
          lid_minp_immob => centurybgc_vars%lid_minp_immob                , & !
          is_aerobic_reac=> centurybgc_vars%is_aerobic_reac               , & !
          primvarid    => centurybgc_vars%primvarid                       , & !
