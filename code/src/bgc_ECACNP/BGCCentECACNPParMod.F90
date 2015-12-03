@@ -63,6 +63,8 @@ module BGCCentECACNPParMod
      real(r8)             :: cp_l2_bgc_tgt
      real(r8)             :: cp_l3_bgc_tgt
 
+     real(r8),allocatable :: cn_ratios_tgt(:)
+     real(r8),allocatable :: cp_ratios_tgt(:)
      real(r8)             :: rf_l1s1_bgc      !respiration fraction litter 1 -> SOM 1
      real(r8)             :: rf_l2s1_bgc
      real(r8)             :: rf_l3s2_bgc

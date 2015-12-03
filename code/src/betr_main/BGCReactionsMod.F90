@@ -244,8 +244,8 @@ module BGCReactionsMod
 
      !-------------------------------------------------------------------------------
      subroutine betr_alm_flux_statevar_feedback_interface(this, bounds, num_soilc, filter_soilc, &
-          carbonstate_vars, nitrogenstate_vars, nitrogenflux_vars, &
-          tracerstate_vars, tracerflux_vars,  betrtracer_vars)
+          carbonstate_vars, nitrogenstate_vars, nitrogenflux_vars, phosphorusstate_vars, &
+          phosphorusflux_vars, tracerstate_vars, tracerflux_vars,  betrtracer_vars)
 
        ! !DESCRIPTION:
        ! template for betr_alm_flux_statevar_feedback
@@ -258,7 +258,8 @@ module BGCReactionsMod
        use CNCarbonStateType        , only : carbonstate_type
        use CNNitrogenStateType      , only : nitrogenstate_type
        use CNNitrogenFluxType       , only : nitrogenflux_type
-
+       use PhosphorusFluxType       , only : phosphorusflux_type
+       use PhosphorusStateType      , only : phosphorusstate_type
        ! !ARGUMENTS:
        import :: bgc_reaction_type
        class(bgc_reaction_type)   , intent(in) :: this                  !
@@ -271,7 +272,8 @@ module BGCReactionsMod
        type(carbonstate_type)     , intent(inout) :: carbonstate_vars   !
        type(nitrogenflux_type)    , intent(inout) :: nitrogenflux_vars  !
        type(nitrogenstate_type)   , intent(inout) :: nitrogenstate_vars !
-
+       type(phosphorusstate_type) , intent(inout) :: phosphorusstate_vars
+       type(phosphorusflux_type)  , intent(inout) :: phosphorusflux_vars
      end subroutine betr_alm_flux_statevar_feedback_interface
 
      !-------------------------------------------------------------------------------
