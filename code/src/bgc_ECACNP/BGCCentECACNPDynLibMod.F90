@@ -1653,6 +1653,7 @@ contains
     associate(                                                                         &
          id_trc_no3x               => betrtracer_vars%id_trc_no3x                    , &
          id_trc_nh3x               => betrtracer_vars%id_trc_nh3x                    , &
+         id_trc_p_sol              => betrtracer_vars%id_trc_p_sol                   , &
          decomp_cpools_vr          => carbonstate_vars%decomp_cpools_vr_col          , &
          decomp_npools_vr          => nitrogenstate_vars%decomp_npools_vr_col        , &
          smin_no3_vr_col           => nitrogenstate_vars%smin_no3_vr_col             , &
@@ -1667,6 +1668,9 @@ contains
          tracer_conc_solid_passive => tracerstate_vars%tracer_conc_solid_passive_col , &
          c_loc                     => centurybgc_vars%c_loc                          , &
          n_loc                     => centurybgc_vars%n_loc                          , &
+         p_loc                     => centurybgc_vars%p_loc                          , &
+         lid_p_secondary_trc       => centurybgc_vars%lid_p_secondary_trc            , &
+         lid_p_occlude_trc         => centurybgc_vars%lid_p_occlude_trc              , &
          lit1                      => centurybgc_vars%lit1                           , &
          lit2                      => centurybgc_vars%lit2                           , &
          lit3                      => centurybgc_vars%lit3                           , &
@@ -1759,7 +1763,7 @@ contains
          nitrogenflux_vars%smin_no3_leached_col(c) = tracerflux_vars%tracer_flx_totleached_col(c,id_trc_no3x)*natomw
          nitrogenflux_vars%smin_no3_runoff_col(c)  = tracerflux_vars%tracer_flx_surfrun_col(c,id_trc_no3x)*natomw
          phosphorusflux_vars%sminp_leached_col(c)  = tracerflux_vars%tracer_flx_totleached_col(c,id_trc_p_sol)*patomw
-         phosphorusflux_vars%sminp_runoff_col(c)   = tracerflux_vars%tracer_flx_surfrun_col(c,id_trc_p_sol)*patomw         
+         phosphorusflux_vars%sminp_runoff_col(c)   = tracerflux_vars%tracer_flx_surfrun_col(c,id_trc_p_sol)*patomw
       enddo
 
     end associate

@@ -87,20 +87,18 @@ contains
          lid_minn_nh4_plant => centurybgc_vars%lid_minn_nh4_plant        , & !
          lid_minn_no3_plant => centurybgc_vars%lid_minn_no3_plant        , & !
          lid_nh4_nit        => centurybgc_vars%lid_nh4_nit               , & !
-         lid_n2_paere=> centurybgc_vars%lid_n2_paere                     , & !
-         lid_ch4_paere=> centurybgc_vars%lid_ch4_paere                   , & !
-         lid_n2o_paere=> centurybgc_vars%lid_n2o_paere                   , & !
-         lid_o2_paere=> centurybgc_vars%lid_o2_paere                     , & !
-         lid_ar_paere=> centurybgc_vars%lid_ar_paere                     , & !
-         lid_co2_paere=> centurybgc_vars%lid_co2_paere                   , & !
-
-         lid_p_solution=> centurybgc_vars%lid_p_solution                 , & !
-         lid_p_secondary=> centurybgc_vars%lid_p_secondary               , & !
+         lid_n2_paere => centurybgc_vars%lid_n2_paere                    , & !
+         lid_ch4_paere => centurybgc_vars%lid_ch4_paere                  , & !
+         lid_n2o_paere => centurybgc_vars%lid_n2o_paere                  , & !
+         lid_o2_paere => centurybgc_vars%lid_o2_paere                    , & !
+         lid_ar_paere => centurybgc_vars%lid_ar_paere                    , & !
+         lid_co2_paere => centurybgc_vars%lid_co2_paere                   , & !
+         lid_p_solution => centurybgc_vars%lid_p_solution                , & !
+         lid_p_secondary => centurybgc_vars%lid_p_secondary              , & !
          lid_p_occlude =>  centurybgc_vars%lid_p_occlude                 , & !
          lid_minp_plant => centurybgc_vars%lid_minp_plant                , & !
          lid_minp_immob => centurybgc_vars%lid_minp_immob                , & !
-
-         is_aerobic_reac=> centurybgc_vars%is_aerobic_reac               , &
+         is_aerobic_reac=> centurybgc_vars%is_aerobic_reac               , & !
          primvarid    => centurybgc_vars%primvarid                       , & !
          lit1_dek_reac=> centurybgc_vars%lit1_dek_reac                   , & !
          lit2_dek_reac=> centurybgc_vars%lit2_dek_reac                   , & !
@@ -132,7 +130,7 @@ contains
          rf_s2s1_bgc      => CNDecompBgcParamsInst%rf_s2s1_bgc           , & !
          rf_s3s1_bgc      => CNDecompBgcParamsInst%rf_s3s1_bgc           , & !
          cwd_fcel_bgc     => CNDecompBgcParamsInst%cwd_fcel_bgc          , & !
-         cwd_flig_bgc     => CNDecompBgcParamsInst%cwd_flig_bgc          , & !
+         cwd_flig_bgc     => CNDecompBgcParamsInst%cwd_flig_bgc            & !
 
          )
 
