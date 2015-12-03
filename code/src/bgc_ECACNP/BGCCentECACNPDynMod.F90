@@ -193,7 +193,7 @@ contains
     cascade_matrix(lid_p_solution         ,reac)   = safe_div(1._r8,cn_ratios(lit2)) - safe_div(1._r8-rf_l2s1_bgc,cp_ratios_tgt(som1))
 
     cascade_matrix(lid_minn_nh4_immob     ,reac)   = -cascade_matrix(lid_nh4         ,reac)
-    cascade_matrix(lid_minp_immob         ,reac)   = -cascade_matrix(lid_p_solution         ,reac)
+    cascade_matrix(lid_minp_immob         ,reac)   = -cascade_matrix(lid_p_solution  ,reac)
     cascade_matrix(lid_co2_hr             ,reac)   = rf_l2s1_bgc
 
     primvarid(reac) = (lit2-1)*nelms+c_loc
@@ -249,7 +249,7 @@ contains
 
     cascade_matrix(lid_co2                ,reac) = ftxt
     cascade_matrix(lid_nh4                ,reac) = safe_div(1._r8,cn_ratios(som1))-safe_div(f1,cn_ratios_tgt(som2))-safe_div(f2,cn_ratios_tgt(som3))
-    cascade_matrix(lid_p_solution         ,reac) = safe_div(1._r8,cn_ratios(som1))-safe_div(f1,cp_ratios_tgt(som2))-safe_div(f2,cp_ratios_tgt(som3))
+    cascade_matrix(lid_p_solution         ,reac) = safe_div(1._r8,cp_ratios(som1))-safe_div(f1,cp_ratios_tgt(som2))-safe_div(f2,cp_ratios_tgt(som3))
 
     cascade_matrix(lid_minn_nh4_immob     ,reac) = -cascade_matrix(lid_nh4         ,reac)
     cascade_matrix(lid_minp_immob         ,reac) = -cascade_matrix(lid_p_solution  ,reac)
@@ -278,7 +278,7 @@ contains
     cascade_matrix(lid_co2                ,reac)   =  rf_s2s1_bgc
     cascade_matrix(lid_nh4                ,reac)   =  safe_div(1._r8,cn_ratios(som2))-0.93_r8*safe_div(1._r8-rf_s2s1_bgc,cn_ratios_tgt(som1)) &
          -0.07_r8*safe_div(1._r8-rf_s2s1_bgc,cn_ratios_tgt(som3))
-    cascade_matrix(lid_p_solution         ,reac)   =  safe_div(1._r8,cn_ratios(som2))-0.93_r8*safe_div(1._r8-rf_s2s1_bgc,cp_ratios_tgt(som1)) &
+    cascade_matrix(lid_p_solution         ,reac)   =  safe_div(1._r8,cp_ratios(som2))-0.93_r8*safe_div(1._r8-rf_s2s1_bgc,cp_ratios_tgt(som1)) &
               -0.07_r8*safe_div(1._r8-rf_s2s1_bgc,cp_ratios_tgt(som3))
 
     cascade_matrix(lid_minn_nh4_immob     ,reac)   = -cascade_matrix(lid_nh4         ,reac)
@@ -303,7 +303,7 @@ contains
 
     cascade_matrix(lid_co2                ,reac) = rf_s3s1_bgc
     cascade_matrix(lid_nh4                ,reac) = safe_div(1._r8,cn_ratios(som3)) - safe_div(1._r8-rf_s3s1_bgc,cn_ratios_tgt(som1))
-    cascade_matrix(lid_p_solution         ,reac) = safe_div(1._r8,cn_ratios(som3)) - safe_div(1._r8-rf_s3s1_bgc,cp_ratios_tgt(som1))
+    cascade_matrix(lid_p_solution         ,reac) = safe_div(1._r8,cp_ratios(som3)) - safe_div(1._r8-rf_s3s1_bgc,cp_ratios_tgt(som1))
 
     cascade_matrix(lid_minn_nh4_immob     ,reac) = -cascade_matrix(lid_nh4         ,reac)
     cascade_matrix(lid_minp_immob         ,reac) = -cascade_matrix(lid_p_solution  ,reac)
@@ -331,7 +331,7 @@ contains
 
     cascade_matrix(lid_nh4                ,reac) = safe_div(1._r8,cn_ratios(cwd)) - safe_div(cwd_fcel_bgc,cn_ratios_tgt(lit2)) - &
          safe_div(cwd_flig_bgc,cn_ratios_tgt(lit3))
-    cascade_matrix(lid_p_solution         ,reac) = safe_div(1._r8,cn_ratios(cwd)) - safe_div(cwd_fcel_bgc,cp_ratios_tgt(lit2)) - &
+    cascade_matrix(lid_p_solution         ,reac) = safe_div(1._r8,cp_ratios(cwd)) - safe_div(cwd_fcel_bgc,cp_ratios_tgt(lit2)) - &
          safe_div(cwd_flig_bgc,cp_ratios_tgt(lit3))
 
     cascade_matrix(lid_minn_nh4_immob     ,reac) = -cascade_matrix(lid_nh4         ,reac)
