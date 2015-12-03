@@ -9,8 +9,8 @@ python create_make.py
 
 cp Makefile ../../scripts/build
 
-export FCOMP=gf6
-if [ $FCOMP -eq "ifort"]
+export FCOMP="gf6"
+if [ $FCOMP == "ifort" ]
   then
   cp Macros.intel ../../scripts/build/Macros
 else
