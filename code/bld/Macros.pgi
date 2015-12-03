@@ -1,0 +1,16 @@
+LKFLAG = -O2 -o
+FCPFLAG = -r8 -c 
+
+CPPDEFS+=  -DCPRGNU -DHIDE_MPI
+F90 = $(FCOMP) $(CPPDEFS)
+NETCDF_PATH = /opt/cray/netcdf/4.3.2/PGI/141/
+NETCDFLIB    =-L$(NETCDF_PATH)/lib -lnetcdff -llapack -lblas
+NETCDFINC    =-I$(NETCDF_PATH)/include
+
+INCS = $(NETCDFINC)
+LIBS = $(NETCDFLIB)
+
+FFLAGS = $(FFLAGS_IN) $(LKFLAG) 
+
+F90C=$(F90) $(FCPFLAG) $(INCS)
+F90L=$(F90) $(LIBS) $(FFLAGS)

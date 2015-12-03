@@ -937,8 +937,8 @@ contains
 
   !--------------------------------------------------------------------------------------------------------------------
   subroutine betr_alm_flux_statevar_feedback(this, bounds, num_soilc, filter_soilc, &
-       carbonstate_vars, nitrogenstate_vars, nitrogenflux_vars, tracerstate_vars,   &
-       tracerflux_vars,  betrtracer_vars)
+       carbonstate_vars, nitrogenstate_vars, nitrogenflux_vars, phosphorusstate_vars, &
+       phosphorusflux_vars, tracerstate_vars, tracerflux_vars,  betrtracer_vars)
 
     !
     ! !DESCRIPTION:
@@ -952,7 +952,8 @@ contains
     use CNCarbonStateType        , only : carbonstate_type
     use CNNitrogenStateType      , only : nitrogenstate_type
     use CNNitrogenFluxType       , only : nitrogenflux_type
-
+    use PhosphorusFluxType       , only : phosphorusflux_type
+    use PhosphorusStateType      , only : phosphorusstate_type
 
     ! !ARGUMENTS:
     class(bgc_reaction_CENTURY_ECACNP_type) , intent(in)    :: this
@@ -965,7 +966,8 @@ contains
     type(carbonstate_type)               , intent(inout) :: carbonstate_vars
     type(nitrogenflux_type)              , intent(inout) :: nitrogenflux_vars
     type(nitrogenstate_type)             , intent(inout) :: nitrogenstate_vars
-
+    type(phosphorusstate_type) , intent(inout) :: phosphorusstate_vars
+    type(phosphorusflux_type)  , intent(inout) :: phosphorusflux_vars
 
     call assign_nitrogen_hydroloss(bounds, num_soilc, filter_soilc, &
          tracerflux_vars, nitrogenflux_vars, phosphorusflux_vars, &
@@ -1120,8 +1122,7 @@ contains
 
     !calculate cascade matrix, which contains the stoichiometry for all reactions
     call calc_cascade_matrix(nstvars, Extra_inst%nr, Extra_inst%cn_ratios, Extra_inst%cp_ratios,   &
-         Extra_inst%n2_n2o_ratio_denit, Extra_inst%pct_sand, centurybgc_vars, nitrogen_limit_flag, &
-         cascade_matrix)
+         Extra_inst%n2_n2o_ratio_denit, Extra_inst%pct_sand, centurybgc_vars,  cascade_matrix)
 
 
     !obtain reaction rates

@@ -398,8 +398,8 @@ contains
 
   !-------------------------------------------------------------------------------
   subroutine betr_alm_flux_statevar_feedback(this, bounds, num_soilc, filter_soilc, &
-       carbonstate_vars, nitrogenstate_vars, nitrogenflux_vars, tracerstate_vars,   &
-       tracerflux_vars,  betrtracer_vars)
+       carbonstate_vars, nitrogenstate_vars, nitrogenflux_vars, phosphorusstate_vars,&
+       phosphorusflux_vars, tracerstate_vars, tracerflux_vars,  betrtracer_vars)
     !
     ! !DESCRIPTION:
     ! do flux and state variable change between betr and alm.
@@ -413,6 +413,8 @@ contains
     use CNCarbonStateType        , only : carbonstate_type
     use CNNitrogenStateType      , only : nitrogenstate_type
     use CNNitrogenFluxType       , only : nitrogenflux_type
+    use PhosphorusFluxType       , only : phosphorusflux_type
+    use PhosphorusStateType      , only : phosphorusstate_type
 
     ! !ARGUMENTS:
     class(bgc_reaction_mock_run_type) , intent(in)    :: this               !
@@ -425,7 +427,8 @@ contains
     type(carbonstate_type)            , intent(inout) :: carbonstate_vars   !
     type(nitrogenflux_type)           , intent(inout) :: nitrogenflux_vars  !
     type(nitrogenstate_type)          , intent(inout) :: nitrogenstate_vars !
-
+    type(phosphorusstate_type)        , intent(inout) :: phosphorusstate_vars
+    type(phosphorusflux_type)         , intent(inout) :: phosphorusflux_vars
   end subroutine betr_alm_flux_statevar_feedback
 
   !-------------------------------------------------------------------------------

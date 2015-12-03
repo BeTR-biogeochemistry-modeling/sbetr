@@ -6,7 +6,7 @@
 
 #define compiler
 
-export FCOMP=gf6
+export FCOMP=pgf90
 
 cd ./build
 

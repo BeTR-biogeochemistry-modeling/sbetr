@@ -9,10 +9,13 @@ python create_make.py
 
 cp Makefile ../../scripts/build
 
-export FCOMP="gf6"
+export FCOMP="pgf90"
 if [ $FCOMP == "ifort" ]
   then
   cp Macros.intel ../../scripts/build/Macros
+elif [ $FCOMP == "pgf90" ]
+  then
+  cp Macros.pgi ../../scripts/build/Macros
 else
   cp Macros.gnu ../../scripts/build/Macros
 fi

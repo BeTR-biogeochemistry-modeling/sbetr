@@ -36,14 +36,14 @@ contains
     use BGCCentECACNPDynLibMod    , only : centurybgc_type
 
     ! !ARGUMENTS:
-    integer                       , intent(in)  :: nstvars
-    integer                       , intent(in)  :: nreactions
-    type(centurybgc_type)         , intent(in)  :: centurybgc_vars
-    real(r8)                      , intent(in)  :: cn_ratios(centurybgc_vars%nom_pools)
-    real(r8)                      , intent(in)  :: cp_ratios(centurybgc_vars%nom_pools)
-    real(r8)                      , intent(in)  :: n2_n2o_ratio_denit                             !ratio of n2 to n2o during denitrification
-    real(r8)                      , intent(in)  :: pct_sand
-    real(r8)                      , intent(out) :: cascade_matrix(nstvars, nreactions)
+    integer                       , intent(in)     :: nstvars
+    integer                       , intent(in)     :: nreactions
+    type(centurybgc_type)         , intent(inout)  :: centurybgc_vars
+    real(r8)                      , intent(in)     :: cn_ratios(centurybgc_vars%nom_pools)
+    real(r8)                      , intent(in)     :: cp_ratios(centurybgc_vars%nom_pools)
+    real(r8)                      , intent(in)     :: n2_n2o_ratio_denit                             !ratio of n2 to n2o during denitrification
+    real(r8)                      , intent(in)     :: pct_sand
+    real(r8)                      , intent(out)    :: cascade_matrix(nstvars, nreactions)
 
     ! !LOCAL VARIABLES:
     real(r8) :: ftxt, f1, f2
@@ -96,7 +96,7 @@ contains
          lid_p_solution => centurybgc_vars%lid_p_solution                , & !
          lid_p_secondary => centurybgc_vars%lid_p_secondary              , & !
          lid_p_occlude =>  centurybgc_vars%lid_p_occlude                 , & !
-         lid_plant_minp => centurybgc_vars%lid_plant_mip                 , & !
+         lid_plant_minp => centurybgc_vars%lid_plant_minp                , & !
          lid_minp_immob => centurybgc_vars%lid_minp_immob                , & !
          is_aerobic_reac=> centurybgc_vars%is_aerobic_reac               , & !
          primvarid    => centurybgc_vars%primvarid                       , & !
@@ -112,6 +112,8 @@ contains
          lid_plant_minn_up_reac=> centurybgc_vars%lid_plant_minn_up_reac , & !
          lid_p_secondary_reac => centurybgc_vars%lid_p_secondary_reac    , & !
          lid_p_occlude_reac  => centurybgc_vars%lid_p_occlude_reac       , & !
+         lid_p_solution_reac => centurybgc_vars%lid_p_solution_reac      , & !
+         lid_plant_minp_up_reac => centurybgc_vars%lid_plant_minp_up_reac, & !
 
          lid_nh4_nit_reac => centurybgc_vars%lid_nh4_nit_reac            , & !
          lid_no3_den_reac => centurybgc_vars%lid_no3_den_reac            , & !
@@ -144,7 +146,6 @@ contains
 
     !initialize all entries to zero
     cascade_matrix = 0._r8
-    nitrogen_limit_flag = .false.
     !higher [nh4] makes lower [no3] competitiveness
     !note all reactions are in the form products - substrates = 0, therefore
     !mass balance is automatically ensured.
@@ -169,7 +170,7 @@ contains
 
     cascade_matrix(lid_minn_nh4_immob     ,reac)  = -cascade_matrix(lid_nh4         ,reac)
     cascade_matrix(lid_co2_hr             ,reac)  = rf_l1s1_bgc
-    casecade_matrix(lid_minp_immob        ,reac)  = -cascade_matrix(lid_p_solution  ,reac)
+    cascade_matrix(lid_minp_immob         ,reac)  = -cascade_matrix(lid_p_solution  ,reac)
 
     primvarid(reac)       = (lit1-1)*nelms+c_loc
     is_aerobic_reac(reac) = .true.
@@ -335,7 +336,7 @@ contains
          safe_div(cwd_flig_bgc,cp_ratios_tgt(lit3))
 
     cascade_matrix(lid_minn_nh4_immob     ,reac) = -cascade_matrix(lid_nh4         ,reac)
-    cascade_matrix(lid_minnp_immob        ,reac) = -cascade_matrix(lid_p_solution  ,reac)
+    cascade_matrix(lid_minp_immob         ,reac) = -cascade_matrix(lid_p_solution  ,reac)
 
     primvarid(reac) = (cwd-1)*nelms+c_loc
     is_aerobic_reac(reac) = .true.
