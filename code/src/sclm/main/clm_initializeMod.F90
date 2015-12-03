@@ -24,21 +24,21 @@ module clm_initializeMod
   public
 
 
-  type(temperature_type)  :: temperature_vars
-  type(Waterstate_Type)   :: waterstate_vars   !column water state
-  type(waterflux_type)    :: waterflux_vars    ! column water flux
-  type(soilstate_type)    :: soilstate_vars    !column physical state variables
-  type(chemstate_type)    :: chemstate_vars    !column chemical state variables
-  type(soilhydrology_type):: soilhydrology_vars!
-  type(atm2lnd_type)      :: atm2lnd_vars
+  type(temperature_type)      :: temperature_vars
+  type(Waterstate_Type)       :: waterstate_vars   !column water state
+  type(waterflux_type)        :: waterflux_vars    ! column water flux
+  type(soilstate_type)        :: soilstate_vars    !column physical state variables
+  type(chemstate_type)        :: chemstate_vars    !column chemical state variables
+  type(soilhydrology_type)    :: soilhydrology_vars!
+  type(atm2lnd_type)          :: atm2lnd_vars
   type(carbonstate_type)      :: carbonstate_vars
   type(carbonflux_type)       :: carbonflux_vars
   type(nitrogenstate_type)    :: nitrogenstate_vars
   type(nitrogenflux_type)     :: nitrogenflux_vars
   type(cnstate_type)          :: cnstate_vars
   type(canopystate_type)      :: canopystate_vars
-  type(phosphorusstate_type)    :: phosphorusstate_vars
-  type(phosphorusflux_type)     :: phosphorusflux_vars
+  type(phosphorusstate_type)  :: phosphorusstate_vars
+  type(phosphorusflux_type)   :: phosphorusflux_vars
   contains
 
   subroutine initialize1(bounds)

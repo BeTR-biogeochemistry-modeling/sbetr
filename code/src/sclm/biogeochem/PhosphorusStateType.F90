@@ -18,7 +18,7 @@ implicit none
     real(r8), pointer :: totecosysp_col               (:)     ! col (gP/m2) total ecosystem phosphorus, incl veg
     real(r8), pointer :: totcolp_col                  (:)     ! col (gP/m2) total column phosphorus, incl veg
     real(r8), pointer :: cwdp_col                     (:)     ! col (gP/m2) Diagnostic: coarse woody debris P
-    
+
     ! patch averaged to column variables
     real(r8), pointer :: totvegp_col                  (:)     ! col (gP/m2) total vegetation phosphorus (p2c)
 
@@ -28,7 +28,7 @@ implicit none
     real(r8), pointer :: secondp_vr_col               (:,:)       ! col (gP/m3) vertically-resolved soil secondary mineralP
     real(r8), pointer :: occlp_vr_col                 (:,:)       ! col (gP/m3) vertically-resolved soil occluded mineral P
     real(r8), pointer :: primp_vr_col                 (:,:)       ! col (gP/m3) vertically-resolved soil parimary mineral P
-    real(r8), pointer :: sminp_vr_col                 (:,:)       ! col (gP/m3) vertically-resolved soil parimary mineral P
+    real(r8), pointer :: sminp_vr_col                 (:,:)       ! col (gP/m3) vertically-resolved soil total mineral P, diagnostic
   contains
 
     procedure, public  :: Init

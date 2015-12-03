@@ -45,6 +45,23 @@ module BGCCentECACNPParMod
      real(r8)             :: cn_s1_bgc        !C:N for SOM 1
      real(r8)             :: cn_s2_bgc        !C:N for SOM 2
      real(r8)             :: cn_s3_bgc        !C:N for SOM 3
+     real(r8)             :: cp_s1_bgc        !C:N for SOM 1
+     real(r8)             :: cp_s2_bgc        !C:N for SOM 2
+     real(r8)             :: cp_s3_bgc        !C:N for SOM 3
+
+     real(r8)             :: cn_s1_bgc_tgt
+     real(r8)             :: cn_s2_bgc_tgt
+     real(r8)             :: cn_s3_bgc_tgt
+     real(r8)             :: cn_l1_bgc_tgt
+     real(r8)             :: cn_l2_bgc_tgt
+     real(r8)             :: cn_l3_bgc_tgt
+
+     real(r8)             :: cp_s1_bgc_tgt
+     real(r8)             :: cp_s2_bgc_tgt
+     real(r8)             :: cp_s3_bgc_tgt
+     real(r8)             :: cp_l1_bgc_tgt
+     real(r8)             :: cp_l2_bgc_tgt
+     real(r8)             :: cp_l3_bgc_tgt
 
      real(r8)             :: rf_l1s1_bgc      !respiration fraction litter 1 -> SOM 1
      real(r8)             :: rf_l2s1_bgc

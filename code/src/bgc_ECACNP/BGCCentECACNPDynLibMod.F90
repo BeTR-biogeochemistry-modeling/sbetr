@@ -8,7 +8,7 @@ module BGCCentECACNPDynLibMod
   use shr_log_mod        , only : errMsg => shr_log_errMsg
   use decompMod          , only : bounds_type
   use clm_varcon         , only : spval
-  use clm_varcon         , only : catomw, natomw
+  use clm_varcon         , only : catomw, natomw, patomw
   use clm_varpar         , only : ndecomp_pools
   use ColumnType         , only : col
   use clm_varctl         , only : spinup_state,iulog
@@ -51,6 +51,7 @@ module BGCCentECACNPDynLibMod
 
      integer           :: c_loc
      integer           :: n_loc
+     integer           :: p_loc
      integer           :: nelms                                  !number of chemical elements in an om pool
 
                                                                  !reactive primary variables
@@ -63,7 +64,13 @@ module BGCCentECACNPDynLibMod
      real(r8)          :: k_decay_cwd
      integer           :: lid_nh4, lid_nh4_nit_reac              !local position of nh4 in the state variable vector
      integer           :: lid_no3, lid_no3_den_reac              !local position of no3 in the state variable vector
-     integer           :: lid_plant_minn, lid_plant_minn_up_reac !local position of plant consumption of mineral nitrogen in the state variable vector
+     integer           :: lid_plant_minn, lid_plant_minn_up_reac !local position of plant uptake of mineral nitrogen in the state variable vector
+     integer           :: lid_plant_minp, lid_plant_minp_up_reac !local position of plant uptake of mineral P in the state variable vector
+     integer           :: lid_p_solution, lid_p_solution_reac    !conversation of adsorbed into secondary phase
+     integer           :: lid_p_secondary,lid_p_secondary_reac   !local position of secondary P in the state variable vector
+
+     integer           :: lid_p_occlude, lid_p_occlude_reac      !local position of occluded P in the state variable vector
+
      integer           :: lid_at_rt, lid_at_rt_reac              !root autotrophic respiration
 
                                                                  !non reactive primary variables
@@ -79,12 +86,15 @@ module BGCCentECACNPDynLibMod
      integer           :: lid_n2o_nit                            !n2o production from nitrification, used to for mass balance book keeping
      integer           :: lid_co2_hr                             !co2 production from heterotrophic respiration
      integer           :: lid_no3_den                            !no3 consumption due to denitrification
-     integer           :: lid_minn_nh4_immob                     !net mineral N immobilization for decomposition
-     integer           :: lid_minn_no3_immob
+     integer           :: lid_minn_nh4_immob                     !net mineral NH4 immobilization for decomposition
+     integer           :: lid_minn_no3_immob                     !net mineral NO3 immobilization for decomposition
      integer           :: lid_minn_nh4_plant
      integer           :: lid_minn_no3_plant
      integer           :: lid_nh4_nit
+     integer           :: lid_p_secondary_trc
+     integer           :: lid_p_occlude_trc
                                                                  !aerechyma transport, diagnostic efflux
+     integer           :: lid_minp_immob                         !net P immobilization by aerobic decomposer
 
      integer           :: lid_ar_paere
      integer           :: lid_n2_paere
@@ -1610,7 +1620,7 @@ contains
 
   !-----------------------------------------------------------------------
   subroutine assign_OM_CNpools(bounds, num_soilc, filter_soilc,  carbonstate_vars, &
-       nitrogenstate_vars, tracerstate_vars, betrtracer_vars, centurybgc_vars)
+       nitrogenstate_vars, phosphorusstate_vars, tracerstate_vars, betrtracer_vars, centurybgc_vars)
 
     ! !DESCRIPTION:
     ! update OM pools
@@ -1621,17 +1631,18 @@ contains
     use tracerstatetype      , only : tracerstate_type
     use BetrTracerType       , only : betrtracer_type
     use clm_varpar           , only : nlevtrc_soil
+    use PhosphorusStateType  , only : phosphorusstate_type
 
     ! !ARGUMENTS:
-    type(bounds_type)        , intent(in) :: bounds                ! bounds
-    integer                  , intent(in) :: num_soilc             ! number of columns in column filter
-    integer                  , intent(in) :: filter_soilc(:)       ! column filter
-    type(tracerstate_type)   , intent(in) :: tracerstate_vars
-    type(centurybgc_type)    , intent(in) :: centurybgc_vars
-    type(betrtracer_type)    , intent(in) :: betrtracer_vars       ! betr configuration information
-    type(carbonstate_type)   , intent(inout) :: carbonstate_vars
-    type(nitrogenstate_type) , intent(inout) :: nitrogenstate_vars !
-
+    type(bounds_type)          , intent(in) :: bounds                ! bounds
+    integer                    , intent(in) :: num_soilc             ! number of columns in column filter
+    integer                    , intent(in) :: filter_soilc(:)       ! column filter
+    type(tracerstate_type)     , intent(in) :: tracerstate_vars
+    type(centurybgc_type)      , intent(in) :: centurybgc_vars
+    type(betrtracer_type)      , intent(in) :: betrtracer_vars       ! betr configuration information
+    type(carbonstate_type)     , intent(inout) :: carbonstate_vars
+    type(nitrogenstate_type)   , intent(inout) :: nitrogenstate_vars !
+    type(phosphorusstate_type) , intent(inout) :: phosphorusstate_vars
     ! !LOCAL VARIABLES:
     integer, parameter :: i_soil1 = 5
     integer, parameter :: i_soil2 = 6
@@ -1647,6 +1658,11 @@ contains
          smin_no3_vr_col           => nitrogenstate_vars%smin_no3_vr_col             , &
          smin_nh4_vr_col           => nitrogenstate_vars%smin_nh4_vr_col             , &
          sminn_vr_col              => nitrogenstate_vars%sminn_vr_col                , &
+         decomp_ppools_vr          => phosphorusstate_vars%decomp_ppools_vr_col      , &
+         secondp_vr_col            => phosphorusstate_vars%secondp_vr_col            , &
+         occlp_vr_col              => phosphorusstate_vars%occlp_vr_col              , &
+         solutionp_vr_col          => phosphorusstate_vars%solutionp_vr_col          , &
+         sminp_vr_col              => phosphorusstate_vars%sminp_vr_col              , &
          tracer_conc_mobile        => tracerstate_vars%tracer_conc_mobile_col        , &
          tracer_conc_solid_passive => tracerstate_vars%tracer_conc_solid_passive_col , &
          c_loc                     => centurybgc_vars%c_loc                          , &
@@ -1665,9 +1681,15 @@ contains
          do fc = 1, num_soilc
             c = filter_soilc(fc)
 
+
             smin_no3_vr_col(c,j) = tracer_conc_mobile(c,j,id_trc_no3x)*natomw
             smin_nh4_vr_col(c,j) = tracer_conc_mobile(c,j,id_trc_nh3x)*natomw
             sminn_vr_col   (c,j) = smin_no3_vr_col(c,j) + smin_nh4_vr_col(c,j)
+
+            secondp_vr_col (c,j) = tracer_conc_solid_passive(c,j,lid_p_secondary_trc) * patomw
+            occlp_vr_col   (c,j) = tracer_conc_solid_passive(c,j,lid_p_occlude_trc) * patomw
+            solutionp_vr_col(c,j)= tracer_conc_mobile(c,j,id_trc_p_sol) * patomw
+            sminp_vr_col   (c,j) = secondp_vr_col(c,j) + occlp_vr_col(c,j) + solutionp_vr_col(c,j)
 
             k = lit1; decomp_cpools_vr(c,j,i_met_lit) = tracer_conc_solid_passive(c,j,(k-1)*nelms+c_loc) * catomw
             k = lit2; decomp_cpools_vr(c,j,i_cel_lit) = tracer_conc_solid_passive(c,j,(k-1)*nelms+c_loc) * catomw
@@ -1684,6 +1706,15 @@ contains
             k = som1; decomp_npools_vr(c,j,i_soil1  ) = tracer_conc_solid_passive(c,j,(k-1)*nelms+n_loc) * natomw
             k = som2; decomp_npools_vr(c,j,i_soil2  ) = tracer_conc_solid_passive(c,j,(k-1)*nelms+n_loc) * natomw
             k = som3; decomp_npools_vr(c,j,i_soil3  ) = tracer_conc_solid_passive(c,j,(k-1)*nelms+n_loc) * natomw
+
+            k = lit1; decomp_ppools_vr(c,j,i_met_lit) = tracer_conc_solid_passive(c,j,(k-1)*nelms+p_loc) * patomw
+            k = lit2; decomp_ppools_vr(c,j,i_cel_lit) = tracer_conc_solid_passive(c,j,(k-1)*nelms+p_loc) * patomw
+            k = lit3; decomp_ppools_vr(c,j,i_lig_lit) = tracer_conc_solid_passive(c,j,(k-1)*nelms+p_loc) * patomw
+            k = cwd ; decomp_ppools_vr(c,j,i_cwd    ) = tracer_conc_solid_passive(c,j,(k-1)*nelms+p_loc) * patomw
+            k = som1; decomp_ppools_vr(c,j,i_soil1  ) = tracer_conc_solid_passive(c,j,(k-1)*nelms+p_loc) * patomw
+            k = som2; decomp_ppools_vr(c,j,i_soil2  ) = tracer_conc_solid_passive(c,j,(k-1)*nelms+p_loc) * patomw
+            k = som3; decomp_ppools_vr(c,j,i_soil3  ) = tracer_conc_solid_passive(c,j,(k-1)*nelms+p_loc) * patomw
+
          enddo
       enddo
 
@@ -1692,7 +1723,7 @@ contains
   end subroutine assign_OM_CNpools
   !-------------------------------------------------------------------------------
   subroutine assign_nitrogen_hydroloss(bounds, num_soilc, filter_soilc, &
-       tracerflux_vars, nitrogenflux_vars, betrtracer_vars)
+       tracerflux_vars, nitrogenflux_vars, phosphorusflux_vars, betrtracer_vars)
 
     !
     ! !DESCRIPTION:
@@ -1702,7 +1733,8 @@ contains
     use tracerfluxType      , only : tracerflux_type
     use BetrTracerType      , only : betrtracer_type
     use CNNitrogenFluxType  , only : nitrogenflux_type
-    use clm_varcon          , only : natomw
+    use clm_varcon          , only : natomw, patomw
+    use PhosphorusFluxType  , only : phosphorusflux_type
 
     ! !ARGUMENTS:
     type(bounds_type)       , intent(in)    :: bounds            ! bounds
@@ -1711,19 +1743,23 @@ contains
     type(tracerflux_type)   , intent(in)    :: tracerflux_vars
     type(betrtracer_type)   , intent(in)    :: betrtracer_vars   ! betr configuration information
     type(nitrogenflux_type) , intent(inout) :: nitrogenflux_vars !
+    type(phosphorusflux_type),intent(inout) :: phosphorusflux_vars
 
     ! !LOCAL VARIABLES:
     integer :: fc, c
     !get nitrogen leaching, and loss through surface runoff
 
-    associate(                                      &
-         id_trc_no3x => betrtracer_vars%id_trc_no3x &
+    associate(                                        &
+         id_trc_no3x => betrtracer_vars%id_trc_no3x , &
+         id_trc_p_sol=> betrtracer_vars%id_trc_p_sol  &
          )
 
       do fc = 1, num_soilc
          c = filter_soilc(fc)
          nitrogenflux_vars%smin_no3_leached_col(c) = tracerflux_vars%tracer_flx_totleached_col(c,id_trc_no3x)*natomw
          nitrogenflux_vars%smin_no3_runoff_col(c)  = tracerflux_vars%tracer_flx_surfrun_col(c,id_trc_no3x)*natomw
+         phosphorusflux_vars%sminp_leached_col(c)  = tracerflux_vars%tracer_flx_totleached_col(c,id_trc_p_sol)*patomw
+         phosphorusflux_vars%sminp_runoff_col(c)   = tracerflux_vars%tracer_flx_surfrun_col(c,id_trc_p_sol)*patomw         
       enddo
 
     end associate

@@ -47,7 +47,7 @@ module BeTRTracerType
    integer :: id_trc_no2x                                        ! tag for no2 and its related species, no2x(HNO2,NO2(-))
    integer :: id_trc_dom                                         ! tag for generic dissolved organic matter
    integer :: id_trc_doc                                         ! tag for generic dissolved organic carbon, used for testing single carbon pool model
-
+   integer :: id_trc_p_sol                                       ! tag for soluble inorganic P, this includes P in equilibrium adsorption
 
    integer :: id_trc_o18_h2o                                     ! tag for H2O(18)
    integer :: id_trc_o17_h2o                                     ! tag for H2O(17)

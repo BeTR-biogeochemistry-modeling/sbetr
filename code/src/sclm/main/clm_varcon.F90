@@ -148,7 +148,7 @@ module clm_varcon
 
   real(r8), parameter :: catomw = 12.011_r8     ! molar mass of C atoms (g/mol)
   real(r8), parameter :: natomw = 14.007_r8     ! molar mass of N atoms (g/mol)
-
+  real(r8), parameter :: patomw = 30.97_r8      ! molar mass of P atmos (g/mol)
   ! urban column types
 
   integer, parameter :: icol_roof        = 71

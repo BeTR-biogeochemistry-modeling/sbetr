@@ -24,7 +24,7 @@ contains
 
   !-------------------------------------------------------------------------------
   subroutine calc_cascade_matrix(nstvars, nreactions, cn_ratios, cp_ratios, n2_n2o_ratio_denit, pct_sand, &
-       centurybgc_vars, nitrogen_limit_flag, cascade_matrix)
+       centurybgc_vars, cascade_matrix)
     !
     ! !DESCRIPTION:
     ! calculate cascade matrix for the decomposition model
@@ -44,7 +44,6 @@ contains
     real(r8)                      , intent(in)  :: n2_n2o_ratio_denit                             !ratio of n2 to n2o during denitrification
     real(r8)                      , intent(in)  :: pct_sand
     real(r8)                      , intent(out) :: cascade_matrix(nstvars, nreactions)
-    logical                       , intent(out) :: nitrogen_limit_flag(centurybgc_vars%nom_pools) !
 
     ! !LOCAL VARIABLES:
     real(r8) :: ftxt, f1, f2
@@ -69,6 +68,7 @@ contains
          cwd       => centurybgc_vars%cwd                                , & !
          c_loc     => centurybgc_vars%c_loc                              , & !
          n_loc     => centurybgc_vars%n_loc                              , & !
+         p_loc     => centurybgc_vars%p_loc                              , & !
          nelms     => centurybgc_vars%nelms                              , & !
          lid_at_rt => centurybgc_vars%lid_at_rt                          , & !
          lid_o2    => centurybgc_vars%lid_o2                             , & !
@@ -94,6 +94,12 @@ contains
          lid_ar_paere=> centurybgc_vars%lid_ar_paere                     , & !
          lid_co2_paere=> centurybgc_vars%lid_co2_paere                   , & !
 
+         lid_p_solution=> centurybgc_vars%lid_p_solution                 , & !
+         lid_p_secondary=> centurybgc_vars%lid_p_secondary               , & !
+         lid_p_occlude =>  centurybgc_vars%lid_p_occlude                 , & !
+         lid_minp_plant => centurybgc_vars%lid_minp_plant                , & !
+         lid_minp_immob => centurybgc_vars%lid_minp_immob                , & !
+
          is_aerobic_reac=> centurybgc_vars%is_aerobic_reac               , &
          primvarid    => centurybgc_vars%primvarid                       , & !
          lit1_dek_reac=> centurybgc_vars%lit1_dek_reac                   , & !
@@ -106,6 +112,8 @@ contains
          lid_at_rt_reac=> centurybgc_vars%lid_at_rt_reac                 , & !
          lid_no3_den  => centurybgc_vars%lid_no3_den                     , & !
          lid_plant_minn_up_reac=> centurybgc_vars%lid_plant_minn_up_reac , & !
+         lid_p_secondary_reac => centurybgc_vars%lid_p_secondary_reac    , & !
+         lid_p_occlude_reac  => centurybgc_vars%lid_p_occlude_reac       , & !
 
          lid_nh4_nit_reac => centurybgc_vars%lid_nh4_nit_reac            , & !
          lid_no3_den_reac => centurybgc_vars%lid_no3_den_reac            , & !
@@ -114,7 +122,18 @@ contains
          lid_n2o_aere_reac=> centurybgc_vars%lid_n2o_aere_reac           , & !
          lid_o2_aere_reac => centurybgc_vars%lid_o2_aere_reac            , & !
          lid_ar_aere_reac => centurybgc_vars%lid_ar_aere_reac            , & !
-         lid_co2_aere_reac=> centurybgc_vars%lid_co2_aere_reac             & !
+         lid_co2_aere_reac=> centurybgc_vars%lid_co2_aere_reac           , & !
+
+         cn_ratios_tgt    => CNDecompBgcParamsInst%cn_ratios_tgt         , & !
+         cp_ratios_tgt    => CNDecompBgcParamsInst%cp_ratios_tgt         , & !
+         rf_l1s1_bgc      => CNDecompBgcParamsInst%rf_l1s1_bgc           , &
+         rf_l2s1_bgc      => CNDecompBgcParamsInst%rf_l2s1_bgc           , & !
+         rf_l3s2_bgc      => CNDecompBgcParamsInst%rf_l3s2_bgc           , & !
+         rf_s2s1_bgc      => CNDecompBgcParamsInst%rf_s2s1_bgc           , & !
+         rf_s3s1_bgc      => CNDecompBgcParamsInst%rf_s3s1_bgc           , & !
+         cwd_fcel_bgc     => CNDecompBgcParamsInst%cwd_fcel_bgc          , & !
+         cwd_flig_bgc     => CNDecompBgcParamsInst%cwd_flig_bgc          , & !
+
          )
 
       !load parameters
@@ -135,82 +154,82 @@ contains
     !----------------------------------------------------------------------
     !reaction1, lit1 -> s1
     reac=lit1_dek_reac
-    !lit1 + 0.55*o2 -> 0.45 som1 + 0.55co2 + (1/cn_ratios(lit1) - 0.45/cn_ratios(som1))min_n+ (1/cp_ratios(lit1)-0.45/cp_ratios(som1))min_p
+    !lit1 + 0.55*o2 -> 0.45 som1 + 0.55co2 + (1/cn_ratios(lit1) - 0.45/cn_ratios_tgt(som1))min_n+ (1/cp_ratios(lit1)-0.45/cp_ratios_tgt(som1))min_p
     cascade_matrix((lit1-1)*nelms+c_loc   ,reac)  = -1._r8
     cascade_matrix((lit1-1)*nelms+n_loc   ,reac)  = -safe_div(1._r8,cn_ratios(lit1))
+    cascade_matrix((lit1-1)*nelms+p_loc   ,reac)  = -safe_div(1._r8,cp_ratios(lit1))
 
-    cascade_matrix(lid_o2                 ,reac)  = -CNDecompBgcParamsInst%rf_l1s1_bgc
-    cascade_matrix((som1-1)*nelms+c_loc   ,reac)  = 1._r8-CNDecompBgcParamsInst%rf_l1s1_bgc
-    cascade_matrix((som1-1)*nelms+n_loc   ,reac)  = safe_div(1._r8-CNDecompBgcParamsInst%rf_l1s1_bgc,cn_ratios(som1))
-    cascade_matrix(lid_co2                ,reac)  = CNDecompBgcParamsInst%rf_l1s1_bgc
-    cascade_matrix(lid_nh4                ,reac)  = safe_div(1._r8,cn_ratios(lit1)) - safe_div(1._r8-CNDecompBgcParamsInst%rf_l1s1_bgc,cn_ratios(som1))
+
+    cascade_matrix(lid_o2                 ,reac)  = -rf_l1s1_bgc
+    cascade_matrix((som1-1)*nelms+c_loc   ,reac)  = 1._r8-rf_l1s1_bgc
+    cascade_matrix((som1-1)*nelms+n_loc   ,reac)  = safe_div(1._r8-rf_l1s1_bgc,cn_ratios_tgt(som1))
+    cascade_matrix((som1-1)*nelms+p_loc   ,reac)  = safe_div(1._r8-rf_l1s1_bgc,cp_ratios_tgt(som1))
+
+    cascade_matrix(lid_co2                ,reac)  = rf_l1s1_bgc
+    cascade_matrix(lid_nh4                ,reac)  = safe_div(1._r8,cn_ratios(lit1)) - safe_div(1._r8-rf_l1s1_bgc,cn_ratios_tgt(som1))
+    cascade_matrix(lid_p_solution         ,reac)  = safe_div(1._r8,cp_ratios(lit1)) - safe_div(1._r8-rf_l1s1_bgc,cp_ratios_tgt(som1))
 
     cascade_matrix(lid_minn_nh4_immob     ,reac)  = -cascade_matrix(lid_nh4         ,reac)
-    cascade_matrix(lid_co2_hr             ,reac)  = CNDecompBgcParamsInst%rf_l1s1_bgc
+    cascade_matrix(lid_co2_hr             ,reac)  = rf_l1s1_bgc
+    casecade_matrix(lid_minp_immob        ,reac)  = -cascade_matrix(lid_p_solution  ,reac)
 
     primvarid(reac)       = (lit1-1)*nelms+c_loc
     is_aerobic_reac(reac) = .true.
 
-    if(cascade_matrix(lid_nh4, reac)<0._r8)then
 
-       !When a reaction needs mineral nitrogen to balance the elements, it takes mineral nitrogen proportionally from nh4 and no3.
-       !This formulation assumes that the nitrogen mineralized from om decomposition is equally accessible to plants and decomposers. Such
-       !a formulation is different from the century BGC in CLM4.5. Rather, CLM4.5 bgc assumes that the nitrogen mineralized from nitrogen releasing
-       !decomposition pathways is first used to meet the nitrogen demand from nitrogen immobilizing decomposition pathways. In the later case, the stoichiometry becomes
-       !rate dependent.
-       !it requires nitrogen uptake
-       nitrogen_limit_flag(reac) = .true.
-    endif
     !----------------------------------------------------------------------
     !reaction 2, lit2 -> s1
     reac = lit2_dek_reac
-    !lit2 + 0.5 o2  -> 0.5 som1 + 0.5 co2 + (1/cn_ratios(lit2)-0.5/cn_ratios(som1))min_n +(1/cp_ratios(lit2)-0.5/cp_ratios(som1))min_p
+    !lit2 + 0.5 o2  -> 0.5 som1 + 0.5 co2 + (1/cn_ratios(lit2)-0.5/cn_ratios_tgt(som1))min_n +(1/cp_ratios(lit2)-0.5/cp_ratios_tgt(som1))min_p
     cascade_matrix((lit2-1)*nelms+c_loc   ,reac)   = -1._r8
     cascade_matrix((lit2-1)*nelms+n_loc   ,reac)   = -safe_div(1._r8,cn_ratios(lit2))
+    cascade_matrix((lit2-1)*nelms+p_loc   ,reac)   = -safe_div(1._r8,cp_ratios(lit2))
 
-    cascade_matrix(lid_o2                 ,reac)   = -CNDecompBgcParamsInst%rf_l2s1_bgc
-    cascade_matrix((som1-1)*nelms+c_loc   ,reac)   =  1._r8-CNDecompBgcParamsInst%rf_l2s1_bgc
-    cascade_matrix((som1-1)*nelms+n_loc   ,reac)   =  safe_div(1._r8-CNDecompBgcParamsInst%rf_l2s1_bgc,cn_ratios(som1))
+    cascade_matrix(lid_o2                 ,reac)   = -rf_l2s1_bgc
+    cascade_matrix((som1-1)*nelms+c_loc   ,reac)   =  1._r8-rf_l2s1_bgc
+    cascade_matrix((som1-1)*nelms+n_loc   ,reac)   =  safe_div(1._r8-rf_l2s1_bgc,cn_ratios_tgt(som1))
+    cascade_matrix((som1-1)*nelms+p_loc   ,reac)   =  safe_div(1._r8-rf_l2s1_bgc,cp_ratios_tgt(som1))
 
-    cascade_matrix(lid_co2                ,reac)   =  CNDecompBgcParamsInst%rf_l2s1_bgc
-    cascade_matrix(lid_nh4                ,reac)   = safe_div(1._r8,cn_ratios(lit2)) - safe_div(1._r8-CNDecompBgcParamsInst%rf_l2s1_bgc,cn_ratios(som1))
+    cascade_matrix(lid_co2                ,reac)   =  rf_l2s1_bgc
+    cascade_matrix(lid_nh4                ,reac)   = safe_div(1._r8,cn_ratios(lit2)) - safe_div(1._r8-rf_l2s1_bgc,cn_ratios_tgt(som1))
+    cascade_matrix(lid_p_solution         ,reac)   = safe_div(1._r8,cn_ratios(lit2)) - safe_div(1._r8-rf_l2s1_bgc,cp_ratios_tgt(som1))
+
     cascade_matrix(lid_minn_nh4_immob     ,reac)   = -cascade_matrix(lid_nh4         ,reac)
-    cascade_matrix(lid_co2_hr             ,reac)   = CNDecompBgcParamsInst%rf_l2s1_bgc
+    cascade_matrix(lid_minp_immob         ,reac)   = -cascade_matrix(lid_p_solution         ,reac)
+    cascade_matrix(lid_co2_hr             ,reac)   = rf_l2s1_bgc
 
     primvarid(reac) = (lit2-1)*nelms+c_loc
     is_aerobic_reac(reac) = .true.
-    if(cascade_matrix(lid_nh4, reac)<0._r8)then
-       !it requires nitrogen uptake
-       nitrogen_limit_flag(reac) = .true.
 
-    endif
     !----------------------------------------------------------------------
     !reaction 3, lit3->s2
     reac = lit3_dek_reac
     !lit3 + 0.5 o2 -> 0.5 som2 + 0.5 co2 + (1/cn_ratios(lit3) - 0.5/cn_ratios(som2))min_n + (1/cp_ratios(lit3)-0.5_r8/cp_ratios(som2))minp
     cascade_matrix((lit3-1)*nelms+c_loc   ,reac) = -1._r8
     cascade_matrix((lit3-1)*nelms+n_loc   ,reac) = -safe_div(1._r8,cn_ratios(lit3))
+    cascade_matrix((lit3-1)*nelms+p_loc   ,reac) = -safe_div(1._r8,cp_ratios(lit3))
 
-    cascade_matrix(lid_o2                 ,reac) = -CNDecompBgcParamsInst%rf_l3s2_bgc
-    cascade_matrix((som2-1)*nelms+c_loc   ,reac) =  1._r8-CNDecompBgcParamsInst%rf_l3s2_bgc
-    cascade_matrix((som2-1)*nelms+n_loc   ,reac) =  safe_div(1._r8-CNDecompBgcParamsInst%rf_l3s2_bgc,cn_ratios(som2))
+    cascade_matrix(lid_o2                 ,reac) = -rf_l3s2_bgc
+    cascade_matrix((som2-1)*nelms+c_loc   ,reac) =  1._r8-rf_l3s2_bgc
+    cascade_matrix((som2-1)*nelms+n_loc   ,reac) =  safe_div(1._r8-rf_l3s2_bgc,cn_ratios_tgt(som2))
+    cascade_matrix((som2-1)*nelms+p_loc   ,reac) =  safe_div(1._r8-rf_l3s2_bgc,cp_ratios_tgt(som2))
 
-    cascade_matrix(lid_co2                ,reac) = CNDecompBgcParamsInst%rf_l3s2_bgc
-    cascade_matrix(lid_nh4                ,reac) = safe_div(1._r8,cn_ratios(lit3)) - safe_div(1._r8-CNDecompBgcParamsInst%rf_l3s2_bgc,cn_ratios(som2))
+    cascade_matrix(lid_co2                ,reac) = rf_l3s2_bgc
+    cascade_matrix(lid_nh4                ,reac) = safe_div(1._r8,cn_ratios(lit3)) - safe_div(1._r8-rf_l3s2_bgc,cn_ratios_tgt(som2))
+    cascade_matrix(lid_p_solution         ,reac) = safe_div(1._r8,cp_ratios(lit3)) - safe_div(1._r8-rf_l3s2_bgc,cp_ratios_tgt(som2))
+
     cascade_matrix(lid_minn_nh4_immob     ,reac) = -cascade_matrix(lid_nh4         ,reac)
-    cascade_matrix(lid_co2_hr             ,reac) = CNDecompBgcParamsInst%rf_l3s2_bgc
+    cascade_matrix(lid_minp_immob         ,reac) = -cascade_matrix(lid_p_solution  ,reac)
+    cascade_matrix(lid_co2_hr             ,reac) = rf_l3s2_bgc
 
     primvarid(reac) = (lit3-1)*nelms+c_loc
     is_aerobic_reac(reac) = .true.
-    if(cascade_matrix(lid_nh4, reac)<0._r8)then
-       !it requires nitrogen uptake
-       nitrogen_limit_flag(reac) = .true.
 
-
-    endif
     !----------------------------------------------------------------------
     !double check those stoichiometry parameters
     !reaction 4, the partition into som2 and som3 is soil texture dependent
+    !SOM1 -> f1*SOM2 + f2*SOm3 + (1-f1-f2)*CO2 + (1/cn_ratios(SOM1)-f1/cn_ratios(SOM2)-f2/cn_ratios(SOM3))*min_n
+    ! +(1/cp_ratios(SOM1)-f1/cp_ratios(SOM2)-f2/cp_ratios(SOM3))*min_p
     reac = som1_dek_reac
 
     ftxt = 0.85_r8 - 0.68_r8 * 0.01_r8 * (100._r8 - pct_sand)
@@ -219,99 +238,110 @@ contains
     ftxt = 1._r8-f1-f2
     cascade_matrix((som1-1)*nelms+c_loc   ,reac)  = -1._r8
     cascade_matrix((som1-1)*nelms+n_loc   ,reac)  = -safe_div(1._r8,cn_ratios(som1))
+    cascade_matrix((som1-1)*nelms+p_loc   ,reac)  = -safe_div(1._r8,cp_ratios(som1))
 
     cascade_matrix(lid_o2                 ,reac) = -ftxt
     cascade_matrix((som3-1)*nelms+c_loc   ,reac)  = f2
-    cascade_matrix((som3-1)*nelms+n_loc   ,reac)  = safe_div(f2,cn_ratios(som3))
+    cascade_matrix((som3-1)*nelms+n_loc   ,reac)  = safe_div(f2,cn_ratios_tgt(som3))
+    cascade_matrix((som3-1)*nelms+p_loc   ,reac)  = safe_div(f2,cp_ratios_tgt(som3))
 
     cascade_matrix((som2-1)*nelms+c_loc   ,reac) = f1
-    cascade_matrix((som2-1)*nelms+n_loc   ,reac) = safe_div(f1,cn_ratios(som2))
+    cascade_matrix((som2-1)*nelms+n_loc   ,reac) = safe_div(f1,cn_ratios_tgt(som2))
+    cascade_matrix((som2-1)*nelms+p_loc   ,reac) = safe_div(f1,cp_ratios_tgt(som2))
 
     cascade_matrix(lid_co2                ,reac) = ftxt
-    cascade_matrix(lid_nh4                ,reac) = safe_div(1._r8,cn_ratios(som1))-safe_div(f1,cn_ratios(som2))-safe_div(f2,cn_ratios(som3))
+    cascade_matrix(lid_nh4                ,reac) = safe_div(1._r8,cn_ratios(som1))-safe_div(f1,cn_ratios_tgt(som2))-safe_div(f2,cn_ratios_tgt(som3))
+    cascade_matrix(lid_p_solution         ,reac) = safe_div(1._r8,cn_ratios(som1))-safe_div(f1,cp_ratios_tgt(som2))-safe_div(f2,cp_ratios_tgt(som3))
+
     cascade_matrix(lid_minn_nh4_immob     ,reac) = -cascade_matrix(lid_nh4         ,reac)
+    cascade_matrix(lid_minp_immob         ,reac) = -cascade_matrix(lid_p_solution  ,reac)
     cascade_matrix(lid_co2_hr             ,reac) = ftxt
 
     primvarid(reac) = (som1-1)*nelms+c_loc
     is_aerobic_reac(reac) = .true.
-    if(cascade_matrix(lid_nh4, reac)<0._r8)then
-       !it requires nitrogen uptake
-       nitrogen_limit_flag(reac) = .true.
 
-    endif
     !----------------------------------------------------------------------
     !reaction 5, som2->som1, som3
     reac = som2_dek_reac
     !som2 + 0.55 o2 -> 0.42 som1 + 0.03som3 + 0.55co2 + (1/cn_ratios(som2)-0.42/cn_ratios(som1)-0.03/cn_ratios(som3)) + (1/cp_raitos(som2)-0.42/cp_ratios(som1)-0.03/cp_ratios(som3))
     cascade_matrix((som2-1)*nelms+c_loc   ,reac)   = -1._r8
     cascade_matrix((som2-1)*nelms+n_loc   ,reac)   = -safe_div(1._r8,cn_ratios(som2))
+    cascade_matrix((som2-1)*nelms+p_loc   ,reac)   = -safe_div(1._r8,cp_ratios(som2))
 
-    cascade_matrix(lid_o2                 ,reac)   = -CNDecompBgcParamsInst%rf_s2s1_bgc
-    cascade_matrix((som1-1)*nelms+c_loc   ,reac)   =  0.93_r8*(1._r8-CNDecompBgcParamsInst%rf_s2s1_bgc)
-    cascade_matrix((som1-1)*nelms+n_loc   ,reac)   =  0.93_r8*safe_div(1._r8-CNDecompBgcParamsInst%rf_s2s1_bgc,cn_ratios(som1))
+    cascade_matrix(lid_o2                 ,reac)   = -rf_s2s1_bgc
+    cascade_matrix((som1-1)*nelms+c_loc   ,reac)   =  0.93_r8*(1._r8-rf_s2s1_bgc)
+    cascade_matrix((som1-1)*nelms+n_loc   ,reac)   =  0.93_r8*safe_div(1._r8-rf_s2s1_bgc,cn_ratios_tgt(som1))
+    cascade_matrix((som1-1)*nelms+p_loc   ,reac)   =  0.93_r8*safe_div(1._r8-rf_s2s1_bgc,cp_ratios_tgt(som1))
 
-    cascade_matrix((som3-1)*nelms+c_loc   ,reac)   =  0.07_r8*(1._r8-CNDecompBgcParamsInst%rf_s2s1_bgc)
-    cascade_matrix((som3-1)*nelms+n_loc   ,reac)   =  0.07_r8*safe_div(1._r8-CNDecompBgcParamsInst%rf_s2s1_bgc,cn_ratios(som3))
+    cascade_matrix((som3-1)*nelms+c_loc   ,reac)   =  0.07_r8*(1._r8-rf_s2s1_bgc)
+    cascade_matrix((som3-1)*nelms+n_loc   ,reac)   =  0.07_r8*safe_div(1._r8-rf_s2s1_bgc,cn_ratios_tgt(som3))
+    cascade_matrix((som3-1)*nelms+p_loc   ,reac)   =  0.07_r8*safe_div(1._r8-rf_s2s1_bgc,cp_ratios_tgt(som3))
 
-    cascade_matrix(lid_co2                ,reac)   =  CNDecompBgcParamsInst%rf_s2s1_bgc
-    cascade_matrix(lid_nh4                ,reac)   =  safe_div(1._r8,cn_ratios(som2))-0.93_r8*safe_div(1._r8-CNDecompBgcParamsInst%rf_s2s1_bgc,cn_ratios(som1)) &
-         -0.07_r8*safe_div(1._r8-CNDecompBgcParamsInst%rf_s2s1_bgc,cn_ratios(som3))
+    cascade_matrix(lid_co2                ,reac)   =  rf_s2s1_bgc
+    cascade_matrix(lid_nh4                ,reac)   =  safe_div(1._r8,cn_ratios(som2))-0.93_r8*safe_div(1._r8-rf_s2s1_bgc,cn_ratios_tgt(som1)) &
+         -0.07_r8*safe_div(1._r8-rf_s2s1_bgc,cn_ratios_tgt(som3))
+    cascade_matrix(lid_p_solution         ,reac)   =  safe_div(1._r8,cn_ratios(som2))-0.93_r8*safe_div(1._r8-rf_s2s1_bgc,cp_ratios_tgt(som1)) &
+              -0.07_r8*safe_div(1._r8-rf_s2s1_bgc,cp_ratios_tgt(som3))
+
     cascade_matrix(lid_minn_nh4_immob     ,reac)   = -cascade_matrix(lid_nh4         ,reac)
-    cascade_matrix(lid_co2_hr             ,reac)   = CNDecompBgcParamsInst%rf_s2s1_bgc
+    cascade_matrix(lid_minp_immob         ,reac)   = -cascade_matrix(lid_p_solution  ,reac)
+    cascade_matrix(lid_co2_hr             ,reac)   = rf_s2s1_bgc
 
     primvarid(reac) = (som2-1)*nelms+c_loc
     is_aerobic_reac(reac) = .true.
-    if(cascade_matrix(lid_nh4, reac)<0._r8)then
-       !it requires nitrogen uptake
-       nitrogen_limit_flag(reac) = .true.
 
-    endif
     !----------------------------------------------------------------------
     !reaction 6, s3-> s1
     reac = som3_dek_reac
     !som3 + 0.55 o2 -> 0.45*som1 + 0.55co2 + (1/cn_ratios(som3)-0.45/cn_ratios(som1)) + (1/cp_ratios(som3)-0.45/cp_ratios(som1))
     cascade_matrix((som3-1)*nelms+c_loc   ,reac) = -1._r8
     cascade_matrix((som3-1)*nelms+n_loc   ,reac) = -safe_div(1._r8,cn_ratios(som3))
+    cascade_matrix((som3-1)*nelms+p_loc   ,reac) = -safe_div(1._r8,cp_ratios(som3))
 
-    cascade_matrix(lid_o2                 ,reac) = -CNDecompBgcParamsInst%rf_s3s1_bgc
-    cascade_matrix((som1-1)*nelms+c_loc   ,reac) = 1._r8-CNDecompBgcParamsInst%rf_s3s1_bgc
-    cascade_matrix((som1-1)*nelms+n_loc   ,reac) = safe_div(1._r8-CNDecompBgcParamsInst%rf_s3s1_bgc,cn_ratios(som1))
+    cascade_matrix(lid_o2                 ,reac) = -rf_s3s1_bgc
+    cascade_matrix((som1-1)*nelms+c_loc   ,reac) = 1._r8-rf_s3s1_bgc
+    cascade_matrix((som1-1)*nelms+n_loc   ,reac) = safe_div(1._r8-rf_s3s1_bgc,cn_ratios_tgt(som1))
+    cascade_matrix((som1-1)*nelms+p_loc   ,reac) = safe_div(1._r8-rf_s3s1_bgc,cp_ratios_tgt(som1))
 
-    cascade_matrix(lid_co2                ,reac) = CNDecompBgcParamsInst%rf_s3s1_bgc
-    cascade_matrix(lid_nh4                ,reac) = safe_div(1._r8,cn_ratios(som3)) - safe_div(1._r8-CNDecompBgcParamsInst%rf_s3s1_bgc,cn_ratios(som1))
+    cascade_matrix(lid_co2                ,reac) = rf_s3s1_bgc
+    cascade_matrix(lid_nh4                ,reac) = safe_div(1._r8,cn_ratios(som3)) - safe_div(1._r8-rf_s3s1_bgc,cn_ratios_tgt(som1))
+    cascade_matrix(lid_p_solution         ,reac) = safe_div(1._r8,cn_ratios(som3)) - safe_div(1._r8-rf_s3s1_bgc,cp_ratios_tgt(som1))
+
     cascade_matrix(lid_minn_nh4_immob     ,reac) = -cascade_matrix(lid_nh4         ,reac)
-    cascade_matrix(lid_co2_hr             ,reac) = CNDecompBgcParamsInst%rf_s3s1_bgc
+    cascade_matrix(lid_minp_immob         ,reac) = -cascade_matrix(lid_p_solution  ,reac)
+
+    cascade_matrix(lid_co2_hr             ,reac) = rf_s3s1_bgc
+
     primvarid(reac) = (som3-1)*nelms+c_loc
     is_aerobic_reac(reac) = .true.
-    if(cascade_matrix(lid_nh4, reac)<0._r8)then
-       !it requires nitrogen uptake
-       nitrogen_limit_flag(reac) = .true.
 
-    endif
     !----------------------------------------------------------------------
     !reaction 7, the partition into lit1 and lit2 is nutrient dependent, respires co2?
     reac = cwd_dek_reac
     !cwd + o2 -> 0.76lit2 + 0.24*lit3 + (1/cn_ratios(cwd)-0.76/cn_ratios(lit2)-0.24/cn_ratios(lit3)) + (1/cp_ratios(cwd)-0.76/cp_ratios(lit2)-0.24/cp_ratios(lit3))
     cascade_matrix((cwd-1)*nelms+c_loc    ,reac) = -1._r8
     cascade_matrix((cwd-1)*nelms+n_loc    ,reac) = -safe_div(1._r8,cn_ratios(cwd))
+    cascade_matrix((cwd-1)*nelms+p_loc    ,reac) = -safe_div(1._r8,cp_ratios(cwd))
 
-    cascade_matrix((lit2-1)*nelms+c_loc   ,reac) = CNDecompBgcParamsInst%cwd_fcel_bgc
-    cascade_matrix((lit2-1)*nelms+n_loc   ,reac) = safe_div(CNDecompBgcParamsInst%cwd_fcel_bgc,cn_ratios(lit2))
+    cascade_matrix((lit2-1)*nelms+c_loc   ,reac) = cwd_fcel_bgc
+    cascade_matrix((lit2-1)*nelms+n_loc   ,reac) = safe_div(cwd_fcel_bgc,cn_ratios_tgt(lit2))
+    cascade_matrix((lit2-1)*nelms+p_loc   ,reac) = safe_div(cwd_fcel_bgc,cp_ratios_tgt(lit2))
 
-    cascade_matrix((lit3-1)*nelms+c_loc   ,reac) = CNDecompBgcParamsInst%cwd_flig_bgc
-    cascade_matrix((lit3-1)*nelms+n_loc   ,reac) = safe_div(CNDecompBgcParamsInst%cwd_flig_bgc,cn_ratios(lit3))
+    cascade_matrix((lit3-1)*nelms+c_loc   ,reac) = cwd_flig_bgc
+    cascade_matrix((lit3-1)*nelms+n_loc   ,reac) = safe_div(cwd_flig_bgc,cn_ratios_tgt(lit3))
+    cascade_matrix((lit3-1)*nelms+p_loc   ,reac) = safe_div(cwd_flig_bgc,cp_ratios_tgt(lit3))
 
-    cascade_matrix(lid_nh4                ,reac) = safe_div(1._r8,cn_ratios(cwd)) - safe_div(CNDecompBgcParamsInst%cwd_fcel_bgc,cn_ratios(lit2)) - &
-         safe_div(CNDecompBgcParamsInst%cwd_flig_bgc,cn_ratios(lit3))
+    cascade_matrix(lid_nh4                ,reac) = safe_div(1._r8,cn_ratios(cwd)) - safe_div(cwd_fcel_bgc,cn_ratios_tgt(lit2)) - &
+         safe_div(cwd_flig_bgc,cn_ratios_tgt(lit3))
+    cascade_matrix(lid_p_solution         ,reac) = safe_div(1._r8,cn_ratios(cwd)) - safe_div(cwd_fcel_bgc,cp_ratios_tgt(lit2)) - &
+         safe_div(cwd_flig_bgc,cp_ratios_tgt(lit3))
+
     cascade_matrix(lid_minn_nh4_immob     ,reac) = -cascade_matrix(lid_nh4         ,reac)
+    cascade_matrix(lid_minnp_immob        ,reac) = -cascade_matrix(lid_p_solution  ,reac)
 
     primvarid(reac) = (cwd-1)*nelms+c_loc
     is_aerobic_reac(reac) = .true.
-    if(cascade_matrix(lid_nh4, reac)<0._r8)then
-       !it requires nitrogen uptake
-       nitrogen_limit_flag(reac) = .true.
 
-    endif
 
     !----------------------------------------------------------------------
     !reaction 8, nitrification
@@ -336,18 +366,46 @@ contains
     cascade_matrix(lid_no3_den,reac) = 1._r8
     primvarid(reac)                  = lid_no3
 
+
+    !----------------------------------------------------------------------
+    !reaction 10, inorganic P non-equilibrium adsorption
+    !P_solution -> p_secondary
+    reac = lid_p_solution_reac
+    cascade_matrix(lid_p_solution,  reac) = -1._r8
+    cascade_matrix(lid_p_secondary, reac) = 1._r8
+
+    !----------------------------------------------------------------------
+    !reaction 11, inorganic P non-equilibrium desorption
+    ! p_secondary -> P_solution
+    reac = lid_p_secondary_reac
+    cascade_matrix(lid_p_solution,  reac) = 1._r8
+    cascade_matrix(lid_p_secondary, reac) = -1._r8
+
+    !----------------------------------------------------------------------
+    !reaction 12, inorganic P occlusion
+    !p_secondary -> p_occlude
+    reac = lid_p_occlude_reac
+    cascade_matrix(lid_p_secondary,  reac) = -1._r8
+    cascade_matrix(lid_p_occlude  ,  reac) = 1._r8
+
     !----------------------------------------------------------------------
     !below are zero order reactions
     !----------------------------------------------------------------------
-    !reaction 10, plant mineral nitrogen uptake
+    !reaction 13, plant mineral nitrogen uptake
     reac = lid_plant_minn_up_reac
     ! f nh4 + (1-f) no3 -> plant_nitrogen
     cascade_matrix(lid_nh4, reac)        = -1._r8
     cascade_matrix(lid_no3, reac)        = 0._r8
     cascade_matrix(lid_plant_minn, reac) = 1._r8
 
-    reac = lid_at_rt_reac
+    !reaction 14, plant mineral phosphorus uptake
+    reac = lid_plant_minp_up_reac
+    ! p_solution -> plant_p
+    cascade_matrix(lid_p_solution, reac) = -1._r8
+    cascade_matrix(lid_plant_minp, reac) = 1._r8
 
+
+    reac = lid_at_rt_reac
     !ar + o2 -> co2
     cascade_matrix(lid_co2, reac) =  1._r8
     cascade_matrix(lid_o2,  reac) = -1._r8

@@ -4,10 +4,28 @@ module BGCReactionsCentECACNPType
 
   !
   ! !DESCRIPTION:
-  ! do ECA based nitrogen competition in betr.
+  ! do ECA based nitrogen/phosphorus competition in betr.
   ! this code uses the operator automated down-regulation scheme
+  ! Ideally, all belowground biogeochemistry processes should be solved
+  ! simultaneously using the ODE solver below, because of the potential
+  ! conflict of interest (in coding) with others, the belowground BGC
+  ! considers the nutrient interaction between decomposers, nitrifiers, denitrifiers
+  ! and plants (uptake). The P cycle does not include P demand from processes
+  ! other than aerobic decomposition and plant growth, therefore nitrifiers and denitrifiers
+  ! are not P limited.
+  ! Also, because I'm solving enzymatic P extraction simultaneously with decomposition
+  ! and plant uptake, each OM pool (execpt CWD) is assigned a targeting CP ratio to
+  ! impose the P limitation in decomposition. This treatment is equivalent to assume
+  ! the decomposers are having fixed stoichiometry. In contrast, other implementations
+  ! in ACME LAND treats enzymatic P extraction and decomposition as two separate processes,
+  ! which causes another ordering ambiguity, such that if one switches the decomposition
+  ! and P extraction, the model will likely make different predictions.
+  ! Further, because I am solving the inorganic P dynamics using the ECA formulation
+  ! the labile P pool is implicitly represented. Also, it is assumed the secondary pool
+  ! are competing for adsorption space with the labile P, so there is an adsoprtion
+  ! saturation effect, which is apparently missing form other ACME implementations.
   ! HISTORY:
-  ! Created by Jinyun Tang, Oct 2nd, 2014
+  ! Created by Jinyun Tang, Nov 20th, 2015
   ! Note: ECA parameters are note tuned.
   !
   ! !USES:
@@ -277,6 +295,7 @@ contains
     nelm =centurybgc_vars%nelms
     c_loc=centurybgc_vars%c_loc
     n_loc=centurybgc_vars%n_loc
+    p_loc=centurybgc_vars%p_loc
 
     itemp = 0
     betrtracer_vars%id_trc_n2   = addone(itemp)
@@ -287,15 +306,16 @@ contains
     betrtracer_vars%id_trc_nh3x = addone(itemp)
     betrtracer_vars%id_trc_no3x = addone(itemp)
     betrtracer_vars%id_trc_n2o  = addone(itemp)
+    betrtracer_vars%id_trc_p_sol= addone(itemp)
 
     betrtracer_vars%ngwmobile_tracer_groups      = itemp                          ! n2, o2, ar, co2, ch4, n2o, nh3x and no3x
     betrtracer_vars%ngwmobile_tracers            = itemp
     betrtracer_vars%nvolatile_tracers            = itemp-2                        ! n2, o2, ar, co2, ch4 and n2o
     betrtracer_vars%nvolatile_tracer_groups      = itemp-2                        !
-    betrtracer_vars%nsolid_passive_tracer_groups =  4                             ! som1, som2, som3 and others (lit1, lit2, lit3, cwd)
-    betrtracer_vars%nsolid_passive_tracers       = centurybgc_vars%nom_pools*nelm !
+    betrtracer_vars%nsolid_passive_tracer_groups =  5                             ! (p_secondary+p_occlude), som1, som2, som3 and others (lit1, lit2, lit3, cwd)
+    betrtracer_vars%nsolid_passive_tracers       = centurybgc_vars%nom_pools*nelm+2 !
 
-    betrtracer_vars%nmem_max                     = nelm*4                         ! total number of elemnts, and 4 sub members (lit1, lit2, lit3, cwd)
+    betrtracer_vars%nmem_max                     = nelm*4                         ! total number of elements, and 4 sub members (lit1, lit2, lit3, cwd)
 
     call betrtracer_vars%Init()
 
@@ -339,13 +359,17 @@ contains
          is_trc_mobile=.false., is_trc_advective = .false., trc_group_id = addone(itemp_grp), &
          trc_group_mem = 1, is_trc_volatile=.false.)
 
-
     call betrtracer_vars%set_tracer(trc_id = betrtracer_vars%id_trc_no3x, trc_name='NO3x',    &
          is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = addone(itemp_grp),   &
          trc_group_mem = 1, is_trc_volatile=.false.,trc_vtrans_scal=1._r8)
 
 
     call betrtracer_vars%set_tracer(trc_id = betrtracer_vars%id_trc_n2o, trc_name='N2O' ,     &
+         is_trc_mobile=.true., is_trc_advective = .false., trc_group_id = addone(itemp_grp),  &
+         trc_group_mem = 1, is_trc_volatile=.true., trc_volatile_id = addone(itemp_v)      ,  &
+         trc_volatile_group_id = addone(itemp_vgrp))
+
+    call betrtracer_vars%set_tracer(trc_id = betrtracer_vars%id_trc_p_sol, trc_name='P_SOL' ,     &
          is_trc_mobile=.true., is_trc_advective = .false., trc_group_id = addone(itemp_grp),  &
          trc_group_mem = 1, is_trc_volatile=.true., trc_volatile_id = addone(itemp_v)      ,  &
          trc_volatile_group_id = addone(itemp_vgrp))
@@ -363,6 +387,11 @@ contains
          is_trc_mobile=.true., is_trc_advective = .false., trc_group_id = itemp_grp,  &
          trc_group_mem= addone(itemp_mem))
 
+    trcid = jj+(centurybgc_vars%lit1-1)*nelm+p_loc
+    call betrtracer_vars%set_tracer(trc_id = trcid, trc_name='LIT1P'             ,    &
+         is_trc_mobile=.true., is_trc_advective = .false., trc_group_id = itemp_grp,  &
+         trc_group_mem= addone(itemp_mem))
+
     !------------------------------------------------------------------------------------
 
     trcid = jj+(centurybgc_vars%lit2-1)*nelm+c_loc
@@ -372,6 +401,11 @@ contains
 
     trcid = jj+(centurybgc_vars%lit2-1)*nelm+n_loc
     call betrtracer_vars%set_tracer(trc_id = trcid, trc_name='LIT2N'             ,    &
+         is_trc_mobile=.true., is_trc_advective = .false., trc_group_id = itemp_grp,  &
+         trc_group_mem= addone(itemp_mem))
+
+    trcid = jj+(centurybgc_vars%lit2-1)*nelm+p_loc
+    call betrtracer_vars%set_tracer(trc_id = trcid, trc_name='LIT2P'             ,    &
          is_trc_mobile=.true., is_trc_advective = .false., trc_group_id = itemp_grp,  &
          trc_group_mem= addone(itemp_mem))
 
@@ -386,6 +420,11 @@ contains
     call betrtracer_vars%set_tracer(trc_id = trcid, trc_name='LIT3N'             ,    &
          is_trc_mobile=.true., is_trc_advective = .false., trc_group_id = itemp_grp,  &
          trc_group_mem= addone(itemp_mem))
+
+    trcid = jj+(centurybgc_vars%lit3-1)*nelm+p_loc
+    call betrtracer_vars%set_tracer(trc_id = trcid, trc_name='LIT3P'             ,    &
+         is_trc_mobile=.true., is_trc_advective = .false., trc_group_id = itemp_grp,  &
+         trc_group_mem= addone(itemp_mem))
     !------------------------------------------------------------------------------------
 
     trcid = jj+(centurybgc_vars%cwd-1 )*nelm+c_loc
@@ -395,6 +434,11 @@ contains
 
     trcid = jj+(centurybgc_vars%cwd-1 )*nelm+n_loc
     call betrtracer_vars%set_tracer(trc_id = trcid, trc_name='CWDN'              ,    &
+         is_trc_mobile=.false., is_trc_advective = .false., trc_group_id = itemp_grp, &
+         trc_group_mem= addone(itemp_mem))
+
+    trcid = jj+(centurybgc_vars%cwd-1 )*nelm+p_loc
+    call betrtracer_vars%set_tracer(trc_id = trcid, trc_name='CWDP'              ,    &
          is_trc_mobile=.false., is_trc_advective = .false., trc_group_id = itemp_grp, &
          trc_group_mem= addone(itemp_mem))
     !==========================================================================================
@@ -410,6 +454,11 @@ contains
     call betrtracer_vars%set_tracer(trc_id = trcid, trc_name='SOM1N'             ,    &
          is_trc_mobile=.true., is_trc_advective = .false., trc_group_id = itemp_grp,  &
          trc_group_mem= addone(itemp_mem))
+
+    trcid = jj+(centurybgc_vars%som1-1)*nelm+p_loc
+    call betrtracer_vars%set_tracer(trc_id = trcid, trc_name='SOM1P'             ,    &
+         is_trc_mobile=.true., is_trc_advective = .false., trc_group_id = itemp_grp,  &
+         trc_group_mem= addone(itemp_mem))
     !------------------------------------------------------------------------------------
     !new group
     itemp_mem=0
@@ -421,6 +470,11 @@ contains
 
     trcid = jj+(centurybgc_vars%som2-1)*nelm+n_loc
     call betrtracer_vars%set_tracer(trc_id = trcid, trc_name='SOM2N'             ,    &
+         is_trc_mobile=.true., is_trc_advective = .false., trc_group_id = itemp_grp,  &
+         trc_group_mem= addone(itemp_mem))
+
+    trcid = jj+(centurybgc_vars%som2-1)*nelm+p_loc
+    call betrtracer_vars%set_tracer(trc_id = trcid, trc_name='SOM2P'             ,    &
          is_trc_mobile=.true., is_trc_advective = .false., trc_group_id = itemp_grp,  &
          trc_group_mem= addone(itemp_mem))
     !------------------------------------------------------------------------------------
@@ -437,6 +491,27 @@ contains
          is_trc_mobile=.true., is_trc_advective = .false., trc_group_id = itemp_grp,  &
          trc_group_mem= addone(itemp_mem))
 
+    trcid = jj+(centurybgc_vars%som3-1)*nelm+p_loc
+    call betrtracer_vars%set_tracer(trc_id = trcid, trc_name='SOM3P'             ,    &
+         is_trc_mobile=.true., is_trc_advective = .false., trc_group_id = itemp_grp,  &
+         trc_group_mem= addone(itemp_mem))
+
+    !------------------------------------------------------------------------------------
+    !new group
+    itemp_mem=0
+    itemp_grp = addone(itemp_grp)
+    lid_p_secondary_trc=centurybgc_vars%nom_pools*nelm + 1
+    lid_p_occlude_trc = centurybgc_vars%nom_pools*nelm + 2
+
+    trcid = jj + lid_p_secondary_trc
+    call betrtracer_vars%set_tracer(trc_id = trcid, trc_name='P_2ND'             ,    &
+         is_trc_mobile=.false., is_trc_advective = .false., trc_group_id = itemp_grp,  &
+         trc_group_mem= addone(itemp_mem))
+
+    trcid = jj + lid_p_secondary_trc
+    call betrtracer_vars%set_tracer(trc_id = trcid, trc_name='P_OCL'             ,    &
+         is_trc_mobile=.false., is_trc_advective = .false., trc_group_id = itemp_grp,  &
+         trc_group_mem= addone(itemp_mem))
 
   end subroutine Init_betrbgc
 
@@ -893,24 +968,27 @@ contains
 
 
     call assign_nitrogen_hydroloss(bounds, num_soilc, filter_soilc, &
-         tracerflux_vars, nitrogenflux_vars, betrtracer_vars)
+         tracerflux_vars, nitrogenflux_vars, phosphorusflux_vars, &
+         betrtracer_vars)
 
     call assign_OM_CNpools(bounds, num_soilc, filter_soilc, &
-         carbonstate_vars, nitrogenstate_vars, tracerstate_vars, betrtracer_vars, centurybgc_vars)
+         carbonstate_vars, nitrogenstate_vars, phosphorusstate_vars, &
+         tracerstate_vars, betrtracer_vars, centurybgc_vars)
 
   end subroutine betr_alm_flux_statevar_feedback
 
   !---------------------------------------------------------------
   subroutine init_betr_alm_bgc_coupler(this, bounds, carbonstate_vars, &
-       nitrogenstate_vars, betrtracer_vars, tracerstate_vars)
+       nitrogenstate_vars, phosphorusstate_vars, betrtracer_vars, tracerstate_vars)
     !
     ! !DESCRIPTION:
     ! do state variable exchange between betr and alm
     ! !USES:
-    use clm_varcon               , only : natomw, catomw
+    use clm_varcon               , only : natomw, catomw, patomw
     use clm_varpar               , only : i_cwd, i_met_lit, i_cel_lit, i_lig_lit
     use CNCarbonStateType        , only : carbonstate_type
     use CNNitrogenStateType      , only : nitrogenstate_type
+    use PhosphorusStateType      , only : phosphorusstate_type
     use tracerstatetype          , only : tracerstate_type
     use BetrTracerType           , only : betrtracer_type
     use clm_varpar               , only : nlevtrc_soil
@@ -923,6 +1001,7 @@ contains
     type(betrtracer_type)                , intent(in)    :: betrtracer_vars ! betr configuration information
     type(carbonstate_type)               , intent(in)    :: carbonstate_vars
     type(nitrogenstate_type)             , intent(in)    :: nitrogenstate_vars
+    type(phosphorusstate_type)           , intent(in)    :: phosphorusstate_vars
 
     ! !LOCAL VARIABLES:
     integer, parameter :: i_soil1 = 5
@@ -936,12 +1015,17 @@ contains
          id_trc_nh3x        => betrtracer_vars%id_trc_nh3x                           , &
          decomp_cpools_vr   => carbonstate_vars%decomp_cpools_vr_col                 , &
          decomp_npools_vr   => nitrogenstate_vars%decomp_npools_vr_col               , &
+         decomp_ppools_vr   => phosphorusstate_vars%decomp_ppools_vr_col             , &
+         secondp_vr         => phosphorusstate_vars%secondp_vr_col                   , &
+         occlp_vr           => phosphorusstate_vars%occlp_vr_col                     , &
+         solutionp_vr       => phosphorusstate_vars%solutionp_vr_col                 , &
          smin_no3_vr_col    => nitrogenstate_vars%smin_no3_vr_col                    , &
          smin_nh4_vr_col    => nitrogenstate_vars%smin_nh4_vr_col                    , &
          tracer_conc_mobile => tracerstate_vars%tracer_conc_mobile_col               , &
          tracer_conc_solid_passive => tracerstate_vars%tracer_conc_solid_passive_col , &
          c_loc              => centurybgc_vars%c_loc                                 , &
          n_loc              => centurybgc_vars%n_loc                                 , &
+         p_loc              => centurybgc_vars%p_loc                                 , &
          lit1               => centurybgc_vars%lit1                                  , &
          lit2               => centurybgc_vars%lit2                                  , &
          lit3               => centurybgc_vars%lit3                                  , &
@@ -959,6 +1043,8 @@ contains
             if (lun%itype(l) == istsoil .or. lun%itype(l) == istcrop) then
                tracer_conc_mobile(c,j,id_trc_no3x)=smin_no3_vr_col(c,j) /natomw
                tracer_conc_mobile(c,j,id_trc_nh3x)=smin_nh4_vr_col(c,j) /natomw
+               tracer_conc_mobile(c,j,id_trc_minp)=solutionp_vr_col(c,j)/patomw
+
                k = lit1; tracer_conc_solid_passive(c,j,(k-1)*nelms+c_loc) = decomp_cpools_vr(c,j,i_met_lit) / catomw
                k = lit2; tracer_conc_solid_passive(c,j,(k-1)*nelms+c_loc) = decomp_cpools_vr(c,j,i_cel_lit) / catomw
                k = lit3; tracer_conc_solid_passive(c,j,(k-1)*nelms+c_loc) = decomp_cpools_vr(c,j,i_lig_lit) / catomw
@@ -974,6 +1060,17 @@ contains
                k = som1; tracer_conc_solid_passive(c,j,(k-1)*nelms+n_loc) = decomp_npools_vr(c,j,i_soil1  ) / natomw
                k = som2; tracer_conc_solid_passive(c,j,(k-1)*nelms+n_loc) = decomp_npools_vr(c,j,i_soil2  ) / natomw
                k = som3; tracer_conc_solid_passive(c,j,(k-1)*nelms+n_loc) = decomp_npools_vr(c,j,i_soil3  ) / natomw
+
+               k = lit1; tracer_conc_solid_passive(c,j,(k-1)*nelms+p_loc) = decomp_ppools_vr(c,j,i_met_lit) / patomw
+               k = lit2; tracer_conc_solid_passive(c,j,(k-1)*nelms+p_loc) = decomp_ppools_vr(c,j,i_cel_lit) / patomw
+               k = lit3; tracer_conc_solid_passive(c,j,(k-1)*nelms+p_loc) = decomp_ppools_vr(c,j,i_lig_lit) / patomw
+               k = cwd ; tracer_conc_solid_passive(c,j,(k-1)*nelms+p_loc) = decomp_ppools_vr(c,j,i_cwd    ) / patomw
+               k = som1; tracer_conc_solid_passive(c,j,(k-1)*nelms+p_loc) = decomp_ppools_vr(c,j,i_soil1  ) / patomw
+               k = som2; tracer_conc_solid_passive(c,j,(k-1)*nelms+p_loc) = decomp_ppools_vr(c,j,i_soil2  ) / patomw
+               k = som3; tracer_conc_solid_passive(c,j,(k-1)*nelms+p_loc) = decomp_ppools_vr(c,j,i_soil3  ) / patomw
+
+               tracer_conc_solid_passive(c,j,lid_p_secondary_trc) = secondp_vr_col(c,j)/patomw
+               tracer_conc_solid_passive(c,j,lid_p_occlude_trc)   = occlp_vr_col(c,j)  /patomw
             endif
          enddo
       enddo
