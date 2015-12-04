@@ -24,7 +24,7 @@ contains
 
   !-------------------------------------------------------------------------------
   subroutine calc_cascade_matrix(nstvars, nreactions, cn_ratios, cp_ratios, n2_n2o_ratio_denit, pct_sand, &
-       centurybgc_vars, cascade_matrix)
+       centurybgc_vars, nitrogen_limit_flag, phosphos_limit_flag, cascade_matrix)
     !
     ! !DESCRIPTION:
     ! calculate cascade matrix for the decomposition model
@@ -44,7 +44,8 @@ contains
     real(r8)                      , intent(in)     :: n2_n2o_ratio_denit                             !ratio of n2 to n2o during denitrification
     real(r8)                      , intent(in)     :: pct_sand
     real(r8)                      , intent(out)    :: cascade_matrix(nstvars, nreactions)
-
+    logical                       , intent(out) :: nitrogen_limit_flag(centurybgc_vars%nom_pools) !
+    logical                       , intent(out) :: phosphos_limit_flag(centurybgc_vars%nom_pools) !
     ! !LOCAL VARIABLES:
     real(r8) :: ftxt, f1, f2
     real(r8) :: compet_plant_no3
@@ -174,7 +175,8 @@ contains
 
     primvarid(reac)       = (lit1-1)*nelms+c_loc
     is_aerobic_reac(reac) = .true.
-
+    nitrogen_limit_flag(reac) = (cascade_matrix(lid_nh4, reac) < 0._r8)
+    phosphos_limit_flag(reac) = (cascade_matrix(lid_p_solution,reac) < 0._r8)
 
     !----------------------------------------------------------------------
     !reaction 2, lit2 -> s1
@@ -197,9 +199,11 @@ contains
     cascade_matrix(lid_minp_immob         ,reac)   = -cascade_matrix(lid_p_solution  ,reac)
     cascade_matrix(lid_co2_hr             ,reac)   = rf_l2s1_bgc
 
+
     primvarid(reac) = (lit2-1)*nelms+c_loc
     is_aerobic_reac(reac) = .true.
-
+    nitrogen_limit_flag(reac) = (cascade_matrix(lid_nh4, reac) < 0._r8)
+    phosphos_limit_flag(reac) = (cascade_matrix(lid_p_solution,reac) < 0._r8)
     !----------------------------------------------------------------------
     !reaction 3, lit3->s2
     reac = lit3_dek_reac
@@ -223,7 +227,8 @@ contains
 
     primvarid(reac) = (lit3-1)*nelms+c_loc
     is_aerobic_reac(reac) = .true.
-
+    nitrogen_limit_flag(reac) = (cascade_matrix(lid_nh4, reac) < 0._r8)
+    phosphos_limit_flag(reac) = (cascade_matrix(lid_p_solution,reac) < 0._r8)
     !----------------------------------------------------------------------
     !double check those stoichiometry parameters
     !reaction 4, the partition into som2 and som3 is soil texture dependent
@@ -258,7 +263,8 @@ contains
 
     primvarid(reac) = (som1-1)*nelms+c_loc
     is_aerobic_reac(reac) = .true.
-
+    nitrogen_limit_flag(reac) = (cascade_matrix(lid_nh4, reac) < 0._r8)
+    phosphos_limit_flag(reac) = (cascade_matrix(lid_p_solution,reac) < 0._r8)
     !----------------------------------------------------------------------
     !reaction 5, som2->som1, som3
     reac = som2_dek_reac
@@ -288,7 +294,8 @@ contains
 
     primvarid(reac) = (som2-1)*nelms+c_loc
     is_aerobic_reac(reac) = .true.
-
+    nitrogen_limit_flag(reac) = (cascade_matrix(lid_nh4, reac) < 0._r8)
+    phosphos_limit_flag(reac) = (cascade_matrix(lid_p_solution,reac) < 0._r8)
     !----------------------------------------------------------------------
     !reaction 6, s3-> s1
     reac = som3_dek_reac
@@ -313,7 +320,8 @@ contains
 
     primvarid(reac) = (som3-1)*nelms+c_loc
     is_aerobic_reac(reac) = .true.
-
+    nitrogen_limit_flag(reac) = (cascade_matrix(lid_nh4, reac) < 0._r8)
+    phosphos_limit_flag(reac) = (cascade_matrix(lid_p_solution,reac) < 0._r8)
     !----------------------------------------------------------------------
     !reaction 7, the partition into lit1 and lit2 is nutrient dependent, respires co2?
     reac = cwd_dek_reac
@@ -340,7 +348,8 @@ contains
 
     primvarid(reac) = (cwd-1)*nelms+c_loc
     is_aerobic_reac(reac) = .true.
-
+    nitrogen_limit_flag(reac) = (cascade_matrix(lid_nh4, reac) < 0._r8)
+    phosphos_limit_flag(reac) = (cascade_matrix(lid_p_solution,reac) < 0._r8)
 
     !----------------------------------------------------------------------
     !reaction 8, nitrification

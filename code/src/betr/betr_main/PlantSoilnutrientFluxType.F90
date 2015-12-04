@@ -37,7 +37,7 @@ module PlantSoilnutrientFluxType
     real(r8), pointer :: fppnd_col                                   (:)    !fraction of fufilled nitrogen demand
     real(r8), pointer :: plant_frootsc_vr_col                        (:,:)  !fine root for nutrient uptake
     real(r8), pointer :: plant_frootsc_col                           (:)    !fine root for nutrient uptake
-
+    
    contains
 
      procedure , public  :: Init

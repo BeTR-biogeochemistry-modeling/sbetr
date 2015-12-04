@@ -435,7 +435,7 @@ contains
 
 
   subroutine init_betr_alm_bgc_coupler(this, bounds, carbonstate_vars, &
-       nitrogenstate_vars, betrtracer_vars, tracerstate_vars)
+       nitrogenstate_vars, phosphorusstate_vars, betrtracer_vars, tracerstate_vars)
 
     ! !DESCRIPTION:
     ! initialize the bgc coupling between betr and alm
@@ -445,6 +445,7 @@ contains
     use clm_varpar               , only : i_cwd, i_met_lit, i_cel_lit, i_lig_lit
     use CNCarbonStateType        , only : carbonstate_type
     use CNNitrogenStateType      , only : nitrogenstate_type
+    use PhosphorusStateType      , only : phosphorusstate_type    
     use tracerstatetype          , only : tracerstate_type
     use BetrTracerType           , only : betrtracer_type
     use clm_varpar               , only : nlevtrc_soil
@@ -457,6 +458,7 @@ contains
     type(betrtracer_type)              , intent(in)    :: betrtracer_vars    ! betr configuration information
     type(carbonstate_type)             , intent(in)    :: carbonstate_vars   !
     type(nitrogenstate_type)           , intent(in)    :: nitrogenstate_vars !
+    type(phosphorusstate_type)         , intent(in)    :: phosphorusstate_vars
 
   end subroutine init_betr_alm_bgc_coupler
 

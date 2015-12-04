@@ -286,7 +286,7 @@ contains
     integer                                              :: jj
     integer                                              :: nelm, itemp_mem
     integer                                              :: itemp, itemp_vgrp, itemp_v, itemp_grp
-    integer                                              :: c_loc, n_loc, trcid
+    integer                                              :: c_loc, n_loc, p_loc, trcid
     logical                                              :: carbon_only = .false.
 
     call cnallocate_carbon_only_set(carbon_only)
@@ -500,15 +500,15 @@ contains
     !new group
     itemp_mem=0
     itemp_grp = addone(itemp_grp)
-    lid_p_secondary_trc=centurybgc_vars%nom_pools*nelm + 1
-    lid_p_occlude_trc = centurybgc_vars%nom_pools*nelm + 2
+    centurybgc_vars%lid_p_secondary_trc=centurybgc_vars%nom_pools*nelm + 1
+    centurybgc_vars%lid_p_occlude_trc = centurybgc_vars%nom_pools*nelm + 2
 
-    trcid = jj + lid_p_secondary_trc
+    trcid = jj + centurybgc_vars%lid_p_secondary_trc
     call betrtracer_vars%set_tracer(trc_id = trcid, trc_name='P_2ND'             ,    &
          is_trc_mobile=.false., is_trc_advective = .false., trc_group_id = itemp_grp,  &
          trc_group_mem= addone(itemp_mem))
 
-    trcid = jj + lid_p_secondary_trc
+    trcid = jj + centurybgc_vars%lid_p_secondary_trc
     call betrtracer_vars%set_tracer(trc_id = trcid, trc_name='P_OCL'             ,    &
          is_trc_mobile=.false., is_trc_advective = .false., trc_group_id = itemp_grp,  &
          trc_group_mem= addone(itemp_mem))
@@ -1015,12 +1015,13 @@ contains
     associate(                                                                         &
          id_trc_no3x        => betrtracer_vars%id_trc_no3x                           , &
          id_trc_nh3x        => betrtracer_vars%id_trc_nh3x                           , &
+         id_trc_p_sol        => betrtracer_vars%id_trc_p_sol                           , &
          decomp_cpools_vr   => carbonstate_vars%decomp_cpools_vr_col                 , &
          decomp_npools_vr   => nitrogenstate_vars%decomp_npools_vr_col               , &
          decomp_ppools_vr   => phosphorusstate_vars%decomp_ppools_vr_col             , &
-         secondp_vr         => phosphorusstate_vars%secondp_vr_col                   , &
-         occlp_vr           => phosphorusstate_vars%occlp_vr_col                     , &
-         solutionp_vr       => phosphorusstate_vars%solutionp_vr_col                 , &
+         secondp_vr_col     => phosphorusstate_vars%secondp_vr_col                   , &
+         occlp_vr_col       => phosphorusstate_vars%occlp_vr_col                     , &
+         solutionp_vr_col   => phosphorusstate_vars%solutionp_vr_col                 , &
          smin_no3_vr_col    => nitrogenstate_vars%smin_no3_vr_col                    , &
          smin_nh4_vr_col    => nitrogenstate_vars%smin_nh4_vr_col                    , &
          tracer_conc_mobile => tracerstate_vars%tracer_conc_mobile_col               , &
@@ -1035,6 +1036,8 @@ contains
          som2               => centurybgc_vars%som2                                  , &
          som3               => centurybgc_vars%som3                                  , &
          cwd                => centurybgc_vars%cwd                                   , &
+         lid_p_occlude_trc  => centurybgc_vars%lid_p_occlude_trc                     , &
+         lid_p_secondary_trc=> centurybgc_vars%lid_p_secondary_trc                   , &
          nelms              => centurybgc_vars%nelms                                   &
          )
 
@@ -1045,7 +1048,7 @@ contains
             if (lun%itype(l) == istsoil .or. lun%itype(l) == istcrop) then
                tracer_conc_mobile(c,j,id_trc_no3x)=smin_no3_vr_col(c,j) /natomw
                tracer_conc_mobile(c,j,id_trc_nh3x)=smin_nh4_vr_col(c,j) /natomw
-               tracer_conc_mobile(c,j,id_trc_minp)=solutionp_vr_col(c,j)/patomw
+               tracer_conc_mobile(c,j,id_trc_p_sol)=solutionp_vr_col(c,j)/patomw
 
                k = lit1; tracer_conc_solid_passive(c,j,(k-1)*nelms+c_loc) = decomp_cpools_vr(c,j,i_met_lit) / catomw
                k = lit2; tracer_conc_solid_passive(c,j,(k-1)*nelms+c_loc) = decomp_cpools_vr(c,j,i_cel_lit) / catomw
@@ -1112,6 +1115,7 @@ contains
     real(r8) :: cascade_matrixp(nprimvars, Extra_inst%nr)
     real(r8) :: cascade_matrixd(nprimvars, Extra_inst%nr)
     logical  :: nitrogen_limit_flag(centurybgc_vars%nom_pools)
+    logical  :: phosphos_limit_flag(centurybgc_vars%nom_pools)
     real(r8) :: reaction_rates(Extra_inst%nr)
     real(r8) :: pscal(1:nprimvars)
     real(r8) :: rscal(1:Extra_inst%nr)
@@ -1122,7 +1126,8 @@ contains
 
     !calculate cascade matrix, which contains the stoichiometry for all reactions
     call calc_cascade_matrix(nstvars, Extra_inst%nr, Extra_inst%cn_ratios, Extra_inst%cp_ratios,   &
-         Extra_inst%n2_n2o_ratio_denit, Extra_inst%pct_sand, centurybgc_vars,  cascade_matrix)
+         Extra_inst%n2_n2o_ratio_denit, Extra_inst%pct_sand, centurybgc_vars, nitrogen_limit_flag, &
+         phosphos_limit_flag,  cascade_matrix)
 
 
     !obtain reaction rates
@@ -1181,8 +1186,9 @@ contains
        endif
     enddo
 
-    call apply_ECA_nutrient_regulation(nprimvars, Extra_inst%nr, Extra_inst%pct_clay, nitrogen_limit_flag,  ystate(1:nprimvars), &
-         Extra_inst%plant_frts, reaction_rates(1:Extra_inst%nr), cascade_matrix(1:nprimvars, 1:Extra_inst%nr))
+    call apply_ECA_nutrient_regulation(nprimvars, Extra_inst%nr, Extra_inst%pct_clay, nitrogen_limit_flag, &
+         phosphos_limit_flag, ystate(1:nprimvars), Extra_inst%plant_frts, reaction_rates(1:Extra_inst%nr), &
+         cascade_matrix(1:nprimvars, 1:Extra_inst%nr))
 
     call pd_decomp(nprimvars, Extra_inst%nr, cascade_matrix(1:nprimvars, 1:Extra_inst%nr), &
          cascade_matrixp(1:nprimvars, 1:Extra_inst%nr),  cascade_matrixd(1:nprimvars, 1:Extra_inst%nr))
@@ -1299,7 +1305,7 @@ contains
 
   !-------------------------------------------------------------------------------
   subroutine apply_ECA_nutrient_regulation(nprimvars, nr, pct_clay, nitrogen_limit_flag, &
-       ystate, plant_frts, reaction_rates, cascade_matrix)
+       phosphos_limit_flag, ystate, plant_frts, reaction_rates, cascade_matrix)
     !
     ! !DESCRIPTION:
     ! do ECA competition
@@ -1313,17 +1319,20 @@ contains
     integer , intent(in) :: nr
     real(r8), intent(in) :: pct_clay
     logical , intent(in) :: nitrogen_limit_flag(centurybgc_vars%nom_pools)
+    logical , intent(in) :: phosphos_limit_flag(centurybgc_vars%nom_pools)
     real(r8), intent(in) :: ystate(1:nprimvars)
     real(r8), intent(in) :: plant_frts
     real(r8), intent(inout) :: reaction_rates(1:nr)
     real(r8), intent(inout) :: cascade_matrix(1:nprimvars, 1:nr)
 
     ! !LOCAL VARIABLES:
-    real(r8) :: k_mat(2,1:centurybgc_vars%ncompets)
+    real(r8) :: k_mat_minn(2,1:centurybgc_vars%ncompets)
+    real(r8) :: k_mat_minp(1:centurybgc_vars%ncompets)
     real(r8) :: vcompet(1:centurybgc_vars%ncompets)
-    real(r8) :: siej_cell_norm(2, 1:centurybgc_vars%ncompets)
-    real(r8) :: eca_nh4, eca_no3
-    integer  :: j
+    real(r8) :: siej_cell_norm_minn(2, 1:centurybgc_vars%ncompets)
+    real(r8) :: siej_cell_norm_minp(1:centurybgc_vars%ncompets)
+    real(r8) :: eca_nh4, eca_no3, eca_minp
+    integer  :: j, ireac
 
     ! the following parameters are arbitrary
     real(r8), parameter :: kd_nh4_nit   = 1._r8
@@ -1333,6 +1342,13 @@ contains
     real(r8), parameter :: kd_no3_plant = 1._r8
     real(r8), parameter :: kd_nh4_decomp= 1._r8
     real(r8), parameter :: kd_no3_decomp= 1._r8
+
+    real(r8), parameter :: kd_minp_nit   = kd_infty
+    real(r8), parameter :: kd_minp_denit = kd_infty
+    real(r8), parameter :: kd_minp_plant = 1._r8
+    real(r8), parameter :: kd_minp_clay  = 1._r8
+    real(r8), parameter :: kd_minp_decomp= 1._r8
+
 
 
     !assume microbial biomass are 1% of the respective som pool
@@ -1364,6 +1380,8 @@ contains
          lid_nh4_nit_reac   => centurybgc_vars%lid_nh4_nit_reac          , &
          lid_no3_den_reac   => centurybgc_vars%lid_no3_den_reac          , &
          lid_plant_minn_up_reac=> centurybgc_vars%lid_plant_minn_up_reac , &
+         lid_plant_minp_up_reac=> centurybgc_vars%lid_plant_minp_up_reac , &
+         lid_p_solution     => centurybgc_vars%lid_p_solution            , &
          nelms              => centurybgc_vars%nelms                     , &
          c_loc              => centurybgc_vars%c_loc                       &
          )
@@ -1371,23 +1389,28 @@ contains
       !form the K matrix
 
       !nh4
-      k_mat(1,:) = kd_infty
+      k_mat_minn(1,:) = kd_infty
       !no3
-      k_mat(2,:) = kd_infty
+      k_mat_minn(2,:) = kd_infty
+      !min P
+      k_mat_minp(:)   = kd_infty
       vcompet=0._r8
       do j = 1,  centurybgc_vars%nom_pools
          if(nitrogen_limit_flag(j))then
-            k_mat(1,j) = kd_nh4_decomp
-            k_mat(2,j) = kd_no3_decomp
+            k_mat_minn(1,j) = kd_nh4_decomp
+            k_mat_minn(2,j) = kd_no3_decomp
+         endif
+         if(phosphos_limit_flag(j))then
+            k_mat_minp(j) = kd_minp_decomp
          endif
       enddo
 
-      k_mat(1,lid_nitri_compet) = kd_nh4_nit
-      k_mat(1,lid_plant_compet) = kd_nh4_plant
-      k_mat(1,lid_clay_compet)  = kd_nh4_clay
+      k_mat_minn(1,lid_nitri_compet) = kd_nh4_nit
+      k_mat_minn(1,lid_plant_compet) = kd_nh4_plant
+      k_mat_minn(1,lid_clay_compet)  = kd_nh4_clay
       !
-      k_mat(2,lid_denit_compet) = kd_no3_denit
-      k_mat(2,lid_plant_compet) = kd_no3_plant
+      k_mat_minn(2,lid_denit_compet) = kd_no3_denit
+      k_mat_minn(2,lid_plant_compet) = kd_no3_plant
 
       !form the competitor vector
       vcompet(lid_lit1_compet) = ystate((lit1-1)*nelms+c_loc) * 0.01_r8
@@ -1405,37 +1428,51 @@ contains
       vcompet(lid_plant_compet)= plant_frts
       vcompet(lid_denit_compet)= ystate(lid_no3) * 1.e-3_r8    !this number is arbitrary
       vcompet(lid_clay_compet) = 1._r8
+
       !form the resource vector
-      call ecacomplex_cell_norm(k_mat,(/ystate(lid_nh4),ystate(lid_no3)/),vcompet,siej_cell_norm)
+      call ecacomplex_cell_norm(k_mat_minn,(/ystate(lid_nh4),ystate(lid_no3)/),vcompet,siej_cell_norm_minn)
+
+      call ecacomplex_cell_norm(k_mat_minp,ystate(lid_p_solution),vcompet,siej_cell_norm_minp)
 
       !now modify the reaction rates
       do j = 1,  centurybgc_vars%nom_pools
          if(nitrogen_limit_flag(j))then
-            eca_nh4 = siej_cell_norm(1,j)/kd_nh4_decomp
-            eca_no3 = siej_cell_norm(2,j)/kd_no3_decomp
+            eca_nh4 = siej_cell_norm_minn(1,j)/kd_nh4_decomp
+            eca_no3 = siej_cell_norm_minn(2,j)/kd_no3_decomp
 
             reaction_rates(j) = reaction_rates(j) * (eca_nh4 + eca_no3)
             cascade_matrix(lid_no3, j) = cascade_matrix(lid_nh4,j) * safe_div(eca_no3,eca_nh4+eca_no3)
             cascade_matrix(lid_nh4, j) = cascade_matrix(lid_nh4, j) - cascade_matrix(lid_no3,j)
 
          endif
+         if(phosphos_limit_flag(j))then
+           eca_minp = siej_cell_norm_minp(j)/kd_minp_decomp
+           reaction_rates(j) = reaction_rates(j)*eca_minp
+         endif
       enddo
 
       !adjust for nitrification
-      reaction_rates(lid_nh4_nit_reac) = reaction_rates(lid_nh4_nit_reac) * siej_cell_norm(1,lid_nitri_compet)
+      ireac = lid_nh4_nit_reac
+      reaction_rates(ireac) = reaction_rates(ireac) * siej_cell_norm_minn(1,lid_nitri_compet)
       !adjust for denitrification
-      reaction_rates(lid_no3_den_reac) = reaction_rates(lid_no3_den_reac) * siej_cell_norm(2,lid_denit_compet)
+      ireac = lid_no3_den_reac
+      reaction_rates(ireac) = reaction_rates(ireac) * siej_cell_norm_minn(2,lid_denit_compet)
 
       !adjust for plant mineral nitrogen uptake
-      eca_nh4 = siej_cell_norm(1,lid_plant_compet)/kd_nh4_decomp
-      eca_no3 = siej_cell_norm(2,lid_plant_compet)/kd_no3_decomp
+      eca_nh4 = siej_cell_norm_minn(1,lid_plant_compet)/kd_nh4_decomp
+      eca_no3 = siej_cell_norm_minn(2,lid_plant_compet)/kd_no3_decomp
 
+      ireac=lid_plant_minn_up_reac
+      reaction_rates(ireac) = reaction_rates(ireac) * (eca_nh4+eca_no3) * vcompet(lid_plant_compet)
+      cascade_matrix(lid_no3, ireac) = cascade_matrix(lid_nh4, ireac) *  safe_div(eca_no3, eca_nh4+eca_no3)
+      cascade_matrix(lid_nh4,ireac) = cascade_matrix(lid_nh4,ireac) - cascade_matrix(lid_no3, ireac)
 
-      reaction_rates(lid_plant_compet) = reaction_rates(lid_plant_compet) * (eca_nh4+eca_no3) * vcompet(lid_plant_compet)
-      cascade_matrix(lid_no3, lid_plant_minn_up_reac) = cascade_matrix(lid_nh4, lid_plant_minn_up_reac) * &
-           safe_div(eca_no3, eca_nh4+eca_no3)
-      cascade_matrix(lid_nh4,lid_plant_minn_up_reac) = cascade_matrix(lid_nh4,lid_plant_minn_up_reac) - &
-           cascade_matrix(lid_no3, lid_plant_minn_up_reac)
+      eca_minp = siej_cell_norm_minp(lid_plant_compet)/kd_minp_decomp
+
+      ireac = lid_plant_minp_up_reac
+      reaction_rates(ireac) = reaction_rates(ireac) * eca_minp/kd_minp_plant
+
+      !reaction rates for secondary p formation
 
     end associate
   end subroutine apply_ECA_nutrient_regulation
