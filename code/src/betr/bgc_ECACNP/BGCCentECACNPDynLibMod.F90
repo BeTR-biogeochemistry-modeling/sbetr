@@ -11,6 +11,7 @@ module BGCCentECACNPDynLibMod
   use clm_varcon         , only : catomw, natomw, patomw
   use clm_varpar         , only : ndecomp_pools
   use ColumnType         , only : col
+  use PatchType          , only : pft
   use clm_varctl         , only : spinup_state,iulog
   use clm_varctl         , only : CNAllocate_Carbon_only
   implicit none
@@ -110,17 +111,12 @@ module BGCCentECACNPDynLibMod
      integer           :: nreactions                             !seven decomposition pathways plus nitrification, denitrification and plant immobilization
      integer           :: ncompets                               !decomposers, + nitrifiers, + denitrifiers, + plants, + adsorption surface
 
-     integer           :: lid_lit1_compet
-     integer           :: lid_lit2_compet
-     integer           :: lid_lit3_compet
-     integer           :: lid_cwd_compet
-     integer           :: lid_som1_compet
-     integer           :: lid_som2_compet
-     integer           :: lid_som3_compet
+     integer           :: lid_decomp_compet
+
      integer           :: lid_plant_compet
      integer           :: lid_nitri_compet
      integer           :: lid_denit_compet
-     integer           :: lid_clay_compet
+     integer           :: lid_minsrf_compet
 
      real(r8), pointer :: t_scalar_col(:,:)
      real(r8), pointer :: w_scalar_col(:,:)
@@ -265,17 +261,11 @@ contains
 
     !decomposers, + nitrifiers, + denitrifiers, + plants, + adsorption surface
     itemp1=0
-    this%lid_lit1_compet      = addone(itemp1)
-    this%lid_lit2_compet      = addone(itemp1)
-    this%lid_lit3_compet      = addone(itemp1)
-    this%lid_cwd_compet       = addone(itemp1)
-    this%lid_som1_compet      = addone(itemp1)
-    this%lid_som2_compet      = addone(itemp1)
-    this%lid_som3_compet      = addone(itemp1)
+    this%lid_decomp_compet    = addone(itemp1)
     this%lid_plant_compet     = addone(itemp1)
     this%lid_nitri_compet     = addone(itemp1)
     this%lid_denit_compet     = addone(itemp1)
-    this%lid_clay_compet      = addone(itemp1)
+    this%lid_minsrf_compet    = addone(itemp1)
 
     this%ncompets  = itemp1
 
@@ -1770,8 +1760,8 @@ contains
   end subroutine assign_nitrogen_hydroloss
 
   !-------------------------------------------------------------------------------
-  subroutine apply_plant_root_nuptake_prof(bounds, ubj, num_soilc, filter_soilc, &
-       root_prof_col, plantsoilnutrientflux_vars)
+  subroutine apply_plant_root_nuptake_prof(bounds, ubj, num_soilp, filter_soilp, &
+       froot_prof_patch, plantsoilnutrientflux_vars)
     !
     ! !DESCRIPTION:
     ! nitroge uptake profile
@@ -1781,78 +1771,28 @@ contains
     ! !ARGUMENTS:
     type(bounds_type)                , intent(in)    :: bounds                                        ! bounds
     integer                          , intent(in)    :: ubj
-    integer                          , intent(in)    :: num_soilc                                     ! number of columns in column filter
-    integer                          , intent(in)    :: filter_soilc(:)                               ! column filter
-    real(r8)                         , intent(in)    :: root_prof_col(bounds%begc:bounds%endc, 1:ubj) !
+    integer                          , intent(in)    :: num_soilp                                     ! number of columns in column filter
+    integer                          , intent(in)    :: filter_soilp(:)                               ! column filter
+    real(r8)                         , intent(in)    :: froot_prof_patch(bounds%begp:bounds%endp, 1:ubj) !
     type(plantsoilnutrientflux_type) , intent(inout) :: plantsoilnutrientflux_vars
 
     ! !LOCAL VARIABLES:
-    integer :: fc, c, j
+    integer :: fp, p, j
 
     associate(                                                                &
-         plant_frootsc_col =>  plantsoilnutrientflux_vars%plant_frootsc_col , &
-         plant_frootsc_vr  => plantsoilnutrientflux_vars%plant_frootsc_vr_col &
+         plant_frootsc_patch =>  plantsoilnutrientflux_vars%plant_frootsc_patch , &
+         plant_frootsc_vr  => plantsoilnutrientflux_vars%plant_frootsc_vr_patch &
          )
 
       do j = 1, ubj
-         do fc = 1, num_soilc
-            c = filter_soilc(fc)
-            plant_frootsc_vr(c, j) = root_prof_col(c,j)  * plant_frootsc_col(c)
+         do fp = 1, num_soilp
+            p = filter_soilc(fp)
+            plant_frootsc_vr(p, j) = froot_prof_patch(p,j)  * plant_frootsc_patch(p)
          enddo
       enddo
     end associate
 
   end subroutine apply_plant_root_nuptake_prof
 !-------------------------------------------------------------------------------
-  subroutine PBiochemMin_QZ(bounds,num_soilc, filter_soilc, &
-         cnstate_vars, phosphorusstate_vars, phosphorusflux_vars)
-      !
-      ! !DESCRIPTION:
-      ! update the phosphatase activity induced P release
-      !
-      ! !USES:
-      use PhosphorusFluxType  , only : phosphorusflux_type
-      use PhosphorusStateType , only : phosphorusstate_type
-      !
-      ! !ARGUMENTS:
-      type(bounds_type)        , intent(in)    :: bounds
-      integer                  , intent(in)    :: num_soilc       ! number of soil columns in filter
-      integer                  , intent(in)    :: filter_soilc(:) ! filter for soil columns
-      type(cnstate_type)         , intent(in)    :: cnstate_vars
-      type(phosphorusstate_type) , intent(inout) :: phosphorusstate_vars
-      type(phosphorusflux_type)  , intent(inout) :: phosphorusflux_vars
-      !
-      integer  :: c,fc,p,j
-      real(r8) :: lamda_up                        ! nitrogen cost of phosphorus uptake
 
-      !-----------------------------------------------------------------------
-
-      associate(&
-           froot_prof       => cnstate_vars%froot_prof_patch            , & ! fine root vertical profile Zeng, X. 2001. Global vegetation root distribution for land modeling. J. Hydrometeor. 2:525-530
-           biochem_pmin_vr  => phosphorusflux_vars%biochem_pmin_vr_col  , &
-           pGPP_pleafp      => phosphorusstate_vars%pgpp_pleafp_patch   , &
-           pGPP_pleafn      => phosphorusstate_vars%ppgg_pleafn_patch   , &
-           vmax_ptase_vr       => ecophyscon%vmax_ptase_vr              , &
-           km_ptase         => ecophyscon%km_ptase                      , &
-           lamda_ptase      => ecophyscon%lamda_ptase  &! critical value of nitrogen cost of phosphatase activity induced phosphorus uptake
-           )
-
-      do j = 1,nlevdecomp
-          do fc = 1,num_soilc
-              c = filter_soilc(fc)
-              biochem_pmin_vr(c,j) = 0.0_r8
-              do p = col%pfti(c), col%pftf(c)
-                  if (pft%active(p)) then
-                      lamda_up = pGPP_pleafp(p)/pGPP_pleafn(p)
-                      biochem_pmin_vr(c,j) = biochem_pmin_vr(c,j) + &
-                          vmax_ptase_vr(j) * max(lamda_up - lamda_ptase, 0.0_r8) / &
-                          (km_ptase + lamda_up - lamda_ptase) * froot_prof(p,j) * pft%wtcol(p)
-                  end if
-              enddo
-          enddo
-      enddo
-
-      end associate
-
-    end subroutine PBiochemMin_QZ
 end module BGCCentECACNPDynLibMod

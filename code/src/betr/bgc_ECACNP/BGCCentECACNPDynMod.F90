@@ -48,14 +48,6 @@ contains
     logical                       , intent(out) :: phosphos_limit_flag(centurybgc_vars%nom_pools) !
     ! !LOCAL VARIABLES:
     real(r8) :: ftxt, f1, f2
-    real(r8) :: compet_plant_no3
-    real(r8) :: compet_plant_nh4
-    real(r8) :: compet_decomp_no3
-    real(r8) :: compet_decomp_nh4
-    real(r8) :: compet_denit
-    real(r8) :: compet_nit
-    real(r8) :: compet_decomp_no3_scal
-    real(r8) :: compet_plant_no3_scal
     integer :: k, reac
 
 
@@ -136,14 +128,6 @@ contains
          cwd_flig_bgc     => CNDecompBgcParamsInst%cwd_flig_bgc            & !
 
          )
-
-      !load parameters
-    compet_plant_no3  = NutrientCompetitionParamsInst%compet_plant_no3
-    compet_plant_nh4  = NutrientCompetitionParamsInst%compet_plant_nh4
-    compet_decomp_no3 = NutrientCompetitionParamsInst%compet_decomp_no3
-    compet_decomp_nh4 = NutrientCompetitionParamsInst%compet_decomp_nh4
-    compet_denit      = NutrientCompetitionParamsInst%compet_denit
-    compet_nit        = NutrientCompetitionParamsInst%compet_nit
 
     !initialize all entries to zero
     cascade_matrix = 0._r8

@@ -744,8 +744,8 @@ contains
          carbonflux_vars%rr_col(bounds%begc:bounds%endc), cnstate_vars%nfixation_prof_col(bounds%begc:bounds%endc,1:ubj), &
          k_decay(centurybgc_vars%lid_at_rt_reac, bounds%begc:bounds%endc, 1:ubj))
 
-    call  apply_plant_root_nuptake_prof(bounds, ubj, num_soilc, filter_soilc    ,     &
-         cnstate_vars%nfixation_prof_col(bounds%begc:bounds%endc,1:ubj)             , &
+    call  apply_plant_root_nuptake_prof(bounds, ubj, num_soilp, filter_soilp      , &
+         cnstate_vars%froot_prof_patch(bounds%begp:bounds%endp,1:ubj)             , &
          plantsoilnutrientflux_vars)
 
     !do ode integration and update state variables for each layer
@@ -763,6 +763,7 @@ contains
                gas2bulkcef=tracercoeff_vars%gas2bulkcef_mobile_col(c,j,:)                            , &
                aere_cond=tracercoeff_vars%aere_cond_col(c,:), tracer_conc_atm=tracerstate_vars%tracer_conc_atm_col(c,:))
 
+          call set_nutrientcompet_paras(ncompete_vars)
           !update state variables
           time = 0._r8
 
@@ -1097,7 +1098,7 @@ contains
     ! the input only contains litter input and mineral nutrient, som is assumed to be of fixed stoichiometry
     ! !USES:
     use SOMStateVarUpdateMod   , only : calc_dtrend_som_bgc
-    use BGCCentECACNPDynMod       , only : calc_cascade_matrix
+    use BGCCentECACNPDynMod    , only : calc_cascade_matrix
     use MathfuncMod            , only : pd_decomp
     implicit none
     !
@@ -1186,8 +1187,9 @@ contains
        endif
     enddo
 
-    call apply_ECA_nutrient_regulation(nprimvars, Extra_inst%nr, Extra_inst%pct_clay, nitrogen_limit_flag, &
-         phosphos_limit_flag, ystate(1:nprimvars), Extra_inst%plant_frts, reaction_rates(1:Extra_inst%nr), &
+
+    call apply_ECA_nutrient_regulation(nprimvars, Extra_inst%nr, nitrogen_limit_flag, &
+         phosphos_limit_flag, ystate(1:nprimvars), ncompete_vars, reaction_rates(1:Extra_inst%nr), &
          cascade_matrix(1:nprimvars, 1:Extra_inst%nr))
 
     call pd_decomp(nprimvars, Extra_inst%nr, cascade_matrix(1:nprimvars, 1:Extra_inst%nr), &
@@ -1304,24 +1306,27 @@ contains
   end subroutine  reduce_reaction_rates
 
   !-------------------------------------------------------------------------------
-  subroutine apply_ECA_nutrient_regulation(nprimvars, nr, pct_clay, nitrogen_limit_flag, &
-       phosphos_limit_flag, ystate, plant_frts, reaction_rates, cascade_matrix)
+  subroutine apply_ECA_nutrient_regulation(nprimvars, nr, nitrogen_limit_flag, &
+       phosphos_limit_flag, ystate, ncompete_vars, reaction_rates, cascade_matrix)
     !
     ! !DESCRIPTION:
     ! do ECA competition
-    !
+    ! because this is a microbe implicit model, the overall microbial population is
+    ! competing with plant and mineral surface for nutrients.
     ! !USES:
     use KineticsMod, only : kd_infty, ecacomplex_cell_norm
     use MathfuncMod, only : safe_div
     implicit none
     ! !ARGUMENTS:
-    integer , intent(in) :: nprimvars
-    integer , intent(in) :: nr
-    real(r8), intent(in) :: pct_clay
+    integer , intent(in) :: nprimvars  !number of primary variables
+    integer , intent(in) :: nr         !number of reactions
     logical , intent(in) :: nitrogen_limit_flag(centurybgc_vars%nom_pools)
     logical , intent(in) :: phosphos_limit_flag(centurybgc_vars%nom_pools)
-    real(r8), intent(in) :: ystate(1:nprimvars)
-    real(r8), intent(in) :: plant_frts
+    type(NutrientCompetitionParamsType), intent(in) :: ncompete_vars
+    real(r8), intent(in)  :: ystate(1:nprimvars)
+    real(r8), intent(in) :: plant_frtcs
+    real(r8), intent(in) :: decomp_mics
+
     real(r8), intent(inout) :: reaction_rates(1:nr)
     real(r8), intent(inout) :: cascade_matrix(1:nprimvars, 1:nr)
 
@@ -1335,6 +1340,7 @@ contains
     integer  :: j, ireac
 
     ! the following parameters are arbitrary
+    ! let me later wrap them up and pass it from a parameter class
     real(r8), parameter :: kd_nh4_nit   = 1._r8
     real(r8), parameter :: kd_nh4_plant = 1._r8
     real(r8), parameter :: kd_nh4_clay  = 1._r8
@@ -1359,15 +1365,11 @@ contains
     associate(                                                             &
          lid_nitri_compet   => centurybgc_vars%lid_nitri_compet          , &
          lid_denit_compet   => centurybgc_vars%lid_denit_compet          , &
+         lid_decomp_compet  => centurybgc_vars%lid_decomp_compet         , &
          lid_plant_compet   => centurybgc_vars%lid_plant_compet          , &
-         lid_clay_compet    => centurybgc_vars%lid_clay_compet           , &
-         lid_lit1_compet    => centurybgc_vars%lid_lit1_compet           , &
-         lid_lit2_compet    => centurybgc_vars%lid_lit2_compet           , &
-         lid_lit3_compet    => centurybgc_vars%lid_lit3_compet           , &
-         lid_cwd_compet     => centurybgc_vars%lid_cwd_compet            , &
-         lid_som1_compet    => centurybgc_vars%lid_som1_compet           , &
-         lid_som2_compet    => centurybgc_vars%lid_som2_compet           , &
-         lid_som3_compet    => centurybgc_vars%lid_som3_compet           , &
+         lid_minsrf_compet  => centurybgc_vars%lid_minsrf_compet         , &
+
+
          lit1               => centurybgc_vars%lit1                      , &
          lit2               => centurybgc_vars%lit2                      , &
          lit3               => centurybgc_vars%lit3                      , &
@@ -1383,51 +1385,25 @@ contains
          lid_plant_minp_up_reac=> centurybgc_vars%lid_plant_minp_up_reac , &
          lid_p_solution     => centurybgc_vars%lid_p_solution            , &
          nelms              => centurybgc_vars%nelms                     , &
-         c_loc              => centurybgc_vars%c_loc                       &
+         c_loc              => centurybgc_vars%c_loc                     , &
          )
-
-      !form the K matrix
-
+      !form the k matrix
+      k_mat_minn(:,:)=kd_infty
       !nh4
-      k_mat_minn(1,:) = kd_infty
+      k_mat_minn(1,lid_decomp_compet) = 1._r8
+      k_mat_minn(1,lid_nit_compet)    = 1._r8
+      k_mat_minn(1,lid_plant_compet)  = 1._r8
+      k_mat_minn(1,lid_minsrf_compet) = 1._r8
       !no3
-      k_mat_minn(2,:) = kd_infty
-      !min P
-      k_mat_minp(:)   = kd_infty
-      vcompet=0._r8
-      do j = 1,  centurybgc_vars%nom_pools
-         if(nitrogen_limit_flag(j))then
-            k_mat_minn(1,j) = kd_nh4_decomp
-            k_mat_minn(2,j) = kd_no3_decomp
-         endif
-         if(phosphos_limit_flag(j))then
-            k_mat_minp(j) = kd_minp_decomp
-         endif
-      enddo
+      k_mat_minn(2,lid_decomp_compet) = 1._r8
+      k_mat_minn(2,lid_denit_compet)  = 1._r8
+      k_mat_minn(2,lid_plant_compet)  = 1._r8
 
-      k_mat_minn(1,lid_nitri_compet) = kd_nh4_nit
-      k_mat_minn(1,lid_plant_compet) = kd_nh4_plant
-      k_mat_minn(1,lid_clay_compet)  = kd_nh4_clay
-      !
-      k_mat_minn(2,lid_denit_compet) = kd_no3_denit
-      k_mat_minn(2,lid_plant_compet) = kd_no3_plant
-
-      !form the competitor vector
-      vcompet(lid_lit1_compet) = ystate((lit1-1)*nelms+c_loc) * 0.01_r8
-      vcompet(lid_lit2_compet) = ystate((lit2-1)*nelms+c_loc) * 0.01_r8
-      vcompet(lid_lit3_compet) = ystate((lit3-1)*nelms+c_loc) * 0.01_r8
-      vcompet(lid_cwd_compet)  = ystate((cwd-1)*nelms+c_loc) * 0.01_r8
-
-      ! by default som decomposition releases mineral nutrient, but I include them as
-      ! subject to potential change
-      vcompet(lid_som1_compet) = ystate((som1-1)*nelms+c_loc) * 0.01_r8
-      vcompet(lid_som2_compet) = ystate((som2-1)*nelms+c_loc) * 0.01_r8
-      vcompet(lid_som3_compet) = ystate((som3-1)*nelms+c_loc) * 0.01_r8
-
-      vcompet(lid_nitri_compet)= ystate(lid_nh4) * 1.e-3_r8    !this number is arbitrary
-      vcompet(lid_plant_compet)= plant_frts
-      vcompet(lid_denit_compet)= ystate(lid_no3) * 1.e-3_r8    !this number is arbitrary
-      vcompet(lid_clay_compet) = 1._r8
+      !inorganic P
+      k_mat_minp(:) = kd_infty
+      k_mat_minp(lid_decomp_compet) = 1._r8
+      k_mat_minp(lid_plant_compet)  = 1._r8
+      k_mat_minp(lid_msurf_compet)  = 1._r8
 
       !form the resource vector
       call ecacomplex_cell_norm(k_mat_minn,(/ystate(lid_nh4),ystate(lid_no3)/),vcompet,siej_cell_norm_minn)

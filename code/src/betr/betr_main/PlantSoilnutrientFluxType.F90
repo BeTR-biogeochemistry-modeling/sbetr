@@ -35,9 +35,9 @@ module PlantSoilnutrientFluxType
     real(r8), pointer :: plant_minn_uptake_potential_vr_col          (:,:)  !plant mineral nitrogen uptake potential for each layer
     real(r8), pointer :: plant_totn_demand_flx_col                   (:)    !column level total nitrogen demand, g N/m2/s
     real(r8), pointer :: fppnd_col                                   (:)    !fraction of fufilled nitrogen demand
-    real(r8), pointer :: plant_frootsc_vr_col                        (:,:)  !fine root for nutrient uptake
-    real(r8), pointer :: plant_frootsc_col                           (:)    !fine root for nutrient uptake
-    
+    real(r8), pointer :: plant_frootsc_vr_patch                      (:,:)  !fine root for nutrient uptake
+    real(r8), pointer :: plant_frootsc_patch                         (:)    !fine root for nutrient uptake
+
    contains
 
      procedure , public  :: Init
@@ -102,8 +102,8 @@ module PlantSoilnutrientFluxType
 
     allocate(this%plant_totn_demand_flx_col          (begc:endc          )) ; this%plant_totn_demand_flx_col          (:)   = nan
 
-    allocate(this%plant_frootsc_col                  (begc:endc          )) ; this%plant_frootsc_col                  (:)   = nan
-    allocate(this%plant_frootsc_vr_col               (begc:endc,lbj:ubj  )) ; this%plant_frootsc_vr_col               (:,:)  = nan
+    allocate(this%plant_frootsc_patch                (begc:endp          )) ; this%plant_frootsc_patch                (:)   = nan
+    allocate(this%plant_frootsc_vr_patch             (begc:endp,lbj:ubj  )) ; this%plant_frootsc_vr_patch            (:,:)  = nan
 
   end subroutine InitAllocate
 
@@ -343,22 +343,11 @@ module PlantSoilnutrientFluxType
     this%plant_minn_uptake_potential_col(c) = this%plant_totn_demand_flx_col(c)*nscal
   enddo
 
-  call p2c(bounds, num_soilc, filter_soilc, frootc_patch, this%plant_frootsc_col)
-
-#if 0
-  !new approach
   do fp = 1, num_soilp
     p = filter_soilp(fp)
-    c = pft%column(p)
-    this%plant_minn_uptake_potential_patch(p) = Vmax_minn*max(frootc_patch(p),10._r8)
-    if(abs(grc%latdeg(col%gridcell(c)))<20._r8)this%plant_minn_uptake_potential_patch(p) = this%plant_minn_uptake_potential_patch(p) * 1.e3_r8
+    this%plant_frootsc_patch(p) = frootc_patch(p)
   enddo
 
-  ! now use the p2c routine to get the column-averaged plant_ndemand
-  call p2c(bounds, num_soilc, filter_soilc, &
-       this%plant_minn_uptake_potential_patch(bounds%begp:bounds%endp), &
-       this%plant_minn_uptake_potential_col(bounds%begc:bounds%endc))
-#endif
 
 end subroutine calc_nutrient_uptake_potential
 

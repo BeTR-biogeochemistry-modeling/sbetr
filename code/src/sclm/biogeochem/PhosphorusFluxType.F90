@@ -58,6 +58,7 @@ contains
 
     allocate(this%bgc_ppool_inputs_col        (begc:endc,ndecomp_pools))     ;this%bgc_ppool_inputs_col              (:,:) = nan
     allocate(this%sminp_leached_col           (begc:endc              ))     ;this%sminp_leached_col                (:)    = nan
+    allocate(this%biochem_pmin_vr_col       (begc:endc,1:nlevdecomp_full))   ;this%biochem_pmin_vr_col               (:,:) = nan
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------

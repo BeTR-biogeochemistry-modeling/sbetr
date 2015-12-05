@@ -29,6 +29,7 @@ implicit none
     real(r8), pointer :: occlp_vr_col                 (:,:)       ! col (gP/m3) vertically-resolved soil occluded mineral P
     real(r8), pointer :: primp_vr_col                 (:,:)       ! col (gP/m3) vertically-resolved soil parimary mineral P
     real(r8), pointer :: sminp_vr_col                 (:,:)       ! col (gP/m3) vertically-resolved soil total mineral P, diagnostic
+
   contains
 
     procedure, public  :: Init
@@ -90,6 +91,8 @@ contains
     allocate(this%primp_vr_col             (begc:endc,1:nlevdecomp_full)) ; this%primp_vr_col             (:,:) = nan
     allocate(this%sminp_vr_col             (begc:endc,1:nlevdecomp_full)) ; this%sminp_vr_col             (:,:) = nan
 
+    allocate(this%ppgg_pleafn_patch   (begp:endp))                   ; this%ppgg_pleafn_patch   (:) = nan
+    allocate(this%pgpp_pleafp_patch   (begp:endp))                   ; this%pgpp_pleafp_patch   (:) = nan
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------
