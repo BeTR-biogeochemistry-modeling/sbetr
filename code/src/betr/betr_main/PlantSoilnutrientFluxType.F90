@@ -35,8 +35,37 @@ module PlantSoilnutrientFluxType
     real(r8), pointer :: plant_minn_uptake_potential_vr_col          (:,:)  !plant mineral nitrogen uptake potential for each layer
     real(r8), pointer :: plant_totn_demand_flx_col                   (:)    !column level total nitrogen demand, g N/m2/s
     real(r8), pointer :: fppnd_col                                   (:)    !fraction of fufilled nitrogen demand
-    real(r8), pointer :: plant_frootsc_vr_col                        (:,:)  !fine root for nutrient uptake
-    real(r8), pointer :: plant_frootsc_col                           (:)    !fine root for nutrient uptake
+    real(r8), pointer :: plant_frootsc_vr_patch                      (:,:)  !fine root for nutrient uptake
+    real(r8), pointer :: plant_frootsc_patch                         (:)    !fine root for nutrient uptake
+    real(r8), pointer :: rr_col                                      (:)    ! column (gC/m2/s) root respiration (fine root MR + total root GR) (p2c)
+    real(r8), pointer :: annavg_agnpp_patch                          (:)     ! (gC/m2/s) annual average aboveground NPP
+    real(r8), pointer :: annavg_bgnpp_patch                          (:)     ! (gC/m2/s) annual average belowground NPP
+    real(r8), pointer :: tempavg_agnpp_patch                         (:)     ! (gC/m2/s) temp. average aboveground NPP
+    real(r8), pointer :: tempavg_bgnpp_patch                         (:)     ! (gC/m2/s) temp. average belowground NPP
+
+    real(r8), pointer :: bgc_cpool_ext_loss_vr_col                 (:, :, :)  ! col-level extneral organic carbon loss gC/m3 /time step
+    real(r8), pointer :: bgc_cpool_ext_inputs_vr_col               (:, :, :)  ! col-level extneral organic carbon input gC/m3 /time step
+    real(r8), pointer :: bgc_ppool_ext_inputs_vr_col               (:,:,:) !col organic nitrogen input, gN/m3/time step
+    real(r8), pointer :: bgc_ppool_ext_loss_vr_col                 (:,:,:) !col extneral organic nitrogen loss, gN/m3/time step
+
+    real(r8), pointer :: bgc_ppool_inputs_col                      (:,:)   !col organic N input, gN/m2/time step
+    real(r8), pointer :: bgc_npool_ext_inputs_vr_col               (:,:,:) !col organic nitrogen input, gN/m3/time step
+    real(r8), pointer :: bgc_npool_ext_loss_vr_col                 (:,:,:) !col extneral organic nitrogen loss, gN/m3/time step
+    real(r8), pointer :: sminn_no3_input_vr_col                    (:,:)   !col no3 input, gN/m3/time step
+    real(r8), pointer :: sminn_nh4_input_vr_col                    (:,:)   !col nh4 input, gN/m3/time step
+    real(r8), pointer :: biochem_pmin_vr_col                       (:,:)   ! col vertically-resolved total biochemical P mineralization (gP/m3/s)
+
+    real(r8), pointer :: hr_vr_col                                 (:,:)   ! total vertically-resolved het. resp. from decomposing C pools (gC/m3/s)
+
+    real(r8), pointer :: f_nit_vr_col                              (:,:)   ! col (gN/m3/s) soil nitrification flux
+    real(r8), pointer :: f_denit_vr_col                            (:,:)   ! col (gN/m3/s) soil denitrification flux
+    real(r8), pointer :: f_n2o_denit_vr_col                        (:,:)   ! col flux of N2o from denitrification [gN/m^3/s]
+    real(r8), pointer :: f_n2o_nit_vr_col                          (:,:)   ! col flux of N2o from nitrification [gN/m^3/s]
+    real(r8), pointer :: actual_immob_no3_vr_col                   (:,:)   ! col vertically-resolved actual immobilization of NO3 (gN/m3/s)
+    real(r8), pointer :: actual_immob_nh4_vr_col                   (:,:)   ! col vertically-resolved actual immobilization of NH4 (gN/m3/s)
+    real(r8), pointer :: smin_no3_to_plant_vr_col                  (:,:)   ! col vertically-resolved plant uptake of soil NO3 (gN/m3/s)
+    real(r8), pointer :: smin_nh4_to_plant_vr_col                  (:,:)   ! col vertically-resolved plant uptake of soil NH4 (gN/m3/s)
+    real(r8), pointer :: supplement_to_sminn_vr_col                (:,:)   ! col vertically-resolved supplemental N supply (gN/m3/s)
 
    contains
 
@@ -74,6 +103,8 @@ module PlantSoilnutrientFluxType
     ! !DESCRIPTION:
     ! Initialize pft nitrogen flux
     !
+    ! USES
+    use clm_varpar,  only : ndecomp_pools, nlevdecomp_full
     ! !ARGUMENTS:
     class (plantsoilnutrientflux_type) :: this
     type(bounds_type) , intent(in) :: bounds
@@ -102,8 +133,39 @@ module PlantSoilnutrientFluxType
 
     allocate(this%plant_totn_demand_flx_col          (begc:endc          )) ; this%plant_totn_demand_flx_col          (:)   = nan
 
-    allocate(this%plant_frootsc_col                  (begc:endc          )) ; this%plant_frootsc_col                  (:)   = nan
-    allocate(this%plant_frootsc_vr_col               (begc:endc,lbj:ubj  )) ; this%plant_frootsc_vr_col               (:,:)  = nan
+    allocate(this%plant_frootsc_patch                (begc:endp          )) ; this%plant_frootsc_patch                (:)   = nan
+    allocate(this%plant_frootsc_vr_patch             (begc:endp,lbj:ubj  )) ; this%plant_frootsc_vr_patch            (:,:)  = nan
+
+    allocate(this%annavg_agnpp_patch                (begp:endp))                  ; this%annavg_agnpp_patch  (:) = spval ! To detect first year
+    allocate(this%annavg_bgnpp_patch                (begp:endp))                  ; this%annavg_bgnpp_patch  (:) = spval ! To detect first year
+    allocate(this%tempavg_agnpp_patch               (begp:endp))                  ; this%tempavg_agnpp_patch (:) = spval
+    allocate(this%tempavg_bgnpp_patch               (begp:endp))                  ; this%tempavg_bgnpp_patch (:) = spval
+
+    allocate(this%bgc_cpool_ext_inputs_vr_col       (begc:endc, 1:nlevdecomp_full,ndecomp_pools));this%bgc_cpool_ext_inputs_vr_col (:,:,:) = nan
+    allocate(this%bgc_cpool_ext_loss_vr_col         (begc:endc, 1:nlevdecomp_full,ndecomp_pools));this%bgc_cpool_ext_loss_vr_col   (:,:,:) = nan
+    allocate(this%rr_col                            (begc:endc))                  ; this%rr_col                    (:)  =nan
+
+    allocate(this%bgc_ppool_ext_inputs_vr_col (begc:endc,1:nlevdecomp_full,ndecomp_pools)) ;this%bgc_ppool_ext_inputs_vr_col    (:,:,:) = nan
+    allocate(this%bgc_ppool_ext_loss_vr_col   (begc:endc,1:nlevdecomp_full,ndecomp_pools)) ;this%bgc_ppool_ext_loss_vr_col      (:,:,:) = nan
+
+    allocate(this%bgc_ppool_inputs_col        (begc:endc,ndecomp_pools))     ;this%bgc_ppool_inputs_col              (:,:) = nan
+
+    allocate(this%bgc_npool_ext_inputs_vr_col (begc:endc,1:nlevdecomp_full,ndecomp_pools)) ;this%bgc_npool_ext_inputs_vr_col    (:,:,:) = nan
+    allocate(this%bgc_npool_ext_loss_vr_col   (begc:endc,1:nlevdecomp_full,ndecomp_pools)) ;this%bgc_npool_ext_loss_vr_col      (:,:,:) = nan
+    allocate(this%sminn_no3_input_vr_col      (begc:endc,1:nlevdecomp_full)) ; this%sminn_no3_input_vr_col           (:,:) = nan
+    allocate(this%sminn_nh4_input_vr_col      (begc:endc,1:nlevdecomp_full)) ; this%sminn_nh4_input_vr_col           (:,:) = nan
+
+    allocate(this%hr_vr_col                         (begc:endc,1:nlevdecomp_full)); this%hr_vr_col    (:,:)=nan
+
+    allocate(this%f_n2o_denit_vr_col          (begc:endc,1:nlevdecomp_full)) ; this%f_n2o_denit_vr_col               (:,:) = nan
+    allocate(this%f_n2o_nit_vr_col            (begc:endc,1:nlevdecomp_full)) ; this%f_n2o_nit_vr_col                 (:,:) = nan
+    allocate(this%actual_immob_no3_vr_col     (begc:endc,1:nlevdecomp_full)) ; this%actual_immob_no3_vr_col          (:,:) = nan
+    allocate(this%actual_immob_nh4_vr_col     (begc:endc,1:nlevdecomp_full)) ; this%actual_immob_nh4_vr_col          (:,:) = nan
+    allocate(this%smin_no3_to_plant_vr_col    (begc:endc,1:nlevdecomp_full)) ; this%smin_no3_to_plant_vr_col         (:,:) = nan
+    allocate(this%smin_nh4_to_plant_vr_col    (begc:endc,1:nlevdecomp_full)) ; this%smin_nh4_to_plant_vr_col         (:,:) = nan
+    allocate(this%supplement_to_sminn_vr_col (begc:endc,1:nlevdecomp_full)) ; this%supplement_to_sminn_vr_col (:,:) = nan
+    allocate(this%f_nit_vr_col                (begc:endc,1:nlevdecomp_full)) ; this%f_nit_vr_col                     (:,:) = nan
+    allocate(this%f_denit_vr_col              (begc:endc,1:nlevdecomp_full)) ; this%f_denit_vr_col                   (:,:) = nan
 
   end subroutine InitAllocate
 
@@ -343,22 +405,11 @@ module PlantSoilnutrientFluxType
     this%plant_minn_uptake_potential_col(c) = this%plant_totn_demand_flx_col(c)*nscal
   enddo
 
-  call p2c(bounds, num_soilc, filter_soilc, frootc_patch, this%plant_frootsc_col)
-
-#if 0
-  !new approach
   do fp = 1, num_soilp
     p = filter_soilp(fp)
-    c = pft%column(p)
-    this%plant_minn_uptake_potential_patch(p) = Vmax_minn*max(frootc_patch(p),10._r8)
-    if(abs(grc%latdeg(col%gridcell(c)))<20._r8)this%plant_minn_uptake_potential_patch(p) = this%plant_minn_uptake_potential_patch(p) * 1.e3_r8
+    this%plant_frootsc_patch(p) = frootc_patch(p)
   enddo
 
-  ! now use the p2c routine to get the column-averaged plant_ndemand
-  call p2c(bounds, num_soilc, filter_soilc, &
-       this%plant_minn_uptake_potential_patch(bounds%begp:bounds%endp), &
-       this%plant_minn_uptake_potential_col(bounds%begc:bounds%endc))
-#endif
 
 end subroutine calc_nutrient_uptake_potential
 

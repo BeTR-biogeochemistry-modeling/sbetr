@@ -138,10 +138,11 @@ def create_deptree(mainobjs, full_file_paths, objs):
         all_mods=[]
         for obj in tobjs:
             obj_file=find_fname(obj,full_file_paths)
-#        print "grep mod for %s" % obj
+            #print "grep mod for %s" % obj
             use_mods=grep_mods(obj_file)
+            #print use_mods
             all_mods.extend(use_mods)
-                #remove duplicate mods
+            #remove duplicate mods
             all_mods=remove_listdup(all_mods)
 
         result=[] #stores the mother layer

@@ -6,12 +6,10 @@ module PhosphorusFluxType
 implicit none
 
   type, public :: phosphorusflux_type
-    real(r8), pointer :: bgc_ppool_ext_inputs_vr_col               (:,:,:) !col organic nitrogen input, gN/m3/time step
-    real(r8), pointer :: bgc_ppool_ext_loss_vr_col                 (:,:,:) !col extneral organic nitrogen loss, gN/m3/time step
-
-    real(r8), pointer :: bgc_ppool_inputs_col                      (:,:)   !col organic N input, gN/m2/time step
     real(r8), pointer :: sminp_leached_col                         (:)     !col inorganic P leaching loss, gP/m2/time step
     real(r8), pointer :: sminp_runoff_col                          (:)     !col inorganic P runoff loss, gP/m2/time step
+    real(r8), pointer :: biochem_pmin_vr_col                       (:,:)   ! col vertically-resolved total biochemical P mineralization (gP/m3/s)
+
   contains
 
     procedure, public  :: Init
@@ -53,11 +51,10 @@ contains
     begp = bounds%begp; endp= bounds%endp
     begc = bounds%begc; endc= bounds%endc
 
-    allocate(this%bgc_ppool_ext_inputs_vr_col (begc:endc,1:nlevdecomp_full,ndecomp_pools)) ;this%bgc_ppool_ext_inputs_vr_col    (:,:,:) = nan
-    allocate(this%bgc_ppool_ext_loss_vr_col   (begc:endc,1:nlevdecomp_full,ndecomp_pools)) ;this%bgc_ppool_ext_loss_vr_col      (:,:,:) = nan
-
-    allocate(this%bgc_ppool_inputs_col        (begc:endc,ndecomp_pools))     ;this%bgc_ppool_inputs_col              (:,:) = nan
     allocate(this%sminp_leached_col           (begc:endc              ))     ;this%sminp_leached_col                (:)    = nan
+    allocate(this%sminp_runoff_col           (begc:endc              ))      ;this%sminp_runoff_col                (:)    = nan    
+    allocate(this%biochem_pmin_vr_col       (begc:endc,1:nlevdecomp_full))   ;this%biochem_pmin_vr_col               (:,:) = nan
+
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------

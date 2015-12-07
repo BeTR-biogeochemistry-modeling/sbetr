@@ -65,8 +65,7 @@ module BGCReactionsMod
      subroutine calc_bgc_reaction_interface(this, bounds, lbj, ubj, num_soilc, filter_soilc, &
           num_soilp,filter_soilp, jtops, dtime,                                              &
           betrtracer_vars, tracercoeff_vars, waterstate_vars, temperature_vars,              &
-          soilstate_vars, chemstate_vars, cnstate_vars, carbonstate_vars, carbonflux_vars,   &
-          nitrogenstate_vars, nitrogenflux_vars,                                             &
+          soilstate_vars, chemstate_vars, cnstate_vars,                                      &
           tracerstate_vars, tracerflux_vars, plantsoilnutrientflux_vars)
        !
        ! !DESCRIPTION:
@@ -86,10 +85,6 @@ module BGCReactionsMod
        use shr_kind_mod             , only : r8 => shr_kind_r8
        use CanopyStateType          , only : canopystate_type
        use CNStateType              , only : cnstate_type
-       use CNCarbonStateType        , only : carbonstate_type
-       use CNCarbonFluxType         , only : carbonflux_type
-       use CNNitrogenFluxType       , only : nitrogenflux_type
-       use CNNitrogenStateType      , only : nitrogenstate_type
 
        ! !ARGUMENTS:
        import :: bgc_reaction_type
@@ -108,10 +103,6 @@ module BGCReactionsMod
        type(betrtracer_type)            , intent(in)    :: betrtracer_vars             ! betr configuration information
        type(soilstate_type)             , intent(in)    :: soilstate_vars
        type(cnstate_type)               , intent(inout) :: cnstate_vars
-       type(carbonstate_type)           , intent(in)    :: carbonstate_vars
-       type(carbonflux_type)            , intent(inout) :: carbonflux_vars
-       type(nitrogenstate_type)         , intent(inout) :: nitrogenstate_vars
-       type(nitrogenflux_type)          , intent(inout) :: nitrogenflux_vars
        type(tracercoeff_type)           , intent(in)    :: tracercoeff_vars
        type(tracerstate_type)           , intent(inout) :: tracerstate_vars
        type(tracerflux_type)            , intent(inout) :: tracerflux_vars
@@ -244,8 +235,8 @@ module BGCReactionsMod
 
      !-------------------------------------------------------------------------------
      subroutine betr_alm_flux_statevar_feedback_interface(this, bounds, num_soilc, filter_soilc, &
-          carbonstate_vars, nitrogenstate_vars, nitrogenflux_vars, &
-          tracerstate_vars, tracerflux_vars,  betrtracer_vars)
+          carbonstate_vars, nitrogenstate_vars, nitrogenflux_vars, phosphorusstate_vars, &
+          phosphorusflux_vars, tracerstate_vars, tracerflux_vars,  betrtracer_vars)
 
        ! !DESCRIPTION:
        ! template for betr_alm_flux_statevar_feedback
@@ -258,7 +249,8 @@ module BGCReactionsMod
        use CNCarbonStateType        , only : carbonstate_type
        use CNNitrogenStateType      , only : nitrogenstate_type
        use CNNitrogenFluxType       , only : nitrogenflux_type
-
+       use PhosphorusFluxType       , only : phosphorusflux_type
+       use PhosphorusStateType      , only : phosphorusstate_type
        ! !ARGUMENTS:
        import :: bgc_reaction_type
        class(bgc_reaction_type)   , intent(in) :: this                  !
@@ -271,14 +263,15 @@ module BGCReactionsMod
        type(carbonstate_type)     , intent(inout) :: carbonstate_vars   !
        type(nitrogenflux_type)    , intent(inout) :: nitrogenflux_vars  !
        type(nitrogenstate_type)   , intent(inout) :: nitrogenstate_vars !
-
+       type(phosphorusstate_type) , intent(inout) :: phosphorusstate_vars
+       type(phosphorusflux_type)  , intent(inout) :: phosphorusflux_vars
      end subroutine betr_alm_flux_statevar_feedback_interface
 
      !-------------------------------------------------------------------------------
 
 
      subroutine init_betr_alm_bgc_coupler_interface(this, bounds, carbonstate_vars, &
-          nitrogenstate_vars, betrtracer_vars, tracerstate_vars)
+          nitrogenstate_vars, phosphorusstate_vars, betrtracer_vars, tracerstate_vars)
        !
        ! !DESCRIPTION:
        ! template for init_betr_alm_bgc_coupler
@@ -289,6 +282,7 @@ module BGCReactionsMod
        use clm_varpar               , only : i_cwd, i_met_lit, i_cel_lit, i_lig_lit
        use CNCarbonStateType        , only : carbonstate_type
        use CNNitrogenStateType      , only : nitrogenstate_type
+       use PhosphorusStateType      , only : phosphorusstate_type
        use tracerstatetype          , only : tracerstate_type
        use BetrTracerType           , only : betrtracer_type
        use clm_varpar               , only : nlevtrc_soil
@@ -302,7 +296,7 @@ module BGCReactionsMod
        type(betrtracer_type)              , intent(in)    :: betrtracer_vars    ! betr configuration information
        type(carbonstate_type)             , intent(in)    :: carbonstate_vars
        type(nitrogenstate_type)           , intent(in)    :: nitrogenstate_vars
-
+       type(phosphorusstate_type)         , intent(in)    :: phosphorusstate_vars
 
      end subroutine init_betr_alm_bgc_coupler_interface
 

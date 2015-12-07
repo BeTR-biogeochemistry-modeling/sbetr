@@ -1706,7 +1706,7 @@ contains
 
   !-----------------------------------------------------------------------
   subroutine calc_aerecond(bounds, num_soilp, filter_soilp, jwt, rootfr, temperature_vars, betrtracer_vars, &
-     canopystate_vars, carbonstate_vars, carbonflux_vars, tracercoeff_vars)
+     canopystate_vars, plantsoilnutrientflux_vars, carbonflux_vars, tracercoeff_vars)
   !
   ! DESCRIPTION
   !
@@ -1717,6 +1717,7 @@ contains
   use CNCarbonStateType     , only : carbonstate_type
   use CanopyStateType       , only : canopystate_type
   use BetrTracerType        , only : betrtracer_type
+  use PlantSoilnutrientFluxType    , only  : plantsoilnutrientflux_type
   use tracercoeffType       , only : tracercoeff_type
   use clm_varpar            , only : nlevsoi
   use TemperatureType       , only : temperature_type
@@ -1730,7 +1731,7 @@ contains
   real(r8)                     , intent(in)   :: rootfr(bounds%begp: ,1: ) ! fraction of roots in each soil layer
   type(temperature_type)       , intent(in)   :: temperature_vars          ! energy state variable
   type(canopystate_type)       , intent(in)   :: canopystate_vars
-  type(carbonstate_type)       , intent(in)   :: carbonstate_vars
+  type(plantsoilnutrientflux_type)       , intent(in)   :: plantsoilnutrientflux_vars
   type(carbonflux_type)        , intent(in)   :: carbonflux_vars
   type(betrtracer_type)        , intent(in)   :: betrtracer_vars            ! betr configuration information
   type(tracercoeff_type)       , intent(inout) :: tracercoeff_vars
@@ -1761,9 +1762,9 @@ contains
     lbl_rsc_h2o    =>    canopystate_vars%lbl_rsc_h2o_patch  , & ! laminar layer resistance for h2o
     elai           =>    canopystate_vars%elai_patch         , &
     annsum_npp     =>    carbonflux_vars%annsum_npp_patch    , & ! Input:  [real(r8) (:) ]  annual sum NPP (gC/m2/yr)
-    annavg_agnpp   =>    carbonflux_vars%annavg_agnpp_patch  , & ! Output: [real(r8) (:) ]  annual average above-ground NPP (gC/m2/s)
-    annavg_bgnpp   =>    carbonflux_vars%annavg_bgnpp_patch  , & ! Output: [real(r8) (:) ]  annual average below-ground NPP (gC/m2/s)
-    frootc         =>    carbonstate_vars%frootc_patch       , & ! Input:  [real(r8) (:)    ]  (gC/m2) fine root C
+    annavg_agnpp   =>    plantsoilnutrientflux_vars%annavg_agnpp_patch  , & ! Output: [real(r8) (:) ]  annual average above-ground NPP (gC/m2/s)
+    annavg_bgnpp   =>    plantsoilnutrientflux_vars%annavg_bgnpp_patch  , & ! Output: [real(r8) (:) ]  annual average below-ground NPP (gC/m2/s)
+    frootc         =>    plantsoilnutrientflux_vars%plant_frootsc_patch       , & ! Input:  [real(r8) (:)    ]  (gC/m2) fine root C
     is_volatile    =>    betrtracer_vars%is_volatile         , &
     volatilegroupid=>    betrtracer_vars%volatilegroupid     , &
     ngwmobile_tracer_groups=>  betrtracer_vars%ngwmobile_tracer_groups   , &
@@ -1870,8 +1871,9 @@ contains
     integer                , intent(in)    :: filter_soilc(:)   ! filter for soil columns
     integer                , intent(in)    :: num_soilp         ! number of soil points in pft filter
     integer                , intent(in)    :: filter_soilp(:)   ! patch filter for soil points
-    type(Carbonflux_type)  , intent(inout) :: carbonflux_vars
-    type(tracercoeff_type) , intent(inout) :: tracercoeff_vars
+    type(Carbonflux_type)  , intent(in)    :: carbonflux_vars
+    type(plantsoilnutrientflux_type), intent(inout) :: plantsoilnutrientflux_vars
+    type(tracercoeff_type)          , intent(inout) :: tracercoeff_vars
     !
     ! !LOCAL VARIABLES:
     integer :: c,p       ! indices
@@ -1882,21 +1884,14 @@ contains
     logical :: newrun
     !-----------------------------------------------------------------------
 
-    associate(                                                       &
-         agnpp           =>    carbonflux_vars%agnpp_patch         , & ! Input:  [real(r8) (:) ]  (gC/m2/s) aboveground NPP
-         bgnpp           =>    carbonflux_vars%bgnpp_patch         , & ! Input:  [real(r8) (:) ]  (gC/m2/s) belowground NPP
-         tempavg_agnpp   =>    carbonflux_vars%tempavg_agnpp_patch , & ! Output: [real(r8) (:) ]  temporary average above-ground NPP (gC/m2/s)
-         annavg_agnpp    =>    carbonflux_vars%annavg_agnpp_patch  , & ! Output: [real(r8) (:) ]  annual average above-ground NPP (gC/m2/s)
-         tempavg_bgnpp   =>    carbonflux_vars%tempavg_bgnpp_patch , & ! Output: [real(r8) (:) ]  temporary average below-ground NPP (gC/m2/s)
-         annavg_bgnpp    =>    carbonflux_vars%annavg_bgnpp_patch  , & ! Output: [real(r8) (:) ]  annual average below-ground NPP (gC/m2/s)
-
-
-         annsum_counter  =>    tracercoeff_vars%annsum_counter_col   & ! Output: [real(r8) (:) ]  seconds since last annual accumulator turnover
-         !finundated    =>    ch4_vars%finundated_col             , & ! Input:  [real(r8) (:) ]  fractional inundated area in soil column
-         !tempavg_somhr =>    ch4_vars%tempavg_somhr_col          , & ! Output: [real(r8) (:) ]  temporary average SOM heterotrophic resp. (gC/m2/s)
-         !annavg_somhr    =>    ch4_vars%annavg_somhr_col           , & ! Output: [real(r8) (:) ]  annual average SOM heterotrophic resp. (gC/m2/s)
-         !tempavg_finrw  =>    ch4_vars%tempavg_finrw_col          , & ! Output: [real(r8) (:) ]  respiration-weighted annual average of finundated
-         !annavg_finrw  =>    ch4_vars%annavg_finrw_col             & ! Output: [real(r8) (:) ]  respiration-weighted annual average of finundated
+    associate(                                                                  &
+         agnpp           =>    carbonflux_vars%agnpp_patch                    , & ! Input:  [real(r8) (:) ]  (gC/m2/s) aboveground NPP
+         bgnpp           =>    carbonflux_vars%bgnpp_patch                    , & ! Input:  [real(r8) (:) ]  (gC/m2/s) belowground NPP
+         tempavg_agnpp   =>    plantsoilnutrientflux_vars%tempavg_agnpp_patch , & ! Output: [real(r8) (:) ]  temporary average above-ground NPP (gC/m2/s)
+         annavg_agnpp    =>    plantsoilnutrientflux_vars%annavg_agnpp_patch  , & ! Output: [real(r8) (:) ]  annual average above-ground NPP (gC/m2/s)
+         tempavg_bgnpp   =>    plantsoilnutrientflux_vars%tempavg_bgnpp_patch , & ! Output: [real(r8) (:) ]  temporary average below-ground NPP (gC/m2/s)
+         annavg_bgnpp    =>    plantsoilnutrientflux_vars%annavg_bgnpp_patch  , & ! Output: [real(r8) (:) ]  annual average below-ground NPP (gC/m2/s)
+         annsum_counter  =>    tracercoeff_vars%annsum_counter_col              & ! Output: [real(r8) (:) ]  seconds since last annual accumulator turnover
          )
 
       ! set time steps

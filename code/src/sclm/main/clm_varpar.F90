@@ -12,10 +12,12 @@ module clm_varpar
   integer, parameter :: numrad      =   2     ! number of solar radiation bands: vis, nir
   integer, parameter :: ngases      =   3     ! CH4, O2, & CO2, this is for centurybgc
   integer, parameter :: mxpft       =  24     ! maximum number of PFT's for any mode;
-  
+  integer, parameter :: nsoilorder  =  15     ! number of soil orders
+
   integer :: natpft_size        ! Number of Patches on natural veg landunit (including bare ground)
   integer  :: nlevdecomp_full = nlevtrc_soil
   integer :: cft_size           ! Number of Patches on crop landunit
+  integer :: numpft
   logical :: crop_prog   = .false.  ! If prognostic crops is turned on
 
   integer :: ndecomp_pools

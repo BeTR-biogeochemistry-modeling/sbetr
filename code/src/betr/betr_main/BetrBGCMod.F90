@@ -47,9 +47,8 @@ contains
   !-------------------------------------------------------------------------------
   subroutine run_betr_one_step_without_drainage(bounds, lbj, ubj, num_soilc, filter_soilc, num_soilp, filter_soilp, col ,   &
        atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, temperature_vars, waterflux_vars, chemstate_vars, &
-       cnstate_vars, canopystate_vars, carbonstate_vars, carbonflux_vars,nitrogenstate_vars, nitrogenflux_vars,             &
-       betrtracer_vars, bgc_reaction, tracerboundarycond_vars, tracercoeff_vars, tracerstate_vars, tracerflux_vars,         &
-       plantsoilnutrientflux_vars)
+       cnstate_vars, canopystate_vars,  carbonflux_vars, betrtracer_vars, bgc_reaction,                   &
+       tracerboundarycond_vars, tracercoeff_vars, tracerstate_vars, tracerflux_vars, plantsoilnutrientflux_vars)
     !
     ! !DESCRIPTION:
     ! run betr code one time step forward, without drainage calculation
@@ -78,11 +77,7 @@ contains
     use CNStateType                  , only          : cnstate_type
     use CNCarbonFluxType             , only          : carbonflux_type
     use tracer_varcon                , only          : is_active_betr_bgc
-    use CNNitrogenStateType          , only          : nitrogenstate_type
-    use CNNitrogenFluxType           , only          : nitrogenflux_type
     use CanopyStateType              , only          : canopystate_type
-    use CNCarbonStateType            , only          : carbonstate_type
-
     !
     ! !ARGUMENTS :
     type(bounds_type)                , intent(in)    :: bounds                     ! bounds
@@ -103,10 +98,7 @@ contains
     type(soilhydrology_type)         , intent(in)    :: soilhydrology_vars
     type(cnstate_type)               , intent(inout) :: cnstate_vars
     type(canopystate_type)           , intent(in)    :: canopystate_vars
-    type(carbonflux_type)            , intent(inout) :: carbonflux_vars
-    type(carbonstate_type)           , intent(in)    :: carbonstate_vars
-    type(nitrogenstate_type)         , intent(inout) :: nitrogenstate_vars
-    type(nitrogenflux_type)          , intent(inout) :: nitrogenflux_vars
+    type(carbonflux_type)            , intent(in)    :: carbonflux_vars
     type(waterflux_type)             , intent(inout) :: waterflux_vars
     type(tracerboundarycond_type)    , intent(inout) :: tracerboundarycond_vars
     type(tracercoeff_type)           , intent(inout) :: tracercoeff_vars
@@ -151,7 +143,7 @@ contains
          temperature_vars,                                            &
          betrtracer_vars,                                             &
          canopystate_vars,                                            &
-         carbonstate_vars,                                            &
+         plantsoilnutrientflux_vars,                                  &
          carbonflux_vars,                                             &
          tracercoeff_vars)
 
@@ -241,10 +233,6 @@ contains
          soilstate_vars,                                  &
          chemstate_vars,                                  &
          cnstate_vars,                                    &
-         carbonstate_vars,                                &
-         carbonflux_vars,                                 &
-         nitrogenstate_vars,                              &
-         nitrogenflux_vars,                               &
          tracerstate_vars,                                &
          tracerflux_vars,                                 &
          plantsoilnutrientflux_vars)

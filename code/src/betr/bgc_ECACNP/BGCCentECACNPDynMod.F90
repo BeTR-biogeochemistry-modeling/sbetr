@@ -24,7 +24,7 @@ contains
 
   !-------------------------------------------------------------------------------
   subroutine calc_cascade_matrix(nstvars, nreactions, cn_ratios, cp_ratios, n2_n2o_ratio_denit, pct_sand, &
-       centurybgc_vars, cascade_matrix)
+       centurybgc_vars, nitrogen_limit_flag, phosphos_limit_flag, cascade_matrix)
     !
     ! !DESCRIPTION:
     ! calculate cascade matrix for the decomposition model
@@ -36,25 +36,18 @@ contains
     use BGCCentECACNPDynLibMod    , only : centurybgc_type
 
     ! !ARGUMENTS:
-    integer                       , intent(in)  :: nstvars
-    integer                       , intent(in)  :: nreactions
-    type(centurybgc_type)         , intent(in)  :: centurybgc_vars
-    real(r8)                      , intent(in)  :: cn_ratios(centurybgc_vars%nom_pools)
-    real(r8)                      , intent(in)  :: cp_ratios(centurybgc_vars%nom_pools)
-    real(r8)                      , intent(in)  :: n2_n2o_ratio_denit                             !ratio of n2 to n2o during denitrification
-    real(r8)                      , intent(in)  :: pct_sand
-    real(r8)                      , intent(out) :: cascade_matrix(nstvars, nreactions)
-
+    integer                       , intent(in)     :: nstvars
+    integer                       , intent(in)     :: nreactions
+    type(centurybgc_type)         , intent(inout)  :: centurybgc_vars
+    real(r8)                      , intent(in)     :: cn_ratios(centurybgc_vars%nom_pools)
+    real(r8)                      , intent(in)     :: cp_ratios(centurybgc_vars%nom_pools)
+    real(r8)                      , intent(in)     :: n2_n2o_ratio_denit                             !ratio of n2 to n2o during denitrification
+    real(r8)                      , intent(in)     :: pct_sand
+    real(r8)                      , intent(out)    :: cascade_matrix(nstvars, nreactions)
+    logical                       , intent(out) :: nitrogen_limit_flag(centurybgc_vars%nom_pools) !
+    logical                       , intent(out) :: phosphos_limit_flag(centurybgc_vars%nom_pools) !
     ! !LOCAL VARIABLES:
     real(r8) :: ftxt, f1, f2
-    real(r8) :: compet_plant_no3
-    real(r8) :: compet_plant_nh4
-    real(r8) :: compet_decomp_no3
-    real(r8) :: compet_decomp_nh4
-    real(r8) :: compet_denit
-    real(r8) :: compet_nit
-    real(r8) :: compet_decomp_no3_scal
-    real(r8) :: compet_plant_no3_scal
     integer :: k, reac
 
 
@@ -96,7 +89,7 @@ contains
          lid_p_solution => centurybgc_vars%lid_p_solution                , & !
          lid_p_secondary => centurybgc_vars%lid_p_secondary              , & !
          lid_p_occlude =>  centurybgc_vars%lid_p_occlude                 , & !
-         lid_minp_plant => centurybgc_vars%lid_minp_plant                , & !
+         lid_plant_minp => centurybgc_vars%lid_plant_minp                , & !
          lid_minp_immob => centurybgc_vars%lid_minp_immob                , & !
          is_aerobic_reac=> centurybgc_vars%is_aerobic_reac               , & !
          primvarid    => centurybgc_vars%primvarid                       , & !
@@ -112,6 +105,8 @@ contains
          lid_plant_minn_up_reac=> centurybgc_vars%lid_plant_minn_up_reac , & !
          lid_p_secondary_reac => centurybgc_vars%lid_p_secondary_reac    , & !
          lid_p_occlude_reac  => centurybgc_vars%lid_p_occlude_reac       , & !
+         lid_p_solution_reac => centurybgc_vars%lid_p_solution_reac      , & !
+         lid_plant_minp_up_reac => centurybgc_vars%lid_plant_minp_up_reac, & !
 
          lid_nh4_nit_reac => centurybgc_vars%lid_nh4_nit_reac            , & !
          lid_no3_den_reac => centurybgc_vars%lid_no3_den_reac            , & !
@@ -134,17 +129,8 @@ contains
 
          )
 
-      !load parameters
-    compet_plant_no3  = NutrientCompetitionParamsInst%compet_plant_no3
-    compet_plant_nh4  = NutrientCompetitionParamsInst%compet_plant_nh4
-    compet_decomp_no3 = NutrientCompetitionParamsInst%compet_decomp_no3
-    compet_decomp_nh4 = NutrientCompetitionParamsInst%compet_decomp_nh4
-    compet_denit      = NutrientCompetitionParamsInst%compet_denit
-    compet_nit        = NutrientCompetitionParamsInst%compet_nit
-
     !initialize all entries to zero
     cascade_matrix = 0._r8
-    nitrogen_limit_flag = .false.
     !higher [nh4] makes lower [no3] competitiveness
     !note all reactions are in the form products - substrates = 0, therefore
     !mass balance is automatically ensured.
@@ -169,11 +155,12 @@ contains
 
     cascade_matrix(lid_minn_nh4_immob     ,reac)  = -cascade_matrix(lid_nh4         ,reac)
     cascade_matrix(lid_co2_hr             ,reac)  = rf_l1s1_bgc
-    casecade_matrix(lid_minp_immob        ,reac)  = -cascade_matrix(lid_p_solution  ,reac)
+    cascade_matrix(lid_minp_immob         ,reac)  = -cascade_matrix(lid_p_solution  ,reac)
 
     primvarid(reac)       = (lit1-1)*nelms+c_loc
     is_aerobic_reac(reac) = .true.
-
+    nitrogen_limit_flag(reac) = (cascade_matrix(lid_nh4, reac) < 0._r8)
+    phosphos_limit_flag(reac) = (cascade_matrix(lid_p_solution,reac) < 0._r8)
 
     !----------------------------------------------------------------------
     !reaction 2, lit2 -> s1
@@ -193,12 +180,14 @@ contains
     cascade_matrix(lid_p_solution         ,reac)   = safe_div(1._r8,cn_ratios(lit2)) - safe_div(1._r8-rf_l2s1_bgc,cp_ratios_tgt(som1))
 
     cascade_matrix(lid_minn_nh4_immob     ,reac)   = -cascade_matrix(lid_nh4         ,reac)
-    cascade_matrix(lid_minp_immob         ,reac)   = -cascade_matrix(lid_p_solution         ,reac)
+    cascade_matrix(lid_minp_immob         ,reac)   = -cascade_matrix(lid_p_solution  ,reac)
     cascade_matrix(lid_co2_hr             ,reac)   = rf_l2s1_bgc
+
 
     primvarid(reac) = (lit2-1)*nelms+c_loc
     is_aerobic_reac(reac) = .true.
-
+    nitrogen_limit_flag(reac) = (cascade_matrix(lid_nh4, reac) < 0._r8)
+    phosphos_limit_flag(reac) = (cascade_matrix(lid_p_solution,reac) < 0._r8)
     !----------------------------------------------------------------------
     !reaction 3, lit3->s2
     reac = lit3_dek_reac
@@ -222,7 +211,8 @@ contains
 
     primvarid(reac) = (lit3-1)*nelms+c_loc
     is_aerobic_reac(reac) = .true.
-
+    nitrogen_limit_flag(reac) = (cascade_matrix(lid_nh4, reac) < 0._r8)
+    phosphos_limit_flag(reac) = (cascade_matrix(lid_p_solution,reac) < 0._r8)
     !----------------------------------------------------------------------
     !double check those stoichiometry parameters
     !reaction 4, the partition into som2 and som3 is soil texture dependent
@@ -249,7 +239,7 @@ contains
 
     cascade_matrix(lid_co2                ,reac) = ftxt
     cascade_matrix(lid_nh4                ,reac) = safe_div(1._r8,cn_ratios(som1))-safe_div(f1,cn_ratios_tgt(som2))-safe_div(f2,cn_ratios_tgt(som3))
-    cascade_matrix(lid_p_solution         ,reac) = safe_div(1._r8,cn_ratios(som1))-safe_div(f1,cp_ratios_tgt(som2))-safe_div(f2,cp_ratios_tgt(som3))
+    cascade_matrix(lid_p_solution         ,reac) = safe_div(1._r8,cp_ratios(som1))-safe_div(f1,cp_ratios_tgt(som2))-safe_div(f2,cp_ratios_tgt(som3))
 
     cascade_matrix(lid_minn_nh4_immob     ,reac) = -cascade_matrix(lid_nh4         ,reac)
     cascade_matrix(lid_minp_immob         ,reac) = -cascade_matrix(lid_p_solution  ,reac)
@@ -257,7 +247,8 @@ contains
 
     primvarid(reac) = (som1-1)*nelms+c_loc
     is_aerobic_reac(reac) = .true.
-
+    nitrogen_limit_flag(reac) = (cascade_matrix(lid_nh4, reac) < 0._r8)
+    phosphos_limit_flag(reac) = (cascade_matrix(lid_p_solution,reac) < 0._r8)
     !----------------------------------------------------------------------
     !reaction 5, som2->som1, som3
     reac = som2_dek_reac
@@ -278,7 +269,7 @@ contains
     cascade_matrix(lid_co2                ,reac)   =  rf_s2s1_bgc
     cascade_matrix(lid_nh4                ,reac)   =  safe_div(1._r8,cn_ratios(som2))-0.93_r8*safe_div(1._r8-rf_s2s1_bgc,cn_ratios_tgt(som1)) &
          -0.07_r8*safe_div(1._r8-rf_s2s1_bgc,cn_ratios_tgt(som3))
-    cascade_matrix(lid_p_solution         ,reac)   =  safe_div(1._r8,cn_ratios(som2))-0.93_r8*safe_div(1._r8-rf_s2s1_bgc,cp_ratios_tgt(som1)) &
+    cascade_matrix(lid_p_solution         ,reac)   =  safe_div(1._r8,cp_ratios(som2))-0.93_r8*safe_div(1._r8-rf_s2s1_bgc,cp_ratios_tgt(som1)) &
               -0.07_r8*safe_div(1._r8-rf_s2s1_bgc,cp_ratios_tgt(som3))
 
     cascade_matrix(lid_minn_nh4_immob     ,reac)   = -cascade_matrix(lid_nh4         ,reac)
@@ -287,7 +278,8 @@ contains
 
     primvarid(reac) = (som2-1)*nelms+c_loc
     is_aerobic_reac(reac) = .true.
-
+    nitrogen_limit_flag(reac) = (cascade_matrix(lid_nh4, reac) < 0._r8)
+    phosphos_limit_flag(reac) = (cascade_matrix(lid_p_solution,reac) < 0._r8)
     !----------------------------------------------------------------------
     !reaction 6, s3-> s1
     reac = som3_dek_reac
@@ -303,7 +295,7 @@ contains
 
     cascade_matrix(lid_co2                ,reac) = rf_s3s1_bgc
     cascade_matrix(lid_nh4                ,reac) = safe_div(1._r8,cn_ratios(som3)) - safe_div(1._r8-rf_s3s1_bgc,cn_ratios_tgt(som1))
-    cascade_matrix(lid_p_solution         ,reac) = safe_div(1._r8,cn_ratios(som3)) - safe_div(1._r8-rf_s3s1_bgc,cp_ratios_tgt(som1))
+    cascade_matrix(lid_p_solution         ,reac) = safe_div(1._r8,cp_ratios(som3)) - safe_div(1._r8-rf_s3s1_bgc,cp_ratios_tgt(som1))
 
     cascade_matrix(lid_minn_nh4_immob     ,reac) = -cascade_matrix(lid_nh4         ,reac)
     cascade_matrix(lid_minp_immob         ,reac) = -cascade_matrix(lid_p_solution  ,reac)
@@ -312,7 +304,8 @@ contains
 
     primvarid(reac) = (som3-1)*nelms+c_loc
     is_aerobic_reac(reac) = .true.
-
+    nitrogen_limit_flag(reac) = (cascade_matrix(lid_nh4, reac) < 0._r8)
+    phosphos_limit_flag(reac) = (cascade_matrix(lid_p_solution,reac) < 0._r8)
     !----------------------------------------------------------------------
     !reaction 7, the partition into lit1 and lit2 is nutrient dependent, respires co2?
     reac = cwd_dek_reac
@@ -331,15 +324,16 @@ contains
 
     cascade_matrix(lid_nh4                ,reac) = safe_div(1._r8,cn_ratios(cwd)) - safe_div(cwd_fcel_bgc,cn_ratios_tgt(lit2)) - &
          safe_div(cwd_flig_bgc,cn_ratios_tgt(lit3))
-    cascade_matrix(lid_p_solution         ,reac) = safe_div(1._r8,cn_ratios(cwd)) - safe_div(cwd_fcel_bgc,cp_ratios_tgt(lit2)) - &
+    cascade_matrix(lid_p_solution         ,reac) = safe_div(1._r8,cp_ratios(cwd)) - safe_div(cwd_fcel_bgc,cp_ratios_tgt(lit2)) - &
          safe_div(cwd_flig_bgc,cp_ratios_tgt(lit3))
 
     cascade_matrix(lid_minn_nh4_immob     ,reac) = -cascade_matrix(lid_nh4         ,reac)
-    cascade_matrix(lid_minnp_immob        ,reac) = -cascade_matrix(lid_p_solution  ,reac)
+    cascade_matrix(lid_minp_immob         ,reac) = -cascade_matrix(lid_p_solution  ,reac)
 
     primvarid(reac) = (cwd-1)*nelms+c_loc
     is_aerobic_reac(reac) = .true.
-
+    nitrogen_limit_flag(reac) = (cascade_matrix(lid_nh4, reac) < 0._r8)
+    phosphos_limit_flag(reac) = (cascade_matrix(lid_p_solution,reac) < 0._r8)
 
     !----------------------------------------------------------------------
     !reaction 8, nitrification

@@ -26,15 +26,35 @@ module BGCCentECACNPParMod
   type(CNNitrifDenitrifParamsType), protected ::  CNNitrifDenitrifParamsInst
 
 
-  type :: NutrientCompetitionParamsType
+  !the following type is defined for nutrient competition. some of its variables
+  !are constant, and some depend on dynamic status of the plants and microbes
+
+  type, public :: NutrientCompetitionParamsType
 
      real(r8) :: dayscrecover      ! number of days to recover negative cpool
-     real(r8) :: compet_plant_no3  ! (unitless) relative compettiveness of plants for NO3
-     real(r8) :: compet_plant_nh4  ! (unitless) relative compettiveness of plants for NH4
-     real(r8) :: compet_decomp_no3 ! (unitless) relative competitiveness of immobilizers for NO3
-     real(r8) :: compet_decomp_nh4 ! (unitless) relative competitiveness of immobilizers for NH4
-     real(r8) :: compet_denit      ! (unitless) relative competitiveness of denitrifiers for NO3
-     real(r8) :: compet_nit        ! (unitless) relative competitiveness of nitrifiers for NH4
+     real(r8)    , pointer :: km_minsurf_minn_vr(:,:)    ! km for NH4 adsorption
+     real(r8)    , pointer :: vmax_plant_nh4(:)          ! VMAX for plant NH4 uptake
+     real(r8)    , pointer :: vmax_plant_no3(:)          ! VMAX for plant NO3 uptake
+     real(r8)    , pointer :: vmax_plant_p(:)            ! VMAX for plant P uptake
+     real(r8)    , pointer :: vmax_minsurf_p_vr(:,:)     ! VMAX for P adsorption
+     real(r8)    , pointer :: km_plant_nh4(:)            ! KM for plant NH4 uptake
+     real(r8)    , pointer :: km_plant_no3(:)            ! KM for plant NO3 uptake
+     real(r8)    , pointer :: km_plant_p(:)              ! KM for plant P uptake
+     real(r8)    , pointer :: km_minsurf_minp_vr(:,:)       ! KM for P adsorption
+     real(r8)              :: km_decomp_nh4_ref          ! KM for microbial decomposer NH4 uptake
+     real(r8)              :: km_decomp_no3_ref          ! KM for microbial decomposer NO3 uptake
+     real(r8)              :: km_decomp_p_ref            ! KM for microbial decomposer P uptake
+     real(r8)              :: km_nit_ref                 ! KM for nitrifier NH4 uptake
+     real(r8)              :: km_den_ref                 ! KM for denitrifier NO3 uptake
+     real(r8)              :: km_plant_nh4_col
+     real(r8)              :: km_plant_no3_col
+
+     real(r8)    , pointer :: cn_ratios_tgt(:)
+     real(r8)    , pointer :: cp_ratios_tgt(:)
+     contains
+       procedure, public  :: Init
+       procedure, private :: InitAllocate
+       procedure, public  :: set_nutrientcompet_paras
   end type NutrientCompetitionParamsType
 
   ! NutrientCompetitionParamsInst is populated in readCNAllocParams which is called in
@@ -62,6 +82,7 @@ module BGCCentECACNPParMod
      real(r8)             :: cp_l1_bgc_tgt
      real(r8)             :: cp_l2_bgc_tgt
      real(r8)             :: cp_l3_bgc_tgt
+
 
      real(r8)             :: rf_l1s1_bgc      !respiration fraction litter 1 -> SOM 1
      real(r8)             :: rf_l2s1_bgc
@@ -105,6 +126,50 @@ module BGCCentECACNPParMod
 
 
 contains
+
+  !-------------------------------------------------------------------------------
+
+  subroutine Init(this)
+
+  ! !ARGUMENTS:
+  class(NutrientCompetitionParamsType) :: this
+
+
+  end subroutine Init
+
+  !-------------------------------------------------------------------------------
+  subroutine set_nutrientcompet_paras(this)
+
+  ! !ARGUMENTS:
+  class(NutrientCompetitionParamsType) :: this
+
+
+  end subroutine set_nutrientcompet_paras
+
+  !-------------------------------------------------------------------------------
+  subroutine InitAllocate(this)
+
+
+  use clm_varpar, only : numpft, nsoilorder, nlevdecomp_full, ndecomp_pools
+  ! !ARGUMENTS:
+
+  class(NutrientCompetitionParamsType) :: this
+
+
+  allocate(this%km_minsurf_minn_vr(0:nsoilorder,1:nlevdecomp_full));
+  allocate(this%vmax_plant_nh4(0:numpft));
+  allocate(this%vmax_plant_no3(0:numpft));
+  allocate(this%vmax_plant_p(0:numpft));
+  allocate(this%vmax_minsurf_p_vr(0:nsoilorder,1:nlevdecomp_full));
+  allocate(this%km_plant_nh4(0:numpft));
+  allocate(this%km_plant_no3(0:numpft));
+  allocate(this%km_plant_p(0:numpft));
+  allocate(this%km_minsurf_minp_vr(0:nsoilorder,1:nlevdecomp_full));
+
+  allocate(this%cn_ratios_tgt(ndecomp_pools));
+  allocate(this%cp_ratios_tgt(ndecomp_pools));
+
+  end subroutine InitAllocate
 
   !-------------------------------------------------------------------------------
   subroutine readCentNitrifDenitrifParams ( ncid )
@@ -565,41 +630,7 @@ subroutine readCentCNAllocParams ( ncid )
 
   ! read in parameters
 
-  tString='compet_plant_no3'
-  call ncd_io(varname=trim(tString),data=tempr, flag='read', ncid=ncid, readvar=readv)
-  if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
-    //errMsg(__FILE__, __LINE__))
-  NutrientCompetitionParamsInst%compet_plant_no3=tempr
 
-  tString='compet_plant_nh4'
-  call ncd_io(varname=trim(tString),data=tempr, flag='read', ncid=ncid, readvar=readv)
-  if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
-    //errMsg(__FILE__, __LINE__))
-  NutrientCompetitionParamsInst%compet_plant_nh4=tempr
-
-  tString='compet_decomp_no3'
-  call ncd_io(varname=trim(tString),data=tempr, flag='read', ncid=ncid, readvar=readv)
-  if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
-    //errMsg(__FILE__, __LINE__))
-  NutrientCompetitionParamsInst%compet_decomp_no3=tempr
-
-  tString='compet_decomp_nh4'
-  call ncd_io(varname=trim(tString),data=tempr, flag='read', ncid=ncid, readvar=readv)
-  if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
-    //errMsg(__FILE__, __LINE__))
-  NutrientCompetitionParamsInst%compet_decomp_nh4=tempr
-
-  tString='compet_denit'
-  call ncd_io(varname=trim(tString),data=tempr, flag='read', ncid=ncid, readvar=readv)
-  if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
-    //errMsg(__FILE__, __LINE__))
-  NutrientCompetitionParamsInst%compet_denit=tempr
-
-  tString='compet_nit'
-  call ncd_io(varname=trim(tString),data=tempr, flag='read', ncid=ncid, readvar=readv)
-  if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString) &
-    //errMsg(__FILE__, __LINE__))
-  NutrientCompetitionParamsInst%compet_nit=tempr
 
 
 end subroutine readCentCNAllocParams
