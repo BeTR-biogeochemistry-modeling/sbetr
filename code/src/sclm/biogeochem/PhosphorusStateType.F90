@@ -91,8 +91,6 @@ contains
     allocate(this%primp_vr_col             (begc:endc,1:nlevdecomp_full)) ; this%primp_vr_col             (:,:) = nan
     allocate(this%sminp_vr_col             (begc:endc,1:nlevdecomp_full)) ; this%sminp_vr_col             (:,:) = nan
 
-    allocate(this%ppgg_pleafn_patch   (begp:endp))                   ; this%ppgg_pleafn_patch   (:) = nan
-    allocate(this%pgpp_pleafp_patch   (begp:endp))                   ; this%pgpp_pleafp_patch   (:) = nan
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------

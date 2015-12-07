@@ -578,8 +578,7 @@ contains
 
   subroutine calc_bgc_reaction(this, bounds, lbj, ubj, num_soilc, filter_soilc, num_soilp, filter_soilp, jtops, dtime, &
        betrtracer_vars, tracercoeff_vars, waterstate_vars, temperature_vars, soilstate_vars, chemstate_vars,           &
-       cnstate_vars, carbonstate_vars, carbonflux_vars, nitrogenstate_vars, nitrogenflux_vars, tracerstate_vars,       &
-       tracerflux_vars, plantsoilnutrientflux_vars)
+       cnstate_vars,tracerstate_vars, tracerflux_vars, plantsoilnutrientflux_vars)
     !
     ! !DESCRIPTION:
     ! do bgc reaction
@@ -600,10 +599,7 @@ contains
     use ODEMod                   , only : ode_ebbks1
     use CNStateType              , only : cnstate_type
     use PlantSoilnutrientFluxType, only : plantsoilnutrientflux_type
-    use CNCarbonStateType        , only : carbonstate_type
-    use CNCarbonFluxType         , only : carbonflux_type
-    use CNNitrogenFluxType       , only : nitrogenflux_type
-    use CNNitrogenStateType      , only : nitrogenstate_type
+
     ! !ARGUMENTS
     class(bgc_reaction_CENTURY_ECACNP_type) , intent(in) :: this
     type(bounds_type)                    , intent(in) :: bounds                        ! bounds
@@ -622,9 +618,6 @@ contains
     type(tracercoeff_type)               , intent(in) :: tracercoeff_vars
     type(carbonstate_type)               , intent(in) :: carbonstate_vars
     type(cnstate_type)                   , intent(inout) :: cnstate_vars
-    type(carbonflux_type)                , intent(inout) :: carbonflux_vars
-    type(nitrogenstate_type)             , intent(inout) :: nitrogenstate_vars
-    type(nitrogenflux_type)              , intent(inout) :: nitrogenflux_vars
     type(tracerstate_type)               , intent(inout) :: tracerstate_vars
     type(tracerflux_type)                , intent(inout) :: tracerflux_vars
     type(plantsoilnutrientflux_type)     , intent(inout) :: plantsoilnutrientflux_vars !
@@ -668,19 +661,19 @@ contains
 
 
     call bgcstate_ext_update_bfdecomp(bounds, 1, ubj, num_soilc, filter_soilc, &
-         carbonflux_vars, nitrogenflux_vars, centurybgc_vars, betrtracer_vars, tracerflux_vars, y0, cn_ratios, cp_ratios)
+         plantsoilnutrientflux_vars, centurybgc_vars, betrtracer_vars, tracerflux_vars, y0, cn_ratios, cp_ratios)
 
     !calculate nitrogen uptake profile
-    call calc_nuptake_prof(bounds, ubj, num_soilc, filter_soilc,                                                &
-         tracerstate_vars%tracer_conc_mobile_col(bounds%begc:bounds%endc, 1:ubj, betrtracer_vars%id_trc_nh3x),  &
-         tracerstate_vars%tracer_conc_mobile_col(bounds%begc:bounds%endc, 1:ubj, betrtracer_vars%id_trc_no3x),  &
-         col%dz(bounds%begc:bounds%endc,1:ubj), cnstate_vars%nfixation_prof_col(bounds%begc:bounds%endc,1:ubj), &
-         nuptake_prof(bounds%begc:bounds%endc,1:ubj))
+    !call calc_nuptake_prof(bounds, ubj, num_soilc, filter_soilc,                                                &
+    !     tracerstate_vars%tracer_conc_mobile_col(bounds%begc:bounds%endc, 1:ubj, betrtracer_vars%id_trc_nh3x),  &
+    !     tracerstate_vars%tracer_conc_mobile_col(bounds%begc:bounds%endc, 1:ubj, betrtracer_vars%id_trc_no3x),  &
+    !     col%dz(bounds%begc:bounds%endc,1:ubj), cnstate_vars%nfixation_prof_col(bounds%begc:bounds%endc,1:ubj), &
+    !     nuptake_prof(bounds%begc:bounds%endc,1:ubj))
 
     !update plant nitrogen uptake potential
 
     call plantsoilnutrientflux_vars%calc_nutrient_uptake_potential(bounds, num_soilc, filter_soilc, num_soilp, &
-         filter_soilp, carbonstate_vars%frootc_patch)
+         filter_soilp)
 
     !calculate multiplicative scalars for decay parameters
     call calc_decompK_multiply_scalar(bounds, lbj, ubj, num_soilc, filter_soilc, jtops,                        &
@@ -688,7 +681,7 @@ contains
          temperature_vars%t_soisno_col(bounds%begc:bounds%endc, lbj:ubj),                                      &
          tracerstate_vars%tracer_conc_mobile_col(bounds%begc:bounds%endc, lbj:ubj, betrtracer_vars%id_trc_o2), &
          tracercoeff_vars%aqu2bulkcef_mobile_col(bounds%begc:bounds%endc, lbj:ubj, betrtracer_vars%id_trc_o2), &
-         soilstate_vars, centurybgc_vars, carbonflux_vars)
+         soilstate_vars, centurybgc_vars, decompECA_vars)
 
     !calculate decay coefficients
     call calc_som_deacyK(bounds, lbj, ubj, num_soilc, filter_soilc, jtops, centurybgc_vars%nom_pools, &
@@ -725,28 +718,19 @@ contains
          tracerstate_vars%tracer_conc_mobile_col(bounds%begc:bounds%endc, lbj:ubj, betrtracer_vars%id_trc_no3x), &
          soilstate_vars,                                                                                         &
          waterstate_vars,                                                                                        &
-         carbonflux_vars,                                                                                        &
+         decompECA_vars,                                                                                         &
          n2_n2o_ratio_denit,                                                                                     &
          nh4_no3_ratio,                                                                                          &
          k_decay(centurybgc_vars%lid_nh4_nit_reac, bounds%begc:bounds%endc, lbj:ubj),                            &
          k_decay(centurybgc_vars%lid_no3_den_reac, bounds%begc:bounds%endc, lbj:ubj))
 
-    !now there is no plant nitrogen uptake, I tend to create a new structure to indicate plant nutrient demand when it is hooked
-    !back with CLM
-
-    call calc_plant_nitrogen_uptake_prof(bounds, ubj, num_soilc, filter_soilc, col%dz(bounds%begc:bounds%endc, lbj:ubj), &
-         plantsoilnutrientflux_vars%plant_minn_uptake_potential_col(bounds%begc:bounds%endc),                            &
-         nuptake_prof(bounds%begc:bounds%endc,1:ubj),                                                                    &
-         k_decay(centurybgc_vars%lid_plant_minn_up_reac, bounds%begc:bounds%endc ,1:ubj))
 
     !apply root distribution here
     call apply_plant_root_respiration_prof(bounds, ubj, num_soilc, filter_soilc,                                          &
-         carbonflux_vars%rr_col(bounds%begc:bounds%endc), cnstate_vars%nfixation_prof_col(bounds%begc:bounds%endc,1:ubj), &
+         plantsoilnutrientflux_vars%rr_col(bounds%begc:bounds%endc), cnstate_vars%nfixation_prof_col(bounds%begc:bounds%endc,1:ubj), &
          k_decay(centurybgc_vars%lid_at_rt_reac, bounds%begc:bounds%endc, 1:ubj))
 
-    call  apply_plant_root_nuptake_prof(bounds, ubj, num_soilp, filter_soilp      , &
-         cnstate_vars%froot_prof_patch(bounds%begp:bounds%endp,1:ubj)             , &
-         plantsoilnutrientflux_vars)
+    !calulate vmax profile for plant nutrient uptake
 
     !do ode integration and update state variables for each layer
 
@@ -781,12 +765,13 @@ contains
        enddo
     enddo
 
-    call bgcstate_ext_update_afdecomp(bounds, 1, ubj, num_soilc, filter_soilc, carbonflux_vars, nitrogenflux_vars, &
+    !will use PlantSoilnutrientFluxType to do feedback in the following subroutines
+    call bgcstate_ext_update_afdecomp(bounds, 1, ubj, num_soilc, filter_soilc, plantsoilnutrientflux_vars, &
          centurybgc_vars, betrtracer_vars, tracerflux_vars, yf)
 
     !retrieve the flux variable
     call retrieve_flux_vars(bounds, lbj, ubj, num_soilc, filter_soilc, jtops, centurybgc_vars%nstvars, dtime, yf, y0, &
-         centurybgc_vars, betrtracer_vars, tracerflux_vars, carbonflux_vars, nitrogenflux_vars, plantsoilnutrientflux_vars)
+         centurybgc_vars, betrtracer_vars, tracerflux_vars, plantsoilnutrientflux_vars)
 
     !retrieve the state variable, state variable will be updated later
     call retrieve_state_vars(bounds, lbj, ubj, num_soilc, filter_soilc, jtops, centurybgc_vars%nstvars,  yf, &

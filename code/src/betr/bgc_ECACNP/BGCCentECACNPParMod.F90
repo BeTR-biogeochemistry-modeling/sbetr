@@ -132,16 +132,16 @@ contains
   subroutine Init(this)
 
   ! !ARGUMENTS:
-  class(CNDecompBgcParamsType) :: this
+  class(NutrientCompetitionParamsType) :: this
 
 
   end subroutine Init
 
   !-------------------------------------------------------------------------------
-  subroutine set_nutrientcompet_paras(this, plant_frootsc_patch )
+  subroutine set_nutrientcompet_paras(this)
 
   ! !ARGUMENTS:
-  class(CNDecompBgcParamsType) :: this
+  class(NutrientCompetitionParamsType) :: this
 
 
   end subroutine set_nutrientcompet_paras
@@ -149,22 +149,25 @@ contains
   !-------------------------------------------------------------------------------
   subroutine InitAllocate(this)
 
+
+  use clm_varpar, only : numpft, nsoilorder, nlevdecomp_full, ndecomp_pools
   ! !ARGUMENTS:
-  class(CNDecompBgcParamsType) :: this
+
+  class(NutrientCompetitionParamsType) :: this
 
 
-  allocate(km_minsurf_minn_vr(:,:));
-  allocate(vmax_plant_nh4(:));
-  allocate(vmax_plant_no3(:));
-  allocate(vmax_plant_p(:));
-  allocate(vmax_minsurf_p_vr(:,:));
-  allocate(km_plant_nh4(:));
-  allocate(km_plant_no3(:));
-  allocate(km_plant_p(:));
-  allocate(km_minsurf_minp_vr(:,:));
+  allocate(this%km_minsurf_minn_vr(0:nsoilorder,1:nlevdecomp_full));
+  allocate(this%vmax_plant_nh4(0:numpft));
+  allocate(this%vmax_plant_no3(0:numpft));
+  allocate(this%vmax_plant_p(0:numpft));
+  allocate(this%vmax_minsurf_p_vr(0:nsoilorder,1:nlevdecomp_full));
+  allocate(this%km_plant_nh4(0:numpft));
+  allocate(this%km_plant_no3(0:numpft));
+  allocate(this%km_plant_p(0:numpft));
+  allocate(this%km_minsurf_minp_vr(0:nsoilorder,1:nlevdecomp_full));
 
-  allocate(cn_ratios_tgt());
-  allocate(cp_ratios_tgt());
+  allocate(this%cn_ratios_tgt(ndecomp_pools));
+  allocate(this%cp_ratios_tgt(ndecomp_pools));
 
   end subroutine InitAllocate
 

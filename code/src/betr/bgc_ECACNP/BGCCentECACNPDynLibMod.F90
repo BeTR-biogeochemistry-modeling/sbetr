@@ -19,7 +19,6 @@ module BGCCentECACNPDynLibMod
   private
 
   public :: apply_plant_root_respiration_prof
-  public :: apply_plant_root_nuptake_prof
   public :: calc_som_deacyK
   public :: calc_sompool_decay
   public :: init_state_vector
@@ -472,8 +471,7 @@ contains
   !-------------------------------------------------------------------------------
 
   subroutine retrieve_flux_vars(bounds, lbj, ubj, numf, filter, jtops, neq, dtime, yf, y0,    &
-       centurybgc_vars, betrtracer_vars, tracerflux_vars, carbonflux_vars, nitrogenflux_vars, &
-       plantsoilnutrientflux_vars)
+       centurybgc_vars, betrtracer_vars, tracerflux_vars,  plantsoilnutrientflux_vars)
     !
     ! !DESCRIPTION:
     !
@@ -481,8 +479,6 @@ contains
     ! !USES:
     use tracerfluxType           , only : tracerflux_type
     use PlantSoilnutrientFluxType, only : plantsoilnutrientflux_type
-    use CNCarbonFluxType         , only : carbonflux_type
-    use CNNitrogenFluxType       , only : nitrogenflux_type
     use BeTRTracerType           , only : betrtracer_type
 
     ! !ARGUMENTS:
@@ -497,8 +493,6 @@ contains
     real(r8)                         ,  intent(in)    :: y0(neq, bounds%begc:bounds%endc, lbj:ubj) !
     type(centurybgc_type)            ,  intent(in)    :: centurybgc_vars
     type(betrtracer_type)            ,  intent(in)    :: betrtracer_vars
-    type(carbonflux_type)            ,  intent(inout) :: carbonflux_vars
-    type(nitrogenflux_type)          ,  intent(inout) :: nitrogenflux_vars
     type(tracerflux_type)            ,  intent(inout) :: tracerflux_vars
     type(plantsoilnutrientflux_type),   intent(inout) :: plantsoilnutrientflux_vars
 
@@ -516,15 +510,15 @@ contains
          nelms                 => centurybgc_vars%nelms                        , & !
          c_loc                 => centurybgc_vars%c_loc                        , & !
          n_loc                 => centurybgc_vars%n_loc                        , & !
-         f_n2o_nit_vr          => nitrogenflux_vars%f_n2o_nit_vr_col           , & !
-         f_denit_vr            => nitrogenflux_vars%f_denit_vr_col             , & !
-         f_nit_vr              => nitrogenflux_vars%f_nit_vr_col               , & !
-         actual_immob_no3_vr   => nitrogenflux_vars%actual_immob_no3_vr_col    , & !
-         actual_immob_nh4_vr   => nitrogenflux_vars%actual_immob_nh4_vr_col    , & !
-         smin_no3_to_plant_vr  => nitrogenflux_vars%smin_no3_to_plant_vr_col   , & !
-         smin_nh4_to_plant_vr  => nitrogenflux_vars%smin_nh4_to_plant_vr_col   , & !
-         supplement_to_sminn_vr=> nitrogenflux_vars%supplement_to_sminn_vr_col , & !
-         hr_vr                 => carbonflux_vars%hr_vr_col                    , & !
+         f_n2o_nit_vr          =>  plantsoilnutrientflux_vars%f_n2o_nit_vr_col           , & !
+         f_denit_vr            =>  plantsoilnutrientflux_vars%f_denit_vr_col             , & !
+         f_nit_vr              =>  plantsoilnutrientflux_vars%f_nit_vr_col               , & !
+         actual_immob_no3_vr   =>  plantsoilnutrientflux_vars%actual_immob_no3_vr_col    , & !
+         actual_immob_nh4_vr   =>  plantsoilnutrientflux_vars%actual_immob_nh4_vr_col    , & !
+         smin_no3_to_plant_vr  =>  plantsoilnutrientflux_vars%smin_no3_to_plant_vr_col   , & !
+         smin_nh4_to_plant_vr  =>  plantsoilnutrientflux_vars%smin_nh4_to_plant_vr_col   , & !
+         supplement_to_sminn_vr=>  plantsoilnutrientflux_vars%supplement_to_sminn_vr_col , & !
+         hr_vr                 =>  plantsoilnutrientflux_vars%hr_vr_col                    , & !
          volatileid            => betrtracer_vars%volatileid                   , & !
          ngwmobile_tracers     => betrtracer_vars%ngwmobile_tracers            , & !
          tracer_flx_netpro_vr  => tracerflux_vars%tracer_flx_netpro_vr_col     , & !
@@ -1356,27 +1350,25 @@ contains
   !-----------------------------------------------------------------------
 
   subroutine bgcstate_ext_update_bfdecomp(bounds, lbj, ubj, num_soilc, filter_soilc, &
-       carbonflux_vars, nitrogenflux_vars, centurybgc_vars, betrtracer_vars, &
+       plantsoilnutrientflux_vars, centurybgc_vars, betrtracer_vars, &
        tracerflux_vars, y0, cn_ratios, cp_ratios)
     ! !DESCRIPTION:
     ! update om pools with external input before doing decomposition
     !
     ! !USES:
     use MathfuncMod              , only :  safe_div
-    use CNCarbonFluxType         , only : carbonflux_type
-    use CNNitrogenFluxType       , only : nitrogenflux_type
     use BetrTracerType           , only : betrtracer_type
     use tracerstatetype          , only : tracerstate_type
     use tracerfluxType           , only : tracerflux_type
-    use CNDecompCascadeConType , only : decomp_cascade_con
+    use CNDecompCascadeConType   , only : decomp_cascade_con
+    use PlantSoilnutrientFluxType, only : plantsoilnutrientflux_type
     !
     ! !ARGUMENTS:
     type(bounds_type)       , intent(in) :: bounds                                                                    ! bounds
     integer                 , intent(in) :: num_soilc                                                                 ! number of columns in column filter
     integer                 , intent(in) :: filter_soilc(:)                                                           ! column filter
     integer                 , intent(in) :: lbj, ubj
-    type(carbonflux_type)   , intent(in) :: carbonflux_vars
-    type(nitrogenflux_type) , intent(in) :: nitrogenflux_vars
+    type(plantsoilnutrientflux_type), intent(in) :: plantsoilnutrientflux_vars
     type(betrtracer_type)   , intent(in) :: betrtracer_vars                                                           ! betr configuration information
     type(centurybgc_type)   , intent(in) :: centurybgc_vars
     type(tracerflux_type)   , intent(inout) :: tracerflux_vars
@@ -1398,10 +1390,10 @@ contains
          id_trc_no3x                    => betrtracer_vars%id_trc_no3x                       , & !
          ngwmobile_tracers              => betrtracer_vars%ngwmobile_tracers                 , & !
          tracer_flx_netpro_vr           => tracerflux_vars%tracer_flx_netpro_vr_col          , & !
-         bgc_cpool_ext_loss_vr          => carbonflux_vars%bgc_cpool_ext_loss_vr_col         , & !
-         bgc_npool_ext_loss_vr          => nitrogenflux_vars%bgc_npool_ext_loss_vr_col       , & !
-         sminn_nh4_input_vr             => nitrogenflux_vars%sminn_nh4_input_vr_col          , & !
-         sminn_no3_input_vr             => nitrogenflux_vars%sminn_no3_input_vr_col          , & !
+         bgc_cpool_ext_loss_vr          => plantsoilnutrientflux_vars%bgc_cpool_ext_loss_vr_col         , & !
+         bgc_npool_ext_loss_vr          => plantsoilnutrientflux_vars%bgc_npool_ext_loss_vr_col       , & !
+         sminn_nh4_input_vr             => plantsoilnutrientflux_vars%sminn_nh4_input_vr_col          , & !
+         sminn_no3_input_vr             => plantsoilnutrientflux_vars%sminn_no3_input_vr_col          , & !
          initial_cn_ratio               => decomp_cascade_con%initial_cn_ratio               , & ! Output: [real(r8)          (:)     ]  c:n ratio for initialization of pools
          floating_cn_ratio_decomp_pools => decomp_cascade_con%floating_cn_ratio_decomp_pools   & ! Output: [logical           (:)     ]  TRUE => pool has fixed C:N ratio
          )
@@ -1453,14 +1445,13 @@ contains
   !-----------------------------------------------------------------------
 
   subroutine bgcstate_ext_update_afdecomp(bounds, lbj, ubj, num_soilc, filter_soilc, &
-       carbonflux_vars, nitrogenflux_vars,  centurybgc_vars, betrtracer_vars, tracerflux_vars, yf)
+        plantsoilnutrientflux_vars,  centurybgc_vars, betrtracer_vars, tracerflux_vars, yf)
 
     ! !DESCRIPTION:
     ! update om state variables after doing decomposition.
     ! !USES:
     use MathfuncMod         , only :  safe_div
-    use CNCarbonFluxType    , only : carbonflux_type
-    use CNNitrogenFluxType  , only : nitrogenflux_type
+    use PlantSoilnutrientFluxType, only : plantsoilnutrientflux_type
     use BetrTracerType      , only : betrtracer_type
     use tracerstatetype     , only : tracerstate_type
     use tracerfluxType      , only : tracerflux_type
@@ -1470,8 +1461,7 @@ contains
     integer                 , intent(in)    :: num_soilc                                                     ! number of columns in column filter
     integer                 , intent(in)    :: filter_soilc(:)                                               ! column filter
     integer                 , intent(in)    :: lbj, ubj
-    type(carbonflux_type)   , intent(in)    :: carbonflux_vars
-    type(nitrogenflux_type) , intent(in)    :: nitrogenflux_vars
+    type(plantsoilnutrientflux_type), intent(in) ::  plantsoilnutrientflux_vars
     type(betrtracer_type)   , intent(in)    :: betrtracer_vars                                               ! betr configuration information
     type(centurybgc_type)   , intent(in)    :: centurybgc_vars
     type(tracerflux_type)   , intent(inout) :: tracerflux_vars
@@ -1487,8 +1477,8 @@ contains
          c_loc                   => centurybgc_vars%c_loc                       , & !
          n_loc                   => centurybgc_vars%n_loc                       , & !
          tracer_flx_netpro_vr    => tracerflux_vars%tracer_flx_netpro_vr_col    , & !
-         bgc_cpool_ext_inputs_vr => carbonflux_vars%bgc_cpool_ext_inputs_vr_col , & !
-         bgc_npool_ext_inputs_vr => nitrogenflux_vars%bgc_npool_ext_inputs_vr_col & !
+         bgc_cpool_ext_inputs_vr =>  plantsoilnutrientflux_vars%bgc_cpool_ext_inputs_vr_col , & !
+         bgc_npool_ext_inputs_vr =>  plantsoilnutrientflux_vars%bgc_npool_ext_inputs_vr_col & !
          )
 
       do k = 1, ndecomp_pools
@@ -1759,40 +1749,7 @@ contains
     end associate
   end subroutine assign_nitrogen_hydroloss
 
-  !-------------------------------------------------------------------------------
-  subroutine apply_plant_root_nuptake_prof(bounds, ubj, num_soilp, filter_soilp, &
-       froot_prof_patch, plantsoilnutrientflux_vars)
-    !
-    ! !DESCRIPTION:
-    ! nitroge uptake profile
-    ! !USES:
-    use PlantSoilnutrientFluxType, only : plantsoilnutrientflux_type
-    implicit none
-    ! !ARGUMENTS:
-    type(bounds_type)                , intent(in)    :: bounds                                        ! bounds
-    integer                          , intent(in)    :: ubj
-    integer                          , intent(in)    :: num_soilp                                     ! number of columns in column filter
-    integer                          , intent(in)    :: filter_soilp(:)                               ! column filter
-    real(r8)                         , intent(in)    :: froot_prof_patch(bounds%begp:bounds%endp, 1:ubj) !
-    type(plantsoilnutrientflux_type) , intent(inout) :: plantsoilnutrientflux_vars
 
-    ! !LOCAL VARIABLES:
-    integer :: fp, p, j
-
-    associate(                                                                &
-         plant_frootsc_patch =>  plantsoilnutrientflux_vars%plant_frootsc_patch , &
-         plant_frootsc_vr  => plantsoilnutrientflux_vars%plant_frootsc_vr_patch &
-         )
-
-      do j = 1, ubj
-         do fp = 1, num_soilp
-            p = filter_soilc(fp)
-            plant_frootsc_vr(p, j) = froot_prof_patch(p,j)  * plant_frootsc_patch(p)
-         enddo
-      enddo
-    end associate
-
-  end subroutine apply_plant_root_nuptake_prof
 !-------------------------------------------------------------------------------
 
 end module BGCCentECACNPDynLibMod
