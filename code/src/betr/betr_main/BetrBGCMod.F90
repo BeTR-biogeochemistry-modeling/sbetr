@@ -124,7 +124,7 @@ contains
     if(use_cn)then
        !update npp for aerenchyma calculation
        call betr_annualupdate(bounds, num_soilc, filter_soilc, num_soilp, filter_soilp, &
-            carbonflux_vars, tracercoeff_vars)
+            carbonflux_vars, plantsoilnutrientflux_vars, tracercoeff_vars)
     endif
 
     !obtain water table depth

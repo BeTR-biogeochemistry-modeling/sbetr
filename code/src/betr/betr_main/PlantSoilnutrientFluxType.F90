@@ -29,12 +29,9 @@ module PlantSoilnutrientFluxType
     real(r8), pointer :: plant_minn_active_yield_flx_patch           (:)    !patch level mineral nitrogen yeild from soil bgc calculation
     real(r8), pointer :: plant_minn_passive_yield_flx_patch          (:)    !patch level mineral nitrogen yeild from soil bgc calculation
     real(r8), pointer :: plant_minn_active_yield_flx_vr_col          (:, :) !layer specific active mineral nitrogen yield
-    real(r8), pointer :: plant_minn_uptake_potential_patch           (:)
-    real(r8), pointer :: plant_minn_uptake_potential_col             (:)
-    real(r8), pointer :: plant_minn_uptake_potential_vr_patch        (:,:)  !plant mineral nitrogen uptake potential for each layer
-    real(r8), pointer :: plant_minn_uptake_potential_vr_col          (:,:)  !plant mineral nitrogen uptake potential for each layer
+    real(r8), pointer :: plant_minn_uptake_vmax_vr_patch        (:,:)  !plant mineral nitrogen uptake potential for each layer
+    real(r8), pointer :: plant_minn_uptake_vmax_vr_col          (:,:)  !plant mineral nitrogen uptake potential for each layer
     real(r8), pointer :: plant_totn_demand_flx_col                   (:)    !column level total nitrogen demand, g N/m2/s
-    real(r8), pointer :: fppnd_col                                   (:)    !fraction of fufilled nitrogen demand
     real(r8), pointer :: plant_frootsc_vr_patch                      (:,:)  !fine root for nutrient uptake
     real(r8), pointer :: plant_frootsc_patch                         (:)    !fine root for nutrient uptake
     real(r8), pointer :: rr_col                                      (:)    ! column (gC/m2/s) root respiration (fine root MR + total root GR) (p2c)
@@ -72,7 +69,7 @@ module PlantSoilnutrientFluxType
      procedure , public  :: Init
      procedure , public  :: SetValues
      procedure , public  :: summary
-     procedure , public  :: calc_nutrient_uptake_potential
+     procedure , public  :: calc_nutrient_uptake_vmax
      procedure , private :: InitAllocate
      procedure , private :: InitHistory
      procedure , private :: InitCold
@@ -121,10 +118,6 @@ module PlantSoilnutrientFluxType
 
     allocate(this%plant_minn_active_yield_flx_patch  (begp:endp          )) ; this%plant_minn_active_yield_flx_patch  (:)   = nan
     allocate(this%plant_minn_passive_yield_flx_patch (begp:endp          )) ; this%plant_minn_passive_yield_flx_patch (:)   = nan
-    allocate(this%plant_minn_uptake_potential_patch  (begp:endp          )) ; this%plant_minn_uptake_potential_patch  (:)   = nan
-    allocate(this%plant_minn_uptake_potential_col    (begc:endc          )) ; this%plant_minn_uptake_potential_col    (:)   = nan
-    allocate(this%fppnd_col                          (begc:endc          )) ; this%fppnd_col                          (:)   = nan
-
 
     allocate(this%plant_minn_active_yield_flx_col    (begc:endc          )) ; this%plant_minn_active_yield_flx_col    (:)   = nan
     allocate(this%plant_minn_passive_yield_flx_col   (begc:endc          )) ; this%plant_minn_passive_yield_flx_col   (:)   = nan
@@ -209,10 +202,6 @@ module PlantSoilnutrientFluxType
          avgflag='A', long_name='plant nitrogen passive uptake flux from soil', &
          ptr_patch=this%plant_minn_passive_yield_flx_patch, default='inactive')
 
-    this%fppnd_col(begc:endc) = spval
-    call hist_addfld1d (fname='FPPND', units='none', &
-         avgflag='A', long_name='fulfilled plant nitrogen demand from mineral nitrogen uptake', &
-         ptr_col=this%fppnd_col)
 
     this%plant_minn_active_yield_flx_col(begc:endc) = spval
     call hist_addfld1d (fname='PLANT_MINN_ACTIVE_YIELD_FLX_COL', units='gN/m^2/s', &
@@ -270,7 +259,6 @@ module PlantSoilnutrientFluxType
        this%plant_minn_active_yield_flx_col(i)   = value_column
        this%plant_minn_passive_yield_flx_col(i)  = value_column
        this%plant_totn_demand_flx_col(i)         = value_column
-       this%fppnd_col(i)                         = value_column
     enddo
 
   end subroutine SetValues
@@ -357,20 +345,15 @@ module PlantSoilnutrientFluxType
     this%plant_minn_active_yield_flx_col(c)  =dot_sum(this%plant_minn_active_yield_flx_vr_col(c,1:ubj),dz(c,1:ubj))/dtime
     this%plant_minn_passive_yield_flx_col(c) =(nh4_transp(c) + no3_transp(c))*natomw/dtime
 
-    if (this%plant_minn_uptake_potential_col(c)>0._r8) then
-       this%fppnd_col(c)   = (this%plant_minn_active_yield_flx_col(c) + &
-                              this%plant_minn_passive_yield_flx_col(c))/this%plant_minn_uptake_potential_col(c)
-    else
-      this%fppnd_col(c) = 1._r8
-    endif
+
   enddo
 
   end subroutine summary
 
 !--------------------------------------------------------------------------------
 
-  subroutine calc_nutrient_uptake_potential(this, bounds, num_soilc, filter_soilc, &
-       num_soilp, filter_soilp, frootc_patch)
+  subroutine calc_nutrient_uptake_vmax(this, bounds, num_soilc, filter_soilc, &
+       num_soilp, filter_soilp)
   !
   ! !DESCRIPTION:
   ! diagnose the vmax for nutrient uptake, with the vision to use ECA or something alike.
@@ -387,14 +370,12 @@ module PlantSoilnutrientFluxType
   integer           , intent(in)    :: filter_soilc(:)
   integer           , intent(in)    :: num_soilp
   integer           , intent(in)    :: filter_soilp(:)
-  real(r8)          , intent(in)    :: frootc_patch(bounds%begp:bounds%endp)
 
   ! !LOCAL VARIABLES:
   real(r8) :: Vmax_minn = 1.e-6_r8  ! gN/gC/s
   integer  :: fp, p, fc, c
   real(r8) :: nscal = 1._r8
 
-  SHR_ASSERT_ALL((ubound(frootc_patch) == (/bounds%endp/)), errMsg(__FILE__,__LINE__))
 
   !calculate root nitrogen uptake potential
 
@@ -402,15 +383,15 @@ module PlantSoilnutrientFluxType
   !
   do fc = 1, num_soilc
     c = filter_soilc(fc)
-    this%plant_minn_uptake_potential_col(c) = this%plant_totn_demand_flx_col(c)*nscal
+
   enddo
 
-  do fp = 1, num_soilp
-    p = filter_soilp(fp)
-    this%plant_frootsc_patch(p) = frootc_patch(p)
-  enddo
+!  do fp = 1, num_soilp
+!    p = filter_soilp(fp)
+!    this%plant_frootsc_patch(p) = frootc_patch(p)
+!  enddo
 
 
-end subroutine calc_nutrient_uptake_potential
+end subroutine calc_nutrient_uptake_vmax
 
 end module PlantSoilnutrientFluxType

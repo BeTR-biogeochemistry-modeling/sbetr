@@ -33,7 +33,6 @@ module BGCCentECACNPDynLibMod
   public :: bgcstate_ext_update_bfdecomp
   public :: bgcstate_ext_update_afdecomp
   public :: set_reaction_order
-  public :: calc_nutrient_compet_rescal
   public :: assign_nitrogen_hydroloss
   public :: assign_OM_CNpools
 
@@ -108,14 +107,8 @@ module BGCCentECACNPDynLibMod
      integer           :: nstvars                                !number of equations for the state variabile vector
      integer           :: nprimvars                              !total number of primary variables
      integer           :: nreactions                             !seven decomposition pathways plus nitrification, denitrification and plant immobilization
-     integer           :: ncompets                               !decomposers, + nitrifiers, + denitrifiers, + plants, + adsorption surface
 
-     integer           :: lid_decomp_compet
 
-     integer           :: lid_plant_compet
-     integer           :: lid_nitri_compet
-     integer           :: lid_denit_compet
-     integer           :: lid_minsrf_compet
 
      real(r8), pointer :: t_scalar_col(:,:)
      real(r8), pointer :: w_scalar_col(:,:)
@@ -258,15 +251,6 @@ contains
     allocate(this%primvarid(ireac)); this%primvarid(:) = -1
     allocate(this%is_aerobic_reac(ireac)); this%is_aerobic_reac(:)=.false.
 
-    !decomposers, + nitrifiers, + denitrifiers, + plants, + adsorption surface
-    itemp1=0
-    this%lid_decomp_compet    = addone(itemp1)
-    this%lid_plant_compet     = addone(itemp1)
-    this%lid_nitri_compet     = addone(itemp1)
-    this%lid_denit_compet     = addone(itemp1)
-    this%lid_minsrf_compet    = addone(itemp1)
-
-    this%ncompets  = itemp1
 
   end subroutine Init_pars
   !-------------------------------------------------------------------------------
@@ -348,7 +332,7 @@ contains
   !-------------------------------------------------------------------------------
   subroutine calc_som_deacyK(bounds, lbj, ubj, numf, filter, jtops, nom_pools, &
        tracercoeff_vars, tracerstate_vars, betrtracer_vars, centurybgc_vars, &
-       carbonflux_vars, dtime, k_decay)
+       decompECA_vars, dtime, k_decay)
     !
     ! !DESCRIPTION:
     ! calculate decay coefficients for different pools
@@ -359,7 +343,8 @@ contains
     use tracerstatetype    , only          : tracerstate_type
     use BeTRTracerType     , only          : betrtracer_type
     use BGCCentECACNPParMod   , only       : CNDecompBgcParamsInst
-    use CNCarbonFluxType   , only          : carbonflux_type
+    use decompECAType      , only          : decompECA_type
+
     integer                , intent(in)    :: nom_pools
     type(bounds_type)      , intent(in)    :: bounds
     integer                , intent(in)    :: lbj, ubj
@@ -369,7 +354,7 @@ contains
     real(r8)               , intent(in)    :: dtime
     type(betrtracer_type)  , intent(in)    :: betrtracer_vars                    ! betr configuration information
     type(centurybgc_type)  , intent(in)    :: centurybgc_vars
-    type(carbonflux_type)  , intent(in)    :: carbonflux_vars
+    type(decompECA_type)   , intent(in)    :: decompECA_vars
     type(tracercoeff_type) , intent(in)    :: tracercoeff_vars
     type(tracerstate_type) , intent(inout) :: tracerstate_vars
     real(r8)               , intent(out)   :: k_decay(nom_pools, bounds%begc:bounds%endc, lbj:ubj)
@@ -378,9 +363,9 @@ contains
     integer :: fc, c, j
     real(r8):: dtimei
     associate(                                                  &
-         t_scalar       => carbonflux_vars%t_scalar_col       , & ! Output: [real(r8) (:,:)   ]  soil temperature scalar for decomp
-         w_scalar       => carbonflux_vars%w_scalar_col       , & ! Output: [real(r8) (:,:)   ]  soil water scalar for decomp
-         o_scalar       => carbonflux_vars%o_scalar_col       , & ! Output: [real(r8) (:,:)   ]  fraction by which decomposition is limited by anoxia
+         t_scalar       => decompECA_vars%t_scalar_col        , & ! Output: [real(r8) (:,:)   ]  soil temperature scalar for decomp
+         w_scalar       => decompECA_vars%w_scalar_col        , & ! Output: [real(r8) (:,:)   ]  soil water scalar for decomp
+         o_scalar       => decompECA_vars%o_scalar_col        , & ! Output: [real(r8) (:,:)   ]  fraction by which decomposition is limited by anoxia
          depth_scalar   => centurybgc_vars%depth_scalar_col   , & ! Output: [real(r8) (:,:,:) ]  rate constant for decomposition (1./sec)
          lit1           => centurybgc_vars%lit1               , & !
          lit2           => centurybgc_vars%lit2               , & !
@@ -713,7 +698,7 @@ contains
   !-------------------------------------------------------------------------------
   subroutine calc_nitrif_denitrif_rate(bounds, lbj, ubj, numf, filter, jtops, dz, t_soisno, pH, &
        pot_co2_hr, anaerobic_frac, smin_nh4_vr, smin_no3_vr, soilstate_vars, waterstate_vars,   &
-       carbonflux_vars, n2_n2o_ratio_denit, nh4_no3_ratio, decay_nh4, decay_no3)
+       decompECA_vars, n2_n2o_ratio_denit, nh4_no3_ratio, decay_nh4, decay_no3)
     !
     ! !DESCRIPTION:
     ! calculate nitrification denitrification rate
@@ -726,7 +711,7 @@ contains
     use WaterStateType      , only : waterstate_type
     use MathfuncMod         , only : safe_div
     use shr_const_mod       , only : SHR_CONST_TKFRZ
-    use CNCarbonFluxType    , only : carbonflux_type
+    use decompECAType       , only : decompECA_type
 
     ! !ARGUMENTS:
     type(bounds_type),      intent(in)  :: bounds
@@ -743,7 +728,7 @@ contains
     real(r8),               intent(in)  :: smin_no3_vr(bounds%begc: , lbj: )                               !soil no3 concentration [mol N/m3]
     type(waterstate_type) , intent(in)  :: waterstate_vars
     type(soilstate_type)  , intent(in)  :: soilstate_vars
-    type(carbonflux_type) , intent(in)  :: carbonflux_vars
+    type(decompECA_type)  , intent(in)  :: decompECA_vars
     real(r8)             ,  intent(out) :: n2_n2o_ratio_denit(bounds%begc: , lbj: )                        !ratio of n2 to n2o in denitrification
     real(r8)             ,  intent(out) :: nh4_no3_ratio(bounds%begc: , lbj: )                             !ratio of soil nh4 and no3
     real(r8)             ,  intent(out) :: decay_nh4(bounds%begc: ,lbj: )                                  !1/s, decay rate of nh4
@@ -793,8 +778,8 @@ contains
          h2osoi_vol                    =>    waterstate_vars%h2osoi_vol_col , & !
          h2osoi_liq                    =>    waterstate_vars%h2osoi_liq_col , & !
          finundated                    =>    waterstate_vars%finundated_col , & ! Input: [real(r8) (:)]
-         t_scalar                      =>    carbonflux_vars%t_scalar_col   , & ! Input: [real(r8) (:,:)   ]  soil temperature scalar for decomp
-         w_scalar                      =>    carbonflux_vars%w_scalar_col     & ! Input: [real(r8) (:,:)   ]  soil water scalar for decomp
+         t_scalar                      =>    decompECA_vars%t_scalar_col   , & ! Input: [real(r8) (:,:)   ]  soil temperature scalar for decomp
+         w_scalar                      =>    decompECA_vars%w_scalar_col     & ! Input: [real(r8) (:,:)   ]  soil water scalar for decomp
          )
 
       ! Set maximum nitrification rate constant
@@ -1144,7 +1129,7 @@ contains
 
   !----------------------------------------------------------------------------------------------------
   subroutine calc_decompK_multiply_scalar(bounds, lbj, ubj, numf, filter, jtops, finundated, zsoi, &
-       t_soisno, o2_bulk, o2_aqu2bulkcef, soilstate_vars, centurybgc_vars, carbonflux_vars)
+       t_soisno, o2_bulk, o2_aqu2bulkcef, soilstate_vars, centurybgc_vars, decompECA_vars)
     !
     ! !DESCRIPTION:
     ! compute scalar multipliers for aerobic om decomposition
@@ -1156,7 +1141,7 @@ contains
     use CNSharedParamsMod   , only : CNParamsShareInst
     use shr_const_mod       , only : SHR_CONST_TKFRZ, SHR_CONST_PI
     use SoilStatetype       , only : soilstate_type
-    use CNCarbonFluxType    , only : carbonflux_type
+    use DecompECAType       , only : decompECA_type
     !
     ! !ARGUMENTS:
     type(bounds_type),         intent(in)  :: bounds
@@ -1171,7 +1156,7 @@ contains
     real(r8),                  intent(in)  :: o2_aqu2bulkcef(bounds%begc:bounds%endc, lbj:ubj)
     type(soilstate_type),      intent(in)  :: soilstate_vars
     type(centurybgc_type)  , intent(inout) :: centurybgc_vars
-    type(carbonflux_type)  , intent(inout) :: carbonflux_vars
+    type(decompECA_type)   , intent(inout) :: decompECA_vars
 
     ! !LOCAL VARIABLES:
     integer                                :: fc, c, j                    !indices
@@ -1194,9 +1179,9 @@ contains
     associate(                                                 &
          sucsat         => soilstate_vars%sucsat_col         , & ! Input:  [real(r8) (:,:)] minimum soil suction [mm]
          soilpsi        => soilstate_vars%soilpsi_col        , & ! Input:  [real(r8) (:,:)] soilwater pontential in each soil layer [MPa]
-         t_scalar       => carbonflux_vars%t_scalar_col      , & ! Output: [real(r8) (:,:)   ]  soil temperature scalar for decomp
-         w_scalar       => carbonflux_vars%w_scalar_col      , & ! Output: [real(r8) (:,:)   ]  soil water scalar for decomp
-         o_scalar       => carbonflux_vars%o_scalar_col      , & ! Output: [real(r8) (:,:)   ]  fraction by which decomposition is limited by anoxia
+         t_scalar       => decompECA_vars%t_scalar_col       , & ! Output: [real(r8) (:,:)   ]  soil temperature scalar for decomp
+         w_scalar       => decompECA_vars%w_scalar_col       , & ! Output: [real(r8) (:,:)   ]  soil water scalar for decomp
+         o_scalar       => decompECA_vars%o_scalar_col       , & ! Output: [real(r8) (:,:)   ]  fraction by which decomposition is limited by anoxia
          depth_scalar   => centurybgc_vars%depth_scalar_col    & ! Output: [real(r8) (:,:,:) ]  rate constant for decomposition (1./sec)
          )
 
@@ -1553,50 +1538,6 @@ contains
   end subroutine set_reaction_order
 
 
-  !-----------------------------------------------------------------------
-  subroutine calc_nutrient_compet_rescal(bounds, ubj, num_soilc, filter_soilc, &
-       dtime, centurybgc_vars,  k_nit, decomp_nh4_immob, plant_ndemand, smin_nh4_vr, nh4_compet)
-
-    !
-    ! !DESCRIPTION:
-    ! scaling factor for nitrogen competition
-    ! !USES:
-    use MathfuncMod       , only : safe_div
-                                                                                      ! !ARGUMENTS:
-    type(bounds_type)     , intent(in) :: bounds                                      ! bounds
-    integer               , intent(in) :: ubj
-    integer               , intent(in) :: num_soilc                                   ! number of columns in column filter
-    integer               , intent(in) :: filter_soilc(:)                             ! column filter
-    type(centurybgc_type) , intent(in) :: centurybgc_vars
-    real(r8)              , intent(in) :: dtime
-    real(r8)              , intent(in) :: k_nit(bounds%begc: , 1: )
-    real(r8)              , intent(in) :: decomp_nh4_immob(bounds%begc: , 1: )
-    real(r8)              , intent(in) :: plant_ndemand(bounds%begc: , 1: )
-    real(r8)              , intent(in) :: smin_nh4_vr(bounds%begc: , 1: )
-    real(r8)              , intent(inout):: nh4_compet(bounds%begc:bounds%endc,1:ubj) !
-    ! !LOCAL VARIABLES:
-    integer :: j, fc, c
-    real(r8):: tot_demand
-
-    SHR_ASSERT_ALL((ubound(k_nit)            == (/bounds%endc, ubj/)), errMsg(__FILE__, __LINE__))
-    SHR_ASSERT_ALL((ubound(decomp_nh4_immob) == (/bounds%endc, ubj/)), errMsg(__FILE__, __LINE__))
-    SHR_ASSERT_ALL((ubound(plant_ndemand)    == (/bounds%endc, ubj/)), errMsg(__FILE__, __LINE__))
-    SHR_ASSERT_ALL((ubound(smin_nh4_vr)      == (/bounds%endc, ubj/)), errMsg(__FILE__, __LINE__))
-    SHR_ASSERT_ALL((ubound(nh4_compet)       == (/bounds%endc, ubj/)), errMsg(__FILE__, __LINE__))
-
-    do j = 1, ubj
-       do fc = 1, num_soilc
-          c = filter_soilc(fc)
-
-          tot_demand= (k_nit(c,j) * smin_nh4_vr(c,j) + decomp_nh4_immob(c,j) + plant_ndemand(c,j))*dtime
-          if(tot_demand<=smin_nh4_vr(c,j))then
-             nh4_compet(c,j)=1._r8
-          else
-             nh4_compet(c,j) = smin_nh4_vr(c,j)/tot_demand
-          endif
-       enddo
-    enddo
-  end subroutine calc_nutrient_compet_rescal
 
   !-----------------------------------------------------------------------
   subroutine assign_OM_CNpools(bounds, num_soilc, filter_soilc,  carbonstate_vars, &

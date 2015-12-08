@@ -43,10 +43,12 @@ module BGCReactionsCentECACNPType
   use tracer_varcon         , only : bndcond_as_conc, bndcond_as_flux
   use BGCCentECACNPDynMod
   use BGCCentECACNPDynLibMod
+  use BGCCentECACNPParMod
   use LandunitType          , only : lun
   use ColumnType            , only : col
   use GridcellType          , only : grc
   use landunit_varcon       , only : istsoil, istcrop
+  use DecompECAType         , only : DecompECA_type
   implicit none
 
   save
@@ -83,7 +85,6 @@ contains
      real(r8)          :: n2_n2o_ratio_denit     !ratio of n2 to n2o during denitrification
      real(r8)          :: pct_sand               !sand content [0-100]
      real(r8)          :: pct_clay               !clay content [0-100]
-     real(r8)          :: plant_frts             !fine roots for nutrient uptake
      logical,  pointer :: is_zero_order(:)
      integer           :: nr                     !number of reactions involved
    contains
@@ -99,6 +100,8 @@ contains
 
   end interface bgc_reaction_CENTURY_ECACNP_type
 
+
+  type(DecompECA_type), private :: DecompECA_vars
 contains
 
   subroutine Init_Allocate(this, nompools, nreacts, nprimstvars)
@@ -146,7 +149,7 @@ contains
   !-------------------------------------------------------------------------------
 
   subroutine AAssign(this, cn_r,cp_r, k_d,  n2_n2o_r_denit, cell_sand, cell_clay, &
-       plant_froots, betrtracer_vars, gas2bulkcef, aere_cond, tracer_conc_atm)
+       betrtracer_vars, gas2bulkcef, aere_cond, tracer_conc_atm)
     !
     ! !DESCRIPTION:
     ! assign member values for the data type specified by this
@@ -160,7 +163,6 @@ contains
     real(r8)              , intent(in) :: n2_n2o_r_denit
     real(r8)              , intent(in) :: cell_sand
     real(r8)              , intent(in) :: cell_clay
-    real(r8)              , intent(in) :: plant_froots
     type(BeTRtracer_type ), intent(in) :: betrtracer_vars
     real(r8)              , intent(in) :: gas2bulkcef(1:betrtracer_vars%nvolatile_tracers)
     real(r8)              , intent(in) :: aere_cond(1:betrtracer_vars%nvolatile_tracers)
@@ -183,7 +185,6 @@ contains
     this%pct_sand           = cell_sand
     this%pct_clay           = cell_clay
     this%k_decay            = k_d
-    this%plant_frts         = plant_froots
 
     do j = 1, betrtracer_vars%ngwmobile_tracers
        if(j == betrtracer_vars%id_trc_o2)then
@@ -289,6 +290,9 @@ contains
     integer                                              :: c_loc, n_loc, p_loc, trcid
     logical                                              :: carbon_only = .false.
 
+
+
+    call DecompECA_vars%Init(bounds)
     call cnallocate_carbon_only_set(carbon_only)
     call centurybgc_vars%Init(bounds, lbj, ubj)
 
@@ -616,7 +620,6 @@ contains
     type(chemstate_type)                 , intent(in) :: chemstate_vars
     type(betrtracer_type)                , intent(in) :: betrtracer_vars               ! betr configuration information
     type(tracercoeff_type)               , intent(in) :: tracercoeff_vars
-    type(carbonstate_type)               , intent(in) :: carbonstate_vars
     type(cnstate_type)                   , intent(inout) :: cnstate_vars
     type(tracerstate_type)               , intent(inout) :: tracerstate_vars
     type(tracerflux_type)                , intent(inout) :: tracerflux_vars
@@ -672,7 +675,7 @@ contains
 
     !update plant nitrogen uptake potential
 
-    call plantsoilnutrientflux_vars%calc_nutrient_uptake_potential(bounds, num_soilc, filter_soilc, num_soilp, &
+    call plantsoilnutrientflux_vars%calc_nutrient_uptake_vmax(bounds, num_soilc, filter_soilc, num_soilp, &
          filter_soilp)
 
     !calculate multiplicative scalars for decay parameters
@@ -685,7 +688,7 @@ contains
 
     !calculate decay coefficients
     call calc_som_deacyK(bounds, lbj, ubj, num_soilc, filter_soilc, jtops, centurybgc_vars%nom_pools, &
-         tracercoeff_vars, tracerstate_vars, betrtracer_vars, centurybgc_vars, carbonflux_vars,dtime, &
+         tracercoeff_vars, tracerstate_vars, betrtracer_vars, centurybgc_vars, decompECA_vars,dtime, &
          k_decay(1:centurybgc_vars%nom_pools, bounds%begc:bounds%endc, lbj:ubj))
 
     !calculate potential decay rates, without nutrient constraint
@@ -742,12 +745,11 @@ contains
           call Extra_inst%AAssign(cn_r=cn_ratios(:,c,j),cp_r=cp_ratios(:,c,j), k_d=k_decay(:,c,j) ,    &
                n2_n2o_r_denit=n2_n2o_ratio_denit(c,j)                                                , &
                cell_sand=soilstate_vars%cellsand_col(c,j), cell_clay=soilstate_vars%cellclay_col(c,j), &
-               plant_froots= plantsoilnutrientflux_vars%plant_frootsc_vr_col(c,j)                    , &
                betrtracer_vars=betrtracer_vars                                                       , &
                gas2bulkcef=tracercoeff_vars%gas2bulkcef_mobile_col(c,j,:)                            , &
                aere_cond=tracercoeff_vars%aere_cond_col(c,:), tracer_conc_atm=tracerstate_vars%tracer_conc_atm_col(c,:))
 
-          call set_nutrientcompet_paras(ncompete_vars)
+          call NutrientCompetitionParamsInst%set_nutrientcompet_paras( )
           !update state variables
           time = 0._r8
 
@@ -1174,7 +1176,7 @@ contains
 
 
     call apply_ECA_nutrient_regulation(nprimvars, Extra_inst%nr, nitrogen_limit_flag, &
-         phosphos_limit_flag, ystate(1:nprimvars), ncompete_vars, reaction_rates(1:Extra_inst%nr), &
+         phosphos_limit_flag, ystate(1:nprimvars), NutrientCompetitionParamsInst, reaction_rates(1:Extra_inst%nr), &
          cascade_matrix(1:nprimvars, 1:Extra_inst%nr))
 
     call pd_decomp(nprimvars, Extra_inst%nr, cascade_matrix(1:nprimvars, 1:Extra_inst%nr), &
@@ -1299,28 +1301,26 @@ contains
     ! because this is a microbe implicit model, the overall microbial population is
     ! competing with plant and mineral surface for nutrients.
     ! !USES:
-    use KineticsMod, only : kd_infty, ecacomplex_cell_norm
-    use MathfuncMod, only : safe_div
+    use KineticsMod        , only : kd_infty, ecacomplex_cell_norm
+    use MathfuncMod        , only : safe_div
+    use BGCCentECACNPParMod, only : NutrientCompetitionParamsType
     implicit none
     ! !ARGUMENTS:
     integer , intent(in) :: nprimvars  !number of primary variables
     integer , intent(in) :: nr         !number of reactions
     logical , intent(in) :: nitrogen_limit_flag(centurybgc_vars%nom_pools)
     logical , intent(in) :: phosphos_limit_flag(centurybgc_vars%nom_pools)
-    type(NutrientCompetitionParamsType), intent(in) :: ncompete_vars
     real(r8), intent(in)  :: ystate(1:nprimvars)
-    real(r8), intent(in) :: plant_frtcs
-    real(r8), intent(in) :: decomp_mics
-
+    type(NutrientCompetitionParamsType), intent(in) :: ncompete_vars
     real(r8), intent(inout) :: reaction_rates(1:nr)
     real(r8), intent(inout) :: cascade_matrix(1:nprimvars, 1:nr)
 
     ! !LOCAL VARIABLES:
-    real(r8) :: k_mat_minn(2,1:centurybgc_vars%ncompets)
-    real(r8) :: k_mat_minp(1:centurybgc_vars%ncompets)
-    real(r8) :: vcompet(1:centurybgc_vars%ncompets)
-    real(r8) :: siej_cell_norm_minn(2, 1:centurybgc_vars%ncompets)
-    real(r8) :: siej_cell_norm_minp(1:centurybgc_vars%ncompets)
+    real(r8) :: k_mat_minn(2,1:ncompete_vars%ncompets)
+    real(r8) :: k_mat_minp(1:ncompete_vars%ncompets)
+    real(r8) :: vcompet(1:ncompete_vars%ncompets)
+    real(r8) :: siej_cell_norm_minn(2, 1:ncompete_vars%ncompets)
+    real(r8) :: siej_cell_norm_minp(1:ncompete_vars%ncompets)
     real(r8) :: eca_nh4, eca_no3, eca_minp
     integer  :: j, ireac
 
@@ -1348,11 +1348,9 @@ contains
     !nh4 adsoprtion follows linear isotherm
 
     associate(                                                             &
-         lid_nitri_compet   => centurybgc_vars%lid_nitri_compet          , &
-         lid_denit_compet   => centurybgc_vars%lid_denit_compet          , &
-         lid_decomp_compet  => centurybgc_vars%lid_decomp_compet         , &
-         lid_plant_compet   => centurybgc_vars%lid_plant_compet          , &
-         lid_minsrf_compet  => centurybgc_vars%lid_minsrf_compet         , &
+         lid_nitri_compet   => ncompete_vars%lid_nitri_compet          , &
+         lid_denit_compet   => ncompete_vars%lid_denit_compet          , &
+         lid_minsrf_compet  => ncompete_vars%lid_minsrf_compet         , &
 
 
          lit1               => centurybgc_vars%lit1                      , &
@@ -1370,13 +1368,16 @@ contains
          lid_plant_minp_up_reac=> centurybgc_vars%lid_plant_minp_up_reac , &
          lid_p_solution     => centurybgc_vars%lid_p_solution            , &
          nelms              => centurybgc_vars%nelms                     , &
-         c_loc              => centurybgc_vars%c_loc                     , &
+         lid_msurf_compet   => ncompete_vars%lid_msurf_compet            , &
+         lid_decomp_compet  => ncompete_vars%lid_decomp_compet           , &
+         lid_plant_compet   => ncompete_vars%lid_plant_compet            , &
+         c_loc              => centurybgc_vars%c_loc                       &
          )
       !form the k matrix
       k_mat_minn(:,:)=kd_infty
       !nh4
       k_mat_minn(1,lid_decomp_compet) = 1._r8
-      k_mat_minn(1,lid_nit_compet)    = 1._r8
+      k_mat_minn(1,lid_nitri_compet)    = 1._r8
       k_mat_minn(1,lid_plant_compet)  = 1._r8
       k_mat_minn(1,lid_minsrf_compet) = 1._r8
       !no3

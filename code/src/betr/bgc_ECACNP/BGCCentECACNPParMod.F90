@@ -49,8 +49,18 @@ module BGCCentECACNPParMod
      real(r8)              :: km_plant_nh4_col
      real(r8)              :: km_plant_no3_col
 
-     real(r8)    , pointer :: cn_ratios_tgt(:)
-     real(r8)    , pointer :: cp_ratios_tgt(:)
+
+     integer               :: lid_msurf_compet
+     integer               :: lid_decomp_compet
+     integer               :: lid_plant_compet
+     integer               :: lid_nitri_compet
+     integer               :: lid_denit_compet
+     integer               :: lid_minsrf_compet
+     integer               :: ncompets               !decomposers, + nitrifiers, + denitrifiers, + plants, + adsorption surface
+
+     !the following two are dynamic parameters
+     real(r8)              :: plant_frtcs
+     real(r8)              :: decomp_mics
      contains
        procedure, public  :: Init
        procedure, private :: InitAllocate
@@ -120,6 +130,8 @@ module BGCCentECACNPParMod
 
      real(r8),allocatable :: spinup_vector(:) ! multipliers for soil decomp during accelerated spinup
 
+     real(r8)    , pointer :: cn_ratios_tgt(:)
+     real(r8)    , pointer :: cp_ratios_tgt(:)
   end type CNDecompBgcParamsType
 
   type(CNDecompBgcParamsType),protected ::  CNDecompBgcParamsInst
@@ -150,7 +162,7 @@ contains
   subroutine InitAllocate(this)
 
 
-  use clm_varpar, only : numpft, nsoilorder, nlevdecomp_full, ndecomp_pools
+  use clm_varpar, only : numpft, nsoilorder, nlevdecomp_full
   ! !ARGUMENTS:
 
   class(NutrientCompetitionParamsType) :: this
@@ -166,8 +178,7 @@ contains
   allocate(this%km_plant_p(0:numpft));
   allocate(this%km_minsurf_minp_vr(0:nsoilorder,1:nlevdecomp_full));
 
-  allocate(this%cn_ratios_tgt(ndecomp_pools));
-  allocate(this%cp_ratios_tgt(ndecomp_pools));
+
 
   end subroutine InitAllocate
 
@@ -249,7 +260,7 @@ contains
     use ncdio_pio              , only: file_desc_t,ncd_io
     use clm_varcon             , only : secspday
     use clm_varctl             , only : spinup_state
-    use clm_varpar             , only : i_met_lit, i_cel_lit, i_lig_lit, i_cwd
+    use clm_varpar             , only : i_met_lit, i_cel_lit, i_lig_lit, i_cwd, ndecomp_pools
     use clm_time_manager       , only : get_days_per_year
     use BeTRTracerType         , only : BeTRTracer_Type
     use CNDecompCascadeConType , only : decomp_cascade_con
@@ -304,6 +315,8 @@ contains
     allocate(CNDecompBgcParamsInst%spinup_vector(CNDecompBgcParamsInst%nsompools))
     CNDecompBgcParamsInst%spinup_vector(:) = (/ 1.0_r8, 15.0_r8, 675.0_r8 /)
 
+    allocate(CNDecompBgcParamsInst%cn_ratios_tgt(ndecomp_pools));
+    allocate(CNDecompBgcParamsInst%cp_ratios_tgt(ndecomp_pools));
 
 
     ! Read off of netcdf file
