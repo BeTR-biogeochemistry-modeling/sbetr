@@ -63,7 +63,8 @@ module BGCCentECACNPDynLibMod
      real(r8)          :: k_decay_cwd
      integer           :: lid_nh4, lid_nh4_nit_reac              !local position of nh4 in the state variable vector
      integer           :: lid_no3, lid_no3_den_reac              !local position of no3 in the state variable vector
-     integer           :: lid_plant_minn, lid_plant_minn_up_reac !local position of plant uptake of mineral nitrogen in the state variable vector
+     integer           :: lid_plant_minn_nh4, lid_plant_minn_nh4_up_reac !local position of plant uptake of mineral nitrogen NH4 in the state variable vector
+     integer           :: lid_plant_minn_no3, lid_plant_minn_no3_up_reac !
      integer           :: lid_plant_minp, lid_plant_minp_up_reac !local position of plant uptake of mineral P in the state variable vector
      integer           :: lid_p_solution, lid_p_solution_reac    !conversation of adsorbed into secondary phase
      integer           :: lid_p_secondary,lid_p_secondary_reac   !local position of secondary P in the state variable vector
@@ -202,7 +203,9 @@ contains
     this%nom_totelms    = itemp
     this%lid_nh4        = addone(itemp); this%lid_nh4_nit_reac = addone(ireac)       !this is also used to indicate the nitrification reaction
     this%lid_no3        = addone(itemp); this%lid_no3_den_reac = addone(ireac)       !this is also used to indicate the denitrification reaction
-    this%lid_plant_minn = addone(itemp); this%lid_plant_minn_up_reac = addone(ireac) !this is used to indicate plant mineral nitrogen uptake
+    this%lid_plant_minn_nh4 = addone(itemp); this%lid_plant_minn_nh4_up_reac = addone(ireac) !this is used to indicate plant mineral nitrogen uptake
+    this%lid_plant_minn_no3 = addone(itemp); this%lid_plant_minn_no3_up_reac = addone(ireac) !this is used to indicate plant mineral nitrogen uptake
+    this%lid_plant_minp = addone(itemp); this%lid_plant_minp_up_reac = addone(irec)
     this%lid_at_rt      = addone(itemp); this%lid_at_rt_reac = addone(ireac)         !this is used to indicate plant autotrophic root respiration
 
     !non-reactive primary variables
@@ -524,7 +527,9 @@ contains
             c = filter(fc)
 
             if(j>=jtops(c))then
-               plantsoilnutrientflux_vars%plant_minn_active_yield_flx_vr_col(c,j) = (yf(centurybgc_vars%lid_plant_minn, c, j) - y0(centurybgc_vars%lid_plant_minn, c, j))*natomw
+               plantsoilnutrientflux_vars%plant_minn_active_yield_flx_vr_col(c,j) = natomw * &
+                   (yf(centurybgc_vars%lid_plant_minn_nh4, c, j) + yf(centurybgc_vars%lid_plant_minn_no3, c, j) -
+                    y0(centurybgc_vars%lid_plant_minn_nh4, c, j) - y0(centurybgc_vars%lid_plant_minn_no3, c, j)) 
 
                smin_no3_to_plant_vr(c,j) = (yf(centurybgc_vars%lid_minn_no3_plant, c, j) - y0(centurybgc_vars%lid_minn_no3_plant, c, j))*natomw/dtime
                smin_nh4_to_plant_vr(c,j) = (yf(centurybgc_vars%lid_minn_nh4_plant, c, j) - y0(centurybgc_vars%lid_minn_nh4_plant, c, j))*natomw/dtime

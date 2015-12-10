@@ -102,7 +102,8 @@ contains
          cwd_dek_reac=> centurybgc_vars%cwd_dek_reac                     , & !
          lid_at_rt_reac=> centurybgc_vars%lid_at_rt_reac                 , & !
          lid_no3_den  => centurybgc_vars%lid_no3_den                     , & !
-         lid_plant_minn_up_reac=> centurybgc_vars%lid_plant_minn_up_reac , & !
+         lid_plant_minn_nh4_up_reac=> centurybgc_vars%lid_plant_minn_nh4_up_reac , & !
+         lid_plant_minn_no3_up_reac=> centurybgc_vars%lid_plant_minn_no3_up_reac , & !
          lid_p_secondary_reac => centurybgc_vars%lid_p_secondary_reac    , & !
          lid_p_occlude_reac  => centurybgc_vars%lid_p_occlude_reac       , & !
          lid_p_solution_reac => centurybgc_vars%lid_p_solution_reac      , & !
@@ -384,11 +385,16 @@ contains
     !below are zero order reactions
     !----------------------------------------------------------------------
     !reaction 13, plant mineral nitrogen uptake
-    reac = lid_plant_minn_up_reac
-    ! f nh4 + (1-f) no3 -> plant_nitrogen
+    reac = lid_plant_minn_nh4_up_reac
+    !  nh4  -> plant_nitrogen
     cascade_matrix(lid_nh4, reac)        = -1._r8
-    cascade_matrix(lid_no3, reac)        = 0._r8
-    cascade_matrix(lid_plant_minn, reac) = 1._r8
+    cascade_matrix(lid_plant_minn_nh4, reac) = 1._r8
+
+    !reaction 14, plant mineral nitrogen uptake
+    reac = lid_plant_minn_no3_up_reac
+    !  no3  -> plant_nitrogen
+    cascade_matrix(lid_no3, reac)        = -1._r8
+    cascade_matrix(lid_plant_minn_no3, reac) = 1._r8
 
     !reaction 14, plant mineral phosphorus uptake
     reac = lid_plant_minp_up_reac

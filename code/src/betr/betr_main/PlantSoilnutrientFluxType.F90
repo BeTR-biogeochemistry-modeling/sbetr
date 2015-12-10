@@ -24,15 +24,14 @@ module PlantSoilnutrientFluxType
   !
   type, public :: plantsoilnutrientflux_type
 
-    real(r8), pointer :: plant_minn_active_yield_flx_col             (:)    !column level mineral nitrogen yield from soil bgc calculation
     real(r8), pointer :: plant_minn_passive_yield_flx_col            (:)
     real(r8), pointer :: plant_minn_active_yield_flx_patch           (:)    !patch level mineral nitrogen yeild from soil bgc calculation
+    real(r8), pointer :: plant_minn_active_yield_flx_vr_patch        (:,:)  !patch level mineral nitrogen yeild from soil bgc calculation
     real(r8), pointer :: plant_minn_passive_yield_flx_patch          (:)    !patch level mineral nitrogen yeild from soil bgc calculation
-    real(r8), pointer :: plant_minn_active_yield_flx_vr_col          (:, :) !layer specific active mineral nitrogen yield
-    real(r8), pointer :: plant_minn_uptake_vmax_vr_patch        (:,:)  !plant mineral nitrogen uptake potential for each layer
-    real(r8), pointer :: plant_minn_uptake_vmax_vr_col          (:,:)  !plant mineral nitrogen uptake potential for each layer
+    real(r8), pointer :: plant_minn_nh4_uptake_vmax_vr_patch         (:,:)  !plant mineral nitrogen uptake potential for each layer
+    real(r8), pointer :: plant_minn_no3_uptake_vmax_vr_patch         (:,:)  !plant mineral nitrogen uptake potential for each layer
     real(r8), pointer :: plant_totn_demand_flx_col                   (:)    !column level total nitrogen demand, g N/m2/s
-    real(r8), pointer :: plant_frootsc_vr_patch                      (:,:)  !fine root for nutrient uptake
+    real(r8), pointer :: plant_effrootsc_vr_patch                    (:,:)  !fine root for nutrient uptake
     real(r8), pointer :: plant_frootsc_patch                         (:)    !fine root for nutrient uptake
     real(r8), pointer :: rr_col                                      (:)    ! column (gC/m2/s) root respiration (fine root MR + total root GR) (p2c)
     real(r8), pointer :: annavg_agnpp_patch                          (:)     ! (gC/m2/s) annual average aboveground NPP
@@ -64,6 +63,15 @@ module PlantSoilnutrientFluxType
     real(r8), pointer :: smin_nh4_to_plant_vr_col                  (:,:)   ! col vertically-resolved plant uptake of soil NH4 (gN/m3/s)
     real(r8), pointer :: supplement_to_sminn_vr_col                (:,:)   ! col vertically-resolved supplemental N supply (gN/m3/s)
 
+
+    real(r8), pointer :: km_minsurf_minnh4_vr_col                  (:,:)   !mineral NH4 adsorption affinity
+    real(r8), pointer :: km_minsurf_minp_vr_col                    (:,:)   !mineral P adsorption affinity
+    real(r8), pointer :: r_adsorp_pcap_vr_col                      (:,:)   !mineral adsorption capacity, this interacts with secondary P
+    real(r8), pointer :: r_adsorp_nh4cap_vr_col                    (:,:)   !mineral adsorption capacity, this assumes equilibrium adsorption
+    real(r8), pointer :: kd_desorp_p_vr_col                        (:,:)   !desorption parameter, 1/s
+    real(r8), pointer :: plant_minn_nh4_uptake_km_vr_patch         (:,:)   !
+    real(r8), pointer :: plant_minn_no3_uptake_km_vr_patch         (:,:)   !
+    real(r8), pointer :: plant_minp_uptake_km_vr_patch             (:,:)   !
    contains
 
      procedure , public  :: Init
@@ -73,6 +81,7 @@ module PlantSoilnutrientFluxType
      procedure , private :: InitAllocate
      procedure , private :: InitHistory
      procedure , private :: InitCold
+     procedure , private :: sub_froot_prof
   end type plantsoilnutrientflux_type
 
  contains
@@ -118,16 +127,20 @@ module PlantSoilnutrientFluxType
 
     allocate(this%plant_minn_active_yield_flx_patch  (begp:endp          )) ; this%plant_minn_active_yield_flx_patch  (:)   = nan
     allocate(this%plant_minn_passive_yield_flx_patch (begp:endp          )) ; this%plant_minn_passive_yield_flx_patch (:)   = nan
+    allocate(this%plant_minn_active_yield_flx_vr_patch (begp:endp,1:nlevdecomp_full )) ; this%plant_minn_active_yield_flx_vr_patch  (:,:)   = nan
 
-    allocate(this%plant_minn_active_yield_flx_col    (begc:endc          )) ; this%plant_minn_active_yield_flx_col    (:)   = nan
     allocate(this%plant_minn_passive_yield_flx_col   (begc:endc          )) ; this%plant_minn_passive_yield_flx_col   (:)   = nan
 
-    allocate(this%plant_minn_active_yield_flx_vr_col (begc:endc, lbj:ubj )) ; this%plant_minn_active_yield_flx_vr_col (:,:) = nan
+    allocate(this%plant_minn_nh4_uptake_vmax_vr_patch(begp:endp, 1:nlevdecomp_full)); this%plant_minn_nh4_uptake_vmax_vr_patch(:,:) = nan
+    allocate(this%plant_minn_no3_uptake_vmax_vr_patch(begp:endp, 1:nlevdecomp_full)); this%plant_minn_no3_uptake_vmax_vr_patch(:,:) = nan
+
+
+    allocate(this%plant_minp_uptake_vmax_vr_patch(begp:endp, 1:nlevdecomp_full)); this%plant_minp_uptake_vmax_vr_patch(:,:) = nan
 
     allocate(this%plant_totn_demand_flx_col          (begc:endc          )) ; this%plant_totn_demand_flx_col          (:)   = nan
 
     allocate(this%plant_frootsc_patch                (begc:endp          )) ; this%plant_frootsc_patch                (:)   = nan
-    allocate(this%plant_frootsc_vr_patch             (begc:endp,lbj:ubj  )) ; this%plant_frootsc_vr_patch            (:,:)  = nan
+    allocate(this%plant_effrootsc_vr_patch             (begc:endp,lbj:ubj  )) ; this%plant_effrootsc_vr_patch            (:,:)  = nan
 
     allocate(this%annavg_agnpp_patch                (begp:endp))                  ; this%annavg_agnpp_patch  (:) = spval ! To detect first year
     allocate(this%annavg_bgnpp_patch                (begp:endp))                  ; this%annavg_bgnpp_patch  (:) = spval ! To detect first year
@@ -159,6 +172,13 @@ module PlantSoilnutrientFluxType
     allocate(this%supplement_to_sminn_vr_col (begc:endc,1:nlevdecomp_full)) ; this%supplement_to_sminn_vr_col (:,:) = nan
     allocate(this%f_nit_vr_col                (begc:endc,1:nlevdecomp_full)) ; this%f_nit_vr_col                     (:,:) = nan
     allocate(this%f_denit_vr_col              (begc:endc,1:nlevdecomp_full)) ; this%f_denit_vr_col                   (:,:) = nan
+
+
+    allocate(this%km_minsurf_minnh4_vr_col   (begc:endc,1:nlevdecomp_full)) ; this%km_minsurf_minnh4_vr_col(:,:) = nan
+    allocate(this%km_minsurf_minp_vr_col     (begc:endc,1:nlevdecomp_full)) ; this%km_minsurf_minp_vr_col  (:,:) = nan
+    allocate(this%r_adsorp_pcap_vr_col       (begc:endc,1:nlevdecomp_full)) ; this%r_adsorp_pcap_vr_col    (:,:) = nan
+    allocate(this%r_adsorp_nh4cap_vr_col     (begc:endc,1:nlevdecomp_full)) ; this%r_adsorp_nh4cap_vr_col  (:,:) = nan
+    allocate(this%kd_desorp_p_vr_col         (begc:endc,1:nlevdecomp_full)) ; this%kd_desorp_p_vr_col      (:,:) = nan
 
   end subroutine InitAllocate
 
@@ -212,13 +232,6 @@ module PlantSoilnutrientFluxType
     call hist_addfld1d (fname='PLANT_MINN_PASSIVE_YIELD_FLX_COL', units='gN/m^2/s', &
          avgflag='A', long_name='plant nitrogen passive uptake flux from soil', &
          ptr_col=this%plant_minn_passive_yield_flx_col)
-
-
-    this%plant_minn_active_yield_flx_vr_col(begc:endc,:) = spval
-    call hist_addfld_decomp (fname='PLANT_MINN_ACTIVE_YIELD_FLX_vr', units='gN/m^3/s', type2d='levtrc', &
-            avgflag='A', long_name='plant nitrogen active_uptake flux from soil', &
-            ptr_col=this%plant_minn_active_yield_flx_vr_col, default='inactive')
-
 
     this%plant_totn_demand_flx_col(begc:endc) = spval
     call hist_addfld1d (fname='PLANT_TOTN_DEMAND_FLX', units='gN/m^2/s',  &
@@ -342,10 +355,7 @@ module PlantSoilnutrientFluxType
 
   do fc = 1, num_soilc
     c = filter_soilc(fc)
-    this%plant_minn_active_yield_flx_col(c)  =dot_sum(this%plant_minn_active_yield_flx_vr_col(c,1:ubj),dz(c,1:ubj))/dtime
     this%plant_minn_passive_yield_flx_col(c) =(nh4_transp(c) + no3_transp(c))*natomw/dtime
-
-
   enddo
 
   end subroutine summary
@@ -353,15 +363,15 @@ module PlantSoilnutrientFluxType
 !--------------------------------------------------------------------------------
 
   subroutine calc_nutrient_uptake_vmax(this, bounds, num_soilc, filter_soilc, &
-       num_soilp, filter_soilp)
+       num_soilp, filter_soilp, t_scalar, w_scalar)
   !
   ! !DESCRIPTION:
   ! diagnose the vmax for nutrient uptake, with the vision to use ECA or something alike.
   !
   ! !USES:
-  use subgridAveMod       , only : p2c
-  use GridcellType        , only : grc
-
+  use subgridAveMod            , only : p2c
+  use GridcellType             , only : grc
+  use CNStateType              , only : cnstate_type
   !
   ! !ARGUMENTS:
   class(plantsoilnutrientflux_type) :: this
@@ -370,28 +380,108 @@ module PlantSoilnutrientFluxType
   integer           , intent(in)    :: filter_soilc(:)
   integer           , intent(in)    :: num_soilp
   integer           , intent(in)    :: filter_soilp(:)
+  real(r8)          , intent(in)    :: t_scalar(bounds%begc: , 1: )
+  real(r8)          , intent(in)    :: w_scalar(bounds%begc: , 1: )
+  type(cnstate_type), intent(in)    :: cnstate_vars
+
 
   ! !LOCAL VARIABLES:
   real(r8) :: Vmax_minn = 1.e-6_r8  ! gN/gC/s
-  integer  :: fp, p, fc, c
-  real(r8) :: nscal = 1._r8
+  integer  :: p, j
+  real(r8) :: tws
 
 
+  SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(__FILE__,__LINE__))
   !calculate root nitrogen uptake potential
 
-  !default approach
-  !
-  do fc = 1, num_soilc
-    c = filter_soilc(fc)
-
+  associate(                                                           &
+    cn_scalar                    => cnstate_vars%cn_scalar           , &
+    cp_scalar                    => cnstate_vars%cp_scalar             &
+  )
+  do j = 1, nlevtrc_soil
+    do fc = 1, num_soilc
+      c =filter_soilc(fc)
+      tws = t_scalar(c,j) *w_scalar(c,j)
+      do p = col%pfti(c), col%pftf(c)
+        if (pft%active(p).and. (pft%itype(p) .ne. noveg)) then
+          this%plant_minp_uptake_vmax_vr_patch(p, j)     = this%plant_minp_uptake_vmax_vr_patch(p, j) * cp_scalar(p) * tws
+          this%plant_minn_nh4_uptake_vmax_vr_patch(p, j) = this%plant_minn_nh4_uptake_vmax_vr_patch(p, j) * cn_scalar(p) * tws
+          this%plant_minn_no3_uptake_vmax_vr_patch(p, j) = this%plant_minn_no3_uptake_vmax_vr_patch(p, j)* cn_scalar(p) * tws
+        endif
+      enddo
+    enddo
   enddo
 
-!  do fp = 1, num_soilp
-!    p = filter_soilp(fp)
-!    this%plant_frootsc_patch(p) = frootc_patch(p)
-!  enddo
+
+  end subroutine calc_nutrient_uptake_vmax
+
+!--------------------------------------------------------------------------------
+  subroutine sub_froot_prof(this, num_soilc, filter_soilc, e_plant_scalar)
+
+  use clm_varpar, only : nlevtrc_soil
+  !
+  ! !ARGUMENTS:
+  class(plantsoilnutrientflux_type) :: this
+  type(bounds_type) , intent(in)    :: bounds
+  integer           , intent(in)    :: num_soilc
+  integer           , intent(in)    :: filter_soilc(:)
+  real(r8)          , intent(in)    :: e_plant_scalar
+  integer :: p, j
+
+  do fc = 1, num_soilc
+    c = filter_soilc(fc)
+    do p = col%pfti(c), col%pftf(c)
+      if (pft%active(p).and. (pft%itype(p) .ne. noveg)) then
+        this%plant_frootsc_patch(p) = frootc(p)
+        !set effective nutrient uptake profile
+        do j = 1, nlevtrc_soil
+          this%plant_effrootsc_vr_patch(p, j) = this%plant_frootsc_patch(p) * froot_prof(p,j) * e_plant_scalar
+        enddo
+      endif
+    enddo
+  enddo
+
+  end subroutine sub_froot_prof
+
+!--------------------------------------------------------------------------------
+  subroutine init_plant_soil_feedback(this, bounds, num_soilc, filter_soilc, ecophyscon_vars)
+
+  use EcophysConType      , only : ecophyscon_type
+
+  type(bounds_type)    , intent(in)    :: bounds
+  type(ecophyscon_type), intent(in) :: ecophyscon_vars
+  integer              , intent(in)    :: num_soilc
+  integer              , intent(in)    :: filter_soilc(:)
 
 
-end subroutine calc_nutrient_uptake_vmax
+  real(r8), parameter   :: E_plant_scalar  = 0.0000125_r8
+  associate(                                                                              &
+  vmax_plant_nh4               => ecophyscon%vmax_plant_nh4                             , &
+  vmax_plant_no3               => ecophyscon%vmax_plant_no3                             , &
+  vmax_plant_p                 => ecophyscon%vmax_plant_p                               , &
+  vmax_minsurf_p_vr            => ecophyscon%vmax_minsurf_p_vr                            &
+  )
+  !set reference vmax
+  do fc = 1, num_soilc
+    c = filter_soilc(fc)
+    do p = col%pfti(c), col%pftf(c)
+      if (pft%active(p).and. (pft%itype(p) .ne. noveg)) then
+        do j = 1, nlevtrc_soil
+          this%plant_minp_uptake_vmax_vr_patch(p, j)     = vmax_plant_p(ivt(p))
+          this%plant_minn_nh4_uptake_vmax_vr_patch(p, j) = vmax_plant_nh4(ivt(p))
+          this%plant_minn_no3_uptake_vmax_vr_patch(p, j) = vmax_plant_no3(ivt(p))
+        enddo
+      endif
+    enddo
+  enddo
 
+  !set root profile
+  call this%sub_froot_prof(num_soilc, filter_soilc, e_plant_scalar)
+
+  !set OM input profile
+
+  !set mineral nutrient input profile
+
+  end associate
+  end subroutine init_plant_soil_feedback
 end module PlantSoilnutrientFluxType

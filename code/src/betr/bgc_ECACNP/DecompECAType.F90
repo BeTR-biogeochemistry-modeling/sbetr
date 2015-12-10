@@ -6,7 +6,7 @@ module DecompECAType
 
 ! USES
 
-  use shr_kind_mod , only : r8 => shr_kind_r8
+  use shr_kind_mod          , only : r8 => shr_kind_r8
   use decompMod             , only : bounds_type
 implicit none
 
@@ -47,7 +47,7 @@ contains
    ! !USES:
    use shr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
    use clm_varpar     , only : nlevdecomp_full
-   use clm_varcon             , only : spval   
+   use clm_varcon             , only : spval
    !
    ! !ARGUMENTS:
    class(DecompECA_Type) :: this

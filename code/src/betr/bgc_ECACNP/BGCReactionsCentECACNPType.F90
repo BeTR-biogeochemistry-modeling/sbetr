@@ -666,12 +666,6 @@ contains
     call bgcstate_ext_update_bfdecomp(bounds, 1, ubj, num_soilc, filter_soilc, &
          plantsoilnutrientflux_vars, centurybgc_vars, betrtracer_vars, tracerflux_vars, y0, cn_ratios, cp_ratios)
 
-    !calculate nitrogen uptake profile
-    !call calc_nuptake_prof(bounds, ubj, num_soilc, filter_soilc,                                                &
-    !     tracerstate_vars%tracer_conc_mobile_col(bounds%begc:bounds%endc, 1:ubj, betrtracer_vars%id_trc_nh3x),  &
-    !     tracerstate_vars%tracer_conc_mobile_col(bounds%begc:bounds%endc, 1:ubj, betrtracer_vars%id_trc_no3x),  &
-    !     col%dz(bounds%begc:bounds%endc,1:ubj), cnstate_vars%nfixation_prof_col(bounds%begc:bounds%endc,1:ubj), &
-    !     nuptake_prof(bounds%begc:bounds%endc,1:ubj))
 
     !update plant nitrogen uptake potential
 
@@ -734,7 +728,8 @@ contains
          k_decay(centurybgc_vars%lid_at_rt_reac, bounds%begc:bounds%endc, 1:ubj))
 
     !calulate vmax profile for plant nutrient uptake
-
+    call plantsoilnutrientflux_vars%calc_nutrient_uptake_vmax(bounds, num_soilc, filter_soilc, &
+         num_soilp, filter_soilp, decompECA_vars%t_scalar_col,  decompECA_vars%w_scalar_col, cnstate_vars)
     !do ode integration and update state variables for each layer
 
     do j = lbj, ubj
@@ -749,7 +744,7 @@ contains
                gas2bulkcef=tracercoeff_vars%gas2bulkcef_mobile_col(c,j,:)                            , &
                aere_cond=tracercoeff_vars%aere_cond_col(c,:), tracer_conc_atm=tracerstate_vars%tracer_conc_atm_col(c,:))
 
-          call NutrientCompetitionParamsInst%set_nutrientcompet_paras( )
+          call NutrientCompetitionParamsInst%set_nutrientcompet_paras(plantsoilnutrientflux_vars, c, j)
           !update state variables
           time = 0._r8
 
@@ -757,6 +752,7 @@ contains
           call ode_ebbks1(one_box_century_bgc, y0(:,c,j), centurybgc_vars%nprimvars,centurybgc_vars%nstvars, &
                time, dtime, yf(:,c,j), pscal)
 
+          call
           if(pscal<5.e-1_r8)then
              write(iulog,*)'lat, lon=',grc%latdeg(col%gridcell(c)),grc%londeg(col%gridcell(c))
              write(iulog,*)'col, lev, pscal=',c, j, pscal
@@ -969,7 +965,8 @@ contains
 
   !---------------------------------------------------------------
   subroutine init_betr_alm_bgc_coupler(this, bounds, carbonstate_vars, &
-       nitrogenstate_vars, phosphorusstate_vars, betrtracer_vars, tracerstate_vars)
+       nitrogenstate_vars, phosphorusstate_vars, plantsoilnutrientflux_vars, &
+       betrtracer_vars, tracerstate_vars)
     !
     ! !DESCRIPTION:
     ! do state variable exchange between betr and alm
@@ -983,7 +980,7 @@ contains
     use BetrTracerType           , only : betrtracer_type
     use clm_varpar               , only : nlevtrc_soil
     use landunit_varcon          , only : istsoil, istcrop
-
+    use PlantSoilnutrientFluxType, only : plantsoilnutrientflux_type
     ! !ARGUMENTS:
     class(bgc_reaction_CENTURY_ECACNP_type) , intent(in)    :: this
     type(bounds_type)                    , intent(in)    :: bounds
@@ -992,7 +989,7 @@ contains
     type(carbonstate_type)               , intent(in)    :: carbonstate_vars
     type(nitrogenstate_type)             , intent(in)    :: nitrogenstate_vars
     type(phosphorusstate_type)           , intent(in)    :: phosphorusstate_vars
-
+    type(plantsoilnutrientflux_type)     , intent(inout) :: plantsoilnutrientflux_vars !
     ! !LOCAL VARIABLES:
     integer, parameter :: i_soil1 = 5
     integer, parameter :: i_soil2 = 6
@@ -1029,6 +1026,7 @@ contains
          nelms              => centurybgc_vars%nelms                                   &
          )
 
+      call plantsoilnutrientflux_vars%init_plant_soil_feedback(ecophyscon_vars)
       !initialize tracer based on carbon/nitrogen pools
       do j = 1, nlevtrc_soil
          do c = bounds%begc, bounds%endc
@@ -1316,29 +1314,15 @@ contains
     real(r8), intent(inout) :: cascade_matrix(1:nprimvars, 1:nr)
 
     ! !LOCAL VARIABLES:
-    real(r8) :: k_mat_minn(2,1:ncompete_vars%ncompets)
-    real(r8) :: k_mat_minp(1:ncompete_vars%ncompets)
-    real(r8) :: vcompet(1:ncompete_vars%ncompets)
+
     real(r8) :: siej_cell_norm_minn(2, 1:ncompete_vars%ncompets)
     real(r8) :: siej_cell_norm_minp(1:ncompete_vars%ncompets)
     real(r8) :: eca_nh4, eca_no3, eca_minp
-    integer  :: j, ireac
+    integer  :: j, ireac, ireac1, ireac2
 
     ! the following parameters are arbitrary
     ! let me later wrap them up and pass it from a parameter class
-    real(r8), parameter :: kd_nh4_nit   = 1._r8
-    real(r8), parameter :: kd_nh4_plant = 1._r8
-    real(r8), parameter :: kd_nh4_clay  = 1._r8
-    real(r8), parameter :: kd_no3_denit = 1._r8
-    real(r8), parameter :: kd_no3_plant = 1._r8
-    real(r8), parameter :: kd_nh4_decomp= 1._r8
-    real(r8), parameter :: kd_no3_decomp= 1._r8
 
-    real(r8), parameter :: kd_minp_nit   = kd_infty
-    real(r8), parameter :: kd_minp_denit = kd_infty
-    real(r8), parameter :: kd_minp_plant = 1._r8
-    real(r8), parameter :: kd_minp_clay  = 1._r8
-    real(r8), parameter :: kd_minp_decomp= 1._r8
 
 
 
@@ -1371,32 +1355,23 @@ contains
          lid_msurf_compet   => ncompete_vars%lid_msurf_compet            , &
          lid_decomp_compet  => ncompete_vars%lid_decomp_compet           , &
          lid_plant_compet   => ncompete_vars%lid_plant_compet            , &
+         ncompets           => ncompete_vars%ncompets                    , &
+         vcompet_minn       => ncompete_vars%vcompet_minn                , &
+         vcompet_minp       => ncompete_vars%vcompet_minp                , &
          c_loc              => centurybgc_vars%c_loc                       &
-         )
-      !form the k matrix
-      k_mat_minn(:,:)=kd_infty
-      !nh4
-      k_mat_minn(1,lid_decomp_compet) = 1._r8
-      k_mat_minn(1,lid_nitri_compet)    = 1._r8
-      k_mat_minn(1,lid_plant_compet)  = 1._r8
-      k_mat_minn(1,lid_minsrf_compet) = 1._r8
-      !no3
-      k_mat_minn(2,lid_decomp_compet) = 1._r8
-      k_mat_minn(2,lid_denit_compet)  = 1._r8
-      k_mat_minn(2,lid_plant_compet)  = 1._r8
 
-      !inorganic P
-      k_mat_minp(:) = kd_infty
-      k_mat_minp(lid_decomp_compet) = 1._r8
-      k_mat_minp(lid_plant_compet)  = 1._r8
-      k_mat_minp(lid_msurf_compet)  = 1._r8
+         )
+
 
       !form the resource vector
-      call ecacomplex_cell_norm(k_mat_minn,(/ystate(lid_nh4),ystate(lid_no3)/),vcompet,siej_cell_norm_minn)
+      call ecacomplex_cell_norm(k_mat_minn(:,1:ncompets),(/ystate(lid_nh4),ystate(lid_no3)/),&
+         vcompet_minn(1:ncompets),siej_cell_norm_minn)
 
-      call ecacomplex_cell_norm(k_mat_minp,ystate(lid_p_solution),vcompet,siej_cell_norm_minp)
+      call ecacomplex_cell_norm(k_mat_minp(1:ncompets),ystate(lid_p_solution),&
+         vcompet_minp(1:ncompets),siej_cell_norm_minp)
 
-      !now modify the reaction rates
+      !now modify the reaction rates,
+      !OM decomposition
       do j = 1,  centurybgc_vars%nom_pools
          if(nitrogen_limit_flag(j))then
             eca_nh4 = siej_cell_norm_minn(1,j)/kd_nh4_decomp
@@ -1413,26 +1388,32 @@ contains
          endif
       enddo
 
-      !adjust for nitrification
+      !nitrification
       ireac = lid_nh4_nit_reac
       reaction_rates(ireac) = reaction_rates(ireac) * siej_cell_norm_minn(1,lid_nitri_compet)
-      !adjust for denitrification
+
+      !denitrification
       ireac = lid_no3_den_reac
       reaction_rates(ireac) = reaction_rates(ireac) * siej_cell_norm_minn(2,lid_denit_compet)
 
       !adjust for plant mineral nitrogen uptake
-      eca_nh4 = siej_cell_norm_minn(1,lid_plant_compet)/kd_nh4_decomp
-      eca_no3 = siej_cell_norm_minn(2,lid_plant_compet)/kd_no3_decomp
 
-      ireac=lid_plant_minn_up_reac
-      reaction_rates(ireac) = reaction_rates(ireac) * (eca_nh4+eca_no3) * vcompet(lid_plant_compet)
-      cascade_matrix(lid_no3, ireac) = cascade_matrix(lid_nh4, ireac) *  safe_div(eca_no3, eca_nh4+eca_no3)
-      cascade_matrix(lid_nh4,ireac) = cascade_matrix(lid_nh4,ireac) - cascade_matrix(lid_no3, ireac)
 
-      eca_minp = siej_cell_norm_minp(lid_plant_compet)/kd_minp_decomp
 
-      ireac = lid_plant_minp_up_reac
-      reaction_rates(ireac) = reaction_rates(ireac) * eca_minp/kd_minp_plant
+      !plants
+      !add up all pfts
+      ireac1=lid_plant_minn_nh4_up_reac; reaction_rates(ireac1) = 0._r8
+      ireac2=lid_plant_minn_no3_up_reac; reaction_rates(ireac2) = 0._r8
+      ireac =lid_plant_minp_up_reac;     reaction_rates(ireac)  = 0._r8
+
+      do j = lid_planti_compet, lid_plantf_compet
+        !nh4
+        reaction_rates(ireac1) = reaction_rates(ireac1) + siej_cell_norm_minn(1,j) * vcompet_minn(j) * vmax_plant_nh4(j)
+        !no3
+        reaction_rates(ireac2) = reaction_rates(ireac2) + siej_cell_norm_minn(2,j) * vcompet_minn(j) * vmax_plant_no3(j)
+        !minp
+        reaction_rates(ireac) = reaction_rates(ireac) + siej_cell_norm_minp(j) * vcompet_minp(j) * vmax_plant_p(j)
+      enddo
 
       !reaction rates for secondary p formation
 
