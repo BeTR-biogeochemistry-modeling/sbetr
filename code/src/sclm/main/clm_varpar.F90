@@ -24,4 +24,6 @@ module clm_varpar
   integer :: ndecomp_cascade_transitions
   integer :: i_met_lit, i_cel_lit, i_lig_lit, i_cwd
 
+  integer, parameter :: ivis        =   1     ! index for visible band
+  integer, parameter :: inir        =   2     ! index for near-infrared band
 end module clm_varpar

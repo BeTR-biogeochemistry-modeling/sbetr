@@ -15,6 +15,7 @@ module clm_varctl
   logical, public :: single_column = .true. !do single column run
   logical, public :: use_cn              = .false.
 
+  integer , parameter, public ::  fname_len = SHR_KIND_CL   ! max length of file names in this module
   ! Type of run
   integer, public :: nsrest             = iundef
 
@@ -27,8 +28,19 @@ module clm_varctl
   integer, public :: spinup_state = 0
 
   logical :: carbon_only  = .false.
+  logical, public :: use_cndv            = .false.
+  logical, public :: use_vertsoilc       = .false.
+  logical, public :: use_crop            = .false.
 
-  character(len=15),public :: nu_com  
+  !----------------------------------------------------------
+  ! dynamic root switch
+  !----------------------------------------------------------
+
+  logical, public :: use_dynroot = .false. ! true => use dynamic root module
+
+  character(len=fname_len), public :: paramfile  = ' '        ! ASCII data file with PFT physiological constants
+  logical, public :: use_ed = .false.            ! true => use  ED  
+  character(len=15),public :: nu_com
   public :: CNAllocate_Carbon_only
   public :: cnallocate_carbon_only_set
  contains

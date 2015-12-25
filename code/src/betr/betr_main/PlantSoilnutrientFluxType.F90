@@ -30,6 +30,7 @@ module PlantSoilnutrientFluxType
     real(r8), pointer :: plant_minn_passive_yield_flx_patch          (:)    !patch level mineral nitrogen yeild from soil bgc calculation
     real(r8), pointer :: plant_minn_nh4_uptake_vmax_vr_patch         (:,:)  !plant mineral nitrogen uptake potential for each layer
     real(r8), pointer :: plant_minn_no3_uptake_vmax_vr_patch         (:,:)  !plant mineral nitrogen uptake potential for each layer
+    real(r8), pointer :: plant_minp_uptake_vmax_vr_patch             (:,:)
     real(r8), pointer :: plant_totn_demand_flx_col                   (:)    !column level total nitrogen demand, g N/m2/s
     real(r8), pointer :: plant_effrootsc_vr_patch                    (:,:)  !fine root for nutrient uptake
     real(r8), pointer :: plant_frootsc_patch                         (:)    !fine root for nutrient uptake
@@ -223,10 +224,6 @@ module PlantSoilnutrientFluxType
          ptr_patch=this%plant_minn_passive_yield_flx_patch, default='inactive')
 
 
-    this%plant_minn_active_yield_flx_col(begc:endc) = spval
-    call hist_addfld1d (fname='PLANT_MINN_ACTIVE_YIELD_FLX_COL', units='gN/m^2/s', &
-         avgflag='A', long_name='plant nitrogen active uptake flux from soil', &
-         ptr_col=this%plant_minn_active_yield_flx_col)
 
     this%plant_minn_passive_yield_flx_col(begc:endc) = spval
     call hist_addfld1d (fname='PLANT_MINN_PASSIVE_YIELD_FLX_COL', units='gN/m^2/s', &
@@ -269,7 +266,6 @@ module PlantSoilnutrientFluxType
 
     do fi = 1,num_column
        i = filter_column(fi)
-       this%plant_minn_active_yield_flx_col(i)   = value_column
        this%plant_minn_passive_yield_flx_col(i)  = value_column
        this%plant_totn_demand_flx_col(i)         = value_column
     enddo
@@ -363,7 +359,7 @@ module PlantSoilnutrientFluxType
 !--------------------------------------------------------------------------------
 
   subroutine calc_nutrient_uptake_vmax(this, bounds, num_soilc, filter_soilc, &
-       num_soilp, filter_soilp, t_scalar, w_scalar)
+       num_soilp, filter_soilp, t_scalar, w_scalar, cnstate_vars)
   !
   ! !DESCRIPTION:
   ! diagnose the vmax for nutrient uptake, with the vision to use ECA or something alike.
@@ -372,6 +368,7 @@ module PlantSoilnutrientFluxType
   use subgridAveMod            , only : p2c
   use GridcellType             , only : grc
   use CNStateType              , only : cnstate_type
+  use clm_varpar               , only : nlevtrc_soil
   !
   ! !ARGUMENTS:
   class(plantsoilnutrientflux_type) :: this
@@ -387,17 +384,17 @@ module PlantSoilnutrientFluxType
 
   ! !LOCAL VARIABLES:
   real(r8) :: Vmax_minn = 1.e-6_r8  ! gN/gC/s
-  integer  :: p, j
+  integer  :: p, j, fc, c
   real(r8) :: tws
 
 
-  SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(__FILE__,__LINE__))
   !calculate root nitrogen uptake potential
 
   associate(                                                           &
     cn_scalar                    => cnstate_vars%cn_scalar           , &
     cp_scalar                    => cnstate_vars%cp_scalar             &
   )
+
   do j = 1, nlevtrc_soil
     do fc = 1, num_soilc
       c =filter_soilc(fc)
@@ -412,7 +409,7 @@ module PlantSoilnutrientFluxType
     enddo
   enddo
 
-
+  end associate
   end subroutine calc_nutrient_uptake_vmax
 
 !--------------------------------------------------------------------------------
@@ -422,11 +419,10 @@ module PlantSoilnutrientFluxType
   !
   ! !ARGUMENTS:
   class(plantsoilnutrientflux_type) :: this
-  type(bounds_type) , intent(in)    :: bounds
   integer           , intent(in)    :: num_soilc
   integer           , intent(in)    :: filter_soilc(:)
   real(r8)          , intent(in)    :: e_plant_scalar
-  integer :: p, j
+  integer :: p, j, fc, c
 
   do fc = 1, num_soilc
     c = filter_soilc(fc)
@@ -447,20 +443,26 @@ module PlantSoilnutrientFluxType
   subroutine init_plant_soil_feedback(this, bounds, num_soilc, filter_soilc, ecophyscon_vars)
 
   use EcophysConType      , only : ecophyscon_type
+  use pftvarcon           , only : noveg
+  use clm_varpar          , only : nlevtrc_soil
 
+  class(plantsoilnutrientflux_type) :: this
   type(bounds_type)    , intent(in)    :: bounds
-  type(ecophyscon_type), intent(in) :: ecophyscon_vars
   integer              , intent(in)    :: num_soilc
   integer              , intent(in)    :: filter_soilc(:)
-
+  type(ecophyscon_type), intent(in)    :: ecophyscon_vars
 
   real(r8), parameter   :: E_plant_scalar  = 0.0000125_r8
+  integer :: fc, c, p, j
+
   associate(                                                                              &
   vmax_plant_nh4               => ecophyscon%vmax_plant_nh4                             , &
   vmax_plant_no3               => ecophyscon%vmax_plant_no3                             , &
   vmax_plant_p                 => ecophyscon%vmax_plant_p                               , &
-  vmax_minsurf_p_vr            => ecophyscon%vmax_minsurf_p_vr                            &
+  vmax_minsurf_p_vr            => ecophyscon%vmax_minsurf_p_vr                          , &
+  ivt                          => pft%itype                                               &
   )
+
   !set reference vmax
   do fc = 1, num_soilc
     c = filter_soilc(fc)
