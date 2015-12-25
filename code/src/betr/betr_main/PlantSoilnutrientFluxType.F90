@@ -369,6 +369,7 @@ module PlantSoilnutrientFluxType
   use GridcellType             , only : grc
   use CNStateType              , only : cnstate_type
   use clm_varpar               , only : nlevtrc_soil
+  use pftvarcon                , only : noveg
   !
   ! !ARGUMENTS:
   class(plantsoilnutrientflux_type) :: this
@@ -413,17 +414,23 @@ module PlantSoilnutrientFluxType
   end subroutine calc_nutrient_uptake_vmax
 
 !--------------------------------------------------------------------------------
-  subroutine sub_froot_prof(this, num_soilc, filter_soilc, e_plant_scalar)
+  subroutine sub_froot_prof(this, num_soilc, filter_soilc, cnstate_vars, e_plant_scalar)
 
-  use clm_varpar, only : nlevtrc_soil
+  use clm_varpar               , only : nlevtrc_soil
+  use CNStateType              , only : cnstate_type
   !
   ! !ARGUMENTS:
   class(plantsoilnutrientflux_type) :: this
   integer           , intent(in)    :: num_soilc
   integer           , intent(in)    :: filter_soilc(:)
   real(r8)          , intent(in)    :: e_plant_scalar
+  type(cnstate_type), intent(in)    :: cnstate_vars
   integer :: p, j, fc, c
 
+  associate(
+         froot_prof                   => cnstate_vars%froot_prof_patch              & !
+  )
+  
   do fc = 1, num_soilc
     c = filter_soilc(fc)
     do p = col%pfti(c), col%pftf(c)
@@ -436,22 +443,23 @@ module PlantSoilnutrientFluxType
       endif
     enddo
   enddo
-
+  end associate
   end subroutine sub_froot_prof
 
 !--------------------------------------------------------------------------------
-  subroutine init_plant_soil_feedback(this, bounds, num_soilc, filter_soilc, ecophyscon_vars)
+  subroutine init_plant_soil_feedback(this, bounds, num_soilc, filter_soilc, cnstate_vars, ecophyscon_vars)
 
   use EcophysConType      , only : ecophyscon_type
   use pftvarcon           , only : noveg
   use clm_varpar          , only : nlevtrc_soil
+  use CNStateType         , only : cnstate_type
 
   class(plantsoilnutrientflux_type) :: this
   type(bounds_type)    , intent(in)    :: bounds
   integer              , intent(in)    :: num_soilc
   integer              , intent(in)    :: filter_soilc(:)
   type(ecophyscon_type), intent(in)    :: ecophyscon_vars
-
+  type(cnstate_type)   , intent(in)    :: cnstate_vars
   real(r8), parameter   :: E_plant_scalar  = 0.0000125_r8
   integer :: fc, c, p, j
 
@@ -478,7 +486,7 @@ module PlantSoilnutrientFluxType
   enddo
 
   !set root profile
-  call this%sub_froot_prof(num_soilc, filter_soilc, e_plant_scalar)
+  call this%sub_froot_prof(num_soilc, filter_soilc, cnstate_vars, e_plant_scalar)
 
   !set OM input profile
 
