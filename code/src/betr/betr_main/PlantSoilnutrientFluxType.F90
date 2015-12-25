@@ -427,10 +427,10 @@ module PlantSoilnutrientFluxType
   type(cnstate_type), intent(in)    :: cnstate_vars
   integer :: p, j, fc, c
 
-  associate(
+  associate(                                                                        &
          froot_prof                   => cnstate_vars%froot_prof_patch              & !
   )
-  
+
   do fc = 1, num_soilc
     c = filter_soilc(fc)
     do p = col%pfti(c), col%pftf(c)
