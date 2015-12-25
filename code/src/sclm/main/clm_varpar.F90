@@ -15,11 +15,11 @@ module clm_varpar
   integer, parameter :: nsoilorder  =  15     ! number of soil orders
 
   integer :: natpft_size        ! Number of Patches on natural veg landunit (including bare ground)
-  integer  :: nlevdecomp_full = nlevtrc_soil
+  integer :: nlevdecomp_full = nlevtrc_soil
   integer :: cft_size           ! Number of Patches on crop landunit
   integer :: numpft
   logical :: crop_prog   = .false.  ! If prognostic crops is turned on
-
+  integer :: nlevdecomp  = nlevtrc_soil
   integer :: ndecomp_pools
   integer :: ndecomp_cascade_transitions
   integer :: i_met_lit, i_cel_lit, i_lig_lit, i_cwd

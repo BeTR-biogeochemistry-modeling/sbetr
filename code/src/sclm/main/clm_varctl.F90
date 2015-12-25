@@ -28,6 +28,7 @@ module clm_varctl
 
   logical :: carbon_only  = .false.
 
+  character(len=15),public :: nu_com  
   public :: CNAllocate_Carbon_only
   public :: cnallocate_carbon_only_set
  contains
