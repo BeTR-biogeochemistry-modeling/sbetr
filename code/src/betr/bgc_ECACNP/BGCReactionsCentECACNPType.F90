@@ -1358,13 +1358,13 @@ contains
          lid_no3            => centurybgc_vars%lid_no3                   , &
          lid_nh4_nit_reac   => centurybgc_vars%lid_nh4_nit_reac          , &
          lid_no3_den_reac   => centurybgc_vars%lid_no3_den_reac          , &
-         lid_plant_minn_up_reac=> centurybgc_vars%lid_plant_minn_up_reac , &
+         lid_plant_minn_nh4_up_reac=> centurybgc_vars%lid_plant_minn_nh4_up_reac , &
+         lid_plant_minn_no3_up_reac=> centurybgc_vars%lid_plant_minn_no3_up_reac , &
          lid_plant_minp_up_reac=> centurybgc_vars%lid_plant_minp_up_reac , &
          lid_p_solution     => centurybgc_vars%lid_p_solution            , &
          nelms              => centurybgc_vars%nelms                     , &
          lid_msurf_compet   => ncompete_vars%lid_msurf_compet            , &
          lid_decomp_compet  => ncompete_vars%lid_decomp_compet           , &
-         lid_plant_compet   => ncompete_vars%lid_plant_compet            , &
          ncompets           => ncompete_vars%ncompets                    , &
          vcompet_minn       => ncompete_vars%vcompet_minn                , &
          vcompet_minp       => ncompete_vars%vcompet_minp                , &
