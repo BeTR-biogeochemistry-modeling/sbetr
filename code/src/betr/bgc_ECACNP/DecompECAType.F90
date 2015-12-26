@@ -15,7 +15,7 @@ implicit none
   real(r8), pointer :: o_scalar_col                              (:,:)   ! fraction by which decomposition is limited by anoxia
   real(r8), pointer :: w_scalar_col                              (:,:)   ! fraction by which decomposition is limited by moisture availability
   real(r8), pointer :: t_scalar_col                              (:,:)   ! fraction by which decomposition is limited by temperature
-
+  real(r8), pointer :: depth_scalar_col                          (:,:)   ! depth dependent factor for heteorotrophic respiration
 
 contains
   procedure, public  :: Init
@@ -59,6 +59,7 @@ contains
    allocate(this%t_scalar_col                      (begc:endc,1:nlevdecomp_full)); this%t_scalar_col (:,:)=spval
    allocate(this%w_scalar_col                      (begc:endc,1:nlevdecomp_full)); this%w_scalar_col (:,:)=spval
    allocate(this%o_scalar_col                      (begc:endc,1:nlevdecomp_full)); this%o_scalar_col (:,:)=spval
+   allocate(this%depth_scalar_col                  (begc:endc,1:nlevdecomp_full)); this%depth_scalar_col(:,:)=spval
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------

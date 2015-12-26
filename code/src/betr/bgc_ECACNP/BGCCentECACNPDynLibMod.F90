@@ -109,12 +109,6 @@ module BGCCentECACNPDynLibMod
      integer           :: nprimvars                              !total number of primary variables
      integer           :: nreactions                             !seven decomposition pathways plus nitrification, denitrification and plant immobilization
 
-
-
-     real(r8), pointer :: t_scalar_col(:,:)
-     real(r8), pointer :: w_scalar_col(:,:)
-     real(r8), pointer :: o_scalar_col(:,:)
-     real(r8), pointer :: depth_scalar_col(:,:)                  !
      integer , pointer :: primvarid(:)
      logical , pointer :: is_aerobic_reac(:)
 
@@ -269,10 +263,8 @@ contains
     integer           , intent(in) :: lbj, ubj                           ! lower and upper bounds, make sure they are > 0
 
 
-    allocate(this%t_scalar_col(bounds%begc:bounds%endc,     lbj:ubj))
-    allocate(this%w_scalar_col(bounds%begc:bounds%endc,     lbj:ubj))
-    allocate(this%o_scalar_col(bounds%begc:bounds%endc,     lbj:ubj))
-    allocate(this%depth_scalar_col(bounds%begc:bounds%endc, lbj:ubj))
+
+
 
   end subroutine InitAllocate
 
@@ -369,7 +361,7 @@ contains
          t_scalar       => decompECA_vars%t_scalar_col        , & ! Output: [real(r8) (:,:)   ]  soil temperature scalar for decomp
          w_scalar       => decompECA_vars%w_scalar_col        , & ! Output: [real(r8) (:,:)   ]  soil water scalar for decomp
          o_scalar       => decompECA_vars%o_scalar_col        , & ! Output: [real(r8) (:,:)   ]  fraction by which decomposition is limited by anoxia
-         depth_scalar   => centurybgc_vars%depth_scalar_col   , & ! Output: [real(r8) (:,:,:) ]  rate constant for decomposition (1./sec)
+         depth_scalar   => decompECA_vars%depth_scalar_col   , & ! Output: [real(r8) (:,:)   ]  rate constant for decomposition (1./sec)
          lit1           => centurybgc_vars%lit1               , & !
          lit2           => centurybgc_vars%lit2               , & !
          lit3           => centurybgc_vars%lit3               , & !
@@ -1187,7 +1179,7 @@ contains
          t_scalar       => decompECA_vars%t_scalar_col       , & ! Output: [real(r8) (:,:)   ]  soil temperature scalar for decomp
          w_scalar       => decompECA_vars%w_scalar_col       , & ! Output: [real(r8) (:,:)   ]  soil water scalar for decomp
          o_scalar       => decompECA_vars%o_scalar_col       , & ! Output: [real(r8) (:,:)   ]  fraction by which decomposition is limited by anoxia
-         depth_scalar   => centurybgc_vars%depth_scalar_col    & ! Output: [real(r8) (:,:,:) ]  rate constant for decomposition (1./sec)
+         depth_scalar   => decompECA_vars%depth_scalar_col    & ! Output: [real(r8) (:,:,:) ]  rate constant for decomposition (1./sec)
          )
 
       catanf_30 = catanf(30._r8)
