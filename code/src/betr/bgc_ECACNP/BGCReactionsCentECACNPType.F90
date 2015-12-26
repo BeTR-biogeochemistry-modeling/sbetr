@@ -752,7 +752,7 @@ contains
           call ode_ebbks1(one_box_century_bgc, y0(:,c,j), centurybgc_vars%nprimvars,centurybgc_vars%nstvars, &
                time, dtime, yf(:,c,j), pscal)
 
-          call
+
           if(pscal<5.e-1_r8)then
              write(iulog,*)'lat, lon=',grc%latdeg(col%gridcell(c)),grc%londeg(col%gridcell(c))
              write(iulog,*)'col, lev, pscal=',c, j, pscal
@@ -1026,7 +1026,8 @@ contains
          nelms              => centurybgc_vars%nelms                                   &
          )
 
-      call plantsoilnutrientflux_vars%init_plant_soil_feedback(ecophyscon_vars)
+      call plantsoilnutrientflux_vars%init_plant_soil_feedback(bounds, num_soilc, filter_soilc, &
+         carbonstate_vars%frootc_patch, cnstate_vars, ecophyscon_vars)
       !initialize tracer based on carbon/nitrogen pools
       do j = 1, nlevtrc_soil
          do c = bounds%begc, bounds%endc

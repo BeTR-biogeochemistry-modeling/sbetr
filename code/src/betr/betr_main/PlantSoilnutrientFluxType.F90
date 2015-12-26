@@ -79,6 +79,7 @@ module PlantSoilnutrientFluxType
      procedure , public  :: SetValues
      procedure , public  :: summary
      procedure , public  :: calc_nutrient_uptake_vmax
+     procedure , public  :: init_plant_soil_feedback
      procedure , private :: InitAllocate
      procedure , private :: InitHistory
      procedure , private :: InitCold

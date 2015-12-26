@@ -74,7 +74,6 @@ contains
          lid_n2    => centurybgc_vars%lid_n2                             , & !
          lid_co2_hr=> centurybgc_vars%lid_co2_hr                         , & !
          lid_n2o_nit=> centurybgc_vars%lid_n2o_nit                       , & !
-         lid_plant_minn => centurybgc_vars%lid_plant_minn                , & !
          lid_minn_nh4_immob => centurybgc_vars%lid_minn_nh4_immob        , & !
          lid_minn_no3_immob => centurybgc_vars%lid_minn_no3_immob        , & !
          lid_minn_nh4_plant => centurybgc_vars%lid_minn_nh4_plant        , & !
@@ -104,6 +103,8 @@ contains
          lid_no3_den  => centurybgc_vars%lid_no3_den                     , & !
          lid_plant_minn_nh4_up_reac=> centurybgc_vars%lid_plant_minn_nh4_up_reac , & !
          lid_plant_minn_no3_up_reac=> centurybgc_vars%lid_plant_minn_no3_up_reac , & !
+         lid_plant_minn_nh4  => centurybgc_vars%lid_plant_minn_nh4       , &
+         lid_plant_minn_no3  => centurybgc_vars%lid_plant_minn_no3       , &
          lid_p_secondary_reac => centurybgc_vars%lid_p_secondary_reac    , & !
          lid_p_occlude_reac  => centurybgc_vars%lid_p_occlude_reac       , & !
          lid_p_solution_reac => centurybgc_vars%lid_p_solution_reac      , & !
