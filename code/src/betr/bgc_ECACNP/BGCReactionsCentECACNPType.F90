@@ -1375,7 +1375,7 @@ contains
          lid_planti_compet  => ncompete_vars%lid_planti_compet           , &
          vmax_plant_nh4     => ncompete_vars%vmax_plant_nh4              , &
          vmax_plant_no3     => ncompete_vars%vmax_plant_no3              , &
-         vmax_plant_p       => ncompete_vars%vmax_plant_p                  &
+         vmax_plant_minp    => ncompete_vars%vmax_plant_minp               &
 
          )
 
@@ -1429,7 +1429,7 @@ contains
         !no3
         reaction_rates(ireac2) = reaction_rates(ireac2) + siej_cell_norm_minn(2,j) * vcompet_minn(j) * vmax_plant_no3(j)
         !minp
-        reaction_rates(ireac) = reaction_rates(ireac) + siej_cell_norm_minp(j) * vcompet_minp(j) * vmax_plant_p(j)
+        reaction_rates(ireac) = reaction_rates(ireac) + siej_cell_norm_minp(j) * vcompet_minp(j) * vmax_plant_minp(j)
       enddo
 
       !reaction rates for secondary p formation
