@@ -2,7 +2,6 @@ program main
 
 use sbetrDriverMod
 
-use sbetrDriverMod       , only : sbetrBGC_driver, time_type
 use decompMod            , only: bounds_type
 use clmgridMod           , only : init_clm_vertgrid
 use clm_varpar           , only : nlevgrnd
