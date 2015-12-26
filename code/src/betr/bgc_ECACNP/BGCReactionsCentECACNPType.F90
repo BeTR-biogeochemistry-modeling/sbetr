@@ -669,8 +669,8 @@ contains
 
     !update plant nitrogen uptake potential
 
-    call plantsoilnutrientflux_vars%calc_nutrient_uptake_vmax(bounds, num_soilc, filter_soilc, num_soilp, &
-         filter_soilp, cnstate_vars)
+    call plantsoilnutrientflux_vars%calc_nutrient_uptake_vmax(bounds, num_soilc, filter_soilc, &
+         num_soilp, filter_soilp, centurybgc_vars%t_scalar_col, centurybgc_vars%w_scalar_col, cnstate_vars)
 
     !calculate multiplicative scalars for decay parameters
     call calc_decompK_multiply_scalar(bounds, lbj, ubj, num_soilc, filter_soilc, jtops,                        &
