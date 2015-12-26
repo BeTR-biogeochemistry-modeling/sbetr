@@ -271,7 +271,8 @@ module BGCReactionsMod
 
 
      subroutine init_betr_alm_bgc_coupler_interface(this, bounds, carbonstate_vars, &
-          nitrogenstate_vars, phosphorusstate_vars, betrtracer_vars, tracerstate_vars)
+          nitrogenstate_vars, phosphorusstate_vars, plantsoilnutrientflux_vars,     &
+          betrtracer_vars, tracerstate_vars)
        !
        ! !DESCRIPTION:
        ! template for init_betr_alm_bgc_coupler
@@ -287,6 +288,9 @@ module BGCReactionsMod
        use BetrTracerType           , only : betrtracer_type
        use clm_varpar               , only : nlevtrc_soil
        use landunit_varcon          , only : istsoil, istcrop
+       use PlantSoilnutrientFluxType, only : plantsoilnutrientflux_type
+
+
        !
        ! !ARGUMENTS:
        import :: bgc_reaction_type
@@ -297,7 +301,7 @@ module BGCReactionsMod
        type(carbonstate_type)             , intent(in)    :: carbonstate_vars
        type(nitrogenstate_type)           , intent(in)    :: nitrogenstate_vars
        type(phosphorusstate_type)         , intent(in)    :: phosphorusstate_vars
-
+       type(plantsoilnutrientflux_type)  , intent(inout)  :: plantsoilnutrientflux_vars !  
      end subroutine init_betr_alm_bgc_coupler_interface
 
   end interface

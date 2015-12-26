@@ -429,7 +429,8 @@ contains
 
 
   subroutine init_betr_alm_bgc_coupler(this, bounds, carbonstate_vars, &
-       nitrogenstate_vars, phosphorusstate_vars, betrtracer_vars, tracerstate_vars)
+       nitrogenstate_vars, phosphorusstate_vars, plantsoilnutrientflux_vars, &
+       betrtracer_vars, tracerstate_vars)
 
     ! !DESCRIPTION:
     ! initialize the bgc coupling between betr and alm
@@ -444,6 +445,7 @@ contains
     use BetrTracerType           , only : betrtracer_type
     use clm_varpar               , only : nlevtrc_soil
     use landunit_varcon          , only : istsoil, istcrop
+    use PlantSoilnutrientFluxType, only : plantsoilnutrientflux_type
 
     ! !ARGUMENTS:
     class(bgc_reaction_mock_run_type)  , intent(in)    :: this               !
@@ -453,7 +455,9 @@ contains
     type(carbonstate_type)             , intent(in)    :: carbonstate_vars   !
     type(nitrogenstate_type)           , intent(in)    :: nitrogenstate_vars !
     type(phosphorusstate_type)         , intent(in)    :: phosphorusstate_vars
+    type(plantsoilnutrientflux_type)   , intent(inout) :: plantsoilnutrientflux_vars !
 
+    
   end subroutine init_betr_alm_bgc_coupler
 
 end module BGCReactionsMockRunType
