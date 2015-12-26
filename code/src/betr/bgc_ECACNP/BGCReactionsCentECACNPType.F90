@@ -1368,7 +1368,14 @@ contains
          ncompets           => ncompete_vars%ncompets                    , &
          vcompet_minn       => ncompete_vars%vcompet_minn                , &
          vcompet_minp       => ncompete_vars%vcompet_minp                , &
-         c_loc              => centurybgc_vars%c_loc                       &
+         c_loc              => centurybgc_vars%c_loc                     , &
+         k_mat_minn         => ncompete_vars%k_mat_minn                  , &
+         k_mat_minp         => ncompete_vars%k_mat_minp                  , &
+         lid_plantf_compet  => ncompete_vars%lid_plantf_compet           , &
+         lid_planti_compet  => ncompete_vars%lid_planti_compet           , &
+         vmax_plant_nh4     => ncompete_vars%vmax_plant_nh4              , &
+         vmax_plant_no3     => ncompete_vars%vmax_plant_no3              , &
+         vmax_plant_p       => ncompete_vars%vmax_plant_p                  &
 
          )
 
@@ -1384,8 +1391,8 @@ contains
       !OM decomposition
       do j = 1,  centurybgc_vars%nom_pools
          if(nitrogen_limit_flag(j))then
-            eca_nh4 = siej_cell_norm_minn(1,j)/kd_nh4_decomp
-            eca_no3 = siej_cell_norm_minn(2,j)/kd_no3_decomp
+            !eca_nh4 = siej_cell_norm_minn(1,j)/kd_nh4_decomp
+            !eca_no3 = siej_cell_norm_minn(2,j)/kd_no3_decomp
 
             reaction_rates(j) = reaction_rates(j) * (eca_nh4 + eca_no3)
             cascade_matrix(lid_no3, j) = cascade_matrix(lid_nh4,j) * safe_div(eca_no3,eca_nh4+eca_no3)
@@ -1393,7 +1400,7 @@ contains
 
          endif
          if(phosphos_limit_flag(j))then
-           eca_minp = siej_cell_norm_minp(j)/kd_minp_decomp
+         !   eca_minp = siej_cell_norm_minp(j)/kd_minp_decomp
            reaction_rates(j) = reaction_rates(j)*eca_minp
          endif
       enddo
