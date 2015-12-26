@@ -40,7 +40,7 @@ module ColumnType
     real(r8), pointer :: z(:,:)                !layer depth (m) (-nlevsno+1:nlevgrnd)
 
     integer , pointer :: pfti                 (:)   ! beginning pft index for each column
-    integer , pointer :: pftf                 (:)   ! ending pft index for each column  
+    integer , pointer :: pftf                 (:)   ! ending pft index for each column
     real(r8), pointer :: wtgcell              (:)   ! weight (relative to gridcell)
     integer , pointer :: gridcell             (:)   ! index into gridcell level quantities
 
@@ -48,6 +48,7 @@ module ColumnType
      integer , pointer :: landunit             (:)   ! index into landunit level quantities
      integer , pointer :: itype                (:)   ! column type
      real(r8), pointer :: wtlunit              (:)   ! weight (relative to landunit)
+     integer , pointer :: npfts                (:)   ! number of patches for each column     
   contains
     procedure          :: Init
     procedure, private :: InitAllocate

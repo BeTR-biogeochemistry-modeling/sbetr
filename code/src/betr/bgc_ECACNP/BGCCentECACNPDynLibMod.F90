@@ -205,7 +205,7 @@ contains
     this%lid_no3        = addone(itemp); this%lid_no3_den_reac = addone(ireac)       !this is also used to indicate the denitrification reaction
     this%lid_plant_minn_nh4 = addone(itemp); this%lid_plant_minn_nh4_up_reac = addone(ireac) !this is used to indicate plant mineral nitrogen uptake
     this%lid_plant_minn_no3 = addone(itemp); this%lid_plant_minn_no3_up_reac = addone(ireac) !this is used to indicate plant mineral nitrogen uptake
-    this%lid_plant_minp = addone(itemp); this%lid_plant_minp_up_reac = addone(irec)
+    this%lid_plant_minp = addone(itemp); this%lid_plant_minp_up_reac = addone(ireac)
     this%lid_at_rt      = addone(itemp); this%lid_at_rt_reac = addone(ireac)         !this is used to indicate plant autotrophic root respiration
 
     !non-reactive primary variables
@@ -527,9 +527,9 @@ contains
             c = filter(fc)
 
             if(j>=jtops(c))then
-               plantsoilnutrientflux_vars%plant_minn_active_yield_flx_vr_col(c,j) = natomw * &
-                   (yf(centurybgc_vars%lid_plant_minn_nh4, c, j) + yf(centurybgc_vars%lid_plant_minn_no3, c, j) -
-                    y0(centurybgc_vars%lid_plant_minn_nh4, c, j) - y0(centurybgc_vars%lid_plant_minn_no3, c, j)) 
+              ! plantsoilnutrientflux_vars%plant_minn_active_yield_flx_vr_col(c,j) = natomw * &
+              !     (yf(centurybgc_vars%lid_plant_minn_nh4, c, j) + yf(centurybgc_vars%lid_plant_minn_no3, c, j) -
+              !      y0(centurybgc_vars%lid_plant_minn_nh4, c, j) - y0(centurybgc_vars%lid_plant_minn_no3, c, j))
 
                smin_no3_to_plant_vr(c,j) = (yf(centurybgc_vars%lid_minn_no3_plant, c, j) - y0(centurybgc_vars%lid_minn_no3_plant, c, j))*natomw/dtime
                smin_nh4_to_plant_vr(c,j) = (yf(centurybgc_vars%lid_minn_nh4_plant, c, j) - y0(centurybgc_vars%lid_minn_nh4_plant, c, j))*natomw/dtime
@@ -1537,7 +1537,8 @@ contains
        is_zero_order(centurybgc_vars%lid_n2_aere_reac)  = .true.
     endif
 
-    is_zero_order(centurybgc_vars%lid_plant_minn_up_reac) = .true.
+    is_zero_order(centurybgc_vars%lid_plant_minn_nh4_up_reac) = .true.
+    is_zero_order(centurybgc_vars%lid_plant_minn_no3_up_reac) = .true.
     is_zero_order(centurybgc_vars%lid_at_rt_reac)         = .true.
 
   end subroutine set_reaction_order

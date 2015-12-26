@@ -37,7 +37,7 @@ module BGCCentECACNPParMod
      real(r8)    , pointer :: km_minsurf_minnh4          ! km for NH4 adsorption
      real(r8)    , pointer :: vmax_plant_nh4(:)          ! VMAX for plant NH4 uptake
      real(r8)    , pointer :: vmax_plant_no3(:)          ! VMAX for plant NO3 uptake
-     real(r8)    , pointer :: vmax_plant_p(:)            ! VMAX for plant P uptake
+     real(r8)    , pointer :: vmax_plant_minp(:)         ! VMAX for plant P uptake
      real(r8)    , pointer :: vmax_minsurf_p(:)          ! VMAX for P adsorption
 
 
@@ -153,6 +153,7 @@ contains
 
 
   use PlantSoilnutrientFluxType, only : plantsoilnutrientflux_type
+  use clm_varpar               , only : maxpatch_pft
   ! !ARGUMENTS:
   class(NutrientCompetitionParamsType) :: this
 
@@ -167,7 +168,10 @@ contains
    plant_effrootsc_vr_patch            => plantsoilnutrientflux_vars%plant_effrootsc_vr_patch           , &
    plant_minp_uptake_vmax_vr_patch     => plantsoilnutrientflux_vars%plant_minp_uptake_vmax_vr_patch    , &
    plant_minn_nh4_uptake_vmax_vr_patch => plantsoilnutrientflux_vars%plant_minn_nh4_uptake_vmax_vr_patch, &
-   plant_minn_no3_uptake_vmax_vr_patch => plantsoilnutrientflux_vars%plant_minn_no3_uptake_vmax_vr_patch  &
+   plant_minn_no3_uptake_vmax_vr_patch => plantsoilnutrientflux_vars%plant_minn_no3_uptake_vmax_vr_patch, &
+   plant_minn_nh4_uptake_km_vr_patch   => plantsoilnutrientflux_vars%plant_minn_nh4_uptake_km_vr_patch  , &
+   plant_minn_no3_uptake_km_vr_patch   => plantsoilnutrientflux_vars%plant_minn_no3_uptake_km_vr_patch  , &
+   plant_minp_uptake_km_vr_patch       => plantsoilnutrientflux_vars%plant_minp_uptake_km_vr_patch        &
   )
   this%lid_planti_compet = 1
   this%lid_plantf_compet = 0
@@ -197,7 +201,7 @@ contains
 
 
   !define the location parameters
-
+  end associate
   end subroutine set_nutrientcompet_paras
 
   !-------------------------------------------------------------------------------
@@ -212,7 +216,7 @@ contains
 
   allocate(this%vmax_plant_nh4(maxpatch_pft));
   allocate(this%vmax_plant_no3(maxpatch_pft));
-  allocate(this%vmax_plant_p(maxpatch_pft));
+  allocate(this%vmax_plant_minp(maxpatch_pft));
 
   maxcomp= maxpatch_pft + 1 + 1 + 1 + 1 !pft + decomp+nit+denit+mineral surface
   allocate(this%k_mat_minn(2,maxcomp))

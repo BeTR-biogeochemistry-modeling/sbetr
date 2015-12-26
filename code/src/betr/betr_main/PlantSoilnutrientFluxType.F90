@@ -414,19 +414,24 @@ module PlantSoilnutrientFluxType
   end subroutine calc_nutrient_uptake_vmax
 
 !--------------------------------------------------------------------------------
-  subroutine sub_froot_prof(this, num_soilc, filter_soilc, cnstate_vars, e_plant_scalar)
+  subroutine sub_froot_prof(this, bounds, num_soilc, filter_soilc, frootc_patch, cnstate_vars, e_plant_scalar)
 
   use clm_varpar               , only : nlevtrc_soil
   use CNStateType              , only : cnstate_type
+  use pftvarcon                , only : noveg
   !
   ! !ARGUMENTS:
   class(plantsoilnutrientflux_type) :: this
   integer           , intent(in)    :: num_soilc
   integer           , intent(in)    :: filter_soilc(:)
+  type(bounds_type) , intent(in)    :: bounds
+  real(r8)          , intent(in)    :: frootc_patch(bounds%begp: )
   real(r8)          , intent(in)    :: e_plant_scalar
   type(cnstate_type), intent(in)    :: cnstate_vars
   integer :: p, j, fc, c
 
+
+  SHR_ASSERT_ALL((ubound(frootc_patch) == (/bounds%endp/)), errMsg(__FILE__,__LINE__))
   associate(                                                                        &
          froot_prof                   => cnstate_vars%froot_prof_patch              & !
   )
@@ -435,7 +440,7 @@ module PlantSoilnutrientFluxType
     c = filter_soilc(fc)
     do p = col%pfti(c), col%pftf(c)
       if (pft%active(p).and. (pft%itype(p) .ne. noveg)) then
-        this%plant_frootsc_patch(p) = frootc(p)
+        this%plant_frootsc_patch(p) = frootc_patch(p)
         !set effective nutrient uptake profile
         do j = 1, nlevtrc_soil
           this%plant_effrootsc_vr_patch(p, j) = this%plant_frootsc_patch(p) * froot_prof(p,j) * e_plant_scalar
@@ -447,7 +452,7 @@ module PlantSoilnutrientFluxType
   end subroutine sub_froot_prof
 
 !--------------------------------------------------------------------------------
-  subroutine init_plant_soil_feedback(this, bounds, num_soilc, filter_soilc, cnstate_vars, ecophyscon_vars)
+  subroutine init_plant_soil_feedback(this, bounds, num_soilc, filter_soilc, frootc_patch, cnstate_vars, ecophyscon_vars)
 
   use EcophysConType      , only : ecophyscon_type
   use pftvarcon           , only : noveg
@@ -458,16 +463,18 @@ module PlantSoilnutrientFluxType
   type(bounds_type)    , intent(in)    :: bounds
   integer              , intent(in)    :: num_soilc
   integer              , intent(in)    :: filter_soilc(:)
+  real(r8)             , intent(in)    :: frootc_patch(bounds%begp: )
   type(ecophyscon_type), intent(in)    :: ecophyscon_vars
   type(cnstate_type)   , intent(in)    :: cnstate_vars
   real(r8), parameter   :: E_plant_scalar  = 0.0000125_r8
   integer :: fc, c, p, j
 
+  SHR_ASSERT_ALL((ubound(frootc_patch) == (/bounds%endp/)), errMsg(__FILE__,__LINE__))
   associate(                                                                              &
-  vmax_plant_nh4               => ecophyscon%vmax_plant_nh4                             , &
-  vmax_plant_no3               => ecophyscon%vmax_plant_no3                             , &
-  vmax_plant_p                 => ecophyscon%vmax_plant_p                               , &
-  vmax_minsurf_p_vr            => ecophyscon%vmax_minsurf_p_vr                          , &
+  vmax_plant_nh4               => ecophyscon_vars%vmax_plant_nh4                        , &
+  vmax_plant_no3               => ecophyscon_vars%vmax_plant_no3                        , &
+  vmax_plant_p                 => ecophyscon_vars%vmax_plant_p                          , &
+  vmax_minsurf_p_vr            => ecophyscon_vars%vmax_minsurf_p_vr                     , &
   ivt                          => pft%itype                                               &
   )
 
@@ -486,7 +493,7 @@ module PlantSoilnutrientFluxType
   enddo
 
   !set root profile
-  call this%sub_froot_prof(num_soilc, filter_soilc, cnstate_vars, e_plant_scalar)
+  call this%sub_froot_prof(bounds, num_soilc, filter_soilc,  frootc_patch, cnstate_vars, e_plant_scalar)
 
   !set OM input profile
 
