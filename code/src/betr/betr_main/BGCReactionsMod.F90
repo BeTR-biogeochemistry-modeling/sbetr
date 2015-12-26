@@ -270,8 +270,8 @@ module BGCReactionsMod
      !-------------------------------------------------------------------------------
 
 
-     subroutine init_betr_alm_bgc_coupler_interface(this, bounds, carbonstate_vars, &
-          nitrogenstate_vars, phosphorusstate_vars, plantsoilnutrientflux_vars,     &
+     subroutine init_betr_alm_bgc_coupler_interface(this, bounds, num_soilc, filter_soilc, &
+          carbonstate_vars, nitrogenstate_vars, phosphorusstate_vars, plantsoilnutrientflux_vars,     &
           betrtracer_vars, tracerstate_vars)
        !
        ! !DESCRIPTION:
@@ -296,12 +296,14 @@ module BGCReactionsMod
        import :: bgc_reaction_type
        class(bgc_reaction_type)           , intent(in)    :: this
        type(bounds_type)                  , intent(in)    :: bounds
+       integer                            , intent(in)    :: num_soilc
+       integer                            , intent(in)    :: filter_soilc(:)
        type(tracerstate_type)             , intent(inout) :: tracerstate_vars
        type(betrtracer_type)              , intent(in)    :: betrtracer_vars    ! betr configuration information
        type(carbonstate_type)             , intent(in)    :: carbonstate_vars
        type(nitrogenstate_type)           , intent(in)    :: nitrogenstate_vars
        type(phosphorusstate_type)         , intent(in)    :: phosphorusstate_vars
-       type(plantsoilnutrientflux_type)  , intent(inout)  :: plantsoilnutrientflux_vars !  
+       type(plantsoilnutrientflux_type)  , intent(inout)  :: plantsoilnutrientflux_vars !
      end subroutine init_betr_alm_bgc_coupler_interface
 
   end interface

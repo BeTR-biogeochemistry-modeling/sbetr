@@ -964,7 +964,7 @@ contains
   end subroutine betr_alm_flux_statevar_feedback
 
   !---------------------------------------------------------------
-  subroutine init_betr_alm_bgc_coupler(this, bounds, carbonstate_vars, &
+  subroutine init_betr_alm_bgc_coupler(this, bounds, num_soilc, filter_soilc, carbonstate_vars, &
        nitrogenstate_vars, phosphorusstate_vars, plantsoilnutrientflux_vars, &
        betrtracer_vars, tracerstate_vars)
     !
@@ -984,6 +984,8 @@ contains
     ! !ARGUMENTS:
     class(bgc_reaction_CENTURY_ECACNP_type) , intent(in)    :: this
     type(bounds_type)                    , intent(in)    :: bounds
+    integer                              , intent(in)    :: num_soilc
+    integer                              , intent(in)    :: filter_soilc(:)
     type(tracerstate_type)               , intent(inout) :: tracerstate_vars
     type(betrtracer_type)                , intent(in)    :: betrtracer_vars ! betr configuration information
     type(carbonstate_type)               , intent(in)    :: carbonstate_vars
@@ -1028,6 +1030,7 @@ contains
 
       call plantsoilnutrientflux_vars%init_plant_soil_feedback(bounds, num_soilc, filter_soilc, &
          carbonstate_vars%frootc_patch, cnstate_vars, ecophyscon_vars)
+
       !initialize tracer based on carbon/nitrogen pools
       do j = 1, nlevtrc_soil
          do c = bounds%begc, bounds%endc
