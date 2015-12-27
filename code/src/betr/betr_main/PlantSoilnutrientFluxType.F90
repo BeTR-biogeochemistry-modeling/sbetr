@@ -28,9 +28,11 @@ module PlantSoilnutrientFluxType
     real(r8), pointer :: plant_minn_active_yield_flx_patch           (:)    !patch level mineral nitrogen yeild from soil bgc calculation
     real(r8), pointer :: plant_minn_active_yield_flx_vr_patch        (:,:)  !patch level mineral nitrogen yeild from soil bgc calculation
     real(r8), pointer :: plant_minn_passive_yield_flx_patch          (:)    !patch level mineral nitrogen yeild from soil bgc calculation
+    real(r8), pointer :: plant_minn_active_yield_flx_vr_col          (:,:)  !patch level mineral nitrogen yeild from soil bgc calculation
+    real(r8), pointer :: plant_minn_active_yield_flx_col             (:)    !column level mineral nitrogen yeild from soil bgc calculation
+
     real(r8), pointer :: plant_minn_nh4_uptake_vmax_vr_patch         (:,:)  !plant mineral nitrogen uptake potential for each layer
     real(r8), pointer :: plant_minn_no3_uptake_vmax_vr_patch         (:,:)  !plant mineral nitrogen uptake potential for each layer
-    real(r8), pointer :: plant_minp_uptake_vmax_vr_patch             (:,:)
     real(r8), pointer :: plant_totn_demand_flx_col                   (:)    !column level total nitrogen demand, g N/m2/s
     real(r8), pointer :: plant_effrootsc_vr_patch                    (:,:)  !fine root for nutrient uptake
     real(r8), pointer :: plant_frootsc_patch                         (:)    !fine root for nutrient uptake
@@ -66,13 +68,19 @@ module PlantSoilnutrientFluxType
 
 
     real(r8), pointer :: km_minsurf_minnh4_vr_col                  (:,:)   !mineral NH4 adsorption affinity
-    real(r8), pointer :: km_minsurf_minp_vr_col                    (:,:)   !mineral P adsorption affinity
-    real(r8), pointer :: r_adsorp_pcap_vr_col                      (:,:)   !mineral adsorption capacity, this interacts with secondary P
-    real(r8), pointer :: r_adsorp_nh4cap_vr_col                    (:,:)   !mineral adsorption capacity, this assumes equilibrium adsorption
-    real(r8), pointer :: kd_desorp_p_vr_col                        (:,:)   !desorption parameter, 1/s
+
+    real(r8), pointer :: r_adsorp_minp_cap_vr_col                  (:,:)   !mineral adsorption capacity, this interacts with secondary P
+    real(r8), pointer :: r_adsorp_nh4_cap_vr_col                    (:,:)   !mineral adsorption capacity, this assumes equilibrium adsorption
+    real(r8), pointer :: kd_desorp_minp_vr_col                     (:,:)   !desorption parameter, 1/s
     real(r8), pointer :: plant_minn_nh4_uptake_km_vr_patch         (:,:)   !
     real(r8), pointer :: plant_minn_no3_uptake_km_vr_patch         (:,:)   !
+
     real(r8), pointer :: plant_minp_uptake_km_vr_patch             (:,:)   !
+    real(r8), pointer :: km_minsurf_minp_vr_col                    (:,:)   !mineral P adsorption affinity
+    real(r8), pointer :: plant_minp_active_yield_flx_col             (:)    !column level mineral phosphorus yeild from soil bgc calculation
+    real(r8), pointer :: plant_minp_uptake_vmax_vr_patch             (:,:)
+
+
    contains
 
      procedure , public  :: Init
@@ -178,9 +186,9 @@ module PlantSoilnutrientFluxType
 
     allocate(this%km_minsurf_minnh4_vr_col   (begc:endc,1:nlevdecomp_full)) ; this%km_minsurf_minnh4_vr_col(:,:) = nan
     allocate(this%km_minsurf_minp_vr_col     (begc:endc,1:nlevdecomp_full)) ; this%km_minsurf_minp_vr_col  (:,:) = nan
-    allocate(this%r_adsorp_pcap_vr_col       (begc:endc,1:nlevdecomp_full)) ; this%r_adsorp_pcap_vr_col    (:,:) = nan
-    allocate(this%r_adsorp_nh4cap_vr_col     (begc:endc,1:nlevdecomp_full)) ; this%r_adsorp_nh4cap_vr_col  (:,:) = nan
-    allocate(this%kd_desorp_p_vr_col         (begc:endc,1:nlevdecomp_full)) ; this%kd_desorp_p_vr_col      (:,:) = nan
+    allocate(this%r_adsorp_minp_cap_vr_col       (begc:endc,1:nlevdecomp_full)) ; this%r_adsorp_minp_cap_vr_col    (:,:) = nan
+    allocate(this%r_adsorp_nh4_cap_vr_col     (begc:endc,1:nlevdecomp_full)) ; this%r_adsorp_nh4_cap_vr_col  (:,:) = nan
+    allocate(this%kd_desorp_minp_vr_col         (begc:endc,1:nlevdecomp_full)) ; this%kd_desorp_minp_vr_col      (:,:) = nan
 
   end subroutine InitAllocate
 

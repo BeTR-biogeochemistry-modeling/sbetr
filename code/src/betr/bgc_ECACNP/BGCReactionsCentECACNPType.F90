@@ -759,7 +759,8 @@ contains
              write(iulog,*)'nstep =',get_nstep()
              call endrun()
           endif
-
+          call update_plant_nutrient_yield_patch(c,j, y0(:,c,j),yf(:,c,j),centurybgc_vars, &
+             NutrientCompetitionParamsInst, plantsoilnutrientflux_vars)
        enddo
     enddo
 
@@ -767,11 +768,11 @@ contains
     call bgcstate_ext_update_afdecomp(bounds, 1, ubj, num_soilc, filter_soilc, plantsoilnutrientflux_vars, &
          centurybgc_vars, betrtracer_vars, tracerflux_vars, yf)
 
-    !retrieve the flux variable
+    !retrieve the column flux variables
     call retrieve_flux_vars(bounds, lbj, ubj, num_soilc, filter_soilc, jtops, centurybgc_vars%nstvars, dtime, yf, y0, &
          centurybgc_vars, betrtracer_vars, tracerflux_vars, plantsoilnutrientflux_vars)
 
-    !retrieve the state variable, state variable will be updated later
+    !retrieve the column state variables, state variable will be updated later
     call retrieve_state_vars(bounds, lbj, ubj, num_soilc, filter_soilc, jtops, centurybgc_vars%nstvars,  yf, &
          centurybgc_vars, betrtracer_vars, tracerstate_vars)
 
@@ -1312,16 +1313,17 @@ contains
     use KineticsMod        , only : kd_infty, ecacomplex_cell_norm
     use MathfuncMod        , only : safe_div
     use BGCCentECACNPParMod, only : NutrientCompetitionParamsType
+
     implicit none
     ! !ARGUMENTS:
-    integer , intent(in) :: nprimvars  !number of primary variables
-    integer , intent(in) :: nr         !number of reactions
-    logical , intent(in) :: nitrogen_limit_flag(centurybgc_vars%nom_pools)
-    logical , intent(in) :: phosphos_limit_flag(centurybgc_vars%nom_pools)
-    real(r8), intent(in)  :: ystate(1:nprimvars)
+    integer                            , intent(in) :: nprimvars  !number of primary variables
+    integer                            , intent(in) :: nr         !number of reactions
+    logical                            , intent(in) :: nitrogen_limit_flag(centurybgc_vars%nom_pools)
+    logical                            , intent(in) :: phosphos_limit_flag(centurybgc_vars%nom_pools)
+    real(r8)                           , intent(in) :: ystate(1:nprimvars)
     type(NutrientCompetitionParamsType), intent(in) :: ncompete_vars
-    real(r8), intent(inout) :: reaction_rates(1:nr)
-    real(r8), intent(inout) :: cascade_matrix(1:nprimvars, 1:nr)
+    real(r8)                           , intent(inout) :: reaction_rates(1:nr)
+    real(r8)                           , intent(inout) :: cascade_matrix(1:nprimvars, 1:nr)
 
     ! !LOCAL VARIABLES:
 

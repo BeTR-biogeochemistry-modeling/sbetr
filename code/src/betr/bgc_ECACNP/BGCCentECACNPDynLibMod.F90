@@ -35,7 +35,7 @@ module BGCCentECACNPDynLibMod
   public :: set_reaction_order
   public :: assign_nitrogen_hydroloss
   public :: assign_OM_CNpools
-
+  public :: update_plant_nutrient_yield_patch
   type, public :: centurybgc_type
 
      integer           :: nom_pools                              !not include coarse wood debris
@@ -1691,4 +1691,23 @@ contains
 
 !-------------------------------------------------------------------------------
 
+  subroutine update_plant_nutrient_yield_patch(c,j, y0c,yfc,centurybgc_vars, &
+     ncompete_vars, plantsoilnutrientflux_vars)
+
+  use BGCCentECACNPParMod      , only : NutrientCompetitionParamsType
+  use PlantSoilnutrientFluxType, only : plantsoilnutrientflux_type
+
+  implicit none
+  !
+  !ARGUMENTS
+  integer                            , intent(in) :: c, j
+  type(centurybgc_type)              , intent(in) :: centurybgc_vars
+  real(r8)                           , intent(in) :: y0c(1:centurybgc_vars%nstvars)
+  real(r8)                           , intent(in) :: yfc(1:centurybgc_vars%nstvars)
+  type(NutrientCompetitionParamsType), intent(in) :: ncompete_vars
+  type(plantsoilnutrientflux_type)   , intent(inout) :: plantsoilnutrientflux_vars !
+
+
+
+  end subroutine update_plant_nutrient_yield_patch
 end module BGCCentECACNPDynLibMod
