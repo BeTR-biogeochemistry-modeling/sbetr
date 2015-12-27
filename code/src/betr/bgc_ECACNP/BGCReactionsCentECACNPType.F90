@@ -4,26 +4,29 @@ module BGCReactionsCentECACNPType
 
   !
   ! !DESCRIPTION:
-  ! do ECA based nitrogen/phosphorus competition in betr.
-  ! this code uses the operator automated down-regulation scheme
+  ! Do ECA based nitrogen/phosphorus competition within betr.
+  ! This code uses the operator automated down-regulation scheme
   ! Ideally, all belowground biogeochemistry processes should be solved
   ! simultaneously using the ODE solver below, because of the potential
   ! conflict of interest (in coding) with others, the belowground BGC
   ! considers the nutrient interaction between decomposers, nitrifiers, denitrifiers
   ! and plants (uptake). The P cycle does not include P demand from processes
   ! other than aerobic decomposition and plant growth, therefore nitrifiers and denitrifiers
-  ! are not P limited.
+  ! are never P limited.
+  !
   ! Also, because I'm solving enzymatic P extraction simultaneously with decomposition
-  ! and plant uptake, each OM pool (execpt CWD) is assigned a targeting CP ratio to
-  ! impose the P limitation in decomposition. This treatment is equivalent to assume
+  ! and plant P uptake, each OM pool (execpt CWD) is assigned a targeting CP ratio to
+  ! impose the P limitation of decomposition. This treatment is equivalent to assume
   ! the decomposers are having fixed stoichiometry. In contrast, other implementations
   ! in ACME LAND treats enzymatic P extraction and decomposition as two separate processes,
   ! which causes another ordering ambiguity, such that if one switches the decomposition
-  ! and P extraction, the model will likely make different predictions.
+  ! and P extraction, the model will likely make very different predictions.
+  !
   ! Further, because I am solving the inorganic P dynamics using the ECA formulation
   ! the labile P pool is implicitly represented. Also, it is assumed the secondary pool
   ! are competing for adsorption space with the labile P, so there is an adsoprtion
   ! saturation effect, which is apparently missing form other ACME implementations.
+  !
   ! HISTORY:
   ! Created by Jinyun Tang, Nov 20th, 2015
   ! Note: ECA parameters are note tuned.
@@ -85,7 +88,7 @@ contains
      real(r8)          :: n2_n2o_ratio_denit     !ratio of n2 to n2o during denitrification
      real(r8)          :: pct_sand               !sand content [0-100]
      real(r8)          :: pct_clay               !clay content [0-100]
-     logical,  pointer :: is_zero_order(:)
+     logical,  pointer :: is_1st_order(:)
      integer           :: nr                     !number of reactions involved
    contains
      procedure, public :: Init_Allocate
@@ -122,7 +125,7 @@ contains
     allocate(this%scal_f(nprimstvars));    this%scal_f(:) = 0._r8
     allocate(this%conv_f(nprimstvars));    this%conv_f(:) = 0._r8
     allocate(this%conc_f(nprimstvars));    this%conc_f(:) = 0._r8
-    allocate(this%is_zero_order(nreacts)); this%is_zero_order(:) = .false.
+    allocate(this%is_1st_order(nreacts)); this%is_1st_order(:) = .false.
     this%nr = nreacts
 
   end subroutine Init_Allocate
@@ -504,15 +507,15 @@ contains
     !new group
     itemp_mem=0
     itemp_grp = addone(itemp_grp)
-    centurybgc_vars%lid_p_secondary_trc=centurybgc_vars%nom_pools*nelm + 1
-    centurybgc_vars%lid_p_occlude_trc = centurybgc_vars%nom_pools*nelm + 2
+    centurybgc_vars%lid_minp_secondary_trc=centurybgc_vars%nom_pools*nelm + 1
+    centurybgc_vars%lid_minp_occlude_trc = centurybgc_vars%nom_pools*nelm + 2
 
-    trcid = jj + centurybgc_vars%lid_p_secondary_trc
+    trcid = jj + centurybgc_vars%lid_minp_secondary_trc
     call betrtracer_vars%set_tracer(trc_id = trcid, trc_name='P_2ND'             ,    &
          is_trc_mobile=.false., is_trc_advective = .false., trc_group_id = itemp_grp,  &
          trc_group_mem= addone(itemp_mem))
 
-    trcid = jj + centurybgc_vars%lid_p_secondary_trc
+    trcid = jj + centurybgc_vars%lid_minp_secondary_trc
     call betrtracer_vars%set_tracer(trc_id = trcid, trc_name='P_OCL'             ,    &
          is_trc_mobile=.false., is_trc_advective = .false., trc_group_id = itemp_grp,  &
          trc_group_mem= addone(itemp_mem))
@@ -647,7 +650,7 @@ contains
 
     call Extra_inst%Init_Allocate(centurybgc_vars%nom_pools, centurybgc_vars%nreactions, centurybgc_vars%nprimvars)
 
-    call set_reaction_order( centurybgc_vars%nreactions, centurybgc_vars, Extra_inst%is_zero_order)
+    call set_reaction_order( centurybgc_vars%nreactions, centurybgc_vars, Extra_inst%is_1st_order)
 
     !initialize local variables
     y0(:, :, :) = spval
@@ -696,7 +699,7 @@ contains
          centurybgc_vars, pot_decay_rates, soilstate_vars%cellsand_col(bounds%begc:bounds%endc,lbj:ubj),   &
          pot_co2_hr, pot_nh3_immob)
 
-    !calculate fraction of anerobic environment
+    !calculate fraction of anaerobic environment
     call calc_anaerobic_frac(bounds, lbj, ubj, num_soilc, filter_soilc, jtops,                                 &
          temperature_vars%t_soisno_col(bounds%begc:bounds%endc,lbj:ubj),                                       &
          soilstate_vars, waterstate_vars%h2osoi_vol_col(bounds%begc:bounds%endc,lbj:ubj),                      &
@@ -721,7 +724,6 @@ contains
          k_decay(centurybgc_vars%lid_nh4_nit_reac, bounds%begc:bounds%endc, lbj:ubj),                            &
          k_decay(centurybgc_vars%lid_no3_den_reac, bounds%begc:bounds%endc, lbj:ubj))
 
-
     !apply root distribution here
     call apply_plant_root_respiration_prof(bounds, ubj, num_soilc, filter_soilc,                                          &
          plantsoilnutrientflux_vars%rr_col(bounds%begc:bounds%endc), cnstate_vars%nfixation_prof_col(bounds%begc:bounds%endc,1:ubj), &
@@ -730,8 +732,8 @@ contains
     !calulate vmax profile for plant nutrient uptake
     call plantsoilnutrientflux_vars%calc_nutrient_uptake_vmax(bounds, num_soilc, filter_soilc, &
          num_soilp, filter_soilp, decompECA_vars%t_scalar_col,  decompECA_vars%w_scalar_col, cnstate_vars)
-    !do ode integration and update state variables for each layer
 
+    !do ode integration and update state variables for each layer
     do j = lbj, ubj
        do fc = 1, num_soilc
           c = filter_soilc(fc)
@@ -751,7 +753,6 @@ contains
           yf(:,c,j)=y0(:,c,j) !this will allow to turn off the bgc reaction for debugging purpose
           call ode_ebbks1(one_box_century_bgc, y0(:,c,j), centurybgc_vars%nprimvars,centurybgc_vars%nstvars, &
                time, dtime, yf(:,c,j), pscal)
-
 
           if(pscal<5.e-1_r8)then
              write(iulog,*)'lat, lon=',grc%latdeg(col%gridcell(c)),grc%londeg(col%gridcell(c))
@@ -1030,8 +1031,8 @@ contains
          som2               => centurybgc_vars%som2                                  , &
          som3               => centurybgc_vars%som3                                  , &
          cwd                => centurybgc_vars%cwd                                   , &
-         lid_p_occlude_trc  => centurybgc_vars%lid_p_occlude_trc                     , &
-         lid_p_secondary_trc=> centurybgc_vars%lid_p_secondary_trc                   , &
+         lid_minp_occlude_trc  => centurybgc_vars%lid_minp_occlude_trc                     , &
+         lid_minp_secondary_trc=> centurybgc_vars%lid_minp_secondary_trc                   , &
          nelms              => centurybgc_vars%nelms                                   &
          )
 
@@ -1071,8 +1072,8 @@ contains
                k = som2; tracer_conc_solid_passive(c,j,(k-1)*nelms+p_loc) = decomp_ppools_vr(c,j,i_soil2  ) / patomw
                k = som3; tracer_conc_solid_passive(c,j,(k-1)*nelms+p_loc) = decomp_ppools_vr(c,j,i_soil3  ) / patomw
 
-               tracer_conc_solid_passive(c,j,lid_p_secondary_trc) = secondp_vr_col(c,j)/patomw
-               tracer_conc_solid_passive(c,j,lid_p_occlude_trc)   = occlp_vr_col(c,j)  /patomw
+               tracer_conc_solid_passive(c,j,lid_minp_secondary_trc) = secondp_vr_col(c,j)/patomw
+               tracer_conc_solid_passive(c,j,lid_minp_occlude_trc)   = occlp_vr_col(c,j)  /patomw
             endif
          enddo
       enddo
@@ -1129,7 +1130,7 @@ contains
 
     !obtain reaction rates
     do lk = 1, Extra_inst%nr
-       if(Extra_inst%is_zero_order(lk))then
+       if(.not. Extra_inst%is_1st_order(lk))then
 
           if ( spinup_state .eq. 1 ) then
              !spinup stage
@@ -1363,7 +1364,7 @@ contains
          lid_plant_minn_nh4_up_reac=> centurybgc_vars%lid_plant_minn_nh4_up_reac , &
          lid_plant_minn_no3_up_reac=> centurybgc_vars%lid_plant_minn_no3_up_reac , &
          lid_plant_minp_up_reac=> centurybgc_vars%lid_plant_minp_up_reac , &
-         lid_p_solution     => centurybgc_vars%lid_p_solution            , &
+         lid_minp_solution     => centurybgc_vars%lid_minp_solution            , &
          nelms              => centurybgc_vars%nelms                     , &
          lid_msurf_compet   => ncompete_vars%lid_msurf_compet            , &
          lid_decomp_compet  => ncompete_vars%lid_decomp_compet           , &
@@ -1385,7 +1386,7 @@ contains
       call ecacomplex_cell_norm(k_mat_minn(:,1:ncompets),(/ystate(lid_nh4),ystate(lid_no3)/),&
          vcompet_minn(1:ncompets),siej_cell_norm_minn)
 
-      call ecacomplex_cell_norm(k_mat_minp(1:ncompets),ystate(lid_p_solution),&
+      call ecacomplex_cell_norm(k_mat_minp(1:ncompets),ystate(lid_minp_solution),&
          vcompet_minp(1:ncompets),siej_cell_norm_minp)
 
       !now modify the reaction rates,

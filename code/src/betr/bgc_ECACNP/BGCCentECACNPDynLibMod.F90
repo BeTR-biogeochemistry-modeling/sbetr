@@ -66,10 +66,10 @@ module BGCCentECACNPDynLibMod
      integer           :: lid_plant_minn_nh4, lid_plant_minn_nh4_up_reac !local position of plant uptake of mineral nitrogen NH4 in the state variable vector
      integer           :: lid_plant_minn_no3, lid_plant_minn_no3_up_reac !
      integer           :: lid_plant_minp, lid_plant_minp_up_reac !local position of plant uptake of mineral P in the state variable vector
-     integer           :: lid_p_solution, lid_p_solution_reac    !conversation of adsorbed into secondary phase
-     integer           :: lid_p_secondary,lid_p_secondary_reac   !local position of secondary P in the state variable vector
+     integer           :: lid_minp_solution, lid_minp_solution_reac    !conversation of adsorbed into secondary phase
+     integer           :: lid_minp_secondary,lid_minp_secondary_reac   !local position of secondary P in the state variable vector
 
-     integer           :: lid_p_occlude, lid_p_occlude_reac      !local position of occluded P in the state variable vector
+     integer           :: lid_minp_occlude, lid_minp_occlude_reac      !local position of occluded P in the state variable vector
 
      integer           :: lid_at_rt, lid_at_rt_reac              !root autotrophic respiration
 
@@ -91,8 +91,8 @@ module BGCCentECACNPDynLibMod
      integer           :: lid_minn_nh4_plant
      integer           :: lid_minn_no3_plant
      integer           :: lid_nh4_nit
-     integer           :: lid_p_secondary_trc
-     integer           :: lid_p_occlude_trc
+     integer           :: lid_minp_secondary_trc
+     integer           :: lid_minp_occlude_trc
                                                                  !aerechyma transport, diagnostic efflux
      integer           :: lid_minp_immob                         !net P immobilization by aerobic decomposer
 
@@ -206,7 +206,6 @@ contains
     this%lid_ch4        = addone(itemp);
     this%lid_ar         = addone(itemp);
 
-
     !second primary variables
     this%lid_o2         = addone(itemp);
     this%lid_co2        = addone(itemp);
@@ -230,9 +229,6 @@ contains
     this%lid_minn_no3_plant = addone(itemp)
     this%lid_nh4_nit        = addone(itemp)
 
-    if(CNAllocate_Carbon_only())then
-       this%lid_nh4_supp = addone(itemp)
-    endif
     !aerechyma transport
     this%lid_o2_paere   = addone(itemp)   !
     if ( spinup_state /= 1 ) then
@@ -1505,7 +1501,7 @@ contains
   end subroutine apply_plant_root_respiration_prof
 
   !-----------------------------------------------------------------------
-  subroutine set_reaction_order( nreact, centurybgc_vars, is_zero_order)
+  subroutine set_reaction_order( nreact, centurybgc_vars, is_1st_order)
     !
     ! !DESCRIPTION:
     ! set order of the reactions, 0 or 1
@@ -1513,25 +1509,9 @@ contains
     ! !ARGUMENTS:
     integer                      , intent(in)  :: nreact
     type(centurybgc_type)        , intent(in)  :: centurybgc_vars
-    logical                      , intent(out) :: is_zero_order(nreact)
+    logical                      , intent(out) :: is_1st_order(nreact)
 
-
-
-    is_zero_order(:) = .false.
-    is_zero_order(centurybgc_vars%lid_o2_aere_reac)  = .true.
-    if(spinup_state /= 1)then
-       is_zero_order(centurybgc_vars%lid_n2o_aere_reac) = .true.
-       is_zero_order(centurybgc_vars%lid_ar_aere_reac)  = .true.
-       is_zero_order(centurybgc_vars%lid_ch4_aere_reac) = .true.
-       is_zero_order(centurybgc_vars%lid_o2_aere_reac)  = .true.
-
-       is_zero_order(centurybgc_vars%lid_co2_aere_reac) = .true.
-       is_zero_order(centurybgc_vars%lid_n2_aere_reac)  = .true.
-    endif
-
-    is_zero_order(centurybgc_vars%lid_plant_minn_nh4_up_reac) = .true.
-    is_zero_order(centurybgc_vars%lid_plant_minn_no3_up_reac) = .true.
-    is_zero_order(centurybgc_vars%lid_at_rt_reac)         = .true.
+    is_1st_order(:) = .false.
 
   end subroutine set_reaction_order
 
@@ -1588,8 +1568,8 @@ contains
          c_loc                     => centurybgc_vars%c_loc                          , &
          n_loc                     => centurybgc_vars%n_loc                          , &
          p_loc                     => centurybgc_vars%p_loc                          , &
-         lid_p_secondary_trc       => centurybgc_vars%lid_p_secondary_trc            , &
-         lid_p_occlude_trc         => centurybgc_vars%lid_p_occlude_trc              , &
+         lid_minp_secondary_trc       => centurybgc_vars%lid_minp_secondary_trc            , &
+         lid_minp_occlude_trc         => centurybgc_vars%lid_minp_occlude_trc              , &
          lit1                      => centurybgc_vars%lit1                           , &
          lit2                      => centurybgc_vars%lit2                           , &
          lit3                      => centurybgc_vars%lit3                           , &
@@ -1609,8 +1589,8 @@ contains
             smin_nh4_vr_col(c,j) = tracer_conc_mobile(c,j,id_trc_nh3x)*natomw
             sminn_vr_col   (c,j) = smin_no3_vr_col(c,j) + smin_nh4_vr_col(c,j)
 
-            secondp_vr_col (c,j) = tracer_conc_solid_passive(c,j,lid_p_secondary_trc) * patomw
-            occlp_vr_col   (c,j) = tracer_conc_solid_passive(c,j,lid_p_occlude_trc) * patomw
+            secondp_vr_col (c,j) = tracer_conc_solid_passive(c,j,lid_minp_secondary_trc) * patomw
+            occlp_vr_col   (c,j) = tracer_conc_solid_passive(c,j,lid_minp_occlude_trc) * patomw
             solutionp_vr_col(c,j)= tracer_conc_mobile(c,j,id_trc_p_sol) * patomw
             sminp_vr_col   (c,j) = secondp_vr_col(c,j) + occlp_vr_col(c,j) + solutionp_vr_col(c,j)
 
