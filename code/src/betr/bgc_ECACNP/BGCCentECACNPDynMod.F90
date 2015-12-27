@@ -91,7 +91,6 @@ contains
          lid_plant_minp => centurybgc_vars%lid_plant_minp                , & !
          lid_minp_immob => centurybgc_vars%lid_minp_immob                , & !
          is_aerobic_reac=> centurybgc_vars%is_aerobic_reac               , & !
-         is_1st_order => centurybgc_vars%is_1st_order                    , & !
          primvarid    => centurybgc_vars%primvarid                       , & !
          lit1_dek_reac=> centurybgc_vars%lit1_dek_reac                   , & !
          lit2_dek_reac=> centurybgc_vars%lit2_dek_reac                   , & !
@@ -163,7 +162,7 @@ contains
     is_aerobic_reac(reac) = .true.
     nitrogen_limit_flag(reac) = (cascade_matrix(lid_nh4, reac) < 0._r8)
     phosphos_limit_flag(reac) = (cascade_matrix(lid_minp_solution,reac) < 0._r8)
-    is_1st_order(reac) = .true.
+
     !---------------------------------------------------------------------------------
     !reaction 2, lit2 -> s1
     reac = lit2_dek_reac
@@ -189,7 +188,7 @@ contains
     is_aerobic_reac(reac) = .true.
     nitrogen_limit_flag(reac) = (cascade_matrix(lid_nh4, reac) < 0._r8)
     phosphos_limit_flag(reac) = (cascade_matrix(lid_minp_solution,reac) < 0._r8)
-    is_1st_order(reac) = .true.
+
     !---------------------------------------------------------------------------------
 
     !reaction 3, lit3->s2
@@ -216,7 +215,6 @@ contains
     is_aerobic_reac(reac) = .true.
     nitrogen_limit_flag(reac) = (cascade_matrix(lid_nh4, reac) < 0._r8)
     phosphos_limit_flag(reac) = (cascade_matrix(lid_minp_solution,reac) < 0._r8)
-    is_1st_order(reac) = .true.
 
     !---------------------------------------------------------------------------------
     !double check those stoichiometry parameters
@@ -254,7 +252,6 @@ contains
     is_aerobic_reac(reac) = .true.
     nitrogen_limit_flag(reac) = (cascade_matrix(lid_nh4, reac) < 0._r8)
     phosphos_limit_flag(reac) = (cascade_matrix(lid_minp_solution,reac) < 0._r8)
-    is_1st_order(reac) = .true.
 
     !---------------------------------------------------------------------------------
     !reaction 5, som2->som1, som3
@@ -287,7 +284,6 @@ contains
     is_aerobic_reac(reac) = .true.
     nitrogen_limit_flag(reac) = (cascade_matrix(lid_nh4, reac) < 0._r8)
     phosphos_limit_flag(reac) = (cascade_matrix(lid_minp_solution,reac) < 0._r8)
-    is_1st_order(reac) = .true.
 
     !---------------------------------------------------------------------------------
     !reaction 6, s3-> s1
@@ -315,7 +311,6 @@ contains
     is_aerobic_reac(reac) = .true.
     nitrogen_limit_flag(reac) = (cascade_matrix(lid_nh4, reac) < 0._r8)
     phosphos_limit_flag(reac) = (cascade_matrix(lid_minp_solution,reac) < 0._r8)
-    is_1st_order(reac) = .true.
 
     !---------------------------------------------------------------------------------
     !reaction 7, the partition into lit1 and lit2 is nutrient dependent, respires co2?
@@ -345,7 +340,6 @@ contains
     is_aerobic_reac(reac) = .true.
     nitrogen_limit_flag(reac) = (cascade_matrix(lid_nh4, reac) < 0._r8)
     phosphos_limit_flag(reac) = (cascade_matrix(lid_minp_solution,reac) < 0._r8)
-    is_1st_order(reac) = .true.
 
     !---------------------------------------------------------------------------------
     !reaction 8, nitrification
@@ -360,7 +354,6 @@ contains
     cascade_matrix(lid_n2o_nit,reac) = nitrif_n2o_loss_frac
     primvarid(reac) = lid_nh4
     is_aerobic_reac(reac) = .true.
-    is_1st_order(reac) = .true.
 
     !---------------------------------------------------------------------------------
     !reaction 9, denitrification
@@ -371,7 +364,6 @@ contains
     cascade_matrix(lid_n2  ,reac)    = 0.5_r8 * n2_n2o_ratio_denit/(1._r8+n2_n2o_ratio_denit)
     cascade_matrix(lid_no3_den,reac) = 1._r8
     primvarid(reac)                  = lid_no3
-    is_1st_order(reac) = .true.
 
     !---------------------------------------------------------------------------------
     !reaction 10, inorganic P non-equilibrium adsorption

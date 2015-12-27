@@ -650,6 +650,8 @@ contains
 
     call Extra_inst%Init_Allocate(centurybgc_vars%nom_pools, centurybgc_vars%nreactions, centurybgc_vars%nprimvars)
 
+    !the reaction order is actually fixed during the simulation, but I included below to allow dynamic
+    !change of the reaction order
     call set_reaction_order( centurybgc_vars%nreactions, centurybgc_vars, Extra_inst%is_1st_order)
 
     !initialize local variables

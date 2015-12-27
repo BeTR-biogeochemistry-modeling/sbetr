@@ -1513,6 +1513,16 @@ contains
 
     is_1st_order(:) = .false.
 
+    is_1st_order(centurybgc_vars%lit1_dek_reac) = .true.
+    is_1st_order(centurybgc_vars%lit2_dek_reac) = .true.
+    is_1st_order(centurybgc_vars%lit3_dek_reac) = .true.
+    is_1st_order(centurybgc_vars%som1_dek_reac) = .true.
+    is_1st_order(centurybgc_vars%som2_dek_reac) = .true.
+    is_1st_order(centurybgc_vars%som3_dek_reac) = .true.
+    is_1st_order(centurybgc_vars%cwd_dek_reac) = .true.
+    is_1st_order(centurybgc_vars%lid_nh4_nit_reac) = .true.
+    is_1st_order(centurybgc_vars%lid_no3_den_reac) = .true.
+
   end subroutine set_reaction_order
 
 
