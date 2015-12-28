@@ -205,7 +205,7 @@ contains
 
     cascade_matrix(lid_co2                ,reac) = rf_l3s2_bgc
     cascade_matrix(lid_nh4                ,reac) = safe_div(1._r8,cn_ratios(lit3)) - safe_div(1._r8-rf_l3s2_bgc,cn_ratios_tgt(som2))
-    cascade_matrix(lid_minp_solution         ,reac) = safe_div(1._r8,cp_ratios(lit3)) - safe_div(1._r8-rf_l3s2_bgc,cp_ratios_tgt(som2))
+    cascade_matrix(lid_minp_solution      ,reac) = safe_div(1._r8,cp_ratios(lit3)) - safe_div(1._r8-rf_l3s2_bgc,cp_ratios_tgt(som2))
 
     cascade_matrix(lid_minn_nh4_immob     ,reac) = -cascade_matrix(lid_nh4         ,reac)
     cascade_matrix(lid_minp_immob         ,reac) = -cascade_matrix(lid_minp_solution  ,reac)

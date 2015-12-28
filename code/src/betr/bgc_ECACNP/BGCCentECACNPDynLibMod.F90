@@ -1522,7 +1522,8 @@ contains
     is_1st_order(centurybgc_vars%cwd_dek_reac) = .true.
     is_1st_order(centurybgc_vars%lid_nh4_nit_reac) = .true.
     is_1st_order(centurybgc_vars%lid_no3_den_reac) = .true.
-
+    is_1st_order(centurybgc_vars%lid_minp_secondary_reac) = .true.
+    is_1st_order(centurybgc_vars%lid_minp_occlude_reac) = .true.
   end subroutine set_reaction_order
 
 

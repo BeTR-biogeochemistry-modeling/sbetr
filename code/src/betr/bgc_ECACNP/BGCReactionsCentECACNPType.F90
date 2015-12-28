@@ -1177,10 +1177,9 @@ contains
                 !avoid excessive arenchyma n2o transport into the atmosphere
                 reaction_rates(lk) = min(reaction_rates(lk),ystate(jj)/dtime)
              else
-                reaction_rates(lk) = Extra_inst%k_decay(lk)            !this effective defines the plant nitrogen demand
+                reaction_rates(lk) = Extra_inst%k_decay(lk)            !
              endif
           endif
-
        else
           reaction_rates(lk)=ystate(centurybgc_vars%primvarid(lk))*Extra_inst%k_decay(lk)
        endif
@@ -1312,6 +1311,7 @@ contains
     ! do ECA competition
     ! because this is a microbe implicit model, the overall microbial population is
     ! competing with plant and mineral surface for nutrients.
+    ! Note all reaction rates are positive
     ! !USES:
     use KineticsMod        , only : kd_infty, ecacomplex_cell_norm
     use MathfuncMod        , only : safe_div
@@ -1333,25 +1333,18 @@ contains
     real(r8) :: siej_cell_norm_minn(2, 1:ncompete_vars%ncompets)
     real(r8) :: siej_cell_norm_minp(1:ncompete_vars%ncompets)
     real(r8) :: eca_nh4, eca_no3, eca_minp
-    integer  :: j, ireac, ireac1, ireac2
-
-    ! the following parameters are arbitrary
-    ! let me later wrap them up and pass it from a parameter class
+    real(r8) :: fnn,fnp
+    integer  :: j, ireac
 
 
-
-
-    !assume microbial biomass are 1% of the respective som pool
     !assume the conversion factor between clay (%) and NH4 adorsption capacity is gamma
     !also assume no competition between NH4 adsoprtion and other chemical adsorption
     !nh4 adsoprtion follows linear isotherm
 
     associate(                                                             &
-         lid_nitri_compet   => ncompete_vars%lid_nitri_compet          , &
-         lid_denit_compet   => ncompete_vars%lid_denit_compet          , &
-         lid_minsrf_compet  => ncompete_vars%lid_minsrf_compet         , &
-
-
+         lid_nitri_compet   => ncompete_vars%lid_nitri_compet            , &
+         lid_denit_compet   => ncompete_vars%lid_denit_compet            , &
+         lid_minsrf_compet  => ncompete_vars%lid_minsrf_compet           , &
          lit1               => centurybgc_vars%lit1                      , &
          lit2               => centurybgc_vars%lit2                      , &
          lit3               => centurybgc_vars%lit3                      , &
@@ -1366,7 +1359,8 @@ contains
          lid_plant_minn_nh4_up_reac=> centurybgc_vars%lid_plant_minn_nh4_up_reac , &
          lid_plant_minn_no3_up_reac=> centurybgc_vars%lid_plant_minn_no3_up_reac , &
          lid_plant_minp_up_reac=> centurybgc_vars%lid_plant_minp_up_reac , &
-         lid_minp_solution     => centurybgc_vars%lid_minp_solution            , &
+         lid_minp_solution     => centurybgc_vars%lid_minp_solution      , &
+         lid_minp_solution_reac=> centurybgc_vars%lid_minp_solution_reac , &
          nelms              => centurybgc_vars%nelms                     , &
          lid_msurf_compet   => ncompete_vars%lid_msurf_compet            , &
          lid_decomp_compet  => ncompete_vars%lid_decomp_compet           , &
@@ -1376,11 +1370,11 @@ contains
          c_loc              => centurybgc_vars%c_loc                     , &
          k_mat_minn         => ncompete_vars%k_mat_minn                  , &
          k_mat_minp         => ncompete_vars%k_mat_minp                  , &
-         lid_plantf_compet  => ncompete_vars%lid_plantf_compet           , &
-         lid_planti_compet  => ncompete_vars%lid_planti_compet           , &
-         vmax_plant_nh4     => ncompete_vars%vmax_plant_nh4              , &
-         vmax_plant_no3     => ncompete_vars%vmax_plant_no3              , &
-         vmax_plant_minp    => ncompete_vars%vmax_plant_minp               &
+         lid_plant_compet  => ncompete_vars%lid_plant_compet             , &
+         vmax_plant_nh4b     => ncompete_vars%vmax_plant_nh4b            , &
+         vmax_plant_no3b     => ncompete_vars%vmax_plant_no3b            , &
+         vmax_plant_minpb    => ncompete_vars%vmax_plant_minpb           , &
+         vmax_minsurf_pb    => ncompete_vars%vmax_minsurf_pb               &
          )
 
 
@@ -1395,18 +1389,23 @@ contains
       !OM decomposition
       do j = 1,  centurybgc_vars%nom_pools
          if(nitrogen_limit_flag(j))then
-            !eca_nh4 = siej_cell_norm_minn(1,j)/kd_nh4_decomp
-            !eca_no3 = siej_cell_norm_minn(2,j)/kd_no3_decomp
+            eca_nh4 = siej_cell_norm_minn(1,lid_decomp_compet)
+            eca_no3 = siej_cell_norm_minn(2,lid_decomp_compet)
+            fnn = eca_nh4 + eca_no3
 
-            reaction_rates(j) = reaction_rates(j) * (eca_nh4 + eca_no3)
             cascade_matrix(lid_no3, j) = cascade_matrix(lid_nh4,j) * safe_div(eca_no3,eca_nh4+eca_no3)
             cascade_matrix(lid_nh4, j) = cascade_matrix(lid_nh4, j) - cascade_matrix(lid_no3,j)
+         else
+           fnn = 1._r8
+         endif
 
-         endif
          if(phosphos_limit_flag(j))then
-         !   eca_minp = siej_cell_norm_minp(j)/kd_minp_decomp
-           reaction_rates(j) = reaction_rates(j)*eca_minp
+           fnp = siej_cell_norm_minp(j)
+         else
+           fnp = 1._r8
          endif
+         !apply law of the minimum
+         reaction_rates(j) = reaction_rates(j)*min(fnn,fnp)
       enddo
 
       !nitrification
@@ -1419,24 +1418,21 @@ contains
 
       !adjust for plant mineral nitrogen uptake
 
+      !plants, because flexible CNP is applied for plants, the plant uptake of nitrogen and phosphorus are independent from each
+      !other
+      ireac =lid_plant_minn_nh4_up_reac
+      reaction_rates(ireac) = siej_cell_norm_minn(1,lid_plant_compet) * vcompet_minn(lid_plant_compet) * vmax_plant_nh4b
+      ireac=lid_plant_minn_no3_up_reac
+      reaction_rates(ireac) = siej_cell_norm_minn(2,lid_plant_compet) * vcompet_minn(lid_plant_compet) * vmax_plant_no3b
+      ireac =lid_plant_minp_up_reac
+      reaction_rates(ireac) = siej_cell_norm_minp(lid_plant_compet) * vcompet_minp(lid_plant_compet) * vmax_plant_minpb
 
-
-      !plants
-      !add up all pfts
-      ireac1=lid_plant_minn_nh4_up_reac; reaction_rates(ireac1) = 0._r8
-      ireac2=lid_plant_minn_no3_up_reac; reaction_rates(ireac2) = 0._r8
-      ireac =lid_plant_minp_up_reac;     reaction_rates(ireac)  = 0._r8
-
-      do j = lid_planti_compet, lid_plantf_compet
-        !nh4
-        reaction_rates(ireac1) = reaction_rates(ireac1) + siej_cell_norm_minn(1,j) * vcompet_minn(j) * vmax_plant_nh4(j)
-        !no3
-        reaction_rates(ireac2) = reaction_rates(ireac2) + siej_cell_norm_minn(2,j) * vcompet_minn(j) * vmax_plant_no3(j)
-        !minp
-        reaction_rates(ireac) = reaction_rates(ireac) + siej_cell_norm_minp(j) * vcompet_minp(j) * vmax_plant_minp(j)
-      enddo
 
       !reaction rates for secondary p formation
+      !secondary p formation is computed using the ECA formulation, with a first order rate from
+      !the complexed form
+      ireac = lid_minp_solution_reac
+      reaction_rates(ireac) = reaction_rates(ireac) * siej_cell_norm_minp(lid_minsrf_compet) * vcompet_minp(lid_minsrf_compet) * vmax_minsurf_pb
 
     end associate
   end subroutine apply_ECA_nutrient_regulation

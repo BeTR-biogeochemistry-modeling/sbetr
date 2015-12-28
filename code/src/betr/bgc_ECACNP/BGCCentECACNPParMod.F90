@@ -40,7 +40,10 @@ module BGCCentECACNPParMod
      real(r8)    , pointer :: vmax_plant_minp(:)         ! VMAX for plant P uptake
      real(r8)    , pointer :: vmax_minsurf_p(:)          ! VMAX for P adsorption
 
-
+     real(r8) :: vmax_plant_nh4b                         !bulk vmax for nh4
+     real(r8) :: vmax_plant_no3b                         !bulk vmax for no3
+     real(r8) :: vmax_plant_minpb                        !bulk vmax for mineral p
+     real(r8) :: vmax_minsurf_pb
 
 
      !the following two are dynamic parameters
@@ -48,6 +51,7 @@ module BGCCentECACNPParMod
      integer               :: lid_decomp_compet
      integer               :: lid_planti_compet
      integer               :: lid_plantf_compet
+     integer               :: lid_plant_compet
      integer               :: lid_nitri_compet
      integer               :: lid_denit_compet
      integer               :: lid_minsrf_compet
