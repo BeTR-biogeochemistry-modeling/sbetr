@@ -1378,7 +1378,7 @@ contains
          )
 
 
-      !form the resource vector
+      !form the resource vector, it is assumed the uptake of N and P will not interfere each other
       call ecacomplex_cell_norm(k_mat_minn(:,1:ncompets),(/ystate(lid_nh4),ystate(lid_no3)/),&
          vcompet_minn(1:ncompets),siej_cell_norm_minn)
 

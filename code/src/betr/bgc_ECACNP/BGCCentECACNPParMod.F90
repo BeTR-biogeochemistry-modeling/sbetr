@@ -34,11 +34,6 @@ module BGCCentECACNPParMod
   type, public :: NutrientCompetitionParamsType
 
      real(r8) :: dayscrecover      ! number of days to recover negative cpool
-     real(r8)    , pointer :: km_minsurf_minnh4          ! km for NH4 adsorption
-     real(r8)    , pointer :: vmax_plant_nh4(:)          ! VMAX for plant NH4 uptake
-     real(r8)    , pointer :: vmax_plant_no3(:)          ! VMAX for plant NO3 uptake
-     real(r8)    , pointer :: vmax_plant_minp(:)         ! VMAX for plant P uptake
-     real(r8)    , pointer :: vmax_minsurf_p(:)          ! VMAX for P adsorption
 
      real(r8) :: vmax_plant_nh4b                         !bulk vmax for nh4
      real(r8) :: vmax_plant_no3b                         !bulk vmax for no3
@@ -49,8 +44,6 @@ module BGCCentECACNPParMod
      !the following two are dynamic parameters
      integer               :: lid_msurf_compet
      integer               :: lid_decomp_compet
-     integer               :: lid_planti_compet
-     integer               :: lid_plantf_compet
      integer               :: lid_plant_compet
      integer               :: lid_nitri_compet
      integer               :: lid_denit_compet
@@ -146,8 +139,22 @@ contains
 
   subroutine Init(this)
 
+  use MathfuncMod, only : addone
   ! !ARGUMENTS:
   class(NutrientCompetitionParamsType) :: this
+
+
+  integer  :: itemp
+  itemp = 0
+  this%lid_plant_compet = addone(itemp)
+  this%lid_msurf_compet = addone(itemp)
+  this%lid_decomp_compet= addone(itemp)
+  this%lid_plant_compet = addone(itemp)
+  this%lid_nitri_compet = addone(itemp)
+  this%lid_denit_compet = addone(itemp)
+  this%lid_minsrf_compet= addone(itemp)
+  this%ncompets = itemp
+
 
 
   end subroutine Init
@@ -158,6 +165,7 @@ contains
 
   use PlantSoilnutrientFluxType, only : plantsoilnutrientflux_type
   use clm_varpar               , only : maxpatch_pft
+
   ! !ARGUMENTS:
   class(NutrientCompetitionParamsType) :: this
 
@@ -165,7 +173,8 @@ contains
   integer,  intent(in) :: c      !column indices
   integer,  intent(in) :: lev    !vertical level indices
 
-  integer :: pi, p
+  integer  :: pi, p
+  real(r8) :: locrbc   !local root biomassc
 
 
   associate(                                                                                              &
@@ -177,27 +186,43 @@ contains
    plant_minn_no3_uptake_km_vr_patch   => plantsoilnutrientflux_vars%plant_minn_no3_uptake_km_vr_patch  , &
    plant_minp_uptake_km_vr_patch       => plantsoilnutrientflux_vars%plant_minp_uptake_km_vr_patch        &
   )
-  this%lid_planti_compet = 1
-  this%lid_plantf_compet = 0
-  !set vmax, km for each plant patch
+
+  !set Vmax and Km upscaling for plants
+
+  this%vmax_plant_nh4b =0._r8
+  this%vmax_plant_no3b =0._r8
+  this%vmax_plant_minpb=0._r8
+  this%k_mat_minn(1:2,this%lid_plant_compet) = 0._r8
+  this%k_mat_minp(this%lid_plant_compet) = 0._r8
 
   do pi = 1,maxpatch_pft
      if (pi <=  col%npfts(c)) then
        p = col%pfti(c) + pi - 1
        if (pft%active(p)) then
-         this%lid_plantf_compet = this%lid_plantf_compet + 1
-         this%vmax_plant_nh4(this%lid_plantf_compet) = plant_minn_nh4_uptake_vmax_vr_patch(p, lev)
-         this%vmax_plant_no3(this%lid_plantf_compet) = plant_minn_no3_uptake_vmax_vr_patch(p, lev)
-         this%vmax_plant_minp(this%lid_plantf_compet)= plant_minp_uptake_vmax_vr_patch(p, lev)
-         this%vcompet_minn(this%lid_plantf_compet)   = plant_effrootsc_vr_patch(p,lev)
-         this%vcompet_minp(this%lid_plantf_compet)   = plant_effrootsc_vr_patch(p,lev)
-         this%k_mat_minn(1,this%lid_plantf_compet)   = plant_minn_nh4_uptake_km_vr_patch(p, lev)
-         this%k_mat_minn(2,this%lid_plantf_compet)   = plant_minn_no3_uptake_km_vr_patch(p,lev)
-         this%k_mat_minp(this%lid_plantf_compet)     = plant_minp_uptake_km_vr_patch(p,lev)
+
+         locrbc=pft%wtcol(p) *  plant_effrootsc_vr_patch(p,lev)
+         this%k_mat_minn(1,this%lid_plant_compet) = this%k_mat_minn(1,this%lid_plant_compet) + locrbc / plant_minn_nh4_uptake_km_vr_patch(p, lev)
+         this%k_mat_minn(2,this%lid_plant_compet)= this%k_mat_minn(1,this%lid_plant_compet) + locrbc / plant_minn_no3_uptake_km_vr_patch(p,lev)
+         this%k_mat_minp(this%lid_plant_compet)  = this%k_mat_minp(this%lid_plant_compet)  + locrbc / plant_minp_uptake_vmax_vr_patch(p, lev)
+         this%vcompet_minn(this%lid_plant_compet) = this%vcompet_minn(this%lid_plant_compet) + locrbc
+         this%vcompet_minp(this%lid_plant_compet) = this%vcompet_minn(this%lid_plant_compet) + locrbc
+
+         this%vmax_plant_nh4b= this%vmax_plant_nh4b  + locrbc * plant_minn_nh4_uptake_vmax_vr_patch(p, lev) / plant_minn_nh4_uptake_km_vr_patch(p, lev)
+         this%vmax_plant_no3b = this%vmax_plant_no3b + locrbc * plant_minn_no3_uptake_vmax_vr_patch(p, lev) / plant_minn_no3_uptake_km_vr_patch(p, lev)
+         this%vmax_plant_minpb= this%vmax_plant_minpb+ locrbc * plant_minp_uptake_vmax_vr_patch(p, lev) / plant_minp_uptake_km_vr_patch(p, lev)
        endif
      endif
   enddo
+  this%vmax_plant_nh4b = this%vmax_plant_nh4b / this%k_mat_minn(1,this%lid_plant_compet)
+  this%vmax_plant_no3b = this%vmax_plant_no3b / this%k_mat_minn(2,this%lid_plant_compet)
+  this%vmax_plant_minpb= this%vmax_plant_minpb/ this%k_mat_minp(this%lid_plant_compet)
+
+  this%k_mat_minn(1,this%lid_plant_compet) = this%k_mat_minn(1,this%lid_plant_compet) / this%vcompet_minn(this%lid_plant_compet)
+  this%k_mat_minn(2,this%lid_plant_compet) = this%k_mat_minn(2,this%lid_plant_compet) / this%vcompet_minn(this%lid_plant_compet)
+  this%k_mat_minp(this%lid_plant_compet)   = this%k_mat_minp(this%lid_plant_compet) / this%vcompet_minp(this%lid_plant_compet)
+
   !obtain actual microbial biomass involved in competition
+
 
   !get soil mineral surface parameters
 
@@ -212,21 +237,15 @@ contains
   subroutine InitAllocate(this)
 
 
-  use clm_varpar, only : maxpatch_pft
 
   integer :: maxcomp
   class(NutrientCompetitionParamsType) :: this
 
 
-  allocate(this%vmax_plant_nh4(maxpatch_pft));
-  allocate(this%vmax_plant_no3(maxpatch_pft));
-  allocate(this%vmax_plant_minp(maxpatch_pft));
-
-  maxcomp= maxpatch_pft + 1 + 1 + 1 + 1 !pft + decomp+nit+denit+mineral surface
-  allocate(this%k_mat_minn(2,maxcomp))
-  allocate(this%k_mat_minp(maxcomp))
-  allocate(this%vcompet_minn(maxcomp))
-  allocate(this%vcompet_minp(maxcomp))
+  allocate(this%k_mat_minn(2,this%ncompets))
+  allocate(this%k_mat_minp(this%ncompets))
+  allocate(this%vcompet_minn(this%ncompets))
+  allocate(this%vcompet_minp(this%ncompets))
 
 
   end subroutine InitAllocate
