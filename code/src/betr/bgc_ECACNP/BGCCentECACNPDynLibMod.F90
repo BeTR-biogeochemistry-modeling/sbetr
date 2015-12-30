@@ -1682,23 +1682,72 @@ contains
 
 !-------------------------------------------------------------------------------
 
-  subroutine update_plant_nutrient_yield_patch(c,j, y0c,yfc,centurybgc_vars, &
+  subroutine update_plant_nutrient_yield_patch(c,lev, y0c,yfc,centurybgc_vars, &
      ncompete_vars, plantsoilnutrientflux_vars)
 
   use BGCCentECACNPParMod      , only : NutrientCompetitionParamsType
   use PlantSoilnutrientFluxType, only : plantsoilnutrientflux_type
-
+  use clm_varpar               , only : maxpatch_pft
   implicit none
   !
   !ARGUMENTS
-  integer                            , intent(in) :: c, j
+  integer                            , intent(in) :: c, lev
   type(centurybgc_type)              , intent(in) :: centurybgc_vars
   real(r8)                           , intent(in) :: y0c(1:centurybgc_vars%nstvars)
   real(r8)                           , intent(in) :: yfc(1:centurybgc_vars%nstvars)
   type(NutrientCompetitionParamsType), intent(in) :: ncompete_vars
   type(plantsoilnutrientflux_type)   , intent(inout) :: plantsoilnutrientflux_vars !
 
+  integer :: p, pi
+  real(r8):: nh4_scal_denom, no3_scal_denom, minp_scal_denom
+  real(r8):: fnh4b, fno3b, fminpb, nh4_scal, no3_scal, minp_scal
+  associate(                                             &
+    vcompet_minn     =>  ncompete_vars%vcompet_minn    , &
+    vcompet_minp     =>  ncompete_vars%vcompet_minp    , &
+    lid_plant_compet =>  ncompete_vars%lid_plant_compet, &
+    vmax_plant_nh4b  =>  ncompete_vars%vmax_plant_nh4b , &
+    vmax_plant_no3b  =>  ncompete_vars%vmax_plant_no3b , &
+    vmax_plant_minpb =>  ncompete_vars%vmax_plant_minpb, &
+    k_mat_minn       =>  ncompete_vars%k_mat_minn      , &
+    k_mat_minp       =>  ncompete_vars%k_mat_minp      , &
+    lid_plant_minn_no3=> centurybgc_vars%lid_plant_minn_no3, &
+    lid_plant_minn_nh4=> centurybgc_vars%lid_plant_minn_nh4, &
+    lid_plant_minp   => centurybgc_vars%lid_plant_minp , &
+    plant_minn_active_yield_flx_vr_patch => plantsoilnutrientflux_vars%plant_minn_active_yield_flx_vr_patch , &
+    plant_effrootsc_vr_patch             => plantsoilnutrientflux_vars%plant_effrootsc_vr_patch             , &
+    plant_minn_nh4_uptake_vmax_vr_patch  => plantsoilnutrientflux_vars%plant_minn_nh4_uptake_vmax_vr_patch  , &
+    plant_minn_no3_uptake_vmax_vr_patch  => plantsoilnutrientflux_vars%plant_minn_no3_uptake_vmax_vr_patch  , &
+    plant_minn_nh4_uptake_km_vr_patch    => plantsoilnutrientflux_vars%plant_minn_nh4_uptake_km_vr_patch    , &
+    plant_minn_no3_uptake_km_vr_patch    => plantsoilnutrientflux_vars%plant_minn_no3_uptake_km_vr_patch    , &
+    plant_minp_active_yield_flx_vr_patch => plantsoilnutrientflux_vars%plant_minp_active_yield_flx_vr_patch , &
+    plant_minp_uptake_vmax_vr_patch      => plantsoilnutrientflux_vars%plant_minp_uptake_vmax_vr_patch      , &
+    plant_minp_uptake_km_vr_patch        => plantsoilnutrientflux_vars%plant_minp_uptake_km_vr_patch          &
 
+  )
+  !calculate the overall flux scaling denominator
+  nh4_scal_denom = vcompet_minn(lid_plant_compet) * vmax_plant_nh4b/k_mat_minn(1,lid_plant_compet)
+  no3_scal_denom = vcompet_minn(lid_plant_compet) * vmax_plant_no3b/k_mat_minn(2,lid_plant_compet)
+  minp_scal_denom= vcompet_minp(lid_plant_compet) * vmax_plant_minpb/k_mat_minp(lid_plant_compet)
+  fnh4b = yfc(lid_plant_minn_nh4)-y0c(lid_plant_minn_nh4)
+  fno3b = yfc(lid_plant_minn_no3)-y0c(lid_plant_minn_no3)
+  fminpb= yfc(lid_plant_minp) - y0c(lid_plant_minp)
 
+  nh4_scal = fnh4b/nh4_scal_denom
+  no3_scal = fno3b/no3_scal_denom
+  minp_scal= fminpb/minp_scal_denom
+
+  do pi = 1,maxpatch_pft
+     if (pi <=  col%npfts(c)) then
+       p = col%pfti(c) + pi - 1
+       if (pft%active(p)) then
+         plant_minn_active_yield_flx_vr_patch(p,lev) = plant_effrootsc_vr_patch(p,lev) * (nh4_scal * &
+           plant_minn_nh4_uptake_vmax_vr_patch(p, lev) / plant_minn_nh4_uptake_km_vr_patch(p, lev) + &
+           no3_scal * plant_minn_no3_uptake_vmax_vr_patch(p, lev) / plant_minn_no3_uptake_km_vr_patch(p, lev))
+         plant_minp_active_yield_flx_vr_patch(p,lev) = plant_effrootsc_vr_patch(p,lev) * minp_scal * &
+           plant_minp_uptake_vmax_vr_patch(p, lev) / plant_minp_uptake_km_vr_patch(p, lev)
+       endif
+     endif
+  enddo
+  end associate
   end subroutine update_plant_nutrient_yield_patch
 end module BGCCentECACNPDynLibMod

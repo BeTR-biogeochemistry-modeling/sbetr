@@ -24,24 +24,27 @@ module PlantSoilnutrientFluxType
   !
   type, public :: plantsoilnutrientflux_type
 
-    real(r8), pointer :: plant_minn_passive_yield_flx_col            (:)
     real(r8), pointer :: plant_minn_active_yield_flx_patch           (:)    !patch level mineral nitrogen yeild from soil bgc calculation
     real(r8), pointer :: plant_minn_active_yield_flx_vr_patch        (:,:)  !patch level mineral nitrogen yeild from soil bgc calculation
     real(r8), pointer :: plant_minn_passive_yield_flx_patch          (:)    !patch level mineral nitrogen yeild from soil bgc calculation
+    real(r8), pointer :: plant_minp_active_yield_flx_patch           (:)    !column level mineral phosphorus yeild from soil bgc calculation
+    real(r8), pointer :: plant_minp_active_yield_flx_vr_patch        (:,:)    !column level mineral phosphorus yeild from soil bgc calculation
+
+    real(r8), pointer :: plant_minn_passive_yield_flx_col            (:)
     real(r8), pointer :: plant_minn_active_yield_flx_vr_col          (:,:)  !patch level mineral nitrogen yeild from soil bgc calculation
     real(r8), pointer :: plant_minn_active_yield_flx_col             (:)    !column level mineral nitrogen yeild from soil bgc calculation
 
     real(r8), pointer :: plant_minn_nh4_uptake_vmax_vr_patch         (:,:)  !plant mineral nitrogen uptake potential for each layer
     real(r8), pointer :: plant_minn_no3_uptake_vmax_vr_patch         (:,:)  !plant mineral nitrogen uptake potential for each layer
-    real(r8), pointer :: plant_totn_demand_flx_col                   (:)    !column level total nitrogen demand, g N/m2/s
     real(r8), pointer :: plant_effrootsc_vr_patch                    (:,:)  !fine root for nutrient uptake
     real(r8), pointer :: plant_frootsc_patch                         (:)    !fine root for nutrient uptake
-    real(r8), pointer :: rr_col                                      (:)    ! column (gC/m2/s) root respiration (fine root MR + total root GR) (p2c)
     real(r8), pointer :: annavg_agnpp_patch                          (:)     ! (gC/m2/s) annual average aboveground NPP
     real(r8), pointer :: annavg_bgnpp_patch                          (:)     ! (gC/m2/s) annual average belowground NPP
     real(r8), pointer :: tempavg_agnpp_patch                         (:)     ! (gC/m2/s) temp. average aboveground NPP
     real(r8), pointer :: tempavg_bgnpp_patch                         (:)     ! (gC/m2/s) temp. average belowground NPP
 
+    real(r8), pointer :: plant_totn_demand_flx_col                   (:)    !column level total nitrogen demand, g N/m2/s
+    real(r8), pointer :: rr_col                                      (:)    ! column (gC/m2/s) root respiration (fine root MR + total root GR) (p2c)
     real(r8), pointer :: bgc_cpool_ext_loss_vr_col                 (:, :, :)  ! col-level extneral organic carbon loss gC/m3 /time step
     real(r8), pointer :: bgc_cpool_ext_inputs_vr_col               (:, :, :)  ! col-level extneral organic carbon input gC/m3 /time step
     real(r8), pointer :: bgc_ppool_ext_inputs_vr_col               (:,:,:) !col organic nitrogen input, gN/m3/time step
@@ -78,6 +81,7 @@ module PlantSoilnutrientFluxType
     real(r8), pointer :: plant_minp_uptake_km_vr_patch             (:,:)   !
     real(r8), pointer :: km_minsurf_minp_vr_col                    (:,:)   !mineral P adsorption affinity
     real(r8), pointer :: plant_minp_active_yield_flx_col             (:)    !column level mineral phosphorus yeild from soil bgc calculation
+    real(r8), pointer :: plant_minp_active_yield_flx_vr_col          (:,:)    !column level mineral phosphorus yeild from soil bgc calculation
     real(r8), pointer :: plant_minp_uptake_vmax_vr_patch             (:,:)
 
 
