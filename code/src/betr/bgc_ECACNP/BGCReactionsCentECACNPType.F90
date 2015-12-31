@@ -672,11 +672,6 @@ contains
          plantsoilnutrientflux_vars, centurybgc_vars, betrtracer_vars, tracerflux_vars, y0, cn_ratios, cp_ratios)
 
 
-    !update plant nitrogen uptake potential
-
-    call plantsoilnutrientflux_vars%calc_nutrient_uptake_vmax(bounds, num_soilc, filter_soilc, &
-         num_soilp, filter_soilp, decompECA_vars%t_scalar_col, decompECA_vars%w_scalar_col, cnstate_vars)
-
     !calculate multiplicative scalars for decay parameters
     call calc_decompK_multiply_scalar(bounds, lbj, ubj, num_soilc, filter_soilc, jtops,                        &
          waterstate_vars%finundated_col(bounds%begc:bounds%endc), col%z(bounds%begc:bounds%endc, lbj:ubj),     &
@@ -731,8 +726,8 @@ contains
          plantsoilnutrientflux_vars%rr_col(bounds%begc:bounds%endc), cnstate_vars%nfixation_prof_col(bounds%begc:bounds%endc,1:ubj), &
          k_decay(centurybgc_vars%lid_at_rt_reac, bounds%begc:bounds%endc, 1:ubj))
 
-    !calulate vmax profile for plant nutrient uptake
-    call plantsoilnutrientflux_vars%calc_nutrient_uptake_vmax(bounds, num_soilc, filter_soilc, &
+    !calulate kinetic parameter profile for plant nutrient uptake
+    call plantsoilnutrientflux_vars%calc_nutrient_uptake_kinetic_pars(bounds, num_soilc, filter_soilc, &
          num_soilp, filter_soilp, decompECA_vars%t_scalar_col,  decompECA_vars%w_scalar_col, cnstate_vars)
 
     !do ode integration and update state variables for each layer
@@ -762,8 +757,7 @@ contains
              write(iulog,*)'nstep =',get_nstep()
              call endrun()
           endif
-          call update_plant_nutrient_yield_patch(c,j, y0(:,c,j),yf(:,c,j),centurybgc_vars, &
-             NutrientCompetitionParamsInst, plantsoilnutrientflux_vars)
+
        enddo
     enddo
 
@@ -779,6 +773,7 @@ contains
     call retrieve_state_vars(bounds, lbj, ubj, num_soilc, filter_soilc, jtops, centurybgc_vars%nstvars,  yf, &
          centurybgc_vars, betrtracer_vars, tracerstate_vars)
 
+    call plantsoilnutrientflux_vars%update_plant_nutrient_active_yield_patch(bounds, num_soilc, filter_soilc)
     call Extra_inst%DDeallocate()
 
   end subroutine calc_bgc_reaction

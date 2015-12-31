@@ -174,52 +174,32 @@ contains
   integer,  intent(in) :: lev    !vertical level indices
 
   integer  :: pi, p
-  real(r8) :: locrbc   !local root biomassc
 
 
-  associate(                                                                                              &
-   plant_effrootsc_vr_patch            => plantsoilnutrientflux_vars%plant_effrootsc_vr_patch           , &
-   plant_minp_uptake_vmax_vr_patch     => plantsoilnutrientflux_vars%plant_minp_uptake_vmax_vr_patch    , &
-   plant_minn_nh4_uptake_vmax_vr_patch => plantsoilnutrientflux_vars%plant_minn_nh4_uptake_vmax_vr_patch, &
-   plant_minn_no3_uptake_vmax_vr_patch => plantsoilnutrientflux_vars%plant_minn_no3_uptake_vmax_vr_patch, &
-   plant_minn_nh4_uptake_km_vr_patch   => plantsoilnutrientflux_vars%plant_minn_nh4_uptake_km_vr_patch  , &
-   plant_minn_no3_uptake_km_vr_patch   => plantsoilnutrientflux_vars%plant_minn_no3_uptake_km_vr_patch  , &
-   plant_minp_uptake_km_vr_patch       => plantsoilnutrientflux_vars%plant_minp_uptake_km_vr_patch        &
+  associate(                                                                                          &
+   plant_compet_minn_vr_col             => plantsoilnutrientflux_vars%plant_compet_minn_vr_col      , &
+   plant_compet_minp_vr_col             => plantsoilnutrientflux_vars%plant_compet_minp_vr_col      , &
+   vmax_plant_nh4b_vr_col               => plantsoilnutrientflux_vars%vmax_plant_nh4b_vr_col        , &
+   vmax_plant_no3b_vr_col               => plantsoilnutrientflux_vars%vmax_plant_no3b_vr_col        , &
+   vmax_plant_minpb_vr_col              => plantsoilnutrientflux_vars%vmax_plant_minpb_vr_col       , &
+   plant_minn_nh4_uptake_km_vr_col   => plantsoilnutrientflux_vars%plant_minn_nh4_uptake_km_vr_col  , &
+   plant_minn_no3_uptake_km_vr_col   => plantsoilnutrientflux_vars%plant_minn_no3_uptake_km_vr_col  , &
+   plant_minp_uptake_km_vr_col       => plantsoilnutrientflux_vars%plant_minp_uptake_km_vr_col        &
   )
 
   !set Vmax and Km upscaling for plants
 
-  this%vmax_plant_nh4b =0._r8
-  this%vmax_plant_no3b =0._r8
-  this%vmax_plant_minpb=0._r8
-  this%k_mat_minn(1:2,this%lid_plant_compet) = 0._r8
-  this%k_mat_minp(this%lid_plant_compet) = 0._r8
+  this%vcompet_minn(this%lid_plant_compet) = plant_compet_minn_vr_col(c,lev)
+  this%vcompet_minp(this%lid_plant_compet) = plant_compet_minp_vr_col(c,lev)
 
-  do pi = 1,maxpatch_pft
-     if (pi <=  col%npfts(c)) then
-       p = col%pfti(c) + pi - 1
-       if (pft%active(p)) then
 
-         locrbc=pft%wtcol(p) *  plant_effrootsc_vr_patch(p,lev)
-         this%k_mat_minn(1,this%lid_plant_compet) = this%k_mat_minn(1,this%lid_plant_compet) + locrbc / plant_minn_nh4_uptake_km_vr_patch(p, lev)
-         this%k_mat_minn(2,this%lid_plant_compet)= this%k_mat_minn(1,this%lid_plant_compet) + locrbc / plant_minn_no3_uptake_km_vr_patch(p,lev)
-         this%k_mat_minp(this%lid_plant_compet)  = this%k_mat_minp(this%lid_plant_compet)  + locrbc / plant_minp_uptake_vmax_vr_patch(p, lev)
-         this%vcompet_minn(this%lid_plant_compet) = this%vcompet_minn(this%lid_plant_compet) + locrbc
-         this%vcompet_minp(this%lid_plant_compet) = this%vcompet_minn(this%lid_plant_compet) + locrbc
+  this%vmax_plant_nh4b = vmax_plant_nh4b_vr_col(c,lev)
+  this%vmax_plant_no3b = vmax_plant_no3b_vr_col(c,lev)
+  this%vmax_plant_minpb= vmax_plant_minpb_vr_col(c,lev)
 
-         this%vmax_plant_nh4b= this%vmax_plant_nh4b  + locrbc * plant_minn_nh4_uptake_vmax_vr_patch(p, lev) / plant_minn_nh4_uptake_km_vr_patch(p, lev)
-         this%vmax_plant_no3b = this%vmax_plant_no3b + locrbc * plant_minn_no3_uptake_vmax_vr_patch(p, lev) / plant_minn_no3_uptake_km_vr_patch(p, lev)
-         this%vmax_plant_minpb= this%vmax_plant_minpb+ locrbc * plant_minp_uptake_vmax_vr_patch(p, lev) / plant_minp_uptake_km_vr_patch(p, lev)
-       endif
-     endif
-  enddo
-  this%vmax_plant_nh4b = this%vmax_plant_nh4b / this%k_mat_minn(1,this%lid_plant_compet)
-  this%vmax_plant_no3b = this%vmax_plant_no3b / this%k_mat_minn(2,this%lid_plant_compet)
-  this%vmax_plant_minpb= this%vmax_plant_minpb/ this%k_mat_minp(this%lid_plant_compet)
-
-  this%k_mat_minn(1,this%lid_plant_compet) = this%k_mat_minn(1,this%lid_plant_compet) / this%vcompet_minn(this%lid_plant_compet)
-  this%k_mat_minn(2,this%lid_plant_compet) = this%k_mat_minn(2,this%lid_plant_compet) / this%vcompet_minn(this%lid_plant_compet)
-  this%k_mat_minp(this%lid_plant_compet)   = this%k_mat_minp(this%lid_plant_compet) / this%vcompet_minp(this%lid_plant_compet)
+  this%k_mat_minn(1,this%lid_plant_compet) = plant_minn_nh4_uptake_km_vr_col(c,lev)
+  this%k_mat_minn(2,this%lid_plant_compet) = plant_minn_no3_uptake_km_vr_col(c,lev)
+  this%k_mat_minp(this%lid_plant_compet)   = plant_minp_uptake_km_vr_col(c,lev)
 
   !obtain actual microbial biomass involved in competition
 
