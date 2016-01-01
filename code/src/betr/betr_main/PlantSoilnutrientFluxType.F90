@@ -34,9 +34,13 @@ module PlantSoilnutrientFluxType
     real(r8), pointer :: plant_minn_active_yield_flx_vr_col          (:,:)  !patch level mineral nitrogen yeild from soil bgc calculation
     real(r8), pointer :: plant_minn_active_yield_flx_col             (:)    !column level mineral nitrogen yeild from soil bgc calculation
 
+
+    real(r8), pointer :: decomp_effc_vr_patch                         (:,:)  !fine root for nutrient uptake
+
     real(r8), pointer :: plant_minn_nh4_uptake_vmax_vr_patch         (:,:)  !plant mineral nitrogen uptake potential for each layer
     real(r8), pointer :: plant_minn_no3_uptake_vmax_vr_patch         (:,:)  !plant mineral nitrogen uptake potential for each layer
     real(r8), pointer :: plant_effrootsc_vr_patch                    (:,:)  !fine root for nutrient uptake
+
     real(r8), pointer :: plant_frootsc_patch                         (:)    !fine root for nutrient uptake
     real(r8), pointer :: annavg_agnpp_patch                          (:)     ! (gC/m2/s) annual average aboveground NPP
     real(r8), pointer :: annavg_bgnpp_patch                          (:)     ! (gC/m2/s) annual average belowground NPP
@@ -77,8 +81,12 @@ module PlantSoilnutrientFluxType
     real(r8), pointer :: kd_desorp_minp_vr_col                     (:,:)   !desorption parameter, 1/s
     real(r8), pointer :: plant_minn_nh4_uptake_km_vr_patch         (:,:)   !
     real(r8), pointer :: plant_minn_no3_uptake_km_vr_patch         (:,:)   !
-
     real(r8), pointer :: plant_minp_uptake_km_vr_patch             (:,:)   !
+
+    real(r8), pointer :: decomp_minn_nh4_uptake_km_vr_patch         (:,:)   !
+    real(r8), pointer :: decomp_minn_no3_uptake_km_vr_patch         (:,:)   !
+    real(r8), pointer :: decomp_minp_uptake_km_vr_patch             (:,:)   !
+
     real(r8), pointer :: km_minsurf_minp_vr_col                    (:,:)   !mineral P adsorption affinity
     real(r8), pointer :: plant_minp_active_yield_flx_col             (:)    !column level mineral phosphorus yeild from soil bgc calculation
     real(r8), pointer :: plant_minp_uptake_vmax_vr_patch           (:,:)
@@ -92,6 +100,12 @@ module PlantSoilnutrientFluxType
     real(r8), pointer :: plant_minp_uptake_km_vr_col              (:,:)
     real(r8), pointer :: plant_compet_minn_vr_col                    (:,:)
     real(r8), pointer :: plant_compet_minp_vr_col                    (:,:)
+
+    real(r8), pointer :: decomp_minn_nh4_uptake_km_vr_col          (:,:)
+    real(r8), pointer :: decomp_minn_no3_uptake_km_vr_col          (:,:)
+    real(r8), pointer :: decomp_minp_uptake_km_vr_col              (:,:)
+    real(r8), pointer :: decomp_compet_minn_vr_col                    (:,:)
+    real(r8), pointer :: decomp_compet_minp_vr_col                    (:,:)
 
     real(r8), pointer :: plant_minn_active_nh4_yield_flx_vr_col     (:,:)
     real(r8), pointer :: plant_minn_active_no3_yield_flx_vr_col     (:,:)
@@ -160,9 +174,15 @@ module PlantSoilnutrientFluxType
 
     allocate(this%plant_minn_nh4_uptake_vmax_vr_patch(begp:endp, 1:nlevdecomp_full)); this%plant_minn_nh4_uptake_vmax_vr_patch(:,:) = nan
     allocate(this%plant_minn_no3_uptake_vmax_vr_patch(begp:endp, 1:nlevdecomp_full)); this%plant_minn_no3_uptake_vmax_vr_patch(:,:) = nan
-
-
     allocate(this%plant_minp_uptake_vmax_vr_patch(begp:endp, 1:nlevdecomp_full)); this%plant_minp_uptake_vmax_vr_patch(:,:) = nan
+
+    allocate(this%plant_minn_nh4_uptake_km_vr_patch(begp:endp,1:nlevdecomp_full)); this%plant_minn_nh4_uptake_km_vr_patch(:,:) = nan
+    allocate(this%plant_minn_no3_uptake_km_vr_patch(begp:endp,1:nlevdecomp_full)); this%plant_minn_no3_uptake_km_vr_patch(:,:) = nan
+    allocate(this%plant_minp_uptake_km_vr_patch(begp:endp,1:nlevdecomp_full)); this%plant_minp_uptake_km_vr_patch(:,:) = nan
+
+    allocate(this%decomp_minn_nh4_uptake_km_vr_patch(begp:endp,1:nlevdecomp_full)); this%decomp_minn_nh4_uptake_km_vr_patch(:,:) = nan
+    allocate(this%decomp_minn_no3_uptake_km_vr_patch(begp:endp,1:nlevdecomp_full)); this%decomp_minn_no3_uptake_km_vr_patch(:,:) = nan
+    allocate(this%decomp_minp_uptake_km_vr_patch(begp:endp,1:nlevdecomp_full)); this%decomp_minp_uptake_km_vr_patch(:,:) = nan
 
     allocate(this%plant_totn_demand_flx_col          (begc:endc          )) ; this%plant_totn_demand_flx_col          (:)   = nan
 
@@ -221,6 +241,13 @@ module PlantSoilnutrientFluxType
    allocate(this%plant_minn_active_no3_yield_flx_vr_col(begc:endc,1:nlevdecomp_full));this%plant_minn_active_no3_yield_flx_vr_col(:,:) = nan
    allocate(this%plant_minn_active_nh4_yield_flx_vr_col(begc:endc,1:nlevdecomp_full));this%plant_minn_active_nh4_yield_flx_vr_col(:,:) = nan
    allocate(this%plant_minp_active_yield_flx_vr_col(begc:endc,1:nlevdecomp_full));this%plant_minp_active_yield_flx_vr_col(:,:) = nan
+
+   allocate(this%decomp_compet_minp_vr_col(begc:endc, 1:nlevdecomp_full)); this%decomp_compet_minp_vr_col (:,:) = nan
+   allocate(this%decomp_compet_minn_vr_col(begc:endc, 1:nlevdecomp_full)); this%decomp_compet_minn_vr_col (:,:) = nan
+
+   allocate(this%decomp_minn_nh4_uptake_km_vr_col(begc:endc,1:nlevdecomp_full));this%decomp_minn_nh4_uptake_km_vr_col(:,:) = nan
+   allocate(this%decomp_minn_no3_uptake_km_vr_col(begc:endc,1:nlevdecomp_full));this%decomp_minn_no3_uptake_km_vr_col(:,:) = nan
+   allocate(this%decomp_minp_uptake_km_vr_col    (begc:endc,1:nlevdecomp_full));this%decomp_minp_uptake_km_vr_col    (:,:) = nan
 
   end subroutine InitAllocate
 

@@ -184,7 +184,13 @@ contains
    vmax_plant_minpb_vr_col              => plantsoilnutrientflux_vars%vmax_plant_minpb_vr_col       , &
    plant_minn_nh4_uptake_km_vr_col   => plantsoilnutrientflux_vars%plant_minn_nh4_uptake_km_vr_col  , &
    plant_minn_no3_uptake_km_vr_col   => plantsoilnutrientflux_vars%plant_minn_no3_uptake_km_vr_col  , &
-   plant_minp_uptake_km_vr_col       => plantsoilnutrientflux_vars%plant_minp_uptake_km_vr_col        &
+   plant_minp_uptake_km_vr_col       => plantsoilnutrientflux_vars%plant_minp_uptake_km_vr_col      , &
+   decomp_compet_minn_vr_col            => plantsoilnutrientflux_vars%decomp_compet_minn_vr_col      , &
+   decomp_compet_minp_vr_col            => plantsoilnutrientflux_vars%decomp_compet_minp_vr_col      , &
+   decomp_minn_nh4_uptake_km_vr_col   => plantsoilnutrientflux_vars%decomp_minn_nh4_uptake_km_vr_col  , &
+   decomp_minn_no3_uptake_km_vr_col   => plantsoilnutrientflux_vars%decomp_minn_no3_uptake_km_vr_col  , &
+   decomp_minp_uptake_km_vr_col       => plantsoilnutrientflux_vars%decomp_minp_uptake_km_vr_col        &
+
   )
 
   !set Vmax and Km upscaling for plants
@@ -202,6 +208,18 @@ contains
   this%k_mat_minp(this%lid_plant_compet)   = plant_minp_uptake_km_vr_col(c,lev)
 
   !obtain actual microbial biomass involved in competition
+  !in the CNP implementation, each pft is assumed to have its own microbial
+  !community information, therefore, an upscaling is done as analogus to the
+  !pfts
+  this%vcompet_minn(this%lid_decomp_compet) = decomp_compet_minn_vr_col(c,lev)
+  this%vcompet_minp(this%lid_decomp_compet) = decomp_compet_minp_vr_col(c,lev)
+
+
+
+  this%k_mat_minn(1,this%lid_decomp_compet) = decomp_minn_nh4_uptake_km_vr_col(c,lev)
+  this%k_mat_minn(2,this%lid_decomp_compet) = decomp_minn_no3_uptake_km_vr_col(c,lev)
+  this%k_mat_minp(this%lid_decomp_compet)   = decomp_minp_uptake_km_vr_col(c,lev)
+
 
 
   !get soil mineral surface parameters
