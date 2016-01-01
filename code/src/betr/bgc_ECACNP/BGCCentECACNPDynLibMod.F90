@@ -515,9 +515,14 @@ contains
             c = filter(fc)
 
             if(j>=jtops(c))then
-              ! plantsoilnutrientflux_vars%plant_minn_active_yield_flx_vr_col(c,j) = natomw * &
-              !     (yf(centurybgc_vars%lid_plant_minn_nh4, c, j) + yf(centurybgc_vars%lid_plant_minn_no3, c, j) -
-              !      y0(centurybgc_vars%lid_plant_minn_nh4, c, j) - y0(centurybgc_vars%lid_plant_minn_no3, c, j))
+               plantsoilnutrientflux_vars%plant_minn_active_nh4_yield_flx_vr_col(c,j) = natomw * &
+                   (yf(centurybgc_vars%lid_plant_minn_nh4, c, j) - y0(centurybgc_vars%lid_plant_minn_nh4, c, j))
+
+               plantsoilnutrientflux_vars%plant_minn_active_no3_yield_flx_vr_col(c,j) = natomw * &
+                        (yf(centurybgc_vars%lid_plant_minn_no3, c, j) - y0(centurybgc_vars%lid_plant_minn_no3, c, j))
+
+               plantsoilnutrientflux_vars%plant_minp_active_yield_flx_vr_col(c,j) = patomw * &
+                                 (yf(centurybgc_vars%lid_plant_minp, c, j) - y0(centurybgc_vars%lid_plant_minp, c, j))
 
                smin_no3_to_plant_vr(c,j) = (yf(centurybgc_vars%lid_minn_no3_plant, c, j) - y0(centurybgc_vars%lid_minn_no3_plant, c, j))*natomw/dtime
                smin_nh4_to_plant_vr(c,j) = (yf(centurybgc_vars%lid_minn_nh4_plant, c, j) - y0(centurybgc_vars%lid_minn_nh4_plant, c, j))*natomw/dtime
