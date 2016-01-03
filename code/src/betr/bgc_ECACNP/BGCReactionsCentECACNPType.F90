@@ -74,8 +74,8 @@ contains
     procedure :: do_tracer_equilibration      ! do equilibrium tracer chemistry
     procedure :: initCold
     procedure :: readParams
-    procedure :: init_betr_alm_bgc_coupler    ! update state vars using other bgc parts in alm
-    procedure :: betr_alm_flux_statevar_feedback
+    procedure :: init_betr_lsm_bgc_coupler    ! update state vars using other bgc parts in lsm
+    procedure :: betr_lsm_flux_statevar_feedback
   end type bgc_reaction_CENTURY_ECACNP_type
 
   type, private :: Extra_type
@@ -919,13 +919,13 @@ contains
   end subroutine InitCold
 
   !--------------------------------------------------------------------------------------------------------------------
-  subroutine betr_alm_flux_statevar_feedback(this, bounds, num_soilc, filter_soilc, &
+  subroutine betr_lsm_flux_statevar_feedback(this, bounds, num_soilc, filter_soilc, &
        carbonstate_vars, nitrogenstate_vars, nitrogenflux_vars, phosphorusstate_vars, &
        phosphorusflux_vars, tracerstate_vars, tracerflux_vars,  betrtracer_vars)
 
     !
     ! !DESCRIPTION:
-    ! do state and flux variable exchange between betr and alm
+    ! do state and flux variable exchange between betr and lsm
     ! !USES:
     use shr_kind_mod             , only : r8 => shr_kind_r8
     use tracerfluxType           , only : tracerflux_type
@@ -960,15 +960,15 @@ contains
          carbonstate_vars, nitrogenstate_vars, phosphorusstate_vars, &
          tracerstate_vars, betrtracer_vars, centurybgc_vars)
 
-  end subroutine betr_alm_flux_statevar_feedback
+  end subroutine betr_lsm_flux_statevar_feedback
 
   !---------------------------------------------------------------
-  subroutine init_betr_alm_bgc_coupler(this, bounds, num_soilc, filter_soilc, carbonstate_vars, &
+  subroutine init_betr_lsm_bgc_coupler(this, bounds, num_soilc, filter_soilc, carbonstate_vars, &
        nitrogenstate_vars, phosphorusstate_vars, plantsoilnutrientflux_vars, &
        betrtracer_vars, tracerstate_vars, cnstate_vars, ecophyscon_vars)
     !
     ! !DESCRIPTION:
-    ! do state variable exchange between betr and alm
+    ! do state variable exchange between betr and lsm
     ! !USES:
     use clm_varcon               , only : natomw, catomw, patomw
     use clm_varpar               , only : i_cwd, i_met_lit, i_cel_lit, i_lig_lit
@@ -1001,7 +1001,7 @@ contains
     integer, parameter :: i_soil1 = 5
     integer, parameter :: i_soil2 = 6
     integer, parameter :: i_soil3 = 7
-    character(len=255) :: subname = 'init_betr_alm_bgc_coupler'
+    character(len=255) :: subname = 'init_betr_lsm_bgc_coupler'
     integer            :: c, j, k, l
 
     associate(                                                                         &
@@ -1075,7 +1075,7 @@ contains
          enddo
       enddo
     end associate
-  end subroutine init_betr_alm_bgc_coupler
+  end subroutine init_betr_lsm_bgc_coupler
 
   !-------------------------------------------------------------------------------
 

@@ -34,8 +34,8 @@ module BGCReactionsMockRunType
      procedure :: do_tracer_equilibration               ! do equilibrium tracer chemistry
      procedure :: InitCold                              ! do cold initialization
      procedure :: readParams                            ! read in parameters
-     procedure :: betr_alm_flux_statevar_feedback       !
-     procedure :: init_betr_alm_bgc_coupler
+     procedure :: betr_lsm_flux_statevar_feedback       !
+     procedure :: init_betr_lsm_bgc_coupler
   end type bgc_reaction_mock_run_type
 
   interface bgc_reaction_mock_run_type
@@ -391,12 +391,12 @@ contains
   end subroutine readParams
 
   !-------------------------------------------------------------------------------
-  subroutine betr_alm_flux_statevar_feedback(this, bounds, num_soilc, filter_soilc, &
+  subroutine betr_lsm_flux_statevar_feedback(this, bounds, num_soilc, filter_soilc, &
        carbonstate_vars, nitrogenstate_vars, nitrogenflux_vars, phosphorusstate_vars,&
        phosphorusflux_vars, tracerstate_vars, tracerflux_vars,  betrtracer_vars)
     !
     ! !DESCRIPTION:
-    ! do flux and state variable change between betr and alm.
+    ! do flux and state variable change between betr and lsm.
     !
     ! !USES:
     use shr_kind_mod             , only : r8 => shr_kind_r8
@@ -423,17 +423,17 @@ contains
     type(nitrogenstate_type)          , intent(inout) :: nitrogenstate_vars !
     type(phosphorusstate_type)        , intent(inout) :: phosphorusstate_vars
     type(phosphorusflux_type)         , intent(inout) :: phosphorusflux_vars
-  end subroutine betr_alm_flux_statevar_feedback
+  end subroutine betr_lsm_flux_statevar_feedback
 
   !-------------------------------------------------------------------------------
 
 
-  subroutine init_betr_alm_bgc_coupler(this, bounds, num_soilc, filter_soilc, carbonstate_vars, &
+  subroutine init_betr_lsm_bgc_coupler(this, bounds, num_soilc, filter_soilc, carbonstate_vars, &
        nitrogenstate_vars, phosphorusstate_vars, plantsoilnutrientflux_vars, &
        betrtracer_vars, tracerstate_vars, cnstate_vars, ecophyscon_vars)
 
     ! !DESCRIPTION:
-    ! initialize the bgc coupling between betr and alm
+    ! initialize the bgc coupling between betr and lsm
     !
     ! !USES:
     use clm_varcon               , only : natomw, catomw
@@ -463,6 +463,6 @@ contains
     type(ecophyscon_type)              , intent(in)    :: ecophyscon_vars
     type(cnstate_type)                 , intent(in)    :: cnstate_vars
 
-  end subroutine init_betr_alm_bgc_coupler
+  end subroutine init_betr_lsm_bgc_coupler
 
 end module BGCReactionsMockRunType

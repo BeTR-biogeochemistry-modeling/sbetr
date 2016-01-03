@@ -34,11 +34,11 @@ module BGCReactionsMod
      !read in implementation specific parameters
      procedure(readParams_interface)                      , deferred :: readParams
 
-     !send back state flux variables to other parts of alm
-     procedure(betr_alm_flux_statevar_feedback_interface) , deferred :: betr_alm_flux_statevar_feedback
+     !send back state flux variables to other parts of lsm
+     procedure(betr_lsm_flux_statevar_feedback_interface) , deferred :: betr_lsm_flux_statevar_feedback
 
-     !initialize betr state variable from other bgc components in alm
-     procedure(init_betr_alm_bgc_coupler_interface)       , deferred :: init_betr_alm_bgc_coupler
+     !initialize betr state variable from other bgc components in lsm
+     procedure(init_betr_lsm_bgc_coupler_interface)       , deferred :: init_betr_lsm_bgc_coupler
 
   end type bgc_reaction_type
 
@@ -234,12 +234,12 @@ module BGCReactionsMod
      end subroutine readParams_interface
 
      !-------------------------------------------------------------------------------
-     subroutine betr_alm_flux_statevar_feedback_interface(this, bounds, num_soilc, filter_soilc, &
+     subroutine betr_lsm_flux_statevar_feedback_interface(this, bounds, num_soilc, filter_soilc, &
           carbonstate_vars, nitrogenstate_vars, nitrogenflux_vars, phosphorusstate_vars, &
           phosphorusflux_vars, tracerstate_vars, tracerflux_vars,  betrtracer_vars)
 
        ! !DESCRIPTION:
-       ! template for betr_alm_flux_statevar_feedback
+       ! template for betr_lsm_flux_statevar_feedback
        ! !USES:
        use decompMod                , only : bounds_type
        use shr_kind_mod             , only : r8 => shr_kind_r8
@@ -265,17 +265,17 @@ module BGCReactionsMod
        type(nitrogenstate_type)   , intent(inout) :: nitrogenstate_vars !
        type(phosphorusstate_type) , intent(inout) :: phosphorusstate_vars
        type(phosphorusflux_type)  , intent(inout) :: phosphorusflux_vars
-     end subroutine betr_alm_flux_statevar_feedback_interface
+     end subroutine betr_lsm_flux_statevar_feedback_interface
 
      !-------------------------------------------------------------------------------
 
 
-     subroutine init_betr_alm_bgc_coupler_interface(this, bounds, num_soilc, filter_soilc, &
+     subroutine init_betr_lsm_bgc_coupler_interface(this, bounds, num_soilc, filter_soilc, &
           carbonstate_vars, nitrogenstate_vars, phosphorusstate_vars, plantsoilnutrientflux_vars,     &
           betrtracer_vars, tracerstate_vars, cnstate_vars, ecophyscon_vars)
        !
        ! !DESCRIPTION:
-       ! template for init_betr_alm_bgc_coupler
+       ! template for init_betr_lsm_bgc_coupler
 
        ! !USES:
        use decompMod                , only : bounds_type
@@ -307,7 +307,7 @@ module BGCReactionsMod
        type(plantsoilnutrientflux_type)  , intent(inout)  :: plantsoilnutrientflux_vars !
        type(ecophyscon_type)              , intent(in)    :: ecophyscon_vars
        type(cnstate_type)                 , intent(in)    :: cnstate_vars
-     end subroutine init_betr_alm_bgc_coupler_interface
+     end subroutine init_betr_lsm_bgc_coupler_interface
 
   end interface
 end module BGCReactionsMod

@@ -15,6 +15,7 @@ implicit none
     procedure, public  :: Init
     procedure, private :: InitCold
     procedure, private :: InitAllocate
+    procedure, private :: SetValues
   end type phosphorusflux_type
 
 contains
@@ -52,7 +53,7 @@ contains
     begc = bounds%begc; endc= bounds%endc
 
     allocate(this%sminp_leached_col           (begc:endc              ))     ;this%sminp_leached_col                (:)    = nan
-    allocate(this%sminp_runoff_col           (begc:endc              ))      ;this%sminp_runoff_col                (:)    = nan    
+    allocate(this%sminp_runoff_col           (begc:endc              ))      ;this%sminp_runoff_col                (:)    = nan
     allocate(this%biochem_pmin_vr_col       (begc:endc,1:nlevdecomp_full))   ;this%biochem_pmin_vr_col               (:,:) = nan
 
   end subroutine InitAllocate
