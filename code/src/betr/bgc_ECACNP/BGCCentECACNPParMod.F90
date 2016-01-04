@@ -176,20 +176,20 @@ contains
   integer  :: pi, p
 
 
-  associate(                                                                                          &
-   plant_compet_minn_vr_col             => plantsoilnutrientflux_vars%plant_compet_minn_vr_col      , &
-   plant_compet_minp_vr_col             => plantsoilnutrientflux_vars%plant_compet_minp_vr_col      , &
-   vmax_plant_nh4b_vr_col               => plantsoilnutrientflux_vars%vmax_plant_nh4b_vr_col        , &
-   vmax_plant_no3b_vr_col               => plantsoilnutrientflux_vars%vmax_plant_no3b_vr_col        , &
-   vmax_plant_minpb_vr_col              => plantsoilnutrientflux_vars%vmax_plant_minpb_vr_col       , &
-   plant_minn_nh4_uptake_km_vr_col   => plantsoilnutrientflux_vars%plant_minn_nh4_uptake_km_vr_col  , &
-   plant_minn_no3_uptake_km_vr_col   => plantsoilnutrientflux_vars%plant_minn_no3_uptake_km_vr_col  , &
-   plant_minp_uptake_km_vr_col       => plantsoilnutrientflux_vars%plant_minp_uptake_km_vr_col      , &
-   decomp_compet_minn_vr_col            => plantsoilnutrientflux_vars%decomp_compet_minn_vr_col      , &
-   decomp_compet_minp_vr_col            => plantsoilnutrientflux_vars%decomp_compet_minp_vr_col      , &
-   decomp_minn_nh4_uptake_km_vr_col   => plantsoilnutrientflux_vars%decomp_minn_nh4_uptake_km_vr_col  , &
-   decomp_minn_no3_uptake_km_vr_col   => plantsoilnutrientflux_vars%decomp_minn_no3_uptake_km_vr_col  , &
-   decomp_minp_uptake_km_vr_col       => plantsoilnutrientflux_vars%decomp_minp_uptake_km_vr_col        &
+  associate(                                                                                              &
+   plant_compet_minn_vr_col             => plantsoilnutrientflux_vars%plant_compet_minn_vr_col          , &
+   plant_compet_minp_vr_col             => plantsoilnutrientflux_vars%plant_compet_minp_vr_col          , &
+   vmax_plant_nh4b_vr_col               => plantsoilnutrientflux_vars%vmax_plant_nh4b_vr_col            , &
+   vmax_plant_no3b_vr_col               => plantsoilnutrientflux_vars%vmax_plant_no3b_vr_col            , &
+   vmax_plant_minpb_vr_col              => plantsoilnutrientflux_vars%vmax_plant_minpb_vr_col           , &
+   plant_minn_nh4_uptake_km_vr_col      => plantsoilnutrientflux_vars%plant_minn_nh4_uptake_km_vr_col   , &
+   plant_minn_no3_uptake_km_vr_col      => plantsoilnutrientflux_vars%plant_minn_no3_uptake_km_vr_col   , &
+   plant_minp_uptake_km_vr_col          => plantsoilnutrientflux_vars%plant_minp_uptake_km_vr_col       , &
+   decomp_compet_minn_vr_col            => plantsoilnutrientflux_vars%decomp_compet_minn_vr_col         , &
+   decomp_compet_minp_vr_col            => plantsoilnutrientflux_vars%decomp_compet_minp_vr_col         , &
+   decomp_minn_nh4_uptake_km_vr_col     => plantsoilnutrientflux_vars%decomp_minn_nh4_uptake_km_vr_col  , &
+   decomp_minn_no3_uptake_km_vr_col     => plantsoilnutrientflux_vars%decomp_minn_no3_uptake_km_vr_col  , &
+   decomp_minp_uptake_km_vr_col         => plantsoilnutrientflux_vars%decomp_minp_uptake_km_vr_col        &
 
   )
 

@@ -83,9 +83,9 @@ module PlantSoilnutrientFluxType
     real(r8), pointer :: plant_minn_no3_uptake_km_vr_patch         (:,:)   !
     real(r8), pointer :: plant_minp_uptake_km_vr_patch             (:,:)   !
 
-    real(r8), pointer :: decomp_minn_nh4_uptake_km_vr_patch         (:,:)   !
-    real(r8), pointer :: decomp_minn_no3_uptake_km_vr_patch         (:,:)   !
-    real(r8), pointer :: decomp_minp_uptake_km_vr_patch             (:,:)   !
+!    real(r8), pointer :: decomp_minn_nh4_uptake_km_vr_patch         (:,:)   ! place holder
+!    real(r8), pointer :: decomp_minn_no3_uptake_km_vr_patch         (:,:)   ! place holder
+!    real(r8), pointer :: decomp_minp_uptake_km_vr_patch             (:,:)   ! place holder
 
     real(r8), pointer :: km_minsurf_minp_vr_col                    (:,:)   !mineral P adsorption affinity
     real(r8), pointer :: plant_minp_active_yield_flx_col             (:)    !column level mineral phosphorus yeild from soil bgc calculation
@@ -111,6 +111,9 @@ module PlantSoilnutrientFluxType
     real(r8), pointer :: plant_minn_active_no3_yield_flx_vr_col     (:,:)
     real(r8), pointer :: plant_minp_active_yield_flx_vr_col        (:,:)    !column level mineral phosphorus yeild from soil bgc calculation
 
+    real(r8) :: decomp_km_nh4
+    real(r8) :: decomp_km_no3
+    real(r8) :: decomp_km_minp
    contains
 
      procedure , public  :: Init
@@ -180,9 +183,9 @@ module PlantSoilnutrientFluxType
     allocate(this%plant_minn_no3_uptake_km_vr_patch(begp:endp,1:nlevdecomp_full)); this%plant_minn_no3_uptake_km_vr_patch(:,:) = nan
     allocate(this%plant_minp_uptake_km_vr_patch(begp:endp,1:nlevdecomp_full)); this%plant_minp_uptake_km_vr_patch(:,:) = nan
 
-    allocate(this%decomp_minn_nh4_uptake_km_vr_patch(begp:endp,1:nlevdecomp_full)); this%decomp_minn_nh4_uptake_km_vr_patch(:,:) = nan
-    allocate(this%decomp_minn_no3_uptake_km_vr_patch(begp:endp,1:nlevdecomp_full)); this%decomp_minn_no3_uptake_km_vr_patch(:,:) = nan
-    allocate(this%decomp_minp_uptake_km_vr_patch(begp:endp,1:nlevdecomp_full)); this%decomp_minp_uptake_km_vr_patch(:,:) = nan
+!    allocate(this%decomp_minn_nh4_uptake_km_vr_patch(begp:endp,1:nlevdecomp_full)); this%decomp_minn_nh4_uptake_km_vr_patch(:,:) = nan
+!    allocate(this%decomp_minn_no3_uptake_km_vr_patch(begp:endp,1:nlevdecomp_full)); this%decomp_minn_no3_uptake_km_vr_patch(:,:) = nan
+!    allocate(this%decomp_minp_uptake_km_vr_patch(begp:endp,1:nlevdecomp_full)); this%decomp_minp_uptake_km_vr_patch(:,:) = nan
 
     allocate(this%plant_totn_demand_flx_col          (begc:endc          )) ; this%plant_totn_demand_flx_col          (:)   = nan
 
@@ -499,6 +502,11 @@ module PlantSoilnutrientFluxType
       this%plant_minn_nh4_uptake_km_vr_col(c,j) = this%plant_minn_nh4_uptake_km_vr_col(c,j) / this%plant_compet_minn_vr_col(c,j)
       this%plant_minn_no3_uptake_km_vr_col(c,j) = this%plant_minn_no3_uptake_km_vr_col(c,j) / this%plant_compet_minn_vr_col(c,j)
       this%plant_minp_uptake_km_vr_col(c,j)     = this%plant_minp_uptake_km_vr_col(c,j) / this%plant_compet_minp_vr_col(c,j)
+
+      this%decomp_minn_nh4_uptake_km_vr_col(c,j) = this%decomp_km_nh4
+      this%decomp_minn_no3_uptake_km_vr_col(c,j) = this%decomp_km_no3
+      this%decomp_minp_uptake_km_vr_col(c,j) = this%decomp_km_minp
+
     enddo
   enddo
 
@@ -571,20 +579,33 @@ module PlantSoilnutrientFluxType
   vmax_plant_no3               => ecophyscon_vars%vmax_plant_no3                        , &
   vmax_plant_p                 => ecophyscon_vars%vmax_plant_p                          , &
   vmax_minsurf_p_vr            => ecophyscon_vars%vmax_minsurf_p_vr                     , &
-  ivt                          => pft%itype                                               &
+  ivt                          => pft%itype                                             , &
+  decompmicc_patch_vr          => ecophyscon_vars%decompmicc_patch_vr                   , &
+  km_decomp_nh4                => ecophyscon_vars%km_decomp_nh4                         , &
+  km_decomp_no3                => ecophyscon_vars%km_decomp_no3                         , &
+  km_decomp_p                  => ecophyscon_vars%km_decomp_p                             &
+
   )
 
+
+  this%decomp_km_nh4 = km_decomp_nh4
+  this%decomp_km_no3 = km_decomp_no3
+  this%decomp_km_minp= km_decomp_p
   !set reference vmax
   do j = 1, nlevtrc_soil
     do fc = 1, num_soilc
       c = filter_soilc(fc)
+      this%decomp_compet_minp_vr_col(c,j) = 0._r8
       do p = col%pfti(c), col%pftf(c)
         if (pft%active(p).and. (pft%itype(p) .ne. noveg)) then
           this%plant_minp_uptake_vmax_vr_patch(p, j)     = vmax_plant_p(ivt(p))
           this%plant_minn_nh4_uptake_vmax_vr_patch(p, j) = vmax_plant_nh4(ivt(p))
           this%plant_minn_no3_uptake_vmax_vr_patch(p, j) = vmax_plant_no3(ivt(p))
+          this%decomp_compet_minn_vr_col(c,j) = this%decomp_compet_minn_vr_col(c,j) + decompmicc_patch_vr(ivt(p),j)*pft%wtcol(p)
+
         endif
       enddo
+      this%decomp_compet_minp_vr_col(c,j) = this%decomp_compet_minn_vr_col(c,j)
     enddo
   enddo
 
@@ -641,6 +662,7 @@ module PlantSoilnutrientFluxType
                 no3_scal * this%plant_minn_no3_uptake_vmax_vr_patch(p,j) / this%plant_minn_no3_uptake_km_vr_patch(p,j))
               this%plant_minp_active_yield_flx_vr_patch(p,j) = this%plant_effrootsc_vr_patch(p,j) * minp_scal * &
                 this%plant_minp_uptake_vmax_vr_patch(p,j) / this%plant_minp_uptake_km_vr_patch(p,j)
+
             endif
           endif
         enddo
