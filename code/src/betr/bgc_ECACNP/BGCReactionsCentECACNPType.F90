@@ -382,8 +382,10 @@ contains
          trc_volatile_group_id = addone(itemp_vgrp))
 
     !------------------------------------------------------------------------------------
+    !only one group passive solid litter tracers
+    !
     itemp_mem=0
-    itemp_grp=addone(itemp_grp)          !only one group passive solid litter tracers
+    itemp_grp=addone(itemp_grp)
     trcid = jj+(centurybgc_vars%lit1-1)*nelm+c_loc
     call betrtracer_vars%set_tracer(trc_id = trcid, trc_name='LIT1C'             ,    &
          is_trc_mobile=.true., is_trc_advective = .false., trc_group_id = itemp_grp,  &
@@ -508,14 +510,14 @@ contains
     itemp_mem=0
     itemp_grp = addone(itemp_grp)
     centurybgc_vars%lid_minp_secondary_trc=centurybgc_vars%nom_pools*nelm + 1
-    centurybgc_vars%lid_minp_occlude_trc = centurybgc_vars%nom_pools*nelm + 2
+    centurybgc_vars%lid_minp_occlude_trc  =centurybgc_vars%nom_pools*nelm + 2
 
     trcid = jj + centurybgc_vars%lid_minp_secondary_trc
     call betrtracer_vars%set_tracer(trc_id = trcid, trc_name='P_2ND'             ,    &
          is_trc_mobile=.false., is_trc_advective = .false., trc_group_id = itemp_grp,  &
          trc_group_mem= addone(itemp_mem))
 
-    trcid = jj + centurybgc_vars%lid_minp_secondary_trc
+    trcid = jj + centurybgc_vars%lid_minp_occlude_trc
     call betrtracer_vars%set_tracer(trc_id = trcid, trc_name='P_OCL'             ,    &
          is_trc_mobile=.false., is_trc_advective = .false., trc_group_id = itemp_grp,  &
          trc_group_mem= addone(itemp_mem))

@@ -298,7 +298,12 @@ contains
              y0(:, c, j ) = 0._r8
 
              !set up nonzero variables
-             y0(1:centurybgc_vars%nom_pools*centurybgc_vars%nelms, c, j)    = tracerstate_vars%tracer_conc_solid_passive_col(c, j, :)
+             y0(1:centurybgc_vars%nom_pools*centurybgc_vars%nelms, c, j)    = &
+                  tracerstate_vars%tracer_conc_solid_passive_col(c, j, 1:centurybgc_vars%nom_pools*centurybgc_vars%nelms)
+
+             y0(centurybgc_vars%lid_minp_occlude,   c, j) = tracerstate_vars%tracer_conc_solid_passive_col(c, j, centurybgc_vars%lid_minp_occlude_trc)
+
+             y0(centurybgc_vars%lid_minp_secondary, c, j) = tracerstate_vars%tracer_conc_solid_passive_col(c, j, centurybgc_vars%lid_minp_secondary_trc)
 
              y0(centurybgc_vars%lid_n2,  c, j)        = max(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_n2)  ,0._r8)
 
@@ -315,6 +320,9 @@ contains
              y0(centurybgc_vars%lid_no3, c, j)        = max(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_no3x),0._r8)
 
              y0(centurybgc_vars%lid_n2o, c, j)        = max(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_n2o), 0._r8)
+
+             y0(centurybgc_vars%lid_minp_solution,  c, j) = max(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_p_sol), 0._r8)
+
           endif
        enddo
     enddo
@@ -479,7 +487,7 @@ contains
     real(r8) :: sminn_plant, sminn_plant2
     real(r8) :: err,hr, immob
     real(r8) :: f_nit_n2o, f_den
-    integer :: fc, c, j, k
+    integer :: fc, c, j, k, trcid
 
     associate(                                                                   & !
          nom_pools             => centurybgc_vars%nom_pools                    , & !
@@ -493,8 +501,7 @@ contains
          actual_immob_nh4_vr   =>  plantsoilnutrientflux_vars%actual_immob_nh4_vr_col    , & !
          smin_no3_to_plant_vr  =>  plantsoilnutrientflux_vars%smin_no3_to_plant_vr_col   , & !
          smin_nh4_to_plant_vr  =>  plantsoilnutrientflux_vars%smin_nh4_to_plant_vr_col   , & !
-         supplement_to_sminn_vr=>  plantsoilnutrientflux_vars%supplement_to_sminn_vr_col , & !
-         hr_vr                 =>  plantsoilnutrientflux_vars%hr_vr_col                    , & !
+         hr_vr                 =>  plantsoilnutrientflux_vars%hr_vr_col                  , & !
          volatileid            => betrtracer_vars%volatileid                   , & !
          ngwmobile_tracers     => betrtracer_vars%ngwmobile_tracers            , & !
          tracer_flx_netpro_vr  => tracerflux_vars%tracer_flx_netpro_vr_col     , & !
@@ -525,6 +532,7 @@ contains
                                  (yf(centurybgc_vars%lid_plant_minp, c, j) - y0(centurybgc_vars%lid_plant_minp, c, j))
 
                smin_no3_to_plant_vr(c,j) = (yf(centurybgc_vars%lid_minn_no3_plant, c, j) - y0(centurybgc_vars%lid_minn_no3_plant, c, j))*natomw/dtime
+
                smin_nh4_to_plant_vr(c,j) = (yf(centurybgc_vars%lid_minn_nh4_plant, c, j) - y0(centurybgc_vars%lid_minn_nh4_plant, c, j))*natomw/dtime
 
                hr_vr       (c,j)  = (yf(centurybgc_vars%lid_co2_hr, c, j) - y0(centurybgc_vars%lid_co2_hr, c, j))*catomw/dtime
@@ -537,7 +545,7 @@ contains
 
                !the temporal averaging for fluxes below will be done later
 
-               tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_o2)  ) = yf(centurybgc_vars%lid_o2_paere  ,c, j)  - y0(centurybgc_vars%lid_o2_paere , c, j)
+               tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_o2) ) = yf(centurybgc_vars%lid_o2_paere  ,c, j)  - y0(centurybgc_vars%lid_o2_paere , c, j)
 
                if ( spinup_state /= 1 ) then
                   tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_n2)  ) = yf(centurybgc_vars%lid_n2_paere  ,c, j)  - y0(centurybgc_vars%lid_n2_paere , c, j)
@@ -573,6 +581,10 @@ contains
                tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_ar) = &
                     yf(centurybgc_vars%lid_ar,c,j) - y0(centurybgc_vars%lid_ar,c,j)
 
+               tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_p_sol) =      &
+                    tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_p_sol) + &
+                    yf(centurybgc_vars%lid_minp_solution,  c, j) - y0(centurybgc_vars%lid_minp_solution, c, j)
+
                !get net production for om pools
                deltac=0._r8
                do k = 1, nom_pools
@@ -584,6 +596,14 @@ contains
                        tracer_flx_netpro_vr(c,j,ngwmobile_tracers+(k-1)*nelms+n_loc) + &
                        yf((k-1)*nelms+n_loc, c, j) - y0((k-1)*nelms+n_loc, c, j)
                enddo
+
+               trcid = ngwmobile_tracers + centurybgc_vars%lid_minp_secondary_trc
+               tracer_flx_netpro_vr(c,j, trcid) = tracer_flx_netpro_vr(c,j, trcid) + &
+                  yf(centurybgc_vars%lid_minp_secondary, c, j) - y0(centurybgc_vars%lid_minp_secondary, c, j)
+
+               trcid = ngwmobile_tracers + centurybgc_vars%lid_minp_occlude_trc
+               tracer_flx_netpro_vr(c,j, trcid) = tracer_flx_netpro_vr(c,j, trcid) + &
+                  yf(centurybgc_vars%lid_minp_occlude, c, j) - y0(centurybgc_vars%lid_minp_occlude, c, j)
             endif
          enddo
 
@@ -641,22 +661,39 @@ contains
          enddo
       enddo
 
-      k1 = betrtracer_vars%id_trc_o2   ; k2 = centurybgc_vars%lid_o2  ;
+      k1 = betrtracer_vars%id_trc_o2   ; k2 = centurybgc_vars%lid_o2
       call assign_A2B(bounds, lbj, ubj, neq, ngwtracers, numf, filter, jtops, k1, k2, yf(:,bounds%begc:bounds%endc, lbj:ubj), tracer_conc_mobile_col(bounds%begc:bounds%endc,lbj:ubj,:))
-      k1 = betrtracer_vars%id_trc_co2x ; k2 = centurybgc_vars%lid_co2 ;
+
+      k1 = betrtracer_vars%id_trc_co2x ; k2 = centurybgc_vars%lid_co2
       call assign_A2B(bounds, lbj, ubj, neq, ngwtracers, numf, filter, jtops, k1, k2, yf(:,bounds%begc:bounds%endc, lbj:ubj), tracer_conc_mobile_col(bounds%begc:bounds%endc,lbj:ubj,:))
-      k1 = betrtracer_vars%id_trc_nh3x ; k2 = centurybgc_vars%lid_nh4 ;
+
+      k1 = betrtracer_vars%id_trc_nh3x ; k2 = centurybgc_vars%lid_nh4
       call assign_A2B(bounds, lbj, ubj, neq, ngwtracers, numf, filter, jtops, k1, k2, yf(:,bounds%begc:bounds%endc, lbj:ubj), tracer_conc_mobile_col(bounds%begc:bounds%endc,lbj:ubj,:))
-      k1 = betrtracer_vars%id_trc_no3x ; k2 = centurybgc_vars%lid_no3 ;
+
+      k1 = betrtracer_vars%id_trc_no3x ; k2 = centurybgc_vars%lid_no3
       call assign_A2B(bounds, lbj, ubj, neq, ngwtracers, numf, filter, jtops, k1, k2, yf(:,bounds%begc:bounds%endc, lbj:ubj), tracer_conc_mobile_col(bounds%begc:bounds%endc,lbj:ubj,:))
-      k1 = betrtracer_vars%id_trc_n2   ; k2 = centurybgc_vars%lid_n2  ;
+
+      k1 = betrtracer_vars%id_trc_n2   ; k2 = centurybgc_vars%lid_n2
       call assign_A2B(bounds, lbj, ubj, neq, ngwtracers, numf, filter, jtops, k1, k2, yf(:,bounds%begc:bounds%endc, lbj:ubj), tracer_conc_mobile_col(bounds%begc:bounds%endc,lbj:ubj,:))
-      k1 = betrtracer_vars%id_trc_ar   ; k2 = centurybgc_vars%lid_ar  ;
+
+      k1 = betrtracer_vars%id_trc_ar   ; k2 = centurybgc_vars%lid_ar
       call assign_A2B(bounds, lbj, ubj, neq, ngwtracers, numf, filter, jtops, k1, k2, yf(:,bounds%begc:bounds%endc, lbj:ubj), tracer_conc_mobile_col(bounds%begc:bounds%endc,lbj:ubj,:))
-      k1 = betrtracer_vars%id_trc_ch4  ; k2 = centurybgc_vars%lid_ch4 ;
+
+      k1 = betrtracer_vars%id_trc_ch4  ; k2 = centurybgc_vars%lid_ch4
       call assign_A2B(bounds, lbj, ubj, neq, ngwtracers, numf, filter, jtops, k1, k2, yf(:,bounds%begc:bounds%endc, lbj:ubj), tracer_conc_mobile_col(bounds%begc:bounds%endc,lbj:ubj,:))
-      k1 =  betrtracer_vars%id_trc_n2o ; k2 = centurybgc_vars%lid_n2o ;
+
+      k1 =  betrtracer_vars%id_trc_n2o ; k2 = centurybgc_vars%lid_n2o
       call assign_A2B(bounds, lbj, ubj, neq, ngwtracers, numf, filter, jtops, k1, k2, yf(:,bounds%begc:bounds%endc, lbj:ubj), tracer_conc_mobile_col(bounds%begc:bounds%endc,lbj:ubj,:))
+
+      k1 = betrtracer_vars%id_trc_p_sol; k2 = centurybgc_vars%lid_minp_solution
+      call assign_A2B(bounds, lbj, ubj, neq, ngwtracers, numf, filter, jtops, k1, k2, yf(:,bounds%begc:bounds%endc, lbj:ubj), tracer_conc_mobile_col(bounds%begc:bounds%endc,lbj:ubj,:))
+
+      k1 = lid_minp_secondary_trc; k2 = centurybgc_vars%lid_minp_secondary
+      call assign_A2B(bounds, lbj, ubj, neq, ngwtracers, numf, filter, jtops, k1, k2, yf(:,bounds%begc:bounds%endc, lbj:ubj), tracer_conc_solid_passive(bounds%begc:bounds%endc,lbj:ubj,:))
+
+      k1 = lid_minp_occlude_trc;   k2 = centurybgc_vars%lid_minp_occlude
+      call assign_A2B(bounds, lbj, ubj, neq, ngwtracers, numf, filter, jtops, k1, k2, yf(:,bounds%begc:bounds%endc, lbj:ubj), tracer_conc_solid_passive(bounds%begc:bounds%endc,lbj:ubj,:))
+
 
     end associate
   end subroutine retrieve_state_vars
@@ -667,7 +704,7 @@ contains
 
     !
     ! !DESCRIPTION:
-    ! assign state variables
+    ! assign state variables, k2-th member of yf to k1-th member of tracer_conc_mobile_col
     !
     implicit none
     ! !ARGUMENTS:
@@ -1351,7 +1388,7 @@ contains
     integer                 , intent(in) :: num_soilc                                                                 ! number of columns in column filter
     integer                 , intent(in) :: filter_soilc(:)                                                           ! column filter
     integer                 , intent(in) :: lbj, ubj
-    type(plantsoilnutrientflux_type), intent(in) :: plantsoilnutrientflux_vars
+    type(plantsoilnutrientflux_type), intent(inout) :: plantsoilnutrientflux_vars
     type(betrtracer_type)   , intent(in) :: betrtracer_vars                                                           ! betr configuration information
     type(centurybgc_type)   , intent(in) :: centurybgc_vars
     type(tracerflux_type)   , intent(inout) :: tracerflux_vars
@@ -1381,7 +1418,8 @@ contains
          sminn_nh4_input_vr             => plantsoilnutrientflux_vars%sminn_nh4_input_vr_col          , & !
          sminn_no3_input_vr             => plantsoilnutrientflux_vars%sminn_no3_input_vr_col          , & !
          sminp_input_vr                 => plantsoilnutrientflux_vars%sminp_input_vr_col              , & !
-         biochem_pmin_vr_col            => plantsoilnutrientflux_vars%biochem_pmin_vr_col               & !
+         biochem_pmin_ppool_vr_col      => plantsoilnutrientflux_vars%biochem_pmin_ppool_vr_col       , & !
+         biochem_pmin_vr_col            => plantsoilnutrientflux_vars%biochem_pmin_vr_col               &
          )
 
       do k = 1, ndecomp_pools
@@ -1391,6 +1429,13 @@ contains
                y0((k-1)*nelm+c_loc,c,j) = y0((k-1)*nelm+c_loc,c,j) - bgc_cpool_ext_loss_vr(c,j,k)/catomw
                y0((k-1)*nelm+n_loc,c,j) = y0((k-1)*nelm+n_loc,c,j) - bgc_npool_ext_loss_vr(c,j,k)/natomw
                y0((k-1)*nelm+p_loc,c,j) = y0((k-1)*nelm+p_loc,c,j) - bgc_ppool_ext_loss_vr(c,j,k)/patomw
+
+               !for P pool, add phosphatase P extraction, ideally, this should be done together
+               !with other bgc flux. But the current calculation of phosphatase activity seems problematic
+               !so I decide to do it here
+               biochem_pmin_ppool_vr_col(c,j,k) = min(biochem_pmin_ppool_vr_col(c,j,k), y0((k-1)*nelm+p_loc,c,j)*patomw)
+
+               y0((k-1)*nelm+p_loc,c,j) = y0((k-1)*nelm+p_loc,c,j) - biochem_pmin_ppool_vr_col(c,j,k)/patomw
 
                cn_ratios(k, c,j) = safe_div(y0((k-1)*nelm+c_loc,c,j), y0((k-1)*nelm+n_loc,c,j))
                cp_ratios(k, c,j) = safe_div(y0((k-1)*nelm+c_loc,c,j), y0((k-1)*nelm+p_loc,c,j))
@@ -1406,9 +1451,17 @@ contains
 
                tracer_flx_netpro_vr(c,j,ngwmobile_tracers+(k-1)*nelm+p_loc) =      &
                     tracer_flx_netpro_vr(c,j,ngwmobile_tracers+(k-1)*nelm+p_loc) - &
-                    bgc_ppool_ext_loss_vr(c,j,k)/patomw
+                    bgc_ppool_ext_loss_vr(c,j,k)/patomw - biochem_pmin_ppool_vr_col(c,j,k)
 
-
+            enddo
+         enddo
+      enddo
+      !back calculate biochem_pmin_vr_col
+      biochem_pmin_vr_col(:,:) = 0._r8
+      do k = 1, ndecomp_pools
+         do j = 1, ubj
+            do fc = 1, num_soilc
+              biochem_pmin_vr_col(c,j) = biochem_pmin_vr_col(c,j) + biochem_pmin_ppool_vr_col(c,j,k)
             enddo
          enddo
       enddo
@@ -1427,9 +1480,10 @@ contains
             tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_nh3x   ) =      &
                  tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_nh3x   ) + &
                  sminn_nh4_input_vr(c,j)/natomw
+
             tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_p_sol)   =      &
                  tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_p_sol)  +  &
-                 sminp_input_vr(c,j)/patomw
+                 (sminp_input_vr(c,j) + biochem_pmin_vr_col(c,j)) /patomw
          enddo
 
       enddo

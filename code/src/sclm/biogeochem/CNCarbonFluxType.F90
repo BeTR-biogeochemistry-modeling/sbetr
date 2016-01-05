@@ -1,17 +1,17 @@
 module CNCarbonFluxType
-  use clm_varcon     , only : spval, ispval, c14ratio
-  use shr_kind_mod       , only : r8 => shr_kind_r8
-  use decompMod      , only : bounds_type
+  use clm_varcon             , only : spval, ispval, c14ratio
+  use shr_kind_mod           , only : r8 => shr_kind_r8
+  use decompMod              , only : bounds_type
   use clm_varcon             , only : spval
   use clm_varpar             , only : nlevdecomp_full, ndecomp_pools
 implicit none
 
   type, public :: carbonflux_type
     real(r8), pointer :: rr_col                                    (:)     ! column (gC/m2/s) root respiration (fine root MR + total root GR) (p2c)
-    real(r8), pointer :: annsum_npp_patch            (:) ! patch annual sum of NPP (gC/m2/yr)
+    real(r8), pointer :: annsum_npp_patch                          (:) ! patch annual sum of NPP (gC/m2/yr)
     real(r8), pointer :: agnpp_patch                               (:)     ! (gC/m2/s) aboveground NPP
     real(r8), pointer :: bgnpp_patch                               (:)     ! (gC/m2/s) belowground NPP
-
+    real(r8), pointer :: hr_col                                    (:)
   contains
 
     procedure, public  :: Init
@@ -57,7 +57,8 @@ contains
     allocate(this%annsum_npp_patch      (begp:endp)) ; this%annsum_npp_patch      (:) = nan
     allocate(this%agnpp_patch                       (begp:endp)) ; this%agnpp_patch                               (:) = nan
     allocate(this%bgnpp_patch                       (begp:endp)) ; this%bgnpp_patch                               (:) = nan
-
+    allocate(this%hr_col (begc:endc)); this%hr_col(:) = nan
+    
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------

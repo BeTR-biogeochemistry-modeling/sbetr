@@ -72,8 +72,8 @@ module PlantSoilnutrientFluxType
     real(r8), pointer :: sminn_no3_input_vr_col                    (:,:)   !col no3 input, gN/m3/time step
     real(r8), pointer :: sminn_nh4_input_vr_col                    (:,:)   !col nh4 input, gN/m3/time step
     real(r8), pointer :: sminp_input_vr_col                        (:,:)   !col minp input, gP/m3/time step
-    real(r8), pointer :: biochem_pmin_vr_col                       (:,:)   ! col vertically-resolved total biochemical P mineralization (gP/m3/s)
-
+    real(r8), pointer :: biochem_pmin_vr_col                       (:,:)   ! col vertically-resolved total potential biochemical P mineralization (gP/m3/s)
+    real(r8), pointer :: biochem_pmin_ppool_vr_col                 (:,:,:) ! p pool divided potential biochemical P mineralization
     real(r8), pointer :: hr_vr_col                                 (:,:)   ! total vertically-resolved het. resp. from decomposing C pools (gC/m3/s)
 
     real(r8), pointer :: f_nit_vr_col                              (:,:)   ! col (gN/m3/s) soil nitrification flux
@@ -128,6 +128,7 @@ module PlantSoilnutrientFluxType
      procedure , public  :: Init
      procedure , public  :: SetValues
      procedure , public  :: nutrient_flx_summary
+     procedure , public  :: integrate_vr_flux_to_2D
      procedure , public  :: calc_nutrient_uptake_kinetic_pars
      procedure , public  :: init_plant_soil_feedback
      procedure , public  :: update_plant_nutrient_active_yield_patch
@@ -217,6 +218,7 @@ module PlantSoilnutrientFluxType
 
     allocate(this%bgc_ppool_ext_inputs_vr_col (begc:endc,1:nlevdecomp_full,ndecomp_pools)) ;this%bgc_ppool_ext_inputs_vr_col    (:,:,:) = nan
     allocate(this%bgc_ppool_ext_loss_vr_col   (begc:endc,1:nlevdecomp_full,ndecomp_pools)) ;this%bgc_ppool_ext_loss_vr_col      (:,:,:) = nan
+    allocate(this%biochem_pmin_ppool_vr_col   (begc:endc,1:nlevdecomp_full,ndecomp_pools)) ;this%biochem_pmin_ppool_vr_col      (:,:,:) = nan
 
     allocate(this%bgc_ppool_inputs_col        (begc:endc,ndecomp_pools))     ;this%bgc_ppool_inputs_col              (:,:) = nan
 
@@ -861,6 +863,8 @@ module PlantSoilnutrientFluxType
   use PhosphorusFluxType       , only : phosphorusflux_type
   use PhosphorusStateType      , only : phosphorusstate_type
   use clm_time_manager         , only : get_step_size
+
+  !
   ! arguments
   class(plantsoilnutrientflux_type) :: this
   type(bounds_type)    , intent(in)    :: bounds
@@ -886,11 +890,54 @@ module PlantSoilnutrientFluxType
       tot_p = sum(decomp_ppools_vr(c,j,1:ndecomp_pools))
 
       do np = 1,   ndecomp_pools
-         this%bgc_ppool_ext_loss_vr_col(c,j,np) = this%bgc_ppool_ext_loss_vr_col(c,j,np) + &
+         this%biochem_pmin_ppool_vr_col(c,j,np) = &
             this%biochem_pmin_vr_col(c,j) * safe_div(decomp_ppools_vr(c,j, np),tot_p)
       enddo
     enddo
   enddo
   end associate
   end subroutine do_om_phosphorus_bioextraction
+
+
+!-------------------------------------------------------------------------------
+  subroutine integrate_vr_flux_to_2D(this, bounds, num_soilc, filter_soilc, carbonflux_vars, &
+    nitrogenflux_vars, phosphorusflux_vars)
+
+  use CNCarbonFluxType    , only : carbonflux_type
+  use CNNitrogenFluxType  , only : nitrogenflux_type
+  use PhosphorusFluxType  , only : phosphorusflux_type
+  use clm_varpar          , only : nlevdecomp
+  use MathfuncMod         , only : dot_sum
+
+  class(plantsoilnutrientflux_type) :: this
+  type(bounds_type)        , intent(in)    :: bounds
+  integer                  , intent(in)    :: num_soilc
+  integer                  , intent(in)    :: filter_soilc(:)
+  type(carbonflux_type)    , intent(inout) :: carbonflux_vars
+  type(nitrogenflux_type)  , intent(inout) :: nitrogenflux_vars
+  type(phosphorusflux_type), intent(inout) :: phosphorusflux_vars
+
+  integer :: c, fc
+!-------------------------------------------------------------------------------
+  associate(                                                 &
+     f_n2o_denit_col  => nitrogenflux_vars%f_n2o_denit_col , &
+     f_n2o_nit_col    => nitrogenflux_vars%f_n2o_nit_col   , &
+     f_nit_col        => nitrogenflux_vars%f_nit_col       , &
+     f_denit_col      => nitrogenflux_vars%f_denit_col     , &
+     dz               => col%dz                            , &
+     hr_col           => carbonflux_vars%hr_col              &
+  )
+
+
+  do fc = 1, num_soilc
+    c = filter_soilc(fc)
+    hr_col(c)          = dot_sum(this%hr_vr_col(c,1:nlevdecomp), dz(c,1:nlevdecomp))
+    f_n2o_denit_col(c) = dot_sum(this%f_n2o_denit_vr_col(c,1:nlevdecomp), dz(c,1:nlevdecomp))
+    f_n2o_nit_col(c)   = dot_sum(this%f_n2o_nit_vr_co(c,1:nlevdecomp), dz(c,1:nlevdecomp))
+    f_nit_col(c)       = dot_sum(this%f_nit_vr_col(c,1:nlevdecomp), dz(c,1:nlevdecomp))
+    f_denit_col(c)     = dot_sum(this%f_denit_vr_col(c,1:nlevdecomp), dz(c,1:nlevdecomp))
+  enddo
+
+  end associate
+  end subroutine integrate_vr_flux_to_2D
 end module PlantSoilnutrientFluxType
