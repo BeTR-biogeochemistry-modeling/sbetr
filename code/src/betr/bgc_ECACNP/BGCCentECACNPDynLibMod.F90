@@ -66,10 +66,10 @@ module BGCCentECACNPDynLibMod
      integer           :: lid_plant_minn_nh4, lid_plant_minn_nh4_up_reac !local position of plant uptake of mineral nitrogen NH4 in the state variable vector
      integer           :: lid_plant_minn_no3, lid_plant_minn_no3_up_reac !
      integer           :: lid_plant_minp, lid_plant_minp_up_reac !local position of plant uptake of mineral P in the state variable vector
-     integer           :: lid_minp_solution, lid_minp_solution_reac    !conversation of adsorbed into secondary phase
-     integer           :: lid_minp_secondary,lid_minp_secondary_reac   !local position of secondary P in the state variable vector
+     integer           :: lid_minp_solution, lid_minp_solution_to_secp_reac    !conversation of adsorbed into secondary phase
+     integer           :: lid_minp_secondary,lid_minp_secondary_to_solp_reac   !local position of secondary P in the state variable vector
 
-     integer           :: lid_minp_occlude, lid_minp_occlude_reac      !local position of occluded P in the state variable vector
+     integer           :: lid_minp_occlude, lid_minp_secp_to_occlude_reac      !local position of occluded P in the state variable vector
 
      integer           :: lid_at_rt, lid_at_rt_reac              !root autotrophic respiration
 
@@ -1542,8 +1542,8 @@ contains
     is_1st_order(centurybgc_vars%cwd_dek_reac) = .true.
     is_1st_order(centurybgc_vars%lid_nh4_nit_reac) = .true.
     is_1st_order(centurybgc_vars%lid_no3_den_reac) = .true.
-    is_1st_order(centurybgc_vars%lid_minp_secondary_reac) = .true.
-    is_1st_order(centurybgc_vars%lid_minp_occlude_reac) = .true.
+    is_1st_order(centurybgc_vars%lid_minp_secondary_to_solp_reac) = .true.
+    is_1st_order(centurybgc_vars%lid_minp_secp_to_occlude_reac) = .true.
   end subroutine set_reaction_order
 
 

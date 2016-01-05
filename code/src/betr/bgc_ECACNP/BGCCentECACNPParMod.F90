@@ -56,7 +56,8 @@ module BGCCentECACNPParMod
 
      real(r8), pointer :: vcompet_minn(:)
      real(r8), pointer :: vcompet_minp(:)
-
+     real(r8)          :: vcompet_minp_cap         !potential surface area for mineral P adsorption
+     real(r8)          :: vcompet_min_nh4_cap      !potential surface area for NH4 adsorption
      contains
        procedure, public  :: Init
        procedure, private :: InitAllocate
@@ -189,8 +190,13 @@ contains
    decomp_compet_minp_vr_col            => plantsoilnutrientflux_vars%decomp_compet_minp_vr_col         , &
    decomp_minn_nh4_uptake_km_vr_col     => plantsoilnutrientflux_vars%decomp_minn_nh4_uptake_km_vr_col  , &
    decomp_minn_no3_uptake_km_vr_col     => plantsoilnutrientflux_vars%decomp_minn_no3_uptake_km_vr_col  , &
-   decomp_minp_uptake_km_vr_col         => plantsoilnutrientflux_vars%decomp_minp_uptake_km_vr_col        &
-
+   decomp_minp_uptake_km_vr_col         => plantsoilnutrientflux_vars%decomp_minp_uptake_km_vr_col      , &
+   vmax_minsurf_minp_vr_col             => plantsoilnutrientflux_vars%vmax_minsurf_minp_vr_col          , &
+   vmax_minsurf_minnh4_vr_col           => plantsoilnutrientflux_vars%vmax_minsurf_minnh4_vr_col        , &
+   km_minsurf_minp_vr_col               => plantsoilnutrientflux_vars%km_minsurf_minp_vr_col            , &
+   km_minsurf_minnh4_vr_col             => plantsoilnutrientflux_vars%km_minsurf_minnh4_vr_col          , &
+   r_adsorp_minp_cap_vr_col             => plantsoilnutrientflux_vars%r_adsorp_minp_cap_vr_col          , &
+   r_adsorp_nh4_cap_vr_col              => plantsoilnutrientflux_vars%r_adsorp_nh4_cap_vr_col             &
   )
 
   !set Vmax and Km upscaling for plants
@@ -214,20 +220,21 @@ contains
   this%vcompet_minn(this%lid_decomp_compet) = decomp_compet_minn_vr_col(c,lev)
   this%vcompet_minp(this%lid_decomp_compet) = decomp_compet_minp_vr_col(c,lev)
 
-
-
   this%k_mat_minn(1,this%lid_decomp_compet) = decomp_minn_nh4_uptake_km_vr_col(c,lev)
   this%k_mat_minn(2,this%lid_decomp_compet) = decomp_minn_no3_uptake_km_vr_col(c,lev)
   this%k_mat_minp(this%lid_decomp_compet)   = decomp_minp_uptake_km_vr_col(c,lev)
 
-
+  !no ammonia adsorption is considered at the moment
+  this%vmax_minsurf_pb                      = vmax_minsurf_minp_vr_col(c,lev)
 
   !get soil mineral surface parameters
+  this%k_mat_minp(this%lid_minsrf_compet) = km_minsurf_minp_vr_col(c,lev)
+  this%vcompet_minp_cap = r_adsorp_minp_cap_vr_col(c,lev)
 
-  !calculate actual number of competitors
+  this%k_mat_minn(1,this%lid_minsrf_compet) = km_minsurf_minnh4_vr_col(c,lev)
+  this%vcompet_min_nh4_cap = r_adsorp_nh4_cap_vr_col(c,lev)
 
 
-  !define the location parameters
   end associate
   end subroutine set_nutrientcompet_paras
 

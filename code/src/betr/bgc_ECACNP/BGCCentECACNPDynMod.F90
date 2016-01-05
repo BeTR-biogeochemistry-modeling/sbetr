@@ -105,9 +105,9 @@ contains
          lid_plant_minn_no3_up_reac=> centurybgc_vars%lid_plant_minn_no3_up_reac , & !
          lid_plant_minn_nh4  => centurybgc_vars%lid_plant_minn_nh4       , &
          lid_plant_minn_no3  => centurybgc_vars%lid_plant_minn_no3       , &
-         lid_minp_secondary_reac => centurybgc_vars%lid_minp_secondary_reac    , & !
-         lid_minp_occlude_reac  => centurybgc_vars%lid_minp_occlude_reac       , & !
-         lid_minp_solution_reac => centurybgc_vars%lid_minp_solution_reac      , & !
+         lid_minp_secondary_to_solp_reac => centurybgc_vars%lid_minp_secondary_to_solp_reac    , & !
+         lid_minp_secp_to_occlude_reac  => centurybgc_vars%lid_minp_secp_to_occlude_reac       , & !
+         lid_minp_solution_to_secp_reac => centurybgc_vars%lid_minp_solution_to_secp_reac      , & !
          lid_plant_minp_up_reac => centurybgc_vars%lid_plant_minp_up_reac, & !
 
          lid_nh4_nit_reac => centurybgc_vars%lid_nh4_nit_reac            , & !
@@ -368,7 +368,7 @@ contains
     !---------------------------------------------------------------------------------
     !reaction 10, inorganic P non-equilibrium adsorption
     !P_solution -> p_secondary
-    reac = lid_minp_solution_reac
+    reac = lid_minp_solution_to_secp_reac
     cascade_matrix(lid_minp_solution,  reac) = -1._r8
     cascade_matrix(lid_minp_secondary, reac) = 1._r8
     primvarid(reac) = lid_minp_solution
@@ -376,7 +376,7 @@ contains
     !----------------------------------------------------------------------
     !reaction 11, inorganic P non-equilibrium desorption
     ! p_secondary -> P_solution
-    reac = lid_minp_secondary_reac
+    reac = lid_minp_secondary_to_solp_reac
     cascade_matrix(lid_minp_solution,  reac) = 1._r8
     cascade_matrix(lid_minp_secondary, reac) = -1._r8
     primvarid(reac) = lid_minp_secondary
@@ -384,7 +384,7 @@ contains
     !----------------------------------------------------------------------
     !reaction 12, inorganic P occlusion
     !p_secondary -> p_occlude
-    reac = lid_minp_occlude_reac
+    reac = lid_minp_secp_to_occlude_reac
     cascade_matrix(lid_minp_secondary,  reac) = -1._r8
     cascade_matrix(lid_minp_occlude  ,  reac) = 1._r8
     primvarid(reac) = lid_minp_secondary

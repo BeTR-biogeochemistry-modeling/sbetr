@@ -726,9 +726,12 @@ contains
          plantsoilnutrientflux_vars%rr_col(bounds%begc:bounds%endc), cnstate_vars%nfixation_prof_col(bounds%begc:bounds%endc,1:ubj), &
          k_decay(centurybgc_vars%lid_at_rt_reac, bounds%begc:bounds%endc, 1:ubj))
 
+
     !calulate kinetic parameter profile for plant nutrient uptake
     call plantsoilnutrientflux_vars%calc_nutrient_uptake_kinetic_pars(bounds, num_soilc, filter_soilc, &
-         num_soilp, filter_soilp, decompECA_vars%t_scalar_col,  decompECA_vars%w_scalar_col, cnstate_vars)
+         num_soilp, filter_soilp, decompECA_vars%t_scalar_col,  decompECA_vars%w_scalar_col,           &
+         cnstate_vars, k_decay(centurybgc_vars%lid_minp_secondary_to_solp_reac, bounds%begc:bounds%endc, 1:ubj), &
+         k_decay(centurybgc_vars%lid_minp_secp_to_occlude_reac, bounds%begc:bounds%endc, 1:ubj))
 
     !do ode integration and update state variables for each layer
     do j = lbj, ubj
@@ -1359,7 +1362,7 @@ contains
          lid_plant_minn_no3_up_reac=> centurybgc_vars%lid_plant_minn_no3_up_reac , &
          lid_plant_minp_up_reac=> centurybgc_vars%lid_plant_minp_up_reac , &
          lid_minp_solution     => centurybgc_vars%lid_minp_solution      , &
-         lid_minp_solution_reac=> centurybgc_vars%lid_minp_solution_reac , &
+         lid_minp_solution_to_secp_reac=> centurybgc_vars%lid_minp_solution_to_secp_reac , &
          nelms              => centurybgc_vars%nelms                     , &
          lid_msurf_compet   => ncompete_vars%lid_msurf_compet            , &
          lid_decomp_compet  => ncompete_vars%lid_decomp_compet           , &
@@ -1367,13 +1370,15 @@ contains
          vcompet_minn       => ncompete_vars%vcompet_minn                , &
          vcompet_minp       => ncompete_vars%vcompet_minp                , &
          c_loc              => centurybgc_vars%c_loc                     , &
+         lid_minp_secondary_trc => centurybgc_vars%lid_minp_secondary_trc, &
          k_mat_minn         => ncompete_vars%k_mat_minn                  , &
          k_mat_minp         => ncompete_vars%k_mat_minp                  , &
          lid_plant_compet  => ncompete_vars%lid_plant_compet             , &
          vmax_plant_nh4b     => ncompete_vars%vmax_plant_nh4b            , &
          vmax_plant_no3b     => ncompete_vars%vmax_plant_no3b            , &
          vmax_plant_minpb    => ncompete_vars%vmax_plant_minpb           , &
-         vmax_minsurf_pb    => ncompete_vars%vmax_minsurf_pb               &
+         vmax_minsurf_pb    => ncompete_vars%vmax_minsurf_pb             , &
+         vcompet_minp_cap   => ncompete_vars%vcompet_minp_cap              &
          )
 
 
@@ -1381,6 +1386,8 @@ contains
       call ecacomplex_cell_norm(k_mat_minn(:,1:ncompets),(/ystate(lid_nh4),ystate(lid_no3)/),&
          vcompet_minn(1:ncompets),siej_cell_norm_minn)
 
+      !obtain the available mineral surface for area competition
+      vcompet_minp(lid_msurf_compet) = vcompet_minp_cap - ystate(lid_minp_secondary_trc)
       call ecacomplex_cell_norm(k_mat_minp(1:ncompets),ystate(lid_minp_solution),&
          vcompet_minp(1:ncompets),siej_cell_norm_minp)
 
@@ -1426,12 +1433,12 @@ contains
       ireac =lid_plant_minp_up_reac
       reaction_rates(ireac) = siej_cell_norm_minp(lid_plant_compet) * vcompet_minp(lid_plant_compet) * vmax_plant_minpb
 
-
       !reaction rates for secondary p formation
       !secondary p formation is computed using the ECA formulation, with a first order rate from
       !the complexed form
-      ireac = lid_minp_solution_reac
-      reaction_rates(ireac) = reaction_rates(ireac) * siej_cell_norm_minp(lid_minsrf_compet) * vcompet_minp(lid_minsrf_compet) * vmax_minsurf_pb
+      ireac = lid_minp_solution_to_secp_reac
+      reaction_rates(ireac) = reaction_rates(ireac) * siej_cell_norm_minp(lid_minsrf_compet) * &
+         vcompet_minp(lid_minsrf_compet) * vmax_minsurf_pb
 
     end associate
   end subroutine apply_ECA_nutrient_regulation

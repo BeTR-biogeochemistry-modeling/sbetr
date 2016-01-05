@@ -78,9 +78,9 @@ module PlantSoilnutrientFluxType
 
 
     real(r8), pointer :: km_minsurf_minnh4_vr_col                  (:,:)   !mineral NH4 adsorption affinity
-
+    real(r8), pointer :: vmax_minsurf_minnh4_vr_col                    (:,:)
     real(r8), pointer :: r_adsorp_minp_cap_vr_col                  (:,:)   !mineral adsorption capacity, this interacts with secondary P
-    real(r8), pointer :: r_adsorp_nh4_cap_vr_col                    (:,:)   !mineral adsorption capacity, this assumes equilibrium adsorption
+    real(r8), pointer :: r_adsorp_nh4_cap_vr_col                   (:,:)   !mineral adsorption capacity, this assumes equilibrium adsorption
     real(r8), pointer :: kd_desorp_minp_vr_col                     (:,:)   !desorption parameter, 1/s
     real(r8), pointer :: plant_minn_nh4_uptake_km_vr_patch         (:,:)   !
     real(r8), pointer :: plant_minn_no3_uptake_km_vr_patch         (:,:)   !
@@ -90,6 +90,7 @@ module PlantSoilnutrientFluxType
 !    real(r8), pointer :: decomp_minn_no3_uptake_km_vr_patch         (:,:)   ! place holder
 !    real(r8), pointer :: decomp_minp_uptake_km_vr_patch             (:,:)   ! place holder
 
+    real(r8), pointer :: vmax_minsurf_minp_vr_col                    (:,:)
     real(r8), pointer :: km_minsurf_minp_vr_col                    (:,:)   !mineral P adsorption affinity
     real(r8), pointer :: plant_minp_active_yield_flx_col             (:)    !column level mineral phosphorus yeild from soil bgc calculation
     real(r8), pointer :: plant_minp_uptake_vmax_vr_patch           (:,:)
@@ -194,8 +195,10 @@ module PlantSoilnutrientFluxType
 !    allocate(this%decomp_minn_no3_uptake_km_vr_patch(begp:endp,1:nlevdecomp_full)); this%decomp_minn_no3_uptake_km_vr_patch(:,:) = nan
 !    allocate(this%decomp_minp_uptake_km_vr_patch(begp:endp,1:nlevdecomp_full)); this%decomp_minp_uptake_km_vr_patch(:,:) = nan
 
-    allocate(this%plant_totn_demand_flx_col          (begc:endc          )) ; this%plant_totn_demand_flx_col          (:)   = nan
+    allocate(this%vmax_minsurf_minnh4_vr_col (begc:endc, 1:nlevdecomp_full)); this%vmax_minsurf_minnh4_vr_col (:,:) = nan
+    allocate(this%vmax_minsurf_minp_vr_col (begc:endc, 1:nlevdecomp_full));   this%vmax_minsurf_minp_vr_col (:,:) = nan
 
+    allocate(this%plant_totn_demand_flx_col          (begc:endc          )) ; this%plant_totn_demand_flx_col          (:)   = nan
     allocate(this%plant_frootsc_patch                (begc:endp          )) ; this%plant_frootsc_patch                (:)   = nan
     allocate(this%plant_effrootsc_vr_patch             (begc:endp,lbj:ubj  )) ; this%plant_effrootsc_vr_patch            (:,:)  = nan
 
@@ -772,7 +775,7 @@ module PlantSoilnutrientFluxType
   use MathfuncMod              , only : safe_div
   use PhosphorusFluxType       , only : phosphorusflux_type
   use PhosphorusStateType      , only : phosphorusstate_type
-
+  use clm_time_manager         , only : get_step_size
   ! arguments
   class(plantsoilnutrientflux_type) :: this
   type(bounds_type)    , intent(in)    :: bounds
@@ -782,23 +785,24 @@ module PlantSoilnutrientFluxType
   type(phosphorusstate_type)  , intent(in) :: phosphorusstate_vars
   type(phosphorusflux_type)   , intent(in) :: phosphorusflux_vars
 
-  real(r8) :: tot_p
+  real(r8) :: tot_p, dtime
   integer  :: np, c, j, fc
 
   associate(                                                           &
     biochem_pmin_vr      => phosphorusflux_vars%biochem_pmin_vr_col  , &
     decomp_ppools_vr     => phosphorusstate_vars%decomp_ppools_vr_col  &
   )
+  dtime =  get_step_size()
   do j = 1, ubj
     do fc = 1, num_soilc
       c = filter_soilc(fc)
-      this%biochem_pmin_vr_col(c,j)=biochem_pmin_vr(c,j)
+      this%biochem_pmin_vr_col(c,j)=biochem_pmin_vr(c,j)*dtime
       !divide biochem_pmin_vr flux to different organic p pools
       tot_p = sum(decomp_ppools_vr(c,j,1:ndecomp_pools))
 
       do np = 1,   ndecomp_pools
          this%bgc_ppool_ext_loss_vr_col(c,j,np) = this%bgc_ppool_ext_loss_vr_col(c,j,np) + &
-            biochem_pmin_vr(c,j) * safe_div(decomp_ppools_vr(c,j, np),tot_p)
+            this%biochem_pmin_vr_col(c,j) * safe_div(decomp_ppools_vr(c,j, np),tot_p)
       enddo
     enddo
   enddo
