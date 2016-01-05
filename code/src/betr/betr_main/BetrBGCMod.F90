@@ -288,8 +288,9 @@ contains
        call plantsoilnutrientflux_vars%summary(bounds, ubj, num_soilc,                                  &
             filter_soilc,                                                                               &
             col%dz(bounds%begc:bounds%endc,1:ubj),                                                      &
-            tracerflux_vars%tracer_flx_vtrans_col(bounds%begc:bounds%endc,betrtracer_vars%id_trc_nh3x), &
-            tracerflux_vars%tracer_flx_vtrans_col(bounds%begc:bounds%endc,betrtracer_vars%id_trc_no3x))
+            tracerflux_vars%tracer_flx_vtrans_vr_col(bounds%begc:bounds%endc,1:ubj,betrtracer_vars%id_trc_nh3x), &
+            tracerflux_vars%tracer_flx_vtrans_vr_col(bounds%begc:bounds%endc,1:ubj,betrtracer_vars%id_trc_no3x), &
+            tracerflux_vars%tracer_flx_vtrans_vr_col(bounds%begc:bounds%endc,1:ubj,betrtracer_vars%id_trc_p_sol))
     endif
   end subroutine run_betr_one_step_without_drainage
 
@@ -659,6 +660,7 @@ contains
          aqu2bulkcef_mobile_col   => tracercoeff_vars%aqu2bulkcef_mobile_col        , & !
          tracer_flx_leaching      => tracerflux_vars%tracer_flx_leaching_col        , & !
          tracer_flx_vtrans        => tracerflux_vars%tracer_flx_vtrans_col          , & !
+         tracer_flx_vtrans_vr     => tracerflux_vars%tracer_flx_vtrans_vr_col       , & !
          tracer_flx_infl          => tracerflux_vars%tracer_flx_infl_col              & !
          )
       !allocate memories
@@ -778,7 +780,7 @@ contains
                        update_col,                                                     &
                        halfdt_col,                                                     &
                        tracer_conc_mobile_col(bounds%begc:bounds%endc, lbj:ubj,trcid), &
-                       transp_mass_vr(bounds%begc:bounds%endc, lbj:ubj, k), transp_mass(:,k), &
+                       transp_mass_vr(bounds%begc:bounds%endc, lbj:ubj, k)           , &
                        transp_mass(bounds%begc:bounds%endc, k))
                endif
             enddo
@@ -839,6 +841,7 @@ contains
       deallocate(adv_trc_group)
       deallocate(err_tracer   )
       deallocate(transp_mass  )
+      deallocate(transp_mass_vr)
       deallocate(leaching_mass)
       deallocate(inflx_top    )
       deallocate(inflx_bot    )
@@ -1354,8 +1357,8 @@ contains
 
   !-------------------------------------------------------------------------------
   subroutine calc_root_uptake_as_perfect_sink(bounds, lbj, ubj,  num_soilc, filter_soilc, &
-       dtime_loc, dz, qflx_rootsoi,                                                       &
-       update_col, halfdt_col, tracer_conc, transp_mass_vr, transp_mass)
+       dtime_loc, dz, qflx_rootsoi, update_col, halfdt_col, tracer_conc, transp_mass_vr , &
+       transp_mass)
     !
     ! !DESCRIPTION:
     ! calculate plant aqueous tracer uptake through transpiration into xylem

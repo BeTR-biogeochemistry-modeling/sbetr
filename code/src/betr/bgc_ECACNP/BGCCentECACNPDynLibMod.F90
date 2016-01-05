@@ -1369,6 +1369,8 @@ contains
          nelm                           => centurybgc_vars%nelms                             , & !
          c_loc                          => centurybgc_vars%c_loc                             , & !
          n_loc                          => centurybgc_vars%n_loc                             , & !
+         p_loc                          => centurybgc_vars%p_loc                             , & !
+         lid_minp_solution              => centurybgc_vars%lid_minp_solution                 , & !
          id_trc_nh3x                    => betrtracer_vars%id_trc_nh3x                       , & !
          id_trc_no3x                    => betrtracer_vars%id_trc_no3x                       , & !
          ngwmobile_tracers              => betrtracer_vars%ngwmobile_tracers                 , & !
@@ -1468,6 +1470,7 @@ contains
          nelm                    => centurybgc_vars%nelms                       , & !
          c_loc                   => centurybgc_vars%c_loc                       , & !
          n_loc                   => centurybgc_vars%n_loc                       , & !
+         p_loc                   => centurybgc_vars%p_loc                       , & !
          tracer_flx_netpro_vr    => tracerflux_vars%tracer_flx_netpro_vr_col    , & !
          bgc_cpool_ext_inputs_vr =>  plantsoilnutrientflux_vars%bgc_cpool_ext_inputs_vr_col , & !
          bgc_npool_ext_inputs_vr =>  plantsoilnutrientflux_vars%bgc_npool_ext_inputs_vr_col , & !
@@ -1482,7 +1485,7 @@ contains
 
                yf((k-1)*nelm+c_loc,c,j) = yf((k-1)*nelm+c_loc,c,j) + bgc_cpool_ext_inputs_vr(c,j,k)/catomw
                yf((k-1)*nelm+n_loc,c,j) = yf((k-1)*nelm+n_loc,c,j) + bgc_npool_ext_inputs_vr(c,j,k)/natomw
-               yf((k-1)*nelm+p_loc,c,j) = yf((k-1)*nelm+p_loc,c,j) + bgc_ppool_ext_inputs_vr(c,j,k)/patomw   
+               yf((k-1)*nelm+p_loc,c,j) = yf((k-1)*nelm+p_loc,c,j) + bgc_ppool_ext_inputs_vr(c,j,k)/patomw
 
             enddo
          enddo

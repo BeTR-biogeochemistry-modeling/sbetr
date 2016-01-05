@@ -689,7 +689,7 @@ module PlantSoilnutrientFluxType
   integer  :: p, j, fc, c
 
   associate(                                                     &
-    rootr_pft         =>    soilstate_vars%rootr_patch         , & ! Input:  [real(r8) (:,:) ]  effective fraction of roots in each soil layer
+    rootr_pft         =>    soilstate_vars%rootfr_patch         , & ! Input:  [real(r8) (:,:) ]  effective fraction of roots in each soil layer
     qflx_tran_veg_pft =>    waterflux_vars%qflx_tran_veg_patch   &
   )
 
