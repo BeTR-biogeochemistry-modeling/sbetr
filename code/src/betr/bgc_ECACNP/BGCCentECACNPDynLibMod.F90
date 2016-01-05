@@ -1418,7 +1418,7 @@ contains
             c = filter_soilc(fc)
             y0(lid_nh4, c, j) = y0(lid_nh4, c, j) + sminn_nh4_input_vr(c,j)/natomw
             y0(lid_no3, c, j) = y0(lid_no3, c, j) + sminn_no3_input_vr(c,j)/natomw
-            y0(lid_minp_solution, c, j) = y0(lid_minp_solution, c, j) + sminp_input_vr(c,j)/patomw
+            y0(lid_minp_solution, c, j) = y0(lid_minp_solution, c, j) + (sminp_input_vr(c,j) + biochem_pmin_vr_col(c,j))/patomw
 
             tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_no3x   ) =      &
                  tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_no3x   ) + &

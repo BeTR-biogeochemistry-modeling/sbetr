@@ -660,13 +660,13 @@ contains
     cn_ratios(:,:,:) = nan
     cp_ratios(:,:,:) = nan
 
+
     !initialize the state vector
     call init_state_vector(bounds, lbj, ubj, num_soilc, filter_soilc, jtops, &
          centurybgc_vars%nstvars, tracerstate_vars, betrtracer_vars, centurybgc_vars, y0)
 
     !update the initial vector from external input
     !calculate elemental stoichiometry for different om pools and add mineral nutrient input from other than decaying process
-
 
     call bgcstate_ext_update_bfdecomp(bounds, 1, ubj, num_soilc, filter_soilc, &
          plantsoilnutrientflux_vars, centurybgc_vars, betrtracer_vars, tracerflux_vars, y0, cn_ratios, cp_ratios)
@@ -949,8 +949,8 @@ contains
     type(carbonstate_type)               , intent(inout) :: carbonstate_vars
     type(nitrogenflux_type)              , intent(inout) :: nitrogenflux_vars
     type(nitrogenstate_type)             , intent(inout) :: nitrogenstate_vars
-    type(phosphorusstate_type) , intent(inout) :: phosphorusstate_vars
-    type(phosphorusflux_type)  , intent(inout) :: phosphorusflux_vars
+    type(phosphorusstate_type)           , intent(inout) :: phosphorusstate_vars
+    type(phosphorusflux_type)            , intent(inout) :: phosphorusflux_vars
 
     call assign_nitrogen_hydroloss(bounds, num_soilc, filter_soilc, &
          tracerflux_vars, nitrogenflux_vars, phosphorusflux_vars, &

@@ -124,11 +124,12 @@ module PlantSoilnutrientFluxType
      procedure , public  :: summary
      procedure , public  :: calc_nutrient_uptake_kinetic_pars
      procedure , public  :: init_plant_soil_feedback
+     procedure , public  :: update_plant_nutrient_active_yield_patch
+     procedure , public  :: do_om_phosphorus_bioextraction
      procedure , private :: InitAllocate
      procedure , private :: InitHistory
      procedure , private :: InitCold
      procedure , private :: sub_froot_prof
-     procedure , public  :: update_plant_nutrient_active_yield_patch
      procedure , private :: transp_col2patch
   end type plantsoilnutrientflux_type
 
@@ -552,10 +553,6 @@ module PlantSoilnutrientFluxType
     enddo
   enddo
 
-
-
-
-
   end associate
   end subroutine calc_nutrient_uptake_kinetic_pars
 
@@ -715,7 +712,7 @@ module PlantSoilnutrientFluxType
   end subroutine transp_col2patch
   !-------------------------------------------------------------------------------
 
-    subroutine update_plant_nutrient_active_yield_patch(this, bounds, num_soilc, filter_soilc)
+  subroutine update_plant_nutrient_active_yield_patch(this, bounds, num_soilc, filter_soilc)
 
     use clm_varpar               , only : maxpatch_pft
     use clm_varpar               , only : nlevtrc_soil
@@ -763,5 +760,48 @@ module PlantSoilnutrientFluxType
       enddo
     enddo
 
-    end subroutine update_plant_nutrient_active_yield_patch
+  end subroutine update_plant_nutrient_active_yield_patch
+!-------------------------------------------------------------------------------
+  subroutine  do_om_phosphorus_bioextraction(this, bounds, ubj, num_soilc, filter_soilc, &
+    phosphorusstate_vars, phosphorusflux_vars)
+
+  !
+  ! USES
+
+  use clm_varpar               , only : ndecomp_pools
+  use MathfuncMod              , only : safe_div
+  use PhosphorusFluxType       , only : phosphorusflux_type
+  use PhosphorusStateType      , only : phosphorusstate_type
+
+  ! arguments
+  class(plantsoilnutrientflux_type) :: this
+  type(bounds_type)    , intent(in)    :: bounds
+  integer              , intent(in)    :: num_soilc
+  integer              , intent(in)    :: filter_soilc(:)
+  integer              , intent(in)    :: ubj
+  type(phosphorusstate_type)  , intent(in) :: phosphorusstate_vars
+  type(phosphorusflux_type)   , intent(in) :: phosphorusflux_vars
+
+  real(r8) :: tot_p
+  integer  :: np, c, j, fc
+
+  associate(                                                           &
+    biochem_pmin_vr      => phosphorusflux_vars%biochem_pmin_vr_col  , &
+    decomp_ppools_vr     => phosphorusstate_vars%decomp_ppools_vr_col  &
+  )
+  do j = 1, ubj
+    do fc = 1, num_soilc
+      c = filter_soilc(fc)
+      this%biochem_pmin_vr_col(c,j)=biochem_pmin_vr(c,j)
+      !divide biochem_pmin_vr flux to different organic p pools
+      tot_p = sum(decomp_ppools_vr(c,j,1:ndecomp_pools))
+
+      do np = 1,   ndecomp_pools
+         this%bgc_ppool_ext_loss_vr_col(c,j,np) = this%bgc_ppool_ext_loss_vr_col(c,j,np) + &
+            biochem_pmin_vr(c,j) * safe_div(decomp_ppools_vr(c,j, np),tot_p)
+      enddo
+    enddo
+  enddo
+  end associate
+  end subroutine do_om_phosphorus_bioextraction
 end module PlantSoilnutrientFluxType
