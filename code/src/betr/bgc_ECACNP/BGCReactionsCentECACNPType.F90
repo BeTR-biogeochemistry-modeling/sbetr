@@ -728,10 +728,11 @@ contains
 
 
     !calulate kinetic parameter profile for plant nutrient uptake
-    call plantsoilnutrientflux_vars%calc_nutrient_uptake_kinetic_pars(bounds, num_soilc, filter_soilc, &
-         num_soilp, filter_soilp, decompECA_vars%t_scalar_col,  decompECA_vars%w_scalar_col,           &
-         cnstate_vars, k_decay(centurybgc_vars%lid_minp_secondary_to_solp_reac, bounds%begc:bounds%endc, 1:ubj), &
-         k_decay(centurybgc_vars%lid_minp_secp_to_occlude_reac, bounds%begc:bounds%endc, 1:ubj))
+    call plantsoilnutrientflux_vars%calc_nutrient_uptake_kinetic_pars(bounds, ubj, num_soilc, filter_soilc, &
+          num_soilp, filter_soilp, decompECA_vars%t_scalar_col(bounds%begc:bounds%endc, 1:ubj),             &
+          decompECA_vars%w_scalar_col(bounds%begc:bounds%endc, 1:ubj), cnstate_vars,                        &
+          k_decay(centurybgc_vars%lid_minp_secondary_to_solp_reac, bounds%begc:bounds%endc, 1:ubj),         &
+          k_decay(centurybgc_vars%lid_minp_secp_to_occlude_reac, bounds%begc:bounds%endc, 1:ubj))
 
     !do ode integration and update state variables for each layer
     do j = lbj, ubj

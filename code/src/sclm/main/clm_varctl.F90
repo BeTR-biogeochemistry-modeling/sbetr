@@ -39,7 +39,8 @@ module clm_varctl
   logical, public :: use_dynroot = .false. ! true => use dynamic root module
 
   character(len=fname_len), public :: paramfile  = ' '        ! ASCII data file with PFT physiological constants
-  logical, public :: use_ed = .false.            ! true => use  ED  
+  character(len=fname_len), public :: fsoilordercon    = ' '  ! ASCII data file with soil order dependent  constants  
+  logical, public :: use_ed = .false.            ! true => use  ED
   character(len=15),public :: nu_com
   public :: CNAllocate_Carbon_only
   public :: cnallocate_carbon_only_set

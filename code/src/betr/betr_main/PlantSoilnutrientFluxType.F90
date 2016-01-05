@@ -475,8 +475,8 @@ module PlantSoilnutrientFluxType
 
 !--------------------------------------------------------------------------------
 
-  subroutine calc_nutrient_uptake_kinetic_pars(this, bounds, num_soilc, filter_soilc, &
-       num_soilp, filter_soilp, t_scalar, w_scalar, cnstate_vars)
+  subroutine calc_nutrient_uptake_kinetic_pars(this, bounds, ubj, num_soilc, filter_soilc, &
+       num_soilp, filter_soilp, t_scalar, w_scalar, cnstate_vars, k_secp_to_solp, k_secp_to_occlp)
   !
   ! !DESCRIPTION:
   ! diagnose the vmax for nutrient uptake, with the vision to use ECA or something alike.
@@ -485,35 +485,47 @@ module PlantSoilnutrientFluxType
   use subgridAveMod            , only : p2c
   use GridcellType             , only : grc
   use CNStateType              , only : cnstate_type
-  use clm_varpar               , only : nlevtrc_soil
+  use clm_varcon               , only : secspday
   use pftvarcon                , only : noveg
+  use soilorder_varcon         , only : r_desorp, r_occlude
+  use clm_time_manager         , only : get_days_per_year, get_step_size
   !
   ! !ARGUMENTS:
   class(plantsoilnutrientflux_type) :: this
   type(bounds_type) , intent(in)    :: bounds
+  integer           , intent(in)    :: ubj
   integer           , intent(in)    :: num_soilc
   integer           , intent(in)    :: filter_soilc(:)
   integer           , intent(in)    :: num_soilp
   integer           , intent(in)    :: filter_soilp(:)
   real(r8)          , intent(in)    :: t_scalar(bounds%begc: , 1: )
   real(r8)          , intent(in)    :: w_scalar(bounds%begc: , 1: )
+  real(r8)          , intent(inout) :: k_secp_to_solp(bounds%begc: , 1: )
+  real(r8)          , intent(inout) :: k_secp_to_occlp(bounds%begc: , 1: )
   type(cnstate_type), intent(in)    :: cnstate_vars
 
 
   ! !LOCAL VARIABLES:
-  real(r8) :: Vmax_minn = 1.e-6_r8  ! gN/gC/s
   integer  :: p, j, fc, c
   real(r8) :: tws
   real(r8) :: locrbc   !local root biomassc
+  real(r8) :: dt, dtd, dayspyr
+  real(r8) :: r_desorp_c, rr
+  real(r8) :: r_occlude_c
 
   !calculate root nitrogen uptake potential
+  SHR_ASSERT_ALL((ubound(t_scalar) == (/bounds%endc, ubj/)), errMsg(__FILE__,__LINE__))
+  SHR_ASSERT_ALL((ubound(w_scalar) == (/bounds%endc, ubj/)), errMsg(__FILE__,__LINE__))
+  SHR_ASSERT_ALL((ubound(k_secp_to_solp) == (/bounds%endc, ubj/)), errMsg(__FILE__,__LINE__))
+  SHR_ASSERT_ALL((ubound(k_secp_to_occlp) == (/bounds%endc, ubj/)), errMsg(__FILE__,__LINE__))
 
   associate(                                                           &
+    isoilorder                   => cnstate_vars%isoilorder          , &
     cn_scalar                    => cnstate_vars%cn_scalar           , &
     cp_scalar                    => cnstate_vars%cp_scalar             &
   )
 
-  do j = 1, nlevtrc_soil
+  do j = 1, ubj
     do fc = 1, num_soilc
       c =filter_soilc(fc)
       tws = t_scalar(c,j) *w_scalar(c,j)
@@ -555,6 +567,33 @@ module PlantSoilnutrientFluxType
 
     enddo
   enddo
+
+
+  !desorption and occlusion parameters
+  dayspyr = get_days_per_year()
+
+  ! set time steps
+  dt = real( get_step_size(), r8 )
+  dtd = dt/(30._r8*secspday)
+
+
+  do j = 1, ubj
+    do fc = 1, num_soilc
+      c = filter_soilc(fc)
+      !desorption rate from secondary p to dissolvable p
+      r_desorp_c = r_desorp( isoilorder(c) )
+      rr=-log(1._r8-r_desorp_c)
+      r_desorp_c = 1._r8-exp(-rr*dtd)
+      k_secp_to_solp(bounds%begc: , 1: ) = r_desorp_c/dt
+
+      !occlusion rate parameter
+      r_occlude_c = r_occlude( isoilorder(c) )
+      rr=-log(1._r8-r_occlude_c)
+      r_occlude_c = 1._r8-exp(-rr*dtd)
+      k_secp_to_occlp(bounds%begc: , 1: ) = r_occlude_c/dt
+    enddo
+  enddo
+
 
   end associate
   end subroutine calc_nutrient_uptake_kinetic_pars

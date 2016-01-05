@@ -1,6 +1,6 @@
 module CNStateType
   use clm_varcon     , only : spval, ispval, c14ratio
-  use shr_kind_mod       , only : r8 => shr_kind_r8
+  use shr_kind_mod   , only : r8 => shr_kind_r8
   use decompMod      , only : bounds_type
   use clm_varpar     , only : nlevdecomp_full
 implicit none
@@ -8,8 +8,8 @@ implicit none
   type, public :: cnstate_type
      real(r8), pointer :: rc14_atm_patch               (:)     ! patch C14O2/C12O2 in atmosphere
      real(r8), pointer :: froot_prof_patch             (:,:)
-     real(r8) , pointer :: nfixation_prof_col          (:,:)   ! col (1/m) profile for N fixation additions
-
+     real(r8), pointer :: nfixation_prof_col          (:,:)   ! col (1/m) profile for N fixation additions
+     integer  ,pointer  :: isoilorder                  (:)     ! col global soil order data
      real(r8), pointer :: cn_scalar                    (:)     ! cn scaling factor for root n uptake kinetics (no units)
      real(r8), pointer :: cp_scalar                    (:)     ! cp scaling factor for root p uptake kinetics (no units)
   contains
@@ -54,6 +54,7 @@ contains
     allocate(this%rc14_atm_patch              (begp:endp)) ;    this%rc14_atm_patch              (:) = nan
     allocate(this%froot_prof_patch    (begp:endp,1:nlevdecomp_full)) ; this%froot_prof_patch    (:,:) = spval
     allocate(this%nfixation_prof_col  (begc:endc,1:nlevdecomp_full)) ; this%nfixation_prof_col  (:,:) = spval
+    allocate(this%isoilorder            (begc:endc))                 ;
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------
