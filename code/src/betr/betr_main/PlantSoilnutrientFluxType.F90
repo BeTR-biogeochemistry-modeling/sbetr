@@ -33,6 +33,8 @@ module PlantSoilnutrientFluxType
 
     real(r8), pointer :: plant_minn_passive_yield_flx_col            (:)
     real(r8), pointer :: plant_minp_passive_yield_flx_col            (:)
+    real(r8), pointer :: plant_minn_yield_flx_patch                  (:)
+    real(r8), pointer :: plant_minp_yield_flx_patch                  (:)
     real(r8), pointer :: plant_minn_active_yield_flx_vr_col          (:,:)  !patch level mineral nitrogen yeild from soil bgc calculation
     real(r8), pointer :: plant_minn_active_yield_flx_col             (:)    !column level mineral nitrogen yeild from soil bgc calculation
 
@@ -49,7 +51,6 @@ module PlantSoilnutrientFluxType
     real(r8), pointer :: tempavg_agnpp_patch                         (:)     ! (gC/m2/s) temp. average aboveground NPP
     real(r8), pointer :: tempavg_bgnpp_patch                         (:)     ! (gC/m2/s) temp. average belowground NPP
 
-    real(r8), pointer :: plant_totn_demand_flx_col                   (:)    !column level total nitrogen demand, g N/m2/s
     real(r8), pointer :: rr_col                                      (:)    ! column (gC/m2/s) root respiration (fine root MR + total root GR) (p2c)
     real(r8), pointer :: bgc_cpool_ext_loss_vr_col                 (:, :, :)  ! col-level extneral organic carbon loss gC/m3 /time step
     real(r8), pointer :: bgc_cpool_ext_inputs_vr_col               (:, :, :)  ! col-level extneral organic carbon input gC/m3 /time step
@@ -198,7 +199,6 @@ module PlantSoilnutrientFluxType
     allocate(this%vmax_minsurf_minnh4_vr_col (begc:endc, 1:nlevdecomp_full)); this%vmax_minsurf_minnh4_vr_col (:,:) = nan
     allocate(this%vmax_minsurf_minp_vr_col (begc:endc, 1:nlevdecomp_full));   this%vmax_minsurf_minp_vr_col (:,:) = nan
 
-    allocate(this%plant_totn_demand_flx_col          (begc:endc          )) ; this%plant_totn_demand_flx_col          (:)   = nan
     allocate(this%plant_frootsc_patch                (begc:endp          )) ; this%plant_frootsc_patch                (:)   = nan
     allocate(this%plant_effrootsc_vr_patch             (begc:endp,lbj:ubj  )) ; this%plant_effrootsc_vr_patch            (:,:)  = nan
 
@@ -263,6 +263,9 @@ module PlantSoilnutrientFluxType
    allocate(this%decomp_minp_uptake_km_vr_col    (begc:endc,1:nlevdecomp_full));this%decomp_minp_uptake_km_vr_col    (:,:) = nan
 
    allocate(this%tranp_wt_patch(begc:endc,1:nlevdecomp_full)); this%tranp_wt_patch (:,:) = nan
+   allocate(this%plant_minn_yield_flx_patch(begp:endp)) ; this%plant_minn_yield_flx_patch(:) = nan
+   allocate(this%plant_minp_yield_flx_patch(begp:endp)) ; this%plant_minp_yield_flx_patch(:) = nan
+
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------
@@ -312,10 +315,6 @@ module PlantSoilnutrientFluxType
          avgflag='A', long_name='plant nitrogen passive uptake flux from soil', &
          ptr_col=this%plant_minn_passive_yield_flx_col)
 
-    this%plant_totn_demand_flx_col(begc:endc) = spval
-    call hist_addfld1d (fname='PLANT_TOTN_DEMAND_FLX', units='gN/m^2/s',  &
-            avgflag='A', long_name='plant nitrogen demand flux', &
-            ptr_col=this%plant_totn_demand_flx_col, default='inactive')
 
   end subroutine InitHistory
 
@@ -349,7 +348,6 @@ module PlantSoilnutrientFluxType
     do fi = 1,num_column
        i = filter_column(fi)
        this%plant_minn_passive_yield_flx_col(i)  = value_column
-       this%plant_totn_demand_flx_col(i)         = value_column
     enddo
 
   end subroutine SetValues
@@ -471,6 +469,17 @@ module PlantSoilnutrientFluxType
     enddo
   enddo
 
+  do fc = 1, num_soilc
+    do pi = 1,maxpatch_pft
+      if (pi <=  col%npfts(c)) then
+        p = col%pfti(c) + pi - 1
+        if (pft%active(p)) then
+          this%plant_minn_yield_flx_patch(p) = this%plant_minn_passive_yield_flx_patch(p) + this%plant_minn_active_yield_flx_patch(p)
+          this%plant_minp_yield_flx_patch(p) = this%plant_minp_passive_yield_flx_patch(p) + this%plant_minp_active_yield_flx_patch(p)
+        endif
+      endif
+    enddo
+  enddo
   end subroutine summary
 
 !--------------------------------------------------------------------------------
