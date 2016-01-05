@@ -25,19 +25,28 @@ module PlantSoilnutrientFluxType
   type, public :: plantsoilnutrientflux_type
 
     real(r8), pointer :: plant_minn_active_yield_flx_patch           (:)    !patch level mineral nitrogen yeild from soil bgc calculation
-    real(r8), pointer :: plant_minn_active_yield_flx_vr_patch        (:,:)  !patch level mineral nitrogen yeild from soil bgc calculation
-    real(r8), pointer :: plant_minn_passive_yield_flx_patch          (:)    !patch level mineral nitrogen yeild from soil bgc calculation
     real(r8), pointer :: plant_minp_active_yield_flx_patch           (:)    !column level mineral phosphorus yeild from soil bgc calculation
-    real(r8), pointer :: plant_minp_active_yield_flx_vr_patch        (:,:)    !column level mineral phosphorus yeild from soil bgc calculation
+
+    real(r8), pointer :: plant_minn_passive_yield_flx_patch          (:)    !patch level mineral nitrogen yeild from soil bgc calculation
     real(r8), pointer :: plant_minp_passive_yield_flx_patch          (:)
+
+    real(r8), pointer :: plant_minn_yield_flx_patch                  (:)
+    real(r8), pointer :: plant_minp_yield_flx_patch                  (:)
+
+    real(r8), pointer :: plant_minn_active_yield_flx_vr_patch        (:,:)  !patch level mineral nitrogen yeild from soil bgc calculation
+    real(r8), pointer :: plant_minp_active_yield_flx_vr_patch        (:,:)    !column level mineral phosphorus yeild from soil bgc calculation
+
 
     real(r8), pointer :: plant_minn_passive_yield_flx_col            (:)
     real(r8), pointer :: plant_minp_passive_yield_flx_col            (:)
-    real(r8), pointer :: plant_minn_yield_flx_patch                  (:)
-    real(r8), pointer :: plant_minp_yield_flx_patch                  (:)
-    real(r8), pointer :: plant_minn_active_yield_flx_vr_col          (:,:)  !patch level mineral nitrogen yeild from soil bgc calculation
-    real(r8), pointer :: plant_minn_active_yield_flx_col             (:)    !column level mineral nitrogen yeild from soil bgc calculation
 
+    real(r8), pointer :: plant_minn_active_yield_flx_col             (:)    !column level mineral nitrogen yeild from soil bgc calculation
+    real(r8), pointer :: plant_minp_active_yield_flx_col             (:)    !column level mineral phosphorus yeild from soil bgc calculation
+
+    real(r8), pointer :: plant_minn_active_nh4_yield_flx_vr_col     (:,:)
+    real(r8), pointer :: plant_minn_active_no3_yield_flx_vr_col     (:,:)
+    real(r8), pointer :: plant_minn_active_yield_flx_vr_col          (:,:)  !patch level mineral nitrogen yeild from soil bgc calculation
+    real(r8), pointer :: plant_minp_active_yield_flx_vr_col        (:,:)    !column level mineral phosphorus yeild from soil bgc calculation
 
     real(r8), pointer :: decomp_effc_vr_patch                         (:,:)  !fine root for nutrient uptake
 
@@ -77,7 +86,6 @@ module PlantSoilnutrientFluxType
     real(r8), pointer :: smin_nh4_to_plant_vr_col                  (:,:)   ! col vertically-resolved plant uptake of soil NH4 (gN/m3/s)
     real(r8), pointer :: supplement_to_sminn_vr_col                (:,:)   ! col vertically-resolved supplemental N supply (gN/m3/s)
 
-
     real(r8), pointer :: km_minsurf_minnh4_vr_col                  (:,:)   !mineral NH4 adsorption affinity
     real(r8), pointer :: vmax_minsurf_minnh4_vr_col                    (:,:)
     real(r8), pointer :: r_adsorp_minp_cap_vr_col                  (:,:)   !mineral adsorption capacity, this interacts with secondary P
@@ -93,7 +101,6 @@ module PlantSoilnutrientFluxType
 
     real(r8), pointer :: vmax_minsurf_minp_vr_col                    (:,:)
     real(r8), pointer :: km_minsurf_minp_vr_col                    (:,:)   !mineral P adsorption affinity
-    real(r8), pointer :: plant_minp_active_yield_flx_col             (:)    !column level mineral phosphorus yeild from soil bgc calculation
     real(r8), pointer :: plant_minp_uptake_vmax_vr_patch           (:,:)
 
     real(r8), pointer :: vmax_plant_nh4b_vr_col                      (:,:)
@@ -112,9 +119,6 @@ module PlantSoilnutrientFluxType
     real(r8), pointer :: decomp_compet_minn_vr_col                    (:,:)
     real(r8), pointer :: decomp_compet_minp_vr_col                    (:,:)
 
-    real(r8), pointer :: plant_minn_active_nh4_yield_flx_vr_col     (:,:)
-    real(r8), pointer :: plant_minn_active_no3_yield_flx_vr_col     (:,:)
-    real(r8), pointer :: plant_minp_active_yield_flx_vr_col        (:,:)    !column level mineral phosphorus yeild from soil bgc calculation
     real(r8), pointer :: tranp_wt_patch                            (:,:)    !fraction of transpiration contributed by different pfts
     real(r8) :: decomp_km_nh4
     real(r8) :: decomp_km_no3
@@ -123,7 +127,7 @@ module PlantSoilnutrientFluxType
 
      procedure , public  :: Init
      procedure , public  :: SetValues
-     procedure , public  :: summary
+     procedure , public  :: nutrient_flx_summary
      procedure , public  :: calc_nutrient_uptake_kinetic_pars
      procedure , public  :: init_plant_soil_feedback
      procedure , public  :: update_plant_nutrient_active_yield_patch
@@ -233,7 +237,6 @@ module PlantSoilnutrientFluxType
     allocate(this%f_nit_vr_col                (begc:endc,1:nlevdecomp_full)) ; this%f_nit_vr_col                     (:,:) = nan
     allocate(this%f_denit_vr_col              (begc:endc,1:nlevdecomp_full)) ; this%f_denit_vr_col                   (:,:) = nan
 
-
     allocate(this%km_minsurf_minnh4_vr_col   (begc:endc,1:nlevdecomp_full)) ; this%km_minsurf_minnh4_vr_col(:,:) = nan
     allocate(this%km_minsurf_minp_vr_col     (begc:endc,1:nlevdecomp_full)) ; this%km_minsurf_minp_vr_col  (:,:) = nan
     allocate(this%r_adsorp_minp_cap_vr_col       (begc:endc,1:nlevdecomp_full)) ; this%r_adsorp_minp_cap_vr_col    (:,:) = nan
@@ -309,13 +312,47 @@ module PlantSoilnutrientFluxType
          ptr_patch=this%plant_minn_passive_yield_flx_patch, default='inactive')
 
 
+    this%plant_minp_active_yield_flx_patch(begp:endp) = spval
+    call hist_addfld1d (fname='PLANT_MINP_ACTIVE_YIELD_FLX_PATCH', units='gP/m^2/s', &
+         avgflag='A', long_name='plant phosphorus active uptake flux from soil', &
+         ptr_patch=this%plant_minp_active_yield_flx_patch, default='inactive')
+
+    this%plant_minp_passive_yield_flx_patch(begp:endp) = spval
+    call hist_addfld1d (fname='PLANT_MINP_PASSIVE_YIELD_FLX_PATCH', units='gP/m^2/s', &
+         avgflag='A', long_name='plant phosphorus passive uptake flux from soil', &
+         ptr_patch=this%plant_minp_passive_yield_flx_patch, default='inactive')
+
 
     this%plant_minn_passive_yield_flx_col(begc:endc) = spval
     call hist_addfld1d (fname='PLANT_MINN_PASSIVE_YIELD_FLX_COL', units='gN/m^2/s', &
          avgflag='A', long_name='plant nitrogen passive uptake flux from soil', &
          ptr_col=this%plant_minn_passive_yield_flx_col)
 
+    this%plant_minn_active_yield_flx_col(begc:endc) = spval
+    call hist_addfld1d (fname='PLANT_MINN_ACTIVE_YIELD_FLX_COL', units='gN/m^2/s', &
+         avgflag='A', long_name='plant nitrogen active uptake flux from soil', &
+         ptr_col=this%plant_minn_active_yield_flx_col)
 
+    this%plant_minn_passive_yield_flx_col(begc:endc) = spval
+    call hist_addfld1d (fname='PLANT_MINP_PASSIVE_YIELD_FLX_COL', units='gP/m^2/s', &
+         avgflag='A', long_name='plant phosphorus passive uptake flux from soil', &
+         ptr_col=this%plant_minn_passive_yield_flx_col)
+
+    this%plant_minp_active_yield_flx_col(begc:endc) = spval
+    call hist_addfld1d (fname='PLANT_MINP_ACTIVE_YIELD_FLX_COL', units='gP/m^2/s', &
+         avgflag='A', long_name='plant phosphorus active uptake flux from soil', &
+         ptr_col=this%plant_minn_active_yield_flx_col)
+
+
+    this%f_nit_vr_col(begc:endc,:) = spval
+    call hist_addfld_decomp (fname='F_NIT'//trim(vr_suffix), units='gN/m^3/s', type2d='levdcmp', &
+         avgflag='A', long_name='nitrification flux', &
+         ptr_col=this%f_nit_vr_col)
+
+    this%f_denit_vr_col(begc:endc,:) = spval
+    call hist_addfld_decomp (fname='F_DENIT'//trim(vr_suffix), units='gN/m^3/s', type2d='levdcmp', &
+         avgflag='A', long_name='denitrification flux', &
+         ptr_col=this%f_denit_vr_col)
   end subroutine InitHistory
 
   !-----------------------------------------------------------------------
@@ -404,7 +441,7 @@ module PlantSoilnutrientFluxType
   end subroutine InitCold
 
   !-----------------------------------------------------------------------
-  subroutine summary(this, bounds, ubj,  num_soilc, filter_soilc, dz, &
+  subroutine nutrient_flx_summary(this, bounds, ubj,  num_soilc, filter_soilc, dz, &
      nh4_transp_vr, no3_transp_vr, minp_transp_vr)
   !
   ! !DESCRIPTION:
@@ -480,7 +517,7 @@ module PlantSoilnutrientFluxType
       endif
     enddo
   enddo
-  end subroutine summary
+  end subroutine nutrient_flx_summary
 
 !--------------------------------------------------------------------------------
 
@@ -813,7 +850,7 @@ module PlantSoilnutrientFluxType
 
   end subroutine update_plant_nutrient_active_yield_patch
 !-------------------------------------------------------------------------------
-  subroutine  do_om_phosphorus_bioextraction(this, bounds, ubj, num_soilc, filter_soilc, &
+  subroutine do_om_phosphorus_bioextraction(this, bounds, ubj, num_soilc, filter_soilc, &
     phosphorusstate_vars, phosphorusflux_vars)
 
   !

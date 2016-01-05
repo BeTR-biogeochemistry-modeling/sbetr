@@ -285,7 +285,7 @@ contains
     if (is_active_betr_bgc) then
 
        !update nitrogen storage pool
-       call plantsoilnutrientflux_vars%summary(bounds, ubj, num_soilc,                                  &
+       call plantsoilnutrientflux_vars%nutrient_flx_summary(bounds, ubj, num_soilc,                                  &
             filter_soilc,                                                                               &
             col%dz(bounds%begc:bounds%endc,1:ubj),                                                      &
             tracerflux_vars%tracer_flx_vtrans_vr_col(bounds%begc:bounds%endc,1:ubj,betrtracer_vars%id_trc_nh3x), &
