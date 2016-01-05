@@ -29,8 +29,10 @@ module PlantSoilnutrientFluxType
     real(r8), pointer :: plant_minn_passive_yield_flx_patch          (:)    !patch level mineral nitrogen yeild from soil bgc calculation
     real(r8), pointer :: plant_minp_active_yield_flx_patch           (:)    !column level mineral phosphorus yeild from soil bgc calculation
     real(r8), pointer :: plant_minp_active_yield_flx_vr_patch        (:,:)    !column level mineral phosphorus yeild from soil bgc calculation
+    real(r8), pointer :: plant_minp_passive_yield_flx_patch          (:)
 
     real(r8), pointer :: plant_minn_passive_yield_flx_col            (:)
+    real(r8), pointer :: plant_minp_passive_yield_flx_col            (:)
     real(r8), pointer :: plant_minn_active_yield_flx_vr_col          (:,:)  !patch level mineral nitrogen yeild from soil bgc calculation
     real(r8), pointer :: plant_minn_active_yield_flx_col             (:)    !column level mineral nitrogen yeild from soil bgc calculation
 
@@ -59,6 +61,7 @@ module PlantSoilnutrientFluxType
     real(r8), pointer :: bgc_npool_ext_loss_vr_col                 (:,:,:) !col extneral organic nitrogen loss, gN/m3/time step
     real(r8), pointer :: sminn_no3_input_vr_col                    (:,:)   !col no3 input, gN/m3/time step
     real(r8), pointer :: sminn_nh4_input_vr_col                    (:,:)   !col nh4 input, gN/m3/time step
+    real(r8), pointer :: sminp_input_vr_col                        (:,:)   !col minp input, gP/m3/time step
     real(r8), pointer :: biochem_pmin_vr_col                       (:,:)   ! col vertically-resolved total biochemical P mineralization (gP/m3/s)
 
     real(r8), pointer :: hr_vr_col                                 (:,:)   ! total vertically-resolved het. resp. from decomposing C pools (gC/m3/s)
@@ -110,7 +113,7 @@ module PlantSoilnutrientFluxType
     real(r8), pointer :: plant_minn_active_nh4_yield_flx_vr_col     (:,:)
     real(r8), pointer :: plant_minn_active_no3_yield_flx_vr_col     (:,:)
     real(r8), pointer :: plant_minp_active_yield_flx_vr_col        (:,:)    !column level mineral phosphorus yeild from soil bgc calculation
-
+    real(r8), pointer :: tranp_wt_patch                            (:,:)    !fraction of transpiration contributed by different pfts
     real(r8) :: decomp_km_nh4
     real(r8) :: decomp_km_no3
     real(r8) :: decomp_km_minp
@@ -126,6 +129,7 @@ module PlantSoilnutrientFluxType
      procedure , private :: InitCold
      procedure , private :: sub_froot_prof
      procedure , public  :: update_plant_nutrient_active_yield_patch
+     procedure , private :: transp_col2patch
   end type plantsoilnutrientflux_type
 
  contains
@@ -171,9 +175,11 @@ module PlantSoilnutrientFluxType
 
     allocate(this%plant_minn_active_yield_flx_patch  (begp:endp          )) ; this%plant_minn_active_yield_flx_patch  (:)   = nan
     allocate(this%plant_minn_passive_yield_flx_patch (begp:endp          )) ; this%plant_minn_passive_yield_flx_patch (:)   = nan
+    allocate(this%plant_minp_passive_yield_flx_patch (begp:endp          )) ; this%plant_minp_passive_yield_flx_patch (:)   = nan
     allocate(this%plant_minn_active_yield_flx_vr_patch (begp:endp,1:nlevdecomp_full )) ; this%plant_minn_active_yield_flx_vr_patch  (:,:)   = nan
 
     allocate(this%plant_minn_passive_yield_flx_col   (begc:endc          )) ; this%plant_minn_passive_yield_flx_col   (:)   = nan
+    allocate(this%plant_minp_passive_yield_flx_col   (begc:endc          )) ; this%plant_minp_passive_yield_flx_col   (:)   = nan
 
     allocate(this%plant_minn_nh4_uptake_vmax_vr_patch(begp:endp, 1:nlevdecomp_full)); this%plant_minn_nh4_uptake_vmax_vr_patch(:,:) = nan
     allocate(this%plant_minn_no3_uptake_vmax_vr_patch(begp:endp, 1:nlevdecomp_full)); this%plant_minn_no3_uptake_vmax_vr_patch(:,:) = nan
@@ -252,6 +258,7 @@ module PlantSoilnutrientFluxType
    allocate(this%decomp_minn_no3_uptake_km_vr_col(begc:endc,1:nlevdecomp_full));this%decomp_minn_no3_uptake_km_vr_col(:,:) = nan
    allocate(this%decomp_minp_uptake_km_vr_col    (begc:endc,1:nlevdecomp_full));this%decomp_minp_uptake_km_vr_col    (:,:) = nan
 
+   allocate(this%tranp_wt_patch(begc:endc,1:nlevdecomp_full)); this%tranp_wt_patch (:,:) = nan
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------
@@ -395,14 +402,17 @@ module PlantSoilnutrientFluxType
   end subroutine InitCold
 
   !-----------------------------------------------------------------------
-  subroutine summary(this, bounds, ubj,  num_soilc, filter_soilc, dz, nh4_transp, no3_transp)
+  subroutine summary(this, bounds, ubj,  num_soilc, filter_soilc, dz, &
+     nh4_transp_vr, no3_transp_vr, minp_transp_vr)
   !
   ! !DESCRIPTION:
   ! summarize state variables from different subpools/subfluxes
   ! !USES:
   use MathfuncMod              , only : dot_sum
   use clm_time_manager         , only : get_step_size
-  use clm_varcon               , only : natomw
+  use clm_varcon               , only : natomw, patomw
+  use clm_varpar               , only : maxpatch_pft
+
 
   ! !ARGUMENTS:
   class(plantsoilnutrientflux_type) :: this
@@ -411,18 +421,50 @@ module PlantSoilnutrientFluxType
   integer,  intent(in) :: filter_soilc(:)
   integer,  intent(in) :: ubj
   real(r8), intent(in) :: dz(bounds%begc:bounds%endc,1:ubj)
-  real(r8), intent(in) :: nh4_transp(bounds%begc:bounds%endc)
-  real(r8), intent(in) :: no3_transp(bounds%begc:bounds%endc)
+  real(r8), intent(in) :: nh4_transp_vr(bounds%begc:bounds%endc, 1:ubj)
+  real(r8), intent(in) :: no3_transp_vr(bounds%begc:bounds%endc, 1:ubj)
+  real(r8), intent(in) :: minp_transp_vr(bounds%begc:bounds%endc,1:ubj)
 
   ! !LOCAL VARIABLES:
-  integer :: fc, c, j
+  integer :: fc, c, j, p, pi
   real(r8) :: dtime
+  real(r8) :: col_minn_flx, col_minp_flx
 
   dtime =  get_step_size()
-
+  !initialize to zero
   do fc = 1, num_soilc
-    c = filter_soilc(fc)
-    this%plant_minn_passive_yield_flx_col(c) =(nh4_transp(c) + no3_transp(c))*natomw/dtime
+    this%plant_minp_passive_yield_flx_col(c) = 0._r8
+    this%plant_minn_passive_yield_flx_col(c) = 0._r8
+    do pi = 1,maxpatch_pft
+      if (pi <=  col%npfts(c)) then
+        p = col%pfti(c) + pi - 1
+        if (pft%active(p)) then
+          this%plant_minn_passive_yield_flx_patch(p) = 0._r8
+          this%plant_minp_passive_yield_flx_patch(p) = 0._r8
+        endif
+      endif
+    enddo
+  enddo
+  do j = 1, ubj
+    do fc = 1, num_soilc
+      c = filter_soilc(fc)
+      col_minn_flx = (nh4_transp_vr(c,j) + no3_transp_vr(c,j))*natomw/dtime
+      col_minp_flx = minp_transp_vr(c,j) * patomw/dtime
+
+      this%plant_minn_passive_yield_flx_col(c) =this%plant_minn_passive_yield_flx_col(c) + col_minn_flx
+      this%plant_minp_passive_yield_flx_col(c) =this%plant_minp_passive_yield_flx_col(c) + col_minp_flx
+
+      !divide into patches based on transpiration flux of each pft
+      do pi = 1,maxpatch_pft
+        if (pi <=  col%npfts(c)) then
+          p = col%pfti(c) + pi - 1
+          if (pft%active(p)) then
+            this%plant_minn_passive_yield_flx_patch(p) =  this%plant_minn_passive_yield_flx_patch(p) + col_minn_flx*this%tranp_wt_patch(p,j)
+            this%plant_minp_passive_yield_flx_patch(p) =  this%plant_minp_passive_yield_flx_patch(p) + col_minp_flx*this%tranp_wt_patch(p,j)
+          endif
+        endif
+      enddo
+    enddo
   enddo
 
   end subroutine summary
@@ -556,12 +598,15 @@ module PlantSoilnutrientFluxType
   end subroutine sub_froot_prof
 
 !--------------------------------------------------------------------------------
-  subroutine init_plant_soil_feedback(this, bounds, num_soilc, filter_soilc, frootc_patch, cnstate_vars, ecophyscon_vars)
+  subroutine init_plant_soil_feedback(this, bounds, num_soilc, filter_soilc, frootc_patch, cnstate_vars, &
+   soilstate_vars,  waterflux_vars, ecophyscon_vars)
 
   use EcophysConType      , only : ecophyscon_type
   use pftvarcon           , only : noveg
   use clm_varpar          , only : nlevtrc_soil
   use CNStateType         , only : cnstate_type
+  use WaterfluxType       , only : waterflux_type
+  use SoilStateType       , only : soilstate_type
 
   class(plantsoilnutrientflux_type) :: this
   type(bounds_type)    , intent(in)    :: bounds
@@ -570,6 +615,9 @@ module PlantSoilnutrientFluxType
   real(r8)             , intent(in)    :: frootc_patch(bounds%begp: )
   type(ecophyscon_type), intent(in)    :: ecophyscon_vars
   type(cnstate_type)   , intent(in)    :: cnstate_vars
+  type(waterflux_type) , intent(in)    :: waterflux_vars
+  type(soilstate_type) , intent(in)    :: soilstate_vars
+
   real(r8), parameter   :: E_plant_scalar  = 0.0000125_r8
   integer :: fc, c, p, j
 
@@ -586,7 +634,6 @@ module PlantSoilnutrientFluxType
   km_decomp_p                  => ecophyscon_vars%km_decomp_p                             &
 
   )
-
 
   this%decomp_km_nh4 = km_decomp_nh4
   this%decomp_km_no3 = km_decomp_no3
@@ -609,6 +656,7 @@ module PlantSoilnutrientFluxType
     enddo
   enddo
 
+  call this%transp_col2patch(bounds, num_soilc, filter_soilc, soilstate_vars, waterflux_vars)
   !set root profile
   call this%sub_froot_prof(bounds, num_soilc, filter_soilc,  frootc_patch, cnstate_vars, e_plant_scalar)
 
@@ -620,11 +668,57 @@ module PlantSoilnutrientFluxType
   end subroutine init_plant_soil_feedback
 
   !-------------------------------------------------------------------------------
+  subroutine transp_col2patch(this, bounds, num_soilc, filter_soilc, soilstate_vars, waterflux_vars)
+
+  !
+  ! USES
+  use WaterfluxType         , only : waterflux_type
+  use SoilStateType         , only : soilstate_type
+  use clm_varpar            , only : nlevtrc_soil
+
+  !
+  !ARGUMENTS
+  class(plantsoilnutrientflux_type)    :: this
+  type(bounds_type)    , intent(in)    :: bounds
+  integer              , intent(in)    :: num_soilc
+  integer              , intent(in)    :: filter_soilc(:)
+  type(waterflux_type) , intent(in)    :: waterflux_vars
+  type(soilstate_type) , intent(in)    :: soilstate_vars
+
+  real(r8) :: rootr_col
+  integer  :: p, j, fc, c
+
+  associate(                                                     &
+    rootr_pft         =>    soilstate_vars%rootr_patch         , & ! Input:  [real(r8) (:,:) ]  effective fraction of roots in each soil layer
+    qflx_tran_veg_pft =>    waterflux_vars%qflx_tran_veg_patch   &
+  )
+
+
+  do j = 1,nlevtrc_soil
+    do fc = 1, num_soilc
+      c = filter_soilc(fc)
+      rootr_col = 0._r8
+      do p = col%pfti(c), col%pftf(c)
+        if (pft%active(p)) then
+          rootr_col = rootr_col + rootr_pft(p,j) * qflx_tran_veg_pft(p) * pft%wtcol(p)
+        end if
+      enddo
+
+      do p = col%pfti(c), col%pftf(c)
+        if (pft%active(p)) then
+          this%tranp_wt_patch(p,j) = rootr_pft(p,j) * qflx_tran_veg_pft(p) / rootr_col
+        end if
+      enddo
+    end do
+  end do
+  end associate
+  end subroutine transp_col2patch
+  !-------------------------------------------------------------------------------
 
     subroutine update_plant_nutrient_active_yield_patch(this, bounds, num_soilc, filter_soilc)
 
     use clm_varpar               , only : maxpatch_pft
-    use clm_varpar          , only : nlevtrc_soil
+    use clm_varpar               , only : nlevtrc_soil
     !
     !ARGUMENTS
     class(plantsoilnutrientflux_type) :: this

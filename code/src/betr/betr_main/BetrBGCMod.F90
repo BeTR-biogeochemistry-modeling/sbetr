@@ -616,7 +616,8 @@ contains
     real(r8)             :: qflx_rootsoi_local(bounds%begc:bounds%endc,lbj:ubj) !
     integer, allocatable :: adv_trc_group( : )
     real(r8), pointer    :: err_tracer( : , : )
-    real(r8), pointer    :: transp_mass( : , : )
+    real(r8), pointer    :: transp_mass_vr( : , : , : )
+    real(r8), pointer    :: transp_mass(:, :)
     real(r8), pointer    :: leaching_mass( : , : )
     real(r8), pointer    :: inflx_top( : , : )
     real(r8), pointer    :: inflx_bot( : , : )
@@ -663,6 +664,7 @@ contains
       !allocate memories
       allocate (adv_trc_group (nmem_max                                    ))
       allocate (err_tracer    (bounds%begc:bounds%endc ,nmem_max           ))
+      allocate (transp_mass_vr(bounds%begc:bounds%endc, lbj:ubj, nmem_max  ))
       allocate (transp_mass   (bounds%begc:bounds%endc, nmem_max           ))
       allocate (leaching_mass (bounds%begc:bounds%endc, nmem_max           ))
       allocate (inflx_top     (bounds%begc:bounds%endc, nmem_max           ))
@@ -765,7 +767,8 @@ contains
                      endif
                   enddo
                enddo
-               transp_mass(:,k) = 0._r8
+               transp_mass_vr(:,:, k) = 0._r8
+               transp_mass(:, k) = 0._r8
                if(vtrans_scal(trcid)>0._r8)then
                   call calc_root_uptake_as_perfect_sink(bounds, lbj, ubj, num_soilc,   &
                        filter_soilc,                                                   &
@@ -775,6 +778,7 @@ contains
                        update_col,                                                     &
                        halfdt_col,                                                     &
                        tracer_conc_mobile_col(bounds%begc:bounds%endc, lbj:ubj,trcid), &
+                       transp_mass_vr(bounds%begc:bounds%endc, lbj:ubj, k), transp_mass(:,k), &
                        transp_mass(bounds%begc:bounds%endc, k))
                endif
             enddo
@@ -806,7 +810,7 @@ contains
 
                      tracer_flx_vtrans(c, trcid)  = tracer_flx_vtrans(c,trcid) + transp_mass(c,k)
                      tracer_flx_leaching(c,trcid) = tracer_flx_leaching(c, trcid) + leaching_mass(c,k)
-
+                     tracer_flx_vtrans_vr(c, lbj:ubj, trcid) = transp_mass_vr(c,lbj:ubj,k)
                   endif
                enddo
             enddo
@@ -1351,7 +1355,7 @@ contains
   !-------------------------------------------------------------------------------
   subroutine calc_root_uptake_as_perfect_sink(bounds, lbj, ubj,  num_soilc, filter_soilc, &
        dtime_loc, dz, qflx_rootsoi,                                                       &
-       update_col, halfdt_col, tracer_conc, transp_mass)
+       update_col, halfdt_col, tracer_conc, transp_mass_vr, transp_mass)
     !
     ! !DESCRIPTION:
     ! calculate plant aqueous tracer uptake through transpiration into xylem
@@ -1367,6 +1371,7 @@ contains
     logical,                intent(in)    :: update_col(bounds%begc:bounds%endc) ! logical switch for active col update
     logical,                intent(in)    :: halfdt_col(bounds%begc:bounds%endc)
     real(r8),               intent(inout) :: tracer_conc(bounds%begc: , lbj: )   ! incoming tracer concentration
+    real(r8),               intent(out)   :: transp_mass_vr(bounds%begc: , lbj: )!
     real(r8),               intent(out)   :: transp_mass(bounds%begc: )
 
     ! !LOCAL VARIABLES:
@@ -1378,7 +1383,9 @@ contains
     SHR_ASSERT_ALL((ubound(dtime_loc)    == (/bounds%endc/))      , errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(tracer_conc)  == (/bounds%endc, ubj/)) , errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(qflx_rootsoi) == (/bounds%endc, ubj/)) , errMsg(__FILE__,__LINE__))
+    SHR_ASSERT_ALL((ubound(transp_mass_vr)  == (/bounds%endc,ubj/))      , errMsg(__FILE__,__LINE__))
     SHR_ASSERT_ALL((ubound(transp_mass)  == (/bounds%endc/))      , errMsg(__FILE__,__LINE__))
+
 
     transp_mass(:) = 0._r8
     do fc = 1, num_soilc
@@ -1386,8 +1393,9 @@ contains
        if(update_col(c) .and. (.not. halfdt_col(c)))then
 
           do j = 1, ubj
-             tracer_conc_new = tracer_conc(c,j) * exp(-max(qflx_rootsoi(c,j),0._r8)*dtime_loc(c))
-             transp_mass(c) = transp_mass(c) + (tracer_conc(c,j)-tracer_conc_new)*dz(c,j)
+             tracer_conc_new  = tracer_conc(c,j) * exp(-max(qflx_rootsoi(c,j),0._r8)*dtime_loc(c))
+             transp_mass_vr(c,j)   = (tracer_conc(c,j)-tracer_conc_new)*dz(c,j)
+             transp_mass(c) = transp_mass(c) + transp_mass_vr(c,j)
              tracer_conc(c,j) = tracer_conc_new
           enddo
        endif

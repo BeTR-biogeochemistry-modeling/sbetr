@@ -46,6 +46,7 @@ module TracerFluxType
      real(r8), pointer :: tracer_flx_totleached_col(:,:)  !total leaching flux, vertical + lateral leaching
 
      real(r8), pointer :: tracer_flx_vtrans_col(:,:)      !column level tracer flux through transpiration
+     real(r8), pointer :: tracer_flx_vtrans_vr_col(:,:,:) !
      !real(r8), pointer :: tracer_flx_snowloss_col(:,:)    !tracer flux lost from snow dynamics, place holder
 
      !tracer fluxes defined at the pft level
@@ -150,6 +151,8 @@ contains
 
        allocate(this%tracer_flx_h2osfc_snow_residual_col(begc:endc, 1:ngwmobile_tracers));this%tracer_flx_h2osfc_snow_residual_col(:,:) = nan
        allocate(this%tracer_flx_totleached_col(begc:endc, 1:ngwmobile_tracers)); this%tracer_flx_totleached_col(:,:) = nan
+       allocate(this%tracer_flx_vtrans_vr_col   (begc:endc, lbj:ubj, 1:ngwmobile_tracers)); this%tracer_flx_vtrans_vr_col   (:,:,:) = nan
+
     endif
     if(nvolatile_tracers>0)then
        allocate(this%tracer_flx_ebu_col         (begc:endc, 1:nvolatile_tracers)); this%tracer_flx_ebu_col      (:,:) = nan
@@ -616,7 +619,7 @@ contains
     end associate
   end subroutine Flux_summary
 
-  
+
   !----------------------------------------------------------------
   subroutine Flux_display(this, c, jj, betrtracer_vars)
     !
@@ -639,7 +642,7 @@ contains
          tracernames            => betrtracer_vars%tracernames           , &
          volatileid             => betrtracer_vars%volatileid              &
          )
-      
+
       !the total net physical loss currently includes infiltration, surface runoff, transpiration aided transport,
       !lateral drainage, vertical leaching
       !for volatile tracers, this includes surface emission surface three different pathways

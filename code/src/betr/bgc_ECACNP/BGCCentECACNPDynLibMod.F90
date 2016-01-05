@@ -1339,7 +1339,7 @@ contains
     ! update om pools with external input before doing decomposition
     !
     ! !USES:
-    use MathfuncMod              , only :  safe_div
+    use MathfuncMod              , only : safe_div
     use BetrTracerType           , only : betrtracer_type
     use tracerstatetype          , only : tracerstate_type
     use tracerfluxType           , only : tracerflux_type
@@ -1373,12 +1373,13 @@ contains
          id_trc_no3x                    => betrtracer_vars%id_trc_no3x                       , & !
          ngwmobile_tracers              => betrtracer_vars%ngwmobile_tracers                 , & !
          tracer_flx_netpro_vr           => tracerflux_vars%tracer_flx_netpro_vr_col          , & !
-         bgc_cpool_ext_loss_vr          => plantsoilnutrientflux_vars%bgc_cpool_ext_loss_vr_col         , & !
+         bgc_cpool_ext_loss_vr          => plantsoilnutrientflux_vars%bgc_cpool_ext_loss_vr_col       , & !
          bgc_npool_ext_loss_vr          => plantsoilnutrientflux_vars%bgc_npool_ext_loss_vr_col       , & !
+         bgc_ppool_ext_loss_vr          => plantsoilnutrientflux_vars%bgc_ppool_ext_loss_vr_col       , & !
          sminn_nh4_input_vr             => plantsoilnutrientflux_vars%sminn_nh4_input_vr_col          , & !
          sminn_no3_input_vr             => plantsoilnutrientflux_vars%sminn_no3_input_vr_col          , & !
-         initial_cn_ratio               => decomp_cascade_con%initial_cn_ratio               , & ! Output: [real(r8)          (:)     ]  c:n ratio for initialization of pools
-         floating_cn_ratio_decomp_pools => decomp_cascade_con%floating_cn_ratio_decomp_pools   & ! Output: [logical           (:)     ]  TRUE => pool has fixed C:N ratio
+         sminp_input_vr                 => plantsoilnutrientflux_vars%sminp_input_vr_col              , & !
+         biochem_pmin_vr_col            => plantsoilnutrientflux_vars%biochem_pmin_vr_col               & !
          )
 
       do k = 1, ndecomp_pools
@@ -1387,12 +1388,11 @@ contains
                c = filter_soilc(fc)
                y0((k-1)*nelm+c_loc,c,j) = y0((k-1)*nelm+c_loc,c,j) - bgc_cpool_ext_loss_vr(c,j,k)/catomw
                y0((k-1)*nelm+n_loc,c,j) = y0((k-1)*nelm+n_loc,c,j) - bgc_npool_ext_loss_vr(c,j,k)/natomw
-               if(floating_cn_ratio_decomp_pools(k))then
-                  cn_ratios(k, c,j) = safe_div(y0((k-1)*nelm+c_loc,c,j), y0((k-1)*nelm+n_loc,c,j))
-               else
-                  cn_ratios(k,c,j) = initial_cn_ratio(k)*natomw/catomw
+               y0((k-1)*nelm+p_loc,c,j) = y0((k-1)*nelm+p_loc,c,j) - bgc_ppool_ext_loss_vr(c,j,k)/patomw
 
-               endif
+               cn_ratios(k, c,j) = safe_div(y0((k-1)*nelm+c_loc,c,j), y0((k-1)*nelm+n_loc,c,j))
+               cp_ratios(k, c,j) = safe_div(y0((k-1)*nelm+c_loc,c,j), y0((k-1)*nelm+p_loc,c,j))
+
 
                tracer_flx_netpro_vr(c,j,ngwmobile_tracers+(k-1)*nelm+c_loc) =      &
                     tracer_flx_netpro_vr(c,j,ngwmobile_tracers+(k-1)*nelm+c_loc) - &
@@ -1401,6 +1401,11 @@ contains
                tracer_flx_netpro_vr(c,j,ngwmobile_tracers+(k-1)*nelm+n_loc) =      &
                     tracer_flx_netpro_vr(c,j,ngwmobile_tracers+(k-1)*nelm+n_loc) - &
                     bgc_npool_ext_loss_vr(c,j,k)/natomw
+
+               tracer_flx_netpro_vr(c,j,ngwmobile_tracers+(k-1)*nelm+p_loc) =      &
+                    tracer_flx_netpro_vr(c,j,ngwmobile_tracers+(k-1)*nelm+p_loc) - &
+                    bgc_ppool_ext_loss_vr(c,j,k)/patomw
+
 
             enddo
          enddo
@@ -1411,6 +1416,7 @@ contains
             c = filter_soilc(fc)
             y0(lid_nh4, c, j) = y0(lid_nh4, c, j) + sminn_nh4_input_vr(c,j)/natomw
             y0(lid_no3, c, j) = y0(lid_no3, c, j) + sminn_no3_input_vr(c,j)/natomw
+            y0(lid_minp_solution, c, j) = y0(lid_minp_solution, c, j) + sminp_input_vr(c,j)/patomw
 
             tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_no3x   ) =      &
                  tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_no3x   ) + &
@@ -1419,6 +1425,9 @@ contains
             tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_nh3x   ) =      &
                  tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_nh3x   ) + &
                  sminn_nh4_input_vr(c,j)/natomw
+            tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_p_sol)   =      &
+                 tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_p_sol)  +  &
+                 sminp_input_vr(c,j)/patomw
          enddo
 
       enddo
@@ -1461,7 +1470,9 @@ contains
          n_loc                   => centurybgc_vars%n_loc                       , & !
          tracer_flx_netpro_vr    => tracerflux_vars%tracer_flx_netpro_vr_col    , & !
          bgc_cpool_ext_inputs_vr =>  plantsoilnutrientflux_vars%bgc_cpool_ext_inputs_vr_col , & !
-         bgc_npool_ext_inputs_vr =>  plantsoilnutrientflux_vars%bgc_npool_ext_inputs_vr_col & !
+         bgc_npool_ext_inputs_vr =>  plantsoilnutrientflux_vars%bgc_npool_ext_inputs_vr_col , & !
+         bgc_ppool_ext_inputs_vr =>  plantsoilnutrientflux_vars%bgc_ppool_ext_inputs_vr_col   & !
+
          )
 
       do k = 1, ndecomp_pools
@@ -1471,6 +1482,7 @@ contains
 
                yf((k-1)*nelm+c_loc,c,j) = yf((k-1)*nelm+c_loc,c,j) + bgc_cpool_ext_inputs_vr(c,j,k)/catomw
                yf((k-1)*nelm+n_loc,c,j) = yf((k-1)*nelm+n_loc,c,j) + bgc_npool_ext_inputs_vr(c,j,k)/natomw
+               yf((k-1)*nelm+p_loc,c,j) = yf((k-1)*nelm+p_loc,c,j) + bgc_ppool_ext_inputs_vr(c,j,k)/patomw   
 
             enddo
          enddo

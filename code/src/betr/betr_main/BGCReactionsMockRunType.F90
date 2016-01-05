@@ -448,7 +448,9 @@ contains
     use PlantSoilnutrientFluxType, only : plantsoilnutrientflux_type
     use EcophysConType           , only : ecophyscon_type
     use CNStateType              , only : cnstate_type
-
+    use WaterfluxType            , only : waterflux_type
+    use SoilStateType            , only : soilstate_type
+    
     ! !ARGUMENTS:
     class(bgc_reaction_mock_run_type)  , intent(in)    :: this               !
     type(bounds_type)                  , intent(in)    :: bounds             !
@@ -462,6 +464,8 @@ contains
     type(plantsoilnutrientflux_type)   , intent(inout) :: plantsoilnutrientflux_vars !
     type(ecophyscon_type)              , intent(in)    :: ecophyscon_vars
     type(cnstate_type)                 , intent(in)    :: cnstate_vars
+    type(waterflux_type)               , intent(in)    :: waterflux_vars
+    type(soilstate_type)               , intent(in)    :: soilstate_vars
 
   end subroutine init_betr_lsm_bgc_coupler
 
