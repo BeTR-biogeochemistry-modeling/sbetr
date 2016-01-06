@@ -10,7 +10,8 @@ implicit none
      real(r8), pointer :: smin_no3_runoff_col                       (:)     ! col soil mineral NO3 pool loss to runoff (gN/m2/s)
      real(r8), pointer :: f_n2o_denit_col                           (:)     ! col flux of N2o from denitrification [gN/m^2/s]
      real(r8), pointer :: f_n2o_nit_col                             (:)     ! col flux of N2o from nitrification [gN/m^2/s]
-
+     real(r8), pointer :: f_nit_col                                 (:)
+     real(r8), pointer :: f_denit_col                               (:)
   contains
 
     procedure, public  :: Init
@@ -55,7 +56,8 @@ contains
     allocate(this%smin_no3_leached_col        (begc:endc))                   ; this%smin_no3_leached_col             (:)   = nan
     allocate(this%f_n2o_denit_col             (begc:endc))                   ; this%f_n2o_denit_col                  (:)   = nan
     allocate(this%f_n2o_nit_col               (begc:endc))                   ; this%f_n2o_nit_col                    (:)   = nan
-
+    allocate(this%f_nit_col                   (begc:endc))                   ; this%f_nit_col                        (:)   = nan
+    allocate(this%f_denit_col                 (begc:endc))                   ; this%f_denit_col                      (:)   = nan
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------

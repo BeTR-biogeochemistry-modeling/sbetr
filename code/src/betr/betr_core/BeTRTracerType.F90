@@ -21,7 +21,7 @@ module BeTRTracerType
    integer :: ngwmobile_tracers                                  ! total number of tracers potentially undergoing gas/aqueous movement
    integer :: nvolatile_tracers                                  ! number of volatile_tracers
    integer :: nsolid_equil_tracers                               ! number of tracers that undergo equilibrium adsorption in soil could include adsorbed doc, nh4(+)
-   integer :: nsolid_passive_tracers                             ! number of tracers that undergo active mineral protection
+   integer :: nsolid_passive_tracers                             ! number of tracers that undergo active mineral interaction
 
    integer :: ntracer_groups                                     !
    integer :: ngwmobile_tracer_groups                            ! total number of groups for mobile tracers

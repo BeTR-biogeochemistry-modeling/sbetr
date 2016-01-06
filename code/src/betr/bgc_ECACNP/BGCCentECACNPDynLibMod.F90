@@ -508,15 +508,6 @@ contains
          tracer_flx_parchm_vr  => tracerflux_vars%tracer_flx_parchm_vr_col       & !
          )
 
-      if(CNAllocate_Carbon_only())then
-         do j = lbj, ubj
-            do fc = 1, numf
-               c = filter(fc)
-               supplement_to_sminn_vr(c,j) = (y0(centurybgc_vars%lid_nh4_supp, c, j) - yf(centurybgc_vars%lid_nh4_supp, c, j))*natomw/dtime
-            enddo
-         enddo
-      endif
-
       do j = lbj, ubj
          do fc = 1, numf
             c = filter(fc)
@@ -642,7 +633,9 @@ contains
     ! all organic matter pools are distributed into solid passive tracers
     associate(   &
          ngwtracers             => betrtracer_vars%ngwmobile_tracers       , & !
-         tracer_conc_mobile_col => tracerstate_vars%tracer_conc_mobile_col   &
+         nsolid_passive_tracers => betrtracer_vars%nsolid_passive_tracers  , & !
+         tracer_conc_mobile_col => tracerstate_vars%tracer_conc_mobile_col , & !
+         tracer_conc_solid_passive_col => tracerstate_vars%tracer_conc_solid_passive_col  &
          )
 
       !only retrieve non-mobile tracers
@@ -654,7 +647,7 @@ contains
                do fc = 1, numf
                   c = filter(fc)
                   if(j>=jtops(c))then
-                     tracerstate_vars%tracer_conc_solid_passive_col(c, j, ll) = yf(ll, c, j)
+                     tracer_conc_solid_passive_col(c, j, ll) = yf(ll, c, j)
                   endif
                enddo
             enddo
@@ -662,38 +655,48 @@ contains
       enddo
 
       k1 = betrtracer_vars%id_trc_o2   ; k2 = centurybgc_vars%lid_o2
-      call assign_A2B(bounds, lbj, ubj, neq, ngwtracers, numf, filter, jtops, k1, k2, yf(:,bounds%begc:bounds%endc, lbj:ubj), tracer_conc_mobile_col(bounds%begc:bounds%endc,lbj:ubj,:))
+      call assign_A2B(bounds, lbj, ubj, neq, ngwtracers, numf, filter, jtops, k1, k2, &
+        yf(:,bounds%begc:bounds%endc, lbj:ubj), tracer_conc_mobile_col(bounds%begc:bounds%endc,lbj:ubj,:))
 
       k1 = betrtracer_vars%id_trc_co2x ; k2 = centurybgc_vars%lid_co2
-      call assign_A2B(bounds, lbj, ubj, neq, ngwtracers, numf, filter, jtops, k1, k2, yf(:,bounds%begc:bounds%endc, lbj:ubj), tracer_conc_mobile_col(bounds%begc:bounds%endc,lbj:ubj,:))
+      call assign_A2B(bounds, lbj, ubj, neq, ngwtracers, numf, filter, jtops, k1, k2, &
+        yf(:,bounds%begc:bounds%endc, lbj:ubj), tracer_conc_mobile_col(bounds%begc:bounds%endc,lbj:ubj,:))
 
       k1 = betrtracer_vars%id_trc_nh3x ; k2 = centurybgc_vars%lid_nh4
-      call assign_A2B(bounds, lbj, ubj, neq, ngwtracers, numf, filter, jtops, k1, k2, yf(:,bounds%begc:bounds%endc, lbj:ubj), tracer_conc_mobile_col(bounds%begc:bounds%endc,lbj:ubj,:))
+      call assign_A2B(bounds, lbj, ubj, neq, ngwtracers, numf, filter, jtops, k1, k2, &
+        yf(:,bounds%begc:bounds%endc, lbj:ubj), tracer_conc_mobile_col(bounds%begc:bounds%endc,lbj:ubj,:))
 
       k1 = betrtracer_vars%id_trc_no3x ; k2 = centurybgc_vars%lid_no3
-      call assign_A2B(bounds, lbj, ubj, neq, ngwtracers, numf, filter, jtops, k1, k2, yf(:,bounds%begc:bounds%endc, lbj:ubj), tracer_conc_mobile_col(bounds%begc:bounds%endc,lbj:ubj,:))
+      call assign_A2B(bounds, lbj, ubj, neq, ngwtracers, numf, filter, jtops, k1, k2, &
+        yf(:,bounds%begc:bounds%endc, lbj:ubj), tracer_conc_mobile_col(bounds%begc:bounds%endc,lbj:ubj,:))
 
       k1 = betrtracer_vars%id_trc_n2   ; k2 = centurybgc_vars%lid_n2
-      call assign_A2B(bounds, lbj, ubj, neq, ngwtracers, numf, filter, jtops, k1, k2, yf(:,bounds%begc:bounds%endc, lbj:ubj), tracer_conc_mobile_col(bounds%begc:bounds%endc,lbj:ubj,:))
+      call assign_A2B(bounds, lbj, ubj, neq, ngwtracers, numf, filter, jtops, k1, k2, &
+        yf(:,bounds%begc:bounds%endc, lbj:ubj), tracer_conc_mobile_col(bounds%begc:bounds%endc,lbj:ubj,:))
 
       k1 = betrtracer_vars%id_trc_ar   ; k2 = centurybgc_vars%lid_ar
-      call assign_A2B(bounds, lbj, ubj, neq, ngwtracers, numf, filter, jtops, k1, k2, yf(:,bounds%begc:bounds%endc, lbj:ubj), tracer_conc_mobile_col(bounds%begc:bounds%endc,lbj:ubj,:))
+      call assign_A2B(bounds, lbj, ubj, neq, ngwtracers, numf, filter, jtops, k1, k2, &
+        yf(:,bounds%begc:bounds%endc, lbj:ubj), tracer_conc_mobile_col(bounds%begc:bounds%endc,lbj:ubj,:))
 
       k1 = betrtracer_vars%id_trc_ch4  ; k2 = centurybgc_vars%lid_ch4
-      call assign_A2B(bounds, lbj, ubj, neq, ngwtracers, numf, filter, jtops, k1, k2, yf(:,bounds%begc:bounds%endc, lbj:ubj), tracer_conc_mobile_col(bounds%begc:bounds%endc,lbj:ubj,:))
+      call assign_A2B(bounds, lbj, ubj, neq, ngwtracers, numf, filter, jtops, k1, k2, &
+        yf(:,bounds%begc:bounds%endc, lbj:ubj), tracer_conc_mobile_col(bounds%begc:bounds%endc,lbj:ubj,:))
 
       k1 =  betrtracer_vars%id_trc_n2o ; k2 = centurybgc_vars%lid_n2o
-      call assign_A2B(bounds, lbj, ubj, neq, ngwtracers, numf, filter, jtops, k1, k2, yf(:,bounds%begc:bounds%endc, lbj:ubj), tracer_conc_mobile_col(bounds%begc:bounds%endc,lbj:ubj,:))
+      call assign_A2B(bounds, lbj, ubj, neq, ngwtracers, numf, filter, jtops, k1, k2, &
+        yf(:,bounds%begc:bounds%endc, lbj:ubj), tracer_conc_mobile_col(bounds%begc:bounds%endc,lbj:ubj,:))
 
       k1 = betrtracer_vars%id_trc_p_sol; k2 = centurybgc_vars%lid_minp_solution
-      call assign_A2B(bounds, lbj, ubj, neq, ngwtracers, numf, filter, jtops, k1, k2, yf(:,bounds%begc:bounds%endc, lbj:ubj), tracer_conc_mobile_col(bounds%begc:bounds%endc,lbj:ubj,:))
+      call assign_A2B(bounds, lbj, ubj, neq, ngwtracers, numf, filter, jtops, k1, k2, &
+        yf(:,bounds%begc:bounds%endc, lbj:ubj), tracer_conc_mobile_col(bounds%begc:bounds%endc,lbj:ubj,:))
 
-      k1 = lid_minp_secondary_trc; k2 = centurybgc_vars%lid_minp_secondary
-      call assign_A2B(bounds, lbj, ubj, neq, ngwtracers, numf, filter, jtops, k1, k2, yf(:,bounds%begc:bounds%endc, lbj:ubj), tracer_conc_solid_passive(bounds%begc:bounds%endc,lbj:ubj,:))
+      k1 = centurybgc_vars%lid_minp_secondary_trc; k2 = centurybgc_vars%lid_minp_secondary
+      call assign_A2B(bounds, lbj, ubj, neq, nsolid_passive_tracers, numf, filter, jtops, k1, k2, &
+        yf(:,bounds%begc:bounds%endc, lbj:ubj), tracer_conc_solid_passive_col(bounds%begc:bounds%endc,lbj:ubj,:))
 
-      k1 = lid_minp_occlude_trc;   k2 = centurybgc_vars%lid_minp_occlude
-      call assign_A2B(bounds, lbj, ubj, neq, ngwtracers, numf, filter, jtops, k1, k2, yf(:,bounds%begc:bounds%endc, lbj:ubj), tracer_conc_solid_passive(bounds%begc:bounds%endc,lbj:ubj,:))
-
+      k1 = centurybgc_vars%lid_minp_occlude_trc;   k2 = centurybgc_vars%lid_minp_occlude
+      call assign_A2B(bounds, lbj, ubj, neq, nsolid_passive_tracers, numf, filter, jtops, k1, k2, &
+        yf(:,bounds%begc:bounds%endc, lbj:ubj), tracer_conc_solid_passive_col(bounds%begc:bounds%endc,lbj:ubj,:))
 
     end associate
   end subroutine retrieve_state_vars

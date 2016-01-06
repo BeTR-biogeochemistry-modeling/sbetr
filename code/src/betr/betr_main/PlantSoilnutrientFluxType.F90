@@ -84,7 +84,6 @@ module PlantSoilnutrientFluxType
     real(r8), pointer :: actual_immob_nh4_vr_col                   (:,:)   ! col vertically-resolved actual immobilization of NH4 (gN/m3/s)
     real(r8), pointer :: smin_no3_to_plant_vr_col                  (:,:)   ! col vertically-resolved plant uptake of soil NO3 (gN/m3/s)
     real(r8), pointer :: smin_nh4_to_plant_vr_col                  (:,:)   ! col vertically-resolved plant uptake of soil NH4 (gN/m3/s)
-    real(r8), pointer :: supplement_to_sminn_vr_col                (:,:)   ! col vertically-resolved supplemental N supply (gN/m3/s)
 
     real(r8), pointer :: km_minsurf_minnh4_vr_col                  (:,:)   !mineral NH4 adsorption affinity
     real(r8), pointer :: vmax_minsurf_minnh4_vr_col                    (:,:)
@@ -235,7 +234,6 @@ module PlantSoilnutrientFluxType
     allocate(this%actual_immob_nh4_vr_col     (begc:endc,1:nlevdecomp_full)) ; this%actual_immob_nh4_vr_col          (:,:) = nan
     allocate(this%smin_no3_to_plant_vr_col    (begc:endc,1:nlevdecomp_full)) ; this%smin_no3_to_plant_vr_col         (:,:) = nan
     allocate(this%smin_nh4_to_plant_vr_col    (begc:endc,1:nlevdecomp_full)) ; this%smin_nh4_to_plant_vr_col         (:,:) = nan
-    allocate(this%supplement_to_sminn_vr_col (begc:endc,1:nlevdecomp_full)) ; this%supplement_to_sminn_vr_col (:,:) = nan
     allocate(this%f_nit_vr_col                (begc:endc,1:nlevdecomp_full)) ; this%f_nit_vr_col                     (:,:) = nan
     allocate(this%f_denit_vr_col              (begc:endc,1:nlevdecomp_full)) ; this%f_denit_vr_col                   (:,:) = nan
 
@@ -933,7 +931,7 @@ module PlantSoilnutrientFluxType
     c = filter_soilc(fc)
     hr_col(c)          = dot_sum(this%hr_vr_col(c,1:nlevdecomp), dz(c,1:nlevdecomp))
     f_n2o_denit_col(c) = dot_sum(this%f_n2o_denit_vr_col(c,1:nlevdecomp), dz(c,1:nlevdecomp))
-    f_n2o_nit_col(c)   = dot_sum(this%f_n2o_nit_vr_co(c,1:nlevdecomp), dz(c,1:nlevdecomp))
+    f_n2o_nit_col(c)   = dot_sum(this%f_n2o_nit_vr_col(c,1:nlevdecomp), dz(c,1:nlevdecomp))
     f_nit_col(c)       = dot_sum(this%f_nit_vr_col(c,1:nlevdecomp), dz(c,1:nlevdecomp))
     f_denit_col(c)     = dot_sum(this%f_denit_vr_col(c,1:nlevdecomp), dz(c,1:nlevdecomp))
   enddo
