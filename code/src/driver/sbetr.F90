@@ -37,4 +37,9 @@ implicit none
 
   call sbetrBGC_driver(bounds, numf, filter, ttime)
 
+  !reading forcing data
+  print*,'reading forcing data'
+
+
+
 end program main

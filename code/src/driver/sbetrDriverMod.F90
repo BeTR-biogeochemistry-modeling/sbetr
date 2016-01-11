@@ -4,6 +4,7 @@ module sbetrDriverMod
 ! module holding subroutines to do out of clm betr application
 ! created by Jinyun Tang
   use shr_kind_mod, only : r8 => shr_kind_r8
+  use ncdio_pio
 implicit none
 
   private
@@ -39,7 +40,6 @@ contains
                                     tracerflux_vars, tracerState_vars, tracerboundarycond_vars, plantsoilnutrientflux_vars
   use BetrBGCMod          , only : run_betr_one_step_without_drainage, betrbgc_init
   use TracerParamsMod     , only : tracer_param_init
-  use ncdio_pio           , only : file_desc_t, ncd_pio_closefile
   use spmdMod             , only : spmd_init
   use accumulMod
   use TracerBalanceMod
@@ -66,6 +66,12 @@ contains
 
   dtime = 1800._r8
 
+
+  call read_betrforcing(bounds, lbj, ubj, num_soilc, filter_soilc, time_vars, col, &
+     atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars,  &
+    waterflux_vars, temperature_vars, chemstate_vars, jtops)
+
+  return
 
   jtops(:) = 999  !this will be replaced with nan when I figured out how to do it, Jinyun Tang, June 17, 2014
 
@@ -187,8 +193,6 @@ contains
   !
   use TracerFluxType,  only : tracerflux_type
   use TracerStateType, only : tracerstate_type
-  use ncdio_pio      , only : ncd_pio_openfile_for_write, file_desc_t
-  use ncdio_pio      , only : ncd_pio_closefile, ncd_putvar
   implicit none
   integer                , intent(in) :: record
   type(tracerflux_type)  , intent(in) :: tracerflux_vars
@@ -238,9 +242,10 @@ contains
   ! create history file and define output variables
   use netcdf
   use histFileMod, only : hist_file_create, hist_def_fld1d, hist_def_fld2d
-  use ncdio_pio,   only : file_desc_t, ncd_pio_createfile,  &
-                          ncd_pio_closefile, ncd_enddef, ncd_putvar
+
   use BeTRTracerType, only: BeTRTracer_Type
+  !
+  !ARGUMENTS
   implicit none
   character(len=*)     , intent(in) :: histfilename
   integer              , intent(in) :: nlevtrc_soil, ncol
@@ -324,9 +329,35 @@ contains
 
   integer :: j, fc, c
   character(len=255) :: subname='read_betrforcing'
+  character(len=250) :: ncf_in_filename
+  type(file_desc_t)  :: ncf_in
+  integer :: dimlen
+  real(r8), allocatable :: data_1d(:)
+  real(r8), allocatable :: data_2d(:,:,:,:)
+  !open file
 
+  ncf_in_filename='/Users/jinyuntang/work/data_collection/clm_output/hd_model/sierra/sierra_clmdef/sierra_clmdef.clm2.h0.51-60.nc'
+  !open file
+  print*,'reading from ',ncf_in_filename
+  !check dimension length
 
+  call ncd_pio_openfile(ncf_in, ncf_in_filename, mode=ncd_nowrite)
+  dimlen = get_dim_len(ncf_in,'levgrnd')
 
+  print*,'dimension length',dimlen
+  allocate(data_1d(dimlen))
+  call ncd_getvar(ncf_in, 'levgrnd', data_1d)
+
+  print*,data_1d
+  print*, 'finished reading'
+
+  !test
+  allocate(data_2d(1,1,1:15,1:3650))
+  call ncd_getvar(ncf_in, 'TSOI', data_2d)
+  print*,data_2d(1,1,:,1)
+  call ncd_pio_closefile(ncf_in)
+
+  return
   !setup top boundary
   do fc = 1, numf
     c = filter(fc)
@@ -334,6 +365,7 @@ contains
     soilhydrology_vars%zwts_col(c) = 10._r8
     atm2lnd_vars%forc_pbot_downscaled_col(c) = 1.01325e5_r8                     ! 1 atmos
   enddo
+
   !set up forcing variables
   do j = lbj, ubj
     do fc = 1, numf

@@ -43,6 +43,7 @@ module ncdio_pio
   public :: ncd_inqdlen        ! inquire dimension length
   public :: ncd_inqfdims       ! inquire file dimnesions
   public :: ncd_defvar         ! define variables
+  public :: get_dim_len        ! get dimension length
 
   public :: ncd_inqvid         ! inquire variable id
   public :: ncd_inqvname       ! inquire variable name
@@ -74,6 +75,10 @@ module ncdio_pio
     module procedure ncd_getvar_int_3d
     module procedure ncd_getvar_real_sp_3d
 
+    module procedure ncd_getvar_real_sp_all_1d
+    module procedure ncd_getvar_real_sp_all_2d
+    module procedure ncd_getvar_real_sp_all_3d
+    module procedure ncd_getvar_real_sp_all_4d
   end interface ncd_getvar
 
   interface get_dim_len
@@ -218,7 +223,7 @@ module ncdio_pio
 ! !ARGUMENTS:
 
   implicit none
-  class(file_desc_t), intent(in) :: ncid               ! file id
+  class(file_desc_t), intent(in) :: ncid    ! file id
   character(len=*), intent(in) :: dimname   !dimension name
   integer, intent(in) :: value              ! dimension length
 !
@@ -693,6 +698,99 @@ module ncdio_pio
     start = (/rec/)),'ncd_getvar_int')
 
   end subroutine ncd_getvar_int
+  !----------------------------------------------------------------------
+
+    subroutine ncd_getvar_real_sp_all_1d(ncid, varname, data)
+    !
+    !DESCRIPTION
+    ! read a real scalar
+    use netcdf
+    use shr_kind_mod, only : r8 => shr_kind_r8
+  !**********************************************************************
+    implicit none
+    class(file_desc_t), intent(in) :: ncid
+    character(len=*),intent(in) :: varname
+    REAL(r8), dimension(:), intent(out) :: data
+
+    integer :: varid
+    logical :: readvar
+    type(Var_desc_t)  :: vardesc
+
+    call check_var(ncid, trim(varname), vardesc, readvar)
+
+    call check_ret( nf90_get_var(ncid%fh, vardesc%varid, data),'ncd_getvar_real_sp_all_1d')
+
+    end subroutine ncd_getvar_real_sp_all_1d
+
+    !----------------------------------------------------------------------
+
+      subroutine ncd_getvar_real_sp_all_2d(ncid, varname, data)
+      !
+      !DESCRIPTION
+      ! read a real scalar
+      use netcdf
+      use shr_kind_mod, only : r8 => shr_kind_r8
+    !**********************************************************************
+      implicit none
+      class(file_desc_t), intent(in) :: ncid
+      character(len=*),intent(in) :: varname
+      REAL(r8), dimension(:,:), intent(out) :: data
+
+      integer :: varid
+      logical :: readvar
+      type(Var_desc_t)  :: vardesc
+
+      call check_var(ncid, trim(varname), vardesc, readvar)
+
+      call check_ret( nf90_get_var(ncid%fh, vardesc%varid, data),'ncd_getvar_real_sp_all_2d')
+
+      end subroutine ncd_getvar_real_sp_all_2d
+      !----------------------------------------------------------------------
+
+        subroutine ncd_getvar_real_sp_all_3d(ncid, varname, data)
+        !
+        !DESCRIPTION
+        ! read a real scalar
+        use netcdf
+        use shr_kind_mod, only : r8 => shr_kind_r8
+      !**********************************************************************
+        implicit none
+        class(file_desc_t), intent(in) :: ncid
+        character(len=*),intent(in) :: varname
+        REAL(r8), dimension(:,:,:), intent(out) :: data
+
+        integer :: varid
+        logical :: readvar
+        type(Var_desc_t)  :: vardesc
+
+        call check_var(ncid, trim(varname), vardesc, readvar)
+
+        call check_ret( nf90_get_var(ncid%fh, vardesc%varid, data),'ncd_getvar_real_sp_all_2d')
+
+        end subroutine ncd_getvar_real_sp_all_3d
+        !----------------------------------------------------------------------
+
+          subroutine ncd_getvar_real_sp_all_4d(ncid, varname, data)
+          !
+          !DESCRIPTION
+          ! read a real scalar
+          use netcdf
+          use shr_kind_mod, only : r8 => shr_kind_r8
+        !**********************************************************************
+          implicit none
+          class(file_desc_t), intent(in) :: ncid
+          character(len=*),intent(in) :: varname
+          REAL(r8), dimension(:,:,:,:), intent(out) :: data
+
+          integer :: varid
+          logical :: readvar
+          type(Var_desc_t)  :: vardesc
+
+          call check_var(ncid, trim(varname), vardesc, readvar)
+
+          call check_ret( nf90_get_var(ncid%fh, vardesc%varid, data),'ncd_getvar_real_sp_all_2d')
+
+          end subroutine ncd_getvar_real_sp_all_4d
 !----------------------------------------------------------------------
 
   subroutine ncd_getvar_real_sp(ncid, varname, rec, data)
