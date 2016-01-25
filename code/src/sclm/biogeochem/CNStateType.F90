@@ -8,10 +8,11 @@ implicit none
   type, public :: cnstate_type
      real(r8), pointer :: rc14_atm_patch               (:)     ! patch C14O2/C12O2 in atmosphere
      real(r8), pointer :: froot_prof_patch             (:,:)
-     real(r8), pointer :: nfixation_prof_col          (:,:)   ! col (1/m) profile for N fixation additions
+     real(r8), pointer :: nfixation_prof_col           (:,:)   ! col (1/m) profile for N fixation additions
      integer  ,pointer  :: isoilorder                  (:)     ! col global soil order data
      real(r8), pointer :: cn_scalar                    (:)     ! cn scaling factor for root n uptake kinetics (no units)
      real(r8), pointer :: cp_scalar                    (:)     ! cp scaling factor for root p uptake kinetics (no units)
+     real(r8), pointer :: ndep_prof_col                (:,:)
   contains
 
     procedure, public  :: Init

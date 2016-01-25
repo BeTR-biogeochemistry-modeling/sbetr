@@ -9,7 +9,27 @@ implicit none
     real(r8), pointer :: sminp_leached_col                         (:)     !col inorganic P leaching loss, gP/m2/time step
     real(r8), pointer :: sminp_runoff_col                          (:)     !col inorganic P runoff loss, gP/m2/time step
     real(r8), pointer :: biochem_pmin_vr_col                       (:,:)   ! col vertically-resolved total biochemical P mineralization (gP/m3/s)
-
+    real(r8), pointer :: phenology_p_to_litr_met_p_col             (:,:)
+    real(r8), pointer :: dwt_frootp_to_litr_met_p_col              (:,:)
+    real(r8), pointer :: phenology_p_to_litr_cel_p_col             (:,:)
+    real(r8), pointer :: dwt_livecrootp_to_cwdp_col                (:,:)
+    real(r8), pointer :: phenology_p_to_litr_lig_p_col             (:,:)
+    real(r8), pointer :: m_decomp_ppools_to_fire_vr_col            (:,:,:)
+    real(r8), pointer :: dwt_deadcrootp_to_cwdp_col                (:,:)
+    real(r8), pointer :: dwt_frootp_to_litr_lig_p_col              (:,:)
+    real(r8), pointer :: dwt_frootp_to_litr_cel_p_col              (:,:)
+    real(r8), pointer :: gap_mortality_p_to_litr_met_p_col         (:,:)
+    real(r8), pointer :: gap_mortality_p_to_cwdp_col               (:,:)
+    real(r8), pointer :: gap_mortality_p_to_litr_lig_p_col         (:,:)
+    real(r8), pointer :: gap_mortality_p_to_litr_cel_p_col         (:,:)
+    real(r8), pointer :: harvest_p_to_litr_met_p_col               (:,:)
+    real(r8), pointer :: harvest_p_to_cwdp_col                     (:,:)
+    real(r8), pointer :: harvest_p_to_litr_lig_p_col               (:,:)
+    real(r8), pointer :: harvest_p_to_litr_cel_p_col               (:,:)
+    real(r8), pointer :: m_p_to_litr_met_fire_col                  (:,:)
+    real(r8), pointer :: m_p_to_litr_cel_fire_col                  (:,:)
+    real(r8), pointer :: m_p_to_litr_lig_fire_col                  (:,:)
+    real(r8), pointer :: fire_mortality_p_to_cwdp_col              (:,:)
   contains
 
     procedure, public  :: Init

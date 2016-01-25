@@ -12,6 +12,27 @@ implicit none
     real(r8), pointer :: agnpp_patch                               (:)     ! (gC/m2/s) aboveground NPP
     real(r8), pointer :: bgnpp_patch                               (:)     ! (gC/m2/s) belowground NPP
     real(r8), pointer :: hr_col                                    (:)
+    real(r8), pointer :: phenology_c_to_litr_met_c_col             (:,:)
+    real(r8), pointer :: phenology_c_to_litr_cel_c_col             (:,:)
+    real(r8), pointer :: phenology_c_to_litr_lig_c_col             (:,:)
+    real(r8), pointer :: dwt_livecrootc_to_cwdc_col                (:,:)
+    real(r8), pointer :: m_decomp_cpools_to_fire_vr_col            (:,:,:)
+    real(r8), pointer :: dwt_deadcrootc_to_cwdc_col                (:,:)
+    real(r8), pointer :: dwt_frootc_to_litr_lig_c_col              (:,:)
+    real(r8), pointer :: dwt_frootc_to_litr_cel_c_col              (:,:)
+    real(r8), pointer :: dwt_frootc_to_litr_met_c_col              (:,:)
+    real(r8), pointer :: gap_mortality_c_to_litr_met_c_col         (:,:)
+    real(r8), pointer :: gap_mortality_c_to_litr_cel_c_col         (:,:)
+    real(r8), pointer :: gap_mortality_c_to_litr_lig_c_col         (:,:)
+    real(r8), pointer :: gap_mortality_c_to_cwdc_col               (:,:)
+    real(r8), pointer :: harvest_c_to_litr_met_c_col               (:,:)
+    real(r8), pointer :: harvest_c_to_litr_cel_c_col               (:,:)
+    real(r8), pointer :: harvest_c_to_litr_lig_c_col               (:,:)
+    real(r8), pointer :: harvest_c_to_cwdc_col                     (:,:)
+    real(r8), pointer :: m_c_to_litr_met_fire_col                  (:,:)
+    real(r8), pointer :: m_c_to_litr_cel_fire_col                  (:,:)
+    real(r8), pointer :: m_c_to_litr_lig_fire_col                  (:,:)
+    real(r8), pointer :: fire_mortality_c_to_cwdc_col              (:,:)
   contains
 
     procedure, public  :: Init
@@ -58,7 +79,7 @@ contains
     allocate(this%agnpp_patch                       (begp:endp)) ; this%agnpp_patch                               (:) = nan
     allocate(this%bgnpp_patch                       (begp:endp)) ; this%bgnpp_patch                               (:) = nan
     allocate(this%hr_col (begc:endc)); this%hr_col(:) = nan
-    
+
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------

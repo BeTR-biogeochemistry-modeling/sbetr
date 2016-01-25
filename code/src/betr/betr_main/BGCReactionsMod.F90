@@ -234,7 +234,7 @@ module BGCReactionsMod
      end subroutine readParams_interface
 
      !-------------------------------------------------------------------------------
-     subroutine betr_lsm_flux_statevar_feedback_interface(this, bounds, num_soilc, filter_soilc, &
+     subroutine betr_lsm_flux_statevar_feedback_interface(this, bounds,num_soilc, filter_soilc, &
           carbonstate_vars, nitrogenstate_vars, nitrogenflux_vars, phosphorusstate_vars, &
           phosphorusflux_vars, tracerstate_vars, tracerflux_vars,  betrtracer_vars)
 
@@ -255,8 +255,8 @@ module BGCReactionsMod
        import :: bgc_reaction_type
        class(bgc_reaction_type)   , intent(in) :: this                  !
        type(bounds_type)          , intent(in) :: bounds                ! bounds
-       integer                    , intent(in) :: num_soilc             ! number of columns in column filter
-       integer                    , intent(in) :: filter_soilc(:)       ! column filter
+       integer                    , intent(in) :: num_soilc
+       integer                    , intent(in) :: filter_soilc(:)
        type(betrtracer_type)      , intent(in) :: betrtracer_vars       ! betr configuration information
        type(tracerstate_type)     , intent(in) :: tracerstate_vars      !
        type(tracerflux_type)      , intent(in) :: tracerflux_vars       !
@@ -270,7 +270,7 @@ module BGCReactionsMod
      !-------------------------------------------------------------------------------
 
 
-     subroutine init_betr_lsm_bgc_coupler_interface(this, bounds, num_soilc, filter_soilc, &
+     subroutine init_betr_lsm_bgc_coupler_interface(this, bounds, &
           carbonstate_vars, nitrogenstate_vars, phosphorusstate_vars, plantsoilnutrientflux_vars,     &
           betrtracer_vars, tracerstate_vars, cnstate_vars, soilstate_vars, waterflux_vars, ecophyscon_vars)
        !
@@ -299,8 +299,6 @@ module BGCReactionsMod
        import :: bgc_reaction_type
        class(bgc_reaction_type)           , intent(in)    :: this
        type(bounds_type)                  , intent(in)    :: bounds
-       integer                            , intent(in)    :: num_soilc
-       integer                            , intent(in)    :: filter_soilc(:)
        type(tracerstate_type)             , intent(inout) :: tracerstate_vars
        type(betrtracer_type)              , intent(in)    :: betrtracer_vars    ! betr configuration information
        type(carbonstate_type)             , intent(in)    :: carbonstate_vars

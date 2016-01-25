@@ -17,6 +17,11 @@ module PlantSoilnutrientFluxType
   use decompMod              , only : bounds_type
   use ColumnType             , only : col
   use PatchType              , only : pft
+  use LandunitType           , only : lun
+  use landunit_varcon        , only : istsoil, istcrop
+  use clm_varpar             , only : nlevdecomp, crop_prog
+  use clm_time_manager       , only : get_step_size
+  use clm_varpar             , only : i_met_lit, i_cel_lit, i_lig_lit, i_cwd
   ! !PUBLIC TYPES:
   implicit none
   save
@@ -396,7 +401,6 @@ module PlantSoilnutrientFluxType
     !
     ! !USES:
     use clm_varpar      , only : crop_prog
-    use landunit_varcon , only : istsoil, istcrop
     use LandunitType   , only : lun
     !
     ! !ARGUMENTS:
@@ -653,13 +657,13 @@ module PlantSoilnutrientFluxType
   !
   ! !ARGUMENTS:
   class(plantsoilnutrientflux_type) :: this
+  type(bounds_type) , intent(in)    :: bounds
   integer           , intent(in)    :: num_soilc
   integer           , intent(in)    :: filter_soilc(:)
-  type(bounds_type) , intent(in)    :: bounds
   real(r8)          , intent(in)    :: frootc_patch(bounds%begp: )
   real(r8)          , intent(in)    :: e_plant_scalar
   type(cnstate_type), intent(in)    :: cnstate_vars
-  integer :: p, j, fc, c
+  integer :: p, j, fc, c, l
 
 
   SHR_ASSERT_ALL((ubound(frootc_patch) == (/bounds%endp/)), errMsg(__FILE__,__LINE__))
@@ -669,15 +673,18 @@ module PlantSoilnutrientFluxType
 
   do fc = 1, num_soilc
     c = filter_soilc(fc)
-    do p = col%pfti(c), col%pftf(c)
-      if (pft%active(p).and. (pft%itype(p) .ne. noveg)) then
-        this%plant_frootsc_patch(p) = frootc_patch(p)
-        !set effective nutrient uptake profile
-        do j = 1, nlevtrc_soil
-          this%plant_effrootsc_vr_patch(p, j) = this%plant_frootsc_patch(p) * froot_prof(p,j) * e_plant_scalar
-        enddo
-      endif
-    enddo
+    l = col%landunit(c)
+    if (lun%itype(l) == istsoil .or. lun%itype(l) == istcrop) then
+      do p = col%pfti(c), col%pftf(c)
+        if (pft%active(p).and. (pft%itype(p) .ne. noveg)) then
+          this%plant_frootsc_patch(p) = frootc_patch(p)
+          !set effective nutrient uptake profile
+          do j = 1, nlevtrc_soil
+            this%plant_effrootsc_vr_patch(p, j) = this%plant_frootsc_patch(p) * froot_prof(p,j) * e_plant_scalar
+          enddo
+        endif
+      enddo
+    endif
   enddo
   end associate
   end subroutine sub_froot_prof
@@ -686,6 +693,10 @@ module PlantSoilnutrientFluxType
   subroutine init_plant_soil_feedback(this, bounds, num_soilc, filter_soilc, frootc_patch, cnstate_vars, &
    soilstate_vars,  waterflux_vars, ecophyscon_vars)
 
+  !
+  ! DESCRIPTION
+  ! this subroutine initializes plant soil feedback
+  !
   use EcophysConType      , only : ecophyscon_type
   use pftvarcon           , only : noveg
   use clm_varpar          , only : nlevtrc_soil
@@ -704,7 +715,7 @@ module PlantSoilnutrientFluxType
   type(soilstate_type) , intent(in)    :: soilstate_vars
 
   real(r8), parameter   :: E_plant_scalar  = 0.0000125_r8
-  integer :: fc, c, p, j
+  integer :: fc, c, p, j, l
 
   SHR_ASSERT_ALL((ubound(frootc_patch) == (/bounds%endp/)), errMsg(__FILE__,__LINE__))
   associate(                                                                              &
@@ -727,23 +738,26 @@ module PlantSoilnutrientFluxType
   do j = 1, nlevtrc_soil
     do fc = 1, num_soilc
       c = filter_soilc(fc)
-      this%decomp_compet_minp_vr_col(c,j) = 0._r8
-      do p = col%pfti(c), col%pftf(c)
-        if (pft%active(p).and. (pft%itype(p) .ne. noveg)) then
-          this%plant_minp_uptake_vmax_vr_patch(p, j)     = vmax_plant_p(ivt(p))
-          this%plant_minn_nh4_uptake_vmax_vr_patch(p, j) = vmax_plant_nh4(ivt(p))
-          this%plant_minn_no3_uptake_vmax_vr_patch(p, j) = vmax_plant_no3(ivt(p))
-          this%decomp_compet_minn_vr_col(c,j) = this%decomp_compet_minn_vr_col(c,j) + decompmicc_patch_vr(ivt(p),j)*pft%wtcol(p)
+      l = col%landunit(c)
+      if (lun%itype(l) == istsoil .or. lun%itype(l) == istcrop) then
+        this%decomp_compet_minp_vr_col(c,j) = 0._r8
+        do p = col%pfti(c), col%pftf(c)
+          if (pft%active(p).and. (pft%itype(p) .ne. noveg)) then
+            this%plant_minp_uptake_vmax_vr_patch(p, j)     = vmax_plant_p(ivt(p))
+            this%plant_minn_nh4_uptake_vmax_vr_patch(p, j) = vmax_plant_nh4(ivt(p))
+            this%plant_minn_no3_uptake_vmax_vr_patch(p, j) = vmax_plant_no3(ivt(p))
+            this%decomp_compet_minn_vr_col(c,j) = this%decomp_compet_minn_vr_col(c,j) + decompmicc_patch_vr(ivt(p),j)*pft%wtcol(p)
 
-        endif
-      enddo
+          endif
+        enddo
+      endif
       this%decomp_compet_minp_vr_col(c,j) = this%decomp_compet_minn_vr_col(c,j)
     enddo
   enddo
 
   call this%transp_col2patch(bounds, num_soilc, filter_soilc, soilstate_vars, waterflux_vars)
   !set root profile
-  call this%sub_froot_prof(bounds, num_soilc, filter_soilc,  frootc_patch, cnstate_vars, e_plant_scalar)
+  call this%sub_froot_prof(bounds, num_soilc, filter_soilc, frootc_patch, cnstate_vars, e_plant_scalar)
 
   !set OM input profile
 
@@ -753,7 +767,7 @@ module PlantSoilnutrientFluxType
   end subroutine init_plant_soil_feedback
 
   !-------------------------------------------------------------------------------
-  subroutine transp_col2patch(this, bounds, num_soilc, filter_soilc, soilstate_vars, waterflux_vars)
+  subroutine transp_col2patch(this, bounds,  num_soilc, filter_soilc, soilstate_vars, waterflux_vars)
 
   !
   ! USES
@@ -765,13 +779,13 @@ module PlantSoilnutrientFluxType
   !ARGUMENTS
   class(plantsoilnutrientflux_type)    :: this
   type(bounds_type)    , intent(in)    :: bounds
-  integer              , intent(in)    :: num_soilc
-  integer              , intent(in)    :: filter_soilc(:)
+  integer              ,  intent(in)   :: num_soilc
+  integer              ,  intent(in)   :: filter_soilc(:)
   type(waterflux_type) , intent(in)    :: waterflux_vars
   type(soilstate_type) , intent(in)    :: soilstate_vars
 
   real(r8) :: rootr_col
-  integer  :: p, j, fc, c
+  integer  :: p, j, fc, c, l
 
   associate(                                                     &
     rootr_pft         =>    soilstate_vars%rootfr_patch         , & ! Input:  [real(r8) (:,:) ]  effective fraction of roots in each soil layer
@@ -782,18 +796,21 @@ module PlantSoilnutrientFluxType
   do j = 1,nlevtrc_soil
     do fc = 1, num_soilc
       c = filter_soilc(fc)
-      rootr_col = 0._r8
-      do p = col%pfti(c), col%pftf(c)
-        if (pft%active(p)) then
-          rootr_col = rootr_col + rootr_pft(p,j) * qflx_tran_veg_pft(p) * pft%wtcol(p)
-        end if
-      enddo
+      l = col%landunit(c)
+      if (lun%itype(l) == istsoil .or. lun%itype(l) == istcrop) then
+        rootr_col = 0._r8
+        do p = col%pfti(c), col%pftf(c)
+          if (pft%active(p)) then
+            rootr_col = rootr_col + rootr_pft(p,j) * qflx_tran_veg_pft(p) * pft%wtcol(p)
+          end if
+        enddo
 
-      do p = col%pfti(c), col%pftf(c)
-        if (pft%active(p)) then
-          this%tranp_wt_patch(p,j) = rootr_pft(p,j) * qflx_tran_veg_pft(p) / rootr_col
-        end if
-      enddo
+        do p = col%pfti(c), col%pftf(c)
+          if (pft%active(p)) then
+            this%tranp_wt_patch(p,j) = rootr_pft(p,j) * qflx_tran_veg_pft(p) / rootr_col
+          end if
+        enddo
+      endif
     end do
   end do
   end associate
@@ -904,7 +921,6 @@ module PlantSoilnutrientFluxType
   use CNCarbonFluxType    , only : carbonflux_type
   use CNNitrogenFluxType  , only : nitrogenflux_type
   use PhosphorusFluxType  , only : phosphorusflux_type
-  use clm_varpar          , only : nlevdecomp
   use MathfuncMod         , only : dot_sum
 
   class(plantsoilnutrientflux_type) :: this
@@ -916,6 +932,7 @@ module PlantSoilnutrientFluxType
   type(phosphorusflux_type), intent(inout) :: phosphorusflux_vars
 
   integer :: c, fc
+
 !-------------------------------------------------------------------------------
   associate(                                                 &
      f_n2o_denit_col  => nitrogenflux_vars%f_n2o_denit_col , &
@@ -938,4 +955,264 @@ module PlantSoilnutrientFluxType
 
   end associate
   end subroutine integrate_vr_flux_to_2D
+
+
+!--------------------------------------------------------------------------------
+
+  subroutine summarize_cflux_external(this, num_soilc, filter_soilc, cf)
+
+  !
+  !DESCRIPTION
+  ! summarize external carbon fluxes
+  !
+  ! USES
+  use clm_varpar      ,  only : ndecomp_pools
+  use CNCarbonFluxType,  only : carbonflux_type
+  !
+  ! Arguments
+
+  class(plantsoilnutrientflux_type) :: this
+  integer              , intent(in) :: num_soilc
+  integer              , intent(in) :: filter_soilc(:)
+  type(carbonflux_type), intent(in) :: cf
+
+  real(r8) :: dt
+  integer  :: j, fc, c, l
+
+  ! set time steps
+  dt = real( get_step_size(), r8 )
+
+  !summarize litter carbon input
+  ! plant to litter fluxes
+  do j = 1,nlevdecomp
+     ! column loop
+     do fc = 1,num_soilc
+        c = filter_soilc(fc)
+        ! phenology and dynamic land cover fluxes, gap mortality fluxes, fire fluxes
+        this%bgc_cpool_ext_inputs_vr_col(c,j,i_met_lit) = &
+             ( cf%phenology_c_to_litr_met_c_col(c,j)    + &
+               cf%dwt_frootc_to_litr_met_c_col(c,j)     + &
+               cf%gap_mortality_c_to_litr_met_c_col(c,j)+ &
+               cf%harvest_c_to_litr_met_c_col(c,j)      + &
+               cf%m_c_to_litr_met_fire_col(c,j)) *dt
+
+        this%bgc_cpool_ext_inputs_vr_col(c,j,i_cel_lit) = &
+             ( cf%phenology_c_to_litr_cel_c_col(c,j)    + &
+               cf%dwt_frootc_to_litr_cel_c_col(c,j)     + &
+               cf%gap_mortality_c_to_litr_cel_c_col(c,j)+ &
+               cf%harvest_c_to_litr_cel_c_col(c,j)      + &
+               cf%m_c_to_litr_cel_fire_col(c,j) ) *dt
+
+        this%bgc_cpool_ext_inputs_vr_col(c,j,i_lig_lit) = &
+             ( cf%phenology_c_to_litr_lig_c_col(c,j)    + &
+             cf%dwt_frootc_to_litr_lig_c_col(c,j)       + &
+             cf%gap_mortality_c_to_litr_lig_c_col(c,j)  + &
+             cf%harvest_c_to_litr_lig_c_col(c,j)        + &
+             cf%m_c_to_litr_lig_fire_col(c,j)) *dt
+
+        this%bgc_cpool_ext_inputs_vr_col(c,j,i_cwd) = &
+             ( cf%dwt_livecrootc_to_cwdc_col(c,j)   + &
+               cf%dwt_deadcrootc_to_cwdc_col(c,j)   + &
+               cf%gap_mortality_c_to_cwdc_col(c,j)  + &
+               cf%harvest_c_to_cwdc_col(c,j)        + &
+               cf%fire_mortality_c_to_cwdc_col(c,j)) *dt
+
+        ! column
+
+
+     enddo
+  enddo
+
+
+  ! litter and CWD losses to fire
+  do l = 1, ndecomp_pools
+     do j = 1, nlevdecomp
+        do fc = 1,num_soilc
+           c = filter_soilc(fc)
+           this%bgc_cpool_ext_loss_vr_col(c,j,l) = this%bgc_cpool_ext_loss_vr_col(c,j,l) + cf%m_decomp_cpools_to_fire_vr_col(c,j,l) * dt
+        end do
+     end do
+  end do
+
+
+
+  end subroutine summarize_cflux_external
+
+!--------------------------------------------------------------------------------
+
+  subroutine summarize_nflux_external(this, num_soilc, filter_soilc, nf, cnstate_vars)
+
+  !
+  !DESCRIPTION
+  ! summarize external nitrogen fluxes
+  !
+  ! USES
+  use clm_varpar         ,  only : ndecomp_pools
+  use CNNitrogenFluxType ,  only : nitrogenflux_type
+  use CNStateType        ,  only : cnstate_type
+  !
+  ! Arguments
+
+  class(plantsoilnutrientflux_type) :: this
+  integer                      , intent(in) :: num_soilc
+  integer                      , intent(in) :: filter_soilc(:)
+  type(nitrogenflux_type)      , intent(in) :: nf
+  type(cnstate_type)           , intent(in) :: cnstate_vars
+  real(r8) :: dt
+  integer  :: j, fc, c, l
+  ! plant to litter fluxes
+  ! phenology and dynamic landcover fluxes
+
+  ! set time steps
+  dt = real( get_step_size(), r8 )
+  associate(                                                     &
+    nfixation_prof        => cnstate_vars%nfixation_prof_col  ,  &
+    ndep_prof             => cnstate_vars%ndep_prof_col          &
+  )
+  do j = 1, nlevdecomp
+    do fc = 1,num_soilc
+      c = filter_soilc(fc)
+      this%bgc_npool_ext_inputs_vr_col(c,j,i_met_lit) =   &
+       ( nf%phenology_n_to_litr_met_n_col(c,j)          + &
+         nf%dwt_frootn_to_litr_met_n_col(c,j)           + &
+         nf%gap_mortality_n_to_litr_met_n_col(c,j)      + &
+         nf%harvest_n_to_litr_met_n_col(c,j)            + &
+         nf%m_n_to_litr_met_fire_col(c,j)) * dt
+
+      this%bgc_npool_ext_inputs_vr_col(c,j,i_cel_lit) =  &
+       ( nf%phenology_n_to_litr_cel_n_col(c,j)         + &
+         nf%dwt_frootn_to_litr_cel_n_col(c,j)          + &
+         nf%gap_mortality_n_to_litr_cel_n_col(c,j)     + &
+         nf%harvest_n_to_litr_cel_n_col(c,j)           + &
+         nf%m_n_to_litr_cel_fire_col(c,j) ) * dt
+
+      this%bgc_npool_ext_inputs_vr_col(c,j,i_lig_lit) =  &
+       ( nf%phenology_n_to_litr_lig_n_col(c,j)         + &
+         nf%dwt_frootn_to_litr_lig_n_col(c,j)          + &
+         nf%gap_mortality_n_to_litr_lig_n_col(c,j)     + &
+         nf%harvest_n_to_litr_lig_n_col(c,j)           + &
+         nf%m_n_to_litr_lig_fire_col(c,j)) * dt
+
+      this%bgc_npool_ext_inputs_vr_col(c,j,i_cwd)     =  &
+       ( nf%dwt_livecrootn_to_cwdn_col(c,j)            + &
+         nf%dwt_deadcrootn_to_cwdn_col(c,j)            + &
+         nf%gap_mortality_n_to_cwdn_col(c,j)           + &
+         nf%harvest_n_to_cwdn_col(c,j)                 + &
+         nf%fire_mortality_n_to_cwdn_col(c,j))   * dt
+
+    enddo
+  enddo
+  do j = 1, nlevdecomp
+    do fc = 1,num_soilc
+      c = filter_soilc(fc)
+      ! N deposition and fixation (put all into NH4 pool)
+      this%sminn_nh4_input_vr_col(c,j) =             &
+       (nf%ndep_to_sminn_col(c) * ndep_prof(c,j)   + &
+        nf%nfix_to_sminn_col(c) * nfixation_prof(c,j) ) *dt
+
+    enddo
+  enddo
+
+  ! repeating N dep and fixation for crops
+  if ( crop_prog )then
+    do j = 1, nlevdecomp
+
+      ! column loop
+      do fc = 1,num_soilc
+        c = filter_soilc(fc)
+
+        ! N deposition and fixation (put all into NH4 pool)
+        this%sminn_nh4_input_vr_col(c,j) = this%sminn_nh4_input_vr_col(c,j) + nf%fert_to_sminn_col(c)*dt * ndep_prof(c,j)
+        this%sminn_nh4_input_vr_col(c,j) = this%sminn_nh4_input_vr_col(c,j) + nf%soyfixn_to_sminn_col(c)*dt * nfixation_prof(c,j)
+        this%sminn_nh4_input_vr_col(c,j) = this%sminn_nh4_input_vr_col(c,j) + nf%supplement_to_sminn_vr_col(c,j)*dt
+      end do
+    end do
+  end if
+
+
+  ! litter and CWD losses to fire
+  do l = 1, ndecomp_pools
+    do j = 1, nlevdecomp
+     ! column loop
+      do fc = 1,num_soilc
+        c = filter_soilc(fc)
+        this%bgc_npool_ext_loss_vr_col(c,j,l) = this%bgc_npool_ext_loss_vr_col(c,j,l) + nf%m_decomp_npools_to_fire_vr_col(c,j,l) * dt
+      end do
+    end do
+  end do
+  end associate
+  end subroutine summarize_nflux_external
+
+!--------------------------------------------------------------------------------
+  subroutine summarize_pflux_external(this, num_soilc, filter_soilc, pf)
+
+  !
+  !DESCRIPTION
+  ! summarize external phosphorus fluxes
+  !
+  ! USES
+  use clm_varpar,  only : ndecomp_pools
+  use PhosphorusFluxType , only : phosphorusflux_type
+  !
+  ! Arguments
+
+  class(plantsoilnutrientflux_type)     :: this
+  integer, intent(in) :: num_soilc
+  integer, intent(in) :: filter_soilc(:)
+  type(phosphorusflux_type), intent(in) :: pf
+  real(r8) :: dt
+  integer  :: j, fc, c, l
+
+  ! set time steps
+  dt = real( get_step_size(), r8 )
+
+  do j = 1, nlevdecomp
+     ! column loop
+     do fc = 1,num_soilc
+        c = filter_soilc(fc)
+        ! plant to litter fluxes
+        ! phenology and dynamic landcover fluxes
+       this%bgc_ppool_ext_inputs_vr_col(c,j,i_met_lit)  = &
+       ( pf%phenology_p_to_litr_met_p_col(c,j)          + &
+         pf%dwt_frootp_to_litr_met_p_col(c,j)           + &
+         pf%gap_mortality_p_to_litr_met_p_col(c,j)      + &
+         pf%harvest_p_to_litr_met_p_col(c,j)            + &
+         pf%m_p_to_litr_met_fire_col(c,j)) * dt
+
+      this%bgc_ppool_ext_inputs_vr_col(c,j,i_cel_lit)  = &
+       ( pf%phenology_p_to_litr_cel_p_col(c,j)         + &
+         pf%dwt_frootp_to_litr_cel_p_col(c,j)          + &
+         pf%gap_mortality_p_to_litr_cel_p_col(c,j)     + &
+         pf%harvest_p_to_litr_cel_p_col(c,j)           + &
+         pf%m_p_to_litr_cel_fire_col(c,j)) * dt
+
+      this%bgc_ppool_ext_inputs_vr_col(c,j,i_lig_lit)  = &
+       ( pf%phenology_p_to_litr_lig_p_col(c,j)         + &
+         pf%dwt_frootp_to_litr_lig_p_col(c,j)          + &
+         pf%gap_mortality_p_to_litr_lig_p_col(c,j)     + &
+         pf%harvest_p_to_litr_lig_p_col(c,j)           + &
+         pf%m_p_to_litr_lig_fire_col(c,j)) * dt
+
+      this%bgc_ppool_ext_inputs_vr_col(c,j,i_cwd)      = &
+       ( pf%dwt_livecrootp_to_cwdp_col(c,j)            + &
+         pf%dwt_deadcrootp_to_cwdp_col(c,j)            + &
+         pf%gap_mortality_p_to_cwdp_col(c,j)           + &
+         pf%harvest_p_to_cwdp_col(c,j)                 + &
+         pf%fire_mortality_p_to_cwdp_col(c,j) )   * dt
+
+    enddo
+  enddo
+                 ! litter and CWD losses to fire
+  do l = 1, ndecomp_pools
+    do j = 1, nlevdecomp
+      ! column loop
+      do fc = 1,num_soilc
+        c = filter_soilc(fc)
+        this%bgc_ppool_ext_loss_vr_col(c,j,l) = this%bgc_ppool_ext_loss_vr_col(c,j,l)+  pf%m_decomp_ppools_to_fire_vr_col(c,j,l) * dt
+      enddo
+    enddo
+  enddo
+
+  end subroutine summarize_pflux_external
+
 end module PlantSoilnutrientFluxType
