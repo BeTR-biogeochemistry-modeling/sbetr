@@ -103,6 +103,7 @@ contains
   end subroutine hist_def_fld1d
 
 
+  !--------------------------------------------------------------------------------
 
 
   subroutine hist_addfld1d (fname, units, avgflag, long_name, type1d_out, &
@@ -163,6 +164,7 @@ contains
 
   end subroutine hist_addfld1d
 
+  !--------------------------------------------------------------------------------
 
   subroutine hist_addfld2d (fname, type2d, units, avgflag, long_name, type1d_out, &
                         ptr_gcell, ptr_lunit, ptr_col, ptr_patch, ptr_lnd, ptr_atm, &

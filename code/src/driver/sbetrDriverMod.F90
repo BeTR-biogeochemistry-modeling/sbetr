@@ -43,6 +43,7 @@ contains
   use spmdMod             , only : spmd_init
   use accumulMod
   use TracerBalanceMod
+  use CLMForcType         , only : clmforc_vars
   implicit none
   type(bounds_type),        intent(in) :: bounds                                ! bounds
   integer,                  intent(in) :: num_soilc                                  ! number of columns in column filter
@@ -66,12 +67,13 @@ contains
 
   dtime = 1800._r8
 
-
+  call clmforc_vars%Loadforc()
+  return
   call read_betrforcing(bounds, lbj, ubj, num_soilc, filter_soilc, time_vars, col, &
      atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars,  &
     waterflux_vars, temperature_vars, chemstate_vars, jtops)
 
-  return
+
 
   jtops(:) = 999  !this will be replaced with nan when I figured out how to do it, Jinyun Tang, June 17, 2014
 
@@ -405,10 +407,10 @@ contains
   use SoilStateType  , only : soilstate_type
 
   implicit none
-  type(soilstate_type), intent(inout) :: soilstate_vars
-  type(waterstate_type), intent(inout) :: waterstate_vars
+  type(soilstate_type),   intent(inout) :: soilstate_vars
+  type(waterstate_type),  intent(inout) :: waterstate_vars
   type(temperature_type), intent(inout) :: temperature_vars
-  type(time_type),             intent(in) :: ttime
+  type(time_type),           intent(in) :: ttime
 
   character(len=255) :: subname ='read_clmforcing'
 
