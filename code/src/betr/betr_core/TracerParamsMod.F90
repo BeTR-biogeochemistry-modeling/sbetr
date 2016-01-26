@@ -1864,7 +1864,7 @@ contains
     use clm_varcon         , only : secspday
     use CNCarbonFluxType   , only : carbonflux_type
     use tracercoeffType    , only : tracercoeff_type
-    use PlantSoilnutrientFluxType    , only  : plantsoilnutrientflux_type    
+    use PlantSoilnutrientFluxType    , only  : plantsoilnutrientflux_type
     !
     ! !ARGUMENTS:
     type(bounds_type)      , intent(in)    :: bounds

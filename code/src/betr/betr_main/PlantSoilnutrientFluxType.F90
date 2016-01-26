@@ -158,9 +158,8 @@ module PlantSoilnutrientFluxType
     integer          , intent(in) :: lbj, ubj
 
     call this%InitAllocate (bounds, lbj, ubj)
-    call this%InitHistory (bounds)
-    call this%InitCold (bounds)
-
+    call this%InitHistory  (bounds)
+    call this%InitCold     (bounds)
   end subroutine Init
 
   !------------------------------------------------------------------------
@@ -187,11 +186,16 @@ module PlantSoilnutrientFluxType
 
     allocate(this%plant_minn_active_yield_flx_patch  (begp:endp          )) ; this%plant_minn_active_yield_flx_patch  (:)   = nan
     allocate(this%plant_minn_passive_yield_flx_patch (begp:endp          )) ; this%plant_minn_passive_yield_flx_patch (:)   = nan
+    allocate(this%plant_minp_active_yield_flx_patch  (begp:endp          )) ; this%plant_minp_active_yield_flx_patch  (:)   = nan
     allocate(this%plant_minp_passive_yield_flx_patch (begp:endp          )) ; this%plant_minp_passive_yield_flx_patch (:)   = nan
+
     allocate(this%plant_minn_active_yield_flx_vr_patch (begp:endp,1:nlevdecomp_full )) ; this%plant_minn_active_yield_flx_vr_patch  (:,:)   = nan
+    allocate(this%plant_minp_active_yield_flx_vr_patch (begp:endp,1:nlevdecomp_full )) ; this%plant_minp_active_yield_flx_vr_patch  (:,:)   = nan
 
     allocate(this%plant_minn_passive_yield_flx_col   (begc:endc          )) ; this%plant_minn_passive_yield_flx_col   (:)   = nan
+    allocate(this%plant_minn_active_yield_flx_col(begc:endc)); this%plant_minn_active_yield_flx_col(:) = nan
     allocate(this%plant_minp_passive_yield_flx_col   (begc:endc          )) ; this%plant_minp_passive_yield_flx_col   (:)   = nan
+    allocate(this%plant_minp_active_yield_flx_col(begc:endc)); this%plant_minp_active_yield_flx_col(:) = nan
 
     allocate(this%plant_minn_nh4_uptake_vmax_vr_patch(begp:endp, 1:nlevdecomp_full)); this%plant_minn_nh4_uptake_vmax_vr_patch(:,:) = nan
     allocate(this%plant_minn_no3_uptake_vmax_vr_patch(begp:endp, 1:nlevdecomp_full)); this%plant_minn_no3_uptake_vmax_vr_patch(:,:) = nan
@@ -274,6 +278,7 @@ module PlantSoilnutrientFluxType
    allocate(this%plant_minn_yield_flx_patch(begp:endp)) ; this%plant_minn_yield_flx_patch(:) = nan
    allocate(this%plant_minp_yield_flx_patch(begp:endp)) ; this%plant_minp_yield_flx_patch(:) = nan
 
+
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------
@@ -338,15 +343,15 @@ module PlantSoilnutrientFluxType
          avgflag='A', long_name='plant nitrogen active uptake flux from soil', &
          ptr_col=this%plant_minn_active_yield_flx_col)
 
-    this%plant_minn_passive_yield_flx_col(begc:endc) = spval
+    this%plant_minp_passive_yield_flx_col(begc:endc) = spval
     call hist_addfld1d (fname='PLANT_MINP_PASSIVE_YIELD_FLX_COL', units='gP/m^2/s', &
          avgflag='A', long_name='plant phosphorus passive uptake flux from soil', &
-         ptr_col=this%plant_minn_passive_yield_flx_col)
+         ptr_col=this%plant_minp_passive_yield_flx_col)
 
     this%plant_minp_active_yield_flx_col(begc:endc) = spval
     call hist_addfld1d (fname='PLANT_MINP_ACTIVE_YIELD_FLX_COL', units='gP/m^2/s', &
          avgflag='A', long_name='plant phosphorus active uptake flux from soil', &
-         ptr_col=this%plant_minn_active_yield_flx_col)
+         ptr_col=this%plant_minp_active_yield_flx_col)
 
 
     this%f_nit_vr_col(begc:endc,:) = spval
@@ -358,6 +363,7 @@ module PlantSoilnutrientFluxType
     call hist_addfld_decomp (fname='F_DENIT'//trim(vr_suffix), units='gN/m^3/s', type2d='levdcmp', &
          avgflag='A', long_name='denitrification flux', &
          ptr_col=this%f_denit_vr_col)
+
   end subroutine InitHistory
 
   !-----------------------------------------------------------------------

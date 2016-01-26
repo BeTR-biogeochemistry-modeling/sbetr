@@ -41,7 +41,7 @@ contains
 
     ! !LOCAL VARIABLES:
     character(len=255) :: subname = 'betrbgc_init'
-
+    print*,subname
   end subroutine betrbgc_init
 
   !-------------------------------------------------------------------------------

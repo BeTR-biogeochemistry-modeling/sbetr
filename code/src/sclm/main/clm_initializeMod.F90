@@ -1,6 +1,7 @@
 module clm_initializeMod
-  use ColumnType             , only : col
-
+  use ColumnType         , only : col
+  use PatchType          , only : pft
+  use LandunitType       , only : lun  
   use decompMod          , only : bounds_type
   use TemperatureType    , only : temperature_type
   use WaterstateType     , only : Waterstate_Type
@@ -48,7 +49,9 @@ module clm_initializeMod
   implicit none
   type(bounds_type), intent(in) :: bounds
 
-  call col%Init (bounds)
+  call pft%Init(bounds)
+  call col%Init(bounds)
+  call lun%Init(bounds)
   end subroutine initialize1
 
   subroutine initialize2(bounds)

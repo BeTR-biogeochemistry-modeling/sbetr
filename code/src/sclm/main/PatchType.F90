@@ -36,6 +36,7 @@ module PatchType
   use shr_kind_mod   , only : r8 => shr_kind_r8
   use shr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
   use clm_varcon     , only : ispval
+  use decompMod      , only : bounds_type
   !
   ! !PUBLIC TYPES:
   implicit none
@@ -68,15 +69,16 @@ module PatchType
 contains
 
   !------------------------------------------------------------------------
-  subroutine Init(this, begp, endp)
+  subroutine Init(this, bounds)
     !
     ! !ARGUMENTS:
     class(patch_type)   :: this
-    integer, intent(in) :: begp,endp
+    type(bounds_type), intent(in) :: bounds
     !
     ! LOCAL VARAIBLES:
+    integer :: begp, endp
     !------------------------------------------------------------------------
-
+    begp=bounds%begp; endp=bounds%endp
     ! The following is set in InitGridCells
     allocate(this%gridcell (begp:endp)); this%gridcell (:) = ispval
     allocate(this%wtgcell  (begp:endp)); this%wtgcell  (:) = nan

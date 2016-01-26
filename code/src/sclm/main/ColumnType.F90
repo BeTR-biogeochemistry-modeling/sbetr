@@ -24,7 +24,7 @@ module ColumnType
   use shr_infnan_mod  , only : nan => shr_infnan_nan, assignment(=)
   use decompMod       , only : bounds_type
   use abortutils      , only : endrun
-
+  use clm_varcon     , only : ispval
   implicit none
   save
   private
@@ -48,7 +48,7 @@ module ColumnType
      integer , pointer :: landunit             (:)   ! index into landunit level quantities
      integer , pointer :: itype                (:)   ! column type
      real(r8), pointer :: wtlunit              (:)   ! weight (relative to landunit)
-     integer , pointer :: npfts                (:)   ! number of patches for each column     
+     integer , pointer :: npfts                (:)   ! number of patches for each column
   contains
     procedure          :: Init
     procedure, private :: InitAllocate
@@ -86,10 +86,10 @@ module ColumnType
     begc = bounds%begc; endc= bounds%endc
     lbj  = bounds%lbj; ubj = bounds%ubj
 
-    allocate(this%snl(begc:endc))
-    allocate(this%dz(begc:endc, lbj:ubj))
-    allocate(this%zi(begc:endc,lbj-1:ubj))
-    allocate(this%z(begc:endc,lbj:ubj))
-
+    allocate(this%snl(begc:endc))          ; this%snl(:) = ispval
+    allocate(this%dz(begc:endc, lbj:ubj))  ;
+    allocate(this%zi(begc:endc,lbj-1:ubj)) ;
+    allocate(this%z(begc:endc,lbj:ubj))    ;
+    allocate(this%landunit(begc:endc))     ; this%landunit(:) = ispval
   end subroutine InitAllocate
 end module ColumnType

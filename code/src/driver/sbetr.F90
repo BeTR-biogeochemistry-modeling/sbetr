@@ -19,6 +19,8 @@ implicit none
   bounds%endc = 1
   bounds%begp = 1
   bounds%endp = 1
+  bounds%begl = 1
+  bounds%endl = 1
   bounds%lbj  = 1
   bounds%ubj  = nlevgrnd
 
@@ -36,9 +38,6 @@ implicit none
   call initialize2(bounds)
 
   call sbetrBGC_driver(bounds, numf, filter, ttime)
-
-  !reading forcing data
-  print*,'reading forcing data'
 
 
 

@@ -91,9 +91,8 @@ contains
 
 
     call this%InitAllocate(bounds, lbj, ubj, betrtracer_vars)
-    call this%InitHistory(bounds, betrtracer_vars)
-    call this%InitCold(bounds)
-
+    call this%InitHistory (bounds, betrtracer_vars)
+    call this%InitCold    (bounds)
   end subroutine Init
 
   !-----------------------------------------------------------------------
@@ -384,6 +383,7 @@ contains
          this%tracer_flx_snwcp_liq_patch(p,:)      = spval
          this%tracer_flx_snwcp_ice_patch(p,:)      = spval
        endif
+
        if (lun%itype(l) == istsoil .or. lun%itype(l) == istcrop) then
          this%tracer_flx_vtrans_patch(p,:)         = 0._r8
          this%tracer_flx_snowfall_grnd_patch(p,:)  = 0._r8
@@ -394,12 +394,13 @@ contains
          this%tracer_flx_snwcp_ice_patch(p,:)      = 0._r8
        endif
     enddo
+
     do c = begc, endc
        l = col%landunit(c)
        if (lun%ifspecial(l)) then
          this%tracer_flx_top_soil_col(c,:)    = spval
          this%tracer_flx_can_loss_col(c,:)    = spval
-         this%tracer_flx_snowmelt_col (c,:)    = spval
+         this%tracer_flx_snowmelt_col (c,:)   = spval
          this%tracer_flx_infl_col(c,:)        = spval
          this%tracer_flx_netphyloss_col(c,:)  = spval
          this%tracer_flx_netpro_col(c,:)      = spval

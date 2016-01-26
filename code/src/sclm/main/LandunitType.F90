@@ -19,6 +19,7 @@ module LandunitType
   use shr_kind_mod   , only : r8 => shr_kind_r8
   use shr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
   use clm_varcon     , only : ispval
+  use decompMod      , only : bounds_type  
   !
   ! !PUBLIC TYPES:
   implicit none
@@ -64,13 +65,14 @@ module LandunitType
 contains
 
   !------------------------------------------------------------------------
-  subroutine Init(this, begl, endl)
+  subroutine Init(this, bounds)
     !
     ! !ARGUMENTS:
     class(landunit_type) :: this
-    integer, intent(in) :: begl,endl
+    type(bounds_type), intent(in) :: bounds
+    integer  :: begl,endl
     !------------------------------------------------------------------------
-
+    begl = bounds%begl; endl = bounds%endl
     ! The following is set in InitGridCellsMod
     allocate(this%gridcell     (begl:endl)); this%gridcell  (:) = ispval
     allocate(this%wtgcell      (begl:endl)); this%wtgcell   (:) = nan

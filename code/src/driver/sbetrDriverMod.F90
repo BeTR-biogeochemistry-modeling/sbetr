@@ -29,7 +29,7 @@ contains
   !the rtm is done using the strang splitting approach (Strang, 1968)
   !
   use shr_kind_mod        , only : r8 => shr_kind_r8
-  use clm_varpar          , only : nlevtrc_soil
+  use clm_varpar          , only : nlevtrc_soil, nlevgrnd
   use decompMod           , only : bounds_type
   use clm_initializeMod   , only : soilstate_vars, waterstate_vars, temperature_vars, &
                                    waterflux_vars, chemstate_vars, atm2lnd_vars, soilhydrology_vars, &
@@ -67,38 +67,27 @@ contains
 
   dtime = 1800._r8
 
+
+  !load forcing data
   call clmforc_vars%Loadforc()
-  return
-  call read_betrforcing(bounds, lbj, ubj, num_soilc, filter_soilc, time_vars, col, &
-     atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars,  &
-    waterflux_vars, temperature_vars, chemstate_vars, jtops)
-
-
 
   jtops(:) = 999  !this will be replaced with nan when I figured out how to do it, Jinyun Tang, June 17, 2014
 
   lbj = 1
-  ubj = nlevtrc_soil
+  ubj = nlevgrnd
 
   call spmd_init
   !initialize parameters
   call betr_initialize(bounds, lbj, ubj, waterstate_vars)
 
-  !initialize the betr parameterization module
-  call tracer_param_init(bounds)
-
-  !initialize the betrBGC module
-  call betrbgc_init(bounds, betrtracer_vars)
-
   !set up model time, in CLM, this will be clm_inparm, but one has to
   !set it different for the offline betr code
 
-  !
 
   !create output file
 
   call hist_htapes_create(histfilename,nlevtrc_soil, num_soilc, betrtracer_vars)
-
+  return
   record = 0
   do
     !set envrionmental forcing by reading foring data: temperature, moisture, atmospheric resistance
@@ -264,7 +253,7 @@ contains
     volatileid        =>  betrtracer_vars%volatileid          , &
     tracernames       =>  betrtracer_vars%tracernames           &
   )
-
+  print*,subname
   call ncd_pio_createfile(ncid, histfilename)
 
   call hist_file_create(ncid,nlevtrc_soil, ncol)
@@ -338,28 +327,7 @@ contains
   real(r8), allocatable :: data_2d(:,:,:,:)
   !open file
 
-  ncf_in_filename='/Users/jinyuntang/work/data_collection/clm_output/hd_model/sierra/sierra_clmdef/sierra_clmdef.clm2.h0.51-60.nc'
-  !open file
-  print*,'reading from ',ncf_in_filename
-  !check dimension length
 
-  call ncd_pio_openfile(ncf_in, ncf_in_filename, mode=ncd_nowrite)
-  dimlen = get_dim_len(ncf_in,'levgrnd')
-
-  print*,'dimension length',dimlen
-  allocate(data_1d(dimlen))
-  call ncd_getvar(ncf_in, 'levgrnd', data_1d)
-
-  print*,data_1d
-  print*, 'finished reading'
-
-  !test
-  allocate(data_2d(1,1,1:15,1:3650))
-  call ncd_getvar(ncf_in, 'TSOI', data_2d)
-  print*,data_2d(1,1,:,1)
-  call ncd_pio_closefile(ncf_in)
-
-  return
   !setup top boundary
   do fc = 1, numf
     c = filter(fc)
