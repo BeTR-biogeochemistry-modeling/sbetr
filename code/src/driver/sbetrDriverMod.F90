@@ -3,8 +3,9 @@ module sbetrDriverMod
 ! DESCRIPTION
 ! module holding subroutines to do out of clm betr application
 ! created by Jinyun Tang
-  use shr_kind_mod, only : r8 => shr_kind_r8
+  use shr_kind_mod        , only : r8 => shr_kind_r8
   use ncdio_pio
+  use CLMForcType         , only : clmforc_vars
 implicit none
 
   private
@@ -16,6 +17,7 @@ implicit none
     real(r8) :: time_end
     real(r8) :: time
     real(r8) :: restart_dtime
+    integer  :: tstep
   end type time_type
 
   character(len=255), parameter :: histfilename="betr_output.nc"      !this will be changed
@@ -41,9 +43,10 @@ contains
   use BetrBGCMod          , only : run_betr_one_step_without_drainage, betrbgc_init
   use TracerParamsMod     , only : tracer_param_init
   use spmdMod             , only : spmd_init
+  use LandunitType        , only : lun
+    use landunit_varcon   , only : istsoil
   use accumulMod
   use TracerBalanceMod
-  use CLMForcType         , only : clmforc_vars
   implicit none
   type(bounds_type),        intent(in) :: bounds                                ! bounds
   integer,                  intent(in) :: num_soilc                                  ! number of columns in column filter
@@ -65,16 +68,20 @@ contains
   integer :: jtops(bounds%begc:bounds%endc)
 
 
-  dtime = 1800._r8
-
+  dtime = 1800._r8   !half hourly time step
+  time_vars%tstep = 0
 
   !load forcing data
   call clmforc_vars%Loadforc()
 
-  jtops(:) = 999  !this will be replaced with nan when I figured out how to do it, Jinyun Tang, June 17, 2014
+  jtops(:) = 1  !this will be replaced with nan when I figured out how to do it, Jinyun Tang, June 17, 2014
 
   lbj = 1
   ubj = nlevgrnd
+  lun%itype(1) = istsoil
+  col%landunit(1) = 1
+  num_soilp = 1
+  allocate(filter_soilp(num_soilp)); filter_soilp(:) = 1
 
   call spmd_init
   !initialize parameters
@@ -89,22 +96,40 @@ contains
   call hist_htapes_create(histfilename,nlevtrc_soil, num_soilc, betrtracer_vars)
   return
   record = 0
+
   do
     !set envrionmental forcing by reading foring data: temperature, moisture, atmospheric resistance
     !from either user specified file or clm history file
-    !and advective velocity at interfatemperature_vars
     call read_betrforcing(bounds, lbj, ubj, num_soilc, filter_soilc, time_vars, col, &
-       atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars,  &
+      atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars,  &
       waterflux_vars, temperature_vars, chemstate_vars, jtops)
+
+    !no calculation in the first step
+    if(record==0)cycle
+
+    !calculate advective velocity
+    call calc_qadv(ubj, num_soilc, filter_soilc, dtime, time_vars, col, waterstate_vars, waterflux_vars)
+
+    call  begin_betr_tracer_massbalance(bounds, lbj, ubj, num_soilc, filter_soilc, &
+         betrtracer_vars, tracerstate_vars, tracerflux_vars)
+
 
     call run_betr_one_step_without_drainage(bounds, lbj, ubj, num_soilc, filter_soilc, num_soilp, filter_soilp, col ,   &
          atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, temperature_vars, waterflux_vars, chemstate_vars, &
          cnstate_vars, canopystate_vars, carbonflux_vars, betrtracer_vars, bgc_reaction, tracerboundarycond_vars, &
          tracercoeff_vars, tracerstate_vars, tracerflux_vars, plantsoilnutrientflux_vars)
 
+    call run_betr_one_step_with_drainage(bounds, lbj, ubj, num_soilc, filter_soilc, &
+         jtops, waterflux_vars%qflx_drain_vr_col, col                             , &
+         betrtracer_vars, tracercoeff_vars, tracerstate_vars,  tracerflux_vars)
+
     !do mass balance check
+    call betr_tracer_massbalance_check(bounds, lbj, ubj, num_soilc, filter_soilc, &
+      betrtracer_vars, tracerstate_vars,  tracerflux_vars)
+
     !update time stamp
     call update_time_stamp(time_vars, dtime)
+
     record = record + 1
     !write output
     call hist_write(record, tracerflux_vars, tracerstate_vars, time_vars)
@@ -150,8 +175,6 @@ contains
 
   character(len=80) :: subname = 'its_time_to_exit'
 
-
-
   ans= (ttime%time .eq. ttime%time_end)
 
 
@@ -170,10 +193,11 @@ contains
 
   character(len=80) :: subname='update_time_stamp'
 
-
   ttime%time=ttime%time+dtime
 
-  print*,'time',ttime%time
+  ttime%tstep = ttime%tstep + 1
+  if(mod(ttime%tstep, 48*365)==0)ttime%tstep = 48*365
+
   end subroutine update_time_stamp
 
 !-------------------------------------------------------------------------------
@@ -213,9 +237,9 @@ contains
 
   implicit none
   type(tracercoeff_type), intent(in) :: tracercoeff_vars
-  type(tracerflux_type),  intent(in) :: tracerflux_vars
+  type(tracerflux_type) , intent(in) :: tracerflux_vars
   type(tracerstate_type), intent(in) :: tracerstate_vars
-  type(time_type)         , intent(in) :: time_vars
+  type(time_type)       , intent(in) :: time_vars
   character(len=80) :: subname = 'rest_write'
 
 
@@ -253,7 +277,7 @@ contains
     volatileid        =>  betrtracer_vars%volatileid          , &
     tracernames       =>  betrtracer_vars%tracernames           &
   )
-  print*,subname
+
   call ncd_pio_createfile(ncid, histfilename)
 
   call hist_file_create(ncid,nlevtrc_soil, ncol)
@@ -261,7 +285,7 @@ contains
 
   call  hist_def_fld2d(ncid, varname="TRACER_P_GAS", nf90_type=nf90_float,dim1name="levgrnd", &
       dim2name="ncol",long_name="total gas pressure", units="Pa")
-  print*,'ntracers',ntracers
+
   do jj = 1, ntracers
     if(jj<= ngwmobile_tracers)then
       call hist_def_fld2d(ncid, varname=trim(tracernames(jj))//'_TRACER_CONC_MOIBLE',&
@@ -320,68 +344,117 @@ contains
 
   integer :: j, fc, c
   character(len=255) :: subname='read_betrforcing'
-  character(len=250) :: ncf_in_filename
-  type(file_desc_t)  :: ncf_in
-  integer :: dimlen
-  real(r8), allocatable :: data_1d(:)
-  real(r8), allocatable :: data_2d(:,:,:,:)
-  !open file
 
 
+
+  associate(                   &
+    tstep => ttime%tstep       &
+  )
   !setup top boundary
   do fc = 1, numf
     c = filter(fc)
     jtops(c) = 1
     soilhydrology_vars%zwts_col(c) = 10._r8
-    atm2lnd_vars%forc_pbot_downscaled_col(c) = 1.01325e5_r8                     ! 1 atmos
+    atm2lnd_vars%forc_pbot_downscaled_col(c) = clmforc_vars%pbot(tstep)             ! 1 atmos
   enddo
+
 
   !set up forcing variables
   do j = lbj, ubj
     do fc = 1, numf
       c = filter(fc)
       if(j>=jtops(c))then
-        waterstate_vars%h2osoi_liqvol_col(c,j) = 0.3_r8
-        waterstate_vars%air_vol_col(c,j) = 0.2_r8
-        soilstate_vars%eff_porosity_col(c,j)  = 0.5_r8
-        soilstate_vars%bsw_col(c,j) = 3._r8
+        waterstate_vars%h2osoi_liqvol_col(c,j) = clmforc_vars%h2osoi_liqvol(tstep,j)
+        waterstate_vars%air_vol_col(c,j)       = clmforc_vars%watsat(j)-clmforc_vars%h2osoi_liqvol(tstep,j)
+        soilstate_vars%eff_porosity_col(c,j)   = clmforc_vars%watsat(j)-clmforc_vars%h2osoi_icevol(tstep,j)
+        soilstate_vars%bsw_col(c,j)            = clmforc_vars%bsw(j)
+        temperature_vars%t_soisno_col(c,j)     = clmforc_vars%t_soi(tstep,j)
+        waterflux_vars%qflx_rootsoi_col(c,j)   = clmforc_vars%qflx_tran_dep(tstep,j)  !water exchange between soil and root, mm/H2O/s
+
         col%dz(c,j) = dzsoi(j)
         col%zi(c,j) = zisoi(j)
-        temperature_vars%t_soisno_col(c,j) = 298._r8
         chemstate_vars%soil_pH(c,j)=7._r8
-        soilhydrology_vars%fracice_col(c,j) = 0._r8                             !no ice
-        waterflux_vars%qflx_adv_col(c,j) = 1.e-6_r8                                 !advective tracer flux, m H2O/s
-        waterflux_vars%qflx_rootsoi_col(c,j) = 0._r8                                !water exchange between soil and root
+        !set drainage to zero
+        !set surface runoff to zero
+        waterflux_vars%qflx_surf_col(c) = 0._r8
+        waterflux_vars%qflx_drain_vr_col(c,j) = 0._r8
       endif
     enddo
   enddo
+
   do fc = 1, numf
-      waterflux_vars%qflx_infl_col(c)  = 1.e-3_r8                                 !infiltration flux, mm H2O/s
+      waterflux_vars%qflx_infl_col(c)  = clmforc_vars%qflx_infl(tstep)              !infiltration flux, mm H2O/s
       col%zi(c,0) = zisoi(0)
   enddo
 
+
+  do j = 1, ubj
+    do fc = 1, numf
+      c = filter(fc)
+      waterstate_vars%h2osoi_liq_col(c,j)    = clmforc_vars%h2osoi_liq(tstep,j)
+      waterstate_vars%h2osoi_ice_col(c,j)    = clmforc_vars%h2osoi_ice(tstep,j)
+    enddo
+  enddo
+  end associate
   end subroutine read_betrforcing
 
-!-------------------------------------------------------------------------------
-  subroutine read_clmforcing(ttime, soilstate_vars, waterstate_vars, temperature_vars)
-  !
-  ! DESCRIPTION
-  !
-  ! reading offline soil biophysical forcing from CLM output
-  ! by default, all data are at half ourly time step
-  !
-  use TemperatureType, only : temperature_type
-  use WaterStateType , only : waterstate_type
-  use SoilStateType  , only : soilstate_type
+  !-------------------------------------------------------------------------------
 
+  subroutine calc_qadv(ubj, numf, filter, dtime, ttime, col, waterstate_vars, waterflux_vars)
+
+  use WaterstateType    , only : waterstate_type
+  use WaterfluxType     , only : waterflux_type
+  use ColumnType        , only : column_type
   implicit none
-  type(soilstate_type),   intent(inout) :: soilstate_vars
-  type(waterstate_type),  intent(inout) :: waterstate_vars
-  type(temperature_type), intent(inout) :: temperature_vars
-  type(time_type),           intent(in) :: ttime
+  integer, intent(in) :: numf
+  integer, intent(in) :: filter(:)
+  integer, intent(in) :: ubj
+  type(time_type),             intent(in) :: ttime
+  real(r8),                 intent(in)    :: dtime
+  type(waterstate_type),    intent(inout) :: waterstate_vars
+  type(waterflux_type),     intent(inout) :: waterflux_vars
+  type(column_type),        intent(inout) :: col
 
-  character(len=255) :: subname ='read_clmforcing'
+  integer :: j, fc, c
+  real(r8):: dmass    !kg/m2 = mm H2O/m2
+
+  associate(                   &
+    tstep => ttime%tstep       &
+  )
 
 
-  end subroutine read_clmforcing
+  !now obtain the advective fluxes between different soil layers
+  !dstorage = (h2o_new-h2o)/dt = qin-qout-qtran_dep
+  !  soilhydrology_vars%fracice_col(c,j) = 0._r8                                 !no ice
+  do fc = 1, numf
+    waterflux_vars%qflx_adv_col(c,0) = clmforc_vars%qflx_infl(tstep)
+    do j = 1,ubj
+      dmass=(waterstate_vars%h2osoi_ice_col(c,j)+waterstate_vars%h2osoi_liq_col(c,j))- &
+         (waterstate_vars%h2osoi_ice_old(c,j)+waterstate_vars%h2osoi_liq_old(c,j))
+
+      waterflux_vars%qflx_adv_col(c,j)= waterflux_vars%qflx_adv_col(c,j-1) - waterflux_vars%qflx_rootsoi_col(c,j) &
+        - dmass/dtime
+    enddo
+  enddo
+
+  !now convert all flux unit into m/s
+
+  do fc = 1, numf
+    waterflux_vars%qflx_adv_col(c,0) = waterflux_vars%qflx_adv_col(c,0)*1.e-3_r8
+    do j = 1,ubj
+      waterflux_vars%qflx_adv_col(c,j)= waterflux_vars%qflx_adv_col(c,j)*1.e-3_r8
+      waterflux_vars%qflx_rootsoi_col(c,j) = waterflux_vars%qflx_rootsoi_col(c,j) * 1.e-3_r8
+    enddo
+  enddo
+
+  do j = 1, ubj
+    do fc = 1, numf
+      c = filter(fc)
+      waterstate_vars%h2osoi_liq_old(c,j)    = waterstate_vars%h2osoi_liq_col(c,j)
+      waterstate_vars%h2osoi_ice_old(c,j)    = waterstate_vars%h2osoi_ice_col(c,j)
+    enddo
+  enddo
+
+  end associate
+  end subroutine calc_qadv
 end module sbetrDriverMod

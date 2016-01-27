@@ -842,6 +842,7 @@ contains
     call ESMF_TimeIntervalGet(step_size, s=get_step_size, rc=rc)
     call chkrc(rc, sub//': error return from ESMF_ClockTimeIntervalGet')
 
+    rc = 1800  
   end function get_step_size
 
   !=========================================================================================

@@ -1,15 +1,23 @@
 module CLMForcType
   use shr_kind_mod        , only : r8 => shr_kind_r8
+  use shr_const_mod       , only : rhoice => SHR_CONST_RHOICE
+  use shr_const_mod       , only : rhoh2o => SHR_CONST_RHOFW
 implicit none
 
 
   type, public :: clmforc_type
     real(r8), pointer :: t_soi(:,:)
-    real(r8), pointer :: h2o_soi(:,:)
-    real(r8), pointer :: qflx_infl(:)
-    real(r8), pointer :: qflx_tran_dep(:,:)
-    real(r8), pointer :: dzsoi(:)     !node thickness
-    real(r8), pointer :: zsoi(:)      !node depth of each numerical node
+    real(r8), pointer :: h2osoi_liqvol(:,:)
+    real(r8), pointer :: h2osoi_liq(:,:)
+    real(r8), pointer :: h2osoi_ice(:,:)
+    real(r8), pointer :: qflx_infl(:)       !surface infiltration, mm/s
+    real(r8), pointer :: qflx_tran_dep(:,:) !transpiration at depth, mm/s
+    real(r8), pointer :: pbot(:)            !amtospheric pressure, Pa
+    real(r8), pointer :: dzsoi(:)           !node thickness
+    real(r8), pointer :: zsoi(:)            !node depth of each numerical node
+    real(r8), pointer :: bsw(:)             !clap-hornberg parameter
+    real(r8), pointer :: watsat(:)          !saturated volumetric water content
+    real(r8), pointer :: h2osoi_icevol(:,:)
     integer           :: nlev
     integer           :: ntsnap
   contains
@@ -41,12 +49,17 @@ contains
   integer, intent(in) :: diml, dimt
 
   allocate(this%t_soi(dimt,diml))
-  allocate(this%h2o_soi(dimt,diml))
+  allocate(this%h2osoi_liqvol(dimt,diml))
+  allocate(this%h2osoi_icevol(dimt,diml))
+  allocate(this%h2osoi_liq(dimt,diml))
+  allocate(this%h2osoi_ice(dimt,diml))
   allocate(this%qflx_infl(dimt))
   allocate(this%qflx_tran_dep(dimt,diml))
   allocate(this%zsoi(diml))
   allocate(this%dzsoi(diml))
-
+  allocate(this%pbot(dimt))
+  allocate(this%watsat(diml))
+  allocate(this%bsw(diml))
   this%nlev=diml
   this%ntsnap=dimt
   end subroutine InitAllocate
@@ -92,6 +105,15 @@ contains
     this%zsoi(j2) = data1(1,j2)
   enddo
 
+  call ncd_getvar(ncf_in_grid,'WATSAT',data1)
+  do j2 = 1, dimlenl
+    this%watsat(j2) = data1(1,j2)
+  enddo
+
+  call ncd_getvar(ncf_in_grid,'BSW',data1)
+  do j2 = 1, dimlenl
+    this%bsw(j2) = data1(1,j2)
+  enddo
 
   !read data
   allocate(data_2d(1,1,dimlenl,1:dimlent))
@@ -105,20 +127,41 @@ contains
   enddo
   enddo
 
-
+  !read h2osoi
   call ncd_getvar(ncf_in_forc, 'H2OSOI', data_2d)
 
   !now assign the data
   do j2 = 1, dimlenl
   do j1 = 1, dimlent
-    this%h2o_soi(j1,j2) = data_2d(1,1,j2,j1)
+    this%h2osoi_liqvol(j1,j2) = data_2d(1,1,j2,j1)
   enddo
   enddo
+
+  !read ice
+  call ncd_getvar(ncf_in_forc, 'SOILICE', data_2d)
+
+  !now assign the data
+  do j2 = 1, dimlenl
+  do j1 = 1, dimlent
+
+    this%h2osoi_icevol(j1,j2) = data_2d(1,1,j2,j1)/rhoice/this%dzsoi(j2)
+    this%h2osoi_liqvol(j1,j2) = this%h2osoi_liqvol(j1,j2) - this%h2osoi_icevol(j1,j2)
+    this%h2osoi_ice(j1,j2) = data_2d(1,1,j2,j1)
+    this%h2osoi_liq(j1,j2) = this%h2osoi_liqvol(j1,j2)*this%dzsoi(j2)*rhoh2o
+  enddo
+  enddo
+
 
   call ncd_getvar(ncf_in_forc,'QINFL',data_1d)
 
   do j1 =1, dimlent
     this%qflx_infl(j1) = data_1d(1,1,j1)
+  enddo
+
+  call ncd_getvar(ncf_in_forc,'PBOT',data_1d)
+
+  do j1 =1, dimlent
+    this%pbot(j1) = data_1d(1,1,j1)
   enddo
 
   call ncd_getvar(ncf_in_forc, 'QVEGT_DEP', data_2d)

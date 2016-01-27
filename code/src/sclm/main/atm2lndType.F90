@@ -9,11 +9,11 @@ module atm2lndType
 implicit none
 
   type, public :: atm2lnd_type
-  
-  real(r8), pointer :: forc_pbot_downscaled_col      (:)   => null() ! downscaled atm pressure (Pa)  
+
+  real(r8), pointer :: forc_pbot_downscaled_col      (:)   => null() ! downscaled atm pressure (Pa)
   contains
-    procedure, public  :: Init         
-    procedure, private :: InitAllocate    
+    procedure, public  :: Init
+    procedure, private :: InitAllocate
   end type atm2lnd_type
   !----------------------------------------------------
 
@@ -23,34 +23,34 @@ implicit none
   subroutine Init(this, bounds)
 
     class(atm2lnd_type) :: this
-    type(bounds_type), intent(in) :: bounds  
+    type(bounds_type), intent(in) :: bounds
 
     call this%InitAllocate(bounds)
 
   end subroutine Init
-  
+
   !------------------------------------------------------------------------
   subroutine InitAllocate(this, bounds)
     !
     ! !DESCRIPTION:
     ! Initialize module data structure
     !
-    use shr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)    
+    use shr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
     ! !ARGUMENTS:
     class(atm2lnd_type) :: this
-    type(bounds_type), intent(in) :: bounds  
+    type(bounds_type), intent(in) :: bounds
     !
     ! !LOCAL VARIABLES:
     integer :: begp, endp
     integer :: begc, endc
     integer :: begg, endg
-    integer :: lbj,  ubj
+
     !------------------------------------------------------------------------
 
     begc = bounds%begc; endc= bounds%endc
-    lbj  = bounds%lbj; ubj = bounds%ubj
+
 
     allocate(this%forc_pbot_downscaled_col(begc:endc));    this%forc_pbot_downscaled_col(:) = nan
-    
-  end subroutine InitAllocate   
+
+  end subroutine InitAllocate
 end module atm2lndType

@@ -16,7 +16,7 @@ module WaterfluxType
   ! column water flux variables structure
   !----------------------------------------------------
   type, public :: waterflux_type
-    real(r8), pointer :: qflx_adv_col(:,:)         !advection velocity from one layer to another, (0:nlevgrnd)
+    real(r8), pointer :: qflx_adv_col(:,:)       !advection velocity from one layer to another, (0:nlevgrnd), positive downward
     real(r8), pointer :: qflx_infl_col(:)	       !infiltration (mm H2O /s)
     real(r8), pointer :: qflx_surf_col(:)	       !surface runoff (mm H2O /s)
     real(r8), pointer :: h2oliq_vol_tendency(:,:)         !temporal change of water during the solution of soil water movement

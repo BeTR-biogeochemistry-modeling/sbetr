@@ -104,8 +104,6 @@ contains
 
     character(len=32) :: subname='betr_initialize'
 
-    print*,subname
-
     call betrtracer_vars%init_scalars()
 
     allocate(bgc_reaction, source=ctreate_bgc_reaction_type(bgc_method))
@@ -116,19 +114,15 @@ contains
 
     call tracerState_vars%Init(bounds, lbj, ubj, betrtracer_vars)
 
-    print*,'tracerflux'
     call tracerflux_vars%Init(bounds,  lbj, ubj, betrtracer_vars)
-    print*,'tracercoeff'
 
     call tracercoeff_vars%Init(bounds, lbj, ubj, betrtracer_vars)
-    print*,'tracer bound'
 
     call tracerboundarycond_vars%Init(bounds, betrtracer_vars)
-    print*,'plantsoil'
 
     call plantsoilnutrientflux_vars%Init(bounds, lbj, ubj)
 
-    print*,'plantsoil done'
+
     !initialize state variable
     call bgc_reaction%initCold(bounds,  betrtracer_vars, waterstate_vars, tracerstate_vars)
 
