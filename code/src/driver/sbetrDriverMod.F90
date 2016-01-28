@@ -40,11 +40,13 @@ contains
   use ColumnType          , only : col
   use betr_initializeMod  , only : betr_initialize, betrtracer_vars, tracercoeff_vars,  bgc_reaction, &
                                     tracerflux_vars, tracerState_vars, tracerboundarycond_vars, plantsoilnutrientflux_vars
-  use BetrBGCMod          , only : run_betr_one_step_without_drainage, betrbgc_init
+  use BetrBGCMod          , only : run_betr_one_step_without_drainage, betrbgc_init, run_betr_one_step_with_drainage
   use TracerParamsMod     , only : tracer_param_init
   use spmdMod             , only : spmd_init
   use LandunitType        , only : lun
-    use landunit_varcon   , only : istsoil
+  use PatchType           , only : pft
+  use landunit_varcon     , only : istsoil
+  use clm_time_manager    , only : proc_initstep, proc_nextstep
   use accumulMod
   use TracerBalanceMod
   implicit none
@@ -69,8 +71,9 @@ contains
 
 
   dtime = 1800._r8   !half hourly time step
-  time_vars%tstep = 0
-
+  time_vars%tstep = 1
+  time_vars%time  = 0._r8
+  time_vars%time_end=dtime*48._r8*365._r8*2._r8
   !load forcing data
   call clmforc_vars%Loadforc()
 
@@ -80,39 +83,41 @@ contains
   ubj = nlevgrnd
   lun%itype(1) = istsoil
   col%landunit(1) = 1
+  col%gridcell(1) = 1
+  pft%landunit(1) = 1
+  pft%column(1)   = 1
+  pft%itype(1)    = 2
+
   num_soilp = 1
   allocate(filter_soilp(num_soilp)); filter_soilp(:) = 1
 
   call spmd_init
+
   !initialize parameters
   call betr_initialize(bounds, lbj, ubj, waterstate_vars)
 
-  !set up model time, in CLM, this will be clm_inparm, but one has to
-  !set it different for the offline betr code
-
-
   !create output file
-
   call hist_htapes_create(histfilename,nlevtrc_soil, num_soilc, betrtracer_vars)
-  return
-  record = 0
 
+  record = -1
+  ubj = nlevtrc_soil
+  call proc_initstep()
   do
+    record = record + 1
     !set envrionmental forcing by reading foring data: temperature, moisture, atmospheric resistance
     !from either user specified file or clm history file
+
     call read_betrforcing(bounds, lbj, ubj, num_soilc, filter_soilc, time_vars, col, &
-      atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars,  &
+      atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars             , &
       waterflux_vars, temperature_vars, chemstate_vars, jtops)
+
+    !calculate advective velocity
+    call calc_qadv(ubj, record, num_soilc, filter_soilc, dtime, time_vars, col, waterstate_vars, waterflux_vars)
 
     !no calculation in the first step
     if(record==0)cycle
-
-    !calculate advective velocity
-    call calc_qadv(ubj, num_soilc, filter_soilc, dtime, time_vars, col, waterstate_vars, waterflux_vars)
-
     call  begin_betr_tracer_massbalance(bounds, lbj, ubj, num_soilc, filter_soilc, &
          betrtracer_vars, tracerstate_vars, tracerflux_vars)
-
 
     call run_betr_one_step_without_drainage(bounds, lbj, ubj, num_soilc, filter_soilc, num_soilp, filter_soilp, col ,   &
          atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, temperature_vars, waterflux_vars, chemstate_vars, &
@@ -120,7 +125,7 @@ contains
          tracercoeff_vars, tracerstate_vars, tracerflux_vars, plantsoilnutrientflux_vars)
 
     call run_betr_one_step_with_drainage(bounds, lbj, ubj, num_soilc, filter_soilc, &
-         jtops, waterflux_vars%qflx_drain_vr_col, col                             , &
+         jtops, waterflux_vars%qflx_drain_vr_col(:,lbj:ubj), col                             , &
          betrtracer_vars, tracercoeff_vars, tracerstate_vars,  tracerflux_vars)
 
     !do mass balance check
@@ -130,13 +135,13 @@ contains
     !update time stamp
     call update_time_stamp(time_vars, dtime)
 
-    record = record + 1
+
     !write output
-    call hist_write(record, tracerflux_vars, tracerstate_vars, time_vars)
+    call hist_write(record, lbj, ubj, tracerflux_vars, tracerstate_vars, time_vars, betrtracer_vars)
 
-    !write restart file?
-    if(its_time_to_write_restart(time_vars)) call rest_write(tracerstate_vars, tracercoeff_vars, tracerflux_vars, time_vars)
-
+    !write restart file? is not functionning at the moment
+    !if(its_time_to_write_restart(time_vars)) call rest_write(tracerstate_vars, tracercoeff_vars, tracerflux_vars, time_vars)
+    call proc_nextstep()
     if(its_time_to_exit(time_vars))exit
 
   enddo
@@ -201,29 +206,65 @@ contains
   end subroutine update_time_stamp
 
 !-------------------------------------------------------------------------------
-  subroutine hist_write(record, tracerflux_vars, tracerstate_vars, time_vars)
+  subroutine hist_write(record, lbj, ubj, tracerflux_vars, tracerstate_vars, time_vars, betrtracer_vars)
   !
   ! DESCRIPTION
   ! output hist file
   !
   use TracerFluxType,  only : tracerflux_type
   use TracerStateType, only : tracerstate_type
+  use BeTRTracerType , only : BeTRTracer_Type
   implicit none
   integer                , intent(in) :: record
+  integer                , intent(in) :: lbj,ubj
   type(tracerflux_type)  , intent(in) :: tracerflux_vars
   type(tracerstate_type) , intent(in) :: tracerstate_vars
   type(time_type)        , intent(in) :: time_vars
+  type(BeTRTracer_Type)  , intent(in) :: betrtracer_vars
 
 
   type(file_desc_t)     :: ncid
+  integer :: jj
   character(len=80) :: subname='hist_write'
+
+  associate(                                                    &
+    ntracers          =>  betrtracer_vars%ntracers            , &
+    ngwmobile_tracers =>  betrtracer_vars%ngwmobile_tracers   , &
+    is_volatile       =>  betrtracer_vars%is_volatile         , &
+    is_h2o            =>  betrtracer_vars%is_h2o              , &
+    is_isotope        =>  betrtracer_vars%is_isotope          , &
+    volatileid        =>  betrtracer_vars%volatileid          , &
+    tracernames       =>  betrtracer_vars%tracernames           &
+  )
 
   call ncd_pio_openfile_for_write(ncid,histfilename)
 
+  if(mod(time_vars%time,86400._r8)==0)print*,'day', time_vars%time/86400._r8
   call ncd_putvar(ncid, "time", record, time_vars%time)
 
-  call ncd_pio_closefile(ncid)
+  do jj = 1, ntracers
+    if(jj<= ngwmobile_tracers)then
+      call ncd_putvar(ncid,trim(tracernames(jj))//'_TRACER_CONC_MOIBLE',&
+        record,tracerstate_vars%tracer_conc_mobile_col(1:1,lbj:ubj,jj))
 
+        if(is_volatile(jj) .and. (.not. is_h2o(jj)) .and. (.not. is_isotope(jj)))then
+
+          call ncd_putvar(ncid, trim(tracernames(jj))//'_TRACER_P_GAS_FRAC',&
+            record,tracerstate_vars%tracer_P_gas_frac_col(1:1,lbj:ubj,volatileid(jj)))
+        endif
+        if(is_volatile(jj))then
+          call ncd_putvar(ncid, trim(tracernames(jj))//'_FLX_SURFEMI', &
+            record, tracerflux_vars%tracer_flx_surfemi_col(1:1, volatileid(jj)))
+        endif
+    else
+      call ncd_putvar(ncid, trim(tracernames(jj))//'_TRACER_CONC_SOLID_PASSIVE', &
+      record, tracerstate_vars%tracer_conc_solid_passive_col(1:1,lbj:ubj,jj-ngwmobile_tracers))
+    endif
+  enddo
+
+  call ncd_putvar(ncid, 'TRACER_P_GAS', record, tracerstate_vars%tracer_P_gas_col(1:1,lbj:ubj))
+  call ncd_pio_closefile(ncid)
+  end associate
   end subroutine hist_write
 !-------------------------------------------------------------------------------
   subroutine rest_write(tracerstate_vars, tracercoeff_vars, tracerflux_vars, time_vars)
@@ -274,6 +315,8 @@ contains
     ntracers          =>  betrtracer_vars%ntracers            , &
     ngwmobile_tracers =>  betrtracer_vars%ngwmobile_tracers   , &
     is_volatile       =>  betrtracer_vars%is_volatile         , &
+    is_h2o            =>  betrtracer_vars%is_h2o              , &
+    is_isotope        =>  betrtracer_vars%is_isotope          , &
     volatileid        =>  betrtracer_vars%volatileid          , &
     tracernames       =>  betrtracer_vars%tracernames           &
   )
@@ -283,22 +326,40 @@ contains
   call hist_file_create(ncid,nlevtrc_soil, ncol)
 
 
-  call  hist_def_fld2d(ncid, varname="TRACER_P_GAS", nf90_type=nf90_float,dim1name="levgrnd", &
-      dim2name="ncol",long_name="total gas pressure", units="Pa")
+  call  hist_def_fld2d(ncid, varname="TRACER_P_GAS", nf90_type=nf90_float,dim1name="ncol", &
+      dim2name="levgrnd",long_name="total gas pressure", units="Pa")
 
   do jj = 1, ntracers
     if(jj<= ngwmobile_tracers)then
       call hist_def_fld2d(ncid, varname=trim(tracernames(jj))//'_TRACER_CONC_MOIBLE',&
-        nf90_type=nf90_float, dim1name="levgrnd", &
-        dim2name="ncol", long_name=trim(tracernames(jj))//"tracer concentrations", &
+        nf90_type=nf90_float, dim1name="ncol", &
+        dim2name="levgrnd", long_name=trim(tracernames(jj))//"tracer concentrations", &
         units="mol m-3")
+
+        if(is_volatile(jj) .and. (.not. is_h2o(jj)) .and. (.not. is_isotope(jj)))then
+
+          call hist_def_fld2d(ncid, varname=trim(tracernames(jj))//'_TRACER_P_GAS_FRAC',&
+            nf90_type=nf90_float, dim1name="ncol", &
+            dim2name="levgrnd", long_name='fraction of gas phase contributed by '//trim(tracernames(jj)), &
+            units="none")
+
+        endif
+
+        if(is_volatile(jj))then
+
+          call hist_def_fld1d (ncid, varname=trim(tracernames(jj))//'_FLX_SURFEMI', units='mol/m2/s', &
+            nf90_type=nf90_float,  dim1name="ncol", &
+            long_name='loss from surface emission for '//trim(tracernames(jj)))
+        endif
     else
       call hist_def_fld2d(ncid, varname=trim(tracernames(jj))//'_TRACER_CONC_SOLID_PASSIVE',&
-        nf90_type=nf90_float, dim1name="levgrnd", &
-        dim2name="ncol", long_name=trim(tracernames(jj))//"tracer concentrations", &
+        nf90_type=nf90_float, dim1name="ncol", &
+        dim2name="levgrnd", long_name=trim(tracernames(jj))//"tracer concentrations", &
         units="mol m-3")
     endif
   enddo
+
+
   call ncd_enddef(ncid)
 
   call ncd_pio_closefile(ncid)
@@ -370,7 +431,6 @@ contains
         soilstate_vars%bsw_col(c,j)            = clmforc_vars%bsw(j)
         temperature_vars%t_soisno_col(c,j)     = clmforc_vars%t_soi(tstep,j)
         waterflux_vars%qflx_rootsoi_col(c,j)   = clmforc_vars%qflx_tran_dep(tstep,j)  !water exchange between soil and root, mm/H2O/s
-
         col%dz(c,j) = dzsoi(j)
         col%zi(c,j) = zisoi(j)
         chemstate_vars%soil_pH(c,j)=7._r8
@@ -383,8 +443,10 @@ contains
   enddo
 
   do fc = 1, numf
+      c = filter(fc)
       waterflux_vars%qflx_infl_col(c)  = clmforc_vars%qflx_infl(tstep)              !infiltration flux, mm H2O/s
       col%zi(c,0) = zisoi(0)
+      waterflux_vars%qflx_gross_infl_soil_col(c) = 0._r8
   enddo
 
 
@@ -400,20 +462,29 @@ contains
 
   !-------------------------------------------------------------------------------
 
-  subroutine calc_qadv(ubj, numf, filter, dtime, ttime, col, waterstate_vars, waterflux_vars)
+  subroutine calc_qadv(ubj, record, numf, filter, dtime, ttime, col, waterstate_vars, waterflux_vars)
 
+  !
+  ! description
+  !calculate advective velocity between different layers
+  !
+  ! USES
   use WaterstateType    , only : waterstate_type
   use WaterfluxType     , only : waterflux_type
   use ColumnType        , only : column_type
+
+  ! ARGUMENTS
   implicit none
   integer, intent(in) :: numf
   integer, intent(in) :: filter(:)
   integer, intent(in) :: ubj
-  type(time_type),             intent(in) :: ttime
-  real(r8),                 intent(in)    :: dtime
-  type(waterstate_type),    intent(inout) :: waterstate_vars
-  type(waterflux_type),     intent(inout) :: waterflux_vars
-  type(column_type),        intent(inout) :: col
+
+  integer                 , intent(in)    :: record
+  type(time_type)         , intent(in)    :: ttime
+  real(r8)                , intent(in)    :: dtime
+  type(waterstate_type)   , intent(inout) :: waterstate_vars
+  type(waterflux_type)    , intent(inout) :: waterflux_vars
+  type(column_type)       , intent(inout) :: col
 
   integer :: j, fc, c
   real(r8):: dmass    !kg/m2 = mm H2O/m2
@@ -425,28 +496,31 @@ contains
 
   !now obtain the advective fluxes between different soil layers
   !dstorage = (h2o_new-h2o)/dt = qin-qout-qtran_dep
-  !  soilhydrology_vars%fracice_col(c,j) = 0._r8                                 !no ice
-  do fc = 1, numf
-    waterflux_vars%qflx_adv_col(c,0) = clmforc_vars%qflx_infl(tstep)
-    do j = 1,ubj
-      dmass=(waterstate_vars%h2osoi_ice_col(c,j)+waterstate_vars%h2osoi_liq_col(c,j))- &
-         (waterstate_vars%h2osoi_ice_old(c,j)+waterstate_vars%h2osoi_liq_old(c,j))
+  if(record > 0)then
+    do fc = 1, numf
+      c = filter(fc)
+      waterflux_vars%qflx_adv_col(c,0) = clmforc_vars%qflx_infl(tstep)
+      do j = 1,ubj
 
-      waterflux_vars%qflx_adv_col(c,j)= waterflux_vars%qflx_adv_col(c,j-1) - waterflux_vars%qflx_rootsoi_col(c,j) &
-        - dmass/dtime
+        dmass=(waterstate_vars%h2osoi_ice_col(c,j)+waterstate_vars%h2osoi_liq_col(c,j))- &
+           (waterstate_vars%h2osoi_ice_old(c,j)+waterstate_vars%h2osoi_liq_old(c,j))
+
+        waterflux_vars%qflx_adv_col(c,j)= waterflux_vars%qflx_adv_col(c,j-1) - waterflux_vars%qflx_rootsoi_col(c,j) &
+          - dmass/dtime
+      enddo
     enddo
-  enddo
 
-  !now convert all flux unit into m/s
+    !now convert all flux unit into m/s
 
-  do fc = 1, numf
-    waterflux_vars%qflx_adv_col(c,0) = waterflux_vars%qflx_adv_col(c,0)*1.e-3_r8
-    do j = 1,ubj
-      waterflux_vars%qflx_adv_col(c,j)= waterflux_vars%qflx_adv_col(c,j)*1.e-3_r8
-      waterflux_vars%qflx_rootsoi_col(c,j) = waterflux_vars%qflx_rootsoi_col(c,j) * 1.e-3_r8
+    do fc = 1, numf
+      c = filter(fc)
+      waterflux_vars%qflx_adv_col(c,0) = waterflux_vars%qflx_adv_col(c,0)*1.e-3_r8
+      do j = 1,ubj
+        waterflux_vars%qflx_adv_col(c,j)= waterflux_vars%qflx_adv_col(c,j)*1.e-3_r8
+        waterflux_vars%qflx_rootsoi_col(c,j) = waterflux_vars%qflx_rootsoi_col(c,j) * 1.e-3_r8
+      enddo
     enddo
-  enddo
-
+  endif
   do j = 1, ubj
     do fc = 1, numf
       c = filter(fc)

@@ -230,10 +230,10 @@ contains
     SHR_ASSERT_ALL((ubound(update_col)      == (/bounds%endc/)),        errMsg(__FILE__,__LINE__))
 
     SHR_ASSERT_ALL((ubound(source)           == (/bounds%endc, ubj, ntrcs/)), errMsg(__FILE__,__LINE__))
-    SHR_ASSERT_ALL((ubound(rt)              == (/bounds%endc, ubj, ntrcs/)), errMsg(__FILE__,__LINE__))
-    SHR_ASSERT_ALL(((/ubound(trcin_mobile,1),ubound(trcin_mobile,2),size(trcin_mobile,3)/)          == (/bounds%endc, ubj, ntrcs/)), errMsg(__FILE__,__LINE__))
-    SHR_ASSERT_ALL(((/ubound(bot_concflx,1),ubound(bot_concflx,2),size(bot_concflx,3)/)             == (/bounds%endc, 2, ntrcs/))  , errMsg(__FILE__,__LINE__))
-    SHR_ASSERT_ALL(((/ubound(trc_concflx_air,1),ubound(trc_concflx_air,2),size(trc_concflx_air,3)/) == (/bounds%endc, 2, ntrcs/))  , errMsg(__FILE__,__LINE__))
+    SHR_ASSERT_ALL((ubound(rt)               == (/bounds%endc, ubj, ntrcs/)), errMsg(__FILE__,__LINE__))
+    SHR_ASSERT_ALL((ubound(trcin_mobile)     == (/bounds%endc, ubj, ntrcs/)), errMsg(__FILE__,__LINE__))
+    SHR_ASSERT_ALL((ubound(bot_concflx)      == (/bounds%endc, 2, ntrcs/))  , errMsg(__FILE__,__LINE__))
+    SHR_ASSERT_ALL((ubound(trc_concflx_air)  == (/bounds%endc, 2, ntrcs/))  , errMsg(__FILE__,__LINE__))
 
 
     if(.not. source_only) then
@@ -379,12 +379,11 @@ contains
    SHR_ASSERT_ALL((ubound(dz)                == (/bounds%endc, ubj/))  , errMsg(__FILE__,__LINE__))
    SHR_ASSERT_ALL((ubound(Rfactor   )        == (/bounds%endc, ubj/))  , errMsg(__FILE__,__LINE__))
    SHR_ASSERT_ALL((ubound(hmconductance)     == (/bounds%endc, ubj-1/)), errMsg(__FILE__,__LINE__))
-   SHR_ASSERT_ALL((ubound(source)    == (/bounds%endc, ubj,  ntrcs/)), errMsg(__FILE__,__LINE__))
-   SHR_ASSERT_ALL((ubound(dtracer)       == (/bounds%endc, ubj, ntrcs/)) , errMsg(__FILE__,__LINE__))
-
-   SHR_ASSERT_ALL(((/ubound(trcin_mobile , 1) , ubound(trcin_mobile , 2), size(trcin_mobile , 3)/)   == (/bounds%endc, ubj, ntrcs/)) , errMsg(__FILE__,__LINE__))
-   SHR_ASSERT_ALL(((/ubound(bot_flux     , 1) , ubound(bot_flux     , 2), size(bot_flux     , 3)/)   == (/bounds%endc, 2, ntrcs/))   , errMsg(__FILE__,__LINE__))
-   SHR_ASSERT_ALL(((/ubound(trc_concflx_air, 1), ubound(trc_concflx_air,2),size(trc_concflx_air,3)/) == (/bounds%endc, 2, ntrcs/))   , errMsg(__FILE__,__LINE__))
+   SHR_ASSERT_ALL((ubound(source)            == (/bounds%endc, ubj,  ntrcs/)), errMsg(__FILE__,__LINE__))
+   SHR_ASSERT_ALL((ubound(dtracer)           == (/bounds%endc, ubj, ntrcs/)) , errMsg(__FILE__,__LINE__))
+   SHR_ASSERT_ALL((ubound(trcin_mobile)      == (/bounds%endc, ubj, ntrcs/)) , errMsg(__FILE__,__LINE__))
+   SHR_ASSERT_ALL((ubound(bot_flux    )      == (/bounds%endc, 2, ntrcs/))   , errMsg(__FILE__,__LINE__))
+   SHR_ASSERT_ALL((ubound(trc_concflx_air)   == (/bounds%endc, 2, ntrcs/))   , errMsg(__FILE__,__LINE__))
 
    !assemble the tridiagonal maxtrix
    if(present(botbc_type))then
@@ -602,13 +601,14 @@ contains
 
    !-------------------------------------------------------------------------------
    subroutine semi_lagrange_adv_backward(bounds, lbj, ubj, lbn, numfl, filter, ntrcs, dtime, dz, &
-        zi, us, inflx_top, inflx_bot, update_col, halfdt_col, trcin, trcou, leaching_mass)
+        zi, us, inflx_top, inflx_bot, trc_bot, update_col, halfdt_col, trcin, trcou, leaching_mass, seep_mass)
      !
      ! DESCRIPTION:
      ! do semi-lagrangian advection for equation
      ! pu/pt+c*pu/px=0
      ! for a certain tracer group
      !
+     ! now it allows seepage from the surface
      ! !USES:
      use shr_kind_mod,     only : r8 => shr_kind_r8
      use decompMod,        only : bounds_type
@@ -628,12 +628,14 @@ contains
      real(r8)          , intent(in)  :: dz(bounds%begc: , lbj: )
      real(r8)          , intent(in)  :: inflx_top(bounds%begc: , 1: )     ! incoming tracer flow at top boundary [mol/m2/s]
      real(r8)          , intent(in)  :: inflx_bot(bounds%begc: , 1: )     !incoming tracer flow at bottom boundary
+     real(r8)          , intent(in)  :: trc_bot(bounds%begc: , 1: )       !bottom layer tracer concentration
      logical           , intent(in)  :: update_col(bounds%begc: )         !indicator of active clumns
      real(r8)          , intent(in)  :: us(bounds%begc: , lbj-1: )        !convective flux defined at the boundary, positive downwards, [m/s]
      logical           , intent(out) :: halfdt_col(bounds%begc:bounds%endc)
      real(r8)          , intent(in)  :: trcin(bounds%begc: , lbj: , 1: )  !input tracer concentration
      real(r8)          , intent(out) :: trcou(bounds%begc: , lbj: , 1: )
      real(r8), optional, intent(out) :: leaching_mass(bounds%begc: , 1: ) !leaching tracer mass
+     real(r8), optional, intent(out) :: seep_mass(bounds%begc: , 1: )     !seepaging tracer mass
 
      ! !LOCAL VARIABLES:
      integer, parameter :: pn = 2                !first order lagrangian interpolation to avoid overshooting
@@ -665,7 +667,9 @@ contains
      SHR_ASSERT_ALL((ubound(zi)         == (/bounds%endc, ubj/)),    errMsg(__FILE__,__LINE__))
      SHR_ASSERT_ALL((ubound(inflx_top)  == (/bounds%endc, ntrcs/)),  errMsg(__FILE__,__LINE__))
      SHR_ASSERT_ALL((ubound(inflx_bot)  == (/bounds%endc, ntrcs/)),  errMsg(__FILE__,__LINE__))
+     SHR_ASSERT_ALL((ubound(trc_bot)    == (/bounds%endc, ntrcs/)),  errMsg(__FILE__,__LINE__))
      SHR_ASSERT_ALL((ubound(leaching_mass)  == (/bounds%endc,ntrcs/)), errMsg(__FILE__,__LINE__))
+     SHR_ASSERT_ALL((ubound(seep_mass)  == (/bounds%endc,ntrcs/)), errMsg(__FILE__,__LINE__))
      SHR_ASSERT_ALL((ubound(trcou)      == (/bounds%endc, ubj,ntrcs/)),    errMsg(__FILE__,__LINE__))
      SHR_ASSERT_ALL(((/ubound(trcin,1),ubound(trcin,2),size(trcin,3)/)      == (/bounds%endc, ubj,ntrcs/)),    errMsg(__FILE__,__LINE__))
 
@@ -676,7 +680,7 @@ contains
         c = filter(fc)
         if(.not. update_col(c))cycle
         !do backward advection for all boundaries, including leftmost (lbn(c)-1) and rightmost (ubj)
-        length = ubj - lbn(c) + 1   !total number of grid cells
+        length = ubj - lbn(c) + 1   ! total number of grid interfaces
         lengthp2 = length + 4       ! add 2 ghost cells both at the left and right boundaries
 
         !define ghost boundary
@@ -718,11 +722,20 @@ contains
 
            !right ghost grids
            if(inflx_bot(c,ntr)==0._r8)then
+              !this would allow tracer to come in from the right hand side.
               j = ubj - lbn(c) + 4
-              mass_curve(j, ntr) = trcin(c,ubj, ntr)*(zghostr(1)-zi(c,ubj))
+              if(us(c,ubj)>0._r8)then
+                mass_curve(j, ntr) = 0._r8
+              else
+                mass_curve(j, ntr) = trc_bot(c,ntr)*(zghostr(1)-zi(c,ubj))
+              endif
 
               j = ubj - lbn(c) + 5
-              mass_curve(j, ntr) = trcin(c,ubj, ntr)*(zghostr(2)-zghostr(1))
+              if(us(c,ubj)>0._r8)then
+                mass_curve(j, ntr) = 0._r8
+              else
+                mass_curve(j, ntr) = trc_bot(c, ntr)*(zghostr(2)-zghostr(1))
+              endif
            else
               j = ubj - lbn(c) + 4
               mass_curve(j, ntr) = inflx_bot(c, ntr) * dtime(c)
@@ -754,6 +767,10 @@ contains
 
            !obtain the grid concentration
            call cumdif(cmass_new(0:length, ntr), mass_new(0:length, ntr))
+           !this calculates tracer loss from seepage
+           if(present(seep_mass))then
+             seep_mass(c,ntr) = max(cmass_new(0,ntr)-cmass_curve(2,ntr),0._r8)
+           endif
            do k = lbn(c), ubj
               j = k - lbn(c) + 1
               !correct for small negative values

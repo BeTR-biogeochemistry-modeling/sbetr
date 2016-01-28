@@ -91,5 +91,6 @@ module ColumnType
     allocate(this%zi(begc:endc,lbj-1:ubj)) ;
     allocate(this%z(begc:endc,lbj:ubj))    ;
     allocate(this%landunit(begc:endc))     ; this%landunit(:) = ispval
+    allocate(this%gridcell(begc:endc))     ; this%gridcell(:) = ispval
   end subroutine InitAllocate
 end module ColumnType

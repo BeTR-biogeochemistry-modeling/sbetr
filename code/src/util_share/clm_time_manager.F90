@@ -48,6 +48,8 @@ module clm_time_manager
         is_perpetual,             &! return true if perpetual calendar is in use
         is_restart,               &! return true if this is a restart run
         update_rad_dtime           ! track radiation interval via nstep
+   public :: proc_nextstep, &
+        proc_initstep
 
    ! Public parameter data
    character(len=*), public, parameter :: NO_LEAP_C   = 'NO_LEAP'
@@ -108,10 +110,25 @@ module clm_time_manager
    private :: calc_nestep
    private :: timemgr_print
    private :: TimeGetymd
-
+   integer, save :: nelapstep
    !=========================================================================================
 contains
   !=========================================================================================
+
+  subroutine proc_nextstep()
+
+  implicit none
+
+  nelapstep = nelapstep + 1
+  end subroutine proc_nextstep
+
+  subroutine proc_initstep()
+
+  implicit none
+
+  nelapstep = 0
+  end subroutine proc_initstep
+
 
   subroutine get_timemgr_defaults( calendar_out,      start_ymd_out,     start_tod_out, ref_ymd_out,        &
        ref_tod_out,       stop_ymd_out,      stop_tod_out,  nelapse_out,        &
@@ -828,21 +845,23 @@ contains
 
   !=========================================================================================
 
-  integer function get_step_size()
+  integer function get_step_size()result(rc)
 
     ! Return the step size in seconds.
-
+    implicit none
     character(len=*), parameter :: sub = 'clm::get_step_size'
     type(ESMF_TimeInterval) :: step_size       ! timestep size
-    integer :: rc
 
-    call ESMF_ClockGet(tm_clock, timeStep=step_size, rc=rc)
-    call chkrc(rc, sub//': error return from ESMF_ClockGet')
 
-    call ESMF_TimeIntervalGet(step_size, s=get_step_size, rc=rc)
-    call chkrc(rc, sub//': error return from ESMF_ClockTimeIntervalGet')
+    rc = 1800
+    return
+    !call ESMF_ClockGet(tm_clock, timeStep=step_size, rc=rc)
+    !call chkrc(rc, sub//': error return from ESMF_ClockGet')
 
-    rc = 1800  
+    !call ESMF_TimeIntervalGet(step_size, s=get_step_size, rc=rc)
+    !call chkrc(rc, sub//': error return from ESMF_ClockTimeIntervalGet')
+    !print*,'rc'
+
   end function get_step_size
 
   !=========================================================================================
@@ -892,6 +911,8 @@ contains
     integer :: rc
     integer(ESMF_KIND_I8) :: step_no
 
+    get_nstep = nelapstep
+    return
     call ESMF_ClockGet(tm_clock, advanceCount=step_no, rc=rc)
     call chkrc(rc, sub//': error return from ESMF_ClockGet')
 

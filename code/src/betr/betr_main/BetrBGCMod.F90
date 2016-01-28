@@ -41,7 +41,7 @@ contains
 
     ! !LOCAL VARIABLES:
     character(len=255) :: subname = 'betrbgc_init'
-    print*,subname
+
   end subroutine betrbgc_init
 
   !-------------------------------------------------------------------------------
@@ -623,7 +623,9 @@ contains
     real(r8), pointer    :: inflx_top( : , : )
     real(r8), pointer    :: inflx_bot( : , : )
     real(r8), pointer    :: dmass( : , : )
+    real(r8), pointer    :: trc_bot(  :, : )
     real(r8), pointer    :: trc_conc_out(:,:,:)
+    real(r8), pointer    :: seep_mass(: , :)
     logical              :: halfdt_col(bounds%begc:bounds%endc)
     real(r8)             :: err_relative
     real(r8)             :: c_courant
@@ -657,8 +659,10 @@ contains
          tracer_group_memid       => betrtracer_vars%tracer_group_memid             , & !
          tracernames              => betrtracer_vars%tracernames                    , & !
          tracer_conc_mobile_col   => tracerstate_vars%tracer_conc_mobile_col        , & !
+         tracer_conc_grndwater_col=> tracerstate_vars%tracer_conc_grndwater_col     , & !
          aqu2bulkcef_mobile_col   => tracercoeff_vars%aqu2bulkcef_mobile_col        , & !
          tracer_flx_leaching      => tracerflux_vars%tracer_flx_leaching_col        , & !
+         tracer_flx_surfrun       => tracerflux_vars%tracer_flx_surfrun_col         , & !
          tracer_flx_vtrans        => tracerflux_vars%tracer_flx_vtrans_col          , & !
          tracer_flx_vtrans_vr     => tracerflux_vars%tracer_flx_vtrans_vr_col       , & !
          tracer_flx_infl          => tracerflux_vars%tracer_flx_infl_col              & !
@@ -671,6 +675,8 @@ contains
       allocate (leaching_mass (bounds%begc:bounds%endc, nmem_max           ))
       allocate (inflx_top     (bounds%begc:bounds%endc, nmem_max           ))
       allocate (inflx_bot     (bounds%begc:bounds%endc, nmem_max           ))
+      allocate (trc_bot       (bounds%begc:bounds%endc, nmem_max           ))
+      allocate (seep_mass     (bounds%begc:bounds%endc, nmem_max           ))
       allocate (dmass         (bounds%begc:bounds%endc,nmem_max            ))
       allocate (trc_conc_out  (bounds%begc:bounds%endc,lbj:ubj, 1:nmem_max ))
 
@@ -701,6 +707,8 @@ contains
                inflx_top(c, k) = tracer_flx_infl(c,adv_trc_group(k))
                !set to 0 to ensure outgoing boundary condition is imposed, this may not be correct for water isotopes
                inflx_bot(c,k) = 0._r8
+
+               trc_bot(c,k) = tracer_conc_grndwater_col(c,adv_trc_group(k))
             enddo
          enddo
 
@@ -708,10 +716,13 @@ contains
          do fc = 1, num_soilc
             c = filter_soilc(fc)
             qflx_adv_local(c,jtops(c)-1) = safe_div(qflx_adv(c,jtops(c)-1),aqu2bulkcef_mobile_col(c,jtops(c),j),eps=loc_eps)
+
             do l = jtops(c), ubj
                qflx_adv_local(c,l)     = safe_div(qflx_adv(c,l),aqu2bulkcef_mobile_col(c,l,j),eps=loc_eps)
                qflx_rootsoi_local(c,l) = safe_div(qflx_rootsoi(c,l),aqu2bulkcef_mobile_col(c,l,j),eps=loc_eps)
+
             enddo
+
          enddo
 
          !dertmine the local advection time step based on the existence of convergence grid cell, i.e.
@@ -752,11 +763,12 @@ contains
                  qflx_adv_local(bounds%begc:bounds%endc,lbj-1:ubj),                               &
                  inflx_top(bounds%begc:bounds%endc, 1:ntrcs),                                     &
                  inflx_bot(bounds%begc:bounds%endc, 1:ntrcs),                                     &
+                 trc_bot(bounds%begc:bounds%endc,   1:ntrcs),                                     &
                  update_col,                                                                      &
                  halfdt_col,                                                                      &
                  tracer_conc_mobile_col(bounds%begc:bounds%endc, lbj:ubj,adv_trc_group(1:ntrcs)), &
                  trc_conc_out(:,:,1:ntrcs),                                                       &
-                 leaching_mass(bounds%begc:bounds%endc,1:ntrcs))
+                 leaching_mass(bounds%begc:bounds%endc,1:ntrcs), seep_mass(bounds%begc:bounds%endc, 1:ntrcs))
 
             !do soil-root tracer exchange
             do k = 1, ntrcs
@@ -795,23 +807,26 @@ contains
                      mass0   = dmass(c, k)
                      dmass(c, k) =  dot_sum(tracer_conc_mobile_col(c,jtops(c):ubj,trcid), dz(c,jtops(c):ubj))- dmass(c, k)
 
-                     err_tracer(c, k) = dmass(c, k) - inflx_top(c,k) * dtime_loc(c) + leaching_mass(c,k) + transp_mass(c, k)
+                     err_tracer(c, k) = dmass(c, k) - inflx_top(c,k) * dtime_loc(c) + leaching_mass(c,k) + transp_mass(c, k) + seep_mass(c,k)
                      if(abs(err_tracer(c,k))<err_adv_min .or. abs(err_tracer(c,k))/(mass0+1.e-10_r8) < 1.e-10_r8)then
                         !when the absolute value is too small, set relative error to
                         err_relative = err_relative_threshold*0.999_r8
                      else
-                        err_relative = err_tracer(c,k)/maxval((/abs(inflx_top(c,k)*dtime_loc(c)),abs(leaching_mass(c,k)),tiny_val/))
+                        err_relative = err_tracer(c,k)/maxval((/abs(inflx_top(c,k)*dtime_loc(c)),abs(leaching_mass(c,k)),&
+                          abs(dmass(c,k)),tiny_val/))
                      endif
                      if(abs(err_relative)<err_relative_threshold)then
                         leaching_mass(c,k) = leaching_mass(c,k) - err_tracer(c,k)
                      else
-                        write(iulog,'(I8,X,A,6(X,A,X,E18.10))')c,tracernames(trcid),' err=',err_tracer(c,k),' transp=',transp_mass(c,k),' lech=',&
+                        write(iulog,'(A,X,I8,X,I8,X,A,6(X,A,X,E18.10))')'nstep=',get_nstep(),c,tracernames(trcid),' err=',err_tracer(c,k),&
+                             ' transp=',transp_mass(c,k),' lech=',&
                              leaching_mass(c,k),' infl=',inflx_top(c,k),' dmass=',dmass(c,k), ' mass0=',mass0,'err_rel=',err_relative
                         call endrun('mass balance error for tracer '//tracernames(j)//errMsg(__FILE__, __LINE__))
                      endif
 
                      tracer_flx_vtrans(c, trcid)  = tracer_flx_vtrans(c,trcid) + transp_mass(c,k)
                      tracer_flx_leaching(c,trcid) = tracer_flx_leaching(c, trcid) + leaching_mass(c,k)
+                     tracer_flx_surfrun(c,trcid)  = tracer_flx_surfrun(c, trcid) + seep_mass(c,k)
                      tracer_flx_vtrans_vr(c, lbj:ubj, trcid) = transp_mass_vr(c,lbj:ubj,k)
                   endif
                enddo
@@ -847,6 +862,8 @@ contains
       deallocate(inflx_bot    )
       deallocate(dmass        )
       deallocate(trc_conc_out )
+      deallocate(trc_bot)
+      deallocate(seep_mass)
     end associate
   end subroutine do_tracer_advection
 
@@ -970,14 +987,16 @@ contains
             call DiffusTransp(bounds, lbj, ubj, jtops,                                       &
                  num_soilc,                                                                  &
                  filter_soilc, ntrcs,                                                        &
-                 tracer_conc_mobile_col( : , : ,dif_trc_group(1:ntrcs)), Rfactor( : , : ,j), &
-                 hmconductance_col( : , : ,j), dtime_loc, dz,  local_source(:,:, 1:ntrcs),   &
+                 tracer_conc_mobile_col( : , lbj:ubj ,dif_trc_group(1:ntrcs)),               &
+                 Rfactor( : , lbj:ubj ,j),                                                   &
+                 hmconductance_col( : , lbj:ubj-1 ,j), dtime_loc, dz(:,lbj:ubj),             &
+                 local_source(:,lbj:ubj, 1:ntrcs),                                           &
                  tracer_gwdif_concflux_top( : , : ,dif_trc_group(1:ntrcs)),                  &
                  condc_toplay( : ,j),                                                        &
                  topbc_type(j),                                                              &
                  bot_concflux( : , : ,dif_trc_group(1:ntrcs)),                               &
                  update_col,                                                                 &
-                 dtracer(:,:,1:ntrcs))
+                 dtracer(:,lbj:ubj,1:ntrcs))
 
             !do tracer update
             do fc = 1, num_soilc
@@ -1748,6 +1767,7 @@ contains
     use tracerfluxType        , only : tracerflux_type
     use tracerstatetype       , only : tracerstate_type
     use MathfuncMod           , only : safe_div
+    use clm_varcon            , only : oneatm    
     ! !ARGUMENTS:
     type(bounds_type),      intent(in)    :: bounds
     integer,                intent(in)    :: lbj, ubj
@@ -1764,6 +1784,7 @@ contains
     associate(                                                                &
          tracer_conc_mobile_col   => tracerstate_vars%tracer_conc_mobile_col, &
          tracer_P_gas_frac_col    => tracerstate_vars%tracer_P_gas_frac_col , &
+         tracer_P_gas_col         => tracerstate_vars%tracer_P_gas_col      , &
          aqu2bulkcef_mobile_col   => tracercoeff_vars%aqu2bulkcef_mobile_col, &
          henrycef_col             => tracercoeff_vars%henrycef_col          , &
          volatilegroupid          => betrtracer_vars%volatilegroupid        , &
@@ -1787,6 +1808,7 @@ contains
                   tracer_P_gas_frac_col(c,j, volatileid(jj))  = calc_gas_pressure(tracer_conc_mobile_col(c,j,jj), &
                        aqu2bulkcef_mobile_col(c,j,groupid(jj)), henrycef_col(c, j, volatilegroupid(jj)))
                   total_pres=total_pres + tracer_P_gas_frac_col(c,j, volatileid(jj))
+                  tracer_P_gas_col(c,j) = total_pres * oneatm
                endif
             enddo
             do jj = 1, ngwmobile_tracers

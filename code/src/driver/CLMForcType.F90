@@ -121,11 +121,13 @@ contains
   call ncd_getvar(ncf_in_forc, 'TSOI', data_2d)
 
   !now assign the data
+
   do j2 = 1, dimlenl
   do j1 = 1, dimlent
     this%t_soi(j1,j2) = data_2d(1,1,j2,j1)
   enddo
   enddo
+
 
   !read h2osoi
   call ncd_getvar(ncf_in_forc, 'H2OSOI', data_2d)

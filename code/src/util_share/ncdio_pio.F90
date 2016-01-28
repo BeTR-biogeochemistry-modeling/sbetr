@@ -416,7 +416,7 @@ module ncdio_pio
   character(len=256) :: str ! temporary
   character(len=32) :: subname='ncd_def_var' ! subroutine name
 !-----------------------------------------------------------------------
-  print*,varname
+
   if (.not. masterproc) return
 
     ! Determine dimension ids for variable
@@ -512,6 +512,7 @@ module ncdio_pio
 
   end subroutine ncd_putvar_int
 !----------------------------------------------------------------------
+
   subroutine ncd_putvar_real_sp(ncid, varname, rec, data)
   !
   !DESCRIPTION
@@ -1062,7 +1063,7 @@ module ncdio_pio
 
     call check_ret(nf90_open(fname, mode, file%fh),'open file '//trim(fname))
 
-    write(iulog,*) 'Opened existing file ', trim(fname), file%fh
+    !write(iulog,*) 'Opened existing file ', trim(fname), file%fh
 
   end subroutine ncd_pio_openfile
 

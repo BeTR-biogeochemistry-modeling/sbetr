@@ -422,7 +422,7 @@ contains
     allocate( deadwdcp_obs       (0:mxpft) )
 
 
-
+    noveg  = 1
 
   end subroutine pftconrd
 

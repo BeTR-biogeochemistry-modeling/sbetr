@@ -203,7 +203,7 @@ contains
             if(is_volatile(jj) .and. (.not. is_h2o(jj)) .and. (.not. is_isotope(jj)))then
                this%tracer_P_gas_frac_col(begc:endc,:, volatileid(jj)) = spval
                data2dptr => this%tracer_P_gas_frac_col(:,:, volatileid(jj))
-               call hist_addfld2d (fname=trim(tracernames(jj))//'_TRACER_P_GAS_FRAC', units='mol m-3', type2d='levtrc',  &
+               call hist_addfld2d (fname=trim(tracernames(jj))//'_TRACER_P_GAS_FRAC', units='none', type2d='levtrc',  &
                     avgflag='A', long_name='fraction of gas phase contributed by '//trim(tracernames(jj)), &
                     ptr_col=data2dptr)
             endif

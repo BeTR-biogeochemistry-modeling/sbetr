@@ -438,7 +438,6 @@ contains
              scal = get_equilibrium_scal(t_soisno(c,n), soi_pH(c,n), trcid,betrtracer_vars)
              henrycef_col(c,n,k)=henrycef_col(c,n,k) * scal
              aqu2neutralcef_col(c,n,j)=1._r8/scal   !this will convert the bulk aqueous phase into neutral phase
-
            endif
          enddo
        enddo
@@ -1263,10 +1262,12 @@ contains
          if(betrtracer_vars%is_volatile(j) .and. betrtracer_vars%is_advective(j))then
            !for volatile non water tracer, infiltration is calculated based dissolution of the gas in the water, this may need
            !improvement when tracers are allowed to transport inside snow, such that the tracer infiltration is derived from mass balance in snow
-           tracer_flx_infl(c,j) = bunsencef_topsoi(c,betrtracer_vars%volatilegroupid(j)) * tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1,j) * qflx_gross_infl_soil(c)*1.e-3_r8
+           tracer_flx_infl(c,j) = bunsencef_topsoi(c,betrtracer_vars%volatilegroupid(j)) * &
+                tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1,j) * qflx_gross_infl_soil(c)*1.e-3_r8
          else
            tracer_flx_infl(c,j) = 0._r8
          endif
+
        enddo
      endif
    enddo
@@ -1782,6 +1783,7 @@ contains
       p = filter_soilp (fp)
       c = pft%column(p)
       g = col%gridcell(c)
+
       ! Calculate aerenchyma diffusion
       if (j > jwt(c) .and. t_soisno(c,j) > tfrz .and. pft%itype(p) /= noveg) then
         ! Attn EK: This calculation of aerenchyma properties is very uncertain. Let's check in once all
