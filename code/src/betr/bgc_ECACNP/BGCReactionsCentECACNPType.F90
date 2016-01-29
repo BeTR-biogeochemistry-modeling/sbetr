@@ -971,7 +971,7 @@ contains
   !---------------------------------------------------------------
   subroutine init_betr_lsm_bgc_coupler(this, bounds, carbonstate_vars, &
        nitrogenstate_vars, phosphorusstate_vars, plantsoilnutrientflux_vars, &
-       betrtracer_vars, tracerstate_vars, cnstate_vars, soilstate_vars, waterflux_vars, ecophyscon_vars)
+       betrtracer_vars, tracerstate_vars, cnstate_vars, ecophyscon_vars)
     !
     ! !DESCRIPTION:
     ! do state variable exchange between betr and lsm
@@ -988,8 +988,7 @@ contains
     use PlantSoilnutrientFluxType, only : plantsoilnutrientflux_type
     use EcophysConType           , only : ecophyscon_type
     use CNStateType              , only : cnstate_type
-    use WaterfluxType            , only : waterflux_type
-    use SoilStateType            , only : soilstate_type
+
 
     ! !ARGUMENTS:
     class(bgc_reaction_CENTURY_ECACNP_type) , intent(in)    :: this
@@ -1002,8 +1001,7 @@ contains
     type(plantsoilnutrientflux_type)     , intent(inout) :: plantsoilnutrientflux_vars !
     type(ecophyscon_type)                , intent(in)    :: ecophyscon_vars
     type(cnstate_type)                   , intent(in)    :: cnstate_vars
-    type(waterflux_type)                 , intent(in)    :: waterflux_vars
-    type(soilstate_type)                 , intent(in)    :: soilstate_vars
+
 
     ! !LOCAL VARIABLES:
     integer, parameter :: i_soil1 = 5
