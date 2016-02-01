@@ -1,4 +1,5 @@
 module BeTRTracerType
+#include "shr_assert.h"
   !------------------------------------------------------------------------------
   ! !DESCRIPTION:
   ! data type to configure betr simulations
@@ -6,6 +7,8 @@ module BeTRTracerType
   ! !USES:
   use shr_kind_mod       , only: r8 => shr_kind_r8
   use decompMod          , only : bounds_type
+  use abortutils         , only : endrun
+  use shr_log_mod        , only : errMsg => shr_log_errMsg
   !
   implicit none
   private
@@ -30,7 +33,6 @@ module BeTRTracerType
    integer :: nsolid_passive_tracer_groups                       ! sub group in solid group
 
    integer :: nh2o_tracers                                       ! number of h2o tracers, this will be used to compute vapor gradient and thermal gradient driven isotopic flow
-   logical :: is_oddstep = .true.                                !this is not used now, originally was included to set up alternative numerical methods
    integer :: id_trc_n2                                          ! tag for n2
    integer :: id_trc_o2                                          ! tag for co2
    integer :: id_trc_ar                                          ! tag for ar
@@ -134,7 +136,6 @@ module BeTRTracerType
   this%nsolid_passive_tracer_groups = 0
 
   this%nh2o_tracers                 = 0      ! number of h2o tracers, this will be used to compute vapor gradient and thermal gradient driven isotopic flow
-  this%is_oddstep                   = .true. !this is not used now, originally was included to set up alternative numerical methods
 
 
   this%id_trc_ch4                   = 0      ! tag for methane
@@ -218,48 +219,82 @@ module BeTRTracerType
 
 !--------------------------------------------------------------------------------
 
-  subroutine set_tracer(this, trc_id, trc_name, is_trc_mobile, is_trc_advective, trc_group_id, &
-     trc_group_mem, is_trc_diffusive, is_trc_volatile, trc_volatile_id, trc_volatile_group_id,trc_vtrans_scal)
+subroutine set_tracer(this, trc_id, trc_name, is_trc_mobile, is_trc_advective, trc_group_id, &
+   trc_group_mem, is_trc_diffusive, is_trc_volatile, trc_volatile_id, trc_volatile_group_id, &
+   is_trc_h2o, trc_vtrans_scal, is_trc_adsorb, trc_adsorbid, trc_adsorbgroupid)
 
-  ! !DESCRIPTION:
-  ! set up tracer property based on input configurations
+! !DESCRIPTION:
+! set up tracer property based on input configurations
 
-     ! !ARGUMENTS:
-    class(BeTRtracer_type) :: this
-    integer            , intent(in) :: trc_id
-    character(len=*)   , intent(in) :: trc_name
-    logical            , intent(in) :: is_trc_mobile
-    logical            , intent(in) :: is_trc_advective
-    integer            , intent(in) :: trc_group_id
-    integer            , intent(in) :: trc_group_mem
+   ! !ARGUMENTS:
+  class(BeTRtracer_type) :: this
+  integer            , intent(in) :: trc_id
+  character(len=*)   , intent(in) :: trc_name
+  logical            , intent(in) :: is_trc_mobile
+  logical            , intent(in) :: is_trc_advective
+  integer            , intent(in) :: trc_group_id
+  integer            , intent(in) :: trc_group_mem
 
-    logical, optional  , intent(in) :: is_trc_diffusive
-    logical, optional  , intent(in) :: is_trc_volatile
-    integer, optional  , intent(in) :: trc_volatile_id
-    integer, optional  , intent(in) :: trc_volatile_group_id
-    real(r8),optional  , intent(in) :: trc_vtrans_scal
+  logical, optional  , intent(in) :: is_trc_diffusive
+  logical, optional  , intent(in) :: is_trc_volatile
+  integer, optional  , intent(in) :: trc_volatile_id
+  integer, optional  , intent(in) :: trc_volatile_group_id
+  real(r8),optional  , intent(in) :: trc_vtrans_scal
+  logical ,optional  , intent(in) :: is_trc_h2o
+  logical ,optional  , intent(in) :: is_trc_adsorb
+  integer ,optional  , intent(in) :: trc_adsorbid
+  integer ,optional  , intent(in) :: trc_adsorbgroupid
 
-    this%tracernames      (trc_id)    = trim(trc_name)
-    this%is_mobile        (trc_id)    = is_trc_mobile
-    this%groupid          (trc_id)    = trc_group_id
-    this%tracer_group_memid(trc_group_id,trc_group_mem) = trc_id
 
-    this%is_advective     (trc_id)    = is_trc_advective
 
-    if(present(is_trc_diffusive)) this%is_diffusive (trc_id) = is_trc_diffusive
-    if(present(is_trc_volatile))then
-      this%is_volatile      (trc_id)    = is_trc_volatile
-      if(this%is_volatile   (trc_id)) then
-        this%volatileid     (trc_id)    = trc_volatile_id
-        this%volatilegroupid(trc_id)    = trc_volatile_group_id
+  this%tracernames      (trc_id)    = trim(trc_name)
+  this%is_mobile        (trc_id)    = is_trc_mobile
+  this%groupid          (trc_id)    = trc_group_id
+  this%tracer_group_memid(trc_group_id,trc_group_mem) = trc_id
+  this%is_advective     (trc_id)    = is_trc_advective
+
+  if(present(is_trc_diffusive)) this%is_diffusive (trc_id) = is_trc_diffusive
+  if(present(is_trc_volatile))then
+    this%is_volatile      (trc_id)    = is_trc_volatile
+    if(this%is_volatile   (trc_id)) then
+      if(.not.present(trc_volatile_id))then
+        call endrun('volatile tracer id is not provided for '//trim(trc_name)//errMsg(__FILE__, __LINE__))
       endif
+      if(.not.present(trc_volatile_group_id))then
+        call endrun('volatile tracer group id is not provided for '//trim(trc_name)//errMsg(__FILE__, __LINE__))
+      endif
+
+      this%volatileid     (trc_id)    = trc_volatile_id
+      this%volatilegroupid(trc_id)    = trc_volatile_group_id
     endif
-    if(present(trc_vtrans_scal))then
-      this%vtrans_scal(trc_id) = trc_vtrans_scal
-    endif
+  endif
 
 
-  end subroutine set_tracer
+  if(present(trc_vtrans_scal))then
+    this%vtrans_scal(trc_id) = trc_vtrans_scal
+  endif
+
+  if(present(is_trc_h2o))then
+    this%is_h2o(trc_id) = is_trc_h2o
+  endif
+
+  if(present(is_trc_adsorb))then
+    this%is_adsorb(trc_id) = is_trc_adsorb
+    if(is_trc_adsorb)then
+      if(.not.present(trc_adsorbid))then
+        call endrun('adsorb tracer id is not provided for '//trim(trc_name)//errMsg(__FILE__, __LINE__))
+      endif
+      if(.not.present(trc_adsorbgroupid))then
+        call endrun('adsorb tracer group id is not provided for '//trim(trc_name)//errMsg(__FILE__, __LINE__))
+      endif
+      this%adsorbid(trc_id) = trc_adsorbid
+      this%adsorbgroupid(trc_id) = trc_adsorbgroupid
+    endif
+  endif
+
+end subroutine set_tracer
+
+
 
 
 end module BeTRTracerType
