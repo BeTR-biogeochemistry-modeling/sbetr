@@ -125,8 +125,7 @@ contains
          tracercoeff_vars, tracerstate_vars, tracerflux_vars, plantsoilnutrientflux_vars)
 
     call run_betr_one_step_with_drainage(bounds, lbj, ubj, num_soilc, filter_soilc, &
-         jtops, waterflux_vars%qflx_drain_vr_col(:,lbj:ubj), col                             , &
-         betrtracer_vars, tracercoeff_vars, tracerstate_vars,  tracerflux_vars)
+         jtops, waterflux_vars, col, betrtracer_vars, tracercoeff_vars, tracerstate_vars,  tracerflux_vars)
 
     !do mass balance check
     call betr_tracer_massbalance_check(bounds, lbj, ubj, num_soilc, filter_soilc, &
@@ -438,12 +437,14 @@ contains
         !set surface runoff to zero
         waterflux_vars%qflx_surf_col(c) = 0._r8
         waterflux_vars%qflx_drain_vr_col(c,j) = 0._r8
+
       endif
     enddo
   enddo
 
   do fc = 1, numf
       c = filter(fc)
+      waterflux_vars%qflx_totdrain_col(c) = 0._r8      
       waterflux_vars%qflx_infl_col(c)  = clmforc_vars%qflx_infl(tstep)              !infiltration flux, mm H2O/s
       col%zi(c,0) = zisoi(0)
       waterflux_vars%qflx_gross_infl_soil_col(c) = 0._r8

@@ -1427,7 +1427,7 @@ contains
 
   !--------------------------------------------------------------------------------
   subroutine run_betr_one_step_with_drainage(bounds, lbj, ubj, num_soilc, filter_soilc, &
-       jtops, qflx_drain_vr, col,                                                       &
+       jtops, waterflux_vars, col,                                                       &
        betrtracer_vars, tracercoeff_vars, tracerstate_vars,  tracerflux_vars)
     !
     ! !DESCRIPTION:
@@ -1439,14 +1439,14 @@ contains
     use tracercoeffType       , only : tracercoeff_type
     use ColumnType            , only : column_type
     use MathfuncMod           , only : safe_div
-
+    use WaterFluxType         , only : waterflux_type
     ! !ARGUMENTS:
     type(bounds_type),        intent(in)    :: bounds
     integer,                  intent(in)    :: lbj, ubj
     integer,                  intent(in)    :: num_soilc                          ! number of columns in column filter_soilc
     integer,                  intent(in)    :: filter_soilc(:)                    ! column filter_soilc
     integer,                  intent(in)    :: jtops(bounds%begc: )
-    real(r8),                 intent(in)    :: qflx_drain_vr(bounds%begc: ,lbj: ) !
+    type(waterflux_type)    , intent(in)    :: waterflux_vars
     type(column_type),        intent(in)    :: col                                ! column type
     type(betrtracer_type),    intent(in)    :: betrtracer_vars                    ! betr configuration information
     type(tracercoeff_type),   intent(in)    :: tracercoeff_vars                   ! tracer phase conversion coefficients
@@ -1457,7 +1457,7 @@ contains
     real(r8) :: aqucon
     integer  :: fc, c, j, k
 
-    SHR_ASSERT_ALL((ubound(qflx_drain_vr) == (/bounds%endc, ubj/)) , errMsg(__FILE__,__LINE__))
+
     SHR_ASSERT_ALL((ubound(jtops)         == (/bounds%endc/))      , errMsg(__FILE__,__LINE__))
 
     associate(                                                                   & !
@@ -1467,8 +1467,12 @@ contains
          is_advective             => betrtracer_vars%is_advective              , & !
          aqu2bulkcef_mobile       => tracercoeff_vars%aqu2bulkcef_mobile_col   , & !
          tracer_conc_mobile       => tracerstate_vars%tracer_conc_mobile_col   , & !
+         tracer_conc_grndwater    => tracerstate_vars%tracer_conc_grndwater_col, & !         
          dz                       => col%dz                                    , & !
-         tracer_flx_drain         => tracerflux_vars%tracer_flx_drain_col        & !
+         tracer_flx_drain         => tracerflux_vars%tracer_flx_drain_col      , & !
+         qflx_drain_vr            => waterflux_vars%qflx_drain_vr_col          , & ! Output  : [real(r8) (:,:) ]  vegetation/soil water exchange (m H2O/step) (to river +)
+         qflx_totdrain            => waterflux_vars%qflx_totdrain_col            & ! Output  : [real(r8) (:,:) ]  (m H2o/step)
+
          )
 
       do j = lbj, ubj
@@ -1478,23 +1482,33 @@ contains
                do k = 1, ngwmobile_tracers
                   !obtain aqueous concentration
                   if(.not. is_advective(k))cycle
-                  aqucon = safe_div(tracer_conc_mobile(c,j,k),aqu2bulkcef_mobile(c,j,groupid(k)))
-                  if(.not. is_h2o(k))then
-                     tracer_flx_drain(c,k)     = tracer_flx_drain(c,k)  + aqucon * max(qflx_drain_vr(c,j),0._r8)
-                     tracer_conc_mobile(c,j,k) =  tracer_conc_mobile(c,j,k) - aqucon * max(qflx_drain_vr(c,j),0._r8)/dz(c,j)
-                     if(tracer_conc_mobile(c,j,k)<0._r8)then
-                        tracer_flx_drain(c,k) = tracer_flx_drain(c,k)+tracer_conc_mobile(c,j,k)*dz(c,j)
-                        tracer_conc_mobile(c,j,k)=0._r8
-                     endif
+                  if(qflx_drain_vr(c,j) > 0._r8)then
+                    aqucon = safe_div(tracer_conc_mobile(c,j,k),aqu2bulkcef_mobile(c,j,groupid(k)))
                   else
-                     !when drainage is negative, this could result in mass balance problem
-                     tracer_flx_drain(c,k)     = tracer_flx_drain(c,k)  + aqucon * max(qflx_drain_vr(c,j),0._r8)
-                     tracer_conc_mobile(c,j,k) =  tracer_conc_mobile(c,j,k) - aqucon * max(qflx_drain_vr(c,j),0._r8)/dz(c,j)
+                    !when drainage is negative, tracer comes from groundwater
+                    aqucon = tracer_conc_grndwater(c,k)
+                  endif
+                  !when drainage is negative, assume the flux is magically coming from other groundwater sources
+                  tracer_flx_drain(c,k)     = tracer_flx_drain(c,k)  + aqucon * qflx_drain_vr(c,j)
+                  tracer_conc_mobile(c,j,k) =  tracer_conc_mobile(c,j,k) - aqucon * qflx_drain_vr(c,j)/dz(c,j)
+                  if(tracer_conc_mobile(c,j,k)<0._r8)then
+                     tracer_flx_drain(c,k) = tracer_flx_drain(c,k)+tracer_conc_mobile(c,j,k)*dz(c,j)
+                     tracer_conc_mobile(c,j,k)=0._r8
                   endif
                enddo
             endif
          enddo
       enddo
+
+      !derive tracer concentration in ground water
+      do fc = 1, num_soilc
+         c = filter_soilc(fc)
+         do k = 1, ngwmobile_tracers
+           if(.not. is_advective(k))cycle
+           tracer_conc_grndwater(c,k) = safe_div(tracer_flx_drain(c,k), qflx_totdrain(c))
+         enddo
+      enddo
+
       !diagnose gas pressure
       call diagnose_gas_pressure(bounds, lbj, ubj, num_soilc, filter_soilc, &
            betrtracer_vars, tracercoeff_vars, tracerstate_vars)
@@ -1767,7 +1781,7 @@ contains
     use tracerfluxType        , only : tracerflux_type
     use tracerstatetype       , only : tracerstate_type
     use MathfuncMod           , only : safe_div
-    use clm_varcon            , only : oneatm    
+    use clm_varcon            , only : oneatm
     ! !ARGUMENTS:
     type(bounds_type),      intent(in)    :: bounds
     integer,                intent(in)    :: lbj, ubj

@@ -1429,20 +1429,26 @@ contains
 
 
    associate(                                                           & !
-     qflx_drain_vr        =>    waterflux_vars%qflx_drain_vr_col        & ! Output  : [real(r8) (:,:) ]  vegetation/soil water exchange (mm H2O/step) (to river +)
+     qflx_drain_vr        =>    waterflux_vars%qflx_drain_vr_col      , & ! Output  : [real(r8) (:,:) ]  vegetation/soil water exchange (m H2O/step) (to river +)
+     qflx_totdrain        =>    waterflux_vars%qflx_totdrain_col        & ! Output  : [real(r8) (:,:) ]  (m H2o/step)
    )
 
    ! get time step
    dtime = get_step_size()
    !start from the bottom layer, because the water exchange between vadose zone soil and aquifer and plant root is known
    !the water flux at uppper surface can be inferred using the mass balance approach
+   do fc = 1, num_hydrologyc
+     c = filter_hydrologyc(fc)
+     qflx_totdrain(c) = 0._r8
+   enddo
    do j = nlevsoi, 1, -1
      do fc = 1, num_hydrologyc
        c = filter_hydrologyc(fc)
-       qflx_drain_vr(c,j) = h2osoi_liq_copy(c,j)-h2osoi_liq(c,j)
+       qflx_drain_vr(c,j) = h2osoi_liq_copy(c,j)-h2osoi_liq(c,j)   !kg/m2/step
+       !the following line will allow negative drainage
+       qflx_drain_vr(c,j) =qflx_drain_vr(c,j)/denh2o               !kg/m2/(kg/m3)/step = m
 
-       qflx_drain_vr(c,j) = min(qflx_drain_vr(c,j),h2osoi_liq_copy(c,j))/denh2o
-
+       qflx_totdrain(c) = qflx_totdrain(c) + qflx_drain_vr(c,j)
      enddo
    enddo
 
