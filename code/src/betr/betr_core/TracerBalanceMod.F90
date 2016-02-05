@@ -23,7 +23,7 @@ implicit none
   contains
 
 
-    
+
     !--------------------------------------------------------------------------------
     subroutine begin_betr_tracer_massbalance(bounds, lbj, ubj, numf, filter, &
          betrtracer_vars, tracerstate_vars, tracerflux_vars)
@@ -104,7 +104,7 @@ implicit none
            ngwmobile_tracers         => betrtracer_vars%ngwmobile_tracers                 , &
            tracernames               => betrtracer_vars%tracernames                       , &
            ntracers                  => betrtracer_vars%ntracers                            &
-           
+
            )
 
         call betr_tracer_mass_summary(bounds, lbj, ubj, numf, filter, betrtracer_vars, tracerstate_vars, &
@@ -158,7 +158,7 @@ implicit none
 
 
     !--------------------------------------------------------------------------------
-    
+
     subroutine betr_tracer_mass_summary(bounds, lbj, ubj, numf, filter, betrtracer_vars, tracerstate_vars, tracer_molarmass_col)
       !
       ! !DESCRIPTION:
@@ -185,13 +185,15 @@ implicit none
            tracer_conc_mobile        => tracerstate_vars%tracer_conc_mobile_col           , &
            tracer_conc_solid_equil   => tracerstate_vars%tracer_conc_solid_equil_col      , &
            tracer_conc_solid_passive => tracerstate_vars%tracer_conc_solid_passive_col    , &
+           tracer_conc_frozen        => tracerstate_vars%tracer_conc_frozen_col           , &
            dz                        => col%dz                                            , &
            ngwmobile_tracers         => betrtracer_vars%ngwmobile_tracers                 , &
            ntracers                  => betrtracer_vars%ntracers                          , &
            is_adsorb                 => betrtracer_vars%is_adsorb                         , &
            nsolid_passive_tracers    => betrtracer_vars%nsolid_passive_tracers            , &
-           adsorbid                  => betrtracer_vars%adsorbid                            &
-           
+           adsorbid                  => betrtracer_vars%adsorbid                          , &
+           is_frozen                 => betrtracer_vars%is_frozen                         , &
+           frozenid                  => betrtracer_vars%frozenid                            &
            )
 
         do jj = 1,   ngwmobile_tracers
@@ -204,6 +206,10 @@ implicit none
                  tracer_molarmass_col(c,jj) = tracer_molarmass_col(c,jj) + &
                       dot_sum(tracer_conc_solid_equil(c,1:nlevtrc_soil,adsorbid(jj)),dz(c,1:nlevtrc_soil))
               endif
+              if(is_frozen(jj))then
+                 tracer_molarmass_col(c,jj) = tracer_molarmass_col(c,jj) + &
+                      dot_sum(tracer_conc_frozen(c,1:nlevtrc_soil,frozenid(jj)),dz(c,1:nlevtrc_soil))
+              endif             
            enddo
         enddo
 

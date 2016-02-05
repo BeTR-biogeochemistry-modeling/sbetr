@@ -29,6 +29,8 @@ module TracerParamsMod
   public :: convert_mobile2gas
   public :: set_phase_convert_coeff
   public :: calc_tracer_infiltration
+  public :: pre_diagnose_dtracer_freeze_thaw
+  public :: diagnose_dtracer_freeze_thaw
   public :: pre_diagnose_soilcol_water_flux
   public :: diagnose_advect_water_flux
   public :: diagnose_drainage_water_flux
@@ -48,6 +50,7 @@ module TracerParamsMod
   end type soil_tortuosity_type
   type(soil_tortuosity_type), target :: tau_soil
   real(r8), private, pointer :: h2osoi_liq_copy(:,:)
+  real(r8), private, pointer :: h2osoi_ice_copy(:,:)
   !!
 contains
 
@@ -1273,6 +1276,107 @@ contains
    enddo
    end associate
    end subroutine calc_tracer_infiltration
+
+   !------------------------------------------------------------------------
+   subroutine pre_diagnose_dtracer_freeze_thaw(bounds, num_nolakec, filter_nolakec, waterstate_vars )
+   !
+   ! DESCRIPTION
+   ! prediagnose water content before phase change
+   !
+   ! USES
+   use WaterStateType        , only : waterstate_type
+   implicit none
+   type(bounds_type)      , intent(in)    :: bounds
+   integer                , intent(in)    :: num_nolakec                        ! number of column non-lake points in column filter
+   integer                , intent(in)    :: filter_nolakec(:)                  ! column filter for non-lake points
+   type(waterstate_type)  , intent(in)    :: waterstate_vars
+   integer :: j, fc, c, l
+   allocate(h2osoi_liq_copy(bounds%begc:bounds%endc, 1:nlevsoi));  h2osoi_liq_copy(:, :) = spval
+   allocate(h2osoi_ice_copy(bounds%begc:bounds%endc, 1:nlevsoi));  h2osoi_ice_copy(:, :) = spval
+
+   do j = 1, nlevsoi
+     do fc = 1, num_nolakec
+       c =  filter_nolakec(fc)
+       h2osoi_liq_copy(c,j) = waterstate_vars%h2osoi_liq_col(c,j)
+       h2osoi_ice_copy(c,j) = waterstate_vars%h2osoi_ice_col(c,j)
+     enddo
+   enddo
+
+   end subroutine pre_diagnose_dtracer_freeze_thaw
+   !------------------------------------------------------------------------
+   subroutine diagnose_dtracer_freeze_thaw(bounds, num_nolakec, filter_nolakec, lun, &
+     waterstate_vars, betrtracer_vars, tracerstate_vars)
+   !
+   ! DESCRIPTION
+   ! aqueous tracer partition based on freeze-thaw
+   !
+   ! USES
+   !
+   use LandunitType          , only : landunit_type
+   use WaterStateType        , only : waterstate_type
+   use tracerstatetype       , only : tracerstate_type
+   use BeTRTracerType        , only : betrtracer_type
+   use landunit_varcon       , only : istsoil
+   !
+   ! Arguments
+   implicit none
+   type(bounds_type)      , intent(in)    :: bounds
+   integer                , intent(in)    :: num_nolakec                        ! number of column non-lake points in column filter
+   integer                , intent(in)    :: filter_nolakec(:)                  ! column filter for non-lake points
+   type(landunit_type)    , intent(in)    :: lun
+   type(waterstate_type)  , intent(in)    :: waterstate_vars
+   type(betrtracer_type)  , intent(in)    :: betrtracer_vars
+   type(tracerstate_type) , intent(inout) :: tracerstate_vars
+
+   integer :: j, fc, c, l, k
+   real(r8) :: thaw_frac, freeze_frac
+   real(r8) :: dtracer
+   associate(                                              &
+     frozenid         => betrtracer_vars%frozenid        , &
+     is_frozen        => betrtracer_vars%is_frozen       , &
+     ngwmobile_tracers=> betrtracer_vars%ngwmobile_tracers,&
+     h2osoi_liq       => waterstate_vars%h2osoi_liq_col  , &
+     h2osoi_ice       => waterstate_vars%h2osoi_ice_col  , &
+     tracer_conc_mobile=> tracerstate_vars%tracer_conc_mobile_col , &
+     tracer_conc_frozen=> tracerstate_vars%tracer_conc_frozen_col   &
+
+   )
+   ! the tracer concentration change between frozen and liquid
+   !  phases due to freeze and thaw only occurs to non-volatile tracers
+   ! and water tracers
+
+   do j = 1, nlevsoi
+     do fc = 1, num_nolakec
+       c =  filter_nolakec(fc)
+       l = col%landunit(c)
+       if(lun%itype(l) == istsoil)then
+         do k = 1, ngwmobile_tracers
+           !if it is a nonvolatile or water tracer, do it
+           if(is_frozen(k))then
+             if(h2osoi_liq(c,j) > h2osoi_liq_copy(c,j))then
+               !thaw, solid to aqueous
+               thaw_frac = min(1._r8-h2osoi_ice(c,j)/h2osoi_ice_copy(c,j),1._r8)
+               dtracer = tracer_conc_frozen(c,j,frozenid(k)) * thaw_frac
+               tracer_conc_frozen(c,j,frozenid(k)) = tracer_conc_frozen(c,j,frozenid(k)) - dtracer
+               tracer_conc_mobile(c,j, k) = tracer_conc_mobile(c,j, k) + dtracer
+             else
+               !freeze, aqueous to solid
+               freeze_frac = min(1._r8 - h2osoi_liq(c,j)/h2osoi_liq_copy(c,j),1._r8)
+               dtracer = tracer_conc_mobile(c,j, k) * freeze_frac          !some modifier are needed to account for change in solubility
+               tracer_conc_frozen(c,j,frozenid(k)) = tracer_conc_frozen(c,j,frozenid(k)) + dtracer
+               tracer_conc_mobile(c,j, k) = tracer_conc_mobile(c,j, k) - dtracer
+             endif
+
+           endif
+         enddo
+       endif
+     enddo
+   enddo
+
+   deallocate(h2osoi_liq_copy)
+   deallocate(h2osoi_ice_copy)
+   end associate
+   end subroutine diagnose_dtracer_freeze_thaw
    !------------------------------------------------------------------------
    subroutine pre_diagnose_soilcol_water_flux(bounds, num_hydrologyc, filter_hydrologyc, num_urbanc, filter_urbanc, h2osoi_liq)
    !

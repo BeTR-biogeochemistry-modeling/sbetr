@@ -25,6 +25,7 @@ module BeTRTracerType
    integer :: nvolatile_tracers                                  ! number of volatile_tracers
    integer :: nsolid_equil_tracers                               ! number of tracers that undergo equilibrium adsorption in soil could include adsorbed doc, nh4(+)
    integer :: nsolid_passive_tracers                             ! number of tracers that undergo active mineral interaction
+   integer :: nfrozen_tracers
 
    integer :: ntracer_groups                                     !
    integer :: ngwmobile_tracer_groups                            ! total number of groups for mobile tracers
@@ -74,6 +75,7 @@ module BeTRTracerType
    logical, pointer :: is_co2tag(:)                              !tagged co2 tracer?
    logical, pointer :: is_dom(:)                                 !true if it is a dom tracer, place holder for rtm bgc
    logical, pointer :: is_isotope(:)
+   logical, pointer :: is_frozen(:)                              !true if the tracer could be frozen
    integer, pointer :: refisoid(:)                               !reference tracer for isotope calculation, this is setup only for non-h2o isotope now
    integer, pointer :: adsorbid(:)                               !which tracer is adsorbed
    integer, pointer :: volatileid(:)
@@ -81,6 +83,7 @@ module BeTRTracerType
    integer, pointer :: adsorbgroupid(:)
    integer, pointer :: volatilegroupid(:)                        !
    integer, pointer :: groupid(:)
+   integer, pointer :: frozenid(:)
 
    logical :: is_tagged_h2o =.false.                             !no tagged h2o run by default
    real(r8),pointer :: tracer_solid_passive_diffus_scal_group(:) !reference diffusivity for solid phase tracer, for modeling turbation
@@ -134,7 +137,7 @@ module BeTRTracerType
   this%nvolatile_tracer_groups      = 0
   this%nsolid_equil_tracer_groups   = 0
   this%nsolid_passive_tracer_groups = 0
-
+  this%nfrozen_tracers              = 0
   this%nh2o_tracers                 = 0      ! number of h2o tracers, this will be used to compute vapor gradient and thermal gradient driven isotopic flow
 
 
@@ -190,13 +193,14 @@ module BeTRTracerType
   allocate(this%is_co2tag          (this%ngwmobile_tracers));    this%is_co2tag(:)       = .false.
   allocate(this%is_dom             (this%ngwmobile_tracers));    this%is_dom(:)          = .false.
   allocate(this%is_isotope         (this%ngwmobile_tracers));    this%is_isotope(:)      = .false.
-
+  allocate(this%is_frozen          (this%ngwmobile_tracers));    this%is_frozen(:)       = .false.
   allocate(this%adsorbgroupid      (this%ngwmobile_tracers));    this%adsorbgroupid(:)   = nanid
   allocate(this%adsorbid           (this%ngwmobile_tracers));    this%adsorbid(:)        = nanid
 
   allocate(this%volatileid         (this%ngwmobile_tracers));    this%volatileid(:)      = nanid
   allocate(this%volatilegroupid    (this%ngwmobile_tracers));    this%volatilegroupid(:) = nanid
   allocate(this%h2oid              (this%nh2o_tracers));         this%h2oid(:)           = nanid
+  allocate(this%frozenid           (this%ngwmobile_tracers));    this%frozenid(:)        = nanid
   allocate(this%id_trc_h2o_tags    (this%nh2o_tracers));         this%id_trc_h2o_tags(:) = nanid
   allocate(this%tracernames        (this%ntracers));             this%tracernames(:)     = ''
   allocate(this%vtrans_scal        (this%ngwmobile_tracers));    this%vtrans_scal(:)     = 0._r8   !no transport through xylem transpiration
@@ -221,7 +225,8 @@ module BeTRTracerType
 
 subroutine set_tracer(this, trc_id, trc_name, is_trc_mobile, is_trc_advective, trc_group_id, &
    trc_group_mem, is_trc_diffusive, is_trc_volatile, trc_volatile_id, trc_volatile_group_id, &
-   is_trc_h2o, trc_vtrans_scal, is_trc_adsorb, trc_adsorbid, trc_adsorbgroupid)
+   is_trc_h2o, trc_vtrans_scal, is_trc_adsorb, trc_adsorbid, trc_adsorbgroupid             , &
+   is_trc_frozen, trc_frozenid)
 
 ! !DESCRIPTION:
 ! set up tracer property based on input configurations
@@ -244,7 +249,8 @@ subroutine set_tracer(this, trc_id, trc_name, is_trc_mobile, is_trc_advective, t
   logical ,optional  , intent(in) :: is_trc_adsorb
   integer ,optional  , intent(in) :: trc_adsorbid
   integer ,optional  , intent(in) :: trc_adsorbgroupid
-
+  logical ,optional  , intent(in) :: is_trc_frozen
+  integer ,optional  , intent(in) :: trc_frozenid
 
 
   this%tracernames      (trc_id)    = trim(trc_name)
@@ -266,16 +272,20 @@ subroutine set_tracer(this, trc_id, trc_name, is_trc_mobile, is_trc_advective, t
 
       this%volatileid     (trc_id)    = trc_volatile_id
       this%volatilegroupid(trc_id)    = trc_volatile_group_id
+      this%nvolatile_tracers          = this%nvolatile_tracers + 1
     endif
   endif
-
 
   if(present(trc_vtrans_scal))then
     this%vtrans_scal(trc_id) = trc_vtrans_scal
   endif
 
   if(present(is_trc_h2o))then
+
     this%is_h2o(trc_id) = is_trc_h2o
+    if(is_trc_h2o)then
+      this%nh2o_tracers = this%nh2o_tracers + 1
+    endif
   endif
 
   if(present(is_trc_adsorb))then
@@ -289,9 +299,20 @@ subroutine set_tracer(this, trc_id, trc_name, is_trc_mobile, is_trc_advective, t
       endif
       this%adsorbid(trc_id) = trc_adsorbid
       this%adsorbgroupid(trc_id) = trc_adsorbgroupid
+      this%nsolid_equil_tracers = this%nsolid_equil_tracers + 1
     endif
   endif
 
+  if(present(is_trc_frozen))then
+    this%is_frozen(trc_id) = is_trc_frozen
+    if(is_trc_frozen)then
+      if(.not. present(trc_frozenid))then
+        call endrun('frozen tracer id is not provided for '//trim(trc_name)//errMsg(__FILE__, __LINE__))
+      endif
+      this%frozenid(trc_id) = trc_frozenid
+      this%nfrozen_tracers = this%nfrozen_tracers + 1
+    endif
+  endif
 end subroutine set_tracer
 
 

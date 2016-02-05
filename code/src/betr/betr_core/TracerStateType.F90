@@ -37,7 +37,7 @@ module TracerStateType
      real(r8), pointer :: tracer_conc_mobile_col        (:,:,:)    !tracer concentration in each layer (mol/m3) (snow/ponding water + soil)
      real(r8), pointer :: tracer_conc_solid_equil_col   (:,:,:)    !tracer concentration in adsorbed/solid phase for each layer (mol/m3) (soil), which is in equilibrium with mobile phase
      real(r8), pointer :: tracer_conc_solid_passive_col (:,:,:)    !tracer concentration in passive solid phase, which is not in equilibrium with mobile phase. e.g. polymers, or protected monomers, or ice
-     !real(r8), pointer :: tracer_conc_frozen_col        (:,:,:)    !place holder, tracer concentration in frozen layer for unsaturated part for nonvolatile species
+     real(r8), pointer :: tracer_conc_frozen_col        (:,:,:)    !place holder, tracer concentration in frozen layer for unsaturated part for nonvolatile species
      !real(r8), pointer :: tracer_conc_bubble_col        (:,:,:)    !place holder, a bubble pool to track the lake ebullition in freeze-thaw period, [col, levels, tracer]
      real(r8), pointer :: beg_tracer_molarmass_col      (:,:)      !column integrated tracer mass
      real(r8), pointer :: end_tracer_molarmass_col      (:,:)      !column integrated tracer mass
@@ -95,7 +95,7 @@ contains
     integer :: nsolid_equil_tracers
     integer :: nsolid_passive_tracers
     integer :: nvolatile_tracers
-
+    integer :: nfrozen_tracers
     !---------------------------------------------------------------------
 
     begc = bounds%begc; endc= bounds%endc
@@ -104,6 +104,7 @@ contains
     nsolid_equil_tracers   = betrtracer_vars%nsolid_equil_tracers
     nsolid_passive_tracers = betrtracer_vars%nsolid_passive_tracers
     nvolatile_tracers      = betrtracer_vars%nvolatile_tracers
+    nfrozen_tracers        = betrtracer_vars%nfrozen_tracers
     allocate(this%tracer_P_gas_col              (begc:endc, lbj:ubj))             ; this%tracer_P_gas_col         (:,:) = nan
     allocate(this%tracer_conc_surfwater_col     (begc:endc, 1:ngwmobile_tracers)) ; this%tracer_conc_surfwater_col(:,:) = nan
     allocate(this%tracer_conc_aquifer_col       (begc:endc, 1:ngwmobile_tracers)) ; this%tracer_conc_aquifer_col  (:,:) = nan
@@ -112,18 +113,14 @@ contains
     allocate(this%tracer_soi_molarmass_col      (begc:endc, 1:ntracers))          ; this%tracer_soi_molarmass_col (:,:) = nan
     allocate(this%errtracer_col                 (begc:endc, 1:ntracers))          ; this%errtracer_col            (:,:) = nan
     allocate(this%tracer_conc_atm_col           (begc:endc, 1:nvolatile_tracers)) ; this%tracer_conc_atm_col      (:,:) = nan
-    allocate(this%tracer_conc_mobile_col        (begc:endc, lbj:ubj, 1:ngwmobile_tracers))     ;
-    this%tracer_conc_mobile_col       (:,:,:) =  nan
+    allocate(this%tracer_conc_mobile_col        (begc:endc, lbj:ubj, 1:ngwmobile_tracers))  ; this%tracer_conc_mobile_col       (:,:,:) =  nan
 
-    allocate(this%tracer_conc_solid_equil_col   (begc:endc, lbj:ubj, 1:nsolid_equil_tracers))  ;
-    this%tracer_conc_solid_equil_col  (:,:,:) = nan
+    allocate(this%tracer_conc_solid_equil_col   (begc:endc, lbj:ubj, 1:nsolid_equil_tracers))  ; this%tracer_conc_solid_equil_col  (:,:,:) = nan
 
-    allocate(this%tracer_conc_solid_passive_col (begc:endc, lbj:ubj, 1:nsolid_passive_tracers));
-    this%tracer_conc_solid_passive_col(:,:,:) = nan
+    allocate(this%tracer_conc_solid_passive_col (begc:endc, lbj:ubj, 1:nsolid_passive_tracers)); this%tracer_conc_solid_passive_col(:,:,:) = nan
 
-    allocate(this%tracer_P_gas_frac_col         (begc:endc, lbj:ubj, 1:nvolatile_tracers))     ;
-    this%tracer_P_gas_frac_col        (:,:,:) = nan
-
+    allocate(this%tracer_P_gas_frac_col         (begc:endc, lbj:ubj, 1:nvolatile_tracers)) ;this%tracer_P_gas_frac_col        (:,:,:) = nan
+    allocate(this%tracer_conc_frozen_col        (begc:endc, lbj:ubj, 1:nfrozen_tracers)); this%tracer_conc_frozen_col (:,:,:) = nan
     allocate(this%beg_tracer_molarmass_col      (begc:endc, 1:ntracers)); this%beg_tracer_molarmass_col(:,:) = nan
     allocate(this%end_tracer_molarmass_col      (begc:endc, 1:ntracers)); this%end_tracer_molarmass_col(:,:) = nan
 
@@ -161,7 +158,9 @@ contains
          is_isotope        =>  betrtracer_vars%is_isotope          , &
          is_h2o            =>  betrtracer_vars%is_h2o              , &
          volatileid        =>  betrtracer_vars%volatileid          , &
-         tracernames       =>  betrtracer_vars%tracernames           &
+         tracernames       =>  betrtracer_vars%tracernames         , &
+         is_frozen         =>  betrtracer_vars%is_frozen           , &
+         frozenid          =>  betrtracer_vars%frozenid              &
          )
       begc = bounds%begc; endc=bounds%endc
 
@@ -208,6 +207,13 @@ contains
                     ptr_col=data2dptr)
             endif
 
+            if(is_frozen(jj))then
+               this%tracer_conc_frozen_col(begc:endc, :, frozenid(jj)) = spval
+               data2dptr => this%tracer_conc_frozen_col(:, :, frozenid(jj))
+               call hist_addfld2d (fname=trim(tracernames(jj))//'_TRACER_CONC_FROZEN', units='mol m-3', type2d='levtrc',  &
+                    avgflag='A', long_name='frozen phase for tracer '//trim(tracernames(jj)), &
+                    ptr_col=data2dptr)
+            endif
          else
             kk = jj - ngwmobile_tracers
             this%tracer_conc_solid_passive_col(begc:endc, :, kk) = spval
@@ -271,7 +277,9 @@ contains
          ngwmobile_tracers =>  betrtracer_vars%ngwmobile_tracers   , &
          is_adsorb         =>  betrtracer_vars%is_adsorb           , &
          adsorbid          =>  betrtracer_vars%adsorbid            , &
-         tracernames       =>  betrtracer_vars%tracernames           &
+         tracernames       =>  betrtracer_vars%tracernames         , &
+         is_frozen         =>  betrtracer_vars%is_frozen           , &
+         frozenid          =>  betrtracer_vars%frozenid              &
          )
 
       do jj = 1, ntracers
@@ -294,6 +302,13 @@ contains
                     dim1name='column',dim2name='levtrc', switchdim=.true., &
                     long_name='',  units='', fill_value=spval, &
                     interpinic_flag='interp', readvar=readvar, data=ptr2d)
+            endif
+            if(is_frozen(jj))then
+              ptr2d => this%tracer_conc_frozen_col(:, :, frozenid(jj))
+              call restartvar(ncid=ncid, flag=flag, varname=trim(tracernames(jj))//'_TRACER_CONC_FROZEN', xtype=ncd_double,  &
+                   dim1name='column',dim2name='levtrc', switchdim=.true., &
+                   long_name='',  units='', fill_value=spval, &
+                   interpinic_flag='interp', readvar=readvar, data=ptr2d)
             endif
          else
             kk = jj - ngwmobile_tracers

@@ -115,7 +115,7 @@ contains
 
     betrtracer_vars%ngwmobile_tracers      = itemp_gwm;   betrtracer_vars%ngwmobile_tracer_groups= itemp_gwm_grp
     betrtracer_vars%nsolid_passive_tracers = itemp_s;     betrtracer_vars%nsolid_passive_tracer_groups = itemp_s
-    betrtracer_vars%nvolatile_tracers      = itemp_g;     betrtracer_vars%nvolatile_tracer_groups= itemp_g
+    betrtracer_vars%nvolatile_tracer_groups= itemp_g
     betrtracer_vars%nmem_max               = 1
 
     call betrtracer_vars%Init()
