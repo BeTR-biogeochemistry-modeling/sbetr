@@ -13,6 +13,7 @@ module BGCReactionsFactoryMod
   use decompMod             , only : bounds_type
   use shr_log_mod           , only : errMsg => shr_log_errMsg
   use tracer_varcon         , only : is_active_betr_bgc
+  use PlantSoilBGCMod       , only : plant_soilbgc_type  
   implicit none
   save
   private

@@ -1,16 +1,24 @@
 module betr_standalone_cpl
 
-
+  use decompMod             , only : bounds_type
+  use betr_initializeMod    , only : betrtracer_vars
+  use betr_initializeMod    , only : tracercoeff_vars
+  use betr_initializeMod    , only : tracerflux_vars
+  use betr_initializeMod    , only : tracerState_vars
+  use betr_initializeMod    , only : tracerboundarycond_vars
+  use betr_initializeMod    , only : plant_soilbgc
+  use betr_initializeMod    , only : bgc_reaction
+  use betr_initializeMod    , only : betr_aerecond_vars
+  use betr_initializeMod    , only : betr_initialize
 implicit none
- private
+ public :: betr_initialize_standalone
  public :: run_betr_one_step_without_drainage_standalone
 contains
 
-
+  !-------------------------------------------------------------------------------
   subroutine run_betr_one_step_without_drainage_standalone(bounds, lbj, ubj, num_soilc, filter_soilc, num_soilp, filter_soilp, col ,   &
      atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, temperature_vars, waterflux_vars, chemstate_vars, &
-     cnstate_vars, canopystate_vars, carbonflux_vars, betrtracer_vars, bgc_reaction, tracerboundarycond_vars, &
-     tracercoeff_vars, tracerstate_vars, tracerflux_vars, plantsoilnutrientflux_vars)
+     cnstate_vars, canopystate_vars, carbonflux_vars)
 
      !
      ! !DESCRIPTION:
@@ -36,11 +44,10 @@ contains
      use BeTR_CNStateType             , only          : betr_cnstate_type
      use BeTR_CarbonFluxType          , only          : betr_carbonflux_type
      use CNStateType                  , only          : cnstate_type
-     use CarbonFluxType               , only          : carbonflux_type
+     use CNCarbonFluxType             , only          : carbonflux_type
      use CanopyStateType              , only          : canopystate_type
      use BeTR_PatchType               , only          : betr_pft
      use PatchType                    , only          : pft
-     use betr_aerecond_vars
 
      !
      ! !ARGUMENTS :
@@ -56,24 +63,18 @@ contains
      type(soilstate_type)             , intent(in)    :: soilstate_vars             ! column physics variable
      type(temperature_type)           , intent(in)    :: temperature_vars           ! energy state variable
      type(chemstate_type)             , intent(in)    :: chemstate_vars
-     class(betrtracer_type)           , intent(in)    :: betrtracer_vars            ! betr configuration information
-     class(bgc_reaction_type)         , intent(in)    :: bgc_reaction
      type(atm2lnd_type)               , intent(in)    :: atm2lnd_vars
      type(soilhydrology_type)         , intent(in)    :: soilhydrology_vars
      type(cnstate_type)               , intent(inout) :: cnstate_vars
      type(canopystate_type)           , intent(in)    :: canopystate_vars
      type(carbonflux_type)            , intent(in)    :: carbonflux_vars
      type(waterflux_type)             , intent(inout) :: waterflux_vars
-     type(tracerboundarycond_type)    , intent(inout) :: tracerboundarycond_vars
-     type(tracercoeff_type)           , intent(inout) :: tracercoeff_vars
-     type(tracerstate_type)           , intent(inout) :: tracerstate_vars
-     type(tracerflux_type)            , intent(inout) :: tracerflux_vars
-     class(plant_soilbgc_type)        , intent(inout) :: plant_soilbgc_coupler !
+
 
 
      !temporary variables
      type(betr_cnstate_type)        :: betr_cnstate_vars
-     type(betr_carbonflux_type)     :: carbonflux_vars
+     type(betr_carbonflux_type)     :: betr_carbonflux_vars
 
      !pass necessary data for correct subroutine call
 
@@ -91,7 +92,38 @@ contains
      call run_betr_one_step_without_drainage(bounds, lbj, ubj, num_soilc, filter_soilc, num_soilp, filter_soilp, col ,   &
        atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, temperature_vars, waterflux_vars, chemstate_vars, &
        betr_cnstate_vars, canopystate_vars, betr_carbonflux_vars, betrtracer_vars, bgc_reaction, betr_aerecond_vars,   &
-       tracerboundarycond_vars, tracercoeff_vars, tracerstate_vars, tracerflux_vars, plantsoilnutrientflux_vars)
+       tracerboundarycond_vars, tracercoeff_vars, tracerstate_vars, tracerflux_vars, plant_soilbgc)
 
   end subroutine run_betr_one_step_without_drainage_standalone
+
+  !-------------------------------------------------------------------------------
+  subroutine betr_initialize_standalone(bounds, lbj, ubj)
+
+  use clm_instMod
+  use BeTR_CNStateType  , only : betr_cnstate_type
+  use EcophysConType    , only : ecophyscon
+  use BeTR_PatchType    , only : betr_pft
+  use PatchType         , only : pft  
+  implicit none
+  type(bounds_type)    , intent(in) :: bounds
+  integer              , intent(in) :: lbj, ubj
+
+  !temporary variables
+  type(betr_cnstate_type)   :: betr_cnstate_vars
+
+  betr_pft%wtcol                        => pft%wtcol
+  betr_pft%column                       => pft%column
+  betr_pft%itype                        => pft%itype
+  betr_pft%landunit                     => pft%landunit
+
+  call betr_initialize(bounds, lbj, ubj, waterstate_vars)
+
+  !pass necessary data
+  betr_cnstate_vars%isoilorder          => cnstate_vars%isoilorder
+
+  call bgc_reaction%init_betr_lsm_bgc_coupler(bounds, plant_soilbgc, &
+       betrtracer_vars, tracerstate_vars, betr_cnstate_vars, ecophyscon)
+
+  end subroutine betr_initialize_standalone
+
 end module betr_standalone_cpl

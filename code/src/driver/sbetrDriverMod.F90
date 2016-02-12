@@ -33,15 +33,13 @@ contains
   use shr_kind_mod        , only : r8 => shr_kind_r8
   use clm_varpar          , only : nlevtrc_soil, nlevgrnd
   use decompMod           , only : bounds_type
-  use clm_initializeMod   , only : soilstate_vars, waterstate_vars, temperature_vars, &
-                                   waterflux_vars, chemstate_vars, atm2lnd_vars, soilhydrology_vars, &
-                                   canopystate_vars, carbonflux_vars, carbonstate_vars, cnstate_vars, &
-                                   nitrogenflux_vars, nitrogenstate_vars
+  use clm_instMod
   use ColumnType          , only : col
-  use betr_initializeMod  , only : betr_initialize, betrtracer_vars, tracercoeff_vars,  bgc_reaction, &
-                                    tracerflux_vars, tracerState_vars, tracerboundarycond_vars, plantsoilnutrientflux_vars
+  use betr_initializeMod  , only : betr_initialize, betrtracer_vars, tracercoeff_vars,  &
+                                    tracerflux_vars, tracerstate_vars
+
   use BetrBGCMod          , only : betrbgc_init, run_betr_one_step_with_drainage
-  use betr_standalone_cpl , only : run_betr_one_step_without_drainage_standalone
+  use betr_standalone_cpl , only : betr_initialize_standalone, run_betr_one_step_without_drainage_standalone
   use TracerParamsMod     , only : tracer_param_init
   use spmdMod             , only : spmd_init
   use LandunitType        , only : lun
@@ -95,7 +93,7 @@ contains
   call spmd_init
 
   !initialize parameters
-  call betr_initialize(bounds, lbj, ubj, waterstate_vars)
+  call betr_initialize_standalone(bounds, lbj, ubj)
 
   !create output file
   call hist_htapes_create(histfilename,nlevtrc_soil, num_soilc, betrtracer_vars)
@@ -122,8 +120,7 @@ contains
 
     call run_betr_one_step_without_drainage_standalone(bounds, lbj, ubj, num_soilc, filter_soilc, num_soilp, filter_soilp, col ,   &
          atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, temperature_vars, waterflux_vars, chemstate_vars, &
-         cnstate_vars, canopystate_vars, carbonflux_vars, betrtracer_vars, bgc_reaction, tracerboundarycond_vars, &
-         tracercoeff_vars, tracerstate_vars, tracerflux_vars, plantsoilnutrientflux_vars)
+         cnstate_vars, canopystate_vars, carbonflux_vars)
 
     call run_betr_one_step_with_drainage(bounds, lbj, ubj, num_soilc, filter_soilc, &
          jtops, waterflux_vars, col, betrtracer_vars, tracercoeff_vars, tracerstate_vars,  tracerflux_vars)
@@ -417,7 +414,6 @@ contains
     soilhydrology_vars%zwts_col(c) = 10._r8
     atm2lnd_vars%forc_pbot_downscaled_col(c) = clmforc_vars%pbot(tstep)             ! 1 atmos
   enddo
-
 
   !set up forcing variables
   do j = lbj, ubj

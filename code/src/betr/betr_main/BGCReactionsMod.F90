@@ -63,10 +63,8 @@ module BGCReactionsMod
      end subroutine Init_betrbgc_interface
      !----------------------------------------------------------------------
      subroutine calc_bgc_reaction_interface(this, bounds, lbj, ubj, num_soilc, filter_soilc, &
-          num_soilp,filter_soilp, jtops, dtime,                                              &
-          betrtracer_vars, tracercoeff_vars, waterstate_vars, temperature_vars,              &
-          soilstate_vars, chemstate_vars, cnstate_vars,                                      &
-          tracerstate_vars, tracerflux_vars, plantsoilnutrientflux_vars)
+          num_soilp,filter_soilp, jtops, dtime, betrtracer_vars, tracercoeff_vars,  cnstate_vars,    &
+          tracerstate_vars, tracerflux_vars, plant_soilbgc)
        !
        ! !DESCRIPTION:
        ! template for calc_bgc_reaction
@@ -75,17 +73,11 @@ module BGCReactionsMod
        use tracerfluxType           , only : tracerflux_type
        use tracerstatetype          , only : tracerstate_type
        use tracercoeffType          , only : tracercoeff_type
-       use WaterStateType           , only : Waterstate_Type
-       use TemperatureType          , only : temperature_type
-       use ChemStateType            , only : chemstate_type
-       use SoilStatetype            , only : soilstate_type
        use decompMod                , only : bounds_type
-       use PlantSoilnutrientFluxType, only : plantsoilnutrientflux_type
        use BeTRTracerType           , only : BeTRTracer_Type
        use shr_kind_mod             , only : r8 => shr_kind_r8
-       use CanopyStateType          , only : canopystate_type
-       use BeTR_CNStateType              , only : betr_cnstate_type
-
+       use BeTR_CNStateType         , only : betr_cnstate_type
+       use PlantSoilBGCMod          , only : plant_soilbgc_type
        ! !ARGUMENTS:
        import :: bgc_reaction_type
        class(bgc_reaction_type)         , intent(in)    :: this
@@ -97,16 +89,12 @@ module BGCReactionsMod
        integer                          , intent(in)    :: jtops( : )                  ! top index of each column
        integer                          , intent(in)    :: lbj, ubj                    ! lower and upper bounds, make sure they are > 0
        real(r8)                         , intent(in)    :: dtime                       ! model time step
-       type(Waterstate_Type)            , intent(in)    :: waterstate_vars             ! water state variables
-       type(temperature_type)           , intent(in)    :: temperature_vars            ! energy state variable
-       type(chemstate_type)             , intent(in)    :: chemstate_vars
        type(betrtracer_type)            , intent(in)    :: betrtracer_vars             ! betr configuration information
-       type(soilstate_type)             , intent(in)    :: soilstate_vars
        type(betr_cnstate_type)          , intent(inout) :: cnstate_vars
        type(tracercoeff_type)           , intent(in)    :: tracercoeff_vars
        type(tracerstate_type)           , intent(inout) :: tracerstate_vars
        type(tracerflux_type)            , intent(inout) :: tracerflux_vars
-       type(plantsoilnutrientflux_type) , intent(inout) ::  plantsoilnutrientflux_vars !total nitrogen yield to plant
+       class(plant_soilbgc_type)        , intent(inout) ::  plant_soilbgc
 
      end subroutine calc_bgc_reaction_interface
      !----------------------------------------------------------------------
@@ -260,8 +248,8 @@ module BGCReactionsMod
      !-------------------------------------------------------------------------------
 
 
-     subroutine init_betr_lsm_bgc_coupler_interface(this, bounds, &
-          plantsoilnutrientflux_vars, betrtracer_vars, tracerstate_vars, cnstate_vars, ecophyscon_vars)
+     subroutine init_betr_lsm_bgc_coupler_interface(this, bounds, plant_soilbgc, &
+           betrtracer_vars, tracerstate_vars, cnstate_vars, ecophyscon_vars)
        !
        ! !DESCRIPTION:
        ! template for init_betr_lsm_bgc_coupler
@@ -274,9 +262,9 @@ module BGCReactionsMod
        use BetrTracerType           , only : betrtracer_type
        use clm_varpar               , only : nlevtrc_soil
        use landunit_varcon          , only : istsoil, istcrop
-       use PlantSoilnutrientFluxType, only : plantsoilnutrientflux_type
+       use PlantSoilBGCMod          , only : plant_soilbgc_type
        use EcophysConType           , only : ecophyscon_type
-       use BeTR_CNStateType              , only : betr_cnstate_type
+       use BeTR_CNStateType         , only : betr_cnstate_type
 
 
        !
@@ -286,7 +274,7 @@ module BGCReactionsMod
        type(bounds_type)                  , intent(in)    :: bounds
        type(tracerstate_type)             , intent(inout) :: tracerstate_vars
        type(betrtracer_type)              , intent(in)    :: betrtracer_vars    ! betr configuration information
-       type(plantsoilnutrientflux_type)  , intent(inout)  :: plantsoilnutrientflux_vars !
+       class(plant_soilbgc_type)          , intent(inout) :: plant_soilbgc !
        type(ecophyscon_type)              , intent(in)    :: ecophyscon_vars
        type(betr_cnstate_type)            , intent(in)    :: cnstate_vars
 

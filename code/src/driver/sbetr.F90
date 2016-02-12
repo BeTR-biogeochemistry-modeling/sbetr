@@ -5,8 +5,7 @@ use sbetrDriverMod
 use decompMod            , only: bounds_type
 use clmgridMod           , only : init_clm_vertgrid
 use clm_varpar           , only : nlevgrnd
-use clm_initializeMod    , only : initialize1, initialize2
-
+use clm_initializeMod    , only : initialize
 implicit none
 
   type(bounds_type) :: bounds
@@ -33,9 +32,7 @@ implicit none
   !set up grid
   call init_clm_vertgrid(nlevgrnd)
 
-  call initialize1(bounds)
-
-  call initialize2(bounds)
+  call initialize(bounds)
 
   call sbetrBGC_driver(bounds, numf, filter, ttime)
 

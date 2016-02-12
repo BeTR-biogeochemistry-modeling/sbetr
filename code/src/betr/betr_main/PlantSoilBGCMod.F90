@@ -68,7 +68,10 @@ end type plant_soilbgc_type
   !----------------------------------------------------------------------
 
   subroutine integrate_vr_flux_to_2D_interface(this, bounds, numf, filter)
-
+  !
+  ! !DESCRIPTIONS
+  ! integrate 3d fluxes into 2d fluxes
+  use decompMod             , only : bounds_type
   ! !ARGUMENTS:
   import :: plant_soilbgc_type
 
@@ -81,4 +84,5 @@ end type plant_soilbgc_type
   end subroutine integrate_vr_flux_to_2D_interface
 
 
+  end interface
 end module PlantSoilBGCMod

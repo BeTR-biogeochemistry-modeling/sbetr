@@ -209,9 +209,9 @@ contains
   end subroutine set_boundary_conditions
 
   !-------------------------------------------------------------------------------
-  subroutine calc_bgc_reaction(this, bounds, lbj, ubj, num_soilc, filter_soilc, num_soilp, filter_soilp, jtops,     &
-       dtime, betrtracer_vars, tracercoeff_vars, waterstate_vars, temperature_vars, soilstate_vars, chemstate_vars, &
-       cnstate_vars, tracerstate_vars, tracerflux_vars, plantsoilnutrientflux_vars)
+  subroutine calc_bgc_reaction(this, bounds, lbj, ubj, num_soilc, filter_soilc, &
+       num_soilp,filter_soilp, jtops, dtime, betrtracer_vars, tracercoeff_vars,  cnstate_vars,    &
+       tracerstate_vars, tracerflux_vars, plant_soilbgc)
     !
     ! !DESCRIPTION:
     ! do bgc reaction
@@ -221,34 +221,27 @@ contains
     use tracerstatetype          , only : tracerstate_type
     use tracercoeffType          , only : tracercoeff_type
     use BetrTracerType           , only : betrtracer_type
-    use WaterStateType           , only : Waterstate_Type
-    use TemperatureType          , only : temperature_type
-    use SoilStatetype            , only : soilstate_type
-    use ChemStateType            , only : chemstate_type
-    use CanopyStateType          , only : canopystate_type
     use BeTR_CNStateType         , only : betr_cnstate_type
-    use PlantSoilnutrientFluxType, only : plantsoilnutrientflux_type
+    use PlantSoilBGCMod          , only : plant_soilbgc_type
     !ARGUMENTS
     class(bgc_reaction_mock_run_type)   , intent(in)    :: this                       !
-    type(bounds_type)                   , intent(in)    :: bounds                     ! bounds
-    integer                             , intent(in)    :: num_soilc                  ! number of columns in column filter_soilc
-    integer                             , intent(in)    :: filter_soilc(:)            ! column filter_soilc
-    integer                             , intent(in)    :: num_soilp                  !
-    integer                             , intent(in)    :: filter_soilp(:)            ! pft filter
-    integer                             , intent(in)    :: jtops(bounds%begc: )       ! top index of each column
-    integer                             , intent(in)    :: lbj, ubj                   ! lower and upper bounds, make sure they are > 0
-    real(r8)                            , intent(in)    :: dtime                      ! model time step
-    type(Waterstate_Type)               , intent(in)    :: waterstate_vars            ! water state variables
-    type(temperature_type)              , intent(in)    :: temperature_vars           ! energy state variable
-    type(soilstate_type)                , intent(in)    :: soilstate_vars             !
-    type(betr_cnstate_type)                  , intent(inout) :: cnstate_vars               !
-    type(chemstate_type)                , intent(in)    :: chemstate_vars             !
-    type(betrtracer_type)               , intent(in)    :: betrtracer_vars            ! betr configuration information
-    type(tracercoeff_type)              , intent(in)    :: tracercoeff_vars           !
-    type(tracerstate_type)              , intent(inout) :: tracerstate_vars           !
-    type(tracerflux_type)               , intent(inout) :: tracerflux_vars            !
-    type(plantsoilnutrientflux_type)    , intent(inout) :: plantsoilnutrientflux_vars !
-    character(len=*)                    , parameter     :: subname ='calc_bgc_reaction'
+    type(bounds_type)                , intent(in)    :: bounds                      ! bounds
+    integer                          , intent(in)    :: num_soilc                   ! number of columns in column filter
+    integer                          , intent(in)    :: filter_soilc(:)             ! column filter
+    integer                          , intent(in)    :: num_soilp
+    integer                          , intent(in)    :: filter_soilp(:)
+    integer                          , intent(in)    :: jtops( : )                  ! top index of each column
+    integer                          , intent(in)    :: lbj, ubj                    ! lower and upper bounds, make sure they are > 0
+    real(r8)                         , intent(in)    :: dtime                       ! model time step
+    type(betrtracer_type)            , intent(in)    :: betrtracer_vars             ! betr configuration information
+    type(betr_cnstate_type)          , intent(inout) :: cnstate_vars
+    type(tracercoeff_type)           , intent(in)    :: tracercoeff_vars
+    type(tracerstate_type)           , intent(inout) :: tracerstate_vars
+    type(tracerflux_type)            , intent(inout) :: tracerflux_vars
+    class(plant_soilbgc_type)        , intent(inout) ::  plant_soilbgc
+
+
+    character(len=*)                 , parameter     :: subname ='calc_bgc_reaction'
 
   end subroutine calc_bgc_reaction
 
@@ -302,7 +295,7 @@ contains
     use BeTRTracerType           , only : BeTRTracer_Type
     use tracerstatetype          , only : tracerstate_type
     use WaterstateType           , only : waterstate_type
-    use BeTR_PatchType           , only : pft   => betr_pft
+    use BeTR_PatchType           , only : pft  => betr_pft
     use clm_varcon               , only : spval, ispval
     use landunit_varcon          , only : istsoil, istcrop
 
@@ -413,7 +406,7 @@ contains
   !-------------------------------------------------------------------------------
 
 
-  subroutine init_betr_lsm_bgc_coupler(this, bounds,                     &
+  subroutine init_betr_lsm_bgc_coupler(this, bounds, plant_soilbgc,  &
        betrtracer_vars, tracerstate_vars, cnstate_vars,  ecophyscon_vars)
 
     ! !DESCRIPTION:
@@ -426,9 +419,9 @@ contains
     use BetrTracerType           , only : betrtracer_type
     use clm_varpar               , only : nlevtrc_soil
     use landunit_varcon          , only : istsoil, istcrop
-    use PlantSoilnutrientFluxType, only : plantsoilnutrientflux_type
+    use PlantSoilBGCMod          , only : plant_soilbgc_type
     use EcophysConType           , only : ecophyscon_type
-    use BeTR_CNStateType              , only : betr_cnstate_type
+    use BeTR_CNStateType         , only : betr_cnstate_type
 
 
     ! !ARGUMENTS:
@@ -436,7 +429,7 @@ contains
     type(bounds_type)                  , intent(in)    :: bounds             !
     type(tracerstate_type)             , intent(inout) :: tracerstate_vars   !
     type(betrtracer_type)              , intent(in)    :: betrtracer_vars    ! betr configuration information
-    type(plantsoilnutrientflux_type)   , intent(inout) :: plantsoilnutrientflux_vars !
+    class(plant_soilbgc_type)          , intent(inout) :: plant_soilbgc !
     type(ecophyscon_type)              , intent(in)    :: ecophyscon_vars
     type(betr_cnstate_type)            , intent(in)    :: cnstate_vars
 

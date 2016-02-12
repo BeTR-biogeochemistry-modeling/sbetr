@@ -21,6 +21,7 @@ module betr_initializeMod
 
   public :: betr_initialize
   public :: betr_readNL
+  public :: betr_rest
   character(len=32) :: bgc_method='mock_run'
 
   !
@@ -142,4 +143,22 @@ contains
   end subroutine betr_initialize
   !---------------------------------------------------------------------------------
 
+
+  subroutine betr_rest(bounds, ncid, flag)
+  !
+  !! DESCRIPTION
+  ! initialize for restart run
+  ! !USES:
+  use ncdio_pio             , only : file_desc_t
+  use decompMod             , only : bounds_type
+  implicit none
+  type(bounds_type)    , intent(in) :: bounds
+  class(file_desc_t)   , intent(inout) :: ncid                                         ! netcdf id
+  character(len=*)     , intent(in)    :: flag                                         ! 'read' or 'write'
+
+
+  call tracerstate_vars%Restart(bounds, ncid, flag=flag, betrtracer_vars=betrtracer_vars)
+  call tracerflux_vars%Restart( bounds, ncid, flag=flag, betrtracer_vars=betrtracer_vars)
+  call tracercoeff_vars%Restart(bounds, ncid, flag=flag, betrtracer_vars=betrtracer_vars)
+  end subroutine betr_rest
 end module betr_initializeMod

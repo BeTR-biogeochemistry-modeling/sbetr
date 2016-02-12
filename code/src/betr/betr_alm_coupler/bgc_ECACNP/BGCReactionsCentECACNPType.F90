@@ -593,9 +593,9 @@ contains
   end subroutine set_boundary_conditions
   !-------------------------------------------------------------------------------
 
-  subroutine calc_bgc_reaction(this, bounds, lbj, ubj, num_soilc, filter_soilc, num_soilp, filter_soilp, jtops, dtime, &
-       betrtracer_vars, tracercoeff_vars, waterstate_vars, temperature_vars, soilstate_vars, chemstate_vars,           &
-       cnstate_vars,tracerstate_vars, tracerflux_vars, plantsoilnutrientflux_vars)
+  subroutine calc_bgc_reaction(this, bounds, lbj, ubj, num_soilc, filter_soilc, &
+       num_soilp,filter_soilp, jtops, dtime, betrtracer_vars, tracercoeff_vars,  cnstate_vars,    &
+       tracerstate_vars, tracerflux_vars, plant_soilbgc)
     !
     ! !DESCRIPTION:
     ! do bgc reaction
@@ -609,10 +609,6 @@ contains
     use tracerstatetype          , only : tracerstate_type
     use tracercoeffType          , only : tracercoeff_type
     use BetrTracerType           , only : betrtracer_type
-    use WaterStateType           , only : Waterstate_Type
-    use TemperatureType          , only : temperature_type
-    use ChemStateType            , only : chemstate_type
-    use SoilStatetype            , only : soilstate_type
     use ODEMod                   , only : ode_ebbks1
     use BeTR_CNStateType         , only : betr_cnstate_type
     use PlantSoilnutrientFluxType, only : plantsoilnutrientflux_type
@@ -627,16 +623,12 @@ contains
     integer                              , intent(in) :: jtops(bounds%begc: )          ! top index of each column
     integer                              , intent(in) :: lbj, ubj                      ! lower and upper bounds, make sure they are > 0
     real(r8)                             , intent(in) :: dtime                         ! model time step
-    type(Waterstate_Type)                , intent(in) :: waterstate_vars               ! water state variables
-    type(temperature_type)               , intent(in) :: temperature_vars              ! energy state variable
-    type(soilstate_type)                 , intent(in) :: soilstate_vars
-    type(chemstate_type)                 , intent(in) :: chemstate_vars
     type(betrtracer_type)                , intent(in) :: betrtracer_vars               ! betr configuration information
     type(tracercoeff_type)               , intent(in) :: tracercoeff_vars
-    type(betr_cnstate_type)                   , intent(inout) :: cnstate_vars
+    type(betr_cnstate_type)              , intent(inout) :: cnstate_vars
     type(tracerstate_type)               , intent(inout) :: tracerstate_vars
     type(tracerflux_type)                , intent(inout) :: tracerflux_vars
-    type(plantsoilnutrientflux_type)     , intent(inout) :: plantsoilnutrientflux_vars !
+    type(plant_soilbgc_type)             , intent(inout) ::  plant_soilbgc
 
     ! !LOCAL VARIABLES:
     character(len=32), parameter :: subname ='calc_bgc_reaction'

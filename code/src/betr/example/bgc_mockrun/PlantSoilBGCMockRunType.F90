@@ -1,7 +1,7 @@
 module PlantSoilBGCMockRunType
 
 
-
+  use PlantSoilBGCMod , only : plant_soilbgc_type
   implicit none
   save
   private
@@ -81,6 +81,7 @@ module PlantSoilBGCMockRunType
 
   subroutine integrate_vr_flux_to_2D(this, bounds, numf, filter)
 
+  use decompMod             , only : bounds_type
   ! !ARGUMENTS:
 
   class(plant_soilbgc_mock_run_type) , intent(in) :: this

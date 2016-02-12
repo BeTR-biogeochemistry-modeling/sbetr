@@ -76,8 +76,10 @@ contains
     use PlantSoilBGCMod              , only          : plant_soilbgc_type
     use BeTR_CNStateType             , only          : betr_cnstate_type
     use BeTR_CarbonFluxType          , only          : betr_carbonflux_type
+    use BeTR_aerocondType            , only          : betr_aerecond_type
     use tracer_varcon                , only          : is_active_betr_bgc
     use CanopyStateType              , only          : canopystate_type
+
     !
     ! !ARGUMENTS :
     type(bounds_type)                , intent(in)    :: bounds                     ! bounds
@@ -144,7 +146,7 @@ contains
          temperature_vars,                                            &
          betrtracer_vars,                                             &
          canopystate_vars,                                            &
-         plant_soilbgc_coupler,                                  &
+         betr_aerecond_vars,                                          &
          carbonflux_vars,                                             &
          tracercoeff_vars)
 
@@ -229,10 +231,6 @@ contains
          dtime,                                           &
          betrtracer_vars,                                 &
          tracercoeff_vars,                                &
-         waterstate_vars,                                 &
-         temperature_vars,                                &
-         soilstate_vars,                                  &
-         chemstate_vars,                                  &
          cnstate_vars,                                    &
          tracerstate_vars,                                &
          tracerflux_vars,                                 &
