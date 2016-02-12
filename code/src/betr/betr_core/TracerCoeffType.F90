@@ -7,7 +7,6 @@ module TracerCoeffType
   use shr_kind_mod           , only : r8 => shr_kind_r8
   use shr_infnan_mod         , only : nan => shr_infnan_nan, assignment(=)
   use decompMod              , only : bounds_type
-  use PatchType              , only : pft
   use ColumnType             , only : col
   use LandunitType           , only : lun
   use landunit_varcon, only : istsoil, istcrop

@@ -40,7 +40,8 @@ contains
   use ColumnType          , only : col
   use betr_initializeMod  , only : betr_initialize, betrtracer_vars, tracercoeff_vars,  bgc_reaction, &
                                     tracerflux_vars, tracerState_vars, tracerboundarycond_vars, plantsoilnutrientflux_vars
-  use BetrBGCMod          , only : run_betr_one_step_without_drainage, betrbgc_init, run_betr_one_step_with_drainage
+  use BetrBGCMod          , only : betrbgc_init, run_betr_one_step_with_drainage
+  use betr_standalone_cpl , only : run_betr_one_step_without_drainage_standalone
   use TracerParamsMod     , only : tracer_param_init
   use spmdMod             , only : spmd_init
   use LandunitType        , only : lun
@@ -119,7 +120,7 @@ contains
     call  begin_betr_tracer_massbalance(bounds, lbj, ubj, num_soilc, filter_soilc, &
          betrtracer_vars, tracerstate_vars, tracerflux_vars)
 
-    call run_betr_one_step_without_drainage(bounds, lbj, ubj, num_soilc, filter_soilc, num_soilp, filter_soilp, col ,   &
+    call run_betr_one_step_without_drainage_standalone(bounds, lbj, ubj, num_soilc, filter_soilc, num_soilp, filter_soilp, col ,   &
          atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, temperature_vars, waterflux_vars, chemstate_vars, &
          cnstate_vars, canopystate_vars, carbonflux_vars, betrtracer_vars, bgc_reaction, tracerboundarycond_vars, &
          tracercoeff_vars, tracerstate_vars, tracerflux_vars, plantsoilnutrientflux_vars)
@@ -133,7 +134,6 @@ contains
 
     !update time stamp
     call update_time_stamp(time_vars, dtime)
-
 
     !write output
     call hist_write(record, lbj, ubj, tracerflux_vars, tracerstate_vars, time_vars, betrtracer_vars)
@@ -444,7 +444,7 @@ contains
 
   do fc = 1, numf
       c = filter(fc)
-      waterflux_vars%qflx_totdrain_col(c) = 0._r8      
+      waterflux_vars%qflx_totdrain_col(c) = 0._r8
       waterflux_vars%qflx_infl_col(c)  = clmforc_vars%qflx_infl(tstep)              !infiltration flux, mm H2O/s
       col%zi(c,0) = zisoi(0)
       waterflux_vars%qflx_gross_infl_soil_col(c) = 0._r8

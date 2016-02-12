@@ -1,4 +1,4 @@
-module PlantSoilnutrientFluxType
+module PlantSoilBGCECAType
 #include "shr_assert.h"
   !!DESCRIPTION:
   ! data structure for above/below ground nutrient coupling.
@@ -59,7 +59,7 @@ module PlantSoilnutrientFluxType
     real(r8), pointer :: plant_minn_no3_uptake_vmax_vr_patch         (:,:)  !plant mineral nitrogen uptake potential for each layer
     real(r8), pointer :: plant_effrootsc_vr_patch                    (:,:)  !fine root for nutrient uptake
 
-    real(r8), pointer :: plant_frootsc_patch                         (:)    !fine root for nutrient uptake
+
     real(r8), pointer :: annavg_agnpp_patch                          (:)     ! (gC/m2/s) annual average aboveground NPP
     real(r8), pointer :: annavg_bgnpp_patch                          (:)     ! (gC/m2/s) annual average belowground NPP
     real(r8), pointer :: tempavg_agnpp_patch                         (:)     ! (gC/m2/s) temp. average aboveground NPP
@@ -131,8 +131,6 @@ module PlantSoilnutrientFluxType
 
      procedure , public  :: Init
      procedure , public  :: SetValues
-     procedure , public  :: nutrient_flx_summary
-     procedure , public  :: integrate_vr_flux_to_2D
      procedure , public  :: calc_nutrient_uptake_kinetic_pars
      procedure , public  :: init_plant_soil_feedback
      procedure , public  :: update_plant_nutrient_active_yield_patch
@@ -212,13 +210,10 @@ module PlantSoilnutrientFluxType
     allocate(this%vmax_minsurf_minnh4_vr_col (begc:endc, 1:nlevdecomp_full)); this%vmax_minsurf_minnh4_vr_col (:,:) = nan
     allocate(this%vmax_minsurf_minp_vr_col (begc:endc, 1:nlevdecomp_full));   this%vmax_minsurf_minp_vr_col (:,:) = nan
 
-    allocate(this%plant_frootsc_patch                (begc:endp          )) ; this%plant_frootsc_patch                (:)   = nan
+
     allocate(this%plant_effrootsc_vr_patch             (begc:endp,lbj:ubj  )) ; this%plant_effrootsc_vr_patch            (:,:)  = nan
 
-    allocate(this%annavg_agnpp_patch                (begp:endp))                  ; this%annavg_agnpp_patch  (:) = spval ! To detect first year
-    allocate(this%annavg_bgnpp_patch                (begp:endp))                  ; this%annavg_bgnpp_patch  (:) = spval ! To detect first year
-    allocate(this%tempavg_agnpp_patch               (begp:endp))                  ; this%tempavg_agnpp_patch (:) = spval
-    allocate(this%tempavg_bgnpp_patch               (begp:endp))                  ; this%tempavg_bgnpp_patch (:) = spval
+
 
     allocate(this%bgc_cpool_ext_inputs_vr_col       (begc:endc, 1:nlevdecomp_full,ndecomp_pools));this%bgc_cpool_ext_inputs_vr_col (:,:,:) = nan
     allocate(this%bgc_cpool_ext_loss_vr_col         (begc:endc, 1:nlevdecomp_full,ndecomp_pools));this%bgc_cpool_ext_loss_vr_col   (:,:,:) = nan
@@ -683,10 +678,9 @@ module PlantSoilnutrientFluxType
     if (lun%itype(l) == istsoil .or. lun%itype(l) == istcrop) then
       do p = col%pfti(c), col%pftf(c)
         if (pft%active(p).and. (pft%itype(p) .ne. noveg)) then
-          this%plant_frootsc_patch(p) = frootc_patch(p)
           !set effective nutrient uptake profile
           do j = 1, nlevtrc_soil
-            this%plant_effrootsc_vr_patch(p, j) = this%plant_frootsc_patch(p) * froot_prof(p,j) * e_plant_scalar
+            this%plant_effrootsc_vr_patch(p, j) = frootc_patch(p) * froot_prof(p,j) * e_plant_scalar
           enddo
         endif
       enddo
@@ -918,49 +912,6 @@ module PlantSoilnutrientFluxType
   enddo
   end associate
   end subroutine do_om_phosphorus_bioextraction
-
-
-!-------------------------------------------------------------------------------
-  subroutine integrate_vr_flux_to_2D(this, bounds, num_soilc, filter_soilc, carbonflux_vars, &
-    nitrogenflux_vars, phosphorusflux_vars)
-
-  use CNCarbonFluxType    , only : carbonflux_type
-  use CNNitrogenFluxType  , only : nitrogenflux_type
-  use PhosphorusFluxType  , only : phosphorusflux_type
-  use MathfuncMod         , only : dot_sum
-
-  class(plantsoilnutrientflux_type) :: this
-  type(bounds_type)        , intent(in)    :: bounds
-  integer                  , intent(in)    :: num_soilc
-  integer                  , intent(in)    :: filter_soilc(:)
-  type(carbonflux_type)    , intent(inout) :: carbonflux_vars
-  type(nitrogenflux_type)  , intent(inout) :: nitrogenflux_vars
-  type(phosphorusflux_type), intent(inout) :: phosphorusflux_vars
-
-  integer :: c, fc
-
-!-------------------------------------------------------------------------------
-  associate(                                                 &
-     f_n2o_denit_col  => nitrogenflux_vars%f_n2o_denit_col , &
-     f_n2o_nit_col    => nitrogenflux_vars%f_n2o_nit_col   , &
-     f_nit_col        => nitrogenflux_vars%f_nit_col       , &
-     f_denit_col      => nitrogenflux_vars%f_denit_col     , &
-     dz               => col%dz                            , &
-     hr_col           => carbonflux_vars%hr_col              &
-  )
-
-
-  do fc = 1, num_soilc
-    c = filter_soilc(fc)
-    hr_col(c)          = dot_sum(this%hr_vr_col(c,1:nlevdecomp), dz(c,1:nlevdecomp))
-    f_n2o_denit_col(c) = dot_sum(this%f_n2o_denit_vr_col(c,1:nlevdecomp), dz(c,1:nlevdecomp))
-    f_n2o_nit_col(c)   = dot_sum(this%f_n2o_nit_vr_col(c,1:nlevdecomp), dz(c,1:nlevdecomp))
-    f_nit_col(c)       = dot_sum(this%f_nit_vr_col(c,1:nlevdecomp), dz(c,1:nlevdecomp))
-    f_denit_col(c)     = dot_sum(this%f_denit_vr_col(c,1:nlevdecomp), dz(c,1:nlevdecomp))
-  enddo
-
-  end associate
-  end subroutine integrate_vr_flux_to_2D
 
 
 !--------------------------------------------------------------------------------
@@ -1221,4 +1172,4 @@ module PlantSoilnutrientFluxType
 
   end subroutine summarize_pflux_external
 
-end module PlantSoilnutrientFluxType
+end module PlantSoilBGCECAType

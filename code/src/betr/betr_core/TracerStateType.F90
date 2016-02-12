@@ -9,7 +9,6 @@ module TracerStateType
   use decompMod      , only : bounds_type
   use LandunitType   , only : lun
   use ColumnType     , only : col
-  use PatchType      , only : pft
   use clm_varctl     , only : iulog
   use abortutils     , only : endrun
   use spmdMod        , only : masterproc

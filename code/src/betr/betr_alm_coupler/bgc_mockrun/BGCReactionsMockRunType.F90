@@ -226,12 +226,8 @@ contains
     use SoilStatetype            , only : soilstate_type
     use ChemStateType            , only : chemstate_type
     use CanopyStateType          , only : canopystate_type
-    use CNStateType              , only : cnstate_type
+    use BeTR_CNStateType         , only : betr_cnstate_type
     use PlantSoilnutrientFluxType, only : plantsoilnutrientflux_type
-    use CNCarbonFluxType         , only : carbonflux_type
-    use CNCarbonStateType        , only : carbonstate_type
-    use CNNitrogenFluxType       , only : nitrogenflux_type
-    use CNNitrogenStateType      , only : nitrogenstate_type
     !ARGUMENTS
     class(bgc_reaction_mock_run_type)   , intent(in)    :: this                       !
     type(bounds_type)                   , intent(in)    :: bounds                     ! bounds
@@ -245,7 +241,7 @@ contains
     type(Waterstate_Type)               , intent(in)    :: waterstate_vars            ! water state variables
     type(temperature_type)              , intent(in)    :: temperature_vars           ! energy state variable
     type(soilstate_type)                , intent(in)    :: soilstate_vars             !
-    type(cnstate_type)                  , intent(inout) :: cnstate_vars               !
+    type(betr_cnstate_type)                  , intent(inout) :: cnstate_vars               !
     type(chemstate_type)                , intent(in)    :: chemstate_vars             !
     type(betrtracer_type)               , intent(in)    :: betrtracer_vars            ! betr configuration information
     type(tracercoeff_type)              , intent(in)    :: tracercoeff_vars           !
@@ -306,7 +302,7 @@ contains
     use BeTRTracerType           , only : BeTRTracer_Type
     use tracerstatetype          , only : tracerstate_type
     use WaterstateType           , only : waterstate_type
-    use PatchType                , only : pft
+    use BeTR_PatchType           , only : pft   => betr_pft
     use clm_varcon               , only : spval, ispval
     use landunit_varcon          , only : istsoil, istcrop
 
@@ -392,8 +388,7 @@ contains
 
   !-------------------------------------------------------------------------------
   subroutine betr_lsm_flux_statevar_feedback(this, bounds, num_soilc, filter_soilc,  &
-       carbonstate_vars, nitrogenstate_vars, nitrogenflux_vars, phosphorusstate_vars,&
-       phosphorusflux_vars, tracerstate_vars, tracerflux_vars,  betrtracer_vars)
+       tracerstate_vars, tracerflux_vars,  betrtracer_vars)
     !
     ! !DESCRIPTION:
     ! do flux and state variable change between betr and lsm.
@@ -404,11 +399,6 @@ contains
     use tracerstatetype          , only : tracerstate_type
     use decompMod                , only : bounds_type
     use BeTRTracerType           , only : BeTRTracer_Type
-    use CNCarbonStateType        , only : carbonstate_type
-    use CNNitrogenStateType      , only : nitrogenstate_type
-    use CNNitrogenFluxType       , only : nitrogenflux_type
-    use PhosphorusFluxType       , only : phosphorusflux_type
-    use PhosphorusStateType      , only : phosphorusstate_type
 
     ! !ARGUMENTS:
     class(bgc_reaction_mock_run_type) , intent(in)    :: this               !
@@ -418,18 +408,12 @@ contains
     type(betrtracer_type)             , intent(in)    :: betrtracer_vars    ! betr configuration information
     type(tracerstate_type)            , intent(in)    :: tracerstate_vars   !
     type(tracerflux_type)             , intent(in)    :: tracerflux_vars    !
-    type(carbonstate_type)            , intent(inout) :: carbonstate_vars   !
-    type(nitrogenflux_type)           , intent(inout) :: nitrogenflux_vars  !
-    type(nitrogenstate_type)          , intent(inout) :: nitrogenstate_vars !
-    type(phosphorusstate_type)        , intent(inout) :: phosphorusstate_vars
-    type(phosphorusflux_type)         , intent(inout) :: phosphorusflux_vars
   end subroutine betr_lsm_flux_statevar_feedback
 
   !-------------------------------------------------------------------------------
 
 
-  subroutine init_betr_lsm_bgc_coupler(this, bounds, carbonstate_vars, &
-       nitrogenstate_vars, phosphorusstate_vars, plantsoilnutrientflux_vars, &
+  subroutine init_betr_lsm_bgc_coupler(this, bounds,                     &
        betrtracer_vars, tracerstate_vars, cnstate_vars,  ecophyscon_vars)
 
     ! !DESCRIPTION:
@@ -438,16 +422,13 @@ contains
     ! !USES:
     use clm_varcon               , only : natomw, catomw
     use clm_varpar               , only : i_cwd, i_met_lit, i_cel_lit, i_lig_lit
-    use CNCarbonStateType        , only : carbonstate_type
-    use CNNitrogenStateType      , only : nitrogenstate_type
-    use PhosphorusStateType      , only : phosphorusstate_type
     use tracerstatetype          , only : tracerstate_type
     use BetrTracerType           , only : betrtracer_type
     use clm_varpar               , only : nlevtrc_soil
     use landunit_varcon          , only : istsoil, istcrop
     use PlantSoilnutrientFluxType, only : plantsoilnutrientflux_type
     use EcophysConType           , only : ecophyscon_type
-    use CNStateType              , only : cnstate_type
+    use BeTR_CNStateType              , only : betr_cnstate_type
 
 
     ! !ARGUMENTS:
@@ -455,12 +436,9 @@ contains
     type(bounds_type)                  , intent(in)    :: bounds             !
     type(tracerstate_type)             , intent(inout) :: tracerstate_vars   !
     type(betrtracer_type)              , intent(in)    :: betrtracer_vars    ! betr configuration information
-    type(carbonstate_type)             , intent(in)    :: carbonstate_vars   !
-    type(nitrogenstate_type)           , intent(in)    :: nitrogenstate_vars !
-    type(phosphorusstate_type)         , intent(in)    :: phosphorusstate_vars
     type(plantsoilnutrientflux_type)   , intent(inout) :: plantsoilnutrientflux_vars !
     type(ecophyscon_type)              , intent(in)    :: ecophyscon_vars
-    type(cnstate_type)                 , intent(in)    :: cnstate_vars
+    type(betr_cnstate_type)            , intent(in)    :: cnstate_vars
 
 
   end subroutine init_betr_lsm_bgc_coupler

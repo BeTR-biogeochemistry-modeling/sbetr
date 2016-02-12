@@ -14,7 +14,7 @@ module TracerParamsMod
   use decompMod             , only : bounds_type
   use clm_varpar            , only : nlevsoi
   use clm_varcon            , only : spval
-  use PatchType             , only : pft
+  use BeTR_PatchType        , only : pft => betr_pft
   use ColumnType            , only : col
   use tracer_varcon
   implicit none
@@ -581,12 +581,12 @@ contains
             !gaseous to bulk mobile phase
             gas2bulkcef_mobile(c,n,k) = air_vol(c,n)+h2osoi_liqvol(c,n)*bunsencef_col(c,n,k)
 
-            if(is_h2o(trcid))then
+            !if(is_h2o(trcid))then
               !for water tracer, I assume the three phases are in equilibrium, such that
-              aqu2bulkcef_mobile(c,n,j)= aqu2bulkcef_mobile(c,n,j) + aqu2equilsolidcef(c,n,adsorbgroupid(trcid))
+            !  aqu2bulkcef_mobile(c,n,j)= aqu2bulkcef_mobile(c,n,j) + aqu2equilsolidcef(c,n,adsorbgroupid(trcid))
 
-              gas2bulkcef_mobile(c,n,k) = gas2bulkcef_mobile(c,n,k)+ aqu2equilsolidcef(c,n,adsorbgroupid(trcid)) * bunsencef_col(c,n,k)
-            endif
+            !  gas2bulkcef_mobile(c,n,k) = gas2bulkcef_mobile(c,n,k)+ aqu2equilsolidcef(c,n,adsorbgroupid(trcid)) * bunsencef_col(c,n,k)
+            !endif
 
             !correct for impermeable layer, to avoid division by zero in doing diffusive transport
             gas2bulkcef_mobile(c,n,k) = max(gas2bulkcef_mobile(c,n,k),air_vol(c,n),minval_airvol)
@@ -1541,6 +1541,8 @@ contains
    dtime = get_step_size()
    !start from the bottom layer, because the water exchange between vadose zone soil and aquifer and plant root is known
    !the water flux at uppper surface can be inferred using the mass balance approach
+   !also, the flux through transpiration has been already calcualted in the no drainage code, therefore no
+   !the change in water content is solely due to subsurface draiange.
    do fc = 1, num_hydrologyc
      c = filter_hydrologyc(fc)
      qflx_totdrain(c) = 0._r8
@@ -1817,18 +1819,17 @@ contains
 
   !-----------------------------------------------------------------------
   subroutine calc_aerecond(bounds, num_soilp, filter_soilp, jwt, rootfr, temperature_vars, betrtracer_vars, &
-     canopystate_vars, plantsoilnutrientflux_vars, carbonflux_vars, tracercoeff_vars)
+     canopystate_vars, betr_aerecond_vars, carbonflux_vars, tracercoeff_vars)
   !
   ! DESCRIPTION
   !
   ! calculate aerenchyma conductance (m/s)
   use clm_varcon            , only : tfrz, rpi
   use pftvarcon             , only : nc3_arctic_grass, crop, nc3_nonarctic_grass, nc4_grass, noveg
-  use CNCarbonFluxType      , only : carbonflux_type
-  use CNCarbonStateType     , only : carbonstate_type
+  use BeTR_CarbonFluxType   , only : betr_carbonflux_type
   use CanopyStateType       , only : canopystate_type
   use BetrTracerType        , only : betrtracer_type
-  use PlantSoilnutrientFluxType    , only  : plantsoilnutrientflux_type
+  use BeTR_aerocondType    , only  : betr_aerecond_type
   use tracercoeffType       , only : tracercoeff_type
   use clm_varpar            , only : nlevsoi
   use TemperatureType       , only : temperature_type
@@ -1842,8 +1843,8 @@ contains
   real(r8)                     , intent(in)   :: rootfr(bounds%begp: ,1: ) ! fraction of roots in each soil layer
   type(temperature_type)       , intent(in)   :: temperature_vars          ! energy state variable
   type(canopystate_type)       , intent(in)   :: canopystate_vars
-  type(plantsoilnutrientflux_type)       , intent(in)   :: plantsoilnutrientflux_vars
-  type(carbonflux_type)        , intent(in)   :: carbonflux_vars
+  type(betr_aerecond_type)       , intent(in)   :: betr_aerecond_vars
+  type(betr_carbonflux_type)        , intent(in)   :: carbonflux_vars
   type(betrtracer_type)        , intent(in)   :: betrtracer_vars            ! betr configuration information
   type(tracercoeff_type)       , intent(inout) :: tracercoeff_vars
 
@@ -1873,9 +1874,9 @@ contains
     lbl_rsc_h2o    =>    canopystate_vars%lbl_rsc_h2o_patch  , & ! laminar layer resistance for h2o
     elai           =>    canopystate_vars%elai_patch         , &
     annsum_npp     =>    carbonflux_vars%annsum_npp_patch    , & ! Input:  [real(r8) (:) ]  annual sum NPP (gC/m2/yr)
-    annavg_agnpp   =>    plantsoilnutrientflux_vars%annavg_agnpp_patch  , & ! Output: [real(r8) (:) ]  annual average above-ground NPP (gC/m2/s)
-    annavg_bgnpp   =>    plantsoilnutrientflux_vars%annavg_bgnpp_patch  , & ! Output: [real(r8) (:) ]  annual average below-ground NPP (gC/m2/s)
-    frootc         =>    plantsoilnutrientflux_vars%plant_frootsc_patch       , & ! Input:  [real(r8) (:)    ]  (gC/m2) fine root C
+    annavg_agnpp   =>    betr_aerecond_vars%annavg_agnpp_patch  , & ! Output: [real(r8) (:) ]  annual average above-ground NPP (gC/m2/s)
+    annavg_bgnpp   =>    betr_aerecond_vars%annavg_bgnpp_patch  , & ! Output: [real(r8) (:) ]  annual average below-ground NPP (gC/m2/s)
+    frootc         =>    betr_aerecond_vars%plant_frootsc_patch , & ! Input:  [real(r8) (:)    ]  (gC/m2) fine root C
     is_volatile    =>    betrtracer_vars%is_volatile         , &
     volatilegroupid=>    betrtracer_vars%volatilegroupid     , &
     ngwmobile_tracer_groups=>  betrtracer_vars%ngwmobile_tracer_groups   , &
@@ -1967,26 +1968,26 @@ contains
 
   !-----------------------------------------------------------------------
   subroutine betr_annualupdate(bounds, num_soilc, filter_soilc, num_soilp, filter_soilp, &
-       carbonflux_vars, plantsoilnutrientflux_vars, tracercoeff_vars)
+       carbonflux_vars, betr_aerecond_vars, tracercoeff_vars)
     !
     ! !DESCRIPTION: Annual mean fields.
     !
     ! !USES:
-    use clm_time_manager   , only : get_step_size, get_days_per_year, get_nstep
-    use clm_varcon         , only : secspday
-    use CNCarbonFluxType   , only : carbonflux_type
-    use tracercoeffType    , only : tracercoeff_type
-    use PlantSoilnutrientFluxType    , only  : plantsoilnutrientflux_type
+    use clm_time_manager             , only : get_step_size, get_days_per_year, get_nstep
+    use clm_varcon                   , only : secspday
+    use BeTR_CarbonFluxType          , only : betr_carbonflux_type
+    use tracercoeffType              , only : tracercoeff_type
+    use BeTR_aerocondType            , only : betr_aerecond_type
     !
     ! !ARGUMENTS:
-    type(bounds_type)      , intent(in)    :: bounds
-    integer                , intent(in)    :: num_soilc         ! number of soil columns in filter
-    integer                , intent(in)    :: filter_soilc(:)   ! filter for soil columns
-    integer                , intent(in)    :: num_soilp         ! number of soil points in pft filter
-    integer                , intent(in)    :: filter_soilp(:)   ! patch filter for soil points
-    type(Carbonflux_type)  , intent(in)    :: carbonflux_vars
-    type(plantsoilnutrientflux_type), intent(inout) :: plantsoilnutrientflux_vars
-    type(tracercoeff_type)          , intent(inout) :: tracercoeff_vars
+    type(bounds_type)           , intent(in)    :: bounds
+    integer                     , intent(in)    :: num_soilc         ! number of soil columns in filter
+    integer                     , intent(in)    :: filter_soilc(:)   ! filter for soil columns
+    integer                     , intent(in)    :: num_soilp         ! number of soil points in pft filter
+    integer                     , intent(in)    :: filter_soilp(:)   ! patch filter for soil points
+    type(betr_carbonflux_type)  , intent(in)    :: carbonflux_vars
+    type(betr_aerecond_type)    , intent(inout) :: betr_aerecond_vars
+    type(tracercoeff_type)      , intent(inout) :: tracercoeff_vars
     !
     ! !LOCAL VARIABLES:
     integer :: c,p       ! indices
@@ -2000,10 +2001,10 @@ contains
     associate(                                                                  &
          agnpp           =>    carbonflux_vars%agnpp_patch                    , & ! Input:  [real(r8) (:) ]  (gC/m2/s) aboveground NPP
          bgnpp           =>    carbonflux_vars%bgnpp_patch                    , & ! Input:  [real(r8) (:) ]  (gC/m2/s) belowground NPP
-         tempavg_agnpp   =>    plantsoilnutrientflux_vars%tempavg_agnpp_patch , & ! Output: [real(r8) (:) ]  temporary average above-ground NPP (gC/m2/s)
-         annavg_agnpp    =>    plantsoilnutrientflux_vars%annavg_agnpp_patch  , & ! Output: [real(r8) (:) ]  annual average above-ground NPP (gC/m2/s)
-         tempavg_bgnpp   =>    plantsoilnutrientflux_vars%tempavg_bgnpp_patch , & ! Output: [real(r8) (:) ]  temporary average below-ground NPP (gC/m2/s)
-         annavg_bgnpp    =>    plantsoilnutrientflux_vars%annavg_bgnpp_patch  , & ! Output: [real(r8) (:) ]  annual average below-ground NPP (gC/m2/s)
+         tempavg_agnpp   =>    betr_aerecond_vars%tempavg_agnpp_patch      , & ! Output: [real(r8) (:) ]  temporary average above-ground NPP (gC/m2/s)
+         annavg_agnpp    =>    betr_aerecond_vars%annavg_agnpp_patch       , & ! Output: [real(r8) (:) ]  annual average above-ground NPP (gC/m2/s)
+         tempavg_bgnpp   =>    betr_aerecond_vars%tempavg_bgnpp_patch      , & ! Output: [real(r8) (:) ]  temporary average below-ground NPP (gC/m2/s)
+         annavg_bgnpp    =>    betr_aerecond_vars%annavg_bgnpp_patch       , & ! Output: [real(r8) (:) ]  annual average below-ground NPP (gC/m2/s)
          annsum_counter  =>    tracercoeff_vars%annsum_counter_col              & ! Output: [real(r8) (:) ]  seconds since last annual accumulator turnover
          )
 

@@ -100,6 +100,7 @@ module BeTRTracerType
      procedure, public  :: init_scalars
      procedure, public  :: set_tracer
      procedure, private :: InitAllocate
+     procedure, public  :: is_solidtransport
   end type BeTRtracer_type
 
 
@@ -201,7 +202,6 @@ module BeTRTracerType
   allocate(this%volatilegroupid    (this%ngwmobile_tracers));    this%volatilegroupid(:) = nanid
   allocate(this%h2oid              (this%nh2o_tracers));         this%h2oid(:)           = nanid
   allocate(this%frozenid           (this%ngwmobile_tracers));    this%frozenid(:)        = nanid
-  allocate(this%id_trc_h2o_tags    (this%nh2o_tracers));         this%id_trc_h2o_tags(:) = nanid
   allocate(this%tracernames        (this%ntracers));             this%tracernames(:)     = ''
   allocate(this%vtrans_scal        (this%ngwmobile_tracers));    this%vtrans_scal(:)     = 0._r8   !no transport through xylem transpiration
 
@@ -317,5 +317,16 @@ end subroutine set_tracer
 
 
 
+!--------------------------------------------------------------------------------
+function is_solidtransport(this)result(yesno)
+
+! !ARGUMENTS:
+class(BeTRtracer_type) :: this
+
+logical :: yesno
+
+yesno = (this%nsolid_passive_tracer_groups > 0)
+
+end function is_solidtransport
 
 end module BeTRTracerType

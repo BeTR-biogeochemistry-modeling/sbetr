@@ -7,7 +7,7 @@ module TracerFluxType
   use decompMod      , only : bounds_type
   use LandunitType   , only : lun
   use ColumnType     , only : col
-  use PatchType      , only : pft
+  use BeTR_PatchType , only : pft => betr_pft
   use clm_varcon     , only : spval, ispval
   use clm_varpar     , only : nlevtrc_soil
   use landunit_varcon, only : istsoil, istcrop
@@ -315,7 +315,7 @@ contains
           data1dptr => this%tracer_flx_surfemi_col(begc:endc, kk)
           call hist_addfld1d (fname=trim(tracernames(jj))//'_FLX_SURFEMI', units='mol/m2/s', &
            avgflag='A', long_name='loss from surface emission for '//trim(tracernames(jj)), &
-           ptr_col=data1dptr, default='inactive')
+           ptr_col=data1dptr)
 
 
          endif

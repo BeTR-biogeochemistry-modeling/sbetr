@@ -1,0 +1,580 @@
+module BGCReactionsH2OIsotopeType
+
+
+#include "shr_assert.h"
+
+!
+! !DESCRIPTION
+! This is used to do O18 isotope simulations involving H2O(18) and COO(18).
+! For H2O(18), the advective part is assumed to follow the equation
+! \frac{\partial Rw*vsm}{\partial t} = \frac{\partial Rw*q}{\partial z} - Transp*R
+! and the evaporative part is assumed to follow the betr diffusion equation
+! with evapative flux as top boundary condition.
+! After diffusive and aqueous transport, an equilibration is assumed to occur simultaneously between
+! solid (ice), liquid and vapor phases
+! The formulation adopted by BeTR is similar as that proposed in Braud et al. (2005) for the SiSPAT-isotope model.
+! However, because CLM does not consider water vapor during water movement calculation, the inclusion of water vapor
+! diffusion may cause some consistency problems, even though this problem is partially fixed using
+! the prescribed top boundary condition.
+
+! HISTORY:
+! Created by Jinyun Tang, Jan 15nd, 2015
+! !USES
+
+  use shr_log_mod           , only : errMsg => shr_log_errMsg
+  use shr_kind_mod          , only : r8 => shr_kind_r8
+  use decompMod             , only : bounds_type
+  use BGCReactionsMod       , only : bgc_reaction_type
+  use tracer_varcon         , only : bndcond_as_conc, bndcond_as_flux
+implicit none
+
+  save
+  private
+  !
+  ! !PUBLIC TYPES:
+  public :: bgc_reaction_h2oiso_type
+
+  type, extends(bgc_reaction_type) :: &
+     bgc_reaction_h2oiso_type
+     private
+   contains
+     procedure :: Init_betrbgc                  ! initialize betr bgc
+     procedure :: set_boundary_conditions       ! set top/bottom boundary conditions for various tracers
+     procedure :: calc_bgc_reaction             ! doing bgc calculation
+     procedure :: init_boundary_condition_type  ! initialize type of top boundary conditions
+     procedure :: do_tracer_equilibration       ! do equilibrium tracer chemistry
+     procedure :: initCold
+     procedure :: readParams
+     procedure :: betr_lsm_flux_statevar_feedback
+     procedure :: init_betr_lsm_bgc_coupler
+   end type bgc_reaction_h2oiso_type
+
+   interface bgc_reaction_h2oiso_type
+     module procedure constructor
+
+   end interface bgc_reaction_h2oiso_type
+
+
+  contains
+!-------------------------------------------------------------------------------
+  type(bgc_reaction_h2oiso_type) function constructor()
+  !
+  ! ! DESCRIPTION
+  ! create an object of type bgc_reaction_h2oiso_type.
+  ! Right now it is purposely left empty
+
+  end function constructor
+
+!-------------------------------------------------------------------------------
+  subroutine init_boundary_condition_type(this, bounds, betrtracer_vars, tracerboundarycond_vars )
+  !
+  ! DESCRIPTIONS
+  ! initialize boundary condition types
+
+  use TracerBoundaryCondType, only : tracerboundarycond_type
+  use tracer_varcon         , only : bndcond_as_conc, bndcond_as_flux
+  use BeTRTracerType        , only : betrtracer_type
+
+
+  class(bgc_reaction_h2oiso_type)   , intent(in) :: this
+  type(BeTRtracer_type )            , intent(in) :: betrtracer_vars
+  type(bounds_type)                 , intent(in) :: bounds
+  type(tracerboundarycond_type)     , intent(in) :: tracerboundarycond_vars
+
+
+  tracerboundarycond_vars%topbc_type(:) = bndcond_as_conc
+
+  !only the water vapor is set with prescribed flux based boundary condition, Riley et al. (2002, GBC)
+  !had a discussion about this.
+  tracerboundarycond_vars%topbc_type(betrtracer_vars%id_trc_o18_h2o) = bndcond_as_flux
+
+  end subroutine init_boundary_condition_type
+
+
+!-------------------------------------------------------------------------------
+
+  subroutine Init_betrbgc(this, bounds, lbj, ubj, betrtracer_vars)
+  !
+  ! DESCRIPTION
+  ! initialize the betrbgc
+  use BeTRTracerType        , only : betrtracer_type
+  use MathfuncMod           , only : addone
+
+  class(bgc_reaction_h2oiso_type) ,  intent(in) :: this
+  type(bounds_type)               ,  intent(in) :: bounds
+  integer                         ,  intent(in) :: lbj, ubj
+  type(BeTRtracer_type )          ,intent(inout) :: betrtracer_vars
+  !local variables
+  character(len=*)       , parameter :: subname ='Init_betrbgc'
+  integer :: itemp_gwm
+  integer :: itemp_g
+  integer :: itemp_s
+  integer :: itemp_gwm_grp
+  integer :: dum
+  integer :: itemp_grp, itemp_v, itemp_vgrp, itemp_adsgrp
+  integer :: itemp_frz
+
+  itemp_gwm     = 0
+  itemp_g       = 0
+  itemp_s       = 0
+  itemp_gwm_grp = 0
+  itemp_adsgrp  = 0
+  betrtracer_vars%id_trc_n2  = addone(itemp_gwm); dum = addone(itemp_g); dum = addone(itemp_gwm_grp)
+  betrtracer_vars%id_trc_o2  = addone(itemp_gwm); dum = addone(itemp_g); dum = addone(itemp_gwm_grp)
+  betrtracer_vars%id_trc_ar  = addone(itemp_gwm); dum = addone(itemp_g); dum = addone(itemp_gwm_grp)
+  betrtracer_vars%id_trc_co2x= addone(itemp_gwm); dum = addone(itemp_g); dum = addone(itemp_gwm_grp)
+  betrtracer_vars%id_trc_ch4 = addone(itemp_gwm); dum = addone(itemp_g); dum = addone(itemp_gwm_grp)
+  betrtracer_vars%id_trc_o18_h2o = addone(itemp_gwm); dum = addone(itemp_g); dum = addone(itemp_gwm_grp)
+
+  betrtracer_vars%ngwmobile_tracers      = itemp_gwm;   betrtracer_vars%ngwmobile_tracer_groups= itemp_gwm_grp
+  betrtracer_vars%nvolatile_tracer_groups= itemp_g
+  betrtracer_vars%nmem_max               = 1
+
+
+  call betrtracer_vars%Init()
+
+
+  itemp_grp = 0    !group id
+  itemp_v = 0      !volatile id
+  itemp_vgrp = 0   !volatile group
+  itemp_frz = 0    !frozen tracer id
+  call betrtracer_vars%set_tracer(trc_id = betrtracer_vars%id_trc_n2, trc_name='N2'  ,      &
+       is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = addone(itemp_grp),   &
+       trc_group_mem= 1,  is_trc_volatile=.true., trc_volatile_id = addone(itemp_v)     ,   &
+       trc_volatile_group_id = addone(itemp_vgrp))
+
+  call betrtracer_vars%set_tracer(trc_id = betrtracer_vars%id_trc_o2, trc_name='O2'  ,      &
+       is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = addone(itemp_grp),   &
+       trc_group_mem = 1, is_trc_volatile=.true., trc_volatile_id = addone(itemp_v)     ,   &
+       trc_volatile_group_id = addone(itemp_vgrp))
+
+  call betrtracer_vars%set_tracer(trc_id = betrtracer_vars%id_trc_ar, trc_name='AR'  ,      &
+       is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = addone(itemp_grp),   &
+       trc_group_mem = 1, is_trc_volatile=.true., trc_volatile_id = addone(itemp_v)     ,   &
+       trc_volatile_group_id = addone(itemp_vgrp))
+
+  call betrtracer_vars%set_tracer(trc_id = betrtracer_vars%id_trc_co2x, trc_name='CO2x',    &
+       is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = addone(itemp_grp)  , &
+       trc_group_mem = 1, is_trc_volatile=.true., trc_volatile_id = addone(itemp_v)       , &
+       trc_volatile_group_id = addone(itemp_vgrp) )
+
+  call betrtracer_vars%set_tracer(trc_id = betrtracer_vars%id_trc_ch4, trc_name='CH4',      &
+       is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = addone(itemp_grp),   &
+       trc_group_mem = 1, is_trc_volatile=.true., trc_volatile_id = addone(itemp_v)     ,   &
+       trc_volatile_group_id = addone(itemp_vgrp))
+
+
+  call betrtracer_vars%set_tracer(trc_id = betrtracer_vars%id_trc_o18_h2o, trc_name='O18_H2O' ,   &
+       is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = addone(itemp_grp)      ,   &
+       trc_group_mem = 1, is_trc_volatile=.true., trc_volatile_id = addone(itemp_v)           ,   &
+       trc_volatile_group_id = addone(itemp_vgrp), is_trc_h2o=.true., trc_vtrans_scal=1._r8   ,   &
+       is_trc_frozen=.true.,  trc_frozenid = addone(itemp_frz))
+
+
+  end subroutine Init_betrbgc
+
+
+!-------------------------------------------------------------------------------
+  subroutine set_boundary_conditions(this, bounds, num_soilc, filter_soilc, dz_top, betrtracer_vars, &
+       waterflux_vars, tracerboundarycond_vars)
+  !
+  ! DESCRIPTION
+  ! set up boundary conditions for tracer movement
+  !
+  use clm_varctl            , only : iulog
+  use TracerBoundaryCondType, only : tracerboundarycond_type
+  use abortutils            , only : endrun
+  use shr_log_mod           , only : errMsg => shr_log_errMsg
+  use BeTRTracerType        , only : betrtracer_type
+  use WaterfluxType         , only : waterflux_type
+  use clm_varcon            , only : denh2o
+
+
+  class(bgc_reaction_h2oiso_type), intent(in) :: this
+  type(bounds_type)                 , intent(in) :: bounds                     !
+  integer                           , intent(in) :: num_soilc                  ! number of columns in column filter_soilc
+  integer                           , intent(in) :: filter_soilc(:)            ! column filter_soilc
+  type(betrtracer_type)             , intent(in) :: betrtracer_vars            !
+  real(r8)                          , intent(in) :: dz_top(bounds%begc: )      !
+  type(waterflux_type)              , intent(in) :: waterflux_vars             !
+  type(tracerboundarycond_type)     , intent(inout) :: tracerboundarycond_vars !
+
+  !local variables
+  integer :: fc, c
+  character(len=255) :: subname = 'set_boundary_conditions'
+
+  SHR_ASSERT_ALL((ubound(dz_top)                == (/bounds%endc/)),   errMsg(__FILE__,__LINE__))
+
+
+  associate(                                                           &
+    qflx_gross_evap_soil => waterflux_vars%qflx_gross_evap_soil_col    &
+  )
+  !eventually, the following code will be implemented using polymorphism
+  !for simplicity, all gases other than water vapor are set with fixed concentration based boundary conditions
+  !
+  do fc = 1, num_soilc
+    c = filter_soilc(fc)
+    tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_n2)      = 32.8_r8                         !mol m-3, contant boundary condition, as concentration
+    tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_o2)      = 8.78_r8                         !mol m-3, contant boundary condition, as concentration
+    tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_ar)      = 0.3924_r8                       !mol m-3, contant boundary condition, as concentration
+    tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_co2x)    = 0.0168_r8                       !mol m-3, contant boundary condition, as concentration
+    tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_ch4)     = 6.939e-5_r8                     !mol m-3, contant boundary condition, as concentration
+    tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_o18_h2o) = -qflx_gross_evap_soil(c)/denh2o !m/s
+
+    tracerboundarycond_vars%bot_concflux_col(c,1,:)                         = 0._r8                           !zero flux boundary condition
+    tracerboundarycond_vars%condc_toplay_col(c,betrtracer_vars%id_trc_n2)   = 2._r8*1.837e-5_r8/dz_top(c)     !m/s surface conductance, this will be represented with Tang-Riley scheme (HESS, 2013)
+    tracerboundarycond_vars%condc_toplay_col(c,betrtracer_vars%id_trc_o2)   = 2._r8*1.713e-5_r8/dz_top(c)     !m/s surface conductance, this will be represented with Tang-Riley scheme (HESS, 2013)
+    tracerboundarycond_vars%condc_toplay_col(c,betrtracer_vars%id_trc_ar)   = 2._r8*1.532e-5_r8/dz_top(c)     !m/s surface conductance, this will be represented with Tang-Riley scheme (HESS, 2013)
+    tracerboundarycond_vars%condc_toplay_col(c,betrtracer_vars%id_trc_co2x) = 2._r8*1.399e-5_r8/dz_top(c)     !m/s surface conductance, this will be represented with Tang-Riley scheme (HESS, 2013)
+    tracerboundarycond_vars%condc_toplay_col(c,betrtracer_vars%id_trc_ch4)  = 2._r8*1.808e-5_r8/dz_top(c)     !m/s surface conductance, this will be represented with Tang-Riley scheme (HESS, 2013)
+  enddo
+  end associate
+  end subroutine set_boundary_conditions
+
+!-------------------------------------------------------------------------------
+
+  subroutine calc_bgc_reaction(this, bounds, lbj, ubj, num_soilc, filter_soilc, num_soilp, filter_soilp, jtops,     &
+       dtime, betrtracer_vars, tracercoeff_vars, waterstate_vars, temperature_vars, soilstate_vars, chemstate_vars, &
+       cnstate_vars, tracerstate_vars, tracerflux_vars, plantsoilnutrientflux_vars)
+
+  !
+  ! do bgc reaction
+  ! eventually this will be an abstract subroutine, but now I use the select case approach for a quick and dirty implementation.
+  !USES
+  !
+  ! !USES:
+  use tracerfluxType           , only : tracerflux_type
+  use tracerstatetype          , only : tracerstate_type
+  use tracercoeffType          , only : tracercoeff_type
+  use BetrTracerType           , only : betrtracer_type
+  use WaterStateType           , only : Waterstate_Type
+  use TemperatureType          , only : temperature_type
+  use SoilStatetype            , only : soilstate_type
+  use ChemStateType            , only : chemstate_type
+  use CanopyStateType          , only : canopystate_type
+  use CNVegStateType           , only : cnstate_type => cnveg_state_type
+  use PlantSoilnutrientFluxType, only : plantsoilnutrientflux_type
+
+  !ARGUMENTS
+  class(bgc_reaction_h2oiso_type)   , intent(in)    :: this                       !
+  type(bounds_type)                   , intent(in)    :: bounds                     ! bounds
+  integer                             , intent(in)    :: num_soilc                  ! number of columns in column filter_soilc
+  integer                             , intent(in)    :: filter_soilc(:)            ! column filter_soilc
+  integer                             , intent(in)    :: num_soilp                  !
+  integer                             , intent(in)    :: filter_soilp(:)            ! pft filter
+  integer                             , intent(in)    :: jtops(bounds%begc: )       ! top index of each column
+  integer                             , intent(in)    :: lbj, ubj                   ! lower and upper bounds, make sure they are > 0
+  real(r8)                            , intent(in)    :: dtime                      ! model time step
+  type(Waterstate_Type)               , intent(in)    :: waterstate_vars            ! water state variables
+  type(temperature_type)              , intent(in)    :: temperature_vars           ! energy state variable
+  type(soilstate_type)                , intent(in)    :: soilstate_vars             !
+  type(cnstate_type)                  , intent(inout) :: cnstate_vars               !
+  type(chemstate_type)                , intent(in)    :: chemstate_vars             !
+  type(betrtracer_type)               , intent(in)    :: betrtracer_vars            ! betr configuration information
+  type(tracercoeff_type)              , intent(in)    :: tracercoeff_vars           !
+  type(tracerstate_type)              , intent(inout) :: tracerstate_vars           !
+  type(tracerflux_type)               , intent(inout) :: tracerflux_vars            !
+  type(plantsoilnutrientflux_type)    , intent(inout) :: plantsoilnutrientflux_vars !
+  character(len=*)                    , parameter     :: subname ='calc_bgc_reaction'
+
+
+
+  ! print*, subname
+  end subroutine calc_bgc_reaction
+
+!-------------------------------------------------------------------------------
+  subroutine do_tracer_equilibration(this, bounds, lbj, ubj, jtops, num_soilc, filter_soilc, &
+       betrtracer_vars, tracercoeff_vars, tracerstate_vars)
+ !
+  ! DESCRIPTIONS
+  ! requilibrate tracers that has solid and mobile phases
+  ! using the theory of mass action. When the redox-ladder is on, this
+  ! subroutine will update the change of pH due to tracer transport, or
+  ! USES
+  !
+  use tracerstatetype       , only : tracerstate_type
+  use tracercoeffType       , only : tracercoeff_type
+  use BeTRTracerType        , only : betrtracer_type
+
+
+  class(bgc_reaction_h2oiso_type),    intent(in) :: this
+
+  type(bounds_type),      intent(in) :: bounds
+  integer,                intent(in) :: lbj, ubj
+  integer,                intent(in) :: jtops(bounds%begc: )        ! top label of each column
+  integer,                intent(in) :: num_soilc
+  integer,                intent(in) :: filter_soilc(:)
+  type(betrtracer_type),  intent(in) :: betrtracer_vars
+  type(tracercoeff_type), intent(in) :: tracercoeff_vars
+  type(tracerstate_type), intent(inout) :: tracerstate_vars
+
+  character(len=255) :: subname = 'do_tracer_equilibration'
+  integer   :: j, fc, c
+  integer   :: trc_id1, trc_id2
+
+
+  SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(__FILE__,__LINE__))
+
+  associate(                                                                         &
+    aqu2equilscef                   => tracercoeff_vars%aqu2equilsolidcef_col          , &
+    aqu2bulkcef_mobile              => tracercoeff_vars%aqu2bulkcef_mobile_col     , &
+    tracer_solid_phase_equil        => tracerstate_vars%tracer_conc_solid_equil_col, &
+    tracer_mobile_phase             => tracerstate_vars%tracer_conc_mobile_col       &
+  )
+  !depending on the simulation type, an implementation of aqueous chemistry will be
+  !employed to separate out the adsorbed phase
+  !It should be noted that this formulation excludes the use of linear isotherm, which
+  !can be integrated through the retardation factor
+  !assuming equilibrium fractionation between ice/water/vapor, calculate the equilibrium solid phase concentrations
+  !this might introduce some bias, because soil moisture profile is updated from phase change and advective transport, while
+  !the equilibration adjusts continously as water flows or phase change occurs
+
+
+
+  trc_id1 = betrtracer_vars%id_trc_o18_h2o
+  trc_id2 = betrtracer_vars%id_trc_o18_h2o_ice
+
+  !the following code is replaced with diagnose_dtracer_freeze_thaw in TracerParamsMod
+
+!  if(trc_id1>0)then
+!    call do_h2o_isotope_equilibration(bounds, lbj, ubj, jtops, num_soilc, filter_soilc, &
+!      aqu2bulkcef_mobile(bounds%begc:bounds%endc, lbj:ubj, trc_id1)        , &
+!      aqu2equilscef(bounds%begc:bounds%endc, lbj:ubj, trc_id2)             , &
+!      tracer_solid_phase_equil(bounds%begc:bounds%endc, lbj:ubj, trc_id2)  , &
+!      tracer_mobile_phase(bounds%begc:bounds%endc, lbj:ubj, trc_id1))
+
+!  endif
+
+  end associate
+
+
+  end subroutine do_tracer_equilibration
+
+
+!-------------------------------------------------------------------------------
+
+  subroutine do_h2o_isotope_equilibration(bounds, lbj, ubj, jtops, numf, filter, aqu2bulkcef, &
+    aqu2equilscef, tracer_solid_phase_equil, tracer_mobile_phase)
+  !
+  ! Diagnose solid phase tracer
+  !
+  implicit none
+  type(bounds_type),      intent(in) :: bounds
+  integer,                intent(in) :: lbj, ubj
+  integer,                intent(in) :: jtops(bounds%begc: )        ! top label of each column
+  integer,                intent(in) :: numf
+  integer,                intent(in) :: filter(:)
+  real(r8),               intent(in) :: aqu2equilscef(bounds%begc: , lbj: )
+  real(r8),               intent(in) :: aqu2bulkcef(bounds%begc: , lbj: )
+  real(r8),               intent(in) :: tracer_mobile_phase(bounds%begc: , lbj: )
+  real(r8),            intent(inout) :: tracer_solid_phase_equil(bounds%begc: ,lbj: )
+
+  real(r8)  :: frac
+  real(r8)  :: tracer_conc
+  integer   :: c, fc, j
+
+  SHR_ASSERT_ALL((ubound(aqu2equilscef) == (/bounds%endc, ubj/)), errMsg(__FILE__,__LINE__))
+  SHR_ASSERT_ALL((ubound(aqu2bulkcef)   == (/bounds%endc, ubj/)), errMsg(__FILE__,__LINE__))
+  SHR_ASSERT_ALL((ubound(tracer_solid_phase_equil) == (/bounds%endc, ubj/)), errMsg(__FILE__,__LINE__))
+  SHR_ASSERT_ALL((ubound(tracer_mobile_phase) == (/bounds%endc, ubj/)), errMsg(__FILE__,__LINE__))
+
+  do j = lbj, ubj
+    do fc = 1, numf
+      c = filter(fc)
+      if(j>=jtops(c))then
+        !obtains total concentration
+        tracer_conc= tracer_mobile_phase(c,j) + tracer_solid_phase_equil(c,j)
+        !obtain the equilibrium conversion parameter
+        frac = aqu2bulkcef(c,j) / (aqu2bulkcef(c,j) + aqu2equilscef(c, j))
+
+        !tracer_mobile_phase(c,j) = tracer_conc * frac
+        tracer_solid_phase_equil(c,j) = tracer_conc - tracer_mobile_phase(c,j)
+      endif
+    enddo
+  enddo
+
+  end subroutine do_h2o_isotope_equilibration
+
+  !-----------------------------------------------------------------------
+  subroutine InitCold(this, bounds, betrtracer_vars, waterstate_vars, tracerstate_vars)
+    !
+    ! !USES:
+    !
+    use BeTRTracerType           , only : BeTRTracer_Type
+    use tracerstatetype          , only : tracerstate_type
+    use WaterstateType           , only : waterstate_type
+    use LandunitType             , only : lun
+    use ColumnType               , only : col
+    use PatchType                , only : pft => patch
+    use clm_varcon               , only : spval, ispval
+    use landunit_varcon          , only : istsoil, istcrop
+    use clm_varcon               , only : denh2o
+    use clm_varpar               , only : nlevtrc_soil
+    ! !ARGUMENTS:
+    class(bgc_reaction_h2oiso_type) , intent(in)    :: this
+    type(bounds_type)                 , intent(in)    :: bounds
+    type(BeTRTracer_Type)             , intent(in)    :: betrtracer_vars
+    type(waterstate_type)             , intent(in)    :: waterstate_vars
+    type(tracerstate_type)            , intent(inout) :: tracerstate_vars
+
+    !
+    ! !LOCAL VARIABLES:
+    integer :: p, c, l, k, j
+    integer :: fc                                        ! filter index
+    integer               :: begc, endc
+    integer               :: begg, endg
+    !-----------------------------------------------------------------------
+
+    begc = bounds%begc; endc= bounds%endc
+    begg = bounds%begg; endg= bounds%endg
+    !-----------------------------------------------------------------------
+
+
+    do c = bounds%begc, bounds%endc
+       l = col%landunit(c)
+       if (lun%ifspecial(l)) then
+         if(betrtracer_vars%ngwmobile_tracers>0)then
+           tracerstate_vars%tracer_conc_mobile_col(c,:,:)        = spval
+           tracerstate_vars%tracer_conc_surfwater_col(c,:)       = spval
+           tracerstate_vars%tracer_conc_aquifer_col(c,:)         = spval
+           tracerstate_vars%tracer_conc_grndwater_col(c,:)       = spval
+         endif
+         if(betrtracer_vars%ntracers > betrtracer_vars%ngwmobile_tracers)then
+           tracerstate_vars%tracer_conc_solid_passive_col(c,:,:) = spval
+         endif
+         if(betrtracer_vars%nsolid_equil_tracers>0)then
+           tracerstate_vars%tracer_conc_solid_equil_col(c, :, :) = spval
+         endif
+       endif
+       tracerstate_vars%tracer_soi_molarmass_col(c,:)            = spval
+
+       if (lun%itype(l) == istsoil .or. lun%itype(l) == istcrop) then
+         !dual phase tracers
+
+         tracerstate_vars%tracer_conc_mobile_col(c,:, :)          = 0._r8
+         tracerstate_vars%tracer_conc_surfwater_col(c,:)          = 0._r8
+         tracerstate_vars%tracer_conc_aquifer_col(c,:)            = 0._r8
+         tracerstate_vars%tracer_conc_grndwater_col(c,:)          = 0._r8
+
+         !solid tracers
+         if(betrtracer_vars%ngwmobile_tracers < betrtracer_vars%ntracers)then
+           tracerstate_vars%tracer_conc_solid_passive_col(c,:,:) = 0._r8
+         endif
+
+         if(betrtracer_vars%nsolid_equil_tracers>0)then
+           tracerstate_vars%tracer_conc_solid_equil_col(c, :, :) = 0._r8
+         endif
+         tracerstate_vars%tracer_soi_molarmass_col(c,:)          = 0._r8
+
+         !set for o18_h2o, assuming no fractionation, which is equivalent to assuming concentration equals 1
+         do j = 1, nlevtrc_soil
+           tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_o18_h2o) = 1._r8 * waterstate_vars%h2osoi_liq_col(c,j)/(denh2o*col%dz(c,j))
+           tracerstate_vars%tracer_conc_frozen_col(c,j,betrtracer_vars%frozenid(betrtracer_vars%id_trc_o18_h2o)) = 1._r8 * waterstate_vars%h2osoi_ice_col(c,j)/(denh2o*col%dz(c,j))
+         enddo
+
+       endif
+     enddo
+
+  end subroutine InitCold
+
+
+
+  !-----------------------------------------------------------------------
+  subroutine readParams(this, ncid, betrtracer_vars)
+    !
+    ! !DESCRIPTION:
+    ! read in module specific parameters
+    !
+    ! !USES:
+
+    use ncdio_pio                , only : file_desc_t
+    use BeTRTracerType           , only : BeTRTracer_Type
+    ! !ARGUMENTS:
+    class(bgc_reaction_h2oiso_type)   , intent(in)    :: this
+    type(BeTRTracer_Type)             , intent(inout) :: betrtracer_vars
+    type(file_desc_t)                 , intent(inout) :: ncid  ! pio netCDF file id
+
+    !do nothing here for the moment, but contents will eventually be filled in here
+
+  end subroutine readParams
+
+  !-------------------------------------------------------------------------------
+  subroutine betr_lsm_flux_statevar_feedback(this, bounds, num_soilc, filter_soilc,  &
+       carbonstate_vars, nitrogenstate_vars, nitrogenflux_vars, phosphorusstate_vars,&
+       phosphorusflux_vars, tracerstate_vars, tracerflux_vars,  betrtracer_vars)
+    !
+    ! !DESCRIPTION:
+    ! do flux and state variable change between betr and lsm.
+    !
+    ! !USES:
+    use shr_kind_mod             , only : r8 => shr_kind_r8
+    use tracerfluxType           , only : tracerflux_type
+    use tracerstatetype          , only : tracerstate_type
+    use decompMod                , only : bounds_type
+    use BeTRTracerType           , only : BeTRTracer_Type
+    use SoilBiogeochemCarbonStateType        , only : carbonstate_type   => soilbiogeochem_carbonstate_type
+    use SoilBiogeochemNitrogenStateType      , only : nitrogenstate_type => soilbiogeochem_nitrogenstate_type
+    use SoilBiogeochemNitrogenFluxType       , only : nitrogenflux_type  => soilbiogeochem_nitrogenflux_type
+    use PhosphorusFluxType       , only : phosphorusflux_type
+    use PhosphorusStateType      , only : phosphorusstate_type
+
+    ! !ARGUMENTS:
+    class(bgc_reaction_h2oiso_type) , intent(in)    :: this               !
+    type(bounds_type)                 , intent(in)    :: bounds             ! bounds
+    integer                           , intent(in)    :: num_soilc
+    integer                           , intent(in)    :: filter_soilc(:)
+    type(betrtracer_type)             , intent(in)    :: betrtracer_vars    ! betr configuration information
+    type(tracerstate_type)            , intent(in)    :: tracerstate_vars   !
+    type(tracerflux_type)             , intent(in)    :: tracerflux_vars    !
+    type(carbonstate_type)            , intent(inout) :: carbonstate_vars   !
+    type(nitrogenflux_type)           , intent(inout) :: nitrogenflux_vars  !
+    type(nitrogenstate_type)          , intent(inout) :: nitrogenstate_vars !
+    type(phosphorusstate_type)        , intent(inout) :: phosphorusstate_vars
+    type(phosphorusflux_type)         , intent(inout) :: phosphorusflux_vars
+
+
+
+  end subroutine betr_lsm_flux_statevar_feedback
+
+
+  !-------------------------------------------------------------------------------
+
+
+  subroutine init_betr_lsm_bgc_coupler(this, bounds, carbonstate_vars, &
+       nitrogenstate_vars, phosphorusstate_vars, plantsoilnutrientflux_vars, &
+       betrtracer_vars, tracerstate_vars, cnstate_vars, ecophyscon_vars)
+
+    ! !DESCRIPTION:
+    ! initialize the bgc coupling between betr and lsm
+    !
+    ! !USES:
+    use clm_varcon               , only : catomw
+    use clm_varpar               , only : i_cwd, i_met_lit, i_cel_lit, i_lig_lit
+    use SoilBiogeochemCarbonStateType        , only : carbonstate_type   => soilbiogeochem_carbonstate_type
+    use SoilBiogeochemNitrogenStateType      , only : nitrogenstate_type => soilbiogeochem_nitrogenstate_type
+    use PhosphorusStateType      , only : phosphorusstate_type
+    use tracerstatetype          , only : tracerstate_type
+    use BetrTracerType           , only : betrtracer_type
+    use clm_varpar               , only : nlevtrc_soil
+    use landunit_varcon          , only : istsoil, istcrop
+    use PlantSoilnutrientFluxType, only : plantsoilnutrientflux_type
+    use EcophysConType           , only : ecophyscon_type
+    use CNVegStateType           , only : cnstate_type => cnveg_state_type
+
+
+    ! !ARGUMENTS:
+    class(bgc_reaction_h2oiso_type)  , intent(in)    :: this               !
+    type(bounds_type)                  , intent(in)    :: bounds             !
+    type(tracerstate_type)             , intent(inout) :: tracerstate_vars   !
+    type(betrtracer_type)              , intent(in)    :: betrtracer_vars    ! betr configuration information
+    type(carbonstate_type)             , intent(in)    :: carbonstate_vars   !
+    type(nitrogenstate_type)           , intent(in)    :: nitrogenstate_vars !
+    type(phosphorusstate_type)         , intent(in)    :: phosphorusstate_vars
+    type(plantsoilnutrientflux_type)   , intent(inout) :: plantsoilnutrientflux_vars !
+    type(ecophyscon_type)              , intent(in)    :: ecophyscon_vars
+    type(cnstate_type)                 , intent(in)    :: cnstate_vars
+
+
+  end subroutine init_betr_lsm_bgc_coupler
+
+end module BGCReactionsH2OIsotopeType

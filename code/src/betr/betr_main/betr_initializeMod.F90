@@ -10,7 +10,8 @@ module betr_initializeMod
   use TracerStateType           , only : TracerState_type
   use tracerboundarycondType    , only : tracerboundarycond_type
   use BGCReactionsMod           , only : bgc_reaction_type
-  use PlantSoilnutrientFluxType , only : plantsoilnutrientflux_type
+  use PlantSoilBGCMod           , only : plant_soilbgc_type
+  use BeTR_aerocondType         , only : betr_aerecond_type
   use clm_varctl                , only : iulog
   use abortutils                , only : endrun
   use shr_log_mod               , only : errMsg => shr_log_errMsg
@@ -31,9 +32,9 @@ module betr_initializeMod
   type(TracerFlux_type)                , public :: tracerflux_vars
   type(TracerState_type)               , public :: tracerState_vars
   type(tracerboundarycond_type)        , public :: tracerboundarycond_vars
-  type(plantsoilnutrientflux_type)     , public :: plantsoilnutrientflux_vars
-  class(bgc_reaction_type),allocatable , public :: bgc_reaction
-
+  class(plant_soilbgc_type), allocatable,public :: plant_soilbgc
+  class(bgc_reaction_type) , allocatable,public :: bgc_reaction
+  type(betr_aerecond_type)              ,public :: betr_aerecond_vars
 contains
 
   !-------------------------------------------------------------------------------
@@ -90,7 +91,7 @@ contains
     !
     ! !USES:
     use decompMod             , only : bounds_type
-    use BGCReactionsFactoryMod, only : ctreate_bgc_reaction_type
+    use BGCReactionsFactoryMod, only : create_betr_application
     use BetrBGCMod            , only : betrbgc_init
     use TransportMod          , only : init_transportmod
     use TracerParamsMod       , only : tracer_param_init
@@ -106,9 +107,12 @@ contains
 
     call betrtracer_vars%init_scalars()
 
-    allocate(bgc_reaction, source=ctreate_bgc_reaction_type(bgc_method))
+
+    call create_betr_application(bgc_reaction, plant_soilbgc, bgc_method)
 
     call bgc_reaction%Init_betrbgc(bounds, lbj, ubj, betrtracer_vars)
+
+    call betr_aerecond_vars%Init(bounds)
 
     call init_transportmod
 
@@ -120,8 +124,8 @@ contains
 
     call tracerboundarycond_vars%Init(bounds, betrtracer_vars)
 
-    call plantsoilnutrientflux_vars%Init(bounds, lbj, ubj)
-
+    !inside Init_plant_soilbgc, specific plant soil bgc coupler data type will be created
+    call plant_soilbgc%Init_plant_soilbgc(bounds, lbj, ubj)
 
     !initialize state variable
     call bgc_reaction%initCold(bounds,  betrtracer_vars, waterstate_vars, tracerstate_vars)
