@@ -38,8 +38,9 @@ contains
   use betr_initializeMod  , only : betr_initialize, betrtracer_vars, tracercoeff_vars,  &
                                     tracerflux_vars, tracerstate_vars
 
-  use BetrBGCMod          , only : betrbgc_init, run_betr_one_step_with_drainage
-  use betr_standalone_cpl , only : betr_initialize_standalone, run_betr_one_step_without_drainage_standalone
+  use betr_standalone_cpl , only : betr_initialize_standalone
+  use betr_standalone_cpl , only : run_betr_one_step_without_drainage_standalone
+  use betr_standalone_cpl , only : run_betr_one_step_with_drainage_standalone
   use TracerParamsMod     , only : tracer_param_init
   use spmdMod             , only : spmd_init
   use LandunitType        , only : lun
@@ -115,19 +116,17 @@ contains
 
     !no calculation in the first step
     if(record==0)cycle
-    call  begin_betr_tracer_massbalance(bounds, lbj, ubj, num_soilc, filter_soilc, &
-         betrtracer_vars, tracerstate_vars, tracerflux_vars)
+    call  begin_betr_tracer_massbalance(bounds, lbj, ubj, num_soilc, filter_soilc)
 
     call run_betr_one_step_without_drainage_standalone(bounds, lbj, ubj, num_soilc, filter_soilc, num_soilp, filter_soilp, col ,   &
          atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, temperature_vars, waterflux_vars, chemstate_vars, &
          cnstate_vars, canopystate_vars, carbonflux_vars)
 
-    call run_betr_one_step_with_drainage(bounds, lbj, ubj, num_soilc, filter_soilc, &
-         jtops, waterflux_vars, col, betrtracer_vars, tracercoeff_vars, tracerstate_vars,  tracerflux_vars)
+    call run_betr_one_step_with_drainage_standalone(bounds, lbj, ubj, num_soilc, filter_soilc, &
+         jtops, waterflux_vars, col)
 
     !do mass balance check
-    call betr_tracer_massbalance_check(bounds, lbj, ubj, num_soilc, filter_soilc, &
-      betrtracer_vars, tracerstate_vars,  tracerflux_vars)
+    call betr_tracer_massbalance_check(bounds, lbj, ubj, num_soilc, filter_soilc)
 
     !update time stamp
     call update_time_stamp(time_vars, dtime)

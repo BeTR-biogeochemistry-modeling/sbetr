@@ -4,7 +4,7 @@ module betr_standalone_cpl
   use betr_initializeMod    , only : betrtracer_vars
   use betr_initializeMod    , only : tracercoeff_vars
   use betr_initializeMod    , only : tracerflux_vars
-  use betr_initializeMod    , only : tracerState_vars
+  use betr_initializeMod    , only : tracerstate_vars
   use betr_initializeMod    , only : tracerboundarycond_vars
   use betr_initializeMod    , only : plant_soilbgc
   use betr_initializeMod    , only : bgc_reaction
@@ -13,6 +13,7 @@ module betr_standalone_cpl
 implicit none
  public :: betr_initialize_standalone
  public :: run_betr_one_step_without_drainage_standalone
+ public :: run_betr_one_step_with_drainage_standalone
 contains
 
   !-------------------------------------------------------------------------------
@@ -103,7 +104,7 @@ contains
   use BeTR_CNStateType  , only : betr_cnstate_type
   use EcophysConType    , only : ecophyscon
   use BeTR_PatchType    , only : betr_pft
-  use PatchType         , only : pft  
+  use PatchType         , only : pft
   implicit none
   type(bounds_type)    , intent(in) :: bounds
   integer              , intent(in) :: lbj, ubj
@@ -126,4 +127,29 @@ contains
 
   end subroutine betr_initialize_standalone
 
+
+  !-------------------------------------------------------------------------------
+  subroutine run_betr_one_step_with_drainage_standalone(bounds, lbj, ubj, num_soilc, filter_soilc, &
+       jtops, waterflux_vars, col)
+
+  ! !USES:
+
+  use BetrBGCMod            , only : run_betr_one_step_with_drainage
+  use ColumnType            , only : column_type
+  use MathfuncMod           , only : safe_div
+  use WaterFluxType         , only : waterflux_type
+  implicit none
+  ! !ARGUMENTS:
+  type(bounds_type),        intent(in)    :: bounds
+  integer,                  intent(in)    :: lbj, ubj
+  integer,                  intent(in)    :: num_soilc                          ! number of columns in column filter_soilc
+  integer,                  intent(in)    :: filter_soilc(:)                    ! column filter_soilc
+  integer,                  intent(in)    :: jtops(bounds%begc: )
+  type(waterflux_type)    , intent(in)    :: waterflux_vars
+  type(column_type),        intent(in)    :: col                                ! column type
+
+  call run_betr_one_step_with_drainage(bounds, lbj, ubj, num_soilc, filter_soilc, &
+       jtops, waterflux_vars, col, betrtracer_vars, tracercoeff_vars, tracerstate_vars,  tracerflux_vars)
+
+  end subroutine run_betr_one_step_with_drainage_standalone
 end module betr_standalone_cpl
