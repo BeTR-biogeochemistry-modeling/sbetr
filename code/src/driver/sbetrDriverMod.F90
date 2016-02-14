@@ -35,9 +35,8 @@ contains
   use decompMod           , only : bounds_type
   use clm_instMod
   use ColumnType          , only : col
-  use betr_initializeMod  , only : betr_initialize, betrtracer_vars, tracercoeff_vars,  &
+  use betr_instMod        , only : betrtracer_vars, tracercoeff_vars,  &
                                     tracerflux_vars, tracerstate_vars
-
   use betr_standalone_cpl , only : betr_initialize_standalone
   use betr_standalone_cpl , only : run_betr_one_step_without_drainage_standalone
   use betr_standalone_cpl , only : run_betr_one_step_with_drainage_standalone

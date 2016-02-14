@@ -8,6 +8,7 @@ implicit none
    integer,  pointer :: column(:)
    integer,  pointer :: itype(:)
    integer,  pointer :: landunit(:)
+   real(r8), pointer :: crop(:)
   end type betr_patch_type
 
   type(betr_patch_type), public :: betr_pft

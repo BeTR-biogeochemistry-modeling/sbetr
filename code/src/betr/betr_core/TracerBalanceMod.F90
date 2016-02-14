@@ -12,7 +12,7 @@ module TracerBalanceMod
   use ColumnType         , only : col
   use clm_time_manager   , only : get_nstep
   use clm_varctl         , only : iulog
-  use betr_initializeMod , only : betrtracer_vars, tracerstate_vars, tracerflux_vars
+  use betr_instMod       , only : betrtracer_vars, tracerstate_vars, tracerflux_vars
 implicit none
   save
   private

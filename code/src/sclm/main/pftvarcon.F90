@@ -60,7 +60,7 @@ module pftvarcon
   real(r8), allocatable :: displar(:)     !ratio of displacement height to canopy top height (-)
   real(r8), allocatable :: roota_par(:)   !CLM rooting distribution parameter [1/m]
   real(r8), allocatable :: rootb_par(:)   !CLM rooting distribution parameter [1/m]
-  real(r8), allocatable :: crop(:)        !crop pft: 0. = not crop, 1. = crop pft
+  real(r8), pointer :: crop(:)        !crop pft: 0. = not crop, 1. = crop pft
   real(r8), allocatable :: irrigated(:)   !irrigated pft: 0. = not, 1. = irrigated
   real(r8), allocatable :: smpso(:)       !soil water potential at full stomatal opening (mm)
   real(r8), allocatable :: smpsc(:)       !soil water potential at full stomatal closure (mm)
@@ -229,7 +229,6 @@ contains
     ! Read and initialize vegetation (PFT) constants
     !
     ! !USES:
-    use fileutils ,  only : getfil
     use ncdio_pio ,  only : ncd_io, ncd_pio_closefile, ncd_pio_openfile, file_desc_t, &
                             ncd_inqdid, ncd_inqdlen
     use clm_varctl,  only : paramfile, use_ed
@@ -301,7 +300,7 @@ contains
     allocate( displar       (0:mxpft) )
     allocate( roota_par     (0:mxpft) )
     allocate( rootb_par     (0:mxpft) )
-    allocate( crop          (0:mxpft) )
+    allocate( crop          (0:mxpft) ); crop(:) = 0
     allocate( irrigated     (0:mxpft) )
     allocate( smpso         (0:mxpft) )
     allocate( smpsc         (0:mxpft) )

@@ -1825,7 +1825,7 @@ contains
   !
   ! calculate aerenchyma conductance (m/s)
   use clm_varcon            , only : tfrz, rpi
-  use pftvarcon             , only : nc3_arctic_grass, crop, nc3_nonarctic_grass, nc4_grass, noveg
+  use BeTR_pftvarconType    , only : betr_pftvarcon
   use BeTR_CarbonFluxType   , only : betr_carbonflux_type
   use CanopyStateType       , only : canopystate_type
   use BetrTracerType        , only : betrtracer_type
@@ -1843,8 +1843,8 @@ contains
   real(r8)                     , intent(in)   :: rootfr(bounds%begp: ,1: ) ! fraction of roots in each soil layer
   type(temperature_type)       , intent(in)   :: temperature_vars          ! energy state variable
   type(canopystate_type)       , intent(in)   :: canopystate_vars
-  type(betr_aerecond_type)       , intent(in)   :: betr_aerecond_vars
-  type(betr_carbonflux_type)        , intent(in)   :: carbonflux_vars
+  type(betr_aerecond_type)     , intent(in)   :: betr_aerecond_vars
+  type(betr_carbonflux_type)   , intent(in)   :: carbonflux_vars
   type(betrtracer_type)        , intent(in)   :: betrtracer_vars            ! betr configuration information
   type(tracercoeff_type)       , intent(inout) :: tracercoeff_vars
 
@@ -1896,7 +1896,7 @@ contains
       g = col%gridcell(c)
 
       ! Calculate aerenchyma diffusion
-      if (j > jwt(c) .and. t_soisno(c,j) > tfrz .and. pft%itype(p) /= noveg) then
+      if (j > jwt(c) .and. t_soisno(c,j) > tfrz .and. pft%itype(p) /= betr_pftvarcon%noveg) then
         ! Attn EK: This calculation of aerenchyma properties is very uncertain. Let's check in once all
         ! the new components are in; if there is any tuning to be done to get a realistic global flux,
         ! this would probably be the place.  We will have to document clearly in the Tech Note
@@ -1929,8 +1929,8 @@ contains
         endif
         n_tiller = m_tiller / 0.22_r8
 
-        if (pft%itype(p) == nc3_arctic_grass .or. crop(pft%itype(p)) == 1 .or. &
-          pft%itype(p) == nc3_nonarctic_grass .or. pft%itype(p) == nc4_grass) then
+        if (pft%itype(p) == betr_pftvarcon%nc3_arctic_grass .or. pft%crop(pft%itype(p)) == 1 .or. &
+          pft%itype(p) == betr_pftvarcon%nc3_nonarctic_grass .or. pft%itype(p) == betr_pftvarcon%nc4_grass) then
           poros_tiller = 0.3_r8  ! Colmer 2003
         else
           poros_tiller = 0.3_r8 * nongrassporosratio

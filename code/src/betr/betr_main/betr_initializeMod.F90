@@ -4,14 +4,7 @@ module betr_initializeMod
   !  subroutines to initialize betr based on namelist
 
   ! !USES:
-  use BeTRTracerType            , only : BeTRtracer_type
-  use TracerCoeffType           , only : TracerCoeff_type
-  use TracerFluxType            , only : TracerFlux_type
-  use TracerStateType           , only : TracerState_type
-  use tracerboundarycondType    , only : tracerboundarycond_type
-  use BGCReactionsMod           , only : bgc_reaction_type
-  use PlantSoilBGCMod           , only : plant_soilbgc_type
-  use BeTR_aerocondType         , only : betr_aerecond_type
+  use betr_instMod
   use clm_varctl                , only : iulog
   use abortutils                , only : endrun
   use shr_log_mod               , only : errMsg => shr_log_errMsg
@@ -24,18 +17,6 @@ module betr_initializeMod
   public :: betr_rest
   character(len=32) :: bgc_method='mock_run'
 
-  !
-  !-----------------------------------------
-  ! Instances of component types
-  !-----------------------------------------
-  type(BeTRtracer_type)                , public :: betrtracer_vars
-  type(TracerCoeff_type)               , public :: tracercoeff_vars
-  type(TracerFlux_type)                , public :: tracerflux_vars
-  type(TracerState_type)               , public :: tracerState_vars
-  type(tracerboundarycond_type)        , public :: tracerboundarycond_vars
-  class(plant_soilbgc_type), allocatable,public :: plant_soilbgc
-  class(bgc_reaction_type) , allocatable,public :: bgc_reaction
-  type(betr_aerecond_type)              ,public :: betr_aerecond_vars
 contains
 
   !-------------------------------------------------------------------------------
@@ -93,7 +74,6 @@ contains
     ! !USES:
     use decompMod             , only : bounds_type
     use BGCReactionsFactoryMod, only : create_betr_application
-    use BetrBGCMod            , only : betrbgc_init
     use TransportMod          , only : init_transportmod
     use TracerParamsMod       , only : tracer_param_init
     use WaterstateType        , only : waterstate_type
@@ -107,7 +87,6 @@ contains
     character(len=32) :: subname='betr_initialize'
 
     call betrtracer_vars%init_scalars()
-
 
     call create_betr_application(bgc_reaction, plant_soilbgc, bgc_method)
 
@@ -138,7 +117,7 @@ contains
     call tracer_param_init(bounds)
 
     !initialize the betrBGC module
-    call betrbgc_init(bounds, betrtracer_vars)
+    call betrbgc_init(bounds)
 
   end subroutine betr_initialize
   !---------------------------------------------------------------------------------
@@ -161,4 +140,19 @@ contains
   call tracerflux_vars%Restart( bounds, ncid, flag=flag, betrtracer_vars=betrtracer_vars)
   call tracercoeff_vars%Restart(bounds, ncid, flag=flag, betrtracer_vars=betrtracer_vars)
   end subroutine betr_rest
+  !---------------------------------------------------------------------------------
+
+  subroutine betrbgc_init(bounds)
+    !
+    ! !DESCRIPTION:
+    ! initialize local variables
+    !
+    use decompMod             , only : bounds_type
+    ! !ARGUMENTS:
+    type(bounds_type)          , intent(in) :: bounds          ! bounds
+
+    ! !LOCAL VARIABLES:
+    character(len=255) :: subname = 'betrbgc_init'
+
+  end subroutine betrbgc_init
 end module betr_initializeMod

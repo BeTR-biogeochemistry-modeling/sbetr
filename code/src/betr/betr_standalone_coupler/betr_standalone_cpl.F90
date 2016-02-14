@@ -1,15 +1,7 @@
 module betr_standalone_cpl
 
   use decompMod             , only : bounds_type
-  use betr_initializeMod    , only : betrtracer_vars
-  use betr_initializeMod    , only : tracercoeff_vars
-  use betr_initializeMod    , only : tracerflux_vars
-  use betr_initializeMod    , only : tracerstate_vars
-  use betr_initializeMod    , only : tracerboundarycond_vars
-  use betr_initializeMod    , only : plant_soilbgc
-  use betr_initializeMod    , only : bgc_reaction
-  use betr_initializeMod    , only : betr_aerecond_vars
-  use betr_initializeMod    , only : betr_initialize
+  use betr_instMod
 implicit none
  public :: betr_initialize_standalone
  public :: run_betr_one_step_without_drainage_standalone
@@ -27,11 +19,6 @@ contains
 
      ! !USES:
      use BetrBGCMod                   , only          : run_betr_one_step_without_drainage
-     use tracerfluxType               , only          : tracerflux_type
-     use tracerstatetype              , only          : tracerstate_type
-     use tracercoeffType              , only          : tracercoeff_type
-     use TracerBoundaryCondType       , only          : TracerBoundaryCond_type
-     use BetrTracerType               , only          : betrtracer_type
      use SoilStateType                , only          : soilstate_type
      use WaterStateType               , only          : Waterstate_Type
      use TemperatureType              , only          : temperature_type
@@ -41,7 +28,6 @@ contains
      use BGCReactionsMod              , only          : bgc_reaction_type
      use atm2lndType                  , only          : atm2lnd_type
      use SoilHydrologyType            , only          : soilhydrology_type
-     use PlantSoilBGCMod              , only          : plant_soilbgc_type
      use BeTR_CNStateType             , only          : betr_cnstate_type
      use BeTR_CarbonFluxType          , only          : betr_carbonflux_type
      use CNStateType                  , only          : cnstate_type
@@ -49,6 +35,7 @@ contains
      use CanopyStateType              , only          : canopystate_type
      use BeTR_PatchType               , only          : betr_pft
      use PatchType                    , only          : pft
+     use pftvarcon                    , only          : crop
 
      !
      ! !ARGUMENTS :
@@ -89,6 +76,7 @@ contains
      betr_pft%column                       => pft%column
      betr_pft%itype                        => pft%itype
      betr_pft%landunit                     => pft%landunit
+     betr_pft%crop                         => crop
 
      call run_betr_one_step_without_drainage(bounds, lbj, ubj, num_soilc, filter_soilc, num_soilp, filter_soilp, col ,   &
        atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, temperature_vars, waterflux_vars, chemstate_vars, &
@@ -101,10 +89,13 @@ contains
   subroutine betr_initialize_standalone(bounds, lbj, ubj)
 
   use clm_instMod
+  use betr_initializeMod, only : betr_initialize  
   use BeTR_CNStateType  , only : betr_cnstate_type
   use EcophysConType    , only : ecophyscon
   use BeTR_PatchType    , only : betr_pft
   use PatchType         , only : pft
+  use pftvarcon         , only : nc3_arctic_grass, crop, nc3_nonarctic_grass, nc4_grass, noveg
+  use BeTR_pftvarconType, only : betr_pftvarcon
   implicit none
   type(bounds_type)    , intent(in) :: bounds
   integer              , intent(in) :: lbj, ubj
@@ -121,6 +112,10 @@ contains
 
   !pass necessary data
   betr_cnstate_vars%isoilorder          => cnstate_vars%isoilorder
+  betr_pftvarcon%nc3_arctic_grass    = nc3_arctic_grass
+  betr_pftvarcon%nc3_nonarctic_grass = nc3_nonarctic_grass
+  betr_pftvarcon%nc4_grass           = nc4_grass
+  betr_pftvarcon%noveg               = noveg
 
   call bgc_reaction%init_betr_lsm_bgc_coupler(bounds, plant_soilbgc, &
        betrtracer_vars, tracerstate_vars, betr_cnstate_vars, ecophyscon)

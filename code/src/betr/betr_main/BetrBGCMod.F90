@@ -25,24 +25,10 @@ module BetrBGCMod
 
   public :: run_betr_one_step_without_drainage
   public :: run_betr_one_step_with_drainage
-  public :: betrBGC_init
   public :: calc_dew_sub_flux
-
 contains
 
-  subroutine betrbgc_init(bounds, betrtracer_vars)
-    !
-    ! !DESCRIPTION:
-    ! initialize local variables
-    !
-    ! !ARGUMENTS:
-    type(bounds_type)          , intent(in) :: bounds          ! bounds
-    class(betrtracer_type)      , intent(in) :: betrtracer_vars ! betr configuration information
 
-    ! !LOCAL VARIABLES:
-    character(len=255) :: subname = 'betrbgc_init'
-
-  end subroutine betrbgc_init
 
   !-------------------------------------------------------------------------------
   subroutine run_betr_one_step_without_drainage(bounds, lbj, ubj, num_soilc, filter_soilc, num_soilp, filter_soilp, col ,   &

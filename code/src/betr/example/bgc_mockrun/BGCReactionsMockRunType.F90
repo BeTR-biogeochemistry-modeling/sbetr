@@ -13,8 +13,8 @@ module BGCReactionsMockRunType
   use decompMod             , only : bounds_type
   use BGCReactionsMod       , only : bgc_reaction_type
   use tracer_varcon         , only : bndcond_as_conc, bndcond_as_flux
-  use LandunitType , only : lun
-  use ColumnType , only : col
+  use LandunitType          , only : lun
+  use ColumnType            , only : col
   implicit none
 
   save
@@ -404,7 +404,6 @@ contains
   end subroutine betr_lsm_flux_statevar_feedback
 
   !-------------------------------------------------------------------------------
-
 
   subroutine init_betr_lsm_bgc_coupler(this, bounds, plant_soilbgc,  &
        betrtracer_vars, tracerstate_vars, cnstate_vars,  ecophyscon_vars)
