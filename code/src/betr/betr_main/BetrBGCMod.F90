@@ -1473,6 +1473,7 @@ contains
                     aqucon = tracer_conc_grndwater(c,k)
                   endif
                   !when drainage is negative, assume the flux is magically coming from other groundwater sources
+
                   tracer_flx_drain(c,k)     = tracer_flx_drain(c,k)  + aqucon * qflx_drain_vr(c,j)
                   tracer_conc_mobile(c,j,k) =  tracer_conc_mobile(c,j,k) - aqucon * qflx_drain_vr(c,j)/dz(c,j)
                   if(tracer_conc_mobile(c,j,k)<0._r8)then
@@ -1481,15 +1482,6 @@ contains
                   endif
                enddo
             endif
-         enddo
-      enddo
-
-      !derive tracer concentration in ground water
-      do fc = 1, num_soilc
-         c = filter_soilc(fc)
-         do k = 1, ngwmobile_tracers
-           if(.not. is_advective(k))cycle
-           tracer_conc_grndwater(c,k) = safe_div(tracer_flx_drain(c,k), qflx_totdrain(c))
          enddo
       enddo
 

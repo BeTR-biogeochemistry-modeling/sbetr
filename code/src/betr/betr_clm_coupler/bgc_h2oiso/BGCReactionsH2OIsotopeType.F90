@@ -51,9 +51,7 @@ implicit none
 
    interface bgc_reaction_h2oiso_type
      module procedure constructor
-
    end interface bgc_reaction_h2oiso_type
-
 
   contains
 !-------------------------------------------------------------------------------
@@ -75,12 +73,10 @@ implicit none
   use tracer_varcon         , only : bndcond_as_conc, bndcond_as_flux
   use BeTRTracerType        , only : betrtracer_type
 
-
   class(bgc_reaction_h2oiso_type)   , intent(in) :: this
   type(BeTRtracer_type )            , intent(in) :: betrtracer_vars
   type(bounds_type)                 , intent(in) :: bounds
   type(tracerboundarycond_type)     , intent(in) :: tracerboundarycond_vars
-
 
   tracerboundarycond_vars%topbc_type(:) = bndcond_as_conc
 
@@ -247,7 +243,7 @@ implicit none
   use tracerstatetype          , only : tracerstate_type
   use tracercoeffType          , only : tracercoeff_type
   use BetrTracerType           , only : betrtracer_type
-  use BeTR_CNStateType         , only : betr_cnstate_type  
+  use BeTR_CNStateType         , only : betr_cnstate_type
   use PlantSoilBGCMod          , only : plant_soilbgc_type
 
   !ARGUMENTS
@@ -265,7 +261,7 @@ implicit none
   type(tracercoeff_type)              , intent(in)    :: tracercoeff_vars           !
   type(tracerstate_type)              , intent(inout) :: tracerstate_vars           !
   type(tracerflux_type)               , intent(inout) :: tracerflux_vars            !
-  type(plant_soilbgc_type)            , intent(inout) ::  plant_soilbgc
+  class(plant_soilbgc_type)           , intent(inout) ::  plant_soilbgc
   character(len=*)                    , parameter     :: subname ='calc_bgc_reaction'
 
 
@@ -394,11 +390,11 @@ implicit none
     use BeTRTracerType           , only : BeTRTracer_Type
     use tracerstatetype          , only : tracerstate_type
     use WaterstateType           , only : waterstate_type
-    use LandunitType             , only : lun
-    use ColumnType               , only : col
-    use PatchType                , only : pft => patch
+    use BeTR_PatchType           , only : pft  => betr_pft
     use clm_varcon               , only : spval, ispval
     use landunit_varcon          , only : istsoil, istcrop
+    use LandunitType             , only : lun
+    use ColumnType               , only : col
     use clm_varcon               , only : denh2o
     use clm_varpar               , only : nlevtrc_soil
     ! !ARGUMENTS:
@@ -491,8 +487,7 @@ implicit none
 
   !-------------------------------------------------------------------------------
   subroutine betr_lsm_flux_statevar_feedback(this, bounds, num_soilc, filter_soilc,  &
-       carbonstate_vars, nitrogenstate_vars, nitrogenflux_vars, phosphorusstate_vars,&
-       phosphorusflux_vars, tracerstate_vars, tracerflux_vars,  betrtracer_vars)
+       tracerstate_vars, tracerflux_vars,  betrtracer_vars)
     !
     ! !DESCRIPTION:
     ! do flux and state variable change between betr and lsm.
@@ -503,11 +498,7 @@ implicit none
     use tracerstatetype          , only : tracerstate_type
     use decompMod                , only : bounds_type
     use BeTRTracerType           , only : BeTRTracer_Type
-    use SoilBiogeochemCarbonStateType        , only : carbonstate_type   => soilbiogeochem_carbonstate_type
-    use SoilBiogeochemNitrogenStateType      , only : nitrogenstate_type => soilbiogeochem_nitrogenstate_type
-    use SoilBiogeochemNitrogenFluxType       , only : nitrogenflux_type  => soilbiogeochem_nitrogenflux_type
-    use PhosphorusFluxType       , only : phosphorusflux_type
-    use PhosphorusStateType      , only : phosphorusstate_type
+
 
     ! !ARGUMENTS:
     class(bgc_reaction_h2oiso_type) , intent(in)    :: this               !
@@ -517,11 +508,7 @@ implicit none
     type(betrtracer_type)             , intent(in)    :: betrtracer_vars    ! betr configuration information
     type(tracerstate_type)            , intent(in)    :: tracerstate_vars   !
     type(tracerflux_type)             , intent(in)    :: tracerflux_vars    !
-    type(carbonstate_type)            , intent(inout) :: carbonstate_vars   !
-    type(nitrogenflux_type)           , intent(inout) :: nitrogenflux_vars  !
-    type(nitrogenstate_type)          , intent(inout) :: nitrogenstate_vars !
-    type(phosphorusstate_type)        , intent(inout) :: phosphorusstate_vars
-    type(phosphorusflux_type)         , intent(inout) :: phosphorusflux_vars
+
 
 
 
@@ -538,9 +525,7 @@ implicit none
     ! initialize the bgc coupling between betr and lsm
     !
     ! !USES:
-    use clm_instMod
-    use clm_varcon               , only : catomw
-    use clm_varpar               , only : i_cwd, i_met_lit, i_cel_lit, i_lig_lit
+    !use clm_instMod
     use tracerstatetype          , only : tracerstate_type
     use BetrTracerType           , only : betrtracer_type
     use clm_varpar               , only : nlevtrc_soil
