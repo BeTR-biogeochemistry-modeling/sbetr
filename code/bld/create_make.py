@@ -28,8 +28,13 @@ def list_files(mypath):
     #Walk through the directories
     for root, directories, files in os.walk(mypath):
         for filename in files:
-            filepath=os.path.join(root,filename)
-            file_paths.append(filepath)
+            loc1=root.find("betr_alm_coupler")
+            loc2=root.find("betr_clm_coupler")
+            if loc1 < 0 and loc2 < 0 :
+                filepath=os.path.join(root,filename)
+                loc3=filename.find("DS_Store")
+                if loc3 < 0 :
+                    file_paths.append(filepath)
     return file_paths
 
 #define the grep function
