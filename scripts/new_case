@@ -7,7 +7,7 @@ mkdir -p build
 cd ../code/bld
 python create_make.py
 
-cp Makefile ../../scripts/build
+mv ../../scripts/Makefile ../../scripts/build
 
 export FCOMP="ifort"
 #export FCOMP="pgf90"

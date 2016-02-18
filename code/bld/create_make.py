@@ -223,7 +223,7 @@ tree_dep=remove_listdup(ttree)
 #now write the Makefile
 
 #open the Makefile to write
-ofile=open("Makefile","w")
+ofile=open("../../scripts/Makefile","w")
 #empty the file
 ofile.truncate()
 
