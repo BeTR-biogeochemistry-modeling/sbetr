@@ -34,14 +34,12 @@ module TracerParamsMod
   public :: pre_diagnose_soilcol_water_flux
   public :: diagnose_advect_water_flux
   public :: diagnose_drainage_water_flux
-  public :: calc_smp_l
   public :: get_zwt
   public :: calc_aerecond
   public :: betr_annualupdate
   !parameters
   real(r8), parameter :: minval_diffus = 1.e-20_r8   !minimum diffusivity, m2/s
   real(r8), parameter :: minval_airvol = 1.e-10_r8   !minimum air-filled volume
-
 
   !declare a private tortuosity type
   type :: soil_tortuosity_type
@@ -576,8 +574,13 @@ contains
           c = filter(fc)
           if(n>=jtops(c))then
             !aqueous to bulk mobile phase
-            aqu2bulkcef_mobile(c,n,j) = air_vol(c,n)/bunsencef_col(c,n,k)+h2osoi_liqvol(c,n)
-
+            if(is_h2o(j))then
+              !this is a (bad) reverse hack because the hydrology code does not consider water vapor transport
+              !jyt, Feb, 18, 2016.
+              aqu2bulkcef_mobile(c,n,j) = h2osoi_liqvol(c,n)
+            else
+              aqu2bulkcef_mobile(c,n,j) = air_vol(c,n)/bunsencef_col(c,n,k)+h2osoi_liqvol(c,n)
+            endif
             !gaseous to bulk mobile phase
             gas2bulkcef_mobile(c,n,k) = air_vol(c,n)+h2osoi_liqvol(c,n)*bunsencef_col(c,n,k)
 
@@ -1256,7 +1259,7 @@ contains
      if(j==betrtracer_vars%id_trc_o18_h2o)then
        do fc = 1, numf
          c = filter(fc)
-         tracer_flx_infl(c,j) = qflx_gross_infl_soil(c)/denh2o    !kg m-2 s-1/ kg m-3 = m/s
+         tracer_flx_infl(c,j) = qflx_gross_infl_soil(c) /denh2o    !kg m-2 s-1/ kg m-3 = m/s
        enddo
      else
        do fc = 1, numf
@@ -1407,7 +1410,7 @@ contains
    end subroutine pre_diagnose_soilcol_water_flux
 
    !------------------------------------------------------------------------
-   subroutine diagnose_advect_water_flux(bounds, num_hydrologyc, filter_hydrologyc, num_urbanc, filter_urbanc, h2osoi_liq, qcharge, waterflux_vars)
+   subroutine diagnose_advect_water_flux(bounds, num_hydrologyc, filter_hydrologyc, num_urbanc, filter_urbanc, h2osoi_liq, qflx_bot, waterflux_vars)
    !
    ! DESCRIPTION
    ! diagnose advective water fluxes between different soil layers
@@ -1424,7 +1427,7 @@ contains
    integer                 , intent(in)    :: filter_urbanc(:)     ! column filter for urban points
    type(waterflux_type)    , intent(inout) :: waterflux_vars
    real(r8)                , intent(in)    :: h2osoi_liq(bounds%begc: , 1: )  !mm H2O/m2 eqv. kg H2O/m2
-   real(r8)                , intent(in)    :: qcharge(bounds%begc: )  ! mm H2O/s aquifer recharge rate
+   real(r8)                , intent(in)    :: qflx_bot(bounds%begc: )  ! mm H2O/s water exchange rate between soil col and aquifer
 
    !local variables
    integer :: j, fc, c
@@ -1435,7 +1438,7 @@ contains
 
 
    SHR_ASSERT_ALL((ubound(h2osoi_liq) == (/bounds%endc, nlevsoi/)), errMsg(__FILE__,__LINE__))
-   SHR_ASSERT_ALL((ubound(qcharge)    == (/bounds%endc/))         , errMsg(__FILE__,__LINE__))
+   SHR_ASSERT_ALL((ubound(qflx_bot)    == (/bounds%endc/))         , errMsg(__FILE__,__LINE__))
 
 
    associate(                                                             & !
@@ -1454,7 +1457,7 @@ contains
      do fc = 1, num_hydrologyc
        c = filter_hydrologyc(fc)
        if(j==nlevsoi)then
-         qflx_adv(c,j) = qcharge(c) * 1.e-3_r8
+         qflx_adv(c,j) = qflx_bot(c) * 1.e-3_r8
        else
          qflx_adv(c,j) = 1.e-3_r8 * (h2osoi_liq(c,j+1)-h2osoi_liq_copy(c,j+1))/dtime + qflx_adv(c,j+1) + qflx_rootsoi(c,j+1)
        endif
@@ -1683,58 +1686,6 @@ contains
 
    end associate
    end subroutine calc_equil_to_liquid_convert_coeff
-
-   !------------------------------------------------------------------------
-   subroutine calc_smp_l(bounds, lbj, ubj, numf, filter, t_soisno, soilstate_vars, waterstate_vars, soil_water_retention_curve)
-
-   use SoilStateType              , only : soilstate_type
-   use WaterStateType             , only : waterstate_type
-   use SoilWaterRetentionCurveMod , only : soil_water_retention_curve_type
-   use clm_varcon                 , only : grav,hfus,tfrz
-
-   implicit none
-   type(bounds_type)         , intent(in)    :: bounds  ! bounds
-   integer                   , intent(in)    :: lbj, ubj                                          ! lower and upper bounds, make sure they are > 0
-   integer                   , intent(in)    :: numf                                              ! number of columns in column filter
-   integer                   , intent(in)    :: filter(:)                                         ! column filter
-   real(r8)                  , intent(in)    :: t_soisno(bounds%begc: , lbj: )                    ! soil temperature
-   type(soilstate_type)      , intent(in)    :: soilstate_vars
-   type(waterstate_type)     , intent(inout) :: waterstate_vars
-   class(soil_water_retention_curve_type), intent(in) :: soil_water_retention_curve
-
-   !local variables
-   real(r8) :: s_node
-   integer  :: fc, c, j
-
-   SHR_ASSERT_ALL((ubound(t_soisno) == (/bounds%endc, ubj/)),errMsg(__FILE__,__LINE__))
-
-
-   associate(                                                     & !
-     h2osoi_vol        =>    waterstate_vars%h2osoi_vol_col     , & ! Input:  [real(r8) (:,:) ]  volumetric soil moisture
-     smp_l             =>    waterstate_vars%smp_l_col          , & ! Output: [real(r8) (:,:) ]  soil suction (mm)
-     bsw               =>    soilstate_vars%bsw_col             , & ! Input:  [real(r8) (:,:) ]  Clapp and Hornberger "b"
-     watsat            =>    soilstate_vars%watsat_col          , & ! Input:  [real(r8) (:,:) ]  minimum soil suction (mm)
-     sucsat            =>    soilstate_vars%sucsat_col            & ! Input:  [real(r8) (:,:) ]  minimum soil suction (mm)
-   )
-
-
-   do j = lbj, ubj
-     do fc = 1, numf
-       c = filter(fc)
-       if(j>=1)then
-
-         if(t_soisno(c,j)<tfrz)then
-           smp_l(c,j)= hfus*(tfrz-t_soisno(c,j))/(grav*t_soisno(c,j)) * 1000._r8  !(mm)
-         else
-           s_node = max(h2osoi_vol(c,j)/watsat(c,j), 0.01_r8)
-           call soil_water_retention_curve%soil_suction(sucsat(c,j), s_node, bsw(c,j), smp_l(c,j))
-         endif
-
-       endif
-     enddo
-   enddo
-   end associate
-   end subroutine calc_smp_l
 
 
   !-----------------------------------------------------------------------

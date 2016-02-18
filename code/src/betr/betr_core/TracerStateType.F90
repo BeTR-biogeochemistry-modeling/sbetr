@@ -14,6 +14,7 @@ module TracerStateType
   use spmdMod        , only : masterproc
   use clm_varcon     , only : spval, ispval
   use landunit_varcon, only : istsoil, istcrop
+  use MathfuncMod    , only : dot_sum  
   !
   ! !PUBLIC TYPES:
   implicit none
@@ -45,6 +46,10 @@ module TracerStateType
      procedure, public  :: Init
      procedure, public  :: Restart
      procedure, public  :: Reset
+     procedure, public  :: int_mass_mobile_col
+     procedure, public  :: int_mass_frozen_col
+     procedure, public  :: int_mass_adsorb_col
+     procedure, public  :: int_mass_solid_col
      procedure, private :: InitAllocate
      procedure, private :: InitHistory
   end type TracerState_type
@@ -336,4 +341,56 @@ contains
 
   end subroutine Reset
 
+  !-----------------------------------------------------------------------
+  function int_mass_mobile_col(this, lbj, ubj, c, j, dz)result(int_mass)
+
+  class(TracerState_type)             :: this
+  integer, intent(in) :: lbj, ubj
+  integer, intent(in) :: c, j
+  real(r8), intent(in):: dz(lbj:ubj)
+  real(r8) :: int_mass
+
+  int_mass = dot_sum(this%tracer_conc_mobile_col(c,lbj:ubj,j), dz)
+
+  end function int_mass_mobile_col
+
+  !-----------------------------------------------------------------------
+  function int_mass_frozen_col(this, lbj, ubj, c, j, dz)result(int_mass)
+
+  class(TracerState_type)             :: this
+  integer, intent(in) :: lbj, ubj
+  integer, intent(in) :: c, j
+  real(r8), intent(in):: dz(lbj:ubj)
+  real(r8) :: int_mass
+
+  int_mass = dot_sum(this%tracer_conc_frozen_col(c,lbj:ubj,j), dz)
+
+  end function int_mass_frozen_col
+
+
+  !-----------------------------------------------------------------------
+  function int_mass_adsorb_col(this, lbj, ubj, c, j, dz)result(int_mass)
+
+  class(TracerState_type)             :: this
+  integer, intent(in) :: lbj, ubj
+  integer, intent(in) :: c, j
+  real(r8), intent(in):: dz(lbj:ubj)
+  real(r8) :: int_mass
+
+  int_mass = dot_sum(this%tracer_conc_solid_equil_col(c,lbj:ubj,j), dz)
+
+  end function int_mass_adsorb_col
+
+  !-----------------------------------------------------------------------
+  function int_mass_solid_col(this, lbj, ubj, c, j, dz)result(int_mass)
+
+  class(TracerState_type)             :: this
+  integer, intent(in) :: lbj, ubj
+  integer, intent(in) :: c, j
+  real(r8), intent(in):: dz(lbj:ubj)
+  real(r8) :: int_mass
+
+  int_mass = dot_sum(this%tracer_conc_solid_passive_col(c,lbj:ubj,j), dz)
+
+  end function int_mass_solid_col
 end module TracerStateType

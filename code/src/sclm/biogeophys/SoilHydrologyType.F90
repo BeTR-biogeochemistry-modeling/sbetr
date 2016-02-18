@@ -8,14 +8,15 @@ Module SoilHydrologyType
 implicit none
 
   type, public :: soilhydrology_type
-  
+
   real(r8), pointer :: fracice_col       (:,:)   ! col fractional impermeability (-)
   real(r8), pointer :: zwts_col           (:)    ! the shallower between zwt_perch and zwt
+  real(r8), pointer :: qflx_bot_col      (:)     ! bottom of soil col flux, (mm/s)  
   contains
-    procedure, public  :: Init         
-    procedure, private :: InitAllocate   
+    procedure, public  :: Init
+    procedure, private :: InitAllocate
   end type soilhydrology_type
-  
+
   contains
 
 
@@ -23,12 +24,12 @@ implicit none
   subroutine Init(this, bounds)
 
     class(soilhydrology_type) :: this
-    type(bounds_type), intent(in) :: bounds  
+    type(bounds_type), intent(in) :: bounds
 
     call this%InitAllocate(bounds)
 
   end subroutine Init
-  
+
   !------------------------------------------------------------------------
   subroutine InitAllocate(this, bounds)
     !
@@ -38,7 +39,7 @@ implicit none
     use shr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
     ! !ARGUMENTS:
     class(soilhydrology_type) :: this
-    type(bounds_type), intent(in) :: bounds  
+    type(bounds_type), intent(in) :: bounds
     !
     ! !LOCAL VARIABLES:
     integer :: begp, endp
@@ -51,6 +52,7 @@ implicit none
     lbj  = bounds%lbj; ubj = bounds%ubj
 
     allocate(this%fracice_col       (begc:endc,lbj:ubj))        ; this%fracice_col       (:,:)   = nan
-    allocate(this%zwts_col           (begc:endc))                ; this%zwts_col         (:)     = nan    
-  end subroutine InitAllocate   
+    allocate(this%zwts_col           (begc:endc))                ; this%zwts_col         (:)     = nan
+    allocate(this%qflx_bot_col      (begc:endc))                 ; this%qflx_bot_col      (:)     = nan
+  end subroutine InitAllocate
 end Module SoilHydrologyType

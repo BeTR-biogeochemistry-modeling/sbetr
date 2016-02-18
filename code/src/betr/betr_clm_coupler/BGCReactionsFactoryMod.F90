@@ -31,7 +31,7 @@ contains
     !
     ! !USES:
     use BGCReactionsMockRunType     , only : bgc_reaction_mock_run_type
-!    use BGCReactionsH2OIsotopeType  , only : bgc_reaction_h2oiso_type
+    use BGCReactionsH2OIsotopeType  , only : bgc_reaction_h2oiso_type
     use BGCReactionsMod             , only : bgc_reaction_type
 
     ! !ARGUMENTS:
@@ -42,6 +42,8 @@ contains
     select case(trim(method))
     case ("mock_run")
        allocate(bgc_reaction, source=bgc_reaction_mock_run_type())
+    case ("h2oiso")
+       allocate(bgc_reaction, source=bgc_reaction_h2oiso_type())
     case default
        write(iulog,*)subname //' ERROR: unknown method: ', method
        call endrun(msg=errMsg(__FILE__, __LINE__))
@@ -54,6 +56,7 @@ contains
 
   use PlantSoilBGCMockRunType     , only : plant_soilbgc_mock_run_type
   use PlantSoilBGCMod             , only : plant_soilbgc_type
+  use PlantSoilBGCH2OIsoRunType   , only : plant_soilbgc_h2oiso_run_type
   ! !ARGUMENTS:
   class(plant_soilbgc_type), allocatable :: plant_soilbgc
   character(len=*), intent(in)          :: method
@@ -62,6 +65,8 @@ contains
   select case(trim(method))
   case ("mock_run")
      allocate(plant_soilbgc, source=plant_soilbgc_mock_run_type())
+  case ("h2oiso")
+     allocate(plant_soilbgc, source=plant_soilbgc_h2oiso_run_type())   
   case default
      write(iulog,*)subname //' ERROR: unknown method: ', method
      call endrun(msg=errMsg(__FILE__, __LINE__))

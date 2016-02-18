@@ -188,7 +188,7 @@ module BeTRTracerType
   allocate(this%is_volatile        (this%ngwmobile_tracers));    this%is_volatile(:)     = .false.
   allocate(this%is_adsorb          (this%ngwmobile_tracers));    this%is_adsorb(:)       = .false.
   allocate(this%is_advective       (this%ntracers));             this%is_advective(:)    = .false.
-  allocate(this%is_diffusive       (this%ntracers));             this%is_diffusive(:)    = .false.
+  allocate(this%is_diffusive       (this%ntracers));             this%is_diffusive(:)    = .true.
   allocate(this%is_mobile          (this%ntracers));             this%is_mobile(:)       = .false.
   allocate(this%is_h2o             (this%ngwmobile_tracers));    this%is_h2o(:)          = .false.
   allocate(this%is_co2tag          (this%ngwmobile_tracers));    this%is_co2tag(:)       = .false.
@@ -259,7 +259,9 @@ subroutine set_tracer(this, trc_id, trc_name, is_trc_mobile, is_trc_advective, t
   this%tracer_group_memid(trc_group_id,trc_group_mem) = trc_id
   this%is_advective     (trc_id)    = is_trc_advective
 
-  if(present(is_trc_diffusive)) this%is_diffusive (trc_id) = is_trc_diffusive
+  if(present(is_trc_diffusive)) then
+    this%is_diffusive (trc_id) = is_trc_diffusive
+  endif
   if(present(is_trc_volatile))then
     this%is_volatile      (trc_id)    = is_trc_volatile
     if(this%is_volatile   (trc_id)) then

@@ -61,17 +61,16 @@ contains
     ! !USES:
     use BeTRTracerType        , only : betrtracer_type
     use TracerBoundaryCondType, only : tracerboundarycond_type
+    use tracer_varcon         , only : bndcond_as_conc, bndcond_as_flux
     use BeTRTracerType        , only : betrtracer_type
 
     ! !ARGUMENTS:
     class(bgc_reaction_mock_run_type), intent(in) :: this
-    type(BeTRtracer_type ),            intent(in) :: betrtracer_vars
+    type(BeTRtracer_type),             intent(in) :: betrtracer_vars
     type(bounds_type),                 intent(in) :: bounds
     type(tracerboundarycond_type),     intent(in) :: tracerboundarycond_vars
 
     ! !LOCAL VARIABLES:
-    integer,  parameter :: bndcond_as_conc = 1   ! top boundary condition as tracer concentration
-    integer,  parameter :: bndcond_as_flx  = 2   ! top boundary condition as tracer flux
 
     tracerboundarycond_vars%topbc_type(:) = bndcond_as_conc
 
@@ -211,12 +210,13 @@ contains
   !-------------------------------------------------------------------------------
   subroutine calc_bgc_reaction(this, bounds, lbj, ubj, num_soilc, filter_soilc, &
        num_soilp,filter_soilp, jtops, dtime, betrtracer_vars, tracercoeff_vars,  cnstate_vars,    &
-       tracerstate_vars, tracerflux_vars, plant_soilbgc)
+       tracerstate_vars, tracerflux_vars, tracerboundarycond_vars, plant_soilbgc)
     !
     ! !DESCRIPTION:
     ! do bgc reaction
     !
     ! !USES:
+    use TracerBoundaryCondType   , only : tracerboundarycond_type
     use tracerfluxType           , only : tracerflux_type
     use tracerstatetype          , only : tracerstate_type
     use tracercoeffType          , only : tracercoeff_type
@@ -238,6 +238,7 @@ contains
     type(tracercoeff_type)           , intent(in)    :: tracercoeff_vars
     type(tracerstate_type)           , intent(inout) :: tracerstate_vars
     type(tracerflux_type)            , intent(inout) :: tracerflux_vars
+    type(tracerboundarycond_type)    , intent(inout) :: tracerboundarycond_vars !
     class(plant_soilbgc_type)        , intent(inout) ::  plant_soilbgc
 
 
@@ -259,7 +260,6 @@ contains
 
     use tracerstatetype       , only : tracerstate_type
     use tracercoeffType       , only : tracercoeff_type
-    use BeTRTracerType        , only : betrtracer_type
     use BeTRTracerType        , only : betrtracer_type
 
     ! !ARGUMENTS:
@@ -323,7 +323,7 @@ contains
        l = col%landunit(c)
        if (lun%ifspecial(l)) then
           if(betrtracer_vars%ngwmobile_tracers>0)then
-             tracerstate_vars%tracer_conc_mobile_col(c,:,:)        = spval
+             tracerstate_vars%tracer_conc_mobile_col(c,:,:)        = spval                
              tracerstate_vars%tracer_conc_surfwater_col(c,:)       = spval
              tracerstate_vars%tracer_conc_aquifer_col(c,:)         = spval
              tracerstate_vars%tracer_conc_grndwater_col(c,:)       = spval
@@ -371,6 +371,7 @@ contains
 
     use ncdio_pio                , only : file_desc_t
     use BeTRTracerType           , only : BeTRTracer_Type
+    implicit none
     ! !ARGUMENTS:
     class(bgc_reaction_mock_run_type) , intent(in)    :: this
     type(BeTRTracer_Type)             , intent(inout) :: betrtracer_vars
@@ -392,7 +393,7 @@ contains
     use tracerstatetype          , only : tracerstate_type
     use decompMod                , only : bounds_type
     use BeTRTracerType           , only : BeTRTracer_Type
-
+    implicit none
     ! !ARGUMENTS:
     class(bgc_reaction_mock_run_type) , intent(in)    :: this               !
     type(bounds_type)                 , intent(in)    :: bounds             ! bounds
@@ -412,8 +413,7 @@ contains
     ! initialize the bgc coupling between betr and lsm
     !
     ! !USES:
-    use clm_varcon               , only : natomw, catomw
-    use clm_varpar               , only : i_cwd, i_met_lit, i_cel_lit, i_lig_lit
+    !use clm_instMod
     use tracerstatetype          , only : tracerstate_type
     use BetrTracerType           , only : betrtracer_type
     use clm_varpar               , only : nlevtrc_soil
@@ -422,7 +422,7 @@ contains
     use EcophysConType           , only : ecophyscon_type
     use BeTR_CNStateType         , only : betr_cnstate_type
 
-
+    implicit none
     ! !ARGUMENTS:
     class(bgc_reaction_mock_run_type)  , intent(in)    :: this               !
     type(bounds_type)                  , intent(in)    :: bounds             !

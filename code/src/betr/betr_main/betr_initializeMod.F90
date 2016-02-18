@@ -73,7 +73,7 @@ contains
     !
     ! !USES:
     use decompMod             , only : bounds_type
-    use BGCReactionsFactoryMod, only : create_betr_application
+    use BGCReactionsFactoryMod
     use TransportMod          , only : init_transportmod
     use TracerParamsMod       , only : tracer_param_init
     use WaterstateType        , only : waterstate_type
@@ -88,7 +88,9 @@ contains
 
     call betrtracer_vars%init_scalars()
 
-    call create_betr_application(bgc_reaction, plant_soilbgc, bgc_method)
+    allocate(bgc_reaction, source=create_bgc_reaction_type(bgc_method))
+
+    allocate(plant_soilbgc, source=create_plant_soilbgc_type(bgc_method))
 
     call bgc_reaction%Init_betrbgc(bounds, lbj, ubj, betrtracer_vars)
 
@@ -155,4 +157,6 @@ contains
     character(len=255) :: subname = 'betrbgc_init'
 
   end subroutine betrbgc_init
+
+
 end module betr_initializeMod

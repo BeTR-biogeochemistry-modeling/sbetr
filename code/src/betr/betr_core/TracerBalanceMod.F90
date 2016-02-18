@@ -161,7 +161,7 @@ implicit none
       ! !USES:
       use tracerstatetype       , only : tracerstate_type
       use clm_varpar            , only : nlevtrc_soil
-      use MathfuncMod           , only : dot_sum
+
 
       implicit none
       ! !ARGUMENTS:
@@ -170,7 +170,7 @@ implicit none
       integer,                intent(in)    :: numf                        ! number of columns in column filter
       integer,                intent(in)    :: filter(:)                   ! column filter
       type(betrtracer_type) , intent(in)    :: betrtracer_vars             ! betr configuration information
-      type(tracerstate_type), intent(inout) :: tracerstate_vars            ! tracer state variables data structure
+      class(tracerstate_type), intent(inout) :: tracerstate_vars            ! tracer state variables data structure
       real(r8)              , intent(inout) :: tracer_molarmass_col(bounds%begc:bounds%endc, 1:betrtracer_vars%ntracers)
       ! !LOCAL VARIABLES:
       integer :: jj, fc, c, kk
@@ -194,15 +194,15 @@ implicit none
            do fc = 1, numf
               c = filter(fc)
 
-              tracer_molarmass_col(c,jj) = dot_sum(tracer_conc_mobile(c,1:nlevtrc_soil,jj), dz(c,1:nlevtrc_soil))
+              tracer_molarmass_col(c,jj) = tracerstate_vars%int_mass_mobile_col(1,nlevtrc_soil,c,jj,dz(c,1:nlevtrc_soil))
 
               if(is_adsorb(jj))then
                  tracer_molarmass_col(c,jj) = tracer_molarmass_col(c,jj) + &
-                      dot_sum(tracer_conc_solid_equil(c,1:nlevtrc_soil,adsorbid(jj)),dz(c,1:nlevtrc_soil))
+                      tracerstate_vars%int_mass_adsorb_col(1,nlevtrc_soil,c,adsorbid(jj),dz(c,1:nlevtrc_soil))
               endif
               if(is_frozen(jj))then
                  tracer_molarmass_col(c,jj) = tracer_molarmass_col(c,jj) + &
-                      dot_sum(tracer_conc_frozen(c,1:nlevtrc_soil,frozenid(jj)),dz(c,1:nlevtrc_soil))
+                      tracerstate_vars%int_mass_frozen_col(1,nlevtrc_soil,c,frozenid(jj),dz(c,1:nlevtrc_soil))
               endif
            enddo
         enddo
@@ -211,7 +211,7 @@ implicit none
            kk = jj + ngwmobile_tracers
            do fc = 1, numf
               c = filter(fc)
-              tracer_molarmass_col(c,kk) = dot_sum(tracer_conc_solid_passive(c,1:nlevtrc_soil,jj), dz(c,1:nlevtrc_soil))
+              tracer_molarmass_col(c,kk) = tracerstate_vars%int_mass_solid_col(1,nlevtrc_soil,c,jj, dz(c,1:nlevtrc_soil))
            enddo
         enddo
       end associate

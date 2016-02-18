@@ -64,12 +64,13 @@ module BGCReactionsMod
      !----------------------------------------------------------------------
      subroutine calc_bgc_reaction_interface(this, bounds, lbj, ubj, num_soilc, filter_soilc, &
           num_soilp,filter_soilp, jtops, dtime, betrtracer_vars, tracercoeff_vars,  cnstate_vars,    &
-          tracerstate_vars, tracerflux_vars, plant_soilbgc)
+          tracerstate_vars, tracerflux_vars,  tracerboundarycond_vars, plant_soilbgc)
        !
        ! !DESCRIPTION:
        ! template for calc_bgc_reaction
        !
        ! !USES:
+       use TracerBoundaryCondType   , only : tracerboundarycond_type
        use tracerfluxType           , only : tracerflux_type
        use tracerstatetype          , only : tracerstate_type
        use tracercoeffType          , only : tracercoeff_type
@@ -94,7 +95,8 @@ module BGCReactionsMod
        type(tracercoeff_type)           , intent(in)    :: tracercoeff_vars
        type(tracerstate_type)           , intent(inout) :: tracerstate_vars
        type(tracerflux_type)            , intent(inout) :: tracerflux_vars
-       class(plant_soilbgc_type)        , intent(inout) ::  plant_soilbgc
+       type(tracerboundarycond_type)    , intent(inout) :: tracerboundarycond_vars !
+       class(plant_soilbgc_type)        , intent(inout) :: plant_soilbgc
 
      end subroutine calc_bgc_reaction_interface
      !----------------------------------------------------------------------

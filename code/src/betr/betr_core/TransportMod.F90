@@ -39,8 +39,14 @@ module TransportMod
 
   !default configuration parameters
   real(r8), private :: cntheta
-
+  logical, private :: debug_loc=.false.
+  public :: set_debug_transp
 contains
+  subroutine set_debug_transp(yesno)
+  implicit none
+  logical, intent(in) :: yesno
+  debug_loc = yesno
+  end subroutine set_debug_transp
   !-------------------------------------------------------------------------------
   subroutine InitAllocate(this, lbj, ubj)
     !
@@ -744,9 +750,9 @@ contains
               mass_curve(j, ntr) = inflx_bot(c, ntr) * dtime(c)
            endif
         enddo
+
         !compute cumulative mass curve
         call cumsum(mass_curve(0:lengthp2,1:ntrcs), cmass_curve(0:lengthp2, 1:ntrcs),idim=1)
-
         !do mass interpolation
         do ntr = 1, ntrcs
            call pchip_polycc((/zghostl,zi(c,lbn(c)-1:ubj),zghostr/), cmass_curve(0:lengthp2, ntr), di(0:lengthp2))

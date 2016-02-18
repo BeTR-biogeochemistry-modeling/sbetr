@@ -13,14 +13,14 @@ module BGCReactionsFactoryMod
   use decompMod             , only : bounds_type
   use shr_log_mod           , only : errMsg => shr_log_errMsg
   use BGCReactionsMod       , only : bgc_reaction_type
-  use PlantSoilBGCMod , only : plant_soilbgc_type  
+  use PlantSoilBGCMod , only : plant_soilbgc_type
   implicit none
   save
   private
 
-  public  :: create_betr_application
-  private :: create_bgc_reaction_type
-  private :: create_plant_soilbgc_type
+  public :: create_betr_application
+  public :: create_bgc_reaction_type
+  public :: create_plant_soilbgc_type
 contains
 
   subroutine create_betr_application(bgc_reaction, plant_soilbgc, method)
