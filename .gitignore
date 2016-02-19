@@ -1,0 +1,10 @@
+# editor files
+*~
+
+# python artifacts
+*.pyc
+
+# build artifacts
+build/
+*.mod
+*.o
