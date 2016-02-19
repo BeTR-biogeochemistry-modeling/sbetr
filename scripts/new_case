@@ -4,20 +4,20 @@
 
 mkdir -p build
 
-cd ../code/bld
+cd bld
 python create_make.py
 
-mv ../../scripts/Makefile ../../scripts/build
+mv ../Makefile ../build
 
 export FCOMP="ifort"
 #export FCOMP="pgf90"
 export FCOMP="gf6"
 if [ $FCOMP == "ifort" ]
   then
-  cp Macros.intel ../../scripts/build/Macros
+  cp Macros.intel ../build/Macros
 elif [ $FCOMP == "pgf90" ]
   then
-  cp Macros.pgi ../../scripts/build/Macros
+  cp Macros.pgi ../build/Macros
 else
-  cp Macros.gnu ../../scripts/build/Macros
+  cp Macros.gnu ../build/Macros
 fi

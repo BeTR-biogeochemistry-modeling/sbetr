@@ -180,7 +180,7 @@ def create_deptree(mainobjs, full_file_paths, objs):
 
 
 #
-mypath="../src"
+mypath="../../src"
 
 #list files in all directories
 full_file_paths=list_files(mypath)
@@ -193,7 +193,7 @@ for file in full_file_paths:
     loc2=file.find(".f90")
     if loc1 > 0 or loc2 >0 :
         stuff=file.split('/')
-        file_new=file.replace("..","$(SRCDIR)")
+        file_new=file.replace("../../src","$(SRCDIR)")
         obj=stuff[-1].replace(".F90",".o")
         obj_ls.append(obj)
 
@@ -223,7 +223,7 @@ tree_dep=remove_listdup(ttree)
 #now write the Makefile
 
 #open the Makefile to write
-ofile=open("../../scripts/Makefile","w")
+ofile=open("../Makefile","w")
 #empty the file
 ofile.truncate()
 
@@ -232,7 +232,7 @@ ofile.write("#This is an automatically generated Makefile from the script create
 ofile.write("shell=/bin/sh\n")
 ofile.write("include Macros\n")
 
-curdir=os.path.dirname(os.path.realpath("../src/"))
+curdir=os.path.abspath(os.path.join(os.getcwd(), '..', '..', 'src'))
 
 ofile.write("#define source code directory\n")
 ofile.write("SRCDIR="+curdir+"\n")
@@ -266,7 +266,7 @@ ofile.write("\n\n\n")
 ofile.write("# define dependence\n")
 for file in full_file_paths:
     stuff=file.split('/')
-    file_new=file.replace("..","$(SRCDIR)")
+    file_new=file.replace("../../src","$(SRCDIR)")
     obj=stuff[-1].replace(".F90",".o")
     ofile.write(obj+": "+file_new+"\n")
     ofile.write("\t$(F90CC) "+file_new+"\n")

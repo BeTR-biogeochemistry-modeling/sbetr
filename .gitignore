@@ -8,3 +8,6 @@
 build/
 *.mod
 *.o
+
+# os x junk
+.DS_Store
