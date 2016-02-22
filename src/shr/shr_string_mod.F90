@@ -1723,6 +1723,8 @@ function shr_string_listCreateField( numFields, strBase ) result ( retString )
    character(*),parameter :: subName = "(shr_string_listCreateField) "
    character(*),parameter :: F00     = "('(shr_string_listCreateField) ',a) "
 
+   character(*), parameter :: file_name = __FILE__
+
 !-------------------------------------------------------------------------------
 
    if ( debug > 1 .and. t01 < 1 ) call shr_timer_get( t01,subName )
@@ -1732,7 +1734,7 @@ function shr_string_listCreateField( numFields, strBase ) result ( retString )
    ! this assert isn't that accurate since it counts all integers as being one
    ! digit, but it should catch most errors and under rather than overestimates
    !
-   SHR_ASSERT( ( ( ( len(strBase) + 3 ) * numFields ) <= 1024 ) , errMsg(__FILE__, __LINE__) )
+   SHR_ASSERT( ( ( ( len(strBase) + 3 ) * numFields ) <= 1024 ) , errMsg(file_name, __LINE__) )
 
    retString = ''
    do idx = 1,numFields
