@@ -13,6 +13,7 @@ implicit none
  public :: calc_dew_sub_flux_clm
  public :: betr_clm_flux_statevar_feedback
  public :: calc_smp_l_clm
+ public :: betr_clm_h2oiso_consistency_check
 contains
 
   !-------------------------------------------------------------------------------
@@ -206,10 +207,8 @@ contains
   type(waterstate_type)     , intent(in)    :: waterstate_vars
   type(waterflux_type)      , intent(in)    :: waterflux_vars
 
-
   call calc_dew_sub_flux(bounds, num_hydrologyc, filter_soilc_hydrologyc, &
        waterstate_vars, waterflux_vars, betrtracer_vars, tracerflux_vars, tracerstate_vars)
-
 
   end subroutine calc_dew_sub_flux_clm
 
@@ -227,8 +226,6 @@ contains
        tracerstate_vars, tracerflux_vars,  betrtracer_vars)
 
   end subroutine betr_clm_flux_statevar_feedback
-
-
 
   !------------------------------------------------------------------------
   subroutine calc_smp_l_clm(bounds, lbj, ubj, numf, filter, t_soisno, soilstate_vars, waterstate_vars, soil_water_retention_curve)
@@ -284,9 +281,39 @@ contains
 
 
   !------------------------------------------------------------------------
-  subroutine h2oiso_consistency_check()
+  subroutine betr_clm_h2oiso_consistency_check(bounds, ubj, num_soilc, filter_soilc)
+  !
+  ! check the overall water mass consistency between betr and clm
+  use clm_instMod
+  use MathfuncMod           , only : dot_sum
+  use clm_varcon            , only : denh2o
   implicit none
+  type(bounds_type)         , intent(in)    :: bounds  ! bounds
+  integer                   , intent(in)    :: ubj
+  integer                   , intent(in)    :: num_soilc
+  integer                   , intent(in)    :: filter_soilc(:)
+  real(r8), allocatable :: eyev(:)
+  integer :: fc, c
+  real(r8):: totwater, err
 
-   
-  end subroutine h2oiso_consistency_check
+
+  associate(                                                     &
+    h2osoi_ice       =>    waterstate_inst%h2osoi_ice_col      , & ! Input:  [real(r8) (:,:) ]  ice lens (kg/m2)
+    h2osoi_liq       =>    waterstate_inst%h2osoi_liq_col      , & ! Output: [real(r8) (:,:) ]  liquid water (kg/m2)
+    end_tracer_molarmass      => tracerstate_vars%end_tracer_molarmass_col        , &
+    id_trc_o18_h2o   => betrtracer_vars%id_trc_o18_h2o           &
+  )
+
+  allocate(eyev(1:ubj))
+  eyev=1._r8
+  do fc = 1, num_soilc
+    c = filter_soilc(fc)
+    totwater=dot_sum(h2osoi_ice(c,1:ubj),eyev) + dot_sum(h2osoi_liq(c,1:ubj),eyev)
+    err = totwater-end_tracer_molarmass(c,id_trc_o18_h2o)
+    print*,get_nstep(),'diff',c, totwater, err, err/totwater
+  enddo
+  deallocate(eyev)
+
+  end associate
+  end subroutine betr_clm_h2oiso_consistency_check
 end module betr_clm_cpl

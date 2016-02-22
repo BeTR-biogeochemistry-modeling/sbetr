@@ -495,6 +495,10 @@ contains
     do fc = 1, numf
       c = filter(fc)
       waterflux_vars%qflx_adv_col(c,0) = clmforc_vars%qflx_infl(tstep)
+      if(waterflux_vars%qflx_adv_col(c,0)< 0._r8)then
+        waterflux_vars%qflx_gross_evap_soil_col(c) = -waterflux_vars%qflx_adv_col(c,0)
+        waterflux_vars%qflx_adv_col(c,0) = 0._r8
+      endif
       do j = 1,ubj
 
         dmass=(waterstate_vars%h2osoi_ice_col(c,j)+waterstate_vars%h2osoi_liq_col(c,j))- &

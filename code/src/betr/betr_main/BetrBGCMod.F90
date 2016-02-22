@@ -13,6 +13,7 @@ module BetrBGCMod
   use clm_varctl         , only : iulog
   use clm_time_manager   , only : get_nstep
   use MathfuncMod        , only : dot_sum
+  use clm_varcon         , only : denh2o
   implicit none
   private
 
@@ -622,8 +623,9 @@ contains
 
     real(r8), parameter  :: err_relative_threshold=1.e-2_r8                     !relative error threshold
     real(r8), parameter  :: err_adv_min=1.e-10_r8
-    real(r8), parameter  :: loc_eps = 1.e-8_r8                                  !smoothing factor to avoid advection velocity spikes, dimension less
+    real(r8), parameter  :: loc_eps = 1.e-12_r8                                 !smoothing factor to avoid advection velocity spikes, dimension less
     real(r8)             :: mass0
+    real(r8)             :: alpha
     character(len=255)   :: subname = 'do_tracer_advection'
 
 
@@ -699,12 +701,27 @@ contains
          !obtain advective velocity for the tracer group
          do fc = 1, num_soilc
             c = filter_soilc(fc)
-            qflx_adv_local(c,jtops(c)-1) = safe_div(qflx_adv(c,jtops(c)-1),aqu2bulkcef_mobile_col(c,jtops(c),j),eps=loc_eps)
+            qflx_adv_local(c,jtops(c)-1) = qflx_adv(c,jtops(c)-1)
             do l = jtops(c), ubj
-               qflx_adv_local(c,l)     = safe_div(qflx_adv(c,l),aqu2bulkcef_mobile_col(c,l,j),eps=loc_eps)
-               qflx_rootsoi_local(c,l) = safe_div(qflx_rootsoi(c,l),aqu2bulkcef_mobile_col(c,l,j),eps=loc_eps)
+              if(l<ubj)then
+                if(qflx_adv(c,l) > 0._r8)then
+                  qflx_adv_local(c,l) = safe_div(qflx_adv(c,l),aqu2bulkcef_mobile_col(c,l,j),eps=loc_eps)
+                else
+                  qflx_adv_local(c,l) = safe_div(qflx_adv(c,l),aqu2bulkcef_mobile_col(c,l+1,j),eps=loc_eps)
+                endif
+              else
+                if(qflx_adv(c,l) > 0._r8)then
+                  qflx_adv_local(c,l) = safe_div(qflx_adv(c,l),aqu2bulkcef_mobile_col(c,l,j),eps=loc_eps)
+                else
+                  qflx_adv_local(c,l) = qflx_adv(c,l)
+                endif
+               endif
+               if(is_h2o(j))then
+                 qflx_rootsoi_local(c,l) = qflx_rootsoi(c,l)
+               else
+                 qflx_rootsoi_local(c,l) = safe_div(qflx_rootsoi(c,l),aqu2bulkcef_mobile_col(c,l,j),eps=loc_eps)
+               endif
             enddo
-
          enddo
 
          !dertmine the local advection time step based on the existence of convergence grid cell, i.e.
@@ -772,6 +789,8 @@ contains
                        dtime_loc,                                                      &
                        dz,                                                             &
                        qflx_rootsoi_local,                                             &
+                       vtrans_scal(trcid),                                             &
+                       is_h2o(trcid),                                                  &
                        update_col,                                                     &
                        halfdt_col,                                                     &
                        tracer_conc_mobile_col(bounds%begc:bounds%endc, lbj:ubj,trcid), &
@@ -1208,7 +1227,7 @@ contains
     use tracercoeffType       , only : tracercoeff_type
     use tracerfluxType        , only : tracerflux_type
     use tracerstatetype       , only : tracerstate_type
-    use clm_varcon            , only : grav, denh2o, oneatm
+    use clm_varcon            , only : grav, oneatm
 
     ! !ARGUMENTS:
     type(bounds_type),      intent(in)    :: bounds
@@ -1359,7 +1378,7 @@ contains
 
   !-------------------------------------------------------------------------------
   subroutine calc_root_uptake_as_perfect_sink(bounds, lbj, ubj,  num_soilc, filter_soilc, &
-       dtime_loc, dz, qflx_rootsoi, update_col, halfdt_col, tracer_conc, transp_mass_vr , &
+       dtime_loc, dz, qflx_rootsoi, vtrans_scal, is_h2o, update_col, halfdt_col, tracer_conc, transp_mass_vr , &
        transp_mass)
     !
     ! !DESCRIPTION:
@@ -1373,6 +1392,8 @@ contains
     real(r8),               intent(in)    :: dz(bounds%begc: , lbj: )            ! layer thickness
     real(r8),               intent(in)    :: dtime_loc(bounds%begc: )
     real(r8),               intent(in)    :: qflx_rootsoi(bounds%begc: , lbj: )
+    real(r8),               intent(in)    :: vtrans_scal
+    logical,                intent(in)    :: is_h2o
     logical,                intent(in)    :: update_col(bounds%begc:bounds%endc) ! logical switch for active col update
     logical,                intent(in)    :: halfdt_col(bounds%begc:bounds%endc)
     real(r8),               intent(inout) :: tracer_conc(bounds%begc: , lbj: )   ! incoming tracer concentration
@@ -1396,10 +1417,14 @@ contains
     do fc = 1, num_soilc
        c = filter_soilc(fc)
        if(update_col(c) .and. (.not. halfdt_col(c)))then
-
           do j = 1, ubj
-             tracer_conc_new  = tracer_conc(c,j) * exp(-max(qflx_rootsoi(c,j),0._r8)*dtime_loc(c))
-             transp_mass_vr(c,j)   = (tracer_conc(c,j)-tracer_conc_new)*dz(c,j)
+             if(is_h2o)then
+               transp_mass_vr(c,j)   = vtrans_scal*qflx_rootsoi(c,j)*denh2o*dtime_loc(c)
+               tracer_conc_new = tracer_conc(c,j) - transp_mass_vr(c,j)/dz(c,j)
+             else
+               tracer_conc_new  = tracer_conc(c,j) * exp(-max(qflx_rootsoi(c,j)*vtrans_scal/dz(c,j),0._r8)*dtime_loc(c))
+               transp_mass_vr(c,j)   = (tracer_conc(c,j)-tracer_conc_new)*dz(c,j)
+             endif
              transp_mass(c) = transp_mass(c) + transp_mass_vr(c,j)
              tracer_conc(c,j) = tracer_conc_new
           enddo
@@ -1507,7 +1532,7 @@ contains
     use tracerstatetype       , only : tracerstate_type
     use tracercoeffType       , only : tracercoeff_type
     use MathfuncMod           , only : safe_div
-    use clm_varcon            , only : denh2o
+
 
     ! !ARGUMENTS:
     type(bounds_type),        intent(in)    :: bounds
@@ -1564,7 +1589,7 @@ contains
          do j = 1, ngwmobile_tracers
 
             if(.not. is_advective(j))cycle
-            !Do not do this for water tracer, maybe I can do it.
+            !Do not do this for water tracer, because surface runoff comes as the residual of infiltration.
             if(is_h2o(j))cycle
             tracer_conc_surfwater(c,j)  = 0._r8   !at this moment it is set to zero, however, when tracer is tracked in snow, it should be non-zero
             trc_srun = tracer_conc_surfwater(c,j) * h2o_srun   !total tracer mass in runoff water before mixing
@@ -1612,7 +1637,7 @@ contains
     use WaterstateType        , only : waterstate_type
     use tracerfluxType        , only : tracerflux_type
     use tracerstatetype       , only : tracerstate_type
-    use clm_varcon            , only : denh2o,spval
+    use clm_varcon            , only : spval
     use clm_varpar            , only : nlevtrc_soil
     use landunit_varcon       , only : istsoil, istcrop
 
@@ -1635,10 +1660,11 @@ contains
          snl                =>    col%snl                                 ,  & ! Input:  [integer  (:)   ]  number of snow layers
          dz                 =>    col%dz                                  ,  & ! Input:  [real(r8) (:,:) ]  layer depth (m)
          h2osoi_ice         =>    waterstate_vars%h2osoi_ice_col          ,  & ! Output: [real(r8) (:,:) ]  ice lens (kg/m2)
+         h2osoi_liq         =>    waterstate_vars%h2osoi_liq_col          ,  & ! Output: [real(r8) (:,:) ]  ice lens (kg/m2)
          frac_h2osfc        =>    waterstate_vars%frac_h2osfc_col         ,  & ! Input:  [real(r8) (:)   ]
          qflx_dew_grnd      =>    waterflux_vars%qflx_dew_grnd_col        ,  & ! Input:  [real(r8) (:)   ]  ground surface dew formation (mm H2O /s) [+]
          qflx_dew_snow      =>    waterflux_vars%qflx_dew_snow_col        ,  & ! Input:  [real(r8) (:)   ]  surface dew added to snow pack (mm H2O /s
-         qflx_sub_snow      =>    waterflux_vars%qflx_sub_snow_col        ,  & ! Output: [real(r8) (:)   ]  sublimation rate from snow pack (mm H2O /s)
+         qflx_sub_snow_vol  =>    waterflux_vars%qflx_sub_snow_vol_col    ,  & ! Output: [real(r8) (:)   ]  sublimation rate from snow pack (mm H2O /s)
          qflx_snow2topsoi   =>    waterflux_vars%qflx_snow2topsoi_col     ,  & ! Output: [real(r8) (:)   ]
          qflx_h2osfc2topsoi =>    waterflux_vars%qflx_h2osfc2topsoi_col   ,  & !
          tracer_flx_dew_grnd=>    tracerflux_vars%tracer_flx_dew_grnd_col ,  & !
@@ -1648,6 +1674,7 @@ contains
          tracer_conc_frozen =>    tracerstate_vars%tracer_conc_frozen_col ,  & !
          is_h2o             =>    betrtracer_vars%is_h2o                  ,  & !
          tracernames        =>    betrtracer_vars%tracernames             ,  &
+         frozenid           =>    betrtracer_vars%frozenid                ,  &
          clandunit          =>    col%landunit                             , & ! Input:  [integer  (:)   ]  columns's landunit
          ltype              =>    lun%itype                                , & ! Input:  [integer  (:)   ]  landunit type
          ngwmobile_tracers  =>    betrtracer_vars%ngwmobile_tracers          &
@@ -1673,13 +1700,9 @@ contains
             l = clandunit(c)
             if (ltype(l)/=istsoil .and. ltype(l)/=istcrop)cycle
             if(snl(c)+1>=1)then
-               tracer_flx_dew_grnd(c, j) = (1._r8 - frac_h2osfc(c))*qflx_dew_grnd(c) * dtime/denh2o
-               tracer_flx_dew_snow(c, j) = (1._r8 - frac_h2osfc(c))*qflx_dew_snow(c) * dtime/denh2o
-               if(h2osoi_ice(c,1)==0._r8)then
-                  tracer_flx_sub_snow(c, j) = qflx_sub_snow(c) * dtime/denh2o
-               else
-                  tracer_flx_sub_snow(c, j) = (1._r8 - frac_h2osfc(c)) * qflx_sub_snow(c) * dtime/denh2o
-               endif
+               tracer_flx_dew_grnd(c, j) = (1._r8 - frac_h2osfc(c))*qflx_dew_grnd(c) * dtime
+               tracer_flx_dew_snow(c, j) = (1._r8 - frac_h2osfc(c))*qflx_dew_snow(c) * dtime
+               tracer_flx_sub_snow(c,j) = tracer_conc_frozen(c,1,frozenid(j)) * dz(c,1) * qflx_sub_snow_vol(c)
             else
                tracer_flx_dew_grnd(c, j) = 0._r8
                tracer_flx_dew_snow(c, j) = 0._r8
@@ -1696,35 +1719,7 @@ contains
             l = clandunit(c)
             if (ltype(l)/=istsoil .and. ltype(l)/=istcrop)cycle
             tracer_conc_mobile(c,1,j) = tracer_conc_mobile(c,1,j) + tracer_flx_dew_grnd(c, j)/dz(c,1)
-            tracer_conc_frozen(c,1,j) = tracer_conc_frozen(c,1,j) +(tracer_flx_dew_snow(c, j)-tracer_flx_sub_snow(c,j))/dz(c,1)
-
-            if(tracer_conc_frozen(c,1,j) < 0._r8)then
-              do ll = 1, 2
-                tot0=tracer_conc_frozen(c,ll,j)*dz(c,ll)
-                tot1=tracer_conc_frozen(c,ll+1,j)*dz(c,ll+1)
-                tot1=tot1+tot0
-                tracer_conc_frozen(c,ll,j) = 0._r8
-                tracer_conc_frozen(c,ll+1,j) = tot1/dz(c,ll+1)
-                if(tot1>0._r8)exit
-              enddo
-
-              do ll2 = 1, 3
-                tot1 = tracer_conc_frozen(c,ll2,j) * dz(c,ll2)
-                if(tot1<0._r8)then
-                  !if all ice is gone
-                  !distribute linearly (in mass) into three layers
-                  tot0 = 0._r8
-                  do ll = 1, 3
-                    tot0=tot0+dz(c,ll)*tracer_conc_mobile(c,ll,j)
-                  enddo
-                  do ll = 1, 3
-                    tracer_conc_mobile(c,ll,j) = tracer_conc_mobile(c,ll,j) * (1._r8+tot1/tot0)
-                  enddo
-                  tracer_conc_frozen(c,ll2,j)= 0._r8
-                endif
-              enddo
-            endif
-
+            tracer_conc_frozen(c,1,frozenid(j)) = tracer_conc_frozen(c,1,frozenid(j)) +(tracer_flx_dew_snow(c, j)-tracer_flx_sub_snow(c,j))/dz(c,1)
          enddo
       enddo
     end associate
@@ -1742,7 +1737,7 @@ contains
     use WaterfluxType         , only : waterflux_type
     use tracerfluxType        , only : tracerflux_type
     use tracerstatetype       , only : tracerstate_type
-    use clm_varcon            , only : denh2o
+
     ! !ARGUMENTS:
     type(bounds_type)         , intent(in)    :: bounds
     integer                   , intent(in)    :: num_soilc        ! number of column soil points in column filter_soilc
@@ -1776,7 +1771,7 @@ contains
          do fc = 1, num_soilc
             c = filter_soilc(fc)
             ! kg/m2/(kg/m3) = m
-            tracer_flx_h2osfc_snow_residual(c,j) = (qflx_snow2topsoi(c) + qflx_h2osfc2topsoi(c))*dtime/denh2o
+            tracer_flx_h2osfc_snow_residual(c,j) = (qflx_snow2topsoi(c) + qflx_h2osfc2topsoi(c))*dtime
             tracer_conc_mobile(c,1,j) = tracer_conc_mobile(c,1,j) + tracer_flx_h2osfc_snow_residual(c,j) /dz(c,1)
          enddo
       enddo
