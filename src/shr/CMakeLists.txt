@@ -6,6 +6,8 @@ set(BETR_SHR_SOURCES shr_const_mod.F90 shr_mpi_mod.F90
   )
 
 configure_file(shr_assert.h shr_assert.h COPYONLY)
+configure_file(mpif.h mpif.h COPYONLY)
+configure_file(dtypes.h dtypes.h COPYONLY)
 
 include(add_betr_library)
 add_betr_library(betr_shr ${BETR_SHR_SOURCES})

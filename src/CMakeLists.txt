@@ -1,4 +1,5 @@
+include_directories(${BETR_INCLUDE_DIRS})
 add_subdirectory(shr)
-add_subdirectory(util_share)
+add_subdirectory(esmf_wrf_timemgr)
 add_subdirectory(sclm)
 add_subdirectory(betr)

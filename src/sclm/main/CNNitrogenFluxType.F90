@@ -130,7 +130,6 @@ contains
     ! !DESCRIPTION:
     ! Set nitrogen flux variables
     !
-    use tracer_varcon , only : is_active_betr_bgc
     ! !ARGUMENTS:
     ! !ARGUMENTS:
     class (nitrogenflux_type) :: this
