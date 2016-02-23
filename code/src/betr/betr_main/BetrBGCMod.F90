@@ -686,7 +686,6 @@ contains
             endif
          enddo
          if(ntrcs==0)cycle
-
          !convert bulk mobile phase into aqueous phase
          do k = 1, ntrcs
             do fc = 1, num_soilc
@@ -855,6 +854,7 @@ contains
          enddo
 
       enddo
+
       deallocate(adv_trc_group)
       deallocate(err_tracer   )
       deallocate(transp_mass  )
@@ -1723,6 +1723,7 @@ contains
          enddo
       enddo
     end associate
+
   end subroutine calc_dew_sub_flux
 
   !--------------------------------------------------------------------------------
@@ -1767,7 +1768,6 @@ contains
       do j = 1, ngwmobile_tracers
 
          if(.not. is_h2o(j))cycle
-
          do fc = 1, num_soilc
             c = filter_soilc(fc)
             ! kg/m2/(kg/m3) = m

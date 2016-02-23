@@ -82,7 +82,9 @@ implicit none
 
   !only the water vapor is set with prescribed flux based boundary condition, Riley et al. (2002, GBC)
   !had a discussion about this.
+  tracerboundarycond_vars%topbc_type(betrtracer_vars%id_trc_d_h2o)   = bndcond_as_flux
   tracerboundarycond_vars%topbc_type(betrtracer_vars%id_trc_o18_h2o) = bndcond_as_flux
+  tracerboundarycond_vars%topbc_type(betrtracer_vars%id_trc_blk_h2o) = bndcond_as_flux
 
   end subroutine init_boundary_condition_type
 
@@ -115,15 +117,18 @@ implicit none
   itemp_s       = 0
   itemp_gwm_grp = 0
   itemp_adsgrp  = 0
-  betrtracer_vars%id_trc_n2  = addone(itemp_gwm); dum = addone(itemp_g); dum = addone(itemp_gwm_grp)
-  betrtracer_vars%id_trc_o2  = addone(itemp_gwm); dum = addone(itemp_g); dum = addone(itemp_gwm_grp)
-  betrtracer_vars%id_trc_ar  = addone(itemp_gwm); dum = addone(itemp_g); dum = addone(itemp_gwm_grp)
-  betrtracer_vars%id_trc_co2x= addone(itemp_gwm); dum = addone(itemp_g); dum = addone(itemp_gwm_grp)
-  betrtracer_vars%id_trc_ch4 = addone(itemp_gwm); dum = addone(itemp_g); dum = addone(itemp_gwm_grp)
-  betrtracer_vars%id_trc_o18_h2o = addone(itemp_gwm); dum = addone(itemp_g); dum = addone(itemp_gwm_grp)
+  betrtracer_vars%id_trc_n2  = addone(itemp_gwm); itemp_gwm_grp = addone(itemp_gwm_grp);
+  betrtracer_vars%id_trc_o2  = addone(itemp_gwm); itemp_gwm_grp = addone(itemp_gwm_grp);
+  betrtracer_vars%id_trc_ar  = addone(itemp_gwm); itemp_gwm_grp = addone(itemp_gwm_grp);
+  betrtracer_vars%id_trc_co2x= addone(itemp_gwm); itemp_gwm_grp = addone(itemp_gwm_grp);
+  betrtracer_vars%id_trc_ch4 = addone(itemp_gwm); itemp_gwm_grp = addone(itemp_gwm_grp);
+  betrtracer_vars%id_trc_blk_h2o = addone(itemp_gwm); itemp_gwm_grp = addone(itemp_gwm_grp);
+  betrtracer_vars%id_trc_o18_h2o = addone(itemp_gwm); itemp_gwm_grp = addone(itemp_gwm_grp);
+  betrtracer_vars%id_trc_d_h2o = addone(itemp_gwm); itemp_gwm_grp = addone(itemp_gwm_grp);
 
-  betrtracer_vars%ngwmobile_tracers      = itemp_gwm;   betrtracer_vars%ngwmobile_tracer_groups= itemp_gwm_grp
-  betrtracer_vars%nvolatile_tracer_groups= itemp_g
+
+  betrtracer_vars%ngwmobile_tracers      = itemp_gwm;   betrtracer_vars%ngwmobile_tracer_groups= itemp_gwm_grp;
+  betrtracer_vars%nvolatile_tracer_groups= itemp_gwm;
   betrtracer_vars%nmem_max               = 1
 
 
@@ -159,13 +164,23 @@ implicit none
        trc_group_mem = 1, is_trc_volatile=.true., trc_volatile_id = addone(itemp_v)     ,   &
        trc_volatile_group_id = addone(itemp_vgrp))
 
-
-  call betrtracer_vars%set_tracer(trc_id = betrtracer_vars%id_trc_o18_h2o, trc_name='O18_H2O' ,   &
+  call betrtracer_vars%set_tracer(trc_id = betrtracer_vars%id_trc_blk_h2o, trc_name='BLK_H2O' ,   &
        is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = addone(itemp_grp)      ,   &
        trc_group_mem = 1, is_trc_diffusive =.false., is_trc_volatile=.true.                   ,   &
        trc_volatile_id = addone(itemp_v), trc_volatile_group_id = addone(itemp_vgrp)          ,   &
        is_trc_h2o=.true., trc_vtrans_scal=1._r8, is_trc_frozen=.true.,  trc_frozenid = addone(itemp_frz))
 
+  call betrtracer_vars%set_tracer(trc_id = betrtracer_vars%id_trc_o18_h2o, trc_name='O18_H2O' ,   &
+       is_trc_mobile=.true., is_trc_advective = .true., trc_group_id =  addone(itemp_grp)     ,   &
+       trc_group_mem = 1, is_trc_diffusive =.false., is_trc_volatile=.true.                   ,   &
+       trc_volatile_id = addone(itemp_v), trc_volatile_group_id = addone(itemp_vgrp)          ,   &
+       is_trc_h2o=.true., trc_vtrans_scal=1._r8, is_trc_frozen=.true.,  trc_frozenid = addone(itemp_frz))
+
+  call betrtracer_vars%set_tracer(trc_id = betrtracer_vars%id_trc_d_h2o, trc_name='D_H2O' ,   &
+       is_trc_mobile=.true., is_trc_advective = .true., trc_group_id =  addone(itemp_grp)     ,   &
+       trc_group_mem = 1, is_trc_diffusive =.false., is_trc_volatile=.true.                   ,   &
+       trc_volatile_id = addone(itemp_v), trc_volatile_group_id = addone(itemp_vgrp)          ,   &
+       is_trc_h2o=.true., trc_vtrans_scal=1._r8, is_trc_frozen=.true.,  trc_frozenid = addone(itemp_frz))
 
   end subroutine Init_betrbgc
 
@@ -214,7 +229,9 @@ implicit none
     tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_ar)      = 0.3924_r8                       !mol m-3, contant boundary condition, as concentration
     tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_co2x)    = 0.0168_r8                       !mol m-3, contant boundary condition, as concentration
     tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_ch4)     = 6.939e-5_r8                     !mol m-3, contant boundary condition, as concentration
+    tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_blk_h2o) = -qflx_gross_evap_soil(c)        !kg m-2-s, not diffusive water vapor transport
     tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_o18_h2o) = -qflx_gross_evap_soil(c)        !kg m-2-s, not diffusive water vapor transport
+    tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_d_h2o)   = -qflx_gross_evap_soil(c)        !kg m-2-s, not diffusive water vapor transport
 
     tracerboundarycond_vars%bot_concflux_col(c,1,:)                         = 0._r8                           !zero flux boundary condition
     tracerboundarycond_vars%condc_toplay_col(c,betrtracer_vars%id_trc_n2)   = 2._r8*1.837e-5_r8/dz_top(c)     !m/s surface conductance, this will be represented with Tang-Riley scheme (HESS, 2013)
@@ -266,6 +283,8 @@ implicit none
   character(len=*)                    , parameter     :: subname ='calc_bgc_reaction'
 
   integer :: jj, c, fc, ll
+  integer, parameter :: nh2o_trcs=3
+  integer :: jjs(nh2o_trcs), kk
   real(r8):: tot0, tot1
 
   associate(                                                                                  &
@@ -273,7 +292,9 @@ implicit none
     tracer_gwdif_concflux_top_col  => tracerboundarycond_vars%tracer_gwdif_concflux_top_col , &
     volatileid                     =>  betrtracer_vars%volatileid                           , & !
     tracer_flx_dif                 =>  tracerflux_vars%tracer_flx_dif_col                   , & !
-    id_trc_o18_h2o                 => betrtracer_vars%id_trc_o18_h2o                          &
+    id_trc_blk_h2o                 => betrtracer_vars%id_trc_blk_h2o                        , &
+    id_trc_o18_h2o                 => betrtracer_vars%id_trc_o18_h2o                        , &
+    id_trc_d_h2o                   => betrtracer_vars%id_trc_d_h2o                            &
   )
 
 
@@ -281,28 +302,31 @@ implicit none
   !apply the evaporation to the water tracer, the following is a hack to avoid the
   !inconsistency between water vapor transport in betr and the hydrology code
   !in the future, when the hdyrology code is corrected, the following will be gone, jyt Feb, 17, 2016
-  jj = id_trc_o18_h2o
-  do fc = 1, num_soilc
-    c = filter_soilc(fc)
-    tracer_mobile_phase(c,1,jj) = tracer_mobile_phase(c,1,jj) + tracer_gwdif_concflux_top_col(c,1,jj)*dtime/col%dz(c,1)
-    if(tracer_mobile_phase(c,1,jj) < 0._r8)then
-      do ll = 1, 2
-        tot0 = tracer_mobile_phase(c,ll,jj)*col%dz(c,ll)
-        tot1 = tracer_mobile_phase(c,ll+1,jj)*col%dz(c,ll+1)
-        tot1 = tot1 + tot0
-        tracer_mobile_phase(c,ll,jj) = 0._r8
-        tracer_mobile_phase(c,ll+1,jj) = tot1/col%dz(c,ll+1)
-        if(tot1>0._r8)exit
-      enddo
-      !the following should rarely occur, so when it occur, end with a warning
-      if(tot1<0._r8)then
-        call endrun('negative H2O tracer '//errMsg(__FILE__, __LINE__))
+  jjs = (/id_trc_blk_h2o,id_trc_o18_h2o, id_trc_d_h2o/)
+
+  do kk = 1, nh2o_trcs
+    jj = jjs(kk)
+    do fc = 1, num_soilc
+      c = filter_soilc(fc)
+      tracer_mobile_phase(c,1,jj) = tracer_mobile_phase(c,1,jj) + tracer_gwdif_concflux_top_col(c,1,jj)*dtime/col%dz(c,1)
+      if(tracer_mobile_phase(c,1,jj) < 0._r8)then
+        do ll = 1, 2
+          tot0 = tracer_mobile_phase(c,ll,jj)*col%dz(c,ll)
+          tot1 = tracer_mobile_phase(c,ll+1,jj)*col%dz(c,ll+1)
+          tot1 = tot1 + tot0
+          tracer_mobile_phase(c,ll,jj) = 0._r8
+          tracer_mobile_phase(c,ll+1,jj) = tot1/col%dz(c,ll+1)
+          if(tot1>0._r8)exit
+        enddo
+        !the following should rarely occur, so when it occur, end with a warning
+        if(tot1<0._r8)then
+          call endrun('negative H2O tracer '//errMsg(__FILE__, __LINE__))
+        endif
       endif
-    endif
-    tracer_flx_dif(c,volatileid(jj)) = tracer_flx_dif(c,volatileid(jj))- tracer_gwdif_concflux_top_col(c,1,jj) * dtime
+      tracer_flx_dif(c,volatileid(jj)) = tracer_flx_dif(c,volatileid(jj))- tracer_gwdif_concflux_top_col(c,1,jj) * dtime
+    enddo
   enddo
 
-  ! print*, subname
   end associate
   end subroutine calc_bgc_reaction
 
@@ -492,12 +516,27 @@ implicit none
          tracerstate_vars%tracer_soi_molarmass_col(c,:)          = 0._r8
 
          !set for o18_h2o, assuming no fractionation, which is equivalent to assuming concentration equals 1
+         trcid = betrtracer_vars%id_trc_blk_h2o
+         tracerstate_vars%tracer_conc_grndwater_col(c,trcid) = denh2o
+         do j = 1, nlevtrc_soil
+           tracerstate_vars%tracer_conc_mobile_col(c,j,trcid) = 1._r8 * waterstate_vars%h2osoi_liq_col(c,j)/col%dz(c,j)
+           tracerstate_vars%tracer_conc_frozen_col(c,j,betrtracer_vars%frozenid(trcid)) = 1._r8 * waterstate_vars%h2osoi_ice_col(c,j)/col%dz(c,j)
+         enddo
+
          trcid = betrtracer_vars%id_trc_o18_h2o
          tracerstate_vars%tracer_conc_grndwater_col(c,trcid) = denh2o
          do j = 1, nlevtrc_soil
            tracerstate_vars%tracer_conc_mobile_col(c,j,trcid) = 1._r8 * waterstate_vars%h2osoi_liq_col(c,j)/col%dz(c,j)
            tracerstate_vars%tracer_conc_frozen_col(c,j,betrtracer_vars%frozenid(trcid)) = 1._r8 * waterstate_vars%h2osoi_ice_col(c,j)/col%dz(c,j)
          enddo
+
+         trcid = betrtracer_vars%id_trc_d_h2o
+         tracerstate_vars%tracer_conc_grndwater_col(c,trcid) = denh2o
+         do j = 1, nlevtrc_soil
+           tracerstate_vars%tracer_conc_mobile_col(c,j,trcid) = 1._r8 * waterstate_vars%h2osoi_liq_col(c,j)/col%dz(c,j)
+           tracerstate_vars%tracer_conc_frozen_col(c,j,betrtracer_vars%frozenid(trcid)) = 1._r8 * waterstate_vars%h2osoi_ice_col(c,j)/col%dz(c,j)
+         enddo
+
        endif
      enddo
 

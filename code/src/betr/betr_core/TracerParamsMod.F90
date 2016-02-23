@@ -584,13 +584,6 @@ contains
             !gaseous to bulk mobile phase
             gas2bulkcef_mobile(c,n,k) = air_vol(c,n)+h2osoi_liqvol(c,n)*bunsencef_col(c,n,k)
 
-            !if(is_h2o(trcid))then
-              !for water tracer, I assume the three phases are in equilibrium, such that
-            !  aqu2bulkcef_mobile(c,n,j)= aqu2bulkcef_mobile(c,n,j) + aqu2equilsolidcef(c,n,adsorbgroupid(trcid))
-
-            !  gas2bulkcef_mobile(c,n,k) = gas2bulkcef_mobile(c,n,k)+ aqu2equilsolidcef(c,n,adsorbgroupid(trcid)) * bunsencef_col(c,n,k)
-            !endif
-
             !correct for impermeable layer, to avoid division by zero in doing diffusive transport
             gas2bulkcef_mobile(c,n,k) = max(gas2bulkcef_mobile(c,n,k),air_vol(c,n),minval_airvol)
           endif
@@ -1257,15 +1250,24 @@ contains
      !for a real mechanistic modeling, tracer_flx_infl should be derived from water flux coming from snow melt, surface ponding water,
      !and precipitation. I here just comparomise for a quick shot.
 
-     if(j==betrtracer_vars%id_trc_o18_h2o)then
+     if(j==betrtracer_vars%id_trc_blk_h2o)then
        do fc = 1, numf
          c = filter(fc)
          tracer_flx_infl(c,j) = 1._r8 * qflx_adv(c,0) * denh2o
        enddo
+     elseif(j==betrtracer_vars%id_trc_o18_h2o)then
+         do fc = 1, numf
+           c = filter(fc)
+           tracer_flx_infl(c,j) = 1._r8 * qflx_adv(c,0) * denh2o
+         enddo
+     elseif(j==betrtracer_vars%id_trc_d_h2o)then
+         do fc = 1, numf
+           c = filter(fc)
+           tracer_flx_infl(c,j) = 1._r8 * qflx_adv(c,0) * denh2o
+         enddo
      else
        do fc = 1, numf
          c = filter(fc)
-
          if(betrtracer_vars%is_volatile(j) .and. betrtracer_vars%is_advective(j))then
            !for volatile non water tracer, infiltration is calculated based dissolution of the gas in the water, this may need
            !improvement when tracers are allowed to transport inside snow, such that the tracer infiltration is derived from mass balance in snow
@@ -1469,7 +1471,6 @@ contains
        endif
      endif
      qflx_adv(c,0) = qflx_gross_infl_soil(c) *1.e-3_r8  !surface infiltration
-     
    enddo
 
    deallocate(h2osoi_liq_copy)
@@ -1645,20 +1646,21 @@ contains
      is_h2o => betrtracer_vars%is_h2o                   &
    )
 
-   if(any(is_h2o))then
+!the following code is now not used
+!   if(any(is_h2o))then
      !doing a water isotope simulation
-     if(betrtracer_vars%id_trc_o18_h2o>0)then
-        do j = lbj, ubj
-          do fc = 1, numf
-            c = filter(fc)
-            if(j>=jtops(c))then
-              alpha_sl = get_equi_sl_h2oiso_fractionation(betrtracer_vars%id_trc_o18_h2o, t_soisno(c,j), betrtracer_vars)
-              aqu2equilsolidcef_col(c,j, betrtracer_vars%id_trc_o18_h2o_ice) = alpha_sl * h2osoi_ice(c,j) / (denh2o * dz(c,j))
-            endif
-          enddo
-        enddo
-     endif
-   endif
+!     if(betrtracer_vars%id_trc_o18_h2o>0)then
+!        do j = lbj, ubj
+!          do fc = 1, numf
+!            c = filter(fc)
+!            if(j>=jtops(c))then
+!              alpha_sl = get_equi_sl_h2oiso_fractionation(betrtracer_vars%id_trc_o18_h2o, t_soisno(c,j), betrtracer_vars)
+!              aqu2equilsolidcef_col(c,j, betrtracer_vars%id_trc_o18_h2o_ice) = alpha_sl * h2osoi_ice(c,j) / (denh2o * dz(c,j))
+!            endif
+!          enddo
+!        enddo
+!     endif
+!   endif
 
    end associate
    end subroutine calc_equil_to_liquid_convert_coeff

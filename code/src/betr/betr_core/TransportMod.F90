@@ -756,13 +756,10 @@ contains
         !do mass interpolation
         do ntr = 1, ntrcs
 
-           ! old
-           !call pchip_polycc((/zghostl,zi(c,lbn(c)-1:ubj),zghostr/), cmass_curve(0:lengthp2, ntr), di(0:lengthp2))
-           !call pchip_interp((/zghostl,zi(c,lbn(c)-1:ubj),zghostr/), cmass_curve(0:lengthp2, ntr), di(0:lengthp2),&
-           !      zold(0:length), cmass_new(0:length, ntr))
            ! now use linear interpolation to maintain mass balance
            call Lagrange_interp(pn, (/zghostl,zi(c,lbn(c)-1:ubj),zghostr/), cmass_curve(0:lengthp2, ntr), &
              zold(0:length), cmass_new(0:length, ntr))
+
            !ensure mass is increasing monotonically
            call asc_sort_vec(cmass_new(0:length,ntr))
 
