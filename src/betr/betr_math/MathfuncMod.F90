@@ -31,6 +31,7 @@ module MathfuncMod
   interface swap
      module procedure swap_i, swap_r, swap_rv
   end interface swap
+  character(len=*), parameter :: filename = '__FILE__'
 contains
   !-------------------------------------------------------------------------------
   function heviside(x)result(ans)
@@ -151,7 +152,7 @@ contains
     integer :: n
     integer :: j
 
-    SHR_ASSERT_ALL((size(x)   == size(y)),        errMsg(__FILE__,__LINE__))
+    SHR_ASSERT_ALL((size(x)   == size(y)),        errMsg(filename,__LINE__))
 
     n = size(x)
 
@@ -179,8 +180,8 @@ contains
 
     if(present(idim))idim_loc=idim
 
-    SHR_ASSERT_ALL((size(x,1)   == size(y,1)),        errMsg(__FILE__,__LINE__))
-    SHR_ASSERT_ALL((size(x,2)   == size(y,2)),        errMsg(__FILE__,__LINE__))
+    SHR_ASSERT_ALL((size(x,1)   == size(y,1)),        errMsg(filename,__LINE__))
+    SHR_ASSERT_ALL((size(x,2)   == size(y,2)),        errMsg(filename,__LINE__))
 
     if(idim_loc == 1)then
        !summation along dimension 1
@@ -214,7 +215,7 @@ contains
     integer :: n
     integer :: j
 
-    SHR_ASSERT_ALL((size(x)   == size(y)),        errMsg(__FILE__,__LINE__))
+    SHR_ASSERT_ALL((size(x)   == size(y)),        errMsg(filename,__LINE__))
 
     n = size(x)
     call diff(x,y(2:n))
@@ -236,7 +237,7 @@ contains
     integer :: n
     integer :: j
 
-    SHR_ASSERT_ALL((size(x)   == size(y)+1),        errMsg(__FILE__,__LINE__))
+    SHR_ASSERT_ALL((size(x)   == size(y)+1),        errMsg(filename,__LINE__))
 
     n = size(x)
     do j = 2, n
@@ -287,7 +288,7 @@ contains
     integer  :: n, j
     real(r8) :: ans
 
-    SHR_ASSERT_ALL((size(x)           == size(y)), errMsg(__FILE__,__LINE__))
+    SHR_ASSERT_ALL((size(x)           == size(y)), errMsg(filename,__LINE__))
 
     n = size(x)
     ! use subroutine from blas
@@ -373,7 +374,7 @@ contains
     integer  :: j, sz
     real(r8) :: ans      !(<=1._r8)
 
-    SHR_ASSERT_ALL((size(p)           == size(v)), errMsg(__FILE__,__LINE__))
+    SHR_ASSERT_ALL((size(p)           == size(v)), errMsg(filename,__LINE__))
 
     sz = size(p)
     ans = 1._r8
@@ -402,9 +403,9 @@ contains
     integer :: i, j
 
 
-    SHR_ASSERT_ALL((ubound(A)           == (/m,n/)), errMsg(__FILE__,__LINE__))
-    SHR_ASSERT_ALL((ubound(AP)          == (/m,n/)), errMsg(__FILE__,__LINE__))
-    SHR_ASSERT_ALL((ubound(AD)          == (/m,n/)), errMsg(__FILE__,__LINE__))
+    SHR_ASSERT_ALL((ubound(A)           == (/m,n/)), errMsg(filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(AP)          == (/m,n/)), errMsg(filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(AD)          == (/m,n/)), errMsg(filename,__LINE__))
 
     AP(:,:) = 0._r8
     AD(:,:) = 0._r8

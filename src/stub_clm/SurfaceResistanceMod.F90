@@ -22,7 +22,7 @@ contains
 
 
   subroutine calc_snow_pondw_resistance(bounds, numf, filter, lbj, ubj, jtop, col, bulkdif_sno, pondwdiff, t_soisno, islake, &
-      betrtracer_vars, waterstate_vars, soilstate_vars, grnd_res)
+      num_tracers, waterstate_vars, soilstate_vars, grnd_res)
   !
   ! DESCRIPTION
   ! After struggling with the partition of soil surface into bare soil, snow covered soil and
@@ -37,7 +37,6 @@ contains
   use shr_kind_mod          , only : r8 => shr_kind_r8
   use clm_varcon            , only : tfrz, denice, denh2o
   use decompMod             , only: bounds_type
-  use BeTRTracerType        , only : betrtracer_type
   use SoilStatetype         , only : soilstate_type
   use WaterStateType        , only : Waterstate_Type
   use ColumnType            , only : column_type
@@ -49,13 +48,13 @@ contains
   integer                   , intent(in) :: jtop(:)                              !indices
   type(column_type)         , intent(in) :: col                                  !column type
   real(r8)                  , intent(in) :: t_soisno(bounds%begc:bounds%endc,lbj:ubj)  !soil temperature
-  type(betrtracer_type)     , intent(in) :: betrtracer_vars        ! betr configuration information
-  real(r8)                  , intent(in) :: bulkdif_sno(bounds%begc:bounds%endc, lbj:ubj, 1:betrtracer_vars%ngwmobile_tracers)
-  real(r8)                  , intent(in) :: pondwdiff(bounds%begc:bounds%endc,1:betrtracer_vars%ngwmobile_tracers) ! tracer diffusivity in ponded water
+  integer                   , intent(in) :: num_tracers        ! betr configuration information
+  real(r8)                  , intent(in) :: bulkdif_sno(bounds%begc:bounds%endc, lbj:ubj, 1:num_tracers)
+  real(r8)                  , intent(in) :: pondwdiff(bounds%begc:bounds%endc,1:num_tracers) ! tracer diffusivity in ponded water
   logical                   , intent(in) :: islake  ! logical indicate
   type(Waterstate_Type)     , intent(in) :: waterstate_vars        ! water state variables
   type(soilstate_type)      , intent(in) :: soilstate_vars        ! column physics variable
-  real(r8)                  , intent(inout):: grnd_res(bounds%begc:bounds%endc, 1:betrtracer_vars%ngwmobile_tracers)
+  real(r8)                  , intent(inout):: grnd_res(bounds%begc:bounds%endc, 1:num_tracers)
 
   !local varibles
   real(r8) :: pondz                            !ponding depth, m
@@ -72,7 +71,7 @@ contains
    dz            =>   col%dz                                        & !Input [real(r8)(:,:)] layer thickness
   )
 
-  do kk = 1, betrtracer_vars%ngwmobile_tracers
+  do kk = 1, num_tracers
     snowres(bounds%begc:bounds%endc)= 0._r8
     do j = lbj, ubj
       do fc = 1, numf

@@ -45,11 +45,11 @@ private
 
   begp = bounds%begp; endp=bounds%endp
 
-  allocate(this%plant_frootsc_patch               (begp:endp))                  ; this%plant_frootsc_patch                (:)   = nan
-  allocate(this%annavg_agnpp_patch                (begp:endp))                  ; this%annavg_agnpp_patch  (:) = spval ! To detect first year
-  allocate(this%annavg_bgnpp_patch                (begp:endp))                  ; this%annavg_bgnpp_patch  (:) = spval ! To detect first year
-  allocate(this%tempavg_agnpp_patch               (begp:endp))                  ; this%tempavg_agnpp_patch (:) = spval
-  allocate(this%tempavg_bgnpp_patch               (begp:endp))                  ; this%tempavg_bgnpp_patch (:) = spval
+  allocate(this%plant_frootsc_patch (begp:endp)); this%plant_frootsc_patch (:)   = nan
+  allocate(this%annavg_agnpp_patch  (begp:endp)); this%annavg_agnpp_patch  (:) = spval ! To detect first year
+  allocate(this%annavg_bgnpp_patch  (begp:endp)); this%annavg_bgnpp_patch  (:) = spval ! To detect first year
+  allocate(this%tempavg_agnpp_patch (begp:endp)); this%tempavg_agnpp_patch (:) = spval
+  allocate(this%tempavg_bgnpp_patch (begp:endp)); this%tempavg_bgnpp_patch (:) = spval
 
   end subroutine InitAllocate
 end module BeTR_aerocondType

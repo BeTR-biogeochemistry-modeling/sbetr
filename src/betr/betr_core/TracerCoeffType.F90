@@ -120,19 +120,44 @@ contains
 
     begc = bounds%begc; endc= bounds%endc
 
-    allocate(this%aqu2neutralcef_col         (begc:endc, lbj:ubj, 1:betrtracer_vars%ngwmobile_tracer_groups));  this%aqu2neutralcef_col        (:,:,:)     = nan
-    allocate(this%aqu2bulkcef_mobile_col     (begc:endc, lbj:ubj, 1:betrtracer_vars%ngwmobile_tracer_groups));  this%aqu2bulkcef_mobile_col    (:,:,:)     = nan
-    allocate(this%gas2bulkcef_mobile_col     (begc:endc, lbj:ubj, 1:betrtracer_vars%nvolatile_tracer_groups));  this%gas2bulkcef_mobile_col    (:,:,:)     = nan
-    allocate(this%henrycef_col               (begc:endc, lbj:ubj, 1:betrtracer_vars%nvolatile_tracer_groups));  this%henrycef_col              (:,:,:)     = nan
-    allocate(this%bunsencef_col              (begc:endc, lbj:ubj, 1:betrtracer_vars%nvolatile_tracer_groups));  this%bunsencef_col             (:,:,:)     = nan
-    allocate(this%tracer_diffusivity_air_col (begc:endc,          1:betrtracer_vars%nvolatile_tracer_groups));  this%tracer_diffusivity_air_col(:,:)       = nan
-    allocate(this%scal_aere_cond_col         (begc:endc,          1:betrtracer_vars%nvolatile_tracer_groups));  this%scal_aere_cond_col        (:,:)       = nan
-    allocate(this%aere_cond_col              (begc:endc,          1:betrtracer_vars%nvolatile_tracer_groups));  this%aere_cond_col             (:,:)       = nan
-    allocate(this%annsum_counter_col         (begc:endc))                                                    ;  this%annsum_counter_col        (:)         = nan
-    allocate(this%diffgas_topsno_col         (begc:endc,          1:betrtracer_vars%nvolatile_tracer_groups));  this%diffgas_topsno_col        (:,:)       = nan
-    allocate(this%diffgas_topsoi_col         (begc:endc,          1:betrtracer_vars%nvolatile_tracer_groups));  this%diffgas_topsoi_col        (:,:)       = nan
-    allocate(this%hmconductance_col          (begc:endc, lbj:ubj, 1:betrtracer_vars%ntracer_groups))         ;  this%hmconductance_col         (:,:,:)     = nan
-    allocate(this%aqu2equilsolidcef_col      (begc:endc, lbj:ubj, 1:betrtracer_vars%nsolid_equil_tracer_groups));this%aqu2equilsolidcef_col        (:,:,:) = nan
+    allocate(this%aqu2neutralcef_col(begc:endc, lbj:ubj, 1:betrtracer_vars%ngwmobile_tracer_groups))
+    this%aqu2neutralcef_col(:,:,:) = nan
+
+    allocate(this%aqu2bulkcef_mobile_col(begc:endc, lbj:ubj, 1:betrtracer_vars%ngwmobile_tracer_groups))
+    this%aqu2bulkcef_mobile_col(:,:,:) = nan
+
+    allocate(this%gas2bulkcef_mobile_col(begc:endc, lbj:ubj, 1:betrtracer_vars%nvolatile_tracer_groups))
+    this%gas2bulkcef_mobile_col(:,:,:)     = nan
+
+    allocate(this%henrycef_col(begc:endc, lbj:ubj, 1:betrtracer_vars%nvolatile_tracer_groups))
+    this%henrycef_col(:,:,:)     = nan
+
+    allocate(this%bunsencef_col(begc:endc, lbj:ubj, 1:betrtracer_vars%nvolatile_tracer_groups))
+    this%bunsencef_col(:,:,:)     = nan
+
+    allocate(this%tracer_diffusivity_air_col(begc:endc, 1:betrtracer_vars%nvolatile_tracer_groups))
+    this%tracer_diffusivity_air_col(:,:)       = nan
+
+    allocate(this%scal_aere_cond_col(begc:endc, 1:betrtracer_vars%nvolatile_tracer_groups))
+    this%scal_aere_cond_col(:,:)       = nan
+
+    allocate(this%aere_cond_col(begc:endc,          1:betrtracer_vars%nvolatile_tracer_groups))
+    this%aere_cond_col(:,:)       = nan
+
+    allocate(this%annsum_counter_col(begc:endc))                                                    
+    this%annsum_counter_col(:)         = nan
+
+    allocate(this%diffgas_topsno_col(begc:endc,          1:betrtracer_vars%nvolatile_tracer_groups))
+    this%diffgas_topsno_col(:,:)       = nan
+
+    allocate(this%diffgas_topsoi_col(begc:endc,          1:betrtracer_vars%nvolatile_tracer_groups))
+    this%diffgas_topsoi_col(:,:)       = nan
+
+    allocate(this%hmconductance_col(begc:endc, lbj:ubj, 1:betrtracer_vars%ntracer_groups))         
+    this%hmconductance_col(:,:,:)     = nan
+
+    allocate(this%aqu2equilsolidcef_col(begc:endc, lbj:ubj, 1:betrtracer_vars%nsolid_equil_tracer_groups))
+    this%aqu2equilsolidcef_col(:,:,:) = nan
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------

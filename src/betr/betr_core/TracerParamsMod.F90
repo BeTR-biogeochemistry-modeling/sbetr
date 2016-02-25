@@ -38,6 +38,7 @@ module TracerParamsMod
   public :: calc_aerecond
   public :: betr_annualupdate
   !parameters
+  character(len=*), parameter :: filename = '__FILE__'
   real(r8), parameter :: minval_diffus = 1.e-20_r8   !minimum diffusivity, m2/s
   real(r8), parameter :: minval_airvol = 1.e-10_r8   !minimum air-filled volume
 
@@ -76,7 +77,8 @@ contains
   end subroutine tracer_param_init
 
   !--------------------------------------------------------------------------------------------------------------
-  subroutine Calc_gaseous_diffusion_soil_tortuosity(bounds, lbj, ubj, jtops, num_soilc, filter_soilc, soilstate_vars, waterstate_vars, tau_gas)
+  subroutine Calc_gaseous_diffusion_soil_tortuosity(bounds, lbj, ubj, jtops, num_soilc, filter_soilc, &
+       soilstate_vars, waterstate_vars, tau_gas)
     !
     ! !DESCRIPTION:
     !
@@ -107,8 +109,8 @@ contains
          air_vol        => waterstate_vars%air_vol_col                     & !volume possessed by air
          )
 
-      SHR_ASSERT_ALL((ubound(jtops)           == (/bounds%endc/)),        errMsg(__FILE__,__LINE__))
-      SHR_ASSERT_ALL((ubound(tau_gas)         == (/bounds%endc, ubj/)),   errMsg(__FILE__,__LINE__))
+      SHR_ASSERT_ALL((ubound(jtops)           == (/bounds%endc/)),        errMsg(filename,__LINE__))
+      SHR_ASSERT_ALL((ubound(tau_gas)         == (/bounds%endc, ubj/)),   errMsg(filename,__LINE__))
 
       do n = lbj, ubj
          do fc = 1, num_soilc
@@ -147,8 +149,8 @@ contains
     integer :: n, fc, c     !indices
     character(len=255) :: subname = 'calc_aqueous_diffusion_soil_tortuosity'
 
-    SHR_ASSERT_ALL((ubound(jtops)           == (/bounds%endc/)),        errMsg(__FILE__,__LINE__))
-    SHR_ASSERT_ALL((ubound(tau_liq)         == (/bounds%endc, ubj/)),   errMsg(__FILE__,__LINE__))
+    SHR_ASSERT_ALL((ubound(jtops)           == (/bounds%endc/)),        errMsg(filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(tau_liq)         == (/bounds%endc, ubj/)),   errMsg(filename,__LINE__))
 
     associate( &
          eff_porosity   => soilstate_vars%eff_porosity_col,                & !effective soil porosity
@@ -208,14 +210,17 @@ contains
     integer :: nsld
     real(r8) :: diffaqu, diffgas
     character(len=255) :: subname = 'calc_bulk_diffusivity'
-
+    
+    integer :: nvolatile_tracer_groups
+    nvolatile_tracer_groups = betrtracer_vars%nvolatile_tracer_groups
+    
     !array shape checking will be added later.
 
-    SHR_ASSERT_ALL((ubound(jtops)           == (/bounds%endc/)),        errMsg(__FILE__,__LINE__))
-    SHR_ASSERT_ALL((ubound(t_soisno)        == (/bounds%endc, ubj/)),   errMsg(__FILE__,__LINE__))
-    SHR_ASSERT_ALL((ubound(jtops)           == (/bounds%endc/)),        errMsg(__FILE__,__LINE__))
-    SHR_ASSERT_ALL((ubound(bunsencef_col)   == (/bounds%endc, ubj, betrtracer_vars%nvolatile_tracer_groups/)),   errMsg(__FILE__,__LINE__))
-    SHR_ASSERT_ALL((ubound(bulkdiffus)      == (/bounds%endc, ubj, betrtracer_vars%ntracer_groups/)),   errMsg(__FILE__,__LINE__))
+    SHR_ASSERT_ALL((ubound(jtops)           == (/bounds%endc/)),        errMsg(filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(t_soisno)        == (/bounds%endc, ubj/)),   errMsg(filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(jtops)           == (/bounds%endc/)),        errMsg(filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(bunsencef_col)   == (/bounds%endc, ubj, nvolatile_tracer_groups/)), errMsg(filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(bulkdiffus)      == (/bounds%endc, ubj, betrtracer_vars%ntracer_groups/)), errMsg(filename,__LINE__))
 
     associate(                                                                                              &
          ngwmobile_tracer_groups                => betrtracer_vars%ngwmobile_tracer_groups                , & ! Integer[intent(in)], number of dual phase (gw) tracers
@@ -357,10 +362,10 @@ contains
    integer :: j, n, fc, c                 !indices
    character(len=255) :: subname = 'calc_bulk_conductances'
 
-   SHR_ASSERT_ALL((ubound(jtops)             == (/bounds%endc/)),        errMsg(__FILE__,__LINE__))
-   SHR_ASSERT_ALL((ubound(dz)                == (/bounds%endc, ubj/)),   errMsg(__FILE__,__LINE__))
-   SHR_ASSERT_ALL((ubound(bulkdiffus)        == (/bounds%endc, ubj, betrtracer_vars%ntracer_groups/)),     errMsg(__FILE__,__LINE__))
-   SHR_ASSERT_ALL((ubound(hmconductance_col) == (/bounds%endc, ubj-1, betrtracer_vars%ntracer_groups/)),   errMsg(__FILE__,__LINE__))
+   SHR_ASSERT_ALL((ubound(jtops)             == (/bounds%endc/)),        errMsg(filename,__LINE__))
+   SHR_ASSERT_ALL((ubound(dz)                == (/bounds%endc, ubj/)),   errMsg(filename,__LINE__))
+   SHR_ASSERT_ALL((ubound(bulkdiffus) == (/bounds%endc, ubj, betrtracer_vars%ntracer_groups/)), errMsg(filename,__LINE__))
+   SHR_ASSERT_ALL((ubound(hmconductance_col) == (/bounds%endc, ubj-1, betrtracer_vars%ntracer_groups/)), errMsg(filename,__LINE__))
 
    associate( &
     ngwmobile_tracer_groups    => betrtracer_vars%ngwmobile_tracer_groups   , & !Integer[intent(in)], number of gw tracers
@@ -408,12 +413,16 @@ contains
    integer :: j, k, n, fc, c, trcid   ! indices
    real(r8) :: scal
    character(len=255) :: subname='calc_henrys_coeff'
+   integer :: nvolatile_tracer_groups, ngwmobile_tracer_groups
 
-   SHR_ASSERT_ALL((ubound(jtops)             == (/bounds%endc/)),        errMsg(__FILE__,__LINE__))
-   SHR_ASSERT_ALL((ubound(t_soisno)          == (/bounds%endc, ubj/)),   errMsg(__FILE__,__LINE__))
-   SHR_ASSERT_ALL((ubound(soi_pH)            == (/bounds%endc, ubj/)),   errMsg(__FILE__,__LINE__))
-   SHR_ASSERT_ALL((ubound(aqu2neutralcef_col)== (/bounds%endc, ubj, betrtracer_vars%ngwmobile_tracer_groups/)),   errMsg(__FILE__,__LINE__))
-   SHR_ASSERT_ALL((ubound(henrycef_col)      == (/bounds%endc, ubj, betrtracer_vars%nvolatile_tracer_groups/)),   errMsg(__FILE__,__LINE__))
+   ngwmobile_tracer_groups = betrtracer_vars%ngwmobile_tracer_groups
+   nvolatile_tracer_groups = betrtracer_vars%nvolatile_tracer_groups
+   
+   SHR_ASSERT_ALL((ubound(jtops)             == (/bounds%endc/)),        errMsg(filename,__LINE__))
+   SHR_ASSERT_ALL((ubound(t_soisno)          == (/bounds%endc, ubj/)),   errMsg(filename,__LINE__))
+   SHR_ASSERT_ALL((ubound(soi_pH)            == (/bounds%endc, ubj/)),   errMsg(filename,__LINE__))
+   SHR_ASSERT_ALL((ubound(aqu2neutralcef_col)== (/bounds%endc, ubj, ngwmobile_tracer_groups/)), errMsg(filename,__LINE__))
+   SHR_ASSERT_ALL((ubound(henrycef_col)      == (/bounds%endc, ubj, nvolatile_tracer_groups/)), errMsg(filename,__LINE__))
 
 
    associate( &
@@ -447,7 +456,8 @@ contains
    end associate
    end subroutine calc_henrys_coeff
 !-------------------------------------------------------------------------------
-   subroutine calc_bunsen_coeff(bounds, lbj, ubj, jtops, numf, filter, henrycef_col, t_soisno, smp_l, betrtracer_vars, bunsencef_col)
+   subroutine calc_bunsen_coeff(bounds, lbj, ubj, jtops, numf, filter, &
+        henrycef_col, t_soisno, smp_l, betrtracer_vars, bunsencef_col)
    !
    ! DESCRIPTION
    ! compute Bunsen's coefficient
@@ -472,12 +482,14 @@ contains
    real(r8) :: rho_vap(bounds%begc:bounds%endc, lbj:ubj)                           ! saturated vapor pressure for different layers
 
    character(len=255) :: subname = 'calc_bunsen_coeff'
+   integer :: nvolatile_tracer_groups
+   nvolatile_tracer_groups = betrtracer_vars%nvolatile_tracer_groups
 
-   SHR_ASSERT_ALL((ubound(jtops)             == (/bounds%endc/)),        errMsg(__FILE__,__LINE__))
-   SHR_ASSERT_ALL((ubound(t_soisno)          == (/bounds%endc, ubj/)),   errMsg(__FILE__,__LINE__))
-   SHR_ASSERT_ALL((ubound(smp_l)             == (/bounds%endc, ubj/)),   errMsg(__FILE__,__LINE__))
-   SHR_ASSERT_ALL((ubound(henrycef_col)      == (/bounds%endc, ubj, betrtracer_vars%nvolatile_tracer_groups/)),   errMsg(__FILE__,__LINE__))
-   SHR_ASSERT_ALL((ubound(bunsencef_col)     == (/bounds%endc, ubj, betrtracer_vars%nvolatile_tracer_groups/)),   errMsg(__FILE__,__LINE__))
+   SHR_ASSERT_ALL((ubound(jtops)             == (/bounds%endc/)),        errMsg(filename,__LINE__))
+   SHR_ASSERT_ALL((ubound(t_soisno)          == (/bounds%endc, ubj/)),   errMsg(filename,__LINE__))
+   SHR_ASSERT_ALL((ubound(smp_l)             == (/bounds%endc, ubj/)),   errMsg(filename,__LINE__))
+   SHR_ASSERT_ALL((ubound(henrycef_col)      == (/bounds%endc, ubj, nvolatile_tracer_groups/)), errMsg(filename,__LINE__))
+   SHR_ASSERT_ALL((ubound(bunsencef_col)     == (/bounds%endc, ubj, nvolatile_tracer_groups/)), errMsg(filename,__LINE__))
 
    associate( &
     ngwmobile_tracer_groups    => betrtracer_vars%ngwmobile_tracer_groups      , & !Integer[intent(in)], number of tracers
@@ -546,7 +558,7 @@ contains
    integer :: j, n, k, fc, c , trcid  ! indices
    character(len=255) :: subname = 'calc_dual_phase_convert_coeff'
 
-   SHR_ASSERT_ALL((ubound(jtops)                   == (/bounds%endc/)),        errMsg(__FILE__,__LINE__))
+   SHR_ASSERT_ALL((ubound(jtops)                   == (/bounds%endc/)),        errMsg(filename,__LINE__))
 
    associate( &
     ngwmobile_tracer_groups    => betrtracer_vars%ngwmobile_tracer_groups      , & !Input: [integer(:)], number of tracers
@@ -751,10 +763,10 @@ contains
    integer :: c, fc, n
    character(len=255) :: subname ='calc_rhovap'
 
-   SHR_ASSERT_ALL((ubound(jtops)        == (/bounds%endc/)),        errMsg(__FILE__,__LINE__))
-   SHR_ASSERT_ALL((ubound(t_soisno)     == (/bounds%endc, ubj/)),   errMsg(__FILE__,__LINE__))
-   SHR_ASSERT_ALL((ubound(smp_l)        == (/bounds%endc, ubj/)),   errMsg(__FILE__,__LINE__))
-   SHR_ASSERT_ALL((ubound(rho_vap)      == (/bounds%endc, ubj/)),   errMsg(__FILE__,__LINE__))
+   SHR_ASSERT_ALL((ubound(jtops)        == (/bounds%endc/)),        errMsg(filename,__LINE__))
+   SHR_ASSERT_ALL((ubound(t_soisno)     == (/bounds%endc, ubj/)),   errMsg(filename,__LINE__))
+   SHR_ASSERT_ALL((ubound(smp_l)        == (/bounds%endc, ubj/)),   errMsg(filename,__LINE__))
+   SHR_ASSERT_ALL((ubound(rho_vap)      == (/bounds%endc, ubj/)),   errMsg(filename,__LINE__))
 
 
    !be careful below, because snow and pure water has no definition of water matrix potential
@@ -1029,7 +1041,8 @@ contains
    end function get_diffusivity_ratio_gas2h2o
 
 !-------------------------------------------------------------------------------
-   subroutine convert_mobile2gas(bounds, lbj, ubj, jtops, numf, filter, do_forward, gas2bulkcef_mobile_col, betrtracer_vars, tracer_conc_mobile)
+   subroutine convert_mobile2gas(bounds, lbj, ubj, jtops, numf, filter, &
+        do_forward, gas2bulkcef_mobile_col, betrtracer_vars, tracer_conc_mobile)
    !
    ! DESCRIPTIONS
    ! do conversion between bulk mobile phase and gaseous phase
@@ -1052,10 +1065,12 @@ contains
    !local variables
    integer :: jj, kk, fc, c, j
    character(len=255) :: subname = 'convert_mobile2gas'
+   integer :: nvolatile_tracers
+   nvolatile_tracers = betrtracer_vars%nvolatile_tracers
 
-   SHR_ASSERT_ALL((ubound(jtops)                  == (/bounds%endc/)),        errMsg(__FILE__,__LINE__))
-   SHR_ASSERT_ALL((ubound(gas2bulkcef_mobile_col) == (/bounds%endc, ubj, betrtracer_vars%nvolatile_tracers/)),   errMsg(__FILE__,__LINE__))
-   SHR_ASSERT_ALL((ubound(tracer_conc_mobile)     == (/bounds%endc, ubj, betrtracer_vars%nvolatile_tracers/)),   errMsg(__FILE__,__LINE__))
+   SHR_ASSERT_ALL((ubound(jtops)                  == (/bounds%endc/)),        errMsg(filename,__LINE__))
+   SHR_ASSERT_ALL((ubound(gas2bulkcef_mobile_col) == (/bounds%endc, ubj, nvolatile_tracers/)),   errMsg(filename,__LINE__))
+   SHR_ASSERT_ALL((ubound(tracer_conc_mobile)     == (/bounds%endc, ubj, nvolatile_tracers/)),   errMsg(filename,__LINE__))
 
 
    associate( &
@@ -1126,14 +1141,16 @@ contains
    character(len=255) :: subname='set_multi_phase_diffusion'
 
 
-   SHR_ASSERT_ALL((ubound(jtops)           == (/bounds%endc/)),        errMsg(__FILE__,__LINE__))
+   SHR_ASSERT_ALL((ubound(jtops)           == (/bounds%endc/)),        errMsg(filename,__LINE__))
 
    !compute tortuosity
    !gaseous phase
-   call calc_gaseous_diffusion_soil_tortuosity(bounds, lbj, ubj, jtops, numf, filter, soilstate_vars, waterstate_vars, tau_soil%tau_gas)
+   call calc_gaseous_diffusion_soil_tortuosity(bounds, lbj, ubj, jtops, numf, filter, &
+        soilstate_vars, waterstate_vars, tau_soil%tau_gas)
 
    !aqueous phase
-   call calc_aqueous_diffusion_soil_tortuosity(bounds, lbj, ubj, jtops, numf, filter, soilstate_vars, waterstate_vars, tau_soil%tau_liq)
+   call calc_aqueous_diffusion_soil_tortuosity(bounds, lbj, ubj, jtops, numf, filter, &
+        soilstate_vars, waterstate_vars, tau_soil%tau_liq)
 
    !compute bulk diffusivity
    call calc_bulk_diffusivity(bounds, lbj, ubj, jtops, numf, filter       , &
@@ -1150,8 +1167,9 @@ contains
 
 
 !--------------------------------------------------------------------------------
-   subroutine set_phase_convert_coeff(bounds, lbj, ubj, jtops, numf, filter, dz, soilstate_vars, waterstate_vars, &
-      temperature_vars, chemstate_vars, betrtracer_vars, tracercoeff_vars)
+   subroutine set_phase_convert_coeff(bounds, lbj, ubj, jtops, numf, filter, &
+        dz, soilstate_vars, waterstate_vars, &
+        temperature_vars, chemstate_vars, betrtracer_vars, tracercoeff_vars)
    !
    ! DESCRIPTION
    ! set parameters for phase conversion
@@ -1176,8 +1194,8 @@ contains
    type(tracercoeff_type), intent(inout) :: tracercoeff_vars ! structure containing tracer transport parameters
    character(len=255) :: subname = 'set_phase_convert_coeff'
 
-   SHR_ASSERT_ALL((ubound(jtops)           == (/bounds%endc/)),        errMsg(__FILE__,__LINE__))
-   SHR_ASSERT_ALL((ubound(dz)              == (/bounds%endc, ubj/)),        errMsg(__FILE__,__LINE__))
+   SHR_ASSERT_ALL((ubound(jtops)           == (/bounds%endc/)),        errMsg(filename,__LINE__))
+   SHR_ASSERT_ALL((ubound(dz)              == (/bounds%endc, ubj/)),        errMsg(filename,__LINE__))
 
    !compute Henry's law constant
    call calc_henrys_coeff(bounds, lbj, ubj, jtops, numf, filter                    , &
@@ -1247,9 +1265,9 @@ contains
     qflx_gross_infl_soil => waterflux_vars%qflx_gross_infl_soil_col                    & !real(r8) (:)  [intent(in)], infiltration, mm/s
    )
 
-   SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(__FILE__,__LINE__))
-   SHR_ASSERT_ALL((ubound(bunsencef_topsoi) == (/bounds%endc, betrtracer_vars%nvolatile_tracers/)), errMsg(__FILE__,__LINE__))
-   SHR_ASSERT_ALL((ubound(tracer_flx_infl) == (/bounds%endc, betrtracer_vars%ngwmobile_tracers/)), errMsg(__FILE__,__LINE__))
+   SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(filename,__LINE__))
+   SHR_ASSERT_ALL((ubound(bunsencef_topsoi) == (/bounds%endc, betrtracer_vars%nvolatile_tracers/)), errMsg(filename,__LINE__))
+   SHR_ASSERT_ALL((ubound(tracer_flx_infl) == (/bounds%endc, betrtracer_vars%ngwmobile_tracers/)), errMsg(filename,__LINE__))
 
    do j = 1, betrtracer_vars%ngwmobile_tracers
 
@@ -1398,7 +1416,7 @@ contains
    !local variables
    integer :: j, fc, c
 
-   SHR_ASSERT_ALL((ubound(h2osoi_liq) == (/bounds%endc, nlevsoi/)), errMsg(__FILE__,__LINE__))
+   SHR_ASSERT_ALL((ubound(h2osoi_liq) == (/bounds%endc, nlevsoi/)), errMsg(filename,__LINE__))
 
    allocate(h2osoi_liq_copy(bounds%begc:bounds%endc, 1:nlevsoi));  h2osoi_liq_copy(:, :) = spval
    do j = 1, nlevsoi
@@ -1410,7 +1428,8 @@ contains
    end subroutine pre_diagnose_soilcol_water_flux
 
    !------------------------------------------------------------------------
-   subroutine diagnose_advect_water_flux(bounds, num_hydrologyc, filter_hydrologyc, num_urbanc, filter_urbanc, h2osoi_liq, qflx_bot, waterflux_vars)
+   subroutine diagnose_advect_water_flux(bounds, num_hydrologyc, filter_hydrologyc, num_urbanc, filter_urbanc, &
+        h2osoi_liq, qflx_bot, waterflux_vars)
    !
    ! DESCRIPTION
    ! diagnose advective water fluxes between different soil layers
@@ -1437,8 +1456,8 @@ contains
    real(r8):: scal
 
 
-   SHR_ASSERT_ALL((ubound(h2osoi_liq) == (/bounds%endc, nlevsoi/)), errMsg(__FILE__,__LINE__))
-   SHR_ASSERT_ALL((ubound(qflx_bot)    == (/bounds%endc/))         , errMsg(__FILE__,__LINE__))
+   SHR_ASSERT_ALL((ubound(h2osoi_liq) == (/bounds%endc, nlevsoi/)), errMsg(filename,__LINE__))
+   SHR_ASSERT_ALL((ubound(qflx_bot)    == (/bounds%endc/))         , errMsg(filename,__LINE__))
 
 
    associate(                                                             & !
@@ -1510,7 +1529,8 @@ contains
 
 
    !------------------------------------------------------------------------
-   subroutine diagnose_drainage_water_flux(bounds, num_hydrologyc, filter_hydrologyc, num_urbanc, filter_urbanc, h2osoi_liq,  waterflux_vars)
+   subroutine diagnose_drainage_water_flux(bounds, num_hydrologyc, filter_hydrologyc, num_urbanc, filter_urbanc, &
+        h2osoi_liq,  waterflux_vars)
    !
    ! DESCRIPTION
    ! diagnose advective water fluxes between different soil layers
@@ -1532,7 +1552,7 @@ contains
    integer :: j, fc, c
    real(r8):: dtime
 
-   SHR_ASSERT_ALL((ubound(h2osoi_liq) == (/bounds%endc, nlevsoi/)), errMsg(__FILE__,__LINE__))
+   SHR_ASSERT_ALL((ubound(h2osoi_liq) == (/bounds%endc, nlevsoi/)), errMsg(filename,__LINE__))
 
 
    associate(                                                           & !
@@ -1656,14 +1676,15 @@ contains
    type(betrtracer_type)     , intent(in) :: betrtracer_vars
    real(r8)                  , intent(in) :: h2osoi_ice(bounds%begc: , lbj: )
    real(r8)                  , intent(in) :: dz(bounds%begc: , lbj: )
-   real(r8)                  , intent(inout) :: aqu2equilsolidcef_col(bounds%begc:bounds%endc, lbj:ubj, 1:betrtracer_vars%nsolid_equil_tracer_groups)
+   real(r8)                  , intent(inout) :: aqu2equilsolidcef_col(bounds%begc:bounds%endc, &
+        lbj:ubj, 1:betrtracer_vars%nsolid_equil_tracer_groups)
 
    real(r8) :: alpha_sl
    integer  :: fc, c, j
 
-   SHR_ASSERT_ALL((ubound(t_soisno)          == (/bounds%endc, ubj/)), errMsg(__FILE__,__LINE__))
-   SHR_ASSERT_ALL((ubound(h2osoi_ice)        == (/bounds%endc, ubj/)), errMsg(__FILE__,__LINE__))
-   SHR_ASSERT_ALL((ubound(dz)                == (/bounds%endc, ubj/)), errMsg(__FILE__,__LINE__))
+   SHR_ASSERT_ALL((ubound(t_soisno)          == (/bounds%endc, ubj/)), errMsg(filename,__LINE__))
+   SHR_ASSERT_ALL((ubound(h2osoi_ice)        == (/bounds%endc, ubj/)), errMsg(filename,__LINE__))
+   SHR_ASSERT_ALL((ubound(dz)                == (/bounds%endc, ubj/)), errMsg(filename,__LINE__))
 
    associate(                                           &
      is_h2o => betrtracer_vars%is_h2o                   &
@@ -1720,9 +1741,9 @@ contains
     f_sat = 0.95_r8   !a number borrowed from zack's ch4 code
 
 
-    SHR_ASSERT_ALL((ubound(zwt) == (/bounds%endc/)), errMsg(__FILE__, __LINE__))
-    SHR_ASSERT_ALL((ubound(zi) == (/bounds%endc, nlevsoi/)), errMsg(__FILE__, __LINE__))
-    SHR_ASSERT_ALL((ubound(jwt) == (/bounds%endc/)), errMsg(__FILE__, __LINE__))
+    SHR_ASSERT_ALL((ubound(zwt) == (/bounds%endc/)), errMsg(filename, __LINE__))
+    SHR_ASSERT_ALL((ubound(zi) == (/bounds%endc, nlevsoi/)), errMsg(filename, __LINE__))
+    SHR_ASSERT_ALL((ubound(jwt) == (/bounds%endc/)), errMsg(filename, __LINE__))
 
 
     associate(                                          &
@@ -1814,8 +1835,8 @@ contains
   logical  :: usefrootc = .false.                                    ! wait to be read in later
   integer  :: j, fp, p, c, g, kk, k, trcid
 
-  SHR_ASSERT_ALL((ubound(jwt) == (/bounds%endc/)), errMsg(__FILE__, __LINE__))
-  SHR_ASSERT_ALL((ubound(rootfr) == (/bounds%endp, nlevsoi/)), errMsg(__FILE__, __LINE__))
+  SHR_ASSERT_ALL((ubound(jwt) == (/bounds%endc/)), errMsg(filename, __LINE__))
+  SHR_ASSERT_ALL((ubound(rootfr) == (/bounds%endp, nlevsoi/)), errMsg(filename, __LINE__))
 
 
   associate(                                                   & !

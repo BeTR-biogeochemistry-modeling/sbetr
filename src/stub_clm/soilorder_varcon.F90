@@ -48,6 +48,7 @@ module soilorder_varcon
   real(r8), pointer :: k_s3_biochem(:)
   real(r8), pointer :: k_s4_biochem(:)
 
+  character(len=*), parameter :: filename = '__FILE__'
 
 
   ! !PUBLIC MEMBER FUNCTIONS:
@@ -89,7 +90,6 @@ contains
     integer :: nsoil             ! number of pfts on pft-physiology file
     logical :: readv            ! read variable in or not
     character(len=32) :: subname = 'soilorder_conrd'              ! subroutine name
-
     ! Expected soil order names: The names expected on the  file and the order
     ! they are expected to be in.
     !
@@ -135,27 +135,27 @@ contains
     call ncd_inqdlen(ncid,dimid,nsoil)
 
     call ncd_io('soilordername',soilordername, 'read', ncid, readvar=readv,posNOTonfile=.true.)
-    if ( .not. readv ) call endrun(msg=' ERROR: error in reading in soil order parameter'//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=' ERROR: error in reading in soil order parameter'//errMsg(filename, __LINE__))
     call ncd_io('r_weather',r_weather, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=' ERROR: error in reading in soil order parameter'//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=' ERROR: error in reading in soil order parameter'//errMsg(filename, __LINE__))
     call ncd_io('r_adsorp',r_adsorp, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=' ERROR: error in reading in soil order parameter'//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=' ERROR: error in reading in soil order parameter'//errMsg(filename, __LINE__))
     call ncd_io('r_desorp',r_desorp, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=' ERROR: error in reading in soil order parameter'//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=' ERROR: error in reading in soil order parameter'//errMsg(filename, __LINE__))
     call ncd_io('r_occlude',r_occlude, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=' ERROR: error in reading in soil order parameter'//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=' ERROR: error in reading in soil order parameter'//errMsg(filename, __LINE__))
     call ncd_io('k_s1_biochem',k_s1_biochem, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=' ERROR: error in reading in soil order parameter'//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=' ERROR: error in reading in soil order parameter'//errMsg(filename, __LINE__))
     call ncd_io('k_s2_biochem',k_s2_biochem, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=' ERROR: error in reading in soil order parameter'//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=' ERROR: error in reading in soil order parameter'//errMsg(filename, __LINE__))
     call ncd_io('k_s3_biochem',k_s3_biochem, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=' ERROR: error in reading in soil order parameter'//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=' ERROR: error in reading in soil order parameter'//errMsg(filename, __LINE__))
     call ncd_io('k_s4_biochem',k_s4_biochem, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=' ERROR: error in reading in soil order parameter'//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=' ERROR: error in reading in soil order parameter'//errMsg(filename, __LINE__))
     call ncd_io('smax',smax, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=' ERROR: error in reading in soil order parameter'//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=' ERROR: error in reading in soil order parameter'//errMsg(filename, __LINE__))
     call ncd_io('ks_sorption',ks_sorption, 'read', ncid, readvar=readv)
-    if ( .not. readv ) call endrun(msg=' ERROR: error in reading in soil order parameter'//errMsg(__FILE__, __LINE__))
+    if ( .not. readv ) call endrun(msg=' ERROR: error in reading in soil order parameter'//errMsg(filename, __LINE__))
 
     call ncd_pio_closefile(ncid)
 
