@@ -2,10 +2,12 @@ module betr_clm_cpl
 #include "shr_assert.h"
   use decompMod          , only : bounds_type
   use betr_instMod
+  use betr_initializeMod
   use clm_time_manager   , only : get_nstep
   use shr_kind_mod       , only : r8 => shr_kind_r8
   use clm_varpar         , only : nlevtrc_soil
 implicit none
+ public :: betr_clm_readParams
  public :: betr_initialize_clm
  public :: run_betr_one_step_without_drainage_clm
  public :: run_betr_one_step_with_drainage_clm
@@ -97,7 +99,6 @@ contains
   subroutine betr_initialize_clm(bounds, lbj, ubj)
 
   use clm_instMod
-  use betr_initializeMod, only : betr_initialize
   use pftconMod         , only : nc3_arctic_grass, nc3_nonarctic_grass, nc4_grass, noveg
   use BeTR_CNStateType  , only : betr_cnstate_type
   use EcophysConType    , only : ecophyscon
@@ -279,6 +280,15 @@ contains
   end associate
   end subroutine calc_smp_l_clm
 
+  !------------------------------------------------------------------------
+  subroutine betr_clm_readParams(ncid)
+
+  use ncdio_pio                , only : file_desc_t
+
+  type(file_desc_t)                 , intent(inout) :: ncid  ! pio netCDF file id
+
+  call bgc_reaction%readParams(ncid, betrtracer_vars)
+  end subroutine betr_clm_readParams
 
   !------------------------------------------------------------------------
   subroutine betr_clm_h2oiso_consistency_check(bounds, ubj, num_soilc, filter_soilc)

@@ -8,10 +8,14 @@ module betr_initializeMod
   use clm_varctl                , only : iulog
   use abortutils                , only : endrun
   use shr_log_mod               , only : errMsg => shr_log_errMsg
+  use BGCReactionsMod           , only : bgc_reaction_type
+  use PlantSoilBGCMod           , only : plant_soilbgc_type
   implicit none
   save
   private   ! By default everything is public
 
+  class(plant_soilbgc_type), allocatable,public :: plant_soilbgc
+  class(bgc_reaction_type) , allocatable,public :: bgc_reaction
   public :: betr_initialize
   public :: betr_readNL
   public :: betr_rest
@@ -33,7 +37,7 @@ contains
     ! !ARGUMENTS:
     character(len=*), intent(IN) :: NLFilename              ! Namelist filename
                                                             !
-                                                            ! !LOCAL VARIABLES:
+    ! !LOCAL VARIABLES:
     integer                      :: ierr                    ! error code
     integer                      :: unitn                   ! unit for namelist file
     character(len=32)            :: subname = 'betr_readNL' ! subroutine name
@@ -73,7 +77,7 @@ contains
     !
     ! !USES:
     use decompMod             , only : bounds_type
-    use BGCReactionsFactoryMod
+    use BGCReactionsFactoryMod, only : create_betr_application
     use TransportMod          , only : init_transportmod
     use TracerParamsMod       , only : tracer_param_init
     use WaterstateType        , only : waterstate_type
@@ -88,9 +92,8 @@ contains
 
     call betrtracer_vars%init_scalars()
 
-    allocate(bgc_reaction, source=create_bgc_reaction_type(bgc_method))
 
-    allocate(plant_soilbgc, source=create_plant_soilbgc_type(bgc_method))
+    call create_betr_application(bgc_reaction, plant_soilbgc, bgc_method)
 
     call bgc_reaction%Init_betrbgc(bounds, lbj, ubj, betrtracer_vars)
 

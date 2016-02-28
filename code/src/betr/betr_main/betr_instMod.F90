@@ -9,8 +9,6 @@ module betr_instMod
   use TracerFluxType            , only : TracerFlux_type
   use TracerStateType           , only : TracerState_type
   use tracerboundarycondType    , only : tracerboundarycond_type
-  use BGCReactionsMod           , only : bgc_reaction_type
-  use PlantSoilBGCMod           , only : plant_soilbgc_type
   use BeTR_aerocondType         , only : betr_aerecond_type
   implicit none
   save
@@ -26,8 +24,6 @@ module betr_instMod
   type(TracerFlux_type)                , public :: tracerflux_vars
   type(TracerState_type)               , public :: tracerState_vars
   type(tracerboundarycond_type)        , public :: tracerboundarycond_vars
-  class(plant_soilbgc_type), allocatable,public :: plant_soilbgc
-  class(bgc_reaction_type) , allocatable,public :: bgc_reaction
   type(betr_aerecond_type)              ,public :: betr_aerecond_vars
 
 end module betr_instMod

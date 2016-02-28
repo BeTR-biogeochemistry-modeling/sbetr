@@ -2,7 +2,7 @@ module betr_standalone_cpl
 
   use decompMod             , only : bounds_type
   use betr_instMod
-implicit none
+  use betr_initializeMod 
  public :: betr_initialize_standalone
  public :: run_betr_one_step_without_drainage_standalone
  public :: run_betr_one_step_with_drainage_standalone
@@ -89,7 +89,6 @@ contains
   subroutine betr_initialize_standalone(bounds, lbj, ubj)
 
   use clm_instMod
-  use betr_initializeMod, only : betr_initialize  
   use BeTR_CNStateType  , only : betr_cnstate_type
   use EcophysConType    , only : ecophyscon
   use BeTR_PatchType    , only : betr_pft
