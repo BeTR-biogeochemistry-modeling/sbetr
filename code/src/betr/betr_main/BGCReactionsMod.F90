@@ -35,7 +35,7 @@ module BGCReactionsMod
      procedure(readParams_interface)                      , deferred :: readParams
 
      !send back state flux variables to other parts of lsm
-     procedure(lsm_betr_flux_state_receive_interface) , deferred :: lsm_betr_flux_state_receive
+     procedure(lsm_betr_flux_state_receive_interface)     , deferred :: lsm_betr_flux_state_receive
 
      !initialize betr state variable from other bgc components in lsm
      procedure(init_betr_lsm_bgc_coupler_interface)       , deferred :: init_betr_lsm_bgc_coupler
