@@ -1,4 +1,4 @@
-module betr_clm_cpl
+module betr_alm_cpl
 #include "shr_assert.h"
   use decompMod          , only : bounds_type
   use betr_instMod
@@ -7,19 +7,19 @@ module betr_clm_cpl
   use shr_kind_mod       , only : r8 => shr_kind_r8
   use clm_varpar         , only : nlevtrc_soil
 implicit none
- public :: betr_clm_readParams
- public :: betr_initialize_clm
- public :: run_betr_one_step_without_drainage_clm
- public :: run_betr_one_step_with_drainage_clm
- public :: diagnose_dtracer_freeze_thaw_clm
- public :: calc_dew_sub_flux_clm
- public :: clm_betr_flux_state_receive
- public :: calc_smp_l_clm
- public :: betr_clm_h2oiso_consistency_check
+ public :: betr_alm_readParams
+ public :: betr_initialize_alm
+ public :: run_betr_one_step_without_drainage_alm
+ public :: run_betr_one_step_with_drainage_alm
+ public :: diagnose_dtracer_freeze_thaw_alm
+ public :: calc_dew_sub_flux_alm
+ public :: alm_betr_flux_state_receive
+ public :: calc_smp_l_alm
+ public :: alm_betr_plant_soil_bgc_send
 contains
 
   !-------------------------------------------------------------------------------
-  subroutine run_betr_one_step_without_drainage_clm(bounds, lbj, ubj, num_soilc, filter_soilc, num_soilp, filter_soilp, col ,   &
+  subroutine run_betr_one_step_without_drainage_alm(bounds, lbj, ubj, num_soilc, filter_soilc, num_soilp, filter_soilp, col ,   &
      atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, temperature_vars, waterflux_vars, chemstate_vars, &
      cnstate_vars, canopystate_vars, carbonflux_vars)
 
@@ -39,13 +39,12 @@ contains
      use SoilHydrologyType            , only          : soilhydrology_type
      use BeTR_CNStateType             , only          : betr_cnstate_type
      use BeTR_CarbonFluxType          , only          : betr_carbonflux_type
-     use CNVegStateType               , only          : cnstate_type => cnveg_state_type
-     use CNVegCarbonFluxType          , only          : carbonflux_type  => cnveg_carbonflux_type
+     use CNStateType                  , only          : cnstate_type
+     use CNCarbonFluxType             , only          : carbonflux_type
      use CanopyStateType              , only          : canopystate_type
      use BeTR_PatchType               , only          : betr_pft
-     use PatchType                    , only          : pft => patch
+     use PatchType                    , only          : pft
      use pftconMod                    , only          : pftcon
-
 
      !
      ! !ARGUMENTS :
@@ -93,10 +92,10 @@ contains
        betr_cnstate_vars, canopystate_vars, betr_carbonflux_vars, betrtracer_vars, bgc_reaction, betr_aerecond_vars,   &
        tracerboundarycond_vars, tracercoeff_vars, tracerstate_vars, tracerflux_vars, plant_soilbgc)
 
-  end subroutine run_betr_one_step_without_drainage_clm
+  end subroutine run_betr_one_step_without_drainage_alm
 
   !-------------------------------------------------------------------------------
-  subroutine betr_initialize_clm(bounds, lbj, ubj)
+  subroutine betr_initialize_alm(bounds, lbj, ubj)
 
   use clm_instMod
   use pftconMod         , only : nc3_arctic_grass, nc3_nonarctic_grass, nc4_grass, noveg
@@ -104,7 +103,7 @@ contains
   use EcophysConType    , only : ecophyscon
   use BeTR_PatchType    , only : betr_pft
   use BeTR_pftvarconType, only : betr_pftvarcon
-  use PatchType         , only : pft => patch
+  use PatchType         , only : pft
   implicit none
   type(bounds_type)    , intent(in) :: bounds
   integer              , intent(in) :: lbj, ubj
@@ -129,11 +128,11 @@ contains
   call bgc_reaction%init_betr_lsm_bgc_coupler(bounds, plant_soilbgc, &
        betrtracer_vars, tracerstate_vars, betr_cnstate_vars, ecophyscon)
 
-  end subroutine betr_initialize_clm
+  end subroutine betr_initialize_alm
 
 
   !-------------------------------------------------------------------------------
-  subroutine run_betr_one_step_with_drainage_clm(bounds, lbj, ubj, num_soilc, filter_soilc, &
+  subroutine run_betr_one_step_with_drainage_alm(bounds, lbj, ubj, num_soilc, filter_soilc, &
        jtops, waterflux_vars, col)
 
   ! !USES:
@@ -155,11 +154,11 @@ contains
   call run_betr_one_step_with_drainage(bounds, lbj, ubj, num_soilc, filter_soilc, &
        jtops, waterflux_vars, col, betrtracer_vars, tracercoeff_vars, tracerstate_vars,  tracerflux_vars)
 
-  end subroutine run_betr_one_step_with_drainage_clm
+  end subroutine run_betr_one_step_with_drainage_alm
 
   !------------------------------------------------------------------------
 
-  subroutine diagnose_dtracer_freeze_thaw_clm(bounds, num_nolakec, filter_nolakec, col, lun, &
+  subroutine diagnose_dtracer_freeze_thaw_alm(bounds, num_nolakec, filter_nolakec, col, lun, &
     waterstate_vars)
   !
   ! DESCRIPTION
@@ -186,11 +185,11 @@ contains
   call diagnose_dtracer_freeze_thaw(bounds, num_nolakec, filter_nolakec, lun, &
     waterstate_vars, betrtracer_vars, tracerstate_vars)
 
-  end subroutine diagnose_dtracer_freeze_thaw_clm
+  end subroutine diagnose_dtracer_freeze_thaw_alm
 
 
   !------------------------------------------------------------------------
-  subroutine calc_dew_sub_flux_clm(bounds, num_hydrologyc, filter_soilc_hydrologyc, &
+  subroutine calc_dew_sub_flux_alm(bounds, num_hydrologyc, filter_soilc_hydrologyc, &
        waterstate_vars, waterflux_vars)
 
   use ColumnType            , only : col
@@ -211,10 +210,10 @@ contains
   call calc_dew_sub_flux(bounds, num_hydrologyc, filter_soilc_hydrologyc, &
        waterstate_vars, waterflux_vars, betrtracer_vars, tracerflux_vars, tracerstate_vars)
 
-  end subroutine calc_dew_sub_flux_clm
+  end subroutine calc_dew_sub_flux_alm
 
   !------------------------------------------------------------------------
-  subroutine clm_betr_flux_state_receive(bounds, num_soilc, filter_soilc)
+  subroutine alm_betr_flux_state_receive(bounds, num_soilc, filter_soilc)
 
   implicit none
   ! !ARGUMENTS:
@@ -222,14 +221,30 @@ contains
   integer                   , intent(in)   :: num_soilc
   integer                   , intent(in)   :: filter_soilc(:)
 
-  call bgc_reaction%lsm_betr_flux_state_receive(bounds, &
-       num_soilc, filter_soilc                        , &
+  call bgc_reaction%betr_lsm_flux_state_sendback(bounds, &
+       num_soilc, filter_soilc,                    &
        tracerstate_vars, tracerflux_vars,  betrtracer_vars)
 
-  end subroutine clm_betr_flux_state_receive
+  end subroutine alm_betr_flux_state_receive
 
   !------------------------------------------------------------------------
-  subroutine calc_smp_l_clm(bounds, lbj, ubj, numf, filter, t_soisno, soilstate_vars, waterstate_vars, soil_water_retention_curve)
+  subroutine alm_betr_plant_soil_bgc_send(bounds, num_soilc, &
+           filter_soilc)
+
+  implicit none
+  type(bounds_type)         , intent(in)   :: bounds
+  integer                   , intent(in)   :: num_soilc
+  integer                   , intent(in)   :: filter_soilc(:)
+
+
+  call plant_soilbgc%init_plant_soil_feedback(bounds, num_soilc, &
+               filter_soilc,  carbonstate_vars%frootc_patch, cnstate_vars, &
+               soilstate_vars,  waterflux_vars, ecophyscon_vars)
+
+  end subroutine alm_betr_plant_soil_bgc_send
+
+  !------------------------------------------------------------------------
+  subroutine calc_smp_l_alm(bounds, lbj, ubj, numf, filter, t_soisno, soilstate_vars, waterstate_vars, soil_water_retention_curve)
 
   use SoilStateType              , only : soilstate_type
   use WaterStateType             , only : waterstate_type
@@ -271,59 +286,30 @@ contains
           smp_l(c,j)= hfus*(tfrz-t_soisno(c,j))/(grav*t_soisno(c,j)) * 1000._r8  !(mm)
         else
           s_node = max(h2osoi_vol(c,j)/watsat(c,j), 0.01_r8)
-          call soil_water_retention_curve%soil_suction(c,j, s_node, soilstate_vars, smp_l(c,j))
+          call soil_water_retention_curve%soil_suction(sucsat(c,j), s_node, bsw(c,j), smp_l(c,j))
         endif
 
       endif
     enddo
   enddo
   end associate
-  end subroutine calc_smp_l_clm
+  end subroutine calc_smp_l_alm
 
   !------------------------------------------------------------------------
-  subroutine betr_clm_readParams(ncid)
-
+  subroutine betr_alm_readParams(ncid)
+  !
+  ! DESCRIPTIONS
+  ! read in parameters from namelist
+  !
+  ! USES
   use ncdio_pio                , only : file_desc_t
 
+  !
+  !ARGUMENTS
+  !
   type(file_desc_t)                 , intent(inout) :: ncid  ! pio netCDF file id
 
   call bgc_reaction%readParams(ncid, betrtracer_vars)
-  end subroutine betr_clm_readParams
+  end subroutine betr_alm_readParams
 
-  !------------------------------------------------------------------------
-  subroutine betr_clm_h2oiso_consistency_check(bounds, ubj, num_soilc, filter_soilc)
-  !
-  ! check the overall water mass consistency between betr and clm
-  use clm_instMod
-  use MathfuncMod           , only : dot_sum
-  use clm_varcon            , only : denh2o
-  implicit none
-  type(bounds_type)         , intent(in)    :: bounds  ! bounds
-  integer                   , intent(in)    :: ubj
-  integer                   , intent(in)    :: num_soilc
-  integer                   , intent(in)    :: filter_soilc(:)
-  real(r8), allocatable :: eyev(:)
-  integer :: fc, c
-  real(r8):: totwater, err
-
-
-  associate(                                                     &
-    h2osoi_ice       =>    waterstate_inst%h2osoi_ice_col      , & ! Input:  [real(r8) (:,:) ]  ice lens (kg/m2)
-    h2osoi_liq       =>    waterstate_inst%h2osoi_liq_col      , & ! Output: [real(r8) (:,:) ]  liquid water (kg/m2)
-    end_tracer_molarmass      => tracerstate_vars%end_tracer_molarmass_col        , &
-    id_trc_o18_h2o   => betrtracer_vars%id_trc_o18_h2o           &
-  )
-
-  allocate(eyev(1:ubj))
-  eyev=1._r8
-  do fc = 1, num_soilc
-    c = filter_soilc(fc)
-    totwater=dot_sum(h2osoi_ice(c,1:ubj),eyev) + dot_sum(h2osoi_liq(c,1:ubj),eyev)
-    err = totwater-end_tracer_molarmass(c,id_trc_o18_h2o)
-    print*,get_nstep(),'diff',c, totwater, err, err/totwater
-  enddo
-  deallocate(eyev)
-
-  end associate
-  end subroutine betr_clm_h2oiso_consistency_check
-end module betr_clm_cpl
+end module betr_alm_cpl

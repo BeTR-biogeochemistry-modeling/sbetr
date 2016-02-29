@@ -45,7 +45,7 @@ implicit none
      procedure :: do_tracer_equilibration       ! do equilibrium tracer chemistry
      procedure :: initCold
      procedure :: readParams
-     procedure :: betr_lsm_flux_statevar_feedback
+     procedure :: lsm_betr_flux_state_receive
      procedure :: init_betr_lsm_bgc_coupler
    end type bgc_reaction_h2oiso_type
 
@@ -564,7 +564,7 @@ implicit none
   end subroutine readParams
 
   !-------------------------------------------------------------------------------
-  subroutine betr_lsm_flux_statevar_feedback(this, bounds, num_soilc, filter_soilc,  &
+  subroutine lsm_betr_flux_state_receive(this, bounds, num_soilc, filter_soilc,  &
        tracerstate_vars, tracerflux_vars,  betrtracer_vars)
     !
     ! !DESCRIPTION:
@@ -590,7 +590,7 @@ implicit none
 
 
 
-  end subroutine betr_lsm_flux_statevar_feedback
+  end subroutine lsm_betr_flux_state_receive
 
 
   !-------------------------------------------------------------------------------

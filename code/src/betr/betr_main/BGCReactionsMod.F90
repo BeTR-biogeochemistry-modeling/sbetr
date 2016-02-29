@@ -35,7 +35,7 @@ module BGCReactionsMod
      procedure(readParams_interface)                      , deferred :: readParams
 
      !send back state flux variables to other parts of lsm
-     procedure(betr_lsm_flux_statevar_feedback_interface) , deferred :: betr_lsm_flux_statevar_feedback
+     procedure(lsm_betr_flux_state_receive_interface) , deferred :: lsm_betr_flux_state_receive
 
      !initialize betr state variable from other bgc components in lsm
      procedure(init_betr_lsm_bgc_coupler_interface)       , deferred :: init_betr_lsm_bgc_coupler
@@ -224,11 +224,11 @@ module BGCReactionsMod
      end subroutine readParams_interface
 
      !-------------------------------------------------------------------------------
-     subroutine betr_lsm_flux_statevar_feedback_interface(this, bounds,num_soilc, filter_soilc, &
+     subroutine lsm_betr_flux_state_receive_interface(this, bounds,num_soilc, filter_soilc, &
           tracerstate_vars, tracerflux_vars,  betrtracer_vars)
 
        ! !DESCRIPTION:
-       ! template for betr_lsm_flux_statevar_feedback
+       ! template for lsm_betr_flux_state_receive
        ! !USES:
        use decompMod                , only : bounds_type
        use shr_kind_mod             , only : r8 => shr_kind_r8
@@ -245,7 +245,7 @@ module BGCReactionsMod
        type(tracerstate_type)     , intent(in) :: tracerstate_vars      !
        type(tracerflux_type)      , intent(in) :: tracerflux_vars       !
 
-     end subroutine betr_lsm_flux_statevar_feedback_interface
+     end subroutine lsm_betr_flux_state_receive_interface
 
      !-------------------------------------------------------------------------------
 

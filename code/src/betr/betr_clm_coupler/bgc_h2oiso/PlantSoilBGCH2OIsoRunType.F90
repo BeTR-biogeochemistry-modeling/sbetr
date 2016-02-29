@@ -16,6 +16,7 @@ module PlantSoilBGCH2OIsoRunType
     procedure :: Init_plant_soilbgc
     procedure :: plant_soilbgc_summary
     procedure :: integrate_vr_flux_to_2D
+    procedure :: lsm_betr_plant_soilbgc_send
   end type plant_soilbgc_h2oiso_run_type
 
 
@@ -92,6 +93,17 @@ module PlantSoilBGCH2OIsoRunType
 
   end subroutine integrate_vr_flux_to_2D
 
+  !----------------------------------------------------------------------
 
+  subroutine lsm_betr_plant_soilbgc_send(this, bounds, numf, filter)
 
+  use decompMod             , only : bounds_type
+  ! !ARGUMENTS:
+
+  class(plant_soilbgc_h2oiso_run_type) , intent(in) :: this
+  type(bounds_type)         , intent(in) :: bounds
+  integer                   , intent(in) :: numf
+  integer                   , intent(in) :: filter(:)
+
+  end subroutine lsm_betr_plant_soilbgc_send
 end module PlantSoilBGCH2OIsoRunType

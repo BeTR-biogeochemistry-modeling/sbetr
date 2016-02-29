@@ -41,7 +41,6 @@ module plant_soilbgc_ECACPL
     real(r8), pointer :: plant_minn_active_yield_flx_vr_patch        (:,:)  !patch level mineral nitrogen yeild from soil bgc calculation
     real(r8), pointer :: plant_minp_active_yield_flx_vr_patch        (:,:)    !column level mineral phosphorus yeild from soil bgc calculation
 
-
     real(r8), pointer :: plant_minn_passive_yield_flx_col            (:)
     real(r8), pointer :: plant_minp_passive_yield_flx_col            (:)
 
