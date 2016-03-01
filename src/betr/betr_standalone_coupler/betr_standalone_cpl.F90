@@ -1,6 +1,6 @@
 module betr_standalone_cpl
 
-  use decompMod             , only : bounds_type
+  use decompMod, only : bounds_type
   use betr_instMod
 implicit none
  public :: betr_initialize_standalone
@@ -18,24 +18,24 @@ contains
      ! run betr code one time step forward, without drainage calculation
 
      ! !USES:
-     use BetrBGCMod                   , only          : run_betr_one_step_without_drainage
-     use SoilStateType                , only          : soilstate_type
-     use WaterStateType               , only          : Waterstate_Type
-     use TemperatureType              , only          : temperature_type
-     use ChemStateType                , only          : chemstate_type
-     use WaterfluxType                , only          : waterflux_type
-     use ColumnType                   , only          : column_type
-     use BGCReactionsMod              , only          : bgc_reaction_type
-     use atm2lndType                  , only          : atm2lnd_type
-     use SoilHydrologyType            , only          : soilhydrology_type
-     use BeTR_CNStateType             , only          : betr_cnstate_type
-     use BeTR_CarbonFluxType          , only          : betr_carbonflux_type
-     use CNStateType                  , only          : cnstate_type
-     use CNCarbonFluxType             , only          : carbonflux_type
-     use CanopyStateType              , only          : canopystate_type
-     use BeTR_PatchType               , only          : betr_pft
-     use PatchType                    , only          : pft
-     use pftvarcon                    , only          : crop
+     use BetrBGCMod, only : run_betr_one_step_without_drainage
+     use SoilStateType, only : soilstate_type
+     use WaterStateType, only : Waterstate_Type
+     use TemperatureType, only : temperature_type
+     use ChemStateType, only : chemstate_type
+     use WaterfluxType, only : waterflux_type
+     use ColumnType, only : column_type
+     use BGCReactionsMod, only : bgc_reaction_type
+     use atm2lndType, only : atm2lnd_type
+     use SoilHydrologyType, only : soilhydrology_type
+     use BeTR_CNStateType, only : betr_cnstate_type
+     use BeTR_CarbonFluxType, only : betr_carbonflux_type
+     use CNStateType, only : cnstate_type
+     use CNCarbonFluxType, only : carbonflux_type
+     use CanopyStateType, only : canopystate_type
+     use BeTR_PatchType, only : betr_pft
+     use PatchType, only : pft
+     use pftvarcon, only : crop
 
      !
      ! !ARGUMENTS :
@@ -90,11 +90,11 @@ contains
 
   use clm_instMod
   use betr_initializeMod, only : betr_initialize  
-  use BeTR_CNStateType  , only : betr_cnstate_type
-  use EcophysConType    , only : ecophyscon
-  use BeTR_PatchType    , only : betr_pft
-  use PatchType         , only : pft
-  use pftvarcon         , only : nc3_arctic_grass, crop, nc3_nonarctic_grass, nc4_grass, noveg
+  use BeTR_CNStateType, only : betr_cnstate_type
+  use EcophysConType, only : ecophyscon
+  use BeTR_PatchType, only : betr_pft
+  use PatchType, only : pft
+  use pftvarcon, only : nc3_arctic_grass, crop, nc3_nonarctic_grass, nc4_grass, noveg
   use BeTR_pftvarconType, only : betr_pftvarcon
   implicit none
   type(bounds_type)    , intent(in) :: bounds
@@ -129,10 +129,10 @@ contains
 
   ! !USES:
 
-  use BetrBGCMod            , only : run_betr_one_step_with_drainage
-  use ColumnType            , only : column_type
-  use MathfuncMod           , only : safe_div
-  use WaterFluxType         , only : waterflux_type
+  use BetrBGCMod, only : run_betr_one_step_with_drainage
+  use ColumnType, only : column_type
+  use MathfuncMod, only : safe_div
+  use WaterFluxType, only : waterflux_type
   implicit none
   ! !ARGUMENTS:
   type(bounds_type),        intent(in)    :: bounds

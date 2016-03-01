@@ -16,6 +16,8 @@ module betr_initializeMod
   public :: betr_readNL
   public :: betr_rest
   character(len=32) :: bgc_method='mock_run'
+  character(len=*), parameter :: filename = '__FILE__'
+  
 
 contains
 
@@ -54,7 +56,7 @@ contains
        if (ierr == 0) then
           read(unitn, betr_inparm, iostat=ierr)
           if (ierr /= 0) then
-             call endrun(msg="ERROR reading betr_inparm namelist"//errmsg(__FILE__, __LINE__))
+             call endrun(msg="ERROR reading betr_inparm namelist"//errmsg(filename, __LINE__))
           end if
        end if
        call relavu( unitn )

@@ -2,10 +2,15 @@ module CLMForcType
   use shr_kind_mod        , only : r8 => shr_kind_r8
   use shr_const_mod       , only : rhoice => SHR_CONST_RHOICE
   use shr_const_mod       , only : rhoh2o => SHR_CONST_RHOFW
-implicit none
 
+  implicit none
+  private
 
+  character(len=*), private, parameter :: module_filename = '__FILE__'
+  
   type, public :: clmforc_type
+     character(len=256) :: grid_filename
+     character(len=256) :: forcing_filename
     real(r8), pointer :: t_soi(:,:)
     real(r8), pointer :: h2osoi_liqvol(:,:)
     real(r8), pointer :: h2osoi_liq(:,:)
@@ -23,7 +28,8 @@ implicit none
   contains
      procedure, private  :: Init
      procedure, private :: InitAllocate
-     procedure, public  :: loadForc
+     procedure, public  :: LoadForcingData
+     procedure, private :: ReadNameList
   end type clmforc_type
 
   type(clmforc_type), public :: clmforc_vars
@@ -66,7 +72,7 @@ contains
 
 
   !------------------------------------------------------------------------
-  subroutine loadForc(this)
+  subroutine LoadForcingData(this)
   use ncdio_pio
   class(clmforc_type) :: this
   character(len=250) :: ncf_in_filename_grid
@@ -79,12 +85,11 @@ contains
   integer :: dimlenl, dimlent
   integer :: j1, j2
 
-
-  ncf_in_filename_grid='/Users/jinyuntang/work/data_collection/clm_output/hourly_data_example/sierra_grid.nc'
+  call this%ReadNameList('example.nl')
+  ncf_in_filename_grid=trim(this%grid_filename)
   call ncd_pio_openfile(ncf_in_grid, ncf_in_filename_grid, mode=ncd_nowrite)
 
-
-  ncf_in_filename_forc='/Users/jinyuntang/work/data_collection/clm_output/hourly_data_example/sierra_clmdef_hhour.clm2.h0.0021-01-01-00000.nc'
+  ncf_in_filename_forc=trim(this%forcing_filename)
 
   call ncd_pio_openfile(ncf_in_forc, ncf_in_filename_forc, mode=ncd_nowrite)
   dimlenl = get_dim_len(ncf_in_forc,'levgrnd')
@@ -183,6 +188,65 @@ contains
   deallocate(data1)
 
 
-  end subroutine loadForc
+end subroutine LoadForcingData
+
+! ----------------------------------------------------------------------
+
+  subroutine ReadNameList(this, filename)
+    !
+    ! !DESCRIPTION:
+    ! read namelist for betr configuration
+    ! !USES:
+    use spmdMod       , only : masterproc, mpicom
+    use fileutils     , only : getavu, relavu, opnfil
+    use shr_nl_mod    , only : shr_nl_find_group_name
+    use shr_mpi_mod   , only : shr_mpi_bcast
+    use clm_varctl   , only : iulog
+    use abortutils      , only : endrun
+    use shr_log_mod     , only : errMsg => shr_log_errMsg    
+    
+    implicit none
+    ! !ARGUMENTS:
+    class(clmforc_type) :: this
+    character(len=*), intent(in) :: filename ! Namelist filename
+    !
+    ! !LOCAL VARIABLES:
+    integer :: ierr                    ! error code
+    integer :: unitn                   ! unit for namelist file
+    character(len=32) :: subname = 'ReadNameList'
+    character(len=256) :: grid_filename, forcing_filename
+
+    !-----------------------------------------------------------------------
+
+    namelist / forcing_inparm / grid_filename, forcing_filename
+
+    ! ----------------------------------------------------------------------
+    ! Read namelist from standard input.
+    ! ----------------------------------------------------------------------
+
+    if ( masterproc )then
+
+       unitn = getavu()
+       write(iulog,*) 'Read in forcing_inparm  namelist'
+       call opnfil (filename, unitn, 'F')
+       call shr_nl_find_group_name(unitn, 'forcing_inparm', status=ierr)
+       if (ierr == 0) then
+          read(unitn, forcing_inparm, iostat=ierr)
+          if (ierr /= 0) then
+             call endrun(msg="ERROR reading forcing_inparm namelist"//errmsg(module_filename, __LINE__))
+          end if
+       end if
+       call relavu( unitn )
+
+    end if
+    ! Broadcast namelist variables read in
+    this%grid_filename = grid_filename
+    this%forcing_filename = forcing_filename
+    call shr_mpi_bcast(grid_filename, mpicom)
+    call shr_mpi_bcast(forcing_filename, mpicom)
+
+  end subroutine ReadNameList
+
+
 
 end module CLMForcType

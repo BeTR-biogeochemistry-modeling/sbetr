@@ -22,7 +22,8 @@ module BetrBGCMod
   real(r8), parameter :: tiny_val       = 1.e-20_r8 !very small value, for tracer concentration etc.
   real(r8), parameter :: dtime_min      = 1._r8     !minimum time step 1 second
   real(r8), parameter :: err_tol_transp = 1.e-8_r8  !error tolerance for tracer transport
-
+  character(len=*), parameter :: filename = '__FILE__'
+  
   public :: run_betr_one_step_without_drainage
   public :: run_betr_one_step_with_drainage
   public :: calc_dew_sub_flux
@@ -328,6 +329,8 @@ contains
 
     character(len=255)   :: subname = 'tracer_solid_transport'
 
+    integer :: ntracer_groups
+    ntracer_groups = betrtracer_vars%ntracer_groups
     if(.not. betrtracer_vars%is_solidtransport())return
     associate(&
          tracernames                   =>  betrtracer_vars%tracernames                        , &
@@ -339,8 +342,8 @@ contains
          tracer_conc_solid_passive_col =>   tracerstate_vars%tracer_conc_solid_passive_col      &
          )
 
-      SHR_ASSERT_ALL((ubound(hmconductance_col) == (/bounds%endc, ubj-1, betrtracer_vars%ntracer_groups/)), errMsg(__FILE__,__LINE__))
-      SHR_ASSERT_ALL((ubound(dz)                == (/bounds%endc, ubj/)), errMsg(__FILE__,__LINE__))
+      SHR_ASSERT_ALL((ubound(hmconductance_col) == (/bounds%endc, ubj-1, ntracer_groups/)), errMsg(filename,__LINE__))
+      SHR_ASSERT_ALL((ubound(dz)                == (/bounds%endc, ubj/)), errMsg(filename,__LINE__))
 
       allocate (difs_trc_group (nmem_max                                   ))
       allocate (dtracer        (bounds%begc:bounds%endc, lbj:ubj, nmem_max ))
@@ -501,11 +504,11 @@ contains
     integer :: jtops0(bounds%begc:bounds%endc)
     character(len=255) :: subname = 'tracer_gw_transport'
 
-    SHR_ASSERT_ALL((ubound(jtops)         == (/bounds%endc/)), errMsg(__FILE__,__LINE__))
-    SHR_ASSERT_ALL((ubound(dz)            == (/bounds%endc, ubj/)), errMsg(__FILE__,__LINE__))
-    SHR_ASSERT_ALL((ubound(zi)            == (/bounds%endc, ubj/)), errMsg(__FILE__,__LINE__))
-    SHR_ASSERT_ALL((ubound(h2osoi_liqvol) == (/bounds%endc, ubj/)), errMsg(__FILE__,__LINE__))
-    SHR_ASSERT_ALL((ubound(Rfactor)       == (/bounds%endc, ubj, betrtracer_vars%ngwmobile_tracer_groups/)), errMsg(__FILE__,__LINE__))
+    SHR_ASSERT_ALL((ubound(jtops)         == (/bounds%endc/)), errMsg(filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(dz)            == (/bounds%endc, ubj/)), errMsg(filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(zi)            == (/bounds%endc, ubj/)), errMsg(filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(h2osoi_liqvol) == (/bounds%endc, ubj/)), errMsg(filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(Rfactor) == (/bounds%endc, ubj, betrtracer_vars%ngwmobile_tracer_groups/)), errMsg(filename,__LINE__))
 
     !
     !Exclude solid phase tracers, by doing tracer equilibration
@@ -627,10 +630,10 @@ contains
     character(len=255)   :: subname = 'do_tracer_advection'
 
 
-    SHR_ASSERT_ALL((ubound(jtops)         == (/bounds%endc/))      , errMsg(__FILE__,__LINE__))
-    SHR_ASSERT_ALL((ubound(dz)            == (/bounds%endc, ubj/)) , errMsg(__FILE__,__LINE__))
-    SHR_ASSERT_ALL((ubound(h2osoi_liqvol) == (/bounds%endc, ubj/)) , errMsg(__FILE__,__LINE__))
-    SHR_ASSERT_ALL((ubound(zi)            == (/bounds%endc, ubj/)) , errMsg(__FILE__,__LINE__))
+    SHR_ASSERT_ALL((ubound(jtops)         == (/bounds%endc/))      , errMsg(filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(dz)            == (/bounds%endc, ubj/)) , errMsg(filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(h2osoi_liqvol) == (/bounds%endc, ubj/)) , errMsg(filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(zi)            == (/bounds%endc, ubj/)) , errMsg(filename,__LINE__))
 
     associate(&
          qflx_adv                 => waterflux_vars%qflx_adv_col                    , & !real(r8) (:,:)[intent(in)], advective velocity defined at layer interfatemperature_vars
@@ -790,21 +793,24 @@ contains
                      mass0   = dmass(c, k)
                      dmass(c, k) =  dot_sum(tracer_conc_mobile_col(c,jtops(c):ubj,trcid), dz(c,jtops(c):ubj))- dmass(c, k)
 
-                     err_tracer(c, k) = dmass(c, k) - inflx_top(c,k) * dtime_loc(c) + leaching_mass(c,k) + transp_mass(c, k) + seep_mass(c,k)
+                     err_tracer(c, k) = dmass(c, k) - inflx_top(c,k) * dtime_loc(c) + leaching_mass(c,k) + &
+                          transp_mass(c, k) + seep_mass(c,k)
                      if(abs(err_tracer(c,k))<err_adv_min .or. abs(err_tracer(c,k))/(mass0+1.e-10_r8) < 1.e-10_r8)then
                         !when the absolute value is too small, set relative error to
                         err_relative = err_relative_threshold*0.999_r8
                      else
-                        err_relative = err_tracer(c,k)/maxval((/abs(inflx_top(c,k)*dtime_loc(c)),abs(leaching_mass(c,k)),&
+                        err_relative = err_tracer(c,k)/maxval((/abs(inflx_top(c,k)*dtime_loc(c)), abs(leaching_mass(c,k)),&
                           abs(dmass(c,k)),tiny_val/))
                      endif
                      if(abs(err_relative)<err_relative_threshold)then
                         leaching_mass(c,k) = leaching_mass(c,k) - err_tracer(c,k)
                      else
-                        write(iulog,'(A,X,I8,X,I8,X,A,6(X,A,X,E18.10))')'nstep=',get_nstep(),c,tracernames(trcid),' err=',err_tracer(c,k),&
+                        write(iulog,'(A,X,I8,X,I8,X,A,6(X,A,X,E18.10))')'nstep=', get_nstep(), c, &
+                             tracernames(trcid),' err=',err_tracer(c,k),&
                              ' transp=',transp_mass(c,k),' lech=',&
-                             leaching_mass(c,k),' infl=',inflx_top(c,k),' dmass=',dmass(c,k), ' mass0=',mass0,'err_rel=',err_relative
-                        call endrun('advection mass balance error for tracer '//tracernames(j)//errMsg(__FILE__, __LINE__))
+                             leaching_mass(c,k),' infl=',inflx_top(c,k),' dmass=',dmass(c,k), ' mass0=', &
+                             mass0,'err_rel=',err_relative
+                        call endrun('advection mass balance error for tracer '//tracernames(j)//errMsg(filename, __LINE__))
                      endif
 
                      tracer_flx_vtrans(c, trcid)  = tracer_flx_vtrans(c,trcid) + transp_mass(c,k)
@@ -906,10 +912,13 @@ contains
     real(r8), parameter   :: err_relative_threshold=1.e-2_r8 !relative error threshold
     real(r8), parameter   :: err_dif_min = 1.e-12_r8  !minimum absolute error
 
-    SHR_ASSERT_ALL((ubound(jtops)             == (/bounds%endc/))                                               , errMsg(__FILE__,__LINE__))
-    SHR_ASSERT_ALL((ubound(dz)                == (/bounds%endc, ubj/))                                          , errMsg(__FILE__,__LINE__))
-    SHR_ASSERT_ALL((ubound(hmconductance_col) == (/bounds%endc, ubj-1, betrtracer_vars%ntracer_groups/))        , errMsg(__FILE__,__LINE__))
-    SHR_ASSERT_ALL((ubound(Rfactor)           == (/bounds%endc, ubj, betrtracer_vars%ngwmobile_tracer_groups/)) , errMsg(__FILE__,__LINE__))
+    integer :: ntracer_groups
+    ntracer_groups = betrtracer_vars%ntracer_groups
+    
+    SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(dz) == (/bounds%endc, ubj/)), errMsg(filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(hmconductance_col) == (/bounds%endc, ubj-1, ntracer_groups/)), errMsg(filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(Rfactor) == (/bounds%endc, ubj, betrtracer_vars%ngwmobile_tracer_groups/)), errMsg(filename,__LINE__))
 
     associate(&
          is_volatile              =>  betrtracer_vars%is_volatile                            , & !
@@ -1003,7 +1012,7 @@ contains
                               !write error message and stop
                               write(iulog,*),tracernames(trcid),c,l
                               write(iulog,*),tracer_conc_mobile_col(c,l,trcid),dtracer(c,l,k),dtime_loc(c)
-                              call endrun('stopped '//trim(subname)//errMsg(__FILE__, __LINE__))
+                              call endrun('stopped '//trim(subname)//errMsg(filename, __LINE__))
                            endif
 
                            !if tracer concentration change is zero, then goto next layer
@@ -1052,7 +1061,8 @@ contains
 
                      mass0=dot_sum(x=tracer_conc_mobile_col(c,jtops(c):ubj,trcid),y=dz(c,jtops(c):ubj))
 
-                     call daxpy(ubj-jtops(c)+1, 1._r8, dtracer(c,jtops(c):ubj, k), 1, tracer_conc_mobile_col(c,jtops(c):ubj,trcid),1)
+                     call daxpy(ubj-jtops(c)+1, 1._r8, dtracer(c,jtops(c):ubj, k), 1, &
+                          tracer_conc_mobile_col(c,jtops(c):ubj,trcid), 1)
 
                      dmass(c, k) = dot_sum(x=dtracer(c,jtops(c):ubj, k),y=dz(c,jtops(c):ubj))
 
@@ -1073,13 +1083,15 @@ contains
                         if(is_volatile(trcid))then
                            diff_surf(c,k) = diff_surf(c,k)+err_tracer(c,k)/dtime_loc(c)
                            !accumulate the diffusive flux at the given time step, + into the atmosphere
-                           tracer_flx_dif(c,volatileid(trcid)) = tracer_flx_dif(c,volatileid(trcid)) - diff_surf(c,k) * dtime_loc(c)
+                           tracer_flx_dif(c,volatileid(trcid)) = tracer_flx_dif(c,volatileid(trcid)) - &
+                                diff_surf(c,k) * dtime_loc(c)
                         endif
                      else
                         write(iulog,*),'mass bal error dif '//tracernames(trcid), mass1,'col=',c,get_cntheta()
-                        write(iulog,*)'err=',err_tracer(c,k),dmass(c,k), ' dif=',diff_surf(c,k)*dtime_loc(c), ' prod=',dot_sum(x=local_source(c,jtops(c):ubj,k),y=dz(c,jtops(c):ubj))*dtime_loc(c)
+                        write(iulog,*)'err=', err_tracer(c,k), dmass(c,k), ' dif=', diff_surf(c,k)*dtime_loc(c), &
+                             ' prod=',dot_sum(x=local_source(c,jtops(c):ubj,k),y=dz(c,jtops(c):ubj))*dtime_loc(c)
                         call endrun('mass balance error for tracer '//tracernames(trcid)//' in ' &
-                           //trim(subname)//errMsg(__FILE__, __LINE__))
+                           //trim(subname)//errMsg(filename, __LINE__))
                      endif
 
                   enddo
@@ -1164,8 +1176,8 @@ contains
     integer            :: j, fc, c, k, kk, trcid
     character(len=255) :: subname = 'set_gwdif_Rfactor'
 
-    SHR_ASSERT_ALL((ubound(jtops)   == (/bounds%endc/))                                               , errMsg(__FILE__,__LINE__))
-    SHR_ASSERT_ALL((ubound(Rfactor) == (/bounds%endc, ubj, betrtracer_vars%ngwmobile_tracer_groups/)) , errMsg(__FILE__,__LINE__))
+    SHR_ASSERT_ALL((ubound(jtops)   == (/bounds%endc/))                                               , errMsg(filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(Rfactor) == (/bounds%endc, ubj, betrtracer_vars%ngwmobile_tracer_groups/)) , errMsg(filename,__LINE__))
 
     associate(                                                                       &  !
          ngwmobile_tracer_groups =>    betrtracer_vars%ngwmobile_tracer_groups     , &  !
@@ -1241,12 +1253,12 @@ contains
     integer             :: vid
     integer             :: fc, c, j, kk
 
-    SHR_ASSERT_ALL((ubound(jtops)     == (/bounds%endc/))      , errMsg(__FILE__,__LINE__))
-    SHR_ASSERT_ALL((ubound(forc_psrf) == (/bounds%endc/))      , errMsg(__FILE__,__LINE__))
-    SHR_ASSERT_ALL((ubound(fracice)   == (/bounds%endc, ubj/)) , errMsg(__FILE__,__LINE__))
-    SHR_ASSERT_ALL((ubound(dz)        == (/bounds%endc, ubj/)) , errMsg(__FILE__,__LINE__))
-    SHR_ASSERT_ALL((ubound(zi)        == (/bounds%endc, ubj/)) , errMsg(__FILE__,__LINE__))
-    SHR_ASSERT_ALL((ubound(zwt)       == (/bounds%endc/))      , errMsg(__FILE__,__LINE__))
+    SHR_ASSERT_ALL((ubound(jtops)     == (/bounds%endc/))      , errMsg(filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(forc_psrf) == (/bounds%endc/))      , errMsg(filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(fracice)   == (/bounds%endc, ubj/)) , errMsg(filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(dz)        == (/bounds%endc, ubj/)) , errMsg(filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(zi)        == (/bounds%endc, ubj/)) , errMsg(filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(zwt)       == (/bounds%endc/))      , errMsg(filename,__LINE__))
 
     associate(                                                                &
          tracer_conc_mobile_col   => tracerstate_vars%tracer_conc_mobile_col, &
@@ -1383,13 +1395,13 @@ contains
     real(r8) :: tracer_conc_new
     integer  :: fc, c, j
 
-    SHR_ASSERT_ALL((ubound(dz)           == (/bounds%endc, ubj/)) , errMsg(__FILE__,__LINE__))
-    SHR_ASSERT_ALL((ubound(update_col)   == (/bounds%endc/))      , errMsg(__FILE__,__LINE__))
-    SHR_ASSERT_ALL((ubound(dtime_loc)    == (/bounds%endc/))      , errMsg(__FILE__,__LINE__))
-    SHR_ASSERT_ALL((ubound(tracer_conc)  == (/bounds%endc, ubj/)) , errMsg(__FILE__,__LINE__))
-    SHR_ASSERT_ALL((ubound(qflx_rootsoi) == (/bounds%endc, ubj/)) , errMsg(__FILE__,__LINE__))
-    SHR_ASSERT_ALL((ubound(transp_mass_vr)  == (/bounds%endc,ubj/))      , errMsg(__FILE__,__LINE__))
-    SHR_ASSERT_ALL((ubound(transp_mass)  == (/bounds%endc/))      , errMsg(__FILE__,__LINE__))
+    SHR_ASSERT_ALL((ubound(dz)           == (/bounds%endc, ubj/)) , errMsg(filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(update_col)   == (/bounds%endc/))      , errMsg(filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(dtime_loc)    == (/bounds%endc/))      , errMsg(filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(tracer_conc)  == (/bounds%endc, ubj/)) , errMsg(filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(qflx_rootsoi) == (/bounds%endc, ubj/)) , errMsg(filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(transp_mass_vr)  == (/bounds%endc,ubj/))      , errMsg(filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(transp_mass)  == (/bounds%endc/))      , errMsg(filename,__LINE__))
 
 
     transp_mass(:) = 0._r8
@@ -1441,7 +1453,7 @@ contains
     integer  :: fc, c, j, k
 
 
-    SHR_ASSERT_ALL((ubound(jtops)         == (/bounds%endc/))      , errMsg(__FILE__,__LINE__))
+    SHR_ASSERT_ALL((ubound(jtops)         == (/bounds%endc/))      , errMsg(filename,__LINE__))
 
     associate(                                                                   & !
          ngwmobile_tracers        => betrtracer_vars%ngwmobile_tracers         , & !
@@ -1575,7 +1587,8 @@ contains
                else
                   scal=1._r8-fracice_top(c)      !reduce the water flush due to ice forst in layer 1
                endif
-               fracc(k) = safe_div(tracer_conc_mobile(c,k,j), aqu2bulkcef_mobile(c,k,groupid(j))) * h2osoi_liqvol(c,k) * dz_top2(c,k) * scal
+               fracc(k) = safe_div(tracer_conc_mobile(c,k,j), aqu2bulkcef_mobile(c,k,groupid(j))) * &
+                    h2osoi_liqvol(c,k) * dz_top2(c,k) * scal
                total = total + fracc(k)        !total mass
             enddo
             !assume perfect mix and obtain the net loss through surface runoff
@@ -1696,7 +1709,8 @@ contains
             l = clandunit(c)
             if (ltype(l)/=istsoil .and. ltype(l)/=istcrop)cycle
             tracer_conc_mobile(c,1,j) = tracer_conc_mobile(c,1,j) + tracer_flx_dew_grnd(c, j)/dz(c,1)
-            tracer_conc_frozen(c,1,j) = tracer_conc_frozen(c,1,j) +(tracer_flx_dew_snow(c, j)-tracer_flx_sub_snow(c,j))/dz(c,1)
+            tracer_conc_frozen(c,1,j) = tracer_conc_frozen(c,1,j) + &
+                 (tracer_flx_dew_snow(c, j) - tracer_flx_sub_snow(c,j)) / dz(c,1)
 
             if(tracer_conc_frozen(c,1,j) < 0._r8)then
               do ll = 1, 2
@@ -1843,7 +1857,8 @@ contains
             enddo
             do jj = 1, ngwmobile_tracers
                if(is_volatile(jj) .and. (.not. is_h2o(jj)) .and. (.not. is_isotope(jj)))then
-                  tracer_P_gas_frac_col(c,j, volatileid(jj)) = safe_div(tracer_P_gas_frac_col(c,j, volatileid(jj)),total_pres)
+                  tracer_P_gas_frac_col(c,j, volatileid(jj)) = safe_div(tracer_P_gas_frac_col(c,j, volatileid(jj)), &
+                       total_pres)
                endif
             enddo
          enddo

@@ -12,6 +12,7 @@ configure_file(dtypes.h dtypes.h COPYONLY)
 include(add_betr_library)
 add_betr_library(betr_shr ${BETR_SHR_SOURCES})
 
+set(BETR_LIBRARIES betr_shr;${BETR_LIBRARIES} PARENT_SCOPE)
 set(BETR_LIBRARIES betr_shr;${BETR_LIBRARIES})
 
 #X#add_subdirectory(tests)

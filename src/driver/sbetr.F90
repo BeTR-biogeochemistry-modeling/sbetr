@@ -1,12 +1,13 @@
 program main
 
-use sbetrDriverMod
+  use decompMod            , only : bounds_type
+  use clmgridMod           , only : init_clm_vertgrid
+  use clm_varpar           , only : nlevgrnd
+  use clm_initializeMod    , only : initialize
+  use sbetrDriverMod, only : time_type
+  use sbetrDriverMod, only : sbetrBGC_driver
 
-use decompMod            , only: bounds_type
-use clmgridMod           , only : init_clm_vertgrid
-use clm_varpar           , only : nlevgrnd
-use clm_initializeMod    , only : initialize
-implicit none
+  implicit none
 
   type(bounds_type) :: bounds
   type(time_type) :: ttime
@@ -35,7 +36,5 @@ implicit none
   call initialize(bounds)
 
   call sbetrBGC_driver(bounds, numf, filter, ttime)
-
-
 
 end program main

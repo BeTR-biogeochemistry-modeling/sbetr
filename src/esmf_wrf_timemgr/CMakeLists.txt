@@ -24,6 +24,7 @@ include_directories(${CMAKE_BINARY_DIR}/src/shr)
 include(add_betr_library)
 add_betr_library(betr_esmf ${BETR_ESMF_SOURCES})
 
+set(BETR_LIBRARIES betr_esmf;${BETR_LIBRARIES} PARENT_SCOPE)
 set(BETR_LIBRARIES betr_esmf;${BETR_LIBRARIES})
 
 #X#add_subdirectory(tests)

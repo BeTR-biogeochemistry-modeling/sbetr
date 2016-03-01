@@ -35,11 +35,15 @@ contains
   use decompMod           , only : bounds_type
   use clm_instMod
   use ColumnType          , only : col
-  use betr_instMod        , only : betrtracer_vars, tracercoeff_vars,  &
-                                    tracerflux_vars, tracerstate_vars
-  use betr_standalone_cpl , only : betr_initialize_standalone
-  use betr_standalone_cpl , only : run_betr_one_step_without_drainage_standalone
-  use betr_standalone_cpl , only : run_betr_one_step_with_drainage_standalone
+  use BeTRSimulation, only : betr_simulation_type
+  use BeTRSimulationFactory, only : create_betr_simulation
+
+  
+!X!  use betr_standalone_cpl , only : betr_initialize_standalone
+!X!  use betr_standalone_cpl , only : run_betr_one_step_without_drainage_standalone
+!X!  use betr_standalone_cpl , only : run_betr_one_step_with_drainage_standalone
+
+  
   use TracerParamsMod     , only : tracer_param_init
   use spmdMod             , only : spmd_init
   use LandunitType        , only : lun
@@ -56,7 +60,7 @@ contains
   type(time_type),       intent(inout) :: time_vars
 
   !local variables
-
+  class(betr_simulation_type), pointer :: simulation
   real(r8) :: dtime    !model time step
   real(r8) :: dtime2   !half of the model time step
   integer  :: record
@@ -73,8 +77,8 @@ contains
   time_vars%tstep = 1
   time_vars%time  = 0._r8
   time_vars%time_end=dtime*48._r8*365._r8*2._r8
-  !load forcing data
-  call clmforc_vars%Loadforc()
+
+  call clmforc_vars%LoadForcingData()
 
   jtops(:) = 1  !this will be replaced with nan when I figured out how to do it, Jinyun Tang, June 17, 2014
 
@@ -93,10 +97,12 @@ contains
   call spmd_init
 
   !initialize parameters
-  call betr_initialize_standalone(bounds, lbj, ubj)
+  simulation => create_betr_simulation('standalone')
+  call  simulation%Init('mock_run', bounds, lbj, ubj)
+  !X!call betr_initialize_standalone(bounds, lbj, ubj)
 
   !create output file
-  call hist_htapes_create(histfilename,nlevtrc_soil, num_soilc, betrtracer_vars)
+  call hist_htapes_create(histfilename,nlevtrc_soil, num_soilc, simulation%betrtracer_vars)
 
   record = -1
   ubj = nlevtrc_soil
@@ -115,23 +121,29 @@ contains
 
     !no calculation in the first step
     if(record==0)cycle
-    call  begin_betr_tracer_massbalance(bounds, lbj, ubj, num_soilc, filter_soilc)
+    call begin_betr_tracer_massbalance(bounds, lbj, ubj, num_soilc, filter_soilc, &
+         simulation%betrtracer_vars, simulation%tracerstate_vars, &
+         simulation%tracerflux_vars)
 
-    call run_betr_one_step_without_drainage_standalone(bounds, lbj, ubj, num_soilc, filter_soilc, num_soilp, filter_soilp, col ,   &
+    call simulation%StepWithoutDrainage(bounds, lbj, ubj, num_soilc, filter_soilc, num_soilp, filter_soilp, col ,   &
          atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, temperature_vars, waterflux_vars, chemstate_vars, &
          cnstate_vars, canopystate_vars, carbonflux_vars)
 
-    call run_betr_one_step_with_drainage_standalone(bounds, lbj, ubj, num_soilc, filter_soilc, &
+    call simulation%StepWithDrainage(bounds, lbj, ubj, num_soilc, filter_soilc, &
          jtops, waterflux_vars, col)
 
     !do mass balance check
-    call betr_tracer_massbalance_check(bounds, lbj, ubj, num_soilc, filter_soilc)
+    call betr_tracer_massbalance_check(bounds, lbj, ubj, num_soilc, filter_soilc, &
+         simulation%betrtracer_vars, simulation%tracerstate_vars, &
+         simulation%tracerflux_vars)
 
     !update time stamp
     call update_time_stamp(time_vars, dtime)
 
     !write output
-    call hist_write(record, lbj, ubj, tracerflux_vars, tracerstate_vars, time_vars, betrtracer_vars)
+    call hist_write(record, lbj, ubj, simulation%tracerflux_vars, &
+         simulation%tracerstate_vars, time_vars, &
+         simulation%betrtracer_vars)
 
     !write restart file? is not functionning at the moment
     !if(its_time_to_write_restart(time_vars)) call rest_write(tracerstate_vars, tracercoeff_vars, tracerflux_vars, time_vars)
@@ -233,7 +245,9 @@ contains
 
   call ncd_pio_openfile_for_write(ncid,histfilename)
 
-  if(mod(time_vars%time,86400._r8)==0)print*,'day', time_vars%time/86400._r8
+  if (mod(time_vars%time ,86400._r8)==0) then
+     print*,'day', time_vars%time/86400._r8
+  end if
   call ncd_putvar(ncid, "time", record, time_vars%time)
 
   do jj = 1, ntracers

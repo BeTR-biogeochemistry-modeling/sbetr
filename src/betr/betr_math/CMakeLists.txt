@@ -12,6 +12,7 @@ include_directories(${CMAKE_BINARY_DIR}/src/stub_clm)
 include(add_betr_library)
 add_betr_library(betr_math ${BETR_MATH_SOURCES})
 
+set(BETR_LIBRARIES betr_math;${BETR_LIBRARIES} PARENT_SCOPE)
 set(BETR_LIBRARIES betr_math;${BETR_LIBRARIES})
 
 #X#add_subdirectory(tests)

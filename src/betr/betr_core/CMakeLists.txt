@@ -23,6 +23,7 @@ include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_math)
 include(add_betr_library)
 add_betr_library(betr_core ${BETR_CORE_SOURCES})
 
+set(BETR_LIBRARIES betr_core;${BETR_LIBRARIES} PARENT_SCOPE)
 set(BETR_LIBRARIES betr_core;${BETR_LIBRARIES})
 
 #X#add_subdirectory(tests)

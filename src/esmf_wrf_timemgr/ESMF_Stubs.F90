@@ -122,16 +122,16 @@ CONTAINS
       type(ESMF_END_FLAG), intent(in), optional  :: endflag
       INTEGER, INTENT(  OUT), OPTIONAL :: rc
 #ifndef HIDE_MPI
-#include <mpif.h>
+!X!#include <mpif.h>
 #endif
       INTEGER :: ier
 
       IF ( PRESENT( rc ) ) rc = ESMF_SUCCESS
 #ifndef HIDE_MPI
-      CALL MPI_Finalize( ier ) 
-      IF ( ier .ne. mpi_success )THEN
-        IF ( PRESENT( rc ) ) rc = ESMF_FAILURE
-      END IF
+!X!      CALL MPI_Finalize( ier ) 
+!X!      IF ( ier .ne. mpi_success )THEN
+!X!        IF ( PRESENT( rc ) ) rc = ESMF_FAILURE
+!X!      END IF
 #endif
    END SUBROUTINE ESMF_Finalize
 

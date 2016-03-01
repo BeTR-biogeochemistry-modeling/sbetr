@@ -9,15 +9,18 @@ module TracerBalanceMod
   use shr_log_mod        , only : errMsg => shr_log_errMsg
   use decompMod          , only : bounds_type
   use BeTRTracerType     , only : betrtracer_type
+  use TracerFluxType     , only : TracerFlux_type
+  use TracerStateType    , only : TracerState_type
   use ColumnType         , only : col
   use clm_time_manager   , only : get_nstep
   use clm_varctl         , only : iulog
-  use betr_instMod       , only : betrtracer_vars, tracerstate_vars, tracerflux_vars
+
 implicit none
   save
   private
 
-
+  character(len=*), parameter :: filename = '__FILE__'
+  
   public :: begin_betr_tracer_massbalance
   public :: betr_tracer_massbalance_check
 
@@ -26,7 +29,8 @@ implicit none
 
 
     !--------------------------------------------------------------------------------
-    subroutine begin_betr_tracer_massbalance(bounds, lbj, ubj, numf, filter )
+    subroutine begin_betr_tracer_massbalance(bounds, lbj, ubj, numf, filter, &
+         betrtracer_vars, tracerstate_vars, tracerflux_vars)
       !
       ! !DESCRIPTION:
       ! Preparing for tracer mass balance check
@@ -34,13 +38,15 @@ implicit none
       ! !USES:
       use clm_varpar            , only : nlevtrc_soil
 
-
       implicit none
       ! !ARGUMENTS:
       type(bounds_type),      intent(in)    :: bounds
       integer,                intent(in)    :: lbj, ubj
       integer,                intent(in)    :: numf                        ! number of columns in column filter
       integer,                intent(in)    :: filter(:)                   ! column filter
+      type(BeTRtracer_type)  , intent(in) :: betrtracer_vars
+      type(TracerFlux_type)  , intent(in) :: tracerflux_vars
+      type(TracerState_type) , intent(inout) :: tracerState_vars
 
 
       ! !LOCAL VARIABLES:
@@ -55,7 +61,8 @@ implicit none
     end subroutine begin_betr_tracer_massbalance
 
     !--------------------------------------------------------------------------------
-    subroutine betr_tracer_massbalance_check(bounds, lbj, ubj, numf, filter)
+    subroutine betr_tracer_massbalance_check(bounds, lbj, ubj, numf, filter, &
+         betrtracer_vars, tracerstate_vars, tracerflux_vars)
       !
       ! !DESCRIPTION:
       ! do mass balance check for betr tracers
@@ -79,6 +86,9 @@ implicit none
       integer,                intent(in)    :: lbj, ubj
       integer,                intent(in)    :: numf             ! number of columns in column filter
       integer,                intent(in)    :: filter(:)        ! column filter
+      type(BeTRtracer_type)  , intent(in) :: betrtracer_vars
+      type(TracerFlux_type)  , intent(in) :: tracerflux_vars
+      type(TracerState_type) , intent(inout) :: tracerState_vars
 
       ! !LOCAL VARIABLES:
       integer  :: jj, fc, c, kk
@@ -127,7 +137,7 @@ implicit none
                       ' begm=',beg_tracer_molarmass(c,kk), &
                       ' endm=',end_tracer_molarmass(c,kk)
                  call tracerflux_vars%flux_display(c,kk,betrtracer_vars)
-                 call endrun(decomp_index=c, clmlevel=namec, msg=errmsg(__FILE__, __LINE__))
+                 call endrun(decomp_index=c, clmlevel=namec, msg=errmsg(filename, __LINE__))
               endif
            enddo
            bal_beg=0._r8
@@ -138,8 +148,9 @@ implicit none
               if(abs(errtracer(c,kk))>err_min)then
                  write(iulog,*)'error exceeds the tolerance for tracer '//tracernames(kk), 'err=',errtracer(c,kk), 'col=',c
                  write(iulog,*)get_nstep(),is_mobile(kk)
-                 write(iulog,*)'begmss=', beg_tracer_molarmass(c,kk), 'endmass=',end_tracer_molarmass(c,kk),' netpro=',tracer_flx_netpro(c,kk)
-                 call endrun(decomp_index=c, clmlevel=namec, msg=errmsg(__FILE__, __LINE__))
+                 write(iulog,*) 'begmss=', beg_tracer_molarmass(c,kk), 'endmass=', end_tracer_molarmass(c,kk), &
+                      ' netpro=', tracer_flx_netpro(c,kk)
+                 call endrun(decomp_index=c, clmlevel=namec, msg=errmsg(filename, __LINE__))
               endif
            enddo
 
