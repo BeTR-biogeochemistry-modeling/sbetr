@@ -13,7 +13,6 @@ module BGCReactionsFactoryMod
   use decompMod             , only : bounds_type
   use shr_log_mod           , only : errMsg => shr_log_errMsg
   use tracer_varcon         , only : is_active_betr_bgc
-  use PlantSoilBGCMod       , only : plant_soilbgc_type  
   implicit none
   save
   private
@@ -25,6 +24,9 @@ contains
 
   subroutine create_betr_application(bgc_reaction, plant_soilbgc, method)
 
+
+  use PlantSoilBGCMod             , only : plant_soilbgc_type
+  use BGCReactionsMod             , only : bgc_reaction_type
 
   class(bgc_reaction_type),  allocatable, intent(out) :: bgc_reaction
   class(plant_soilbgc_type), allocatable, intent(out) :: plant_soilbgc

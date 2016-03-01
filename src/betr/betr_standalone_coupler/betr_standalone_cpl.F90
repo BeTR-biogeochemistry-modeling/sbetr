@@ -2,7 +2,7 @@ module betr_standalone_cpl
 
   use decompMod, only : bounds_type
   use betr_instMod
-implicit none
+  use betr_initializeMod 
  public :: betr_initialize_standalone
  public :: run_betr_one_step_without_drainage_standalone
  public :: run_betr_one_step_with_drainage_standalone

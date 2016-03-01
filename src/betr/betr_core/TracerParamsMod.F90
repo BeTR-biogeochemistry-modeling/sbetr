@@ -16,6 +16,7 @@ module TracerParamsMod
   use clm_varcon            , only : spval
   use BeTR_PatchType        , only : pft => betr_pft
   use ColumnType            , only : col
+  use clm_time_manager      , only : get_nstep
   use tracer_varcon
   implicit none
   save
@@ -29,9 +30,8 @@ module TracerParamsMod
   public :: convert_mobile2gas
   public :: set_phase_convert_coeff
   public :: calc_tracer_infiltration
-  public :: pre_diagnose_dtracer_freeze_thaw
-  public :: diagnose_dtracer_freeze_thaw
   public :: pre_diagnose_soilcol_water_flux
+  public :: diagnose_dtracer_freeze_thaw
   public :: diagnose_advect_water_flux
   public :: diagnose_drainage_water_flux
   public :: get_zwt
@@ -596,13 +596,6 @@ contains
             !gaseous to bulk mobile phase
             gas2bulkcef_mobile(c,n,k) = air_vol(c,n)+h2osoi_liqvol(c,n)*bunsencef_col(c,n,k)
 
-            !if(is_h2o(trcid))then
-              !for water tracer, I assume the three phases are in equilibrium, such that
-            !  aqu2bulkcef_mobile(c,n,j)= aqu2bulkcef_mobile(c,n,j) + aqu2equilsolidcef(c,n,adsorbgroupid(trcid))
-
-            !  gas2bulkcef_mobile(c,n,k) = gas2bulkcef_mobile(c,n,k)+ aqu2equilsolidcef(c,n,adsorbgroupid(trcid)) * bunsencef_col(c,n,k)
-            !endif
-
             !correct for impermeable layer, to avoid division by zero in doing diffusive transport
             gas2bulkcef_mobile(c,n,k) = max(gas2bulkcef_mobile(c,n,k),air_vol(c,n),minval_airvol)
           endif
@@ -611,7 +604,8 @@ contains
     else
       !when linear adsorption is used for some adsorptive aqueous tracers, the aqu2bulkcef will be the retardation factor
       !for the moment, it is set to one for all non-volatile tracers
-      !It is assumed that ice have same equilibrium solublity as liquid water for soluable tracers
+      !It is assumed that ice have same equilibrium solubility as liquid water for soluble tracers
+      !it's possible I don't need the following with the freeze-thaw partition approach, jyt, Feb, 19, 2016
       do n = lbj, ubj
         do fc = 1, numf
           c = filter(fc)
@@ -1262,7 +1256,7 @@ contains
    integer :: fc, c, j
 
    associate(                                                                          &
-    qflx_gross_infl_soil => waterflux_vars%qflx_gross_infl_soil_col                    & !real(r8) (:)  [intent(in)], infiltration, mm/s
+    qflx_adv            =>    waterflux_vars%qflx_adv_col                    & !real(r8) (:)  [intent(in)], infiltration, mm/s
    )
 
    SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(filename,__LINE__))
@@ -1274,20 +1268,29 @@ contains
      !for a real mechanistic modeling, tracer_flx_infl should be derived from water flux coming from snow melt, surface ponding water,
      !and precipitation. I here just comparomise for a quick shot.
 
-     if(j==betrtracer_vars%id_trc_o18_h2o)then
+     if(j==betrtracer_vars%id_trc_blk_h2o)then
        do fc = 1, numf
          c = filter(fc)
-         tracer_flx_infl(c,j) = qflx_gross_infl_soil(c) /denh2o    !kg m-2 s-1/ kg m-3 = m/s
+         tracer_flx_infl(c,j) = 1._r8 * qflx_adv(c,0) * denh2o
        enddo
+     elseif(j==betrtracer_vars%id_trc_o18_h2o)then
+         do fc = 1, numf
+           c = filter(fc)
+           tracer_flx_infl(c,j) = 1._r8 * qflx_adv(c,0) * denh2o
+         enddo
+     elseif(j==betrtracer_vars%id_trc_d_h2o)then
+         do fc = 1, numf
+           c = filter(fc)
+           tracer_flx_infl(c,j) = 1._r8 * qflx_adv(c,0) * denh2o
+         enddo
      else
        do fc = 1, numf
          c = filter(fc)
-
          if(betrtracer_vars%is_volatile(j) .and. betrtracer_vars%is_advective(j))then
            !for volatile non water tracer, infiltration is calculated based dissolution of the gas in the water, this may need
            !improvement when tracers are allowed to transport inside snow, such that the tracer infiltration is derived from mass balance in snow
            tracer_flx_infl(c,j) = bunsencef_topsoi(c,betrtracer_vars%volatilegroupid(j)) * &
-                tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1,j) * qflx_gross_infl_soil(c)*1.e-3_r8
+                tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1,j) * qflx_adv(c,0)
          else
            tracer_flx_infl(c,j) = 0._r8
          endif
@@ -1298,32 +1301,6 @@ contains
    end associate
    end subroutine calc_tracer_infiltration
 
-   !------------------------------------------------------------------------
-   subroutine pre_diagnose_dtracer_freeze_thaw(bounds, num_nolakec, filter_nolakec, waterstate_vars )
-   !
-   ! DESCRIPTION
-   ! prediagnose water content before phase change
-   !
-   ! USES
-   use WaterStateType        , only : waterstate_type
-   implicit none
-   type(bounds_type)      , intent(in)    :: bounds
-   integer                , intent(in)    :: num_nolakec                        ! number of column non-lake points in column filter
-   integer                , intent(in)    :: filter_nolakec(:)                  ! column filter for non-lake points
-   type(waterstate_type)  , intent(in)    :: waterstate_vars
-   integer :: j, fc, c, l
-   allocate(h2osoi_liq_copy(bounds%begc:bounds%endc, 1:nlevsoi));  h2osoi_liq_copy(:, :) = spval
-   allocate(h2osoi_ice_copy(bounds%begc:bounds%endc, 1:nlevsoi));  h2osoi_ice_copy(:, :) = spval
-
-   do j = 1, nlevsoi
-     do fc = 1, num_nolakec
-       c =  filter_nolakec(fc)
-       h2osoi_liq_copy(c,j) = waterstate_vars%h2osoi_liq_col(c,j)
-       h2osoi_ice_copy(c,j) = waterstate_vars%h2osoi_ice_col(c,j)
-     enddo
-   enddo
-
-   end subroutine pre_diagnose_dtracer_freeze_thaw
    !------------------------------------------------------------------------
    subroutine diagnose_dtracer_freeze_thaw(bounds, num_nolakec, filter_nolakec, lun, &
      waterstate_vars, betrtracer_vars, tracerstate_vars)
@@ -1372,7 +1349,7 @@ contains
        l = col%landunit(c)
        if(lun%itype(l) == istsoil)then
          do k = 1, ngwmobile_tracers
-           !if it is a nonvolatile or water tracer, do it
+           !if it is a frozenable tracer, do it
            if(is_frozen(k))then
              if(h2osoi_liq(c,j) > h2osoi_liq_copy(c,j))then
                !thaw, solid to aqueous
@@ -1383,11 +1360,10 @@ contains
              else
                !freeze, aqueous to solid
                freeze_frac = min(1._r8 - h2osoi_liq(c,j)/h2osoi_liq_copy(c,j),1._r8)
-               dtracer = tracer_conc_mobile(c,j, k) * freeze_frac          !some modifier are needed to account for change in solubility
+               dtracer = tracer_conc_mobile(c,j,k) * freeze_frac          !some modifier are needed to account for change in solubility
                tracer_conc_frozen(c,j,frozenid(k)) = tracer_conc_frozen(c,j,frozenid(k)) + dtracer
                tracer_conc_mobile(c,j, k) = tracer_conc_mobile(c,j, k) - dtracer
              endif
-
            endif
          enddo
        endif
@@ -1399,42 +1375,40 @@ contains
    end associate
    end subroutine diagnose_dtracer_freeze_thaw
    !------------------------------------------------------------------------
-   subroutine pre_diagnose_soilcol_water_flux(bounds, num_hydrologyc, filter_hydrologyc, num_urbanc, filter_urbanc, h2osoi_liq)
+   subroutine pre_diagnose_soilcol_water_flux(bounds, num_nolakec, filter_nolakec, waterstate_vars)
    !
    ! DESCRIPTION
    ! pre diagnose advective water fluxes at different soil interfaces
 
 
+   use WaterStateType        , only : waterstate_type
    implicit none
-   type(bounds_type)       , intent(in)    :: bounds               ! bounds
-   integer                 , intent(in)    :: num_hydrologyc       ! number of column soil points in column filter
-   integer                 , intent(in)    :: filter_hydrologyc(:) ! column filter for soil points
-   integer                 , intent(in)    :: num_urbanc           ! number of column urban points in column filter
-   integer                 , intent(in)    :: filter_urbanc(:)     ! column filter for urban points
-   real(r8)                , intent(in)    :: h2osoi_liq(bounds%begc: , 1: )
-
-   !local variables
-   integer :: j, fc, c
-
-   SHR_ASSERT_ALL((ubound(h2osoi_liq) == (/bounds%endc, nlevsoi/)), errMsg(filename,__LINE__))
+   type(bounds_type)      , intent(in)    :: bounds
+   integer                , intent(in)    :: num_nolakec                        ! number of column non-lake points in column filter
+   integer                , intent(in)    :: filter_nolakec(:)                  ! column filter for non-lake points
+   type(waterstate_type)  , intent(in)    :: waterstate_vars
+   integer :: j, fc, c, l
 
    allocate(h2osoi_liq_copy(bounds%begc:bounds%endc, 1:nlevsoi));  h2osoi_liq_copy(:, :) = spval
+   allocate(h2osoi_ice_copy(bounds%begc:bounds%endc, 1:nlevsoi));  h2osoi_ice_copy(:, :) = spval
+
    do j = 1, nlevsoi
-     do fc = 1, num_hydrologyc
-       c = filter_hydrologyc(fc)
-       h2osoi_liq_copy(c,j) = h2osoi_liq(c,j)
+     do fc = 1, num_nolakec
+       c =  filter_nolakec(fc)
+       h2osoi_liq_copy(c,j) = waterstate_vars%h2osoi_liq_col(c,j)
+       h2osoi_ice_copy(c,j) = waterstate_vars%h2osoi_ice_col(c,j)
      enddo
    enddo
    end subroutine pre_diagnose_soilcol_water_flux
 
    !------------------------------------------------------------------------
    subroutine diagnose_advect_water_flux(bounds, num_hydrologyc, filter_hydrologyc, num_urbanc, filter_urbanc, &
-        h2osoi_liq, qflx_bot, waterflux_vars)
+        waterstate_vars, qflx_bot, waterflux_vars)
    !
    ! DESCRIPTION
    ! diagnose advective water fluxes between different soil layers
    !
-
+   use WaterStateType       , only : waterstate_type
    use WaterFluxType        , only : waterflux_type
    use clm_time_manager     , only : get_step_size
    use clm_varcon           , only : denh2o
@@ -1445,7 +1419,7 @@ contains
    integer                 , intent(in)    :: num_urbanc           ! number of column urban points in column filter
    integer                 , intent(in)    :: filter_urbanc(:)     ! column filter for urban points
    type(waterflux_type)    , intent(inout) :: waterflux_vars
-   real(r8)                , intent(in)    :: h2osoi_liq(bounds%begc: , 1: )  !mm H2O/m2 eqv. kg H2O/m2
+   type(waterstate_type)   , intent(in)     :: waterstate_vars
    real(r8)                , intent(in)    :: qflx_bot(bounds%begc: )  ! mm H2O/s water exchange rate between soil col and aquifer
 
    !local variables
@@ -1454,17 +1428,17 @@ contains
    real(r8):: diff
    real(r8):: infl_tmp
    real(r8):: scal
+   logical :: tf
 
-
-   SHR_ASSERT_ALL((ubound(h2osoi_liq) == (/bounds%endc, nlevsoi/)), errMsg(filename,__LINE__))
    SHR_ASSERT_ALL((ubound(qflx_bot)    == (/bounds%endc/))         , errMsg(filename,__LINE__))
 
-
    associate(                                                             & !
+     h2osoi_liq          =>    waterstate_vars%h2osoi_liq_col           , &
+     h2osoi_ice          =>    waterstate_vars%h2osoi_ice_col           , &
      qflx_rootsoi        =>    waterflux_vars%qflx_rootsoi_col          , & ! Iput  : [real(r8) (:,:) ]  vegetation/soil water exchange (m H2O/s) (+ = to atm)
      qflx_adv            =>    waterflux_vars%qflx_adv_col              , & ! Output: [real(r8) (:,:) ]  water flux at interfaces       (m H2O/s) (- = to atm)
      qflx_gross_infl_soil=>    waterflux_vars%qflx_gross_infl_soil_col  , & ! Output: [real(r8) (:)] gross infiltration (mm H2O/s)
-     qflx_infl           =>    waterflux_vars%qflx_infl_col             , & ! Output: [real(r8) (:)] infiltration
+     qflx_infl           =>    waterflux_vars%qflx_infl_col             , & ! Output: [real(r8) (:)] infiltration, mm H2O/s
      qflx_gross_evap_soil=>    waterflux_vars%qflx_gross_evap_soil_col    & ! Output: [real(r8) (:)] gross evaporation (mm H2O/s)
    )
 
@@ -1476,11 +1450,10 @@ contains
      do fc = 1, num_hydrologyc
        c = filter_hydrologyc(fc)
        if(j==nlevsoi)then
-         qflx_adv(c,j) = qflx_bot(c) * 1.e-3_r8
+         qflx_adv(c,j) = qflx_bot(c) * 1.e-3_r8                                 ! m/s
        else
          qflx_adv(c,j) = 1.e-3_r8 * (h2osoi_liq(c,j+1)-h2osoi_liq_copy(c,j+1))/dtime + qflx_adv(c,j+1) + qflx_rootsoi(c,j+1)
        endif
-
      enddo
    enddo
 
@@ -1497,11 +1470,10 @@ contains
      if(abs(diff)/=0._r8)then
        if(infl_tmp==0._r8)then
          if(diff>0._r8)then
-           qflx_gross_infl_soil(c)=diff
-           qflx_gross_evap_soil(c)=0._r8
+           !the corrected infiltration > net infiltration
+           qflx_gross_infl_soil(c)=qflx_gross_infl_soil(c) + diff
          else
-           qflx_gross_infl_soil(c)=0._r8
-           qflx_gross_evap_soil(c)=-diff
+           qflx_gross_evap_soil(c)=qflx_gross_evap_soil(c)-diff
          endif
        else
          scal = (1._r8+diff/infl_tmp)
@@ -1518,19 +1490,18 @@ contains
          endif
        endif
      endif
-
-     qflx_adv(c,0) = qflx_gross_infl_soil(c) *.1e-3_r8  !surface infiltration
-
+     qflx_adv(c,0) = qflx_gross_infl_soil(c) *1.e-3_r8  !surface infiltration
    enddo
 
    deallocate(h2osoi_liq_copy)
+   deallocate(h2osoi_ice_copy)
    end associate
    end subroutine diagnose_advect_water_flux
 
 
    !------------------------------------------------------------------------
    subroutine diagnose_drainage_water_flux(bounds, num_hydrologyc, filter_hydrologyc, num_urbanc, filter_urbanc, &
-        h2osoi_liq,  waterflux_vars)
+        waterstate_vars,  waterflux_vars)
    !
    ! DESCRIPTION
    ! diagnose advective water fluxes between different soil layers
@@ -1539,6 +1510,7 @@ contains
    use WaterFluxType        , only : waterflux_type
    use clm_varcon           , only : denh2o
    use clm_time_manager     , only : get_step_size
+   use WaterStateType        , only : waterstate_type
    implicit none
    type(bounds_type)       , intent(in)    :: bounds               ! bounds
    integer                 , intent(in)    :: num_hydrologyc       ! number of column soil points in column filter
@@ -1546,18 +1518,18 @@ contains
    integer                 , intent(in)    :: num_urbanc           ! number of column urban points in column filter
    integer                 , intent(in)    :: filter_urbanc(:)     ! column filter for urban points
    type(waterflux_type)    , intent(inout) :: waterflux_vars
-   real(r8)                , intent(in)    :: h2osoi_liq(bounds%begc: , 1: )  !mm H2O/m2 eqv. kg H2O/m2
+   type(waterstate_type)   , intent(in)    :: waterstate_vars
 
    !local variables
    integer :: j, fc, c
    real(r8):: dtime
 
-   SHR_ASSERT_ALL((ubound(h2osoi_liq) == (/bounds%endc, nlevsoi/)), errMsg(filename,__LINE__))
-
 
    associate(                                                           & !
-     qflx_drain_vr        =>    waterflux_vars%qflx_drain_vr_col      , & ! Output  : [real(r8) (:,:) ]  vegetation/soil water exchange (m H2O/step) (to river +)
-     qflx_totdrain        =>    waterflux_vars%qflx_totdrain_col        & ! Output  : [real(r8) (:,:) ]  (m H2o/step)
+     h2osoi_liq         =>    waterstate_vars%h2osoi_liq_col          , & ! Output: [real(r8) (:,:) ] liquid water (kg/m2)
+     h2osoi_ice         =>    waterstate_vars%h2osoi_ice_col          , & ! Output: [real(r8) (:,:) ] ice lens (kg/m2)
+     qflx_drain_vr      =>    waterflux_vars%qflx_drain_vr_col        , & ! Output  : [real(r8) (:,:) ]  vegetation/soil water exchange (m H2O/step) (to river +)
+     qflx_totdrain      =>    waterflux_vars%qflx_totdrain_col          & ! Output  : [real(r8) (:,:) ]  (m H2o/step)
    )
 
    ! get time step
@@ -1574,14 +1546,19 @@ contains
      do fc = 1, num_hydrologyc
        c = filter_hydrologyc(fc)
        qflx_drain_vr(c,j) = h2osoi_liq_copy(c,j)-h2osoi_liq(c,j)   !kg/m2/step
+       if(j==1)then
+         !the following line is due to the ice check that is added in drainage calculation
+         qflx_drain_vr(c,j) = qflx_drain_vr(c,j) + (h2osoi_ice_copy(c,j)-h2osoi_ice(c,j))
+       endif
        !the following line will allow negative drainage
-       qflx_drain_vr(c,j) =qflx_drain_vr(c,j)/denh2o               !kg/m2/(kg/m3)/step = m
+       qflx_drain_vr(c,j) =qflx_drain_vr(c,j) * 1.e-3_r8               !kg/m2/(kg/m3)/step = m/step
 
        qflx_totdrain(c) = qflx_totdrain(c) + qflx_drain_vr(c,j)
      enddo
    enddo
 
    deallocate(h2osoi_liq_copy)
+   deallocate(h2osoi_ice_copy)
    end associate
    end subroutine diagnose_drainage_water_flux
 
@@ -1690,20 +1667,21 @@ contains
      is_h2o => betrtracer_vars%is_h2o                   &
    )
 
-   if(any(is_h2o))then
+!the following code is now not used
+!   if(any(is_h2o))then
      !doing a water isotope simulation
-     if(betrtracer_vars%id_trc_o18_h2o>0)then
-        do j = lbj, ubj
-          do fc = 1, numf
-            c = filter(fc)
-            if(j>=jtops(c))then
-              alpha_sl = get_equi_sl_h2oiso_fractionation(betrtracer_vars%id_trc_o18_h2o, t_soisno(c,j), betrtracer_vars)
-              aqu2equilsolidcef_col(c,j, betrtracer_vars%id_trc_o18_h2o_ice) = alpha_sl * h2osoi_ice(c,j) / (denh2o * dz(c,j))
-            endif
-          enddo
-        enddo
-     endif
-   endif
+!     if(betrtracer_vars%id_trc_o18_h2o>0)then
+!        do j = lbj, ubj
+!          do fc = 1, numf
+!            c = filter(fc)
+!            if(j>=jtops(c))then
+!              alpha_sl = get_equi_sl_h2oiso_fractionation(betrtracer_vars%id_trc_o18_h2o, t_soisno(c,j), betrtracer_vars)
+!              aqu2equilsolidcef_col(c,j, betrtracer_vars%id_trc_o18_h2o_ice) = alpha_sl * h2osoi_ice(c,j) / (denh2o * dz(c,j))
+!            endif
+!          enddo
+!        enddo
+!     endif
+!   endif
 
    end associate
    end subroutine calc_equil_to_liquid_convert_coeff
@@ -1945,7 +1923,7 @@ contains
     ! !DESCRIPTION: Annual mean fields.
     !
     ! !USES:
-    use clm_time_manager             , only : get_step_size, get_days_per_year, get_nstep
+    use clm_time_manager             , only : get_step_size, get_days_per_year
     use clm_varcon                   , only : secspday
     use BeTR_CarbonFluxType          , only : betr_carbonflux_type
     use tracercoeffType              , only : tracercoeff_type

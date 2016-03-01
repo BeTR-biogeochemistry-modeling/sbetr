@@ -75,7 +75,7 @@ contains
     procedure :: initCold
     procedure :: readParams
     procedure :: init_betr_lsm_bgc_coupler    ! update state vars using other bgc parts in lsm
-    procedure :: betr_lsm_flux_statevar_feedback
+    procedure :: lsm_betr_flux_state_receive
   end type bgc_reaction_CENTURY_ECACNP_type
 
   type, private :: Extra_type
@@ -925,7 +925,7 @@ contains
   end subroutine InitCold
 
   !--------------------------------------------------------------------------------------------------------------------
-  subroutine betr_lsm_flux_statevar_feedback(this, bounds, num_soilc, filter_soilc, &
+  subroutine lsm_betr_flux_state_receive(this, bounds, num_soilc, filter_soilc, &
         tracerstate_vars, tracerflux_vars,  betrtracer_vars)
 
     !
@@ -955,7 +955,7 @@ contains
          carbonstate_vars, nitrogenstate_vars, phosphorusstate_vars, &
          tracerstate_vars, betrtracer_vars, centurybgc_vars)
 
-  end subroutine betr_lsm_flux_statevar_feedback
+  end subroutine lsm_betr_flux_state_receive
 
   !---------------------------------------------------------------
   subroutine init_betr_lsm_bgc_coupler(this, bounds, plantsoilnutrientflux_vars, &

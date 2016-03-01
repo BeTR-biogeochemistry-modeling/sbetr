@@ -28,6 +28,7 @@ module WaterfluxType
     real(r8), pointer :: qflx_totdrain_col        (:)   ! col total liquid water drainage  (m/time step), updated in betr
     real(r8), pointer :: qflx_dew_grnd_col        (:)   ! col ground surface dew formation (mm H2O /s) [+] (+ = to atm); usually eflx_bot >= 0)
     real(r8), pointer :: qflx_dew_snow_col        (:)   ! col surface dew added to snow pack (mm H2O /s) [+]
+    real(r8), pointer :: qflx_sub_snow_vol_col    (:)
     real(r8), pointer :: qflx_sub_snow_col        (:)   ! col sublimation rate from snow pack (mm H2O /s) [+]
     real(r8), pointer :: qflx_h2osfc2topsoi_col   (:)   ! col liquid water coming from surface standing water top soil (mm H2O/s)
     real(r8), pointer :: qflx_snow2topsoi_col     (:)   ! col liquid water coming from residual snow to topsoil (mm H2O/s)
@@ -79,11 +80,12 @@ module WaterfluxType
     allocate(this%qflx_drain_vr_col        (begc:endc,lbj:ubj))      ; this%qflx_drain_vr_col        (:,:) = nan
     allocate(this%qflx_dew_grnd_col        (begc:endc))              ; this%qflx_dew_grnd_col        (:)   = nan
     allocate(this%qflx_dew_snow_col        (begc:endc))              ; this%qflx_dew_snow_col        (:)   = nan
+    allocate(this%qflx_sub_snow_vol_col    (begc:endc))              ; this%qflx_sub_snow_vol_col    (:)   = 0._r8
     allocate(this%qflx_sub_snow_col        (begc:endc))              ; this%qflx_sub_snow_col        (:)   = 0.0_r8
     allocate(this%qflx_snow2topsoi_col     (begc:endc))              ; this%qflx_snow2topsoi_col     (:)   = nan
     allocate(this%qflx_h2osfc2topsoi_col   (begc:endc))              ; this%qflx_h2osfc2topsoi_col   (:)   = nan
     allocate(this%qflx_tran_veg_patch      (begp:endp))              ; this%qflx_tran_veg_patch      (:)   = nan
-    allocate( this%qflx_totdrain_col       (begc:endc))              ; this%qflx_totdrain_col        (:)   = nan    
+    allocate( this%qflx_totdrain_col       (begc:endc))              ; this%qflx_totdrain_col        (:)   = nan
   end subroutine InitAllocate
 
 

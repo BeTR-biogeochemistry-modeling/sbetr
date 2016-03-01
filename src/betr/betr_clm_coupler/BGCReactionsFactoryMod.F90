@@ -12,15 +12,31 @@ module BGCReactionsFactoryMod
   use abortutils                  , only : endrun
   use clm_varctl                  , only : iulog
   use shr_log_mod                 , only : errMsg => shr_log_errMsg
-
   implicit none
   save
   private
-
-  public :: create_bgc_reaction_type
-  public :: create_plant_soilbgc_type
+  public :: create_betr_application
+  private :: create_bgc_reaction_type
+  private :: create_plant_soilbgc_type
 contains
 
+  subroutine create_betr_application(bgc_reaction, plant_soilbgc, method)
+
+  use PlantSoilBGCMod             , only : plant_soilbgc_type
+  use BGCReactionsMod             , only : bgc_reaction_type
+
+  !!
+  ! ARGUMENTS
+  !
+  class(bgc_reaction_type),  allocatable, intent(out) :: bgc_reaction
+  class(plant_soilbgc_type), allocatable, intent(out) :: plant_soilbgc
+  character(len=*), intent(in)          :: method
+
+  allocate(bgc_reaction, source=create_bgc_reaction_type(method))
+
+  allocate(plant_soilbgc, source=create_plant_soilbgc_type(method))
+
+  end subroutine create_betr_application
 
 !-------------------------------------------------------------------------------
 
@@ -66,7 +82,7 @@ contains
   case ("mock_run")
      allocate(plant_soilbgc, source=plant_soilbgc_mock_run_type())
   case ("h2oiso")
-     allocate(plant_soilbgc, source=plant_soilbgc_h2oiso_run_type())   
+     allocate(plant_soilbgc, source=plant_soilbgc_h2oiso_run_type())
   case default
      write(iulog,*)subname //' ERROR: unknown method: ', method
      call endrun(msg=errMsg(__FILE__, __LINE__))

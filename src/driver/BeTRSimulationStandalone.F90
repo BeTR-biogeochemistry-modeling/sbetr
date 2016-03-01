@@ -118,9 +118,13 @@ contains
     type(cnstate_type), intent(inout) :: cnstate_vars
     type(canopystate_type), intent(in) :: canopystate_vars
     type(carbonflux_type), intent(in) :: carbonflux_vars
-    type(waterflux_type), intent(inout) :: waterflux_vars !temporary variables
+    type(waterflux_type), intent(inout) :: waterflux_vars
+
+    !temporary variables
     type(betr_cnstate_type) :: betr_cnstate_vars
-    type(betr_carbonflux_type) :: betr_carbonflux_vars !pass necessary data for correct subroutine call
+    type(betr_carbonflux_type) :: betr_carbonflux_vars
+
+    !pass necessary data for correct subroutine call
     
     betr_cnstate_vars%isoilorder          => cnstate_vars%isoilorder
     

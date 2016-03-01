@@ -35,7 +35,7 @@ module BGCReactionsMockRunType
      procedure :: do_tracer_equilibration               ! do equilibrium tracer chemistry
      procedure :: InitCold                              ! do cold initialization
      procedure :: readParams                            ! read in parameters
-     procedure :: betr_lsm_flux_statevar_feedback       !
+     procedure :: lsm_betr_flux_state_receive       !
      procedure :: init_betr_lsm_bgc_coupler
   end type bgc_reaction_mock_run_type
 
@@ -324,7 +324,7 @@ contains
        l = col%landunit(c)
        if (lun%ifspecial(l)) then
           if(betrtracer_vars%ngwmobile_tracers>0)then
-             tracerstate_vars%tracer_conc_mobile_col(c,:,:)        = spval                
+             tracerstate_vars%tracer_conc_mobile_col(c,:,:)        = spval
              tracerstate_vars%tracer_conc_surfwater_col(c,:)       = spval
              tracerstate_vars%tracer_conc_aquifer_col(c,:)         = spval
              tracerstate_vars%tracer_conc_grndwater_col(c,:)       = spval
@@ -382,7 +382,7 @@ contains
   end subroutine readParams
 
   !-------------------------------------------------------------------------------
-  subroutine betr_lsm_flux_statevar_feedback(this, bounds, num_soilc, filter_soilc,  &
+  subroutine lsm_betr_flux_state_receive(this, bounds, num_soilc, filter_soilc,  &
        tracerstate_vars, tracerflux_vars,  betrtracer_vars)
     !
     ! !DESCRIPTION:
@@ -403,7 +403,7 @@ contains
     type(betrtracer_type)             , intent(in)    :: betrtracer_vars    ! betr configuration information
     type(tracerstate_type)            , intent(in)    :: tracerstate_vars   !
     type(tracerflux_type)             , intent(in)    :: tracerflux_vars    !
-  end subroutine betr_lsm_flux_statevar_feedback
+  end subroutine lsm_betr_flux_state_receive
 
   !-------------------------------------------------------------------------------
 
