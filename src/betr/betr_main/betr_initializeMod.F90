@@ -20,7 +20,7 @@ module betr_initializeMod
   public :: betr_readNL
   public :: betr_rest
   character(len=32) :: bgc_method='mock_run'
-  character(len=*), parameter :: filename = '__FILE__'
+  character(len=*), parameter :: mod_filename = __FILE__
   
 
 contains

@@ -10,7 +10,7 @@ module CLMForcType
 
   private
 
-  character(len=*), private, parameter :: module_filename = '__FILE__'
+  character(len=*), private, parameter :: mod_filename = __FILE__
   
   type, public :: clmforc_type
      character(len=betr_filename_length) :: grid_filename
@@ -244,7 +244,7 @@ end subroutine LoadForcingData
        ioerror_msg=''
        read(namelist_buffer, nml=forcing_inparm, iostat=nml_error, iomsg=ioerror_msg)
        if (nml_error /= 0) then
-          call endrun(msg="ERROR reading forcing_inparm namelist "//errmsg(module_filename, __LINE__))
+          call endrun(msg="ERROR reading forcing_inparm namelist "//errmsg(mod_filename, __LINE__))
        end if
     end if
 

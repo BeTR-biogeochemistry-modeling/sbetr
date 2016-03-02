@@ -14,7 +14,7 @@ module BeTRSimulationCLM
   implicit none
 
   private
-  character(len=*), private, parameter :: filename = "__FILE__"
+  character(len=*), private, parameter :: mod_filename = __FILE__
 
   type, public, extends(betr_simulation_type) :: betr_simulation_clm_type
 

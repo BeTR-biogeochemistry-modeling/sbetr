@@ -19,7 +19,7 @@ implicit none
   save
   private
 
-  character(len=*), parameter :: filename = '__FILE__'
+  character(len=*), parameter :: mod_filename = __FILE__
   
   public :: begin_betr_tracer_massbalance
   public :: betr_tracer_massbalance_check
@@ -137,7 +137,7 @@ implicit none
                       ' begm=',beg_tracer_molarmass(c,kk), &
                       ' endm=',end_tracer_molarmass(c,kk)
                  call tracerflux_vars%flux_display(c,kk,betrtracer_vars)
-                 call endrun(decomp_index=c, clmlevel=namec, msg=errmsg(filename, __LINE__))
+                 call endrun(decomp_index=c, clmlevel=namec, msg=errMsg(mod_filename, __LINE__))
               endif
            enddo
            bal_beg=0._r8
@@ -150,7 +150,7 @@ implicit none
                  write(iulog,*)get_nstep(),is_mobile(kk)
                  write(iulog,*) 'begmss=', beg_tracer_molarmass(c,kk), 'endmass=', end_tracer_molarmass(c,kk), &
                       ' netpro=', tracer_flx_netpro(c,kk)
-                 call endrun(decomp_index=c, clmlevel=namec, msg=errmsg(filename, __LINE__))
+                 call endrun(decomp_index=c, clmlevel=namec, msg=errMsg(mod_filename, __LINE__))
               endif
            enddo
 

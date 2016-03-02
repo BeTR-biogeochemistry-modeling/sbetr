@@ -38,7 +38,7 @@ module TracerParamsMod
   public :: calc_aerecond
   public :: betr_annualupdate
   !parameters
-  character(len=*), parameter :: filename = '__FILE__'
+  character(len=*), parameter :: filename = __FILE__
   real(r8), parameter :: minval_diffus = 1.e-20_r8   !minimum diffusivity, m2/s
   real(r8), parameter :: minval_airvol = 1.e-10_r8   !minimum air-filled volume
 

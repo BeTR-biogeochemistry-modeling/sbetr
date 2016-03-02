@@ -16,7 +16,7 @@ module InterpolationMod
   public :: Lagrange_interp
   public :: pchip_polycc
   public :: pchip_interp
-  character(len=*), parameter :: filename = '__FILE__'
+  character(len=*), parameter :: mod_filename = __FILE__
 contains
 
   !-------------------------------------------------------------------------------
@@ -36,9 +36,9 @@ contains
     integer :: k, ni, nx
     integer :: pos, disp, disp1
 
-    SHR_ASSERT_ALL((ubound(x) == ubound(y)), errMsg(filename,__LINE__))
-    SHR_ASSERT_ALL((ubound(xi) == ubound(yi)), errMsg(filename,__LINE__))
-    SHR_ASSERT_ALL((ubound(x) >= pn+1), errMsg(filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(x) == ubound(y)), errMsg(mod_filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(xi) == ubound(yi)), errMsg(mod_filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(x) >= pn+1), errMsg(mod_filename,__LINE__))
 
     ni  = size(xi)
     nx = size(x)
@@ -90,8 +90,8 @@ contains
     real(r8)  :: L(pn+1)    ! Lagrange cardinal function
     real(r8)  :: Pz    ! target value
 
-    SHR_ASSERT_ALL((size(xvect) == size(yvect)), errMsg(filename,__LINE__))
-    SHR_ASSERT_ALL((size(xvect) == pn+1), errMsg(filename,__LINE__))
+    SHR_ASSERT_ALL((size(xvect) == size(yvect)), errMsg(mod_filename,__LINE__))
+    SHR_ASSERT_ALL((size(xvect) == pn+1), errMsg(mod_filename,__LINE__))
 
     ! n = number of data points:length of each data vector
     n = size(xvect)
@@ -172,8 +172,8 @@ contains
     integer :: region_loc
     integer :: n, j
 
-    SHR_ASSERT_ALL((size(x) == size(fx)), errMsg(filename,__LINE__))
-    SHR_ASSERT_ALL((size(x) == size(di)), errMsg(filename,__LINE__))
+    SHR_ASSERT_ALL((size(x) == size(fx)), errMsg(mod_filename,__LINE__))
+    SHR_ASSERT_ALL((size(x) == size(di)), errMsg(mod_filename,__LINE__))
 
     region_loc=2
     if(present(region))region_loc=region
@@ -283,7 +283,7 @@ contains
                 endif
              endif
           case default
-             call endrun(msg='an constraint region must be specified for pchip_polycc '//errMsg(filename, __LINE__))
+             call endrun(msg='an constraint region must be specified for pchip_polycc '//errMsg(mod_filename, __LINE__))
           end select
 
        endif
@@ -313,9 +313,9 @@ contains
     integer  :: n, j
     integer  :: id
 
-    SHR_ASSERT_ALL((size(x) == size(fx)),  errMsg(filename,__LINE__))
-    SHR_ASSERT_ALL((size(x) == size(di)),  errMsg(filename,__LINE__))
-    SHR_ASSERT_ALL((size(xi) == size(yi)), errMsg(filename,__LINE__))
+    SHR_ASSERT_ALL((size(x) == size(fx)),  errMsg(mod_filename,__LINE__))
+    SHR_ASSERT_ALL((size(x) == size(di)),  errMsg(mod_filename,__LINE__))
+    SHR_ASSERT_ALL((size(xi) == size(yi)), errMsg(mod_filename,__LINE__))
 
     n=size(xi)  !total number of points to be interpolated
 

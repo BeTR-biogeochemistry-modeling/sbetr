@@ -40,7 +40,8 @@ module TransportMod
   !default configuration parameters
   real(r8), private :: cntheta
   logical, private :: debug_loc=.false.
-  character(len=*), private, parameter :: filename = '__FILE__'
+  character(len=*), private, parameter :: filename = &
+       __FILE__
   public :: set_debug_transp
 contains
   subroutine set_debug_transp(yesno)

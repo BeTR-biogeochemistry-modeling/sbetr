@@ -21,7 +21,7 @@ module BGCReactionsMockRunType
   private
   !
   ! !PUBLIC TYPES:
-  character(len=*), parameter :: filename = '__FILE__'
+  character(len=*), parameter :: mod_filename = __FILE__
   public :: bgc_reaction_mock_run_type
 
   type, extends(bgc_reaction_type) :: &
@@ -181,7 +181,7 @@ contains
     integer            :: fc, c
     character(len=255) :: subname = 'set_boundary_conditions'
 
-    SHR_ASSERT_ALL((ubound(dz_top)                == (/bounds%endc/)),   errMsg(filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(dz_top)                == (/bounds%endc/)),   errMsg(mod_filename,__LINE__))
 
     associate(                                     &
          groupid  => betrtracer_vars%groupid       &
@@ -276,7 +276,7 @@ contains
     character(len=255) :: subname = 'do_tracer_equilibration'
 
 
-    SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__))
 
     !depending on the simulation type, an implementation of aqueous chemistry will be
     !employed to separate out the adsorbed phase

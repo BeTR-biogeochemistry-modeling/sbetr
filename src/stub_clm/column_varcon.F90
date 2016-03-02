@@ -50,9 +50,9 @@ contains
     ! !LOCAL VARIABLES:
 
     character(len=*), parameter :: subname = 'icemec_class_to_col_itype'
-    character(len=*), parameter :: filename = '__FILE__'
+    character(len=*), parameter :: mod_filename = __FILE__
     !-----------------------------------------------------------------------
-    SHR_ASSERT((1 <= icemec_class .and. icemec_class <= maxpatch_glcmec), errMsg(filename, __LINE__))
+    SHR_ASSERT((1 <= icemec_class .and. icemec_class <= maxpatch_glcmec), errMsg(mod_filename, __LINE__))
 
     col_itype = istice_mec*100 + icemec_class
 
@@ -75,7 +75,7 @@ contains
     ! !LOCAL VARIABLES:
 
     character(len=*), parameter :: subname = 'col_itype_to_icemec_class'
-    character(len=*), parameter :: filename = '__FILE__'
+    character(len=*), parameter :: mod_filename = __FILE__
     !-----------------------------------------------------------------------
 
     icemec_class = col_itype - istice_mec*100
@@ -83,7 +83,7 @@ contains
     ! The following assertion is here to ensure that col_itype is really from an
     ! istice_mec landunit
 
-    SHR_ASSERT((1 <= icemec_class .and. icemec_class <= maxpatch_glcmec), errMsg(filename, __LINE__))
+    SHR_ASSERT((1 <= icemec_class .and. icemec_class <= maxpatch_glcmec), errMsg(mod_filename, __LINE__))
 
   end function col_itype_to_icemec_class
 

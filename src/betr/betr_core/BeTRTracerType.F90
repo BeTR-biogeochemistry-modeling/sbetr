@@ -12,7 +12,7 @@ module BeTRTracerType
   !
   implicit none
   private
-  character(len=*), parameter :: filename = '__FILE__'
+  character(len=*), parameter :: mod_filename = __FILE__
 
   !----------------------------------------------------
   !betr tracer setup structure
@@ -269,10 +269,10 @@ subroutine set_tracer(this, trc_id, trc_name, is_trc_mobile, is_trc_advective, t
     this%is_volatile      (trc_id)    = is_trc_volatile
     if(this%is_volatile   (trc_id)) then
       if(.not.present(trc_volatile_id))then
-        call endrun('volatile tracer id is not provided for '//trim(trc_name)//errMsg(filename, __LINE__))
+        call endrun('volatile tracer id is not provided for '//trim(trc_name)//errMsg(mod_filename, __LINE__))
       endif
       if(.not.present(trc_volatile_group_id))then
-        call endrun('volatile tracer group id is not provided for '//trim(trc_name)//errMsg(filename, __LINE__))
+        call endrun('volatile tracer group id is not provided for '//trim(trc_name)//errMsg(mod_filename, __LINE__))
       endif
 
       this%volatileid     (trc_id)    = trc_volatile_id
@@ -297,10 +297,10 @@ subroutine set_tracer(this, trc_id, trc_name, is_trc_mobile, is_trc_advective, t
     this%is_adsorb(trc_id) = is_trc_adsorb
     if(is_trc_adsorb)then
       if(.not.present(trc_adsorbid))then
-        call endrun('adsorb tracer id is not provided for '//trim(trc_name)//errMsg(filename, __LINE__))
+        call endrun('adsorb tracer id is not provided for '//trim(trc_name)//errMsg(mod_filename, __LINE__))
       endif
       if(.not.present(trc_adsorbgroupid))then
-        call endrun('adsorb tracer group id is not provided for '//trim(trc_name)//errMsg(filename, __LINE__))
+        call endrun('adsorb tracer group id is not provided for '//trim(trc_name)//errMsg(mod_filename, __LINE__))
       endif
       this%adsorbid(trc_id) = trc_adsorbid
       this%adsorbgroupid(trc_id) = trc_adsorbgroupid
@@ -312,7 +312,7 @@ subroutine set_tracer(this, trc_id, trc_name, is_trc_mobile, is_trc_advective, t
     this%is_frozen(trc_id) = is_trc_frozen
     if(is_trc_frozen)then
       if(.not. present(trc_frozenid))then
-        call endrun('frozen tracer id is not provided for '//trim(trc_name)//errMsg(filename, __LINE__))
+        call endrun('frozen tracer id is not provided for '//trim(trc_name)//errMsg(mod_filename, __LINE__))
       endif
       this%frozenid(trc_id) = trc_frozenid
       this%nfrozen_tracers = this%nfrozen_tracers + 1

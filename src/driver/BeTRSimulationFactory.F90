@@ -12,7 +12,8 @@ module BeTRSimulationFactory
   implicit none
   save
   private
-  character(len=*), private, parameter :: filename = "__FILE__"
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
   public :: create_betr_simulation
 contains
 
@@ -35,17 +36,17 @@ contains
        case ("clm")
           write(*, *) "ERROR: simulator type '", &
                trim(simulator_name), "' has not been implemented."
-          call endrun(msg=errMsg(filename, __LINE__))
+          call endrun(msg=errMsg(mod_filename, __LINE__))
           !X!allocate(simulator, source=create_betr_simulation_clm())
        case ("alm")
           write(*, *) "ERROR: simulator type '", &
                trim(simulator_name), "' has not been implemented."
-          call endrun(msg=errMsg(filename, __LINE__))
+          call endrun(msg=errMsg(mod_filename, __LINE__))
           !X! allocate(simulator, source=create_betr_simulation_alm())
        case default
           write(*, *) "ERROR: unknown simulator type '", &
                trim(simulator_name), "'."
-          call endrun(msg=errMsg(filename, __LINE__))
+          call endrun(msg=errMsg(mod_filename, __LINE__))
     end select
   end function create_betr_simulation
 

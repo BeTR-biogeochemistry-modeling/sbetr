@@ -24,7 +24,7 @@ module BeTRSimulation
 
   implicit none
   private
-  character(len=*), private, parameter :: filename = "__FILE__"
+  character(len=*), private, parameter :: mod_filename = __FILE__
 
   type, public :: betr_simulation_type
      character(len=128) :: reaction_method
