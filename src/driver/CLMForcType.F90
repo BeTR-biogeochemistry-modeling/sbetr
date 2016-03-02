@@ -240,7 +240,7 @@ end subroutine LoadForcingData
     ! Read namelist from standard input.
     ! ----------------------------------------------------------------------
 
-    if ( masterproc )then
+    if ( .true. )then
        ioerror_msg=''
        read(namelist_buffer, nml=forcing_inparm, iostat=nml_error, iomsg=ioerror_msg)
        if (nml_error /= 0) then
