@@ -6,7 +6,8 @@ module sbetrDriverMod
   use shr_kind_mod        , only : r8 => shr_kind_r8
   use ncdio_pio
   use CLMForcType         , only : clmforc_vars
-implicit none
+
+  implicit none
 
   private
   save
@@ -20,10 +21,10 @@ implicit none
     integer  :: tstep
   end type time_type
 
-  character(len=255), parameter :: histfilename="betr_output.nc"      !this will be changed
+  character(len=*), parameter :: histfilename="betr_output.nc"      !this will be changed
 contains
 
-  subroutine sbetrBGC_driver(bounds, num_soilc, filter_soilc,time_vars)
+  subroutine sbetrBGC_driver(namelist_buffer, bounds, num_soilc, filter_soilc,time_vars)
   !
   !DESCRIPTION
   !driver subroutine for sbetrBGC
@@ -38,6 +39,7 @@ contains
   use BeTRSimulation, only : betr_simulation_type
   use BeTRSimulationFactory, only : create_betr_simulation
 
+  use betr_constants, only : betr_namelist_buffer_size
   
 !X!  use betr_standalone_cpl , only : betr_initialize_standalone
 !X!  use betr_standalone_cpl , only : run_betr_one_step_without_drainage_standalone
@@ -52,7 +54,9 @@ contains
   use clm_time_manager    , only : proc_initstep, proc_nextstep
   use accumulMod
   use TracerBalanceMod
+
   implicit none
+  character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
   type(bounds_type),        intent(in) :: bounds                                ! bounds
   integer,                  intent(in) :: num_soilc                                  ! number of columns in column filter
   integer,                  intent(in) :: filter_soilc(:)                             ! column filter
@@ -78,7 +82,7 @@ contains
   time_vars%time  = 0._r8
   time_vars%time_end=dtime*48._r8*365._r8*2._r8
 
-  call clmforc_vars%LoadForcingData()
+  call clmforc_vars%LoadForcingData(namelist_buffer)
 
   jtops(:) = 1  !this will be replaced with nan when I figured out how to do it, Jinyun Tang, June 17, 2014
 

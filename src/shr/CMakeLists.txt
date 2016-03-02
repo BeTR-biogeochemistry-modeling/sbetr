@@ -18,7 +18,7 @@ set(BETR_LIBRARIES betr_shr;${BETR_LIBRARIES})
 #X#add_subdirectory(tests)
 
 if (NOT CMAKE_INSTALL_PREFIX STREQUAL "INSTALL_DISABLED")
-  install(TARGETS betr_math DESTINATION lib)
+  install(TARGETS betr_shr DESTINATION lib)
   file(GLOB HEADERS *.h)
   install(FILES ${HEADERS} DESTINATION include/betr/shr)
 endif()

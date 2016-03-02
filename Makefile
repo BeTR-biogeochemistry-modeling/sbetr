@@ -93,7 +93,7 @@ ifneq ($(prefix), not-set)
   CONFIG_FLAGS += -DCMAKE_INSTALL_PREFIX:PATH=$(prefix)
 else
   # No default installation dir.
-  CONFIG_FLAGS += -DCMAKE_INSTALL_PREFIX:PATH=INSTALL_DISABLED
+  CONFIG_FLAGS += -DCMAKE_INSTALL_PREFIX:PATH=$(shell pwd)
 endif
 
 # Special considerations for specific systems.

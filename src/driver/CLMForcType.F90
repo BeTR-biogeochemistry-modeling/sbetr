@@ -3,14 +3,18 @@ module CLMForcType
   use shr_const_mod       , only : rhoice => SHR_CONST_RHOICE
   use shr_const_mod       , only : rhoh2o => SHR_CONST_RHOFW
 
+  use betr_constants, only : betr_filename_length, betr_string_length_long
+  use betr_constants, only : betr_namelist_buffer_size
+  
   implicit none
+
   private
 
   character(len=*), private, parameter :: module_filename = '__FILE__'
   
   type, public :: clmforc_type
-     character(len=256) :: grid_filename
-     character(len=256) :: forcing_filename
+     character(len=betr_filename_length) :: grid_filename
+     character(len=betr_filename_length) :: forcing_filename
     real(r8), pointer :: t_soi(:,:)
     real(r8), pointer :: h2osoi_liqvol(:,:)
     real(r8), pointer :: h2osoi_liq(:,:)
@@ -72,9 +76,14 @@ contains
 
 
   !------------------------------------------------------------------------
-  subroutine LoadForcingData(this)
-  use ncdio_pio
-  class(clmforc_type) :: this
+  subroutine LoadForcingData(this, namelist_buffer)
+
+    use ncdio_pio
+    implicit none
+
+    class(clmforc_type) :: this
+    character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
+    
   character(len=250) :: ncf_in_filename_grid
   character(len=250) :: ncf_in_filename_forc
   type(file_desc_t)  :: ncf_in_grid
@@ -85,13 +94,14 @@ contains
   integer :: dimlenl, dimlent
   integer :: j1, j2
 
-  call this%ReadNameList('example.nl')
+  call this%ReadNameList(namelist_buffer)
+  
   ncf_in_filename_grid=trim(this%grid_filename)
   call ncd_pio_openfile(ncf_in_grid, ncf_in_filename_grid, mode=ncd_nowrite)
 
   ncf_in_filename_forc=trim(this%forcing_filename)
-
   call ncd_pio_openfile(ncf_in_forc, ncf_in_filename_forc, mode=ncd_nowrite)
+  
   dimlenl = get_dim_len(ncf_in_forc,'levgrnd')
   dimlent = get_dim_len(ncf_in_forc,'time')
 
@@ -192,7 +202,7 @@ end subroutine LoadForcingData
 
 ! ----------------------------------------------------------------------
 
-  subroutine ReadNameList(this, filename)
+  subroutine ReadNameList(this, namelist_buffer)
     !
     ! !DESCRIPTION:
     ! read namelist for betr configuration
@@ -204,46 +214,55 @@ end subroutine LoadForcingData
     use clm_varctl   , only : iulog
     use abortutils      , only : endrun
     use shr_log_mod     , only : errMsg => shr_log_errMsg    
+
+    use betr_constants, only : stdout
     
     implicit none
     ! !ARGUMENTS:
     class(clmforc_type) :: this
-    character(len=*), intent(in) :: filename ! Namelist filename
+    character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
     !
     ! !LOCAL VARIABLES:
-    integer :: ierr                    ! error code
-    integer :: unitn                   ! unit for namelist file
-    character(len=32) :: subname = 'ReadNameList'
-    character(len=256) :: grid_filename, forcing_filename
+    integer :: nml_error
+    character(len=*), parameter :: subname = 'ReadNameList'
+    character(len=betr_filename_length) :: grid_filename, forcing_filename
+    character(len=betr_string_length_long) :: ioerror_msg
+
 
     !-----------------------------------------------------------------------
-
+    
     namelist / forcing_inparm / grid_filename, forcing_filename
+
+    grid_filename = ''
+    forcing_filename = ''
 
     ! ----------------------------------------------------------------------
     ! Read namelist from standard input.
     ! ----------------------------------------------------------------------
 
     if ( masterproc )then
-
-       unitn = getavu()
-       write(iulog,*) 'Read in forcing_inparm  namelist'
-       call opnfil (filename, unitn, 'F')
-       call shr_nl_find_group_name(unitn, 'forcing_inparm', status=ierr)
-       if (ierr == 0) then
-          read(unitn, forcing_inparm, iostat=ierr)
-          if (ierr /= 0) then
-             call endrun(msg="ERROR reading forcing_inparm namelist"//errmsg(module_filename, __LINE__))
-          end if
+       ioerror_msg=''
+       read(namelist_buffer, nml=forcing_inparm, iostat=nml_error, iomsg=ioerror_msg)
+       if (nml_error /= 0) then
+          call endrun(msg="ERROR reading forcing_inparm namelist "//errmsg(module_filename, __LINE__))
        end if
-       call relavu( unitn )
-
     end if
-    ! Broadcast namelist variables read in
+
+    if (.true.) then
+       write(stdout, *)
+       write(stdout, *) '--------------------'
+       write(stdout, *)
+       write(stdout, *) ' betr climate forcing :'
+       write(stdout, *)
+       write(stdout, *) ' forcing_inparm namelist settings :'
+       write(stdout, *)
+       write(stdout, forcing_inparm)
+       write(stdout, *)
+       write(stdout, *) '--------------------'
+    endif
+
     this%grid_filename = grid_filename
     this%forcing_filename = forcing_filename
-    call shr_mpi_bcast(grid_filename, mpicom)
-    call shr_mpi_bcast(forcing_filename, mpicom)
 
   end subroutine ReadNameList
 
