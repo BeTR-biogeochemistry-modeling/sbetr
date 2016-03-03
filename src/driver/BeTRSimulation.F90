@@ -52,7 +52,8 @@ contains
 
 !-------------------------------------------------------------------------------
 
-  subroutine BeTRSimulationInit(this, reaction_method, bounds, lbj, ubj)
+  subroutine BeTRSimulationInit(this, reaction_method, bounds, lbj, ubj, &
+       waterstate)
 
     use decompMod             , only : bounds_type
     use TransportMod          , only : init_transportmod
@@ -65,6 +66,7 @@ contains
     character(len=*), intent(in) :: reaction_method
     type(bounds_type)    , intent(in) :: bounds
     integer              , intent(in) :: lbj, ubj
+    type(waterstate_type), intent(inout) :: waterstate
 
     character(len=32) :: subname='BeTRSimulationInit'
 
@@ -88,8 +90,7 @@ contains
     call this%plant_soilbgc%Init_plant_soilbgc(bounds, lbj, ubj)
 
     !initialize state variable
-    ! FIXME(bja, 2016-03) need water state vars!
-!X!    call bgc_reaction%initCold(bounds,  betrtracer_vars, waterstate_vars, tracerstate_vars)
+    call this%bgc_reaction%initCold(bounds,  this%betrtracer_vars, waterstate, this%tracerstate_vars)
 
     !initialize boundary condition type
     call this%bgc_reaction%init_boundary_condition_type(bounds, this%betrtracer_vars, this%tracerboundarycond_vars)

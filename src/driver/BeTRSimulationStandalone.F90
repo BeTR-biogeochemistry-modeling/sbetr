@@ -53,7 +53,7 @@ contains
 
   !-------------------------------------------------------------------------------
 
-  subroutine StandaloneInit(this, reaction_method, bounds, lbj, ubj)
+  subroutine StandaloneInit(this, reaction_method, bounds, lbj, ubj, waterstate)
 
     use BeTRSimulation, only : BeTRSimulationInit
     use ReactionsFactoryStandalone, only : create_standalone_bgc_reaction_type, &
@@ -64,12 +64,14 @@ contains
     use PatchType, only : pft
     use pftvarcon, only : noveg, nc4_grass, nc3_arctic_grass, nc3_nonarctic_grass
     use clm_instMod, only : cnstate_vars
+    use WaterStateType, only : waterstate_type
     
     implicit none
     class(betr_simulation_standalone_type) :: this
     character(len=*), intent(in) :: reaction_method
     type(bounds_type)    , intent(in) :: bounds
     integer              , intent(in) :: lbj, ubj
+    type(waterstate_type), intent(inout) :: waterstate
     
     
     betr_pft%wtcol                        => pft%wtcol
@@ -84,7 +86,7 @@ contains
 
     ! now call the base simulation init to continue initialization
     ! FIXME(bja, 2016-03) missing water state vars!
-    call BeTRSimulationInit(this, reaction_method, bounds, lbj, ubj)
+    call BeTRSimulationInit(this, reaction_method, bounds, lbj, ubj, waterstate)
 
     !pass necessary data
     this%betr_cnstate_vars%isoilorder  => cnstate_vars%isoilorder

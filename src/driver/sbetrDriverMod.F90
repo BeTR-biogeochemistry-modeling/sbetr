@@ -107,7 +107,7 @@ contains
   !initialize parameters
   call read_name_list(namelist_buffer, simulator_name, reactions_name)  
   simulation => create_betr_simulation(simulator_name)
-  call  simulation%Init(reactions_name, bounds, lbj, ubj)
+  call  simulation%Init(reactions_name, bounds, lbj, ubj, waterstate_vars)
   !X!call betr_initialize_standalone(bounds, lbj, ubj)
 
   !create output file
