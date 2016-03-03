@@ -60,13 +60,29 @@ contains
     integer              , intent(in) :: lbj, ubj
     
     
+    betr_pft%wtcol                        => pft%wtcol
+    betr_pft%column                       => pft%column
+    betr_pft%itype                        => pft%itype
+    betr_pft%landunit                     => pft%landunit
+    
     ! allocate the reaction types that may only be known to this
     ! simulation type.
     allocate(this%bgc_reaction, source=create_standalone_bgc_reaction_type(reaction_method))
     allocate(this%plant_soilbgc, source=create_standalone_plant_soilbgc_type(reaction_method))
 
     ! now call the base simulation init to continue initialization
+    ! FIXME(bja, 2016-03) missing water state vars!
     call BeTRSimulationInit(this, reaction_method, bounds, lbj, ubj)
+
+    !pass necessary data
+    betr_cnstate_vars%isoilorder          => cnstate_vars%isoilorder
+    betr_pftvarcon%nc3_arctic_grass    = nc3_arctic_grass
+    betr_pftvarcon%nc3_nonarctic_grass = nc3_nonarctic_grass
+    betr_pftvarcon%nc4_grass           = nc4_grass
+    betr_pftvarcon%noveg               = noveg
+
+    call bgc_reaction%init_betr_lsm_bgc_coupler(bounds, plant_soilbgc, &
+         betrtracer_vars, tracerstate_vars, betr_cnstate_vars, ecophyscon)
 
   end subroutine StandaloneInit
 

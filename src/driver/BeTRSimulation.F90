@@ -88,6 +88,7 @@ contains
     call this%plant_soilbgc%Init_plant_soilbgc(bounds, lbj, ubj)
 
     !initialize state variable
+    ! FIXME(bja, 2016-03) need water state vars!
 !X!    call bgc_reaction%initCold(bounds,  betrtracer_vars, waterstate_vars, tracerstate_vars)
 
     !initialize boundary condition type
@@ -97,7 +98,7 @@ contains
     call tracer_param_init(bounds)
 
     !initialize the betrBGC module
-    !X!call betrbgc_init(bounds) - empty subroutine...
+    !X!call betrbgc_init(bounds) - NOTE(bja, 2016-03) empty subroutine...
 
   end subroutine BeTRSimulationInit
 
