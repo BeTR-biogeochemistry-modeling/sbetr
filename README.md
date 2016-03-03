@@ -1,3 +1,48 @@
+# BeTR
+
+BeTR is a standalone reactive transport libary designed to be
+integrated ino land surface models such as CLM and ALM.
+
+Jinyun Tang, jinyuntang@lbl.gov
+
+## Building
+
+There is a cmake based build system that has been tested on Mac OS X
+with gfortran installed into the users path. To build:
+
+    cd ${SBETR_ROOT}
+    make config
+    make debug=1 all
+
+This will do an out of source build in:
+
+    ${SBETR_ROOT}/build/Xyz/src
+
+where Xyz is the build configuration.
+
+The standalone `sbetr` executable is in:
+
+    ${SBETR_(ROOT}/bulid/Xyz/src/driver/sbetr
+
+## Testing
+
+Integration of pFUnit based unit tests and a systems level regression
+test driver are in progress.
+
+## Running
+
+sbetr takes exactly one command line arguement, the name of the input
+namelist file. The namelist input file specifies runtime configuration
+and paths to other input data files. NOTE: paths are relative to the
+directory where sbetr is executed!
+
+
+    cd ${SBETR_ROOT}/example_input
+    ../build/Darwin-x86_64-static-double-cc-Debug/src/driver/sbetr mock.namelist
+
+
+---------------------------------------------
+
 README (jinyuntang@lbl.gov)
 direcotries:
 code/src contains model code
