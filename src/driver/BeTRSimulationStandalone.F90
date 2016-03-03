@@ -11,7 +11,10 @@ module BeTRSimulationStandalone
 
   use decompMod, only : bounds_type
   use BeTRSimulation, only : betr_simulation_type
-  
+  use BeTR_CNStateType, only : betr_cnstate_type
+
+  use EcophysConType, only : ecophyscon_type
+
   implicit none
 
   private
@@ -19,6 +22,9 @@ module BeTRSimulationStandalone
        __FILE__
 
   type, public, extends(betr_simulation_type) :: betr_simulation_standalone_type
+     type(betr_cnstate_type) :: betr_cnstate_vars
+     type(ecophyscon_type) :: ecophyscon
+
 
    contains
      procedure :: Init => StandaloneInit
@@ -52,6 +58,12 @@ contains
     use BeTRSimulation, only : BeTRSimulationInit
     use ReactionsFactoryStandalone, only : create_standalone_bgc_reaction_type, &
          create_standalone_plant_soilbgc_type
+
+    use BeTR_PatchType, only : betr_pft
+    use BeTR_pftvarconType, only : betr_pftvarcon
+    use PatchType, only : pft
+    use pftvarcon, only : noveg, nc4_grass, nc3_arctic_grass, nc3_nonarctic_grass
+    use clm_instMod, only : cnstate_vars
     
     implicit none
     class(betr_simulation_standalone_type) :: this
@@ -75,14 +87,15 @@ contains
     call BeTRSimulationInit(this, reaction_method, bounds, lbj, ubj)
 
     !pass necessary data
-    betr_cnstate_vars%isoilorder          => cnstate_vars%isoilorder
+    this%betr_cnstate_vars%isoilorder  => cnstate_vars%isoilorder
     betr_pftvarcon%nc3_arctic_grass    = nc3_arctic_grass
     betr_pftvarcon%nc3_nonarctic_grass = nc3_nonarctic_grass
     betr_pftvarcon%nc4_grass           = nc4_grass
     betr_pftvarcon%noveg               = noveg
 
-    call bgc_reaction%init_betr_lsm_bgc_coupler(bounds, plant_soilbgc, &
-         betrtracer_vars, tracerstate_vars, betr_cnstate_vars, ecophyscon)
+    call this%bgc_reaction%init_betr_lsm_bgc_coupler(bounds, this%plant_soilbgc, &
+         this%betrtracer_vars, this%tracerstate_vars, this%betr_cnstate_vars, &
+         this%ecophyscon)
 
   end subroutine StandaloneInit
 
@@ -104,7 +117,6 @@ contains
     use BGCReactionsMod, only : bgc_reaction_type
     use atm2lndType, only : atm2lnd_type
     use SoilHydrologyType, only : soilhydrology_type
-    use BeTR_CNStateType, only : betr_cnstate_type
     use BeTR_CarbonFluxType, only : betr_carbonflux_type
     use CNStateType, only : cnstate_type
     use CNCarbonFluxType, only : carbonflux_type
@@ -138,12 +150,11 @@ contains
     type(waterflux_type), intent(inout) :: waterflux_vars
 
     !temporary variables
-    type(betr_cnstate_type) :: betr_cnstate_vars
     type(betr_carbonflux_type) :: betr_carbonflux_vars
 
     !pass necessary data for correct subroutine call
     
-    betr_cnstate_vars%isoilorder          => cnstate_vars%isoilorder
+    this%betr_cnstate_vars%isoilorder          => cnstate_vars%isoilorder
     
     betr_carbonflux_vars%annsum_npp_patch => carbonflux_vars%annsum_npp_patch
     betr_carbonflux_vars%agnpp_patch      => carbonflux_vars%agnpp_patch
@@ -159,7 +170,7 @@ contains
          num_soilc, filter_soilc, num_soilp, filter_soilp, col,   &
          atm2lnd_vars, soilhydrology_vars, soilstate_vars, &
          waterstate_vars, temperature_vars, waterflux_vars, &
-         chemstate_vars, betr_cnstate_vars, canopystate_vars, &
+         chemstate_vars, this%betr_cnstate_vars, canopystate_vars, &
          betr_carbonflux_vars, this%betrtracer_vars, this%bgc_reaction, &
          this%betr_aerecond_vars, this%tracerboundarycond_vars, this%tracercoeff_vars, &
          this%tracerstate_vars, this%tracerflux_vars, this%plant_soilbgc)
