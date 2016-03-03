@@ -1,6 +1,6 @@
 &sbetr_driver
-  simulator_type = 'standalone'
-  reactions_type = 'mock_run'
+  simulator_name = 'standalone'
+  reactions_name = 'mock_run'
 /
 
 &forcing_inparm

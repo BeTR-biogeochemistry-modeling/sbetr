@@ -12,6 +12,8 @@ module sbetrDriverMod
   private
   save
   public :: sbetrBGC_driver
+  
+  character(len=*), parameter :: mod_filename = __FILE__
 
 
   type,public:: time_type
@@ -39,7 +41,7 @@ contains
   use BeTRSimulation, only : betr_simulation_type
   use BeTRSimulationFactory, only : create_betr_simulation
 
-  use betr_constants, only : betr_namelist_buffer_size
+  use betr_constants, only : betr_namelist_buffer_size, betr_string_length_long
   
 !X!  use betr_standalone_cpl , only : betr_initialize_standalone
 !X!  use betr_standalone_cpl , only : run_betr_one_step_without_drainage_standalone
@@ -76,6 +78,8 @@ contains
   integer :: lbj, ubj
   integer :: jtops(bounds%begc:bounds%endc)
 
+  character(len=betr_string_length_long) :: simulator_name, reactions_name
+
 
   dtime = 1800._r8   !half hourly time step
   time_vars%tstep = 1
@@ -101,8 +105,9 @@ contains
   call spmd_init
 
   !initialize parameters
-  simulation => create_betr_simulation('standalone')
-  call  simulation%Init('mock_run', bounds, lbj, ubj)
+  call read_name_list(namelist_buffer, simulator_name, reactions_name)  
+  simulation => create_betr_simulation(simulator_name)
+  call  simulation%Init(reactions_name, bounds, lbj, ubj)
   !X!call betr_initialize_standalone(bounds, lbj, ubj)
 
   !create output file
@@ -157,6 +162,69 @@ contains
   enddo
 
   end subroutine sbetrBGC_driver
+! ----------------------------------------------------------------------
+
+  subroutine read_name_list(namelist_buffer, simulator_name_arg, reactions_name_arg)
+    !
+    ! !DESCRIPTION:
+    ! read namelist for betr configuration
+    ! !USES:
+    use spmdMod       , only : masterproc, mpicom
+    use clm_varctl   , only : iulog
+    use abortutils      , only : endrun
+    use shr_log_mod     , only : errMsg => shr_log_errMsg    
+
+    use betr_constants, only : stdout, betr_string_length_long, betr_namelist_buffer_size
+    
+    implicit none
+    ! !ARGUMENTS:
+    character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
+    character(len=betr_string_length_long), intent(out) :: simulator_name_arg, reactions_name_arg
+    !
+    ! !LOCAL VARIABLES:
+    integer :: nml_error
+    character(len=*), parameter :: subname = 'read_name_list'
+    character(len=betr_string_length_long) :: simulator_name, reactions_name
+    character(len=betr_string_length_long) :: ioerror_msg
+
+
+    !-----------------------------------------------------------------------
+    
+    namelist / sbetr_driver / simulator_name, reactions_name
+
+    simulator_name = ''
+    reactions_name = ''
+
+    ! ----------------------------------------------------------------------
+    ! Read namelist from standard input.
+    ! ----------------------------------------------------------------------
+
+    if ( .true. )then
+       ioerror_msg=''
+       read(namelist_buffer, nml=sbetr_driver, iostat=nml_error, iomsg=ioerror_msg)
+       if (nml_error /= 0) then
+          call endrun(msg="ERROR reading sbetr_driver namelist "//errmsg(mod_filename, __LINE__))
+       end if
+    end if
+
+    if (.true.) then
+       write(stdout, *)
+       write(stdout, *) '--------------------'
+       write(stdout, *)
+       write(stdout, *) ' sbetr driver :'
+       write(stdout, *)
+       write(stdout, *) ' sbetr_driver namelist settings :'
+       write(stdout, *)
+       write(stdout, sbetr_driver)
+       write(stdout, *)
+       write(stdout, *) '--------------------'
+    endif
+
+    simulator_name_arg = simulator_name
+    reactions_name_arg = reactions_name
+
+  end subroutine read_name_list
+
 !-------------------------------------------------------------------------------
 
   function its_time_to_write_restart(ttime)result(ans)

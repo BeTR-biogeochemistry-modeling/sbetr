@@ -31,7 +31,7 @@ contains
     class(betr_simulation_type), pointer :: simulator
     
     select case(trim(simulator_name))
-       case ("mock_run")
+       case ("standalone")
           allocate(simulator, source=create_betr_simulation_standalone())
        case ("clm")
           write(*, *) "ERROR: simulator type '", &
