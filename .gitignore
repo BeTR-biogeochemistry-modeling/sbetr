@@ -1,0 +1,13 @@
+# editor files
+*~
+
+# python artifacts
+*.pyc
+
+# build artifacts
+build/
+*.mod
+*.o
+
+# os x junk
+.DS_Store
