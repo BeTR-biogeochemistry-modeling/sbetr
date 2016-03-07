@@ -7,9 +7,9 @@ module TracerCoeffType
   use shr_kind_mod           , only : r8 => shr_kind_r8
   use shr_infnan_mod         , only : nan => shr_infnan_nan, assignment(=)
   use decompMod              , only : bounds_type
-  use ColumnType             , only : col
-  use LandunitType           , only : lun
-  use landunit_varcon, only : istsoil, istcrop
+  use BeTR_ColumnType        , only : col => betr_col
+  use BeTR_LandunitType      , only : lun => betr_lun
+  use landunit_varcon        , only : istsoil, istcrop
   !
   ! !PUBLIC TYPES:
   implicit none
@@ -144,7 +144,7 @@ contains
     allocate(this%aere_cond_col(begc:endc,          1:betrtracer_vars%nvolatile_tracer_groups))
     this%aere_cond_col(:,:)       = nan
 
-    allocate(this%annsum_counter_col(begc:endc))                                                    
+    allocate(this%annsum_counter_col(begc:endc))
     this%annsum_counter_col(:)         = nan
 
     allocate(this%diffgas_topsno_col(begc:endc,          1:betrtracer_vars%nvolatile_tracer_groups))
@@ -153,7 +153,7 @@ contains
     allocate(this%diffgas_topsoi_col(begc:endc,          1:betrtracer_vars%nvolatile_tracer_groups))
     this%diffgas_topsoi_col(:,:)       = nan
 
-    allocate(this%hmconductance_col(begc:endc, lbj:ubj, 1:betrtracer_vars%ntracer_groups))         
+    allocate(this%hmconductance_col(begc:endc, lbj:ubj, 1:betrtracer_vars%ntracer_groups))
     this%hmconductance_col(:,:,:)     = nan
 
     allocate(this%aqu2equilsolidcef_col(begc:endc, lbj:ubj, 1:betrtracer_vars%nsolid_equil_tracer_groups))

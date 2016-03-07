@@ -7,14 +7,14 @@ module TracerStateType
   use shr_kind_mod   , only : r8 => shr_kind_r8
   use shr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
   use decompMod      , only : bounds_type
-  use LandunitType   , only : lun
-  use ColumnType     , only : col
+  use BeTR_LandunitType, only : lun => betr_lun
+  use BeTR_ColumnType, only : col => betr_col
   use clm_varctl     , only : iulog
   use abortutils     , only : endrun
   use spmdMod        , only : masterproc
   use clm_varcon     , only : spval, ispval
   use landunit_varcon, only : istsoil, istcrop
-  use MathfuncMod    , only : dot_sum  
+  use MathfuncMod    , only : dot_sum
   !
   ! !PUBLIC TYPES:
   implicit none

@@ -15,7 +15,7 @@ module TracerParamsMod
   use clm_varpar            , only : nlevsoi
   use clm_varcon            , only : spval
   use BeTR_PatchType        , only : pft => betr_pft
-  use ColumnType            , only : col
+  use BeTR_ColumnType       , only : col => betr_col
   use clm_time_manager      , only : get_nstep
   use tracer_varcon
   implicit none
@@ -210,10 +210,10 @@ contains
     integer :: nsld
     real(r8) :: diffaqu, diffgas
     character(len=255) :: subname = 'calc_bulk_diffusivity'
-    
+
     integer :: nvolatile_tracer_groups
     nvolatile_tracer_groups = betrtracer_vars%nvolatile_tracer_groups
-    
+
     !array shape checking will be added later.
 
     SHR_ASSERT_ALL((ubound(jtops)           == (/bounds%endc/)),        errMsg(filename,__LINE__))
@@ -417,7 +417,7 @@ contains
 
    ngwmobile_tracer_groups = betrtracer_vars%ngwmobile_tracer_groups
    nvolatile_tracer_groups = betrtracer_vars%nvolatile_tracer_groups
-   
+
    SHR_ASSERT_ALL((ubound(jtops)             == (/bounds%endc/)),        errMsg(filename,__LINE__))
    SHR_ASSERT_ALL((ubound(t_soisno)          == (/bounds%endc, ubj/)),   errMsg(filename,__LINE__))
    SHR_ASSERT_ALL((ubound(soi_pH)            == (/bounds%endc, ubj/)),   errMsg(filename,__LINE__))
@@ -1302,7 +1302,7 @@ contains
    end subroutine calc_tracer_infiltration
 
    !------------------------------------------------------------------------
-   subroutine diagnose_dtracer_freeze_thaw(bounds, num_nolakec, filter_nolakec, lun, &
+   subroutine diagnose_dtracer_freeze_thaw(bounds, num_nolakec, filter_nolakec, &
      waterstate_vars, betrtracer_vars, tracerstate_vars)
    !
    ! DESCRIPTION
@@ -1310,7 +1310,7 @@ contains
    !
    ! USES
    !
-   use LandunitType          , only : landunit_type
+   use BeTR_LandunitType     , only : lun => betr_lun
    use WaterStateType        , only : waterstate_type
    use tracerstatetype       , only : tracerstate_type
    use BeTRTracerType        , only : betrtracer_type
@@ -1321,7 +1321,6 @@ contains
    type(bounds_type)      , intent(in)    :: bounds
    integer                , intent(in)    :: num_nolakec                        ! number of column non-lake points in column filter
    integer                , intent(in)    :: filter_nolakec(:)                  ! column filter for non-lake points
-   type(landunit_type)    , intent(in)    :: lun
    type(waterstate_type)  , intent(in)    :: waterstate_vars
    type(betrtracer_type)  , intent(in)    :: betrtracer_vars
    type(tracerstate_type) , intent(inout) :: tracerstate_vars

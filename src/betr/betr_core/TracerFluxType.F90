@@ -5,8 +5,8 @@ module TracerFluxType
   use shr_kind_mod   , only : r8 => shr_kind_r8
   use shr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
   use decompMod      , only : bounds_type
-  use LandunitType   , only : lun
-  use ColumnType     , only : col
+  use BeTR_LandunitType   , only : lun => betr_lun
+  use BeTR_ColumnType, only : col => betr_col
   use BeTR_PatchType , only : pft => betr_pft
   use clm_varcon     , only : spval, ispval
   use clm_varpar     , only : nlevtrc_soil
@@ -470,8 +470,8 @@ contains
     ! Now it is purposely empty, but will be potentially useful in the future
     ! !USES:
     use BetrTracerType        , only : betrtracer_type
-    use clm_varpar , only : nlevsno, nlevsoi
-    use clm_varcon , only : spval
+    use clm_varpar            , only : nlevsno, nlevsoi
+    use clm_varcon            , only : spval
     use restUtilMod
     use ncdio_pio
     !

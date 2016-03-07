@@ -59,7 +59,7 @@ contains
   end function quadrootbnd
 
   !-------------------------------------------------------------------------------
-  
+
   function quadproot(a,b,c)result(x)
     !
     ! !DESCRIPTION:
@@ -213,7 +213,7 @@ contains
     call lubksb(a,indx,r,n)
   end subroutine LUsolvAxr
   !===============================================================================
-  
+
   subroutine lubksb(a,indx,b,n)
     !
     ! !DESCRIPTION:
@@ -470,7 +470,7 @@ contains
   ! !IROUTINE: brent
   !
   ! !INTERFACE:
-  
+
   subroutine brent_np(x, x1,x2,f1, f2, macheps, tol,func)
 
     !
@@ -818,7 +818,7 @@ contains
     !  notices are included in any copies made.
     !  Neither the authors nor the publishers accept any responsibility for
     !  any results obtained by use of this code.
-
+    ! re-written by Jinyun Tang, Apr, 2013.
     ! !USES:
     use MathfuncMod, only : swap
     implicit none
@@ -891,7 +891,7 @@ contains
 
     ! !DESCRIPTION:
     !
-    ! This subroutine performs back substition once a system
+    ! This subroutine performs back substitution once a system
     ! of equations has been reduced by Gaussian elimination
     !  Copyright 1994, Miles Ellis, Ivor Philips and Tom Lahey
     !  Copyright 1994, Addison-Wesley Publishers Ltd.

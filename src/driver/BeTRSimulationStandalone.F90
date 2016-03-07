@@ -33,7 +33,7 @@ module BeTRSimulationStandalone
   end type betr_simulation_standalone_type
 
   public :: create_betr_simulation_standalone
-  
+
 contains
 
 !-------------------------------------------------------------------------------
@@ -60,25 +60,40 @@ contains
          create_standalone_plant_soilbgc_type
 
     use BeTR_PatchType, only : betr_pft
+    use BeTR_ColumnType, only : betr_col
+    use BeTR_LandunitType,only : betr_lun
     use BeTR_pftvarconType, only : betr_pftvarcon
     use PatchType, only : pft
+    use ColumnType, only : col
+    use LandunitType,only : lun
     use pftvarcon, only : noveg, nc4_grass, nc3_arctic_grass, nc3_nonarctic_grass
     use clm_instMod, only : cnstate_vars
     use WaterStateType, only : waterstate_type
-    
+
+
     implicit none
     class(betr_simulation_standalone_type) :: this
     character(len=*), intent(in) :: reaction_method
     type(bounds_type)    , intent(in) :: bounds
     integer              , intent(in) :: lbj, ubj
     type(waterstate_type), intent(inout) :: waterstate
-    
-    
+
+
     betr_pft%wtcol                        => pft%wtcol
     betr_pft%column                       => pft%column
     betr_pft%itype                        => pft%itype
     betr_pft%landunit                     => pft%landunit
-    
+
+    betr_col%landunit                     => col%landunit
+    betr_col%gridcell                     => col%gridcell
+    betr_col%snl                          => col%snl
+    betr_col%dz                           => col%dz
+    betr_col%zi                           => col%zi
+    betr_col%z                            => col%z
+
+    betr_lun%itype                        => lun%itype
+    betr_lun%ifspecial                    => lun%ifspecial
+
     ! allocate the reaction types that may only be known to this
     ! simulation type.
     allocate(this%bgc_reaction, source=create_standalone_bgc_reaction_type(reaction_method))
@@ -101,7 +116,7 @@ contains
 
   end subroutine StandaloneInit
 
-  
+
   !---------------------------------------------------------------------------------
   subroutine StandaloneStepWithoutDrainage(this, bounds, lbj, ubj, &
        num_soilc, filter_soilc, num_soilp, filter_soilp, col ,   &
@@ -124,7 +139,11 @@ contains
     use CNCarbonFluxType, only : carbonflux_type
     use CanopyStateType, only : canopystate_type
     use BeTR_PatchType, only : betr_pft
+    use BeTR_ColumnType, only : betr_col
+    use BeTR_LandunitType,only : betr_lun
+
     use PatchType, only : pft
+    use LandunitType,only : lun
     use pftvarcon, only : crop
 
     implicit none
@@ -138,7 +157,7 @@ contains
     integer, intent(in) :: num_soilp
     integer, intent(in) :: filter_soilp(:) ! pft filter
     integer, intent(in) :: lbj, ubj ! lower and upper bounds, make sure they are > 0
-    
+
     type(column_type), intent(in) :: col ! column type
     type(Waterstate_Type), intent(in) :: waterstate_vars ! water state variables
     type(soilstate_type), intent(in) :: soilstate_vars ! column physics variable
@@ -155,21 +174,31 @@ contains
     type(betr_carbonflux_type) :: betr_carbonflux_vars
 
     !pass necessary data for correct subroutine call
-    
+
     this%betr_cnstate_vars%isoilorder          => cnstate_vars%isoilorder
-    
+
     betr_carbonflux_vars%annsum_npp_patch => carbonflux_vars%annsum_npp_patch
     betr_carbonflux_vars%agnpp_patch      => carbonflux_vars%agnpp_patch
     betr_carbonflux_vars%bgnpp_patch      => carbonflux_vars%bgnpp_patch
-    
+
     betr_pft%wtcol                        => pft%wtcol
     betr_pft%column                       => pft%column
     betr_pft%itype                        => pft%itype
     betr_pft%landunit                     => pft%landunit
     betr_pft%crop                         => crop
-    
+
+    betr_col%landunit                     => col%landunit
+    betr_col%gridcell                     => col%gridcell
+    betr_col%snl                          => col%snl
+    betr_col%dz                           => col%dz
+    betr_col%zi                           => col%zi
+    betr_col%z                            => col%z
+
+    betr_lun%itype                        => lun%itype
+    betr_lun%ifspecial                    => lun%ifspecial
+
     call run_betr_one_step_without_drainage(bounds, lbj, ubj, &
-         num_soilc, filter_soilc, num_soilp, filter_soilp, col,   &
+         num_soilc, filter_soilc, num_soilp, filter_soilp,  &
          atm2lnd_vars, soilhydrology_vars, soilstate_vars, &
          waterstate_vars, temperature_vars, waterflux_vars, &
          chemstate_vars, this%betr_cnstate_vars, canopystate_vars, &
@@ -178,7 +207,7 @@ contains
          this%tracerstate_vars, this%tracerflux_vars, this%plant_soilbgc)
 
 
-    
+
   end subroutine StandaloneStepWithoutDrainage
 
   !---------------------------------------------------------------------------------
@@ -189,7 +218,9 @@ contains
     use ColumnType, only : column_type
     use MathfuncMod, only : safe_div
     use WaterFluxType, only : waterflux_type
-
+    use BeTR_ColumnType, only : betr_col
+    use BeTR_LandunitType,only : betr_lun
+    use LandunitType,only : lun
     implicit none
 
     ! !ARGUMENTS:
@@ -201,13 +232,25 @@ contains
     integer, intent(in) :: jtops(bounds%begc: )
     type(waterflux_type)    , intent(in) :: waterflux_vars
     type(column_type), intent(in) :: col ! column type
-    
+
+
+    betr_col%landunit                     => col%landunit
+    betr_col%gridcell                     => col%gridcell
+    betr_col%snl                          => col%snl
+    betr_col%dz                           => col%dz
+    betr_col%zi                           => col%zi
+    betr_col%z                            => col%z 
+
+    betr_lun%itype                        => lun%itype
+    betr_lun%ifspecial                    => lun%ifspecial
+
+
     call run_betr_one_step_with_drainage(bounds, lbj, ubj, &
          num_soilc, filter_soilc, &
-         jtops, waterflux_vars, col, this%betrtracer_vars, this%tracercoeff_vars, &
+         jtops, waterflux_vars, this%betrtracer_vars, this%tracercoeff_vars, &
          this%tracerstate_vars,  this%tracerflux_vars)
 
-  
+
   end subroutine StandaloneStepWithDrainage
 
 

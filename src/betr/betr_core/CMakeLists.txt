@@ -2,7 +2,6 @@ set(BETR_CORE_SOURCES
   BeTRTracerType.F90
   BeTR_CNStateType.F90
   BeTR_CarbonFluxType.F90
-  BeTR_PatchType.F90
   BeTR_aerocondType.F90
   BeTR_pftvarconType.F90
   KineticsMod.F90
@@ -18,6 +17,7 @@ set(BETR_CORE_SOURCES
 include_directories(${CMAKE_BINARY_DIR}/src/shr)
 include_directories(${CMAKE_BINARY_DIR}/src/stub_clm)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_math)
+include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_grid)
 
 
 include(add_betr_library)

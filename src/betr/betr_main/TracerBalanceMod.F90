@@ -11,7 +11,7 @@ module TracerBalanceMod
   use BeTRTracerType     , only : betrtracer_type
   use TracerFluxType     , only : TracerFlux_type
   use TracerStateType    , only : TracerState_type
-  use ColumnType         , only : col
+  use BeTR_ColumnType    , only : col => betr_col
   use clm_time_manager   , only : get_nstep
   use clm_varctl         , only : iulog
 
@@ -20,7 +20,7 @@ implicit none
   private
 
   character(len=*), parameter :: mod_filename = __FILE__
-  
+
   public :: begin_betr_tracer_massbalance
   public :: betr_tracer_massbalance_check
 

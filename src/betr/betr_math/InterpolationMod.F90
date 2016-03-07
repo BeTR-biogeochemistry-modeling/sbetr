@@ -6,9 +6,9 @@ module InterpolationMod
   ! author: Jinyun Tang, Sep, 2014
 
   ! !USES:
-  use shr_kind_mod, only: r8 => shr_kind_r8
+  use shr_kind_mod          , only: r8 => shr_kind_r8
   use abortutils            , only : endrun
-  use shr_log_mod ,   only: errMsg => shr_log_errMsg
+  use shr_log_mod           , only: errMsg => shr_log_errMsg
   implicit none
   private
   save
