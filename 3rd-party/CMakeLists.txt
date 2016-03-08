@@ -48,6 +48,9 @@ if (NOT EXISTS ${PROJECT_BINARY_DIR}/lib/libpfunit.a)
 endif()
 add_library(pfunit STATIC IMPORTED GLOBAL)
 set_target_properties(pfunit PROPERTIES IMPORTED_LOCATION ${PROJECT_BINARY_DIR}/lib/libpfunit.a)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/3rd-party/pfunit/include/" PARENT_SCOPE)
+set(ENV{PFUNIT} ${PROJECT_BINARY_DIR} CACHE)
+
 
 
 # Add all the libraries to the build system at large.
