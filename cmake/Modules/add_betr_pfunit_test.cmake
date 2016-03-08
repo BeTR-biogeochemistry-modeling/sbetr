@@ -1,5 +1,5 @@
 # This function adds a pfunit test executable for BeTR.
-function(add_betr_unit_test exe)
+function(add_betr_pfunit_test exe)
   configure_file(${CMAKE_BINARY_DIR}/include/driver.F90 driver.F90 COPYONLY)
   add_executable(${exe} ${ARGN} driver.F90)
   target_link_libraries(${exe} pfunit;${BETR_LIBRARIES})
