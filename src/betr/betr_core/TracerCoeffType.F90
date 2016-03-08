@@ -9,7 +9,7 @@ module TracerCoeffType
   use decompMod              , only : bounds_type
   use BeTR_ColumnType        , only : col => betr_col
   use BeTR_LandunitType      , only : lun => betr_lun
-  use landunit_varcon        , only : istsoil, istcrop
+  use BeTR_landvarconType    , only : landvarcon => betr_landvarcon
   !
   ! !PUBLIC TYPES:
   implicit none
@@ -75,8 +75,7 @@ contains
     ! Now it is purposely empty, but will be potentially useful in the future
     ! !USES:
     use BetrTracerType        , only : betrtracer_type
-    use clm_varpar , only : nlevsno, nlevsoi
-    use clm_varcon , only : spval
+    use clm_varcon            , only : spval
     use restUtilMod
     use ncdio_pio
     !
@@ -169,7 +168,6 @@ contains
     ! !USES:
     !use shr_infnan_mod, only : nan => shr_infnan_nan, assignment(=)
     use clm_varcon     , only : spval
-    use clm_varpar     , only : nlevsno
     use BeTRTracerType , only : BeTRTracer_Type
     use histFileMod    , only : hist_addfld1d, hist_addfld2d
     use histFileMod    , only : no_snow_normal, no_snow_zero
@@ -284,7 +282,7 @@ contains
           this%annsum_counter_col        (c)     = spval
        endif
 
-       if (lun%itype(l) == istsoil .or. lun%itype(l) == istcrop) then
+       if (lun%itype(l) == landvarcon%istsoil .or. lun%itype(l) == landvarcon%istcrop) then
           this%aqu2neutralcef_col        (c,:,:) = 0._r8
           this%aqu2bulkcef_mobile_col    (c,:,:) = 0._r8
           this%gas2bulkcef_mobile_col    (c,:,:) = 0._r8

@@ -103,13 +103,21 @@ contains
   use BeTR_PatchType, only : betr_pft
   use PatchType, only : pft
   use pftvarcon, only : nc3_arctic_grass, crop, nc3_nonarctic_grass, nc4_grass, noveg
+  use landunit_varcon
   use BeTR_pftvarconType, only : betr_pftvarcon
+  use BeTR_landvarconType, only : betr_landvarcon
+  use tracer_varcon, only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
+  use clm_varpar, only :   nlevsoi, nlevsno, nlevtrc_soil 
+
   implicit none
   type(bounds_type)    , intent(in) :: bounds
   integer              , intent(in) :: lbj, ubj
 
   !temporary variables
   type(betr_cnstate_type)   :: betr_cnstate_vars
+
+  betr_nlevsoi = nlevsoi
+  betr_nlevsno = nlevsno
 
   betr_pft%wtcol                        => pft%wtcol
   betr_pft%column                       => pft%column
@@ -124,6 +132,10 @@ contains
   betr_pftvarcon%nc3_nonarctic_grass = nc3_nonarctic_grass
   betr_pftvarcon%nc4_grass           = nc4_grass
   betr_pftvarcon%noveg               = noveg
+
+  betr_landvarcon%istsoil             = istsoil
+  betr_landvarcon%istcrop             = istcrop
+  betr_landvarcon%istice              = istice
 
   call bgc_reaction%init_betr_lsm_bgc_coupler(bounds, plant_soilbgc, &
        betrtracer_vars, tracerstate_vars, betr_cnstate_vars, ecophyscon)

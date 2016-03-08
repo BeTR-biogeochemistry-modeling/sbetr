@@ -3,7 +3,6 @@ set(BETR_CORE_SOURCES
   BeTR_CNStateType.F90
   BeTR_CarbonFluxType.F90
   BeTR_aerocondType.F90
-  BeTR_pftvarconType.F90
   KineticsMod.F90
   TracerBoundaryCondType.F90
   TracerCoeffType.F90

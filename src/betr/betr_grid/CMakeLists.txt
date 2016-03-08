@@ -2,6 +2,8 @@ set(BETR_GRID_SOURCES
   BeTR_ColumnType.F90
   BeTR_LandunitType.F90
   BeTR_PatchType.F90
+  BeTR_landvarconType.F90
+  BeTR_pftvarconType.F90
   )
 
 include_directories(${CMAKE_BINARY_DIR}/src/shr)

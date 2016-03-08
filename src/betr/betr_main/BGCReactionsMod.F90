@@ -259,11 +259,10 @@ module BGCReactionsMod
        ! !USES:
        use decompMod                , only : bounds_type
        use clm_varcon               , only : natomw, catomw
-       use clm_varpar               , only : i_cwd, i_met_lit, i_cel_lit, i_lig_lit
+       use tracer_varcon            , only : nlevtrc_soil  => betr_nlevtrc_soil
        use tracerstatetype          , only : tracerstate_type
        use BetrTracerType           , only : betrtracer_type
-       use clm_varpar               , only : nlevtrc_soil
-       use landunit_varcon          , only : istsoil, istcrop
+       use BeTR_landvarconType      , only : landvarcon => betr_landvarcon
        use PlantSoilBGCMod          , only : plant_soilbgc_type
        use EcophysConType           , only : ecophyscon_type
        use BeTR_CNStateType         , only : betr_cnstate_type

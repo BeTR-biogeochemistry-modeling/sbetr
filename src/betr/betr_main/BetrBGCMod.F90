@@ -61,7 +61,7 @@ contains
     use BGCReactionsMod              , only          : bgc_reaction_type
     use atm2lndType                  , only          : atm2lnd_type
     use SoilHydrologyType            , only          : soilhydrology_type
-    use clm_varpar                   , only          : nlevsoi
+    use tracer_varcon                , only          : nlevsoi  => betr_nlevsoi
     use PlantSoilBGCMod              , only          : plant_soilbgc_type
     use BeTR_CNStateType             , only          : betr_cnstate_type
     use BeTR_CarbonFluxType          , only          : betr_carbonflux_type
@@ -1648,8 +1648,8 @@ contains
     use tracerfluxType        , only : tracerflux_type
     use tracerstatetype       , only : tracerstate_type
     use clm_varcon            , only : spval
-    use clm_varpar            , only : nlevtrc_soil
-    use landunit_varcon       , only : istsoil, istcrop
+    use tracer_varcon         , only : nlevtrc_soil  => betr_nlevtrc_soil
+    use BeTR_landvarconType   , only : landvarcon  => betr_landvarcon
 
     ! !ARGUMENTS:
     type(bounds_type)         , intent(in)    :: bounds
@@ -1708,7 +1708,7 @@ contains
          do fc = 1, num_hydrologyc
             c = filter_soilc_hydrologyc(fc)
             l = clandunit(c)
-            if (ltype(l)/=istsoil .and. ltype(l)/=istcrop)cycle
+            if (ltype(l)/= landvarcon%istsoil .and. ltype(l)/= landvarcon%istcrop)cycle
             if(snl(c)+1>=1)then
                tracer_flx_dew_grnd(c, j) = (1._r8 - frac_h2osfc(c))*qflx_dew_grnd(c) * dtime
                tracer_flx_dew_snow(c, j) = (1._r8 - frac_h2osfc(c))*qflx_dew_snow(c) * dtime
@@ -1727,7 +1727,7 @@ contains
          do fc = 1, num_hydrologyc
             c = filter_soilc_hydrologyc(fc)
             l = clandunit(c)
-            if (ltype(l)/=istsoil .and. ltype(l)/=istcrop)cycle
+            if (ltype(l) /= landvarcon%istsoil .and. ltype(l) /= landvarcon%istcrop)cycle
             tracer_conc_mobile(c,1,j) = tracer_conc_mobile(c,1,j) + tracer_flx_dew_grnd(c, j)/dz(c,1)
             tracer_conc_frozen(c,1,frozenid(j)) = tracer_conc_frozen(c,1,frozenid(j)) + &
                  (tracer_flx_dew_snow(c, j)-tracer_flx_sub_snow(c,j))/dz(c,1)

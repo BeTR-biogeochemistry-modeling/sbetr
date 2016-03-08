@@ -70,7 +70,10 @@ contains
     use clm_instMod, only : cnstate_vars
     use WaterStateType, only : waterstate_type
 
-
+    use landunit_varcon
+    use BeTR_landvarconType, only : betr_landvarcon
+    use tracer_varcon, only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
+    use clm_varpar, only : nlevsno, nlevsoi, nlevtrc_soil
     implicit none
     class(betr_simulation_standalone_type) :: this
     character(len=*), intent(in) :: reaction_method
@@ -78,6 +81,9 @@ contains
     integer              , intent(in) :: lbj, ubj
     type(waterstate_type), intent(inout) :: waterstate
 
+    betr_nlevsoi = nlevsoi
+    betr_nlevsno = nlevsno
+    betr_nlevtrc_soil = nlevtrc_soil
 
     betr_pft%wtcol                        => pft%wtcol
     betr_pft%column                       => pft%column
@@ -94,6 +100,15 @@ contains
     betr_lun%itype                        => lun%itype
     betr_lun%ifspecial                    => lun%ifspecial
 
+    betr_pftvarcon%nc3_arctic_grass    = nc3_arctic_grass
+    betr_pftvarcon%nc3_nonarctic_grass = nc3_nonarctic_grass
+    betr_pftvarcon%nc4_grass           = nc4_grass
+    betr_pftvarcon%noveg               = noveg
+
+    betr_landvarcon%istsoil            = istsoil
+    betr_landvarcon%istcrop            = istcrop
+    betr_landvarcon%istice             = istice
+
     ! allocate the reaction types that may only be known to this
     ! simulation type.
     allocate(this%bgc_reaction, source=create_standalone_bgc_reaction_type(reaction_method))
@@ -105,10 +120,6 @@ contains
 
     !pass necessary data
     this%betr_cnstate_vars%isoilorder  => cnstate_vars%isoilorder
-    betr_pftvarcon%nc3_arctic_grass    = nc3_arctic_grass
-    betr_pftvarcon%nc3_nonarctic_grass = nc3_nonarctic_grass
-    betr_pftvarcon%nc4_grass           = nc4_grass
-    betr_pftvarcon%noveg               = noveg
 
     call this%bgc_reaction%init_betr_lsm_bgc_coupler(bounds, this%plant_soilbgc, &
          this%betrtracer_vars, this%tracerstate_vars, this%betr_cnstate_vars, &
@@ -239,7 +250,7 @@ contains
     betr_col%snl                          => col%snl
     betr_col%dz                           => col%dz
     betr_col%zi                           => col%zi
-    betr_col%z                            => col%z 
+    betr_col%z                            => col%z
 
     betr_lun%itype                        => lun%itype
     betr_lun%ifspecial                    => lun%ifspecial

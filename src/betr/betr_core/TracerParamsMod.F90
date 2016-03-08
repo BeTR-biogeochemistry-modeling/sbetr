@@ -12,7 +12,7 @@ module TracerParamsMod
   use shr_kind_mod          , only : r8 => shr_kind_r8
   use shr_log_mod           , only : errMsg => shr_log_errMsg
   use decompMod             , only : bounds_type
-  use clm_varpar            , only : nlevsoi
+  use tracer_varcon         , only : nlevsoi  => betr_nlevsoi
   use clm_varcon            , only : spval
   use BeTR_PatchType        , only : pft => betr_pft
   use BeTR_ColumnType       , only : col => betr_col
@@ -62,7 +62,7 @@ contains
     ! initialize the tracerParamsMod
     !
     ! !USES:
-    use clm_varpar         , only : nlevtrc_soil
+    use tracer_varcon         , only : nlevtrc_soil => betr_nlevtrc_soil
 
     implicit none
     type(bounds_type), intent(in) :: bounds   !bounds
@@ -1314,7 +1314,7 @@ contains
    use WaterStateType        , only : waterstate_type
    use tracerstatetype       , only : tracerstate_type
    use BeTRTracerType        , only : betrtracer_type
-   use landunit_varcon       , only : istsoil
+   use BeTR_landvarconType   , only : landvarcon => betr_landvarcon
    !
    ! Arguments
    implicit none
@@ -1346,7 +1346,7 @@ contains
      do fc = 1, num_nolakec
        c =  filter_nolakec(fc)
        l = col%landunit(c)
-       if(lun%itype(l) == istsoil)then
+       if(lun%itype(l) == landvarcon%istsoil)then
          do k = 1, ngwmobile_tracers
            !if it is a frozenable tracer, do it
            if(is_frozen(k))then
@@ -1693,7 +1693,7 @@ contains
     ! !DESCRIPTION:
     ! Finds the first unsaturated layer going up. Also allows a perched water table over ice.
     !
-    use clm_varpar         , only : nlevsoi
+    use tracer_varcon      , only : nlevsoi  => betr_nlevsoi
     use clm_varcon         , only : tfrz
     use SoilStateType      , only : soilstate_type
     use WaterstateType     , only : waterstate_type
@@ -1774,13 +1774,13 @@ contains
   !
   ! calculate aerenchyma conductance (m/s)
   use clm_varcon            , only : tfrz, rpi
-  use BeTR_pftvarconType    , only : betr_pftvarcon
+  use BeTR_pftvarconType    , only : pftvarcon => betr_pftvarcon
   use BeTR_CarbonFluxType   , only : betr_carbonflux_type
   use CanopyStateType       , only : canopystate_type
   use BetrTracerType        , only : betrtracer_type
   use BeTR_aerocondType    , only  : betr_aerecond_type
   use tracercoeffType       , only : tracercoeff_type
-  use clm_varpar            , only : nlevsoi
+  use tracer_varcon         , only : nlevsoi  => betr_nlevsoi
   use TemperatureType       , only : temperature_type
   use MathfuncMod           , only : safe_div
   use clm_varctl            , only : use_cn
@@ -1845,7 +1845,7 @@ contains
       g = col%gridcell(c)
 
       ! Calculate aerenchyma diffusion
-      if (j > jwt(c) .and. t_soisno(c,j) > tfrz .and. pft%itype(p) /= betr_pftvarcon%noveg) then
+      if (j > jwt(c) .and. t_soisno(c,j) > tfrz .and. pft%itype(p) /= pftvarcon%noveg) then
         ! Attn EK: This calculation of aerenchyma properties is very uncertain. Let's check in once all
         ! the new components are in; if there is any tuning to be done to get a realistic global flux,
         ! this would probably be the place.  We will have to document clearly in the Tech Note
@@ -1878,8 +1878,8 @@ contains
         endif
         n_tiller = m_tiller / 0.22_r8
 
-        if (pft%itype(p) == betr_pftvarcon%nc3_arctic_grass .or. pft%crop(pft%itype(p)) == 1 .or. &
-          pft%itype(p) == betr_pftvarcon%nc3_nonarctic_grass .or. pft%itype(p) == betr_pftvarcon%nc4_grass) then
+        if (pft%itype(p) == pftvarcon%nc3_arctic_grass .or. pft%crop(pft%itype(p)) == 1 .or. &
+          pft%itype(p) == pftvarcon%nc3_nonarctic_grass .or. pft%itype(p) == pftvarcon%nc4_grass) then
           poros_tiller = 0.3_r8  ! Colmer 2003
         else
           poros_tiller = 0.3_r8 * nongrassporosratio
