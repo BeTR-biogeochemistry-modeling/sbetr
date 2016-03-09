@@ -15,6 +15,8 @@ include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_math)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_core)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_main)
+include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_grid)
+
 
 
 include(add_betr_library)

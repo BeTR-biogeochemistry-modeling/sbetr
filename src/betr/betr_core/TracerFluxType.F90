@@ -5,12 +5,12 @@ module TracerFluxType
   use shr_kind_mod   , only : r8 => shr_kind_r8
   use shr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
   use decompMod      , only : bounds_type
-  use LandunitType   , only : lun
-  use ColumnType     , only : col
+  use BeTR_LandunitType   , only : lun => betr_lun
+  use BeTR_ColumnType, only : col => betr_col
   use BeTR_PatchType , only : pft => betr_pft
   use clm_varcon     , only : spval, ispval
-  use clm_varpar     , only : nlevtrc_soil
-  use landunit_varcon, only : istsoil, istcrop
+  use tracer_varcon  , only : nlevtrc_soil => betr_nlevtrc_soil
+  use BeTR_landvarconType, only : landvarcon => betr_landvarcon
   use clm_varctl     , only : iulog
   !
   ! !PUBLIC TYPES:
@@ -181,7 +181,6 @@ contains
     ! !USES:
     !use shr_infnan_mod, only: nan => shr_infnan_nan, assignment(=)
     use clm_varcon    , only: spval
-    use clm_varpar    , only: nlevsno
     use histFileMod   , only: hist_addfld1d, hist_addfld2d
     use histFileMod   , only: no_snow_normal, no_snow_zero
     use BeTRTracerType, only: BeTRTracer_Type
@@ -394,7 +393,7 @@ contains
          this%tracer_flx_snwcp_ice_patch(p,:)      = spval
        endif
 
-       if (lun%itype(l) == istsoil .or. lun%itype(l) == istcrop) then
+       if (lun%itype(l) == landvarcon%istsoil .or. lun%itype(l) == landvarcon%istcrop) then
          this%tracer_flx_vtrans_patch(p,:)         = 0._r8
          this%tracer_flx_snowfall_grnd_patch(p,:)  = 0._r8
          this%tracer_flx_rainfall_grnd_patch(p,:)  = 0._r8
@@ -432,7 +431,7 @@ contains
          this%tracer_flx_totleached_col(c,:)  = spval
        endif
 
-       if (lun%itype(l) == istsoil .or. lun%itype(l) == istcrop) then
+       if (lun%itype(l) == landvarcon%istsoil .or. lun%itype(l) == landvarcon%istcrop) then
          this%tracer_flx_top_soil_col(c,:)    = 0._r8
          this%tracer_flx_can_loss_col(c,:)    = 0._r8
          this%tracer_flx_snowmelt_col (c,:)   = 0._r8
@@ -470,8 +469,7 @@ contains
     ! Now it is purposely empty, but will be potentially useful in the future
     ! !USES:
     use BetrTracerType        , only : betrtracer_type
-    use clm_varpar , only : nlevsno, nlevsoi
-    use clm_varcon , only : spval
+    use clm_varcon            , only : spval
     use restUtilMod
     use ncdio_pio
     !

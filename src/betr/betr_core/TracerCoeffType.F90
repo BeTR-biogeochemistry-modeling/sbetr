@@ -7,9 +7,9 @@ module TracerCoeffType
   use shr_kind_mod           , only : r8 => shr_kind_r8
   use shr_infnan_mod         , only : nan => shr_infnan_nan, assignment(=)
   use decompMod              , only : bounds_type
-  use ColumnType             , only : col
-  use LandunitType           , only : lun
-  use landunit_varcon, only : istsoil, istcrop
+  use BeTR_ColumnType        , only : col => betr_col
+  use BeTR_LandunitType      , only : lun => betr_lun
+  use BeTR_landvarconType    , only : landvarcon => betr_landvarcon
   !
   ! !PUBLIC TYPES:
   implicit none
@@ -75,8 +75,7 @@ contains
     ! Now it is purposely empty, but will be potentially useful in the future
     ! !USES:
     use BetrTracerType        , only : betrtracer_type
-    use clm_varpar , only : nlevsno, nlevsoi
-    use clm_varcon , only : spval
+    use clm_varcon            , only : spval
     use restUtilMod
     use ncdio_pio
     !
@@ -144,7 +143,7 @@ contains
     allocate(this%aere_cond_col(begc:endc,          1:betrtracer_vars%nvolatile_tracer_groups))
     this%aere_cond_col(:,:)       = nan
 
-    allocate(this%annsum_counter_col(begc:endc))                                                    
+    allocate(this%annsum_counter_col(begc:endc))
     this%annsum_counter_col(:)         = nan
 
     allocate(this%diffgas_topsno_col(begc:endc,          1:betrtracer_vars%nvolatile_tracer_groups))
@@ -153,7 +152,7 @@ contains
     allocate(this%diffgas_topsoi_col(begc:endc,          1:betrtracer_vars%nvolatile_tracer_groups))
     this%diffgas_topsoi_col(:,:)       = nan
 
-    allocate(this%hmconductance_col(begc:endc, lbj:ubj, 1:betrtracer_vars%ntracer_groups))         
+    allocate(this%hmconductance_col(begc:endc, lbj:ubj, 1:betrtracer_vars%ntracer_groups))
     this%hmconductance_col(:,:,:)     = nan
 
     allocate(this%aqu2equilsolidcef_col(begc:endc, lbj:ubj, 1:betrtracer_vars%nsolid_equil_tracer_groups))
@@ -169,7 +168,6 @@ contains
     ! !USES:
     !use shr_infnan_mod, only : nan => shr_infnan_nan, assignment(=)
     use clm_varcon     , only : spval
-    use clm_varpar     , only : nlevsno
     use BeTRTracerType , only : BeTRTracer_Type
     use histFileMod    , only : hist_addfld1d, hist_addfld2d
     use histFileMod    , only : no_snow_normal, no_snow_zero
@@ -284,7 +282,7 @@ contains
           this%annsum_counter_col        (c)     = spval
        endif
 
-       if (lun%itype(l) == istsoil .or. lun%itype(l) == istcrop) then
+       if (lun%itype(l) == landvarcon%istsoil .or. lun%itype(l) == landvarcon%istcrop) then
           this%aqu2neutralcef_col        (c,:,:) = 0._r8
           this%aqu2bulkcef_mobile_col    (c,:,:) = 0._r8
           this%gas2bulkcef_mobile_col    (c,:,:) = 0._r8

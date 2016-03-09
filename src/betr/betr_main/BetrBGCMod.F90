@@ -24,7 +24,7 @@ module BetrBGCMod
   real(r8), parameter :: dtime_min      = 1._r8     !minimum time step 1 second
   real(r8), parameter :: err_tol_transp = 1.e-8_r8  !error tolerance for tracer transport
   character(len=*), parameter :: filename = __FILE__
-  
+
   public :: run_betr_one_step_without_drainage
   public :: run_betr_one_step_with_drainage
   public :: calc_dew_sub_flux
@@ -34,7 +34,7 @@ contains
 
 
   !-------------------------------------------------------------------------------
-  subroutine run_betr_one_step_without_drainage(bounds, lbj, ubj, num_soilc, filter_soilc, num_soilp, filter_soilp, col ,   &
+  subroutine run_betr_one_step_without_drainage(bounds, lbj, ubj, num_soilc, filter_soilc, num_soilp, filter_soilp,         &
        atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, temperature_vars, waterflux_vars, chemstate_vars, &
        cnstate_vars, canopystate_vars,  carbonflux_vars, betrtracer_vars, bgc_reaction, betr_aerecond_vars,                 &
        tracerboundarycond_vars, tracercoeff_vars, tracerstate_vars, tracerflux_vars, plant_soilbgc_coupler)
@@ -57,11 +57,11 @@ contains
     use TemperatureType              , only          : temperature_type
     use ChemStateType                , only          : chemstate_type
     use WaterfluxType                , only          : waterflux_type
-    use ColumnType                   , only          : column_type
+    use BeTR_ColumnType              , only          : col => betr_col
     use BGCReactionsMod              , only          : bgc_reaction_type
     use atm2lndType                  , only          : atm2lnd_type
     use SoilHydrologyType            , only          : soilhydrology_type
-    use clm_varpar                   , only          : nlevsoi
+    use tracer_varcon                , only          : nlevsoi  => betr_nlevsoi
     use PlantSoilBGCMod              , only          : plant_soilbgc_type
     use BeTR_CNStateType             , only          : betr_cnstate_type
     use BeTR_CarbonFluxType          , only          : betr_carbonflux_type
@@ -78,7 +78,6 @@ contains
     integer                          , intent(in)    :: filter_soilp(:)            ! pft filter
     integer                          , intent(in)    :: lbj, ubj                   ! lower and upper bounds, make sure they are > 0
 
-    type(column_type)                , intent(in)    :: col                        ! column type
     type(Waterstate_Type)            , intent(in)    :: waterstate_vars            ! water state variables
     type(soilstate_type)             , intent(in)    :: soilstate_vars             ! column physics variable
     type(temperature_type)           , intent(in)    :: temperature_vars           ! energy state variable
@@ -933,7 +932,7 @@ contains
 
     integer :: ntracer_groups
     ntracer_groups = betrtracer_vars%ntracer_groups
-    
+
     SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(filename,__LINE__))
     SHR_ASSERT_ALL((ubound(dz) == (/bounds%endc, ubj/)), errMsg(filename,__LINE__))
     SHR_ASSERT_ALL((ubound(hmconductance_col) == (/bounds%endc, ubj-1, ntracer_groups/)), errMsg(filename,__LINE__))
@@ -1447,8 +1446,7 @@ contains
 
   !--------------------------------------------------------------------------------
   subroutine run_betr_one_step_with_drainage(bounds, lbj, ubj, num_soilc, filter_soilc, &
-       jtops, waterflux_vars, col,                                                       &
-       betrtracer_vars, tracercoeff_vars, tracerstate_vars,  tracerflux_vars)
+       jtops, waterflux_vars, betrtracer_vars, tracercoeff_vars, tracerstate_vars,  tracerflux_vars)
     !
     ! !DESCRIPTION:
     ! do tracer update due to drainage
@@ -1457,7 +1455,7 @@ contains
     use tracerfluxType        , only : tracerflux_type
     use tracerstatetype       , only : tracerstate_type
     use tracercoeffType       , only : tracercoeff_type
-    use ColumnType            , only : column_type
+    use BeTR_ColumnType       , only : col => betr_col
     use MathfuncMod           , only : safe_div
     use WaterFluxType         , only : waterflux_type
     ! !ARGUMENTS:
@@ -1467,7 +1465,6 @@ contains
     integer,                  intent(in)    :: filter_soilc(:)                    ! column filter_soilc
     integer,                  intent(in)    :: jtops(bounds%begc: )
     type(waterflux_type)    , intent(in)    :: waterflux_vars
-    type(column_type),        intent(in)    :: col                                ! column type
     class(betrtracer_type),    intent(in)    :: betrtracer_vars                    ! betr configuration information
     type(tracercoeff_type),   intent(in)    :: tracercoeff_vars                   ! tracer phase conversion coefficients
     type(tracerflux_type),    intent(inout) :: tracerflux_vars
@@ -1644,15 +1641,15 @@ contains
     ! calculate water flux from dew formation, and sublimation
     ! !USES:
     use clm_time_manager      , only : get_step_size
-    use ColumnType            , only : col
-    use LandunitType          , only : lun
+    use BeTR_ColumnType       , only : col => betr_col
+    use BeTR_LandunitType     , only : lun => betr_lun
     use WaterfluxType         , only : waterflux_type
     use WaterstateType        , only : waterstate_type
     use tracerfluxType        , only : tracerflux_type
     use tracerstatetype       , only : tracerstate_type
     use clm_varcon            , only : spval
-    use clm_varpar            , only : nlevtrc_soil
-    use landunit_varcon       , only : istsoil, istcrop
+    use tracer_varcon         , only : nlevtrc_soil  => betr_nlevtrc_soil
+    use BeTR_landvarconType   , only : landvarcon  => betr_landvarcon
 
     ! !ARGUMENTS:
     type(bounds_type)         , intent(in)    :: bounds
@@ -1711,7 +1708,7 @@ contains
          do fc = 1, num_hydrologyc
             c = filter_soilc_hydrologyc(fc)
             l = clandunit(c)
-            if (ltype(l)/=istsoil .and. ltype(l)/=istcrop)cycle
+            if (ltype(l)/= landvarcon%istsoil .and. ltype(l)/= landvarcon%istcrop)cycle
             if(snl(c)+1>=1)then
                tracer_flx_dew_grnd(c, j) = (1._r8 - frac_h2osfc(c))*qflx_dew_grnd(c) * dtime
                tracer_flx_dew_snow(c, j) = (1._r8 - frac_h2osfc(c))*qflx_dew_snow(c) * dtime
@@ -1730,7 +1727,7 @@ contains
          do fc = 1, num_hydrologyc
             c = filter_soilc_hydrologyc(fc)
             l = clandunit(c)
-            if (ltype(l)/=istsoil .and. ltype(l)/=istcrop)cycle
+            if (ltype(l) /= landvarcon%istsoil .and. ltype(l) /= landvarcon%istcrop)cycle
             tracer_conc_mobile(c,1,j) = tracer_conc_mobile(c,1,j) + tracer_flx_dew_grnd(c, j)/dz(c,1)
             tracer_conc_frozen(c,1,frozenid(j)) = tracer_conc_frozen(c,1,frozenid(j)) + &
                  (tracer_flx_dew_snow(c, j)-tracer_flx_sub_snow(c,j))/dz(c,1)
@@ -1748,7 +1745,7 @@ contains
     ! apply tracer flux from combining residual snow and ponding water
     ! !USES:
     use clm_time_manager      , only : get_step_size
-    use ColumnType            , only : col
+    use BeTR_ColumnType       , only : col => betr_col
     use WaterfluxType         , only : waterflux_type
     use tracerfluxType        , only : tracerflux_type
     use tracerstatetype       , only : tracerstate_type

@@ -7,14 +7,14 @@ module TracerStateType
   use shr_kind_mod   , only : r8 => shr_kind_r8
   use shr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
   use decompMod      , only : bounds_type
-  use LandunitType   , only : lun
-  use ColumnType     , only : col
+  use BeTR_LandunitType, only : lun => betr_lun
+  use BeTR_ColumnType, only : col => betr_col
   use clm_varctl     , only : iulog
   use abortutils     , only : endrun
   use spmdMod        , only : masterproc
   use clm_varcon     , only : spval, ispval
-  use landunit_varcon, only : istsoil, istcrop
-  use MathfuncMod    , only : dot_sum  
+  use BeTR_landvarconType, only : landvarcon => betr_landvarcon
+  use MathfuncMod    , only : dot_sum
   !
   ! !PUBLIC TYPES:
   implicit none
@@ -146,7 +146,6 @@ contains
     !
     ! !USES:
     !use shr_infnan_mod, only: nan => shr_infnan_nan, assignment(=)
-    use clm_varpar    , only: nlevsno
     use BeTRTracerType, only: BeTRTracer_Type
     use histFileMod   , only: hist_addfld1d, hist_addfld2d
     use histFileMod   , only: no_snow_normal, no_snow_zero
@@ -262,9 +261,7 @@ contains
     ! Read/Write module information to/from restart file.
     !
     ! !USES:
-    use clm_varpar , only : nlevsno, nlevsoi
     use clm_varctl , only : iulog
-    use clm_varpar , only : nlevsno
     use BeTRTracerType, only : BeTRTracer_Type
     !use spmdMod    , only : masterproc
     use restUtilMod

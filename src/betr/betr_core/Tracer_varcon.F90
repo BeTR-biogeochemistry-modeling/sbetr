@@ -23,6 +23,9 @@ module Tracer_varcon
   real(r8),public, parameter :: SHR_CONST_VSMOW_D = 155.76e-6_R8    ! ratio of D/H in Vienna Standard Mean Ocean Water (VSMOW)
   real(r8),public, parameter :: SHR_CONST_VSMOW_T = 1.85e-6_R8      ! ratio of T/H in Vienna Standard Mean Ocean Water (VSMOW)
 
+  integer, public            :: betr_nlevsoi
+  integer, public            :: betr_nlevsno
+  integer, public            :: betr_nlevtrc_soil
   ! underground tracer transport logical switches
   logical, public            :: ltracer_offline=.true.       ! true=> do not pass volatile tracers from/to atmosphere
   logical, public            :: ltrcunsat=.false.            ! ture=> swith on tracer transport for specified underground processes in unsaturated upland soil

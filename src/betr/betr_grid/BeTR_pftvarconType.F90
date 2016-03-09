@@ -9,6 +9,6 @@ implicit none
    integer :: noveg                  !value for not vegetated
   end type betr_pftvarcon_type
 
-  type(betr_pftvarcon_type), public ::betr_pftvarcon
+  type(betr_pftvarcon_type), public :: betr_pftvarcon
 
 end module BeTR_pftvarconType

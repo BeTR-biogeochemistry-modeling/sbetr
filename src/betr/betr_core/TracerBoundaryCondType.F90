@@ -88,7 +88,6 @@ contains
     !
     ! !USES:
     use clm_varcon    , only: spval
-    use clm_varpar    , only: nlevsno
 
     !
     ! !ARGUMENTS:
@@ -101,7 +100,7 @@ contains
 
 
   end subroutine InitHistory
-  
+
   !-----------------------------------------------------------------------
   subroutine InitCold(this, bounds)
     !
@@ -134,7 +133,6 @@ contains
     ! Read/Write module information to/from restart file.
     !
     ! !USES:
-    use clm_varpar , only : nlevsno, nlevsoi
     use clm_varcon , only : spval
     use clm_varctl , only : iulog
     use ncdio_pio
