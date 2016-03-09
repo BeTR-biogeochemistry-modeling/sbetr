@@ -43,6 +43,12 @@ module TransportMod
   character(len=*), private, parameter :: filename = &
        __FILE__
   public :: set_debug_transp
+
+  ! NOTE(bja, 201603) procedures that end with a trailing underscore
+  ! are public only for unit testing purposes. They are not part of
+  ! the public API for this module and should not be used externally.
+  public :: mass_curve_correct_
+  
 contains
   subroutine set_debug_transp(yesno)
   implicit none
@@ -789,7 +795,7 @@ contains
                  if(present(leaching_mass))then
                     leaching_mass(c, ntr) = leaching_mass(c, ntr)+mass_new(j, ntr) !add the numerical error to leaching
                  endif
-                 mass_new(j, ntr)=mass_curve_correct(mass_new(j, ntr))
+                 mass_new(j, ntr) = mass_curve_correct_(mass_new(j, ntr))
               endif
               trcou(c,k, ntr)=mass_new(j, ntr)/dz(c,k)
            enddo
@@ -848,7 +854,7 @@ contains
    end function is_ascending_vec
 
    !-------------------------------------------------------------------------------
-   function mass_curve_correct(mass_curve)result(ans)
+   function mass_curve_correct_(mass_curve) result(ans)
      !
      ! !DESCRIPTION:
      ! Correct random truncation error induced negative values
@@ -859,16 +865,16 @@ contains
 
      ! !LOCAL VARIABLES:
      real(r8) :: ans
-     real(r8) :: eps = 1.e-15_r8
-     character(len=32) :: subname = 'mass_curve_correct'
+     real(r8), parameter :: eps = 1.e-15_r8
+     character(len=*), parameter :: subname = 'mass_curve_correct_'
 
-     if(abs(mass_curve)<eps)then
+     if(abs(mass_curve) < eps)then
         ans = 0._r8
      else
         ans = mass_curve
      endif
      return
-   end function mass_curve_correct
+   end function mass_curve_correct_
    !-------------------------------------------------------------------------------
    subroutine backward_advection(zi, us,  dtime, zold)
      !
