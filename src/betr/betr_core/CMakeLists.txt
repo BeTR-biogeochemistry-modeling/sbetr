@@ -25,7 +25,7 @@ add_betr_library(betr_core ${BETR_CORE_SOURCES})
 set(BETR_LIBRARIES betr_core;${BETR_LIBRARIES} PARENT_SCOPE)
 set(BETR_LIBRARIES betr_core;${BETR_LIBRARIES})
 
-#X#add_subdirectory(tests)
+add_subdirectory(tests)
 
 if (NOT CMAKE_INSTALL_PREFIX STREQUAL "INSTALL_DISABLED")
   install(TARGETS betr_core DESTINATION lib)

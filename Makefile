@@ -76,8 +76,8 @@ endif
 
 # Debugging symbols
 ifeq ($(debug), not-set)
-  BUILDDIR := ${BUILDDIR}-Release
-  CONFIG_FLAGS += -DCMAKE_BUILD_TYPE=Release
+  BUILDDIR := ${BUILDDIR}-Debug
+  CONFIG_FLAGS += -DCMAKE_BUILD_TYPE=Debug
 else
   ifeq ($(debug), 0)
     BUILDDIR := ${BUILDDIR}-Release
@@ -93,7 +93,7 @@ ifneq ($(prefix), not-set)
   CONFIG_FLAGS += -DCMAKE_INSTALL_PREFIX:PATH=$(prefix)
 else
   # No default installation dir.
-  CONFIG_FLAGS += -DCMAKE_INSTALL_PREFIX:PATH=$(shell pwd)
+  CONFIG_FLAGS += -DCMAKE_INSTALL_PREFIX:PATH=${HOME}/local/betr
 endif
 
 # Special considerations for specific systems.

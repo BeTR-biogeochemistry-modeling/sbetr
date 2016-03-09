@@ -159,17 +159,22 @@ else()
 endif()
 
 
+# Other third-party libraries.
+add_subdirectory(3rd-party)
+
 # Include the binary directory in the header file search path,
-# since it's where we place generated files.
+# since it's where we place the third-party libraries.
 include_directories("${PROJECT_BINARY_DIR}")
+include_directories("${PROJECT_BINARY_DIR}/include")
+link_directories("${PROJECT_BINARY_DIR}/lib")
+include_directories(${BETR_INCDIRS})
+
+# Unit testing.
+enable_testing()
 
 # Source code itself.
 include_directories("${PROJECT_SOURCE_DIR}")
 add_subdirectory(src)
-
-# Unit testing.
-#X#enable_testing()
-#X#add_subdirectory(unit_tests)
 
 # Drivers for benchmarks.
 #X#add_subdirectory(drivers)

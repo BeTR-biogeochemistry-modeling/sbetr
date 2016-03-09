@@ -12,6 +12,7 @@ module MathfuncMod
   implicit none
   save
   private
+  public :: heviside
   public :: cumsum
   public :: swap
   public :: minmax
