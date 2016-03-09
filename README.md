@@ -7,22 +7,30 @@ Jinyun Tang, jinyuntang@lbl.gov
 
 ## Building
 
-There is a cmake based build system that has been tested on Mac OS X
-with gfortran installed into the users path. To build:
+BeTR uses a cmake based build system. The default build is debug. To
+build using the default debug configuration:
 
     cd ${SBETR_ROOT}
     make config
-    make debug=1 all
+    make all
 
 This will do an out of source build in:
 
-    ${SBETR_ROOT}/build/Xyz/src
+    ${SBETR_ROOT}/build/Xyz-Debug/src
 
 where Xyz is the build configuration.
 
 The standalone `sbetr` executable is in:
 
-    ${SBETR_(ROOT}/bulid/Xyz/src/driver/sbetr
+    ${SBETR_(ROOT}/bulid/Xyz-Debug/src/driver/sbetr
+
+To build a release configuration of the code:
+
+    cd ${SBETR_ROOT}
+    make debug=0 config
+    make debug=0 all
+
+
 
 ## Testing
 
