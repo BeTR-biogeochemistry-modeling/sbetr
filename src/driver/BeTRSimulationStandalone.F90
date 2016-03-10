@@ -1,33 +1,39 @@
 module BeTRSimulationStandalone
   !
   ! !DESCRIPTION:
-  !  factory to load the specific betr simulator
+  !  BeTR standalone simulation class.
   !
-  ! !USES:
+  !  BeTR simulation class are API definitions, mapping data
+  !  structures from a specific LSM, e.g. CLM, ALM, into BeTR data
+  !  structures. The standalone class use BeTR data structures
+  !  natively, so is mapping BeTR to BeTR. This class shouldn't be
+  !  doing much.
   !
   use abortutils, only : endrun
   use clm_varctl, only : iulog
   use shr_log_mod, only : errMsg => shr_log_errMsg
 
-  use decompMod, only : bounds_type
   use BeTRSimulation, only : betr_simulation_type
-  use BeTR_CNStateType, only : betr_cnstate_type
 
+  use decompMod, only : bounds_type
   use EcophysConType, only : ecophyscon_type
 
   implicit none
 
   private
+
   character(len=*), private, parameter :: mod_filename = &
        __FILE__
 
   type, public, extends(betr_simulation_type) :: betr_simulation_standalone_type
-     type(betr_cnstate_type) :: betr_cnstate_vars
+     ! NOTE(bja, 201603) LSM specific types here!
      type(ecophyscon_type) :: ecophyscon
 
+     ! NOTE(bja, 201603) most (all?) BeTR types go into the base
+     ! class.
 
    contains
-     procedure :: Init => StandaloneInit
+     procedure, public :: Init => StandaloneInit
      procedure, public :: StepWithoutDrainage => StandaloneStepWithoutDrainage
      procedure, public :: StepWithDrainage => StandaloneStepWithDrainage
   end type betr_simulation_standalone_type
@@ -74,7 +80,9 @@ contains
     use BeTR_landvarconType, only : betr_landvarcon
     use tracer_varcon, only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
     use clm_varpar, only : nlevsno, nlevsoi, nlevtrc_soil
+
     implicit none
+
     class(betr_simulation_standalone_type) :: this
     character(len=*), intent(in) :: reaction_method
     type(bounds_type)    , intent(in) :: bounds
@@ -115,7 +123,6 @@ contains
     allocate(this%plant_soilbgc, source=create_standalone_plant_soilbgc_type(reaction_method))
 
     ! now call the base simulation init to continue initialization
-    ! FIXME(bja, 2016-03) missing water state vars!
     call BeTRSimulationInit(this, reaction_method, bounds, lbj, ubj, waterstate)
 
     !pass necessary data

@@ -1,16 +1,17 @@
 module BeTRSimulation
   !
   ! !DESCRIPTION:
-  !  factory to load the specific betr simulator
+  !  BeTR simulation base class.
   !
-  ! !USES:
+  !  BeTR simulation class are API definitions, mapping data
+  !  structures from a specific LSM, e.g. CLM, ALM, into BeTR data
+  !  structures. 
   !
   use abortutils                  , only : endrun
   use clm_varctl                  , only : iulog
   use shr_log_mod                 , only : errMsg => shr_log_errMsg
 
   use decompMod, only : bounds_type
-
 
   ! !USES:
   use BeTRTracerType            , only : BeTRtracer_type
@@ -21,14 +22,23 @@ module BeTRSimulation
   use BGCReactionsMod           , only : bgc_reaction_type
   use PlantSoilBGCMod           , only : plant_soilbgc_type
   use BeTR_aerocondType         , only : betr_aerecond_type
+  use betr_constants, only : betr_string_length
+  use BeTR_CNStateType, only : betr_cnstate_type
+  use BeTR_CarbonFluxType, only : betr_carbonflux_type
 
   implicit none
+
   private
+
   character(len=*), private, parameter :: mod_filename = __FILE__
 
   type, public :: betr_simulation_type
-     character(len=128) :: reaction_method
+     character(len=betr_string_length) :: reaction_method
 
+     ! FIXME(bja, 201603) most of these types should be private!
+     
+     ! NOTE(bja, 201603) BeTR types only, no LSM specific types here!
+     type(betr_cnstate_type), public :: betr_cnstate_vars
      type(BeTRtracer_type), public :: betrtracer_vars
      type(TracerCoeff_type), public :: tracercoeff_vars
      type(TracerFlux_type), public :: tracerflux_vars
@@ -37,6 +47,7 @@ module BeTRSimulation
      class(plant_soilbgc_type), allocatable,public :: plant_soilbgc
      class(bgc_reaction_type), allocatable,public :: bgc_reaction
      type(betr_aerecond_type), public :: betr_aerecond_vars
+     type(betr_carbonflux_type), public :: betr_carbonflux_vars
    contains
      procedure, public :: Init => BeTRSimulationInit
      procedure, public :: ReadNameList => BeTRSimulationReadNameList
@@ -68,7 +79,7 @@ contains
     integer              , intent(in) :: lbj, ubj
     type(waterstate_type), intent(inout) :: waterstate
 
-    character(len=32) :: subname='BeTRSimulationInit'
+    character(len=*), parameter :: subname = 'BeTRSimulationInit'
 
     call this%betrtracer_vars%init_scalars()
 
@@ -121,8 +132,9 @@ contains
     ! !LOCAL VARIABLES:
     integer :: ierr                    ! error code
     integer :: unitn                   ! unit for namelist file
-    character(len=32) :: subname = 'BeTRSimulationReadNameList'
-    character(len=128) :: reaction_method
+    character(len=betr_string_length) :: reaction_method
+
+    character(len=*), parameter :: subname = 'BeTRSimulationReadNameList'
 
     !-----------------------------------------------------------------------
 
@@ -193,7 +205,6 @@ contains
     use atm2lndType, only : atm2lnd_type
     use SoilHydrologyType, only : soilhydrology_type
     use BeTR_CNStateType, only : betr_cnstate_type
-    use BeTR_CarbonFluxType, only : betr_carbonflux_type
     use CNStateType, only : cnstate_type
     use CNCarbonFluxType, only : carbonflux_type
     use CanopyStateType, only : canopystate_type
@@ -221,8 +232,6 @@ contains
     type(canopystate_type), intent(in) :: canopystate_vars
     type(carbonflux_type), intent(in) :: carbonflux_vars
     type(waterflux_type), intent(inout) :: waterflux_vars !temporary variables
-    type(betr_cnstate_type) :: betr_cnstate_vars
-    type(betr_carbonflux_type) :: betr_carbonflux_vars !pass necessary data for correct subroutine call
 
   end subroutine BeTRSimulationStepWithoutDrainage
 
