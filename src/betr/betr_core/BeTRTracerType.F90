@@ -6,7 +6,6 @@ module BeTRTracerType
   !
   ! !USES:
   use shr_kind_mod       , only: r8 => shr_kind_r8
-  use decompMod          , only : bounds_type
   use abortutils         , only : endrun
   use shr_log_mod        , only : errMsg => shr_log_errMsg
   !
@@ -52,7 +51,7 @@ module BeTRTracerType
    integer :: id_trc_doc                                         ! tag for generic dissolved organic carbon, used for testing single carbon pool model
    integer :: id_trc_p_sol                                       ! tag for soluble inorganic P, this includes P in equilibrium adsorption
 
-   integer :: id_trc_blk_h2o                                     ! tag for bulk water, including all water and its isotopologues. 
+   integer :: id_trc_blk_h2o                                     ! tag for bulk water, including all water and its isotopologues.
    integer :: id_trc_o18_h2o                                     ! tag for H2O(18)
    integer :: id_trc_o17_h2o                                     ! tag for H2O(17)
    integer :: id_trc_o18_h2o_ice                                 ! tag for H2O(18) in ice

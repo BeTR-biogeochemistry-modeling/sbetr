@@ -4,8 +4,8 @@ module TracerBoundaryCondType
 ! data type to specify boundary conditions for tracer tranpsort
 !
 ! !USES:
-   use shr_kind_mod   , only : r8 => shr_kind_r8
-   use decompMod      , only : bounds_type
+   use shr_kind_mod    , only : r8 => shr_kind_r8
+   use BeTR_decompMod  , only : bounds_type  => betr_bounds_type
 
   implicit none
   save
@@ -87,7 +87,7 @@ contains
     ! History fields initialization
     !
     ! !USES:
-    use clm_varcon    , only: spval
+    use betr_varcon    , only: spval => bspval
 
     !
     ! !ARGUMENTS:
@@ -133,8 +133,8 @@ contains
     ! Read/Write module information to/from restart file.
     !
     ! !USES:
-    use clm_varcon , only : spval
-    use clm_varctl , only : iulog
+    use betr_varcon , only : spval  => bspval
+    use clm_varctl  , only : iulog
     use ncdio_pio
     !
     ! !ARGUMENTS:

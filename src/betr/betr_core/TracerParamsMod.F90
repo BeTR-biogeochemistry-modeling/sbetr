@@ -11,9 +11,9 @@ module TracerParamsMod
   ! !USES:
   use shr_kind_mod          , only : r8 => shr_kind_r8
   use shr_log_mod           , only : errMsg => shr_log_errMsg
-  use decompMod             , only : bounds_type
+  use BeTR_decompMod        , only : bounds_type  => betr_bounds_type
   use tracer_varcon         , only : nlevsoi  => betr_nlevsoi
-  use clm_varcon            , only : spval
+  use betr_varcon           , only : spval => bspval
   use BeTR_PatchType        , only : pft => betr_pft
   use BeTR_ColumnType       , only : col => betr_col
   use clm_time_manager      , only : get_nstep
@@ -85,8 +85,8 @@ contains
     ! compute soil tortuosity for gasesous diffusion
 
     ! !USES:
-    use SoilStateType      , only : soilstate_type
-    use WaterStateType     , only : Waterstate_Type
+    use SoilStateType           , only : soilstate_type
+    use BeTR_WaterStateType     , only : Waterstate_type  => betr_waterstate_type
 
     implicit none
     !arguments
@@ -130,8 +130,8 @@ contains
     ! compute soil tortuosity for aquesous diffusion
     !
 
-    use SoilStateType      , only : soilstate_type
-    use WaterStateType     , only : Waterstate_Type
+    use SoilStateType         , only : soilstate_type
+    use BeTR_WaterStateType   , only : waterstate_type  => betr_waterstate_type
 
     implicit none
 
@@ -182,10 +182,9 @@ contains
     !D_bulk=(airvol*D_g*tau_g+bunsencef_col*h2osoi_liqvol*D_w*tau_w)
 
     ! !USES:
-    use WaterStateType        , only : Waterstate_Type
+    use BeTR_WaterStateType   , only : waterstate_type  => betr_waterstate_type
     use BeTRTracerType        , only : betrtracer_type
     use CanopyStateType       , only : canopystate_type
-    use clm_varcon            , only : zisoi
 
     type(bounds_type)          , intent(in) :: bounds                                  ! bounds
     integer                    , intent(in) :: numf                                    ! number of columns in column filter
@@ -236,7 +235,8 @@ contains
          tracer_solid_passive_diffus_scal_group => betrtracer_vars%tracer_solid_passive_diffus_scal_group , & !scaling factor for solid phase diffusivity
          tracer_solid_passive_diffus_thc_group  => betrtracer_vars%tracer_solid_passive_diffus_thc_group  , & !threshold for solid phase diffusivity
          tau_gas                                => tau_soi%tau_gas                                        , & ! real(r8)[intent(in)], gaseous tortuosity
-         tau_liq                                => tau_soi%tau_liq                                          & ! real(r8)[intent(in)], aqueous tortuosity
+         tau_liq                                => tau_soi%tau_liq                                        , & ! real(r8)[intent(in)], aqueous tortuosity
+         zi                                     => col%zi                                                   & ! real(r8)[intent(in)],
          )
 
       bulkdiffus(:,:,:) = 1.e-40_r8                            !initialize to a very small number
@@ -290,6 +290,7 @@ contains
       enddo
 
       !do solid phase passive tracers
+      !the following setup is adapted from CLM4.5
       do j = ngwmobile_tracer_groups + 1, ntracer_groups
          nsld = j - ngwmobile_tracer_groups
          trcid = tracer_group_memid(j,1)
@@ -301,12 +302,12 @@ contains
                     ( max(altmax(c), altmax_lastyear(c)) > 0._r8) ) then
                   ! use mixing profile modified slightly from Koven et al. (2009): constant through active layer, linear decrease from base of active layer to zero at a fixed depth
 
-                  if ( zisoi(n) < max(altmax(c), altmax_lastyear(c)) ) then
+                  if ( zi(c,n) < max(altmax(c), altmax_lastyear(c)) ) then
                      bulkdiffus(c,n,j) = cryoturb_diffusion_k * tracer_solid_passive_diffus_scal_group(nsld)
                      bulkdiffus(c,n,j) = max(bulkdiffus(c,n,j), tracer_solid_passive_diffus_thc_group(nsld))
                   else
                      bulkdiffus(c,n,j) = max(cryoturb_diffusion_k * &
-                          ( 1._r8 - ( zisoi(n) - max(altmax(c), altmax_lastyear(c)) ) / &
+                          ( 1._r8 - ( zi(c,n) - max(altmax(c), altmax_lastyear(c)) ) / &
                           ( max_depth_cryoturb - max(altmax(c), altmax_lastyear(c)) ) ), 0._r8)  ! go linearly to zero between ALT and max_depth_cryoturb
                      bulkdiffus(c,n,j) = bulkdiffus(c,n,j) * tracer_solid_passive_diffus_scal_group(nsld)
                      bulkdiffus(c,n,j) = max(bulkdiffus(c,n,j), tracer_solid_passive_diffus_thc_group(nsld))
@@ -462,7 +463,7 @@ contains
    ! DESCRIPTION
    ! compute Bunsen's coefficient
    !
-   use clm_varcon        , only : denh2o
+   use betr_varcon        , only : denh2o  => bdenh2o
    use BeTRTracerType     , only : betrtracer_type
    implicit none
    !arguments
@@ -540,9 +541,9 @@ contains
 
    !USES:
    use BeTRTracerType     , only : betrtracer_type
-   use WaterStateType     , only : Waterstate_Type
+   use BeTR_WaterStateType, only : waterstate_type  => betr_waterstate_type
    use TracerCoeffType    , only : tracercoeff_type
-   use clm_varcon         , only : denh2o, denice
+   use betr_varcon        , only : denh2o => bdenh2o, denice => bdenice
    implicit none
    !arguments
    type(bounds_type),      intent(in)    :: bounds                      ! bounds
@@ -737,7 +738,7 @@ contains
    !Compute actual vapor pressure inside the soil profile
    !
    ! uses
-   use clm_varcon    , only : rwat, grav
+   use betr_varcon   , only : rwat => brwat, grav => bgrav
    use QSatMod       , only : rhoSat
 
    implicit none
@@ -1108,7 +1109,7 @@ contains
    ! set parameters for the dual phase diffusion
    !
    use TracerCoeffType    , only : tracercoeff_type
-   use WaterStateType     , only : Waterstate_Type
+   use BeTR_WaterStateType   , only : waterstate_type  => betr_waterstate_type
    use SoilStateType      , only : soilstate_type
    use TemperatureType    , only : temperature_type
    use ChemStateType      , only : chemstate_type
@@ -1168,7 +1169,7 @@ contains
    ! DESCRIPTION
    ! set parameters for phase conversion
    use TracerCoeffType    , only : tracercoeff_type
-   use WaterStateType     , only : Waterstate_Type
+   use BeTR_WaterStateType   , only : waterstate_type  => betr_waterstate_type
    use SoilStateType      , only : soilstate_type
    use TemperatureType    , only : temperature_type
    use ChemStateType      , only : chemstate_type
@@ -1235,10 +1236,10 @@ contains
    ! \frac{\parital m}{\partial t}+\frac{V*m}{\partial z} = 0
    !where m = C*vsm, therefore, V=ql/vsm
    !
-   use WaterfluxType         , only : waterflux_type
+   use BeTR_WaterfluxType    , only : waterflux_type => betr_waterflux_type
    use TracerBoundaryCondType, only : tracerboundarycond_type
    use BeTRTracerType        , only : betrtracer_type
-   use clm_varcon            , only : denh2o
+   use betr_varcon           , only : denh2o  => bdenh2o
    implicit none
 
    type(bounds_type)            , intent(in)    :: bounds
@@ -1311,7 +1312,7 @@ contains
    ! USES
    !
    use BeTR_LandunitType     , only : lun => betr_lun
-   use WaterStateType        , only : waterstate_type
+   use BeTR_WaterStateType   , only : waterstate_type  => betr_waterstate_type
    use tracerstatetype       , only : tracerstate_type
    use BeTRTracerType        , only : betrtracer_type
    use BeTR_landvarconType   , only : landvarcon => betr_landvarcon
@@ -1379,8 +1380,7 @@ contains
    ! DESCRIPTION
    ! pre diagnose advective water fluxes at different soil interfaces
 
-
-   use WaterStateType        , only : waterstate_type
+   use BeTR_WaterStateType        , only : waterstate_type  => betr_waterstate_type
    implicit none
    type(bounds_type)      , intent(in)    :: bounds
    integer                , intent(in)    :: num_nolakec                        ! number of column non-lake points in column filter
@@ -1407,10 +1407,10 @@ contains
    ! DESCRIPTION
    ! diagnose advective water fluxes between different soil layers
    !
-   use WaterStateType       , only : waterstate_type
-   use WaterFluxType        , only : waterflux_type
+   use BeTR_WaterStateType  , only : waterstate_type => betr_waterstate_type
+   use BeTR_WaterFluxType   , only : waterflux_type  => betr_waterflux_type
    use clm_time_manager     , only : get_step_size
-   use clm_varcon           , only : denh2o
+   use betr_varcon          , only : denh2o => bdenh2o
    implicit none
    type(bounds_type)       , intent(in)    :: bounds               ! bounds
    integer                 , intent(in)    :: num_hydrologyc       ! number of column soil points in column filter
@@ -1506,10 +1506,11 @@ contains
    ! diagnose advective water fluxes between different soil layers
    !
 
-   use WaterFluxType        , only : waterflux_type
-   use clm_varcon           , only : denh2o
+   use BeTR_WaterFluxType   , only : waterflux_type => betr_waterflux_type
+   use BeTR_WaterStateType  , only : waterstate_type=> betr_waterstate_type
+   use betr_varcon          , only : denh2o => bdenh2o
    use clm_time_manager     , only : get_step_size
-   use WaterStateType        , only : waterstate_type
+
    implicit none
    type(bounds_type)       , intent(in)    :: bounds               ! bounds
    integer                 , intent(in)    :: num_hydrologyc       ! number of column soil points in column filter
@@ -1640,7 +1641,7 @@ contains
    ! mean linear isotherms of adsorption/desorption. Currently, it is only
    ! for water isotope partitioning between liquid water and ice
    !
-   use clm_varcon            , only : denh2o, denice
+   use betr_varcon           , only : denh2o => bdenh2o, denice => bdenice
    use BeTRTracerType        , only : betrtracer_type
    implicit none
    type(bounds_type)         , intent(in) :: bounds  ! bounds
@@ -1694,9 +1695,9 @@ contains
     ! Finds the first unsaturated layer going up. Also allows a perched water table over ice.
     !
     use tracer_varcon      , only : nlevsoi  => betr_nlevsoi
-    use clm_varcon         , only : tfrz
+    use betr_varcon        , only : tfrz => btfrz
     use SoilStateType      , only : soilstate_type
-    use WaterstateType     , only : waterstate_type
+    use BeTR_WaterstateType, only : waterstate_type  => betr_waterstate_type
     use TemperatureType    , only : temperature_type
     ! !ARGUMENTS:
     type(bounds_type)      , intent(in)   :: bounds
@@ -1721,7 +1722,6 @@ contains
     SHR_ASSERT_ALL((ubound(zwt) == (/bounds%endc/)), errMsg(filename, __LINE__))
     SHR_ASSERT_ALL((ubound(zi) == (/bounds%endc, nlevsoi/)), errMsg(filename, __LINE__))
     SHR_ASSERT_ALL((ubound(jwt) == (/bounds%endc/)), errMsg(filename, __LINE__))
-
 
     associate(                                          &
          watsat     => soilstate_vars%watsat_col      , & ! Input:  [real(r8) (:,:)  ] volumetric soil water at saturation (porosity)
@@ -1773,7 +1773,7 @@ contains
   ! DESCRIPTION
   !
   ! calculate aerenchyma conductance (m/s)
-  use clm_varcon            , only : tfrz, rpi
+  use betr_varcon           , only : tfrz => btfrz, rpi => brpi
   use BeTR_pftvarconType    , only : pftvarcon => betr_pftvarcon
   use BeTR_CarbonFluxType   , only : betr_carbonflux_type
   use CanopyStateType       , only : canopystate_type
@@ -1923,7 +1923,7 @@ contains
     !
     ! !USES:
     use clm_time_manager             , only : get_step_size, get_days_per_year
-    use clm_varcon                   , only : secspday
+    use betr_varcon                  , only : secspday => bsecspday
     use BeTR_CarbonFluxType          , only : betr_carbonflux_type
     use tracercoeffType              , only : tracercoeff_type
     use BeTR_aerocondType            , only : betr_aerecond_type

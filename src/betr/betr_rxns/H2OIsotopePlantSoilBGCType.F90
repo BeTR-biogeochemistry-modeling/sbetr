@@ -43,11 +43,11 @@ module H2OIsotopePlantSoilBGCType
   ! template for init_betrbgc
   !
   ! !USES:
-  use decompMod             , only : bounds_type
+  use BeTR_decompMod             , only : betr_bounds_type
 
   ! !ARGUMENTS:
   class(plant_soilbgc_h2oiso_run_type) , intent(in) :: this
-  type(bounds_type)         , intent(in) :: bounds
+  type(betr_bounds_type)         , intent(in) :: bounds
   integer                   , intent(in) :: lbj, ubj
 
   end subroutine Init_plant_soilbgc
@@ -60,13 +60,13 @@ module H2OIsotopePlantSoilBGCType
   ! !USES:
   use BeTRTracerType        , only : BeTRtracer_type
   use tracerfluxType        , only : tracerflux_type
-  use decompMod             , only : bounds_type
+  use BeTR_decompMod             , only : betr_bounds_type
   use shr_kind_mod          , only : r8 => shr_kind_r8
 
   ! !ARGUMENTS:
 
   class(plant_soilbgc_h2oiso_run_type) , intent(in) :: this
-  type(bounds_type)         , intent(in) :: bounds
+  type(betr_bounds_type)         , intent(in) :: bounds
   integer                   , intent(in) :: lbj, ubj
   integer                   , intent(in) :: numf
   integer                   , intent(in) :: filter(:)
@@ -82,11 +82,11 @@ module H2OIsotopePlantSoilBGCType
 
   subroutine integrate_vr_flux_to_2D(this, bounds, numf, filter)
 
-  use decompMod             , only : bounds_type
+  use BeTR_decompMod             , only : betr_bounds_type
   ! !ARGUMENTS:
 
   class(plant_soilbgc_h2oiso_run_type) , intent(in) :: this
-  type(bounds_type)         , intent(in) :: bounds
+  type(betr_bounds_type)         , intent(in) :: bounds
   integer                   , intent(in) :: numf
   integer                   , intent(in) :: filter(:)
 
@@ -97,11 +97,11 @@ module H2OIsotopePlantSoilBGCType
 
   subroutine lsm_betr_plant_soilbgc_send(this, bounds, numf, filter)
 
-  use decompMod             , only : bounds_type
+  use BeTR_decompMod             , only : betr_bounds_type
   ! !ARGUMENTS:
 
   class(plant_soilbgc_h2oiso_run_type) , intent(in) :: this
-  type(bounds_type)         , intent(in) :: bounds
+  type(betr_bounds_type)         , intent(in) :: bounds
   integer                   , intent(in) :: numf
   integer                   , intent(in) :: filter(:)
 

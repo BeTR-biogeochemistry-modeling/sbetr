@@ -2,6 +2,7 @@ module MockPlantSoilBGCType
 
 
   use PlantSoilBGCMod , only : plant_soilbgc_type
+  use betr_decompMod    , only : bounds_type => betr_bounds_type
   implicit none
   save
   private
@@ -43,7 +44,6 @@ module MockPlantSoilBGCType
   ! template for init_betrbgc
   !
   ! !USES:
-  use decompMod             , only : bounds_type
 
   ! !ARGUMENTS:
   class(plant_soilbgc_mock_run_type) , intent(in) :: this
@@ -60,7 +60,6 @@ module MockPlantSoilBGCType
   ! !USES:
   use BeTRTracerType        , only : BeTRtracer_type
   use tracerfluxType        , only : tracerflux_type
-  use decompMod             , only : bounds_type
   use shr_kind_mod          , only : r8 => shr_kind_r8
 
   ! !ARGUMENTS:
@@ -82,7 +81,7 @@ module MockPlantSoilBGCType
 
   subroutine integrate_vr_flux_to_2D(this, bounds, numf, filter)
 
-  use decompMod             , only : bounds_type
+
   ! !ARGUMENTS:
 
   class(plant_soilbgc_mock_run_type) , intent(in) :: this
@@ -97,7 +96,6 @@ module MockPlantSoilBGCType
 
   subroutine lsm_betr_plant_soilbgc_send(this, bounds, numf, filter)
 
-  use decompMod             , only : bounds_type
   ! !ARGUMENTS:
 
   class(plant_soilbgc_mock_run_type) , intent(in) :: this

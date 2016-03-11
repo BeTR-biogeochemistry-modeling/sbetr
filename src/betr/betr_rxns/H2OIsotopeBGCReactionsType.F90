@@ -74,10 +74,11 @@ implicit none
   use TracerBoundaryCondType, only : tracerboundarycond_type
   use tracer_varcon         , only : bndcond_as_conc, bndcond_as_flux
   use BeTRTracerType        , only : betrtracer_type
+  use BeTR_decompMod           , only : betr_bounds_type
 
   class(bgc_reaction_h2oiso_type)   , intent(in) :: this
   type(BeTRtracer_type )            , intent(in) :: betrtracer_vars
-  type(bounds_type)                 , intent(in) :: bounds
+  type(betr_bounds_type)                 , intent(in) :: bounds
   type(tracerboundarycond_type)     , intent(in) :: tracerboundarycond_vars
 
   tracerboundarycond_vars%topbc_type(:) = bndcond_as_conc
@@ -99,9 +100,10 @@ implicit none
   ! initialize the betrbgc
   use BeTRTracerType        , only : betrtracer_type
   use MathfuncMod           , only : addone
+  use BeTR_decompMod           , only : betr_bounds_type
 
   class(bgc_reaction_h2oiso_type) ,  intent(in) :: this
-  type(bounds_type)               ,  intent(in) :: bounds
+  type(betr_bounds_type)          ,  intent(in) :: bounds
   integer                         ,  intent(in) :: lbj, ubj
   type(BeTRtracer_type )          ,intent(inout) :: betrtracer_vars
   !local variables
@@ -197,18 +199,19 @@ implicit none
   use clm_varctl            , only : iulog
   use TracerBoundaryCondType, only : tracerboundarycond_type
   use shr_log_mod           , only : errMsg => shr_log_errMsg
+  use BeTR_decompMod        , only : betr_bounds_type
   use BeTRTracerType        , only : betrtracer_type
-  use WaterfluxType         , only : waterflux_type
+  use BeTR_WaterfluxType    , only : betr_waterflux_type
   use clm_varcon            , only : denh2o
 
 
   class(bgc_reaction_h2oiso_type), intent(in) :: this
-  type(bounds_type)                 , intent(in) :: bounds                     !
+  type(betr_bounds_type)         , intent(in) :: bounds                     !
   integer                           , intent(in) :: num_soilc                  ! number of columns in column filter_soilc
   integer                           , intent(in) :: filter_soilc(:)            ! column filter_soilc
   type(betrtracer_type)             , intent(in) :: betrtracer_vars            !
   real(r8)                          , intent(in) :: dz_top(bounds%begc: )      !
-  type(waterflux_type)              , intent(in) :: waterflux_vars             !
+  type(betr_waterflux_type), intent(in) :: waterflux_vars             !
   type(tracerboundarycond_type)     , intent(inout) :: tracerboundarycond_vars !
 
   !local variables
@@ -257,6 +260,7 @@ implicit none
   !USES
   !
   ! !USES:
+  use BeTR_decompMod           , only : betr_bounds_type
   use tracerfluxType           , only : tracerflux_type
   use tracerstatetype          , only : tracerstate_type
   use tracercoeffType          , only : tracercoeff_type
@@ -267,7 +271,7 @@ implicit none
   use ColumnType               , only : col
   !ARGUMENTS
   class(bgc_reaction_h2oiso_type)     , intent(in)    :: this                       !
-  type(bounds_type)                   , intent(in)    :: bounds                     ! bounds
+  type(betr_bounds_type), intent(in) :: bounds ! bounds
   integer                             , intent(in)    :: num_soilc                  ! number of columns in column filter_soilc
   integer                             , intent(in)    :: filter_soilc(:)            ! column filter_soilc
   integer                             , intent(in)    :: num_soilp                  !
@@ -345,11 +349,12 @@ implicit none
   use tracerstatetype       , only : tracerstate_type
   use tracercoeffType       , only : tracercoeff_type
   use BeTRTracerType        , only : betrtracer_type
+  use BeTR_decompMod        , only : betr_bounds_type
 
 
   class(bgc_reaction_h2oiso_type),    intent(in) :: this
 
-  type(bounds_type),      intent(in) :: bounds
+  type(betr_bounds_type),      intent(in) :: bounds
   integer,                intent(in) :: lbj, ubj
   integer,                intent(in) :: jtops(bounds%begc: )        ! top label of each column
   integer,                intent(in) :: num_soilc
@@ -408,8 +413,9 @@ implicit none
   !
   ! Diagnose solid phase tracer
   !
+  use BeTR_decompMod           , only : betr_bounds_type
   implicit none
-  type(bounds_type),      intent(in) :: bounds
+  type(betr_bounds_type),      intent(in) :: bounds
   integer,                intent(in) :: lbj, ubj
   integer,                intent(in) :: jtops(bounds%begc: )        ! top label of each column
   integer,                intent(in) :: numf
@@ -450,9 +456,10 @@ implicit none
     !
     ! !USES:
     !
+    use BeTR_decompMod           , only : betr_bounds_type
     use BeTRTracerType           , only : BeTRTracer_Type
     use tracerstatetype          , only : tracerstate_type
-    use WaterstateType           , only : waterstate_type
+    use BeTR_WaterstateType      , only : betr_waterstate_type
     use BeTR_PatchType           , only : pft  => betr_pft
     use clm_varcon               , only : spval, ispval
     use landunit_varcon          , only : istsoil, istcrop
@@ -462,9 +469,9 @@ implicit none
     use clm_varpar               , only : nlevtrc_soil
     ! !ARGUMENTS:
     class(bgc_reaction_h2oiso_type) , intent(in)    :: this
-    type(bounds_type)                 , intent(in)    :: bounds
+    type(betr_bounds_type)                 , intent(in)    :: bounds
     type(BeTRTracer_Type)             , intent(in)    :: betrtracer_vars
-    type(waterstate_type)             , intent(in)    :: waterstate_vars
+    type(betr_waterstate_type)             , intent(in)    :: waterstate_vars
     type(tracerstate_type)            , intent(inout) :: tracerstate_vars
 
     !
@@ -581,11 +588,12 @@ implicit none
     use tracerstatetype          , only : tracerstate_type
     use decompMod                , only : bounds_type
     use BeTRTracerType           , only : BeTRTracer_Type
+    use BeTR_decompMod           , only : betr_bounds_type
 
 
     ! !ARGUMENTS:
     class(bgc_reaction_h2oiso_type) , intent(in)    :: this               !
-    type(bounds_type)                 , intent(in)    :: bounds             ! bounds
+    type(betr_bounds_type)                 , intent(in)    :: bounds             ! bounds
     integer                           , intent(in)    :: num_soilc
     integer                           , intent(in)    :: filter_soilc(:)
     type(betrtracer_type)             , intent(in)    :: betrtracer_vars    ! betr configuration information
@@ -616,11 +624,12 @@ implicit none
     use PlantSoilBGCMod          , only : plant_soilbgc_type
     use EcophysConType           , only : ecophyscon_type
     use BeTR_CNStateType         , only : betr_cnstate_type
+    use BeTR_decompMod           , only : betr_bounds_type
 
 
     ! !ARGUMENTS:
     class(bgc_reaction_h2oiso_type)    , intent(in)    :: this               !
-    type(bounds_type)                  , intent(in)    :: bounds             !
+    type(betr_bounds_type)                  , intent(in)    :: bounds             !
     type(tracerstate_type)             , intent(inout) :: tracerstate_vars   !
     type(betrtracer_type)              , intent(in)    :: betrtracer_vars    ! betr configuration information
     class(plant_soilbgc_type)          , intent(inout) :: plant_soilbgc !

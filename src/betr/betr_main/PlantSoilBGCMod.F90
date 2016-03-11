@@ -30,12 +30,12 @@ end type plant_soilbgc_type
   ! template for init_betrbgc
   !
   ! !USES:
-  use decompMod             , only : bounds_type
+  use BeTR_decompMod         , only : betr_bounds_type
 
   ! !ARGUMENTS:
   import :: plant_soilbgc_type
   class(plant_soilbgc_type) , intent(in) :: this
-  type(bounds_type)         , intent(in) :: bounds
+  type(betr_bounds_type)         , intent(in) :: bounds
   integer                   , intent(in) :: lbj, ubj
 
   end subroutine Init_plant_soilbgc_interface
@@ -48,14 +48,14 @@ end type plant_soilbgc_type
   ! !USES:
   use BeTRTracerType        , only : BeTRtracer_type
   use tracerfluxType        , only : tracerflux_type
-  use decompMod             , only : bounds_type
+  use BeTR_decompMod        , only : betr_bounds_type
   use shr_kind_mod          , only : r8 => shr_kind_r8
 
   ! !ARGUMENTS:
   import :: plant_soilbgc_type
 
   class(plant_soilbgc_type) , intent(in) :: this
-  type(bounds_type)         , intent(in) :: bounds
+  type(betr_bounds_type)         , intent(in) :: bounds
   integer                   , intent(in) :: lbj, ubj
   integer                   , intent(in) :: numf
   integer                   , intent(in) :: filter(:)
@@ -73,12 +73,12 @@ end type plant_soilbgc_type
   !
   ! !DESCRIPTIONS
   ! integrate 3d fluxes into 2d fluxes
-  use decompMod             , only : bounds_type
+  use BeTR_decompMod         , only : betr_bounds_type
   ! !ARGUMENTS:
   import :: plant_soilbgc_type
 
   class(plant_soilbgc_type) , intent(in) :: this
-  type(bounds_type)         , intent(in) :: bounds
+  type(betr_bounds_type)         , intent(in) :: bounds
   integer                   , intent(in) :: numf
   integer                   , intent(in) :: filter(:)
 
@@ -91,12 +91,12 @@ end type plant_soilbgc_type
   ! send lsm variables into betr
   ! the interface will be further revised for plant soilbgc coupling
   !
-  use decompMod             , only : bounds_type
+  use BeTR_decompMod         , only : betr_bounds_type
   ! !ARGUMENTS:
   import :: plant_soilbgc_type
 
   class(plant_soilbgc_type) , intent(in) :: this
-  type(bounds_type)         , intent(in) :: bounds
+  type(betr_bounds_type)         , intent(in) :: bounds
   integer                   , intent(in) :: numf
   integer                   , intent(in) :: filter(:)
 

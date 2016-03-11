@@ -12,7 +12,7 @@ module sbetrDriverMod
   private
   save
   public :: sbetrBGC_driver
-  
+
   character(len=*), parameter :: mod_filename = __FILE__
 
 
@@ -42,12 +42,12 @@ contains
   use BeTRSimulationFactory, only : create_betr_simulation
 
   use betr_constants, only : betr_namelist_buffer_size, betr_string_length_long
-  
+
 !X!  use betr_standalone_cpl , only : betr_initialize_standalone
 !X!  use betr_standalone_cpl , only : run_betr_one_step_without_drainage_standalone
 !X!  use betr_standalone_cpl , only : run_betr_one_step_with_drainage_standalone
 
-  
+
   use TracerParamsMod     , only : tracer_param_init
   use spmdMod             , only : spmd_init
   use LandunitType        , only : lun
@@ -55,7 +55,7 @@ contains
   use landunit_varcon     , only : istsoil
   use clm_time_manager    , only : proc_initstep, proc_nextstep
   use accumulMod
-  use TracerBalanceMod
+
 
   implicit none
   character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
@@ -92,6 +92,7 @@ contains
 
   lbj = 1
   ubj = nlevgrnd
+
   lun%itype(1) = istsoil
   col%landunit(1) = 1
   col%gridcell(1) = 1
@@ -105,15 +106,16 @@ contains
   call spmd_init
 
   !initialize parameters
-  call read_name_list(namelist_buffer, simulator_name, reactions_name)  
+  call read_name_list(namelist_buffer, simulator_name, reactions_name)
   simulation => create_betr_simulation(simulator_name)
-  call  simulation%Init(reactions_name, bounds, lbj, ubj, waterstate_vars)
+  call  simulation%Init(reactions_name, bounds, waterstate_vars)
   !X!call betr_initialize_standalone(bounds, lbj, ubj)
 
   !create output file
   call hist_htapes_create(histfilename,nlevtrc_soil, num_soilc, simulation%betrtracer_vars)
 
   record = -1
+  !in all calculations, ubj is set to nlevtrc_soil
   ubj = nlevtrc_soil
   call proc_initstep()
   do
@@ -130,21 +132,17 @@ contains
 
     !no calculation in the first step
     if(record==0)cycle
-    call begin_betr_tracer_massbalance(bounds, lbj, ubj, num_soilc, filter_soilc, &
-         simulation%betrtracer_vars, simulation%tracerstate_vars, &
-         simulation%tracerflux_vars)
+    call simulation%BeginMassBalanceCheck(bounds,  num_soilc, filter_soilc)
 
-    call simulation%StepWithoutDrainage(bounds, lbj, ubj, num_soilc, filter_soilc, num_soilp, filter_soilp, col ,   &
+    call simulation%StepWithoutDrainage(bounds,  num_soilc, filter_soilc, num_soilp, filter_soilp, col ,   &
          atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, temperature_vars, waterflux_vars, chemstate_vars, &
          cnstate_vars, canopystate_vars, carbonflux_vars)
 
-    call simulation%StepWithDrainage(bounds, lbj, ubj, num_soilc, filter_soilc, &
+    call simulation%StepWithDrainage(bounds,  num_soilc, filter_soilc, &
          jtops, waterflux_vars, col)
 
     !do mass balance check
-    call betr_tracer_massbalance_check(bounds, lbj, ubj, num_soilc, filter_soilc, &
-         simulation%betrtracer_vars, simulation%tracerstate_vars, &
-         simulation%tracerflux_vars)
+    call simulation%MassBalanceCheck(bounds,  num_soilc, filter_soilc)
 
     !update time stamp
     call update_time_stamp(time_vars, dtime)
@@ -172,10 +170,10 @@ contains
     use spmdMod       , only : masterproc, mpicom
     use clm_varctl   , only : iulog
     use abortutils      , only : endrun
-    use shr_log_mod     , only : errMsg => shr_log_errMsg    
+    use shr_log_mod     , only : errMsg => shr_log_errMsg
 
     use betr_constants, only : stdout, betr_string_length_long, betr_namelist_buffer_size
-    
+
     implicit none
     ! !ARGUMENTS:
     character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
@@ -189,7 +187,7 @@ contains
 
 
     !-----------------------------------------------------------------------
-    
+
     namelist / sbetr_driver / simulator_name, reactions_name
 
     simulator_name = ''

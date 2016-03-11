@@ -12,10 +12,11 @@ module BeTRSimulationStandalone
   use abortutils, only : endrun
   use clm_varctl, only : iulog
   use shr_log_mod, only : errMsg => shr_log_errMsg
-
-  use BeTRSimulation, only : betr_simulation_type
-
+  use betr_decompMod    , only : betr_bounds_type
   use decompMod, only : bounds_type
+  use BeTRSimulation, only : betr_simulation_type
+  use BeTR_CNStateType, only : betr_cnstate_type
+  use tracer_varcon, only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
   use EcophysConType, only : ecophyscon_type
 
   implicit none
@@ -59,7 +60,7 @@ contains
 
   !-------------------------------------------------------------------------------
 
-  subroutine StandaloneInit(this, reaction_method, bounds, lbj, ubj, waterstate)
+  subroutine StandaloneInit(this, reaction_method, bounds, waterstate)
 
     use BeTRSimulation, only : BeTRSimulationInit
     use ReactionsFactory, only : create_bgc_reaction_type, &
@@ -75,10 +76,9 @@ contains
     use pftvarcon, only : noveg, nc4_grass, nc3_arctic_grass, nc3_nonarctic_grass
     use clm_instMod, only : cnstate_vars
     use WaterStateType, only : waterstate_type
-
+    use BeTR_WaterStateType, only : betr_waterstate_type
     use landunit_varcon
     use BeTR_landvarconType, only : betr_landvarcon
-    use tracer_varcon, only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
     use clm_varpar, only : nlevsno, nlevsoi, nlevtrc_soil
 
     implicit none
@@ -86,12 +86,24 @@ contains
     class(betr_simulation_standalone_type), intent(inout) :: this
     character(len=*), intent(in) :: reaction_method
     type(bounds_type)    , intent(in) :: bounds
-    integer              , intent(in) :: lbj, ubj
+
     type(waterstate_type), intent(inout) :: waterstate
+
+    type(betr_bounds_type)     :: betr_bounds
+    integer  :: lbj, ubj
+
 
     betr_nlevsoi = nlevsoi
     betr_nlevsno = nlevsno
     betr_nlevtrc_soil = nlevtrc_soil
+
+    !pass necessary data for correct subroutine call
+    !set lbj and ubj
+    betr_bounds%lbj  = 1          ; betr_bounds%ubj  = betr_nlevsoi
+    betr_bounds%begp = bounds%begp; betr_bounds%endp = bounds%endp
+    betr_bounds%begc = bounds%begc; betr_bounds%endc = bounds%endc
+    betr_bounds%begl = bounds%begl; betr_bounds%endl = bounds%endl
+    betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
 
     betr_pft%wtcol                        => pft%wtcol
     betr_pft%column                       => pft%column
@@ -123,12 +135,12 @@ contains
     allocate(this%plant_soilbgc, source=create_plant_soilbgc_type(reaction_method))
 
     ! now call the base simulation init to continue initialization
-    call BeTRSimulationInit(this, reaction_method, bounds, lbj, ubj, waterstate)
+    call BeTRSimulationInit(this, reaction_method, bounds, waterstate)
 
     !pass necessary data
     this%betr_cnstate_vars%isoilorder  => cnstate_vars%isoilorder
 
-    call this%bgc_reaction%init_betr_lsm_bgc_coupler(bounds, this%plant_soilbgc, &
+    call this%bgc_reaction%init_betr_lsm_bgc_coupler(betr_bounds, this%plant_soilbgc, &
          this%betrtracer_vars, this%tracerstate_vars, this%betr_cnstate_vars, &
          this%ecophyscon)
 
@@ -136,30 +148,32 @@ contains
 
 
   !---------------------------------------------------------------------------------
-  subroutine StandaloneStepWithoutDrainage(this, bounds, lbj, ubj, &
+  subroutine StandaloneStepWithoutDrainage(this, bounds,  &
        num_soilc, filter_soilc, num_soilp, filter_soilp, col ,   &
        atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, &
        temperature_vars, waterflux_vars, chemstate_vars, &
        cnstate_vars, canopystate_vars, carbonflux_vars)
 
-    use BetrBGCMod, only : run_betr_one_step_without_drainage
     use SoilStateType, only : soilstate_type
     use WaterStateType, only : Waterstate_Type
     use TemperatureType, only : temperature_type
     use ChemStateType, only : chemstate_type
     use WaterfluxType, only : waterflux_type
     use ColumnType, only : column_type
-    use BGCReactionsMod, only : bgc_reaction_type
     use atm2lndType, only : atm2lnd_type
     use SoilHydrologyType, only : soilhydrology_type
-    use BeTR_CarbonFluxType, only : betr_carbonflux_type
     use CNStateType, only : cnstate_type
     use CNCarbonFluxType, only : carbonflux_type
     use CanopyStateType, only : canopystate_type
+
+    use BGCReactionsMod, only : bgc_reaction_type
+    use BetrBGCMod, only : run_betr_one_step_without_drainage
+    use BeTR_CarbonFluxType, only : betr_carbonflux_type
     use BeTR_PatchType, only : betr_pft
     use BeTR_ColumnType, only : betr_col
     use BeTR_LandunitType,only : betr_lun
-
+    use BeTR_WaterstateType   , only : betr_waterstate_type
+    use BeTR_WaterfluxType    , only : betr_waterflux_type
     use PatchType, only : pft
     use LandunitType,only : lun
     use pftvarcon, only : crop
@@ -174,7 +188,6 @@ contains
     integer, intent(in) :: filter_soilc(:) ! column filter_soilc
     integer, intent(in) :: num_soilp
     integer, intent(in) :: filter_soilp(:) ! pft filter
-    integer, intent(in) :: lbj, ubj ! lower and upper bounds, make sure they are > 0
 
     type(column_type), intent(in) :: col ! column type
     type(Waterstate_Type), intent(in) :: waterstate_vars ! water state variables
@@ -190,8 +203,19 @@ contains
 
     !temporary variables
     type(betr_carbonflux_type) :: betr_carbonflux_vars
+    type(betr_waterflux_type)  :: betr_waterflux_vars
+    type(betr_waterstate_type)  :: betr_waterstate_vars
+    type(betr_bounds_type)     :: betr_bounds
+    integer  :: lbj, ubj ! lower and upper bounds, make sure they are > 0
 
     !pass necessary data for correct subroutine call
+    !set lbj and ubj
+    betr_bounds%lbj  = 1          ; betr_bounds%ubj  = betr_nlevsoi
+    betr_bounds%begp = bounds%begp; betr_bounds%endp = bounds%endp
+    betr_bounds%begc = bounds%begc; betr_bounds%endc = bounds%endc
+    betr_bounds%begl = bounds%begl; betr_bounds%endl = bounds%endl
+    betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
+    lbj = betr_bounds%lbj; ubj = betr_bounds%ubj
 
     this%betr_cnstate_vars%isoilorder          => cnstate_vars%isoilorder
 
@@ -215,42 +239,85 @@ contains
     betr_lun%itype                        => lun%itype
     betr_lun%ifspecial                    => lun%ifspecial
 
-    call run_betr_one_step_without_drainage(bounds, lbj, ubj, &
+    !assign waterstate
+    betr_waterstate_vars%h2osoi_liq_col    => waterstate_vars%h2osoi_liq_col
+    betr_waterstate_vars%h2osoi_ice_col    => waterstate_vars%h2osoi_ice_col
+
+    betr_waterstate_vars%h2osoi_liq_old    => waterstate_vars%h2osoi_liq_old
+    betr_waterstate_vars%h2osoi_ice_old    => waterstate_vars%h2osoi_ice_old
+    betr_waterstate_vars%h2osoi_liqvol_col => waterstate_vars%h2osoi_liqvol_col
+    betr_waterstate_vars%h2osoi_icevol_col => waterstate_vars%h2osoi_icevol_col
+    betr_waterstate_vars%h2osoi_vol_col    => waterstate_vars%h2osoi_vol_col
+    betr_waterstate_vars%air_vol_col       => waterstate_vars%air_vol_col
+    betr_waterstate_vars%finundated_col    => waterstate_vars%finundated_col
+    betr_waterstate_vars%rho_vap           => waterstate_vars%rho_vap
+    betr_waterstate_vars%rhvap_soi         => waterstate_vars%rhvap_soi
+    betr_waterstate_vars%smp_l_col         => waterstate_vars%smp_l_col
+    betr_waterstate_vars%frac_h2osfc_col   => waterstate_vars%frac_h2osfc_col
+
+    betr_waterflux_vars%qflx_adv_col       => waterflux_vars%qflx_adv_col
+    betr_waterflux_vars%qflx_infl_col      => waterflux_vars%qflx_infl_col
+    betr_waterflux_vars%qflx_surf_col      => waterflux_vars%qflx_surf_col
+    betr_waterflux_vars%qflx_rootsoi       => waterflux_vars%qflx_rootsoi
+    betr_waterflux_vars%qflx_gross_evap_soil_col  => waterflux_vars%qflx_gross_evap_soil_col
+    betr_waterflux_vars%qflx_gross_infl_soil_col  => waterflux_vars%qflx_gross_infl_soil_col
+    betr_waterflux_vars%qflx_rootsoi_col        => waterflux_vars%qflx_rootsoi_col
+    betr_waterflux_vars%qflx_drain_vr_col       => waterflux_vars%qflx_drain_vr_col
+    betr_waterflux_vars%qflx_totdrain_col       => waterflux_vars%qflx_totdrain_col
+    betr_waterflux_vars%qflx_dew_grnd_col       => waterflux_vars%qflx_dew_grnd_col
+    betr_waterflux_vars%qflx_dew_snow_col       => waterflux_vars%qflx_dew_snow_col
+    betr_waterflux_vars%qflx_sub_snow_vol_col   => waterflux_vars%qflx_sub_snow_vol_col
+    betr_waterflux_vars%qflx_sub_snow_col       => waterflux_vars%qflx_sub_snow_col
+    betr_waterflux_vars%qflx_h2osfc2topsoi_col  => waterflux_vars%qflx_h2osfc2topsoi_col
+    betr_waterflux_vars%qflx_snow2topsoi_col    => waterflux_vars%qflx_snow2topsoi_col
+    betr_waterflux_vars%qflx_tran_veg_patch     => waterflux_vars%qflx_tran_veg_patch
+
+    call run_betr_one_step_without_drainage(betr_bounds, lbj, ubj, &
          num_soilc, filter_soilc, num_soilp, filter_soilp,  &
          atm2lnd_vars, soilhydrology_vars, soilstate_vars, &
-         waterstate_vars, temperature_vars, waterflux_vars, &
+         betr_waterstate_vars, temperature_vars, betr_waterflux_vars, &
          chemstate_vars, this%betr_cnstate_vars, canopystate_vars, &
          betr_carbonflux_vars, this%betrtracer_vars, this%bgc_reaction, &
          this%betr_aerecond_vars, this%tracerboundarycond_vars, this%tracercoeff_vars, &
          this%tracerstate_vars, this%tracerflux_vars, this%plant_soilbgc)
 
-
-
   end subroutine StandaloneStepWithoutDrainage
 
   !---------------------------------------------------------------------------------
-  subroutine StandaloneStepWithDrainage(this, bounds, lbj, ubj, &
+  subroutine StandaloneStepWithDrainage(this, bounds,  &
        num_soilc, filter_soilc, jtops, waterflux_vars, col)
 
-    use BetrBGCMod, only : run_betr_one_step_with_drainage
-    use ColumnType, only : column_type
-    use MathfuncMod, only : safe_div
-    use WaterFluxType, only : waterflux_type
+    use BetrBGCMod    , only : run_betr_one_step_with_drainage
+    use ColumnType    , only : column_type
+    use MathfuncMod   , only : safe_div
+    use WaterFluxType , only : waterflux_type
     use BeTR_ColumnType, only : betr_col
     use BeTR_LandunitType,only : betr_lun
     use LandunitType,only : lun
+    use BeTR_WaterfluxType    , only : betr_waterflux_type
     implicit none
 
     ! !ARGUMENTS:
     class(betr_simulation_standalone_type), intent(inout) :: this
     type(bounds_type), intent(in) :: bounds
-    integer, intent(in) :: lbj, ubj
     integer, intent(in) :: num_soilc ! number of columns in column filter_soilc
     integer, intent(in) :: filter_soilc(:) ! column filter_soilc
     integer, intent(in) :: jtops(bounds%begc: )
     type(waterflux_type)    , intent(in) :: waterflux_vars
     type(column_type), intent(in) :: col ! column type
 
+    type(betr_waterflux_type)  :: betr_waterflux_vars
+    type(betr_bounds_type)     :: betr_bounds
+    integer  :: lbj, ubj ! lower and upper bounds, make sure they are > 0
+
+    !pass necessary data for correct subroutine call
+    !set lbj and ubj
+    betr_bounds%lbj  = 1          ; betr_bounds%ubj  = betr_nlevsoi
+    betr_bounds%begp = bounds%begp; betr_bounds%endp = bounds%endp
+    betr_bounds%begc = bounds%begc; betr_bounds%endc = bounds%endc
+    betr_bounds%begl = bounds%begl; betr_bounds%endl = bounds%endl
+    betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
+    lbj = betr_bounds%lbj; ubj = betr_bounds%ubj
 
     betr_col%landunit                     => col%landunit
     betr_col%gridcell                     => col%gridcell
@@ -262,12 +329,27 @@ contains
     betr_lun%itype                        => lun%itype
     betr_lun%ifspecial                    => lun%ifspecial
 
+    betr_waterflux_vars%qflx_adv_col       => waterflux_vars%qflx_adv_col
+    betr_waterflux_vars%qflx_infl_col      => waterflux_vars%qflx_infl_col
+    betr_waterflux_vars%qflx_surf_col      => waterflux_vars%qflx_surf_col
+    betr_waterflux_vars%qflx_rootsoi       => waterflux_vars%qflx_rootsoi
+    betr_waterflux_vars%qflx_gross_evap_soil_col  => waterflux_vars%qflx_gross_evap_soil_col
+    betr_waterflux_vars%qflx_gross_infl_soil_col  => waterflux_vars%qflx_gross_infl_soil_col
+    betr_waterflux_vars%qflx_rootsoi_col        => waterflux_vars%qflx_rootsoi_col
+    betr_waterflux_vars%qflx_drain_vr_col       => waterflux_vars%qflx_drain_vr_col
+    betr_waterflux_vars%qflx_totdrain_col       => waterflux_vars%qflx_totdrain_col
+    betr_waterflux_vars%qflx_dew_grnd_col       => waterflux_vars%qflx_dew_grnd_col
+    betr_waterflux_vars%qflx_dew_snow_col       => waterflux_vars%qflx_dew_snow_col
+    betr_waterflux_vars%qflx_sub_snow_vol_col   => waterflux_vars%qflx_sub_snow_vol_col
+    betr_waterflux_vars%qflx_sub_snow_col       => waterflux_vars%qflx_sub_snow_col
+    betr_waterflux_vars%qflx_h2osfc2topsoi_col  => waterflux_vars%qflx_h2osfc2topsoi_col
+    betr_waterflux_vars%qflx_snow2topsoi_col    => waterflux_vars%qflx_snow2topsoi_col
+    betr_waterflux_vars%qflx_tran_veg_patch     => waterflux_vars%qflx_tran_veg_patch
 
-    call run_betr_one_step_with_drainage(bounds, lbj, ubj, &
+    call run_betr_one_step_with_drainage(betr_bounds, lbj, ubj, &
          num_soilc, filter_soilc, &
-         jtops, waterflux_vars, this%betrtracer_vars, this%tracercoeff_vars, &
+         jtops, betr_waterflux_vars, this%betrtracer_vars, this%tracercoeff_vars, &
          this%tracerstate_vars,  this%tracerflux_vars)
-
 
   end subroutine StandaloneStepWithDrainage
 
