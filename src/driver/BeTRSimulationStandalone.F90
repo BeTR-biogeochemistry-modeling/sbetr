@@ -167,7 +167,6 @@ contains
     use CanopyStateType, only : canopystate_type
 
     use BGCReactionsMod, only : bgc_reaction_type
-    use BetrBGCMod, only : run_betr_one_step_without_drainage
     use BeTR_CarbonFluxType, only : betr_carbonflux_type
     use BeTR_PatchType, only : betr_pft
     use BeTR_ColumnType, only : betr_col
@@ -272,7 +271,7 @@ contains
     betr_waterflux_vars%qflx_snow2topsoi_col    => waterflux_vars%qflx_snow2topsoi_col
     betr_waterflux_vars%qflx_tran_veg_patch     => waterflux_vars%qflx_tran_veg_patch
 
-    call run_betr_one_step_without_drainage(betr_bounds, lbj, ubj, &
+    call this%betr%step_without_drainage(betr_bounds, lbj, ubj, &
          num_soilc, filter_soilc, num_soilp, filter_soilp,  &
          atm2lnd_vars, soilhydrology_vars, soilstate_vars, &
          betr_waterstate_vars, temperature_vars, betr_waterflux_vars, &
@@ -287,7 +286,6 @@ contains
   subroutine StandaloneStepWithDrainage(this, bounds,  &
        num_soilc, filter_soilc, jtops, waterflux_vars, col)
 
-    use BetrBGCMod    , only : run_betr_one_step_with_drainage
     use ColumnType    , only : column_type
     use MathfuncMod   , only : safe_div
     use WaterFluxType , only : waterflux_type
@@ -346,7 +344,7 @@ contains
     betr_waterflux_vars%qflx_snow2topsoi_col    => waterflux_vars%qflx_snow2topsoi_col
     betr_waterflux_vars%qflx_tran_veg_patch     => waterflux_vars%qflx_tran_veg_patch
 
-    call run_betr_one_step_with_drainage(betr_bounds, lbj, ubj, &
+    call this%betr%step_with_drainage(betr_bounds, lbj, ubj, &
          num_soilc, filter_soilc, &
          jtops, betr_waterflux_vars, this%betrtracer_vars, this%tracercoeff_vars, &
          this%tracerstate_vars,  this%tracerflux_vars)

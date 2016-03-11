@@ -25,16 +25,21 @@ module BetrBGCMod
   real(r8), parameter :: err_tol_transp = 1.e-8_r8  !error tolerance for tracer transport
   character(len=*), parameter :: filename = __FILE__
 
-  public :: run_betr_one_step_without_drainage
-  public :: run_betr_one_step_with_drainage
-  public :: calc_dew_sub_flux
-  public :: check_mass_err
+  type, public :: betr_type
+
+   contains
+     procedure, public :: step_without_drainage
+     procedure, public :: step_with_drainage
+     procedure, public :: calc_dew_sub_flux
+     procedure, public :: check_mass_err
+  end type betr_type
+  
 contains
 
 
 
   !-------------------------------------------------------------------------------
-  subroutine run_betr_one_step_without_drainage(bounds, lbj, ubj, num_soilc, filter_soilc, num_soilp, filter_soilp,         &
+  subroutine step_without_drainage(this, bounds, lbj, ubj, num_soilc, filter_soilc, num_soilp, filter_soilp,         &
        atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, temperature_vars, waterflux_vars, chemstate_vars, &
        cnstate_vars, canopystate_vars,  carbonflux_vars, betrtracer_vars, bgc_reaction, betr_aerecond_vars,                 &
        tracerboundarycond_vars, tracercoeff_vars, tracerstate_vars, tracerflux_vars, plant_soilbgc_coupler)
@@ -71,6 +76,7 @@ contains
 
     !
     ! !ARGUMENTS :
+    class(betr_type), intent(inout) :: this
     type(bounds_type)                , intent(in)    :: bounds                     ! bounds
     integer                          , intent(in)    :: num_soilc                  ! number of columns in column filter_soilc
     integer                          , intent(in)    :: filter_soilc(:)            ! column filter_soilc
@@ -278,7 +284,7 @@ contains
             betrtracer_vars, tracerflux_vars)
     endif
 
-  end subroutine run_betr_one_step_without_drainage
+  end subroutine step_without_drainage
 
   !-------------------------------------------------------------------------------
   subroutine tracer_solid_transport(bounds, lbj, ubj, num_soilc, filter_soilc, dtime, hmconductance_col, dz, &
@@ -1446,7 +1452,7 @@ contains
   end subroutine calc_root_uptake_as_perfect_sink
 
   !--------------------------------------------------------------------------------
-  subroutine run_betr_one_step_with_drainage(bounds, lbj, ubj, num_soilc, filter_soilc, &
+  subroutine step_with_drainage(this, bounds, lbj, ubj, num_soilc, filter_soilc, &
        jtops, waterflux_vars, betrtracer_vars, tracercoeff_vars, tracerstate_vars,  tracerflux_vars)
     !
     ! !DESCRIPTION:
@@ -1460,6 +1466,7 @@ contains
     use MathfuncMod           , only : safe_div
     use BeTR_WaterFluxType    , only : waterflux_type  => betr_waterflux_type
     ! !ARGUMENTS:
+    class(betr_type), intent(inout) :: this
     type(bounds_type),        intent(in)    :: bounds
     integer,                  intent(in)    :: lbj, ubj
     integer,                  intent(in)    :: num_soilc                          ! number of columns in column filter_soilc
@@ -1524,7 +1531,7 @@ contains
            betrtracer_vars, tracercoeff_vars, tracerstate_vars)
 
     end associate
-  end subroutine run_betr_one_step_with_drainage
+  end subroutine step_with_drainage
 
   !--------------------------------------------------------------------------------
   subroutine calc_tracer_surface_runoff(bounds, lbj, ubj, num_soilc, filter_soilc, &
@@ -1635,7 +1642,7 @@ contains
   end subroutine calc_tracer_surface_runoff
 
   !--------------------------------------------------------------------------------
-  subroutine calc_dew_sub_flux(bounds, num_hydrologyc, filter_soilc_hydrologyc, &
+  subroutine calc_dew_sub_flux(this, bounds, num_hydrologyc, filter_soilc_hydrologyc, &
        waterstate_vars, waterflux_vars, betrtracer_vars, tracerflux_vars, tracerstate_vars)
     !
     ! DESCRIPTION:
@@ -1653,6 +1660,7 @@ contains
     use BeTR_landvarconType   , only : landvarcon  => betr_landvarcon
 
     ! !ARGUMENTS:
+    class(betr_type), intent(inout) :: this
     type(bounds_type)         , intent(in)    :: bounds
     integer                   , intent(in)    :: num_hydrologyc             ! number of column soil points in column filter_soilc
     integer                   , intent(in)    :: filter_soilc_hydrologyc(:) ! column filter_soilc for soil points
@@ -1861,13 +1869,16 @@ contains
 
   !--------------------------------------------------------------------------------
 
-  subroutine check_mass_err(c, trcid, ubj, dz, betrtracer_vars, tracerstate_vars, tracerflux_vars)
+  subroutine check_mass_err(this, c, trcid, ubj, dz, betrtracer_vars, tracerstate_vars, tracerflux_vars)
 
   !
   !temporary mass balance check
   use tracerfluxType        , only : tracerflux_type
   use tracerstatetype       , only : tracerstate_type
+  
   implicit none
+  
+  class(betr_type), intent(inout) :: this
   integer, intent(in) :: ubj
   integer, intent(in) :: c, trcid
   real(r8), intent(in):: dz(1:ubj)

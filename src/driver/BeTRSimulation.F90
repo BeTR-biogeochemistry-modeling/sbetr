@@ -15,6 +15,7 @@ module BeTRSimulation
   use decompMod                   , only : bounds_type
 
   ! !USES:
+  use BetrBGCMod, only : betr_type
   use BeTRTracerType            , only : BeTRtracer_type
   use TracerCoeffType           , only : TracerCoeff_type
   use TracerFluxType            , only : TracerFlux_type
@@ -34,6 +35,7 @@ module BeTRSimulation
   character(len=*), private, parameter :: mod_filename = __FILE__
 
   type, public :: betr_simulation_type
+     type(betr_type), public :: betr
      character(len=betr_string_length) :: reaction_method
 
      ! FIXME(bja, 201603) most of these types should be private!
@@ -220,7 +222,6 @@ contains
        temperature_vars, waterflux_vars, chemstate_vars, &
        cnstate_vars, canopystate_vars, carbonflux_vars)
 
-    use BetrBGCMod, only : run_betr_one_step_without_drainage
     use SoilStateType, only : soilstate_type
     use WaterStateType, only : Waterstate_Type
     use TemperatureType, only : temperature_type
@@ -267,7 +268,7 @@ contains
   !---------------------------------------------------------------------------------
   subroutine BeTRSimulationStepWithDrainage(this, bounds, num_soilc, &
        filter_soilc, jtops, waterflux_vars, col)
-    use BetrBGCMod, only : run_betr_one_step_with_drainage
+
     use ColumnType, only : column_type
     use MathfuncMod, only : safe_div
     use WaterFluxType, only : waterflux_type

@@ -161,7 +161,6 @@ contains
        temperature_vars, waterflux_vars, chemstate_vars, &
        cnstate_vars, canopystate_vars, carbonflux_vars)
 
-    use BetrBGCMod, only : run_betr_one_step_without_drainage
     use SoilStateType, only : soilstate_type
     use WaterStateType, only : Waterstate_Type
     use TemperatureType, only : temperature_type
@@ -286,7 +285,7 @@ contains
     betr_waterflux_vars%qflx_snow2topsoi_col    => waterflux_vars%qflx_snow2topsoi_col
     betr_waterflux_vars%qflx_tran_veg_patch     => waterflux_vars%qflx_tran_veg_patch
 
-    call run_betr_one_step_without_drainage(betr_bounds, lbj, ubj, &
+    call this%betr%step_without_drainage(betr_bounds, lbj, ubj, &
          num_soilc, filter_soilc, num_soilp, filter_soilp,  &
          atm2lnd_vars, soilhydrology_vars, soilstate_vars, &
          betr_waterstate_vars, temperature_vars, betr_waterflux_vars, &
@@ -301,7 +300,6 @@ contains
   subroutine CLMStepWithDrainage(this, bounds, &
        num_soilc, filter_soilc, jtops, waterflux_vars, col)
 
-    use BetrBGCMod, only : run_betr_one_step_with_drainage
     use ColumnType, only : column_type
     use MathfuncMod, only : safe_div
     use WaterFluxType, only : waterflux_type
@@ -367,7 +365,7 @@ contains
     betr_waterflux_vars%qflx_snow2topsoi_col    => waterflux_vars%qflx_snow2topsoi_col
     betr_waterflux_vars%qflx_tran_veg_patch     => waterflux_vars%qflx_tran_veg_patch
 
-    call run_betr_one_step_with_drainage(betr_bounds, lbj, ubj, &
+    call this%betr%step_with_drainage(betr_bounds, lbj, ubj, &
          num_soilc, filter_soilc, &
          jtops, betr_waterflux_vars, this%betrtracer_vars, this%tracercoeff_vars, &
          this%tracerstate_vars,  this%tracerflux_vars)
@@ -415,7 +413,6 @@ contains
     
     use ColumnType, only : col
     use LandunitType, only : lun
-    use BetrBGCMod, only : calc_dew_sub_flux, check_mass_err
     use BeTR_WaterfluxType, only : betr_waterflux_type
     use BeTR_WaterstateType, only : betr_waterstate_type
     use clm_varcon, only : denh2o,spval
@@ -431,7 +428,7 @@ contains
     type(betr_waterstate_type), intent(in) :: waterstate_vars
     type(betr_waterflux_type), intent(in) :: waterflux_vars
 
-  call calc_dew_sub_flux(bounds, num_hydrologyc, filter_soilc_hydrologyc, &
+  call this%betr%calc_dew_sub_flux(bounds, num_hydrologyc, filter_soilc_hydrologyc, &
        waterstate_vars, waterflux_vars, this%betrtracer_vars, this%tracerflux_vars, this%tracerstate_vars)
 
   end subroutine calc_dew_sub_flux_clm
