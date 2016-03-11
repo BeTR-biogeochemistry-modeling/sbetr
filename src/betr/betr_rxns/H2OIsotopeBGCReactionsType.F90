@@ -1,4 +1,4 @@
-module BGCReactionsH2OIsotopeType
+module H2OIsotopeBGCReactionsType
 
 #include "shr_assert.h"
 
@@ -30,6 +30,8 @@ implicit none
 
   save
   private
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
   !
   ! !PUBLIC TYPES:
   public :: bgc_reaction_h2oiso_type
@@ -213,7 +215,7 @@ implicit none
   integer :: fc, c
   character(len=255) :: subname = 'set_boundary_conditions'
 
-  SHR_ASSERT_ALL((ubound(dz_top)                == (/bounds%endc/)),   errMsg(__FILE__,__LINE__))
+  SHR_ASSERT_ALL((ubound(dz_top)                == (/bounds%endc/)),   errMsg(mod_filename,__LINE__))
 
 
   associate(                                                           &
@@ -320,7 +322,7 @@ implicit none
         enddo
         !the following should rarely occur, so when it occur, end with a warning
         if(tot1<0._r8)then
-          call endrun('negative H2O tracer '//errMsg(__FILE__, __LINE__))
+          call endrun('negative H2O tracer '//errMsg(mod_filename, __LINE__))
         endif
       endif
       tracer_flx_dif(c,volatileid(jj)) = tracer_flx_dif(c,volatileid(jj))- tracer_gwdif_concflux_top_col(c,1,jj) * dtime
@@ -361,7 +363,7 @@ implicit none
   integer   :: trc_id1, trc_id2
 
 
-  SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(__FILE__,__LINE__))
+  SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__))
 
   associate(                                                                         &
     aqu2equilscef                   => tracercoeff_vars%aqu2equilsolidcef_col          , &
@@ -421,10 +423,10 @@ implicit none
   real(r8)  :: tracer_conc
   integer   :: c, fc, j
 
-  SHR_ASSERT_ALL((ubound(aqu2equilscef) == (/bounds%endc, ubj/)), errMsg(__FILE__,__LINE__))
-  SHR_ASSERT_ALL((ubound(aqu2bulkcef)   == (/bounds%endc, ubj/)), errMsg(__FILE__,__LINE__))
-  SHR_ASSERT_ALL((ubound(tracer_solid_phase_equil) == (/bounds%endc, ubj/)), errMsg(__FILE__,__LINE__))
-  SHR_ASSERT_ALL((ubound(tracer_mobile_phase) == (/bounds%endc, ubj/)), errMsg(__FILE__,__LINE__))
+  SHR_ASSERT_ALL((ubound(aqu2equilscef) == (/bounds%endc, ubj/)), errMsg(mod_filename,__LINE__))
+  SHR_ASSERT_ALL((ubound(aqu2bulkcef)   == (/bounds%endc, ubj/)), errMsg(mod_filename,__LINE__))
+  SHR_ASSERT_ALL((ubound(tracer_solid_phase_equil) == (/bounds%endc, ubj/)), errMsg(mod_filename,__LINE__))
+  SHR_ASSERT_ALL((ubound(tracer_mobile_phase) == (/bounds%endc, ubj/)), errMsg(mod_filename,__LINE__))
 
   do j = lbj, ubj
     do fc = 1, numf
@@ -520,21 +522,24 @@ implicit none
          tracerstate_vars%tracer_conc_grndwater_col(c,trcid) = denh2o
          do j = 1, nlevtrc_soil
            tracerstate_vars%tracer_conc_mobile_col(c,j,trcid) = 1._r8 * waterstate_vars%h2osoi_liq_col(c,j)/col%dz(c,j)
-           tracerstate_vars%tracer_conc_frozen_col(c,j,betrtracer_vars%frozenid(trcid)) = 1._r8 * waterstate_vars%h2osoi_ice_col(c,j)/col%dz(c,j)
+           tracerstate_vars%tracer_conc_frozen_col(c,j,betrtracer_vars%frozenid(trcid)) = &
+                1._r8 * waterstate_vars%h2osoi_ice_col(c,j)/col%dz(c,j)
          enddo
 
          trcid = betrtracer_vars%id_trc_o18_h2o
          tracerstate_vars%tracer_conc_grndwater_col(c,trcid) = denh2o
          do j = 1, nlevtrc_soil
            tracerstate_vars%tracer_conc_mobile_col(c,j,trcid) = 1._r8 * waterstate_vars%h2osoi_liq_col(c,j)/col%dz(c,j)
-           tracerstate_vars%tracer_conc_frozen_col(c,j,betrtracer_vars%frozenid(trcid)) = 1._r8 * waterstate_vars%h2osoi_ice_col(c,j)/col%dz(c,j)
+           tracerstate_vars%tracer_conc_frozen_col(c,j,betrtracer_vars%frozenid(trcid)) = &
+                1._r8 * waterstate_vars%h2osoi_ice_col(c,j)/col%dz(c,j)
          enddo
 
          trcid = betrtracer_vars%id_trc_d_h2o
          tracerstate_vars%tracer_conc_grndwater_col(c,trcid) = denh2o
          do j = 1, nlevtrc_soil
            tracerstate_vars%tracer_conc_mobile_col(c,j,trcid) = 1._r8 * waterstate_vars%h2osoi_liq_col(c,j)/col%dz(c,j)
-           tracerstate_vars%tracer_conc_frozen_col(c,j,betrtracer_vars%frozenid(trcid)) = 1._r8 * waterstate_vars%h2osoi_ice_col(c,j)/col%dz(c,j)
+           tracerstate_vars%tracer_conc_frozen_col(c,j,betrtracer_vars%frozenid(trcid)) = &
+                1._r8 * waterstate_vars%h2osoi_ice_col(c,j)/col%dz(c,j)
          enddo
 
        endif
@@ -625,4 +630,4 @@ implicit none
 
   end subroutine init_betr_lsm_bgc_coupler
 
-end module BGCReactionsH2OIsotopeType
+end module H2OIsotopeBGCReactionsType

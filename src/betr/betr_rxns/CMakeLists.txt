@@ -2,6 +2,8 @@ set(BETR_RXNS_SOURCES
   ReactionsFactory.F90
   MockBGCReactionsType.F90
   MockPlantSoilBGCType.F90
+  H2OIsotopeBGCReactionsType.F90
+  H2OIsotopePlantSoilBGCType.F90
   )
 
 include_directories(${CMAKE_BINARY_DIR}/src/shr)

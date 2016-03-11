@@ -47,6 +47,7 @@ contains
     ! !USES:
     use BGCReactionsMod             , only : bgc_reaction_type
     use MockBGCReactionsType     , only : bgc_reaction_mock_run_type
+    use H2OIsotopeBGCReactionsType, only : bgc_reaction_h2oiso_type
     use abortutils                  , only : endrun
     use clm_varctl                  , only : iulog
 
@@ -59,9 +60,7 @@ contains
     case ("mock_run")
        allocate(bgc_reaction, source=bgc_reaction_mock_run_type())
     case ("h2oiso")
-       !X!allocate(bgc_reaction, source=bgc_reaction_h2oiso_type())
-       write(iulog,*)subname //' ERROR: bgc_reaction method "', method, '" not implemented.'
-       call endrun(msg=errMsg(__FILE__, __LINE__))
+       allocate(bgc_reaction, source=bgc_reaction_h2oiso_type())
     case default
        write(iulog,*)subname //' ERROR: unknown method: ', method
        call endrun(msg=errMsg(__FILE__, __LINE__))
@@ -73,6 +72,7 @@ contains
 
   use PlantSoilBGCMod             , only : plant_soilbgc_type
   use MockPlantSoilBGCType     , only : plant_soilbgc_mock_run_type
+  use H2OIsotopePlantSoilBGCType     , only : plant_soilbgc_h2oiso_run_type
   use abortutils                  , only : endrun
   use clm_varctl                  , only : iulog
 
@@ -87,11 +87,9 @@ contains
   case ("mock_run")
      allocate(plant_soilbgc, source=plant_soilbgc_mock_run_type())
   case ("h2oiso")
-     !X!allocate(plant_soilbgc, source=plant_soilbgc_h2oiso_run_type())
-     write(iulog,*)subname //' ERROR: plant_soilbgc method "', method, '" not implemented.'
-     call endrun(msg=errMsg(__FILE__, __LINE__))
+     allocate(plant_soilbgc, source=plant_soilbgc_h2oiso_run_type())
   case default
-     write(iulog,*)subname //' ERROR: unknown method: ', method
+     write(*, *)subname //' ERROR: unknown method: ', method
      call endrun(msg=errMsg(__FILE__, __LINE__))
   end select
 

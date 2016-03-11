@@ -1,4 +1,4 @@
-module PlantSoilBGCH2OIsoRunType
+module H2OIsotopePlantSoilBGCType
 
 
   use PlantSoilBGCMod , only : plant_soilbgc_type
@@ -106,4 +106,4 @@ module PlantSoilBGCH2OIsoRunType
   integer                   , intent(in) :: filter(:)
 
   end subroutine lsm_betr_plant_soilbgc_send
-end module PlantSoilBGCH2OIsoRunType
+end module H2OIsotopePlantSoilBGCType
