@@ -1,4 +1,4 @@
-module ReactionsFactoryStandalone
+module ReactionsFactory
   !
   ! !DESCRIPTION:
   !  factory to load the specific bgc reaction modules
@@ -18,12 +18,13 @@ module ReactionsFactoryStandalone
   save
   private
 
-  public :: create_standalone_betr_application
-  public :: create_standalone_bgc_reaction_type
-  public :: create_standalone_plant_soilbgc_type
+  public :: create_betr_application
+  public :: create_bgc_reaction_type
+  public :: create_plant_soilbgc_type
+
 contains
 
-  subroutine create_standalone_betr_application(bgc_reaction, plant_soilbgc, method)
+  subroutine create_betr_application(bgc_reaction, plant_soilbgc, method)
 
 
   class(bgc_reaction_type),  allocatable, intent(out) :: bgc_reaction
@@ -31,14 +32,14 @@ contains
   character(len=*), intent(in)          :: method
 
 
-  allocate(bgc_reaction, source=create_standalone_bgc_reaction_type(method))
+  allocate(bgc_reaction, source=create_bgc_reaction_type(method))
 
-  allocate(plant_soilbgc, source=create_standalone_plant_soilbgc_type(method))
+  allocate(plant_soilbgc, source=create_plant_soilbgc_type(method))
 
-  end subroutine create_standalone_betr_application
+  end subroutine create_betr_application
 !-------------------------------------------------------------------------------
 
-  function create_standalone_bgc_reaction_type(method) result(bgc_reaction)
+  function create_bgc_reaction_type(method) result(bgc_reaction)
     !
     ! !DESCRIPTION:
     ! create and return an object of bgc_reaction
@@ -57,14 +58,18 @@ contains
     select case(trim(method))
     case ("mock_run")
        allocate(bgc_reaction, source=bgc_reaction_mock_run_type())
+    case ("h2oiso")
+       !X!allocate(bgc_reaction, source=bgc_reaction_h2oiso_type())
+       write(iulog,*)subname //' ERROR: bgc_reaction method "', method, '" not implemented.'
+       call endrun(msg=errMsg(__FILE__, __LINE__))
     case default
        write(iulog,*)subname //' ERROR: unknown method: ', method
        call endrun(msg=errMsg(__FILE__, __LINE__))
     end select
-  end function create_standalone_bgc_reaction_type
+  end function create_bgc_reaction_type
   !-------------------------------------------------------------------------------
 
-  function create_standalone_plant_soilbgc_type(method)result(plant_soilbgc)
+  function create_plant_soilbgc_type(method)result(plant_soilbgc)
 
   use PlantSoilBGCMod             , only : plant_soilbgc_type
   use PlantSoilBGCMockRunType     , only : plant_soilbgc_mock_run_type
@@ -81,10 +86,14 @@ contains
   select case(trim(method))
   case ("mock_run")
      allocate(plant_soilbgc, source=plant_soilbgc_mock_run_type())
+  case ("h2oiso")
+     !X!allocate(plant_soilbgc, source=plant_soilbgc_h2oiso_run_type())
+     write(iulog,*)subname //' ERROR: plant_soilbgc method "', method, '" not implemented.'
+     call endrun(msg=errMsg(__FILE__, __LINE__))
   case default
      write(iulog,*)subname //' ERROR: unknown method: ', method
      call endrun(msg=errMsg(__FILE__, __LINE__))
   end select
 
-  end function create_standalone_plant_soilbgc_type
-end module ReactionsFactoryStandalone
+  end function create_plant_soilbgc_type
+end module ReactionsFactory

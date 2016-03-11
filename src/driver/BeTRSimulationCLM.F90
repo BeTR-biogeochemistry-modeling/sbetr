@@ -67,8 +67,8 @@ contains
   subroutine CLMInit(this, reaction_method, bounds, lbj, ubj, waterstate)
 
     use BeTRSimulation, only : BeTRSimulationInit
-    use ReactionsFactoryStandalone, only : create_standalone_bgc_reaction_type, &
-         create_standalone_plant_soilbgc_type
+    use ReactionsFactory, only : create_bgc_reaction_type, &
+         create_plant_soilbgc_type
 
     use BeTR_PatchType, only : betr_pft
     use BeTR_ColumnType, only : betr_col
@@ -124,8 +124,8 @@ contains
 
     ! allocate the reaction types that may only be known to this
     ! simulation type.
-    allocate(this%bgc_reaction, source=create_standalone_bgc_reaction_type(reaction_method))
-    allocate(this%plant_soilbgc, source=create_standalone_plant_soilbgc_type(reaction_method))
+    allocate(this%bgc_reaction, source=create_bgc_reaction_type(reaction_method))
+    allocate(this%plant_soilbgc, source=create_plant_soilbgc_type(reaction_method))
 
     ! now call the base simulation init to continue initialization
     call BeTRSimulationInit(this, reaction_method, bounds, lbj, ubj, waterstate)
