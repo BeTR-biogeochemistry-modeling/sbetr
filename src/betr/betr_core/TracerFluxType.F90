@@ -4,11 +4,11 @@ module TracerFluxType
   ! !USES:
   use shr_kind_mod   , only : r8 => shr_kind_r8
   use shr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
-  use decompMod      , only : bounds_type
+  use BeTR_decompMod      , only : bounds_type  => betr_bounds_type
   use BeTR_LandunitType   , only : lun => betr_lun
   use BeTR_ColumnType, only : col => betr_col
   use BeTR_PatchType , only : pft => betr_pft
-  use clm_varcon     , only : spval, ispval
+  use betr_varcon    , only : spval => bspval, ispval => bispval
   use tracer_varcon  , only : nlevtrc_soil => betr_nlevtrc_soil
   use BeTR_landvarconType, only : landvarcon => betr_landvarcon
   use clm_varctl     , only : iulog
@@ -180,7 +180,6 @@ contains
     !
     ! !USES:
     !use shr_infnan_mod, only: nan => shr_infnan_nan, assignment(=)
-    use clm_varcon    , only: spval
     use histFileMod   , only: hist_addfld1d, hist_addfld2d
     use histFileMod   , only: no_snow_normal, no_snow_zero
     use BeTRTracerType, only: BeTRTracer_Type
@@ -469,7 +468,6 @@ contains
     ! Now it is purposely empty, but will be potentially useful in the future
     ! !USES:
     use BetrTracerType        , only : betrtracer_type
-    use clm_varcon            , only : spval
     use restUtilMod
     use ncdio_pio
     !
@@ -573,7 +571,7 @@ contains
 
     use BetrTracerType        , only : betrtracer_type
     use clm_time_manager      , only : get_step_size
-    use clm_varpar            , only : nlevtrc_soil
+    use tracer_varcon         , only : nlevtrc_soil => betr_nlevtrc_soil
     use MathfuncMod           , only : dot_sum
     class(TracerFlux_type)               :: this
     type(BeTRTracer_Type)  , intent(in)  :: betrtracer_vars

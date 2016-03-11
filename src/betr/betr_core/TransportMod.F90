@@ -48,7 +48,7 @@ module TransportMod
   ! are public only for unit testing purposes. They are not part of
   ! the public API for this module and should not be used externally.
   public :: mass_curve_correct_
-  
+
 contains
   subroutine set_debug_transp(yesno)
   implicit none
@@ -154,8 +154,8 @@ contains
     !
     ! !USES:
     !
-    use shr_kind_mod, only: r8 => shr_kind_r8
-    use decompMod,  only : bounds_type
+    use shr_kind_mod     , only : r8 => shr_kind_r8
+    use BeTR_decompMod   , only : bounds_type  => betr_bounds_type
     implicit none
     ! !ARGUMENTS:
     type(bounds_type),  intent(in) :: bounds                              !bounds
@@ -197,7 +197,7 @@ contains
     ! !USES
     !
     use shr_kind_mod, only: r8 => shr_kind_r8
-    use decompMod,  only : bounds_type
+    use BeTR_decompMod         , only : bounds_type  => betr_bounds_type
 
     implicit none
     ! !ARGUMENTS:
@@ -350,9 +350,9 @@ contains
    ! the solver returns the tracer change due to diffusive transport
    !
    ! !USES:
-   use shr_kind_mod  , only : r8 => shr_kind_r8
-   use decompMod     , only : bounds_type
-   use TridiagonalMod, only : Tridiagonal
+   use shr_kind_mod   , only : r8 => shr_kind_r8
+   use BeTR_decompMod , only : bounds_type  => betr_bounds_type
+   use BTridiagonalMod , only : Tridiagonal
 
    implicit none
    ! !ARGUMENTS:
@@ -430,7 +430,7 @@ contains
      !
      ! !USES:
      use shr_kind_mod, only: r8 => shr_kind_r8
-     use decompMod,  only : bounds_type
+     use BeTR_decompMod         , only : bounds_type  => betr_bounds_type
 
      implicit none
      ! !ARGUMENTS:
@@ -526,8 +526,8 @@ contains
      !
      ! !USES:
      use shr_kind_mod, only: r8 => shr_kind_r8
-     use decompMod,  only : bounds_type
-     use TridiagonalMod, only : Tridiagonal
+     use BeTR_decompMod , only : bounds_type  => betr_bounds_type
+     use BTridiagonalMod , only : Tridiagonal
 
      implicit none
      ! !ARGUMENTS:
@@ -624,9 +624,9 @@ contains
      !
      ! now it allows seepage from the surface
      ! !USES:
-     use shr_kind_mod,     only : r8 => shr_kind_r8
-     use decompMod,        only : bounds_type
-     use MathfuncMod,      only : cumsum, cumdif, safe_div, dot_sum, asc_sort_vec
+     use shr_kind_mod    , only : r8 => shr_kind_r8
+     use BeTR_decompMod  , only : bounds_type  => betr_bounds_type
+     use MathfuncMod     , only : cumsum, cumdif, safe_div, dot_sum, asc_sort_vec
      use InterpolationMod, only : pchip_polycc, pchip_interp
      use InterpolationMod, only : Lagrange_interp
      implicit none

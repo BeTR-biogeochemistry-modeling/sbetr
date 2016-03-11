@@ -21,7 +21,7 @@ module betr_initializeMod
   public :: betr_rest
   character(len=32) :: bgc_method='mock_run'
   character(len=*), parameter :: mod_filename = __FILE__
-  
+
 
 contains
 
@@ -78,7 +78,7 @@ contains
     ! Initialize BeTR
     !
     ! !USES:
-    use decompMod             , only : bounds_type
+    use BeTR_decompMod        , only : bounds_type  => betr_bounds_type
     use BGCReactionsFactoryMod, only : create_betr_application
     use TransportMod          , only : init_transportmod
     use TracerParamsMod       , only : tracer_param_init
@@ -136,7 +136,7 @@ contains
   ! initialize for restart run
   ! !USES:
   use ncdio_pio             , only : file_desc_t
-  use decompMod             , only : bounds_type
+  use BeTR_decompMod        , only : bounds_type  => betr_bounds_type
   implicit none
   type(bounds_type)    , intent(in) :: bounds
   class(file_desc_t)   , intent(inout) :: ncid                                         ! netcdf id
@@ -154,7 +154,7 @@ contains
     ! !DESCRIPTION:
     ! initialize local variables
     !
-    use decompMod             , only : bounds_type
+    use BeTR_decompMod         , only : bounds_type  => betr_bounds_type
     ! !ARGUMENTS:
     type(bounds_type)          , intent(in) :: bounds          ! bounds
 

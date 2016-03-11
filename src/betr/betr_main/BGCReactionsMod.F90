@@ -51,7 +51,7 @@ module BGCReactionsMod
        !
        ! !USES:
        use BeTRTracerType        , only : BeTRtracer_type
-       use decompMod             , only : bounds_type
+       use BeTR_decompMod        , only : bounds_type  => betr_bounds_type
        !
        ! !ARGUMENTS:
        import :: bgc_reaction_type
@@ -74,7 +74,7 @@ module BGCReactionsMod
        use tracerfluxType           , only : tracerflux_type
        use tracerstatetype          , only : tracerstate_type
        use tracercoeffType          , only : tracercoeff_type
-       use decompMod                , only : bounds_type
+       use BeTR_decompMod           , only : bounds_type  => betr_bounds_type
        use BeTRTracerType           , only : BeTRTracer_Type
        use shr_kind_mod             , only : r8 => shr_kind_r8
        use BeTR_CNStateType         , only : betr_cnstate_type
@@ -109,9 +109,9 @@ module BGCReactionsMod
        !
        ! !USES:
        use TracerBoundaryCondType , only : tracerboundarycond_type
-       use decompMod              , only : bounds_type
+       use BeTR_decompMod         , only : bounds_type  => betr_bounds_type
        use BeTRTracerType         , only : BeTRTracer_Type
-       use WaterfluxType          , only : waterflux_type
+       use BeTR_WaterfluxType     , only : waterflux_type => betr_waterflux_type
        use shr_kind_mod           , only : r8 => shr_kind_r8
 
        ! !ARGUMENTS:
@@ -138,7 +138,7 @@ module BGCReactionsMod
        ! !USES:
        use BeTRTracerType        , only : betrtracer_type
        use TracerBoundaryCondType, only : tracerboundarycond_type
-       use decompMod             , only : bounds_type
+       use BeTR_decompMod        , only : bounds_type  => betr_bounds_type
 
        ! !ARGUMENTS:
        import :: bgc_reaction_type
@@ -161,7 +161,7 @@ module BGCReactionsMod
        use tracerstatetype       , only : tracerstate_type
        use tracercoeffType       , only : tracercoeff_type
        use BeTRTracerType        , only : BeTRTracer_Type
-       use decompMod             , only : bounds_type
+       use BeTR_decompMod        , only : bounds_type  => betr_bounds_type
 
        ! !ARGUMENTS:
        import :: bgc_reaction_type
@@ -188,11 +188,11 @@ module BGCReactionsMod
        !
        use BeTRTracerType           , only : BeTRTracer_Type
        use tracerstatetype          , only : tracerstate_type
-       use WaterstateType           , only : waterstate_type
+       use BeTR_WaterstateType      , only : waterstate_type  => betr_waterstate_type
        use BeTR_LandunitType        , only : lun  => betr_lun
        use BeTR_ColumnType          , only : col  => betr_col
        use BeTR_PatchType           , only : pft  => betr_pft
-       use decompMod                , only : bounds_type
+       use BeTR_decompMod           , only : bounds_type  => betr_bounds_type
 
        ! !ARGUMENTS:
        import :: bgc_reaction_type
@@ -230,7 +230,7 @@ module BGCReactionsMod
        ! !DESCRIPTION:
        ! template for lsm_betr_flux_state_receive
        ! !USES:
-       use decompMod                , only : bounds_type
+       use BeTR_decompMod           , only : bounds_type  => betr_bounds_type
        use shr_kind_mod             , only : r8 => shr_kind_r8
        use tracerfluxType           , only : tracerflux_type
        use tracerstatetype          , only : tracerstate_type
@@ -257,8 +257,8 @@ module BGCReactionsMod
        ! template for init_betr_lsm_bgc_coupler
 
        ! !USES:
-       use decompMod                , only : bounds_type
-       use clm_varcon               , only : natomw, catomw
+       use BeTR_decompMod           , only : bounds_type  => betr_bounds_type
+       use tracer_varcon            , only : natomw, catomw
        use tracer_varcon            , only : nlevtrc_soil  => betr_nlevtrc_soil
        use tracerstatetype          , only : tracerstate_type
        use BetrTracerType           , only : betrtracer_type

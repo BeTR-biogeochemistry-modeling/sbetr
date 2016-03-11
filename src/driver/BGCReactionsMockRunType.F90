@@ -10,7 +10,7 @@ module BGCReactionsMockRunType
   ! !USES:
   use shr_log_mod           , only : errMsg => shr_log_errMsg
   use shr_kind_mod          , only : r8 => shr_kind_r8
-  use decompMod             , only : bounds_type
+  use BeTR_decompMod        , only : bounds_type  => betr_bounds_type
   use BGCReactionsMod       , only : bgc_reaction_type
   use tracer_varcon         , only : bndcond_as_conc, bndcond_as_flux
   use LandunitType          , only : lun
@@ -164,7 +164,7 @@ contains
     use abortutils            , only : endrun
     use shr_log_mod           , only : errMsg => shr_log_errMsg
     use BeTRTracerType        , only : betrtracer_type
-    use WaterfluxType         , only : waterflux_type
+    use BeTR_WaterfluxType    , only : waterflux_type  => betr_waterflux_type
 
     ! !ARGUMENTS:
     class(bgc_reaction_mock_run_type) , intent(in) :: this                       !
@@ -295,11 +295,10 @@ contains
     ! !USES:
     use BeTRTracerType           , only : BeTRTracer_Type
     use tracerstatetype          , only : tracerstate_type
-    use WaterstateType           , only : waterstate_type
+    use BeTR_WaterstateType      , only : waterstate_type  => betr_waterstate_type
     use BeTR_PatchType           , only : pft  => betr_pft
-    use clm_varcon               , only : spval, ispval
-    use landunit_varcon          , only : istsoil, istcrop
-
+    use betr_varcon              , only : spval => bspval, ispval => bispval
+    use BeTR_landvarconType      , only : landvarcon  => betr_landvarcon
     ! !ARGUMENTS:
     class(bgc_reaction_mock_run_type) , intent(in)    :: this
     type(bounds_type)                 , intent(in)    :: bounds
@@ -338,7 +337,7 @@ contains
        endif
        tracerstate_vars%tracer_soi_molarmass_col(c,:)            = spval
 
-       if (lun%itype(l) == istsoil .or. lun%itype(l) == istcrop) then
+       if (lun%itype(l) == landvarcon%istsoil .or. lun%itype(l) == landvarcon%istcrop) then
           !dual phase tracers
 
           tracerstate_vars%tracer_conc_mobile_col(c,:, :)          = 0._r8
@@ -392,7 +391,6 @@ contains
     use shr_kind_mod             , only : r8 => shr_kind_r8
     use tracerfluxType           , only : tracerflux_type
     use tracerstatetype          , only : tracerstate_type
-    use decompMod                , only : bounds_type
     use BeTRTracerType           , only : BeTRTracer_Type
     implicit none
     ! !ARGUMENTS:
@@ -417,8 +415,7 @@ contains
     !use clm_instMod
     use tracerstatetype          , only : tracerstate_type
     use BetrTracerType           , only : betrtracer_type
-    use clm_varpar               , only : nlevtrc_soil
-    use landunit_varcon          , only : istsoil, istcrop
+    use tracer_varcon            , only : nlevtrc_soil   => betr_nlevtrc_soil
     use PlantSoilBGCMod          , only : plant_soilbgc_type
     use EcophysConType           , only : ecophyscon_type
     use BeTR_CNStateType         , only : betr_cnstate_type

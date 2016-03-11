@@ -10,7 +10,6 @@ module ReactionsFactoryStandalone
   ! !USES:
   !
   use shr_kind_mod          , only : r8 => shr_kind_r8
-  use decompMod             , only : bounds_type
   use shr_log_mod           , only : errMsg => shr_log_errMsg
   use BGCReactionsMod       , only : bgc_reaction_type
   use PlantSoilBGCMod , only : plant_soilbgc_type

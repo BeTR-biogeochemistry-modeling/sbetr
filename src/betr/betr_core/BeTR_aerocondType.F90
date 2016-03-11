@@ -2,8 +2,8 @@ module BeTR_aerocondType
 
   use shr_kind_mod           , only : r8 => shr_kind_r8
   use shr_infnan_mod         , only : nan => shr_infnan_nan, assignment(=)
-  use decompMod              , only : bounds_type
-  use clm_varcon             , only : spval, ispval
+  use BeTR_decompMod         , only : bounds_type  => betr_bounds_type
+  use betr_varcon            , only : spval => bspval, ispval => bispval
 implicit none
 save
 private
