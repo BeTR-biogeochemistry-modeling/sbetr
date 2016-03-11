@@ -1,4 +1,4 @@
-module PlantSoilBGCMockRunType
+module MockPlantSoilBGCType
 
 
   use PlantSoilBGCMod , only : plant_soilbgc_type
@@ -106,4 +106,4 @@ module PlantSoilBGCMockRunType
   integer                   , intent(in) :: filter(:)
 
   end subroutine lsm_betr_plant_soilbgc_send
-end module PlantSoilBGCMockRunType
+end module MockPlantSoilBGCType

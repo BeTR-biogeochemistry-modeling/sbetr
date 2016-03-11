@@ -46,7 +46,7 @@ contains
     !
     ! !USES:
     use BGCReactionsMod             , only : bgc_reaction_type
-    use BGCReactionsMockRunType     , only : bgc_reaction_mock_run_type
+    use MockBGCReactionsType     , only : bgc_reaction_mock_run_type
     use abortutils                  , only : endrun
     use clm_varctl                  , only : iulog
 
@@ -72,7 +72,7 @@ contains
   function create_plant_soilbgc_type(method)result(plant_soilbgc)
 
   use PlantSoilBGCMod             , only : plant_soilbgc_type
-  use PlantSoilBGCMockRunType     , only : plant_soilbgc_mock_run_type
+  use MockPlantSoilBGCType     , only : plant_soilbgc_mock_run_type
   use abortutils                  , only : endrun
   use clm_varctl                  , only : iulog
 

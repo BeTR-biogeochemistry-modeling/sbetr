@@ -3,4 +3,8 @@ add_subdirectory(betr_math)
 add_subdirectory(betr_grid)
 add_subdirectory(betr_core)
 add_subdirectory(betr_main)
-set(BETR_LIBRARIES betr_util;betr_math;betr_grid;betr_core;betr_main;${BETR_LIBRARIES} PARENT_SCOPE)
+add_subdirectory(betr_rxns)
+
+# FIXME(bja, 201603) is this manual list necessary with the subdir
+# adding to parent scope?
+set(BETR_LIBRARIES betr_util;betr_math;betr_grid;betr_core;betr_main;betr_rxns;${BETR_LIBRARIES} PARENT_SCOPE)
