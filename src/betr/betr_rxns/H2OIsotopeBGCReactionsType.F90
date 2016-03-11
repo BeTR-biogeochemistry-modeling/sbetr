@@ -1,4 +1,4 @@
-module BGCReactionsH2OIsotopeType
+module H2OIsotopeBGCReactionsType
 
 #include "shr_assert.h"
 
@@ -30,6 +30,8 @@ implicit none
 
   save
   private
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
   !
   ! !PUBLIC TYPES:
   public :: bgc_reaction_h2oiso_type
@@ -72,10 +74,11 @@ implicit none
   use TracerBoundaryCondType, only : tracerboundarycond_type
   use tracer_varcon         , only : bndcond_as_conc, bndcond_as_flux
   use BeTRTracerType        , only : betrtracer_type
+  use BeTR_decompMod           , only : betr_bounds_type
 
   class(bgc_reaction_h2oiso_type)   , intent(in) :: this
   type(BeTRtracer_type )            , intent(in) :: betrtracer_vars
-  type(bounds_type)                 , intent(in) :: bounds
+  type(betr_bounds_type)                 , intent(in) :: bounds
   type(tracerboundarycond_type)     , intent(in) :: tracerboundarycond_vars
 
   tracerboundarycond_vars%topbc_type(:) = bndcond_as_conc
@@ -97,9 +100,10 @@ implicit none
   ! initialize the betrbgc
   use BeTRTracerType        , only : betrtracer_type
   use MathfuncMod           , only : addone
+  use BeTR_decompMod           , only : betr_bounds_type
 
   class(bgc_reaction_h2oiso_type) ,  intent(in) :: this
-  type(bounds_type)               ,  intent(in) :: bounds
+  type(betr_bounds_type)          ,  intent(in) :: bounds
   integer                         ,  intent(in) :: lbj, ubj
   type(BeTRtracer_type )          ,intent(inout) :: betrtracer_vars
   !local variables
@@ -195,25 +199,26 @@ implicit none
   use clm_varctl            , only : iulog
   use TracerBoundaryCondType, only : tracerboundarycond_type
   use shr_log_mod           , only : errMsg => shr_log_errMsg
+  use BeTR_decompMod        , only : betr_bounds_type
   use BeTRTracerType        , only : betrtracer_type
-  use WaterfluxType         , only : waterflux_type
+  use BeTR_WaterfluxType    , only : betr_waterflux_type
   use clm_varcon            , only : denh2o
 
 
   class(bgc_reaction_h2oiso_type), intent(in) :: this
-  type(bounds_type)                 , intent(in) :: bounds                     !
+  type(betr_bounds_type)         , intent(in) :: bounds                     !
   integer                           , intent(in) :: num_soilc                  ! number of columns in column filter_soilc
   integer                           , intent(in) :: filter_soilc(:)            ! column filter_soilc
   type(betrtracer_type)             , intent(in) :: betrtracer_vars            !
   real(r8)                          , intent(in) :: dz_top(bounds%begc: )      !
-  type(waterflux_type)              , intent(in) :: waterflux_vars             !
+  type(betr_waterflux_type), intent(in) :: waterflux_vars             !
   type(tracerboundarycond_type)     , intent(inout) :: tracerboundarycond_vars !
 
   !local variables
   integer :: fc, c
   character(len=255) :: subname = 'set_boundary_conditions'
 
-  SHR_ASSERT_ALL((ubound(dz_top)                == (/bounds%endc/)),   errMsg(__FILE__,__LINE__))
+  SHR_ASSERT_ALL((ubound(dz_top)                == (/bounds%endc/)),   errMsg(mod_filename,__LINE__))
 
 
   associate(                                                           &
@@ -255,6 +260,7 @@ implicit none
   !USES
   !
   ! !USES:
+  use BeTR_decompMod           , only : betr_bounds_type
   use tracerfluxType           , only : tracerflux_type
   use tracerstatetype          , only : tracerstate_type
   use tracercoeffType          , only : tracercoeff_type
@@ -265,7 +271,7 @@ implicit none
   use ColumnType               , only : col
   !ARGUMENTS
   class(bgc_reaction_h2oiso_type)     , intent(in)    :: this                       !
-  type(bounds_type)                   , intent(in)    :: bounds                     ! bounds
+  type(betr_bounds_type), intent(in) :: bounds ! bounds
   integer                             , intent(in)    :: num_soilc                  ! number of columns in column filter_soilc
   integer                             , intent(in)    :: filter_soilc(:)            ! column filter_soilc
   integer                             , intent(in)    :: num_soilp                  !
@@ -320,7 +326,7 @@ implicit none
         enddo
         !the following should rarely occur, so when it occur, end with a warning
         if(tot1<0._r8)then
-          call endrun('negative H2O tracer '//errMsg(__FILE__, __LINE__))
+          call endrun('negative H2O tracer '//errMsg(mod_filename, __LINE__))
         endif
       endif
       tracer_flx_dif(c,volatileid(jj)) = tracer_flx_dif(c,volatileid(jj))- tracer_gwdif_concflux_top_col(c,1,jj) * dtime
@@ -343,11 +349,12 @@ implicit none
   use tracerstatetype       , only : tracerstate_type
   use tracercoeffType       , only : tracercoeff_type
   use BeTRTracerType        , only : betrtracer_type
+  use BeTR_decompMod        , only : betr_bounds_type
 
 
   class(bgc_reaction_h2oiso_type),    intent(in) :: this
 
-  type(bounds_type),      intent(in) :: bounds
+  type(betr_bounds_type),      intent(in) :: bounds
   integer,                intent(in) :: lbj, ubj
   integer,                intent(in) :: jtops(bounds%begc: )        ! top label of each column
   integer,                intent(in) :: num_soilc
@@ -361,7 +368,7 @@ implicit none
   integer   :: trc_id1, trc_id2
 
 
-  SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(__FILE__,__LINE__))
+  SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__))
 
   associate(                                                                         &
     aqu2equilscef                   => tracercoeff_vars%aqu2equilsolidcef_col          , &
@@ -406,8 +413,9 @@ implicit none
   !
   ! Diagnose solid phase tracer
   !
+  use BeTR_decompMod           , only : betr_bounds_type
   implicit none
-  type(bounds_type),      intent(in) :: bounds
+  type(betr_bounds_type),      intent(in) :: bounds
   integer,                intent(in) :: lbj, ubj
   integer,                intent(in) :: jtops(bounds%begc: )        ! top label of each column
   integer,                intent(in) :: numf
@@ -421,10 +429,10 @@ implicit none
   real(r8)  :: tracer_conc
   integer   :: c, fc, j
 
-  SHR_ASSERT_ALL((ubound(aqu2equilscef) == (/bounds%endc, ubj/)), errMsg(__FILE__,__LINE__))
-  SHR_ASSERT_ALL((ubound(aqu2bulkcef)   == (/bounds%endc, ubj/)), errMsg(__FILE__,__LINE__))
-  SHR_ASSERT_ALL((ubound(tracer_solid_phase_equil) == (/bounds%endc, ubj/)), errMsg(__FILE__,__LINE__))
-  SHR_ASSERT_ALL((ubound(tracer_mobile_phase) == (/bounds%endc, ubj/)), errMsg(__FILE__,__LINE__))
+  SHR_ASSERT_ALL((ubound(aqu2equilscef) == (/bounds%endc, ubj/)), errMsg(mod_filename,__LINE__))
+  SHR_ASSERT_ALL((ubound(aqu2bulkcef)   == (/bounds%endc, ubj/)), errMsg(mod_filename,__LINE__))
+  SHR_ASSERT_ALL((ubound(tracer_solid_phase_equil) == (/bounds%endc, ubj/)), errMsg(mod_filename,__LINE__))
+  SHR_ASSERT_ALL((ubound(tracer_mobile_phase) == (/bounds%endc, ubj/)), errMsg(mod_filename,__LINE__))
 
   do j = lbj, ubj
     do fc = 1, numf
@@ -448,9 +456,10 @@ implicit none
     !
     ! !USES:
     !
+    use BeTR_decompMod           , only : betr_bounds_type
     use BeTRTracerType           , only : BeTRTracer_Type
     use tracerstatetype          , only : tracerstate_type
-    use WaterstateType           , only : waterstate_type
+    use BeTR_WaterstateType      , only : betr_waterstate_type
     use BeTR_PatchType           , only : pft  => betr_pft
     use clm_varcon               , only : spval, ispval
     use landunit_varcon          , only : istsoil, istcrop
@@ -460,9 +469,9 @@ implicit none
     use clm_varpar               , only : nlevtrc_soil
     ! !ARGUMENTS:
     class(bgc_reaction_h2oiso_type) , intent(in)    :: this
-    type(bounds_type)                 , intent(in)    :: bounds
+    type(betr_bounds_type)                 , intent(in)    :: bounds
     type(BeTRTracer_Type)             , intent(in)    :: betrtracer_vars
-    type(waterstate_type)             , intent(in)    :: waterstate_vars
+    type(betr_waterstate_type)             , intent(in)    :: waterstate_vars
     type(tracerstate_type)            , intent(inout) :: tracerstate_vars
 
     !
@@ -520,21 +529,24 @@ implicit none
          tracerstate_vars%tracer_conc_grndwater_col(c,trcid) = denh2o
          do j = 1, nlevtrc_soil
            tracerstate_vars%tracer_conc_mobile_col(c,j,trcid) = 1._r8 * waterstate_vars%h2osoi_liq_col(c,j)/col%dz(c,j)
-           tracerstate_vars%tracer_conc_frozen_col(c,j,betrtracer_vars%frozenid(trcid)) = 1._r8 * waterstate_vars%h2osoi_ice_col(c,j)/col%dz(c,j)
+           tracerstate_vars%tracer_conc_frozen_col(c,j,betrtracer_vars%frozenid(trcid)) = &
+                1._r8 * waterstate_vars%h2osoi_ice_col(c,j)/col%dz(c,j)
          enddo
 
          trcid = betrtracer_vars%id_trc_o18_h2o
          tracerstate_vars%tracer_conc_grndwater_col(c,trcid) = denh2o
          do j = 1, nlevtrc_soil
            tracerstate_vars%tracer_conc_mobile_col(c,j,trcid) = 1._r8 * waterstate_vars%h2osoi_liq_col(c,j)/col%dz(c,j)
-           tracerstate_vars%tracer_conc_frozen_col(c,j,betrtracer_vars%frozenid(trcid)) = 1._r8 * waterstate_vars%h2osoi_ice_col(c,j)/col%dz(c,j)
+           tracerstate_vars%tracer_conc_frozen_col(c,j,betrtracer_vars%frozenid(trcid)) = &
+                1._r8 * waterstate_vars%h2osoi_ice_col(c,j)/col%dz(c,j)
          enddo
 
          trcid = betrtracer_vars%id_trc_d_h2o
          tracerstate_vars%tracer_conc_grndwater_col(c,trcid) = denh2o
          do j = 1, nlevtrc_soil
            tracerstate_vars%tracer_conc_mobile_col(c,j,trcid) = 1._r8 * waterstate_vars%h2osoi_liq_col(c,j)/col%dz(c,j)
-           tracerstate_vars%tracer_conc_frozen_col(c,j,betrtracer_vars%frozenid(trcid)) = 1._r8 * waterstate_vars%h2osoi_ice_col(c,j)/col%dz(c,j)
+           tracerstate_vars%tracer_conc_frozen_col(c,j,betrtracer_vars%frozenid(trcid)) = &
+                1._r8 * waterstate_vars%h2osoi_ice_col(c,j)/col%dz(c,j)
          enddo
 
        endif
@@ -576,11 +588,12 @@ implicit none
     use tracerstatetype          , only : tracerstate_type
     use decompMod                , only : bounds_type
     use BeTRTracerType           , only : BeTRTracer_Type
+    use BeTR_decompMod           , only : betr_bounds_type
 
 
     ! !ARGUMENTS:
     class(bgc_reaction_h2oiso_type) , intent(in)    :: this               !
-    type(bounds_type)                 , intent(in)    :: bounds             ! bounds
+    type(betr_bounds_type)                 , intent(in)    :: bounds             ! bounds
     integer                           , intent(in)    :: num_soilc
     integer                           , intent(in)    :: filter_soilc(:)
     type(betrtracer_type)             , intent(in)    :: betrtracer_vars    ! betr configuration information
@@ -611,11 +624,12 @@ implicit none
     use PlantSoilBGCMod          , only : plant_soilbgc_type
     use EcophysConType           , only : ecophyscon_type
     use BeTR_CNStateType         , only : betr_cnstate_type
+    use BeTR_decompMod           , only : betr_bounds_type
 
 
     ! !ARGUMENTS:
     class(bgc_reaction_h2oiso_type)    , intent(in)    :: this               !
-    type(bounds_type)                  , intent(in)    :: bounds             !
+    type(betr_bounds_type)                  , intent(in)    :: bounds             !
     type(tracerstate_type)             , intent(inout) :: tracerstate_vars   !
     type(betrtracer_type)              , intent(in)    :: betrtracer_vars    ! betr configuration information
     class(plant_soilbgc_type)          , intent(inout) :: plant_soilbgc !
@@ -625,4 +639,4 @@ implicit none
 
   end subroutine init_betr_lsm_bgc_coupler
 
-end module BGCReactionsH2OIsotopeType
+end module H2OIsotopeBGCReactionsType

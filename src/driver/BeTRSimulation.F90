@@ -1,9 +1,11 @@
 module BeTRSimulation
   !
   ! !DESCRIPTION:
-  !  factory to load the specific betr simulator
+  !  BeTR simulation base class.
   !
-  ! !USES:
+  !  BeTR simulation class are API definitions, mapping data
+  !  structures from a specific LSM, e.g. CLM, ALM, into BeTR data
+  !  structures. 
   !
   use abortutils                  , only : endrun
   use clm_varctl                  , only : iulog
@@ -21,14 +23,23 @@ module BeTRSimulation
   use BGCReactionsMod           , only : bgc_reaction_type
   use PlantSoilBGCMod           , only : plant_soilbgc_type
   use BeTR_aerocondType         , only : betr_aerecond_type
+  use betr_constants, only : betr_string_length
+  use BeTR_CNStateType, only : betr_cnstate_type
+  use BeTR_CarbonFluxType, only : betr_carbonflux_type
 
   implicit none
+
   private
+
   character(len=*), private, parameter :: mod_filename = __FILE__
 
   type, public :: betr_simulation_type
-     character(len=128) :: reaction_method
+     character(len=betr_string_length) :: reaction_method
 
+     ! FIXME(bja, 201603) most of these types should be private!
+     
+     ! NOTE(bja, 201603) BeTR types only, no LSM specific types here!
+     type(betr_cnstate_type), public :: betr_cnstate_vars
      type(BeTRtracer_type), public :: betrtracer_vars
      type(TracerCoeff_type), public :: tracercoeff_vars
      type(TracerFlux_type), public :: tracerflux_vars
@@ -37,6 +48,7 @@ module BeTRSimulation
      class(plant_soilbgc_type), allocatable,public :: plant_soilbgc
      class(bgc_reaction_type), allocatable,public :: bgc_reaction
      type(betr_aerecond_type), public :: betr_aerecond_vars
+     type(betr_carbonflux_type), public :: betr_carbonflux_vars
    contains
      procedure, public :: Init => BeTRSimulationInit
      procedure, public :: ReadNameList => BeTRSimulationReadNameList
@@ -62,13 +74,13 @@ contains
     use BeTR_WaterstateType   , only : betr_waterstate_type
     implicit none
 
-    class(betr_simulation_type) :: this
+    class(betr_simulation_type), intent(inout) :: this
     character(len=*), intent(in) :: reaction_method
     type(bounds_type)    , intent(in) :: bounds
 
     type(waterstate_type), intent(inout) :: waterstate
 
-    character(len=32) :: subname='BeTRSimulationInit'
+    character(len=*), parameter :: subname = 'BeTRSimulationInit'
     type(betr_waterstate_type) :: betr_waterstate
     type(betr_bounds_type)     :: betr_bounds
     integer :: lbj, ubj
@@ -83,7 +95,6 @@ contains
     lbj = betr_bounds%lbj; ubj = betr_bounds%ubj
     betr_waterstate%h2osoi_liq_col => waterstate%h2osoi_liq_col
     betr_waterstate%h2osoi_ice_col    => waterstate%h2osoi_ice_col
-
 
     call this%betrtracer_vars%init_scalars()
 
@@ -130,14 +141,15 @@ contains
     use shr_mpi_mod   , only : shr_mpi_bcast
     implicit none
     ! !ARGUMENTS:
-    class(betr_simulation_type) :: this
+    class(betr_simulation_type), intent(inout) :: this
     character(len=*), intent(IN) :: filename ! Namelist filename
     !
     ! !LOCAL VARIABLES:
     integer :: ierr                    ! error code
     integer :: unitn                   ! unit for namelist file
-    character(len=32) :: subname = 'BeTRSimulationReadNameList'
-    character(len=128) :: reaction_method
+    character(len=betr_string_length) :: reaction_method
+
+    character(len=*), parameter :: subname = 'BeTRSimulationReadNameList'
 
     !-----------------------------------------------------------------------
 
@@ -177,7 +189,7 @@ contains
     use ncdio_pio, only : file_desc_t
     implicit none
 
-    class(betr_simulation_type) :: this
+    class(betr_simulation_type), intent(inout) :: this
     type(bounds_type), intent(in) :: bounds
     class(file_desc_t), intent(inout) :: ncid ! netcdf id
     character(len=*), intent(in)    :: flag ! 'read' or 'write'
@@ -208,28 +220,28 @@ contains
        temperature_vars, waterflux_vars, chemstate_vars, &
        cnstate_vars, canopystate_vars, carbonflux_vars)
 
-    !this will be overridden in actual application
-    use BetrBGCMod         , only : run_betr_one_step_without_drainage
-    use SoilStateType      , only : soilstate_type
-    use WaterStateType     , only : Waterstate_Type
-    use TemperatureType    , only : temperature_type
-    use ChemStateType      , only : chemstate_type
-    use WaterfluxType      , only : waterflux_type
-    use ColumnType         , only : column_type
-    use BGCReactionsMod    , only : bgc_reaction_type
-    use atm2lndType        , only : atm2lnd_type
-    use SoilHydrologyType  , only : soilhydrology_type
-    use BeTR_CNStateType   , only : betr_cnstate_type
+    use BetrBGCMod, only : run_betr_one_step_without_drainage
+    use SoilStateType, only : soilstate_type
+    use WaterStateType, only : Waterstate_Type
+    use TemperatureType, only : temperature_type
+    use ChemStateType, only : chemstate_type
+    use WaterfluxType, only : waterflux_type
+    use ColumnType, only : column_type
+    use BGCReactionsMod, only : bgc_reaction_type
+    use atm2lndType, only : atm2lnd_type
+    use SoilHydrologyType, only : soilhydrology_type
+    use BeTR_CNStateType, only : betr_cnstate_type
     use BeTR_CarbonFluxType, only : betr_carbonflux_type
-    use CNStateType        , only : cnstate_type
-    use CNCarbonFluxType   , only : carbonflux_type
-    use CanopyStateType    , only : canopystate_type
-    use BeTR_PatchType     , only : betr_pft
-    use PatchType          , only : pft
-    use pftvarcon          , only : crop
+    use CNStateType, only : cnstate_type
+    use CNCarbonFluxType, only : carbonflux_type
+    use CanopyStateType, only : canopystate_type
+    use BeTR_PatchType, only : betr_pft
+    use PatchType, only : pft
+    use pftvarcon, only : crop
 
     implicit none
-    class(betr_simulation_type) :: this
+    
+    class(betr_simulation_type), intent(inout) :: this
     type(bounds_type), intent(in) :: bounds ! bounds
     integer, intent(in) :: num_soilc ! number of columns in column filter_soilc
     integer, intent(in) :: filter_soilc(:) ! column filter_soilc
@@ -248,8 +260,6 @@ contains
     type(canopystate_type), intent(in) :: canopystate_vars
     type(carbonflux_type), intent(in) :: carbonflux_vars
     type(waterflux_type), intent(inout) :: waterflux_vars !temporary variables
-    type(betr_cnstate_type) :: betr_cnstate_vars
-    type(betr_carbonflux_type) :: betr_carbonflux_vars !pass necessary data for correct subroutine call
 
 
   end subroutine BeTRSimulationStepWithoutDrainage
@@ -263,7 +273,8 @@ contains
     use WaterFluxType, only : waterflux_type
 
     implicit none
-    class(betr_simulation_type) :: this
+
+    class(betr_simulation_type), intent(inout) :: this
     type(bounds_type), intent(in) :: bounds
     integer, intent(in) :: num_soilc ! number of columns in column filter_soilc
     integer, intent(in) :: filter_soilc(:) ! column filter_soilc

@@ -1,37 +1,36 @@
-module PlantSoilBGCMockRunType
+module H2OIsotopePlantSoilBGCType
 
 
   use PlantSoilBGCMod , only : plant_soilbgc_type
-  use betr_decompMod    , only : bounds_type => betr_bounds_type
   implicit none
   save
   private
 
 
-  public :: plant_soilbgc_mock_run_type
+  public :: plant_soilbgc_h2oiso_run_type
 
   type, extends(plant_soilbgc_type) :: &
-    plant_soilbgc_mock_run_type
+    plant_soilbgc_h2oiso_run_type
   private
     contains
     procedure :: Init_plant_soilbgc
     procedure :: plant_soilbgc_summary
     procedure :: integrate_vr_flux_to_2D
     procedure :: lsm_betr_plant_soilbgc_send
-  end type plant_soilbgc_mock_run_type
+  end type plant_soilbgc_h2oiso_run_type
 
 
-  interface plant_soilbgc_mock_run_type
+  interface plant_soilbgc_h2oiso_run_type
     module procedure constructor
-  end interface plant_soilbgc_mock_run_type
+  end interface plant_soilbgc_h2oiso_run_type
 
   contains
 
   !-------------------------------------------------------------------------------
-  type(plant_soilbgc_mock_run_type) function constructor()
+  type(plant_soilbgc_h2oiso_run_type) function constructor()
   !
   ! !DESCRIPTION:
-  ! create an object of type plant_soilbgc_mock_run_type.
+  ! create an object of type plant_soilbgc_h2oiso_run_type.
   ! Right now it is purposely empty
 
   end function constructor
@@ -44,10 +43,11 @@ module PlantSoilBGCMockRunType
   ! template for init_betrbgc
   !
   ! !USES:
+  use BeTR_decompMod             , only : betr_bounds_type
 
   ! !ARGUMENTS:
-  class(plant_soilbgc_mock_run_type) , intent(in) :: this
-  type(bounds_type)         , intent(in) :: bounds
+  class(plant_soilbgc_h2oiso_run_type) , intent(in) :: this
+  type(betr_bounds_type)         , intent(in) :: bounds
   integer                   , intent(in) :: lbj, ubj
 
   end subroutine Init_plant_soilbgc
@@ -60,12 +60,13 @@ module PlantSoilBGCMockRunType
   ! !USES:
   use BeTRTracerType        , only : BeTRtracer_type
   use tracerfluxType        , only : tracerflux_type
+  use BeTR_decompMod             , only : betr_bounds_type
   use shr_kind_mod          , only : r8 => shr_kind_r8
 
   ! !ARGUMENTS:
 
-  class(plant_soilbgc_mock_run_type) , intent(in) :: this
-  type(bounds_type)         , intent(in) :: bounds
+  class(plant_soilbgc_h2oiso_run_type) , intent(in) :: this
+  type(betr_bounds_type)         , intent(in) :: bounds
   integer                   , intent(in) :: lbj, ubj
   integer                   , intent(in) :: numf
   integer                   , intent(in) :: filter(:)
@@ -81,11 +82,11 @@ module PlantSoilBGCMockRunType
 
   subroutine integrate_vr_flux_to_2D(this, bounds, numf, filter)
 
-
+  use BeTR_decompMod             , only : betr_bounds_type
   ! !ARGUMENTS:
 
-  class(plant_soilbgc_mock_run_type) , intent(in) :: this
-  type(bounds_type)         , intent(in) :: bounds
+  class(plant_soilbgc_h2oiso_run_type) , intent(in) :: this
+  type(betr_bounds_type)         , intent(in) :: bounds
   integer                   , intent(in) :: numf
   integer                   , intent(in) :: filter(:)
 
@@ -96,12 +97,13 @@ module PlantSoilBGCMockRunType
 
   subroutine lsm_betr_plant_soilbgc_send(this, bounds, numf, filter)
 
+  use BeTR_decompMod             , only : betr_bounds_type
   ! !ARGUMENTS:
 
-  class(plant_soilbgc_mock_run_type) , intent(in) :: this
-  type(bounds_type)         , intent(in) :: bounds
+  class(plant_soilbgc_h2oiso_run_type) , intent(in) :: this
+  type(betr_bounds_type)         , intent(in) :: bounds
   integer                   , intent(in) :: numf
   integer                   , intent(in) :: filter(:)
 
   end subroutine lsm_betr_plant_soilbgc_send
-end module PlantSoilBGCMockRunType
+end module H2OIsotopePlantSoilBGCType

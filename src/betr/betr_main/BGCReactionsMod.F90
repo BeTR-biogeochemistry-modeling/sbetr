@@ -51,12 +51,12 @@ module BGCReactionsMod
        !
        ! !USES:
        use BeTRTracerType        , only : BeTRtracer_type
-       use BeTR_decompMod        , only : bounds_type  => betr_bounds_type
+       use BeTR_decompMod        , only : betr_bounds_type
        !
        ! !ARGUMENTS:
        import :: bgc_reaction_type
        class(bgc_reaction_type) , intent(in)    :: this
-       type(bounds_type)        , intent(in)    :: bounds
+       type(betr_bounds_type)        , intent(in)    :: bounds
        integer                  , intent(in)    :: lbj, ubj
        type(BeTRtracer_type )   , intent(inout) :: betrtracer_vars
 
@@ -74,7 +74,7 @@ module BGCReactionsMod
        use tracerfluxType           , only : tracerflux_type
        use tracerstatetype          , only : tracerstate_type
        use tracercoeffType          , only : tracercoeff_type
-       use BeTR_decompMod           , only : bounds_type  => betr_bounds_type
+       use BeTR_decompMod           , only : betr_bounds_type
        use BeTRTracerType           , only : BeTRTracer_Type
        use shr_kind_mod             , only : r8 => shr_kind_r8
        use BeTR_CNStateType         , only : betr_cnstate_type
@@ -82,7 +82,7 @@ module BGCReactionsMod
        ! !ARGUMENTS:
        import :: bgc_reaction_type
        class(bgc_reaction_type)         , intent(in)    :: this
-       type(bounds_type)                , intent(in)    :: bounds                      ! bounds
+       type(betr_bounds_type)                , intent(in)    :: bounds                      ! bounds
        integer                          , intent(in)    :: num_soilc                   ! number of columns in column filter
        integer                          , intent(in)    :: filter_soilc(:)             ! column filter
        integer                          , intent(in)    :: num_soilp
@@ -109,7 +109,7 @@ module BGCReactionsMod
        !
        ! !USES:
        use TracerBoundaryCondType , only : tracerboundarycond_type
-       use BeTR_decompMod         , only : bounds_type  => betr_bounds_type
+       use BeTR_decompMod         , only : betr_bounds_type
        use BeTRTracerType         , only : BeTRTracer_Type
        use BeTR_WaterfluxType     , only : waterflux_type => betr_waterflux_type
        use shr_kind_mod           , only : r8 => shr_kind_r8
@@ -117,7 +117,7 @@ module BGCReactionsMod
        ! !ARGUMENTS:
        import :: bgc_reaction_type
        class(bgc_reaction_type)      , intent(in) :: this                       !
-       type(bounds_type)             , intent(in) :: bounds                     !
+       type(betr_bounds_type)       , intent(in) :: bounds                     !
        integer                       , intent(in) :: num_soilc                  ! number of columns in column filter
        integer                       , intent(in) :: filter_soilc(:)            ! column filter
        type(betrtracer_type)         , intent(in) :: betrtracer_vars            !
@@ -138,13 +138,13 @@ module BGCReactionsMod
        ! !USES:
        use BeTRTracerType        , only : betrtracer_type
        use TracerBoundaryCondType, only : tracerboundarycond_type
-       use BeTR_decompMod        , only : bounds_type  => betr_bounds_type
+       use BeTR_decompMod        , only : betr_bounds_type
 
        ! !ARGUMENTS:
        import :: bgc_reaction_type
        class(bgc_reaction_type)         , intent(in) :: this
        type(BeTRtracer_type )           , intent(in) :: betrtracer_vars
-       type(bounds_type)                , intent(in) :: bounds
+       type(betr_bounds_type)                , intent(in) :: bounds
        type(tracerboundarycond_type)    , intent(in) :: tracerboundarycond_vars
 
      end subroutine init_boundary_condition_type_interface
@@ -161,13 +161,13 @@ module BGCReactionsMod
        use tracerstatetype       , only : tracerstate_type
        use tracercoeffType       , only : tracercoeff_type
        use BeTRTracerType        , only : BeTRTracer_Type
-       use BeTR_decompMod        , only : bounds_type  => betr_bounds_type
+       use BeTR_decompMod        , only : betr_bounds_type
 
        ! !ARGUMENTS:
        import :: bgc_reaction_type
 
        class(bgc_reaction_type)   , intent(in)    :: this
-       type(bounds_type)          , intent(in)    :: bounds
+       type(betr_bounds_type)     , intent(in)    :: bounds
        integer                    , intent(in)    :: lbj, ubj
        integer                    , intent(in)    :: jtops( : )        ! top label of each column
        integer                    , intent(in)    :: num_soilc
@@ -188,18 +188,18 @@ module BGCReactionsMod
        !
        use BeTRTracerType           , only : BeTRTracer_Type
        use tracerstatetype          , only : tracerstate_type
-       use BeTR_WaterstateType      , only : waterstate_type  => betr_waterstate_type
+       use BeTR_WaterstateType      , only : betr_waterstate_type
        use BeTR_LandunitType        , only : lun  => betr_lun
        use BeTR_ColumnType          , only : col  => betr_col
        use BeTR_PatchType           , only : pft  => betr_pft
-       use BeTR_decompMod           , only : bounds_type  => betr_bounds_type
+       use BeTR_decompMod           , only : betr_bounds_type
 
        ! !ARGUMENTS:
        import :: bgc_reaction_type
        class(bgc_reaction_type)          , intent(in)    :: this
-       type(bounds_type)                 , intent(in)    :: bounds
+       type(betr_bounds_type)                 , intent(in)    :: bounds
        type(BeTRTracer_Type)             , intent(in)    :: betrtracer_vars
-       type(waterstate_type)             , intent(in)    :: waterstate_vars
+       type(betr_waterstate_type)             , intent(in)    :: waterstate_vars
        type(tracerstate_type)            , intent(inout) :: tracerstate_vars
 
 
@@ -230,7 +230,7 @@ module BGCReactionsMod
        ! !DESCRIPTION:
        ! template for lsm_betr_flux_state_receive
        ! !USES:
-       use BeTR_decompMod           , only : bounds_type  => betr_bounds_type
+       use BeTR_decompMod           , only : betr_bounds_type
        use shr_kind_mod             , only : r8 => shr_kind_r8
        use tracerfluxType           , only : tracerflux_type
        use tracerstatetype          , only : tracerstate_type
@@ -238,7 +238,7 @@ module BGCReactionsMod
        ! !ARGUMENTS:
        import :: bgc_reaction_type
        class(bgc_reaction_type)   , intent(in) :: this                  !
-       type(bounds_type)          , intent(in) :: bounds                ! bounds
+       type(betr_bounds_type)     , intent(in) :: bounds                ! bounds
        integer                    , intent(in) :: num_soilc
        integer                    , intent(in) :: filter_soilc(:)
        type(betrtracer_type)      , intent(in) :: betrtracer_vars       ! betr configuration information
@@ -257,12 +257,12 @@ module BGCReactionsMod
        ! template for init_betr_lsm_bgc_coupler
 
        ! !USES:
-       use BeTR_decompMod           , only : bounds_type  => betr_bounds_type
+       use BeTR_decompMod           , only : betr_bounds_type
        use tracer_varcon            , only : natomw, catomw
        use tracer_varcon            , only : nlevtrc_soil  => betr_nlevtrc_soil
        use tracerstatetype          , only : tracerstate_type
        use BetrTracerType           , only : betrtracer_type
-       use BeTR_landvarconType      , only : landvarcon => betr_landvarcon
+       use BeTR_landvarconType      , only : betr_landvarcon
        use PlantSoilBGCMod          , only : plant_soilbgc_type
        use EcophysConType           , only : ecophyscon_type
        use BeTR_CNStateType         , only : betr_cnstate_type
@@ -272,7 +272,7 @@ module BGCReactionsMod
        ! !ARGUMENTS:
        import :: bgc_reaction_type
        class(bgc_reaction_type)           , intent(in)    :: this
-       type(bounds_type)                  , intent(in)    :: bounds
+       type(betr_bounds_type)                  , intent(in)    :: bounds
        type(tracerstate_type)             , intent(inout) :: tracerstate_vars
        type(betrtracer_type)              , intent(in)    :: betrtracer_vars    ! betr configuration information
        class(plant_soilbgc_type)          , intent(inout) :: plant_soilbgc !

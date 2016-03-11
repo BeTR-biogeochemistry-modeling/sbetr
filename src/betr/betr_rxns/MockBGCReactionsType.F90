@@ -1,4 +1,4 @@
-module BGCReactionsMockRunType
+module MockBGCReactionsType
 
 #include "shr_assert.h"
   !
@@ -433,4 +433,4 @@ contains
 
   end subroutine init_betr_lsm_bgc_coupler
 
-end module BGCReactionsMockRunType
+end module MockBGCReactionsType

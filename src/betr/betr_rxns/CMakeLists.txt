@@ -1,10 +1,9 @@
-set(BETR_DRIVER_SOURCES
-  BeTRSimulation.F90
-  BeTRSimulationFactory.F90
-  BeTRSimulationStandalone.F90
-  BeTRSimulationCLM.F90
-  CLMForcType.F90
-  sbetrDriverMod.F90
+set(BETR_RXNS_SOURCES
+  ReactionsFactory.F90
+  MockBGCReactionsType.F90
+  MockPlantSoilBGCType.F90
+  H2OIsotopeBGCReactionsType.F90
+  H2OIsotopePlantSoilBGCType.F90
   )
 
 include_directories(${CMAKE_BINARY_DIR}/src/shr)
@@ -14,25 +13,21 @@ include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_math)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_core)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_main)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_grid)
-include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_rxns)
-
 
 
 include(add_betr_library)
-add_betr_library(betr_driver ${BETR_DRIVER_SOURCES})
+add_betr_library(betr_rxns ${BETR_RXNS_SOURCES})
 
 
-set(BETR_LIBRARIES betr_driver;${BETR_LIBRARIES} PARENT_SCOPE)
-set(BETR_LIBRARIES betr_driver;${BETR_LIBRARIES})
+set(BETR_LIBRARIES betr_rxns;${BETR_LIBRARIES} PARENT_SCOPE)
+set(BETR_LIBRARIES betr_rxns;${BETR_LIBRARIES})
 
 link_libraries(${BETR_LIBRARIES};${BETR_TPLS})
-include(add_betr_executable)
-add_betr_executable(sbetr sbetr.F90)
 
 #X#add_subdirectory(tests)
 
 if (NOT CMAKE_INSTALL_PREFIX STREQUAL "INSTALL_DISABLED")
-  install(TARGETS betr_driver DESTINATION lib)
+  install(TARGETS betr_rxns DESTINATION lib)
   file(GLOB HEADERS *.h)
-  install(FILES ${HEADERS} DESTINATION include/betr/driver)
+  install(FILES ${HEADERS} DESTINATION include/betr/rxns)
 endif()
