@@ -8,7 +8,7 @@ module BetrBGCMod
   !  !USES:
   use shr_kind_mod       , only : r8 => shr_kind_r8
   use shr_log_mod        , only : errMsg => shr_log_errMsg
-  use decompMod          , only : bounds_type
+  use BeTR_decompMod     , only : bounds_type  => betr_bounds_type
   use BeTRTracerType     , only : betrtracer_type
   use clm_varctl         , only : iulog
   use clm_time_manager   , only : get_nstep
@@ -53,10 +53,10 @@ contains
     use TracerParamsMod              , only          : set_phase_convert_coeff, set_multi_phase_diffusion, calc_tracer_infiltration
     use TracerParamsMod              , only          : get_zwt, calc_aerecond, betr_annualupdate
     use SoilStateType                , only          : soilstate_type
-    use WaterStateType               , only          : Waterstate_Type
+    use BeTR_WaterStateType          , only          : Waterstate_Type  => BeTR_Waterstate_Type
     use TemperatureType              , only          : temperature_type
     use ChemStateType                , only          : chemstate_type
-    use WaterfluxType                , only          : waterflux_type
+    use BeTR_WaterfluxType           , only          : waterflux_type   => betr_waterflux_type
     use BeTR_ColumnType              , only          : col => betr_col
     use BGCReactionsMod              , only          : bgc_reaction_type
     use atm2lndType                  , only          : atm2lnd_type
@@ -474,9 +474,9 @@ contains
     use tracerboundarycondtype  , only : tracerboundarycond_type
     use tracerfluxtype          , only : tracerflux_type
     use tracercoeffType         , only : tracercoeff_type
-    use WaterfluxType           , only : waterflux_type
+    use BeTR_WaterfluxType      , only : waterflux_type   => betr_waterflux_type
     use BGCReactionsMod         , only : bgc_reaction_type
-    use WaterStateType          , only : Waterstate_Type
+    use BeTR_WaterStateType     , only : Waterstate_Type  => BeTR_Waterstate_Type
 
     ! !ARGUMENTS:
     type(bounds_type)             , intent(in)    :: bounds
@@ -578,7 +578,7 @@ contains
     use TracerCoeffType    , only          : tracercoeff_type
     use TransportMod       , only          : semi_lagrange_adv_backward, set_debug_transp
     use abortutils         , only          : endrun
-    use WaterfluxType      , only          : waterflux_type
+    use BeTR_WaterfluxType , only          : waterflux_type   => betr_waterflux_type
     use MathfuncMod        , only          : safe_div
     !
     type(bounds_type)      , intent(in)    :: bounds
@@ -891,7 +891,8 @@ contains
     use TransportMod          , only : DiffusTransp, get_cntheta
     use abortutils            , only : endrun
     use tracer_varcon         , only : bndcond_as_conc
-    use WaterStateType        , only : Waterstate_Type
+    use BeTR_WaterStateType   , only : Waterstate_Type  => BeTR_Waterstate_Type
+
     !
     ! !ARGUMENTS:
     type(bounds_type)             , intent(in)    :: bounds
@@ -1457,7 +1458,7 @@ contains
     use tracercoeffType       , only : tracercoeff_type
     use BeTR_ColumnType       , only : col => betr_col
     use MathfuncMod           , only : safe_div
-    use WaterFluxType         , only : waterflux_type
+    use BeTR_WaterFluxType    , only : waterflux_type  => betr_waterflux_type
     ! !ARGUMENTS:
     type(bounds_type),        intent(in)    :: bounds
     integer,                  intent(in)    :: lbj, ubj
@@ -1535,8 +1536,8 @@ contains
     !
     ! !USES:
     use clm_time_manager      , only : get_step_size
-    use WaterStateType        , only : Waterstate_Type
-    use WaterfluxType         , only : waterflux_type
+    use BeTR_WaterStateType   , only : Waterstate_Type  => BeTR_Waterstate_Type
+    use BeTR_WaterfluxType    , only : waterflux_type   => betr_waterflux_type
     use tracerfluxType        , only : tracerflux_type
     use tracerstatetype       , only : tracerstate_type
     use tracercoeffType       , only : tracercoeff_type
@@ -1643,8 +1644,8 @@ contains
     use clm_time_manager      , only : get_step_size
     use BeTR_ColumnType       , only : col => betr_col
     use BeTR_LandunitType     , only : lun => betr_lun
-    use WaterfluxType         , only : waterflux_type
-    use WaterstateType        , only : waterstate_type
+    use BeTR_WaterfluxType    , only : waterflux_type   => betr_waterflux_type
+    use BeTR_WaterstateType   , only : waterstate_type  => betr_waterstate_type
     use tracerfluxType        , only : tracerflux_type
     use tracerstatetype       , only : tracerstate_type
     use clm_varcon            , only : spval
@@ -1746,7 +1747,7 @@ contains
     ! !USES:
     use clm_time_manager      , only : get_step_size
     use BeTR_ColumnType       , only : col => betr_col
-    use WaterfluxType         , only : waterflux_type
+    use BeTR_WaterfluxType    , only : waterflux_type   => betr_waterflux_type
     use tracerfluxType        , only : tracerflux_type
     use tracerstatetype       , only : tracerstate_type
 

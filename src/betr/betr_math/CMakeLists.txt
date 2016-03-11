@@ -3,9 +3,11 @@ set(BETR_MATH_SOURCES
   InterpolationMod.F90
   MathfuncMod.F90
   ODEMod.F90
+  BTridiagonalMod.F90
   )
 
 include_directories(${CMAKE_BINARY_DIR}/src/shr)
+include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)
 include_directories(${CMAKE_BINARY_DIR}/src/stub_clm)
 
 

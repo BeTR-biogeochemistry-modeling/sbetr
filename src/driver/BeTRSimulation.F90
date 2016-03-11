@@ -8,9 +8,9 @@ module BeTRSimulation
   use abortutils                  , only : endrun
   use clm_varctl                  , only : iulog
   use shr_log_mod                 , only : errMsg => shr_log_errMsg
-
-  use decompMod, only : bounds_type
-
+  use tracer_varcon               , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
+  use BeTR_decompMod              , only : betr_bounds_type
+  use decompMod                   , only : bounds_type
 
   ! !USES:
   use BeTRTracerType            , only : BeTRtracer_type
@@ -43,60 +43,75 @@ module BeTRSimulation
      procedure, public :: RestartInit => BeTRSimulationRestartInit
      procedure, public :: StepWithoutDrainage => BeTRSimulationStepWithoutDrainage
      procedure, public :: StepWithDrainage => BeTRSimulationStepWithDrainage
-
+     procedure, public :: BeginMassBalanceCheck => BeTRSimulationBeginMassBalanceCheck
+     procedure, public :: MassBalanceCheck      => BeTRSimulationMassBalanceCheck
   end type betr_simulation_type
 
   public :: BeTRSimulationInit
-  
+
 contains
 
 !-------------------------------------------------------------------------------
 
-  subroutine BeTRSimulationInit(this, reaction_method, bounds, lbj, ubj, &
+  subroutine BeTRSimulationInit(this, reaction_method, bounds, &
        waterstate)
-
-    use decompMod             , only : bounds_type
+    !
     use TransportMod          , only : init_transportmod
     use TracerParamsMod       , only : tracer_param_init
     use WaterstateType        , only : waterstate_type
-
+    use BeTR_WaterstateType   , only : betr_waterstate_type
     implicit none
 
     class(betr_simulation_type) :: this
     character(len=*), intent(in) :: reaction_method
     type(bounds_type)    , intent(in) :: bounds
-    integer              , intent(in) :: lbj, ubj
+
     type(waterstate_type), intent(inout) :: waterstate
 
     character(len=32) :: subname='BeTRSimulationInit'
+    type(betr_waterstate_type) :: betr_waterstate
+    type(betr_bounds_type)     :: betr_bounds
+    integer :: lbj, ubj
+
+    !set lbj and ubj
+    betr_bounds%lbj  = 1          ; betr_bounds%ubj  = betr_nlevsoi
+    betr_bounds%begp = bounds%begp; betr_bounds%endp = bounds%endp
+    betr_bounds%begc = bounds%begc; betr_bounds%endc = bounds%endc
+    betr_bounds%begl = bounds%begl; betr_bounds%endl = bounds%endl
+    betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
+
+    lbj = betr_bounds%lbj; ubj = betr_bounds%ubj
+    betr_waterstate%h2osoi_liq_col => waterstate%h2osoi_liq_col
+    betr_waterstate%h2osoi_ice_col    => waterstate%h2osoi_ice_col
+
 
     call this%betrtracer_vars%init_scalars()
 
-    call this%bgc_reaction%Init_betrbgc(bounds, lbj, ubj, this%betrtracer_vars)
+    call this%bgc_reaction%Init_betrbgc(betr_bounds, lbj, ubj, this%betrtracer_vars)
 
-    call this%betr_aerecond_vars%Init(bounds)
+    call this%betr_aerecond_vars%Init(betr_bounds)
 
     call init_transportmod()
 
-    call this%tracerState_vars%Init(bounds, lbj, ubj, this%betrtracer_vars)
+    call this%tracerState_vars%Init(betr_bounds, lbj, ubj, this%betrtracer_vars)
 
-    call this%tracerflux_vars%Init(bounds,  lbj, ubj, this%betrtracer_vars)
+    call this%tracerflux_vars%Init(betr_bounds,  lbj, ubj, this%betrtracer_vars)
 
-    call this%tracercoeff_vars%Init(bounds, lbj, ubj, this%betrtracer_vars)
+    call this%tracercoeff_vars%Init(betr_bounds, lbj, ubj, this%betrtracer_vars)
 
-    call this%tracerboundarycond_vars%Init(bounds, this%betrtracer_vars)
+    call this%tracerboundarycond_vars%Init(betr_bounds, this%betrtracer_vars)
 
     !inside Init_plant_soilbgc, specific plant soil bgc coupler data type will be created
-    call this%plant_soilbgc%Init_plant_soilbgc(bounds, lbj, ubj)
+    call this%plant_soilbgc%Init_plant_soilbgc(betr_bounds, lbj, ubj)
 
     !initialize state variable
-    call this%bgc_reaction%initCold(bounds,  this%betrtracer_vars, waterstate, this%tracerstate_vars)
+    call this%bgc_reaction%initCold(betr_bounds,  this%betrtracer_vars, betr_waterstate, this%tracerstate_vars)
 
     !initialize boundary condition type
-    call this%bgc_reaction%init_boundary_condition_type(bounds, this%betrtracer_vars, this%tracerboundarycond_vars)
+    call this%bgc_reaction%init_boundary_condition_type(betr_bounds, this%betrtracer_vars, this%tracerboundarycond_vars)
 
     !initialize the betr parameterization module
-    call tracer_param_init(bounds)
+    call tracer_param_init(betr_bounds)
 
     !initialize the betrBGC module
     !X!call betrbgc_init(bounds) - NOTE(bja, 2016-03) empty subroutine...
@@ -160,7 +175,6 @@ contains
     ! initialize for restart run
     ! !USES:
     use ncdio_pio, only : file_desc_t
-
     implicit none
 
     class(betr_simulation_type) :: this
@@ -168,38 +182,51 @@ contains
     class(file_desc_t), intent(inout) :: ncid ! netcdf id
     character(len=*), intent(in)    :: flag ! 'read' or 'write'
 
-    call this%tracerstate_vars%Restart(bounds, ncid, flag=flag, betrtracer_vars=this%betrtracer_vars)
-    
-    call this%tracerflux_vars%Restart(bounds, ncid, flag=flag, betrtracer_vars=this%betrtracer_vars)
+    type(betr_bounds_type)     :: betr_bounds
+    integer :: lbj, ubj
 
-    call this%tracercoeff_vars%Restart(bounds, ncid, flag=flag, betrtracer_vars=this%betrtracer_vars)
+    !set lbj and ubj
+    betr_bounds%lbj  = 1          ; betr_bounds%ubj  = betr_nlevsoi
+    betr_bounds%begp = bounds%begp; betr_bounds%endp = bounds%endp
+    betr_bounds%begc = bounds%begc; betr_bounds%endc = bounds%endc
+    betr_bounds%begl = bounds%begl; betr_bounds%endl = bounds%endl
+    betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
+    lbj = betr_bounds%lbj; ubj = betr_bounds%ubj
+
+    call this%tracerstate_vars%Restart(betr_bounds, ncid, flag=flag, betrtracer_vars=this%betrtracer_vars)
+
+    call this%tracerflux_vars%Restart(betr_bounds, ncid, flag=flag, betrtracer_vars=this%betrtracer_vars)
+
+    call this%tracercoeff_vars%Restart(betr_bounds, ncid, flag=flag, betrtracer_vars=this%betrtracer_vars)
   end subroutine BeTRSimulationRestartInit
 
 
   !---------------------------------------------------------------------------------
-  subroutine BeTRSimulationStepWithoutDrainage(this, bounds, lbj, ubj, &
+  subroutine BeTRSimulationStepWithoutDrainage(this, bounds, &
        num_soilc, filter_soilc, num_soilp, filter_soilp, col ,   &
        atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, &
        temperature_vars, waterflux_vars, chemstate_vars, &
        cnstate_vars, canopystate_vars, carbonflux_vars)
-    use BetrBGCMod, only : run_betr_one_step_without_drainage
-    use SoilStateType, only : soilstate_type
-    use WaterStateType, only : Waterstate_Type
-    use TemperatureType, only : temperature_type
-    use ChemStateType, only : chemstate_type
-    use WaterfluxType, only : waterflux_type
-    use ColumnType, only : column_type
-    use BGCReactionsMod, only : bgc_reaction_type
-    use atm2lndType, only : atm2lnd_type
-    use SoilHydrologyType, only : soilhydrology_type
-    use BeTR_CNStateType, only : betr_cnstate_type
+
+    !this will be overridden in actual application
+    use BetrBGCMod         , only : run_betr_one_step_without_drainage
+    use SoilStateType      , only : soilstate_type
+    use WaterStateType     , only : Waterstate_Type
+    use TemperatureType    , only : temperature_type
+    use ChemStateType      , only : chemstate_type
+    use WaterfluxType      , only : waterflux_type
+    use ColumnType         , only : column_type
+    use BGCReactionsMod    , only : bgc_reaction_type
+    use atm2lndType        , only : atm2lnd_type
+    use SoilHydrologyType  , only : soilhydrology_type
+    use BeTR_CNStateType   , only : betr_cnstate_type
     use BeTR_CarbonFluxType, only : betr_carbonflux_type
-    use CNStateType, only : cnstate_type
-    use CNCarbonFluxType, only : carbonflux_type
-    use CanopyStateType, only : canopystate_type
-    use BeTR_PatchType, only : betr_pft
-    use PatchType, only : pft
-    use pftvarcon, only : crop
+    use CNStateType        , only : cnstate_type
+    use CNCarbonFluxType   , only : carbonflux_type
+    use CanopyStateType    , only : canopystate_type
+    use BeTR_PatchType     , only : betr_pft
+    use PatchType          , only : pft
+    use pftvarcon          , only : crop
 
     implicit none
     class(betr_simulation_type) :: this
@@ -208,8 +235,8 @@ contains
     integer, intent(in) :: filter_soilc(:) ! column filter_soilc
     integer, intent(in) :: num_soilp
     integer, intent(in) :: filter_soilp(:) ! pft filter
-    integer, intent(in) :: lbj, ubj ! lower and upper bounds, make sure they are > 0
-    
+
+
     type(column_type), intent(in) :: col ! column type
     type(Waterstate_Type), intent(in) :: waterstate_vars ! water state variables
     type(soilstate_type), intent(in) :: soilstate_vars ! column physics variable
@@ -224,10 +251,11 @@ contains
     type(betr_cnstate_type) :: betr_cnstate_vars
     type(betr_carbonflux_type) :: betr_carbonflux_vars !pass necessary data for correct subroutine call
 
+
   end subroutine BeTRSimulationStepWithoutDrainage
 
   !---------------------------------------------------------------------------------
-  subroutine BeTRSimulationStepWithDrainage(this, bounds, lbj, ubj, num_soilc, &
+  subroutine BeTRSimulationStepWithDrainage(this, bounds, num_soilc, &
        filter_soilc, jtops, waterflux_vars, col)
     use BetrBGCMod, only : run_betr_one_step_with_drainage
     use ColumnType, only : column_type
@@ -235,17 +263,67 @@ contains
     use WaterFluxType, only : waterflux_type
 
     implicit none
-
     class(betr_simulation_type) :: this
     type(bounds_type), intent(in) :: bounds
-    integer, intent(in) :: lbj, ubj
     integer, intent(in) :: num_soilc ! number of columns in column filter_soilc
     integer, intent(in) :: filter_soilc(:) ! column filter_soilc
     integer, intent(in) :: jtops(bounds%begc: )
     type(waterflux_type)    , intent(in) :: waterflux_vars
     type(column_type), intent(in) :: col ! column type
-      
+
   end subroutine BeTRSimulationStepWithDrainage
 
 
+  !---------------------------------------------------------------------------------
+
+  subroutine BeTRSimulationBeginMassBalanceCheck(this, bounds, num_soilc, &
+       filter_soilc)
+  use TracerBalanceMod, only : begin_betr_tracer_massbalance
+  implicit none
+    class(betr_simulation_type) :: this
+    type(bounds_type), intent(in) :: bounds
+    integer, intent(in) :: num_soilc ! number of columns in column filter_soilc
+    integer, intent(in) :: filter_soilc(:) ! column filter_soilc
+
+    type(betr_bounds_type)     :: betr_bounds
+    integer  :: lbj, ubj
+    !set lbj and ubj
+    betr_bounds%lbj  = 1          ; betr_bounds%ubj  = betr_nlevsoi
+    betr_bounds%begp = bounds%begp; betr_bounds%endp = bounds%endp
+    betr_bounds%begc = bounds%begc; betr_bounds%endc = bounds%endc
+    betr_bounds%begl = bounds%begl; betr_bounds%endl = bounds%endl
+    betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
+    lbj = betr_bounds%lbj; ubj = betr_bounds%ubj
+
+    call begin_betr_tracer_massbalance(betr_bounds, lbj, ubj, num_soilc, filter_soilc, &
+         this%betrtracer_vars, this%tracerstate_vars, &
+         this%tracerflux_vars)
+
+  end  subroutine BeTRSimulationBeginMassBalanceCheck
+  !---------------------------------------------------------------------------------
+
+  subroutine BeTRSimulationMassBalanceCheck(this, bounds, num_soilc, &
+       filter_soilc)
+  use TracerBalanceMod, only : betr_tracer_massbalance_check
+  implicit none
+    class(betr_simulation_type) :: this
+    type(bounds_type), intent(in) :: bounds
+    integer, intent(in) :: num_soilc ! number of columns in column filter_soilc
+    integer, intent(in) :: filter_soilc(:) ! column filter_soilc
+
+    integer :: lbj, ubj
+    type(betr_bounds_type)     :: betr_bounds
+
+    !set lbj and ubj
+    betr_bounds%lbj  = 1          ; betr_bounds%ubj  = betr_nlevsoi
+    betr_bounds%begp = bounds%begp; betr_bounds%endp = bounds%endp
+    betr_bounds%begc = bounds%begc; betr_bounds%endc = bounds%endc
+    betr_bounds%begl = bounds%begl; betr_bounds%endl = bounds%endl
+    betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
+    lbj = betr_bounds%lbj; ubj = betr_bounds%ubj
+
+    call betr_tracer_massbalance_check(betr_bounds, lbj, ubj, num_soilc, filter_soilc, &
+         this%betrtracer_vars, this%tracerstate_vars, &
+         this%tracerflux_vars)
+  end subroutine BeTRSimulationMassBalanceCheck
 end module BeTRSimulation

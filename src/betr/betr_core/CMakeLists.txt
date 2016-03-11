@@ -3,6 +3,8 @@ set(BETR_CORE_SOURCES
   BeTR_CNStateType.F90
   BeTR_CarbonFluxType.F90
   BeTR_aerocondType.F90
+  BeTR_WaterstateType.F90
+  BeTR_WaterfluxType.F90
   KineticsMod.F90
   TracerBoundaryCondType.F90
   TracerCoeffType.F90
@@ -15,9 +17,9 @@ set(BETR_CORE_SOURCES
 
 include_directories(${CMAKE_BINARY_DIR}/src/shr)
 include_directories(${CMAKE_BINARY_DIR}/src/stub_clm)
+include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_math)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_grid)
-
 
 include(add_betr_library)
 add_betr_library(betr_core ${BETR_CORE_SOURCES})

@@ -79,6 +79,10 @@ module Tracer_varcon
   real(r8),public            :: atm_deld_ch4   = 0._r8 !realtive to VSMOW
   real(r8),public            :: atm_deld_h2o   = 0._r8 !relative to VSMOW
 
+  real(r8), parameter :: catomw = 12.011_r8     ! molar mass of C atoms (g/mol)
+  real(r8), parameter :: natomw = 14.007_r8     ! molar mass of N atoms (g/mol)
+  real(r8), parameter :: patomw = 30.97_r8      ! molar mass of P atmos (g/mol)
+
   integer, parameter, public :: bndcond_as_conc = 1    !top boundary conditions as tracer concentration
   integer, parameter, public :: bndcond_as_flux=2      !top boundary condition as tracer flux
 

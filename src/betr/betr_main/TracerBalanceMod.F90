@@ -7,7 +7,7 @@ module TracerBalanceMod
 
   use shr_kind_mod       , only : r8 => shr_kind_r8
   use shr_log_mod        , only : errMsg => shr_log_errMsg
-  use decompMod          , only : bounds_type
+  use BeTR_decompMod     , only : bounds_type  => betr_bounds_type
   use BeTRTracerType     , only : betrtracer_type
   use TracerFluxType     , only : TracerFlux_type
   use TracerStateType    , only : TracerState_type
@@ -36,7 +36,7 @@ implicit none
       ! Preparing for tracer mass balance check
       !
       ! !USES:
-      use clm_varpar            , only : nlevtrc_soil
+      use tracer_varcon            , only : nlevtrc_soil  => betr_nlevtrc_soil
 
       implicit none
       ! !ARGUMENTS:
@@ -78,7 +78,8 @@ implicit none
       use abortutils            , only : endrun
       use clm_varctl            , only : iulog
       use clm_time_manager      , only : get_step_size,get_nstep
-      use clm_varcon            , only : namec,catomw,natomw
+      use betr_varcon           , only : namec  => bnamec
+      use tracer_varcon         , only : catomw,natomw
       implicit none
 
       ! !ARGUMENTS:
@@ -171,7 +172,7 @@ implicit none
       !
       ! !USES:
       use tracerstatetype       , only : tracerstate_type
-      use clm_varpar            , only : nlevtrc_soil
+      use tracer_varcon         , only : nlevtrc_soil  => betr_nlevtrc_soil
 
 
       implicit none

@@ -6,7 +6,7 @@ module TracerCoeffType
   ! !USES:
   use shr_kind_mod           , only : r8 => shr_kind_r8
   use shr_infnan_mod         , only : nan => shr_infnan_nan, assignment(=)
-  use decompMod              , only : bounds_type
+  use BeTR_decompMod         , only : bounds_type  => betr_bounds_type
   use BeTR_ColumnType        , only : col => betr_col
   use BeTR_LandunitType      , only : lun => betr_lun
   use BeTR_landvarconType    , only : landvarcon => betr_landvarcon
@@ -75,7 +75,7 @@ contains
     ! Now it is purposely empty, but will be potentially useful in the future
     ! !USES:
     use BetrTracerType        , only : betrtracer_type
-    use clm_varcon            , only : spval
+    use betr_varcon           , only : spval  => bspval
     use restUtilMod
     use ncdio_pio
     !
@@ -167,7 +167,7 @@ contains
     !
     ! !USES:
     !use shr_infnan_mod, only : nan => shr_infnan_nan, assignment(=)
-    use clm_varcon     , only : spval
+    use betr_varcon    , only : spval => bspval
     use BeTRTracerType , only : BeTRTracer_Type
     use histFileMod    , only : hist_addfld1d, hist_addfld2d
     use histFileMod    , only : no_snow_normal, no_snow_zero
@@ -253,7 +253,7 @@ contains
     !  do cold initialization
     !
     ! !USES:
-    use clm_varcon , only : spval
+    use betr_varcon , only : spval  => bspval
     !
     ! !ARGUMENTS:
     class(TracerCoeff_type)        :: this

@@ -8,5 +8,4 @@ module betr_constants
   integer, parameter :: betr_filename_length = 256
   integer, parameter :: betr_namelist_buffer_size = 4096
 
-
 end module betr_constants
