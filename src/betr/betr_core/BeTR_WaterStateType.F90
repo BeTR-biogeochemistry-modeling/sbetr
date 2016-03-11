@@ -9,7 +9,6 @@ module BeTR_WaterstateType
   ! column water state variables structure
   !----------------------------------------------------
   type, public :: betr_Waterstate_type
-
     real(r8), pointer :: h2osoi_liq_col(:,:)       !liquid water (kg/m2) (new) (-nlevsno+1:nlevgrnd)
     real(r8), pointer :: h2osoi_ice_col(:,:)       !ice lens (kg/m2) (new) (-nlevsno+1:nlevgrnd)
     real(r8), pointer :: h2osoi_liq_old(:,:)       !liquid water (kg/m2) (old) (-nlevsno+1:nlevgrnd)

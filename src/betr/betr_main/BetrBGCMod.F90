@@ -66,7 +66,7 @@ contains
     use BeTR_CNStateType             , only          : betr_cnstate_type
     use BeTR_CarbonFluxType          , only          : betr_carbonflux_type
     use BeTR_aerocondType            , only          : betr_aerecond_type
-    use tracer_varcon                , only          : is_active_betr_bgc
+    use betr_ctrl                    , only          : is_active_betr_bgc
     use CanopyStateType              , only          : canopystate_type
 
     !
