@@ -73,7 +73,7 @@ contains
 
     implicit none
 
-    class(betr_simulation_type) :: this
+    class(betr_simulation_type), intent(inout) :: this
     character(len=*), intent(in) :: reaction_method
     type(bounds_type)    , intent(in) :: bounds
     integer              , intent(in) :: lbj, ubj
@@ -126,7 +126,7 @@ contains
     use shr_mpi_mod   , only : shr_mpi_bcast
     implicit none
     ! !ARGUMENTS:
-    class(betr_simulation_type) :: this
+    class(betr_simulation_type), intent(inout) :: this
     character(len=*), intent(IN) :: filename ! Namelist filename
     !
     ! !LOCAL VARIABLES:
@@ -175,7 +175,7 @@ contains
 
     implicit none
 
-    class(betr_simulation_type) :: this
+    class(betr_simulation_type), intent(inout) :: this
     type(bounds_type), intent(in) :: bounds
     class(file_desc_t), intent(inout) :: ncid ! netcdf id
     character(len=*), intent(in)    :: flag ! 'read' or 'write'
@@ -213,7 +213,8 @@ contains
     use pftvarcon, only : crop
 
     implicit none
-    class(betr_simulation_type) :: this
+    
+    class(betr_simulation_type), intent(inout) :: this
     type(bounds_type), intent(in) :: bounds ! bounds
     integer, intent(in) :: num_soilc ! number of columns in column filter_soilc
     integer, intent(in) :: filter_soilc(:) ! column filter_soilc
@@ -245,7 +246,7 @@ contains
 
     implicit none
 
-    class(betr_simulation_type) :: this
+    class(betr_simulation_type), intent(inout) :: this
     type(bounds_type), intent(in) :: bounds
     integer, intent(in) :: lbj, ubj
     integer, intent(in) :: num_soilc ! number of columns in column filter_soilc

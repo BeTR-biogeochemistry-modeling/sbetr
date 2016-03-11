@@ -2,6 +2,7 @@ set(BETR_DRIVER_SOURCES
   BeTRSimulation.F90
   BeTRSimulationFactory.F90
   BeTRSimulationStandalone.F90
+  BeTRSimulationCLM.F90
   ReactionsFactoryStandalone.F90
   BGCReactionsMockRunType.F90
   PlantSoilBGCMockRunType.F90

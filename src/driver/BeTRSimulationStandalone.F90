@@ -83,7 +83,7 @@ contains
 
     implicit none
 
-    class(betr_simulation_standalone_type) :: this
+    class(betr_simulation_standalone_type), intent(inout) :: this
     character(len=*), intent(in) :: reaction_method
     type(bounds_type)    , intent(in) :: bounds
     integer              , intent(in) :: lbj, ubj
@@ -166,7 +166,7 @@ contains
 
     implicit none
 
-    class(betr_simulation_standalone_type) :: this
+    class(betr_simulation_standalone_type), intent(inout) :: this
 
     ! !ARGUMENTS :
     type(bounds_type), intent(in) :: bounds ! bounds
@@ -242,7 +242,7 @@ contains
     implicit none
 
     ! !ARGUMENTS:
-    class(betr_simulation_standalone_type) :: this
+    class(betr_simulation_standalone_type), intent(inout) :: this
     type(bounds_type), intent(in) :: bounds
     integer, intent(in) :: lbj, ubj
     integer, intent(in) :: num_soilc ! number of columns in column filter_soilc

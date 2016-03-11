@@ -24,7 +24,7 @@ contains
     !
     use BeTRSimulation, only : betr_simulation_type
     use BeTRSimulationStandalone, only : create_betr_simulation_standalone
-    !use BeTRSimulationCLM, only : create_betr_simulation_clm
+    use BeTRSimulationCLM, only : create_betr_simulation_clm
     !use BeTRSimulationALM, only : create_betr_simulation_alm
 
     character(len=*), intent(in) :: simulator_name
@@ -34,10 +34,7 @@ contains
        case ("standalone")
           allocate(simulator, source=create_betr_simulation_standalone())
        case ("clm")
-          write(*, *) "ERROR: simulator type '", &
-               trim(simulator_name), "' has not been implemented."
-          call endrun(msg=errMsg(mod_filename, __LINE__))
-          !X!allocate(simulator, source=create_betr_simulation_clm())
+          allocate(simulator, source=create_betr_simulation_clm())
        case ("alm")
           write(*, *) "ERROR: simulator type '", &
                trim(simulator_name), "' has not been implemented."

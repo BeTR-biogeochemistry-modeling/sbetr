@@ -57,8 +57,6 @@ contains
 
     allocate(simulation)
 
-    call simulation%Init()
-
     create_betr_simulation_clm => simulation
 
   end function create_betr_simulation_clm
@@ -296,13 +294,13 @@ contains
     type(bounds_type), intent(in) :: bounds
     integer, intent(in) :: num_nolakec ! number of column non-lake points in column filter
     integer, intent(in) :: filter_nolakec(:) ! column filter for non-lake points
+    type(column_type), intent(in) :: col ! column type
     type(landunit_type), intent(in) :: lun
     type(waterstate_type), intent(in) :: waterstate_vars
-    type(column_type), intent(in) :: col ! column type
 
 
-    call diagnose_dtracer_freeze_thaw(bounds, num_nolakec, filter_nolakec, lun, &
-         waterstate_vars, betrtracer_vars, tracerstate_vars)
+    call diagnose_dtracer_freeze_thaw(bounds, num_nolakec, filter_nolakec, &
+         waterstate_vars, this%betrtracer_vars, this%tracerstate_vars)
 
   end subroutine diagnose_dtracer_freeze_thaw_clm
 
@@ -310,6 +308,8 @@ contains
   subroutine calc_dew_sub_flux_clm(this, bounds, num_hydrologyc, filter_soilc_hydrologyc, &
        waterstate_vars, waterflux_vars)
 
+    ! External interface called by CLM
+    
     use ColumnType, only : col
     use LandunitType, only : lun
     use WaterfluxType, only : waterflux_type
@@ -323,12 +323,12 @@ contains
     class(betr_simulation_clm_type), intent(inout) :: this
     type(bounds_type), intent(in) :: bounds
     integer, intent(in) :: num_hydrologyc ! number of column soil points in column filter_soilc
-  integer, intent(in) :: filter_soilc_hydrologyc(:) ! column filter_soilc for soil points
-  type(waterstate_type), intent(in) :: waterstate_vars
-  type(waterflux_type), intent(in) :: waterflux_vars
+    integer, intent(in) :: filter_soilc_hydrologyc(:) ! column filter_soilc for soil points
+    type(waterstate_type), intent(in) :: waterstate_vars
+    type(waterflux_type), intent(in) :: waterflux_vars
 
   call calc_dew_sub_flux(bounds, num_hydrologyc, filter_soilc_hydrologyc, &
-       waterstate_vars, waterflux_vars, betrtracer_vars, tracerflux_vars, tracerstate_vars)
+       waterstate_vars, waterflux_vars, this%betrtracer_vars, this%tracerflux_vars, this%tracerstate_vars)
 
   end subroutine calc_dew_sub_flux_clm
 
@@ -344,7 +344,7 @@ contains
 
     call this%bgc_reaction%lsm_betr_flux_state_receive(bounds, &
          num_soilc, filter_soilc, &
-         tracerstate_vars, tracerflux_vars,  betrtracer_vars)
+         this%tracerstate_vars, this%tracerflux_vars,  this%betrtracer_vars)
 
   end subroutine clm_betr_flux_state_receive
 
@@ -394,7 +394,11 @@ contains
                   smp_l(c,j)= hfus*(tfrz-t_soisno(c,j))/(grav*t_soisno(c,j)) * 1000._r8  !(mm)
                else
                   s_node = max(h2osoi_vol(c,j)/watsat(c,j), 0.01_r8)
-                  call soil_water_retention_curve%soil_suction(c,j, s_node, soilstate_vars, smp_l(c,j))
+                  ! FIXME(bja, 201603) this depends on the SWRC
+                  ! implemnted by the driving LSM. Doesn't agree with
+                  ! stub version...
+
+                  !X!call soil_water_retention_curve%soil_suction_clm(c, j, s_node, soilstate_vars, smp_l(c,j))
                endif
                
             endif
@@ -413,17 +417,21 @@ contains
     class(betr_simulation_clm_type), intent(inout) :: this
     type(file_desc_t), intent(inout) :: ncid  ! pio netCDF file id
     
-    call this%bgc_reaction%readParams(ncid, betrtracer_vars)
+    call this%bgc_reaction%readParams(ncid, this%betrtracer_vars)
   end subroutine betr_clm_readParams
   
   !------------------------------------------------------------------------
   subroutine betr_clm_h2oiso_consistency_check(this, &
-       bounds, ubj, num_soilc, filter_soilc)
+       bounds, ubj, num_soilc, filter_soilc, waterstate_vars)
     !
     ! check the overall water mass consistency between betr and clm
-    use clm_instMod
+    !use clm_instMod
     use MathfuncMod, only : dot_sum
     use clm_varcon, only : denh2o
+
+    use WaterStateType, only : waterstate_type
+
+    use clm_time_manager, only : get_nstep
     
     implicit none
     
@@ -432,15 +440,16 @@ contains
     integer, intent(in) :: ubj
     integer, intent(in) :: num_soilc
     integer, intent(in) :: filter_soilc(:)
+    type(waterstate_type), intent(in) :: waterstate_vars
     real(r8), allocatable :: eyev(:)
     integer :: fc, c
     real(r8):: totwater, err
     
     associate( &
-         h2osoi_ice =>    waterstate_inst%h2osoi_ice_col, & ! Input:  [real(r8) (:,:) ]  ice lens (kg/m2)
-         h2osoi_liq =>    waterstate_inst%h2osoi_liq_col, & ! Output: [real(r8) (:,:) ]  liquid water (kg/m2)
-         end_tracer_molarmass => tracerstate_vars%end_tracer_molarmass_col, &
-         id_trc_o18_h2o => betrtracer_vars%id_trc_o18_h2o           &
+         h2osoi_ice => waterstate_vars%h2osoi_ice_col, & ! Input:  [real(r8) (:,:) ]  ice lens (kg/m2)
+         h2osoi_liq => waterstate_vars%h2osoi_liq_col, & ! Output: [real(r8) (:,:) ]  liquid water (kg/m2)
+         end_tracer_molarmass => this%tracerstate_vars%end_tracer_molarmass_col, &
+         id_trc_o18_h2o => this%betrtracer_vars%id_trc_o18_h2o           &
          )
       
       allocate(eyev(1:ubj))
