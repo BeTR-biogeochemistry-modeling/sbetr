@@ -1,7 +1,5 @@
 set(BETR_MAIN_SOURCES
-  BGCReactionsMod.F90
   BetrBGCMod.F90
-  PlantSoilBGCMod.F90
   TracerBalanceMod.F90
   )
 
@@ -11,6 +9,7 @@ include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_math)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_core)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_grid)
+include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_rxns)
 
 
 include(add_betr_library)
