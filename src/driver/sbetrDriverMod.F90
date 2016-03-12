@@ -127,7 +127,7 @@ contains
 
   call spmd_init
 
-  call  simulation%Init(namelist_buffer, bounds, waterstate_vars)
+  call  simulation%Init(namelist_buffer, bounds, waterstate_vars, cnstate_vars)
 
   !create output file
   call hist_htapes_create(histfilename,nlevtrc_soil, num_soilc, simulation%betr%tracers)

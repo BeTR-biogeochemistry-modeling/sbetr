@@ -24,6 +24,7 @@ module BetrBGCMod
   use BeTR_aerocondType, only : betr_aerecond_type
   use BeTR_CarbonFluxType, only : betr_carbonflux_type
   use BeTR_WaterstateType, only : betr_waterstate_type
+  use BeTR_CNStateType, only : betr_cnstate_type
   
   use clm_varctl         , only : iulog
   use clm_time_manager   , only : get_nstep
@@ -59,6 +60,7 @@ module BetrBGCMod
 
      ! FIXME(bja, 201603) is this correct/safe?
      type(betr_waterstate_type), public :: waterstate
+     type(betr_cnstate_type), public :: cnstate
 
    contains
      procedure, public :: Init
@@ -73,7 +75,7 @@ module BetrBGCMod
 contains
 
 !-------------------------------------------------------------------------------
-  subroutine Init(this, namelist_buffer, bounds, waterstate)
+  subroutine Init(this, namelist_buffer, bounds, waterstate, cnstate)
 
     use BeTR_decompMod, only : betr_bounds_type
 
@@ -91,6 +93,7 @@ contains
     character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
     type(betr_bounds_type), intent(in) :: bounds
     type(betr_waterstate_type), intent(in) :: waterstate
+    type(betr_cnstate_type), intent(in) :: cnstate
 
     integer :: lbj, ubj
 
@@ -99,6 +102,7 @@ contains
 
     this%waterstate%h2osoi_liq_col => waterstate%h2osoi_liq_col
     this%waterstate%h2osoi_ice_col => waterstate%h2osoi_ice_col
+    this%cnstate%isoilorder  => cnstate%isoilorder
 
     call this%ReadNamelist(namelist_buffer)
     

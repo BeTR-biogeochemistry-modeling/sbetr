@@ -56,23 +56,30 @@ contains
 !-------------------------------------------------------------------------------
 
   subroutine BeTRSimulationInit(this, namelist_buffer, bounds, &
-       waterstate)
+       waterstate, cnstate)
     !
     use WaterstateType        , only : waterstate_type
-    use BeTR_WaterstateType   , only : betr_waterstate_type
+    use CNStateType        , only : cnstate_type
+
+    use BeTR_WaterStateType, only : betr_waterstate_type
+    use BeTR_CNStateType, only : betr_cnstate_type
+
     use betr_constants, only : betr_namelist_buffer_size
 
     implicit none
 
     class(betr_simulation_type), intent(inout) :: this
     character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
-    type(bounds_type)    , intent(in) :: bounds
 
+    type(bounds_type)    , intent(in) :: bounds
     type(waterstate_type), intent(inout) :: waterstate
+    type(cnstate_type), intent(inout) :: cnstate
 
     character(len=*), parameter :: subname = 'BeTRSimulationInit'
-    type(betr_waterstate_type) :: betr_waterstate
+
     type(betr_bounds_type)     :: betr_bounds
+    type(betr_waterstate_type) :: betr_waterstate
+    type(betr_cnstate_type) :: betr_cnstate
 
     
     !set lbj and ubj
@@ -84,8 +91,10 @@ contains
 
     betr_waterstate%h2osoi_liq_col => waterstate%h2osoi_liq_col
     betr_waterstate%h2osoi_ice_col => waterstate%h2osoi_ice_col
+
+    betr_cnstate%isoilorder  => cnstate%isoilorder
     
-    call this%betr%Init(namelist_buffer, betr_bounds, betr_waterstate)
+    call this%betr%Init(namelist_buffer, betr_bounds, betr_waterstate, betr_cnstate)
 
 
     !initialize the betrBGC module

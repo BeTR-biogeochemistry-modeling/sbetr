@@ -64,7 +64,7 @@ contains
   
   !-------------------------------------------------------------------------------
 
-  subroutine CLMInit(this, namelist_buffer, bounds, waterstate)
+  subroutine CLMInit(this, namelist_buffer, bounds, waterstate, cnstate)
 
     use BeTRSimulation, only : BeTRSimulationInit
     use betr_constants, only : betr_namelist_buffer_size
@@ -77,9 +77,12 @@ contains
     use ColumnType, only : col
     use LandunitType,only : lun
     use pftvarcon, only : noveg, nc4_grass, nc3_arctic_grass, nc3_nonarctic_grass
-    use clm_instMod, only : cnstate_vars
+
     use WaterStateType, only : waterstate_type
     use BeTR_WaterStateType, only : betr_waterstate_type
+
+    use CNStateType, only : cnstate_type
+    use BeTR_CNStateType, only : betr_cnstate_type
 
     use landunit_varcon
     use BeTR_landvarconType, only : betr_landvarcon
@@ -93,9 +96,11 @@ contains
     character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
     type(bounds_type), intent(in) :: bounds
     type(waterstate_type), intent(inout) :: waterstate
+    type(cnstate_type), intent(inout) :: cnstate
 
-    type(betr_waterstate_type) :: betr_waterstate
     type(betr_bounds_type)     :: betr_bounds
+    type(betr_waterstate_type) :: betr_waterstate
+    type(betr_cnstate_type) :: betr_cnstate
     integer :: lbj, ubj
 
     betr_nlevsoi = nlevsoi
@@ -134,15 +139,16 @@ contains
 
     lbj = betr_bounds%lbj; ubj = betr_bounds%ubj
 
-    betr_waterstate%h2osoi_liq_col => waterstate%h2osoi_liq_col
+    !X!betr_waterstate%h2osoi_liq_col => waterstate%h2osoi_liq_col
+    !X!betr_waterstate%h2osoi_ice_col => waterstate%h2osoi_ice_col
+
+    !X!betr_cnstate%isoilorder  => cnstate%isoilorder
+    
     ! allocate the reaction types that may only be known to this
     ! simulation type.
 
     ! now call the base simulation init to continue initialization
-    call BeTRSimulationInit(this, namelist_buffer, bounds, waterstate)
-
-    !pass necessary data
-    this%betr%cnstates%isoilorder  => cnstate_vars%isoilorder
+    call BeTRSimulationInit(this, namelist_buffer, bounds, waterstate, cnstate)
 
     call this%betr%bgc_reaction%init_betr_lsm_bgc_coupler(betr_bounds, this%betr%plant_soilbgc, &
          this%betr%tracers, this%betr%tracerstates, this%betr%cnstates, &
