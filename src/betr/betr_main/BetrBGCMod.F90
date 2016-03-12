@@ -8,7 +8,10 @@ module BetrBGCMod
   !  !USES:
   use shr_kind_mod       , only : r8 => shr_kind_r8
   use shr_log_mod        , only : errMsg => shr_log_errMsg
+
   use BeTR_decompMod     , only : bounds_type  => betr_bounds_type
+
+  use betr_constants, only : betr_string_length
 
   use BGCReactionsMod, only : bgc_reaction_type
   use PlantSoilBGCMod, only : plant_soilbgc_type
@@ -39,6 +42,8 @@ module BetrBGCMod
   character(len=*), parameter :: filename = __FILE__
 
   type, public :: betr_type
+     character(len=betr_string_length) :: reaction_method
+
      class(bgc_reaction_type), allocatable, public :: bgc_reaction
      class(plant_soilbgc_type), allocatable, public :: plant_soilbgc
 
@@ -54,15 +59,100 @@ module BetrBGCMod
      
 
    contains
+     procedure, public :: Init
      procedure, public :: step_without_drainage
      procedure, public :: step_with_drainage
      procedure, public :: calc_dew_sub_flux
      procedure, public :: check_mass_err
+
+     procedure, private :: ReadNamelist
   end type betr_type
   
 contains
 
+!-------------------------------------------------------------------------------
+  subroutine Init(this, namelist_buffer)
 
+    use betr_constants, only : betr_namelist_buffer_size
+
+    use ReactionsFactory, only : create_bgc_reaction_type, &
+         create_plant_soilbgc_type
+
+
+    implicit none
+
+    class(betr_type), intent(inout) :: this
+    character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
+
+    call this%ReadNamelist(namelist_buffer)
+    
+    allocate(this%bgc_reaction, &
+         source=create_bgc_reaction_type(this%reaction_method))
+    allocate(this%plant_soilbgc, &
+         source=create_plant_soilbgc_type(this%reaction_method))
+
+  end subroutine Init
+  
+!-------------------------------------------------------------------------------
+  subroutine ReadNamelist(this, namelist_buffer)
+    !
+    ! !DESCRIPTION:
+    ! read namelist for betr configuration
+    ! !USES:
+    use spmdMod       , only : masterproc, mpicom
+    use clm_varctl   , only : iulog
+    use abortutils      , only : endrun
+    use shr_log_mod     , only : errMsg => shr_log_errMsg
+
+    use betr_constants, only : stdout, betr_string_length_long, betr_namelist_buffer_size
+
+    implicit none
+    ! !ARGUMENTS:
+    class(betr_type), intent(inout) :: this
+    character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
+
+    !
+    ! !LOCAL VARIABLES:
+    integer :: nml_error
+    character(len=*), parameter :: subname = 'ReadNamelist'
+    character(len=betr_string_length) :: reaction_method
+    character(len=betr_string_length_long) :: ioerror_msg
+
+
+    !-----------------------------------------------------------------------
+
+    namelist / betr_parameters / reaction_method
+
+    reaction_method = ''
+
+    ! ----------------------------------------------------------------------
+    ! Read namelist from standard input.
+    ! ----------------------------------------------------------------------
+
+    if ( .true. )then
+       ioerror_msg=''
+       read(namelist_buffer, nml=betr_parameters, iostat=nml_error, iomsg=ioerror_msg)
+       if (nml_error /= 0) then
+          call endrun(msg="ERROR reading betr_parameters namelist "//errmsg(filename, __LINE__))
+       end if
+    end if
+
+    if (.true.) then
+       write(stdout, *)
+       write(stdout, *) '--------------------'
+       write(stdout, *)
+       write(stdout, *) ' betr bgc type :'
+       write(stdout, *)
+       write(stdout, *) ' betr_parameters namelist settings :'
+       write(stdout, *)
+       write(stdout, betr_parameters)
+       write(stdout, *)
+       write(stdout, *) '--------------------'
+    endif
+
+    this%reaction_method = reaction_method
+
+  end subroutine ReadNamelist
 
   !-------------------------------------------------------------------------------
   subroutine step_without_drainage(this, bounds, lbj, ubj, num_soilc, filter_soilc, num_soilp, filter_soilp,         &

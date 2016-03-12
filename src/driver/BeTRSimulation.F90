@@ -35,7 +35,6 @@ module BeTRSimulation
 
   type, public :: betr_simulation_type
      type(betr_type), public :: betr
-     character(len=betr_string_length) :: reaction_method
 
      ! FIXME(bja, 201603) most of these types should be private!
      
@@ -56,17 +55,19 @@ contains
 
 !-------------------------------------------------------------------------------
 
-  subroutine BeTRSimulationInit(this, reaction_method, bounds, &
+  subroutine BeTRSimulationInit(this, namelist_buffer, bounds, &
        waterstate)
     !
     use TransportMod          , only : init_transportmod
     use TracerParamsMod       , only : tracer_param_init
     use WaterstateType        , only : waterstate_type
     use BeTR_WaterstateType   , only : betr_waterstate_type
+    use betr_constants, only : betr_namelist_buffer_size
+
     implicit none
 
     class(betr_simulation_type), intent(inout) :: this
-    character(len=*), intent(in) :: reaction_method
+    character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
     type(bounds_type)    , intent(in) :: bounds
 
     type(waterstate_type), intent(inout) :: waterstate
@@ -76,6 +77,8 @@ contains
     type(betr_bounds_type)     :: betr_bounds
     integer :: lbj, ubj
 
+    call this%betr%Init(namelist_buffer)
+    
     !set lbj and ubj
     betr_bounds%lbj  = 1          ; betr_bounds%ubj  = betr_nlevsoi
     betr_bounds%begp = bounds%begp; betr_bounds%endp = bounds%endp
@@ -166,7 +169,6 @@ contains
 
     end if
     ! Broadcast namelist variables read in
-    this%reaction_method = reaction_method
     call shr_mpi_bcast(reaction_method, mpicom)
 
   end subroutine BeTRSimulationReadNameList

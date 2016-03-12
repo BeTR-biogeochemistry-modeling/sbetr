@@ -64,11 +64,10 @@ contains
   
   !-------------------------------------------------------------------------------
 
-  subroutine CLMInit(this, reaction_method, bounds, waterstate)
+  subroutine CLMInit(this, namelist_buffer, bounds, waterstate)
 
     use BeTRSimulation, only : BeTRSimulationInit
-    use ReactionsFactory, only : create_bgc_reaction_type, &
-         create_plant_soilbgc_type
+    use betr_constants, only : betr_namelist_buffer_size
 
     use BeTR_PatchType, only : betr_pft
     use BeTR_ColumnType, only : betr_col
@@ -91,7 +90,7 @@ contains
     implicit none
 
     class(betr_simulation_clm_type), intent(inout) :: this
-    character(len=*), intent(in) :: reaction_method
+    character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
     type(bounds_type), intent(in) :: bounds
     type(waterstate_type), intent(inout) :: waterstate
 
@@ -138,11 +137,9 @@ contains
     betr_waterstate%h2osoi_liq_col => waterstate%h2osoi_liq_col
     ! allocate the reaction types that may only be known to this
     ! simulation type.
-    allocate(this%betr%bgc_reaction, source=create_bgc_reaction_type(reaction_method))
-    allocate(this%betr%plant_soilbgc, source=create_plant_soilbgc_type(reaction_method))
 
     ! now call the base simulation init to continue initialization
-    call BeTRSimulationInit(this, reaction_method, bounds, waterstate)
+    call BeTRSimulationInit(this, namelist_buffer, bounds, waterstate)
 
     !pass necessary data
     this%betr%cnstates%isoilorder  => cnstate_vars%isoilorder

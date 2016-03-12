@@ -106,9 +106,9 @@ contains
   call spmd_init
 
   !initialize parameters
-  call read_name_list(namelist_buffer, simulator_name, reactions_name)
+  call read_name_list(namelist_buffer, simulator_name)
   simulation => create_betr_simulation(simulator_name)
-  call  simulation%Init(reactions_name, bounds, waterstate_vars)
+  call  simulation%Init(namelist_buffer, bounds, waterstate_vars)
   !X!call betr_initialize_standalone(bounds, lbj, ubj)
 
   !create output file
@@ -162,7 +162,7 @@ contains
   end subroutine sbetrBGC_driver
 ! ----------------------------------------------------------------------
 
-  subroutine read_name_list(namelist_buffer, simulator_name_arg, reactions_name_arg)
+  subroutine read_name_list(namelist_buffer, simulator_name_arg)
     !
     ! !DESCRIPTION:
     ! read namelist for betr configuration
@@ -177,21 +177,20 @@ contains
     implicit none
     ! !ARGUMENTS:
     character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
-    character(len=betr_string_length_long), intent(out) :: simulator_name_arg, reactions_name_arg
+    character(len=betr_string_length_long), intent(out) :: simulator_name_arg
     !
     ! !LOCAL VARIABLES:
     integer :: nml_error
     character(len=*), parameter :: subname = 'read_name_list'
-    character(len=betr_string_length_long) :: simulator_name, reactions_name
+    character(len=betr_string_length_long) :: simulator_name
     character(len=betr_string_length_long) :: ioerror_msg
 
 
     !-----------------------------------------------------------------------
 
-    namelist / sbetr_driver / simulator_name, reactions_name
+    namelist / sbetr_driver / simulator_name
 
     simulator_name = ''
-    reactions_name = ''
 
     ! ----------------------------------------------------------------------
     ! Read namelist from standard input.
@@ -219,7 +218,6 @@ contains
     endif
 
     simulator_name_arg = simulator_name
-    reactions_name_arg = reactions_name
 
   end subroutine read_name_list
 
