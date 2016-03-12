@@ -26,6 +26,7 @@ module BeTRSimulation
   use betr_constants, only : betr_string_length
   use BeTR_CNStateType, only : betr_cnstate_type
   use BeTR_CarbonFluxType, only : betr_carbonflux_type
+  use betr_constants, only : betr_filename_length
 
   implicit none
 
@@ -35,7 +36,8 @@ module BeTRSimulation
 
   type, public :: betr_simulation_type
      type(betr_type), public :: betr
-
+     character(len=betr_filename_length), public :: hist_filename
+     integer, public :: num_soilc
      ! FIXME(bja, 201603) most of these types should be private!
      
      ! NOTE(bja, 201603) BeTR types only, no LSM specific types here!
@@ -48,6 +50,8 @@ module BeTRSimulation
      procedure, public :: StepWithDrainage => BeTRSimulationStepWithDrainage
      procedure, public :: BeginMassBalanceCheck => BeTRSimulationBeginMassBalanceCheck
      procedure, public :: MassBalanceCheck      => BeTRSimulationMassBalanceCheck
+     procedure, public :: CreateHistory => hist_htapes_create
+     procedure, public :: WriteHistory => hist_write
   end type betr_simulation_type
 
   public :: BeTRSimulationInit
@@ -100,9 +104,13 @@ contains
     type(betr_cnstate_type), intent(inout) :: betr_cnstate
 
     character(len=*), parameter :: subname = 'BeTRInit'
+
+    this%num_soilc = 1
+    this%hist_filename = "betr_output.nc"
     
     call this%betr%Init(namelist_buffer, betr_bounds, betr_waterstate, betr_cnstate)
 
+    call this%CreateHistory(betr_nlevtrc_soil, this%num_soilc)
 
   end subroutine BeTRInit
 
@@ -312,4 +320,147 @@ contains
          this%betr%tracers, this%betr%tracerstates, &
          this%betr%tracerfluxes)
   end subroutine BeTRSimulationMassBalanceCheck
+
+!-------------------------------------------------------------------------------
+
+  subroutine hist_htapes_create(this, nlevtrc_soil, ncol)
+  !
+  ! DESCRIPTIONS
+  ! create history file and define output variables
+
+    use netcdf
+    use ncdio_pio
+    use histFileMod, only : hist_file_create, hist_def_fld1d, hist_def_fld2d
+
+    !
+    !ARGUMENTS
+    implicit none
+
+    class(betr_simulation_type), intent(inout) :: this
+    integer              , intent(in) :: nlevtrc_soil, ncol
+
+    integer            :: jj, kk
+    type(file_desc_t)  :: ncid
+    character(len=*), parameter :: subname = 'hist_htapes_create'
+
+    associate( &
+         ntracers => this%betr%tracers%ntracers, &
+         ngwmobile_tracers => this%betr%tracers%ngwmobile_tracers, &
+         is_volatile => this%betr%tracers%is_volatile, &
+         is_h2o => this%betr%tracers%is_h2o, &
+         is_isotope => this%betr%tracers%is_isotope, &
+         volatileid => this%betr%tracers%volatileid, &
+         tracernames => this%betr%tracers%tracernames &
+         )
+
+      call ncd_pio_createfile(ncid, this%hist_filename)
+
+      call hist_file_create(ncid,nlevtrc_soil, ncol)
+
+
+      call  hist_def_fld2d(ncid, varname="TRACER_P_GAS", nf90_type=nf90_float,dim1name="ncol", &
+           dim2name="levgrnd",long_name="total gas pressure", units="Pa")
+
+      do jj = 1, ntracers
+         if(jj<= ngwmobile_tracers)then
+            call hist_def_fld2d(ncid, varname=trim(tracernames(jj))//'_TRACER_CONC_MOIBLE',&
+                 nf90_type=nf90_float, dim1name="ncol", &
+                 dim2name="levgrnd", long_name=trim(tracernames(jj))//"tracer concentrations", &
+                 units="mol m-3")
+            
+            if(is_volatile(jj) .and. (.not. is_h2o(jj)) .and. (.not. is_isotope(jj)))then
+               
+               call hist_def_fld2d(ncid, varname=trim(tracernames(jj))//'_TRACER_P_GAS_FRAC',&
+                    nf90_type=nf90_float, dim1name="ncol", &
+                    dim2name="levgrnd", long_name='fraction of gas phase contributed by '//trim(tracernames(jj)), &
+                    units="none")
+               
+            endif
+            
+            if(is_volatile(jj))then
+               
+               call hist_def_fld1d (ncid, varname=trim(tracernames(jj))//'_FLX_SURFEMI', units='mol/m2/s', &
+                    nf90_type=nf90_float,  dim1name="ncol", &
+                    long_name='loss from surface emission for '//trim(tracernames(jj)))
+            endif
+         else
+            call hist_def_fld2d(ncid, varname=trim(tracernames(jj))//'_TRACER_CONC_SOLID_PASSIVE',&
+                 nf90_type=nf90_float, dim1name="ncol", &
+                 dim2name="levgrnd", long_name=trim(tracernames(jj))//"tracer concentrations", &
+                 units="mol m-3")
+         endif
+      enddo
+      
+
+      call ncd_enddef(ncid)
+
+      call ncd_pio_closefile(ncid)
+
+    end associate
+  end subroutine hist_htapes_create
+
+  !-------------------------------------------------------------------------------
+  subroutine hist_write(this, record, lbj, ubj, time_vars)
+    !
+    ! DESCRIPTION
+    ! output hist file
+    !
+    use shr_kind_mod        , only : r8 => shr_kind_r8
+    use ncdio_pio
+    
+    use BeTR_TimeMod, only : betr_time_type
+
+    implicit none
+
+    class(betr_simulation_type), intent(inout) :: this
+    integer, intent(in) :: record
+    integer, intent(in) :: lbj,ubj
+    type(betr_time_type), intent(in) :: time_vars
+
+    type(file_desc_t) :: ncid
+    integer :: jj
+    character(len=*), parameter :: subname='hist_write'
+
+    associate( &
+         ntracers => this%betr%tracers%ntracers, &
+         ngwmobile_tracers => this%betr%tracers%ngwmobile_tracers, &
+         is_volatile => this%betr%tracers%is_volatile, &
+         is_h2o => this%betr%tracers%is_h2o, &
+         is_isotope => this%betr%tracers%is_isotope, &
+         volatileid => this%betr%tracers%volatileid, &
+         tracernames => this%betr%tracers%tracernames &
+         )
+
+      call ncd_pio_openfile_for_write(ncid, this%hist_filename)
+
+      if (mod(time_vars%time, 86400._r8)==0) then
+         print*,'day', time_vars%time/86400._r8
+      end if
+      call ncd_putvar(ncid, "time", record, time_vars%time)
+      
+      do jj = 1, ntracers
+         if(jj<= ngwmobile_tracers)then
+            call ncd_putvar(ncid,trim(tracernames(jj))//'_TRACER_CONC_MOIBLE',&
+                 record,this%betr%tracerstates%tracer_conc_mobile_col(1:1,lbj:ubj,jj))
+            
+            if(is_volatile(jj) .and. (.not. is_h2o(jj)) .and. (.not. is_isotope(jj)))then
+               
+               call ncd_putvar(ncid, trim(tracernames(jj))//'_TRACER_P_GAS_FRAC',&
+                    record,this%betr%tracerstates%tracer_P_gas_frac_col(1:1,lbj:ubj,volatileid(jj)))
+            endif
+            if(is_volatile(jj))then
+               call ncd_putvar(ncid, trim(tracernames(jj))//'_FLX_SURFEMI', &
+                    record, this%betr%tracerfluxes%tracer_flx_surfemi_col(1:1, volatileid(jj)))
+            endif
+         else
+            call ncd_putvar(ncid, trim(tracernames(jj))//'_TRACER_CONC_SOLID_PASSIVE', &
+                 record, this%betr%tracerstates%tracer_conc_solid_passive_col(1:1,lbj:ubj,jj-ngwmobile_tracers))
+         endif
+      enddo
+      
+      call ncd_putvar(ncid, 'TRACER_P_GAS', record, this%betr%tracerstates%tracer_P_gas_col(1:1,lbj:ubj))
+      call ncd_pio_closefile(ncid)
+    end associate
+  end subroutine hist_write
+
 end module BeTRSimulation
