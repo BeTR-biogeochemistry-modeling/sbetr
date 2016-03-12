@@ -4,7 +4,8 @@ program main
   use clmgridMod           , only : init_clm_vertgrid
   use clm_varpar           , only : nlevgrnd
   use clm_initializeMod    , only : initialize
-  use sbetrDriverMod, only : time_type
+ 
+  use BeTR_TimeMod, only : betr_time_type
   use sbetrDriverMod, only : sbetrBGC_driver
 
   use betr_constants, only : betr_filename_length, betr_namelist_buffer_size
@@ -13,7 +14,7 @@ program main
   implicit none
 
   type(bounds_type) :: bounds
-  type(time_type) :: ttime
+  type(betr_time_type) :: ttime
   integer :: numf
   integer, pointer :: filter(:)
 

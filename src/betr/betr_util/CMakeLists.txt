@@ -2,6 +2,7 @@ set(BETR_UTIL_SOURCES
   betr_constants.F90
   BeTR_decompMod.F90
   betr_varcon.F90
+  BeTR_time_mod.F90
   )
 include_directories(${CMAKE_BINARY_DIR}/src/shr)
 include(add_betr_library)

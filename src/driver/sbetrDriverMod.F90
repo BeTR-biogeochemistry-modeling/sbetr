@@ -7,6 +7,8 @@ module sbetrDriverMod
   use ncdio_pio
   use CLMForcType         , only : clmforc_vars
 
+  use BeTR_TimeMod, only : betr_time_type
+  
   implicit none
 
   private
@@ -14,14 +16,6 @@ module sbetrDriverMod
   public :: sbetrBGC_driver
 
   character(len=*), parameter :: mod_filename = __FILE__
-
-
-  type,public:: time_type
-    real(r8) :: time_end
-    real(r8) :: time
-    real(r8) :: restart_dtime
-    integer  :: tstep
-  end type time_type
 
   character(len=*), parameter :: histfilename="betr_output.nc"      !this will be changed
 contains
@@ -63,7 +57,7 @@ contains
   integer,                  intent(in) :: num_soilc                                  ! number of columns in column filter
   integer,                  intent(in) :: filter_soilc(:)                             ! column filter
 
-  type(time_type),       intent(inout) :: time_vars
+  type(betr_time_type),       intent(inout) :: time_vars
 
   !local variables
   class(betr_simulation_type), pointer :: simulation
@@ -230,7 +224,7 @@ contains
   !
 
   implicit none
-  type(time_type), intent(in) :: ttime
+  type(betr_time_type), intent(in) :: ttime
   logical :: ans
 
   character(len=80) :: subname = 'its_time_to_write_restart'
@@ -248,7 +242,7 @@ contains
   !
 
   implicit none
-  type(time_type), intent(in) :: ttime
+  type(betr_time_type), intent(in) :: ttime
   logical :: ans
 
 
@@ -267,7 +261,7 @@ contains
   use shr_kind_mod, only : r8 => shr_kind_r8
 
   implicit none
-  type(time_type), intent(inout) :: ttime
+  type(betr_time_type), intent(inout) :: ttime
   real(r8),           intent(in) :: dtime
 
   character(len=80) :: subname='update_time_stamp'
@@ -293,7 +287,7 @@ contains
   integer                , intent(in) :: lbj,ubj
   type(tracerflux_type)  , intent(in) :: tracerflux_vars
   type(tracerstate_type) , intent(in) :: tracerstate_vars
-  type(time_type)        , intent(in) :: time_vars
+  type(betr_time_type)        , intent(in) :: time_vars
   type(BeTRTracer_Type)  , intent(in) :: betrtracer_vars
 
 
@@ -356,7 +350,7 @@ contains
   type(tracercoeff_type), intent(in) :: tracercoeff_vars
   type(tracerflux_type) , intent(in) :: tracerflux_vars
   type(tracerstate_type), intent(in) :: tracerstate_vars
-  type(time_type)       , intent(in) :: time_vars
+  type(betr_time_type)       , intent(in) :: time_vars
   character(len=80) :: subname = 'rest_write'
 
 
@@ -468,7 +462,7 @@ contains
   integer, intent(in) :: numf
   integer, intent(in) :: filter(:)
   integer, intent(in) :: lbj, ubj
-  type(time_type),             intent(in) :: ttime
+  type(betr_time_type),             intent(in) :: ttime
   type(chemstate_type),     intent(inout) :: chemstate_vars
   type(atm2lnd_type),       intent(inout) :: atm2lnd_vars
   type(soilstate_type),     intent(inout) :: soilstate_vars
@@ -557,7 +551,7 @@ contains
   integer, intent(in) :: ubj
 
   integer                 , intent(in)    :: record
-  type(time_type)         , intent(in)    :: ttime
+  type(betr_time_type)    , intent(in)    :: ttime
   real(r8)                , intent(in)    :: dtime
   type(waterstate_type)   , intent(inout) :: waterstate_vars
   type(waterflux_type)    , intent(inout) :: waterflux_vars
