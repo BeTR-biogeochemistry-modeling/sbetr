@@ -138,10 +138,10 @@ contains
     call BeTRSimulationInit(this, reaction_method, bounds, waterstate)
 
     !pass necessary data
-    this%betr_cnstate_vars%isoilorder  => cnstate_vars%isoilorder
+    this%betr%cnstates%isoilorder  => cnstate_vars%isoilorder
 
     call this%betr%bgc_reaction%init_betr_lsm_bgc_coupler(betr_bounds, this%betr%plant_soilbgc, &
-         this%betr%tracers, this%betr%tracerstates, this%betr_cnstate_vars, &
+         this%betr%tracers, this%betr%tracerstates, this%betr%cnstates, &
          this%ecophyscon)
 
   end subroutine StandaloneInit
@@ -216,7 +216,7 @@ contains
     betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
     lbj = betr_bounds%lbj; ubj = betr_bounds%ubj
 
-    this%betr_cnstate_vars%isoilorder          => cnstate_vars%isoilorder
+    this%betr%cnstates%isoilorder          => cnstate_vars%isoilorder
 
     betr_carbonflux_vars%annsum_npp_patch => carbonflux_vars%annsum_npp_patch
     betr_carbonflux_vars%agnpp_patch      => carbonflux_vars%agnpp_patch
@@ -275,7 +275,7 @@ contains
          num_soilc, filter_soilc, num_soilp, filter_soilp,  &
          atm2lnd_vars, soilhydrology_vars, soilstate_vars, &
          betr_waterstate_vars, temperature_vars, betr_waterflux_vars, &
-         chemstate_vars, this%betr_cnstate_vars, canopystate_vars, &
+         chemstate_vars, this%betr%cnstates, canopystate_vars, &
          betr_carbonflux_vars, this%betr%tracers, this%betr%bgc_reaction, &
          this%betr_aerecond_vars, this%betr%tracerboundaryconds, this%betr%tracercoeffs, &
          this%betr%tracerstates, this%betr%tracerfluxes, this%betr%plant_soilbgc)

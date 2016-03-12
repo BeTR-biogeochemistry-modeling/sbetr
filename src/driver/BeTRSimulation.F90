@@ -40,7 +40,6 @@ module BeTRSimulation
      ! FIXME(bja, 201603) most of these types should be private!
      
      ! NOTE(bja, 201603) BeTR types only, no LSM specific types here!
-     type(betr_cnstate_type), public :: betr_cnstate_vars
      type(betr_aerecond_type), public :: betr_aerecond_vars
      type(betr_carbonflux_type), public :: betr_carbonflux_vars
    contains
