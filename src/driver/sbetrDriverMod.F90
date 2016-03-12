@@ -20,7 +20,7 @@ module sbetrDriverMod
   character(len=*), parameter :: histfilename="betr_output.nc"      !this will be changed
 contains
 
-  subroutine sbetrBGC_driver(namelist_buffer, bounds, num_soilc, filter_soilc,time_vars)
+  subroutine sbetrBGC_driver(namelist_buffer)
   !
   !DESCRIPTION
   !driver subroutine for sbetrBGC
@@ -32,6 +32,10 @@ contains
   use decompMod           , only : bounds_type
   use clm_instMod
   use ColumnType          , only : col
+  use clmgridMod           , only : init_clm_vertgrid
+  use clm_varpar           , only : nlevgrnd
+  use clm_initializeMod    , only : initialize
+
   use BeTRSimulation, only : betr_simulation_type
   use BeTRSimulationFactory, only : create_betr_simulation
 
@@ -53,11 +57,6 @@ contains
 
   implicit none
   character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
-  type(bounds_type),        intent(in) :: bounds                                ! bounds
-  integer,                  intent(in) :: num_soilc                                  ! number of columns in column filter
-  integer,                  intent(in) :: filter_soilc(:)                             ! column filter
-
-  type(betr_time_type),       intent(inout) :: time_vars
 
   !local variables
   class(betr_simulation_type), pointer :: simulation
@@ -67,22 +66,47 @@ contains
 
   character(len=80) :: subname = 'sbetrBGC_driver'
 
+  type(betr_time_type) :: time_vars
+  type(bounds_type) :: bounds
+  integer :: lbj, ubj
   integer :: num_soilp
   integer, allocatable :: filter_soilp(:)
-  integer :: lbj, ubj
-  integer :: jtops(bounds%begc:bounds%endc)
+  integer :: num_jtops 
+  integer, allocatable :: jtops(:)
+  integer :: num_soilc
+  integer, allocatable :: filter_soilc(:)
 
-  character(len=betr_string_length_long) :: simulator_name, reactions_name
+  character(len=betr_string_length_long) :: simulator_name
+
+  !set up mask
+  bounds%begc = 1
+  bounds%endc = 1
+  bounds%begp = 1
+  bounds%endp = 1
+  bounds%begl = 1
+  bounds%endl = 1
+  bounds%lbj  = 1
+  bounds%ubj  = nlevgrnd
+
+  num_soilc = 1
+  allocate(filter_soilc(num_soilc))
+  filter_soilc(:) = 1
+  num_jtops = 1
+  allocate(jtops(num_jtops))
+  jtops(:) = 1
+  !set up grid
+  call init_clm_vertgrid(nlevgrnd)
+
+  call initialize(bounds)
 
 
   dtime = 1800._r8   !half hourly time step
   time_vars%tstep = 1
   time_vars%time  = 0._r8
-  time_vars%time_end=dtime*48._r8*365._r8*2._r8
+  time_vars%time_end = dtime*48._r8*365._r8*2._r8
+  time_vars%restart_dtime = 1800*2
 
   call clmforc_vars%LoadForcingData(namelist_buffer)
-
-  jtops(:) = 1  !this will be replaced with nan when I figured out how to do it, Jinyun Tang, June 17, 2014
 
   lbj = 1
   ubj = nlevgrnd
@@ -153,7 +177,8 @@ contains
 
   enddo
 
-  end subroutine sbetrBGC_driver
+end subroutine sbetrBGC_driver
+
 ! ----------------------------------------------------------------------
 
   subroutine read_name_list(namelist_buffer, simulator_name_arg)
