@@ -40,7 +40,6 @@ module BeTRSimulation
      ! FIXME(bja, 201603) most of these types should be private!
      
      ! NOTE(bja, 201603) BeTR types only, no LSM specific types here!
-     type(betr_aerecond_type), public :: betr_aerecond_vars
      type(betr_carbonflux_type), public :: betr_carbonflux_vars
    contains
      procedure, public :: Init => BeTRSimulationInit
@@ -93,7 +92,7 @@ contains
 
     call this%betr%bgc_reaction%Init_betrbgc(betr_bounds, lbj, ubj, this%betr%tracers)
 
-    call this%betr_aerecond_vars%Init(betr_bounds)
+    call this%betr%aereconds%Init(betr_bounds)
 
     call init_transportmod()
 

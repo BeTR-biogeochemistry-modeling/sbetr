@@ -291,7 +291,7 @@ contains
          betr_waterstate_vars, temperature_vars, betr_waterflux_vars, &
          chemstate_vars, this%betr%cnstates, canopystate_vars, &
          betr_carbonflux_vars, this%betr%tracers, this%betr%bgc_reaction, &
-         this%betr_aerecond_vars, this%betr%tracerboundaryconds, this%betr%tracercoeffs, &
+         this%betr%aereconds, this%betr%tracerboundaryconds, this%betr%tracercoeffs, &
          this%betr%tracerstates, this%betr%tracerfluxes, this%betr%plant_soilbgc)
 
   end subroutine CLMStepWithoutDrainage
