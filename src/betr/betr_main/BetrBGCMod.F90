@@ -10,6 +10,7 @@ module BetrBGCMod
   use shr_log_mod        , only : errMsg => shr_log_errMsg
   use BeTR_decompMod     , only : bounds_type  => betr_bounds_type
 
+  use BGCReactionsMod, only : bgc_reaction_type
   use PlantSoilBGCMod, only : plant_soilbgc_type
   use BeTRTracerType, only : betrtracer_type
   use TracerCoeffType, only : TracerCoeff_type
@@ -35,7 +36,8 @@ module BetrBGCMod
   character(len=*), parameter :: filename = __FILE__
 
   type, public :: betr_type
-     class(plant_soilbgc_type), allocatable,public :: plant_soilbgc
+     class(bgc_reaction_type), allocatable, public :: bgc_reaction
+     class(plant_soilbgc_type), allocatable, public :: plant_soilbgc
 
      type(BeTRtracer_type), public :: tracers
      type(TracerCoeff_type), public :: tracercoeffs

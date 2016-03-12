@@ -41,7 +41,6 @@ module BeTRSimulation
      
      ! NOTE(bja, 201603) BeTR types only, no LSM specific types here!
      type(betr_cnstate_type), public :: betr_cnstate_vars
-     class(bgc_reaction_type), allocatable,public :: bgc_reaction
      type(betr_aerecond_type), public :: betr_aerecond_vars
      type(betr_carbonflux_type), public :: betr_carbonflux_vars
    contains
@@ -93,7 +92,7 @@ contains
 
     call this%betr%tracers%init_scalars()
 
-    call this%bgc_reaction%Init_betrbgc(betr_bounds, lbj, ubj, this%betr%tracers)
+    call this%betr%bgc_reaction%Init_betrbgc(betr_bounds, lbj, ubj, this%betr%tracers)
 
     call this%betr_aerecond_vars%Init(betr_bounds)
 
@@ -111,10 +110,10 @@ contains
     call this%betr%plant_soilbgc%Init_plant_soilbgc(betr_bounds, lbj, ubj)
 
     !initialize state variable
-    call this%bgc_reaction%initCold(betr_bounds,  this%betr%tracers, betr_waterstate, this%betr%tracerstates)
+    call this%betr%bgc_reaction%initCold(betr_bounds,  this%betr%tracers, betr_waterstate, this%betr%tracerstates)
 
     !initialize boundary condition type
-    call this%bgc_reaction%init_boundary_condition_type(betr_bounds, this%betr%tracers, this%betr%tracerboundaryconds)
+    call this%betr%bgc_reaction%init_boundary_condition_type(betr_bounds, this%betr%tracers, this%betr%tracerboundaryconds)
 
     !initialize the betr parameterization module
     call tracer_param_init(betr_bounds)

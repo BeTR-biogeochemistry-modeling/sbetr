@@ -138,7 +138,7 @@ contains
     betr_waterstate%h2osoi_liq_col => waterstate%h2osoi_liq_col
     ! allocate the reaction types that may only be known to this
     ! simulation type.
-    allocate(this%bgc_reaction, source=create_bgc_reaction_type(reaction_method))
+    allocate(this%betr%bgc_reaction, source=create_bgc_reaction_type(reaction_method))
     allocate(this%betr%plant_soilbgc, source=create_plant_soilbgc_type(reaction_method))
 
     ! now call the base simulation init to continue initialization
@@ -147,7 +147,7 @@ contains
     !pass necessary data
     this%betr_cnstate_vars%isoilorder  => cnstate_vars%isoilorder
 
-    call this%bgc_reaction%init_betr_lsm_bgc_coupler(betr_bounds, this%betr%plant_soilbgc, &
+    call this%betr%bgc_reaction%init_betr_lsm_bgc_coupler(betr_bounds, this%betr%plant_soilbgc, &
          this%betr%tracers, this%betr%tracerstates, this%betr_cnstate_vars, &
          this%ecophyscon)
 
@@ -290,7 +290,7 @@ contains
          atm2lnd_vars, soilhydrology_vars, soilstate_vars, &
          betr_waterstate_vars, temperature_vars, betr_waterflux_vars, &
          chemstate_vars, this%betr_cnstate_vars, canopystate_vars, &
-         betr_carbonflux_vars, this%betr%tracers, this%bgc_reaction, &
+         betr_carbonflux_vars, this%betr%tracers, this%betr%bgc_reaction, &
          this%betr_aerecond_vars, this%betr%tracerboundaryconds, this%betr%tracercoeffs, &
          this%betr%tracerstates, this%betr%tracerfluxes, this%betr%plant_soilbgc)
 
@@ -445,7 +445,7 @@ contains
     integer, intent(in) :: num_soilc
     integer, intent(in) :: filter_soilc(:)
 
-    call this%bgc_reaction%lsm_betr_flux_state_receive(bounds, &
+    call this%betr%bgc_reaction%lsm_betr_flux_state_receive(bounds, &
          num_soilc, filter_soilc, &
          this%betr%tracerstates, this%betr%tracerfluxes,  this%betr%tracers)
 
@@ -522,7 +522,7 @@ contains
     class(betr_simulation_clm_type), intent(inout) :: this
     type(file_desc_t), intent(inout) :: ncid  ! pio netCDF file id
     
-    call this%bgc_reaction%readParams(ncid, this%betr%tracers)
+    call this%betr%bgc_reaction%readParams(ncid, this%betr%tracers)
   end subroutine betr_clm_readParams
   
   !------------------------------------------------------------------------
