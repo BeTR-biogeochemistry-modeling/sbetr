@@ -40,6 +40,7 @@ module BeTRSimulation
      
      ! NOTE(bja, 201603) BeTR types only, no LSM specific types here!
    contains
+     procedure, public :: BeTRInit
      procedure, public :: Init => BeTRSimulationInit
      procedure, public :: ReadNameList => BeTRSimulationReadNameList
      procedure, public :: RestartInit => BeTRSimulationRestartInit
@@ -53,16 +54,13 @@ module BeTRSimulation
 
 contains
 
-!-------------------------------------------------------------------------------
-
+  !-------------------------------------------------------------------------------
   subroutine BeTRSimulationInit(this, namelist_buffer, bounds, &
        waterstate, cnstate)
-    !
+    ! Dummy routine for inheritance purposes. don't use.
+
     use WaterstateType        , only : waterstate_type
     use CNStateType        , only : cnstate_type
-
-    use BeTR_WaterStateType, only : betr_waterstate_type
-    use BeTR_CNStateType, only : betr_cnstate_type
 
     use betr_constants, only : betr_namelist_buffer_size
 
@@ -76,31 +74,37 @@ contains
     type(cnstate_type), intent(inout) :: cnstate
 
     character(len=*), parameter :: subname = 'BeTRSimulationInit'
-
-    type(betr_bounds_type)     :: betr_bounds
-    type(betr_waterstate_type) :: betr_waterstate
-    type(betr_cnstate_type) :: betr_cnstate
+    
+    call endrun(msg="ERROR "//subname//" unimplemented. "//errmsg(mod_filename, __LINE__))
 
     
-    !set lbj and ubj
-    betr_bounds%lbj  = 1          ; betr_bounds%ubj  = betr_nlevsoi
-    betr_bounds%begp = bounds%begp; betr_bounds%endp = bounds%endp
-    betr_bounds%begc = bounds%begc; betr_bounds%endc = bounds%endc
-    betr_bounds%begl = bounds%begl; betr_bounds%endl = bounds%endl
-    betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
+  end subroutine BeTRSimulationInit
 
-    betr_waterstate%h2osoi_liq_col => waterstate%h2osoi_liq_col
-    betr_waterstate%h2osoi_ice_col => waterstate%h2osoi_ice_col
+!-------------------------------------------------------------------------------
 
-    betr_cnstate%isoilorder  => cnstate%isoilorder
+  subroutine BeTRInit(this, namelist_buffer, betr_bounds, &
+       betr_waterstate, betr_cnstate)
+    !
+    use BeTR_WaterStateType, only : betr_waterstate_type
+    use BeTR_CNStateType, only : betr_cnstate_type
+
+    use betr_constants, only : betr_namelist_buffer_size
+
+    implicit none
+
+    class(betr_simulation_type), intent(inout) :: this
+    character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
+
+    type(betr_bounds_type)    , intent(in) :: betr_bounds
+    type(betr_waterstate_type), intent(inout) :: betr_waterstate
+    type(betr_cnstate_type), intent(inout) :: betr_cnstate
+
+    character(len=*), parameter :: subname = 'BeTRInit'
     
     call this%betr%Init(namelist_buffer, betr_bounds, betr_waterstate, betr_cnstate)
 
 
-    !initialize the betrBGC module
-    !X!call betrbgc_init(bounds) - NOTE(bja, 2016-03) empty subroutine...
-
-  end subroutine BeTRSimulationInit
+  end subroutine BeTRInit
 
   !-------------------------------------------------------------------------------
   subroutine BeTRSimulationReadNameList(this, filename)

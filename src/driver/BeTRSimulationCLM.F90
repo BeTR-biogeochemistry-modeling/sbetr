@@ -139,16 +139,16 @@ contains
 
     lbj = betr_bounds%lbj; ubj = betr_bounds%ubj
 
-    !X!betr_waterstate%h2osoi_liq_col => waterstate%h2osoi_liq_col
-    !X!betr_waterstate%h2osoi_ice_col => waterstate%h2osoi_ice_col
+    betr_waterstate%h2osoi_liq_col => waterstate%h2osoi_liq_col
+    betr_waterstate%h2osoi_ice_col => waterstate%h2osoi_ice_col
 
-    !X!betr_cnstate%isoilorder  => cnstate%isoilorder
+    betr_cnstate%isoilorder  => cnstate%isoilorder
     
     ! allocate the reaction types that may only be known to this
     ! simulation type.
 
     ! now call the base simulation init to continue initialization
-    call BeTRSimulationInit(this, namelist_buffer, bounds, waterstate, cnstate)
+    call this%BeTRInit(namelist_buffer, betr_bounds, betr_waterstate, betr_cnstate)
 
     call this%betr%bgc_reaction%init_betr_lsm_bgc_coupler(betr_bounds, this%betr%plant_soilbgc, &
          this%betr%tracers, this%betr%tracerstates, this%betr%cnstates, &

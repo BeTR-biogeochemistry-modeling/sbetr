@@ -95,6 +95,9 @@ contains
     type(cnstate_type), intent(inout) :: cnstate
 
     type(betr_bounds_type)     :: betr_bounds
+    type(betr_waterstate_type) :: betr_waterstate
+    type(betr_cnstate_type) :: betr_cnstate
+
     integer  :: lbj, ubj
 
 
@@ -138,13 +141,13 @@ contains
     ! simulation type by deallocating and overriding methods created
     ! in betr%Init().
 
-    !X!betr_waterstate%h2osoi_liq_col => waterstate%h2osoi_liq_col
-    !X!betr_waterstate%h2osoi_ice_col => waterstate%h2osoi_ice_col
+    betr_waterstate%h2osoi_liq_col => waterstate%h2osoi_liq_col
+    betr_waterstate%h2osoi_ice_col => waterstate%h2osoi_ice_col
 
-    !X!betr_cnstates%isoilorder  => cnstate%isoilorder
+    betr_cnstate%isoilorder  => cnstate%isoilorder
 
     ! now call the base simulation init to continue initialization
-    call BeTRSimulationInit(this, namelist_buffer, bounds, waterstate, cnstate)
+    call this%BeTRInit(namelist_buffer, betr_bounds, betr_waterstate, betr_cnstate)
 
     !pass necessary data
 
