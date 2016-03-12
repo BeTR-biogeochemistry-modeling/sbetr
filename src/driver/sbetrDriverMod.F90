@@ -112,7 +112,7 @@ contains
   !X!call betr_initialize_standalone(bounds, lbj, ubj)
 
   !create output file
-  call hist_htapes_create(histfilename,nlevtrc_soil, num_soilc, simulation%betrtracer_vars)
+  call hist_htapes_create(histfilename,nlevtrc_soil, num_soilc, simulation%betr%tracers)
 
   record = -1
   !in all calculations, ubj is set to nlevtrc_soil
@@ -150,7 +150,7 @@ contains
     !write output
     call hist_write(record, lbj, ubj, simulation%tracerflux_vars, &
          simulation%tracerstate_vars, time_vars, &
-         simulation%betrtracer_vars)
+         simulation%betr%tracers)
 
     !write restart file? is not functionning at the moment
     !if(its_time_to_write_restart(time_vars)) call rest_write(tracerstate_vars, tracercoeff_vars, tracerflux_vars, time_vars)

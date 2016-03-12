@@ -26,6 +26,7 @@ module BetrBGCMod
   character(len=*), parameter :: filename = __FILE__
 
   type, public :: betr_type
+     type(BeTRtracer_type), public :: tracers
 
    contains
      procedure, public :: step_without_drainage

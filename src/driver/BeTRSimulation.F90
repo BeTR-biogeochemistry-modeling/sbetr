@@ -42,7 +42,6 @@ module BeTRSimulation
      
      ! NOTE(bja, 201603) BeTR types only, no LSM specific types here!
      type(betr_cnstate_type), public :: betr_cnstate_vars
-     type(BeTRtracer_type), public :: betrtracer_vars
      type(TracerCoeff_type), public :: tracercoeff_vars
      type(TracerFlux_type), public :: tracerflux_vars
      type(TracerState_type), public :: tracerState_vars
@@ -98,30 +97,30 @@ contains
     betr_waterstate%h2osoi_liq_col => waterstate%h2osoi_liq_col
     betr_waterstate%h2osoi_ice_col    => waterstate%h2osoi_ice_col
 
-    call this%betrtracer_vars%init_scalars()
+    call this%betr%tracers%init_scalars()
 
-    call this%bgc_reaction%Init_betrbgc(betr_bounds, lbj, ubj, this%betrtracer_vars)
+    call this%bgc_reaction%Init_betrbgc(betr_bounds, lbj, ubj, this%betr%tracers)
 
     call this%betr_aerecond_vars%Init(betr_bounds)
 
     call init_transportmod()
 
-    call this%tracerState_vars%Init(betr_bounds, lbj, ubj, this%betrtracer_vars)
+    call this%tracerState_vars%Init(betr_bounds, lbj, ubj, this%betr%tracers)
 
-    call this%tracerflux_vars%Init(betr_bounds,  lbj, ubj, this%betrtracer_vars)
+    call this%tracerflux_vars%Init(betr_bounds,  lbj, ubj, this%betr%tracers)
 
-    call this%tracercoeff_vars%Init(betr_bounds, lbj, ubj, this%betrtracer_vars)
+    call this%tracercoeff_vars%Init(betr_bounds, lbj, ubj, this%betr%tracers)
 
-    call this%tracerboundarycond_vars%Init(betr_bounds, this%betrtracer_vars)
+    call this%tracerboundarycond_vars%Init(betr_bounds, this%betr%tracers)
 
     !inside Init_plant_soilbgc, specific plant soil bgc coupler data type will be created
     call this%plant_soilbgc%Init_plant_soilbgc(betr_bounds, lbj, ubj)
 
     !initialize state variable
-    call this%bgc_reaction%initCold(betr_bounds,  this%betrtracer_vars, betr_waterstate, this%tracerstate_vars)
+    call this%bgc_reaction%initCold(betr_bounds,  this%betr%tracers, betr_waterstate, this%tracerstate_vars)
 
     !initialize boundary condition type
-    call this%bgc_reaction%init_boundary_condition_type(betr_bounds, this%betrtracer_vars, this%tracerboundarycond_vars)
+    call this%bgc_reaction%init_boundary_condition_type(betr_bounds, this%betr%tracers, this%tracerboundarycond_vars)
 
     !initialize the betr parameterization module
     call tracer_param_init(betr_bounds)
@@ -207,11 +206,11 @@ contains
     betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
     lbj = betr_bounds%lbj; ubj = betr_bounds%ubj
 
-    call this%tracerstate_vars%Restart(betr_bounds, ncid, flag=flag, betrtracer_vars=this%betrtracer_vars)
+    call this%tracerstate_vars%Restart(betr_bounds, ncid, flag=flag, betrtracer_vars=this%betr%tracers)
 
-    call this%tracerflux_vars%Restart(betr_bounds, ncid, flag=flag, betrtracer_vars=this%betrtracer_vars)
+    call this%tracerflux_vars%Restart(betr_bounds, ncid, flag=flag, betrtracer_vars=this%betr%tracers)
 
-    call this%tracercoeff_vars%Restart(betr_bounds, ncid, flag=flag, betrtracer_vars=this%betrtracer_vars)
+    call this%tracercoeff_vars%Restart(betr_bounds, ncid, flag=flag, betrtracer_vars=this%betr%tracers)
   end subroutine BeTRSimulationRestartInit
 
 
@@ -308,7 +307,7 @@ contains
     lbj = betr_bounds%lbj; ubj = betr_bounds%ubj
 
     call begin_betr_tracer_massbalance(betr_bounds, lbj, ubj, num_soilc, filter_soilc, &
-         this%betrtracer_vars, this%tracerstate_vars, &
+         this%betr%tracers, this%tracerstate_vars, &
          this%tracerflux_vars)
 
   end  subroutine BeTRSimulationBeginMassBalanceCheck
@@ -335,7 +334,7 @@ contains
     lbj = betr_bounds%lbj; ubj = betr_bounds%ubj
 
     call betr_tracer_massbalance_check(betr_bounds, lbj, ubj, num_soilc, filter_soilc, &
-         this%betrtracer_vars, this%tracerstate_vars, &
+         this%betr%tracers, this%tracerstate_vars, &
          this%tracerflux_vars)
   end subroutine BeTRSimulationMassBalanceCheck
 end module BeTRSimulation
