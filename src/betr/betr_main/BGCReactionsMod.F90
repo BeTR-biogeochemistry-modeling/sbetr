@@ -4,6 +4,7 @@ module BGCReactionsMod
   ! template for doing bgc reaction in betr
   !
   ! !USES:
+  use bshr_kind_mod           , only : r8 => shr_kind_r8
   use BeTR_LandunitType , only : lun => betr_lun
   use BeTR_ColumnType   , only : col => betr_col
   implicit none
@@ -70,13 +71,13 @@ module BGCReactionsMod
        ! template for calc_bgc_reaction
        !
        ! !USES:
+       use bshr_kind_mod           , only : r8 => shr_kind_r8
        use TracerBoundaryCondType   , only : tracerboundarycond_type
        use tracerfluxType           , only : tracerflux_type
        use tracerstatetype          , only : tracerstate_type
        use tracercoeffType          , only : tracercoeff_type
        use BeTR_decompMod           , only : betr_bounds_type
        use BeTRTracerType           , only : BeTRTracer_Type
-       use shr_kind_mod             , only : r8 => shr_kind_r8
        use BeTR_CNStateType         , only : betr_cnstate_type
        use PlantSoilBGCMod          , only : plant_soilbgc_type
        ! !ARGUMENTS:
@@ -112,7 +113,7 @@ module BGCReactionsMod
        use BeTR_decompMod         , only : betr_bounds_type
        use BeTRTracerType         , only : BeTRTracer_Type
        use BeTR_WaterfluxType     , only : waterflux_type => betr_waterflux_type
-       use shr_kind_mod           , only : r8 => shr_kind_r8
+       use bshr_kind_mod           , only : r8 => shr_kind_r8
 
        ! !ARGUMENTS:
        import :: bgc_reaction_type
@@ -231,7 +232,6 @@ module BGCReactionsMod
        ! template for lsm_betr_flux_state_receive
        ! !USES:
        use BeTR_decompMod           , only : betr_bounds_type
-       use shr_kind_mod             , only : r8 => shr_kind_r8
        use tracerfluxType           , only : tracerflux_type
        use tracerstatetype          , only : tracerstate_type
        use BeTRTracerType           , only : BeTRTracer_Type

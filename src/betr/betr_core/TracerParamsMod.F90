@@ -1,5 +1,5 @@
 module TracerParamsMod
-#include "shr_assert.h"
+#include "bshr_assert.h"
 
   ! !DESCRIPTION:
   ! Module holding routines used to compute solubility, and phase conversion parameters
@@ -9,8 +9,8 @@ module TracerParamsMod
   ! History
   ! Jinyun Tang created May 2014.
   ! !USES:
-  use shr_kind_mod          , only : r8 => shr_kind_r8
-  use shr_log_mod           , only : errMsg => shr_log_errMsg
+  use bshr_kind_mod          , only : r8 => shr_kind_r8
+  use bshr_log_mod           , only : errMsg => shr_log_errMsg
   use BeTR_decompMod        , only : bounds_type  => betr_bounds_type
   use tracer_varcon         , only : nlevsoi  => betr_nlevsoi
   use betr_varcon           , only : spval => bspval

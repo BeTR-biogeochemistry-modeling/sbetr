@@ -1,13 +1,13 @@
 module BeTRTracerType
-#include "shr_assert.h"
+#include "bshr_assert.h"
   !------------------------------------------------------------------------------
   ! !DESCRIPTION:
   ! data type to configure betr simulations
   !
   ! !USES:
-  use shr_kind_mod       , only: r8 => shr_kind_r8
-  use abortutils         , only : endrun
-  use shr_log_mod        , only : errMsg => shr_log_errMsg
+  use bshr_kind_mod       , only: r8 => shr_kind_r8
+  use abortutils          , only : endrun
+  use bshr_log_mod        , only : errMsg => shr_log_errMsg
   !
   implicit none
   private

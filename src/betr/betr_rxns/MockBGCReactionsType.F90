@@ -1,6 +1,6 @@
 module MockBGCReactionsType
 
-#include "shr_assert.h"
+#include "bshr_assert.h"
   !
   ! !DESCRIPTION:
   ! This is an example on how to use polymorphism to create your own bgc modules that will be run with BeTR
@@ -8,13 +8,13 @@ module MockBGCReactionsType
   ! HISTORY:
   ! Created by Jinyun Tang, Oct 2nd, 2014
   ! !USES:
-  use shr_log_mod           , only : errMsg => shr_log_errMsg
-  use shr_kind_mod          , only : r8 => shr_kind_r8
-  use BeTR_decompMod        , only : bounds_type  => betr_bounds_type
-  use BGCReactionsMod       , only : bgc_reaction_type
-  use tracer_varcon         , only : bndcond_as_conc, bndcond_as_flux
-  use LandunitType          , only : lun
-  use ColumnType            , only : col
+  use bshr_log_mod           , only : errMsg => shr_log_errMsg
+  use bshr_kind_mod          , only : r8 => shr_kind_r8
+  use BeTR_decompMod         , only : bounds_type  => betr_bounds_type
+  use BGCReactionsMod        , only : bgc_reaction_type
+  use tracer_varcon          , only : bndcond_as_conc, bndcond_as_flux
+  use BeTR_LandunitType      , only : lun => betr_lun
+  use ColumnType             , only : col
   implicit none
 
   save
@@ -162,7 +162,7 @@ contains
     use clm_varctl            , only : iulog
     use TracerBoundaryCondType, only : tracerboundarycond_type
     use abortutils            , only : endrun
-    use shr_log_mod           , only : errMsg => shr_log_errMsg
+    use bshr_log_mod           , only : errMsg => shr_log_errMsg
     use BeTRTracerType        , only : betrtracer_type
     use BeTR_WaterfluxType    , only : waterflux_type  => betr_waterflux_type
 
@@ -388,7 +388,7 @@ contains
     ! do flux and state variable change between betr and lsm.
     !
     ! !USES:
-    use shr_kind_mod             , only : r8 => shr_kind_r8
+    use bshr_kind_mod             , only : r8 => shr_kind_r8
     use tracerfluxType           , only : tracerflux_type
     use tracerstatetype          , only : tracerstate_type
     use BeTRTracerType           , only : BeTRTracer_Type

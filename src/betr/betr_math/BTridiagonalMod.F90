@@ -5,6 +5,7 @@ module BTridiagonalMod
   ! Tridiagonal matrix solution
   !
   use BeTR_decompMod , only : bounds_type  => betr_bounds_type
+  use bshr_kind_mod , only : r8 => shr_kind_r8
   ! !PUBLIC TYPES:
   implicit none
   save
@@ -29,7 +30,6 @@ contains
     ! A x = r
     ! where x and r are vectors
     ! !USES:
-    use shr_kind_mod   , only: r8 => shr_kind_r8
     use clm_varctl     , only : iulog
     !
     ! !ARGUMENTS:
@@ -107,7 +107,6 @@ contains
     ! A X = R
     ! where A, X and R are all matrices.
     ! !USES:
-    use shr_kind_mod   , only: r8 => shr_kind_r8
     use clm_varctl     , only : iulog
     !
     ! !ARGUMENTS:
@@ -206,7 +205,6 @@ contains
      !Attention: Now the code is specifically written for the soil water coupling with hydraulic
      !redistribution. Idealy, the code should fit well with the purpose of solving coupled heat and
      !water transport equation, but I did not make any attempt here.
-     use shr_kind_mod , only : r8 => shr_kind_r8
      use clm_varctl   , only : iulog
      implicit none
      type(bounds_type) , intent(in)  :: bounds                                 ! bounds

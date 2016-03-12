@@ -3,7 +3,7 @@ module BeTR_ColumnType
 
   ! Column type for data transfer between lsm and BeTR
   ! !PUBLIC TYPES:
-  use shr_kind_mod   , only : r8 => shr_kind_r8
+  use bshr_kind_mod   , only : r8 => shr_kind_r8
   implicit none
   save
   private

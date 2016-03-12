@@ -5,7 +5,6 @@ set(BETR_MAIN_SOURCES
   TracerBalanceMod.F90
   )
 
-include_directories(${CMAKE_BINARY_DIR}/src/shr)
 include_directories(${CMAKE_BINARY_DIR}/src/stub_clm)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_math)

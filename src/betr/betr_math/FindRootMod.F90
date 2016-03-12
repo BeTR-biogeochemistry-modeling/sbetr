@@ -5,8 +5,8 @@ module FindRootMod
   !  History: created by Jinyun Tang, 2013
 
   ! !USES:
-  use shr_kind_mod        , only : r8 => shr_kind_r8
-  use shr_log_mod         , only : errMsg => shr_log_errMsg
+  use bshr_kind_mod        , only : r8 => shr_kind_r8
+  use bshr_log_mod         , only : errMsg => shr_log_errMsg
   use abortutils          , only : endrun
   use clm_varctl          , only : iulog
   use MathfuncMod         , only : is_bounded
@@ -377,7 +377,7 @@ contains
 
     interface
        subroutine func(x,f, pp)
-         use shr_kind_mod       , only : r8 => shr_kind_r8
+         use bshr_kind_mod        , only : r8 => shr_kind_r8
          implicit none
          real(r8), intent(in)  :: x
          real(r8), intent(out) :: f
@@ -492,7 +492,7 @@ contains
     real(r8), intent(out):: x
     interface
        subroutine func(x,f)
-         use shr_kind_mod       , only : r8 => shr_kind_r8
+         use bshr_kind_mod        , only : r8 => shr_kind_r8
          implicit none
          real(r8), intent(in)  :: x
          real(r8), intent(out) :: f
@@ -602,7 +602,7 @@ contains
     integer    , intent(out) :: iter         !number of used iterations
     interface
        subroutine func(x,f,p)
-         use shr_kind_mod       , only : r8 => shr_kind_r8
+         use bshr_kind_mod        , only : r8 => shr_kind_r8
          implicit none
          real(r8), intent(in)  :: x
          real(r8), intent(out) :: f
@@ -700,7 +700,7 @@ contains
     integer,  intent(out) :: iter
     interface
        subroutine func(x,f)
-         use shr_kind_mod       , only : r8 => shr_kind_r8
+         use bshr_kind_mod        , only : r8 => shr_kind_r8
          implicit none
          real(r8), intent(in)  :: x
          real(r8), intent(out) :: f

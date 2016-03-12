@@ -1,19 +1,19 @@
 module BetrBGCMod
 
-#include "shr_assert.h"
+#include "bshr_assert.h"
   !
   ! !DESCRIPTION:
   !  subroutines for betr application
   !
   !  !USES:
-  use shr_kind_mod       , only : r8 => shr_kind_r8
-  use shr_log_mod        , only : errMsg => shr_log_errMsg
+  use bshr_kind_mod       , only : r8 => shr_kind_r8
+  use bshr_log_mod        , only : errMsg => shr_log_errMsg
   use BeTR_decompMod     , only : bounds_type  => betr_bounds_type
   use BeTRTracerType     , only : betrtracer_type
   use clm_varctl         , only : iulog
   use clm_time_manager   , only : get_nstep
   use MathfuncMod        , only : dot_sum
-  use clm_varcon         , only : denh2o
+  use betr_varcon        , only : denh2o => bdenh2o
   implicit none
   private
 
@@ -1239,7 +1239,7 @@ contains
     use tracercoeffType       , only : tracercoeff_type
     use tracerfluxType        , only : tracerflux_type
     use tracerstatetype       , only : tracerstate_type
-    use clm_varcon            , only : grav, oneatm
+    use betr_varcon           , only : grav => bgrav, oneatm => boneatm
 
     ! !ARGUMENTS:
     type(bounds_type),      intent(in)    :: bounds
@@ -1648,7 +1648,7 @@ contains
     use BeTR_WaterstateType   , only : waterstate_type  => betr_waterstate_type
     use tracerfluxType        , only : tracerflux_type
     use tracerstatetype       , only : tracerstate_type
-    use clm_varcon            , only : spval
+    use betr_varcon           , only : spval => bspval
     use tracer_varcon         , only : nlevtrc_soil  => betr_nlevtrc_soil
     use BeTR_landvarconType   , only : landvarcon  => betr_landvarcon
 
@@ -1804,7 +1804,7 @@ contains
     use tracerfluxType        , only : tracerflux_type
     use tracerstatetype       , only : tracerstate_type
     use MathfuncMod           , only : safe_div
-    use clm_varcon            , only : oneatm
+    use betr_varcon           , only : oneatm => boneatm
     ! !ARGUMENTS:
     type(bounds_type),      intent(in)    :: bounds
     integer,                intent(in)    :: lbj, ubj

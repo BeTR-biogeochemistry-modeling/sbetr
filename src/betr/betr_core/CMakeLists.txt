@@ -15,7 +15,6 @@ set(BETR_CORE_SOURCES
   TransportMod.F90
   )
 
-include_directories(${CMAKE_BINARY_DIR}/src/shr)
 include_directories(${CMAKE_BINARY_DIR}/src/stub_clm)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_math)

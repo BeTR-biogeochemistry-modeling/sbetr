@@ -3,8 +3,23 @@ set(BETR_UTIL_SOURCES
   BeTR_decompMod.F90
   betr_varcon.F90
   betr_ctrl.F90
+  bshr_const_mod.F90
+  bshr_infnan_mod.F90
+  bshr_kind_mod.F90
+  bshr_log_mod.F90
+  bshr_nl_mod.F90
+  bshr_string_mod.F90
+  bshr_mpi_mod.F90
+  bshr_assert_mod.F90
+  bshr_sys_mod.F90
+  bshr_timer_mod.F90
   )
-include_directories(${CMAKE_BINARY_DIR}/src/shr)
+
+
+configure_file(bshr_assert.h bshr_assert.h COPYONLY)
+configure_file(bmpif.h bmpif.h COPYONLY)
+configure_file(dtypes.h dtypes.h COPYONLY)
+
 include(add_betr_library)
 add_betr_library(betr_util ${BETR_UTIL_SOURCES})
 

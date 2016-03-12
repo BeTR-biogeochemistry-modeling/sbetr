@@ -4,7 +4,7 @@ module TracerBoundaryCondType
 ! data type to specify boundary conditions for tracer tranpsort
 !
 ! !USES:
-   use shr_kind_mod    , only : r8 => shr_kind_r8
+   use bshr_kind_mod    , only : r8 => shr_kind_r8
    use BeTR_decompMod  , only : bounds_type  => betr_bounds_type
 
   implicit none
@@ -108,7 +108,7 @@ contains
     ! do cold initialization
     ! !USES:
     !
-    use shr_infnan_mod, only : nan => shr_infnan_nan, assignment(=)
+    use bshr_infnan_mod, only : nan => shr_infnan_nan, assignment(=)
     implicit none
     ! !ARGUMENTS:
     class(tracerboundarycond_type) :: this

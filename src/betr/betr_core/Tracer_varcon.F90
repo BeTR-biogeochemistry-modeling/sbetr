@@ -8,7 +8,7 @@ module Tracer_varcon
   ! Module containing parameters and logical switches and routine to read constants from CLM namelist for tracer transport set up.
   !
   ! !USES:
-  use shr_kind_mod, only : r8 => shr_kind_r8
+  use bshr_kind_mod, only : r8 => shr_kind_r8
   use abortutils  , only : endrun
   use clm_varctl  , only : iulog
   !
