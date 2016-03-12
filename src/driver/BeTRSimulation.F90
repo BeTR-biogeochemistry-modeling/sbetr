@@ -58,8 +58,6 @@ contains
   subroutine BeTRSimulationInit(this, namelist_buffer, bounds, &
        waterstate)
     !
-    use TransportMod          , only : init_transportmod
-    use TracerParamsMod       , only : tracer_param_init
     use WaterstateType        , only : waterstate_type
     use BeTR_WaterstateType   , only : betr_waterstate_type
     use betr_constants, only : betr_namelist_buffer_size
@@ -75,9 +73,7 @@ contains
     character(len=*), parameter :: subname = 'BeTRSimulationInit'
     type(betr_waterstate_type) :: betr_waterstate
     type(betr_bounds_type)     :: betr_bounds
-    integer :: lbj, ubj
 
-    call this%betr%Init(namelist_buffer)
     
     !set lbj and ubj
     betr_bounds%lbj  = 1          ; betr_bounds%ubj  = betr_nlevsoi
@@ -86,37 +82,11 @@ contains
     betr_bounds%begl = bounds%begl; betr_bounds%endl = bounds%endl
     betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
 
-    lbj = betr_bounds%lbj; ubj = betr_bounds%ubj
     betr_waterstate%h2osoi_liq_col => waterstate%h2osoi_liq_col
-    betr_waterstate%h2osoi_ice_col    => waterstate%h2osoi_ice_col
+    betr_waterstate%h2osoi_ice_col => waterstate%h2osoi_ice_col
+    
+    call this%betr%Init(namelist_buffer, betr_bounds, betr_waterstate)
 
-    call this%betr%tracers%init_scalars()
-
-    call this%betr%bgc_reaction%Init_betrbgc(betr_bounds, lbj, ubj, this%betr%tracers)
-
-    call this%betr%aereconds%Init(betr_bounds)
-
-    call init_transportmod()
-
-    call this%betr%tracerstates%Init(betr_bounds, lbj, ubj, this%betr%tracers)
-
-    call this%betr%tracerfluxes%Init(betr_bounds,  lbj, ubj, this%betr%tracers)
-
-    call this%betr%tracercoeffs%Init(betr_bounds, lbj, ubj, this%betr%tracers)
-
-    call this%betr%tracerboundaryconds%Init(betr_bounds, this%betr%tracers)
-
-    !inside Init_plant_soilbgc, specific plant soil bgc coupler data type will be created
-    call this%betr%plant_soilbgc%Init_plant_soilbgc(betr_bounds, lbj, ubj)
-
-    !initialize state variable
-    call this%betr%bgc_reaction%initCold(betr_bounds,  this%betr%tracers, betr_waterstate, this%betr%tracerstates)
-
-    !initialize boundary condition type
-    call this%betr%bgc_reaction%init_boundary_condition_type(betr_bounds, this%betr%tracers, this%betr%tracerboundaryconds)
-
-    !initialize the betr parameterization module
-    call tracer_param_init(betr_bounds)
 
     !initialize the betrBGC module
     !X!call betrbgc_init(bounds) - NOTE(bja, 2016-03) empty subroutine...

@@ -23,6 +23,7 @@ module BetrBGCMod
   use BeTR_CNStateType, only : betr_cnstate_type
   use BeTR_aerocondType, only : betr_aerecond_type
   use BeTR_CarbonFluxType, only : betr_carbonflux_type
+  use BeTR_WaterstateType, only : betr_waterstate_type
   
   use clm_varctl         , only : iulog
   use clm_time_manager   , only : get_nstep
@@ -56,7 +57,8 @@ module BetrBGCMod
      type(betr_aerecond_type), public :: aereconds
      type(betr_carbonflux_type), public :: carbonfluxes
 
-     
+     ! FIXME(bja, 201603) is this correct/safe?
+     type(betr_waterstate_type), public :: waterstate
 
    contains
      procedure, public :: Init
@@ -71,18 +73,32 @@ module BetrBGCMod
 contains
 
 !-------------------------------------------------------------------------------
-  subroutine Init(this, namelist_buffer)
+  subroutine Init(this, namelist_buffer, bounds, waterstate)
+
+    use BeTR_decompMod, only : betr_bounds_type
 
     use betr_constants, only : betr_namelist_buffer_size
 
     use ReactionsFactory, only : create_bgc_reaction_type, &
          create_plant_soilbgc_type
+    use TransportMod          , only : init_transportmod
+    use TracerParamsMod       , only : tracer_param_init
 
 
     implicit none
 
     class(betr_type), intent(inout) :: this
     character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
+    type(betr_bounds_type), intent(in) :: bounds
+    type(betr_waterstate_type), intent(in) :: waterstate
+
+    integer :: lbj, ubj
+
+    lbj = bounds%lbj
+    ubj = bounds%ubj
+
+    this%waterstate%h2osoi_liq_col => waterstate%h2osoi_liq_col
+    this%waterstate%h2osoi_ice_col => waterstate%h2osoi_ice_col
 
     call this%ReadNamelist(namelist_buffer)
     
@@ -91,6 +107,35 @@ contains
     allocate(this%plant_soilbgc, &
          source=create_plant_soilbgc_type(this%reaction_method))
 
+    call this%tracers%init_scalars()
+
+    call this%bgc_reaction%Init_betrbgc(bounds, lbj, ubj, this%tracers)
+
+    call this%aereconds%Init(bounds)
+
+    call init_transportmod()
+
+    call this%tracerstates%Init(bounds, lbj, ubj, this%tracers)
+
+    call this%tracerfluxes%Init(bounds,  lbj, ubj, this%tracers)
+
+    call this%tracercoeffs%Init(bounds, lbj, ubj, this%tracers)
+
+    call this%tracerboundaryconds%Init(bounds, this%tracers)
+
+    !inside Init_plant_soilbgc, specific plant soil bgc coupler data type will be created
+    call this%plant_soilbgc%Init_plant_soilbgc(bounds, lbj, ubj)
+
+    !initialize state variable
+    call this%bgc_reaction%initCold(bounds,  this%tracers, this%waterstate, this%tracerstates)
+
+    !initialize boundary condition type
+    call this%bgc_reaction%init_boundary_condition_type(bounds, this%tracers, this%tracerboundaryconds)
+
+    !initialize the betr parameterization module
+    call tracer_param_init(bounds)
+
+    
   end subroutine Init
   
 !-------------------------------------------------------------------------------
