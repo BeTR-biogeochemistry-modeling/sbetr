@@ -10,11 +10,12 @@ module BetrBGCMod
   use shr_log_mod        , only : errMsg => shr_log_errMsg
   use BeTR_decompMod     , only : bounds_type  => betr_bounds_type
 
+  use PlantSoilBGCMod, only : plant_soilbgc_type
   use BeTRTracerType, only : betrtracer_type
   use TracerCoeffType, only : TracerCoeff_type
   use TracerFluxType, only : TracerFlux_type
   use TracerStateType, only : TracerState_type
-  use tracerboundarycondType    , only : tracerboundarycond_type
+  use tracerboundarycondType, only : tracerboundarycond_type
   
   use clm_varctl         , only : iulog
   use clm_time_manager   , only : get_nstep
@@ -34,6 +35,8 @@ module BetrBGCMod
   character(len=*), parameter :: filename = __FILE__
 
   type, public :: betr_type
+     class(plant_soilbgc_type), allocatable,public :: plant_soilbgc
+
      type(BeTRtracer_type), public :: tracers
      type(TracerCoeff_type), public :: tracercoeffs
      type(TracerFlux_type), public :: tracerfluxes

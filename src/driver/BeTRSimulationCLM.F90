@@ -139,7 +139,7 @@ contains
     ! allocate the reaction types that may only be known to this
     ! simulation type.
     allocate(this%bgc_reaction, source=create_bgc_reaction_type(reaction_method))
-    allocate(this%plant_soilbgc, source=create_plant_soilbgc_type(reaction_method))
+    allocate(this%betr%plant_soilbgc, source=create_plant_soilbgc_type(reaction_method))
 
     ! now call the base simulation init to continue initialization
     call BeTRSimulationInit(this, reaction_method, bounds, waterstate)
@@ -147,7 +147,7 @@ contains
     !pass necessary data
     this%betr_cnstate_vars%isoilorder  => cnstate_vars%isoilorder
 
-    call this%bgc_reaction%init_betr_lsm_bgc_coupler(betr_bounds, this%plant_soilbgc, &
+    call this%bgc_reaction%init_betr_lsm_bgc_coupler(betr_bounds, this%betr%plant_soilbgc, &
          this%betr%tracers, this%betr%tracerstates, this%betr_cnstate_vars, &
          this%ecophyscon)
 
@@ -292,7 +292,7 @@ contains
          chemstate_vars, this%betr_cnstate_vars, canopystate_vars, &
          betr_carbonflux_vars, this%betr%tracers, this%bgc_reaction, &
          this%betr_aerecond_vars, this%betr%tracerboundaryconds, this%betr%tracercoeffs, &
-         this%betr%tracerstates, this%betr%tracerfluxes, this%plant_soilbgc)
+         this%betr%tracerstates, this%betr%tracerfluxes, this%betr%plant_soilbgc)
 
   end subroutine CLMStepWithoutDrainage
 

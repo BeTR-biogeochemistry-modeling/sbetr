@@ -41,7 +41,6 @@ module BeTRSimulation
      
      ! NOTE(bja, 201603) BeTR types only, no LSM specific types here!
      type(betr_cnstate_type), public :: betr_cnstate_vars
-     class(plant_soilbgc_type), allocatable,public :: plant_soilbgc
      class(bgc_reaction_type), allocatable,public :: bgc_reaction
      type(betr_aerecond_type), public :: betr_aerecond_vars
      type(betr_carbonflux_type), public :: betr_carbonflux_vars
@@ -109,7 +108,7 @@ contains
     call this%betr%tracerboundaryconds%Init(betr_bounds, this%betr%tracers)
 
     !inside Init_plant_soilbgc, specific plant soil bgc coupler data type will be created
-    call this%plant_soilbgc%Init_plant_soilbgc(betr_bounds, lbj, ubj)
+    call this%betr%plant_soilbgc%Init_plant_soilbgc(betr_bounds, lbj, ubj)
 
     !initialize state variable
     call this%bgc_reaction%initCold(betr_bounds,  this%betr%tracers, betr_waterstate, this%betr%tracerstates)
