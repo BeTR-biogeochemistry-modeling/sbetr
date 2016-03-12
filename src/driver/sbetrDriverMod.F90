@@ -148,7 +148,7 @@ contains
     call update_time_stamp(time_vars, dtime)
 
     !write output
-    call hist_write(record, lbj, ubj, simulation%tracerflux_vars, &
+    call hist_write(record, lbj, ubj, simulation%betr%tracerfluxes, &
          simulation%tracerstate_vars, time_vars, &
          simulation%betr%tracers)
 

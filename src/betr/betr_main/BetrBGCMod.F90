@@ -12,6 +12,7 @@ module BetrBGCMod
 
   use BeTRTracerType, only : betrtracer_type
   use TracerCoeffType, only : TracerCoeff_type
+  use TracerFluxType, only : TracerFlux_type
   
   use clm_varctl         , only : iulog
   use clm_time_manager   , only : get_nstep
@@ -33,6 +34,7 @@ module BetrBGCMod
   type, public :: betr_type
      type(BeTRtracer_type), public :: tracers
      type(TracerCoeff_type), public :: tracercoeffs
+     type(TracerFlux_type), public :: tracerfluxes
      
 
    contains

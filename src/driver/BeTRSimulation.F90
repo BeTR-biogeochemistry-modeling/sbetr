@@ -41,7 +41,6 @@ module BeTRSimulation
      
      ! NOTE(bja, 201603) BeTR types only, no LSM specific types here!
      type(betr_cnstate_type), public :: betr_cnstate_vars
-     type(TracerFlux_type), public :: tracerflux_vars
      type(TracerState_type), public :: tracerState_vars
      type(tracerboundarycond_type), public :: tracerboundarycond_vars
      class(plant_soilbgc_type), allocatable,public :: plant_soilbgc
@@ -105,7 +104,7 @@ contains
 
     call this%tracerState_vars%Init(betr_bounds, lbj, ubj, this%betr%tracers)
 
-    call this%tracerflux_vars%Init(betr_bounds,  lbj, ubj, this%betr%tracers)
+    call this%betr%tracerfluxes%Init(betr_bounds,  lbj, ubj, this%betr%tracers)
 
     call this%betr%tracercoeffs%Init(betr_bounds, lbj, ubj, this%betr%tracers)
 
@@ -206,7 +205,7 @@ contains
 
     call this%tracerstate_vars%Restart(betr_bounds, ncid, flag=flag, betrtracer_vars=this%betr%tracers)
 
-    call this%tracerflux_vars%Restart(betr_bounds, ncid, flag=flag, betrtracer_vars=this%betr%tracers)
+    call this%betr%tracerfluxes%Restart(betr_bounds, ncid, flag=flag, betrtracer_vars=this%betr%tracers)
 
     call this%betr%tracercoeffs%Restart(betr_bounds, ncid, flag=flag, betrtracer_vars=this%betr%tracers)
   end subroutine BeTRSimulationRestartInit
@@ -306,7 +305,7 @@ contains
 
     call begin_betr_tracer_massbalance(betr_bounds, lbj, ubj, num_soilc, filter_soilc, &
          this%betr%tracers, this%tracerstate_vars, &
-         this%tracerflux_vars)
+         this%betr%tracerfluxes)
 
   end  subroutine BeTRSimulationBeginMassBalanceCheck
   !---------------------------------------------------------------------------------
@@ -333,6 +332,6 @@ contains
 
     call betr_tracer_massbalance_check(betr_bounds, lbj, ubj, num_soilc, filter_soilc, &
          this%betr%tracers, this%tracerstate_vars, &
-         this%tracerflux_vars)
+         this%betr%tracerfluxes)
   end subroutine BeTRSimulationMassBalanceCheck
 end module BeTRSimulation
