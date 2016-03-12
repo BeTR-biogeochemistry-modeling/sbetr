@@ -78,6 +78,10 @@ contains
 
   character(len=betr_string_length_long) :: simulator_name
 
+  !initialize parameters
+  call read_name_list(namelist_buffer, simulator_name)
+  simulation => create_betr_simulation(simulator_name)
+
   !set up mask
   bounds%begc = 1
   bounds%endc = 1
@@ -123,11 +127,7 @@ contains
 
   call spmd_init
 
-  !initialize parameters
-  call read_name_list(namelist_buffer, simulator_name)
-  simulation => create_betr_simulation(simulator_name)
   call  simulation%Init(namelist_buffer, bounds, waterstate_vars)
-  !X!call betr_initialize_standalone(bounds, lbj, ubj)
 
   !create output file
   call hist_htapes_create(histfilename,nlevtrc_soil, num_soilc, simulation%betr%tracers)
