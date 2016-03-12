@@ -151,10 +151,6 @@ contains
 
     !pass necessary data
 
-    call this%betr%bgc_reaction%init_betr_lsm_bgc_coupler(betr_bounds, this%betr%plant_soilbgc, &
-         this%betr%tracers, this%betr%tracerstates, this%betr%cnstates, &
-         this%ecophyscon)
-
   end subroutine StandaloneInit
 
 

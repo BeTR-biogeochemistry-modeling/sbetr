@@ -12,6 +12,7 @@ module BetrBGCMod
   use BeTR_decompMod     , only : bounds_type  => betr_bounds_type
 
   use betr_constants, only : betr_string_length
+  use MathfuncMod        , only : dot_sum
 
   use BGCReactionsMod, only : bgc_reaction_type
   use PlantSoilBGCMod, only : plant_soilbgc_type
@@ -28,8 +29,9 @@ module BetrBGCMod
   
   use clm_varctl         , only : iulog
   use clm_time_manager   , only : get_nstep
-  use MathfuncMod        , only : dot_sum
   use clm_varcon         , only : denh2o
+
+  use EcophysConType, only : ecophyscon_type
 
   implicit none
 
@@ -58,9 +60,11 @@ module BetrBGCMod
      type(betr_aerecond_type), public :: aereconds
      type(betr_carbonflux_type), public :: carbonfluxes
 
-     ! FIXME(bja, 201603) is this correct/safe?
      type(betr_waterstate_type), public :: waterstate
      type(betr_cnstate_type), public :: cnstate
+
+     ! FIXME(bja, 201603) replace LSM specific types!
+
 
    contains
      procedure, public :: Init
@@ -75,7 +79,10 @@ module BetrBGCMod
 contains
 
 !-------------------------------------------------------------------------------
-  subroutine Init(this, namelist_buffer, bounds, waterstate, cnstate)
+  subroutine Init(this, namelist_buffer, bounds, waterstate, cnstate, ecophyscon)
+
+    use abortutils, only : endrun
+    use shr_log_mod, only : errMsg => shr_log_errMsg
 
     use BeTR_decompMod, only : betr_bounds_type
 
@@ -94,8 +101,16 @@ contains
     type(betr_bounds_type), intent(in) :: bounds
     type(betr_waterstate_type), intent(in) :: waterstate
     type(betr_cnstate_type), intent(in) :: cnstate
+    type(ecophyscon_type), intent(in), optional :: ecophyscon
+
+    type(ecophyscon_type) :: junk
 
     integer :: lbj, ubj
+
+    if (present(ecophyscon)) then
+       write(*,*) 'ERROR: ecophyscon not implemented in BeTR class '
+       call endrun(msg=errMsg(filename,__LINE__))
+    end if
 
     lbj = bounds%lbj
     ubj = bounds%ubj
@@ -139,6 +154,12 @@ contains
     !initialize the betr parameterization module
     call tracer_param_init(bounds)
 
+    ! FIXME(bja, 201603) ecophyscon is not currently being used, so we
+    ! are explicitly passing initialized junk data.
+    call this%bgc_reaction%init_betr_lsm_bgc_coupler(&
+         bounds, this%plant_soilbgc, &
+         this%tracers, this%tracerstates, this%cnstates, &
+         junk)
     
   end subroutine Init
   
