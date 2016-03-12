@@ -148,7 +148,7 @@ contains
     this%betr_cnstate_vars%isoilorder  => cnstate_vars%isoilorder
 
     call this%bgc_reaction%init_betr_lsm_bgc_coupler(betr_bounds, this%plant_soilbgc, &
-         this%betr%tracers, this%tracerstate_vars, this%betr_cnstate_vars, &
+         this%betr%tracers, this%betr%tracerstates, this%betr_cnstate_vars, &
          this%ecophyscon)
 
   end subroutine CLMInit
@@ -292,7 +292,7 @@ contains
          chemstate_vars, this%betr_cnstate_vars, canopystate_vars, &
          betr_carbonflux_vars, this%betr%tracers, this%bgc_reaction, &
          this%betr_aerecond_vars, this%tracerboundarycond_vars, this%betr%tracercoeffs, &
-         this%tracerstate_vars, this%betr%tracerfluxes, this%plant_soilbgc)
+         this%betr%tracerstates, this%betr%tracerfluxes, this%plant_soilbgc)
 
   end subroutine CLMStepWithoutDrainage
 
@@ -368,7 +368,7 @@ contains
     call this%betr%step_with_drainage(betr_bounds, lbj, ubj, &
          num_soilc, filter_soilc, &
          jtops, betr_waterflux_vars, this%betr%tracers, this%betr%tracercoeffs, &
-         this%tracerstate_vars,  this%betr%tracerfluxes)
+         this%betr%tracerstates,  this%betr%tracerfluxes)
 
   end subroutine CLMStepWithDrainage
   
@@ -401,7 +401,7 @@ contains
 
 
     call diagnose_dtracer_freeze_thaw(bounds, num_nolakec, filter_nolakec, &
-         waterstate_vars, this%betr%tracers, this%tracerstate_vars)
+         waterstate_vars, this%betr%tracers, this%betr%tracerstates)
 
   end subroutine diagnose_dtracer_freeze_thaw_clm
 
@@ -429,7 +429,7 @@ contains
     type(betr_waterflux_type), intent(in) :: waterflux_vars
 
   call this%betr%calc_dew_sub_flux(bounds, num_hydrologyc, filter_soilc_hydrologyc, &
-       waterstate_vars, waterflux_vars, this%betr%tracers, this%betr%tracerfluxes, this%tracerstate_vars)
+       waterstate_vars, waterflux_vars, this%betr%tracers, this%betr%tracerfluxes, this%betr%tracerstates)
 
   end subroutine calc_dew_sub_flux_clm
 
@@ -447,7 +447,7 @@ contains
 
     call this%bgc_reaction%lsm_betr_flux_state_receive(bounds, &
          num_soilc, filter_soilc, &
-         this%tracerstate_vars, this%betr%tracerfluxes,  this%betr%tracers)
+         this%betr%tracerstates, this%betr%tracerfluxes,  this%betr%tracers)
 
   end subroutine clm_betr_flux_state_receive
 
@@ -553,7 +553,7 @@ contains
     associate( &
          h2osoi_ice => waterstate_vars%h2osoi_ice_col, & ! Input:  [real(r8) (:,:) ]  ice lens (kg/m2)
          h2osoi_liq => waterstate_vars%h2osoi_liq_col, & ! Output: [real(r8) (:,:) ]  liquid water (kg/m2)
-         end_tracer_molarmass => this%tracerstate_vars%end_tracer_molarmass_col, &
+         end_tracer_molarmass => this%betr%tracerstates%end_tracer_molarmass_col, &
          id_trc_o18_h2o => this%betr%tracers%id_trc_o18_h2o           &
          )
       

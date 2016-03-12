@@ -141,7 +141,7 @@ contains
     this%betr_cnstate_vars%isoilorder  => cnstate_vars%isoilorder
 
     call this%bgc_reaction%init_betr_lsm_bgc_coupler(betr_bounds, this%plant_soilbgc, &
-         this%betr%tracers, this%tracerstate_vars, this%betr_cnstate_vars, &
+         this%betr%tracers, this%betr%tracerstates, this%betr_cnstate_vars, &
          this%ecophyscon)
 
   end subroutine StandaloneInit
@@ -278,7 +278,7 @@ contains
          chemstate_vars, this%betr_cnstate_vars, canopystate_vars, &
          betr_carbonflux_vars, this%betr%tracers, this%bgc_reaction, &
          this%betr_aerecond_vars, this%tracerboundarycond_vars, this%betr%tracercoeffs, &
-         this%tracerstate_vars, this%betr%tracerfluxes, this%plant_soilbgc)
+         this%betr%tracerstates, this%betr%tracerfluxes, this%plant_soilbgc)
 
   end subroutine StandaloneStepWithoutDrainage
 
@@ -347,7 +347,7 @@ contains
     call this%betr%step_with_drainage(betr_bounds, lbj, ubj, &
          num_soilc, filter_soilc, &
          jtops, betr_waterflux_vars, this%betr%tracers, this%betr%tracercoeffs, &
-         this%tracerstate_vars,  this%betr%tracerfluxes)
+         this%betr%tracerstates,  this%betr%tracerfluxes)
 
   end subroutine StandaloneStepWithDrainage
 

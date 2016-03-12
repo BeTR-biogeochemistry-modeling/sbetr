@@ -149,7 +149,7 @@ contains
 
     !write output
     call hist_write(record, lbj, ubj, simulation%betr%tracerfluxes, &
-         simulation%tracerstate_vars, time_vars, &
+         simulation%betr%tracerstates, time_vars, &
          simulation%betr%tracers)
 
     !write restart file? is not functionning at the moment
