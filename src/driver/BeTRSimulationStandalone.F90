@@ -201,7 +201,6 @@ contains
     type(waterflux_type), intent(inout) :: waterflux_vars
 
     !temporary variables
-    type(betr_carbonflux_type) :: betr_carbonflux_vars
     type(betr_waterflux_type)  :: betr_waterflux_vars
     type(betr_waterstate_type)  :: betr_waterstate_vars
     type(betr_bounds_type)     :: betr_bounds
@@ -218,9 +217,9 @@ contains
 
     this%betr%cnstates%isoilorder          => cnstate_vars%isoilorder
 
-    betr_carbonflux_vars%annsum_npp_patch => carbonflux_vars%annsum_npp_patch
-    betr_carbonflux_vars%agnpp_patch      => carbonflux_vars%agnpp_patch
-    betr_carbonflux_vars%bgnpp_patch      => carbonflux_vars%bgnpp_patch
+    this%betr%carbonfluxes%annsum_npp_patch => carbonflux_vars%annsum_npp_patch
+    this%betr%carbonfluxes%agnpp_patch      => carbonflux_vars%agnpp_patch
+    this%betr%carbonfluxes%bgnpp_patch      => carbonflux_vars%bgnpp_patch
 
     betr_pft%wtcol                        => pft%wtcol
     betr_pft%column                       => pft%column
@@ -276,7 +275,7 @@ contains
          atm2lnd_vars, soilhydrology_vars, soilstate_vars, &
          betr_waterstate_vars, temperature_vars, betr_waterflux_vars, &
          chemstate_vars, this%betr%cnstates, canopystate_vars, &
-         betr_carbonflux_vars, this%betr%tracers, this%betr%bgc_reaction, &
+         this%betr%carbonfluxes, this%betr%tracers, this%betr%bgc_reaction, &
          this%betr%aereconds, this%betr%tracerboundaryconds, this%betr%tracercoeffs, &
          this%betr%tracerstates, this%betr%tracerfluxes, this%betr%plant_soilbgc)
 

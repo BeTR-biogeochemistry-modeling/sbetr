@@ -19,6 +19,7 @@ module BetrBGCMod
   use tracerboundarycondType, only : tracerboundarycond_type
   use BeTR_CNStateType, only : betr_cnstate_type
   use BeTR_aerocondType, only : betr_aerecond_type
+  use BeTR_CarbonFluxType, only : betr_carbonflux_type
   
   use clm_varctl         , only : iulog
   use clm_time_manager   , only : get_nstep
@@ -48,6 +49,7 @@ module BetrBGCMod
      type(tracerboundarycond_type), public :: tracerboundaryconds
      type(betr_cnstate_type), public :: cnstates
      type(betr_aerecond_type), public :: aereconds
+     type(betr_carbonflux_type), public :: carbonfluxes
 
      
 

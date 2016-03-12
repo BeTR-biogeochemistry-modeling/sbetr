@@ -40,7 +40,6 @@ module BeTRSimulation
      ! FIXME(bja, 201603) most of these types should be private!
      
      ! NOTE(bja, 201603) BeTR types only, no LSM specific types here!
-     type(betr_carbonflux_type), public :: betr_carbonflux_vars
    contains
      procedure, public :: Init => BeTRSimulationInit
      procedure, public :: ReadNameList => BeTRSimulationReadNameList
