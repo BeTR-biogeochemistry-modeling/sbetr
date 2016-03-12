@@ -17,7 +17,6 @@ module BeTRSimulation
   ! !USES:
   use BetrBGCMod, only : betr_type
   use BeTRTracerType            , only : BeTRtracer_type
-  use TracerCoeffType           , only : TracerCoeff_type
   use TracerFluxType            , only : TracerFlux_type
   use TracerStateType           , only : TracerState_type
   use tracerboundarycondType    , only : tracerboundarycond_type
@@ -42,7 +41,6 @@ module BeTRSimulation
      
      ! NOTE(bja, 201603) BeTR types only, no LSM specific types here!
      type(betr_cnstate_type), public :: betr_cnstate_vars
-     type(TracerCoeff_type), public :: tracercoeff_vars
      type(TracerFlux_type), public :: tracerflux_vars
      type(TracerState_type), public :: tracerState_vars
      type(tracerboundarycond_type), public :: tracerboundarycond_vars
@@ -109,7 +107,7 @@ contains
 
     call this%tracerflux_vars%Init(betr_bounds,  lbj, ubj, this%betr%tracers)
 
-    call this%tracercoeff_vars%Init(betr_bounds, lbj, ubj, this%betr%tracers)
+    call this%betr%tracercoeffs%Init(betr_bounds, lbj, ubj, this%betr%tracers)
 
     call this%tracerboundarycond_vars%Init(betr_bounds, this%betr%tracers)
 
@@ -210,7 +208,7 @@ contains
 
     call this%tracerflux_vars%Restart(betr_bounds, ncid, flag=flag, betrtracer_vars=this%betr%tracers)
 
-    call this%tracercoeff_vars%Restart(betr_bounds, ncid, flag=flag, betrtracer_vars=this%betr%tracers)
+    call this%betr%tracercoeffs%Restart(betr_bounds, ncid, flag=flag, betrtracer_vars=this%betr%tracers)
   end subroutine BeTRSimulationRestartInit
 
 

@@ -9,12 +9,17 @@ module BetrBGCMod
   use shr_kind_mod       , only : r8 => shr_kind_r8
   use shr_log_mod        , only : errMsg => shr_log_errMsg
   use BeTR_decompMod     , only : bounds_type  => betr_bounds_type
-  use BeTRTracerType     , only : betrtracer_type
+
+  use BeTRTracerType, only : betrtracer_type
+  use TracerCoeffType, only : TracerCoeff_type
+  
   use clm_varctl         , only : iulog
   use clm_time_manager   , only : get_nstep
   use MathfuncMod        , only : dot_sum
   use clm_varcon         , only : denh2o
+
   implicit none
+
   private
 
   integer,  parameter :: do_diffusion   = 1         ! do diffusive transport
@@ -27,6 +32,8 @@ module BetrBGCMod
 
   type, public :: betr_type
      type(BeTRtracer_type), public :: tracers
+     type(TracerCoeff_type), public :: tracercoeffs
+     
 
    contains
      procedure, public :: step_without_drainage

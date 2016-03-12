@@ -277,7 +277,7 @@ contains
          betr_waterstate_vars, temperature_vars, betr_waterflux_vars, &
          chemstate_vars, this%betr_cnstate_vars, canopystate_vars, &
          betr_carbonflux_vars, this%betr%tracers, this%bgc_reaction, &
-         this%betr_aerecond_vars, this%tracerboundarycond_vars, this%tracercoeff_vars, &
+         this%betr_aerecond_vars, this%tracerboundarycond_vars, this%betr%tracercoeffs, &
          this%tracerstate_vars, this%tracerflux_vars, this%plant_soilbgc)
 
   end subroutine StandaloneStepWithoutDrainage
@@ -346,7 +346,7 @@ contains
 
     call this%betr%step_with_drainage(betr_bounds, lbj, ubj, &
          num_soilc, filter_soilc, &
-         jtops, betr_waterflux_vars, this%betr%tracers, this%tracercoeff_vars, &
+         jtops, betr_waterflux_vars, this%betr%tracers, this%betr%tracercoeffs, &
          this%tracerstate_vars,  this%tracerflux_vars)
 
   end subroutine StandaloneStepWithDrainage
