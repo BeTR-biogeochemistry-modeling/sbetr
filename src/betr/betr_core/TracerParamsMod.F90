@@ -1111,7 +1111,7 @@ contains
    use TracerCoeffType    , only : tracercoeff_type
    use BeTR_WaterStateType   , only : waterstate_type  => betr_waterstate_type
    use SoilStateType      , only : soilstate_type
-   use TemperatureType    , only : temperature_type
+   use BeTR_TemperatureType    , only : betr_temperature_type
    use ChemStateType      , only : chemstate_type
    use BeTRTracerType     , only : betrtracer_type
    use CanopyStateType    , only : canopystate_type
@@ -1124,7 +1124,7 @@ contains
    type(betrtracer_type)   , intent(in) :: betrtracer_vars      ! betr configuration information
    type(Waterstate_Type)   , intent(in) :: waterstate_vars          ! water state variables
    type(soilstate_type)    , intent(in) :: soilstate_vars          ! physical state variables
-   type(temperature_type)  , intent(in) :: temperature_vars          ! energy state variable
+   type(betr_temperature_type)  , intent(in) :: temperature_vars          ! energy state variable
    type(canopystate_type)  , intent(in) :: canopystate_vars
    type(chemstate_type)    , intent(in) :: chemstate_vars        ! chemistry state variable
    type(tracercoeff_type)  , intent(inout) :: tracercoeff_vars ! structure containing tracer transport parameters
@@ -1171,7 +1171,7 @@ contains
    use TracerCoeffType    , only : tracercoeff_type
    use BeTR_WaterStateType   , only : waterstate_type  => betr_waterstate_type
    use SoilStateType      , only : soilstate_type
-   use TemperatureType    , only : temperature_type
+   use BeTR_TemperatureType    , only : betr_temperature_type
    use ChemStateType      , only : chemstate_type
    use BeTRTracerType     , only : betrtracer_type
    implicit none
@@ -1184,7 +1184,7 @@ contains
    type(betrtracer_type),  intent(in) :: betrtracer_vars             ! betr configuration information
    type(Waterstate_Type),  intent(in) :: waterstate_vars          ! water state variables
    type(soilstate_type),   intent(in) :: soilstate_vars          ! physical state variables
-   type(temperature_type), intent(in) :: temperature_vars          ! energy state variable
+   type(betr_temperature_type), intent(in) :: temperature_vars          ! energy state variable
    type(chemstate_type),   intent(in) :: chemstate_vars        ! chemical state variable
    type(tracercoeff_type), intent(inout) :: tracercoeff_vars ! structure containing tracer transport parameters
    character(len=255) :: subname = 'set_phase_convert_coeff'
@@ -1697,15 +1697,15 @@ contains
     use tracer_varcon      , only : nlevsoi  => betr_nlevsoi
     use betr_varcon        , only : tfrz => btfrz
     use SoilStateType      , only : soilstate_type
-    use BeTR_WaterstateType, only : waterstate_type  => betr_waterstate_type
-    use TemperatureType    , only : temperature_type
+    use BeTR_WaterstateType, only : betr_waterstate_type
+    use BeTR_TemperatureType    , only : betr_temperature_type
     ! !ARGUMENTS:
     type(bounds_type)      , intent(in)   :: bounds
     integer                , intent(in)   :: numf                ! number of column soil points in column filter
     integer                , intent(in)   :: filter(:)           ! column filter for soil points
     type(soilstate_type)   , intent(in)   :: soilstate_vars
-    type(waterstate_type)  , intent(in)   :: waterstate_vars
-    type(temperature_type) , intent(in)   :: temperature_vars
+    type(betr_waterstate_type)  , intent(in)   :: waterstate_vars
+    type(betr_temperature_type) , intent(in)   :: temperature_vars
     real(r8)               , intent(in)   :: zi(bounds%begc: , 0: )
     real(r8)               , intent(inout):: zwt( bounds%begc: ) ! water table depth (-) [col]
     integer                , intent(inout):: jwt(bounds%begc: )
@@ -1781,7 +1781,7 @@ contains
   use BeTR_aerocondType    , only  : betr_aerecond_type
   use tracercoeffType       , only : tracercoeff_type
   use tracer_varcon         , only : nlevsoi  => betr_nlevsoi
-  use TemperatureType       , only : temperature_type
+  use BeTR_TemperatureType       , only : betr_temperature_type
   use MathfuncMod           , only : safe_div
   use clm_varctl            , only : use_cn
   use clm_time_manager      , only : get_step_size, get_nstep
@@ -1790,7 +1790,7 @@ contains
   integer                      , intent(in)   :: filter_soilp(:)           ! column filter for soil points
   integer                      , intent(in)   :: jwt(bounds%begc: )
   real(r8)                     , intent(in)   :: rootfr(bounds%begp: ,1: ) ! fraction of roots in each soil layer
-  type(temperature_type)       , intent(in)   :: temperature_vars          ! energy state variable
+  type(betr_temperature_type)       , intent(in)   :: temperature_vars          ! energy state variable
   type(canopystate_type)       , intent(in)   :: canopystate_vars
   type(betr_aerecond_type)     , intent(in)   :: betr_aerecond_vars
   type(betr_carbonflux_type)   , intent(in)   :: carbonflux_vars

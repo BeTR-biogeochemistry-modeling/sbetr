@@ -326,6 +326,7 @@ implicit none
         enddo
         !the following should rarely occur, so when it occur, end with a warning
         if(tot1<0._r8)then
+          print*,tracer_mobile_phase(c,1:2,jj),tot1
           call endrun('negative H2O tracer '//errMsg(mod_filename, __LINE__))
         endif
       endif

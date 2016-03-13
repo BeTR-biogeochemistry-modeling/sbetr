@@ -5,6 +5,7 @@ set(BETR_CORE_SOURCES
   BeTR_aerocondType.F90
   BeTR_WaterstateType.F90
   BeTR_WaterfluxType.F90
+  BeTR_TemperatureType.F90
   KineticsMod.F90
   TracerBoundaryCondType.F90
   TracerCoeffType.F90

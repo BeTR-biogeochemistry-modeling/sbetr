@@ -174,6 +174,7 @@ contains
     use BeTR_LandunitType,only : betr_lun
     use BeTR_WaterstateType   , only : betr_waterstate_type
     use BeTR_WaterfluxType    , only : betr_waterflux_type
+    use BeTR_TemperatureType, only : betr_temperature_type
     use PatchType, only : pft
     use LandunitType,only : lun
     use pftvarcon, only : crop
@@ -206,6 +207,7 @@ contains
     type(betr_waterflux_type)  :: betr_waterflux_vars
     type(betr_waterstate_type)  :: betr_waterstate_vars
     type(betr_bounds_type)     :: betr_bounds
+    type(betr_temperature_type) :: betr_temperature_vars ! energy state variable
     integer  :: lbj, ubj ! lower and upper bounds, make sure they are > 0
 
     !pass necessary data for correct subroutine call
@@ -272,10 +274,15 @@ contains
     betr_waterflux_vars%qflx_snow2topsoi_col    => waterflux_vars%qflx_snow2topsoi_col
     betr_waterflux_vars%qflx_tran_veg_patch     => waterflux_vars%qflx_tran_veg_patch
 
+
+    betr_temperature_vars%t_soisno_col        => temperature_vars%t_soisno_col
+    betr_temperature_vars%t_soi_10cm          => temperature_vars%t_soi_10cm
+    betr_temperature_vars%t_veg_patch         => temperature_vars%t_veg_patch
+
     call run_betr_one_step_without_drainage(betr_bounds, lbj, ubj, &
          num_soilc, filter_soilc, num_soilp, filter_soilp,  &
          atm2lnd_vars, soilhydrology_vars, soilstate_vars, &
-         betr_waterstate_vars, temperature_vars, betr_waterflux_vars, &
+         betr_waterstate_vars, betr_temperature_vars, betr_waterflux_vars, &
          chemstate_vars, this%betr_cnstate_vars, canopystate_vars, &
          betr_carbonflux_vars, this%betrtracer_vars, this%bgc_reaction, &
          this%betr_aerecond_vars, this%tracerboundarycond_vars, this%tracercoeff_vars, &

@@ -108,15 +108,21 @@ contains
   !initialize parameters
   call read_name_list(namelist_buffer, simulator_name, reactions_name)
   simulation => create_betr_simulation(simulator_name)
+
+  !in all calculations, ubj is set to nlevtrc_soil
+  ubj = nlevtrc_soil
+  !obtain waterstate_vars for initilizations that need it
+  call read_betrforcing(bounds, lbj, ubj, num_soilc, filter_soilc, time_vars, col, &
+      atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars             , &
+      waterflux_vars, temperature_vars, chemstate_vars, jtops)
+
   call  simulation%Init(reactions_name, bounds, waterstate_vars)
-  !X!call betr_initialize_standalone(bounds, lbj, ubj)
 
   !create output file
   call hist_htapes_create(histfilename,nlevtrc_soil, num_soilc, simulation%betrtracer_vars)
 
   record = -1
-  !in all calculations, ubj is set to nlevtrc_soil
-  ubj = nlevtrc_soil
+
   call proc_initstep()
   do
     record = record + 1
@@ -143,6 +149,10 @@ contains
 
     !do mass balance check
     call simulation%MassBalanceCheck(bounds,  num_soilc, filter_soilc)
+
+    !specific for water tracer transport
+    call simulation%ConsistencyCheck(bounds, ubj, num_soilc, &
+      filter_soilc, waterstate_vars)
 
     !update time stamp
     call update_time_stamp(time_vars, dtime)
@@ -526,6 +536,9 @@ contains
       waterflux_vars%qflx_infl_col(c)  = clmforc_vars%qflx_infl(tstep)              !infiltration flux, mm H2O/s
       col%zi(c,0) = zisoi(0)
       waterflux_vars%qflx_gross_infl_soil_col(c) = 0._r8
+
+      waterflux_vars%qflx_snow2topsoi_col(c) = 0._r8
+      waterflux_vars%qflx_h2osfc2topsoi_col(c) = 0._r8
   enddo
 
 

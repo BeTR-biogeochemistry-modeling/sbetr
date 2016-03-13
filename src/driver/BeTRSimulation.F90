@@ -5,7 +5,7 @@ module BeTRSimulation
   !
   !  BeTR simulation class are API definitions, mapping data
   !  structures from a specific LSM, e.g. CLM, ALM, into BeTR data
-  !  structures. 
+  !  structures.
   !
   use abortutils                  , only : endrun
   use clm_varctl                  , only : iulog
@@ -37,7 +37,7 @@ module BeTRSimulation
      character(len=betr_string_length) :: reaction_method
 
      ! FIXME(bja, 201603) most of these types should be private!
-     
+
      ! NOTE(bja, 201603) BeTR types only, no LSM specific types here!
      type(betr_cnstate_type), public :: betr_cnstate_vars
      type(BeTRtracer_type), public :: betrtracer_vars
@@ -53,6 +53,7 @@ module BeTRSimulation
      procedure, public :: Init => BeTRSimulationInit
      procedure, public :: ReadNameList => BeTRSimulationReadNameList
      procedure, public :: RestartInit => BeTRSimulationRestartInit
+     procedure, public :: ConsistencyCheck => BeTRSimulationConsistencyCheck
      procedure, public :: StepWithoutDrainage => BeTRSimulationStepWithoutDrainage
      procedure, public :: StepWithDrainage => BeTRSimulationStepWithDrainage
      procedure, public :: BeginMassBalanceCheck => BeTRSimulationBeginMassBalanceCheck
@@ -240,7 +241,7 @@ contains
     use pftvarcon, only : crop
 
     implicit none
-    
+
     class(betr_simulation_type), intent(inout) :: this
     type(bounds_type), intent(in) :: bounds ! bounds
     integer, intent(in) :: num_soilc ! number of columns in column filter_soilc
@@ -337,4 +338,19 @@ contains
          this%betrtracer_vars, this%tracerstate_vars, &
          this%tracerflux_vars)
   end subroutine BeTRSimulationMassBalanceCheck
+
+
+  !---------------------------------------------------------------------------------
+  subroutine BeTRSimulationConsistencyCheck(this, &
+     bounds, ubj, num_soilc, filter_soilc, waterstate_vars)
+    use WaterStateType, only : Waterstate_Type
+  implicit none
+    class(betr_simulation_type), intent(inout) :: this
+    type(bounds_type), intent(in) :: bounds
+    integer, intent(in) :: num_soilc ! number of columns in column filter_soilc
+    integer, intent(in) :: filter_soilc(:) ! column filter_soilc
+    integer, intent(in) :: ubj
+    type(Waterstate_Type), intent(in) :: waterstate_vars ! water state variables
+
+  end subroutine BeTRSimulationConsistencyCheck
 end module BeTRSimulation

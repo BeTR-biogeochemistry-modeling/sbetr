@@ -54,7 +54,7 @@ contains
     use TracerParamsMod              , only          : get_zwt, calc_aerecond, betr_annualupdate
     use SoilStateType                , only          : soilstate_type
     use BeTR_WaterStateType          , only          : Waterstate_Type  => BeTR_Waterstate_Type
-    use TemperatureType              , only          : temperature_type
+    use BeTR_TemperatureType         , only          : betr_temperature_type
     use ChemStateType                , only          : chemstate_type
     use BeTR_WaterfluxType           , only          : waterflux_type   => betr_waterflux_type
     use BeTR_ColumnType              , only          : col => betr_col
@@ -80,7 +80,7 @@ contains
 
     type(Waterstate_Type)            , intent(in)    :: waterstate_vars            ! water state variables
     type(soilstate_type)             , intent(in)    :: soilstate_vars             ! column physics variable
-    type(temperature_type)           , intent(in)    :: temperature_vars           ! energy state variable
+    type(betr_temperature_type)           , intent(in)    :: temperature_vars           ! energy state variable
     type(chemstate_type)             , intent(in)    :: chemstate_vars
     class(betrtracer_type)           , intent(in)    :: betrtracer_vars            ! betr configuration information
     class(bgc_reaction_type)         , intent(in)    :: bgc_reaction
