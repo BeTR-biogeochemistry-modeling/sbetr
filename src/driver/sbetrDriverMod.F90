@@ -68,12 +68,6 @@ contains
   type(betr_time_type) :: time_vars
   type(bounds_type) :: bounds
   integer :: lbj, ubj
-  integer :: num_soilp
-  integer, allocatable :: filter_soilp(:)
-  integer :: num_jtops 
-  integer, allocatable :: jtops(:)
-  integer :: num_soilc
-  integer, allocatable :: filter_soilc(:)
 
   character(len=betr_string_length_long) :: simulator_name
 
@@ -91,12 +85,6 @@ contains
   bounds%lbj  = 1
   bounds%ubj  = nlevgrnd
 
-  num_soilc = 1
-  allocate(filter_soilc(num_soilc))
-  filter_soilc(:) = 1
-  num_jtops = 1
-  allocate(jtops(num_jtops))
-  jtops(:) = 1
   !set up grid
   call init_clm_vertgrid(nlevgrnd)
 
@@ -121,9 +109,6 @@ contains
   pft%column(1)   = 1
   pft%itype(1)    = 2
 
-  num_soilp = 1
-  allocate(filter_soilp(num_soilp)); filter_soilp(:) = 1
-
   call spmd_init
 
   call  simulation%Init(namelist_buffer, bounds, waterstate_vars, cnstate_vars)
@@ -137,26 +122,28 @@ contains
     !set envrionmental forcing by reading foring data: temperature, moisture, atmospheric resistance
     !from either user specified file or clm history file
 
-    call read_betrforcing(bounds, lbj, ubj, num_soilc, filter_soilc, time_vars, col, &
-      atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars             , &
-      waterflux_vars, temperature_vars, chemstate_vars, jtops)
+    call read_betrforcing(bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, time_vars, col, &
+      atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars, &
+      waterflux_vars, temperature_vars, chemstate_vars, simulation%jtops)
 
     !calculate advective velocity
-    call calc_qadv(ubj, record, num_soilc, filter_soilc, dtime, time_vars, col, waterstate_vars, waterflux_vars)
+    call calc_qadv(ubj, record, &
+         simulation%num_soilc, simulation%filter_soilc, &
+         dtime, time_vars, col, waterstate_vars, waterflux_vars)
 
     !no calculation in the first step
     if(record==0)cycle
-    call simulation%BeginMassBalanceCheck(bounds,  num_soilc, filter_soilc)
+    call simulation%BeginMassBalanceCheck(bounds)
 
-    call simulation%StepWithoutDrainage(bounds,  num_soilc, filter_soilc, num_soilp, filter_soilp, col ,   &
-         atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, temperature_vars, waterflux_vars, chemstate_vars, &
+    call simulation%StepWithoutDrainage(bounds, col, &
+         atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, &
+         temperature_vars, waterflux_vars, chemstate_vars, &
          cnstate_vars, canopystate_vars, carbonflux_vars)
 
-    call simulation%StepWithDrainage(bounds,  num_soilc, filter_soilc, &
-         jtops, waterflux_vars, col)
+    call simulation%StepWithDrainage(bounds, waterflux_vars, col)
 
     !do mass balance check
-    call simulation%MassBalanceCheck(bounds,  num_soilc, filter_soilc)
+    call simulation%MassBalanceCheck(bounds)
 
     !update time stamp
     call update_time_stamp(time_vars, dtime)

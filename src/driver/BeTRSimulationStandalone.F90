@@ -155,8 +155,7 @@ contains
 
 
   !---------------------------------------------------------------------------------
-  subroutine StandaloneStepWithoutDrainage(this, bounds,  &
-       num_soilc, filter_soilc, num_soilp, filter_soilp, col ,   &
+  subroutine StandaloneStepWithoutDrainage(this, bounds, col, &
        atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, &
        temperature_vars, waterflux_vars, chemstate_vars, &
        cnstate_vars, canopystate_vars, carbonflux_vars)
@@ -190,10 +189,6 @@ contains
 
     ! !ARGUMENTS :
     type(bounds_type), intent(in) :: bounds ! bounds
-    integer, intent(in) :: num_soilc ! number of columns in column filter_soilc
-    integer, intent(in) :: filter_soilc(:) ! column filter_soilc
-    integer, intent(in) :: num_soilp
-    integer, intent(in) :: filter_soilp(:) ! pft filter
 
     type(column_type), intent(in) :: col ! column type
     type(Waterstate_Type), intent(in) :: waterstate_vars ! water state variables
@@ -278,7 +273,7 @@ contains
     betr_waterflux_vars%qflx_tran_veg_patch     => waterflux_vars%qflx_tran_veg_patch
 
     call this%betr%step_without_drainage(betr_bounds, lbj, ubj, &
-         num_soilc, filter_soilc, num_soilp, filter_soilp,  &
+         this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp,  &
          atm2lnd_vars, soilhydrology_vars, soilstate_vars, &
          betr_waterstate_vars, temperature_vars, betr_waterflux_vars, &
          chemstate_vars, this%betr%cnstates, canopystate_vars, &
@@ -290,7 +285,7 @@ contains
 
   !---------------------------------------------------------------------------------
   subroutine StandaloneStepWithDrainage(this, bounds,  &
-       num_soilc, filter_soilc, jtops, waterflux_vars, col)
+       waterflux_vars, col)
 
     use ColumnType    , only : column_type
     use MathfuncMod   , only : safe_div
@@ -304,9 +299,6 @@ contains
     ! !ARGUMENTS:
     class(betr_simulation_standalone_type), intent(inout) :: this
     type(bounds_type), intent(in) :: bounds
-    integer, intent(in) :: num_soilc ! number of columns in column filter_soilc
-    integer, intent(in) :: filter_soilc(:) ! column filter_soilc
-    integer, intent(in) :: jtops(bounds%begc: )
     type(waterflux_type)    , intent(in) :: waterflux_vars
     type(column_type), intent(in) :: col ! column type
 
@@ -351,8 +343,8 @@ contains
     betr_waterflux_vars%qflx_tran_veg_patch     => waterflux_vars%qflx_tran_veg_patch
 
     call this%betr%step_with_drainage(betr_bounds, lbj, ubj, &
-         num_soilc, filter_soilc, &
-         jtops, betr_waterflux_vars, this%betr%tracers, this%betr%tracercoeffs, &
+         this%num_soilc, this%filter_soilc, &
+         this%jtops, betr_waterflux_vars, this%betr%tracers, this%betr%tracercoeffs, &
          this%betr%tracerstates,  this%betr%tracerfluxes)
 
   end subroutine StandaloneStepWithDrainage

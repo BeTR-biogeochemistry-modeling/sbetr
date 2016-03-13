@@ -37,7 +37,13 @@ module BeTRSimulation
   type, public :: betr_simulation_type
      type(betr_type), public :: betr
      character(len=betr_filename_length), public :: hist_filename
+     integer, public :: num_soilp
+     integer, public, allocatable :: filter_soilp(:)
+     integer, public :: num_jtops 
+     integer, public, allocatable :: jtops(:)
      integer, public :: num_soilc
+     integer, public, allocatable :: filter_soilc(:)
+
      ! FIXME(bja, 201603) most of these types should be private!
      
      ! NOTE(bja, 201603) BeTR types only, no LSM specific types here!
@@ -105,8 +111,20 @@ contains
 
     character(len=*), parameter :: subname = 'BeTRInit'
 
-    this%num_soilc = 1
     this%hist_filename = "betr_output.nc"
+    
+    this%num_jtops = 1
+    allocate(this%jtops(this%num_jtops))
+    this%jtops(:) = 1
+
+    this%num_soilc = 1
+    allocate(this%filter_soilc(this%num_soilc))
+    this%filter_soilc(:) = 1
+
+    this%num_soilp = 1
+    allocate(this%filter_soilp(this%num_soilp))
+    this%filter_soilp(:) = 1
+
     
     call this%betr%Init(namelist_buffer, betr_bounds, betr_waterstate, betr_cnstate)
 
@@ -198,8 +216,7 @@ contains
 
 
   !---------------------------------------------------------------------------------
-  subroutine BeTRSimulationStepWithoutDrainage(this, bounds, &
-       num_soilc, filter_soilc, num_soilp, filter_soilp, col ,   &
+  subroutine BeTRSimulationStepWithoutDrainage(this, bounds, col, &
        atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, &
        temperature_vars, waterflux_vars, chemstate_vars, &
        cnstate_vars, canopystate_vars, carbonflux_vars)
@@ -226,10 +243,6 @@ contains
     
     class(betr_simulation_type), intent(inout) :: this
     type(bounds_type), intent(in) :: bounds ! bounds
-    integer, intent(in) :: num_soilc ! number of columns in column filter_soilc
-    integer, intent(in) :: filter_soilc(:) ! column filter_soilc
-    integer, intent(in) :: num_soilp
-    integer, intent(in) :: filter_soilp(:) ! pft filter
 
 
     type(column_type), intent(in) :: col ! column type
@@ -248,8 +261,7 @@ contains
   end subroutine BeTRSimulationStepWithoutDrainage
 
   !---------------------------------------------------------------------------------
-  subroutine BeTRSimulationStepWithDrainage(this, bounds, num_soilc, &
-       filter_soilc, jtops, waterflux_vars, col)
+  subroutine BeTRSimulationStepWithDrainage(this, bounds, waterflux_vars, col)
 
     use ColumnType, only : column_type
     use MathfuncMod, only : safe_div
@@ -259,9 +271,6 @@ contains
 
     class(betr_simulation_type), intent(inout) :: this
     type(bounds_type), intent(in) :: bounds
-    integer, intent(in) :: num_soilc ! number of columns in column filter_soilc
-    integer, intent(in) :: filter_soilc(:) ! column filter_soilc
-    integer, intent(in) :: jtops(bounds%begc: )
     type(waterflux_type)    , intent(in) :: waterflux_vars
     type(column_type), intent(in) :: col ! column type
 
@@ -270,14 +279,14 @@ contains
 
   !---------------------------------------------------------------------------------
 
-  subroutine BeTRSimulationBeginMassBalanceCheck(this, bounds, num_soilc, &
-       filter_soilc)
-  use TracerBalanceMod, only : begin_betr_tracer_massbalance
-  implicit none
+  subroutine BeTRSimulationBeginMassBalanceCheck(this, bounds)
+    
+    use TracerBalanceMod, only : begin_betr_tracer_massbalance
+    
+    implicit none
+    
     class(betr_simulation_type) :: this
     type(bounds_type), intent(in) :: bounds
-    integer, intent(in) :: num_soilc ! number of columns in column filter_soilc
-    integer, intent(in) :: filter_soilc(:) ! column filter_soilc
 
     type(betr_bounds_type)     :: betr_bounds
     integer  :: lbj, ubj
@@ -289,21 +298,22 @@ contains
     betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
     lbj = betr_bounds%lbj; ubj = betr_bounds%ubj
 
-    call begin_betr_tracer_massbalance(betr_bounds, lbj, ubj, num_soilc, filter_soilc, &
+    call begin_betr_tracer_massbalance(betr_bounds, lbj, ubj, &
+         this%num_soilc, this%filter_soilc, &
          this%betr%tracers, this%betr%tracerstates, &
          this%betr%tracerfluxes)
 
   end  subroutine BeTRSimulationBeginMassBalanceCheck
   !---------------------------------------------------------------------------------
 
-  subroutine BeTRSimulationMassBalanceCheck(this, bounds, num_soilc, &
-       filter_soilc)
-  use TracerBalanceMod, only : betr_tracer_massbalance_check
-  implicit none
+  subroutine BeTRSimulationMassBalanceCheck(this, bounds)
+
+    use TracerBalanceMod, only : betr_tracer_massbalance_check
+
+    implicit none
+    
     class(betr_simulation_type) :: this
     type(bounds_type), intent(in) :: bounds
-    integer, intent(in) :: num_soilc ! number of columns in column filter_soilc
-    integer, intent(in) :: filter_soilc(:) ! column filter_soilc
 
     integer :: lbj, ubj
     type(betr_bounds_type)     :: betr_bounds
@@ -316,7 +326,8 @@ contains
     betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
     lbj = betr_bounds%lbj; ubj = betr_bounds%ubj
 
-    call betr_tracer_massbalance_check(betr_bounds, lbj, ubj, num_soilc, filter_soilc, &
+    call betr_tracer_massbalance_check(betr_bounds, lbj, ubj, &
+         this%num_soilc, this%filter_soilc, &
          this%betr%tracers, this%betr%tracerstates, &
          this%betr%tracerfluxes)
   end subroutine BeTRSimulationMassBalanceCheck
