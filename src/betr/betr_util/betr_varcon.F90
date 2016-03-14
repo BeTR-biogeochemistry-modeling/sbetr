@@ -14,6 +14,8 @@ module betr_varcon
   real(r8), public, parameter ::  bspval = 1.e36_r8  ! special value for real data
   integer , public, parameter :: bispval = -9999     ! special value for int data (keep this negative to avoid conflicts with possible valid values)
 
+  real(r8) :: bc14ratio = 1.e-12_r8
+
   real(r8) :: boneatm = 1.01325e5_r8 !one standard atmospheric pressure
   real(r8) :: brpi    = SHR_CONST_PI
   real(r8) :: bgrav   = SHR_CONST_G      !gravity constant [m/s2]

@@ -181,7 +181,12 @@ contains
     use BeTR_WaterstateType   , only : betr_waterstate_type
     use BeTR_WaterfluxType    , only : betr_waterflux_type
     use BeTR_TemperatureType, only : betr_temperature_type
+    use BeTR_SoilHydrologyType, only : betr_soilhydrology_type
+    use BeTR_atm2lndType, only : betr_atm2lnd_type
     use betr_decompMod    , only : betr_bounds_type
+    use BeTR_CanopyStateType, only : betr_canopystate_type
+    use BeTR_ChemStateType, only : betr_chemstate_type
+    use BeTR_SoilStateType, only : betr_soilstate_type
     use tracer_varcon, only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
 
     use PatchType, only : pft
@@ -219,6 +224,11 @@ contains
     type(betr_waterstate_type)  :: betr_waterstate_vars
     type(betr_bounds_type)     :: betr_bounds
     type(betr_temperature_type):: betr_temperature_vars
+    type(betr_soilhydrology_type) :: betr_soilhydrology_vars
+    type(betr_atm2lnd_type) :: betr_atm2lnd_vars
+    type(betr_canopystate_type)  :: betr_canopystate_vars
+    type(betr_chemstate_type) :: betr_chemstate_vars
+    type(betr_soilstate_type) :: betr_soilstate_vars ! column physics variable
     integer  :: lbj, ubj ! lower and upper bounds, make sure they are > 0
 
     !pass necessary data for correct subroutine call
@@ -293,11 +303,36 @@ contains
     betr_temperature_vars%t_soi_10cm          => temperature_vars%t_soi_10cm
     betr_temperature_vars%t_veg_patch         => temperature_vars%t_veg_patch
 
+    betr_soilhydrology_vars%fracice_col    => soilhydrology_vars%fracice_col
+    betr_soilhydrology_vars%zwts_col       => soilhydrology_vars%zwts_col
+    betr_soilhydrology_vars%qflx_bot_col   => soilhydrology_vars%qflx_bot_col
+
+    betr_atm2lnd_vars%forc_pbot_downscaled_col => atm2lnd_vars%forc_pbot_downscaled_col
+
+    betr_canopystate_vars%altmax_col      => canopystate_vars%altmax_col
+    betr_canopystate_vars%altmax_lastyear_col   => canopystate_vars%altmax_lastyear_col
+    betr_canopystate_vars%lbl_rsc_h2o_patch     => canopystate_vars%lbl_rsc_h2o_patch
+    betr_canopystate_vars%elai_patch      => canopystate_vars%elai_patch
+
+    betr_chemstate_vars%soil_pH => chemstate_vars%soil_pH
+
+    betr_soilstate_vars%bsw_col  => soilstate_vars%bsw_col
+    betr_soilstate_vars%watsat_col => soilstate_vars%watsat_col
+    betr_soilstate_vars%eff_porosity_col => soilstate_vars%eff_porosity_col
+    betr_soilstate_vars%soilpsi_col  => soilstate_vars%soilpsi_col
+    betr_soilstate_vars%cellorg_col  => soilstate_vars%cellorg_col
+    betr_soilstate_vars%cellclay_col  => soilstate_vars%cellclay_col
+    betr_soilstate_vars%cellsand_col  => soilstate_vars%cellsand_col
+    betr_soilstate_vars%bd_col   => soilstate_vars%bd_col
+    betr_soilstate_vars%watfc_col  => soilstate_vars%watfc_col
+    betr_soilstate_vars%sucsat_col => soilstate_vars%sucsat_col
+    betr_soilstate_vars%rootfr_patch => soilstate_vars%rootfr_patch
+
     call run_betr_one_step_without_drainage(betr_bounds, lbj, ubj, &
          num_soilc, filter_soilc, num_soilp, filter_soilp,  &
-         atm2lnd_vars, soilhydrology_vars, soilstate_vars, &
+         betr_atm2lnd_vars, betr_soilhydrology_vars, betr_soilstate_vars, &
          betr_waterstate_vars, betr_temperature_vars, betr_waterflux_vars, &
-         chemstate_vars, this%betr_cnstate_vars, canopystate_vars, &
+         betr_chemstate_vars, this%betr_cnstate_vars, betr_canopystate_vars, &
          betr_carbonflux_vars, this%betrtracer_vars, this%bgc_reaction, &
          this%betr_aerecond_vars, this%tracerboundarycond_vars, this%tracercoeff_vars, &
          this%tracerstate_vars, this%tracerflux_vars, this%plant_soilbgc)
@@ -512,8 +547,8 @@ contains
                   ! FIXME(bja, 201603) this depends on the SWRC
                   ! implemnted by the driving LSM. Doesn't agree with
                   ! stub version...
-
-                  !X!call soil_water_retention_curve%soil_suction_clm(c, j, s_node, soilstate_vars, smp_l(c,j))
+                  ! the following call is CLM specific, jyt, Mar 13, 2016
+                  !Xcall soil_water_retention_curve%soil_suction(c, j, s_node, soilstate_vars, smp_l(c,j))
                endif
 
             endif

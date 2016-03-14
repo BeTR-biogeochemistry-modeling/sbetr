@@ -1,11 +1,16 @@
 set(BETR_CORE_SOURCES
-  BeTRTracerType.F90
   BeTR_CNStateType.F90
   BeTR_CarbonFluxType.F90
   BeTR_aerocondType.F90
   BeTR_WaterstateType.F90
   BeTR_WaterfluxType.F90
   BeTR_TemperatureType.F90
+  BeTR_SoilHydrologyType.F90
+  BeTR_atm2lndType.F90
+  BeTR_CanopyStateType.F90
+  BeTR_ChemStateType.F90
+  BeTR_SoilStateType.F90
+  BeTRTracerType.F90
   KineticsMod.F90
   TracerBoundaryCondType.F90
   TracerCoeffType.F90

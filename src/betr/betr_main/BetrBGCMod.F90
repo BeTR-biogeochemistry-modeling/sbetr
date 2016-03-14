@@ -52,22 +52,22 @@ contains
     use BetrTracerType               , only          : betrtracer_type
     use TracerParamsMod              , only          : set_phase_convert_coeff, set_multi_phase_diffusion, calc_tracer_infiltration
     use TracerParamsMod              , only          : get_zwt, calc_aerecond, betr_annualupdate
-    use SoilStateType                , only          : soilstate_type
-    use BeTR_WaterStateType          , only          : Waterstate_Type  => BeTR_Waterstate_Type
+    use BeTR_SoilStateType           , only          : betr_soilstate_type
+    use BeTR_WaterStateType          , only          : BeTR_Waterstate_Type
     use BeTR_TemperatureType         , only          : betr_temperature_type
-    use ChemStateType                , only          : chemstate_type
-    use BeTR_WaterfluxType           , only          : waterflux_type   => betr_waterflux_type
+    use BeTR_ChemStateType           , only          : betr_chemstate_type
+    use BeTR_WaterfluxType           , only          : betr_waterflux_type
     use BeTR_ColumnType              , only          : col => betr_col
     use BGCReactionsMod              , only          : bgc_reaction_type
-    use atm2lndType                  , only          : atm2lnd_type
-    use SoilHydrologyType            , only          : soilhydrology_type
+    use BeTR_atm2lndType             , only          : betr_atm2lnd_type
+    use BeTR_SoilHydrologyType       , only          : betr_soilhydrology_type
     use tracer_varcon                , only          : nlevsoi  => betr_nlevsoi
     use PlantSoilBGCMod              , only          : plant_soilbgc_type
     use BeTR_CNStateType             , only          : betr_cnstate_type
     use BeTR_CarbonFluxType          , only          : betr_carbonflux_type
     use BeTR_aerocondType            , only          : betr_aerecond_type
     use betr_ctrl                    , only          : is_active_betr_bgc
-    use CanopyStateType              , only          : canopystate_type
+    use BeTR_CanopyStateType         , only          : betr_canopystate_type
 
     !
     ! !ARGUMENTS :
@@ -78,19 +78,19 @@ contains
     integer                          , intent(in)    :: filter_soilp(:)            ! pft filter
     integer                          , intent(in)    :: lbj, ubj                   ! lower and upper bounds, make sure they are > 0
 
-    type(Waterstate_Type)            , intent(in)    :: waterstate_vars            ! water state variables
-    type(soilstate_type)             , intent(in)    :: soilstate_vars             ! column physics variable
-    type(betr_temperature_type)           , intent(in)    :: temperature_vars           ! energy state variable
-    type(chemstate_type)             , intent(in)    :: chemstate_vars
+    type(betr_waterstate_type)            , intent(in)    :: waterstate_vars            ! water state variables
+    type(betr_soilstate_type)             , intent(in)    :: soilstate_vars             ! column physics variable
+    type(betr_temperature_type)      , intent(in)    :: temperature_vars           ! energy state variable
+    type(betr_chemstate_type)        , intent(in)    :: chemstate_vars
     class(betrtracer_type)           , intent(in)    :: betrtracer_vars            ! betr configuration information
     class(bgc_reaction_type)         , intent(in)    :: bgc_reaction
-    type(atm2lnd_type)               , intent(in)    :: atm2lnd_vars
-    type(soilhydrology_type)         , intent(in)    :: soilhydrology_vars
+    type(betr_atm2lnd_type)          , intent(in)    :: atm2lnd_vars
+    type(betr_soilhydrology_type)    , intent(in)    :: soilhydrology_vars
     type(betr_cnstate_type)          , intent(inout) :: cnstate_vars
-    type(canopystate_type)           , intent(in)    :: canopystate_vars
+    type(betr_canopystate_type)      , intent(in)    :: canopystate_vars
     type(betr_carbonflux_type)       , intent(in)    :: carbonflux_vars
     type(betr_aerecond_type)         , intent(inout) :: betr_aerecond_vars
-    type(waterflux_type)             , intent(inout) :: waterflux_vars
+    type(betr_waterflux_type)             , intent(inout) :: waterflux_vars
     type(tracerboundarycond_type)    , intent(inout) :: tracerboundarycond_vars
     type(tracercoeff_type)           , intent(inout) :: tracercoeff_vars
     type(tracerstate_type)           , intent(inout) :: tracerstate_vars
@@ -474,9 +474,9 @@ contains
     use tracerboundarycondtype  , only : tracerboundarycond_type
     use tracerfluxtype          , only : tracerflux_type
     use tracercoeffType         , only : tracercoeff_type
-    use BeTR_WaterfluxType      , only : waterflux_type   => betr_waterflux_type
+    use BeTR_WaterfluxType      , only : betr_waterflux_type
     use BGCReactionsMod         , only : bgc_reaction_type
-    use BeTR_WaterStateType     , only : Waterstate_Type  => BeTR_Waterstate_Type
+    use BeTR_WaterStateType     , only : BeTR_Waterstate_Type
 
     ! !ARGUMENTS:
     type(bounds_type)             , intent(in)    :: bounds
@@ -491,13 +491,13 @@ contains
     real(r8)                      , intent(in)    :: Rfactor(bounds%begc: ,lbj: ,1: )    !rfactor for dual diffusive transport
     integer                       , intent(in)    :: transp_pathway(2)                   !the pathway vector
     real(r8)                      , intent(in)    :: dtime                               !model time step
-    type(waterflux_type)          , intent(in)    :: waterflux_vars
+    type(betr_waterflux_type)     , intent(in)    :: waterflux_vars
     type(tracerboundarycond_type) , intent(in)    :: tracerboundarycond_vars
     class(bgc_reaction_type)      , intent(in)    :: bgc_reaction
     type(tracercoeff_type)        , intent(inout) :: tracercoeff_vars
     type(tracerstate_type)        , intent(inout) :: tracerstate_vars
     type(tracerflux_type)         , intent(inout) :: tracerflux_vars
-    type(Waterstate_Type)         , intent(in)    :: waterstate_vars                     ! water state variables
+    type(betr_waterstate_type)         , intent(in)    :: waterstate_vars                     ! water state variables
 
     ! !LOCAL VARIABLES:
     integer ::  kk
@@ -578,7 +578,7 @@ contains
     use TracerCoeffType    , only          : tracercoeff_type
     use TransportMod       , only          : semi_lagrange_adv_backward, set_debug_transp
     use abortutils         , only          : endrun
-    use BeTR_WaterfluxType , only          : waterflux_type   => betr_waterflux_type
+    use BeTR_WaterfluxType , only          : betr_waterflux_type
     use MathfuncMod        , only          : safe_div
     !
     type(bounds_type)      , intent(in)    :: bounds
@@ -591,7 +591,7 @@ contains
     real(r8)               , intent(in)    :: zi(bounds%begc: ,lbj-1: )
     real(r8)               , intent(in)    :: h2osoi_liqvol(bounds%begc: , lbj: ) !
     real(r8)               , intent(in)    :: dtime                               !model time step
-    type(waterflux_type)   , intent(in)    :: waterflux_vars
+    type(betr_waterflux_type)   , intent(in)    :: waterflux_vars
     type(tracercoeff_type) , intent(in)    :: tracercoeff_vars
     type(tracerstate_type) , intent(inout) :: tracerstate_vars
     type(tracerflux_type)  , intent(inout) :: tracerflux_vars
@@ -891,7 +891,7 @@ contains
     use TransportMod          , only : DiffusTransp, get_cntheta
     use abortutils            , only : endrun
     use tracer_varcon         , only : bndcond_as_conc
-    use BeTR_WaterStateType   , only : Waterstate_Type  => BeTR_Waterstate_Type
+    use BeTR_WaterStateType   , only : BeTR_Waterstate_Type
 
     !
     ! !ARGUMENTS:
@@ -908,7 +908,7 @@ contains
     type(tracerboundarycond_type) , intent(in)    :: ttracerboundarycond_vars
     type(tracerstate_type)        , intent(inout) :: tracerstate_vars
     type(tracerflux_type)         , intent(inout) :: tracerflux_vars
-    type(Waterstate_Type)         , intent(in)    :: waterstate_vars                             ! water state variables
+    type(betr_waterstate_type)         , intent(in)    :: waterstate_vars                             ! water state variables
     !
     ! !LOCAL VARIABLES:
     character(len=255)    :: subname = 'do_tracer_gw_diffusion'
@@ -1458,14 +1458,14 @@ contains
     use tracercoeffType       , only : tracercoeff_type
     use BeTR_ColumnType       , only : col => betr_col
     use MathfuncMod           , only : safe_div
-    use BeTR_WaterFluxType    , only : waterflux_type  => betr_waterflux_type
+    use BeTR_WaterFluxType    , only : betr_waterflux_type
     ! !ARGUMENTS:
     type(bounds_type),        intent(in)    :: bounds
     integer,                  intent(in)    :: lbj, ubj
     integer,                  intent(in)    :: num_soilc                          ! number of columns in column filter_soilc
     integer,                  intent(in)    :: filter_soilc(:)                    ! column filter_soilc
     integer,                  intent(in)    :: jtops(bounds%begc: )
-    type(waterflux_type)    , intent(in)    :: waterflux_vars
+    type(betr_waterflux_type)    , intent(in)    :: waterflux_vars
     class(betrtracer_type),    intent(in)    :: betrtracer_vars                    ! betr configuration information
     type(tracercoeff_type),   intent(in)    :: tracercoeff_vars                   ! tracer phase conversion coefficients
     type(tracerflux_type),    intent(inout) :: tracerflux_vars
@@ -1536,8 +1536,8 @@ contains
     !
     ! !USES:
     use clm_time_manager      , only : get_step_size
-    use BeTR_WaterStateType   , only : Waterstate_Type  => BeTR_Waterstate_Type
-    use BeTR_WaterfluxType    , only : waterflux_type   => betr_waterflux_type
+    use BeTR_WaterStateType   , only : BeTR_Waterstate_Type
+    use BeTR_WaterfluxType    , only : betr_waterflux_type
     use tracerfluxType        , only : tracerflux_type
     use tracerstatetype       , only : tracerstate_type
     use tracercoeffType       , only : tracercoeff_type
@@ -1551,8 +1551,8 @@ contains
     integer,                  intent(in)    :: filter_soilc(:)                         ! column filter_soilc
     real(r8),                 intent(in)    :: fracice_top(bounds%begc:bounds%endc)    ! ice fraction of topsoil
     real(r8),                 intent(in)    :: dz_top2(bounds%begc:bounds%endc, 1:ubj) ! node depth of the first 2 soil layers
-    type(Waterstate_Type),    intent(in)    :: waterstate_vars
-    type(waterflux_type),     intent(in)    :: waterflux_vars
+    type(betr_waterstate_type),    intent(in)    :: waterstate_vars
+    type(betr_waterflux_type),     intent(in)    :: waterflux_vars
     class(betrtracer_type),    intent(in)    :: betrtracer_vars                         ! betr configuration information
     type(tracercoeff_type),   intent(in)    :: tracercoeff_vars                        ! tracer phase conversion coefficients
     type(tracerflux_type),    intent(inout) :: tracerflux_vars                         ! tracer flux
@@ -1644,8 +1644,8 @@ contains
     use clm_time_manager      , only : get_step_size
     use BeTR_ColumnType       , only : col => betr_col
     use BeTR_LandunitType     , only : lun => betr_lun
-    use BeTR_WaterfluxType    , only : waterflux_type   => betr_waterflux_type
-    use BeTR_WaterstateType   , only : waterstate_type  => betr_waterstate_type
+    use BeTR_WaterfluxType    , only : betr_waterflux_type
+    use BeTR_WaterstateType   , only : betr_waterstate_type
     use tracerfluxType        , only : tracerflux_type
     use tracerstatetype       , only : tracerstate_type
     use betr_varcon           , only : spval => bspval
@@ -1656,8 +1656,8 @@ contains
     type(bounds_type)         , intent(in)    :: bounds
     integer                   , intent(in)    :: num_hydrologyc             ! number of column soil points in column filter_soilc
     integer                   , intent(in)    :: filter_soilc_hydrologyc(:) ! column filter_soilc for soil points
-    type(waterstate_type)     , intent(in)    :: waterstate_vars
-    type(waterflux_type)      , intent(in)    :: waterflux_vars
+    type(betr_waterstate_type)     , intent(in)    :: waterstate_vars
+    type(betr_waterflux_type)      , intent(in)    :: waterflux_vars
     class(betrtracer_type)     , intent(in)    :: betrtracer_vars            ! betr configuration information
     type(tracerflux_type)     , intent(inout) :: tracerflux_vars            ! tracer flux
     type(tracerstate_type)    , intent(inout) :: tracerstate_vars           ! tracer state variables data structure
@@ -1747,7 +1747,7 @@ contains
     ! !USES:
     use clm_time_manager      , only : get_step_size
     use BeTR_ColumnType       , only : col => betr_col
-    use BeTR_WaterfluxType    , only : waterflux_type   => betr_waterflux_type
+    use BeTR_WaterfluxType    , only : betr_waterflux_type
     use tracerfluxType        , only : tracerflux_type
     use tracerstatetype       , only : tracerstate_type
 
@@ -1755,7 +1755,7 @@ contains
     type(bounds_type)         , intent(in)    :: bounds
     integer                   , intent(in)    :: num_soilc        ! number of column soil points in column filter_soilc
     integer                   , intent(in)    :: filter_soilc(:)  ! column filter_soilc for soil points
-    type(waterflux_type)      , intent(in)    :: waterflux_vars
+    type(betr_waterflux_type)      , intent(in)    :: waterflux_vars
     class(betrtracer_type)     , intent(in)    :: betrtracer_vars  ! betr configuration information
     type(tracerflux_type)     , intent(inout) :: tracerflux_vars  ! tracer flux
     type(tracerstate_type)    , intent(inout) :: tracerstate_vars ! tracer state variables data structure

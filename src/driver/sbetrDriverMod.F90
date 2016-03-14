@@ -151,8 +151,8 @@ contains
     call simulation%MassBalanceCheck(bounds,  num_soilc, filter_soilc)
 
     !specific for water tracer transport
-    call simulation%ConsistencyCheck(bounds, ubj, num_soilc, &
-      filter_soilc, waterstate_vars)
+    !call simulation%ConsistencyCheck(bounds, ubj, num_soilc, &
+    !  filter_soilc, waterstate_vars)
 
     !update time stamp
     call update_time_stamp(time_vars, dtime)
