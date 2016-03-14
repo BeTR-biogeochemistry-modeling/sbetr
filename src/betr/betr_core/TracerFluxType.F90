@@ -11,7 +11,7 @@ module TracerFluxType
   use betr_varcon    , only : spval => bspval, ispval => bispval
   use tracer_varcon  , only : nlevtrc_soil => betr_nlevtrc_soil
   use BeTR_landvarconType, only : landvarcon => betr_landvarcon
-  use clm_varctl     , only : iulog
+  use betr_ctrl     , only : iulog => biulog
   !
   ! !PUBLIC TYPES:
 

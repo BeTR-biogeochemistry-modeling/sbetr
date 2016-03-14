@@ -8,7 +8,7 @@ module FindRootMod
   use bshr_kind_mod        , only : r8 => shr_kind_r8
   use bshr_log_mod         , only : errMsg => shr_log_errMsg
   use abortutils          , only : endrun
-  use clm_varctl          , only : iulog
+  use betr_ctrl          , only : iulog  => biulog
   use MathfuncMod         , only : is_bounded
   implicit none
   interface hybrid_findroot
@@ -91,7 +91,7 @@ contains
     ! return positive root of the cubic equation
     !
     ! !USES:
-    use clm_varcon , only : rpi
+    use betr_varcon , only : rpi  => brpi
     implicit none
     ! !ARGUMENTS:
     real(r8), intent(in) :: a, b, c, d
@@ -152,7 +152,7 @@ contains
     ! return positive root of the cubic equation
     !
     ! !USES:
-    use clm_varcon , only : rpi
+    use betr_varcon , only : rpi  => brpi
     implicit none
     ! !ARGUMENTS:
     real(r8), intent(in) :: a, b, c, d

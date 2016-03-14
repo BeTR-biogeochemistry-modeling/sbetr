@@ -10,7 +10,7 @@ module BetrBGCMod
   use bshr_log_mod        , only : errMsg => shr_log_errMsg
   use BeTR_decompMod     , only : bounds_type  => betr_bounds_type
   use BeTRTracerType     , only : betrtracer_type
-  use clm_varctl         , only : iulog
+  use betr_ctrl         , only : iulog  => biulog
   use clm_time_manager   , only : get_nstep
   use MathfuncMod        , only : dot_sum
   use betr_varcon        , only : denh2o => bdenh2o
@@ -44,7 +44,7 @@ contains
 
     ! !USES:
     use clm_time_manager             , only          : get_step_size
-    use clm_varctl                   , only          : use_cn
+    use betr_ctrl                    , only          : betr_use_cn
     use tracerfluxType               , only          : tracerflux_type
     use tracerstatetype              , only          : tracerstate_type
     use tracercoeffType              , only          : tracercoeff_type
@@ -112,7 +112,7 @@ contains
     !set up jtops
     tracerboundarycond_vars%jtops_col(:)=1
 
-    if(use_cn)then
+    if(betr_use_cn)then
        !update npp for aerenchyma calculation
        call betr_annualupdate(bounds, num_soilc, filter_soilc, num_soilp, filter_soilp, &
             carbonflux_vars, betr_aerecond_vars, tracercoeff_vars)

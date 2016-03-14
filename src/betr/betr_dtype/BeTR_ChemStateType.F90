@@ -6,7 +6,7 @@ module BeTR_ChemStateType
   use bshr_log_mod     , only : errMsg => shr_log_errMsg
   use bshr_infnan_mod  , only : nan => shr_infnan_nan, assignment(=)
   use betr_decompMod   , only : betr_bounds_type
-  use abortutils      , only : endrun
+
 
   implicit none
   save

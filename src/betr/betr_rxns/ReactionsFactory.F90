@@ -48,7 +48,7 @@ contains
     use MockBGCReactionsType     , only : bgc_reaction_mock_run_type
     use H2OIsotopeBGCReactionsType, only : bgc_reaction_h2oiso_type
     use abortutils                  , only : endrun
-    use clm_varctl                  , only : iulog
+    use betr_ctrl                  , only : iulog  => biulog
 
     ! !ARGUMENTS:
     class(bgc_reaction_type), allocatable :: bgc_reaction
@@ -73,7 +73,7 @@ contains
   use MockPlantSoilBGCType     , only : plant_soilbgc_mock_run_type
   use H2OIsotopePlantSoilBGCType     , only : plant_soilbgc_h2oiso_run_type
   use abortutils                  , only : endrun
-  use clm_varctl                  , only : iulog
+  use betr_ctrl                  , only : iulog  => biulog
 
 
   ! !ARGUMENTS:

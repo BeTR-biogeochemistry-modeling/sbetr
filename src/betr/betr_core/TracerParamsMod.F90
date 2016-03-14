@@ -1783,7 +1783,7 @@ contains
   use tracer_varcon         , only : nlevsoi  => betr_nlevsoi
   use BeTR_TemperatureType       , only : betr_temperature_type
   use MathfuncMod           , only : safe_div
-  use clm_varctl            , only : use_cn
+  use betr_ctrl            , only : betr_use_cn
   use clm_time_manager      , only : get_step_size, get_nstep
   type(bounds_type)            , intent(in)   :: bounds
   integer                      , intent(in)   :: num_soilp                 ! number of column soil points in column filter
@@ -1850,7 +1850,7 @@ contains
         ! the new components are in; if there is any tuning to be done to get a realistic global flux,
         ! this would probably be the place.  We will have to document clearly in the Tech Note
         ! any major changes from the Riley et al. 2011 version. (There are a few other minor ones.)
-        if(use_cn)then
+        if(betr_use_cn)then
           anpp = annsum_npp(p) ! g C / m^2/yr
           anpp = max(anpp, 0._r8) ! NPP can be negative b/c of consumption of storage pools
 
@@ -1867,7 +1867,7 @@ contains
         ! Note: this calculation is based on Arctic graminoids, and should be refined for woody plants, if not
         ! done on a PFT-specific basis.
 
-        if(.not. use_cn)then
+        if(.not. betr_use_cn)then
           m_tiller = 0._r8        !this was set to zero purposely
         else
           if (usefrootc) then

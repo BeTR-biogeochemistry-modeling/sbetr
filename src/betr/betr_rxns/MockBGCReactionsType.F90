@@ -159,7 +159,7 @@ contains
     ! set up boundary conditions for tracer movement
     !
     ! !USES:
-    use clm_varctl            , only : iulog
+    use betr_ctrl            , only : iulog  => biulog
     use TracerBoundaryCondType, only : tracerboundarycond_type
     use abortutils            , only : endrun
     use bshr_log_mod           , only : errMsg => shr_log_errMsg

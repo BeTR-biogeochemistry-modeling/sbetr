@@ -8,7 +8,7 @@ module BeTRSimulation
   !  structures.
   !
   use abortutils                  , only : endrun
-  use clm_varctl                  , only : iulog
+  use clm_varctl                  , only : iulog, use_cn
   use shr_log_mod                 , only : errMsg => shr_log_errMsg
   use tracer_varcon               , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
   use BeTR_decompMod              , only : betr_bounds_type
@@ -73,6 +73,7 @@ contains
     use TracerParamsMod       , only : tracer_param_init
     use WaterstateType        , only : waterstate_type
     use BeTR_WaterstateType   , only : betr_waterstate_type
+    use betr_ctrl             , only : betr_use_cn
     implicit none
 
     class(betr_simulation_type), intent(inout) :: this
@@ -96,6 +97,7 @@ contains
     lbj = betr_bounds%lbj; ubj = betr_bounds%ubj
     betr_waterstate%h2osoi_liq_col => waterstate%h2osoi_liq_col
     betr_waterstate%h2osoi_ice_col    => waterstate%h2osoi_ice_col
+    betr_use_cn = use_cn
 
     call this%betrtracer_vars%init_scalars()
 

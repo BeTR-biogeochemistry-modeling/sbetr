@@ -5,7 +5,6 @@ module BeTR_SoilStateType
   use bshr_log_mod     , only : errMsg => shr_log_errMsg
   use bshr_infnan_mod  , only : nan => shr_infnan_nan, assignment(=)
   use betr_decompMod       , only : betr_bounds_type
-  use abortutils      , only : endrun
   use betr_varcon      , only : spval => bspval
   implicit none
   save

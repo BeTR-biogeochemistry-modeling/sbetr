@@ -30,7 +30,7 @@ contains
     ! A x = r
     ! where x and r are vectors
     ! !USES:
-    use clm_varctl     , only : iulog
+    use betr_ctrl     , only : iulog => biulog
     !
     ! !ARGUMENTS:
     implicit none
@@ -107,7 +107,7 @@ contains
     ! A X = R
     ! where A, X and R are all matrices.
     ! !USES:
-    use clm_varctl     , only : iulog
+    use betr_ctrl     , only : iulog  => biulog
     !
     ! !ARGUMENTS:
     implicit none
@@ -205,7 +205,7 @@ contains
      !Attention: Now the code is specifically written for the soil water coupling with hydraulic
      !redistribution. Idealy, the code should fit well with the purpose of solving coupled heat and
      !water transport equation, but I did not make any attempt here.
-     use clm_varctl   , only : iulog
+     use betr_ctrl   , only : iulog  => biulog
      implicit none
      type(bounds_type) , intent(in)  :: bounds                                 ! bounds
      integer           , intent(in)  :: lbj, ubj                               ! lbinning and ubing level indices

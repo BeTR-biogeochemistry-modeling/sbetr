@@ -59,10 +59,6 @@ contains
   subroutine initCold(this, bounds)
     !
     ! !USES:
-    use spmdMod    , only : masterproc
-    use fileutils  , only : getfil
-    use clm_varctl , only : nsrest, nsrStartup
-    use ncdio_pio
     !
     ! !ARGUMENTS:
     class(betr_canopystate_type) :: this
@@ -77,7 +73,6 @@ contains
     real(r8) ,pointer     :: gti (:)                  ! read in - fmax (needs to be a pointer for use in ncdio)
     integer               :: dimid                    ! dimension id
     integer               :: ier                      ! error status
-    type(file_desc_t)     :: ncid                     ! netcdf id
     logical               :: readvar
     character(len=256)    :: locfn                    ! local filename
     integer               :: begc, endc

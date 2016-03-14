@@ -6,7 +6,7 @@ module KineticsMod
 
   use bshr_kind_mod, only: r8 => shr_kind_r8
   use abortutils,   only: endrun
-  use clm_varctl,   only: iulog
+  use betr_ctrl,    only: iulog => biulog
   implicit none
   real(r8),public, parameter :: kd_infty = 1.e40_r8      !internal parameter
 

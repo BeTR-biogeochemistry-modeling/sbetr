@@ -134,7 +134,7 @@ contains
     !
     ! !USES:
     use betr_varcon , only : spval  => bspval
-    use clm_varctl  , only : iulog
+    use betr_ctrl  , only : iulog => biulog
     use ncdio_pio
     !
     ! !ARGUMENTS:

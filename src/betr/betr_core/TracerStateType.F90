@@ -9,10 +9,10 @@ module TracerStateType
   use BeTR_decompMod , only : bounds_type  => betr_bounds_type
   use BeTR_LandunitType, only : lun => betr_lun
   use BeTR_ColumnType, only : col => betr_col
-  use clm_varctl     , only : iulog
+  use betr_ctrl     , only : iulog => biulog
   use abortutils     , only : endrun
   use spmdMod        , only : masterproc
-  use clm_varcon     , only : spval, ispval
+  use betr_varcon     , only : spval => bspval, ispval => bispval
   use BeTR_landvarconType, only : landvarcon => betr_landvarcon
   use MathfuncMod    , only : dot_sum
   !
@@ -258,7 +258,7 @@ contains
     ! Read/Write module information to/from restart file.
     !
     ! !USES:
-    use clm_varctl , only : iulog
+    use betr_ctrl , only : iulog  => biulog
     use BeTRTracerType, only : BeTRTracer_Type
     !use spmdMod    , only : masterproc
     use restUtilMod

@@ -196,7 +196,7 @@ implicit none
   ! DESCRIPTION
   ! set up boundary conditions for tracer movement
   !
-  use clm_varctl            , only : iulog
+  use betr_ctrl            , only : iulog => biulog
   use TracerBoundaryCondType, only : tracerboundarycond_type
   use bshr_log_mod           , only : errMsg => shr_log_errMsg
   use BeTR_decompMod        , only : betr_bounds_type
