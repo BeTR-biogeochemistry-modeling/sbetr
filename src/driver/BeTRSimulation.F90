@@ -26,7 +26,14 @@ module BeTRSimulation
   use betr_constants, only : betr_string_length
   use BeTR_CNStateType, only : betr_cnstate_type
   use BeTR_CarbonFluxType, only : betr_carbonflux_type
-
+  use BeTR_WaterstateType   , only : betr_waterstate_type
+  use BeTR_WaterfluxType    , only : betr_waterflux_type
+  use BeTR_TemperatureType, only : betr_temperature_type
+  use BeTR_SoilHydrologyType, only : betr_soilhydrology_type
+  use BeTR_atm2lndType, only : betr_atm2lnd_type
+  use BeTR_CanopyStateType, only : betr_canopystate_type
+  use BeTR_ChemStateType, only : betr_chemstate_type
+  use BeTR_SoilStateType, only : betr_soilstate_type
   implicit none
 
   private
@@ -49,6 +56,14 @@ module BeTRSimulation
      class(bgc_reaction_type), allocatable,public :: bgc_reaction
      type(betr_aerecond_type), public :: betr_aerecond_vars
      type(betr_carbonflux_type), public :: betr_carbonflux_vars
+     type(betr_soilstate_type), public :: betr_soilstate_vars ! column physics variable
+     type(betr_waterflux_type), public  :: betr_waterflux_vars
+     type(betr_waterstate_type), public  :: betr_waterstate_vars
+     type(betr_temperature_type),public :: betr_temperature_vars
+     type(betr_soilhydrology_type), public :: betr_soilhydrology_vars
+     type(betr_canopystate_type), public  :: betr_canopystate_vars
+     type(betr_chemstate_type), public :: betr_chemstate_vars
+     type(betr_atm2lnd_type), public :: betr_atm2lnd_vars
    contains
      procedure, public :: Init => BeTRSimulationInit
      procedure, public :: ReadNameList => BeTRSimulationReadNameList
@@ -83,7 +98,6 @@ contains
     type(waterstate_type), intent(inout) :: waterstate
 
     character(len=*), parameter :: subname = 'BeTRSimulationInit'
-    type(betr_waterstate_type) :: betr_waterstate
     type(betr_bounds_type)     :: betr_bounds
     integer :: lbj, ubj
 
@@ -95,8 +109,8 @@ contains
     betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
 
     lbj = betr_bounds%lbj; ubj = betr_bounds%ubj
-    betr_waterstate%h2osoi_liq_col => waterstate%h2osoi_liq_col
-    betr_waterstate%h2osoi_ice_col    => waterstate%h2osoi_ice_col
+    this%betr_waterstate_vars%h2osoi_liq_col => waterstate%h2osoi_liq_col
+    this%betr_waterstate_vars%h2osoi_ice_col    => waterstate%h2osoi_ice_col
     betr_use_cn = use_cn
 
     call this%betrtracer_vars%init_scalars()
@@ -119,7 +133,7 @@ contains
     call this%plant_soilbgc%Init_plant_soilbgc(betr_bounds, lbj, ubj)
 
     !initialize state variable
-    call this%bgc_reaction%initCold(betr_bounds,  this%betrtracer_vars, betr_waterstate, this%tracerstate_vars)
+    call this%bgc_reaction%initCold(betr_bounds,  this%betrtracer_vars, this%betr_waterstate_vars, this%tracerstate_vars)
 
     !initialize boundary condition type
     call this%bgc_reaction%init_boundary_condition_type(betr_bounds, this%betrtracer_vars, this%tracerboundarycond_vars)

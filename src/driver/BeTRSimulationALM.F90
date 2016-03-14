@@ -108,7 +108,7 @@ contains
     implicit none
 
     ! !ARGUMENTS:
-    class(betr_simulation_standalone_type) :: this
+    class(betr_simulation_alm_type) :: this
     type(bounds_type), intent(in) :: bounds
     integer, intent(in) :: lbj, ubj
     integer, intent(in) :: num_soilc ! number of columns in column filter_soilc
@@ -122,10 +122,11 @@ contains
 
 
   !------------------------------------------------------------------------
-  subroutine ALMBetrPlantSoilBGCSend(bounds, num_soilc, &
+  subroutine ALMBetrPlantSoilBGCSend(this, bounds, num_soilc, &
            filter_soilc)
 
   implicit none
+  class(betr_simulation_alm_type) :: this
   type(bounds_type)         , intent(in)   :: bounds
   integer                   , intent(in)   :: num_soilc
   integer                   , intent(in)   :: filter_soilc(:)
@@ -139,7 +140,7 @@ contains
 
   !------------------------------------------------------------------------
 
-  subroutine ALMDiagnoseDtracerFreezeThaw(bounds, num_nolakec, filter_nolakec, col, lun, &
+  subroutine ALMDiagnoseDtracerFreezeThaw(this, bounds, num_nolakec, filter_nolakec, col, lun, &
     waterstate_vars)
   !
   ! DESCRIPTION
@@ -155,6 +156,7 @@ contains
   !
   ! Arguments
   implicit none
+  class(betr_simulation_alm_type) :: this
   type(bounds_type)      , intent(in)    :: bounds
   integer                , intent(in)    :: num_nolakec                        ! number of column non-lake points in column filter
   integer                , intent(in)    :: filter_nolakec(:)                  ! column filter for non-lake points
@@ -170,7 +172,7 @@ contains
 
 
   !------------------------------------------------------------------------
-  subroutine ALMCalcDewSubFlux(bounds, num_hydrologyc, filter_soilc_hydrologyc, &
+  subroutine ALMCalcDewSubFlux(this, bounds, num_hydrologyc, filter_soilc_hydrologyc, &
        waterstate_vars, waterflux_vars)
 
   use ColumnType            , only : col
@@ -182,6 +184,7 @@ contains
   use landunit_varcon       , only : istsoil, istcrop
 
   ! !ARGUMENTS:
+  class(betr_simulation_alm_type) :: this
   type(bounds_type)         , intent(in)    :: bounds
   integer                   , intent(in)    :: num_hydrologyc             ! number of column soil points in column filter_soilc
   integer                   , intent(in)    :: filter_soilc_hydrologyc(:) ! column filter_soilc for soil points
@@ -194,10 +197,11 @@ contains
   end subroutine ALMCalcDewSubFlux
 
   !------------------------------------------------------------------------
-  subroutine ALMBetrFluxStateReceive(bounds, num_soilc, filter_soilc)
+  subroutine ALMBetrFluxStateReceive(this, bounds, num_soilc, filter_soilc)
 
   implicit none
   ! !ARGUMENTS:
+  class(betr_simulation_alm_type) :: this
   type(bounds_type)         , intent(in)   :: bounds
   integer                   , intent(in)   :: num_soilc
   integer                   , intent(in)   :: filter_soilc(:)
@@ -209,7 +213,7 @@ contains
   end subroutine ALMBetrFluxStateReceive
 
   !------------------------------------------------------------------------
-  subroutine ALMCalcSmpL(bounds, lbj, ubj, numf, filter, t_soisno, soilstate_vars, waterstate_vars, soil_water_retention_curve)
+  subroutine ALMCalcSmpL(this, bounds, lbj, ubj, numf, filter, t_soisno, soilstate_vars, waterstate_vars, soil_water_retention_curve)
 
   use SoilStateType              , only : soilstate_type
   use WaterStateType             , only : waterstate_type
@@ -217,6 +221,7 @@ contains
   use clm_varcon                 , only : grav,hfus,tfrz
 
   implicit none
+  class(betr_simulation_alm_type) :: this
   type(bounds_type)         , intent(in)    :: bounds  ! bounds
   integer                   , intent(in)    :: lbj, ubj                                          ! lower and upper bounds, make sure they are > 0
   integer                   , intent(in)    :: numf                                              ! number of columns in column filter
@@ -262,7 +267,7 @@ contains
 
 
   !------------------------------------------------------------------------
-  subroutine ALMBetrReadParams(ncid)
+  subroutine ALMBetrReadParams(this, ncid)
   !
   ! DESCRIPTIONS
   ! read in parameters from namelist
@@ -273,6 +278,7 @@ contains
   !
   !ARGUMENTS
   !
+  class(betr_simulation_alm_type) :: this
   type(file_desc_t)                 , intent(inout) :: ncid  ! pio netCDF file id
 
   call bgc_reaction%readParams(ncid, betrtracer_vars)
