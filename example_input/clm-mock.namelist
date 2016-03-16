@@ -1,7 +1,11 @@
 &sbetr_driver
   simulator_name = 'clm'
-  reactions_name = 'mock_run'
 /
+
+&betr_parameters
+  reaction_method = 'mock_run'
+/
+
 
 &forcing_inparm
   grid_filename = "sierra_grid.nc"

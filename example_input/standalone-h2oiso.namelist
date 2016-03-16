@@ -1,6 +1,9 @@
 &sbetr_driver
   simulator_name = 'standalone'
-  reactions_name = 'h2oiso'
+/
+
+&betr_parameters
+  reaction_method = 'h2oiso'
 /
 
 &forcing_inparm

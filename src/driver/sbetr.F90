@@ -1,21 +1,11 @@
 program main
 
-  use decompMod            , only : bounds_type
-  use clmgridMod           , only : init_clm_vertgrid
-  use clm_varpar           , only : nlevgrnd
-  use clm_initializeMod    , only : initialize
-  use sbetrDriverMod, only : time_type
   use sbetrDriverMod, only : sbetrBGC_driver
 
   use betr_constants, only : betr_filename_length, betr_namelist_buffer_size
   
   
   implicit none
-
-  type(bounds_type) :: bounds
-  type(time_type) :: ttime
-  integer :: numf
-  integer, pointer :: filter(:)
 
   integer :: arg_count
   integer :: args
@@ -35,38 +25,20 @@ program main
   namelist_buffer = ''
   call namelist_to_buffer(namelist_filename, namelist_buffer)
   
-  !set up mask
-  bounds%begc = 1
-  bounds%endc = 1
-  bounds%begp = 1
-  bounds%endp = 1
-  bounds%begl = 1
-  bounds%endl = 1
-  bounds%lbj  = 1
-  bounds%ubj  = nlevgrnd
-
-  numf = 1
-  ttime%time_end = 1800*48*10
-  ttime%restart_dtime=1800*2
-  allocate(filter(numf))
-  filter(:) = 1
-
-  !set up grid
-  call init_clm_vertgrid(nlevgrnd)
-
-  call initialize(bounds)
-
-  call sbetrBGC_driver(namelist_buffer, bounds, numf, filter, ttime)
+  call sbetrBGC_driver(namelist_buffer)
 
 end program main
 
 
+! ----------------------------------------------------------------------
 subroutine usage()
   use betr_constants, only : stdout
   
   write(stdout, *) 'sbetr - standalone driver for BeTR reactive transport library.'
   write(stdout, *) 'usage: sbetr namelist_filename'
 end subroutine usage
+
+! ----------------------------------------------------------------------
 
 subroutine namelist_to_buffer(namelist_filename, namelist_buffer)
 

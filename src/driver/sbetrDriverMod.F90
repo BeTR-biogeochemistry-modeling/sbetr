@@ -7,6 +7,8 @@ module sbetrDriverMod
   use ncdio_pio
   use CLMForcType         , only : clmforc_vars
 
+  use BeTR_TimeMod, only : betr_time_type
+
   implicit none
 
   private
@@ -15,18 +17,9 @@ module sbetrDriverMod
 
   character(len=*), parameter :: mod_filename = __FILE__
 
-
-  type,public:: time_type
-    real(r8) :: time_end
-    real(r8) :: time
-    real(r8) :: restart_dtime
-    integer  :: tstep
-  end type time_type
-
-  character(len=*), parameter :: histfilename="betr_output.nc"      !this will be changed
 contains
 
-  subroutine sbetrBGC_driver(namelist_buffer, bounds, num_soilc, filter_soilc,time_vars)
+  subroutine sbetrBGC_driver(namelist_buffer)
   !
   !DESCRIPTION
   !driver subroutine for sbetrBGC
@@ -38,6 +31,10 @@ contains
   use decompMod           , only : bounds_type
   use clm_instMod
   use ColumnType          , only : col
+  use clmgridMod           , only : init_clm_vertgrid
+  use clm_varpar           , only : nlevgrnd
+  use clm_initializeMod    , only : initialize
+
   use BeTRSimulation, only : betr_simulation_type
   use BeTRSimulationFactory, only : create_betr_simulation
 
@@ -59,11 +56,6 @@ contains
 
   implicit none
   character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
-  type(bounds_type),        intent(in) :: bounds                                ! bounds
-  integer,                  intent(in) :: num_soilc                                  ! number of columns in column filter
-  integer,                  intent(in) :: filter_soilc(:)                             ! column filter
-
-  type(time_type),       intent(inout) :: time_vars
 
   !local variables
   class(betr_simulation_type), pointer :: simulation
@@ -73,25 +65,42 @@ contains
 
   character(len=80) :: subname = 'sbetrBGC_driver'
 
-  integer :: num_soilp
-  integer, allocatable :: filter_soilp(:)
+  type(betr_time_type) :: time_vars
+  type(bounds_type) :: bounds
   integer :: lbj, ubj
-  integer :: jtops(bounds%begc:bounds%endc)
 
-  character(len=betr_string_length_long) :: simulator_name, reactions_name
+  character(len=betr_string_length_long) :: simulator_name
+
+  !initialize parameters
+  call read_name_list(namelist_buffer, simulator_name)
+  simulation => create_betr_simulation(simulator_name)
+
+  !set up mask
+  bounds%begc = 1
+  bounds%endc = 1
+  bounds%begp = 1
+  bounds%endp = 1
+  bounds%begl = 1
+  bounds%endl = 1
+  bounds%lbj  = 1
+  bounds%ubj  = nlevtrc_soil
+
+  !set up grid
+  call init_clm_vertgrid(nlevgrnd)
+
+  call initialize(bounds)
 
 
   dtime = 1800._r8   !half hourly time step
   time_vars%tstep = 1
   time_vars%time  = 0._r8
-  time_vars%time_end=dtime*48._r8*365._r8*2._r8
+  time_vars%time_end = dtime*48._r8*365._r8*2._r8
+  time_vars%restart_dtime = 1800*2
 
   call clmforc_vars%LoadForcingData(namelist_buffer)
 
-  jtops(:) = 1  !this will be replaced with nan when I figured out how to do it, Jinyun Tang, June 17, 2014
-
   lbj = 1
-  ubj = nlevgrnd
+  ubj = nlevtrc_soil
 
   lun%itype(1) = istsoil
   col%landunit(1) = 1
@@ -100,26 +109,16 @@ contains
   pft%column(1)   = 1
   pft%itype(1)    = 2
 
-  num_soilp = 1
-  allocate(filter_soilp(num_soilp)); filter_soilp(:) = 1
-
   call spmd_init
+  !set filters to load initialization data from input
+  call simulation%BeTRSetFilter()
 
-  !initialize parameters
-  call read_name_list(namelist_buffer, simulator_name, reactions_name)
-  simulation => create_betr_simulation(simulator_name)
-
-  !in all calculations, ubj is set to nlevtrc_soil
-  ubj = nlevtrc_soil
   !obtain waterstate_vars for initilizations that need it
-  call read_betrforcing(bounds, lbj, ubj, num_soilc, filter_soilc, time_vars, col, &
-      atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars             , &
-      waterflux_vars, temperature_vars, chemstate_vars, jtops)
+  call read_betrforcing(bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, time_vars, col, &
+       atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars             , &
+       waterflux_vars, temperature_vars, chemstate_vars, simulation%jtops)
 
-  call  simulation%Init(reactions_name, bounds, waterstate_vars)
-
-  !create output file
-  call hist_htapes_create(histfilename,nlevtrc_soil, num_soilc, simulation%betrtracer_vars)
+  call  simulation%Init(namelist_buffer, bounds, waterstate_vars, cnstate_vars)
 
   record = -1
 
@@ -129,26 +128,28 @@ contains
     !set envrionmental forcing by reading foring data: temperature, moisture, atmospheric resistance
     !from either user specified file or clm history file
 
-    call read_betrforcing(bounds, lbj, ubj, num_soilc, filter_soilc, time_vars, col, &
-      atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars             , &
-      waterflux_vars, temperature_vars, chemstate_vars, jtops)
+    call read_betrforcing(bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, time_vars, col, &
+      atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars, &
+      waterflux_vars, temperature_vars, chemstate_vars, simulation%jtops)
 
     !calculate advective velocity
-    call calc_qadv(ubj, record, num_soilc, filter_soilc, dtime, time_vars, col, waterstate_vars, waterflux_vars)
+    call calc_qadv(ubj, record, &
+         simulation%num_soilc, simulation%filter_soilc, &
+         dtime, time_vars, col, waterstate_vars, waterflux_vars)
 
     !no calculation in the first step
     if(record==0)cycle
-    call simulation%BeginMassBalanceCheck(bounds,  num_soilc, filter_soilc)
+    call simulation%BeginMassBalanceCheck(bounds)
 
-    call simulation%StepWithoutDrainage(bounds,  num_soilc, filter_soilc, num_soilp, filter_soilp, col ,   &
-         atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, temperature_vars, waterflux_vars, chemstate_vars, &
+    call simulation%StepWithoutDrainage(bounds, col, &
+         atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, &
+         temperature_vars, waterflux_vars, chemstate_vars, &
          cnstate_vars, canopystate_vars, carbonflux_vars)
 
-    call simulation%StepWithDrainage(bounds,  num_soilc, filter_soilc, &
-         jtops, waterflux_vars, col)
+    call simulation%StepWithDrainage(bounds, waterflux_vars, col)
 
     !do mass balance check
-    call simulation%MassBalanceCheck(bounds,  num_soilc, filter_soilc)
+    call simulation%MassBalanceCheck(bounds)
 
     !specific for water tracer transport
     !call simulation%ConsistencyCheck(bounds, ubj, num_soilc, &
@@ -158,9 +159,7 @@ contains
     call update_time_stamp(time_vars, dtime)
 
     !write output
-    call hist_write(record, lbj, ubj, simulation%tracerflux_vars, &
-         simulation%tracerstate_vars, time_vars, &
-         simulation%betrtracer_vars)
+    call simulation%WriteHistory(record, lbj, ubj, time_vars)
 
     !write restart file? is not functionning at the moment
     !if(its_time_to_write_restart(time_vars)) call rest_write(tracerstate_vars, tracercoeff_vars, tracerflux_vars, time_vars)
@@ -169,10 +168,11 @@ contains
 
   enddo
 
-  end subroutine sbetrBGC_driver
+end subroutine sbetrBGC_driver
+
 ! ----------------------------------------------------------------------
 
-  subroutine read_name_list(namelist_buffer, simulator_name_arg, reactions_name_arg)
+  subroutine read_name_list(namelist_buffer, simulator_name_arg)
     !
     ! !DESCRIPTION:
     ! read namelist for betr configuration
@@ -187,21 +187,20 @@ contains
     implicit none
     ! !ARGUMENTS:
     character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
-    character(len=betr_string_length_long), intent(out) :: simulator_name_arg, reactions_name_arg
+    character(len=betr_string_length_long), intent(out) :: simulator_name_arg
     !
     ! !LOCAL VARIABLES:
     integer :: nml_error
     character(len=*), parameter :: subname = 'read_name_list'
-    character(len=betr_string_length_long) :: simulator_name, reactions_name
+    character(len=betr_string_length_long) :: simulator_name
     character(len=betr_string_length_long) :: ioerror_msg
 
 
     !-----------------------------------------------------------------------
 
-    namelist / sbetr_driver / simulator_name, reactions_name
+    namelist / sbetr_driver / simulator_name
 
     simulator_name = ''
-    reactions_name = ''
 
     ! ----------------------------------------------------------------------
     ! Read namelist from standard input.
@@ -229,7 +228,6 @@ contains
     endif
 
     simulator_name_arg = simulator_name
-    reactions_name_arg = reactions_name
 
   end subroutine read_name_list
 
@@ -242,7 +240,7 @@ contains
   !
 
   implicit none
-  type(time_type), intent(in) :: ttime
+  type(betr_time_type), intent(in) :: ttime
   logical :: ans
 
   character(len=80) :: subname = 'its_time_to_write_restart'
@@ -260,7 +258,7 @@ contains
   !
 
   implicit none
-  type(time_type), intent(in) :: ttime
+  type(betr_time_type), intent(in) :: ttime
   logical :: ans
 
 
@@ -279,7 +277,7 @@ contains
   use shr_kind_mod, only : r8 => shr_kind_r8
 
   implicit none
-  type(time_type), intent(inout) :: ttime
+  type(betr_time_type), intent(inout) :: ttime
   real(r8),           intent(in) :: dtime
 
   character(len=80) :: subname='update_time_stamp'
@@ -292,69 +290,7 @@ contains
   end subroutine update_time_stamp
 
 !-------------------------------------------------------------------------------
-  subroutine hist_write(record, lbj, ubj, tracerflux_vars, tracerstate_vars, time_vars, betrtracer_vars)
-  !
-  ! DESCRIPTION
-  ! output hist file
-  !
-  use TracerFluxType,  only : tracerflux_type
-  use TracerStateType, only : tracerstate_type
-  use BeTRTracerType , only : BeTRTracer_Type
-  implicit none
-  integer                , intent(in) :: record
-  integer                , intent(in) :: lbj,ubj
-  type(tracerflux_type)  , intent(in) :: tracerflux_vars
-  type(tracerstate_type) , intent(in) :: tracerstate_vars
-  type(time_type)        , intent(in) :: time_vars
-  type(BeTRTracer_Type)  , intent(in) :: betrtracer_vars
 
-
-  type(file_desc_t)     :: ncid
-  integer :: jj
-  character(len=80) :: subname='hist_write'
-
-  associate(                                                    &
-    ntracers          =>  betrtracer_vars%ntracers            , &
-    ngwmobile_tracers =>  betrtracer_vars%ngwmobile_tracers   , &
-    is_volatile       =>  betrtracer_vars%is_volatile         , &
-    is_h2o            =>  betrtracer_vars%is_h2o              , &
-    is_isotope        =>  betrtracer_vars%is_isotope          , &
-    volatileid        =>  betrtracer_vars%volatileid          , &
-    tracernames       =>  betrtracer_vars%tracernames           &
-  )
-
-  call ncd_pio_openfile_for_write(ncid,histfilename)
-
-  if (mod(time_vars%time ,86400._r8)==0) then
-     print*,'day', time_vars%time/86400._r8
-  end if
-  call ncd_putvar(ncid, "time", record, time_vars%time)
-
-  do jj = 1, ntracers
-    if(jj<= ngwmobile_tracers)then
-      call ncd_putvar(ncid,trim(tracernames(jj))//'_TRACER_CONC_MOIBLE',&
-        record,tracerstate_vars%tracer_conc_mobile_col(1:1,lbj:ubj,jj))
-
-        if(is_volatile(jj) .and. (.not. is_h2o(jj)) .and. (.not. is_isotope(jj)))then
-
-          call ncd_putvar(ncid, trim(tracernames(jj))//'_TRACER_P_GAS_FRAC',&
-            record,tracerstate_vars%tracer_P_gas_frac_col(1:1,lbj:ubj,volatileid(jj)))
-        endif
-        if(is_volatile(jj))then
-          call ncd_putvar(ncid, trim(tracernames(jj))//'_FLX_SURFEMI', &
-            record, tracerflux_vars%tracer_flx_surfemi_col(1:1, volatileid(jj)))
-        endif
-    else
-      call ncd_putvar(ncid, trim(tracernames(jj))//'_TRACER_CONC_SOLID_PASSIVE', &
-      record, tracerstate_vars%tracer_conc_solid_passive_col(1:1,lbj:ubj,jj-ngwmobile_tracers))
-    endif
-  enddo
-
-  call ncd_putvar(ncid, 'TRACER_P_GAS', record, tracerstate_vars%tracer_P_gas_col(1:1,lbj:ubj))
-  call ncd_pio_closefile(ncid)
-  end associate
-  end subroutine hist_write
-!-------------------------------------------------------------------------------
   subroutine rest_write(tracerstate_vars, tracercoeff_vars, tracerflux_vars, time_vars)
   !
   ! DESCRIPTION
@@ -368,92 +304,11 @@ contains
   type(tracercoeff_type), intent(in) :: tracercoeff_vars
   type(tracerflux_type) , intent(in) :: tracerflux_vars
   type(tracerstate_type), intent(in) :: tracerstate_vars
-  type(time_type)       , intent(in) :: time_vars
+  type(betr_time_type)       , intent(in) :: time_vars
   character(len=80) :: subname = 'rest_write'
 
 
-
-
-
   end subroutine rest_write
-
-
-!-------------------------------------------------------------------------------
-
-  subroutine hist_htapes_create(histfilename,nlevtrc_soil, ncol, betrtracer_vars)
-  !
-  ! DESCRIPTIONS
-  ! create history file and define output variables
-  use netcdf
-  use histFileMod, only : hist_file_create, hist_def_fld1d, hist_def_fld2d
-
-  use BeTRTracerType, only: BeTRTracer_Type
-  !
-  !ARGUMENTS
-  implicit none
-  character(len=*)     , intent(in) :: histfilename
-  integer              , intent(in) :: nlevtrc_soil, ncol
-  type(BeTRTracer_Type), intent(in) :: betrtracer_vars
-
-  integer            :: jj, kk
-  type(file_desc_t)  :: ncid
-  character(len=255) :: subname = 'hist_htapes_create'
-
-  associate(                                                    &
-    ntracers          =>  betrtracer_vars%ntracers            , &
-    ngwmobile_tracers =>  betrtracer_vars%ngwmobile_tracers   , &
-    is_volatile       =>  betrtracer_vars%is_volatile         , &
-    is_h2o            =>  betrtracer_vars%is_h2o              , &
-    is_isotope        =>  betrtracer_vars%is_isotope          , &
-    volatileid        =>  betrtracer_vars%volatileid          , &
-    tracernames       =>  betrtracer_vars%tracernames           &
-  )
-
-  call ncd_pio_createfile(ncid, histfilename)
-
-  call hist_file_create(ncid,nlevtrc_soil, ncol)
-
-
-  call  hist_def_fld2d(ncid, varname="TRACER_P_GAS", nf90_type=nf90_float,dim1name="ncol", &
-      dim2name="levgrnd",long_name="total gas pressure", units="Pa")
-
-  do jj = 1, ntracers
-    if(jj<= ngwmobile_tracers)then
-      call hist_def_fld2d(ncid, varname=trim(tracernames(jj))//'_TRACER_CONC_MOIBLE',&
-        nf90_type=nf90_float, dim1name="ncol", &
-        dim2name="levgrnd", long_name=trim(tracernames(jj))//"tracer concentrations", &
-        units="mol m-3")
-
-        if(is_volatile(jj) .and. (.not. is_h2o(jj)) .and. (.not. is_isotope(jj)))then
-
-          call hist_def_fld2d(ncid, varname=trim(tracernames(jj))//'_TRACER_P_GAS_FRAC',&
-            nf90_type=nf90_float, dim1name="ncol", &
-            dim2name="levgrnd", long_name='fraction of gas phase contributed by '//trim(tracernames(jj)), &
-            units="none")
-
-        endif
-
-        if(is_volatile(jj))then
-
-          call hist_def_fld1d (ncid, varname=trim(tracernames(jj))//'_FLX_SURFEMI', units='mol/m2/s', &
-            nf90_type=nf90_float,  dim1name="ncol", &
-            long_name='loss from surface emission for '//trim(tracernames(jj)))
-        endif
-    else
-      call hist_def_fld2d(ncid, varname=trim(tracernames(jj))//'_TRACER_CONC_SOLID_PASSIVE',&
-        nf90_type=nf90_float, dim1name="ncol", &
-        dim2name="levgrnd", long_name=trim(tracernames(jj))//"tracer concentrations", &
-        units="mol m-3")
-    endif
-  enddo
-
-
-  call ncd_enddef(ncid)
-
-  call ncd_pio_closefile(ncid)
-
-  end associate
-  end subroutine hist_htapes_create
 
 !-------------------------------------------------------------------------------
 
@@ -480,7 +335,7 @@ contains
   integer, intent(in) :: numf
   integer, intent(in) :: filter(:)
   integer, intent(in) :: lbj, ubj
-  type(time_type),             intent(in) :: ttime
+  type(betr_time_type),             intent(in) :: ttime
   type(chemstate_type),     intent(inout) :: chemstate_vars
   type(atm2lnd_type),       intent(inout) :: atm2lnd_vars
   type(soilstate_type),     intent(inout) :: soilstate_vars
@@ -572,7 +427,7 @@ contains
   integer, intent(in) :: ubj
 
   integer                 , intent(in)    :: record
-  type(time_type)         , intent(in)    :: ttime
+  type(betr_time_type)    , intent(in)    :: ttime
   real(r8)                , intent(in)    :: dtime
   type(waterstate_type)   , intent(inout) :: waterstate_vars
   type(waterflux_type)    , intent(inout) :: waterflux_vars

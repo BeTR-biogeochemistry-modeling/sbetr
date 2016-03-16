@@ -8,13 +8,33 @@ module BetrBGCMod
   !  !USES:
   use bshr_kind_mod       , only : r8 => shr_kind_r8
   use bshr_log_mod        , only : errMsg => shr_log_errMsg
+
   use BeTR_decompMod     , only : bounds_type  => betr_bounds_type
-  use BeTRTracerType     , only : betrtracer_type
+
   use betr_ctrl         , only : iulog  => biulog
-  use clm_time_manager   , only : get_nstep
-  use MathfuncMod        , only : dot_sum
+
+  use betr_constants, only : betr_string_length
   use betr_varcon        , only : denh2o => bdenh2o
+
+  use MathfuncMod        , only : dot_sum
+
+  use BGCReactionsMod, only : bgc_reaction_type
+  use PlantSoilBGCMod, only : plant_soilbgc_type
+  use BeTRTracerType, only : betrtracer_type
+  use TracerCoeffType, only : TracerCoeff_type
+  use TracerFluxType, only : TracerFlux_type
+  use TracerStateType, only : TracerState_type
+  use tracerboundarycondType, only : tracerboundarycond_type
+  use BeTR_aerocondType, only : betr_aerecond_type
+  use BeTR_CarbonFluxType, only : betr_carbonflux_type
+  use BeTR_WaterstateType, only : betr_waterstate_type
+  use BeTR_CNStateType, only : betr_cnstate_type
+
+  use clm_time_manager   , only : get_nstep
+  use EcophysConType, only : ecophyscon_type
+
   implicit none
+
   private
 
   integer,  parameter :: do_diffusion   = 1         ! do diffusive transport
@@ -25,16 +45,182 @@ module BetrBGCMod
   real(r8), parameter :: err_tol_transp = 1.e-8_r8  !error tolerance for tracer transport
   character(len=*), parameter :: filename = __FILE__
 
-  public :: run_betr_one_step_without_drainage
-  public :: run_betr_one_step_with_drainage
-  public :: calc_dew_sub_flux
-  public :: check_mass_err
+  type, public :: betr_type
+     character(len=betr_string_length) :: reaction_method
+
+     class(bgc_reaction_type), allocatable, public :: bgc_reaction
+     class(plant_soilbgc_type), allocatable, public :: plant_soilbgc
+
+     type(BeTRtracer_type), public :: tracers
+     type(TracerCoeff_type), public :: tracercoeffs
+     type(TracerFlux_type), public :: tracerfluxes
+     type(TracerState_type), public :: tracerstates
+     type(tracerboundarycond_type), public :: tracerboundaryconds
+     type(betr_cnstate_type), public :: cnstates
+     type(betr_aerecond_type), public :: aereconds
+     type(betr_carbonflux_type), public :: carbonfluxes
+     type(betr_waterstate_type), public :: waterstate
+     type(betr_cnstate_type), public :: cnstate
+
+     ! FIXME(bja, 201603) replace LSM specific types!
+
+
+   contains
+     procedure, public :: Init
+     procedure, public :: step_without_drainage
+     procedure, public :: step_with_drainage
+     procedure, public :: calc_dew_sub_flux
+     procedure, public :: check_mass_err
+
+     procedure, private :: ReadNamelist
+  end type betr_type
+
 contains
 
+!-------------------------------------------------------------------------------
+  subroutine Init(this, namelist_buffer, bounds, waterstate, cnstate, ecophyscon)
 
+    use abortutils, only : endrun
+    use bshr_log_mod, only : errMsg => shr_log_errMsg
+    use BeTR_decompMod, only : betr_bounds_type
+    use betr_constants, only : betr_namelist_buffer_size
+    use ReactionsFactory, only : create_bgc_reaction_type, &
+         create_plant_soilbgc_type
+    use TransportMod          , only : init_transportmod
+    use TracerParamsMod       , only : tracer_param_init
+
+    implicit none
+
+    class(betr_type), intent(inout) :: this
+    character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
+    type(betr_bounds_type), intent(in) :: bounds
+    type(betr_waterstate_type), intent(in) :: waterstate
+    type(betr_cnstate_type), intent(in) :: cnstate
+    type(ecophyscon_type), intent(in), optional :: ecophyscon
+
+    type(ecophyscon_type) :: junk
+
+    integer :: lbj, ubj
+
+    if (present(ecophyscon)) then
+       write(*,*) 'ERROR: ecophyscon not implemented in BeTR class '
+       call endrun(msg=errMsg(filename,__LINE__))
+    end if
+
+    lbj = bounds%lbj
+    ubj = bounds%ubj
+
+    this%waterstate%h2osoi_liq_col => waterstate%h2osoi_liq_col
+    this%waterstate%h2osoi_ice_col => waterstate%h2osoi_ice_col
+    this%cnstate%isoilorder  => cnstate%isoilorder
+
+    call this%ReadNamelist(namelist_buffer)
+
+    allocate(this%bgc_reaction, &
+         source=create_bgc_reaction_type(this%reaction_method))
+    allocate(this%plant_soilbgc, &
+         source=create_plant_soilbgc_type(this%reaction_method))
+
+    call this%tracers%init_scalars()
+
+    call this%bgc_reaction%Init_betrbgc(bounds, lbj, ubj, this%tracers)
+
+    call this%aereconds%Init(bounds)
+
+    call init_transportmod()
+
+    call this%tracerstates%Init(bounds, lbj, ubj, this%tracers)
+
+    call this%tracerfluxes%Init(bounds,  lbj, ubj, this%tracers)
+
+    call this%tracercoeffs%Init(bounds, lbj, ubj, this%tracers)
+
+    call this%tracerboundaryconds%Init(bounds, this%tracers)
+
+    !inside Init_plant_soilbgc, specific plant soil bgc coupler data type will be created
+    call this%plant_soilbgc%Init_plant_soilbgc(bounds, lbj, ubj)
+
+    !initialize state variable
+    call this%bgc_reaction%initCold(bounds,  this%tracers, this%waterstate, this%tracerstates)
+
+    !initialize boundary condition type
+    call this%bgc_reaction%init_boundary_condition_type(bounds, this%tracers, this%tracerboundaryconds)
+
+    !initialize the betr parameterization module
+    call tracer_param_init(bounds)
+
+    ! FIXME(bja, 201603) ecophyscon is not currently being used, so we
+    ! are explicitly passing initialized junk data.
+    call this%bgc_reaction%init_betr_lsm_bgc_coupler(&
+         bounds, this%plant_soilbgc, &
+         this%tracers, this%tracerstates, this%cnstates, &
+         junk)
+
+  end subroutine Init
+
+!-------------------------------------------------------------------------------
+  subroutine ReadNamelist(this, namelist_buffer)
+    !
+    ! !DESCRIPTION:
+    ! read namelist for betr configuration
+    ! !USES:
+    use spmdMod       , only : masterproc, mpicom
+    use clm_varctl   , only : iulog
+    use abortutils      , only : endrun
+    use bshr_log_mod     , only : errMsg => shr_log_errMsg
+
+    use betr_constants, only : stdout, betr_string_length_long, betr_namelist_buffer_size
+
+    implicit none
+    ! !ARGUMENTS:
+    class(betr_type), intent(inout) :: this
+    character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
+
+    !
+    ! !LOCAL VARIABLES:
+    integer :: nml_error
+    character(len=*), parameter :: subname = 'ReadNamelist'
+    character(len=betr_string_length) :: reaction_method
+    character(len=betr_string_length_long) :: ioerror_msg
+
+
+    !-----------------------------------------------------------------------
+
+    namelist / betr_parameters / reaction_method
+
+    reaction_method = ''
+
+    ! ----------------------------------------------------------------------
+    ! Read namelist from standard input.
+    ! ----------------------------------------------------------------------
+
+    if ( .true. )then
+       ioerror_msg=''
+       read(namelist_buffer, nml=betr_parameters, iostat=nml_error, iomsg=ioerror_msg)
+       if (nml_error /= 0) then
+          call endrun(msg="ERROR reading betr_parameters namelist "//errmsg(filename, __LINE__))
+       end if
+    end if
+
+    if (.true.) then
+       write(stdout, *)
+       write(stdout, *) '--------------------'
+       write(stdout, *)
+       write(stdout, *) ' betr bgc type :'
+       write(stdout, *)
+       write(stdout, *) ' betr_parameters namelist settings :'
+       write(stdout, *)
+       write(stdout, betr_parameters)
+       write(stdout, *)
+       write(stdout, *) '--------------------'
+    endif
+
+    this%reaction_method = reaction_method
+
+  end subroutine ReadNamelist
 
   !-------------------------------------------------------------------------------
-  subroutine run_betr_one_step_without_drainage(bounds, lbj, ubj, num_soilc, filter_soilc, num_soilp, filter_soilp,         &
+  subroutine step_without_drainage(this, bounds, lbj, ubj, num_soilc, filter_soilc, num_soilp, filter_soilp,         &
        atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, temperature_vars, waterflux_vars, chemstate_vars, &
        cnstate_vars, canopystate_vars,  carbonflux_vars, betrtracer_vars, bgc_reaction, betr_aerecond_vars,                 &
        tracerboundarycond_vars, tracercoeff_vars, tracerstate_vars, tracerflux_vars, plant_soilbgc_coupler)
@@ -71,6 +257,7 @@ contains
 
     !
     ! !ARGUMENTS :
+    class(betr_type), intent(inout) :: this
     type(bounds_type)                , intent(in)    :: bounds                     ! bounds
     integer                          , intent(in)    :: num_soilc                  ! number of columns in column filter_soilc
     integer                          , intent(in)    :: filter_soilc(:)            ! column filter_soilc
@@ -278,7 +465,7 @@ contains
             betrtracer_vars, tracerflux_vars)
     endif
 
-  end subroutine run_betr_one_step_without_drainage
+  end subroutine step_without_drainage
 
   !-------------------------------------------------------------------------------
   subroutine tracer_solid_transport(bounds, lbj, ubj, num_soilc, filter_soilc, dtime, hmconductance_col, dz, &
@@ -1446,7 +1633,7 @@ contains
   end subroutine calc_root_uptake_as_perfect_sink
 
   !--------------------------------------------------------------------------------
-  subroutine run_betr_one_step_with_drainage(bounds, lbj, ubj, num_soilc, filter_soilc, &
+  subroutine step_with_drainage(this, bounds, lbj, ubj, num_soilc, filter_soilc, &
        jtops, waterflux_vars, betrtracer_vars, tracercoeff_vars, tracerstate_vars,  tracerflux_vars)
     !
     ! !DESCRIPTION:
@@ -1460,6 +1647,7 @@ contains
     use MathfuncMod           , only : safe_div
     use BeTR_WaterFluxType    , only : betr_waterflux_type
     ! !ARGUMENTS:
+    class(betr_type), intent(inout) :: this
     type(bounds_type),        intent(in)    :: bounds
     integer,                  intent(in)    :: lbj, ubj
     integer,                  intent(in)    :: num_soilc                          ! number of columns in column filter_soilc
@@ -1524,7 +1712,7 @@ contains
            betrtracer_vars, tracercoeff_vars, tracerstate_vars)
 
     end associate
-  end subroutine run_betr_one_step_with_drainage
+  end subroutine step_with_drainage
 
   !--------------------------------------------------------------------------------
   subroutine calc_tracer_surface_runoff(bounds, lbj, ubj, num_soilc, filter_soilc, &
@@ -1635,7 +1823,7 @@ contains
   end subroutine calc_tracer_surface_runoff
 
   !--------------------------------------------------------------------------------
-  subroutine calc_dew_sub_flux(bounds, num_hydrologyc, filter_soilc_hydrologyc, &
+  subroutine calc_dew_sub_flux(this, bounds, num_hydrologyc, filter_soilc_hydrologyc, &
        waterstate_vars, waterflux_vars, betrtracer_vars, tracerflux_vars, tracerstate_vars)
     !
     ! DESCRIPTION:
@@ -1653,6 +1841,7 @@ contains
     use BeTR_landvarconType   , only : landvarcon  => betr_landvarcon
 
     ! !ARGUMENTS:
+    class(betr_type), intent(inout) :: this
     type(bounds_type)         , intent(in)    :: bounds
     integer                   , intent(in)    :: num_hydrologyc             ! number of column soil points in column filter_soilc
     integer                   , intent(in)    :: filter_soilc_hydrologyc(:) ! column filter_soilc for soil points
@@ -1861,13 +2050,16 @@ contains
 
   !--------------------------------------------------------------------------------
 
-  subroutine check_mass_err(c, trcid, ubj, dz, betrtracer_vars, tracerstate_vars, tracerflux_vars)
+  subroutine check_mass_err(this, c, trcid, ubj, dz, betrtracer_vars, tracerstate_vars, tracerflux_vars)
 
   !
   !temporary mass balance check
   use tracerfluxType        , only : tracerflux_type
   use tracerstatetype       , only : tracerstate_type
+
   implicit none
+
+  class(betr_type), intent(inout) :: this
   integer, intent(in) :: ubj
   integer, intent(in) :: c, trcid
   real(r8), intent(in):: dz(1:ubj)

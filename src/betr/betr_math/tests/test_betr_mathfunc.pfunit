@@ -10,7 +10,7 @@ contains
   @test
   subroutine test_heavyside()
 
-    use shr_kind_mod, only : r8 => shr_kind_r8
+    use bshr_kind_mod, only : r8 => shr_kind_r8
     use MathFuncMod, only : heviside
 
     implicit none
@@ -20,5 +20,3 @@ contains
 
   end subroutine test_heavyside
 end module test_mathfunc_module
-
-

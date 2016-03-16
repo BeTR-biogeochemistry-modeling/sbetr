@@ -10,7 +10,7 @@ contains
   @test
   subroutine test_mass_curve_correct()
 
-    use shr_kind_mod, only : r8 => shr_kind_r8
+    use bshr_kind_mod, only : r8 => shr_kind_r8
     use TransportMod, only : mass_curve_correct_
 
     implicit none
@@ -22,5 +22,3 @@ contains
 
   end subroutine test_mass_curve_correct
 end module test_betr_transport_module
-
-

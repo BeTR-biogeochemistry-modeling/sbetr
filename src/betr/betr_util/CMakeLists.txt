@@ -13,6 +13,7 @@ set(BETR_UTIL_SOURCES
   bshr_assert_mod.F90
   bshr_sys_mod.F90
   bshr_timer_mod.F90
+  BeTR_time_mod.F90
   )
 
 

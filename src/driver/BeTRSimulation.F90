@@ -15,25 +15,10 @@ module BeTRSimulation
   use decompMod                   , only : bounds_type
 
   ! !USES:
-  use BeTRTracerType            , only : BeTRtracer_type
-  use TracerCoeffType           , only : TracerCoeff_type
-  use TracerFluxType            , only : TracerFlux_type
-  use TracerStateType           , only : TracerState_type
-  use tracerboundarycondType    , only : tracerboundarycond_type
-  use BGCReactionsMod           , only : bgc_reaction_type
-  use PlantSoilBGCMod           , only : plant_soilbgc_type
-  use BeTR_aerocondType         , only : betr_aerecond_type
-  use betr_constants, only : betr_string_length
-  use BeTR_CNStateType, only : betr_cnstate_type
-  use BeTR_CarbonFluxType, only : betr_carbonflux_type
-  use BeTR_WaterstateType   , only : betr_waterstate_type
-  use BeTR_WaterfluxType    , only : betr_waterflux_type
-  use BeTR_TemperatureType, only : betr_temperature_type
-  use BeTR_SoilHydrologyType, only : betr_soilhydrology_type
-  use BeTR_atm2lndType, only : betr_atm2lnd_type
-  use BeTR_CanopyStateType, only : betr_canopystate_type
-  use BeTR_ChemStateType, only : betr_chemstate_type
-  use BeTR_SoilStateType, only : betr_soilstate_type
+  use BetrBGCMod                , only : betr_type
+  use betr_constants            , only : betr_string_length
+  use betr_constants            , only : betr_filename_length
+
   implicit none
 
   private
@@ -41,30 +26,22 @@ module BeTRSimulation
   character(len=*), private, parameter :: mod_filename = __FILE__
 
   type, public :: betr_simulation_type
-     character(len=betr_string_length) :: reaction_method
+     type(betr_type), public :: betr
+     character(len=betr_filename_length), public :: hist_filename
+     integer, public :: num_soilp
+     integer, public, allocatable :: filter_soilp(:)
+     integer, public :: num_jtops
+     integer, public, allocatable :: jtops(:)
+     integer, public :: num_soilc
+     integer, public, allocatable :: filter_soilc(:)
 
      ! FIXME(bja, 201603) most of these types should be private!
 
      ! NOTE(bja, 201603) BeTR types only, no LSM specific types here!
-     type(betr_cnstate_type), public :: betr_cnstate_vars
-     type(BeTRtracer_type), public :: betrtracer_vars
-     type(TracerCoeff_type), public :: tracercoeff_vars
-     type(TracerFlux_type), public :: tracerflux_vars
-     type(TracerState_type), public :: tracerState_vars
-     type(tracerboundarycond_type), public :: tracerboundarycond_vars
-     class(plant_soilbgc_type), allocatable,public :: plant_soilbgc
-     class(bgc_reaction_type), allocatable,public :: bgc_reaction
-     type(betr_aerecond_type), public :: betr_aerecond_vars
-     type(betr_carbonflux_type), public :: betr_carbonflux_vars
-     type(betr_soilstate_type), public :: betr_soilstate_vars ! column physics variable
-     type(betr_waterflux_type), public  :: betr_waterflux_vars
-     type(betr_waterstate_type), public  :: betr_waterstate_vars
-     type(betr_temperature_type),public :: betr_temperature_vars
-     type(betr_soilhydrology_type), public :: betr_soilhydrology_vars
-     type(betr_canopystate_type), public  :: betr_canopystate_vars
-     type(betr_chemstate_type), public :: betr_chemstate_vars
-     type(betr_atm2lnd_type), public :: betr_atm2lnd_vars
+
    contains
+     procedure, public :: BeTRInit
+     procedure, public :: BeTRSetFilter
      procedure, public :: Init => BeTRSimulationInit
      procedure, public :: ReadNameList => BeTRSimulationReadNameList
      procedure, public :: RestartInit => BeTRSimulationRestartInit
@@ -73,78 +50,91 @@ module BeTRSimulation
      procedure, public :: StepWithDrainage => BeTRSimulationStepWithDrainage
      procedure, public :: BeginMassBalanceCheck => BeTRSimulationBeginMassBalanceCheck
      procedure, public :: MassBalanceCheck      => BeTRSimulationMassBalanceCheck
+     procedure, public :: CreateHistory => hist_htapes_create
+     procedure, public :: WriteHistory => hist_write
   end type betr_simulation_type
 
   public :: BeTRSimulationInit
 
 contains
 
-!-------------------------------------------------------------------------------
+  !-------------------------------------------------------------------------------
+  subroutine BeTRSimulationInit(this, namelist_buffer, bounds, &
+       waterstate, cnstate)
+    ! Dummy routine for inheritance purposes. don't use.
 
-  subroutine BeTRSimulationInit(this, reaction_method, bounds, &
-       waterstate)
-    !
-    use TransportMod          , only : init_transportmod
-    use TracerParamsMod       , only : tracer_param_init
     use WaterstateType        , only : waterstate_type
-    use BeTR_WaterstateType   , only : betr_waterstate_type
-    use betr_ctrl             , only : betr_use_cn
+    use CNStateType           , only : cnstate_type
+
+    use betr_constants, only : betr_namelist_buffer_size
+
+
     implicit none
 
     class(betr_simulation_type), intent(inout) :: this
-    character(len=*), intent(in) :: reaction_method
-    type(bounds_type)    , intent(in) :: bounds
+    character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
 
+    type(bounds_type)    , intent(in) :: bounds
     type(waterstate_type), intent(inout) :: waterstate
+    type(cnstate_type), intent(inout) :: cnstate
 
     character(len=*), parameter :: subname = 'BeTRSimulationInit'
-    type(betr_bounds_type)     :: betr_bounds
-    integer :: lbj, ubj
 
-    !set lbj and ubj
-    betr_bounds%lbj  = 1          ; betr_bounds%ubj  = betr_nlevsoi
-    betr_bounds%begp = bounds%begp; betr_bounds%endp = bounds%endp
-    betr_bounds%begc = bounds%begc; betr_bounds%endc = bounds%endc
-    betr_bounds%begl = bounds%begl; betr_bounds%endl = bounds%endl
-    betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
 
-    lbj = betr_bounds%lbj; ubj = betr_bounds%ubj
-    this%betr_waterstate_vars%h2osoi_liq_col => waterstate%h2osoi_liq_col
-    this%betr_waterstate_vars%h2osoi_ice_col    => waterstate%h2osoi_ice_col
-    betr_use_cn = use_cn
+    call endrun(msg="ERROR "//subname//" unimplemented. "//errmsg(mod_filename, __LINE__))
 
-    call this%betrtracer_vars%init_scalars()
-
-    call this%bgc_reaction%Init_betrbgc(betr_bounds, lbj, ubj, this%betrtracer_vars)
-
-    call this%betr_aerecond_vars%Init(betr_bounds)
-
-    call init_transportmod()
-
-    call this%tracerState_vars%Init(betr_bounds, lbj, ubj, this%betrtracer_vars)
-
-    call this%tracerflux_vars%Init(betr_bounds,  lbj, ubj, this%betrtracer_vars)
-
-    call this%tracercoeff_vars%Init(betr_bounds, lbj, ubj, this%betrtracer_vars)
-
-    call this%tracerboundarycond_vars%Init(betr_bounds, this%betrtracer_vars)
-
-    !inside Init_plant_soilbgc, specific plant soil bgc coupler data type will be created
-    call this%plant_soilbgc%Init_plant_soilbgc(betr_bounds, lbj, ubj)
-
-    !initialize state variable
-    call this%bgc_reaction%initCold(betr_bounds,  this%betrtracer_vars, this%betr_waterstate_vars, this%tracerstate_vars)
-
-    !initialize boundary condition type
-    call this%bgc_reaction%init_boundary_condition_type(betr_bounds, this%betrtracer_vars, this%tracerboundarycond_vars)
-
-    !initialize the betr parameterization module
-    call tracer_param_init(betr_bounds)
-
-    !initialize the betrBGC module
-    !X!call betrbgc_init(bounds) - NOTE(bja, 2016-03) empty subroutine...
 
   end subroutine BeTRSimulationInit
+
+!-------------------------------------------------------------------------------
+  subroutine BeTRSetFilter(this)
+
+
+  implicit none
+
+    class(betr_simulation_type), intent(inout) :: this
+    this%num_jtops = 1
+    allocate(this%jtops(this%num_jtops))
+    this%jtops(:) = 1
+
+
+    this%num_soilc = 1
+    allocate(this%filter_soilc(this%num_soilc))
+    this%filter_soilc(:) = 1
+
+    this%num_soilp = 1
+    allocate(this%filter_soilp(this%num_soilp))
+    this%filter_soilp(:) = 1
+
+  end subroutine BeTRSetFilter
+!-------------------------------------------------------------------------------
+
+  subroutine BeTRInit(this, namelist_buffer, betr_bounds, &
+       betr_waterstate, betr_cnstate)
+    !
+    use BeTR_WaterStateType, only : betr_waterstate_type
+    use BeTR_CNStateType, only : betr_cnstate_type
+
+    use betr_constants, only : betr_namelist_buffer_size
+
+    implicit none
+
+    class(betr_simulation_type), intent(inout) :: this
+    character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
+
+    type(betr_bounds_type)    , intent(in) :: betr_bounds
+    type(betr_waterstate_type), intent(inout) :: betr_waterstate
+    type(betr_cnstate_type), intent(inout) :: betr_cnstate
+
+    character(len=*), parameter :: subname = 'BeTRInit'
+
+    this%hist_filename = "betr_output.nc"
+
+    call this%betr%Init(namelist_buffer, betr_bounds, betr_waterstate, betr_cnstate)
+
+    call this%CreateHistory(betr_nlevtrc_soil, this%num_soilc)
+
+  end subroutine BeTRInit
 
   !-------------------------------------------------------------------------------
   subroutine BeTRSimulationReadNameList(this, filename)
@@ -192,7 +182,6 @@ contains
 
     end if
     ! Broadcast namelist variables read in
-    this%reaction_method = reaction_method
     call shr_mpi_bcast(reaction_method, mpicom)
 
   end subroutine BeTRSimulationReadNameList
@@ -222,29 +211,26 @@ contains
     betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
     lbj = betr_bounds%lbj; ubj = betr_bounds%ubj
 
-    call this%tracerstate_vars%Restart(betr_bounds, ncid, flag=flag, betrtracer_vars=this%betrtracer_vars)
+    call this%betr%tracerstates%Restart(betr_bounds, ncid, flag=flag, betrtracer_vars=this%betr%tracers)
 
-    call this%tracerflux_vars%Restart(betr_bounds, ncid, flag=flag, betrtracer_vars=this%betrtracer_vars)
+    call this%betr%tracerfluxes%Restart(betr_bounds, ncid, flag=flag, betrtracer_vars=this%betr%tracers)
 
-    call this%tracercoeff_vars%Restart(betr_bounds, ncid, flag=flag, betrtracer_vars=this%betrtracer_vars)
+    call this%betr%tracercoeffs%Restart(betr_bounds, ncid, flag=flag, betrtracer_vars=this%betr%tracers)
   end subroutine BeTRSimulationRestartInit
 
 
   !---------------------------------------------------------------------------------
-  subroutine BeTRSimulationStepWithoutDrainage(this, bounds, &
-       num_soilc, filter_soilc, num_soilp, filter_soilp, col ,   &
+  subroutine BeTRSimulationStepWithoutDrainage(this, bounds, col, &
        atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, &
        temperature_vars, waterflux_vars, chemstate_vars, &
        cnstate_vars, canopystate_vars, carbonflux_vars)
 
-    use BetrBGCMod, only : run_betr_one_step_without_drainage
     use SoilStateType, only : soilstate_type
     use WaterStateType, only : Waterstate_Type
     use TemperatureType, only : temperature_type
     use ChemStateType, only : chemstate_type
     use WaterfluxType, only : waterflux_type
     use ColumnType, only : column_type
-    use BGCReactionsMod, only : bgc_reaction_type
     use atm2lndType, only : atm2lnd_type
     use SoilHydrologyType, only : soilhydrology_type
     use BeTR_CNStateType, only : betr_cnstate_type
@@ -260,10 +246,6 @@ contains
 
     class(betr_simulation_type), intent(inout) :: this
     type(bounds_type), intent(in) :: bounds ! bounds
-    integer, intent(in) :: num_soilc ! number of columns in column filter_soilc
-    integer, intent(in) :: filter_soilc(:) ! column filter_soilc
-    integer, intent(in) :: num_soilp
-    integer, intent(in) :: filter_soilp(:) ! pft filter
 
 
     type(column_type), intent(in) :: col ! column type
@@ -282,9 +264,8 @@ contains
   end subroutine BeTRSimulationStepWithoutDrainage
 
   !---------------------------------------------------------------------------------
-  subroutine BeTRSimulationStepWithDrainage(this, bounds, num_soilc, &
-       filter_soilc, jtops, waterflux_vars, col)
-    use BetrBGCMod, only : run_betr_one_step_with_drainage
+  subroutine BeTRSimulationStepWithDrainage(this, bounds, waterflux_vars, col)
+
     use ColumnType, only : column_type
     use MathfuncMod, only : safe_div
     use WaterFluxType, only : waterflux_type
@@ -293,9 +274,6 @@ contains
 
     class(betr_simulation_type), intent(inout) :: this
     type(bounds_type), intent(in) :: bounds
-    integer, intent(in) :: num_soilc ! number of columns in column filter_soilc
-    integer, intent(in) :: filter_soilc(:) ! column filter_soilc
-    integer, intent(in) :: jtops(bounds%begc: )
     type(waterflux_type)    , intent(in) :: waterflux_vars
     type(column_type), intent(in) :: col ! column type
 
@@ -304,14 +282,14 @@ contains
 
   !---------------------------------------------------------------------------------
 
-  subroutine BeTRSimulationBeginMassBalanceCheck(this, bounds, num_soilc, &
-       filter_soilc)
-  use TracerBalanceMod, only : begin_betr_tracer_massbalance
-  implicit none
+  subroutine BeTRSimulationBeginMassBalanceCheck(this, bounds)
+
+    use TracerBalanceMod, only : begin_betr_tracer_massbalance
+
+    implicit none
+
     class(betr_simulation_type) :: this
     type(bounds_type), intent(in) :: bounds
-    integer, intent(in) :: num_soilc ! number of columns in column filter_soilc
-    integer, intent(in) :: filter_soilc(:) ! column filter_soilc
 
     type(betr_bounds_type)     :: betr_bounds
     integer  :: lbj, ubj
@@ -323,21 +301,22 @@ contains
     betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
     lbj = betr_bounds%lbj; ubj = betr_bounds%ubj
 
-    call begin_betr_tracer_massbalance(betr_bounds, lbj, ubj, num_soilc, filter_soilc, &
-         this%betrtracer_vars, this%tracerstate_vars, &
-         this%tracerflux_vars)
+    call begin_betr_tracer_massbalance(betr_bounds, lbj, ubj, &
+         this%num_soilc, this%filter_soilc, &
+         this%betr%tracers, this%betr%tracerstates, &
+         this%betr%tracerfluxes)
 
   end  subroutine BeTRSimulationBeginMassBalanceCheck
   !---------------------------------------------------------------------------------
 
-  subroutine BeTRSimulationMassBalanceCheck(this, bounds, num_soilc, &
-       filter_soilc)
-  use TracerBalanceMod, only : betr_tracer_massbalance_check
-  implicit none
+  subroutine BeTRSimulationMassBalanceCheck(this, bounds)
+
+    use TracerBalanceMod, only : betr_tracer_massbalance_check
+
+    implicit none
+
     class(betr_simulation_type) :: this
     type(bounds_type), intent(in) :: bounds
-    integer, intent(in) :: num_soilc ! number of columns in column filter_soilc
-    integer, intent(in) :: filter_soilc(:) ! column filter_soilc
 
     integer :: lbj, ubj
     type(betr_bounds_type)     :: betr_bounds
@@ -350,11 +329,153 @@ contains
     betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
     lbj = betr_bounds%lbj; ubj = betr_bounds%ubj
 
-    call betr_tracer_massbalance_check(betr_bounds, lbj, ubj, num_soilc, filter_soilc, &
-         this%betrtracer_vars, this%tracerstate_vars, &
-         this%tracerflux_vars)
+    call betr_tracer_massbalance_check(betr_bounds, lbj, ubj, &
+         this%num_soilc, this%filter_soilc, &
+         this%betr%tracers, this%betr%tracerstates, &
+         this%betr%tracerfluxes)
   end subroutine BeTRSimulationMassBalanceCheck
 
+!-------------------------------------------------------------------------------
+
+  subroutine hist_htapes_create(this, nlevtrc_soil, ncol)
+  !
+  ! DESCRIPTIONS
+  ! create history file and define output variables
+
+    use netcdf
+    use ncdio_pio
+    use histFileMod, only : hist_file_create, hist_def_fld1d, hist_def_fld2d
+
+    !
+    !ARGUMENTS
+    implicit none
+
+    class(betr_simulation_type), intent(inout) :: this
+    integer              , intent(in) :: nlevtrc_soil, ncol
+
+    integer            :: jj, kk
+    type(file_desc_t)  :: ncid
+    character(len=*), parameter :: subname = 'hist_htapes_create'
+
+    associate( &
+         ntracers => this%betr%tracers%ntracers, &
+         ngwmobile_tracers => this%betr%tracers%ngwmobile_tracers, &
+         is_volatile => this%betr%tracers%is_volatile, &
+         is_h2o => this%betr%tracers%is_h2o, &
+         is_isotope => this%betr%tracers%is_isotope, &
+         volatileid => this%betr%tracers%volatileid, &
+         tracernames => this%betr%tracers%tracernames &
+         )
+
+      call ncd_pio_createfile(ncid, this%hist_filename)
+
+      call hist_file_create(ncid,nlevtrc_soil, ncol)
+
+
+      call  hist_def_fld2d(ncid, varname="TRACER_P_GAS", nf90_type=nf90_float,dim1name="ncol", &
+           dim2name="levgrnd",long_name="total gas pressure", units="Pa")
+
+      do jj = 1, ntracers
+         if(jj<= ngwmobile_tracers)then
+            call hist_def_fld2d(ncid, varname=trim(tracernames(jj))//'_TRACER_CONC_MOIBLE',&
+                 nf90_type=nf90_float, dim1name="ncol", &
+                 dim2name="levgrnd", long_name=trim(tracernames(jj))//"tracer concentrations", &
+                 units="mol m-3")
+
+            if(is_volatile(jj) .and. (.not. is_h2o(jj)) .and. (.not. is_isotope(jj)))then
+
+               call hist_def_fld2d(ncid, varname=trim(tracernames(jj))//'_TRACER_P_GAS_FRAC',&
+                    nf90_type=nf90_float, dim1name="ncol", &
+                    dim2name="levgrnd", long_name='fraction of gas phase contributed by '//trim(tracernames(jj)), &
+                    units="none")
+
+            endif
+
+            if(is_volatile(jj))then
+
+               call hist_def_fld1d (ncid, varname=trim(tracernames(jj))//'_FLX_SURFEMI', units='mol/m2/s', &
+                    nf90_type=nf90_float,  dim1name="ncol", &
+                    long_name='loss from surface emission for '//trim(tracernames(jj)))
+            endif
+         else
+            call hist_def_fld2d(ncid, varname=trim(tracernames(jj))//'_TRACER_CONC_SOLID_PASSIVE',&
+                 nf90_type=nf90_float, dim1name="ncol", &
+                 dim2name="levgrnd", long_name=trim(tracernames(jj))//"tracer concentrations", &
+                 units="mol m-3")
+         endif
+      enddo
+
+
+      call ncd_enddef(ncid)
+
+      call ncd_pio_closefile(ncid)
+
+    end associate
+  end subroutine hist_htapes_create
+
+  !-------------------------------------------------------------------------------
+  subroutine hist_write(me, record, lbj, ubj, time_vars)
+    !
+    ! DESCRIPTION
+    ! output hist file
+    !
+    use shr_kind_mod        , only : r8 => shr_kind_r8
+    use ncdio_pio
+
+    use BeTR_TimeMod, only : betr_time_type
+
+    implicit none
+
+    class(betr_simulation_type), intent(inout) :: me
+    integer, intent(in) :: record
+    integer, intent(in) :: lbj,ubj
+    type(betr_time_type), intent(in) :: time_vars
+
+    type(file_desc_t) :: ncid
+    integer :: jj
+    character(len=*), parameter :: subname='hist_write'
+
+    associate( &
+         ntracers => me%betr%tracers%ntracers, &
+         ngwmobile_tracers => me%betr%tracers%ngwmobile_tracers, &
+         is_volatile => me%betr%tracers%is_volatile, &
+         is_h2o => me%betr%tracers%is_h2o, &
+         is_isotope => me%betr%tracers%is_isotope, &
+         volatileid => me%betr%tracers%volatileid, &
+         tracernames => me%betr%tracers%tracernames &
+         )
+
+      call ncd_pio_openfile_for_write(ncid, me%hist_filename)
+
+      if (mod(time_vars%time, 86400._r8)==0) then
+         print*,'day', time_vars%time/86400._r8
+      end if
+      call ncd_putvar(ncid, "time", record, time_vars%time)
+
+      do jj = 1, ntracers
+         if(jj<= ngwmobile_tracers)then
+            call ncd_putvar(ncid,trim(tracernames(jj))//'_TRACER_CONC_MOIBLE',&
+                 record,me%betr%tracerstates%tracer_conc_mobile_col(1:1,lbj:ubj,jj))
+
+            if(is_volatile(jj) .and. (.not. is_h2o(jj)) .and. (.not. is_isotope(jj)))then
+
+               call ncd_putvar(ncid, trim(tracernames(jj))//'_TRACER_P_GAS_FRAC',&
+                    record,me%betr%tracerstates%tracer_P_gas_frac_col(1:1,lbj:ubj,volatileid(jj)))
+            endif
+            if(is_volatile(jj))then
+               call ncd_putvar(ncid, trim(tracernames(jj))//'_FLX_SURFEMI', &
+                    record, me%betr%tracerfluxes%tracer_flx_surfemi_col(1:1, volatileid(jj)))
+            endif
+         else
+            call ncd_putvar(ncid, trim(tracernames(jj))//'_TRACER_CONC_SOLID_PASSIVE', &
+                 record, me%betr%tracerstates%tracer_conc_solid_passive_col(1:1,lbj:ubj,jj-ngwmobile_tracers))
+         endif
+      enddo
+
+      call ncd_putvar(ncid, 'TRACER_P_GAS', record, me%betr%tracerstates%tracer_P_gas_col(1:1,lbj:ubj))
+      call ncd_pio_closefile(ncid)
+    end associate
+  end subroutine hist_write
 
   !---------------------------------------------------------------------------------
   subroutine BeTRSimulationConsistencyCheck(this, &
@@ -369,4 +490,5 @@ contains
     type(Waterstate_Type), intent(in) :: waterstate_vars ! water state variables
 
   end subroutine BeTRSimulationConsistencyCheck
+
 end module BeTRSimulation

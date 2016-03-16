@@ -1,5 +1,7 @@
 set(BETR_RXNS_SOURCES
   ReactionsFactory.F90
+  BGCReactionsMod.F90
+  PlantSoilBGCMod.F90
   MockBGCReactionsType.F90
   MockPlantSoilBGCType.F90
   H2OIsotopeBGCReactionsType.F90
@@ -11,7 +13,6 @@ include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_math)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_dtype)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_core)
-include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_main)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_grid)
 
 
