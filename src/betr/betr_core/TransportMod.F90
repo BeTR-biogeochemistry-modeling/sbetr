@@ -5,13 +5,13 @@ module TransportMod
   ! subroutines to do 1d vertical multiphase transport in soil/water
   ! History: created by Jinyun Tang, Jun 2011
 
-#include "shr_assert.h"
+#include "bshr_assert.h"
   ! !USES:
-  use shr_log_mod         , only : errMsg => shr_log_errMsg
+  use bshr_log_mod         , only : errMsg => shr_log_errMsg
   use tracer_varcon       , only : bndcond_as_conc, bndcond_as_flux
   use clm_varctl          , only : iulog
   use abortutils          , only : endrun
-  use shr_kind_mod        , only : r8 => shr_kind_r8
+  use bshr_kind_mod        , only : r8 => shr_kind_r8
   implicit none
   private
   public :: DiffusTransp              !do tracer transport through diffusion, for both lake and soil
@@ -154,7 +154,7 @@ contains
     !
     ! !USES:
     !
-    use shr_kind_mod     , only : r8 => shr_kind_r8
+    use bshr_kind_mod     , only : r8 => shr_kind_r8
     use BeTR_decompMod   , only : bounds_type  => betr_bounds_type
     implicit none
     ! !ARGUMENTS:
@@ -196,7 +196,7 @@ contains
     !
     ! !USES
     !
-    use shr_kind_mod, only: r8 => shr_kind_r8
+    use bshr_kind_mod, only: r8 => shr_kind_r8
     use BeTR_decompMod         , only : bounds_type  => betr_bounds_type
 
     implicit none
@@ -350,7 +350,7 @@ contains
    ! the solver returns the tracer change due to diffusive transport
    !
    ! !USES:
-   use shr_kind_mod   , only : r8 => shr_kind_r8
+   use bshr_kind_mod   , only : r8 => shr_kind_r8
    use BeTR_decompMod , only : bounds_type  => betr_bounds_type
    use BTridiagonalMod , only : Tridiagonal
 
@@ -429,7 +429,7 @@ contains
      ! Do solid phase transport with tracer source
      !
      ! !USES:
-     use shr_kind_mod, only: r8 => shr_kind_r8
+     use bshr_kind_mod, only: r8 => shr_kind_r8
      use BeTR_decompMod         , only : bounds_type  => betr_bounds_type
 
      implicit none
@@ -525,7 +525,7 @@ contains
      ! Do diffusive solid phase tracer transport
      !
      ! !USES:
-     use shr_kind_mod, only: r8 => shr_kind_r8
+     use bshr_kind_mod, only: r8 => shr_kind_r8
      use BeTR_decompMod , only : bounds_type  => betr_bounds_type
      use BTridiagonalMod , only : Tridiagonal
 
@@ -624,7 +624,7 @@ contains
      !
      ! now it allows seepage from the surface
      ! !USES:
-     use shr_kind_mod    , only : r8 => shr_kind_r8
+     use bshr_kind_mod    , only : r8 => shr_kind_r8
      use BeTR_decompMod  , only : bounds_type  => betr_bounds_type
      use MathfuncMod     , only : cumsum, cumdif, safe_div, dot_sum, asc_sort_vec
      use InterpolationMod, only : pchip_polycc, pchip_interp

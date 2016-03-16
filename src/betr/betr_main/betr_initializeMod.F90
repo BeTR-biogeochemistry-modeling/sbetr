@@ -7,7 +7,7 @@ module betr_initializeMod
   use betr_instMod
   use clm_varctl                , only : iulog
   use abortutils                , only : endrun
-  use shr_log_mod               , only : errMsg => shr_log_errMsg
+  use bshr_log_mod               , only : errMsg => shr_log_errMsg
   use BGCReactionsMod           , only : bgc_reaction_type
   use PlantSoilBGCMod           , only : plant_soilbgc_type
   implicit none
@@ -33,8 +33,8 @@ contains
     ! !USES:
     use spmdMod       , only : masterproc, mpicom
     use fileutils     , only : getavu, relavu, opnfil
-    use shr_nl_mod    , only : shr_nl_find_group_name
-    use shr_mpi_mod   , only : shr_mpi_bcast
+    use bshr_nl_mod   , only : shr_nl_find_group_name
+    use bshr_mpi_mod  , only : shr_mpi_bcast
     implicit none
     ! !ARGUMENTS:
     character(len=*), intent(IN) :: NLFilename              ! Namelist filename

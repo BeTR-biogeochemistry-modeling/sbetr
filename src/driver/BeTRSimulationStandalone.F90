@@ -179,6 +179,12 @@ contains
     use BeTR_LandunitType,only : betr_lun
     use BeTR_WaterstateType   , only : betr_waterstate_type
     use BeTR_WaterfluxType    , only : betr_waterflux_type
+    use BeTR_TemperatureType, only : betr_temperature_type
+    use BeTR_SoilHydrologyType, only : betr_soilhydrology_type
+    use BeTR_atm2lndType, only : betr_atm2lnd_type
+    use BeTR_CanopyStateType, only : betr_canopystate_type
+    use BeTR_ChemStateType, only : betr_chemstate_type
+    use BeTR_SoilStateType, only : betr_soilstate_type
     use PatchType, only : pft
     use LandunitType,only : lun
     use pftvarcon, only : crop
@@ -206,6 +212,12 @@ contains
     type(betr_waterflux_type)  :: betr_waterflux_vars
     type(betr_waterstate_type)  :: betr_waterstate_vars
     type(betr_bounds_type)     :: betr_bounds
+    type(betr_temperature_type) :: betr_temperature_vars ! energy state variable
+    type(betr_soilhydrology_type) :: betr_soilhydrology_vars
+    type(betr_atm2lnd_type) :: betr_atm2lnd_vars
+    type(betr_canopystate_type)  :: betr_canopystate_vars
+    type(betr_chemstate_type) :: betr_chemstate_vars
+    type(betr_soilstate_type) :: betr_soilstate_vars ! column physics variable
     integer  :: lbj, ubj ! lower and upper bounds, make sure they are > 0
 
     !pass necessary data for correct subroutine call
@@ -272,11 +284,40 @@ contains
     betr_waterflux_vars%qflx_snow2topsoi_col    => waterflux_vars%qflx_snow2topsoi_col
     betr_waterflux_vars%qflx_tran_veg_patch     => waterflux_vars%qflx_tran_veg_patch
 
+    betr_temperature_vars%t_soisno_col        => temperature_vars%t_soisno_col
+    betr_temperature_vars%t_soi_10cm          => temperature_vars%t_soi_10cm
+    betr_temperature_vars%t_veg_patch         => temperature_vars%t_veg_patch
+
+    betr_soilhydrology_vars%fracice_col    => soilhydrology_vars%fracice_col
+    betr_soilhydrology_vars%zwts_col       => soilhydrology_vars%zwts_col
+    betr_soilhydrology_vars%qflx_bot_col   => soilhydrology_vars%qflx_bot_col
+
+    betr_atm2lnd_vars%forc_pbot_downscaled_col => atm2lnd_vars%forc_pbot_downscaled_col
+
+    betr_canopystate_vars%altmax_col      => canopystate_vars%altmax_col
+    betr_canopystate_vars%altmax_lastyear_col   => canopystate_vars%altmax_lastyear_col
+    betr_canopystate_vars%lbl_rsc_h2o_patch     => canopystate_vars%lbl_rsc_h2o_patch
+    betr_canopystate_vars%elai_patch      => canopystate_vars%elai_patch
+
+    betr_chemstate_vars%soil_pH => chemstate_vars%soil_pH
+
+    betr_soilstate_vars%bsw_col  => soilstate_vars%bsw_col
+    betr_soilstate_vars%watsat_col => soilstate_vars%watsat_col
+    betr_soilstate_vars%eff_porosity_col => soilstate_vars%eff_porosity_col
+    betr_soilstate_vars%soilpsi_col  => soilstate_vars%soilpsi_col
+    betr_soilstate_vars%cellorg_col  => soilstate_vars%cellorg_col
+    betr_soilstate_vars%cellclay_col  => soilstate_vars%cellclay_col
+    betr_soilstate_vars%cellsand_col  => soilstate_vars%cellsand_col
+    betr_soilstate_vars%bd_col   => soilstate_vars%bd_col
+    betr_soilstate_vars%watfc_col  => soilstate_vars%watfc_col
+    betr_soilstate_vars%sucsat_col => soilstate_vars%sucsat_col
+    betr_soilstate_vars%rootfr_patch => soilstate_vars%rootfr_patch
+
     call this%betr%step_without_drainage(betr_bounds, lbj, ubj, &
          this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp,  &
-         atm2lnd_vars, soilhydrology_vars, soilstate_vars, &
-         betr_waterstate_vars, temperature_vars, betr_waterflux_vars, &
-         chemstate_vars, this%betr%cnstates, canopystate_vars, &
+         betr_atm2lnd_vars, betr_soilhydrology_vars, betr_soilstate_vars, &
+         betr_waterstate_vars, betr_temperature_vars, betr_waterflux_vars, &
+         betr_chemstate_vars, this%betr%cnstates, betr_canopystate_vars, &
          this%betr%carbonfluxes, this%betr%tracers, this%betr%bgc_reaction, &
          this%betr%aereconds, this%betr%tracerboundaryconds, this%betr%tracercoeffs, &
          this%betr%tracerstates, this%betr%tracerfluxes, this%betr%plant_soilbgc)

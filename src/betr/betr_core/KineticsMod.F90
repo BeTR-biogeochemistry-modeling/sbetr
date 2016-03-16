@@ -4,7 +4,7 @@ module KineticsMod
   ! Created by Jinyun Tang, Apr 11, 2013
   ! !USES:
 
-  use shr_kind_mod, only: r8 => shr_kind_r8
+  use bshr_kind_mod, only: r8 => shr_kind_r8
   use abortutils,   only: endrun
   use clm_varctl,   only: iulog
   implicit none

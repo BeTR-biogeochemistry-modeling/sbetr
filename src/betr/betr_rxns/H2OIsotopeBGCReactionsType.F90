@@ -1,6 +1,6 @@
 module H2OIsotopeBGCReactionsType
 
-#include "shr_assert.h"
+#include "bshr_assert.h"
 
 !
 ! !DESCRIPTION
@@ -20,8 +20,8 @@ module H2OIsotopeBGCReactionsType
 ! Created by Jinyun Tang, Jan 15nd, 2015
 ! !USES
 
-  use shr_log_mod           , only : errMsg => shr_log_errMsg
-  use shr_kind_mod          , only : r8 => shr_kind_r8
+  use bshr_log_mod           , only : errMsg => shr_log_errMsg
+  use bshr_kind_mod          , only : r8 => shr_kind_r8
   use decompMod             , only : bounds_type
   use BGCReactionsMod       , only : bgc_reaction_type
   use tracer_varcon         , only : bndcond_as_conc, bndcond_as_flux
@@ -198,11 +198,11 @@ implicit none
   !
   use clm_varctl            , only : iulog
   use TracerBoundaryCondType, only : tracerboundarycond_type
-  use shr_log_mod           , only : errMsg => shr_log_errMsg
+  use bshr_log_mod           , only : errMsg => shr_log_errMsg
   use BeTR_decompMod        , only : betr_bounds_type
   use BeTRTracerType        , only : betrtracer_type
   use BeTR_WaterfluxType    , only : betr_waterflux_type
-  use clm_varcon            , only : denh2o
+  use betr_varcon           , only : denh2o  => bdenh2o
 
 
   class(bgc_reaction_h2oiso_type), intent(in) :: this
@@ -268,7 +268,7 @@ implicit none
   use BeTR_CNStateType         , only : betr_cnstate_type
   use PlantSoilBGCMod          , only : plant_soilbgc_type
   use TracerBoundaryCondType   , only : tracerboundarycond_type
-  use ColumnType               , only : col
+  use BeTR_ColumnType          , only : col => betr_col
   !ARGUMENTS
   class(bgc_reaction_h2oiso_type)     , intent(in)    :: this                       !
   type(betr_bounds_type), intent(in) :: bounds ! bounds
@@ -326,6 +326,7 @@ implicit none
         enddo
         !the following should rarely occur, so when it occur, end with a warning
         if(tot1<0._r8)then
+          print*,tracer_mobile_phase(c,1:2,jj),tot1
           call endrun('negative H2O tracer '//errMsg(mod_filename, __LINE__))
         endif
       endif
@@ -461,12 +462,12 @@ implicit none
     use tracerstatetype          , only : tracerstate_type
     use BeTR_WaterstateType      , only : betr_waterstate_type
     use BeTR_PatchType           , only : pft  => betr_pft
-    use clm_varcon               , only : spval, ispval
+    use betr_varcon              , only : spval => bspval, ispval => bispval
     use landunit_varcon          , only : istsoil, istcrop
-    use LandunitType             , only : lun
-    use ColumnType               , only : col
-    use clm_varcon               , only : denh2o
-    use clm_varpar               , only : nlevtrc_soil
+    use BeTR_LandunitType        , only : lun => betr_lun
+    use BeTR_ColumnType          , only : col => betr_col
+    use betr_varcon              , only : denh2o => bdenh2o
+    use tracer_varcon            , only : nlevtrc_soil  => betr_nlevtrc_soil
     ! !ARGUMENTS:
     class(bgc_reaction_h2oiso_type) , intent(in)    :: this
     type(betr_bounds_type)                 , intent(in)    :: bounds
@@ -583,7 +584,7 @@ implicit none
     ! do flux and state variable change between betr and lsm.
     !
     ! !USES:
-    use shr_kind_mod             , only : r8 => shr_kind_r8
+    use bshr_kind_mod             , only : r8 => shr_kind_r8
     use tracerfluxType           , only : tracerflux_type
     use tracerstatetype          , only : tracerstate_type
     use decompMod                , only : bounds_type
@@ -619,7 +620,7 @@ implicit none
     !use clm_instMod
     use tracerstatetype          , only : tracerstate_type
     use BetrTracerType           , only : betrtracer_type
-    use clm_varpar               , only : nlevtrc_soil
+    use tracer_varcon            , only : nlevtrc_soil  => betr_nlevtrc_soil
     use landunit_varcon          , only : istsoil, istcrop
     use PlantSoilBGCMod          , only : plant_soilbgc_type
     use EcophysConType           , only : ecophyscon_type

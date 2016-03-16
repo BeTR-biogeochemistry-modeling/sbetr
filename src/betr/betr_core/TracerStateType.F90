@@ -4,8 +4,8 @@ module TracerStateType
   !  data type for state variables used in betr
   !
   ! !USES:
-  use shr_kind_mod   , only : r8 => shr_kind_r8
-  use shr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
+  use bshr_kind_mod   , only : r8 => shr_kind_r8
+  use bshr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
   use BeTR_decompMod , only : bounds_type  => betr_bounds_type
   use BeTR_LandunitType, only : lun => betr_lun
   use BeTR_ColumnType, only : col => betr_col
@@ -145,7 +145,6 @@ contains
     ! History fields initialization
     !
     ! !USES:
-    !use shr_infnan_mod, only: nan => shr_infnan_nan, assignment(=)
     use BeTRTracerType, only: BeTRTracer_Type
     use histFileMod   , only: hist_addfld1d, hist_addfld2d
     use histFileMod   , only: no_snow_normal, no_snow_zero

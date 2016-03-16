@@ -8,7 +8,7 @@ module Tracer_varcon
   ! Module containing parameters and logical switches and routine to read constants from CLM namelist for tracer transport set up.
   !
   ! !USES:
-  use shr_kind_mod, only : r8 => shr_kind_r8
+  use bshr_kind_mod, only : r8 => shr_kind_r8
   use abortutils  , only : endrun
   use clm_varctl  , only : iulog
   !
@@ -26,29 +26,11 @@ module Tracer_varcon
   integer, public            :: betr_nlevsoi
   integer, public            :: betr_nlevsno
   integer, public            :: betr_nlevtrc_soil
-  ! underground tracer transport logical switches
-  logical, public            :: ltracer_offline=.true.       ! true=> do not pass volatile tracers from/to atmosphere
-  logical, public            :: ltrcunsat=.false.            ! ture=> swith on tracer transport for specified underground processes in unsaturated upland soil
-  logical, public            :: ltrcsat  =.false.            ! ture=> swith on tracer transport for specified underground processes in unsaturated wetland soil
-  logical, public            :: ltrclake =.false.            ! ture=> swith on tracer transport for specified underground processes in lake water and lake soil
-  logical, public            :: laquadv_off =.false.         ! true=> turn off aqueous advection
-  logical, public            :: lgasadv_off = .false.        ! true=> turn off gas advection
-  logical, public            :: lzero_restart = .false.      ! true => start with nil tracer concentration, by default
-  logical, public            :: is_online_soilchem = .false. ! true=> chemistry is done outside TracerUpdate, added for plug&play capability, say microbial model
-  logical, public            :: ldsolvn_vtransport = .false. ! this is not in the namelist, and its value will be determined in SoilTracersMod, don transport?
-  logical, public            :: ldsolvc_vtransport = .false. ! this is not in the namelist, and its value will be determined in SoilTracersMod, doc transport?
-  logical, public            :: lco2_refix = .false.         ! true => refix co2 transported to leaf
-  logical, public            :: lneut = .false.              ! true => only allow neutral molecules to go through xylem
-  logical, public            :: ltracer_stem = .false.       ! true => model valatile tracer in stem
-  logical, public            :: use_pH_data = .false.
-  logical, public            :: licecoat = .false.           ! true => switch on ice coating for dissolved tracers, the coating is defined as the dice/h2oliq,
-  ! where, dice is the change of ice content during to free-thaw cyles
-  logical, public            :: is_active_betr_bgc = .false.
-  logical, public            :: do_betr_leaching = .false.
-  logical, public            :: liceseal = .true.       ! true => allow ice to seal the surface soil and keep the gas tracer
-  real(r8),public            :: rr_dif_scal = 1._r8     ! scaling factor for how much root respiration is diffused out into soil
-  real(r8),public            :: mr_dif_scal = 0._r8     ! how much fraction of stem respiration is back into xylem
-  real(r8),public            :: co2_refix_scal = 0.0_r8 ! how much fraction of co2 in the xylem is refixed in leaf
+
+  ! the following will likely become case dependent
+!x  real(r8),public            :: rr_dif_scal = 1._r8     ! scaling factor for how much root respiration is diffused out into soil
+!x  real(r8),public            :: mr_dif_scal = 0._r8     ! how much fraction of stem respiration is back into xylem
+!x  real(r8),public            :: co2_refix_scal = 0.0_r8 ! how much fraction of co2 in the xylem is refixed in leaf
   real(r8),public            :: site_pH = 7._r8         ! pH value of the site
 
   !  atmospheric compositions, (v/v)

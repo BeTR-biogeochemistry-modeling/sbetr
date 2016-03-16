@@ -1,6 +1,6 @@
 module BeTR_TimeMod
 
-  use shr_kind_mod        , only : r8 => shr_kind_r8
+  use bshr_kind_mod        , only : r8 => shr_kind_r8
 
   implicit none
   

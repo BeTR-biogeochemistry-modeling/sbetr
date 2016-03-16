@@ -83,7 +83,7 @@ contains
   bounds%begl = 1
   bounds%endl = 1
   bounds%lbj  = 1
-  bounds%ubj  = nlevgrnd
+  bounds%ubj  = nlevtrc_soil
 
   !set up grid
   call init_clm_vertgrid(nlevgrnd)
@@ -100,7 +100,7 @@ contains
   call clmforc_vars%LoadForcingData(namelist_buffer)
 
   lbj = 1
-  ubj = nlevgrnd
+  ubj = nlevtrc_soil
 
   lun%itype(1) = istsoil
   col%landunit(1) = 1
@@ -113,9 +113,14 @@ contains
 
   call  simulation%Init(namelist_buffer, bounds, waterstate_vars, cnstate_vars)
 
+
+  !obtain waterstate_vars for initilizations that need it
+  call read_betrforcing(bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, time_vars, col, &
+       atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars             , &
+       waterflux_vars, temperature_vars, chemstate_vars, simulation%jtops)
+
   record = -1
-  !in all calculations, ubj is set to nlevtrc_soil
-  ubj = nlevtrc_soil
+
   call proc_initstep()
   do
     record = record + 1
@@ -144,6 +149,10 @@ contains
 
     !do mass balance check
     call simulation%MassBalanceCheck(bounds)
+
+    !specific for water tracer transport
+    !call simulation%ConsistencyCheck(bounds, ubj, num_soilc, &
+    !  filter_soilc, waterstate_vars)
 
     !update time stamp
     call update_time_stamp(time_vars, dtime)
@@ -381,6 +390,9 @@ end subroutine sbetrBGC_driver
       waterflux_vars%qflx_infl_col(c)  = clmforc_vars%qflx_infl(tstep)              !infiltration flux, mm H2O/s
       col%zi(c,0) = zisoi(0)
       waterflux_vars%qflx_gross_infl_soil_col(c) = 0._r8
+
+      waterflux_vars%qflx_snow2topsoi_col(c) = 0._r8
+      waterflux_vars%qflx_h2osfc2topsoi_col(c) = 0._r8
   enddo
 
 

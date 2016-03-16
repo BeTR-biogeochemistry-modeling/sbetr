@@ -5,7 +5,7 @@ module BeTRSimulation
   !
   !  BeTR simulation class are API definitions, mapping data
   !  structures from a specific LSM, e.g. CLM, ALM, into BeTR data
-  !  structures. 
+  !  structures.
   !
   use abortutils                  , only : endrun
   use clm_varctl                  , only : iulog
@@ -45,13 +45,14 @@ module BeTRSimulation
      integer, public, allocatable :: filter_soilc(:)
 
      ! FIXME(bja, 201603) most of these types should be private!
-     
+
      ! NOTE(bja, 201603) BeTR types only, no LSM specific types here!
    contains
      procedure, public :: BeTRInit
      procedure, public :: Init => BeTRSimulationInit
      procedure, public :: ReadNameList => BeTRSimulationReadNameList
      procedure, public :: RestartInit => BeTRSimulationRestartInit
+     procedure, public :: ConsistencyCheck => BeTRSimulationConsistencyCheck
      procedure, public :: StepWithoutDrainage => BeTRSimulationStepWithoutDrainage
      procedure, public :: StepWithDrainage => BeTRSimulationStepWithDrainage
      procedure, public :: BeginMassBalanceCheck => BeTRSimulationBeginMassBalanceCheck
@@ -240,7 +241,7 @@ contains
     use pftvarcon, only : crop
 
     implicit none
-    
+
     class(betr_simulation_type), intent(inout) :: this
     type(bounds_type), intent(in) :: bounds ! bounds
 
@@ -411,7 +412,7 @@ contains
   end subroutine hist_htapes_create
 
   !-------------------------------------------------------------------------------
-  subroutine hist_write(this, record, lbj, ubj, time_vars)
+  subroutine hist_write(me, record, lbj, ubj, time_vars)
     !
     ! DESCRIPTION
     ! output hist file
@@ -423,7 +424,7 @@ contains
 
     implicit none
 
-    class(betr_simulation_type), intent(inout) :: this
+    class(betr_simulation_type), intent(inout) :: me
     integer, intent(in) :: record
     integer, intent(in) :: lbj,ubj
     type(betr_time_type), intent(in) :: time_vars
@@ -433,16 +434,16 @@ contains
     character(len=*), parameter :: subname='hist_write'
 
     associate( &
-         ntracers => this%betr%tracers%ntracers, &
-         ngwmobile_tracers => this%betr%tracers%ngwmobile_tracers, &
-         is_volatile => this%betr%tracers%is_volatile, &
-         is_h2o => this%betr%tracers%is_h2o, &
-         is_isotope => this%betr%tracers%is_isotope, &
-         volatileid => this%betr%tracers%volatileid, &
-         tracernames => this%betr%tracers%tracernames &
+         ntracers => me%betr%tracers%ntracers, &
+         ngwmobile_tracers => me%betr%tracers%ngwmobile_tracers, &
+         is_volatile => me%betr%tracers%is_volatile, &
+         is_h2o => me%betr%tracers%is_h2o, &
+         is_isotope => me%betr%tracers%is_isotope, &
+         volatileid => me%betr%tracers%volatileid, &
+         tracernames => me%betr%tracers%tracernames &
          )
 
-      call ncd_pio_openfile_for_write(ncid, this%hist_filename)
+      call ncd_pio_openfile_for_write(ncid, me%hist_filename)
 
       if (mod(time_vars%time, 86400._r8)==0) then
          print*,'day', time_vars%time/86400._r8
@@ -452,26 +453,40 @@ contains
       do jj = 1, ntracers
          if(jj<= ngwmobile_tracers)then
             call ncd_putvar(ncid,trim(tracernames(jj))//'_TRACER_CONC_MOIBLE',&
-                 record,this%betr%tracerstates%tracer_conc_mobile_col(1:1,lbj:ubj,jj))
+                 record,me%betr%tracerstates%tracer_conc_mobile_col(1:1,lbj:ubj,jj))
             
             if(is_volatile(jj) .and. (.not. is_h2o(jj)) .and. (.not. is_isotope(jj)))then
                
                call ncd_putvar(ncid, trim(tracernames(jj))//'_TRACER_P_GAS_FRAC',&
-                    record,this%betr%tracerstates%tracer_P_gas_frac_col(1:1,lbj:ubj,volatileid(jj)))
+                    record,me%betr%tracerstates%tracer_P_gas_frac_col(1:1,lbj:ubj,volatileid(jj)))
             endif
             if(is_volatile(jj))then
                call ncd_putvar(ncid, trim(tracernames(jj))//'_FLX_SURFEMI', &
-                    record, this%betr%tracerfluxes%tracer_flx_surfemi_col(1:1, volatileid(jj)))
+                    record, me%betr%tracerfluxes%tracer_flx_surfemi_col(1:1, volatileid(jj)))
             endif
          else
             call ncd_putvar(ncid, trim(tracernames(jj))//'_TRACER_CONC_SOLID_PASSIVE', &
-                 record, this%betr%tracerstates%tracer_conc_solid_passive_col(1:1,lbj:ubj,jj-ngwmobile_tracers))
+                 record, me%betr%tracerstates%tracer_conc_solid_passive_col(1:1,lbj:ubj,jj-ngwmobile_tracers))
          endif
       enddo
       
-      call ncd_putvar(ncid, 'TRACER_P_GAS', record, this%betr%tracerstates%tracer_P_gas_col(1:1,lbj:ubj))
+      call ncd_putvar(ncid, 'TRACER_P_GAS', record, me%betr%tracerstates%tracer_P_gas_col(1:1,lbj:ubj))
       call ncd_pio_closefile(ncid)
     end associate
   end subroutine hist_write
+
+  !---------------------------------------------------------------------------------
+  subroutine BeTRSimulationConsistencyCheck(this, &
+     bounds, ubj, num_soilc, filter_soilc, waterstate_vars)
+    use WaterStateType, only : Waterstate_Type
+  implicit none
+    class(betr_simulation_type), intent(inout) :: this
+    type(bounds_type), intent(in) :: bounds
+    integer, intent(in) :: num_soilc ! number of columns in column filter_soilc
+    integer, intent(in) :: filter_soilc(:) ! column filter_soilc
+    integer, intent(in) :: ubj
+    type(Waterstate_Type), intent(in) :: waterstate_vars ! water state variables
+
+  end subroutine BeTRSimulationConsistencyCheck
 
 end module BeTRSimulation
