@@ -15,7 +15,7 @@ module BeTRSimulation
   use decompMod                   , only : bounds_type
 
   ! !USES:
-  use BetrBGCMod                , only : betr_type
+  use BetrType                  , only : betr_type
   use betr_constants            , only : betr_string_length
   use betr_constants            , only : betr_filename_length
 

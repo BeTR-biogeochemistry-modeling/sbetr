@@ -316,7 +316,7 @@ contains
     call this%betr%step_without_drainage(betr_bounds, lbj, ubj, &
          this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp,  &
          betr_atm2lnd_vars, betr_soilhydrology_vars, betr_soilstate_vars, &
-         betr_waterstate_vars, betr_temperature_vars, betr_waterflux_vars, &
+         betr_waterstate_vars, betr_waterflux_vars, betr_temperature_vars, &
          betr_chemstate_vars, this%betr%cnstates, betr_canopystate_vars, &
          this%betr%carbonfluxes, this%betr%tracers, this%betr%bgc_reaction, &
          this%betr%aereconds, this%betr%tracerboundaryconds, this%betr%tracercoeffs, &
