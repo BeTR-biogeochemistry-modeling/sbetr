@@ -9,5 +9,8 @@ build/
 *.mod
 *.o
 
+# test output
+*.testlog
+
 # os x junk
 .DS_Store
