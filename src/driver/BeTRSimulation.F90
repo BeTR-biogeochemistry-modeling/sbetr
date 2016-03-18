@@ -142,7 +142,7 @@ contains
 
     call this%CreateHistory(betr_nlevtrc_soil, this%num_soilc)
 
-    call this%regression%Init(namelist_buffer)
+    call this%regression%Init(base_filename, namelist_buffer)
 
   end subroutine BeTRInit
 
@@ -511,7 +511,8 @@ contains
 
     class(betr_simulation_type), intent(inout) :: this
 
-    call this%regression%WriteOutput()
-
+    if (this%regression%write_regression_output) then
+       call this%regression%WriteOutput()
+    end if
   end subroutine WriteRegressionOutput
 end module BeTRSimulation
