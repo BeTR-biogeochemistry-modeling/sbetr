@@ -168,6 +168,8 @@ contains
 
   enddo
 
+  call simulation%WriteRegressionOutput()
+  
 end subroutine sbetrBGC_driver
 
 ! ----------------------------------------------------------------------

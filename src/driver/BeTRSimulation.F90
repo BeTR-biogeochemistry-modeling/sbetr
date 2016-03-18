@@ -18,7 +18,7 @@ module BeTRSimulation
   use BetrType                  , only : betr_type
   use betr_constants            , only : betr_string_length
   use betr_constants            , only : betr_filename_length
-
+  use betr_regression_module, only : betr_regression_type
   implicit none
 
   private
@@ -27,6 +27,7 @@ module BeTRSimulation
 
   type, public :: betr_simulation_type
      type(betr_type), public :: betr
+     type(betr_regression_type), private :: regression
      character(len=betr_filename_length), public :: hist_filename
      integer, public :: num_soilp
      integer, public, allocatable :: filter_soilp(:)
@@ -52,6 +53,7 @@ module BeTRSimulation
      procedure, public :: MassBalanceCheck      => BeTRSimulationMassBalanceCheck
      procedure, public :: CreateHistory => hist_htapes_create
      procedure, public :: WriteHistory => hist_write
+     procedure, public :: WriteRegressionOutput
   end type betr_simulation_type
 
   public :: BeTRSimulationInit
@@ -133,6 +135,8 @@ contains
     call this%betr%Init(namelist_buffer, betr_bounds, betr_waterstate, betr_cnstate)
 
     call this%CreateHistory(betr_nlevtrc_soil, this%num_soilc)
+
+    call this%regression%Init(namelist_buffer)
 
   end subroutine BeTRInit
 
@@ -491,4 +495,15 @@ contains
 
   end subroutine BeTRSimulationConsistencyCheck
 
+  !---------------------------------------------------------------------------------
+
+  subroutine WriteRegressionOutput(this)
+
+    implicit none
+
+    class(betr_simulation_type), intent(inout) :: this
+
+    call this%regression%WriteOutput()
+
+  end subroutine WriteRegressionOutput
 end module BeTRSimulation

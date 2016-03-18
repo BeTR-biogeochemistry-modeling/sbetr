@@ -15,6 +15,7 @@ set(BETR_UTIL_SOURCES
   bshr_sys_mod.F90
   bshr_timer_mod.F90
   BeTR_time_mod.F90
+  betr_regression_mod.F90
   )
 
 configure_file(bshr_assert.h bshr_assert.h COPYONLY)
