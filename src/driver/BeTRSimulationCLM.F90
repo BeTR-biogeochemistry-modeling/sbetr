@@ -66,10 +66,11 @@ contains
 
   !-------------------------------------------------------------------------------
 
-  subroutine CLMInit(this, namelist_buffer, bounds, waterstate, cnstate)
+  subroutine CLMInit(this, base_filename, namelist_buffer, bounds, waterstate, cnstate)
 
     use BeTRSimulation, only : BeTRSimulationInit
     use betr_constants, only : betr_namelist_buffer_size
+    use betr_constants, only : betr_filename_length
 
     use BeTR_PatchType, only : betr_pft
     use BeTR_ColumnType, only : betr_col
@@ -95,6 +96,7 @@ contains
     implicit none
 
     class(betr_simulation_clm_type), intent(inout) :: this
+    character(len=betr_filename_length), intent(in) :: base_filename
     character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
     type(bounds_type), intent(in) :: bounds
     type(waterstate_type), intent(inout) :: waterstate
@@ -150,7 +152,8 @@ contains
     ! simulation type.
 
     ! now call the base simulation init to continue initialization
-    call this%BeTRInit(namelist_buffer, betr_bounds, betr_waterstate, betr_cnstate)
+    call this%BeTRInit(base_filename, namelist_buffer, &
+         betr_bounds, betr_waterstate, betr_cnstate)
 
   end subroutine CLMInit
 

@@ -27,8 +27,11 @@ module BeTRSimulation
 
   type, public :: betr_simulation_type
      type(betr_type), public :: betr
+     character(len=betr_string_length), private :: base_filename
+     character(len=betr_filename_length), private :: hist_filename
+
      type(betr_regression_type), private :: regression
-     character(len=betr_filename_length), public :: hist_filename
+
      integer, public :: num_soilp
      integer, public, allocatable :: filter_soilp(:)
      integer, public :: num_jtops
@@ -61,19 +64,20 @@ module BeTRSimulation
 contains
 
   !-------------------------------------------------------------------------------
-  subroutine BeTRSimulationInit(this, namelist_buffer, bounds, &
-       waterstate, cnstate)
+  subroutine BeTRSimulationInit(this, base_filename, namelist_buffer, &
+       bounds, waterstate, cnstate)
     ! Dummy routine for inheritance purposes. don't use.
 
     use WaterstateType        , only : waterstate_type
     use CNStateType           , only : cnstate_type
 
-    use betr_constants, only : betr_namelist_buffer_size
+    use betr_constants, only : betr_namelist_buffer_size, betr_filename_length
 
 
     implicit none
 
     class(betr_simulation_type), intent(inout) :: this
+    character(len=betr_filename_length), intent(in) :: base_filename
     character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
 
     type(bounds_type)    , intent(in) :: bounds
@@ -111,17 +115,19 @@ contains
   end subroutine BeTRSetFilter
 !-------------------------------------------------------------------------------
 
-  subroutine BeTRInit(this, namelist_buffer, betr_bounds, &
-       betr_waterstate, betr_cnstate)
+  subroutine BeTRInit(this, base_filename, namelist_buffer, &
+       betr_bounds, betr_waterstate, betr_cnstate)
     !
     use BeTR_WaterStateType, only : betr_waterstate_type
     use BeTR_CNStateType, only : betr_cnstate_type
 
     use betr_constants, only : betr_namelist_buffer_size
+    use betr_constants, only : betr_filename_length
 
     implicit none
 
     class(betr_simulation_type), intent(inout) :: this
+    character(len=betr_filename_length), intent(in) :: base_filename
     character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
 
     type(betr_bounds_type)    , intent(in) :: betr_bounds
@@ -130,8 +136,8 @@ contains
 
     character(len=*), parameter :: subname = 'BeTRInit'
 
-    this%hist_filename = "betr_output.nc"
-
+    this%base_filename = base_filename
+    
     call this%betr%Init(namelist_buffer, betr_bounds, betr_waterstate, betr_cnstate)
 
     call this%CreateHistory(betr_nlevtrc_soil, this%num_soilc)
@@ -371,6 +377,8 @@ contains
          tracernames => this%betr%tracers%tracernames &
          )
 
+      this%hist_filename = trim(this%base_filename) // '.output.nc'
+      
       call ncd_pio_createfile(ncid, this%hist_filename)
 
       call hist_file_create(ncid,nlevtrc_soil, ncol)
