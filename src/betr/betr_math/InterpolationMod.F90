@@ -7,7 +7,7 @@ module InterpolationMod
 
   ! !USES:
   use bshr_kind_mod          , only: r8 => shr_kind_r8
-  use abortutils            , only : endrun
+  use babortutils            , only : endrun
   use bshr_log_mod           , only: errMsg => shr_log_errMsg
   implicit none
   private
@@ -124,8 +124,6 @@ contains
 
     ! array dimension
     n = size(xvect)
-
-
 
     if(x<xvect(1))then
        k = -100  !beyond left boundary

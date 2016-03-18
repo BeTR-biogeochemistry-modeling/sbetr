@@ -10,7 +10,7 @@ module TransportMod
   use bshr_log_mod         , only : errMsg => shr_log_errMsg
   use tracer_varcon       , only : bndcond_as_conc, bndcond_as_flux
   use betr_ctrl          , only : iulog => biulog
-  use abortutils          , only : endrun
+  use babortutils          , only : endrun
   use bshr_kind_mod        , only : r8 => shr_kind_r8
   implicit none
   private

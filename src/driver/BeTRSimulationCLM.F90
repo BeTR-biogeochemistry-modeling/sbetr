@@ -17,7 +17,10 @@ module BeTRSimulationCLM
 
   use decompMod, only : bounds_type
   use EcophysConType, only : ecophyscon_type
-
+  use BeTR_PatchType, only : betr_pft
+  use BeTR_ColumnType, only : betr_col
+  use BeTR_LandunitType,only : betr_lun
+  use tracer_varcon, only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
   implicit none
 
   private
@@ -172,9 +175,6 @@ contains
     use CNCarbonFluxType, only : carbonflux_type
     use CanopyStateType, only : canopystate_type
 
-    use BeTR_PatchType, only : betr_pft
-    use BeTR_ColumnType, only : betr_col
-    use BeTR_LandunitType,only : betr_lun
 
     use BeTR_WaterstateType   , only : betr_waterstate_type
     use BeTR_WaterfluxType    , only : betr_waterflux_type
@@ -322,14 +322,12 @@ contains
     betr_soilstate_vars%sucsat_col => soilstate_vars%sucsat_col
     betr_soilstate_vars%rootfr_patch => soilstate_vars%rootfr_patch
 
-    call this%betr%step_without_drainage(betr_bounds, lbj, ubj, &
+    call this%betr%step_without_drainage(betr_bounds,   &
          this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp,  &
          betr_atm2lnd_vars, betr_soilhydrology_vars, betr_soilstate_vars, &
-         betr_waterstate_vars, betr_temperature_vars, betr_waterflux_vars, &
+         betr_waterstate_vars, betr_waterflux_vars, betr_temperature_vars,  &
          betr_chemstate_vars, this%betr%cnstates, betr_canopystate_vars, &
-         this%betr%carbonfluxes, this%betr%tracers, this%betr%bgc_reaction, &
-         this%betr%aereconds, this%betr%tracerboundaryconds, this%betr%tracercoeffs, &
-         this%betr%tracerstates, this%betr%tracerfluxes, this%betr%plant_soilbgc)
+         this%betr%carbonfluxes)
 
 
   end subroutine CLMStepWithoutDrainage
@@ -341,8 +339,7 @@ contains
     use ColumnType, only : column_type
     use MathfuncMod, only : safe_div
     use WaterFluxType, only : waterflux_type
-    use BeTR_ColumnType, only : betr_col
-    use BeTR_LandunitType,only : betr_lun
+
     use betr_decompMod, only : betr_bounds_type
     use LandunitType,only : lun
     use tracer_varcon, only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
@@ -380,7 +377,6 @@ contains
     betr_bounds%begc = bounds%begc; betr_bounds%endc = bounds%endc
     betr_bounds%begl = bounds%begl; betr_bounds%endl = bounds%endl
     betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
-    lbj = betr_bounds%lbj; ubj = betr_bounds%ubj
 
     betr_waterflux_vars%qflx_adv_col       => waterflux_vars%qflx_adv_col
     betr_waterflux_vars%qflx_infl_col      => waterflux_vars%qflx_infl_col
@@ -400,10 +396,9 @@ contains
     betr_waterflux_vars%qflx_tran_veg_patch     => waterflux_vars%qflx_tran_veg_patch
 
 
-    call this%betr%step_with_drainage(betr_bounds, lbj, ubj, &
+    call this%betr%step_with_drainage(betr_bounds,   &
          this%num_soilc, this%filter_soilc, this%jtops, &
-         betr_waterflux_vars, this%betr%tracers, this%betr%tracercoeffs, &
-         this%betr%tracerstates,  this%betr%tracerfluxes)
+         betr_waterflux_vars)
 
   end subroutine CLMStepWithDrainage
 
@@ -421,9 +416,8 @@ contains
     use LandunitType, only : landunit_type
     use BeTR_WaterStateType, only : betr_waterstate_type
     use landunit_varcon, only : istsoil
-    use TracerParamsMod, only : diagnose_dtracer_freeze_thaw
     use betr_decompMod    , only : betr_bounds_type
-
+    use WaterStateType, only : waterstate_type
     implicit none
 
     class(betr_simulation_clm_type), intent(inout) :: this
@@ -432,11 +426,47 @@ contains
     integer, intent(in) :: filter_nolakec(:) ! column filter for non-lake points
     type(column_type), intent(in) :: col ! column type
     type(landunit_type), intent(in) :: lun
-    type(betr_waterstate_type), intent(in) :: waterstate_vars
+    type(waterstate_type), intent(in) :: waterstate_vars
 
 
-    call diagnose_dtracer_freeze_thaw(bounds, num_nolakec, filter_nolakec, &
-         waterstate_vars, this%betr%tracers, this%betr%tracerstates)
+    !temporary variables
+    type(betr_waterstate_type)  :: betr_waterstate_vars
+    type(betr_bounds_type)     :: betr_bounds
+
+    betr_col%landunit => col%landunit
+    betr_col%gridcell => col%gridcell
+    betr_col%snl => col%snl
+    betr_col%dz => col%dz
+    betr_col%zi => col%zi
+    betr_col%z => col%z
+
+    betr_lun%itype => lun%itype
+    betr_lun%ifspecial => lun%ifspecial
+
+    betr_bounds%lbj  = 1          ; betr_bounds%ubj  = betr_nlevsoi
+    betr_bounds%begp = bounds%begp; betr_bounds%endp = bounds%endp
+    betr_bounds%begc = bounds%begc; betr_bounds%endc = bounds%endc
+    betr_bounds%begl = bounds%begl; betr_bounds%endl = bounds%endl
+    betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
+
+    !assign waterstate
+    betr_waterstate_vars%h2osoi_liq_col    => waterstate_vars%h2osoi_liq_col
+    betr_waterstate_vars%h2osoi_ice_col    => waterstate_vars%h2osoi_ice_col
+
+    betr_waterstate_vars%h2osoi_liq_old    => waterstate_vars%h2osoi_liq_old
+    betr_waterstate_vars%h2osoi_ice_old    => waterstate_vars%h2osoi_ice_old
+    betr_waterstate_vars%h2osoi_liqvol_col => waterstate_vars%h2osoi_liqvol_col
+    betr_waterstate_vars%h2osoi_icevol_col => waterstate_vars%h2osoi_icevol_col
+    betr_waterstate_vars%h2osoi_vol_col    => waterstate_vars%h2osoi_vol_col
+    betr_waterstate_vars%air_vol_col       => waterstate_vars%air_vol_col
+    betr_waterstate_vars%finundated_col    => waterstate_vars%finundated_col
+    betr_waterstate_vars%rho_vap           => waterstate_vars%rho_vap
+    betr_waterstate_vars%rhvap_soi         => waterstate_vars%rhvap_soi
+    betr_waterstate_vars%smp_l_col         => waterstate_vars%smp_l_col
+    betr_waterstate_vars%frac_h2osfc_col   => waterstate_vars%frac_h2osfc_col
+
+    call this%betr%diagnose_dtracer_freeze_thaw(bounds, num_nolakec, filter_nolakec,  &
+      betr_waterstate_vars)
 
   end subroutine diagnose_dtracer_freeze_thaw_clm
 

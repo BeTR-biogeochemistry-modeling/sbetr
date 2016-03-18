@@ -159,7 +159,6 @@ contains
     real(r8), intent(out) :: y(neq)
     external :: odefun
 
-
     ! !LOCAL VARIABLES:
     real(r8) :: f(neq)
     real(r8) :: f1(neq)
@@ -226,7 +225,6 @@ contains
        if(f(n)<0._r8)then
           nJ = nJ  + 1
           pm = -y0(n)/(f(n)*dt)
-
           pm = min(pm,1.e30_r8)
           aj(nJ) = -safe_div(1._r8,pm)
           if(nJ==1)then
@@ -238,8 +236,6 @@ contains
     enddo
     if(nJ>0)then
        pmax=min(1._r8,pmax**(nJ))
-
-
        !solve the gradient modifier function
        mbkks_data%nJ=nJ
        mbkks_data%iJ=1._r8/nJ

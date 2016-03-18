@@ -47,7 +47,7 @@ contains
     use BGCReactionsMod             , only : bgc_reaction_type
     use MockBGCReactionsType     , only : bgc_reaction_mock_run_type
     use H2OIsotopeBGCReactionsType, only : bgc_reaction_h2oiso_type
-    use abortutils                  , only : endrun
+    use babortutils                  , only : endrun
     use betr_ctrl                  , only : iulog  => biulog
 
     ! !ARGUMENTS:
@@ -72,7 +72,7 @@ contains
   use PlantSoilBGCMod             , only : plant_soilbgc_type
   use MockPlantSoilBGCType     , only : plant_soilbgc_mock_run_type
   use H2OIsotopePlantSoilBGCType     , only : plant_soilbgc_h2oiso_run_type
-  use abortutils                  , only : endrun
+  use babortutils                  , only : endrun
   use betr_ctrl                  , only : iulog  => biulog
 
 

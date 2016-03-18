@@ -75,7 +75,7 @@ implicit none
       !
       ! !USES:
 
-      use abortutils            , only : endrun
+      use babortutils            , only : endrun
       use betr_ctrl            , only : iulog  => biulog
       use clm_time_manager      , only : get_step_size,get_nstep
       use betr_varcon           , only : namec  => bnamec

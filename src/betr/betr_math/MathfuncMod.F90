@@ -7,7 +7,7 @@ module MathfuncMod
   ! !USES:
   use bshr_kind_mod    , only : r8 => shr_kind_r8
   use betr_ctrl      , only : iulog  => biulog
-  use abortutils      , only : endrun
+  use babortutils      , only : endrun
   use bshr_log_mod     , only : errMsg => shr_log_errMsg
   implicit none
   save

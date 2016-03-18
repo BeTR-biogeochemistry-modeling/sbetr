@@ -25,7 +25,7 @@ module H2OIsotopeBGCReactionsType
   use decompMod             , only : bounds_type
   use BGCReactionsMod       , only : bgc_reaction_type
   use tracer_varcon         , only : bndcond_as_conc, bndcond_as_flux
-  use abortutils            , only : endrun
+  use babortutils            , only : endrun
 implicit none
 
   save
@@ -617,7 +617,6 @@ implicit none
     ! initialize the bgc coupling between betr and lsm
     !
     ! !USES:
-    !use clm_instMod
     use tracerstatetype          , only : tracerstate_type
     use BetrTracerType           , only : betrtracer_type
     use tracer_varcon            , only : nlevtrc_soil  => betr_nlevtrc_soil
