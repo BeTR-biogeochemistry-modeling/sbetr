@@ -11,6 +11,8 @@ build/
 
 # test output
 *.testlog
+*.stdout
+*.bak
 
 # os x junk
 .DS_Store
