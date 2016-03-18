@@ -167,6 +167,28 @@ class RegressionTestSuite(object):
         for test in self._tests:
             test.update_baseline(dry_run)
 
+    def status_summary(self):
+        """Return the test results for the test suite.
+
+        """
+        status = {'skip': 0,
+                  'fail': 0,
+                  'pass': 0,
+                  'total': len(self._tests),
+                  }
+        for test in self._tests:
+            if test._status == 'skip':
+                status['skip'] += 1
+            elif test._status == 'fail':
+                status['fail'] += 1
+            elif test._status == 'pass':
+                status['pass'] += 1
+            else:
+                msg = ('development error: suite "{0}" : test "{1}" : '
+                       'indeterminant status.'.format(self._name, test._name))
+                raise RuntimeError(msg)
+        return status
+
 
 class RegressionTest(object):
     """
@@ -182,7 +204,7 @@ class RegressionTest(object):
         self._name = name
         self._namelist_filename = None
         self._tolerances = tolerances
-        self._skip = False
+        self._status = None
         self._timeout = 60.0
 
         # setup the test
@@ -258,7 +280,7 @@ class RegressionTest(object):
             logging.critical(
                 'expected "{0}" in directory : {1}'.format(namelist_filename,
                                                            os.getcwd()))
-            self._skip = True
+            self._status = 'skip'
         else:
             self._namelist_filename = namelist_filename
 
@@ -269,10 +291,13 @@ class RegressionTest(object):
             self._run_test(executable, dry_run)
         self._check_test()
         # FIXME(bja, 201603) need better status mechanism
-        if self._skip:
+        if self._status == 'skip':
             print('s', end='')
+        elif self._status == 'fail':
+            print('F', end='')
         else:
             print('.', end='')
+        sys.stdout.flush()
 
     def _run_test(self, executable, dry_run):
         """Run the test
@@ -280,7 +305,7 @@ class RegressionTest(object):
         logging.info(SEPERATOR)
         logging.info('Running test "{0}"'.format(self._name))
         self._cleanup_previous_run()
-        if self._skip:
+        if self._status == 'skip':
             logging.critical('Skipping test "{0}"').format(self._name)
             return
         cmd = []
@@ -309,12 +334,14 @@ class RegressionTest(object):
                 self._name, finish - start))
             run_stdout.close()
             status = abs(proc.returncode)
-            # FIXME(bja, 201603) do something with return code?!
+            if status != 0:
+                self._status = 'fail'
 
     def _check_test(self):
         """Check the test results against the baseline
         """
-        pass
+        if not self._status:
+            self._status = 'pass'
 
     def update_baseline(self, dry_run):
         """Update the baseline regression file with the results from the
@@ -526,6 +553,25 @@ def main(options):
     for suite in test_suites:
         suite.run_tests(executable, check_only, dry_run)
     print(BANNER)
+
+    status_summary = {
+        'skip': 0,
+        'fail': 0,
+        'pass': 0,
+        'total': 0,
+    }
+    for suite in test_suites:
+        status = suite.status_summary()
+        status_summary['skip'] += status['skip']
+        status_summary['fail'] += status['fail']
+        status_summary['pass'] += status['pass']
+        status_summary['total'] += status['total']
+
+    print("Status:")
+    print("  skipped : {0}".format(status_summary['skip']))
+    print("  failed : {0}".format(status_summary['fail']))
+    print("  passed : {0}".format(status_summary['pass']))
+    print("  total : {0}".format(status_summary['total']))
 
     logging.shutdown()
     return 0

@@ -32,6 +32,9 @@ program main
   
   call sbetrBGC_driver(base_filename, namelist_buffer)
 
+  ! return correct error code to caller
+  call exit(0)
+  
 end program main
 
 
