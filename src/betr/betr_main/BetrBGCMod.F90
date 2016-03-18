@@ -335,7 +335,7 @@ contains
     use tracerfluxType           , only : tracerflux_type
     use tracerboundarycondtype   , only : tracerboundarycond_type
     use TransportMod             , only : DiffusTransp
-    use abortutils               , only : endrun
+    use babortutils               , only : endrun
 
     ! !ARGUMENTS:
     type(bounds_type)            , intent(in)    :: bounds
@@ -617,7 +617,7 @@ contains
     use tracerfluxtype     , only          : tracerflux_type
     use TracerCoeffType    , only          : tracercoeff_type
     use TransportMod       , only          : semi_lagrange_adv_backward, set_debug_transp
-    use abortutils         , only          : endrun
+    use babortutils         , only          : endrun
     use BeTR_WaterfluxType , only          : betr_waterflux_type
     use MathfuncMod        , only          : safe_div
     !
@@ -929,7 +929,7 @@ contains
     use tracerboundarycondtype, only : tracerboundarycond_type
     use tracerfluxtype,         only : tracerflux_type
     use TransportMod          , only : DiffusTransp, get_cntheta
-    use abortutils            , only : endrun
+    use babortutils            , only : endrun
     use tracer_varcon         , only : bndcond_as_conc
     use BeTR_WaterStateType   , only : BeTR_Waterstate_Type
 

@@ -3,6 +3,7 @@ set(BETR_DRIVER_SOURCES
   BeTRSimulationFactory.F90
   BeTRSimulationStandalone.F90
   BeTRSimulationCLM.F90
+  BeTRSimulationALM.F90
   CLMForcType.F90
   sbetrDriverMod.F90
   )

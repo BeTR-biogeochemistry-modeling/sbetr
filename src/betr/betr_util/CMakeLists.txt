@@ -1,5 +1,6 @@
 set(BETR_UTIL_SOURCES
   betr_constants.F90
+  babortutils.F90
   BeTR_decompMod.F90
   betr_varcon.F90
   betr_ctrl.F90
@@ -15,7 +16,6 @@ set(BETR_UTIL_SOURCES
   bshr_timer_mod.F90
   BeTR_time_mod.F90
   )
-
 
 configure_file(bshr_assert.h bshr_assert.h COPYONLY)
 configure_file(bmpif.h bmpif.h COPYONLY)

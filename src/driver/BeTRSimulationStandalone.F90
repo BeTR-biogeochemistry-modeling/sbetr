@@ -313,14 +313,12 @@ contains
     betr_soilstate_vars%sucsat_col => soilstate_vars%sucsat_col
     betr_soilstate_vars%rootfr_patch => soilstate_vars%rootfr_patch
 
-    call this%betr%step_without_drainage(betr_bounds, lbj, ubj, &
+    call this%betr%step_without_drainage(betr_bounds,   &
          this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp,  &
          betr_atm2lnd_vars, betr_soilhydrology_vars, betr_soilstate_vars, &
          betr_waterstate_vars, betr_waterflux_vars, betr_temperature_vars, &
          betr_chemstate_vars, this%betr%cnstates, betr_canopystate_vars, &
-         this%betr%carbonfluxes, this%betr%tracers, this%betr%bgc_reaction, &
-         this%betr%aereconds, this%betr%tracerboundaryconds, this%betr%tracercoeffs, &
-         this%betr%tracerstates, this%betr%tracerfluxes, this%betr%plant_soilbgc)
+         this%betr%carbonfluxes)
 
   end subroutine StandaloneStepWithoutDrainage
 
@@ -383,10 +381,9 @@ contains
     betr_waterflux_vars%qflx_snow2topsoi_col    => waterflux_vars%qflx_snow2topsoi_col
     betr_waterflux_vars%qflx_tran_veg_patch     => waterflux_vars%qflx_tran_veg_patch
 
-    call this%betr%step_with_drainage(betr_bounds, lbj, ubj, &
+    call this%betr%step_with_drainage(betr_bounds,   &
          this%num_soilc, this%filter_soilc, &
-         this%jtops, betr_waterflux_vars, this%betr%tracers, this%betr%tracercoeffs, &
-         this%betr%tracerstates,  this%betr%tracerfluxes)
+         this%jtops, betr_waterflux_vars)
 
   end subroutine StandaloneStepWithDrainage
 

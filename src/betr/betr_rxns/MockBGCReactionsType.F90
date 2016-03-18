@@ -161,7 +161,7 @@ contains
     ! !USES:
     use betr_ctrl            , only : iulog  => biulog
     use TracerBoundaryCondType, only : tracerboundarycond_type
-    use abortutils            , only : endrun
+    use babortutils            , only : endrun
     use bshr_log_mod           , only : errMsg => shr_log_errMsg
     use BeTRTracerType        , only : betrtracer_type
     use BeTR_WaterfluxType    , only : waterflux_type  => betr_waterflux_type

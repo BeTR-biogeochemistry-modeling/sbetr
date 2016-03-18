@@ -9,7 +9,7 @@ module Tracer_varcon
   !
   ! !USES:
   use bshr_kind_mod, only : r8 => shr_kind_r8
-  use abortutils  , only : endrun
+  use babortutils  , only : endrun
   use betr_ctrl  , only : iulog => biulog
   !
   ! !PUBLIC TYPES:

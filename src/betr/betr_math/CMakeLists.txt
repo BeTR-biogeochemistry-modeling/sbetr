@@ -7,7 +7,6 @@ set(BETR_MATH_SOURCES
   )
 
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)
-include_directories(${CMAKE_BINARY_DIR}/src/stub_clm)
 
 
 include(add_betr_library)
