@@ -171,22 +171,23 @@ class RegressionTestSuite(object):
         """Return the test results for the test suite.
 
         """
-        status = {'skip': 0,
-                  'fail': 0,
-                  'pass': 0,
-                  'total': len(self._tests),
-                  }
+        status = StatusSummary()
+
         for test in self._tests:
-            if test._status == 'skip':
-                status['skip'] += 1
-            elif test._status == 'fail':
-                status['fail'] += 1
-            elif test._status == 'pass':
-                status['pass'] += 1
+            if test.status() == 'skip':
+                status.add_skip()
+            elif test.status() == 'fail':
+                status.add_failure()
+            elif test.status() == 'pass':
+                status.add_pass()
             else:
                 msg = ('development error: suite "{0}" : test "{1}" : '
                        'indeterminant status.'.format(self._name, test._name))
                 raise RuntimeError(msg)
+        if len(self._tests) != status.total():
+            msg = ('development error: suite "{0}" : number of tests did not'
+                   ' equal the number of valid statuses.'.format(self._name))
+            raise RuntimeError(msg)
         return status
 
 
@@ -283,6 +284,11 @@ class RegressionTest(object):
             self._status = 'skip'
         else:
             self._namelist_filename = namelist_filename
+
+    def status(self):
+        """
+        """
+        return self._status
 
     def run(self, executable, check_only, dry_run):
         """
@@ -429,6 +435,65 @@ class Tolerances(object):
             raise RuntimeError(msg)
 
 
+class StatusSummary(object):
+    """
+    """
+
+    def __init__(self):
+        """
+        """
+        self._skips = 0
+        self._failures = 0
+        self._passes = 0
+        self._total = 0
+
+    def __add__(self, other):
+        """
+        """
+        self.add_skip(other.skips())
+        self.add_failure(other.failures())
+        self.add_pass(other.passes())
+        return self
+
+    def skips(self):
+        """
+        """
+        return self._skips
+
+    def add_skip(self, num=1):
+        """
+        """
+        self._skips += num
+        self._total += num
+
+    def failures(self):
+        """
+        """
+        return self._failures
+
+    def add_failure(self, num=1):
+        """
+        """
+        self._failures += num
+        self._total += num
+
+    def passes(self):
+        """
+        """
+        return self._passes
+
+    def add_pass(self, num=1):
+        """
+        """
+        self._passes += num
+        self._total += num
+
+    def total(self):
+        """
+        """
+        return self._total
+
+
 # -----------------------------------------------------------------------------
 #
 # work functions
@@ -527,6 +592,7 @@ def verify_executable(executable):
 def main(options):
     print(BANNER)
     print('BeTR regression test driver')
+    start_time = time.time()
 
     cwd = os.getcwd()
     setup_log(cwd)
@@ -554,24 +620,18 @@ def main(options):
         suite.run_tests(executable, check_only, dry_run)
     print(BANNER)
 
-    status_summary = {
-        'skip': 0,
-        'fail': 0,
-        'pass': 0,
-        'total': 0,
-    }
+    status = StatusSummary()
     for suite in test_suites:
-        status = suite.status_summary()
-        status_summary['skip'] += status['skip']
-        status_summary['fail'] += status['fail']
-        status_summary['pass'] += status['pass']
-        status_summary['total'] += status['total']
+        status += suite.status_summary()
 
+    end_time = time.time()
+        
     print("Status:")
-    print("  skipped : {0}".format(status_summary['skip']))
-    print("  failed : {0}".format(status_summary['fail']))
-    print("  passed : {0}".format(status_summary['pass']))
-    print("  total : {0}".format(status_summary['total']))
+    print("  total tests : {0}".format(status.total()))
+    print("    skipped : {0}".format(status.skips()))
+    print("    failed : {0}".format(status.failures()))
+    print("    passed : {0}".format(status.passes()))
+    print("  overall time : {0:5.2f} [s]".format(end_time - start_time))
 
     logging.shutdown()
     return 0
