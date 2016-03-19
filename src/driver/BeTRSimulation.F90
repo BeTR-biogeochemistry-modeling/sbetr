@@ -507,12 +507,32 @@ contains
 
   subroutine WriteRegressionOutput(this)
 
+    use betr_constants, only : betr_string_length
+    
     implicit none
 
     class(betr_simulation_type), intent(inout) :: this
 
+    integer :: jj, tt, begc, endc
+    character(len=betr_string_length) :: category
+
+    ! FIXME(bja, 201603) need a way to categorize output variables,
+    ! e.g. concentration, velocity, etc. Hard coding for now.
+    category = 'concentration'
+
+    begc = 1
+    endc = 1
+    
     if (this%regression%write_regression_output) then
-       call this%regression%WriteOutput()
+       call this%regression%OpenOutput()
+       do tt = 1, this%betr%tracers%ntracers
+          if (tt < this%betr%tracers%ngwmobile_tracers) then
+             call this%regression%WriteData(category, &
+                  this%betr%tracers%tracernames(tt), &
+                  this%betr%tracerstates%tracer_conc_mobile_col(begc, :, tt))
+          end if
+       end do
+       call this%regression%CloseOutput()
     end if
   end subroutine WriteRegressionOutput
 end module BeTRSimulation

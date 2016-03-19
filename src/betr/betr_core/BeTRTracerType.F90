@@ -8,6 +8,7 @@ module BeTRTracerType
   use bshr_kind_mod       , only: r8 => shr_kind_r8
   use babortutils          , only : endrun
   use bshr_log_mod        , only : errMsg => shr_log_errMsg
+  use betr_constants, only : betr_var_name_length
   !
   implicit none
   private
@@ -91,8 +92,8 @@ module BeTRTracerType
 
    integer, pointer :: solid_passive_tracer_groupid(:,:)
    integer, pointer :: tracer_group_memid(:,:)                   !grp, gmem
-   character(len=36),pointer :: tracernames(:)                   !array with tracer names
-   character(len=36),pointer :: units(:)
+   character(len=betr_var_name_length),pointer :: tracernames(:)                   !array with tracer names
+   character(len=betr_var_name_length),pointer :: units(:)
    real(r8),pointer :: gram_mole_wt(:)                           !molecular weight of the master species, [g/mol]
    real(r8),pointer :: vtrans_scal(:)                            !scaling factor for plant tracer uptake through transpiration, for non-water neutral aqueous tracers
 

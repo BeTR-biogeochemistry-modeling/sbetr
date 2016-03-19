@@ -295,7 +295,8 @@ class RegressionTest(object):
         """
         if not check_only:
             self._run_test(executable, dry_run)
-        self._check_test()
+        if not self._status:
+            self._check_test()
         # FIXME(bja, 201603) need better status mechanism
         if self._status == 'skip':
             print('s', end='')
@@ -346,9 +347,23 @@ class RegressionTest(object):
     def _check_test(self):
         """Check the test results against the baseline
         """
+        filename = '{0}.regression'.format(self._name)
+        regression = read_config_file(filename)
+
+        filename = '{0}.regression.baseline'.format(self._name)
+        baseline = read_config_file(filename)
+
+        for section in baseline.sections():
+            if not regression.has_section(section):
+                self._status = 'fail'
+        
         if not self._status:
             self._status = 'pass'
 
+    def _read_regression(self, filename):
+        """Read a cfg/ini regression file into a config object.
+        """
+            
     def update_baseline(self, dry_run):
         """Update the baseline regression file with the results from the
         current run.
