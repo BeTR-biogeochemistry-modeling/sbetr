@@ -47,7 +47,7 @@ else:
 # globals
 #
 BANNER = 70*'-'
-SEPERATOR = '+{0}'.format(35*'-')
+SEPERATOR = '-+- {0}'.format(35*'-')
 
 
 # -----------------------------------------------------------------------------
@@ -101,7 +101,7 @@ def read_config_file(filename):
 
     cfg_file = os.path.abspath(filename)
     if not os.path.isfile(cfg_file):
-        raise RuntimeError("Could not find config file: {0}".format(cfg_file))
+        raise RuntimeError("Could not find file: {0}".format(cfg_file))
 
     config = config_parser()
     config.read(cfg_file)
@@ -196,8 +196,12 @@ class RegressionTest(object):
     """
 
     def __init__(self, name, tolerances, options, timeout):
-        """
-        Note: assume that we are in the test directory.
+        """Note: assume that we are in the test directory.
+
+        We start with a None status because we want to explicitly se
+        the pass/fail/skip status. If it is still unset at the end of
+        the test, then there is a bug in the comparison code!
+
         """
         logging.info('  Adding test "{0}"'.format(name))
 
@@ -297,7 +301,7 @@ class RegressionTest(object):
             self._run_test(executable, dry_run)
         if not self._status:
             self._check_test()
-        # FIXME(bja, 201603) need better status mechanism
+
         if self._status == 'skip':
             print('s', end='')
         elif self._status == 'fail':
@@ -347,23 +351,81 @@ class RegressionTest(object):
     def _check_test(self):
         """Check the test results against the baseline
         """
-        filename = '{0}.regression'.format(self._name)
-        regression = read_config_file(filename)
+        logging.info(SEPERATOR)
+        logging.info('Checking test "{0}"'.format(self._name))
 
+        # NOTE(bja, 201603) we check baseline first, so if the current
+        # regression file is missing we get a failure instead of a
+        # skip status!
         filename = '{0}.regression.baseline'.format(self._name)
-        baseline = read_config_file(filename)
+        baseline = None
+        try:
+            baseline = read_config_file(filename)
+        except RuntimeError as e:
+            logging.critical(e)
+            msg = ('  SKIP : Could not open baseline file for '
+                   'test "{0}".'.format(self._name))
+            logging.critical(msg)
+            self._status = 'skip'
 
-        for section in baseline.sections():
-            if not regression.has_section(section):
-                self._status = 'fail'
-        
+        filename = '{0}.regression'.format(self._name)
+        regression = None
+        try:
+            regression = read_config_file(filename)
+        except RuntimeError as e:
+            logging.critical(e)
+            msg = ('  FAILURE : Could not open regression file for '
+                   'test "{0}".'.format(self._name))
+            logging.critical(msg)
+            self._status = 'fail'
+
+        if not regression or not baseline:
+            return
+
+        self._compare_regession_to_baseline(regression, baseline)
+
+    def _compare_regession_to_baseline(self, regression, baseline):
+        """
+        """
+        self._compare_sections(regression, 'regression',
+                               baseline, 'baseline')
+        self._compare_sections(baseline, 'baseline',
+                               regression, 'regression')
+
         if not self._status:
+            msg = ('  PASS : {0} '.format(self._name))
+            logging.critical(msg)
             self._status = 'pass'
 
-    def _read_regression(self, filename):
-        """Read a cfg/ini regression file into a config object.
+    def _compare_sections(self, a, a_name, b, b_name):
+        """check that all sections in a are in b
         """
-            
+        for section in a.sections():
+            if section not in b.sections():
+                msg = ('  FAILURE : sections "{0}" present in {1} '
+                       'but missing from {2}'.format(section, a_name, b_name))
+                logging.critical(msg)
+                self._status = 'fail'
+            else:
+                self._compare_options(
+                    section,
+                    a.items(section), a_name,
+                    b.items(section), b_name)
+
+    def _compare_options(self, section, a, a_name, b, b_name):
+        """
+        """
+        for key, value in a:
+            b_keys = [bk for bk, bv in b]
+            if key not in b_keys:
+                msg = ('  FAIURE : {0} : key "{1}" present in {2} '
+                       'mising in {3}'.format(section, key, a_name, b_name))
+                logging.critical(msg)
+                self._status = 'fail'
+            else:
+                # compare values, based on tolerances!
+                pass
+
     def update_baseline(self, dry_run):
         """Update the baseline regression file with the results from the
         current run.
