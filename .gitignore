@@ -13,6 +13,10 @@ build/
 *.testlog
 *.stdout
 *.bak
+*.regression
+
+# simulation output
+*.output.nc
 
 # os x junk
 .DS_Store
