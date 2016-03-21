@@ -6,6 +6,7 @@ Unit test suite for the betr regression test manager
 from __future__ import print_function
 
 import logging
+import os
 import sys
 import unittest
 
@@ -21,20 +22,23 @@ from rtest_betr import StatusSummary
 class StatusSummary_suite(unittest.TestCase):
     """
     """
+    _LOG_FILENAME = 'dummy.testlog'
 
     def setUp(self):
         """
         """
-        log_filename = 'dummy.testlog'
-        logging.basicConfig(filename=log_filename,
+        logging.basicConfig(filename=self._LOG_FILENAME,
                             filemode='w',
                             level=logging.INFO,
                             format='%(message)s')
+        logging.info('mtest {0} unit test log.'.format(__name__))
 
     def tearDown(self):
         """
         """
         logging.shutdown()
+        if os.path.isfile(self._LOG_FILENAME):
+            os.remove(self._LOG_FILENAME)
 
     # ------------------------------------------------------
 

@@ -15,11 +15,10 @@ if sys.version_info[0] == 2:
 else:
     from configparser import ConfigParser as config_parser
 
+from rtest_betr import main
 
-from rtest_betr import Tolerances
 
-
-class Tolerances_suite(unittest.TestCase):
+class BeTR_suite(unittest.TestCase):
     """
     """
     _LOG_FILENAME = 'dummy.testlog'
@@ -42,14 +41,13 @@ class Tolerances_suite(unittest.TestCase):
 
     # ------------------------------------------------------
 
-    def test_tolerances_default(self):
-        """Test basic initialization of a tolerance object and return of a
+    def test_example_default(self):
+        """A working example test
         default value.
 
         """
-        tolerances = Tolerances()
-        expected = Tolerances._DEFAULT_EPSILON
-        received = tolerances.get(Tolerances.CONC, 'value')
+        expected = True
+        received = True
 
         self.assertEqual(expected, received)
 
