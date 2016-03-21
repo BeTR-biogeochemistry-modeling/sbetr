@@ -641,12 +641,17 @@ class StatusSummary(object):
         self._total = 0
 
     def __add__(self, other):
+        """Addition operator to combine status objects
+
+        NOTE(bja, 201603) do NOT manually increment totals here. they
+        are incremented automatically.
+
         """
-        """
-        self.add_skip(other.skips())
-        self.add_failure(other.failures())
-        self.add_pass(other.passes())
-        return self
+        new = StatusSummary()
+        new.add_skip(self.skips() + other.skips())
+        new.add_failure(self.failures() + other.failures())
+        new.add_pass(self.passes() + other.passes())
+        return new
 
     def skips(self):
         """
