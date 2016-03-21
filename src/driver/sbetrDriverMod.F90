@@ -285,7 +285,7 @@ end subroutine sbetrBGC_driver
   ttime%time=ttime%time+dtime
 
   ttime%tstep = ttime%tstep + 1
-  if(mod(ttime%tstep, 48*365)==0)ttime%tstep = 48*365
+  if(mod(ttime%tstep, 48*365)==0)ttime%tstep = 1
 
   end subroutine update_time_stamp
 
@@ -360,6 +360,7 @@ end subroutine sbetrBGC_driver
     jtops(c) = 1
     soilhydrology_vars%zwts_col(c) = 10._r8
     atm2lnd_vars%forc_pbot_downscaled_col(c) = clmforc_vars%pbot(tstep)             ! 1 atmos
+    atm2lnd_vars%forc_t_downscaled_col(c)    = clmforc_vars%tbot(tstep)             ! 2 atmos temperature
   enddo
 
   !set up forcing variables

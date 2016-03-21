@@ -103,7 +103,7 @@ module BGCReactionsMod
      !----------------------------------------------------------------------
 
      subroutine set_boundary_conditions_interface(this, bounds, num_soilc, filter_soilc, dz_top, &
-          betrtracer_vars, waterflux_vars, tracerboundarycond_vars)
+          betrtracer_vars, waterflux_vars, atm2lnd_vars, tracerboundarycond_vars)
 
        ! !DESCRIPTION:
        ! template for set_boundary_conditions
@@ -112,8 +112,9 @@ module BGCReactionsMod
        use TracerBoundaryCondType , only : tracerboundarycond_type
        use BeTR_decompMod         , only : betr_bounds_type
        use BeTRTracerType         , only : BeTRTracer_Type
-       use BeTR_WaterfluxType     , only : waterflux_type => betr_waterflux_type
-       use bshr_kind_mod           , only : r8 => shr_kind_r8
+       use BeTR_WaterfluxType     , only : betr_waterflux_type
+       use BeTR_atm2lndType       , only : betr_atm2lnd_type
+       use bshr_kind_mod          , only : r8 => shr_kind_r8
 
        ! !ARGUMENTS:
        import :: bgc_reaction_type
@@ -123,7 +124,8 @@ module BGCReactionsMod
        integer                       , intent(in) :: filter_soilc(:)            ! column filter
        type(betrtracer_type)         , intent(in) :: betrtracer_vars            !
        real(r8)                      , intent(in) :: dz_top( : )                !
-       type(waterflux_type)          , intent(in) :: waterflux_vars             !
+       type(betr_waterflux_type)     , intent(in) :: waterflux_vars             !
+       type(betr_atm2lnd_type)       , intent(in) :: atm2lnd_vars
        type(tracerboundarycond_type) , intent(inout) :: tracerboundarycond_vars !
 
      end subroutine set_boundary_conditions_interface

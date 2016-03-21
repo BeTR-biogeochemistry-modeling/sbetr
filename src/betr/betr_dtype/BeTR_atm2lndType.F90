@@ -11,6 +11,7 @@ implicit none
   type, public :: betr_atm2lnd_type
 
   real(r8), pointer :: forc_pbot_downscaled_col      (:)   => null() ! downscaled atm pressure (Pa)
+  real(r8), pointer :: forc_t_downscaled_col         (:)   => null() ! downscaled atm temperature (Kelvin)
   contains
     procedure, public  :: Init
     procedure, private :: InitAllocate

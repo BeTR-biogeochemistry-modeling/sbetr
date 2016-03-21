@@ -5,13 +5,13 @@ module CLMForcType
 
   use betr_constants, only : betr_filename_length, betr_string_length_long
   use betr_constants, only : betr_namelist_buffer_size
-  
+
   implicit none
 
   private
 
   character(len=*), private, parameter :: mod_filename = __FILE__
-  
+
   type, public :: clmforc_type
      character(len=betr_filename_length) :: grid_filename
      character(len=betr_filename_length) :: forcing_filename
@@ -22,6 +22,7 @@ module CLMForcType
     real(r8), pointer :: qflx_infl(:)       !surface infiltration, mm/s
     real(r8), pointer :: qflx_tran_dep(:,:) !transpiration at depth, mm/s
     real(r8), pointer :: pbot(:)            !amtospheric pressure, Pa
+    real(r8), pointer :: tbot(:)            !atmoshperic temperature, kelvin
     real(r8), pointer :: dzsoi(:)           !node thickness
     real(r8), pointer :: zsoi(:)            !node depth of each numerical node
     real(r8), pointer :: bsw(:)             !clap-hornberg parameter
@@ -68,6 +69,7 @@ contains
   allocate(this%zsoi(diml))
   allocate(this%dzsoi(diml))
   allocate(this%pbot(dimt))
+  allocate(this%tbot(dimt))
   allocate(this%watsat(diml))
   allocate(this%bsw(diml))
   this%nlev=diml
@@ -83,7 +85,7 @@ contains
 
     class(clmforc_type) :: this
     character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
-    
+
   character(len=250) :: ncf_in_filename_grid
   character(len=250) :: ncf_in_filename_forc
   type(file_desc_t)  :: ncf_in_grid
@@ -95,13 +97,13 @@ contains
   integer :: j1, j2
 
   call this%ReadNameList(namelist_buffer)
-  
+
   ncf_in_filename_grid=trim(this%grid_filename)
   call ncd_pio_openfile(ncf_in_grid, ncf_in_filename_grid, mode=ncd_nowrite)
 
   ncf_in_filename_forc=trim(this%forcing_filename)
   call ncd_pio_openfile(ncf_in_forc, ncf_in_filename_forc, mode=ncd_nowrite)
-  
+
   dimlenl = get_dim_len(ncf_in_forc,'levgrnd')
   dimlent = get_dim_len(ncf_in_forc,'time')
 
@@ -181,6 +183,12 @@ contains
     this%pbot(j1) = data_1d(1,1,j1)
   enddo
 
+  call ncd_getvar(ncf_in_forc,'TBOT',data_1d)
+
+  do j1 =1, dimlent
+    this%tbot(j1) = data_1d(1,1,j1)
+  enddo
+
   call ncd_getvar(ncf_in_forc, 'QVEGT_DEP', data_2d)
 
   !now assign the data
@@ -213,10 +221,10 @@ end subroutine LoadForcingData
     use shr_mpi_mod   , only : shr_mpi_bcast
     use clm_varctl   , only : iulog
     use abortutils      , only : endrun
-    use shr_log_mod     , only : errMsg => shr_log_errMsg    
+    use shr_log_mod     , only : errMsg => shr_log_errMsg
 
     use betr_constants, only : stdout
-    
+
     implicit none
     ! !ARGUMENTS:
     class(clmforc_type) :: this
@@ -230,7 +238,7 @@ end subroutine LoadForcingData
 
 
     !-----------------------------------------------------------------------
-    
+
     namelist / forcing_inparm / grid_filename, forcing_filename
 
     grid_filename = ''

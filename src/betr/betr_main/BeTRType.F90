@@ -287,7 +287,7 @@ contains
     dtime2 = dtime * 0.5_r8
 
 
-    call stage_tracer_transport(bounds, num_soilc, filter_soilc, num_soilp, filter_soilp, &
+    call stage_tracer_transport(bounds, num_soilc, filter_soilc, num_soilp, filter_soilp, atm2lnd_vars, &
          carbonflux_vars, soilstate_vars, waterstate_vars, waterflux_vars, temperature_vars, soilhydrology_vars, &
          chemstate_vars, this%aereconds, canopystate_vars, this%tracers, this%tracercoeffs, &
          this%tracerboundaryconds, this%tracerfluxes, this%bgc_reaction, Rfactor)

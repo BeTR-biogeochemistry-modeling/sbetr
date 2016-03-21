@@ -302,6 +302,7 @@ contains
     betr_soilhydrology_vars%qflx_bot_col   => soilhydrology_vars%qflx_bot_col
 
     betr_atm2lnd_vars%forc_pbot_downscaled_col => atm2lnd_vars%forc_pbot_downscaled_col
+    betr_atm2lnd_vars%forc_t_downscaled_col => atm2lnd_vars%forc_t_downscaled_col
 
     betr_canopystate_vars%altmax_col      => canopystate_vars%altmax_col
     betr_canopystate_vars%altmax_lastyear_col   => canopystate_vars%altmax_lastyear_col

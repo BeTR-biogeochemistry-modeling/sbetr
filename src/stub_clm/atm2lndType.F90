@@ -11,6 +11,7 @@ implicit none
   type, public :: atm2lnd_type
 
   real(r8), pointer :: forc_pbot_downscaled_col      (:)   => null() ! downscaled atm pressure (Pa)
+  real(r8), pointer :: forc_t_downscaled_col         (:)   => null() ! downscaled atm temperature (Kelvin)
   contains
     procedure, public  :: Init
     procedure, private :: InitAllocate
@@ -51,6 +52,7 @@ implicit none
 
 
     allocate(this%forc_pbot_downscaled_col(begc:endc));    this%forc_pbot_downscaled_col(:) = nan
+    allocate(this%forc_t_downscaled_col(begc:endc));    this%forc_t_downscaled_col(:) = nan
 
   end subroutine InitAllocate
 end module atm2lndType
