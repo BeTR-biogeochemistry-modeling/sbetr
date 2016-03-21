@@ -8,9 +8,9 @@ itself.
 
 If you make changes to the testing infracture, you *MUST* run the meta-test suite:
 
-    # not implemented yet
-    # make mtest
-    python -m unittest discover --buffer --pattern 'test_*.py'
+    # from the regression-tests directory, not mtest!
+    make mtest
+    python -m unittest discover --buffer --start-directory mtest/unit/
 
 
 ## Test Design

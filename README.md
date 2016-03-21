@@ -47,8 +47,18 @@ or by calling ctest in the build directory.
 Regression tests are based on calling the standalone sbetr executable
 and checking the results are within a specified epsilon of a baseline.
 
+Regression testing will eventually be integrated into the 'make test'
+command with unit tests. For now they have to be run separately.
+
+    cd regression-tests
+    make rtest
+    
+
+
 
 ### Creating new tests
+
+*Document procedure for new regression tests*
 
 *Document procedure for new pFUnit tests*
 
