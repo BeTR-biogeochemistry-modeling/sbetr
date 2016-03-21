@@ -109,6 +109,15 @@ def read_config_file(filename):
     return config
 
 
+def read_config_file_as_dict(filename):
+    """Read the configuration file and return a dictionary
+
+    """
+    config = read_config_file(filename)
+    config_dict = config_to_dict(config)
+    return config_dict
+
+
 # -----------------------------------------------------------------------------
 #
 # Classes
@@ -118,7 +127,7 @@ class RegressionTestSuite(object):
     """
     """
 
-    def __init__(self, filename, config, timeout):
+    def __init__(self, filename, conf, timeout):
         """
         """
         name = os.path.basename(filename)
@@ -128,24 +137,24 @@ class RegressionTestSuite(object):
         self._test_dir = os.path.abspath(os.path.dirname(filename))
 
         self._default_tolerances = Tolerances()
-        self._default_tolerances.update_from_config(config)
+        self._default_tolerances.update(conf)
 
         self._tests = []
-        self._add_tests_from_config(config, timeout)
+        self._add_tests(conf, timeout)
 
-    def _add_tests_from_config(self, config, timeout):
+    def _add_tests(self, conf, timeout):
         """
         """
         os.chdir(self._test_dir)
 
-        for test_name in config.sections():
+        for test_name in conf:
             tolerances = copy.deepcopy(self._default_tolerances)
-            options = config.items(test_name)
+            options = conf[test_name]
             try:
                 test = RegressionTest(test_name, tolerances, options, timeout)
                 self._tests.append(test)
             except RuntimeError as e:
-                msg = "{0} : {1}".format(e)
+                msg = "{0} : {1}".format(self._name, e)
                 raise RuntimeError(msg)
 
     def run_tests(self, executable, check_only, dry_run):
@@ -221,8 +230,8 @@ class RegressionTest(object):
         """
         """
         for opt in options:
-            name = opt[0]
-            value = opt[1]
+            name = opt
+            value = options[opt]
             processed = False
             try:
                 # check for non-tolerance options first, e.g. restart
@@ -306,8 +315,13 @@ class RegressionTest(object):
             print('s', end='')
         elif self._status == 'fail':
             print('F', end='')
-        else:
+        elif self._status == 'pass':
             print('.', end='')
+        else:
+            msg = ('  DEV_ERROR : {0} : unknown status type "{1}".'.format(
+                self._name, self._status))
+            logging.critical(msg)
+            raise RuntimeError(msg)
         sys.stdout.flush()
 
     def _run_test(self, executable, dry_run):
@@ -354,13 +368,13 @@ class RegressionTest(object):
         logging.info(SEPERATOR)
         logging.info('Checking test "{0}"'.format(self._name))
 
-        # NOTE(bja, 201603) we check baseline first, so if the current
-        # regression file is missing we get a failure instead of a
-        # skip status!
+        # NOTE(bja, 201603) relying on implicit ordering. We check
+        # baseline first, so if the current regression file is missing
+        # we get a failure instead of a skip status!
         filename = '{0}.regression.baseline'.format(self._name)
         baseline = None
         try:
-            baseline = read_config_file(filename)
+            baseline = read_config_file_as_dict(filename)
         except RuntimeError as e:
             logging.critical(e)
             msg = ('  SKIP : Could not open baseline file for '
@@ -371,7 +385,7 @@ class RegressionTest(object):
         filename = '{0}.regression'.format(self._name)
         regression = None
         try:
-            regression = read_config_file(filename)
+            regression = read_config_file_as_dict(filename)
         except RuntimeError as e:
             logging.critical(e)
             msg = ('  FAILURE : Could not open regression file for '
@@ -385,7 +399,11 @@ class RegressionTest(object):
         self._compare_regession_to_baseline(regression, baseline)
 
     def _compare_regession_to_baseline(self, regression, baseline):
-        """
+        """FIXME(bja, 201603) Initially comparing regression to baseline and
+        baseline to regression as a brute force way to pick up
+        sections that are present in one but not another. This will
+        result in double reporting of comparison failures!
+
         """
         self._compare_sections(regression, 'regression',
                                baseline, 'baseline')
@@ -397,11 +415,11 @@ class RegressionTest(object):
             logging.critical(msg)
             self._status = 'pass'
 
-    def _compare_sections(self, a, a_name, b, b_name):
+    def _compare_sections(self, a_data, a_name, b_data, b_name):
         """check that all sections in a are in b
         """
-        for section in a.sections():
-            if section not in b.sections():
+        for section in a_data:
+            if section not in b_data:
                 msg = ('  FAILURE : sections "{0}" present in {1} '
                        'but missing from {2}'.format(section, a_name, b_name))
                 logging.critical(msg)
@@ -409,22 +427,88 @@ class RegressionTest(object):
             else:
                 self._compare_options(
                     section,
-                    a.items(section), a_name,
-                    b.items(section), b_name)
+                    a_data[section], a_name,
+                    b_data[section], b_name)
 
-    def _compare_options(self, section, a, a_name, b, b_name):
+    def _compare_options(self, section, a_data, a_name, b_data, b_name):
         """
         """
-        for key, value in a:
-            b_keys = [bk for bk, bv in b]
-            if key not in b_keys:
+        category = self._get_section_category(section, a_data)
+        for key in a_data:
+            if key not in b_data:
                 msg = ('  FAIURE : {0} : key "{1}" present in {2} '
                        'mising in {3}'.format(section, key, a_name, b_name))
                 logging.critical(msg)
                 self._status = 'fail'
-            else:
-                # compare values, based on tolerances!
+            elif key == 'category':
                 pass
+            else:
+                self._compare_values_with_tolerance(
+                    category, section, key, a_data[key], b_data[key])
+
+    def _compare_values_with_tolerance(
+            self, category, section, key, a_data, b_data):
+        """
+        """
+        if category is "discrete":
+            self._compare_integer_values_with_tolerance(
+                category, section, key, a_data, b_data)
+        else:
+            self._compare_float_values_with_tolerance(
+                category, section, key, a_data, b_data)
+
+    def _compare_integer_values_with_tolerance(
+            self, category, section, key, a_data, b_data):
+        """
+        """
+        msg = ('  DEV_ERROR : {0} : {1} : comparison of "discrete" '
+               'data has not been implemented!'.format(self._name, section))
+        raise RuntimeError(msg)
+
+    def _compare_float_values_with_tolerance(
+            self, category, section, key, a_data, b_data):
+        """
+        """
+        tol_type = self._tolerances.get(category, 'type')
+        tol_value = self._tolerances.get(category, 'value')
+
+        a_value = float(a_data)
+        b_value = float(b_data)
+        abs_diff = abs(a_value - b_value)
+
+        if tol_type == Tolerances.ABSOLUTE:
+            diff = abs_diff
+        elif tol_type == Tolerances.RELATIVE:
+            diff = abs_diff / a_value
+        elif tol_type == Tolerances.PERCENT:
+            diff = 100.0 * abs_diff / a_value
+        else:
+            # shouldn't be possible to get here if previous error
+            # checking was good....
+            msg = ('  DEV_ERROR : {0} : {1} : {2} : invalid tolerance '
+                   'type "{3}".'.format(self._name, section, key, tol_type))
+            raise RuntimeError(msg)
+
+        if diff > tol_value:
+            msg = ('  FAILURE : {0} : {1} : {2} : '
+                   'tolerance failure : {3} > {4} [{5}]'.format(
+                       self._name, section, key, diff, tol_value, tol_type))
+            logging.critical(msg)
+            self._status = 'fail'
+
+    def _get_section_category(self, section, a):
+        """Extract the 'category' value from the section.
+        """
+        category = None
+        if 'category' not in a:
+            msg = ('  DEV_ERROR : {0} : section "{1}" missing required '
+                   'option "category"'.format(self._name, section))
+            logging.critical(msg)
+            raise RuntimeError(msg)
+
+        category = a['category']
+        self._tolerances.check_category(category)
+        return category
 
     def update_baseline(self, dry_run):
         """Update the baseline regression file with the results from the
@@ -441,6 +525,7 @@ class RegressionTest(object):
         output_files = [
             '{0}.regression'.format(self._name),
             '{0}.stdout'.format(self._name),
+            '{0}.output.nc'.format(self._name),
         ]
         for output in output_files:
             src = output
@@ -452,44 +537,54 @@ class RegressionTest(object):
 class Tolerances(object):
     """Class to manage tolerances for tests
     """
-    # tolerance names
+    # tolerance category names
     GENERAL = 'general'
     CONC = 'concentration'
     VELOCITY = 'velocity'
+    # DISCRETE = 'discrete'
+    _KNOWN_CATEGORIES = [
+        GENERAL,
+        CONC,
+        VELOCITY,
+    ]
 
     # tolerance types
     ABSOLUTE = 'absolute'
     RELATIVE = 'relative'
     PERCENT = 'percent'
 
+    _DEFAULT_EPSILON = 1.0e-16
+    
     def __init__(self):
         """
         """
         self._tolerances = {}
-        tol_names = [self.GENERAL, self.CONC, self.VELOCITY, ]
-        for tol in tol_names:
-            self._tolerances[tol] = {'value': 1.0e-12,
+        for tol in self._KNOWN_CATEGORIES:
+            self._tolerances[tol] = {'value': self._DEFAULT_EPSILON,
                                      'type': self.ABSOLUTE,
                                      'min': 0.0,
                                      'max': sys.float_info.max,
                                      }
 
-    def update_from_config(self, config):
+    def get(self, category, key):
+        """
+        """
+        return self._tolerances[category][key]
+
+    def update(self, conf):
         """Add tolerances from a configuration parser object
         """
-        if not config.has_section('default_tolerances'):
+        if 'default_tolerances' not in conf:
             # It is legitimate not to specify default tolerances, so
             # we just return.
             return
-        new_tolerances = config.items('default_tolerances')
-        for tol_name, data in new_tolerances:
-            self.update_from_name(tol_name, data)
+        new_tolerances = conf['default_tolerances']
+        for tol in new_tolerances:
+            self.update_from_name(tol, new_tolerances[tol])
 
-        success = config.remove_section('default_tolerances')
-        if not success:
-            # should never be here...
-            msg = 'Could not remove default tolerances section from config!'
-            raise RuntimeError(msg)
+        # remove the default tolerances section so we can process the
+        # rest of the dict as tests.
+        del conf['default_tolerances']
 
     def update_from_name(self, tol_name, data):
         """
@@ -498,17 +593,38 @@ class Tolerances(object):
             value, tol_type = data.split()
             value = float(value)
             if value < self._tolerances[tol_name]['min']:
-                msg = "{1} = {2} ; must be greater than {3}".format(
-                    tol_name, value, self._tolerances[tol_name]['min'])
+                msg = ('tolerance "{0} = {1} [{2}]" ; must be greater '
+                       'than {3}'.format(
+                           tol_name, value, tol_type,
+                           self._tolerances[tol_name]['min']))
                 raise RuntimeError(msg)
+            if tol_type == self.PERCENT:
+                self._tolerances[tol_name]['max'] = 100.0
             if value > self._tolerances[tol_name]['max']:
-                msg = "{1} = {2} ; must be less than {3}".format(
-                    tol_name, value, self._tolerances[tol_name]['max'])
+                print(tol_name)
+                print(value)
+                print(self._tolerances[tol_name]['max'])
+                msg = ('tolerance "{0} = {1} [{2}]" ; must be less '
+                       'than {3}'.format(
+                           tol_name, value, tol_type,
+                           self._tolerances[tol_name]['max']))
                 raise RuntimeError(msg)
+
             self._tolerances[tol_name]['type'] = tol_type
             self._tolerances[tol_name]['value'] = value
         else:
-            msg = "Unknown tolerance type '{1}'.".format(tol_name)
+            msg = "Unknown tolerance type '{0}'.".format(tol_name)
+            raise RuntimeError(msg)
+
+    def check_category(self, category):
+        """Check that an externally supplied category is one of the valid
+        known types.
+
+        """
+        if category not in self._KNOWN_CATEGORIES:
+            msg = ('  ERROR : invalid tolerance category "{0}". '
+                   'Valid values are :\n    {1}'.format(
+                       category, self._KNOWN_CATEGORIES))
             raise RuntimeError(msg)
 
 
@@ -661,6 +777,27 @@ def verify_executable(executable):
     logging.info('Executable exists and is can be run by this user.')
 
 
+def config_to_dict(config):
+    """Convert a config object into a dictionary.
+
+    Note: we can probably just use config._sections, but:
+
+      1) that is relying on a a private variable
+
+      2) won't do cfg value interpolation, which we hopfully wouldn't
+    use anyway....
+
+    """
+    config_dict = {}
+    for section in config.sections():
+        config_dict[section] = {}
+        for option in config.options(section):
+            value = config.get(section, option)
+            config_dict[section][option] = value
+
+    return config_dict
+
+
 # -----------------------------------------------------------------------------
 #
 # main
@@ -679,14 +816,15 @@ def main(options):
     if options.config:
         filenames = options.config
     else:
-        filenames = find_all_config_files(cwd)
+        test_root = os.path.join(cwd, 'tests')
+        filenames = find_all_config_files(test_root)
 
     print('Setting up tests.')
     test_suites = []
     for filename in filenames:
         os.chdir(cwd)
         logging.info(BANNER)
-        config = read_config_file(filename)
+        config = read_config_file_as_dict(filename)
         suite = RegressionTestSuite(filename, config, options.timeout)
         test_suites.append(suite)
 
