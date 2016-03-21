@@ -1,0 +1,12 @@
+&sbetr_driver
+  simulator_name = 'alm'
+/
+
+&betr_parameters
+  reaction_method = 'h2oiso'
+/
+
+&forcing_inparm
+  grid_filename = "sierra_grid.nc"
+  forcing_filename = 'sierra_clmdef_hhour.clm2.h0.0021-01-01-00000.nc'
+/
