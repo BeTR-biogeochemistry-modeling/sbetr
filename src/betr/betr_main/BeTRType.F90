@@ -360,7 +360,7 @@ contains
     integer,                  intent(in)    :: filter_soilc(:)                    ! column filter_soilc
     integer,                  intent(in)    :: jtops(bounds%begc: )
     type(betr_waterflux_type)    , intent(in)    :: waterflux_vars
-  
+
     ! !LOCAL VARIABLES:
     real(r8) :: aqucon
     integer  :: fc, c, j, k
@@ -640,8 +640,6 @@ contains
 
    end associate
    end subroutine diagnose_dtracer_freeze_thaw
-
-
 
   !------------------------------------------------------------------------
   subroutine betr_lsm_flux_state_sendback(this, bounds,  num_soilc, filter_soilc )
