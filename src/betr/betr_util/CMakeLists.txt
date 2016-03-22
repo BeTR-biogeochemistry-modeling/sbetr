@@ -15,6 +15,8 @@ set(BETR_UTIL_SOURCES
   bshr_sys_mod.F90
   bshr_timer_mod.F90
   BeTR_time_mod.F90
+  betr_regression_mod.F90
+  betr_utils.F90
   )
 
 configure_file(bshr_assert.h bshr_assert.h COPYONLY)
@@ -27,7 +29,7 @@ add_betr_library(betr_util ${BETR_UTIL_SOURCES})
 set(BETR_LIBRARIES betr_util;${BETR_LIBRARIES} PARENT_SCOPE)
 set(BETR_LIBRARIES betr_util;${BETR_LIBRARIES})
 
-#X#add_subdirectory(tests)
+add_subdirectory(tests)
 
 if (NOT CMAKE_INSTALL_PREFIX STREQUAL "INSTALL_DISABLED")
   install(TARGETS betr_util DESTINATION lib)

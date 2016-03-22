@@ -9,5 +9,14 @@ build/
 *.mod
 *.o
 
+# test output
+*.testlog
+*.stdout
+*.bak
+*.regression
+
+# simulation output
+*.output.nc
+
 # os x junk
 .DS_Store

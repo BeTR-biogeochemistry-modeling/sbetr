@@ -19,7 +19,7 @@ module sbetrDriverMod
 
 contains
 
-  subroutine sbetrBGC_driver(namelist_buffer)
+  subroutine sbetrBGC_driver(base_filename, namelist_buffer)
   !
   !DESCRIPTION
   !driver subroutine for sbetrBGC
@@ -38,7 +38,7 @@ contains
   use BeTRSimulation, only : betr_simulation_type
   use BeTRSimulationFactory, only : create_betr_simulation
 
-  use betr_constants, only : betr_namelist_buffer_size, betr_string_length_long
+  use betr_constants, only : betr_namelist_buffer_size, betr_string_length_long, betr_filename_length
 
 !X!  use betr_standalone_cpl , only : betr_initialize_standalone
 !X!  use betr_standalone_cpl , only : run_betr_one_step_without_drainage_standalone
@@ -55,7 +55,9 @@ contains
 
 
   implicit none
+  character(len=betr_filename_length), intent(in) :: base_filename
   character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
+
 
   !local variables
   class(betr_simulation_type), pointer :: simulation
@@ -118,7 +120,7 @@ contains
        atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars             , &
        waterflux_vars, temperature_vars, chemstate_vars, simulation%jtops)
 
-  call  simulation%Init(namelist_buffer, bounds, waterstate_vars, cnstate_vars)
+  call  simulation%Init(base_filename, namelist_buffer, bounds, waterstate_vars, cnstate_vars)
 
   record = -1
 
@@ -168,6 +170,8 @@ contains
 
   enddo
 
+  call simulation%WriteRegressionOutput()
+  
 end subroutine sbetrBGC_driver
 
 ! ----------------------------------------------------------------------

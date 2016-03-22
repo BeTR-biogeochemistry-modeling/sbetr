@@ -47,8 +47,64 @@ or by calling ctest in the build directory.
 Regression tests are based on calling the standalone sbetr executable
 and checking the results are within a specified epsilon of a baseline.
 
+Regression testing will eventually be integrated into the 'make test'
+command with unit tests. For now they have to be run separately.
+
+    cd regression-tests
+    make rtest
+    
+
+
 
 ### Creating new tests
+
+#### Regression tests
+
+Regression tests are grouped into test suites, which are defined by
+configuration files. The directory where the configuration file is
+referred to as the 'suite directory'. A suite directory can contain
+multiple configuratin files. Configuration files are in cfg/ini
+format, and have the following information:
+
+```INI
+[default_tolerances]
+#category = value type
+general = 1.0e-14 absolute
+concentration = 1.0e-13 relative
+
+[mock]
+# override default tolarance
+concentration = 1.0e-14 absolute
+
+```
+
+Where there is one required section: `default_tolerances`. This
+contains the default tolerances for *all tests in this suite.*
+Tolerances are specified by category, concentration, velocity,
+general. The type of toleraces can be absolute, relative or
+percent. These values can be over ridden for individual tests.
+
+All other sections are considered to define tests. The name of the
+section is the test name. It is expected that a `test_name.namelist`
+file will be present in the same directory as the suite configuration
+file. sbetr is run from the same directory as the configuration file,
+and all paths in the namelist file must be relative to this directory.
+sbetr will write a `test_name.regression` file with the regression
+test data. This is compared to `test_name.regression.baseline`, also
+in the same directory as the suite configuration file. Keys in the
+test section are used to modify the test, either by changing the
+tolerance, or modifying some other functionality, e.g. we will
+eventually have restart tests triggered by a setting in the test
+section.
+
+Setting tolerances is a balancing act that requires some trial and
+error. Test tolerances should be set as tightly as possible to
+identify small changes in behavior. But they should be loose enough to
+be platform independent, so we don't get false positives when moving
+to a new platform.
+
+
+#### Unit tests
 
 *Document procedure for new pFUnit tests*
 

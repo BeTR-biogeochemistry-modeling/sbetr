@@ -18,7 +18,7 @@ module BeTRSimulation
   use BetrType                  , only : betr_type
   use betr_constants            , only : betr_string_length
   use betr_constants            , only : betr_filename_length
-
+  use betr_regression_module, only : betr_regression_type
   implicit none
 
   private
@@ -27,7 +27,11 @@ module BeTRSimulation
 
   type, public :: betr_simulation_type
      type(betr_type), public :: betr
-     character(len=betr_filename_length), public :: hist_filename
+     character(len=betr_string_length), private :: base_filename
+     character(len=betr_filename_length), private :: hist_filename
+
+     type(betr_regression_type), private :: regression
+
      integer, public :: num_soilp
      integer, public, allocatable :: filter_soilp(:)
      integer, public :: num_jtops
@@ -52,6 +56,7 @@ module BeTRSimulation
      procedure, public :: MassBalanceCheck      => BeTRSimulationMassBalanceCheck
      procedure, public :: CreateHistory => hist_htapes_create
      procedure, public :: WriteHistory => hist_write
+     procedure, public :: WriteRegressionOutput
   end type betr_simulation_type
 
   public :: BeTRSimulationInit
@@ -59,19 +64,20 @@ module BeTRSimulation
 contains
 
   !-------------------------------------------------------------------------------
-  subroutine BeTRSimulationInit(this, namelist_buffer, bounds, &
-       waterstate, cnstate)
+  subroutine BeTRSimulationInit(this, base_filename, namelist_buffer, &
+       bounds, waterstate, cnstate)
     ! Dummy routine for inheritance purposes. don't use.
 
     use WaterstateType        , only : waterstate_type
     use CNStateType           , only : cnstate_type
 
-    use betr_constants, only : betr_namelist_buffer_size
+    use betr_constants, only : betr_namelist_buffer_size, betr_filename_length
 
 
     implicit none
 
     class(betr_simulation_type), intent(inout) :: this
+    character(len=betr_filename_length), intent(in) :: base_filename
     character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
 
     type(bounds_type)    , intent(in) :: bounds
@@ -108,17 +114,19 @@ contains
   end subroutine BeTRSetFilter
 !-------------------------------------------------------------------------------
 
-  subroutine BeTRInit(this, namelist_buffer, betr_bounds, &
-       betr_waterstate, betr_cnstate)
+  subroutine BeTRInit(this, base_filename, namelist_buffer, &
+       betr_bounds, betr_waterstate, betr_cnstate)
     !
     use BeTR_WaterStateType, only : betr_waterstate_type
     use BeTR_CNStateType, only : betr_cnstate_type
 
     use betr_constants, only : betr_namelist_buffer_size
+    use betr_constants, only : betr_filename_length
 
     implicit none
 
     class(betr_simulation_type), intent(inout) :: this
+    character(len=betr_filename_length), intent(in) :: base_filename
     character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
 
     type(betr_bounds_type)    , intent(in) :: betr_bounds
@@ -127,11 +135,13 @@ contains
 
     character(len=*), parameter :: subname = 'BeTRInit'
 
-    this%hist_filename = "betr_output.nc"
-
+    this%base_filename = base_filename
+    
     call this%betr%Init(namelist_buffer, betr_bounds, betr_waterstate, betr_cnstate)
 
     call this%CreateHistory(betr_nlevtrc_soil, this%num_soilc)
+
+    call this%regression%Init(base_filename, namelist_buffer)
 
   end subroutine BeTRInit
 
@@ -366,6 +376,8 @@ contains
          tracernames => this%betr%tracers%tracernames &
          )
 
+      this%hist_filename = trim(this%base_filename) // '.output.nc'
+      
       call ncd_pio_createfile(ncid, this%hist_filename)
 
       call hist_file_create(ncid,nlevtrc_soil, ncol)
@@ -490,4 +502,36 @@ contains
 
   end subroutine BeTRSimulationConsistencyCheck
 
+  !---------------------------------------------------------------------------------
+
+  subroutine WriteRegressionOutput(this)
+
+    use betr_constants, only : betr_string_length
+    
+    implicit none
+
+    class(betr_simulation_type), intent(inout) :: this
+
+    integer :: jj, tt, begc, endc
+    character(len=betr_string_length) :: category
+
+    ! FIXME(bja, 201603) need a way to categorize output variables,
+    ! e.g. concentration, velocity, etc. Hard coding for now.
+    category = 'concentration'
+
+    begc = 1
+    endc = 1
+    
+    if (this%regression%write_regression_output) then
+       call this%regression%OpenOutput()
+       do tt = 1, this%betr%tracers%ntracers
+          if (tt < this%betr%tracers%ngwmobile_tracers) then
+             call this%regression%WriteData(category, &
+                  this%betr%tracers%tracernames(tt), &
+                  this%betr%tracerstates%tracer_conc_mobile_col(begc, :, tt))
+          end if
+       end do
+       call this%regression%CloseOutput()
+    end if
+  end subroutine WriteRegressionOutput
 end module BeTRSimulation
