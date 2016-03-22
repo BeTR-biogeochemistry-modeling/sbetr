@@ -287,7 +287,7 @@ contains
     dtime2 = dtime * 0.5_r8
 
 
-    call stage_tracer_transport(bounds, num_soilc, filter_soilc, num_soilp, filter_soilp, &
+    call stage_tracer_transport(bounds, num_soilc, filter_soilc, num_soilp, filter_soilp, atm2lnd_vars, &
          carbonflux_vars, soilstate_vars, waterstate_vars, waterflux_vars, temperature_vars, soilhydrology_vars, &
          chemstate_vars, this%aereconds, canopystate_vars, this%tracers, this%tracercoeffs, &
          this%tracerboundaryconds, this%tracerfluxes, this%bgc_reaction, Rfactor)
@@ -360,7 +360,7 @@ contains
     integer,                  intent(in)    :: filter_soilc(:)                    ! column filter_soilc
     integer,                  intent(in)    :: jtops(bounds%begc: )
     type(betr_waterflux_type)    , intent(in)    :: waterflux_vars
-  
+
     ! !LOCAL VARIABLES:
     real(r8) :: aqucon
     integer  :: fc, c, j, k
@@ -640,8 +640,6 @@ contains
 
    end associate
    end subroutine diagnose_dtracer_freeze_thaw
-
-
 
   !------------------------------------------------------------------------
   subroutine betr_lsm_flux_state_sendback(this, bounds,  num_soilc, filter_soilc )

@@ -106,7 +106,7 @@ contains
   end subroutine surface_tracer_hydropath_update
   !-------------------------------------------------------------------------------
 
-  subroutine stage_tracer_transport(bounds, num_soilc, filter_soilc, num_soilp, filter_soilp, &
+  subroutine stage_tracer_transport(bounds, num_soilc, filter_soilc, num_soilp, filter_soilp, atm2lnd_vars, &
     carbonflux_vars, soilstate_vars, waterstate_vars, waterflux_vars, temperature_vars, soilhydrology_vars, &
     chemstate_vars, aerecond_vars, canopystate_vars, betrtracer_vars, tracercoeff_vars, &
     tracerboundarycond_vars, tracerflux_vars, bgc_reaction, Rfactor)
@@ -121,6 +121,7 @@ contains
     use BetrTracerType               , only          : betrtracer_type
     use TracerParamsMod              , only          : set_phase_convert_coeff, set_multi_phase_diffusion, calc_tracer_infiltration
     use TracerParamsMod              , only          : get_zwt, calc_aerecond, betr_annualupdate
+    use BeTR_atm2lndType             , only          : betr_atm2lnd_type
     use BeTR_SoilStateType           , only          : betr_soilstate_type
     use BeTR_WaterStateType          , only          : BeTR_Waterstate_Type
     use BeTR_WaterfluxType           , only          : betr_waterflux_type
@@ -138,6 +139,7 @@ contains
     integer                          , intent(in)    :: filter_soilc(:)            ! column filter_soilc
     integer                          , intent(in)    :: num_soilp
     integer                          , intent(in)    :: filter_soilp(:)            ! pft filter
+    type(betr_atm2lnd_type)          , intent(in)    :: atm2lnd_vars
     type(betr_waterstate_type)       , intent(in)    :: waterstate_vars            ! water state variables
     type(betr_soilstate_type)        , intent(in)    :: soilstate_vars             ! column physics variable
     type(betr_temperature_type)      , intent(in)    :: temperature_vars           ! energy state variable
@@ -222,6 +224,7 @@ contains
          col%dz(bounds%begc:bounds%endc,1),                                    &
          betrtracer_vars,                                                      &
          waterflux_vars,                                                       &
+         atm2lnd_vars  ,                                                       &
          tracerboundarycond_vars)
 
     call calc_tracer_infiltration(bounds, lbj, ubj,              &
@@ -1377,7 +1380,7 @@ contains
             total_pressure=n2_pressure+o2_pressure+ar_pressure+co2_pressure+ch4_pressure
 
             if(total_pressure>press_hydro)then
-               !ebullition occurs
+               print*,"!ebullition occurs"
                !calculate the fraction of gas to be released as bubble
                frac=(total_pressure-press_hydro)/total_pressure
                !note because there exisiting a relationship gas_conc*gas2bulkcef=bulk_con
@@ -1696,14 +1699,13 @@ contains
             !calculate the total gas pressure
             total_pres=0._r8
             do jj = 1, ngwmobile_tracers
-
                if(is_volatile(jj) .and. (.not. is_h2o(jj)) .and. (.not. is_isotope(jj)))then
                   tracer_P_gas_frac_col(c,j, volatileid(jj))  = calc_gas_pressure(tracer_conc_mobile_col(c,j,jj), &
                        aqu2bulkcef_mobile_col(c,j,groupid(jj)), henrycef_col(c, j, volatilegroupid(jj)))
                   total_pres=total_pres + tracer_P_gas_frac_col(c,j, volatileid(jj))
-                  tracer_P_gas_col(c,j) = total_pres * oneatm
                endif
             enddo
+            tracer_P_gas_col(c,j) = total_pres * oneatm
             do jj = 1, ngwmobile_tracers
                if(is_volatile(jj) .and. (.not. is_h2o(jj)) .and. (.not. is_isotope(jj)))then
                   tracer_P_gas_frac_col(c,j, volatileid(jj)) = safe_div(tracer_P_gas_frac_col(c,j, volatileid(jj)), &

@@ -153,7 +153,7 @@ contains
 
   !-------------------------------------------------------------------------------
   subroutine set_boundary_conditions(this, bounds, num_soilc, filter_soilc, dz_top, betrtracer_vars, &
-       waterflux_vars, tracerboundarycond_vars)
+       waterflux_vars, atm2lnd_vars, tracerboundarycond_vars)
     !
     ! !DESCRIPTION:
     ! set up boundary conditions for tracer movement
@@ -164,8 +164,9 @@ contains
     use babortutils            , only : endrun
     use bshr_log_mod           , only : errMsg => shr_log_errMsg
     use BeTRTracerType        , only : betrtracer_type
-    use BeTR_WaterfluxType    , only : waterflux_type  => betr_waterflux_type
-
+    use BeTR_atm2lndType       , only : betr_atm2lnd_type
+    use BeTR_WaterfluxType    , only : betr_waterflux_type
+    use betr_varcon           , only : rgas => brgas
     ! !ARGUMENTS:
     class(bgc_reaction_mock_run_type) , intent(in) :: this                       !
     type(bounds_type)                 , intent(in) :: bounds                     !
@@ -173,29 +174,33 @@ contains
     integer                           , intent(in) :: filter_soilc(:)            ! column filter_soilc
     type(betrtracer_type)             , intent(in) :: betrtracer_vars            !
     real(r8)                          , intent(in) :: dz_top(bounds%begc: )      !
-    type(waterflux_type)              , intent(in) :: waterflux_vars             !
+    type(betr_waterflux_type)         , intent(in) :: waterflux_vars             !
+    type(betr_atm2lnd_type)           , intent(in) :: atm2lnd_vars      !
     type(tracerboundarycond_type)     , intent(inout) :: tracerboundarycond_vars !
 
 
     ! !LOCAL VARIABLES:
     integer            :: fc, c
     character(len=255) :: subname = 'set_boundary_conditions'
-
+    real(r8) :: irt   !the inverse of R*T
     SHR_ASSERT_ALL((ubound(dz_top)                == (/bounds%endc/)),   errMsg(mod_filename,__LINE__))
 
     associate(                                     &
-         groupid  => betrtracer_vars%groupid       &
+         forc_pbot            => atm2lnd_vars%forc_pbot_downscaled_col    , &
+         forc_tbot            => atm2lnd_vars%forc_t_downscaled_col       , &
+         groupid                   => betrtracer_vars%groupid               &
          )
 
       do fc = 1, num_soilc
          c = filter_soilc(fc)
+         irt = 1.e3_r8/(forc_tbot(c)*rgas)
 
          !eventually, the following code will be implemented using polymorphism
-         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_n2)   = 32.8_r8                     !mol m-3, contant boundary condition
-         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_o2)   = 8.78_r8                     !mol m-3, contant boundary condition
-         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_ar)   = 0.3924_r8                   !mol m-3, contant boundary condition
-         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_co2x) = 0.0168_r8                   !mol m-3, contant boundary condition
-         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_ch4)  = 6.939e-5_r8                 !mol m-3, contant boundary condition
+         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_n2)      = forc_pbot(c)*0.78084_r8*irt     !mol m-3, contant boundary condition, as concentration
+         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_o2)      = forc_pbot(c)*0.20946_r8*irt     !mol m-3, contant boundary condition, as concentration
+         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_ar)      = forc_pbot(c)*0.009340_r8*irt     !mol m-3, contant boundary condition, as concentration
+         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_co2x)    = forc_pbot(c)*367e-6_r8*irt      !mol m-3, contant boundary condition, as concentration
+         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_ch4)     = forc_pbot(c)*1.79e-6_r8*irt     !mol m-3, contant boundary condition, as concentration
 
          tracerboundarycond_vars%bot_concflux_col(c,1,:)                                          = 0._r8                       !zero flux boundary condition
          tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_n2))           = 2._r8*1.837e-5_r8/dz_top(c) !m/s surface conductance

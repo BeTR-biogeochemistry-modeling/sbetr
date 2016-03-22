@@ -103,7 +103,6 @@ contains
     allocate(this%jtops(this%num_jtops))
     this%jtops(:) = 1
 
-
     this%num_soilc = 1
     allocate(this%filter_soilc(this%num_soilc))
     this%filter_soilc(:) = 1
