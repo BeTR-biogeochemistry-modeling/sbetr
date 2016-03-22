@@ -135,9 +135,9 @@ class RegressionTestSuite(object):
         self._name = name.split('.')[0]
 
         self._test_dir = os.path.abspath(os.path.dirname(filename))
-
-        self._default_tolerances = Tolerances()
-        self._default_tolerances.update(conf)
+        # default comparison object for this test suite
+        # tests will get a copy and modify as needed.
+        self._comparison = Comparison(self._name, conf)
 
         self._tests = []
         self._add_tests(conf, timeout)
@@ -148,10 +148,10 @@ class RegressionTestSuite(object):
         os.chdir(self._test_dir)
 
         for test_name in conf:
-            tolerances = copy.deepcopy(self._default_tolerances)
+            comparison = copy.deepcopy(self._comparison)
             options = conf[test_name]
             try:
-                test = RegressionTest(test_name, tolerances, options, timeout)
+                test = RegressionTest(test_name, comparison, options, timeout)
                 self._tests.append(test)
             except RuntimeError as e:
                 msg = "{0} : {1}".format(self._name, e)
@@ -204,7 +204,7 @@ class RegressionTest(object):
     """
     """
 
-    def __init__(self, name, tolerances, options, timeout):
+    def __init__(self, name, comparison, options, timeout):
         """Note: assume that we are in the test directory.
 
         We start with a None status because we want to explicitly se
@@ -217,11 +217,12 @@ class RegressionTest(object):
         # initialize to defaults
         self._name = name
         self._namelist_filename = None
-        self._tolerances = tolerances
+        self._comparison = comparison
         self._status = None
         self._timeout = 60.0
 
         # setup the test
+        self._comparison.set_name(self._name)
         self._process_options(options)
         self._set_timeout(timeout)
         self._check_namelist()
@@ -235,12 +236,14 @@ class RegressionTest(object):
             processed = False
             try:
                 # check for non-tolerance options first, e.g. restart
+                # FIXME(bja, 201603) should remove processed options
+                # from the dict!
                 if name == 'timeout':
                     self._set_timeout(value)
                     processed = True
                 else:
-                    # tolerances will raise an exception if the name is unknown
-                    self._tolerances.update_from_name(name, value)
+                    # comparison will raise an exception if the name is unknown
+                    self._comparison.update_from_name(name, value)
                     processed = True
             except RuntimeError as e:
                 msg = '{0} : {1}'.format(self._name, e)
@@ -396,9 +399,75 @@ class RegressionTest(object):
         if not regression or not baseline:
             return
 
-        self._compare_regession_to_baseline(regression, baseline)
+        # TODO(bja, 201603) is it safe to directly assign status here?
+        self._status = self._comparison.regression_to_baseline(
+            regression, baseline)
 
-    def _compare_regession_to_baseline(self, regression, baseline):
+    def update_baseline(self, dry_run):
+        """Update the baseline regression file with the results from the
+        current run.
+
+        """
+        pass
+
+    def _cleanup_previous_run(self):
+        """Cleanup any output files that may be left over from a previous run
+        so we are sure we test current results.
+
+        """
+        output_files = [
+            '{0}.regression'.format(self._name),
+            '{0}.stdout'.format(self._name),
+            '{0}.output.nc'.format(self._name),
+        ]
+        for output in output_files:
+            src = output
+            dest = '{0}.bak'.format(src)
+            if os.path.exists(src):
+                os.rename(src, dest)
+
+
+class Comparison(object):
+    """Regression test class to isolate the comparison of simulation
+    results to baselines. Doesn't have much data of it's own except
+    the tolerances, but it make it much easier to see the comparison
+    code and unit test if it is in it's own class.
+
+    """
+
+    def __init__(self, name, conf):
+        """
+        """
+        self._name = name
+        self._tolerances = Tolerances()
+        self._tolerances.update(conf)
+        self._status = None
+
+    def update(self, conf):
+        """Update from conf dict.
+
+        Only comparison options are tolerances, so we just pass
+        through.
+
+        """
+        self._tolerances.update(conf)
+
+    def update_from_name(self, name, value):
+        """Update object configuration.
+
+        Only comparison options are tolerances, so we just pass
+        through.
+
+        """
+        self._tolerances.update_from_name(name, value)
+
+    def set_name(self, name):
+        """Update the name of the test/suite this object is associated with.
+
+        """
+        self._name = name
+
+    def regression_to_baseline(self, regression, baseline):
         """FIXME(bja, 201603) Initially comparing regression to baseline and
         baseline to regression as a brute force way to pick up
         sections that are present in one but not another. This will
@@ -414,6 +483,7 @@ class RegressionTest(object):
             msg = ('  PASS : {0} '.format(self._name))
             logging.critical(msg)
             self._status = 'pass'
+        return self._status
 
     def _compare_sections(self, a_data, a_name, b_data, b_name):
         """check that all sections in a are in b
@@ -489,12 +559,18 @@ class RegressionTest(object):
                    'type "{3}".'.format(self._name, section, key, tol_type))
             raise RuntimeError(msg)
 
+        pass_comparison = None
         if diff > tol_value:
             msg = ('  FAILURE : {0} : {1} : {2} : '
                    'tolerance failure : {3} > {4} [{5}]'.format(
                        self._name, section, key, diff, tol_value, tol_type))
             logging.critical(msg)
             self._status = 'fail'
+            pass_comparison = False
+        else:
+            pass_comparison = True
+        return pass_comparison
+
 
     def _get_section_category(self, section, a):
         """Extract the 'category' value from the section.
@@ -507,31 +583,8 @@ class RegressionTest(object):
             raise RuntimeError(msg)
 
         category = a['category']
-        self._tolerances.check_category(category)
+        self._tolerances.check_valid_category(category)
         return category
-
-    def update_baseline(self, dry_run):
-        """Update the baseline regression file with the results from the
-        current run.
-
-        """
-        pass
-
-    def _cleanup_previous_run(self):
-        """Cleanup any output files that may be left over from a previous run
-        so we are sure we test current results.
-
-        """
-        output_files = [
-            '{0}.regression'.format(self._name),
-            '{0}.stdout'.format(self._name),
-            '{0}.output.nc'.format(self._name),
-        ]
-        for output in output_files:
-            src = output
-            dest = '{0}.bak'.format(src)
-            if os.path.exists(src):
-                os.rename(src, dest)
 
 
 class Tolerances(object):
@@ -569,6 +622,17 @@ class Tolerances(object):
     def get(self, category, key):
         """
         """
+        if category not in self._tolerances:
+            msg = ('  DEV_ERROR : invalid tolerance category "{0}"'
+                   ' requested after checking should be complete.')
+            logging.critical(msg)
+            raise RuntimeError(msg)
+        if key not in self._tolerances[category]:
+            msg = ('  DEV_ERROR : invalid tolerance data type "{0}"'
+                   ' requested.')
+            logging.critical(msg)
+            raise RuntimeError(msg)
+
         return self._tolerances[category][key]
 
     def update(self, conf):
@@ -586,37 +650,46 @@ class Tolerances(object):
         # rest of the dict as tests.
         del conf['default_tolerances']
 
-    def update_from_name(self, tol_name, data):
+    def update_from_name(self, category, data):
         """
         """
-        if tol_name in self._tolerances:
+        if category in self._tolerances:
             value, tol_type = data.split()
-            value = float(value)
-            if value < self._tolerances[tol_name]['min']:
+            try:
+                value = float(value)
+            except ValueError as e:
+                msg = ('tolerance value "{0} = {1}" could not be converted '
+                       'to a floaitng point number.'.format(category, value))
+                logging.critical(e)
+                logging.critical(msg)
+                raise RuntimeError(msg)
+
+            if value < self._tolerances[category]['min']:
                 msg = ('tolerance "{0} = {1} [{2}]" ; must be greater '
                        'than {3}'.format(
-                           tol_name, value, tol_type,
-                           self._tolerances[tol_name]['min']))
+                           category, value, tol_type,
+                           self._tolerances[category]['min']))
+                logging.critical(msg)
                 raise RuntimeError(msg)
+
             if tol_type == self.PERCENT:
-                self._tolerances[tol_name]['max'] = 100.0
-            if value > self._tolerances[tol_name]['max']:
-                print(tol_name)
-                print(value)
-                print(self._tolerances[tol_name]['max'])
+                self._tolerances[category]['max'] = 100.0
+
+            if value > self._tolerances[category]['max']:
                 msg = ('tolerance "{0} = {1} [{2}]" ; must be less '
                        'than {3}'.format(
-                           tol_name, value, tol_type,
-                           self._tolerances[tol_name]['max']))
+                           category, value, tol_type,
+                           self._tolerances[category]['max']))
+                logging.critical(msg)
                 raise RuntimeError(msg)
 
-            self._tolerances[tol_name]['type'] = tol_type
-            self._tolerances[tol_name]['value'] = value
+            self._tolerances[category]['type'] = tol_type
+            self._tolerances[category]['value'] = value
         else:
-            msg = "Unknown tolerance type '{0}'.".format(tol_name)
+            msg = "Unknown tolerance type '{0}'.".format(category)
             raise RuntimeError(msg)
 
-    def check_category(self, category):
+    def check_valid_category(self, category):
         """Check that an externally supplied category is one of the valid
         known types.
 
@@ -626,6 +699,7 @@ class Tolerances(object):
                    'Valid values are :\n    {1}'.format(
                        category, self._KNOWN_CATEGORIES))
             raise RuntimeError(msg)
+        return True
 
 
 class StatusSummary(object):
@@ -734,6 +808,9 @@ def setup_log(test_dir):
     time_stamp = datetime.now().strftime('%Y-%m-%d_%H%M%S')
     # log_filename = 'betr-tests-{0}.log'.format(time_stamp)
     log_filename = 'betr-tests.testlog'
+    if os.path.isfile(log_filename):
+        backup = '{0}.bak'.format(log_filename)
+        os.rename(log_filename, backup)
     logging.basicConfig(filename=log_filename,
                         filemode='w',
                         level=logging.INFO,

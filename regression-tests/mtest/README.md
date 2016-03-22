@@ -10,6 +10,7 @@ If you make changes to the testing infracture, you *MUST* run the meta-test suit
 
     # from the regression-tests directory, not mtest!
     make mtest
+    # or
     python -m unittest discover --buffer --start-directory mtest/unit/
 
 

@@ -4,7 +4,7 @@ RTEST = ./rtest_betr.py
 RTEST_ARGS = --backtrace
 RTEST_ARGS += --executable $(SBETR)
 
-rtest : FORCE
+test rtest : FORCE
 	$(RTEST) $(RTEST_ARGS)
 
 # NOTE(bja, 201603) rcheck - runs the regression test manager with
