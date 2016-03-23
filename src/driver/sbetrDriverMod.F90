@@ -154,8 +154,8 @@ contains
     call simulation%MassBalanceCheck(bounds)
 
     !specific for water tracer transport
-    !call simulation%ConsistencyCheck(bounds, ubj, num_soilc, &
-    !  filter_soilc, waterstate_vars)
+    !call simulation%ConsistencyCheck(bounds, ubj, simulation%num_soilc, &
+    !  simulation%filter_soilc, waterstate_vars)
 
     !update time stamp
     call update_time_stamp(time_vars, dtime)
@@ -171,7 +171,7 @@ contains
   enddo
 
   call simulation%WriteRegressionOutput()
-  
+
 end subroutine sbetrBGC_driver
 
 ! ----------------------------------------------------------------------
@@ -377,7 +377,7 @@ end subroutine sbetrBGC_driver
         soilstate_vars%eff_porosity_col(c,j)   = clmforc_vars%watsat(j)-clmforc_vars%h2osoi_icevol(tstep,j)
         soilstate_vars%bsw_col(c,j)            = clmforc_vars%bsw(j)
         temperature_vars%t_soisno_col(c,j)     = clmforc_vars%t_soi(tstep,j)
-        waterflux_vars%qflx_rootsoi_col(c,j)   = clmforc_vars%qflx_tran_dep(tstep,j)  !water exchange between soil and root, mm/H2O/s
+        waterflux_vars%qflx_rootsoi_col(c,j)   = clmforc_vars%qflx_rootsoi(tstep,j)  !water exchange between soil and root, m/H2O/s
         col%dz(c,j) = dzsoi(j)
         col%zi(c,j) = zisoi(j)
         chemstate_vars%soil_pH(c,j)=7._r8
@@ -393,9 +393,7 @@ end subroutine sbetrBGC_driver
   do fc = 1, numf
       c = filter(fc)
       waterflux_vars%qflx_totdrain_col(c) = 0._r8
-      waterflux_vars%qflx_infl_col(c)  = clmforc_vars%qflx_infl(tstep)              !infiltration flux, mm H2O/s
       col%zi(c,0) = zisoi(0)
-      waterflux_vars%qflx_gross_infl_soil_col(c) = 0._r8
 
       waterflux_vars%qflx_snow2topsoi_col(c) = 0._r8
       waterflux_vars%qflx_h2osfc2topsoi_col(c) = 0._r8
@@ -451,30 +449,37 @@ end subroutine sbetrBGC_driver
   if(record > 0)then
     do fc = 1, numf
       c = filter(fc)
-      waterflux_vars%qflx_adv_col(c,0) = clmforc_vars%qflx_infl(tstep)
-      if(waterflux_vars%qflx_adv_col(c,0)< 0._r8)then
-        waterflux_vars%qflx_gross_evap_soil_col(c) = -waterflux_vars%qflx_adv_col(c,0)
-        waterflux_vars%qflx_adv_col(c,0) = 0._r8
-      endif
-      do j = 1,ubj
 
-        dmass=(waterstate_vars%h2osoi_ice_col(c,j)+waterstate_vars%h2osoi_liq_col(c,j))- &
+      do j = ubj, 1, -1
+        if(j==ubj)then
+          waterflux_vars%qflx_adv_col(c,j) = clmforc_vars%qbot(tstep)
+          dmass=(waterstate_vars%h2osoi_ice_col(c,j)+waterstate_vars%h2osoi_liq_col(c,j))- &
            (waterstate_vars%h2osoi_ice_old(c,j)+waterstate_vars%h2osoi_liq_old(c,j))
-
-        waterflux_vars%qflx_adv_col(c,j)= waterflux_vars%qflx_adv_col(c,j-1) - waterflux_vars%qflx_rootsoi_col(c,j) &
-          - dmass/dtime
+          !the following is for first step initialization
+          if(dmass==0._r8)waterflux_vars%qflx_adv_col(c,j) = 0._r8
+        else
+          dmass=(waterstate_vars%h2osoi_ice_col(c,j)+waterstate_vars%h2osoi_liq_col(c,j))- &
+           (waterstate_vars%h2osoi_ice_old(c,j)+waterstate_vars%h2osoi_liq_old(c,j))
+          waterflux_vars%qflx_adv_col(c,j)= dmass * 1.e-3_r8/dtime + waterflux_vars%qflx_adv_col(c,j+1) + &
+             waterflux_vars%qflx_rootsoi_col(c,j)
+        endif
       enddo
-    enddo
+      waterflux_vars%qflx_infl_col(c) = clmforc_vars%qflx_infl(tstep)
 
-    !now convert all flux unit into m/s
+      !now correct the infiltration
+      waterflux_vars%qflx_gross_infl_soil_col(c) = (waterstate_vars%h2osoi_liq_col(c,1)-waterstate_vars%h2osoi_liq_old(c,1))/dtime &
+             + (waterflux_vars%qflx_rootsoi_col(c,1)+waterflux_vars%qflx_adv_col(c,1))*1.e3_r8
 
-    do fc = 1, numf
-      c = filter(fc)
-      waterflux_vars%qflx_adv_col(c,0) = waterflux_vars%qflx_adv_col(c,0)*1.e-3_r8
-      do j = 1,ubj
-        waterflux_vars%qflx_adv_col(c,j)= waterflux_vars%qflx_adv_col(c,j)*1.e-3_r8
-        waterflux_vars%qflx_rootsoi_col(c,j) = waterflux_vars%qflx_rootsoi_col(c,j) * 1.e-3_r8
-      enddo
+      !the following may have some problem, because it also includes contributions from
+      !dew, and sublimation
+      if(waterflux_vars%qflx_gross_infl_soil_col(c)>0._r8)then
+        waterflux_vars%qflx_adv_col(c,0) = waterflux_vars%qflx_gross_infl_soil_col(c) * 1.e-3_r8
+        waterflux_vars%qflx_gross_evap_soil_col(c) = 0._r8
+      else
+        waterflux_vars%qflx_gross_evap_soil_col(c) = waterflux_vars%qflx_gross_infl_soil_col(c)
+        waterflux_vars%qflx_adv_col(c,0) = 0._r8
+        waterflux_vars%qflx_gross_infl_soil_col(c) = 0._r8
+      endif
     enddo
   endif
   do j = 1, ubj

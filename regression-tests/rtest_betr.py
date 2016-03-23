@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """BeTR regression test driver
 
 Author: Ben Andre <andre@ucar.edu>

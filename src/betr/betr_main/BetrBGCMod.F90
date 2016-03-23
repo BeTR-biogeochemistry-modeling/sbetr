@@ -1380,7 +1380,7 @@ contains
             total_pressure=n2_pressure+o2_pressure+ar_pressure+co2_pressure+ch4_pressure
 
             if(total_pressure>press_hydro)then
-               print*,"!ebullition occurs"
+               !print*,"!ebullition occurs"
                !calculate the fraction of gas to be released as bubble
                frac=(total_pressure-press_hydro)/total_pressure
                !note because there exisiting a relationship gas_conc*gas2bulkcef=bulk_con

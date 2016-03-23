@@ -5,7 +5,7 @@ program main
   use betr_constants, only : stdout, betr_filename_length, betr_namelist_buffer_size
 
   use betr_utils, only : remove_filename_extension
-  
+
   implicit none
 
   integer :: arg_count
@@ -13,7 +13,7 @@ program main
   character(len=betr_filename_length) :: namelist_filename
   character(len=betr_namelist_buffer_size) :: namelist_buffer
   character(len=betr_filename_length) :: base_filename
-  
+
 
   arg_count = command_argument_count()
   if (arg_count /= 1) then
@@ -25,23 +25,23 @@ program main
   call get_command_argument(1, namelist_filename)
   base_filename = remove_filename_extension(namelist_filename)
   write(stdout, '(a, a)') 'Using base filename for output : ', trim(base_filename)
-  
+
   write(stdout, '(a, a)') 'Reading namelist filename : ', trim(namelist_filename)
   namelist_buffer = ''
   call namelist_to_buffer(namelist_filename, namelist_buffer)
-  
+
   call sbetrBGC_driver(base_filename, namelist_buffer)
 
   ! return correct error code to caller
   call exit(0)
-  
+
 end program main
 
 
 ! ----------------------------------------------------------------------
 subroutine usage()
   use betr_constants, only : stdout
-  
+
   write(stdout, *) 'sbetr - standalone driver for BeTR reactive transport library.'
   write(stdout, *) 'usage: sbetr namelist_filename'
 end subroutine usage
@@ -51,7 +51,7 @@ end subroutine usage
 subroutine namelist_to_buffer(namelist_filename, namelist_buffer)
 
   use betr_constants, only : betr_string_length_long, betr_namelist_buffer_size, stdout
-  
+
   character(len=*), intent(in) :: namelist_filename
   character(len=betr_namelist_buffer_size), intent(out) :: namelist_buffer
 
@@ -60,7 +60,7 @@ subroutine namelist_to_buffer(namelist_filename, namelist_buffer)
   integer :: nml_unit, nml_error
 
   nml_unit = 16
-  
+
   ! read the namelist file into a buffer.
   open(unit=nml_unit, file=trim(namelist_filename), action='read', access='stream', &
        form='unformatted', iostat=nml_error)

@@ -20,7 +20,7 @@ module CLMForcType
     real(r8), pointer :: h2osoi_liq(:,:)
     real(r8), pointer :: h2osoi_ice(:,:)
     real(r8), pointer :: qflx_infl(:)       !surface infiltration, mm/s
-    real(r8), pointer :: qflx_tran_dep(:,:) !transpiration at depth, mm/s
+    real(r8), pointer :: qflx_rootsoi(:,:)  !transpiration at depth, m/s
     real(r8), pointer :: pbot(:)            !amtospheric pressure, Pa
     real(r8), pointer :: tbot(:)            !atmoshperic temperature, kelvin
     real(r8), pointer :: dzsoi(:)           !node thickness
@@ -28,6 +28,7 @@ module CLMForcType
     real(r8), pointer :: bsw(:)             !clap-hornberg parameter
     real(r8), pointer :: watsat(:)          !saturated volumetric water content
     real(r8), pointer :: h2osoi_icevol(:,:)
+    real(r8), pointer :: qbot(:)            !water flux at bottom boundary, mm/s
     integer           :: nlev
     integer           :: ntsnap
   contains
@@ -65,10 +66,11 @@ contains
   allocate(this%h2osoi_liq(dimt,diml))
   allocate(this%h2osoi_ice(dimt,diml))
   allocate(this%qflx_infl(dimt))
-  allocate(this%qflx_tran_dep(dimt,diml))
+  allocate(this%qflx_rootsoi(dimt,diml))
   allocate(this%zsoi(diml))
   allocate(this%dzsoi(diml))
   allocate(this%pbot(dimt))
+  allocate(this%qbot(dimt))
   allocate(this%tbot(dimt))
   allocate(this%watsat(diml))
   allocate(this%bsw(diml))
@@ -90,11 +92,12 @@ contains
   character(len=250) :: ncf_in_filename_forc
   type(file_desc_t)  :: ncf_in_grid
   type(file_desc_t)  :: ncf_in_forc
-  real(r8), allocatable :: data_2d(:,:,:,:)
-  real(r8), allocatable :: data_1d(:,:,:)
+  real(r8), allocatable :: data_2d(:,:,:)
+  real(r8), allocatable :: data_1d(:,:)
   real(r8), allocatable :: data1(:,:)
   integer :: dimlenl, dimlent
   integer :: j1, j2
+
 
   call this%ReadNameList(namelist_buffer)
 
@@ -133,15 +136,15 @@ contains
   enddo
 
   !read data
-  allocate(data_2d(1,1,dimlenl,1:dimlent))
-  allocate(data_1d(1,1,dimlent))
+  allocate(data_2d(1,dimlenl,1:dimlent))
+  allocate(data_1d(1,dimlent))
   call ncd_getvar(ncf_in_forc, 'TSOI', data_2d)
 
   !now assign the data
 
   do j2 = 1, dimlenl
   do j1 = 1, dimlent
-    this%t_soi(j1,j2) = data_2d(1,1,j2,j1)
+    this%t_soi(j1,j2) = data_2d(1,j2,j1)
   enddo
   enddo
 
@@ -152,7 +155,7 @@ contains
   !now assign the data
   do j2 = 1, dimlenl
   do j1 = 1, dimlent
-    this%h2osoi_liqvol(j1,j2) = data_2d(1,1,j2,j1)
+    this%h2osoi_liqvol(j1,j2) = data_2d(1,j2,j1)
   enddo
   enddo
 
@@ -163,9 +166,9 @@ contains
   do j2 = 1, dimlenl
   do j1 = 1, dimlent
 
-    this%h2osoi_icevol(j1,j2) = data_2d(1,1,j2,j1)/rhoice/this%dzsoi(j2)
+    this%h2osoi_icevol(j1,j2) = data_2d(1,j2,j1)/rhoice/this%dzsoi(j2)
     this%h2osoi_liqvol(j1,j2) = this%h2osoi_liqvol(j1,j2) - this%h2osoi_icevol(j1,j2)
-    this%h2osoi_ice(j1,j2) = data_2d(1,1,j2,j1)
+    this%h2osoi_ice(j1,j2) = data_2d(1,j2,j1)
     this%h2osoi_liq(j1,j2) = this%h2osoi_liqvol(j1,j2)*this%dzsoi(j2)*rhoh2o
   enddo
   enddo
@@ -174,27 +177,32 @@ contains
   call ncd_getvar(ncf_in_forc,'QINFL',data_1d)
 
   do j1 =1, dimlent
-    this%qflx_infl(j1) = data_1d(1,1,j1)
+    this%qflx_infl(j1) = data_1d(1,j1)
   enddo
 
   call ncd_getvar(ncf_in_forc,'PBOT',data_1d)
 
   do j1 =1, dimlent
-    this%pbot(j1) = data_1d(1,1,j1)
+    this%pbot(j1) = data_1d(1,j1)
   enddo
 
   call ncd_getvar(ncf_in_forc,'TBOT',data_1d)
 
   do j1 =1, dimlent
-    this%tbot(j1) = data_1d(1,1,j1)
+    this%tbot(j1) = data_1d(1,j1)
   enddo
 
-  call ncd_getvar(ncf_in_forc, 'QVEGT_DEP', data_2d)
+  call ncd_getvar(ncf_in_forc, 'QCHARGE', data_1d)
+  do j1 =1, dimlent
+    this%qbot(j1) = data_1d(1,j1) * 1.e-3_r8  !convert int m/s
+  enddo
+
+  call ncd_getvar(ncf_in_forc, 'QFLX_ROOTSOI', data_2d)
 
   !now assign the data
   do j2 = 1, dimlenl
   do j1 = 1, dimlent
-    this%qflx_tran_dep(j1,j2) = data_2d(1,1,j2,j1)
+    this%qflx_rootsoi(j1,j2) = data_2d(1,j2,j1)
   enddo
   enddo
 
@@ -269,8 +277,8 @@ end subroutine LoadForcingData
        write(stdout, *) '--------------------'
     endif
 
-    this%grid_filename = grid_filename
-    this%forcing_filename = forcing_filename
+    this%grid_filename = trim(grid_filename)
+    this%forcing_filename = trim(forcing_filename)
 
   end subroutine ReadNameList
 
