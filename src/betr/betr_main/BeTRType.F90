@@ -11,7 +11,8 @@ module BetrType
   use BeTR_decompMod      , only : bounds_type  => betr_bounds_type
   use betr_ctrl           , only : iulog  => biulog
   use betr_constants      , only : betr_string_length
-  use tracer_varcon         , only : nlevsoi  => betr_nlevsoi
+  use tracer_varcon       , only : nlevsoi  => betr_nlevsoi
+  use tracer_varcon        , only : nlevsno => betr_nlevsno
   use betr_varcon           , only : spval => bspval
   use BeTR_PatchType        , only : pft => betr_pft
   use BeTR_ColumnType       , only : col => betr_col
@@ -70,6 +71,11 @@ module BetrType
      procedure, public :: diagnose_drainage_water_flux
      procedure, public :: diagnose_dtracer_freeze_thaw
      procedure, public :: check_mass_err
+     procedure, public :: Enter_tracer_LayerAdjustment
+     procedure, public :: Exit_tracer_LayerAdjustment
+     procedure, public :: tracer_snowcapping
+     procedure, public :: tracer_DivideSnowLayers
+     procedure, public :: tracer_CombineSnowLayers
      procedure, private :: ReadNamelist
 
   end type betr_type
@@ -839,5 +845,228 @@ contains
 
    end associate
    end subroutine diagnose_drainage_water_flux
+
+   !------------------------------------------------------------------------
+
+   subroutine tracer_DivideSnowLayers(this, bounds, num_snowc, filter_snowc, divide_matrix)
+   !
+   ! DESCRIPTIONS
+   ! divide tracers in snow
+   !
+   ! USES
+   implicit none
+   class(betr_type), intent(inout) :: this
+   type(bounds_type)       , intent(in)    :: bounds               ! bounds
+   integer                 , intent(in)    :: num_snowc      ! number of column soil points in column filter
+   integer                 , intent(in)    :: filter_snowc(:) ! column filter for soil points
+   real(r8), intent(in) :: divide_matrix(bounds%begc: , 1: , 1: )
+
+   !temporary variable
+   real(r8) :: tracer_copy(bounds%begc:bounds%endc, 1:nlevsno)
+   integer  :: jj, jj1
+
+   SHR_ASSERT_ALL((ubound(divide_matrix,1)         == bounds%endc)      , errMsg(filename,__LINE__))
+   SHR_ASSERT_ALL((ubound(divide_matrix,2)         == nlevsno)      , errMsg(filename,__LINE__))
+   SHR_ASSERT_ALL((ubound(divide_matrix,3)         == nlevsno)      , errMsg(filename,__LINE__))
+
+   associate(                             &
+      tracer_conc_frozen_col => this%tracerstates%tracer_conc_frozen_col , &
+      tracer_conc_mobile_col => this%tracerstates%tracer_conc_mobile_col , &
+      tracer_conc_solid_passive_col => this%tracerstates%tracer_conc_solid_passive_col, &
+      ntracers         => this%tracers%ntracers, &
+      ngwmobile_tracers=> this%tracers%ngwmobile_tracers , &
+      is_frozen => this%tracers%is_frozen &
+   )
+
+   do jj = 1, ntracers
+     if(jj<= ngwmobile_tracers)then
+        !make a copy
+        call tracer_copy_a2b_div(bounds, num_snowc, filter_snowc, col%snl, &
+           tracer_conc_mobile_col(bounds%begc:bounds%endc, -nlevsno+1:0,jj),tracer_copy)
+        !remapping
+        call tracer_col_mapping_div(bounds, num_snowc, filter_snowc, col%snl, divide_matrix, &
+           tracer_copy, tracer_conc_mobile_col(bounds%begc:bounds%endc, -nlevsno+1:1,jj))
+
+        if(is_frozen(jj))then
+          !make a copy
+          call tracer_copy_a2b_div(bounds, num_snowc, filter_snowc, col%snl, &
+            tracer_conc_frozen_col(bounds%begc:bounds%endc, -nlevsno+1:0,jj),tracer_copy)
+          !remapping
+          call tracer_col_mapping_div(bounds, num_snowc, filter_snowc, col%snl, divide_matrix, &
+             tracer_copy, tracer_conc_frozen_col(bounds%begc:bounds%endc, -nlevsno+1:0,jj))
+        endif
+     else
+       !x!currently, no solid tracer is allowed to mix with snow
+       !! jj1=jj-ngwmobile_tracers
+       !x!tracer_conc_solid_passive_col
+       !x!copy
+       !x!remapping
+     endif
+   enddo
+   end associate
+   end subroutine tracer_DivideSnowLayers
+   !------------------------------------------------------------------------
+
+   subroutine tracer_CombineSnowLayers(this, bounds, num_snowc, filter_snowc, combine_matrix)
+   !
+   ! DESCRIPTIONS
+   ! combine tracers in snow
+   !
+   !! USES
+   use tracer_varcon, only : nlevsno => betr_nlevsno
+   !!
+   ! ARGUMENTS
+   implicit none
+   class(betr_type), intent(inout) :: this
+   type(bounds_type)       , intent(in)    :: bounds               ! bounds
+   integer                 , intent(in)    :: num_snowc      ! number of column soil points in column filter
+   integer                 , intent(in)    :: filter_snowc(:) ! column filter for soil points
+   real(r8), intent(in) :: combine_matrix(bounds%begc: ,-nlevsno+1: ,-nlevsno+1: )
+
+   !temporary variables
+   real(r8) :: tracer_copy(bounds%begc:bounds%endc,-nlevsno+1:1)
+   integer  :: jj, jj1
+
+   SHR_ASSERT_ALL((ubound(combine_matrix,1)         == bounds%endc)  , errMsg(filename,__LINE__))
+   SHR_ASSERT_ALL((ubound(combine_matrix,2)         == 1)      , errMsg(filename,__LINE__))
+   SHR_ASSERT_ALL((ubound(combine_matrix,3)         == 1)      , errMsg(filename,__LINE__))
+
+   associate(                             &
+      tracer_conc_frozen_col => this%tracerstates%tracer_conc_frozen_col , &
+      tracer_conc_mobile_col => this%tracerstates%tracer_conc_mobile_col , &
+      tracer_conc_solid_passive_col => this%tracerstates%tracer_conc_solid_passive_col, &
+      ntracers         => this%tracers%ntracers, &
+      ngwmobile_tracers=> this%tracers%ngwmobile_tracers , &
+      is_frozen => this%tracers%is_frozen &
+   )
+
+
+   do jj = 1, ntracers
+     if(jj<= ngwmobile_tracers)then
+        !make a copy
+        call tracer_copy_a2b_comb(bounds, num_snowc, filter_snowc, col%snl, &
+           tracer_conc_mobile_col(bounds%begc:bounds%endc, -nlevsno+1:1,jj),tracer_copy)
+        !remapping
+        call tracer_col_mapping_comb(bounds, num_snowc, filter_snowc, col%snl, combine_matrix, &
+           tracer_copy, tracer_conc_mobile_col(bounds%begc:bounds%endc, -nlevsno+1:1,jj))
+        if(is_frozen(jj))then
+          !make a copy
+          call tracer_copy_a2b_comb(bounds, num_snowc, filter_snowc, col%snl, &
+            tracer_conc_frozen_col(bounds%begc:bounds%endc, -nlevsno+1:1,jj),tracer_copy)
+          !remapping
+          call tracer_col_mapping_comb(bounds, num_snowc, filter_snowc, col%snl, combine_matrix, &
+             tracer_copy, tracer_conc_frozen_col(bounds%begc:bounds%endc, -nlevsno+1:1,jj))
+        endif
+     else
+       !x!currently, no solid tracer is allowed to mix with snow
+       !! jj1=jj-ngwmobile_tracers
+       !x!tracer_conc_solid_passive_col
+       !x!copy
+       !x!remapping
+     endif
+   enddo
+
+   end associate
+   end subroutine tracer_CombineSnowLayers
+
+   !------------------------------------------------------------------------
+   subroutine Enter_tracer_LayerAdjustment(this, bounds, num_snowc, filter_snowc )
+   !
+   !! DESCRIPTION
+   ! prepare tracer for entering mass adjustment in response to snow dynamics
+
+   implicit none
+   class(betr_type), intent(inout) :: this
+   type(bounds_type)       , intent(in)    :: bounds               ! bounds
+   integer                 , intent(in)    :: num_snowc      ! number of column soil points in column filter
+   integer                 , intent(in)    :: filter_snowc(:) ! column filter for soil points
+
+   !temporary variables
+   integer :: fc, c, j, jj
+
+   associate(                             &
+      tracer_conc_frozen_col => this%tracerstates%tracer_conc_frozen_col , &
+      tracer_conc_mobile_col => this%tracerstates%tracer_conc_mobile_col , &
+      tracer_conc_solid_passive_col => this%tracerstates%tracer_conc_solid_passive_col, &
+      ntracers         => this%tracers%ntracers, &
+      ngwmobile_tracers=> this%tracers%ngwmobile_tracers , &
+      is_frozen => this%tracers%is_frozen , &
+      snl => col%snl &
+   )
+   do jj = 1, ntracers
+     if(jj<= ngwmobile_tracers)then
+       do j = -nlevsno + 1, 1
+         do fc = 1, num_snowc
+           c = filter_snowc(fc)
+           if(j >= snl(c) + 1)then
+             tracer_conc_mobile_col(c,j,jj) = tracer_conc_mobile_col(c,j,jj) /col%dz(c,j)
+             if(is_frozen(jj))then
+               tracer_conc_frozen_col(c,j,jj) = tracer_conc_frozen_col(c,j,jj)/col%dz(c,j)
+             endif
+           endif
+         enddo
+       enddo
+     else
+       !no passive tracer adjustment at this moment, can be used for aerosols or mineral particles
+     endif
+   enddo
+   end associate
+   end subroutine Enter_tracer_LayerAdjustment
+
+   !------------------------------------------------------------------------
+   subroutine Exit_tracer_LayerAdjustment(this, bounds, num_snowc, filter_snowc )
+   !! DESCRIPTION
+   ! prepare tracer for exit mass adjustment in response to snow dynamics
+   implicit none
+   class(betr_type), intent(inout) :: this
+   type(bounds_type)       , intent(in)    :: bounds               ! bounds
+   integer                 , intent(in)    :: num_snowc      ! number of column soil points in column filter
+   integer                 , intent(in)    :: filter_snowc(:) ! column filter for soil points
+
+   !temporary variables
+   integer :: fc, c, j, jj
+
+   associate(                             &
+      tracer_conc_frozen_col => this%tracerstates%tracer_conc_frozen_col , &
+      tracer_conc_mobile_col => this%tracerstates%tracer_conc_mobile_col , &
+      tracer_conc_solid_passive_col => this%tracerstates%tracer_conc_solid_passive_col, &
+      ntracers         => this%tracers%ntracers, &
+      ngwmobile_tracers=> this%tracers%ngwmobile_tracers , &
+      is_frozen => this%tracers%is_frozen , &
+      snl => col%snl &
+   )
+   do jj = 1, ntracers
+     if(jj<= ngwmobile_tracers)then
+       do j = -nlevsno + 1, 1
+         do fc = 1, num_snowc
+           c = filter_snowc(fc)
+           if(j >= snl(c) + 1)then
+             tracer_conc_mobile_col(c,j,jj) = tracer_conc_mobile_col(c,j,jj) *col%dz(c,j)
+             if(is_frozen(jj))then
+               tracer_conc_frozen_col(c,j,jj) = tracer_conc_frozen_col(c,j,jj)*col%dz(c,j)
+             endif
+           endif
+         enddo
+       enddo
+     else
+       !no passive tracer adjustment at this moment, can be used for aerosols or mineral particles
+     endif
+   enddo
+   end associate
+   end subroutine Exit_tracer_LayerAdjustment
+   !------------------------------------------------------------------------
+
+   subroutine tracer_snowcapping(this, bounds, num_snowc, filter_snowc, waterflux_vars)
+
+   !do tracer update due to snow capping
+   use BeTR_WaterfluxType           , only          : betr_waterflux_type
+   implicit none
+   class(betr_type), intent(inout) :: this
+   type(bounds_type)       , intent(in)    :: bounds               ! bounds
+   integer                 , intent(in)    :: num_snowc      ! number of column soil points in column filter
+   integer                 , intent(in)    :: filter_snowc(:) ! column filter for soil points
+   type(betr_waterflux_type), intent(in)   :: waterflux_vars
+
+   end subroutine tracer_snowcapping
 
 end module BetrType

@@ -27,7 +27,7 @@ module BetrBGCMod
   use BeTR_ColumnType              , only          : col => betr_col
   use clm_time_manager   , only : get_nstep
   use EcophysConType, only : ecophyscon_type
-
+  use tracer_varcon, only : nlevsno => betr_nlevsno
   implicit none
 
   private
@@ -45,6 +45,10 @@ module BetrBGCMod
   public :: tracer_gws_transport
   public :: calc_ebullition
   public :: diagnose_gas_pressure
+  public :: tracer_copy_a2b_div
+  public :: tracer_copy_a2b_comb
+  public :: tracer_col_mapping_div
+  public :: tracer_col_mapping_comb
 contains
 
 
@@ -52,7 +56,9 @@ contains
      waterstate_vars, waterflux_vars, soilhydrology_vars, betrtracer_vars, tracerstate_vars, &
      tracercoeff_vars,  tracerflux_vars)
 
-
+    !
+    ! !DESCRIPTIONS
+    ! do tracer update through, residual snow, and surface runoff
     ! !USES:
     use tracerfluxType               , only          : tracerflux_type
     use tracerstatetype              , only          : tracerstate_type
@@ -1716,5 +1722,101 @@ contains
       enddo
     end associate
   end subroutine diagnose_gas_pressure
+
+
+   !------------------------------------------------------------------------
+
+   subroutine tracer_copy_a2b_div(bounds, num_snowc, filter_snowc, snl, tracer_in, tracer_copy)
+   implicit none
+   type(bounds_type)       , intent(in)    :: bounds               ! bounds
+   integer                 , intent(in)    :: num_snowc      ! number of column soil points in column filter
+   integer                 , intent(in)    :: filter_snowc(:) ! column filter for soil points
+   integer       , intent(in) :: snl(bounds%begc:bounds%endc)
+   real(r8), intent(in)  :: tracer_in(bounds%begc:bounds%endc, -nlevsno+1:0)
+   real(r8), intent(out) :: tracer_copy(bounds%begc:bounds%endc, 1:nlevsno)
+
+   integer :: fc, c, j
+
+   tracer_copy(:,:) = 0._r8
+   do j = 1, nlevsno
+     do fc = 1, num_snowc
+       c = filter_snowc(fc)
+       if(j <= abs(snl(c)))then
+         tracer_copy(c,j) = tracer_in(c,j+snl(c))
+       endif
+     enddo
+   enddo
+
+   end subroutine tracer_copy_a2b_div
+   !------------------------------------------------------------------------
+
+   subroutine tracer_copy_a2b_comb(bounds, num_snowc, filter_snowc, snl, tracer_in, tracer_copy)
+   implicit none
+   type(bounds_type)       , intent(in)    :: bounds               ! bounds
+   integer                 , intent(in)    :: num_snowc      ! number of column soil points in column filter
+   integer                 , intent(in)    :: filter_snowc(:) ! column filter for soil points
+   integer       , intent(in) :: snl(bounds%begc:bounds%endc)
+   real(r8), intent(in)  :: tracer_in(bounds%begc:bounds%endc, -nlevsno+1:1)
+   real(r8), intent(out) :: tracer_copy(bounds%begc:bounds%endc,-nlevsno+1:1)
+
+   integer :: fc, c, j
+
+   tracer_copy(:,:) = 0._r8
+   do j = -nlevsno+1, 1
+     do fc = 1, num_snowc
+       c = filter_snowc(fc)
+       if(j >= snl(c)+1)then
+         tracer_copy(c,j) = tracer_in(c,j)
+       endif
+     enddo
+   enddo
+   end subroutine tracer_copy_a2b_comb
+   !------------------------------------------------------------------------
+
+   subroutine tracer_col_mapping_div(bounds, num_snowc, filter_snowc, snl, transition_matrix, &
+      tracer_copy, tracer_out)
+   implicit none
+   type(bounds_type)       , intent(in)    :: bounds               ! bounds
+   integer                 , intent(in)    :: num_snowc      ! number of column soil points in column filter
+   integer                 , intent(in)    :: filter_snowc(:) ! column filter for soil points
+   integer       , intent(in) :: snl(bounds%begc:bounds%endc)
+   real(r8), intent(in) :: transition_matrix(bounds%begc:bounds%endc,1:nlevsno,1:nlevsno)
+   real(r8), intent(in) :: tracer_copy(bounds%begc:bounds%endc, 1:nlevsno)
+   real(r8), intent(out):: tracer_out(bounds%begc:bounds%endc, -nlevsno+1:0)
+   integer :: fc, c, j
+
+   do j = -nlevsno + 1, 0
+     do fc = 1, num_snowc
+       c = filter_snowc(fc)
+       if(j>= snl(c)+1)then
+         tracer_out(c,j) = dot_sum(transition_matrix(c,j-snl(c),:),tracer_copy(c,:))
+       endif
+     enddo
+   enddo
+   end subroutine tracer_col_mapping_div
+   !------------------------------------------------------------------------
+
+   subroutine tracer_col_mapping_comb(bounds, num_snowc, filter_snowc, snl, transition_matrix, &
+      tracer_copy, tracer_out)
+   implicit none
+   type(bounds_type)       , intent(in)    :: bounds               ! bounds
+   integer                 , intent(in)    :: num_snowc      ! number of column soil points in column filter
+   integer                 , intent(in)    :: filter_snowc(:) ! column filter for soil points
+   integer                 , intent(in) :: snl(bounds%begc:bounds%endc)
+   real(r8)                , intent(in) :: transition_matrix(bounds%begc:bounds%endc,-nlevsno+1:1,-nlevsno+1:1)
+   real(r8)                , intent(in) :: tracer_copy(bounds%begc:bounds%endc,-nlevsno+1:1)
+   real(r8)                , intent(out):: tracer_out(bounds%begc:bounds%endc, -nlevsno+1:1)
+   integer :: fc, c, j
+
+   do j = -nlevsno + 1, 1
+     do fc = 1, num_snowc
+       c = filter_snowc(fc)
+       if(j>= snl(c)+1)then
+         tracer_out(c,j) = dot_sum(transition_matrix(c,j,:),tracer_copy(c,:))
+       endif
+     enddo
+   enddo
+   end subroutine tracer_col_mapping_comb
+
 
 end module BetrBGCMod
