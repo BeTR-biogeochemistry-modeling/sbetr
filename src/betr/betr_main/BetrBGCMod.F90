@@ -32,8 +32,8 @@ module BetrBGCMod
 
   private
 
-  integer,  parameter :: do_diffusion   = 1         ! do diffusive transport
-  integer,  parameter :: do_advection   = 2         ! do advective transport, aquesou phase only
+  integer,  parameter :: diffusion_scheme   = 1         ! do diffusive transport
+  integer,  parameter :: advection_scheme   = 2         ! do advective transport, aquesou phase only
 
   real(r8), parameter :: tiny_val       = 1.e-20_r8 !very small value, for tracer concentration etc.
   real(r8), parameter :: dtime_min      = 1._r8     !minimum time step 1 second
@@ -259,7 +259,7 @@ contains
 
   subroutine tracer_gws_transport(bounds, num_soilc, filter_soilc, Rfactor, waterstate_vars, &
     waterflux_vars, betrtracer_vars, tracerboundarycond_vars, tracercoeff_vars, &
-    tracerstate_vars, tracerflux_vars, bgc_reaction)
+    tracerstate_vars, tracerflux_vars, bgc_reaction, advection_on, diffusion_on)
 
     use clm_time_manager             , only          : get_step_size
     ! !USES:
@@ -281,6 +281,8 @@ contains
     type(betr_waterstate_type)       , intent(in)    :: waterstate_vars            ! water state variables
     class(betrtracer_type)           , intent(in)    :: betrtracer_vars            ! betr configuration information
     class(bgc_reaction_type)         , intent(in)    :: bgc_reaction
+    logical, intent(in) :: advection_on
+    logical, intent(in) :: diffusion_on
     type(betr_waterflux_type)        , intent(inout) :: waterflux_vars
     type(tracerboundarycond_type)    , intent(inout) :: tracerboundarycond_vars
     type(tracercoeff_type)           , intent(inout) :: tracercoeff_vars
@@ -306,7 +308,8 @@ contains
          col%dz(bounds%begc:bounds%endc, lbj:ubj),                            &
          col%zi(bounds%begc:bounds%endc,lbj-1:ubj),                           &
          waterstate_vars%h2osoi_liqvol_col(bounds%begc:bounds%endc, lbj:ubj), &
-         (/do_advection, do_diffusion/),                                      &
+         (/advection_scheme, diffusion_scheme/),                              &
+         advection_on, diffusion_on, &
          dtime,                                                               &
          betrtracer_vars,                                                     &
          tracerboundarycond_vars,                                             &
@@ -512,7 +515,8 @@ contains
 
   !-------------------------------------------------------------------------------
   subroutine tracer_gw_transport(bounds, lbj, ubj, jtops, num_soilc, filter_soilc, Rfactor,     &
-       dz, zi, h2osoi_liqvol, transp_pathway, dtime,  betrtracer_vars, tracerboundarycond_vars, &
+       dz, zi, h2osoi_liqvol, transp_pathway, advection_on, diffusion_on, dtime,  &
+       betrtracer_vars, tracerboundarycond_vars, &
        tracercoeff_vars, waterflux_vars, bgc_reaction, tracerstate_vars, tracerflux_vars, waterstate_vars)
     !
     ! !DESCRIPTION:
@@ -539,6 +543,8 @@ contains
     real(r8)                      , intent(in)    :: h2osoi_liqvol(bounds%begc: , lbj: ) !
     real(r8)                      , intent(in)    :: Rfactor(bounds%begc: ,lbj: ,1: )    !rfactor for dual diffusive transport
     integer                       , intent(in)    :: transp_pathway(2)                   !the pathway vector
+    logical, intent(in) :: advection_on
+    logical, intent(in) :: diffusion_on
     real(r8)                      , intent(in)    :: dtime                               !model time step
     type(betr_waterflux_type)     , intent(in)    :: waterflux_vars
     type(tracerboundarycond_type) , intent(in)    :: tracerboundarycond_vars
@@ -574,7 +580,7 @@ contains
 
     !do diffusive and advective transport, assuming aqueous and gaseous phase are in equilbrium
     do kk = 1 , 2
-       if (transp_pathway(kk) == do_diffusion) then
+       if (transp_pathway(kk) == diffusion_scheme .and. diffusion_on) then
           call do_tracer_gw_diffusion(bounds, lbj, ubj,                                    &
                jtops,                                                                      &
                num_soilc,                                                                  &
@@ -589,7 +595,7 @@ contains
                tracerflux_vars,                                                            &
                waterstate_vars)
 
-       elseif (transp_pathway(kk) == do_advection)then
+       elseif (transp_pathway(kk) == advection_scheme .and. advection_on)then
           jtops0(:) = 1
           call do_tracer_advection(bounds, lbj, ubj, &
                jtops0,                               &

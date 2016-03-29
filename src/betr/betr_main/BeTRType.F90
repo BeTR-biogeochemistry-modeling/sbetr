@@ -39,8 +39,13 @@ module BetrType
   character(len=*), parameter :: filename = __FILE__
 
   type, public :: betr_type
+     ! namelist control variables
      character(len=betr_string_length) :: reaction_method
+     logical :: diffusion_on = .true.
+     logical :: advection_on = .true.
+     logical :: reaction_on  = .true.
 
+     ! internal types
      class(bgc_reaction_type), allocatable, public :: bgc_reaction
      class(plant_soilbgc_type), allocatable, public :: plant_soilbgc
 
@@ -189,13 +194,19 @@ contains
     character(len=*), parameter :: subname = 'ReadNamelist'
     character(len=betr_string_length) :: reaction_method
     character(len=betr_string_length_long) :: ioerror_msg
+    logical :: advection_on, diffusion_on, reaction_on
 
 
     !-----------------------------------------------------------------------
 
-    namelist / betr_parameters / reaction_method
+    namelist / betr_parameters / &
+         reaction_method, &
+         advection_on, diffusion_on, reaction_on
 
     reaction_method = ''
+    advection_on = .true.
+    diffusion_on = .true.
+    reaction_on = .true.
 
     ! ----------------------------------------------------------------------
     ! Read namelist from standard input.
@@ -223,6 +234,10 @@ contains
     endif
 
     this%reaction_method = reaction_method
+
+    this%advection_on = advection_on
+    this%diffusion_on = diffusion_on
+    this%reaction_on = reaction_on
 
   end subroutine ReadNamelist
 
@@ -319,7 +334,7 @@ contains
 
     call tracer_gws_transport(bounds, num_soilc, filter_soilc, Rfactor, waterstate_vars, &
       waterflux_vars, this%tracers, this%tracerboundaryconds, this%tracercoeffs, &
-      this%tracerstates, this%tracerfluxes, this%bgc_reaction)
+      this%tracerstates, this%tracerfluxes, this%bgc_reaction, this%advection_on, this%diffusion_on)
 
     call calc_ebullition(bounds, 1, ubj,                                 &
          this%tracerboundaryconds%jtops_col,                             &
