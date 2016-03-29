@@ -525,7 +525,7 @@ contains
     if (this%regression%write_regression_output) then
        call this%regression%OpenOutput()
        do tt = 1, this%betr%tracers%ntracers
-          if (tt < this%betr%tracers%ngwmobile_tracers) then
+          if (tt <= this%betr%tracers%ngwmobile_tracers) then
              call this%regression%WriteData(category, &
                   this%betr%tracers%tracernames(tt), &
                   this%betr%tracerstates%tracer_conc_mobile_col(begc, :, tt))
