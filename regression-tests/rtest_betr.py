@@ -176,6 +176,11 @@ class RegressionTestSuite(object):
         for test in self._tests:
             test.update_baseline(dry_run)
 
+    def num_tests(self):
+        """Return the number of tests in the test suite
+        """
+        return len(self._tests)
+
     def status_summary(self):
         """Return the test results for the test suite.
 
@@ -912,7 +917,11 @@ def main(options):
         logging.info(BANNER)
         config = read_config_file_as_dict(filename)
         suite = RegressionTestSuite(filename, config, options.timeout)
-        test_suites.append(suite)
+        if suite.num_tests() > 0:
+            test_suites.append(suite)
+        else:
+            logging.info('   WARNING: No tests in suite {0}'.format(filename))
+            del suite
 
     print('Running tests:')
     dry_run = options.dry_run
