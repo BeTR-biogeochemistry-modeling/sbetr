@@ -157,24 +157,22 @@ class RegressionTestSuite(object):
                 msg = "{0} : {1}".format(self._name, e)
                 raise RuntimeError(msg)
 
-    def run_tests(self, executable, check_only, dry_run):
+    def run_tests(self, executable, check_only, dry_run, update_baseline):
         """Run the tests in the test suite
+
+        Note: we want to update the baselines from here rather than in
+        a separate function call to the test suite so the update
+        baseline occurs next to the test results in the global test
+        log.
+
         """
         logging.info(BANNER)
         logging.info('Running tests for "{0}"'.format(self._name))
         os.chdir(self._test_dir)
         for test in self._tests:
             test.run(executable, check_only, dry_run)
-        print()
-
-    def update_baseline_files(self, dry_run):
-        """Update the baseline regression files with the results from the
-        current run.
-
-        """
-        os.chdir(self._test_dir)
-        for test in self._tests:
-            test.update_baseline(dry_run)
+            if update_baseline:
+                test.update_baseline(dry_run)
 
     def num_tests(self):
         """Return the number of tests in the test suite
@@ -208,6 +206,8 @@ class RegressionTestSuite(object):
 class RegressionTest(object):
     """
     """
+    _REGRESSION = 'regression'
+    _BASELINE = 'regression.baseline'
 
     def __init__(self, name, comparison, options, timeout):
         """Note: assume that we are in the test directory.
@@ -383,7 +383,7 @@ class RegressionTest(object):
         # NOTE(bja, 201603) relying on implicit ordering. We check
         # baseline first, so if the current regression file is missing
         # we get a failure instead of a skip status!
-        filename = '{0}.regression.baseline'.format(self._name)
+        filename = '{0}.{1}'.format(self._name, self._BASELINE)
         baseline = None
         try:
             baseline = read_config_file_as_dict(filename)
@@ -394,7 +394,7 @@ class RegressionTest(object):
             logging.critical(msg)
             self._status = 'skip'
 
-        filename = '{0}.regression'.format(self._name)
+        filename = '{0}.{1}'.format(self._name, self._REGRESSION)
         regression = None
         try:
             regression = read_config_file_as_dict(filename)
@@ -417,7 +417,18 @@ class RegressionTest(object):
         current run.
 
         """
-        pass
+        current = '{0}.{1}'.format(self._name, self._REGRESSION)
+        baseline = '{0}.{1}'.format(self._name, self._BASELINE)
+        try:
+            logging.info('  mv {0} {1}'.format(current, baseline))
+            if not dry_run:
+                os.rename(current, baseline)
+                logging.critical('  {0} : updated baseline with current '
+                                 'regression file.'.format(self._name))
+        except OSError as e:
+            msg = '    ERROR: {0} : {1} :\n  moving "{2}" to "{3}"'.format(
+                self._name, e, current, baseline)
+            logging.critical(msg)
 
     def _cleanup_previous_run(self):
         """Cleanup any output files that may be left over from a previous run
@@ -425,7 +436,7 @@ class RegressionTest(object):
 
         """
         output_files = [
-            '{0}.regression'.format(self._name),
+            '{0}.{1}'.format(self._name, self._REGRESSION),
             '{0}.stdout'.format(self._name),
             '{0}.output.nc'.format(self._name),
         ]
@@ -926,8 +937,11 @@ def main(options):
     print('Running tests:')
     dry_run = options.dry_run
     check_only = options.check_only
+    update_baseline = options.update_baseline
     for suite in test_suites:
-        suite.run_tests(executable, check_only, dry_run)
+        suite.run_tests(executable, check_only, dry_run, update_baseline)
+
+    print()
     print(BANNER)
 
     status = StatusSummary()
