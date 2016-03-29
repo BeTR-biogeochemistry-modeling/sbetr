@@ -354,9 +354,10 @@ class RegressionTest(object):
                 if time.time() - start > self._timeout:
                     proc.kill()
                     time.sleep(0.1)
-                    msg = ('ERROR: "{0}" exceeded max run time '
+                    msg = ('    FAILURE: "{0}" exceeded max run time '
                            '{1} seconds.'.format(self._name, self._timeout))
                     logging.critical(''.join(['\n', msg, '\n']))
+                    self._status = 'fail'
             finish = time.time()
             logging.info("    {0} : run time : {1:.2f} seconds".format(
                 self._name, finish - start))
@@ -364,6 +365,9 @@ class RegressionTest(object):
             status = abs(proc.returncode)
             if status != 0:
                 self._status = 'fail'
+                logging.critical('    FAILURE: runtime error in "{0}". '
+                                 'See {0}.stdout file for details.'.format(
+                                     self._name))
 
     def _check_test(self):
         """Check the test results against the baseline
