@@ -514,23 +514,38 @@ contains
 
     integer :: jj, tt, begc, endc
     character(len=betr_string_length) :: category
+    character(len=betr_string_length) :: name    
 
     ! FIXME(bja, 201603) need a way to categorize output variables,
     ! e.g. concentration, velocity, etc. Hard coding for now.
     category = 'concentration'
 
+    ! FIXME(bja, 201603) should we output units as well...?
+    
     begc = 1
     endc = 1
     
     if (this%regression%write_regression_output) then
        call this%regression%OpenOutput()
+       ! NOTE(bja, 201603) currently we are allocating all tracer
+       ! state vars all the time.
        do tt = 1, this%betr%tracers%ntracers
           if (tt <= this%betr%tracers%ngwmobile_tracers) then
-             call this%regression%WriteData(category, &
-                  this%betr%tracers%tracernames(tt), &
+             name = trim(this%betr%tracers%tracernames(tt)) // '_total_aqueous_conc'
+             call this%regression%WriteData(category, name, &
                   this%betr%tracerstates%tracer_conc_mobile_col(begc, :, tt))
           end if
+          if (tt <= this%betr%tracers%nvolatile_tracers) then
+             name = trim(this%betr%tracers%tracernames(tt)) // '_gas_partial_pressure'
+             call this%regression%WriteData(category, name, &
+                  this%betr%tracerstates%tracer_P_gas_frac_col(begc, :, tt))
+          end if
        end do
+
+       name = 'total_gas_pressure'
+       call this%regression%WriteData(category, name, &
+            this%betr%tracerstates%tracer_P_gas_col(begc, :))
+
        call this%regression%CloseOutput()
     end if
   end subroutine WriteRegressionOutput

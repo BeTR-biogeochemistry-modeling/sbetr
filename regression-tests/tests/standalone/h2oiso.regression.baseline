@@ -1,4 +1,4 @@
-[N2]
+[N2_total_aqueous_conc]
 category = concentration
 min =   3.4049086073269E+00
 max =   0.5809864454037E+01
@@ -7,7 +7,16 @@ cell    1 =   0.5809864454037E+01
 cell    3 =   0.4726442258878E+01
 cell    5 =   0.4216121830610E+01
 
-[O2]
+[N2_gas_partial_pressure]
+category = concentration
+min =   7.7951267685251E-01
+max =   0.7811708576599E+00
+mean =   0.7805693339328E+00
+cell    1 =   0.7808333177934E+00
+cell    3 =   0.7809251568171E+00
+cell    5 =   0.7809284252820E+00
+
+[O2_total_aqueous_conc]
 category = concentration
 min =   9.5084641908405E-01
 max =   0.1588451521394E+01
@@ -16,7 +25,16 @@ cell    1 =   0.1588451521394E+01
 cell    3 =   0.1294294857210E+01
 cell    5 =   0.1156376439639E+01
 
-[AR]
+[O2_gas_partial_pressure]
+category = concentration
+min =   2.0914343493345E-01
+max =   0.2106387773898E+00
+mean =   0.2096916844216E+00
+cell    1 =   0.2094580139288E+00
+cell    3 =   0.2093808390139E+00
+cell    5 =   0.2093693670627E+00
+
+[AR_total_aqueous_conc]
 category = concentration
 min =   4.2694172104246E-02
 max =   0.7103071561695E-01
@@ -25,7 +43,16 @@ cell    1 =   0.7103071561695E-01
 cell    3 =   0.5792609005949E-01
 cell    5 =   0.5178533442020E-01
 
-[CO2x]
+[AR_gas_partial_pressure]
+category = concentration
+min =   9.3335753413616E-03
+max =   0.9459158396126E-02
+mean =   0.9366611519759E-02
+cell    1 =   0.9339934816982E-02
+cell    3 =   0.9341454015940E-02
+cell    5 =   0.9344183781331E-02
+
+[CO2x_total_aqueous_conc]
 category = concentration
 min =   3.7126657903114E-03
 max =   0.4952105337293E-02
@@ -34,7 +61,16 @@ cell    1 =   0.4952105337293E-02
 cell    3 =   0.4008360856006E-02
 cell    5 =   0.3712665790311E-02
 
-[CH4]
+[CO2x_gas_partial_pressure]
+category = concentration
+min =   3.4690761328348E-04
+max =   0.4106620369603E-03
+mean =   0.3705750892482E-03
+cell    1 =   0.3669434844756E-03
+cell    3 =   0.3507599446041E-03
+cell    5 =   0.3562330242365E-03
+
+[CH4_total_aqueous_conc]
 category = concentration
 min =   8.1245973629583E-06
 max =   0.1355679210776E-04
@@ -43,7 +79,16 @@ cell    1 =   0.1355679210776E-04
 cell    3 =   0.1104812666606E-04
 cell    5 =   0.9870213907865E-05
 
-[BLK_H2O]
+[CH4_gas_partial_pressure]
+category = concentration
+min =   1.7899763273975E-06
+max =   0.1812702329824E-05
+mean =   0.1795036626531E-05
+cell    1 =   0.1789976327397E-05
+cell    3 =   0.1790208421857E-05
+cell    5 =   0.1790849781998E-05
+
+[BLK_H2O_total_aqueous_conc]
 category = concentration
 min =   3.5756650343087E+02
 max =   0.4878294482185E+04
@@ -52,7 +97,16 @@ cell    1 =   0.4878294482185E+04
 cell    3 =   0.6688318925490E+03
 cell    5 =   0.9270191836951E+03
 
-[O18_H2O]
+[BLK_H2O_gas_partial_pressure]
+category = concentration
+min =                   NaN
+max =                   NaN
+mean =                   NaN
+cell    1 =                   NaN
+cell    3 =                   NaN
+cell    5 =                   NaN
+
+[O18_H2O_total_aqueous_conc]
 category = concentration
 min =   3.5756650343087E+02
 max =   0.4878294482185E+04
@@ -61,12 +115,39 @@ cell    1 =   0.4878294482185E+04
 cell    3 =   0.6688318925490E+03
 cell    5 =   0.9270191836951E+03
 
-[D_H2O]
+[O18_H2O_gas_partial_pressure]
 category = concentration
-min =   3.5756650343086E+02
+min =                   NaN
+max =                   NaN
+mean =                   NaN
+cell    1 =                   NaN
+cell    3 =                   NaN
+cell    5 =                   NaN
+
+[D_H2O_total_aqueous_conc]
+category = concentration
+min =   3.5756650343087E+02
 max =   0.4878294482185E+04
 mean =   0.1188168955219E+04
 cell    1 =   0.4878294482185E+04
 cell    3 =   0.6688318925490E+03
 cell    5 =   0.9270191836951E+03
+
+[D_H2O_gas_partial_pressure]
+category = concentration
+min =                   NaN
+max =                   NaN
+mean =                   NaN
+cell    1 =                   NaN
+cell    3 =                   NaN
+cell    5 =                   NaN
+
+[total_gas_pressure]
+category = concentration
+min =   8.6357718913265E+04
+max =   0.1045283816461E+06
+mean =   0.9276129361410E+05
+cell    1 =   0.9068859290817E+05
+cell    3 =   0.9112705461614E+05
+cell    5 =   0.9170029488650E+05
 
