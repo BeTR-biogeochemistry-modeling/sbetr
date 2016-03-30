@@ -223,7 +223,7 @@ contains
      jj = size(ee)       !number of enzymes, dim2
      if(ii/=size(siej,1) .or. jj/=size(siej,2))then
         write(iulog,*)'wrong matrix shape in ecacomplex_m'
-        write(iulog,*)'clm model is stopping'
+        write(iulog,*)'betr is stopping'
         call endrun()
      endif
      siej = 0._r8
@@ -268,7 +268,7 @@ contains
      jj = size(ee)       !number of enzymes, dim2
      if(ii/=size(siej,1) .or. jj/=size(siej,2))then
         write(iulog,*)'wrong matrix shape in ecacomplex_m'
-        write(iulog,*)'clm model is stopping'
+        write(iulog,*)'betr model is stopping'
         call endrun()
      endif
      siej = 0._r8

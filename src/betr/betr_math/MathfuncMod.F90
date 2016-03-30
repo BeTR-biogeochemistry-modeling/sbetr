@@ -102,7 +102,7 @@ contains
 
     if(size(a)/=size(b))then
        write(iulog,*)'the input vectors are not of same size in swap_rv'
-       write(iulog,*)'clm model is stopping'
+       write(iulog,*)'betr is stopping'
        call endrun()
     endif
 

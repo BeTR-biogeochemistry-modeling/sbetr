@@ -25,7 +25,7 @@ module BetrBGCMod
   use BeTR_WaterstateType, only : betr_waterstate_type
   use BeTR_CNStateType, only : betr_cnstate_type
   use BeTR_ColumnType              , only          : col => betr_col
-  use clm_time_manager   , only : get_nstep
+  use betr_time_manager   , only : get_nstep
   use EcophysConType, only : ecophyscon_type
   use tracer_varcon, only : nlevsno => betr_nlevsno
   implicit none
@@ -115,7 +115,7 @@ contains
   subroutine stage_tracer_transport(bounds, num_soilc, filter_soilc, num_soilp, filter_soilp, atm2lnd_vars, &
     carbonflux_vars, soilstate_vars, waterstate_vars, waterflux_vars, temperature_vars, soilhydrology_vars, &
     chemstate_vars, aerecond_vars, canopystate_vars, betrtracer_vars, tracercoeff_vars, &
-    tracerboundarycond_vars, tracerflux_vars, bgc_reaction, Rfactor)
+    tracerboundarycond_vars, tracerflux_vars, bgc_reaction, Rfactor, advection_on)
 
     ! !USES:
     use betr_ctrl                    , only          : betr_use_cn
@@ -161,7 +161,7 @@ contains
     type(tracercoeff_type)           , intent(inout) :: tracercoeff_vars
     type(tracerflux_type)            , intent(inout) :: tracerflux_vars
     real(r8)                         , intent(out)    :: Rfactor(bounds%begc: , bounds%lbj: ,1: ) !retardation factor
-
+    logical, intent(in) :: advection_on
     integer            :: jwt(bounds%begc:bounds%endc)
     integer :: lbj, ubj
 
@@ -233,6 +233,7 @@ contains
          atm2lnd_vars  ,                                                       &
          tracerboundarycond_vars)
 
+    if(advection_on) &
     call calc_tracer_infiltration(bounds, lbj, ubj,              &
          tracerboundarycond_vars%jtops_col,                      &
          num_soilc,                                              &
@@ -259,9 +260,9 @@ contains
 
   subroutine tracer_gws_transport(bounds, num_soilc, filter_soilc, Rfactor, waterstate_vars, &
     waterflux_vars, betrtracer_vars, tracerboundarycond_vars, tracercoeff_vars, &
-    tracerstate_vars, tracerflux_vars, bgc_reaction)
+    tracerstate_vars, tracerflux_vars, bgc_reaction, advection_on, diffusion_on)
 
-    use clm_time_manager             , only          : get_step_size
+    use betr_time_manager             , only          : get_step_size
     ! !USES:
     use tracerfluxType               , only          : tracerflux_type
     use tracerstatetype              , only          : tracerstate_type
@@ -281,6 +282,8 @@ contains
     type(betr_waterstate_type)       , intent(in)    :: waterstate_vars            ! water state variables
     class(betrtracer_type)           , intent(in)    :: betrtracer_vars            ! betr configuration information
     class(bgc_reaction_type)         , intent(in)    :: bgc_reaction
+    logical, intent(in) :: advection_on
+    logical, intent(in) :: diffusion_on
     type(betr_waterflux_type)        , intent(inout) :: waterflux_vars
     type(tracerboundarycond_type)    , intent(inout) :: tracerboundarycond_vars
     type(tracercoeff_type)           , intent(inout) :: tracercoeff_vars
@@ -307,6 +310,8 @@ contains
          col%zi(bounds%begc:bounds%endc,lbj-1:ubj),                           &
          waterstate_vars%h2osoi_liqvol_col(bounds%begc:bounds%endc, lbj:ubj), &
          (/do_advection, do_diffusion/),                                      &
+         advection_on,                                      &
+         diffusion_on,                                      &
          dtime,                                                               &
          betrtracer_vars,                                                     &
          tracerboundarycond_vars,                                             &
@@ -512,8 +517,10 @@ contains
 
   !-------------------------------------------------------------------------------
   subroutine tracer_gw_transport(bounds, lbj, ubj, jtops, num_soilc, filter_soilc, Rfactor,     &
-       dz, zi, h2osoi_liqvol, transp_pathway, dtime,  betrtracer_vars, tracerboundarycond_vars, &
-       tracercoeff_vars, waterflux_vars, bgc_reaction, tracerstate_vars, tracerflux_vars, waterstate_vars)
+       dz, zi, h2osoi_liqvol, transp_pathway, advection_on, diffusion_on, dtime,  &
+       betrtracer_vars, tracerboundarycond_vars, &
+       tracercoeff_vars, waterflux_vars, bgc_reaction, tracerstate_vars, tracerflux_vars,&
+       waterstate_vars)
     !
     ! !DESCRIPTION:
     ! do dual-phase (gas+aqueous) vertical tracer transport
@@ -540,6 +547,8 @@ contains
     real(r8)                      , intent(in)    :: Rfactor(bounds%begc: ,lbj: ,1: )    !rfactor for dual diffusive transport
     integer                       , intent(in)    :: transp_pathway(2)                   !the pathway vector
     real(r8)                      , intent(in)    :: dtime                               !model time step
+    logical, intent(in) :: advection_on
+    logical, intent(in) :: diffusion_on
     type(betr_waterflux_type)     , intent(in)    :: waterflux_vars
     type(tracerboundarycond_type) , intent(in)    :: tracerboundarycond_vars
     class(bgc_reaction_type)      , intent(in)    :: bgc_reaction
@@ -574,7 +583,7 @@ contains
 
     !do diffusive and advective transport, assuming aqueous and gaseous phase are in equilbrium
     do kk = 1 , 2
-       if (transp_pathway(kk) == do_diffusion) then
+       if (transp_pathway(kk) == do_diffusion .and.  diffusion_on) then
           call do_tracer_gw_diffusion(bounds, lbj, ubj,                                    &
                jtops,                                                                      &
                num_soilc,                                                                  &
@@ -589,7 +598,7 @@ contains
                tracerflux_vars,                                                            &
                waterstate_vars)
 
-       elseif (transp_pathway(kk) == do_advection)then
+       elseif (transp_pathway(kk) == do_advection .and. advection_on)then
           jtops0(:) = 1
           call do_tracer_advection(bounds, lbj, ubj, &
                jtops0,                               &
@@ -1504,7 +1513,7 @@ contains
     ! calculate tracer loss through surface water runoff
     !
     ! !USES:
-    use clm_time_manager      , only : get_step_size
+    use betr_time_manager      , only : get_step_size
     use BeTR_WaterStateType   , only : BeTR_Waterstate_Type
     use BeTR_WaterfluxType    , only : betr_waterflux_type
     use tracerfluxType        , only : tracerflux_type
@@ -1611,7 +1620,7 @@ contains
     ! !DESCRIPTION:
     ! apply tracer flux from combining residual snow and ponding water
     ! !USES:
-    use clm_time_manager      , only : get_step_size
+    use betr_time_manager      , only : get_step_size
     use BeTR_WaterfluxType    , only : betr_waterflux_type
     use tracerfluxType        , only : tracerflux_type
     use tracerstatetype       , only : tracerstate_type

@@ -570,7 +570,7 @@ contains
     ! aggregate fluxes for mass balance check
 
     use BetrTracerType        , only : betrtracer_type
-    use clm_time_manager      , only : get_step_size
+    use betr_time_manager     , only : get_step_size
     use tracer_varcon         , only : nlevtrc_soil => betr_nlevtrc_soil
     use MathfuncMod           , only : dot_sum
     class(TracerFlux_type)               :: this

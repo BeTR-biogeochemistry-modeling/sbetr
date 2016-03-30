@@ -16,7 +16,7 @@ module TracerParamsMod
   use betr_varcon           , only : spval => bspval
   use BeTR_PatchType        , only : pft => betr_pft
   use BeTR_ColumnType       , only : col => betr_col
-  use clm_time_manager      , only : get_nstep
+  use betr_time_manager      , only : get_nstep
   use tracer_varcon
   implicit none
   save
@@ -1521,7 +1521,7 @@ contains
   use BeTR_TemperatureType       , only : betr_temperature_type
   use MathfuncMod           , only : safe_div
   use betr_ctrl            , only : betr_use_cn
-  use clm_time_manager      , only : get_step_size, get_nstep
+  use betr_time_manager      , only : get_step_size, get_nstep
   type(bounds_type)            , intent(in)   :: bounds
   integer                      , intent(in)   :: num_soilp                 ! number of column soil points in column filter
   integer                      , intent(in)   :: filter_soilp(:)           ! column filter for soil points
@@ -1659,7 +1659,7 @@ contains
     ! !DESCRIPTION: Annual mean fields.
     !
     ! !USES:
-    use clm_time_manager             , only : get_step_size, get_days_per_year
+    use betr_time_manager             , only : get_step_size, get_days_per_year
     use betr_varcon                  , only : secspday => bsecspday
     use BeTR_CarbonFluxType          , only : betr_carbonflux_type
     use tracercoeffType              , only : tracercoeff_type

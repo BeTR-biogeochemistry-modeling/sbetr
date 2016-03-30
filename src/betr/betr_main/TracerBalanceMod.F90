@@ -12,7 +12,7 @@ module TracerBalanceMod
   use TracerFluxType     , only : TracerFlux_type
   use TracerStateType    , only : TracerState_type
   use BeTR_ColumnType    , only : col => betr_col
-  use clm_time_manager   , only : get_nstep
+  use betr_time_manager   , only : get_nstep
   use betr_ctrl         , only : iulog  => biulog
 
 implicit none
@@ -77,7 +77,7 @@ implicit none
 
       use babortutils            , only : endrun
       use betr_ctrl            , only : iulog  => biulog
-      use clm_time_manager      , only : get_step_size,get_nstep
+      use betr_time_manager      , only : get_step_size,get_nstep
       use betr_varcon           , only : namec  => bnamec
       use tracer_varcon         , only : catomw,natomw
       implicit none

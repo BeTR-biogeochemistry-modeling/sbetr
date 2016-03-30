@@ -29,7 +29,7 @@ module BetrType
   use BeTR_CarbonFluxType, only : betr_carbonflux_type
   use BeTR_WaterstateType, only : betr_waterstate_type
   use BeTR_CNStateType, only : betr_cnstate_type
-  use clm_time_manager   , only : get_nstep
+  use betr_time_manager   , only : get_nstep
   use EcophysConType, only : ecophyscon_type
   use BetrBGCMod
   implicit none
@@ -40,6 +40,9 @@ module BetrType
 
   type, public :: betr_type
      character(len=betr_string_length) :: reaction_method
+     logical :: diffusion_on = .true.
+     logical :: advection_on = .true.
+     logical :: reaction_on  = .true.
 
      class(bgc_reaction_type), allocatable, public :: bgc_reaction
      class(plant_soilbgc_type), allocatable, public :: plant_soilbgc
@@ -172,7 +175,7 @@ contains
     ! read namelist for betr configuration
     ! !USES:
     use spmdMod       , only : masterproc, mpicom
-    use clm_varctl   , only : iulog
+    use betr_ctrl     , only : iulog => biulog
     use babortutils      , only : endrun
     use bshr_log_mod     , only : errMsg => shr_log_errMsg
 
@@ -189,13 +192,18 @@ contains
     character(len=*), parameter :: subname = 'ReadNamelist'
     character(len=betr_string_length) :: reaction_method
     character(len=betr_string_length_long) :: ioerror_msg
-
+    logical :: advection_on, diffusion_on, reaction_on
 
     !-----------------------------------------------------------------------
 
-    namelist / betr_parameters / reaction_method
+    namelist / betr_parameters / &
+         reaction_method, &
+         advection_on, diffusion_on, reaction_on
 
     reaction_method = ''
+    advection_on = .true.
+    diffusion_on = .true.
+    reaction_on = .true.
 
     ! ----------------------------------------------------------------------
     ! Read namelist from standard input.
@@ -223,7 +231,9 @@ contains
     endif
 
     this%reaction_method = reaction_method
-
+    this%advection_on = advection_on
+    this%diffusion_on = diffusion_on
+    this%reaction_on = reaction_on
   end subroutine ReadNamelist
 
   !-------------------------------------------------------------------------------
@@ -235,7 +245,7 @@ contains
     ! run betr code one time step forward, without drainage calculation
 
     ! !USES:
-    use clm_time_manager             , only          : get_step_size
+    use betr_time_manager             , only         : get_step_size
     use tracerfluxType               , only          : tracerflux_type
     use tracerstatetype              , only          : tracerstate_type
     use tracercoeffType              , only          : tracercoeff_type
@@ -296,7 +306,7 @@ contains
     call stage_tracer_transport(bounds, num_soilc, filter_soilc, num_soilp, filter_soilp, atm2lnd_vars, &
          carbonflux_vars, soilstate_vars, waterstate_vars, waterflux_vars, temperature_vars, soilhydrology_vars, &
          chemstate_vars, this%aereconds, canopystate_vars, this%tracers, this%tracercoeffs, &
-         this%tracerboundaryconds, this%tracerfluxes, this%bgc_reaction, Rfactor)
+         this%tracerboundaryconds, this%tracerfluxes, this%bgc_reaction, Rfactor, this%advection_on)
 
     call surface_tracer_hydropath_update(bounds, num_soilc, filter_soilc, &
        waterstate_vars, waterflux_vars, soilhydrology_vars, this%tracers, this%tracerstates, &
@@ -319,7 +329,7 @@ contains
 
     call tracer_gws_transport(bounds, num_soilc, filter_soilc, Rfactor, waterstate_vars, &
       waterflux_vars, this%tracers, this%tracerboundaryconds, this%tracercoeffs, &
-      this%tracerstates, this%tracerfluxes, this%bgc_reaction)
+      this%tracerstates, this%tracerfluxes, this%bgc_reaction, this%advection_on, this%diffusion_on)
 
     call calc_ebullition(bounds, 1, ubj,                                 &
          this%tracerboundaryconds%jtops_col,                             &
@@ -432,7 +442,7 @@ contains
     ! DESCRIPTION:
     ! calculate water flux from dew formation, and sublimation
     ! !USES:
-    use clm_time_manager      , only : get_step_size
+    use betr_time_manager      , only : get_step_size
     use BeTR_WaterfluxType    , only : betr_waterflux_type
     use BeTR_WaterstateType   , only : betr_waterstate_type
     use tracerfluxType        , only : tracerflux_type
@@ -696,7 +706,7 @@ contains
    !
    use BeTR_WaterStateType  , only : betr_waterstate_type
    use BeTR_WaterFluxType   , only : betr_waterflux_type
-   use clm_time_manager     , only : get_step_size
+   use betr_time_manager     , only : get_step_size
    use betr_varcon          , only : denh2o => bdenh2o
    implicit none
    class(betr_type), intent(inout) :: this
@@ -794,7 +804,7 @@ contains
    use BeTR_WaterFluxType   , only : betr_waterflux_type
    use BeTR_WaterStateType  , only : betr_waterstate_type
    use betr_varcon          , only : denh2o => bdenh2o
-   use clm_time_manager     , only : get_step_size
+   use betr_time_manager     , only : get_step_size
 
    implicit none
    class(betr_type), intent(inout) :: this
