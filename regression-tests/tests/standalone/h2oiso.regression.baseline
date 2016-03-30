@@ -8,7 +8,7 @@ cell    3 =   0.4726442258878E+01
 cell    5 =   0.4216121830610E+01
 
 [N2_gas_partial_pressure]
-category = concentration
+category = pressure
 min =   7.7951267685251E-01
 max =   0.7811708576599E+00
 mean =   0.7805693339328E+00
@@ -26,7 +26,7 @@ cell    3 =   0.1294294857210E+01
 cell    5 =   0.1156376439639E+01
 
 [O2_gas_partial_pressure]
-category = concentration
+category = pressure
 min =   2.0914343493345E-01
 max =   0.2106387773898E+00
 mean =   0.2096916844216E+00
@@ -44,7 +44,7 @@ cell    3 =   0.5792609005949E-01
 cell    5 =   0.5178533442020E-01
 
 [AR_gas_partial_pressure]
-category = concentration
+category = pressure
 min =   9.3335753413616E-03
 max =   0.9459158396126E-02
 mean =   0.9366611519759E-02
@@ -62,7 +62,7 @@ cell    3 =   0.4008360856006E-02
 cell    5 =   0.3712665790311E-02
 
 [CO2x_gas_partial_pressure]
-category = concentration
+category = pressure
 min =   3.4690761328348E-04
 max =   0.4106620369603E-03
 mean =   0.3705750892482E-03
@@ -80,7 +80,7 @@ cell    3 =   0.1104812666606E-04
 cell    5 =   0.9870213907865E-05
 
 [CH4_gas_partial_pressure]
-category = concentration
+category = pressure
 min =   1.7899763273975E-06
 max =   0.1812702329824E-05
 mean =   0.1795036626531E-05
@@ -90,7 +90,7 @@ cell    5 =   0.1790849781998E-05
 
 [BLK_H2O_total_aqueous_conc]
 category = concentration
-min =   3.5756650343087E+02
+min =   3.5756650343086E+02
 max =   0.4878294482185E+04
 mean =   0.1188168955219E+04
 cell    1 =   0.4878294482185E+04
@@ -98,7 +98,7 @@ cell    3 =   0.6688318925490E+03
 cell    5 =   0.9270191836951E+03
 
 [BLK_H2O_gas_partial_pressure]
-category = concentration
+category = pressure
 min =                   NaN
 max =                   NaN
 mean =                   NaN
@@ -116,7 +116,7 @@ cell    3 =   0.6688318925490E+03
 cell    5 =   0.9270191836951E+03
 
 [O18_H2O_gas_partial_pressure]
-category = concentration
+category = pressure
 min =                   NaN
 max =                   NaN
 mean =                   NaN
@@ -126,7 +126,7 @@ cell    5 =                   NaN
 
 [D_H2O_total_aqueous_conc]
 category = concentration
-min =   3.5756650343087E+02
+min =   3.5756650343088E+02
 max =   0.4878294482185E+04
 mean =   0.1188168955219E+04
 cell    1 =   0.4878294482185E+04
@@ -134,7 +134,7 @@ cell    3 =   0.6688318925490E+03
 cell    5 =   0.9270191836951E+03
 
 [D_H2O_gas_partial_pressure]
-category = concentration
+category = pressure
 min =                   NaN
 max =                   NaN
 mean =                   NaN
@@ -143,7 +143,7 @@ cell    3 =                   NaN
 cell    5 =                   NaN
 
 [total_gas_pressure]
-category = concentration
+category = pressure
 min =   8.6357718913265E+04
 max =   0.1045283816461E+06
 mean =   0.9276129361410E+05
