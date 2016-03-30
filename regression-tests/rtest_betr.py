@@ -55,10 +55,14 @@ SEPERATOR = '-+- {0}'.format(35*'-')
 # User input
 #
 # -----------------------------------------------------------------------------
-def commandline_options(ext_args=[]):
+def commandline_options(ext_args=None):
     """Process the command line arguments.
 
     NOTE(bja, 201603): ext_args should only be used by the unit tests!
+    The caller should pass a list of args. We default to none so that
+    the arg parser will default back to sys.argv if nothing is
+    specifed.
+
     """
     parser = argparse.ArgumentParser(
         description='FIXME: python program template.')
@@ -89,11 +93,7 @@ def commandline_options(ext_args=[]):
                         help=('update the baseline regression file with '
                               'the results of the current run.'))
 
-    if ext_args:
-        args = ext_args
-    else:
-        args = None
-    options = parser.parse_args(args)
+    options = parser.parse_args(ext_args)
     return options
 
 
