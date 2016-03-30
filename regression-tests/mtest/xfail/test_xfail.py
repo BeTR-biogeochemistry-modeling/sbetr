@@ -15,7 +15,7 @@ if sys.version_info[0] == 2:  # pragma: no coverage
 else:
     from configparser import ConfigParser as config_parser
 
-from rtest_betr import main
+from rtest_betr import main, commandline_options
 
 
 class BeTR_suite(unittest.TestCase):
@@ -26,18 +26,18 @@ class BeTR_suite(unittest.TestCase):
     def setUp(self):
         """
         """
-        logging.basicConfig(filename=self._LOG_FILENAME,
-                            filemode='w',
-                            level=logging.INFO,
-                            format='%(message)s')
-        logging.info('mtest {0} unit test log.'.format(__name__))
+        test_dir = 'mtest/xfail'
+        ext_args = [
+            '--executable', '{0}/dummy.exe'.format(test_dir),
+            '--config', '{0}/xfail.cfg'.format(test_dir),
+            '--check-only',
+        ]
+        self._options = commandline_options(ext_args)
 
     def tearDown(self):
         """
         """
-        logging.shutdown()
-        if os.path.isfile(self._LOG_FILENAME):
-            os.remove(self._LOG_FILENAME)  # pragma: no coverage
+        pass
 
     # ------------------------------------------------------
 
@@ -46,11 +46,8 @@ class BeTR_suite(unittest.TestCase):
         default value.
 
         """
-        expected = True
-        received = True
-
-        self.assertEqual(expected, received)
-
+        status = main(self._options)
+        self.assertNotEqual(status, 0)
 
 if __name__ == '__main__':
     # unittest.main(buffer=True)

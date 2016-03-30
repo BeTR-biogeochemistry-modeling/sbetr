@@ -9,7 +9,7 @@ from __future__ import print_function
 
 import sys
 
-if sys.hexversion < 0x02070000:
+if sys.hexversion < 0x02070000:  # pragma: no coverage
     print(70 * "*")
     print("ERROR: {0} requires python >= 2.7.x. ".format(sys.argv[0]))
     print("It appears that you are running python {0}".format(
@@ -30,7 +30,7 @@ import subprocess
 import time
 import traceback
 
-if sys.version_info[0] == 2:
+if sys.version_info[0] == 2:  # pragma: no coverage
     from ConfigParser import SafeConfigParser as config_parser
 else:
     from configparser import ConfigParser as config_parser
@@ -55,9 +55,10 @@ SEPERATOR = '-+- {0}'.format(35*'-')
 # User input
 #
 # -----------------------------------------------------------------------------
-def commandline_options():
+def commandline_options(ext_args=[]):
     """Process the command line arguments.
 
+    NOTE(bja, 201603): ext_args should only be used by the unit tests!
     """
     parser = argparse.ArgumentParser(
         description='FIXME: python program template.')
@@ -88,7 +89,11 @@ def commandline_options():
                         help=('update the baseline regression file with '
                               'the results of the current run.'))
 
-    options = parser.parse_args()
+    if ext_args:
+        args = ext_args
+    else:
+        args = None
+    options = parser.parse_args(args)
     return options
 
 
@@ -585,6 +590,8 @@ class Comparison(object):
                    'tolerance failure : {3} > {4} [{5}]'.format(
                        self._name, section, key, diff, tol_value, tol_type))
             logging.critical(msg)
+            # FIXME(bja, 201603) ugly side-effect, should be setting
+            # based on return value.....
             self._status = 'fail'
             pass_comparison = False
         else:
@@ -958,7 +965,7 @@ def main(options):
     print("  overall time : {0:5.2f} [s]".format(end_time - start_time))
 
     logging.shutdown()
-    return 0
+    return status.total() - status.passes()
 
 
 if __name__ == "__main__":

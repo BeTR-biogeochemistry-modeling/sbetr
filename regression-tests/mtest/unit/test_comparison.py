@@ -11,7 +11,7 @@ import os.path
 import sys
 import unittest
 
-if sys.version_info[0] == 2:
+if sys.version_info[0] == 2:  # pragma: no cover
     from ConfigParser import SafeConfigParser as config_parser
 else:
     from configparser import ConfigParser as config_parser
@@ -39,7 +39,7 @@ class Comparison_suite(unittest.TestCase):
         """
         logging.shutdown()
         if os.path.isfile(self._LOG_FILENAME):
-            os.remove(self._LOG_FILENAME)
+            os.remove(self._LOG_FILENAME)  # pragma: no coverage
 
     # ------------------------------------------------------
 
@@ -79,7 +79,7 @@ class Comparison_suite(unittest.TestCase):
         """
         conf = {}
         comparison = Comparison('unittest', conf)
-        
+
         section = {'category': 'dog cat',
                    'foo': 'bar baz'}
 
@@ -124,6 +124,80 @@ class Comparison_suite(unittest.TestCase):
             category, section, key, a_data, b_data)
         self.assertFalse(received)
 
+    # ------------------------------------------------------
+    def test_comparison_float_relative_pass(self):
+        """Test that comparison of float with relative tolerance passes when
+        it is less that tolerance.
+
+        """
+        conf = {}
+        comparison = Comparison('unittest', conf)
+        category = comparison._tolerances.CONC
+        comparison.update_from_name(category, '1.0e-4 relative')
+        section = 'foo'
+        key = 'cell 1'
+        a_data = '1.0e-16'
+        b_data = '1.00001e-16'
+
+        received = comparison._compare_float_values_with_tolerance(
+            category, section, key, a_data, b_data)
+        self.assertTrue(received)
+
+    def test_comparison_float_relative_fail(self):
+        """Test that comparison of float with relative tolerance fails when it
+        is greater than tolerance.
+
+        """
+        conf = {}
+        comparison = Comparison('unittest', conf)
+        category = comparison._tolerances.CONC
+        comparison.update_from_name(category, '1.0e-5 relative')
+        section = 'foo'
+        key = 'cell 1'
+        a_data = '1.0e-16'
+        b_data = '1.00001e-16'
+
+        received = comparison._compare_float_values_with_tolerance(
+            category, section, key, a_data, b_data)
+        self.assertFalse(received)
+
+    # ------------------------------------------------------
+    def test_comparison_float_percent_pass(self):
+        """Test that comparison of float with percent tolerance passes when
+        it is less that tolerance.
+
+        """
+        conf = {}
+        comparison = Comparison('unittest', conf)
+        category = comparison._tolerances.CONC
+        comparison.update_from_name(category, '5.0 percent')
+        section = 'foo'
+        key = 'cell 1'
+        a_data = '1.0e-16'
+        b_data = '1.04e-16'
+
+        received = comparison._compare_float_values_with_tolerance(
+            category, section, key, a_data, b_data)
+        self.assertTrue(received)
+
+    def test_comparison_float_percent_fail(self):
+        """Test that comparison of float with percent tolerance fails when it
+        is greater than tolerance.
+
+        """
+        conf = {}
+        comparison = Comparison('unittest', conf)
+        category = comparison._tolerances.CONC
+        comparison.update_from_name(category, '5.0 percent')
+        section = 'foo'
+        key = 'cell 1'
+        a_data = '1.0e-16'
+        b_data = '1.06e-16'
+
+        received = comparison._compare_float_values_with_tolerance(
+            category, section, key, a_data, b_data)
+        self.assertFalse(received)
+
 if __name__ == '__main__':
     # unittest.main(buffer=True)
-    unittest.main()
+    unittest.main()  # pragma: no cover

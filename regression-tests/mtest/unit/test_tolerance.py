@@ -10,7 +10,7 @@ import os
 import sys
 import unittest
 
-if sys.version_info[0] == 2:
+if sys.version_info[0] == 2:  # pragma: no coverage
     from ConfigParser import SafeConfigParser as config_parser
 else:
     from configparser import ConfigParser as config_parser
@@ -38,7 +38,7 @@ class Tolerances_suite(unittest.TestCase):
         """
         logging.shutdown()
         if os.path.isfile(self._LOG_FILENAME):
-            os.remove(self._LOG_FILENAME)
+            os.remove(self._LOG_FILENAME)  # pragma: no coverage
 
     # ------------------------------------------------------
 
@@ -200,7 +200,7 @@ data key.  type.
         self.assertRaises(RuntimeError,
                           tolerances.get, category, key)
 
-        
+
 if __name__ == '__main__':
     # unittest.main(buffer=True)
-    unittest.main()
+    unittest.main()  # pragma: no coverage

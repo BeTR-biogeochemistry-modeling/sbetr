@@ -10,7 +10,7 @@ import os
 import sys
 import unittest
 
-if sys.version_info[0] == 2:
+if sys.version_info[0] == 2:  # pragma: no coverage
     from ConfigParser import SafeConfigParser as config_parser
 else:
     from configparser import ConfigParser as config_parser
@@ -38,7 +38,7 @@ class StatusSummary_suite(unittest.TestCase):
         """
         logging.shutdown()
         if os.path.isfile(self._LOG_FILENAME):
-            os.remove(self._LOG_FILENAME)
+            os.remove(self._LOG_FILENAME)  # pragma: no coverage
 
     # ------------------------------------------------------
 
@@ -49,7 +49,7 @@ class StatusSummary_suite(unittest.TestCase):
         """
         status = StatusSummary()
         expected = 0
-        
+
         received = status.skips()
         self.assertEqual(expected, received)
 
@@ -75,35 +75,7 @@ class StatusSummary_suite(unittest.TestCase):
         self.assertEqual(expected, received)
 
     def test_status_add_skip_specified(self):
-        """Test default increment of skips
-
-        """
-        status = StatusSummary()
-
-        expected = 2
-        status.add_skip(2)
-        received = status.skips()
-        self.assertEqual(expected, received)
-
-        expected = 5
-        status.add_skip(3)
-        received = status.skips()
-        self.assertEqual(expected, received)
-
-    def test_status_add_skip_default(self):
-        """Test default increment of skips
-
-        """
-        status = StatusSummary()
-        expected = 2
-
-        status.add_skip()
-        status.add_skip()
-        received = status.skips()
-        self.assertEqual(expected, received)
-
-    def test_status_add_skip_specified(self):
-        """Test default increment of skips
+        """Test specified increment of skips
 
         """
         status = StatusSummary()
@@ -279,4 +251,4 @@ added.
 # -----------------------------------------------------------------------------
 if __name__ == '__main__':
     # unittest.main(buffer=True)
-    unittest.main()
+    unittest.main()  # pragma: no coverage
