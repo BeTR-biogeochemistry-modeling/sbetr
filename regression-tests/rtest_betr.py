@@ -528,7 +528,16 @@ class Comparison(object):
     def _compare_options(self, section, a_data, a_name, b_data, b_name):
         """
         """
-        category = self._get_section_category(section, a_data)
+        a_category = self._get_section_category(section, a_data)
+        b_category = self._get_section_category(section, b_data)
+        if a_category != b_category:
+            self._status = 'fail'
+            msg = ('  FAILURE : {0} : data category does not match:\n'
+                   '      {1} = {2}\n'
+                   '      {3} = {4}\n'.format(section, a_name, a_category,
+                                              b_name, b_category))
+            logging.critical(msg)
+
         for key in a_data:
             if key not in b_data:
                 msg = ('  FAIURE : {0} : key "{1}" present in {2} '
@@ -539,7 +548,7 @@ class Comparison(object):
                 pass
             else:
                 self._compare_values_with_tolerance(
-                    category, section, key, a_data[key], b_data[key])
+                    a_category, section, key, a_data[key], b_data[key])
 
     def _compare_values_with_tolerance(
             self, category, section, key, a_data, b_data):
