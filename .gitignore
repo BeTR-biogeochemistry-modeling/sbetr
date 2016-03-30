@@ -15,6 +15,15 @@ build/
 *.bak
 *.regression
 
+# python coverage output
+.coverage
+coverage-html
+
+# python virtual environments
+env/
+env2/
+env3/
+
 # simulation output
 *.output.nc
 
