@@ -50,7 +50,7 @@ contains
   use LandunitType        , only : lun
   use PatchType           , only : pft
   use landunit_varcon     , only : istsoil
-  use clm_time_manager    , only : proc_initstep, proc_nextstep
+  use betr_time_manager    , only : proc_initstep, proc_nextstep
   use accumulMod
 
 

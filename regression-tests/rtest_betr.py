@@ -9,7 +9,7 @@ from __future__ import print_function
 
 import sys
 
-if sys.hexversion < 0x02070000:
+if sys.hexversion < 0x02070000:  # pragma: no coverage
     print(70 * "*")
     print("ERROR: {0} requires python >= 2.7.x. ".format(sys.argv[0]))
     print("It appears that you are running python {0}".format(
@@ -30,7 +30,7 @@ import subprocess
 import time
 import traceback
 
-if sys.version_info[0] == 2:
+if sys.version_info[0] == 2:  # pragma: no coverage
     from ConfigParser import SafeConfigParser as config_parser
 else:
     from configparser import ConfigParser as config_parser
@@ -55,8 +55,13 @@ SEPERATOR = '-+- {0}'.format(35*'-')
 # User input
 #
 # -----------------------------------------------------------------------------
-def commandline_options():
+def commandline_options(ext_args=None):
     """Process the command line arguments.
+
+    NOTE(bja, 201603): ext_args should only be used by the unit tests!
+    The caller should pass a list of args. We default to none so that
+    the arg parser will default back to sys.argv if nothing is
+    specifed.
 
     """
     parser = argparse.ArgumentParser(
@@ -88,7 +93,7 @@ def commandline_options():
                         help=('update the baseline regression file with '
                               'the results of the current run.'))
 
-    options = parser.parse_args()
+    options = parser.parse_args(ext_args)
     return options
 
 
@@ -157,24 +162,22 @@ class RegressionTestSuite(object):
                 msg = "{0} : {1}".format(self._name, e)
                 raise RuntimeError(msg)
 
-    def run_tests(self, executable, check_only, dry_run):
+    def run_tests(self, executable, check_only, dry_run, update_baseline):
         """Run the tests in the test suite
+
+        Note: we want to update the baselines from here rather than in
+        a separate function call to the test suite so the update
+        baseline occurs next to the test results in the global test
+        log.
+
         """
         logging.info(BANNER)
         logging.info('Running tests for "{0}"'.format(self._name))
         os.chdir(self._test_dir)
         for test in self._tests:
             test.run(executable, check_only, dry_run)
-        print()
-
-    def update_baseline_files(self, dry_run):
-        """Update the baseline regression files with the results from the
-        current run.
-
-        """
-        os.chdir(self._test_dir)
-        for test in self._tests:
-            test.update_baseline(dry_run)
+            if update_baseline:
+                test.update_baseline(dry_run)
 
     def num_tests(self):
         """Return the number of tests in the test suite
@@ -208,6 +211,8 @@ class RegressionTestSuite(object):
 class RegressionTest(object):
     """
     """
+    _REGRESSION = 'regression'
+    _BASELINE = 'regression.baseline'
 
     def __init__(self, name, comparison, options, timeout):
         """Note: assume that we are in the test directory.
@@ -383,7 +388,7 @@ class RegressionTest(object):
         # NOTE(bja, 201603) relying on implicit ordering. We check
         # baseline first, so if the current regression file is missing
         # we get a failure instead of a skip status!
-        filename = '{0}.regression.baseline'.format(self._name)
+        filename = '{0}.{1}'.format(self._name, self._BASELINE)
         baseline = None
         try:
             baseline = read_config_file_as_dict(filename)
@@ -394,7 +399,7 @@ class RegressionTest(object):
             logging.critical(msg)
             self._status = 'skip'
 
-        filename = '{0}.regression'.format(self._name)
+        filename = '{0}.{1}'.format(self._name, self._REGRESSION)
         regression = None
         try:
             regression = read_config_file_as_dict(filename)
@@ -417,7 +422,18 @@ class RegressionTest(object):
         current run.
 
         """
-        pass
+        current = '{0}.{1}'.format(self._name, self._REGRESSION)
+        baseline = '{0}.{1}'.format(self._name, self._BASELINE)
+        try:
+            logging.info('  mv {0} {1}'.format(current, baseline))
+            if not dry_run:
+                os.rename(current, baseline)
+                logging.critical('  {0} : updated baseline with current '
+                                 'regression file.'.format(self._name))
+        except OSError as e:
+            msg = '    ERROR: {0} : {1} :\n  moving "{2}" to "{3}"'.format(
+                self._name, e, current, baseline)
+            logging.critical(msg)
 
     def _cleanup_previous_run(self):
         """Cleanup any output files that may be left over from a previous run
@@ -425,7 +441,7 @@ class RegressionTest(object):
 
         """
         output_files = [
-            '{0}.regression'.format(self._name),
+            '{0}.{1}'.format(self._name, self._REGRESSION),
             '{0}.stdout'.format(self._name),
             '{0}.output.nc'.format(self._name),
         ]
@@ -512,7 +528,16 @@ class Comparison(object):
     def _compare_options(self, section, a_data, a_name, b_data, b_name):
         """
         """
-        category = self._get_section_category(section, a_data)
+        a_category = self._get_section_category(section, a_data)
+        b_category = self._get_section_category(section, b_data)
+        if a_category != b_category:
+            self._status = 'fail'
+            msg = ('  FAILURE : {0} : data category does not match:\n'
+                   '      {1} = {2}\n'
+                   '      {3} = {4}\n'.format(section, a_name, a_category,
+                                              b_name, b_category))
+            logging.critical(msg)
+
         for key in a_data:
             if key not in b_data:
                 msg = ('  FAIURE : {0} : key "{1}" present in {2} '
@@ -523,7 +548,7 @@ class Comparison(object):
                 pass
             else:
                 self._compare_values_with_tolerance(
-                    category, section, key, a_data[key], b_data[key])
+                    a_category, section, key, a_data[key], b_data[key])
 
     def _compare_values_with_tolerance(
             self, category, section, key, a_data, b_data):
@@ -574,6 +599,8 @@ class Comparison(object):
                    'tolerance failure : {3} > {4} [{5}]'.format(
                        self._name, section, key, diff, tol_value, tol_type))
             logging.critical(msg)
+            # FIXME(bja, 201603) ugly side-effect, should be setting
+            # based on return value.....
             self._status = 'fail'
             pass_comparison = False
         else:
@@ -602,11 +629,13 @@ class Tolerances(object):
     # tolerance category names
     GENERAL = 'general'
     CONC = 'concentration'
+    PRESSURE = 'pressure'
     VELOCITY = 'velocity'
     # DISCRETE = 'discrete'
     _KNOWN_CATEGORIES = [
         GENERAL,
         CONC,
+        PRESSURE,
         VELOCITY,
     ]
 
@@ -926,8 +955,11 @@ def main(options):
     print('Running tests:')
     dry_run = options.dry_run
     check_only = options.check_only
+    update_baseline = options.update_baseline
     for suite in test_suites:
-        suite.run_tests(executable, check_only, dry_run)
+        suite.run_tests(executable, check_only, dry_run, update_baseline)
+
+    print()
     print(BANNER)
 
     status = StatusSummary()
@@ -944,7 +976,7 @@ def main(options):
     print("  overall time : {0:5.2f} [s]".format(end_time - start_time))
 
     logging.shutdown()
-    return 0
+    return status.total() - status.passes()
 
 
 if __name__ == "__main__":

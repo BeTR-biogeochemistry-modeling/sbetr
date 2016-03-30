@@ -43,4 +43,6 @@ the code coverage tool and ensure that you are maintaining or
 increasing code coverage before your changes will be accepted. Code
 coverage reports are obtained by running:
 
-    coverage
+    make test-coverage
+
+from the regression-tests directory, not the mtest directory.

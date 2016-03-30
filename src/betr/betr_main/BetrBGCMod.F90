@@ -25,7 +25,7 @@ module BetrBGCMod
   use BeTR_WaterstateType, only : betr_waterstate_type
   use BeTR_CNStateType, only : betr_cnstate_type
   use BeTR_ColumnType              , only          : col => betr_col
-  use clm_time_manager   , only : get_nstep
+  use betr_time_manager   , only : get_nstep
   use EcophysConType, only : ecophyscon_type
   use tracer_varcon, only : nlevsno => betr_nlevsno
   implicit none
@@ -115,7 +115,7 @@ contains
   subroutine stage_tracer_transport(bounds, num_soilc, filter_soilc, num_soilp, filter_soilp, atm2lnd_vars, &
     carbonflux_vars, soilstate_vars, waterstate_vars, waterflux_vars, temperature_vars, soilhydrology_vars, &
     chemstate_vars, aerecond_vars, canopystate_vars, betrtracer_vars, tracercoeff_vars, &
-    tracerboundarycond_vars, tracerflux_vars, bgc_reaction, Rfactor)
+    tracerboundarycond_vars, tracerflux_vars, bgc_reaction, Rfactor, advection_on)
 
     ! !USES:
     use betr_ctrl                    , only          : betr_use_cn
@@ -161,7 +161,7 @@ contains
     type(tracercoeff_type)           , intent(inout) :: tracercoeff_vars
     type(tracerflux_type)            , intent(inout) :: tracerflux_vars
     real(r8)                         , intent(out)    :: Rfactor(bounds%begc: , bounds%lbj: ,1: ) !retardation factor
-
+    logical, intent(in) :: advection_on
     integer            :: jwt(bounds%begc:bounds%endc)
     integer :: lbj, ubj
 
@@ -233,6 +233,7 @@ contains
          atm2lnd_vars  ,                                                       &
          tracerboundarycond_vars)
 
+    if(advection_on) &
     call calc_tracer_infiltration(bounds, lbj, ubj,              &
          tracerboundarycond_vars%jtops_col,                      &
          num_soilc,                                              &
@@ -261,7 +262,7 @@ contains
     waterflux_vars, betrtracer_vars, tracerboundarycond_vars, tracercoeff_vars, &
     tracerstate_vars, tracerflux_vars, bgc_reaction, advection_on, diffusion_on)
 
-    use clm_time_manager             , only          : get_step_size
+    use betr_time_manager             , only          : get_step_size
     ! !USES:
     use tracerfluxType               , only          : tracerflux_type
     use tracerstatetype              , only          : tracerstate_type
@@ -1510,7 +1511,7 @@ contains
     ! calculate tracer loss through surface water runoff
     !
     ! !USES:
-    use clm_time_manager      , only : get_step_size
+    use betr_time_manager      , only : get_step_size
     use BeTR_WaterStateType   , only : BeTR_Waterstate_Type
     use BeTR_WaterfluxType    , only : betr_waterflux_type
     use tracerfluxType        , only : tracerflux_type
@@ -1617,7 +1618,7 @@ contains
     ! !DESCRIPTION:
     ! apply tracer flux from combining residual snow and ponding water
     ! !USES:
-    use clm_time_manager      , only : get_step_size
+    use betr_time_manager      , only : get_step_size
     use BeTR_WaterfluxType    , only : betr_waterflux_type
     use tracerfluxType        , only : tracerflux_type
     use tracerstatetype       , only : tracerstate_type
