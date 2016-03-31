@@ -197,9 +197,9 @@ contains
     !solve linear equation Ax=r, using the LU decomposition
     implicit none
     ! !ARGUMENTS:
+    integer  , intent(in)    :: n
     real(r8) , intent(inout) :: a(n,n)
     real(r8) , intent(inout) :: r(n)
-    integer  , intent(in)    :: n
 
     ! !LOCAL VARIABLES:
     real(r8) :: d(n)
@@ -227,10 +227,10 @@ contains
 
     implicit none
     ! !ARGUMENTS:
+    integer  ,    intent(in) :: n
     real(r8) ,    intent(in) :: a(n,n)
     integer  ,    intent(in) :: indx(n)
     real(r8) , intent(inout) :: b(n)
-    integer  ,    intent(in) :: n
 
     ! !LOCAL VARIABLES:
     integer :: i,ii,ll
@@ -274,10 +274,10 @@ contains
     use MathfuncMod, only : swap
     implicit none
     ! !ARGUMENTS:
+    integer  ,  intent(in)  :: n
     real(r8), intent(inout) :: a(n,n)
     integer   , intent(out) :: indx(n)
     real(r8)  , intent(out) :: d(n)
-    integer  ,  intent(in)  :: n
 
     ! !LOCAL VARIABLES:
     real(r8), dimension(size(a,1)) :: vv !vv stores the implicit scaling of each row.
