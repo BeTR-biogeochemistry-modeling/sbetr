@@ -57,6 +57,8 @@ include_directories(${CMAKE_BINARY_DIR}/src/esmf_wrf_timemgr)
 include(add_betr_library)
 add_betr_library(betr_stub_clm ${BETR_STUB_CLM_SOURCES})
 
+set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -w")
+
 set(BETR_LIBRARIES betr_stub_clm;${BETR_LIBRARIES} PARENT_SCOPE)
 set(BETR_LIBRARIES betr_stub_clm;${BETR_LIBRARIES})
 
