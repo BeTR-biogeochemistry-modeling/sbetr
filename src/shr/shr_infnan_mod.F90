@@ -71,7 +71,7 @@ public :: shr_infnan_isneginf
 
 ! Locally defined isnan.
 #ifndef HAVE_IEEE_ARITHMETIC
-#line 70 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 70 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 interface shr_infnan_isnan
    ! TYPE double,real
    module procedure shr_infnan_isnan_double
@@ -80,7 +80,7 @@ interface shr_infnan_isnan
 end interface
 #endif
 
-#line 76 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 76 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 interface shr_infnan_isinf
    ! TYPE double,real
    module procedure shr_infnan_isinf_double
@@ -88,7 +88,7 @@ interface shr_infnan_isinf
    module procedure shr_infnan_isinf_real
 end interface
 
-#line 81 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 81 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 interface shr_infnan_isposinf
    ! TYPE double,real
    module procedure shr_infnan_isposinf_double
@@ -96,7 +96,7 @@ interface shr_infnan_isposinf
    module procedure shr_infnan_isposinf_real
 end interface
 
-#line 86 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 86 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 interface shr_infnan_isneginf
    ! TYPE double,real
    module procedure shr_infnan_isneginf_double
@@ -124,7 +124,7 @@ type :: shr_infnan_inf_type
 end type shr_infnan_inf_type
 
 ! Allow assigning reals to NaN or Inf.
-#line 111 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 111 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 interface assignment(=)
    ! TYPE double,real
    ! DIMS 0,1,2,3,4,5,6,7
@@ -225,13 +225,13 @@ interface assignment(=)
 end interface
 
 ! Conversion functions.
-#line 121 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 121 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 interface shr_infnan_to_r8
    module procedure nan_r8
    module procedure inf_r8
 end interface
 
-#line 126 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 126 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 interface shr_infnan_to_r4
    module procedure nan_r4
    module procedure inf_r4
@@ -272,7 +272,7 @@ integer(i8), parameter :: dposinf_pat = int(Z'7FF0000000000000',i8)
 integer(i8), parameter :: dneginf_pat = ibset(dposinf_pat,bit_size(1_i8)-1)
 #endif
 
-#line 166 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 166 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 contains
 
 !---------------------------------------------------------------------
@@ -282,24 +282,24 @@ contains
 !---------------------------------------------------------------------
 
 ! TYPE double,real
-#line 175 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 175 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 elemental function shr_infnan_isinf_double(x) result(isinf)
   real(r8), intent(in) :: x
   logical :: isinf
 
   isinf = shr_infnan_isposinf(x) .or. shr_infnan_isneginf(x)
 
-#line 181 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 181 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end function shr_infnan_isinf_double
 ! TYPE double,real
-#line 175 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 175 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 elemental function shr_infnan_isinf_real(x) result(isinf)
   real(r4), intent(in) :: x
   logical :: isinf
 
   isinf = shr_infnan_isposinf(x) .or. shr_infnan_isneginf(x)
 
-#line 181 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 181 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end function shr_infnan_isinf_real
 
 #ifdef HAVE_IEEE_ARITHMETIC
@@ -311,7 +311,7 @@ end function shr_infnan_isinf_real
 !---------------------------------------------------------------------
 
 ! TYPE double,real
-#line 192 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 192 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 elemental function shr_infnan_isposinf_double(x) result(isposinf)
   use, intrinsic :: ieee_arithmetic, only: &
        ieee_class, &
@@ -322,10 +322,10 @@ elemental function shr_infnan_isposinf_double(x) result(isposinf)
 
   isposinf = (ieee_positive_inf == ieee_class(x))
 
-#line 202 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 202 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end function shr_infnan_isposinf_double
 ! TYPE double,real
-#line 192 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 192 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 elemental function shr_infnan_isposinf_real(x) result(isposinf)
   use, intrinsic :: ieee_arithmetic, only: &
        ieee_class, &
@@ -336,11 +336,11 @@ elemental function shr_infnan_isposinf_real(x) result(isposinf)
 
   isposinf = (ieee_positive_inf == ieee_class(x))
 
-#line 202 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 202 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end function shr_infnan_isposinf_real
 
 ! TYPE double,real
-#line 205 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 205 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 elemental function shr_infnan_isneginf_double(x) result(isneginf)
   use, intrinsic :: ieee_arithmetic, only: &
        ieee_class, &
@@ -351,10 +351,10 @@ elemental function shr_infnan_isneginf_double(x) result(isneginf)
 
   isneginf = (ieee_negative_inf == ieee_class(x))
 
-#line 215 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 215 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end function shr_infnan_isneginf_double
 ! TYPE double,real
-#line 205 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 205 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 elemental function shr_infnan_isneginf_real(x) result(isneginf)
   use, intrinsic :: ieee_arithmetic, only: &
        ieee_class, &
@@ -365,7 +365,7 @@ elemental function shr_infnan_isneginf_real(x) result(isneginf)
 
   isneginf = (ieee_negative_inf == ieee_class(x))
 
-#line 215 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 215 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end function shr_infnan_isneginf_real
 
 #else
@@ -374,24 +374,24 @@ end function shr_infnan_isneginf_real
 #ifdef CPRGNU
 ! NaN testing on gfortran.
 ! TYPE double,real
-#line 223 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 223 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 elemental function shr_infnan_isnan_double(x) result(is_nan)
   real(r8), intent(in) :: x
   logical :: is_nan
 
   is_nan = isnan(x)
 
-#line 229 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 229 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end function shr_infnan_isnan_double
 ! TYPE double,real
-#line 223 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 223 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 elemental function shr_infnan_isnan_real(x) result(is_nan)
   real(r4), intent(in) :: x
   logical :: is_nan
 
   is_nan = isnan(x)
 
-#line 229 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 229 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end function shr_infnan_isnan_real
 ! End GNU section.
 #endif
@@ -402,7 +402,7 @@ end function shr_infnan_isnan_real
 !---------------------------------------------------------------------
 
 ! TYPE double,real
-#line 239 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 239 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 elemental function shr_infnan_isposinf_double(x) result(isposinf)
   real(r8), intent(in) :: x
   logical :: isposinf
@@ -414,10 +414,10 @@ elemental function shr_infnan_isposinf_double(x) result(isposinf)
 
   isposinf = (x == transfer(posinf_pat,x))
 
-#line 250 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 250 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end function shr_infnan_isposinf_double
 ! TYPE double,real
-#line 239 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 239 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 elemental function shr_infnan_isposinf_real(x) result(isposinf)
   real(r4), intent(in) :: x
   logical :: isposinf
@@ -429,11 +429,11 @@ elemental function shr_infnan_isposinf_real(x) result(isposinf)
 
   isposinf = (x == transfer(posinf_pat,x))
 
-#line 250 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 250 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end function shr_infnan_isposinf_real
 
 ! TYPE double,real
-#line 253 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 253 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 elemental function shr_infnan_isneginf_double(x) result(isneginf)
   real(r8), intent(in) :: x
   logical :: isneginf
@@ -445,10 +445,10 @@ elemental function shr_infnan_isneginf_double(x) result(isneginf)
 
   isneginf = (x == transfer(neginf_pat,x))
 
-#line 264 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 264 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end function shr_infnan_isneginf_double
 ! TYPE double,real
-#line 253 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 253 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 elemental function shr_infnan_isneginf_real(x) result(isneginf)
   real(r4), intent(in) :: x
   logical :: isneginf
@@ -460,7 +460,7 @@ elemental function shr_infnan_isneginf_real(x) result(isneginf)
 
   isneginf = (x == transfer(neginf_pat,x))
 
-#line 264 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 264 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end function shr_infnan_isneginf_real
 
 ! End ieee_arithmetic conditional.
@@ -484,7 +484,7 @@ end function shr_infnan_isneginf_real
 
 ! TYPE double,real
 ! DIMS 0,1,2,3,4,5,6,7
-#line 287 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 287 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 pure subroutine set_nan_0d_double(output, nan)
 #ifdef HAVE_IEEE_ARITHMETIC
   use, intrinsic :: ieee_arithmetic, only: &
@@ -523,11 +523,11 @@ pure subroutine set_nan_0d_double(output, nan)
 
   output = tmp
 
-#line 325 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 325 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end subroutine set_nan_0d_double
 ! TYPE double,real
 ! DIMS 0,1,2,3,4,5,6,7
-#line 287 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 287 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 pure subroutine set_nan_1d_double(output, nan)
 #ifdef HAVE_IEEE_ARITHMETIC
   use, intrinsic :: ieee_arithmetic, only: &
@@ -566,11 +566,11 @@ pure subroutine set_nan_1d_double(output, nan)
 
   output = tmp
 
-#line 325 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 325 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end subroutine set_nan_1d_double
 ! TYPE double,real
 ! DIMS 0,1,2,3,4,5,6,7
-#line 287 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 287 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 pure subroutine set_nan_2d_double(output, nan)
 #ifdef HAVE_IEEE_ARITHMETIC
   use, intrinsic :: ieee_arithmetic, only: &
@@ -609,11 +609,11 @@ pure subroutine set_nan_2d_double(output, nan)
 
   output = tmp
 
-#line 325 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 325 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end subroutine set_nan_2d_double
 ! TYPE double,real
 ! DIMS 0,1,2,3,4,5,6,7
-#line 287 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 287 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 pure subroutine set_nan_3d_double(output, nan)
 #ifdef HAVE_IEEE_ARITHMETIC
   use, intrinsic :: ieee_arithmetic, only: &
@@ -652,11 +652,11 @@ pure subroutine set_nan_3d_double(output, nan)
 
   output = tmp
 
-#line 325 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 325 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end subroutine set_nan_3d_double
 ! TYPE double,real
 ! DIMS 0,1,2,3,4,5,6,7
-#line 287 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 287 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 pure subroutine set_nan_4d_double(output, nan)
 #ifdef HAVE_IEEE_ARITHMETIC
   use, intrinsic :: ieee_arithmetic, only: &
@@ -695,11 +695,11 @@ pure subroutine set_nan_4d_double(output, nan)
 
   output = tmp
 
-#line 325 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 325 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end subroutine set_nan_4d_double
 ! TYPE double,real
 ! DIMS 0,1,2,3,4,5,6,7
-#line 287 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 287 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 pure subroutine set_nan_5d_double(output, nan)
 #ifdef HAVE_IEEE_ARITHMETIC
   use, intrinsic :: ieee_arithmetic, only: &
@@ -738,11 +738,11 @@ pure subroutine set_nan_5d_double(output, nan)
 
   output = tmp
 
-#line 325 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 325 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end subroutine set_nan_5d_double
 ! TYPE double,real
 ! DIMS 0,1,2,3,4,5,6,7
-#line 287 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 287 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 pure subroutine set_nan_6d_double(output, nan)
 #ifdef HAVE_IEEE_ARITHMETIC
   use, intrinsic :: ieee_arithmetic, only: &
@@ -781,11 +781,11 @@ pure subroutine set_nan_6d_double(output, nan)
 
   output = tmp
 
-#line 325 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 325 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end subroutine set_nan_6d_double
 ! TYPE double,real
 ! DIMS 0,1,2,3,4,5,6,7
-#line 287 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 287 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 pure subroutine set_nan_7d_double(output, nan)
 #ifdef HAVE_IEEE_ARITHMETIC
   use, intrinsic :: ieee_arithmetic, only: &
@@ -824,11 +824,11 @@ pure subroutine set_nan_7d_double(output, nan)
 
   output = tmp
 
-#line 325 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 325 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end subroutine set_nan_7d_double
 ! TYPE double,real
 ! DIMS 0,1,2,3,4,5,6,7
-#line 287 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 287 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 pure subroutine set_nan_0d_real(output, nan)
 #ifdef HAVE_IEEE_ARITHMETIC
   use, intrinsic :: ieee_arithmetic, only: &
@@ -867,11 +867,11 @@ pure subroutine set_nan_0d_real(output, nan)
 
   output = tmp
 
-#line 325 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 325 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end subroutine set_nan_0d_real
 ! TYPE double,real
 ! DIMS 0,1,2,3,4,5,6,7
-#line 287 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 287 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 pure subroutine set_nan_1d_real(output, nan)
 #ifdef HAVE_IEEE_ARITHMETIC
   use, intrinsic :: ieee_arithmetic, only: &
@@ -910,11 +910,11 @@ pure subroutine set_nan_1d_real(output, nan)
 
   output = tmp
 
-#line 325 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 325 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end subroutine set_nan_1d_real
 ! TYPE double,real
 ! DIMS 0,1,2,3,4,5,6,7
-#line 287 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 287 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 pure subroutine set_nan_2d_real(output, nan)
 #ifdef HAVE_IEEE_ARITHMETIC
   use, intrinsic :: ieee_arithmetic, only: &
@@ -953,11 +953,11 @@ pure subroutine set_nan_2d_real(output, nan)
 
   output = tmp
 
-#line 325 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 325 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end subroutine set_nan_2d_real
 ! TYPE double,real
 ! DIMS 0,1,2,3,4,5,6,7
-#line 287 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 287 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 pure subroutine set_nan_3d_real(output, nan)
 #ifdef HAVE_IEEE_ARITHMETIC
   use, intrinsic :: ieee_arithmetic, only: &
@@ -996,11 +996,11 @@ pure subroutine set_nan_3d_real(output, nan)
 
   output = tmp
 
-#line 325 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 325 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end subroutine set_nan_3d_real
 ! TYPE double,real
 ! DIMS 0,1,2,3,4,5,6,7
-#line 287 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 287 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 pure subroutine set_nan_4d_real(output, nan)
 #ifdef HAVE_IEEE_ARITHMETIC
   use, intrinsic :: ieee_arithmetic, only: &
@@ -1039,11 +1039,11 @@ pure subroutine set_nan_4d_real(output, nan)
 
   output = tmp
 
-#line 325 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 325 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end subroutine set_nan_4d_real
 ! TYPE double,real
 ! DIMS 0,1,2,3,4,5,6,7
-#line 287 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 287 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 pure subroutine set_nan_5d_real(output, nan)
 #ifdef HAVE_IEEE_ARITHMETIC
   use, intrinsic :: ieee_arithmetic, only: &
@@ -1082,11 +1082,11 @@ pure subroutine set_nan_5d_real(output, nan)
 
   output = tmp
 
-#line 325 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 325 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end subroutine set_nan_5d_real
 ! TYPE double,real
 ! DIMS 0,1,2,3,4,5,6,7
-#line 287 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 287 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 pure subroutine set_nan_6d_real(output, nan)
 #ifdef HAVE_IEEE_ARITHMETIC
   use, intrinsic :: ieee_arithmetic, only: &
@@ -1125,11 +1125,11 @@ pure subroutine set_nan_6d_real(output, nan)
 
   output = tmp
 
-#line 325 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 325 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end subroutine set_nan_6d_real
 ! TYPE double,real
 ! DIMS 0,1,2,3,4,5,6,7
-#line 287 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 287 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 pure subroutine set_nan_7d_real(output, nan)
 #ifdef HAVE_IEEE_ARITHMETIC
   use, intrinsic :: ieee_arithmetic, only: &
@@ -1168,12 +1168,12 @@ pure subroutine set_nan_7d_real(output, nan)
 
   output = tmp
 
-#line 325 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 325 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end subroutine set_nan_7d_real
 
 ! TYPE double,real
 ! DIMS 0,1,2,3,4,5,6,7
-#line 329 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 329 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 pure subroutine set_inf_0d_double(output, inf)
 #ifdef HAVE_IEEE_ARITHMETIC
   use, intrinsic :: ieee_arithmetic, only: &
@@ -1212,11 +1212,11 @@ pure subroutine set_inf_0d_double(output, inf)
 
   output = tmp
 
-#line 367 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 367 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end subroutine set_inf_0d_double
 ! TYPE double,real
 ! DIMS 0,1,2,3,4,5,6,7
-#line 329 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 329 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 pure subroutine set_inf_1d_double(output, inf)
 #ifdef HAVE_IEEE_ARITHMETIC
   use, intrinsic :: ieee_arithmetic, only: &
@@ -1255,11 +1255,11 @@ pure subroutine set_inf_1d_double(output, inf)
 
   output = tmp
 
-#line 367 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 367 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end subroutine set_inf_1d_double
 ! TYPE double,real
 ! DIMS 0,1,2,3,4,5,6,7
-#line 329 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 329 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 pure subroutine set_inf_2d_double(output, inf)
 #ifdef HAVE_IEEE_ARITHMETIC
   use, intrinsic :: ieee_arithmetic, only: &
@@ -1298,11 +1298,11 @@ pure subroutine set_inf_2d_double(output, inf)
 
   output = tmp
 
-#line 367 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 367 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end subroutine set_inf_2d_double
 ! TYPE double,real
 ! DIMS 0,1,2,3,4,5,6,7
-#line 329 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 329 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 pure subroutine set_inf_3d_double(output, inf)
 #ifdef HAVE_IEEE_ARITHMETIC
   use, intrinsic :: ieee_arithmetic, only: &
@@ -1341,11 +1341,11 @@ pure subroutine set_inf_3d_double(output, inf)
 
   output = tmp
 
-#line 367 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 367 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end subroutine set_inf_3d_double
 ! TYPE double,real
 ! DIMS 0,1,2,3,4,5,6,7
-#line 329 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 329 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 pure subroutine set_inf_4d_double(output, inf)
 #ifdef HAVE_IEEE_ARITHMETIC
   use, intrinsic :: ieee_arithmetic, only: &
@@ -1384,11 +1384,11 @@ pure subroutine set_inf_4d_double(output, inf)
 
   output = tmp
 
-#line 367 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 367 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end subroutine set_inf_4d_double
 ! TYPE double,real
 ! DIMS 0,1,2,3,4,5,6,7
-#line 329 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 329 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 pure subroutine set_inf_5d_double(output, inf)
 #ifdef HAVE_IEEE_ARITHMETIC
   use, intrinsic :: ieee_arithmetic, only: &
@@ -1427,11 +1427,11 @@ pure subroutine set_inf_5d_double(output, inf)
 
   output = tmp
 
-#line 367 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 367 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end subroutine set_inf_5d_double
 ! TYPE double,real
 ! DIMS 0,1,2,3,4,5,6,7
-#line 329 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 329 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 pure subroutine set_inf_6d_double(output, inf)
 #ifdef HAVE_IEEE_ARITHMETIC
   use, intrinsic :: ieee_arithmetic, only: &
@@ -1470,11 +1470,11 @@ pure subroutine set_inf_6d_double(output, inf)
 
   output = tmp
 
-#line 367 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 367 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end subroutine set_inf_6d_double
 ! TYPE double,real
 ! DIMS 0,1,2,3,4,5,6,7
-#line 329 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 329 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 pure subroutine set_inf_7d_double(output, inf)
 #ifdef HAVE_IEEE_ARITHMETIC
   use, intrinsic :: ieee_arithmetic, only: &
@@ -1513,11 +1513,11 @@ pure subroutine set_inf_7d_double(output, inf)
 
   output = tmp
 
-#line 367 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 367 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end subroutine set_inf_7d_double
 ! TYPE double,real
 ! DIMS 0,1,2,3,4,5,6,7
-#line 329 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 329 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 pure subroutine set_inf_0d_real(output, inf)
 #ifdef HAVE_IEEE_ARITHMETIC
   use, intrinsic :: ieee_arithmetic, only: &
@@ -1556,11 +1556,11 @@ pure subroutine set_inf_0d_real(output, inf)
 
   output = tmp
 
-#line 367 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 367 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end subroutine set_inf_0d_real
 ! TYPE double,real
 ! DIMS 0,1,2,3,4,5,6,7
-#line 329 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 329 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 pure subroutine set_inf_1d_real(output, inf)
 #ifdef HAVE_IEEE_ARITHMETIC
   use, intrinsic :: ieee_arithmetic, only: &
@@ -1599,11 +1599,11 @@ pure subroutine set_inf_1d_real(output, inf)
 
   output = tmp
 
-#line 367 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 367 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end subroutine set_inf_1d_real
 ! TYPE double,real
 ! DIMS 0,1,2,3,4,5,6,7
-#line 329 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 329 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 pure subroutine set_inf_2d_real(output, inf)
 #ifdef HAVE_IEEE_ARITHMETIC
   use, intrinsic :: ieee_arithmetic, only: &
@@ -1642,11 +1642,11 @@ pure subroutine set_inf_2d_real(output, inf)
 
   output = tmp
 
-#line 367 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 367 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end subroutine set_inf_2d_real
 ! TYPE double,real
 ! DIMS 0,1,2,3,4,5,6,7
-#line 329 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 329 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 pure subroutine set_inf_3d_real(output, inf)
 #ifdef HAVE_IEEE_ARITHMETIC
   use, intrinsic :: ieee_arithmetic, only: &
@@ -1685,11 +1685,11 @@ pure subroutine set_inf_3d_real(output, inf)
 
   output = tmp
 
-#line 367 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 367 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end subroutine set_inf_3d_real
 ! TYPE double,real
 ! DIMS 0,1,2,3,4,5,6,7
-#line 329 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 329 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 pure subroutine set_inf_4d_real(output, inf)
 #ifdef HAVE_IEEE_ARITHMETIC
   use, intrinsic :: ieee_arithmetic, only: &
@@ -1728,11 +1728,11 @@ pure subroutine set_inf_4d_real(output, inf)
 
   output = tmp
 
-#line 367 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 367 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end subroutine set_inf_4d_real
 ! TYPE double,real
 ! DIMS 0,1,2,3,4,5,6,7
-#line 329 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 329 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 pure subroutine set_inf_5d_real(output, inf)
 #ifdef HAVE_IEEE_ARITHMETIC
   use, intrinsic :: ieee_arithmetic, only: &
@@ -1771,11 +1771,11 @@ pure subroutine set_inf_5d_real(output, inf)
 
   output = tmp
 
-#line 367 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 367 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end subroutine set_inf_5d_real
 ! TYPE double,real
 ! DIMS 0,1,2,3,4,5,6,7
-#line 329 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 329 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 pure subroutine set_inf_6d_real(output, inf)
 #ifdef HAVE_IEEE_ARITHMETIC
   use, intrinsic :: ieee_arithmetic, only: &
@@ -1814,11 +1814,11 @@ pure subroutine set_inf_6d_real(output, inf)
 
   output = tmp
 
-#line 367 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 367 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end subroutine set_inf_6d_real
 ! TYPE double,real
 ! DIMS 0,1,2,3,4,5,6,7
-#line 329 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 329 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 pure subroutine set_inf_7d_real(output, inf)
 #ifdef HAVE_IEEE_ARITHMETIC
   use, intrinsic :: ieee_arithmetic, only: &
@@ -1857,7 +1857,7 @@ pure subroutine set_inf_7d_real(output, inf)
 
   output = tmp
 
-#line 367 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 367 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end subroutine set_inf_7d_real
 
 !---------------------------------------------------------------------
@@ -1866,44 +1866,44 @@ end subroutine set_inf_7d_real
 ! Function methods to get reals from nan/inf types.
 !---------------------------------------------------------------------
 
-#line 375 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 375 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 pure function nan_r8(nan) result(output)
   class(shr_infnan_nan_type), intent(in) :: nan
   real(r8) :: output
 
   output = nan
 
-#line 381 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 381 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end function nan_r8
 
-#line 383 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 383 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 pure function nan_r4(nan) result(output)
   class(shr_infnan_nan_type), intent(in) :: nan
   real(r4) :: output
 
   output = nan
 
-#line 389 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 389 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end function nan_r4
 
-#line 391 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 391 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 pure function inf_r8(inf) result(output)
   class(shr_infnan_inf_type), intent(in) :: inf
   real(r8) :: output
 
   output = inf
 
-#line 397 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 397 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end function inf_r8
 
-#line 399 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 399 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 pure function inf_r4(inf) result(output)
   class(shr_infnan_inf_type), intent(in) :: inf
   real(r4) :: output
 
   output = inf
 
-#line 405 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
+# 405 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
 end function inf_r4
 
 end module shr_infnan_mod
