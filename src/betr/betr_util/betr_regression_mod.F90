@@ -191,7 +191,7 @@ contains
     ! be use in section names. We need to sanitize the names!
     write(this%output, '("[",a,"]")') trim(name)
 
-    write(this%output, '("category = ",a)'), trim(category)
+    write(this%output, '("category = ",a)') trim(category)
     
     val = minval(data(:))
     write(this%output, '("min = ",es21.13)') val
@@ -212,7 +212,7 @@ contains
        cell_increment = int(size(data) / num_cells)
        
        do cell = 1, num_cells, cell_increment
-          write(this%output, '("cell ", i4, " = ", e21.13)'), cell, data(cell)
+          write(this%output, '("cell ", i4, " = ", e21.13)') cell, data(cell)
        end do
     write(this%output, '(a)')
     end if

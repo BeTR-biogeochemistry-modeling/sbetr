@@ -85,6 +85,8 @@ module betr_time_manager
   ! Positive for future times, negative
   ! for previous times.
 
+  ! remove unused dummy arg compiler warning
+  if (offset > 0) continue
 
   !hardwire at the moment
   get_days_per_year = 365
