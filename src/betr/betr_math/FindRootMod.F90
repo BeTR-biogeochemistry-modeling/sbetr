@@ -246,7 +246,7 @@ contains
        b(ll)=b(i)
        if (ii /= 0) then
           summ=summ-dot_product(a(i,ii:i-1),b(ii:i-1))
-       else if (summ /= 0.0) then
+       else if (summ /= 0.0_r8) then
           ii=i !A nonzero element was encountered, so from now on we will
        end if !have to do the dot product above.
        b(i)=summ
@@ -287,7 +287,7 @@ contains
 
     d=1.0 !No row interchanges yet.
     vv=maxval(abs(a),dim=2) !Loop over rows to get the implicit scaling
-    if (any(vv == 0.0)) then
+    if (any(vv == 0.0_r8)) then
        write(6,*)'singular matrix in ludcmp' !information.
        stop
     endif
@@ -301,7 +301,7 @@ contains
           vv(imax)=vv(j) !Also interchange the scale factor.
        end if
        indx(j)=imax
-       if (a(j,j) == 0.0) a(j,j)=TINY
+       if (a(j,j) == 0.0_r8) a(j,j)=TINY
        !       If the pivot element is zero the matrix is singular (at least to the precision of the algorithm).
        !       For some applications on singular matrices, it is desirable to substitute TINY
        !       for zero.
@@ -422,7 +422,7 @@ contains
        endif
        tol1=2._r8*macheps*abs(b)+0.5_r8*tol  !Convergence check.
        xm=0.5_r8*(c-b)
-       if(abs(xm) <= tol1 .or. fb == 0.)then
+       if(abs(xm) <= tol1 .or. fb == 0._r8)then
           x=b
           return
        endif
@@ -539,7 +539,7 @@ contains
        endif
        tol1=2._r8*macheps*abs(b)+0.5_r8*tol  !Convergence check.
        xm=0.5_r8*(c-b)
-       if(abs(xm) <= tol1 .or. fb == 0.)then
+       if(abs(xm) <= tol1 .or. fb == 0._r8)then
           x=b
           return
        endif
