@@ -1133,6 +1133,9 @@ contains
 
    SHR_ASSERT_ALL((ubound(jtops)           == (/bounds%endc/)),        errMsg(filename,__LINE__))
 
+    ! remove compiler warnings for unused dummy args
+   if (size(chemstate_vars%soil_pH) > 0) continue
+
    !compute tortuosity
    !gaseous phase
    call calc_gaseous_diffusion_soil_tortuosity(bounds, lbj, ubj, jtops, numf, filter, &
@@ -1187,7 +1190,10 @@ contains
    SHR_ASSERT_ALL((ubound(jtops)           == (/bounds%endc/)),        errMsg(filename,__LINE__))
    SHR_ASSERT_ALL((ubound(dz)              == (/bounds%endc, ubj/)),        errMsg(filename,__LINE__))
 
-   !compute Henry's law constant
+    ! remove compiler warnings for unused dummy args
+   if (size(soilstate_vars%bsw_col) > 0) continue
+
+    !compute Henry's law constant
    call calc_henrys_coeff(bounds, lbj, ubj, jtops, numf, filter                    , &
        temperature_vars%t_soisno_col(bounds%begc:bounds%endc,lbj:ubj)              , &
        chemstate_vars%soil_pH(bounds%begc:bounds%endc, lbj:ubj),  betrtracer_vars  , &
@@ -1250,6 +1256,13 @@ contains
 
    ! local variables
    integer :: fc, c, j
+
+    ! remove compiler warnings for unused dummy args
+    if (lbj > 0) continue
+    if (ubj > 0) continue
+    !if (len(betrtracer_vars%betr_simname) > 0) continue
+
+   
 
    associate(                                                                          &
     qflx_adv            =>    waterflux_vars%qflx_adv_col                    & !real(r8) (:)  [intent(in)], infiltration, mm/s
@@ -1314,6 +1327,10 @@ contains
 
    real(r8) :: ans
 
+    ! remove compiler warnings for unused dummy args
+    if (trcid > 0) continue
+    if (temp > 0) continue
+    if (len(betrtracer_vars%betr_simname) > 0) continue
 
 
    !now it is set to one, for O18 and H/D, pleasure refer to Braud et al. (2005, J. Hydrology)
@@ -1336,6 +1353,10 @@ contains
 
    real(r8) :: ans
 
+    ! remove compiler warnings for unused dummy args
+    if (trcid > 0) continue
+    if (temp > 0) continue
+    if (len(betrtracer_vars%betr_simname) > 0) continue
 
 
    !now it is set to one, for O18, Roche (2013, GMD) gives some information
@@ -1359,6 +1380,10 @@ contains
 
    real(r8) :: ans
 
+    ! remove compiler warnings for unused dummy args
+    if (trcid > 0) continue
+    if (temp > 0) continue
+    if (len(betrtracer_vars%betr_simname) > 0) continue
 
 
    !now it is set to one, it is equal to alpha_sv*alpha_vl
@@ -1400,7 +1425,13 @@ contains
    SHR_ASSERT_ALL((ubound(h2osoi_ice)        == (/bounds%endc, ubj/)), errMsg(filename,__LINE__))
    SHR_ASSERT_ALL((ubound(dz)                == (/bounds%endc, ubj/)), errMsg(filename,__LINE__))
 
-   associate(                                           &
+    ! remove unused dummy arg compiler warning
+    if (numf > 0) continue
+    if (size(filter) > 0) continue
+    if (size(jtops) > 0) continue
+    if (size(aqu2equilsolidcef_col) > 0) continue
+
+    associate(                                           &
      is_h2o => betrtracer_vars%is_h2o                   &
    )
 
@@ -1683,6 +1714,9 @@ contains
     real(r8):: secsperyear
     logical :: newrun
     !-----------------------------------------------------------------------
+
+    ! remove unused dummy arg compiler warning
+    if (bounds%begc > 0) continue
 
     associate(                                                                  &
          agnpp           =>    carbonflux_vars%agnpp_patch                    , & ! Input:  [real(r8) (:) ]  (gC/m2/s) aboveground NPP

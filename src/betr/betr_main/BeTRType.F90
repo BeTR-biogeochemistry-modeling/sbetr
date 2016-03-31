@@ -467,7 +467,11 @@ contains
     real(r8) :: tot1, totz, tot0, tot2, tot3, tot4
     integer :: fc, c, j, l, ll, ll2
 
-    associate(                                                               & !
+    ! remove compiler warnings about unused dummy args
+    if (this%advection_on) continue
+    if (bounds%begc > 0) continue
+
+   associate(                                                               & !
          snl                =>    col%snl                                 ,  & ! Input:  [integer  (:)   ]  number of snow layers
          dz                 =>    col%dz                                  ,  & ! Input:  [real(r8) (:,:) ]  layer depth (m)
          h2osoi_ice         =>    waterstate_vars%h2osoi_ice_col          ,  & ! Output: [real(r8) (:,:) ]  ice lens (kg/m2)
@@ -559,6 +563,9 @@ contains
   class(tracerstate_type)  , intent(in) :: tracerstate_vars ! tracer state variables data structure
   real(r8) :: totmass, err
 
+  ! remove compiler warnings about unused dummy args
+  if (this%advection_on) continue
+
   associate(                                                                            &
        beg_tracer_molarmass      => tracerstate_vars%beg_tracer_molarmass_col         , &
        tracer_flx_netpro         => tracerflux_vars%tracer_flx_netpro_col             , &
@@ -613,6 +620,8 @@ contains
    real(r8) :: thaw_frac, freeze_frac
    real(r8) :: dtracer
 
+   if (bounds%begc > 0) continue
+
    associate(                                                   &
      frozenid         => this%tracers%frozenid        , &
      is_frozen        => this%tracers%is_frozen       , &
@@ -666,6 +675,12 @@ contains
    integer                , intent(in)    :: num_soilc                        ! number of column non-lake points in column filter
    integer                , intent(in)    :: filter_soilc(:)                  ! column filter for non-lake points
 
+   ! remove compiler warnings about unused dummy args
+   if (this%advection_on) continue
+   if (bounds%begc > 0) continue
+   if (num_soilc > 0) continue
+   if (size(filter_soilc) > 0) continue
+
 !x   call this%bgc_reaction%betr_lsm_flux_state_sendback(bounds, &
 !x       num_soilc, filter_soilc,                    &
 !x       this%tracerstate_vars, this%tracerflux_vars,  this%betrtracer_vars)
@@ -687,6 +702,8 @@ contains
    type(betr_waterstate_type)  , intent(in)    :: waterstate_vars
    integer :: j, fc, c, l
 
+   ! remove compiler warnings about unused dummy args
+   if (bounds%begc > 0) continue
 
    do j = 1, nlevsoi
      do fc = 1, num_nolakec
@@ -726,6 +743,9 @@ contains
    real(r8):: infl_tmp
    real(r8):: scal
    logical :: tf
+
+   if (num_urbanc > 0) continue
+   if (size(filter_urbanc) > 0) continue
 
    SHR_ASSERT_ALL((ubound(qflx_bot)    == (/bounds%endc/))         , errMsg(filename,__LINE__))
 
@@ -820,6 +840,10 @@ contains
    integer :: j, fc, c
    real(r8):: dtime
 
+   ! remove compiler warnings about unused dummy args
+   if (bounds%begc > 0) continue
+   if (num_urbanc > 0) continue
+   if (size(filter_urbanc) > 0) continue
 
    associate(                                                           & !
      h2osoi_liq         =>    waterstate_vars%h2osoi_liq_col          , & ! Output: [real(r8) (:,:) ] liquid water (kg/m2)
@@ -994,6 +1018,9 @@ contains
    !temporary variables
    integer :: fc, c, j, jj
 
+   ! remove compiler warnings about unused dummy args
+   if (bounds%begc > 0) continue
+
    associate(                             &
       tracer_conc_frozen_col => this%tracerstates%tracer_conc_frozen_col , &
       tracer_conc_mobile_col => this%tracerstates%tracer_conc_mobile_col , &
@@ -1036,6 +1063,9 @@ contains
    !temporary variables
    integer :: fc, c, j, jj
 
+   ! remove compiler warnings about unused dummy args
+   if (bounds%begc > 0) continue
+
    associate(                             &
       tracer_conc_frozen_col => this%tracerstates%tracer_conc_frozen_col , &
       tracer_conc_mobile_col => this%tracerstates%tracer_conc_mobile_col , &
@@ -1077,6 +1107,13 @@ contains
    integer                 , intent(in)    :: filter_snowc(:) ! column filter for soil points
    type(betr_waterflux_type), intent(in)   :: waterflux_vars
 
-   end subroutine tracer_snowcapping
+   ! remove compiler warnings about unused dummy args
+   if (this%advection_on) continue
+   if (bounds%begc > 0) continue
+   if (num_snowc > 0) continue
+   if (size(filter_snowc) > 0) continue
+   if (size(waterflux_vars%qflx_drain_vr_col) > 0) continue
+
+  end subroutine tracer_snowcapping
 
 end module BetrType

@@ -98,6 +98,9 @@ contains
     integer :: begc, endc
     real(r8), pointer :: data2dptr_col(:,:) ! temp. pointers for slicing larger arrays
 
+    ! remove compiler warnings for unused dummy args
+    if (size(this%jtops_col) > 0) continue
+    if (bounds%begc > 0) continue
 
   end subroutine InitHistory
 
@@ -116,6 +119,8 @@ contains
     !
     ! !LOCAL VARIABLES:
 
+    ! remove compiler warnings for unused dummy args
+    if (bounds%begc > 0) continue
 
     !-----------------------------------------------------------------------
     this%topbc_type(:)                        = -1
@@ -147,6 +152,11 @@ contains
     integer :: j,c     ! indices
     logical :: readvar ! determine if variable is on initial file
 
+    ! remove compiler warnings for unused dummy args
+    if (size(this%jtops_col) > 0) continue
+    if (bounds%begc > 0) continue
+    if (ncid%fh > 0) continue
+    if (len(flag) > 0) continue
 
   end subroutine Restart
 
@@ -160,7 +170,9 @@ contains
     class(tracerboundarycond_type) :: this
     integer           , intent(in) :: column     ! column index
 
-
-
+    ! remove compiler warnings for unused dummy args
+    if (size(this%jtops_col) > 0) continue
+    if (column > 0) continue
+    
   end subroutine Reset
  end module TracerBoundaryCondType

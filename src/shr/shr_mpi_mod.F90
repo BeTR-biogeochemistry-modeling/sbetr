@@ -122,6 +122,8 @@ SUBROUTINE shr_mpi_chkerr(rcode,string)
 !-------------------------------------------------------------------------------
 ! PURPOSE: layer on MPI error checking
 !-------------------------------------------------------------------------------
+   if (rcode > 0) continue
+   if (len(string) > 0) continue
 
 
 
@@ -151,6 +153,11 @@ SUBROUTINE shr_mpi_sendi0(lvec,pid,tag,comm,string)
 !-------------------------------------------------------------------------------
 
    lsize = 1
+   if (lvec > 0) continue
+   if (pid > 0) continue
+   if (tag > 0) continue
+   if (comm > 0) continue
+   if (len(string) > 0) continue
 
 
 
@@ -178,6 +185,11 @@ SUBROUTINE shr_mpi_sendi1(lvec,pid,tag,comm,string)
 !-------------------------------------------------------------------------------
 ! PURPOSE: Send a vector of integers
 !-------------------------------------------------------------------------------
+   if (lvec(1) > 0) continue
+   if (pid > 0) continue
+   if (tag > 0) continue
+   if (comm > 0) continue
+   if (len(string) > 0) continue
 
 
 
@@ -205,6 +217,11 @@ SUBROUTINE shr_mpi_sendr0(lvec,pid,tag,comm,string)
 !-------------------------------------------------------------------------------
 ! PURPOSE: Send a real scalar
 !-------------------------------------------------------------------------------
+   if (lvec > 0) continue
+   if (pid > 0) continue
+   if (tag > 0) continue
+   if (comm > 0) continue
+   if (len(string) > 0) continue
 
 
 
@@ -232,6 +249,11 @@ SUBROUTINE shr_mpi_sendr1(lvec,pid,tag,comm,string)
 !-------------------------------------------------------------------------------
 ! PURPOSE: Send a vector of reals
 !-------------------------------------------------------------------------------
+   if (lvec(1) > 0) continue
+   if (pid > 0) continue
+   if (tag > 0) continue
+   if (comm > 0) continue
+   if (len(string) > 0) continue
 
 
 
@@ -259,6 +281,11 @@ SUBROUTINE shr_mpi_sendr3(array,pid,tag,comm,string)
 !-------------------------------------------------------------------------------
 ! PURPOSE: Send a vector of reals
 !-------------------------------------------------------------------------------
+   if (array(1, 1, 1) > 0) continue
+   if (pid > 0) continue
+   if (tag > 0) continue
+   if (comm > 0) continue
+   if (len(string) > 0) continue
 
 
 
@@ -287,6 +314,11 @@ SUBROUTINE shr_mpi_recvi0(lvec,pid,tag,comm,string)
 !-------------------------------------------------------------------------------
 ! PURPOSE: Recv a vector of reals
 !-------------------------------------------------------------------------------
+   lvec = 0
+   if (pid > 0) continue
+   if (tag > 0) continue
+   if (comm > 0) continue
+   if (len(string) > 0) continue
 
 
 END SUBROUTINE shr_mpi_recvi0
@@ -314,6 +346,11 @@ SUBROUTINE shr_mpi_recvi1(lvec,pid,tag,comm,string)
 !-------------------------------------------------------------------------------
 ! PURPOSE: Recv a vector of reals
 !-------------------------------------------------------------------------------
+   lvec(1) = 0
+   if (pid > 0) continue
+   if (tag > 0) continue
+   if (comm > 0) continue
+   if (len(string) > 0) continue
 
 
 END SUBROUTINE shr_mpi_recvi1
@@ -341,6 +378,11 @@ SUBROUTINE shr_mpi_recvr0(lvec,pid,tag,comm,string)
 !-------------------------------------------------------------------------------
 ! PURPOSE: Recv a vector of reals
 !-------------------------------------------------------------------------------
+   lvec = 0
+   if (pid > 0) continue
+   if (tag > 0) continue
+   if (comm > 0) continue
+   if (len(string) > 0) continue
 
 
 END SUBROUTINE shr_mpi_recvr0
@@ -368,6 +410,11 @@ SUBROUTINE shr_mpi_recvr1(lvec,pid,tag,comm,string)
 !-------------------------------------------------------------------------------
 ! PURPOSE: Recv a vector of reals
 !-------------------------------------------------------------------------------
+   lvec(1) = 0
+   if (pid > 0) continue
+   if (tag > 0) continue
+   if (comm > 0) continue
+   if (len(string) > 0) continue
 
 
 END SUBROUTINE shr_mpi_recvr1
@@ -395,6 +442,11 @@ SUBROUTINE shr_mpi_recvr3(array,pid,tag,comm,string)
 !-------------------------------------------------------------------------------
 ! PURPOSE: Recv a vector of reals
 !-------------------------------------------------------------------------------
+   array(1, 1, 1) = 0
+   if (pid > 0) continue
+   if (tag > 0) continue
+   if (comm > 0) continue
+   if (len(string) > 0) continue
 
 
 
@@ -422,6 +474,10 @@ SUBROUTINE shr_mpi_bcasti0(vec,comm,string,pebcast)
 !-------------------------------------------------------------------------------
 ! PURPOSE: Broadcast an integer
 !-------------------------------------------------------------------------------
+   vec = vec
+   if (comm > 0) continue
+   if (len(string) > 0) continue
+   if (pebcast > 0) continue
 
 
 
@@ -446,6 +502,10 @@ SUBROUTINE shr_mpi_bcasti80(vec,comm,string,pebcast)
   !-------------------------------------------------------------------------------
   ! PURPOSE: Broadcast an integer
   !-------------------------------------------------------------------------------
+   vec = vec
+   if (comm > 0) continue
+   if (len(string) > 0) continue
+   if (pebcast > 0) continue
 
 
 
@@ -473,6 +533,10 @@ SUBROUTINE shr_mpi_bcastl0(vec,comm,string,pebcast)
 !-------------------------------------------------------------------------------
 ! PURPOSE: Broadcast a logical
 !-------------------------------------------------------------------------------
+   vec = vec
+   if (comm > 0) continue
+   if (len(string) > 0) continue
+   if (pebcast > 0) continue
 
 
 END SUBROUTINE shr_mpi_bcastl0
@@ -499,6 +563,10 @@ SUBROUTINE shr_mpi_bcastc0(vec,comm,string,pebcast)
 !-------------------------------------------------------------------------------
 ! PURPOSE: Broadcast a character string
 !-------------------------------------------------------------------------------
+   vec = vec
+   if (comm > 0) continue
+   if (len(string) > 0) continue
+   if (pebcast > 0) continue
 
 
 
@@ -526,6 +594,10 @@ SUBROUTINE shr_mpi_bcastc1(vec,comm,string,pebcast)
 !-------------------------------------------------------------------------------
 ! PURPOSE: Broadcast a character string
 !-------------------------------------------------------------------------------
+   vec(1) = vec(1)
+   if (comm > 0) continue
+   if (len(string) > 0) continue
+   if (pebcast > 0) continue
 
 
 END SUBROUTINE shr_mpi_bcastc1
@@ -552,6 +624,10 @@ SUBROUTINE shr_mpi_bcastr0(vec,comm,string,pebcast)
 !-------------------------------------------------------------------------------
 ! PURPOSE: Broadcast a real
 !-------------------------------------------------------------------------------
+   vec = vec
+   if (comm > 0) continue
+   if (len(string) > 0) continue
+   if (pebcast > 0) continue
 
 
 
@@ -579,6 +655,10 @@ SUBROUTINE shr_mpi_bcasti1(vec,comm,string,pebcast)
 !-------------------------------------------------------------------------------
 ! PURPOSE: Broadcast a vector of integers
 !-------------------------------------------------------------------------------
+   vec(1) = vec(1)
+   if (comm > 0) continue
+   if (len(string) > 0) continue
+   if (pebcast > 0) continue
 
 
 END SUBROUTINE shr_mpi_bcasti1
@@ -602,6 +682,10 @@ SUBROUTINE shr_mpi_bcasti81(vec,comm,string,pebcast)
   !-------------------------------------------------------------------------------
   ! PURPOSE: Broadcast a vector of integers
   !-------------------------------------------------------------------------------
+   vec(1) = vec(1)
+   if (comm > 0) continue
+   if (len(string) > 0) continue
+   if (pebcast > 0) continue
 
 
 
@@ -629,6 +713,10 @@ SUBROUTINE shr_mpi_bcastl1(vec,comm,string,pebcast)
 !-------------------------------------------------------------------------------
 ! PURPOSE: Broadcast a logical
 !-------------------------------------------------------------------------------
+   vec(1) = vec(1)
+   if (comm > 0) continue
+   if (len(string) > 0) continue
+   if (pebcast > 0) continue
 
 
 
@@ -656,7 +744,10 @@ SUBROUTINE shr_mpi_bcastr1(vec,comm,string,pebcast)
 !-------------------------------------------------------------------------------
 ! PURPOSE: Broadcast a vector of reals
 !-------------------------------------------------------------------------------
-
+   vec(1) = vec(1)
+   if (comm > 0) continue
+   if (len(string) > 0) continue
+   if (pebcast > 0) continue
 
 END SUBROUTINE shr_mpi_bcastr1
 
@@ -684,6 +775,11 @@ SUBROUTINE shr_mpi_bcastr2(arr,comm,string,pebcast)
 !-------------------------------------------------------------------------------
 ! PURPOSE: Broadcast a 2d array of reals
 !-------------------------------------------------------------------------------
+   arr(1, 1) = arr(1, 1)
+   if (comm > 0) continue
+   if (len(string) > 0) continue
+   if (pebcast > 0) continue
+
 
 
 END SUBROUTINE shr_mpi_bcastr2
@@ -712,6 +808,10 @@ SUBROUTINE shr_mpi_bcasti2(arr,comm,string,pebcast)
 !-------------------------------------------------------------------------------
 ! PURPOSE: Broadcast a 2d array of integers
 !-------------------------------------------------------------------------------
+   arr(1, 1) = arr(1, 1)
+   if (comm > 0) continue
+   if (len(string) > 0) continue
+   if (pebcast > 0) continue
 
 
 
@@ -741,6 +841,10 @@ SUBROUTINE shr_mpi_bcastr3(arr,comm,string,pebcast)
 !-------------------------------------------------------------------------------
 ! PURPOSE: Broadcast a 3d array of reals
 !-------------------------------------------------------------------------------
+   arr(1, 1, 1) = arr(1, 1, 1)
+   if (comm > 0) continue
+   if (len(string) > 0) continue
+   if (pebcast > 0) continue
 
 
 
@@ -780,6 +884,13 @@ SUBROUTINE shr_mpi_gathScatvInitr1(comm, rootid, locArr, glob1DArr, globSize, &
 !-------------------------------------------------------------------------------
 ! PURPOSE: Setup arrays for a gatherv/scatterv operation
 !-------------------------------------------------------------------------------
+   if (comm > 0) continue
+   if (rootid > 0) continue
+   glob1DArr(1) = locArr(1)
+   if (locSize > 0) continue
+   if (globSize(1) > 0) continue
+   if (displs(1) > 0) continue
+   if (len(string) > 0) continue
 
 
 END SUBROUTINE shr_mpi_gathScatvInitr1
@@ -811,6 +922,13 @@ SUBROUTINE shr_mpi_gathervr1(locarr, locSize, glob1DArr, globSize, displs, rooti
 !-------------------------------------------------------------------------------
 ! PURPOSE: Gather a 1D array of reals
 !-------------------------------------------------------------------------------
+   glob1DArr(1) = locarr(1)
+   if (locSize > 0) continue
+   if (globSize(1) > 0) continue
+   if (displs(1) > 0) continue
+   if (rootid > 0) continue
+   if (comm > 0) continue
+   if (len(string) > 0) continue
 
 
 END SUBROUTINE shr_mpi_gathervr1
@@ -842,6 +960,13 @@ SUBROUTINE shr_mpi_scattervr1(locarr, locSize, glob1Darr, globSize, displs, root
 !-------------------------------------------------------------------------------
 ! PURPOSE: Scatter a 1D array of reals
 !-------------------------------------------------------------------------------
+   locarr(1) = glob1DArr(1)
+   if (locSize > 0) continue
+   if (globSize(1) > 0) continue
+   if (displs(1) > 0) continue
+   if (rootid > 0) continue
+   if (comm > 0) continue
+   if (len(string) > 0) continue
 
 
 
@@ -876,6 +1001,10 @@ SUBROUTINE shr_mpi_sumi0(lvec,gvec,comm,string,all)
 ! PURPOSE: Finds sum of a distributed vector of values, assume local sum
 !          already computed
 !-------------------------------------------------------------------------------
+   if (len(string) > 0) continue
+   if (comm > 0) continue
+   gvec = lvec
+   if (all) continue
 
 
 
@@ -908,6 +1037,10 @@ SUBROUTINE shr_mpi_sumi1(lvec,gvec,comm,string,all)
 ! PURPOSE: Finds sum of a distributed vector of values, assume local sum
 !          already computed
 !-------------------------------------------------------------------------------
+   if (len(string) > 0) continue
+   if (comm > 0) continue
+   gvec(1) = lvec(1)
+   if (all) continue
 
 
 END SUBROUTINE shr_mpi_sumi1
@@ -939,6 +1072,10 @@ SUBROUTINE shr_mpi_sumb0(lvec,gvec,comm,string,all)
 ! PURPOSE: Finds sum of a distributed vector of values, assume local sum
 !          already computed
 !-------------------------------------------------------------------------------
+   if (len(string) > 0) continue
+   if (comm > 0) continue
+   gvec = lvec
+   if (all) continue
 
 
 END SUBROUTINE shr_mpi_sumb0
@@ -970,6 +1107,10 @@ SUBROUTINE shr_mpi_sumb1(lvec,gvec,comm,string,all)
 ! PURPOSE: Finds sum of a distributed vector of values, assume local sum
 !          already computed
 !-------------------------------------------------------------------------------
+   if (len(string) > 0) continue
+   if (comm > 0) continue
+   gvec(1) = lvec(1)
+   if (all) continue
 
 
 END SUBROUTINE shr_mpi_sumb1
@@ -1001,7 +1142,10 @@ SUBROUTINE shr_mpi_sumr0(lvec,gvec,comm,string,all)
 ! PURPOSE: Finds sum of a distributed vector of values, assume local sum
 !          already computed
 !-------------------------------------------------------------------------------
-
+   if (len(string) > 0) continue
+   if (comm > 0) continue
+   gvec = lvec
+   if (all) continue
 
 
 END SUBROUTINE shr_mpi_sumr0
@@ -1033,6 +1177,10 @@ SUBROUTINE shr_mpi_sumr1(lvec,gvec,comm,string,all)
 ! PURPOSE: Finds sum of a distributed vector of values, assume local sum
 !          already computed
 !-------------------------------------------------------------------------------
+   if (len(string) > 0) continue
+   if (comm > 0) continue
+   gvec(1) = lvec(1)
+   if (all) continue
 
 
 
@@ -1065,6 +1213,10 @@ SUBROUTINE shr_mpi_sumr2(lvec,gvec,comm,string,all)
 ! PURPOSE: Finds sum of a distributed vector of values, assume local sum
 !          already computed
 !-------------------------------------------------------------------------------
+   if (len(string) > 0) continue
+   if (comm > 0) continue
+   gvec(1,1) = lvec(1,1)
+   if (all) continue
 
 
 
@@ -1097,6 +1249,10 @@ SUBROUTINE shr_mpi_sumr3(lvec,gvec,comm,string,all)
 ! PURPOSE: Finds sum of a distributed vector of values, assume local sum
 !          already computed
 !-------------------------------------------------------------------------------
+   if (len(string) > 0) continue
+   if (comm > 0) continue
+   gvec(1,1,1) = lvec(1,1,1)
+   if (all) continue
 
 
 
@@ -1129,7 +1285,10 @@ SUBROUTINE shr_mpi_mini0(lvec,gvec,comm,string,all)
 ! PURPOSE: Finds min of a distributed vector of values, assume local min
 !          already computed
 !-------------------------------------------------------------------------------
-
+   if (len(string) > 0) continue
+   if (comm > 0) continue
+   gvec = lvec
+   if (all) continue
 
 END SUBROUTINE shr_mpi_mini0
 
@@ -1160,6 +1319,10 @@ SUBROUTINE shr_mpi_mini1(lvec,gvec,comm,string,all)
 ! PURPOSE: Finds min of a distributed vector of values, assume local min
 !          already computed
 !-------------------------------------------------------------------------------
+   if (len(string) > 0) continue
+   if (comm > 0) continue
+   gvec(1) = lvec(1)
+   if (all) continue
 
 
 END SUBROUTINE shr_mpi_mini1
@@ -1191,7 +1354,10 @@ SUBROUTINE shr_mpi_minr0(lvec,gvec,comm,string,all)
 ! PURPOSE: Finds min of a distributed vector of values, assume local min
 !          already computed
 !-------------------------------------------------------------------------------
-
+   if (len(string) > 0) continue
+   if (comm > 0) continue
+   gvec = lvec
+   if (all) continue
 
 
 END SUBROUTINE shr_mpi_minr0
@@ -1223,6 +1389,10 @@ SUBROUTINE shr_mpi_minr1(lvec,gvec,comm,string,all)
 ! PURPOSE: Finds min of a distributed vector of values, assume local min
 !          already computed
 !-------------------------------------------------------------------------------
+   if (len(string) > 0) continue
+   if (comm > 0) continue
+   gvec(1) = lvec(1)
+   if (all) continue
 
 
 
@@ -1255,7 +1425,10 @@ SUBROUTINE shr_mpi_maxi0(lvec,gvec,comm,string,all)
 ! PURPOSE: Finds max of a distributed vector of values, assume local max
 !          already computed
 !-------------------------------------------------------------------------------
-
+   if (len(string) > 0) continue
+   if (comm > 0) continue
+   gvec = lvec
+   if (all) continue
 
 
 END SUBROUTINE shr_mpi_maxi0
@@ -1287,6 +1460,10 @@ SUBROUTINE shr_mpi_maxi1(lvec,gvec,comm,string,all)
 ! PURPOSE: Finds max of a distributed vector of values, assume local max
 !          already computed
 !-------------------------------------------------------------------------------
+   if (len(string) > 0) continue
+   if (comm > 0) continue
+   gvec(1) = lvec(1)
+   if (all) continue
 
 
 
@@ -1319,7 +1496,10 @@ SUBROUTINE shr_mpi_maxr0(lvec,gvec,comm,string,all)
 ! PURPOSE: Finds max of a distributed vector of values, assume local max
 !          already computed
 !-------------------------------------------------------------------------------
-
+   if (len(string) > 0) continue
+   if (comm > 0) continue
+   gvec = lvec
+   if (all) continue
 
 END SUBROUTINE shr_mpi_maxr0
 
@@ -1350,7 +1530,10 @@ SUBROUTINE shr_mpi_maxr1(lvec,gvec,comm,string,all)
 ! PURPOSE: Finds max of a distributed vector of values, assume local max
 !          already computed
 !-------------------------------------------------------------------------------
-
+   if (len(string) > 0) continue
+   if (comm > 0) continue
+   gvec(1) = lvec(1)
+   if (all) continue
 
 
 END SUBROUTINE shr_mpi_maxr1
@@ -1374,7 +1557,9 @@ SUBROUTINE shr_mpi_commsize(comm,size,string)
 !-------------------------------------------------------------------------------
 ! PURPOSE: MPI commsize
 !-------------------------------------------------------------------------------
-
+   if (len(string) > 0) continue
+   if (comm > 0) continue
+   size = 0
 
 END SUBROUTINE shr_mpi_commsize
 
@@ -1397,6 +1582,9 @@ SUBROUTINE shr_mpi_commrank(comm,rank,string)
 !-------------------------------------------------------------------------------
 ! PURPOSE: MPI commrank
 !-------------------------------------------------------------------------------
+   if (len(string) > 0) continue
+   if (comm > 0) continue
+   rank = 0
 
 END SUBROUTINE shr_mpi_commrank
 
@@ -1418,6 +1606,8 @@ SUBROUTINE shr_mpi_initialized(flag,string)
 !-------------------------------------------------------------------------------
 ! PURPOSE: MPI initialized
 !-------------------------------------------------------------------------------
+   if (len(string) > 0) continue
+   if (flag) continue
 
 
 END SUBROUTINE shr_mpi_initialized
@@ -1441,6 +1631,8 @@ SUBROUTINE shr_mpi_abort(string,rcode)
 !-------------------------------------------------------------------------------
 ! PURPOSE: MPI abort
 !-------------------------------------------------------------------------------
+   if (len(string) > 0) continue
+   if (rcode > 0) continue
 
 
 END SUBROUTINE shr_mpi_abort
@@ -1463,7 +1655,8 @@ SUBROUTINE shr_mpi_barrier(comm,string)
 !-------------------------------------------------------------------------------
 ! PURPOSE: MPI barrier
 !-------------------------------------------------------------------------------
-
+   if (len(string) > 0) continue
+   if (comm > 0) continue
 
 
 END SUBROUTINE shr_mpi_barrier
@@ -1485,6 +1678,7 @@ SUBROUTINE shr_mpi_init(string)
 !-------------------------------------------------------------------------------
 ! PURPOSE: MPI init
 !-------------------------------------------------------------------------------
+   if (len(string) > 0) continue
 
 
 
@@ -1507,7 +1701,7 @@ SUBROUTINE shr_mpi_finalize(string)
 !-------------------------------------------------------------------------------
 ! PURPOSE: MPI finalize
 !-------------------------------------------------------------------------------
-
+   if (len(string) > 0) continue
 
 
 END SUBROUTINE shr_mpi_finalize

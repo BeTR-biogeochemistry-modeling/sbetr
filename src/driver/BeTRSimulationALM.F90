@@ -404,7 +404,13 @@ contains
   integer                   , intent(in)   :: filter_soilc(:)
 
 
-!  call this%betr%plant_soilbgc%init_plant_soil_feedback(bounds, num_soilc, &
+  ! remove compiler warnings
+  if (this%num_soilc > 0) continue
+  if (bounds%begc > 0) continue
+  if (num_soilc > 0) continue
+  if (size(filter_soilc) > 0) continue
+
+  !  call this%betr%plant_soilbgc%init_plant_soil_feedback(bounds, num_soilc, &
 !               filter_soilc,  carbonstate_vars%frootc_patch, cnstate_vars, &
 !               soilstate_vars,  waterflux_vars, ecophyscon_vars)
 
@@ -516,6 +522,12 @@ contains
   integer                   , intent(in)   :: num_soilc
   integer                   , intent(in)   :: filter_soilc(:)
 
+  ! remove compiler warnings
+  if (this%num_soilc > 0) continue
+  if (bounds%begc > 0) continue
+  if (num_soilc > 0) continue
+  if (size(filter_soilc) > 0) continue
+
 !x  call this%betr%bgc_reaction%betr_lsm_flux_state_sendback(bounds, &
 !       num_soilc, filter_soilc)
 
@@ -547,6 +559,8 @@ contains
 
   SHR_ASSERT_ALL((ubound(t_soisno) == (/bounds%endc, ubj/)),errMsg(mod_filename,__LINE__))
 
+  ! remove compiler warnings
+  if (this%num_soilc > 0) continue
 
   associate(                                                     & !
     h2osoi_vol        =>    waterstate_vars%h2osoi_vol_col     , & ! Input:  [real(r8) (:,:) ]  volumetric soil moisture

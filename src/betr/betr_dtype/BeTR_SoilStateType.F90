@@ -61,6 +61,7 @@ module BeTR_SoilStateType
     !------------------------------------------------------------------------
 
     begc = bounds%begc; endc= bounds%endc
+    begp = bounds%begp; endp= bounds%endp
     lbj  = bounds%lbj; ubj = bounds%ubj
 
     allocate(this%bsw_col(begc:endc, lbj:ubj))         ; this%bsw_col(:,:) = nan

@@ -278,6 +278,9 @@ contains
     real(r8), pointer :: ptr1d(:)
     real(r8), pointer :: ptr2d(:,:)
 
+    ! remove unused dummy arg compiler warning
+    if (bounds%begc > 0) continue
+    
     associate(                                                    &
          ntracers          =>  betrtracer_vars%ntracers            , &
          ngwmobile_tracers =>  betrtracer_vars%ngwmobile_tracers   , &
@@ -340,7 +343,10 @@ contains
     integer               , intent(in)  :: column     ! column index
     !-----------------------------------------------------------------------
 
-
+    ! remove unused dummy arg compiler warnings
+    if (size(this%tracer_conc_surfwater_col) > 0) continue
+    if (column > 0) continue
+    
   end subroutine Reset
 
   !-----------------------------------------------------------------------

@@ -78,6 +78,9 @@ contains
     integer               :: begc, endc
     integer               :: begg, endg
 
+    ! remove compiler warnings for unused dummy args
+    if (size(this%altmax_col) > 0) continue
+    if (bounds%begc > 0) continue
 
 
   end subroutine initCold

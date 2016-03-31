@@ -14,6 +14,8 @@ module BGCReactionsMod
 
   type, abstract :: bgc_reaction_type
      private
+     ! dummy var to remove compiler warnings
+     logical, public :: dummy_compiler_warning
    contains
      !initialize betr bgc
      procedure(Init_betrbgc_interface)                    , deferred :: Init_betrbgc

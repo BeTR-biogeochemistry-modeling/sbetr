@@ -137,7 +137,7 @@ contains
     !calculate advective velocity
     call calc_qadv(ubj, record, &
          simulation%num_soilc, simulation%filter_soilc, &
-         dtime, time_vars, col, waterstate_vars, waterflux_vars)
+         dtime, time_vars, waterstate_vars, waterflux_vars)
 
     !no calculation in the first step
     if(record==0)cycle
@@ -237,22 +237,22 @@ end subroutine sbetrBGC_driver
 
 !-------------------------------------------------------------------------------
 
-  function its_time_to_write_restart(ttime)result(ans)
-  !
-  ! DESCRIPTION
-  ! decide if to write restart file
-  !
-
-  implicit none
-  type(betr_time_type), intent(in) :: ttime
-  logical :: ans
-
-  character(len=80) :: subname = 'its_time_to_write_restart'
-
-
-
-  ans = (mod(ttime%time,ttime%restart_dtime) == 0)
-  end function its_time_to_write_restart
+!X!  function its_time_to_write_restart(ttime)result(ans)
+!X!  !
+!X!  ! DESCRIPTION
+!X!  ! decide if to write restart file
+!X!  !
+!X!
+!X!  implicit none
+!X!  type(betr_time_type), intent(in) :: ttime
+!X!  logical :: ans
+!X!
+!X!  character(len=80) :: subname = 'its_time_to_write_restart'
+!X!
+!X!
+!X!
+!X!  ans = (mod(ttime%time,ttime%restart_dtime) == 0)
+!X!  end function its_time_to_write_restart
 
 !-------------------------------------------------------------------------------
   function its_time_to_exit(ttime)result(ans)
@@ -295,24 +295,23 @@ end subroutine sbetrBGC_driver
 
 !-------------------------------------------------------------------------------
 
-  subroutine rest_write(tracerstate_vars, tracercoeff_vars, tracerflux_vars, time_vars)
-  !
-  ! DESCRIPTION
-  ! write restart file
-
-  use tracerfluxType,  only : tracerflux_type
-  use tracerstatetype, only : tracerstate_type
-  use tracercoeffType, only : tracercoeff_type
-
-  implicit none
-  type(tracercoeff_type), intent(in) :: tracercoeff_vars
-  type(tracerflux_type) , intent(in) :: tracerflux_vars
-  type(tracerstate_type), intent(in) :: tracerstate_vars
-  type(betr_time_type)       , intent(in) :: time_vars
-  character(len=80) :: subname = 'rest_write'
-
-
-  end subroutine rest_write
+!X!  subroutine rest_write(tracerstate_vars, tracercoeff_vars, tracerflux_vars, time_vars)
+!X!  !
+!X!  ! DESCRIPTION
+!X!  ! write restart file
+!X!
+!X!  use tracerfluxType,  only : tracerflux_type
+!X!  use tracerstatetype, only : tracerstate_type
+!X!  use tracercoeffType, only : tracercoeff_type
+!X!
+!X!  implicit none
+!X!  type(tracercoeff_type), intent(in) :: tracercoeff_vars
+!X!  type(tracerflux_type) , intent(in) :: tracerflux_vars
+!X!  type(tracerstate_type), intent(in) :: tracerstate_vars
+!X!  type(betr_time_type)       , intent(in) :: time_vars
+!X!  character(len=80) :: subname = 'rest_write'
+!X!
+!X!  end subroutine rest_write
 
 !-------------------------------------------------------------------------------
 
@@ -412,7 +411,7 @@ end subroutine sbetrBGC_driver
 
   !-------------------------------------------------------------------------------
 
-  subroutine calc_qadv(ubj, record, numf, filter, dtime, ttime, col, waterstate_vars, waterflux_vars)
+  subroutine calc_qadv(ubj, record, numf, filter, dtime, ttime, waterstate_vars, waterflux_vars)
 
   !
   ! description
@@ -434,7 +433,6 @@ end subroutine sbetrBGC_driver
   real(r8)                , intent(in)    :: dtime
   type(waterstate_type)   , intent(inout) :: waterstate_vars
   type(waterflux_type)    , intent(inout) :: waterflux_vars
-  type(column_type)       , intent(inout) :: col
 
   integer :: j, fc, c
   real(r8):: dmass    !kg/m2 = mm H2O/m2

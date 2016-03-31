@@ -916,10 +916,10 @@ contains
      use InterpolationMod, only : Lagrange_interp
      implicit none
      ! !ARGUMENTS:
+     integer,  intent(in)  :: neq
      real(r8), intent(in)  :: y0(neq)
      real(r8), intent(in)  :: dt
      real(r8), intent(in)  :: ti
-     integer,  intent(in)  :: neq
      real(r8), intent(out) :: dxdt(neq)
 
      ! !LOCAL VARIABLES:
@@ -928,6 +928,10 @@ contains
      real(r8)           :: ui(neq)
      character(len=32)  :: subname ='trajectory'
 
+     ! remove unused dummy args compiler warnings
+     if (dt > 0.0_r8) continue 
+     if (ti > 0.0_r8) continue 
+     
      call Lagrange_interp(pn, Extra_inst%zi(1:Extra_inst%nlen), Extra_inst%us(1:Extra_inst%nlen), y0, ui)
      do j = 1, neq
         dxdt(j) = -ui(j)

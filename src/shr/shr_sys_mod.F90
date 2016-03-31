@@ -39,6 +39,7 @@ SUBROUTINE shr_sys_abort(string,rc)
    write(s_logunit,F00) 'WARNING: calling shr_mpi_abort() and stopping'
 
    stop
+   rc = 0
 
 END SUBROUTINE shr_sys_abort
 
@@ -69,7 +70,8 @@ SUBROUTINE shr_sys_chdir(path, rcode)
    !----- formats -----
    character(*),parameter :: subName =   '(shr_sys_chdir) '
    character(*),parameter :: F00     = "('(shr_sys_chdir) ',4a)"
-
+   rcode = 0
+   if (len(path) > 0) continue
 end SUBROUTINE shr_sys_chdir
 
 
@@ -90,6 +92,7 @@ SUBROUTINE shr_sys_sleep(sec)
    character(*),parameter :: subName =   '(shr_sys_sleep) '
    character(*),parameter :: F00     = "('(shr_sys_sleep) ',4a)"
    character(*),parameter :: F10     = "('sleep ',i8 )"
+   if (sec > 0.0) continue
 end SUBROUTINE shr_sys_sleep
 
 
@@ -109,5 +112,7 @@ SUBROUTINE shr_sys_system(str,rcode)
    !----- formats -----
    character(*),parameter :: subName =   '(shr_sys_system) '
    character(*),parameter :: F00     = "('(shr_sys_system) ',4a)"
+   rcode = 0
+   if (len(str) == 0) continue
 end SUBROUTINE shr_sys_system   
 end module shr_sys_mod

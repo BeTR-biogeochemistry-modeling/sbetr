@@ -50,7 +50,9 @@ contains
   ! !DESCRIPTION:
   ! create an object of type bgc_reaction_mock_run_type.
   ! Right now it is purposely empty
-
+    type(bgc_reaction_mock_run_type), allocatable :: bgc
+    allocate(bgc)
+    constructor = bgc
   end function constructor
 
   !-------------------------------------------------------------------------------
@@ -73,6 +75,10 @@ contains
 
     ! !LOCAL VARIABLES:
 
+    ! remove compiler warnings for unused dummy args
+    if (this%dummy_compiler_warning) continue
+    if (bounds%begc > 0) continue
+    if (len(betrtracer_vars%betr_simname) > 0) continue
     tracerboundarycond_vars%topbc_type(:) = bndcond_as_conc
 
   end subroutine init_boundary_condition_type
@@ -101,6 +107,13 @@ contains
     integer :: itemp_gwm_grp
     integer :: dum
     integer :: itemp_grp, itemp_v, itemp_vgrp
+
+    ! remove compiler warnings for unused dummy args
+    if (this%dummy_compiler_warning) continue
+    if (bounds%begc > 0) continue
+    if (lbj > 0) continue
+    if (ubj > 0) continue
+    if (len(betrtracer_vars%betr_simname) > 0) continue
 
     itemp_gwm     = 0;
     itemp_g       = 0 ;
@@ -185,6 +198,10 @@ contains
     real(r8) :: irt   !the inverse of R*T
     SHR_ASSERT_ALL((ubound(dz_top)                == (/bounds%endc/)),   errMsg(mod_filename,__LINE__))
 
+    ! remove compiler warnings for unused dummy args
+    if (this%dummy_compiler_warning) continue
+    if (size(waterflux_vars%qflx_drain_vr_col) > 0) continue
+
     associate(                                     &
          forc_pbot            => atm2lnd_vars%forc_pbot_downscaled_col    , &
          forc_tbot            => atm2lnd_vars%forc_t_downscaled_col       , &
@@ -250,6 +267,25 @@ contains
 
     character(len=*)                 , parameter     :: subname ='calc_bgc_reaction'
 
+    ! remove compiler warnings for unused dummy args
+    if (this%dummy_compiler_warning) continue
+    if (bounds%begc > 0) continue
+    if (lbj > 0) continue
+    if (ubj > 0) continue
+    if (size(jtops) > 0) continue
+    if (num_soilc > 0) continue
+    if (size(filter_soilc) > 0) continue
+    if (num_soilp > 0) continue
+    if (size(filter_soilp) > 0) continue
+    if (dtime > 0.0) continue
+    if (len(betrtracer_vars%betr_simname) > 0) continue
+    if (size(cnstate_vars%isoilorder) > 0) continue
+    if (size(tracercoeff_vars%annsum_counter_col) > 0) continue
+    if (size(tracerstate_vars%tracer_conc_surfwater_col) > 0) continue
+    if (size(tracerflux_vars%tracer_flx_top_soil_col) > 0) continue
+    if (size(tracerboundarycond_vars%jtops_col) > 0) continue
+    if (plant_soilbgc%dummy_compiler_warning) continue
+
   end subroutine calc_bgc_reaction
 
 
@@ -283,7 +319,19 @@ contains
 
     SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__))
 
-    !depending on the simulation type, an implementation of aqueous chemistry will be
+    ! remove compiler warnings for unused dummy args
+    if (this%dummy_compiler_warning) continue
+    if (bounds%begc > 0) continue
+    if (lbj > 0) continue
+    if (ubj > 0) continue
+    if (size(jtops) > 0) continue
+    if (num_soilc > 0) continue
+    if (size(filter_soilc) > 0) continue
+    if (len(betrtracer_vars%betr_simname) > 0) continue
+    if (size(tracerstate_vars%tracer_conc_surfwater_col) > 0) continue
+    if (size(tracercoeff_vars%annsum_counter_col) > 0) continue
+    
+    !continue on the simulation type, an implementation of aqueous chemistry will be
     !employed to separate out the adsorbed phase
     !It should be noted that this formulation excludes the use of linear isotherm, which
     !can be integrated through the retardation factor
@@ -318,6 +366,10 @@ contains
     integer               :: begc, endc
     integer               :: begg, endg
     !-----------------------------------------------------------------------
+
+    ! remove compiler warnings for unused dummy args
+    if (this%dummy_compiler_warning) continue
+    if (size(waterstate_vars%h2osoi_liq_col) > 0) continue
 
     begc = bounds%begc; endc= bounds%endc
     begg = bounds%begg; endg= bounds%endg
@@ -382,6 +434,11 @@ contains
     type(BeTRTracer_Type)             , intent(inout) :: betrtracer_vars
     type(file_desc_t)                 , intent(inout) :: ncid  ! pio netCDF file id
 
+    ! remove compiler warnings for unused dummy args
+    if (this%dummy_compiler_warning) continue
+    if (ncid%fh > 0) continue
+    if (len(betrtracer_vars%betr_simname) > 0) continue
+ 
     !do nothing here
   end subroutine readParams
 
@@ -406,6 +463,16 @@ contains
     type(betrtracer_type)             , intent(in)    :: betrtracer_vars    ! betr configuration information
     type(tracerstate_type)            , intent(in)    :: tracerstate_vars   !
     type(tracerflux_type)             , intent(in)    :: tracerflux_vars    !
+
+    ! remove compiler warnings for unused dummy args
+    if (this%dummy_compiler_warning) continue
+    if (bounds%begc > 0) continue
+    if (num_soilc > 0) continue
+    if (size(filter_soilc) > 0) continue
+    if (len(betrtracer_vars%betr_simname) > 0) continue
+    if (size(tracerstate_vars%tracer_conc_surfwater_col) > 0) continue
+    if (size(tracerflux_vars%tracer_flx_top_soil_col) > 0) continue
+ 
   end subroutine lsm_betr_flux_state_receive
 
   !-------------------------------------------------------------------------------
@@ -435,6 +502,15 @@ contains
     type(ecophyscon_type)              , intent(in)    :: ecophyscon_vars
     type(betr_cnstate_type)            , intent(in)    :: cnstate_vars
 
+    ! remove compiler warnings for unused dummy args
+    if (this%dummy_compiler_warning) continue
+    if (bounds%begc > 0) continue
+    if (plant_soilbgc%dummy_compiler_warning) continue
+    if (len(betrtracer_vars%betr_simname) > 0) continue
+    if (size(tracerstate_vars%tracer_conc_surfwater_col) > 0) continue
+    if (size(cnstate_vars%isoilorder) > 0) continue
+    if (allocated(ecophyscon_vars%noveg)) continue
+ 
 
   end subroutine init_betr_lsm_bgc_coupler
 

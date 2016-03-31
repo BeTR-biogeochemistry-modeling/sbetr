@@ -8,6 +8,8 @@ module PlantSoilBGCMod
 
 type, abstract :: plant_soilbgc_type
    private
+   ! dummy var to remove compiler warnings
+   logical, public :: dummy_compiler_warning
  contains
 
    !initialize Init_plant_soilbgc

@@ -33,6 +33,10 @@ module H2OIsotopePlantSoilBGCType
   ! create an object of type plant_soilbgc_h2oiso_run_type.
   ! Right now it is purposely empty
 
+    type(plant_soilbgc_h2oiso_run_type), allocatable :: plants
+    allocate(plants)
+    constructor = plants
+
   end function constructor
 
   !-------------------------------------------------------------------------------
@@ -49,6 +53,12 @@ module H2OIsotopePlantSoilBGCType
   class(plant_soilbgc_h2oiso_run_type) , intent(in) :: this
   type(betr_bounds_type)         , intent(in) :: bounds
   integer                   , intent(in) :: lbj, ubj
+
+  ! remove compiler warnings for unused dummy args
+  if (this%dummy_compiler_warning) continue
+  if (bounds%begc > 0) continue
+  if (lbj > 0) continue
+  if (ubj > 0) continue
 
   end subroutine Init_plant_soilbgc
 
@@ -74,6 +84,16 @@ module H2OIsotopePlantSoilBGCType
   type(BeTRtracer_type )    , intent(in) :: betrtracer_vars
   type(tracerflux_type)     , intent(in) :: tracerflux_vars
 
+  ! remove compiler warnings for unused dummy args
+  if (this%dummy_compiler_warning) continue
+  if (bounds%begc > 0) continue
+  if (numf > 0) continue
+  if (size(filter) > 0) continue
+  if (lbj > 0) continue
+  if (ubj > 0) continue
+  if (size(dz) > 0) continue
+  if (len(betrtracer_vars%betr_simname) > 0) continue
+  if (size(tracerflux_vars%tracer_flx_top_soil_col) > 0) continue
 
   end subroutine plant_soilbgc_summary
 
@@ -90,6 +110,11 @@ module H2OIsotopePlantSoilBGCType
   integer                   , intent(in) :: numf
   integer                   , intent(in) :: filter(:)
 
+  ! remove compiler warnings for unused dummy args
+  if (this%dummy_compiler_warning) continue
+  if (bounds%begc > 0) continue
+  if (numf > 0) continue
+  if (size(filter) > 0) continue
 
   end subroutine integrate_vr_flux_to_2D
 
@@ -104,6 +129,12 @@ module H2OIsotopePlantSoilBGCType
   type(betr_bounds_type)         , intent(in) :: bounds
   integer                   , intent(in) :: numf
   integer                   , intent(in) :: filter(:)
+
+  ! remove compiler warnings for unused dummy args
+  if (this%dummy_compiler_warning) continue
+  if (bounds%begc > 0) continue
+  if (numf > 0) continue
+  if (size(filter) > 0) continue
 
   end subroutine lsm_betr_plant_soilbgc_send
 end module H2OIsotopePlantSoilBGCType

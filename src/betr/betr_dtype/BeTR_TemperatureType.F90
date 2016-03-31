@@ -55,6 +55,7 @@ module BeTR_TemperatureType
     !------------------------------------------------------------------------
 
     begc = bounds%begc; endc= bounds%endc
+    begp = bounds%begp; endp= bounds%endp
     lbj  = bounds%lbj;  ubj = bounds%ubj
 
     allocate(this%t_soisno_col(begc:endc, lbj:ubj));  this%t_soisno_col(:,:) = nan

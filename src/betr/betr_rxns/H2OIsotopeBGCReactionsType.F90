@@ -63,6 +63,10 @@ implicit none
   ! create an object of type bgc_reaction_h2oiso_type.
   ! Right now it is purposely left empty
 
+    type(bgc_reaction_h2oiso_type), allocatable :: bgc
+    allocate(bgc)
+    constructor = bgc
+
   end function constructor
 
 !-------------------------------------------------------------------------------
@@ -80,6 +84,10 @@ implicit none
   type(BeTRtracer_type )            , intent(in) :: betrtracer_vars
   type(betr_bounds_type)                 , intent(in) :: bounds
   type(tracerboundarycond_type)     , intent(in) :: tracerboundarycond_vars
+
+  ! remove compiler warnings for unused dummy args
+  if (this%dummy_compiler_warning) continue
+  if (bounds%begc > 0) continue
 
   tracerboundarycond_vars%topbc_type(:) = bndcond_as_conc
 
@@ -115,6 +123,12 @@ implicit none
   integer :: dum
   integer :: itemp_grp, itemp_v, itemp_vgrp, itemp_adsgrp
   integer :: itemp_frz
+
+  ! remove compiler warnings for unused dummy args
+  if (this%dummy_compiler_warning) continue
+  if (bounds%begc > 0) continue
+  if (lbj > 0) continue
+  if (ubj > 0) continue
 
   itemp_gwm     = 0
   itemp_g       = 0
@@ -223,6 +237,8 @@ implicit none
   real(r8) :: irt   !the inverse of R*T
   SHR_ASSERT_ALL((ubound(dz_top)                == (/bounds%endc/)),   errMsg(mod_filename,__LINE__))
 
+  ! remove compiler warnings for unused dummy args
+  if (this%dummy_compiler_warning) continue
 
   associate(                                                           &
     forc_pbot            => atm2lnd_vars%forc_pbot_downscaled_col    , &
@@ -232,7 +248,7 @@ implicit none
   !eventually, the following code will be implemented using polymorphism
   !for simplicity, all gases other than water vapor are set with fixed concentration based boundary conditions
   !now the following gas composition does not make into 100% at the moment, it is about 99.15%
-  irt = 1._r8/(forc_tbot(c)*rgas)
+    !irt = 1._r8/(forc_tbot(c)*rgas)
   do fc = 1, num_soilc
     c = filter_soilc(fc)
     irt = 1.e3_r8/(forc_tbot(c)*rgas)
@@ -300,7 +316,23 @@ implicit none
   integer :: jjs(nh2o_trcs), kk
   real(r8):: tot0, tot1
 
-  associate(                                                                                  &
+    ! remove compiler warnings for unused dummy args
+    if (this%dummy_compiler_warning) continue
+    if (bounds%begc > 0) continue
+    if (lbj > 0) continue
+    if (ubj > 0) continue
+    if (size(jtops) > 0) continue
+    if (num_soilc > 0) continue
+    if (size(filter_soilc) > 0) continue
+    if (num_soilp > 0) continue
+    if (size(filter_soilp) > 0) continue
+    if (dtime > 0.0) continue
+    if (size(cnstate_vars%isoilorder) > 0) continue
+    if (size(tracercoeff_vars%annsum_counter_col) > 0) continue
+    if (size(tracerflux_vars%tracer_flx_top_soil_col) > 0) continue
+    if (plant_soilbgc%dummy_compiler_warning) continue
+
+    associate(                                                                                  &
     tracer_mobile_phase            => tracerstate_vars%tracer_conc_mobile_col               , &
     tracer_gwdif_concflux_top_col  => tracerboundarycond_vars%tracer_gwdif_concflux_top_col , &
     volatileid                     =>  betrtracer_vars%volatileid                           , & !
@@ -378,6 +410,17 @@ implicit none
 
   SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__))
 
+    ! remove compiler warnings for unused dummy args
+    if (this%dummy_compiler_warning) continue
+    if (bounds%begc > 0) continue
+    if (lbj > 0) continue
+    if (ubj > 0) continue
+    if (size(jtops) > 0) continue
+    if (num_soilc > 0) continue
+    if (size(filter_soilc) > 0) continue
+    if (size(tracerstate_vars%tracer_conc_surfwater_col) > 0) continue
+    if (size(tracercoeff_vars%annsum_counter_col) > 0) continue
+    
   associate(                                                                         &
     aqu2equilscef                   => tracercoeff_vars%aqu2equilsolidcef_col          , &
     aqu2bulkcef_mobile              => tracercoeff_vars%aqu2bulkcef_mobile_col     , &
@@ -399,14 +442,15 @@ implicit none
 
   !the following code is replaced with diagnose_dtracer_freeze_thaw in TracerParamsMod
 
-!  if(trc_id1>0)then
-!    call do_h2o_isotope_equilibration(bounds, lbj, ubj, jtops, num_soilc, filter_soilc, &
-!      aqu2bulkcef_mobile(bounds%begc:bounds%endc, lbj:ubj, trc_id1)        , &
-!      aqu2equilscef(bounds%begc:bounds%endc, lbj:ubj, trc_id2)             , &
-!      tracer_solid_phase_equil(bounds%begc:bounds%endc, lbj:ubj, trc_id2)  , &
-!      tracer_mobile_phase(bounds%begc:bounds%endc, lbj:ubj, trc_id1))
+  if (.false.) then
+  !  if(trc_id1>0)then
+    call do_h2o_isotope_equilibration(bounds, lbj, ubj, jtops, num_soilc, filter_soilc, &
+      aqu2bulkcef_mobile(bounds%begc:bounds%endc, lbj:ubj, trc_id1)        , &
+      aqu2equilscef(bounds%begc:bounds%endc, lbj:ubj, trc_id2)             , &
+      tracer_solid_phase_equil(bounds%begc:bounds%endc, lbj:ubj, trc_id2)  , &
+      tracer_mobile_phase(bounds%begc:bounds%endc, lbj:ubj, trc_id1))
 
-!  endif
+  endif
 
   end associate
 
@@ -442,6 +486,9 @@ implicit none
   SHR_ASSERT_ALL((ubound(tracer_solid_phase_equil) == (/bounds%endc, ubj/)), errMsg(mod_filename,__LINE__))
   SHR_ASSERT_ALL((ubound(tracer_mobile_phase) == (/bounds%endc, ubj/)), errMsg(mod_filename,__LINE__))
 
+  ! remove compiler warnings for unused dummy args
+  if (bounds%begc > 0) continue
+    
   do j = lbj, ubj
     do fc = 1, numf
       c = filter(fc)
@@ -490,6 +537,10 @@ implicit none
     integer               :: begg, endg
     integer               :: trcid
     !-----------------------------------------------------------------------
+
+    ! remove compiler warnings for unused dummy args
+    if (this%dummy_compiler_warning) continue
+    if (size(waterstate_vars%h2osoi_liq_col) > 0) continue
 
     begc = bounds%begc; endc= bounds%endc
     begg = bounds%begg; endg= bounds%endg
@@ -579,6 +630,10 @@ implicit none
     type(BeTRTracer_Type)             , intent(inout) :: betrtracer_vars
     type(file_desc_t)                 , intent(inout) :: ncid  ! pio netCDF file id
 
+    ! remove compiler warnings for unused dummy args
+    if (this%dummy_compiler_warning) continue
+    if (ncid%fh > 0) continue
+    if (len(betrtracer_vars%betr_simname) > 0) continue
     !do nothing here for the moment, but contents will eventually be filled in here
 
   end subroutine readParams
@@ -609,6 +664,14 @@ implicit none
     type(tracerflux_type)             , intent(in)    :: tracerflux_vars    !
 
 
+    ! remove compiler warnings for unused dummy args
+    if (this%dummy_compiler_warning) continue
+    if (bounds%begc > 0) continue
+    if (num_soilc > 0) continue
+    if (size(filter_soilc) > 0) continue
+    if (len(betrtracer_vars%betr_simname) > 0) continue
+    if (size(tracerstate_vars%tracer_conc_surfwater_col) > 0) continue
+    if (size(tracerflux_vars%tracer_flx_top_soil_col) > 0) continue
 
 
   end subroutine lsm_betr_flux_state_receive
@@ -643,6 +706,14 @@ implicit none
     type(ecophyscon_type)              , intent(in)    :: ecophyscon_vars
     type(betr_cnstate_type)            , intent(in)    :: cnstate_vars
 
+    ! remove compiler warnings for unused dummy args
+    if (this%dummy_compiler_warning) continue
+    if (bounds%begc > 0) continue
+    if (plant_soilbgc%dummy_compiler_warning) continue
+    if (len(betrtracer_vars%betr_simname) > 0) continue
+    if (size(tracerstate_vars%tracer_conc_surfwater_col) > 0) continue
+    if (size(cnstate_vars%isoilorder) > 0) continue
+    if (allocated(ecophyscon_vars%noveg)) continue
 
   end subroutine init_betr_lsm_bgc_coupler
 
