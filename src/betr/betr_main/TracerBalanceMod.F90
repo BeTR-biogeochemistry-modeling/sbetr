@@ -134,7 +134,7 @@ implicit none
               if(abs(err_rel)>err_min_rel)then
                  write(iulog,*)'error exceeds the tolerance for tracer '//tracernames(kk), ' err=',errtracer(c,kk), ' col=',c
                  write(iulog,*)'nstep=',get_nstep()
-                 write(iulog,'(4(A,X,E20.10))')'netpro=',tracer_flx_netpro(c,kk),' netphyloss=',tracer_flx_netphyloss(c,kk),&
+                 write(iulog,'(4(A,5X,E20.10))')'netpro=',tracer_flx_netpro(c,kk),' netphyloss=',tracer_flx_netphyloss(c,kk),&
                       ' begm=',beg_tracer_molarmass(c,kk), &
                       ' endm=',end_tracer_molarmass(c,kk)
                  call tracerflux_vars%flux_display(c,kk,betrtracer_vars)
@@ -187,6 +187,10 @@ implicit none
       ! !LOCAL VARIABLES:
       integer :: jj, fc, c, kk
 
+      ! remove unused dummy args compiler warnings
+      if (lbj > 0) continue
+      if (ubj > 0) continue
+      
       associate(                                                                            &
            tracer_conc_mobile        => tracerstate_vars%tracer_conc_mobile_col           , &
            tracer_conc_solid_equil   => tracerstate_vars%tracer_conc_solid_equil_col      , &

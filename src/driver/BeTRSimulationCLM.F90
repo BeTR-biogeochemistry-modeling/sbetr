@@ -541,7 +541,7 @@ contains
     real(r8), intent(in) :: t_soisno(bounds%begc:, lbj: )                    ! soil temperature
     type(soilstate_type), intent(in) :: soilstate_vars
     type(waterstate_type), intent(inout) :: waterstate_vars
-    class(soil_water_retention_curve_type), intent(in) :: soil_water_retention_curve
+    class(soil_water_retention_curve_type), intent(in), optional :: soil_water_retention_curve
 
     !local variables
     real(r8) :: s_node
@@ -549,7 +549,10 @@ contains
 
     SHR_ASSERT_ALL((ubound(t_soisno) == (/bounds%endc, ubj/)),errMsg(mod_filename,__LINE__))
 
-
+    ! humor the compiler about unused variables
+    if (this%num_soilc > 0) continue
+    if (present(soil_water_retention_curve)) continue
+    
     associate(                                                     & !
          h2osoi_vol =>    waterstate_vars%h2osoi_vol_col, & ! Input:  [real(r8) (:,:) ]  volumetric soil moisture
          smp_l =>    waterstate_vars%smp_l_col, & ! Output: [real(r8) (:,:) ]  soil suction (mm)
@@ -581,17 +584,17 @@ contains
     end associate
   end subroutine calc_smp_l_clm
 
-  !------------------------------------------------------------------------
-  subroutine betr_clm_readParams(this, ncid)
-
-    use ncdio_pio, only : file_desc_t
-
-    implicit none
-
-    class(betr_simulation_clm_type), intent(inout) :: this
-    type(file_desc_t), intent(inout) :: ncid  ! pio netCDF file id
-    call this%betr%bgc_reaction%readParams(ncid, this%betr%tracers)
-  end subroutine betr_clm_readParams
+!X!  !------------------------------------------------------------------------
+!X!  subroutine betr_clm_readParams(this, ncid)
+!X!
+!X!    use ncdio_pio, only : file_desc_t
+!X!
+!X!    implicit none
+!X!
+!X!    class(betr_simulation_clm_type), intent(inout) :: this
+!X!    type(file_desc_t), intent(inout) :: ncid  ! pio netCDF file id
+!X!    call this%betr%bgc_reaction%readParams(ncid, this%betr%tracers)
+!X!  end subroutine betr_clm_readParams
 
   !------------------------------------------------------------------------
   subroutine betr_clm_h2oiso_consistency_check(this, &
@@ -618,6 +621,9 @@ contains
     integer :: fc, c
     real(r8):: totwater, err
 
+    ! humor the compiler about unused variables
+    if (bounds%begc > 0) continue
+    
     associate( &
          h2osoi_ice => waterstate_vars%h2osoi_ice_col, & ! Input:  [real(r8) (:,:) ]  ice lens (kg/m2)
          h2osoi_liq => waterstate_vars%h2osoi_liq_col, & ! Output: [real(r8) (:,:) ]  liquid water (kg/m2)

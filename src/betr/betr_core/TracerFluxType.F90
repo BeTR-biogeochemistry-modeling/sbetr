@@ -482,6 +482,13 @@ contains
     integer :: j,c ! indices
     logical :: readvar      ! determine if variable is on initial file
 
+    ! remove compiler warnings for unused dummy args
+    if (size(this%tracer_flx_top_soil_col) > 0) continue
+    if (bounds%begc > 0) continue
+    if (ncid%fh > 0) continue
+    if (len(flag) > 0) continue
+    if (len(betrtracer_vars%betr_simname) > 0) continue
+    
 
    end subroutine Restart
 
@@ -500,6 +507,9 @@ contains
 
     integer :: fc, column
 
+    ! remove compiler warnings for unused dummy args
+    if (bounds%begc > 0) continue
+    
     do fc = 1, numf
       column = filter(fc)
       this%tracer_flx_top_soil_col   (column,:)   = 0._r8
@@ -654,14 +664,14 @@ contains
       !lateral drainage, vertical leaching
       !for volatile tracers, this includes surface emission surface three different pathways
       write(iulog,*)tracernames(jj)
-      write(iulog,*),'infl=',this%tracer_flx_infl_col(c,jj),',drain=',  this%tracer_flx_drain_col(c,jj),    &
+      write(iulog,*) 'infl=',this%tracer_flx_infl_col(c,jj),',drain=',  this%tracer_flx_drain_col(c,jj),    &
            ',surfrun=',this%tracer_flx_surfrun_col(c,jj),',vtrans=', this%tracer_flx_vtrans_col(c,jj),&
            ',leaching=', this%tracer_flx_leaching_col(c,jj),',dew_grnd=',this%tracer_flx_dew_grnd_col(c, jj),&
            ',dew_snow=', this%tracer_flx_dew_snow_col(c, jj),',sub_snow=',this%tracer_flx_sub_snow_col(c,jj)
 
       if(is_volatile(jj))then
          kk = volatileid(jj)
-         write(iulog,*),',tpartm=', this%tracer_flx_tparchm_col(c,kk),',dif=', this%tracer_flx_dif_col(c,kk),  &
+         write(iulog,*) ',tpartm=', this%tracer_flx_tparchm_col(c,kk),',dif=', this%tracer_flx_dif_col(c,kk),  &
               ',ebu=',this%tracer_flx_ebu_col(c,kk)
       endif
 

@@ -27,7 +27,7 @@ module BeTRSimulation
 
   type, public :: betr_simulation_type
      type(betr_type), public :: betr
-     character(len=betr_string_length), private :: base_filename
+     character(len=betr_filename_length), private :: base_filename
      character(len=betr_filename_length), private :: hist_filename
 
      type(betr_regression_type), private :: regression
@@ -47,7 +47,6 @@ module BeTRSimulation
      procedure, public :: BeTRInit
      procedure, public :: BeTRSetFilter
      procedure, public :: Init => BeTRSimulationInit
-     procedure, public :: ReadNameList => BeTRSimulationReadNameList
      procedure, public :: RestartInit => BeTRSimulationRestartInit
      procedure, public :: ConsistencyCheck => BeTRSimulationConsistencyCheck
      procedure, public :: StepWithoutDrainage => BeTRSimulationStepWithoutDrainage
@@ -89,6 +88,12 @@ contains
 
     call endrun(msg="ERROR "//subname//" unimplemented. "//errmsg(mod_filename, __LINE__))
 
+    if (this%num_soilc > 0) continue
+    if (bounds%begc > 0) continue
+    if (size(waterstate%h2osoi_liq_col) > 0) continue
+    if (size(cnstate%cn_scalar) > 0) continue
+    if (len(base_filename) > 0) continue
+    if (len(namelist_buffer) > 0) continue
 
   end subroutine BeTRSimulationInit
 
@@ -144,56 +149,6 @@ contains
     call this%regression%Init(base_filename, namelist_buffer)
 
   end subroutine BeTRInit
-
-  !-------------------------------------------------------------------------------
-  subroutine BeTRSimulationReadNameList(this, filename)
-    !
-    ! !DESCRIPTION:
-    ! read namelist for betr configuration
-    ! !USES:
-    use spmdMod       , only : masterproc, mpicom
-    use fileutils     , only : getavu, relavu, opnfil
-    use shr_nl_mod    , only : shr_nl_find_group_name
-    use shr_mpi_mod   , only : shr_mpi_bcast
-    implicit none
-    ! !ARGUMENTS:
-    class(betr_simulation_type), intent(inout) :: this
-    character(len=*), intent(IN) :: filename ! Namelist filename
-    !
-    ! !LOCAL VARIABLES:
-    integer :: ierr                    ! error code
-    integer :: unitn                   ! unit for namelist file
-    character(len=betr_string_length) :: reaction_method
-
-    character(len=*), parameter :: subname = 'BeTRSimulationReadNameList'
-
-    !-----------------------------------------------------------------------
-
-    namelist / betr_inparm / reaction_method
-
-    ! ----------------------------------------------------------------------
-    ! Read namelist from standard input.
-    ! ----------------------------------------------------------------------
-
-    if ( masterproc )then
-
-       unitn = getavu()
-       write(iulog,*) 'Read in betr_inparm  namelist'
-       call opnfil (filename, unitn, 'F')
-       call shr_nl_find_group_name(unitn, 'betr_inparm', status=ierr)
-       if (ierr == 0) then
-          read(unitn, betr_inparm, iostat=ierr)
-          if (ierr /= 0) then
-             call endrun(msg="ERROR reading betr_inparm namelist"//errmsg(filename, __LINE__))
-          end if
-       end if
-       call relavu( unitn )
-
-    end if
-    ! Broadcast namelist variables read in
-    call shr_mpi_bcast(reaction_method, mpicom)
-
-  end subroutine BeTRSimulationReadNameList
 
   !---------------------------------------------------------------------------------
   subroutine BeTRSimulationRestartInit(this, bounds, ncid, flag)
@@ -269,6 +224,20 @@ contains
     type(carbonflux_type), intent(in) :: carbonflux_vars
     type(waterflux_type), intent(inout) :: waterflux_vars !temporary variables
 
+    if (this%num_soilc > 0) continue
+    if (bounds%begc > 0) continue
+    if (size(col%z) > 0) continue
+    if (size(waterstate_vars%h2osoi_liq_col) > 0) continue
+    if (size(soilstate_vars%watsat_col) > 0) continue
+    if (size(temperature_vars%t_soisno_col) > 0) continue
+    if (size(chemstate_vars%soil_pH) > 0) continue
+    if (size(atm2lnd_vars%forc_t_downscaled_col) > 0) continue
+    if (size(soilhydrology_vars%fracice_col) > 0) continue
+    if (size(cnstate_vars%cn_scalar) > 0) continue
+    if (size(canopystate_vars%altmax_col) > 0) continue
+    if (size(carbonflux_vars%rr_col) > 0) continue
+    if (size(waterflux_vars%qflx_drain_vr_col) > 0) continue
+
 
   end subroutine BeTRSimulationStepWithoutDrainage
 
@@ -285,6 +254,12 @@ contains
     type(bounds_type), intent(in) :: bounds
     type(waterflux_type)    , intent(in) :: waterflux_vars
     type(column_type), intent(in) :: col ! column type
+
+    ! remove compiler warnings about unused dummy args
+    if (this%num_soilc > 0) continue
+    if (bounds%begc > 0) continue
+    if (size(waterflux_vars%qflx_drain_vr_col) > 0) continue
+    if (size(col%z) > 0) continue
 
   end subroutine BeTRSimulationStepWithDrainage
 
@@ -500,6 +475,14 @@ contains
     integer, intent(in) :: ubj
     type(Waterstate_Type), intent(in) :: waterstate_vars ! water state variables
 
+    ! remove compiler warnings
+    if (this%num_soilc > 0) continue
+    if (bounds%begc > 0) continue
+    if (ubj > 0) continue
+    if (num_soilc > 0) continue
+    if (size(filter_soilc) > 0) continue
+    if (associated(waterstate_vars%h2osoi_liq_col)) continue
+    
   end subroutine BeTRSimulationConsistencyCheck
 
   !---------------------------------------------------------------------------------

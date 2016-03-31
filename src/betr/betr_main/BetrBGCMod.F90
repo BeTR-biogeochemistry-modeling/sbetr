@@ -383,6 +383,12 @@ contains
     character(len=255)   :: subname = 'tracer_solid_transport'
 
     integer :: ntracer_groups
+
+    ! remove compiler warnings for unused dummy args
+    if (size(tracerboundarycond_vars%jtops_col) > 0) continue
+
+    
+    
     ntracer_groups = betrtracer_vars%ntracer_groups
     if(.not. betrtracer_vars%is_solidtransport())return
     associate(&
@@ -878,7 +884,7 @@ contains
                      if(abs(err_relative)<err_relative_threshold)then
                         leaching_mass(c,k) = leaching_mass(c,k) - err_tracer(c,k)
                      else
-                        write(iulog,'(A,X,I8,X,I8,X,A,6(X,A,X,E18.10))')'nstep=', get_nstep(), c, &
+                        write(iulog,'(A,5X,I8,5X,I8,5X,A,6(5X,A,5X,E18.10))')'nstep=', get_nstep(), c, &
                              tracernames(trcid),' err=',err_tracer(c,k),&
                              ' transp=',transp_mass(c,k),' lech=',&
                              leaching_mass(c,k),' infl=',inflx_top(c,k),' dmass=',dmass(c,k), ' mass0=', &
@@ -995,6 +1001,9 @@ contains
     SHR_ASSERT_ALL((ubound(hmconductance_col) == (/bounds%endc, ubj-1, ntracer_groups/)), errMsg(filename,__LINE__))
     SHR_ASSERT_ALL((ubound(Rfactor) == (/bounds%endc, ubj, betrtracer_vars%ngwmobile_tracer_groups/)), errMsg(filename,__LINE__))
 
+    ! remove compiler warnings for unused dummy args
+    if (size(waterstate_vars%h2osoi_liq_col) > 0) continue
+
     associate(&
          is_volatile              =>  betrtracer_vars%is_volatile                            , & !
          is_mobile                =>  betrtracer_vars%is_mobile                              , & !
@@ -1085,8 +1094,8 @@ contains
 
                            if(tracer_conc_mobile_col(c,l,trcid)<0._r8)then
                               !write error message and stop
-                              write(iulog,*),tracernames(trcid),c,l
-                              write(iulog,*),tracer_conc_mobile_col(c,l,trcid),dtracer(c,l,k),dtime_loc(c)
+                              write(iulog,*) tracernames(trcid),c,l
+                              write(iulog,*) tracer_conc_mobile_col(c,l,trcid),dtracer(c,l,k),dtime_loc(c)
                               call endrun('stopped '//trim(subname)//errMsg(filename, __LINE__))
                            endif
 
@@ -1162,7 +1171,7 @@ contains
                                 diff_surf(c,k) * dtime_loc(c)
                         endif
                      else
-                        write(iulog,*),'mass bal error dif '//tracernames(trcid), mass1,'col=',c,get_cntheta()
+                        write(iulog,*) 'mass bal error dif '//tracernames(trcid), mass1,'col=',c,get_cntheta()
                         write(iulog,*)'err=', err_tracer(c,k), dmass(c,k), ' dif=', diff_surf(c,k)*dtime_loc(c), &
                              ' prod=',dot_sum(x=local_source(c,jtops(c):ubj,k),y=dz(c,jtops(c):ubj))*dtime_loc(c)
                         call endrun('mass balance error for tracer '//tracernames(trcid)//' in ' &
@@ -1334,6 +1343,9 @@ contains
     SHR_ASSERT_ALL((ubound(dz)        == (/bounds%endc, ubj/)) , errMsg(filename,__LINE__))
     SHR_ASSERT_ALL((ubound(zi)        == (/bounds%endc, ubj/)) , errMsg(filename,__LINE__))
     SHR_ASSERT_ALL((ubound(zwt)       == (/bounds%endc/))      , errMsg(filename,__LINE__))
+
+    ! remove compiler warnings about unused dummy args
+    if (dtime > 0) continue
 
     associate(                                                                &
          tracer_conc_mobile_col   => tracerstate_vars%tracer_conc_mobile_col, &
@@ -1545,6 +1557,10 @@ contains
     real(r8) :: total
     real(r8) :: frac1
     real(r8) :: dtmp
+
+    ! remove compiler warnings about unused dummy args
+    if (lbj > 0) continue
+
     associate(                                                                  &
          ngwmobile_tracers     => betrtracer_vars%ngwmobile_tracers           , & !
          groupid               => betrtracer_vars%groupid                     , & !
@@ -1636,6 +1652,9 @@ contains
     real(r8) :: dtime
     integer :: fc, c, j
 
+    ! remove compiler warnings about unused dummy args
+    if (bounds%begc > 0) continue
+
     associate(                                                                                   & !
          dz                 =>    col%dz                                                       , & ! Input:  [real(r8) (:,:) ]  layer depth (m)
          qflx_snow2topsoi   =>    waterflux_vars%qflx_snow2topsoi_col                          , & ! Input:  [real(r8) (:)   ]  ground surface dew formation (mm H2O /s) [+]
@@ -1690,7 +1709,11 @@ contains
     integer  :: j, fc, c, jj
     real(r8) :: total_pres
 
-    associate(                                                                &
+    ! remove compiler warnings about unused dummy args
+    if (bounds%begc > 0) continue
+    if (lbj > 0) continue
+
+  associate(                                                                &
          tracer_conc_mobile_col   => tracerstate_vars%tracer_conc_mobile_col, &
          tracer_P_gas_frac_col    => tracerstate_vars%tracer_P_gas_frac_col , &
          tracer_P_gas_col         => tracerstate_vars%tracer_P_gas_col      , &

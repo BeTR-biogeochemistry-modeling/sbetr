@@ -90,6 +90,10 @@ contains
     integer :: j,c ! indices
     logical :: readvar      ! determine if variable is on initial file
 
+    ! remove compiler warnings for unused dummy args
+    if (len(betrtracer_vars%betr_simname) > 0) continue
+    if (bounds%begc > 0) continue
+
 
     call restartvar(ncid=ncid, flag=flag, varname='annsum_counter_betr', xtype=ncd_double,  &
          dim1name='column', long_name='',  units='', &
