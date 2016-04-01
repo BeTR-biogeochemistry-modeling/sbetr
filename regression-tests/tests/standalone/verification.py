@@ -41,12 +41,12 @@ import matplotlib.pyplot as plt
 # other modules in this package
 #
 
+
 # -------------------------------------------------------------------------------
 #
 # User input
 #
 # -------------------------------------------------------------------------------
-
 def commandline_options():
     """Process the command line arguments.
 
@@ -83,25 +83,34 @@ def read_config_file(filename):
 
     return config
 
+
 # -------------------------------------------------------------------------------
 #
-# 
+# FIXME: do something
 #
 # -------------------------------------------------------------------------------
 def extract_from_netcdf(filename):
     """
     """
-    f = netcdf.netcdf_file(filename, 'r')
-    for v in f.variables:
-        print(v)
-        print('    {0} = {1}'.format(f.variables[v].dimensions, f.variables[v].shape))
+    with netcdf.netcdf_file(filename, 'r', mmap=False) as f:
+        for v in f.variables:
+            print(v)
+            print('    {0} = {1}'.format(
+                f.variables[v].dimensions, f.variables[v].shape))
+            if len(f.variables[v].shape) == 3:
+                ts = 1
+                lev = ':'
+                col = 0
+                value = f.variables[v].data[ts, :, col]
+                print('    ({ts}, {lev}, {col}) = {value}'.format(
+                    ts=ts, lev=lev, col=col, value=value))
+
 
 # -------------------------------------------------------------------------------
 #
 # main
 #
 # -------------------------------------------------------------------------------
-
 def main(options):
     # config = read_config_file(options.config[0])
     filename = 'mock-advection.output.nc'
