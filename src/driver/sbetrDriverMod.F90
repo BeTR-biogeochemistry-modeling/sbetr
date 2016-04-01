@@ -5,7 +5,7 @@ module sbetrDriverMod
 ! created by Jinyun Tang
   use shr_kind_mod        , only : r8 => shr_kind_r8
   use ncdio_pio
-  use CLMForcType         , only : clmforc_vars
+  !use CLMForcType         , only : clmforc_vars
 
   use BeTR_TimeMod, only : betr_time_type
 
@@ -40,10 +40,7 @@ contains
 
   use betr_constants, only : betr_namelist_buffer_size, betr_string_length_long, betr_filename_length
 
-!X!  use betr_standalone_cpl , only : betr_initialize_standalone
-!X!  use betr_standalone_cpl , only : run_betr_one_step_without_drainage_standalone
-!X!  use betr_standalone_cpl , only : run_betr_one_step_with_drainage_standalone
-
+  use ForcingDataType, only : ForcingData_type
 
   use TracerParamsMod     , only : tracer_param_init
   use spmdMod             , only : spmd_init
@@ -72,6 +69,7 @@ contains
   integer :: lbj, ubj
 
   character(len=betr_string_length_long) :: simulator_name
+  class(ForcingData_type), allocatable :: forcing_data
 
   !initialize parameters
   call read_name_list(namelist_buffer, simulator_name)
@@ -99,7 +97,8 @@ contains
   time_vars%time_end = dtime*48._r8*365._r8*2._r8
   time_vars%restart_dtime = 1800*2
 
-  call clmforc_vars%LoadForcingData(namelist_buffer)
+  allocate(forcing_data)
+  call forcing_data%ReadData(namelist_buffer)
 
   lbj = 1
   ubj = nlevtrc_soil
@@ -116,7 +115,7 @@ contains
   call simulation%BeTRSetFilter()
 
   !obtain waterstate_vars for initilizations that need it
-  call read_betrforcing(bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, time_vars, col, &
+  call update_forcing(forcing_data, bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, time_vars, col, &
        atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars             , &
        waterflux_vars, temperature_vars, chemstate_vars, simulation%jtops)
 
@@ -130,12 +129,12 @@ contains
     !set envrionmental forcing by reading foring data: temperature, moisture, atmospheric resistance
     !from either user specified file or clm history file
 
-    call read_betrforcing(bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, time_vars, col, &
+    call update_forcing(forcing_data, bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, time_vars, col, &
       atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars, &
       waterflux_vars, temperature_vars, chemstate_vars, simulation%jtops)
 
     !calculate advective velocity
-    call calc_qadv(ubj, record, &
+    call calc_qadv(forcing_data, ubj, record, &
          simulation%num_soilc, simulation%filter_soilc, &
          dtime, time_vars, waterstate_vars, waterflux_vars)
 
@@ -315,7 +314,7 @@ end subroutine sbetrBGC_driver
 
 !-------------------------------------------------------------------------------
 
-  subroutine read_betrforcing(bounds, lbj, ubj, numf, filter, ttime, col, atm2lnd_vars, &
+  subroutine update_forcing(forcing_data, bounds, lbj, ubj, numf, filter, ttime, col, atm2lnd_vars, &
     soilhydrology_vars, soilstate_vars,waterstate_vars,waterflux_vars, &
     temperature_vars,chemstate_vars, jtops)
   !
@@ -333,7 +332,12 @@ end subroutine sbetrBGC_driver
   use decompMod         , only : bounds_type
   use SoilHydrologyType , only : soilhydrology_type
   use atm2lndType       , only : atm2lnd_type
+
+  use ForcingDataType, only : ForcingData_type
+
   implicit none
+
+  class(ForcingData_type), intent(inout) :: forcing_data
   type(bounds_type), intent(in) :: bounds
   integer, intent(in) :: numf
   integer, intent(in) :: filter(:)
@@ -350,7 +354,7 @@ end subroutine sbetrBGC_driver
   integer,               intent(inout)    :: jtops(bounds%begc:bounds%endc)
 
   integer :: j, fc, c
-  character(len=255) :: subname='read_betrforcing'
+  character(len=255) :: subname='update_forcing'
 
 
 
@@ -362,8 +366,8 @@ end subroutine sbetrBGC_driver
     c = filter(fc)
     jtops(c) = 1
     soilhydrology_vars%zwts_col(c) = 10._r8
-    atm2lnd_vars%forc_pbot_downscaled_col(c) = clmforc_vars%pbot(tstep)             ! 1 atmos
-    atm2lnd_vars%forc_t_downscaled_col(c)    = clmforc_vars%tbot(tstep)             ! 2 atmos temperature
+    atm2lnd_vars%forc_pbot_downscaled_col(c) = forcing_data%pbot(tstep)             ! 1 atmos
+    atm2lnd_vars%forc_t_downscaled_col(c)    = forcing_data%tbot(tstep)             ! 2 atmos temperature
   enddo
 
   !set up forcing variables
@@ -371,12 +375,12 @@ end subroutine sbetrBGC_driver
     do fc = 1, numf
       c = filter(fc)
       if(j>=jtops(c))then
-        waterstate_vars%h2osoi_liqvol_col(c,j) = clmforc_vars%h2osoi_liqvol(tstep,j)
-        waterstate_vars%air_vol_col(c,j)       = clmforc_vars%watsat(j)-clmforc_vars%h2osoi_liqvol(tstep,j)
-        soilstate_vars%eff_porosity_col(c,j)   = clmforc_vars%watsat(j)-clmforc_vars%h2osoi_icevol(tstep,j)
-        soilstate_vars%bsw_col(c,j)            = clmforc_vars%bsw(j)
-        temperature_vars%t_soisno_col(c,j)     = clmforc_vars%t_soi(tstep,j)
-        waterflux_vars%qflx_rootsoi_col(c,j)   = clmforc_vars%qflx_rootsoi(tstep,j)  !water exchange between soil and root, m/H2O/s
+        waterstate_vars%h2osoi_liqvol_col(c,j) = forcing_data%h2osoi_liqvol(tstep,j)
+        waterstate_vars%air_vol_col(c,j)       = forcing_data%watsat(j)-forcing_data%h2osoi_liqvol(tstep,j)
+        soilstate_vars%eff_porosity_col(c,j)   = forcing_data%watsat(j)-forcing_data%h2osoi_icevol(tstep,j)
+        soilstate_vars%bsw_col(c,j)            = forcing_data%bsw(j)
+        temperature_vars%t_soisno_col(c,j)     = forcing_data%t_soi(tstep,j)
+        waterflux_vars%qflx_rootsoi_col(c,j)   = forcing_data%qflx_rootsoi(tstep,j)  !water exchange between soil and root, m/H2O/s
         col%dz(c,j) = dzsoi(j)
         col%zi(c,j) = zisoi(j)
         chemstate_vars%soil_pH(c,j)=7._r8
@@ -402,16 +406,16 @@ end subroutine sbetrBGC_driver
   do j = 1, ubj
     do fc = 1, numf
       c = filter(fc)
-      waterstate_vars%h2osoi_liq_col(c,j)    = clmforc_vars%h2osoi_liq(tstep,j)
-      waterstate_vars%h2osoi_ice_col(c,j)    = clmforc_vars%h2osoi_ice(tstep,j)
+      waterstate_vars%h2osoi_liq_col(c,j)    = forcing_data%h2osoi_liq(tstep,j)
+      waterstate_vars%h2osoi_ice_col(c,j)    = forcing_data%h2osoi_ice(tstep,j)
     enddo
   enddo
   end associate
-  end subroutine read_betrforcing
+  end subroutine update_forcing
 
   !-------------------------------------------------------------------------------
 
-  subroutine calc_qadv(ubj, record, numf, filter, dtime, ttime, waterstate_vars, waterflux_vars)
+  subroutine calc_qadv(forcing_data, ubj, record, numf, filter, dtime, ttime, waterstate_vars, waterflux_vars)
 
   !
   ! description
@@ -422,8 +426,11 @@ end subroutine sbetrBGC_driver
   use WaterfluxType     , only : waterflux_type
   use ColumnType        , only : column_type
 
-  ! ARGUMENTS
+  use ForcingDataType, only : ForcingData_type
+
   implicit none
+
+  class(ForcingData_type), intent(inout) :: forcing_data
   integer, intent(in) :: numf
   integer, intent(in) :: filter(:)
   integer, intent(in) :: ubj
@@ -450,7 +457,7 @@ end subroutine sbetrBGC_driver
 
       do j = ubj, 1, -1
         if(j==ubj)then
-          waterflux_vars%qflx_adv_col(c,j) = clmforc_vars%qbot(tstep)
+          waterflux_vars%qflx_adv_col(c,j) = forcing_data%qbot(tstep)
           dmass=(waterstate_vars%h2osoi_ice_col(c,j)+waterstate_vars%h2osoi_liq_col(c,j))- &
            (waterstate_vars%h2osoi_ice_old(c,j)+waterstate_vars%h2osoi_liq_old(c,j))
           !the following is for first step initialization
@@ -462,7 +469,7 @@ end subroutine sbetrBGC_driver
              waterflux_vars%qflx_rootsoi_col(c,j)
         endif
       enddo
-      waterflux_vars%qflx_infl_col(c) = clmforc_vars%qflx_infl(tstep)
+      waterflux_vars%qflx_infl_col(c) = forcing_data%qflx_infl(tstep)
 
       !now correct the infiltration
       waterflux_vars%qflx_gross_infl_soil_col(c) = (waterstate_vars%h2osoi_liq_col(c,1)-waterstate_vars%h2osoi_liq_old(c,1))/dtime &
