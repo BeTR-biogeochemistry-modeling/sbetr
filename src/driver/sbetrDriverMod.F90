@@ -5,7 +5,6 @@ module sbetrDriverMod
 ! created by Jinyun Tang
   use shr_kind_mod        , only : r8 => shr_kind_r8
   use ncdio_pio
-  !use CLMForcType         , only : clmforc_vars
 
   use BeTR_TimeMod, only : betr_time_type
 
@@ -115,7 +114,7 @@ contains
   call simulation%BeTRSetFilter()
 
   !obtain waterstate_vars for initilizations that need it
-  call update_forcing(forcing_data, bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, time_vars, col, &
+  call forcing_data%UpdateForcing(bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, time_vars, col, &
        atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars             , &
        waterflux_vars, temperature_vars, chemstate_vars, simulation%jtops)
 
@@ -129,7 +128,7 @@ contains
     !set envrionmental forcing by reading foring data: temperature, moisture, atmospheric resistance
     !from either user specified file or clm history file
 
-    call update_forcing(forcing_data, bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, time_vars, col, &
+    call forcing_data%UpdateForcing(bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, time_vars, col, &
       atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars, &
       waterflux_vars, temperature_vars, chemstate_vars, simulation%jtops)
 
@@ -312,107 +311,6 @@ end subroutine sbetrBGC_driver
 !X!
 !X!  end subroutine rest_write
 
-!-------------------------------------------------------------------------------
-
-  subroutine update_forcing(forcing_data, bounds, lbj, ubj, numf, filter, ttime, col, atm2lnd_vars, &
-    soilhydrology_vars, soilstate_vars,waterstate_vars,waterflux_vars, &
-    temperature_vars,chemstate_vars, jtops)
-  !
-  ! DESCRIPTIONS
-  ! read environmental forcing to run betr
-  ! for clm forced runs, it will forcing from history files
-  !
-  use TemperatureType   , only : temperature_type
-  use WaterstateType    , only : waterstate_type
-  use WaterfluxType     , only : waterflux_type
-  use SoilStateType     , only : soilstate_type
-  use ChemStateType     , only : chemstate_type
-  use ColumnType        , only : column_type
-  use clmgridMod        , only : dzsoi, zisoi
-  use decompMod         , only : bounds_type
-  use SoilHydrologyType , only : soilhydrology_type
-  use atm2lndType       , only : atm2lnd_type
-
-  use ForcingDataType, only : ForcingData_type
-
-  implicit none
-
-  class(ForcingData_type), intent(inout) :: forcing_data
-  type(bounds_type), intent(in) :: bounds
-  integer, intent(in) :: numf
-  integer, intent(in) :: filter(:)
-  integer, intent(in) :: lbj, ubj
-  type(betr_time_type),             intent(in) :: ttime
-  type(chemstate_type),     intent(inout) :: chemstate_vars
-  type(atm2lnd_type),       intent(inout) :: atm2lnd_vars
-  type(soilstate_type),     intent(inout) :: soilstate_vars
-  type(waterstate_type),    intent(inout) :: waterstate_vars
-  type(waterflux_type),     intent(inout) :: waterflux_vars
-  type(temperature_type),   intent(inout) :: temperature_vars
-  type(column_type),        intent(inout) :: col
-  type(soilhydrology_type), intent(inout) :: soilhydrology_vars
-  integer,               intent(inout)    :: jtops(bounds%begc:bounds%endc)
-
-  integer :: j, fc, c
-  character(len=255) :: subname='update_forcing'
-
-
-
-  associate(                   &
-    tstep => ttime%tstep       &
-  )
-  !setup top boundary
-  do fc = 1, numf
-    c = filter(fc)
-    jtops(c) = 1
-    soilhydrology_vars%zwts_col(c) = 10._r8
-    atm2lnd_vars%forc_pbot_downscaled_col(c) = forcing_data%pbot(tstep)             ! 1 atmos
-    atm2lnd_vars%forc_t_downscaled_col(c)    = forcing_data%tbot(tstep)             ! 2 atmos temperature
-  enddo
-
-  !set up forcing variables
-  do j = lbj, ubj
-    do fc = 1, numf
-      c = filter(fc)
-      if(j>=jtops(c))then
-        waterstate_vars%h2osoi_liqvol_col(c,j) = forcing_data%h2osoi_liqvol(tstep,j)
-        waterstate_vars%air_vol_col(c,j)       = forcing_data%watsat(j)-forcing_data%h2osoi_liqvol(tstep,j)
-        soilstate_vars%eff_porosity_col(c,j)   = forcing_data%watsat(j)-forcing_data%h2osoi_icevol(tstep,j)
-        soilstate_vars%bsw_col(c,j)            = forcing_data%bsw(j)
-        temperature_vars%t_soisno_col(c,j)     = forcing_data%t_soi(tstep,j)
-        waterflux_vars%qflx_rootsoi_col(c,j)   = forcing_data%qflx_rootsoi(tstep,j)  !water exchange between soil and root, m/H2O/s
-        col%dz(c,j) = dzsoi(j)
-        col%zi(c,j) = zisoi(j)
-        chemstate_vars%soil_pH(c,j)=7._r8
-        !set drainage to zero
-        !set surface runoff to zero
-        waterflux_vars%qflx_surf_col(c) = 0._r8
-        waterflux_vars%qflx_drain_vr_col(c,j) = 0._r8
-
-      endif
-    enddo
-  enddo
-
-  do fc = 1, numf
-      c = filter(fc)
-      waterflux_vars%qflx_totdrain_col(c) = 0._r8
-      col%zi(c,0) = zisoi(0)
-
-      waterflux_vars%qflx_snow2topsoi_col(c) = 0._r8
-      waterflux_vars%qflx_h2osfc2topsoi_col(c) = 0._r8
-  enddo
-
-
-  do j = 1, ubj
-    do fc = 1, numf
-      c = filter(fc)
-      waterstate_vars%h2osoi_liq_col(c,j)    = forcing_data%h2osoi_liq(tstep,j)
-      waterstate_vars%h2osoi_ice_col(c,j)    = forcing_data%h2osoi_ice(tstep,j)
-    enddo
-  enddo
-  end associate
-  end subroutine update_forcing
-
   !-------------------------------------------------------------------------------
 
   subroutine calc_qadv(forcing_data, ubj, record, numf, filter, dtime, ttime, waterstate_vars, waterflux_vars)
@@ -457,7 +355,7 @@ end subroutine sbetrBGC_driver
 
       do j = ubj, 1, -1
         if(j==ubj)then
-          waterflux_vars%qflx_adv_col(c,j) = forcing_data%qbot(tstep)
+          waterflux_vars%qflx_adv_col(c,j) = forcing_data%discharge(tstep)
           dmass=(waterstate_vars%h2osoi_ice_col(c,j)+waterstate_vars%h2osoi_liq_col(c,j))- &
            (waterstate_vars%h2osoi_ice_old(c,j)+waterstate_vars%h2osoi_liq_old(c,j))
           !the following is for first step initialization
@@ -469,7 +367,7 @@ end subroutine sbetrBGC_driver
              waterflux_vars%qflx_rootsoi_col(c,j)
         endif
       enddo
-      waterflux_vars%qflx_infl_col(c) = forcing_data%qflx_infl(tstep)
+      waterflux_vars%qflx_infl_col(c) = forcing_data%infiltration(tstep)
 
       !now correct the infiltration
       waterflux_vars%qflx_gross_infl_soil_col(c) = (waterstate_vars%h2osoi_liq_col(c,1)-waterstate_vars%h2osoi_liq_old(c,1))/dtime &

@@ -14,11 +14,17 @@ module ForcingDataType
 
   character(len=*), private, parameter :: mod_filename = __FILE__
 
+  character(len=*), parameter :: steady_state_name = 'steady state'
+  character(len=*), parameter :: transient_name = 'transient'
+  integer, parameter :: transient = 1
+  integer, parameter :: steady_state = 2
+
   type, public :: ForcingData_type
      character(len=betr_filename_length) :: grid_filename
      character(len=betr_filename_length) :: forcing_filename
      character(len=betr_string_length) :: forcing_format ! file format: netcdf, namelist, csv, etc.
-     character(len=betr_string_length) :: forcing_type ! steady state, transient
+     character(len=betr_string_length) :: forcing_type_name ! steady state, transient
+     integer :: forcing_type
 
 
      integer :: num_levels
@@ -46,35 +52,46 @@ module ForcingDataType
      procedure, public :: ReadData
      procedure, public :: ReadGridData
      procedure, public :: ReadForcingData
-!     procedure, public :: GetForcing
+     procedure, public :: UpdateForcing
+     procedure, public :: discharge
+     procedure, public :: infiltration
      procedure, private :: InitAllocate
      procedure, private :: ReadNameList
   end type ForcingData_type
 
 contains
 
-  subroutine Init(this, diml, dimt)
+  subroutine Init(this, dim_levels, dim_time)
 
     class(ForcingData_type) :: this
-
-    integer, intent(in) :: diml, dimt
-
-    call this%InitAllocate(diml, dimt)
-
-  end subroutine Init
-
-
-  !------------------------------------------------------------------------
-  subroutine InitAllocate(this, dim_levels, dim_time)
-
-    class(ForcingData_type) :: this
-    !at this moment the variable size is fixed
 
     integer, intent(in) :: dim_levels, dim_time
 
     this%num_columns = 1
     this%num_levels=dim_levels
     this%num_time=dim_time
+
+    select case (trim(this%forcing_type_name))
+       case (transient_name)
+          this%forcing_type = transient
+       case (steady_state_name)
+          this%forcing_type = steady_state
+          ! ignore the values scraped from netcdf and just use one time level.
+          this%num_time = 1
+       case default
+          this%forcing_type = transient
+          write(*, *) 'WARNING: no forcing data type specified, using transient.'
+       end select
+    
+    call this%InitAllocate()
+
+  end subroutine Init
+
+  !------------------------------------------------------------------------
+  subroutine InitAllocate(this)
+
+    class(ForcingData_type) :: this
+    !at this moment the variable size is fixed
 
     allocate(this%t_soi(this%num_time, this%num_levels))
     allocate(this%h2osoi_liqvol(this%num_time, this%num_levels))
@@ -92,7 +109,6 @@ contains
     allocate(this%bsw(this%num_levels))
 
   end subroutine InitAllocate
-
 
   !------------------------------------------------------------------------
   subroutine ReadData(this, namelist_buffer)
@@ -191,6 +207,7 @@ contains
     allocate(data_2d(this%num_columns, this%num_levels, 1:this%num_time))
     allocate(data_1d(this%num_columns, this%num_time))
 
+    !X!write(*, *) 'Reading TSOI'
     call ncd_getvar(ncf_in_forc, 'TSOI', data_2d)
     do j2 = 1, this%num_levels
        do j1 = 1, this%num_time
@@ -198,6 +215,7 @@ contains
        enddo
     enddo
 
+    !X!write(*, *) 'Reading H2OSOI'
     call ncd_getvar(ncf_in_forc, 'H2OSOI', data_2d)
     do j2 = 1, this%num_levels
        do j1 = 1, this%num_time
@@ -205,6 +223,7 @@ contains
        enddo
     enddo
 
+    !X!write(*, *) 'Reading SOILICE'
     call ncd_getvar(ncf_in_forc, 'SOILICE', data_2d)
     do j2 = 1, this%num_levels
        do j1 = 1, this%num_time
@@ -217,26 +236,31 @@ contains
     enddo
 
 
+    !X!write(*, *) 'Reading QINFL'
     call ncd_getvar(ncf_in_forc, 'QINFL', data_1d)
     do j1 =1, this%num_time
        this%qflx_infl(j1) = data_1d(this%num_columns, j1)
     enddo
 
+    !X!write(*, *) 'Reading PBOT'
     call ncd_getvar(ncf_in_forc, 'PBOT', data_1d)
     do j1 =1, this%num_time
        this%pbot(j1) = data_1d(this%num_columns, j1)
     enddo
 
+    !X!write(*, *) 'Reading TBOT'
     call ncd_getvar(ncf_in_forc, 'TBOT', data_1d)
     do j1 =1, this%num_time
        this%tbot(j1) = data_1d(this%num_columns, j1)
     enddo
 
+    !X!write(*, *) 'Reading QCHARGE'
     call ncd_getvar(ncf_in_forc, 'QCHARGE', data_1d)
     do j1 =1, this%num_time
        this%qbot(j1) = data_1d(this%num_columns, j1) * 1.e-3_r8  !convert int m/s
     enddo
 
+    !X!write(*, *) 'Reading QFLX_ROOTSOI'
     call ncd_getvar(ncf_in_forc, 'QFLX_ROOTSOI', data_2d)
     do j2 = 1, this%num_levels
        do j1 = 1, this%num_time
@@ -277,18 +301,18 @@ contains
     integer :: nml_error
     character(len=*), parameter :: subname = 'ReadNameList'
     character(len=betr_filename_length) :: grid_filename
-    character(len=betr_filename_length) :: forcing_format, forcing_type, forcing_filename
+    character(len=betr_filename_length) :: forcing_format, forcing_type_name, forcing_filename
     character(len=betr_string_length_long) :: ioerror_msg
 
 
     !-----------------------------------------------------------------------
 
     namelist / forcing_inparm / grid_filename, &
-         forcing_type, forcing_filename, forcing_format
+         forcing_type_name, forcing_filename, forcing_format
 
     grid_filename = ''
     forcing_format = ''
-    forcing_type = ''
+    forcing_type_name = transient_name
     forcing_filename = ''
 
     ! ----------------------------------------------------------------------
@@ -317,12 +341,163 @@ contains
     endif
 
     this%grid_filename = trim(grid_filename)
-    this%forcing_type = trim(forcing_type)
+    this%forcing_type_name = trim(forcing_type_name)
     this%forcing_format = trim(forcing_format)
     this%forcing_filename = trim(forcing_filename)
 
   end subroutine ReadNameList
 
+  ! ----------------------------------------------------------------------
 
+  subroutine UpdateForcing(this, bounds, lbj, ubj, numf, filter, ttime, col, atm2lnd_vars, &
+       soilhydrology_vars, soilstate_vars,waterstate_vars,waterflux_vars, &
+       temperature_vars,chemstate_vars, jtops)
+    !
+    ! DESCRIPTIONS
+    ! read environmental forcing to run betr
+    ! for clm forced runs, it will forcing from history files
+    !
+    use TemperatureType   , only : temperature_type
+    use WaterstateType    , only : waterstate_type
+    use WaterfluxType     , only : waterflux_type
+    use SoilStateType     , only : soilstate_type
+    use ChemStateType     , only : chemstate_type
+    use ColumnType        , only : column_type
+    use clmgridMod        , only : dzsoi, zisoi
+    use decompMod         , only : bounds_type
+    use SoilHydrologyType , only : soilhydrology_type
+    use atm2lndType       , only : atm2lnd_type
+
+    use BeTR_TimeMod, only : betr_time_type
+    
+    implicit none
+
+    class(ForcingData_type), intent(in) :: this
+    type(bounds_type), intent(in) :: bounds
+    integer, intent(in) :: numf
+    integer, intent(in) :: filter(:)
+    integer, intent(in) :: lbj, ubj
+    type(betr_time_type),     intent(in) :: ttime
+    type(chemstate_type),     intent(inout) :: chemstate_vars
+    type(atm2lnd_type),       intent(inout) :: atm2lnd_vars
+    type(soilstate_type),     intent(inout) :: soilstate_vars
+    type(waterstate_type),    intent(inout) :: waterstate_vars
+    type(waterflux_type),     intent(inout) :: waterflux_vars
+    type(temperature_type),   intent(inout) :: temperature_vars
+    type(column_type),        intent(inout) :: col
+    type(soilhydrology_type), intent(inout) :: soilhydrology_vars
+    integer,               intent(inout)    :: jtops(bounds%begc:bounds%endc)
+
+    integer :: j, fc, c, tstep
+    character(len=255) :: subname='update_forcing'
+
+    !X!write(*, *) 'Updating forcing data'
+
+    if (this%forcing_type == steady_state) then
+       tstep = 1
+    else
+       tstep = ttime%tstep
+    end if
+
+    !setup top boundary
+    do fc = 1, numf
+       c = filter(fc)
+       jtops(c) = 1
+       soilhydrology_vars%zwts_col(c) = 10._r8
+       atm2lnd_vars%forc_pbot_downscaled_col(c) = this%pbot(tstep)  ! 1 atmos
+       atm2lnd_vars%forc_t_downscaled_col(c)    = this%tbot(tstep)  ! 2 atmos temperature
+    enddo
+
+    !set up forcing variables
+    do j = lbj, ubj
+       do fc = 1, numf
+          c = filter(fc)
+          if(j>=jtops(c))then
+             waterstate_vars%h2osoi_liqvol_col(c,j) = this%h2osoi_liqvol(tstep,j)
+             waterstate_vars%air_vol_col(c,j) = this%watsat(j)-this%h2osoi_liqvol(tstep,j)
+
+             soilstate_vars%eff_porosity_col(c,j) = this%watsat(j)-this%h2osoi_icevol(tstep,j)
+             soilstate_vars%bsw_col(c,j) = this%bsw(j)
+
+             temperature_vars%t_soisno_col(c,j) = this%t_soi(tstep,j)
+
+             waterflux_vars%qflx_rootsoi_col(c,j) = this%qflx_rootsoi(tstep,j)  !water exchange between soil and root, m/H2O/s
+
+             col%dz(c,j) = dzsoi(j)
+             col%zi(c,j) = zisoi(j)
+
+             chemstate_vars%soil_pH(c,j) = 7._r8
+
+             !set drainage to zero
+             !set surface runoff to zero
+             waterflux_vars%qflx_surf_col(c) = 0._r8
+             waterflux_vars%qflx_drain_vr_col(c,j) = 0._r8
+
+          endif
+       enddo
+    enddo
+
+    do fc = 1, numf
+       c = filter(fc)
+       waterflux_vars%qflx_totdrain_col(c) = 0._r8
+       col%zi(c,0) = zisoi(0)
+
+       waterflux_vars%qflx_snow2topsoi_col(c) = 0._r8
+       waterflux_vars%qflx_h2osfc2topsoi_col(c) = 0._r8
+    enddo
+
+
+    do j = 1, ubj
+       do fc = 1, numf
+          c = filter(fc)
+          waterstate_vars%h2osoi_liq_col(c,j) = this%h2osoi_liq(tstep,j)
+          waterstate_vars%h2osoi_ice_col(c,j) = this%h2osoi_ice(tstep,j)
+       enddo
+    enddo
+  end subroutine UpdateForcing
+
+  ! ----------------------------------------------------------------------
+
+  function discharge(this, tstep) result(flux)
+
+    implicit none
+    
+    class(ForcingData_type), intent(in) :: this
+    integer, intent(in) :: tstep
+
+    real(r8) :: flux
+    integer :: index
+
+    if (this%forcing_type == steady_state) then
+       index = 1
+    else
+       index = tstep
+    end if
+
+    flux = this%qbot(tstep)
+
+  end function discharge
+
+  ! ----------------------------------------------------------------------
+
+  function infiltration(this, tstep) result(flux)
+
+    implicit none
+    
+    class(ForcingData_type), intent(in) :: this
+    integer, intent(in) :: tstep
+
+    real(r8) :: flux
+    integer :: index
+
+    if (this%forcing_type == steady_state) then
+       index = 1
+    else
+       index = tstep
+    end if
+
+    flux = this%qflx_infl(tstep)
+
+  end function infiltration
 
 end module ForcingDataType

@@ -1,0 +1,22 @@
+&sbetr_driver
+  simulator_name = 'standalone'
+/
+
+&betr_parameters
+  reaction_method = 'mock_run'
+  advection_on = .true.
+  diffusion_on = .false.
+  reaction_on = .false.
+/
+
+&forcing_inparm
+  grid_filename = '../../../example_input/sierra_grid.nc'
+  forcing_type_name = 'steady state'
+  forcing_format = 'netcdf'
+  forcing_filename = '../../../example_input/uniform_steadystate.nc'
+/
+
+&regression_test
+  write_regression_output = .true.
+  cells = 5
+/
