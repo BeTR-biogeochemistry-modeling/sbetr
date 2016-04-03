@@ -9,6 +9,10 @@
   reaction_on = .false.
 /
 
+&betr_time
+  stop_time = 5184000.0
+/
+
 &forcing_inparm
   grid_filename = '../../../example_input/sierra_grid.nc'
   forcing_type_name = 'steady state'
