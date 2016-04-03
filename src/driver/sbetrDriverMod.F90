@@ -63,12 +63,12 @@ contains
 
   character(len=80) :: subname = 'sbetrBGC_driver'
 
-  type(betr_time_type) :: time_vars
   type(bounds_type) :: bounds
   integer :: lbj, ubj
 
   character(len=betr_string_length_long) :: simulator_name
   class(ForcingData_type), allocatable :: forcing_data
+  class(betr_time_type), allocatable :: time_vars
 
   !initialize parameters
   call read_name_list(namelist_buffer, simulator_name)
@@ -89,12 +89,8 @@ contains
 
   call initialize(bounds)
 
-
-  dtime = 1800._r8   !half hourly time step
-  time_vars%tstep = 1
-  time_vars%time  = 0._r8
-  time_vars%time_end = dtime*48._r8*365._r8*2._r8
-  time_vars%restart_dtime = 1800*2
+  allocate(time_vars)
+  call time_vars%Init(namelist_buffer)
 
   allocate(forcing_data)
   call forcing_data%ReadData(namelist_buffer)
@@ -135,7 +131,7 @@ contains
     !calculate advective velocity
     call calc_qadv(forcing_data, ubj, record, &
          simulation%num_soilc, simulation%filter_soilc, &
-         dtime, time_vars, waterstate_vars, waterflux_vars)
+         time_vars, waterstate_vars, waterflux_vars)
 
     !no calculation in the first step
     if(record==0)cycle
@@ -156,7 +152,7 @@ contains
     !  simulation%filter_soilc, waterstate_vars)
 
     !update time stamp
-    call update_time_stamp(time_vars, dtime)
+    call time_vars%update_time_stamp()
 
     !write output
     call simulation%WriteHistory(record, lbj, ubj, time_vars)
@@ -164,7 +160,9 @@ contains
     !write restart file? is not functionning at the moment
     !if(its_time_to_write_restart(time_vars)) call rest_write(tracerstate_vars, tracercoeff_vars, tracerflux_vars, time_vars)
     call proc_nextstep()
-    if(its_time_to_exit(time_vars))exit
+    if(time_vars%its_time_to_exit()) then
+       exit
+    end if
 
   enddo
 
@@ -233,63 +231,6 @@ end subroutine sbetrBGC_driver
 
   end subroutine read_name_list
 
-!-------------------------------------------------------------------------------
-
-!X!  function its_time_to_write_restart(ttime)result(ans)
-!X!  !
-!X!  ! DESCRIPTION
-!X!  ! decide if to write restart file
-!X!  !
-!X!
-!X!  implicit none
-!X!  type(betr_time_type), intent(in) :: ttime
-!X!  logical :: ans
-!X!
-!X!  character(len=80) :: subname = 'its_time_to_write_restart'
-!X!
-!X!
-!X!
-!X!  ans = (mod(ttime%time,ttime%restart_dtime) == 0)
-!X!  end function its_time_to_write_restart
-
-!-------------------------------------------------------------------------------
-  function its_time_to_exit(ttime)result(ans)
-  !
-  ! DESCRIPTION
-  ! decide if to exit the loop
-  !
-
-  implicit none
-  type(betr_time_type), intent(in) :: ttime
-  logical :: ans
-
-
-  character(len=80) :: subname = 'its_time_to_exit'
-
-  ans= (ttime%time .eq. ttime%time_end)
-
-
-  end function its_time_to_exit
-
-!-------------------------------------------------------------------------------
-  subroutine update_time_stamp(ttime, dtime)
-  !
-  ! DESCRIPTION
-  !
-  use shr_kind_mod, only : r8 => shr_kind_r8
-
-  implicit none
-  type(betr_time_type), intent(inout) :: ttime
-  real(r8),           intent(in) :: dtime
-
-  character(len=80) :: subname='update_time_stamp'
-
-  ttime%time=ttime%time+dtime
-
-  ttime%tstep = ttime%tstep + 1
-  if(mod(ttime%tstep, 48*365)==0)ttime%tstep = 1
-
-  end subroutine update_time_stamp
 
 !-------------------------------------------------------------------------------
 
@@ -313,7 +254,7 @@ end subroutine sbetrBGC_driver
 
   !-------------------------------------------------------------------------------
 
-  subroutine calc_qadv(forcing_data, ubj, record, numf, filter, dtime, ttime, waterstate_vars, waterflux_vars)
+  subroutine calc_qadv(forcing_data, ubj, record, numf, filter, ttime, waterstate_vars, waterflux_vars)
 
   !
   ! description
@@ -335,15 +276,15 @@ end subroutine sbetrBGC_driver
 
   integer                 , intent(in)    :: record
   type(betr_time_type)    , intent(in)    :: ttime
-  real(r8)                , intent(in)    :: dtime
   type(waterstate_type)   , intent(inout) :: waterstate_vars
   type(waterflux_type)    , intent(inout) :: waterflux_vars
 
   integer :: j, fc, c
   real(r8):: dmass    !kg/m2 = mm H2O/m2
 
-  associate(                   &
-    tstep => ttime%tstep       &
+  associate( &
+       tstep => ttime%tstep, &
+       dtime => ttime%delta_time &
   )
 
 
