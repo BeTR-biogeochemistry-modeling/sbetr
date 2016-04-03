@@ -3,7 +3,10 @@
 /
 
 &betr_parameters
-  reaction_method = 'h2oiso'
+  reaction_method = 'mock_run'
+  advection_on = .true.
+  diffusion_on = .false.
+  reaction_on = .false.
 /
 
 &betr_time
@@ -12,7 +15,9 @@
 
 &forcing_inparm
   grid_filename = '../../../example_input/sierra_grid.nc'
-  forcing_filename = '../../../example_input/sierra_halfhour_full_year_clmforc.nc'
+  forcing_type_name = 'steady state'
+  forcing_format = 'netcdf'
+  forcing_filename = '../../../example_input/uniform_steadystate.nc'
 /
 
 &regression_test

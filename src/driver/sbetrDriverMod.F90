@@ -5,7 +5,6 @@ module sbetrDriverMod
 ! created by Jinyun Tang
   use shr_kind_mod        , only : r8 => shr_kind_r8
   use ncdio_pio
-  use CLMForcType         , only : clmforc_vars
 
   use BeTR_TimeMod, only : betr_time_type
 
@@ -40,10 +39,7 @@ contains
 
   use betr_constants, only : betr_namelist_buffer_size, betr_string_length_long, betr_filename_length
 
-!X!  use betr_standalone_cpl , only : betr_initialize_standalone
-!X!  use betr_standalone_cpl , only : run_betr_one_step_without_drainage_standalone
-!X!  use betr_standalone_cpl , only : run_betr_one_step_with_drainage_standalone
-
+  use ForcingDataType, only : ForcingData_type
 
   use TracerParamsMod     , only : tracer_param_init
   use spmdMod             , only : spmd_init
@@ -67,11 +63,12 @@ contains
 
   character(len=80) :: subname = 'sbetrBGC_driver'
 
-  type(betr_time_type) :: time_vars
   type(bounds_type) :: bounds
   integer :: lbj, ubj
 
   character(len=betr_string_length_long) :: simulator_name
+  class(ForcingData_type), allocatable :: forcing_data
+  class(betr_time_type), allocatable :: time_vars
 
   !initialize parameters
   call read_name_list(namelist_buffer, simulator_name)
@@ -92,14 +89,11 @@ contains
 
   call initialize(bounds)
 
+  allocate(time_vars)
+  call time_vars%Init(namelist_buffer)
 
-  dtime = 1800._r8   !half hourly time step
-  time_vars%tstep = 1
-  time_vars%time  = 0._r8
-  time_vars%time_end = dtime*48._r8*365._r8*2._r8
-  time_vars%restart_dtime = 1800*2
-
-  call clmforc_vars%LoadForcingData(namelist_buffer)
+  allocate(forcing_data)
+  call forcing_data%ReadData(namelist_buffer)
 
   lbj = 1
   ubj = nlevtrc_soil
@@ -116,7 +110,7 @@ contains
   call simulation%BeTRSetFilter()
 
   !obtain waterstate_vars for initilizations that need it
-  call read_betrforcing(bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, time_vars, col, &
+  call forcing_data%UpdateForcing(bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, time_vars, col, &
        atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars             , &
        waterflux_vars, temperature_vars, chemstate_vars, simulation%jtops)
 
@@ -130,14 +124,14 @@ contains
     !set envrionmental forcing by reading foring data: temperature, moisture, atmospheric resistance
     !from either user specified file or clm history file
 
-    call read_betrforcing(bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, time_vars, col, &
+    call forcing_data%UpdateForcing(bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, time_vars, col, &
       atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars, &
       waterflux_vars, temperature_vars, chemstate_vars, simulation%jtops)
 
     !calculate advective velocity
-    call calc_qadv(ubj, record, &
+    call calc_qadv(forcing_data, ubj, record, &
          simulation%num_soilc, simulation%filter_soilc, &
-         dtime, time_vars, waterstate_vars, waterflux_vars)
+         time_vars, waterstate_vars, waterflux_vars)
 
     !no calculation in the first step
     if(record==0)cycle
@@ -158,7 +152,7 @@ contains
     !  simulation%filter_soilc, waterstate_vars)
 
     !update time stamp
-    call update_time_stamp(time_vars, dtime)
+    call time_vars%update_time_stamp()
 
     !write output
     call simulation%WriteHistory(record, lbj, ubj, time_vars)
@@ -166,7 +160,9 @@ contains
     !write restart file? is not functionning at the moment
     !if(its_time_to_write_restart(time_vars)) call rest_write(tracerstate_vars, tracercoeff_vars, tracerflux_vars, time_vars)
     call proc_nextstep()
-    if(its_time_to_exit(time_vars))exit
+    if(time_vars%its_time_to_exit()) then
+       exit
+    end if
 
   enddo
 
@@ -235,63 +231,6 @@ end subroutine sbetrBGC_driver
 
   end subroutine read_name_list
 
-!-------------------------------------------------------------------------------
-
-!X!  function its_time_to_write_restart(ttime)result(ans)
-!X!  !
-!X!  ! DESCRIPTION
-!X!  ! decide if to write restart file
-!X!  !
-!X!
-!X!  implicit none
-!X!  type(betr_time_type), intent(in) :: ttime
-!X!  logical :: ans
-!X!
-!X!  character(len=80) :: subname = 'its_time_to_write_restart'
-!X!
-!X!
-!X!
-!X!  ans = (mod(ttime%time,ttime%restart_dtime) == 0)
-!X!  end function its_time_to_write_restart
-
-!-------------------------------------------------------------------------------
-  function its_time_to_exit(ttime)result(ans)
-  !
-  ! DESCRIPTION
-  ! decide if to exit the loop
-  !
-
-  implicit none
-  type(betr_time_type), intent(in) :: ttime
-  logical :: ans
-
-
-  character(len=80) :: subname = 'its_time_to_exit'
-
-  ans= (ttime%time .eq. ttime%time_end)
-
-
-  end function its_time_to_exit
-
-!-------------------------------------------------------------------------------
-  subroutine update_time_stamp(ttime, dtime)
-  !
-  ! DESCRIPTION
-  !
-  use shr_kind_mod, only : r8 => shr_kind_r8
-
-  implicit none
-  type(betr_time_type), intent(inout) :: ttime
-  real(r8),           intent(in) :: dtime
-
-  character(len=80) :: subname='update_time_stamp'
-
-  ttime%time=ttime%time+dtime
-
-  ttime%tstep = ttime%tstep + 1
-  if(mod(ttime%tstep, 48*365)==0)ttime%tstep = 1
-
-  end subroutine update_time_stamp
 
 !-------------------------------------------------------------------------------
 
@@ -313,105 +252,9 @@ end subroutine sbetrBGC_driver
 !X!
 !X!  end subroutine rest_write
 
-!-------------------------------------------------------------------------------
-
-  subroutine read_betrforcing(bounds, lbj, ubj, numf, filter, ttime, col, atm2lnd_vars, &
-    soilhydrology_vars, soilstate_vars,waterstate_vars,waterflux_vars, &
-    temperature_vars,chemstate_vars, jtops)
-  !
-  ! DESCRIPTIONS
-  ! read environmental forcing to run betr
-  ! for clm forced runs, it will forcing from history files
-  !
-  use TemperatureType   , only : temperature_type
-  use WaterstateType    , only : waterstate_type
-  use WaterfluxType     , only : waterflux_type
-  use SoilStateType     , only : soilstate_type
-  use ChemStateType     , only : chemstate_type
-  use ColumnType        , only : column_type
-  use clmgridMod        , only : dzsoi, zisoi
-  use decompMod         , only : bounds_type
-  use SoilHydrologyType , only : soilhydrology_type
-  use atm2lndType       , only : atm2lnd_type
-  implicit none
-  type(bounds_type), intent(in) :: bounds
-  integer, intent(in) :: numf
-  integer, intent(in) :: filter(:)
-  integer, intent(in) :: lbj, ubj
-  type(betr_time_type),             intent(in) :: ttime
-  type(chemstate_type),     intent(inout) :: chemstate_vars
-  type(atm2lnd_type),       intent(inout) :: atm2lnd_vars
-  type(soilstate_type),     intent(inout) :: soilstate_vars
-  type(waterstate_type),    intent(inout) :: waterstate_vars
-  type(waterflux_type),     intent(inout) :: waterflux_vars
-  type(temperature_type),   intent(inout) :: temperature_vars
-  type(column_type),        intent(inout) :: col
-  type(soilhydrology_type), intent(inout) :: soilhydrology_vars
-  integer,               intent(inout)    :: jtops(bounds%begc:bounds%endc)
-
-  integer :: j, fc, c
-  character(len=255) :: subname='read_betrforcing'
-
-
-
-  associate(                   &
-    tstep => ttime%tstep       &
-  )
-  !setup top boundary
-  do fc = 1, numf
-    c = filter(fc)
-    jtops(c) = 1
-    soilhydrology_vars%zwts_col(c) = 10._r8
-    atm2lnd_vars%forc_pbot_downscaled_col(c) = clmforc_vars%pbot(tstep)             ! 1 atmos
-    atm2lnd_vars%forc_t_downscaled_col(c)    = clmforc_vars%tbot(tstep)             ! 2 atmos temperature
-  enddo
-
-  !set up forcing variables
-  do j = lbj, ubj
-    do fc = 1, numf
-      c = filter(fc)
-      if(j>=jtops(c))then
-        waterstate_vars%h2osoi_liqvol_col(c,j) = clmforc_vars%h2osoi_liqvol(tstep,j)
-        waterstate_vars%air_vol_col(c,j)       = clmforc_vars%watsat(j)-clmforc_vars%h2osoi_liqvol(tstep,j)
-        soilstate_vars%eff_porosity_col(c,j)   = clmforc_vars%watsat(j)-clmforc_vars%h2osoi_icevol(tstep,j)
-        soilstate_vars%bsw_col(c,j)            = clmforc_vars%bsw(j)
-        temperature_vars%t_soisno_col(c,j)     = clmforc_vars%t_soi(tstep,j)
-        waterflux_vars%qflx_rootsoi_col(c,j)   = clmforc_vars%qflx_rootsoi(tstep,j)  !water exchange between soil and root, m/H2O/s
-        col%dz(c,j) = dzsoi(j)
-        col%zi(c,j) = zisoi(j)
-        chemstate_vars%soil_pH(c,j)=7._r8
-        !set drainage to zero
-        !set surface runoff to zero
-        waterflux_vars%qflx_surf_col(c) = 0._r8
-        waterflux_vars%qflx_drain_vr_col(c,j) = 0._r8
-
-      endif
-    enddo
-  enddo
-
-  do fc = 1, numf
-      c = filter(fc)
-      waterflux_vars%qflx_totdrain_col(c) = 0._r8
-      col%zi(c,0) = zisoi(0)
-
-      waterflux_vars%qflx_snow2topsoi_col(c) = 0._r8
-      waterflux_vars%qflx_h2osfc2topsoi_col(c) = 0._r8
-  enddo
-
-
-  do j = 1, ubj
-    do fc = 1, numf
-      c = filter(fc)
-      waterstate_vars%h2osoi_liq_col(c,j)    = clmforc_vars%h2osoi_liq(tstep,j)
-      waterstate_vars%h2osoi_ice_col(c,j)    = clmforc_vars%h2osoi_ice(tstep,j)
-    enddo
-  enddo
-  end associate
-  end subroutine read_betrforcing
-
   !-------------------------------------------------------------------------------
 
-  subroutine calc_qadv(ubj, record, numf, filter, dtime, ttime, waterstate_vars, waterflux_vars)
+  subroutine calc_qadv(forcing_data, ubj, record, numf, filter, ttime, waterstate_vars, waterflux_vars)
 
   !
   ! description
@@ -422,23 +265,26 @@ end subroutine sbetrBGC_driver
   use WaterfluxType     , only : waterflux_type
   use ColumnType        , only : column_type
 
-  ! ARGUMENTS
+  use ForcingDataType, only : ForcingData_type
+
   implicit none
+
+  class(ForcingData_type), intent(inout) :: forcing_data
   integer, intent(in) :: numf
   integer, intent(in) :: filter(:)
   integer, intent(in) :: ubj
 
   integer                 , intent(in)    :: record
   type(betr_time_type)    , intent(in)    :: ttime
-  real(r8)                , intent(in)    :: dtime
   type(waterstate_type)   , intent(inout) :: waterstate_vars
   type(waterflux_type)    , intent(inout) :: waterflux_vars
 
   integer :: j, fc, c
   real(r8):: dmass    !kg/m2 = mm H2O/m2
 
-  associate(                   &
-    tstep => ttime%tstep       &
+  associate( &
+       tstep => ttime%tstep, &
+       dtime => ttime%delta_time &
   )
 
 
@@ -450,7 +296,7 @@ end subroutine sbetrBGC_driver
 
       do j = ubj, 1, -1
         if(j==ubj)then
-          waterflux_vars%qflx_adv_col(c,j) = clmforc_vars%qbot(tstep)
+          waterflux_vars%qflx_adv_col(c,j) = forcing_data%discharge(tstep)
           dmass=(waterstate_vars%h2osoi_ice_col(c,j)+waterstate_vars%h2osoi_liq_col(c,j))- &
            (waterstate_vars%h2osoi_ice_old(c,j)+waterstate_vars%h2osoi_liq_old(c,j))
           !the following is for first step initialization
@@ -462,7 +308,7 @@ end subroutine sbetrBGC_driver
              waterflux_vars%qflx_rootsoi_col(c,j)
         endif
       enddo
-      waterflux_vars%qflx_infl_col(c) = clmforc_vars%qflx_infl(tstep)
+      waterflux_vars%qflx_infl_col(c) = forcing_data%infiltration(tstep)
 
       !now correct the infiltration
       waterflux_vars%qflx_gross_infl_soil_col(c) = (waterstate_vars%h2osoi_liq_col(c,1)-waterstate_vars%h2osoi_liq_old(c,1))/dtime &

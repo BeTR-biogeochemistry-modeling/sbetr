@@ -6,6 +6,10 @@
   reaction_method = 'mock_run'
 /
 
+&betr_time
+  stop_time = 5184000.0
+/
+
 &forcing_inparm
   grid_filename = '../../../example_input/sierra_grid.nc'
   forcing_filename = '../../../example_input/sierra_halfhour_full_year_clmforc.nc'
