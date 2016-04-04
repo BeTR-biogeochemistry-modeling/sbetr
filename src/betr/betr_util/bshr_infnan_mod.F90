@@ -7,6 +7,9 @@
 ! ieee_arithmetic intrinsic module.
 #if defined CPRIBM || defined CPRPGI || defined CPRINTEL ||  defined CPRCRAY || defined CPRNAG || defined CPRGNU
 #define HAVE_IEEE_ARITHMETIC
+#if CPRGNU && __GNUC_VERSION__ < 5
+#undef HAVE_IEEE_ARITHMETIC
+#endif
 #endif
 
 module bshr_infnan_mod
