@@ -468,8 +468,8 @@ contains
     ! Now it is purposely empty, but will be potentially useful in the future
     ! !USES:
     use BetrTracerType        , only : betrtracer_type
-    use restUtilMod
-    use ncdio_pio
+    !use restUtilMod, only : 
+    use ncdio_pio, only : file_desc_t
     !
     ! !ARGUMENTS:
     class(TracerFlux_type) :: this

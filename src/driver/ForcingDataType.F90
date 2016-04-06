@@ -113,7 +113,12 @@ contains
   !------------------------------------------------------------------------
   subroutine ReadData(this, namelist_buffer)
 
-    use ncdio_pio
+    use ncdio_pio, only : file_desc_t
+    use ncdio_pio, only : ncd_nowrite
+    use ncdio_pio, only : ncd_pio_openfile
+    use ncdio_pio, only : get_dim_len
+    use ncdio_pio, only : ncd_getvar
+    use ncdio_pio, only : ncd_pio_closefile
 
     implicit none
 
@@ -144,7 +149,11 @@ contains
   !------------------------------------------------------------------------
   subroutine ReadGridData(this)
 
-    use ncdio_pio
+    use ncdio_pio, only : file_desc_t
+    use ncdio_pio, only : ncd_nowrite
+    use ncdio_pio, only : ncd_pio_openfile
+    use ncdio_pio, only : ncd_getvar
+    use ncdio_pio, only : ncd_pio_closefile
 
     implicit none
 
@@ -189,7 +198,11 @@ contains
   !------------------------------------------------------------------------
   subroutine ReadForcingData(this)
 
-    use ncdio_pio
+    use ncdio_pio, only : file_desc_t
+    use ncdio_pio, only : ncd_nowrite
+    use ncdio_pio, only : ncd_pio_openfile
+    use ncdio_pio, only : ncd_getvar
+    use ncdio_pio, only : ncd_pio_closefile
 
     implicit none
 

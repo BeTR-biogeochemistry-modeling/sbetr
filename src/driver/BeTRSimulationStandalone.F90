@@ -82,7 +82,7 @@ contains
     use CNStateType, only : cnstate_type
     use BeTR_CNStateType, only : betr_cnstate_type
 
-    use landunit_varcon
+    use landunit_varcon, only : istcrop, istice, istsoil
     use BeTR_landvarconType, only : betr_landvarcon
     use clm_varpar, only : nlevsno, nlevsoi, nlevtrc_soil
 

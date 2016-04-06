@@ -326,8 +326,11 @@ contains
   ! DESCRIPTIONS
   ! create history file and define output variables
 
-    use netcdf
-    use ncdio_pio
+    use netcdf, only : nf90_float
+    use ncdio_pio, only : file_desc_t
+    use ncdio_pio, only : ncd_pio_createfile
+    use ncdio_pio, only : ncd_pio_closefile
+    use ncdio_pio, only : ncd_enddef
     use histFileMod, only : hist_file_create, hist_def_fld1d, hist_def_fld2d
 
     !
@@ -406,7 +409,10 @@ contains
     ! output hist file
     !
     use shr_kind_mod        , only : r8 => shr_kind_r8
-    use ncdio_pio
+    use ncdio_pio, only : file_desc_t
+    use ncdio_pio, only : ncd_pio_openfile_for_write
+    use ncdio_pio, only : ncd_putvar
+    use ncdio_pio, only : ncd_pio_closefile
 
     use BeTR_TimeMod, only : betr_time_type
 

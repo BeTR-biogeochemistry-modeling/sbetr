@@ -20,8 +20,13 @@ MODULE bshr_sys_mod
 
    use, intrinsic :: iso_fortran_env, only: output_unit, error_unit
 
-   use bshr_kind_mod  ! defines real & integer kinds
-   use bshr_mpi_mod   ! wraps MPI layer
+   use bshr_kind_mod, only : SHR_KIND_IN
+   use bshr_kind_mod, only : SHR_KIND_I8
+   use bshr_kind_mod, only : SHR_KIND_R8
+   use bshr_kind_mod, only : SHR_KIND_CL
+   use bshr_kind_mod, only : SHR_KIND_CX
+   use bshr_mpi_mod, only : shr_mpi_initialized
+   use bshr_mpi_mod, only : shr_mpi_abort
    use bshr_log_mod, only: s_loglev  => shr_log_Level
    use bshr_log_mod, only: s_logunit => shr_log_Unit
 

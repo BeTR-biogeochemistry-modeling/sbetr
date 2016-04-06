@@ -24,7 +24,8 @@ module bshr_timer_mod
    !    2000-??-?? - 1st version by B. Kauffman
    !----------------------------------------------------------------------------
 
-   use bshr_kind_mod
+   use bshr_kind_mod, only : SHR_KIND_IN
+   use bshr_kind_mod, only : SHR_KIND_R8
    use bshr_log_mod, only: s_loglev  => shr_log_Level
    use bshr_log_mod, only: s_logunit => shr_log_Unit
 
@@ -375,7 +376,7 @@ end subroutine shr_timer_free_all
 
 subroutine shr_timer_sleep(sec)
 
-   use bshr_sys_mod     ! share system calls (namely, shr_sys_sleep)
+   use bshr_sys_mod, only : shr_sys_sleep
 
    !----- local -----
    real   (SHR_KIND_R8),intent(in) :: sec  ! number of seconds to sleep
