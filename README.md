@@ -127,10 +127,14 @@ AR, CO2 and CH4
 ## Development
 
 Key direcotries:
- * 3rd-party - select 3rd-party sources that betr depends on.
- * src - contains model code
- * cmake - contains utilities for the configuration and build system.
- * regression_tests - regressiont test input and baselines.
+
+* 3rd-party - select 3rd-party sources that betr depends on.
+
+* src - contains model code
+
+* cmake - contains utilities for the configuration and build system.
+
+* regression_tests - regressiont test input and baselines.
 
 
 To configure a new bgc implementation, follow the example in
