@@ -14,10 +14,10 @@
 /
 
 &forcing_inparm
-  grid_filename = '../../../example_input/sierra_grid.nc'
+  grid_filename = '../../input-data/uniform_steadystate_grid.nc'
   forcing_type_name = 'steady state'
   forcing_format = 'netcdf'
-  forcing_filename = '../../../example_input/uniform_steadystate.nc'
+  forcing_filename = '../../input-data/uniform_steadystate_forcing.nc'
 /
 
 &regression_test

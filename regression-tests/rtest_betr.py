@@ -86,7 +86,7 @@ def commandline_options(ext_args=None):
     parser.add_argument('--executable', nargs=1, required=True,
                         help='path to the executable')
 
-    parser.add_argument('--timeout', nargs=1, default='',
+    parser.add_argument('--timeout', nargs=1, default='30.0',
                         help='max runtime [seconds] before we timout a test.')
 
     parser.add_argument('--update-baseline', action='store_true',
@@ -918,6 +918,69 @@ def config_to_dict(config):
     return config_dict
 
 
+def run_command(name, command, dry_run):
+    """Run an external command with desired logging.
+    """
+    logging.info("    {0}".format(" ".join(command)))
+    status = None
+    timeout = 15.0
+    if not dry_run:
+        run_stdout = open(name + ".stdout", 'w')
+        start = time.time()
+        proc = subprocess.Popen(command,
+                                shell=False,
+                                stdout=run_stdout,
+                                stderr=subprocess.STDOUT)
+        while proc.poll() is None:
+            time.sleep(0.1)
+            if time.time() - start > timeout:
+                proc.kill()
+                time.sleep(0.1)
+                msg = ('    FAILURE: "{0}" exceeded max run time '
+                       '{1} seconds.'.format(name, timeout))
+                logging.critical(''.join(['\n', msg, '\n']))
+                status = 'fail'
+        finish = time.time()
+        logging.info("    {0} : run time : {1:.2f} seconds".format(
+            name, finish - start))
+        run_stdout.close()
+        status = abs(proc.returncode)
+        if status != 0:
+            status = 'fail'
+            logging.critical('    FAILURE: runtime error in "{0}". '
+                             'See {0}.stdout file for details.'.format(
+                                 name))
+
+
+def convert_input_data(input_dir, dry_run):
+    """Check that text cdl-netcdf input files are available as binary
+    netcdf by calling the external ncgen command.
+
+    FIXME(bja, 201604) assumes that ncgen is in the path....
+
+    FIXME(bja, 201604) assumes that all input files are in a single
+    hard coded directory. Should this be genralized....?
+
+    """
+    all_files = os.listdir(input_dir)
+    nc_files = [f for f in all_files if f.endswith('.nc')]
+    cdl_files = [f for f in all_files if f.endswith('.nc.cdl')]
+
+    for cdl in cdl_files:
+        nc_filename = cdl.split('.')[:-1]
+        nc_filename = '.'.join(nc_filename)
+        if nc_filename not in nc_files:
+            nc_filename = os.path.join(input_dir, nc_filename)
+            cdl_filename = os.path.join(input_dir, cdl)
+            command = [
+                'ncgen',
+                '-o',
+                nc_filename,
+                cdl_filename,
+            ]
+            run_command(cdl, command, dry_run)
+
+
 # -----------------------------------------------------------------------------
 #
 # main
@@ -928,6 +991,9 @@ def main(options):
     print('BeTR regression test driver')
     start_time = time.time()
 
+    # FIXME(bja, 201604) assuming that we are always being called from
+    # the same directory. Is there a need to support calling from an
+    # arbitrary location, e.g. integration with ctest?
     cwd = os.getcwd()
     setup_log(cwd)
     executable = os.path.abspath(options.executable[0])
@@ -938,6 +1004,15 @@ def main(options):
     else:
         test_root = os.path.join(cwd, 'tests')
         filenames = find_all_config_files(test_root)
+
+    input_dir = os.path.join(cwd, 'input-data')
+    if not os.path.isdir(input_dir):
+        msg = ('  DEV_ERROR: input data directory does not exist:'
+               '\n    {0}'.format(input_dir))
+        raise RuntimeError(msg)
+
+    dry_run = options.dry_run
+    convert_input_data(input_dir, dry_run)
 
     print('Setting up tests.')
     test_suites = []
@@ -953,7 +1028,6 @@ def main(options):
             del suite
 
     print('Running tests:')
-    dry_run = options.dry_run
     check_only = options.check_only
     update_baseline = options.update_baseline
     for suite in test_suites:
