@@ -298,8 +298,8 @@ class Comparison_suite(unittest.TestCase):
         comparison._compare_options(section, a_data, a_name, b_data, b_name)
         self.assertEqual(comparison._status, 'fail')
 
-    def test_compare_options_missing_key_fails(self):
-        """Test that a key missing from one regression section causes a
+    def test_compare_options_missing_key_first_fails(self):
+        """Test that a key missing from the first regression section causes a
         failure.
 
         """
@@ -320,9 +320,8 @@ class Comparison_suite(unittest.TestCase):
         comparison._compare_options(section, a_data, a_name, b_data, b_name)
         self.assertEqual(comparison._status, 'fail')
 
-    @unittest.skip('FIXME(bja, 201603) comparison not yet implemented')
-    def test_compare_options_missing_other_key_fails(self):
-        """Test that a key missing from one regression section causes a
+    def test_compare_options_missing_key_second_fails(self):
+        """Test that a key missing from the second regression section causes a
         failure.
 
         """
@@ -376,7 +375,6 @@ class Comparison_suite(unittest.TestCase):
         denominator = comparison._set_denominator(a_data, b_data)
         self.assertEqual(b_data, denominator)
 
-    # ------------------------------------------------------
     def test_set_denominator_second_zero(self):
         """Test that setting the denominator works when the second value is
         zero.
@@ -390,7 +388,6 @@ class Comparison_suite(unittest.TestCase):
         denominator = comparison._set_denominator(a_data, b_data)
         self.assertEqual(a_data, denominator)
 
-    # ------------------------------------------------------
     def test_set_denominator_both_zero(self):
         """Test that setting the denominator works when the both values are
         zero.
@@ -404,7 +401,6 @@ class Comparison_suite(unittest.TestCase):
         denominator = comparison._set_denominator(a_data, b_data)
         self.assertEqual(1.0, denominator)
 
-    # ------------------------------------------------------
     def test_set_denominator_neither_zero(self):
         """Test that setting the denominator returns the first value when
         the both values are non-zero.
@@ -418,6 +414,230 @@ class Comparison_suite(unittest.TestCase):
         denominator = comparison._set_denominator(a_data, b_data)
         self.assertEqual(a_data, denominator)
 
+    # ------------------------------------------------------
+    def test_compare_sections_missing_baseline_fails(self):
+        """Test that a key missing from baseline regression section causes a
+        failure.
+
+        """
+        conf = {}
+        comparison = Comparison('unittest', conf)
+        section = 'foo_test'
+        a_data = {
+            section: {
+                'category': comparison._tolerances.CONC,
+                'min': '1.02345e-1',
+            },
+        }
+        a_name = 'a_baseline'
+        b_data = {
+            section: {
+                'category': comparison._tolerances.CONC,
+                'min': '1.02345e-1',
+                'max': '9.8765e1',
+            },
+            'other_section': {},
+        }
+        b_name = 'b_regression'
+        comparison._compare_sections(a_data, a_name, b_data, b_name)
+        self.assertEqual(comparison._status, 'fail')
+
+    def test_compare_sections_missing_current_fails(self):
+        """Test that a key missing from current regression section causes a
+        failure.
+
+        """
+        conf = {}
+        comparison = Comparison('unittest', conf)
+        section = 'foo_test'
+        a_data = {
+            section: {
+                'category': comparison._tolerances.CONC,
+                'min': '1.02345e-1',
+            },
+            'other_section': {},
+        }
+        a_name = 'a_baseline'
+        b_data = {
+            section: {
+                'category': comparison._tolerances.CONC,
+                'min': '1.02345e-1',
+                'max': '9.8765e1',
+            },
+        }
+        b_name = 'b_regression'
+        comparison._compare_sections(a_data, a_name, b_data, b_name)
+        self.assertEqual(comparison._status, 'fail')
+
+    def test_compare_sections_both_pass(self):
+        """Test that if all sections are in both regression and baseline
+        doesn't cause a failure.
+
+        """
+        conf = {}
+        comparison = Comparison('unittest', conf)
+        section = 'foo_test'
+        a_data = {
+            section: {
+                'category': comparison._tolerances.CONC,
+                'min': '1.02345e-1',
+                'max': '9.8765e1',
+            },
+            'other_section': {
+                'category': comparison._tolerances.CONC,
+                'min': '2.345e-2',
+            },
+        }
+        a_name = 'a_baseline'
+        b_data = {
+            section: {
+                'category': comparison._tolerances.CONC,
+                'min': '1.02345e-1',
+                'max': '9.8765e1',
+            },
+            'other_section': {
+                'category': comparison._tolerances.CONC,
+                'min': '2.345e-2',
+            },
+        }
+        b_name = 'b_regression'
+        comparison._compare_sections(a_data, a_name, b_data, b_name)
+        self.assertIsNone(comparison._status)
+
+    # ------------------------------------------------------
+
+    def test_regression_to_baseline_pass(self):
+        """Test that if regression and baseline are the same, we get a pass
+
+        """
+        conf = {}
+        comparison = Comparison('unittest', conf)
+        a_data = {
+            'section': {
+                'category': comparison._tolerances.CONC,
+                'min': '1.02345e-1',
+                'max': '9.8765e1',
+            },
+            'other_section': {
+                'category': comparison._tolerances.CONC,
+                'min': '2.345e-2',
+            },
+        }
+        b_data = {
+            'section': {
+                'category': comparison._tolerances.CONC,
+                'min': '1.02345e-1',
+                'max': '9.8765e1',
+            },
+            'other_section': {
+                'category': comparison._tolerances.CONC,
+                'min': '2.345e-2',
+            },
+        }
+
+        status = comparison.regression_to_baseline(a_data, b_data)
+        self.assertEqual(status, 'pass')
+
+    def test_regression_to_baseline_fail_tolerance(self):
+        """Test that if regression and baseline have values that exceed
+        tolerances, we get a failure.
+
+        """
+        conf = {}
+        comparison = Comparison('unittest', conf)
+        a_data = {
+            'section': {
+                'category': comparison._tolerances.CONC,
+                'min': '1.02345e-1',
+                'max': '9.8765e1',
+            },
+            'other_section': {
+                'category': comparison._tolerances.CONC,
+                'min': '2.345e-2',
+            },
+        }
+        b_data = {
+            'section': {
+                'category': comparison._tolerances.CONC,
+                'min': '1.02345e-1',
+                'max': '9.8765e1',
+            },
+            'other_section': {
+                'category': comparison._tolerances.CONC,
+                'min': '3.45e-2',
+            },
+        }
+
+        status = comparison.regression_to_baseline(a_data, b_data)
+        self.assertEqual(status, 'fail')
+
+    def test_regression_to_baseline_fail_key(self):
+        """Test that if regression and baseline don't have the same keys, we
+        get a failure.
+
+        """
+        conf = {}
+        comparison = Comparison('unittest', conf)
+        a_data = {
+            'section': {
+                'category': comparison._tolerances.CONC,
+                'min': '1.02345e-1',
+                'max': '9.8765e1',
+            },
+            'other_section': {
+                'category': comparison._tolerances.CONC,
+                'max': '2.345e-2',
+            },
+        }
+        b_data = {
+            'section': {
+                'category': comparison._tolerances.CONC,
+                'min': '1.02345e-1',
+                'max': '9.8765e1',
+            },
+            'other_section': {
+                'category': comparison._tolerances.CONC,
+                'min': '2.345e-2',
+            },
+        }
+
+        status = comparison.regression_to_baseline(a_data, b_data)
+        self.assertEqual(status, 'fail')
+
+    def test_regression_to_baseline_fail_section(self):
+        """Test that if regression and baseline don't have the same sections,
+        we get a failure.
+
+        """
+        conf = {}
+        comparison = Comparison('unittest', conf)
+        a_data = {
+            'foo': {
+                'category': comparison._tolerances.CONC,
+                'min': '1.02345e-1',
+                'max': '9.8765e1',
+            },
+            'other_section': {
+                'category': comparison._tolerances.CONC,
+                'min': '2.345e-2',
+            },
+        }
+        b_data = {
+            'section': {
+                'category': comparison._tolerances.CONC,
+                'min': '1.02345e-1',
+                'max': '9.8765e1',
+            },
+            'other_section': {
+                'category': comparison._tolerances.CONC,
+                'min': '2.345e-2',
+            },
+        }
+
+        status = comparison.regression_to_baseline(a_data, b_data)
+        self.assertEqual(status, 'fail')
+
+    # ------------------------------------------------------
 
 if __name__ == '__main__':
     # unittest.main(buffer=True)

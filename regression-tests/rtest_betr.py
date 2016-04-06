@@ -493,14 +493,10 @@ class Comparison(object):
         self._name = name
 
     def regression_to_baseline(self, regression, baseline):
-        """FIXME(bja, 201603) Initially comparing regression to baseline and
-        baseline to regression as a brute force way to pick up
-        sections that are present in one but not another. This will
-        result in double reporting of comparison failures!
+        """Comparing regression to baseline and baseline and set the status as
+        pass if we didn't detect any errors..
 
         """
-        self._compare_sections(regression, 'regression',
-                               baseline, 'baseline')
         self._compare_sections(baseline, 'baseline',
                                regression, 'regression')
 
@@ -511,19 +507,32 @@ class Comparison(object):
         return self._status
 
     def _compare_sections(self, a_data, a_name, b_data, b_name):
-        """check that all sections in a are in b
+        """Compare the sections. Any sections in a or b but not both are a
+        failure.
+
         """
         for section in a_data:
             if section not in b_data:
-                msg = ('  FAILURE : sections "{0}" present in {1} '
+                msg = ('  FAILURE : section "{0}" present in {1} '
                        'but missing from {2}'.format(section, a_name, b_name))
                 logging.critical(msg)
                 self._status = 'fail'
             else:
+                # in both a and b
                 self._compare_options(
                     section,
                     a_data[section], a_name,
                     b_data[section], b_name)
+
+        for section in b_data:
+            # NOTE(bja, 201604) don't need the else clause here
+            # because we already checked common sections.
+            if section not in a_data:
+                msg = ('  FAILURE : section "{0}" present in {1} '
+                       'but missing from {2}'.format(section, b_name, a_name))
+                logging.critical(msg)
+                self._status = 'fail'
+
 
     def _compare_options(self, section, a_data, a_name, b_data, b_name):
         """
@@ -549,6 +558,16 @@ class Comparison(object):
             else:
                 self._compare_values_with_tolerance(
                     a_category, section, key, a_data[key], b_data[key])
+
+        for key in b_data:
+            # NOTE(bja, 2016) don't need the else to call
+            # compare_values again because we already compared
+            # sections in both files!
+            if key not in a_data:
+                msg = ('  FAIURE : {0} : key "{1}" present in {2} '
+                       'mising in {3}'.format(section, key, b_name, a_name))
+                logging.critical(msg)
+                self._status = 'fail'
 
     def _compare_values_with_tolerance(
             self, category, section, key, a_data, b_data):
