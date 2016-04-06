@@ -184,7 +184,7 @@ contains
 
 
   !---------------------------------------------------------------------------------
-  subroutine BeTRSimulationStepWithoutDrainage(this, bounds, col, &
+  subroutine BeTRSimulationStepWithoutDrainage(this, betr_time, bounds, col, &
        atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, &
        temperature_vars, waterflux_vars, chemstate_vars, &
        cnstate_vars, canopystate_vars, carbonflux_vars)
@@ -203,12 +203,14 @@ contains
     use CNCarbonFluxType, only : carbonflux_type
     use CanopyStateType, only : canopystate_type
     use BeTR_PatchType, only : betr_pft
+    use BeTR_TimeMod, only : betr_time_type
     use PatchType, only : pft
     use pftvarcon, only : crop
 
     implicit none
 
     class(betr_simulation_type), intent(inout) :: this
+    class(betr_time_type), intent(in) :: betr_time
     type(bounds_type), intent(in) :: bounds ! bounds
 
 
@@ -224,7 +226,9 @@ contains
     type(carbonflux_type), intent(in) :: carbonflux_vars
     type(waterflux_type), intent(inout) :: waterflux_vars !temporary variables
 
+    ! remove compiler warnings about unused dummy args
     if (this%num_soilc > 0) continue
+    if (betr_time%tstep > 0) continue
     if (bounds%begc > 0) continue
     if (size(col%z) > 0) continue
     if (size(waterstate_vars%h2osoi_liq_col) > 0) continue
@@ -293,13 +297,15 @@ contains
   end  subroutine BeTRSimulationBeginMassBalanceCheck
   !---------------------------------------------------------------------------------
 
-  subroutine BeTRSimulationMassBalanceCheck(this, bounds)
+  subroutine BeTRSimulationMassBalanceCheck(this, betr_time, bounds)
 
     use TracerBalanceMod, only : betr_tracer_massbalance_check
+    use BeTR_TimeMod, only : betr_time_type
 
     implicit none
 
-    class(betr_simulation_type) :: this
+    class(betr_simulation_type), intent(inout) :: this
+    class(betr_time_type), intent(in) :: betr_time
     type(bounds_type), intent(in) :: bounds
 
     integer :: lbj, ubj
@@ -313,7 +319,7 @@ contains
     betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
     lbj = betr_bounds%lbj; ubj = betr_bounds%ubj
 
-    call betr_tracer_massbalance_check(betr_bounds, lbj, ubj, &
+    call betr_tracer_massbalance_check(betr_time, betr_bounds, lbj, ubj, &
          this%num_soilc, this%filter_soilc, &
          this%betr%tracers, this%betr%tracerstates, &
          this%betr%tracerfluxes)

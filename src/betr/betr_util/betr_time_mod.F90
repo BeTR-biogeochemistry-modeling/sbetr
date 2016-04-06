@@ -1,6 +1,7 @@
 module BeTR_TimeMod
 
   use bshr_kind_mod, only : r8 => shr_kind_r8
+  use bshr_kind_mod, only : i8 => shr_kind_i8
   use betr_constants, only : stdout, betr_string_length_long
 
   implicit none
@@ -15,10 +16,17 @@ module BeTR_TimeMod
      real(r8) :: time
      real(r8) :: restart_dtime
      integer  :: tstep
+     integer :: nelapstep
    contains
      procedure, public :: Init
      procedure, public :: its_time_to_exit
      procedure, public :: update_time_stamp
+     procedure, public :: set_nstep
+     procedure, public :: get_nstep
+     procedure, public :: get_days_per_year
+     procedure, public :: get_step_size
+     procedure, public :: proc_nextstep
+     procedure, public :: proc_initstep
      procedure, private :: ReadNamelist
   end type betr_time_type
 
@@ -169,5 +177,86 @@ contains
 
   end subroutine update_time_stamp
 
+  !-------------------------------------------------------------------------------
+  real(r8) function get_step_size(this) result(rc)
+
+    ! Return the step size in seconds.
+
+    implicit none
+
+    class(betr_time_type), intent(in) :: this
+
+    rc = this%delta_time
+    return
+
+  end function get_step_size
+
+  !-------------------------------------------------------------------------------
+  integer function get_nstep(this)
+
+    ! Return the timestep number.
+    implicit none
+
+    class(betr_time_type), intent(in) :: this
+
+    character(len=*), parameter :: sub = 'betr::get_nstep'
+
+    get_nstep = this%nelapstep
+
+  end function get_nstep
+
+
+  !-------------------------------------------------------------------------------
+  subroutine set_nstep(this, nstep)
+
+    ! Return the timestep number.
+    implicit none
+    class(betr_time_type), intent(inout) :: this
+
+    character(len=*), parameter :: sub = 'betr::get_nstep'
+    integer, intent(in) :: nstep
+
+    this%nelapstep = nstep
+  end subroutine set_nstep
+
+  !-------------------------------------------------------------------------------
+  subroutine proc_nextstep(this)
+
+    implicit none
+
+    class(betr_time_type), intent(inout) :: this
+
+    this%nelapstep = this%nelapstep + 1
+  end subroutine proc_nextstep
+
+  !-------------------------------------------------------------------------------
+  subroutine proc_initstep(this)
+
+    implicit none
+    class(betr_time_type), intent(inout) :: this
+
+    this%nelapstep = 0
+  end subroutine proc_initstep
+
+  !-------------------------------------------------------------------------------
+  integer function get_days_per_year(this, offset)
+
+    implicit none
+
+    class(betr_time_type), intent(in) :: this
+    integer, optional, intent(in) :: offset  ! Offset from current time in seconds.
+
+    ! Positive for future times, negative
+    ! for previous times.
+
+    ! remove unused dummy arg compiler warning
+    if (offset > 0) continue
+    if (this%tstep > 0) continue
+
+    !hardwire at the moment
+    get_days_per_year = 365
+  end function get_days_per_year
+
+  !-------------------------------------------------------------------------------
 
 end module BeTR_TimeMod

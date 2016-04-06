@@ -56,7 +56,6 @@ contains
   use LandunitType        , only : lun
   use PatchType           , only : pft
   use landunit_varcon     , only : istsoil
-  use betr_time_manager    , only : proc_initstep, proc_nextstep
 
   implicit none
   
@@ -127,7 +126,7 @@ contains
 
   record = -1
 
-  call proc_initstep()
+  call time_vars%proc_initstep()
   do
     record = record + 1
     !set envrionmental forcing by reading foring data: temperature, moisture, atmospheric resistance
@@ -146,7 +145,7 @@ contains
     if(record==0)cycle
     call simulation%BeginMassBalanceCheck(bounds)
 
-    call simulation%StepWithoutDrainage(bounds, col, &
+    call simulation%StepWithoutDrainage(time_vars, bounds, col, &
          atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, &
          temperature_vars, waterflux_vars, chemstate_vars, &
          cnstate_vars, canopystate_vars, carbonflux_vars)
@@ -154,7 +153,7 @@ contains
     call simulation%StepWithDrainage(bounds, waterflux_vars, col)
 
     !do mass balance check
-    call simulation%MassBalanceCheck(bounds)
+    call simulation%MassBalanceCheck(time_vars, bounds)
 
     !specific for water tracer transport
     !call simulation%ConsistencyCheck(bounds, ubj, simulation%num_soilc, &
@@ -168,7 +167,7 @@ contains
 
     !write restart file? is not functionning at the moment
     !if(its_time_to_write_restart(time_vars)) call rest_write(tracerstate_vars, tracercoeff_vars, tracerflux_vars, time_vars)
-    call proc_nextstep()
+    call time_vars%proc_nextstep()
     if(time_vars%its_time_to_exit()) then
        exit
     end if
