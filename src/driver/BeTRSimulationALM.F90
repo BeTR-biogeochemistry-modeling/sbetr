@@ -71,7 +71,7 @@ contains
     use pftvarcon, only : noveg, nc4_grass, nc3_arctic_grass, nc3_nonarctic_grass
     use WaterStateType, only : waterstate_type
     use CNStateType, only : cnstate_type
-    use landunit_varcon
+    use landunit_varcon, only : istcrop, istice, istsoil
     use clm_varpar, only : nlevsno, nlevsoi, nlevtrc_soil
 
     !betr types

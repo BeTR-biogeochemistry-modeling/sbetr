@@ -19,6 +19,7 @@ configure_file(dtypes.h dtypes.h COPYONLY)
 include(add_betr_library)
 add_betr_library(betr_shr ${BETR_SHR_SOURCES})
 
+# turn off all compiler warnings in clm code
 set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -w")
 
 set(BETR_LIBRARIES betr_shr;${BETR_LIBRARIES} PARENT_SCOPE)

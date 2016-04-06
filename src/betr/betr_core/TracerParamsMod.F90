@@ -17,7 +17,7 @@ module TracerParamsMod
   use BeTR_PatchType        , only : pft => betr_pft
   use BeTR_ColumnType       , only : col => betr_col
   use betr_time_manager      , only : get_nstep
-  use tracer_varcon
+
   implicit none
   save
   private
@@ -1110,7 +1110,9 @@ contains
    use BeTR_ChemStateType      , only : betr_chemstate_type
    use BeTRTracerType     , only : betrtracer_type
    use BeTR_CanopyStateType    , only : betr_canopystate_type
-   use SurfaceResistanceMod
+
+   implicit none
+   
    type(bounds_type)       , intent(in) :: bounds  ! bounds
    integer                 , intent(in) :: lbj, ubj             ! lower and upper bounds, make sure they are > 0
    integer                 , intent(in) :: jtops(bounds%begc: ) ! top label of each column

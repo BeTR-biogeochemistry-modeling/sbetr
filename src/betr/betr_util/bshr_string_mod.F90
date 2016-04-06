@@ -23,8 +23,13 @@ module bshr_string_mod
 
 ! !USES:
 #include "bshr_assert.h"
-   use bshr_kind_mod   ! F90 kinds
-   use bshr_sys_mod    ! shared system calls
+   use bshr_kind_mod, only : SHR_KIND_IN  ! F90 kinds
+   use bshr_kind_mod, only : SHR_KIND_R8
+   use bshr_kind_mod, only : SHR_KIND_CL
+   use bshr_kind_mod, only : SHR_KIND_CS
+   use bshr_kind_mod, only : SHR_KIND_CX
+   use bshr_kind_mod, only : SHR_KIND_CXX
+
    use bshr_timer_mod, only : shr_timer_get, shr_timer_start, shr_timer_stop
    use bshr_log_mod,   only : errMsg    => shr_log_errMsg
    use bshr_log_mod,   only : s_loglev  => shr_log_Level

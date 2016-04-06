@@ -31,7 +31,7 @@ module BetrType
   use BeTR_CNStateType, only : betr_cnstate_type
   use betr_time_manager   , only : get_nstep
   use EcophysConType, only : ecophyscon_type
-  use BetrBGCMod
+
   implicit none
 
   private
@@ -267,6 +267,10 @@ contains
     use BeTR_aerocondType            , only          : betr_aerecond_type
     use betr_ctrl                    , only          : is_active_betr_bgc
     use BeTR_CanopyStateType         , only          : betr_canopystate_type
+    use BetrBGCMod, only : calc_ebullition
+    use BetrBGCMod, only : stage_tracer_transport
+    use BetrBGCMod, only : surface_tracer_hydropath_update
+    use BetrBGCMod, only : tracer_gws_transport
 
     !
     ! !ARGUMENTS :
@@ -369,6 +373,8 @@ contains
     use tracercoeffType       , only : tracercoeff_type
     use MathfuncMod           , only : safe_div
     use BeTR_WaterFluxType    , only : betr_waterflux_type
+    use BetrBGCMod, only : diagnose_gas_pressure
+
     ! !ARGUMENTS:
     class(betr_type), intent(inout) :: this
     type(bounds_type),        intent(in)    :: bounds
@@ -888,7 +894,11 @@ contains
    ! divide tracers in snow
    !
    ! USES
+     use BetrBGCMod, only : tracer_col_mapping_div
+     use BetrBGCMod, only : tracer_copy_a2b_div
+
    implicit none
+
    class(betr_type), intent(inout) :: this
    type(bounds_type)       , intent(in)    :: bounds               ! bounds
    integer                 , intent(in)    :: num_snowc      ! number of column soil points in column filter
@@ -947,7 +957,10 @@ contains
    ! combine tracers in snow
    !
    !! USES
-   use tracer_varcon, only : nlevsno => betr_nlevsno
+     use tracer_varcon, only : nlevsno => betr_nlevsno
+     use BetrBGCMod, only : tracer_col_mapping_div
+     use BetrBGCMod, only : tracer_col_mapping_comb
+     use BetrBGCMod, only : tracer_copy_a2b_comb
    !!
    ! ARGUMENTS
    implicit none

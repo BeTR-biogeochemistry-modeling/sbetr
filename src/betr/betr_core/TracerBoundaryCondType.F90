@@ -140,7 +140,7 @@ contains
     ! !USES:
     use betr_varcon , only : spval  => bspval
     use betr_ctrl  , only : iulog => biulog
-    use ncdio_pio
+    use ncdio_pio, only : file_desc_t
     !
     ! !ARGUMENTS:
     class(tracerboundarycond_type)      :: this

@@ -13,7 +13,8 @@ module bshr_log_mod
 
 ! !USES:
 
-  use bshr_kind_mod
+  use bshr_kind_mod, only : SHR_KIND_IN
+  use bshr_kind_mod, only : SHR_KIND_CX
 
   implicit none
   private

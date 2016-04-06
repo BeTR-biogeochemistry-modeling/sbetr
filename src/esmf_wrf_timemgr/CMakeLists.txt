@@ -24,6 +24,7 @@ include_directories(${CMAKE_BINARY_DIR}/src/shr)
 include(add_betr_library)
 add_betr_library(betr_esmf ${BETR_ESMF_SOURCES})
 
+# disable all compiler warnings for clm code
 set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -w")
 
 set(BETR_LIBRARIES betr_esmf;${BETR_LIBRARIES} PARENT_SCOPE)
