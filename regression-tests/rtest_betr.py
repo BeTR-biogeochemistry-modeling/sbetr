@@ -579,13 +579,14 @@ class Comparison(object):
         a_value = float(a_data)
         b_value = float(b_data)
         abs_diff = abs(a_value - b_value)
+        denominator = self._set_denominator(a_value, b_value)
 
         if tol_type == Tolerances.ABSOLUTE:
             diff = abs_diff
         elif tol_type == Tolerances.RELATIVE:
-            diff = abs_diff / a_value
+            diff = abs_diff / denominator
         elif tol_type == Tolerances.PERCENT:
-            diff = 100.0 * abs_diff / a_value
+            diff = 100.0 * abs_diff / denominator
         else:
             # shouldn't be possible to get here if previous error
             # checking was good....
@@ -607,6 +608,23 @@ class Comparison(object):
             pass_comparison = True
         return pass_comparison
 
+    def _set_denominator(self, a_value, b_value):
+        """Set the denominator, accounting for zero values being a valid
+        value, to avoid a floating point error.
+
+        """
+        if a_value == 0.0 and b_value != 0.0:
+            denominator = b_value
+        elif a_value != 0.0 and b_value == 0.0:
+            denominator = a_value
+        elif a_value == 0 and b_value == 0:
+            # set to 1.0 to avoid a floating point exception without
+            # special logic.
+            denominator = 1.0
+        else:  # a != 0 and b != 0
+            denominator = a_value
+
+        return denominator
 
     def _get_section_category(self, section, a):
         """Extract the 'category' value from the section.

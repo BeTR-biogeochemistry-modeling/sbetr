@@ -362,6 +362,63 @@ class Comparison_suite(unittest.TestCase):
         self.assertEqual(comparison._tolerances._tolerances[category]['value'],
                          float(value))
 
+    # ------------------------------------------------------
+    def test_set_denominator_first_zero(self):
+        """Test that setting the denominator works when the first value is
+        zero.
+
+        """
+        conf = {}
+        comparison = Comparison('unittest', conf)
+        a_data = 0.0
+        b_data = 1.00001e-16
+
+        denominator = comparison._set_denominator(a_data, b_data)
+        self.assertEqual(b_data, denominator)
+
+    # ------------------------------------------------------
+    def test_set_denominator_second_zero(self):
+        """Test that setting the denominator works when the second value is
+        zero.
+
+        """
+        conf = {}
+        comparison = Comparison('unittest', conf)
+        a_data = 1.00001e-16
+        b_data = 0.0
+
+        denominator = comparison._set_denominator(a_data, b_data)
+        self.assertEqual(a_data, denominator)
+
+    # ------------------------------------------------------
+    def test_set_denominator_both_zero(self):
+        """Test that setting the denominator works when the both values are
+        zero.
+
+        """
+        conf = {}
+        comparison = Comparison('unittest', conf)
+        a_data = 0.0
+        b_data = 0.0
+
+        denominator = comparison._set_denominator(a_data, b_data)
+        self.assertEqual(1.0, denominator)
+
+    # ------------------------------------------------------
+    def test_set_denominator_neither_zero(self):
+        """Test that setting the denominator returns the first value when
+        the both values are non-zero.
+
+        """
+        conf = {}
+        comparison = Comparison('unittest', conf)
+        a_data = 1.0e-1
+        b_data = 2.0e-12
+
+        denominator = comparison._set_denominator(a_data, b_data)
+        self.assertEqual(a_data, denominator)
+
+
 if __name__ == '__main__':
     # unittest.main(buffer=True)
     unittest.main()  # pragma: no cover
