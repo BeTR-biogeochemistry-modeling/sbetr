@@ -29,9 +29,8 @@ module BetrType
   use BeTR_CarbonFluxType, only : betr_carbonflux_type
   use BeTR_WaterstateType, only : betr_waterstate_type
   use BeTR_CNStateType, only : betr_cnstate_type
-  use betr_time_manager   , only : get_nstep
   use EcophysConType, only : ecophyscon_type
-  use BetrBGCMod
+
   implicit none
 
   private
@@ -241,7 +240,8 @@ contains
   end subroutine ReadNamelist
 
   !-------------------------------------------------------------------------------
-  subroutine step_without_drainage(this, bounds, num_soilc, filter_soilc, num_soilp, filter_soilp,         &
+  subroutine step_without_drainage(this, betr_time, &
+       bounds, num_soilc, filter_soilc, num_soilp, filter_soilp,         &
        atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, waterflux_vars, temperature_vars,&
        chemstate_vars, cnstate_vars, canopystate_vars,  carbonflux_vars)
     !
@@ -249,7 +249,6 @@ contains
     ! run betr code one time step forward, without drainage calculation
 
     ! !USES:
-    use betr_time_manager             , only         : get_step_size
     use tracerfluxType               , only          : tracerflux_type
     use tracerstatetype              , only          : tracerstate_type
     use tracercoeffType              , only          : tracercoeff_type
@@ -271,10 +270,16 @@ contains
     use BeTR_aerocondType            , only          : betr_aerecond_type
     use betr_ctrl                    , only          : is_active_betr_bgc
     use BeTR_CanopyStateType         , only          : betr_canopystate_type
+    use BetrBGCMod, only : calc_ebullition
+    use BetrBGCMod, only : stage_tracer_transport
+    use BetrBGCMod, only : surface_tracer_hydropath_update
+    use BetrBGCMod, only : tracer_gws_transport
+    use BeTR_TimeMod, only : betr_time_type
 
     !
     ! !ARGUMENTS :
     class(betr_type), intent(inout) :: this
+    class(betr_time_type), intent(in) :: betr_time
     type(bounds_type)                , intent(in)    :: bounds                     ! bounds
     integer                          , intent(in)    :: num_soilc                  ! number of columns in column filter_soilc
     integer                          , intent(in)    :: filter_soilc(:)            ! column filter_soilc
@@ -301,18 +306,19 @@ contains
 
     lbj = bounds%lbj; ubj = bounds%ubj
 
-    dtime = get_step_size()
+    dtime = betr_time%get_step_size()
 
     !initialize extra parameters
     dtime2 = dtime * 0.5_r8
 
 
-    call stage_tracer_transport(bounds, num_soilc, filter_soilc, num_soilp, filter_soilp, atm2lnd_vars, &
+    call stage_tracer_transport(betr_time, &
+         bounds, num_soilc, filter_soilc, num_soilp, filter_soilp, atm2lnd_vars, &
          carbonflux_vars, soilstate_vars, waterstate_vars, waterflux_vars, temperature_vars, soilhydrology_vars, &
          chemstate_vars, this%aereconds, canopystate_vars, this%tracers, this%tracercoeffs, &
          this%tracerboundaryconds, this%tracerfluxes, this%bgc_reaction, Rfactor, this%advection_on)
 
-    call surface_tracer_hydropath_update(bounds, num_soilc, filter_soilc, &
+    call surface_tracer_hydropath_update(betr_time, bounds, num_soilc, filter_soilc, &
        waterstate_vars, waterflux_vars, soilhydrology_vars, this%tracers, this%tracerstates, &
        this%tracercoeffs,  this%tracerfluxes)
 
@@ -331,7 +337,7 @@ contains
          this%tracerboundaryconds,                        &
          this%plant_soilbgc)
 
-    call tracer_gws_transport(bounds, num_soilc, filter_soilc, Rfactor, waterstate_vars, &
+    call tracer_gws_transport(betr_time, bounds, num_soilc, filter_soilc, Rfactor, waterstate_vars, &
       waterflux_vars, this%tracers, this%tracerboundaryconds, this%tracercoeffs, &
       this%tracerstates, this%tracerfluxes, this%bgc_reaction, this%advection_on, this%diffusion_on)
 
@@ -373,6 +379,8 @@ contains
     use tracercoeffType       , only : tracercoeff_type
     use MathfuncMod           , only : safe_div
     use BeTR_WaterFluxType    , only : betr_waterflux_type
+    use BetrBGCMod, only : diagnose_gas_pressure
+
     ! !ARGUMENTS:
     class(betr_type), intent(inout) :: this
     type(bounds_type),        intent(in)    :: bounds
@@ -440,13 +448,12 @@ contains
 
 
   !--------------------------------------------------------------------------------
-  subroutine calc_dew_sub_flux(this, bounds, num_hydrologyc, filter_soilc_hydrologyc, &
+  subroutine calc_dew_sub_flux(this, betr_time, bounds, num_hydrologyc, filter_soilc_hydrologyc, &
        waterstate_vars, waterflux_vars, betrtracer_vars, tracerflux_vars, tracerstate_vars)
     !
     ! DESCRIPTION:
     ! calculate water flux from dew formation, and sublimation
     ! !USES:
-    use betr_time_manager      , only : get_step_size
     use BeTR_WaterfluxType    , only : betr_waterflux_type
     use BeTR_WaterstateType   , only : betr_waterstate_type
     use tracerfluxType        , only : tracerflux_type
@@ -454,9 +461,11 @@ contains
     use betr_varcon           , only : spval => bspval
     use tracer_varcon         , only : nlevtrc_soil  => betr_nlevtrc_soil
     use BeTR_landvarconType   , only : landvarcon  => betr_landvarcon
+    use BeTR_TimeMod, only : betr_time_type
 
     ! !ARGUMENTS:
     class(betr_type), intent(inout) :: this
+    class(betr_time_type), intent(in) :: betr_time
     type(bounds_type)         , intent(in)    :: bounds
     integer                   , intent(in)    :: num_hydrologyc             ! number of column soil points in column filter_soilc
     integer                   , intent(in)    :: filter_soilc_hydrologyc(:) ! column filter_soilc for soil points
@@ -508,7 +517,7 @@ contains
       enddo
 
       !do tracer update from dew and sublimation
-      dtime = get_step_size()
+      dtime = betr_time%get_step_size()
 
       do j = 1, ngwmobile_tracers
          !now only do water isotope tracer
@@ -549,16 +558,19 @@ contains
 
   !--------------------------------------------------------------------------------
 
-  subroutine check_mass_err(this, c, trcid, ubj, dz, betrtracer_vars, tracerstate_vars, tracerflux_vars)
+  subroutine check_mass_err(this, betr_time, &
+       c, trcid, ubj, dz, betrtracer_vars, tracerstate_vars, tracerflux_vars)
 
   !
   !temporary mass balance check
   use tracerfluxType        , only : tracerflux_type
   use tracerstatetype       , only : tracerstate_type
+  use BeTR_TimeMod, only : betr_time_type
 
   implicit none
 
   class(betr_type), intent(inout) :: this
+  class(betr_time_type), intent(in) :: betr_time
   integer, intent(in) :: ubj
   integer, intent(in) :: c, trcid
   real(r8), intent(in):: dz(1:ubj)
@@ -587,7 +599,7 @@ contains
      totmass = totmass + &
           tracerstate_vars%int_mass_frozen_col(1,ubj,c,frozenid(trcid),dz(1:ubj))
   endif
-  call tracerflux_vars%flux_summary(c, betrtracer_vars)
+  call tracerflux_vars%flux_summary(betr_time, c, betrtracer_vars)
   err=beg_tracer_molarmass(c,trcid)-totmass  &
        + tracer_flx_netpro(c,trcid)-tracer_flx_netphyloss(c,trcid)
   print*,'err',err
@@ -719,7 +731,8 @@ contains
    end subroutine pre_diagnose_soilcol_water_flux
 
    !------------------------------------------------------------------------
-   subroutine diagnose_advect_water_flux(this, bounds, num_hydrologyc, filter_hydrologyc, num_urbanc, filter_urbanc, &
+   subroutine diagnose_advect_water_flux(this, betr_time, &
+        bounds, num_hydrologyc, filter_hydrologyc, num_urbanc, filter_urbanc, &
         waterstate_vars, qflx_bot, waterflux_vars)
    !
    ! DESCRIPTION
@@ -727,10 +740,13 @@ contains
    !
    use BeTR_WaterStateType  , only : betr_waterstate_type
    use BeTR_WaterFluxType   , only : betr_waterflux_type
-   use betr_time_manager     , only : get_step_size
    use betr_varcon          , only : denh2o => bdenh2o
+   use BeTR_TimeMod, only : betr_time_type
+   
    implicit none
+   
    class(betr_type), intent(inout) :: this
+   class(betr_time_type), intent(in) :: betr_time
    type(bounds_type)       , intent(in)    :: bounds               ! bounds
    integer                 , intent(in)    :: num_hydrologyc       ! number of column soil points in column filter
    integer                 , intent(in)    :: filter_hydrologyc(:) ! column filter for soil points
@@ -764,7 +780,7 @@ contains
    )
 
    ! get time step
-   dtime = get_step_size()
+   dtime = betr_time%get_step_size()
    !start from the bottom layer, because the water exchange between vadose zone soil and aquifer and plant root is known
    !the water flux at uppper surface can be inferred using the mass balance approach
    do j = nlevsoi, 1, -1
@@ -818,7 +834,8 @@ contains
    end subroutine diagnose_advect_water_flux
 
    !------------------------------------------------------------------------
-   subroutine diagnose_drainage_water_flux(this, bounds, num_hydrologyc, filter_hydrologyc, num_urbanc, filter_urbanc, &
+   subroutine diagnose_drainage_water_flux(this, betr_time, &
+        bounds, num_hydrologyc, filter_hydrologyc, num_urbanc, filter_urbanc, &
         waterstate_vars,  waterflux_vars)
    !
    ! DESCRIPTION
@@ -828,10 +845,11 @@ contains
    use BeTR_WaterFluxType   , only : betr_waterflux_type
    use BeTR_WaterStateType  , only : betr_waterstate_type
    use betr_varcon          , only : denh2o => bdenh2o
-   use betr_time_manager     , only : get_step_size
+   use BeTR_TimeMod, only : betr_time_type
 
    implicit none
    class(betr_type), intent(inout) :: this
+   class(betr_time_type), intent(in) :: betr_time
    type(bounds_type)       , intent(in)    :: bounds               ! bounds
    integer                 , intent(in)    :: num_hydrologyc       ! number of column soil points in column filter
    integer                 , intent(in)    :: filter_hydrologyc(:) ! column filter for soil points
@@ -857,7 +875,7 @@ contains
    )
 
    ! get time step
-   dtime = get_step_size()
+   dtime = betr_time%get_step_size()
    !start from the bottom layer, because the water exchange between vadose zone soil and aquifer and plant root is known
    !the water flux at uppper surface can be inferred using the mass balance approach
    !also, the flux through transpiration has been already calcualted in the no drainage code, therefore no
@@ -892,7 +910,11 @@ contains
    ! divide tracers in snow
    !
    ! USES
+     use BetrBGCMod, only : tracer_col_mapping_div
+     use BetrBGCMod, only : tracer_copy_a2b_div
+
    implicit none
+
    class(betr_type), intent(inout) :: this
    type(bounds_type)       , intent(in)    :: bounds               ! bounds
    integer                 , intent(in)    :: num_snowc      ! number of column soil points in column filter
@@ -951,7 +973,10 @@ contains
    ! combine tracers in snow
    !
    !! USES
-   use tracer_varcon, only : nlevsno => betr_nlevsno
+     use tracer_varcon, only : nlevsno => betr_nlevsno
+     use BetrBGCMod, only : tracer_col_mapping_div
+     use BetrBGCMod, only : tracer_col_mapping_comb
+     use BetrBGCMod, only : tracer_copy_a2b_comb
    !!
    ! ARGUMENTS
    implicit none

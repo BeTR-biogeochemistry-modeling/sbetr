@@ -5,7 +5,8 @@
 
 MODULE bshr_const_mod
 
-   use bshr_kind_mod
+   use bshr_kind_mod, only : SHR_KIND_IN
+   use bshr_kind_mod, only : SHR_KIND_R8
 
    integer(SHR_KIND_IN),parameter,private :: R8 = SHR_KIND_R8 ! rename for local readability only
 

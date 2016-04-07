@@ -9,6 +9,11 @@ build/
 *.mod
 *.o
 
+# test input
+# NOTE(bja, 201604) input is stored in git as plain text cdl files,
+# not binary nc!
+regression-tests/input-data/*.nc
+
 # test output
 *.testlog
 *.stdout

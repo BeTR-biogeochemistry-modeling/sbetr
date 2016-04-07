@@ -21,7 +21,9 @@ module MockBGCReactionsType
   private
   !
   ! !PUBLIC TYPES:
-  character(len=*), parameter :: mod_filename = __FILE__
+  character(len=*), parameter :: mod_filename = &
+       __FILE__
+
   public :: bgc_reaction_mock_run_type
 
   type, extends(bgc_reaction_type) :: &

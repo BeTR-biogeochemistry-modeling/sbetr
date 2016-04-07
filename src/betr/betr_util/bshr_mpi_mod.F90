@@ -9,7 +9,10 @@ Module bshr_mpi_mod
 ! PURPOSE: general layer on MPI functions
 !-------------------------------------------------------------------------------
 
-   use bshr_kind_mod
+   use bshr_kind_mod, only : SHR_KIND_IN
+   use bshr_kind_mod, only : SHR_KIND_R8
+   use bshr_kind_mod, only : SHR_KIND_I8
+   use bshr_kind_mod, only : SHR_KIND_CL
    use bshr_log_mod, only: s_loglev  => shr_log_Level
    use bshr_log_mod, only: s_logunit => shr_log_Unit
 

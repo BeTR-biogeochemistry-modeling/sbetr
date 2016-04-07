@@ -76,8 +76,9 @@ contains
     ! !USES:
     use BetrTracerType        , only : betrtracer_type
     use betr_varcon           , only : spval  => bspval
-    use restUtilMod
-    use ncdio_pio
+    use restUtilMod, only : restartvar
+    use ncdio_pio, only : file_desc_t
+    use ncdio_pio, only : ncd_double
     !
     ! !ARGUMENTS:
     class(TracerCoeff_type) :: this

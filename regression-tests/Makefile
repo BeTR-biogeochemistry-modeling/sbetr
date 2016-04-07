@@ -33,4 +33,8 @@ test-coverage : FORCE
 clean : FORCE
 	-rm *~
 
+clobber : clean
+	-rm input-data/*.nc input-data/*~
+
+
 FORCE : 

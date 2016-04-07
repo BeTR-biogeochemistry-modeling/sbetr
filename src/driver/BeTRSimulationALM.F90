@@ -71,7 +71,7 @@ contains
     use pftvarcon, only : noveg, nc4_grass, nc3_arctic_grass, nc3_nonarctic_grass
     use WaterStateType, only : waterstate_type
     use CNStateType, only : cnstate_type
-    use landunit_varcon
+    use landunit_varcon, only : istcrop, istice, istsoil
     use clm_varpar, only : nlevsno, nlevsoi, nlevtrc_soil
 
     !betr types
@@ -151,7 +151,8 @@ contains
 
   end subroutine ALMInit
 !-------------------------------------------------------------------------------
-  subroutine ALMStepWithoutDrainage(this, bounds,  col ,   &
+  subroutine ALMStepWithoutDrainage(this, betr_time, &
+       bounds,  col ,   &
        atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, &
        temperature_vars, waterflux_vars, chemstate_vars, &
        cnstate_vars, canopystate_vars, carbonflux_vars)
@@ -179,6 +180,7 @@ contains
     use BeTR_CanopyStateType, only : betr_canopystate_type
     use BeTR_ChemStateType, only : betr_chemstate_type
     use BeTR_SoilStateType, only : betr_soilstate_type
+    use BeTR_TimeMod, only : betr_time_type
     use tracer_varcon, only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
     use PatchType, only : pft
     use LandunitType,only : lun
@@ -191,6 +193,7 @@ contains
     class(betr_simulation_alm_type), intent(inout) :: this
 
     ! !ARGUMENTS :
+    class(betr_time_type), intent(in) :: betr_time
     type(bounds_type), intent(in) :: bounds ! bounds
     type(column_type), intent(in) :: col ! column type
     type(Waterstate_Type), intent(in) :: waterstate_vars ! water state variables
@@ -314,7 +317,7 @@ contains
     betr_soilstate_vars%sucsat_col => soilstate_vars%sucsat_col
     betr_soilstate_vars%rootfr_patch => soilstate_vars%rootfr_patch
 
-    call this%betr%step_without_drainage(betr_bounds,  &
+    call this%betr%step_without_drainage(betr_time, betr_bounds,  &
          this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp,  &
          betr_atm2lnd_vars, betr_soilhydrology_vars, betr_soilstate_vars, &
          betr_waterstate_vars, betr_waterflux_vars, betr_temperature_vars,  &
@@ -485,7 +488,8 @@ contains
 
 
   !------------------------------------------------------------------------
-  subroutine ALMCalcDewSubFlux(this, bounds, num_hydrologyc, filter_soilc_hydrologyc, &
+  subroutine ALMCalcDewSubFlux(this, betr_time, &
+       bounds, num_hydrologyc, filter_soilc_hydrologyc, &
        waterstate_vars, waterflux_vars)
 
     ! External interface called by CLM
@@ -497,17 +501,20 @@ contains
     use clm_varcon, only : denh2o,spval
     use landunit_varcon, only : istsoil, istcrop
     use betr_decompMod    , only : betr_bounds_type
+    use BeTR_TimeMod, only : betr_time_type
 
     implicit none
 
     class(betr_simulation_alm_type), intent(inout) :: this
+    class(betr_time_type), intent(in) :: betr_time
     type(betr_bounds_type), intent(in) :: bounds
     integer, intent(in) :: num_hydrologyc ! number of column soil points in column filter_soilc
     integer, intent(in) :: filter_soilc_hydrologyc(:) ! column filter_soilc for soil points
     type(betr_waterstate_type), intent(in) :: waterstate_vars
     type(betr_waterflux_type), intent(in) :: waterflux_vars
 
-  call this%betr%calc_dew_sub_flux(bounds, num_hydrologyc, filter_soilc_hydrologyc, &
+    call this%betr%calc_dew_sub_flux(betr_time, &
+         bounds, num_hydrologyc, filter_soilc_hydrologyc, &
        waterstate_vars, waterflux_vars, this%betr%tracers, this%betr%tracerfluxes, this%betr%tracerstates)
 
   end subroutine ALMCalcDewSubFlux

@@ -16,8 +16,7 @@ module TracerParamsMod
   use betr_varcon           , only : spval => bspval
   use BeTR_PatchType        , only : pft => betr_pft
   use BeTR_ColumnType       , only : col => betr_col
-  use betr_time_manager      , only : get_nstep
-  use tracer_varcon
+
   implicit none
   save
   private
@@ -1110,7 +1109,9 @@ contains
    use BeTR_ChemStateType      , only : betr_chemstate_type
    use BeTRTracerType     , only : betrtracer_type
    use BeTR_CanopyStateType    , only : betr_canopystate_type
-   use SurfaceResistanceMod
+
+   implicit none
+   
    type(bounds_type)       , intent(in) :: bounds  ! bounds
    integer                 , intent(in) :: lbj, ubj             ! lower and upper bounds, make sure they are > 0
    integer                 , intent(in) :: jtops(bounds%begc: ) ! top label of each column
@@ -1552,7 +1553,7 @@ contains
   use BeTR_TemperatureType       , only : betr_temperature_type
   use MathfuncMod           , only : safe_div
   use betr_ctrl            , only : betr_use_cn
-  use betr_time_manager      , only : get_step_size, get_nstep
+  implicit none
   type(bounds_type)            , intent(in)   :: bounds
   integer                      , intent(in)   :: num_soilp                 ! number of column soil points in column filter
   integer                      , intent(in)   :: filter_soilp(:)           ! column filter for soil points
@@ -1684,19 +1685,20 @@ contains
 
 
   !-----------------------------------------------------------------------
-  subroutine betr_annualupdate(bounds, num_soilc, filter_soilc, num_soilp, filter_soilp, &
+  subroutine betr_annualupdate(betr_time, bounds, num_soilc, filter_soilc, num_soilp, filter_soilp, &
        carbonflux_vars, betr_aerecond_vars, tracercoeff_vars)
     !
     ! !DESCRIPTION: Annual mean fields.
     !
     ! !USES:
-    use betr_time_manager             , only : get_step_size, get_days_per_year
+    use BeTR_TimeMod, only : betr_time_type
     use betr_varcon                  , only : secspday => bsecspday
     use BeTR_CarbonFluxType          , only : betr_carbonflux_type
     use tracercoeffType              , only : tracercoeff_type
     use BeTR_aerocondType            , only : betr_aerecond_type
     !
     ! !ARGUMENTS:
+    type(betr_time_type), intent(in) :: betr_time
     type(bounds_type)           , intent(in)    :: bounds
     integer                     , intent(in)    :: num_soilc         ! number of soil columns in filter
     integer                     , intent(in)    :: filter_soilc(:)   ! filter for soil columns
@@ -1729,8 +1731,8 @@ contains
          )
 
       ! set time steps
-      dt = real(get_step_size(), r8)
-      secsperyear = real( get_days_per_year() * secspday, r8)
+      dt = betr_time%get_step_size()
+      secsperyear = real( betr_time%get_days_per_year() * secspday, r8)
 
       newrun = .false.
 

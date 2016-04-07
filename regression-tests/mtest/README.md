@@ -41,8 +41,31 @@ A key aspect of being confident in the meta-test system is code
 coverage. If you make changes to the test infrastructure, you must run
 the code coverage tool and ensure that you are maintaining or
 increasing code coverage before your changes will be accepted. Code
-coverage reports are obtained by running:
+coverage reports are obtained by running the python coverage
+tool. Install the coverage tool with:
+
+    virtualenv env
+    . env/bin/activate
+    pip install coverage
+
+Run the coverage report with:
 
     make test-coverage
 
-from the regression-tests directory, not the mtest directory.
+from the regression-tests directory, not the mtest directory. This
+will run the meta-tests in the coverage tool and output a simple text
+summary to standard out, and create a detailed html coverage report:
+
+    ...
+    ...
+    ...
+    Name                                Stmts   Miss Branch BrPart  Cover
+    ---------------------------------------------------------------------
+    rtest_betr.py                         574    142    178     24    73%
+    ---------------------------------------------------------------------
+    TOTAL                                1127    142    178     24    84%
+    
+    5 files skipped due to complete coverage.
+    For detailed analysis, see the html report at:
+        coverage-html/index.html
+    

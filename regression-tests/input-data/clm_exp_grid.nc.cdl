@@ -1,0 +1,145 @@
+netcdf clm_exp_grid {
+dimensions:
+	levgrnd = 15 ;
+	lndgrid = 1 ;
+variables:
+	double BSW(levgrnd, lndgrid) ;
+		BSW:long_name = "slope of soil water retention curve" ;
+		BSW:units = "unitless" ;
+		BSW:_FillValue = 9.9999996169031625e+35 ;
+		BSW:missing_value = 9.99999962e+35f ;
+	double DZSOI(levgrnd, lndgrid) ;
+		DZSOI:long_name = "soil thickness" ;
+		DZSOI:units = "m" ;
+		DZSOI:_FillValue = 9.9999996169031625e+35 ;
+		DZSOI:missing_value = 9.99999962e+35f ;
+	double WATSAT(levgrnd, lndgrid) ;
+		WATSAT:long_name = "saturated soil water content (porosity)" ;
+		WATSAT:units = "mm3/mm3" ;
+		WATSAT:_FillValue = 9.9999996169031625e+35 ;
+		WATSAT:missing_value = 9.99999962e+35f ;
+	double ZSOI(levgrnd, lndgrid) ;
+		ZSOI:long_name = "soil depth" ;
+		ZSOI:units = "m" ;
+		ZSOI:_FillValue = 9.9999996169031625e+35 ;
+		ZSOI:missing_value = 9.99999962e+35f ;
+	double lat(lndgrid) ;
+		lat:long_name = "coordinate latitude" ;
+		lat:units = "degrees_north" ;
+		lat:_FillValue = 9.9999996169031625e+35 ;
+		lat:missing_value = 9.99999962e+35f ;
+	double levgrnd(levgrnd) ;
+		levgrnd:long_name = "coordinate soil levels" ;
+		levgrnd:units = "m" ;
+	double lon(lndgrid) ;
+		lon:long_name = "coordinate longitude" ;
+		lon:units = "degrees_east" ;
+		lon:_FillValue = 9.9999996169031625e+35 ;
+		lon:missing_value = 9.99999962e+35f ;
+
+// global attributes:
+		:title = "CLM History file information" ;
+		:comment = "NOTE: None of the variables are weighted by land fraction!" ;
+		:Conventions = "CF-1.0" ;
+		:history = "Tue Jan 26 14:08:50 2016: ncks -v WATSAT,lon,lat,DZSOI,ZSOI,BSW CLM_USRDAT.ICLM45.lawrencium-lr3.intel.5656685.norm.2016-01-15.clm2.h0.0001-01-01-00000.nc sierra_grid.nc\n",
+			"created on 01/20/16 13:41:24" ;
+		:source = "Community Land Model CLM4.0" ;
+		:hostname = "lawrencium-lr3" ;
+		:username = "jitang" ;
+		:version = "cesm1_3_beta10" ;
+		:revision_id = "$Id: histFileMod.F90 42903 2012-12-21 15:32:10Z muszala $" ;
+		:case_title = "UNSET" ;
+		:case_id = "CLM_USRDAT.ICLM45.lawrencium-lr3.intel.5656685.norm.2016-01-15" ;
+		:Surface_dataset = "surfdata_US-Blo_grid_c160115.nc" ;
+		:Initial_conditions_dataset = "CLM_USRDAT.ICLM45.lawrencium-lr3.intel.5656685.2016-01-15.clm2.r.0061-01-01-00000.nc" ;
+		:PFT_physiological_constants_dataset = "clm_params.c140423.nc" ;
+		:ltype_vegetated_or_bare_soil = 1 ;
+		:ltype_crop = 2 ;
+		:ltype_landice = 3 ;
+		:ltype_landice_multiple_elevation_classes = 4 ;
+		:ltype_deep_lake = 5 ;
+		:ltype_wetland = 6 ;
+		:ltype_urban_tbd = 7 ;
+		:ltype_urban_hd = 8 ;
+		:ltype_urban_md = 9 ;
+		:NCO = "\"4.5.3\"" ;
+data:
+
+ BSW =
+  5.5819539999999996,
+  5.8422966000000001,
+  6.1484255799999996,
+  6.3773365000000002,
+  6.7252011300000003,
+  6.8982462900000003,
+  7.3739514399999999,
+  7.2094378499999996,
+  7.2030000699999999,
+  8.4750003800000009,
+  8.4750003800000009,
+  8.4750003800000009,
+  8.4750003800000009,
+  8.4750003800000009,
+  8.4750003800000009 ;
+
+ DZSOI =
+  0.0175128188,
+  0.0275789686,
+  0.045470032799999997,
+  0.074967414100000004,
+  0.123600364,
+  0.203782558,
+  0.33598062400000001,
+  0.55393838900000003,
+  0.91329002400000003,
+  1.5057606699999999,
+  2.48257971,
+  4.0930819500000002,
+  6.7483510999999998,
+  11.1261501,
+  13.8511524 ;
+
+ WATSAT =
+  0.50330948799999997,
+  0.46785691400000001,
+  0.44546940899999998,
+  0.43583592799999998,
+  0.43314901,
+  0.42817482400000001,
+  0.42955455199999998,
+  0.42528390900000002,
+  0.42348000400000002,
+  0.42851999400000002,
+  0.42851999400000002,
+  0.42851999400000002,
+  0.42851999400000002,
+  0.42851999400000002,
+  0.42851999400000002 ;
+
+ ZSOI =
+  0.0071006352100000001,
+  0.0279249996,
+  0.062258575099999998,
+  0.11886506500000001,
+  0.2121934,
+  0.3660658,
+  0.61975848700000002,
+  1.03802705,
+  1.72763526,
+  2.8646071000000002,
+  4.7391567200000004,
+  7.8297662700000004,
+  12.925320599999999,
+  21.326469400000001,
+  35.177619900000003 ;
+
+ lat = 38.895198800000003 ;
+
+ levgrnd = 0.0071006352100000001, 0.0279249996, 0.062258575099999998, 
+    0.11886506500000001, 0.2121934, 0.3660658, 0.61975848700000002, 
+    1.03802705, 1.72763526, 2.8646071000000002, 4.7391567200000004, 
+    7.8297662700000004, 12.925320599999999, 21.326469400000001, 
+    35.177619900000003 ;
+
+ lon = 239.36729399999999 ;
+}

@@ -468,8 +468,8 @@ contains
     ! Now it is purposely empty, but will be potentially useful in the future
     ! !USES:
     use BetrTracerType        , only : betrtracer_type
-    use restUtilMod
-    use ncdio_pio
+    !use restUtilMod, only : 
+    use ncdio_pio, only : file_desc_t
     !
     ! !ARGUMENTS:
     class(TracerFlux_type) :: this
@@ -575,15 +575,19 @@ contains
   end subroutine temporal_average
 
   !----------------------------------------------------------------
-  subroutine Flux_summary(this, c, betrtracer_vars)
+  subroutine Flux_summary(this, betr_time, c, betrtracer_vars)
     !
     ! aggregate fluxes for mass balance check
 
     use BetrTracerType        , only : betrtracer_type
-    use betr_time_manager     , only : get_step_size
     use tracer_varcon         , only : nlevtrc_soil => betr_nlevtrc_soil
     use MathfuncMod           , only : dot_sum
-    class(TracerFlux_type)               :: this
+    use BeTR_TimeMod, only : betr_time_type
+
+    implicit none
+    
+    class(TracerFlux_type), intent(in) :: this
+    class(betr_time_type), intent(in) :: betr_time
     type(BeTRTracer_Type)  , intent(in)  :: betrtracer_vars
     integer                , intent(in)  :: c     ! column index
 
@@ -598,7 +602,7 @@ contains
          tracernames            => betrtracer_vars%tracernames           , &
          volatileid             => betrtracer_vars%volatileid              &
          )
-      dtime = get_step_size()
+      dtime = betr_time%get_step_size()
 
       do jj = 1, ngwmobile_tracers
          !the total net physical loss currently includes infiltration, surface runoff, transpiration aided transport,

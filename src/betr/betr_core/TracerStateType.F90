@@ -261,8 +261,9 @@ contains
     use betr_ctrl , only : iulog  => biulog
     use BeTRTracerType, only : BeTRTracer_Type
     !use spmdMod    , only : masterproc
-    use restUtilMod
-    use ncdio_pio
+    use restUtilMod, only : restartvar
+    use ncdio_pio, only : file_desc_t
+    use ncdio_pio, only : ncd_double
     !
     implicit none
     ! !ARGUMENTS:

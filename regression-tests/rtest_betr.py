@@ -86,7 +86,7 @@ def commandline_options(ext_args=None):
     parser.add_argument('--executable', nargs=1, required=True,
                         help='path to the executable')
 
-    parser.add_argument('--timeout', nargs=1, default='',
+    parser.add_argument('--timeout', nargs=1, default='30.0',
                         help='max runtime [seconds] before we timout a test.')
 
     parser.add_argument('--update-baseline', action='store_true',
@@ -493,14 +493,10 @@ class Comparison(object):
         self._name = name
 
     def regression_to_baseline(self, regression, baseline):
-        """FIXME(bja, 201603) Initially comparing regression to baseline and
-        baseline to regression as a brute force way to pick up
-        sections that are present in one but not another. This will
-        result in double reporting of comparison failures!
+        """Comparing regression to baseline and baseline and set the status as
+        pass if we didn't detect any errors..
 
         """
-        self._compare_sections(regression, 'regression',
-                               baseline, 'baseline')
         self._compare_sections(baseline, 'baseline',
                                regression, 'regression')
 
@@ -511,19 +507,32 @@ class Comparison(object):
         return self._status
 
     def _compare_sections(self, a_data, a_name, b_data, b_name):
-        """check that all sections in a are in b
+        """Compare the sections. Any sections in a or b but not both are a
+        failure.
+
         """
         for section in a_data:
             if section not in b_data:
-                msg = ('  FAILURE : sections "{0}" present in {1} '
+                msg = ('  FAILURE : section "{0}" present in {1} '
                        'but missing from {2}'.format(section, a_name, b_name))
                 logging.critical(msg)
                 self._status = 'fail'
             else:
+                # in both a and b
                 self._compare_options(
                     section,
                     a_data[section], a_name,
                     b_data[section], b_name)
+
+        for section in b_data:
+            # NOTE(bja, 201604) don't need the else clause here
+            # because we already checked common sections.
+            if section not in a_data:
+                msg = ('  FAILURE : section "{0}" present in {1} '
+                       'but missing from {2}'.format(section, b_name, a_name))
+                logging.critical(msg)
+                self._status = 'fail'
+
 
     def _compare_options(self, section, a_data, a_name, b_data, b_name):
         """
@@ -549,6 +558,16 @@ class Comparison(object):
             else:
                 self._compare_values_with_tolerance(
                     a_category, section, key, a_data[key], b_data[key])
+
+        for key in b_data:
+            # NOTE(bja, 2016) don't need the else to call
+            # compare_values again because we already compared
+            # sections in both files!
+            if key not in a_data:
+                msg = ('  FAIURE : {0} : key "{1}" present in {2} '
+                       'mising in {3}'.format(section, key, b_name, a_name))
+                logging.critical(msg)
+                self._status = 'fail'
 
     def _compare_values_with_tolerance(
             self, category, section, key, a_data, b_data):
@@ -579,13 +598,14 @@ class Comparison(object):
         a_value = float(a_data)
         b_value = float(b_data)
         abs_diff = abs(a_value - b_value)
+        denominator = self._set_denominator(a_value, b_value)
 
         if tol_type == Tolerances.ABSOLUTE:
             diff = abs_diff
         elif tol_type == Tolerances.RELATIVE:
-            diff = abs_diff / a_value
+            diff = abs_diff / denominator
         elif tol_type == Tolerances.PERCENT:
-            diff = 100.0 * abs_diff / a_value
+            diff = 100.0 * abs_diff / denominator
         else:
             # shouldn't be possible to get here if previous error
             # checking was good....
@@ -607,6 +627,23 @@ class Comparison(object):
             pass_comparison = True
         return pass_comparison
 
+    def _set_denominator(self, a_value, b_value):
+        """Set the denominator, accounting for zero values being a valid
+        value, to avoid a floating point error.
+
+        """
+        if a_value == 0.0 and b_value != 0.0:
+            denominator = b_value
+        elif a_value != 0.0 and b_value == 0.0:
+            denominator = a_value
+        elif a_value == 0 and b_value == 0:
+            # set to 1.0 to avoid a floating point exception without
+            # special logic.
+            denominator = 1.0
+        else:  # a != 0 and b != 0
+            denominator = a_value
+
+        return denominator
 
     def _get_section_category(self, section, a):
         """Extract the 'category' value from the section.
@@ -918,6 +955,69 @@ def config_to_dict(config):
     return config_dict
 
 
+def run_command(name, command, dry_run):
+    """Run an external command with desired logging.
+    """
+    logging.info("    {0}".format(" ".join(command)))
+    status = None
+    timeout = 15.0
+    if not dry_run:
+        run_stdout = open(name + ".stdout", 'w')
+        start = time.time()
+        proc = subprocess.Popen(command,
+                                shell=False,
+                                stdout=run_stdout,
+                                stderr=subprocess.STDOUT)
+        while proc.poll() is None:
+            time.sleep(0.1)
+            if time.time() - start > timeout:
+                proc.kill()
+                time.sleep(0.1)
+                msg = ('    FAILURE: "{0}" exceeded max run time '
+                       '{1} seconds.'.format(name, timeout))
+                logging.critical(''.join(['\n', msg, '\n']))
+                status = 'fail'
+        finish = time.time()
+        logging.info("    {0} : run time : {1:.2f} seconds".format(
+            name, finish - start))
+        run_stdout.close()
+        status = abs(proc.returncode)
+        if status != 0:
+            status = 'fail'
+            logging.critical('    FAILURE: runtime error in "{0}". '
+                             'See {0}.stdout file for details.'.format(
+                                 name))
+
+
+def convert_input_data(input_dir, dry_run):
+    """Check that text cdl-netcdf input files are available as binary
+    netcdf by calling the external ncgen command.
+
+    FIXME(bja, 201604) assumes that ncgen is in the path....
+
+    FIXME(bja, 201604) assumes that all input files are in a single
+    hard coded directory. Should this be genralized....?
+
+    """
+    all_files = os.listdir(input_dir)
+    nc_files = [f for f in all_files if f.endswith('.nc')]
+    cdl_files = [f for f in all_files if f.endswith('.nc.cdl')]
+
+    for cdl in cdl_files:
+        nc_filename = cdl.split('.')[:-1]
+        nc_filename = '.'.join(nc_filename)
+        if nc_filename not in nc_files:
+            nc_filename = os.path.join(input_dir, nc_filename)
+            cdl_filename = os.path.join(input_dir, cdl)
+            command = [
+                'ncgen',
+                '-o',
+                nc_filename,
+                cdl_filename,
+            ]
+            run_command(cdl, command, dry_run)
+
+
 # -----------------------------------------------------------------------------
 #
 # main
@@ -928,6 +1028,9 @@ def main(options):
     print('BeTR regression test driver')
     start_time = time.time()
 
+    # FIXME(bja, 201604) assuming that we are always being called from
+    # the same directory. Is there a need to support calling from an
+    # arbitrary location, e.g. integration with ctest?
     cwd = os.getcwd()
     setup_log(cwd)
     executable = os.path.abspath(options.executable[0])
@@ -938,6 +1041,15 @@ def main(options):
     else:
         test_root = os.path.join(cwd, 'tests')
         filenames = find_all_config_files(test_root)
+
+    input_dir = os.path.join(cwd, 'input-data')
+    if not os.path.isdir(input_dir):
+        msg = ('  DEV_ERROR: input data directory does not exist:'
+               '\n    {0}'.format(input_dir))
+        raise RuntimeError(msg)
+
+    dry_run = options.dry_run
+    convert_input_data(input_dir, dry_run)
 
     print('Setting up tests.')
     test_suites = []
@@ -953,7 +1065,6 @@ def main(options):
             del suite
 
     print('Running tests:')
-    dry_run = options.dry_run
     check_only = options.check_only
     update_baseline = options.update_baseline
     for suite in test_suites:

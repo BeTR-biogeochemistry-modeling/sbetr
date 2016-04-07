@@ -1,7 +1,7 @@
 # BeTR
 
 BeTR is a standalone reactive transport libary designed to be
-integrated ino land surface models such as CLM and ALM.
+integrated into land surface models such as CLM and ALM.
 
 Jinyun Tang, jinyuntang@lbl.gov
 
@@ -103,6 +103,25 @@ identify small changes in behavior. But they should be loose enough to
 be platform independent, so we don't get false positives when moving
 to a new platform.
 
+A requirement for testing is that the repository be self contained and
+platform independent. All input data and baselines should be contained
+in the repository. Inorder to be revision control friendly, the data
+should be saved in the repository as plain text files. Netcdf files
+should be converted to their text representation with:
+
+    ncdump -p 9,17 ${DATA}.nc > ${DATA}.nc.cdl
+
+These files will be automatically converted back to binary when the
+test suite is run with:
+
+    ncgen -o ${DATA}.nc ${DATA}.nc.cdl
+
+Check the cdl file to ensure all variables have the same data type as
+is expected in the code, i.e. double percision for r8. Before saving a
+cdl file in the repo, verify that the round trip of cdl-nc-cdl results
+in the same files. *Failure to do so will result in unreproducible
+test results!*
+
 
 #### Unit tests
 
@@ -127,10 +146,21 @@ AR, CO2 and CH4
 ## Development
 
 Key direcotries:
- * 3rd-party - select 3rd-party sources that betr depends on.
- * src - contains model code
- * cmake - contains utilities for the configuration and build system.
- * regression_tests - regressiont test input and baselines.
+
+* 3rd-party - select 3rd-party sources that betr depends on.
+
+* src - contains model code
+
+  * src/betr - LM independent betr library
+
+  * src/driver - standalone driver
+
+  * src/stub\_clm, esmf\_wrf\_timemgr, src/shr - stub version of land
+    model code needed to make the standalone LM interfaces compile.
+
+* cmake - contains utilities for the configuration and build system.
+
+* regression_tests - regressiont test input and baselines.
 
 
 To configure a new bgc implementation, follow the example in

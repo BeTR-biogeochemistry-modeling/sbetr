@@ -4,7 +4,6 @@ module sbetrDriverMod
 ! module holding subroutines to do out of clm betr application
 ! created by Jinyun Tang
   use shr_kind_mod        , only : r8 => shr_kind_r8
-  use ncdio_pio
 
   use BeTR_TimeMod, only : betr_time_type
 
@@ -26,12 +25,23 @@ contains
   !the rtm is done using the strang splitting approach (Strang, 1968)
   !
   use shr_kind_mod        , only : r8 => shr_kind_r8
-  use clm_varpar          , only : nlevtrc_soil, nlevgrnd
+  use clm_varpar          , only : nlevtrc_soil
+  use clm_varpar          , only : nlevgrnd
   use decompMod           , only : bounds_type
-  use clm_instMod
+
+  use clm_instMod, only : atm2lnd_vars
+  use clm_instMod, only : canopystate_vars
+  use clm_instMod, only : carbonflux_vars
+  use clm_instMod, only : chemstate_vars
+  use clm_instMod, only : cnstate_vars
+  use clm_instMod, only : soilhydrology_vars
+  use clm_instMod, only : soilstate_vars
+  use clm_instMod, only : temperature_vars
+  use clm_instMod, only : waterflux_vars
+  use clm_instMod, only : waterstate_vars
+
   use ColumnType          , only : col
   use clmgridMod           , only : init_clm_vertgrid
-  use clm_varpar           , only : nlevgrnd
   use clm_initializeMod    , only : initialize
 
   use BeTRSimulation, only : betr_simulation_type
@@ -46,11 +56,9 @@ contains
   use LandunitType        , only : lun
   use PatchType           , only : pft
   use landunit_varcon     , only : istsoil
-  use betr_time_manager    , only : proc_initstep, proc_nextstep
-  use accumulMod
-
 
   implicit none
+  
   character(len=betr_filename_length), intent(in) :: base_filename
   character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
 
@@ -118,7 +126,7 @@ contains
 
   record = -1
 
-  call proc_initstep()
+  call time_vars%proc_initstep()
   do
     record = record + 1
     !set envrionmental forcing by reading foring data: temperature, moisture, atmospheric resistance
@@ -137,7 +145,7 @@ contains
     if(record==0)cycle
     call simulation%BeginMassBalanceCheck(bounds)
 
-    call simulation%StepWithoutDrainage(bounds, col, &
+    call simulation%StepWithoutDrainage(time_vars, bounds, col, &
          atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, &
          temperature_vars, waterflux_vars, chemstate_vars, &
          cnstate_vars, canopystate_vars, carbonflux_vars)
@@ -145,7 +153,7 @@ contains
     call simulation%StepWithDrainage(bounds, waterflux_vars, col)
 
     !do mass balance check
-    call simulation%MassBalanceCheck(bounds)
+    call simulation%MassBalanceCheck(time_vars, bounds)
 
     !specific for water tracer transport
     !call simulation%ConsistencyCheck(bounds, ubj, simulation%num_soilc, &
@@ -159,7 +167,7 @@ contains
 
     !write restart file? is not functionning at the moment
     !if(its_time_to_write_restart(time_vars)) call rest_write(tracerstate_vars, tracercoeff_vars, tracerflux_vars, time_vars)
-    call proc_nextstep()
+    call time_vars%proc_nextstep()
     if(time_vars%its_time_to_exit()) then
        exit
     end if

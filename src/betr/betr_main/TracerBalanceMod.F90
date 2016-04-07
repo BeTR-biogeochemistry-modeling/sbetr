@@ -12,7 +12,6 @@ module TracerBalanceMod
   use TracerFluxType     , only : TracerFlux_type
   use TracerStateType    , only : TracerState_type
   use BeTR_ColumnType    , only : col => betr_col
-  use betr_time_manager   , only : get_nstep
   use betr_ctrl         , only : iulog  => biulog
 
 implicit none
@@ -61,7 +60,7 @@ implicit none
     end subroutine begin_betr_tracer_massbalance
 
     !--------------------------------------------------------------------------------
-    subroutine betr_tracer_massbalance_check(bounds, lbj, ubj, numf, filter, &
+    subroutine betr_tracer_massbalance_check(betr_time, bounds, lbj, ubj, numf, filter, &
          betrtracer_vars, tracerstate_vars, tracerflux_vars)
       !
       ! !DESCRIPTION:
@@ -77,12 +76,14 @@ implicit none
 
       use babortutils            , only : endrun
       use betr_ctrl            , only : iulog  => biulog
-      use betr_time_manager      , only : get_step_size,get_nstep
       use betr_varcon           , only : namec  => bnamec
       use tracer_varcon         , only : catomw,natomw
+      use BeTR_TimeMod, only : betr_time_type
+
       implicit none
 
       ! !ARGUMENTS:
+      class(betr_time_type), intent(in) :: betr_time
       type(bounds_type),      intent(in)    :: bounds
       integer,                intent(in)    :: lbj, ubj
       integer,                intent(in)    :: numf             ! number of columns in column filter
@@ -115,12 +116,12 @@ implicit none
         call betr_tracer_mass_summary(bounds, lbj, ubj, numf, filter, betrtracer_vars, tracerstate_vars, &
              end_tracer_molarmass)
 
-        dtime=get_step_size()
+        dtime = betr_time%get_step_size()
 
         do fc = 1, numf
            c = filter(fc)
            !summarize the fluxes
-           call tracerflux_vars%flux_summary(c, betrtracer_vars)
+           call tracerflux_vars%flux_summary(betr_time, c, betrtracer_vars)
 
            do kk = 1, ngwmobile_tracers
               errtracer(c,kk) = beg_tracer_molarmass(c,kk)-end_tracer_molarmass(c,kk)  &
@@ -133,7 +134,7 @@ implicit none
 
               if(abs(err_rel)>err_min_rel)then
                  write(iulog,*)'error exceeds the tolerance for tracer '//tracernames(kk), ' err=',errtracer(c,kk), ' col=',c
-                 write(iulog,*)'nstep=',get_nstep()
+                 write(iulog,*)'nstep=', betr_time%get_nstep()
                  write(iulog,'(4(A,5X,E20.10))')'netpro=',tracer_flx_netpro(c,kk),' netphyloss=',tracer_flx_netphyloss(c,kk),&
                       ' begm=',beg_tracer_molarmass(c,kk), &
                       ' endm=',end_tracer_molarmass(c,kk)
@@ -148,7 +149,7 @@ implicit none
               errtracer(c,kk) = beg_tracer_molarmass(c,kk)-end_tracer_molarmass(c,kk) + tracer_flx_netpro(c,kk)
               if(abs(errtracer(c,kk))>err_min)then
                  write(iulog,*)'error exceeds the tolerance for tracer '//tracernames(kk), 'err=',errtracer(c,kk), 'col=',c
-                 write(iulog,*)get_nstep(),is_mobile(kk)
+                 write(iulog,*) betr_time%get_nstep(),is_mobile(kk)
                  write(iulog,*) 'begmss=', beg_tracer_molarmass(c,kk), 'endmass=', end_tracer_molarmass(c,kk), &
                       ' netpro=', tracer_flx_netpro(c,kk)
                  call endrun(decomp_index=c, clmlevel=namec, msg=errMsg(mod_filename, __LINE__))

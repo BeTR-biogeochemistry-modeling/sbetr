@@ -4,7 +4,6 @@ set(BETR_UTIL_SOURCES
   BeTR_decompMod.F90
   betr_varcon.F90
   betr_ctrl.F90
-  betr_time_manager.F90
   bshr_const_mod.F90
   bshr_infnan_mod.F90
   bshr_kind_mod.F90
@@ -15,7 +14,7 @@ set(BETR_UTIL_SOURCES
   bshr_assert_mod.F90
   bshr_sys_mod.F90
   bshr_timer_mod.F90
-  BeTR_time_mod.F90
+  betr_time_mod.F90
   betr_regression_mod.F90
   betr_utils.F90
   )

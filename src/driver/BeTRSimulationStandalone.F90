@@ -82,7 +82,7 @@ contains
     use CNStateType, only : cnstate_type
     use BeTR_CNStateType, only : betr_cnstate_type
 
-    use landunit_varcon
+    use landunit_varcon, only : istcrop, istice, istsoil
     use BeTR_landvarconType, only : betr_landvarcon
     use clm_varpar, only : nlevsno, nlevsoi, nlevtrc_soil
 
@@ -157,7 +157,7 @@ contains
 
 
   !---------------------------------------------------------------------------------
-  subroutine StandaloneStepWithoutDrainage(this, bounds, col, &
+  subroutine StandaloneStepWithoutDrainage(this, betr_time, bounds, col, &
        atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, &
        temperature_vars, waterflux_vars, chemstate_vars, &
        cnstate_vars, canopystate_vars, carbonflux_vars)
@@ -187,6 +187,8 @@ contains
     use BeTR_CanopyStateType, only : betr_canopystate_type
     use BeTR_ChemStateType, only : betr_chemstate_type
     use BeTR_SoilStateType, only : betr_soilstate_type
+    use BeTR_TimeMod, only : betr_time_type
+
     use PatchType, only : pft
     use LandunitType,only : lun
     use pftvarcon, only : crop
@@ -196,6 +198,7 @@ contains
     class(betr_simulation_standalone_type), intent(inout) :: this
 
     ! !ARGUMENTS :
+    class(betr_time_type), intent(in) :: betr_time
     type(bounds_type), intent(in) :: bounds ! bounds
 
     type(column_type), intent(in) :: col ! column type
@@ -316,7 +319,7 @@ contains
     betr_soilstate_vars%sucsat_col => soilstate_vars%sucsat_col
     betr_soilstate_vars%rootfr_patch => soilstate_vars%rootfr_patch
 
-    call this%betr%step_without_drainage(betr_bounds,   &
+    call this%betr%step_without_drainage(betr_time, betr_bounds,   &
          this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp,  &
          betr_atm2lnd_vars, betr_soilhydrology_vars, betr_soilstate_vars, &
          betr_waterstate_vars, betr_waterflux_vars, betr_temperature_vars, &
