@@ -1,7 +1,7 @@
 # BeTR
 
 BeTR is a standalone reactive transport libary designed to be
-integrated ino land surface models such as CLM and ALM.
+integrated into land surface models such as CLM and ALM.
 
 Jinyun Tang, jinyuntang@lbl.gov
 
@@ -150,6 +150,13 @@ Key direcotries:
 * 3rd-party - select 3rd-party sources that betr depends on.
 
 * src - contains model code
+
+  * src/betr - LM independent betr library
+
+  * src/driver - standalone driver
+
+  * src/stub\_clm, esmf\_wrf\_timemgr, src/shr - stub version of land
+    model code needed to make the standalone LM interfaces compile.
 
 * cmake - contains utilities for the configuration and build system.
 
