@@ -869,12 +869,13 @@ def append_command_to_log(command, tempfile):
         subprocess.call(command, shell=False,
                         stdout=tempinfo,
                         stderr=subprocess.STDOUT)
-        # NOTE(bja) 2013-06 : need a short sleep to ensure the
+        # NOTE(bja, 2013-06) : need a short sleep to ensure the
         # contents get written...?
         time.sleep(0.01)
-    with open(tempfile, 'r') as tempinfo:
-        for line in tempinfo.readlines():
-            logging.info('    {0}'.format(line.strip()))
+    if os.path.isfile(tempfile):
+        with open(tempfile, 'r') as tempinfo:
+            for line in tempinfo.readlines():
+                logging.info('    {0}'.format(line.strip()))
 
 
 def setup_log(test_dir):
@@ -955,40 +956,6 @@ def config_to_dict(config):
     return config_dict
 
 
-def run_command(name, command, dry_run):
-    """Run an external command with desired logging.
-    """
-    logging.info("    {0}".format(" ".join(command)))
-    status = None
-    timeout = 15.0
-    if not dry_run:
-        run_stdout = open(name + ".stdout", 'w')
-        start = time.time()
-        proc = subprocess.Popen(command,
-                                shell=False,
-                                stdout=run_stdout,
-                                stderr=subprocess.STDOUT)
-        while proc.poll() is None:
-            time.sleep(0.1)
-            if time.time() - start > timeout:
-                proc.kill()
-                time.sleep(0.1)
-                msg = ('    FAILURE: "{0}" exceeded max run time '
-                       '{1} seconds.'.format(name, timeout))
-                logging.critical(''.join(['\n', msg, '\n']))
-                status = 'fail'
-        finish = time.time()
-        logging.info("    {0} : run time : {1:.2f} seconds".format(
-            name, finish - start))
-        run_stdout.close()
-        status = abs(proc.returncode)
-        if status != 0:
-            status = 'fail'
-            logging.critical('    FAILURE: runtime error in "{0}". '
-                             'See {0}.stdout file for details.'.format(
-                                 name))
-
-
 def convert_input_data(input_dir, dry_run):
     """Check that text cdl-netcdf input files are available as binary
     netcdf by calling the external ncgen command.
@@ -999,23 +966,47 @@ def convert_input_data(input_dir, dry_run):
     hard coded directory. Should this be genralized....?
 
     """
+    logging.info(SEPERATOR)
+    logging.info('Converting input data from text cdl to binary nc.')
     all_files = os.listdir(input_dir)
-    nc_files = [f for f in all_files if f.endswith('.nc')]
-    cdl_files = [f for f in all_files if f.endswith('.nc.cdl')]
+    nc_files = [f for f in all_files if f.endswith('.cdl.nc')]
+    cdl_files = [f for f in all_files if f.endswith('.cdl')]
+
+    tempfile = "{0}/tmp-betr-test-info.txt".format(input_dir)
 
     for cdl in cdl_files:
-        nc_filename = cdl.split('.')[:-1]
-        nc_filename = '.'.join(nc_filename)
-        if nc_filename not in nc_files:
-            nc_filename = os.path.join(input_dir, nc_filename)
-            cdl_filename = os.path.join(input_dir, cdl)
+        nc = cdl + '.nc'
+        nc_filename = os.path.join(input_dir, nc)
+        cdl_filename = os.path.join(input_dir, cdl)
+
+        convert = False
+        if nc not in nc_files:
+            # nc file doesn't exist, need to convert
+            convert = True
+            logging.info('  {0}: nc doesn\'t exist.'.format(cdl))
+        else:
+            nc_timestamp = os.path.getmtime(nc_filename)
+            cdl_timestamp = os.path.getmtime(cdl_filename)
+            mod_time = cdl_timestamp - nc_timestamp
+            if mod_time > 0:
+                # cdl file in newer than nc file. need to convert
+                convert = True
+                logging.info(
+                    '  {0}: cdl file is newer than nc file: {1}.'.format(
+                        cdl, mod_time))
+
+        if convert:
+            msg = '  converting {0} to binary nc format'.format(cdl)
+            logging.info(msg)
             command = [
                 'ncgen',
                 '-o',
                 nc_filename,
                 cdl_filename,
             ]
-            run_command(cdl, command, dry_run)
+            append_command_to_log(command, tempfile)
+            os.remove(tempfile)
+            logging.info('')
 
 
 # -----------------------------------------------------------------------------
