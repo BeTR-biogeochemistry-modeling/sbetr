@@ -487,7 +487,7 @@ contains
        index = tstep
     end if
 
-    flux = this%qbot(tstep)
+    flux = this%qbot(index)
 
   end function discharge
 
@@ -509,7 +509,7 @@ contains
        index = tstep
     end if
 
-    flux = this%qflx_infl(tstep)
+    flux = this%qflx_infl(index)
 
   end function infiltration
 
