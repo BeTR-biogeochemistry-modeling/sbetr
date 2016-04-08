@@ -12,6 +12,9 @@ module SoilWaterRetentionCurveFactoryMod
   implicit none
   save
   private
+
+  character(len=*), parameter :: mod_filename = &
+       __FILE__
   !
   ! !PUBLIC ROUTINES:
   public :: create_soil_water_retention_curve  ! create an object of class soil_water_retention_curve_type
@@ -51,7 +54,7 @@ contains
 
     case default
        write(iulog,*) subname//' ERROR: unknown method: ', method
-       call endrun(msg=errMsg(__FILE__, __LINE__))
+       call endrun(msg=errMsg(mod_filename, __LINE__))
 
     end select
 

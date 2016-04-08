@@ -16,7 +16,8 @@ module InterpolationMod
   public :: Lagrange_interp
   public :: pchip_polycc
   public :: pchip_interp
-  character(len=*), parameter :: mod_filename = __FILE__
+  character(len=*), parameter :: mod_filename = &
+       __FILE__
 contains
 
   !-------------------------------------------------------------------------------

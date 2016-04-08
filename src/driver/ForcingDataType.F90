@@ -12,7 +12,8 @@ module ForcingDataType
 
   private
 
-  character(len=*), private, parameter :: mod_filename = __FILE__
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
 
   character(len=*), parameter :: steady_state_name = 'steady state'
   character(len=*), parameter :: transient_name = 'transient'
