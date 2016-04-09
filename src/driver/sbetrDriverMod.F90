@@ -26,7 +26,6 @@ contains
   !
   use shr_kind_mod        , only : r8 => shr_kind_r8
   use clm_varpar          , only : nlevtrc_soil
-  use clm_varpar          , only : nlevgrnd
   use decompMod           , only : bounds_type
 
   use clm_instMod, only : atm2lnd_vars
@@ -50,6 +49,7 @@ contains
   use betr_constants, only : betr_namelist_buffer_size, betr_string_length_long, betr_filename_length
 
   use ForcingDataType, only : ForcingData_type
+  use BeTR_GridMod, only : betr_grid_type
 
   use TracerParamsMod     , only : tracer_param_init
   use spmdMod             , only : spmd_init
@@ -76,6 +76,7 @@ contains
 
   character(len=betr_string_length_long) :: simulator_name
   class(ForcingData_type), allocatable :: forcing_data
+  class(betr_grid_type), allocatable :: grid_data
   class(betr_time_type), allocatable :: time_vars
 
   !initialize parameters
@@ -93,7 +94,9 @@ contains
   bounds%ubj  = nlevtrc_soil
 
   !set up grid
-  call init_clm_vertgrid(nlevgrnd)
+  allocate(grid_data)
+  call grid_data%Init(namelist_buffer)
+  call init_clm_vertgrid(grid_data%nlevgrnd)
 
   call initialize(bounds)
 
@@ -101,7 +104,7 @@ contains
   call time_vars%Init(namelist_buffer)
 
   allocate(forcing_data)
-  call forcing_data%ReadData(namelist_buffer)
+  call forcing_data%ReadData(namelist_buffer, grid_data)
 
   lbj = 1
   ubj = nlevtrc_soil
@@ -118,7 +121,8 @@ contains
   call simulation%BeTRSetFilter()
 
   !obtain waterstate_vars for initilizations that need it
-  call forcing_data%UpdateForcing(bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, time_vars, col, &
+  call forcing_data%UpdateForcing(grid_data, &
+       bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, time_vars, col, &
        atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars             , &
        waterflux_vars, temperature_vars, chemstate_vars, simulation%jtops)
 
@@ -132,7 +136,8 @@ contains
     !set envrionmental forcing by reading foring data: temperature, moisture, atmospheric resistance
     !from either user specified file or clm history file
 
-    call forcing_data%UpdateForcing(bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, time_vars, col, &
+    call forcing_data%UpdateForcing(grid_data, &
+         bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, time_vars, col, &
       atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars, &
       waterflux_vars, temperature_vars, chemstate_vars, simulation%jtops)
 

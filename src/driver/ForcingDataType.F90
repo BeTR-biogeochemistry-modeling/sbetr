@@ -21,7 +21,6 @@ module ForcingDataType
   integer, parameter :: steady_state = 2
 
   type, public :: ForcingData_type
-     character(len=betr_filename_length) :: grid_filename
      character(len=betr_filename_length) :: forcing_filename
      character(len=betr_string_length) :: forcing_format ! file format: netcdf, namelist, csv, etc.
      character(len=betr_string_length) :: forcing_type_name ! steady state, transient
@@ -40,10 +39,6 @@ module ForcingDataType
      real(r8), pointer :: qflx_rootsoi(:,:)  !transpiration at depth, m/s
      real(r8), pointer :: pbot(:)            !amtospheric pressure, Pa
      real(r8), pointer :: tbot(:)            !atmoshperic temperature, kelvin
-     real(r8), pointer :: dzsoi(:)           !node thickness
-     real(r8), pointer :: zsoi(:)            !node depth of each numerical node
-     real(r8), pointer :: bsw(:)             !clap-hornberg parameter
-     real(r8), pointer :: watsat(:)          !saturated volumetric water content
      real(r8), pointer :: h2osoi_icevol(:,:)
      real(r8), pointer :: qbot(:)            !water flux at bottom boundary, mm/s
 
@@ -51,7 +46,6 @@ module ForcingDataType
 
      procedure, public :: Init
      procedure, public :: ReadData
-     procedure, public :: ReadGridData
      procedure, public :: ReadForcingData
      procedure, public :: UpdateForcing
      procedure, public :: discharge
@@ -101,18 +95,14 @@ contains
     allocate(this%h2osoi_ice(this%num_time, this%num_levels))
     allocate(this%qflx_infl(this%num_time))
     allocate(this%qflx_rootsoi(this%num_time, this%num_levels))
-    allocate(this%zsoi(this%num_levels))
-    allocate(this%dzsoi(this%num_levels))
     allocate(this%pbot(this%num_time))
     allocate(this%qbot(this%num_time))
     allocate(this%tbot(this%num_time))
-    allocate(this%watsat(this%num_levels))
-    allocate(this%bsw(this%num_levels))
 
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------
-  subroutine ReadData(this, namelist_buffer)
+  subroutine ReadData(this, namelist_buffer, grid)
 
     use ncdio_pio, only : file_desc_t
     use ncdio_pio, only : ncd_nowrite
@@ -121,10 +111,15 @@ contains
     use ncdio_pio, only : ncd_getvar
     use ncdio_pio, only : ncd_pio_closefile
 
+    use babortutils, only : endrun
+    use bshr_log_mod, only : errMsg => shr_log_errMsg
+    use BeTR_GridMod, only : betr_grid_type
+
     implicit none
 
     class(ForcingData_type) :: this
     character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
+    class(betr_grid_type), intent(in) :: grid
 
     character(len=250) :: ncf_in_filename_forc
     type(file_desc_t)  :: ncf_in_forc
@@ -141,73 +136,31 @@ contains
     num_time = get_dim_len(ncf_in_forc, 'time')
     call ncd_pio_closefile(ncf_in_forc)
 
+    if (grid%nlevgrnd /= num_levels) then
+       call endrun(msg="ERROR inconsistent vertical levels between "//&
+            "grid and forcing. "//errmsg(mod_filename, __LINE__))
+       
+    end if
+    
     call this%Init(num_levels, num_time)
-    call this%ReadGridData()
-    call this%ReadForcingData()
+    call this%ReadForcingData(grid)
 
   end subroutine ReadData
 
   !------------------------------------------------------------------------
-  subroutine ReadGridData(this)
+  subroutine ReadForcingData(this, grid)
 
     use ncdio_pio, only : file_desc_t
     use ncdio_pio, only : ncd_nowrite
     use ncdio_pio, only : ncd_pio_openfile
     use ncdio_pio, only : ncd_getvar
     use ncdio_pio, only : ncd_pio_closefile
+    use BeTR_GridMod, only : betr_grid_type
 
     implicit none
 
     class(ForcingData_type) :: this
-
-    character(len=250) :: ncf_in_filename_grid
-    type(file_desc_t)  :: ncf_in_grid
-    real(r8), allocatable :: data(:,:)
-    integer :: j2
-
-
-    ncf_in_filename_grid=trim(this%grid_filename)
-    call ncd_pio_openfile(ncf_in_grid, ncf_in_filename_grid, mode=ncd_nowrite)
-
-    allocate(data(this%num_columns, this%num_levels))
-    call ncd_getvar(ncf_in_grid, 'DZSOI', data)
-    do j2 = 1, this%num_levels
-       this%dzsoi(j2) = data(this%num_columns, j2)
-    enddo
-
-    call ncd_getvar(ncf_in_grid, 'ZSOI', data)
-    do j2 = 1, this%num_levels
-       this%zsoi(j2) = data(this%num_columns, j2)
-    enddo
-
-    call ncd_getvar(ncf_in_grid, 'WATSAT', data)
-    do j2 = 1, this%num_levels
-       this%watsat(j2) = data(this%num_columns, j2)
-    enddo
-
-    call ncd_getvar(ncf_in_grid, 'BSW', data)
-    do j2 = 1, this%num_levels
-       this%bsw(j2) = data(this%num_columns, j2)
-    enddo
-
-    call ncd_pio_closefile(ncf_in_grid)
-
-    deallocate(data)
-
-  end subroutine ReadGridData
-
-  !------------------------------------------------------------------------
-  subroutine ReadForcingData(this)
-
-    use ncdio_pio, only : file_desc_t
-    use ncdio_pio, only : ncd_nowrite
-    use ncdio_pio, only : ncd_pio_openfile
-    use ncdio_pio, only : ncd_getvar
-    use ncdio_pio, only : ncd_pio_closefile
-
-    implicit none
-
-    class(ForcingData_type) :: this
+    class(betr_grid_type), intent(in) :: grid
 
     character(len=250) :: ncf_in_filename_forc
     type(file_desc_t)  :: ncf_in_forc
@@ -242,10 +195,10 @@ contains
     do j2 = 1, this%num_levels
        do j1 = 1, this%num_time
 
-          this%h2osoi_icevol(j1, j2) = data_2d(this%num_columns, j2, j1)/rhoice/this%dzsoi(j2)
+          this%h2osoi_icevol(j1, j2) = data_2d(this%num_columns, j2, j1)/rhoice/grid%dzsoi(j2)
           this%h2osoi_liqvol(j1, j2) = this%h2osoi_liqvol(j1, j2) - this%h2osoi_icevol(j1, j2)
           this%h2osoi_ice(j1, j2) = data_2d(this%num_columns, j2, j1)
-          this%h2osoi_liq(j1, j2) = this%h2osoi_liqvol(j1, j2)*this%dzsoi(j2)*rhoh2o
+          this%h2osoi_liq(j1, j2) = this%h2osoi_liqvol(j1, j2)*grid%dzsoi(j2)*rhoh2o
        enddo
     enddo
 
@@ -314,17 +267,15 @@ contains
     ! !LOCAL VARIABLES:
     integer :: nml_error
     character(len=*), parameter :: subname = 'ReadNameList'
-    character(len=betr_filename_length) :: grid_filename
     character(len=betr_filename_length) :: forcing_format, forcing_type_name, forcing_filename
     character(len=betr_string_length_long) :: ioerror_msg
 
 
     !-----------------------------------------------------------------------
 
-    namelist / forcing_inparm / grid_filename, &
+    namelist / forcing_inparm / &
          forcing_type_name, forcing_filename, forcing_format
 
-    grid_filename = ''
     forcing_format = ''
     forcing_type_name = transient_name
     forcing_filename = ''
@@ -354,7 +305,6 @@ contains
        write(stdout, *) '--------------------'
     endif
 
-    this%grid_filename = trim(grid_filename)
     this%forcing_type_name = trim(forcing_type_name)
     this%forcing_format = trim(forcing_format)
     this%forcing_filename = trim(forcing_filename)
@@ -363,7 +313,7 @@ contains
 
   ! ----------------------------------------------------------------------
 
-  subroutine UpdateForcing(this, bounds, lbj, ubj, numf, filter, ttime, col, atm2lnd_vars, &
+  subroutine UpdateForcing(this, grid, bounds, lbj, ubj, numf, filter, ttime, col, atm2lnd_vars, &
        soilhydrology_vars, soilstate_vars,waterstate_vars,waterflux_vars, &
        temperature_vars,chemstate_vars, jtops)
     !
@@ -377,16 +327,17 @@ contains
     use SoilStateType     , only : soilstate_type
     use ChemStateType     , only : chemstate_type
     use ColumnType        , only : column_type
-    use clmgridMod        , only : dzsoi, zisoi
     use decompMod         , only : bounds_type
     use SoilHydrologyType , only : soilhydrology_type
     use atm2lndType       , only : atm2lnd_type
 
     use BeTR_TimeMod, only : betr_time_type
+    use BeTR_GridMod, only : betr_grid_type
     
     implicit none
 
     class(ForcingData_type), intent(in) :: this
+    class(betr_grid_type), intent(in) :: grid
     type(bounds_type), intent(in) :: bounds
     integer, intent(in) :: numf
     integer, intent(in) :: filter(:)
@@ -428,17 +379,17 @@ contains
           c = filter(fc)
           if(j>=jtops(c))then
              waterstate_vars%h2osoi_liqvol_col(c,j) = this%h2osoi_liqvol(tstep,j)
-             waterstate_vars%air_vol_col(c,j) = this%watsat(j)-this%h2osoi_liqvol(tstep,j)
+             waterstate_vars%air_vol_col(c,j) = grid%watsat(j)-this%h2osoi_liqvol(tstep,j)
 
-             soilstate_vars%eff_porosity_col(c,j) = this%watsat(j)-this%h2osoi_icevol(tstep,j)
-             soilstate_vars%bsw_col(c,j) = this%bsw(j)
+             soilstate_vars%eff_porosity_col(c,j) = grid%watsat(j)-this%h2osoi_icevol(tstep,j)
+             soilstate_vars%bsw_col(c,j) = grid%bsw(j)
 
              temperature_vars%t_soisno_col(c,j) = this%t_soi(tstep,j)
 
              waterflux_vars%qflx_rootsoi_col(c,j) = this%qflx_rootsoi(tstep,j)  !water exchange between soil and root, m/H2O/s
 
-             col%dz(c,j) = dzsoi(j)
-             col%zi(c,j) = zisoi(j)
+             col%dz(c,j) = grid%dzsoi(j)
+             col%zi(c,j) = grid%zisoi(j)
 
              chemstate_vars%soil_pH(c,j) = 7._r8
 
@@ -454,7 +405,7 @@ contains
     do fc = 1, numf
        c = filter(fc)
        waterflux_vars%qflx_totdrain_col(c) = 0._r8
-       col%zi(c,0) = zisoi(0)
+       col%zi(c,0) = grid%zisoi(0)
 
        waterflux_vars%qflx_snow2topsoi_col(c) = 0._r8
        waterflux_vars%qflx_h2osfc2topsoi_col(c) = 0._r8
