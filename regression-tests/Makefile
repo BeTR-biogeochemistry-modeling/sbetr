@@ -31,10 +31,17 @@ test-coverage : FORCE
 	@echo '    coverage-html/index.html'
 
 clean : FORCE
-	-rm *~
+	-find . -name '*~' -print0 | xargs -0 rm
 
+
+# try to remove all generated files. Note, these globs should be as
+# specific as possible to avoid removing unintended files!
 clobber : clean
-	-rm input-data/*.nc input-data/*~
+	-find . -name '*.cdl.nc' -print0 | xargs -0 rm
+	-find . -name '*.output.nc' -print0 | xargs -0 rm
+	-find . -name '*.bak' -print0 | xargs -0 rm
+	-find . -name '*.stdout' -print0 | xargs -0 rm
+	-find . -name '*.regression' -print0 | xargs -0 rm
 
 
 FORCE : 

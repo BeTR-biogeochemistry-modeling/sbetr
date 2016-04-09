@@ -11,8 +11,11 @@
 /
 
 &forcing_inparm
-  grid_filename = '../../../example_input/sierra_grid.nc'
   forcing_filename = '../../../example_input/sierra_halfhour_full_year_clmforc.nc'
+/
+
+&betr_grid
+  grid_data_filename = '../../input-data/clm_exp_grid.cdl.nc'
 /
 
 &regression_test

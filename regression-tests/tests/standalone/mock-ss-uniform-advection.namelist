@@ -20,7 +20,10 @@
 /
 
 &betr_grid
-  grid_data_filename = '../../input-data/clm_exp_grid.cdl.nc'
+  grid_data_filename = '../../input-data/uniform_steadystate_grid.cdl.nc'
+  grid_type_str = 'uniform'
+  delta_z = 0.1
+  nlevgrnd = 15
 /
 
 &regression_test

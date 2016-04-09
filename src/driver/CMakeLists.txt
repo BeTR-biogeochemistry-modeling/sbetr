@@ -5,6 +5,7 @@ set(BETR_DRIVER_SOURCES
   BeTRSimulationCLM.F90
   BeTRSimulationALM.F90
   ForcingDataType.F90
+  GridMod.F90
   sbetrDriverMod.F90
   )
 

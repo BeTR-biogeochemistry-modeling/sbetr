@@ -23,7 +23,8 @@ module BeTRSimulation
 
   private
 
-  character(len=*), private, parameter :: mod_filename = __FILE__
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
 
   type, public :: betr_simulation_type
      type(betr_type), public :: betr
