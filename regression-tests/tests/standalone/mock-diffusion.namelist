@@ -10,8 +10,14 @@
 /
 
 &forcing_inparm
-  grid_filename = '../../../example_input/sierra_grid.nc'
-  forcing_filename = '../../../example_input/sierra_halfhour_full_year_clmforc.nc'
+  forcing_filename = '../../input-data/uniform_steadystate_forcing.cdl.nc'
+/
+
+&betr_grid
+  grid_data_filename = '../../input-data/uniform_steadystate_grid.cdl.nc'
+  grid_type_str = 'uniform'
+  delta_z = 0.1
+  nlevgrnd = 15
 /
 
 &regression_test
