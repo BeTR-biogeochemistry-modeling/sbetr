@@ -15,12 +15,11 @@ module MockBGCReactionsType
   use tracer_varcon          , only : bndcond_as_conc, bndcond_as_flux
   use BeTR_LandunitType      , only : lun => betr_lun
   use ColumnType             , only : col
+
   implicit none
 
-  save
   private
-  !
-  ! !PUBLIC TYPES:
+
   character(len=*), parameter :: mod_filename = &
        __FILE__
 

@@ -2,10 +2,10 @@ module H2OIsotopePlantSoilBGCType
 
 
   use PlantSoilBGCMod , only : plant_soilbgc_type
-  implicit none
-  save
-  private
 
+  implicit none
+
+  private
 
   public :: plant_soilbgc_h2oiso_run_type
 

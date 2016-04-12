@@ -3,10 +3,10 @@ module MockPlantSoilBGCType
 
   use PlantSoilBGCMod , only : plant_soilbgc_type
   use betr_decompMod    , only : bounds_type => betr_bounds_type
-  implicit none
-  save
-  private
 
+  implicit none
+
+  private
 
   public :: plant_soilbgc_mock_run_type
 
