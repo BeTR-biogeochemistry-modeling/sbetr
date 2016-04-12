@@ -269,84 +269,85 @@ end subroutine sbetrBGC_driver
 
   subroutine calc_qadv(forcing_data, ubj, record, numf, filter, ttime, waterstate_vars, waterflux_vars)
 
-  !
-  ! description
-  !calculate advective velocity between different layers
-  !
-  ! USES
-  use WaterstateType    , only : waterstate_type
-  use WaterfluxType     , only : waterflux_type
-  use ColumnType        , only : column_type
+    !
+    ! description
+    !calculate advective velocity between different layers
+    !
+    ! USES
+    use WaterstateType    , only : waterstate_type
+    use WaterfluxType     , only : waterflux_type
+    use ColumnType        , only : column_type
 
-  use ForcingDataType, only : ForcingData_type
+    use ForcingDataType, only : ForcingData_type
 
-  implicit none
+    implicit none
 
-  class(ForcingData_type), intent(inout) :: forcing_data
-  integer, intent(in) :: numf
-  integer, intent(in) :: filter(:)
-  integer, intent(in) :: ubj
+    class(ForcingData_type), intent(inout) :: forcing_data
+    integer, intent(in) :: numf
+    integer, intent(in) :: filter(:)
+    integer, intent(in) :: ubj
 
-  integer                 , intent(in)    :: record
-  type(betr_time_type)    , intent(in)    :: ttime
-  type(waterstate_type)   , intent(inout) :: waterstate_vars
-  type(waterflux_type)    , intent(inout) :: waterflux_vars
+    integer                 , intent(in)    :: record
+    type(betr_time_type)    , intent(in)    :: ttime
+    type(waterstate_type)   , intent(inout) :: waterstate_vars
+    type(waterflux_type)    , intent(inout) :: waterflux_vars
 
-  integer :: j, fc, c
-  real(r8):: dmass    !kg/m2 = mm H2O/m2
+    integer :: j, fc, c
+    real(r8):: dmass    !kg/m2 = mm H2O/m2
 
-  associate( &
-       tstep => ttime%tstep, &
-       dtime => ttime%delta_time &
-  )
+    associate( &
+         tstep => ttime%tstep, &
+         dtime => ttime%delta_time &
+         )
 
 
-  !now obtain the advective fluxes between different soil layers
-  !dstorage = (h2o_new-h2o)/dt = qin-qout-qtran_dep
-  if(record > 0)then
-    do fc = 1, numf
-      c = filter(fc)
+      !now obtain the advective fluxes between different soil layers
+      !dstorage = (h2o_new-h2o)/dt = qin-qout-qtran_dep
+    if (record > 0) then
+       do fc = 1, numf
+          c = filter(fc)
 
-      do j = ubj, 1, -1
-        if(j==ubj)then
-          waterflux_vars%qflx_adv_col(c,j) = forcing_data%discharge(tstep)
-          dmass=(waterstate_vars%h2osoi_ice_col(c,j)+waterstate_vars%h2osoi_liq_col(c,j))- &
-           (waterstate_vars%h2osoi_ice_old(c,j)+waterstate_vars%h2osoi_liq_old(c,j))
-          !the following is for first step initialization
-          if(dmass==0._r8)waterflux_vars%qflx_adv_col(c,j) = 0._r8
-        else
-          dmass=(waterstate_vars%h2osoi_ice_col(c,j)+waterstate_vars%h2osoi_liq_col(c,j))- &
-           (waterstate_vars%h2osoi_ice_old(c,j)+waterstate_vars%h2osoi_liq_old(c,j))
-          waterflux_vars%qflx_adv_col(c,j)= dmass * 1.e-3_r8/dtime + waterflux_vars%qflx_adv_col(c,j+1) + &
-             waterflux_vars%qflx_rootsoi_col(c,j)
-        endif
-      enddo
-      waterflux_vars%qflx_infl_col(c) = forcing_data%infiltration(tstep)
+          do j = ubj, 1, -1
+             dmass = (waterstate_vars%h2osoi_ice_col(c,j) + waterstate_vars%h2osoi_liq_col(c,j)) - &
+                  (waterstate_vars%h2osoi_ice_old(c,j) + waterstate_vars%h2osoi_liq_old(c,j))
+             if (j == ubj) then
+                waterflux_vars%qflx_adv_col(c,j) = forcing_data%discharge(tstep)
+                !the following is for first step initialization
+                if (dmass == 0._r8) then
+                   waterflux_vars%qflx_adv_col(c,j) = 0._r8
+                end if
+             else
+                waterflux_vars%qflx_adv_col(c,j) = dmass * 1.e-3_r8 / dtime + &
+                     waterflux_vars%qflx_adv_col(c,j+1) + waterflux_vars%qflx_rootsoi_col(c,j)
+             end if
+          end do
+          waterflux_vars%qflx_infl_col(c) = forcing_data%infiltration(tstep)
 
-      !now correct the infiltration
-      waterflux_vars%qflx_gross_infl_soil_col(c) = (waterstate_vars%h2osoi_liq_col(c,1)-waterstate_vars%h2osoi_liq_old(c,1))/dtime &
-             + (waterflux_vars%qflx_rootsoi_col(c,1)+waterflux_vars%qflx_adv_col(c,1))*1.e3_r8
+          !now correct the infiltration
+          waterflux_vars%qflx_gross_infl_soil_col(c) = &
+               (waterstate_vars%h2osoi_liq_col(c,1) - waterstate_vars%h2osoi_liq_old(c,1)) / dtime + &
+               (waterflux_vars%qflx_rootsoi_col(c,1) + waterflux_vars%qflx_adv_col(c,1)) * 1.e3_r8
 
-      !the following may have some problem, because it also includes contributions from
-      !dew, and sublimation
-      if(waterflux_vars%qflx_gross_infl_soil_col(c)>0._r8)then
-        waterflux_vars%qflx_adv_col(c,0) = waterflux_vars%qflx_gross_infl_soil_col(c) * 1.e-3_r8
-        waterflux_vars%qflx_gross_evap_soil_col(c) = 0._r8
-      else
-        waterflux_vars%qflx_gross_evap_soil_col(c) = waterflux_vars%qflx_gross_infl_soil_col(c)
-        waterflux_vars%qflx_adv_col(c,0) = 0._r8
-        waterflux_vars%qflx_gross_infl_soil_col(c) = 0._r8
-      endif
-    enddo
-  endif
-  do j = 1, ubj
-    do fc = 1, numf
-      c = filter(fc)
-      waterstate_vars%h2osoi_liq_old(c,j)    = waterstate_vars%h2osoi_liq_col(c,j)
-      waterstate_vars%h2osoi_ice_old(c,j)    = waterstate_vars%h2osoi_ice_col(c,j)
-    enddo
-  enddo
+          !the following may have some problem, because it also includes contributions from
+          !dew, and sublimation
+          if ( waterflux_vars%qflx_gross_infl_soil_col(c) > 0._r8) then
+             waterflux_vars%qflx_adv_col(c,0) = waterflux_vars%qflx_gross_infl_soil_col(c) * 1.e-3_r8
+             waterflux_vars%qflx_gross_evap_soil_col(c) = 0._r8
+          else
+             waterflux_vars%qflx_gross_evap_soil_col(c) = waterflux_vars%qflx_gross_infl_soil_col(c)
+             waterflux_vars%qflx_adv_col(c,0) = 0._r8
+             waterflux_vars%qflx_gross_infl_soil_col(c) = 0._r8
+          end if
+       end do
+    end if
+    do j = 1, ubj
+       do fc = 1, numf
+          c = filter(fc)
+          waterstate_vars%h2osoi_liq_old(c, j) = waterstate_vars%h2osoi_liq_col(c, j)
+          waterstate_vars%h2osoi_ice_old(c, j) = waterstate_vars%h2osoi_ice_col(c, j)
+       end do
+    end do
 
   end associate
-  end subroutine calc_qadv
+end subroutine calc_qadv
 end module sbetrDriverMod
