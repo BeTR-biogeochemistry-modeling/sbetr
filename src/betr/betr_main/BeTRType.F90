@@ -88,7 +88,8 @@ contains
 
 !-------------------------------------------------------------------------------
   subroutine Init(this, namelist_buffer, bounds, waterstate, cnstate, ecophyscon)
-
+    ! FIXME(bja, 201604) need to remove waterstate, cnstate and
+    ! ecophyscon from this routine.
     use babortutils, only : endrun
     use bshr_log_mod, only : errMsg => shr_log_errMsg
     use BeTR_decompMod, only : betr_bounds_type
