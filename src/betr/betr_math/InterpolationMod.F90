@@ -9,15 +9,18 @@ module InterpolationMod
   use bshr_kind_mod          , only: r8 => shr_kind_r8
   use babortutils            , only : endrun
   use bshr_log_mod           , only: errMsg => shr_log_errMsg
+
   implicit none
+
   private
-  save
+
+  character(len=*), parameter :: mod_filename = &
+       __FILE__
 
   public :: Lagrange_interp
   public :: pchip_polycc
   public :: pchip_interp
-  character(len=*), parameter :: mod_filename = &
-       __FILE__
+
 contains
 
   !-------------------------------------------------------------------------------
