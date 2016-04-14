@@ -4,9 +4,10 @@ module BeTR_aerocondType
   use bshr_infnan_mod         , only : nan => shr_infnan_nan, assignment(=)
   use BeTR_decompMod         , only : bounds_type  => betr_bounds_type
   use betr_varcon            , only : spval => bspval, ispval => bispval
-implicit none
-save
-private
+
+  implicit none
+
+  private
 
 
 !

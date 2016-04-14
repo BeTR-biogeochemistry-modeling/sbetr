@@ -8,7 +8,7 @@ module BeTR_TemperatureType
   use betr_decompMod   , only : betr_bounds_type
 
   implicit none
-  save
+
   private
 
 !----------------------------------------------------

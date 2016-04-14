@@ -2,8 +2,9 @@ module BeTR_WaterstateType
   !------------------------------------------------------------------------------
   ! !USES:
   use bshr_kind_mod    , only : r8 => shr_kind_r8
+
   implicit none
-  save
+
   private
   !----------------------------------------------------
   ! column water state variables structure
