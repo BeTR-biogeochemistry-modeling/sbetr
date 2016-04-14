@@ -7,23 +7,19 @@ module ODEMod
   ! !USES:
   use bshr_kind_mod          , only : r8 => shr_kind_r8
   use betr_ctrl            , only : iulog => biulog
+  
   implicit none
-  save
+
   private
+
+  real(r8), parameter :: tiny = 1.e-23_r8
+  logical, public, parameter :: ldebug_ode=.false.
 
   public :: ode_mbbks1, ode_adapt_mbbks1
   public :: ode_ebbks1
   public :: ode_rk4
   public :: ode_rk2
-  real(r8), parameter :: tiny = 1.e-23_r8
 
-  type, private:: mbkks_type
-     real(r8), pointer :: aj(:)
-     real(r8) :: iJ
-     integer :: nJ
-  end type mbkks_type
-  logical,public :: ldebug_ode=.false.
-  type(mbkks_type), private :: mbkks_data
   interface get_rerr
      module procedure get_rerr_v, get_rerr_s
   end interface get_rerr
@@ -200,7 +196,10 @@ contains
     !
     ! !USES:
     use MathfuncMod   , only : safe_div
+    use func_data_type_mod, only : func_data_type
+
     implicit none
+
     ! !ARGUMENTS:
     integer,  intent(in)  :: neq      ! number of equations
     real(r8), intent(in)  :: y0(neq)  ! state variable at previous time step
@@ -216,6 +215,8 @@ contains
     real(r8) :: pm
     real(r8) :: a
     integer  :: n, nJ
+    type(func_data_type) :: mbkks_data
+
 
     allocate(mbkks_data%aj(neq))
     aj => mbkks_data%aj
@@ -242,7 +243,8 @@ contains
        if(pmax<1.e-8_r8)then
           pscal=pmax
        else
-          pscal=GetGdtScalar(aj,nJ,pmax)
+          mbkks_data%nJ = nJ
+          pscal=GetGdtScalar(mbkks_data, pmax)
           pscal=pscal**(1._r8/nJ)
        endif
        !reduce the chance of negative y(n) from roundoff error
@@ -381,17 +383,20 @@ contains
   end function get_rerr_s
 
   !-------------------------------------------------------------------------------
-  function GetGdtScalar(aj,nJ,pmax)result(pp)
+  function GetGdtScalar(mbkks_data, pmax) result(pp)
     ! !DESCRIPTION:
     !get the gradient scaling factor for bkks integrator
     !
     ! !USES:
     use FindRootMod, only : brent
+    use func_data_type_mod, only : func_data_type
+
     implicit none
+
     ! !ARGUMENTS:
-    integer,  intent(in) :: nJ
-    real(r8), intent(in) :: aj(nJ)
+    type(func_data_type), intent(in) :: mbkks_data
     real(r8), intent(in) :: pmax
+
     ! !LOCAL VARIABLES:
     real(r8) :: iJ
     real(r8) :: f1, f2
@@ -399,22 +404,25 @@ contains
     real(r8), parameter :: tol = 1.e-8_r8
 
     real(r8) :: pp
-    ! remove compiler warning about unused dummy arg
-    if (size(aj) > 0) continue
     
-    call gfunc_mbkks(0._r8, f1)
-    call gfunc_mbkks(pmax, f2)
-    call brent(pp, 0._r8, pmax, f1, f2, macheps, tol, gfunc_mbkks)
-  end function GetGdtScalar
-  !-------------------------------------------------------------------------------
+    call gfunc_mbkks(0._r8, mbkks_data, f1)
+    call gfunc_mbkks(pmax, mbkks_data, f2)
+    call brent(pp, 0._r8, pmax, f1, f2, macheps, tol, mbkks_data, gfunc_mbkks)
 
-  subroutine gfunc_mbkks(p, value)
+  end function GetGdtScalar
+
+  !-------------------------------------------------------------------------------
+  subroutine gfunc_mbkks(p, mbkks_data, gf_value)
     ! !DESCRIPTION:
     !the bkks function
+    use func_data_type_mod, only : func_data_type
+
     implicit none
+
     ! !ARGUMENTS:
     real(r8), intent(in) :: p
-    real(r8), intent(out):: value
+    type(func_data_type), intent(in) :: mbkks_data
+    real(r8), intent(out):: gf_value
 
     ! !LOCAL VARIABLES:
     integer :: jj
@@ -425,12 +433,14 @@ contains
     aj => mbkks_data%aj
     nJ = mbkks_data%nJ
     iJ = mbkks_data%iJ
-    value = 1._r8
+    gf_value = 1._r8
     do jj = 1, nJ
-       value = value * (1._r8 + aj(jj) * p**(iJ))
+       gf_value = gf_value * (1._r8 + aj(jj) * p**(iJ))
     enddo
-    value = value - p
-    if(abs(value)<1.e-20_r8)value=0._r8
+    gf_value = gf_value - p
+    if(abs(gf_value) < 1.e-20_r8) then
+       gf_value = 0._r8
+    end if
   end subroutine gfunc_mbkks
 
   !-------------------------------------------------------------------------------

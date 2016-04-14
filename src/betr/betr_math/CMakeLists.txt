@@ -1,4 +1,5 @@
 set(BETR_MATH_SOURCES
+  func_data_type_mod.F90
   FindRootMod.F90
   InterpolationMod.F90
   MathfuncMod.F90
