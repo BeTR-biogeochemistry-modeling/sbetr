@@ -37,6 +37,8 @@ module Tracer_varcon
 
   logical, parameter :: l2ndadvsolver = .false. ! by default use 1st order solver for advection
 
+  save
+
   integer, public :: betr_nlevsoi
   integer, public :: betr_nlevsno
   integer, public :: betr_nlevtrc_soil

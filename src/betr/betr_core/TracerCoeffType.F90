@@ -13,7 +13,7 @@ module TracerCoeffType
   !
   ! !PUBLIC TYPES:
   implicit none
-  save
+
   private
   !
   ! !PUBLIC DATA:

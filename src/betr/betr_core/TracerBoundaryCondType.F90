@@ -8,7 +8,7 @@ module TracerBoundaryCondType
    use BeTR_decompMod  , only : bounds_type  => betr_bounds_type
 
   implicit none
-  save
+
   private
   !
   ! !PUBLIC DATA:

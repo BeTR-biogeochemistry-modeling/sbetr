@@ -16,7 +16,7 @@ module TracerFluxType
   ! !PUBLIC TYPES:
 
   implicit none
-  save
+
   private
   !
   ! !PUBLIC DATA:
