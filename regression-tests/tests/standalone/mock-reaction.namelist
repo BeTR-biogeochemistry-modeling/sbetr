@@ -10,6 +10,7 @@
 /
 
 &forcing_inparm
+  forcing_type_name = 'steady state'
   forcing_filename = '../../input-data/uniform_steadystate_forcing.cdl.nc'
 /
 

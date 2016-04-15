@@ -168,7 +168,7 @@ contains
     call time_vars%update_time_stamp()
 
     !write output
-    call simulation%WriteHistory(record, lbj, ubj, time_vars)
+    call simulation%WriteHistory(record, lbj, ubj, time_vars, waterflux_vars%qflx_adv_col)
 
     !write restart file? is not functionning at the moment
     !if(its_time_to_write_restart(time_vars)) call rest_write(tracerstate_vars, tracercoeff_vars, tracerflux_vars, time_vars)
@@ -179,7 +179,7 @@ contains
 
   enddo
 
-  call simulation%WriteRegressionOutput()
+  call simulation%WriteRegressionOutput(waterflux_vars%qflx_adv_col)
 
 end subroutine sbetrBGC_driver
 
