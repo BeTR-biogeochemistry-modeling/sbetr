@@ -314,7 +314,18 @@ end subroutine sbetrBGC_driver
                 waterflux_vars%qflx_adv_col(c,j) = forcing_data%discharge(tstep)
                 !the following is for first step initialization
                 if (dmass == 0._r8) then
-                   waterflux_vars%qflx_adv_col(c,j) = 0._r8
+                   ! NOTE(bja, 201604) Not sure what this is suppose
+                   ! to be doing, but it's incorrect.
+                   !
+                   ! 1) h2osoi_liq_old doesn't appear to have been
+                   ! initialized to anything other than a nan.
+                   !
+                   ! 2) dmass == 0 is a legitimate initial condition,
+                   ! e.g. saturated soil colum. Zeroing out the
+                   ! discharge isn't correct and gives zero flux for
+                   ! all time when the root-soil exchange is zero.
+                   
+                   !X!waterflux_vars%qflx_adv_col(c,j) = 0._r8
                 end if
              else
                 waterflux_vars%qflx_adv_col(c,j) = dmass * 1.e-3_r8 / dtime + &

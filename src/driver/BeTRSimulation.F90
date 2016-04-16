@@ -552,8 +552,8 @@ contains
 
        name = 'advective flux'
        category = 'velocity'
-!X!       call this%regression%WriteData(category, name, &
-!X!            velocity(begc, :))
+       call this%regression%WriteData(category, name, &
+            velocity(begc, :))
        
        call this%regression%CloseOutput()
     end if
