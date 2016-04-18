@@ -26,10 +26,11 @@ module H2OIsotopeBGCReactionsType
   use BGCReactionsMod       , only : bgc_reaction_type
   use tracer_varcon         , only : bndcond_as_conc, bndcond_as_flux
   use babortutils            , only : endrun
-implicit none
 
-  save
+  implicit none
+
   private
+  
   character(len=*), private, parameter :: mod_filename = &
        __FILE__
   !

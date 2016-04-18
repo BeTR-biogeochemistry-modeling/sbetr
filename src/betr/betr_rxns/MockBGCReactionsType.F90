@@ -15,12 +15,11 @@ module MockBGCReactionsType
   use tracer_varcon          , only : bndcond_as_conc, bndcond_as_flux
   use BeTR_LandunitType      , only : lun => betr_lun
   use ColumnType             , only : col
+
   implicit none
 
-  save
   private
-  !
-  ! !PUBLIC TYPES:
+
   character(len=*), parameter :: mod_filename = &
        __FILE__
 
@@ -82,6 +81,8 @@ contains
     if (bounds%begc > 0) continue
     if (len(betrtracer_vars%betr_simname) > 0) continue
     tracerboundarycond_vars%topbc_type(:) = bndcond_as_conc
+    ! FIXME(bja, 201604) Don't we need a bottom BC?
+    !X!tracerboundarycond_vars%botbc_type(:) = bndcond_as_flux
 
   end subroutine init_boundary_condition_type
 

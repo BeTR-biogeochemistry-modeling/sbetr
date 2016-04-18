@@ -9,7 +9,7 @@ module BeTR_ChemStateType
 
 
   implicit none
-  save
+
   private
   !----------------------------------------------------
   ! column chemical state variables structure

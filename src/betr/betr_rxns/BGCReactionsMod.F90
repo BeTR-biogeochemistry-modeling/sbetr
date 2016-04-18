@@ -7,9 +7,11 @@ module BGCReactionsMod
   use bshr_kind_mod           , only : r8 => shr_kind_r8
   use BeTR_LandunitType , only : lun => betr_lun
   use BeTR_ColumnType   , only : col => betr_col
+
   implicit none
-  save
+
   private
+  
   public ::  bgc_reaction_type
 
   type, abstract :: bgc_reaction_type

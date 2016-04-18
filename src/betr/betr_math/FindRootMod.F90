@@ -10,15 +10,9 @@ module FindRootMod
   use babortutils          , only : endrun
   use betr_ctrl          , only : iulog  => biulog
   use MathfuncMod         , only : is_bounded
+
   implicit none
-  interface hybrid_findroot
-     module procedure hybrid_findroot_np, hybrid_findroot_p
-  end interface hybrid_findroot
-
-  interface brent
-     module procedure brent_np, brent_p
-  end interface brent
-
+  
 contains
   !-------------------------------------------------------------------------------
   function quadrootbnd(a,b,c, xl, xr)result(x)
@@ -346,124 +340,7 @@ contains
          spread(b,dim=1,ncopies=size(a))
 
   end function outerprod
-  !-------------------------------------------------------------------------------
-  !BOP
-  !
-  ! !IROUTINE: brent
-  !
-  ! !INTERFACE:
 
-  subroutine brent_p(x, x1,x2,f1, f2, macheps, tol, pp, func)
-
-    !
-    !!DESCRIPTION:
-    !Use Brent's method to find the root of a single variable function func, which is known to exist between x1 and x2.
-    !The found root will be updated until its accuracy is tol.
-
-    !!REVISION HISTORY:
-    !Dec 14/2012: Jinyun Tang, modified from numerical recipes in F90 by press et al. 1188-1189
-    !
-    !!USES:
-
-
-    !
-    !!ARGUMENTS:
-    implicit none
-    real(r8), intent(in) :: x1, x2, f1, f2    !minimum and maximum of the variable domain to search for the solution ci_func(x1) = f1, ci_func(x2)=f2
-    real(r8), intent(in) :: macheps           !machine precision
-    integer,  intent(in) :: pp                !index argument used by subroutine func
-    real(r8), intent(in) :: tol               !the error tolerance
-    real(r8), intent(out):: x                !indepedent variable of the single value function func(x)
-
-    interface
-       subroutine func(x,f, pp)
-         use bshr_kind_mod        , only : r8 => shr_kind_r8
-         implicit none
-         real(r8), intent(in)  :: x
-         real(r8), intent(out) :: f
-         integer,  intent(in) :: pp
-       end subroutine func
-    end interface
-
-    ! !LOCAL VARIABLES:
-    integer, parameter :: ITMAX = 40            !maximum number of iterations
-    integer :: iter
-    real(r8)  :: a,b,c,d,e,fa,fb,fc,p,q,r,s,xm,tol1
-
-
-    a=x1
-    b=x2
-    fa=f1
-    fb=f2
-    if((fa > 0._r8 .and. fb > 0._r8).or.(fa < 0._r8 .and. fb < 0._r8))then
-       write(iulog,*) 'root must be bracketed for brent'
-       write(iulog,*) 'a=',a,' b=',b,' fa=',fa,' fb=',fb
-       call endrun(msg=errmsg(__FILE__, __LINE__))
-    endif
-    c=b
-    fc=fb
-    iter = 0
-    do
-       if(iter==ITMAX)exit
-       iter=iter+1
-       if((fb > 0._r8 .and. fc > 0._r8) .or. (fb < 0._r8 .and. fc < 0._r8))then
-          c=a   !Rename a, b, c and adjust bounding interval d.
-          fc=fa
-          d=b-a
-          e=d
-       endif
-       if( abs(fc) < abs(fb)) then
-          a=b
-          b=c
-          c=a
-          fa=fb
-          fb=fc
-          fc=fa
-       endif
-       tol1=2._r8*macheps*abs(b)+0.5_r8*tol  !Convergence check.
-       xm=0.5_r8*(c-b)
-       if(abs(xm) <= tol1 .or. fb == 0._r8)then
-          x=b
-          return
-       endif
-       if(abs(e) >= tol1 .and. abs(fa) > abs(fb)) then
-          s=fb/fa !Attempt inverse quadratic interpolation.
-          if(a == c) then
-             p=2._r8*xm*s
-             q=1._r8-s
-          else
-             q=fa/fc
-             r=fb/fc
-             p=s*(2._r8*xm*q*(q-r)-(b-a)*(r-1._r8))
-             q=(q-1._r8)*(r-1._r8)*(s-1._r8)
-          endif
-          if(p > 0._r8) q=-q !Check whether in bounds.
-          p=abs(p)
-          if(2._r8*p < min(3._r8*xm*q-abs(tol1*q),abs(e*q))) then
-             e=d !Accept interpolation.
-             d=p/q
-          else
-             d=xm  !Interpolation failed, use bisection.
-             e=d
-          endif
-       else !Bounds decreasing too slowly, use bisection.
-          d=xm
-          e=d
-       endif
-       a=b !Move last best guess to a.
-       fa=fb
-       if(abs(d) > tol1) then !Evaluate new trial root.
-          b=b+d
-       else
-          b=b+sign(tol1,xm)
-       endif
-       call func(b,fb, pp)
-       if(fb==0._r8)exit
-    enddo
-    if(iter==ITMAX)write(iulog,*) 'brent exceeding maximum iterations', b, fb
-    x=b
-
-  end subroutine brent_p
   !------------------------------------------------------------------------------
   !BOP
   !
@@ -471,7 +348,7 @@ contains
   !
   ! !INTERFACE:
 
-  subroutine brent_np(x, x1,x2,f1, f2, macheps, tol,func)
+  subroutine brent(x, x1,x2,f1, f2, macheps, tol, func_data, func)
 
     !
     !!DESCRIPTION:
@@ -482,19 +359,22 @@ contains
     !Dec 14/2012: Jinyun Tang, modified from numerical recipes in F90 by press et al. 1188-1189
     !
     !!USES:
-
+    use func_data_type_mod, only : func_data_type
     !
     !!ARGUMENTS:
     implicit none
     real(r8), intent(in) :: x1, x2, f1, f2    !minimum and maximum of the variable domain to search for the solution ci_func(x1) = f1, ci_func(x2)=f2
     real(r8), intent(in) :: macheps           !machine precision
     real(r8), intent(in) :: tol               !the error tolerance
+    type(func_data_type), intent(in) :: func_data ! data passed to subroutine func
     real(r8), intent(out):: x
     interface
-       subroutine func(x,f)
+       subroutine func(x, func_data, f)
          use bshr_kind_mod        , only : r8 => shr_kind_r8
+         use func_data_type_mod, only : func_data_type
          implicit none
          real(r8), intent(in)  :: x
+         type(func_data_type), intent(in) :: func_data ! data passed to subroutine func
          real(r8), intent(out) :: f
        end subroutine func
     end interface
@@ -574,114 +454,16 @@ contains
        else
           b=b+sign(tol1,xm)
        endif
-       call func(b, fb)
+       call func(b, func_data, fb)
        if(fb==0._r8)exit
     enddo
     if(iter==ITMAX)write(iulog,*) 'brent exceeding maximum iterations', b, fb
     x=b
 
-  end subroutine brent_np
+  end subroutine brent
 
   !------------------------------------------------------------------------------------
-  subroutine hybrid_findroot_p(x0, p, iter, func)
-    !
-    !! DESCRIPTION:
-    ! use a hybrid solver to find the root of equation
-    ! f(x) = x- h(x),
-    !  s.t. f(x) = 0.
-    !the hybrid approach combines the strength of the newton secant approach (find the solution domain)
-    !and the bisection approach implemented with the Brent's method to guarrantee convergence.
-    !
-    !! REVISION HISTORY:
-    !Apr 14/2013: created by Jinyun Tang
-
-    implicit none
-    ! !ARGUMENTS:
-    real(r8) , intent(inout) :: x0           !solution's initial guess
-    integer    ,  intent(in) :: p            !index used in the function
-    integer    , intent(out) :: iter         !number of used iterations
-    interface
-       subroutine func(x,f,p)
-         use bshr_kind_mod        , only : r8 => shr_kind_r8
-         implicit none
-         real(r8), intent(in)  :: x
-         real(r8), intent(out) :: f
-         integer,  intent(in)  :: p
-       end subroutine func
-    end interface
-
-    ! !LOCAL VARIABLES:
-    real(r8) :: a, b
-    real(r8) :: fa, fb
-    real(r8) :: x1, f0, f1
-    real(r8) :: x, dx
-    real(r8), parameter :: eps = 1.e-2_r8      !relative accuracy
-    real(r8), parameter :: eps1= 1.e-4_r8
-    integer,  parameter :: itmax = 40          !maximum number of iterations
-    real(r8) :: tol,minx,minf
-
-
-    call func(x0, f0, p)
-    if(f0 == 0._r8)return
-
-    minx=x0
-    minf=f0
-    x1 = x0 * 0.99_r8
-    call func(x1,f1, p)
-
-    if(f1==0._r8)then
-       x0 = x1
-       return
-    endif
-    if(f1<minf)then
-       minx=x1
-       minf=f1
-    endif
-
-    !first use the secant approach, then use the brent approach as a backup
-    iter = 0
-    do
-       iter = iter + 1
-       dx = - f1 * (x1-x0)/(f1-f0)
-       x = x1 + dx
-       tol = abs(x) * eps
-       if(abs(dx)<tol)then
-          x0 = x
-          exit
-       endif
-       x0 = x1
-       f0 = f1
-       x1 = x
-       call func(x1,f1, p)
-       if(f1<minf)then
-          minx=x1
-          minf=f1
-       endif
-       if(abs(f1)<=eps1)then
-          x0 = x1
-          exit
-       endif
-
-       !if a root zone is found, use the brent method for a robust backup strategy
-       if(f1 * f0 < 0._r8)then
-          call brent_p(x, x0,x1,f0,f1, eps, tol, p, func)
-          x0=x
-          exit
-       endif
-       if(iter>itmax)then
-          !in case of failing to converge within itmax iterations
-          !stop at the minimum function
-          !this happens because of some other issues besides the stomatal conductance calculation
-          !and it happens usually in very dry places and more likely with c4 plants.
-          call func(minx,f1, p)
-          exit
-       endif
-    enddo
-  end subroutine hybrid_findroot_p
-
-
-  !------------------------------------------------------------------------------------
-  subroutine hybrid_findroot_np(x0, iter, func)
+  subroutine hybrid_findroot(x0, iter, func)
     !
     !! DESCRIPTION:
     ! use a hybrid solver to find the root of equation
@@ -693,16 +475,20 @@ contains
     !
     !! REVISION HISTORY:
     !Apr 14/2013: created by Jinyun Tang
+    use func_data_type_mod, only : func_data_type
 
     implicit none
+
     ! !ARGUMENTS:
     real(r8), intent(inout) :: x0           !solution's initial guess
     integer,  intent(out) :: iter
     interface
-       subroutine func(x,f)
+       subroutine func(x, func_data, f)
          use bshr_kind_mod        , only : r8 => shr_kind_r8
+         use func_data_type_mod, only : func_data_type
          implicit none
          real(r8), intent(in)  :: x
+         type(func_data_type), intent(in) :: func_data ! data passed to subroutine func
          real(r8), intent(out) :: f
        end subroutine func
     end interface
@@ -717,13 +503,15 @@ contains
     integer,  parameter :: itmax = 40          !maximum number of iterations
     real(r8) :: tol,minx,minf
 
-    call func(x0, f0)
+    type(func_data_type) :: func_data ! dummy data passed to subroutine func    
+
+    call func(x0, func_data, f0)
     if(f0 == 0._r8)return
 
     minx=x0
     minf=f0
     x1 = x0 * 0.99_r8
-    call func(x1,f1)
+    call func(x1, func_data, f1)
 
     if(f1==0._r8)then
        x0 = x1
@@ -748,7 +536,7 @@ contains
        x0 = x1
        f0 = f1
        x1 = x
-       call func(x1,f1)
+       call func(x1, func_data, f1)
        if(f1<minf)then
           minx=x1
           minf=f1
@@ -760,7 +548,7 @@ contains
 
        !if a root zone is found, use the brent method for a robust backup strategy
        if(f1 * f0 < 0._r8)then
-          call brent_np(x, x0,x1,f0,f1, eps, tol, func)
+          call brent(x, x0,x1,f0,f1, eps, tol, func_data, func)
           x0=x
           exit
        endif
@@ -769,11 +557,11 @@ contains
           !stop at the minimum function
           !this happens because of some other issues besides the stomatal conductance calculation
           !and it happens usually in very dry places and more likely with c4 plants.
-          call func(minx,f1)
+          call func(minx, func_data, f1)
           exit
        endif
     enddo
-  end subroutine hybrid_findroot_np
+  end subroutine hybrid_findroot
 
   !--------------------------------------------------------------------------
   SUBROUTINE gaussian_solve(a,b,error)

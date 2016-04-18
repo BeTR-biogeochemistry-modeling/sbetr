@@ -14,8 +14,8 @@ module TracerBalanceMod
   use BeTR_ColumnType    , only : col => betr_col
   use betr_ctrl         , only : iulog  => biulog
 
-implicit none
-  save
+  implicit none
+
   private
 
   character(len=*), parameter :: mod_filename = &

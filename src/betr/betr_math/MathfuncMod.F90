@@ -5,13 +5,18 @@ module MathfuncMod
   ! History: Created by Jinyun Tang
   !
   ! !USES:
-  use bshr_kind_mod    , only : r8 => shr_kind_r8
-  use betr_ctrl      , only : iulog  => biulog
-  use babortutils      , only : endrun
-  use bshr_log_mod     , only : errMsg => shr_log_errMsg
+  use bshr_kind_mod, only : r8 => shr_kind_r8
+  use betr_ctrl, only : iulog  => biulog
+  use babortutils, only : endrun
+  use bshr_log_mod, only : errMsg => shr_log_errMsg
+
   implicit none
-  save
+
   private
+
+  character(len=*), parameter :: mod_filename = &
+       __FILE__
+
   public :: heviside
   public :: cumsum
   public :: swap
@@ -26,13 +31,14 @@ module MathfuncMod
   public :: minp
   public :: pd_decomp
   public :: num2str
+
   interface cumsum
      module procedure cumsum_v, cumsum_m
   end interface cumsum
   interface swap
      module procedure swap_i, swap_r, swap_rv
   end interface swap
-  character(len=*), parameter :: mod_filename = __FILE__
+
 contains
   !-------------------------------------------------------------------------------
   function heviside(x)result(ans)

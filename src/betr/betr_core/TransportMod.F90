@@ -7,23 +7,18 @@ module TransportMod
 
 #include "bshr_assert.h"
   ! !USES:
-  use bshr_log_mod         , only : errMsg => shr_log_errMsg
-  use tracer_varcon       , only : bndcond_as_conc, bndcond_as_flux
-  use betr_ctrl          , only : iulog => biulog
-  use babortutils          , only : endrun
-  use bshr_kind_mod        , only : r8 => shr_kind_r8
+  use bshr_log_mod, only : errMsg => shr_log_errMsg
+  use tracer_varcon, only : bndcond_as_conc, bndcond_as_flux
+  use betr_ctrl, only : iulog => biulog
+  use babortutils, only : endrun
+  use bshr_kind_mod, only : r8 => shr_kind_r8
+
   implicit none
+
   private
-  public :: DiffusTransp              !do tracer transport through diffusion, for both lake and soil
-  public :: calc_interface_conductance
-  public :: init_transportmod
-  public :: get_cntheta
-  public :: calc_col_CFL              !claculate CFL critieria
-  public :: semi_lagrange_adv_backward
-  interface DiffusTransp
-     module procedure DiffusTransp_gw
-     module procedure DiffusTransp_solid
-  end interface DiffusTransp
+
+  character(len=*), private, parameter :: filename = &
+       __FILE__
 
   type, private :: Extra_type
      real(r8), pointer :: zi(:)               !interfaces
@@ -35,14 +30,25 @@ module TransportMod
      procedure, public :: AAssign
   end type Extra_type
 
+  ! FIXME(bja, 201604) these instance variables need to be removed
   type(Extra_type), private :: Extra_inst
-
   !default configuration parameters
   real(r8), private :: cntheta
   logical, private :: debug_loc=.false.
-  character(len=*), private, parameter :: filename = &
-       __FILE__
+
   public :: set_debug_transp
+  public :: calc_interface_conductance
+  public :: init_transportmod
+  public :: get_cntheta
+  public :: calc_col_CFL              !claculate CFL critieria
+  public :: semi_lagrange_adv_backward
+
+  public :: DiffusTransp ! tracer transport through diffusion, for both lake and soil
+  interface DiffusTransp
+     module procedure DiffusTransp_gw
+     module procedure DiffusTransp_solid
+  end interface DiffusTransp
+
 
   ! NOTE(bja, 201603) procedures that end with a trailing underscore
   ! are public only for unit testing purposes. They are not part of
@@ -50,11 +56,13 @@ module TransportMod
   public :: mass_curve_correct_
 
 contains
+
   subroutine set_debug_transp(yesno)
-  implicit none
-  logical, intent(in) :: yesno
-  debug_loc = yesno
+    implicit none
+    logical, intent(in) :: yesno
+    debug_loc = yesno
   end subroutine set_debug_transp
+
   !-------------------------------------------------------------------------------
   subroutine InitAllocate(this, lbj, ubj)
     !
@@ -154,9 +162,11 @@ contains
     !
     ! !USES:
     !
-    use bshr_kind_mod     , only : r8 => shr_kind_r8
-    use BeTR_decompMod   , only : bounds_type  => betr_bounds_type
+    use bshr_kind_mod, only : r8 => shr_kind_r8
+    use BeTR_decompMod, only : bounds_type  => betr_bounds_type
+
     implicit none
+
     ! !ARGUMENTS:
     type(bounds_type),  intent(in) :: bounds                              !bounds
     integer,     intent(in)        :: lbj, ubj                            ! lbinning and ubing level indices
@@ -197,7 +207,7 @@ contains
     ! !USES
     !
     use bshr_kind_mod, only: r8 => shr_kind_r8
-    use BeTR_decompMod         , only : bounds_type  => betr_bounds_type
+    use BeTR_decompMod, only : bounds_type  => betr_bounds_type
 
     implicit none
     ! !ARGUMENTS:
@@ -255,6 +265,10 @@ contains
        SHR_ASSERT_ALL((ubound(bt)            == (/bounds%endc, ubj/)),   errMsg(filename,__LINE__))
        SHR_ASSERT_ALL((ubound(ct)            == (/bounds%endc, ubj/)),   errMsg(filename,__LINE__))
     endif
+
+    ! FIXME(bja, 201604) this logic should be moved to initialization
+    ! so that it is only done once and to simplify the error prone
+    ! copy and paste function calls into this routine!
 
     !unless specified explicitly, the bottom boundary condition is given as flux
     if(present(botbc_type))then

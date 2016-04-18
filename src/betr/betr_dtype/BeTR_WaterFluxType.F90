@@ -3,8 +3,9 @@ module BeTR_WaterfluxType
   !------------------------------------------------------------------------------
   ! !USES:
   use bshr_kind_mod    , only : r8 => shr_kind_r8
+
   implicit none
-  save
+
   private
 
   !----------------------------------------------------

@@ -13,8 +13,9 @@ module ReactionsFactory
   use bshr_log_mod           , only : errMsg => shr_log_errMsg
   use BGCReactionsMod       , only : bgc_reaction_type
   use PlantSoilBGCMod , only : plant_soilbgc_type
+
   implicit none
-  save
+
   private
 
   public :: create_betr_application

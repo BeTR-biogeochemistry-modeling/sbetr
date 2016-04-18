@@ -371,6 +371,9 @@ contains
       call  hist_def_fld2d(ncid, varname="TRACER_P_GAS", nf90_type=nf90_float,dim1name="ncol", &
            dim2name="levgrnd",long_name="total gas pressure", units="Pa")
 
+      call  hist_def_fld2d(ncid, varname="QFLX_ADV", nf90_type=nf90_float,dim1name="ncol", &
+           dim2name="levgrnd",long_name="advective flux / velocity", units="m/s")
+
       do jj = 1, ntracers
          if(jj<= ngwmobile_tracers)then
             call hist_def_fld2d(ncid, varname=trim(tracernames(jj))//'_TRACER_CONC_MOIBLE',&
@@ -410,7 +413,7 @@ contains
   end subroutine hist_htapes_create
 
   !-------------------------------------------------------------------------------
-  subroutine hist_write(me, record, lbj, ubj, time_vars)
+  subroutine hist_write(me, record, lbj, ubj, time_vars, velocity)
     !
     ! DESCRIPTION
     ! output hist file
@@ -429,6 +432,7 @@ contains
     integer, intent(in) :: record
     integer, intent(in) :: lbj,ubj
     type(betr_time_type), intent(in) :: time_vars
+    real(r8), intent(in) :: velocity(:, :)
 
     type(file_desc_t) :: ncid
     integer :: jj
@@ -472,6 +476,9 @@ contains
       enddo
 
       call ncd_putvar(ncid, 'TRACER_P_GAS', record, me%betr%tracerstates%tracer_P_gas_col(1:1,lbj:ubj))
+
+      call ncd_putvar(ncid, 'QFLX_ADV', record, velocity(1:1, lbj:ubj))
+
       call ncd_pio_closefile(ncid)
     end associate
   end subroutine hist_write
@@ -500,13 +507,15 @@ contains
 
   !---------------------------------------------------------------------------------
 
-  subroutine WriteRegressionOutput(this)
+  subroutine WriteRegressionOutput(this, velocity)
 
+    use bshr_kind_mod, only : r8 => shr_kind_r8
     use betr_constants, only : betr_string_length
     
     implicit none
 
     class(betr_simulation_type), intent(inout) :: this
+    real(r8), intent(in) :: velocity(:, :)
 
     integer :: jj, tt, begc, endc
     character(len=betr_string_length) :: category
@@ -541,6 +550,11 @@ contains
        call this%regression%WriteData(category, name, &
             this%betr%tracerstates%tracer_P_gas_col(begc, :))
 
+       name = 'advective flux'
+       category = 'velocity'
+       call this%regression%WriteData(category, name, &
+            velocity(begc, :))
+       
        call this%regression%CloseOutput()
     end if
   end subroutine WriteRegressionOutput

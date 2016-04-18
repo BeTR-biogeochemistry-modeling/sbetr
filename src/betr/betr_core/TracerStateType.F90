@@ -18,7 +18,7 @@ module TracerStateType
   !
   ! !PUBLIC TYPES:
   implicit none
-  save
+
   private
   !
   ! !PUBLIC DATA:

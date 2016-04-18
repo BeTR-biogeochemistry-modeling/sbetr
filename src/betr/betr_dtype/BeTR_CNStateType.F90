@@ -1,8 +1,8 @@
 module BeTR_CNStateType
   !data type to pass in cn information
-implicit none
-save
-private
+  implicit none
+
+  private
 
 !
 ! !PUBLIC DATA:

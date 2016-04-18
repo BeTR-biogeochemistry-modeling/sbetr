@@ -6,8 +6,9 @@ module BeTR_SoilStateType
   use bshr_infnan_mod  , only : nan => shr_infnan_nan, assignment(=)
   use betr_decompMod       , only : betr_bounds_type
   use betr_varcon      , only : spval => bspval
+
   implicit none
-  save
+
   private
 
   !----------------------------------------------------

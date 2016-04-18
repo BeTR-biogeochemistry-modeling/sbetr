@@ -7,12 +7,13 @@ module BTridiagonalMod
   use BeTR_decompMod , only : bounds_type  => betr_bounds_type
   use bshr_kind_mod , only : r8 => shr_kind_r8
   ! !PUBLIC TYPES:
+
   implicit none
-  save
   !
   ! !PUBLIC MEMBER FUNCTIONS:
   public :: Tridiagonal
   public :: trisim
+
   interface Tridiagonal
     module procedure Tridiagonal_sr
     module procedure Tridiagonal_mr

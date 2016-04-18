@@ -32,8 +32,8 @@ module BetrBGCMod
 
   private
 
-  integer,  parameter :: do_diffusion   = 1         ! do diffusive transport
-  integer,  parameter :: do_advection   = 2         ! do advective transport, aquesou phase only
+  integer,  parameter :: diffusion_scheme   = 1         ! do diffusive transport
+  integer,  parameter :: advection_scheme   = 2         ! do advective transport, aquesou phase only
 
   real(r8), parameter :: tiny_val       = 1.e-20_r8 !very small value, for tracer concentration etc.
   real(r8), parameter :: dtime_min      = 1._r8     !minimum time step 1 second
@@ -321,9 +321,8 @@ contains
          col%dz(bounds%begc:bounds%endc, lbj:ubj),                            &
          col%zi(bounds%begc:bounds%endc,lbj-1:ubj),                           &
          waterstate_vars%h2osoi_liqvol_col(bounds%begc:bounds%endc, lbj:ubj), &
-         (/do_advection, do_diffusion/),                                      &
-         advection_on,                                      &
-         diffusion_on,                                      &
+         (/advection_scheme, diffusion_scheme/),                              &
+         advection_on, diffusion_on, &
          betrtracer_vars,                                                     &
          tracerboundarycond_vars,                                             &
          tracercoeff_vars,                                                    &
@@ -537,8 +536,7 @@ contains
   subroutine tracer_gw_transport(betr_time, bounds, lbj, ubj, jtops, num_soilc, filter_soilc, Rfactor,     &
        dz, zi, h2osoi_liqvol, transp_pathway, advection_on, diffusion_on,  &
        betrtracer_vars, tracerboundarycond_vars, &
-       tracercoeff_vars, waterflux_vars, bgc_reaction, tracerstate_vars, tracerflux_vars,&
-       waterstate_vars)
+       tracercoeff_vars, waterflux_vars, bgc_reaction, tracerstate_vars, tracerflux_vars, waterstate_vars)
     !
     ! !DESCRIPTION:
     ! do dual-phase (gas+aqueous) vertical tracer transport
@@ -607,7 +605,7 @@ contains
 
     !do diffusive and advective transport, assuming aqueous and gaseous phase are in equilbrium
     do kk = 1 , 2
-       if (transp_pathway(kk) == do_diffusion .and.  diffusion_on) then
+       if (transp_pathway(kk) == diffusion_scheme .and. diffusion_on) then
           call do_tracer_gw_diffusion(bounds, lbj, ubj,                                    &
                jtops,                                                                      &
                num_soilc,                                                                  &
@@ -622,7 +620,7 @@ contains
                tracerflux_vars,                                                            &
                waterstate_vars)
 
-       elseif (transp_pathway(kk) == do_advection .and. advection_on)then
+       elseif (transp_pathway(kk) == advection_scheme .and. advection_on)then
           jtops0(:) = 1
           call do_tracer_advection(betr_time, bounds, lbj, ubj, &
                jtops0,                               &

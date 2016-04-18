@@ -38,11 +38,13 @@ module BetrType
   character(len=*), parameter :: filename = __FILE__
 
   type, public :: betr_type
+     ! namelist control variables
      character(len=betr_string_length) :: reaction_method
      logical :: diffusion_on = .true.
      logical :: advection_on = .true.
      logical :: reaction_on  = .true.
 
+     ! internal types
      class(bgc_reaction_type), allocatable, public :: bgc_reaction
      class(plant_soilbgc_type), allocatable, public :: plant_soilbgc
 
@@ -86,7 +88,8 @@ contains
 
 !-------------------------------------------------------------------------------
   subroutine Init(this, namelist_buffer, bounds, waterstate, cnstate, ecophyscon)
-
+    ! FIXME(bja, 201604) need to remove waterstate, cnstate and
+    ! ecophyscon from this routine.
     use babortutils, only : endrun
     use bshr_log_mod, only : errMsg => shr_log_errMsg
     use BeTR_decompMod, only : betr_bounds_type
@@ -230,9 +233,11 @@ contains
     endif
 
     this%reaction_method = reaction_method
+
     this%advection_on = advection_on
     this%diffusion_on = diffusion_on
     this%reaction_on = reaction_on
+
   end subroutine ReadNamelist
 
   !-------------------------------------------------------------------------------
