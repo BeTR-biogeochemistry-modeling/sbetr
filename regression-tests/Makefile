@@ -1,4 +1,6 @@
-SBETR = ../build/Darwin-x86_64-static-double-cc-Debug/src/driver/sbetr
+# FIXME(bja, 201604) need to stop using a hard coded path. Maybe
+# switch to some sort of cmake-ified out of source tests.
+SBETR = ../local/bin/sbetr
 
 RTEST = ./rtest_betr.py
 RTEST_ARGS = --backtrace

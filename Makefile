@@ -89,12 +89,10 @@ else
 endif
 
 # Installation prefix.
-ifneq ($(prefix), not-set)
-  CONFIG_FLAGS += -DCMAKE_INSTALL_PREFIX:PATH=$(prefix)
-else
-  # No default installation dir.
-  CONFIG_FLAGS += -DCMAKE_INSTALL_PREFIX:PATH=${HOME}/local/betr
+ifeq ($(prefix), not-set)
+  prefix = $(CURDIR)/local
 endif
+CONFIG_FLAGS += -DCMAKE_INSTALL_PREFIX:PATH=$(prefix)
 
 # Special considerations for specific systems.
 ifeq ($(systype), Darwin)
@@ -143,6 +141,7 @@ config: distclean
 
 distclean:
 	@rm -rf $(BUILDDIR)
+	@rm -rf ./local
 
 stats: 
 	@python tools/gather_stats.py
