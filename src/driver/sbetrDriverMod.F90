@@ -58,7 +58,7 @@ contains
   use landunit_varcon     , only : istsoil
 
   implicit none
-  
+
   character(len=betr_filename_length), intent(in) :: base_filename
   character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
 
@@ -324,7 +324,7 @@ end subroutine sbetrBGC_driver
                    ! e.g. saturated soil colum. Zeroing out the
                    ! discharge isn't correct and gives zero flux for
                    ! all time when the root-soil exchange is zero.
-                   
+
                    !X!waterflux_vars%qflx_adv_col(c,j) = 0._r8
                 end if
              else

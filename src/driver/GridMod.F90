@@ -3,7 +3,7 @@ module BeTR_GridMod
   use bshr_kind_mod , only: r8 => shr_kind_r8
   use babortutils      , only : endrun
   use bshr_log_mod     , only : errMsg => shr_log_errMsg
-  
+
   use betr_constants, only : betr_filename_length
   use betr_constants, only : betr_string_length, betr_string_length_long
   use betr_constants, only : betr_namelist_buffer_size
@@ -67,7 +67,6 @@ contains
 
     call this%ReadNameList(namelist_buffer)
     call this%InitAllocate()
-    
     select case (trim(this%grid_type_str))
        case (clm_str)
           this%grid_type = clm_grid
@@ -83,7 +82,7 @@ contains
           call this%clm_exponential_vertical_grid()
           write(*, *) 'WARNING: no grid data type specified, using clm.'
        end select
-       
+
     ! select read routine based on data format.
     call this%ReadNetCDFData()
 
@@ -93,14 +92,14 @@ contains
     write(*, *) 'zisoi = ', this%zisoi
     write(*, *) 'bsw = ', this%bsw
     write(*, *) 'watsat = ', this%watsat
-       
+
   end subroutine Init
 
   ! ---------------------------------------------------------------------------
   subroutine InitAllocate(this)
 
     implicit none
-    
+
     class(betr_grid_type), intent(inout) :: this
 
     allocate(this%zsoi(1:this%nlevgrnd))
@@ -108,7 +107,7 @@ contains
 
     allocate(this%zisoi(0:this%nlevgrnd))
     this%zisoi = bspval
-    
+
     allocate(this%dzsoi(1:this%nlevgrnd))
     this%dzsoi = bspval
 
@@ -128,10 +127,10 @@ contains
     use betr_constants, only : betr_string_length_long
 
     implicit none
-    
+
     class(betr_grid_type), intent(inout) :: this
     character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
-    
+
     integer :: nml_error
     character(len=*), parameter :: subname = 'ReadNameList'
     character(len=betr_string_length) :: grid_data_format, grid_type_str
@@ -235,7 +234,7 @@ contains
 
     end if
 
-    
+
     call ncd_pio_closefile(ncf_in)
 
     deallocate(data)
@@ -256,7 +255,7 @@ contains
     if (this%delta_z == bspval) then
        call endrun(msg="ERROR reading betr_grid namelist must specify delta_z. "//errmsg(mod_filename, __LINE__))
     end if
-    
+
     ! thickness b/n two interfaces
     this%dzsoi(:) = this%delta_z
 
@@ -306,11 +305,11 @@ contains
     use bshr_kind_mod , only: r8 => shr_kind_r8
 
     implicit none
-    
+
     class(betr_grid_type), intent(inout) :: this
 
     integer :: j
-    
+
     this%zisoi(0) = 0._r8
     do j = 1, this%nlevgrnd-1
        this%zisoi(j) = 0.5_r8*(this%zsoi(j) + this%zsoi(j+1))

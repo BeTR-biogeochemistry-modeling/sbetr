@@ -77,7 +77,7 @@ contains
           this%forcing_type = transient
           write(*, *) 'WARNING: no forcing data type specified, using transient.'
        end select
-    
+
     call this%InitAllocate()
 
   end subroutine Init
@@ -139,9 +139,9 @@ contains
     if (grid%nlevgrnd /= num_levels) then
        call endrun(msg="ERROR inconsistent vertical levels between "//&
             "grid and forcing. "//errmsg(mod_filename, __LINE__))
-       
+
     end if
-    
+
     call this%Init(num_levels, num_time)
     call this%ReadForcingData(grid)
 
@@ -333,7 +333,7 @@ contains
 
     use BeTR_TimeMod, only : betr_time_type
     use BeTR_GridMod, only : betr_grid_type
-    
+
     implicit none
 
     class(ForcingData_type), intent(in) :: this
@@ -378,9 +378,10 @@ contains
        do fc = 1, numf
           c = filter(fc)
           if(j>=jtops(c))then
-             waterstate_vars%h2osoi_liqvol_col(c,j) = this%h2osoi_liqvol(tstep,j)
-             waterstate_vars%air_vol_col(c,j) = grid%watsat(j)-this%h2osoi_liqvol(tstep,j)
-
+             !take the minimum to avoid incompatible combination between uniform steady state forcing with
+             !expoential grid.
+             waterstate_vars%h2osoi_liqvol_col(c,j) = min(this%h2osoi_liqvol(tstep,j),grid%watsat(j))
+             waterstate_vars%air_vol_col(c,j) = grid%watsat(j)-waterstate_vars%h2osoi_liqvol_col(c,j)
              soilstate_vars%eff_porosity_col(c,j) = grid%watsat(j)-this%h2osoi_icevol(tstep,j)
              soilstate_vars%bsw_col(c,j) = grid%bsw(j)
 
@@ -426,7 +427,7 @@ contains
   function discharge(this, tstep) result(flux)
 
     implicit none
-    
+
     class(ForcingData_type), intent(in) :: this
     integer, intent(in) :: tstep
 
@@ -448,7 +449,7 @@ contains
   function infiltration(this, tstep) result(flux)
 
     implicit none
-    
+
     class(ForcingData_type), intent(in) :: this
     integer, intent(in) :: tstep
 

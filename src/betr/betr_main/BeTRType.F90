@@ -43,6 +43,7 @@ module BetrType
      logical :: diffusion_on = .true.
      logical :: advection_on = .true.
      logical :: reaction_on  = .true.
+     logical :: ebullition_on= .true.
 
      ! internal types
      class(bgc_reaction_type), allocatable, public :: bgc_reaction
@@ -194,18 +195,20 @@ contains
     character(len=*), parameter :: subname = 'ReadNamelist'
     character(len=betr_string_length) :: reaction_method
     character(len=betr_string_length_long) :: ioerror_msg
-    logical :: advection_on, diffusion_on, reaction_on
+    logical :: advection_on, diffusion_on, reaction_on, ebullition_on
 
     !-----------------------------------------------------------------------
 
     namelist / betr_parameters / &
          reaction_method, &
-         advection_on, diffusion_on, reaction_on
+         advection_on, diffusion_on, reaction_on, &
+         ebullition_on
 
     reaction_method = ''
     advection_on = .true.
     diffusion_on = .true.
     reaction_on = .true.
+    ebullition_on =.true.
 
     ! ----------------------------------------------------------------------
     ! Read namelist from standard input.
@@ -237,7 +240,7 @@ contains
     this%advection_on = advection_on
     this%diffusion_on = diffusion_on
     this%reaction_on = reaction_on
-
+    this%ebullition_on = ebullition_on
   end subroutine ReadNamelist
 
   !-------------------------------------------------------------------------------
@@ -323,6 +326,7 @@ contains
        waterstate_vars, waterflux_vars, soilhydrology_vars, this%tracers, this%tracerstates, &
        this%tracercoeffs,  this%tracerfluxes)
 
+    if(this%reaction_on) &
     call this%bgc_reaction%calc_bgc_reaction(bounds, lbj, ubj, &
          num_soilc,                                       &
          filter_soilc,                                    &
@@ -355,7 +359,8 @@ contains
          this%tracers,                                                   &
          this%tracercoeffs,                                              &
          this%tracerstates,                                              &
-         this%tracerfluxes%tracer_flx_ebu_col(bounds%begc:bounds%endc, 1:this%tracers%nvolatile_tracers))
+         this%tracerfluxes%tracer_flx_ebu_col(bounds%begc:bounds%endc, 1:this%tracers%nvolatile_tracers), &
+         this%ebullition_on)
 
     if (is_active_betr_bgc) then
        !update nitrogen storage pool
@@ -743,9 +748,9 @@ contains
    use BeTR_WaterFluxType   , only : betr_waterflux_type
    use betr_varcon          , only : denh2o => bdenh2o
    use BeTR_TimeMod, only : betr_time_type
-   
+
    implicit none
-   
+
    class(betr_type), intent(inout) :: this
    class(betr_time_type), intent(in) :: betr_time
    type(bounds_type)       , intent(in)    :: bounds               ! bounds

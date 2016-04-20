@@ -81,6 +81,8 @@ contains
     if (bounds%begc > 0) continue
     if (len(betrtracer_vars%betr_simname) > 0) continue
     tracerboundarycond_vars%topbc_type(:) = bndcond_as_conc
+
+    !when bottom BC is not given, it is specified as constant flux
     ! FIXME(bja, 201604) Don't we need a bottom BC?
     !X!tracerboundarycond_vars%botbc_type(:) = bndcond_as_flux
 
@@ -218,11 +220,11 @@ contains
          !eventually, the following code will be implemented using polymorphism
          tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_n2)      = forc_pbot(c)*0.78084_r8*irt     !mol m-3, contant boundary condition, as concentration
          tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_o2)      = forc_pbot(c)*0.20946_r8*irt     !mol m-3, contant boundary condition, as concentration
-         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_ar)      = forc_pbot(c)*0.009340_r8*irt     !mol m-3, contant boundary condition, as concentration
+         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_ar)      = forc_pbot(c)*0.009340_r8*irt    !mol m-3, contant boundary condition, as concentration
          tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_co2x)    = forc_pbot(c)*367e-6_r8*irt      !mol m-3, contant boundary condition, as concentration
          tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_ch4)     = forc_pbot(c)*1.79e-6_r8*irt     !mol m-3, contant boundary condition, as concentration
 
-         tracerboundarycond_vars%bot_concflux_col(c,1,:)                                          = 0._r8                       !zero flux boundary condition
+         tracerboundarycond_vars%bot_concflux_col(c,1,:)                                          = 0._r8                       !zero flux boundary condition for diffusion
          tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_n2))           = 2._r8*1.837e-5_r8/dz_top(c) !m/s surface conductance
          tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_o2))           = 2._r8*1.713e-5_r8/dz_top(c) !m/s surface conductance
          tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_ar))           = 2._r8*1.532e-5_r8/dz_top(c) !m/s surface conductance
@@ -333,7 +335,7 @@ contains
     if (len(betrtracer_vars%betr_simname) > 0) continue
     if (size(tracerstate_vars%tracer_conc_surfwater_col) > 0) continue
     if (size(tracercoeff_vars%annsum_counter_col) > 0) continue
-    
+
     !continue on the simulation type, an implementation of aqueous chemistry will be
     !employed to separate out the adsorbed phase
     !It should be noted that this formulation excludes the use of linear isotherm, which
@@ -441,7 +443,7 @@ contains
     if (this%dummy_compiler_warning) continue
     if (ncid%fh > 0) continue
     if (len(betrtracer_vars%betr_simname) > 0) continue
- 
+
     !do nothing here
   end subroutine readParams
 
@@ -475,7 +477,7 @@ contains
     if (len(betrtracer_vars%betr_simname) > 0) continue
     if (size(tracerstate_vars%tracer_conc_surfwater_col) > 0) continue
     if (size(tracerflux_vars%tracer_flx_top_soil_col) > 0) continue
- 
+
   end subroutine lsm_betr_flux_state_receive
 
   !-------------------------------------------------------------------------------
@@ -513,7 +515,7 @@ contains
     if (size(tracerstate_vars%tracer_conc_surfwater_col) > 0) continue
     if (size(cnstate_vars%isoilorder) > 0) continue
     if (allocated(ecophyscon_vars%noveg)) continue
- 
+
 
   end subroutine init_betr_lsm_bgc_coupler
 

@@ -1111,7 +1111,7 @@ contains
    use BeTR_CanopyStateType    , only : betr_canopystate_type
 
    implicit none
-   
+
    type(bounds_type)       , intent(in) :: bounds  ! bounds
    integer                 , intent(in) :: lbj, ubj             ! lower and upper bounds, make sure they are > 0
    integer                 , intent(in) :: jtops(bounds%begc: ) ! top label of each column
@@ -1263,7 +1263,7 @@ contains
     if (ubj > 0) continue
     !if (len(betrtracer_vars%betr_simname) > 0) continue
 
-   
+
 
    associate(                                                                          &
     qflx_adv            =>    waterflux_vars%qflx_adv_col                    & !real(r8) (:)  [intent(in)], infiltration, mm/s

@@ -399,8 +399,8 @@ contains
     ! remove compiler warnings for unused dummy args
     if (size(tracerboundarycond_vars%jtops_col) > 0) continue
 
-    
-    
+
+
     ntracer_groups = betrtracer_vars%ntracer_groups
     if(.not. betrtracer_vars%is_solidtransport())return
     associate(&
@@ -1318,7 +1318,7 @@ contains
   !-------------------------------------------------------------------------------
   subroutine calc_ebullition(bounds, lbj, ubj, jtops, num_soilc, filter_soilc, &
        forc_psrf, zi, dz, dtime, fracice, zwt, betrtracer_vars,                &
-       tracercoeff_vars, tracerstate_vars, tracer_flx_ebu_col)
+       tracercoeff_vars, tracerstate_vars, tracer_flx_ebu_col,ebullition_on)
     !
     ! !DESCRIPTION:
     !
@@ -1344,7 +1344,7 @@ contains
     type(tracercoeff_type), intent(in)    :: tracercoeff_vars                                                                 ! tracer phase conversion coefficients
     type(tracerstate_type), intent(inout) :: tracerstate_vars                                                                 ! tracer state variables data structure
     real(r8),               intent(inout) :: tracer_flx_ebu_col(bounds%begc:bounds%endc, 1:betrtracer_vars%nvolatile_tracers) ! tracer ebullition
-
+    logical,                intent(in)    :: ebullition_on
     ! !LOCAL VARIABLES:
     real(r8), parameter :: icefrac_sealed=0.99_r8                         !set the sealing up ice fraction
     real(r8)            :: bubble_flux(betrtracer_vars%nvolatile_tracers) !bubble flux, mol/m2/s
@@ -1388,6 +1388,7 @@ contains
          id_trc_co2x              => betrtracer_vars%id_trc_co2x              &
          )
 
+      if(.not. ebullition_on)return
       if (.not. all(is_mobile((/id_trc_n2,id_trc_o2,id_trc_ar,id_trc_ch4,id_trc_co2x/)))) return
 
       do fc = 1, num_soilc
