@@ -9,13 +9,16 @@
   reaction_on = .false.
 /
 
-&forcing_inparm
-  forcing_filename = '../../input-data/uniform_steadystate_forcing.cdl.nc'
-/
-
 &betr_time
   stop_time = 5184000.0
 /
+
+&forcing_inparm
+  forcing_type_name = 'steady state'
+  forcing_format = 'netcdf'
+  forcing_filename = '../../input-data/uniform_steadystate_forcing.cdl.nc'
+/
+
 &betr_grid
   grid_data_filename = '../../input-data/uniform_steadystate_grid.cdl.nc'
   grid_type_str = 'uniform'
