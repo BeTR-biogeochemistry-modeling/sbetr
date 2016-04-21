@@ -150,7 +150,6 @@ contains
 
     ! allocate the reaction types that may only be known to this
     ! simulation type.
-
     ! now call the base simulation init to continue initialization
     call this%BeTRInit(base_filename, namelist_buffer, &
          betr_bounds, betr_waterstate, betr_cnstate)
@@ -557,7 +556,7 @@ contains
     ! humor the compiler about unused variables
     if (this%num_soilc > 0) continue
     if (present(soil_water_retention_curve)) continue
-    
+
     associate(                                                     & !
          h2osoi_vol =>    waterstate_vars%h2osoi_vol_col, & ! Input:  [real(r8) (:,:) ]  volumetric soil moisture
          smp_l =>    waterstate_vars%smp_l_col, & ! Output: [real(r8) (:,:) ]  soil suction (mm)
@@ -628,7 +627,7 @@ contains
 
     ! humor the compiler about unused variables
     if (bounds%begc > 0) continue
-    
+
     associate( &
          h2osoi_ice => waterstate_vars%h2osoi_ice_col, & ! Input:  [real(r8) (:,:) ]  ice lens (kg/m2)
          h2osoi_liq => waterstate_vars%h2osoi_liq_col, & ! Output: [real(r8) (:,:) ]  liquid water (kg/m2)

@@ -391,7 +391,7 @@ contains
 
              col%dz(c,j) = grid%dzsoi(j)
              col%zi(c,j) = grid%zisoi(j)
-
+             col%z(c,j)  = grid%zsoi(j)
              chemstate_vars%soil_pH(c,j) = 7._r8
 
              !set drainage to zero

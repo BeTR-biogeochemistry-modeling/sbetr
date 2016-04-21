@@ -142,7 +142,7 @@ contains
     character(len=*), parameter :: subname = 'BeTRInit'
 
     this%base_filename = base_filename
-    
+
     call this%betr%Init(namelist_buffer, betr_bounds, betr_waterstate, betr_cnstate)
 
     call this%CreateHistory(betr_nlevtrc_soil, this%num_soilc)
@@ -338,8 +338,11 @@ contains
     use ncdio_pio, only : ncd_pio_createfile
     use ncdio_pio, only : ncd_pio_closefile
     use ncdio_pio, only : ncd_enddef
+    use ncdio_pio, only : ncd_defvar
+    use ncdio_pio, only : ncd_putvar
     use histFileMod, only : hist_file_create, hist_def_fld1d, hist_def_fld2d
-
+    use betr_varcon, only : bspval
+    use BeTR_ColumnType, only : betr_col
     !
     !ARGUMENTS
     implicit none
@@ -362,11 +365,16 @@ contains
          )
 
       this%hist_filename = trim(this%base_filename) // '.output.nc'
-      
+
       call ncd_pio_createfile(ncid, this%hist_filename)
 
       call hist_file_create(ncid,nlevtrc_soil, ncol)
 
+
+     call ncd_defvar(ncid, "ZSOI", nf90_float,                  &
+        dim1name="ncol",dim2name="levgrnd",                 &
+        long_name="grid center"           ,                 &
+        units="m", missing_value=bspval, fill_value=bspval)
 
       call  hist_def_fld2d(ncid, varname="TRACER_P_GAS", nf90_type=nf90_float,dim1name="ncol", &
            dim2name="levgrnd",long_name="total gas pressure", units="Pa")
@@ -406,7 +414,7 @@ contains
 
 
       call ncd_enddef(ncid)
-
+      call ncd_putvar(ncid,"ZSOI",1,betr_col%z(1:1,1:nlevtrc_soil))
       call ncd_pio_closefile(ncid)
 
     end associate
@@ -502,7 +510,7 @@ contains
     if (num_soilc > 0) continue
     if (size(filter_soilc) > 0) continue
     if (associated(waterstate_vars%h2osoi_liq_col)) continue
-    
+
   end subroutine BeTRSimulationConsistencyCheck
 
   !---------------------------------------------------------------------------------
@@ -511,7 +519,7 @@ contains
 
     use bshr_kind_mod, only : r8 => shr_kind_r8
     use betr_constants, only : betr_string_length
-    
+
     implicit none
 
     class(betr_simulation_type), intent(inout) :: this
@@ -519,13 +527,13 @@ contains
 
     integer :: jj, tt, begc, endc
     character(len=betr_string_length) :: category
-    character(len=betr_string_length) :: name    
+    character(len=betr_string_length) :: name
 
     ! FIXME(bja, 201603) should we output units as well...?
-    
+
     begc = 1
     endc = 1
-    
+
     if (this%regression%write_regression_output) then
        call this%regression%OpenOutput()
        ! NOTE(bja, 201603) currently we are allocating all tracer
@@ -554,7 +562,7 @@ contains
        category = 'velocity'
        call this%regression%WriteData(category, name, &
             velocity(begc, :))
-       
+
        call this%regression%CloseOutput()
     end if
   end subroutine WriteRegressionOutput

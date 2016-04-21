@@ -126,9 +126,7 @@ CONFIG_FLAGS += -DTPL_NETCDF_LIBRARIES="$(NETCDF_FLIBS)"
 
 define run-config
 @mkdir -p $(BUILDDIR)
-@mkdir -p local
 @cd $(BUILDDIR) && cmake $(CURDIR) $(CONFIG_FLAGS)
-@cd $(CURDIR)/local && ln -s $(CURDIR)/$(BUILDDIR)/src/driver bin
 endef
 
 all test clean install:
