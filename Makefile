@@ -97,7 +97,7 @@ CONFIG_FLAGS += -DCMAKE_INSTALL_PREFIX:PATH=$(prefix)
 # Special considerations for specific systems.
 ifeq ($(systype), Darwin)
   CONFIG_FLAGS += -DAPPLE=1
-else 
+else
   ifeq ($(systype), Linux)
     CONFIG_FLAGS += -DLINUX=1
   endif
@@ -126,7 +126,9 @@ CONFIG_FLAGS += -DTPL_NETCDF_LIBRARIES="$(NETCDF_FLIBS)"
 
 define run-config
 @mkdir -p $(BUILDDIR)
+@mkdir -p local
 @cd $(BUILDDIR) && cmake $(CURDIR) $(CONFIG_FLAGS)
+@cd $(CURDIR)/local && ln -s $(CURDIR)/$(BUILDDIR)/src/driver bin
 endef
 
 all test clean install:
@@ -143,16 +145,16 @@ distclean:
 	@rm -rf $(BUILDDIR)
 	@rm -rf ./local
 
-stats: 
+stats:
 	@python tools/gather_stats.py
 
-prepend-license: 
+prepend-license:
 	@python tools/prepend_license.py
 
 ctags-emacs :
-	@ctags -e -f ETAGS -R --exclude=.git --exclude=build 
+	@ctags -e -f ETAGS -R --exclude=.git --exclude=build
 
 #dist:
 #	utils/mkdist.sh $(PKGNAME)
 
-.PHONY: config distclean all clean install uninstall 
+.PHONY: config distclean all clean install uninstall
