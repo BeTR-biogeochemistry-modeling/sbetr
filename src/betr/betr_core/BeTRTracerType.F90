@@ -6,6 +6,7 @@ module BeTRTracerType
   !
   ! !USES:
   use bshr_kind_mod       , only: r8 => shr_kind_r8
+  use bshr_infnan_mod         , only : nan => shr_infnan_nan, assignment(=)
   use babortutils          , only : endrun
   use bshr_log_mod        , only : errMsg => shr_log_errMsg
   use betr_constants, only : betr_var_name_length
@@ -143,7 +144,6 @@ module BeTRTracerType
   this%nfrozen_tracers              = 0
   this%nh2o_tracers                 = 0      ! number of h2o tracers, this will be used to compute vapor gradient and thermal gradient driven isotopic flow
 
-
   this%id_trc_ch4                   = 0      ! tag for methane
   this%id_trc_o2                    = 0      ! tag for co2
   this%id_trc_n2                    = 0      ! tag for n2
@@ -159,7 +159,6 @@ module BeTRTracerType
   this%id_trc_no3x                  = 0      ! tag for no3 and its related species, no3x(HNO3,NO3(-))
   this%id_trc_no2x                  = 0      ! tag for no2 and its related species, no2x(HNO2,NO2(-))
   this%id_trc_dom                   = 0      ! tag for generic dissolved organic matter
-
 
   this%id_trc_o18_h2o               = 0      ! tag for H2O(18)
   this%id_trc_o17_h2o               = 0      ! tag for H2O(17)
@@ -255,7 +254,6 @@ subroutine set_tracer(this, trc_id, trc_name, is_trc_mobile, is_trc_advective, t
   logical ,optional  , intent(in) :: is_trc_frozen
   integer ,optional  , intent(in) :: trc_frozenid
 
-
   this%tracernames      (trc_id)    = trim(trc_name)
   this%is_mobile        (trc_id)    = is_trc_mobile
   this%groupid          (trc_id)    = trc_group_id
@@ -274,7 +272,6 @@ subroutine set_tracer(this, trc_id, trc_name, is_trc_mobile, is_trc_advective, t
       if(.not.present(trc_volatile_group_id))then
         call endrun('volatile tracer group id is not provided for '//trim(trc_name)//errMsg(mod_filename, __LINE__))
       endif
-
       this%volatileid     (trc_id)    = trc_volatile_id
       this%volatilegroupid(trc_id)    = trc_volatile_group_id
       this%nvolatile_tracers          = this%nvolatile_tracers + 1
@@ -286,7 +283,6 @@ subroutine set_tracer(this, trc_id, trc_name, is_trc_mobile, is_trc_advective, t
   endif
 
   if(present(is_trc_h2o))then
-
     this%is_h2o(trc_id) = is_trc_h2o
     if(is_trc_h2o)then
       this%nh2o_tracers = this%nh2o_tracers + 1

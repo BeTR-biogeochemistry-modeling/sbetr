@@ -274,9 +274,7 @@ contains
     if(present(botbc_type))then
        botbc_ltype = botbc_type
        if(botbc_type==bndcond_as_conc)then
-
           SHR_ASSERT_ALL((ubound(condc_botlay)    == (/bounds%endc/)),        errMsg(filename,__LINE__))
-
        endif
     else
        botbc_ltype = bndcond_as_flux
@@ -286,7 +284,6 @@ contains
        !form the diffusion matrix
        c = filter(fc)
        if(update_col(c))then
-
           do j = jtop(c), ubj
              do k = 1, ntrcs
                 if(j == jtop(c))then
@@ -337,6 +334,7 @@ contains
                    bt(c,j)=dz(c,j)/dtime(c)+cntheta*hmconductance(c,j)/Rfactor(c,j)
                 endif
                 ct(c,j)=-cntheta*hmconductance(c,j)/Rfactor(c,j+1)
+                at(c,j)=0._r8  !avoid variable not defined
              elseif(j==ubj)then
                 at(c,j)=-cntheta*hmconductance(c,j-1)/rfactor(c,j-1)
                 if(botbc_ltype == bndcond_as_conc)then
@@ -344,6 +342,7 @@ contains
                 else
                    bt(c,j)=dz(c,j)/dtime(c)+cntheta*hmconductance(c,j-1)/Rfactor(c,j)
                 endif
+                ct(c,j) = 0._r8 !avoid variable not defined
              else
                 at(c,j)=-cntheta*hmconductance(c,j-1)/rfactor(c,j-1)
                 ct(c,j)=-cntheta*hmconductance(c,j)/rfactor(c,j+1)
@@ -943,9 +942,9 @@ contains
      character(len=32)  :: subname ='trajectory'
 
      ! remove unused dummy args compiler warnings
-     if (dt > 0.0_r8) continue 
-     if (ti > 0.0_r8) continue 
-     
+     if (dt > 0.0_r8) continue
+     if (ti > 0.0_r8) continue
+
      call Lagrange_interp(pn, Extra_inst%zi(1:Extra_inst%nlen), Extra_inst%us(1:Extra_inst%nlen), y0, ui)
      do j = 1, neq
         dxdt(j) = -ui(j)

@@ -207,7 +207,7 @@ contains
     reaction_method = ''
     advection_on = .true.
     diffusion_on = .true.
-    reaction_on = .true.
+    reaction_on  = .true.
     ebullition_on =.true.
 
     ! ----------------------------------------------------------------------

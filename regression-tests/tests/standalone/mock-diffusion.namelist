@@ -7,6 +7,7 @@
   advection_on = .false.
   diffusion_on = .true.
   reaction_on = .false.
+  ebullition_on=.false.
 /
 
 &forcing_inparm

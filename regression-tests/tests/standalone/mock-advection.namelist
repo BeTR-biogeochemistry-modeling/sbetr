@@ -7,6 +7,7 @@
   advection_on = .true.
   diffusion_on = .false.
   reaction_on = .false.
+  ebullition_on=.false.
 /
 
 &betr_time

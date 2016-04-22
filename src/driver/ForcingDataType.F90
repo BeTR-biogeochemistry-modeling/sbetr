@@ -382,6 +382,7 @@ contains
              !expoential grid.
              waterstate_vars%h2osoi_liqvol_col(c,j) = min(this%h2osoi_liqvol(tstep,j),grid%watsat(j))
              waterstate_vars%air_vol_col(c,j) = grid%watsat(j)-waterstate_vars%h2osoi_liqvol_col(c,j)
+             waterstate_vars%h2osoi_icevol_col(c,j) = this%h2osoi_icevol(tstep,j)
              soilstate_vars%eff_porosity_col(c,j) = grid%watsat(j)-this%h2osoi_icevol(tstep,j)
              soilstate_vars%bsw_col(c,j) = grid%bsw(j)
 
@@ -398,7 +399,6 @@ contains
              !set surface runoff to zero
              waterflux_vars%qflx_surf_col(c) = 0._r8
              waterflux_vars%qflx_drain_vr_col(c,j) = 0._r8
-
           endif
        enddo
     enddo

@@ -409,8 +409,8 @@ contains
          ngwmobile_tracers             =>  betrtracer_vars%ngwmobile_tracers                  , &
          tracer_group_memid            =>  betrtracer_vars%tracer_group_memid                 , &
          is_mobile                     =>  betrtracer_vars%is_mobile                          , &
-         tracer_flx_netpro_vr          => tracerflux_vars%tracer_flx_netpro_vr_col            , & !
-         tracer_conc_solid_passive_col =>   tracerstate_vars%tracer_conc_solid_passive_col      &
+         tracer_flx_netpro_vr          =>  tracerflux_vars%tracer_flx_netpro_vr_col           , & !
+         tracer_conc_solid_passive_col =>  tracerstate_vars%tracer_conc_solid_passive_col       &
          )
 
       SHR_ASSERT_ALL((ubound(hmconductance_col) == (/bounds%endc, ubj-1, ntracer_groups/)), errMsg(filename,__LINE__))
@@ -1102,7 +1102,6 @@ contains
 
                !update the column
                if(update_col(c))then
-
                   !do negative tracer screening
                   lnegative_tracer = .false.
 
@@ -1193,8 +1192,8 @@ contains
                                 diff_surf(c,k) * dtime_loc(c)
                         endif
                      else
-                        write(iulog,*) 'mass bal error dif '//tracernames(trcid), mass1,'col=',c,get_cntheta()
-                        write(iulog,*)'err=', err_tracer(c,k), dmass(c,k), ' dif=', diff_surf(c,k)*dtime_loc(c), &
+                        write(iulog,*) 'mass bal error dif '//tracernames(trcid), mass1,'col=',c
+                        write(iulog,*)'err=', err_tracer(c,k), 'dmass=',dmass(c,k), ' dif=', diff_surf(c,k)*dtime_loc(c), &
                              ' prod=',dot_sum(x=local_source(c,jtops(c):ubj,k),y=dz(c,jtops(c):ubj))*dtime_loc(c)
                         call endrun('mass balance error for tracer '//tracernames(trcid)//' in ' &
                            //trim(subname)//errMsg(filename, __LINE__))

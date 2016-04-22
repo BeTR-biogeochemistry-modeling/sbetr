@@ -1,6 +1,6 @@
 [N2_total_aqueous_conc]
 category = concentration
-min =   3.5131605226137E+00
+min =   0.3513160522614E+01
 max =   0.3513161182579E+01
 mean =   0.3513160782971E+01
 cell    1 =   0.3513161182579E+01
@@ -9,7 +9,7 @@ cell    5 =   0.3513160775806E+01
 
 [N2_gas_partial_pressure]
 category = pressure
-min =   7.8083313968548E-01
+min =   0.7808331396855E+00
 max =   0.7808392620120E+00
 mean =   0.7808368467392E+00
 cell    1 =   0.7808331396855E+00
@@ -18,7 +18,7 @@ cell    5 =   0.7808369131984E+00
 
 [O2_total_aqueous_conc]
 category = concentration
-min =   9.8508989522723E-01
+min =   0.9850898952272E+00
 max =   0.9850908981608E+00
 mean =   0.9850902908859E+00
 cell    1 =   0.9850908981608E+00
@@ -27,7 +27,7 @@ cell    5 =   0.9850902799980E+00
 
 [O2_gas_partial_pressure]
 category = pressure
-min =   2.0945815963236E-01
+min =   0.2094581596324E+00
 max =   0.2094596280383E+00
 mean =   0.2094590487485E+00
 cell    1 =   0.2094581596324E+00
@@ -36,7 +36,7 @@ cell    5 =   0.2094590646884E+00
 
 [AR_total_aqueous_conc]
 category = concentration
-min =   4.4210905457069E-02
+min =   0.4421090545707E-01
 max =   0.4421111939572E-01
 mean =   0.4421098985617E-01
 cell    1 =   0.4421111939572E-01
@@ -45,7 +45,7 @@ cell    5 =   0.4421098753363E-01
 
 [AR_gas_partial_pressure]
 category = pressure
-min =   9.3399179177265E-03
+min =   0.9339917917726E-02
 max =   0.9339947707916E-02
 mean =   0.9339935955613E-02
 cell    1 =   0.9339917917726E-02
@@ -54,7 +54,7 @@ cell    5 =   0.9339936278992E-02
 
 [CO2x_total_aqueous_conc]
 category = concentration
-min =   4.7204425584229E-03
+min =   0.4720442558423E-02
 max =   0.4820578787005E-02
 mean =   0.4759946443713E-02
 cell    1 =   0.4820578787005E-02
@@ -63,7 +63,7 @@ cell    5 =   0.4758859354183E-02
 
 [CO2x_gas_partial_pressure]
 category = pressure
-min =   3.5937225034733E-04
+min =   0.3593722503473E-03
 max =   0.3669927801679E-03
 mean =   0.3623785680361E-03
 cell    1 =   0.3669927801679E-03
@@ -72,7 +72,7 @@ cell    5 =   0.3622958454392E-03
 
 [CH4_total_aqueous_conc]
 category = concentration
-min =   8.3932881739138E-06
+min =   0.8393288173914E-05
 max =   0.8393321541546E-05
 mean =   0.8393301337592E-05
 cell    1 =   0.8393321541546E-05
@@ -81,16 +81,25 @@ cell    5 =   0.8393300975431E-05
 
 [CH4_gas_partial_pressure]
 category = pressure
-min =   1.7899842703896E-06
+min =   0.1789984270390E-05
 max =   0.1789991525354E-05
 mean =   0.1789988663274E-05
 cell    1 =   0.1789984270390E-05
 cell    3 =   0.1789986634442E-05
 cell    5 =   0.1789988742046E-05
 
+[DOC_total_aqueous_conc]
+category = concentration
+min =   0.1553860600123E-05
+max =   0.5528377535697E+00
+mean =   0.1000000000000E+00
+cell    1 =   0.1553860600123E-05
+cell    3 =   0.3460966101699E-03
+cell    5 =   0.3277472532969E-01
+
 [total_gas_pressure]
 category = pressure
-min =   1.0121369459751E+05
+min =   0.1012136945975E+06
 max =   0.1012145072036E+06
 mean =   0.1012140151718E+06
 cell    1 =   0.1012145072036E+06
@@ -99,7 +108,7 @@ cell    5 =   0.1012140063501E+06
 
 [advective flux]
 category = velocity
-min =   5.0000000000000E-06
+min =   0.5000000000000E-05
 max =   0.5000000000000E-05
 mean =   0.5000000000000E-05
 cell    1 =   0.5000000000000E-05

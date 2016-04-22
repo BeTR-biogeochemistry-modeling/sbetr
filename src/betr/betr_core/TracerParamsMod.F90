@@ -291,20 +291,19 @@ contains
          do n = 1, ubj
             do fc = 1,numf
                c = filter(fc)
-
                if  ( ( max(altmax(c), altmax_lastyear(c)) <= max_altdepth_cryoturbation ) .and. &
-                    ( max(altmax(c), altmax_lastyear(c)) > 0._r8) ) then
+                  ( max(altmax(c), altmax_lastyear(c)) > 0._r8) ) then
                   ! use mixing profile modified slightly from Koven et al. (2009): constant through active layer, linear decrease from base of active layer to zero at a fixed depth
 
                   if ( zi(c,n) < max(altmax(c), altmax_lastyear(c)) ) then
-                     bulkdiffus(c,n,j) = cryoturb_diffusion_k * tracer_solid_passive_diffus_scal_group(nsld)
-                     bulkdiffus(c,n,j) = max(bulkdiffus(c,n,j), tracer_solid_passive_diffus_thc_group(nsld))
+                    bulkdiffus(c,n,j) = cryoturb_diffusion_k * tracer_solid_passive_diffus_scal_group(nsld)
+                    bulkdiffus(c,n,j) = max(bulkdiffus(c,n,j), tracer_solid_passive_diffus_thc_group(nsld))
                   else
-                     bulkdiffus(c,n,j) = max(cryoturb_diffusion_k * &
+                    bulkdiffus(c,n,j) = max(cryoturb_diffusion_k * &
                           ( 1._r8 - ( zi(c,n) - max(altmax(c), altmax_lastyear(c)) ) / &
                           ( max_depth_cryoturb - max(altmax(c), altmax_lastyear(c)) ) ), 0._r8)  ! go linearly to zero between ALT and max_depth_cryoturb
-                     bulkdiffus(c,n,j) = bulkdiffus(c,n,j) * tracer_solid_passive_diffus_scal_group(nsld)
-                     bulkdiffus(c,n,j) = max(bulkdiffus(c,n,j), tracer_solid_passive_diffus_thc_group(nsld))
+                    bulkdiffus(c,n,j) = bulkdiffus(c,n,j) * tracer_solid_passive_diffus_scal_group(nsld)
+                    bulkdiffus(c,n,j) = max(bulkdiffus(c,n,j), tracer_solid_passive_diffus_thc_group(nsld))
                   endif
                elseif (  max(altmax(c), altmax_lastyear(c)) > 0._r8 ) then
                   ! constant advection, constant diffusion
@@ -600,12 +599,11 @@ contains
       !when linear adsorption is used for some adsorptive aqueous tracers, the aqu2bulkcef will be the retardation factor
       !for the moment, it is set to one for all non-volatile tracers
       !It is assumed that ice have same equilibrium solubility as liquid water for soluble tracers
-      !it's possible I don't need the following with the freeze-thaw partition approach, jyt, Feb, 19, 2016
       do n = lbj, ubj
         do fc = 1, numf
           c = filter(fc)
           if(n>=jtops(c))then
-            aqu2bulkcef_mobile(c, n, j) = h2osoi_liqvol(c,n)+denice/denh2o * h2osoi_icevol(c,n)
+            aqu2bulkcef_mobile(c, n, j) = h2osoi_liqvol(c,n)
           endif
         enddo
       enddo
@@ -948,7 +946,6 @@ contains
       diff=2.6e-9_r8*temp/298.15_r8  !considers revision
    elseif(trcid==betrtracer_vars%id_trc_nh3x)then
       diff=1.64e-5_r8*temp/298.15_r8
-
 !isotopes
    elseif(trcid==betrtracer_vars%id_trc_d_h2o)then
       diff=0.9833_r8*1e-9_r8*exp(-(535400._r8/temp-1393.3_r8)/temp+2.1876_r8)

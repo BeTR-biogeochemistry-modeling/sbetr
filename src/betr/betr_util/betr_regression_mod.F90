@@ -1,16 +1,16 @@
 module betr_regression_module
 
   use betr_constants, only : betr_filename_length
-  
+
   implicit none
 
   private
   character(len=*), private, parameter :: mod_filename = &
        __FILE__
-  
+
   type, public :: betr_regression_type
      character(len=betr_filename_length), private :: filename
-     integer :: output     
+     integer :: output
 
      logical, public :: write_regression_output
      integer, private :: num_cells
@@ -20,8 +20,8 @@ module betr_regression_module
      !X!integer, allocatable, private :: cell_ids(:)
    contains
      procedure, public :: Init
-     procedure, public :: OpenOutput 
-     procedure, public :: CloseOutput 
+     procedure, public :: OpenOutput
+     procedure, public :: CloseOutput
      procedure, public :: WriteData
      procedure, private :: ReadNamelist
      procedure, private :: CheckInput
@@ -45,13 +45,13 @@ contains
     call this%ReadNamelist(namelist_buffer)
     call this%CheckInput()
   end subroutine Init
-    
+
   !--------------------------------------------------------------------
-  
+
   subroutine ReadNamelist(this, namelist_buffer)
     use babortutils, only : endrun
     use bshr_log_mod, only : errMsg => shr_log_errMsg
-    
+
     use betr_constants, only : stdout, betr_string_length_long, betr_namelist_buffer_size
 
     implicit none
@@ -109,7 +109,7 @@ contains
 
     use babortutils, only : endrun
     use bshr_log_mod, only : errMsg => shr_log_errMsg
-    
+
     implicit none
 
     class(betr_regression_type), intent(in) :: this
@@ -119,7 +119,7 @@ contains
     if (this%write_regression_output) then
        ! sanity check on input
        if (this%num_cells < 0) then
-          msg = 'ERROR num cells must be >= 0. '               
+          msg = 'ERROR num cells must be >= 0. '
           call endrun(msg=msg//errmsg(mod_filename, __LINE__))
        end if
     end if
@@ -130,35 +130,35 @@ contains
   subroutine OpenOutput(this)
 
     use betr_constants, only : stdout
-    
+
     implicit none
 
     class(betr_regression_type), intent(inout) :: this
 
     integer :: output = 16
-    
+
     write(stdout, '(a, a)') 'Writing regression output to .', this%filename
 
     open(this%output, file=this%filename, status='REPLACE')
 
   end subroutine OpenOutput
 
-  
+
   !---------------------------------------------------------------------------------
 
   subroutine CloseOutput(this)
 
     use betr_constants, only : stdout
-    
+
     implicit none
 
     class(betr_regression_type), intent(inout) :: this
 
     close(this%output)
-    
+
   end subroutine CloseOutput
 
-  
+
   !---------------------------------------------------------------------------------
 
   subroutine WriteData(this, category, name, data)
@@ -173,10 +173,10 @@ contains
     ! mean, vector norms, cell point data.
 
     use bshr_kind_mod, only : r8 => shr_kind_r8
-    
+
     use betr_constants, only : stdout
     use betr_constants, only : betr_var_name_length, betr_string_length
-    
+
     implicit none
 
     class(betr_regression_type), intent(inout) :: this
@@ -192,14 +192,17 @@ contains
     write(this%output, '("[",a,"]")') trim(name)
 
     write(this%output, '("category = ",a)') trim(category)
-    
+
     val = minval(data(:))
-    write(this%output, '("min = ",es21.13)') val
-    
+    if(abs(val)<1.e-50_r8)val=0._r8
+    write(this%output, '("min = ",e21.13)') val
+
     val = maxval(data(:))
+    if(abs(val)<1.e-50_r8)val=0._r8
     write(this%output, '("max = ",e21.13)') val
-    
+
     val = sum(data(:)) / size(data)
+    if(abs(val)<1.e-50_r8)val=0._r8
     write(this%output, '("mean = ",e21.13)') val
 
     if (this%num_cells > 0) then
@@ -210,7 +213,7 @@ contains
        end if
 
        cell_increment = int(size(data) / num_cells)
-       
+
        do cell = 1, num_cells, cell_increment
           write(this%output, '("cell ", i4, " = ", e21.13)') cell, data(cell)
        end do
@@ -218,5 +221,5 @@ contains
     end if
   end subroutine WriteData
 
-  
+
 end module betr_regression_module

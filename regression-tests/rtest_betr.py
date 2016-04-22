@@ -594,7 +594,6 @@ class Comparison(object):
         """
         tol_type = self._tolerances.get(category, 'type')
         tol_value = self._tolerances.get(category, 'value')
-
         a_value = float(a_data)
         b_value = float(b_data)
         abs_diff = abs(a_value - b_value)

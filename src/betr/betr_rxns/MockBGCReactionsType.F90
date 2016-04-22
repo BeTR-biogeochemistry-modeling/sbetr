@@ -116,8 +116,7 @@ contains
     ! remove compiler warnings for unused dummy args
     if (this%dummy_compiler_warning) continue
     if (bounds%begc > 0) continue
-    if (lbj > 0) continue
-    if (ubj > 0) continue
+    if (ubj > lbj) continue
     if (len(betrtracer_vars%betr_simname) > 0) continue
 
     itemp_gwm     = 0;
@@ -130,6 +129,7 @@ contains
     betrtracer_vars%id_trc_ar  = addone(itemp_gwm); dum = addone(itemp_g); dum = addone(itemp_gwm_grp)
     betrtracer_vars%id_trc_co2x= addone(itemp_gwm); dum = addone(itemp_g); dum = addone(itemp_gwm_grp)
     betrtracer_vars%id_trc_ch4 = addone(itemp_gwm); dum = addone(itemp_g); dum = addone(itemp_gwm_grp)
+    betrtracer_vars%id_trc_doc = addone(itemp_gwm); dum = addone(itemp_gwm_grp)
 
     betrtracer_vars%ngwmobile_tracers      = itemp_gwm;   betrtracer_vars%ngwmobile_tracer_groups= itemp_gwm_grp
     betrtracer_vars%nsolid_passive_tracers = itemp_s;     betrtracer_vars%nsolid_passive_tracer_groups = itemp_s
@@ -166,6 +166,10 @@ contains
          is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = addone(itemp_grp),   &
          trc_group_mem = 1, is_trc_volatile=.true., trc_volatile_id = addone(itemp_v)     ,   &
          trc_volatile_group_id = addone(itemp_vgrp))
+
+    call betrtracer_vars%set_tracer(trc_id = betrtracer_vars%id_trc_doc, trc_name='DOC',      &
+         is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = addone(itemp_grp),   &
+         trc_group_mem = 1)
 
   end subroutine Init_betrbgc
 
@@ -223,6 +227,7 @@ contains
          tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_ar)      = forc_pbot(c)*0.009340_r8*irt    !mol m-3, contant boundary condition, as concentration
          tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_co2x)    = forc_pbot(c)*367e-6_r8*irt      !mol m-3, contant boundary condition, as concentration
          tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_ch4)     = forc_pbot(c)*1.79e-6_r8*irt     !mol m-3, contant boundary condition, as concentration
+         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_doc)     = 0._r8                           !mol m-3, contant boundary condition, as concentration
 
          tracerboundarycond_vars%bot_concflux_col(c,1,:)                                          = 0._r8                       !zero flux boundary condition for diffusion
          tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_n2))           = 2._r8*1.837e-5_r8/dz_top(c) !m/s surface conductance
@@ -230,6 +235,7 @@ contains
          tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_ar))           = 2._r8*1.532e-5_r8/dz_top(c) !m/s surface conductance
          tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_co2x))         = 2._r8*1.399e-5_r8/dz_top(c) !m/s surface conductance
          tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_ch4))          = 2._r8*1.808e-5_r8/dz_top(c) !m/s surface conductance
+         tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_doc))          = 0._r8                       !m/s surface conductance
       enddo
 
     end associate
@@ -275,8 +281,7 @@ contains
     ! remove compiler warnings for unused dummy args
     if (this%dummy_compiler_warning) continue
     if (bounds%begc > 0) continue
-    if (lbj > 0) continue
-    if (ubj > 0) continue
+    if (ubj > lbj) continue
     if (size(jtops) > 0) continue
     if (num_soilc > 0) continue
     if (size(filter_soilc) > 0) continue
@@ -327,8 +332,7 @@ contains
     ! remove compiler warnings for unused dummy args
     if (this%dummy_compiler_warning) continue
     if (bounds%begc > 0) continue
-    if (lbj > 0) continue
-    if (ubj > 0) continue
+    if (ubj > lbj) continue
     if (size(jtops) > 0) continue
     if (num_soilc > 0) continue
     if (size(filter_soilc) > 0) continue
@@ -340,7 +344,6 @@ contains
     !employed to separate out the adsorbed phase
     !It should be noted that this formulation excludes the use of linear isotherm, which
     !can be integrated through the retardation factor
-
 
   end subroutine do_tracer_equilibration
 
@@ -407,7 +410,7 @@ contains
           tracerstate_vars%tracer_conc_aquifer_col(c,:)            = 0._r8
           tracerstate_vars%tracer_conc_grndwater_col(c,:)          = 0._r8
 
-
+          tracerstate_vars%tracer_conc_mobile_col(c,7, betrtracer_vars%id_trc_doc) = 1._r8  !point source
           !solid tracers
           if(betrtracer_vars%ngwmobile_tracers < betrtracer_vars%ntracers)then
              tracerstate_vars%tracer_conc_solid_passive_col(c,:,:) = 0._r8

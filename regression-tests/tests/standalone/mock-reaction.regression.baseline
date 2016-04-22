@@ -88,6 +88,15 @@ cell    1 =   0.0000000000000E+00
 cell    3 =   0.0000000000000E+00
 cell    5 =   0.0000000000000E+00
 
+[DOC_total_aqueous_conc]
+category = concentration
+min =   0.0000000000000E+00
+max =   0.1000000000000E+01
+mean =   0.1000000000000E+00
+cell    1 =   0.0000000000000E+00
+cell    3 =   0.0000000000000E+00
+cell    5 =   0.0000000000000E+00
+
 [total_gas_pressure]
 category = pressure
 min =   0.0000000000000E+00
