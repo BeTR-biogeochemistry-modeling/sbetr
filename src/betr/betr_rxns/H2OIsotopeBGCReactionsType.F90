@@ -26,11 +26,11 @@ module H2OIsotopeBGCReactionsType
   use BGCReactionsMod       , only : bgc_reaction_type
   use tracer_varcon         , only : bndcond_as_conc, bndcond_as_flux
   use babortutils            , only : endrun
-
+  use BeTR_biogeophysInputType, only : betr_biogeophys_input_type
   implicit none
 
   private
-  
+
   character(len=*), private, parameter :: mod_filename = &
        __FILE__
   !
@@ -206,7 +206,7 @@ module H2OIsotopeBGCReactionsType
 
 !-------------------------------------------------------------------------------
   subroutine set_boundary_conditions(this, bounds, num_soilc, filter_soilc, dz_top, betrtracer_vars, &
-       waterflux_vars, atm2lnd_vars, tracerboundarycond_vars)
+       biophysforc, biogeo_flux, tracerboundarycond_vars)
   !
   ! DESCRIPTION
   ! set up boundary conditions for tracer movement
@@ -220,7 +220,7 @@ module H2OIsotopeBGCReactionsType
   use BeTR_atm2lndType       , only : betr_atm2lnd_type
   use betr_varcon           , only : denh2o  => bdenh2o
   use betr_varcon           , only : rgas => brgas
-
+  use BeTR_biogeoFluxType, only : betr_biogeo_flux_type
 
   class(bgc_reaction_h2oiso_type), intent(in) :: this
   type(betr_bounds_type)         , intent(in) :: bounds                     !
@@ -228,8 +228,8 @@ module H2OIsotopeBGCReactionsType
   integer                           , intent(in) :: filter_soilc(:)            ! column filter_soilc
   type(betrtracer_type)             , intent(in) :: betrtracer_vars            !
   real(r8)                          , intent(in) :: dz_top(bounds%begc: )      !
-  type(betr_waterflux_type)         , intent(in) :: waterflux_vars
-  type(betr_atm2lnd_type)           , intent(in) :: atm2lnd_vars      !
+  type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
+  type(betr_biogeo_flux_type) , intent(in) :: biogeo_flux
   type(tracerboundarycond_type)     , intent(inout) :: tracerboundarycond_vars !
 
   !local variables
@@ -242,9 +242,9 @@ module H2OIsotopeBGCReactionsType
   if (this%dummy_compiler_warning) continue
 
   associate(                                                           &
-    forc_pbot            => atm2lnd_vars%forc_pbot_downscaled_col    , &
-    forc_tbot            => atm2lnd_vars%forc_t_downscaled_col       , &
-    qflx_gross_evap_soil => waterflux_vars%qflx_gross_evap_soil_col    &
+    forc_pbot            => biophysforc%forc_pbot_downscaled_col    , &
+    forc_tbot            => biophysforc%forc_t_downscaled_col       , &
+    qflx_gross_evap_soil => biogeo_flux%qflx_gross_evap_soil_col    &
   )
   !eventually, the following code will be implemented using polymorphism
   !for simplicity, all gases other than water vapor are set with fixed concentration based boundary conditions
@@ -275,7 +275,7 @@ module H2OIsotopeBGCReactionsType
 !-------------------------------------------------------------------------------
 
   subroutine calc_bgc_reaction(this, bounds, lbj, ubj, num_soilc, filter_soilc, &
-       num_soilp,filter_soilp, jtops, dtime, betrtracer_vars, tracercoeff_vars,  cnstate_vars,    &
+       num_soilp,filter_soilp, jtops, dtime, betrtracer_vars, tracercoeff_vars, biophysforc,     &
        tracerstate_vars, tracerflux_vars, tracerboundarycond_vars, plant_soilbgc)
 
   !
@@ -304,7 +304,7 @@ module H2OIsotopeBGCReactionsType
   integer                             , intent(in)    :: lbj, ubj                   ! lower and upper bounds, make sure they are > 0
   real(r8)                            , intent(in)    :: dtime                      ! model time step
   type(betrtracer_type)               , intent(in)    :: betrtracer_vars            ! betr configuration information
-  type(betr_cnstate_type)             , intent(inout) :: cnstate_vars
+  type(betr_biogeophys_input_type), intent(in) :: biophysforc
   type(tracercoeff_type)              , intent(in)    :: tracercoeff_vars           !
   type(tracerstate_type)              , intent(inout) :: tracerstate_vars           !
   type(tracerflux_type)               , intent(inout) :: tracerflux_vars            !
@@ -328,7 +328,7 @@ module H2OIsotopeBGCReactionsType
     if (num_soilp > 0) continue
     if (size(filter_soilp) > 0) continue
     if (dtime > 0.0) continue
-    if (size(cnstate_vars%isoilorder) > 0) continue
+    if (size(biophysforc%isoilorder) > 0) continue
     if (size(tracercoeff_vars%annsum_counter_col) > 0) continue
     if (size(tracerflux_vars%tracer_flx_top_soil_col) > 0) continue
     if (plant_soilbgc%dummy_compiler_warning) continue
@@ -421,7 +421,7 @@ module H2OIsotopeBGCReactionsType
     if (size(filter_soilc) > 0) continue
     if (size(tracerstate_vars%tracer_conc_surfwater_col) > 0) continue
     if (size(tracercoeff_vars%annsum_counter_col) > 0) continue
-    
+
   associate(                                                                         &
     aqu2equilscef                   => tracercoeff_vars%aqu2equilsolidcef_col          , &
     aqu2bulkcef_mobile              => tracercoeff_vars%aqu2bulkcef_mobile_col     , &
@@ -489,7 +489,7 @@ module H2OIsotopeBGCReactionsType
 
   ! remove compiler warnings for unused dummy args
   if (bounds%begc > 0) continue
-    
+
   do j = lbj, ubj
     do fc = 1, numf
       c = filter(fc)
@@ -508,7 +508,7 @@ module H2OIsotopeBGCReactionsType
   end subroutine do_h2o_isotope_equilibration
 
   !-----------------------------------------------------------------------
-  subroutine InitCold(this, bounds, betrtracer_vars, waterstate_vars, tracerstate_vars)
+  subroutine InitCold(this, bounds, betrtracer_vars, biophysforc, tracerstate_vars)
     !
     ! !USES:
     !
@@ -527,7 +527,7 @@ module H2OIsotopeBGCReactionsType
     class(bgc_reaction_h2oiso_type) , intent(in)    :: this
     type(betr_bounds_type)                 , intent(in)    :: bounds
     type(BeTRTracer_Type)             , intent(in)    :: betrtracer_vars
-    type(betr_waterstate_type)             , intent(in)    :: waterstate_vars
+    type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
     type(tracerstate_type)            , intent(inout) :: tracerstate_vars
 
     !
@@ -541,7 +541,7 @@ module H2OIsotopeBGCReactionsType
 
     ! remove compiler warnings for unused dummy args
     if (this%dummy_compiler_warning) continue
-    if (size(waterstate_vars%h2osoi_liq_col) > 0) continue
+    if (size(biophysforc%h2osoi_liq_col) > 0) continue
 
     begc = bounds%begc; endc= bounds%endc
     begg = bounds%begg; endg= bounds%endg
@@ -588,25 +588,25 @@ module H2OIsotopeBGCReactionsType
          trcid = betrtracer_vars%id_trc_blk_h2o
          tracerstate_vars%tracer_conc_grndwater_col(c,trcid) = denh2o
          do j = 1, nlevtrc_soil
-           tracerstate_vars%tracer_conc_mobile_col(c,j,trcid) = 1._r8 * waterstate_vars%h2osoi_liq_col(c,j)/col%dz(c,j)
+           tracerstate_vars%tracer_conc_mobile_col(c,j,trcid) = 1._r8 * biophysforc%h2osoi_liq_col(c,j)/col%dz(c,j)
            tracerstate_vars%tracer_conc_frozen_col(c,j,betrtracer_vars%frozenid(trcid)) = &
-                1._r8 * waterstate_vars%h2osoi_ice_col(c,j)/col%dz(c,j)
+                1._r8 * biophysforc%h2osoi_ice_col(c,j)/col%dz(c,j)
          enddo
 
          trcid = betrtracer_vars%id_trc_o18_h2o
          tracerstate_vars%tracer_conc_grndwater_col(c,trcid) = denh2o
          do j = 1, nlevtrc_soil
-           tracerstate_vars%tracer_conc_mobile_col(c,j,trcid) = 1._r8 * waterstate_vars%h2osoi_liq_col(c,j)/col%dz(c,j)
+           tracerstate_vars%tracer_conc_mobile_col(c,j,trcid) = 1._r8 * biophysforc%h2osoi_liq_col(c,j)/col%dz(c,j)
            tracerstate_vars%tracer_conc_frozen_col(c,j,betrtracer_vars%frozenid(trcid)) = &
-                1._r8 * waterstate_vars%h2osoi_ice_col(c,j)/col%dz(c,j)
+                1._r8 * biophysforc%h2osoi_ice_col(c,j)/col%dz(c,j)
          enddo
 
          trcid = betrtracer_vars%id_trc_d_h2o
          tracerstate_vars%tracer_conc_grndwater_col(c,trcid) = denh2o
          do j = 1, nlevtrc_soil
-           tracerstate_vars%tracer_conc_mobile_col(c,j,trcid) = 1._r8 * waterstate_vars%h2osoi_liq_col(c,j)/col%dz(c,j)
+           tracerstate_vars%tracer_conc_mobile_col(c,j,trcid) = 1._r8 * biophysforc%h2osoi_liq_col(c,j)/col%dz(c,j)
            tracerstate_vars%tracer_conc_frozen_col(c,j,betrtracer_vars%frozenid(trcid)) = &
-                1._r8 * waterstate_vars%h2osoi_ice_col(c,j)/col%dz(c,j)
+                1._r8 * biophysforc%h2osoi_ice_col(c,j)/col%dz(c,j)
          enddo
 
        endif
@@ -682,7 +682,7 @@ module H2OIsotopeBGCReactionsType
 
 
   subroutine init_betr_lsm_bgc_coupler(this, bounds,                     &
-       plant_soilbgc, betrtracer_vars, tracerstate_vars, cnstate_vars,  ecophyscon_vars)
+       plant_soilbgc, betrtracer_vars, tracerstate_vars, biophysforc,  ecophyscon_vars)
 
     ! !DESCRIPTION:
     ! initialize the bgc coupling between betr and lsm
@@ -694,7 +694,6 @@ module H2OIsotopeBGCReactionsType
     use landunit_varcon          , only : istsoil, istcrop
     use PlantSoilBGCMod          , only : plant_soilbgc_type
     use EcophysConType           , only : ecophyscon_type
-    use BeTR_CNStateType         , only : betr_cnstate_type
     use BeTR_decompMod           , only : betr_bounds_type
 
 
@@ -705,7 +704,7 @@ module H2OIsotopeBGCReactionsType
     type(betrtracer_type)              , intent(in)    :: betrtracer_vars    ! betr configuration information
     class(plant_soilbgc_type)          , intent(inout) :: plant_soilbgc !
     type(ecophyscon_type)              , intent(in)    :: ecophyscon_vars
-    type(betr_cnstate_type)            , intent(in)    :: cnstate_vars
+    type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
 
     ! remove compiler warnings for unused dummy args
     if (this%dummy_compiler_warning) continue
@@ -713,7 +712,7 @@ module H2OIsotopeBGCReactionsType
     if (plant_soilbgc%dummy_compiler_warning) continue
     if (len(betrtracer_vars%betr_simname) > 0) continue
     if (size(tracerstate_vars%tracer_conc_surfwater_col) > 0) continue
-    if (size(cnstate_vars%isoilorder) > 0) continue
+    if (size(biophysforc%isoilorder) > 0) continue
     if (allocated(ecophyscon_vars%noveg)) continue
 
   end subroutine init_betr_lsm_bgc_coupler

@@ -155,7 +155,7 @@ contains
          temperature_vars, waterflux_vars, chemstate_vars, &
          cnstate_vars, canopystate_vars, carbonflux_vars)
 
-    call simulation%StepWithDrainage(bounds, waterflux_vars, col)
+    call simulation%StepWithDrainage(bounds, col)
 
     !do mass balance check
     call simulation%MassBalanceCheck(time_vars, bounds)

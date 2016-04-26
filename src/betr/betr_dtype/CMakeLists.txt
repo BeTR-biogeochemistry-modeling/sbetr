@@ -10,7 +10,11 @@ set(BETR_DTYPE_SOURCES
   BeTR_CanopyStateType.F90
   BeTR_ChemStateType.F90
   BeTR_SoilStateType.F90
+  BeTR_biogeophysInputType.F90
+  BeTR_biogeoStateType.F90
+  BeTR_biogeoFluxType.F90
   )
+
 
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)
 

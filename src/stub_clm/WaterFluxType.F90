@@ -20,7 +20,6 @@ module WaterfluxType
     real(r8), pointer :: qflx_infl_col(:)	       !infiltration (mm H2O /s)
     real(r8), pointer :: qflx_surf_col(:)	       !surface runoff (mm H2O /s)
     real(r8), pointer :: h2oliq_vol_tendency(:,:)         !temporal change of water during the solution of soil water movement
-    real(r8), pointer :: qflx_rootsoi(:,:)     ! water flux between root and soil [m/s]
     real(r8), pointer :: qflx_gross_evap_soil_col (:)   ! col gross infiltration from soil, this satisfies the relationship qflx_infl_col = qflx_gross_infl_soil_col-qflx_gross_evap_soil_col
     real(r8), pointer :: qflx_gross_infl_soil_col (:)   ! col gross infiltration, before considering the evaporation, mm/s
     real(r8), pointer :: qflx_rootsoi_col         (:,:) ! col root and soil water exchange [mm H2O/s] [+ into root]
@@ -73,7 +72,6 @@ module WaterfluxType
     allocate(this%qflx_adv_col(begc:endc, lbj-1:ubj))
     allocate(this%qflx_infl_col(begc:endc))
     allocate(this%qflx_surf_col(begc:endc))
-    allocate(this%qflx_rootsoi(begc:endc,lbj:ubj))
     allocate(this%qflx_gross_evap_soil_col (begc:endc))              ; this%qflx_gross_evap_soil_col (:)   = nan
     allocate(this%qflx_gross_infl_soil_col (begc:endc))              ; this%qflx_gross_infl_soil_col (:)   = nan
     allocate(this%qflx_rootsoi_col         (begc:endc,lbj:ubj))      ; this%qflx_rootsoi_col         (:,:) = nan

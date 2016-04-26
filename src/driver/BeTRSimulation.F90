@@ -19,6 +19,9 @@ module BeTRSimulation
   use betr_constants            , only : betr_string_length
   use betr_constants            , only : betr_filename_length
   use betr_regression_module, only : betr_regression_type
+  use BeTR_biogeophysInputType, only : betr_biogeophys_input_type
+  use BeTR_biogeoStateType, only : betr_biogeo_state_type
+  use BeTR_biogeoFluxType, only : betr_biogeo_flux_type
   implicit none
 
   private
@@ -28,6 +31,9 @@ module BeTRSimulation
 
   type, public :: betr_simulation_type
      type(betr_type), public :: betr
+     type(betr_biogeophys_input_type), public :: biophys_forc
+     type(betr_biogeo_state_type), public :: biogeo_state
+     type(betr_biogeo_flux_type), public :: biogeo_flux
      character(len=betr_filename_length), private :: base_filename
      character(len=betr_filename_length), private :: hist_filename
 
@@ -54,6 +60,7 @@ module BeTRSimulation
      procedure, public :: StepWithDrainage => BeTRSimulationStepWithDrainage
      procedure, public :: BeginMassBalanceCheck => BeTRSimulationBeginMassBalanceCheck
      procedure, public :: MassBalanceCheck      => BeTRSimulationMassBalanceCheck
+     procedure, public :: SetBiophysForcing  => BeTRSimulationSetBiophysForcing
      procedure, public :: CreateHistory => hist_htapes_create
      procedure, public :: WriteHistory => hist_write
      procedure, public :: WriteRegressionOutput
@@ -121,10 +128,10 @@ contains
 !-------------------------------------------------------------------------------
 
   subroutine BeTRInit(this, base_filename, namelist_buffer, &
-       betr_bounds, betr_waterstate, betr_cnstate)
+       betr_bounds, waterstate, cnstate)
     !
-    use BeTR_WaterStateType, only : betr_waterstate_type
-    use BeTR_CNStateType, only : betr_cnstate_type
+    use WaterStateType, only : waterstate_type
+    use CNStateType, only : cnstate_type
 
     use betr_constants, only : betr_namelist_buffer_size
     use betr_constants, only : betr_filename_length
@@ -136,14 +143,23 @@ contains
     character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
 
     type(betr_bounds_type)    , intent(in) :: betr_bounds
-    type(betr_waterstate_type), intent(inout) :: betr_waterstate
-    type(betr_cnstate_type), intent(inout) :: betr_cnstate
+    type(waterstate_type), intent(in) :: waterstate
+    type(cnstate_type), intent(in) :: cnstate
 
     character(len=*), parameter :: subname = 'BeTRInit'
 
     this%base_filename = base_filename
 
-    call this%betr%Init(namelist_buffer, betr_bounds, betr_waterstate, betr_cnstate)
+    call this%biophys_forc%Init(betr_bounds)
+
+    call this%biogeo_state%Init(betr_bounds)
+
+    call this%biogeo_flux%Init(betr_bounds)
+
+    call this%SetBiophysForcing(betr_bounds, cnstate_vars=cnstate, &
+      waterstate_vars = waterstate)
+
+    call this%betr%Init(namelist_buffer, betr_bounds, this%biophys_forc)
 
     call this%CreateHistory(betr_nlevtrc_soil, this%num_soilc)
 
@@ -247,7 +263,7 @@ contains
   end subroutine BeTRSimulationStepWithoutDrainage
 
   !---------------------------------------------------------------------------------
-  subroutine BeTRSimulationStepWithDrainage(this, bounds, waterflux_vars, col)
+  subroutine BeTRSimulationStepWithDrainage(this, bounds,  col)
 
     use ColumnType, only : column_type
     use MathfuncMod, only : safe_div
@@ -257,13 +273,11 @@ contains
 
     class(betr_simulation_type), intent(inout) :: this
     type(bounds_type), intent(in) :: bounds
-    type(waterflux_type)    , intent(in) :: waterflux_vars
     type(column_type), intent(in) :: col ! column type
 
     ! remove compiler warnings about unused dummy args
     if (this%num_soilc > 0) continue
     if (bounds%begc > 0) continue
-    if (size(waterflux_vars%qflx_drain_vr_col) > 0) continue
     if (size(col%z) > 0) continue
 
   end subroutine BeTRSimulationStepWithDrainage
@@ -566,4 +580,150 @@ contains
        call this%regression%CloseOutput()
     end if
   end subroutine WriteRegressionOutput
+
+  !------------------------------------------------------------------------
+  subroutine BeTRSimulationSetBiophysForcing(this, bounds,  cnstate_vars, carbonflux_vars, waterstate_vars, &
+    waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
+    chemstate_vars, soilstate_vars)
+
+  !USES
+    use SoilStateType, only : soilstate_type
+    use WaterStateType, only : Waterstate_Type
+    use TemperatureType, only : temperature_type
+    use ChemStateType, only : chemstate_type
+    use WaterfluxType, only : waterflux_type
+    use atm2lndType, only : atm2lnd_type
+    use SoilHydrologyType, only : soilhydrology_type
+    use CNStateType, only : cnstate_type
+    use CNCarbonFluxType, only : carbonflux_type
+    use CanopyStateType, only : canopystate_type
+  implicit none
+  class(betr_simulation_type), intent(inout) :: this
+  type(betr_bounds_type), intent(in) :: bounds
+  type(cnstate_type), optional, intent(in) :: cnstate_vars
+  type(carbonflux_type), optional, intent(in) :: carbonflux_vars
+  type(Waterstate_Type), optional, intent(in) :: Waterstate_vars
+  type(waterflux_type), optional, intent(in) :: waterflux_vars
+  type(temperature_type), optional, intent(in) :: temperature_vars
+  type(soilhydrology_type), optional, intent(in) :: soilhydrology_vars
+  type(atm2lnd_type), optional, intent(in) :: atm2lnd_vars
+  type(canopystate_type), optional, intent(in) :: canopystate_vars
+  type(chemstate_type), optional, intent(in) :: chemstate_vars
+  type(soilstate_type), optional, intent(in) :: soilstate_vars
+
+  integer :: begp, begc, endp, endc
+  integer :: p, c, lbj, ubj
+
+  begc = bounds%begc; endc= bounds%endc
+  begp = bounds%begp; endp= bounds%endp
+  lbj = bounds%lbj; ubj=bounds%ubj
+
+  if(present(cnstate_vars))then
+    do c = begc, endc
+      this%biophys_forc%isoilorder(c) = cnstate_vars%isoilorder(c)
+    enddo
+  endif
+
+  if(present(carbonflux_vars))then
+    do p = begp, endp
+      this%biophys_forc%annsum_npp_patch(p) = carbonflux_vars%annsum_npp_patch(p)
+      this%biophys_forc%agnpp_patch(p) = carbonflux_vars%agnpp_patch(p)
+      this%biophys_forc%bgnpp_patch(p) = carbonflux_vars%bgnpp_patch(p)
+    enddo
+  endif
+  !assign waterstate
+  if(present(waterstate_vars))then
+    do c = begc, endc
+      this%biophys_forc%finundated_col(c)    = waterstate_vars%finundated_col(c)
+      this%biophys_forc%frac_h2osfc_col(c)   = waterstate_vars%frac_h2osfc_col(c)
+      this%biophys_forc%h2osoi_liq_col(c,lbj:ubj)    = waterstate_vars%h2osoi_liq_col(c,lbj:ubj)
+      this%biophys_forc%h2osoi_ice_col(c,lbj:ubj)    = waterstate_vars%h2osoi_ice_col(c,lbj:ubj)
+      this%biophys_forc%h2osoi_liq_old(c,lbj:ubj)    = waterstate_vars%h2osoi_liq_old(c,lbj:ubj)
+      this%biophys_forc%h2osoi_ice_old(c,lbj:ubj)    = waterstate_vars%h2osoi_ice_old(c,lbj:ubj)
+      this%biophys_forc%h2osoi_liqvol_col(c,lbj:ubj) = waterstate_vars%h2osoi_liqvol_col(c,lbj:ubj)
+      this%biophys_forc%h2osoi_icevol_col(c,lbj:ubj) = waterstate_vars%h2osoi_icevol_col(c,lbj:ubj)
+      this%biophys_forc%h2osoi_vol_col(c,lbj:ubj)    = waterstate_vars%h2osoi_vol_col(c,lbj:ubj)
+      this%biophys_forc%air_vol_col(c,lbj:ubj)       = waterstate_vars%air_vol_col(c,lbj:ubj)
+      this%biophys_forc%rho_vap(c,lbj:ubj)           = waterstate_vars%rho_vap(c,lbj:ubj)
+      this%biophys_forc%rhvap_soi(c,lbj:ubj)         = waterstate_vars%rhvap_soi(c,lbj:ubj)
+      this%biophys_forc%smp_l_col(c,lbj:ubj)         = waterstate_vars%smp_l_col(c,lbj:ubj)
+    enddo
+  endif
+  if(present(waterflux_vars))then
+    do c = begc, endc
+      this%biogeo_flux%qflx_infl_col(c)      = waterflux_vars%qflx_infl_col(c)
+      this%biogeo_flux%qflx_totdrain_col(c)  = waterflux_vars%qflx_totdrain_col(c)
+      this%biogeo_flux%qflx_gross_evap_soil_col(c)  = waterflux_vars%qflx_gross_evap_soil_col(c)
+      this%biogeo_flux%qflx_gross_infl_soil_col(c)  = waterflux_vars%qflx_gross_infl_soil_col(c)
+      this%biophys_forc%qflx_surf_col(c)      = waterflux_vars%qflx_surf_col(c)
+      this%biophys_forc%qflx_dew_grnd_col(c)       = waterflux_vars%qflx_dew_grnd_col(c)
+      this%biophys_forc%qflx_dew_snow_col(c)       = waterflux_vars%qflx_dew_snow_col(c)
+      this%biophys_forc%qflx_sub_snow_vol_col(c)   = waterflux_vars%qflx_sub_snow_vol_col(c)
+      this%biophys_forc%qflx_sub_snow_col(c)       = waterflux_vars%qflx_sub_snow_col(c)
+      this%biophys_forc%qflx_h2osfc2topsoi_col(c)  = waterflux_vars%qflx_h2osfc2topsoi_col(c)
+      this%biophys_forc%qflx_snow2topsoi_col(c)    = waterflux_vars%qflx_snow2topsoi_col(c)
+      this%biophys_forc%qflx_rootsoi_col(c,lbj:ubj)  = waterflux_vars%qflx_rootsoi_col(c,lbj:ubj)
+      this%biogeo_flux%qflx_adv_col(c,lbj-1:ubj) = waterflux_vars%qflx_adv_col(c,lbj-1:ubj)
+      this%biogeo_flux%qflx_drain_vr_col(c,lbj:ubj) = waterflux_vars%qflx_drain_vr_col(c,lbj:ubj)
+    enddo
+    do p = begp, endp
+      this%biophys_forc%qflx_tran_veg_patch(p)     = waterflux_vars%qflx_tran_veg_patch(p)
+    enddo
+  endif
+  if(present(temperature_vars))then
+    do c = begc, endc
+      this%biophys_forc%t_soi_10cm(c)          = temperature_vars%t_soi_10cm(c)
+      this%biophys_forc%t_soisno_col(c,lbj:ubj)     = temperature_vars%t_soisno_col(c,lbj:ubj)
+    enddo
+    do p = begp, endp
+      this%biophys_forc%t_veg_patch(p)         = temperature_vars%t_veg_patch(p)
+    enddo
+  endif
+  if(present(soilhydrology_vars))then
+    do c = begc, endc
+      this%biophys_forc%qflx_bot_col(c)   = soilhydrology_vars%qflx_bot_col(c)
+      this%biophys_forc%fracice_col(c,lbj:ubj)    = soilhydrology_vars%fracice_col(c,lbj:ubj)
+    enddo
+  endif
+
+  if(present(atm2lnd_vars))then
+    do c = begc, endc
+      this%biophys_forc%forc_pbot_downscaled_col(c) = atm2lnd_vars%forc_pbot_downscaled_col(c)
+      this%biophys_forc%forc_t_downscaled_col(c) = atm2lnd_vars%forc_t_downscaled_col(c)
+    enddo
+  endif
+
+  if(present(canopystate_vars))then
+    do c = begc, endc
+      this%biophys_forc%altmax_col(c)      = canopystate_vars%altmax_col(c)
+      this%biophys_forc%altmax_lastyear_col(c)   = canopystate_vars%altmax_lastyear_col(c)
+    enddo
+    do p = begp, endp
+      this%biophys_forc%lbl_rsc_h2o_patch(p)     = canopystate_vars%lbl_rsc_h2o_patch(p)
+      this%biophys_forc%elai_patch(p)      = canopystate_vars%elai_patch(p)
+    enddo
+  endif
+  if(present(chemstate_vars))then
+    do c = begc, endc
+      this%biophys_forc%soil_pH(c,lbj:ubj) = chemstate_vars%soil_pH(c,lbj:ubj)
+    enddo
+  endif
+  if(present(soilstate_vars))then
+    do c = begc, endc
+      this%biophys_forc%bsw_col(c,lbj:ubj)  = soilstate_vars%bsw_col(c,lbj:ubj)
+      this%biophys_forc%watsat_col(c,lbj:ubj) = soilstate_vars%watsat_col(c,lbj:ubj)
+      this%biophys_forc%eff_porosity_col(c,lbj:ubj) = soilstate_vars%eff_porosity_col(c,lbj:ubj)
+      this%biophys_forc%soilpsi_col(c,lbj:ubj)  = soilstate_vars%soilpsi_col(c,lbj:ubj)
+      this%biophys_forc%cellorg_col(c,lbj:ubj)  = soilstate_vars%cellorg_col(c,lbj:ubj)
+      this%biophys_forc%cellclay_col(c,lbj:ubj)  = soilstate_vars%cellclay_col(c,lbj:ubj)
+      this%biophys_forc%cellsand_col(c,lbj:ubj)  = soilstate_vars%cellsand_col(c,lbj:ubj)
+      this%biophys_forc%bd_col(c,lbj:ubj)   = soilstate_vars%bd_col(c,lbj:ubj)
+      this%biophys_forc%watfc_col(c,lbj:ubj)  = soilstate_vars%watfc_col(c,lbj:ubj)
+      this%biophys_forc%sucsat_col(c,lbj:ubj) = soilstate_vars%sucsat_col(c,lbj:ubj)
+    enddo
+    do p = begp, endp
+      this%biophys_forc%rootfr_patch(p,lbj:ubj) = soilstate_vars%rootfr_patch(p,lbj:ubj)
+    enddo
+   endif
+  end subroutine BeTRSimulationSetBiophysForcing
 end module BeTRSimulation

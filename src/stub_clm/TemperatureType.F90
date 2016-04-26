@@ -57,9 +57,9 @@ module TemperatureType
 
     begc = bounds%begc; endc= bounds%endc
     lbj  = bounds%lbj;  ubj = bounds%ubj
-
+    begp = bounds%begp; endp = bounds%endp
     allocate(this%t_soisno_col(begc:endc, lbj:ubj));  this%t_soisno_col(:,:) = nan
-    allocate(this%t_soi_10cm(begc:endc))           ;  this%t_soi_10cm(:) = nan 
-    allocate(this%t_veg_patch              (begp:endp))                      ; this%t_veg_patch              (:)   = nan
+    allocate(this%t_soi_10cm(begc:endc))           ;  this%t_soi_10cm(:) = nan
+    allocate(this%t_veg_patch  (begp:endp))        ; this%t_veg_patch              (:)   = nan
   end subroutine InitAllocate
 end module TemperatureType

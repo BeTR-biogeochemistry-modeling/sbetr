@@ -55,7 +55,7 @@ contains
     allocate(this%rc14_atm_patch              (begp:endp)) ;    this%rc14_atm_patch              (:) = nan
     allocate(this%froot_prof_patch    (begp:endp,1:nlevdecomp_full)) ; this%froot_prof_patch    (:,:) = spval
     allocate(this%nfixation_prof_col  (begc:endc,1:nlevdecomp_full)) ; this%nfixation_prof_col  (:,:) = spval
-    allocate(this%isoilorder            (begc:endc))                 ;
+    allocate(this%isoilorder            (begc:endc))                 ; this%isoilorder(:) = ispval
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------

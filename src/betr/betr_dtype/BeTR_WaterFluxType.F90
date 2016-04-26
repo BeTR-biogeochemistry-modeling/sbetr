@@ -15,7 +15,6 @@ module BeTR_WaterfluxType
     real(r8), pointer :: qflx_adv_col             (:,:) !advection velocity from one layer to another, (0:nlevgrnd), positive downward
     real(r8), pointer :: qflx_infl_col            (:)     !infiltration (mm H2O /s)
     real(r8), pointer :: qflx_surf_col            (:)     !surface runoff (mm H2O /s)
-    real(r8), pointer :: qflx_rootsoi             (:,:) ! water flux between root and soil [m/s]
     real(r8), pointer :: qflx_gross_evap_soil_col (:)   ! col gross infiltration from soil, this satisfies the relationship qflx_infl_col = qflx_gross_infl_soil_col-qflx_gross_evap_soil_col
     real(r8), pointer :: qflx_gross_infl_soil_col (:)   ! col gross infiltration, before considering the evaporation, mm/s
     real(r8), pointer :: qflx_rootsoi_col         (:,:) ! col root and soil water exchange [mm H2O/s] [+ into root]

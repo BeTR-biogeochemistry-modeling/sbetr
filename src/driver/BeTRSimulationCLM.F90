@@ -38,10 +38,10 @@ module BeTRSimulationCLM
      procedure, public :: StepWithoutDrainage => CLMStepWithoutDrainage
      procedure, public :: StepWithDrainage => CLMStepWithDrainage
      procedure, public :: ConsistencyCheck => betr_clm_h2oiso_consistency_check
-     procedure, public :: diagnose_dtracer_freeze_thaw_clm
-     procedure, public :: calc_dew_sub_flux_clm
-     procedure, public :: clm_betr_flux_state_receive
-     procedure, public :: calc_smp_l_clm
+     procedure, public :: DiagnoseDtracerFreezeThaw => diagnose_dtracer_freeze_thaw_clm
+     procedure, public :: CalcDewSubFlux => calc_dew_sub_flux_clm
+     procedure, public :: BetrFluxStateReceive      => clm_betr_flux_state_receive
+     procedure, public :: CalcSmpL                  => calc_smp_l_clm
   end type betr_simulation_clm_type
 
   public :: create_betr_simulation_clm
@@ -143,16 +143,11 @@ contains
 
     lbj = betr_bounds%lbj; ubj = betr_bounds%ubj
 
-    betr_waterstate%h2osoi_liq_col => waterstate%h2osoi_liq_col
-    betr_waterstate%h2osoi_ice_col => waterstate%h2osoi_ice_col
-
-    betr_cnstate%isoilorder  => cnstate%isoilorder
-
     ! allocate the reaction types that may only be known to this
     ! simulation type.
     ! now call the base simulation init to continue initialization
     call this%BeTRInit(base_filename, namelist_buffer, &
-         betr_bounds, betr_waterstate, betr_cnstate)
+         betr_bounds, waterstate, cnstate)
 
   end subroutine CLMInit
 
@@ -235,12 +230,6 @@ contains
     betr_nlevsno = nlevsno
     betr_nlevtrc_soil = nlevtrc_soil
 
-    this%betr%cnstates%isoilorder => cnstate_vars%isoilorder
-
-    this%betr%carbonfluxes%annsum_npp_patch => carbonflux_vars%annsum_npp_patch
-    this%betr%carbonfluxes%agnpp_patch => carbonflux_vars%agnpp_patch
-    this%betr%carbonfluxes%bgnpp_patch => carbonflux_vars%bgnpp_patch
-
     betr_pft%wtcol => pft%wtcol
     betr_pft%column => pft%column
     betr_pft%itype => pft%itype
@@ -264,83 +253,28 @@ contains
     betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
     lbj = betr_bounds%lbj; ubj = betr_bounds%ubj
 
-    !assign waterstate
 
-    betr_waterstate_vars%h2osoi_liq_col    => waterstate_vars%h2osoi_liq_col
-    betr_waterstate_vars%h2osoi_ice_col    => waterstate_vars%h2osoi_ice_col
-
-    betr_waterstate_vars%h2osoi_liq_old    => waterstate_vars%h2osoi_liq_old
-    betr_waterstate_vars%h2osoi_ice_old    => waterstate_vars%h2osoi_ice_old
-    betr_waterstate_vars%h2osoi_liqvol_col => waterstate_vars%h2osoi_liqvol_col
-    betr_waterstate_vars%h2osoi_icevol_col => waterstate_vars%h2osoi_icevol_col
-    betr_waterstate_vars%h2osoi_vol_col    => waterstate_vars%h2osoi_vol_col
-    betr_waterstate_vars%air_vol_col       => waterstate_vars%air_vol_col
-    betr_waterstate_vars%finundated_col    => waterstate_vars%finundated_col
-    betr_waterstate_vars%rho_vap           => waterstate_vars%rho_vap
-    betr_waterstate_vars%rhvap_soi         => waterstate_vars%rhvap_soi
-    betr_waterstate_vars%smp_l_col         => waterstate_vars%smp_l_col
-    betr_waterstate_vars%frac_h2osfc_col   => waterstate_vars%frac_h2osfc_col
-
-    betr_waterflux_vars%qflx_adv_col       => waterflux_vars%qflx_adv_col
-    betr_waterflux_vars%qflx_infl_col      => waterflux_vars%qflx_infl_col
-    betr_waterflux_vars%qflx_surf_col      => waterflux_vars%qflx_surf_col
-    betr_waterflux_vars%qflx_rootsoi       => waterflux_vars%qflx_rootsoi
-    betr_waterflux_vars%qflx_gross_evap_soil_col  => waterflux_vars%qflx_gross_evap_soil_col
-    betr_waterflux_vars%qflx_gross_infl_soil_col  => waterflux_vars%qflx_gross_infl_soil_col
-    betr_waterflux_vars%qflx_rootsoi_col        => waterflux_vars%qflx_rootsoi_col
-    betr_waterflux_vars%qflx_drain_vr_col       => waterflux_vars%qflx_drain_vr_col
-    betr_waterflux_vars%qflx_totdrain_col       => waterflux_vars%qflx_totdrain_col
-    betr_waterflux_vars%qflx_dew_grnd_col       => waterflux_vars%qflx_dew_grnd_col
-    betr_waterflux_vars%qflx_dew_snow_col       => waterflux_vars%qflx_dew_snow_col
-    betr_waterflux_vars%qflx_sub_snow_vol_col   => waterflux_vars%qflx_sub_snow_vol_col
-    betr_waterflux_vars%qflx_sub_snow_col       => waterflux_vars%qflx_sub_snow_col
-    betr_waterflux_vars%qflx_h2osfc2topsoi_col  => waterflux_vars%qflx_h2osfc2topsoi_col
-    betr_waterflux_vars%qflx_snow2topsoi_col    => waterflux_vars%qflx_snow2topsoi_col
-    betr_waterflux_vars%qflx_tran_veg_patch     => waterflux_vars%qflx_tran_veg_patch
-
-    betr_temperature_vars%t_soisno_col        => temperature_vars%t_soisno_col
-    betr_temperature_vars%t_soi_10cm          => temperature_vars%t_soi_10cm
-    betr_temperature_vars%t_veg_patch         => temperature_vars%t_veg_patch
-
-    betr_soilhydrology_vars%fracice_col    => soilhydrology_vars%fracice_col
-    betr_soilhydrology_vars%zwts_col       => soilhydrology_vars%zwts_col
-    betr_soilhydrology_vars%qflx_bot_col   => soilhydrology_vars%qflx_bot_col
-
-    betr_atm2lnd_vars%forc_pbot_downscaled_col => atm2lnd_vars%forc_pbot_downscaled_col
-    betr_atm2lnd_vars%forc_t_downscaled_col => atm2lnd_vars%forc_t_downscaled_col
-
-    betr_canopystate_vars%altmax_col      => canopystate_vars%altmax_col
-    betr_canopystate_vars%altmax_lastyear_col   => canopystate_vars%altmax_lastyear_col
-    betr_canopystate_vars%lbl_rsc_h2o_patch     => canopystate_vars%lbl_rsc_h2o_patch
-    betr_canopystate_vars%elai_patch      => canopystate_vars%elai_patch
-
-    betr_chemstate_vars%soil_pH => chemstate_vars%soil_pH
-
-    betr_soilstate_vars%bsw_col  => soilstate_vars%bsw_col
-    betr_soilstate_vars%watsat_col => soilstate_vars%watsat_col
-    betr_soilstate_vars%eff_porosity_col => soilstate_vars%eff_porosity_col
-    betr_soilstate_vars%soilpsi_col  => soilstate_vars%soilpsi_col
-    betr_soilstate_vars%cellorg_col  => soilstate_vars%cellorg_col
-    betr_soilstate_vars%cellclay_col  => soilstate_vars%cellclay_col
-    betr_soilstate_vars%cellsand_col  => soilstate_vars%cellsand_col
-    betr_soilstate_vars%bd_col   => soilstate_vars%bd_col
-    betr_soilstate_vars%watfc_col  => soilstate_vars%watfc_col
-    betr_soilstate_vars%sucsat_col => soilstate_vars%sucsat_col
-    betr_soilstate_vars%rootfr_patch => soilstate_vars%rootfr_patch
+    call this%SetBiophysForcing(betr_bounds, &
+      cnstate_vars = cnstate_vars, &
+      carbonflux_vars=carbonflux_vars, &
+      waterstate_vars=waterstate_vars, &
+      waterflux_vars=waterflux_vars, &
+      temperature_vars=temperature_vars,&
+      soilhydrology_vars=soilhydrology_vars,&
+      atm2lnd_vars=atm2lnd_vars,&
+      canopystate_vars=canopystate_vars, &
+      chemstate_vars=chemstate_vars, &
+      soilstate_vars=soilstate_vars)
 
     call this%betr%step_without_drainage(betr_time, betr_bounds,   &
          this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp,  &
-         betr_atm2lnd_vars, betr_soilhydrology_vars, betr_soilstate_vars, &
-         betr_waterstate_vars, betr_waterflux_vars, betr_temperature_vars,  &
-         betr_chemstate_vars, this%betr%cnstates, betr_canopystate_vars, &
-         this%betr%carbonfluxes)
+         this%biophys_forc, this%biogeo_flux, this%biogeo_state)
 
 
   end subroutine CLMStepWithoutDrainage
 
   !---------------------------------------------------------------------------------
-  subroutine CLMStepWithDrainage(this, bounds, &
-       waterflux_vars, col)
+  subroutine CLMStepWithDrainage(this, bounds, col)
 
     use ColumnType, only : column_type
     use MathfuncMod, only : safe_div
@@ -357,7 +291,6 @@ contains
     ! !ARGUMENTS:
     class(betr_simulation_clm_type), intent(inout) :: this
     type(bounds_type), intent(in) :: bounds
-    type(waterflux_type), intent(in) :: waterflux_vars
     type(column_type), intent(in) :: col ! column type
 
     type(betr_waterflux_type)  :: betr_waterflux_vars
@@ -384,27 +317,9 @@ contains
     betr_bounds%begl = bounds%begl; betr_bounds%endl = bounds%endl
     betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
 
-    betr_waterflux_vars%qflx_adv_col       => waterflux_vars%qflx_adv_col
-    betr_waterflux_vars%qflx_infl_col      => waterflux_vars%qflx_infl_col
-    betr_waterflux_vars%qflx_surf_col      => waterflux_vars%qflx_surf_col
-    betr_waterflux_vars%qflx_rootsoi       => waterflux_vars%qflx_rootsoi
-    betr_waterflux_vars%qflx_gross_evap_soil_col  => waterflux_vars%qflx_gross_evap_soil_col
-    betr_waterflux_vars%qflx_gross_infl_soil_col  => waterflux_vars%qflx_gross_infl_soil_col
-    betr_waterflux_vars%qflx_rootsoi_col        => waterflux_vars%qflx_rootsoi_col
-    betr_waterflux_vars%qflx_drain_vr_col       => waterflux_vars%qflx_drain_vr_col
-    betr_waterflux_vars%qflx_totdrain_col       => waterflux_vars%qflx_totdrain_col
-    betr_waterflux_vars%qflx_dew_grnd_col       => waterflux_vars%qflx_dew_grnd_col
-    betr_waterflux_vars%qflx_dew_snow_col       => waterflux_vars%qflx_dew_snow_col
-    betr_waterflux_vars%qflx_sub_snow_vol_col   => waterflux_vars%qflx_sub_snow_vol_col
-    betr_waterflux_vars%qflx_sub_snow_col       => waterflux_vars%qflx_sub_snow_col
-    betr_waterflux_vars%qflx_h2osfc2topsoi_col  => waterflux_vars%qflx_h2osfc2topsoi_col
-    betr_waterflux_vars%qflx_snow2topsoi_col    => waterflux_vars%qflx_snow2topsoi_col
-    betr_waterflux_vars%qflx_tran_veg_patch     => waterflux_vars%qflx_tran_veg_patch
-
-
     call this%betr%step_with_drainage(betr_bounds,   &
          this%num_soilc, this%filter_soilc, this%jtops, &
-         betr_waterflux_vars)
+         this%biogeo_flux)
 
   end subroutine CLMStepWithDrainage
 
@@ -455,24 +370,11 @@ contains
     betr_bounds%begl = bounds%begl; betr_bounds%endl = bounds%endl
     betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
 
-    !assign waterstate
-    betr_waterstate_vars%h2osoi_liq_col    => waterstate_vars%h2osoi_liq_col
-    betr_waterstate_vars%h2osoi_ice_col    => waterstate_vars%h2osoi_ice_col
-
-    betr_waterstate_vars%h2osoi_liq_old    => waterstate_vars%h2osoi_liq_old
-    betr_waterstate_vars%h2osoi_ice_old    => waterstate_vars%h2osoi_ice_old
-    betr_waterstate_vars%h2osoi_liqvol_col => waterstate_vars%h2osoi_liqvol_col
-    betr_waterstate_vars%h2osoi_icevol_col => waterstate_vars%h2osoi_icevol_col
-    betr_waterstate_vars%h2osoi_vol_col    => waterstate_vars%h2osoi_vol_col
-    betr_waterstate_vars%air_vol_col       => waterstate_vars%air_vol_col
-    betr_waterstate_vars%finundated_col    => waterstate_vars%finundated_col
-    betr_waterstate_vars%rho_vap           => waterstate_vars%rho_vap
-    betr_waterstate_vars%rhvap_soi         => waterstate_vars%rhvap_soi
-    betr_waterstate_vars%smp_l_col         => waterstate_vars%smp_l_col
-    betr_waterstate_vars%frac_h2osfc_col   => waterstate_vars%frac_h2osfc_col
+    call this%SetBiophysForcing(betr_bounds, &
+      waterstate_vars=waterstate_vars)
 
     call this%betr%diagnose_dtracer_freeze_thaw(bounds, num_nolakec, filter_nolakec,  &
-      betr_waterstate_vars)
+      this%biophys_forc)
 
   end subroutine diagnose_dtracer_freeze_thaw_clm
 
@@ -485,8 +387,8 @@ contains
 
     use ColumnType, only : col
     use LandunitType, only : lun
-    use BeTR_WaterfluxType, only : betr_waterflux_type
-    use BeTR_WaterstateType, only : betr_waterstate_type
+    use WaterfluxType, only : waterflux_type
+    use WaterstateType, only : waterstate_type
     use clm_varcon, only : denh2o,spval
     use landunit_varcon, only : istsoil, istcrop
     use betr_decompMod    , only : betr_bounds_type
@@ -498,11 +400,15 @@ contains
     type(betr_bounds_type), intent(in) :: bounds
     integer, intent(in) :: num_hydrologyc ! number of column soil points in column filter_soilc
     integer, intent(in) :: filter_soilc_hydrologyc(:) ! column filter_soilc for soil points
-    type(betr_waterstate_type), intent(in) :: waterstate_vars
-    type(betr_waterflux_type), intent(in) :: waterflux_vars
+    type(waterstate_type), intent(in) :: waterstate_vars
+    type(waterflux_type), intent(in) :: waterflux_vars
 
-  call this%betr%calc_dew_sub_flux(betr_time, bounds, num_hydrologyc, filter_soilc_hydrologyc, &
-       waterstate_vars, waterflux_vars, this%betr%tracers, this%betr%tracerfluxes, this%betr%tracerstates)
+    call this%SetBiophysForcing(bounds, &
+      waterstate_vars=waterstate_vars, &
+      waterflux_vars=waterflux_vars)
+
+   call this%betr%calc_dew_sub_flux(betr_time, bounds, num_hydrologyc, filter_soilc_hydrologyc, &
+       this%biophys_forc, this%betr%tracers, this%betr%tracerfluxes, this%betr%tracerstates)
 
   end subroutine calc_dew_sub_flux_clm
 

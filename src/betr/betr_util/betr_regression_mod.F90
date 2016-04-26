@@ -185,7 +185,7 @@ contains
     real(r8), intent(in) :: data(:)
 
     integer :: cell_increment, num_cells, cell
-    real(r8) :: val
+    real(r8) :: val, local_val
 
     ! FIXME(bja, 201603) cfg/ini format limits the characters that can
     ! be use in section names. We need to sanitize the names!
@@ -215,7 +215,9 @@ contains
        cell_increment = int(size(data) / num_cells)
 
        do cell = 1, num_cells, cell_increment
-          write(this%output, '("cell ", i4, " = ", e21.13)') cell, data(cell)
+          local_val = data(cell)
+          if(abs(local_val)<1.e-50_r8)local_val=0._r8
+          write(this%output, '("cell ", i4, " = ", e21.13)') cell, local_val
        end do
     write(this%output, '(a)')
     end if
