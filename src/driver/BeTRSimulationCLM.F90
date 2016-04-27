@@ -45,8 +45,6 @@ module BeTRSimulationCLM
      procedure, public :: CalcDewSubFlux => CLMCalcDewSubFlux
      procedure, public :: BetrFluxStateReceive      => CLMBetrFluxStateReceive
      procedure, public :: CalcSmpL                  => CLMCalcSmpL
-     procedure, public :: PreDiagSoilColWaterFlux   => clm_pre_diagnose_soilcol_water_flux
-     procedure, public :: DiagAdvWaterFlux   => clm_diagnose_advect_water_flux
   end type betr_simulation_clm_type
 
   public :: create_betr_simulation_clm
@@ -529,71 +527,5 @@ contains
 
     end associate
   end subroutine clm_h2oiso_consistency_check
-  !------------------------------------------------------------------------
 
-  subroutine clm_pre_diagnose_soilcol_water_flux(this, bounds, num_nolakec, filter_nolakec, waterstate_vars)
-
-  use WaterStateType, only : waterstate_type
-  implicit none
-
-  class(betr_simulation_clm_type), intent(inout) :: this
-   type(bounds_type)      , intent(in)    :: bounds
-   integer                , intent(in)    :: num_nolakec                        ! number of column non-lake points in column filter
-   integer                , intent(in)    :: filter_nolakec(:)                  ! column filter for non-lake points
-   type(waterstate_type), intent(in) :: waterstate_vars
-
-   type(betr_bounds_type)     :: betr_bounds
-
-
-    betr_bounds%lbj  = 1          ; betr_bounds%ubj  = betr_nlevsoi
-    betr_bounds%begp = bounds%begp; betr_bounds%endp = bounds%endp
-    betr_bounds%begc = bounds%begc; betr_bounds%endc = bounds%endc
-    betr_bounds%begl = bounds%begl; betr_bounds%endl = bounds%endl
-    betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
-
-    call this%SetBiophysForcing(betr_bounds,  waterstate_vars=waterstate_vars)
-
-   call this%betr%pre_diagnose_soilcol_water_flux(betr_bounds, num_nolakec,&
-     filter_nolakec, this%biophys_forc)
-  end subroutine clm_pre_diagnose_soilcol_water_flux
-
-
-  !------------------------------------------------------------------------
-  subroutine clm_diagnose_advect_water_flux(this, betr_time, bounds, num_hydrologyc, &
-    filter_hydrologyc, num_urbanc, filter_urbanc,waterstate_vars,soilhydrology_vars, waterflux_vars)
-
-    use WaterfluxType, only : waterflux_type
-    use WaterStateType, only : Waterstate_Type
-    use SoilHydrologyType, only : soilhydrology_type
-  implicit none
-  class(betr_simulation_clm_type), intent(inout) :: this
-  class(betr_time_type), intent(in) :: betr_time
-   type(bounds_type)      , intent(in)    :: bounds
-   integer                , intent(in)    :: num_hydrologyc                        ! number of column non-lake points in column filter
-   integer                , intent(in)    :: filter_hydrologyc(:)                  ! column filter for non-lake points
-   integer                , intent(in)    :: num_urbanc                        ! number of column non-lake points in column filter
-   integer                , intent(in)    :: filter_urbanc(:)                  ! column filter for non-lake points
-   type(waterstate_type), intent(in) :: waterstate_vars
-   type(soilhydrology_type), intent(in) :: soilhydrology_vars
-   type(waterflux_type),  intent(inout) :: waterflux_vars
-
-   type(betr_bounds_type)     :: betr_bounds
-
-    betr_bounds%lbj  = 1          ; betr_bounds%ubj  = betr_nlevsoi
-    betr_bounds%begp = bounds%begp; betr_bounds%endp = bounds%endp
-    betr_bounds%begc = bounds%begc; betr_bounds%endc = bounds%endc
-    betr_bounds%begl = bounds%begl; betr_bounds%endl = bounds%endl
-    betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
-
-  call this%SetBiophysForcing(betr_bounds,  waterstate_vars=waterstate_vars, &
-      waterflux_vars=waterflux_vars, soilhydrology_vars = soilhydrology_vars)
-
-  call this%betr%diagnose_advect_water_flux(betr_time, &
-     betr_bounds, num_hydrologyc, filter_hydrologyc, num_urbanc, filter_urbanc, &
-     this%biophys_forc, this%biogeo_flux)
-
-  !now assign back waterflux_vars
-  call this%SendBiogeoFlux(betr_bounds, waterflux_vars=waterflux_vars)
-
-  end subroutine clm_diagnose_advect_water_flux
 end module BeTRSimulationCLM

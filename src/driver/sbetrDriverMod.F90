@@ -126,6 +126,11 @@ contains
        atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars             , &
        waterflux_vars, temperature_vars, chemstate_vars, simulation%jtops)
 
+  !calculate advective velocity
+  call calc_qadv(forcing_data, ubj, record, &
+      simulation%num_soilc, simulation%filter_soilc, &
+      time_vars, waterstate_vars, waterflux_vars)
+
   call  simulation%Init(base_filename, namelist_buffer, bounds, waterstate_vars, cnstate_vars)
 
   record = -1
@@ -133,6 +138,10 @@ contains
   call time_vars%proc_initstep()
   do
     record = record + 1
+
+    call simulation%PreDiagSoilColWaterFlux(bounds, simulation%num_soilc, &
+      simulation%filter_soilc, waterstate_vars)
+
     !set envrionmental forcing by reading foring data: temperature, moisture, atmospheric resistance
     !from either user specified file or clm history file
 
@@ -142,9 +151,13 @@ contains
       waterflux_vars, temperature_vars, chemstate_vars, simulation%jtops)
 
     !calculate advective velocity
-    call calc_qadv(forcing_data, ubj, record, &
-         simulation%num_soilc, simulation%filter_soilc, &
-         time_vars, waterstate_vars, waterflux_vars)
+    !call calc_qadv(forcing_data, ubj, record, &
+    !     simulation%num_soilc, simulation%filter_soilc, &
+    !     time_vars, waterstate_vars, waterflux_vars)
+
+    call simulation%DiagAdvWaterFlux(time_vars, bounds, &
+      simulation%num_soilc, simulation%filter_soilc, &
+      waterstate_vars, soilhydrology_vars, waterflux_vars)
 
     !no calculation in the first step
     if(record==0)cycle
@@ -303,33 +316,18 @@ end subroutine sbetrBGC_driver
 
       !now obtain the advective fluxes between different soil layers
       !dstorage = (h2o_new-h2o)/dt = qin-qout-qtran_dep
-    if (record > 0) then
+    if (record >= 0) then
        do fc = 1, numf
           c = filter(fc)
 
           do j = ubj, 1, -1
-             dmass = (waterstate_vars%h2osoi_ice_col(c,j) + waterstate_vars%h2osoi_liq_col(c,j)) - &
-                  (waterstate_vars%h2osoi_ice_old(c,j) + waterstate_vars%h2osoi_liq_old(c,j))
              if (j == ubj) then
-                waterflux_vars%qflx_adv_col(c,j) = forcing_data%discharge(tstep)
-                !the following is for first step initialization
-                if (dmass == 0._r8) then
-                   ! NOTE(bja, 201604) Not sure what this is suppose
-                   ! to be doing, but it's incorrect.
-                   !
-                   ! 1) h2osoi_liq_old doesn't appear to have been
-                   ! initialized to anything other than a nan.
-                   !
-                   ! 2) dmass == 0 is a legitimate initial condition,
-                   ! e.g. saturated soil colum. Zeroing out the
-                   ! discharge isn't correct and gives zero flux for
-                   ! all time when the root-soil exchange is zero.
-
-                   !X!waterflux_vars%qflx_adv_col(c,j) = 0._r8
-                end if
+                waterflux_vars%qflx_adv_col(c,j) = forcing_data%discharge(tstep) * 1.e-3_r8
              else
+                dmass = (waterstate_vars%h2osoi_ice_col(c,j+1) + waterstate_vars%h2osoi_liq_col(c,j+1)) - &
+                  (waterstate_vars%h2osoi_ice_old(c,j+1) + waterstate_vars%h2osoi_liq_old(c,j+1))
                 waterflux_vars%qflx_adv_col(c,j) = dmass * 1.e-3_r8 / dtime + &
-                     waterflux_vars%qflx_adv_col(c,j+1) + waterflux_vars%qflx_rootsoi_col(c,j)
+                     waterflux_vars%qflx_adv_col(c,j+1) + waterflux_vars%qflx_rootsoi_col(c,j+1)
              end if
           end do
           waterflux_vars%qflx_infl_col(c) = forcing_data%infiltration(tstep)

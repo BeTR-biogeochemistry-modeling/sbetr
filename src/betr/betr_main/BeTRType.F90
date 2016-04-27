@@ -696,7 +696,7 @@ contains
 
    !------------------------------------------------------------------------
    subroutine diagnose_advect_water_flux(this, betr_time, &
-        bounds, num_hydrologyc, filter_hydrologyc, num_urbanc, filter_urbanc, &
+        bounds, num_hydrologyc, filter_hydrologyc, &
         biophysforc, biogeo_flux)
    !
    ! DESCRIPTION
@@ -711,8 +711,6 @@ contains
    type(bounds_type)       , intent(in)    :: bounds               ! bounds
    integer                 , intent(in)    :: num_hydrologyc       ! number of column soil points in column filter
    integer                 , intent(in)    :: filter_hydrologyc(:) ! column filter for soil points
-   integer                 , intent(in)    :: num_urbanc           ! number of column urban points in column filter
-   integer                 , intent(in)    :: filter_urbanc(:)     ! column filter for urban points
    type(betr_biogeophys_input_type), intent(in)    :: biophysforc
    type(betr_biogeo_flux_type), intent(inout) :: biogeo_flux
 
@@ -723,9 +721,6 @@ contains
    real(r8):: infl_tmp
    real(r8):: scal
    logical :: tf
-
-   if (num_urbanc > 0) continue
-   if (size(filter_urbanc) > 0) continue
 
    associate(                                                          & !
      h2osoi_liq          =>    biophysforc%h2osoi_liq_col            , &
@@ -748,7 +743,8 @@ contains
        if(j==nlevsoi)then
          qflx_adv(c,j) = qflx_bot(c) * 1.e-3_r8                                 ! m/s
        else
-         qflx_adv(c,j) = 1.e-3_r8 * (h2osoi_liq(c,j+1)-this%h2osoi_liq_copy(c,j+1))/dtime + qflx_adv(c,j+1) + qflx_rootsoi(c,j+1)
+         qflx_adv(c,j) = 1.e-3_r8 * (h2osoi_liq(c,j+1)-this%h2osoi_liq_copy(c,j+1))/dtime &
+           + qflx_adv(c,j+1) + qflx_rootsoi(c,j+1)
        endif
      enddo
    enddo
@@ -788,7 +784,6 @@ contains
      endif
      qflx_adv(c,0) = qflx_gross_infl_soil(c) *1.e-3_r8  !surface infiltration
    enddo
-
    end associate
    end subroutine diagnose_advect_water_flux
 

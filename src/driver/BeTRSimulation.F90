@@ -22,6 +22,7 @@ module BeTRSimulation
   use BeTR_biogeophysInputType, only : betr_biogeophys_input_type
   use BeTR_biogeoStateType, only : betr_biogeo_state_type
   use BeTR_biogeoFluxType, only : betr_biogeo_flux_type
+  use BeTR_TimeMod, only : betr_time_type
   implicit none
 
   private
@@ -56,6 +57,8 @@ module BeTRSimulation
      procedure, public :: Init => BeTRSimulationInit
      procedure, public :: RestartInit => BeTRSimulationRestartInit
      procedure, public :: ConsistencyCheck => BeTRSimulationConsistencyCheck
+     procedure, public :: PreDiagSoilColWaterFlux => BeTRSimulationPreDiagSoilColWaterFlux
+     procedure, public :: DiagAdvWaterFlux  => BeTRSimulationDiagAdvWaterFlux
      procedure, public :: StepWithoutDrainage => BeTRSimulationStepWithoutDrainage
      procedure, public :: StepWithDrainage => BeTRSimulationStepWithDrainage
      procedure, public :: BeginMassBalanceCheck => BeTRSimulationBeginMassBalanceCheck
@@ -753,6 +756,7 @@ contains
   if(present(waterflux_vars))then
     do c = begc, endc
       waterflux_vars%qflx_infl_col(c) = this%biogeo_flux%qflx_infl_col(c)
+      waterflux_vars%qflx_adv_col(c,lbj-1:ubj) = this%biogeo_flux%qflx_adv_col(c,lbj-1:ubj)
       waterflux_vars%qflx_totdrain_col(c) = this%biogeo_flux%qflx_totdrain_col(c)
       waterflux_vars%qflx_gross_evap_soil_col(c) = this%biogeo_flux%qflx_gross_evap_soil_col(c)
       waterflux_vars%qflx_gross_infl_soil_col(c) = this%biogeo_flux%qflx_gross_infl_soil_col(c)
@@ -761,4 +765,74 @@ contains
   endif
 
   end subroutine BeTRSimulationSendBiogeoFlux
+
+  !------------------------------------------------------------------------
+  subroutine BeTRSimulationPreDiagSoilColWaterFlux(this, bounds, num_nolakec, filter_nolakec, waterstate_vars)
+
+  use WaterStateType, only : waterstate_type
+  implicit none
+
+  class(betr_simulation_type), intent(inout) :: this
+   type(bounds_type)      , intent(in)    :: bounds
+   integer                , intent(in)    :: num_nolakec                        ! number of column non-lake points in column filter
+   integer                , intent(in)    :: filter_nolakec(:)                  ! column filter for non-lake points
+   type(waterstate_type), intent(in) :: waterstate_vars
+
+   type(betr_bounds_type)     :: betr_bounds
+
+
+    betr_bounds%lbj  = 1          ; betr_bounds%ubj  = betr_nlevsoi
+    betr_bounds%begp = bounds%begp; betr_bounds%endp = bounds%endp
+    betr_bounds%begc = bounds%begc; betr_bounds%endc = bounds%endc
+    betr_bounds%begl = bounds%begl; betr_bounds%endl = bounds%endl
+    betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
+
+    call this%SetBiophysForcing(betr_bounds,  waterstate_vars=waterstate_vars)
+
+   call this%betr%pre_diagnose_soilcol_water_flux(betr_bounds, num_nolakec, &
+     filter_nolakec, this%biophys_forc)
+
+  end subroutine BeTRSimulationPreDiagSoilColWaterFlux
+
+  !------------------------------------------------------------------------
+  subroutine BeTRSimulationDiagAdvWaterFlux(this, betr_time, bounds, num_hydrologyc, &
+    filter_hydrologyc, waterstate_vars, soilhydrology_vars, waterflux_vars)
+
+  !DESCRIPTION
+  !
+  !
+  ! USES
+  !
+    use WaterfluxType, only : waterflux_type
+    use WaterStateType, only : Waterstate_Type
+    use SoilHydrologyType, only : soilhydrology_type
+  implicit none
+  class(betr_simulation_type), intent(inout) :: this
+  class(betr_time_type), intent(in) :: betr_time
+   type(bounds_type)      , intent(in)    :: bounds
+   integer                , intent(in)    :: num_hydrologyc                        ! number of column non-lake points in column filter
+   integer                , intent(in)    :: filter_hydrologyc(:)                  ! column filter for non-lake points
+   type(waterstate_type), intent(in) :: waterstate_vars
+   type(soilhydrology_type), intent(in) :: soilhydrology_vars
+   type(waterflux_type),  intent(inout) :: waterflux_vars
+
+   type(betr_bounds_type)     :: betr_bounds
+
+    betr_bounds%lbj  = 1          ; betr_bounds%ubj  = betr_nlevsoi
+    betr_bounds%begp = bounds%begp; betr_bounds%endp = bounds%endp
+    betr_bounds%begc = bounds%begc; betr_bounds%endc = bounds%endc
+    betr_bounds%begl = bounds%begl; betr_bounds%endl = bounds%endl
+    betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
+
+  call this%SetBiophysForcing(betr_bounds,  waterstate_vars=waterstate_vars, &
+      waterflux_vars=waterflux_vars, soilhydrology_vars = soilhydrology_vars)
+
+  call this%betr%diagnose_advect_water_flux(betr_time, &
+     betr_bounds, num_hydrologyc, filter_hydrologyc,  &
+     this%biophys_forc, this%biogeo_flux)
+
+  !now assign back waterflux_vars
+  call this%SendBiogeoFlux(betr_bounds, waterflux_vars=waterflux_vars)
+
+  end subroutine BeTRSimulationDiagAdvWaterFlux
 end module BeTRSimulation

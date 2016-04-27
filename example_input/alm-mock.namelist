@@ -8,6 +8,9 @@
 
 
 &forcing_inparm
-  grid_filename = "sierra_grid.nc"
   forcing_filename = 'sierra_halfhour_full_year_clmforc.nc'
+/
+
+&betr_grid
+  grid_data_filename = "sierra_grid.nc"
 /

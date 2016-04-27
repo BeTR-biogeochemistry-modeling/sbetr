@@ -224,7 +224,7 @@ contains
     !X!write(*, *) 'Reading QCHARGE'
     call ncd_getvar(ncf_in_forc, 'QCHARGE', data_1d)
     do j1 =1, this%num_time
-       this%qbot(j1) = data_1d(this%num_columns, j1) * 1.e-3_r8  !convert int m/s
+       this%qbot(j1) = data_1d(this%num_columns, j1)  ! mm/s
     enddo
 
     !X!write(*, *) 'Reading QFLX_ROOTSOI'
@@ -369,6 +369,7 @@ contains
        c = filter(fc)
        jtops(c) = 1
        soilhydrology_vars%zwts_col(c) = 10._r8
+       soilhydrology_vars%qflx_bot_col = this%discharge(tstep)
        atm2lnd_vars%forc_pbot_downscaled_col(c) = this%pbot(tstep)  ! 1 atmos
        atm2lnd_vars%forc_t_downscaled_col(c)    = this%tbot(tstep)  ! 2 atmos temperature
     enddo
@@ -410,6 +411,8 @@ contains
 
        waterflux_vars%qflx_snow2topsoi_col(c) = 0._r8
        waterflux_vars%qflx_h2osfc2topsoi_col(c) = 0._r8
+       waterflux_vars%qflx_gross_infl_soil_col(c) = 0._r8
+       waterflux_vars%qflx_gross_evap_soil_col(c) = 0._r8
     enddo
 
 
