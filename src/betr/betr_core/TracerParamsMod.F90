@@ -80,8 +80,6 @@ contains
     ! compute soil tortuosity for gasesous diffusion
 
     ! !USES:
-    use BeTR_SoilStateType           , only : betr_soilstate_type
-    use BeTR_WaterStateType     , only : betr_waterstate_type
 
     implicit none
     !arguments
@@ -123,9 +121,6 @@ contains
     ! DESCRIPTIONS
     ! compute soil tortuosity for aquesous diffusion
     !
-
-    use BeTR_SoilStateType         , only : betr_soilstate_type
-    use BeTR_WaterStateType   , only : betr_waterstate_type
 
     implicit none
 
@@ -175,9 +170,7 @@ contains
     !D_bulk=(airvol*D_g*tau_g+bunsencef_col*h2osoi_liqvol*D_w*tau_w)
 
     ! !USES:
-    use BeTR_WaterStateType   , only : betr_waterstate_type
     use BeTRTracerType        , only : betrtracer_type
-    use BeTR_CanopyStateType  , only : betr_canopystate_type
 
     type(bounds_type)          , intent(in) :: bounds                                  ! bounds
     integer                    , intent(in) :: numf                                    ! number of columns in column filter
@@ -531,7 +524,6 @@ contains
 
    !USES:
    use BeTRTracerType     , only : betrtracer_type
-   use BeTR_WaterStateType, only : betr_waterstate_type
    use TracerCoeffType    , only : tracercoeff_type
    use betr_varcon        , only : denh2o => bdenh2o, denice => bdenice
    implicit none
@@ -1097,12 +1089,7 @@ contains
    ! set parameters for the dual phase diffusion
    !
    use TracerCoeffType    , only : tracercoeff_type
-   use BeTR_WaterStateType   , only : betr_waterstate_type
-   use BeTR_SoilStateType      , only : betr_soilstate_type
-   use BeTR_TemperatureType    , only : betr_temperature_type
-   use BeTR_ChemStateType      , only : betr_chemstate_type
    use BeTRTracerType     , only : betrtracer_type
-   use BeTR_CanopyStateType    , only : betr_canopystate_type
 
    implicit none
 
@@ -1153,10 +1140,6 @@ contains
    ! DESCRIPTION
    ! set parameters for phase conversion
    use TracerCoeffType    , only : tracercoeff_type
-   use BeTR_WaterStateType   , only : betr_waterstate_type
-   use BeTR_SoilStateType      , only : betr_soilstate_type
-   use BeTR_TemperatureType    , only : betr_temperature_type
-   use BeTR_ChemStateType      , only : betr_chemstate_type
    use BeTRTracerType     , only : betrtracer_type
    implicit none
    type(bounds_type),      intent(in) :: bounds  ! bounds
@@ -1217,7 +1200,6 @@ contains
    ! \frac{\parital m}{\partial t}+\frac{V*m}{\partial z} = 0
    !where m = C*vsm, therefore, V=ql/vsm
    !
-   use BeTR_WaterfluxType    , only : betr_waterflux_type
    use TracerBoundaryCondType, only : tracerboundarycond_type
    use BeTRTracerType        , only : betrtracer_type
    use betr_varcon           , only : denh2o  => bdenh2o
@@ -1436,9 +1418,7 @@ contains
     !
     use tracer_varcon      , only : nlevsoi  => betr_nlevsoi
     use betr_varcon        , only : tfrz => btfrz
-    use BeTR_SoilStateType      , only : betr_soilstate_type
-    use BeTR_WaterstateType, only : betr_waterstate_type
-    use BeTR_TemperatureType    , only : betr_temperature_type
+   implicit none
     ! !ARGUMENTS:
     type(bounds_type)      , intent(in)   :: bounds
     integer                , intent(in)   :: numf                ! number of column soil points in column filter
@@ -1513,13 +1493,10 @@ contains
   ! calculate aerenchyma conductance (m/s)
   use betr_varcon           , only : tfrz => btfrz, rpi => brpi
   use BeTR_pftvarconType    , only : pftvarcon => betr_pftvarcon
-  use BeTR_CarbonFluxType   , only : betr_carbonflux_type
-  use BeTR_CanopyStateType       , only : betr_canopystate_type
   use BetrTracerType        , only : betrtracer_type
   use BeTR_aerocondType    , only  : betr_aerecond_type
   use tracercoeffType       , only : tracercoeff_type
   use tracer_varcon         , only : nlevsoi  => betr_nlevsoi
-  use BeTR_TemperatureType       , only : betr_temperature_type
   use MathfuncMod           , only : safe_div
   use betr_ctrl            , only : betr_use_cn
   implicit none
@@ -1658,7 +1635,6 @@ contains
     ! !USES:
     use BeTR_TimeMod, only : betr_time_type
     use betr_varcon                  , only : secspday => bsecspday
-    use BeTR_CarbonFluxType          , only : betr_carbonflux_type
     use tracercoeffType              , only : tracercoeff_type
     use BeTR_aerocondType            , only : betr_aerecond_type
     !

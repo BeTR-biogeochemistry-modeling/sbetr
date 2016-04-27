@@ -273,7 +273,6 @@ module BGCReactionsMod
        use BeTR_landvarconType      , only : betr_landvarcon
        use PlantSoilBGCMod          , only : plant_soilbgc_type
        use EcophysConType           , only : ecophyscon_type
-       use BeTR_CNStateType         , only : betr_cnstate_type
 
 
        !

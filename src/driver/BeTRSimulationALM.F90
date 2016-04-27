@@ -14,7 +14,6 @@ module BeTRSimulationALM
   use BeTRSimulation  , only : betr_simulation_type
   use decompMod       , only : bounds_type
   use BeTRSimulation  , only : betr_simulation_type
-  use BeTR_CNStateType, only : betr_cnstate_type
   use EcophysConType  , only : ecophyscon_type
   use tracer_varcon, only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
   use BeTR_PatchType, only : betr_pft
@@ -39,6 +38,7 @@ module BeTRSimulationALM
      procedure, public :: BetrFluxStateReceive      => ALMBetrFluxStateReceive
      procedure, public :: CalcSmpL                  => ALMCalcSmpL
      procedure, public :: BetrPlantSoilBGCSend      => ALMBetrPlantSoilBGCSend
+     procedure, public :: PreDiagSoilColWaterFlux   => Alm_pre_diagnose_soilcol_water_flux
   end type betr_simulation_alm_type
 
   public :: create_betr_simulation_alm
@@ -83,8 +83,6 @@ contains
     use BeTR_ColumnType, only : betr_col
     use BeTR_LandunitType,only : betr_lun
     use BeTR_pftvarconType, only : betr_pftvarcon
-    use BeTR_WaterStateType, only : betr_waterstate_type
-    use BeTR_CNStateType, only : betr_cnstate_type
     use BeTR_landvarconType, only : betr_landvarcon
     use BeTR_decompMod              , only : betr_bounds_type
 
@@ -100,8 +98,6 @@ contains
 
     !temporary variables
     type(betr_bounds_type)     :: betr_bounds
-    type(betr_waterstate_type) :: betr_waterstate
-    type(betr_cnstate_type) :: betr_cnstate
     integer :: lbj, ubj
 
     !grid size
@@ -162,20 +158,11 @@ contains
     use BGCReactionsMod, only : bgc_reaction_type
     use atm2lndType, only : atm2lnd_type
     use SoilHydrologyType, only : soilhydrology_type
-    use BeTR_CarbonFluxType, only : betr_carbonflux_type
     use CNStateType, only : cnstate_type
     use CNCarbonFluxType, only : carbonflux_type
     use CanopyStateType, only : canopystate_type
 
-    use BeTR_WaterstateType   , only : betr_waterstate_type
-    use BeTR_WaterfluxType    , only : betr_waterflux_type
-    use BeTR_TemperatureType, only : betr_temperature_type
-    use BeTR_SoilHydrologyType, only : betr_soilhydrology_type
-    use BeTR_atm2lndType, only : betr_atm2lnd_type
 
-    use BeTR_CanopyStateType, only : betr_canopystate_type
-    use BeTR_ChemStateType, only : betr_chemstate_type
-    use BeTR_SoilStateType, only : betr_soilstate_type
     use BeTR_TimeMod, only : betr_time_type
     use tracer_varcon, only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
     use PatchType, only : pft
@@ -203,16 +190,6 @@ contains
     type(carbonflux_type), intent(in) :: carbonflux_vars
     type(waterflux_type), intent(inout) :: waterflux_vars
 
-    !temporary variables
-    !temporary variables
-    type(betr_waterflux_type)  :: betr_waterflux_vars
-    type(betr_waterstate_type)  :: betr_waterstate_vars
-    type(betr_temperature_type):: betr_temperature_vars
-    type(betr_soilhydrology_type) :: betr_soilhydrology_vars
-    type(betr_atm2lnd_type) :: betr_atm2lnd_vars
-    type(betr_canopystate_type)  :: betr_canopystate_vars
-    type(betr_chemstate_type) :: betr_chemstate_vars
-    type(betr_soilstate_type) :: betr_soilstate_vars ! column physics variable
     type(betr_bounds_type)     :: betr_bounds
 
 
@@ -272,7 +249,6 @@ contains
 
     use betr_decompMod, only : betr_bounds_type
     use tracer_varcon, only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
-    use BeTR_WaterfluxType    , only : betr_waterflux_type
 
     implicit none
 
@@ -282,7 +258,6 @@ contains
     type(column_type), intent(in) :: col ! column type
 
     !temporary variables
-    type(betr_waterflux_type)  :: betr_waterflux_vars
     type(betr_bounds_type)     :: betr_bounds
     integer  :: lbj, ubj ! lower and upper bounds, make sure they are > 0
 
@@ -351,7 +326,6 @@ contains
   use ColumnType            , only : column_type
   use LandunitType          , only : landunit_type
   use WaterStateType        , only : waterstate_type
-  use BeTR_WaterstateType, only : betr_waterstate_type
   !
   ! Arguments
   implicit none
@@ -364,7 +338,6 @@ contains
   type(column_type)      , intent(in)    :: col                                ! column type
 
   !temporary variables
-  type(betr_waterstate_type)  :: betr_waterstate_vars
   type(betr_bounds_type)     :: betr_bounds
 
   betr_col%landunit => col%landunit
@@ -507,5 +480,32 @@ contains
   end subroutine ALMCalcSmpL
 
 
+  !------------------------------------------------------------------------
+
+  subroutine alm_pre_diagnose_soilcol_water_flux(this, bounds, num_nolakec, filter_nolakec, waterstate_vars)
+
+  use WaterStateType, only : waterstate_type
+  implicit none
+
+  class(betr_simulation_alm_type), intent(inout) :: this
+   type(bounds_type)      , intent(in)    :: bounds
+   integer                , intent(in)    :: num_nolakec                        ! number of column non-lake points in column filter
+   integer                , intent(in)    :: filter_nolakec(:)                  ! column filter for non-lake points
+   type(waterstate_type), intent(in) :: waterstate_vars
+
+   type(betr_bounds_type)     :: betr_bounds
+
+
+    betr_bounds%lbj  = 1          ; betr_bounds%ubj  = betr_nlevsoi
+    betr_bounds%begp = bounds%begp; betr_bounds%endp = bounds%endp
+    betr_bounds%begc = bounds%begc; betr_bounds%endc = bounds%endc
+    betr_bounds%begl = bounds%begl; betr_bounds%endl = bounds%endl
+    betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
+
+    call this%SetBiophysForcing(betr_bounds,  waterstate_vars=waterstate_vars)
+
+   call this%betr%pre_diagnose_soilcol_water_flux(betr_bounds, num_nolakec, &
+     filter_nolakec, this%biophys_forc)
+  end subroutine alm_pre_diagnose_soilcol_water_flux
 
 end module BeTRSimulationALM

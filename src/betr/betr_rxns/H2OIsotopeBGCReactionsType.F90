@@ -216,8 +216,6 @@ module H2OIsotopeBGCReactionsType
   use bshr_log_mod           , only : errMsg => shr_log_errMsg
   use BeTR_decompMod        , only : betr_bounds_type
   use BeTRTracerType        , only : betrtracer_type
-  use BeTR_WaterfluxType    , only : betr_waterflux_type
-  use BeTR_atm2lndType       , only : betr_atm2lnd_type
   use betr_varcon           , only : denh2o  => bdenh2o
   use betr_varcon           , only : rgas => brgas
   use BeTR_biogeoFluxType, only : betr_biogeo_flux_type
@@ -289,7 +287,6 @@ module H2OIsotopeBGCReactionsType
   use tracerstatetype          , only : tracerstate_type
   use tracercoeffType          , only : tracercoeff_type
   use BetrTracerType           , only : betrtracer_type
-  use BeTR_CNStateType         , only : betr_cnstate_type
   use PlantSoilBGCMod          , only : plant_soilbgc_type
   use TracerBoundaryCondType   , only : tracerboundarycond_type
   use BeTR_ColumnType          , only : col => betr_col
@@ -515,7 +512,6 @@ module H2OIsotopeBGCReactionsType
     use BeTR_decompMod           , only : betr_bounds_type
     use BeTRTracerType           , only : BeTRTracer_Type
     use tracerstatetype          , only : tracerstate_type
-    use BeTR_WaterstateType      , only : betr_waterstate_type
     use BeTR_PatchType           , only : pft  => betr_pft
     use betr_varcon              , only : spval => bspval, ispval => bispval
     use landunit_varcon          , only : istsoil, istcrop

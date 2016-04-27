@@ -214,8 +214,6 @@ contains
     use ColumnType, only : column_type
     use atm2lndType, only : atm2lnd_type
     use SoilHydrologyType, only : soilhydrology_type
-    use BeTR_CNStateType, only : betr_cnstate_type
-    use BeTR_CarbonFluxType, only : betr_carbonflux_type
     use CNStateType, only : cnstate_type
     use CNCarbonFluxType, only : carbonflux_type
     use CanopyStateType, only : canopystate_type

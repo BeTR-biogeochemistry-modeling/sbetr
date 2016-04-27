@@ -253,7 +253,6 @@ contains
     use tracerstatetype          , only : tracerstate_type
     use tracercoeffType          , only : tracercoeff_type
     use BetrTracerType           , only : betrtracer_type
-    use BeTR_CNStateType         , only : betr_cnstate_type
     use PlantSoilBGCMod          , only : plant_soilbgc_type
     !ARGUMENTS
     class(bgc_reaction_mock_run_type)   , intent(in)    :: this                       !
@@ -354,7 +353,6 @@ contains
     ! !USES:
     use BeTRTracerType           , only : BeTRTracer_Type
     use tracerstatetype          , only : tracerstate_type
-    use BeTR_WaterstateType      , only : waterstate_type  => betr_waterstate_type
     use BeTR_PatchType           , only : pft  => betr_pft
     use betr_varcon              , only : spval => bspval, ispval => bispval
     use BeTR_landvarconType      , only : landvarcon  => betr_landvarcon

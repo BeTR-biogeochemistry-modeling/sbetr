@@ -21,9 +21,6 @@ module BetrBGCMod
   use TracerStateType, only : TracerState_type
   use tracerboundarycondType, only : tracerboundarycond_type
   use BeTR_aerocondType, only : betr_aerecond_type
-  use BeTR_CarbonFluxType, only : betr_carbonflux_type
-  use BeTR_WaterstateType, only : betr_waterstate_type
-  use BeTR_CNStateType, only : betr_cnstate_type
   use BeTR_ColumnType              , only          : col => betr_col
   use BeTR_biogeophysInputType, only : betr_biogeophys_input_type
   use betr_biogeoStateType, only : betr_biogeo_state_type
@@ -66,13 +63,7 @@ contains
     use tracerstatetype              , only          : tracerstate_type
     use tracercoeffType              , only          : tracercoeff_type
     use BetrTracerType               , only          : betrtracer_type
-    use BeTR_SoilStateType           , only          : betr_soilstate_type
-    use BeTR_WaterStateType          , only          : BeTR_Waterstate_Type
-    use BeTR_TemperatureType         , only          : betr_temperature_type
-    use BeTR_ChemStateType           , only          : betr_chemstate_type
-    use BeTR_WaterfluxType           , only          : betr_waterflux_type
     use BeTR_ColumnType              , only          : col => betr_col
-    use BeTR_SoilHydrologyType       , only          : betr_soilhydrology_type
     use BeTR_TimeMod, only : betr_time_type
 
     !
@@ -132,17 +123,8 @@ contains
     use BetrTracerType               , only          : betrtracer_type
     use TracerParamsMod              , only          : set_phase_convert_coeff, set_multi_phase_diffusion, calc_tracer_infiltration
     use TracerParamsMod              , only          : get_zwt, calc_aerecond, betr_annualupdate
-    use BeTR_atm2lndType             , only          : betr_atm2lnd_type
-    use BeTR_SoilStateType           , only          : betr_soilstate_type
-    use BeTR_WaterStateType          , only          : BeTR_Waterstate_Type
-    use BeTR_WaterfluxType           , only          : betr_waterflux_type
-    use BeTR_TemperatureType         , only          : betr_temperature_type
-    use BeTR_ChemStateType           , only          : betr_chemstate_type
     use BeTR_ColumnType              , only          : col => betr_col
-    use BeTR_SoilHydrologyType       , only          : betr_soilhydrology_type
-    use BeTR_CarbonFluxType          , only          : betr_carbonflux_type
     use BeTR_aerocondType            , only          : betr_aerecond_type
-    use BeTR_CanopyStateType         , only          : betr_canopystate_type
     use BGCReactionsMod              , only          : bgc_reaction_type
     use BeTR_TimeMod, only : betr_time_type
     implicit none
@@ -258,9 +240,6 @@ contains
     use tracercoeffType              , only          : tracercoeff_type
     use TracerBoundaryCondType       , only          : TracerBoundaryCond_type
     use BetrTracerType               , only          : betrtracer_type
-    use BeTR_WaterStateType          , only          : BeTR_Waterstate_Type
-    use BeTR_ChemStateType           , only          : betr_chemstate_type
-    use BeTR_WaterfluxType           , only          : betr_waterflux_type
     use BeTR_ColumnType              , only          : col => betr_col
     use BGCReactionsMod              , only          : bgc_reaction_type
     use BeTR_TimeMod, only : betr_time_type
@@ -526,9 +505,7 @@ contains
     use tracerboundarycondtype  , only : tracerboundarycond_type
     use tracerfluxtype          , only : tracerflux_type
     use tracercoeffType         , only : tracercoeff_type
-    use BeTR_WaterfluxType      , only : betr_waterflux_type
     use BGCReactionsMod         , only : bgc_reaction_type
-    use BeTR_WaterStateType     , only : BeTR_Waterstate_Type
     use BeTR_TimeMod, only : betr_time_type
 
     implicit none
@@ -636,7 +613,6 @@ contains
     use TracerCoeffType    , only          : tracercoeff_type
     use TransportMod       , only          : semi_lagrange_adv_backward, set_debug_transp
     use babortutils         , only          : endrun
-    use BeTR_WaterfluxType , only          : betr_waterflux_type
     use MathfuncMod        , only          : safe_div
     use BeTR_TimeMod, only : betr_time_type
 
@@ -953,7 +929,6 @@ contains
     use TransportMod          , only : DiffusTransp, get_cntheta
     use babortutils            , only : endrun
     use tracer_varcon         , only : bndcond_as_conc
-    use BeTR_WaterStateType   , only : BeTR_Waterstate_Type
 
     !
     ! !ARGUMENTS:
@@ -1520,8 +1495,6 @@ contains
     ! calculate tracer loss through surface water runoff
     !
     ! !USES:
-    use BeTR_WaterStateType   , only : BeTR_Waterstate_Type
-    use BeTR_WaterfluxType    , only : betr_waterflux_type
     use tracerfluxType        , only : tracerflux_type
     use tracerstatetype       , only : tracerstate_type
     use tracercoeffType       , only : tracercoeff_type
@@ -1630,7 +1603,6 @@ contains
     ! !DESCRIPTION:
     ! apply tracer flux from combining residual snow and ponding water
     ! !USES:
-    use BeTR_WaterfluxType    , only : betr_waterflux_type
     use tracerfluxType        , only : tracerflux_type
     use tracerstatetype       , only : tracerstate_type
     use BeTR_TimeMod, only : betr_time_type

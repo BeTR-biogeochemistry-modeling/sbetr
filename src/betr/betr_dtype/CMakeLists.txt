@@ -1,15 +1,5 @@
 set(BETR_DTYPE_SOURCES
-  BeTR_CNStateType.F90
-  BeTR_CarbonFluxType.F90
   BeTR_aerocondType.F90
-  BeTR_WaterStateType.F90
-  BeTR_WaterFluxType.F90
-  BeTR_TemperatureType.F90
-  BeTR_SoilHydrologyType.F90
-  BeTR_atm2lndType.F90
-  BeTR_CanopyStateType.F90
-  BeTR_ChemStateType.F90
-  BeTR_SoilStateType.F90
   BeTR_biogeophysInputType.F90
   BeTR_biogeoStateType.F90
   BeTR_biogeoFluxType.F90
