@@ -697,14 +697,13 @@ contains
    !------------------------------------------------------------------------
    subroutine diagnose_advect_water_flux(this, betr_time, &
         bounds, num_hydrologyc, filter_hydrologyc, num_urbanc, filter_urbanc, &
-        qflx_bot, biophysforc, biogeo_flux)
+        biophysforc, biogeo_flux)
    !
    ! DESCRIPTION
    ! diagnose advective water fluxes between different soil layers
    !
    use betr_varcon          , only : denh2o => bdenh2o
    use BeTR_TimeMod, only : betr_time_type
-
    implicit none
 
    class(betr_type), intent(inout) :: this
@@ -714,8 +713,7 @@ contains
    integer                 , intent(in)    :: filter_hydrologyc(:) ! column filter for soil points
    integer                 , intent(in)    :: num_urbanc           ! number of column urban points in column filter
    integer                 , intent(in)    :: filter_urbanc(:)     ! column filter for urban points
-   real(r8)                , intent(in)    :: qflx_bot(bounds%begc: )  ! mm H2O/s water exchange rate between soil col and aquifer
-   type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
+   type(betr_biogeophys_input_type), intent(in)    :: biophysforc
    type(betr_biogeo_flux_type), intent(inout) :: biogeo_flux
 
    !local variables
@@ -729,12 +727,11 @@ contains
    if (num_urbanc > 0) continue
    if (size(filter_urbanc) > 0) continue
 
-   SHR_ASSERT_ALL((ubound(qflx_bot)    == (/bounds%endc/))         , errMsg(filename,__LINE__))
-
-   associate(                                                             & !
-     h2osoi_liq          =>    biophysforc%h2osoi_liq_col           , &
-     h2osoi_ice          =>    biophysforc%h2osoi_ice_col           , &
-     qflx_rootsoi        =>    biophysforc%qflx_rootsoi_col          , & ! Iput  : [real(r8) (:,:) ]  vegetation/soil water exchange (m H2O/s) (+ = to atm)
+   associate(                                                          & !
+     h2osoi_liq          =>    biophysforc%h2osoi_liq_col            , &
+     h2osoi_ice          =>    biophysforc%h2osoi_ice_col            , &
+     qflx_rootsoi        =>    biophysforc%qflx_rootsoi_col          , & ! Input  : [real(r8) (:,:) ]  vegetation/soil water exchange (m H2O/s) (+ = to atm)
+     qflx_bot            =>    biophysforc%qflx_bot_col              , & ! Input : [real(r8)]
      qflx_adv            =>    biogeo_flux%qflx_adv_col              , & ! Output: [real(r8) (:,:) ]  water flux at interfaces       (m H2O/s) (- = to atm)
      qflx_gross_infl_soil=>    biogeo_flux%qflx_gross_infl_soil_col  , & ! Output: [real(r8) (:)] gross infiltration (mm H2O/s)
      qflx_infl           =>    biogeo_flux%qflx_infl_col             , & ! Output: [real(r8) (:)] infiltration, mm H2O/s

@@ -61,6 +61,7 @@ module BeTRSimulation
      procedure, public :: BeginMassBalanceCheck => BeTRSimulationBeginMassBalanceCheck
      procedure, public :: MassBalanceCheck      => BeTRSimulationMassBalanceCheck
      procedure, public :: SetBiophysForcing  => BeTRSimulationSetBiophysForcing
+     procedure, public :: SendBiogeoFlux    => BeTRSimulationSendBiogeoFlux
      procedure, public :: CreateHistory => hist_htapes_create
      procedure, public :: WriteHistory => hist_write
      procedure, public :: WriteRegressionOutput
@@ -724,4 +725,40 @@ contains
     enddo
    endif
   end subroutine BeTRSimulationSetBiophysForcing
+
+  !------------------------------------------------------------------------
+  subroutine BeTRSimulationSendBiogeoFlux(this, bounds,  carbonflux_vars,  &
+    waterflux_vars)
+  !
+  ! USES
+    use WaterfluxType, only : waterflux_type
+    use CNCarbonFluxType, only : carbonflux_type
+
+  implicit none
+  class(betr_simulation_type), intent(inout) :: this
+  type(betr_bounds_type), intent(in) :: bounds
+  type(carbonflux_type), optional, intent(inout) :: carbonflux_vars
+  type(waterflux_type), optional, intent(inout) :: waterflux_vars
+
+  integer :: begp, begc, endp, endc
+  integer :: p, c, lbj, ubj
+
+  begc = bounds%begc; endc= bounds%endc
+  begp = bounds%begp; endp= bounds%endp
+  lbj = bounds%lbj; ubj=bounds%ubj
+
+  if(present(carbonflux_vars))then
+    !do nothing
+  endif
+  if(present(waterflux_vars))then
+    do c = begc, endc
+      waterflux_vars%qflx_infl_col(c) = this%biogeo_flux%qflx_infl_col(c)
+      waterflux_vars%qflx_totdrain_col(c) = this%biogeo_flux%qflx_totdrain_col(c)
+      waterflux_vars%qflx_gross_evap_soil_col(c) = this%biogeo_flux%qflx_gross_evap_soil_col(c)
+      waterflux_vars%qflx_gross_infl_soil_col(c) = this%biogeo_flux%qflx_gross_infl_soil_col(c)
+    enddo
+
+  endif
+
+  end subroutine BeTRSimulationSendBiogeoFlux
 end module BeTRSimulation
