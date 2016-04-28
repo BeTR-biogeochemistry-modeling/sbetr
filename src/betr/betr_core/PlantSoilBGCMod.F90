@@ -5,7 +5,8 @@ module PlantSoilBGCMod
 ! template for doing plant and soil bgc coupling
 !
 ! !USES:
-
+  use BeTR_decompMod         , only : betr_bounds_type
+implicit none
 type, abstract :: plant_soilbgc_type
    private
    ! dummy var to remove compiler warnings
@@ -14,12 +15,14 @@ type, abstract :: plant_soilbgc_type
 
    !initialize Init_plant_soilbgc
    procedure(Init_plant_soilbgc_interface)                    , deferred :: Init_plant_soilbgc
-
-   procedure(lsm_betr_plant_soilbgc_send_interface)           , deferred :: lsm_betr_plant_soilbgc_send
-
+   !send back plant nutrient yield
+   procedure(lsm_betr_plant_soilbgc_recv_interface)           , deferred :: lsm_betr_plant_soilbgc_recv
+   !summarize active+passive plant nutrient yield
    procedure(plant_soilbgc_summary_interface)                 , deferred :: plant_soilbgc_summary
-
+   !do profile integration of fluxes
    procedure(integrate_vr_flux_to_2D_interface)               , deferred :: integrate_vr_flux_to_2D
+   !send in bgc inputs
+   procedure(lsm_betr_plant_soilbgc_send_interface)          , deferred :: lsm_betr_plant_soilbgc_send
 end type plant_soilbgc_type
 
 
@@ -88,12 +91,14 @@ end type plant_soilbgc_type
   end subroutine integrate_vr_flux_to_2D_interface
   !----------------------------------------------------------------------
 
-  subroutine lsm_betr_plant_soilbgc_send_interface(this, bounds, numf, filter)
+  subroutine lsm_betr_plant_soilbgc_recv_interface(this, bounds, numf, filter, biogeo_fluxes)
+  !DESCRIPTION
+  !return plant nutrient yield
   !
-  ! send lsm variables into betr
-  ! the interface will be further revised for plant soilbgc coupling
-  !
+  !USES
   use BeTR_decompMod         , only : betr_bounds_type
+  use BeTR_biogeoStateType, only : betr_biogeo_state_type
+  use BeTR_biogeoFluxType, only : betr_biogeo_flux_type
   ! !ARGUMENTS:
   import :: plant_soilbgc_type
 
@@ -101,7 +106,33 @@ end type plant_soilbgc_type
   type(betr_bounds_type)         , intent(in) :: bounds
   integer                   , intent(in) :: numf
   integer                   , intent(in) :: filter(:)
+  type(betr_biogeo_flux_type), intent(inout) :: biogeo_fluxes
+
+
+  end subroutine lsm_betr_plant_soilbgc_recv_interface
+  !----------------------------------------------------------------------
+  subroutine lsm_betr_plant_soilbgc_send_interface(this, bounds, numf, &
+                 filter, biogeo_states, biogeo_fluxes, ecophyscon_vars)
+  !DESCRIPTION
+  ! initialize feedback variables for plant soil bgc interactions
+  !
+  !USES
+  use BeTR_biogeoStateType, only : betr_biogeo_state_type
+  use BeTR_biogeoFluxType, only : betr_biogeo_flux_type
+  use BeTR_decompMod         , only : betr_bounds_type
+  use EcophysConType, only : ecophyscon_type
+  ! !ARGUMENTS:
+  import :: plant_soilbgc_type
+
+  class(plant_soilbgc_type) , intent(in) :: this
+  type(betr_bounds_type)         , intent(in) :: bounds
+  integer                   , intent(in) :: numf
+  integer                   , intent(in) :: filter(:)
+  type(betr_biogeo_state_type), intent(in) :: biogeo_states
+  type(betr_biogeo_flux_type), intent(in) :: biogeo_fluxes
+  type(ecophyscon_type), intent(in) :: ecophyscon_vars
 
   end subroutine lsm_betr_plant_soilbgc_send_interface
+
   end interface
 end module PlantSoilBGCMod

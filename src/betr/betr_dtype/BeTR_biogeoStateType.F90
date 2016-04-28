@@ -4,7 +4,6 @@ module BeTR_biogeoStateType
   use betr_decompMod  , only : betr_bounds_type
 implicit none
 
-
   type betr_biogeo_state_type
     real(r8), pointer :: zwts_col           (:)   => null() ! the shallower between zwt_perch and zwt
     contains

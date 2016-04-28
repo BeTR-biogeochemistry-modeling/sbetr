@@ -37,7 +37,6 @@ module MockBGCReactionsType
      procedure :: InitCold                              ! do cold initialization
      procedure :: readParams                            ! read in parameters
      procedure :: lsm_betr_flux_state_receive       !
-     procedure :: init_betr_lsm_bgc_coupler
   end type bgc_reaction_mock_run_type
 
   interface bgc_reaction_mock_run_type
@@ -479,42 +478,5 @@ contains
 
   end subroutine lsm_betr_flux_state_receive
 
-  !-------------------------------------------------------------------------------
-
-  subroutine init_betr_lsm_bgc_coupler(this, bounds, plant_soilbgc,  &
-       betrtracer_vars, tracerstate_vars, biophysforc,  ecophyscon_vars)
-
-    ! !DESCRIPTION:
-    ! initialize the bgc coupling between betr and lsm
-    !
-    ! !USES:
-    !use clm_instMod
-    use tracerstatetype          , only : tracerstate_type
-    use BetrTracerType           , only : betrtracer_type
-    use tracer_varcon            , only : nlevtrc_soil   => betr_nlevtrc_soil
-    use PlantSoilBGCMod          , only : plant_soilbgc_type
-    use EcophysConType           , only : ecophyscon_type
-
-    implicit none
-    ! !ARGUMENTS:
-    class(bgc_reaction_mock_run_type)  , intent(in)    :: this               !
-    type(bounds_type)                  , intent(in)    :: bounds             !
-    type(tracerstate_type)             , intent(inout) :: tracerstate_vars   !
-    type(betrtracer_type)              , intent(in)    :: betrtracer_vars    ! betr configuration information
-    class(plant_soilbgc_type)          , intent(inout) :: plant_soilbgc !
-    type(ecophyscon_type)              , intent(in)    :: ecophyscon_vars
-    type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
-
-    ! remove compiler warnings for unused dummy args
-    if (this%dummy_compiler_warning) continue
-    if (bounds%begc > 0) continue
-    if (plant_soilbgc%dummy_compiler_warning) continue
-    if (len(betrtracer_vars%betr_simname) > 0) continue
-    if (size(tracerstate_vars%tracer_conc_surfwater_col) > 0) continue
-    if (size(biophysforc%isoilorder) > 0) continue
-    if (allocated(ecophyscon_vars%noveg)) continue
-
-
-  end subroutine init_betr_lsm_bgc_coupler
 
 end module MockBGCReactionsType

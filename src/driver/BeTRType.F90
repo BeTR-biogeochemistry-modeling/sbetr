@@ -146,12 +146,6 @@ contains
     !initialize the betr parameterization module
     call tracer_param_init(bounds)
 
-    ! FIXME(bja, 201603) ecophyscon is not currently being used, so we
-    ! are explicitly passing initialized junk data.
-    call this%bgc_reaction%init_betr_lsm_bgc_coupler(&
-         bounds, this%plant_soilbgc, &
-         this%tracers, this%tracerstates, biophysforc, &
-         junk)
 
    allocate(this%h2osoi_liq_copy(bounds%begc:bounds%endc, 1:nlevsoi));  this%h2osoi_liq_copy(:, :) = spval
    allocate(this%h2osoi_ice_copy(bounds%begc:bounds%endc, 1:nlevsoi));  this%h2osoi_ice_copy(:, :) = spval
@@ -718,6 +712,8 @@ contains
    real(r8):: scal
    logical :: tf
 
+   ! remove compiler warnings about unused dummy args
+   if (bounds%begc > 0) continue
    associate(                                                          & !
      h2osoi_liq          =>    biophysforc%h2osoi_liq_col            , &
      h2osoi_ice          =>    biophysforc%h2osoi_ice_col            , &
@@ -755,15 +751,8 @@ contains
      !the predicted net infiltration
      infl_tmp=qflx_gross_infl_soil(c)-qflx_gross_evap_soil(c)
      diff=qflx_infl(c)-infl_tmp
-     if(abs(diff)/=0._r8)then
-       if(infl_tmp==0._r8)then
-         if(diff>0._r8)then
-           !the corrected infiltration > net infiltration
-           qflx_gross_infl_soil(c)=qflx_gross_infl_soil(c) + diff
-         else
-           qflx_gross_evap_soil(c)=qflx_gross_evap_soil(c)-diff
-         endif
-       else
+     if(abs(diff)>0._r8)then
+       if(abs(infl_tmp)>0._r8)then
          scal = (1._r8+diff/infl_tmp)
          qflx_gross_infl_soil(c) = qflx_gross_infl_soil(c) * scal
          qflx_gross_evap_soil(c) = qflx_gross_evap_soil(c) * scal
@@ -775,6 +764,13 @@ contains
          if(qflx_gross_infl_soil(c)<0._r8)then
            qflx_gross_evap_soil(c) = qflx_gross_evap_soil(c)-qflx_gross_infl_soil(c)
            qflx_gross_infl_soil(c) = 0._r8
+         endif
+       else
+         if(diff>0._r8)then
+           !the corrected infiltration > net infiltration
+           qflx_gross_infl_soil(c)=qflx_gross_infl_soil(c) + diff
+         else
+           qflx_gross_evap_soil(c)=qflx_gross_evap_soil(c)-diff
          endif
        endif
      endif
@@ -1090,7 +1086,7 @@ contains
 
   end subroutine tracer_snowcapping
    !------------------------------------------------------------------------
-  subroutine create_betr_application(this,bgc_reaction, plant_soilbgc, method)
+  subroutine create_betr_application(this, bgc_reaction, plant_soilbgc, method)
 
   use ReactionsFactory, only : create_betr_def_application
   use ApplicationsFactory, only : create_betr_usr_application
@@ -1102,6 +1098,8 @@ contains
   character(len=*), intent(in)          :: method
   !temporary variable
   logical :: yesno
+   ! remove compiler warnings about unused dummy args
+  if(len_trim(this%reaction_method)>0)continue
 
   !if it is a default case, create it
   call create_betr_def_application(bgc_reaction, plant_soilbgc, method, yesno)

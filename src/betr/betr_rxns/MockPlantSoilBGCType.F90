@@ -17,6 +17,7 @@ module MockPlantSoilBGCType
     procedure :: Init_plant_soilbgc
     procedure :: plant_soilbgc_summary
     procedure :: integrate_vr_flux_to_2D
+    procedure :: lsm_betr_plant_soilbgc_recv
     procedure :: lsm_betr_plant_soilbgc_send
   end type plant_soilbgc_mock_run_type
 
@@ -91,7 +92,7 @@ module MockPlantSoilBGCType
   if (size(dz) > 0) continue
   if (len(betrtracer_vars%betr_simname) > 0) continue
   if (size(tracerflux_vars%tracer_flx_top_soil_col) > 0) continue
-  
+
   end subroutine plant_soilbgc_summary
 
 
@@ -117,20 +118,53 @@ module MockPlantSoilBGCType
 
   !----------------------------------------------------------------------
 
-  subroutine lsm_betr_plant_soilbgc_send(this, bounds, numf, filter)
+  subroutine lsm_betr_plant_soilbgc_recv(this, bounds, numf, filter, biogeo_fluxes)
+
+  !DESCRIPTION
+  !return plant nutrient yield
+  !
+  !USES
+  use BeTR_biogeoFluxType, only : betr_biogeo_flux_type
 
   ! !ARGUMENTS:
-
   class(plant_soilbgc_mock_run_type) , intent(in) :: this
   type(bounds_type)         , intent(in) :: bounds
   integer                   , intent(in) :: numf
   integer                   , intent(in) :: filter(:)
+  type(betr_biogeo_flux_type), intent(inout) :: biogeo_fluxes
 
   ! remove compiler warnings for unused dummy args
   if (this%dummy_compiler_warning) continue
   if (bounds%begc > 0) continue
   if (numf > 0) continue
   if (size(filter) > 0) continue
-  
+
+  end subroutine lsm_betr_plant_soilbgc_recv
+
+
+  !----------------------------------------------------------------------
+
+  subroutine lsm_betr_plant_soilbgc_send(this, bounds, numf, filter,  &
+    biogeo_states, biogeo_fluxes, ecophyscon_vars)
+  !
+  !DESCRIPTION
+  ! initialize feedback variables for plant soil bgc interactions
+  !
+  !USES
+  use BeTR_biogeoStateType, only : betr_biogeo_state_type
+  use BeTR_biogeoFluxType, only : betr_biogeo_flux_type
+  use BeTR_decompMod         , only : betr_bounds_type
+  use EcophysConType, only : ecophyscon_type
+
+  ! !ARGUMENTS:
+  class(plant_soilbgc_mock_run_type) , intent(in) :: this
+  type(betr_bounds_type)         , intent(in) :: bounds
+  integer                   , intent(in) :: numf
+  integer                   , intent(in) :: filter(:)
+  type(betr_biogeo_state_type), intent(in) :: biogeo_states
+  type(betr_biogeo_flux_type), intent(in) :: biogeo_fluxes
+  type(ecophyscon_type), intent(in) :: ecophyscon_vars
+
+
   end subroutine lsm_betr_plant_soilbgc_send
 end module MockPlantSoilBGCType

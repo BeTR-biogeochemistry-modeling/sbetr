@@ -42,8 +42,8 @@ module BeTRSimulationCLM
      procedure, public :: ConsistencyCheck => clm_h2oiso_consistency_check
      procedure, public :: DiagnoseDtracerFreezeThaw => CLMDiagnoseDtracerFreezeThaw
      procedure, public :: CalcDewSubFlux => CLMCalcDewSubFlux
-     procedure, public :: BetrFluxStateReceive      => CLMBetrFluxStateReceive
-     procedure, public :: CalcSmpL                  => CLMCalcSmpL
+     procedure, public :: SoilFluxStateRecv      => CLMBetrSoilFluxStateRecv
+     procedure, public :: CalcSmpL                => CLMCalcSmpL
   end type betr_simulation_clm_type
 
   public :: create_betr_simulation_clm
@@ -375,7 +375,7 @@ contains
   end subroutine CLMCalcDewSubFlux
 
   !------------------------------------------------------------------------
-  subroutine CLMBetrFluxStateReceive(this, bounds, num_soilc, filter_soilc)
+  subroutine CLMBetrSoilFluxStateRecv(this, bounds, num_soilc, filter_soilc)
    !DESCRIPTION
    !this is to expaneded
    !
@@ -392,7 +392,7 @@ contains
          num_soilc, filter_soilc, &
          this%betr%tracerstates, this%betr%tracerfluxes,  this%betr%tracers)
 
-  end subroutine CLMBetrFluxStateReceive
+  end subroutine CLMBetrSoilFluxStateRecv
 
   !------------------------------------------------------------------------
   subroutine CLMCalcSmpL(this, bounds, lbj, ubj, &

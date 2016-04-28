@@ -37,9 +37,10 @@ module BeTRSimulationALM
      !unique subroutines
      procedure, public :: DiagnoseDtracerFreezeThaw => ALMDiagnoseDtracerFreezeThaw
      procedure, public :: CalcDewSubFlux            => ALMCalcDewSubFlux
-     procedure, public :: BetrFluxStateReceive      => ALMBetrFluxStateReceive
+     procedure, public :: SoilFluxStateRecv     => ALMBetrSoilFluxStateRecv
      procedure, public :: CalcSmpL                  => ALMCalcSmpL
-     procedure, public :: BetrPlantSoilBGCSend      => ALMBetrPlantSoilBGCSend
+     procedure, public :: PlantSoilBGCSend      => ALMBetrPlantSoilBGCSend
+     procedure, public :: PlantSoilBGCRecv      => ALMBetrPlantSoilBGCRecv
   end type betr_simulation_alm_type
 
   public :: create_betr_simulation_alm
@@ -158,7 +159,6 @@ contains
     use ChemStateType, only : chemstate_type
     use WaterfluxType, only : waterflux_type
     use ColumnType, only : column_type
-    use BGCReactionsMod, only : bgc_reaction_type
     use atm2lndType, only : atm2lnd_type
     use SoilHydrologyType, only : soilhydrology_type
     use CNStateType, only : cnstate_type
@@ -300,12 +300,34 @@ contains
   if (num_soilc > 0) continue
   if (size(filter_soilc) > 0) continue
 
-  !  call this%betr%plant_soilbgc%init_plant_soil_feedback(bounds, num_soilc, &
-  !               filter_soilc,  carbonstate_vars%frootc_patch, cnstate_vars, &
-  !               soilstate_vars,  waterflux_vars, ecophyscon_vars)
+  !pull in fluxes of external inputs and plant demand
+  !call this%betr%plant_soilbgc%lsm_betr_plant_soilbgc_send(bounds, num_soilc, &
+  !               filter_soilc, this%biogeo_state, this%biogeo_flux, ecophyscon_vars)
 
+  !pull in all state variables and update tracers
   end subroutine ALMBetrPlantSoilBGCSend
 
+  !------------------------------------------------------------------------
+  subroutine ALMBetrPlantSoilBGCRecv(this, bounds, num_soilc,  filter_soilc)
+  !this should be expanded
+  implicit none
+  class(betr_simulation_alm_type) :: this
+  type(bounds_type)         , intent(in)   :: bounds
+  integer                   , intent(in)   :: num_soilc
+  integer                   , intent(in)   :: filter_soilc(:)
+
+  ! remove compiler warnings
+  if (this%num_soilc > 0) continue
+  if (bounds%begc > 0) continue
+  if (num_soilc > 0) continue
+  if (size(filter_soilc) > 0) continue
+
+  !pull in fluxes of external inputs and plant demand
+  !call this%betr%plant_soilbgc%lsm_betr_plant_soilbgc_recv(bounds, num_soilc, &
+  !               filter_soilc, this%biogeo_flux)
+  !reset the biogeo_flux
+  !pull in all state variables and update tracers
+  end subroutine ALMBetrPlantSoilBGCRecv
   !------------------------------------------------------------------------
 
   subroutine ALMDiagnoseDtracerFreezeThaw(this, bounds, num_nolakec, filter_nolakec, col, lun, &
@@ -391,8 +413,8 @@ contains
   end subroutine ALMCalcDewSubFlux
 
   !------------------------------------------------------------------------
-  subroutine ALMBetrFluxStateReceive(this, bounds, num_soilc, filter_soilc)
-  !this should be expanded
+  subroutine ALMBetrSoilFluxStateRecv(this, bounds, num_soilc, filter_soilc)
+  !this should be expanded and called after tracer update with drainage
   implicit none
   ! !ARGUMENTS:
   class(betr_simulation_alm_type) :: this
@@ -407,9 +429,9 @@ contains
   if (size(filter_soilc) > 0) continue
 
 !x  call this%betr%bgc_reaction%betr_lsm_flux_state_sendback(bounds, &
-!       num_soilc, filter_soilc)
+!       num_soilc, filter_soilc, this%biogeo_state, this%biogeo_flux)
 
-  end subroutine ALMBetrFluxStateReceive
+  end subroutine ALMBetrSoilFluxStateRecv
 
   !------------------------------------------------------------------------
   subroutine ALMCalcSmpL(this, bounds, lbj, ubj, numf, filter, t_soisno, &

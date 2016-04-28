@@ -40,11 +40,8 @@ module BGCReactionsMod
      !read in implementation specific parameters
      procedure(readParams_interface)                      , deferred :: readParams
 
-     !send back state flux variables to other parts of lsm
+     !send back soil state flux variables to other parts of lsm
      procedure(lsm_betr_flux_state_receive_interface)     , deferred :: lsm_betr_flux_state_receive
-
-     !initialize betr state variable from other bgc components in lsm
-     procedure(init_betr_lsm_bgc_coupler_interface)       , deferred :: init_betr_lsm_bgc_coupler
 
   end type bgc_reaction_type
 
@@ -253,41 +250,6 @@ module BGCReactionsMod
        type(tracerflux_type)      , intent(in) :: tracerflux_vars       !
 
      end subroutine lsm_betr_flux_state_receive_interface
-
-     !-------------------------------------------------------------------------------
-
-
-     subroutine init_betr_lsm_bgc_coupler_interface(this, bounds, plant_soilbgc, &
-           betrtracer_vars, tracerstate_vars, biophysforc, ecophyscon_vars)
-       !
-       ! !DESCRIPTION:
-       ! template for init_betr_lsm_bgc_coupler
-       use BeTR_biogeophysInputType, only : betr_biogeophys_input_type
-
-       ! !USES:
-       use BeTR_decompMod           , only : betr_bounds_type
-       use tracer_varcon            , only : natomw, catomw
-       use tracer_varcon            , only : nlevtrc_soil  => betr_nlevtrc_soil
-       use tracerstatetype          , only : tracerstate_type
-       use BetrTracerType           , only : betrtracer_type
-       use BeTR_landvarconType      , only : betr_landvarcon
-       use PlantSoilBGCMod          , only : plant_soilbgc_type
-       use EcophysConType           , only : ecophyscon_type
-
-
-       !
-       ! !ARGUMENTS:
-       import :: bgc_reaction_type
-       class(bgc_reaction_type)           , intent(in)    :: this
-       type(betr_bounds_type)                  , intent(in)    :: bounds
-       type(tracerstate_type)             , intent(inout) :: tracerstate_vars
-       type(betrtracer_type)              , intent(in)    :: betrtracer_vars    ! betr configuration information
-       class(plant_soilbgc_type)          , intent(inout) :: plant_soilbgc !
-       type(ecophyscon_type)              , intent(in)    :: ecophyscon_vars
-       type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
-
-
-     end subroutine init_betr_lsm_bgc_coupler_interface
 
   end interface
 end module BGCReactionsMod

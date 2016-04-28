@@ -1548,7 +1548,7 @@ contains
          c = filter_soilc(fc)
          !it is assumed the surface runoff water mixes perfectly with that of the first two soil nodes, so that a proportion goes off with surface runoff
          !Obtain the total volume
-         if(qflx_surf(c)==0._r8)cycle
+         if(abs(qflx_surf(c))<1.e-50_r8)cycle
          !volume of water coming from surface runoff
          h2o_srun = qflx_surf(c) * dtime / denh2o
          !total volume of water

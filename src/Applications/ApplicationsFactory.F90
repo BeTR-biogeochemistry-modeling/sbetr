@@ -56,6 +56,7 @@ contains
     select case(trim(method))
 
     case default
+
        write(iulog,*)subname //' ERROR: unknown method: ', method
        call endrun(msg=errMsg(__FILE__, __LINE__))
     end select
@@ -75,7 +76,6 @@ contains
   class(plant_soilbgc_type), allocatable :: plant_soilbgc
   character(len=*), intent(in)          :: method
   character(len=*), parameter           :: subname = 'create_plant_soilbgc_type'
-
 
   select case(trim(method))
 
