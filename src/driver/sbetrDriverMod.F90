@@ -150,11 +150,6 @@ contains
       atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars, &
       waterflux_vars, temperature_vars, chemstate_vars, simulation%jtops)
 
-    !calculate advective velocity
-    !call calc_qadv(forcing_data, ubj, record, &
-    !     simulation%num_soilc, simulation%filter_soilc, &
-    !     time_vars, waterstate_vars, waterflux_vars)
-
     call simulation%DiagAdvWaterFlux(time_vars, bounds, &
       simulation%num_soilc, simulation%filter_soilc, &
       waterstate_vars, soilhydrology_vars, waterflux_vars)

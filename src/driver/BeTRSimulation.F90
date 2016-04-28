@@ -77,14 +77,14 @@ contains
   !-------------------------------------------------------------------------------
   subroutine BeTRSimulationInit(this, base_filename, namelist_buffer, &
        bounds, waterstate, cnstate)
+    !
+    ! DESCRIPTIONS
     ! Dummy routine for inheritance purposes. don't use.
-
+    !
+    !USES
     use WaterstateType        , only : waterstate_type
     use CNStateType           , only : cnstate_type
-
     use betr_constants, only : betr_namelist_buffer_size, betr_filename_length
-
-
     implicit none
 
     class(betr_simulation_type), intent(inout) :: this
@@ -96,7 +96,6 @@ contains
     type(cnstate_type), intent(inout) :: cnstate
 
     character(len=*), parameter :: subname = 'BeTRSimulationInit'
-
 
     call endrun(msg="ERROR "//subname//" unimplemented. "//errmsg(mod_filename, __LINE__))
 
@@ -111,10 +110,11 @@ contains
 
 !-------------------------------------------------------------------------------
   subroutine BeTRSetFilter(this)
-
+  !
+  !DESCRIPTION
+  ! set betr filter, only used for standalone applicaitons
 
   implicit none
-
     class(betr_simulation_type), intent(inout) :: this
     this%num_jtops = 1
     allocate(this%jtops(this%num_jtops))
@@ -127,29 +127,30 @@ contains
     this%num_soilp = 1
     allocate(this%filter_soilp(this%num_soilp))
     this%filter_soilp(:) = 1
-
   end subroutine BeTRSetFilter
 !-------------------------------------------------------------------------------
 
   subroutine BeTRInit(this, base_filename, namelist_buffer, &
        betr_bounds, waterstate, cnstate)
     !
+    ! DESCRIPTION
+    ! initialize BeTR
+    !
+    !!USES
     use WaterStateType, only : waterstate_type
     use CNStateType, only : cnstate_type
-
     use betr_constants, only : betr_namelist_buffer_size
     use betr_constants, only : betr_filename_length
-
     implicit none
-
+    !ARGUMENTS
     class(betr_simulation_type), intent(inout) :: this
     character(len=betr_filename_length), intent(in) :: base_filename
     character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
-
     type(betr_bounds_type)    , intent(in) :: betr_bounds
     type(waterstate_type), intent(in) :: waterstate
     type(cnstate_type), intent(in) :: cnstate
 
+    !TEMPORARY VARIABLES
     character(len=*), parameter :: subname = 'BeTRInit'
 
     this%base_filename = base_filename
@@ -179,12 +180,13 @@ contains
     ! !USES:
     use ncdio_pio, only : file_desc_t
     implicit none
-
+    !ARGUMENTS
     class(betr_simulation_type), intent(inout) :: this
     type(bounds_type), intent(in) :: bounds
     class(file_desc_t), intent(inout) :: ncid ! netcdf id
     character(len=*), intent(in)    :: flag ! 'read' or 'write'
 
+    !TEMPORARY VARIABLES
     type(betr_bounds_type)     :: betr_bounds
     integer :: lbj, ubj
 
@@ -209,7 +211,10 @@ contains
        atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, &
        temperature_vars, waterflux_vars, chemstate_vars, &
        cnstate_vars, canopystate_vars, carbonflux_vars)
-
+  !DESCRPTION
+  !interface for StepWithoutDrainage
+  !
+  ! USES
     use SoilStateType, only : soilstate_type
     use WaterStateType, only : Waterstate_Type
     use TemperatureType, only : temperature_type
@@ -225,14 +230,11 @@ contains
     use BeTR_TimeMod, only : betr_time_type
     use PatchType, only : pft
     use pftvarcon, only : crop
-
     implicit none
-
+  !ARGUMENTS
     class(betr_simulation_type), intent(inout) :: this
     class(betr_time_type), intent(in) :: betr_time
     type(bounds_type), intent(in) :: bounds ! bounds
-
-
     type(column_type), intent(in) :: col ! column type
     type(Waterstate_Type), intent(in) :: waterstate_vars ! water state variables
     type(soilstate_type), intent(in) :: soilstate_vars ! column physics variable
@@ -266,13 +268,16 @@ contains
 
   !---------------------------------------------------------------------------------
   subroutine BeTRSimulationStepWithDrainage(this, bounds,  col)
-
+   !
+   !DESCRIPTION
+   !interface for using StepWithDrainage
+   !
+   !USES
     use ColumnType, only : column_type
     use MathfuncMod, only : safe_div
     use WaterFluxType, only : waterflux_type
-
     implicit none
-
+    !ARGUMENTS
     class(betr_simulation_type), intent(inout) :: this
     type(bounds_type), intent(in) :: bounds
     type(column_type), intent(in) :: col ! column type
@@ -284,20 +289,22 @@ contains
 
   end subroutine BeTRSimulationStepWithDrainage
 
-
   !---------------------------------------------------------------------------------
-
   subroutine BeTRSimulationBeginMassBalanceCheck(this, bounds)
-
+    !DESCRIPTION
+    !stage tracer mass balance check
+    !
+    !USES
     use TracerBalanceMod, only : begin_betr_tracer_massbalance
-
     implicit none
-
+    !ARGUMENTS
     class(betr_simulation_type) :: this
     type(bounds_type), intent(in) :: bounds
 
+    !TEMPORARY VARIABLES
     type(betr_bounds_type)     :: betr_bounds
     integer  :: lbj, ubj
+
     !set lbj and ubj
     betr_bounds%lbj  = 1          ; betr_bounds%ubj  = betr_nlevsoi
     betr_bounds%begp = bounds%begp; betr_bounds%endp = bounds%endp
@@ -315,16 +322,18 @@ contains
   !---------------------------------------------------------------------------------
 
   subroutine BeTRSimulationMassBalanceCheck(this, betr_time, bounds)
-
+   !DESCRIPTION
+   ! do tracer mass balance check
+   !
+   !USES
     use TracerBalanceMod, only : betr_tracer_massbalance_check
     use BeTR_TimeMod, only : betr_time_type
-
     implicit none
-
+    !ARGUMENTS
     class(betr_simulation_type), intent(inout) :: this
     class(betr_time_type), intent(in) :: betr_time
     type(bounds_type), intent(in) :: bounds
-
+    !TEMPORARY VARIABLES
     integer :: lbj, ubj
     type(betr_bounds_type)     :: betr_bounds
 
@@ -347,8 +356,9 @@ contains
   subroutine hist_htapes_create(this, nlevtrc_soil, ncol)
   !
   ! DESCRIPTIONS
-  ! create history file and define output variables
-
+  ! create history file and define output variables, only for standalone applicaitons
+  !
+  ! USES
     use netcdf, only : nf90_float
     use ncdio_pio, only : file_desc_t
     use ncdio_pio, only : ncd_pio_createfile
@@ -365,7 +375,7 @@ contains
 
     class(betr_simulation_type), intent(inout) :: this
     integer              , intent(in) :: nlevtrc_soil, ncol
-
+  !TEMPORARY VARIABLES
     integer            :: jj, kk
     type(file_desc_t)  :: ncid
     character(len=*), parameter :: subname = 'hist_htapes_create'
@@ -385,7 +395,6 @@ contains
       call ncd_pio_createfile(ncid, this%hist_filename)
 
       call hist_file_create(ncid,nlevtrc_soil, ncol)
-
 
      call ncd_defvar(ncid, "ZSOI", nf90_float,                  &
         dim1name="ncol",dim2name="levgrnd",                 &
@@ -428,7 +437,6 @@ contains
          endif
       enddo
 
-
       call ncd_enddef(ncid)
       call ncd_putvar(ncid,"ZSOI",1,betr_col%z(1:1,1:nlevtrc_soil))
       call ncd_pio_closefile(ncid)
@@ -440,24 +448,23 @@ contains
   subroutine hist_write(me, record, lbj, ubj, time_vars, velocity)
     !
     ! DESCRIPTION
-    ! output hist file
+    ! output hist file, only for standalone applications
     !
+    ! USES
     use shr_kind_mod        , only : r8 => shr_kind_r8
     use ncdio_pio, only : file_desc_t
     use ncdio_pio, only : ncd_pio_openfile_for_write
     use ncdio_pio, only : ncd_putvar
     use ncdio_pio, only : ncd_pio_closefile
-
     use BeTR_TimeMod, only : betr_time_type
-
     implicit none
-
+    !ARGUMENTS
     class(betr_simulation_type), intent(inout) :: me
     integer, intent(in) :: record
     integer, intent(in) :: lbj,ubj
     type(betr_time_type), intent(in) :: time_vars
     real(r8), intent(in) :: velocity(:, :)
-
+    !TEMPORARY VARIABLES
     type(file_desc_t) :: ncid
     integer :: jj
     character(len=*), parameter :: subname='hist_write'
@@ -510,8 +517,13 @@ contains
   !---------------------------------------------------------------------------------
   subroutine BeTRSimulationConsistencyCheck(this, &
      bounds, ubj, num_soilc, filter_soilc, waterstate_vars)
+  ! DESCRIPTION
+  ! Do consistency check, can be overwritten for varies purpose
+  !
+  ! USES
     use WaterStateType, only : Waterstate_Type
   implicit none
+   !ARGUMENTS
     class(betr_simulation_type), intent(inout) :: this
     type(bounds_type), intent(in) :: bounds
     integer, intent(in) :: num_soilc ! number of columns in column filter_soilc
@@ -532,21 +544,22 @@ contains
   !---------------------------------------------------------------------------------
 
   subroutine WriteRegressionOutput(this, velocity)
-
+  !DESCRIPTION
+  ! output for regression test
+  !
+  ! USES
     use bshr_kind_mod, only : r8 => shr_kind_r8
     use betr_constants, only : betr_string_length
-
     implicit none
-
+   !ARGUMENTS
     class(betr_simulation_type), intent(inout) :: this
     real(r8), intent(in) :: velocity(:, :)
-
+  !TEMPORARY VARIABLES
     integer :: jj, tt, begc, endc
     character(len=betr_string_length) :: category
     character(len=betr_string_length) :: name
 
     ! FIXME(bja, 201603) should we output units as well...?
-
     begc = 1
     endc = 1
 
@@ -587,7 +600,8 @@ contains
   subroutine BeTRSimulationSetBiophysForcing(this, bounds,  cnstate_vars, carbonflux_vars, waterstate_vars, &
     waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
     chemstate_vars, soilstate_vars)
-
+  !DESCRIPTION
+  !pass in biogeophysical variables for running betr
   !USES
     use SoilStateType, only : soilstate_type
     use WaterStateType, only : Waterstate_Type
@@ -600,6 +614,7 @@ contains
     use CNCarbonFluxType, only : carbonflux_type
     use CanopyStateType, only : canopystate_type
   implicit none
+  !ARGUMENTS
   class(betr_simulation_type), intent(inout) :: this
   type(betr_bounds_type), intent(in) :: bounds
   type(cnstate_type), optional, intent(in) :: cnstate_vars
@@ -613,6 +628,7 @@ contains
   type(chemstate_type), optional, intent(in) :: chemstate_vars
   type(soilstate_type), optional, intent(in) :: soilstate_vars
 
+  !TEMPORARY VARIABLES
   integer :: begp, begc, endp, endc
   integer :: p, c, lbj, ubj
 
@@ -732,12 +748,14 @@ contains
   !------------------------------------------------------------------------
   subroutine BeTRSimulationSendBiogeoFlux(this, bounds,  carbonflux_vars,  &
     waterflux_vars)
-  !
+  ! DESCRIPTIONS
+  ! update and return fluxes, this eventually will be expanded to
+  ! include other fluxes
   ! USES
     use WaterfluxType, only : waterflux_type
     use CNCarbonFluxType, only : carbonflux_type
-
   implicit none
+  !ARGUMENTS
   class(betr_simulation_type), intent(inout) :: this
   type(betr_bounds_type), intent(in) :: bounds
   type(carbonflux_type), optional, intent(inout) :: carbonflux_vars
@@ -761,25 +779,27 @@ contains
       waterflux_vars%qflx_gross_evap_soil_col(c) = this%biogeo_flux%qflx_gross_evap_soil_col(c)
       waterflux_vars%qflx_gross_infl_soil_col(c) = this%biogeo_flux%qflx_gross_infl_soil_col(c)
     enddo
-
   endif
 
   end subroutine BeTRSimulationSendBiogeoFlux
 
   !------------------------------------------------------------------------
   subroutine BeTRSimulationPreDiagSoilColWaterFlux(this, bounds, num_nolakec, filter_nolakec, waterstate_vars)
-
+  !DESCRIPTION
+  !prepare for water flux diagnosis. it is called before diagnosing the advective fluxes and applying
+  !freeze-thaw tracer partition.
+  !
+  !USES
   use WaterStateType, only : waterstate_type
   implicit none
-
+  !ARGUMENTS
   class(betr_simulation_type), intent(inout) :: this
    type(bounds_type)      , intent(in)    :: bounds
    integer                , intent(in)    :: num_nolakec                        ! number of column non-lake points in column filter
    integer                , intent(in)    :: filter_nolakec(:)                  ! column filter for non-lake points
    type(waterstate_type), intent(in) :: waterstate_vars
-
+  !TEMPORARY VARIABLES
    type(betr_bounds_type)     :: betr_bounds
-
 
     betr_bounds%lbj  = 1          ; betr_bounds%ubj  = betr_nlevsoi
     betr_bounds%begp = bounds%begp; betr_bounds%endp = bounds%endp
@@ -799,7 +819,7 @@ contains
     filter_hydrologyc, waterstate_vars, soilhydrology_vars, waterflux_vars)
 
   !DESCRIPTION
-  !
+  ! diagnose water fluxes for tracer advection
   !
   ! USES
   !
@@ -807,6 +827,7 @@ contains
     use WaterStateType, only : Waterstate_Type
     use SoilHydrologyType, only : soilhydrology_type
   implicit none
+  !ARGUMENTS
   class(betr_simulation_type), intent(inout) :: this
   class(betr_time_type), intent(in) :: betr_time
    type(bounds_type)      , intent(in)    :: bounds

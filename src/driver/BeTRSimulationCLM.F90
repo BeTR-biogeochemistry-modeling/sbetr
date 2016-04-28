@@ -1,7 +1,7 @@
 module BeTRSimulationCLM
   !
   ! !DESCRIPTION:
-  !  factory to load the specific betr simulator
+  !  CLM-BeTR interface
   !
   ! !USES:
   !
@@ -15,7 +15,6 @@ module BeTRSimulationCLM
 
   use decompMod, only : bounds_type
   use EcophysConType, only : ecophyscon_type
-
   use BeTRSimulation, only : betr_simulation_type
   use betr_decompMod    , only : betr_bounds_type
   use BeTR_TimeMod, only : betr_time_type
@@ -39,7 +38,7 @@ module BeTRSimulationCLM
      procedure, public :: Init => CLMInit
      procedure, public :: StepWithoutDrainage => CLMStepWithoutDrainage
      procedure, public :: StepWithDrainage => CLMStepWithDrainage
-     !unique subroutines
+     !clm unique subroutines
      procedure, public :: ConsistencyCheck => clm_h2oiso_consistency_check
      procedure, public :: DiagnoseDtracerFreezeThaw => CLMDiagnoseDtracerFreezeThaw
      procedure, public :: CalcDewSubFlux => CLMCalcDewSubFlux
@@ -54,23 +53,25 @@ contains
 !-------------------------------------------------------------------------------
 
   function create_betr_simulation_clm()
-
+    !DESCRIPTION
+    ! constructor
     implicit none
 
     class(betr_simulation_clm_type), pointer :: create_betr_simulation_clm
     class(betr_simulation_clm_type), pointer :: simulation
 
     allocate(simulation)
-
     create_betr_simulation_clm => simulation
 
   end function create_betr_simulation_clm
 
-
   !-------------------------------------------------------------------------------
 
   subroutine CLMInit(this, base_filename, namelist_buffer, bounds, waterstate, cnstate)
-
+    !DESCRIPTION
+    !initialize interface
+    !
+    !USES
     use BeTRSimulation, only : BeTRSimulationInit
     use betr_constants, only : betr_namelist_buffer_size
     use betr_constants, only : betr_filename_length
@@ -83,25 +84,21 @@ contains
     use ColumnType, only : col
     use LandunitType,only : lun
     use pftvarcon, only : noveg, nc4_grass, nc3_arctic_grass, nc3_nonarctic_grass
-
     use WaterStateType, only : waterstate_type
-
     use CNStateType, only : cnstate_type
-
     use landunit_varcon, only : istcrop, istice, istsoil
     use BeTR_landvarconType, only : betr_landvarcon
     use tracer_varcon, only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
     use clm_varpar, only : nlevsno, nlevsoi, nlevtrc_soil
-
     implicit none
-
+    !ARGUMENTS
     class(betr_simulation_clm_type), intent(inout) :: this
     character(len=betr_filename_length), intent(in) :: base_filename
     character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
     type(bounds_type), intent(in) :: bounds
     type(waterstate_type), intent(inout) :: waterstate
     type(cnstate_type), intent(inout) :: cnstate
-
+    !TEMPORARY VARIABLES
     type(betr_bounds_type)     :: betr_bounds
     integer :: lbj, ubj
 
@@ -155,7 +152,10 @@ contains
        atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, &
        temperature_vars, waterflux_vars, chemstate_vars, &
        cnstate_vars, canopystate_vars, carbonflux_vars)
-
+   !DESCRIPTION
+   !march one step without drainage
+   !
+   !USES
     use SoilStateType, only : soilstate_type
     use WaterStateType, only : Waterstate_Type
     use TemperatureType, only : temperature_type
@@ -168,19 +168,14 @@ contains
     use CNStateType, only : cnstate_type
     use CNCarbonFluxType, only : carbonflux_type
     use CanopyStateType, only : canopystate_type
-
     use tracer_varcon, only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
     use PatchType, only : pft
     use LandunitType,only : lun
     use pftvarcon, only : crop
-
     use clm_varpar, only : nlevsno, nlevsoi, nlevtrc_soil
-
     implicit none
-
-    class(betr_simulation_clm_type), intent(inout) :: this
-
     ! !ARGUMENTS :
+    class(betr_simulation_clm_type), intent(inout) :: this
     class(betr_time_type), intent(in) :: betr_time
     type(bounds_type), intent(in) :: bounds ! bounds
     type(column_type), intent(in) :: col ! column type
@@ -197,8 +192,6 @@ contains
 
     !temporary variables
     type(betr_bounds_type)     :: betr_bounds
-
-
     integer  :: lbj, ubj ! lower and upper bounds, make sure they are > 0
 
     !pass necessary data for correct subroutine call
@@ -229,7 +222,6 @@ contains
     betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
     lbj = betr_bounds%lbj; ubj = betr_bounds%ubj
 
-
     call this%SetBiophysForcing(betr_bounds, &
       cnstate_vars = cnstate_vars, &
       carbonflux_vars=carbonflux_vars, &
@@ -246,23 +238,22 @@ contains
          this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp,  &
          this%biophys_forc, this%biogeo_flux, this%biogeo_state)
 
-
   end subroutine CLMStepWithoutDrainage
 
   !---------------------------------------------------------------------------------
   subroutine CLMStepWithDrainage(this, bounds, col)
-
+   !DESCRIPTION
+   !march one step with drainage
+  !
+  !USES
     use ColumnType, only : column_type
     use MathfuncMod, only : safe_div
     use WaterFluxType, only : waterflux_type
-
     use betr_decompMod, only : betr_bounds_type
     use LandunitType,only : lun
     use tracer_varcon, only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
     use clm_varpar, only : nlevsno, nlevsoi, nlevtrc_soil
-
     implicit none
-
     ! !ARGUMENTS:
     class(betr_simulation_clm_type), intent(inout) :: this
     type(bounds_type), intent(in) :: bounds
@@ -306,14 +297,13 @@ contains
     ! aqueous tracer partition based on freeze-thaw
     !
     ! USES
-    !
     use ColumnType, only : column_type
     use LandunitType, only : landunit_type
     use landunit_varcon, only : istsoil
     use betr_decompMod    , only : betr_bounds_type
     use WaterStateType, only : waterstate_type
     implicit none
-
+    !!ARGUMENTS
     class(betr_simulation_clm_type), intent(inout) :: this
     type(betr_bounds_type), intent(in) :: bounds
     integer, intent(in) :: num_nolakec ! number of column non-lake points in column filter
@@ -321,7 +311,6 @@ contains
     type(column_type), intent(in) :: col ! column type
     type(landunit_type), intent(in) :: lun
     type(waterstate_type), intent(in) :: waterstate_vars
-
 
     !temporary variables
     type(betr_bounds_type)     :: betr_bounds
@@ -354,9 +343,10 @@ contains
   subroutine CLMCalcDewSubFlux(this, betr_time, &
        bounds, num_hydrologyc, filter_soilc_hydrologyc, &
        waterstate_vars, waterflux_vars)
-
+    !DESCRIPTION
     ! External interface called by CLM
-
+    !
+    !USES
     use ColumnType, only : col
     use LandunitType, only : lun
     use WaterfluxType, only : waterflux_type
@@ -366,7 +356,7 @@ contains
     use betr_decompMod    , only : betr_bounds_type
     use BeTR_TimeMod, only : betr_time_type
     implicit none
-
+    !ARGUMENTS
     class(betr_simulation_clm_type), intent(inout) :: this
     class(betr_time_type), intent(in) :: betr_time
     type(betr_bounds_type), intent(in) :: bounds
@@ -386,11 +376,13 @@ contains
 
   !------------------------------------------------------------------------
   subroutine CLMBetrFluxStateReceive(this, bounds, num_soilc, filter_soilc)
-
+   !DESCRIPTION
+   !this is to expaneded
+   !
+   !USES
     use betr_decompMod    , only : betr_bounds_type
-
     implicit none
-
+    !ARGUMENTS
     class(betr_simulation_clm_type), intent(inout) :: this
     type(betr_bounds_type), intent(in) :: bounds
     integer, intent(in) :: num_soilc
@@ -405,16 +397,17 @@ contains
   !------------------------------------------------------------------------
   subroutine CLMCalcSmpL(this, bounds, lbj, ubj, &
        numf, filter, t_soisno, soilstate_vars, waterstate_vars, soil_water_retention_curve)
-
+   !DESCRIPTION
+   ! calculate water suction potential
+   !
+   !USES
     use SoilStateType, only : soilstate_type
     use WaterStateType, only : waterstate_type
     use SoilWaterRetentionCurveMod, only : soil_water_retention_curve_type
     use betr_decompMod    , only : betr_bounds_type
-
     use clm_varcon, only : grav,hfus,tfrz
-
     implicit none
-
+    !ARGUMENTS
     class(betr_simulation_clm_type), intent(inout) :: this
     type(bounds_type), intent(in) :: bounds  ! bounds
     integer, intent(in) :: lbj, ubj ! lower and upper bounds, make sure they are > 0
@@ -425,7 +418,7 @@ contains
     type(waterstate_type), intent(inout) :: waterstate_vars
     class(soil_water_retention_curve_type), intent(in), optional :: soil_water_retention_curve
 
-    !local variables
+    !temporary variables
     real(r8) :: s_node
     integer :: fc, c, j
 
@@ -442,7 +435,6 @@ contains
          watsat =>    soilstate_vars%watsat_col, & ! Input:  [real(r8) (:,:) ]  minimum soil suction (mm)
          sucsat =>    soilstate_vars%sucsat_col            & ! Input:  [real(r8) (:,:) ]  minimum soil suction (mm)
          )
-
 
       do j = lbj, ubj
          do fc = 1, numf
@@ -481,25 +473,23 @@ contains
   !------------------------------------------------------------------------
   subroutine clm_h2oiso_consistency_check(this, &
        bounds, ubj, num_soilc, filter_soilc, waterstate_vars)
-    !
+    !DESCRIPTION
     ! check the overall water mass consistency between betr and clm
-    !use clm_instMod
+    !
+    !USES
     use MathfuncMod, only : dot_sum
     use clm_varcon, only : denh2o
-
     use WaterStateType, only : waterstate_type
-
     use clm_time_manager, only : get_nstep
-
     implicit none
-
+    !ARGUMENTS
     class(betr_simulation_clm_type), intent(inout) :: this
     type(bounds_type), intent(in) :: bounds  ! bounds
     integer, intent(in) :: ubj
     integer, intent(in) :: num_soilc
     integer, intent(in) :: filter_soilc(:)
     type(waterstate_type), intent(in) :: waterstate_vars
-
+    !TEMPORARY VARIABLES
     real(r8), allocatable :: eyev(:)
     integer :: fc, c
     real(r8):: totwater, err

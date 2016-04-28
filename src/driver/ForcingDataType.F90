@@ -57,6 +57,8 @@ module ForcingDataType
 contains
 
   subroutine Init(this, dim_levels, dim_time)
+    !DESCRIPTION
+    !initialize
 
     class(ForcingData_type) :: this
 
@@ -84,7 +86,8 @@ contains
 
   !------------------------------------------------------------------------
   subroutine InitAllocate(this)
-
+    !DESCRIPTION
+    !allocate memory
     class(ForcingData_type) :: this
     !at this moment the variable size is fixed
 
@@ -103,24 +106,25 @@ contains
 
   !------------------------------------------------------------------------
   subroutine ReadData(this, namelist_buffer, grid)
-
+    !DESCRIPTION
+    !
+    !USES
     use ncdio_pio, only : file_desc_t
     use ncdio_pio, only : ncd_nowrite
     use ncdio_pio, only : ncd_pio_openfile
     use ncdio_pio, only : get_dim_len
     use ncdio_pio, only : ncd_getvar
     use ncdio_pio, only : ncd_pio_closefile
-
     use babortutils, only : endrun
     use bshr_log_mod, only : errMsg => shr_log_errMsg
     use BeTR_GridMod, only : betr_grid_type
 
     implicit none
-
+    !ARGUMENTS
     class(ForcingData_type) :: this
     character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
     class(betr_grid_type), intent(in) :: grid
-
+    !TEMPORARY VARIABLES
     character(len=250) :: ncf_in_filename_forc
     type(file_desc_t)  :: ncf_in_forc
 
@@ -149,19 +153,20 @@ contains
 
   !------------------------------------------------------------------------
   subroutine ReadForcingData(this, grid)
-
+    !DESCRIPTION
+    !
+    !USES
     use ncdio_pio, only : file_desc_t
     use ncdio_pio, only : ncd_nowrite
     use ncdio_pio, only : ncd_pio_openfile
     use ncdio_pio, only : ncd_getvar
     use ncdio_pio, only : ncd_pio_closefile
     use BeTR_GridMod, only : betr_grid_type
-
     implicit none
-
+    !ARGUMENTS
     class(ForcingData_type) :: this
     class(betr_grid_type), intent(in) :: grid
-
+    !TEMPORARY VARIABLES
     character(len=250) :: ncf_in_filename_forc
     type(file_desc_t)  :: ncf_in_forc
     real(r8), allocatable :: data_2d(:,:,:)
@@ -201,7 +206,6 @@ contains
           this%h2osoi_liq(j1, j2) = this%h2osoi_liqvol(j1, j2)*grid%dzsoi(j2)*rhoh2o
        enddo
     enddo
-
 
     !X!write(*, *) 'Reading QINFL'
     call ncd_getvar(ncf_in_forc, 'QINFL', data_1d)
@@ -256,9 +260,7 @@ contains
     use clm_varctl   , only : iulog
     use abortutils      , only : endrun
     use shr_log_mod     , only : errMsg => shr_log_errMsg
-
     use betr_constants, only : stdout
-
     implicit none
     ! !ARGUMENTS:
     class(ForcingData_type) :: this
@@ -269,7 +271,6 @@ contains
     character(len=*), parameter :: subname = 'ReadNameList'
     character(len=betr_filename_length) :: forcing_format, forcing_type_name, forcing_filename
     character(len=betr_string_length_long) :: ioerror_msg
-
 
     !-----------------------------------------------------------------------
 
@@ -428,7 +429,8 @@ contains
   ! ----------------------------------------------------------------------
 
   function discharge(this, tstep) result(flux)
-
+   !DESCRIPTION
+   !return discharge at bottom of the soil column
     implicit none
 
     class(ForcingData_type), intent(in) :: this
@@ -450,7 +452,8 @@ contains
   ! ----------------------------------------------------------------------
 
   function infiltration(this, tstep) result(flux)
-
+    !DESCRIPTION
+  !return infiltration
     implicit none
 
     class(ForcingData_type), intent(in) :: this

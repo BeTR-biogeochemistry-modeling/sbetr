@@ -19,9 +19,10 @@ contains
 
 !-------------------------------------------------------------------------------
   function create_betr_simulation(simulator_name) result(simulator)
-    !
+    !DESCRIPTION
     ! create a betr simulation object
     !
+    !USES
     use BeTRSimulation, only : betr_simulation_type
     use BeTRSimulationStandalone, only : create_betr_simulation_standalone
     use BeTRSimulationCLM, only : create_betr_simulation_clm

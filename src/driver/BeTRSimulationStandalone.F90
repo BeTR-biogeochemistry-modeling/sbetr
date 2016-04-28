@@ -45,14 +45,14 @@ contains
 !-------------------------------------------------------------------------------
 
   function create_betr_simulation_standalone()
-
+  ! DESCRIPTION
+  ! constructor
     implicit none
 
     class(betr_simulation_standalone_type), pointer :: create_betr_simulation_standalone
     class(betr_simulation_standalone_type), pointer :: simulation
 
     allocate(simulation)
-
     create_betr_simulation_standalone => simulation
 
   end function create_betr_simulation_standalone
@@ -61,11 +61,13 @@ contains
 
   subroutine StandaloneInit(this, base_filename, namelist_buffer, bounds, waterstate, cnstate)
 
+    !DESCRIPTION
+    !initialize standalone betr
+    !
+    !USES
     use BeTRSimulation, only : BeTRSimulationInit
     use betr_constants, only : betr_namelist_buffer_size
     use betr_constants, only : betr_filename_length
-
-
     use BeTR_PatchType, only : betr_pft
     use BeTR_ColumnType, only : betr_col
     use BeTR_LandunitType,only : betr_lun
@@ -74,27 +76,21 @@ contains
     use ColumnType, only : col
     use LandunitType,only : lun
     use pftvarcon, only : noveg, nc4_grass, nc3_arctic_grass, nc3_nonarctic_grass
-
     use WaterStateType, only : waterstate_type
-
     use CNStateType, only : cnstate_type
-
     use landunit_varcon, only : istcrop, istice, istsoil
     use BeTR_landvarconType, only : betr_landvarcon
     use clm_varpar, only : nlevsno, nlevsoi, nlevtrc_soil
-
     implicit none
-
+    !ARGUMENTS
     class(betr_simulation_standalone_type), intent(inout) :: this
     character(len=betr_filename_length), intent(in) :: base_filename
     character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
     type(bounds_type)    , intent(in) :: bounds
-
     type(waterstate_type), intent(inout) :: waterstate
     type(cnstate_type), intent(inout) :: cnstate
-
+    !TEMPORARY VARIABLES
     type(betr_bounds_type)     :: betr_bounds
-
     integer  :: lbj, ubj
 
     betr_nlevsoi = nlevsoi
@@ -151,7 +147,10 @@ contains
        atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, &
        temperature_vars, waterflux_vars, chemstate_vars, &
        cnstate_vars, canopystate_vars, carbonflux_vars)
-
+    !DESCRIPTION
+    !march one step without drainage
+    !
+    !USES
     use SoilStateType, only : soilstate_type
     use WaterStateType, only : Waterstate_Type
     use TemperatureType, only : temperature_type
@@ -163,25 +162,19 @@ contains
     use CNStateType, only : cnstate_type
     use CNCarbonFluxType, only : carbonflux_type
     use CanopyStateType, only : canopystate_type
-
     use BGCReactionsMod, only : bgc_reaction_type
     use BeTR_PatchType, only : betr_pft
     use BeTR_ColumnType, only : betr_col
     use BeTR_LandunitType,only : betr_lun
     use BeTR_TimeMod, only : betr_time_type
-
     use PatchType, only : pft
     use LandunitType,only : lun
     use pftvarcon, only : crop
-
     implicit none
-
+    !ARGUMENTS
     class(betr_simulation_standalone_type), intent(inout) :: this
-
-    ! !ARGUMENTS :
     class(betr_time_type), intent(in) :: betr_time
     type(bounds_type), intent(in) :: bounds ! bounds
-
     type(column_type), intent(in) :: col ! column type
     type(Waterstate_Type), intent(in) :: waterstate_vars ! water state variables
     type(soilstate_type), intent(in) :: soilstate_vars ! column physics variable
@@ -245,7 +238,10 @@ contains
 
   !---------------------------------------------------------------------------------
   subroutine StandaloneStepWithDrainage(this, bounds, col)
-
+    !DESCRIPTION
+    !march one step with drainage
+    !
+    !USES
     use ColumnType    , only : column_type
     use MathfuncMod   , only : safe_div
     use WaterFluxType , only : waterflux_type
@@ -253,12 +249,12 @@ contains
     use BeTR_LandunitType,only : betr_lun
     use LandunitType,only : lun
     implicit none
-
     ! !ARGUMENTS:
     class(betr_simulation_standalone_type), intent(inout) :: this
     type(bounds_type), intent(in) :: bounds
     type(column_type), intent(in) :: col ! column type
 
+    !TEMPORARY VARIABLES
     type(betr_bounds_type)     :: betr_bounds
     integer  :: lbj, ubj ! lower and upper bounds, make sure they are > 0
 

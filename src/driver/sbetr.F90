@@ -1,13 +1,12 @@
 program main
-
+  !DESCRIPTION
+  !main driver file for standalone betr
+  !
+  !USES
   use sbetrDriverMod, only : sbetrBGC_driver
-
   use betr_constants, only : stdout, betr_filename_length, betr_namelist_buffer_size
-
   use betr_utils, only : remove_filename_extension
-
   implicit none
-
   integer :: arg_count
   integer :: args
   character(len=betr_filename_length) :: namelist_filename
