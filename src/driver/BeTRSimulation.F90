@@ -10,6 +10,7 @@ module BeTRSimulation
   use abortutils                  , only : endrun
   use clm_varctl                  , only : iulog, use_cn
   use shr_log_mod                 , only : errMsg => shr_log_errMsg
+    use shr_kind_mod        , only : r8 => shr_kind_r8
   use tracer_varcon               , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
   use BeTR_decompMod              , only : betr_bounds_type
   use decompMod                   , only : bounds_type
@@ -59,6 +60,11 @@ module BeTRSimulation
      procedure, public :: ConsistencyCheck => BeTRSimulationConsistencyCheck
      procedure, public :: PreDiagSoilColWaterFlux => BeTRSimulationPreDiagSoilColWaterFlux
      procedure, public :: DiagAdvWaterFlux  => BeTRSimulationDiagAdvWaterFlux
+     procedure, public :: DiagDrainWaterFlux => BeTRSimulationDiagDrainWaterFlux
+     procedure, public :: BeginSnowLayerAdjst => BeTRSimulationBeginTracerSnowLayerAdjst
+     procedure, public :: EndSnowLayerAdjst => BeTRSimulationEndTracerSnowLayerAdjst
+     procedure, public :: CombineSnowLayers => BeTRSimulationCombineSnowLayers
+     procedure, public :: DvideSnowLayers => BeTRSimulationDvideSnowLayers
      procedure, public :: StepWithoutDrainage => BeTRSimulationStepWithoutDrainage
      procedure, public :: StepWithDrainage => BeTRSimulationStepWithDrainage
      procedure, public :: BeginMassBalanceCheck => BeTRSimulationBeginMassBalanceCheck
@@ -451,7 +457,6 @@ contains
     ! output hist file, only for standalone applications
     !
     ! USES
-    use shr_kind_mod        , only : r8 => shr_kind_r8
     use ncdio_pio, only : file_desc_t
     use ncdio_pio, only : ncd_pio_openfile_for_write
     use ncdio_pio, only : ncd_putvar
@@ -825,7 +830,7 @@ contains
   !
     use WaterfluxType, only : waterflux_type
     use WaterStateType, only : Waterstate_Type
-    use SoilHydrologyType, only : soilhydrology_type
+   use SoilHydrologyType, only : soilhydrology_type
   implicit none
   !ARGUMENTS
   class(betr_simulation_type), intent(inout) :: this
@@ -836,7 +841,7 @@ contains
    type(waterstate_type), intent(in) :: waterstate_vars
    type(soilhydrology_type), intent(in) :: soilhydrology_vars
    type(waterflux_type),  intent(inout) :: waterflux_vars
-
+   !TEMPORARY VARIABLES
    type(betr_bounds_type)     :: betr_bounds
 
     betr_bounds%lbj  = 1          ; betr_bounds%ubj  = betr_nlevsoi
@@ -856,4 +861,142 @@ contains
   call this%SendBiogeoFlux(betr_bounds, waterflux_vars=waterflux_vars)
 
   end subroutine BeTRSimulationDiagAdvWaterFlux
+  !------------------------------------------------------------------------
+  subroutine BeTRSimulationDiagDrainWaterFlux(this, betr_time, &
+        bounds, num_hydrologyc, filter_hydrologyc, waterstate_vars, waterflux_vars)
+  !DESCRIPTION
+  ! diagnose water fluxes due to subsurface drainage
+  !
+  ! USES
+  !
+    use WaterfluxType, only : waterflux_type
+    use WaterStateType, only : Waterstate_Type
+    use SoilHydrologyType, only : soilhydrology_type
+  implicit none
+  !ARGUMENTS
+  class(betr_simulation_type), intent(inout) :: this
+  class(betr_time_type), intent(in) :: betr_time
+   type(bounds_type)      , intent(in)    :: bounds
+   integer                , intent(in)    :: num_hydrologyc                        ! number of column non-lake points in column filter
+   integer                , intent(in)    :: filter_hydrologyc(:)                  ! column filter for non-lake points
+   type(waterstate_type), intent(in) :: waterstate_vars
+   type(waterflux_type),  intent(inout) :: waterflux_vars
+   !TEMPORARY VARIABLES
+   type(betr_bounds_type)     :: betr_bounds
+
+    betr_bounds%lbj  = 1          ; betr_bounds%ubj  = betr_nlevsoi
+    betr_bounds%begp = bounds%begp; betr_bounds%endp = bounds%endp
+    betr_bounds%begc = bounds%begc; betr_bounds%endc = bounds%endc
+    betr_bounds%begl = bounds%begl; betr_bounds%endl = bounds%endl
+    betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
+
+  call this%SetBiophysForcing(betr_bounds,  waterstate_vars=waterstate_vars)
+
+   call this%betr%diagnose_drainage_water_flux(betr_time, &
+     betr_bounds, num_hydrologyc, filter_hydrologyc, &
+     this%biophys_forc, this%biogeo_flux)
+
+  !now assign back waterflux_vars
+  call this%SendBiogeoFlux(betr_bounds, waterflux_vars=waterflux_vars)
+
+  end subroutine BeTRSimulationDiagDrainWaterFlux
+  !------------------------------------------------------------------------
+  subroutine BeTRSimulationBeginTracerSnowLayerAdjst(this, bounds, num_snowc, filter_snowc)
+  !DESCRIPTION
+  !prepare for tracer adjustment in snow layers
+  implicit none
+  !ARGUMENTS
+  class(betr_simulation_type), intent(inout) :: this
+   type(bounds_type)      , intent(in)    :: bounds
+   integer, intent(in) :: num_snowc
+   integer, intent(in) :: filter_snowc(:)
+
+   !TEMPORARY VARIABLES
+   type(betr_bounds_type)     :: betr_bounds
+
+    betr_bounds%lbj  = 1          ; betr_bounds%ubj  = betr_nlevsoi
+    betr_bounds%begp = bounds%begp; betr_bounds%endp = bounds%endp
+    betr_bounds%begc = bounds%begc; betr_bounds%endc = bounds%endc
+    betr_bounds%begl = bounds%begl; betr_bounds%endl = bounds%endl
+    betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
+
+  call this%betr%Enter_tracer_LayerAdjustment(betr_bounds, num_snowc, filter_snowc)
+
+  end subroutine BeTRSimulationBeginTracerSnowLayerAdjst
+  !------------------------------------------------------------------------
+  subroutine BeTRSimulationEndTracerSnowLayerAdjst(this, bounds, num_snowc, filter_snowc)
+  !DESCRIPTION
+  !wrap up tracer adjustment in snow layers
+  implicit none
+  !ARGUMENTS
+  class(betr_simulation_type), intent(inout) :: this
+   type(bounds_type)      , intent(in)    :: bounds
+   integer, intent(in) :: num_snowc
+   integer, intent(in) :: filter_snowc(:)
+
+   !TEMPORARY VARIABLES
+   type(betr_bounds_type)     :: betr_bounds
+    betr_bounds%lbj  = 1          ; betr_bounds%ubj  = betr_nlevsoi
+    betr_bounds%begp = bounds%begp; betr_bounds%endp = bounds%endp
+    betr_bounds%begc = bounds%begc; betr_bounds%endc = bounds%endc
+    betr_bounds%begl = bounds%begl; betr_bounds%endl = bounds%endl
+    betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
+
+  call this%betr%Exit_tracer_LayerAdjustment(betr_bounds, num_snowc, filter_snowc)
+
+  end subroutine BeTRSimulationEndTracerSnowLayerAdjst
+  !------------------------------------------------------------------------
+  subroutine BeTRSimulationDvideSnowLayers(this, bounds, num_snowc, filter_snowc, divide_matrix)
+  !DESCRIPTIONS
+  !redistribute tracer in snow layers due to division
+  !
+  !USES
+  use clm_varpar, only : nlevsno
+  implicit none
+  !ARGUMENTS
+  class(betr_simulation_type), intent(inout) :: this
+   type(bounds_type)       , intent(in)    :: bounds               ! bounds
+   integer                 , intent(in)    :: num_snowc      ! number of column soil points in column filter
+   integer                 , intent(in)    :: filter_snowc(:) ! column filter for soil points
+   real(r8), intent(in) :: divide_matrix(bounds%begc:bounds%endc , 1:nlevsno , 1:nlevsno )
+
+   !TEMPORARY VARIABLES
+   type(betr_bounds_type)     :: betr_bounds
+    betr_bounds%lbj  = 1          ; betr_bounds%ubj  = betr_nlevsoi
+    betr_bounds%begp = bounds%begp; betr_bounds%endp = bounds%endp
+    betr_bounds%begc = bounds%begc; betr_bounds%endc = bounds%endc
+    betr_bounds%begl = bounds%begl; betr_bounds%endl = bounds%endl
+    betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
+
+  call this%betr%tracer_DivideSnowLayers(betr_bounds, num_snowc, filter_snowc, divide_matrix)
+
+  end subroutine BeTRSimulationDvideSnowLayers
+
+  !------------------------------------------------------------------------
+  subroutine BeTRSimulationCombineSnowLayers(this, bounds, num_snowc, filter_snowc, combine_matrix)
+  !DESCRIPTIONS
+  !redistribute tracer in snow layers due to division
+  !
+  !USES
+  use clm_varpar, only : nlevsno
+  implicit none
+  !ARGUMENTS
+  class(betr_simulation_type), intent(inout) :: this
+   type(bounds_type)       , intent(in)    :: bounds               ! bounds
+   integer                 , intent(in)    :: num_snowc      ! number of column soil points in column filter
+   integer                 , intent(in)    :: filter_snowc(:) ! column filter for soil points
+   real(r8), intent(in) :: combine_matrix(bounds%begc:bounds%endc,-nlevsno+1:1 ,-nlevsno+1:1 )
+
+   !TEMPORARY VARIABLES
+   type(betr_bounds_type)     :: betr_bounds
+    betr_bounds%lbj  = 1          ; betr_bounds%ubj  = betr_nlevsoi
+    betr_bounds%begp = bounds%begp; betr_bounds%endp = bounds%endp
+    betr_bounds%begc = bounds%begc; betr_bounds%endc = bounds%endc
+    betr_bounds%begl = bounds%begl; betr_bounds%endl = bounds%endl
+    betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
+
+  call this%betr%tracer_CombineSnowLayers(betr_bounds, num_snowc, filter_snowc, combine_matrix)
+
+  end subroutine BeTRSimulationCombineSnowLayers
+
 end module BeTRSimulation

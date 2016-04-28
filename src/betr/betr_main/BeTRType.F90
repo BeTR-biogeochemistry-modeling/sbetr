@@ -789,7 +789,7 @@ contains
 
    !------------------------------------------------------------------------
    subroutine diagnose_drainage_water_flux(this, betr_time, &
-        bounds, num_hydrologyc, filter_hydrologyc, num_urbanc, filter_urbanc, &
+        bounds, num_hydrologyc, filter_hydrologyc, &
         biophysforc, biogeo_flux)
    !
    ! DESCRIPTION
@@ -805,8 +805,6 @@ contains
    type(bounds_type)       , intent(in)    :: bounds               ! bounds
    integer                 , intent(in)    :: num_hydrologyc       ! number of column soil points in column filter
    integer                 , intent(in)    :: filter_hydrologyc(:) ! column filter for soil points
-   integer                 , intent(in)    :: num_urbanc           ! number of column urban points in column filter
-   integer                 , intent(in)    :: filter_urbanc(:)     ! column filter for urban points
    type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
    type(betr_biogeo_flux_type), intent(inout) :: biogeo_flux
 
@@ -816,8 +814,6 @@ contains
 
    ! remove compiler warnings about unused dummy args
    if (bounds%begc > 0) continue
-   if (num_urbanc > 0) continue
-   if (size(filter_urbanc) > 0) continue
 
    associate(                                                           & !
      h2osoi_liq         =>    biophysforc%h2osoi_liq_col          , & ! Output: [real(r8) (:,:) ] liquid water (kg/m2)
