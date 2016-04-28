@@ -30,7 +30,8 @@ To build a release configuration of the code:
     make debug=0 config
     make debug=0 all
 
-
+The following command will create local/bin/, where sbetr will be installed.
+    make install
 
 ## Testing
 
@@ -52,7 +53,7 @@ command with unit tests. For now they have to be run separately.
 
     cd regression-tests
     make rtest
-    
+
 
 
 
@@ -139,8 +140,7 @@ directory where sbetr is executed!
     ../build/Darwin-x86_64-static-double-cc-Debug/src/driver/sbetr mock.namelist
 
 The example is set with mock run that transport five tracers: N2, O2,
-AR, CO2 and CH4
-
+AR, CO2, CH4 and DOC
 
 
 ## Development
@@ -158,6 +158,8 @@ Key direcotries:
   * src/stub\_clm, esmf\_wrf\_timemgr, src/shr - stub version of land
     model code needed to make the standalone LM interfaces compile.
 
+  * Application - place to hold customized betr applications
+
 * cmake - contains utilities for the configuration and build system.
 
 * regression_tests - regressiont test input and baselines.
@@ -165,5 +167,4 @@ Key direcotries:
 
 To configure a new bgc implementation, follow the example in
 BGCReactionsMockRunType and add the new configuration name to
-BGCReactionsFactoryMod.
-
+ApplicationsFactoryMod.
