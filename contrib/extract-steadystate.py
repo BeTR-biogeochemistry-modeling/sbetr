@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-"""Generate plots comparing the betr reactive transport solutions with
-the compariable analytical solution.
+"""FIXME: A nice python program to do something useful.
 
 Author: Ben Andre <andre@ucar.edu>
 
@@ -35,18 +34,17 @@ else:
 #
 import numpy as np
 from scipy.io import netcdf
-import matplotlib.pyplot as plt
 
 #
 # other modules in this package
 #
-
 
 # -------------------------------------------------------------------------------
 #
 # User input
 #
 # -------------------------------------------------------------------------------
+
 def commandline_options():
     """Process the command line arguments.
 
@@ -61,8 +59,11 @@ def commandline_options():
     parser.add_argument('--debug', action='store_true',
                         help='extra debugging output')
 
-    # parser.add_argument('--config', nargs=1, required=True,
-    #                    help='path to config file')
+    parser.add_argument('--data-dir', nargs=1, default=['.'],
+                        help='path to directory containing the data')
+
+    parser.add_argument('--config', nargs=1, required=True,
+                        help='path to config file')
 
     options = parser.parse_args()
     return options
@@ -83,27 +84,11 @@ def read_config_file(filename):
 
     return config
 
-
 # -------------------------------------------------------------------------------
 #
-# FIXME: do something
+# FIXME: work functions
 #
 # -------------------------------------------------------------------------------
-def extract_from_netcdf(filename):
-    """
-    """
-    with netcdf.netcdf_file(filename, 'r', mmap=False) as f:
-        for v in f.variables:
-            print(v)
-            print('    {0} = {1}'.format(
-                f.variables[v].dimensions, f.variables[v].shape))
-            if len(f.variables[v].shape) == 3:
-                ts = 1
-                lev = ':'
-                col = 0
-                value = f.variables[v].data[ts, :, col]
-                print('    ({ts}, {lev}, {col}) = {value}'.format(
-                    ts=ts, lev=lev, col=col, value=value))
 
 
 # -------------------------------------------------------------------------------
@@ -111,10 +96,51 @@ def extract_from_netcdf(filename):
 # main
 #
 # -------------------------------------------------------------------------------
+
 def main(options):
-    # config = read_config_file(options.config[0])
-    filename = 'mock-advection.output.nc'
-    extract_from_netcdf(filename)
+    config = read_config_file(options.config[0])
+    data_dir = options.data_dir[0]
+    input_filename = config.get('netcdf', 'input')
+    input_filename = os.path.join(os.path.abspath(data_dir), input_filename)
+    print('Opening input file {0}'.format(input_filename))
+    infile = netcdf.netcdf_file(input_filename, 'r', mmap=False)
+    
+    output_filename = config.get('netcdf', 'output')
+    output_filename = os.path.join(os.path.abspath(data_dir), output_filename)
+    print('Opening output file {0}'.format(output_filename))
+    outfile = netcdf.netcdf_file(output_filename, 'w', mmap=False)
+    
+    size_list = config.items('sizes')
+    sizes = {}
+    for name, value in size_list:
+        sizes[name] = int(value)
+    print('sizes = {0}'.format(sizes))
+
+    for dim in sizes:
+        outfile.createDimension(dim, sizes[dim])
+
+    time_in = infile.variables['time']
+    time_out = outfile.createVariable('time', time_in.typecode(), ('time', ))
+    time_out[:] = 0.0
+
+    for d in ('2d', '3d'):
+        dimensions = config.get(d, 'dimensions').split()
+        variables = config.get(d, 'variables').split()
+        print('{0} : dimensions = {1}'.format(d, dimensions))
+        print('{0} : variables = {1}'.format(d, variables))
+        for var in variables:
+            variable_in = infile.variables[var]
+            variable_out = outfile.createVariable(var, variable_in.typecode(), dimensions)
+            variable_out._attributes.update(variable_in._attributes)
+            if '3d' == d:
+                variable_out.data[0, :, 0] = variable_in[0, :, 0]
+            elif '2d' in d:
+                variable_out.data[0, 0] = variable_in.data[0, 0]
+                print('{0} in : {1}'.format(var, variable_in.__dict__))
+                print('{0} out : {1}'.format(var, variable_out.__dict__))
+            
+    infile.close()
+    outfile.close()
     return 0
 
 
