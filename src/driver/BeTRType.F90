@@ -78,6 +78,7 @@ module BetrType
      procedure, public :: tracer_DivideSnowLayers
      procedure, public :: tracer_CombineSnowLayers
      procedure, private :: ReadNamelist
+     procedure, private :: create_betr_application
 
   end type betr_type
 
@@ -91,8 +92,6 @@ contains
     use bshr_log_mod, only : errMsg => shr_log_errMsg
     use BeTR_decompMod, only : betr_bounds_type
     use betr_constants, only : betr_namelist_buffer_size
-    use ReactionsFactory, only : create_bgc_reaction_type, &
-         create_plant_soilbgc_type
     use TransportMod          , only : init_transportmod
     use TracerParamsMod       , only : tracer_param_init
 
@@ -117,10 +116,7 @@ contains
 
     call this%ReadNamelist(namelist_buffer)
 
-    allocate(this%bgc_reaction, &
-         source=create_bgc_reaction_type(this%reaction_method))
-    allocate(this%plant_soilbgc, &
-         source=create_plant_soilbgc_type(this%reaction_method))
+    call this%create_betr_application(this%bgc_reaction, this%plant_soilbgc, this%reaction_method)
 
     call this%tracers%init_scalars()
 
@@ -1093,5 +1089,25 @@ contains
    if (size(biophysforc%h2osoi_liq_col) > 0) continue
 
   end subroutine tracer_snowcapping
+   !------------------------------------------------------------------------
+  subroutine create_betr_application(this,bgc_reaction, plant_soilbgc, method)
 
+  use ReactionsFactory, only : create_betr_def_application
+  use ApplicationsFactory, only : create_betr_usr_application
+  implicit none
+
+   class(betr_type), intent(inout) :: this
+  class(bgc_reaction_type),  allocatable, intent(out) :: bgc_reaction
+  class(plant_soilbgc_type), allocatable, intent(out) :: plant_soilbgc
+  character(len=*), intent(in)          :: method
+  !temporary variable
+  logical :: yesno
+
+  !if it is a default case, create it
+  call create_betr_def_application(bgc_reaction, plant_soilbgc, method, yesno)
+
+  if(.not. yesno)then
+    call create_betr_usr_application(bgc_reaction, plant_soilbgc, method)
+  endif
+  end subroutine create_betr_application
 end module BetrType

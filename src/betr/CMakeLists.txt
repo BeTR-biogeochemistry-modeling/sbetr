@@ -5,7 +5,6 @@ add_subdirectory(betr_dtype)
 add_subdirectory(betr_core)
 add_subdirectory(betr_rxns)
 add_subdirectory(betr_main)
-
 # FIXME(bja, 201603) is this manual list necessary with the subdir
 # adding to parent scope?
 

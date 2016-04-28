@@ -1,4 +1,5 @@
 set(BETR_DRIVER_SOURCES
+  BeTRType.F90
   BeTRSimulation.F90
   BeTRSimulationFactory.F90
   BeTRSimulationStandalone.F90
@@ -11,6 +12,7 @@ set(BETR_DRIVER_SOURCES
 
 include_directories(${CMAKE_BINARY_DIR}/src/shr)
 include_directories(${CMAKE_BINARY_DIR}/src/stub_clm)
+include_directories(${CMAKE_BINARY_DIR}/src/Applications)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_math)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_dtype)
@@ -18,8 +20,6 @@ include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_core)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_main)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_grid)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_rxns)
-
-
 
 include(add_betr_library)
 add_betr_library(betr_driver ${BETR_DRIVER_SOURCES})

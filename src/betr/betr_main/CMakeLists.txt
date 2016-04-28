@@ -1,6 +1,5 @@
 set(BETR_MAIN_SOURCES
   BetrBGCMod.F90
-  BeTRType.F90
   TracerBalanceMod.F90
   )
 

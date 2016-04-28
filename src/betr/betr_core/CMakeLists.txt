@@ -8,6 +8,8 @@ set(BETR_CORE_SOURCES
   TracerStateType.F90
   Tracer_varcon.F90
   TransportMod.F90
+  BGCReactionsMod.F90
+  PlantSoilBGCMod.F90
   )
 
 include_directories(${CMAKE_BINARY_DIR}/src/stub_clm)

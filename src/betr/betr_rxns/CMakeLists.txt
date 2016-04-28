@@ -1,7 +1,5 @@
 set(BETR_RXNS_SOURCES
   ReactionsFactory.F90
-  BGCReactionsMod.F90
-  PlantSoilBGCMod.F90
   MockBGCReactionsType.F90
   MockPlantSoilBGCType.F90
   H2OIsotopeBGCReactionsType.F90
