@@ -1,0 +1,41 @@
+language: 
+
+os:
+  - linux
+  - osx
+
+before_script:
+  - echo -e "Host *\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+
+sudo: required
+
+dist: trusty # Ubuntu 14.04.
+
+compiler:
+  - gcc
+
+env:
+  - DEBUG=0
+  - DEBUG=1
+
+install: sh ./.travis/install-$TRAVIS_OS_NAME-deps.sh
+
+addons:
+  apt:
+    # Travis whitelist of packages.
+    # https://github.com/travis-ci/apt-package-whitelist/blob/master/ubuntu-trusty
+    packages:
+      - cmake
+      - gcc
+      - gfortran
+
+
+before_script:
+  - make config debug=$DEBUG travis=1
+
+
+script: 
+  - make debug=$DEBUG all
+  - make debug=$DEBUG test
+  - make debug=$DEBUG install
+  - cd regression-tests; make rtest
