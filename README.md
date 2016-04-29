@@ -31,6 +31,7 @@ To build a release configuration of the code:
     make debug=0 all
 
 The following command will create local/bin/, where sbetr will be installed.
+
     make install
 
 ## Testing
