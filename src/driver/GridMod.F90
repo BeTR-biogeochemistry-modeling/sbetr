@@ -1,13 +1,13 @@
 module BeTR_GridMod
 
-  use bshr_kind_mod , only: r8 => shr_kind_r8
+  use bshr_kind_mod    , only : r8 => shr_kind_r8
   use babortutils      , only : endrun
   use bshr_log_mod     , only : errMsg => shr_log_errMsg
 
-  use betr_constants, only : betr_filename_length
-  use betr_constants, only : betr_string_length, betr_string_length_long
-  use betr_constants, only : betr_namelist_buffer_size
-  use betr_constants, only : stdout
+  use betr_constants   , only : betr_filename_length
+  use betr_constants   , only : betr_string_length, betr_string_length_long
+  use betr_constants   , only : betr_namelist_buffer_size
+  use betr_constants   , only : stdout
 
   use betr_varcon, only : bspval
 
@@ -19,9 +19,9 @@ module BeTR_GridMod
   character(len=*), private, parameter :: mod_filename = &
        __FILE__
 
-  character(len=*), parameter :: uniform_str = 'uniform'
-  character(len=*), parameter :: clm_str = 'clm'
-  character(len=*), parameter :: dataset_str = 'dataset'
+  character(len=*), parameter          :: uniform_str = 'uniform'
+  character(len=*), parameter          :: clm_str = 'clm'
+  character(len=*), parameter          :: dataset_str = 'dataset'
 
   integer, parameter :: uniform_grid = 1
   integer, parameter :: clm_grid = 2
@@ -31,12 +31,12 @@ module BeTR_GridMod
 
   type, public :: betr_grid_type
      character(len=betr_filename_length) :: grid_data_filename
-     character(len=betr_string_length) :: grid_data_format ! file format: netcdf, namelist, csv, etc.
-     character(len=betr_string_length) :: grid_type_str ! uniform, clm
+     character(len=betr_string_length)   :: grid_data_format ! file format: netcdf, namelist, csv, etc.
+     character(len=betr_string_length)   :: grid_type_str ! uniform, clm
      integer :: grid_type
 
-     integer, public :: nlevgrnd
-     real(r8), public :: delta_z
+     integer,  public          :: nlevgrnd
+     real(r8), public          :: delta_z
      real(r8), public, pointer :: zsoi(:)  !soil depth, node center 1 : nlevsoi
      real(r8), public, pointer :: zisoi(:) !soil depth, interface,  0 : nlevsoi
      real(r8), public, pointer :: dzsoi(:) !soil layer thickness
@@ -44,9 +44,9 @@ module BeTR_GridMod
      real(r8), public, pointer :: bsw(:) ! clap-hornberg parameter
      real(r8), public, pointer :: watsat(:) ! saturated volumetric water content
    contains
-     procedure, public :: Init
-     procedure, public :: ReadNamelist
-     procedure, public :: ReadNetCDFData
+     procedure, public  :: Init
+     procedure, public  :: ReadNamelist
+     procedure, public  :: ReadNetCDFData
      procedure, private :: InitAllocate
      procedure, private :: uniform_vertical_grid
      procedure, private :: clm_exponential_vertical_grid
@@ -62,8 +62,8 @@ contains
 
     implicit none
 
-    class(betr_grid_type), intent(inout) :: this
-    character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
+    class(betr_grid_type),                    intent(inout) :: this
+    character(len=betr_namelist_buffer_size), intent(in)    :: namelist_buffer
 
     call this%ReadNameList(namelist_buffer)
     call this%InitAllocate()
@@ -128,16 +128,16 @@ contains
 
     implicit none
 
-    class(betr_grid_type), intent(inout) :: this
-    character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
+    class(betr_grid_type),                    intent(inout) :: this
+    character(len=betr_namelist_buffer_size), intent(in)    :: namelist_buffer
 
-    integer :: nml_error
-    character(len=*), parameter :: subname = 'ReadNameList'
-    character(len=betr_string_length) :: grid_data_format, grid_type_str
-    character(len=betr_filename_length) :: grid_data_filename
+    integer                                :: nml_error
+    character(len=*), parameter            :: subname = 'ReadNameList'
+    character(len=betr_string_length)      :: grid_data_format, grid_type_str
+    character(len=betr_filename_length)    :: grid_data_filename
     character(len=betr_string_length_long) :: ioerror_msg
-    integer :: nlevgrnd
-    real(r8) :: delta_z
+    integer                                :: nlevgrnd
+    real(r8)                               :: delta_z
 
     !-----------------------------------------------------------------------
 
@@ -198,10 +198,10 @@ contains
 
     class(betr_grid_type), intent(inout) :: this
 
-    character(len=250) :: ncf_in_filename
-    type(file_desc_t)  :: ncf_in
+    character(len=250)    :: ncf_in_filename
+    type(file_desc_t)     :: ncf_in
     real(r8), allocatable :: data(:,:)
-    integer :: j
+    integer               :: j
 
 
     ncf_in_filename = trim(this%grid_data_filename)
@@ -280,8 +280,8 @@ contains
 
     class(betr_grid_type), intent(inout) :: this
 
-    real(r8) :: scalez = 0.025_r8 ! Soil layer thickness discretization (m)
-    integer :: j
+    real(r8)                             :: scalez = 0.025_r8 ! Soil layer thickness discretization (m)
+    integer                              :: j
 
     ! node depths
     do j = 1, this%nlevgrnd
