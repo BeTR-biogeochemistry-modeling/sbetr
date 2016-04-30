@@ -24,10 +24,9 @@ addons:
   apt:
     # Travis whitelist of packages.
     # https://github.com/travis-ci/apt-package-whitelist/blob/master/ubuntu-trusty
+    # NOTE(bja, 201604) default gcc is too old.
     packages:
       - cmake
-      - gcc
-      - gfortran
 
 
 before_script:
