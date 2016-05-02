@@ -5,11 +5,11 @@ module FindRootMod
   !  History: created by Jinyun Tang, 2013
 
   ! !USES:
-  use bshr_kind_mod        , only : r8 => shr_kind_r8
-  use bshr_log_mod         , only : errMsg => shr_log_errMsg
-  use babortutils          , only : endrun
-  use betr_ctrl          , only : iulog  => biulog
-  use MathfuncMod         , only : is_bounded
+  use bshr_kind_mod , only : r8 => shr_kind_r8
+  use bshr_log_mod  , only : errMsg => shr_log_errMsg
+  use babortutils   , only : endrun
+  use betr_ctrl     , only : iulog  => biulog
+  use MathfuncMod   , only : is_bounded
 
   implicit none
   
@@ -135,7 +135,6 @@ contains
              endif
           endif
        endif
-
     endif
   end function cubicrootbnd
 
@@ -386,7 +385,6 @@ contains
     integer, parameter :: iulog = 6
     integer :: iter
     real(r8)  :: a,b,c,d,e,fa,fb,fc,p,q,r,s,xm,tol1
-
 
     a=x1
     b=x2
@@ -672,7 +670,6 @@ contains
     enddo
 
   end subroutine gaussian_elimination
-
 
   !-----------------------------------------------------------------
   SUBROUTINE back_substitution(a,b,error)

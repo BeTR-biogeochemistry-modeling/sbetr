@@ -5,9 +5,9 @@ module BeTRSimulationFactory
   !
   ! !USES:
   !
-  use abortutils                  , only : endrun
-  use clm_varctl                  , only : iulog
-  use shr_log_mod                 , only : errMsg => shr_log_errMsg
+  use abortutils  , only : endrun
+  use clm_varctl  , only : iulog
+  use shr_log_mod , only : errMsg => shr_log_errMsg
 
   implicit none
   save
@@ -23,12 +23,13 @@ contains
     ! create a betr simulation object
     !
     !USES
-    use BeTRSimulation, only : betr_simulation_type
-    use BeTRSimulationStandalone, only : create_betr_simulation_standalone
-    use BeTRSimulationCLM, only : create_betr_simulation_clm
-    use BeTRSimulationALM, only : create_betr_simulation_alm
-
-    character(len=*), intent(in) :: simulator_name
+    use BeTRSimulation           , only : betr_simulation_type
+    use BeTRSimulationStandalone , only : create_betr_simulation_standalone
+    use BeTRSimulationCLM        , only : create_betr_simulation_clm
+    use BeTRSimulationALM        , only : create_betr_simulation_alm
+    implicit none
+    !ARGUMENTS
+    character(len=*), intent(in)         :: simulator_name
     class(betr_simulation_type), pointer :: simulator
 
     select case(trim(simulator_name))

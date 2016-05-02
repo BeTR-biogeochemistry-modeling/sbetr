@@ -4,12 +4,12 @@ module TracerCoeffType
   ! datatype for tracer phase conversion parameters and other scaling parameters
   !
   ! !USES:
-  use bshr_kind_mod           , only : r8 => shr_kind_r8
-  use bshr_infnan_mod         , only : nan => shr_infnan_nan, assignment(=)
-  use BeTR_decompMod         , only : bounds_type  => betr_bounds_type
-  use BeTR_ColumnType        , only : col => betr_col
-  use BeTR_LandunitType      , only : lun => betr_lun
-  use BeTR_landvarconType    , only : landvarcon => betr_landvarcon
+  use bshr_kind_mod       , only : r8 => shr_kind_r8
+  use bshr_infnan_mod     , only : nan => shr_infnan_nan, assignment(=)
+  use BeTR_decompMod      , only : bounds_type  => betr_bounds_type
+  use BeTR_ColumnType     , only : col => betr_col
+  use BeTR_LandunitType   , only : lun => betr_lun
+  use BeTR_landvarconType , only : landvarcon => betr_landvarcon
   !
   ! !PUBLIC TYPES:
   implicit none
@@ -74,11 +74,11 @@ contains
     !
     ! Now it is purposely empty, but will be potentially useful in the future
     ! !USES:
-    use BetrTracerType        , only : betrtracer_type
-    use betr_varcon           , only : spval  => bspval
-    use restUtilMod, only : restartvar
-    use ncdio_pio, only : file_desc_t
-    use ncdio_pio, only : ncd_double
+    use BetrTracerType , only : betrtracer_type
+    use betr_varcon    , only : spval  => bspval
+    use restUtilMod    , only : restartvar
+    use ncdio_pio      , only : file_desc_t
+    use ncdio_pio      , only : ncd_double
     !
     ! !ARGUMENTS:
     class(TracerCoeff_type) :: this
@@ -190,9 +190,7 @@ contains
     real(r8), pointer :: data1dptr(:)   ! temp. pointers for slicing larger arrays
 
     !use the interface provided from CLM
-
-
-    associate(                                                                  &
+    associate(                                                                     &
          ntracer_groups       => betrtracer_vars%ntracer_groups                  , &
          tracer_group_memid   => betrtracer_vars%tracer_group_memid              , &
          ngwmobile_tracer_groups    => betrtracer_vars%ngwmobile_tracer_groups   , &
@@ -210,41 +208,41 @@ contains
                kk = volatilegroupid(jj)
                this%scal_aere_cond_col(begc:endc, kk) = spval
                data1dptr => this%scal_aere_cond_col(begc:endc, kk)
-               call hist_addfld1d (fname='SCAL_ARENCHYMA_'//tracernames(trcid), units='none', &
+               call hist_addfld1d (fname='SCAL_ARENCHYMA_'//tracernames(trcid), units='none',                                      &
                     avgflag='A', long_name='scaling factor for tracer transport through arenchyma for '//trim(tracernames(trcid)), &
                     ptr_col=data1dptr, default='inactive')
 
                this%aere_cond_col(begc:endc, kk) = spval
                data1dptr => this%aere_cond_col(begc:endc, kk)
-               call hist_addfld1d (fname='ARENCHYMA_'//tracernames(trcid), units='m/s', &
-                    avgflag='A', long_name='conductance for tracer transport through arenchyma for '//trim(tracernames(trcid)), &
+               call hist_addfld1d (fname='ARENCHYMA_'//tracernames(trcid), units='m/s',                                            &
+                    avgflag='A', long_name='conductance for tracer transport through arenchyma for '//trim(tracernames(trcid)),    &
                     ptr_col=data1dptr, default='inactive')
 
                this%diffgas_topsoi_col(begc:endc, kk) = spval
                data1dptr => this%diffgas_topsoi_col(begc:endc, kk)
-               call hist_addfld1d (fname='CDIFF_TOPSOI_'//tracernames(trcid), units='none', &
-                    avgflag='A', long_name='gas diffusivity in top soil layer for '//trim(tracernames(trcid)), &
+               call hist_addfld1d (fname='CDIFF_TOPSOI_'//tracernames(trcid), units='none',                                        &
+                    avgflag='A', long_name='gas diffusivity in top soil layer for '//trim(tracernames(trcid)),                     &
                     ptr_col=data1dptr, default='inactive')
 
                this%gas2bulkcef_mobile_col(:,:,kk) = spval
                data2dptr => this%gas2bulkcef_mobile_col(:,:,kk)
-               call hist_addfld2d (fname='CGAS2BULK_'//tracernames(trcid), units='none', type2d='levtrc',  &
-                    avgflag='A', long_name='converting factor from gas to bulk phase for '//trim(tracernames(trcid)), &
+               call hist_addfld2d (fname='CGAS2BULK_'//tracernames(trcid), units='none', type2d='levtrc',                          &
+                    avgflag='A', long_name='converting factor from gas to bulk phase for '//trim(tracernames(trcid)),              &
                     ptr_col=data2dptr, default='inactive')
             endif
 
             this%aqu2bulkcef_mobile_col(:,:,jj) = spval
             data2dptr => this%aqu2bulkcef_mobile_col(:,:,jj)
-            call hist_addfld2d (fname='CAQU2BULK_vr_'//tracernames(trcid), units='none', type2d='levtrc',  &
-                 avgflag='A', long_name='converting factor from aqeous to bulk phase for '//trim(tracernames(trcid)), &
+            call hist_addfld2d (fname='CAQU2BULK_vr_'//tracernames(trcid), units='none', type2d='levtrc',                          &
+                 avgflag='A', long_name='converting factor from aqeous to bulk phase for '//trim(tracernames(trcid)),              &
                  ptr_col=data2dptr, default='inactive')
 
          endif
 
          this%hmconductance_col(:,:,jj) = spval
          data2dptr => this%hmconductance_col(:,:,jj)
-         call hist_addfld2d (fname='HMCONDC_vr_'//tracernames(trcid), units='none', type2d='levtrc',  &
-              avgflag='A', long_name='bulk conductance for '//trim(tracernames(trcid)), &
+         call hist_addfld2d (fname='HMCONDC_vr_'//tracernames(trcid), units='none', type2d='levtrc',                               &
+              avgflag='A', long_name='bulk conductance for '//trim(tracernames(trcid)),                                            &
               ptr_col=data2dptr, default='inactive')
       enddo
 

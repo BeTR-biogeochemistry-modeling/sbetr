@@ -8,9 +8,9 @@ module bshr_assert_mod
 ! Assert subroutines for common debugging operations.
 
 use bshr_kind_mod, only: &
-     r4 => shr_kind_r4, &
-     r8 => shr_kind_r8, &
-     i4 => shr_kind_i4, &
+     r4 => shr_kind_r4,  &
+     r8 => shr_kind_r8,  &
+     i4 => shr_kind_i4,  &
      i8 => shr_kind_i8
 
 use bshr_sys_mod, only: &

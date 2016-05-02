@@ -9,11 +9,10 @@ module ReactionsFactory
   !
   ! !USES:
   !
-  use bshr_kind_mod          , only : r8 => shr_kind_r8
-  use bshr_log_mod           , only : errMsg => shr_log_errMsg
-  use BGCReactionsMod       , only : bgc_reaction_type
+  use bshr_kind_mod   , only : r8 => shr_kind_r8
+  use bshr_log_mod    , only : errMsg => shr_log_errMsg
+  use BGCReactionsMod , only : bgc_reaction_type
   use PlantSoilBGCMod , only : plant_soilbgc_type
-
   implicit none
 
   private
@@ -27,9 +26,10 @@ contains
   !create betr applications
   !
   implicit none
+  !arguments  
   class(bgc_reaction_type),  allocatable, intent(out) :: bgc_reaction
   class(plant_soilbgc_type), allocatable, intent(out) :: plant_soilbgc
-  character(len=*), intent(in)          :: method
+  character(len=*),                       intent(in)  :: method
 
   logical, intent(out) :: yesno
   yesno = is_reaction_exist(method)
@@ -47,16 +47,17 @@ contains
     ! create and return an object of bgc_reaction
     !
     ! !USES:
-    use BGCReactionsMod             , only : bgc_reaction_type
-    use MockBGCReactionsType     , only : bgc_reaction_mock_run_type
-    use H2OIsotopeBGCReactionsType, only : bgc_reaction_h2oiso_type
-    use babortutils                  , only : endrun
+    use BGCReactionsMod            , only : bgc_reaction_type
+    use MockBGCReactionsType       , only : bgc_reaction_mock_run_type
+    use H2OIsotopeBGCReactionsType , only : bgc_reaction_h2oiso_type
+    use babortutils                , only : endrun
     use betr_ctrl                  , only : iulog  => biulog
-
+    implicit none
     ! !ARGUMENTS:
-    class(bgc_reaction_type), allocatable :: bgc_reaction
-    character(len=*), intent(in)          :: method
-    character(len=*), parameter           :: subname = 'create_bgc_reaction_type'
+    class(bgc_reaction_type) , allocatable :: bgc_reaction
+    character(len=*)         , intent(in)  :: method
+    !local variables
+    character(len=*)         , parameter   :: subname = 'create_bgc_reaction_type'
 
     select case(trim(method))
     case ("mock_run")
@@ -75,16 +76,16 @@ contains
   !create plant soil bgc type
   !
   !USES
-  use PlantSoilBGCMod             , only : plant_soilbgc_type
-  use MockPlantSoilBGCType     , only : plant_soilbgc_mock_run_type
-  use H2OIsotopePlantSoilBGCType     , only : plant_soilbgc_h2oiso_run_type
-  use babortutils                  , only : endrun
+  use PlantSoilBGCMod            , only : plant_soilbgc_type
+  use MockPlantSoilBGCType       , only : plant_soilbgc_mock_run_type
+  use H2OIsotopePlantSoilBGCType , only : plant_soilbgc_h2oiso_run_type
+  use babortutils                , only : endrun
   use betr_ctrl                  , only : iulog  => biulog
-
+  implicit none
   ! !ARGUMENTS:
-  class(plant_soilbgc_type), allocatable :: plant_soilbgc
-  character(len=*), intent(in)          :: method
-  character(len=*), parameter           :: subname = 'create_standalone_plant_soilbgc_type'
+  class(plant_soilbgc_type) , allocatable :: plant_soilbgc
+  character(len=*)          , intent(in)  :: method
+  character(len=*)          , parameter   :: subname = 'create_standalone_plant_soilbgc_type'
 
   select case(trim(method))
   case ("mock_run")
@@ -102,8 +103,9 @@ contains
   !DESCRIPTION
   !determine if it is a default betr application
   implicit none
-  character(len=*), intent(in)          :: method
-  character(len=*), parameter           :: subname = 'is_reaction_exist'
+  character(len=*), intent(in) :: method
+  character(len=*), parameter  :: subname = 'is_reaction_exist'
+  !local variable
   logical :: yesno
   select case(trim(method))
   case ("mock_run")

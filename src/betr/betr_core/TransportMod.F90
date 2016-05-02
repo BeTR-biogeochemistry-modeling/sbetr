@@ -7,11 +7,11 @@ module TransportMod
 
 #include "bshr_assert.h"
   ! !USES:
-  use bshr_log_mod, only : errMsg => shr_log_errMsg
-  use tracer_varcon, only : bndcond_as_conc, bndcond_as_flux
-  use betr_ctrl, only : iulog => biulog
-  use babortutils, only : endrun
-  use bshr_kind_mod, only : r8 => shr_kind_r8
+  use bshr_log_mod  , only : errMsg => shr_log_errMsg
+  use tracer_varcon , only : bndcond_as_conc, bndcond_as_flux
+  use betr_ctrl     , only : iulog => biulog
+  use babortutils   , only : endrun
+  use bshr_kind_mod , only : r8 => shr_kind_r8
 
   implicit none
 
@@ -130,7 +130,6 @@ contains
     ! !LOCAL VARIABLES:
     real(r8) :: ans
     character(len=32) :: subname ='get_cntheta'
-
     ans = cntheta
     return
   end function get_cntheta
@@ -162,20 +161,20 @@ contains
     !
     ! !USES:
     !
-    use bshr_kind_mod, only : r8 => shr_kind_r8
+    use bshr_kind_mod,  only : r8 => shr_kind_r8
     use BeTR_decompMod, only : bounds_type  => betr_bounds_type
 
     implicit none
 
     ! !ARGUMENTS:
-    type(bounds_type),  intent(in) :: bounds                              !bounds
-    integer,     intent(in)        :: lbj, ubj                            ! lbinning and ubing level indices
-    integer,     intent(in)        :: jtop(bounds%begc: )                 ! index of upper boundary, which could be variable
-    integer,     intent(in)        :: numfl                               ! length of the filter
-    integer,     intent(in)        :: filter(:)                           ! the actual filter
-    real(r8),    intent(in)        :: bulkdiffus(bounds%begc: ,lbj: )     !weighted bulk diffusivity for dual-phase diffusion
-    real(r8),    intent(in)        :: dz(bounds%begc: , lbj: )
-    real(r8), intent(inout)        :: hmconductance(bounds%begc: , lbj: ) !weighted bulk conductance
+    type(bounds_type) , intent(in)    :: bounds                              !bounds
+    integer           , intent(in)    :: lbj, ubj                            ! lbinning and ubing level indices
+    integer           , intent(in)    :: jtop(bounds%begc: )                 ! index of upper boundary, which could be variable
+    integer           , intent(in)    :: numfl                               ! length of the filter
+    integer           , intent(in)    :: filter(:)                           ! the actual filter
+    real(r8)          , intent(in)    :: bulkdiffus(bounds%begc: ,lbj: )     !weighted bulk diffusivity for dual-phase diffusion
+    real(r8)          , intent(in)    :: dz(bounds%begc: , lbj: )
+    real(r8)          , intent(inout) :: hmconductance(bounds%begc: , lbj: ) !weighted bulk conductance
 
     ! !LOCAL VARIABLES:
     integer :: n, c, fc
@@ -198,7 +197,7 @@ contains
   end subroutine calc_interface_conductance
   !-------------------------------------------------------------------------------
   subroutine DiffusTransp_gw_tridiag(bounds, lbj, ubj, jtop, numfl, filter, ntrcs, trcin_mobile, &
-       Rfactor, hmconductance, dtime, dz, source, trc_concflx_air,condc_toplay, topbc_type,&
+       Rfactor, hmconductance, dtime, dz, source, trc_concflx_air,condc_toplay, topbc_type,      &
        bot_concflx, update_col, source_only, rt, at,bt,ct, botbc_type, condc_botlay)
     !
     ! !DESCRIPTION:
@@ -211,37 +210,35 @@ contains
 
     implicit none
     ! !ARGUMENTS:
-    type(bounds_type),  intent(in) :: bounds                           ! bounds
-    integer,  intent(in) :: lbj, ubj                                   ! lbinning and ubing level indices
-    integer,  intent(in) :: jtop(bounds%begc: )                        ! index of upper boundary, which could be variable
-    integer,  intent(in) :: numfl                                      ! length of the filter
-    integer,  intent(in) :: filter(:)                                  ! the actual filter
-    integer,  intent(in) :: ntrcs
-    real(r8), intent(in) :: Rfactor(bounds%begc: , lbj: )              ! conversion parameter from the given tracer phase to bulk mobile phase
-    real(r8), intent(in) :: hmconductance(bounds%begc: , lbj: )        ! weighted bulk tracer conductances
-    real(r8), intent(in) :: dz(bounds%begc: , lbj: )                   ! node thickness
-    real(r8), intent(in) :: dtime(bounds%begc: )                       ! time step
-    real(r8), intent(in) :: condc_toplay(bounds%begc: )                ! top layer conductance
-    integer,  intent(in) :: topbc_type                                 ! type of top boundary condtion: 1, concentration, 2 flux
-    real(r8), intent(in) :: bot_concflx    (bounds%begc: , 1: , 1: )   ! flux or concentration at the bottom boundary
-    real(r8), intent(in) :: trc_concflx_air(bounds%begc: , 1: , 1: )   ! atmospheric tracer concentration (topbc_type=1) or flux (topbc_type=2)
-    real(r8), intent(in) :: trcin_mobile   (bounds%begc: , lbj: , 1: ) ! incoming mobile tracer concentration
-    real(r8), intent(in) :: source         (bounds%begc: , lbj: , 1: ) ! chemical sources [mol/m3]
-
-    logical,  intent(in) :: source_only                                ! if .true. only update the source array rt, used for explicit solver
-    logical,  intent(in) :: update_col(bounds%begc: )                  ! logical switch indicating if the column is for active update
-
-    real(r8), intent(out):: rt(bounds%begc: ,lbj: , 1: )               ! tridiagonal matrix element r
-    real(r8), optional,intent(inout):: at(bounds%begc: , lbj: )        ! tridiagonal matrix element a
-    real(r8), optional,intent(inout):: bt(bounds%begc: , lbj: )        ! tridiagonal matrix element b
-    real(r8), optional,intent(inout):: ct(bounds%begc: , lbj: )        ! tridiagonal matrix element c
-    integer,  optional,intent(in)   :: botbc_type                      ! type of bottom boundary condition
-    real(r8), optional,intent(in)   :: condc_botlay(bounds%begc: )     !conductance at bottom layer
+    type(bounds_type) ,            intent(in)    :: bounds                           ! bounds
+    integer           ,            intent(in)    :: lbj, ubj                                   ! lbinning and ubing level indices
+    integer           ,            intent(in)    :: jtop(bounds%begc: )                        ! index of upper boundary, which could be variable
+    integer           ,            intent(in)    :: numfl                                      ! length of the filter
+    integer           ,            intent(in)    :: filter(:)                                  ! the actual filter
+    integer           ,            intent(in)    :: ntrcs
+    real(r8)          ,            intent(in)    :: Rfactor(bounds%begc: , lbj: )              ! conversion parameter from the given tracer phase to bulk mobile phase
+    real(r8)          ,            intent(in)    :: hmconductance(bounds%begc: , lbj: )        ! weighted bulk tracer conductances
+    real(r8)          ,            intent(in)    :: dz(bounds%begc: , lbj: )                   ! node thickness
+    real(r8)          ,            intent(in)    :: dtime(bounds%begc: )                       ! time step
+    real(r8)          ,            intent(in)    :: condc_toplay(bounds%begc: )                ! top layer conductance
+    integer           ,            intent(in)    :: topbc_type                                 ! type of top boundary condtion: 1, concentration, 2 flux
+    real(r8)          ,            intent(in)    :: bot_concflx    (bounds%begc: , 1: , 1: )   ! flux or concentration at the bottom boundary
+    real(r8)          ,            intent(in)    :: trc_concflx_air(bounds%begc: , 1: , 1: )   ! atmospheric tracer concentration (topbc_type=1) or flux (topbc_type=2)
+    real(r8)          ,            intent(in)    :: trcin_mobile   (bounds%begc: , lbj: , 1: ) ! incoming mobile tracer concentration
+    real(r8)          ,            intent(in)    :: source         (bounds%begc: , lbj: , 1: ) ! chemical sources [mol/m3]
+    logical           ,            intent(in)    :: source_only                                ! if .true. only update the source array rt, used for explicit solver
+    logical           ,            intent(in)    :: update_col(bounds%begc: )                  ! logical switch indicating if the column is for active update
+    real(r8)          ,            intent(out)   :: rt(bounds%begc: ,lbj: , 1: )               ! tridiagonal matrix element r
+    real(r8)          , optional,  intent(inout) :: at(bounds%begc: , lbj: )        ! tridiagonal matrix element a
+    real(r8)          , optional,  intent(inout) :: bt(bounds%begc: , lbj: )        ! tridiagonal matrix element b
+    real(r8)          , optional,  intent(inout) :: ct(bounds%begc: , lbj: )        ! tridiagonal matrix element c
+    integer           ,  optional, intent(in)    :: botbc_type                      ! type of bottom boundary condition
+    real(r8)          , optional,  intent(in)    :: condc_botlay(bounds%begc: )     !conductance at bottom layer
 
     ! !LOCAL VARIABLES:
-    integer :: j, fc, c, k      !indices
-    integer :: botbc_ltype      !temp. variable
-    real(r8) ::Fl, Fr
+    integer            :: j, fc, c, k      !indices
+    integer            :: botbc_ltype      !temp. variable
+    real(r8)           ::Fl, Fr
     character(len=255) :: subname='DiffusTransp_gw'
 
 
@@ -258,7 +255,6 @@ contains
     SHR_ASSERT_ALL((ubound(trcin_mobile)     == (/bounds%endc, ubj, ntrcs/)), errMsg(filename,__LINE__))
     SHR_ASSERT_ALL((ubound(bot_concflx)      == (/bounds%endc, 2, ntrcs/))  , errMsg(filename,__LINE__))
     SHR_ASSERT_ALL((ubound(trc_concflx_air)  == (/bounds%endc, 2, ntrcs/))  , errMsg(filename,__LINE__))
-
 
     if(.not. source_only) then
        SHR_ASSERT_ALL((ubound(at)            == (/bounds%endc, ubj/)),   errMsg(filename,__LINE__))
@@ -354,8 +350,8 @@ contains
 
   end subroutine DiffusTransp_gw_tridiag
 !-------------------------------------------------------------------------------
-   subroutine DiffusTransp_gw(bounds, lbj, ubj, jtop, numfl, filter, ntrcs, trcin_mobile, &
-       Rfactor, hmconductance, dtime, dz, source, trc_concflx_air,condc_toplay, topbc_type,&
+   subroutine DiffusTransp_gw(bounds, lbj, ubj, jtop, numfl, filter, ntrcs, trcin_mobile,   &
+       Rfactor, hmconductance, dtime, dz, source, trc_concflx_air,condc_toplay, topbc_type, &
        bot_flux, update_col, dtracer, botbc_type, condc_botlay)
    !
    ! !DESCRIPTION:
@@ -364,7 +360,7 @@ contains
    !
    ! !USES:
    use bshr_kind_mod   , only : r8 => shr_kind_r8
-   use BeTR_decompMod , only : bounds_type  => betr_bounds_type
+   use BeTR_decompMod  , only : bounds_type  => betr_bounds_type
    use BTridiagonalMod , only : Tridiagonal
 
    implicit none
@@ -442,8 +438,8 @@ contains
      ! Do solid phase transport with tracer source
      !
      ! !USES:
-     use bshr_kind_mod, only: r8 => shr_kind_r8
-     use BeTR_decompMod         , only : bounds_type  => betr_bounds_type
+     use bshr_kind_mod  , only : r8 => shr_kind_r8
+     use BeTR_decompMod , only : bounds_type  => betr_bounds_type
 
      implicit none
      ! !ARGUMENTS:
@@ -483,8 +479,6 @@ contains
      SHR_ASSERT_ALL((ubound(source)        == (/bounds%endc, ubj, ntrcs/)), errMsg(filename,__LINE__))
 
      SHR_ASSERT_ALL(((/ubound(trcin,1),ubound(trcin,2),size(trcin,3)/) == (/bounds%endc, ubj, ntrcs/)), errMsg(filename,__LINE__))
-
-
 
      !zero flux is imposed both at the top and bottom boundaries
      !set zero outgoing flux
@@ -538,25 +532,25 @@ contains
      ! Do diffusive solid phase tracer transport
      !
      ! !USES:
-     use bshr_kind_mod, only: r8 => shr_kind_r8
-     use BeTR_decompMod , only : bounds_type  => betr_bounds_type
+     use bshr_kind_mod   , only : r8 => shr_kind_r8
+     use BeTR_decompMod  , only : bounds_type  => betr_bounds_type
      use BTridiagonalMod , only : Tridiagonal
 
      implicit none
      ! !ARGUMENTS:
-     type(bounds_type),  intent(in) :: bounds                       ! bounds
-     integer  , intent(in)   :: lbj, ubj                            ! lbinning and ubing level indices
-     integer  , intent(in)   :: lbn(bounds%begc: )                  ! indices of top boundary
-     integer  , intent(in)   :: numfl                               ! filter dimension
-     integer  , intent(in)   :: filter(:)                           ! filter
-     integer  , intent(in)   :: ntrcs
-     real(r8) , intent(in)   :: hmconductance(bounds%begc: , lbj: ) ! weighted conductance
-     real(r8) , intent(in)   :: dtime_col(bounds%begc: )            ! model time step
-     real(r8) , intent(in)   :: dz(bounds%begc: , lbj: )            ! layer thickness
-     real(r8) , intent(in)   :: trcin (bounds%begc: , lbj: , 1: )   ! tracer concentration [mol/m3]
-     real(r8) , intent(in)   :: source(bounds%begc: , lbj: , 1: )   ! chemical sources [mol/m3/s]
-     logical  , intent(in)   :: update_col(bounds%begc: )           ! logical switch indicating if the column is for active update
-     real(r8), intent(inout) :: dtracer(bounds%begc: , lbj: ,1: )   ! update to the tracer
+     type(bounds_type) , intent(in)    :: bounds                       ! bounds
+     integer           , intent(in)    :: lbj, ubj                            ! lbinning and ubing level indices
+     integer           , intent(in)    :: lbn(bounds%begc: )                  ! indices of top boundary
+     integer           , intent(in)    :: numfl                               ! filter dimension
+     integer           , intent(in)    :: filter(:)                           ! filter
+     integer           , intent(in)    :: ntrcs
+     real(r8)          , intent(in)    :: hmconductance(bounds%begc: , lbj: ) ! weighted conductance
+     real(r8)          , intent(in)    :: dtime_col(bounds%begc: )            ! model time step
+     real(r8)          , intent(in)    :: dz(bounds%begc: , lbj: )            ! layer thickness
+     real(r8)          , intent(in)    :: trcin (bounds%begc: , lbj: , 1: )   ! tracer concentration [mol/m3]
+     real(r8)          , intent(in)    :: source(bounds%begc: , lbj: , 1: )   ! chemical sources [mol/m3/s]
+     logical           , intent(in)    :: update_col(bounds%begc: )           ! logical switch indicating if the column is for active update
+     real(r8)          , intent(inout) :: dtracer(bounds%begc: , lbj: ,1: )   ! update to the tracer
 
      ! !LOCAL VARIABLES:
      real(r8) :: at(bounds%begc:bounds%endc, lbj:ubj)             !returning tridiagonal a matrix
@@ -565,7 +559,6 @@ contains
      real(r8) :: rt(bounds%begc:bounds%endc, lbj:ubj, 1:ntrcs)             !returning tridiagonal r matrix
      character(len=255) :: subname = 'DiffusTransp_solid'
 
-
      SHR_ASSERT_ALL((ubound(lbn)           == (/bounds%endc/)),        errMsg(filename,__LINE__))
      SHR_ASSERT_ALL((ubound(hmconductance) == (/bounds%endc, ubj-1/)), errMsg(filename,__LINE__))
      SHR_ASSERT_ALL((ubound(dz)            == (/bounds%endc, ubj/)),   errMsg(filename,__LINE__))
@@ -573,9 +566,7 @@ contains
      SHR_ASSERT_ALL((ubound(dtime_col)     == (/bounds%endc/)),        errMsg(filename,__LINE__))
      SHR_ASSERT_ALL((ubound(dtracer)       == (/bounds%endc, ubj, ntrcs/)),   errMsg(filename,__LINE__))
      SHR_ASSERT_ALL((ubound(source)        == (/bounds%endc, ubj, ntrcs/)),   errMsg(filename,__LINE__))
-
      SHR_ASSERT_ALL(((/ubound(trcin,1),ubound(trcin,2),size(trcin,3)/) == (/bounds%endc, ubj,ntrcs/)), errMsg(filename,__LINE__))
-
 
      !assemble the tridiagonal matrix
      call Diffustransp_solid_tridiag(bounds, lbj, ubj, lbn, numfl, filter, ntrcs, trcin,&
@@ -638,10 +629,10 @@ contains
      ! now it allows seepage from the surface
      ! !USES:
      use bshr_kind_mod    , only : r8 => shr_kind_r8
-     use BeTR_decompMod  , only : bounds_type  => betr_bounds_type
-     use MathfuncMod     , only : cumsum, cumdif, safe_div, dot_sum, asc_sort_vec
-     use InterpolationMod, only : pchip_polycc, pchip_interp
-     use InterpolationMod, only : Lagrange_interp
+     use BeTR_decompMod   , only : bounds_type  => betr_bounds_type
+     use MathfuncMod      , only : cumsum, cumdif, safe_div, dot_sum, asc_sort_vec
+     use InterpolationMod , only : pchip_polycc, pchip_interp
+     use InterpolationMod , only : Lagrange_interp
      implicit none
      ! !ARGUMENTS:
      type(bounds_type) , intent(in)  :: bounds                             !bounds
@@ -684,7 +675,6 @@ contains
      real(r8) :: utmp
      real(r8) :: dinfl_mass
      character(len=32) :: subname='semi_lagrange_adv_backward'
-
 
      SHR_ASSERT_ALL((ubound(lbn)        == (/bounds%endc/)),         errMsg(filename,__LINE__))
      SHR_ASSERT_ALL((ubound(dtime)      == (/bounds%endc/)),         errMsg(filename,__LINE__))

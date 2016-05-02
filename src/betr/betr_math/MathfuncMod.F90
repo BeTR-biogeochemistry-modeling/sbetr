@@ -5,10 +5,10 @@ module MathfuncMod
   ! History: Created by Jinyun Tang
   !
   ! !USES:
-  use bshr_kind_mod, only : r8 => shr_kind_r8
-  use betr_ctrl, only : iulog  => biulog
-  use babortutils, only : endrun
-  use bshr_log_mod, only : errMsg => shr_log_errMsg
+  use bshr_kind_mod , only : r8 => shr_kind_r8
+  use betr_ctrl     , only : iulog  => biulog
+  use babortutils   , only : endrun
+  use bshr_log_mod  , only : errMsg => shr_log_errMsg
 
   implicit none
 
@@ -67,10 +67,9 @@ contains
     implicit none
     ! !ARGUMENTS:
     integer, intent(inout) :: a, b
-
     ! !LOCAL VARIABLES:
     integer :: c
-
+    
     c = a
     a = b
     b = c
@@ -259,8 +258,8 @@ contains
     ! avoid division by zero when calculate a/b
     implicit none
     ! !ARGUMENTS:
-    real(r8), intent(in)           :: a   !numerator
-    real(r8), intent(in)           :: b   !denominator
+    real(r8),           intent(in) :: a   !numerator
+    real(r8),           intent(in) :: b   !denominator
     real(r8), optional, intent(in) :: eps !screening threshold
     !
     ! !LOCAL VARIABLES:
@@ -294,7 +293,7 @@ contains
     integer  :: n, j
     real(r8) :: ans
 
-    SHR_ASSERT_ALL((size(x)           == size(y)), errMsg(mod_filename,__LINE__))
+    SHR_ASSERT_ALL((size(x)  == size(y)), errMsg(mod_filename,__LINE__))
 
     n = size(x)
     ! use subroutine from blas
@@ -430,7 +429,7 @@ contains
     !turn a number into a string using the specified format
     implicit none
     ! !ARGUMENTS:
-    integer, intent(in) :: a
+    integer,          intent(in) :: a
     character(len=*), intent(in) :: fmt
 
     ! !LOCAL VARIABLES:

@@ -2,16 +2,16 @@ module TracerFluxType
   !!DESCRIPTION:
   ! tracer flux type
   ! !USES:
-  use bshr_kind_mod   , only : r8 => shr_kind_r8
-  use bshr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
+  use bshr_kind_mod       , only : r8 => shr_kind_r8
+  use bshr_infnan_mod     , only : nan => shr_infnan_nan, assignment(=)
   use BeTR_decompMod      , only : bounds_type  => betr_bounds_type
   use BeTR_LandunitType   , only : lun => betr_lun
-  use BeTR_ColumnType, only : col => betr_col
-  use BeTR_PatchType , only : pft => betr_pft
-  use betr_varcon    , only : spval => bspval, ispval => bispval
-  use tracer_varcon  , only : nlevtrc_soil => betr_nlevtrc_soil
-  use BeTR_landvarconType, only : landvarcon => betr_landvarcon
-  use betr_ctrl     , only : iulog => biulog
+  use BeTR_ColumnType     , only : col => betr_col
+  use BeTR_PatchType      , only : pft => betr_pft
+  use betr_varcon         , only : spval => bspval, ispval => bispval
+  use tracer_varcon       , only : nlevtrc_soil => betr_nlevtrc_soil
+  use BeTR_landvarconType , only : landvarcon => betr_landvarcon
+  use betr_ctrl           , only : iulog => biulog
   !
   ! !PUBLIC TYPES:
 
@@ -84,10 +84,10 @@ contains
     use BeTRTracerType, only : BeTRTracer_Type
     implicit none
     ! !ARGUMENTS:
-    class(TracerFlux_type)            :: this
-    type(bounds_type), intent(in)     :: bounds
-    integer, intent(in)               :: lbj, ubj
-    type(BeTRTracer_Type), intent(in) :: betrtracer_vars
+    class(TracerFlux_type)             :: this
+    type(bounds_type)     , intent(in) :: bounds
+    integer               , intent(in) :: lbj, ubj
+    type(BeTRTracer_Type) , intent(in) :: betrtracer_vars
 
 
     call this%InitAllocate(bounds, lbj, ubj, betrtracer_vars)
@@ -105,10 +105,10 @@ contains
     implicit none
     !
     ! !ARGUMENTS:
-    class(TracerFlux_type)            :: this
-    type(bounds_type), intent(in)     :: bounds
-    integer, intent(in)               :: lbj, ubj
-    type(BeTRTracer_Type), intent(in) :: betrtracer_vars
+    class(TracerFlux_type)             :: this
+    type(bounds_type)     , intent(in) :: bounds
+    integer               , intent(in) :: lbj, ubj
+    type(BeTRTracer_Type) , intent(in) :: betrtracer_vars
     !
     ! !LOCAL VARIABLES:
     integer :: begc, endc
@@ -153,7 +153,6 @@ contains
        allocate(this%tracer_flx_totleached_col(begc:endc, 1:ngwmobile_tracers)); this%tracer_flx_totleached_col(:,:) = nan
        allocate(this%tracer_flx_vtrans_vr_col   (begc:endc, lbj:ubj, 1:ngwmobile_tracers))
        this%tracer_flx_vtrans_vr_col   (:,:,:) = nan
-
     endif
     if(nvolatile_tracers>0)then
        allocate(this%tracer_flx_ebu_col         (begc:endc, 1:nvolatile_tracers)); this%tracer_flx_ebu_col      (:,:) = nan
@@ -185,9 +184,9 @@ contains
     use BeTRTracerType, only: BeTRTracer_Type
     !
     ! !ARGUMENTS:
-    class(TracerFlux_type) :: this
-    type(bounds_type), intent(in) :: bounds
-    type(BeTRTracer_Type), intent(in) :: betrtracer_vars
+    class(TracerFlux_type)             :: this
+    type(bounds_type)     , intent(in) :: bounds
+    type(BeTRTracer_Type) , intent(in) :: betrtracer_vars
 
     !
     ! !LOCAL VARIABLES:
@@ -224,40 +223,40 @@ contains
 
         this%tracer_flx_h2osfc_snow_residual_col(begc:endc, jj) = spval
         data1dptr => this%tracer_flx_h2osfc_snow_residual_col(:, jj)
-        call hist_addfld1d (fname=trim(tracernames(jj))//'_FLX_H2OSFC_SNOW_RES', units='mol/m2/s', &
+        call hist_addfld1d (fname=trim(tracernames(jj))//'_FLX_H2OSFC_SNOW_RES', units='mol/m2/s',                   &
          avgflag='A', long_name='incoming flux to topsoi from snow and h2osfc residual for '//trim(tracernames(jj)), &
          ptr_col=data1dptr,  default='inactive')
 
         this%tracer_flx_sub_snow_col(begc:endc, jj) = spval
         data1dptr => this%tracer_flx_sub_snow_col(:, jj)
-        call hist_addfld1d (fname=trim(tracernames(jj))//'_FLX_SUB_SNOW', units='mol/m2/s', &
-         avgflag='A', long_name='sublimation flux from snow for '//trim(tracernames(jj)), &
+        call hist_addfld1d (fname=trim(tracernames(jj))//'_FLX_SUB_SNOW', units='mol/m2/s',                          &
+         avgflag='A', long_name='sublimation flux from snow for '//trim(tracernames(jj)),                            &
          ptr_col=data1dptr,  default='inactive')
 
 
         this%tracer_flx_top_soil_col(begc:endc, jj) = spval
         data1dptr => this%tracer_flx_top_soil_col(:, jj)
-        call hist_addfld1d (fname=trim(tracernames(jj))//'_FLX_TOPSOIL', units='mol/m2/s', &
-         avgflag='A', long_name='incoming flux at top of the soil for '//trim(tracernames(jj)), &
+        call hist_addfld1d (fname=trim(tracernames(jj))//'_FLX_TOPSOIL', units='mol/m2/s',                           &
+         avgflag='A', long_name='incoming flux at top of the soil for '//trim(tracernames(jj)),                      &
          ptr_col=data1dptr,  default='inactive')
 
 
         this%tracer_flx_can_loss_col(begc:endc, jj) = spval
         data1dptr => this%tracer_flx_can_loss_col(:, jj)
-        call hist_addfld1d (fname=trim(tracernames(jj))//'_FLX_CAN_LOSS', units='mol/m2/s', &
-         avgflag='A', long_name='loss from canopy for '//trim(tracernames(jj)), &
+        call hist_addfld1d (fname=trim(tracernames(jj))//'_FLX_CAN_LOSS', units='mol/m2/s',                          &
+         avgflag='A', long_name='loss from canopy for '//trim(tracernames(jj)),                                      &
          ptr_col=data1dptr, default='inactive')
 
         this%tracer_flx_snowmelt_col(begc:endc, jj) = spval
         data1dptr => this%tracer_flx_snowmelt_col(:, jj)
-        call hist_addfld1d (fname=trim(tracernames(jj))//'_FLX_SNOWMELT', units='mol/m2/s', &
-         avgflag='A', long_name='loss from snowmelt for '//trim(tracernames(jj)), &
+        call hist_addfld1d (fname=trim(tracernames(jj))//'_FLX_SNOWMELT', units='mol/m2/s',                          &
+         avgflag='A', long_name='loss from snowmelt for '//trim(tracernames(jj)),                                    &
          ptr_col=data1dptr,  default='inactive')
 
         this%tracer_flx_infl_col(begc:endc, jj) = spval
         data1dptr => this%tracer_flx_infl_col(:, jj)
-        call hist_addfld1d (fname=trim(tracernames(jj))//'_FLX_INFIL', units='mol/m2/s', &
-         avgflag='A', long_name='infiltration for '//trim(tracernames(jj)), &
+        call hist_addfld1d (fname=trim(tracernames(jj))//'_FLX_INFIL', units='mol/m2/s',                             &
+         avgflag='A', long_name='infiltration for '//trim(tracernames(jj)),                                          &
          ptr_col=data1dptr,  default='inactive')
 
 
@@ -288,66 +287,64 @@ contains
 
         this%tracer_flx_totleached_col(begc:endc, jj) = spval
         data1dptr => this%tracer_flx_totleached_col(:, jj)
-        call hist_addfld1d (fname=trim(tracernames(jj))//'_FLX_TLEACH', units='mol/m2/s', &
-         avgflag='A', long_name='transport through leaching for '//trim(tracernames(jj)), &
+        call hist_addfld1d (fname=trim(tracernames(jj))//'_FLX_TLEACH', units='mol/m2/s',                     &
+         avgflag='A', long_name='transport through leaching for '//trim(tracernames(jj)),                     &
          ptr_col=data1dptr, default='inactive')
 
         if(is_volatile(jj))then
           kk = volatileid(jj)
           this%tracer_flx_ebu_col(begc:endc, kk) = spval
           data1dptr => this%tracer_flx_ebu_col(:, kk)
-          call hist_addfld1d (fname=trim(tracernames(jj))//'_FLX_EBU', units='mol/m2/s', &
+          call hist_addfld1d (fname=trim(tracernames(jj))//'_FLX_EBU', units='mol/m2/s',                      &
             avgflag='A', long_name='loss through ebullition (+ into atmosphere) for '//trim(tracernames(jj)), &
             ptr_col=data1dptr,  default='inactive')
 
           this%tracer_flx_dif_col(begc:endc, kk) = spval
           data1dptr => this%tracer_flx_dif_col(:, kk)
-          call hist_addfld1d (fname=trim(tracernames(jj))//'_FLX_DIF', units='mol/m2/s', &
-            avgflag='A', long_name='loss through diffusion (+ into atmosphere) for '//trim(tracernames(jj)), &
+          call hist_addfld1d (fname=trim(tracernames(jj))//'_FLX_DIF', units='mol/m2/s',                      &
+            avgflag='A', long_name='loss through diffusion (+ into atmosphere) for '//trim(tracernames(jj)),  &
             ptr_col=data1dptr,  default='inactive')
 
           this%tracer_flx_tparchm_col(begc:endc, kk) = spval
           data1dptr => this%tracer_flx_tparchm_col(:, kk)
-          call hist_addfld1d (fname=trim(tracernames(jj))//'_FLX_ARCHM', units='mol/m2/s', &
-           avgflag='A', long_name='loss from aerenchyma transport for '//trim(tracernames(jj)), &
+          call hist_addfld1d (fname=trim(tracernames(jj))//'_FLX_ARCHM', units='mol/m2/s',                    &
+           avgflag='A', long_name='loss from aerenchyma transport for '//trim(tracernames(jj)),               &
            ptr_col=data1dptr, default='inactive')
 
           this%tracer_flx_surfemi_col(begc:endc, kk) = spval
           data1dptr => this%tracer_flx_surfemi_col(begc:endc, kk)
-          call hist_addfld1d (fname=trim(tracernames(jj))//'_FLX_SURFEMI', units='mol/m2/s', &
-           avgflag='A', long_name='loss from surface emission for '//trim(tracernames(jj)), &
+          call hist_addfld1d (fname=trim(tracernames(jj))//'_FLX_SURFEMI', units='mol/m2/s',                  &
+           avgflag='A', long_name='loss from surface emission for '//trim(tracernames(jj)),                   &
            ptr_col=data1dptr)
-
-
          endif
 
          this%tracer_flx_drain_col(begc:endc, jj) = spval
          data1dptr => this%tracer_flx_drain_col(:, jj)
          call hist_addfld1d (fname=trim(tracernames(jj))//'_FLX_DRAIN', units='mol/m2/s', &
-          avgflag='A', long_name='loss from drainage for '//trim(tracernames(jj)), &
+          avgflag='A', long_name='loss from drainage for '//trim(tracernames(jj)),        &
           ptr_col=data1dptr,  default='inactive')
       endif
       this%tracer_flx_netphyloss_col(begc:endc, jj) = spval
       data1dptr => this%tracer_flx_netphyloss_col(:, jj)
-      call hist_addfld1d (fname=trim(tracernames(jj))//'_FLX_NETLOSS', units='mol/m2/s', &
-        avgflag='A', long_name='net loss for '//trim(tracernames(jj)), &
+      call hist_addfld1d (fname=trim(tracernames(jj))//'_FLX_NETLOSS', units='mol/m2/s',  &
+        avgflag='A', long_name='net loss for '//trim(tracernames(jj)),                    &
         ptr_col=data1dptr, default='inactive')
 
       this%tracer_flx_netpro_col(begc:endc, jj) = spval
       data1dptr => this%tracer_flx_netpro_col(:, jj)
-      call hist_addfld1d (fname=trim(tracernames(jj))//'_FLX_NETPRO', units='mol/m2/s', &
-        avgflag='A', long_name='net production for '//trim(tracernames(jj)), &
+      call hist_addfld1d (fname=trim(tracernames(jj))//'_FLX_NETPRO', units='mol/m2/s',   &
+        avgflag='A', long_name='net production for '//trim(tracernames(jj)),              &
         ptr_col=data1dptr, default='inactive')
 
       this%tracer_flx_dstor_col(begc:endc, jj)  = spval
       data1dptr => this%tracer_flx_dstor_col(:, jj)
-      call hist_addfld1d (fname=trim(tracernames(jj))//'_FLX_DSTOR', units='mol/m2/s', &
-        avgflag='A', long_name='total concentration change for '//trim(tracernames(jj)), &
+      call hist_addfld1d (fname=trim(tracernames(jj))//'_FLX_DSTOR', units='mol/m2/s',    &
+        avgflag='A', long_name='total concentration change for '//trim(tracernames(jj)),  &
         ptr_col=data1dptr,  default='inactive')
 
       this%tracer_flx_prec_col(begc:endc, jj) = spval
       data1dptr => this%tracer_flx_prec_col(:, jj)
-      call hist_addfld1d (fname=trim(tracernames(jj))//'_FLX_PREC', units='mol/m2/s', &
+      call hist_addfld1d (fname=trim(tracernames(jj))//'_FLX_PREC', units='mol/m2/s',     &
         avgflag='A', long_name='incoming from precipitation for '//trim(tracernames(jj)), &
         ptr_col=data1dptr,  default='inactive')
 
@@ -368,13 +365,13 @@ contains
     ! !USES:
     !
     ! !ARGUMENTS:
-    class(TracerFlux_type) :: this
+    class(TracerFlux_type)         :: this
     type(bounds_type) , intent(in) :: bounds
     !
     ! !LOCAL VARIABLES:
-    integer  :: c, j, p, l       ! index
-    integer               :: begp, endp
-    integer               :: begc, endc
+    integer :: c, j, p, l       ! index
+    integer :: begp, endp
+    integer :: begc, endc
     !-----------------------------------------------------------------------
 
     begc = bounds%begc; endc= bounds%endc
@@ -467,16 +464,15 @@ contains
     !
     ! Now it is purposely empty, but will be potentially useful in the future
     ! !USES:
-    use BetrTracerType        , only : betrtracer_type
-    !use restUtilMod, only : 
-    use ncdio_pio, only : file_desc_t
+    use BetrTracerType , only : betrtracer_type
+    use ncdio_pio      , only : file_desc_t
     !
     ! !ARGUMENTS:
-    class(TracerFlux_type) :: this
-    type(bounds_type)    , intent(in)    :: bounds
-    type(file_desc_t)    , intent(inout) :: ncid                                         ! netcdf id
-    character(len=*)     , intent(in)    :: flag                                         ! 'read' or 'write'
-    type(BeTRTracer_Type), intent(in)    :: betrtracer_vars
+    class(TracerFlux_type)                :: this
+    type(bounds_type)     , intent(in)    :: bounds
+    type(file_desc_t)     , intent(inout) :: ncid                                         ! netcdf id
+    character(len=*)      , intent(in)    :: flag                                         ! 'read' or 'write'
+    type(BeTRTracer_Type) , intent(in)    :: betrtracer_vars
     !
     ! !LOCAL VARIABLES:
     integer :: j,c ! indices
@@ -484,10 +480,10 @@ contains
 
     ! remove compiler warnings for unused dummy args
     if (size(this%tracer_flx_top_soil_col) > 0) continue
-    if (bounds%begc > 0) continue
-    if (ncid%fh > 0) continue
-    if (len(flag) > 0) continue
-    if (len(betrtracer_vars%betr_simname) > 0) continue
+    if (bounds%begc > 0)                        continue
+    if (ncid%fh > 0)                            continue
+    if (len(flag) > 0)                          continue
+    if (len(betrtracer_vars%betr_simname) > 0)  continue
     
 
    end subroutine Restart
@@ -578,23 +574,21 @@ contains
   subroutine Flux_summary(this, betr_time, c, betrtracer_vars)
     !
     ! aggregate fluxes for mass balance check
-
-    use BetrTracerType        , only : betrtracer_type
-    use tracer_varcon         , only : nlevtrc_soil => betr_nlevtrc_soil
-    use MathfuncMod           , only : dot_sum
-    use BeTR_TimeMod, only : betr_time_type
-
-    implicit none
-    
-    class(TracerFlux_type), intent(in) :: this
-    class(betr_time_type), intent(in) :: betr_time
-    type(BeTRTracer_Type)  , intent(in)  :: betrtracer_vars
-    integer                , intent(in)  :: c     ! column index
+    ! USES
+    use BetrTracerType , only : betrtracer_type
+    use tracer_varcon  , only : nlevtrc_soil => betr_nlevtrc_soil
+    use MathfuncMod    , only : dot_sum
+    use BeTR_TimeMod   , only : betr_time_type
+    implicit none    
+    class(TracerFlux_type) , intent(in) :: this
+    class(betr_time_type)  , intent(in) :: betr_time
+    type(BeTRTracer_Type)  , intent(in) :: betrtracer_vars
+    integer                , intent(in) :: c     ! column index
 
     !local variables
     integer :: jj, kk
     real(r8):: dtime
-    associate(                                                          &
+    associate(                                                             &
          ntracers               => betrtracer_vars%ntracers              , &
          nvolatile_tracers      => betrtracer_vars%nvolatile_tracers     , &
          ngwmobile_tracers      => betrtracer_vars%ngwmobile_tracers     , &
@@ -655,7 +649,7 @@ contains
     !local variables
     integer :: kk
 
-    associate(                                                          &
+    associate(                                                             &
          ntracers               => betrtracer_vars%ntracers              , &
          nvolatile_tracers      => betrtracer_vars%nvolatile_tracers     , &
          ngwmobile_tracers      => betrtracer_vars%ngwmobile_tracers     , &
@@ -663,7 +657,6 @@ contains
          tracernames            => betrtracer_vars%tracernames           , &
          volatileid             => betrtracer_vars%volatileid              &
          )
-
       !the total net physical loss currently includes infiltration, surface runoff, transpiration aided transport,
       !lateral drainage, vertical leaching
       !for volatile tracers, this includes surface emission surface three different pathways

@@ -6,9 +6,9 @@ module InterpolationMod
   ! author: Jinyun Tang, Sep, 2014
 
   ! !USES:
-  use bshr_kind_mod          , only: r8 => shr_kind_r8
-  use babortutils            , only : endrun
-  use bshr_log_mod           , only: errMsg => shr_log_errMsg
+  use bshr_kind_mod , only : r8 => shr_kind_r8
+  use babortutils   , only : endrun
+  use bshr_log_mod  , only : errMsg => shr_log_errMsg
 
   implicit none
 
@@ -30,7 +30,7 @@ contains
     ! do order pn lagrangian interpolation
     implicit none
     ! !ARGUMENTS:
-    integer,  intent(in)                :: pn    !order of interpolation
+    integer,                intent(in)  :: pn    !order of interpolation
     real(r8), dimension(:), intent(in)  :: x   !location of data
     real(r8), dimension(:), intent(in)  :: y   !value of data
     real(r8), dimension(:), intent(in)  :: xi  !target points to be evaluated
@@ -40,9 +40,9 @@ contains
     integer :: k, ni, nx
     integer :: pos, disp, disp1
 
-    SHR_ASSERT_ALL((ubound(x) == ubound(y)), errMsg(mod_filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(x) == ubound(y)),   errMsg(mod_filename,__LINE__))
     SHR_ASSERT_ALL((ubound(xi) == ubound(yi)), errMsg(mod_filename,__LINE__))
-    SHR_ASSERT_ALL((ubound(x) >= pn+1), errMsg(mod_filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(x) >= pn+1),        errMsg(mod_filename,__LINE__))
 
     ni  = size(xi)
     nx = size(x)
@@ -85,9 +85,9 @@ contains
     !
     implicit none
     ! !ARGUMENTS:
-    integer, intent(in)                :: pn   ! Order of Interpolation Polynomial
+    integer,                intent(in) :: pn   ! Order of Interpolation Polynomial
     real(r8), dimension(:), intent(in) :: xvect, yvect  ! vectors of known data: x,y-values
-    real(r8), intent(in)               :: z   ! the target point "z"
+    real(r8),               intent(in) :: z   ! the target point "z"
 
     ! !LOCAL VARIABLES:
     integer   :: i, j, n
@@ -95,7 +95,7 @@ contains
     real(r8)  :: Pz    ! target value
 
     SHR_ASSERT_ALL((size(xvect) == size(yvect)), errMsg(mod_filename,__LINE__))
-    SHR_ASSERT_ALL((size(xvect) == pn+1), errMsg(mod_filename,__LINE__))
+    SHR_ASSERT_ALL((size(xvect) == pn+1),        errMsg(mod_filename,__LINE__))
 
     ! n = number of data points:length of each data vector
     n = size(xvect)
@@ -122,7 +122,7 @@ contains
     implicit none
     ! !ARGUMENTS:
     real(r8), dimension(:), intent(in) :: xvect       ! vector of x-values
-    real(r8), intent(in)               :: x
+    real(r8),               intent(in) :: x
 
     integer :: i, k, n
 
@@ -287,7 +287,6 @@ contains
           case default
              call endrun(msg='an constraint region must be specified for pchip_polycc '//errMsg(mod_filename, __LINE__))
           end select
-
        endif
     enddo
 

@@ -5,14 +5,14 @@ module ODEMod
   ! Jinyun Tang, 2013
   !
   ! !USES:
-  use bshr_kind_mod          , only : r8 => shr_kind_r8
-  use betr_ctrl            , only : iulog => biulog
+  use bshr_kind_mod , only : r8 => shr_kind_r8
+  use betr_ctrl     , only : iulog => biulog
   
   implicit none
 
   private
 
-  real(r8), parameter :: tiny = 1.e-23_r8
+  real(r8),        parameter :: tiny = 1.e-23_r8
   logical, public, parameter :: ldebug_ode=.false.
 
   public :: ode_mbbks1, ode_adapt_mbbks1
@@ -35,12 +35,12 @@ contains
     !
     implicit none
     ! !ARGUMENTS:
-    integer,  intent(in)            :: nprimeq !number of primary equations that are subject to positive constraint
-    integer,  intent(in)            :: neq     !total number of equations
-    real(r8), intent(in)            :: y0(neq) !initial values
-    real(r8), intent(in)            :: t       !current time
-    real(r8), intent(in)            :: dt      !time step
-    real(r8), intent(out)           :: y(neq)  !return values
+    integer,            intent(in)  :: nprimeq !number of primary equations that are subject to positive constraint
+    integer,            intent(in)  :: neq     !total number of equations
+    real(r8),           intent(in)  :: y0(neq) !initial values
+    real(r8),           intent(in)  :: t       !current time
+    real(r8),           intent(in)  :: dt      !time step
+    real(r8),           intent(out) :: y(neq)  !return values
     real(r8), optional, intent(out) :: pscal   !scaling factor
     external :: odefun
 
@@ -69,7 +69,6 @@ contains
     real(r8), intent(out) :: y(neq)     !return value
 
     external :: odefun
-
     ! !LOCAL VARIABLES:
     real(r8) :: f(neq)
     real(r8) :: f1(neq)
@@ -92,12 +91,12 @@ contains
     !first order accurate implicit BBKS fixed time step positive preserving ode integrator
     implicit none
     ! !ARGUMENTS:
-    integer,  intent(in)            :: nprimeq
-    integer,  intent(in)            :: neq
-    real(r8), intent(in)            :: y0(neq)
-    real(r8), intent(in)            :: t
-    real(r8), intent(in)            :: dt
-    real(r8), intent(out)           :: y(neq)
+    integer,            intent(in)  :: nprimeq
+    integer,            intent(in)  :: neq
+    real(r8),           intent(in)  :: y0(neq)
+    real(r8),           intent(in)  :: t
+    real(r8),           intent(in)  :: dt
+    real(r8),           intent(out) :: y(neq)
     real(r8), optional, intent(out) :: pscal
     external :: odefun
 
@@ -259,7 +258,6 @@ contains
     call daxpy(neq, a, f, 1, y, 1)
     deallocate(mbkks_data%aj)
 
-
   end subroutine mbbks
 
   !-------------------------------------------------------------------------------
@@ -339,7 +337,6 @@ contains
        endif
        if(abs(dtr/dt)<1.e-4_r8)exit
     enddo
-
   end subroutine ode_adapt_mbbks1
 
   !-------------------------------------------------------------------------------
@@ -349,7 +346,7 @@ contains
     ! obtain the relative error
     implicit none
     ! !ARGUMENTS:
-    integer, intent(in)  :: neq     !number of equations
+    integer,  intent(in) :: neq     !number of equations
     real(r8), intent(in) :: yc(neq) !coarse solution
     real(r8), intent(in) :: yf(neq) !fine solution
 
@@ -388,14 +385,12 @@ contains
     !get the gradient scaling factor for bkks integrator
     !
     ! !USES:
-    use FindRootMod, only : brent
-    use func_data_type_mod, only : func_data_type
-
+    use FindRootMod        , only : brent
+    use func_data_type_mod , only : func_data_type
     implicit none
-
     ! !ARGUMENTS:
-    type(func_data_type), intent(in) :: mbkks_data
-    real(r8), intent(in) :: pmax
+    type(func_data_type) , intent(in) :: mbkks_data
+    real(r8)             , intent(in) :: pmax
 
     ! !LOCAL VARIABLES:
     real(r8) :: iJ
@@ -415,10 +410,10 @@ contains
   subroutine gfunc_mbkks(p, mbkks_data, gf_value)
     ! !DESCRIPTION:
     !the bkks function
+    !
+    !USES
     use func_data_type_mod, only : func_data_type
-
     implicit none
-
     ! !ARGUMENTS:
     real(r8), intent(in) :: p
     type(func_data_type), intent(in) :: mbkks_data
@@ -447,15 +442,17 @@ contains
   subroutine ebbks(y0, f, nprimeq, neq, dt, y,ps)
     ! !DESCRIPTION:
     !ebbks update
+    !
+    !USES   
     implicit none
     ! !ARGUMENTS:
-    integer,  intent(in) :: neq
-    real(r8), intent(in) :: y0(neq)
-    real(r8), intent(in) :: f(neq)
-    real(r8), intent(in) :: dt
-    integer,  intent(in) :: nprimeq
-    real(r8), intent(out):: y(neq)
-    real(r8), optional, intent(out):: ps
+    integer,            intent(in)  :: neq
+    real(r8),           intent(in)  :: y0(neq)
+    real(r8),           intent(in)  :: f(neq)
+    real(r8),           intent(in)  :: dt
+    integer,            intent(in)  :: nprimeq
+    real(r8),           intent(out) :: y(neq)
+    real(r8), optional, intent(out) :: ps
     ! !LOCAL VARIABLES:
     real(r8), parameter :: beta=0.999_r8  !scaling parameter
     real(r8) :: js, jsmin
@@ -481,12 +478,10 @@ contains
     if(nJ>0)then
        p = min(jsmin*beta,1._r8)
     endif
-
     y(:) = y0(:)
     if(present(ps))ps=p
     p = p * dt
     call daxpy(neq, p, f, 1, y, 1)
-
   end subroutine ebbks
 
 

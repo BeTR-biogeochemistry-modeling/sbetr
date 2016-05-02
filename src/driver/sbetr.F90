@@ -3,15 +3,15 @@ program main
   !main driver file for standalone betr
   !
   !USES
-  use sbetrDriverMod, only : sbetrBGC_driver
-  use betr_constants, only : stdout, betr_filename_length, betr_namelist_buffer_size
-  use betr_utils, only : remove_filename_extension
+  use sbetrDriverMod , only : sbetrBGC_driver
+  use betr_constants , only : stdout, betr_filename_length, betr_namelist_buffer_size
+  use betr_utils     , only : remove_filename_extension
   implicit none
   integer :: arg_count
   integer :: args
-  character(len=betr_filename_length) :: namelist_filename
+  character(len=betr_filename_length)      :: namelist_filename
   character(len=betr_namelist_buffer_size) :: namelist_buffer
-  character(len=betr_filename_length) :: base_filename
+  character(len=betr_filename_length)      :: base_filename
 
 
   arg_count = command_argument_count()
@@ -39,8 +39,10 @@ end program main
 
 ! ----------------------------------------------------------------------
 subroutine usage()
+  !DESCRIPTION
+  !display something
   use betr_constants, only : stdout
-
+ implicit none
   write(stdout, *) 'sbetr - standalone driver for BeTR reactive transport library.'
   write(stdout, *) 'usage: sbetr namelist_filename'
 end subroutine usage
@@ -48,14 +50,16 @@ end subroutine usage
 ! ----------------------------------------------------------------------
 
 subroutine namelist_to_buffer(namelist_filename, namelist_buffer)
-
+  !DESCRIPTION
+  !read in namelist
+  !USES
   use betr_constants, only : betr_string_length_long, betr_namelist_buffer_size, stdout
+  implicit none
+  character(len=*)                         , intent(in)  :: namelist_filename
+  character(len=betr_namelist_buffer_size) , intent(out) :: namelist_buffer
 
-  character(len=*), intent(in) :: namelist_filename
-  character(len=betr_namelist_buffer_size), intent(out) :: namelist_buffer
-
-  character(len=*), parameter :: subname = 'namelist_to_buffer'
-  character(len=betr_string_length_long) :: ioerror_msg
+  character(len=*), parameter                            :: subname = 'namelist_to_buffer'
+  character(len=betr_string_length_long)                 :: ioerror_msg
   integer :: nml_unit, nml_error
 
   nml_unit = 16
@@ -92,6 +96,4 @@ subroutine namelist_to_buffer(namelist_filename, namelist_buffer)
      call abort()
   end if
   close(nml_unit)
-
-
 end subroutine namelist_to_buffer

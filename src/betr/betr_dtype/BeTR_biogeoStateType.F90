@@ -15,7 +15,7 @@ contains
 
   subroutine Init(this, bounds)
 
-  class(betr_biogeo_state_type) :: this
+  class(betr_biogeo_state_type)      :: this
   type(betr_bounds_type), intent(in) :: bounds
 
   call this%InitAllocate(bounds)
@@ -24,15 +24,15 @@ contains
   !------------------------------------------------------------------------
   subroutine InitAllocate(this, bounds)
 
-  class(betr_biogeo_state_type) :: this
+  class(betr_biogeo_state_type)      :: this
   type(betr_bounds_type), intent(in) :: bounds
 
   integer :: begp, endp
   integer :: begc, endc
   integer :: lbj, ubj
-  begp = bounds%begp; endp=bounds%endp
-  begc = bounds%begc; endc=bounds%endc
-  lbj = bounds%lbj; ubj=bounds%ubj
+  begp = bounds%begp ; endp=bounds%endp
+  begc = bounds%begc ; endc=bounds%endc
+  lbj = bounds%lbj   ; ubj=bounds%ubj
 
   !soilhydrology
   allocate(this%zwts_col           (begc:endc) ) ! the shallower between zwt_perch and zwt

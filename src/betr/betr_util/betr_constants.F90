@@ -3,7 +3,6 @@ module betr_constants
   implicit none
 
   integer, parameter :: stdout = 6
-
   integer, parameter :: betr_var_name_length = 36
   integer, parameter :: betr_string_length = 128
   integer, parameter :: betr_string_length_long = 256
