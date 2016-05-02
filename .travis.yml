@@ -1,9 +1,5 @@
 language: 
 
-os:
-  - linux
-  - osx
-
 before_script:
   - echo -e "Host *\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
 
