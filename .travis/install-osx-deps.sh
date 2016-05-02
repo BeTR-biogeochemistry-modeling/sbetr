@@ -9,3 +9,10 @@ brew install gcc netcdf --with-fortran --without-cxx
 # Make sure the weird gfortran library links are in place.
 ln -s /usr/local/lib/gcc/5/libgfortran.dylib /usr/local/lib/libgfortran.dylib
 ln -s /usr/local/lib/gcc/5/libgfortran.a /usr/local/lib/libgfortran.a
+
+cat >> ~/.profile <<EOF
+CC=gcc
+CXX=g++
+FC=gfortran
+export CC CXX FC
+EOF

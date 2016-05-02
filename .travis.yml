@@ -30,7 +30,7 @@ addons:
 
 
 before_script:
-  - make config debug=$DEBUG travis=1
+  - make config debug=$DEBUG CC=${CC} CXX=${CXX} FC=${FC} travis=1
 
 
 script: 
