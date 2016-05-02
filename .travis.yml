@@ -14,10 +14,6 @@ dist: trusty # Ubuntu 14.04.
 compiler:
   - gcc
 
-env:
-  - DEBUG=0
-  - DEBUG=1
-
 install: sh ./.travis/install-$TRAVIS_OS_NAME-deps.sh
 
 addons:
