@@ -10,9 +10,3 @@ brew install gcc netcdf --with-fortran --without-cxx
 ln -s /usr/local/lib/gcc/5/libgfortran.dylib /usr/local/lib/libgfortran.dylib
 ln -s /usr/local/lib/gcc/5/libgfortran.a /usr/local/lib/libgfortran.a
 
-CC=gcc
-CXX=g++
-FC=gfortran
-export CC CXX FC
-
-make config debug=$DEBUG CC=${CC} CXX=${CXX} FC=${FC} travis=1

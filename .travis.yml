@@ -29,12 +29,13 @@ addons:
       - cmake
 
 
-#before_script:
-#  - . ./compilers.sh; make config debug=$DEBUG CC=${CC} CXX=${CXX} FC=${FC} travis=1
-
-
 script: 
-  - make debug=$DEBUG all
-  - make debug=$DEBUG test
-  - make debug=$DEBUG install
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then export CC=gcc-5; export CXX=g++-5; export FC=gfortran-5;  else export CC=gcc; export CXX=g++; export FC=gfortran; fi
+  - echo CC=${CC}
+  - echo CXX=${CXX}
+  - echo FC=${FC}
+  - make debug=$DEBUG CC=${CC} CXX=${CXX} FC=${FC} config
+  - make debug=$DEBUG CC=${CC} CXX=${CXX} FC=${FC} all
+  - make debug=$DEBUG CC=${CC} CXX=${CXX} FC=${FC} test
+  - make debug=$DEBUG CC=${CC} CXX=${CXX} FC=${FC} install
   - cd regression-tests; make rtest
