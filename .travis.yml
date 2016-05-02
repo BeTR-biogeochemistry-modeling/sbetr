@@ -28,9 +28,25 @@ addons:
     packages:
       - cmake
 
+matrix:
+  include:
+    # linux + gcc-5 + DEBUG=0
+    - env: CC=gcc-5; export CXX=g++-5; export FC=gfortran-5; DEBUG=0
+      os: linux
+
+    # linux + gcc-5 + DEBUG=1
+    - env: CC=gcc-5; export CXX=g++-5; export FC=gfortran-5; DEBUG=1
+      os: linux
+
+    # osx + gcc + DEBUG=0
+    - env: CC=gcc; export CXX=g++; export FC=gfortran; DEBUG=0
+      os: osx
+
+    # osx + gcc + DEBUG=1
+    - env: CC=gcc; export CXX=g++; export FC=gfortran; DEBUG=1
+      os: osx
 
 script: 
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then export CC=gcc-5; export CXX=g++-5; export FC=gfortran-5;  else export CC=gcc; export CXX=g++; export FC=gfortran; fi
   - echo CC=${CC}
   - echo CXX=${CXX}
   - echo FC=${FC}
