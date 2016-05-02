@@ -25,7 +25,7 @@ module BetrBGCMod
   use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
   use betr_biogeoStateType     , only : betr_biogeo_state_type
   use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
-  use EcophysConType           , only : ecophyscon_type
+  use BeTR_EcophysConType      , only : betr_ecophyscon_type
   use tracer_varcon            , only : nlevsno => betr_nlevsno
   implicit none
 

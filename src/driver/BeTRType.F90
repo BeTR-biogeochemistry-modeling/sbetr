@@ -29,7 +29,7 @@ module BetrType
   use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
   use BeTR_biogeoStateType     , only : betr_biogeo_state_type
   use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
-  use EcophysConType           , only : ecophyscon_type
+  use BeTR_EcophysConType      , only : betr_ecophyscon_type
 
   implicit none
 
@@ -103,10 +103,10 @@ contains
     character(len=betr_namelist_buffer_size) , intent(in)           :: namelist_buffer
     type(betr_bounds_type)                   , intent(in)           :: bounds
     type(betr_biogeophys_input_type)         , intent(in)           :: biophysforc
-    type(ecophyscon_type)                    , intent(in), optional :: ecophyscon
+    type(betr_ecophyscon_type)               , intent(in), optional :: ecophyscon
 
     !temporary variables
-    type(ecophyscon_type) :: junk
+    type(betr_ecophyscon_type) :: junk
     integer               :: lbj, ubj
 
     if (present(ecophyscon)) then
@@ -516,7 +516,7 @@ contains
 
   !DESCRIPTION
   !temporary mass balance check
-  !USES 
+  !USES
   use tracerfluxType  , only : tracerflux_type
   use tracerstatetype , only : tracerstate_type
   use BeTR_TimeMod    , only : betr_time_type
@@ -660,7 +660,7 @@ contains
    ! pre diagnose advective water fluxes at different soil interfaces
 
    implicit none
-   !ARGUMENTS 
+   !ARGUMENTS
    class(betr_type)                 , intent(inout) :: this
    type(bounds_type)                , intent(in)    :: bounds
    integer                          , intent(in)    :: num_nolakec                        ! number of column non-lake points in column filter
@@ -1083,7 +1083,7 @@ contains
    !------------------------------------------------------------------------
   subroutine create_betr_application(this, bgc_reaction, plant_soilbgc, method)
   !DESCRIPTION
-  !create betr applications based on method  
+  !create betr applications based on method
   !USES
   use ReactionsFactory    , only : create_betr_def_application
   use ApplicationsFactory , only : create_betr_usr_application

@@ -120,7 +120,7 @@ end type plant_soilbgc_type
   use BeTR_biogeoStateType , only : betr_biogeo_state_type
   use BeTR_biogeoFluxType  , only : betr_biogeo_flux_type
   use BeTR_decompMod       , only : betr_bounds_type
-  use EcophysConType       , only : ecophyscon_type
+  use BeTR_EcophysConType  , only : betr_ecophyscon_type
   ! !ARGUMENTS:
   import :: plant_soilbgc_type
 
@@ -130,7 +130,7 @@ end type plant_soilbgc_type
   integer                      , intent(in) :: filter(:)
   type(betr_biogeo_state_type) , intent(in) :: biogeo_states
   type(betr_biogeo_flux_type)  , intent(in) :: biogeo_fluxes
-  type(ecophyscon_type)        , intent(in) :: ecophyscon_vars
+  type(betr_ecophyscon_type)   , intent(in) :: ecophyscon_vars
 
   end subroutine lsm_betr_plant_soilbgc_send_interface
 

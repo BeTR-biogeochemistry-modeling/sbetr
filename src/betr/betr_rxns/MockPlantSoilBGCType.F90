@@ -133,11 +133,11 @@ module MockPlantSoilBGCType
   type(betr_biogeo_flux_type)        , intent(inout) :: biogeo_fluxes
 
   ! remove compiler warnings for unused dummy args
-  if (this%dummy_compiler_warning) continue
-  if (bounds%begc > 0)             continue
-  if (numf > 0)                    continue
-  if (size(filter) > 0)            continue
-
+  if (this%dummy_compiler_warning)        continue
+  if (bounds%begc > 0)                    continue
+  if (numf > 0)                           continue
+  if (size(filter) > 0)                   continue
+  if (size(biogeo_fluxes%qflx_adv_col)>0) continue
   end subroutine lsm_betr_plant_soilbgc_recv
 
 
@@ -153,7 +153,7 @@ module MockPlantSoilBGCType
   use BeTR_biogeoStateType , only : betr_biogeo_state_type
   use BeTR_biogeoFluxType  , only : betr_biogeo_flux_type
   use BeTR_decompMod       , only : betr_bounds_type
-  use EcophysConType       , only : ecophyscon_type
+  use BeTR_EcophysConType  , only : betr_ecophyscon_type
 
   ! !ARGUMENTS:
   class(plant_soilbgc_mock_run_type) , intent(in) :: this
@@ -162,13 +162,16 @@ module MockPlantSoilBGCType
   integer                            , intent(in) :: filter(:)
   type(betr_biogeo_state_type)       , intent(in) :: biogeo_states
   type(betr_biogeo_flux_type)        , intent(in) :: biogeo_fluxes
-  type(ecophyscon_type)              , intent(in) :: ecophyscon_vars
+  type(betr_ecophyscon_type)         , intent(in) :: ecophyscon_vars
   
   ! remove compiler warnings for unused dummy args
-  if (this%dummy_compiler_warning) continue
-  if (bounds%begc > 0)             continue
-  if (numf > 0)                    continue
-  if (size(filter) > 0)            continue
-
+  if (this%dummy_compiler_warning)       continue
+  if (bounds%begc > 0)                   continue
+  if (numf > 0)                          continue
+  if (size(filter) > 0)                  continue
+  if (size(biogeo_states%zwts_col)>0)    continue
+  if(size(biogeo_fluxes%qflx_adv_col)>0) continue
+  if(size(ecophyscon_vars%noveg)>0)      continue
+  
   end subroutine lsm_betr_plant_soilbgc_send
 end module MockPlantSoilBGCType

@@ -17,6 +17,7 @@ module BeTRSimulationALM
   use BeTRSimulation    , only : betr_simulation_type
   use BeTR_TimeMod      , only : betr_time_type
   use EcophysConType    , only : ecophyscon_type
+  use BeTR_EcophysConType    , only : betr_ecophyscon_type
   use tracer_varcon     , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
   use BeTR_PatchType    , only : betr_pft
   use BeTR_ColumnType   , only : betr_col
@@ -29,7 +30,7 @@ module BeTRSimulationALM
        __FILE__
 
   type, public, extends(betr_simulation_type) :: betr_simulation_alm_type
-     type(ecophyscon_type) :: ecophyscon
+     type(betr_ecophyscon_type) :: betr_ecophyscon
    contains
      procedure :: Init                              => ALMInit
      procedure, public :: StepWithoutDrainage       => ALMStepWithoutDrainage
