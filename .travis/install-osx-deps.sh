@@ -15,5 +15,4 @@ CXX=g++
 FC=gfortran
 export CC CXX FC
 
-cd ..
 make config debug=$DEBUG CC=${CC} CXX=${CXX} FC=${FC} travis=1
