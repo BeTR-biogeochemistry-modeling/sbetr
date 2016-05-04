@@ -171,6 +171,58 @@ endif()
 
 set(POLYMEC_TP_LIBS ${HDF5_LIBRARIES};${POLYMEC_TP_LIBS})
 
+# Build the netcdf library.
+set(NETCDF_LIBRARY "${PROJECT_BINARY_DIR}/lib/libnetcdf${LIB_SUFFIX}")
+if (NOT EXISTS ${NETCDF_LIBRARY})
+  message("Preparing netcdf-c...")
+  execute_process(COMMAND cmake -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/netcdf-c ${CMAKE_CURRENT_BINARY_DIR}/netcdf-c
+                  RESULT_VARIABLE stat)
+  if (NOT stat EQUAL 0)
+    message(FATAL_ERROR "Copying library source failed.")
+  endif()
+
+  message("Configuring netcdf-c library...")
+  execute_process(COMMAND "${CMAKE_COMMAND}" -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DUSE_HDF5=ON -DHDF5_LIB=${POLYMEC_HDF5_LIBRARY} -DHDF5_HL_LIB=${POLYMEC_HDF5_HL_LIBRARY} -DHDF5_INCLUDE_DIR=${POLYMEC_HDF5_INCLUDE_DIR} -DCMAKE_INSTALL_PREFIX=${PROJECT_BINARY_DIR} -DCMAKE_INSTALL_LIBDIR=lib -DENABLE_DAP=OFF -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS} -DFIND_SHARED_LIBS=${BUILD_SHARED_LIBS} -DENABLE_DYNAMIC_LOADING=ON -DENABLE_TESTS=OFF -DBUILD_UTILITIES=ON -DBUILD_EXAMPLES=OFF -DNC_HAVE_PARALLEL_HDF5=${POLYMEC_HAVE_MPI} -DHDF5_IS_PARALLEL=${POLYMEC_HAVE_MPI}
+                  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/netcdf-c
+                  OUTPUT_VARIABLE netcdf_config_log ERROR_VARIABLE netcdf_config_err
+                  RESULT_VARIABLE stat)
+  file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/netcdf-c_config.log ${netcdf_config_log})
+  if (NOT stat EQUAL 0)
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/netcdf-c_config_errors.log ${netcdf_config_err})
+    message(FATAL_ERROR "Error configuring netcdf-c library. See ${CMAKE_CURRENT_BINARY_DIR}/netcdf-c_config*.log for details.")
+  endif()
+
+  message("Building and installing netcdf-c library...")
+  execute_process(COMMAND make install -j4
+                  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/netcdf-c
+                  OUTPUT_VARIABLE netcdf_build_log ERROR_VARIABLE netcdf_build_err
+                  RESULT_VARIABLE stat)
+  file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/netcdf-c_build.log ${netcdf_build_log})
+  if (NOT stat EQUAL 0)
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/netcdf-c_build_errors.log ${netcdf_build_err})
+    message(FATAL_ERROR "Error building netcdf-c library. See ${CMAKE_CURRENT_BINARY_DIR}/netcdf-c_build*.log for details.")
+  endif()
+
+  # On Macs we need to change the rpath of shared libraries so we can install them elsewhere.
+  if (APPLE AND BUILD_SHARED_LIBS)
+    execute_process(COMMAND install_name_tool -id @rpath/libnetcdf${LIB_SUFFIX} ${PROJECT_BINARY_DIR}/lib/libnetcdf${LIB_SUFFIX})
+  endif()
+
+endif()
+
+if (NOT CMAKE_INSTALL_PREFIX STREQUAL "INSTALL_DISABLED")
+  if (${NETCDF_LIBRARY} STREQUAL "${PROJECT_BINARY_DIR}/lib/libnetcdf${LIB_SUFFIX}")
+    file(GLOB nc_libs "${PROJECT_BINARY_DIR}/lib/libnetcdf*${LIB_SUFFIX}*")
+    install(FILES ${nc_libs} DESTINATION lib)
+    foreach(nc_util nc-config;nccopy;ncdump;ncgen;ncgen3)
+      list(APPEND nc_utils ${PROJECT_BINARY_DIR}/bin/${nc_util})
+    endforeach()
+    install(FILES ${nc_utils} DESTINATION bin
+            PERMISSIONS OWNER_READ;OWNER_WRITE;OWNER_EXECUTE;
+                        GROUP_READ;GROUP_EXECUTE;WORLD_READ;WORLD_EXECUTE)
+  endif()
+endif()
+set(POLYGLOT_TP_LIBS netcdf;${POLYGLOT_TP_LIBS})
 
 # Add all the libraries to the build system at large.
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${BETR_TP_C_FLAGS}" PARENT_SCOPE)
