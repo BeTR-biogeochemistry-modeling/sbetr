@@ -51,6 +51,51 @@ set_target_properties(pfunit PROPERTIES IMPORTED_LOCATION ${PROJECT_BINARY_DIR}/
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/3rd-party/pfunit/include/" PARENT_SCOPE)
 set(ENV{PFUNIT} ${PROJECT_BINARY_DIR} CACHE)
 
+# Build zlib for compression.
+if (NOT EXISTS ${Z_LIBRARY})
+  set(ZLIB_CONFIG_OPTS --prefix=${PROJECT_BINARY_DIR} --static)
+
+  message("Preparing zlib...")
+  execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/zlib ${CMAKE_CURRENT_BINARY_DIR}/zlib
+                  RESULT_VARIABLE stat)
+  if (NOT stat EQUAL 0)
+    message(FATAL_ERROR "Copying library source failed.")
+  endif()
+
+  message("Configuring zlib...")
+  execute_process(COMMAND env CC=${CMAKE_C_COMPILER} CFLAGS=${CMAKE_C_FLAGS} ./configure ${ZLIB_CONFIG_OPTS}
+                  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/zlib
+                  OUTPUT_VARIABLE zlib_config_log ERROR_VARIABLE zlib_config_err
+                  RESULT_VARIABLE stat)
+  file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/zlib_config.log ${zlib_config_log})
+  if (NOT stat EQUAL 0)
+    if (TRAVIS_CI)
+      message(WARNING "Configuration of zlib library failed:")
+      message(FATAL_ERROR ${zlib_config_err})
+    else()
+      file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/zlib_config_errors.log ${zlib_config_err})
+      message(FATAL_ERROR "Configuration of zlib library failed. See ${CMAKE_CURRENT_BINARY_DIR}/zlib_config_*.log.")
+    endif()
+  endif()
+
+  message("Building and installing zlib (${NUM_BUILD_THREADS} threads)...")
+  execute_process(COMMAND make install -j${NUM_BUILD_THREADS}
+                  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/zlib
+                  OUTPUT_VARIABLE zlib_build_log ERROR_VARIABLE zlib_build_err
+                  RESULT_VARIABLE stat)
+  file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/zlib_build.log ${zlib_build_log})
+  if (NOT stat EQUAL 0)
+    if (TRAVIS_CI)
+      message(WARNING "Build of zlib library failed:")
+      message(FATAL_ERROR ${zlib_build_err})
+    else()
+      file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/zlib_build_errors.log ${zlib_build_err})
+      message(FATAL_ERROR "Build of zlib library failed. See ${CMAKE_CURRENT_BINARY_DIR}/zlib_build_*.log.")
+    endif()
+  endif()
+
+endif()
+set(BETR_TP_LIBS z;${BETR_TP_LIBS})
 
 
 # Add all the libraries to the build system at large.
