@@ -31,6 +31,8 @@ if (NOT EXISTS ${PROJECT_BINARY_DIR}/lib/libpfunit.a)
 
   if (NOT stat EQUAL 0)
     file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/pfunit_config_errors.log ${pfunit_config_err})
+    message(${pfunit_config_log})
+    message(${pfunit_config_err})
     message(FATAL_ERROR "Configuration of pfunit library failed.")
   endif()
 
