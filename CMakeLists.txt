@@ -1,6 +1,8 @@
 # Minimum CMake version.
 cmake_minimum_required (VERSION 2.8.12)
 
+set(GFORTRAN_MINIMUM_VERSION "5.3.0")
+
 # Adjust CMake's module path.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
@@ -101,6 +103,9 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${SYS_FLAGS}")
 
 # Fortran compiler flags.
 if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
+  if(CMAKE_Fortran_COMPILER_VERSION VERSION_LESS ${GFORTRAN_MINIMUM_VERSION})
+    message(FATAL_ERROR "The gfortran compiler version must be greater than ${GFORTRAN_MINIMUM_VERSION}. You have: ${CMAKE_Fortran_COMPILER_VERSION}.")
+  endif()
   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -W -Wall -std=gnu -pedantic -Wno-unused-variable -Wno-unused-parameter -Werror=use-without-only -DCPRGNU")
 endif()
 

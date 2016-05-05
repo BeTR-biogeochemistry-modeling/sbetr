@@ -7,6 +7,37 @@ Jinyun Tang, jinyuntang@lbl.gov
 
 ## Building
 
+### Requirements
+
+Requirements for configuring and building BeTR:
+
+* fortran compiler
+
+  * gfortran > 5.3.0. Older versions make work, but are not
+    supported. At a minimum, you will have to change the compiler
+    flags. The pfunit testing frame work can NOT be build with gcc <
+    4.9.
+
+  * intel - TBD
+
+  * pgi - TBD
+
+  * nag - TBD
+
+* c compiler - only used for 3rd-party libraries. Any modern compiler
+  should work. The following versions are tested:
+
+  * clang - approximately 7.3
+
+  * gcc - 5.3
+
+* python 2.7
+
+All third party dependancies for building and running standalone BeTR
+will eventually be included in the 3rd-party directory.
+
+### Build
+
 BeTR uses a cmake based build system. The default build is debug. To
 build using the default debug configuration:
 
@@ -33,6 +64,10 @@ To build a release configuration of the code:
 The following command will create local/bin/, where sbetr will be installed.
 
     make install
+
+Please note, the top level make file providing `make config` etc is a
+convenience for the most common use cases. You don't have to use it
+and can specify all configuration and build commands manually.
 
 ## Testing
 
