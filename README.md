@@ -53,7 +53,7 @@ where Xyz is the build configuration.
 
 The standalone `sbetr` executable is in:
 
-    ${SBETR_(ROOT}/bulid/Xyz-Debug/src/driver/sbetr
+    ${SBETR_(ROOT}/build/Xyz-Debug/src/driver/sbetr
 
 To build a release configuration of the code:
 
