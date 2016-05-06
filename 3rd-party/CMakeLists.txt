@@ -183,6 +183,7 @@ endif()
 # take a while to catch up to recent developments) from freaking out.
 if (NOT HDF5_LIB_NAME STREQUAL "hdf5" AND HDF5_LIBRARY MATCHES "${PROJECT_BINARY_DIR}/lib" AND NOT EXISTS ${PROJECT_BINARY_DIR}/lib/libhdf5${LIB_SUFFIX})
   execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${HDF5_LIBRARY} ${PROJECT_BINARY_DIR}/lib/libhdf5${LIB_SUFFIX})
+  execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${HDF5_HL_LIBRARY} ${PROJECT_BINARY_DIR}/lib/libhdf5_hl${LIB_SUFFIX})
 endif()
 
 set(BETR_TP_LIBS ${HDF5_LIBRARIES};${BETR_TP_LIBS})
