@@ -153,13 +153,13 @@ if (NOT EXISTS ${HDF5_LIBRARY})
   
 endif()
 if (HDF5_LIBRARY STREQUAL "${PROJECT_BINARY_DIR}/lib/lib${HDF5_LIB_NAME}${LIB_SUFFIX}")
-  set(POLYMEC_HDF5_LIBRARY "${CMAKE_INSTALL_PREFIX}/lib/lib${HDF5_LIB_NAME}${LIB_SUFFIX}" PARENT_SCOPE)
-  set(POLYMEC_HDF5_HL_LIBRARY "${CMAKE_INSTALL_PREFIX}/lib/lib${HDF5_HL_LIB_NAME}${LIB_SUFFIX}" PARENT_SCOPE)
-  set(POLYMEC_HDF5_INCLUDE_DIR "${CMAKE_INSTALL_PREFIX}/include" PARENT_SCOPE)
+  set(BETR_HDF5_LIBRARY "${CMAKE_INSTALL_PREFIX}/lib/lib${HDF5_LIB_NAME}${LIB_SUFFIX}" PARENT_SCOPE)
+  set(BETR_HDF5_HL_LIBRARY "${CMAKE_INSTALL_PREFIX}/lib/lib${HDF5_HL_LIB_NAME}${LIB_SUFFIX}" PARENT_SCOPE)
+  set(BETR_HDF5_INCLUDE_DIR "${CMAKE_INSTALL_PREFIX}/include" PARENT_SCOPE)
 else()
-  set(POLYMEC_HDF5_LIBRARY ${HDF5_LIBRARY} PARENT_SCOPE)
-  set(POLYMEC_HDF5_HL_LIBRARY ${HDF5_HL_LIBRARY} PARENT_SCOPE)
-  set(POLYMEC_HDF5_INCLUDE_DIR ${HDF5_INCLUDE_DIR} PARENT_SCOPE)
+  set(BETR_HDF5_LIBRARY ${HDF5_LIBRARY} PARENT_SCOPE)
+  set(BETR_HDF5_HL_LIBRARY ${HDF5_HL_LIBRARY} PARENT_SCOPE)
+  set(BETR_HDF5_INCLUDE_DIR ${HDF5_INCLUDE_DIR} PARENT_SCOPE)
 endif()
 
 # If our HDF5 library is named something weird, copy it to a file with the 
@@ -169,9 +169,9 @@ if (NOT HDF5_LIB_NAME STREQUAL "hdf5" AND HDF5_LIBRARY MATCHES "${PROJECT_BINARY
   execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${HDF5_LIBRARY} ${PROJECT_BINARY_DIR}/lib/libhdf5${LIB_SUFFIX})
 endif()
 
-set(POLYMEC_TP_LIBS ${HDF5_LIBRARIES};${POLYMEC_TP_LIBS})
+set(BETR_TP_LIBS ${HDF5_LIBRARIES};${BETR_TP_LIBS})
 
-# Build the netcdf library.
+# Build the netcdf c library.
 set(NETCDF_LIBRARY "${PROJECT_BINARY_DIR}/lib/libnetcdf${LIB_SUFFIX}")
 if (NOT EXISTS ${NETCDF_LIBRARY})
   message("Preparing netcdf-c...")
@@ -182,7 +182,7 @@ if (NOT EXISTS ${NETCDF_LIBRARY})
   endif()
 
   message("Configuring netcdf-c library...")
-  execute_process(COMMAND "${CMAKE_COMMAND}" -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DUSE_HDF5=ON -DHDF5_LIB=${POLYMEC_HDF5_LIBRARY} -DHDF5_HL_LIB=${POLYMEC_HDF5_HL_LIBRARY} -DHDF5_INCLUDE_DIR=${POLYMEC_HDF5_INCLUDE_DIR} -DCMAKE_INSTALL_PREFIX=${PROJECT_BINARY_DIR} -DCMAKE_INSTALL_LIBDIR=lib -DENABLE_DAP=OFF -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS} -DFIND_SHARED_LIBS=${BUILD_SHARED_LIBS} -DENABLE_DYNAMIC_LOADING=ON -DENABLE_TESTS=OFF -DBUILD_UTILITIES=ON -DBUILD_EXAMPLES=OFF -DNC_HAVE_PARALLEL_HDF5=${POLYMEC_HAVE_MPI} -DHDF5_IS_PARALLEL=${POLYMEC_HAVE_MPI}
+  execute_process(COMMAND "${CMAKE_COMMAND}" -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DUSE_HDF5=ON -DHDF5_LIB=${BETR_HDF5_LIBRARY} -DHDF5_HL_LIB=${BETR_HDF5_HL_LIBRARY} -DHDF5_INCLUDE_DIR=${BETR_HDF5_INCLUDE_DIR} -DCMAKE_INSTALL_PREFIX=${PROJECT_BINARY_DIR} -DCMAKE_INSTALL_LIBDIR=lib -DENABLE_DAP=OFF -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS} -DFIND_SHARED_LIBS=${BUILD_SHARED_LIBS} -DENABLE_DYNAMIC_LOADING=ON -DENABLE_TESTS=OFF -DBUILD_UTILITIES=ON -DBUILD_EXAMPLES=OFF -DNC_HAVE_PARALLEL_HDF5=${BETR_HAVE_MPI} -DHDF5_IS_PARALLEL=${BETR_HAVE_MPI}
                   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/netcdf-c
                   OUTPUT_VARIABLE netcdf_config_log ERROR_VARIABLE netcdf_config_err
                   RESULT_VARIABLE stat)
@@ -222,10 +222,64 @@ if (NOT CMAKE_INSTALL_PREFIX STREQUAL "INSTALL_DISABLED")
                         GROUP_READ;GROUP_EXECUTE;WORLD_READ;WORLD_EXECUTE)
   endif()
 endif()
-set(POLYGLOT_TP_LIBS netcdf;${POLYGLOT_TP_LIBS})
+set(BETR_TP_LIBS netcdf;${BETR_TP_LIBS})
+
+# Build the netcdf fortran library.
+set(NETCDF_LIBRARY "${PROJECT_BINARY_DIR}/lib/libnetcdff${LIB_SUFFIX}")
+if (NOT EXISTS ${NETCDF_LIBRARY})
+  message("Preparing netcdf-fortran...")
+  execute_process(COMMAND cmake -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/netcdf-fortran ${CMAKE_CURRENT_BINARY_DIR}/netcdf-fortran
+                  RESULT_VARIABLE stat)
+  if (NOT stat EQUAL 0)
+    message(FATAL_ERROR "Copying library source failed.")
+  endif()
+
+  message("Configuring netcdf-fortran library...")
+  execute_process(COMMAND "${CMAKE_COMMAND}" -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_Fortran_COMPILER=${CMAKE_Fortran_COMPILER} -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DUSE_HDF5=ON -DHDF5_LIB=${BETR_HDF5_LIBRARY} -DHDF5_HL_LIB=${BETR_HDF5_HL_LIBRARY} -DHDF5_INCLUDE_DIR=${BETR_HDF5_INCLUDE_DIR} -DCMAKE_INSTALL_PREFIX=${PROJECT_BINARY_DIR} -DCMAKE_INSTALL_LIBDIR=lib -DENABLE_DAP=OFF -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS} -DFIND_SHARED_LIBS=${BUILD_SHARED_LIBS} -DENABLE_DYNAMIC_LOADING=ON -DENABLE_TESTS=OFF -DBUILD_UTILITIES=ON -DBUILD_EXAMPLES=OFF -DNC_HAVE_PARALLEL_HDF5=${BETR_HAVE_MPI} -DHDF5_IS_PARALLEL=${BETR_HAVE_MPI}
+                  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/netcdf-fortran
+                  OUTPUT_VARIABLE netcdf_config_log ERROR_VARIABLE netcdf_config_err
+                  RESULT_VARIABLE stat)
+  file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/netcdf-fortran_config.log ${netcdf_config_log})
+  if (NOT stat EQUAL 0)
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/netcdf-fortran_config_errors.log ${netcdf_config_err})
+    message(FATAL_ERROR "Error configuring netcdf-fortran library. See ${CMAKE_CURRENT_BINARY_DIR}/netcdf-fortran_config*.log for details.")
+  endif()
+
+  message("Building and installing netcdf-fortran library...")
+  execute_process(COMMAND make install -j4
+                  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/netcdf-fortran
+                  OUTPUT_VARIABLE netcdf_fortran_build_log ERROR_VARIABLE netcdf_fortran_build_err
+                  RESULT_VARIABLE stat)
+  file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/netcdf-fortran_build.log ${netcdf_fortran_build_log})
+  if (NOT stat EQUAL 0)
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/netcdf-fortran_build_errors.log ${netcdf_fortran_build_err})
+    message(FATAL_ERROR "Error building netcdf-fortran library. See ${CMAKE_CURRENT_BINARY_DIR}/netcdf-fortran_build*.log for details.")
+  endif()
+
+  # On Macs we need to change the rpath of shared libraries so we can install them elsewhere.
+  if (APPLE AND BUILD_SHARED_LIBS)
+    execute_process(COMMAND install_name_tool -id @rpath/libnetcdf${LIB_SUFFIX} ${PROJECT_BINARY_DIR}/lib/libnetcdf${LIB_SUFFIX})
+  endif()
+
+endif()
+
+if (NOT CMAKE_INSTALL_PREFIX STREQUAL "INSTALL_DISABLED")
+  if (${NETCDF_LIBRARY} STREQUAL "${PROJECT_BINARY_DIR}/lib/libnetcdf${LIB_SUFFIX}")
+    file(GLOB nc_libs "${PROJECT_BINARY_DIR}/lib/libnetcdf*${LIB_SUFFIX}*")
+    install(FILES ${nc_libs} DESTINATION lib)
+    foreach(nc_util nf-config)
+      list(APPEND nc_utils ${PROJECT_BINARY_DIR}/bin/${nc_util})
+    endforeach()
+    install(FILES ${nc_utils} DESTINATION bin
+            PERMISSIONS OWNER_READ;OWNER_WRITE;OWNER_EXECUTE;
+                        GROUP_READ;GROUP_EXECUTE;WORLD_READ;WORLD_EXECUTE)
+  endif()
+endif()
+set(BETR_TP_LIBS netcdff;${BETR_TP_LIBS})
 
 # Add all the libraries to the build system at large.
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${BETR_TP_C_FLAGS}" PARENT_SCOPE)
+set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${BETR_TP_Fortran_FLAGS}" PARENT_SCOPE)
 set(BETR_LIBRARIES ${BETR_TP_LIBS};${BETR_LIBRARIES} PARENT_SCOPE)
 set(BETR_INCDIRS ${BETR_INCDIRS};${BETR_TP_INCDIRS} PARENT_SCOPE)
 

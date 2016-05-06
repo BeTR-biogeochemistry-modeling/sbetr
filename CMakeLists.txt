@@ -1,5 +1,5 @@
-# Minimum CMake version.
-cmake_minimum_required (VERSION 2.8.12)
+# Minimum CMake version, determined by hdf5.
+cmake_minimum_required (VERSION 3.1)
 
 # Adjust CMake's module path.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
@@ -21,6 +21,8 @@ endif()
 if (NOT CMAKE_INSTALL_PREFIX)
   set(CMAKE_INSTALL_PREFIX /usr/local)
 endif()
+
+include(set_up_platform)
 
 # Make sure compilers are set. This must be done before enabling languages.
 if (NOT CMAKE_C_COMPILER)
@@ -53,6 +55,7 @@ endif()
 if (NOT CMAKE_Fortran_FLAGS)
   set(CMAKE_Fortran_FLAGS $ENV{FCFLAGS})
 endif()
+set_up_platform()
 enable_language(C)
 enable_language(CXX)
 enable_language(Fortran)
@@ -131,32 +134,32 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 # Check third-party library dependencies.
 set(BETR_NEED_PETSC 0)
 
-if (XSDK_WITH_NETCDF)
-  if (NOT TPL_NETCDF_LIBRARIES)
-    message(FATAL_ERROR "TPL_NETCDF_LIBRARIES option be set for netcdf support to be enabled.")
-  endif()
-#X#  foreach(lib ${TPL_NETCDF_LIBRARIES})
-#X#    if (NOT EXISTS ${lib})
-#X#      message(FATAL_ERROR "netcdf library not found: ${lib}")
-#X#    endif()
-#X#  endforeach()
-
-  if (NOT TPL_NETCDF_INCLUDE_DIRS)
-    message(FATAL_ERROR "TPL_NETCDF_INCLUDE_DIRS option be set for netcdf support to be enabled.")
-  endif()
-#X#  foreach(dir ${TPL_NETCDF_INCLUDE_DIRS})
-#X#    if (NOT EXISTS ${dir})
-#X#      message(FATAL_ERROR "netcdf include directory not found: ${dir}")
-#X#    endif()
-#X#  endforeach()
-
-  message("-- Enabled support for netcdf.")
-  list(APPEND BETR_TPLS ${TPL_NETCDF_LIBRARIES})
-  list(APPEND BETR_INCLUDE_DIRS ${TPL_NETCDF_INCLUDE_DIRS})
-  set(BETR_HAVE_NETCDF 1)
-else()
-  set(BETR_HAVE_NETCDF 0)
-endif()
+#X#if (XSDK_WITH_NETCDF)
+#X#  if (NOT TPL_NETCDF_LIBRARIES)
+#X#    message(FATAL_ERROR "TPL_NETCDF_LIBRARIES option be set for netcdf support to be enabled.")
+#X#  endif()
+#X##X#  foreach(lib ${TPL_NETCDF_LIBRARIES})
+#X##X#    if (NOT EXISTS ${lib})
+#X##X#      message(FATAL_ERROR "netcdf library not found: ${lib}")
+#X##X#    endif()
+#X##X#  endforeach()
+#X#
+#X#  if (NOT TPL_NETCDF_INCLUDE_DIRS)
+#X#    message(FATAL_ERROR "TPL_NETCDF_INCLUDE_DIRS option be set for netcdf support to be enabled.")
+#X#  endif()
+#X##X#  foreach(dir ${TPL_NETCDF_INCLUDE_DIRS})
+#X##X#    if (NOT EXISTS ${dir})
+#X##X#      message(FATAL_ERROR "netcdf include directory not found: ${dir}")
+#X##X#    endif()
+#X##X#  endforeach()
+#X#
+#X#  message("-- Enabled support for netcdf.")
+#X#  list(APPEND BETR_TPLS ${TPL_NETCDF_LIBRARIES})
+#X#  list(APPEND BETR_INCLUDE_DIRS ${TPL_NETCDF_INCLUDE_DIRS})
+#X#  set(BETR_HAVE_NETCDF 1)
+#X#else()
+#X#  set(BETR_HAVE_NETCDF 0)
+#X#endif()
 
 
 # Other third-party libraries.
