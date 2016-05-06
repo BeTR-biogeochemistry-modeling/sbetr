@@ -5,7 +5,7 @@ module BTridiagonalMod
   ! Tridiagonal matrix solution
   !
   use BeTR_decompMod , only : bounds_type  => betr_bounds_type
-  use bshr_kind_mod , only : r8 => shr_kind_r8
+  use bshr_kind_mod  , only : r8 => shr_kind_r8
   ! !PUBLIC TYPES:
 
   implicit none

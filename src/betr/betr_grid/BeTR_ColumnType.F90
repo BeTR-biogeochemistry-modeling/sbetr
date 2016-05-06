@@ -10,13 +10,13 @@ module BeTR_ColumnType
 
   type, public :: betr_column_type
      ! g/l/c/p hierarchy, local g/l/c/p cells only
-   integer , pointer :: landunit             (:)   ! index into landunit level quantities
-   integer , pointer :: gridcell             (:)   ! index into gridcell level quantities
+   integer , pointer :: landunit (:)   ! index into landunit level quantities
+   integer , pointer :: gridcell (:)   ! index into gridcell level quantities
 
-   integer , pointer :: snl                  (:)   ! number of snow layers
-   real(r8), pointer :: dz                   (:,:) ! layer thickness (m)  (-nlevsno+1:nlevgrnd)
-   real(r8), pointer :: zi                   (:,:) ! interface level below a "z" level (m) (-nlevsno+0:nlevgrnd)
-   real(r8), pointer :: z                    (:,:) ! interface level below a "z" level (m) (-nlevsno+0:nlevgrnd)
+   integer , pointer :: snl      (:)   ! number of snow layers
+   real(r8), pointer :: dz       (:,:) ! layer thickness (m)  (-nlevsno+1:nlevgrnd)
+   real(r8), pointer :: zi       (:,:) ! interface level below a "z" level (m) (-nlevsno+0:nlevgrnd)
+   real(r8), pointer :: z        (:,:) ! interface level below a "z" level (m) (-nlevsno+0:nlevgrnd)
 
   end type betr_column_type
 

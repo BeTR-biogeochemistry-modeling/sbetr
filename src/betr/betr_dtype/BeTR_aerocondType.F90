@@ -1,9 +1,10 @@
 module BeTR_aerocondType
-
-  use bshr_kind_mod           , only : r8 => shr_kind_r8
-  use bshr_infnan_mod         , only : nan => shr_infnan_nan, assignment(=)
-  use BeTR_decompMod         , only : bounds_type  => betr_bounds_type
-  use betr_varcon            , only : spval => bspval, ispval => bispval
+  !DESCRIPTION
+  !module for aerodynamic calculation
+  use bshr_kind_mod   , only : r8 => shr_kind_r8
+  use bshr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
+  use BeTR_decompMod  , only : bounds_type  => betr_bounds_type
+  use betr_varcon     , only : spval => bspval, ispval => bispval
 
   implicit none
 
@@ -28,6 +29,7 @@ module BeTR_aerocondType
 
   subroutine Init(this, bounds)
 
+  implicit none
   class(betr_aerecond_type) :: this
   type(bounds_type), intent(in) :: bounds
 
@@ -36,10 +38,11 @@ module BeTR_aerocondType
   !------------------------------------------------------------------------
   subroutine InitAllocate(this, bounds)
 
-
+  !Description
+  !allocate memory
+  implicit none
   class(betr_aerecond_type) :: this
   type(bounds_type), intent(in) :: bounds
-
   integer :: begp, endp
 
   begp = bounds%begp; endp=bounds%endp

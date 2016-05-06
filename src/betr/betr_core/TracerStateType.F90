@@ -4,17 +4,17 @@ module TracerStateType
   !  data type for state variables used in betr
   !
   ! !USES:
-  use bshr_kind_mod   , only : r8 => shr_kind_r8
-  use bshr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
-  use BeTR_decompMod , only : bounds_type  => betr_bounds_type
-  use BeTR_LandunitType, only : lun => betr_lun
-  use BeTR_ColumnType, only : col => betr_col
-  use betr_ctrl     , only : iulog => biulog
-  use abortutils     , only : endrun
-  use spmdMod        , only : masterproc
-  use betr_varcon     , only : spval => bspval, ispval => bispval
-  use BeTR_landvarconType, only : landvarcon => betr_landvarcon
-  use MathfuncMod    , only : dot_sum
+  use bshr_kind_mod       , only : r8 => shr_kind_r8
+  use bshr_infnan_mod     , only : nan => shr_infnan_nan, assignment(=)
+  use BeTR_decompMod      , only : bounds_type  => betr_bounds_type
+  use BeTR_LandunitType   , only : lun => betr_lun
+  use BeTR_ColumnType     , only : col => betr_col
+  use betr_ctrl           , only : iulog => biulog
+  use abortutils          , only : endrun
+  use spmdMod             , only : masterproc
+  use betr_varcon         , only : spval => bspval, ispval => bispval
+  use BeTR_landvarconType , only : landvarcon => betr_landvarcon
+  use MathfuncMod         , only : dot_sum
   !
   ! !PUBLIC TYPES:
   implicit none
@@ -160,8 +160,7 @@ contains
     real(r8), pointer :: data2dptr(:,:) ! temp. pointers for slicing larger arrays
     real(r8), pointer :: data1dptr(:)   ! temp. pointers for slicing larger arrays
 
-
-    associate(                                                    &
+    associate(                                                       &
          ntracers          =>  betrtracer_vars%ntracers            , &
          ngwmobile_tracers =>  betrtracer_vars%ngwmobile_tracers   , &
          is_volatile       =>  betrtracer_vars%is_volatile         , &
@@ -258,12 +257,12 @@ contains
     ! Read/Write module information to/from restart file.
     !
     ! !USES:
-    use betr_ctrl , only : iulog  => biulog
-    use BeTRTracerType, only : BeTRTracer_Type
-    !use spmdMod    , only : masterproc
-    use restUtilMod, only : restartvar
-    use ncdio_pio, only : file_desc_t
-    use ncdio_pio, only : ncd_double
+    use betr_ctrl      , only : iulog  => biulog
+    use BeTRTracerType , only : BeTRTracer_Type
+    !use spmdMod       , only : masterproc
+    use restUtilMod    , only : restartvar
+    use ncdio_pio      , only : file_desc_t
+    use ncdio_pio      , only : ncd_double
     !
     implicit none
     ! !ARGUMENTS:
@@ -282,7 +281,7 @@ contains
     ! remove unused dummy arg compiler warning
     if (bounds%begc > 0) continue
     
-    associate(                                                    &
+    associate(                                                       &
          ntracers          =>  betrtracer_vars%ntracers            , &
          ngwmobile_tracers =>  betrtracer_vars%ngwmobile_tracers   , &
          is_adsorb         =>  betrtracer_vars%is_adsorb           , &
@@ -352,12 +351,13 @@ contains
 
   !-----------------------------------------------------------------------
   function int_mass_mobile_col(this, lbj, ubj, c, j, dz)result(int_mass)
-
-  class(TracerState_type)             :: this
-  integer, intent(in) :: lbj, ubj
-  integer, intent(in) :: c, j
-  real(r8), intent(in):: dz(lbj:ubj)
-  real(r8) :: int_mass
+  !DESCRIPTION
+  !integrate mobile tracer mass, gas+aqueous
+  class(TracerState_type) :: this
+  integer, intent(in)     :: lbj, ubj
+  integer, intent(in)     :: c, j
+  real(r8), intent(in)    :: dz(lbj:ubj)
+  real(r8)                :: int_mass
 
   int_mass = dot_sum(this%tracer_conc_mobile_col(c,lbj:ubj,j), dz)
 
@@ -365,12 +365,13 @@ contains
 
   !-----------------------------------------------------------------------
   function int_mass_frozen_col(this, lbj, ubj, c, j, dz)result(int_mass)
-
-  class(TracerState_type)             :: this
-  integer, intent(in) :: lbj, ubj
-  integer, intent(in) :: c, j
-  real(r8), intent(in):: dz(lbj:ubj)
-  real(r8) :: int_mass
+  !DESCRIPTION
+  !integrate frozen tracer mass
+  class(TracerState_type) :: this
+  integer, intent(in)     :: lbj, ubj
+  integer, intent(in)     :: c, j
+  real(r8), intent(in)    :: dz(lbj:ubj)
+  real(r8)                :: int_mass
 
   int_mass = dot_sum(this%tracer_conc_frozen_col(c,lbj:ubj,j), dz)
 
@@ -379,12 +380,13 @@ contains
 
   !-----------------------------------------------------------------------
   function int_mass_adsorb_col(this, lbj, ubj, c, j, dz)result(int_mass)
-
-  class(TracerState_type)             :: this
-  integer, intent(in) :: lbj, ubj
-  integer, intent(in) :: c, j
-  real(r8), intent(in):: dz(lbj:ubj)
-  real(r8) :: int_mass
+  !DESCRIPTION
+  !integrate adsorbed tracer mass
+  class(TracerState_type) :: this
+  integer, intent(in)     :: lbj, ubj
+  integer, intent(in)     :: c, j
+  real(r8), intent(in)    :: dz(lbj:ubj)
+  real(r8)                :: int_mass
 
   int_mass = dot_sum(this%tracer_conc_solid_equil_col(c,lbj:ubj,j), dz)
 
@@ -392,12 +394,13 @@ contains
 
   !-----------------------------------------------------------------------
   function int_mass_solid_col(this, lbj, ubj, c, j, dz)result(int_mass)
-
-  class(TracerState_type)             :: this
-  integer, intent(in) :: lbj, ubj
-  integer, intent(in) :: c, j
-  real(r8), intent(in):: dz(lbj:ubj)
-  real(r8) :: int_mass
+  !DESCRIPTION
+  !integrate solid tracer mass
+  class(TracerState_type) :: this
+  integer, intent(in)     :: lbj, ubj
+  integer, intent(in)     :: c, j
+  real(r8), intent(in)    :: dz(lbj:ubj)
+  real(r8)                :: int_mass
 
   int_mass = dot_sum(this%tracer_conc_solid_passive_col(c,lbj:ubj,j), dz)
 

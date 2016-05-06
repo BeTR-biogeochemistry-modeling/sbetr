@@ -5,11 +5,11 @@ module BeTRTracerType
   ! data type to configure betr simulations
   !
   ! !USES:
-  use bshr_kind_mod       , only: r8 => shr_kind_r8
-  use bshr_infnan_mod         , only : nan => shr_infnan_nan, assignment(=)
-  use babortutils          , only : endrun
-  use bshr_log_mod        , only : errMsg => shr_log_errMsg
-  use betr_constants, only : betr_var_name_length
+  use bshr_kind_mod   , only : r8 => shr_kind_r8
+  use bshr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
+  use babortutils     , only : endrun
+  use bshr_log_mod    , only : errMsg => shr_log_errMsg
+  use betr_constants  , only : betr_var_name_length
   !
   implicit none
   private
@@ -241,7 +241,6 @@ subroutine set_tracer(this, trc_id, trc_name, is_trc_mobile, is_trc_advective, t
   logical            , intent(in) :: is_trc_advective
   integer            , intent(in) :: trc_group_id
   integer            , intent(in) :: trc_group_mem
-
   logical, optional  , intent(in) :: is_trc_diffusive
   logical, optional  , intent(in) :: is_trc_volatile
   integer, optional  , intent(in) :: trc_volatile_id
@@ -318,16 +317,17 @@ end subroutine set_tracer
 
 
 
-!--------------------------------------------------------------------------------
-function is_solidtransport(this)result(yesno)
+  !--------------------------------------------------------------------------------
+  function is_solidtransport(this)result(yesno)
 
-! !ARGUMENTS:
-class(BeTRtracer_type) :: this
+   ! !ARGUMENTS:
+  implicit none    
+  class(BeTRtracer_type) :: this
 
-logical :: yesno
+  logical :: yesno
 
-yesno = (this%nsolid_passive_tracer_groups > 0)
+  yesno = (this%nsolid_passive_tracer_groups > 0)
 
-end function is_solidtransport
+  end function is_solidtransport
 
 end module BeTRTracerType

@@ -22,7 +22,7 @@ type, abstract :: plant_soilbgc_type
    !do profile integration of fluxes
    procedure(integrate_vr_flux_to_2D_interface)               , deferred :: integrate_vr_flux_to_2D
    !send in bgc inputs
-   procedure(lsm_betr_plant_soilbgc_send_interface)          , deferred :: lsm_betr_plant_soilbgc_send
+   procedure(lsm_betr_plant_soilbgc_send_interface)          , deferred  :: lsm_betr_plant_soilbgc_send
 end type plant_soilbgc_type
 
 
@@ -40,7 +40,7 @@ end type plant_soilbgc_type
   ! !ARGUMENTS:
   import :: plant_soilbgc_type
   class(plant_soilbgc_type) , intent(in) :: this
-  type(betr_bounds_type)         , intent(in) :: bounds
+  type(betr_bounds_type)    , intent(in) :: bounds
   integer                   , intent(in) :: lbj, ubj
 
   end subroutine Init_plant_soilbgc_interface
@@ -51,16 +51,16 @@ end type plant_soilbgc_type
        filter, dz, betrtracer_vars, tracerflux_vars)
 
   ! !USES:
-  use BeTRTracerType        , only : BeTRtracer_type
-  use tracerfluxType        , only : tracerflux_type
-  use BeTR_decompMod        , only : betr_bounds_type
-  use bshr_kind_mod          , only : r8 => shr_kind_r8
+  use BeTRTracerType , only : BeTRtracer_type
+  use tracerfluxType , only : tracerflux_type
+  use BeTR_decompMod , only : betr_bounds_type
+  use bshr_kind_mod  , only : r8 => shr_kind_r8
 
   ! !ARGUMENTS:
   import :: plant_soilbgc_type
-
+ 
   class(plant_soilbgc_type) , intent(in) :: this
-  type(betr_bounds_type)         , intent(in) :: bounds
+  type(betr_bounds_type)    , intent(in) :: bounds
   integer                   , intent(in) :: lbj, ubj
   integer                   , intent(in) :: numf
   integer                   , intent(in) :: filter(:)
@@ -83,7 +83,7 @@ end type plant_soilbgc_type
   import :: plant_soilbgc_type
 
   class(plant_soilbgc_type) , intent(in) :: this
-  type(betr_bounds_type)         , intent(in) :: bounds
+  type(betr_bounds_type)    , intent(in) :: bounds
   integer                   , intent(in) :: numf
   integer                   , intent(in) :: filter(:)
 
@@ -96,17 +96,17 @@ end type plant_soilbgc_type
   !return plant nutrient yield
   !
   !USES
-  use BeTR_decompMod         , only : betr_bounds_type
-  use BeTR_biogeoStateType, only : betr_biogeo_state_type
-  use BeTR_biogeoFluxType, only : betr_biogeo_flux_type
+  use BeTR_decompMod       , only : betr_bounds_type
+  use BeTR_biogeoStateType , only : betr_biogeo_state_type
+  use BeTR_biogeoFluxType  , only : betr_biogeo_flux_type
   ! !ARGUMENTS:
   import :: plant_soilbgc_type
 
-  class(plant_soilbgc_type) , intent(in) :: this
-  type(betr_bounds_type)         , intent(in) :: bounds
-  integer                   , intent(in) :: numf
-  integer                   , intent(in) :: filter(:)
-  type(betr_biogeo_flux_type), intent(inout) :: biogeo_fluxes
+  class(plant_soilbgc_type)   , intent(in)    :: this
+  type(betr_bounds_type)      , intent(in)    :: bounds
+  integer                     , intent(in)    :: numf
+  integer                     , intent(in)    :: filter(:)
+  type(betr_biogeo_flux_type) , intent(inout) :: biogeo_fluxes
 
 
   end subroutine lsm_betr_plant_soilbgc_recv_interface
@@ -117,20 +117,20 @@ end type plant_soilbgc_type
   ! initialize feedback variables for plant soil bgc interactions
   !
   !USES
-  use BeTR_biogeoStateType, only : betr_biogeo_state_type
-  use BeTR_biogeoFluxType, only : betr_biogeo_flux_type
-  use BeTR_decompMod         , only : betr_bounds_type
-  use EcophysConType, only : ecophyscon_type
+  use BeTR_biogeoStateType , only : betr_biogeo_state_type
+  use BeTR_biogeoFluxType  , only : betr_biogeo_flux_type
+  use BeTR_decompMod       , only : betr_bounds_type
+  use BeTR_EcophysConType  , only : betr_ecophyscon_type
   ! !ARGUMENTS:
   import :: plant_soilbgc_type
 
-  class(plant_soilbgc_type) , intent(in) :: this
-  type(betr_bounds_type)         , intent(in) :: bounds
-  integer                   , intent(in) :: numf
-  integer                   , intent(in) :: filter(:)
-  type(betr_biogeo_state_type), intent(in) :: biogeo_states
-  type(betr_biogeo_flux_type), intent(in) :: biogeo_fluxes
-  type(ecophyscon_type), intent(in) :: ecophyscon_vars
+  class(plant_soilbgc_type)    , intent(in) :: this
+  type(betr_bounds_type)       , intent(in) :: bounds
+  integer                      , intent(in) :: numf
+  integer                      , intent(in) :: filter(:)
+  type(betr_biogeo_state_type) , intent(in) :: biogeo_states
+  type(betr_biogeo_flux_type)  , intent(in) :: biogeo_fluxes
+  type(betr_ecophyscon_type)   , intent(in) :: ecophyscon_vars
 
   end subroutine lsm_betr_plant_soilbgc_send_interface
 

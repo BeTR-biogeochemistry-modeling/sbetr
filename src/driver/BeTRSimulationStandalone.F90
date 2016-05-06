@@ -9,15 +9,15 @@ module BeTRSimulationStandalone
   !  natively, so is mapping BeTR to BeTR. This class shouldn't be
   !  doing much.
   !
-  use abortutils, only : endrun
-  use clm_varctl, only : iulog
-  use shr_log_mod, only : errMsg => shr_log_errMsg
-  use betr_decompMod    , only : betr_bounds_type
-  use decompMod, only : bounds_type
-  use BeTRSimulation, only : betr_simulation_type
-  use tracer_varcon, only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
-  use EcophysConType, only : ecophyscon_type
-
+  use abortutils     , only : endrun
+  use clm_varctl     , only : iulog
+  use shr_log_mod    , only : errMsg => shr_log_errMsg
+  use betr_decompMod , only : betr_bounds_type
+  use decompMod      , only : bounds_type
+  use BeTRSimulation , only : betr_simulation_type
+  use tracer_varcon  , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
+  use EcophysConType , only : ecophyscon_type
+  use BeTR_EcophysConType , only : betr_ecophyscon_type
   implicit none
 
   private
@@ -27,15 +27,15 @@ module BeTRSimulationStandalone
 
   type, public, extends(betr_simulation_type) :: betr_simulation_standalone_type
      ! NOTE(bja, 201603) LSM specific types here!
-     type(ecophyscon_type) :: ecophyscon
+     type(betr_ecophyscon_type) :: betr_ecophyscon
 
      ! NOTE(bja, 201603) most (all?) BeTR types go into the base
      ! class.
 
    contains
-     procedure, public :: Init => StandaloneInit
+     procedure, public :: Init                => StandaloneInit
      procedure, public :: StepWithoutDrainage => StandaloneStepWithoutDrainage
-     procedure, public :: StepWithDrainage => StandaloneStepWithDrainage
+     procedure, public :: StepWithDrainage    => StandaloneStepWithDrainage
   end type betr_simulation_standalone_type
 
   public :: create_betr_simulation_standalone
@@ -65,36 +65,36 @@ contains
     !initialize standalone betr
     !
     !USES
-    use BeTRSimulation, only : BeTRSimulationInit
-    use betr_constants, only : betr_namelist_buffer_size
-    use betr_constants, only : betr_filename_length
-    use BeTR_PatchType, only : betr_pft
-    use BeTR_ColumnType, only : betr_col
-    use BeTR_LandunitType,only : betr_lun
-    use BeTR_pftvarconType, only : betr_pftvarcon
-    use PatchType, only : pft
-    use ColumnType, only : col
-    use LandunitType,only : lun
-    use pftvarcon, only : noveg, nc4_grass, nc3_arctic_grass, nc3_nonarctic_grass
-    use WaterStateType, only : waterstate_type
-    use CNStateType, only : cnstate_type
-    use landunit_varcon, only : istcrop, istice, istsoil
-    use BeTR_landvarconType, only : betr_landvarcon
-    use clm_varpar, only : nlevsno, nlevsoi, nlevtrc_soil
+    use BeTRSimulation      , only : BeTRSimulationInit
+    use betr_constants      , only : betr_namelist_buffer_size
+    use betr_constants      , only : betr_filename_length
+    use BeTR_PatchType      , only : betr_pft
+    use BeTR_ColumnType     , only : betr_col
+    use BeTR_LandunitType   , only : betr_lun
+    use BeTR_pftvarconType  , only : betr_pftvarcon
+    use PatchType           , only : pft
+    use ColumnType          , only : col
+    use LandunitType        , only : lun
+    use pftvarcon           , only : noveg, nc4_grass, nc3_arctic_grass, nc3_nonarctic_grass
+    use WaterStateType      , only : waterstate_type
+    use CNStateType         , only : cnstate_type
+    use landunit_varcon     , only : istcrop, istice, istsoil
+    use BeTR_landvarconType , only : betr_landvarcon
+    use clm_varpar          , only : nlevsno, nlevsoi, nlevtrc_soil
     implicit none
     !ARGUMENTS
-    class(betr_simulation_standalone_type), intent(inout) :: this
-    character(len=betr_filename_length), intent(in) :: base_filename
-    character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
-    type(bounds_type)    , intent(in) :: bounds
-    type(waterstate_type), intent(inout) :: waterstate
-    type(cnstate_type), intent(inout) :: cnstate
+    class(betr_simulation_standalone_type)   , intent(inout) :: this
+    character(len=betr_filename_length)      , intent(in)    :: base_filename
+    character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
+    type(bounds_type)                        , intent(in)    :: bounds
+    type(waterstate_type)                    , intent(inout) :: waterstate
+    type(cnstate_type)                       , intent(inout) :: cnstate
     !TEMPORARY VARIABLES
-    type(betr_bounds_type)     :: betr_bounds
-    integer  :: lbj, ubj
+    type(betr_bounds_type) :: betr_bounds
+    integer                :: lbj, ubj
 
-    betr_nlevsoi = nlevsoi
-    betr_nlevsno = nlevsno
+    betr_nlevsoi      = nlevsoi
+    betr_nlevsno      = nlevsno
     betr_nlevtrc_soil = nlevtrc_soil
 
     !pass necessary data for correct subroutine call
@@ -105,20 +105,20 @@ contains
     betr_bounds%begl = bounds%begl; betr_bounds%endl = bounds%endl
     betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
 
-    betr_pft%wtcol                        => pft%wtcol
-    betr_pft%column                       => pft%column
-    betr_pft%itype                        => pft%itype
-    betr_pft%landunit                     => pft%landunit
+    betr_pft%wtcol                     => pft%wtcol
+    betr_pft%column                    => pft%column
+    betr_pft%itype                     => pft%itype
+    betr_pft%landunit                  => pft%landunit
 
-    betr_col%landunit                     => col%landunit
-    betr_col%gridcell                     => col%gridcell
-    betr_col%snl                          => col%snl
-    betr_col%dz                           => col%dz
-    betr_col%zi                           => col%zi
-    betr_col%z                            => col%z
+    betr_col%landunit                  => col%landunit
+    betr_col%gridcell                  => col%gridcell
+    betr_col%snl                       => col%snl
+    betr_col%dz                        => col%dz
+    betr_col%zi                        => col%zi
+    betr_col%z                         => col%z
 
-    betr_lun%itype                        => lun%itype
-    betr_lun%ifspecial                    => lun%ifspecial
+    betr_lun%itype                     => lun%itype
+    betr_lun%ifspecial                 => lun%ifspecial
 
     betr_pftvarcon%nc3_arctic_grass    = nc3_arctic_grass
     betr_pftvarcon%nc3_nonarctic_grass = nc3_nonarctic_grass
@@ -143,49 +143,49 @@ contains
 
 
   !---------------------------------------------------------------------------------
-  subroutine StandaloneStepWithoutDrainage(this, betr_time, bounds, col, &
+  subroutine StandaloneStepWithoutDrainage(this, betr_time, bounds, col,  &
        atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, &
-       temperature_vars, waterflux_vars, chemstate_vars, &
+       temperature_vars, waterflux_vars, chemstate_vars,                  &
        cnstate_vars, canopystate_vars, carbonflux_vars)
     !DESCRIPTION
     !march one step without drainage
     !
     !USES
-    use SoilStateType, only : soilstate_type
-    use WaterStateType, only : Waterstate_Type
-    use TemperatureType, only : temperature_type
-    use ChemStateType, only : chemstate_type
-    use WaterfluxType, only : waterflux_type
-    use ColumnType, only : column_type
-    use atm2lndType, only : atm2lnd_type
-    use SoilHydrologyType, only : soilhydrology_type
-    use CNStateType, only : cnstate_type
-    use CNCarbonFluxType, only : carbonflux_type
-    use CanopyStateType, only : canopystate_type
-    use BGCReactionsMod, only : bgc_reaction_type
-    use BeTR_PatchType, only : betr_pft
-    use BeTR_ColumnType, only : betr_col
-    use BeTR_LandunitType,only : betr_lun
-    use BeTR_TimeMod, only : betr_time_type
-    use PatchType, only : pft
-    use LandunitType,only : lun
-    use pftvarcon, only : crop
+    use SoilStateType     , only : soilstate_type
+    use WaterStateType    , only : Waterstate_Type
+    use TemperatureType   , only : temperature_type
+    use ChemStateType     , only : chemstate_type
+    use WaterfluxType     , only : waterflux_type
+    use ColumnType        , only : column_type
+    use atm2lndType       , only : atm2lnd_type
+    use SoilHydrologyType , only : soilhydrology_type
+    use CNStateType       , only : cnstate_type
+    use CNCarbonFluxType  , only : carbonflux_type
+    use CanopyStateType   , only : canopystate_type
+    use BGCReactionsMod   , only : bgc_reaction_type
+    use BeTR_PatchType    , only : betr_pft
+    use BeTR_ColumnType   , only : betr_col
+    use BeTR_LandunitType , only : betr_lun
+    use BeTR_TimeMod      , only : betr_time_type
+    use PatchType         , only : pft
+    use LandunitType      , only : lun
+    use pftvarcon         , only : crop
     implicit none
     !ARGUMENTS
-    class(betr_simulation_standalone_type), intent(inout) :: this
-    class(betr_time_type), intent(in) :: betr_time
-    type(bounds_type), intent(in) :: bounds ! bounds
-    type(column_type), intent(in) :: col ! column type
-    type(Waterstate_Type), intent(in) :: waterstate_vars ! water state variables
-    type(soilstate_type), intent(in) :: soilstate_vars ! column physics variable
-    type(temperature_type), intent(in) :: temperature_vars ! energy state variable
-    type(chemstate_type), intent(in) :: chemstate_vars
-    type(atm2lnd_type), intent(in) :: atm2lnd_vars
-    type(soilhydrology_type), intent(in) :: soilhydrology_vars
-    type(cnstate_type), intent(inout) :: cnstate_vars
-    type(canopystate_type), intent(in) :: canopystate_vars
-    type(carbonflux_type), intent(in) :: carbonflux_vars
-    type(waterflux_type), intent(inout) :: waterflux_vars
+    class(betr_simulation_standalone_type) , intent(inout) :: this
+    class(betr_time_type)                  , intent(in)    :: betr_time
+    type(bounds_type)                      , intent(in)    :: bounds ! bounds
+    type(column_type)                      , intent(in)    :: col ! column type
+    type(Waterstate_Type)                  , intent(in)    :: waterstate_vars ! water state variables
+    type(soilstate_type)                   , intent(in)    :: soilstate_vars ! column physics variable
+    type(temperature_type)                 , intent(in)    :: temperature_vars ! energy state variable
+    type(chemstate_type)                   , intent(in)    :: chemstate_vars
+    type(atm2lnd_type)                     , intent(in)    :: atm2lnd_vars
+    type(soilhydrology_type)               , intent(in)    :: soilhydrology_vars
+    type(cnstate_type)                     , intent(inout) :: cnstate_vars
+    type(canopystate_type)                 , intent(in)    :: canopystate_vars
+    type(carbonflux_type)                  , intent(in)    :: carbonflux_vars
+    type(waterflux_type)                   , intent(inout) :: waterflux_vars
 
     !temporary variables
     type(betr_bounds_type)     :: betr_bounds
@@ -194,44 +194,44 @@ contains
 
     !pass necessary data for correct subroutine call
     !set lbj and ubj
-    betr_bounds%lbj  = 1          ; betr_bounds%ubj  = betr_nlevsoi
-    betr_bounds%begp = bounds%begp; betr_bounds%endp = bounds%endp
-    betr_bounds%begc = bounds%begc; betr_bounds%endc = bounds%endc
-    betr_bounds%begl = bounds%begl; betr_bounds%endl = bounds%endl
-    betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
-    lbj = betr_bounds%lbj; ubj = betr_bounds%ubj
+    betr_bounds%lbj  = 1           ; betr_bounds%ubj  = betr_nlevsoi
+    betr_bounds%begp = bounds%begp ; betr_bounds%endp = bounds%endp
+    betr_bounds%begc = bounds%begc ; betr_bounds%endc = bounds%endc
+    betr_bounds%begl = bounds%begl ; betr_bounds%endl = bounds%endl
+    betr_bounds%begg = bounds%begg ; betr_bounds%endg = bounds%endg
+    lbj = betr_bounds%lbj          ; ubj = betr_bounds%ubj
 
-    betr_pft%wtcol                        => pft%wtcol
-    betr_pft%column                       => pft%column
-    betr_pft%itype                        => pft%itype
-    betr_pft%landunit                     => pft%landunit
-    betr_pft%crop                         => crop
+    betr_pft%wtcol     => pft%wtcol
+    betr_pft%column    => pft%column
+    betr_pft%itype     => pft%itype
+    betr_pft%landunit  => pft%landunit
+    betr_pft%crop      => crop
 
-    betr_col%landunit                     => col%landunit
-    betr_col%gridcell                     => col%gridcell
-    betr_col%snl                          => col%snl
-    betr_col%dz                           => col%dz
-    betr_col%zi                           => col%zi
-    betr_col%z                            => col%z
+    betr_col%landunit  => col%landunit
+    betr_col%gridcell  => col%gridcell
+    betr_col%snl       => col%snl
+    betr_col%dz        => col%dz
+    betr_col%zi        => col%zi
+    betr_col%z         => col%z
 
-    betr_lun%itype                        => lun%itype
-    betr_lun%ifspecial                    => lun%ifspecial
+    betr_lun%itype     => lun%itype
+    betr_lun%ifspecial => lun%ifspecial
 
 
-    call this%SetBiophysForcing(betr_bounds, &
-      cnstate_vars = cnstate_vars, &
-      carbonflux_vars=carbonflux_vars, &
-      waterstate_vars=waterstate_vars, &
-      waterflux_vars=waterflux_vars, &
-      temperature_vars=temperature_vars,&
-      soilhydrology_vars=soilhydrology_vars,&
-      atm2lnd_vars=atm2lnd_vars,&
-      canopystate_vars=canopystate_vars, &
-      chemstate_vars=chemstate_vars, &
+    call this%SetBiophysForcing(betr_bounds,                                   &
+      cnstate_vars = cnstate_vars,                                             &
+      carbonflux_vars=carbonflux_vars,                                         &
+      waterstate_vars=waterstate_vars,                                         &
+      waterflux_vars=waterflux_vars,                                           &
+      temperature_vars=temperature_vars,                                       &
+      soilhydrology_vars=soilhydrology_vars,                                   &
+      atm2lnd_vars=atm2lnd_vars,                                               &
+      canopystate_vars=canopystate_vars,                                       &
+      chemstate_vars=chemstate_vars,                                           &
       soilstate_vars=soilstate_vars)
 
-    call this%betr%step_without_drainage(betr_time, betr_bounds,   &
-         this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp,  &
+    call this%betr%step_without_drainage(betr_time, betr_bounds,               &
+         this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp, &
          this%biophys_forc, this%biogeo_flux, this%biogeo_state)
 
   end subroutine StandaloneStepWithoutDrainage
@@ -242,43 +242,43 @@ contains
     !march one step with drainage
     !
     !USES
-    use ColumnType    , only : column_type
-    use MathfuncMod   , only : safe_div
-    use WaterFluxType , only : waterflux_type
-    use BeTR_ColumnType, only : betr_col
-    use BeTR_LandunitType,only : betr_lun
-    use LandunitType,only : lun
+    use ColumnType        , only : column_type
+    use MathfuncMod       , only : safe_div
+    use WaterFluxType     , only : waterflux_type
+    use BeTR_ColumnType   , only : betr_col
+    use BeTR_LandunitType , only : betr_lun
+    use LandunitType      , only : lun
     implicit none
     ! !ARGUMENTS:
-    class(betr_simulation_standalone_type), intent(inout) :: this
-    type(bounds_type), intent(in) :: bounds
-    type(column_type), intent(in) :: col ! column type
+    class(betr_simulation_standalone_type) , intent(inout) :: this
+    type(bounds_type)                      , intent(in)    :: bounds
+    type(column_type)                      , intent(in)    :: col ! column type
 
     !TEMPORARY VARIABLES
-    type(betr_bounds_type)     :: betr_bounds
-    integer  :: lbj, ubj ! lower and upper bounds, make sure they are > 0
+    type(betr_bounds_type) :: betr_bounds
+    integer                :: lbj, ubj ! lower and upper bounds, make sure they are > 0
 
     !pass necessary data for correct subroutine call
     !set lbj and ubj
-    betr_bounds%lbj  = 1          ; betr_bounds%ubj  = betr_nlevsoi
-    betr_bounds%begp = bounds%begp; betr_bounds%endp = bounds%endp
-    betr_bounds%begc = bounds%begc; betr_bounds%endc = bounds%endc
-    betr_bounds%begl = bounds%begl; betr_bounds%endl = bounds%endl
-    betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
-    lbj = betr_bounds%lbj; ubj = betr_bounds%ubj
+    betr_bounds%lbj  = 1           ; betr_bounds%ubj  = betr_nlevsoi
+    betr_bounds%begp = bounds%begp ; betr_bounds%endp = bounds%endp
+    betr_bounds%begc = bounds%begc ; betr_bounds%endc = bounds%endc
+    betr_bounds%begl = bounds%begl ; betr_bounds%endl = bounds%endl
+    betr_bounds%begg = bounds%begg ; betr_bounds%endg = bounds%endg
+    lbj = betr_bounds%lbj          ; ubj = betr_bounds%ubj
 
-    betr_col%landunit                     => col%landunit
-    betr_col%gridcell                     => col%gridcell
-    betr_col%snl                          => col%snl
-    betr_col%dz                           => col%dz
-    betr_col%zi                           => col%zi
-    betr_col%z                            => col%z
+    betr_col%landunit  => col%landunit
+    betr_col%gridcell  => col%gridcell
+    betr_col%snl       => col%snl
+    betr_col%dz        => col%dz
+    betr_col%zi        => col%zi
+    betr_col%z         => col%z
 
-    betr_lun%itype                        => lun%itype
-    betr_lun%ifspecial                    => lun%ifspecial
+    betr_lun%itype     => lun%itype
+    betr_lun%ifspecial => lun%ifspecial
 
-    call this%betr%step_with_drainage(betr_bounds,   &
-         this%num_soilc, this%filter_soilc, &
+    call this%betr%step_with_drainage(betr_bounds, &
+         this%num_soilc, this%filter_soilc,        &
          this%jtops, this%biogeo_flux)
 
   end subroutine StandaloneStepWithDrainage

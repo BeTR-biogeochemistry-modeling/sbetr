@@ -1,6 +1,6 @@
 module betr_varcon
-  use bshr_kind_mod           , only : r8 => shr_kind_r8
-  use bshr_const_mod, only: SHR_CONST_G,SHR_CONST_STEBOL,SHR_CONST_KARMAN,     &
+  use bshr_kind_mod  , only : r8 => shr_kind_r8
+  use bshr_const_mod , only : SHR_CONST_G,SHR_CONST_STEBOL,SHR_CONST_KARMAN,  &
                            SHR_CONST_RWV,SHR_CONST_RDAIR,SHR_CONST_CPFW,      &
                            SHR_CONST_CPICE,SHR_CONST_CPDAIR,SHR_CONST_LATVAP, &
                            SHR_CONST_LATSUB,SHR_CONST_LATICE,SHR_CONST_RHOFW, &
@@ -11,8 +11,8 @@ module betr_varcon
 
   character(len=16), parameter :: bnamec  = 'column'       ! name of columns
   character(len=16), parameter :: bnamep  = 'pft'          ! name of patches
-  real(r8), public, parameter ::  bspval = 1.e36_r8  ! special value for real data
-  integer , public, parameter :: bispval = -9999     ! special value for int data (keep this negative to avoid conflicts with possible valid values)
+  real(r8), public,  parameter :: bspval = 1.e36_r8  ! special value for real data
+  integer , public,  parameter :: bispval = -9999     ! special value for int data (keep this negative to avoid conflicts with possible valid values)
 
   real(r8) :: bc14ratio = 1.e-12_r8
 

@@ -3,16 +3,14 @@ module sbetrDriverMod
 ! DESCRIPTION
 ! module holding subroutines to do out of clm betr application
 ! created by Jinyun Tang
-  use shr_kind_mod        , only : r8 => shr_kind_r8
-
-  use BeTR_TimeMod, only : betr_time_type
+  use shr_kind_mod , only : r8 => shr_kind_r8
+  use BeTR_TimeMod , only : betr_time_type
 
   implicit none
 
   private
   save
   public :: sbetrBGC_driver
-
   character(len=*), parameter :: mod_filename = __FILE__
 
 contains
@@ -24,55 +22,49 @@ contains
   !
   !the rtm is done using the strang splitting approach (Strang, 1968)
   !
-  use shr_kind_mod        , only : r8 => shr_kind_r8
-  use clm_varpar          , only : nlevtrc_soil
-  use decompMod           , only : bounds_type
+  use shr_kind_mod          , only : r8 => shr_kind_r8
+  use clm_varpar            , only : nlevtrc_soil
+  use decompMod             , only : bounds_type
 
-  use clm_instMod, only : atm2lnd_vars
-  use clm_instMod, only : canopystate_vars
-  use clm_instMod, only : carbonflux_vars
-  use clm_instMod, only : chemstate_vars
-  use clm_instMod, only : cnstate_vars
-  use clm_instMod, only : soilhydrology_vars
-  use clm_instMod, only : soilstate_vars
-  use clm_instMod, only : temperature_vars
-  use clm_instMod, only : waterflux_vars
-  use clm_instMod, only : waterstate_vars
-
-  use ColumnType          , only : col
-  use clmgridMod           , only : init_clm_vertgrid
-  use clm_initializeMod    , only : initialize
-
-  use BeTRSimulation, only : betr_simulation_type
-  use BeTRSimulationFactory, only : create_betr_simulation
-
-  use betr_constants, only : betr_namelist_buffer_size, betr_string_length_long, betr_filename_length
-
-  use ForcingDataType, only : ForcingData_type
-  use BeTR_GridMod, only : betr_grid_type
-
-  use TracerParamsMod     , only : tracer_param_init
-  use spmdMod             , only : spmd_init
-  use LandunitType        , only : lun
-  use PatchType           , only : pft
-  use landunit_varcon     , only : istsoil
-
+  use clm_instMod           , only : atm2lnd_vars
+  use clm_instMod           , only : canopystate_vars
+  use clm_instMod           , only : carbonflux_vars
+  use clm_instMod           , only : chemstate_vars
+  use clm_instMod           , only : cnstate_vars
+  use clm_instMod           , only : soilhydrology_vars
+  use clm_instMod           , only : soilstate_vars
+  use clm_instMod           , only : temperature_vars
+  use clm_instMod           , only : waterflux_vars
+  use clm_instMod           , only : waterstate_vars
+  use ColumnType            , only : col
+  use clmgridMod            , only : init_clm_vertgrid
+  use clm_initializeMod     , only : initialize
+  use BeTRSimulation        , only : betr_simulation_type
+  use BeTRSimulationFactory , only : create_betr_simulation
+  use betr_constants        , only : betr_namelist_buffer_size, betr_string_length_long, betr_filename_length
+  use ForcingDataType       , only : ForcingData_type
+  use BeTR_GridMod          , only : betr_grid_type
+  use TracerParamsMod       , only : tracer_param_init
+  use spmdMod               , only : spmd_init
+  use LandunitType          , only : lun
+  use PatchType             , only : pft
+  use landunit_varcon       , only : istsoil
   implicit none
-
-  character(len=betr_filename_length), intent(in) :: base_filename
-  character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
+  !arguments
+  character(len=betr_filename_length)      , intent(in) :: base_filename
+  character(len=betr_namelist_buffer_size) , intent(in) :: namelist_buffer
 
 
   !local variables
   class(betr_simulation_type), pointer :: simulation
-  real(r8) :: dtime    !model time step
-  real(r8) :: dtime2   !half of the model time step
-  integer  :: record
+  real(r8)                             :: dtime    !model time step
+  real(r8)                             :: dtime2   !half of the model time step
+  integer                              :: record
 
-  character(len=80) :: subname = 'sbetrBGC_driver'
+  character(len=80)                    :: subname = 'sbetrBGC_driver'
 
-  type(bounds_type) :: bounds
-  integer :: lbj, ubj
+  type(bounds_type)                    :: bounds
+  integer                              :: lbj, ubj
 
   character(len=betr_string_length_long) :: simulator_name
   class(ForcingData_type), allocatable :: forcing_data
@@ -121,14 +113,14 @@ contains
   call simulation%BeTRSetFilter()
 
   !obtain waterstate_vars for initilizations that need it
-  call forcing_data%UpdateForcing(grid_data, &
+  call forcing_data%UpdateForcing(grid_data,                                            &
        bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, time_vars, col, &
-       atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars             , &
+       atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars             ,   &
        waterflux_vars, temperature_vars, chemstate_vars, simulation%jtops)
 
   !calculate advective velocity
-  call calc_qadv(forcing_data, ubj, record, &
-      simulation%num_soilc, simulation%filter_soilc, &
+  call calc_qadv(forcing_data, ubj, record,                                             &
+      simulation%num_soilc, simulation%filter_soilc,                                    &
       time_vars, waterstate_vars, waterflux_vars)
 
   call  simulation%Init(base_filename, namelist_buffer, bounds, waterstate_vars, cnstate_vars)
@@ -145,22 +137,22 @@ contains
     !set envrionmental forcing by reading foring data: temperature, moisture, atmospheric resistance
     !from either user specified file or clm history file
 
-    call forcing_data%UpdateForcing(grid_data, &
+    call forcing_data%UpdateForcing(grid_data,                                            &
          bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, time_vars, col, &
-      atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars, &
+      atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars,                   &
       waterflux_vars, temperature_vars, chemstate_vars, simulation%jtops)
 
-    call simulation%DiagAdvWaterFlux(time_vars, bounds, &
-      simulation%num_soilc, simulation%filter_soilc, &
+    call simulation%DiagAdvWaterFlux(time_vars, bounds,                                   &
+      simulation%num_soilc, simulation%filter_soilc,                                      &
       waterstate_vars, soilhydrology_vars, waterflux_vars)
 
     !no calculation in the first step
     if(record==0)cycle
     call simulation%BeginMassBalanceCheck(bounds)
 
-    call simulation%StepWithoutDrainage(time_vars, bounds, col, &
+    call simulation%StepWithoutDrainage(time_vars, bounds, col,             &
          atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, &
-         temperature_vars, waterflux_vars, chemstate_vars, &
+         temperature_vars, waterflux_vars, chemstate_vars,                  &
          cnstate_vars, canopystate_vars, carbonflux_vars)
 
     call simulation%StepWithDrainage(bounds, col)
@@ -169,7 +161,7 @@ contains
     call simulation%MassBalanceCheck(time_vars, bounds)
 
     !specific for water tracer transport
-    !call simulation%ConsistencyCheck(bounds, ubj, simulation%num_soilc, &
+    !call simulation%ConsistencyCheck(bounds, ubj, simulation%num_soilc,    &
     !  simulation%filter_soilc, waterstate_vars)
 
     !update time stamp
@@ -198,21 +190,20 @@ end subroutine sbetrBGC_driver
     ! !DESCRIPTION:
     ! read namelist for betr configuration
     ! !USES:
-    use spmdMod       , only : masterproc, mpicom
-    use clm_varctl   , only : iulog
-    use abortutils      , only : endrun
-    use shr_log_mod     , only : errMsg => shr_log_errMsg
-
-    use betr_constants, only : stdout, betr_string_length_long, betr_namelist_buffer_size
+    use spmdMod        , only : masterproc, mpicom
+    use clm_varctl     , only : iulog
+    use abortutils     , only : endrun
+    use shr_log_mod    , only : errMsg => shr_log_errMsg
+    use betr_constants , only : stdout, betr_string_length_long, betr_namelist_buffer_size
 
     implicit none
     ! !ARGUMENTS:
-    character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
-    character(len=betr_string_length_long), intent(out) :: simulator_name_arg
+    character(len=betr_namelist_buffer_size) , intent(in)  :: namelist_buffer
+    character(len=betr_string_length_long)   , intent(out) :: simulator_name_arg
     !
     ! !LOCAL VARIABLES:
-    integer :: nml_error
-    character(len=*), parameter :: subname = 'read_name_list'
+    integer                                :: nml_error
+    character(len=*), parameter            :: subname = 'read_name_list'
     character(len=betr_string_length_long) :: simulator_name
     character(len=betr_string_length_long) :: ioerror_msg
 
@@ -279,17 +270,15 @@ end subroutine sbetrBGC_driver
 
     !
     ! description
-    !calculate advective velocity between different layers
-    !
+    ! calculate advective velocity between different layers
+    ! this function is now not used, and will be deleted
     ! USES
-    use WaterstateType    , only : waterstate_type
-    use WaterfluxType     , only : waterflux_type
-    use ColumnType        , only : column_type
-
-    use ForcingDataType, only : ForcingData_type
-
+    use WaterstateType  , only : waterstate_type
+    use WaterfluxType   , only : waterflux_type
+    use ColumnType      , only : column_type
+    use ForcingDataType , only : ForcingData_type
     implicit none
-
+    !ARGUMENTS
     class(ForcingData_type), intent(inout) :: forcing_data
     integer, intent(in) :: numf
     integer, intent(in) :: filter(:)
@@ -303,18 +292,15 @@ end subroutine sbetrBGC_driver
     integer :: j, fc, c
     real(r8):: dmass    !kg/m2 = mm H2O/m2
 
-    associate( &
-         tstep => ttime%tstep, &
+    associate(                     &
+         tstep => ttime%tstep,     &
          dtime => ttime%delta_time &
          )
-
-
       !now obtain the advective fluxes between different soil layers
       !dstorage = (h2o_new-h2o)/dt = qin-qout-qtran_dep
     if (record >= 0) then
        do fc = 1, numf
           c = filter(fc)
-
           do j = ubj, 1, -1
              if (j == ubj) then
                 waterflux_vars%qflx_adv_col(c,j) = forcing_data%discharge(tstep) * 1.e-3_r8

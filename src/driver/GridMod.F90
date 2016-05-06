@@ -1,13 +1,12 @@
 module BeTR_GridMod
 
-  use bshr_kind_mod , only: r8 => shr_kind_r8
+  use bshr_kind_mod    , only : r8 => shr_kind_r8
   use babortutils      , only : endrun
   use bshr_log_mod     , only : errMsg => shr_log_errMsg
-
-  use betr_constants, only : betr_filename_length
-  use betr_constants, only : betr_string_length, betr_string_length_long
-  use betr_constants, only : betr_namelist_buffer_size
-  use betr_constants, only : stdout
+  use betr_constants   , only : betr_filename_length
+  use betr_constants   , only : betr_string_length, betr_string_length_long
+  use betr_constants   , only : betr_namelist_buffer_size
+  use betr_constants   , only : stdout
 
   use betr_varcon, only : bspval
 
@@ -19,9 +18,9 @@ module BeTR_GridMod
   character(len=*), private, parameter :: mod_filename = &
        __FILE__
 
-  character(len=*), parameter :: uniform_str = 'uniform'
-  character(len=*), parameter :: clm_str = 'clm'
-  character(len=*), parameter :: dataset_str = 'dataset'
+  character(len=*), parameter          :: uniform_str = 'uniform'
+  character(len=*), parameter          :: clm_str = 'clm'
+  character(len=*), parameter          :: dataset_str = 'dataset'
 
   integer, parameter :: uniform_grid = 1
   integer, parameter :: clm_grid = 2
@@ -31,12 +30,12 @@ module BeTR_GridMod
 
   type, public :: betr_grid_type
      character(len=betr_filename_length) :: grid_data_filename
-     character(len=betr_string_length) :: grid_data_format ! file format: netcdf, namelist, csv, etc.
-     character(len=betr_string_length) :: grid_type_str ! uniform, clm
+     character(len=betr_string_length)   :: grid_data_format ! file format: netcdf, namelist, csv, etc.
+     character(len=betr_string_length)   :: grid_type_str ! uniform, clm
      integer :: grid_type
 
-     integer, public :: nlevgrnd
-     real(r8), public :: delta_z
+     integer,  public          :: nlevgrnd
+     real(r8), public          :: delta_z
      real(r8), public, pointer :: zsoi(:)  !soil depth, node center 1 : nlevsoi
      real(r8), public, pointer :: zisoi(:) !soil depth, interface,  0 : nlevsoi
      real(r8), public, pointer :: dzsoi(:) !soil layer thickness
@@ -44,9 +43,9 @@ module BeTR_GridMod
      real(r8), public, pointer :: bsw(:) ! clap-hornberg parameter
      real(r8), public, pointer :: watsat(:) ! saturated volumetric water content
    contains
-     procedure, public :: Init
-     procedure, public :: ReadNamelist
-     procedure, public :: ReadNetCDFData
+     procedure, public  :: Init
+     procedure, public  :: ReadNamelist
+     procedure, public  :: ReadNetCDFData
      procedure, private :: InitAllocate
      procedure, private :: uniform_vertical_grid
      procedure, private :: clm_exponential_vertical_grid
@@ -62,8 +61,8 @@ contains
 
     implicit none
 
-    class(betr_grid_type), intent(inout) :: this
-    character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
+    class(betr_grid_type),                    intent(inout) :: this
+    character(len=betr_namelist_buffer_size), intent(in)    :: namelist_buffer
 
     call this%ReadNameList(namelist_buffer)
     call this%InitAllocate()
@@ -128,28 +127,28 @@ contains
 
     implicit none
 
-    class(betr_grid_type), intent(inout) :: this
-    character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
+    class(betr_grid_type),                    intent(inout) :: this
+    character(len=betr_namelist_buffer_size), intent(in)    :: namelist_buffer
 
-    integer :: nml_error
-    character(len=*), parameter :: subname = 'ReadNameList'
-    character(len=betr_string_length) :: grid_data_format, grid_type_str
-    character(len=betr_filename_length) :: grid_data_filename
+    integer                                :: nml_error
+    character(len=*), parameter            :: subname = 'ReadNameList'
+    character(len=betr_string_length)      :: grid_data_format, grid_type_str
+    character(len=betr_filename_length)    :: grid_data_filename
     character(len=betr_string_length_long) :: ioerror_msg
-    integer :: nlevgrnd
-    real(r8) :: delta_z
+    integer                                :: nlevgrnd
+    real(r8)                               :: delta_z
 
     !-----------------------------------------------------------------------
 
-    namelist / betr_grid / &
+    namelist / betr_grid /                                    &
          grid_type_str, grid_data_filename, grid_data_format, &
          nlevgrnd, delta_z
 
-    grid_data_format = ''
+    grid_data_format   = ''
     grid_data_filename = ''
-    grid_type_str = clm_str
-    nlevgrnd = 15 ! default to clm grid
-    delta_z = bspval
+    grid_type_str      = clm_str
+    nlevgrnd           = 15 ! default to clm grid
+    delta_z            = bspval
 
     ! ----------------------------------------------------------------------
     ! Read namelist from standard input.
@@ -187,21 +186,21 @@ contains
 
   !------------------------------------------------------------------------
   subroutine ReadNetCDFData(this)
-
+    !DESCRIPTION
+    !read netcdf data
     use ncdio_pio, only : file_desc_t
     use ncdio_pio, only : ncd_nowrite
     use ncdio_pio, only : ncd_pio_openfile
     use ncdio_pio, only : ncd_getvar
     use ncdio_pio, only : ncd_pio_closefile
-
     implicit none
-
+    !argument
     class(betr_grid_type), intent(inout) :: this
-
-    character(len=250) :: ncf_in_filename
-    type(file_desc_t)  :: ncf_in
+    !temporary variables
+    character(len=250)    :: ncf_in_filename
+    type(file_desc_t)     :: ncf_in
     real(r8), allocatable :: data(:,:)
-    integer :: j
+    integer               :: j
 
 
     ncf_in_filename = trim(this%grid_data_filename)
@@ -234,7 +233,6 @@ contains
 
     end if
 
-
     call ncd_pio_closefile(ncf_in)
 
     deallocate(data)
@@ -243,13 +241,13 @@ contains
 
   ! ---------------------------------------------------------------------------
   subroutine uniform_vertical_grid(this)
-
+    !DESCRIPTION
+    !set uniform thickness grid
     use bshr_kind_mod , only: r8 => shr_kind_r8
-
     implicit none
-
+    !argument
     class(betr_grid_type), intent(inout) :: this
-
+    !temporary variable
     integer :: j
 
     if (this%delta_z == bspval) then
@@ -275,13 +273,12 @@ contains
     ! initialize the clm exporential vertical grid for computation
     !
     use bshr_kind_mod , only: r8 => shr_kind_r8
-
     implicit none
-
+    !argument
     class(betr_grid_type), intent(inout) :: this
-
-    real(r8) :: scalez = 0.025_r8 ! Soil layer thickness discretization (m)
-    integer :: j
+    !temporary variables
+    real(r8)                             :: scalez = 0.025_r8 ! Soil layer thickness discretization (m)
+    integer                              :: j
 
     ! node depths
     do j = 1, this%nlevgrnd
@@ -301,13 +298,14 @@ contains
 
   ! ---------------------------------------------------------------------------
   subroutine set_interface_depths(this)
-
+    !DESCRIPTION
+    !set node depth
+    !USES
     use bshr_kind_mod , only: r8 => shr_kind_r8
-
     implicit none
-
+    !argument
     class(betr_grid_type), intent(inout) :: this
-
+    !temporary variables
     integer :: j
 
     this%zisoi(0) = 0._r8

@@ -5,14 +5,14 @@ module TracerBalanceMod
 ! module contains subroutines to do
 ! tracer mass balance check
 
-  use bshr_kind_mod       , only : r8 => shr_kind_r8
-  use bshr_log_mod        , only : errMsg => shr_log_errMsg
-  use BeTR_decompMod     , only : bounds_type  => betr_bounds_type
-  use BeTRTracerType     , only : betrtracer_type
-  use TracerFluxType     , only : TracerFlux_type
-  use TracerStateType    , only : TracerState_type
-  use BeTR_ColumnType    , only : col => betr_col
-  use betr_ctrl         , only : iulog  => biulog
+  use bshr_kind_mod   , only : r8 => shr_kind_r8
+  use bshr_log_mod    , only : errMsg => shr_log_errMsg
+  use BeTR_decompMod  , only : bounds_type  => betr_bounds_type
+  use BeTRTracerType  , only : betrtracer_type
+  use TracerFluxType  , only : TracerFlux_type
+  use TracerStateType , only : TracerState_type
+  use BeTR_ColumnType , only : col => betr_col
+  use betr_ctrl       , only : iulog  => biulog
 
   implicit none
 
@@ -40,12 +40,12 @@ module TracerBalanceMod
 
       implicit none
       ! !ARGUMENTS:
-      type(bounds_type),      intent(in)    :: bounds
-      integer,                intent(in)    :: lbj, ubj
-      integer,                intent(in)    :: numf                        ! number of columns in column filter
-      integer,                intent(in)    :: filter(:)                   ! column filter
-      type(BeTRtracer_type)  , intent(in) :: betrtracer_vars
-      type(TracerFlux_type)  , intent(in) :: tracerflux_vars
+      type(bounds_type)      , intent(in)    :: bounds
+      integer                , intent(in)    :: lbj, ubj
+      integer                , intent(in)    :: numf                        ! number of columns in column filter
+      integer                , intent(in)    :: filter(:)                   ! column filter
+      type(BeTRtracer_type)  , intent(in)    :: betrtracer_vars
+      type(TracerFlux_type)  , intent(in)    :: tracerflux_vars
       type(TracerState_type) , intent(inout) :: tracerState_vars
 
 
@@ -54,7 +54,6 @@ module TracerBalanceMod
       integer :: fc, c
 
       call tracerflux_vars%Reset(bounds, numf, filter)
-
       call betr_tracer_mass_summary(bounds, lbj, ubj, numf, filter, betrtracer_vars, tracerstate_vars, &
            tracerstate_vars%beg_tracer_molarmass_col)
 
@@ -75,22 +74,22 @@ module TracerBalanceMod
       !
       ! !USES:
 
-      use babortutils            , only : endrun
-      use betr_ctrl            , only : iulog  => biulog
-      use betr_varcon           , only : namec  => bnamec
-      use tracer_varcon         , only : catomw,natomw
-      use BeTR_TimeMod, only : betr_time_type
+      use babortutils   , only : endrun
+      use betr_ctrl     , only : iulog  => biulog
+      use betr_varcon   , only : namec  => bnamec
+      use tracer_varcon , only : catomw,natomw
+      use BeTR_TimeMod  , only : betr_time_type
 
       implicit none
 
       ! !ARGUMENTS:
-      class(betr_time_type), intent(in) :: betr_time
-      type(bounds_type),      intent(in)    :: bounds
-      integer,                intent(in)    :: lbj, ubj
-      integer,                intent(in)    :: numf             ! number of columns in column filter
-      integer,                intent(in)    :: filter(:)        ! column filter
-      type(BeTRtracer_type)  , intent(in) :: betrtracer_vars
-      type(TracerFlux_type)  , intent(in) :: tracerflux_vars
+      class(betr_time_type)  , intent(in)    :: betr_time
+      type(bounds_type)      , intent(in)    :: bounds
+      integer                , intent(in)    :: lbj, ubj
+      integer                , intent(in)    :: numf             ! number of columns in column filter
+      integer                , intent(in)    :: filter(:)        ! column filter
+      type(BeTRtracer_type)  , intent(in)    :: betrtracer_vars
+      type(TracerFlux_type)  , intent(in)    :: tracerflux_vars
       type(TracerState_type) , intent(inout) :: tracerState_vars
 
       ! !LOCAL VARIABLES:
@@ -111,7 +110,6 @@ module TracerBalanceMod
            ngwmobile_tracers         => betrtracer_vars%ngwmobile_tracers                 , &
            tracernames               => betrtracer_vars%tracernames                       , &
            ntracers                  => betrtracer_vars%ntracers                            &
-
            )
 
         call betr_tracer_mass_summary(bounds, lbj, ubj, numf, filter, betrtracer_vars, tracerstate_vars, &
@@ -164,7 +162,6 @@ module TracerBalanceMod
 
     end subroutine betr_tracer_massbalance_check
 
-
     !--------------------------------------------------------------------------------
 
     subroutine betr_tracer_mass_summary(bounds, lbj, ubj, numf, filter, betrtracer_vars, tracerstate_vars, tracer_molarmass_col)
@@ -173,19 +170,19 @@ module TracerBalanceMod
       ! summarize the column tracer mass
       !
       ! !USES:
-      use tracerstatetype       , only : tracerstate_type
-      use tracer_varcon         , only : nlevtrc_soil  => betr_nlevtrc_soil
+      use tracerstatetype , only : tracerstate_type
+      use tracer_varcon   , only : nlevtrc_soil  => betr_nlevtrc_soil
 
 
       implicit none
       ! !ARGUMENTS:
-      type(bounds_type),      intent(in)    :: bounds
-      integer,                intent(in)    :: lbj, ubj
-      integer,                intent(in)    :: numf                        ! number of columns in column filter
-      integer,                intent(in)    :: filter(:)                   ! column filter
-      type(betrtracer_type) , intent(in)    :: betrtracer_vars             ! betr configuration information
-      class(tracerstate_type), intent(inout) :: tracerstate_vars            ! tracer state variables data structure
-      real(r8)              , intent(inout) :: tracer_molarmass_col(bounds%begc:bounds%endc, 1:betrtracer_vars%ntracers)
+      type(bounds_type)       , intent(in)    :: bounds
+      integer                 , intent(in)    :: lbj, ubj
+      integer                 , intent(in)    :: numf                        ! number of columns in column filter
+      integer                 , intent(in)    :: filter(:)                   ! column filter
+      type(betrtracer_type)   , intent(in)    :: betrtracer_vars             ! betr configuration information
+      class(tracerstate_type) , intent(inout) :: tracerstate_vars            ! tracer state variables data structure
+      real(r8)                , intent(inout) :: tracer_molarmass_col(bounds%begc:bounds%endc, 1:betrtracer_vars%ntracers)
       ! !LOCAL VARIABLES:
       integer :: jj, fc, c, kk
 
@@ -207,7 +204,6 @@ module TracerBalanceMod
            is_frozen                 => betrtracer_vars%is_frozen                         , &
            frozenid                  => betrtracer_vars%frozenid                            &
            )
-
         do jj = 1,   ngwmobile_tracers
            do fc = 1, numf
               c = filter(fc)
@@ -224,7 +220,6 @@ module TracerBalanceMod
               endif
            enddo
         enddo
-
         do jj = 1, nsolid_passive_tracers
            kk = jj + ngwmobile_tracers
            do fc = 1, numf
@@ -234,5 +229,4 @@ module TracerBalanceMod
         enddo
       end associate
     end subroutine betr_tracer_mass_summary
-
 end module TracerBalanceMod

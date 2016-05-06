@@ -1,8 +1,8 @@
 module BeTR_TimeMod
 
-  use bshr_kind_mod, only : r8 => shr_kind_r8
-  use bshr_kind_mod, only : i8 => shr_kind_i8
-  use betr_constants, only : stdout, betr_string_length_long
+  use bshr_kind_mod  , only : r8 => shr_kind_r8
+  use bshr_kind_mod  , only : i8 => shr_kind_i8
+  use betr_constants , only : stdout, betr_string_length_long
 
   implicit none
 
@@ -56,10 +56,9 @@ contains
     ! !DESCRIPTION:
     ! read namelist for betr configuration
     ! !USES:
-    use babortutils, only : endrun
-    use bshr_log_mod, only : errMsg => shr_log_errMsg
-
-    use betr_constants, only : stdout, betr_string_length_long, betr_namelist_buffer_size
+    use babortutils    , only : endrun
+    use bshr_log_mod   , only : errMsg => shr_log_errMsg
+    use betr_constants , only : stdout, betr_string_length_long, betr_namelist_buffer_size
 
     implicit none
     ! !ARGUMENTS:
@@ -147,7 +146,6 @@ contains
     implicit none
     class(betr_time_type), intent(in) :: this
     logical :: ans
-
 
     character(len=80) :: subname = 'its_time_to_exit'
 

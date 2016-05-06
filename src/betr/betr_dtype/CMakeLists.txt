@@ -1,5 +1,6 @@
 set(BETR_DTYPE_SOURCES
   BeTR_aerocondType.F90
+  BeTR_EcophysConType.F90
   BeTR_biogeophysInputType.F90
   BeTR_biogeoStateType.F90
   BeTR_biogeoFluxType.F90

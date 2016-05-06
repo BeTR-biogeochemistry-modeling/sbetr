@@ -32,10 +32,10 @@ module Tracer_varcon
   real(r8), parameter :: natomw = 14.007_r8     ! molar mass of N atoms (g/mol)
   real(r8), parameter :: patomw = 30.97_r8      ! molar mass of P atmos (g/mol)
 
-  integer, parameter :: bndcond_as_conc = 1 ! top boundary conditions as tracer concentration
-  integer, parameter :: bndcond_as_flux = 2 ! top boundary condition as tracer flux
+  integer, parameter  :: bndcond_as_conc = 1 ! top boundary conditions as tracer concentration
+  integer, parameter  :: bndcond_as_flux = 2 ! top boundary condition as tracer flux
 
-  logical, parameter :: l2ndadvsolver = .false. ! by default use 1st order solver for advection
+  logical, parameter  :: l2ndadvsolver = .false. ! by default use 1st order solver for advection
 
   save
 

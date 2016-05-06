@@ -12,17 +12,17 @@ module betr_regression_module
      character(len=betr_filename_length), private :: filename
      integer :: output
 
-     logical, public :: write_regression_output
+     logical, public  :: write_regression_output
      integer, private :: num_cells
      ! FIXME(bja, 201603) specifying cell ids requires more careful
      !thought. Maybe just hard code a max....
 
      !X!integer, allocatable, private :: cell_ids(:)
    contains
-     procedure, public :: Init
-     procedure, public :: OpenOutput
-     procedure, public :: CloseOutput
-     procedure, public :: WriteData
+     procedure, public  :: Init
+     procedure, public  :: OpenOutput
+     procedure, public  :: CloseOutput
+     procedure, public  :: WriteData
      procedure, private :: ReadNamelist
      procedure, private :: CheckInput
   end type betr_regression_type
@@ -35,9 +35,9 @@ contains
 
     implicit none
 
-    class(betr_regression_type), intent(inout) :: this
-    character(len=betr_filename_length), intent(in) :: base_filename
-    character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
+    class(betr_regression_type)              , intent(inout) :: this
+    character(len=betr_filename_length)      , intent(in)    :: base_filename
+    character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
 
     this%output = 16
     this%filename = trim(base_filename) // '.regression'
@@ -49,10 +49,9 @@ contains
   !--------------------------------------------------------------------
 
   subroutine ReadNamelist(this, namelist_buffer)
-    use babortutils, only : endrun
-    use bshr_log_mod, only : errMsg => shr_log_errMsg
-
-    use betr_constants, only : stdout, betr_string_length_long, betr_namelist_buffer_size
+    use babortutils    , only : endrun
+    use bshr_log_mod   , only : errMsg => shr_log_errMsg
+    use betr_constants , only : stdout, betr_string_length_long, betr_namelist_buffer_size
 
     implicit none
 
@@ -105,10 +104,9 @@ contains
 
   subroutine CheckInput(this)
 
-    use betr_constants, only : betr_string_length_long
-
-    use babortutils, only : endrun
-    use bshr_log_mod, only : errMsg => shr_log_errMsg
+    use betr_constants , only : betr_string_length_long
+    use babortutils    , only : endrun
+    use bshr_log_mod   , only : errMsg => shr_log_errMsg
 
     implicit none
 
@@ -172,17 +170,16 @@ contains
     ! section data is just keyword = value for things like min, max,
     ! mean, vector norms, cell point data.
 
-    use bshr_kind_mod, only : r8 => shr_kind_r8
-
-    use betr_constants, only : stdout
-    use betr_constants, only : betr_var_name_length, betr_string_length
+    use bshr_kind_mod  , only : r8 => shr_kind_r8
+    use betr_constants , only : stdout
+    use betr_constants , only : betr_var_name_length, betr_string_length
 
     implicit none
 
-    class(betr_regression_type), intent(inout) :: this
-    character(len=betr_string_length), intent(in) :: category
-    character(len=betr_var_name_length), intent(in) :: name
-    real(r8), intent(in) :: data(:)
+    class(betr_regression_type)         , intent(inout) :: this
+    character(len=betr_string_length)   , intent(in)    :: category
+    character(len=betr_var_name_length) , intent(in)    :: name
+    real(r8)                            , intent(in)    :: data(:)
 
     integer :: cell_increment, num_cells, cell
     real(r8) :: val, local_val

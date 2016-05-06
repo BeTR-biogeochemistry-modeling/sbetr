@@ -4,9 +4,9 @@ module KineticsMod
   ! Created by Jinyun Tang, Apr 11, 2013
   ! !USES:
 
-  use bshr_kind_mod, only: r8 => shr_kind_r8
-  use babortutils,   only: endrun
-  use betr_ctrl,    only: iulog => biulog
+  use bshr_kind_mod , only: r8 => shr_kind_r8
+  use babortutils   , only: endrun
+  use betr_ctrl     , only: iulog => biulog
   implicit none
   real(r8),public, parameter :: kd_infty = 1.e40_r8      !internal parameter
 
@@ -338,7 +338,7 @@ contains
      ! !ARGUMENTS:
      real(r8), dimension(:), intent(in)  :: kd
      real(r8), dimension(:), intent(in)  :: ss
-     real(r8), intent(in)                :: ee
+     real(r8),               intent(in)  :: ee
      real(r8), dimension(:), intent(out) :: siej
      ! !LOCAL VARIABLES:
      integer :: ii

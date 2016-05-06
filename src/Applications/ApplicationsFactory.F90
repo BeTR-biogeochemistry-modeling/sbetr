@@ -27,8 +27,7 @@ contains
   implicit none
   class(bgc_reaction_type),  allocatable, intent(out) :: bgc_reaction
   class(plant_soilbgc_type), allocatable, intent(out) :: plant_soilbgc
-  character(len=*), intent(in)          :: method
-
+  character(len=*),                       intent(in)  :: method
 
   allocate(bgc_reaction, source=create_bgc_reaction_type(method))
 
@@ -44,13 +43,14 @@ contains
     ! create and return an object of bgc_reaction
     !
     ! !USES:
-    use BGCReactionsMod             , only : bgc_reaction_type
-    use babortutils                  , only : endrun
-    use betr_ctrl                  , only : iulog  => biulog
+    use BGCReactionsMod , only : bgc_reaction_type
+    use babortutils     , only : endrun
+    use betr_ctrl       , only : iulog  => biulog
 
     ! !ARGUMENTS:
-    class(bgc_reaction_type), allocatable :: bgc_reaction
     character(len=*), intent(in)          :: method
+    ! temporary varaibles
+    class(bgc_reaction_type), allocatable :: bgc_reaction
     character(len=*), parameter           :: subname = 'create_bgc_reaction_type'
 
     select case(trim(method))
@@ -67,15 +67,17 @@ contains
 
   !DESCRIPTION
   !create and return an object of plant_soilbgc
-
-  use PlantSoilBGCMod             , only : plant_soilbgc_type
-  use babortutils                  , only : endrun
-  use betr_ctrl                  , only : iulog  => biulog
-
+  !
+  !USES
+  use PlantSoilBGCMod , only : plant_soilbgc_type
+  use babortutils     , only : endrun
+  use betr_ctrl       , only : iulog  => biulog
+  implicit none
   ! !ARGUMENTS:
-  class(plant_soilbgc_type), allocatable :: plant_soilbgc
   character(len=*), intent(in)          :: method
-  character(len=*), parameter           :: subname = 'create_plant_soilbgc_type'
+  !temporary variables
+  class(plant_soilbgc_type) , allocatable :: plant_soilbgc
+  character(len=*)          , parameter   :: subname = 'create_plant_soilbgc_type'
 
   select case(trim(method))
 

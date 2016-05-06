@@ -4,8 +4,8 @@ module TracerBoundaryCondType
 ! data type to specify boundary conditions for tracer tranpsort
 !
 ! !USES:
-   use bshr_kind_mod    , only : r8 => shr_kind_r8
-   use BeTR_decompMod  , only : bounds_type  => betr_bounds_type
+   use bshr_kind_mod  , only : r8 => shr_kind_r8
+   use BeTR_decompMod , only : bounds_type  => betr_bounds_type
 
   implicit none
 
@@ -43,9 +43,9 @@ contains
     use BeTRTracerType, only : BeTRTracer_Type
     !
     ! !ARGUMENTS:
-    class(tracerboundarycond_type) :: this
-    type(bounds_type), intent(in) :: bounds
-    type(BeTRTracer_Type), intent(in) :: betrtracer_vars
+    class(tracerboundarycond_type)     :: this
+    type(bounds_type)     , intent(in) :: bounds
+    type(BeTRTracer_Type) , intent(in) :: betrtracer_vars
 
     call this%InitAllocate(bounds, betrtracer_vars)
     call this%InitHistory(bounds)
@@ -88,7 +88,6 @@ contains
     !
     ! !USES:
     use betr_varcon    , only: spval => bspval
-
     !
     ! !ARGUMENTS:
     class(tracerboundarycond_type) :: this
@@ -100,7 +99,7 @@ contains
 
     ! remove compiler warnings for unused dummy args
     if (size(this%jtops_col) > 0) continue
-    if (bounds%begc > 0) continue
+    if (bounds%begc > 0)          continue
 
   end subroutine InitHistory
 
@@ -139,8 +138,8 @@ contains
     !
     ! !USES:
     use betr_varcon , only : spval  => bspval
-    use betr_ctrl  , only : iulog => biulog
-    use ncdio_pio, only : file_desc_t
+    use betr_ctrl   , only : iulog => biulog
+    use ncdio_pio   , only : file_desc_t
     !
     ! !ARGUMENTS:
     class(tracerboundarycond_type)      :: this
@@ -172,7 +171,7 @@ contains
 
     ! remove compiler warnings for unused dummy args
     if (size(this%jtops_col) > 0) continue
-    if (column > 0) continue
+    if (column > 0)               continue
     
   end subroutine Reset
  end module TracerBoundaryCondType
