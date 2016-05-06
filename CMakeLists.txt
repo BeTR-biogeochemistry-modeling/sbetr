@@ -102,7 +102,10 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${SYS_FLAGS}")
 # Fortran compiler flags.
 if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -W -Wall -std=gnu -pedantic -Wno-unused-variable -Wno-unused-parameter -Werror=use-without-only -DCPRGNU")
+elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -DCPRINTEL")
 endif()
+
 
 # Figure out the system type.
 set(BETR_HAVE_BOOL 1) # All reasonable C99 compilers have this now.
@@ -129,6 +132,22 @@ set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 # Check third-party library dependencies.
+# Basic libraries to be linked in.
+set(BETR_LIBRARIES m)
+#if (${NEED_LAPACK})
+include(FindBLAS)
+include(FindLAPACK)
+find_package(BLAS REQUIRED)
+find_package(LAPACK REQUIRED)
+if (${LAPACK_LIBRARY_DIR})
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L${LAPACK_LIBRARY_DIR}")
+endif()
+if (${BLAS_LIBRARY_DIR})
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L${BLAS_LIBRARY_DIR}")
+endif()
+set(BETR_LIBRARIES ${BETR_LIBRARIES};${LAPACK_LIBRARIES};${BLAS_LIBRARIES})
+#endif()
+
 set(BETR_NEED_PETSC 0)
 
 if (XSDK_WITH_NETCDF)

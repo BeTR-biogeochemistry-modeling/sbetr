@@ -61,9 +61,9 @@ module SoilStateType
     integer :: lbj,  ubj
     !------------------------------------------------------------------------
 
+    begp = bounds%begp; endp=bounds%endp
     begc = bounds%begc; endc= bounds%endc
     lbj  = bounds%lbj; ubj = bounds%ubj
-
     allocate(this%bsw_col(begc:endc, lbj:ubj))         ; this%bsw_col(:,:) = nan
     allocate(this%watsat_col(begc:endc, lbj:ubj))      ; this%watsat_col(:,:) = nan
     allocate(this%eff_porosity_col(begc:endc, lbj:ubj)); this%eff_porosity_col(:,:) = nan
