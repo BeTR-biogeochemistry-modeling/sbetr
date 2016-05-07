@@ -374,7 +374,7 @@ end function shr_infnan_isneginf_real
 #else
 ! Don't have ieee_arithmetic.
 
-#ifdef CPRGNU
+#ifdef CPRGNU || CPRINTEL
 ! NaN testing on gfortran.
 ! TYPE double,real
 # 223 "/home/santos/csm_share/shr_assert_macro/shr/shr_infnan_mod.F90.in"
