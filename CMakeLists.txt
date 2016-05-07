@@ -92,6 +92,8 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
   if (LINUX EQUAL 1)
     # Counter some of GCC's more recent stinginess on Linux.
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_POSIX_C_SOURCE=200809L")# -D_BSD_SOURCE")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -ldl")
+
   endif()
 
 elseif (CMAKE_C_COMPILER_ID STREQUAL "Clang")
