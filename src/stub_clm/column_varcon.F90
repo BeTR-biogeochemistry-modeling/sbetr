@@ -50,7 +50,8 @@ contains
     ! !LOCAL VARIABLES:
 
     character(len=*), parameter :: subname = 'icemec_class_to_col_itype'
-    character(len=*), parameter :: mod_filename = __FILE__
+    character(len=*), parameter :: mod_filename = &
+         __FILE__
     !-----------------------------------------------------------------------
     SHR_ASSERT((1 <= icemec_class .and. icemec_class <= maxpatch_glcmec), errMsg(mod_filename, __LINE__))
 
@@ -75,7 +76,8 @@ contains
     ! !LOCAL VARIABLES:
 
     character(len=*), parameter :: subname = 'col_itype_to_icemec_class'
-    character(len=*), parameter :: mod_filename = __FILE__
+    character(len=*), parameter :: mod_filename = 'column_varcon.F90'
+
     !-----------------------------------------------------------------------
 
     icemec_class = col_itype - istice_mec*100

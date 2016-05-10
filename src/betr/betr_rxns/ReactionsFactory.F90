@@ -15,6 +15,9 @@ module ReactionsFactory
   use PlantSoilBGCMod , only : plant_soilbgc_type
   implicit none
 
+  character(len=*), parameter :: mod_filename = &
+       __FILE__
+  
   private
 
   public :: create_betr_def_application
@@ -66,7 +69,7 @@ contains
        allocate(bgc_reaction, source=bgc_reaction_h2oiso_type())
     case default
        write(iulog,*)subname //' ERROR: unknown method: ', method
-       call endrun(msg=errMsg(__FILE__, __LINE__))
+       call endrun(msg=errMsg(mod_filename, __LINE__))
     end select
   end function create_bgc_reaction_type
   !-------------------------------------------------------------------------------
@@ -94,7 +97,7 @@ contains
      allocate(plant_soilbgc, source=plant_soilbgc_h2oiso_run_type())
   case default
      write(*, *)subname //' ERROR: unknown method: ', method
-     call endrun(msg=errMsg(__FILE__, __LINE__))
+     call endrun(msg=errMsg(mod_filename, __LINE__))
   end select
 
   end function create_plant_soilbgc_type
