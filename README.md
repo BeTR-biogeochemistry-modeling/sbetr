@@ -34,6 +34,18 @@ The following command will create local/bin/, where sbetr will be installed.
 
     make install
 
+To run betr on cluster, one needs to load the following (take intel compiler for example)
+the compiler, cmake, python (>2.7), netcdf, and mkl, the configuration command is then
+
+make config CC=icc CXX=icpc FC=ifort
+
+and the install command is
+
+make install CC=icc CXX=icpc FC=ifort
+
+Others should be done similarly as one run betr on a desktop or laptop, with appropriate
+modifications as described above.
+
 ## Testing
 
 BeTR testing inclueds [pFUnit](http://pfunit.sourceforge.net/) based
