@@ -47,4 +47,4 @@ script:
   - make travis=1 debug=$DEBUG CC=${CC} CXX=${CXX} FC=${FC} install
   - make travis=1 debug=$DEBUG CC=${CC} CXX=${CXX} FC=${FC} test
   - cd regression-tests; make rtest
-  - cat regression-tests/betr-tests.testlog
+  - cat betr-tests.testlog
