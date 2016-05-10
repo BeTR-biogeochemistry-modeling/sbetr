@@ -7,6 +7,40 @@ Jinyun Tang, jinyuntang@lbl.gov
 
 ## Building
 
+### Requirements
+
+Requirements for configuring and building BeTR:
+
+* cmake > 3.1
+
+* fortran compiler
+
+  * gfortran > 5.3.0. Older versions make work, but are not
+    supported. At a minimum, you will have to change the compiler
+    flags. The pfunit testing frame work can NOT be build with gcc <
+    4.9.
+
+  * intel - TBD
+
+  * pgi - TBD
+
+  * nag - TBD
+
+* c compiler - only used for 3rd-party libraries. Any modern compiler
+  should work. The following versions are tested:
+
+  * clang - approximately 7.3
+
+  * gcc - 5.3
+
+* python 2.7
+
+All third party dependancies for building and running standalone BeTR
+are included in the 3rd-party directory.
+
+### Build
+
+
 BeTR uses a cmake based build system. The default build is debug. To
 build using the default debug configuration:
 
@@ -22,7 +56,7 @@ where Xyz is the build configuration.
 
 The standalone `sbetr` executable is in:
 
-    ${SBETR_(ROOT}/bulid/Xyz-Debug/src/driver/sbetr
+    ${SBETR_(ROOT}/build/Xyz-Debug/src/driver/sbetr
 
 To build a release configuration of the code:
 
@@ -34,17 +68,25 @@ The following command will create local/bin/, where sbetr will be installed.
 
     make install
 
-To run betr on cluster, one needs to load the following (take intel compiler for example)
-the compiler, cmake, python (>2.7), netcdf, and mkl, the configuration command is then
+Please note, the top level make file providing `make config` etc is a
+convenience for the most common use cases. You don't have to use it
+and can specify all configuration and build commands manually.
 
-make config CC=icc CXX=icpc FC=ifort
+
+### HPC machines
+
+To run betr on cluster, one needs to load the following (take intel
+compiler for example) the compiler, cmake, python (>2.7), and
+mkl, the configuration command is then
+
+    make config CC=icc CXX=icpc FC=ifort
 
 and the install command is
 
-make install CC=icc CXX=icpc FC=ifort
+    make install CC=icc CXX=icpc FC=ifort
 
-Others should be done similarly as one run betr on a desktop or laptop, with appropriate
-modifications as described above.
+Others should be done similarly as one run betr on a desktop or
+laptop, with appropriate modifications as described above.
 
 ## Testing
 
@@ -89,6 +131,7 @@ concentration = 1.0e-13 relative
 [mock]
 # override default tolarance
 concentration = 1.0e-14 absolute
+timeout = 30 seconds
 
 ```
 
@@ -97,6 +140,15 @@ contains the default tolerances for *all tests in this suite.*
 Tolerances are specified by category, concentration, velocity,
 general. The type of toleraces can be absolute, relative or
 percent. These values can be over ridden for individual tests.
+
+In general, tests should be kept short. Long tests are harder to debug
+and they rarely provide a benefit over shorter tests. If a particular
+set of conditions needs to be tested, it is better to create a special
+forcing data set that exercises those conditions in a short test. The
+test suite enforces a timeout limit for tests to prevent infinite
+loops and other hangs from running. If a test is exceeding the default
+timeout limit, then it can be increased on a case by case basis in the
+test suite configuration.
 
 All other sections are considered to define tests. The name of the
 section is the test name. It is expected that a `test_name.namelist`
@@ -150,7 +202,7 @@ directory where sbetr is executed!
 
 
     cd ${SBETR_ROOT}/example_input
-    ../build/Darwin-x86_64-static-double-cc-Debug/src/driver/sbetr mock.namelist
+    ${SBETR_ROOT}/local/bin/sbetr mock.namelist
 
 The example is set with mock run that transport five tracers: N2, O2,
 AR, CO2, CH4 and DOC
