@@ -1728,7 +1728,8 @@ function shr_string_listCreateField( numFields, strBase ) result ( retString )
    character(*),parameter :: subName = "(shr_string_listCreateField) "
    character(*),parameter :: F00     = "('(shr_string_listCreateField) ',a) "
 
-   character(*), parameter :: file_name = __FILE__
+   character(*), parameter :: file_name = &
+        __FILE__
 
 !-------------------------------------------------------------------------------
 

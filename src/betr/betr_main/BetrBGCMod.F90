@@ -37,7 +37,8 @@ module BetrBGCMod
   real(r8), parameter :: tiny_val         = 1.e-20_r8 !very small value, for tracer concentration etc.
   real(r8), parameter :: dtime_min        = 1._r8     !minimum time step 1 second
   real(r8), parameter :: err_tol_transp   = 1.e-8_r8  !error tolerance for tracer transport
-  character(len =*), parameter :: filename= __FILE__
+  character(len=*), parameter :: filename = &
+       __FILE__
 
   public :: stage_tracer_transport
   public :: surface_tracer_hydropath_update

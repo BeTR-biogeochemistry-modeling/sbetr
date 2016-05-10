@@ -62,7 +62,8 @@ module subgridAveMod
   private :: build_scale_l2g
   private :: create_scale_l2g_lookup
 
-  character(len=*), parameter :: mod_filename = __FILE__
+  character(len=*), parameter :: mod_filename = &
+       __FILE__
   
   ! WJS (10-14-11): TODO:
   !
