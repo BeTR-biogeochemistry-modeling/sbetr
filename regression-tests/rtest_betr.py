@@ -86,7 +86,7 @@ def commandline_options(ext_args=None):
     parser.add_argument('--executable', nargs=1, required=True,
                         help='path to the executable')
 
-    parser.add_argument('--timeout', nargs=1, default='80.0',
+    parser.add_argument('--timeout', nargs=1, default='90.0',
                         help='max runtime [seconds] before we timout a test.')
 
     parser.add_argument('--update-baseline', action='store_true',

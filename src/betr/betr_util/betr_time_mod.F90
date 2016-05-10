@@ -91,7 +91,7 @@ contains
     ! Read namelist from standard input.
     ! ----------------------------------------------------------------------
 
-    if ( .true. )then
+    if ( index(trim(namelist_buffer),'betr_time')/=0 )then
        ioerror_msg=''
        read(namelist_buffer, nml=betr_time, iostat=nml_error, iomsg=ioerror_msg)
        if (nml_error /= 0) then
