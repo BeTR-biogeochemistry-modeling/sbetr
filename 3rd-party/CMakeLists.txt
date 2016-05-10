@@ -187,6 +187,11 @@ if (NOT HDF5_LIB_NAME STREQUAL "hdf5" AND HDF5_LIBRARY MATCHES "${PROJECT_BINARY
 endif()
 
 set(BETR_TP_LIBS ${HDF5_LIBRARIES};${BETR_TP_LIBS})
+if (LINUX EQUAL 1)
+  # Needed to link hdf5 / netcdf
+  set(BETR_TP_LIBS "-ldl";${BETR_TP_LIBS})
+  #set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -ldl" PARENT_SCOPE)
+endif()
 
 # Build the netcdf c library.
 set(NETCDF_LIBRARY "${PROJECT_BINARY_DIR}/lib/libnetcdf${LIB_SUFFIX}")
