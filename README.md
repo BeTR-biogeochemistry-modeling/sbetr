@@ -7,6 +7,8 @@ Jinyun Tang, jinyuntang@lbl.gov
 
 ## Building
 
+[![Build Status](https://travis-ci.org/BeTR-biogeochemistry-modeling/sbetr.svg?branch=master)](https://travis-ci.org/BeTR-biogeochemistry-modeling/sbetr)
+
 ### Requirements
 
 Requirements for configuring and building BeTR:
