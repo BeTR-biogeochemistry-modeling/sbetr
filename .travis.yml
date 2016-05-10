@@ -23,19 +23,19 @@ addons:
 matrix:
   include:
     # linux + gcc-5 + DEBUG=0
-    - env: CC=gcc-5; export CXX=g++-5; export FC=gfortran-5; DEBUG=0
+    - env: DEBUG=0; CC=gcc-5; export CXX=g++-5; export FC=gfortran-5
       os: linux
 
     # linux + gcc-5 + DEBUG=1
-    - env: CC=gcc-5; export CXX=g++-5; export FC=gfortran-5; DEBUG=1
+    - env: DEBUG=1; CC=gcc-5; export CXX=g++-5; export FC=gfortran-5
       os: linux
 
     # osx + gcc + DEBUG=0
-    - env: CC=gcc; export CXX=g++; export FC=gfortran; DEBUG=0
+    - env: DEBUG=0; CC=gcc; export CXX=g++; export FC=gfortran
       os: osx
 
     # osx + gcc + DEBUG=1
-    - env: CC=gcc; export CXX=g++; export FC=gfortran; DEBUG=1
+    - env: DEBUG=1; CC=gcc; export CXX=g++; export FC=gfortran
       os: osx
 
 script: 
@@ -46,4 +46,5 @@ script:
   - make travis=1 debug=$DEBUG CC=${CC} CXX=${CXX} FC=${FC} all
   - make travis=1 debug=$DEBUG CC=${CC} CXX=${CXX} FC=${FC} install
   - make travis=1 debug=$DEBUG CC=${CC} CXX=${CXX} FC=${FC} test
-  - cd regression-tests; make rtest; cat betr-tests.testlog
+  - cd regression-tests; make rtest
+  - cat regression-tests/betr-tests.testlog
