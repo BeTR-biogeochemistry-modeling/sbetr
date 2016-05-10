@@ -11,10 +11,7 @@ sanitize   = not-set
 CC         = not-set
 CXX        = not-set
 FC         = not-set
-
-netcdf_fflags = not-set
-netcdf_flibs = not-set
-
+travis = not-set
 # This proxies everything to the builddir cmake.
 
 cputype = $(shell uname -m | sed "s/\\ /_/g")
@@ -24,6 +21,13 @@ BUILDDIR := build/$(systype)-$(cputype)
 CONFIG_FLAGS = -DUNIX=1 -Wno-dev
 
 # Process configuration options.
+
+# Travis-CI build
+ifeq ($(travis), not-set)
+  CONFIG_FLAGS += -DTRAVIS_CI=0
+else
+  CONFIG_FLAGS += -DTRAVIS_CI=1
+endif
 
 # Verbose builds?
 ifeq ($(verbose), 1)
@@ -108,20 +112,6 @@ ifeq ($(sanitize), 1)
   BUILDDIR := ${BUILDDIR}-AddressSanitizer
   CONFIG_FLAGS += -DADDRESS_SANITIZER=1
 endif
-
-# netcdf
-ifneq ($(netcdf_fflags), not-set)
-  NETCDF_FFLAGS = $(netcdf_fflags)
-else
-  NETCDF_FFLAGS = $(shell nc-config --prefix)/include
-endif
-ifneq ($(netcdf_flibs), not-set)
-  NETCDF_FLIBS = $(netcdf_flibs)
-else
-  NETCDF_FLIBS = $(shell nc-config --flibs)
-endif
-CONFIG_FLAGS += -DTPL_NETCDF_INCLUDE_DIRS=" $(NETCDF_FFLAGS)"
-CONFIG_FLAGS += -DTPL_NETCDF_LIBRARIES="$(NETCDF_FLIBS)"
 
 define run-config
 @mkdir -p $(BUILDDIR)
