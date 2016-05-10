@@ -955,11 +955,9 @@ def config_to_dict(config):
     return config_dict
 
 
-def convert_input_data(input_dir, dry_run):
+def convert_input_data(ncgen, input_dir, dry_run):
     """Check that text cdl-netcdf input files are available as binary
     netcdf by calling the external ncgen command.
-
-    FIXME(bja, 201604) assumes that ncgen is in the path....
 
     FIXME(bja, 201604) assumes that all input files are in a single
     hard coded directory. Should this be genralized....?
@@ -998,7 +996,7 @@ def convert_input_data(input_dir, dry_run):
             msg = '  converting {0} to binary nc format'.format(cdl)
             logging.info(msg)
             command = [
-                'ncgen',
+                ncgen,
                 '-o',
                 nc_filename,
                 cdl_filename,
@@ -1007,6 +1005,30 @@ def convert_input_data(input_dir, dry_run):
             os.remove(tempfile)
             logging.info('')
 
+
+def find_executable(exe, paths):
+    """Check if an executable exists is a list of paths and use it, or try
+    to see if it is just in the user path.
+
+    """
+    logging.info('Searching for executable "{0}"'.format(exe))
+    found = False
+    full_path = None
+    for path in paths:
+        full_path = os.path.join(path, exe)
+        try:
+            verify_executable(full_path)
+        except RuntimeError as e:
+            # not useable, move on
+            pass
+        else:
+            found = True
+            break
+    if not found:
+        msg = "ERROR: could not find a usable executable for '{0}'".format(exe)
+        raise RuntimeError(msg)
+    logging.info('  Using "{0}" at :\n    {1}'.format(exe, full_path))
+    return full_path
 
 # -----------------------------------------------------------------------------
 #
@@ -1025,6 +1047,7 @@ def main(options):
     setup_log(cwd)
     executable = os.path.abspath(options.executable[0])
     verify_executable(executable)
+    exe_paths = [os.path.dirname(executable), '']
 
     if options.config:
         filenames = options.config
@@ -1039,7 +1062,8 @@ def main(options):
         raise RuntimeError(msg)
 
     dry_run = options.dry_run
-    convert_input_data(input_dir, dry_run)
+    ncgen = find_executable('ncgen', exe_paths)
+    convert_input_data(ncgen, input_dir, dry_run)
 
     print('Setting up tests.')
     test_suites = []
