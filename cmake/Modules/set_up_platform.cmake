@@ -35,8 +35,6 @@ macro(set_up_platform)
   set(HDF5_LIBRARIES ${HDF5_HL_LIB_NAME};${HDF5_LIB_NAME})
   set(HDF5_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/include")
   get_filename_component(HDF5_LIBRARY_DIR ${Z_LIBRARY} DIRECTORY)
-  set(SILO_LIBRARY "${CMAKE_CURRENT_BINARY_DIR}/lib/libsiloh5.a")
-  set(SILO_LIBRARIES siloh5)
   if (APPLE)
     set(NEED_LAPACK FALSE)
   else()
@@ -100,19 +98,6 @@ macro(set_up_platform)
       get_filename_component(HDF5_LIBRARY_DIR ${HDF5_LIBRARY} DIRECTORY)
     endif()
 
-    set(SILO_LOC $ENV{SILO_DIR})
-    if (NOT SILO_LOC)
-      message(FATAL_ERROR "SILO_DIR not found. Please load the silo module.")
-    endif()
-
-    if (EXISTS ${SILO_LOC}/lib/libsiloh5.a)
-      include_directories(${SILO_LOC}/include)
-      link_directories(${SILO_LOC}/lib)
-      list(APPEND EXTRA_LINK_DIRECTORIES ${SILO_LOC}/lib)
-      set(SILO_LIBRARY ${SILO_LOC}/lib/libsiloh5.a)
-      set(SILO_LIBRARIES siloh5)
-    endif()
-
   elseif (HOSTNAME MATCHES "edison") # NERSC Edison
     # Edison likes Intel's compilers
     # (but Intel's compilers don't do C11.).
@@ -158,19 +143,6 @@ macro(set_up_platform)
       get_filename_component(HDF5_LIBRARY_DIR ${HDF5_LIBRARY} DIRECTORY)
     endif()
 
-    set(SILO_LOC $ENV{SILO_DIR})
-    if (NOT SILO_LOC)
-      message(FATAL_ERROR "SILO_DIR not found. Please load the silo module.")
-    endif()
-
-    if (EXISTS ${SILO_LOC}/lib/libsiloh5.a)
-      include_directories(${SILO_LOC}/include)
-      link_directories(${SILO_LOC}/lib)
-      list(APPEND EXTRA_LINK_DIRECTORIES ${SILO_LOC}/lib)
-      set(SILO_LIBRARY ${SILO_LOC}/lib/libsiloh5.a)
-      set(SILO_LIBRARIES siloh5)
-    endif()
-
   elseif(HOSTNAME MATCHES "hopper") # NERSC Hopper
 
     # Hopper is being decommissioned soon (Dec 2015), so we aren't super 
@@ -183,20 +155,6 @@ macro(set_up_platform)
 
     # We expect the following libraries to be available.
     set(Z_LIBRARY /usr/lib64/libz.a)
-
-    # Silo on Hopper doesn't use HDF5, so never mind that stuff.
-
-    set(SILO_LOC $ENV{SILO_DIR})
-    if (NOT SILO_LOC)
-      message(FATAL_ERROR "SILO_DIR not found. Please load the silo module.")
-    endif()
-    include_directories(${SILO_LOC}/include)
-    link_directories(${SILO_LOC}/lib)
-    list(APPEND EXTRA_LINK_DIRECTORIES ${SILO_LOC}/lib)
-    link_directories(/opt/pgi/default/linux86-64/default/lib) # built with PGI
-    list(APPEND EXTRA_LINK_DIRECTORIES /opt/pgi/default/linux86-64/default/lib) # built with PGI
-    set(SILO_LIBRARY ${SILO_LOC}/lib/libsilo.a)
-    set(SILO_LIBRARIES silo;pgc)
 
   endif()
 
