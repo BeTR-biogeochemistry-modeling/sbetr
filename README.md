@@ -115,6 +115,24 @@ laptop, with appropriate modifications as described above.
 
         module swap intel pgi
 
+* edison
+
+  * intel
+
+        module load cmake/3.3.2
+        module load intel/15.0.1.133
+
+        make CC=icc CXX=icpc FC=ifort config all install test
+
+* cori
+
+  * intel
+
+        module load cmake/3.3.2
+        module load intel/16.0.0.109
+
+        make CC=icc CXX=icpc FC=ifort config all install test
+
 ## Testing
 
 BeTR testing inclueds [pFUnit](http://pfunit.sourceforge.net/) based
