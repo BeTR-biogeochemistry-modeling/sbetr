@@ -1609,8 +1609,11 @@ SUBROUTINE shr_mpi_initialized(flag,string)
 !-------------------------------------------------------------------------------
 ! PURPOSE: MPI initialized
 !-------------------------------------------------------------------------------
-   if (len(string) > 0) continue
-   if (flag) continue
+
+   if (present(string)) then
+      if (len(string) > 0) continue
+   endif
+   flag = .true.
 
 
 END SUBROUTINE shr_mpi_initialized
