@@ -35,8 +35,7 @@ macro(set_up_platform)
   set(HDF5_LIBRARIES ${HDF5_HL_LIB_NAME};${HDF5_LIB_NAME})
   set(HDF5_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/include")
   get_filename_component(HDF5_LIBRARY_DIR ${Z_LIBRARY} DIRECTORY)
-#  set(SILO_LIBRARY "${CMAKE_CURRENT_BINARY_DIR}/lib/libsiloh5.a")
-#  set(SILO_LIBRARIES siloh5)
+
   if (APPLE)
     set(NEED_LAPACK FALSE)
   else()
@@ -158,19 +157,6 @@ macro(set_up_platform)
       get_filename_component(HDF5_LIBRARY_DIR ${HDF5_LIBRARY} DIRECTORY)
     endif()
 
-#    set(SILO_LOC $ENV{SILO_DIR})
-#    if (NOT SILO_LOC)
-#      message(FATAL_ERROR "SILO_DIR not found. Please load the silo module.")
-#    endif()
-
-#    if (EXISTS ${SILO_LOC}/lib/libsiloh5.a)
-#      include_directories(${SILO_LOC}/include)
-#      link_directories(${SILO_LOC}/lib)
-#      list(APPEND EXTRA_LINK_DIRECTORIES ${SILO_LOC}/lib)
-#      set(SILO_LIBRARY ${SILO_LOC}/lib/libsiloh5.a)
-#      set(SILO_LIBRARIES siloh5)
-#    endif()
-
   elseif(HOSTNAME MATCHES "hopper") # NERSC Hopper
 
     # Hopper is being decommissioned soon (Dec 2015), so we aren't super 
@@ -184,20 +170,23 @@ macro(set_up_platform)
     # We expect the following libraries to be available.
     set(Z_LIBRARY /usr/lib64/libz.a)
 
-    # Silo on Hopper doesn't use HDF5, so never mind that stuff.
+  elseif(HOSTNAME MATCHES "yslogin") # NCAR yellowstone
+    message("-- Running on yellowstone.")
+    set(NUM_BUILD_THREADS "4")
+    if (FALSE) # gnu
+      set(BLAS_INCLUDE_DIRS "/glade/apps/opt/lib")
+      set(BLAS_LIBRARIES "${BLAS_INCLUDE_DIRS}/libblas.a")
+      set(LAPACK_INCLUDE_DIRS "/glade/apps/opt/lib")
+      set(LAPACK_LIBRARIES "${LAPACK_INCLUDE_DIRS}/liblapack.a")
+      set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${BLAS_LIBRARIES}")
+      set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${LAPACK_LIBRARIES}")
+      set(NEED_LAPACK FALSE)
+    endif()
 
-#    set(SILO_LOC $ENV{SILO_DIR})
-#    if (NOT SILO_LOC)
-#      message(FATAL_ERROR "SILO_DIR not found. Please load the silo module.")
-#    endif()
-#    include_directories(${SILO_LOC}/include)
-#    link_directories(${SILO_LOC}/lib)
-#    list(APPEND EXTRA_LINK_DIRECTORIES ${SILO_LOC}/lib)
-#    link_directories(/opt/pgi/default/linux86-64/default/lib) # built with PGI
-#    list(APPEND EXTRA_LINK_DIRECTORIES /opt/pgi/default/linux86-64/default/lib) # built with PGI
-#    set(SILO_LIBRARY ${SILO_LOC}/lib/libsilo.a)
-#    set(SILO_LIBRARIES silo;pgc)
-
+    if (TRUE) # intel
+      set(NEED_LAPACK FALSE)
+    endif()
+    
   endif()
 
 endmacro()
