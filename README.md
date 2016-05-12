@@ -90,6 +90,31 @@ and the install command is
 Others should be done similarly as one run betr on a desktop or
 laptop, with appropriate modifications as described above.
 
+
+* yellowstone
+
+  * intel
+
+        module unload ncarbinlibs
+        module load intel/16.0.2
+        module load mkl/11.3.0
+        module load cmake/3.3.1
+        module load python/2.7.7
+
+        make CC=icc CXX=icpc FC=ifort config all install test
+
+  * gnu - doesn't work yet, can't link blas
+
+        module swap intel gnu/5.3.0
+        module load cmake/3.3.1
+        module load python/2.7.7
+
+        make config all install test
+
+  * pgi - in progress
+
+        module swap intel pgi
+
 ## Testing
 
 BeTR testing inclueds [pFUnit](http://pfunit.sourceforge.net/) based
