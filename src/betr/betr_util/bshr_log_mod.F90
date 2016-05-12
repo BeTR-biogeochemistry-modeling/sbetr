@@ -17,6 +17,10 @@ module bshr_log_mod
   use bshr_kind_mod, only : SHR_KIND_CX
 
   implicit none
+
+  character(len=*), parameter :: mod_filename = &
+       __FILE__
+
   private
 
 ! !PUBLIC TYPES:
@@ -48,7 +52,7 @@ contains
 ! !DESCRIPTION:
 !     Return an error message containing file & line info
 !     \newline
-!     errMsg = shr\_log\_errMsg(__FILE__, __LINE__)
+!     errMsg = shr\_log\_errMsg(mod_filename, __LINE__)
 !
 ! !REVISION HISTORY:
 !     2013-July-23 - Bill Sacks

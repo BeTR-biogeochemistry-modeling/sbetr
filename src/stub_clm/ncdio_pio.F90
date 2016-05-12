@@ -23,6 +23,10 @@ module ncdio_pio
   use clm_varctl  , only : single_column, iulog
   use spmdMod     , only : masterproc
   implicit none
+
+  character(len=*), parameter :: mod_filename = &
+       __FILE__
+
   private
   save
 
@@ -245,7 +249,7 @@ module ncdio_pio
     write (iulog,*) 'CHECK_DIM error: mismatch of input dimension ',dimlen, &
       ' with expected value ',value,' for variable ', trim(dimname)
 
-    call shr_sys_abort(errMsg(__FILE__,__LINE__))
+    call shr_sys_abort(errMsg(mod_filename,__LINE__))
   end if
 
   end subroutine check_dim
@@ -1348,7 +1352,7 @@ module ncdio_pio
 
     if (ni == 0 .or. nj == 0) then
        write(iulog,*) trim(subname),' ERROR: ni,nj = ',ni,nj,' cannot be zero '
-       call shr_sys_abort(errMsg(__FILE__, __LINE__))
+       call shr_sys_abort(errMsg(mod_filename, __LINE__))
     end if
 
     if (nj == 1) then

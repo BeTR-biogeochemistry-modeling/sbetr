@@ -15,7 +15,8 @@ module ApplicationsFactory
   use PlantSoilBGCMod        , only : plant_soilbgc_type
 
   implicit none
-
+  character(len=*), parameter :: mod_filename = &
+       __FILE__
   private
   public :: create_betr_usr_application
 contains
@@ -58,7 +59,7 @@ contains
     case default
 
        write(iulog,*)subname //' ERROR: unknown method: ', method
-       call endrun(msg=errMsg(__FILE__, __LINE__))
+       call endrun(msg=errMsg(mod_filename, __LINE__))
     end select
   end function create_bgc_reaction_type
   !-------------------------------------------------------------------------------
@@ -83,7 +84,7 @@ contains
 
   case default
      write(*, *)subname //' ERROR: unknown method: ', method
-     call endrun(msg=errMsg(__FILE__, __LINE__))
+     call endrun(msg=errMsg(mod_filename, __LINE__))
   end select
 
   end function create_plant_soilbgc_type

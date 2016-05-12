@@ -12,6 +12,9 @@ module FindRootMod
   use MathfuncMod   , only : is_bounded
 
   implicit none
+
+  character(len=*), parameter :: mod_filename = &
+       __FILE__
   
 contains
   !-------------------------------------------------------------------------------
@@ -42,12 +45,12 @@ contains
              return
           else
              write(iulog,*)'no bounded solution for the given quadratic equation'
-             call endrun(msg=errmsg(__FILE__, __LINE__))
+             call endrun(msg=errmsg(mod_filename, __LINE__))
           endif
        endif
     else
        write(iulog,*)'no real solution for the given quadratic equation'
-       call endrun(msg=errmsg(__FILE__, __LINE__))
+       call endrun(msg=errmsg(mod_filename, __LINE__))
     endif
     return
   end function quadrootbnd
@@ -73,7 +76,7 @@ contains
        x = (-b + sqrt(delta))/2._r8
     else
        write(iulog,*)'no positive solution for the given quadratic equation'
-       call endrun(msg=errmsg(__FILE__, __LINE__))
+       call endrun(msg=errmsg(mod_filename, __LINE__))
     endif
     return
   end function quadproot
@@ -109,7 +112,7 @@ contains
     delta =-4._r8 * p**3._r8 - 27._r8 * q ** 2._r8
     if(delta<0._r8)then
        write(iulog,*)'no real solution for the given cubic equation'
-       call endrun(msg=errmsg(__FILE__, __LINE__))
+       call endrun(msg=errmsg(mod_filename, __LINE__))
     else
        n = sqrt(-4._r8*p/3._r8)
        f = -q/2._r8 * (-p/3._r8)**(-1.5_r8)
@@ -131,7 +134,7 @@ contains
                 return
              else
                 write(iulog,*)'no bounded solution for the given cubic equation'
-                call endrun(msg=errmsg(__FILE__, __LINE__))
+                call endrun(msg=errmsg(mod_filename, __LINE__))
              endif
           endif
        endif
@@ -165,7 +168,7 @@ contains
     delta =-4._r8 * p**3._r8 - 27._r8 * q ** 2._r8
     if(delta<0._r8)then
        write(iulog,*)'no real solution for the given cubic equation'
-       call endrun(msg=errmsg(__FILE__, __LINE__))
+       call endrun(msg=errmsg(mod_filename, __LINE__))
     else
        n = sqrt(-4._r8*p/3._r8)
        f = -q/2._r8 * (-p/3._r8)**(-1.5_r8)
@@ -393,7 +396,7 @@ contains
     if((fa > 0._r8 .and. fb > 0._r8).or.(fa < 0._r8 .and. fb < 0._r8))then
        write(iulog,*) 'root must be bracketed for brent'
        write(iulog,*) 'a=',a,' b=',b,' fa=',fa,' fb=',fb
-       call endrun(msg=errmsg(__FILE__, __LINE__))
+       call endrun(msg=errmsg(mod_filename, __LINE__))
     endif
     c=b
     fc=fb

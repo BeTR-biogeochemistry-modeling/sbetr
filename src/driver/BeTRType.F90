@@ -35,7 +35,8 @@ module BetrType
 
   private
 
-  character(len=*), parameter :: filename = __FILE__
+  character(len=*), parameter :: filename = &
+       __FILE__
 
   type, public :: betr_type
      ! namelist control variables
