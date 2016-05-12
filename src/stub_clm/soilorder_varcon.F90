@@ -48,7 +48,8 @@ module soilorder_varcon
   real(r8), pointer :: k_s3_biochem(:)
   real(r8), pointer :: k_s4_biochem(:)
 
-  character(len=*), parameter :: mod_filename = __FILE__
+  character(len=*), parameter :: mod_filename = &
+       __FILE__
 
 
   ! !PUBLIC MEMBER FUNCTIONS:

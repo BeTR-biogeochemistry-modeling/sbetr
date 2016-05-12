@@ -6,7 +6,8 @@ module CNSharedParamsMod
   use shr_kind_mod , only: r8 => shr_kind_r8
   implicit none
   save
-
+  character(len=*), parameter :: mod_filename = &
+       __FILE__
   ! CNParamsShareInst.  PGI wants the type decl. public but the instance
   ! is indeed protected.  A generic private statement at the start of the module
   ! overrides the protected functionality with PGI
@@ -52,43 +53,43 @@ contains
     !
     tString='q10_mr'
     !call ncd_io(varname=trim(tString),data=tempr, flag='read', ncid=ncid, readvar=readv)
-    !if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+    !if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(mod_filename, __LINE__))
     CNParamsShareInst%Q10=tempr
 
     tString='minpsi_hr'
     !call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-    !if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+    !if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(mod_filename, __LINE__))
     CNParamsShareInst%minpsi=tempr
 
     tString='cwd_fcel'
     !call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-    !if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+    !if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(mod_filename, __LINE__))
     CNParamsShareInst%cwd_fcel=tempr
 
     tString='cwd_flig'
     !call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-    !if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+    !if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(mod_filename, __LINE__))
     CNParamsShareInst%cwd_flig=tempr
 
     tString='froz_q10'
     !call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-    !if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+    !if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(mod_filename, __LINE__))
     CNParamsShareInst%froz_q10=tempr
 
     tString='decomp_depth_efolding'
     !call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-    !if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+    !if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(mod_filename, __LINE__))
     CNParamsShareInst%decomp_depth_efolding=tempr
 
     tString='mino2lim'
     !call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-    !if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+    !if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(mod_filename, __LINE__))
     CNParamsShareInst%mino2lim=tempr
     !CNParamsShareInst%mino2lim=0.2_r8
 
     tString='organic_max'
     !call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-    !if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__))
+    !if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(mod_filename, __LINE__))
     CNParamsShareInst%organic_max=tempr
 
   end subroutine CNParamsReadShared

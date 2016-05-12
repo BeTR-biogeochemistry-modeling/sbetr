@@ -11,7 +11,9 @@ module sbetrDriverMod
   private
   save
   public :: sbetrBGC_driver
-  character(len=*), parameter :: mod_filename = __FILE__
+
+  character(len=*), parameter :: mod_filename = &
+       __FILE__
 
 contains
 

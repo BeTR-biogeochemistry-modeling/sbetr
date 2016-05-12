@@ -13,7 +13,8 @@ module BeTRTracerType
   !
   implicit none
   private
-  character(len=*), parameter :: mod_filename = __FILE__
+  character(len=*), parameter :: mod_filename = &
+       __FILE__
 
   !----------------------------------------------------
   !betr tracer setup structure
