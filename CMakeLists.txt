@@ -34,6 +34,12 @@ if (NOT CMAKE_INSTALL_PREFIX)
   set(CMAKE_INSTALL_PREFIX /usr/local)
 endif()
 
+# set the number of cores to something reasonable so we don't over
+# subscribe a laptop or exceed hpc login node restrictions. could
+# switch to something more sophisticated like polymec if necessary.
+set(NUMBER_OF_CORES 4)
+math(EXPR NUM_BUILD_THREADS "${NUMBER_OF_CORES} + 1")
+
 include(set_up_platform)
 include(set_up_compilers)
 

@@ -170,6 +170,23 @@ macro(set_up_platform)
     # We expect the following libraries to be available.
     set(Z_LIBRARY /usr/lib64/libz.a)
 
+  elseif(HOSTNAME MATCHES "yslogin") # NCAR yellowstone
+    message("-- Running on yellowstone.")
+    set(NUM_BUILD_THREADS "4")
+    if (FALSE) # gnu
+      set(BLAS_INCLUDE_DIRS "/glade/apps/opt/lib")
+      set(BLAS_LIBRARIES "${BLAS_INCLUDE_DIRS}/libblas.a")
+      set(LAPACK_INCLUDE_DIRS "/glade/apps/opt/lib")
+      set(LAPACK_LIBRARIES "${LAPACK_INCLUDE_DIRS}/liblapack.a")
+      set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${BLAS_LIBRARIES}")
+      set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${LAPACK_LIBRARIES}")
+      set(NEED_LAPACK FALSE)
+    endif()
+
+    if (TRUE) # intel
+      set(NEED_LAPACK FALSE)
+    endif()
+    
   endif()
 
 endmacro()
