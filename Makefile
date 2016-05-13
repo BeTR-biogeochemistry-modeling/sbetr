@@ -118,7 +118,29 @@ define run-config
 @cd $(BUILDDIR) && cmake $(CURDIR) $(CONFIG_FLAGS)
 endef
 
-all test clean install:
+all: 
+	@if [ ! -f $(BUILDDIR)/Makefile ]; then \
+		more INSTALL; \
+	else \
+		$(MAKE) -C $(BUILDDIR) $@ --no-print-directory $(MAKEFLAGS); \
+	fi
+
+install: all
+	@if [ ! -f $(BUILDDIR)/Makefile ]; then \
+		more INSTALL; \
+	else \
+		$(MAKE) -C $(BUILDDIR) $@ --no-print-directory $(MAKEFLAGS); \
+	fi
+
+test: install
+	@if [ ! -f $(BUILDDIR)/Makefile ]; then \
+		more INSTALL; \
+	else \
+		$(MAKE) -C $(BUILDDIR) $@ --no-print-directory $(MAKEFLAGS); \
+		$(MAKE) -C regression-tests $@ --no-print-directory $(MAKEFLAGS); \
+	fi
+
+clean:
 	@if [ ! -f $(BUILDDIR)/Makefile ]; then \
 		more INSTALL; \
 	else \
@@ -144,4 +166,4 @@ ctags-emacs :
 #dist:
 #	utils/mkdist.sh $(PKGNAME)
 
-.PHONY: config distclean all clean install uninstall
+.PHONY: config distclean all clean install uninstall test
