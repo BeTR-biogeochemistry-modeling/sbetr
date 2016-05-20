@@ -16,14 +16,14 @@ module BeTRSimulation
   use decompMod      , only : bounds_type
 
   ! !USES:
-  use BetrType                  , only : betr_type
-  use betr_constants            , only : betr_string_length
-  use betr_constants            , only : betr_filename_length
-  use betr_regression_module,     only : betr_regression_type
-  use BeTR_biogeophysInputType,   only : betr_biogeophys_input_type
-  use BeTR_biogeoStateType,       only : betr_biogeo_state_type
-  use BeTR_biogeoFluxType,        only : betr_biogeo_flux_type
-  use BeTR_TimeMod,               only : betr_time_type
+  use BetrType                 , only : betr_type
+  use betr_constants           , only : betr_string_length
+  use betr_constants           , only : betr_filename_length
+  use betr_regression_module   , only : betr_regression_type
+  use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
+  use BeTR_biogeoStateType     , only : betr_biogeo_state_type
+  use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
+  use BeTR_TimeMod             , only : betr_time_type
   implicit none
 
   private
@@ -32,12 +32,12 @@ module BeTRSimulation
        __FILE__
 
   type, public :: betr_simulation_type
-     type(betr_type), public                      :: betr
-     type(betr_biogeophys_input_type), public     :: biophys_forc
-     type(betr_biogeo_state_type), public         :: biogeo_state
-     type(betr_biogeo_flux_type), public          :: biogeo_flux
-     character(len=betr_filename_length), private :: base_filename
-     character(len=betr_filename_length), private :: hist_filename
+     type(betr_type)                     , public  :: betr
+     type(betr_biogeophys_input_type)    , public  :: biophys_forc
+     type(betr_biogeo_state_type)        , public  :: biogeo_state
+     type(betr_biogeo_flux_type)         , public  :: biogeo_flux
+     character(len=betr_filename_length) , private :: base_filename
+     character(len=betr_filename_length) , private :: hist_filename
 
      type(betr_regression_type), private          :: regression
 
@@ -69,8 +69,8 @@ module BeTRSimulation
      procedure, public :: StepWithDrainage        => BeTRSimulationStepWithDrainage
      procedure, public :: BeginMassBalanceCheck   => BeTRSimulationBeginMassBalanceCheck
      procedure, public :: MassBalanceCheck        => BeTRSimulationMassBalanceCheck
-     procedure, public :: SetBiophysForcing       => BeTRSimulationSetBiophysForcing
-     procedure, public :: SendBiogeoFlux          => BeTRSimulationSendBiogeoFlux
+     procedure, public :: BeTRSetBiophysForcing   => BeTRSimulationSetBiophysForcing
+     procedure, public :: RetrieveBiogeoFlux      => BeTRSimulationRetrieveBiogeoFlux
      procedure, public :: CreateHistory           => hist_htapes_create
      procedure, public :: WriteHistory            => hist_write
      procedure, public :: WriteRegressionOutput
@@ -82,14 +82,13 @@ contains
 
   !-------------------------------------------------------------------------------
   subroutine BeTRSimulationInit(this, base_filename, namelist_buffer, &
-       bounds, waterstate, cnstate)
+       bounds, waterstate)
     !
     ! DESCRIPTIONS
     ! Dummy routine for inheritance purposes. don't use.
     !
     !USES
     use WaterstateType , only : waterstate_type
-    use CNStateType    , only : cnstate_type
     use betr_constants , only : betr_namelist_buffer_size, betr_filename_length
     implicit none
 
@@ -99,7 +98,6 @@ contains
 
     type(bounds_type)                        , intent(in)    :: bounds
     type(waterstate_type)                    , intent(inout) :: waterstate
-    type(cnstate_type)                       , intent(inout) :: cnstate
 
     character(len=*), parameter :: subname = 'BeTRSimulationInit'
 
@@ -108,7 +106,6 @@ contains
     if (this%num_soilc > 0)                  continue
     if (bounds%begc > 0)                     continue
     if (size(waterstate%h2osoi_liq_col) > 0) continue
-    if (size(cnstate%cn_scalar) > 0)         continue
     if (len(base_filename) > 0)              continue
     if (len(namelist_buffer) > 0)            continue
 
@@ -139,14 +136,13 @@ contains
 !-------------------------------------------------------------------------------
 
   subroutine BeTRInit(this, base_filename, namelist_buffer, &
-       betr_bounds, waterstate, cnstate)
+       bounds, waterstate)
     !
     ! DESCRIPTION
     ! initialize BeTR
     !
     !!USES
     use WaterStateType , only : waterstate_type
-    use CNStateType    , only : cnstate_type
     use betr_constants , only : betr_namelist_buffer_size
     use betr_constants , only : betr_filename_length
     implicit none
@@ -154,14 +150,21 @@ contains
     class(betr_simulation_type)              , intent(inout) :: this
     character(len=betr_filename_length)      , intent(in)    :: base_filename
     character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
-    type(betr_bounds_type)                   , intent(in)    :: betr_bounds
+    type(bounds_type)                   , intent(in)    :: bounds
     type(waterstate_type)                    , intent(in)    :: waterstate
-    type(cnstate_type)                       , intent(in)    :: cnstate
 
     !TEMPORARY VARIABLES
     character(len=*), parameter :: subname = 'BeTRInit'
+    type(betr_bounds_type) :: betr_bounds
 
     this%base_filename = base_filename
+
+    !grid horizontal bounds
+    betr_bounds%lbj  = 1          ; betr_bounds%ubj  = betr_nlevsoi
+    betr_bounds%begp = bounds%begp; betr_bounds%endp = bounds%endp
+    betr_bounds%begc = bounds%begc; betr_bounds%endc = bounds%endc
+    betr_bounds%begl = bounds%begl; betr_bounds%endl = bounds%endl
+    betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
 
     call this%biophys_forc%Init(betr_bounds)
 
@@ -169,7 +172,7 @@ contains
 
     call this%biogeo_flux%Init(betr_bounds)
 
-    call this%SetBiophysForcing(betr_bounds, cnstate_vars=cnstate, &
+    call this%BeTRSetBiophysForcing(bounds,  betr_bounds%lbj, betr_bounds%ubj, &
       waterstate_vars = waterstate)
 
     call this%betr%Init(namelist_buffer, betr_bounds, this%biophys_forc)
@@ -215,10 +218,7 @@ contains
 
 
   !---------------------------------------------------------------------------------
-  subroutine BeTRSimulationStepWithoutDrainage(this, betr_time, bounds, col, &
-       atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, &
-       temperature_vars, waterflux_vars, chemstate_vars, &
-       cnstate_vars, canopystate_vars, carbonflux_vars)
+  subroutine BeTRSimulationStepWithoutDrainage(this, betr_time, bounds, col)
   !DESCRPTION
   !interface for StepWithoutDrainage
   !
@@ -231,7 +231,6 @@ contains
     use ColumnType        , only : column_type
     use atm2lndType       , only : atm2lnd_type
     use SoilHydrologyType , only : soilhydrology_type
-    use CNStateType       , only : cnstate_type
     use CNCarbonFluxType  , only : carbonflux_type
     use CanopyStateType   , only : canopystate_type
     use BeTR_PatchType    , only : betr_pft
@@ -244,33 +243,12 @@ contains
     class(betr_time_type)       , intent(in)    :: betr_time
     type(bounds_type)           , intent(in)    :: bounds ! bounds
     type(column_type)           , intent(in)    :: col ! column type
-    type(Waterstate_Type)       , intent(in)    :: waterstate_vars ! water state variables
-    type(soilstate_type)        , intent(in)    :: soilstate_vars ! column physics variable
-    type(temperature_type)      , intent(in)    :: temperature_vars ! energy state variable
-    type(chemstate_type)        , intent(in)    :: chemstate_vars
-    type(atm2lnd_type)          , intent(in)    :: atm2lnd_vars
-    type(soilhydrology_type)    , intent(in)    :: soilhydrology_vars
-    type(cnstate_type)          , intent(inout) :: cnstate_vars
-    type(canopystate_type)      , intent(in)    :: canopystate_vars
-    type(carbonflux_type)       , intent(in)    :: carbonflux_vars
-    type(waterflux_type)        , intent(inout) :: waterflux_vars !temporary variables
 
     ! remove compiler warnings about unused dummy args
     if (this%num_soilc > 0)                           continue
     if (betr_time%tstep > 0)                          continue
     if (bounds%begc > 0)                              continue
     if (size(col%z) > 0)                              continue
-    if (size(waterstate_vars%h2osoi_liq_col) > 0)     continue
-    if (size(soilstate_vars%watsat_col) > 0)          continue
-    if (size(temperature_vars%t_soisno_col) > 0)      continue
-    if (size(chemstate_vars%soil_pH) > 0)             continue
-    if (size(atm2lnd_vars%forc_t_downscaled_col) > 0) continue
-    if (size(soilhydrology_vars%fracice_col) > 0)     continue
-    if (size(cnstate_vars%cn_scalar) > 0)             continue
-    if (size(canopystate_vars%altmax_col) > 0)        continue
-    if (size(carbonflux_vars%rr_col) > 0)             continue
-    if (size(waterflux_vars%qflx_drain_vr_col) > 0)   continue
-
 
   end subroutine BeTRSimulationStepWithoutDrainage
 
@@ -600,7 +578,7 @@ contains
   end subroutine WriteRegressionOutput
 
   !------------------------------------------------------------------------
-  subroutine BeTRSimulationSetBiophysForcing(this, bounds,  cnstate_vars, carbonflux_vars, waterstate_vars, &
+  subroutine BeTRSimulationSetBiophysForcing(this, bounds,  lbj, ubj, carbonflux_vars, waterstate_vars, &
     waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
     chemstate_vars, soilstate_vars)
   !DESCRIPTION
@@ -613,14 +591,13 @@ contains
     use WaterfluxType     , only : waterflux_type
     use atm2lndType       , only : atm2lnd_type
     use SoilHydrologyType , only : soilhydrology_type
-    use CNStateType       , only : cnstate_type
     use CNCarbonFluxType  , only : carbonflux_type
     use CanopyStateType   , only : canopystate_type
   implicit none
   !ARGUMENTS
   class(betr_simulation_type) , intent(inout)        :: this
-  type(betr_bounds_type)      , intent(in)           :: bounds
-  type(cnstate_type)          , optional, intent(in) :: cnstate_vars
+  type(bounds_type)           , intent(in)           :: bounds
+  integer                     , intent(in)           :: lbj, ubj
   type(carbonflux_type)       , optional, intent(in) :: carbonflux_vars
   type(Waterstate_Type)       , optional, intent(in) :: Waterstate_vars
   type(waterflux_type)        , optional, intent(in) :: waterflux_vars
@@ -633,17 +610,11 @@ contains
 
   !TEMPORARY VARIABLES
   integer :: begp, begc, endp, endc
-  integer :: p, c, lbj, ubj
+  integer :: p, c
 
   begc = bounds%begc ; endc= bounds%endc
   begp = bounds%begp ; endp= bounds%endp
-  lbj = bounds%lbj   ; ubj=bounds%ubj
 
-  if(present(cnstate_vars))then
-    do c = begc, endc
-      this%biophys_forc%isoilorder(c) = cnstate_vars%isoilorder(c)
-    enddo
-  endif
 
   if(present(carbonflux_vars))then
     do p = begp, endp
@@ -749,7 +720,7 @@ contains
   end subroutine BeTRSimulationSetBiophysForcing
 
   !------------------------------------------------------------------------
-  subroutine BeTRSimulationSendBiogeoFlux(this, bounds,  carbonflux_vars,  &
+  subroutine BeTRSimulationRetrieveBiogeoFlux(this, bounds, lbj,ubj, carbonflux_vars,  &
     waterflux_vars)
   ! DESCRIPTIONS
   ! update and return fluxes, this eventually will be expanded to
@@ -760,16 +731,16 @@ contains
   implicit none
   !ARGUMENTS
   class(betr_simulation_type) , intent(inout)           :: this
-  type(betr_bounds_type)      , intent(in)              :: bounds
+  type(bounds_type)           , intent(in)              :: bounds
+  integer                     , intent(in)              :: lbj, ubj
   type(carbonflux_type)       , optional, intent(inout) :: carbonflux_vars
   type(waterflux_type)        , optional, intent(inout) :: waterflux_vars
 
   integer :: begp, begc, endp, endc
-  integer :: p, c, lbj, ubj
+  integer :: p, c
 
   begc = bounds%begc ; endc= bounds%endc
   begp = bounds%begp ; endp= bounds%endp
-  lbj = bounds%lbj   ; ubj=bounds%ubj
 
   if(present(carbonflux_vars))then
     !do nothing
@@ -784,23 +755,23 @@ contains
     enddo
   endif
 
-  end subroutine BeTRSimulationSendBiogeoFlux
+  end subroutine BeTRSimulationRetrieveBiogeoFlux
 
   !------------------------------------------------------------------------
-  subroutine BeTRSimulationPreDiagSoilColWaterFlux(this, bounds, num_nolakec, filter_nolakec, waterstate_vars)
+  subroutine BeTRSimulationPreDiagSoilColWaterFlux(this, bounds, num_nolakec, filter_nolakec)
   !DESCRIPTION
   !prepare for water flux diagnosis. it is called before diagnosing the advective fluxes and applying
   !freeze-thaw tracer partition.
   !
   !USES
-  use WaterStateType, only : waterstate_type
+
   implicit none
   !ARGUMENTS
   class(betr_simulation_type) , intent(inout) :: this
    type(bounds_type)          , intent(in)    :: bounds
    integer                    , intent(in)    :: num_nolakec                        ! number of column non-lake points in column filter
    integer                    , intent(in)    :: filter_nolakec(:)                  ! column filter for non-lake points
-   type(waterstate_type)      , intent(in)    :: waterstate_vars
+
   !TEMPORARY VARIABLES
    type(betr_bounds_type)     :: betr_bounds
 
@@ -810,8 +781,6 @@ contains
     betr_bounds%begl = bounds%begl; betr_bounds%endl = bounds%endl
     betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
 
-    call this%SetBiophysForcing(betr_bounds,  waterstate_vars=waterstate_vars)
-
    call this%betr%pre_diagnose_soilcol_water_flux(betr_bounds, num_nolakec, &
      filter_nolakec, this%biophys_forc)
 
@@ -819,16 +788,14 @@ contains
 
   !------------------------------------------------------------------------
   subroutine BeTRSimulationDiagAdvWaterFlux(this, betr_time, bounds, num_hydrologyc, &
-    filter_hydrologyc, waterstate_vars, soilhydrology_vars, waterflux_vars)
+    filter_hydrologyc)
 
   !DESCRIPTION
   ! diagnose water fluxes for tracer advection
   !
   ! USES
   !
-    use WaterfluxType     , only : waterflux_type
-    use WaterStateType    , only : Waterstate_Type
-    use SoilHydrologyType , only : soilhydrology_type
+
   implicit none
   !ARGUMENTS
    class(betr_simulation_type) , intent(inout) :: this
@@ -836,9 +803,7 @@ contains
    type(bounds_type)           , intent(in)    :: bounds
    integer                     , intent(in)    :: num_hydrologyc                        ! number of column non-lake points in column filter
    integer                     , intent(in)    :: filter_hydrologyc(:)                  ! column filter for non-lake points
-   type(waterstate_type)       , intent(in)    :: waterstate_vars
-   type(soilhydrology_type)    , intent(in)    :: soilhydrology_vars
-   type(waterflux_type)        , intent(inout) :: waterflux_vars
+
    !TEMPORARY VARIABLES
    type(betr_bounds_type)     :: betr_bounds
 
@@ -848,20 +813,15 @@ contains
     betr_bounds%begl = bounds%begl; betr_bounds%endl = bounds%endl
     betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
 
-  call this%SetBiophysForcing(betr_bounds,  waterstate_vars=waterstate_vars, &
-      waterflux_vars=waterflux_vars, soilhydrology_vars = soilhydrology_vars)
-
   call this%betr%diagnose_advect_water_flux(betr_time,                       &
      betr_bounds, num_hydrologyc, filter_hydrologyc,                         &
      this%biophys_forc, this%biogeo_flux)
 
-  !now assign back waterflux_vars
-  call this%SendBiogeoFlux(betr_bounds, waterflux_vars=waterflux_vars)
 
   end subroutine BeTRSimulationDiagAdvWaterFlux
   !------------------------------------------------------------------------
   subroutine BeTRSimulationDiagDrainWaterFlux(this, betr_time, &
-        bounds, num_hydrologyc, filter_hydrologyc, waterstate_vars, waterflux_vars)
+        bounds, num_hydrologyc, filter_hydrologyc)
   !DESCRIPTION
   ! diagnose water fluxes due to subsurface drainage
   !
@@ -877,8 +837,7 @@ contains
    type(bounds_type)           , intent(in)    :: bounds
    integer                     , intent(in)    :: num_hydrologyc                        ! number of column non-lake points in column filter
    integer                     , intent(in)    :: filter_hydrologyc(:)                  ! column filter for non-lake points
-   type(waterstate_type)       , intent(in)    :: waterstate_vars
-   type(waterflux_type)        , intent(inout) :: waterflux_vars
+
    !TEMPORARY VARIABLES
    type(betr_bounds_type)     :: betr_bounds
 
@@ -888,14 +847,9 @@ contains
     betr_bounds%begl = bounds%begl; betr_bounds%endl = bounds%endl
     betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
 
-  call this%SetBiophysForcing(betr_bounds,  waterstate_vars=waterstate_vars)
-
    call this%betr%diagnose_drainage_water_flux(betr_time, &
      betr_bounds, num_hydrologyc, filter_hydrologyc,      &
      this%biophys_forc, this%biogeo_flux)
-
-  !now assign back waterflux_vars
-  call this%SendBiogeoFlux(betr_bounds, waterflux_vars=waterflux_vars)
 
   end subroutine BeTRSimulationDiagDrainWaterFlux
   !------------------------------------------------------------------------

@@ -24,6 +24,9 @@ contains
   !
   !the rtm is done using the strang splitting approach (Strang, 1968)
   !
+  use BeTRSimulationCLM     , only : betr_simulation_clm_type
+  use BeTRSimulationStandalone, only : betr_simulation_standalone_type
+  use BeTRSimulationALM     , only : betr_simulation_alm_type
   use shr_kind_mod          , only : r8 => shr_kind_r8
   use clm_varpar            , only : nlevtrc_soil
   use decompMod             , only : bounds_type
@@ -32,7 +35,6 @@ contains
   use clm_instMod           , only : canopystate_vars
   use clm_instMod           , only : carbonflux_vars
   use clm_instMod           , only : chemstate_vars
-  use clm_instMod           , only : cnstate_vars
   use clm_instMod           , only : soilhydrology_vars
   use clm_instMod           , only : soilstate_vars
   use clm_instMod           , only : temperature_vars
@@ -51,6 +53,7 @@ contains
   use LandunitType          , only : lun
   use PatchType             , only : pft
   use landunit_varcon       , only : istsoil
+  use clm_varpar            , only : nlevsno, nlevsoi
   implicit none
   !arguments
   character(len=betr_filename_length)      , intent(in) :: base_filename
@@ -125,16 +128,27 @@ contains
       simulation%num_soilc, simulation%filter_soilc,                                    &
       time_vars, waterstate_vars, waterflux_vars)
 
-  call  simulation%Init(base_filename, namelist_buffer, bounds, waterstate_vars, cnstate_vars)
+  call  simulation%Init(base_filename, namelist_buffer, bounds, waterstate_vars)
 
   record = -1
 
   call time_vars%proc_initstep()
+  select type(simulation)
+  class is (betr_simulation_standalone_type)
+    print*,'simulation using standalone-betr'
+  class is (betr_simulation_alm_type)
+    print*,'simulation using alm-betr'
+  class is (betr_simulation_clm_type)
+    print*,'simulation using clm-betr'
+  class default
+  end select
   do
     record = record + 1
 
+    call simulation%BeTRSetBiophysForcing(bounds, 1, nlevsoi, waterstate_vars=waterstate_vars)
+
     call simulation%PreDiagSoilColWaterFlux(bounds, simulation%num_soilc, &
-      simulation%filter_soilc, waterstate_vars)
+      simulation%filter_soilc)
 
     !set envrionmental forcing by reading foring data: temperature, moisture, atmospheric resistance
     !from either user specified file or clm history file
@@ -144,18 +158,32 @@ contains
       atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars,                   &
       waterflux_vars, temperature_vars, chemstate_vars, simulation%jtops)
 
+    call simulation%BeTRSetBiophysForcing(bounds,  1, nlevsoi, waterstate_vars=waterstate_vars, &
+      waterflux_vars=waterflux_vars, soilhydrology_vars = soilhydrology_vars)
+
     call simulation%DiagAdvWaterFlux(time_vars, bounds,                                   &
-      simulation%num_soilc, simulation%filter_soilc,                                      &
-      waterstate_vars, soilhydrology_vars, waterflux_vars)
+      simulation%num_soilc, simulation%filter_soilc)
+
+    !now assign back waterflux_vars
+    call simulation%RetrieveBiogeoFlux(bounds, 1, nlevsoi, waterflux_vars=waterflux_vars)
 
     !no calculation in the first step
     if(record==0)cycle
     call simulation%BeginMassBalanceCheck(bounds)
 
-    call simulation%StepWithoutDrainage(time_vars, bounds, col,             &
-         atm2lnd_vars, soilhydrology_vars, soilstate_vars, waterstate_vars, &
-         temperature_vars, waterflux_vars, chemstate_vars,                  &
-         cnstate_vars, canopystate_vars, carbonflux_vars)
+    !the following call could be lsm specific, so that
+    !different lsm could use different definitions of input
+    !variables, e.g. clm doesn't use cnstate_vars as public variables
+    call simulation%BeTRSetBiophysForcing(bounds, 1, nlevsoi,  carbonflux_vars=carbonflux_vars,       &
+      waterstate_vars=waterstate_vars,         waterflux_vars=waterflux_vars,         &
+      temperature_vars=temperature_vars,       soilhydrology_vars=soilhydrology_vars, &
+      atm2lnd_vars=atm2lnd_vars,               canopystate_vars=canopystate_vars,     &
+      chemstate_vars=chemstate_vars,           soilstate_vars=soilstate_vars          )
+
+    call simulation%StepWithoutDrainage(time_vars, bounds, col)
+
+    !set forcing variable for drainage
+    call simulation%BeTRSetBiophysForcing(bounds, 1, nlevsoi, waterflux_vars=waterflux_vars )
 
     call simulation%StepWithDrainage(bounds, col)
 
