@@ -918,7 +918,7 @@ def verify_executable(executable):
 
     """
     logging.info(SEPERATOR)
-    logging.info('Using executable:')
+    logging.info('Verifying executable:')
     logging.info('    {0}'.format(executable))
 
     if not os.path.isfile(executable):
@@ -1020,12 +1020,27 @@ def find_executable(exe, paths):
             verify_executable(full_path)
         except RuntimeError as e:
             # not useable, move on
+            logging.info('    checked : "{0}"'.format(full_path))
             pass
         else:
             found = True
             break
+
     if not found:
-        msg = "ERROR: could not find a usable executable for '{0}'".format(exe)
+        # check to see if it is just in the user path.
+        try:
+            command = [exe, '--help']
+            subprocess.call(command, shell=False)
+        except OSError:
+            # not in path:
+            pass
+        else:
+            full_path = exe
+            found = True
+
+    if not found:
+        msg = ("ERROR: could not find a usable executable for '{0}' in:\n"
+               "    {1}".format(exe, paths))
         raise RuntimeError(msg)
     logging.info('  Using "{0}" at :\n    {1}'.format(exe, full_path))
     return full_path

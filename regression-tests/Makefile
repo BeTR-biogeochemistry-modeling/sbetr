@@ -9,7 +9,9 @@ RTEST_ARGS += --executable $(SBETR)
 COVERAGERC = --rcfile mtest/.coveragerc
 COVERAGE_RUN_FLAGS = $(COVERAGERC) -m unittest discover
 
-test rtest : FORCE
+test : mtest rtest
+
+rtest : FORCE
 	$(RTEST) $(RTEST_ARGS)
 
 # NOTE(bja, 201603) rcheck - runs the regression test manager with
@@ -22,15 +24,24 @@ rcheck : FORCE
 mtest : FORCE
 	python -m unittest discover --buffer --start-directory mtest/unit/
 
+# NOTE(bja, 201605) python coverage tool must be installed. If it
+# isn't in the system packages, run 'make env'.
 test-coverage : FORCE
 	coverage erase
-	COVERAGE_FILE=.coverage.unit coverage run $(COVERAGE_RUN_FLAGS) mtest/unit
-	COVERAGE_FILE=.coverage.xfail coverage run $(COVERAGE_RUN_FLAGS) mtest/xfail
+	PATH="${PATH}:../local/bin" COVERAGE_FILE=.coverage.unit coverage run $(COVERAGE_RUN_FLAGS) mtest/unit
+	PATH="${PATH}:../local/bin" COVERAGE_FILE=.coverage.xfail coverage run $(COVERAGE_RUN_FLAGS) mtest/xfail
 	coverage combine $(COVERAGERC)
 	coverage html $(COVERAGERC)
 	coverage report $(COVERAGERC)
 	@echo 'For detailed analysis, see the html report at:'
 	@echo '    coverage-html/index.html'
+
+# NOTE(bja, 201605) this creates the python virtual environment and
+# install the code coverage tool. Requires virtualenv be
+# installed at the system level.
+env : 
+	virtualenv env
+	. env/bin/activate; pip install coverage
 
 clean : FORCE
 	-find . -name '*~' -print0 | xargs -0 rm
