@@ -102,7 +102,7 @@ contains
   !------------------------------------------------------------------------
   subroutine ReadData(this, namelist_buffer, grid)
     !DESCRIPTION
-    !read infomration about forcing data 
+    !read infomration about forcing data
     !USES
     use ncdio_pio    , only : file_desc_t
     use ncdio_pio    , only : ncd_nowrite
@@ -180,7 +180,7 @@ contains
           this%t_soi(j1, j2) = data_2d(this%num_columns, j2, j1)
        enddo
     enddo
-    
+
     !X!write(*, *) 'Reading H2OSOI'
     call ncd_getvar(ncf_in_forc, 'H2OSOI', data_2d)
     do j2 = 1, this%num_levels

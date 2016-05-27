@@ -376,8 +376,8 @@ contains
 
     begc = bounds%begc; endc= bounds%endc
     begp = bounds%begp; endp= bounds%endp
-
-    do p = bounds%begp,bounds%endp
+    print*,'pp',begp, endp
+    do p = begp,endp
        l = pft%landunit(p)
        if (lun%ifspecial(l)) then
          this%tracer_flx_vtrans_patch(p,:)         = spval
@@ -484,7 +484,7 @@ contains
     if (ncid%fh > 0)                            continue
     if (len(flag) > 0)                          continue
     if (len(betrtracer_vars%betr_simname) > 0)  continue
-    
+
 
    end subroutine Restart
 
@@ -505,7 +505,7 @@ contains
 
     ! remove compiler warnings for unused dummy args
     if (bounds%begc > 0) continue
-    
+
     do fc = 1, numf
       column = filter(fc)
       this%tracer_flx_top_soil_col   (column,:)   = 0._r8
@@ -579,7 +579,7 @@ contains
     use tracer_varcon  , only : nlevtrc_soil => betr_nlevtrc_soil
     use MathfuncMod    , only : dot_sum
     use BeTR_TimeMod   , only : betr_time_type
-    implicit none    
+    implicit none
     class(TracerFlux_type) , intent(in) :: this
     class(betr_time_type)  , intent(in) :: betr_time
     type(BeTRTracer_Type)  , intent(in) :: betrtracer_vars

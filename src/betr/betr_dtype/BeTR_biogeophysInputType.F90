@@ -69,10 +69,24 @@ implicit none
     procedure, public  :: Init
     procedure, private :: InitAllocate
   end type betr_biogeophys_input_type
+
+  public :: create_betr_biogeophys_input
 contains
 
+  function create_betr_biogeophys_input()
+  ! DESCRIPTION
+  ! constructor
+    implicit none
+    class(betr_biogeophys_input_type), pointer :: create_betr_biogeophys_input
+    class(betr_biogeophys_input_type), pointer :: biogeophys_input
+
+    allocate(biogeophys_input)
+    create_betr_biogeophys_input => biogeophys_input
+
+  end function create_betr_biogeophys_input
+  !------------------------------------------------------------------------
   subroutine Init(this, bounds)
-  
+
   class(betr_biogeophys_input_type)  :: this
   type(betr_bounds_type), intent(in) :: bounds
 

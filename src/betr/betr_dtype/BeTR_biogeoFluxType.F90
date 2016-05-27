@@ -17,8 +17,23 @@ implicit none
       procedure, private :: InitAllocate
   end type betr_biogeo_flux_type
 
+  public :: create_betr_biogeoFlux
+
 contains
 
+  function create_betr_biogeoFlux()
+  ! DESCRIPTION
+  ! constructor
+    implicit none
+    class(betr_biogeo_flux_type), pointer :: create_betr_biogeoFlux
+    class(betr_biogeo_flux_type), pointer :: biogeflux
+
+    allocate(biogeflux)
+    create_betr_biogeoFlux => biogeflux
+
+  end function create_betr_biogeoFlux
+
+  !------------------------------------------------------------------------
   subroutine Init(this, bounds)
 
   class(betr_biogeo_flux_type)       :: this

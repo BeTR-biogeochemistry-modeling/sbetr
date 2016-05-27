@@ -83,7 +83,21 @@ module BetrType
 
   end type betr_type
 
+  public :: create_betr_type
 contains
+
+
+  function create_betr_type()
+  ! DESCRIPTION
+  ! constructor
+    implicit none
+    class(betr_type), pointer :: create_betr_type
+    class(betr_type), pointer :: betr
+
+    allocate(betr)
+    create_betr_type => betr
+
+  end function create_betr_type
 
 !-------------------------------------------------------------------------------
   subroutine Init(this, namelist_buffer, bounds, biophysforc, ecophyscon)
@@ -148,7 +162,6 @@ contains
 
     !initialize the betr parameterization module
     call tracer_param_init(bounds)
-
 
    allocate(this%h2osoi_liq_copy(bounds%begc:bounds%endc, 1:nlevsoi));  this%h2osoi_liq_copy(:, :) = spval
    allocate(this%h2osoi_ice_copy(bounds%begc:bounds%endc, 1:nlevsoi));  this%h2osoi_ice_copy(:, :) = spval

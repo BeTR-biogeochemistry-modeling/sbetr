@@ -38,4 +38,6 @@ module betr_varcon
   real(r8) :: btkwat  = 0.57_r8       !thermal conductivity of water [W/m/K]
   real(r8) :: btfrz   = SHR_CONST_TKFRZ  !freezing temperature [K]
   real(r8), public, parameter ::  bsecspday= SHR_CONST_CDAY  ! Seconds per day
+
+  integer, public :: betr_maxpatch_pft = 1
 end module betr_varcon
