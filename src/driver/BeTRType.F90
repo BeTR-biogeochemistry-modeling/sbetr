@@ -78,8 +78,10 @@ module BetrType
      procedure, public  :: tracer_snowcapping
      procedure, public  :: tracer_DivideSnowLayers
      procedure, public  :: tracer_CombineSnowLayers
+     procedure, public  :: get_hist_size
      procedure, private :: ReadNamelist
      procedure, private :: create_betr_application
+     procedure, public  :: HistRetrieve
 
   end type betr_type
 
@@ -125,8 +127,7 @@ contains
     integer               :: lbj, ubj
 
     if (present(ecophyscon)) then
-       write(*,*) 'ERROR: ecophyscon not implemented in BeTR class '
-       call endrun(msg=errMsg(filename,__LINE__))
+       call endrun('ERROR: ecophyscon not implemented in BeTR class '//errMsg(filename,__LINE__))
     end if
 
     lbj = bounds%lbj;  ubj = bounds%ubj
@@ -1119,4 +1120,73 @@ contains
     call create_betr_usr_application(bgc_reaction, plant_soilbgc, method)
   endif
   end subroutine create_betr_application
+
+   !------------------------------------------------------------------------
+
+  subroutine get_hist_size(this, num_state1d, num_state2d, num_flux1d, num_flux2d, &
+         nmlist_hist1d_state_buffer, nmlist_hist2d_state_buffer, &
+         nmlist_hist1d_flux_buffer, nmlist_hist2d_flux_buffer)
+  !
+  ! DESCRIPTION
+  ! return number of variables for history output
+  !
+  ! USES
+  use betr_ctrl, only : max_betr_hist_type
+  implicit none
+  !ARGUMENTS
+  class(betr_type)  ,     intent(inout) :: this
+  integer           ,     intent(out)   :: num_state1d
+  integer           ,     intent(out)   :: num_state2d
+  integer           ,     intent(out)   :: num_flux1d
+  integer           ,     intent(out)   :: num_flux2d
+  character(len=255), intent(out) :: nmlist_hist1d_state_buffer(max_betr_hist_type)
+  character(len=255), intent(out) :: nmlist_hist2d_state_buffer(max_betr_hist_type)
+  character(len=255), intent(out) :: nmlist_hist1d_flux_buffer(max_betr_hist_type)
+  character(len=255), intent(out) :: nmlist_hist2d_flux_buffer(max_betr_hist_type)
+  integer :: j
+
+  num_state1d = this%tracerstates%num_hist1d
+  num_state2d = this%tracerstates%num_hist2d
+  num_flux1d  = this%tracerfluxes%num_hist1d
+  num_flux2d  = this%tracerfluxes%num_hist2d
+
+  do j = 1, num_state1d
+    nmlist_hist1d_state_buffer(j) = this%tracerstates%nmlist_hist1d_buffer(j)
+  enddo
+
+  do j = 1, num_state2d
+    nmlist_hist2d_state_buffer(j) =this%tracerstates%nmlist_hist2d_buffer(j)
+  enddo
+
+  do j = 1, num_flux1d
+    nmlist_hist1d_flux_buffer(j) = this%tracerfluxes%nmlist_hist1d_buffer(j)
+  enddo
+
+  do j = 1, num_flux2d
+    nmlist_hist2d_flux_buffer(j) = this%tracerfluxes%nmlist_hist2d_buffer(j)
+  enddo
+  end subroutine get_hist_size
+
+  !------------------------------------------------------------------------
+  subroutine HistRetrieve(this, bounds, lbj, ubj, num_state1d, num_state2d, &
+     num_flux1d, num_flux2d, states_1d, states_2d, fluxes_1d, fluxes_2d)
+  implicit none
+  class(betr_type)  ,     intent(inout) :: this
+  type(bounds_type) , intent(in)    :: bounds               ! bounds
+  integer, intent(in) :: lbj, ubj
+  integer           ,     intent(in)   :: num_state1d
+  integer           ,     intent(in)   :: num_state2d
+  integer           ,     intent(in)   :: num_flux1d
+  integer           ,     intent(in)   :: num_flux2d
+  real(r8)          , intent(out) :: states_1d(bounds%begc:bounds%endc,1:num_state1d)
+  real(r8)          , intent(out) :: states_2d(bounds%begc:bounds%endc,lbj:ubj, 1:num_state2d)
+  real(r8)          , intent(out) :: fluxes_1d(bounds%begc:bounds%endc,1:num_flux1d)
+  real(r8)          , intent(out) :: fluxes_2d(bounds%begc:bounds%endc,lbj:ubj, 1:num_flux2d)
+
+  call this%tracerstates%retrieve_hist(bounds, lbj, ubj, states_2d, states_1d, this%tracers)
+
+  call this%tracerfluxes%retrieve_hist(bounds, lbj, ubj, fluxes_2d, fluxes_1d, this%tracers)
+
+  end subroutine HistRetrieve
+
 end module BetrType

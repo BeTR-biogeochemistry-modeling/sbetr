@@ -8,14 +8,14 @@ module FindRootMod
   use bshr_kind_mod , only : r8 => shr_kind_r8
   use bshr_log_mod  , only : errMsg => shr_log_errMsg
   use babortutils   , only : endrun
-  use betr_ctrl     , only : iulog  => biulog
+  use betr_ctrl     , only : iulog  => biulog, do_betr_otuput
   use MathfuncMod   , only : is_bounded
 
   implicit none
 
   character(len=*), parameter :: mod_filename = &
        __FILE__
-  
+
 contains
   !-------------------------------------------------------------------------------
   function quadrootbnd(a,b,c, xl, xr)result(x)
@@ -44,13 +44,11 @@ contains
           if(is_bounded(x,xl,xr))then
              return
           else
-             write(iulog,*)'no bounded solution for the given quadratic equation'
-             call endrun(msg=errmsg(mod_filename, __LINE__))
+             call endrun('no bounded solution for the given quadratic equation '//errmsg(mod_filename, __LINE__))
           endif
        endif
     else
-       write(iulog,*)'no real solution for the given quadratic equation'
-       call endrun(msg=errmsg(mod_filename, __LINE__))
+       call endrun('no real solution for the given quadratic equation '//errmsg(mod_filename, __LINE__))
     endif
     return
   end function quadrootbnd
@@ -75,8 +73,7 @@ contains
     if(delta>=0._r8)then
        x = (-b + sqrt(delta))/2._r8
     else
-       write(iulog,*)'no positive solution for the given quadratic equation'
-       call endrun(msg=errmsg(mod_filename, __LINE__))
+       call endrun('no positive solution for the given quadratic equation '//errmsg(mod_filename, __LINE__))
     endif
     return
   end function quadproot
@@ -111,8 +108,7 @@ contains
 
     delta =-4._r8 * p**3._r8 - 27._r8 * q ** 2._r8
     if(delta<0._r8)then
-       write(iulog,*)'no real solution for the given cubic equation'
-       call endrun(msg=errmsg(mod_filename, __LINE__))
+       call endrun('no real solution for the given cubic equation '//errmsg(mod_filename, __LINE__))
     else
        n = sqrt(-4._r8*p/3._r8)
        f = -q/2._r8 * (-p/3._r8)**(-1.5_r8)
@@ -133,8 +129,7 @@ contains
              if(is_bounded(x,xl,xr))then
                 return
              else
-                write(iulog,*)'no bounded solution for the given cubic equation'
-                call endrun(msg=errmsg(mod_filename, __LINE__))
+                call endrun('no bounded solution for the given cubic equation '//errmsg(mod_filename, __LINE__))
              endif
           endif
        endif
@@ -167,8 +162,7 @@ contains
 
     delta =-4._r8 * p**3._r8 - 27._r8 * q ** 2._r8
     if(delta<0._r8)then
-       write(iulog,*)'no real solution for the given cubic equation'
-       call endrun(msg=errmsg(mod_filename, __LINE__))
+       call endrun('no real solution for the given cubic equation '//errmsg(mod_filename, __LINE__))
     else
        n = sqrt(-4._r8*p/3._r8)
        f = -q/2._r8 * (-p/3._r8)**(-1.5_r8)
@@ -393,7 +387,7 @@ contains
     b=x2
     fa=f1
     fb=f2
-    if((fa > 0._r8 .and. fb > 0._r8).or.(fa < 0._r8 .and. fb < 0._r8))then
+    if((fa > 0._r8 .and. fb > 0._r8).or.(fa < 0._r8 .and. fb < 0._r8) .and. do_betr_otuput)then
        write(iulog,*) 'root must be bracketed for brent'
        write(iulog,*) 'a=',a,' b=',b,' fa=',fa,' fb=',fb
        call endrun(msg=errmsg(mod_filename, __LINE__))
@@ -504,7 +498,7 @@ contains
     integer,  parameter :: itmax = 40          !maximum number of iterations
     real(r8) :: tol,minx,minf
 
-    type(func_data_type) :: func_data ! dummy data passed to subroutine func    
+    type(func_data_type) :: func_data ! dummy data passed to subroutine func
 
     call func(x0, func_data, f0)
     if(f0 == 0._r8)return

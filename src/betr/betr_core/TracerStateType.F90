@@ -10,11 +10,10 @@ module TracerStateType
   use BeTR_LandunitType   , only : lun => betr_lun
   use BeTR_ColumnType     , only : col => betr_col
   use betr_ctrl           , only : iulog => biulog
-  use abortutils          , only : endrun
-  use spmdMod             , only : masterproc
   use betr_varcon         , only : spval => bspval, ispval => bispval
   use BeTR_landvarconType , only : landvarcon => betr_landvarcon
   use MathfuncMod         , only : dot_sum
+  use TracerBaseType      , only : tracerbase_type
   !
   ! !PUBLIC TYPES:
   implicit none
@@ -24,7 +23,7 @@ module TracerStateType
   ! !PUBLIC DATA:
   !
 
-  type, public ::  TracerState_type
+  type, public, extends(tracerbase_type) ::  TracerState_type
      ! Column tracer state variables
      real(r8), pointer :: tracer_conc_surfwater_col     (:,:)      !tracer concentration in the hydraulic head
      real(r8), pointer :: tracer_conc_aquifer_col       (:,:)      !tracer concentration in the flux to aquifer
@@ -42,6 +41,7 @@ module TracerStateType
      real(r8), pointer :: beg_tracer_molarmass_col      (:,:)      !column integrated tracer mass
      real(r8), pointer :: end_tracer_molarmass_col      (:,:)      !column integrated tracer mass
      real(r8), pointer :: errtracer_col                 (:,:)      !column mass balance error
+
    contains
      procedure, public  :: Init
      procedure, public  :: Restart
@@ -52,6 +52,7 @@ module TracerStateType
      procedure, public  :: int_mass_solid_col
      procedure, private :: InitAllocate
      procedure, private :: InitHistory
+     procedure, public  :: retrieve_hist
   end type TracerState_type
 
 contains
@@ -73,6 +74,7 @@ contains
     type(BeTRTracer_Type), intent(in) :: betrtracer_vars
 
     call this%InitAllocate(bounds, lbj, ubj, betrtracer_vars)
+    call this%tracer_base_init()
     call this%InitHistory(bounds, betrtracer_vars)
 
   end subroutine Init
@@ -146,8 +148,6 @@ contains
     !
     ! !USES:
     use BeTRTracerType, only: BeTRTracer_Type
-    use histFileMod   , only: hist_addfld1d, hist_addfld2d
-    use histFileMod   , only: no_snow_normal, no_snow_zero
     !
     ! !ARGUMENTS:
     class(TracerState_type)           :: this
@@ -157,8 +157,6 @@ contains
     ! !LOCAL VARIABLES:
     integer :: begc, endc
     integer :: jj, kk
-    real(r8), pointer :: data2dptr(:,:) ! temp. pointers for slicing larger arrays
-    real(r8), pointer :: data1dptr(:)   ! temp. pointers for slicing larger arrays
 
     associate(                                                       &
          ntracers          =>  betrtracer_vars%ntracers            , &
@@ -171,84 +169,57 @@ contains
          is_frozen         =>  betrtracer_vars%is_frozen           , &
          frozenid          =>  betrtracer_vars%frozenid              &
          )
-      begc = bounds%begc; endc=bounds%endc
 
-      this%tracer_P_gas_col(begc:endc, :) = spval
-      data2dptr => this%tracer_P_gas_col
-
-      call hist_addfld2d (fname='TRACER_P_GAS', units='Pa', type2d='levtrc',  &
-           avgflag='A', long_name='total gas pressure', &
-           ptr_col=data2dptr)
+      this%num_hist1d=0
+      this%num_hist2d=0
+      call this%add_hist_var2d(fname='TRACER_P_GAS', units='Pa', type2d='levtrc',  &
+           avgflag='A', long_name='total gas pressure')
 
       do jj = 1, ntracers
          if(jj<= ngwmobile_tracers)then
 
-            this%tracer_conc_surfwater_col(begc:endc,jj) = spval
-            data1dptr => this%tracer_conc_surfwater_col(:,jj)
-            call hist_addfld1d (fname=trim(tracernames(jj))//'_TRACER_CONC_SURFWATER', units='mol m-3', &
+            call this%add_hist_var1d (fname=trim(tracernames(jj))//'_TRACER_CONC_SURFWATER', units='mol m-3', &
                  avgflag='A', long_name='head concentration for tracer '//trim(tracernames(jj)), &
-                 ptr_col=data1dptr, default='inactive')
+                 default='inactive')
 
-
-            this%tracer_conc_aquifer_col(begc:endc, jj) = spval
-            data1dptr => this%tracer_conc_aquifer_col(:, jj)
-            call hist_addfld1d (fname=trim(tracernames(jj))//'_TRACER_CONC_AQUIFER', units='mol m-3', &
+            call this%add_hist_var1d (fname=trim(tracernames(jj))//'_TRACER_CONC_AQUIFER', units='mol m-3', &
                  avgflag='A', long_name='quifier concentration for tracer '//trim(tracernames(jj)), &
-                 ptr_col=data1dptr, default='inactive')
+                 default='inactive')
 
-            this%tracer_conc_grndwater_col(begc:endc, jj) = spval
-            data1dptr => this%tracer_conc_grndwater_col(:, jj)
-            call hist_addfld1d (fname=trim(tracernames(jj))//'_TRACER_CONC_GRNDWATER', units='mol m-3', &
+            call this%add_hist_var1d (fname=trim(tracernames(jj))//'_TRACER_CONC_GRNDWATER', units='mol m-3', &
                  avgflag='A', long_name='groundwater concentration for tracer '//trim(tracernames(jj)), &
-                 ptr_col=data1dptr, default='inactive')
+                 default='inactive')
 
-            this%tracer_conc_mobile_col(begc:endc, :, jj) = spval
-            data2dptr => this%tracer_conc_mobile_col(:, :, jj)
-            call hist_addfld2d (fname=trim(tracernames(jj))//'_TRACER_CONC_MOBILE', units='mol m-3', type2d='levtrc',  &
-                 avgflag='A', long_name='gw-mobile phase for tracer '//trim(tracernames(jj)), &
-                 ptr_col=data2dptr)
+            call this%add_hist_var2d (fname=trim(tracernames(jj))//'_TRACER_CONC_MOBILE', units='mol m-3', type2d='levtrc',  &
+                 avgflag='A', long_name='gw-mobile phase for tracer '//trim(tracernames(jj)))
 
             if(is_volatile(jj) .and. (.not. is_h2o(jj)) .and. (.not. is_isotope(jj)))then
-               this%tracer_P_gas_frac_col(begc:endc,:, volatileid(jj)) = spval
-               data2dptr => this%tracer_P_gas_frac_col(:,:, volatileid(jj))
-               call hist_addfld2d (fname=trim(tracernames(jj))//'_TRACER_P_GAS_FRAC', units='none', type2d='levtrc',  &
-                    avgflag='A', long_name='fraction of gas phase contributed by '//trim(tracernames(jj)), &
-                    ptr_col=data2dptr)
+               call this%add_hist_var2d (fname=trim(tracernames(jj))//'_TRACER_P_GAS_FRAC', units='none', type2d='levtrc',  &
+                    avgflag='A', long_name='fraction of gas phase contributed by '//trim(tracernames(jj)))
             endif
 
             if(is_frozen(jj))then
-               this%tracer_conc_frozen_col(begc:endc, :, frozenid(jj)) = spval
-               data2dptr => this%tracer_conc_frozen_col(:, :, frozenid(jj))
-               call hist_addfld2d (fname=trim(tracernames(jj))//'_TRACER_CONC_FROZEN', units='mol m-3', type2d='levtrc',  &
-                    avgflag='A', long_name='frozen phase for tracer '//trim(tracernames(jj)), &
-                    ptr_col=data2dptr)
+               call this%add_hist_var2d (fname=trim(tracernames(jj))//'_TRACER_CONC_FROZEN', units='mol m-3', type2d='levtrc',  &
+                    avgflag='A', long_name='frozen phase for tracer '//trim(tracernames(jj)))
             endif
          else
             kk = jj - ngwmobile_tracers
-            this%tracer_conc_solid_passive_col(begc:endc, :, kk) = spval
-            data2dptr => this%tracer_conc_solid_passive_col(:, :, kk)
-            call hist_addfld2d (fname=trim(tracernames(jj))//'TRACER_CONC_SOLID_PASSIVE', units='mol m-3', type2d='levtrc',  &
+            call this%add_hist_var2d (fname=trim(tracernames(jj))//'TRACER_CONC_SOLID_PASSIVE', units='mol m-3', type2d='levtrc',  &
                  avgflag='A', long_name='passive solid phase for tracer '//trim(tracernames(jj)), &
-                 ptr_col=data2dptr, default='inactive')
+                 default='inactive')
          endif
-
-         this%tracer_soi_molarmass_col(begc:endc, jj) = spval
-         data1dptr => this%tracer_soi_molarmass_col(:,jj)
-         call hist_addfld1d (fname=trim(tracernames(jj))//'_TRCER_SOI_MOLAMASS', units='mol m-2', &
+         call this%add_hist_var1d (fname=trim(tracernames(jj))//'_TRCER_SOI_MOLAMASS', units='mol m-2', &
               avgflag='A', long_name='total molar mass in soil for '//trim(tracernames(jj)), &
-              ptr_col=data1dptr, default='inactive')
+              default='inactive')
 
-         this%tracer_col_molarmass_col(begc:endc, jj) = spval
-         data1dptr => this%tracer_col_molarmass_col(:,jj)
-         call hist_addfld1d (fname=trim(tracernames(jj))//'_TRCER_COL_MOLAMASS', units='mol m-2', &
+         call this%add_hist_var1d (fname=trim(tracernames(jj))//'_TRCER_COL_MOLAMASS', units='mol m-2', &
               avgflag='A', long_name='total molar mass in the column (soi+snow) for '//trim(tracernames(jj)), &
-              ptr_col=data1dptr, default='inactive')
+              default='inactive')
 
       enddo
 
     end associate
   end subroutine InitHistory
-
 
   !------------------------------------------------------------------------
   subroutine Restart(this, bounds, ncid, flag, betrtracer_vars)
@@ -259,7 +230,6 @@ contains
     ! !USES:
     use betr_ctrl      , only : iulog  => biulog
     use BeTRTracerType , only : BeTRTracer_Type
-    !use spmdMod       , only : masterproc
     use restUtilMod    , only : restartvar
     use ncdio_pio      , only : file_desc_t
     use ncdio_pio      , only : ncd_double
@@ -280,7 +250,7 @@ contains
 
     ! remove unused dummy arg compiler warning
     if (bounds%begc > 0) continue
-    
+
     associate(                                                       &
          ntracers          =>  betrtracer_vars%ntracers            , &
          ngwmobile_tracers =>  betrtracer_vars%ngwmobile_tracers   , &
@@ -346,7 +316,7 @@ contains
     ! remove unused dummy arg compiler warnings
     if (size(this%tracer_conc_surfwater_col) > 0) continue
     if (column > 0) continue
-    
+
   end subroutine Reset
 
   !-----------------------------------------------------------------------
@@ -405,4 +375,69 @@ contains
   int_mass = dot_sum(this%tracer_conc_solid_passive_col(c,lbj:ubj,j), dz)
 
   end function int_mass_solid_col
+
+  !----------------------------------------------------------------
+  subroutine retrieve_hist(this, bounds, lbj, ubj, state_2d, state_1d, betrtracer_vars)
+  !
+  !DESCRIPTION
+  !retrieve data for history output
+  use MathfuncMod, only : addone
+  use BeTRTracerType , only : BeTRTracer_Type
+  implicit none
+  class(TracerState_type) :: this
+  type(bounds_type)    , intent(in)  :: bounds
+  integer, intent(in) :: lbj, ubj
+  real(r8), intent(inout) :: state_2d(bounds%begc:bounds%endc, lbj:ubj,1:this%num_hist2d)
+  real(r8), intent(inout) :: state_1d(bounds%begc:bounds%endc, 1:this%num_hist1d)
+  type(BeTRTracer_Type)  , intent(in)  :: betrtracer_vars
+  integer :: begc, endc
+  integer :: jj, kk
+  integer :: idtemp1d, idtemp2d
+
+  associate(                                                       &
+         ntracers          =>  betrtracer_vars%ntracers            , &
+         ngwmobile_tracers =>  betrtracer_vars%ngwmobile_tracers   , &
+         is_volatile       =>  betrtracer_vars%is_volatile         , &
+         is_isotope        =>  betrtracer_vars%is_isotope          , &
+         is_h2o            =>  betrtracer_vars%is_h2o              , &
+         volatileid        =>  betrtracer_vars%volatileid          , &
+         tracernames       =>  betrtracer_vars%tracernames         , &
+         is_frozen         =>  betrtracer_vars%is_frozen           , &
+         frozenid          =>  betrtracer_vars%frozenid              &
+   )
+  begc = bounds%begc; endc=bounds%endc
+  idtemp1d = 0; idtemp2d = 0
+  state_2d(begc:endc, lbj:ubj, addone(idtemp2d))= this%tracer_P_gas_col(begc:endc, lbj:ubj)
+
+  do jj = 1, ntracers
+    if(jj<= ngwmobile_tracers)then
+
+      state_1d(begc:endc,addone(idtemp1d)) = this%tracer_conc_surfwater_col(begc:endc,jj)
+
+      state_1d(begc:endc, addone(idtemp1d)) =this%tracer_conc_aquifer_col(begc:endc, jj)
+
+      state_1d(begc:endc, addone(idtemp1d))=this%tracer_conc_grndwater_col(begc:endc, jj)
+
+      state_2d(begc:endc, lbj:ubj, addone(idtemp2d))= this%tracer_conc_mobile_col(begc:endc, lbj:ubj, jj)
+
+      if(is_volatile(jj) .and. (.not. is_h2o(jj)) .and. (.not. is_isotope(jj)))then
+        state_2d(begc:endc, lbj:ubj, addone(idtemp2d))= this%tracer_P_gas_frac_col(begc:endc,lbj:ubj, volatileid(jj))
+      endif
+
+      if(is_frozen(jj))then
+        state_2d(begc:endc, lbj:ubj, addone(idtemp2d)) = this%tracer_conc_frozen_col(begc:endc,lbj:ubj, frozenid(jj))
+      endif
+    else
+      kk = jj - ngwmobile_tracers
+      state_2d(begc:endc, lbj:ubj, addone(idtemp2d)) = this%tracer_conc_solid_passive_col(begc:endc, lbj:ubj, kk)
+    endif
+
+    state_1d(begc:endc, addone(idtemp1d))=this%tracer_soi_molarmass_col(begc:endc, jj)
+
+    state_1d(begc:endc, addone(idtemp1d))= this%tracer_col_molarmass_col(begc:endc, jj)
+
+  enddo
+
+  end associate
+  end subroutine retrieve_hist
 end module TracerStateType

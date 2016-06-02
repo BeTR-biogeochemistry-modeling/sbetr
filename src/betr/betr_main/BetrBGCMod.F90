@@ -9,7 +9,7 @@ module BetrBGCMod
   use bshr_kind_mod            , only : r8 => shr_kind_r8
   use bshr_log_mod             , only : errMsg => shr_log_errMsg
   use BeTR_decompMod           , only : bounds_type  => betr_bounds_type
-  use betr_ctrl                , only : iulog  => biulog
+  use betr_ctrl                , only : iulog  => biulog, do_betr_otuput
   use betr_constants           , only : betr_string_length
   use betr_varcon              , only : denh2o => bdenh2o
   use MathfuncMod              , only : dot_sum
@@ -428,7 +428,7 @@ contains
                            !if the tracer update is very tinty, then set it to zero
                            if(abs(dtracer(c,l,k))<tiny_val)dtracer(c,l,k) = 0._r8
 
-                           if(tracer_conc_solid_passive_col(c,l,trcid)<0._r8)then
+                           if(tracer_conc_solid_passive_col(c,l,trcid)<0._r8 .and. do_betr_otuput)then
                               write(iulog,*)'nstep',betr_time%get_nstep(),'col=',c,'l=',l,trcid
                               write(iulog,*)'dtime=',dtime_loc(c)
                               write(iulog,*)tracer_conc_solid_passive_col(c,l,trcid),dtracer(c,l,k)
@@ -453,7 +453,7 @@ contains
 
                      err_tracer(c, k) = dot_sum(dtracer(c,jtops(c):ubj, k), dz(c,jtops(c):ubj))
 
-                     if(abs(err_tracer(c,k))>=err_min_solid)then
+                     if(abs(err_tracer(c,k))>=err_min_solid .and. do_betr_otuput)then
                         call endrun('mass balance error for tracer '//tracernames(trcid)//' in '//trim(subname))
                      endif
                   enddo
@@ -529,12 +529,12 @@ contains
 
     SHR_ASSERT_ALL((ubound(jtops)     == (/bounds%endc/)),                          errMsg(filename,__LINE__))
     SHR_ASSERT_ALL((ubound(dz,1)      == bounds%endc),                              errMsg(filename,__LINE__))
-    SHR_ASSERT_ALL((ubound(dz,2)      == ubj),                                      errMsg(filename,__LINE__))   
+    SHR_ASSERT_ALL((ubound(dz,2)      == ubj),                                      errMsg(filename,__LINE__))
     SHR_ASSERT_ALL((ubound(zi,1)      == bounds%endc),                              errMsg(filename,__LINE__))
-    SHR_ASSERT_ALL((ubound(zi,2)      == ubj),                                      errMsg(filename,__LINE__))   
+    SHR_ASSERT_ALL((ubound(zi,2)      == ubj),                                      errMsg(filename,__LINE__))
     SHR_ASSERT_ALL((ubound(Rfactor,1) == bounds%endc),                              errMsg(filename,__LINE__))
     SHR_ASSERT_ALL((ubound(Rfactor,2) ==  ubj ),                                    errMsg(filename,__LINE__))
-    SHR_ASSERT_ALL((ubound(Rfactor,3) ==  betrtracer_vars%ngwmobile_tracer_groups), errMsg(filename,__LINE__))   
+    SHR_ASSERT_ALL((ubound(Rfactor,3) ==  betrtracer_vars%ngwmobile_tracer_groups), errMsg(filename,__LINE__))
     dtime = betr_time%get_step_size()
     !
     !Exclude solid phase tracers, by doing tracer equilibration
@@ -604,7 +604,7 @@ contains
     use TransportMod    , only : semi_lagrange_adv_backward, set_debug_transp
     use babortutils     , only : endrun
     use MathfuncMod     , only : safe_div
-    use BeTR_TimeMod    , only : betr_time_type   
+    use BeTR_TimeMod    , only : betr_time_type
     implicit none
     !ARGUMENTS
     class(betr_time_type)            , intent(in)    :: betr_time!
@@ -658,9 +658,9 @@ contains
 
     SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/))      , errMsg(filename,__LINE__))
     SHR_ASSERT_ALL((ubound(dz,1)  == bounds%endc),           errMsg(filename,__LINE__))
-    SHR_ASSERT_ALL((ubound(dz,2)  == ubj),                   errMsg(filename,__LINE__))   
+    SHR_ASSERT_ALL((ubound(dz,2)  == ubj),                   errMsg(filename,__LINE__))
     SHR_ASSERT_ALL((ubound(zi,1)  == bounds%endc),           errMsg(filename,__LINE__))
-    SHR_ASSERT_ALL((ubound(zi,2)  == ubj),                   errMsg(filename,__LINE__))     
+    SHR_ASSERT_ALL((ubound(zi,2)  == ubj),                   errMsg(filename,__LINE__))
 
 
     associate(                                                                         &
@@ -850,12 +850,14 @@ contains
                      if(abs(err_relative)<err_relative_threshold)then
                         leaching_mass(c,k) = leaching_mass(c,k) - err_tracer(c,k)
                      else
-                        write(iulog,'(A,5X,I8,5X,I8,5X,A,6(5X,A,5X,E18.10))')'nstep=', betr_time%get_nstep(), c, &
+                        if(do_betr_otuput)then
+                          write(iulog,'(A,5X,I8,5X,I8,5X,A,6(5X,A,5X,E18.10))')'nstep=', betr_time%get_nstep(), c, &
                              tracernames(trcid),' err=',err_tracer(c,k),&
                              ' transp=',transp_mass(c,k),' lech=',&
                              leaching_mass(c,k),' infl=',inflx_top(c,k),' dmass=',dmass(c,k), ' mass0=', &
                              mass0,'err_rel=',err_relative
-                        call endrun('advection mass balance error for tracer '//tracernames(j)//errMsg(filename, __LINE__))
+                          call endrun('advection mass balance error for tracer '//tracernames(j)//errMsg(filename, __LINE__))
+                        endif
                      endif
                      tracer_flx_vtrans(c, trcid)  = tracer_flx_vtrans(c,trcid) + transp_mass(c,k)
                      tracer_flx_leaching(c,trcid) = tracer_flx_leaching(c, trcid) + leaching_mass(c,k)
@@ -955,10 +957,10 @@ contains
 
     SHR_ASSERT_ALL((ubound(jtops)               == (/bounds%endc/)),                         errMsg(filename,__LINE__))
     SHR_ASSERT_ALL((ubound(dz,1)                == bounds%endc),                             errMsg(filename,__LINE__))
-    SHR_ASSERT_ALL((ubound(dz,2)                == ubj),                                     errMsg(filename,__LINE__))     
+    SHR_ASSERT_ALL((ubound(dz,2)                == ubj),                                     errMsg(filename,__LINE__))
     SHR_ASSERT_ALL((ubound(hmconductance_col,1) == bounds%endc),                             errMsg(filename,__LINE__))
     SHR_ASSERT_ALL((ubound(hmconductance_col,2) == ubj-1),                                   errMsg(filename,__LINE__))
-    SHR_ASSERT_ALL((ubound(hmconductance_col,3) == ntracer_groups),                          errMsg(filename,__LINE__))   
+    SHR_ASSERT_ALL((ubound(hmconductance_col,3) == ntracer_groups),                          errMsg(filename,__LINE__))
     SHR_ASSERT_ALL((ubound(Rfactor,1)           == bounds%endc),                             errMsg(filename,__LINE__))
     SHR_ASSERT_ALL((ubound(Rfactor,2)           == ubj),                                     errMsg(filename,__LINE__))
     SHR_ASSERT_ALL((ubound(Rfactor,3)           == betrtracer_vars%ngwmobile_tracer_groups), errMsg(filename,__LINE__))
@@ -1047,7 +1049,7 @@ contains
                         if(tracer_conc_mobile_col(c,l,trcid)<-dtracer(c,l,k))then
                            !if the tracer update is very tinty, then set it to zero
                            if(abs(dtracer(c,l,k))<tiny_val)dtracer(c,l,k) = 0._r8
-                           if(tracer_conc_mobile_col(c,l,trcid)<0._r8)then
+                           if(tracer_conc_mobile_col(c,l,trcid)<0._r8 .and. do_betr_otuput)then
                               !write error message and stop
                               write(iulog,*) tracernames(trcid),c,l
                               write(iulog,*) tracer_conc_mobile_col(c,l,trcid),dtracer(c,l,k),dtime_loc(c)
@@ -1067,7 +1069,7 @@ contains
                   enddo
 
                   !time stepping screening
-                  if(dtime_loc(c)<1.e-3_r8)then
+                  if(dtime_loc(c)<1.e-3_r8 .and. do_betr_otuput)then
                      write(iulog,*)'diffusion time step < 1.e-3_r8', dtime_loc(c), 'col ',c
                      do k = 1, ntrcs
                         write(iulog,*)'tracer '//tracernames(trcid),get_cntheta()
@@ -1125,11 +1127,13 @@ contains
                                 diff_surf(c,k) * dtime_loc(c)
                         endif
                      else
-                        write(iulog,*) 'mass bal error dif '//tracernames(trcid), mass1,'col=',c
-                        write(iulog,*)'err=', err_tracer(c,k), 'dmass=',dmass(c,k), ' dif=', diff_surf(c,k)*dtime_loc(c), &
+                        if(do_betr_otuput)then
+                          write(iulog,*) 'mass bal error dif '//tracernames(trcid), mass1,'col=',c
+                          write(iulog,*)'err=', err_tracer(c,k), 'dmass=',dmass(c,k), ' dif=', diff_surf(c,k)*dtime_loc(c), &
                              ' prod=',dot_sum(x=local_source(c,jtops(c):ubj,k),y=dz(c,jtops(c):ubj))*dtime_loc(c)
-                        call endrun('mass balance error for tracer '//tracernames(trcid)//' in ' &
+                          call endrun('mass balance error for tracer '//tracernames(trcid)//' in ' &
                            //trim(subname)//errMsg(filename, __LINE__))
+                        endif
                      endif
                   enddo
                endif
@@ -1212,7 +1216,7 @@ contains
     SHR_ASSERT_ALL((ubound(jtops)   == (/bounds%endc/))                                               , errMsg(filename,__LINE__))
     SHR_ASSERT_ALL((ubound(Rfactor,1) == bounds%endc) ,                                                 errMsg(filename,__LINE__))
     SHR_ASSERT_ALL((ubound(Rfactor,2) == ubj) ,                                                         errMsg(filename,__LINE__))
-    SHR_ASSERT_ALL((ubound(Rfactor,3) == betrtracer_vars%ngwmobile_tracer_groups) ,                     errMsg(filename,__LINE__))   
+    SHR_ASSERT_ALL((ubound(Rfactor,3) == betrtracer_vars%ngwmobile_tracer_groups) ,                     errMsg(filename,__LINE__))
     associate(                                                                       &  !
          ngwmobile_tracer_groups =>    betrtracer_vars%ngwmobile_tracer_groups     , &  !
          tracer_group_memid      =>    betrtracer_vars%tracer_group_memid          , &  !
@@ -1288,9 +1292,9 @@ contains
     SHR_ASSERT_ALL((ubound(jtops)     == (/bounds%endc/))      , errMsg(filename,__LINE__))
     SHR_ASSERT_ALL((ubound(forc_psrf) == (/bounds%endc/))      , errMsg(filename,__LINE__))
     SHR_ASSERT_ALL((ubound(fracice,1) == bounds%endc) ,          errMsg(filename,__LINE__))
-    SHR_ASSERT_ALL((ubound(fracice,2) == ubj) ,                  errMsg(filename,__LINE__))   
+    SHR_ASSERT_ALL((ubound(fracice,2) == ubj) ,                  errMsg(filename,__LINE__))
     SHR_ASSERT_ALL((ubound(dz,1)      == bounds%endc),           errMsg(filename,__LINE__))
-    SHR_ASSERT_ALL((ubound(dz,2)      == ubj),                   errMsg(filename,__LINE__))     
+    SHR_ASSERT_ALL((ubound(dz,2)      == ubj),                   errMsg(filename,__LINE__))
     SHR_ASSERT_ALL((ubound(zwt)       == (/bounds%endc/))      , errMsg(filename,__LINE__))
 
     ! remove compiler warnings about unused dummy args
@@ -1437,11 +1441,11 @@ contains
     SHR_ASSERT_ALL((ubound(update_col)       == (/bounds%endc/))      , errMsg(filename,__LINE__))
     SHR_ASSERT_ALL((ubound(dtime_loc)        == (/bounds%endc/))      , errMsg(filename,__LINE__))
     SHR_ASSERT_ALL((ubound(tracer_conc,1)    == bounds%endc) ,          errMsg(filename,__LINE__))
-    SHR_ASSERT_ALL((ubound(tracer_conc,2)    ==  ubj) ,                 errMsg(filename,__LINE__))   
+    SHR_ASSERT_ALL((ubound(tracer_conc,2)    ==  ubj) ,                 errMsg(filename,__LINE__))
     SHR_ASSERT_ALL((ubound(qflx_rootsoi,1)   == bounds%endc) ,          errMsg(filename,__LINE__))
-    SHR_ASSERT_ALL((ubound(qflx_rootsoi,2)   == ubj) ,                  errMsg(filename,__LINE__))    
+    SHR_ASSERT_ALL((ubound(qflx_rootsoi,2)   == ubj) ,                  errMsg(filename,__LINE__))
     SHR_ASSERT_ALL((ubound(transp_mass_vr,1) == bounds%endc)      ,     errMsg(filename,__LINE__))
-    SHR_ASSERT_ALL((ubound(transp_mass_vr,2) == ubj)      ,             errMsg(filename,__LINE__))   
+    SHR_ASSERT_ALL((ubound(transp_mass_vr,2) == ubj)      ,             errMsg(filename,__LINE__))
     SHR_ASSERT_ALL((ubound(transp_mass)      == (/bounds%endc/))      , errMsg(filename,__LINE__))
 
     transp_mass(:) = 0._r8

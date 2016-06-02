@@ -130,8 +130,6 @@ contains
     betr_landvarcon%istcrop            = istcrop
     betr_landvarcon%istice             = istice
 
-
-
     ! now call the base simulation init to continue initialization
     call this%BeTRInit(base_filename, namelist_buffer, &
          bounds, waterstate)

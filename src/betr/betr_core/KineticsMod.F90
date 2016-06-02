@@ -3,12 +3,17 @@ module KineticsMod
   ! Subroutines to do substrate kinetics
   ! Created by Jinyun Tang, Apr 11, 2013
   ! !USES:
-
-  use bshr_kind_mod , only: r8 => shr_kind_r8
-  use babortutils   , only: endrun
-  use betr_ctrl     , only: iulog => biulog
+#include "bshr_assert.h"
+  use bshr_kind_mod , only : r8 => shr_kind_r8
+  use babortutils   , only : endrun
+  use bshr_log_mod  , only : errMsg => shr_log_errMsg
   implicit none
+  private
+  character(len=*), parameter :: mod_filename = &
+       __FILE__
+
   real(r8),public, parameter :: kd_infty = 1.e40_r8      !internal parameter
+  public :: mmcomplex, ecacomplex, ecacomplex_cell_norm
 
   interface mmcomplex   !the m-m kinetics
      module procedure mmcomplex_v1s,mmcomplex_v1e, mmcomplex_m
@@ -222,9 +227,7 @@ contains
      ii = size(ss)       !number of substrates, dim 1
      jj = size(ee)       !number of enzymes, dim2
      if(ii/=size(siej,1) .or. jj/=size(siej,2))then
-        write(iulog,*)'wrong matrix shape in ecacomplex_m'
-        write(iulog,*)'betr is stopping'
-        call endrun()
+        call endrun('wrong matrix shape in ecacomplex_m '//errMsg(mod_filename, __LINE__))
      endif
      siej = 0._r8
      do i = 1, ii
@@ -267,9 +270,7 @@ contains
      ii = size(ss)       !number of substrates, dim 1
      jj = size(ee)       !number of enzymes, dim2
      if(ii/=size(siej,1) .or. jj/=size(siej,2))then
-        write(iulog,*)'wrong matrix shape in ecacomplex_m'
-        write(iulog,*)'betr model is stopping'
-        call endrun()
+        call endrun('wrong matrix shape in ecacomplex_m '//errMsg(mod_filename, __LINE__))
      endif
      siej = 0._r8
      do i = 1, ii

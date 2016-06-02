@@ -10,6 +10,7 @@ module BeTRTracerType
   use babortutils     , only : endrun
   use bshr_log_mod    , only : errMsg => shr_log_errMsg
   use betr_constants  , only : betr_var_name_length
+  use betr_ctrl       , only : do_betr_otuput
   !
   implicit none
   private
@@ -266,10 +267,10 @@ subroutine set_tracer(this, trc_id, trc_name, is_trc_mobile, is_trc_advective, t
   if(present(is_trc_volatile))then
     this%is_volatile      (trc_id)    = is_trc_volatile
     if(this%is_volatile   (trc_id)) then
-      if(.not.present(trc_volatile_id))then
+      if(.not.present(trc_volatile_id) .and. do_betr_otuput)then
         call endrun('volatile tracer id is not provided for '//trim(trc_name)//errMsg(mod_filename, __LINE__))
       endif
-      if(.not.present(trc_volatile_group_id))then
+      if(.not.present(trc_volatile_group_id) .and. do_betr_otuput)then
         call endrun('volatile tracer group id is not provided for '//trim(trc_name)//errMsg(mod_filename, __LINE__))
       endif
       this%volatileid     (trc_id)    = trc_volatile_id
@@ -292,10 +293,10 @@ subroutine set_tracer(this, trc_id, trc_name, is_trc_mobile, is_trc_advective, t
   if(present(is_trc_adsorb))then
     this%is_adsorb(trc_id) = is_trc_adsorb
     if(is_trc_adsorb)then
-      if(.not.present(trc_adsorbid))then
+      if(.not.present(trc_adsorbid) .and. do_betr_otuput)then
         call endrun('adsorb tracer id is not provided for '//trim(trc_name)//errMsg(mod_filename, __LINE__))
       endif
-      if(.not.present(trc_adsorbgroupid))then
+      if(.not.present(trc_adsorbgroupid) .and. do_betr_otuput)then
         call endrun('adsorb tracer group id is not provided for '//trim(trc_name)//errMsg(mod_filename, __LINE__))
       endif
       this%adsorbid(trc_id) = trc_adsorbid
@@ -307,7 +308,7 @@ subroutine set_tracer(this, trc_id, trc_name, is_trc_mobile, is_trc_advective, t
   if(present(is_trc_frozen))then
     this%is_frozen(trc_id) = is_trc_frozen
     if(is_trc_frozen)then
-      if(.not. present(trc_frozenid))then
+      if(.not. present(trc_frozenid) .and. do_betr_otuput)then
         call endrun('frozen tracer id is not provided for '//trim(trc_name)//errMsg(mod_filename, __LINE__))
       endif
       this%frozenid(trc_id) = trc_frozenid
@@ -322,7 +323,7 @@ end subroutine set_tracer
   function is_solidtransport(this)result(yesno)
 
    ! !ARGUMENTS:
-  implicit none    
+  implicit none
   class(BeTRtracer_type) :: this
 
   logical :: yesno

@@ -18,6 +18,7 @@ module BeTRSimulation
   use PatchType      , only : pft
   ! !USES:
   use BetrType                 , only : betr_type, create_betr_type
+  use betr_ctrl                , only : max_betr_hist_type, betr_offline
   use betr_constants           , only : betr_string_length
   use betr_constants           , only : betr_filename_length
   use betr_regression_module   , only : betr_regression_type
@@ -50,6 +51,20 @@ module BeTRSimulation
      integer, public                              :: num_soilc
      integer, public, allocatable                 :: filter_soilc(:)
 
+     real(r8), pointer :: states_2d(:,:,:) !(col, lay,var)
+     real(r8), pointer :: states_1d(:,:)   !(col, var)
+     real(r8), pointer :: fluxes_2d(:,:,:) !(col, lay,var)
+     real(r8), pointer :: fluxes_1d(:,:)   !(col, var)
+     character(len=255) :: nmlist_hist1d_state_buffer(max_betr_hist_type)
+     character(len=255) :: nmlist_hist2d_state_buffer(max_betr_hist_type)
+     character(len=255) :: nmlist_hist1d_flux_buffer(max_betr_hist_type)
+     character(len=255) :: nmlist_hist2d_flux_buffer(max_betr_hist_type)
+
+     integer :: num_hist_state1d
+     integer :: num_hist_state2d
+     integer :: num_hist_flux1d
+     integer :: num_hist_flux2d
+
      ! FIXME(bja, 201603) most of these types should be private!
 
      ! NOTE(bja, 201603) BeTR types only, no LSM specific types here!
@@ -76,6 +91,12 @@ module BeTRSimulation
      procedure, public :: CreateHistory           => hist_htapes_create
      procedure, public :: WriteHistory            => hist_write
      procedure, public :: WriteRegressionOutput
+     !the following are used to interact with lsm
+     procedure, public :: BeTRRestart             => BeTRSimulationRestart
+     procedure, public :: BeTRCreateHistory       => BeTRSimulationCreateHistory
+     procedure, public :: BeTRRetrieveHistory     => BeTRSimulationRetrieveHistory
+     procedure, private:: hist_create_states
+     procedure, private:: hist_create_fluxes
   end type betr_simulation_type
 
   public :: BeTRSimulationInit
@@ -176,7 +197,6 @@ contains
     betr_bounds%begl = 1 ; betr_bounds%endl = 1
     betr_bounds%begg = 1 ; betr_bounds%endg = 1
 
-
     do c = bounds%begc, bounds%endc
 
       call this%biophys_forc(c)%Init(betr_bounds)
@@ -194,8 +214,19 @@ contains
       call this%betr(c)%Init(namelist_buffer, betr_bounds, this%biophys_forc(c))
     enddo
 
-    call this%CreateHistory(betr_nlevtrc_soil, this%num_soilc)
+    if(betr_offline)then
+      call this%CreateHistory(betr_nlevtrc_soil, this%num_soilc)
+    else
+      c = bounds%begc
+      call this%betr(c)%get_hist_size(this%num_hist_state1d, this%num_hist_state2d, &
+         this%num_hist_flux1d, this%num_hist_flux2d, &
+         this%nmlist_hist1d_state_buffer, this%nmlist_hist2d_state_buffer, &
+         this%nmlist_hist1d_flux_buffer, this%nmlist_hist2d_flux_buffer)
 
+      call this%BeTRCreateHistory(bounds, betr_nlevtrc_soil, &
+         this%num_hist_state1d, this%num_hist_state2d, &
+            this%num_hist_flux1d, this%num_hist_flux2d)
+    endif
     call this%regression%Init(base_filename, namelist_buffer)
 
   end subroutine BeTRInit
@@ -1016,5 +1047,201 @@ contains
   enddo
 
   end subroutine BeTRSimulationCombineSnowLayers
+  !------------------------------------------------------------------------
+  subroutine hist_create_fluxes(this, bounds, betr_nlevtrc_soil, num_flux1d, num_flux2d)
+  !
+  !DESCRIPTION
+  !create history file for betr fluxes
+  !
+  use betr_varcon         , only : spval => bspval
+  use histFileMod   , only: hist_addfld1d, hist_addfld2d
+  implicit none
+  class(betr_simulation_type) , intent(inout) :: this
+  integer, intent(in) :: betr_nlevtrc_soil
+  type(bounds_type)           , intent(in)    :: bounds               ! bounds
+  integer           ,     intent(in)   :: num_flux1d
+  integer           ,     intent(in)   :: num_flux2d
+
+  !local variables
+  integer :: jj, begc, endc
+  character(len=100) :: fname
+  character(len=30) :: units
+  character(len=20) :: avgflag
+  character(len=20) :: type2d
+  character(len=200) :: long_name
+  character(len=20) :: default
+  integer :: nml_error
+  character(len=200):: ioerror_msg
+
+  real(r8), pointer :: data2dptr(:,:) ! temp. pointers for slicing larger arrays
+  real(r8), pointer :: data1dptr(:)   ! temp. pointers for slicing larger arrays
+
+  namelist /hist2d_fmt/    &
+  fname, units, avgflag,type2d,long_name, default
+
+  namelist /hist1d_fmt/    &
+  fname, units, avgflag, long_name, default
+
+  if(num_flux2d >0)then
+    allocate(this%fluxes_2d(bounds%begc:bounds%endc, 1:betr_nlevtrc_soil, 1:num_flux2d))
+  endif
+  if(num_flux1d>0)then
+    allocate(this%fluxes_1d(bounds%begc:bounds%endc, 1:num_flux1d))
+  endif
+  do jj = 1, num_flux2d
+    !read name list
+    read(this%nmlist_hist2d_flux_buffer(jj), nml=hist2d_fmt, iostat=nml_error, iomsg=ioerror_msg)
+    if(nml_error/=0)then
+      write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
+    endif
+    this%fluxes_2d(begc:endc,1:betr_nlevtrc_soil, jj) = spval
+    data2dptr => this%states_2d(begc:endc,1:betr_nlevtrc_soil, jj)
+    call hist_addfld2d (fname=fname, units=units, type2d=type2d,  &
+           avgflag=avgflag, long_name=long_name,  ptr_col=data2dptr, default=default)
+  enddo
+
+  do jj = 1, num_flux1d
+    !read name list
+    read(this%nmlist_hist1d_flux_buffer(jj), nml=hist1d_fmt, iostat=nml_error, iomsg=ioerror_msg)
+    if(nml_error/=0)then
+      write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
+    endif
+    this%fluxes_1d(begc:endc,jj) = spval
+    data1dptr => this%fluxes_1d(begc:endc, jj)
+    call hist_addfld1d (fname=fname, units=units,  avgflag=avgflag, long_name=long_name, &
+      ptr_col=data1dptr, default=default)
+  enddo
+  end subroutine hist_create_fluxes
+  !------------------------------------------------------------------------
+  subroutine hist_create_states(this, bounds, betr_nlevtrc_soil, num_state1d, num_state2d)
+  !
+  !create history file for betr states variables
+  use histFileMod   , only: hist_addfld1d, hist_addfld2d
+  use betr_varcon         , only : spval => bspval
+  implicit none
+  !ARGUMENTS
+  class(betr_simulation_type) , intent(inout) :: this
+  type(bounds_type)           , intent(in)    :: bounds               ! bounds
+  integer, intent(in) :: betr_nlevtrc_soil
+  integer           ,     intent(in)   :: num_state1d
+  integer           ,     intent(in)   :: num_state2d
+
+  !local variables
+  integer :: begc, endc
+  integer :: jj
+  character(len=100) :: fname
+  character(len=30) :: units
+  character(len=20) :: avgflag
+  character(len=20) :: type2d
+  character(len=200) :: long_name
+  character(len=20) :: default
+  integer :: nml_error
+  character(len=200):: ioerror_msg
+  real(r8), pointer :: data2dptr(:,:) ! temp. pointers for slicing larger arrays
+  real(r8), pointer :: data1dptr(:)   ! temp. pointers for slicing larger arrays
+
+  namelist /hist2d_fmt/    &
+  fname, units, avgflag,type2d,long_name, default
+
+  namelist /hist1d_fmt/    &
+  fname, units, avgflag, long_name, default
+
+  begc = bounds%begc; endc = bounds%endc
+
+  if(num_state2d>0)then
+    allocate(this%states_2d(bounds%begc:bounds%endc, 1:betr_nlevtrc_soil, 1:num_state2d))
+  endif
+  if(num_state1d>0)then
+    allocate(this%states_1d(bounds%begc:bounds%endc, 1:num_state1d))
+  endif
+
+  do jj = 1, num_state2d
+    !read namelist
+    print*,this%nmlist_hist2d_state_buffer(jj)
+    read(this%nmlist_hist2d_state_buffer(jj), nml=hist2d_fmt, iostat=nml_error, iomsg=ioerror_msg)
+    if(nml_error/=0)then
+      write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
+    endif
+    this%states_2d(begc:endc,1:betr_nlevtrc_soil, jj) = spval
+    data2dptr => this%states_2d(begc:endc,1:betr_nlevtrc_soil, jj)
+    call hist_addfld2d (fname=fname, units=units, type2d=type2d,  &
+           avgflag=avgflag, long_name=long_name,  ptr_col=data2dptr, default=default)
+  enddo
+
+  do jj = 1, num_state1d
+    !read namelist
+    read(this%nmlist_hist1d_state_buffer(jj), nml=hist1d_fmt, iostat=nml_error, iomsg=ioerror_msg)
+    if(nml_error/=0)then
+      write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
+    endif
+    this%states_1d(begc:endc,jj) = spval
+    data1dptr => this%states_1d(begc:endc,jj)
+    call hist_addfld1d (fname=fname, units=units, avgflag=avgflag, &
+      long_name=long_name, ptr_col=data1dptr, default=default)
+  enddo
+  end subroutine hist_create_states
+  !------------------------------------------------------------------------
+  subroutine BeTRSimulationCreateHistory(this, bounds, betr_nlevtrc_soil,&
+     num_state1d, num_state2d, num_flux1d, num_flux2d)
+  use betr_varcon         , only : spval => bspval
+  implicit none
+  !ARGUMENTS
+  class(betr_simulation_type) , intent(inout) :: this
+  type(bounds_type)           , intent(in)    :: bounds               ! bounds
+  integer           , intent(in) :: betr_nlevtrc_soil
+  integer           ,     intent(in)   :: num_state1d
+  integer           ,     intent(in)   :: num_state2d
+  integer           ,     intent(in)   :: num_flux1d
+  integer           ,     intent(in)   :: num_flux2d
+
+  call this%hist_create_states(bounds, betr_nlevtrc_soil, num_state1d, num_state2d)
+
+  call this%hist_create_fluxes(bounds, betr_nlevtrc_soil, num_flux1d, num_flux2d)
+
+  end subroutine BeTRSimulationCreateHistory
+  !------------------------------------------------------------------------
+  subroutine BeTRSimulationRetrieveHistory(this, bounds, numf, filter)
+  implicit none
+  !ARGUMENTS
+  class(betr_simulation_type) , intent(inout) :: this
+  type(bounds_type)           , intent(in)    :: bounds               ! bounds
+  integer, intent(in) :: numf
+  integer, intent(in) :: filter(:)
+
+  !TEMPORARY VARIABLES
+  integer :: fc, c
+  type(betr_bounds_type)     :: betr_bounds
+
+
+  betr_bounds%lbj  = 1 ; betr_bounds%ubj  = betr_nlevsoi
+  betr_bounds%begc = 1 ; betr_bounds%endc = 1
+  betr_bounds%begp = 1 ; betr_bounds%endp = betr_maxpatch_pft
+  betr_bounds%begl = 1 ; betr_bounds%endl = 1
+  betr_bounds%begg = 1 ; betr_bounds%endg = 1
+
+  do fc = 1, numf
+    c = filter(fc)
+    call this%betr(c)%HistRetrieve(betr_bounds, 1, betr_nlevtrc_soil, &
+       this%num_hist_state1d, this%num_hist_state2d, this%num_hist_flux1d,&
+       this%num_hist_flux2d, this%states_1d(c:c,:), &
+       this%states_2d(c:c,1:betr_nlevtrc_soil,:), this%fluxes_1d(c:c,:),&
+       this%fluxes_2d(c:c,1:betr_nlevtrc_soil,:))
+  enddo
+
+  end subroutine BeTRSimulationRetrieveHistory
+  !------------------------------------------------------------------------
+  subroutine BeTRSimulationRestart(this, bounds, ncid, flag)
+  !DESCRIPTION
+  !create or read restart file
+  use ncdio_pio      , only : file_desc_t
+  implicit none
+  ! !ARGUMENTS:
+  class(betr_simulation_type) , intent(inout) :: this
+  type(bounds_type)    , intent(in)    :: bounds
+  class(file_desc_t)   , intent(inout) :: ncid                                         ! netcdf id
+  character(len=*)     , intent(in)    :: flag                                         ! 'read' or 'write'
+
+
+  end subroutine BeTRSimulationRestart
 
 end module BeTRSimulation
