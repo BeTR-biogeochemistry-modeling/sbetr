@@ -17,7 +17,7 @@ contains
   !-----------------------------------------------------------------------
   subroutine tracer_base_init(this)
   implicit none
-  class(tracerbase_type) :: this
+  class(tracerbase_type), intent(inout) :: this
 
   !set number of history files to zero
   this%num_hist1d = 0
@@ -32,7 +32,7 @@ contains
   !DESCRIPTION
   !build the namelist for an output 2d variable
   implicit none
-  class(tracerbase_type) :: this
+  class(tracerbase_type), intent(inout) :: this
   character(len=*), intent(in) :: fname
   character(len=*), intent(in) :: units
   character(len=*), intent(in) :: type2d
@@ -70,7 +70,7 @@ contains
   !DESCRIPTION
   !build the namelist for an output 2d variable
   implicit none
-  class(tracerbase_type) :: this
+  class(tracerbase_type), intent(inout) :: this
   character(len=*), intent(in) :: fname
   character(len=*), intent(in) :: units
   character(len=*), intent(in) :: avgflag

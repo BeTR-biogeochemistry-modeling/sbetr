@@ -10,7 +10,6 @@ module TransportMod
   use bshr_log_mod  , only : errMsg => shr_log_errMsg
   use tracer_varcon , only : bndcond_as_conc, bndcond_as_flux
   use betr_ctrl     , only : iulog => biulog
-  use babortutils   , only : endrun
   use bshr_kind_mod , only : r8 => shr_kind_r8
 
   implicit none
@@ -70,7 +69,7 @@ contains
     ! allocate memory for arrays of the specified data type
 
     ! !ARGUMENTS:
-    class(Extra_type)   :: this
+    class(Extra_type), intent(inout)  :: this
     integer, intent(in) :: lbj, ubj
     character(len=32) :: subname ='InitAllocate'
 
@@ -87,7 +86,7 @@ contains
     ! Deallocate memories
     !
     ! !ARGUMENTS:
-    class(Extra_type) :: this
+    class(Extra_type), intent(inout) :: this
     character(len=32) :: subname ='DDeallocate'
     deallocate(this%zi)
     deallocate(this%us)
@@ -102,7 +101,7 @@ contains
     ! Assgin values for member variables for the specified data type
     !
     ! !ARGUMENTS:
-    class(Extra_type) :: this
+    class(Extra_type), intent(inout) :: this
     real(r8), dimension(:), intent(in) :: zi_t
     real(r8), dimension(:), intent(in) :: us_t
 
@@ -618,7 +617,7 @@ contains
    end function calc_col_CFL
 
    !-------------------------------------------------------------------------------
-   subroutine semi_lagrange_adv_backward(bounds, lbj, ubj, lbn, numfl, filter, ntrcs, dtime, dz, &
+   subroutine semi_lagrange_adv_backward(bounds, bstatus, lbj, ubj, lbn, numfl, filter, ntrcs, dtime, dz, &
         zi, us, inflx_top, inflx_bot, trc_bot, update_col, halfdt_col, trcin, trcou, leaching_mass, seep_mass)
      !
      ! DESCRIPTION:
@@ -631,11 +630,12 @@ contains
      use bshr_kind_mod    , only : r8 => shr_kind_r8
      use BeTR_decompMod   , only : bounds_type  => betr_bounds_type
      use MathfuncMod      , only : cumsum, cumdif, safe_div, dot_sum, asc_sort_vec
-     use InterpolationMod , only : pchip_polycc, pchip_interp
      use InterpolationMod , only : Lagrange_interp
+     use BetrStatusType   , only : betr_status_type
      implicit none
      ! !ARGUMENTS:
      type(bounds_type) , intent(in)  :: bounds                             !bounds
+     type(betr_status_type), intent(out)   :: bstatus
      integer           , intent(in)  :: lbj, ubj                          ! lbinning and ubing level indices
      integer           , intent(in)  :: lbn(bounds%begc: )                !label of the top/left boundary
      integer           , intent(in)  :: numfl
@@ -676,6 +676,7 @@ contains
      real(r8) :: dinfl_mass
      character(len=32) :: subname='semi_lagrange_adv_backward'
 
+     call bstatus%reset()
      SHR_ASSERT_ALL((ubound(lbn)        == (/bounds%endc/)),         errMsg(filename,__LINE__))
      SHR_ASSERT_ALL((ubound(dtime)      == (/bounds%endc/)),         errMsg(filename,__LINE__))
      SHR_ASSERT_ALL((ubound(dz)         == (/bounds%endc, ubj/)),    errMsg(filename,__LINE__))
@@ -794,7 +795,8 @@ contains
               !correct for small negative values
               if(mass_new(j, ntr)<0._r8)then
                  write(iulog,*)j,mass_new(j, ntr),cmass_new(j, ntr),cmass_new(j-1, ntr)
-                 call endrun('negative tracer '//errMsg(filename, __LINE__))
+                 call bstatus%set_msg(msg='negative tracer '//errMsg(filename, __LINE__), err=-1)
+                 return
                  if(present(leaching_mass))then
                     leaching_mass(c, ntr) = leaching_mass(c, ntr)+mass_new(j, ntr) !add the numerical error to leaching
                  endif

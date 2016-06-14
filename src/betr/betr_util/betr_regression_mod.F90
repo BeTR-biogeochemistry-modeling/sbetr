@@ -29,34 +29,36 @@ module betr_regression_module
 
 contains
 
-  subroutine Init(this, base_filename, namelist_buffer)
+  subroutine Init(this, base_filename, namelist_buffer, bstatus)
 
     use betr_constants, only : betr_namelist_buffer_size
-
+    use BetrStatusType , only : betr_status_type
     implicit none
 
     class(betr_regression_type)              , intent(inout) :: this
     character(len=betr_filename_length)      , intent(in)    :: base_filename
     character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
+    class(betr_status_type)        , intent(out)   :: bstatus
 
     this%output = 16
     this%filename = trim(base_filename) // '.regression'
 
-    call this%ReadNamelist(namelist_buffer)
-    call this%CheckInput()
+    call this%ReadNamelist(namelist_buffer, bstatus)
+    if(bstatus%check_status())return
+    call this%CheckInput(bstatus)
   end subroutine Init
 
   !--------------------------------------------------------------------
 
-  subroutine ReadNamelist(this, namelist_buffer)
-    use babortutils    , only : endrun
+  subroutine ReadNamelist(this, namelist_buffer, bstatus)
     use bshr_log_mod   , only : errMsg => shr_log_errMsg
     use betr_constants , only : stdout, betr_string_length_long, betr_namelist_buffer_size
-
+    use BetrStatusType , only : betr_status_type
     implicit none
 
     class(betr_regression_type), intent(inout) :: this
     character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
+    class(betr_status_type)        , intent(out)   :: bstatus
 
     character(len=*), parameter :: subname = 'betr_regression:ReadNamelist'
     ! !LOCAL VARIABLES:
@@ -67,7 +69,7 @@ contains
     !-----------------------------------------------------------------------
 
     namelist / regression_test / cells, write_regression_output
-
+    call bstatus%reset()
     cells = 0
     write_regression_output = .false.
 
@@ -79,7 +81,8 @@ contains
        ioerror_msg=''
        read(namelist_buffer, nml=regression_test, iostat=nml_error, iomsg=ioerror_msg)
        if (nml_error /= 0) then
-          call endrun(msg="ERROR reading betr_regression_test namelist "//errmsg(mod_filename, __LINE__))
+          call bstatus%set_msg(msg="ERROR reading betr_regression_test namelist "//errmsg(mod_filename, __LINE__),err=-1)
+          return
        end if
     end if
 
@@ -102,23 +105,23 @@ contains
 
   !---------------------------------------------------------------------------------
 
-  subroutine CheckInput(this)
+  subroutine CheckInput(this, bstatus)
 
     use betr_constants , only : betr_string_length_long
-    use babortutils    , only : endrun
     use bshr_log_mod   , only : errMsg => shr_log_errMsg
-
+    use BetrStatusType , only : betr_status_type
     implicit none
 
     class(betr_regression_type), intent(in) :: this
-
+    class(betr_status_type)        , intent(out)   :: bstatus
     character(len=betr_string_length_long) :: msg
 
     if (this%write_regression_output) then
        ! sanity check on input
        if (this%num_cells < 0) then
           msg = 'ERROR num cells must be >= 0. '
-          call endrun(msg=msg//errmsg(mod_filename, __LINE__))
+          call bstatus%set_msg(msg=msg//errmsg(mod_filename, __LINE__),err=-1)
+          return
        end if
     end if
   end subroutine CheckInput

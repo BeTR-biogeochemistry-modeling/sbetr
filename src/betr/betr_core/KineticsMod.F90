@@ -5,7 +5,6 @@ module KineticsMod
   ! !USES:
 #include "bshr_assert.h"
   use bshr_kind_mod , only : r8 => shr_kind_r8
-  use babortutils   , only : endrun
   use bshr_log_mod  , only : errMsg => shr_log_errMsg
   implicit none
   private
@@ -208,26 +207,31 @@ contains
    enddo
    end subroutine ecacomplex_v1e
    !-------------------------------------------------------------------------------
-   subroutine ecacomplex_m(kd,ss,ee,siej)
+   subroutine ecacomplex_m(kd,ss,ee,siej, bstatus)
      ! !DESCRIPTION:
      !compute concentrations of the enzyme substrate complexes
      !using the first order accurate ECA kinetics
      ! many substrate vs many enzymes
+     use BetrStatusType  , only : betr_status_type
      implicit none
      ! !ARGUMENTS:
      real(r8), dimension(:,:), intent(in)  :: kd
      real(r8), dimension(:), intent(in)    :: ee, ss
      real(r8), dimension(:,:), intent(out) :: siej
+     type(betr_status_type), intent(out)   :: bstatus
 
      ! !LOCAL VARIABLES:
      integer :: ii,jj
      integer :: i, j, k
      real(r8) :: dnm1, dnm2
 
+     call bstatus%reset()
      ii = size(ss)       !number of substrates, dim 1
      jj = size(ee)       !number of enzymes, dim2
      if(ii/=size(siej,1) .or. jj/=size(siej,2))then
-        call endrun('wrong matrix shape in ecacomplex_m '//errMsg(mod_filename, __LINE__))
+        call bstatus%set_msg(msg='wrong matrix shape in ecacomplex_m ' &
+           //errMsg(mod_filename, __LINE__), err=-1)
+        if(bstatus%check_status())return
      endif
      siej = 0._r8
      do i = 1, ii
@@ -251,26 +255,31 @@ contains
      enddo
    end subroutine ecacomplex_m
    !-------------------------------------------------------------------------------
-   subroutine ecacomplex_cell_norm_m(kd,ss,ee,siej)
+   subroutine ecacomplex_cell_norm_m(kd,ss,ee,siej, bstatus)
      ! !DESCRIPTION:
      ! compute concentrations of the enzyme substrate complexes
      ! using the first order accurate ECA kinetics
      ! and noramlize the return value with cell abundance
      ! many substrates vs many enzymes
+     use BetrStatusType  , only : betr_status_type
      implicit none
      ! !ARGUMENTS:
      real(r8), dimension(:,:), intent(in)  :: kd
      real(r8), dimension(:), intent(in)    :: ee, ss
      real(r8), dimension(:,:), intent(out) :: siej
+     type(betr_status_type), intent(out)   :: bstatus
      ! !LOCAL VARIABLES:
      integer :: ii,jj
      integer :: i, j, k
      real(r8) :: dnm1, dnm2
 
+     call bstatus%reset()
      ii = size(ss)       !number of substrates, dim 1
      jj = size(ee)       !number of enzymes, dim2
      if(ii/=size(siej,1) .or. jj/=size(siej,2))then
-        call endrun('wrong matrix shape in ecacomplex_m '//errMsg(mod_filename, __LINE__))
+        call bstatus%set_msg(msg='wrong matrix shape in ecacomplex_m ' &
+          //errMsg(mod_filename, __LINE__), err=-1)
+        if(bstatus%check_status())return
      endif
      siej = 0._r8
      do i = 1, ii

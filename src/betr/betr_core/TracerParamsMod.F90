@@ -370,11 +370,12 @@ contains
 
 !-------------------------------------------------------------------------------
    subroutine calc_henrys_coeff(bounds, lbj, ubj, jtops, numf, filter, t_soisno, soi_pH, &
-       betrtracer_vars, aqu2neutralcef_col, henrycef_col)
+       betrtracer_vars, aqu2neutralcef_col, henrycef_col, betr_status)
    !
    ! DESCRIPTION
    ! compute henry's law constant for volatile tracers
    use BeTRTracerType     , only : betrtracer_type
+   use BetrStatusType     , only : betr_status_type
    implicit none
    !arguments
    type(bounds_type),      intent(in) :: bounds  ! bounds
@@ -386,15 +387,16 @@ contains
    real(r8),               intent(in) :: soi_pH(bounds%begc: , lbj: )      !pH profile
    type(betrtracer_type),  intent(in) :: betrtracer_vars        ! betr configuration information
 
-   real(r8),   intent(inout):: aqu2neutralcef_col(bounds%begc: , lbj: , 1: ) !conversion parameter between bulk aqueous and neutral aqueous tracer
-   real(r8),   intent(inout):: henrycef_col(bounds%begc: , lbj: ,  1: )       !henry's constant, mol/L/atm = M/atm
-
+   real(r8)            ,   intent(inout):: aqu2neutralcef_col(bounds%begc: , lbj: , 1: ) !conversion parameter between bulk aqueous and neutral aqueous tracer
+   real(r8)            ,   intent(inout):: henrycef_col(bounds%begc: , lbj: ,  1: )       !henry's constant, mol/L/atm = M/atm
+   type(betr_status_type), intent(out)  :: betr_status
    !local variables
    integer :: j, k, n, fc, c, trcid   ! indices
    real(r8) :: scal
    character(len=255) :: subname='calc_henrys_coeff'
    integer :: nvolatile_tracer_groups, ngwmobile_tracer_groups
 
+   call betr_status%reset()
    ngwmobile_tracer_groups = betrtracer_vars%ngwmobile_tracer_groups
    nvolatile_tracer_groups = betrtracer_vars%nvolatile_tracer_groups
 
@@ -436,13 +438,14 @@ contains
    end subroutine calc_henrys_coeff
 !-------------------------------------------------------------------------------
    subroutine calc_bunsen_coeff(bounds, lbj, ubj, jtops, numf, filter, &
-        henrycef_col, t_soisno, smp_l, betrtracer_vars, bunsencef_col)
+        henrycef_col, t_soisno, smp_l, betrtracer_vars, bunsencef_col, betr_status)
    !
    ! DESCRIPTION
    ! compute Bunsen's coefficient
    !
    use betr_varcon        , only : denh2o  => bdenh2o
    use BeTRTracerType     , only : betrtracer_type
+   use BetrStatusType     , only : betr_status_type
    implicit none
    !arguments
    type(bounds_type),      intent(in) :: bounds                                    ! bounds
@@ -455,12 +458,14 @@ contains
    type(betrtracer_type),  intent(in) :: betrtracer_vars                           ! betr configuration information
    real(r8),               intent(in) :: henrycef_col(bounds%begc: , lbj: ,  1: )  !henry's constant
    real(r8),            intent(inout) :: bunsencef_col(bounds%begc: , lbj: , 1: )  !returning variable
-
+   type(betr_status_type) , intent(out)   :: betr_status
    !local variables
    integer            :: j, k, n, fc, c , trcid       !indices
    real(r8)           :: rho_vap(bounds%begc:bounds%endc, lbj:ubj)                           ! saturated vapor pressure for different layers
    character(len=255) :: subname = 'calc_bunsen_coeff'
    integer            :: nvolatile_tracer_groups
+
+   call betr_status%reset()
    nvolatile_tracer_groups = betrtracer_vars%nvolatile_tracer_groups
 
    SHR_ASSERT_ALL((ubound(jtops)             == (/bounds%endc/)),        errMsg(filename,__LINE__))
@@ -506,7 +511,7 @@ contains
 !-------------------------------------------------------------------------------
 
    subroutine calc_dual_phase_convert_coeff(bounds, lbj, ubj, jtops, numf, filter, &
-     biophysforc, betrtracer_vars, tracercoeff_vars)
+     biophysforc, betrtracer_vars, tracercoeff_vars, betr_status)
 
    !DESCRIPTIONS:
    !compute phase conversion coefficients between gaseous and aqueous phases
@@ -517,6 +522,7 @@ contains
    use BeTRTracerType     , only : betrtracer_type
    use TracerCoeffType    , only : tracercoeff_type
    use betr_varcon        , only : denh2o => bdenh2o, denice => bdenice
+   use BetrStatusType     , only : betr_status_type
    implicit none
    !arguments
    type(bounds_type)                , intent(in)    :: bounds                      ! bounds
@@ -527,13 +533,13 @@ contains
    type(betrtracer_type)            , intent(in)    :: betrtracer_vars             ! betr configuration information
    type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
    type(tracercoeff_type)           , intent(inout) :: tracercoeff_vars            ! structure containing tracer transport parameters
-
+   type(betr_status_type)           , intent(out)   :: betr_status
    !local variables
    integer            :: j, n, k, fc, c , trcid  ! indices
    character(len=255) :: subname = 'calc_dual_phase_convert_coeff'
 
+   call betr_status%reset()
    SHR_ASSERT_ALL((ubound(jtops)                   == (/bounds%endc/)),        errMsg(filename,__LINE__))
-
    associate(                                                                    &
     ngwmobile_tracer_groups    => betrtracer_vars%ngwmobile_tracer_groups      , & !Input: [integer(:)], number of tracers
     tracer_group_memid         => betrtracer_vars%tracer_group_memid           , & !Input: [integer(:)], tracer id
@@ -1060,7 +1066,7 @@ contains
 !-------------------------------------------------------------------------------
 
    subroutine set_multi_phase_diffusion(bounds, lbj, ubj, jtops, numf, filter, &
-      biophysforc, betrtracer_vars, tracercoeff_vars)
+      biophysforc, betrtracer_vars, tracercoeff_vars, betr_status)
    !
    ! DESCRIPTION
    ! set parameters for the dual phase diffusion
@@ -1068,6 +1074,7 @@ contains
    !USES
    use TracerCoeffType    , only : tracercoeff_type
    use BeTRTracerType     , only : betrtracer_type
+   use BetrStatusType     , only : betr_status_type
    implicit none
    !ARGUMENTS
    type(bounds_type)                , intent(in)    :: bounds  ! bounds
@@ -1078,13 +1085,14 @@ contains
    type(betrtracer_type)            , intent(in)    :: betrtracer_vars      ! betr configuration information
    type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
    type(tracercoeff_type)           , intent(inout) :: tracercoeff_vars ! structure containing tracer transport parameters
-
+   type(betr_status_type)           , intent(out)   :: betr_status
    !
    real(r8) :: bulkdiffus(bounds%begc:bounds%endc,lbj:ubj,1:betrtracer_vars%ntracer_groups )  !weighted bulk diffusivity for dual-phase diffusion
 
    !maybe I should use tau_soil as a local variable, I will check this later
    character(len=255) :: subname='set_multi_phase_diffusion'
 
+   call betr_status%reset()
    SHR_ASSERT_ALL((ubound(jtops)           == (/bounds%endc/)),        errMsg(filename,__LINE__))
 
    !compute tortuosity
@@ -1111,12 +1119,13 @@ contains
 
 !--------------------------------------------------------------------------------
    subroutine set_phase_convert_coeff(bounds, lbj, ubj, jtops, numf, filter, &
-        dz, biophysforc, betrtracer_vars, tracercoeff_vars)
+        dz, biophysforc, betrtracer_vars, tracercoeff_vars, betr_status)
    !
    ! DESCRIPTION
    ! set parameters for phase conversion
    use TracerCoeffType    , only : tracercoeff_type
    use BeTRTracerType     , only : betrtracer_type
+   use BetrStatusType     , only : betr_status_type
    implicit none
    type(bounds_type)                , intent(in)    :: bounds  ! bounds
    integer                          , intent(in)    :: lbj, ubj             ! lower and upper bounds, make sure they are > 0
@@ -1127,17 +1136,22 @@ contains
    type(betrtracer_type)            , intent(in)    :: betrtracer_vars             ! betr configuration information
    type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
    type(tracercoeff_type)           , intent(inout) :: tracercoeff_vars ! structure containing tracer transport parameters
+   type(betr_status_type)           , intent(out)   :: betr_status
+
    character(len=255) :: subname = 'set_phase_convert_coeff'
 
-   SHR_ASSERT_ALL((ubound(jtops)           == (/bounds%endc/)),        errMsg(filename,__LINE__))
-   SHR_ASSERT_ALL((ubound(dz)              == (/bounds%endc, ubj/)),        errMsg(filename,__LINE__))
+   call betr_status%reset()
+
+   SHR_ASSERT_ALL((ubound(jtops)   == (/bounds%endc/)),        errMsg(filename,__LINE__))
+   SHR_ASSERT_ALL((ubound(dz)      == (/bounds%endc, ubj/)),   errMsg(filename,__LINE__))
 
     !compute Henry's law constant
    call calc_henrys_coeff(bounds, lbj, ubj, jtops, numf, filter                    , &
        biophysforc%t_soisno_col(bounds%begc:bounds%endc,lbj:ubj)              ,      &
        biophysforc%soil_pH(bounds%begc:bounds%endc, lbj:ubj),  betrtracer_vars  ,    &
        tracercoeff_vars%aqu2neutralcef_col(bounds%begc:bounds%endc,lbj:ubj, : )    , &
-       tracercoeff_vars%henrycef_col(bounds%begc:bounds%endc, lbj:ubj, : ))
+       tracercoeff_vars%henrycef_col(bounds%begc:bounds%endc, lbj:ubj, : ), betr_status)
+    if(betr_status%check_status())return
 
    !compute Bunsen's coefficients
    call calc_bunsen_coeff(bounds, lbj, ubj, jtops, numf, filter                    , &
@@ -1145,7 +1159,8 @@ contains
         biophysforc%t_soisno_col(bounds%begc:bounds%endc, lbj:ubj)            ,      &
         biophysforc%smp_l_col    (bounds%begc:bounds%endc, lbj:ubj)            ,     &
         betrtracer_vars                                                            , &
-        tracercoeff_vars%bunsencef_col(bounds%begc:bounds%endc, lbj:ubj, :))
+        tracercoeff_vars%bunsencef_col(bounds%begc:bounds%endc, lbj:ubj, :), betr_status)
+    if(betr_status%check_status())return
 
    !compute equilibrium fraction to liquid phase conversion parameter
    if(betrtracer_vars%nsolid_equil_tracers>0)then
@@ -1153,12 +1168,14 @@ contains
         biophysforc%t_soisno_col(bounds%begc:bounds%endc, lbj:ubj)            ,      &
         biophysforc%h2osoi_ice_col(bounds%begc:bounds%endc,lbj:ubj)            ,     &
         dz(bounds%begc:bounds%endc, lbj:ubj)                                   ,     &
-        betrtracer_vars, tracercoeff_vars%aqu2equilsolidcef_col(bounds%begc:bounds%endc, lbj:ubj,:))
+        betrtracer_vars, &
+        tracercoeff_vars%aqu2equilsolidcef_col(bounds%begc:bounds%endc, lbj:ubj,:), betr_status)
+     if(betr_status%check_status())return
    endif
 
    !compute phase conversion coefficients
-   call calc_dual_phase_convert_coeff(bounds, lbj, ubj, jtops, numf, filter, biophysforc, betrtracer_vars, tracercoeff_vars)
-
+   call calc_dual_phase_convert_coeff(bounds, lbj, ubj, jtops, numf, filter, &
+      biophysforc, betrtracer_vars, tracercoeff_vars, betr_status)
 
    end subroutine set_phase_convert_coeff
 
@@ -1166,7 +1183,7 @@ contains
 
   !------------------------------------------------------------------------
    subroutine calc_tracer_infiltration(bounds, jtops, numf, filter, bunsencef_topsoi, &
-     betrtracer_vars, tracerboundarycond_vars, biogeo_flux,  tracer_flx_infl)
+     betrtracer_vars, tracerboundarycond_vars, biogeo_flux,  tracer_flx_infl, betr_status)
    !
    ! DESCRIPTION
    ! calculate advection velocity for BeTR code
@@ -1180,6 +1197,7 @@ contains
    use TracerBoundaryCondType, only : tracerboundarycond_type
    use BeTRTracerType        , only : betrtracer_type
    use betr_varcon           , only : denh2o  => bdenh2o
+   use BetrStatusType        , only : betr_status_type
    implicit none
    !ARGUMENTS
    type(bounds_type)            , intent(in)    :: bounds
@@ -1191,9 +1209,12 @@ contains
    type(tracerboundarycond_type), intent(in)    :: tracerboundarycond_vars
    type(betr_biogeo_flux_type)  , intent(in)    :: biogeo_flux
    real(r8)                     , intent(inout) :: tracer_flx_infl(bounds%begc: , 1: )
+   type(betr_status_type)       , intent(out)   :: betr_status
 
    ! local variables
    integer :: fc, c, j
+
+   call betr_status%reset()
     ! remove compiler warnings for unused dummy args
     !if (len(betrtracer_vars%betr_simname) > 0) continue
 
@@ -1320,8 +1341,8 @@ contains
 
 
    !------------------------------------------------------------------------
-   subroutine calc_equil_to_liquid_convert_coeff(bounds, lbj, ubj, jtops, numf, filter, t_soisno, h2osoi_ice, dz, &
-       betrtracer_vars, aqu2equilsolidcef_col)
+   subroutine calc_equil_to_liquid_convert_coeff(bounds, lbj, ubj, jtops, numf, filter,&
+       t_soisno, h2osoi_ice, dz, betrtracer_vars, aqu2equilsolidcef_col, betr_status)
    !
    ! DESCRIPTION
    ! calculate partition parameter between solid and aqueous phase tracers
@@ -1329,9 +1350,12 @@ contains
    ! for water isotopes, this represents ice/liquid equilibrium partitioning, it could also
    ! mean linear isotherms of adsorption/desorption. Currently, it is only
    ! for water isotope partitioning between liquid water and ice
-   !
+   ! It is temporary not needed for water isotopes. Rather an
+   ! explicit mass proportional partitioning during freeze-thaw is implemented.
+   ! June 7, 2016. Jinyun Tang
    use betr_varcon           , only : denh2o => bdenh2o, denice => bdenice
    use BeTRTracerType        , only : betrtracer_type
+   use BetrStatusType        , only : betr_status_type
    implicit none
    type(bounds_type)     , intent(in)    :: bounds  ! bounds
    integer               , intent(in)    :: lbj, ubj                                          ! lower and upper bounds, make sure they are > 0
@@ -1344,10 +1368,14 @@ contains
    real(r8)              , intent(in)    :: dz(bounds%begc: , lbj: )
    real(r8)              , intent(inout) :: aqu2equilsolidcef_col(bounds%begc:bounds%endc, &
                                               lbj:ubj, 1:betrtracer_vars%nsolid_equil_tracer_groups)
+   type(betr_status_type), intent(out)   :: betr_status
 
+   !temporary variables
    real(r8) :: alpha_sl
    integer  :: fc, c, j
 
+   call betr_status%reset()
+   return
    SHR_ASSERT_ALL((ubound(t_soisno)          == (/bounds%endc, ubj/)), errMsg(filename,__LINE__))
    SHR_ASSERT_ALL((ubound(h2osoi_ice)        == (/bounds%endc, ubj/)), errMsg(filename,__LINE__))
    SHR_ASSERT_ALL((ubound(dz)                == (/bounds%endc, ubj/)), errMsg(filename,__LINE__))
@@ -1384,13 +1412,14 @@ contains
 
   !-----------------------------------------------------------------------
   subroutine get_zwt (bounds, numf, filter, zi, &
-       biophysforc, zwt,jwt)
+       biophysforc, zwt,jwt, betr_status)
     !
     ! !DESCRIPTION:
     ! Finds the first unsaturated layer going up. Also allows a perched water table over ice.
     !
     use tracer_varcon      , only : nlevsoi  => betr_nlevsoi
     use betr_varcon        , only : tfrz => btfrz
+    use BetrStatusType     , only : betr_status_type
    implicit none
     ! !ARGUMENTS:
     type(bounds_type)                , intent(in)    :: bounds
@@ -1400,6 +1429,7 @@ contains
     real(r8)                         , intent(in)    :: zi(bounds%begc: , 0: )
     real(r8)                         , intent(inout) :: zwt( bounds%begc: ) ! water table depth (-) [col]
     integer                          , intent(inout) :: jwt(bounds%begc: )
+    type(betr_status_type)           , intent(out)   :: betr_status
     !
     ! !LOCAL VARIABLES:
     real(r8) :: f_sat    ! volumetric soil water defining top of water table or where production is allowed
@@ -1407,8 +1437,9 @@ contains
     integer  :: fc       ! filter column index
 
     !-----------------------------------------------------------------------
-    f_sat = 0.95_r8   !a number borrowed from zack's ch4 code
+    call betr_status%reset()
 
+    f_sat = 0.95_r8   !a number borrowed from zack's ch4 code
 
     SHR_ASSERT_ALL((ubound(zwt) == (/bounds%endc/)), errMsg(filename, __LINE__))
     SHR_ASSERT_ALL((ubound(zi) == (/bounds%endc, nlevsoi/)), errMsg(filename, __LINE__))
@@ -1454,7 +1485,7 @@ contains
 
   !-----------------------------------------------------------------------
   subroutine calc_aerecond(bounds, num_soilp, filter_soilp, jwt, biophysforc,  betrtracer_vars, &
-      betr_aerecond_vars, tracercoeff_vars)
+      betr_aerecond_vars, tracercoeff_vars, betr_status)
   !
   ! DESCRIPTION
   !
@@ -1468,6 +1499,7 @@ contains
   use tracer_varcon      , only : nlevsoi  => betr_nlevsoi
   use MathfuncMod        , only : safe_div
   use betr_ctrl          , only : betr_use_cn
+  use BetrStatusType     , only : betr_status_type
   implicit none
   type(bounds_type)                , intent(in)    :: bounds
   integer                          , intent(in)    :: num_soilp                 ! number of column soil points in column filter
@@ -1477,6 +1509,7 @@ contains
   type(betr_aerecond_type)         , intent(in)    :: betr_aerecond_vars
   type(betrtracer_type)            , intent(in)    :: betrtracer_vars            ! betr configuration information
   type(tracercoeff_type)           , intent(inout) :: tracercoeff_vars
+  type(betr_status_type)           , intent(out)   :: betr_status
 
   real(r8) :: aerecond               !
   real(r8) :: nppratio
@@ -1492,6 +1525,8 @@ contains
   real(r8) :: unsat_aere_ratio= 0.05_r8 / 0.3_r8
   logical  :: usefrootc = .false.                                    ! wait to be read in later
   integer  :: j, fp, p, c, g, kk, k, trcid
+
+  call betr_status%reset()
 
   SHR_ASSERT_ALL((ubound(jwt) == (/bounds%endc/)), errMsg(filename, __LINE__))
 
@@ -1595,7 +1630,7 @@ contains
 
   !-----------------------------------------------------------------------
   subroutine betr_annualupdate(betr_time, bounds, num_soilc, filter_soilc, num_soilp, filter_soilp, &
-       biophysforc, betr_aerecond_vars, tracercoeff_vars)
+       biophysforc, betr_aerecond_vars, tracercoeff_vars, betr_status)
     !
     ! !DESCRIPTION: Annual mean fields.
     !
@@ -1604,6 +1639,7 @@ contains
     use betr_varcon       , only : secspday => bsecspday
     use tracercoeffType   , only : tracercoeff_type
     use BeTR_aerocondType , only : betr_aerecond_type
+    use BetrStatusType    , only : betr_status_type
     !
     ! !ARGUMENTS:
     type(betr_time_type)             , intent(in)    :: betr_time
@@ -1615,6 +1651,7 @@ contains
     type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
     type(betr_aerecond_type)         , intent(inout) :: betr_aerecond_vars
     type(tracercoeff_type)           , intent(inout) :: tracercoeff_vars
+    type(betr_status_type)           , intent(out)   :: betr_status
     !
     ! !LOCAL VARIABLES:
     integer :: c,p       ! indices
@@ -1627,6 +1664,7 @@ contains
 
     ! remove unused dummy arg compiler warning
     if (bounds%begc > 0) continue
+    call betr_status%reset()
 
     associate(                                                               &
          agnpp           =>    biophysforc%agnpp_patch                    ,  & ! Input:  [real(r8) (:) ]  (gC/m2/s) aboveground NPP

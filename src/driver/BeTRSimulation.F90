@@ -27,6 +27,8 @@ module BeTRSimulation
   use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type, create_betr_biogeoFlux
   use BeTR_TimeMod             , only : betr_time_type
   use betr_varcon              , only : betr_maxpatch_pft
+  use BetrStatusType           , only : betr_status_type, create_betr_status_type
+  use BetrStatusSimType        , only : betr_status_sim_type, create_betr_status_sim_type
   implicit none
 
   private
@@ -39,6 +41,8 @@ module BeTRSimulation
      type(betr_biogeophys_input_type)    , public, pointer  :: biophys_forc(:)
      type(betr_biogeo_state_type)        , public, pointer  :: biogeo_state(:)
      type(betr_biogeo_flux_type)         , public, pointer  :: biogeo_flux(:)
+     type(betr_status_type)              , public, pointer  :: bstatus(:)
+     type(betr_status_sim_type)          , public, pointer  :: bsimstatus
      character(len=betr_filename_length) , private :: base_filename
      character(len=betr_filename_length) , private :: hist_filename
 
@@ -189,7 +193,8 @@ contains
     allocate(this%biophys_forc(bounds%begc:bounds%endc), source=create_betr_biogeophys_input())
     allocate(this%biogeo_flux(bounds%begc:bounds%endc), source=create_betr_biogeoFlux())
     allocate(this%biogeo_state(bounds%begc:bounds%endc), source=create_betr_biogeo_state())
-
+    allocate(this%bstatus(bounds%begc:bounds%endc), source=create_betr_status_type())
+    allocate(this%bsimstatus, source = create_betr_status_sim_type())
     !grid horizontal bounds
     betr_bounds%lbj  = 1 ; betr_bounds%ubj  = betr_nlevsoi
     betr_bounds%begc = 1 ; betr_bounds%endc = 1
@@ -211,8 +216,14 @@ contains
         waterstate_vars = waterstate)
 
     do c = bounds%begc, bounds%endc
-      call this%betr(c)%Init(namelist_buffer, betr_bounds, this%biophys_forc(c))
+      call this%betr(c)%Init(namelist_buffer, betr_bounds, this%biophys_forc(c), this%bstatus(c))
+      if(this%bstatus(c)%check_status())then
+        call this%bsimstatus%setcol(c)
+        call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
+        exit
+      endif
     enddo
+    if(this%bsimstatus%check_status())return
 
     if(betr_offline)then
       call this%CreateHistory(betr_nlevtrc_soil, this%num_soilc)
@@ -227,7 +238,7 @@ contains
          this%num_hist_state1d, this%num_hist_state2d, &
             this%num_hist_flux1d, this%num_hist_flux2d)
     endif
-    call this%regression%Init(base_filename, namelist_buffer)
+    call this%regression%Init(base_filename, namelist_buffer, this%bsimstatus)
 
   end subroutine BeTRInit
 
@@ -255,7 +266,6 @@ contains
     betr_bounds%begc = 1; betr_bounds%endc = 1
     betr_bounds%begl = 1; betr_bounds%endl = 1
     betr_bounds%begg = 1; betr_bounds%endg = 1
-
 
    !  call this%betr%tracerstates%Restart(betr_bounds, ncid, flag=flag, betrtracer_vars=this%betr%tracers)
 
@@ -332,7 +342,7 @@ contains
     use TracerBalanceMod, only : begin_betr_tracer_massbalance
     implicit none
     !ARGUMENTS
-    class(betr_simulation_type)   :: this
+    class(betr_simulation_type), intent(inout)   :: this
     type(bounds_type), intent(in) :: bounds
 
     !TEMPORARY VARIABLES
@@ -351,8 +361,14 @@ contains
       call begin_betr_tracer_massbalance(betr_bounds,         &
          this%num_soilc, this%filter_soilc,                   &
          this%betr(c)%tracers, this%betr(c)%tracerstates,     &
-         this%betr(c)%tracerfluxes)
+         this%betr(c)%tracerfluxes, this%bstatus(c))
+      if(this%bstatus(c)%check_status())then
+        call this%bsimstatus%setcol(c)
+        call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
+        exit
+      endif
     enddo
+
   end  subroutine BeTRSimulationBeginMassBalanceCheck
   !---------------------------------------------------------------------------------
 
@@ -380,10 +396,15 @@ contains
     betr_bounds%begg = 1; betr_bounds%endg = 1
 
    do c = bounds%begc, bounds%endc
-    call betr_tracer_massbalance_check(betr_time, betr_bounds,           &
+      call betr_tracer_massbalance_check(betr_time, betr_bounds,           &
          this%num_soilc, this%filter_soilc,                              &
          this%betr(c)%tracers, this%betr(c)%tracerstates,                &
-         this%betr(c)%tracerfluxes)
+         this%betr(c)%tracerfluxes, this%bstatus(c))
+      if(this%bstatus(c)%check_status())then
+        call this%bsimstatus%setcol(c)
+        call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
+        exit
+      endif
    enddo
   end subroutine BeTRSimulationMassBalanceCheck
 
@@ -665,7 +686,6 @@ contains
   cc = 1
 
   do c = bounds%begc, bounds%endc
-
   if(present(carbonflux_vars))then
     do pi = 1, betr_maxpatch_pft
        this%biophys_forc(c)%annsum_npp_patch(pi) = 0._r8
@@ -810,7 +830,6 @@ contains
 
   integer :: begp, begc, endp, endc
   integer :: p, c
-
 
   if(present(carbonflux_vars))then
     !do nothing
@@ -1230,18 +1249,75 @@ contains
 
   end subroutine BeTRSimulationRetrieveHistory
   !------------------------------------------------------------------------
-  subroutine BeTRSimulationRestart(this, bounds, ncid, flag)
+  subroutine BeTRSimulationRestart(this, bounds, ncid, flag, numf, filter)
   !DESCRIPTION
   !create or read restart file
   use ncdio_pio      , only : file_desc_t
+  use betr_varcon         , only : spval => bspval
+  use restUtilMod    , only : restartvar
+  use ncdio_pio      , only : file_desc_t
+  use ncdio_pio      , only : ncd_double
   implicit none
   ! !ARGUMENTS:
   class(betr_simulation_type) , intent(inout) :: this
   type(bounds_type)    , intent(in)    :: bounds
   class(file_desc_t)   , intent(inout) :: ncid                                         ! netcdf id
   character(len=*)     , intent(in)    :: flag                                         ! 'read' or 'write'
+  integer, intent(in) :: numf
+  integer, intent(in) :: filter(:)
+
+  !local variables
+  real(r8), pointer :: states_1d(:,:)
+  real(r8), pointer :: states_2d(:,:,:)
+  integer :: nrest_1d, nrest_2d
+  integer :: c, jj, fc
+  character(len=255) :: rest_varname_1d(200)
+  character(len=255) :: rest_varname_2d(200)
+  logical :: readvar      ! determine if variable is on initial file
+  real(r8), pointer :: ptr1d(:)
+  real(r8), pointer :: ptr2d(:,:)
+  type(betr_bounds_type)     :: betr_bounds
+
+  c = bounds%begc
+  call this%betr(c)%get_restartvar(nrest_1d, nrest_2d,rest_varname_1d, &
+     rest_varname_2d)
+
+  allocate(states_1d(bounds%begc:bounds%endc, 1:nrest_1d))
+  allocate(states_2d(bounds%begc:bounds%endc, 1:betr_nlevtrc_soil, 1:nrest_2d))
+
+  if(trim(flag)/='define')then
+    !assign initial conditions
+    betr_bounds%lbj  = 1 ; betr_bounds%ubj  = betr_nlevsoi
+    betr_bounds%begc = 1 ; betr_bounds%endc = 1
+    betr_bounds%begp = 1 ; betr_bounds%endp = betr_maxpatch_pft
+    betr_bounds%begl = 1 ; betr_bounds%endl = 1
+    betr_bounds%begg = 1 ; betr_bounds%endg = 1
+    do fc = 1, numf
+      c = filter(fc)
+      call this%betr(c)%set_restvar(betr_bounds, 1, betr_nlevtrc_soil, nrest_1d,&
+        nrest_2d, states_1d(c:c,:), states_2d(c:c,:,:), flag)
+    enddo
+  endif
+
+  do jj = 1, nrest_1d
+    ptr1d => states_1d(:, jj)
+    call restartvar(ncid=ncid, flag=flag, varname=trim(rest_varname_1d(jj)), &
+       xtype=ncd_double,  dim1name='column', long_name='',  units='', &
+       interpinic_flag='interp' , readvar=readvar, data=ptr1d)
+  enddo
+  do jj = 1, nrest_2d
+    ptr2d => states_2d(:, :, jj)
+    call restartvar(ncid=ncid, flag=flag, varname=trim(rest_varname_2d(jj)), xtype=ncd_double,  &
+      dim1name='column',dim2name='levtrc', switchdim=.true., &
+      long_name='',  units='', fill_value=spval, &
+      interpinic_flag='interp', readvar=readvar, data=ptr2d)
+  enddo
 
 
+
+
+  deallocate(states_1d)
+  deallocate(states_2d)
   end subroutine BeTRSimulationRestart
 
 end module BeTRSimulation

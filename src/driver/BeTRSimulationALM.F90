@@ -185,11 +185,16 @@ contains
     betr_bounds%begl = 1; betr_bounds%endl = 1
     betr_bounds%begg = 1; betr_bounds%endg = 1
 
-
    do c = bounds%begc, bounds%endc
-    call this%betr(c)%step_without_drainage(betr_time, betr_bounds,               &
+     call this%betr(c)%step_without_drainage(betr_time, betr_bounds,            &
          this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp, &
-         this%biophys_forc(c), this%biogeo_flux(c), this%biogeo_state(c))
+         this%biophys_forc(c), this%biogeo_flux(c), this%biogeo_state(c), this%bstatus(c))
+
+     if(this%bstatus(c)%check_status())then
+        call this%bsimstatus%setcol(c)
+        call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
+        exit
+     endif
   enddo
   end subroutine ALMStepWithoutDrainage
 
@@ -240,7 +245,13 @@ contains
     do c = bounds%begc, bounds%endc
       call this%betr(c)%step_with_drainage(betr_bounds,      &
          this%num_soilc, this%filter_soilc, this%jtops, &
-         this%biogeo_flux(c))
+         this%biogeo_flux(c), this%bstatus(c))
+
+      if(this%bstatus(c)%check_status())then
+        call this%bsimstatus%setcol(c)
+        call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
+        exit
+      endif
     enddo
 
   end subroutine ALMStepWithDrainage
@@ -249,7 +260,7 @@ contains
   subroutine ALMBetrPlantSoilBGCSend(this, bounds, num_soilc,  filter_soilc)
   !this should be expanded
   implicit none
-  class(betr_simulation_alm_type) :: this
+  class(betr_simulation_alm_type), intent(inout)  :: this
   type(bounds_type) , intent(in)  :: bounds
   integer           , intent(in)  :: num_soilc
   integer           , intent(in)  :: filter_soilc(:)
@@ -271,7 +282,7 @@ contains
   subroutine ALMBetrPlantSoilBGCRecv(this, bounds, num_soilc,  filter_soilc)
   !this should be expanded
   implicit none
-  class(betr_simulation_alm_type) :: this
+  class(betr_simulation_alm_type), intent(inout)  :: this
   type(bounds_type) , intent(in)  :: bounds
   integer           , intent(in)  :: num_soilc
   integer           , intent(in)  :: filter_soilc(:)
@@ -302,7 +313,7 @@ contains
   implicit none
   !
   ! Arguments
-  class(betr_simulation_alm_type)    :: this
+  class(betr_simulation_alm_type), intent(inout)   :: this
   type(bounds_type)     , intent(in) :: bounds
   integer               , intent(in) :: num_nolakec                        ! number of column non-lake points in column filter
   integer               , intent(in) :: filter_nolakec(:)                  ! column filter for non-lake points
@@ -381,7 +392,7 @@ contains
   !this should be expanded and called after tracer update with drainage
   implicit none
   ! !ARGUMENTS:
-  class(betr_simulation_alm_type) :: this
+  class(betr_simulation_alm_type), intent(inout) :: this
   type(bounds_type) , intent(in)  :: bounds
   integer           , intent(in)  :: num_soilc
   integer           , intent(in)  :: filter_soilc(:)
@@ -410,7 +421,7 @@ contains
   use clm_varcon                 , only : grav,hfus,tfrz
   implicit none
   !ARGUMENTS
-  class(betr_simulation_alm_type)                        :: this
+  class(betr_simulation_alm_type), intent(inout)  :: this
   type(bounds_type)                      , intent(in)    :: bounds  ! bounds
   integer                                , intent(in)    :: lbj, ubj                                          ! lower and upper bounds, make sure they are > 0
   integer                                , intent(in)    :: numf                                              ! number of columns in column filter

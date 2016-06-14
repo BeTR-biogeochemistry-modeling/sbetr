@@ -35,7 +35,7 @@ module H2OIsotopePlantSoilBGCType
   ! Right now it is purposely empty
 
     type(plant_soilbgc_h2oiso_run_type), allocatable :: plants
-    
+
     allocate(plants)
     constructor = plants
 
@@ -52,7 +52,7 @@ module H2OIsotopePlantSoilBGCType
   use BeTR_decompMod             , only : betr_bounds_type
   implicit none
   ! !ARGUMENTS:
-  class(plant_soilbgc_h2oiso_run_type) , intent(in) :: this
+  class(plant_soilbgc_h2oiso_run_type) , intent(inout) :: this
   type(betr_bounds_type)               , intent(in) :: bounds
   integer                              , intent(in) :: lbj, ubj
 
@@ -67,16 +67,17 @@ module H2OIsotopePlantSoilBGCType
 
   !----------------------------------------------------------------------
   subroutine plant_soilbgc_summary(this,bounds, lbj, ubj, numf, &
-       filter, dz, betrtracer_vars, tracerflux_vars)
+       filter, dz, betrtracer_vars, tracerflux_vars, betr_status)
 
   ! !USES:
   use BeTRTracerType , only : BeTRtracer_type
   use tracerfluxType , only : tracerflux_type
   use BeTR_decompMod , only : betr_bounds_type
   use bshr_kind_mod  , only : r8 => shr_kind_r8
+  use BetrStatusType , only : betr_status_type
   implicit none
   ! !ARGUMENTS:
-  class(plant_soilbgc_h2oiso_run_type) , intent(in) :: this
+  class(plant_soilbgc_h2oiso_run_type) , intent(inout) :: this
   type(betr_bounds_type)               , intent(in) :: bounds
   integer                              , intent(in) :: lbj, ubj
   integer                              , intent(in) :: numf
@@ -84,7 +85,9 @@ module H2OIsotopePlantSoilBGCType
   real(r8)                             , intent(in) :: dz(bounds%begc:bounds%endc,1:ubj)
   type(BeTRtracer_type )               , intent(in) :: betrtracer_vars
   type(tracerflux_type)                , intent(in) :: tracerflux_vars
+  type(betr_status_type)               , intent(out)   :: betr_status
 
+  call betr_status%reset()
   ! remove compiler warnings for unused dummy args
   if (this%dummy_compiler_warning)                       continue
   if (bounds%begc > 0)                                   continue
@@ -106,7 +109,7 @@ module H2OIsotopePlantSoilBGCType
   use BeTR_decompMod             , only : betr_bounds_type
   ! !ARGUMENTS:
   implicit none
-  class(plant_soilbgc_h2oiso_run_type) , intent(in) :: this
+  class(plant_soilbgc_h2oiso_run_type) , intent(inout) :: this
   type(betr_bounds_type)               , intent(in) :: bounds
   integer                              , intent(in) :: numf
   integer                              , intent(in) :: filter(:)
@@ -129,7 +132,7 @@ module H2OIsotopePlantSoilBGCType
   use BeTR_biogeoFluxType , only : betr_biogeo_flux_type
   ! !ARGUMENTS:
   implicit none
-  class(plant_soilbgc_h2oiso_run_type) , intent(in)    :: this
+  class(plant_soilbgc_h2oiso_run_type) , intent(inout)    :: this
   type(betr_bounds_type)               , intent(in)    :: bounds
   integer                              , intent(in)    :: numf
   integer                              , intent(in)    :: filter(:)
@@ -159,7 +162,7 @@ module H2OIsotopePlantSoilBGCType
   use BeTR_EcophysConType  , only : betr_ecophyscon_type
   implicit none
   ! !ARGUMENTS:
-  class(plant_soilbgc_h2oiso_run_type) , intent(in) :: this
+  class(plant_soilbgc_h2oiso_run_type) , intent(inout) :: this
   type(betr_bounds_type)               , intent(in) :: bounds
   integer                              , intent(in) :: numf
   integer                              , intent(in) :: filter(:)

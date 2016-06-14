@@ -86,7 +86,7 @@ contains
     use BeTRTracerType, only : BeTRTracer_Type
     implicit none
     ! !ARGUMENTS:
-    class(TracerFlux_type)             :: this
+    class(TracerFlux_type), intent(inout)  :: this
     type(bounds_type)     , intent(in) :: bounds
     integer               , intent(in) :: lbj, ubj
     type(BeTRTracer_Type) , intent(in) :: betrtracer_vars
@@ -107,7 +107,7 @@ contains
     implicit none
     !
     ! !ARGUMENTS:
-    class(TracerFlux_type)             :: this
+    class(TracerFlux_type), intent(inout) :: this
     type(bounds_type)     , intent(in) :: bounds
     integer               , intent(in) :: lbj, ubj
     type(BeTRTracer_Type) , intent(in) :: betrtracer_vars
@@ -183,7 +183,7 @@ contains
     use BeTRTracerType, only: BeTRTracer_Type
     !
     ! !ARGUMENTS:
-    class(TracerFlux_type)             :: this
+    class(TracerFlux_type), intent(inout)  :: this
     type(bounds_type)     , intent(in) :: bounds
     type(BeTRTracer_Type) , intent(in) :: betrtracer_vars
 
@@ -315,7 +315,7 @@ contains
     ! !USES:
     !
     ! !ARGUMENTS:
-    class(TracerFlux_type)         :: this
+    class(TracerFlux_type), intent(inout) :: this
     type(bounds_type) , intent(in) :: bounds
     !
     ! !LOCAL VARIABLES:
@@ -418,7 +418,7 @@ contains
     use ncdio_pio      , only : file_desc_t
     !
     ! !ARGUMENTS:
-    class(TracerFlux_type)                :: this
+    class(TracerFlux_type), intent(inout) :: this
     type(bounds_type)     , intent(in)    :: bounds
     type(file_desc_t)     , intent(inout) :: ncid                                         ! netcdf id
     character(len=*)      , intent(in)    :: flag                                         ! 'read' or 'write'
@@ -445,7 +445,7 @@ contains
     ! Intitialize SNICAR variables for fresh snow column
     !
     ! !ARGUMENTS:
-    class(TracerFlux_type)             :: this
+    class(TracerFlux_type), intent(inout) :: this
     type(bounds_type)    , intent(in)  :: bounds
     integer              , intent(in)  :: numf
     integer              , intent(in)  :: filter(:)
@@ -492,7 +492,7 @@ contains
     ! do temporal average for different fluxes
 
     !!ARGUMENTS:
-    class(TracerFlux_type)             :: this
+    class(TracerFlux_type), intent(inout) :: this
     integer              , intent(in)  :: column     ! column index
     real(r8)             , intent(in)  :: dtime
 
@@ -530,7 +530,7 @@ contains
     use MathfuncMod    , only : dot_sum
     use BeTR_TimeMod   , only : betr_time_type
     implicit none
-    class(TracerFlux_type) , intent(in) :: this
+    class(TracerFlux_type) , intent(inout) :: this
     class(betr_time_type)  , intent(in) :: betr_time
     type(BeTRTracer_Type)  , intent(in) :: betrtracer_vars
     integer                , intent(in) :: c     ! column index
@@ -586,16 +586,19 @@ contains
 
 
   !----------------------------------------------------------------
-  subroutine Flux_display(this, c, jj, betrtracer_vars)
+  subroutine Flux_display(this, c, jj, betrtracer_vars, msg)
     !
     ! aggregate fluxes for mass balance check
 
     use BetrTracerType        , only : betrtracer_type
+    use betr_constants        , only : betr_errmsg_len
 
-    class(TracerFlux_type)               :: this
+    class(TracerFlux_type), intent(inout)  :: this
     type(BeTRTracer_Type)  , intent(in)  :: betrtracer_vars
     integer                , intent(in)  :: c     ! column index
     integer                , intent(in)  :: jj
+    character(len=betr_errmsg_len), intent(out) :: msg
+    character(len=betr_errmsg_len) :: msg1
     !local variables
     integer :: kk
 
@@ -610,18 +613,18 @@ contains
       !the total net physical loss currently includes infiltration, surface runoff, transpiration aided transport,
       !lateral drainage, vertical leaching
       !for volatile tracers, this includes surface emission surface three different pathways
-      write(iulog,*)tracernames(jj)
-      write(iulog,*) 'infl=',this%tracer_flx_infl_col(c,jj),',drain=',  this%tracer_flx_drain_col(c,jj),    &
+      write(msg,*)tracernames(jj), new_line('A')//'infl=',this%tracer_flx_infl_col(c,jj),&
+           ',drain=',  this%tracer_flx_drain_col(c,jj),    &
            ',surfrun=',this%tracer_flx_surfrun_col(c,jj),',vtrans=', this%tracer_flx_vtrans_col(c,jj),&
            ',leaching=', this%tracer_flx_leaching_col(c,jj),',dew_grnd=',this%tracer_flx_dew_grnd_col(c, jj),&
            ',dew_snow=', this%tracer_flx_dew_snow_col(c, jj),',sub_snow=',this%tracer_flx_sub_snow_col(c,jj)
 
       if(is_volatile(jj))then
          kk = volatileid(jj)
-         write(iulog,*) ',tpartm=', this%tracer_flx_tparchm_col(c,kk),',dif=', this%tracer_flx_dif_col(c,kk),  &
+         write(msg1,*) ',tpartm=', this%tracer_flx_tparchm_col(c,kk),',dif=', this%tracer_flx_dif_col(c,kk),  &
               ',ebu=',this%tracer_flx_ebu_col(c,kk)
       endif
-
+      msg = trim(msg)//new_line('A')//trim(msg1)
 
     end associate
   end subroutine Flux_display
@@ -633,7 +636,7 @@ contains
   use MathfuncMod, only : addone
   use BeTRTracerType , only : BeTRTracer_Type
   implicit none
-  class(TracerFlux_type)               :: this
+  class(TracerFlux_type), intent(inout) :: this
   type(bounds_type)    , intent(in)  :: bounds
   integer, intent(in) :: lbj, ubj
   real(r8), intent(inout) :: flux_2d(bounds%begc:bounds%endc, lbj:ubj,1:this%num_hist2d)

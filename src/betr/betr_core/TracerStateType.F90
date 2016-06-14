@@ -53,6 +53,7 @@ module TracerStateType
      procedure, private :: InitAllocate
      procedure, private :: InitHistory
      procedure, public  :: retrieve_hist
+     procedure, public  :: get_restartvars
   end type TracerState_type
 
 contains
@@ -68,7 +69,7 @@ contains
 
     implicit none
     ! !ARGUMENTS:
-    class(TracerState_type)           :: this
+    class(TracerState_type), intent(inout) :: this
     type(bounds_type)    , intent(in) :: bounds
     integer              , intent(in) :: lbj, ubj
     type(BeTRTracer_Type), intent(in) :: betrtracer_vars
@@ -90,7 +91,7 @@ contains
     implicit none
     !
     ! !ARGUMENTS:
-    class(TracerState_type)           :: this
+    class(TracerState_type), intent(inout) :: this
     type(bounds_type), intent(in)     :: bounds
     integer, intent(in)               :: lbj, ubj
     type(BeTRTracer_Type), intent(in) :: betrtracer_vars
@@ -150,7 +151,7 @@ contains
     use BeTRTracerType, only: BeTRTracer_Type
     !
     ! !ARGUMENTS:
-    class(TracerState_type)           :: this
+    class(TracerState_type), intent(inout) :: this
     type(bounds_type)    , intent(in) :: bounds
     type(BeTRTracer_Type), intent(in) :: betrtracer_vars
     !
@@ -170,8 +171,6 @@ contains
          frozenid          =>  betrtracer_vars%frozenid              &
          )
 
-      this%num_hist1d=0
-      this%num_hist2d=0
       call this%add_hist_var2d(fname='TRACER_P_GAS', units='Pa', type2d='levtrc',  &
            avgflag='A', long_name='total gas pressure')
 
@@ -222,7 +221,7 @@ contains
   end subroutine InitHistory
 
   !------------------------------------------------------------------------
-  subroutine Restart(this, bounds, ncid, flag, betrtracer_vars)
+  subroutine Restart(this, bounds, lbj, ubj, nrest_1d, nrest_2d, states_1d, states_2d, betrtracer_vars, flag)
     !
     ! !DESCRIPTION:
     ! Read/Write module information to/from restart file.
@@ -230,23 +229,23 @@ contains
     ! !USES:
     use betr_ctrl      , only : iulog  => biulog
     use BeTRTracerType , only : BeTRTracer_Type
-    use restUtilMod    , only : restartvar
-    use ncdio_pio      , only : file_desc_t
-    use ncdio_pio      , only : ncd_double
+    use MathfuncMod, only : addone
     !
     implicit none
     ! !ARGUMENTS:
-    class(TracerState_type)              :: this
+    class(TracerState_type), intent(inout)  :: this
     type(bounds_type)    , intent(in)    :: bounds
-    class(file_desc_t)   , intent(inout) :: ncid                                         ! netcdf id
-    character(len=*)     , intent(in)    :: flag                                         ! 'read' or 'write'
+    integer, intent(in) :: nrest_1d, nrest_2d
+    integer, intent(in) :: lbj, ubj
+    real(r8), intent(inout) :: states_1d(bounds%begc:bounds%endc, 1:nrest_1d)
+    real(r8), intent(inout) :: states_2d(bounds%begc:bounds%endc, lbj:ubj, 1:nrest_1d)
     type(BeTRTracer_Type), intent(in)    :: betrtracer_vars
+    character(len=*), intent(in) :: flag
     !
     ! !LOCAL VARIABLES:
     integer :: j,c,jj,kk ! indices
-    logical :: readvar      ! determine if variable is on initial file
-    real(r8), pointer :: ptr1d(:)
-    real(r8), pointer :: ptr2d(:,:)
+
+    integer :: idtemp1d, idtemp2d
 
     ! remove unused dummy arg compiler warning
     if (bounds%begc > 0) continue
@@ -260,45 +259,52 @@ contains
          is_frozen         =>  betrtracer_vars%is_frozen           , &
          frozenid          =>  betrtracer_vars%frozenid              &
          )
-
+     idtemp1d = 0; idtemp2d= 0
+     if(trim(flag)=='read')then
       do jj = 1, ntracers
          if(jj<= ngwmobile_tracers)then
 
-            ptr1d => this%tracer_conc_aquifer_col(:, jj)
-            call restartvar(ncid=ncid, flag=flag, varname=trim(tracernames(jj))//'_TRACER_CONC_AQUIFER', &
-                 xtype=ncd_double,  dim1name='column', long_name='',  units='', &
-                 interpinic_flag='interp' , readvar=readvar, data=ptr1d)
+            this%tracer_conc_aquifer_col(:, jj) = states_1d(:,addone(idtemp1d))
 
-            ptr2d => this%tracer_conc_mobile_col(:, :, jj)
-            call restartvar(ncid=ncid, flag=flag, varname=trim(tracernames(jj))//'_TRACER_CONC_MOIBLE', xtype=ncd_double,  &
-                 dim1name='column',dim2name='levtrc', switchdim=.true., &
-                 long_name='',  units='', fill_value=spval, &
-                 interpinic_flag='interp', readvar=readvar, data=ptr2d)
+            this%tracer_conc_mobile_col(:, :, jj) = states_2d(:,:,addone(idtemp2d))
 
             if(is_adsorb(jj))then
-               ptr2d => this%tracer_conc_solid_equil_col(:, :, adsorbid(jj))
-               call restartvar(ncid=ncid, flag=flag, varname=trim(tracernames(jj))//'_TRACER_CONC_SOLID_EQUIL', xtype=ncd_double,  &
-                    dim1name='column',dim2name='levtrc', switchdim=.true., &
-                    long_name='',  units='', fill_value=spval, &
-                    interpinic_flag='interp', readvar=readvar, data=ptr2d)
+              this%tracer_conc_solid_equil_col(:, :, adsorbid(jj)) = states_2d(:,:,addone(idtemp2d))
             endif
             if(is_frozen(jj))then
-              ptr2d => this%tracer_conc_frozen_col(:, :, frozenid(jj))
-              call restartvar(ncid=ncid, flag=flag, varname=trim(tracernames(jj))//'_TRACER_CONC_FROZEN', xtype=ncd_double,  &
-                   dim1name='column',dim2name='levtrc', switchdim=.true., &
-                   long_name='',  units='', fill_value=spval, &
-                   interpinic_flag='interp', readvar=readvar, data=ptr2d)
+              this%tracer_conc_frozen_col(:, :, frozenid(jj)) = states_2d(:,:,addone(idtemp2d))
             endif
          else
             kk = jj - ngwmobile_tracers
-            ptr2d => this%tracer_conc_solid_passive_col(:, :, kk)
-            call restartvar(ncid=ncid, flag=flag, varname=trim(tracernames(jj))//'TRACER_CONC_SOLID_PASSIVE', xtype=ncd_double,  &
-                 dim1name='column',dim2name='levtrc', switchdim=.true., &
-                 long_name='',  units='', &
-                 interpinic_flag='interp', readvar=readvar, data=ptr2d)
+            this%tracer_conc_solid_passive_col(:, :, kk)   = states_2d(:,:,addone(idtemp2d))
          endif
-
       enddo
+    elseif(trim(flag)=='write')then
+      do jj = 1, ntracers
+         if(jj<= ngwmobile_tracers)then
+
+            states_1d(:,addone(idtemp1d)) = this%tracer_conc_aquifer_col(:, jj)
+
+            states_2d(:,:,addone(idtemp2d)) = this%tracer_conc_mobile_col(:, :, jj)
+
+            if(is_adsorb(jj))then
+              states_2d(:,:,addone(idtemp2d)) = this%tracer_conc_solid_equil_col(:, :, adsorbid(jj))
+            endif
+            if(is_frozen(jj))then
+              states_2d(:,:,addone(idtemp2d)) = this%tracer_conc_frozen_col(:, :, frozenid(jj))
+            endif
+         else
+            kk = jj - ngwmobile_tracers
+            states_2d(:,:,addone(idtemp2d)) = this%tracer_conc_solid_passive_col(:, :, kk)
+         endif
+      enddo
+
+    endif
+!x  do not use the error check capability
+!x     if(idtemp1d/=nrest_1d)then
+!x     endif
+!x     if(idtemp1d/=nrest_2d)then
+!x     endif
     end associate
   end subroutine Restart
 
@@ -309,7 +315,7 @@ contains
     !  reset state variables
     !
     ! !ARGUMENTS:
-    class(TracerState_type)             :: this
+    class(TracerState_type), intent(inout) :: this
     integer               , intent(in)  :: column     ! column index
     !-----------------------------------------------------------------------
 
@@ -323,7 +329,7 @@ contains
   function int_mass_mobile_col(this, lbj, ubj, c, j, dz)result(int_mass)
   !DESCRIPTION
   !integrate mobile tracer mass, gas+aqueous
-  class(TracerState_type) :: this
+  class(TracerState_type), intent(inout) :: this
   integer, intent(in)     :: lbj, ubj
   integer, intent(in)     :: c, j
   real(r8), intent(in)    :: dz(lbj:ubj)
@@ -337,7 +343,7 @@ contains
   function int_mass_frozen_col(this, lbj, ubj, c, j, dz)result(int_mass)
   !DESCRIPTION
   !integrate frozen tracer mass
-  class(TracerState_type) :: this
+  class(TracerState_type), intent(inout) :: this
   integer, intent(in)     :: lbj, ubj
   integer, intent(in)     :: c, j
   real(r8), intent(in)    :: dz(lbj:ubj)
@@ -352,7 +358,7 @@ contains
   function int_mass_adsorb_col(this, lbj, ubj, c, j, dz)result(int_mass)
   !DESCRIPTION
   !integrate adsorbed tracer mass
-  class(TracerState_type) :: this
+  class(TracerState_type), intent(inout) :: this
   integer, intent(in)     :: lbj, ubj
   integer, intent(in)     :: c, j
   real(r8), intent(in)    :: dz(lbj:ubj)
@@ -366,7 +372,7 @@ contains
   function int_mass_solid_col(this, lbj, ubj, c, j, dz)result(int_mass)
   !DESCRIPTION
   !integrate solid tracer mass
-  class(TracerState_type) :: this
+  class(TracerState_type), intent(inout) :: this
   integer, intent(in)     :: lbj, ubj
   integer, intent(in)     :: c, j
   real(r8), intent(in)    :: dz(lbj:ubj)
@@ -384,7 +390,7 @@ contains
   use MathfuncMod, only : addone
   use BeTRTracerType , only : BeTRTracer_Type
   implicit none
-  class(TracerState_type) :: this
+  class(TracerState_type), intent(inout) :: this
   type(bounds_type)    , intent(in)  :: bounds
   integer, intent(in) :: lbj, ubj
   real(r8), intent(inout) :: state_2d(bounds%begc:bounds%endc, lbj:ubj,1:this%num_hist2d)
@@ -440,4 +446,56 @@ contains
 
   end associate
   end subroutine retrieve_hist
+
+  !----------------------------------------------------------------
+
+  subroutine get_restartvars(this, nrest_1d, nrest_2d,rest_varname_1d, &
+    rest_varname_2d,  betrtracer_vars)
+  !
+  !DESCRIPTION
+  !set restr files
+  use betr_ctrl, only : max_betr_hist_type
+  use MathfuncMod, only : addone
+  use BeTRTracerType , only : BeTRTracer_Type
+  implicit none
+  class(TracerState_type), intent(inout) :: this
+  integer, intent(out) :: nrest_1d, nrest_2d
+  character(len=255), intent(out) :: rest_varname_1d(max_betr_hist_type)
+  character(len=255), intent(out) :: rest_varname_2d(max_betr_hist_type)
+  type(BeTRTracer_Type)  , intent(in)  :: betrtracer_vars
+  integer :: jj, kk
+
+    associate(                                                       &
+         ntracers          =>  betrtracer_vars%ntracers            , &
+         ngwmobile_tracers =>  betrtracer_vars%ngwmobile_tracers   , &
+         is_adsorb         =>  betrtracer_vars%is_adsorb           , &
+         adsorbid          =>  betrtracer_vars%adsorbid            , &
+         tracernames       =>  betrtracer_vars%tracernames         , &
+         is_frozen         =>  betrtracer_vars%is_frozen           , &
+         frozenid          =>  betrtracer_vars%frozenid              &
+         )
+
+    nrest_1d = 0; nrest_2d = 0
+      do jj = 1, ntracers
+         if(jj<= ngwmobile_tracers)then
+            rest_varname_1d(addone(nrest_1d))=trim(tracernames(jj))//'_TRACER_CONC_AQUIFER'
+
+            rest_varname_2d(addone(nrest_2d))=trim(tracernames(jj))//'_TRACER_CONC_MOIBLE'
+
+            if(is_adsorb(jj))then
+               rest_varname_2d(addone(nrest_2d))=trim(tracernames(jj))//'_TRACER_CONC_SOLID_EQUIL'
+            endif
+            if(is_frozen(jj))then
+              rest_varname_2d(addone(nrest_2d))=trim(tracernames(jj))//'_TRACER_CONC_FROZEN'
+            endif
+         else
+            kk = jj - ngwmobile_tracers
+            rest_varname_2d(addone(nrest_2d))=trim(tracernames(jj))//'TRACER_CONC_SOLID_PASSIVE'
+         endif
+      enddo
+    end associate
+
+  end subroutine get_restartvars
+
+
 end module TracerStateType

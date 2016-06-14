@@ -30,39 +30,41 @@ module TracerBalanceMod
 
     !--------------------------------------------------------------------------------
     subroutine begin_betr_tracer_massbalance(bounds,  numf, filter, &
-         betrtracer_vars, tracerstate_vars, tracerflux_vars)
+         betrtracer_vars, tracerstate_vars, tracerflux_vars, betr_status)
       !
       ! !DESCRIPTION:
       ! Preparing for tracer mass balance check
       !
       ! !USES:
-      use tracer_varcon            , only : nlevtrc_soil  => betr_nlevtrc_soil
-
+      use tracer_varcon   , only : nlevtrc_soil  => betr_nlevtrc_soil
+      use BetrStatusType  , only : betr_status_type
       implicit none
       ! !ARGUMENTS:
       type(bounds_type)      , intent(in)    :: bounds
       integer                , intent(in)    :: numf                        ! number of columns in column filter
       integer                , intent(in)    :: filter(:)                   ! column filter
       type(BeTRtracer_type)  , intent(in)    :: betrtracer_vars
-      type(TracerFlux_type)  , intent(in)    :: tracerflux_vars
+      type(TracerFlux_type)  , intent(inout) :: tracerflux_vars
       type(TracerState_type) , intent(inout) :: tracerState_vars
-
+      type(betr_status_type) , intent(out)   :: betr_status
 
       ! !LOCAL VARIABLES:
       character(len=256) :: subname='begin_betr_tracer_massbalance'
       integer :: fc, c
       integer :: lbj, ubj
 
+      call betr_status%reset()
       lbj = bounds%lbj;  ubj = bounds%ubj
       call tracerflux_vars%Reset(bounds, numf, filter)
-      call betr_tracer_mass_summary(bounds, lbj, ubj, numf, filter, betrtracer_vars, tracerstate_vars, &
-           tracerstate_vars%beg_tracer_molarmass_col)
+      call betr_tracer_mass_summary(bounds, lbj, ubj, numf, filter, &
+           betrtracer_vars, tracerstate_vars, &
+           tracerstate_vars%beg_tracer_molarmass_col, betr_status)
 
     end subroutine begin_betr_tracer_massbalance
 
     !--------------------------------------------------------------------------------
     subroutine betr_tracer_massbalance_check(betr_time, bounds,  numf, filter, &
-         betrtracer_vars, tracerstate_vars, tracerflux_vars)
+         betrtracer_vars, tracerstate_vars, tracerflux_vars, betr_status)
       !
       ! !DESCRIPTION:
       ! do mass balance check for betr tracers
@@ -75,12 +77,12 @@ module TracerBalanceMod
       !
       ! !USES:
 
-      use babortutils   , only : endrun
       use betr_ctrl     , only : iulog  => biulog, do_betr_otuput
       use betr_varcon   , only : namec  => bnamec
       use tracer_varcon , only : catomw,natomw
       use BeTR_TimeMod  , only : betr_time_type
-
+      use BetrStatusType, only : betr_status_type
+      use betr_constants, only : betr_errmsg_len
       implicit none
 
       ! !ARGUMENTS:
@@ -89,8 +91,9 @@ module TracerBalanceMod
       integer                , intent(in)    :: numf             ! number of columns in column filter
       integer                , intent(in)    :: filter(:)        ! column filter
       type(BeTRtracer_type)  , intent(in)    :: betrtracer_vars
-      type(TracerFlux_type)  , intent(in)    :: tracerflux_vars
+      type(TracerFlux_type)  , intent(inout) :: tracerflux_vars
       type(TracerState_type) , intent(inout) :: tracerState_vars
+      type(betr_status_type) , intent(out)   :: betr_status
 
       ! !LOCAL VARIABLES:
       integer  :: jj, fc, c, kk
@@ -100,7 +103,9 @@ module TracerBalanceMod
       real(r8), parameter :: err_min = 1.e-8_r8
       real(r8), parameter :: err_min_rel=1.e-3_r8
       integer    :: lbj, ubj
+      character(len=betr_errmsg_len) :: msg, msg1
 
+      call betr_status%reset()
       associate(                                                                            &
            beg_tracer_molarmass      => tracerstate_vars%beg_tracer_molarmass_col         , &
            end_tracer_molarmass      => tracerstate_vars%end_tracer_molarmass_col         , &
@@ -117,7 +122,7 @@ module TracerBalanceMod
       ubj = bounds%ubj
 
         call betr_tracer_mass_summary(bounds, lbj, ubj, numf, filter, betrtracer_vars, tracerstate_vars, &
-             end_tracer_molarmass)
+             end_tracer_molarmass, betr_status)
 
         dtime = betr_time%get_step_size()
 
@@ -136,13 +141,17 @@ module TracerBalanceMod
               endif
 
               if(abs(err_rel)>err_min_rel .and. do_betr_otuput)then
-                 write(iulog,*)'error exceeds the tolerance for tracer '//tracernames(kk), ' err=',errtracer(c,kk), ' col=',c
-                 write(iulog,*)'nstep=', betr_time%get_nstep()
-                 write(iulog,'(4(A,5X,E20.10))')'netpro=',tracer_flx_netpro(c,kk),' netphyloss=',tracer_flx_netphyloss(c,kk),&
-                      ' begm=',beg_tracer_molarmass(c,kk), &
-                      ' endm=',end_tracer_molarmass(c,kk)
-                 call tracerflux_vars%flux_display(c,kk,betrtracer_vars)
-                 call endrun(decomp_index=c, clmlevel=namec, msg=errMsg(mod_filename, __LINE__))
+                 write(msg,*)'error exceeds the tolerance for tracer '//tracernames(kk), &
+                      ' err=',errtracer(c,kk), ' col=',c, &
+                      new_line('A')//'nstep=', betr_time%get_nstep(), &
+                      new_line('A')//'netpro=',tracer_flx_netpro(c,kk),' netphyloss=',tracer_flx_netphyloss(c,kk),&
+                      new_line('A')//' begm=',beg_tracer_molarmass(c,kk), &
+                      new_line('A')//' endm=',end_tracer_molarmass(c,kk), &
+                      new_line('A')//errMsg(mod_filename, __LINE__)
+                 call tracerflux_vars%flux_display(c,kk,betrtracer_vars, msg1)
+                 msg = trim(msg)//new_line('A')//trim(msg1)
+                 call betr_status%set_msg(msg=msg, err=-1)
+                 return
               endif
            enddo
            bal_beg=0._r8
@@ -151,11 +160,12 @@ module TracerBalanceMod
            do kk = ngwmobile_tracers+1, ntracers
               errtracer(c,kk) = beg_tracer_molarmass(c,kk)-end_tracer_molarmass(c,kk) + tracer_flx_netpro(c,kk)
               if(abs(errtracer(c,kk))>err_min .and. do_betr_otuput)then
-                 write(iulog,*)'error exceeds the tolerance for tracer '//tracernames(kk), 'err=',errtracer(c,kk), 'col=',c
-                 write(iulog,*) betr_time%get_nstep(),is_mobile(kk)
-                 write(iulog,*) 'begmss=', beg_tracer_molarmass(c,kk), 'endmass=', end_tracer_molarmass(c,kk), &
-                      ' netpro=', tracer_flx_netpro(c,kk)
-                 call endrun(decomp_index=c, clmlevel=namec, msg=errMsg(mod_filename, __LINE__))
+                 write(msg,*)'error exceeds the tolerance for tracer '//tracernames(kk), 'err=',errtracer(c,kk), 'col=',c, &
+                     new_line('A')//'nstep=',betr_time%get_nstep(),'is_mobile=',is_mobile(kk), &
+                     new_line('A')//'begmass=', beg_tracer_molarmass(c,kk), 'endmass=', end_tracer_molarmass(c,kk), &
+                      ' netpro=', tracer_flx_netpro(c,kk),new_line('A'), errMsg(mod_filename, __LINE__)
+                 call betr_status%set_msg(msg=msg, err=-1)
+                 return
               endif
            enddo
 
@@ -168,7 +178,8 @@ module TracerBalanceMod
 
     !--------------------------------------------------------------------------------
 
-    subroutine betr_tracer_mass_summary(bounds, lbj, ubj, numf, filter, betrtracer_vars, tracerstate_vars, tracer_molarmass_col)
+    subroutine betr_tracer_mass_summary(bounds, lbj, ubj, numf, filter, betrtracer_vars,&
+       tracerstate_vars, tracer_molarmass_col, betr_status)
       !
       ! !DESCRIPTION:
       ! summarize the column tracer mass
@@ -176,8 +187,7 @@ module TracerBalanceMod
       ! !USES:
       use tracerstatetype , only : tracerstate_type
       use tracer_varcon   , only : nlevtrc_soil  => betr_nlevtrc_soil
-
-
+      use BetrStatusType  , only : betr_status_type
       implicit none
       ! !ARGUMENTS:
       type(bounds_type)       , intent(in)    :: bounds
@@ -187,9 +197,12 @@ module TracerBalanceMod
       type(betrtracer_type)   , intent(in)    :: betrtracer_vars             ! betr configuration information
       class(tracerstate_type) , intent(inout) :: tracerstate_vars            ! tracer state variables data structure
       real(r8)                , intent(inout) :: tracer_molarmass_col(bounds%begc:bounds%endc, 1:betrtracer_vars%ntracers)
+      type(betr_status_type)  , intent(out)   :: betr_status
+
       ! !LOCAL VARIABLES:
       integer :: jj, fc, c, kk
 
+      call betr_status%reset()
       ! remove unused dummy args compiler warnings
       if (lbj > 0) continue
       if (ubj > 0) continue

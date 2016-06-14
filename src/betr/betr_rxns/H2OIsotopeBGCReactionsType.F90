@@ -24,7 +24,6 @@ module H2OIsotopeBGCReactionsType
   use decompMod                , only : bounds_type
   use BGCReactionsMod          , only : bgc_reaction_type
   use tracer_varcon            , only : bndcond_as_conc, bndcond_as_flux
-  use babortutils              , only : endrun
   use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
   implicit none
 
@@ -73,14 +72,14 @@ module H2OIsotopeBGCReactionsType
   !
   ! DESCRIPTIONS
   ! initialize boundary condition types
-  ! USES  
+  ! USES
   use TracerBoundaryCondType , only : tracerboundarycond_type
   use tracer_varcon          , only : bndcond_as_conc, bndcond_as_flux
   use BeTRTracerType         , only : betrtracer_type
-  use BeTR_decompMod         , only : betr_bounds_type  
+  use BeTR_decompMod         , only : betr_bounds_type
   implicit none
   !arguments
-  class(bgc_reaction_h2oiso_type) , intent(in) :: this
+  class(bgc_reaction_h2oiso_type) , intent(inout) :: this
   type(BeTRtracer_type )          , intent(in) :: betrtracer_vars
   type(betr_bounds_type)          , intent(in) :: bounds
   type(tracerboundarycond_type)   , intent(in) :: tracerboundarycond_vars
@@ -101,19 +100,22 @@ module H2OIsotopeBGCReactionsType
 
 !-------------------------------------------------------------------------------
 
-  subroutine Init_betrbgc(this, bounds, lbj, ubj, betrtracer_vars)
+  subroutine Init_betrbgc(this, bounds, lbj, ubj, betrtracer_vars, bstatus)
   !
   ! DESCRIPTION
   ! initialize the betrbgc
-  ! USES  
+  ! USES
   use BeTRTracerType , only : betrtracer_type
   use MathfuncMod    , only : addone
   use BeTR_decompMod , only : betr_bounds_type
+  use BetrStatusType , only : betr_status_type
   implicit none
-  class(bgc_reaction_h2oiso_type) , intent(in)    :: this
+  class(bgc_reaction_h2oiso_type) , intent(inout)    :: this
   type(betr_bounds_type)          , intent(in)    :: bounds
   integer                         , intent(in)    :: lbj, ubj
   type(BeTRtracer_type )          , intent(inout) :: betrtracer_vars
+  type(betr_status_type)          , intent(out)   :: bstatus
+
   !local variables
   character(len=*)       , parameter :: subname ='Init_betrbgc'
   integer :: itemp_gwm
@@ -124,6 +126,7 @@ module H2OIsotopeBGCReactionsType
   integer :: itemp_grp, itemp_v, itemp_vgrp, itemp_adsgrp
   integer :: itemp_frz
 
+  call bstatus%reset()
   ! remove compiler warnings for unused dummy args
   if (this%dummy_compiler_warning) continue
   if (bounds%begc > 0) continue
@@ -154,60 +157,71 @@ module H2OIsotopeBGCReactionsType
   itemp_v = 0      !volatile id
   itemp_vgrp = 0   !volatile group
   itemp_frz = 0    !frozen tracer id
-  call betrtracer_vars%set_tracer(trc_id = betrtracer_vars%id_trc_n2, trc_name='N2'  ,      &
+  call betrtracer_vars%set_tracer(bstatus=bstatus, trc_id = betrtracer_vars%id_trc_n2, trc_name='N2'  ,      &
        is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = addone(itemp_grp),   &
        trc_group_mem= 1,  is_trc_volatile=.true., trc_volatile_id = addone(itemp_v)     ,   &
        trc_volatile_group_id = addone(itemp_vgrp))
+  if(bstatus%check_status())return
 
-  call betrtracer_vars%set_tracer(trc_id = betrtracer_vars%id_trc_o2, trc_name='O2'  ,      &
+  call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_o2, trc_name='O2'  ,      &
        is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = addone(itemp_grp),   &
        trc_group_mem = 1, is_trc_volatile=.true., trc_volatile_id = addone(itemp_v)     ,   &
        trc_volatile_group_id = addone(itemp_vgrp))
+  if(bstatus%check_status())return
 
-  call betrtracer_vars%set_tracer(trc_id = betrtracer_vars%id_trc_ar, trc_name='AR'  ,      &
+  call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_ar, trc_name='AR'  ,      &
        is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = addone(itemp_grp),   &
        trc_group_mem = 1, is_trc_volatile=.true., trc_volatile_id = addone(itemp_v)     ,   &
        trc_volatile_group_id = addone(itemp_vgrp))
+  if(bstatus%check_status())return
 
-  call betrtracer_vars%set_tracer(trc_id = betrtracer_vars%id_trc_co2x, trc_name='CO2x',    &
+  call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_co2x, trc_name='CO2x',    &
        is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = addone(itemp_grp)  , &
        trc_group_mem = 1, is_trc_volatile=.true., trc_volatile_id = addone(itemp_v)       , &
-       trc_volatile_group_id = addone(itemp_vgrp) )
+       trc_volatile_group_id = addone(itemp_vgrp))
+  if(bstatus%check_status())return
 
-  call betrtracer_vars%set_tracer(trc_id = betrtracer_vars%id_trc_ch4, trc_name='CH4',      &
+  call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_ch4, trc_name='CH4',      &
        is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = addone(itemp_grp),   &
        trc_group_mem = 1, is_trc_volatile=.true., trc_volatile_id = addone(itemp_v)     ,   &
        trc_volatile_group_id = addone(itemp_vgrp))
+  if(bstatus%check_status())return
 
-  call betrtracer_vars%set_tracer(trc_id = betrtracer_vars%id_trc_blk_h2o, trc_name='BLK_H2O' ,   &
+  call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_blk_h2o, trc_name='BLK_H2O' ,   &
        is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = addone(itemp_grp)      ,   &
        trc_group_mem = 1, is_trc_diffusive =.false., is_trc_volatile=.true.                   ,   &
        trc_volatile_id = addone(itemp_v), trc_volatile_group_id = addone(itemp_vgrp)          ,   &
-       is_trc_h2o=.true., trc_vtrans_scal=1._r8, is_trc_frozen=.true.,  trc_frozenid = addone(itemp_frz))
+       is_trc_h2o=.true., trc_vtrans_scal=1._r8, is_trc_frozen=.true.,  &
+       trc_frozenid = addone(itemp_frz))
+  if(bstatus%check_status())return
 
-  call betrtracer_vars%set_tracer(trc_id = betrtracer_vars%id_trc_o18_h2o, trc_name='O18_H2O' ,   &
+  call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_o18_h2o, trc_name='O18_H2O' ,   &
        is_trc_mobile=.true., is_trc_advective = .true., trc_group_id =  addone(itemp_grp)     ,   &
        trc_group_mem = 1, is_trc_diffusive =.false., is_trc_volatile=.true.                   ,   &
        trc_volatile_id = addone(itemp_v), trc_volatile_group_id = addone(itemp_vgrp)          ,   &
-       is_trc_h2o=.true., trc_vtrans_scal=1._r8, is_trc_frozen=.true.,  trc_frozenid = addone(itemp_frz))
+       is_trc_h2o=.true., trc_vtrans_scal=1._r8, is_trc_frozen=.true.,  &
+       trc_frozenid = addone(itemp_frz))
+  if(bstatus%check_status())return
 
-  call betrtracer_vars%set_tracer(trc_id = betrtracer_vars%id_trc_d_h2o, trc_name='D_H2O' ,   &
+  call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_d_h2o, trc_name='D_H2O' ,   &
        is_trc_mobile=.true., is_trc_advective = .true., trc_group_id =  addone(itemp_grp)     ,   &
        trc_group_mem = 1, is_trc_diffusive =.false., is_trc_volatile=.true.                   ,   &
        trc_volatile_id = addone(itemp_v), trc_volatile_group_id = addone(itemp_vgrp)          ,   &
-       is_trc_h2o=.true., trc_vtrans_scal=1._r8, is_trc_frozen=.true.,  trc_frozenid = addone(itemp_frz))
+       is_trc_h2o=.true., trc_vtrans_scal=1._r8, is_trc_frozen=.true., &
+       trc_frozenid = addone(itemp_frz))
+  if(bstatus%check_status())return
 
   end subroutine Init_betrbgc
 
 
 !-------------------------------------------------------------------------------
   subroutine set_boundary_conditions(this, bounds, num_soilc, filter_soilc, dz_top, betrtracer_vars, &
-       biophysforc, biogeo_flux, tracerboundarycond_vars)
+       biophysforc, biogeo_flux, tracerboundarycond_vars, betr_status)
   !
   ! DESCRIPTION
   ! set up boundary conditions for tracer movement
   !
-  ! USES  
+  ! USES
   use betr_ctrl              , only : iulog => biulog
   use TracerBoundaryCondType , only : tracerboundarycond_type
   use bshr_log_mod           , only : errMsg => shr_log_errMsg
@@ -216,9 +230,10 @@ module H2OIsotopeBGCReactionsType
   use betr_varcon            , only : denh2o  => bdenh2o
   use betr_varcon            , only : rgas => brgas
   use BeTR_biogeoFluxType    , only : betr_biogeo_flux_type
+  use BetrStatusType         , only : betr_status_type
   implicit none
   !ARGUMENTS
-  class(bgc_reaction_h2oiso_type)  , intent(in)    :: this
+  class(bgc_reaction_h2oiso_type)  , intent(inout)    :: this
   type(betr_bounds_type)           , intent(in)    :: bounds                     !
   integer                          , intent(in)    :: num_soilc                  ! number of columns in column filter_soilc
   integer                          , intent(in)    :: filter_soilc(:)            ! column filter_soilc
@@ -227,11 +242,13 @@ module H2OIsotopeBGCReactionsType
   type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
   type(betr_biogeo_flux_type)      , intent(in)    :: biogeo_flux
   type(tracerboundarycond_type)    , intent(inout) :: tracerboundarycond_vars !
-
+  type(betr_status_type)           , intent(out)   :: betr_status
   !local variables
   integer :: fc, c
   character(len=255) :: subname = 'set_boundary_conditions'
   real(r8) :: irt   !the inverse of R*T
+
+  call betr_status%reset()
   SHR_ASSERT_ALL((ubound(dz_top)                == (/bounds%endc/)),   errMsg(mod_filename,__LINE__))
 
   ! remove compiler warnings for unused dummy args
@@ -272,7 +289,7 @@ module H2OIsotopeBGCReactionsType
 
   subroutine calc_bgc_reaction(this, bounds, lbj, ubj, num_soilc, filter_soilc,              &
        num_soilp,filter_soilp, jtops, dtime, betrtracer_vars, tracercoeff_vars, biophysforc, &
-       tracerstate_vars, tracerflux_vars, tracerboundarycond_vars, plant_soilbgc)
+       tracerstate_vars, tracerflux_vars, tracerboundarycond_vars, plant_soilbgc, betr_status)
 
   !
   ! do bgc reaction
@@ -288,8 +305,10 @@ module H2OIsotopeBGCReactionsType
   use PlantSoilBGCMod        , only : plant_soilbgc_type
   use TracerBoundaryCondType , only : tracerboundarycond_type
   use BeTR_ColumnType        , only : col => betr_col
+  use BetrStatusType         , only : betr_status_type
+  use betr_constants         , only : betr_errmsg_len
   !ARGUMENTS
-  class(bgc_reaction_h2oiso_type)  , intent(in)    :: this                       !
+  class(bgc_reaction_h2oiso_type)  , intent(inout) :: this                       !
   type(betr_bounds_type)           , intent(in)    :: bounds ! bounds
   integer                          , intent(in)    :: num_soilc                  ! number of columns in column filter_soilc
   integer                          , intent(in)    :: filter_soilc(:)            ! column filter_soilc
@@ -305,13 +324,17 @@ module H2OIsotopeBGCReactionsType
   type(tracerflux_type)            , intent(inout) :: tracerflux_vars            !
   type(tracerboundarycond_type)    , intent(inout) :: tracerboundarycond_vars !
   class(plant_soilbgc_type)        , intent(inout) :: plant_soilbgc
-  !local variables
-  character(len=*)                    , parameter :: subname ='calc_bgc_reaction'
-  integer                                         :: jj, c, fc, ll
-  integer,                              parameter :: nh2o_trcs=3
-  integer                                         :: jjs(nh2o_trcs), kk
-  real(r8)                                        :: tot0, tot1
+  type(betr_status_type)           , intent(out)   :: betr_status
 
+  !local variables
+  character(len=*)  , parameter :: subname ='calc_bgc_reaction'
+  integer                       :: jj, c, fc, ll
+  integer,            parameter :: nh2o_trcs=3
+  integer                       :: jjs(nh2o_trcs), kk
+  real(r8)                      :: tot0, tot1
+  character(len=betr_errmsg_len) :: msg
+
+  call betr_status%reset()
     ! remove compiler warnings for unused dummy args
     if (this%dummy_compiler_warning)                       continue
     if (bounds%begc > 0)                                   continue
@@ -359,8 +382,9 @@ module H2OIsotopeBGCReactionsType
         enddo
         !the following should rarely occur, so when it occur, end with a warning
         if(tot1<0._r8)then
-          print*,tracer_mobile_phase(c,1:2,jj),tot1
-          call endrun('negative H2O tracer '//errMsg(mod_filename, __LINE__))
+          write(msg,*),tracer_mobile_phase(c,1:2,jj),tot1
+          msg=trim(msg)//new_line('A')//'negative H2O tracer '//errMsg(mod_filename, __LINE__)
+          call betr_status%set_msg(msg=msg, err=-1)
         endif
       endif
       tracer_flx_dif(c,volatileid(jj)) = tracer_flx_dif(c,volatileid(jj))- tracer_gwdif_concflux_top_col(c,1,jj) * dtime
@@ -386,7 +410,7 @@ module H2OIsotopeBGCReactionsType
   use BeTR_decompMod        , only : betr_bounds_type
   implicit none
   !ARGUMENTS
-  class(bgc_reaction_h2oiso_type) , intent(in) :: this
+  class(bgc_reaction_h2oiso_type) , intent(inout) :: this
   type(betr_bounds_type)          , intent(in) :: bounds
   integer                         , intent(in) :: lbj, ubj
   integer                         , intent(in) :: jtops(bounds%begc: )        ! top label of each column
@@ -470,11 +494,11 @@ module H2OIsotopeBGCReactionsType
   integer   :: c, fc, j
 
   SHR_ASSERT_ALL((ubound(aqu2equilscef,1)            == bounds%endc), errMsg(mod_filename,__LINE__))
-  SHR_ASSERT_ALL((ubound(aqu2equilscef,2)            == ubj),         errMsg(mod_filename,__LINE__))  
+  SHR_ASSERT_ALL((ubound(aqu2equilscef,2)            == ubj),         errMsg(mod_filename,__LINE__))
   SHR_ASSERT_ALL((ubound(aqu2bulkcef,1)              == bounds%endc), errMsg(mod_filename,__LINE__))
-  SHR_ASSERT_ALL((ubound(aqu2bulkcef,2)              == ubj),         errMsg(mod_filename,__LINE__))  
+  SHR_ASSERT_ALL((ubound(aqu2bulkcef,2)              == ubj),         errMsg(mod_filename,__LINE__))
   SHR_ASSERT_ALL((ubound(tracer_solid_phase_equil,1) == bounds%endc), errMsg(mod_filename,__LINE__))
-  SHR_ASSERT_ALL((ubound(tracer_solid_phase_equil,2) == ubj),         errMsg(mod_filename,__LINE__))  
+  SHR_ASSERT_ALL((ubound(tracer_solid_phase_equil,2) == ubj),         errMsg(mod_filename,__LINE__))
   SHR_ASSERT_ALL((ubound(tracer_mobile_phase,1)      == bounds%endc), errMsg(mod_filename,__LINE__))
   SHR_ASSERT_ALL((ubound(tracer_mobile_phase,2)      == ubj),         errMsg(mod_filename,__LINE__))
   ! remove compiler warnings for unused dummy args
@@ -511,8 +535,8 @@ module H2OIsotopeBGCReactionsType
     use betr_varcon       , only : denh2o => bdenh2o
     use tracer_varcon     , only : nlevtrc_soil  => betr_nlevtrc_soil
     implicit none
-    ! !ARGUMENTS:   
-    class(bgc_reaction_h2oiso_type)  , intent(in)    :: this
+    ! !ARGUMENTS:
+    class(bgc_reaction_h2oiso_type)  , intent(inout)    :: this
     type(betr_bounds_type)           , intent(in)    :: bounds
     type(BeTRTracer_Type)            , intent(in)    :: betrtracer_vars
     type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
@@ -605,7 +629,7 @@ module H2OIsotopeBGCReactionsType
     use BeTRTracerType , only : BeTRTracer_Type
     implicit none
     ! !ARGUMENTS:
-    class(bgc_reaction_h2oiso_type) , intent(in)    :: this
+    class(bgc_reaction_h2oiso_type) , intent(inout)    :: this
     type(BeTRTracer_Type)           , intent(inout) :: betrtracer_vars
     type(file_desc_t)               , intent(inout) :: ncid  ! pio netCDF file id
 
@@ -633,7 +657,7 @@ module H2OIsotopeBGCReactionsType
     use BeTR_decompMod  , only : betr_bounds_type
     implicit none
     ! !ARGUMENTS:
-    class(bgc_reaction_h2oiso_type) , intent(in) :: this               !
+    class(bgc_reaction_h2oiso_type) , intent(inout) :: this               !
     type(betr_bounds_type)          , intent(in) :: bounds             ! bounds
     integer                         , intent(in) :: num_soilc
     integer                         , intent(in) :: filter_soilc(:)

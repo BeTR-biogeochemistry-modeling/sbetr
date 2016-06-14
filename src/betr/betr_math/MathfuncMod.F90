@@ -7,7 +7,6 @@ module MathfuncMod
   ! !USES:
   use bshr_kind_mod , only : r8 => shr_kind_r8
   use betr_ctrl     , only : iulog  => biulog
-  use babortutils   , only : endrun
   use bshr_log_mod  , only : errMsg => shr_log_errMsg
 
   implicit none
@@ -69,7 +68,7 @@ contains
     integer, intent(inout) :: a, b
     ! !LOCAL VARIABLES:
     integer :: c
-    
+
     c = a
     a = b
     b = c
@@ -93,28 +92,30 @@ contains
 
   end subroutine swap_r
   !-------------------------------------------------------------------------------
-  subroutine swap_rv(a,b)
+  subroutine swap_rv(a,b, betr_status)
     !
     ! !DESCRIPTION:
     ! swap two vectors
+    use BetrStatusType         , only : betr_status_type
+    use betr_constants         , only : betr_errmsg_len
     implicit none
     ! !ARGUMENTS:
     real(r8), dimension(:), intent(inout) :: a, b
+    type(betr_status_type), intent(out)   :: betr_status
     ! !LOCAL VARIABLES:
     real(r8), dimension(size(a)) :: c
-
+    character(len=betr_errmsg_len) :: msg
     integer :: n
 
     if(size(a)/=size(b))then
-       write(iulog,*)'the input vectors are not of same size in swap_rv'
-       write(iulog,*)'betr is stopping'
-       call endrun()
+       write(msg,*)'the input vectors are not of same size in swap_rv'
+       msg = trim(msg)//new_line('A')//'stop in '//errmsg(mod_filename, __LINE__)
+       call betr_status%set_msg(msg=msg,err=-1)
+       return
     endif
-
     c = a
     a = b
     b = c
-
   end subroutine swap_rv
   !-------------------------------------------------------------------------------
   function minmax(x)result(ans)

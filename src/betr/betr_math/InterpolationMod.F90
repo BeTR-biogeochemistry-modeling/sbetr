@@ -7,7 +7,6 @@ module InterpolationMod
 
   ! !USES:
   use bshr_kind_mod , only : r8 => shr_kind_r8
-  use babortutils   , only : endrun
   use bshr_log_mod  , only : errMsg => shr_log_errMsg
 
   implicit none
@@ -150,7 +149,7 @@ contains
 
   end function find_idx
   !------------------------------------------------------------
-  subroutine pchip_polycc(x, fx, di, region)
+  subroutine pchip_polycc(x, fx, di, bstatus, region)
     !
     ! DESCRIPTION
     ! Given the data, generate the coefficients of the monotonic cubic
@@ -158,13 +157,16 @@ contains
     ! Ref, Fritsch and Carlson, 1980
     !
     ! !USES:
-    use MathfuncMod, only : diff
+    use MathfuncMod      , only : diff
+    use BetrStatusType   , only : betr_status_type
+    use betr_constants   , only : betr_errmsg_len
     implicit none
     ! !ARGUMENTS:
     real(r8), dimension(:), intent(in) :: x
     real(r8), dimension(:), intent(in) :: fx
     real(r8), dimension(:), intent(out):: di
     integer,  optional,     intent(in) :: region
+    type(betr_status_type), intent(out):: bstatus
 
     ! !LOCAL VARIABLES:
     real(r8), allocatable :: h(:)
@@ -173,6 +175,7 @@ contains
     real(r8) :: alpha, beta, tao, rr
     integer :: region_loc
     integer :: n, j
+    character(len=betr_errmsg_len) :: msg
 
     SHR_ASSERT_ALL((size(x) == size(fx)), errMsg(mod_filename,__LINE__))
     SHR_ASSERT_ALL((size(x) == size(di)), errMsg(mod_filename,__LINE__))
@@ -285,7 +288,9 @@ contains
                 endif
              endif
           case default
-             call endrun(msg='an constraint region must be specified for pchip_polycc '//errMsg(mod_filename, __LINE__))
+             msg='an constraint region must be specified for pchip_polycc '//errMsg(mod_filename, __LINE__)
+             call bstatus%set_msg(msg=msg, err=-1)
+             return
           end select
        endif
     enddo
