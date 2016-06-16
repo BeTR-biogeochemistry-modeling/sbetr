@@ -847,7 +847,7 @@ contains
   end subroutine BeTRSimulationRetrieveBiogeoFlux
 
   !------------------------------------------------------------------------
-  subroutine BeTRSimulationPreDiagSoilColWaterFlux(this, bounds, num_nolakec, filter_nolakec)
+  subroutine BeTRSimulationPreDiagSoilColWaterFlux(this, num_nolakec, filter_nolakec)
   !DESCRIPTION
   !prepare for water flux diagnosis. it is called before diagnosing the advective fluxes and applying
   !freeze-thaw tracer partition.
@@ -857,7 +857,6 @@ contains
   implicit none
   !ARGUMENTS
   class(betr_simulation_type) , intent(inout) :: this
-   type(bounds_type)          , intent(in)    :: bounds
    integer                    , intent(in)    :: num_nolakec                        ! number of column non-lake points in column filter
    integer                    , intent(in)    :: filter_nolakec(:)                  ! column filter for non-lake points
 
@@ -879,7 +878,7 @@ contains
   end subroutine BeTRSimulationPreDiagSoilColWaterFlux
 
   !------------------------------------------------------------------------
-  subroutine BeTRSimulationDiagAdvWaterFlux(this, betr_time, bounds, num_hydrologyc, &
+  subroutine BeTRSimulationDiagAdvWaterFlux(this, betr_time, num_hydrologyc, &
     filter_hydrologyc)
 
   !DESCRIPTION
@@ -892,7 +891,6 @@ contains
   !ARGUMENTS
    class(betr_simulation_type) , intent(inout) :: this
    class(betr_time_type)       , intent(in)    :: betr_time
-   type(bounds_type)           , intent(in)    :: bounds
    integer                     , intent(in)    :: num_hydrologyc                        ! number of column non-lake points in column filter
    integer                     , intent(in)    :: filter_hydrologyc(:)                  ! column filter for non-lake points
 
@@ -916,7 +914,7 @@ contains
   end subroutine BeTRSimulationDiagAdvWaterFlux
   !------------------------------------------------------------------------
   subroutine BeTRSimulationDiagDrainWaterFlux(this, betr_time, &
-        bounds, num_hydrologyc, filter_hydrologyc)
+       num_hydrologyc, filter_hydrologyc)
   !DESCRIPTION
   ! diagnose water fluxes due to subsurface drainage
   !
@@ -929,7 +927,6 @@ contains
   !ARGUMENTS
    class(betr_simulation_type) , intent(inout) :: this
    class(betr_time_type)       , intent(in)    :: betr_time
-   type(bounds_type)           , intent(in)    :: bounds
    integer                     , intent(in)    :: num_hydrologyc                        ! number of column non-lake points in column filter
    integer                     , intent(in)    :: filter_hydrologyc(:)                  ! column filter for non-lake points
 
@@ -951,14 +948,13 @@ contains
   enddo
   end subroutine BeTRSimulationDiagDrainWaterFlux
   !------------------------------------------------------------------------
-  subroutine BeTRSimulationBeginTracerSnowLayerAdjst(this, bounds, num_snowc, filter_snowc)
+  subroutine BeTRSimulationBeginTracerSnowLayerAdjst(this,  num_snowc, filter_snowc)
   !DESCRIPTION
   !prepare for tracer adjustment in snow layers
   use betr_varcon, only : betr_maxpatch_pft
   implicit none
   !ARGUMENTS
    class(betr_simulation_type) , intent(inout) :: this
-   type(bounds_type)           , intent(in)    :: bounds
    integer                     , intent(in)    :: num_snowc
    integer                     , intent(in)    :: filter_snowc(:)
 
@@ -977,14 +973,13 @@ contains
    enddo
   end subroutine BeTRSimulationBeginTracerSnowLayerAdjst
   !------------------------------------------------------------------------
-  subroutine BeTRSimulationEndTracerSnowLayerAdjst(this, bounds, num_snowc, filter_snowc)
+  subroutine BeTRSimulationEndTracerSnowLayerAdjst(this, num_snowc, filter_snowc)
   !DESCRIPTION
   !wrap up tracer adjustment in snow layers
   use betr_varcon, only : betr_maxpatch_pft
   implicit none
   !ARGUMENTS
    class(betr_simulation_type) , intent(inout) :: this
-   type(bounds_type)           , intent(in)    :: bounds
    integer                     , intent(in)    :: num_snowc
    integer                     , intent(in)    :: filter_snowc(:)
 
@@ -1113,12 +1108,14 @@ contains
   namelist /hist1d_fmt/    &
   fname, units, avgflag, long_name, default
 
+  begc=bounds%begc; endc=bounds%endc
   if(num_flux2d >0)then
-    allocate(this%fluxes_2d(bounds%begc:bounds%endc, 1:betr_nlevtrc_soil, 1:num_flux2d))
+    allocate(this%fluxes_2d(begc:endc, 1:betr_nlevtrc_soil, 1:num_flux2d))
   endif
   if(num_flux1d>0)then
-    allocate(this%fluxes_1d(bounds%begc:bounds%endc, 1:num_flux1d))
+    allocate(this%fluxes_1d(begc:endc, 1:num_flux1d))
   endif
+
   do jj = 1, num_flux2d
     !read name list
     read(this%nmlist_hist2d_flux_buffer(jj), nml=hist2d_fmt, iostat=nml_error, iomsg=ioerror_msg)
@@ -1230,11 +1227,10 @@ contains
 
   end subroutine BeTRSimulationCreateHistory
   !------------------------------------------------------------------------
-  subroutine BeTRSimulationRetrieveHistory(this, bounds, numf, filter)
+  subroutine BeTRSimulationRetrieveHistory(this, numf, filter)
   implicit none
   !ARGUMENTS
   class(betr_simulation_type) , intent(inout) :: this
-  type(bounds_type)           , intent(in)    :: bounds               ! bounds
   integer, intent(in) :: numf
   integer, intent(in) :: filter(:)
 

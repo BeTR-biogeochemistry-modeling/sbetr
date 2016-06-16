@@ -149,7 +149,7 @@ contains
 
     call simulation%BeTRSetBiophysForcing(bounds, 1, nlevsoi, waterstate_vars=waterstate_vars)
 
-    call simulation%PreDiagSoilColWaterFlux(bounds, simulation%num_soilc, &
+    call simulation%PreDiagSoilColWaterFlux(simulation%num_soilc, &
       simulation%filter_soilc)
 
     !set envrionmental forcing by reading foring data: temperature, moisture, atmospheric resistance
@@ -163,7 +163,7 @@ contains
     call simulation%BeTRSetBiophysForcing(bounds,  1, nlevsoi, waterstate_vars=waterstate_vars, &
       waterflux_vars=waterflux_vars, soilhydrology_vars = soilhydrology_vars)
 
-    call simulation%DiagAdvWaterFlux(time_vars, bounds,                                   &
+    call simulation%DiagAdvWaterFlux(time_vars,                                    &
       simulation%num_soilc, simulation%filter_soilc)
 
     !now assign back waterflux_vars

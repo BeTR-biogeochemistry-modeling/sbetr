@@ -266,7 +266,7 @@ contains
 
   !------------------------------------------------------------------------
 
-  subroutine CLMDiagnoseDtracerFreezeThaw(this, bounds, num_nolakec, filter_nolakec, col, lun)
+  subroutine CLMDiagnoseDtracerFreezeThaw(this, num_nolakec, filter_nolakec, col, lun)
     !
     ! DESCRIPTION
     ! aqueous tracer partition based on freeze-thaw
@@ -280,7 +280,6 @@ contains
     implicit none
     !!ARGUMENTS
     class(betr_simulation_clm_type) , intent(inout) :: this
-    type(bounds_type)               , intent(in)    :: bounds
     integer                         , intent(in)    :: num_nolakec ! number of column non-lake points in column filter
     integer                         , intent(in)    :: filter_nolakec(:) ! column filter for non-lake points
     type(column_type)               , intent(in)    :: col ! column type
@@ -351,7 +350,7 @@ contains
   end subroutine CLMCalcDewSubFlux
 
   !------------------------------------------------------------------------
-  subroutine CLMBetrSoilFluxStateRecv(this, bounds, num_soilc, filter_soilc)
+  subroutine CLMBetrSoilFluxStateRecv(this,  num_soilc, filter_soilc)
    !DESCRIPTION
    !this is to expaneded
    !
@@ -360,7 +359,6 @@ contains
     implicit none
     !ARGUMENTS
     class(betr_simulation_clm_type) , intent(inout) :: this
-    type(bounds_type)          , intent(in)    :: bounds
     integer                         , intent(in)    :: num_soilc
     integer                         , intent(in)    :: filter_soilc(:)
 

@@ -390,23 +390,28 @@ contains
   end subroutine ALMCalcDewSubFlux
 
   !------------------------------------------------------------------------
-  subroutine ALMBetrSoilFluxStateRecv(this, bounds, num_soilc, filter_soilc)
+  subroutine ALMBetrSoilFluxStateRecv(this, num_soilc, filter_soilc)
   !this should be expanded and called after tracer update with drainage
   implicit none
   ! !ARGUMENTS:
   class(betr_simulation_alm_type), intent(inout) :: this
-  type(bounds_type) , intent(in)  :: bounds
   integer           , intent(in)  :: num_soilc
   integer           , intent(in)  :: filter_soilc(:)
 
-  ! remove compiler warnings
-  if (this%num_soilc > 0)     continue
-  if (bounds%begc > 0)        continue
-  if (num_soilc > 0)          continue
-  if (size(filter_soilc) > 0) continue
+  integer :: fc, c
+  type(betr_bounds_type)     :: betr_bounds
+  betr_bounds%lbj  = 1 ; betr_bounds%ubj  = betr_nlevsoi
+  betr_bounds%begc = 1 ; betr_bounds%endc = 1
+  betr_bounds%begp = 1 ; betr_bounds%endp = betr_maxpatch_pft
+  betr_bounds%begl = 1 ; betr_bounds%endl = 1
+  betr_bounds%begg = 1 ; betr_bounds%endg = 1
 
-!x  call this%betr(c)%bgc_reaction%betr_lsm_flux_state_sendback(bounds, &
-!       num_soilc, filter_soilc, this%biogeo_state, this%biogeo_flux)
+    do fc = 1, num_soilc
+      c = filter_soilc(fc)
+      call this%betr(c)%bgc_reaction%lsm_betr_flux_state_receive(betr_bounds, &
+         this%num_soilc, this%filter_soilc,                                   &
+         this%betr(c)%tracerstates, this%betr(c)%tracerfluxes,  this%betr(c)%tracers)
+    enddo
 
   end subroutine ALMBetrSoilFluxStateRecv
 
