@@ -8,5 +8,7 @@ implicit none
   logical, public :: is_active_betr_bgc = .false.
   logical, public :: betr_use_cn =.false.
   integer, public :: biulog = 6        ! "stdout" log file unit number, default is 6
-
+  logical, public :: do_betr_otuput = .true.
+  integer, parameter, public :: max_betr_hist_type=200
+  logical, public :: betr_offline = .true.
 end module betr_ctrl

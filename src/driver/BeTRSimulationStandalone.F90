@@ -18,6 +18,7 @@ module BeTRSimulationStandalone
   use tracer_varcon       , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
   use EcophysConType      , only : ecophyscon_type
   use BeTR_EcophysConType , only : betr_ecophyscon_type
+  use betr_varcon         , only : betr_maxpatch_pft
   implicit none
 
   private
@@ -98,12 +99,7 @@ contains
     betr_nlevtrc_soil = nlevtrc_soil
 
     !pass necessary data for correct subroutine call
-    !set lbj and ubj
-    betr_bounds%lbj  = 1          ; betr_bounds%ubj  = betr_nlevsoi
-    betr_bounds%begp = bounds%begp; betr_bounds%endp = bounds%endp
-    betr_bounds%begc = bounds%begc; betr_bounds%endc = bounds%endc
-    betr_bounds%begl = bounds%begl; betr_bounds%endl = bounds%endl
-    betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
+
 
     betr_pft%wtcol                     => pft%wtcol
     betr_pft%column                    => pft%column
@@ -136,7 +132,7 @@ contains
     ! now call the base simulation init to continue initialization
     call this%BeTRInit(base_filename, namelist_buffer, &
          bounds, waterstate)
-
+    if(this%bsimstatus%check_status())return
     !pass necessary data
 
   end subroutine StandaloneInit
@@ -167,15 +163,10 @@ contains
     type(betr_bounds_type)     :: betr_bounds
 
     integer  :: lbj, ubj ! lower and upper bounds, make sure they are > 0
-
+    integer  :: c
     !pass necessary data for correct subroutine call
     !set lbj and ubj
-    betr_bounds%lbj  = 1           ; betr_bounds%ubj  = betr_nlevsoi
-    betr_bounds%begp = bounds%begp ; betr_bounds%endp = bounds%endp
-    betr_bounds%begc = bounds%begc ; betr_bounds%endc = bounds%endc
-    betr_bounds%begl = bounds%begl ; betr_bounds%endl = bounds%endl
-    betr_bounds%begg = bounds%begg ; betr_bounds%endg = bounds%endg
-    lbj = betr_bounds%lbj          ; ubj = betr_bounds%ubj
+
 
     betr_pft%wtcol     => pft%wtcol
     betr_pft%column    => pft%column
@@ -193,10 +184,25 @@ contains
     betr_lun%itype     => lun%itype
     betr_lun%ifspecial => lun%ifspecial
 
-    call this%betr%step_without_drainage(betr_time, betr_bounds,               &
-         this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp, &
-         this%biophys_forc, this%biogeo_flux, this%biogeo_state)
+    betr_bounds%lbj  = 1 ; betr_bounds%ubj  = betr_nlevsoi
+    betr_bounds%begc = 1 ; betr_bounds%endc = 1
+    betr_bounds%begp = 1 ; betr_bounds%endp = betr_maxpatch_pft
+    betr_bounds%begl = 1 ; betr_bounds%endl = 1
+    betr_bounds%begg = 1 ; betr_bounds%endg = 1
 
+    do c = bounds%begc, bounds%endc
+     call this%betr(c)%step_without_drainage(betr_time, betr_bounds,           &
+         this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp, &
+         this%biophys_forc(c), this%biogeo_flux(c), this%biogeo_state(c), this%bstatus(c))
+
+      if(this%bstatus(c)%check_status())then
+        call this%bsimstatus%setcol(c)
+        call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
+        exit
+      endif
+    enddo
+    if(this%bsimstatus%check_status()) &
+      call endrun(msg=this%bsimstatus%print_msg())
   end subroutine StandaloneStepWithoutDrainage
 
   !---------------------------------------------------------------------------------
@@ -220,15 +226,10 @@ contains
     !TEMPORARY VARIABLES
     type(betr_bounds_type) :: betr_bounds
     integer                :: lbj, ubj ! lower and upper bounds, make sure they are > 0
+    integer :: c
 
     !pass necessary data for correct subroutine call
     !set lbj and ubj
-    betr_bounds%lbj  = 1           ; betr_bounds%ubj  = betr_nlevsoi
-    betr_bounds%begp = bounds%begp ; betr_bounds%endp = bounds%endp
-    betr_bounds%begc = bounds%begc ; betr_bounds%endc = bounds%endc
-    betr_bounds%begl = bounds%begl ; betr_bounds%endl = bounds%endl
-    betr_bounds%begg = bounds%begg ; betr_bounds%endg = bounds%endg
-    lbj = betr_bounds%lbj          ; ubj = betr_bounds%ubj
 
     betr_col%landunit  => col%landunit
     betr_col%gridcell  => col%gridcell
@@ -240,10 +241,23 @@ contains
     betr_lun%itype     => lun%itype
     betr_lun%ifspecial => lun%ifspecial
 
-    call this%betr%step_with_drainage(betr_bounds, &
-         this%num_soilc, this%filter_soilc,        &
-         this%jtops, this%biogeo_flux)
+    betr_bounds%lbj  = 1 ; betr_bounds%ubj  = betr_nlevsoi
+    betr_bounds%begc = 1 ; betr_bounds%endc = 1
+    betr_bounds%begp = 1 ; betr_bounds%endp = betr_maxpatch_pft
+    betr_bounds%begl = 1 ; betr_bounds%endl = 1
+    betr_bounds%begg = 1 ; betr_bounds%endg = 1
 
+    do c = bounds%begc, bounds%endc
+      call this%betr(c)%step_with_drainage(betr_bounds, &
+         this%num_soilc, this%filter_soilc,        &
+         this%jtops, this%biogeo_flux(c), this%bstatus(c))
+
+      if(this%bstatus(c)%check_status())then
+        call this%bsimstatus%setcol(c)
+        call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
+        exit
+      endif
+    enddo
   end subroutine StandaloneStepWithDrainage
 
 
@@ -280,9 +294,11 @@ contains
   type(chemstate_type)                   , optional, intent(in) :: chemstate_vars
   type(soilstate_type)                   , optional, intent(in) :: soilstate_vars
 
-  call this%BeTRSetBiophysForcing(bounds, 1, nlevsoi, carbonflux_vars, waterstate_vars, &
-    waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
-    chemstate_vars, soilstate_vars)
+
+    call this%BeTRSetBiophysForcing(bounds, 1, nlevsoi, carbonflux_vars, waterstate_vars, &
+      waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
+      chemstate_vars, soilstate_vars)
+
   !the following will be standalone bgc specific
   end subroutine StandaloneSetBiophysForcing
 end module BeTRSimulationStandalone

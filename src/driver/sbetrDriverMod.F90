@@ -109,6 +109,8 @@ contains
   lun%itype(1) = istsoil
   col%landunit(1) = 1
   col%gridcell(1) = 1
+  col%npfts(1)    = 1
+  col%pfti(1)     = 1
   pft%landunit(1) = 1
   pft%column(1)   = 1
   pft%itype(1)    = 2

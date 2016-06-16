@@ -7,9 +7,9 @@ module BeTRTracerType
   ! !USES:
   use bshr_kind_mod   , only : r8 => shr_kind_r8
   use bshr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
-  use babortutils     , only : endrun
   use bshr_log_mod    , only : errMsg => shr_log_errMsg
   use betr_constants  , only : betr_var_name_length
+  use betr_ctrl       , only : do_betr_otuput
   !
   implicit none
   private
@@ -115,7 +115,7 @@ module BeTRTracerType
   subroutine Init(this)
 
     implicit none
-    class(BeTRtracer_type) :: this
+    class(BeTRtracer_type), intent(inout) :: this
 
     this%ntracers=this%ngwmobile_tracers+this%nsolid_passive_tracers
     this%ntracer_groups = this%nsolid_passive_tracer_groups + this%ngwmobile_tracer_groups
@@ -129,7 +129,7 @@ module BeTRTracerType
   ! initilaize scalar variables within the type
 
   implicit none
-  class(BeTRtracer_type) :: this
+  class(BeTRtracer_type), intent(inout) :: this
 
   this%ntracers                     = 0      ! total number of tracers, gas/aqueous tracers + solid tracers that undergo active mineral protection
   this%ngwmobile_tracers            = 0      ! total number of tracers undergoing gas/aqueous movement
@@ -184,7 +184,7 @@ module BeTRTracerType
   ! allocate memories for vectors
 
   implicit none
-  class(BeTRtracer_type) :: this
+  class(BeTRtracer_type), intent(inout) :: this
   integer, parameter :: nanid=-1
 
   allocate(this%is_volatile        (this%ngwmobile_tracers));    this%is_volatile(:)     = .false.
@@ -226,16 +226,17 @@ module BeTRTracerType
 
 !--------------------------------------------------------------------------------
 
-subroutine set_tracer(this, trc_id, trc_name, is_trc_mobile, is_trc_advective, trc_group_id, &
+subroutine set_tracer(this, bstatus, trc_id, trc_name, is_trc_mobile, is_trc_advective, trc_group_id, &
    trc_group_mem, is_trc_diffusive, is_trc_volatile, trc_volatile_id, trc_volatile_group_id, &
    is_trc_h2o, trc_vtrans_scal, is_trc_adsorb, trc_adsorbid, trc_adsorbgroupid             , &
    is_trc_frozen, trc_frozenid)
 
 ! !DESCRIPTION:
 ! set up tracer property based on input configurations
-
+  use BetrStatusType  , only : betr_status_type
+  implicit none
    ! !ARGUMENTS:
-  class(BeTRtracer_type) :: this
+  class(BeTRtracer_type), intent(inout) :: this
   integer            , intent(in) :: trc_id
   character(len=*)   , intent(in) :: trc_name
   logical            , intent(in) :: is_trc_mobile
@@ -253,6 +254,9 @@ subroutine set_tracer(this, trc_id, trc_name, is_trc_mobile, is_trc_advective, t
   integer ,optional  , intent(in) :: trc_adsorbgroupid
   logical ,optional  , intent(in) :: is_trc_frozen
   integer ,optional  , intent(in) :: trc_frozenid
+  type(betr_status_type), intent(out)   :: bstatus
+
+  call bstatus%reset()
 
   this%tracernames      (trc_id)    = trim(trc_name)
   this%is_mobile        (trc_id)    = is_trc_mobile
@@ -266,11 +270,15 @@ subroutine set_tracer(this, trc_id, trc_name, is_trc_mobile, is_trc_advective, t
   if(present(is_trc_volatile))then
     this%is_volatile      (trc_id)    = is_trc_volatile
     if(this%is_volatile   (trc_id)) then
-      if(.not.present(trc_volatile_id))then
-        call endrun('volatile tracer id is not provided for '//trim(trc_name)//errMsg(mod_filename, __LINE__))
+      if(.not.present(trc_volatile_id) .and. do_betr_otuput)then
+        call bstatus%set_msg(msg='volatile tracer id is not provided for ' &
+            //trim(trc_name)//errMsg(mod_filename, __LINE__),err=-1)
+        return
       endif
-      if(.not.present(trc_volatile_group_id))then
-        call endrun('volatile tracer group id is not provided for '//trim(trc_name)//errMsg(mod_filename, __LINE__))
+      if(.not.present(trc_volatile_group_id) .and. do_betr_otuput)then
+        call bstatus%set_msg(msg='volatile tracer group id is not provided for ' &
+            //trim(trc_name)//errMsg(mod_filename, __LINE__), err=-1)
+        return
       endif
       this%volatileid     (trc_id)    = trc_volatile_id
       this%volatilegroupid(trc_id)    = trc_volatile_group_id
@@ -292,11 +300,15 @@ subroutine set_tracer(this, trc_id, trc_name, is_trc_mobile, is_trc_advective, t
   if(present(is_trc_adsorb))then
     this%is_adsorb(trc_id) = is_trc_adsorb
     if(is_trc_adsorb)then
-      if(.not.present(trc_adsorbid))then
-        call endrun('adsorb tracer id is not provided for '//trim(trc_name)//errMsg(mod_filename, __LINE__))
+      if(.not.present(trc_adsorbid) .and. do_betr_otuput)then
+        call bstatus%set_msg(msg='adsorb tracer id is not provided for ' &
+            //trim(trc_name)//errMsg(mod_filename, __LINE__), err=-1)
+        return
       endif
-      if(.not.present(trc_adsorbgroupid))then
-        call endrun('adsorb tracer group id is not provided for '//trim(trc_name)//errMsg(mod_filename, __LINE__))
+      if(.not.present(trc_adsorbgroupid) .and. do_betr_otuput)then
+        call bstatus%set_msg(msg='adsorb tracer group id is not provided for ' &
+           //trim(trc_name)//errMsg(mod_filename, __LINE__), err=-1)
+        return
       endif
       this%adsorbid(trc_id) = trc_adsorbid
       this%adsorbgroupid(trc_id) = trc_adsorbgroupid
@@ -307,8 +319,10 @@ subroutine set_tracer(this, trc_id, trc_name, is_trc_mobile, is_trc_advective, t
   if(present(is_trc_frozen))then
     this%is_frozen(trc_id) = is_trc_frozen
     if(is_trc_frozen)then
-      if(.not. present(trc_frozenid))then
-        call endrun('frozen tracer id is not provided for '//trim(trc_name)//errMsg(mod_filename, __LINE__))
+      if(.not. present(trc_frozenid) .and. do_betr_otuput)then
+        call bstatus%set_msg(msg='frozen tracer id is not provided for ' &
+            //trim(trc_name)//errMsg(mod_filename, __LINE__), err=-1)
+        return
       endif
       this%frozenid(trc_id) = trc_frozenid
       this%nfrozen_tracers = this%nfrozen_tracers + 1
@@ -322,8 +336,8 @@ end subroutine set_tracer
   function is_solidtransport(this)result(yesno)
 
    ! !ARGUMENTS:
-  implicit none    
-  class(BeTRtracer_type) :: this
+  implicit none
+  class(BeTRtracer_type), intent(inout) :: this
 
   logical :: yesno
 

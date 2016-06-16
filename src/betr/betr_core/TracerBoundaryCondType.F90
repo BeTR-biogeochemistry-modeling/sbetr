@@ -43,7 +43,7 @@ contains
     use BeTRTracerType, only : BeTRTracer_Type
     !
     ! !ARGUMENTS:
-    class(tracerboundarycond_type)     :: this
+    class(tracerboundarycond_type), intent(inout) :: this
     type(bounds_type)     , intent(in) :: bounds
     type(BeTRTracer_Type) , intent(in) :: betrtracer_vars
 
@@ -61,7 +61,7 @@ contains
     ! allocate memories to relevant variables
     !
     ! !ARGUMENTS:
-    class(tracerboundarycond_type)     :: this
+    class(tracerboundarycond_type), intent(inout)  :: this
     type(bounds_type),      intent(in) :: bounds
     type(BeTRTracer_Type), intent(in)  :: betrtracer_vars
     !
@@ -90,7 +90,7 @@ contains
     use betr_varcon    , only: spval => bspval
     !
     ! !ARGUMENTS:
-    class(tracerboundarycond_type) :: this
+    class(tracerboundarycond_type), intent(inout) :: this
     type(bounds_type), intent(in) :: bounds
     !
     ! !LOCAL VARIABLES:
@@ -113,7 +113,7 @@ contains
     use bshr_infnan_mod, only : nan => shr_infnan_nan, assignment(=)
     implicit none
     ! !ARGUMENTS:
-    class(tracerboundarycond_type) :: this
+    class(tracerboundarycond_type), intent(inout) :: this
     type(bounds_type) , intent(in) :: bounds
     !
     ! !LOCAL VARIABLES:
@@ -142,7 +142,7 @@ contains
     use ncdio_pio   , only : file_desc_t
     !
     ! !ARGUMENTS:
-    class(tracerboundarycond_type)      :: this
+    class(tracerboundarycond_type), intent(inout)  :: this
     type(bounds_type)   , intent(in)    :: bounds
     type(file_desc_t)   , intent(inout) :: ncid                                         ! netcdf id
     character(len=*)    , intent(in)    :: flag                                         ! 'read' or 'write'
@@ -166,12 +166,12 @@ contains
     ! Intitialize SNICAR variables for fresh snow column
     !
     ! !ARGUMENTS:
-    class(tracerboundarycond_type) :: this
+    class(tracerboundarycond_type), intent(inout) :: this
     integer           , intent(in) :: column     ! column index
 
     ! remove compiler warnings for unused dummy args
     if (size(this%jtops_col) > 0) continue
     if (column > 0)               continue
-    
+
   end subroutine Reset
  end module TracerBoundaryCondType

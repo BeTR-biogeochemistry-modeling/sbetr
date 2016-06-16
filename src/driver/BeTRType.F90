@@ -17,7 +17,6 @@ module BetrType
   use BeTR_PatchType           , only : pft => betr_pft
   use BeTR_ColumnType          , only : col => betr_col
   use BeTR_LandunitType        , only : lun => betr_lun
-
   use BGCReactionsMod          , only : bgc_reaction_type
   use PlantSoilBGCMod          , only : plant_soilbgc_type
   use BeTRTracerType           , only : betrtracer_type
@@ -78,52 +77,74 @@ module BetrType
      procedure, public  :: tracer_snowcapping
      procedure, public  :: tracer_DivideSnowLayers
      procedure, public  :: tracer_CombineSnowLayers
+     procedure, public  :: get_hist_size
      procedure, private :: ReadNamelist
      procedure, private :: create_betr_application
-
+     procedure, public  :: HistRetrieve
+     procedure, public  :: set_restvar
+     procedure, public  :: get_restartvar
   end type betr_type
 
+  public :: create_betr_type
 contains
 
+
+  function create_betr_type()
+  ! DESCRIPTION
+  ! constructor
+    implicit none
+    class(betr_type), pointer :: create_betr_type
+    class(betr_type), pointer :: betr
+
+    allocate(betr)
+    create_betr_type => betr
+
+  end function create_betr_type
+
 !-------------------------------------------------------------------------------
-  subroutine Init(this, namelist_buffer, bounds, biophysforc, ecophyscon)
+  subroutine Init(this, namelist_buffer, bounds, biophysforc, bstatus, ecophyscon)
 
     ! FIXME(bja, 201604) need to remove waterstate, cnstate and
     ! ecophyscon from this routine.
     !USES
-    use babortutils     , only : endrun
     use bshr_log_mod    , only : errMsg => shr_log_errMsg
     use BeTR_decompMod  , only : betr_bounds_type
     use betr_constants  , only : betr_namelist_buffer_size
     use TransportMod    , only : init_transportmod
     use TracerParamsMod , only : tracer_param_init
-
+    use BetrStatusType  , only : betr_status_type
     implicit none
     !arguments
     class(betr_type)                         , intent(inout)        :: this
     character(len=betr_namelist_buffer_size) , intent(in)           :: namelist_buffer
     type(betr_bounds_type)                   , intent(in)           :: bounds
     type(betr_biogeophys_input_type)         , intent(in)           :: biophysforc
+    type(betr_status_type)                   , intent(out)          :: bstatus
     type(betr_ecophyscon_type)               , intent(in), optional :: ecophyscon
 
     !temporary variables
     type(betr_ecophyscon_type) :: junk
+    character(len=1024) :: msg
     integer               :: lbj, ubj
 
     if (present(ecophyscon)) then
-       write(*,*) 'ERROR: ecophyscon not implemented in BeTR class '
-       call endrun(msg=errMsg(filename,__LINE__))
+       msg = 'ERROR: ecophyscon not implemented in BeTR class '//errMsg(filename,__LINE__)
+       call bstatus%set_msg(msg=msg, err=-1)
+       return
     end if
 
     lbj = bounds%lbj;  ubj = bounds%ubj
 
-    call this%ReadNamelist(namelist_buffer)
+    call this%ReadNamelist(namelist_buffer, bstatus)
+    if(bstatus%check_status())return
 
-    call this%create_betr_application(this%bgc_reaction, this%plant_soilbgc, this%reaction_method)
+    call this%create_betr_application(this%bgc_reaction, this%plant_soilbgc, this%reaction_method, bstatus)
+    if(bstatus%check_status())return
 
     call this%tracers%init_scalars()
 
-    call this%bgc_reaction%Init_betrbgc(bounds, lbj, ubj, this%tracers)
+    call this%bgc_reaction%Init_betrbgc(bounds, lbj, ubj, this%tracers, bstatus)
+    if(bstatus%check_status())return
 
     call this%aereconds%Init(bounds)
 
@@ -149,27 +170,27 @@ contains
     !initialize the betr parameterization module
     call tracer_param_init(bounds)
 
-
    allocate(this%h2osoi_liq_copy(bounds%begc:bounds%endc, 1:nlevsoi));  this%h2osoi_liq_copy(:, :) = spval
    allocate(this%h2osoi_ice_copy(bounds%begc:bounds%endc, 1:nlevsoi));  this%h2osoi_ice_copy(:, :) = spval
 
   end subroutine Init
 
 !-------------------------------------------------------------------------------
-  subroutine ReadNamelist(this, namelist_buffer)
+  subroutine ReadNamelist(this, namelist_buffer, bstatus)
     !
     ! !DESCRIPTION:
     ! read namelist for betr configuration
     ! !USES:
     use spmdMod        , only : masterproc, mpicom
     use betr_ctrl      , only : iulog => biulog
-    use babortutils    , only : endrun
     use bshr_log_mod   , only : errMsg => shr_log_errMsg
     use betr_constants , only : stdout, betr_string_length_long, betr_namelist_buffer_size
+    use BetrStatusType , only : betr_status_type
     implicit none
     ! !ARGUMENTS:
     class(betr_type)                         , intent(inout) :: this
     character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
+    type(betr_status_type)                   , intent(out) :: bstatus
 
     !
     ! !LOCAL VARIABLES:
@@ -186,6 +207,7 @@ contains
          advection_on, diffusion_on, reaction_on, &
          ebullition_on
 
+    call bstatus%reset()
     reaction_method = ''
     advection_on    = .true.
     diffusion_on    = .true.
@@ -200,7 +222,8 @@ contains
        ioerror_msg=''
        read(namelist_buffer, nml=betr_parameters, iostat=nml_error, iomsg=ioerror_msg)
        if (nml_error /= 0) then
-          call endrun(msg="ERROR reading betr_parameters namelist "//errmsg(filename, __LINE__))
+          call bstatus%set_msg(msg="ERROR reading betr_parameters namelist "//errmsg(filename, __LINE__),err=-1)
+          return
        end if
     end if
 
@@ -227,7 +250,7 @@ contains
   !-------------------------------------------------------------------------------
   subroutine step_without_drainage(this, betr_time,              &
        bounds, num_soilc, filter_soilc, num_soilp, filter_soilp, &
-       biophysforc, biogeo_flux, biogeo_state)
+       biophysforc, biogeo_flux, biogeo_state, betr_status)
     !
     ! !DESCRIPTION:
     ! run betr code one time step forward, without drainage calculation
@@ -247,6 +270,7 @@ contains
     use BetrBGCMod             , only : surface_tracer_hydropath_update
     use BetrBGCMod             , only : tracer_gws_transport
     use BeTR_TimeMod           , only : betr_time_type
+    use BetrStatusType         , only : betr_status_type
     !
     ! !ARGUMENTS :
     class(betr_type)                 , intent(inout) :: this
@@ -259,6 +283,7 @@ contains
     type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
     type(betr_biogeo_flux_type)      , intent(in)    :: biogeo_flux
     type(betr_biogeo_state_type)     , intent(inout) :: biogeo_state
+    type(betr_status_type)           , intent(out)   :: betr_status
 
     ! !LOCAL VARIABLES:
     character(len=255) :: subname = 'run_betr_one_step_without_drainage'
@@ -267,6 +292,8 @@ contains
     integer            :: j
     integer            :: lbj, ubj
 
+
+    call betr_status%reset()
     lbj = bounds%lbj; ubj = bounds%ubj
 
     dtime = betr_time%get_step_size()
@@ -275,11 +302,13 @@ contains
          bounds, num_soilc, filter_soilc, num_soilp, filter_soilp, biophysforc,      &
          biogeo_state, biogeo_flux, this%aereconds, this%tracers, this%tracercoeffs, &
          this%tracerboundaryconds, this%tracerfluxes, this%bgc_reaction,             &
-         Rfactor, this%advection_on)
+         Rfactor, this%advection_on, betr_status)
+    if(betr_status%check_status())return
 
     call surface_tracer_hydropath_update(betr_time, bounds, num_soilc, filter_soilc, &
        biophysforc, this%tracers, this%tracerstates,                                 &
-       this%tracercoeffs,  this%tracerfluxes)
+       this%tracercoeffs,  this%tracerfluxes, betr_status)
+    if(betr_status%check_status())return
 
     if(this%reaction_on)                                       &
     call this%bgc_reaction%calc_bgc_reaction(bounds, lbj, ubj, &
@@ -295,11 +324,14 @@ contains
          this%tracerstates,                                    &
          this%tracerfluxes,                                    &
          this%tracerboundaryconds,                             &
-         this%plant_soilbgc)
+         this%plant_soilbgc, betr_status)
+    if(betr_status%check_status())return
 
-    call tracer_gws_transport(betr_time, bounds, num_soilc, filter_soilc, Rfactor, biophysforc, &
-      biogeo_flux, this%tracers, this%tracerboundaryconds, this%tracercoeffs,                   &
-      this%tracerstates, this%tracerfluxes, this%bgc_reaction, this%advection_on, this%diffusion_on)
+    call tracer_gws_transport(betr_time, bounds, num_soilc, filter_soilc         , &
+      Rfactor, biophysforc, biogeo_flux, this%tracers, this%tracerboundaryconds  , &
+      this%tracercoeffs,  this%tracerstates, this%tracerfluxes, this%bgc_reaction, &
+      this%advection_on, this%diffusion_on, betr_status)
+    if(betr_status%check_status())return
 
     call calc_ebullition(bounds, 1, ubj,                                                                  &
          this%tracerboundaryconds%jtops_col,                                                              &
@@ -315,21 +347,22 @@ contains
          this%tracercoeffs,                                                                               &
          this%tracerstates,                                                                               &
          this%tracerfluxes%tracer_flx_ebu_col(bounds%begc:bounds%endc, 1:this%tracers%nvolatile_tracers), &
-         this%ebullition_on)
+         this%ebullition_on, betr_status)
+    if(betr_status%check_status())return
 
     if (is_active_betr_bgc) then
        !update nitrogen storage pool
        call this%plant_soilbgc%plant_soilbgc_summary(bounds, lbj, ubj, num_soilc, &
             filter_soilc,                                                         &
             col%dz(bounds%begc:bounds%endc,1:ubj),                                &
-            this%tracers, this%tracerfluxes)
+            this%tracers, this%tracerfluxes, betr_status)
     endif
-
   end subroutine step_without_drainage
 
 
   !--------------------------------------------------------------------------------
-  subroutine step_with_drainage(this, bounds,  num_soilc, filter_soilc, jtops, biogeo_flux)
+  subroutine step_with_drainage(this, bounds,  num_soilc, filter_soilc, jtops, &
+    biogeo_flux, betr_status)
     !
     ! !DESCRIPTION:
     ! do tracer update due to drainage
@@ -340,7 +373,8 @@ contains
     use tracercoeffType , only : tracercoeff_type
     use MathfuncMod     , only : safe_div
     use BetrBGCMod      , only : diagnose_gas_pressure
-
+    use BetrStatusType  , only : betr_status_type
+    implicit none
     ! !ARGUMENTS:
     class(betr_type)            , intent(inout) :: this
     type(bounds_type)           , intent(in)    :: bounds
@@ -348,15 +382,16 @@ contains
     integer                     , intent(in)    :: filter_soilc(:)                    ! column filter_soilc
     integer                     , intent(in)    :: jtops(bounds%begc: )
     type(betr_biogeo_flux_type) , intent(in)    :: biogeo_flux
+    type(betr_status_type)      , intent(out)   :: betr_status
 
     ! !LOCAL VARIABLES:
     real(r8) :: aqucon
     integer  :: fc, c, j, k
     integer  :: lbj, ubj
 
-
-    SHR_ASSERT_ALL((ubound(jtops)         == (/bounds%endc/))      , errMsg(filename,__LINE__))
-
+    call betr_status%reset()
+    SHR_ASSERT_ALL((ubound(jtops)  == (/bounds%endc/)), errMsg(filename,__LINE__), betr_status)
+    if(betr_status%check_status())return
     associate(                                                                         & !
          ngwmobile_tracers     => this%tracers%ngwmobile_tracers         ,             & !
          groupid               => this%tracers%groupid                    ,            & !
@@ -396,10 +431,10 @@ contains
             endif
          enddo
       enddo
-
+      if(betr_status%check_status())return
       !diagnose gas pressure
       call diagnose_gas_pressure(bounds, lbj, ubj, num_soilc, filter_soilc, &
-           this%tracers, this%tracercoeffs, this%tracerstates)
+           this%tracers, this%tracercoeffs, this%tracerstates, betr_status)
 
     end associate
   end subroutine step_with_drainage
@@ -512,8 +547,8 @@ contains
 
   !--------------------------------------------------------------------------------
 
-  subroutine check_mass_err(this, betr_time, &
-       c, trcid, ubj, dz, betrtracer_vars, tracerstate_vars, tracerflux_vars)
+  subroutine check_mass_err(this, betr_time, c, trcid, ubj, dz, betrtracer_vars,&
+    tracerstate_vars, tracerflux_vars, bstatus)
 
   !DESCRIPTION
   !temporary mass balance check
@@ -521,6 +556,7 @@ contains
   use tracerfluxType  , only : tracerflux_type
   use tracerstatetype , only : tracerstate_type
   use BeTR_TimeMod    , only : betr_time_type
+  use BetrStatusType  , only : betr_status_type
   implicit none
   !ARGUMENTS
   class(betr_type)        , intent(inout) :: this
@@ -528,11 +564,13 @@ contains
   integer                 , intent(in)    :: ubj
   integer                 , intent(in)    :: c, trcid
   real(r8)                , intent(in)    :: dz(1:ubj)
-  class(betrtracer_type)  , intent(in)    :: betrtracer_vars  ! tracer info data structure
-  type(tracerflux_type)   , intent(in)    :: tracerflux_vars  ! tracer flux
-  class(tracerstate_type) , intent(in)    :: tracerstate_vars ! tracer state variables data structure
+  class(betrtracer_type)  , intent(inout) :: betrtracer_vars  ! tracer info data structure
+  type(tracerflux_type)   , intent(inout) :: tracerflux_vars  ! tracer flux
+  class(tracerstate_type) , intent(inout) :: tracerstate_vars ! tracer state variables data structure
+  type(betr_status_type)  , intent(out)   :: bstatus
   real(r8)                                :: totmass , err
 
+  call bstatus%reset()
   ! remove compiler warnings about unused dummy args
   if (this%advection_on) continue
 
@@ -547,16 +585,18 @@ contains
        frozenid                  => betrtracer_vars%frozenid                            &
        )
 
-  totmass=tracerstate_vars%int_mass_mobile_col(1,ubj,c,trcid,dz(1:ubj))
-
+  totmass=tracerstate_vars%int_mass_mobile_col(1,ubj,c,trcid,dz(1:ubj), bstatus)
+  if(bstatus%check_status())return
   if(is_frozen(trcid))then
      totmass = totmass + &
-          tracerstate_vars%int_mass_frozen_col(1,ubj,c,frozenid(trcid),dz(1:ubj))
+          tracerstate_vars%int_mass_frozen_col(1,ubj,c,frozenid(trcid),dz(1:ubj),bstatus)
+     if(bstatus%check_status())return
   endif
-  call tracerflux_vars%flux_summary(betr_time, c, betrtracer_vars)
+  call tracerflux_vars%flux_summary(betr_time, c, betrtracer_vars,bstatus)
+  if(bstatus%check_status())return
   err=beg_tracer_molarmass(c,trcid)-totmass  &
        + tracer_flx_netpro(c,trcid)-tracer_flx_netphyloss(c,trcid)
-  print*,'err',err
+!x  print*,'err',err
   end associate
   end subroutine check_mass_err
 
@@ -840,14 +880,15 @@ contains
 
    !------------------------------------------------------------------------
 
-   subroutine tracer_DivideSnowLayers(this, bounds, num_snowc, filter_snowc, divide_matrix)
+   subroutine tracer_DivideSnowLayers(this, bounds, num_snowc, filter_snowc, divide_matrix, bstatus)
    !
    ! DESCRIPTIONS
    ! divide tracers in snow
    !
    ! USES
-     use BetrBGCMod, only : tracer_col_mapping_div
-     use BetrBGCMod, only : tracer_copy_a2b_div
+   use BetrBGCMod, only : tracer_col_mapping_div
+   use BetrBGCMod, only : tracer_copy_a2b_div
+   use BetrStatusType      , only : betr_status_type
    implicit none
    !ARGUMENTS
    class(betr_type)  , intent(inout) :: this
@@ -855,15 +896,19 @@ contains
    integer           , intent(in)    :: num_snowc      ! number of column soil points in column filter
    integer           , intent(in)    :: filter_snowc(:) ! column filter for soil points
    real(r8)          , intent(in)    :: divide_matrix(bounds%begc: , 1: , 1: )
+   type(betr_status_type),intent(out):: bstatus
 
    !temporary variable
    real(r8) :: tracer_copy(bounds%begc:bounds%endc, 1:nlevsno)
    integer  :: jj, jj1
 
-   SHR_ASSERT_ALL((ubound(divide_matrix ,1)         == bounds%endc)  , errMsg(filename,__LINE__))
-   SHR_ASSERT_ALL((ubound(divide_matrix ,2)         == nlevsno)      , errMsg(filename,__LINE__))
-   SHR_ASSERT_ALL((ubound(divide_matrix ,3)         == nlevsno)      , errMsg(filename,__LINE__))
-
+   call bstatus%reset()
+   SHR_ASSERT_ALL((ubound(divide_matrix ,1)  == bounds%endc)  , errMsg(filename,__LINE__), bstatus)
+   if(bstatus%check_status())return
+   SHR_ASSERT_ALL((ubound(divide_matrix ,2)  == nlevsno)      , errMsg(filename,__LINE__), bstatus)
+   if(bstatus%check_status())return
+   SHR_ASSERT_ALL((ubound(divide_matrix ,3)  == nlevsno)      , errMsg(filename,__LINE__), bstatus)
+   if(bstatus%check_status())return
    associate(                                                                           &
       tracer_conc_frozen_col        => this%tracerstates%tracer_conc_frozen_col ,       &
       tracer_conc_mobile_col        => this%tracerstates%tracer_conc_mobile_col ,       &
@@ -880,15 +925,16 @@ contains
            tracer_conc_mobile_col(bounds%begc:bounds%endc, -nlevsno+1:0,jj),tracer_copy)
         !remapping
         call tracer_col_mapping_div(bounds, num_snowc, filter_snowc, col%snl, divide_matrix,   &
-           tracer_copy, tracer_conc_mobile_col(bounds%begc:bounds%endc, -nlevsno+1:1,jj))
-
+           tracer_copy, tracer_conc_mobile_col(bounds%begc:bounds%endc, -nlevsno+1:1,jj),bstatus)
+        if(bstatus%check_status())return
         if(is_frozen(jj))then
           !make a copy
           call tracer_copy_a2b_div(bounds, num_snowc, filter_snowc, col%snl,                   &
             tracer_conc_frozen_col(bounds%begc:bounds%endc, -nlevsno+1:0,jj),tracer_copy)
           !remapping
           call tracer_col_mapping_div(bounds, num_snowc, filter_snowc, col%snl, divide_matrix, &
-             tracer_copy, tracer_conc_frozen_col(bounds%begc:bounds%endc, -nlevsno+1:0,jj))
+             tracer_copy, tracer_conc_frozen_col(bounds%begc:bounds%endc, -nlevsno+1:0,jj),bstatus)
+          if(bstatus%check_status())return
         endif
      else
        !x!currently, no solid tracer is allowed to mix with snow
@@ -902,16 +948,17 @@ contains
    end subroutine tracer_DivideSnowLayers
    !------------------------------------------------------------------------
 
-   subroutine tracer_CombineSnowLayers(this, bounds, num_snowc, filter_snowc, combine_matrix)
+   subroutine tracer_CombineSnowLayers(this, bounds, num_snowc, filter_snowc, combine_matrix, bstatus)
    !
    ! DESCRIPTIONS
    ! combine tracers in snow
    !
    !! USES
-     use tracer_varcon , only : nlevsno => betr_nlevsno
-     use BetrBGCMod    , only : tracer_col_mapping_div
-     use BetrBGCMod    , only : tracer_col_mapping_comb
-     use BetrBGCMod    , only : tracer_copy_a2b_comb
+   use tracer_varcon , only : nlevsno => betr_nlevsno
+   use BetrBGCMod    , only : tracer_col_mapping_div
+   use BetrBGCMod    , only : tracer_col_mapping_comb
+   use BetrBGCMod    , only : tracer_copy_a2b_comb
+   use BetrStatusType      , only : betr_status_type
    !!
    ! ARGUMENTS
    implicit none
@@ -920,14 +967,19 @@ contains
    integer           , intent(in)    :: num_snowc      ! number of column soil points in column filter
    integer           , intent(in)    :: filter_snowc(:) ! column filter for soil points
    real(r8)          , intent(in)    :: combine_matrix(bounds%begc: ,-nlevsno+1: ,-nlevsno+1: )
+   type(betr_status_type),intent(out):: bstatus
 
    !temporary variables
    real(r8) :: tracer_copy(bounds%begc:bounds%endc,-nlevsno+1:1)
    integer  :: jj, jj1
 
-   SHR_ASSERT_ALL((ubound(combine_matrix,1)         == bounds%endc)  , errMsg(filename,__LINE__))
-   SHR_ASSERT_ALL((ubound(combine_matrix,2)         == 1)            , errMsg(filename,__LINE__))
-   SHR_ASSERT_ALL((ubound(combine_matrix,3)         == 1)            , errMsg(filename,__LINE__))
+   call bstatus%reset()
+   SHR_ASSERT_ALL((ubound(combine_matrix,1) == bounds%endc)  , errMsg(filename,__LINE__),bstatus)
+   if(bstatus%check_status())return
+   SHR_ASSERT_ALL((ubound(combine_matrix,2) == 1)            , errMsg(filename,__LINE__),bstatus)
+   if(bstatus%check_status())return
+   SHR_ASSERT_ALL((ubound(combine_matrix,3) == 1)            , errMsg(filename,__LINE__),bstatus)
+   if(bstatus%check_status())return
 
    associate(                                                                           &
       tracer_conc_frozen_col        => this%tracerstates%tracer_conc_frozen_col ,       &
@@ -946,14 +998,16 @@ contains
            tracer_conc_mobile_col(bounds%begc:bounds%endc, -nlevsno+1:1,jj),tracer_copy)
         !remapping
         call tracer_col_mapping_comb(bounds, num_snowc, filter_snowc, col%snl, combine_matrix,   &
-           tracer_copy, tracer_conc_mobile_col(bounds%begc:bounds%endc, -nlevsno+1:1,jj))
+           tracer_copy, tracer_conc_mobile_col(bounds%begc:bounds%endc, -nlevsno+1:1,jj),bstatus)
+        if(bstatus%check_status())return
         if(is_frozen(jj))then
           !make a copy
           call tracer_copy_a2b_comb(bounds, num_snowc, filter_snowc, col%snl,                    &
             tracer_conc_frozen_col(bounds%begc:bounds%endc, -nlevsno+1:1,jj),tracer_copy)
           !remapping
           call tracer_col_mapping_comb(bounds, num_snowc, filter_snowc, col%snl, combine_matrix, &
-             tracer_copy, tracer_conc_frozen_col(bounds%begc:bounds%endc, -nlevsno+1:1,jj))
+             tracer_copy, tracer_conc_frozen_col(bounds%begc:bounds%endc, -nlevsno+1:1,jj),bstatus)
+          if(bstatus%check_status())return
         endif
      else
        !x!currently, no solid tracer is allowed to mix with snow
@@ -1082,20 +1136,24 @@ contains
 
   end subroutine tracer_snowcapping
    !------------------------------------------------------------------------
-  subroutine create_betr_application(this, bgc_reaction, plant_soilbgc, method)
+  subroutine create_betr_application(this, bgc_reaction, plant_soilbgc, method, bstatus)
   !DESCRIPTION
   !create betr applications based on method
   !USES
   use ReactionsFactory    , only : create_betr_def_application
   use ApplicationsFactory , only : create_betr_usr_application
+  use BetrStatusType      , only : betr_status_type
   implicit none
   !ARGUMENTS
-  class(betr_type)         ,               intent(inout) :: this
+  class(betr_type)          ,               intent(inout) :: this
   class(bgc_reaction_type)  ,  allocatable, intent(out)  :: bgc_reaction
-  class(plant_soilbgc_type) , allocatable,  intent(out)  :: plant_soilbgc
+  class(plant_soilbgc_type) ,  allocatable, intent(out)  :: plant_soilbgc
   character(len=*)          ,               intent(in)   :: method
+  type(betr_status_type)    , intent(out) :: bstatus
   !temporary variable
   logical :: yesno
+
+  call bstatus%reset()
    ! remove compiler warnings about unused dummy args
   if(len_trim(this%reaction_method)>0)continue
 
@@ -1103,7 +1161,108 @@ contains
   call create_betr_def_application(bgc_reaction, plant_soilbgc, method, yesno)
 
   if(.not. yesno)then
-    call create_betr_usr_application(bgc_reaction, plant_soilbgc, method)
+    call create_betr_usr_application(bgc_reaction, plant_soilbgc, method, bstatus)
   endif
   end subroutine create_betr_application
+
+   !------------------------------------------------------------------------
+
+  subroutine get_hist_size(this, num_state1d, num_state2d, num_flux1d, num_flux2d, &
+         nmlist_hist1d_state_buffer, nmlist_hist2d_state_buffer, &
+         nmlist_hist1d_flux_buffer, nmlist_hist2d_flux_buffer)
+  !
+  ! DESCRIPTION
+  ! return number of variables for history output
+  !
+  ! USES
+  use betr_ctrl, only : max_betr_hist_type
+  implicit none
+  !ARGUMENTS
+  class(betr_type)  ,     intent(inout) :: this
+  integer           ,     intent(out)   :: num_state1d
+  integer           ,     intent(out)   :: num_state2d
+  integer           ,     intent(out)   :: num_flux1d
+  integer           ,     intent(out)   :: num_flux2d
+  character(len=255), intent(out) :: nmlist_hist1d_state_buffer(max_betr_hist_type)
+  character(len=255), intent(out) :: nmlist_hist2d_state_buffer(max_betr_hist_type)
+  character(len=255), intent(out) :: nmlist_hist1d_flux_buffer(max_betr_hist_type)
+  character(len=255), intent(out) :: nmlist_hist2d_flux_buffer(max_betr_hist_type)
+  integer :: j
+
+  num_state1d = this%tracerstates%num_hist1d
+  num_state2d = this%tracerstates%num_hist2d
+  num_flux1d  = this%tracerfluxes%num_hist1d
+  num_flux2d  = this%tracerfluxes%num_hist2d
+
+  do j = 1, num_state1d
+    nmlist_hist1d_state_buffer(j) = this%tracerstates%nmlist_hist1d_buffer(j)
+  enddo
+
+  do j = 1, num_state2d
+    nmlist_hist2d_state_buffer(j) =this%tracerstates%nmlist_hist2d_buffer(j)
+  enddo
+
+  do j = 1, num_flux1d
+    nmlist_hist1d_flux_buffer(j) = this%tracerfluxes%nmlist_hist1d_buffer(j)
+  enddo
+
+  do j = 1, num_flux2d
+    nmlist_hist2d_flux_buffer(j) = this%tracerfluxes%nmlist_hist2d_buffer(j)
+  enddo
+  end subroutine get_hist_size
+
+  !------------------------------------------------------------------------
+  subroutine HistRetrieve(this, bounds, lbj, ubj, num_state1d, num_state2d, &
+     num_flux1d, num_flux2d, states_1d, states_2d, fluxes_1d, fluxes_2d)
+  implicit none
+  class(betr_type)  ,     intent(inout) :: this
+  type(bounds_type) , intent(in)    :: bounds               ! bounds
+  integer, intent(in) :: lbj, ubj
+  integer           ,     intent(in)   :: num_state1d
+  integer           ,     intent(in)   :: num_state2d
+  integer           ,     intent(in)   :: num_flux1d
+  integer           ,     intent(in)   :: num_flux2d
+  real(r8)          , intent(out) :: states_1d(bounds%begc:bounds%endc,1:num_state1d)
+  real(r8)          , intent(out) :: states_2d(bounds%begc:bounds%endc,lbj:ubj, 1:num_state2d)
+  real(r8)          , intent(out) :: fluxes_1d(bounds%begc:bounds%endc,1:num_flux1d)
+  real(r8)          , intent(out) :: fluxes_2d(bounds%begc:bounds%endc,lbj:ubj, 1:num_flux2d)
+
+  call this%tracerstates%retrieve_hist(bounds, lbj, ubj, states_2d, states_1d, this%tracers)
+
+  call this%tracerfluxes%retrieve_hist(bounds, lbj, ubj, fluxes_2d, fluxes_1d, this%tracers)
+
+  end subroutine HistRetrieve
+
+  !------------------------------------------------------------------------
+  subroutine get_restartvar(this, nrest_1d, nrest_2d,rest_varname_1d, &
+   rest_varname_2d)
+  !
+  !DESCRIPTION
+  use betr_ctrl, only : max_betr_hist_type
+  implicit none
+  class(betr_type)  ,     intent(inout) :: this
+  integer, intent(out) :: nrest_1d, nrest_2d
+  character(len=255), intent(out) :: rest_varname_1d(max_betr_hist_type)
+  character(len=255), intent(out) :: rest_varname_2d(max_betr_hist_type)
+
+  call this%tracerstates%get_restartvars(nrest_1d, nrest_2d,rest_varname_1d, &
+   rest_varname_2d, this%tracers)
+
+  end subroutine get_restartvar
+
+  !------------------------------------------------------------------------
+  subroutine set_restvar(this, bounds, lbj, ubj, nrest_1d, nrest_2d, states_1d, states_2d, flag)
+  !
+  !DESCRIPTIONS
+  !set initial conditions based on restart file
+  implicit none
+  class(betr_type)  ,     intent(inout) :: this
+  type(bounds_type)                , intent(in)    :: bounds               ! bounds
+  integer, intent(in) :: nrest_1d, nrest_2d
+  integer, intent(in) :: lbj, ubj
+  real(r8), intent(inout) :: states_1d(bounds%begc:bounds%endc, 1:nrest_1d)
+  real(r8), intent(inout) :: states_2d(bounds%begc:bounds%endc, lbj:ubj, 1:nrest_2d)
+  character(len=*), intent(in) :: flag
+  call this%tracerstates%restart(bounds, lbj, ubj, nrest_1d, nrest_2d, states_1d, states_2d, this%tracers, flag)
+  end subroutine set_restvar
 end module BetrType

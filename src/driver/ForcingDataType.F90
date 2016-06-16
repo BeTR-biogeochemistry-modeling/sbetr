@@ -55,7 +55,7 @@ contains
     !initialize
     implicit none
     !ARGUMENTS
-    class(ForcingData_type) :: this
+    class(ForcingData_type), intent(inout) :: this
     integer, intent(in)     :: dim_levels, dim_time
 
     this%num_columns = 1
@@ -83,7 +83,7 @@ contains
     !DESCRIPTION
     !allocate memory
     implicit none
-    class(ForcingData_type) :: this
+    class(ForcingData_type), intent(inout) :: this
     !at this moment the variable size is fixed
 
     allocate(this%t_soi(this%num_time, this%num_levels))
@@ -102,7 +102,7 @@ contains
   !------------------------------------------------------------------------
   subroutine ReadData(this, namelist_buffer, grid)
     !DESCRIPTION
-    !read infomration about forcing data 
+    !read infomration about forcing data
     !USES
     use ncdio_pio    , only : file_desc_t
     use ncdio_pio    , only : ncd_nowrite
@@ -115,7 +115,7 @@ contains
     use BeTR_GridMod , only : betr_grid_type
     implicit none
     !ARGUMENTS
-    class(ForcingData_type)                              :: this
+    class(ForcingData_type), intent(inout)  :: this
     character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
     class(betr_grid_type), intent(in)                    :: grid
     !TEMPORARY VARIABLES
@@ -158,7 +158,7 @@ contains
     use BeTR_GridMod , only : betr_grid_type
     implicit none
     !ARGUMENTS
-    class(ForcingData_type)           :: this
+    class(ForcingData_type), intent(inout)  :: this
     class(betr_grid_type), intent(in) :: grid
     !TEMPORARY VARIABLES
     character(len=250)    :: ncf_in_filename_forc
@@ -180,7 +180,7 @@ contains
           this%t_soi(j1, j2) = data_2d(this%num_columns, j2, j1)
        enddo
     enddo
-    
+
     !X!write(*, *) 'Reading H2OSOI'
     call ncd_getvar(ncf_in_forc, 'H2OSOI', data_2d)
     do j2 = 1, this%num_levels
@@ -257,7 +257,7 @@ contains
     use betr_constants , only : stdout
     implicit none
     ! !ARGUMENTS:
-    class(ForcingData_type)                              :: this
+    class(ForcingData_type), intent(inout)  :: this
     character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
     !
     ! !LOCAL VARIABLES:

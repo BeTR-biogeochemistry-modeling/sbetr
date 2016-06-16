@@ -7,7 +7,7 @@ module ODEMod
   ! !USES:
   use bshr_kind_mod , only : r8 => shr_kind_r8
   use betr_ctrl     , only : iulog => biulog
-  
+
   implicit none
 
   private
@@ -86,9 +86,10 @@ contains
     call ebbks(y0, f, nprimeq, neq, dt, y)
   end subroutine ode_ebbks2
   !-------------------------------------------------------------------------------
-  subroutine ode_mbbks1(odefun, y0, nprimeq, neq, t, dt, y, pscal)
+  subroutine ode_mbbks1(odefun, y0, nprimeq, neq, t, dt, y, pscal, bstatus)
     ! !DESCRPTION:
     !first order accurate implicit BBKS fixed time step positive preserving ode integrator
+    use BetrStatusType    , only : betr_status_type
     implicit none
     ! !ARGUMENTS:
     integer,            intent(in)  :: nprimeq
@@ -98,15 +99,18 @@ contains
     real(r8),           intent(in)  :: dt
     real(r8),           intent(out) :: y(neq)
     real(r8), optional, intent(out) :: pscal
+    type(betr_status_type), intent(out) :: bstatus
+
     external :: odefun
 
     ! !LOCAL VARIABLES:
     real(r8) :: f(neq)
     real(r8) :: pscal1
 
+    call bstatus%reset()
     call odefun(y0, dt, t, nprimeq, neq, f)
 
-    call mbbks(y0, f, nprimeq, neq, dt, y, pscal1)
+    call mbbks(y0, f, nprimeq, neq, dt, y, pscal1, bstatus)
 
     if(present(pscal))pscal=pscal1
   end subroutine ode_mbbks1
@@ -140,10 +144,11 @@ contains
 
   end subroutine get_tscal
   !-------------------------------------------------------------------------------
-  subroutine ode_mbbks2(odefun, y0, nprimeq, neq, t, dt, y)
+  subroutine ode_mbbks2(odefun, y0, nprimeq, neq, t, dt, y, bstatus)
     !
     ! !DESCRIPTION:
     !second order implicit bkks ode integration with the adaptive time stepping
+    use BetrStatusType    , only : betr_status_type
     implicit none
     ! !ARGUMENTS:
     integer,  intent(in)  :: nprimeq
@@ -152,6 +157,7 @@ contains
     real(r8), intent(in)  :: t
     real(r8), intent(in)  :: dt
     real(r8), intent(out) :: y(neq)
+    type(betr_status_type), intent(out) :: bstatus
     external :: odefun
 
     ! !LOCAL VARIABLES:
@@ -162,10 +168,11 @@ contains
     integer  :: n
     real(r8) :: nJ, pp
     real(r8) :: pscal
-
+    call bstatus%reset()
     call odefun(y0, dt, t, nprimeq, neq, f)
 
-    call mbbks(y0, f, nprimeq, neq, dt, y1, pscal)
+    call mbbks(y0, f, nprimeq, neq, dt, y1, pscal, bstatus)
+    if(bstatus%check_status())return
     ti = t + dt
     call odefun(y1, dt, ti,nprimeq, neq, f1)
 
@@ -185,18 +192,18 @@ contains
        enddo
     endif
 
-    call mbbks(y0, f, nprimeq, neq, dt, y, pscal)
+    call mbbks(y0, f, nprimeq, neq, dt, y, pscal, bstatus)
 
   end subroutine ode_mbbks2
   !-------------------------------------------------------------------------------
-  subroutine mbbks(y0, f, nprimeq, neq, dt, y, pscal)
+  subroutine mbbks(y0, f, nprimeq, neq, dt, y, pscal, bstatus)
     ! !DESCRIPTION:
     ! mbbks update
     !
     ! !USES:
-    use MathfuncMod   , only : safe_div
+    use MathfuncMod       , only : safe_div
     use func_data_type_mod, only : func_data_type
-
+    use BetrStatusType    , only : betr_status_type
     implicit none
 
     ! !ARGUMENTS:
@@ -207,6 +214,7 @@ contains
     integer,  intent(in)  :: nprimeq  !
     real(r8), intent(out) :: y(neq)   ! updated state variable
     real(r8), intent(out) :: pscal
+    type(betr_status_type), intent(out) :: bstatus
 
     ! !LOCAL VARIABLES:
     real(r8), pointer :: aj(:)
@@ -215,7 +223,6 @@ contains
     real(r8) :: a
     integer  :: n, nJ
     type(func_data_type) :: mbkks_data
-
 
     allocate(mbkks_data%aj(neq))
     aj => mbkks_data%aj
@@ -243,7 +250,8 @@ contains
           pscal=pmax
        else
           mbkks_data%nJ = nJ
-          pscal=GetGdtScalar(mbkks_data, pmax)
+          call GetGdtScalar(mbkks_data, pmax, pscal, bstatus)
+          if(bstatus%check_status())return
           pscal=pscal**(1._r8/nJ)
        endif
        !reduce the chance of negative y(n) from roundoff error
@@ -261,13 +269,14 @@ contains
   end subroutine mbbks
 
   !-------------------------------------------------------------------------------
-  subroutine ode_adapt_mbbks1(odefun, y0, nprimeq, neq, t, dt, y)
+  subroutine ode_adapt_mbbks1(odefun, y0, nprimeq, neq, t, dt, y, bstatus)
     ! !DESCRIPTION:
     !first order implicit bkks ode integration with the adaptive time stepping
     !This could be used as an example for the implementation of time-adaptive
     !mbbks1.
     ! !NOTE:
     ! this code should only be used for mass positive ODE integration
+    use BetrStatusType    , only : betr_status_type
     implicit none
     ! !ARGUMENTS:
     integer,  intent(in)  :: neq      ! number of equations
@@ -276,6 +285,7 @@ contains
     real(r8), intent(in)  :: dt       ! time stepping
     integer,  intent(in)  :: nprimeq  !
     real(r8), intent(out) :: y(neq)   ! updated state variable
+    type(betr_status_type), intent(out) :: bstatus
     external :: odefun
 
     ! !LOCAL VARIABLES:
@@ -292,9 +302,10 @@ contains
     real(r8) :: rerr, dt_scal, pscal
     integer  :: n, nJ
 
+    call bstatus%reset()
     ! remove compiler warning about unused dummy arg
     if (t > 0.0_r8) continue
-    
+
     dt2=dt
     dtmin=dt/64._r8
     dtr=dt
@@ -304,22 +315,25 @@ contains
     do
        if(dt2<=dtmin)then
           call odefun(y, dt2, tt, nprimeq, neq, f)
-          call mbbks(y, f, nprimeq, neq, dt2, yc, pscal)
+          call mbbks(y, f, nprimeq, neq, dt2, yc, pscal, bstatus)
+          if(bstatus%check_status())return
           dtr=dtr-dt2
           tt=tt+dt2
           y=yc
        else
           !get coarse grid solution
           call odefun(y, dt2, tt, nprimeq, neq, f)
-          call mbbks(y, f, nprimeq, neq, dt2, yc, pscal)
-
+          call mbbks(y, f, nprimeq, neq, dt2, yc, pscal, bstatus)
+          if(bstatus%check_status())return
           !get fine grid solution
           dt05=dt2*0.5_r8
-          call mbbks(y,f,nprimeq, neq,dt05, yf, pscal)
+          call mbbks(y,f,nprimeq, neq,dt05, yf, pscal, bstatus)
+          if(bstatus%check_status())return
           tt2=tt+dt05
           ycp=yf
           call odefun(ycp, dt05, tt, nprimeq, neq, f)
-          call mbbks(ycp,f,nprimeq, neq,dt05,yf,pscal)
+          call mbbks(ycp,f,nprimeq, neq,dt05,yf,pscal, bstatus)
+          if(bstatus%check_status())return
 
           !determine the relative error
           rerr=get_rerr_v(yc,yf, neq)
@@ -380,17 +394,20 @@ contains
   end function get_rerr_s
 
   !-------------------------------------------------------------------------------
-  function GetGdtScalar(mbkks_data, pmax) result(pp)
+  subroutine GetGdtScalar(mbkks_data, pmax, pp, bstatus)
     ! !DESCRIPTION:
     !get the gradient scaling factor for bkks integrator
     !
     ! !USES:
     use FindRootMod        , only : brent
     use func_data_type_mod , only : func_data_type
+    use BetrstatusType     , only : betr_status_type
     implicit none
     ! !ARGUMENTS:
     type(func_data_type) , intent(in) :: mbkks_data
     real(r8)             , intent(in) :: pmax
+    real(r8)             , intent(out):: pp
+    type(betr_status_type), intent(out) :: bstatus
 
     ! !LOCAL VARIABLES:
     real(r8) :: iJ
@@ -398,13 +415,13 @@ contains
     real(r8), parameter :: macheps = 1.e-8_r8
     real(r8), parameter :: tol = 1.e-8_r8
 
-    real(r8) :: pp
-    
+    call bstatus%reset()
+
     call gfunc_mbkks(0._r8, mbkks_data, f1)
     call gfunc_mbkks(pmax, mbkks_data, f2)
-    call brent(pp, 0._r8, pmax, f1, f2, macheps, tol, mbkks_data, gfunc_mbkks)
+    call brent(pp, 0._r8, pmax, f1, f2, macheps, tol, mbkks_data, gfunc_mbkks, bstatus)
 
-  end function GetGdtScalar
+  end subroutine GetGdtScalar
 
   !-------------------------------------------------------------------------------
   subroutine gfunc_mbkks(p, mbkks_data, gf_value)
@@ -443,7 +460,7 @@ contains
     ! !DESCRIPTION:
     !ebbks update
     !
-    !USES   
+    !USES
     implicit none
     ! !ARGUMENTS:
     integer,            intent(in)  :: neq

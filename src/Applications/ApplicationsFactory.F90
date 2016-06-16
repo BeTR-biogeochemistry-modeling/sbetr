@@ -21,70 +21,86 @@ module ApplicationsFactory
   public :: create_betr_usr_application
 contains
 
-  subroutine create_betr_usr_application(bgc_reaction, plant_soilbgc, method)
+  subroutine create_betr_usr_application(bgc_reaction, plant_soilbgc, method, bstatus)
   !DESCRIPTION
   !create betr applications
   !
+  use betr_constants  , only : betr_errmsg_len
+  use BetrStatusType  , only : betr_status_type
   implicit none
   class(bgc_reaction_type),  allocatable, intent(out) :: bgc_reaction
   class(plant_soilbgc_type), allocatable, intent(out) :: plant_soilbgc
   character(len=*),                       intent(in)  :: method
+  type(betr_status_type), intent(out) :: bstatus
 
-  allocate(bgc_reaction, source=create_bgc_reaction_type(method))
 
-  allocate(plant_soilbgc, source=create_plant_soilbgc_type(method))
+  allocate(bgc_reaction, source=create_bgc_reaction_type(method,bstatus))
+  if(bstatus%check_status())return
+
+  allocate(plant_soilbgc, source=create_plant_soilbgc_type(method,bstatus))
 
   end subroutine create_betr_usr_application
 
 !-------------------------------------------------------------------------------
 
-  function create_bgc_reaction_type(method) result(bgc_reaction)
+  function create_bgc_reaction_type(method, bstatus) result(bgc_reaction)
     !
     ! !DESCRIPTION:
     ! create and return an object of bgc_reaction
     !
     ! !USES:
     use BGCReactionsMod , only : bgc_reaction_type
-    use babortutils     , only : endrun
     use betr_ctrl       , only : iulog  => biulog
-
+    use betr_constants  , only : betr_errmsg_len
+    use BetrStatusType  , only : betr_status_type
+    implicit none
     ! !ARGUMENTS:
     character(len=*), intent(in)          :: method
+    type(betr_status_type), intent(out)   :: bstatus
+
     ! temporary varaibles
     class(bgc_reaction_type), allocatable :: bgc_reaction
     character(len=*), parameter           :: subname = 'create_bgc_reaction_type'
+    character(len=betr_errmsg_len) :: msg
 
+    call bstatus%reset()
     select case(trim(method))
 
     case default
-
-       write(iulog,*)subname //' ERROR: unknown method: ', method
-       call endrun(msg=errMsg(mod_filename, __LINE__))
+       write(msg,*)subname //' ERROR: unknown method: ', method
+       msg = trim(msg)//new_line('A')//errMsg(mod_filename, __LINE__)
+       call bstatus%set_msg(msg=msg,err=-1)
     end select
   end function create_bgc_reaction_type
   !-------------------------------------------------------------------------------
 
-  function create_plant_soilbgc_type(method)result(plant_soilbgc)
+  function create_plant_soilbgc_type(method, bstatus)result(plant_soilbgc)
 
   !DESCRIPTION
   !create and return an object of plant_soilbgc
   !
   !USES
   use PlantSoilBGCMod , only : plant_soilbgc_type
-  use babortutils     , only : endrun
   use betr_ctrl       , only : iulog  => biulog
+  use betr_constants  , only : betr_errmsg_len
+  use BetrStatusType  , only : betr_status_type
   implicit none
   ! !ARGUMENTS:
   character(len=*), intent(in)          :: method
+  type(betr_status_type), intent(out)   :: bstatus
   !temporary variables
   class(plant_soilbgc_type) , allocatable :: plant_soilbgc
   character(len=*)          , parameter   :: subname = 'create_plant_soilbgc_type'
+  character(len=betr_errmsg_len) :: msg
+
+  call bstatus%reset()
 
   select case(trim(method))
 
   case default
-     write(*, *)subname //' ERROR: unknown method: ', method
-     call endrun(msg=errMsg(mod_filename, __LINE__))
+     write(msg, *)subname //' ERROR: unknown method: ', method
+     msg = trim(msg)//new_line('A')//errMsg(mod_filename, __LINE__)
+     call bstatus%set_msg(msg=msg,err=-1)
   end select
 
   end function create_plant_soilbgc_type

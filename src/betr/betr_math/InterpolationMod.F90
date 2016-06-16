@@ -7,7 +7,6 @@ module InterpolationMod
 
   ! !USES:
   use bshr_kind_mod , only : r8 => shr_kind_r8
-  use babortutils   , only : endrun
   use bshr_log_mod  , only : errMsg => shr_log_errMsg
 
   implicit none
@@ -24,10 +23,11 @@ module InterpolationMod
 contains
 
   !-------------------------------------------------------------------------------
-  subroutine Lagrange_interp(pn, x, y, xi, yi)
+  subroutine Lagrange_interp(pn, x, y, xi, yi, bstatus)
     !
     ! !DESCRIPTION:
     ! do order pn lagrangian interpolation
+    use BetrStatusType, only : betr_status_type
     implicit none
     ! !ARGUMENTS:
     integer,                intent(in)  :: pn    !order of interpolation
@@ -35,14 +35,18 @@ contains
     real(r8), dimension(:), intent(in)  :: y   !value of data
     real(r8), dimension(:), intent(in)  :: xi  !target points to be evaluated
     real(r8), dimension(:), intent(out) :: yi !target values
-
+    type(betr_status_type), intent(out) :: bstatus
     ! !LOCAL VARIABLES:
     integer :: k, ni, nx
     integer :: pos, disp, disp1
 
-    SHR_ASSERT_ALL((ubound(x) == ubound(y)),   errMsg(mod_filename,__LINE__))
-    SHR_ASSERT_ALL((ubound(xi) == ubound(yi)), errMsg(mod_filename,__LINE__))
-    SHR_ASSERT_ALL((ubound(x) >= pn+1),        errMsg(mod_filename,__LINE__))
+    call bstatus%reset()
+    SHR_ASSERT_ALL((ubound(x) == ubound(y)),   errMsg(mod_filename,__LINE__), bstatus)
+    if(bstatus%check_status())return
+    SHR_ASSERT_ALL((ubound(xi) == ubound(yi)), errMsg(mod_filename,__LINE__), bstatus)
+    if(bstatus%check_status())return
+    SHR_ASSERT_ALL((ubound(x) >= pn+1),        errMsg(mod_filename,__LINE__), bstatus)
+    if(bstatus%check_status())return
 
     ni  = size(xi)
     nx = size(x)
@@ -66,11 +70,14 @@ contains
        else
           ! call function Lagrange
           if (pos <= disp1) then
-             yi(k) = Lagrange_poly(pn, x(1:pn+1), y(1:pn+1), xi(k))
+             yi(k) = Lagrange_poly(pn, x(1:pn+1), y(1:pn+1), xi(k), bstatus)
+             if(bstatus%check_status())return
           else if (pos >= nx-disp) then
-             yi(k) = Lagrange_poly(pn, x(nx-pn:nx), y(nx-pn:nx), xi(k))
+             yi(k) = Lagrange_poly(pn, x(nx-pn:nx), y(nx-pn:nx), xi(k), bstatus)
+             if(bstatus%check_status())return
           else
-             yi(k) = Lagrange_poly(pn, x(pos-disp1:pos+disp), y(pos-disp1:pos+disp), xi(k))
+             yi(k) = Lagrange_poly(pn, x(pos-disp1:pos+disp), y(pos-disp1:pos+disp), xi(k), bstatus)
+             if(bstatus%check_status())return
           end if
        endif
     enddo
@@ -78,25 +85,28 @@ contains
   end subroutine Lagrange_interp
 
   !-------------------------------------------------------------------------------
-  function Lagrange_poly(pn, xvect, yvect, z)result(Pz)
+  function Lagrange_poly(pn, xvect, yvect, z, bstatus)result(Pz)
     !
     ! !DESCRIPTION:
     ! do lagrangian interpolation at order pn
     !
+    use BetrStatusType, only : betr_status_type
     implicit none
     ! !ARGUMENTS:
     integer,                intent(in) :: pn   ! Order of Interpolation Polynomial
     real(r8), dimension(:), intent(in) :: xvect, yvect  ! vectors of known data: x,y-values
     real(r8),               intent(in) :: z   ! the target point "z"
-
+    type(betr_status_type), intent(out) :: bstatus
     ! !LOCAL VARIABLES:
     integer   :: i, j, n
     real(r8)  :: L(pn+1)    ! Lagrange cardinal function
     real(r8)  :: Pz    ! target value
 
-    SHR_ASSERT_ALL((size(xvect) == size(yvect)), errMsg(mod_filename,__LINE__))
-    SHR_ASSERT_ALL((size(xvect) == pn+1),        errMsg(mod_filename,__LINE__))
-
+    call bstatus%reset()
+    SHR_ASSERT_ALL((size(xvect) == size(yvect)), errMsg(mod_filename,__LINE__), bstatus)
+    if(bstatus%check_status())return
+    SHR_ASSERT_ALL((size(xvect) == pn+1),        errMsg(mod_filename,__LINE__), bstatus)
+    if(bstatus%check_status())return
     ! n = number of data points:length of each data vector
     n = size(xvect)
     ! Initializations of Pz and L
@@ -150,7 +160,7 @@ contains
 
   end function find_idx
   !------------------------------------------------------------
-  subroutine pchip_polycc(x, fx, di, region)
+  subroutine pchip_polycc(x, fx, di, bstatus, region)
     !
     ! DESCRIPTION
     ! Given the data, generate the coefficients of the monotonic cubic
@@ -158,13 +168,16 @@ contains
     ! Ref, Fritsch and Carlson, 1980
     !
     ! !USES:
-    use MathfuncMod, only : diff
+    use MathfuncMod      , only : diff
+    use BetrStatusType   , only : betr_status_type
+    use betr_constants   , only : betr_errmsg_len
     implicit none
     ! !ARGUMENTS:
     real(r8), dimension(:), intent(in) :: x
     real(r8), dimension(:), intent(in) :: fx
     real(r8), dimension(:), intent(out):: di
     integer,  optional,     intent(in) :: region
+    type(betr_status_type), intent(out):: bstatus
 
     ! !LOCAL VARIABLES:
     real(r8), allocatable :: h(:)
@@ -173,10 +186,13 @@ contains
     real(r8) :: alpha, beta, tao, rr
     integer :: region_loc
     integer :: n, j
+    character(len=betr_errmsg_len) :: msg
 
-    SHR_ASSERT_ALL((size(x) == size(fx)), errMsg(mod_filename,__LINE__))
-    SHR_ASSERT_ALL((size(x) == size(di)), errMsg(mod_filename,__LINE__))
-
+    call bstatus%reset()
+    SHR_ASSERT_ALL((size(x) == size(fx)), errMsg(mod_filename,__LINE__), bstatus)
+    if(bstatus%check_status())return
+    SHR_ASSERT_ALL((size(x) == size(di)), errMsg(mod_filename,__LINE__), bstatus)
+    if(bstatus%check_status())return
     region_loc=2
     if(present(region))region_loc=region
 
@@ -185,10 +201,11 @@ contains
     allocate(df(n-1))
     allocate(slp(n-1))
     !get interval length
-    call diff(x, h)
+    call diff(x, h, bstatus)
+    if(bstatus%check_status())return
     !get function step
-    call diff(fx, df)
-
+    call diff(fx, df, bstatus)
+    if(bstatus%check_status())return
     !get slope
     do j = 1, n-1
        slp(j)=df(j)/h(j)
@@ -285,7 +302,9 @@ contains
                 endif
              endif
           case default
-             call endrun(msg='an constraint region must be specified for pchip_polycc '//errMsg(mod_filename, __LINE__))
+             msg='an constraint region must be specified for pchip_polycc '//errMsg(mod_filename, __LINE__)
+             call bstatus%set_msg(msg=msg, err=-1)
+             return
           end select
        endif
     enddo
@@ -296,10 +315,11 @@ contains
   end subroutine pchip_polycc
   !------------------------------------------------------------
 
-  subroutine pchip_interp(x, fx, di, xi, yi)
+  subroutine pchip_interp(x, fx, di, xi, yi, bstatus)
 
     ! !DESCRIPTION:
     ! do monotonic cubic spline interpolation
+    use BetrStatusType   , only : betr_status_type
     implicit none
     ! !ARGUMENTS:
     real(r8), dimension(:), intent(in) :: x
@@ -307,6 +327,7 @@ contains
     real(r8), dimension(:), intent(in) :: di
     real(r8), dimension(:), intent(in) :: xi
     real(r8), dimension(:), intent(out) :: yi
+    type(betr_status_type), intent(out) :: bstatus
 
     ! !LOCAL VARIABLES:
     real(r8) :: h, t1, t2
@@ -314,10 +335,13 @@ contains
     integer  :: n, j
     integer  :: id
 
-    SHR_ASSERT_ALL((size(x) == size(fx)),  errMsg(mod_filename,__LINE__))
-    SHR_ASSERT_ALL((size(x) == size(di)),  errMsg(mod_filename,__LINE__))
-    SHR_ASSERT_ALL((size(xi) == size(yi)), errMsg(mod_filename,__LINE__))
-
+    call bstatus%reset()
+    SHR_ASSERT_ALL((size(x) == size(fx)),  errMsg(mod_filename,__LINE__), bstatus)
+    if(bstatus%check_status())return
+    SHR_ASSERT_ALL((size(x) == size(di)),  errMsg(mod_filename,__LINE__), bstatus)
+    if(bstatus%check_status())return
+    SHR_ASSERT_ALL((size(xi) == size(yi)), errMsg(mod_filename,__LINE__), bstatus)
+    if(bstatus%check_status())return
     n=size(xi)  !total number of points to be interpolated
 
     yi(:)=0._r8
@@ -346,7 +370,6 @@ contains
       fval=(3._r8-2._r8*t)*t*t
 
     end function phi
-
 
     function psi(t) result(fval)
       implicit none

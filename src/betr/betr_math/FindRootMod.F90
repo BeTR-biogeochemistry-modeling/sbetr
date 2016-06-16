@@ -7,33 +7,36 @@ module FindRootMod
   ! !USES:
   use bshr_kind_mod , only : r8 => shr_kind_r8
   use bshr_log_mod  , only : errMsg => shr_log_errMsg
-  use babortutils   , only : endrun
-  use betr_ctrl     , only : iulog  => biulog
+  use betr_ctrl     , only : iulog  => biulog, do_betr_otuput
   use MathfuncMod   , only : is_bounded
 
   implicit none
 
   character(len=*), parameter :: mod_filename = &
        __FILE__
-  
+
 contains
   !-------------------------------------------------------------------------------
-  function quadrootbnd(a,b,c, xl, xr)result(x)
+  subroutine quadrootbnd(a,b,c, xl, xr, x, bstatus)
     !
     ! !DESCRIPTION:
     ! return a root of the qudratic equation
     ! within bound xl and xr
-
+    use betr_constants  , only : betr_errmsg_len
+    use BetrStatusType  , only : betr_status_type
     implicit none
     ! !ARGUMENTS:
     real(r8), intent(in) :: a, b, c
     real(r8), intent(in) :: xl, xr
+    real(r8), intent(out):: x
+    type(betr_status_type), intent(out)   :: bstatus
 
     ! !LOCAL VARIABLES:
-    real(r8) :: x
     real(r8) :: delta
+    character(len=betr_errmsg_len) :: msg
     character(len=32) :: subname ='quadrootbnd'
 
+    call bstatus%reset()
     delta = b * b -4._r8 * a * c
     if(delta>=0._r8)then
        x = (-b + sqrt(delta))/2._r8
@@ -44,64 +47,72 @@ contains
           if(is_bounded(x,xl,xr))then
              return
           else
-             write(iulog,*)'no bounded solution for the given quadratic equation'
-             call endrun(msg=errmsg(mod_filename, __LINE__))
+             msg = 'no bounded solution for the given quadratic equation '//errmsg(mod_filename, __LINE__)
+             call bstatus%set_msg(msg=msg, err=-1)
           endif
        endif
     else
-       write(iulog,*)'no real solution for the given quadratic equation'
-       call endrun(msg=errmsg(mod_filename, __LINE__))
+       msg='no real solution for the given quadratic equation '//errmsg(mod_filename, __LINE__)
+       call bstatus%set_msg(msg=msg, err=-1)
     endif
     return
-  end function quadrootbnd
+  end subroutine quadrootbnd
 
   !-------------------------------------------------------------------------------
 
-  function quadproot(a,b,c)result(x)
+  subroutine quadproot(a,b,c,x, bstatus)
     !
     ! !DESCRIPTION:
     ! return positive root of the qudratic equation
-
+    use BetrStatusType  , only : betr_status_type
+    use betr_constants  , only : betr_errmsg_len
     implicit none
     ! !ARGUMENTS:
     real(r8), intent(in) :: a, b, c
+    real(r8), intent(out):: x
+    type(betr_status_type), intent(out) :: bstatus
 
     ! !LOCAL VARIABLES:
-    real(r8) :: x
     real(r8) :: delta
     character(len=32) :: subname ='quadproot'
-
+    character(len=betr_errmsg_len) :: msg
+    call bstatus%reset()
     delta = b * b -4._r8 * a * c
     if(delta>=0._r8)then
        x = (-b + sqrt(delta))/2._r8
     else
-       write(iulog,*)'no positive solution for the given quadratic equation'
-       call endrun(msg=errmsg(mod_filename, __LINE__))
+       msg='no positive solution for the given quadratic equation '//errmsg(mod_filename, __LINE__)
+       call bstatus%set_msg(msg=msg, err=-1)
     endif
     return
-  end function quadproot
+  end subroutine quadproot
   !===============================================================================
 
-  function cubicrootbnd(a,b,c,d, xl, xr)result(x)
+  subroutine cubicrootbnd(a,b,c,d, xl, xr, x, bstatus)
     !
     ! !DESCRIPTION:
     ! return positive root of the cubic equation
     !
     ! !USES:
-    use betr_varcon , only : rpi  => brpi
+    use betr_varcon     , only : rpi  => brpi
+    use BetrStatusType  , only : betr_status_type
+    use betr_constants  , only : betr_errmsg_len
     implicit none
     ! !ARGUMENTS:
     real(r8), intent(in) :: a, b, c, d
     real(r8), intent(in) :: xl, xr
+    real(r8), intent(out):: x
+    type(betr_status_type), intent(out) :: bstatus
 
     ! !LOCAL VARIABLES:
-    real(r8) :: x
     real(r8) :: p, q
     real(r8) :: b1, c1, d1
     real(r8) :: n, u, f, y
     real(r8) :: delta
+    character(len=betr_errmsg_len) :: msg
     character(len=32) :: subname ='cubicrootbnd'
 
+    call bstatus%reset()
     b1 = b/a
     c1 = c/a
     d1 = d/a
@@ -111,8 +122,8 @@ contains
 
     delta =-4._r8 * p**3._r8 - 27._r8 * q ** 2._r8
     if(delta<0._r8)then
-       write(iulog,*)'no real solution for the given cubic equation'
-       call endrun(msg=errmsg(mod_filename, __LINE__))
+       msg='no real solution for the given cubic equation '//errmsg(mod_filename, __LINE__)
+       call bstatus%set_msg(msg=msg,err=-1)
     else
        n = sqrt(-4._r8*p/3._r8)
        f = -q/2._r8 * (-p/3._r8)**(-1.5_r8)
@@ -133,47 +144,52 @@ contains
              if(is_bounded(x,xl,xr))then
                 return
              else
-                write(iulog,*)'no bounded solution for the given cubic equation'
-                call endrun(msg=errmsg(mod_filename, __LINE__))
+                msg='no bounded solution for the given cubic equation '//errmsg(mod_filename, __LINE__)
+                call bstatus%set_msg(msg=msg,err=-1)
              endif
           endif
        endif
     endif
-  end function cubicrootbnd
+  end subroutine cubicrootbnd
 
   !===============================================================================
-  function cubicproot(a,b,c,d)result(x)
+  subroutine cubicproot(a,b,c,d, x, bstatus)
     !
     ! !DESCRIPTION:
     ! return positive root of the cubic equation
     !
     ! !USES:
-    use betr_varcon , only : rpi  => brpi
+    use betr_varcon    , only : rpi  => brpi
+    use BetrStatusType , only : betr_status_type
+    use betr_constants , only : betr_errmsg_len
     implicit none
     ! !ARGUMENTS:
     real(r8), intent(in) :: a, b, c, d
+    real(r8), intent(out) :: x
+    type(betr_status_type), intent(out) :: bstatus
+
     ! !LOCAL VARIABLES:
-    real(r8) :: x
     real(r8) :: p, q
     real(r8) :: b1, c1, d1
     real(r8) :: n, u, f, y
     real(r8) :: delta
+    character(len=betr_errmsg_len) :: msg
+
+    call bstatus%reset()
     b1 = b/a
     c1 = c/a
     d1 = d/a
 
     p = c1 - b1 * b1 /3._r8
     q = d1 - b1 / 3._r8 * (c1 - 2._r8 * b1**2._r8/9._r8)
-
     delta =-4._r8 * p**3._r8 - 27._r8 * q ** 2._r8
     if(delta<0._r8)then
-       write(iulog,*)'no real solution for the given cubic equation'
-       call endrun(msg=errmsg(mod_filename, __LINE__))
+       msg='no real solution for the given cubic equation '//errmsg(mod_filename, __LINE__)
+       call bstatus%set_msg(msg=msg,err=-1)
     else
        n = sqrt(-4._r8*p/3._r8)
        f = -q/2._r8 * (-p/3._r8)**(-1.5_r8)
        u = acos(f)/3._r8
-
        if(u<=rpi/3._r8)then
           y = n * cos(u)
        elseif(u>rpi/3._r8 .and. u < rpi/2._r8)then
@@ -184,26 +200,29 @@ contains
        endif
        x = y - b1 / 3._r8
     endif
-  end function cubicproot
+  end subroutine cubicproot
 
   !===============================================================================
 
-  subroutine LUsolvAxr(a,r, n)
+  subroutine LUsolvAxr(a,r, n, bstatus)
     ! !DESCRIPTION:
     !solve linear equation Ax=r, using the LU decomposition
+    use BetrStatusType    , only : betr_status_type
     implicit none
     ! !ARGUMENTS:
     integer  , intent(in)    :: n
     real(r8) , intent(inout) :: a(n,n)
     real(r8) , intent(inout) :: r(n)
+    type(betr_status_type), intent(out)   :: bstatus
 
     ! !LOCAL VARIABLES:
     real(r8) :: d(n)
     integer :: indx(n)
 
+    call bstatus%reset()
     !do lu decomposition
-    call ludcmp(a,indx,d,n)
-
+    call ludcmp(a,indx,d,n, bstatus)
+    if(bstatus%check_status())return
     !solve for the equation
 
     call lubksb(a,indx,r,n)
@@ -254,7 +273,7 @@ contains
   !===============================================================================
 
 
-  subroutine ludcmp(a,indx,d,n)
+  subroutine ludcmp(a,indx,d,n, bstatus)
     ! !DESCRIPTION:
     !
     !   LU docomposition
@@ -267,32 +286,37 @@ contains
     ! invert a matrix.
     !
     ! !USES:
-    use MathfuncMod, only : swap
+    use MathfuncMod       , only : swap
+    use BetrStatusType    , only : betr_status_type
+    use betr_constants    , only : betr_errmsg_len
     implicit none
     ! !ARGUMENTS:
     integer  ,  intent(in)  :: n
     real(r8), intent(inout) :: a(n,n)
     integer   , intent(out) :: indx(n)
     real(r8)  , intent(out) :: d(n)
+    type(betr_status_type), intent(out)   :: bstatus
 
     ! !LOCAL VARIABLES:
     real(r8), dimension(size(a,1)) :: vv !vv stores the implicit scaling of each row.
     real(r8), parameter :: TINY=1.0e-20  !A small number.
     integer :: j,imax
+    character(len=betr_errmsg_len) :: msg
 
-
-    d=1.0 !No row interchanges yet.
+    call bstatus%reset()
+    d=1.0_r8 !No row interchanges yet.
     vv=maxval(abs(a),dim=2) !Loop over rows to get the implicit scaling
     if (any(vv == 0.0_r8)) then
-       write(6,*)'singular matrix in ludcmp' !information.
-       stop
+       write(msg,*)'singular matrix in ludcmp'//errMsg(mod_filename, __LINE__) !information.
+       call bstatus%set_msg(msg=msg,err=-1)
+       return
     endif
     !There is a row of zeros.
-    vv=1.0 / vv !Save the scaling.
+    vv=1.0_r8 / vv !Save the scaling.
     do j=1,n
        imax=(j-1)+imaxloc(vv(j:n)*abs(a(j:n,j))) !Find the pivot row.
        if (j /= imax) then !Do we need to interchange rows?
-          call swap(a(imax,:),a(j,:)) !Yes, do so...
+          call swap(a(imax,:),a(j,:), bstatus) !Yes, do so...
           d=-d !...and change the parity of d.
           vv(imax)=vv(j) !Also interchange the scale factor.
        end if
@@ -350,7 +374,7 @@ contains
   !
   ! !INTERFACE:
 
-  subroutine brent(x, x1,x2,f1, f2, macheps, tol, func_data, func)
+  subroutine brent(x, x1,x2,f1, f2, macheps, tol, func_data, func, bstatus)
 
     !
     !!DESCRIPTION:
@@ -362,6 +386,8 @@ contains
     !
     !!USES:
     use func_data_type_mod, only : func_data_type
+    use betr_constants    , only : betr_errmsg_len
+    use BetrstatusType    , only : betr_status_type
     !
     !!ARGUMENTS:
     implicit none
@@ -370,6 +396,8 @@ contains
     real(r8), intent(in) :: tol               !the error tolerance
     type(func_data_type), intent(in) :: func_data ! data passed to subroutine func
     real(r8), intent(out):: x
+    type(betr_status_type), intent(out) :: bstatus
+
     interface
        subroutine func(x, func_data, f)
          use bshr_kind_mod        , only : r8 => shr_kind_r8
@@ -383,20 +411,20 @@ contains
 
     ! !CALLED FROM:
     ! whenever it is needed
-
     integer, parameter :: ITMAX = 40            !maximum number of iterations
     integer, parameter :: iulog = 6
     integer :: iter
     real(r8)  :: a,b,c,d,e,fa,fb,fc,p,q,r,s,xm,tol1
+    character(len=betr_errmsg_len) :: msg
 
+    call bstatus%reset()
     a=x1
     b=x2
     fa=f1
     fb=f2
-    if((fa > 0._r8 .and. fb > 0._r8).or.(fa < 0._r8 .and. fb < 0._r8))then
-       write(iulog,*) 'root must be bracketed for brent'
-       write(iulog,*) 'a=',a,' b=',b,' fa=',fa,' fb=',fb
-       call endrun(msg=errmsg(mod_filename, __LINE__))
+    if((fa > 0._r8 .and. fb > 0._r8).or.(fa < 0._r8 .and. fb < 0._r8) .and. do_betr_otuput)then
+       write(msg,*) 'root must be bracketed for brent', new_line('A')//'a=',a,' b=',b,' fa=',fa,' fb=',fb
+       call bstatus%set_msg(msg=msg, err=-1)
     endif
     c=b
     fc=fb
@@ -458,13 +486,16 @@ contains
        call func(b, func_data, fb)
        if(fb==0._r8)exit
     enddo
-    if(iter==ITMAX)write(iulog,*) 'brent exceeding maximum iterations', b, fb
+    if(iter==ITMAX)then
+      write(msg,*) 'brent exceeding maximum iterations', b, fb
+      call bstatus%set_msg(msg=msg, err=1)
+    endif
     x=b
 
   end subroutine brent
 
   !------------------------------------------------------------------------------------
-  subroutine hybrid_findroot(x0, iter, func)
+  subroutine hybrid_findroot(x0, iter, func, bstatus)
     !
     !! DESCRIPTION:
     ! use a hybrid solver to find the root of equation
@@ -477,12 +508,13 @@ contains
     !! REVISION HISTORY:
     !Apr 14/2013: created by Jinyun Tang
     use func_data_type_mod, only : func_data_type
-
+    use BetrStatusType    , only : betr_status_type
     implicit none
 
     ! !ARGUMENTS:
     real(r8), intent(inout) :: x0           !solution's initial guess
     integer,  intent(out) :: iter
+    type(betr_status_type), intent(out) :: bstatus
     interface
        subroutine func(x, func_data, f)
          use bshr_kind_mod        , only : r8 => shr_kind_r8
@@ -504,8 +536,9 @@ contains
     integer,  parameter :: itmax = 40          !maximum number of iterations
     real(r8) :: tol,minx,minf
 
-    type(func_data_type) :: func_data ! dummy data passed to subroutine func    
+    type(func_data_type) :: func_data ! dummy data passed to subroutine func
 
+    call bstatus%reset()
     call func(x0, func_data, f0)
     if(f0 == 0._r8)return
 
@@ -549,7 +582,8 @@ contains
 
        !if a root zone is found, use the brent method for a robust backup strategy
        if(f1 * f0 < 0._r8)then
-          call brent(x, x0,x1,f0,f1, eps, tol, func_data, func)
+          call brent(x, x0,x1,f0,f1, eps, tol, func_data, func, bstatus)
+          if(bstatus%check_status())return
           x0=x
           exit
        endif
@@ -565,7 +599,7 @@ contains
   end subroutine hybrid_findroot
 
   !--------------------------------------------------------------------------
-  SUBROUTINE gaussian_solve(a,b,error)
+  SUBROUTINE gaussian_solve(a,b,bstatus)
     ! !DESCRIPTION:
     ! This subroutine solves the linear system Ax = b
     !  Copyright 1994, Miles Ellis, Ivor Philips and Tom Lahey
@@ -577,24 +611,25 @@ contains
     !  Neither the authors nor the publishers accept any responsibility for
     !  any results obtained by use of this code.
     !  modified by Jinyun Tang
-
+    use BetrStatusType   , only : betr_status_type
     ! !ARGUMENTS:
     real(r8), dimension(:,:), intent(inout) :: a     !coefficients of A
     real(r8), dimension(:)  , intent(inout) :: b     !right handside and solution on returning.
-    integer, intent(out)                    :: error ! indicates if errors are found
+    type(betr_status_type)  , intent(out)   :: bstatus
 
+    call bstatus%reset()
     ! Reduce the equations by Gaussian elimination
-    call gaussian_elimination(a,b,error)
+    call gaussian_elimination(a,b,bstatus)
 
     ! If reduction was successful, calculate solution by
     ! back substitution
-    if (error == 0) call back_substitution(a,b,error)
+    if (.not. bstatus%check_status()) call back_substitution(a,b,bstatus)
 
   end subroutine gaussian_solve
 
   !---------------------------------------------------------------------------
 
-  subroutine gaussian_elimination(a,b,error)
+  subroutine gaussian_elimination(a,b,bstatus)
 
     ! !DESCRIPTION:
     ! This subroutine performs Gaussian elimination on a
@@ -609,40 +644,46 @@ contains
     !  any results obtained by use of this code.
     ! re-written by Jinyun Tang, Apr, 2013.
     ! !USES:
-    use MathfuncMod, only : swap
+    use MathfuncMod      , only : swap
+    use BetrStatusType   , only : betr_status_type
+    use betr_constants   , only : betr_errmsg_len
     implicit none
     ! !ARGUMENTS:
     real(r8), dimension(:,:), intent(inout) :: a !contains the coefficients
     real(r8), dimension(:)  , intent(inout) :: b !contains the right-hand side
-    integer,  intent(out)                   :: error
+    type(betr_status_type)  , intent(out)   :: bstatus
 
     ! !LOCAL VARIABLES:
     real(r8), dimension(size(a,1)) :: temp_array ! Automatic array
     integer, dimension(1) :: ksave
     integer :: i, j, k, n
     real(r8) :: temp, m
+    character(len=betr_errmsg_len) :: msg
 
+    call bstatus%reset()
     ! Validity checks
     n = size(a,1)
 
     if (n == 0) then
-       error = -1              ! There is no problem to solve
+       msg = 'There is no problem to solve'//errMsg(mod_filename,__LINE__)
+       call bstatus%set_msg(msg=msg, err= -1)
        return
     endif
 
     if (n /= size(a,2))then
-       error = -2              ! a is not square
+       msg = 'a is not square'//errMsg(mod_filename,__LINE__)
+       call bstatus%set_msg(msg=msg, err= -2)
        return
     endif
 
     if (n/=size(b))then
-       error = -3              ! Size of b does not match a
+       msg = ' Size of b does not match a'//errMsg(mod_filename,__LINE__)
+       call bstatus%set_msg(msg=msg, err= -3)
        return
     endif
 
     ! Dimensions of arrays are OK, so go ahead with Gaussian
     ! elimination
-    error = 0
 
     do i = 1, n-1
        ! Find row with largest value of |a(j,i)|, j=i, ..., n
@@ -652,13 +693,15 @@ contains
        k = ksave(1) + i - 1
 
        if ( abs(a(k,i)) <= 1.e-5_r8 ) then
-          error = -4            ! No solution possible
+          msg = 'No solution possible'//errMsg(mod_filename,__LINE__)
+          call bstatus%set_msg(msg=msg, err= -4)
           return
        endif
 
        !Interchange row i and row k, if necessary
        if(k /= i) then
-          call swap(a(i,:),a(k,:))
+          call swap(a(i,:),a(k,:), bstatus)
+          if(bstatus%check_status())return
           ! Interchange corresponding elements of b
           call swap(b(i), b(k))
        endif
@@ -675,7 +718,7 @@ contains
   end subroutine gaussian_elimination
 
   !-----------------------------------------------------------------
-  SUBROUTINE back_substitution(a,b,error)
+  SUBROUTINE back_substitution(a,b,bstatus)
 
     ! !DESCRIPTION:
     !
@@ -690,26 +733,27 @@ contains
     !  Neither the authors nor the publishers accept any responsibility for
     !  any results obtained by use of this code.
     !  Modified by Jinyun Tang, Apr, 2013
-
+    use BetrStatusType   , only : betr_status_type
+    use betr_constants   , only : betr_errmsg_len
     implicit none
 
     ! !ARGUMENTS:
     real(r8), dimension(:,:), intent(in)  :: a     !contains the coefficients
     real(r8), dimension(:), intent(inout) :: b     !contains the right-hand side coefficients, will contain the solution on exit
-    integer , intent(out)                 :: error ! will be set non-zero if an error is found
+    type(betr_status_type)  , intent(out) :: bstatus
 
     ! !LOCAL VARIABLES:
     real(r8) :: sum
     integer :: i,j,n
+    character(len=betr_errmsg_len) :: msg
 
-
-    error = 0
+    call bstatus%reset()
     n = size(b)
     ! Solve for each variable in turn
     do i = n,1,-1
        ! Check for zero coefficient
        if ( abs(a(i,i)) <= 1.e-5_r8 ) then
-          error = -4
+          call bstatus%set_msg(msg='zero coefficient'//errMsg(mod_filename,__LINE__), err=-4)
           return
        endif
        sum = b(i)
