@@ -100,6 +100,7 @@ contains
   allocate(time_vars)
   call time_vars%Init(namelist_buffer)
 
+  print*,'read forcing'
   allocate(forcing_data)
   call forcing_data%ReadData(namelist_buffer, grid_data)
 
@@ -116,20 +117,20 @@ contains
   pft%itype(1)    = 2
 
   call spmd_init
-  !set filters to load initialization data from input
+  !print*,'set filters to load initialization data from input'
   call simulation%BeTRSetFilter()
 
-  !obtain waterstate_vars for initilizations that need it
+  !print*,'obtain waterstate_vars for initilizations that need it'
   call forcing_data%UpdateForcing(grid_data,                                            &
        bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, time_vars, col, &
        atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars             ,   &
        waterflux_vars, temperature_vars, chemstate_vars, simulation%jtops)
 
-  !calculate advective velocity
+  !print*,'calculate initial advective velocity'
   call calc_qadv(forcing_data, ubj, record,                                             &
       simulation%num_soilc, simulation%filter_soilc,                                    &
       time_vars, waterstate_vars, waterflux_vars)
-
+  !print*,'base_filename:',trim(base_filename)
   call  simulation%Init(base_filename, namelist_buffer, bounds, waterstate_vars)
 
   record = -1
@@ -147,11 +148,13 @@ contains
   do
     record = record + 1
 
+    !print*,'prepare for diagnosing water flux'
     call simulation%BeTRSetBiophysForcing(bounds, 1, nlevsoi, waterstate_vars=waterstate_vars)
 
     call simulation%PreDiagSoilColWaterFlux(simulation%num_soilc, &
       simulation%filter_soilc)
 
+    !print*,'update forcing for betr'
     !set envrionmental forcing by reading foring data: temperature, moisture, atmospheric resistance
     !from either user specified file or clm history file
 
@@ -163,6 +166,7 @@ contains
     call simulation%BeTRSetBiophysForcing(bounds,  1, nlevsoi, waterstate_vars=waterstate_vars, &
       waterflux_vars=waterflux_vars, soilhydrology_vars = soilhydrology_vars)
 
+    !print*,'diagnose water flux'
     call simulation%DiagAdvWaterFlux(time_vars,                                    &
       simulation%num_soilc, simulation%filter_soilc)
 
@@ -173,6 +177,7 @@ contains
     if(record==0)cycle
     call simulation%BeginMassBalanceCheck(bounds)
 
+    !print*,'without drainage'
     !the following call could be lsm specific, so that
     !different lsm could use different definitions of input
     !variables, e.g. clm doesn't use cnstate_vars as public variables
@@ -181,15 +186,14 @@ contains
       temperature_vars=temperature_vars,       soilhydrology_vars=soilhydrology_vars, &
       atm2lnd_vars=atm2lnd_vars,               canopystate_vars=canopystate_vars,     &
       chemstate_vars=chemstate_vars,           soilstate_vars=soilstate_vars          )
-
     call simulation%StepWithoutDrainage(time_vars, bounds, col)
 
+    !print*,'with drainge'
     !set forcing variable for drainage
     call simulation%BeTRSetBiophysForcing(bounds, 1, nlevsoi, waterflux_vars=waterflux_vars )
-
     call simulation%StepWithDrainage(bounds, col)
 
-    !do mass balance check
+    !print*,'do mass balance check'
     call simulation%MassBalanceCheck(time_vars, bounds)
 
     !specific for water tracer transport
@@ -199,10 +203,10 @@ contains
     !update time stamp
     call time_vars%update_time_stamp()
 
-    !write output
+    !print*,'write output'
     call simulation%WriteHistory(record, lbj, ubj, time_vars, waterflux_vars%qflx_adv_col)
 
-    !write restart file? is not functionning at the moment
+    !print*,'write restart file? is not functionning at the moment'
     !if(its_time_to_write_restart(time_vars)) call rest_write(tracerstate_vars, tracercoeff_vars, tracerflux_vars, time_vars)
     call time_vars%proc_nextstep()
     if(time_vars%its_time_to_exit()) then

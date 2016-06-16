@@ -184,7 +184,7 @@ contains
     betr_bounds%begc = 1; betr_bounds%endc = 1
     betr_bounds%begl = 1; betr_bounds%endl = 1
     betr_bounds%begg = 1; betr_bounds%endg = 1
-
+    call this%bsimstatus%reset()
     do c = bounds%begc, bounds%endc
       call this%betr(c)%step_without_drainage(betr_time, betr_bounds,            &
          this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp, &
@@ -243,7 +243,7 @@ contains
     betr_bounds%begc = 1; betr_bounds%endc = 1
     betr_bounds%begl = 1; betr_bounds%endl = 1
     betr_bounds%begg = 1; betr_bounds%endg = 1
-
+    call this%bsimstatus%reset()
     do c = bounds%begc, bounds%endc
       call this%betr(c)%step_with_drainage(betr_bounds,      &
          this%num_soilc, this%filter_soilc, this%jtops, &

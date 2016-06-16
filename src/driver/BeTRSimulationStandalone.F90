@@ -132,7 +132,7 @@ contains
     ! now call the base simulation init to continue initialization
     call this%BeTRInit(base_filename, namelist_buffer, &
          bounds, waterstate)
-    if(this%bsimstatus%check_status())return
+
     !pass necessary data
 
   end subroutine StandaloneInit
@@ -190,6 +190,7 @@ contains
     betr_bounds%begl = 1 ; betr_bounds%endl = 1
     betr_bounds%begg = 1 ; betr_bounds%endg = 1
 
+    call this%bsimstatus%reset() 
     do c = bounds%begc, bounds%endc
      call this%betr(c)%step_without_drainage(betr_time, betr_bounds,           &
          this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp, &
@@ -202,7 +203,7 @@ contains
       endif
     enddo
     if(this%bsimstatus%check_status()) &
-      call endrun(msg=this%bsimstatus%print_msg())
+      call endrun(msg=trim(this%bsimstatus%print_msg()))
   end subroutine StandaloneStepWithoutDrainage
 
   !---------------------------------------------------------------------------------
@@ -246,7 +247,7 @@ contains
     betr_bounds%begp = 1 ; betr_bounds%endp = betr_maxpatch_pft
     betr_bounds%begl = 1 ; betr_bounds%endl = 1
     betr_bounds%begg = 1 ; betr_bounds%endg = 1
-
+    call this%bsimstatus%reset()
     do c = bounds%begc, bounds%endc
       call this%betr(c)%step_with_drainage(betr_bounds, &
          this%num_soilc, this%filter_soilc,        &

@@ -1032,7 +1032,7 @@ module ncdio_pio
 
     call check_ret(nf90_create(fname, nf90_clobber, file%fh), 'create file '//fname)
 
-    write(iulog,*) 'Opened file ', trim(fname),  ' to write', file%fh
+    !write(iulog,*) 'Opened file ', trim(fname),  ' to write', file%fh
 
   end subroutine ncd_pio_createfile
 !-----------------------------------------------------------------------
@@ -1065,9 +1065,9 @@ module ncdio_pio
     !-----------------------------------------------------------------------
 
 
+    !write(iulog,*) 'Opened existing file ', trim(fname), file%fh
     call check_ret(nf90_open(fname, mode, file%fh),'open file '//trim(fname))
 
-    !write(iulog,*) 'Opened existing file ', trim(fname), file%fh
 
   end subroutine ncd_pio_openfile
 

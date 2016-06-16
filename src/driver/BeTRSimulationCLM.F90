@@ -191,7 +191,7 @@ contains
     betr_bounds%begp = 1 ; betr_bounds%endp = betr_maxpatch_pft
     betr_bounds%begl = 1 ; betr_bounds%endl = 1
     betr_bounds%begg = 1 ; betr_bounds%endg = 1
-
+    call this%bsimstatus%reset()
     do c = bounds%begc, bounds%endc
       call this%betr(c)%step_without_drainage(betr_time, betr_bounds,          &
          this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp, &
@@ -249,7 +249,7 @@ contains
     betr_bounds%begp = 1 ; betr_bounds%endp = betr_maxpatch_pft
     betr_bounds%begl = 1 ; betr_bounds%endl = 1
     betr_bounds%begg = 1 ; betr_bounds%endg = 1
-
+    call this%bsimstatus%reset()
     do c = bounds%begc, bounds%endc
        call this%betr(c)%step_with_drainage(betr_bounds,      &
          this%num_soilc, this%filter_soilc, this%jtops, &
@@ -491,6 +491,7 @@ contains
 
       allocate(eyev(1:ubj))
       eyev=1._r8
+      call this%bsimstatus%reset()
       do fc = 1, num_soilc
          c = filter_soilc(fc)
          totwater=dot_sum(h2osoi_ice(c,1:ubj),eyev,this%bstatus(c)) + dot_sum(h2osoi_liq(c,1:ubj),eyev,this%bstatus(c))
@@ -503,7 +504,8 @@ contains
          print*,get_nstep(),'diff',c, totwater, end_tracer_molarmass(c,id_trc_o18_h2o),err, err/totwater
       enddo
       deallocate(eyev)
-
+      if(this%bsimstatus%check_status()) &
+         call endrun(msg=this%bsimstatus%print_msg())
     end associate
   end subroutine clm_h2oiso_consistency_check
 

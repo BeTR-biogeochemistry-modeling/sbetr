@@ -349,7 +349,6 @@ contains
          this%tracerfluxes%tracer_flx_ebu_col(bounds%begc:bounds%endc, 1:this%tracers%nvolatile_tracers), &
          this%ebullition_on, betr_status)
     if(betr_status%check_status())return
-
     if (is_active_betr_bgc) then
        !update nitrogen storage pool
        call this%plant_soilbgc%plant_soilbgc_summary(bounds, lbj, ubj, num_soilc, &

@@ -185,6 +185,7 @@ contains
     character(len=*), parameter :: subname = 'BeTRInit'
     type(betr_bounds_type) :: betr_bounds
     integer :: c
+    !print*,'base_filename',trim(base_filename)
 
     this%base_filename = base_filename
 
@@ -195,6 +196,7 @@ contains
     allocate(this%biogeo_state(bounds%begc:bounds%endc), source=create_betr_biogeo_state())
     allocate(this%bstatus(bounds%begc:bounds%endc), source=create_betr_status_type())
     allocate(this%bsimstatus, source = create_betr_status_sim_type())
+    call this%bsimstatus%reset()
     !grid horizontal bounds
     betr_bounds%lbj  = 1 ; betr_bounds%ubj  = betr_nlevsoi
     betr_bounds%begc = 1 ; betr_bounds%endc = 1
@@ -223,8 +225,8 @@ contains
         exit
       endif
     enddo
-    if(this%bsimstatus%check_status())return
-
+    if(this%bsimstatus%check_status())call endrun(msg=this%bsimstatus%print_msg())
+    !print*,'create hist files',betr_offline
     if(betr_offline)then
       call this%CreateHistory(betr_nlevtrc_soil, this%num_soilc)
     else
@@ -239,7 +241,7 @@ contains
             this%num_hist_flux1d, this%num_hist_flux2d)
     endif
     call this%regression%Init(base_filename, namelist_buffer, this%bsimstatus)
-
+    if(this%bsimstatus%check_status())call endrun(msg=this%bsimstatus%print_msg())
   end subroutine BeTRInit
 
   !---------------------------------------------------------------------------------
@@ -448,7 +450,6 @@ contains
          )
 
       this%hist_filename = trim(this%base_filename) // '.output.nc'
-
       call ncd_pio_createfile(ncid, this%hist_filename)
 
       call hist_file_create(ncid,nlevtrc_soil, ncol)
