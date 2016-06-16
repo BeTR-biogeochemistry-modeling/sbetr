@@ -146,21 +146,23 @@ contains
 
   end function minmax
   !-------------------------------------------------------------------------------
-  subroutine cumsum_v(x, y)
+  subroutine cumsum_v(bstatus, x, y)
     !
     ! !DESCRIPTION:
     ! cumulative sum of a vector x
+    use BetrStatusType, only : betr_status_type
     implicit none
     ! !ARGUMENTS:
     real(r8), dimension(:), intent(in)  :: x  !input vector
     real(r8), dimension(:), intent(out) :: y  !sum
-
+    type(betr_status_type), intent(out) :: bstatus
     ! !LOCAL VARIABLES:
     integer :: n
     integer :: j
 
-    SHR_ASSERT_ALL((size(x)   == size(y)),        errMsg(mod_filename,__LINE__))
-
+    call bstatus%reset()
+    SHR_ASSERT_ALL((size(x)   == size(y)), errMsg(mod_filename,__LINE__), bstatus)
+    if(bstatus%check_status())return
     n = size(x)
 
     y(1)=x(1)
@@ -170,81 +172,92 @@ contains
 
   end subroutine cumsum_v
   !-------------------------------------------------------------------------------
-  subroutine cumsum_m(x, y, idim)
+  subroutine cumsum_m(bstatus, x, y, idim)
     !
     ! !DESCRIPTION:
     ! do cumulative summation for maxtrix x along dimnension idim
+    use BetrStatusType, only : betr_status_type
     implicit none
     ! !ARGUMENTS:
     real(r8), dimension(:,:), intent(in)  :: x    !input array
     real(r8), dimension(:,:), intent(out) :: y    !output cum sum
     integer , optional,     intent(in)    :: idim !dimension to be summed
-
+    type(betr_status_type), intent(out) :: bstatus
     ! !LOCAL VARIABLES:
     integer :: n
     integer :: j
     integer :: idim_loc
 
+    call bstatus%reset()
     if(present(idim))idim_loc=idim
 
-    SHR_ASSERT_ALL((size(x,1)   == size(y,1)),        errMsg(mod_filename,__LINE__))
-    SHR_ASSERT_ALL((size(x,2)   == size(y,2)),        errMsg(mod_filename,__LINE__))
-
+    SHR_ASSERT_ALL((size(x,1)   == size(y,1)),        errMsg(mod_filename,__LINE__), bstatus)
+    if(bstatus%check_status())return
+    SHR_ASSERT_ALL((size(x,2)   == size(y,2)),        errMsg(mod_filename,__LINE__), bstatus)
+    if(bstatus%check_status())return
     if(idim_loc == 1)then
        !summation along dimension 1
        n = size(x,2)
        do j = 1, n
-          call cumsum_v(x(:,j),y(:,j))
+         call cumsum_v(bstatus, x(:,j),y(:,j))
+         if(bstatus%check_status())return
        enddo
     else
        !summation along dimension 2
        n = size(x,1)
        do j = 1, n
-          call cumsum_v(x(j,:),y(j,:))
+          call cumsum_v(bstatus, x(j,:),y(j,:))
+          if(bstatus%check_status())return
        enddo
-
     endif
 
   end subroutine cumsum_m
 
   !-------------------------------------------------------------------------------
-  subroutine cumdif(x, y)
+  subroutine cumdif(x, y, bstatus)
     !
     ! !DESCRIPTION:
     ! do nearest neighbor finite difference
     !
+    use BetrStatusType, only : betr_status_type
     implicit none
     ! !ARGUMENTS:
     real(r8), dimension(:), intent(in)  :: x   !input array
     real(r8), dimension(:), intent(out) :: y   !output dif
-
+    type(betr_status_type), intent(out) :: bstatus
     ! !LOCAL VARIABLES:
     integer :: n
     integer :: j
-
-    SHR_ASSERT_ALL((size(x)   == size(y)),        errMsg(mod_filename,__LINE__))
+    call bstatus%reset()
+    SHR_ASSERT_ALL((size(x)   == size(y)),  errMsg(mod_filename,__LINE__), bstatus)
+    if(bstatus%check_status())return
 
     n = size(x)
-    call diff(x,y(2:n))
+    call diff(x,y(2:n), bstatus)
+    if(bstatus%check_status())return
     y(1)=x(1)
 
   end subroutine cumdif
   !-------------------------------------------------------------------------------
 
-  subroutine diff(x,y)
+  subroutine diff(x,y, bstatus)
     !
     ! !DESCRIPTION:
     ! do nearest neighbor forward difference
     !
+    use BetrStatusType, only : betr_status_type
     implicit none
     ! !ARGUMENTS:
     real(r8), dimension(:), intent(in)  :: x  !input array
     real(r8), dimension(:), intent(out) :: y  !output array
+    type(betr_status_type), intent(out) :: bstatus
 
     integer :: n
     integer :: j
 
-    SHR_ASSERT_ALL((size(x)   == size(y)+1),        errMsg(mod_filename,__LINE__))
+    call bstatus%reset()
+    SHR_ASSERT_ALL((size(x)   == size(y)+1),        errMsg(mod_filename,__LINE__), bstatus)
+    if(bstatus%check_status())return
 
     n = size(x)
     do j = 2, n
@@ -280,21 +293,25 @@ contains
   end function safe_div
 
   !--------------------------------------------------------------------------------
-  function dot_sum(x,y)result(ans)
+  function dot_sum(x,y, bstatus)result(ans)
     !
     ! !DESCRIPTION:
     ! calculate the dot product
     !
     ! !USES:
+    use BetrStatusType, only : betr_status_type
     implicit none
     ! !ARGUMENTS:
     real(r8), dimension(:), intent(in) :: x
     real(r8), dimension(:), intent(in) :: y
+    type(betr_status_type), intent(out) :: bstatus
     ! !LOCAL VARIABLES:
     integer  :: n, j
     real(r8) :: ans
 
-    SHR_ASSERT_ALL((size(x)  == size(y)), errMsg(mod_filename,__LINE__))
+    call bstatus%reset()
+    SHR_ASSERT_ALL((size(x)  == size(y)), errMsg(mod_filename,__LINE__), bstatus)
+    if(bstatus%check_status())return
 
     n = size(x)
     ! use subroutine from blas
@@ -366,12 +383,12 @@ contains
   end function is_bounded
 
   !--------------------------------------------------------------------------------
-  function minp(p,v)result(ans)
+  function minp(p,v, bstatus)result(ans)
     !
     ! !DESCRIPTION:
     !find the minimum of the nonzero p entries, with the entry determined by
     !nonzero values of v
-
+    use BetrStatusType, only : betr_status_type
     implicit none
     ! !ARGUMENTS:
     real(r8), dimension(:), intent(in) :: p
@@ -379,9 +396,11 @@ contains
     ! !LOCAL VARIABLES:
     integer  :: j, sz
     real(r8) :: ans      !(<=1._r8)
+    type(betr_status_type), intent(out) :: bstatus
 
-    SHR_ASSERT_ALL((size(p)           == size(v)), errMsg(mod_filename,__LINE__))
-
+    call bstatus%reset()
+    SHR_ASSERT_ALL((size(p)           == size(v)), errMsg(mod_filename,__LINE__), bstatus)
+    if(bstatus%check_status())return
     sz = size(p)
     ans = 1._r8
     do j = 1, sz
@@ -392,26 +411,30 @@ contains
   end function minp
 
   !--------------------------------------------------------------------------------
-  subroutine pd_decomp(m, n, A, AP, AD)
+  subroutine pd_decomp(m, n, A, AP, AD, bstatus)
     !
     ! !DESCRIPTION:
     !separate a input matrix A into AP and AD with positive
     !and negative entries respectively.
-
+    use BetrStatusType, only : betr_status_type
     implicit none
     ! !ARGUMENTS:
     integer  , intent(in) :: n, m
     real(r8) , intent(in) :: A(1: ,  1: )
     real(r8) , intent(out):: AP(1: , 1: )
     real(r8) , intent(out):: AD(1: , 1: )
+    type(betr_status_type), intent(out) :: bstatus
 
     ! !LOCAL VARIABLES:
     integer :: i, j
 
-
-    SHR_ASSERT_ALL((ubound(A)           == (/m,n/)), errMsg(mod_filename,__LINE__))
-    SHR_ASSERT_ALL((ubound(AP)          == (/m,n/)), errMsg(mod_filename,__LINE__))
-    SHR_ASSERT_ALL((ubound(AD)          == (/m,n/)), errMsg(mod_filename,__LINE__))
+    call bstatus%reset()
+    SHR_ASSERT_ALL((ubound(A)           == (/m,n/)), errMsg(mod_filename,__LINE__), bstatus)
+    if(bstatus%check_status())return
+    SHR_ASSERT_ALL((ubound(AP)          == (/m,n/)), errMsg(mod_filename,__LINE__), bstatus)
+    if(bstatus%check_status())return
+    SHR_ASSERT_ALL((ubound(AD)          == (/m,n/)), errMsg(mod_filename,__LINE__), bstatus)
+    if(bstatus%check_status())return
 
     AP(:,:) = 0._r8
     AD(:,:) = 0._r8

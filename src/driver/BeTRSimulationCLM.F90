@@ -203,6 +203,8 @@ contains
         exit
       endif
     enddo
+    if(this%bsimstatus%check_status()) &
+      call endrun(msg=this%bsimstatus%print_msg())
   end subroutine CLMStepWithoutDrainage
 
   !---------------------------------------------------------------------------------
@@ -248,16 +250,18 @@ contains
     betr_bounds%begl = 1 ; betr_bounds%endl = 1
     betr_bounds%begg = 1 ; betr_bounds%endg = 1
 
-   do c = bounds%begc, bounds%endc
-     call this%betr(c)%step_with_drainage(betr_bounds,      &
+    do c = bounds%begc, bounds%endc
+       call this%betr(c)%step_with_drainage(betr_bounds,      &
          this%num_soilc, this%filter_soilc, this%jtops, &
          this%biogeo_flux(c), this%bstatus(c))
-     if(this%bstatus(c)%check_status())then
-        call this%bsimstatus%setcol(c)
-        call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
-        exit
-     endif
-  enddo
+       if(this%bstatus(c)%check_status())then
+         call this%bsimstatus%setcol(c)
+         call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
+         exit
+       endif
+    enddo
+    if(this%bsimstatus%check_status()) &
+      call endrun(msg=this%bsimstatus%print_msg())
   end subroutine CLMStepWithDrainage
 
   !------------------------------------------------------------------------
@@ -491,7 +495,12 @@ contains
       eyev=1._r8
       do fc = 1, num_soilc
          c = filter_soilc(fc)
-         totwater=dot_sum(h2osoi_ice(c,1:ubj),eyev) + dot_sum(h2osoi_liq(c,1:ubj),eyev)
+         totwater=dot_sum(h2osoi_ice(c,1:ubj),eyev,this%bstatus(c)) + dot_sum(h2osoi_liq(c,1:ubj),eyev,this%bstatus(c))
+         if(this%bstatus(c)%check_status())then
+           call this%bsimstatus%setcol(c)
+           call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
+           exit
+         endif
          err = totwater-end_tracer_molarmass(c,id_trc_o18_h2o)
          print*,get_nstep(),'diff',c, totwater, end_tracer_molarmass(c,id_trc_o18_h2o),err, err/totwater
       enddo

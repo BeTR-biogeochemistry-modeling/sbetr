@@ -326,7 +326,7 @@ contains
 
     begc = bounds%begc; endc= bounds%endc
     begp = bounds%begp; endp= bounds%endp
-    print*,'pp',begp, endp
+
     do p = begp,endp
        l = pft%landunit(p)
        if (lun%ifspecial(l)) then
@@ -521,7 +521,7 @@ contains
   end subroutine temporal_average
 
   !----------------------------------------------------------------
-  subroutine Flux_summary(this, betr_time, c, betrtracer_vars)
+  subroutine Flux_summary(this, betr_time, c, betrtracer_vars, bstatus)
     !
     ! aggregate fluxes for mass balance check
     ! USES
@@ -529,15 +529,18 @@ contains
     use tracer_varcon  , only : nlevtrc_soil => betr_nlevtrc_soil
     use MathfuncMod    , only : dot_sum
     use BeTR_TimeMod   , only : betr_time_type
+    use BetrStatusType, only : betr_status_type
     implicit none
     class(TracerFlux_type) , intent(inout) :: this
     class(betr_time_type)  , intent(in) :: betr_time
     type(BeTRTracer_Type)  , intent(in) :: betrtracer_vars
     integer                , intent(in) :: c     ! column index
+    type(betr_status_type) , intent(out):: bstatus
 
     !local variables
     integer :: jj, kk
     real(r8):: dtime
+    call bstatus%reset()
     associate(                                                             &
          ntracers               => betrtracer_vars%ntracers              , &
          nvolatile_tracers      => betrtracer_vars%nvolatile_tracers     , &
@@ -562,8 +565,8 @@ contains
          if(is_volatile(jj))then
             kk = volatileid(jj)
             this%tracer_flx_tparchm_col(c,kk) = dot_sum(x=this%tracer_flx_parchm_vr_col(c,1:nlevtrc_soil,kk), &
-                 y=col%dz(c,1:nlevtrc_soil))
-
+                 y=col%dz(c,1:nlevtrc_soil), bstatus=bstatus)
+            if(bstatus%check_status())return
             this%tracer_flx_surfemi_col(c,kk) = this%tracer_flx_tparchm_col(c,kk) + this%tracer_flx_dif_col(c,kk) + &
                  this%tracer_flx_ebu_col(c,kk)
 
@@ -573,7 +576,9 @@ contains
       enddo
 
       do jj = 1, ntracers
-         this%tracer_flx_netpro_col(c,jj) = dot_sum(x=this%tracer_flx_netpro_vr_col(c,1:nlevtrc_soil,jj),y=col%dz(c,1:nlevtrc_soil))
+         this%tracer_flx_netpro_col(c,jj) = dot_sum(x=this%tracer_flx_netpro_vr_col(c,1:nlevtrc_soil,jj),&
+             y=col%dz(c,1:nlevtrc_soil), bstatus=bstatus)
+         if(bstatus%check_status())return
          if(jj<=ngwmobile_tracers)then
             if(is_volatile(jj))then
                kk = volatileid(jj)

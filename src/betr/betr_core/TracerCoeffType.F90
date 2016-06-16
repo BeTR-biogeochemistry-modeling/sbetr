@@ -64,7 +64,7 @@ contains
 
     call this%InitAllocate(bounds, lbj, ubj, betrtracer_vars)
     call this%tracer_base_init()
-    call this%InitHistory(bounds, betrtracer_vars)
+    call this%InitHistory(betrtracer_vars)
     call this%InitCold(bounds)
 
   end subroutine Init
@@ -167,7 +167,7 @@ contains
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------
-  subroutine InitHistory(this, bounds, betrtracer_vars)
+  subroutine InitHistory(this, betrtracer_vars)
     !
     ! !DESCRIPTION:
     ! History fields initialization
@@ -180,7 +180,6 @@ contains
     !
     ! !ARGUMENTS:
     class(TracerCoeff_type), intent(inout) :: this
-    type(bounds_type)    , intent(in) :: bounds
     type(BeTRTracer_Type), intent(in) :: betrtracer_vars
     !
     ! !LOCAL VARIABLES:

@@ -326,59 +326,70 @@ contains
   end subroutine Reset
 
   !-----------------------------------------------------------------------
-  function int_mass_mobile_col(this, lbj, ubj, c, j, dz)result(int_mass)
+  function int_mass_mobile_col(this, lbj, ubj, c, j, dz, bstatus)result(int_mass)
   !DESCRIPTION
   !integrate mobile tracer mass, gas+aqueous
+  use BetrStatusType         , only : betr_status_type
+  implicit none
   class(TracerState_type), intent(inout) :: this
   integer, intent(in)     :: lbj, ubj
   integer, intent(in)     :: c, j
   real(r8), intent(in)    :: dz(lbj:ubj)
+  type(betr_status_type) , intent(out)   :: bstatus
   real(r8)                :: int_mass
-
-  int_mass = dot_sum(this%tracer_conc_mobile_col(c,lbj:ubj,j), dz)
+  call bstatus%reset()
+  int_mass = dot_sum(this%tracer_conc_mobile_col(c,lbj:ubj,j), dz, bstatus)
 
   end function int_mass_mobile_col
 
   !-----------------------------------------------------------------------
-  function int_mass_frozen_col(this, lbj, ubj, c, j, dz)result(int_mass)
+  function int_mass_frozen_col(this, lbj, ubj, c, j, dz, bstatus)result(int_mass)
   !DESCRIPTION
   !integrate frozen tracer mass
+  use BetrStatusType         , only : betr_status_type
+  implicit none
   class(TracerState_type), intent(inout) :: this
   integer, intent(in)     :: lbj, ubj
   integer, intent(in)     :: c, j
   real(r8), intent(in)    :: dz(lbj:ubj)
+  type(betr_status_type)  , intent(out)   :: bstatus
   real(r8)                :: int_mass
-
-  int_mass = dot_sum(this%tracer_conc_frozen_col(c,lbj:ubj,j), dz)
+  call bstatus%reset()
+  int_mass = dot_sum(this%tracer_conc_frozen_col(c,lbj:ubj,j), dz, bstatus)
 
   end function int_mass_frozen_col
 
 
   !-----------------------------------------------------------------------
-  function int_mass_adsorb_col(this, lbj, ubj, c, j, dz)result(int_mass)
+  function int_mass_adsorb_col(this, lbj, ubj, c, j, dz, bstatus)result(int_mass)
   !DESCRIPTION
   !integrate adsorbed tracer mass
+  use BetrStatusType         , only : betr_status_type
   class(TracerState_type), intent(inout) :: this
   integer, intent(in)     :: lbj, ubj
   integer, intent(in)     :: c, j
   real(r8), intent(in)    :: dz(lbj:ubj)
+  type(betr_status_type)  , intent(out)   :: bstatus
   real(r8)                :: int_mass
 
-  int_mass = dot_sum(this%tracer_conc_solid_equil_col(c,lbj:ubj,j), dz)
+  int_mass = dot_sum(this%tracer_conc_solid_equil_col(c,lbj:ubj,j), dz, bstatus)
 
   end function int_mass_adsorb_col
 
   !-----------------------------------------------------------------------
-  function int_mass_solid_col(this, lbj, ubj, c, j, dz)result(int_mass)
+  function int_mass_solid_col(this, lbj, ubj, c, j, dz, bstatus)result(int_mass)
   !DESCRIPTION
   !integrate solid tracer mass
+  use BetrStatusType         , only : betr_status_type
+  implicit none
   class(TracerState_type), intent(inout) :: this
   integer, intent(in)     :: lbj, ubj
   integer, intent(in)     :: c, j
   real(r8), intent(in)    :: dz(lbj:ubj)
+  type(betr_status_type)  , intent(out)   :: bstatus
   real(r8)                :: int_mass
-
-  int_mass = dot_sum(this%tracer_conc_solid_passive_col(c,lbj:ubj,j), dz)
+  call bstatus%reset()
+  int_mass = dot_sum(this%tracer_conc_solid_passive_col(c,lbj:ubj,j), dz, bstatus)
 
   end function int_mass_solid_col
 

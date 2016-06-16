@@ -1709,12 +1709,13 @@ end subroutine shr_string_listGetDel
 !            LAI_1:LAI_2:LAI_3:LAI_4:LAI_5
 !
 !===============================================================================
-function shr_string_listCreateField( numFields, strBase ) result ( retString )
-
+function shr_string_listCreateField( numFields, strBase, bstatus ) result ( retString )
+   use BetrStatusType, only : betr_status_type
    implicit none
 
    integer(SHR_KIND_IN), intent(in) :: numFields   ! number of fields
    character(len=*)    , intent(in) :: strBase     ! input string base
+   type(betr_status_type), intent(out) :: bstatus
    character(SHR_KIND_CXX)          :: retString   ! colon delimited field list
 
    integer                          :: idx         ! index for looping over numFields
@@ -1731,6 +1732,7 @@ function shr_string_listCreateField( numFields, strBase ) result ( retString )
    character(*), parameter :: file_name = &
         __FILE__
 
+   call bstatus%reset()
 !-------------------------------------------------------------------------------
 
    if ( debug > 1 .and. t01 < 1 ) call shr_timer_get( t01,subName )
@@ -1740,7 +1742,8 @@ function shr_string_listCreateField( numFields, strBase ) result ( retString )
    ! this assert isn't that accurate since it counts all integers as being one
    ! digit, but it should catch most errors and under rather than overestimates
    !
-   SHR_ASSERT( ( ( ( len(strBase) + 3 ) * numFields ) <= 1024 ) , errMsg(file_name, __LINE__) )
+   SHR_ASSERT( ( ( ( len(strBase) + 3 ) * numFields ) <= 1024 ) , errMsg(file_name, __LINE__), bstatus )
+   if(bstatus%check_status())return
 
    retString = ''
    do idx = 1,numFields

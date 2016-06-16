@@ -74,14 +74,14 @@ contains
 
   !--------------------------------------------------------------------------------------------------------------
   subroutine Calc_gaseous_diffusion_soil_tortuosity(bounds, lbj, ubj, jtops, num_soilc, filter_soilc, &
-       biophysforc, tau_gas)
+       biophysforc, tau_gas, bstatus)
     !
     ! !DESCRIPTION:
     !
     ! compute soil tortuosity for gasesous diffusion
 
     ! !USES:
-
+    use BetrStatusType         , only : betr_status_type
     implicit none
     !arguments
     type(bounds_type)                , intent(in)    :: bounds                             ! bounds
@@ -91,19 +91,22 @@ contains
     integer                          , intent(in)    :: jtops(bounds%begc: )               ! top label of each column
     type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
     real(r8)                         , intent(inout) :: tau_gas(bounds%begc: , lbj: )      !output variable
-
+    type(betr_status_type)           , intent(out)   :: bstatus
     !local variables
     integer :: n, fc, c     !indices
     character(len=255) :: subname = 'calc_gaseous_diffusion_soil_tortuosity'
 
+    call bstatus%reset()
     associate(                                           &
          eff_porosity   => biophysforc%eff_porosity_col, & !effective soil porosity
          bsw            => biophysforc%bsw_col         , & !clapp-hornber shape parameters
          air_vol        => biophysforc%air_vol_col       & !volume possessed by air
          )
 
-      SHR_ASSERT_ALL((ubound(jtops)           == (/bounds%endc/)),        errMsg(filename,__LINE__))
-      SHR_ASSERT_ALL((ubound(tau_gas)         == (/bounds%endc, ubj/)),   errMsg(filename,__LINE__))
+      SHR_ASSERT_ALL((ubound(jtops)   == (/bounds%endc/)),  errMsg(filename,__LINE__), bstatus)
+      if(bstatus%check_status())return
+      SHR_ASSERT_ALL((ubound(tau_gas) == (/bounds%endc, ubj/)),   errMsg(filename,__LINE__), bstatus)
+      if(bstatus%check_status())return
 
       do n = lbj, ubj
          do fc = 1, num_soilc
@@ -117,13 +120,14 @@ contains
 
   end subroutine Calc_gaseous_diffusion_soil_tortuosity
   !--------------------------------------------------------------------------------------------------------------
-  subroutine Calc_aqueous_diffusion_soil_tortuosity(bounds, lbj, ubj, jtops, numf, filter, biophysforc, tau_liq)
+  subroutine Calc_aqueous_diffusion_soil_tortuosity(bounds, lbj, ubj, jtops, numf, filter, &
+    biophysforc, tau_liq, betr_status)
     !
     ! DESCRIPTIONS
     ! compute soil tortuosity for aquesous diffusion
     !
+    use BetrStatusType         , only : betr_status_type
     implicit none
-
     !arguments
     type(bounds_type)                , intent(in)    :: bounds                                ! bounds
     integer                          , intent(in)    :: numf                                  ! number of columns in column filter
@@ -132,13 +136,17 @@ contains
     integer                          , intent(in)    :: jtops(bounds%begc: )                  ! top label of each column
     type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
     real(r8)                         , intent(inout) :: tau_liq(bounds%begc: , lbj: )         !output variable
+    type(betr_status_type)           , intent(out)   :: betr_status
 
     !local variables
     integer :: n, fc, c     !indices
     character(len=255) :: subname = 'calc_aqueous_diffusion_soil_tortuosity'
 
-    SHR_ASSERT_ALL((ubound(jtops)           == (/bounds%endc/)),        errMsg(filename,__LINE__))
-    SHR_ASSERT_ALL((ubound(tau_liq)         == (/bounds%endc, ubj/)),   errMsg(filename,__LINE__))
+    call betr_status%reset()
+    SHR_ASSERT_ALL((ubound(jtops)    == (/bounds%endc/)),        errMsg(filename,__LINE__), betr_status)
+    if(betr_status%check_status())return
+    SHR_ASSERT_ALL((ubound(tau_liq)  == (/bounds%endc, ubj/)),   errMsg(filename,__LINE__), betr_status)
+    if(betr_status%check_status())return
 
     associate(                                           &
          eff_porosity   => biophysforc%eff_porosity_col, & !effective soil porosity
@@ -160,7 +168,7 @@ contains
   !--------------------------------------------------------------------------------------------------------------
 
   subroutine calc_bulk_diffusivity(bounds, lbj, ubj, jtops, numf, filter, bunsencef_col, &
-       biophysforc, tau_soi, betrtracer_vars,  bulkdiffus)
+       biophysforc, tau_soi, betrtracer_vars,  bulkdiffus, betr_status)
     !
     ! !DESCRIPTION:
     ! compute the weighted bulk diffusivity in soil for dual-phase transport
@@ -171,6 +179,7 @@ contains
 
     ! !USES:
     use BeTRTracerType        , only : betrtracer_type
+    use BetrStatusType        , only : betr_status_type
     implicit none
     type(bounds_type)                , intent(in)  :: bounds                                  ! bounds
     integer                          , intent(in)  :: numf                                    ! number of columns in column filter
@@ -182,7 +191,7 @@ contains
     type(betr_biogeophys_input_type) , intent(in)  :: biophysforc
     type(soil_tortuosity_type)       , intent(in)  :: tau_soi                                 ! soil tortuosity
     real(r8)                         , intent(out) :: bulkdiffus(bounds%begc: ,lbj: , 1: )    ! the returning variable
-
+    type(betr_status_type)           , intent(out) :: betr_status
     !local variables
     real(r8)           :: max_depth_cryoturb         = 3._r8  !m
     !parameters below will be encapsulated into a structure later
@@ -195,14 +204,28 @@ contains
     character(len=255) :: subname = 'calc_bulk_diffusivity'
 
     integer :: nvolatile_tracer_groups
+
+    call betr_status%reset()
     nvolatile_tracer_groups = betrtracer_vars%nvolatile_tracer_groups
 
     !array shape checking will be added later.
 
-    SHR_ASSERT_ALL((ubound(jtops)           == (/bounds%endc/)),        errMsg(filename,__LINE__))
-    SHR_ASSERT_ALL((ubound(jtops)           == (/bounds%endc/)),        errMsg(filename,__LINE__))
-    SHR_ASSERT_ALL((ubound(bunsencef_col)   == (/bounds%endc, ubj, nvolatile_tracer_groups/)), errMsg(filename,__LINE__))
-    SHR_ASSERT_ALL((ubound(bulkdiffus)      == (/bounds%endc, ubj, betrtracer_vars%ntracer_groups/)), errMsg(filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(jtops)           == (/bounds%endc/)),   errMsg(filename,__LINE__), betr_status)
+    if(betr_status%check_status())return
+    SHR_ASSERT_ALL((ubound(jtops)           == (/bounds%endc/)),   errMsg(filename,__LINE__), betr_status)
+    if(betr_status%check_status())return
+    SHR_ASSERT_ALL((ubound(bunsencef_col,1) == bounds%endc), errMsg(filename,__LINE__), betr_status)
+    if(betr_status%check_status())return
+    SHR_ASSERT_ALL((ubound(bunsencef_col,2) == ubj), errMsg(filename,__LINE__), betr_status)
+    if(betr_status%check_status())return
+    SHR_ASSERT_ALL((ubound(bunsencef_col,3) == nvolatile_tracer_groups), errMsg(filename,__LINE__), betr_status)
+    if(betr_status%check_status())return
+    SHR_ASSERT_ALL((ubound(bulkdiffus,1)    == bounds%endc), errMsg(filename,__LINE__),betr_status)
+    if(betr_status%check_status())return
+    SHR_ASSERT_ALL((ubound(bulkdiffus,2)    == ubj), errMsg(filename,__LINE__),betr_status)
+    if(betr_status%check_status())return
+    SHR_ASSERT_ALL((ubound(bulkdiffus,3)    == betrtracer_vars%ntracer_groups), errMsg(filename,__LINE__),betr_status)
+    if(betr_status%check_status())return
 
     associate(                                                                                              &
          ngwmobile_tracer_groups                => betrtracer_vars%ngwmobile_tracer_groups                , & ! Integer[intent(in)], number of dual phase (gw) tracers
@@ -308,7 +331,8 @@ contains
 !--------------------------------------------------------------------------------------------------------------
 
 
-   subroutine calc_bulk_conductances(bounds, lbj, ubj, jtops, numf, filter, bulkdiffus, dz, betrtracer_vars,  hmconductance_col)
+   subroutine calc_bulk_conductances(bounds, lbj, ubj, jtops, numf, filter, &
+     bulkdiffus, dz, betrtracer_vars,  hmconductance_col, betr_status)
    !
    ! DESCRIPTIONS:
    ! Compute weighted conductances for diffusive/dispersive tracer transport
@@ -325,6 +349,7 @@ contains
    ! !USES:
    use transportmod       , only : calc_interface_conductance
    use BeTRTracerType     , only : betrtracer_type
+   use BetrStatusType     , only : betr_status_type
    implicit none
    !arguments
    type(bounds_type),      intent(in) :: bounds                      ! bounds
@@ -336,16 +361,30 @@ contains
    real(r8),               intent(in) :: bulkdiffus(bounds%begc: ,lbj: ,1: )  !weighted bulk diffusivity for dual-phase diffusion
    real(r8),               intent(in) :: dz(bounds%begc: , lbj: )
    real(r8),            intent(inout) :: hmconductance_col(bounds%begc: , lbj: ,1: ) !weighted bulk conductance
-
+   type(betr_status_type), intent(out):: betr_status
    !local variables
 
    integer :: j, n, fc, c                 !indices
    character(len=255) :: subname = 'calc_bulk_conductances'
-
-   SHR_ASSERT_ALL((ubound(jtops)             == (/bounds%endc/)),        errMsg(filename,__LINE__))
-   SHR_ASSERT_ALL((ubound(dz)                == (/bounds%endc, ubj/)),   errMsg(filename,__LINE__))
-   SHR_ASSERT_ALL((ubound(bulkdiffus) == (/bounds%endc, ubj, betrtracer_vars%ntracer_groups/)), errMsg(filename,__LINE__))
-   SHR_ASSERT_ALL((ubound(hmconductance_col) == (/bounds%endc, ubj-1, betrtracer_vars%ntracer_groups/)), errMsg(filename,__LINE__))
+   call betr_status%reset()
+   SHR_ASSERT_ALL((ubound(jtops)             == (/bounds%endc/)),        errMsg(filename,__LINE__), betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(dz,1)       == bounds%endc),   errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(dz,2)       == ubj),   errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(bulkdiffus,1) == bounds%endc), errMsg(filename,__LINE__), betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(bulkdiffus,2) == ubj), errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(bulkdiffus,3) == betrtracer_vars%ntracer_groups), errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(hmconductance_col,1) == bounds%endc), errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(hmconductance_col,2) == ubj-1), errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(hmconductance_col,3) == betrtracer_vars%ntracer_groups), errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
 
    associate(                                                                 &
     ngwmobile_tracer_groups    => betrtracer_vars%ngwmobile_tracer_groups   , & !Integer[intent(in)], number of gw tracers
@@ -362,7 +401,8 @@ contains
      call calc_interface_conductance(bounds, lbj, ubj, jtops, numf, filter , &
              bulkdiffus(bounds%begc:bounds%endc, lbj:ubj, j)               , &
              dz(bounds%begc:bounds%endc, lbj:ubj)                          , &
-             hmconductance_col(bounds%begc:bounds%endc, lbj:ubj-1, j))
+             hmconductance_col(bounds%begc:bounds%endc, lbj:ubj-1, j), betr_status)
+     if(betr_status%check_status())return
    enddo
 
    end associate
@@ -400,12 +440,28 @@ contains
    ngwmobile_tracer_groups = betrtracer_vars%ngwmobile_tracer_groups
    nvolatile_tracer_groups = betrtracer_vars%nvolatile_tracer_groups
 
-   SHR_ASSERT_ALL((ubound(jtops)             == (/bounds%endc/)),        errMsg(filename,__LINE__))
-   SHR_ASSERT_ALL((ubound(t_soisno)          == (/bounds%endc, ubj/)),   errMsg(filename,__LINE__))
-   SHR_ASSERT_ALL((ubound(soi_pH)            == (/bounds%endc, ubj/)),   errMsg(filename,__LINE__))
-   SHR_ASSERT_ALL((ubound(aqu2neutralcef_col)== (/bounds%endc, ubj, ngwmobile_tracer_groups/)), errMsg(filename,__LINE__))
-   SHR_ASSERT_ALL((ubound(henrycef_col)      == (/bounds%endc, ubj, nvolatile_tracer_groups/)), errMsg(filename,__LINE__))
-
+   SHR_ASSERT_ALL((ubound(jtops)             == (/bounds%endc/)),        errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(t_soisno,1)       ==  bounds%endc),   errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(t_soisno,2)       == ubj),   errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(soi_pH,1)         == bounds%endc),   errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(soi_pH,2)         == ubj),  errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(aqu2neutralcef_col,1)== bounds%endc), errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(aqu2neutralcef_col,2)== ubj), errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(aqu2neutralcef_col,3)== ngwmobile_tracer_groups), errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(henrycef_col,1)   == bounds%endc), errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(henrycef_col,2)   == ubj), errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(henrycef_col,3)   == nvolatile_tracer_groups), errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
 
    associate(                                                               &
     ngwmobile_tracer_groups    => betrtracer_vars%ngwmobile_tracer_groups , & !Integer[intent(in)], number of tracers
@@ -468,11 +524,28 @@ contains
    call betr_status%reset()
    nvolatile_tracer_groups = betrtracer_vars%nvolatile_tracer_groups
 
-   SHR_ASSERT_ALL((ubound(jtops)             == (/bounds%endc/)),        errMsg(filename,__LINE__))
-   SHR_ASSERT_ALL((ubound(t_soisno)          == (/bounds%endc, ubj/)),   errMsg(filename,__LINE__))
-   SHR_ASSERT_ALL((ubound(smp_l)             == (/bounds%endc, ubj/)),   errMsg(filename,__LINE__))
-   SHR_ASSERT_ALL((ubound(henrycef_col)      == (/bounds%endc, ubj, nvolatile_tracer_groups/)), errMsg(filename,__LINE__))
-   SHR_ASSERT_ALL((ubound(bunsencef_col)     == (/bounds%endc, ubj, nvolatile_tracer_groups/)), errMsg(filename,__LINE__))
+   SHR_ASSERT_ALL((ubound(jtops)             == (/bounds%endc/)),        errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(t_soisno,1)     == bounds%endc),   errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(t_soisno,2)     == ubj),   errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(smp_l,1)        == bounds%endc),   errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(smp_l,2)        == ubj),   errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(henrycef_col,1)  == bounds%endc), errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(henrycef_col,2)  == ubj), errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(henrycef_col,3)  == nvolatile_tracer_groups), errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(bunsencef_col,1)  == bounds%endc), errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(bunsencef_col,2)  == ubj), errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(bunsencef_col,3)  == nvolatile_tracer_groups), errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
 
    associate(                                                                    &
     ngwmobile_tracer_groups    => betrtracer_vars%ngwmobile_tracer_groups      , & !Integer[intent(in)], number of tracers
@@ -482,7 +555,8 @@ contains
     volatilegroupid            => betrtracer_vars%volatilegroupid                & !integer[intent(in)], location in the volatile vector
    )
    if(any(is_h2o))then
-     call calc_rhovap(bounds, lbj, ubj, jtops, numf, filter, t_soisno, smp_l, rho_vap)
+     call calc_rhovap(bounds, lbj, ubj, jtops, numf, filter, t_soisno, smp_l, rho_vap, betr_status)
+     if(betr_status%check_status())return
    endif
 
    do j = 1, ngwmobile_tracer_groups
@@ -539,7 +613,7 @@ contains
    character(len=255) :: subname = 'calc_dual_phase_convert_coeff'
 
    call betr_status%reset()
-   SHR_ASSERT_ALL((ubound(jtops)                   == (/bounds%endc/)),        errMsg(filename,__LINE__))
+   SHR_ASSERT_ALL((ubound(jtops)   == (/bounds%endc/)),        errMsg(filename,__LINE__),betr_status)
    associate(                                                                    &
     ngwmobile_tracer_groups    => betrtracer_vars%ngwmobile_tracer_groups      , & !Input: [integer(:)], number of tracers
     tracer_group_memid         => betrtracer_vars%tracer_group_memid           , & !Input: [integer(:)], tracer id
@@ -628,7 +702,6 @@ contains
    real(r8)            :: co2logK1, co2logK2, rscal
    character(len=255)  :: subname ='get_equilibrium_scal'
 
-
    if(tracer==betrtracer_vars%id_trc_co2x)then
       !H2CO3  <--> H(+)+HCO3(-)    K1
       !HCO3(-)<--> H(+)+CO3(2-)    K2
@@ -704,7 +777,8 @@ contains
    end function get_henrycef
 !-------------------------------------------------------------------------------
 
-   subroutine calc_rhovap(bounds, lbj, ubj, jtops, num_soilc, filter_soilc, t_soisno, smp_l, rho_vap)
+   subroutine calc_rhovap(bounds, lbj, ubj, jtops, num_soilc, filter_soilc, &
+     t_soisno, smp_l, rho_vap, betr_status)
    !
    !DESCRIPTION
    !Compute actual vapor pressure inside the soil profile
@@ -712,7 +786,7 @@ contains
    ! uses
    use betr_varcon   , only : rwat => brwat, grav => bgrav
    use QSatMod       , only : rhoSat
-
+   use BetrStatusType, only : betr_status_type
    implicit none
    !arguments
    type(bounds_type) , intent(in)    :: bounds                           ! bounds
@@ -723,17 +797,28 @@ contains
    real(r8)          , intent(in)    :: t_soisno(bounds%begc: , lbj: )   !soil temperature, K
    real(r8)          , intent(in)    :: smp_l(bounds%begc: , lbj: )      !liquid soil matric potential, mm
    real(r8)          , intent(inout) :: rho_vap(bounds%begc: , lbj: )  !actual vapor pressure, kg/m3
+   type(betr_status_type),intent(out):: betr_status
 
    !local variables
    real(r8)           :: hh           !relative humidity
    real(r8)           :: rho_sat      !saturated water vapor pressure
    integer            :: c, fc, n
    character(len=255) :: subname ='calc_rhovap'
-
-   SHR_ASSERT_ALL((ubound(jtops)        == (/bounds%endc/)),        errMsg(filename,__LINE__))
-   SHR_ASSERT_ALL((ubound(t_soisno)     == (/bounds%endc, ubj/)),   errMsg(filename,__LINE__))
-   SHR_ASSERT_ALL((ubound(smp_l)        == (/bounds%endc, ubj/)),   errMsg(filename,__LINE__))
-   SHR_ASSERT_ALL((ubound(rho_vap)      == (/bounds%endc, ubj/)),   errMsg(filename,__LINE__))
+   call betr_status%reset()
+   SHR_ASSERT_ALL((ubound(jtops)        == (/bounds%endc/)),        errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(t_soisno,1)     == bounds%endc),   errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(t_soisno,2)     == ubj),   errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(smp_l,1)        == bounds%endc),   errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(smp_l,2)        == ubj),   errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(rho_vap,1)      == bounds%begc),   errMsg(filename,__LINE__), betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(rho_vap,2)      == ubj),   errMsg(filename,__LINE__), betr_status)
+   if(betr_status%check_status())return
 
    !be careful below, because snow and pure water has no definition of water matrix potential
    do n = lbj, ubj
@@ -928,7 +1013,8 @@ contains
    elseif(trcid==betrtracer_vars%id_trc_o18_h2o)then
       diff=0.9669_r8*1e-9_r8*exp(-(535400._r8/temp-1393.3_r8)/temp+2.1876_r8)
    elseif(trcid==betrtracer_vars%id_trc_o18_co2x)then
-      !theoretical calculations based on molecular dynamics indicate the fractionation between carbonate and bicarbonate due to diffusion is less than 1 per mil.
+      !theoretical calculations based on molecular dynamics indicate the fractionation
+      !between carbonate and bicarbonate due to diffusion is less than 1 per mil.
       !so set it to the diffusivity of the base value
       diff=1.81e-6_r8*exp(-2032.6/temp)
    elseif(trcid==betrtracer_vars%id_trc_c13_co2x)then
@@ -1002,7 +1088,8 @@ contains
 
 !-------------------------------------------------------------------------------
    subroutine convert_mobile2gas(bounds, lbj, ubj, jtops, numf, filter, &
-        do_forward, gas2bulkcef_mobile_col, betrtracer_vars, tracer_conc_mobile)
+        do_forward, gas2bulkcef_mobile_col, betrtracer_vars, tracer_conc_mobile, &
+        betr_status)
    !
    ! DESCRIPTIONS
    ! do conversion between bulk mobile phase and gaseous phase
@@ -1010,6 +1097,7 @@ contains
    ! USES
    !
    use BeTRTracerType     , only : betrtracer_type
+   use BetrStatusType     , only : betr_status_type
    implicit none
    !arguments
    type(bounds_type)     , intent(in)    :: bounds                  ! bounds
@@ -1021,21 +1109,34 @@ contains
    type(betrtracer_type) , intent(in)    :: betrtracer_vars         ! betr configuration information
    real(r8)              , intent(in)    :: gas2bulkcef_mobile_col(bounds%begc: ,lbj: , 1: )  !conversion parameter
    real(r8)              , intent(inout) :: tracer_conc_mobile(bounds%begc: ,lbj: , 1: )  !bulk mobile tracer
-
+   type(betr_status_type), intent(out)   :: betr_status
    !local variables
    integer :: jj, kk, fc, c, j
    character(len=255) :: subname = 'convert_mobile2gas'
    integer :: nvolatile_tracers
+
+   call betr_status%reset()
    nvolatile_tracers = betrtracer_vars%nvolatile_tracers
 
-   SHR_ASSERT_ALL((ubound(jtops)                  == (/bounds%endc/)),        errMsg(filename,__LINE__))
-   SHR_ASSERT_ALL((ubound(gas2bulkcef_mobile_col) == (/bounds%endc, ubj, nvolatile_tracers/)),   errMsg(filename,__LINE__))
-   SHR_ASSERT_ALL((ubound(tracer_conc_mobile)     == (/bounds%endc, ubj, nvolatile_tracers/)),   errMsg(filename,__LINE__))
+   SHR_ASSERT_ALL((ubound(jtops)                  == (/bounds%endc/)),   errMsg(filename,__LINE__), betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(gas2bulkcef_mobile_col,1) == bounds%endc),   errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(gas2bulkcef_mobile_col,2) == ubj),   errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(gas2bulkcef_mobile_col,3) == nvolatile_tracers),   errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(tracer_conc_mobile,1)     == bounds%endc),   errMsg(filename,__LINE__), betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(tracer_conc_mobile,2)     == ubj),   errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(tracer_conc_mobile,3)     == nvolatile_tracers),   errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
 
-   associate(                                                           &
-    ngwmobile_tracers => betrtracer_vars%ngwmobile_tracers            , & !Integer[intent(in)], number of tracers
-    is_volatile       => betrtracer_vars%is_volatile         ,          & !logical[intent(in)], is a volatile tracer?
-    volatilegroupid   => betrtracer_vars%volatilegroupid                & !integer[intent(in)], location in the volatile vector
+   associate(                                                  &
+    ngwmobile_tracers => betrtracer_vars%ngwmobile_tracers   , & !Integer[intent(in)], number of tracers
+    is_volatile       => betrtracer_vars%is_volatile         , & !logical[intent(in)], is a volatile tracer?
+    volatilegroupid   => betrtracer_vars%volatilegroupid       & !integer[intent(in)], location in the volatile vector
    )
    do jj = 1, ngwmobile_tracers
      if(is_volatile(jj))then
@@ -1093,26 +1194,30 @@ contains
    character(len=255) :: subname='set_multi_phase_diffusion'
 
    call betr_status%reset()
-   SHR_ASSERT_ALL((ubound(jtops)           == (/bounds%endc/)),        errMsg(filename,__LINE__))
+   SHR_ASSERT_ALL((ubound(jtops)   == (/bounds%endc/)), errMsg(filename,__LINE__), betr_status)
+   if(betr_status%check_status())return
 
    !compute tortuosity
    !gaseous phase
    call calc_gaseous_diffusion_soil_tortuosity(bounds, lbj, ubj, jtops, numf, filter, &
-        biophysforc, tau_soil%tau_gas)
+        biophysforc, tau_soil%tau_gas, betr_status)
+   if(betr_status%check_status())return
 
    !aqueous phase
    call calc_aqueous_diffusion_soil_tortuosity(bounds, lbj, ubj, jtops, numf, filter, &
-        biophysforc, tau_soil%tau_liq)
+        biophysforc, tau_soil%tau_liq, betr_status)
+   if(betr_status%check_status())return
 
    !compute bulk diffusivity
    call calc_bulk_diffusivity(bounds, lbj, ubj, jtops, numf, filter       , &
       tracercoeff_vars%bunsencef_col(bounds%begc:bounds%endc,lbj:ubj, : ) , &
-      biophysforc, tau_soil, betrtracer_vars, bulkdiffus)
+      biophysforc, tau_soil, betrtracer_vars, bulkdiffus, betr_status)
+   if(betr_status%check_status())return
 
    !compute weigthed conductances
    call calc_bulk_conductances(bounds, lbj, ubj, jtops, numf, filter, bulkdiffus, &
       col%dz(bounds%begc:bounds%endc,lbj:ubj), betrtracer_vars,  &
-      tracercoeff_vars%hmconductance_col(bounds%begc:bounds%endc, lbj:ubj-1, :))
+      tracercoeff_vars%hmconductance_col(bounds%begc:bounds%endc, lbj:ubj-1, :), betr_status)
 
    end subroutine set_multi_phase_diffusion
 
@@ -1141,10 +1246,10 @@ contains
    character(len=255) :: subname = 'set_phase_convert_coeff'
 
    call betr_status%reset()
-
-   SHR_ASSERT_ALL((ubound(jtops)   == (/bounds%endc/)),        errMsg(filename,__LINE__))
-   SHR_ASSERT_ALL((ubound(dz)      == (/bounds%endc, ubj/)),   errMsg(filename,__LINE__))
-
+   SHR_ASSERT_ALL((ubound(jtops)   == (/bounds%endc/)),        errMsg(filename,__LINE__), betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(dz)      == (/bounds%endc, ubj/)),   errMsg(filename,__LINE__), betr_status)
+   if(betr_status%check_status())return
     !compute Henry's law constant
    call calc_henrys_coeff(bounds, lbj, ubj, jtops, numf, filter                    , &
        biophysforc%t_soisno_col(bounds%begc:bounds%endc,lbj:ubj)              ,      &
@@ -1222,9 +1327,16 @@ contains
     qflx_adv            =>    biogeo_flux%qflx_adv_col & !real(r8) (:)  [intent(in)], infiltration, mm/s
    )
 
-   SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(filename,__LINE__))
-   SHR_ASSERT_ALL((ubound(bunsencef_topsoi) == (/bounds%endc, betrtracer_vars%nvolatile_tracers/)), errMsg(filename,__LINE__))
-   SHR_ASSERT_ALL((ubound(tracer_flx_infl) == (/bounds%endc, betrtracer_vars%ngwmobile_tracers/)), errMsg(filename,__LINE__))
+   SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(filename,__LINE__), betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(bunsencef_topsoi,1) == bounds%endc ), errMsg(filename,__LINE__), betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(bunsencef_topsoi,2) == betrtracer_vars%nvolatile_tracers), errMsg(filename,__LINE__), betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(tracer_flx_infl,1) == bounds%endc), errMsg(filename,__LINE__), betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(tracer_flx_infl,2) == betrtracer_vars%ngwmobile_tracers), errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
 
    do j = 1, betrtracer_vars%ngwmobile_tracers
 
@@ -1376,9 +1488,11 @@ contains
 
    call betr_status%reset()
    return
-   SHR_ASSERT_ALL((ubound(t_soisno)          == (/bounds%endc, ubj/)), errMsg(filename,__LINE__))
-   SHR_ASSERT_ALL((ubound(h2osoi_ice)        == (/bounds%endc, ubj/)), errMsg(filename,__LINE__))
-   SHR_ASSERT_ALL((ubound(dz)                == (/bounds%endc, ubj/)), errMsg(filename,__LINE__))
+   SHR_ASSERT_ALL((ubound(t_soisno)   == (/bounds%endc, ubj/)), errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(h2osoi_ice) == (/bounds%endc, ubj/)), errMsg(filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
+   SHR_ASSERT_ALL((ubound(dz)         == (/bounds%endc, ubj/)), errMsg(filename,__LINE__),betr_status)
 
     ! remove unused dummy arg compiler warning
     if (numf > 0)                        continue
@@ -1441,9 +1555,12 @@ contains
 
     f_sat = 0.95_r8   !a number borrowed from zack's ch4 code
 
-    SHR_ASSERT_ALL((ubound(zwt) == (/bounds%endc/)), errMsg(filename, __LINE__))
-    SHR_ASSERT_ALL((ubound(zi) == (/bounds%endc, nlevsoi/)), errMsg(filename, __LINE__))
-    SHR_ASSERT_ALL((ubound(jwt) == (/bounds%endc/)), errMsg(filename, __LINE__))
+    SHR_ASSERT_ALL((ubound(zwt) == (/bounds%endc/)), errMsg(filename, __LINE__),betr_status)
+    if(betr_status%check_status())return
+    SHR_ASSERT_ALL((ubound(zi) == (/bounds%endc, nlevsoi/)), errMsg(filename, __LINE__),betr_status)
+    if(betr_status%check_status())return
+    SHR_ASSERT_ALL((ubound(jwt) == (/bounds%endc/)), errMsg(filename, __LINE__),betr_status)
+    if(betr_status%check_status())return
 
     associate(                                       &
          watsat     => biophysforc%watsat_col      , & ! Input:  [real(r8) (:,:)  ] volumetric soil water at saturation (porosity)
@@ -1528,7 +1645,8 @@ contains
 
   call betr_status%reset()
 
-  SHR_ASSERT_ALL((ubound(jwt) == (/bounds%endc/)), errMsg(filename, __LINE__))
+  SHR_ASSERT_ALL((ubound(jwt) == (/bounds%endc/)), errMsg(filename, __LINE__),betr_status)
+  if(betr_status%check_status())return
 
   associate(                                                                & !
     z                       =>    col%z                               ,     & ! Input:  [real(r8) (:,:)  ]  layer depth (m) (-nlevsno+1:nlevsoi)

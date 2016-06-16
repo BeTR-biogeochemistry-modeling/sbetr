@@ -1030,7 +1030,13 @@ contains
     betr_bounds%begg = 1; betr_bounds%endg = 1
   do fc = 1, num_snowc
     c = filter_snowc(fc)
-    call this%betr(c)%tracer_DivideSnowLayers(betr_bounds, this%num_soilc, this%filter_soilc, divide_matrix(c:c,:,:))
+    call this%betr(c)%tracer_DivideSnowLayers(betr_bounds, this%num_soilc, &
+      this%filter_soilc, divide_matrix(c:c,:,:), this%bstatus(c))
+    if(this%bstatus(c)%check_status())then
+      call this%bsimstatus%setcol(c)
+      call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
+      exit
+    endif
   enddo
 
   end subroutine BeTRSimulationDvideSnowLayers
@@ -1062,7 +1068,13 @@ contains
 
   do fc = 1, num_snowc
     c = filter_snowc(fc)
-    call this%betr(c)%tracer_CombineSnowLayers(betr_bounds, this%num_soilc, this%filter_soilc, combine_matrix(c:c,:,:))
+    call this%betr(c)%tracer_CombineSnowLayers(betr_bounds, this%num_soilc,&
+      this%filter_soilc, combine_matrix(c:c,:,:),this%bstatus(c))
+    if(this%bstatus(c)%check_status())then
+      call this%bsimstatus%setcol(c)
+      call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
+      exit
+    endif
   enddo
 
   end subroutine BeTRSimulationCombineSnowLayers
@@ -1176,7 +1188,6 @@ contains
 
   do jj = 1, num_state2d
     !read namelist
-    print*,this%nmlist_hist2d_state_buffer(jj)
     read(this%nmlist_hist2d_state_buffer(jj), nml=hist2d_fmt, iostat=nml_error, iomsg=ioerror_msg)
     if(nml_error/=0)then
       write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg

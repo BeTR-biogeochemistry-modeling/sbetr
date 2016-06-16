@@ -249,7 +249,8 @@ module H2OIsotopeBGCReactionsType
   real(r8) :: irt   !the inverse of R*T
 
   call betr_status%reset()
-  SHR_ASSERT_ALL((ubound(dz_top)                == (/bounds%endc/)),   errMsg(mod_filename,__LINE__))
+  SHR_ASSERT_ALL((ubound(dz_top)  == (/bounds%endc/)),   errMsg(mod_filename,__LINE__), betr_status)
+  if(betr_status%check_status())return
 
   ! remove compiler warnings for unused dummy args
   if (this%dummy_compiler_warning) continue
@@ -396,7 +397,7 @@ module H2OIsotopeBGCReactionsType
 
 !-------------------------------------------------------------------------------
   subroutine do_tracer_equilibration(this, bounds, lbj, ubj, jtops, num_soilc, filter_soilc, &
-       betrtracer_vars, tracercoeff_vars, tracerstate_vars)
+       betrtracer_vars, tracercoeff_vars, tracerstate_vars, betr_status)
  !
   ! DESCRIPTIONS
   ! requilibrate tracers that has solid and mobile phases
@@ -408,6 +409,7 @@ module H2OIsotopeBGCReactionsType
   use tracercoeffType       , only : tracercoeff_type
   use BeTRTracerType        , only : betrtracer_type
   use BeTR_decompMod        , only : betr_bounds_type
+  use BetrStatusType        , only : betr_status_type
   implicit none
   !ARGUMENTS
   class(bgc_reaction_h2oiso_type) , intent(inout) :: this
@@ -419,14 +421,16 @@ module H2OIsotopeBGCReactionsType
   type(betrtracer_type)           , intent(in) :: betrtracer_vars
   type(tracercoeff_type)          , intent(in) :: tracercoeff_vars
   type(tracerstate_type)          , intent(inout) :: tracerstate_vars
+  type(betr_status_type)          , intent(out)   :: betr_status
 
+  !local variables
   character(len=255) :: subname = 'do_tracer_equilibration'
   integer   :: j, fc, c
   integer   :: trc_id1, trc_id2
 
-
-  SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__))
-
+  call betr_status%reset()
+  SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__), betr_status)
+  if(betr_status%check_status())return
     ! remove compiler warnings for unused dummy args
     if (this%dummy_compiler_warning)                          continue
     if (bounds%begc > 0)                                      continue
@@ -438,11 +442,11 @@ module H2OIsotopeBGCReactionsType
     if (size(tracerstate_vars%tracer_conc_surfwater_col) > 0) continue
     if (size(tracercoeff_vars%annsum_counter_col) > 0)        continue
 
-  associate(                                                                             &
-    aqu2equilscef                   => tracercoeff_vars%aqu2equilsolidcef_col          , &
-    aqu2bulkcef_mobile              => tracercoeff_vars%aqu2bulkcef_mobile_col     ,     &
-    tracer_solid_phase_equil        => tracerstate_vars%tracer_conc_solid_equil_col,     &
-    tracer_mobile_phase             => tracerstate_vars%tracer_conc_mobile_col           &
+  associate(                                                                         &
+    aqu2equilscef                   => tracercoeff_vars%aqu2equilsolidcef_col      , &
+    aqu2bulkcef_mobile              => tracercoeff_vars%aqu2bulkcef_mobile_col     , &
+    tracer_solid_phase_equil        => tracerstate_vars%tracer_conc_solid_equil_col, &
+    tracer_mobile_phase             => tracerstate_vars%tracer_conc_mobile_col       &
   )
   !depending on the simulation type, an implementation of aqueous chemistry will be
   !employed to separate out the adsorbed phase
@@ -463,7 +467,7 @@ module H2OIsotopeBGCReactionsType
       aqu2bulkcef_mobile(bounds%begc:bounds%endc, lbj:ubj, trc_id1)        ,            &
       aqu2equilscef(bounds%begc:bounds%endc, lbj:ubj, trc_id2)             ,            &
       tracer_solid_phase_equil(bounds%begc:bounds%endc, lbj:ubj, trc_id2)  ,            &
-      tracer_mobile_phase(bounds%begc:bounds%endc, lbj:ubj, trc_id1))
+      tracer_mobile_phase(bounds%begc:bounds%endc, lbj:ubj, trc_id1), betr_status)
 
   endif
   end associate
@@ -473,11 +477,12 @@ module H2OIsotopeBGCReactionsType
 !-------------------------------------------------------------------------------
 
   subroutine do_h2o_isotope_equilibration(bounds, lbj, ubj, jtops, numf, filter, aqu2bulkcef, &
-    aqu2equilscef, tracer_solid_phase_equil, tracer_mobile_phase)
+    aqu2equilscef, tracer_solid_phase_equil, tracer_mobile_phase, bstatus)
   !
   ! Diagnose solid phase tracer
   !
-  use BeTR_decompMod           , only : betr_bounds_type
+  use BeTR_decompMod        , only : betr_bounds_type
+  use BetrStatusType        , only : betr_status_type
   implicit none
   type(betr_bounds_type) , intent(in)    :: bounds
   integer                , intent(in)    :: lbj, ubj
@@ -488,19 +493,29 @@ module H2OIsotopeBGCReactionsType
   real(r8)               , intent(in)    :: aqu2bulkcef(bounds%begc: , lbj: )
   real(r8)               , intent(in)    :: tracer_mobile_phase(bounds%begc: , lbj: )
   real(r8)               , intent(inout) :: tracer_solid_phase_equil(bounds%begc: ,lbj: )
-
+  type(betr_status_type) , intent(out)   :: bstatus
   real(r8)  :: frac
   real(r8)  :: tracer_conc
   integer   :: c, fc, j
 
-  SHR_ASSERT_ALL((ubound(aqu2equilscef,1)            == bounds%endc), errMsg(mod_filename,__LINE__))
-  SHR_ASSERT_ALL((ubound(aqu2equilscef,2)            == ubj),         errMsg(mod_filename,__LINE__))
-  SHR_ASSERT_ALL((ubound(aqu2bulkcef,1)              == bounds%endc), errMsg(mod_filename,__LINE__))
-  SHR_ASSERT_ALL((ubound(aqu2bulkcef,2)              == ubj),         errMsg(mod_filename,__LINE__))
-  SHR_ASSERT_ALL((ubound(tracer_solid_phase_equil,1) == bounds%endc), errMsg(mod_filename,__LINE__))
-  SHR_ASSERT_ALL((ubound(tracer_solid_phase_equil,2) == ubj),         errMsg(mod_filename,__LINE__))
-  SHR_ASSERT_ALL((ubound(tracer_mobile_phase,1)      == bounds%endc), errMsg(mod_filename,__LINE__))
-  SHR_ASSERT_ALL((ubound(tracer_mobile_phase,2)      == ubj),         errMsg(mod_filename,__LINE__))
+  call bstatus%reset()
+  SHR_ASSERT_ALL((ubound(aqu2equilscef,1)            == bounds%endc), errMsg(mod_filename,__LINE__),bstatus)
+  if(bstatus%check_status())return
+  SHR_ASSERT_ALL((ubound(aqu2equilscef,2)            == ubj),         errMsg(mod_filename,__LINE__),bstatus)
+  if(bstatus%check_status())return
+  SHR_ASSERT_ALL((ubound(aqu2bulkcef,1)              == bounds%endc), errMsg(mod_filename,__LINE__),bstatus)
+  if(bstatus%check_status())return
+  SHR_ASSERT_ALL((ubound(aqu2bulkcef,2)              == ubj),         errMsg(mod_filename,__LINE__),bstatus)
+  if(bstatus%check_status())return
+  SHR_ASSERT_ALL((ubound(tracer_solid_phase_equil,1) == bounds%endc), errMsg(mod_filename,__LINE__),bstatus)
+  if(bstatus%check_status())return
+  SHR_ASSERT_ALL((ubound(tracer_solid_phase_equil,2) == ubj),         errMsg(mod_filename,__LINE__),bstatus)
+  if(bstatus%check_status())return
+  SHR_ASSERT_ALL((ubound(tracer_mobile_phase,1)      == bounds%endc), errMsg(mod_filename,__LINE__),bstatus)
+  if(bstatus%check_status())return
+  SHR_ASSERT_ALL((ubound(tracer_mobile_phase,2)      == ubj),         errMsg(mod_filename,__LINE__),bstatus)
+  if(bstatus%check_status())return
+
   ! remove compiler warnings for unused dummy args
   if (bounds%begc > 0) continue
   do j = lbj, ubj

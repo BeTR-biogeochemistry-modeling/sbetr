@@ -129,8 +129,8 @@ module TracerBalanceMod
         do fc = 1, numf
            c = filter(fc)
            !summarize the fluxes
-           call tracerflux_vars%flux_summary(betr_time, c, betrtracer_vars)
-
+           call tracerflux_vars%flux_summary(betr_time, c, betrtracer_vars,betr_status)
+           if(betr_status%check_status())return
            do kk = 1, ngwmobile_tracers
               errtracer(c,kk) = beg_tracer_molarmass(c,kk)-end_tracer_molarmass(c,kk)  &
                    + tracer_flx_netpro(c,kk)-tracer_flx_netphyloss(c,kk)
@@ -225,15 +225,21 @@ module TracerBalanceMod
            do fc = 1, numf
               c = filter(fc)
 
-              tracer_molarmass_col(c,jj) = tracerstate_vars%int_mass_mobile_col(1,nlevtrc_soil,c,jj,dz(c,1:nlevtrc_soil))
+              tracer_molarmass_col(c,jj) = &
+                 tracerstate_vars%int_mass_mobile_col(1,nlevtrc_soil,c,jj,dz(c,1:nlevtrc_soil),betr_status)
+              if(betr_status%check_status())return
 
               if(is_adsorb(jj))then
                  tracer_molarmass_col(c,jj) = tracer_molarmass_col(c,jj) + &
-                      tracerstate_vars%int_mass_adsorb_col(1,nlevtrc_soil,c,adsorbid(jj),dz(c,1:nlevtrc_soil))
+                      tracerstate_vars%int_mass_adsorb_col(1,nlevtrc_soil,c,adsorbid(jj),&
+                      dz(c,1:nlevtrc_soil),betr_status)
+                 if(betr_status%check_status())return
               endif
               if(is_frozen(jj))then
                  tracer_molarmass_col(c,jj) = tracer_molarmass_col(c,jj) + &
-                      tracerstate_vars%int_mass_frozen_col(1,nlevtrc_soil,c,frozenid(jj),dz(c,1:nlevtrc_soil))
+                      tracerstate_vars%int_mass_frozen_col(1,nlevtrc_soil,c,&
+                      frozenid(jj),dz(c,1:nlevtrc_soil),betr_status)
+                 if(betr_status%check_status())return
               endif
            enddo
         enddo
@@ -241,7 +247,9 @@ module TracerBalanceMod
            kk = jj + ngwmobile_tracers
            do fc = 1, numf
               c = filter(fc)
-              tracer_molarmass_col(c,kk) = tracerstate_vars%int_mass_solid_col(1,nlevtrc_soil,c,jj, dz(c,1:nlevtrc_soil))
+              tracer_molarmass_col(c,kk) = tracerstate_vars%int_mass_solid_col(1,nlevtrc_soil,&
+                c,jj, dz(c,1:nlevtrc_soil),betr_status)
+              if(betr_status%check_status())return
            enddo
         enddo
       end associate

@@ -162,7 +162,7 @@ module BGCReactionsMod
 
      !-------------------------------------------------------------------------------
      subroutine do_tracer_equilibration_interface(this, bounds, lbj, ubj, jtops, num_soilc, filter_soilc, &
-          betrtracer_vars, tracercoeff_vars, tracerstate_vars)
+          betrtracer_vars, tracercoeff_vars, tracerstate_vars, betr_status)
        !
        ! !DESCRIPTION:
        ! template for do_tracer_equilibration
@@ -172,7 +172,7 @@ module BGCReactionsMod
        use tracercoeffType       , only : tracercoeff_type
        use BeTRTracerType        , only : BeTRTracer_Type
        use BeTR_decompMod        , only : betr_bounds_type
-
+       use BetrStatusType        , only : betr_status_type
        ! !ARGUMENTS:
        import :: bgc_reaction_type
 
@@ -185,7 +185,7 @@ module BGCReactionsMod
        type(betrtracer_type)      , intent(in)    :: betrtracer_vars
        type(tracercoeff_type)     , intent(in)    :: tracercoeff_vars
        type(tracerstate_type)     , intent(inout) :: tracerstate_vars
-
+       type(betr_status_type)     , intent(out)   :: betr_status
 
      end subroutine do_tracer_equilibration_interface
 

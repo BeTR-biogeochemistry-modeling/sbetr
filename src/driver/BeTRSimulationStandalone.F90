@@ -200,7 +200,9 @@ contains
         call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
         exit
       endif
-   enddo
+    enddo
+    if(this%bsimstatus%check_status()) &
+      call endrun(msg=this%bsimstatus%print_msg())
   end subroutine StandaloneStepWithoutDrainage
 
   !---------------------------------------------------------------------------------

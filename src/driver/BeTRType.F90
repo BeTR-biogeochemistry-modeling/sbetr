@@ -17,7 +17,6 @@ module BetrType
   use BeTR_PatchType           , only : pft => betr_pft
   use BeTR_ColumnType          , only : col => betr_col
   use BeTR_LandunitType        , only : lun => betr_lun
-
   use BGCReactionsMod          , only : bgc_reaction_type
   use PlantSoilBGCMod          , only : plant_soilbgc_type
   use BeTRTracerType           , only : betrtracer_type
@@ -293,6 +292,7 @@ contains
     integer            :: j
     integer            :: lbj, ubj
 
+
     call betr_status%reset()
     lbj = bounds%lbj; ubj = bounds%ubj
 
@@ -357,7 +357,6 @@ contains
             col%dz(bounds%begc:bounds%endc,1:ubj),                                &
             this%tracers, this%tracerfluxes, betr_status)
     endif
-
   end subroutine step_without_drainage
 
 
@@ -391,8 +390,8 @@ contains
     integer  :: lbj, ubj
 
     call betr_status%reset()
-    SHR_ASSERT_ALL((ubound(jtops)         == (/bounds%endc/))      , errMsg(filename,__LINE__))
-
+    SHR_ASSERT_ALL((ubound(jtops)  == (/bounds%endc/)), errMsg(filename,__LINE__), betr_status)
+    if(betr_status%check_status())return
     associate(                                                                         & !
          ngwmobile_tracers     => this%tracers%ngwmobile_tracers         ,             & !
          groupid               => this%tracers%groupid                    ,            & !
@@ -548,8 +547,8 @@ contains
 
   !--------------------------------------------------------------------------------
 
-  subroutine check_mass_err(this, betr_time, &
-       c, trcid, ubj, dz, betrtracer_vars, tracerstate_vars, tracerflux_vars)
+  subroutine check_mass_err(this, betr_time, c, trcid, ubj, dz, betrtracer_vars,&
+    tracerstate_vars, tracerflux_vars, bstatus)
 
   !DESCRIPTION
   !temporary mass balance check
@@ -557,6 +556,7 @@ contains
   use tracerfluxType  , only : tracerflux_type
   use tracerstatetype , only : tracerstate_type
   use BeTR_TimeMod    , only : betr_time_type
+  use BetrStatusType  , only : betr_status_type
   implicit none
   !ARGUMENTS
   class(betr_type)        , intent(inout) :: this
@@ -567,8 +567,10 @@ contains
   class(betrtracer_type)  , intent(inout) :: betrtracer_vars  ! tracer info data structure
   type(tracerflux_type)   , intent(inout) :: tracerflux_vars  ! tracer flux
   class(tracerstate_type) , intent(inout) :: tracerstate_vars ! tracer state variables data structure
+  type(betr_status_type)  , intent(out)   :: bstatus
   real(r8)                                :: totmass , err
 
+  call bstatus%reset()
   ! remove compiler warnings about unused dummy args
   if (this%advection_on) continue
 
@@ -583,16 +585,18 @@ contains
        frozenid                  => betrtracer_vars%frozenid                            &
        )
 
-  totmass=tracerstate_vars%int_mass_mobile_col(1,ubj,c,trcid,dz(1:ubj))
-
+  totmass=tracerstate_vars%int_mass_mobile_col(1,ubj,c,trcid,dz(1:ubj), bstatus)
+  if(bstatus%check_status())return
   if(is_frozen(trcid))then
      totmass = totmass + &
-          tracerstate_vars%int_mass_frozen_col(1,ubj,c,frozenid(trcid),dz(1:ubj))
+          tracerstate_vars%int_mass_frozen_col(1,ubj,c,frozenid(trcid),dz(1:ubj),bstatus)
+     if(bstatus%check_status())return
   endif
-  call tracerflux_vars%flux_summary(betr_time, c, betrtracer_vars)
+  call tracerflux_vars%flux_summary(betr_time, c, betrtracer_vars,bstatus)
+  if(bstatus%check_status())return
   err=beg_tracer_molarmass(c,trcid)-totmass  &
        + tracer_flx_netpro(c,trcid)-tracer_flx_netphyloss(c,trcid)
-  print*,'err',err
+!x  print*,'err',err
   end associate
   end subroutine check_mass_err
 
@@ -876,14 +880,15 @@ contains
 
    !------------------------------------------------------------------------
 
-   subroutine tracer_DivideSnowLayers(this, bounds, num_snowc, filter_snowc, divide_matrix)
+   subroutine tracer_DivideSnowLayers(this, bounds, num_snowc, filter_snowc, divide_matrix, bstatus)
    !
    ! DESCRIPTIONS
    ! divide tracers in snow
    !
    ! USES
-     use BetrBGCMod, only : tracer_col_mapping_div
-     use BetrBGCMod, only : tracer_copy_a2b_div
+   use BetrBGCMod, only : tracer_col_mapping_div
+   use BetrBGCMod, only : tracer_copy_a2b_div
+   use BetrStatusType      , only : betr_status_type
    implicit none
    !ARGUMENTS
    class(betr_type)  , intent(inout) :: this
@@ -891,15 +896,19 @@ contains
    integer           , intent(in)    :: num_snowc      ! number of column soil points in column filter
    integer           , intent(in)    :: filter_snowc(:) ! column filter for soil points
    real(r8)          , intent(in)    :: divide_matrix(bounds%begc: , 1: , 1: )
+   type(betr_status_type),intent(out):: bstatus
 
    !temporary variable
    real(r8) :: tracer_copy(bounds%begc:bounds%endc, 1:nlevsno)
    integer  :: jj, jj1
 
-   SHR_ASSERT_ALL((ubound(divide_matrix ,1)         == bounds%endc)  , errMsg(filename,__LINE__))
-   SHR_ASSERT_ALL((ubound(divide_matrix ,2)         == nlevsno)      , errMsg(filename,__LINE__))
-   SHR_ASSERT_ALL((ubound(divide_matrix ,3)         == nlevsno)      , errMsg(filename,__LINE__))
-
+   call bstatus%reset()
+   SHR_ASSERT_ALL((ubound(divide_matrix ,1)  == bounds%endc)  , errMsg(filename,__LINE__), bstatus)
+   if(bstatus%check_status())return
+   SHR_ASSERT_ALL((ubound(divide_matrix ,2)  == nlevsno)      , errMsg(filename,__LINE__), bstatus)
+   if(bstatus%check_status())return
+   SHR_ASSERT_ALL((ubound(divide_matrix ,3)  == nlevsno)      , errMsg(filename,__LINE__), bstatus)
+   if(bstatus%check_status())return
    associate(                                                                           &
       tracer_conc_frozen_col        => this%tracerstates%tracer_conc_frozen_col ,       &
       tracer_conc_mobile_col        => this%tracerstates%tracer_conc_mobile_col ,       &
@@ -916,15 +925,16 @@ contains
            tracer_conc_mobile_col(bounds%begc:bounds%endc, -nlevsno+1:0,jj),tracer_copy)
         !remapping
         call tracer_col_mapping_div(bounds, num_snowc, filter_snowc, col%snl, divide_matrix,   &
-           tracer_copy, tracer_conc_mobile_col(bounds%begc:bounds%endc, -nlevsno+1:1,jj))
-
+           tracer_copy, tracer_conc_mobile_col(bounds%begc:bounds%endc, -nlevsno+1:1,jj),bstatus)
+        if(bstatus%check_status())return
         if(is_frozen(jj))then
           !make a copy
           call tracer_copy_a2b_div(bounds, num_snowc, filter_snowc, col%snl,                   &
             tracer_conc_frozen_col(bounds%begc:bounds%endc, -nlevsno+1:0,jj),tracer_copy)
           !remapping
           call tracer_col_mapping_div(bounds, num_snowc, filter_snowc, col%snl, divide_matrix, &
-             tracer_copy, tracer_conc_frozen_col(bounds%begc:bounds%endc, -nlevsno+1:0,jj))
+             tracer_copy, tracer_conc_frozen_col(bounds%begc:bounds%endc, -nlevsno+1:0,jj),bstatus)
+          if(bstatus%check_status())return
         endif
      else
        !x!currently, no solid tracer is allowed to mix with snow
@@ -938,16 +948,17 @@ contains
    end subroutine tracer_DivideSnowLayers
    !------------------------------------------------------------------------
 
-   subroutine tracer_CombineSnowLayers(this, bounds, num_snowc, filter_snowc, combine_matrix)
+   subroutine tracer_CombineSnowLayers(this, bounds, num_snowc, filter_snowc, combine_matrix, bstatus)
    !
    ! DESCRIPTIONS
    ! combine tracers in snow
    !
    !! USES
-     use tracer_varcon , only : nlevsno => betr_nlevsno
-     use BetrBGCMod    , only : tracer_col_mapping_div
-     use BetrBGCMod    , only : tracer_col_mapping_comb
-     use BetrBGCMod    , only : tracer_copy_a2b_comb
+   use tracer_varcon , only : nlevsno => betr_nlevsno
+   use BetrBGCMod    , only : tracer_col_mapping_div
+   use BetrBGCMod    , only : tracer_col_mapping_comb
+   use BetrBGCMod    , only : tracer_copy_a2b_comb
+   use BetrStatusType      , only : betr_status_type
    !!
    ! ARGUMENTS
    implicit none
@@ -956,14 +967,19 @@ contains
    integer           , intent(in)    :: num_snowc      ! number of column soil points in column filter
    integer           , intent(in)    :: filter_snowc(:) ! column filter for soil points
    real(r8)          , intent(in)    :: combine_matrix(bounds%begc: ,-nlevsno+1: ,-nlevsno+1: )
+   type(betr_status_type),intent(out):: bstatus
 
    !temporary variables
    real(r8) :: tracer_copy(bounds%begc:bounds%endc,-nlevsno+1:1)
    integer  :: jj, jj1
 
-   SHR_ASSERT_ALL((ubound(combine_matrix,1)         == bounds%endc)  , errMsg(filename,__LINE__))
-   SHR_ASSERT_ALL((ubound(combine_matrix,2)         == 1)            , errMsg(filename,__LINE__))
-   SHR_ASSERT_ALL((ubound(combine_matrix,3)         == 1)            , errMsg(filename,__LINE__))
+   call bstatus%reset()
+   SHR_ASSERT_ALL((ubound(combine_matrix,1) == bounds%endc)  , errMsg(filename,__LINE__),bstatus)
+   if(bstatus%check_status())return
+   SHR_ASSERT_ALL((ubound(combine_matrix,2) == 1)            , errMsg(filename,__LINE__),bstatus)
+   if(bstatus%check_status())return
+   SHR_ASSERT_ALL((ubound(combine_matrix,3) == 1)            , errMsg(filename,__LINE__),bstatus)
+   if(bstatus%check_status())return
 
    associate(                                                                           &
       tracer_conc_frozen_col        => this%tracerstates%tracer_conc_frozen_col ,       &
@@ -982,14 +998,16 @@ contains
            tracer_conc_mobile_col(bounds%begc:bounds%endc, -nlevsno+1:1,jj),tracer_copy)
         !remapping
         call tracer_col_mapping_comb(bounds, num_snowc, filter_snowc, col%snl, combine_matrix,   &
-           tracer_copy, tracer_conc_mobile_col(bounds%begc:bounds%endc, -nlevsno+1:1,jj))
+           tracer_copy, tracer_conc_mobile_col(bounds%begc:bounds%endc, -nlevsno+1:1,jj),bstatus)
+        if(bstatus%check_status())return
         if(is_frozen(jj))then
           !make a copy
           call tracer_copy_a2b_comb(bounds, num_snowc, filter_snowc, col%snl,                    &
             tracer_conc_frozen_col(bounds%begc:bounds%endc, -nlevsno+1:1,jj),tracer_copy)
           !remapping
           call tracer_col_mapping_comb(bounds, num_snowc, filter_snowc, col%snl, combine_matrix, &
-             tracer_copy, tracer_conc_frozen_col(bounds%begc:bounds%endc, -nlevsno+1:1,jj))
+             tracer_copy, tracer_conc_frozen_col(bounds%begc:bounds%endc, -nlevsno+1:1,jj),bstatus)
+          if(bstatus%check_status())return
         endif
      else
        !x!currently, no solid tracer is allowed to mix with snow

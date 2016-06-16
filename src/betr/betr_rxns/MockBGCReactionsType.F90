@@ -207,8 +207,8 @@ contains
     real(r8) :: irt   !the inverse of R*T
 
     call betr_status%reset()
-
-    SHR_ASSERT_ALL((ubound(dz_top)                == (/bounds%endc/)),   errMsg(mod_filename,__LINE__))
+    SHR_ASSERT_ALL((ubound(dz_top)  == (/bounds%endc/)),   errMsg(mod_filename,__LINE__), betr_status)
+    if(betr_status%check_status())return
     ! remove compiler warnings for unused dummy args
     if (this%dummy_compiler_warning)      continue
     if (size(biogeo_flux%qflx_adv_col)>0) continue
@@ -302,7 +302,7 @@ contains
 
   !-------------------------------------------------------------------------------
   subroutine do_tracer_equilibration(this, bounds, lbj, ubj, jtops, num_soilc, filter_soilc, &
-       betrtracer_vars, tracercoeff_vars, tracerstate_vars)
+       betrtracer_vars, tracercoeff_vars, tracerstate_vars, betr_status)
     !
     ! DESCRIPTION:
     ! requilibrate tracers that has solid and mobile phases
@@ -313,6 +313,7 @@ contains
     use tracerstatetype , only : tracerstate_type
     use tracercoeffType , only : tracercoeff_type
     use BeTRTracerType  , only : betrtracer_type
+    use BetrStatusType  , only : betr_status_type
     implicit none
     ! !ARGUMENTS:
     class(bgc_reaction_mock_run_type) , intent(inout)    :: this
@@ -324,10 +325,13 @@ contains
     type(betrtracer_type)             , intent(in)    :: betrtracer_vars
     type(tracercoeff_type)            , intent(in)    :: tracercoeff_vars
     type(tracerstate_type)            , intent(inout) :: tracerstate_vars
+    type(betr_status_type)            , intent(out)   :: betr_status
     !local variables
     character(len=255) :: subname = 'do_tracer_equilibration'
 
-    SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__))
+    call betr_status%reset()
+    SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__), betr_status)
+    if(betr_status%check_status())return
 
     ! remove compiler warnings for unused dummy args
     if (this%dummy_compiler_warning)                          continue
