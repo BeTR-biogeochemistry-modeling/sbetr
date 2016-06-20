@@ -378,7 +378,8 @@ contains
         exit
       endif
     enddo
-
+    if(this%bsimstatus%check_status()) &
+      call endrun(msg=trim(this%bsimstatus%print_msg()))
   end  subroutine BeTRSimulationBeginMassBalanceCheck
   !---------------------------------------------------------------------------------
 
@@ -416,6 +417,8 @@ contains
         exit
       endif
    enddo
+   if(this%bsimstatus%check_status()) &
+      call endrun(msg=trim(this%bsimstatus%print_msg()))
   end subroutine BeTRSimulationMassBalanceCheck
 
 !-------------------------------------------------------------------------------
@@ -1042,7 +1045,8 @@ contains
       exit
     endif
   enddo
-
+  if(this%bsimstatus%check_status()) &
+    call endrun(msg=trim(this%bsimstatus%print_msg()))
   end subroutine BeTRSimulationDvideSnowLayers
 
   !------------------------------------------------------------------------
@@ -1080,7 +1084,8 @@ contains
       exit
     endif
   enddo
-
+  if(this%bsimstatus%check_status()) &
+    call endrun(msg=trim(this%bsimstatus%print_msg()))
   end subroutine BeTRSimulationCombineSnowLayers
   !------------------------------------------------------------------------
   subroutine hist_create_fluxes(this, bounds, betr_nlevtrc_soil, num_flux1d, num_flux2d)

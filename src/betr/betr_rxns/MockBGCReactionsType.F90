@@ -279,7 +279,14 @@ contains
     type(betr_status_type)            , intent(out)   :: betr_status
     character(len=*)                 , parameter     :: subname ='calc_bgc_reaction'
 
+    integer :: c, fc, ll
+
     call betr_status%reset()
+    associate(                                                                    &
+    tracer_mobile_phase            => tracerstate_vars%tracer_conc_mobile_col  ,  &
+    tracer_flx_netpro_vr           => tracerflux_vars%tracer_flx_netpro_vr_col ,  &
+    id_trc_doc                     => betrtracer_vars%id_trc_doc                  &
+    )
     ! remove compiler warnings for unused dummy args
     if (this%dummy_compiler_warning)                          continue
     if (bounds%begc > 0)                                      continue
@@ -298,6 +305,15 @@ contains
     if (size(tracerboundarycond_vars%jtops_col) > 0)          continue
     if (plant_soilbgc%dummy_compiler_warning)                 continue
 
+    !now assume doc decays with a turnover rate 1.e-6_r8
+    do ll = 1, ubj
+      do fc = 1, num_soilc
+        c = filter_soilc(fc)
+        tracer_flx_netpro_vr(c,ll,id_trc_doc)=tracer_mobile_phase(c,ll,id_trc_doc)*(exp(-1.e-6_r8*dtime)-1._r8)
+        tracer_mobile_phase(c,ll,id_trc_doc) = tracer_mobile_phase(c,ll,id_trc_doc)+tracer_flx_netpro_vr(c,ll,id_trc_doc)
+      enddo
+    enddo
+   end associate
   end subroutine calc_bgc_reaction
 
   !-------------------------------------------------------------------------------
