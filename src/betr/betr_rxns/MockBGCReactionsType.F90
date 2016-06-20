@@ -68,7 +68,7 @@ contains
     use BeTRTracerType        , only : betrtracer_type
 
     ! !ARGUMENTS:
-    class(bgc_reaction_mock_run_type), intent(in) :: this
+    class(bgc_reaction_mock_run_type), intent(inout) :: this
     type(BeTRtracer_type),             intent(in) :: betrtracer_vars
     type(bounds_type),                 intent(in) :: bounds
     type(tracerboundarycond_type),     intent(in) :: tracerboundarycond_vars
@@ -88,7 +88,7 @@ contains
   end subroutine init_boundary_condition_type
 
   !-------------------------------------------------------------------------------
-  subroutine Init_betrbgc(this, bounds, lbj, ubj, betrtracer_vars)
+  subroutine Init_betrbgc(this, bounds, lbj, ubj, betrtracer_vars, bstatus)
     !
     ! DESCRIPTION:
     ! initialize the betrbgc
@@ -96,13 +96,13 @@ contains
     ! !USES:
     use BeTRTracerType , only : betrtracer_type
     use MathfuncMod    , only : addone
-
+    use BetrStatusType , only : betr_status_type
     ! !ARGUMENTS:
-    class(bgc_reaction_mock_run_type), intent(in)    :: this
+    class(bgc_reaction_mock_run_type), intent(inout)    :: this
     type(bounds_type)                , intent(in)    :: bounds
     integer                          , intent(in)    :: lbj, ubj
     type(BeTRtracer_type )           , intent(inout) :: betrtracer_vars
-
+    type(betr_status_type)           , intent(out)   :: bstatus
     character(len=*), parameter                      :: subname ='Init_betrbgc'
 
     integer :: itemp_gwm
@@ -112,6 +112,7 @@ contains
     integer :: dum
     integer :: itemp_grp, itemp_v, itemp_vgrp
 
+    call bstatus%reset()
     ! remove compiler warnings for unused dummy args
     if (this%dummy_compiler_warning)           continue
     if (bounds%begc > 0)                       continue
@@ -141,32 +142,32 @@ contains
     itemp_v = 0      !volatile id
     itemp_vgrp = 0   !volatile group
 
-    call betrtracer_vars%set_tracer(trc_id = betrtracer_vars%id_trc_n2, trc_name='N2'  ,      &
+    call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_n2, trc_name='N2'  ,      &
          is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = addone(itemp_grp),   &
          trc_group_mem= 1,  is_trc_volatile=.true., trc_volatile_id = addone(itemp_v)     ,   &
          trc_volatile_group_id = addone(itemp_vgrp))
 
-    call betrtracer_vars%set_tracer(trc_id = betrtracer_vars%id_trc_o2, trc_name='O2'  ,      &
+    call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_o2, trc_name='O2'  ,      &
          is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = addone(itemp_grp),   &
          trc_group_mem = 1, is_trc_volatile=.true., trc_volatile_id = addone(itemp_v)     ,   &
          trc_volatile_group_id = addone(itemp_vgrp))
 
-    call betrtracer_vars%set_tracer(trc_id = betrtracer_vars%id_trc_ar, trc_name='AR'  ,      &
+    call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_ar, trc_name='AR'  ,      &
          is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = addone(itemp_grp),   &
          trc_group_mem = 1, is_trc_volatile=.true., trc_volatile_id = addone(itemp_v)     ,   &
          trc_volatile_group_id = addone(itemp_vgrp))
 
-    call betrtracer_vars%set_tracer(trc_id = betrtracer_vars%id_trc_co2x, trc_name='CO2x',    &
+    call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_co2x, trc_name='CO2x',    &
          is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = addone(itemp_grp)  , &
          trc_group_mem = 1, is_trc_volatile=.true., trc_volatile_id = addone(itemp_v)       , &
-         trc_volatile_group_id = addone(itemp_vgrp) )
+         trc_volatile_group_id = addone(itemp_vgrp))
 
-    call betrtracer_vars%set_tracer(trc_id = betrtracer_vars%id_trc_ch4, trc_name='CH4',      &
+    call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_ch4, trc_name='CH4',      &
          is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = addone(itemp_grp),   &
          trc_group_mem = 1, is_trc_volatile=.true., trc_volatile_id = addone(itemp_v)     ,   &
          trc_volatile_group_id = addone(itemp_vgrp))
 
-    call betrtracer_vars%set_tracer(trc_id = betrtracer_vars%id_trc_doc, trc_name='DOC',      &
+    call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_doc, trc_name='DOC',      &
          is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = addone(itemp_grp),   &
          trc_group_mem = 1)
 
@@ -174,7 +175,7 @@ contains
 
   !-------------------------------------------------------------------------------
   subroutine set_boundary_conditions(this, bounds, num_soilc, filter_soilc, dz_top, betrtracer_vars, &
-       biophysforc, biogeo_flux, tracerboundarycond_vars)
+       biophysforc, biogeo_flux, tracerboundarycond_vars, betr_status)
     !
     ! !DESCRIPTION:
     ! set up boundary conditions for tracer movement
@@ -182,14 +183,14 @@ contains
     ! !USES:
     use betr_ctrl              , only : iulog  => biulog
     use TracerBoundaryCondType , only : tracerboundarycond_type
-    use babortutils            , only : endrun
     use bshr_log_mod           , only : errMsg => shr_log_errMsg
     use BeTRTracerType         , only : betrtracer_type
     use betr_varcon            , only : rgas => brgas
     use BeTR_biogeoFluxType    , only : betr_biogeo_flux_type
+    use BetrStatusType         , only : betr_status_type
     implicit none
     ! !ARGUMENTS:
-    class(bgc_reaction_mock_run_type) , intent(in)    :: this                       !
+    class(bgc_reaction_mock_run_type) , intent(inout)    :: this                       !
     type(bounds_type)                 , intent(in)    :: bounds                     !
     integer                           , intent(in)    :: num_soilc                  ! number of columns in column filter_soilc
     integer                           , intent(in)    :: filter_soilc(:)            ! column filter_soilc
@@ -198,13 +199,16 @@ contains
     type(betr_biogeophys_input_type)  , intent(in)    :: biophysforc
     type(betr_biogeo_flux_type)       , intent(in)    :: biogeo_flux
     type(tracerboundarycond_type)     , intent(inout) :: tracerboundarycond_vars !
+    type(betr_status_type)            , intent(out)   :: betr_status
 
     ! !LOCAL VARIABLES:
     integer            :: fc, c
     character(len=255) :: subname = 'set_boundary_conditions'
     real(r8) :: irt   !the inverse of R*T
-    SHR_ASSERT_ALL((ubound(dz_top)                == (/bounds%endc/)),   errMsg(mod_filename,__LINE__))
 
+    call betr_status%reset()
+    SHR_ASSERT_ALL((ubound(dz_top)  == (/bounds%endc/)),   errMsg(mod_filename,__LINE__), betr_status)
+    if(betr_status%check_status())return
     ! remove compiler warnings for unused dummy args
     if (this%dummy_compiler_warning)      continue
     if (size(biogeo_flux%qflx_adv_col)>0) continue
@@ -241,7 +245,7 @@ contains
   !-------------------------------------------------------------------------------
   subroutine calc_bgc_reaction(this, bounds, lbj, ubj, num_soilc, filter_soilc,               &
        num_soilp,filter_soilp, jtops, dtime, betrtracer_vars, tracercoeff_vars,  biophysforc, &
-       tracerstate_vars, tracerflux_vars, tracerboundarycond_vars, plant_soilbgc)
+       tracerstate_vars, tracerflux_vars, tracerboundarycond_vars, plant_soilbgc, betr_status)
     !
     ! !DESCRIPTION:
     ! do bgc reaction
@@ -253,9 +257,10 @@ contains
     use tracercoeffType        , only : tracercoeff_type
     use BetrTracerType         , only : betrtracer_type
     use PlantSoilBGCMod        , only : plant_soilbgc_type
+    use BetrStatusType         , only : betr_status_type
     implicit none
     !ARGUMENTS
-    class(bgc_reaction_mock_run_type) , intent(in)    :: this                       !
+    class(bgc_reaction_mock_run_type) , intent(inout)    :: this                       !
     type(bounds_type)                 , intent(in)    :: bounds                      ! bounds
     integer                           , intent(in)    :: num_soilc                   ! number of columns in column filter
     integer                           , intent(in)    :: filter_soilc(:)             ! column filter
@@ -271,9 +276,17 @@ contains
     type(tracerflux_type)             , intent(inout) :: tracerflux_vars
     type(tracerboundarycond_type)     , intent(inout) :: tracerboundarycond_vars !
     class(plant_soilbgc_type)         , intent(inout) ::  plant_soilbgc
-
+    type(betr_status_type)            , intent(out)   :: betr_status
     character(len=*)                 , parameter     :: subname ='calc_bgc_reaction'
-    
+
+    integer :: c, fc, ll
+
+    call betr_status%reset()
+    associate(                                                                    &
+    tracer_mobile_phase            => tracerstate_vars%tracer_conc_mobile_col  ,  &
+    tracer_flx_netpro_vr           => tracerflux_vars%tracer_flx_netpro_vr_col ,  &
+    id_trc_doc                     => betrtracer_vars%id_trc_doc                  &
+    )
     ! remove compiler warnings for unused dummy args
     if (this%dummy_compiler_warning)                          continue
     if (bounds%begc > 0)                                      continue
@@ -292,11 +305,20 @@ contains
     if (size(tracerboundarycond_vars%jtops_col) > 0)          continue
     if (plant_soilbgc%dummy_compiler_warning)                 continue
 
+    !now assume doc decays with a turnover rate 1.e-6_r8
+    do ll = 1, ubj
+      do fc = 1, num_soilc
+        c = filter_soilc(fc)
+        tracer_flx_netpro_vr(c,ll,id_trc_doc)=tracer_mobile_phase(c,ll,id_trc_doc)*(exp(-1.e-6_r8*dtime)-1._r8)
+        tracer_mobile_phase(c,ll,id_trc_doc) = tracer_mobile_phase(c,ll,id_trc_doc)+tracer_flx_netpro_vr(c,ll,id_trc_doc)
+      enddo
+    enddo
+   end associate
   end subroutine calc_bgc_reaction
 
   !-------------------------------------------------------------------------------
   subroutine do_tracer_equilibration(this, bounds, lbj, ubj, jtops, num_soilc, filter_soilc, &
-       betrtracer_vars, tracercoeff_vars, tracerstate_vars)
+       betrtracer_vars, tracercoeff_vars, tracerstate_vars, betr_status)
     !
     ! DESCRIPTION:
     ! requilibrate tracers that has solid and mobile phases
@@ -307,9 +329,10 @@ contains
     use tracerstatetype , only : tracerstate_type
     use tracercoeffType , only : tracercoeff_type
     use BeTRTracerType  , only : betrtracer_type
+    use BetrStatusType  , only : betr_status_type
     implicit none
     ! !ARGUMENTS:
-    class(bgc_reaction_mock_run_type) , intent(in)    :: this
+    class(bgc_reaction_mock_run_type) , intent(inout)    :: this
     type(bounds_type)                 , intent(in)    :: bounds
     integer                           , intent(in)    :: lbj, ubj
     integer                           , intent(in)    :: jtops(bounds%begc: )        ! top label of each column
@@ -318,10 +341,13 @@ contains
     type(betrtracer_type)             , intent(in)    :: betrtracer_vars
     type(tracercoeff_type)            , intent(in)    :: tracercoeff_vars
     type(tracerstate_type)            , intent(inout) :: tracerstate_vars
+    type(betr_status_type)            , intent(out)   :: betr_status
     !local variables
     character(len=255) :: subname = 'do_tracer_equilibration'
 
-    SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__))
+    call betr_status%reset()
+    SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__), betr_status)
+    if(betr_status%check_status())return
 
     ! remove compiler warnings for unused dummy args
     if (this%dummy_compiler_warning)                          continue
@@ -355,7 +381,7 @@ contains
     use BeTR_landvarconType , only : landvarcon  => betr_landvarcon
     implicit none
     ! !ARGUMENTS:
-    class(bgc_reaction_mock_run_type) , intent(in)    :: this
+    class(bgc_reaction_mock_run_type) , intent(inout)    :: this
     type(bounds_type)                 , intent(in)    :: bounds
     type(BeTRTracer_Type)             , intent(in)    :: betrtracer_vars
     type(betr_biogeophys_input_type)  , intent(in)    :: biophysforc
@@ -429,7 +455,7 @@ contains
     use BeTRTracerType , only : BeTRTracer_Type
     implicit none
     ! !ARGUMENTS:
-    class(bgc_reaction_mock_run_type) , intent(in)    :: this
+    class(bgc_reaction_mock_run_type) , intent(inout)    :: this
     type(BeTRTracer_Type)             , intent(inout) :: betrtracer_vars
     type(file_desc_t)                 , intent(inout) :: ncid  ! pio netCDF file id
 
@@ -455,7 +481,7 @@ contains
     use BeTRTracerType  , only : BeTRTracer_Type
     implicit none
     ! !ARGUMENTS:
-    class(bgc_reaction_mock_run_type) , intent(in) :: this               !
+    class(bgc_reaction_mock_run_type) , intent(inout) :: this               !
     type(bounds_type)                 , intent(in) :: bounds             ! bounds
     integer                           , intent(in) :: num_soilc
     integer                           , intent(in) :: filter_soilc(:)

@@ -1,6 +1,7 @@
 set(BETR_UTIL_SOURCES
   betr_constants.F90
   babortutils.F90
+  BetrStatusType.F90
   BeTR_decompMod.F90
   betr_varcon.F90
   betr_ctrl.F90

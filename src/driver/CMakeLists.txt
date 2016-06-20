@@ -1,5 +1,6 @@
 set(BETR_DRIVER_SOURCES
   BeTRType.F90
+  BeTRStatusSimType.F90
   BeTRSimulation.F90
   BeTRSimulationFactory.F90
   BeTRSimulationStandalone.F90

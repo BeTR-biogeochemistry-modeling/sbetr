@@ -11,8 +11,23 @@ implicit none
       procedure, private :: InitAllocate
   end type betr_biogeo_state_type
 
+  public :: create_betr_biogeo_state
+
 contains
 
+  function create_betr_biogeo_state()
+  ! DESCRIPTION
+  ! constructor
+    implicit none
+    class(betr_biogeo_state_type), pointer :: create_betr_biogeo_state
+    class(betr_biogeo_state_type), pointer :: biogeo_state
+
+    allocate(biogeo_state)
+    create_betr_biogeo_state => biogeo_state
+
+  end function create_betr_biogeo_state
+
+  !------------------------------------------------------------------------
   subroutine Init(this, bounds)
 
   class(betr_biogeo_state_type)      :: this

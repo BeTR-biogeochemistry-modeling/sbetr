@@ -5,6 +5,10 @@ integrated into land surface models such as CLM and ALM.
 
 Jinyun Tang, jinyuntang@lbl.gov
 
+References
+
+Tang, J. Y., Riley, W. J., Koven, C. D., and Subin, Z. M.: CLM4-BeTR, a generic biogeochemical transport and reaction module for CLM4: model development, evaluation, and application, Geosci. Model Dev., 6, 127-140, doi:10.5194/gmd-6-127-2013, 2013.
+
 ## Building
 
 [![Build Status](https://travis-ci.org/BeTR-biogeochemistry-modeling/sbetr.svg?branch=master)](https://travis-ci.org/BeTR-biogeochemistry-modeling/sbetr)

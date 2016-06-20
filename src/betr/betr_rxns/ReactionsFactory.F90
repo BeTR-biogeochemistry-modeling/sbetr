@@ -17,7 +17,7 @@ module ReactionsFactory
 
   character(len=*), parameter :: mod_filename = &
        __FILE__
-  
+
   private
 
   public :: create_betr_def_application
@@ -29,7 +29,7 @@ contains
   !create betr applications
   !
   implicit none
-  !arguments  
+  !arguments
   class(bgc_reaction_type),  allocatable, intent(out) :: bgc_reaction
   class(plant_soilbgc_type), allocatable, intent(out) :: plant_soilbgc
   character(len=*),                       intent(in)  :: method
@@ -53,8 +53,9 @@ contains
     use BGCReactionsMod            , only : bgc_reaction_type
     use MockBGCReactionsType       , only : bgc_reaction_mock_run_type
     use H2OIsotopeBGCReactionsType , only : bgc_reaction_h2oiso_type
-    use babortutils                , only : endrun
     use betr_ctrl                  , only : iulog  => biulog
+    use BetrStatusType             , only : betr_status_type
+    use betr_constants             , only : betr_errmsg_len
     implicit none
     ! !ARGUMENTS:
     class(bgc_reaction_type) , allocatable :: bgc_reaction
@@ -68,8 +69,9 @@ contains
     case ("h2oiso")
        allocate(bgc_reaction, source=bgc_reaction_h2oiso_type())
     case default
-       write(iulog,*)subname //' ERROR: unknown method: ', method
-       call endrun(msg=errMsg(mod_filename, __LINE__))
+!x       write(iulog,*)subname //' ERROR: unknown method: ', method
+!x       call endrun(msg=errMsg(mod_filename, __LINE__))
+       !do nothing
     end select
   end function create_bgc_reaction_type
   !-------------------------------------------------------------------------------
@@ -82,7 +84,6 @@ contains
   use PlantSoilBGCMod            , only : plant_soilbgc_type
   use MockPlantSoilBGCType       , only : plant_soilbgc_mock_run_type
   use H2OIsotopePlantSoilBGCType , only : plant_soilbgc_h2oiso_run_type
-  use babortutils                , only : endrun
   use betr_ctrl                  , only : iulog  => biulog
   implicit none
   ! !ARGUMENTS:
@@ -96,8 +97,9 @@ contains
   case ("h2oiso")
      allocate(plant_soilbgc, source=plant_soilbgc_h2oiso_run_type())
   case default
-     write(*, *)subname //' ERROR: unknown method: ', method
-     call endrun(msg=errMsg(mod_filename, __LINE__))
+!x     write(*, *)subname //' ERROR: unknown method: ', method
+!x     call endrun(msg=errMsg(mod_filename, __LINE__))
+   !do nothing
   end select
 
   end function create_plant_soilbgc_type

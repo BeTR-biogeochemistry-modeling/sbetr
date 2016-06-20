@@ -21,6 +21,7 @@ module BeTRSimulationALM
   use BeTR_ColumnType     , only : betr_col
   use BeTR_LandunitType   , only : betr_lun
   use betr_decompMod      , only : betr_bounds_type
+  use betr_varcon         , only : betr_maxpatch_pft
   implicit none
 
   private
@@ -129,7 +130,6 @@ contains
     betr_landvarcon%istcrop            = istcrop
     betr_landvarcon%istice             = istice
 
-
     ! now call the base simulation init to continue initialization
     call this%BeTRInit(base_filename, namelist_buffer, &
          bounds, waterstate)
@@ -156,6 +156,7 @@ contains
 
     !TEMPORARY VARIABLES
     type(betr_bounds_type)     :: betr_bounds
+    integer :: c
 
     !pass necessary data for correct subroutine call
     betr_nlevsoi       = nlevsoi
@@ -178,17 +179,25 @@ contains
     betr_lun%itype     => lun%itype
     betr_lun%ifspecial => lun%ifspecial
 
-    betr_bounds%lbj  = 1          ; betr_bounds%ubj  = betr_nlevsoi
-    betr_bounds%begp = bounds%begp; betr_bounds%endp = bounds%endp
-    betr_bounds%begc = bounds%begc; betr_bounds%endc = bounds%endc
-    betr_bounds%begl = bounds%begl; betr_bounds%endl = bounds%endl
-    betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
-
-
-    call this%betr%step_without_drainage(betr_time, betr_bounds,               &
+    betr_bounds%lbj  = 1; betr_bounds%ubj  = betr_nlevsoi
+    betr_bounds%begp = 1; betr_bounds%endp =  betr_maxpatch_pft
+    betr_bounds%begc = 1; betr_bounds%endc = 1
+    betr_bounds%begl = 1; betr_bounds%endl = 1
+    betr_bounds%begg = 1; betr_bounds%endg = 1
+    call this%bsimstatus%reset()
+    do c = bounds%begc, bounds%endc
+      call this%betr(c)%step_without_drainage(betr_time, betr_bounds,            &
          this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp, &
-         this%biophys_forc, this%biogeo_flux, this%biogeo_state)
+         this%biophys_forc(c), this%biogeo_flux(c), this%biogeo_state(c), this%bstatus(c))
 
+      if(this%bstatus(c)%check_status())then
+        call this%bsimstatus%setcol(c)
+        call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
+        exit
+      endif
+    enddo
+    if(this%bsimstatus%check_status()) &
+      call endrun(msg=this%bsimstatus%print_msg())
   end subroutine ALMStepWithoutDrainage
 
   !---------------------------------------------------------------------------------
@@ -213,6 +222,7 @@ contains
     !temporary variables
     type(betr_bounds_type) :: betr_bounds
     integer                :: lbj, ubj ! lower and upper bounds, make sure they are > 0
+    integer                :: c
 
     betr_nlevsoi       = nlevsoi
     betr_nlevsno       = nlevsno
@@ -228,15 +238,23 @@ contains
     betr_lun%itype     => lun%itype
     betr_lun%ifspecial => lun%ifspecial
 
-    betr_bounds%lbj  = 1          ; betr_bounds%ubj  = betr_nlevsoi
-    betr_bounds%begp = bounds%begp; betr_bounds%endp = bounds%endp
-    betr_bounds%begc = bounds%begc; betr_bounds%endc = bounds%endc
-    betr_bounds%begl = bounds%begl; betr_bounds%endl = bounds%endl
-    betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
-
-    call this%betr%step_with_drainage(betr_bounds,      &
+    betr_bounds%lbj  = 1; betr_bounds%ubj  = betr_nlevsoi
+    betr_bounds%begp = 1; betr_bounds%endp =  betr_maxpatch_pft
+    betr_bounds%begc = 1; betr_bounds%endc = 1
+    betr_bounds%begl = 1; betr_bounds%endl = 1
+    betr_bounds%begg = 1; betr_bounds%endg = 1
+    call this%bsimstatus%reset()
+    do c = bounds%begc, bounds%endc
+      call this%betr(c)%step_with_drainage(betr_bounds,      &
          this%num_soilc, this%filter_soilc, this%jtops, &
-         this%biogeo_flux)
+         this%biogeo_flux(c), this%bstatus(c))
+
+      if(this%bstatus(c)%check_status())then
+        call this%bsimstatus%setcol(c)
+        call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
+        exit
+      endif
+    enddo
 
   end subroutine ALMStepWithDrainage
 
@@ -244,7 +262,7 @@ contains
   subroutine ALMBetrPlantSoilBGCSend(this, bounds, num_soilc,  filter_soilc)
   !this should be expanded
   implicit none
-  class(betr_simulation_alm_type) :: this
+  class(betr_simulation_alm_type), intent(inout)  :: this
   type(bounds_type) , intent(in)  :: bounds
   integer           , intent(in)  :: num_soilc
   integer           , intent(in)  :: filter_soilc(:)
@@ -256,7 +274,7 @@ contains
   if (size(filter_soilc) > 0) continue
 
   !pull in fluxes of external inputs and plant demand
-  !call this%betr%plant_soilbgc%lsm_betr_plant_soilbgc_send(bounds, num_soilc, &
+  !call this%betr(c)%plant_soilbgc%lsm_betr_plant_soilbgc_send(bounds, num_soilc, &
   !               filter_soilc, this%biogeo_state, this%biogeo_flux, ecophyscon_vars)
 
   !pull in all state variables and update tracers
@@ -266,7 +284,7 @@ contains
   subroutine ALMBetrPlantSoilBGCRecv(this, bounds, num_soilc,  filter_soilc)
   !this should be expanded
   implicit none
-  class(betr_simulation_alm_type) :: this
+  class(betr_simulation_alm_type), intent(inout)  :: this
   type(bounds_type) , intent(in)  :: bounds
   integer           , intent(in)  :: num_soilc
   integer           , intent(in)  :: filter_soilc(:)
@@ -278,7 +296,7 @@ contains
   if (size(filter_soilc) > 0) continue
 
   !pull in fluxes of external inputs and plant demand
-  !call this%betr%plant_soilbgc%lsm_betr_plant_soilbgc_recv(bounds, num_soilc, &
+  !call this%betr(c)%plant_soilbgc%lsm_betr_plant_soilbgc_recv(bounds, num_soilc, &
   !               filter_soilc, this%biogeo_flux)
   !reset the biogeo_flux
   !pull in all state variables and update tracers
@@ -297,7 +315,7 @@ contains
   implicit none
   !
   ! Arguments
-  class(betr_simulation_alm_type)    :: this
+  class(betr_simulation_alm_type), intent(inout)   :: this
   type(bounds_type)     , intent(in) :: bounds
   integer               , intent(in) :: num_nolakec                        ! number of column non-lake points in column filter
   integer               , intent(in) :: filter_nolakec(:)                  ! column filter for non-lake points
@@ -307,6 +325,7 @@ contains
 
   !temporary variables
   type(betr_bounds_type)     :: betr_bounds
+  integer :: fc, c
 
   betr_col%landunit  => col%landunit
   betr_col%gridcell  => col%gridcell
@@ -318,15 +337,17 @@ contains
   betr_lun%itype     => lun%itype
   betr_lun%ifspecial => lun%ifspecial
 
-  betr_bounds%lbj  = 1          ; betr_bounds%ubj  = betr_nlevsoi
-  betr_bounds%begp = bounds%begp; betr_bounds%endp = bounds%endp
-  betr_bounds%begc = bounds%begc; betr_bounds%endc = bounds%endc
-  betr_bounds%begl = bounds%begl; betr_bounds%endl = bounds%endl
-  betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
+    betr_bounds%lbj  = 1 ; betr_bounds%ubj  = betr_nlevsoi
+    betr_bounds%begc = 1 ; betr_bounds%endc = 1
+    betr_bounds%begp = 1 ; betr_bounds%endp = betr_maxpatch_pft
+    betr_bounds%begl = 1 ; betr_bounds%endl = 1
+    betr_bounds%begg = 1 ; betr_bounds%endg = 1
 
-  call this%betr%diagnose_dtracer_freeze_thaw(betr_bounds, num_nolakec, filter_nolakec,  &
-    this%biophys_forc)
-
+  do fc = 1, num_nolakec
+    c = filter_nolakec(fc)
+    call this%betr(c)%diagnose_dtracer_freeze_thaw(betr_bounds, this%num_soilc, this%filter_soilc,  &
+      this%biophys_forc(c))
+  enddo
   end subroutine ALMDiagnoseDtracerFreezeThaw
 
   !------------------------------------------------------------------------
@@ -352,37 +373,45 @@ contains
 
     !temporary variables
     type(betr_bounds_type)     :: betr_bounds
+    integer :: fc, c
 
-    betr_bounds%lbj  = 1          ; betr_bounds%ubj  = betr_nlevsoi
-    betr_bounds%begp = bounds%begp; betr_bounds%endp = bounds%endp
-    betr_bounds%begc = bounds%begc; betr_bounds%endc = bounds%endc
-    betr_bounds%begl = bounds%begl; betr_bounds%endl = bounds%endl
-    betr_bounds%begg = bounds%begg; betr_bounds%endg = bounds%endg
+    betr_bounds%lbj  = 1 ; betr_bounds%ubj  = betr_nlevsoi
+    betr_bounds%begc = 1 ; betr_bounds%endc = 1
+    betr_bounds%begp = 1 ; betr_bounds%endp = betr_maxpatch_pft
+    betr_bounds%begl = 1 ; betr_bounds%endl = 1
+    betr_bounds%begg = 1 ; betr_bounds%endg = 1
 
-    call this%betr%calc_dew_sub_flux(betr_time,           &
-         betr_bounds, num_hydrologyc, filter_soilc_hydrologyc, &
-        this%biophys_forc, this%betr%tracers, this%betr%tracerfluxes, this%betr%tracerstates)
-
+    do fc = 1, num_hydrologyc
+      c = filter_soilc_hydrologyc(fc)
+      call this%betr(c)%calc_dew_sub_flux(betr_time,           &
+         betr_bounds, this%num_soilc, this%filter_soilc, &
+        this%biophys_forc(c), this%betr(c)%tracers, this%betr(c)%tracerfluxes, this%betr(c)%tracerstates)
+    enddo
   end subroutine ALMCalcDewSubFlux
 
   !------------------------------------------------------------------------
-  subroutine ALMBetrSoilFluxStateRecv(this, bounds, num_soilc, filter_soilc)
+  subroutine ALMBetrSoilFluxStateRecv(this, num_soilc, filter_soilc)
   !this should be expanded and called after tracer update with drainage
   implicit none
   ! !ARGUMENTS:
-  class(betr_simulation_alm_type) :: this
-  type(bounds_type) , intent(in)  :: bounds
+  class(betr_simulation_alm_type), intent(inout) :: this
   integer           , intent(in)  :: num_soilc
   integer           , intent(in)  :: filter_soilc(:)
 
-  ! remove compiler warnings
-  if (this%num_soilc > 0)     continue
-  if (bounds%begc > 0)        continue
-  if (num_soilc > 0)          continue
-  if (size(filter_soilc) > 0) continue
+  integer :: fc, c
+  type(betr_bounds_type)     :: betr_bounds
+  betr_bounds%lbj  = 1 ; betr_bounds%ubj  = betr_nlevsoi
+  betr_bounds%begc = 1 ; betr_bounds%endc = 1
+  betr_bounds%begp = 1 ; betr_bounds%endp = betr_maxpatch_pft
+  betr_bounds%begl = 1 ; betr_bounds%endl = 1
+  betr_bounds%begg = 1 ; betr_bounds%endg = 1
 
-!x  call this%betr%bgc_reaction%betr_lsm_flux_state_sendback(bounds, &
-!       num_soilc, filter_soilc, this%biogeo_state, this%biogeo_flux)
+    do fc = 1, num_soilc
+      c = filter_soilc(fc)
+      call this%betr(c)%bgc_reaction%lsm_betr_flux_state_receive(betr_bounds, &
+         this%num_soilc, this%filter_soilc,                                   &
+         this%betr(c)%tracerstates, this%betr(c)%tracerfluxes,  this%betr(c)%tracers)
+    enddo
 
   end subroutine ALMBetrSoilFluxStateRecv
 
@@ -399,7 +428,7 @@ contains
   use clm_varcon                 , only : grav,hfus,tfrz
   implicit none
   !ARGUMENTS
-  class(betr_simulation_alm_type)                        :: this
+  class(betr_simulation_alm_type), intent(inout)  :: this
   type(bounds_type)                      , intent(in)    :: bounds  ! bounds
   integer                                , intent(in)    :: lbj, ubj                                          ! lower and upper bounds, make sure they are > 0
   integer                                , intent(in)    :: numf                                              ! number of columns in column filter
@@ -476,9 +505,10 @@ contains
   type(chemstate_type)        , optional, intent(in) :: chemstate_vars
   type(soilstate_type)        , optional, intent(in) :: soilstate_vars
 
+
   call this%BeTRSetBiophysForcing(bounds, 1, nlevsoi, carbonflux_vars, waterstate_vars, &
-    waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
-    chemstate_vars, soilstate_vars)
+      waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
+      chemstate_vars, soilstate_vars)
 
   !the following will be ALM specific
   !big leaf model

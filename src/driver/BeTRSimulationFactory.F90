@@ -38,9 +38,6 @@ contains
        case ("clm")
           allocate(simulator, source=create_betr_simulation_clm())
        case ("alm")
-          !write(*, *) "ERROR: simulator type '", &
-          !     trim(simulator_name), "' has not been implemented."
-          !call endrun(msg=errMsg(mod_filename, __LINE__))
           allocate(simulator, source=create_betr_simulation_alm())
        case default
           write(*, *) "ERROR: unknown simulator type '", &
