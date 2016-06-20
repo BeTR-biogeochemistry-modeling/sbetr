@@ -325,6 +325,10 @@ contains
     ! !DESCRIPTION:
     ! return a variable with a + 1
     !
+    ! don't use it directly to refer an array element in the following
+    ! arr(addone(a))
+    ! rather you should use
+    ! id=addone(a); arr(id)
     ! !USES:
 
     implicit none
@@ -333,8 +337,8 @@ contains
     ! !LOCAL VARIABLES:
     integer :: ans
 
-    a = a + 1
-    ans = a
+    ans = a + 1
+    a = ans
   end function addone
 
   !--------------------------------------------------------------------------------

@@ -422,7 +422,7 @@ module ncdio_pio
 !-----------------------------------------------------------------------
 
   if (.not. masterproc) return
-
+  !print*,'define:',trim(varname)
     ! Determine dimension ids for variable
   ncid_local = ncid%fh
   dimid(:) = 0
@@ -451,7 +451,7 @@ module ncdio_pio
     call check_ret(nf90_inq_dimid(ncid_local, dim5name, dimid(5)), subname//' dim5: '//dim5name)
   endif
 
-    ! Define variable
+  !print*,'Define variable'
 
   if (present(dim1name)) then
     ndims = 0
@@ -460,8 +460,9 @@ module ncdio_pio
     end do
     call check_ret(nf90_def_var(ncid_local, trim(varname), xtype, dimid(1:ndims), varid), subname)
   else
-    call check_ret(nf90_def_var(ncid_local, trim(varname), xtype,  0, varid), subname)
+    call check_ret(nf90_def_var(ncid_local, trim(varname), xtype,  varid), subname)
   end if
+  !print*,'define att'
   if (present(long_name)) then
     call check_ret(nf90_put_att(ncid_local, varid, 'long_name',  trim(long_name)), subname)
   end if

@@ -1262,6 +1262,7 @@ contains
   real(r8), intent(inout) :: states_1d(bounds%begc:bounds%endc, 1:nrest_1d)
   real(r8), intent(inout) :: states_2d(bounds%begc:bounds%endc, lbj:ubj, 1:nrest_2d)
   character(len=*), intent(in) :: flag
+
   call this%tracerstates%restart(bounds, lbj, ubj, nrest_1d, nrest_2d, states_1d, states_2d, this%tracers, flag)
   end subroutine set_restvar
 end module BetrType

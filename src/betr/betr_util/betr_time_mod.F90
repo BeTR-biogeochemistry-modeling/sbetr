@@ -8,7 +8,7 @@ module BeTR_TimeMod
 
   character(len=*), parameter :: mod_filename = &
        __FILE__
-  
+
   type, public:: betr_time_type
      ! NOTE(bja, 201603) all real variables have units of seconds!
      real(r8) :: delta_time
@@ -19,6 +19,7 @@ module BeTR_TimeMod
      integer :: nelapstep
    contains
      procedure, public :: Init
+     procedure, public :: its_time_to_write_restart
      procedure, public :: its_time_to_exit
      procedure, public :: update_time_stamp
      procedure, public :: set_nstep
@@ -27,6 +28,7 @@ module BeTR_TimeMod
      procedure, public :: get_step_size
      procedure, public :: proc_nextstep
      procedure, public :: proc_initstep
+     procedure, public :: print_cur_time
      procedure, private :: ReadNamelist
   end type betr_time_type
 
@@ -85,7 +87,7 @@ contains
 
     delta_time = 1800._r8   !half hourly time step
     stop_time = delta_time*48._r8*365._r8*2._r8
-    restart_dtime = delta_time * 2.0_r8
+    restart_dtime = -1._r8
 
     ! ----------------------------------------------------------------------
     ! Read namelist from standard input.
@@ -114,27 +116,28 @@ contains
 
     this%delta_time = delta_time
     this%stop_time = stop_time
-    this%restart_dtime = restart_dtime
-
+    if(restart_dtime < 0._r8)then
+      this%restart_dtime  = this%stop_time
+    else
+      this%restart_dtime = restart_dtime
+    endif
   end subroutine ReadNamelist
 
   !-------------------------------------------------------------------------------
-  !X!  function its_time_to_write_restart(this)result(ans)
-  !X!  !
-  !X!  ! DESCRIPTION
-  !X!  ! decide if to write restart file
-  !X!  !
-  !X!
-  !X!  implicit none
-  !X!  type(betr_time_type), intent(in) :: this
-  !X!  logical :: ans
-  !X!
-  !X!  character(len=80) :: subname = 'its_time_to_write_restart'
-  !X!
-  !X!
-  !X!
-  !X!  ans = (mod(this%time,this%restart_dtime) == 0)
-  !X!  end function its_time_to_write_restart
+    function its_time_to_write_restart(this)result(ans)
+     !
+     ! DESCRIPTION
+     ! decide if to write restart file
+     !
+
+     implicit none
+     class(betr_time_type), intent(in) :: this
+     logical :: ans
+
+     character(len=80) :: subname = 'its_time_to_write_restart'
+
+     ans = (mod(this%time,this%restart_dtime) == 0)
+     end function its_time_to_write_restart
 
   !-------------------------------------------------------------------------------
   function its_time_to_exit(this) result(ans)
@@ -215,6 +218,11 @@ contains
     integer, intent(in) :: nstep
 
     this%nelapstep = nstep
+
+    this%tstep = max(mod(nstep+1,48*365),1)
+
+    this%time  = nstep*this%delta_time
+
   end subroutine set_nstep
 
   !-------------------------------------------------------------------------------
@@ -257,4 +265,11 @@ contains
 
   !-------------------------------------------------------------------------------
 
+  subroutine print_cur_time(this)
+  implicit none
+  class(betr_time_type), intent(in) :: this
+
+  print*,'time=',this%time,'tstep=',this%tstep,'nelapstep=',this%nelapstep
+
+  end subroutine print_cur_time
 end module BeTR_TimeMod

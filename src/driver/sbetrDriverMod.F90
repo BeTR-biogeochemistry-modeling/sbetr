@@ -30,7 +30,7 @@ contains
   use shr_kind_mod          , only : r8 => shr_kind_r8
   use clm_varpar            , only : nlevtrc_soil
   use decompMod             , only : bounds_type
-
+  use ncdio_pio             , only : file_desc_t
   use clm_instMod           , only : atm2lnd_vars
   use clm_instMod           , only : canopystate_vars
   use clm_instMod           , only : carbonflux_vars
@@ -70,14 +70,17 @@ contains
 
   type(bounds_type)                    :: bounds
   integer                              :: lbj, ubj
-
+  logical :: continue_run
+  type(file_desc_t)                      :: ncid
   character(len=betr_string_length_long) :: simulator_name
+  character(len=betr_string_length_long) :: restfname
   class(ForcingData_type), allocatable :: forcing_data
   class(betr_grid_type), allocatable :: grid_data
   class(betr_time_type), allocatable :: time_vars
-
+  character(len=256) :: restfile
+  integer :: nstep
   !initialize parameters
-  call read_name_list(namelist_buffer, simulator_name)
+  call read_name_list(namelist_buffer, simulator_name, continue_run)
   simulation => create_betr_simulation(simulator_name)
 
   !set up mask
@@ -120,22 +123,28 @@ contains
   !print*,'set filters to load initialization data from input'
   call simulation%BeTRSetFilter()
 
+  if(continue_run)then
+    ! print*,'continue from restart file'
+    call read_restinfo(restfname, nstep)
+    !set current step
+    call time_vars%set_nstep(nstep-1)
+    ! print*,'back 1 step'
+    call time_vars%print_cur_time()
+  endif
+
   !print*,'obtain waterstate_vars for initilizations that need it'
   call forcing_data%UpdateForcing(grid_data,                                            &
        bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, time_vars, col, &
        atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars             ,   &
        waterflux_vars, temperature_vars, chemstate_vars, simulation%jtops)
 
-  !print*,'calculate initial advective velocity'
-  call calc_qadv(forcing_data, ubj, record,                                             &
-      simulation%num_soilc, simulation%filter_soilc,                                    &
-      time_vars, waterstate_vars, waterflux_vars)
+  !print*,'initial water state variable output',time_vars%tstep
+  call calc_qadv(ubj, simulation%num_soilc, &
+       simulation%filter_soilc, waterstate_vars)
+
   !print*,'base_filename:',trim(base_filename)
   call  simulation%Init(base_filename, namelist_buffer, bounds, waterstate_vars)
 
-  record = -1
-
-  call time_vars%proc_initstep()
   select type(simulation)
   class is (betr_simulation_standalone_type)
     print*,'simulation using standalone-betr'
@@ -145,6 +154,22 @@ contains
     print*,'simulation using clm-betr'
   class default
   end select
+
+  !read initial condition from restart file is needed
+  if(continue_run)then
+    call simulation%BeTRRestartOpen(restfname, flag='read', ncid=ncid)
+    call simulation%BeTRRestart(bounds, ncid, simulation%num_soilc, simulation%filter_soilc, flag='read')
+    call simulation%BeTRRestartClose(ncid)
+    !the following aligns forcing data with correct time stamp
+    call time_vars%set_nstep(nstep)
+    call time_vars%print_cur_time()
+    record = 0
+  else
+    record = -1
+    call time_vars%proc_initstep()
+  endif
+
+
   do
     record = record + 1
 
@@ -154,7 +179,7 @@ contains
     call simulation%PreDiagSoilColWaterFlux(simulation%num_soilc, &
       simulation%filter_soilc)
 
-    !print*,'update forcing for betr'
+    ! print*,'update forcing for betr'
     !set envrionmental forcing by reading foring data: temperature, moisture, atmospheric resistance
     !from either user specified file or clm history file
 
@@ -206,9 +231,23 @@ contains
     !print*,'write output'
     call simulation%WriteHistory(record, lbj, ubj, time_vars, waterflux_vars%qflx_adv_col)
 
-    !print*,'write restart file? is not functionning at the moment'
-    !if(its_time_to_write_restart(time_vars)) call rest_write(tracerstate_vars, tracercoeff_vars, tracerflux_vars, time_vars)
     call time_vars%proc_nextstep()
+    !print*,'write restart file? is not functionning at the moment'
+    if(time_vars%its_time_to_write_restart()) then
+       !set restfname
+       nstep = time_vars%get_nstep()
+       write(restfname,'(A,I8.8,A)')trim(base_filename)//'.',nstep,'.rst.nc'
+       call write_restinfo(restfname, nstep)
+       !print*, 'open restart file'
+       call simulation%BeTRRestartOpen(restfname, flag='write', ncid=ncid)
+       ! print*,'define restart file'
+       call simulation%BeTRRestart(bounds, ncid, simulation%num_soilc, simulation%filter_soilc, flag='define')
+       ! print*,'write restart file'
+       call simulation%BeTRRestart(bounds, ncid, simulation%num_soilc, simulation%filter_soilc, flag='write')
+       ! print*,'close file'
+       call simulation%BeTRRestartClose(ncid)
+    endif
+
     if(time_vars%its_time_to_exit()) then
        exit
     end if
@@ -221,7 +260,7 @@ end subroutine sbetrBGC_driver
 
 ! ----------------------------------------------------------------------
 
-  subroutine read_name_list(namelist_buffer, simulator_name_arg)
+  subroutine read_name_list(namelist_buffer, simulator_name_arg, continue_run)
     !
     ! !DESCRIPTION:
     ! read namelist for betr configuration
@@ -236,6 +275,7 @@ end subroutine sbetrBGC_driver
     ! !ARGUMENTS:
     character(len=betr_namelist_buffer_size) , intent(in)  :: namelist_buffer
     character(len=betr_string_length_long)   , intent(out) :: simulator_name_arg
+    logical, intent(out) :: continue_run
     !
     ! !LOCAL VARIABLES:
     integer                                :: nml_error
@@ -244,10 +284,12 @@ end subroutine sbetrBGC_driver
     character(len=betr_string_length_long) :: ioerror_msg
 
 
+
     !-----------------------------------------------------------------------
 
-    namelist / sbetr_driver / simulator_name
+    namelist / sbetr_driver / simulator_name, continue_run
 
+    continue_run=.false.
     simulator_name = ''
 
     ! ----------------------------------------------------------------------
@@ -280,29 +322,10 @@ end subroutine sbetrBGC_driver
   end subroutine read_name_list
 
 
-!-------------------------------------------------------------------------------
-
-!X!  subroutine rest_write(tracerstate_vars, tracercoeff_vars, tracerflux_vars, time_vars)
-!X!  !
-!X!  ! DESCRIPTION
-!X!  ! write restart file
-!X!
-!X!  use tracerfluxType,  only : tracerflux_type
-!X!  use tracerstatetype, only : tracerstate_type
-!X!  use tracercoeffType, only : tracercoeff_type
-!X!
-!X!  implicit none
-!X!  type(tracercoeff_type), intent(in) :: tracercoeff_vars
-!X!  type(tracerflux_type) , intent(in) :: tracerflux_vars
-!X!  type(tracerstate_type), intent(in) :: tracerstate_vars
-!X!  type(betr_time_type)       , intent(in) :: time_vars
-!X!  character(len=80) :: subname = 'rest_write'
-!X!
-!X!  end subroutine rest_write
 
   !-------------------------------------------------------------------------------
 
-  subroutine calc_qadv(forcing_data, ubj, record, numf, filter, ttime, waterstate_vars, waterflux_vars)
+  subroutine calc_qadv(ubj, numf, filter, waterstate_vars)
 
     !
     ! description
@@ -310,62 +333,16 @@ end subroutine sbetrBGC_driver
     ! this function is now not used, and will be deleted
     ! USES
     use WaterstateType  , only : waterstate_type
-    use WaterfluxType   , only : waterflux_type
     use ColumnType      , only : column_type
-    use ForcingDataType , only : ForcingData_type
     implicit none
     !ARGUMENTS
-    class(ForcingData_type), intent(inout) :: forcing_data
     integer, intent(in) :: numf
     integer, intent(in) :: filter(:)
     integer, intent(in) :: ubj
-
-    integer                 , intent(in)    :: record
-    type(betr_time_type)    , intent(in)    :: ttime
     type(waterstate_type)   , intent(inout) :: waterstate_vars
-    type(waterflux_type)    , intent(inout) :: waterflux_vars
 
     integer :: j, fc, c
-    real(r8):: dmass    !kg/m2 = mm H2O/m2
 
-    associate(                     &
-         tstep => ttime%tstep,     &
-         dtime => ttime%delta_time &
-         )
-      !now obtain the advective fluxes between different soil layers
-      !dstorage = (h2o_new-h2o)/dt = qin-qout-qtran_dep
-    if (record >= 0) then
-       do fc = 1, numf
-          c = filter(fc)
-          do j = ubj, 1, -1
-             if (j == ubj) then
-                waterflux_vars%qflx_adv_col(c,j) = forcing_data%discharge(tstep) * 1.e-3_r8
-             else
-                dmass = (waterstate_vars%h2osoi_ice_col(c,j+1) + waterstate_vars%h2osoi_liq_col(c,j+1)) - &
-                  (waterstate_vars%h2osoi_ice_old(c,j+1) + waterstate_vars%h2osoi_liq_old(c,j+1))
-                waterflux_vars%qflx_adv_col(c,j) = dmass * 1.e-3_r8 / dtime + &
-                     waterflux_vars%qflx_adv_col(c,j+1) + waterflux_vars%qflx_rootsoi_col(c,j+1)
-             end if
-          end do
-          waterflux_vars%qflx_infl_col(c) = forcing_data%infiltration(tstep)
-
-          !now correct the infiltration
-          waterflux_vars%qflx_gross_infl_soil_col(c) = &
-               (waterstate_vars%h2osoi_liq_col(c,1) - waterstate_vars%h2osoi_liq_old(c,1)) / dtime + &
-               (waterflux_vars%qflx_rootsoi_col(c,1) + waterflux_vars%qflx_adv_col(c,1)) * 1.e3_r8
-
-          !the following may have some problem, because it also includes contributions from
-          !dew, and sublimation
-          if ( waterflux_vars%qflx_gross_infl_soil_col(c) > 0._r8) then
-             waterflux_vars%qflx_adv_col(c,0) = waterflux_vars%qflx_gross_infl_soil_col(c) * 1.e-3_r8
-             waterflux_vars%qflx_gross_evap_soil_col(c) = 0._r8
-          else
-             waterflux_vars%qflx_gross_evap_soil_col(c) = waterflux_vars%qflx_gross_infl_soil_col(c)
-             waterflux_vars%qflx_adv_col(c,0) = 0._r8
-             waterflux_vars%qflx_gross_infl_soil_col(c) = 0._r8
-          end if
-       end do
-    end if
     do j = 1, ubj
        do fc = 1, numf
           c = filter(fc)
@@ -374,6 +351,39 @@ end subroutine sbetrBGC_driver
        end do
     end do
 
-  end associate
-end subroutine calc_qadv
+  end subroutine calc_qadv
+  !-------------------------------------------------------------------------------
+  subroutine read_restinfo(restfile, nstep)
+  implicit none
+  character(len=*), intent(out) :: restfile
+  integer, intent(out) :: nstep
+
+  integer :: rpt_unit, rpt_error
+
+  rpt_unit=20
+  open(unit=rpt_unit,file='rpoint.betr', status='old',&
+          action='read', form='formatted', iostat=rpt_error)
+  read(rpt_unit,*)restfile,nstep
+  print*,'restart file: ', trim(restfile), 'step=',nstep
+  close(rpt_unit)
+
+  end subroutine read_restinfo
+
+  !-------------------------------------------------------------------------------
+  subroutine write_restinfo(fname, nstep)
+
+  implicit none
+  character(len=*), intent(in) :: fname
+  integer, intent(in) :: nstep
+
+  integer :: rpt_unit, rpt_error
+  character(len=50) :: rpt_filename='rpoint.betr'
+
+  !write rpoint.betr
+  rpt_unit=20
+  open(unit=rpt_unit,file=trim(rpt_filename), status='replace',&
+     action='write', form='formatted', iostat=rpt_error)
+  write(rpt_unit,*)trim(fname), nstep
+  close(rpt_unit)
+  end subroutine write_restinfo
 end module sbetrDriverMod

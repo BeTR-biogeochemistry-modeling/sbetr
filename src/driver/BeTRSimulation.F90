@@ -77,7 +77,6 @@ module BeTRSimulation
      procedure, public :: BeTRInit
      procedure, public :: BeTRSetFilter
      procedure, public :: Init                    => BeTRSimulationInit
-     procedure, public :: RestartInit             => BeTRSimulationRestartInit
      procedure, public :: ConsistencyCheck        => BeTRSimulationConsistencyCheck
      procedure, public :: PreDiagSoilColWaterFlux => BeTRSimulationPreDiagSoilColWaterFlux
      procedure, public :: DiagAdvWaterFlux        => BeTRSimulationDiagAdvWaterFlux
@@ -97,6 +96,8 @@ module BeTRSimulation
      procedure, public :: WriteRegressionOutput
      !the following are used to interact with lsm
      procedure, public :: BeTRRestart             => BeTRSimulationRestart
+     procedure, public :: BeTRRestartOpen         => BeTRSimulationRestartOpen
+     procedure, public :: BeTRRestartClose        => BeTRSimulationRestartClose
      procedure, public :: BeTRCreateHistory       => BeTRSimulationCreateHistory
      procedure, public :: BeTRRetrieveHistory     => BeTRSimulationRetrieveHistory
      procedure, private:: hist_create_states
@@ -245,38 +246,45 @@ contains
   end subroutine BeTRInit
 
   !---------------------------------------------------------------------------------
-  subroutine BeTRSimulationRestartInit(this, bounds, ncid, flag)
+  subroutine BeTRSimulationRestartOpen(this, fname, flag, ncid)
+    !
+    !! DESCRIPTION
+    ! open restart file, note it is only used in the stand alone mode
+    ! note
+    ! !USES:
+    use ncdio_pio, only : file_desc_t, ncd_nowrite, ncd_pio_openfile, ncd_pio_createfile
+    implicit none
+    !ARGUMENTS
+    class(betr_simulation_type) , intent(inout) :: this
+    character(len=*), intent(in) :: fname
+    class(file_desc_t)          , intent(out) :: ncid ! netcdf id
+    character(len=*), intent(in) :: flag
+
+
+    print*,'open restart file ',trim(fname), ' for ',trim(flag)
+    if(trim(flag)=='read')then
+      call ncd_pio_openfile(ncid, trim(fname), ncd_nowrite)
+    elseif(trim(flag)=='write')then
+      call ncd_pio_createfile(ncid, trim(fname))
+    endif
+
+  end subroutine BeTRSimulationRestartOpen
+
+
+  !---------------------------------------------------------------------------------
+  subroutine BeTRSimulationRestartClose(this, ncid)
     !
     !! DESCRIPTION
     ! initialize for restart run
     ! !USES:
-    use ncdio_pio, only : file_desc_t
+    use ncdio_pio, only : file_desc_t, ncd_pio_closefile
     implicit none
     !ARGUMENTS
     class(betr_simulation_type) , intent(inout) :: this
-    type(bounds_type)           , intent(in)    :: bounds
     class(file_desc_t)          , intent(inout) :: ncid ! netcdf id
-    character(len=*)            , intent(in)    :: flag ! 'read' or 'write'
 
-    !TEMPORARY VARIABLES
-    type(betr_bounds_type)     :: betr_bounds
-    integer :: lbj, ubj
-
-    !set lbj and ubj
-    betr_bounds%lbj  = 1; betr_bounds%ubj  = betr_nlevsoi
-    betr_bounds%begp = 1; betr_bounds%endp =  betr_maxpatch_pft
-    betr_bounds%begc = 1; betr_bounds%endc = 1
-    betr_bounds%begl = 1; betr_bounds%endl = 1
-    betr_bounds%begg = 1; betr_bounds%endg = 1
-
-   !  call this%betr%tracerstates%Restart(betr_bounds, ncid, flag=flag, betrtracer_vars=this%betr%tracers)
-
-   !  call this%betr%tracerfluxes%Restart(betr_bounds, ncid, flag=flag, betrtracer_vars=this%betr%tracers)
-
-   !  call this%betr%tracercoeffs%Restart(betr_bounds, ncid, flag=flag, betrtracer_vars=this%betr%tracers)
-  end subroutine BeTRSimulationRestartInit
-
-
+    call ncd_pio_closefile(ncid)
+  end subroutine BeTRSimulationRestartClose
   !---------------------------------------------------------------------------------
   subroutine BeTRSimulationStepWithoutDrainage(this, betr_time, bounds, col)
   !DESCRPTION
@@ -1257,20 +1265,21 @@ contains
 
   end subroutine BeTRSimulationRetrieveHistory
   !------------------------------------------------------------------------
-  subroutine BeTRSimulationRestart(this, bounds, ncid, flag, numf, filter)
+  subroutine BeTRSimulationRestart(this, bounds, ncid, numf, filter, flag)
   !DESCRIPTION
   !create or read restart file
   use ncdio_pio      , only : file_desc_t
-  use betr_varcon         , only : spval => bspval
+  use betr_varcon    , only : spval => bspval
   use restUtilMod    , only : restartvar
-  use ncdio_pio      , only : file_desc_t
-  use ncdio_pio      , only : ncd_double
+  use ncdio_pio      , only : file_desc_t, ncd_defvar, ncd_defdim
+  use ncdio_pio      , only : ncd_double, ncd_enddef, ncd_putvar
+  use ncdio_pio      , only : ncd_getvar
   implicit none
   ! !ARGUMENTS:
   class(betr_simulation_type) , intent(inout) :: this
   type(bounds_type)    , intent(in)    :: bounds
   class(file_desc_t)   , intent(inout) :: ncid                                         ! netcdf id
-  character(len=*)     , intent(in)    :: flag                                         ! 'read' or 'write'
+  character(len=*)     , intent(in)    :: flag ! 'read' or 'write'
   integer, intent(in) :: numf
   integer, intent(in) :: filter(:)
 
@@ -1285,13 +1294,14 @@ contains
   real(r8), pointer :: ptr1d(:)
   real(r8), pointer :: ptr2d(:,:)
   type(betr_bounds_type)     :: betr_bounds
+  integer :: recordDimID
 
   c = bounds%begc
   call this%betr(c)%get_restartvar(nrest_1d, nrest_2d,rest_varname_1d, &
      rest_varname_2d)
 
-  allocate(states_1d(bounds%begc:bounds%endc, 1:nrest_1d))
-  allocate(states_2d(bounds%begc:bounds%endc, 1:betr_nlevtrc_soil, 1:nrest_2d))
+  allocate(states_1d(bounds%begc:bounds%endc, 1:nrest_1d)); states_1d(:,:)=spval
+  allocate(states_2d(bounds%begc:bounds%endc, 1:betr_nlevtrc_soil, 1:nrest_2d)); states_2d(:,:,:)=spval
 
   if(trim(flag)/='define')then
     !assign initial conditions
@@ -1307,22 +1317,80 @@ contains
     enddo
   endif
 
-  do jj = 1, nrest_1d
-    ptr1d => states_1d(:, jj)
-    call restartvar(ncid=ncid, flag=flag, varname=trim(rest_varname_1d(jj)), &
-       xtype=ncd_double,  dim1name='column', long_name='',  units='', &
-       interpinic_flag='interp' , readvar=readvar, data=ptr1d)
-  enddo
-  do jj = 1, nrest_2d
-    ptr2d => states_2d(:, :, jj)
-    call restartvar(ncid=ncid, flag=flag, varname=trim(rest_varname_2d(jj)), xtype=ncd_double,  &
-      dim1name='column',dim2name='levtrc', switchdim=.true., &
-      long_name='',  units='', fill_value=spval, &
-      interpinic_flag='interp', readvar=readvar, data=ptr2d)
-  enddo
+  if(betr_offline)then
+    ! print*,'offline restart', flag
+    if(flag=='define')then
+      ! print*,'define restart file'
+      ! define the dimensions
+      !the temporal dimension is infinite
 
+      !number of vertical layers
+      call ncd_defdim(ncid, 'levtrc', betr_nlevsoi, recordDimID)
 
+      !number of columns
+      call ncd_defdim(ncid, 'column', this%num_soilc, recordDimID)
 
+      !define the time dimension
+      call ncd_defvar(ncid, 'time',ncd_double, long_name='', &
+         units = '',  missing_value=spval, fill_value=spval)
+
+      do jj = 1, nrest_1d
+        !x print*,jj,trim(rest_varname_1d(jj))
+        call ncd_defvar(ncid, trim(rest_varname_1d(jj)),ncd_double,dim1name='column',  &
+          long_name='', units = '',  missing_value=spval, fill_value=spval)
+      enddo
+
+      do jj =1, nrest_2d
+        call ncd_defvar(ncid, trim(rest_varname_2d(jj)),ncd_double,dim1name='column',  &
+          dim2name='levtrc', long_name='', units = '',  missing_value=spval, fill_value=spval)
+      enddo
+      call ncd_enddef(ncid)
+
+    elseif(flag=='write')then
+      ! print*,'write restart file'
+      do jj = 1, nrest_1d
+         ptr1d => states_1d(:, jj)
+         call ncd_putvar(ncid, trim(rest_varname_1d(jj)), 1, ptr1d)
+      enddo
+
+      do jj = 1, nrest_2d
+        ptr2d => states_2d(:, :, jj)
+        call ncd_putvar(ncid, trim(rest_varname_2d(jj)), 1, ptr2d)
+      enddo
+    elseif(flag=='read')then
+      ! print*,'read restart file'
+      do jj = 1, nrest_1d
+         ptr1d => states_1d(:, jj)
+         call ncd_getvar(ncid, trim(rest_varname_1d(jj)), ptr1d)
+      enddo
+
+      do jj = 1, nrest_2d
+        ptr2d => states_2d(:, :, jj)
+        call ncd_getvar(ncid, trim(rest_varname_2d(jj)), ptr2d)
+      enddo
+
+      ! print*,'assign values to state variables',flag
+      do fc = 1, numf
+        c = filter(fc)
+        call this%betr(c)%set_restvar(betr_bounds, 1, betr_nlevtrc_soil, nrest_1d,&
+          nrest_2d, states_1d(c:c,:), states_2d(c:c,:,:), flag)
+      enddo
+    endif
+  else
+    do jj = 1, nrest_1d
+      ptr1d => states_1d(:, jj)
+      call restartvar(ncid=ncid, flag=flag, varname=trim(rest_varname_1d(jj)), &
+         xtype=ncd_double,  dim1name='column', long_name='',  units='', &
+         interpinic_flag='interp' , readvar=readvar, data=ptr1d)
+    enddo
+    do jj = 1, nrest_2d
+      ptr2d => states_2d(:, :, jj)
+      call restartvar(ncid=ncid, flag=flag, varname=trim(rest_varname_2d(jj)), xtype=ncd_double,  &
+        dim1name='column',dim2name='levtrc', switchdim=.true., &
+        long_name='',  units='', fill_value=spval, &
+        interpinic_flag='interp', readvar=readvar, data=ptr2d)
+    enddo
+  endif
 
   deallocate(states_1d)
   deallocate(states_2d)

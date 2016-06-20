@@ -238,14 +238,14 @@ contains
     integer, intent(in) :: nrest_1d, nrest_2d
     integer, intent(in) :: lbj, ubj
     real(r8), intent(inout) :: states_1d(bounds%begc:bounds%endc, 1:nrest_1d)
-    real(r8), intent(inout) :: states_2d(bounds%begc:bounds%endc, lbj:ubj, 1:nrest_1d)
+    real(r8), intent(inout) :: states_2d(bounds%begc:bounds%endc, lbj:ubj, 1:nrest_2d)
     type(BeTRTracer_Type), intent(in)    :: betrtracer_vars
     character(len=*), intent(in) :: flag
     !
     ! !LOCAL VARIABLES:
-    integer :: j,c,jj,kk ! indices
+    integer :: j,c,jj,kk,ll ! indices
 
-    integer :: idtemp1d, idtemp2d
+    integer :: idtemp1d, idtemp2d, id
 
     ! remove unused dummy arg compiler warning
     if (bounds%begc > 0) continue
@@ -261,50 +261,52 @@ contains
          )
      idtemp1d = 0; idtemp2d= 0
      if(trim(flag)=='read')then
-      do jj = 1, ntracers
+       do jj = 1, ntracers
          if(jj<= ngwmobile_tracers)then
 
-            this%tracer_conc_aquifer_col(:, jj) = states_1d(:,addone(idtemp1d))
+            id=addone(idtemp1d);this%tracer_conc_aquifer_col(:, jj) = states_1d(:,id)
 
-            this%tracer_conc_mobile_col(:, :, jj) = states_2d(:,:,addone(idtemp2d))
+            id=addone(idtemp2d);this%tracer_conc_mobile_col(:, :, jj) = states_2d(:,:,id)
 
+          !x  do ll = lbj, ubj
+          !x    print*,'read',this%tracer_conc_mobile_col(:,ll,jj),states_2d(:,ll,id)
+          !x  enddo
             if(is_adsorb(jj))then
-              this%tracer_conc_solid_equil_col(:, :, adsorbid(jj)) = states_2d(:,:,addone(idtemp2d))
+              id=addone(idtemp2d);this%tracer_conc_solid_equil_col(:, :, adsorbid(jj)) = states_2d(:,:,id)
             endif
             if(is_frozen(jj))then
-              this%tracer_conc_frozen_col(:, :, frozenid(jj)) = states_2d(:,:,addone(idtemp2d))
+              id=addone(idtemp2d);this%tracer_conc_frozen_col(:, :, frozenid(jj)) = states_2d(:,:,id)
             endif
          else
             kk = jj - ngwmobile_tracers
-            this%tracer_conc_solid_passive_col(:, :, kk)   = states_2d(:,:,addone(idtemp2d))
+            id=addone(idtemp2d);this%tracer_conc_solid_passive_col(:, :, kk)   = states_2d(:,:,id)
          endif
-      enddo
-    elseif(trim(flag)=='write')then
-      do jj = 1, ntracers
+       enddo
+     elseif(trim(flag)=='write')then
+       do jj = 1, ntracers
          if(jj<= ngwmobile_tracers)then
 
-            states_1d(:,addone(idtemp1d)) = this%tracer_conc_aquifer_col(:, jj)
+            id=addone(idtemp1d);states_1d(:,id) = this%tracer_conc_aquifer_col(:, jj)
 
-            states_2d(:,:,addone(idtemp2d)) = this%tracer_conc_mobile_col(:, :, jj)
+            id=addone(idtemp2d);states_2d(:,:,id) = this%tracer_conc_mobile_col(:, :, jj)
 
+          !x  do ll = lbj, ubj
+          !x    print*,this%tracer_conc_mobile_col(:,ll,jj),states_2d(:,ll,id)
+          !x  enddo
             if(is_adsorb(jj))then
-              states_2d(:,:,addone(idtemp2d)) = this%tracer_conc_solid_equil_col(:, :, adsorbid(jj))
+              id=addone(idtemp2d);states_2d(:,:,id) = this%tracer_conc_solid_equil_col(:, :, adsorbid(jj))
             endif
             if(is_frozen(jj))then
-              states_2d(:,:,addone(idtemp2d)) = this%tracer_conc_frozen_col(:, :, frozenid(jj))
+              id=addone(idtemp2d);states_2d(:,:,id) = this%tracer_conc_frozen_col(:, :, frozenid(jj))
             endif
          else
             kk = jj - ngwmobile_tracers
-            states_2d(:,:,addone(idtemp2d)) = this%tracer_conc_solid_passive_col(:, :, kk)
+            id=addone(idtemp2d);states_2d(:,:,id) = this%tracer_conc_solid_passive_col(:, :, kk)
          endif
       enddo
 
     endif
-!x  do not use the error check capability
-!x     if(idtemp1d/=nrest_1d)then
-!x     endif
-!x     if(idtemp1d/=nrest_2d)then
-!x     endif
+
     end associate
   end subroutine Restart
 
@@ -474,7 +476,7 @@ contains
   character(len=255), intent(out) :: rest_varname_1d(max_betr_hist_type)
   character(len=255), intent(out) :: rest_varname_2d(max_betr_hist_type)
   type(BeTRTracer_Type)  , intent(in)  :: betrtracer_vars
-  integer :: jj, kk
+  integer :: jj, kk,id
 
     associate(                                                       &
          ntracers          =>  betrtracer_vars%ntracers            , &
@@ -487,21 +489,22 @@ contains
          )
 
     nrest_1d = 0; nrest_2d = 0
+
       do jj = 1, ntracers
          if(jj<= ngwmobile_tracers)then
-            rest_varname_1d(addone(nrest_1d))=trim(tracernames(jj))//'_TRACER_CONC_AQUIFER'
+            id = addone(nrest_1d); rest_varname_1d(id)=trim(tracernames(jj))//'_TRACER_CONC_AQUIFER'
 
-            rest_varname_2d(addone(nrest_2d))=trim(tracernames(jj))//'_TRACER_CONC_MOIBLE'
+            id=addone(nrest_2d); rest_varname_2d(id)=trim(tracernames(jj))//'_TRACER_CONC_MOIBLE'
 
             if(is_adsorb(jj))then
-               rest_varname_2d(addone(nrest_2d))=trim(tracernames(jj))//'_TRACER_CONC_SOLID_EQUIL'
+               id=addone(nrest_2d);rest_varname_2d(id)=trim(tracernames(jj))//'_TRACER_CONC_SOLID_EQUIL'
             endif
             if(is_frozen(jj))then
-              rest_varname_2d(addone(nrest_2d))=trim(tracernames(jj))//'_TRACER_CONC_FROZEN'
+              id=addone(nrest_2d);rest_varname_2d(id)=trim(tracernames(jj))//'_TRACER_CONC_FROZEN'
             endif
          else
             kk = jj - ngwmobile_tracers
-            rest_varname_2d(addone(nrest_2d))=trim(tracernames(jj))//'TRACER_CONC_SOLID_PASSIVE'
+            id=addone(nrest_2d);rest_varname_2d(id)=trim(tracernames(jj))//'TRACER_CONC_SOLID_PASSIVE'
          endif
       enddo
     end associate
