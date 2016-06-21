@@ -544,8 +544,6 @@ module H2OIsotopeBGCReactionsType
     use tracerstatetype   , only : tracerstate_type
     use BeTR_PatchType    , only : pft  => betr_pft
     use betr_varcon       , only : spval => bspval, ispval => bispval
-    use landunit_varcon   , only : istsoil, istcrop
-    use BeTR_LandunitType , only : lun => betr_lun
     use BeTR_ColumnType   , only : col => betr_col
     use betr_varcon       , only : denh2o => bdenh2o
     use tracer_varcon     , only : nlevtrc_soil  => betr_nlevtrc_soil
@@ -573,61 +571,43 @@ module H2OIsotopeBGCReactionsType
     begg = bounds%begg; endg= bounds%endg
     !-----------------------------------------------------------------------
     do c = bounds%begc, bounds%endc
-       l = col%landunit(c)
-       if (lun%ifspecial(l)) then
-         if(betrtracer_vars%ngwmobile_tracers>0)then
-           tracerstate_vars%tracer_conc_mobile_col(c,:,:)        = spval
-           tracerstate_vars%tracer_conc_surfwater_col(c,:)       = spval
-           tracerstate_vars%tracer_conc_aquifer_col(c,:)         = spval
-           tracerstate_vars%tracer_conc_grndwater_col(c,:)       = spval
-         endif
-         if(betrtracer_vars%ntracers > betrtracer_vars%ngwmobile_tracers)then
-           tracerstate_vars%tracer_conc_solid_passive_col(c,:,:) = spval
-         endif
-         if(betrtracer_vars%nsolid_equil_tracers>0)then
-           tracerstate_vars%tracer_conc_solid_equil_col(c, :, :) = spval
-         endif
-       endif
-       tracerstate_vars%tracer_soi_molarmass_col(c,:)            = spval
 
-       if (lun%itype(l) == istsoil .or. lun%itype(l) == istcrop) then
-         !dual phase tracers
-         tracerstate_vars%tracer_conc_mobile_col(c,:, :)          = 0._r8
-         tracerstate_vars%tracer_conc_surfwater_col(c,:)          = 0._r8
-         tracerstate_vars%tracer_conc_aquifer_col(c,:)            = 0._r8
-         tracerstate_vars%tracer_conc_grndwater_col(c,:)          = 0._r8
-         !solid tracers
-         if(betrtracer_vars%ngwmobile_tracers < betrtracer_vars%ntracers)then
-           tracerstate_vars%tracer_conc_solid_passive_col(c,:,:) = 0._r8
-         endif
-         if(betrtracer_vars%nsolid_equil_tracers>0)then
-           tracerstate_vars%tracer_conc_solid_equil_col(c, :, :) = 0._r8
-         endif
-         tracerstate_vars%tracer_soi_molarmass_col(c,:)          = 0._r8
-         !set for o18_h2o, assuming no fractionation, which is equivalent to assuming concentration equals 1
-         trcid = betrtracer_vars%id_trc_blk_h2o
-         tracerstate_vars%tracer_conc_grndwater_col(c,trcid) = denh2o
-         do j = 1, nlevtrc_soil
-           tracerstate_vars%tracer_conc_mobile_col(c,j,trcid) = 1._r8 * biophysforc%h2osoi_liq_col(c,j)/col%dz(c,j)
-           tracerstate_vars%tracer_conc_frozen_col(c,j,betrtracer_vars%frozenid(trcid)) = &
+      !dual phase tracers
+      tracerstate_vars%tracer_conc_mobile_col(c,:, :)          = 0._r8
+      tracerstate_vars%tracer_conc_surfwater_col(c,:)          = 0._r8
+      tracerstate_vars%tracer_conc_aquifer_col(c,:)            = 0._r8
+      tracerstate_vars%tracer_conc_grndwater_col(c,:)          = 0._r8
+      !solid tracers
+      if(betrtracer_vars%ngwmobile_tracers < betrtracer_vars%ntracers)then
+        tracerstate_vars%tracer_conc_solid_passive_col(c,:,:) = 0._r8
+      endif
+      if(betrtracer_vars%nsolid_equil_tracers>0)then
+        tracerstate_vars%tracer_conc_solid_equil_col(c, :, :) = 0._r8
+      endif
+      tracerstate_vars%tracer_soi_molarmass_col(c,:)          = 0._r8
+      !set for o18_h2o, assuming no fractionation, which is equivalent to assuming concentration equals 1
+      trcid = betrtracer_vars%id_trc_blk_h2o
+      tracerstate_vars%tracer_conc_grndwater_col(c,trcid) = denh2o
+      do j = 1, nlevtrc_soil
+        tracerstate_vars%tracer_conc_mobile_col(c,j,trcid) = 1._r8 * biophysforc%h2osoi_liq_col(c,j)/col%dz(c,j)
+        tracerstate_vars%tracer_conc_frozen_col(c,j,betrtracer_vars%frozenid(trcid)) = &
                 1._r8 * biophysforc%h2osoi_ice_col(c,j)/col%dz(c,j)
-         enddo
-         trcid = betrtracer_vars%id_trc_o18_h2o
-         tracerstate_vars%tracer_conc_grndwater_col(c,trcid) = denh2o
-         do j = 1, nlevtrc_soil
-           tracerstate_vars%tracer_conc_mobile_col(c,j,trcid) = 1._r8 * biophysforc%h2osoi_liq_col(c,j)/col%dz(c,j)
-           tracerstate_vars%tracer_conc_frozen_col(c,j,betrtracer_vars%frozenid(trcid)) = &
+      enddo
+      trcid = betrtracer_vars%id_trc_o18_h2o
+      tracerstate_vars%tracer_conc_grndwater_col(c,trcid) = denh2o
+      do j = 1, nlevtrc_soil
+        tracerstate_vars%tracer_conc_mobile_col(c,j,trcid) = 1._r8 * biophysforc%h2osoi_liq_col(c,j)/col%dz(c,j)
+        tracerstate_vars%tracer_conc_frozen_col(c,j,betrtracer_vars%frozenid(trcid)) = &
                 1._r8 * biophysforc%h2osoi_ice_col(c,j)/col%dz(c,j)
-         enddo
-         trcid = betrtracer_vars%id_trc_d_h2o
-         tracerstate_vars%tracer_conc_grndwater_col(c,trcid) = denh2o
-         do j = 1, nlevtrc_soil
-           tracerstate_vars%tracer_conc_mobile_col(c,j,trcid) = 1._r8 * biophysforc%h2osoi_liq_col(c,j)/col%dz(c,j)
-           tracerstate_vars%tracer_conc_frozen_col(c,j,betrtracer_vars%frozenid(trcid)) = &
+      enddo
+      trcid = betrtracer_vars%id_trc_d_h2o
+      tracerstate_vars%tracer_conc_grndwater_col(c,trcid) = denh2o
+      do j = 1, nlevtrc_soil
+        tracerstate_vars%tracer_conc_mobile_col(c,j,trcid) = 1._r8 * biophysforc%h2osoi_liq_col(c,j)/col%dz(c,j)
+        tracerstate_vars%tracer_conc_frozen_col(c,j,betrtracer_vars%frozenid(trcid)) = &
                 1._r8 * biophysforc%h2osoi_ice_col(c,j)/col%dz(c,j)
-         enddo
-       endif
-     enddo
+      enddo
+   enddo
 
   end subroutine InitCold
 

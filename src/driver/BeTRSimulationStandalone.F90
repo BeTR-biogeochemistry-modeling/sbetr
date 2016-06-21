@@ -190,9 +190,10 @@ contains
     betr_bounds%begl = 1 ; betr_bounds%endl = 1
     betr_bounds%begg = 1 ; betr_bounds%endg = 1
 
-    call this%bsimstatus%reset() 
+    call this%bsimstatus%reset()
     do c = bounds%begc, bounds%endc
-     call this%betr(c)%step_without_drainage(betr_time, betr_bounds,           &
+      if(.not. this%active_col(c))cycle
+      call this%betr(c)%step_without_drainage(betr_time, betr_bounds,           &
          this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp, &
          this%biophys_forc(c), this%biogeo_flux(c), this%biogeo_state(c), this%bstatus(c))
 
@@ -249,6 +250,7 @@ contains
     betr_bounds%begg = 1 ; betr_bounds%endg = 1
     call this%bsimstatus%reset()
     do c = bounds%begc, bounds%endc
+      if(.not. this%active_col(c))cycle
       call this%betr(c)%step_with_drainage(betr_bounds, &
          this%num_soilc, this%filter_soilc,        &
          this%jtops, this%biogeo_flux(c), this%bstatus(c))

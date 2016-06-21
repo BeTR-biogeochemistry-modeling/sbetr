@@ -186,6 +186,7 @@ contains
     betr_bounds%begg = 1; betr_bounds%endg = 1
     call this%bsimstatus%reset()
     do c = bounds%begc, bounds%endc
+      if(.not. this%active_col(c))cycle
       call this%betr(c)%step_without_drainage(betr_time, betr_bounds,            &
          this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp, &
          this%biophys_forc(c), this%biogeo_flux(c), this%biogeo_state(c), this%bstatus(c))
@@ -245,6 +246,7 @@ contains
     betr_bounds%begg = 1; betr_bounds%endg = 1
     call this%bsimstatus%reset()
     do c = bounds%begc, bounds%endc
+      if(.not. this%active_col(c))cycle
       call this%betr(c)%step_with_drainage(betr_bounds,      &
          this%num_soilc, this%filter_soilc, this%jtops, &
          this%biogeo_flux(c), this%bstatus(c))
@@ -345,6 +347,7 @@ contains
 
   do fc = 1, num_nolakec
     c = filter_nolakec(fc)
+    if(.not. this%active_col(c))cycle
     call this%betr(c)%diagnose_dtracer_freeze_thaw(betr_bounds, this%num_soilc, this%filter_soilc,  &
       this%biophys_forc(c))
   enddo
@@ -383,6 +386,7 @@ contains
 
     do fc = 1, num_hydrologyc
       c = filter_soilc_hydrologyc(fc)
+      if(.not. this%active_col(c))cycle
       call this%betr(c)%calc_dew_sub_flux(betr_time,           &
          betr_bounds, this%num_soilc, this%filter_soilc, &
         this%biophys_forc(c), this%betr(c)%tracers, this%betr(c)%tracerfluxes, this%betr(c)%tracerstates)
@@ -408,6 +412,7 @@ contains
 
     do fc = 1, num_soilc
       c = filter_soilc(fc)
+      if(.not. this%active_col(c))cycle
       call this%betr(c)%bgc_reaction%lsm_betr_flux_state_receive(betr_bounds, &
          this%num_soilc, this%filter_soilc,                                   &
          this%betr(c)%tracerstates, this%betr(c)%tracerfluxes,  this%betr(c)%tracers)
@@ -458,6 +463,7 @@ contains
   do j = lbj, ubj
     do fc = 1, numf
       c = filter(fc)
+      if(.not. this%active_col(c))cycle
       if(j>=1)then
         if(t_soisno(c,j)<tfrz)then
           smp_l(c,j)= hfus*(tfrz-t_soisno(c,j))/(grav*t_soisno(c,j)) * 1000._r8  !(mm)

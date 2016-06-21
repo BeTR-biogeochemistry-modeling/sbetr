@@ -43,6 +43,7 @@ module BeTRSimulation
      type(betr_biogeo_flux_type)         , public, pointer  :: biogeo_flux(:)
      type(betr_status_type)              , public, pointer  :: bstatus(:)
      type(betr_status_sim_type)          , public, pointer  :: bsimstatus
+     logical                             , public, pointer :: active_col(:)
      character(len=betr_filename_length) , private :: base_filename
      character(len=betr_filename_length) , private :: hist_filename
 
@@ -174,6 +175,8 @@ contains
     use betr_constants , only : betr_namelist_buffer_size
     use betr_constants , only : betr_filename_length
     use betr_varcon    , only : betr_maxpatch_pft
+    use LandunitType   , only : lun
+    use landunit_varcon, only : istsoil, istcrop
     implicit none
     !ARGUMENTS
     class(betr_simulation_type)              , intent(inout) :: this
@@ -185,7 +188,7 @@ contains
     !TEMPORARY VARIABLES
     character(len=*), parameter :: subname = 'BeTRInit'
     type(betr_bounds_type) :: betr_bounds
-    integer :: c
+    integer :: c, l
     !print*,'base_filename',trim(base_filename)
 
     this%base_filename = base_filename
@@ -196,6 +199,7 @@ contains
     allocate(this%biogeo_flux(bounds%begc:bounds%endc), source=create_betr_biogeoFlux())
     allocate(this%biogeo_state(bounds%begc:bounds%endc), source=create_betr_biogeo_state())
     allocate(this%bstatus(bounds%begc:bounds%endc), source=create_betr_status_type())
+    allocate(this%active_col(bounds%begc:bounds%endc))
     allocate(this%bsimstatus, source = create_betr_status_sim_type())
     call this%bsimstatus%reset()
     !grid horizontal bounds
@@ -206,13 +210,18 @@ contains
     betr_bounds%begg = 1 ; betr_bounds%endg = 1
 
     do c = bounds%begc, bounds%endc
-
+      l = col%landunit(c)
       call this%biophys_forc(c)%Init(betr_bounds)
 
       call this%biogeo_state(c)%Init(betr_bounds)
 
       call this%biogeo_flux(c)%Init(betr_bounds)
 
+      if (lun%itype(l) == istsoil .or. lun%itype(l) == istcrop) then
+        this%active_col(c) = .true.
+      else
+        this%active_col(c) = .false.
+      endif
     enddo
 
     call this%BeTRSetBiophysForcing(bounds, betr_bounds%lbj, betr_bounds%ubj, &
@@ -368,6 +377,7 @@ contains
     betr_bounds%begg = 1; betr_bounds%endg = 1
 
     do c = bounds%begc, bounds%endc
+      if(.not. this%active_col(c))cycle
       call begin_betr_tracer_massbalance(betr_bounds,         &
          this%num_soilc, this%filter_soilc,                   &
          this%betr(c)%tracers, this%betr(c)%tracerstates,     &
@@ -407,6 +417,7 @@ contains
     betr_bounds%begg = 1; betr_bounds%endg = 1
 
    do c = bounds%begc, bounds%endc
+      if(.not. this%active_col(c))cycle
       call betr_tracer_massbalance_check(betr_time, betr_bounds,           &
          this%num_soilc, this%filter_soilc,                              &
          this%betr(c)%tracers, this%betr(c)%tracerstates,                &
@@ -698,6 +709,7 @@ contains
   cc = 1
 
   do c = bounds%begc, bounds%endc
+  if(.not. this%active_col(c))cycle
   if(present(carbonflux_vars))then
     do pi = 1, betr_maxpatch_pft
        this%biophys_forc(c)%annsum_npp_patch(pi) = 0._r8
@@ -798,7 +810,6 @@ contains
     this%biophys_forc(c)%soil_pH(cc,lbj:ubj) = chemstate_vars%soil_pH(c,lbj:ubj)
   endif
   if(present(soilstate_vars))then
-
       this%biophys_forc(c)%bsw_col(cc,lbj:ubj)          = soilstate_vars%bsw_col(c,lbj:ubj)
       this%biophys_forc(c)%watsat_col(cc,lbj:ubj)       = soilstate_vars%watsat_col(c,lbj:ubj)
       this%biophys_forc(c)%eff_porosity_col(cc,lbj:ubj) = soilstate_vars%eff_porosity_col(c,lbj:ubj)
@@ -848,6 +859,7 @@ contains
   endif
   if(present(waterflux_vars))then
     do c = bounds%begc, bounds%endc
+      if(.not. this%active_col(c))cycle
       waterflux_vars%qflx_infl_col(c)            = this%biogeo_flux(c)%qflx_infl_col(c)
       waterflux_vars%qflx_adv_col(c,lbj-1:ubj)   = this%biogeo_flux(c)%qflx_adv_col(c,lbj-1:ubj)
       waterflux_vars%qflx_totdrain_col(c)        = this%biogeo_flux(c)%qflx_totdrain_col(c)
@@ -884,6 +896,7 @@ contains
 
    do fc= 1, num_nolakec
      c = filter_nolakec(fc)
+     if(.not. this%active_col(c))cycle
      call this%betr(c)%pre_diagnose_soilcol_water_flux(betr_bounds, this%num_soilc, &
        this%filter_soilc, this%biophys_forc(c))
    enddo
@@ -918,6 +931,7 @@ contains
 
    do fc = 1, num_hydrologyc
      c = filter_hydrologyc(fc)
+     if(.not. this%active_col(c))cycle
      call this%betr(c)%diagnose_advect_water_flux(betr_time,                      &
        betr_bounds, this%num_soilc, this%filter_soilc,                         &
        this%biophys_forc(c), this%biogeo_flux(c))
@@ -954,6 +968,7 @@ contains
 
    do fc = 1, num_hydrologyc
      c = filter_hydrologyc(fc)
+     if(.not. this%active_col(c))cycle
      call this%betr(c)%diagnose_drainage_water_flux(betr_time, &
        betr_bounds, this%num_soilc, this%filter_soilc,      &
        this%biophys_forc(c), this%biogeo_flux(c))
@@ -981,6 +996,7 @@ contains
     betr_bounds%begg = 1; betr_bounds%endg = 1
    do fc = 1, num_snowc
      c = filter_snowc(fc)
+     if(.not. this%active_col(c))cycle
      call this%betr(c)%Enter_tracer_LayerAdjustment(betr_bounds, this%num_soilc, this%filter_soilc)
    enddo
   end subroutine BeTRSimulationBeginTracerSnowLayerAdjst
@@ -1006,6 +1022,7 @@ contains
     betr_bounds%begg = 1; betr_bounds%endg = 1
   do fc = 1, num_snowc
     c = filter_snowc(fc)
+    if(.not. this%active_col(c))cycle
     call this%betr(c)%Exit_tracer_LayerAdjustment(betr_bounds, this%num_soilc, this%filter_soilc)
   enddo
 
@@ -1037,6 +1054,7 @@ contains
     betr_bounds%begg = 1; betr_bounds%endg = 1
   do fc = 1, num_snowc
     c = filter_snowc(fc)
+    if(.not. this%active_col(c))cycle
     call this%betr(c)%tracer_DivideSnowLayers(betr_bounds, this%num_soilc, &
       this%filter_soilc, divide_matrix(c:c,:,:), this%bstatus(c))
     if(this%bstatus(c)%check_status())then
@@ -1076,6 +1094,7 @@ contains
 
   do fc = 1, num_snowc
     c = filter_snowc(fc)
+    if(.not. this%active_col(c))cycle
     call this%betr(c)%tracer_CombineSnowLayers(betr_bounds, this%num_soilc,&
       this%filter_soilc, combine_matrix(c:c,:,:),this%bstatus(c))
     if(this%bstatus(c)%check_status())then
@@ -1261,6 +1280,7 @@ contains
 
   do fc = 1, numf
     c = filter(fc)
+    if(.not. this%active_col(c))cycle
     call this%betr(c)%HistRetrieve(betr_bounds, 1, betr_nlevtrc_soil, &
        this%num_hist_state1d, this%num_hist_state2d, this%num_hist_flux1d,&
        this%num_hist_flux2d, this%states_1d(c:c,:), &

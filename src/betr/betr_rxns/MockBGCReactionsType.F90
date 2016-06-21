@@ -13,7 +13,6 @@ module MockBGCReactionsType
   use BeTR_decompMod           , only : bounds_type  => betr_bounds_type
   use BGCReactionsMod          , only : bgc_reaction_type
   use tracer_varcon            , only : bndcond_as_conc, bndcond_as_flux
-  use BeTR_LandunitType        , only : lun => betr_lun
   use ColumnType               , only : col
   use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
   implicit none
@@ -405,41 +404,23 @@ contains
 
 
     do c = bounds%begc, bounds%endc
-       l = col%landunit(c)
-       if (lun%ifspecial(l)) then
-          if(betrtracer_vars%ngwmobile_tracers>0)then
-             tracerstate_vars%tracer_conc_mobile_col(c,:,:)        = spval
-             tracerstate_vars%tracer_conc_surfwater_col(c,:)       = spval
-             tracerstate_vars%tracer_conc_aquifer_col(c,:)         = spval
-             tracerstate_vars%tracer_conc_grndwater_col(c,:)       = spval
-          endif
-          if(betrtracer_vars%ntracers > betrtracer_vars%ngwmobile_tracers)then
-             tracerstate_vars%tracer_conc_solid_passive_col(c,:,:) = spval
-          endif
-          if(betrtracer_vars%nsolid_equil_tracers>0)then
-             tracerstate_vars%tracer_conc_solid_equil_col(c, :, :) = spval
-          endif
-       endif
-       tracerstate_vars%tracer_soi_molarmass_col(c,:)            = spval
 
-       if (lun%itype(l) == landvarcon%istsoil .or. lun%itype(l) == landvarcon%istcrop) then
-          !dual phase tracers
+      !dual phase tracers
 
-          tracerstate_vars%tracer_conc_mobile_col(c,:, :)          = 0._r8
-          tracerstate_vars%tracer_conc_surfwater_col(c,:)          = 0._r8
-          tracerstate_vars%tracer_conc_aquifer_col(c,:)            = 0._r8
-          tracerstate_vars%tracer_conc_grndwater_col(c,:)          = 0._r8
-          tracerstate_vars%tracer_conc_mobile_col(c,7, betrtracer_vars%id_trc_doc) = 1._r8  !point source
-          !solid tracers
-          if(betrtracer_vars%ngwmobile_tracers < betrtracer_vars%ntracers)then
-             tracerstate_vars%tracer_conc_solid_passive_col(c,:,:) = 0._r8
-          endif
+      tracerstate_vars%tracer_conc_mobile_col(c,:, :)          = 0._r8
+      tracerstate_vars%tracer_conc_surfwater_col(c,:)          = 0._r8
+      tracerstate_vars%tracer_conc_aquifer_col(c,:)            = 0._r8
+      tracerstate_vars%tracer_conc_grndwater_col(c,:)          = 0._r8
+      tracerstate_vars%tracer_conc_mobile_col(c,7, betrtracer_vars%id_trc_doc) = 1._r8  !point source
+      !solid tracers
+      if(betrtracer_vars%ngwmobile_tracers < betrtracer_vars%ntracers)then
+        tracerstate_vars%tracer_conc_solid_passive_col(c,:,:) = 0._r8
+      endif
 
-          if(betrtracer_vars%nsolid_equil_tracers>0)then
-             tracerstate_vars%tracer_conc_solid_equil_col(c, :, :) = 0._r8
-          endif
-          tracerstate_vars%tracer_soi_molarmass_col(c,:)          = 0._r8
-       endif
+      if(betrtracer_vars%nsolid_equil_tracers>0)then
+        tracerstate_vars%tracer_conc_solid_equil_col(c, :, :) = 0._r8
+      endif
+      tracerstate_vars%tracer_soi_molarmass_col(c,:)          = 0._r8
     enddo
 
   end subroutine InitCold

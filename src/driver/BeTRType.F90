@@ -16,7 +16,6 @@ module BetrType
   use betr_varcon              , only : spval => bspval
   use BeTR_PatchType           , only : pft => betr_pft
   use BeTR_ColumnType          , only : col => betr_col
-  use BeTR_LandunitType        , only : lun => betr_lun
   use BGCReactionsMod          , only : bgc_reaction_type
   use PlantSoilBGCMod          , only : plant_soilbgc_type
   use BeTRTracerType           , only : betrtracer_type
@@ -493,7 +492,6 @@ contains
          tracernames        =>    betrtracer_vars%tracernames             ,  &
          frozenid           =>    betrtracer_vars%frozenid                ,  &
          clandunit          =>    col%landunit                             , & ! Input:  [integer  (:)   ]  columns's landunit
-         ltype              =>    lun%itype                                , & ! Input:  [integer  (:)   ]  landunit type
          ngwmobile_tracers  =>    betrtracer_vars%ngwmobile_tracers          &
          )
 
@@ -514,7 +512,6 @@ contains
          do fc = 1, num_hydrologyc
             c = filter_soilc_hydrologyc(fc)
             l = clandunit(c)
-            if (ltype(l)/= landvarcon%istsoil .and. ltype(l)/= landvarcon%istcrop)cycle
             if(snl(c)+1>=1)then
                tracer_flx_dew_grnd(c, j) = (1._r8 - frac_h2osfc(c))*qflx_dew_grnd(c) * dtime
                tracer_flx_dew_snow(c, j) = (1._r8 - frac_h2osfc(c))*qflx_dew_snow(c) * dtime
@@ -533,7 +530,6 @@ contains
          do fc = 1, num_hydrologyc
             c = filter_soilc_hydrologyc(fc)
             l = clandunit(c)
-            if (ltype(l) /= landvarcon%istsoil .and. ltype(l) /= landvarcon%istcrop)cycle
             tracer_conc_mobile(c,1,j) = tracer_conc_mobile(c,1,j) + tracer_flx_dew_grnd(c, j)/dz(c,1)
             tracer_conc_frozen(c,1,frozenid(j)) = tracer_conc_frozen(c,1,frozenid(j)) + &
                  (tracer_flx_dew_snow(c, j)-tracer_flx_sub_snow(c,j))/dz(c,1)
@@ -609,7 +605,6 @@ contains
    !
    ! USES
    !
-   use BeTR_LandunitType     , only : lun => betr_lun
    use tracerstatetype       , only : tracerstate_type
    use BeTRTracerType        , only : betrtracer_type
    use BeTR_landvarconType   , only : landvarcon => betr_landvarcon
@@ -645,27 +640,24 @@ contains
    do j = 1, nlevsoi
      do fc = 1, num_nolakec
        c =  filter_nolakec(fc)
-       l = col%landunit(c)
-       if(lun%itype(l) == landvarcon%istsoil)then
-         do k = 1, ngwmobile_tracers
-           !if it is a frozenable tracer, do it
-           if(is_frozen(k))then
-             if(h2osoi_liq(c,j) > this%h2osoi_liq_copy(c,j))then
-               !thaw, solid to aqueous
-               thaw_frac = min(1._r8-h2osoi_ice(c,j)/this%h2osoi_ice_copy(c,j),1._r8)
-               dtracer = tracer_conc_frozen(c,j,frozenid(k)) * thaw_frac
-               tracer_conc_frozen(c,j,frozenid(k)) = tracer_conc_frozen(c,j,frozenid(k)) - dtracer
-               tracer_conc_mobile(c,j, k) = tracer_conc_mobile(c,j, k) + dtracer
-             else
-               !freeze, aqueous to solid
-               freeze_frac = min(1._r8 - h2osoi_liq(c,j)/this%h2osoi_liq_copy(c,j),1._r8)
-               dtracer = tracer_conc_mobile(c,j,k) * freeze_frac          !some modifier are needed to account for change in solubility
-               tracer_conc_frozen(c,j,frozenid(k)) = tracer_conc_frozen(c,j,frozenid(k)) + dtracer
-               tracer_conc_mobile(c,j, k) = tracer_conc_mobile(c,j, k) - dtracer
-             endif
-           endif
-         enddo
-       endif
+       do k = 1, ngwmobile_tracers
+        !if it is a frozenable tracer, do it
+        if(is_frozen(k))then
+          if(h2osoi_liq(c,j) > this%h2osoi_liq_copy(c,j))then
+            !thaw, solid to aqueous
+            thaw_frac = min(1._r8-h2osoi_ice(c,j)/this%h2osoi_ice_copy(c,j),1._r8)
+            dtracer = tracer_conc_frozen(c,j,frozenid(k)) * thaw_frac
+            tracer_conc_frozen(c,j,frozenid(k)) = tracer_conc_frozen(c,j,frozenid(k)) - dtracer
+            tracer_conc_mobile(c,j, k) = tracer_conc_mobile(c,j, k) + dtracer
+          else
+            !freeze, aqueous to solid
+            freeze_frac = min(1._r8 - h2osoi_liq(c,j)/this%h2osoi_liq_copy(c,j),1._r8)
+            dtracer = tracer_conc_mobile(c,j,k) * freeze_frac          !some modifier are needed to account for change in solubility
+            tracer_conc_frozen(c,j,frozenid(k)) = tracer_conc_frozen(c,j,frozenid(k)) + dtracer
+            tracer_conc_mobile(c,j, k) = tracer_conc_mobile(c,j, k) - dtracer
+          endif
+        endif
+       enddo
      enddo
    enddo
 
