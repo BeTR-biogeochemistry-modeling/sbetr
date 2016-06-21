@@ -38,6 +38,14 @@ module MathfuncMod
      module procedure swap_i, swap_r, swap_rv
   end interface swap
 
+  !law of minimum flux based back tracing tools
+  !for ODE integration, Tang and Riley, BG, 2015.
+  type, public :: lom_type
+  contains
+    procedure, public :: calc_state_pscal
+    procedure, public :: calc_reaction_rscal
+    procedure, public :: apply_reaction_rscal
+  end type lom_type
 contains
   !-------------------------------------------------------------------------------
   function heviside(x)result(ans)
@@ -403,7 +411,7 @@ contains
     type(betr_status_type), intent(out) :: bstatus
 
     call bstatus%reset()
-    SHR_ASSERT_ALL((size(p)           == size(v)), errMsg(mod_filename,__LINE__), bstatus)
+    SHR_ASSERT_ALL((size(p)   == size(v)), errMsg(mod_filename,__LINE__), bstatus)
     if(bstatus%check_status())return
     sz = size(p)
     ans = 1._r8
@@ -467,4 +475,96 @@ contains
     write(str,fmt)a
     ans =  trim(adjustl(str))
   end function num2str
+
+  !-------------------------------------------------------------------------------
+  subroutine calc_state_pscal(this, nprimvars, dtime, ystate, p_dt,  d_dt, pscal, lneg, bstatus)
+    !
+    ! !DESCRIPTION:
+    ! calcualte limiting factor from each primary state variable
+    !
+    use BetrstatusType     , only : betr_status_type
+    use betr_constants     , only : betr_errmsg_len
+    implicit none
+    ! !ARGUMENTS:
+    class(lom_type), intent(in) :: this
+    integer,  intent(in)  :: nprimvars
+    real(r8), intent(in)  :: dtime
+    real(r8), intent(in)  :: ystate(1:nprimvars)
+    real(r8), intent(in)  :: p_dt(1:nprimvars)
+    real(r8), intent(in)  :: d_dt(1:nprimvars)
+    real(r8), intent(out) :: pscal(1:nprimvars)
+    logical,  intent(out) :: lneg
+    type(betr_status_type), intent(out) :: bstatus
+    character(len=betr_errmsg_len) :: msg
+
+    ! !LOCAL VARIABLES:
+    real(r8) :: yt
+    integer  :: j
+    real(r8),parameter :: p_par=0.999_r8
+
+    call bstatus%reset()
+    lneg =.false.
+
+    do j = 1, nprimvars
+       yt = ystate(j) + (p_dt(j)+d_dt(j))*dtime
+       if(yt<0._r8)then
+          pscal(j) = -(p_dt(j)*dtime+ystate(j))/(dtime*d_dt(j))*p_par
+          lneg=.true.
+          if(pscal(j)<0._r8)then
+             msg = 'ngeative p in calc_state_pscal'//errmsg(mod_filename, __LINE__)
+             call bstatus%set_msg(msg,err=-1)
+             if(bstatus%check_status())return
+          endif
+       else
+          pscal(j) = 1._r8
+       endif
+    enddo
+  end subroutine calc_state_pscal
+
+  !-------------------------------------------------------------------------------
+  subroutine calc_reaction_rscal(this, nprimvars, nr, pscal, cascade_matrixd, rscal, bstatus)
+    !
+    ! !DESCRIPTION:
+    ! calcualte limiting factor for each reaction
+    ! !USES:
+    use BetrstatusType     , only : betr_status_type
+    implicit none
+    ! !ARGUMENTS:
+    class(lom_type), intent(in) :: this
+    integer , intent(in) :: nprimvars
+    integer , intent(in) :: nr
+    real(r8), intent(in) :: pscal(1:nprimvars)
+    real(r8), intent(in) :: cascade_matrixd(1:nprimvars, 1:nr)
+    real(r8), intent(out):: rscal(1:nr)
+    type(betr_status_type), intent(out) :: bstatus
+    ! !LOCAL VARIABLES:
+    integer :: j
+
+    call bstatus%reset()
+    do j = 1, nr
+      rscal(j) = minp(pscal,cascade_matrixd(1:nprimvars, j), bstatus)
+      if(bstatus%check_status())return
+    enddo
+
+  end subroutine calc_reaction_rscal
+
+  !-------------------------------------------------------------------------------
+  subroutine apply_reaction_rscal(this, nr, rscal, reaction_rates)
+    !
+    ! !DESCRIPTION:
+    ! reduce reaction rates using input scalar
+    !
+    implicit none
+    ! !ARGUMENTS:
+    class(lom_type), intent(in) :: this
+    integer , intent(in)    :: nr
+    real(r8), intent(in)    :: rscal(1:nr)
+    real(r8), intent(inout) :: reaction_rates(1:nr)
+    ! !LOCAL VARIABLES:
+    integer :: j
+
+    do j = 1, nr
+       reaction_rates(j) = reaction_rates(j)*rscal(j)
+    enddo
+  end subroutine  apply_reaction_rscal
 end module MathfuncMod
