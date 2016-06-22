@@ -5,8 +5,6 @@ module TracerFluxType
   use bshr_kind_mod       , only : r8 => shr_kind_r8
   use bshr_infnan_mod     , only : nan => shr_infnan_nan, assignment(=)
   use BeTR_decompMod      , only : bounds_type  => betr_bounds_type
-  use BeTR_ColumnType     , only : col => betr_col
-  use BeTR_PatchType      , only : pft => betr_pft
   use betr_varcon         , only : spval => bspval, ispval => bispval
   use tracer_varcon       , only : nlevtrc_soil => betr_nlevtrc_soil
   use BeTR_landvarconType , only : landvarcon => betr_landvarcon
@@ -479,7 +477,7 @@ contains
   end subroutine temporal_average
 
   !----------------------------------------------------------------
-  subroutine Flux_summary(this, betr_time, c, betrtracer_vars, bstatus)
+  subroutine Flux_summary(this, col, betr_time, c, betrtracer_vars, bstatus)
     !
     ! aggregate fluxes for mass balance check
     ! USES
@@ -488,8 +486,10 @@ contains
     use MathfuncMod    , only : dot_sum
     use BeTR_TimeMod   , only : betr_time_type
     use BetrStatusType, only : betr_status_type
+    use betr_columnType  , only : betr_column_type
     implicit none
     class(TracerFlux_type) , intent(inout) :: this
+    type(betr_column_type) , intent(in) :: col
     class(betr_time_type)  , intent(in) :: betr_time
     type(BeTRTracer_Type)  , intent(in) :: betrtracer_vars
     integer                , intent(in) :: c     ! column index

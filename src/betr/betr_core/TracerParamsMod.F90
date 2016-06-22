@@ -14,8 +14,6 @@ module TracerParamsMod
   use BeTR_decompMod           , only : bounds_type  => betr_bounds_type
   use tracer_varcon            , only : nlevsoi  => betr_nlevsoi
   use betr_varcon              , only : spval => bspval
-  use BeTR_PatchType           , only : pft => betr_pft
-  use BeTR_ColumnType          , only : col => betr_col
   use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
   use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
   implicit none
@@ -167,7 +165,7 @@ contains
 
   !--------------------------------------------------------------------------------------------------------------
 
-  subroutine calc_bulk_diffusivity(bounds, lbj, ubj, jtops, numf, filter, bunsencef_col, &
+  subroutine calc_bulk_diffusivity(bounds, col, lbj, ubj, jtops, numf, filter, bunsencef_col, &
        biophysforc, tau_soi, betrtracer_vars,  bulkdiffus, betr_status)
     !
     ! !DESCRIPTION:
@@ -180,8 +178,10 @@ contains
     ! !USES:
     use BeTRTracerType        , only : betrtracer_type
     use BetrStatusType        , only : betr_status_type
+    use betr_columnType       , only : betr_column_type
     implicit none
     type(bounds_type)                , intent(in)  :: bounds                                  ! bounds
+    type(betr_column_type)           , intent(in)  :: col
     integer                          , intent(in)  :: numf                                    ! number of columns in column filter
     integer                          , intent(in)  :: filter(:)                               ! column filter
     integer                          , intent(in)  :: lbj, ubj                                ! lower and upper bounds, make sure they are > 0
@@ -1166,7 +1166,7 @@ contains
    end subroutine convert_mobile2gas
 !-------------------------------------------------------------------------------
 
-   subroutine set_multi_phase_diffusion(bounds, lbj, ubj, jtops, numf, filter, &
+   subroutine set_multi_phase_diffusion(bounds, col, lbj, ubj, jtops, numf, filter, &
       biophysforc, betrtracer_vars, tracercoeff_vars, betr_status)
    !
    ! DESCRIPTION
@@ -1176,9 +1176,11 @@ contains
    use TracerCoeffType    , only : tracercoeff_type
    use BeTRTracerType     , only : betrtracer_type
    use BetrStatusType     , only : betr_status_type
+   use betr_columnType    , only : betr_column_type
    implicit none
    !ARGUMENTS
    type(bounds_type)                , intent(in)    :: bounds  ! bounds
+   type(betr_column_type)           , intent(in)    :: col
    integer                          , intent(in)    :: lbj, ubj             ! lower and upper bounds, make sure they are > 0
    integer                          , intent(in)    :: jtops(bounds%begc: ) ! top label of each column
    integer                          , intent(in)    :: numf                 ! number of columns in column filter
@@ -1209,7 +1211,7 @@ contains
    if(betr_status%check_status())return
 
    !compute bulk diffusivity
-   call calc_bulk_diffusivity(bounds, lbj, ubj, jtops, numf, filter       , &
+   call calc_bulk_diffusivity(bounds, col, lbj, ubj, jtops, numf, filter       , &
       tracercoeff_vars%bunsencef_col(bounds%begc:bounds%endc,lbj:ubj, : ) , &
       biophysforc, tau_soil, betrtracer_vars, bulkdiffus, betr_status)
    if(betr_status%check_status())return
@@ -1601,8 +1603,8 @@ contains
   end subroutine get_zwt
 
   !-----------------------------------------------------------------------
-  subroutine calc_aerecond(bounds, num_soilp, filter_soilp, jwt, biophysforc,  betrtracer_vars, &
-      betr_aerecond_vars, tracercoeff_vars, betr_status)
+  subroutine calc_aerecond(bounds, col, pft, num_soilp, filter_soilp, jwt, &
+      biophysforc,  betrtracer_vars,  betr_aerecond_vars, tracercoeff_vars, betr_status)
   !
   ! DESCRIPTION
   !
@@ -1617,8 +1619,12 @@ contains
   use MathfuncMod        , only : safe_div
   use betr_ctrl          , only : betr_use_cn
   use BetrStatusType     , only : betr_status_type
+  use betr_columnType    , only : betr_column_type
+  use BeTR_patchtype     , only : betr_patch_type
   implicit none
   type(bounds_type)                , intent(in)    :: bounds
+  type(betr_column_type)           , intent(in)    :: col
+  type(betr_patch_type)            , intent(in)    :: pft
   integer                          , intent(in)    :: num_soilp                 ! number of column soil points in column filter
   integer                          , intent(in)    :: filter_soilp(:)           ! column filter for soil points
   integer                          , intent(in)    :: jwt(bounds%begc: )
@@ -1674,7 +1680,6 @@ contains
     do fp = 1, num_soilp
       p = filter_soilp (fp)
       c = pft%column(p)
-      g = col%gridcell(c)
 
       ! Calculate aerenchyma diffusion
       if (j > jwt(c) .and. t_soisno(c,j) > tfrz .and. pft%itype(p) /= pftvarcon%noveg) then
@@ -1747,7 +1752,7 @@ contains
 
 
   !-----------------------------------------------------------------------
-  subroutine betr_annualupdate(betr_time, bounds, num_soilc, filter_soilc, num_soilp, filter_soilp, &
+  subroutine betr_annualupdate(betr_time, bounds, pft, num_soilc, filter_soilc, num_soilp, filter_soilp, &
        biophysforc, betr_aerecond_vars, tracercoeff_vars, betr_status)
     !
     ! !DESCRIPTION: Annual mean fields.
@@ -1758,10 +1763,12 @@ contains
     use tracercoeffType   , only : tracercoeff_type
     use BeTR_aerocondType , only : betr_aerecond_type
     use BetrStatusType    , only : betr_status_type
+    use BeTR_patchtype    , only : betr_patch_type
     !
     ! !ARGUMENTS:
     type(betr_time_type)             , intent(in)    :: betr_time
     type(bounds_type)                , intent(in)    :: bounds
+    type(betr_patch_type)            , intent(in)    :: pft
     integer                          , intent(in)    :: num_soilc         ! number of soil columns in filter
     integer                          , intent(in)    :: filter_soilc(:)   ! filter for soil columns
     integer                          , intent(in)    :: num_soilp         ! number of soil points in pft filter

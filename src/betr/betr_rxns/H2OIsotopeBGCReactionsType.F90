@@ -288,7 +288,7 @@ module H2OIsotopeBGCReactionsType
 
 !-------------------------------------------------------------------------------
 
-  subroutine calc_bgc_reaction(this, bounds, lbj, ubj, num_soilc, filter_soilc,              &
+  subroutine calc_bgc_reaction(this, bounds, col, lbj, ubj, num_soilc, filter_soilc,              &
        num_soilp,filter_soilp, jtops, dtime, betrtracer_vars, tracercoeff_vars, biophysforc, &
        tracerstate_vars, tracerflux_vars, tracerboundarycond_vars, plant_soilbgc, betr_status)
 
@@ -305,12 +305,13 @@ module H2OIsotopeBGCReactionsType
   use BetrTracerType         , only : betrtracer_type
   use PlantSoilBGCMod        , only : plant_soilbgc_type
   use TracerBoundaryCondType , only : tracerboundarycond_type
-  use BeTR_ColumnType        , only : col => betr_col
   use BetrStatusType         , only : betr_status_type
   use betr_constants         , only : betr_errmsg_len
+  use betr_columnType        , only : betr_column_type
   !ARGUMENTS
   class(bgc_reaction_h2oiso_type)  , intent(inout) :: this                       !
   type(betr_bounds_type)           , intent(in)    :: bounds ! bounds
+  type(betr_column_type)           , intent(in)    :: col
   integer                          , intent(in)    :: num_soilc                  ! number of columns in column filter_soilc
   integer                          , intent(in)    :: filter_soilc(:)            ! column filter_soilc
   integer                          , intent(in)    :: num_soilp                  !
@@ -383,7 +384,7 @@ module H2OIsotopeBGCReactionsType
         enddo
         !the following should rarely occur, so when it occur, end with a warning
         if(tot1<0._r8)then
-          write(msg,*),tracer_mobile_phase(c,1:2,jj),tot1
+          write(msg,*)tracer_mobile_phase(c,1:2,jj),tot1
           msg=trim(msg)//new_line('A')//'negative H2O tracer '//errMsg(mod_filename, __LINE__)
           call betr_status%set_msg(msg=msg, err=-1)
         endif
@@ -535,22 +536,22 @@ module H2OIsotopeBGCReactionsType
   end subroutine do_h2o_isotope_equilibration
 
   !-----------------------------------------------------------------------
-  subroutine InitCold(this, bounds, betrtracer_vars, biophysforc, tracerstate_vars)
+  subroutine InitCold(this, bounds, col, betrtracer_vars, biophysforc, tracerstate_vars)
     !
     ! !USES:
     !
     use BeTR_decompMod    , only : betr_bounds_type
     use BeTRTracerType    , only : BeTRTracer_Type
     use tracerstatetype   , only : tracerstate_type
-    use BeTR_PatchType    , only : pft  => betr_pft
     use betr_varcon       , only : spval => bspval, ispval => bispval
-    use BeTR_ColumnType   , only : col => betr_col
     use betr_varcon       , only : denh2o => bdenh2o
     use tracer_varcon     , only : nlevtrc_soil  => betr_nlevtrc_soil
+    use betr_columnType   , only : betr_column_type
     implicit none
     ! !ARGUMENTS:
     class(bgc_reaction_h2oiso_type)  , intent(inout)    :: this
     type(betr_bounds_type)           , intent(in)    :: bounds
+    type(betr_column_type)           , intent(in)    :: col
     type(BeTRTracer_Type)            , intent(in)    :: betrtracer_vars
     type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
     type(tracerstate_type)           , intent(inout) :: tracerstate_vars

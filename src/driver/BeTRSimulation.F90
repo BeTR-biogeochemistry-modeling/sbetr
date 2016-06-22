@@ -14,7 +14,6 @@ module BeTRSimulation
   use tracer_varcon  , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
   use BeTR_decompMod , only : betr_bounds_type
   use decompMod      , only : bounds_type
-  use ColumnType     , only : col
   use PatchType      , only : pft
   ! !USES:
   use BetrType                 , only : betr_type, create_betr_type
@@ -29,6 +28,8 @@ module BeTRSimulation
   use betr_varcon              , only : betr_maxpatch_pft
   use BetrStatusType           , only : betr_status_type, create_betr_status_type
   use BetrStatusSimType        , only : betr_status_sim_type, create_betr_status_sim_type
+  use betr_columnType          , only : betr_column_type, create_betr_column_type
+  use betr_patchType           , only : betr_patch_type, create_betr_patch_type
   implicit none
 
   private
@@ -44,6 +45,8 @@ module BeTRSimulation
      type(betr_status_type)              , public, pointer  :: bstatus(:)
      type(betr_status_sim_type)          , public, pointer  :: bsimstatus
      logical                             , public, pointer :: active_col(:)
+     type(betr_column_type)              , public, pointer :: betr_col(:)
+     type(betr_patch_type)               , public, pointer :: betr_pft(:)
      character(len=betr_filename_length) , private :: base_filename
      character(len=betr_filename_length) , private :: hist_filename
 
@@ -101,6 +104,8 @@ module BeTRSimulation
      procedure, public :: BeTRRestartClose        => BeTRSimulationRestartClose
      procedure, public :: BeTRCreateHistory       => BeTRSimulationCreateHistory
      procedure, public :: BeTRRetrieveHistory     => BeTRSimulationRetrieveHistory
+     procedure, public :: BeTRSetcps              => BeTRSimulationSetcps
+     procedure, public :: BeTRSetBounds           => BeTRSimulationSetBounds
      procedure, private:: hist_create_states
      procedure, private:: hist_create_fluxes
   end type betr_simulation_type
@@ -111,7 +116,7 @@ contains
 
   !-------------------------------------------------------------------------------
   subroutine BeTRSimulationInit(this, base_filename, namelist_buffer, &
-       bounds, waterstate)
+       bounds, col, pft, waterstate)
     !
     ! DESCRIPTIONS
     ! Dummy routine for inheritance purposes. don't use.
@@ -119,12 +124,15 @@ contains
     !USES
     use WaterstateType , only : waterstate_type
     use betr_constants , only : betr_namelist_buffer_size, betr_filename_length
+    use ColumnType      , only : column_type
+    use PatchType      , only : patch_type
     implicit none
 
     class(betr_simulation_type)              , intent(inout) :: this
     character(len=betr_filename_length)      , intent(in)    :: base_filename
     character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
-
+    type(column_type)                        , intent(in) :: col
+    type(patch_type)                         , intent(in) :: pft
     type(bounds_type)                        , intent(in)    :: bounds
     type(waterstate_type)                    , intent(inout) :: waterstate
 
@@ -165,7 +173,7 @@ contains
 !-------------------------------------------------------------------------------
 
   subroutine BeTRInit(this, base_filename, namelist_buffer, &
-       bounds, waterstate)
+       bounds, col, pft, waterstate)
     !
     ! DESCRIPTION
     ! initialize BeTR
@@ -177,12 +185,16 @@ contains
     use betr_varcon    , only : betr_maxpatch_pft
     use LandunitType   , only : lun
     use landunit_varcon, only : istsoil, istcrop
+    use ColumnType     , only : column_type
+    use PatchType      , only : patch_type
     implicit none
     !ARGUMENTS
     class(betr_simulation_type)              , intent(inout) :: this
     character(len=betr_filename_length)      , intent(in)    :: base_filename
     character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
     type(bounds_type)                        , intent(in)    :: bounds
+    type(column_type)                        , intent(in) :: col
+    type(patch_type)                         , intent(in) :: pft
     type(waterstate_type)                    , intent(in)    :: waterstate
 
     !TEMPORARY VARIABLES
@@ -199,15 +211,14 @@ contains
     allocate(this%biogeo_flux(bounds%begc:bounds%endc), source=create_betr_biogeoFlux())
     allocate(this%biogeo_state(bounds%begc:bounds%endc), source=create_betr_biogeo_state())
     allocate(this%bstatus(bounds%begc:bounds%endc), source=create_betr_status_type())
+    allocate(this%betr_col(bounds%begc:bounds%endc), source=create_betr_column_type())
+    allocate(this%betr_pft(bounds%begc:bounds%endc), source=create_betr_patch_type())
     allocate(this%active_col(bounds%begc:bounds%endc))
     allocate(this%bsimstatus, source = create_betr_status_sim_type())
     call this%bsimstatus%reset()
+
     !grid horizontal bounds
-    betr_bounds%lbj  = 1 ; betr_bounds%ubj  = betr_nlevsoi
-    betr_bounds%begc = 1 ; betr_bounds%endc = 1
-    betr_bounds%begp = 1 ; betr_bounds%endp = betr_maxpatch_pft
-    betr_bounds%begl = 1 ; betr_bounds%endl = 1
-    betr_bounds%begg = 1 ; betr_bounds%endg = 1
+    call this%BeTRSetBounds(betr_bounds)
 
     do c = bounds%begc, bounds%endc
       l = col%landunit(c)
@@ -217,18 +228,23 @@ contains
 
       call this%biogeo_flux(c)%Init(betr_bounds)
 
+      call this%betr_col(c)%Init(betr_bounds)
+
+      call this%betr_pft(c)%Init(betr_bounds)
+
       if (lun%itype(l) == istsoil .or. lun%itype(l) == istcrop) then
         this%active_col(c) = .true.
       else
         this%active_col(c) = .false.
       endif
     enddo
-
-    call this%BeTRSetBiophysForcing(bounds, betr_bounds%lbj, betr_bounds%ubj, &
+    call this%BeTRSetcps(bounds, col, pft)
+    call this%BeTRSetBiophysForcing(bounds, col, betr_bounds%lbj, betr_bounds%ubj, &
         waterstate_vars = waterstate)
 
     do c = bounds%begc, bounds%endc
-      call this%betr(c)%Init(namelist_buffer, betr_bounds, this%biophys_forc(c), this%bstatus(c))
+      call this%betr(c)%Init(namelist_buffer, betr_bounds, this%betr_col(c), &
+          this%biophys_forc(c), this%bstatus(c))
       if(this%bstatus(c)%check_status())then
         call this%bsimstatus%setcol(c)
         call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
@@ -236,6 +252,7 @@ contains
       endif
     enddo
     if(this%bsimstatus%check_status())call endrun(msg=this%bsimstatus%print_msg())
+
     !print*,'create hist files',betr_offline
     if(betr_offline)then
       call this%CreateHistory(betr_nlevtrc_soil, this%num_soilc)
@@ -295,7 +312,7 @@ contains
     call ncd_pio_closefile(ncid)
   end subroutine BeTRSimulationRestartClose
   !---------------------------------------------------------------------------------
-  subroutine BeTRSimulationStepWithoutDrainage(this, betr_time, bounds, col)
+  subroutine BeTRSimulationStepWithoutDrainage(this, betr_time, bounds, col, pft)
   !DESCRPTION
   !interface for StepWithoutDrainage
   !
@@ -310,9 +327,8 @@ contains
     use SoilHydrologyType , only : soilhydrology_type
     use CNCarbonFluxType  , only : carbonflux_type
     use CanopyStateType   , only : canopystate_type
-    use BeTR_PatchType    , only : betr_pft
     use BeTR_TimeMod      , only : betr_time_type
-    use PatchType         , only : pft
+    use PatchType         , only : patch_type
     use pftvarcon         , only : crop
     implicit none
   !ARGUMENTS
@@ -320,6 +336,7 @@ contains
     class(betr_time_type)       , intent(in)    :: betr_time
     type(bounds_type)           , intent(in)    :: bounds ! bounds
     type(column_type)           , intent(in)    :: col ! column type
+    type(patch_type)            , intent(in)    :: pft
 
     ! remove compiler warnings about unused dummy args
     if (this%num_soilc > 0)                           continue
@@ -370,16 +387,12 @@ contains
     integer :: c
 
     !set lbj and ubj
-    betr_bounds%lbj  = 1; betr_bounds%ubj  = betr_nlevsoi
-    betr_bounds%begp = 1; betr_bounds%endp =  betr_maxpatch_pft
-    betr_bounds%begc = 1; betr_bounds%endc = 1
-    betr_bounds%begl = 1; betr_bounds%endl = 1
-    betr_bounds%begg = 1; betr_bounds%endg = 1
+    call this%BeTRSetBounds(betr_bounds)
 
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
       call begin_betr_tracer_massbalance(betr_bounds,         &
-         this%num_soilc, this%filter_soilc,                   &
+         this%betr_col(c), this%num_soilc, this%filter_soilc,                   &
          this%betr(c)%tracers, this%betr(c)%tracerstates,     &
          this%betr(c)%tracerfluxes, this%bstatus(c))
       if(this%bstatus(c)%check_status())then
@@ -410,16 +423,12 @@ contains
     integer :: c
 
     !set lbj and ubj
-    betr_bounds%lbj  = 1; betr_bounds%ubj  = betr_nlevsoi
-    betr_bounds%begp = 1; betr_bounds%endp =  betr_maxpatch_pft
-    betr_bounds%begc = 1; betr_bounds%endc = 1
-    betr_bounds%begl = 1; betr_bounds%endl = 1
-    betr_bounds%begg = 1; betr_bounds%endg = 1
+    call this%BeTRSetBounds(betr_bounds)
 
    do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
       call betr_tracer_massbalance_check(betr_time, betr_bounds,           &
-         this%num_soilc, this%filter_soilc,                              &
+         this%betr_col(c), this%num_soilc, this%filter_soilc,           &
          this%betr(c)%tracers, this%betr(c)%tracerstates,                &
          this%betr(c)%tracerfluxes, this%bstatus(c))
       if(this%bstatus(c)%check_status())then
@@ -449,7 +458,7 @@ contains
     use ncdio_pio       , only : ncd_putvar
     use histFileMod     , only : hist_file_create, hist_def_fld1d, hist_def_fld2d
     use betr_varcon     , only : bspval
-    use BeTR_ColumnType , only : betr_col
+    use betr_columnType , only : betr_column_type
     !
     !ARGUMENTS
     implicit none
@@ -515,7 +524,7 @@ contains
       enddo
 
       call ncd_enddef(ncid)
-      call ncd_putvar(ncid,"ZSOI",1,betr_col%z(1:1,1:nlevtrc_soil))
+      call ncd_putvar(ncid,"ZSOI",1,this%betr_col(c)%z(1:1,1:nlevtrc_soil))
       call ncd_pio_closefile(ncid)
 
     end associate
@@ -673,7 +682,7 @@ contains
   end subroutine WriteRegressionOutput
 
   !------------------------------------------------------------------------
-  subroutine BeTRSimulationSetBiophysForcing(this, bounds,  lbj, ubj, carbonflux_vars, waterstate_vars, &
+  subroutine BeTRSimulationSetBiophysForcing(this, bounds,  col, lbj, ubj, carbonflux_vars, waterstate_vars, &
     waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
     chemstate_vars, soilstate_vars)
   !DESCRIPTION
@@ -688,10 +697,12 @@ contains
     use SoilHydrologyType , only : soilhydrology_type
     use CNCarbonFluxType  , only : carbonflux_type
     use CanopyStateType   , only : canopystate_type
+    use ColumnType        , only : column_type
   implicit none
   !ARGUMENTS
   class(betr_simulation_type) , intent(inout)        :: this
   type(bounds_type)           , intent(in)           :: bounds
+  type(column_type)                      , intent(in)    :: col ! column type
   integer                     , intent(in)           :: lbj, ubj
   type(carbonflux_type)       , optional, intent(in) :: carbonflux_vars
   type(Waterstate_Type)       , optional, intent(in) :: Waterstate_vars
@@ -888,11 +899,8 @@ contains
    type(betr_bounds_type)     :: betr_bounds
    integer :: fc, c
 
-    betr_bounds%lbj  = 1; betr_bounds%ubj  = betr_nlevsoi
-    betr_bounds%begp = 1; betr_bounds%endp =  betr_maxpatch_pft
-    betr_bounds%begc = 1; betr_bounds%endc = 1
-    betr_bounds%begl = 1; betr_bounds%endl = 1
-    betr_bounds%begg = 1; betr_bounds%endg = 1
+
+   call this%BeTRSetBounds(betr_bounds)
 
    do fc= 1, num_nolakec
      c = filter_nolakec(fc)
@@ -923,11 +931,7 @@ contains
    type(betr_bounds_type)     :: betr_bounds
    integer :: fc, c
 
-    betr_bounds%lbj  = 1; betr_bounds%ubj  = betr_nlevsoi
-    betr_bounds%begp = 1; betr_bounds%endp = betr_maxpatch_pft
-    betr_bounds%begc = 1; betr_bounds%endc = 1
-    betr_bounds%begl = 1; betr_bounds%endl = 1
-    betr_bounds%begg = 1; betr_bounds%endg = 1
+   call this%BeTRSetBounds(betr_bounds)
 
    do fc = 1, num_hydrologyc
      c = filter_hydrologyc(fc)
@@ -960,11 +964,7 @@ contains
    type(betr_bounds_type)     :: betr_bounds
    integer :: fc, c
 
-    betr_bounds%lbj  = 1; betr_bounds%ubj  = betr_nlevsoi
-    betr_bounds%begp = 1; betr_bounds%endp = betr_maxpatch_pft
-    betr_bounds%begc = 1; betr_bounds%endc = 1
-    betr_bounds%begl = 1; betr_bounds%endl = 1
-    betr_bounds%begg = 1; betr_bounds%endg = 1
+   call this%BeTRSetBounds(betr_bounds)
 
    do fc = 1, num_hydrologyc
      c = filter_hydrologyc(fc)
@@ -989,15 +989,13 @@ contains
    type(betr_bounds_type)     :: betr_bounds
    integer :: fc, c
 
-    betr_bounds%lbj  = 1; betr_bounds%ubj  = betr_nlevsoi
-    betr_bounds%begp = 1; betr_bounds%endp = betr_maxpatch_pft
-    betr_bounds%begc = 1; betr_bounds%endc = 1
-    betr_bounds%begl = 1; betr_bounds%endl = 1
-    betr_bounds%begg = 1; betr_bounds%endg = 1
+   call this%BeTRSetBounds(betr_bounds)
+
    do fc = 1, num_snowc
      c = filter_snowc(fc)
      if(.not. this%active_col(c))cycle
-     call this%betr(c)%Enter_tracer_LayerAdjustment(betr_bounds, this%num_soilc, this%filter_soilc)
+     call this%betr(c)%Enter_tracer_LayerAdjustment(betr_bounds, this%betr_col(c), &
+       this%num_soilc, this%filter_soilc)
    enddo
   end subroutine BeTRSimulationBeginTracerSnowLayerAdjst
   !------------------------------------------------------------------------
@@ -1015,16 +1013,14 @@ contains
    type(betr_bounds_type)     :: betr_bounds
    integer :: fc, c
 
-    betr_bounds%lbj  = 1; betr_bounds%ubj  = betr_nlevsoi
-    betr_bounds%begp = 1; betr_bounds%endp = betr_maxpatch_pft
-    betr_bounds%begc = 1; betr_bounds%endc = 1
-    betr_bounds%begl = 1; betr_bounds%endl = 1
-    betr_bounds%begg = 1; betr_bounds%endg = 1
-  do fc = 1, num_snowc
-    c = filter_snowc(fc)
-    if(.not. this%active_col(c))cycle
-    call this%betr(c)%Exit_tracer_LayerAdjustment(betr_bounds, this%num_soilc, this%filter_soilc)
-  enddo
+   call this%BeTRSetBounds(betr_bounds)
+
+   do fc = 1, num_snowc
+     c = filter_snowc(fc)
+     if(.not. this%active_col(c))cycle
+     call this%betr(c)%Exit_tracer_LayerAdjustment(betr_bounds, this%betr_col(c), &
+       this%num_soilc, this%filter_soilc)
+   enddo
 
   end subroutine BeTRSimulationEndTracerSnowLayerAdjst
   !------------------------------------------------------------------------
@@ -1047,22 +1043,19 @@ contains
    type(betr_bounds_type)     :: betr_bounds
    integer :: fc, c
 
-    betr_bounds%lbj  = 1; betr_bounds%ubj  = betr_nlevsoi
-    betr_bounds%begp = 1; betr_bounds%endp = betr_maxpatch_pft
-    betr_bounds%begc = 1; betr_bounds%endc = 1
-    betr_bounds%begl = 1; betr_bounds%endl = 1
-    betr_bounds%begg = 1; betr_bounds%endg = 1
-  do fc = 1, num_snowc
-    c = filter_snowc(fc)
-    if(.not. this%active_col(c))cycle
-    call this%betr(c)%tracer_DivideSnowLayers(betr_bounds, this%num_soilc, &
-      this%filter_soilc, divide_matrix(c:c,:,:), this%bstatus(c))
-    if(this%bstatus(c)%check_status())then
-      call this%bsimstatus%setcol(c)
-      call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
-      exit
-    endif
-  enddo
+   call this%BeTRSetBounds(betr_bounds)
+
+   do fc = 1, num_snowc
+     c = filter_snowc(fc)
+     if(.not. this%active_col(c))cycle
+     call this%betr(c)%tracer_DivideSnowLayers(betr_bounds, this%betr_col(c),this%num_soilc, &
+       this%filter_soilc, divide_matrix(c:c,:,:), this%bstatus(c))
+     if(this%bstatus(c)%check_status())then
+       call this%bsimstatus%setcol(c)
+       call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
+       exit
+     endif
+   enddo
   if(this%bsimstatus%check_status()) &
     call endrun(msg=trim(this%bsimstatus%print_msg()))
   end subroutine BeTRSimulationDvideSnowLayers
@@ -1086,24 +1079,21 @@ contains
    !TEMPORARY VARIABLES
    type(betr_bounds_type)     :: betr_bounds
    integer :: fc, c
-    betr_bounds%lbj  = 1; betr_bounds%ubj  = betr_nlevsoi
-    betr_bounds%begp = 1; betr_bounds%endp = betr_maxpatch_pft
-    betr_bounds%begc = 1; betr_bounds%endc = 1
-    betr_bounds%begl = 1; betr_bounds%endl = 1
-    betr_bounds%begg = 1; betr_bounds%endg = 1
 
-  do fc = 1, num_snowc
-    c = filter_snowc(fc)
-    if(.not. this%active_col(c))cycle
-    call this%betr(c)%tracer_CombineSnowLayers(betr_bounds, this%num_soilc,&
-      this%filter_soilc, combine_matrix(c:c,:,:),this%bstatus(c))
-    if(this%bstatus(c)%check_status())then
-      call this%bsimstatus%setcol(c)
-      call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
-      exit
-    endif
-  enddo
-  if(this%bsimstatus%check_status()) &
+   call this%BeTRSetBounds(betr_bounds)
+
+   do fc = 1, num_snowc
+     c = filter_snowc(fc)
+     if(.not. this%active_col(c))cycle
+     call this%betr(c)%tracer_CombineSnowLayers(betr_bounds, this%betr_col(c),this%num_soilc,&
+       this%filter_soilc, combine_matrix(c:c,:,:),this%bstatus(c))
+     if(this%bstatus(c)%check_status())then
+       call this%bsimstatus%setcol(c)
+       call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
+       exit
+     endif
+   enddo
+   if(this%bsimstatus%check_status()) &
     call endrun(msg=trim(this%bsimstatus%print_msg()))
   end subroutine BeTRSimulationCombineSnowLayers
   !------------------------------------------------------------------------
@@ -1271,12 +1261,7 @@ contains
   integer :: fc, c
   type(betr_bounds_type)     :: betr_bounds
 
-
-  betr_bounds%lbj  = 1 ; betr_bounds%ubj  = betr_nlevsoi
-  betr_bounds%begc = 1 ; betr_bounds%endc = 1
-  betr_bounds%begp = 1 ; betr_bounds%endp = betr_maxpatch_pft
-  betr_bounds%begl = 1 ; betr_bounds%endl = 1
-  betr_bounds%begg = 1 ; betr_bounds%endg = 1
+  call this%BeTRSetBounds(betr_bounds)
 
   do fc = 1, numf
     c = filter(fc)
@@ -1330,11 +1315,7 @@ contains
 
   if(trim(flag)/='define')then
     !assign initial conditions
-    betr_bounds%lbj  = 1 ; betr_bounds%ubj  = betr_nlevsoi
-    betr_bounds%begc = 1 ; betr_bounds%endc = 1
-    betr_bounds%begp = 1 ; betr_bounds%endp = betr_maxpatch_pft
-    betr_bounds%begl = 1 ; betr_bounds%endl = 1
-    betr_bounds%begg = 1 ; betr_bounds%endg = 1
+    call this%BeTRSetBounds(betr_bounds)
     do fc = 1, numf
       c = filter(fc)
       call this%betr(c)%set_restvar(betr_bounds, 1, betr_nlevtrc_soil, nrest_1d,&
@@ -1420,5 +1401,69 @@ contains
   deallocate(states_1d)
   deallocate(states_2d)
   end subroutine BeTRSimulationRestart
+  !------------------------------------------------------------------------
+  subroutine BeTRSimulationSetcps(this, bounds, col, pft)
+  !
+  !DESCRIPTION
+  ! set up columns
+  !USES
+  use decompMod             , only : bounds_type
+  use ColumnType            , only : column_type
+  use PatchType             , only : patch_type
+  use pftvarcon             , only : crop
+  !ARGUMENTS
+  implicit none
+  class(betr_simulation_type) , intent(inout) :: this
+  type(bounds_type), intent(in) :: bounds
+  type(column_type), intent(in) :: col
+  type(patch_type), optional, intent(in) :: pft
+  integer :: c, p, pi
+
+
+  do c = bounds%begc, bounds%endc
+    this%betr_col(c)%snl(1) = col%snl(c)
+    this%betr_col(c)%zi(1,:)= col%zi(c,:)
+    this%betr_col(c)%dz(1,:)= col%dz(c,:)
+    this%betr_col(c)%z(1,:)= col%z(c,:)
+    this%betr_col(c)%pfti(1)= col%pfti(c)
+    this%betr_col(c)%pftf(1)= col%pftf(c)
+    this%betr_col(c)%npfts(1)= col%npfts(c)
+
+    if(present(pft))then
+      this%betr_pft(c)%column(:)=1
+      do pi = 1, betr_maxpatch_pft
+        if (pi <= col%npfts(c)) then
+          p = col%pfti(c) + pi - 1
+          if (pft%active(p)) then
+            this%betr_pft(c)%wtcol(pi) = pft%wtcol(p)
+            this%betr_pft(c)%itype(pi) = pft%itype(p)
+            this%betr_pft(c)%crop(pi) = crop(pi)
+          endif
+        endif
+      enddo
+    endif
+  enddo
+
+
+  end subroutine BeTRSimulationSetcps
+
+  !------------------------------------------------------------------------
+  subroutine BeTRSimulationSetBounds(this, betr_bounds)
+  !
+  !DESCRIPTION
+  !set betr_bounds
+  !
+  use betr_varcon    , only : betr_maxpatch_pft
+  use tracer_varcon  , only : betr_nlevsoi
+  implicit none
+  class(betr_simulation_type) , intent(inout) :: this
+  type(betr_bounds_type), intent(out)  :: betr_bounds
+
+  betr_bounds%lbj  = 1; betr_bounds%ubj  = betr_nlevsoi
+  betr_bounds%begp = 1; betr_bounds%endp =  betr_maxpatch_pft
+  betr_bounds%begc = 1; betr_bounds%endc = 1
+  betr_bounds%begl = 1; betr_bounds%endl = 1
+  betr_bounds%begg = 1; betr_bounds%endg = 1
+  end subroutine BeTRSimulationSetBounds
 
 end module BeTRSimulation

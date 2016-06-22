@@ -21,7 +21,6 @@ module BetrBGCMod
   use TracerStateType          , only : TracerState_type
   use tracerboundarycondType   , only : tracerboundarycond_type
   use BeTR_aerocondType        , only : betr_aerecond_type
-  use BeTR_ColumnType          , only : col => betr_col
   use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
   use betr_biogeoStateType     , only : betr_biogeo_state_type
   use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
@@ -52,7 +51,8 @@ module BetrBGCMod
 contains
 
 
-  subroutine surface_tracer_hydropath_update(betr_time, bounds, num_soilc, filter_soilc, &
+  subroutine surface_tracer_hydropath_update(betr_time, bounds, col, &
+     num_soilc, filter_soilc, &
      biophysforc, betrtracer_vars, tracerstate_vars, &
      tracercoeff_vars,  tracerflux_vars, betr_status)
     !
@@ -63,14 +63,15 @@ contains
     use tracerstatetype , only : tracerstate_type
     use tracercoeffType , only : tracercoeff_type
     use BetrTracerType  , only : betrtracer_type
-    use BeTR_ColumnType , only : col => betr_col
     use BeTR_TimeMod    , only : betr_time_type
     use BetrStatusType  , only : betr_status_type
+    use betr_columnType          , only : betr_column_type
     !
     ! Arguments
     implicit none
     class(betr_time_type)            , intent(in)    :: betr_time
     type(bounds_type)                , intent(in)    :: bounds                     ! bounds
+    type(betr_column_type)           , intent(in)    :: col
     integer                          , intent(in)    :: num_soilc                  ! number of columns in column filter_soilc
     integer                          , intent(in)    :: filter_soilc(:)            ! column filter_soilc
     class(betrtracer_type)           , intent(in)    :: betrtracer_vars            ! betr configuration information
@@ -85,7 +86,7 @@ contains
     lbj = bounds%lbj; ubj = bounds%ubj
     !calculate flux from merging topsoil with surface ponding water and snow
     call calc_tracer_h2osfc_snow_residual_combine(betr_time, &
-         bounds, num_soilc, filter_soilc,                    &
+       bounds, col, num_soilc, filter_soilc,                 &
        biophysforc,                                          &
        betrtracer_vars,                                      &
        tracerstate_vars,                                     &
@@ -107,8 +108,8 @@ contains
   end subroutine surface_tracer_hydropath_update
   !-------------------------------------------------------------------------------
 
-  subroutine stage_tracer_transport(betr_time,                   &
-       bounds, num_soilc, filter_soilc, num_soilp, filter_soilp, &
+  subroutine stage_tracer_transport(betr_time, bounds, col, pft, num_soilc, &
+       filter_soilc, num_soilp, filter_soilp, &
        biophysforc, biogeo_state, biogeo_flux, aerecond_vars,    &
        betrtracer_vars, tracercoeff_vars,                        &
        tracerboundarycond_vars, tracerflux_vars, bgc_reaction, Rfactor, &
@@ -125,15 +126,18 @@ contains
     use BetrTracerType         , only : betrtracer_type
     use TracerParamsMod        , only : set_phase_convert_coeff, set_multi_phase_diffusion, calc_tracer_infiltration
     use TracerParamsMod        , only : get_zwt, calc_aerecond, betr_annualupdate
-    use BeTR_ColumnType        , only : col => betr_col
+    use betr_columnType        , only : betr_column_type
     use BeTR_aerocondType      , only : betr_aerecond_type
     use BGCReactionsMod        , only : bgc_reaction_type
     use BeTR_TimeMod           , only : betr_time_type
     use BetrStatusType         , only : betr_status_type
+    use BeTR_PatchType         , only : betr_patch_type
     implicit none
     !arguments
     class(betr_time_type)            , intent(in)    :: betr_time
     type(bounds_type)                , intent(in)    :: bounds                     ! bounds
+    type(betr_column_type)           , intent(in)    :: col
+    type(betr_patch_type)            , intent(in)    :: pft
     integer                          , intent(in)    :: num_soilc                  ! number of columns in column filter_soilc
     integer                          , intent(in)    :: filter_soilc(:)            ! column filter_soilc
     integer                          , intent(in)    :: num_soilp
@@ -171,7 +175,7 @@ contains
 
     if(betr_use_cn)then
        !update npp for aerenchyma calculation
-       call betr_annualupdate(betr_time, bounds, num_soilc, filter_soilc, &
+       call betr_annualupdate(betr_time, bounds, pft, num_soilc, filter_soilc, &
             num_soilp, filter_soilp, biophysforc, aerecond_vars, &
             tracercoeff_vars, betr_status)
        if(betr_status%check_status())return
@@ -186,7 +190,7 @@ contains
     if(betr_status%check_status())return
 
     !calculate arenchyma conductance
-    call calc_aerecond(bounds, num_soilp, filter_soilp, &
+    call calc_aerecond(bounds, col, pft, num_soilp, filter_soilp, &
          jwt(bounds%begc:bounds%endc),                  &
          biophysforc,                                   &
          betrtracer_vars,                               &
@@ -207,7 +211,7 @@ contains
          betr_status = betr_status)
     if(betr_status%check_status())return
 
-    call set_multi_phase_diffusion(bounds, lbj, ubj, &
+    call set_multi_phase_diffusion(bounds, col, lbj, ubj, &
          tracerboundarycond_vars%jtops_col         , &
          num_soilc                                 , &
          filter_soilc                              , &
@@ -251,8 +255,8 @@ contains
 
   !-------------------------------------------------------------------------------
 
-  subroutine tracer_gws_transport(betr_time, &
-       bounds, num_soilc, filter_soilc, Rfactor, biophysforc, biogeo_flux, &
+  subroutine tracer_gws_transport(betr_time, bounds, col, num_soilc, &
+    filter_soilc, Rfactor, biophysforc, biogeo_flux, &
     betrtracer_vars, tracerboundarycond_vars, tracercoeff_vars, &
     tracerstate_vars, tracerflux_vars, bgc_reaction, advection_on, &
     diffusion_on, betr_status)
@@ -264,14 +268,15 @@ contains
     use tracercoeffType        , only : tracercoeff_type
     use TracerBoundaryCondType , only : TracerBoundaryCond_type
     use BetrTracerType         , only : betrtracer_type
-    use BeTR_ColumnType        , only : col => betr_col
     use BGCReactionsMod        , only : bgc_reaction_type
     use BeTR_TimeMod           , only : betr_time_type
     use BetrStatusType         , only : betr_status_type
+    use betr_columnType        , only : betr_column_type
     implicit none
     !ARGUMENTS
     class(betr_time_type)            , intent(in)    :: betr_time
     type(bounds_type)                , intent(in)    :: bounds                     ! bounds
+    type(betr_column_type)           , intent(in)    :: col
     integer                          , intent(in)    :: num_soilc                  ! number of columns in column filter_soilc
     integer                          , intent(in)    :: filter_soilc(:)            ! column filter_soilc
     real(r8)                         , intent(in)    :: Rfactor(bounds%begc: , bounds%lbj: ,1: ) !retardation factor
@@ -1707,7 +1712,7 @@ contains
 
   !--------------------------------------------------------------------------------
   subroutine calc_tracer_h2osfc_snow_residual_combine(betr_time, &
-       bounds, num_soilc, filter_soilc, biophysforc, betrtracer_vars, &
+       bounds, col, num_soilc, filter_soilc, biophysforc, betrtracer_vars, &
        tracerstate_vars, tracerflux_vars, betr_status)
     !
     ! !DESCRIPTION:
@@ -1717,9 +1722,11 @@ contains
     use tracerstatetype , only : tracerstate_type
     use BeTR_TimeMod    , only : betr_time_type
     use BetrStatusType  , only : betr_status_type
+    use betr_columnType , only : betr_column_type
     ! !ARGUMENTS:
     class(betr_time_type)            , intent(in)    :: betr_time
     type(bounds_type)                , intent(in)    :: bounds
+    type(betr_column_type)           , intent(in)    :: col
     integer                          , intent(in)    :: num_soilc        ! number of column soil points in column filter_soilc
     integer                          , intent(in)    :: filter_soilc(:)  ! column filter_soilc for soil points
     type(betr_biogeophys_input_type) , intent(in)    :: biophysforc

@@ -143,7 +143,7 @@ contains
        simulation%filter_soilc, waterstate_vars)
 
   !print*,'base_filename:',trim(base_filename)
-  call  simulation%Init(base_filename, namelist_buffer, bounds, waterstate_vars)
+  call  simulation%Init(base_filename, namelist_buffer, bounds, col, pft, waterstate_vars)
 
   select type(simulation)
   class is (betr_simulation_standalone_type)
@@ -174,7 +174,7 @@ contains
     record = record + 1
 
     !print*,'prepare for diagnosing water flux'
-    call simulation%BeTRSetBiophysForcing(bounds, 1, nlevsoi, waterstate_vars=waterstate_vars)
+    call simulation%BeTRSetBiophysForcing(bounds, col, 1, nlevsoi, waterstate_vars=waterstate_vars)
 
     call simulation%PreDiagSoilColWaterFlux(simulation%num_soilc, &
       simulation%filter_soilc)
@@ -188,7 +188,7 @@ contains
       atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars,                   &
       waterflux_vars, temperature_vars, chemstate_vars, simulation%jtops)
 
-    call simulation%BeTRSetBiophysForcing(bounds,  1, nlevsoi, waterstate_vars=waterstate_vars, &
+    call simulation%BeTRSetBiophysForcing(bounds, col, 1, nlevsoi, waterstate_vars=waterstate_vars, &
       waterflux_vars=waterflux_vars, soilhydrology_vars = soilhydrology_vars)
 
     !print*,'diagnose water flux'
@@ -206,16 +206,18 @@ contains
     !the following call could be lsm specific, so that
     !different lsm could use different definitions of input
     !variables, e.g. clm doesn't use cnstate_vars as public variables
-    call simulation%BeTRSetBiophysForcing(bounds, 1, nlevsoi,  carbonflux_vars=carbonflux_vars,       &
+    call simulation%BeTRSetBiophysForcing(bounds, col, 1, nlevsoi,  &
+      carbonflux_vars=carbonflux_vars,       &
       waterstate_vars=waterstate_vars,         waterflux_vars=waterflux_vars,         &
       temperature_vars=temperature_vars,       soilhydrology_vars=soilhydrology_vars, &
       atm2lnd_vars=atm2lnd_vars,               canopystate_vars=canopystate_vars,     &
       chemstate_vars=chemstate_vars,           soilstate_vars=soilstate_vars          )
-    call simulation%StepWithoutDrainage(time_vars, bounds, col)
+    call simulation%StepWithoutDrainage(time_vars, bounds, col, pft)
 
     !print*,'with drainge'
     !set forcing variable for drainage
-    call simulation%BeTRSetBiophysForcing(bounds, 1, nlevsoi, waterflux_vars=waterflux_vars )
+    call simulation%BeTRSetBiophysForcing(bounds, col, 1, nlevsoi,&
+       waterflux_vars=waterflux_vars )
     call simulation%StepWithDrainage(bounds, col)
 
     !print*,'do mass balance check'

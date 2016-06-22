@@ -94,5 +94,6 @@ module ColumnType
     allocate(this%gridcell(begc:endc))     ; this%gridcell(:) = ispval
     allocate(this%npfts(begc:endc))
     allocate(this%pfti(begc:endc))
+    allocate(this%pftf(begc:endc))
   end subroutine InitAllocate
 end module ColumnType

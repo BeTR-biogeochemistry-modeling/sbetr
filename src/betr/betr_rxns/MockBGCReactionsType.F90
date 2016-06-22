@@ -242,7 +242,7 @@ contains
   end subroutine set_boundary_conditions
 
   !-------------------------------------------------------------------------------
-  subroutine calc_bgc_reaction(this, bounds, lbj, ubj, num_soilc, filter_soilc,               &
+  subroutine calc_bgc_reaction(this, bounds, col, lbj, ubj, num_soilc, filter_soilc,               &
        num_soilp,filter_soilp, jtops, dtime, betrtracer_vars, tracercoeff_vars,  biophysforc, &
        tracerstate_vars, tracerflux_vars, tracerboundarycond_vars, plant_soilbgc, betr_status)
     !
@@ -257,10 +257,12 @@ contains
     use BetrTracerType         , only : betrtracer_type
     use PlantSoilBGCMod        , only : plant_soilbgc_type
     use BetrStatusType         , only : betr_status_type
+    use betr_columnType        , only : betr_column_type
     implicit none
     !ARGUMENTS
-    class(bgc_reaction_mock_run_type) , intent(inout)    :: this                       !
+    class(bgc_reaction_mock_run_type) , intent(inout) :: this                       !
     type(bounds_type)                 , intent(in)    :: bounds                      ! bounds
+    type(betr_column_type)            , intent(in)    :: col
     integer                           , intent(in)    :: num_soilc                   ! number of columns in column filter
     integer                           , intent(in)    :: filter_soilc(:)             ! column filter
     integer                           , intent(in)    :: num_soilp
@@ -367,7 +369,7 @@ contains
   end subroutine do_tracer_equilibration
 
   !-----------------------------------------------------------------------
-  subroutine InitCold(this, bounds, betrtracer_vars, biophysforc, tracerstate_vars)
+  subroutine InitCold(this, bounds, col, betrtracer_vars, biophysforc, tracerstate_vars)
     !
     ! !DESCRIPTION:
     ! do cold initialization
@@ -375,13 +377,14 @@ contains
     ! !USES:
     use BeTRTracerType      , only : BeTRTracer_Type
     use tracerstatetype     , only : tracerstate_type
-    use BeTR_PatchType      , only : pft  => betr_pft
     use betr_varcon         , only : spval => bspval, ispval => bispval
     use BeTR_landvarconType , only : landvarcon  => betr_landvarcon
+    use betr_columnType     , only : betr_column_type
     implicit none
     ! !ARGUMENTS:
     class(bgc_reaction_mock_run_type) , intent(inout)    :: this
     type(bounds_type)                 , intent(in)    :: bounds
+    type(betr_column_type)            , intent(in)    :: col
     type(BeTRTracer_Type)             , intent(in)    :: betrtracer_vars
     type(betr_biogeophys_input_type)  , intent(in)    :: biophysforc
     type(tracerstate_type)            , intent(inout) :: tracerstate_vars

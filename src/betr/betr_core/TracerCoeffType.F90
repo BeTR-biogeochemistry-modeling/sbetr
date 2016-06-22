@@ -7,7 +7,6 @@ module TracerCoeffType
   use bshr_kind_mod       , only : r8 => shr_kind_r8
   use bshr_infnan_mod     , only : nan => shr_infnan_nan, assignment(=)
   use BeTR_decompMod      , only : bounds_type  => betr_bounds_type
-  use BeTR_ColumnType     , only : col => betr_col
   use BeTR_landvarconType , only : landvarcon => betr_landvarcon
   use TracerBaseType      , only : tracerbase_type
   !
