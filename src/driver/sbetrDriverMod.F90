@@ -103,7 +103,7 @@ contains
   allocate(time_vars)
   call time_vars%Init(namelist_buffer)
 
-  print*,'read forcing'
+  !x print*,'read forcing'
   allocate(forcing_data)
   call forcing_data%ReadData(namelist_buffer, grid_data)
 
@@ -176,8 +176,7 @@ contains
     !print*,'prepare for diagnosing water flux'
     call simulation%BeTRSetBiophysForcing(bounds, col, 1, nlevsoi, waterstate_vars=waterstate_vars)
 
-    call simulation%PreDiagSoilColWaterFlux(simulation%num_soilc, &
-      simulation%filter_soilc)
+    call simulation%PreDiagSoilColWaterFlux(simulation%num_soilc,  simulation%filter_soilc)
 
     ! print*,'update forcing for betr'
     !set envrionmental forcing by reading foring data: temperature, moisture, atmospheric resistance
@@ -192,8 +191,8 @@ contains
       waterflux_vars=waterflux_vars, soilhydrology_vars = soilhydrology_vars)
 
     !print*,'diagnose water flux'
-    call simulation%DiagAdvWaterFlux(time_vars,                                    &
-      simulation%num_soilc, simulation%filter_soilc)
+    call simulation%DiagAdvWaterFlux(time_vars, simulation%num_soilc, &
+      simulation%filter_soilc)
 
     !now assign back waterflux_vars
     call simulation%RetrieveBiogeoFlux(bounds, 1, nlevsoi, waterflux_vars=waterflux_vars)
@@ -211,7 +210,7 @@ contains
       waterstate_vars=waterstate_vars,         waterflux_vars=waterflux_vars,         &
       temperature_vars=temperature_vars,       soilhydrology_vars=soilhydrology_vars, &
       atm2lnd_vars=atm2lnd_vars,               canopystate_vars=canopystate_vars,     &
-      chemstate_vars=chemstate_vars,           soilstate_vars=soilstate_vars          )
+      chemstate_vars=chemstate_vars,           soilstate_vars=soilstate_vars)
     call simulation%StepWithoutDrainage(time_vars, bounds, col, pft)
 
     !print*,'with drainge'
@@ -231,7 +230,8 @@ contains
     call time_vars%update_time_stamp()
 
     !print*,'write output'
-    call simulation%WriteHistory(record, lbj, ubj, time_vars, waterflux_vars%qflx_adv_col)
+    call simulation%WriteOfflineHistory(bounds, record, simulation%num_soilc,  &
+       simulation%filter_soilc, time_vars, waterflux_vars%qflx_adv_col)
 
     call time_vars%proc_nextstep()
     !print*,'write restart file? is not functionning at the moment'
@@ -284,8 +284,6 @@ end subroutine sbetrBGC_driver
     character(len=*), parameter            :: subname = 'read_name_list'
     character(len=betr_string_length_long) :: simulator_name
     character(len=betr_string_length_long) :: ioerror_msg
-
-
 
     !-----------------------------------------------------------------------
 

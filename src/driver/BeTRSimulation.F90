@@ -95,19 +95,22 @@ module BeTRSimulation
      procedure, public :: MassBalanceCheck        => BeTRSimulationMassBalanceCheck
      procedure, public :: BeTRSetBiophysForcing   => BeTRSimulationSetBiophysForcing
      procedure, public :: RetrieveBiogeoFlux      => BeTRSimulationRetrieveBiogeoFlux
-     procedure, public :: CreateHistory           => hist_htapes_create
-     procedure, public :: WriteHistory            => hist_write
+     procedure, public :: CreateOfflineHistory    => hist_htapes_create
+     procedure, public :: WriteOfflineHistory     => hist_write
      procedure, public :: WriteRegressionOutput
      !the following are used to interact with lsm
      procedure, public :: BeTRRestart             => BeTRSimulationRestart
      procedure, public :: BeTRRestartOpen         => BeTRSimulationRestartOpen
      procedure, public :: BeTRRestartClose        => BeTRSimulationRestartClose
-     procedure, public :: BeTRCreateHistory       => BeTRSimulationCreateHistory
-     procedure, public :: BeTRRetrieveHistory     => BeTRSimulationRetrieveHistory
+     procedure, private :: BeTRCreateHistory      => BeTRSimulationCreateHistory
+     procedure, private :: BeTRRetrieveHistory    => BeTRSimulationRetrieveHistory
      procedure, public :: BeTRSetcps              => BeTRSimulationSetcps
      procedure, public :: BeTRSetBounds           => BeTRSimulationSetBounds
      procedure, private:: hist_create_states
      procedure, private:: hist_create_fluxes
+     procedure, private:: hist_output_states
+     procedure, private:: hist_output_fluxes
+
   end type betr_simulation_type
 
   public :: BeTRSimulationInit
@@ -253,16 +256,19 @@ contains
     enddo
     if(this%bsimstatus%check_status())call endrun(msg=this%bsimstatus%print_msg())
 
+    !identify variables that are used for output
+    c = bounds%begc
+    call this%betr(c)%get_hist_size(this%num_hist_state1d, this%num_hist_state2d, &
+      this%num_hist_flux1d, this%num_hist_flux2d, &
+      this%nmlist_hist1d_state_buffer, this%nmlist_hist2d_state_buffer, &
+      this%nmlist_hist1d_flux_buffer, this%nmlist_hist2d_flux_buffer)
+
     !print*,'create hist files',betr_offline
     if(betr_offline)then
-      call this%CreateHistory(betr_nlevtrc_soil, this%num_soilc)
+      call this%CreateOfflineHistory(bounds, betr_nlevtrc_soil, &
+         this%num_hist_state1d, this%num_hist_state2d, &
+            this%num_hist_flux1d, this%num_hist_flux2d)
     else
-      c = bounds%begc
-      call this%betr(c)%get_hist_size(this%num_hist_state1d, this%num_hist_state2d, &
-         this%num_hist_flux1d, this%num_hist_flux2d, &
-         this%nmlist_hist1d_state_buffer, this%nmlist_hist2d_state_buffer, &
-         this%nmlist_hist1d_flux_buffer, this%nmlist_hist2d_flux_buffer)
-
       call this%BeTRCreateHistory(bounds, betr_nlevtrc_soil, &
          this%num_hist_state1d, this%num_hist_state2d, &
             this%num_hist_flux1d, this%num_hist_flux2d)
@@ -285,7 +291,6 @@ contains
     character(len=*), intent(in) :: fname
     class(file_desc_t)          , intent(out) :: ncid ! netcdf id
     character(len=*), intent(in) :: flag
-
 
     print*,'open restart file ',trim(fname), ' for ',trim(flag)
     if(trim(flag)=='read')then
@@ -443,7 +448,8 @@ contains
 
 !-------------------------------------------------------------------------------
 
-  subroutine hist_htapes_create(this, nlevtrc_soil, ncol)
+  subroutine hist_htapes_create(this, bounds, betr_nlevtrc_soil, &
+     num_hist_state1d, num_hist_state2d, num_hist_flux1d, num_hist_flux2d)
   !
   ! DESCRIPTIONS
   ! create history file and define output variables, only for standalone applicaitons
@@ -456,20 +462,28 @@ contains
     use ncdio_pio       , only : ncd_enddef
     use ncdio_pio       , only : ncd_defvar
     use ncdio_pio       , only : ncd_putvar
-    use histFileMod     , only : hist_file_create, hist_def_fld1d, hist_def_fld2d
+    use bhistFileMod    , only : hist_file_create, hist_def_fld1d, hist_def_fld2d
     use betr_varcon     , only : bspval
     use betr_columnType , only : betr_column_type
     !
     !ARGUMENTS
     implicit none
-
     class(betr_simulation_type) , intent(inout) :: this
-    integer                     , intent(in)    :: nlevtrc_soil, ncol
+    type(bounds_type)           , intent(in)    :: bounds               ! bounds
+    integer           , intent(in) :: betr_nlevtrc_soil
+    integer           ,     intent(in)   :: num_hist_state1d
+    integer           ,     intent(in)   :: num_hist_state2d
+    integer           ,     intent(in)   :: num_hist_flux1d
+    integer           ,     intent(in)   :: num_hist_flux2d
+
+
   !TEMPORARY VARIABLES
     integer                     :: jj, kk, c
+    integer :: ncol
     type(file_desc_t)           :: ncid
     character(len=*), parameter :: subname = 'hist_htapes_create'
-   c = 1
+
+    c = 1
     associate(                                                     &
          ntracers          => this%betr(c)%tracers%ntracers,          &
          ngwmobile_tracers => this%betr(c)%tracers%ngwmobile_tracers, &
@@ -480,58 +494,35 @@ contains
          tracernames       => this%betr(c)%tracers%tracernames        &
          )
 
-      this%hist_filename = trim(this%base_filename) // '.output.nc'
-      call ncd_pio_createfile(ncid, this%hist_filename)
+    ncol = bounds%endc-bounds%begc + 1
+    this%hist_filename = trim(this%base_filename) // '.output.nc'
+    call ncd_pio_createfile(ncid, this%hist_filename)
 
-      call hist_file_create(ncid,nlevtrc_soil, ncol)
+    call hist_file_create(ncid, betr_nlevtrc_soil, ncol)
 
-     call ncd_defvar(ncid, "ZSOI", nf90_float, &
-        dim1name="ncol",dim2name="levgrnd",    &
+    call ncd_defvar(ncid, "ZSOI", nf90_float, &
+        dim1name="ncol",dim2name="levtrc",    &
         long_name="grid center"           ,    &
         units="m", missing_value=bspval, fill_value=bspval)
 
-      call  hist_def_fld2d(ncid, varname="TRACER_P_GAS", nf90_type=nf90_float,dim1name="ncol", &
-           dim2name="levgrnd",long_name="total gas pressure", units="Pa")
+    call  hist_def_fld2d(ncid, varname="QFLX_ADV", nf90_type=nf90_float,dim1name="ncol",     &
+           dim2name="levtrc",long_name="advective flux / velocity", units="m/s")
 
-      call  hist_def_fld2d(ncid, varname="QFLX_ADV", nf90_type=nf90_float,dim1name="ncol",     &
-           dim2name="levgrnd",long_name="advective flux / velocity", units="m/s")
+    print*,'hist_create_states'
+    call this%hist_create_states(bounds, betr_nlevtrc_soil, num_hist_state1d, num_hist_state2d, ncid=ncid)
 
-      do jj = 1, ntracers
-         if(jj<= ngwmobile_tracers)then
-            call hist_def_fld2d(ncid, varname=trim(tracernames(jj))//'_TRACER_CONC_MOIBLE',    &
-                 nf90_type=nf90_float, dim1name="ncol",                                        &
-                 dim2name="levgrnd", long_name=trim(tracernames(jj))//"tracer concentrations", &
-                 units="mol m-3")
+    print*,'hist_create_fluxes'
+    call this%hist_create_fluxes(bounds, betr_nlevtrc_soil, num_hist_flux1d, num_hist_flux2d, ncid=ncid)
 
-            if(is_volatile(jj) .and. (.not. is_h2o(jj)) .and. (.not. is_isotope(jj)))then
-               call hist_def_fld2d(ncid, varname=trim(tracernames(jj))//'_TRACER_P_GAS_FRAC',                     &
-                    nf90_type=nf90_float, dim1name="ncol",                                                        &
-                    dim2name="levgrnd", long_name='fraction of gas phase contributed by '//trim(tracernames(jj)), &
-                    units="none")
-            endif
-
-            if(is_volatile(jj))then
-               call hist_def_fld1d (ncid, varname=trim(tracernames(jj))//'_FLX_SURFEMI', units='mol/m2/s', &
-                    nf90_type=nf90_float,  dim1name="ncol",                                                &
-                    long_name='loss from surface emission for '//trim(tracernames(jj)))
-            endif
-         else
-            call hist_def_fld2d(ncid, varname=trim(tracernames(jj))//'_TRACER_CONC_SOLID_PASSIVE', &
-                 nf90_type=nf90_float, dim1name="ncol",                                            &
-                 dim2name="levgrnd", long_name=trim(tracernames(jj))//"tracer concentrations",     &
-                 units="mol m-3")
-         endif
-      enddo
-
-      call ncd_enddef(ncid)
-      call ncd_putvar(ncid,"ZSOI",1,this%betr_col(c)%z(1:1,1:nlevtrc_soil))
-      call ncd_pio_closefile(ncid)
+    call ncd_enddef(ncid)
+    call ncd_putvar(ncid,"ZSOI",1,this%betr_col(c)%z(1:1,1:betr_nlevtrc_soil))
+    call ncd_pio_closefile(ncid)
 
     end associate
   end subroutine hist_htapes_create
 
   !-------------------------------------------------------------------------------
-  subroutine hist_write(me, record, lbj, ubj, time_vars, velocity)
+  subroutine hist_write(this, bounds, record, numf, filter, time_vars, velocity)
     !
     ! DESCRIPTION
     ! output hist file, only for standalone applications
@@ -542,11 +533,14 @@ contains
     use ncdio_pio    , only : ncd_putvar
     use ncdio_pio    , only : ncd_pio_closefile
     use BeTR_TimeMod , only : betr_time_type
+    use betr_varcon  , only : spval => bspval
     implicit none
     !ARGUMENTS
-    class(betr_simulation_type) , intent(inout) :: me
+    class(betr_simulation_type) , intent(inout) :: this
+    type(bounds_type)           , intent(in)    :: bounds
     integer                     , intent(in)    :: record
-    integer                     , intent(in)    :: lbj,ubj
+    integer                     , intent(in)    :: numf
+    integer                     , intent(in)    :: filter(:)
     type(betr_time_type)        , intent(in)    :: time_vars
     real(r8)                    , intent(in)    :: velocity(:, :)
     !TEMPORARY VARIABLES
@@ -556,44 +550,36 @@ contains
     character(len=*), parameter :: subname='hist_write'
       c = 1
     associate(                                                   &
-         ntracers          => me%betr(c)%tracers%ntracers,          &
-         ngwmobile_tracers => me%betr(c)%tracers%ngwmobile_tracers, &
-         is_volatile       => me%betr(c)%tracers%is_volatile,       &
-         is_h2o            => me%betr(c)%tracers%is_h2o,            &
-         is_isotope        => me%betr(c)%tracers%is_isotope,        &
-         volatileid        => me%betr(c)%tracers%volatileid,        &
-         tracernames       => me%betr(c)%tracers%tracernames        &
+         ntracers          => this%betr(c)%tracers%ntracers,          &
+         ngwmobile_tracers => this%betr(c)%tracers%ngwmobile_tracers, &
+         is_volatile       => this%betr(c)%tracers%is_volatile,       &
+         is_h2o            => this%betr(c)%tracers%is_h2o,            &
+         is_isotope        => this%betr(c)%tracers%is_isotope,        &
+         volatileid        => this%betr(c)%tracers%volatileid,        &
+         tracernames       => this%betr(c)%tracers%tracernames        &
          )
 
-      call ncd_pio_openfile_for_write(ncid, me%hist_filename)
+      call ncd_pio_openfile_for_write(ncid, this%hist_filename)
 
       if (mod(time_vars%time, 86400._r8)==0) then
          print*,'day', time_vars%time/86400._r8
       end if
       call ncd_putvar(ncid, "time", record, time_vars%time)
 
-      do jj = 1, ntracers
-         if(jj<= ngwmobile_tracers)then
-            call ncd_putvar(ncid,trim(tracernames(jj))//'_TRACER_CONC_MOIBLE',         &
-                 record,me%betr(c)%tracerstates%tracer_conc_mobile_col(1:1,lbj:ubj,jj))
-
-            if(is_volatile(jj) .and. (.not. is_h2o(jj)) .and. (.not. is_isotope(jj)))then
-               call ncd_putvar(ncid, trim(tracernames(jj))//'_TRACER_P_GAS_FRAC',      &
-                    record,me%betr(c)%tracerstates%tracer_P_gas_frac_col(1:1,lbj:ubj,volatileid(jj)))
-            endif
-            if(is_volatile(jj))then
-               call ncd_putvar(ncid, trim(tracernames(jj))//'_FLX_SURFEMI',            &
-                    record, me%betr(c)%tracerfluxes%tracer_flx_surfemi_col(1:1, volatileid(jj)))
-            endif
-         else
-            call ncd_putvar(ncid, trim(tracernames(jj))//'_TRACER_CONC_SOLID_PASSIVE', &
-                 record, me%betr(c)%tracerstates%tracer_conc_solid_passive_col(1:1,lbj:ubj,jj-ngwmobile_tracers))
-         endif
+      do c = bounds%begc, bounds%endc
+        call ncd_putvar(ncid, 'QFLX_ADV', record, velocity(c:c, 1:betr_nlevtrc_soil))
       enddo
 
-      call ncd_putvar(ncid, 'TRACER_P_GAS', record, me%betr(c)%tracerstates%tracer_P_gas_col(1:1,lbj:ubj))
+      this%states_1d(:,:) = spval; this%states_2d(:,:,:) = spval
+      this%fluxes_1d(:,:) = spval; this%fluxes_2d(:,:,:) = spval
 
-      call ncd_putvar(ncid, 'QFLX_ADV', record, velocity(1:1, lbj:ubj))
+      call this%BeTRRetrieveHistory(numf, filter)
+
+      call this%hist_output_states(ncid, record, bounds, betr_nlevtrc_soil, &
+            this%num_hist_state1d, this%num_hist_state2d)
+
+      call this%hist_output_fluxes(ncid, record, bounds, betr_nlevtrc_soil, &
+           this%num_hist_flux1d, this%num_hist_flux2d)
 
       call ncd_pio_closefile(ncid)
     end associate
@@ -1096,21 +1082,24 @@ contains
    if(this%bsimstatus%check_status()) &
     call endrun(msg=trim(this%bsimstatus%print_msg()))
   end subroutine BeTRSimulationCombineSnowLayers
+
   !------------------------------------------------------------------------
-  subroutine hist_create_fluxes(this, bounds, betr_nlevtrc_soil, num_flux1d, num_flux2d)
+  subroutine hist_create_fluxes(this, bounds, betr_nlevtrc_soil, num_flux1d, num_flux2d, ncid)
   !
   !DESCRIPTION
   !create history file for betr fluxes
   !
   use betr_varcon         , only : spval => bspval
-  use histFileMod   , only: hist_addfld1d, hist_addfld2d
+  use histFileMod         , only: hist_addfld1d, hist_addfld2d
+  use bhistFileMod        , only : hist_def_fld2d , hist_def_fld1d
+  use ncdio_pio           , only : file_desc_t, ncd_float
   implicit none
   class(betr_simulation_type) , intent(inout) :: this
   integer, intent(in) :: betr_nlevtrc_soil
   type(bounds_type)           , intent(in)    :: bounds               ! bounds
   integer           ,     intent(in)   :: num_flux1d
   integer           ,     intent(in)   :: num_flux2d
-
+  type(file_desc_t) ,   optional,  intent(inout)   :: ncid
   !local variables
   integer :: jj, begc, endc
   character(len=100) :: fname
@@ -1121,6 +1110,7 @@ contains
   character(len=20) :: default
   integer :: nml_error
   character(len=200):: ioerror_msg
+  character(len=*), parameter :: subname = 'hist_create_fluxes'
 
   real(r8), pointer :: data2dptr(:,:) ! temp. pointers for slicing larger arrays
   real(r8), pointer :: data1dptr(:)   ! temp. pointers for slicing larger arrays
@@ -1131,7 +1121,12 @@ contains
   namelist /hist1d_fmt/    &
   fname, units, avgflag, long_name, default
 
+  if(betr_offline .and. (.not. present(ncid)))then
+    call endrun(msg="ncid not defined in "//subname//errmsg(mod_filename, __LINE__))
+  endif
+
   begc=bounds%begc; endc=bounds%endc
+
   if(num_flux2d >0)then
     allocate(this%fluxes_2d(begc:endc, 1:betr_nlevtrc_soil, 1:num_flux2d))
   endif
@@ -1139,16 +1134,22 @@ contains
     allocate(this%fluxes_1d(begc:endc, 1:num_flux1d))
   endif
 
+
   do jj = 1, num_flux2d
     !read name list
     read(this%nmlist_hist2d_flux_buffer(jj), nml=hist2d_fmt, iostat=nml_error, iomsg=ioerror_msg)
     if(nml_error/=0)then
       write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
     endif
-    this%fluxes_2d(begc:endc,1:betr_nlevtrc_soil, jj) = spval
-    data2dptr => this%states_2d(begc:endc,1:betr_nlevtrc_soil, jj)
-    call hist_addfld2d (fname=fname, units=units, type2d=type2d,  &
+    if(betr_offline)then
+      call hist_def_fld2d (ncid, varname=fname, nf90_type=ncd_float, dim1name = "ncol",&
+            dim2name="levtrc", long_name=long_name, units=units)
+    else
+      this%fluxes_2d(begc:endc,1:betr_nlevtrc_soil, jj) = spval
+      data2dptr => this%states_2d(begc:endc,1:betr_nlevtrc_soil, jj)
+      call hist_addfld2d (fname=fname, units=units, type2d=type2d,  &
            avgflag=avgflag, long_name=long_name,  ptr_col=data2dptr, default=default)
+    endif
   enddo
 
   do jj = 1, num_flux1d
@@ -1157,18 +1158,27 @@ contains
     if(nml_error/=0)then
       write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
     endif
-    this%fluxes_1d(begc:endc,jj) = spval
-    data1dptr => this%fluxes_1d(begc:endc, jj)
-    call hist_addfld1d (fname=fname, units=units,  avgflag=avgflag, long_name=long_name, &
-      ptr_col=data1dptr, default=default)
+    if(betr_offline)then
+      call hist_def_fld1d (ncid, varname=fname,  nf90_type=ncd_float, &
+        dim1name="ncol", long_name=long_name, units=units)
+    else
+      this%fluxes_1d(begc:endc,jj) = spval
+      data1dptr => this%fluxes_1d(begc:endc, jj)
+      call hist_addfld1d (fname=fname, units=units,  avgflag=avgflag, long_name=long_name, &
+        ptr_col=data1dptr, default=default)
+    endif
+
   enddo
   end subroutine hist_create_fluxes
+
   !------------------------------------------------------------------------
-  subroutine hist_create_states(this, bounds, betr_nlevtrc_soil, num_state1d, num_state2d)
+  subroutine hist_create_states(this, bounds, betr_nlevtrc_soil, num_state1d, num_state2d, ncid)
   !
   !create history file for betr states variables
   use histFileMod   , only: hist_addfld1d, hist_addfld2d
+  use bhistFileMod        , only : hist_def_fld2d , hist_def_fld1d
   use betr_varcon         , only : spval => bspval
+  use ncdio_pio , only : file_desc_t, ncd_float
   implicit none
   !ARGUMENTS
   class(betr_simulation_type) , intent(inout) :: this
@@ -1176,7 +1186,7 @@ contains
   integer, intent(in) :: betr_nlevtrc_soil
   integer           ,     intent(in)   :: num_state1d
   integer           ,     intent(in)   :: num_state2d
-
+  type(file_desc_t) ,   optional,  intent(inout)   :: ncid
   !local variables
   integer :: begc, endc
   integer :: jj
@@ -1190,12 +1200,17 @@ contains
   character(len=200):: ioerror_msg
   real(r8), pointer :: data2dptr(:,:) ! temp. pointers for slicing larger arrays
   real(r8), pointer :: data1dptr(:)   ! temp. pointers for slicing larger arrays
+  character(len=*), parameter :: subname = 'hist_create_states'
 
   namelist /hist2d_fmt/    &
   fname, units, avgflag,type2d,long_name, default
 
   namelist /hist1d_fmt/    &
   fname, units, avgflag, long_name, default
+
+  if(betr_offline .and. (.not. present(ncid)))then
+    call endrun(msg="ncid not defined in "//subname//errmsg(mod_filename, __LINE__))
+  endif
 
   begc = bounds%begc; endc = bounds%endc
 
@@ -1212,10 +1227,16 @@ contains
     if(nml_error/=0)then
       write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
     endif
-    this%states_2d(begc:endc,1:betr_nlevtrc_soil, jj) = spval
-    data2dptr => this%states_2d(begc:endc,1:betr_nlevtrc_soil, jj)
-    call hist_addfld2d (fname=fname, units=units, type2d=type2d,  &
+    print*,jj,fname,long_name,units
+    if(betr_offline)then
+      call hist_def_fld2d (ncid=ncid, varname=trim(fname), nf90_type=ncd_float, dim1name = "ncol",&
+          dim2name="levtrc", long_name=long_name, units=units)
+    else
+      this%states_2d(begc:endc,1:betr_nlevtrc_soil, jj) = spval
+      data2dptr => this%states_2d(begc:endc,1:betr_nlevtrc_soil, jj)
+      call hist_addfld2d (fname=fname, units=units, type2d=type2d,  &
            avgflag=avgflag, long_name=long_name,  ptr_col=data2dptr, default=default)
+    endif
   enddo
 
   do jj = 1, num_state1d
@@ -1224,15 +1245,156 @@ contains
     if(nml_error/=0)then
       write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
     endif
-    this%states_1d(begc:endc,jj) = spval
-    data1dptr => this%states_1d(begc:endc,jj)
-    call hist_addfld1d (fname=fname, units=units, avgflag=avgflag, &
-      long_name=long_name, ptr_col=data1dptr, default=default)
+    if(betr_offline)then
+      call hist_def_fld1d (ncid, varname=fname,  nf90_type=ncd_float, &
+        dim1name="ncol", long_name=long_name, units=units)
+    else
+      this%states_1d(begc:endc,jj) = spval
+      data1dptr => this%states_1d(begc:endc,jj)
+      call hist_addfld1d (fname=fname, units=units, avgflag=avgflag, &
+          long_name=long_name, ptr_col=data1dptr, default=default)
+    endif
   enddo
+
   end subroutine hist_create_states
+  !------------------------------------------------------------------------
+
+  subroutine hist_output_fluxes(this,  ncid, record, bounds, betr_nlevtrc_soil, num_flux1d, num_flux2d)
+  !
+  !DESCRIPTION
+  !create history file for betr fluxes
+  !
+  use betr_varcon         , only : spval => bspval
+  use histFileMod         , only: hist_addfld1d, hist_addfld2d
+  use ncdio_pio           , only :   file_desc_t, ncd_putvar
+  implicit none
+  class(betr_simulation_type) , intent(inout) :: this
+  integer, intent(in) :: betr_nlevtrc_soil
+  integer, intent(in) :: record
+  type(bounds_type)           , intent(in)    :: bounds               ! bounds
+  integer           ,     intent(in)   :: num_flux1d
+  integer           ,     intent(in)   :: num_flux2d
+  type(file_desc_t) ,     intent(inout)   :: ncid
+  !local variables
+  integer :: jj, begc, endc
+  character(len=100) :: fname
+  character(len=30) :: units
+  character(len=20) :: avgflag
+  character(len=20) :: type2d
+  character(len=200) :: long_name
+  character(len=20) :: default
+  integer :: nml_error
+  character(len=200):: ioerror_msg
+  character(len=*), parameter :: subname = 'hist_output_fluxes'
+
+  real(r8), pointer :: data2dptr(:,:) ! temp. pointers for slicing larger arrays
+  real(r8), pointer :: data1dptr(:)   ! temp. pointers for slicing larger arrays
+
+  namelist /hist2d_fmt/    &
+  fname, units, avgflag,type2d,long_name, default
+
+  namelist /hist1d_fmt/    &
+  fname, units, avgflag, long_name, default
+
+
+  begc=bounds%begc; endc=bounds%endc
+
+  do jj = 1, num_flux2d
+    !read name list
+    read(this%nmlist_hist2d_flux_buffer(jj), nml=hist2d_fmt, iostat=nml_error, iomsg=ioerror_msg)
+    if(nml_error/=0)then
+      write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
+    endif
+    data2dptr => this%states_2d(begc:endc,1:betr_nlevtrc_soil, jj)
+
+    call ncd_putvar(ncid,fname, record, data2dptr)
+
+  enddo
+
+  do jj = 1, num_flux1d
+    !read name list
+    read(this%nmlist_hist1d_flux_buffer(jj), nml=hist1d_fmt, iostat=nml_error, iomsg=ioerror_msg)
+    if(nml_error/=0)then
+      write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
+    endif
+    data1dptr => this%fluxes_1d(begc:endc, jj)
+
+    call ncd_putvar(ncid,fname, record, data1dptr)
+
+  enddo
+  end subroutine hist_output_fluxes
+  !------------------------------------------------------------------------
+  subroutine hist_output_states(this,  ncid,  record, bounds, betr_nlevtrc_soil, num_state1d, num_state2d)
+  !
+  !create history file for betr states variables
+  use histFileMod   , only: hist_addfld1d, hist_addfld2d
+  use betr_varcon         , only : spval => bspval
+  use ncdio_pio , only : file_desc_t, ncd_putvar
+  implicit none
+  !ARGUMENTS
+  class(betr_simulation_type) , intent(inout) :: this
+  integer, intent(in) :: record
+  type(bounds_type)           , intent(in)    :: bounds               ! bounds
+  integer, intent(in) :: betr_nlevtrc_soil
+  integer           ,     intent(in)   :: num_state1d
+  integer           ,     intent(in)   :: num_state2d
+  type(file_desc_t) ,     intent(inout)   :: ncid
+  !local variables
+  integer :: begc, endc
+  integer :: jj
+  character(len=100) :: fname
+  character(len=30) :: units
+  character(len=20) :: avgflag
+  character(len=20) :: type2d
+  character(len=200) :: long_name
+  character(len=20) :: default
+  integer :: nml_error
+  character(len=200):: ioerror_msg
+  real(r8), pointer :: data2dptr(:,:) ! temp. pointers for slicing larger arrays
+  real(r8), pointer :: data1dptr(:)   ! temp. pointers for slicing larger arrays
+  character(len=*), parameter :: subname = 'hist_output_states'
+
+  namelist /hist2d_fmt/    &
+  fname, units, avgflag,type2d,long_name, default
+
+  namelist /hist1d_fmt/    &
+  fname, units, avgflag, long_name, default
+
+
+  begc = bounds%begc; endc = bounds%endc
+
+  do jj = 1, num_state2d
+    !read namelist
+    read(this%nmlist_hist2d_state_buffer(jj), nml=hist2d_fmt, iostat=nml_error, iomsg=ioerror_msg)
+    if(nml_error/=0)then
+      write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
+    endif
+
+    data2dptr => this%states_2d(begc:endc,1:betr_nlevtrc_soil, jj)
+
+    call ncd_putvar(ncid,fname, record, data2dptr)
+
+  enddo
+
+  do jj = 1, num_state1d
+    !read namelist
+    read(this%nmlist_hist1d_state_buffer(jj), nml=hist1d_fmt, iostat=nml_error, iomsg=ioerror_msg)
+    if(nml_error/=0)then
+      write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
+    endif
+
+    data1dptr => this%states_1d(begc:endc,jj)
+
+    call ncd_putvar(ncid,fname, record, data1dptr)
+
+  enddo
+
+  end subroutine hist_output_states
   !------------------------------------------------------------------------
   subroutine BeTRSimulationCreateHistory(this, bounds, betr_nlevtrc_soil,&
      num_state1d, num_state2d, num_flux1d, num_flux2d)
+  !
+  !links the variable to output
   use betr_varcon         , only : spval => bspval
   implicit none
   !ARGUMENTS
