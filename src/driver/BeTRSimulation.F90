@@ -1142,6 +1142,7 @@ contains
       write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
     endif
     if(betr_offline)then
+      print*,jj,trim(fname)
       call hist_def_fld2d (ncid, varname=fname, nf90_type=ncd_float, dim1name = "ncol",&
             dim2name="levtrc", long_name=long_name, units=units)
     else
@@ -1159,6 +1160,7 @@ contains
       write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
     endif
     if(betr_offline)then
+      print*,jj,trim(fname)
       call hist_def_fld1d (ncid, varname=fname,  nf90_type=ncd_float, &
         dim1name="ncol", long_name=long_name, units=units)
     else
@@ -1227,8 +1229,9 @@ contains
     if(nml_error/=0)then
       write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
     endif
-    print*,jj,fname,long_name,units
+
     if(betr_offline)then
+      print*,jj,trim(fname)
       call hist_def_fld2d (ncid=ncid, varname=trim(fname), nf90_type=ncd_float, dim1name = "ncol",&
           dim2name="levtrc", long_name=long_name, units=units)
     else
@@ -1246,6 +1249,7 @@ contains
       write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
     endif
     if(betr_offline)then
+      print*,jj,trim(fname)
       call hist_def_fld1d (ncid, varname=fname,  nf90_type=ncd_float, &
         dim1name="ncol", long_name=long_name, units=units)
     else
@@ -1305,9 +1309,9 @@ contains
     if(nml_error/=0)then
       write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
     endif
-    data2dptr => this%states_2d(begc:endc,1:betr_nlevtrc_soil, jj)
+    data2dptr => this%fluxes_2d(begc:endc,1:betr_nlevtrc_soil, jj)
 
-    call ncd_putvar(ncid,fname, record, data2dptr)
+    call ncd_putvar(ncid, fname, record, data2dptr)
 
   enddo
 
