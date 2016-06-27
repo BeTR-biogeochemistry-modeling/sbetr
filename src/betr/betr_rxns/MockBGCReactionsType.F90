@@ -13,7 +13,6 @@ module MockBGCReactionsType
   use BeTR_decompMod           , only : bounds_type  => betr_bounds_type
   use BGCReactionsMod          , only : bgc_reaction_type
   use tracer_varcon            , only : bndcond_as_conc, bndcond_as_flux
-  use BeTR_LandunitType        , only : lun => betr_lun
   use ColumnType               , only : col
   use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
   implicit none
@@ -243,7 +242,7 @@ contains
   end subroutine set_boundary_conditions
 
   !-------------------------------------------------------------------------------
-  subroutine calc_bgc_reaction(this, bounds, lbj, ubj, num_soilc, filter_soilc,               &
+  subroutine calc_bgc_reaction(this, bounds, col, lbj, ubj, num_soilc, filter_soilc,               &
        num_soilp,filter_soilp, jtops, dtime, betrtracer_vars, tracercoeff_vars,  biophysforc, &
        tracerstate_vars, tracerflux_vars, tracerboundarycond_vars, plant_soilbgc, betr_status)
     !
@@ -258,10 +257,12 @@ contains
     use BetrTracerType         , only : betrtracer_type
     use PlantSoilBGCMod        , only : plant_soilbgc_type
     use BetrStatusType         , only : betr_status_type
+    use betr_columnType        , only : betr_column_type
     implicit none
     !ARGUMENTS
-    class(bgc_reaction_mock_run_type) , intent(inout)    :: this                       !
+    class(bgc_reaction_mock_run_type) , intent(inout) :: this                       !
     type(bounds_type)                 , intent(in)    :: bounds                      ! bounds
+    type(betr_column_type)            , intent(in)    :: col
     integer                           , intent(in)    :: num_soilc                   ! number of columns in column filter
     integer                           , intent(in)    :: filter_soilc(:)             ! column filter
     integer                           , intent(in)    :: num_soilp
@@ -368,7 +369,7 @@ contains
   end subroutine do_tracer_equilibration
 
   !-----------------------------------------------------------------------
-  subroutine InitCold(this, bounds, betrtracer_vars, biophysforc, tracerstate_vars)
+  subroutine InitCold(this, bounds, col, betrtracer_vars, biophysforc, tracerstate_vars)
     !
     ! !DESCRIPTION:
     ! do cold initialization
@@ -376,13 +377,14 @@ contains
     ! !USES:
     use BeTRTracerType      , only : BeTRTracer_Type
     use tracerstatetype     , only : tracerstate_type
-    use BeTR_PatchType      , only : pft  => betr_pft
     use betr_varcon         , only : spval => bspval, ispval => bispval
     use BeTR_landvarconType , only : landvarcon  => betr_landvarcon
+    use betr_columnType     , only : betr_column_type
     implicit none
     ! !ARGUMENTS:
     class(bgc_reaction_mock_run_type) , intent(inout)    :: this
     type(bounds_type)                 , intent(in)    :: bounds
+    type(betr_column_type)            , intent(in)    :: col
     type(BeTRTracer_Type)             , intent(in)    :: betrtracer_vars
     type(betr_biogeophys_input_type)  , intent(in)    :: biophysforc
     type(tracerstate_type)            , intent(inout) :: tracerstate_vars
@@ -405,41 +407,23 @@ contains
 
 
     do c = bounds%begc, bounds%endc
-       l = col%landunit(c)
-       if (lun%ifspecial(l)) then
-          if(betrtracer_vars%ngwmobile_tracers>0)then
-             tracerstate_vars%tracer_conc_mobile_col(c,:,:)        = spval
-             tracerstate_vars%tracer_conc_surfwater_col(c,:)       = spval
-             tracerstate_vars%tracer_conc_aquifer_col(c,:)         = spval
-             tracerstate_vars%tracer_conc_grndwater_col(c,:)       = spval
-          endif
-          if(betrtracer_vars%ntracers > betrtracer_vars%ngwmobile_tracers)then
-             tracerstate_vars%tracer_conc_solid_passive_col(c,:,:) = spval
-          endif
-          if(betrtracer_vars%nsolid_equil_tracers>0)then
-             tracerstate_vars%tracer_conc_solid_equil_col(c, :, :) = spval
-          endif
-       endif
-       tracerstate_vars%tracer_soi_molarmass_col(c,:)            = spval
 
-       if (lun%itype(l) == landvarcon%istsoil .or. lun%itype(l) == landvarcon%istcrop) then
-          !dual phase tracers
+      !dual phase tracers
 
-          tracerstate_vars%tracer_conc_mobile_col(c,:, :)          = 0._r8
-          tracerstate_vars%tracer_conc_surfwater_col(c,:)          = 0._r8
-          tracerstate_vars%tracer_conc_aquifer_col(c,:)            = 0._r8
-          tracerstate_vars%tracer_conc_grndwater_col(c,:)          = 0._r8
-          tracerstate_vars%tracer_conc_mobile_col(c,7, betrtracer_vars%id_trc_doc) = 1._r8  !point source
-          !solid tracers
-          if(betrtracer_vars%ngwmobile_tracers < betrtracer_vars%ntracers)then
-             tracerstate_vars%tracer_conc_solid_passive_col(c,:,:) = 0._r8
-          endif
+      tracerstate_vars%tracer_conc_mobile_col(c,:, :)          = 0._r8
+      tracerstate_vars%tracer_conc_surfwater_col(c,:)          = 0._r8
+      tracerstate_vars%tracer_conc_aquifer_col(c,:)            = 0._r8
+      tracerstate_vars%tracer_conc_grndwater_col(c,:)          = 0._r8
+      tracerstate_vars%tracer_conc_mobile_col(c,7, betrtracer_vars%id_trc_doc) = 1._r8  !point source
+      !solid tracers
+      if(betrtracer_vars%ngwmobile_tracers < betrtracer_vars%ntracers)then
+        tracerstate_vars%tracer_conc_solid_passive_col(c,:,:) = 0._r8
+      endif
 
-          if(betrtracer_vars%nsolid_equil_tracers>0)then
-             tracerstate_vars%tracer_conc_solid_equil_col(c, :, :) = 0._r8
-          endif
-          tracerstate_vars%tracer_soi_molarmass_col(c,:)          = 0._r8
-       endif
+      if(betrtracer_vars%nsolid_equil_tracers>0)then
+        tracerstate_vars%tracer_conc_solid_equil_col(c, :, :) = 0._r8
+      endif
+      tracerstate_vars%tracer_soi_molarmass_col(c,:)          = 0._r8
     enddo
 
   end subroutine InitCold

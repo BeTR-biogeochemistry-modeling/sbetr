@@ -14,7 +14,6 @@ module BeTRSimulation
   use tracer_varcon  , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
   use BeTR_decompMod , only : betr_bounds_type
   use decompMod      , only : bounds_type
-  use ColumnType     , only : col
   use PatchType      , only : pft
   ! !USES:
   use BetrType                 , only : betr_type, create_betr_type
@@ -29,6 +28,8 @@ module BeTRSimulation
   use betr_varcon              , only : betr_maxpatch_pft
   use BetrStatusType           , only : betr_status_type, create_betr_status_type
   use BetrStatusSimType        , only : betr_status_sim_type, create_betr_status_sim_type
+  use betr_columnType          , only : betr_column_type, create_betr_column_type
+  use betr_patchType           , only : betr_patch_type, create_betr_patch_type
   implicit none
 
   private
@@ -43,6 +44,9 @@ module BeTRSimulation
      type(betr_biogeo_flux_type)         , public, pointer  :: biogeo_flux(:)
      type(betr_status_type)              , public, pointer  :: bstatus(:)
      type(betr_status_sim_type)          , public, pointer  :: bsimstatus
+     logical                             , public, pointer :: active_col(:)
+     type(betr_column_type)              , public, pointer :: betr_col(:)
+     type(betr_patch_type)               , public, pointer :: betr_pft(:)
      character(len=betr_filename_length) , private :: base_filename
      character(len=betr_filename_length) , private :: hist_filename
 
@@ -91,17 +95,22 @@ module BeTRSimulation
      procedure, public :: MassBalanceCheck        => BeTRSimulationMassBalanceCheck
      procedure, public :: BeTRSetBiophysForcing   => BeTRSimulationSetBiophysForcing
      procedure, public :: RetrieveBiogeoFlux      => BeTRSimulationRetrieveBiogeoFlux
-     procedure, public :: CreateHistory           => hist_htapes_create
-     procedure, public :: WriteHistory            => hist_write
+     procedure, public :: CreateOfflineHistory    => hist_htapes_create
+     procedure, public :: WriteOfflineHistory     => hist_write
      procedure, public :: WriteRegressionOutput
      !the following are used to interact with lsm
      procedure, public :: BeTRRestart             => BeTRSimulationRestart
      procedure, public :: BeTRRestartOpen         => BeTRSimulationRestartOpen
      procedure, public :: BeTRRestartClose        => BeTRSimulationRestartClose
-     procedure, public :: BeTRCreateHistory       => BeTRSimulationCreateHistory
-     procedure, public :: BeTRRetrieveHistory     => BeTRSimulationRetrieveHistory
+     procedure, private :: BeTRCreateHistory      => BeTRSimulationCreateHistory
+     procedure, private :: BeTRRetrieveHistory    => BeTRSimulationRetrieveHistory
+     procedure, public :: BeTRSetcps              => BeTRSimulationSetcps
+     procedure, public :: BeTRSetBounds           => BeTRSimulationSetBounds
      procedure, private:: hist_create_states
      procedure, private:: hist_create_fluxes
+     procedure, private:: hist_output_states
+     procedure, private:: hist_output_fluxes
+
   end type betr_simulation_type
 
   public :: BeTRSimulationInit
@@ -110,7 +119,7 @@ contains
 
   !-------------------------------------------------------------------------------
   subroutine BeTRSimulationInit(this, base_filename, namelist_buffer, &
-       bounds, waterstate)
+       bounds, col, pft, waterstate)
     !
     ! DESCRIPTIONS
     ! Dummy routine for inheritance purposes. don't use.
@@ -118,12 +127,15 @@ contains
     !USES
     use WaterstateType , only : waterstate_type
     use betr_constants , only : betr_namelist_buffer_size, betr_filename_length
+    use ColumnType      , only : column_type
+    use PatchType      , only : patch_type
     implicit none
 
     class(betr_simulation_type)              , intent(inout) :: this
     character(len=betr_filename_length)      , intent(in)    :: base_filename
     character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
-
+    type(column_type)                        , intent(in) :: col
+    type(patch_type)                         , intent(in) :: pft
     type(bounds_type)                        , intent(in)    :: bounds
     type(waterstate_type)                    , intent(inout) :: waterstate
 
@@ -164,7 +176,7 @@ contains
 !-------------------------------------------------------------------------------
 
   subroutine BeTRInit(this, base_filename, namelist_buffer, &
-       bounds, waterstate)
+       bounds, col, pft, waterstate)
     !
     ! DESCRIPTION
     ! initialize BeTR
@@ -174,18 +186,24 @@ contains
     use betr_constants , only : betr_namelist_buffer_size
     use betr_constants , only : betr_filename_length
     use betr_varcon    , only : betr_maxpatch_pft
+    use LandunitType   , only : lun
+    use landunit_varcon, only : istsoil, istcrop
+    use ColumnType     , only : column_type
+    use PatchType      , only : patch_type
     implicit none
     !ARGUMENTS
     class(betr_simulation_type)              , intent(inout) :: this
     character(len=betr_filename_length)      , intent(in)    :: base_filename
     character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
     type(bounds_type)                        , intent(in)    :: bounds
+    type(column_type)                        , intent(in) :: col
+    type(patch_type)                         , intent(in) :: pft
     type(waterstate_type)                    , intent(in)    :: waterstate
 
     !TEMPORARY VARIABLES
     character(len=*), parameter :: subname = 'BeTRInit'
     type(betr_bounds_type) :: betr_bounds
-    integer :: c
+    integer :: c, l
     !print*,'base_filename',trim(base_filename)
 
     this%base_filename = base_filename
@@ -196,30 +214,40 @@ contains
     allocate(this%biogeo_flux(bounds%begc:bounds%endc), source=create_betr_biogeoFlux())
     allocate(this%biogeo_state(bounds%begc:bounds%endc), source=create_betr_biogeo_state())
     allocate(this%bstatus(bounds%begc:bounds%endc), source=create_betr_status_type())
+    allocate(this%betr_col(bounds%begc:bounds%endc), source=create_betr_column_type())
+    allocate(this%betr_pft(bounds%begc:bounds%endc), source=create_betr_patch_type())
+    allocate(this%active_col(bounds%begc:bounds%endc))
     allocate(this%bsimstatus, source = create_betr_status_sim_type())
     call this%bsimstatus%reset()
+
     !grid horizontal bounds
-    betr_bounds%lbj  = 1 ; betr_bounds%ubj  = betr_nlevsoi
-    betr_bounds%begc = 1 ; betr_bounds%endc = 1
-    betr_bounds%begp = 1 ; betr_bounds%endp = betr_maxpatch_pft
-    betr_bounds%begl = 1 ; betr_bounds%endl = 1
-    betr_bounds%begg = 1 ; betr_bounds%endg = 1
+    call this%BeTRSetBounds(betr_bounds)
 
     do c = bounds%begc, bounds%endc
-
+      l = col%landunit(c)
       call this%biophys_forc(c)%Init(betr_bounds)
 
       call this%biogeo_state(c)%Init(betr_bounds)
 
       call this%biogeo_flux(c)%Init(betr_bounds)
 
-    enddo
+      call this%betr_col(c)%Init(betr_bounds)
 
-    call this%BeTRSetBiophysForcing(bounds, betr_bounds%lbj, betr_bounds%ubj, &
+      call this%betr_pft(c)%Init(betr_bounds)
+
+      if (lun%itype(l) == istsoil .or. lun%itype(l) == istcrop) then
+        this%active_col(c) = .true.
+      else
+        this%active_col(c) = .false.
+      endif
+    enddo
+    call this%BeTRSetcps(bounds, col, pft)
+    call this%BeTRSetBiophysForcing(bounds, col, betr_bounds%lbj, betr_bounds%ubj, &
         waterstate_vars = waterstate)
 
     do c = bounds%begc, bounds%endc
-      call this%betr(c)%Init(namelist_buffer, betr_bounds, this%biophys_forc(c), this%bstatus(c))
+      call this%betr(c)%Init(namelist_buffer, betr_bounds, this%betr_col(c), &
+          this%biophys_forc(c), this%bstatus(c))
       if(this%bstatus(c)%check_status())then
         call this%bsimstatus%setcol(c)
         call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
@@ -227,16 +255,20 @@ contains
       endif
     enddo
     if(this%bsimstatus%check_status())call endrun(msg=this%bsimstatus%print_msg())
+
+    !identify variables that are used for output
+    c = bounds%begc
+    call this%betr(c)%get_hist_size(this%num_hist_state1d, this%num_hist_state2d, &
+      this%num_hist_flux1d, this%num_hist_flux2d, &
+      this%nmlist_hist1d_state_buffer, this%nmlist_hist2d_state_buffer, &
+      this%nmlist_hist1d_flux_buffer, this%nmlist_hist2d_flux_buffer)
+
     !print*,'create hist files',betr_offline
     if(betr_offline)then
-      call this%CreateHistory(betr_nlevtrc_soil, this%num_soilc)
+      call this%CreateOfflineHistory(bounds, betr_nlevtrc_soil, &
+         this%num_hist_state1d, this%num_hist_state2d, &
+            this%num_hist_flux1d, this%num_hist_flux2d)
     else
-      c = bounds%begc
-      call this%betr(c)%get_hist_size(this%num_hist_state1d, this%num_hist_state2d, &
-         this%num_hist_flux1d, this%num_hist_flux2d, &
-         this%nmlist_hist1d_state_buffer, this%nmlist_hist2d_state_buffer, &
-         this%nmlist_hist1d_flux_buffer, this%nmlist_hist2d_flux_buffer)
-
       call this%BeTRCreateHistory(bounds, betr_nlevtrc_soil, &
          this%num_hist_state1d, this%num_hist_state2d, &
             this%num_hist_flux1d, this%num_hist_flux2d)
@@ -259,7 +291,6 @@ contains
     character(len=*), intent(in) :: fname
     class(file_desc_t)          , intent(out) :: ncid ! netcdf id
     character(len=*), intent(in) :: flag
-
 
     print*,'open restart file ',trim(fname), ' for ',trim(flag)
     if(trim(flag)=='read')then
@@ -286,7 +317,7 @@ contains
     call ncd_pio_closefile(ncid)
   end subroutine BeTRSimulationRestartClose
   !---------------------------------------------------------------------------------
-  subroutine BeTRSimulationStepWithoutDrainage(this, betr_time, bounds, col)
+  subroutine BeTRSimulationStepWithoutDrainage(this, betr_time, bounds, col, pft)
   !DESCRPTION
   !interface for StepWithoutDrainage
   !
@@ -301,9 +332,8 @@ contains
     use SoilHydrologyType , only : soilhydrology_type
     use CNCarbonFluxType  , only : carbonflux_type
     use CanopyStateType   , only : canopystate_type
-    use BeTR_PatchType    , only : betr_pft
     use BeTR_TimeMod      , only : betr_time_type
-    use PatchType         , only : pft
+    use PatchType         , only : patch_type
     use pftvarcon         , only : crop
     implicit none
   !ARGUMENTS
@@ -311,6 +341,7 @@ contains
     class(betr_time_type)       , intent(in)    :: betr_time
     type(bounds_type)           , intent(in)    :: bounds ! bounds
     type(column_type)           , intent(in)    :: col ! column type
+    type(patch_type)            , intent(in)    :: pft
 
     ! remove compiler warnings about unused dummy args
     if (this%num_soilc > 0)                           continue
@@ -361,15 +392,12 @@ contains
     integer :: c
 
     !set lbj and ubj
-    betr_bounds%lbj  = 1; betr_bounds%ubj  = betr_nlevsoi
-    betr_bounds%begp = 1; betr_bounds%endp =  betr_maxpatch_pft
-    betr_bounds%begc = 1; betr_bounds%endc = 1
-    betr_bounds%begl = 1; betr_bounds%endl = 1
-    betr_bounds%begg = 1; betr_bounds%endg = 1
+    call this%BeTRSetBounds(betr_bounds)
 
     do c = bounds%begc, bounds%endc
+      if(.not. this%active_col(c))cycle
       call begin_betr_tracer_massbalance(betr_bounds,         &
-         this%num_soilc, this%filter_soilc,                   &
+         this%betr_col(c), this%num_soilc, this%filter_soilc,                   &
          this%betr(c)%tracers, this%betr(c)%tracerstates,     &
          this%betr(c)%tracerfluxes, this%bstatus(c))
       if(this%bstatus(c)%check_status())then
@@ -400,15 +428,12 @@ contains
     integer :: c
 
     !set lbj and ubj
-    betr_bounds%lbj  = 1; betr_bounds%ubj  = betr_nlevsoi
-    betr_bounds%begp = 1; betr_bounds%endp =  betr_maxpatch_pft
-    betr_bounds%begc = 1; betr_bounds%endc = 1
-    betr_bounds%begl = 1; betr_bounds%endl = 1
-    betr_bounds%begg = 1; betr_bounds%endg = 1
+    call this%BeTRSetBounds(betr_bounds)
 
    do c = bounds%begc, bounds%endc
+      if(.not. this%active_col(c))cycle
       call betr_tracer_massbalance_check(betr_time, betr_bounds,           &
-         this%num_soilc, this%filter_soilc,                              &
+         this%betr_col(c), this%num_soilc, this%filter_soilc,           &
          this%betr(c)%tracers, this%betr(c)%tracerstates,                &
          this%betr(c)%tracerfluxes, this%bstatus(c))
       if(this%bstatus(c)%check_status())then
@@ -423,7 +448,8 @@ contains
 
 !-------------------------------------------------------------------------------
 
-  subroutine hist_htapes_create(this, nlevtrc_soil, ncol)
+  subroutine hist_htapes_create(this, bounds, betr_nlevtrc_soil, &
+     num_hist_state1d, num_hist_state2d, num_hist_flux1d, num_hist_flux2d)
   !
   ! DESCRIPTIONS
   ! create history file and define output variables, only for standalone applicaitons
@@ -436,20 +462,28 @@ contains
     use ncdio_pio       , only : ncd_enddef
     use ncdio_pio       , only : ncd_defvar
     use ncdio_pio       , only : ncd_putvar
-    use histFileMod     , only : hist_file_create, hist_def_fld1d, hist_def_fld2d
+    use bhistFileMod    , only : hist_file_create, hist_def_fld1d, hist_def_fld2d
     use betr_varcon     , only : bspval
-    use BeTR_ColumnType , only : betr_col
+    use betr_columnType , only : betr_column_type
     !
     !ARGUMENTS
     implicit none
-
     class(betr_simulation_type) , intent(inout) :: this
-    integer                     , intent(in)    :: nlevtrc_soil, ncol
+    type(bounds_type)           , intent(in)    :: bounds               ! bounds
+    integer           , intent(in) :: betr_nlevtrc_soil
+    integer           ,     intent(in)   :: num_hist_state1d
+    integer           ,     intent(in)   :: num_hist_state2d
+    integer           ,     intent(in)   :: num_hist_flux1d
+    integer           ,     intent(in)   :: num_hist_flux2d
+
+
   !TEMPORARY VARIABLES
     integer                     :: jj, kk, c
+    integer :: ncol
     type(file_desc_t)           :: ncid
     character(len=*), parameter :: subname = 'hist_htapes_create'
-   c = 1
+
+    c = 1
     associate(                                                     &
          ntracers          => this%betr(c)%tracers%ntracers,          &
          ngwmobile_tracers => this%betr(c)%tracers%ngwmobile_tracers, &
@@ -460,58 +494,35 @@ contains
          tracernames       => this%betr(c)%tracers%tracernames        &
          )
 
-      this%hist_filename = trim(this%base_filename) // '.output.nc'
-      call ncd_pio_createfile(ncid, this%hist_filename)
+    ncol = bounds%endc-bounds%begc + 1
+    this%hist_filename = trim(this%base_filename) // '.output.nc'
+    call ncd_pio_createfile(ncid, this%hist_filename)
 
-      call hist_file_create(ncid,nlevtrc_soil, ncol)
+    call hist_file_create(ncid, betr_nlevtrc_soil, ncol)
 
-     call ncd_defvar(ncid, "ZSOI", nf90_float, &
-        dim1name="ncol",dim2name="levgrnd",    &
+    call ncd_defvar(ncid, "ZSOI", nf90_float, &
+        dim1name="ncol",dim2name="levtrc",    &
         long_name="grid center"           ,    &
         units="m", missing_value=bspval, fill_value=bspval)
 
-      call  hist_def_fld2d(ncid, varname="TRACER_P_GAS", nf90_type=nf90_float,dim1name="ncol", &
-           dim2name="levgrnd",long_name="total gas pressure", units="Pa")
+    call  hist_def_fld2d(ncid, varname="QFLX_ADV", nf90_type=nf90_float,dim1name="ncol",     &
+           dim2name="levtrc",long_name="advective flux / velocity", units="m/s")
 
-      call  hist_def_fld2d(ncid, varname="QFLX_ADV", nf90_type=nf90_float,dim1name="ncol",     &
-           dim2name="levgrnd",long_name="advective flux / velocity", units="m/s")
+    print*,'hist_create_states'
+    call this%hist_create_states(bounds, betr_nlevtrc_soil, num_hist_state1d, num_hist_state2d, ncid=ncid)
 
-      do jj = 1, ntracers
-         if(jj<= ngwmobile_tracers)then
-            call hist_def_fld2d(ncid, varname=trim(tracernames(jj))//'_TRACER_CONC_MOIBLE',    &
-                 nf90_type=nf90_float, dim1name="ncol",                                        &
-                 dim2name="levgrnd", long_name=trim(tracernames(jj))//"tracer concentrations", &
-                 units="mol m-3")
+    print*,'hist_create_fluxes'
+    call this%hist_create_fluxes(bounds, betr_nlevtrc_soil, num_hist_flux1d, num_hist_flux2d, ncid=ncid)
 
-            if(is_volatile(jj) .and. (.not. is_h2o(jj)) .and. (.not. is_isotope(jj)))then
-               call hist_def_fld2d(ncid, varname=trim(tracernames(jj))//'_TRACER_P_GAS_FRAC',                     &
-                    nf90_type=nf90_float, dim1name="ncol",                                                        &
-                    dim2name="levgrnd", long_name='fraction of gas phase contributed by '//trim(tracernames(jj)), &
-                    units="none")
-            endif
-
-            if(is_volatile(jj))then
-               call hist_def_fld1d (ncid, varname=trim(tracernames(jj))//'_FLX_SURFEMI', units='mol/m2/s', &
-                    nf90_type=nf90_float,  dim1name="ncol",                                                &
-                    long_name='loss from surface emission for '//trim(tracernames(jj)))
-            endif
-         else
-            call hist_def_fld2d(ncid, varname=trim(tracernames(jj))//'_TRACER_CONC_SOLID_PASSIVE', &
-                 nf90_type=nf90_float, dim1name="ncol",                                            &
-                 dim2name="levgrnd", long_name=trim(tracernames(jj))//"tracer concentrations",     &
-                 units="mol m-3")
-         endif
-      enddo
-
-      call ncd_enddef(ncid)
-      call ncd_putvar(ncid,"ZSOI",1,betr_col%z(1:1,1:nlevtrc_soil))
-      call ncd_pio_closefile(ncid)
+    call ncd_enddef(ncid)
+    call ncd_putvar(ncid,"ZSOI",1,this%betr_col(c)%z(1:1,1:betr_nlevtrc_soil))
+    call ncd_pio_closefile(ncid)
 
     end associate
   end subroutine hist_htapes_create
 
   !-------------------------------------------------------------------------------
-  subroutine hist_write(me, record, lbj, ubj, time_vars, velocity)
+  subroutine hist_write(this, bounds, record, numf, filter, time_vars, velocity)
     !
     ! DESCRIPTION
     ! output hist file, only for standalone applications
@@ -522,11 +533,14 @@ contains
     use ncdio_pio    , only : ncd_putvar
     use ncdio_pio    , only : ncd_pio_closefile
     use BeTR_TimeMod , only : betr_time_type
+    use betr_varcon  , only : spval => bspval
     implicit none
     !ARGUMENTS
-    class(betr_simulation_type) , intent(inout) :: me
+    class(betr_simulation_type) , intent(inout) :: this
+    type(bounds_type)           , intent(in)    :: bounds
     integer                     , intent(in)    :: record
-    integer                     , intent(in)    :: lbj,ubj
+    integer                     , intent(in)    :: numf
+    integer                     , intent(in)    :: filter(:)
     type(betr_time_type)        , intent(in)    :: time_vars
     real(r8)                    , intent(in)    :: velocity(:, :)
     !TEMPORARY VARIABLES
@@ -536,44 +550,36 @@ contains
     character(len=*), parameter :: subname='hist_write'
       c = 1
     associate(                                                   &
-         ntracers          => me%betr(c)%tracers%ntracers,          &
-         ngwmobile_tracers => me%betr(c)%tracers%ngwmobile_tracers, &
-         is_volatile       => me%betr(c)%tracers%is_volatile,       &
-         is_h2o            => me%betr(c)%tracers%is_h2o,            &
-         is_isotope        => me%betr(c)%tracers%is_isotope,        &
-         volatileid        => me%betr(c)%tracers%volatileid,        &
-         tracernames       => me%betr(c)%tracers%tracernames        &
+         ntracers          => this%betr(c)%tracers%ntracers,          &
+         ngwmobile_tracers => this%betr(c)%tracers%ngwmobile_tracers, &
+         is_volatile       => this%betr(c)%tracers%is_volatile,       &
+         is_h2o            => this%betr(c)%tracers%is_h2o,            &
+         is_isotope        => this%betr(c)%tracers%is_isotope,        &
+         volatileid        => this%betr(c)%tracers%volatileid,        &
+         tracernames       => this%betr(c)%tracers%tracernames        &
          )
 
-      call ncd_pio_openfile_for_write(ncid, me%hist_filename)
+      call ncd_pio_openfile_for_write(ncid, this%hist_filename)
 
       if (mod(time_vars%time, 86400._r8)==0) then
          print*,'day', time_vars%time/86400._r8
       end if
       call ncd_putvar(ncid, "time", record, time_vars%time)
 
-      do jj = 1, ntracers
-         if(jj<= ngwmobile_tracers)then
-            call ncd_putvar(ncid,trim(tracernames(jj))//'_TRACER_CONC_MOIBLE',         &
-                 record,me%betr(c)%tracerstates%tracer_conc_mobile_col(1:1,lbj:ubj,jj))
-
-            if(is_volatile(jj) .and. (.not. is_h2o(jj)) .and. (.not. is_isotope(jj)))then
-               call ncd_putvar(ncid, trim(tracernames(jj))//'_TRACER_P_GAS_FRAC',      &
-                    record,me%betr(c)%tracerstates%tracer_P_gas_frac_col(1:1,lbj:ubj,volatileid(jj)))
-            endif
-            if(is_volatile(jj))then
-               call ncd_putvar(ncid, trim(tracernames(jj))//'_FLX_SURFEMI',            &
-                    record, me%betr(c)%tracerfluxes%tracer_flx_surfemi_col(1:1, volatileid(jj)))
-            endif
-         else
-            call ncd_putvar(ncid, trim(tracernames(jj))//'_TRACER_CONC_SOLID_PASSIVE', &
-                 record, me%betr(c)%tracerstates%tracer_conc_solid_passive_col(1:1,lbj:ubj,jj-ngwmobile_tracers))
-         endif
+      do c = bounds%begc, bounds%endc
+        call ncd_putvar(ncid, 'QFLX_ADV', record, velocity(c:c, 1:betr_nlevtrc_soil))
       enddo
 
-      call ncd_putvar(ncid, 'TRACER_P_GAS', record, me%betr(c)%tracerstates%tracer_P_gas_col(1:1,lbj:ubj))
+      this%states_1d(:,:) = spval; this%states_2d(:,:,:) = spval
+      this%fluxes_1d(:,:) = spval; this%fluxes_2d(:,:,:) = spval
 
-      call ncd_putvar(ncid, 'QFLX_ADV', record, velocity(1:1, lbj:ubj))
+      call this%BeTRRetrieveHistory(numf, filter)
+
+      call this%hist_output_states(ncid, record, bounds, betr_nlevtrc_soil, &
+            this%num_hist_state1d, this%num_hist_state2d)
+
+      call this%hist_output_fluxes(ncid, record, bounds, betr_nlevtrc_soil, &
+           this%num_hist_flux1d, this%num_hist_flux2d)
 
       call ncd_pio_closefile(ncid)
     end associate
@@ -662,7 +668,7 @@ contains
   end subroutine WriteRegressionOutput
 
   !------------------------------------------------------------------------
-  subroutine BeTRSimulationSetBiophysForcing(this, bounds,  lbj, ubj, carbonflux_vars, waterstate_vars, &
+  subroutine BeTRSimulationSetBiophysForcing(this, bounds,  col, lbj, ubj, carbonflux_vars, waterstate_vars, &
     waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
     chemstate_vars, soilstate_vars)
   !DESCRIPTION
@@ -677,10 +683,12 @@ contains
     use SoilHydrologyType , only : soilhydrology_type
     use CNCarbonFluxType  , only : carbonflux_type
     use CanopyStateType   , only : canopystate_type
+    use ColumnType        , only : column_type
   implicit none
   !ARGUMENTS
   class(betr_simulation_type) , intent(inout)        :: this
   type(bounds_type)           , intent(in)           :: bounds
+  type(column_type)                      , intent(in)    :: col ! column type
   integer                     , intent(in)           :: lbj, ubj
   type(carbonflux_type)       , optional, intent(in) :: carbonflux_vars
   type(Waterstate_Type)       , optional, intent(in) :: Waterstate_vars
@@ -698,6 +706,7 @@ contains
   cc = 1
 
   do c = bounds%begc, bounds%endc
+  if(.not. this%active_col(c))cycle
   if(present(carbonflux_vars))then
     do pi = 1, betr_maxpatch_pft
        this%biophys_forc(c)%annsum_npp_patch(pi) = 0._r8
@@ -798,7 +807,6 @@ contains
     this%biophys_forc(c)%soil_pH(cc,lbj:ubj) = chemstate_vars%soil_pH(c,lbj:ubj)
   endif
   if(present(soilstate_vars))then
-
       this%biophys_forc(c)%bsw_col(cc,lbj:ubj)          = soilstate_vars%bsw_col(c,lbj:ubj)
       this%biophys_forc(c)%watsat_col(cc,lbj:ubj)       = soilstate_vars%watsat_col(c,lbj:ubj)
       this%biophys_forc(c)%eff_porosity_col(cc,lbj:ubj) = soilstate_vars%eff_porosity_col(c,lbj:ubj)
@@ -848,6 +856,7 @@ contains
   endif
   if(present(waterflux_vars))then
     do c = bounds%begc, bounds%endc
+      if(.not. this%active_col(c))cycle
       waterflux_vars%qflx_infl_col(c)            = this%biogeo_flux(c)%qflx_infl_col(c)
       waterflux_vars%qflx_adv_col(c,lbj-1:ubj)   = this%biogeo_flux(c)%qflx_adv_col(c,lbj-1:ubj)
       waterflux_vars%qflx_totdrain_col(c)        = this%biogeo_flux(c)%qflx_totdrain_col(c)
@@ -876,14 +885,12 @@ contains
    type(betr_bounds_type)     :: betr_bounds
    integer :: fc, c
 
-    betr_bounds%lbj  = 1; betr_bounds%ubj  = betr_nlevsoi
-    betr_bounds%begp = 1; betr_bounds%endp =  betr_maxpatch_pft
-    betr_bounds%begc = 1; betr_bounds%endc = 1
-    betr_bounds%begl = 1; betr_bounds%endl = 1
-    betr_bounds%begg = 1; betr_bounds%endg = 1
+
+   call this%BeTRSetBounds(betr_bounds)
 
    do fc= 1, num_nolakec
      c = filter_nolakec(fc)
+     if(.not. this%active_col(c))cycle
      call this%betr(c)%pre_diagnose_soilcol_water_flux(betr_bounds, this%num_soilc, &
        this%filter_soilc, this%biophys_forc(c))
    enddo
@@ -910,14 +917,11 @@ contains
    type(betr_bounds_type)     :: betr_bounds
    integer :: fc, c
 
-    betr_bounds%lbj  = 1; betr_bounds%ubj  = betr_nlevsoi
-    betr_bounds%begp = 1; betr_bounds%endp = betr_maxpatch_pft
-    betr_bounds%begc = 1; betr_bounds%endc = 1
-    betr_bounds%begl = 1; betr_bounds%endl = 1
-    betr_bounds%begg = 1; betr_bounds%endg = 1
+   call this%BeTRSetBounds(betr_bounds)
 
    do fc = 1, num_hydrologyc
      c = filter_hydrologyc(fc)
+     if(.not. this%active_col(c))cycle
      call this%betr(c)%diagnose_advect_water_flux(betr_time,                      &
        betr_bounds, this%num_soilc, this%filter_soilc,                         &
        this%biophys_forc(c), this%biogeo_flux(c))
@@ -946,14 +950,11 @@ contains
    type(betr_bounds_type)     :: betr_bounds
    integer :: fc, c
 
-    betr_bounds%lbj  = 1; betr_bounds%ubj  = betr_nlevsoi
-    betr_bounds%begp = 1; betr_bounds%endp = betr_maxpatch_pft
-    betr_bounds%begc = 1; betr_bounds%endc = 1
-    betr_bounds%begl = 1; betr_bounds%endl = 1
-    betr_bounds%begg = 1; betr_bounds%endg = 1
+   call this%BeTRSetBounds(betr_bounds)
 
    do fc = 1, num_hydrologyc
      c = filter_hydrologyc(fc)
+     if(.not. this%active_col(c))cycle
      call this%betr(c)%diagnose_drainage_water_flux(betr_time, &
        betr_bounds, this%num_soilc, this%filter_soilc,      &
        this%biophys_forc(c), this%biogeo_flux(c))
@@ -974,14 +975,13 @@ contains
    type(betr_bounds_type)     :: betr_bounds
    integer :: fc, c
 
-    betr_bounds%lbj  = 1; betr_bounds%ubj  = betr_nlevsoi
-    betr_bounds%begp = 1; betr_bounds%endp = betr_maxpatch_pft
-    betr_bounds%begc = 1; betr_bounds%endc = 1
-    betr_bounds%begl = 1; betr_bounds%endl = 1
-    betr_bounds%begg = 1; betr_bounds%endg = 1
+   call this%BeTRSetBounds(betr_bounds)
+
    do fc = 1, num_snowc
      c = filter_snowc(fc)
-     call this%betr(c)%Enter_tracer_LayerAdjustment(betr_bounds, this%num_soilc, this%filter_soilc)
+     if(.not. this%active_col(c))cycle
+     call this%betr(c)%Enter_tracer_LayerAdjustment(betr_bounds, this%betr_col(c), &
+       this%num_soilc, this%filter_soilc)
    enddo
   end subroutine BeTRSimulationBeginTracerSnowLayerAdjst
   !------------------------------------------------------------------------
@@ -999,15 +999,14 @@ contains
    type(betr_bounds_type)     :: betr_bounds
    integer :: fc, c
 
-    betr_bounds%lbj  = 1; betr_bounds%ubj  = betr_nlevsoi
-    betr_bounds%begp = 1; betr_bounds%endp = betr_maxpatch_pft
-    betr_bounds%begc = 1; betr_bounds%endc = 1
-    betr_bounds%begl = 1; betr_bounds%endl = 1
-    betr_bounds%begg = 1; betr_bounds%endg = 1
-  do fc = 1, num_snowc
-    c = filter_snowc(fc)
-    call this%betr(c)%Exit_tracer_LayerAdjustment(betr_bounds, this%num_soilc, this%filter_soilc)
-  enddo
+   call this%BeTRSetBounds(betr_bounds)
+
+   do fc = 1, num_snowc
+     c = filter_snowc(fc)
+     if(.not. this%active_col(c))cycle
+     call this%betr(c)%Exit_tracer_LayerAdjustment(betr_bounds, this%betr_col(c), &
+       this%num_soilc, this%filter_soilc)
+   enddo
 
   end subroutine BeTRSimulationEndTracerSnowLayerAdjst
   !------------------------------------------------------------------------
@@ -1030,21 +1029,19 @@ contains
    type(betr_bounds_type)     :: betr_bounds
    integer :: fc, c
 
-    betr_bounds%lbj  = 1; betr_bounds%ubj  = betr_nlevsoi
-    betr_bounds%begp = 1; betr_bounds%endp = betr_maxpatch_pft
-    betr_bounds%begc = 1; betr_bounds%endc = 1
-    betr_bounds%begl = 1; betr_bounds%endl = 1
-    betr_bounds%begg = 1; betr_bounds%endg = 1
-  do fc = 1, num_snowc
-    c = filter_snowc(fc)
-    call this%betr(c)%tracer_DivideSnowLayers(betr_bounds, this%num_soilc, &
-      this%filter_soilc, divide_matrix(c:c,:,:), this%bstatus(c))
-    if(this%bstatus(c)%check_status())then
-      call this%bsimstatus%setcol(c)
-      call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
-      exit
-    endif
-  enddo
+   call this%BeTRSetBounds(betr_bounds)
+
+   do fc = 1, num_snowc
+     c = filter_snowc(fc)
+     if(.not. this%active_col(c))cycle
+     call this%betr(c)%tracer_DivideSnowLayers(betr_bounds, this%betr_col(c),this%num_soilc, &
+       this%filter_soilc, divide_matrix(c:c,:,:), this%bstatus(c))
+     if(this%bstatus(c)%check_status())then
+       call this%bsimstatus%setcol(c)
+       call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
+       exit
+     endif
+   enddo
   if(this%bsimstatus%check_status()) &
     call endrun(msg=trim(this%bsimstatus%print_msg()))
   end subroutine BeTRSimulationDvideSnowLayers
@@ -1068,40 +1065,41 @@ contains
    !TEMPORARY VARIABLES
    type(betr_bounds_type)     :: betr_bounds
    integer :: fc, c
-    betr_bounds%lbj  = 1; betr_bounds%ubj  = betr_nlevsoi
-    betr_bounds%begp = 1; betr_bounds%endp = betr_maxpatch_pft
-    betr_bounds%begc = 1; betr_bounds%endc = 1
-    betr_bounds%begl = 1; betr_bounds%endl = 1
-    betr_bounds%begg = 1; betr_bounds%endg = 1
 
-  do fc = 1, num_snowc
-    c = filter_snowc(fc)
-    call this%betr(c)%tracer_CombineSnowLayers(betr_bounds, this%num_soilc,&
-      this%filter_soilc, combine_matrix(c:c,:,:),this%bstatus(c))
-    if(this%bstatus(c)%check_status())then
-      call this%bsimstatus%setcol(c)
-      call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
-      exit
-    endif
-  enddo
-  if(this%bsimstatus%check_status()) &
+   call this%BeTRSetBounds(betr_bounds)
+
+   do fc = 1, num_snowc
+     c = filter_snowc(fc)
+     if(.not. this%active_col(c))cycle
+     call this%betr(c)%tracer_CombineSnowLayers(betr_bounds, this%betr_col(c),this%num_soilc,&
+       this%filter_soilc, combine_matrix(c:c,:,:),this%bstatus(c))
+     if(this%bstatus(c)%check_status())then
+       call this%bsimstatus%setcol(c)
+       call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
+       exit
+     endif
+   enddo
+   if(this%bsimstatus%check_status()) &
     call endrun(msg=trim(this%bsimstatus%print_msg()))
   end subroutine BeTRSimulationCombineSnowLayers
+
   !------------------------------------------------------------------------
-  subroutine hist_create_fluxes(this, bounds, betr_nlevtrc_soil, num_flux1d, num_flux2d)
+  subroutine hist_create_fluxes(this, bounds, betr_nlevtrc_soil, num_flux1d, num_flux2d, ncid)
   !
   !DESCRIPTION
   !create history file for betr fluxes
   !
   use betr_varcon         , only : spval => bspval
-  use histFileMod   , only: hist_addfld1d, hist_addfld2d
+  use histFileMod         , only: hist_addfld1d, hist_addfld2d
+  use bhistFileMod        , only : hist_def_fld2d , hist_def_fld1d
+  use ncdio_pio           , only : file_desc_t, ncd_float
   implicit none
   class(betr_simulation_type) , intent(inout) :: this
   integer, intent(in) :: betr_nlevtrc_soil
   type(bounds_type)           , intent(in)    :: bounds               ! bounds
   integer           ,     intent(in)   :: num_flux1d
   integer           ,     intent(in)   :: num_flux2d
-
+  type(file_desc_t) ,   optional,  intent(inout)   :: ncid
   !local variables
   integer :: jj, begc, endc
   character(len=100) :: fname
@@ -1112,6 +1110,7 @@ contains
   character(len=20) :: default
   integer :: nml_error
   character(len=200):: ioerror_msg
+  character(len=*), parameter :: subname = 'hist_create_fluxes'
 
   real(r8), pointer :: data2dptr(:,:) ! temp. pointers for slicing larger arrays
   real(r8), pointer :: data1dptr(:)   ! temp. pointers for slicing larger arrays
@@ -1122,7 +1121,12 @@ contains
   namelist /hist1d_fmt/    &
   fname, units, avgflag, long_name, default
 
+  if(betr_offline .and. (.not. present(ncid)))then
+    call endrun(msg="ncid not defined in "//subname//errmsg(mod_filename, __LINE__))
+  endif
+
   begc=bounds%begc; endc=bounds%endc
+
   if(num_flux2d >0)then
     allocate(this%fluxes_2d(begc:endc, 1:betr_nlevtrc_soil, 1:num_flux2d))
   endif
@@ -1130,16 +1134,23 @@ contains
     allocate(this%fluxes_1d(begc:endc, 1:num_flux1d))
   endif
 
+
   do jj = 1, num_flux2d
     !read name list
     read(this%nmlist_hist2d_flux_buffer(jj), nml=hist2d_fmt, iostat=nml_error, iomsg=ioerror_msg)
     if(nml_error/=0)then
       write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
     endif
-    this%fluxes_2d(begc:endc,1:betr_nlevtrc_soil, jj) = spval
-    data2dptr => this%states_2d(begc:endc,1:betr_nlevtrc_soil, jj)
-    call hist_addfld2d (fname=fname, units=units, type2d=type2d,  &
+    if(betr_offline)then
+      print*,jj,trim(fname)
+      call hist_def_fld2d (ncid, varname=fname, nf90_type=ncd_float, dim1name = "ncol",&
+            dim2name="levtrc", long_name=long_name, units=units)
+    else
+      this%fluxes_2d(begc:endc,1:betr_nlevtrc_soil, jj) = spval
+      data2dptr => this%states_2d(begc:endc,1:betr_nlevtrc_soil, jj)
+      call hist_addfld2d (fname=fname, units=units, type2d=type2d,  &
            avgflag=avgflag, long_name=long_name,  ptr_col=data2dptr, default=default)
+    endif
   enddo
 
   do jj = 1, num_flux1d
@@ -1148,18 +1159,28 @@ contains
     if(nml_error/=0)then
       write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
     endif
-    this%fluxes_1d(begc:endc,jj) = spval
-    data1dptr => this%fluxes_1d(begc:endc, jj)
-    call hist_addfld1d (fname=fname, units=units,  avgflag=avgflag, long_name=long_name, &
-      ptr_col=data1dptr, default=default)
+    if(betr_offline)then
+      print*,jj,trim(fname)
+      call hist_def_fld1d (ncid, varname=fname,  nf90_type=ncd_float, &
+        dim1name="ncol", long_name=long_name, units=units)
+    else
+      this%fluxes_1d(begc:endc,jj) = spval
+      data1dptr => this%fluxes_1d(begc:endc, jj)
+      call hist_addfld1d (fname=fname, units=units,  avgflag=avgflag, long_name=long_name, &
+        ptr_col=data1dptr, default=default)
+    endif
+
   enddo
   end subroutine hist_create_fluxes
+
   !------------------------------------------------------------------------
-  subroutine hist_create_states(this, bounds, betr_nlevtrc_soil, num_state1d, num_state2d)
+  subroutine hist_create_states(this, bounds, betr_nlevtrc_soil, num_state1d, num_state2d, ncid)
   !
   !create history file for betr states variables
   use histFileMod   , only: hist_addfld1d, hist_addfld2d
+  use bhistFileMod        , only : hist_def_fld2d , hist_def_fld1d
   use betr_varcon         , only : spval => bspval
+  use ncdio_pio , only : file_desc_t, ncd_float
   implicit none
   !ARGUMENTS
   class(betr_simulation_type) , intent(inout) :: this
@@ -1167,7 +1188,7 @@ contains
   integer, intent(in) :: betr_nlevtrc_soil
   integer           ,     intent(in)   :: num_state1d
   integer           ,     intent(in)   :: num_state2d
-
+  type(file_desc_t) ,   optional,  intent(inout)   :: ncid
   !local variables
   integer :: begc, endc
   integer :: jj
@@ -1181,12 +1202,17 @@ contains
   character(len=200):: ioerror_msg
   real(r8), pointer :: data2dptr(:,:) ! temp. pointers for slicing larger arrays
   real(r8), pointer :: data1dptr(:)   ! temp. pointers for slicing larger arrays
+  character(len=*), parameter :: subname = 'hist_create_states'
 
   namelist /hist2d_fmt/    &
   fname, units, avgflag,type2d,long_name, default
 
   namelist /hist1d_fmt/    &
   fname, units, avgflag, long_name, default
+
+  if(betr_offline .and. (.not. present(ncid)))then
+    call endrun(msg="ncid not defined in "//subname//errmsg(mod_filename, __LINE__))
+  endif
 
   begc = bounds%begc; endc = bounds%endc
 
@@ -1203,10 +1229,17 @@ contains
     if(nml_error/=0)then
       write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
     endif
-    this%states_2d(begc:endc,1:betr_nlevtrc_soil, jj) = spval
-    data2dptr => this%states_2d(begc:endc,1:betr_nlevtrc_soil, jj)
-    call hist_addfld2d (fname=fname, units=units, type2d=type2d,  &
+
+    if(betr_offline)then
+      print*,jj,trim(fname)
+      call hist_def_fld2d (ncid=ncid, varname=trim(fname), nf90_type=ncd_float, dim1name = "ncol",&
+          dim2name="levtrc", long_name=long_name, units=units)
+    else
+      this%states_2d(begc:endc,1:betr_nlevtrc_soil, jj) = spval
+      data2dptr => this%states_2d(begc:endc,1:betr_nlevtrc_soil, jj)
+      call hist_addfld2d (fname=fname, units=units, type2d=type2d,  &
            avgflag=avgflag, long_name=long_name,  ptr_col=data2dptr, default=default)
+    endif
   enddo
 
   do jj = 1, num_state1d
@@ -1215,15 +1248,157 @@ contains
     if(nml_error/=0)then
       write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
     endif
-    this%states_1d(begc:endc,jj) = spval
-    data1dptr => this%states_1d(begc:endc,jj)
-    call hist_addfld1d (fname=fname, units=units, avgflag=avgflag, &
-      long_name=long_name, ptr_col=data1dptr, default=default)
+    if(betr_offline)then
+      print*,jj,trim(fname)
+      call hist_def_fld1d (ncid, varname=fname,  nf90_type=ncd_float, &
+        dim1name="ncol", long_name=long_name, units=units)
+    else
+      this%states_1d(begc:endc,jj) = spval
+      data1dptr => this%states_1d(begc:endc,jj)
+      call hist_addfld1d (fname=fname, units=units, avgflag=avgflag, &
+          long_name=long_name, ptr_col=data1dptr, default=default)
+    endif
   enddo
+
   end subroutine hist_create_states
+  !------------------------------------------------------------------------
+
+  subroutine hist_output_fluxes(this,  ncid, record, bounds, betr_nlevtrc_soil, num_flux1d, num_flux2d)
+  !
+  !DESCRIPTION
+  !create history file for betr fluxes
+  !
+  use betr_varcon         , only : spval => bspval
+  use histFileMod         , only: hist_addfld1d, hist_addfld2d
+  use ncdio_pio           , only :   file_desc_t, ncd_putvar
+  implicit none
+  class(betr_simulation_type) , intent(inout) :: this
+  integer, intent(in) :: betr_nlevtrc_soil
+  integer, intent(in) :: record
+  type(bounds_type)           , intent(in)    :: bounds               ! bounds
+  integer           ,     intent(in)   :: num_flux1d
+  integer           ,     intent(in)   :: num_flux2d
+  type(file_desc_t) ,     intent(inout)   :: ncid
+  !local variables
+  integer :: jj, begc, endc
+  character(len=100) :: fname
+  character(len=30) :: units
+  character(len=20) :: avgflag
+  character(len=20) :: type2d
+  character(len=200) :: long_name
+  character(len=20) :: default
+  integer :: nml_error
+  character(len=200):: ioerror_msg
+  character(len=*), parameter :: subname = 'hist_output_fluxes'
+
+  real(r8), pointer :: data2dptr(:,:) ! temp. pointers for slicing larger arrays
+  real(r8), pointer :: data1dptr(:)   ! temp. pointers for slicing larger arrays
+
+  namelist /hist2d_fmt/    &
+  fname, units, avgflag,type2d,long_name, default
+
+  namelist /hist1d_fmt/    &
+  fname, units, avgflag, long_name, default
+
+
+  begc=bounds%begc; endc=bounds%endc
+
+  do jj = 1, num_flux2d
+    !read name list
+    read(this%nmlist_hist2d_flux_buffer(jj), nml=hist2d_fmt, iostat=nml_error, iomsg=ioerror_msg)
+    if(nml_error/=0)then
+      write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
+    endif
+    data2dptr => this%fluxes_2d(begc:endc,1:betr_nlevtrc_soil, jj)
+
+    call ncd_putvar(ncid, fname, record, data2dptr)
+
+  enddo
+
+  do jj = 1, num_flux1d
+    !read name list
+    read(this%nmlist_hist1d_flux_buffer(jj), nml=hist1d_fmt, iostat=nml_error, iomsg=ioerror_msg)
+    if(nml_error/=0)then
+      write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
+    endif
+    data1dptr => this%fluxes_1d(begc:endc, jj)
+
+    call ncd_putvar(ncid,fname, record, data1dptr)
+
+  enddo
+  end subroutine hist_output_fluxes
+  !------------------------------------------------------------------------
+  subroutine hist_output_states(this,  ncid,  record, bounds, betr_nlevtrc_soil, num_state1d, num_state2d)
+  !
+  !create history file for betr states variables
+  use histFileMod   , only: hist_addfld1d, hist_addfld2d
+  use betr_varcon         , only : spval => bspval
+  use ncdio_pio , only : file_desc_t, ncd_putvar
+  implicit none
+  !ARGUMENTS
+  class(betr_simulation_type) , intent(inout) :: this
+  integer, intent(in) :: record
+  type(bounds_type)           , intent(in)    :: bounds               ! bounds
+  integer, intent(in) :: betr_nlevtrc_soil
+  integer           ,     intent(in)   :: num_state1d
+  integer           ,     intent(in)   :: num_state2d
+  type(file_desc_t) ,     intent(inout)   :: ncid
+  !local variables
+  integer :: begc, endc
+  integer :: jj
+  character(len=100) :: fname
+  character(len=30) :: units
+  character(len=20) :: avgflag
+  character(len=20) :: type2d
+  character(len=200) :: long_name
+  character(len=20) :: default
+  integer :: nml_error
+  character(len=200):: ioerror_msg
+  real(r8), pointer :: data2dptr(:,:) ! temp. pointers for slicing larger arrays
+  real(r8), pointer :: data1dptr(:)   ! temp. pointers for slicing larger arrays
+  character(len=*), parameter :: subname = 'hist_output_states'
+
+  namelist /hist2d_fmt/    &
+  fname, units, avgflag,type2d,long_name, default
+
+  namelist /hist1d_fmt/    &
+  fname, units, avgflag, long_name, default
+
+
+  begc = bounds%begc; endc = bounds%endc
+
+  do jj = 1, num_state2d
+    !read namelist
+    read(this%nmlist_hist2d_state_buffer(jj), nml=hist2d_fmt, iostat=nml_error, iomsg=ioerror_msg)
+    if(nml_error/=0)then
+      write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
+    endif
+
+    data2dptr => this%states_2d(begc:endc,1:betr_nlevtrc_soil, jj)
+
+    call ncd_putvar(ncid,fname, record, data2dptr)
+
+  enddo
+
+  do jj = 1, num_state1d
+    !read namelist
+    read(this%nmlist_hist1d_state_buffer(jj), nml=hist1d_fmt, iostat=nml_error, iomsg=ioerror_msg)
+    if(nml_error/=0)then
+      write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
+    endif
+
+    data1dptr => this%states_1d(begc:endc,jj)
+
+    call ncd_putvar(ncid,fname, record, data1dptr)
+
+  enddo
+
+  end subroutine hist_output_states
   !------------------------------------------------------------------------
   subroutine BeTRSimulationCreateHistory(this, bounds, betr_nlevtrc_soil,&
      num_state1d, num_state2d, num_flux1d, num_flux2d)
+  !
+  !links the variable to output
   use betr_varcon         , only : spval => bspval
   implicit none
   !ARGUMENTS
@@ -1252,15 +1427,11 @@ contains
   integer :: fc, c
   type(betr_bounds_type)     :: betr_bounds
 
-
-  betr_bounds%lbj  = 1 ; betr_bounds%ubj  = betr_nlevsoi
-  betr_bounds%begc = 1 ; betr_bounds%endc = 1
-  betr_bounds%begp = 1 ; betr_bounds%endp = betr_maxpatch_pft
-  betr_bounds%begl = 1 ; betr_bounds%endl = 1
-  betr_bounds%begg = 1 ; betr_bounds%endg = 1
+  call this%BeTRSetBounds(betr_bounds)
 
   do fc = 1, numf
     c = filter(fc)
+    if(.not. this%active_col(c))cycle
     call this%betr(c)%HistRetrieve(betr_bounds, 1, betr_nlevtrc_soil, &
        this%num_hist_state1d, this%num_hist_state2d, this%num_hist_flux1d,&
        this%num_hist_flux2d, this%states_1d(c:c,:), &
@@ -1310,11 +1481,7 @@ contains
 
   if(trim(flag)/='define')then
     !assign initial conditions
-    betr_bounds%lbj  = 1 ; betr_bounds%ubj  = betr_nlevsoi
-    betr_bounds%begc = 1 ; betr_bounds%endc = 1
-    betr_bounds%begp = 1 ; betr_bounds%endp = betr_maxpatch_pft
-    betr_bounds%begl = 1 ; betr_bounds%endl = 1
-    betr_bounds%begg = 1 ; betr_bounds%endg = 1
+    call this%BeTRSetBounds(betr_bounds)
     do fc = 1, numf
       c = filter(fc)
       call this%betr(c)%set_restvar(betr_bounds, 1, betr_nlevtrc_soil, nrest_1d,&
@@ -1400,5 +1567,69 @@ contains
   deallocate(states_1d)
   deallocate(states_2d)
   end subroutine BeTRSimulationRestart
+  !------------------------------------------------------------------------
+  subroutine BeTRSimulationSetcps(this, bounds, col, pft)
+  !
+  !DESCRIPTION
+  ! set up columns
+  !USES
+  use decompMod             , only : bounds_type
+  use ColumnType            , only : column_type
+  use PatchType             , only : patch_type
+  use pftvarcon             , only : crop
+  !ARGUMENTS
+  implicit none
+  class(betr_simulation_type) , intent(inout) :: this
+  type(bounds_type), intent(in) :: bounds
+  type(column_type), intent(in) :: col
+  type(patch_type), optional, intent(in) :: pft
+  integer :: c, p, pi
+
+
+  do c = bounds%begc, bounds%endc
+    this%betr_col(c)%snl(1) = col%snl(c)
+    this%betr_col(c)%zi(1,:)= col%zi(c,:)
+    this%betr_col(c)%dz(1,:)= col%dz(c,:)
+    this%betr_col(c)%z(1,:)= col%z(c,:)
+    this%betr_col(c)%pfti(1)= col%pfti(c)
+    this%betr_col(c)%pftf(1)= col%pftf(c)
+    this%betr_col(c)%npfts(1)= col%npfts(c)
+
+    if(present(pft))then
+      this%betr_pft(c)%column(:)=1
+      do pi = 1, betr_maxpatch_pft
+        if (pi <= col%npfts(c)) then
+          p = col%pfti(c) + pi - 1
+          if (pft%active(p)) then
+            this%betr_pft(c)%wtcol(pi) = pft%wtcol(p)
+            this%betr_pft(c)%itype(pi) = pft%itype(p)
+            this%betr_pft(c)%crop(pi) = crop(pi)
+          endif
+        endif
+      enddo
+    endif
+  enddo
+
+
+  end subroutine BeTRSimulationSetcps
+
+  !------------------------------------------------------------------------
+  subroutine BeTRSimulationSetBounds(this, betr_bounds)
+  !
+  !DESCRIPTION
+  !set betr_bounds
+  !
+  use betr_varcon    , only : betr_maxpatch_pft
+  use tracer_varcon  , only : betr_nlevsoi
+  implicit none
+  class(betr_simulation_type) , intent(inout) :: this
+  type(betr_bounds_type), intent(out)  :: betr_bounds
+
+  betr_bounds%lbj  = 1; betr_bounds%ubj  = betr_nlevsoi
+  betr_bounds%begp = 1; betr_bounds%endp =  betr_maxpatch_pft
+  betr_bounds%begc = 1; betr_bounds%endc = 1
+  betr_bounds%begl = 1; betr_bounds%endl = 1
+  betr_bounds%begg = 1; betr_bounds%endg = 1
+  end subroutine BeTRSimulationSetBounds
 
 end module BeTRSimulation

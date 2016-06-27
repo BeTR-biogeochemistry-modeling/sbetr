@@ -7,8 +7,6 @@ module TracerStateType
   use bshr_kind_mod       , only : r8 => shr_kind_r8
   use bshr_infnan_mod     , only : nan => shr_infnan_nan, assignment(=)
   use BeTR_decompMod      , only : bounds_type  => betr_bounds_type
-  use BeTR_LandunitType   , only : lun => betr_lun
-  use BeTR_ColumnType     , only : col => betr_col
   use betr_ctrl           , only : iulog => biulog
   use betr_varcon         , only : spval => bspval, ispval => bispval
   use BeTR_landvarconType , only : landvarcon => betr_landvarcon

@@ -7,8 +7,6 @@ module TracerCoeffType
   use bshr_kind_mod       , only : r8 => shr_kind_r8
   use bshr_infnan_mod     , only : nan => shr_infnan_nan, assignment(=)
   use BeTR_decompMod      , only : bounds_type  => betr_bounds_type
-  use BeTR_ColumnType     , only : col => betr_col
-  use BeTR_LandunitType   , only : lun => betr_lun
   use BeTR_landvarconType , only : landvarcon => betr_landvarcon
   use TracerBaseType      , only : tracerbase_type
   !
@@ -255,37 +253,18 @@ contains
     !-----------------------------------------------------------------------
 
     do c = bounds%begc, bounds%endc
-       l = col%landunit(c)
-
-       if (lun%ifspecial(l)) then
-          this%aqu2neutralcef_col        (c,:,:) = spval
-          this%aqu2bulkcef_mobile_col    (c,:,:) = spval
-          this%gas2bulkcef_mobile_col    (c,:,:) = spval
-          this%henrycef_col              (c,:,:) = spval
-          this%bunsencef_col             (c,:,:) = spval
-          this%tracer_diffusivity_air_col(c,:)   = spval
-          this%scal_aere_cond_col        (c,:)   = spval
-          this%aere_cond_col             (c,:)   = spval
-          this%diffgas_topsno_col        (c,:)   = spval
-          this%diffgas_topsoi_col        (c,:)   = spval
-          this%hmconductance_col         (c,:,:) = spval
-          this%annsum_counter_col        (c)     = spval
-       endif
-
-       if (lun%itype(l) == landvarcon%istsoil .or. lun%itype(l) == landvarcon%istcrop) then
-          this%aqu2neutralcef_col        (c,:,:) = 0._r8
-          this%aqu2bulkcef_mobile_col    (c,:,:) = 0._r8
-          this%gas2bulkcef_mobile_col    (c,:,:) = 0._r8
-          this%henrycef_col              (c,:,:) = 0._r8
-          this%bunsencef_col             (c,:,:) = 0._r8
-          this%tracer_diffusivity_air_col(c,:)   = 0._r8
-          this%scal_aere_cond_col        (c,:)   = 0._r8
-          this%aere_cond_col             (c,:)   = 0._r8
-          this%diffgas_topsno_col        (c,:)   = 0._r8
-          this%diffgas_topsoi_col        (c,:)   = 0._r8
-          this%hmconductance_col         (c,:,:) = 0._r8
-          this%annsum_counter_col        (c)     = 0._r8
-       endif
+      this%aqu2neutralcef_col        (c,:,:) = 0._r8
+      this%aqu2bulkcef_mobile_col    (c,:,:) = 0._r8
+      this%gas2bulkcef_mobile_col    (c,:,:) = 0._r8
+      this%henrycef_col              (c,:,:) = 0._r8
+      this%bunsencef_col             (c,:,:) = 0._r8
+      this%tracer_diffusivity_air_col(c,:)   = 0._r8
+      this%scal_aere_cond_col        (c,:)   = 0._r8
+      this%aere_cond_col             (c,:)   = 0._r8
+      this%diffgas_topsno_col        (c,:)   = 0._r8
+      this%diffgas_topsoi_col        (c,:)   = 0._r8
+      this%hmconductance_col         (c,:,:) = 0._r8
+      this%annsum_counter_col        (c)     = 0._r8
     enddo
 
   end subroutine InitCold

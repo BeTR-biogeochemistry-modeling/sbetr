@@ -15,7 +15,7 @@ module H2OIsotopePlantSoilBGCType
     contains
     procedure :: Init_plant_soilbgc
     procedure :: plant_soilbgc_summary
-    procedure :: integrate_vr_flux_to_2D
+    procedure :: integrate_vr_flux
     procedure :: lsm_betr_plant_soilbgc_recv
     procedure :: lsm_betr_plant_soilbgc_send
   end type plant_soilbgc_h2oiso_run_type
@@ -104,7 +104,7 @@ module H2OIsotopePlantSoilBGCType
 
   !----------------------------------------------------------------------
 
-  subroutine integrate_vr_flux_to_2D(this, bounds, numf, filter)
+  subroutine integrate_vr_flux(this, bounds, numf, filter)
 
   use BeTR_decompMod             , only : betr_bounds_type
   ! !ARGUMENTS:
@@ -120,7 +120,7 @@ module H2OIsotopePlantSoilBGCType
   if (numf > 0)                    continue
   if (size(filter) > 0)            continue
 
-  end subroutine integrate_vr_flux_to_2D
+  end subroutine integrate_vr_flux
 
   !----------------------------------------------------------------------
 

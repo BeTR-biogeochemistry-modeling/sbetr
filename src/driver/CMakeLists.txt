@@ -1,5 +1,6 @@
 set(BETR_DRIVER_SOURCES
   BeTRType.F90
+  bhistFileMod.F90
   BeTRStatusSimType.F90
   BeTRSimulation.F90
   BeTRSimulationFactory.F90
@@ -25,6 +26,7 @@ include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_rxns)
 include(add_betr_library)
 add_betr_library(betr_driver ${BETR_DRIVER_SOURCES})
 
+#set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -w")
 
 set(BETR_LIBRARIES betr_driver;${BETR_LIBRARIES} PARENT_SCOPE)
 set(BETR_LIBRARIES betr_driver;${BETR_LIBRARIES})

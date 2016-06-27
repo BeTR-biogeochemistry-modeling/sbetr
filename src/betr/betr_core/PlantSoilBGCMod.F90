@@ -20,7 +20,7 @@ type, abstract :: plant_soilbgc_type
    !summarize active+passive plant nutrient yield
    procedure(plant_soilbgc_summary_interface)                 , deferred :: plant_soilbgc_summary
    !do profile integration of fluxes
-   procedure(integrate_vr_flux_to_2D_interface)               , deferred :: integrate_vr_flux_to_2D
+   procedure(integrate_vr_flux_interface)                     , deferred :: integrate_vr_flux
    !send in bgc inputs
    procedure(lsm_betr_plant_soilbgc_send_interface)          , deferred  :: lsm_betr_plant_soilbgc_send
 end type plant_soilbgc_type
@@ -74,7 +74,7 @@ end type plant_soilbgc_type
 
   !----------------------------------------------------------------------
 
-  subroutine integrate_vr_flux_to_2D_interface(this, bounds, numf, filter)
+  subroutine integrate_vr_flux_interface(this, bounds, numf, filter)
   !
   ! !DESCRIPTIONS
   ! integrate 3d fluxes into 2d fluxes
@@ -88,7 +88,7 @@ end type plant_soilbgc_type
   integer                   , intent(in) :: filter(:)
 
 
-  end subroutine integrate_vr_flux_to_2D_interface
+  end subroutine integrate_vr_flux_interface
   !----------------------------------------------------------------------
 
   subroutine lsm_betr_plant_soilbgc_recv_interface(this, bounds, numf, filter, biogeo_fluxes)
