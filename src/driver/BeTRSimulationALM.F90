@@ -208,13 +208,25 @@ contains
   end subroutine ALMStepWithDrainage
 
   !------------------------------------------------------------------------
-  subroutine ALMBetrPlantSoilBGCSend(this, bounds, num_soilc,  filter_soilc)
-  !this should be expanded
+  subroutine ALMBetrPlantSoilBGCSend(this, bounds, num_soilc,  filter_soilc, carbonflux_vars, &
+    nitrogenflux_vars, phosphorusflux_vars)
+  !read in biogeochemical fluxes from alm for soil bgc modeling
+  !these are C, N and P fluxes from root input, surface litter input
+  !atmospheric deposition, fire (negative), and fertilization
+  !Because of possible harvest activity that is
+  !related to dynamic land use, input profiles are computed in alm.
+  !
+  use CNCarbonFluxType, only : carbonflux_type
+  use CNNitrogenFluxType, only : nitrogenflux_type
+  use PhosphorusFluxType, only : phosphorusflux_type
   implicit none
   class(betr_simulation_alm_type), intent(inout)  :: this
   type(bounds_type) , intent(in)  :: bounds
   integer           , intent(in)  :: num_soilc
   integer           , intent(in)  :: filter_soilc(:)
+  type(carbonflux_type), intent(in):: carbonflux_vars
+  type(nitrogenflux_type), intent(in):: nitrogenflux_vars
+  type(phosphorusflux_type), intent(in):: phosphorusflux_vars
 
   ! remove compiler warnings
   if (this%num_soilc > 0)     continue
@@ -222,21 +234,157 @@ contains
   if (num_soilc > 0)          continue
   if (size(filter_soilc) > 0) continue
 
-  !pull in fluxes of external inputs and plant demand
-  !call this%betr(c)%plant_soilbgc%lsm_betr_plant_soilbgc_send(bounds, num_soilc, &
-  !               filter_soilc, this%biogeo_state, this%biogeo_flux, ecophyscon_vars)
+  !sum up carbon input profiles
+
+  !do j = 1,nlevdecomp
+            ! column loop
+  !  do fc = 1,num_soilc
+  !    c = filter_soilc(fc)
+               ! phenology and dynamic land cover fluxes
+  !    cf%decomp_cpools_sourcesink_col(c,j,i_met_lit) = &
+  !      ( cf%phenology_c_to_litr_met_c_col(c,j) + cf%dwt_frootc_to_litr_met_c_col(c,j) ) *dt
+  !     cf%decomp_cpools_sourcesink_col(c,j,i_cel_lit) = &
+  !       ( cf%phenology_c_to_litr_cel_c_col(c,j) + cf%dwt_frootc_to_litr_cel_c_col(c,j) ) *dt
+  !     cf%decomp_cpools_sourcesink_col(c,j,i_lig_lit) = &
+  !        ( cf%phenology_c_to_litr_lig_c_col(c,j) + cf%dwt_frootc_to_litr_lig_c_col(c,j) ) *dt
+  !     cf%decomp_cpools_sourcesink_col(c,j,i_cwd) = &
+  !      ( cf%dwt_livecrootc_to_cwdc_col(c,j) + cf%dwt_deadcrootc_to_cwdc_col(c,j) ) *dt
+
+  ! column gap mortality fluxes
+  ! cf%bgc_cpool_ext_inputs_vr_col(c,j,i_met_lit) = &
+  !   cf%bgc_cpool_ext_inputs_vr_col(c,j,i_met_lit) + cf%gap_mortality_c_to_litr_met_c_col(c,j) * dt
+  !  cf%bgc_cpool_ext_inputs_vr_col(c,j,i_cel_lit) = &
+  !   cf%bgc_cpool_ext_inputs_vr_col(c,j,i_cel_lit) + cf%gap_mortality_c_to_litr_cel_c_col(c,j) * dt
+  !  cf%bgc_cpool_ext_inputs_vr_col(c,j,i_lig_lit) = &
+  !     cf%bgc_cpool_ext_inputs_vr_col(c,j,i_lig_lit) + cf%gap_mortality_c_to_litr_lig_c_col(c,j) * dt
+  !  cf%bgc_cpool_ext_inputs_vr_col(c,j,i_cwd) = &
+  !cf%bgc_cpool_ext_inputs_vr_col(c,j,i_cwd) + cf%gap_mortality_c_to_cwdc_col(c,j) * dt
+
+
+  !   cf%bgc_cpool_ext_inputs_vr_col(c,j,i_met_lit) = &
+  !      cf%bgc_cpool_ext_inputs_vr_col(c,j,i_met_lit) + cf%harvest_c_to_litr_met_c_col(c,j) * dt
+  !     cf%bgc_cpool_ext_inputs_vr_col(c,j,i_cel_lit) = &
+  !       cf%bgc_cpool_ext_inputs_vr_col(c,j,i_cel_lit) + cf%harvest_c_to_litr_cel_c_col(c,j) * dt
+  !     cf%bgc_cpool_ext_inputs_vr_col(c,j,i_lig_lit) = &
+  !       cf%bgc_cpool_ext_inputs_vr_col(c,j,i_lig_lit) + cf%harvest_c_to_litr_lig_c_col(c,j) * dt
+  !    cf%bgc_cpool_ext_inputs_vr_col(c,j,i_cwd) = &
+  !cf%bgc_cpool_ext_inputs_vr_col(c,j,i_cwd) + cf%harvest_c_to_cwdc_col(c,j) * dt
+
+  ! cf%bgc_cpool_ext_inputs_vr_col(c,j,i_cwd) = cf%bgc_cpool_ext_inputs_vr_col(c,j,i_cwd) + cf%fire_mortality_c_to_cwdc_col(c,j) * dt
+
+        ! pft-level wood to column-level litter (uncombusted wood)
+  ! cf%bgc_cpool_ext_inputs_vr_col(c,j,i_met_lit) = cf%bgc_cpool_ext_inputs_vr_col(c,j,i_met_lit) + cf%m_c_to_litr_met_fire_col(c,j)* dt
+  ! cf%bgc_cpool_ext_inputs_vr_col(c,j,i_cel_lit) = cf%bgc_cpool_ext_inputs_vr_col(c,j,i_cel_lit) + cf%m_c_to_litr_cel_fire_col(c,j)* dt
+  ! cf%bgc_cpool_ext_inputs_vr_col(c,j,i_lig_lit) = cf%bgc_cpool_ext_inputs_vr_col(c,j,i_lig_lit) + cf%m_c_to_litr_lig_fire_col(c,j)* dt
+
+  !   end do
+  ! end do
+  !sum up nitrogen input profiles
+  !nf%bgc_npool_ext_inputs_vr_col(c,j,i_met_lit) = nf%bgc_npool_ext_inputs_vr_col(c,j,i_met_lit) + &
+  !                  ( nf%phenology_n_to_litr_met_n_col(c,j) + nf%dwt_frootn_to_litr_met_n_col(c,j) ) * dt
+  !
+  !             nf%bgc_npool_ext_inputs_vr_col(c,j,i_cel_lit) = nf%bgc_npool_ext_inputs_vr_col(c,j,i_cel_lit) + &
+  !                  ( nf%phenology_n_to_litr_cel_n_col(c,j) + nf%dwt_frootn_to_litr_cel_n_col(c,j) ) * dt
+  !
+  !             nf%bgc_npool_ext_inputs_vr_col(c,j,i_lig_lit) = nf%bgc_npool_ext_inputs_vr_col(c,j,i_lig_lit) + &
+  !                  ( nf%phenology_n_to_litr_lig_n_col(c,j) + nf%dwt_frootn_to_litr_lig_n_col(c,j) ) * dt
+  !
+  !             nf%bgc_npool_ext_inputs_vr_col(c,j,i_cwd)     = nf%bgc_npool_ext_inputs_vr_col(c,j,i_cwd) + &
+  ! ( nf%dwt_livecrootn_to_cwdn_col(c,j) + nf%dwt_deadcrootn_to_cwdn_col(c,j) ) * dt
+  !         nf%bgc_npool_ext_inputs_vr_col(c,j,i_met_lit) = &
+  !                  nf%bgc_npool_ext_inputs_vr_col(c,j,i_met_lit) + nf%gap_mortality_n_to_litr_met_n_col(c,j) * dt
+  !             nf%bgc_npool_ext_inputs_vr_col(c,j,i_cel_lit) = &
+  !                  nf%bgc_npool_ext_inputs_vr_col(c,j,i_cel_lit) + nf%gap_mortality_n_to_litr_cel_n_col(c,j) * dt
+  !             nf%bgc_npool_ext_inputs_vr_col(c,j,i_lig_lit) = &
+  !                  nf%bgc_npool_ext_inputs_vr_col(c,j,i_lig_lit) + nf%gap_mortality_n_to_litr_lig_n_col(c,j) * dt
+  !             nf%bgc_npool_ext_inputs_vr_col(c,j,i_cwd)     = &
+  ! nf%bgc_npool_ext_inputs_vr_col(c,j,i_cwd) + nf%gap_mortality_n_to_cwdn_col(c,j) * dt
+
+  !             nf%bgc_npool_ext_inputs_vr_col(c,j,i_met_lit) = &
+  !                  nf%bgc_npool_ext_inputs_vr_col(c,j,i_met_lit) + nf%harvest_n_to_litr_met_n_col(c,j) * dt
+  !             nf%bgc_npool_ext_inputs_vr_col(c,j,i_cel_lit) = &
+  !                  nf%bgc_npool_ext_inputs_vr_col(c,j,i_cel_lit) + nf%harvest_n_to_litr_cel_n_col(c,j) * dt
+  !             nf%bgc_npool_ext_inputs_vr_col(c,j,i_lig_lit) = &
+  !                  nf%bgc_npool_ext_inputs_vr_col(c,j,i_lig_lit) + nf%harvest_n_to_litr_lig_n_col(c,j) * dt
+  !             nf%bgc_npool_ext_inputs_vr_col(c,j,i_cwd)     = &
+  ! nf%bgc_npool_ext_inputs_vr_col(c,j,i_cwd) + nf%harvest_n_to_cwdn_col(c,j) * dt
+
+  !             nf%bgc_npool_ext_inputs_vr_col(c,j,i_cwd) = nf%bgc_npool_ext_inputs_vr_col(c,j,i_cwd) + nf%fire_mortality_n_to_cwdn_col(c,j) * dt
+
+               ! pft-level wood to column-level litter (uncombusted wood)
+  !             nf%bgc_npool_ext_inputs_vr_col(c,j,i_met_lit) = nf%bgc_npool_ext_inputs_vr_col(c,j,i_met_lit) + nf%m_n_to_litr_met_fire_col(c,j)* dt
+  !             nf%bgc_npool_ext_inputs_vr_col(c,j,i_cel_lit) = nf%bgc_npool_ext_inputs_vr_col(c,j,i_cel_lit) + nf%m_n_to_litr_cel_fire_col(c,j)* dt
+  !nf%bgc_npool_ext_inputs_vr_col(c,j,i_lig_lit) = nf%bgc_npool_ext_inputs_vr_col(c,j,i_lig_lit) + nf%m_n_to_litr_lig_fire_col(c,j)* dt
+  ! nitrogen deposition and fixation
+
+  !   nf%sminn_nh4_input_vr_col(c,j) = nf%sminn_nh4_input_vr_col(c,j) + nf%ndep_to_sminn_col(c)*dt * ndep_prof(c,j)
+      !now a fraction of fixed nitrogen is first added to plant nitrogen pool
+  !   nf%sminn_nh4_input_vr_col(c,j) = nf%sminn_nh4_input_vr_col(c,j) + nf%nfix_to_sminn_col(c)*dt * nfixation_prof(c,j) * (1._r8-exp(-cnstate_vars%frootc_nfix_scalar_col(c)/frootc_nfix_thc))
+
+  !sum up phosphorus input profiles
+  !          pf%decomp_ppools_sourcesink_col(c,j,i_met_lit) = &
+  !               ( pf%phenology_p_to_litr_met_p_col(c,j) + pf%dwt_frootp_to_litr_met_p_col(c,j) ) * dt
+
+  !          pf%decomp_ppools_sourcesink_col(c,j,i_cel_lit) = &
+  !               ( pf%phenology_p_to_litr_cel_p_col(c,j) + pf%dwt_frootp_to_litr_cel_p_col(c,j) ) * dt
+
+  !          pf%decomp_ppools_sourcesink_col(c,j,i_lig_lit) = &
+  !               ( pf%phenology_p_to_litr_lig_p_col(c,j) + pf%dwt_frootp_to_litr_lig_p_col(c,j) ) * dt
+
+  !          pf%decomp_ppools_sourcesink_col(c,j,i_cwd)     = &
+  ! ( pf%dwt_livecrootp_to_cwdp_col(c,j) + pf%dwt_deadcrootp_to_cwdp_col(c,j) ) * dt
+
+  !          ps%decomp_ppools_vr_col(c,j,i_met_lit) = &
+  !               ps%decomp_ppools_vr_col(c,j,i_met_lit) + pf%gap_mortality_p_to_litr_met_p_col(c,j) * dt
+  !          ps%decomp_ppools_vr_col(c,j,i_cel_lit) = &
+  !               ps%decomp_ppools_vr_col(c,j,i_cel_lit) + pf%gap_mortality_p_to_litr_cel_p_col(c,j) * dt
+  !          ps%decomp_ppools_vr_col(c,j,i_lig_lit) = &
+  !               ps%decomp_ppools_vr_col(c,j,i_lig_lit) + pf%gap_mortality_p_to_litr_lig_p_col(c,j) * dt
+  !          ps%decomp_ppools_vr_col(c,j,i_cwd)     = &
+  ! ps%decomp_ppools_vr_col(c,j,i_cwd) + pf%gap_mortality_p_to_cwdp_col(c,j) * dt
+
+  !          ps%decomp_ppools_vr_col(c,j,i_met_lit) = &
+  !               ps%decomp_ppools_vr_col(c,j,i_met_lit) + pf%harvest_p_to_litr_met_p_col(c,j) * dt
+  !          ps%decomp_ppools_vr_col(c,j,i_cel_lit) = &
+  !               ps%decomp_ppools_vr_col(c,j,i_cel_lit) + pf%harvest_p_to_litr_cel_p_col(c,j) * dt
+  !          ps%decomp_ppools_vr_col(c,j,i_lig_lit) = &
+  !               ps%decomp_ppools_vr_col(c,j,i_lig_lit) + pf%harvest_p_to_litr_lig_p_col(c,j) * dt
+  !          ps%decomp_ppools_vr_col(c,j,i_cwd)     = &
+  ! ps%decomp_ppools_vr_col(c,j,i_cwd) + pf%harvest_p_to_cwdp_col(c,j) * dt
+
+  !          ps%decomp_ppools_vr_col(c,j,i_cwd) = ps%decomp_ppools_vr_col(c,j,i_cwd) + pf%fire_mortality_p_to_cwdp_col(c,j) * dt
+
+            ! pft-level wood to column-level litter (uncombusted wood)
+  ! ps%decomp_ppools_vr_col(c,j,i_met_lit) = ps%decomp_ppools_vr_col(c,j,i_met_lit) + pf%m_p_to_litr_met_fire_col(c,j)* dt
+  ! ps%decomp_ppools_vr_col(c,j,i_cel_lit) = ps%decomp_ppools_vr_col(c,j,i_cel_lit) + pf%m_p_to_litr_cel_fire_col(c,j)* dt
+  ! ps%decomp_ppools_vr_col(c,j,i_lig_lit) = ps%decomp_ppools_vr_col(c,j,i_lig_lit) + pf%m_p_to_litr_lig_fire_col(c,j)* dt
+
+  !mineral phosphorus
+  !deposition
+  ! pdep_to_sminp_col(c)*dt * pdep_prof(c,j)
+  !weathering
+  !primp_to_labilep_vr_col(c,j)
 
   !pull in all state variables and update tracers
   end subroutine ALMBetrPlantSoilBGCSend
 
   !------------------------------------------------------------------------
-  subroutine ALMBetrPlantSoilBGCRecv(this, bounds, num_soilc,  filter_soilc)
-  !this should be expanded
+  subroutine ALMBetrPlantSoilBGCRecv(this, bounds, num_soilc,  filter_soilc,&
+   carbonflux_vars, nitrogenflux_vars, phosphorusflux_vars)
+  !this returns the flux back to ALM after doing soil BGC
+  !this specifically returns plant nutrient yield
+
+  use CNCarbonFluxType, only : carbonflux_type
+  use CNNitrogenFluxType, only : nitrogenflux_type
+  use PhosphorusFluxType, only : phosphorusflux_type
   implicit none
   class(betr_simulation_alm_type), intent(inout)  :: this
   type(bounds_type) , intent(in)  :: bounds
   integer           , intent(in)  :: num_soilc
   integer           , intent(in)  :: filter_soilc(:)
+  type(carbonflux_type), intent(inout):: carbonflux_vars
+  type(nitrogenflux_type), intent(inout):: nitrogenflux_vars
+  type(phosphorusflux_type), intent(inout):: phosphorusflux_vars
 
   ! remove compiler warnings
   if (this%num_soilc > 0)     continue
@@ -244,10 +392,7 @@ contains
   if (num_soilc > 0)          continue
   if (size(filter_soilc) > 0) continue
 
-  !pull in fluxes of external inputs and plant demand
-  !call this%betr(c)%plant_soilbgc%lsm_betr_plant_soilbgc_recv(bounds, num_soilc, &
-  !               filter_soilc, this%biogeo_flux)
-  !reset the biogeo_flux
+
   !pull in all state variables and update tracers
   end subroutine ALMBetrPlantSoilBGCRecv
   !------------------------------------------------------------------------
@@ -449,9 +594,5 @@ contains
       waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
       chemstate_vars, soilstate_vars)
 
-  !the following will be ALM specific
-  !big leaf model
-  !dvgm
-  !
   end subroutine ALMSetBiophysForcing
 end module BeTRSimulationALM
