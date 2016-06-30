@@ -14,7 +14,6 @@ implicit none
      real(r8), pointer :: f_denit_col                               (:)
      real(r8), pointer :: supplement_to_sminn_vr_col                (:,:)
      real(r8), pointer :: soyfixn_to_sminn_col                      (:)
-     real(r8), pointer :: fert_to_sminn_col                         (:)
      real(r8), pointer :: m_decomp_npools_to_fire_vr_col            (:,:,:)
      real(r8), pointer :: ndep_to_sminn_col                         (:)
      real(r8), pointer :: dwt_livecrootn_to_cwdn_col                (:,:)
@@ -38,6 +37,8 @@ implicit none
      real(r8), pointer :: harvest_n_to_litr_met_n_col               (:,:)
      real(r8), pointer :: m_n_to_litr_cel_fire_col                  (:,:)
      real(r8), pointer :: m_n_to_litr_met_fire_col                  (:,:)
+     real(r8), pointer :: fert_to_sminn_col                        (:)
+
   contains
 
     procedure, public  :: Init
@@ -78,12 +79,39 @@ contains
 
     begp = bounds%begp; endp= bounds%endp
     begc = bounds%begc; endc= bounds%endc
-    allocate(this%smin_no3_runoff_col         (begc:endc))                   ; this%smin_no3_runoff_col              (:)   = nan
-    allocate(this%smin_no3_leached_col        (begc:endc))                   ; this%smin_no3_leached_col             (:)   = nan
-    allocate(this%f_n2o_denit_col             (begc:endc))                   ; this%f_n2o_denit_col                  (:)   = nan
-    allocate(this%f_n2o_nit_col               (begc:endc))                   ; this%f_n2o_nit_col                    (:)   = nan
-    allocate(this%f_nit_col                   (begc:endc))                   ; this%f_nit_col                        (:)   = nan
-    allocate(this%f_denit_col                 (begc:endc))                   ; this%f_denit_col                      (:)   = nan
+    allocate(this%smin_no3_runoff_col         (begc:endc)); this%smin_no3_runoff_col   (:)   = nan
+    allocate(this%smin_no3_leached_col        (begc:endc)); this%smin_no3_leached_col  (:)   = nan
+    allocate(this%f_n2o_denit_col             (begc:endc)); this%f_n2o_denit_col       (:)   = nan
+    allocate(this%f_n2o_nit_col               (begc:endc)); this%f_n2o_nit_col         (:)   = nan
+    allocate(this%f_nit_col                   (begc:endc)); this%f_nit_col             (:)   = nan
+    allocate(this%f_denit_col                 (begc:endc)); this%f_denit_col           (:)   = nan
+    allocate(this%fert_to_sminn_col          (begc:endc)); this%fert_to_sminn_col    (:) = nan
+
+
+    allocate(this%soyfixn_to_sminn_col(begc:endc)); this%soyfixn_to_sminn_col(:) = nan
+    allocate(this%m_decomp_npools_to_fire_vr_col(begc:endc,1:nlevdecomp_full,1:7)); this%m_decomp_npools_to_fire_vr_col(:,:,:) =nan
+    allocate(this%ndep_to_sminn_col(begc:endc)); this%ndep_to_sminn_col(:) = nan
+    allocate(this%dwt_livecrootn_to_cwdn_col(begc:endc,1:nlevdecomp_full)); this%dwt_livecrootn_to_cwdn_col(:,:) = nan
+    allocate(this%phenology_n_to_litr_lig_n_col(begc:endc,1:nlevdecomp_full)); this%phenology_n_to_litr_lig_n_col(:,:) = nan
+    allocate(this%dwt_deadcrootn_to_cwdn_col(begc:endc,1:nlevdecomp_full)); this%dwt_deadcrootn_to_cwdn_col(:,:) = nan
+    allocate(this%dwt_frootn_to_litr_lig_n_col(begc:endc,1:nlevdecomp_full)); this%dwt_frootn_to_litr_lig_n_col(:,:) = nan
+    allocate(this%phenology_n_to_litr_cel_n_col(begc:endc,1:nlevdecomp_full)); this%phenology_n_to_litr_cel_n_col(:,:) = nan
+    allocate(this%phenology_n_to_litr_met_n_col(begc:endc,1:nlevdecomp_full)); this%phenology_n_to_litr_met_n_col(:,:) = nan
+    allocate(this%gap_mortality_n_to_cwdn_col(begc:endc,1:nlevdecomp_full)); this%gap_mortality_n_to_cwdn_col(:,:) = nan
+    allocate(this%gap_mortality_n_to_litr_lig_n_col(begc:endc,1:nlevdecomp_full)); this%gap_mortality_n_to_litr_lig_n_col(:,:) = nan
+    allocate(this%dwt_frootn_to_litr_cel_n_col(begc:endc,1:nlevdecomp_full)); this%dwt_frootn_to_litr_cel_n_col(:,:) = nan
+    allocate(this%dwt_frootn_to_litr_met_n_col(begc:endc,1:nlevdecomp_full)); this%dwt_frootn_to_litr_met_n_col(:,:) = nan
+    allocate(this%harvest_n_to_cwdn_col(begc:endc,1:nlevdecomp_full)); this%harvest_n_to_cwdn_col(:,:) = nan
+    allocate(this%harvest_n_to_litr_lig_n_col(begc:endc,1:nlevdecomp_full)); this%harvest_n_to_litr_lig_n_col(:,:) = nan
+    allocate(this%gap_mortality_n_to_litr_cel_n_col(begc:endc,1:nlevdecomp_full)); this%gap_mortality_n_to_litr_cel_n_col(:,:) = nan
+    allocate(this%gap_mortality_n_to_litr_met_n_col(begc:endc,1:nlevdecomp_full)); this%gap_mortality_n_to_litr_met_n_col(:,:) = nan
+    allocate(this%fire_mortality_n_to_cwdn_col(begc:endc,1:nlevdecomp_full)); this%fire_mortality_n_to_cwdn_col(:,:) = nan
+    allocate(this%m_n_to_litr_lig_fire_col(begc:endc,1:nlevdecomp_full)); this%m_n_to_litr_lig_fire_col(:,:) = nan
+    allocate(this%harvest_n_to_litr_cel_n_col(begc:endc,1:nlevdecomp_full)); this%harvest_n_to_litr_cel_n_col(:,:) = nan
+    allocate(this%harvest_n_to_litr_met_n_col(begc:endc,1:nlevdecomp_full)); this%harvest_n_to_litr_met_n_col(:,:) = nan
+    allocate(this%m_n_to_litr_cel_fire_col(begc:endc,1:nlevdecomp_full)); this%m_n_to_litr_cel_fire_col(:,:) = nan
+    allocate(this%m_n_to_litr_met_fire_col(begc:endc,1:nlevdecomp_full)); this%m_n_to_litr_met_fire_col(:,:) = nan
+
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------
@@ -115,9 +143,30 @@ contains
     integer               :: begg, endg
 
 
-    do p = bounds%begp,bounds%endp
-
-    enddo
+    this%fert_to_sminn_col    (:) = 0._r8
+    this%soyfixn_to_sminn_col(:) = 0._r8
+    this%m_decomp_npools_to_fire_vr_col(:,:,:) = 0._r8
+    this%ndep_to_sminn_col(:) = 0._r8
+    this%dwt_livecrootn_to_cwdn_col(:,:) = 0._r8
+    this%phenology_n_to_litr_lig_n_col(:,:) = 0._r8
+    this%dwt_deadcrootn_to_cwdn_col(:,:) = 0._r8
+    this%dwt_frootn_to_litr_lig_n_col(:,:) = 0._r8
+    this%phenology_n_to_litr_cel_n_col(:,:) = 0._r8
+    this%phenology_n_to_litr_met_n_col(:,:) = 0._r8
+    this%gap_mortality_n_to_cwdn_col(:,:) = 0._r8
+    this%gap_mortality_n_to_litr_lig_n_col(:,:) = 0._r8
+    this%dwt_frootn_to_litr_cel_n_col(:,:) = 0._r8
+    this%dwt_frootn_to_litr_met_n_col(:,:) = 0._r8
+    this%harvest_n_to_cwdn_col(:,:) = 0._r8
+    this%harvest_n_to_litr_lig_n_col(:,:) = 0._r8
+    this%gap_mortality_n_to_litr_cel_n_col(:,:) = 0._r8
+    this%gap_mortality_n_to_litr_met_n_col(:,:) = 0._r8
+    this%fire_mortality_n_to_cwdn_col(:,:) = 0._r8
+    this%m_n_to_litr_lig_fire_col(:,:) = 0._r8
+    this%harvest_n_to_litr_cel_n_col(:,:) = 0._r8
+    this%harvest_n_to_litr_met_n_col(:,:) = 0._r8
+    this%m_n_to_litr_cel_fire_col(:,:) = 0._r8
+    this%m_n_to_litr_met_fire_col(:,:) = 0._r8
 
   end subroutine initCold
 

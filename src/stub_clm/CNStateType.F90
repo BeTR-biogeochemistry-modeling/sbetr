@@ -9,10 +9,11 @@ implicit none
      real(r8), pointer :: rc14_atm_patch               (:)     ! patch C14O2/C12O2 in atmosphere
      real(r8), pointer :: froot_prof_patch             (:,:)
      real(r8), pointer :: nfixation_prof_col           (:,:)   ! col (1/m) profile for N fixation additions
-     integer  ,pointer  :: isoilorder                  (:)     ! col global soil order data
+     integer  ,pointer :: isoilorder                   (:)     ! col global soil order data
      real(r8), pointer :: cn_scalar                    (:)     ! cn scaling factor for root n uptake kinetics (no units)
      real(r8), pointer :: cp_scalar                    (:)     ! cp scaling factor for root p uptake kinetics (no units)
      real(r8), pointer :: ndep_prof_col                (:,:)
+     real(r8), pointer :: pdep_prof_col                (:,:)
   contains
 
     procedure, public  :: Init
@@ -56,6 +57,9 @@ contains
     allocate(this%froot_prof_patch    (begp:endp,1:nlevdecomp_full)) ; this%froot_prof_patch    (:,:) = spval
     allocate(this%nfixation_prof_col  (begc:endc,1:nlevdecomp_full)) ; this%nfixation_prof_col  (:,:) = spval
     allocate(this%isoilorder            (begc:endc))                 ; this%isoilorder(:) = ispval
+    allocate(this%ndep_prof_col (begc:endc, 1:nlevdecomp_full)); this%ndep_prof_col(:,:) = spval
+    allocate(this%pdep_prof_col (begc:endc, 1:nlevdecomp_full)); this%pdep_prof_col(:,:) = spval
+
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------

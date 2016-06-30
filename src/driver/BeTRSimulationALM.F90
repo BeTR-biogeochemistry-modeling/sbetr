@@ -208,8 +208,9 @@ contains
   end subroutine ALMStepWithDrainage
 
   !------------------------------------------------------------------------
-  subroutine ALMBetrPlantSoilBGCSend(this, bounds, num_soilc,  filter_soilc, carbonflux_vars, &
-    nitrogenflux_vars, phosphorusflux_vars)
+  subroutine ALMBetrPlantSoilBGCSend(this, bounds, num_soilc,  filter_soilc, cnstate_vars, &
+    carbonflux_vars,  nitrogenflux_vars, phosphorusflux_vars)
+
   !read in biogeochemical fluxes from alm for soil bgc modeling
   !these are C, N and P fluxes from root input, surface litter input
   !atmospheric deposition, fire (negative), and fertilization
@@ -219,152 +220,196 @@ contains
   use CNCarbonFluxType, only : carbonflux_type
   use CNNitrogenFluxType, only : nitrogenflux_type
   use PhosphorusFluxType, only : phosphorusflux_type
+  use CNStateType, only : cnstate_type
+  use clm_varpar, only : i_cwd, i_met_lit, i_cel_lit, i_lig_lit
+
   implicit none
   class(betr_simulation_alm_type), intent(inout)  :: this
   type(bounds_type) , intent(in)  :: bounds
   integer           , intent(in)  :: num_soilc
   integer           , intent(in)  :: filter_soilc(:)
+  type(cnstate_type), intent(in)  :: cnstate_vars
   type(carbonflux_type), intent(in):: carbonflux_vars
   type(nitrogenflux_type), intent(in):: nitrogenflux_vars
   type(phosphorusflux_type), intent(in):: phosphorusflux_vars
 
+  !temporary variables
+  type(betr_bounds_type) :: betr_bounds
+  integer :: c, fc, j
   ! remove compiler warnings
   if (this%num_soilc > 0)     continue
   if (bounds%begc > 0)        continue
   if (num_soilc > 0)          continue
   if (size(filter_soilc) > 0) continue
 
+  associate(                                           &
+    ndep_prof     => cnstate_vars%ndep_prof_col     ,  &
+    pdep_prof     => cnstate_vars%pdep_prof_col     ,  &
+    nfixation_prof=> cnstate_vars%nfixation_prof_col   &
+  )
+  call this%BeTRSetBounds(betr_bounds)
+
+  do fc = 1, num_soilc
+    c = filter_soilc(fc)
+    call this%biogeo_flux(c)%reset(value_column=0._r8)
+  enddo
   !sum up carbon input profiles
+  do j = bounds%lbj, bounds%ubj
+    do fc = 1, num_soilc
+      c = filter_soilc(fc)
+      !carbon input
+      !metabolic carbon
+      this%biogeo_flux(c)%cflx_input_litr_met_vr_col(1,j) = &
+         this%biogeo_flux(c)%cflx_input_litr_met_vr_col(1,j) + &
+         carbonflux_vars%phenology_c_to_litr_met_c_col(c,j) + &  !phenology
+         carbonflux_vars%dwt_frootc_to_litr_met_c_col(c,j) + &   !dynamic land cover
+         carbonflux_vars%gap_mortality_c_to_litr_met_c_col(c,j) + & !gap mortality
+         carbonflux_vars%harvest_c_to_litr_met_c_col(c,j)  + & !harvest
+         carbonflux_vars%m_c_to_litr_met_fire_col(c,j)         ! fire mortality
+      !cellulose carbon
+      this%biogeo_flux(c)%cflx_input_litr_cel_vr_col(1,j) = &
+         this%biogeo_flux(c)%cflx_input_litr_cel_vr_col(1,j) + &
+         carbonflux_vars%phenology_c_to_litr_cel_c_col(c,j) + &  !phenology
+         carbonflux_vars%dwt_frootc_to_litr_cel_c_col(c,j) + &   !dynamic land cover
+         carbonflux_vars%gap_mortality_c_to_litr_cel_c_col(c,j) + & !gap mortality
+         carbonflux_vars%harvest_c_to_litr_cel_c_col(c,j)  + & !harvest
+         carbonflux_vars%m_c_to_litr_cel_fire_col(c,j)         ! fire mortality
+      !lignin carbon
+      this%biogeo_flux(c)%cflx_input_litr_lig_vr_col(1,j) = &
+         this%biogeo_flux(c)%cflx_input_litr_lig_vr_col(1,j) + &
+         carbonflux_vars%phenology_c_to_litr_lig_c_col(c,j) + &  !phenology
+         carbonflux_vars%dwt_frootc_to_litr_lig_c_col(c,j) + &   !dynamic land cover
+         carbonflux_vars%gap_mortality_c_to_litr_lig_c_col(c,j) + & !gap mortality
+         carbonflux_vars%harvest_c_to_litr_lig_c_col(c,j)  + & !harvest
+         carbonflux_vars%m_c_to_litr_lig_fire_col(c,j)         ! fire mortality
 
-  !do j = 1,nlevdecomp
-            ! column loop
-  !  do fc = 1,num_soilc
-  !    c = filter_soilc(fc)
-               ! phenology and dynamic land cover fluxes
-  !    cf%decomp_cpools_sourcesink_col(c,j,i_met_lit) = &
-  !      ( cf%phenology_c_to_litr_met_c_col(c,j) + cf%dwt_frootc_to_litr_met_c_col(c,j) ) *dt
-  !     cf%decomp_cpools_sourcesink_col(c,j,i_cel_lit) = &
-  !       ( cf%phenology_c_to_litr_cel_c_col(c,j) + cf%dwt_frootc_to_litr_cel_c_col(c,j) ) *dt
-  !     cf%decomp_cpools_sourcesink_col(c,j,i_lig_lit) = &
-  !        ( cf%phenology_c_to_litr_lig_c_col(c,j) + cf%dwt_frootc_to_litr_lig_c_col(c,j) ) *dt
-  !     cf%decomp_cpools_sourcesink_col(c,j,i_cwd) = &
-  !      ( cf%dwt_livecrootc_to_cwdc_col(c,j) + cf%dwt_deadcrootc_to_cwdc_col(c,j) ) *dt
+      !fire carbon loss
+      this%biogeo_flux(c)%cflx_output_litr_met_vr_col(1,j) = &
+         this%biogeo_flux(c)%cflx_output_litr_met_vr_col(1,j) + &
+         carbonflux_vars%m_decomp_cpools_to_fire_vr_col(c,j,i_met_lit)
 
-  ! column gap mortality fluxes
-  ! cf%bgc_cpool_ext_inputs_vr_col(c,j,i_met_lit) = &
-  !   cf%bgc_cpool_ext_inputs_vr_col(c,j,i_met_lit) + cf%gap_mortality_c_to_litr_met_c_col(c,j) * dt
-  !  cf%bgc_cpool_ext_inputs_vr_col(c,j,i_cel_lit) = &
-  !   cf%bgc_cpool_ext_inputs_vr_col(c,j,i_cel_lit) + cf%gap_mortality_c_to_litr_cel_c_col(c,j) * dt
-  !  cf%bgc_cpool_ext_inputs_vr_col(c,j,i_lig_lit) = &
-  !     cf%bgc_cpool_ext_inputs_vr_col(c,j,i_lig_lit) + cf%gap_mortality_c_to_litr_lig_c_col(c,j) * dt
-  !  cf%bgc_cpool_ext_inputs_vr_col(c,j,i_cwd) = &
-  !cf%bgc_cpool_ext_inputs_vr_col(c,j,i_cwd) + cf%gap_mortality_c_to_cwdc_col(c,j) * dt
+      this%biogeo_flux(c)%cflx_output_litr_cel_vr_col(1,j) = &
+         this%biogeo_flux(c)%cflx_output_litr_cel_vr_col(1,j) + &
+         carbonflux_vars%m_decomp_cpools_to_fire_vr_col(c,j,i_cel_lit)
 
+      this%biogeo_flux(c)%cflx_output_litr_lig_vr_col(1,j) = &
+         this%biogeo_flux(c)%cflx_output_litr_lig_vr_col(1,j) + &
+         carbonflux_vars%m_decomp_cpools_to_fire_vr_col(c,j,i_lig_lit)
 
-  !   cf%bgc_cpool_ext_inputs_vr_col(c,j,i_met_lit) = &
-  !      cf%bgc_cpool_ext_inputs_vr_col(c,j,i_met_lit) + cf%harvest_c_to_litr_met_c_col(c,j) * dt
-  !     cf%bgc_cpool_ext_inputs_vr_col(c,j,i_cel_lit) = &
-  !       cf%bgc_cpool_ext_inputs_vr_col(c,j,i_cel_lit) + cf%harvest_c_to_litr_cel_c_col(c,j) * dt
-  !     cf%bgc_cpool_ext_inputs_vr_col(c,j,i_lig_lit) = &
-  !       cf%bgc_cpool_ext_inputs_vr_col(c,j,i_lig_lit) + cf%harvest_c_to_litr_lig_c_col(c,j) * dt
-  !    cf%bgc_cpool_ext_inputs_vr_col(c,j,i_cwd) = &
-  !cf%bgc_cpool_ext_inputs_vr_col(c,j,i_cwd) + cf%harvest_c_to_cwdc_col(c,j) * dt
+      this%biogeo_flux(c)%cflx_output_litr_cwd_vr_col(1,j) = &
+         this%biogeo_flux(c)%cflx_output_litr_cel_vr_col(1,j) + &
+         carbonflux_vars%m_decomp_cpools_to_fire_vr_col(c,j,i_cwd)
 
-  ! cf%bgc_cpool_ext_inputs_vr_col(c,j,i_cwd) = cf%bgc_cpool_ext_inputs_vr_col(c,j,i_cwd) + cf%fire_mortality_c_to_cwdc_col(c,j) * dt
+      !nitrogen input
+      !metabolic nitrogen
+      this%biogeo_flux(c)%nflx_input_litr_met_vr_col(1,j) = &
+         this%biogeo_flux(c)%nflx_input_litr_met_vr_col(1,j) + &
+         nitrogenflux_vars%phenology_n_to_litr_met_n_col(c,j) + &  !phenology
+         nitrogenflux_vars%dwt_frootn_to_litr_met_n_col(c,j) + &   !dynamic land cover
+         nitrogenflux_vars%gap_mortality_n_to_litr_met_n_col(c,j) + & !gap mortality
+         nitrogenflux_vars%harvest_n_to_litr_met_n_col(c,j)  + & !harvest
+         nitrogenflux_vars%m_n_to_litr_met_fire_col(c,j)         ! fire mortality
+      !cellulose nitrogen
+      this%biogeo_flux(c)%nflx_input_litr_cel_vr_col(1,j) = &
+         this%biogeo_flux(c)%nflx_input_litr_cel_vr_col(1,j) + &
+         nitrogenflux_vars%phenology_n_to_litr_cel_n_col(c,j) + &  !phenology
+         nitrogenflux_vars%dwt_frootn_to_litr_cel_n_col(c,j) + &   !dynamic land cover
+         nitrogenflux_vars%gap_mortality_n_to_litr_cel_n_col(c,j) + & !gap mortality
+         nitrogenflux_vars%harvest_n_to_litr_cel_n_col(c,j)  + & !harvest
+         nitrogenflux_vars%m_n_to_litr_cel_fire_col(c,j)         ! fire mortality
+      !lignin nitrogen
+      this%biogeo_flux(c)%nflx_input_litr_lig_vr_col(1,j) = &
+         this%biogeo_flux(c)%nflx_input_litr_lig_vr_col(1,j) + &
+         nitrogenflux_vars%phenology_n_to_litr_lig_n_col(c,j) + &  !phenology
+         nitrogenflux_vars%dwt_frootn_to_litr_lig_n_col(c,j) + &   !dynamic land cover
+         nitrogenflux_vars%gap_mortality_n_to_litr_lig_n_col(c,j) + & !gap mortality
+         nitrogenflux_vars%harvest_n_to_litr_lig_n_col(c,j)  + & !harvest
+         nitrogenflux_vars%m_n_to_litr_lig_fire_col(c,j)         ! fire mortality
 
-        ! pft-level wood to column-level litter (uncombusted wood)
-  ! cf%bgc_cpool_ext_inputs_vr_col(c,j,i_met_lit) = cf%bgc_cpool_ext_inputs_vr_col(c,j,i_met_lit) + cf%m_c_to_litr_met_fire_col(c,j)* dt
-  ! cf%bgc_cpool_ext_inputs_vr_col(c,j,i_cel_lit) = cf%bgc_cpool_ext_inputs_vr_col(c,j,i_cel_lit) + cf%m_c_to_litr_cel_fire_col(c,j)* dt
-  ! cf%bgc_cpool_ext_inputs_vr_col(c,j,i_lig_lit) = cf%bgc_cpool_ext_inputs_vr_col(c,j,i_lig_lit) + cf%m_c_to_litr_lig_fire_col(c,j)* dt
+      !fire nitrogen loss
+      this%biogeo_flux(c)%nflx_output_litr_met_vr_col(1,j) = &
+         this%biogeo_flux(c)%nflx_output_litr_met_vr_col(1,j) + &
+         nitrogenflux_vars%m_decomp_npools_to_fire_vr_col(c,j,i_met_lit)
 
-  !   end do
-  ! end do
-  !sum up nitrogen input profiles
-  !nf%bgc_npool_ext_inputs_vr_col(c,j,i_met_lit) = nf%bgc_npool_ext_inputs_vr_col(c,j,i_met_lit) + &
-  !                  ( nf%phenology_n_to_litr_met_n_col(c,j) + nf%dwt_frootn_to_litr_met_n_col(c,j) ) * dt
-  !
-  !             nf%bgc_npool_ext_inputs_vr_col(c,j,i_cel_lit) = nf%bgc_npool_ext_inputs_vr_col(c,j,i_cel_lit) + &
-  !                  ( nf%phenology_n_to_litr_cel_n_col(c,j) + nf%dwt_frootn_to_litr_cel_n_col(c,j) ) * dt
-  !
-  !             nf%bgc_npool_ext_inputs_vr_col(c,j,i_lig_lit) = nf%bgc_npool_ext_inputs_vr_col(c,j,i_lig_lit) + &
-  !                  ( nf%phenology_n_to_litr_lig_n_col(c,j) + nf%dwt_frootn_to_litr_lig_n_col(c,j) ) * dt
-  !
-  !             nf%bgc_npool_ext_inputs_vr_col(c,j,i_cwd)     = nf%bgc_npool_ext_inputs_vr_col(c,j,i_cwd) + &
-  ! ( nf%dwt_livecrootn_to_cwdn_col(c,j) + nf%dwt_deadcrootn_to_cwdn_col(c,j) ) * dt
-  !         nf%bgc_npool_ext_inputs_vr_col(c,j,i_met_lit) = &
-  !                  nf%bgc_npool_ext_inputs_vr_col(c,j,i_met_lit) + nf%gap_mortality_n_to_litr_met_n_col(c,j) * dt
-  !             nf%bgc_npool_ext_inputs_vr_col(c,j,i_cel_lit) = &
-  !                  nf%bgc_npool_ext_inputs_vr_col(c,j,i_cel_lit) + nf%gap_mortality_n_to_litr_cel_n_col(c,j) * dt
-  !             nf%bgc_npool_ext_inputs_vr_col(c,j,i_lig_lit) = &
-  !                  nf%bgc_npool_ext_inputs_vr_col(c,j,i_lig_lit) + nf%gap_mortality_n_to_litr_lig_n_col(c,j) * dt
-  !             nf%bgc_npool_ext_inputs_vr_col(c,j,i_cwd)     = &
-  ! nf%bgc_npool_ext_inputs_vr_col(c,j,i_cwd) + nf%gap_mortality_n_to_cwdn_col(c,j) * dt
+      this%biogeo_flux(c)%nflx_output_litr_cel_vr_col(1,j) = &
+         this%biogeo_flux(c)%nflx_output_litr_cel_vr_col(1,j) + &
+         nitrogenflux_vars%m_decomp_npools_to_fire_vr_col(c,j,i_cel_lit)
 
-  !             nf%bgc_npool_ext_inputs_vr_col(c,j,i_met_lit) = &
-  !                  nf%bgc_npool_ext_inputs_vr_col(c,j,i_met_lit) + nf%harvest_n_to_litr_met_n_col(c,j) * dt
-  !             nf%bgc_npool_ext_inputs_vr_col(c,j,i_cel_lit) = &
-  !                  nf%bgc_npool_ext_inputs_vr_col(c,j,i_cel_lit) + nf%harvest_n_to_litr_cel_n_col(c,j) * dt
-  !             nf%bgc_npool_ext_inputs_vr_col(c,j,i_lig_lit) = &
-  !                  nf%bgc_npool_ext_inputs_vr_col(c,j,i_lig_lit) + nf%harvest_n_to_litr_lig_n_col(c,j) * dt
-  !             nf%bgc_npool_ext_inputs_vr_col(c,j,i_cwd)     = &
-  ! nf%bgc_npool_ext_inputs_vr_col(c,j,i_cwd) + nf%harvest_n_to_cwdn_col(c,j) * dt
+      this%biogeo_flux(c)%nflx_output_litr_lig_vr_col(1,j) = &
+         this%biogeo_flux(c)%nflx_output_litr_lig_vr_col(1,j) + &
+         nitrogenflux_vars%m_decomp_npools_to_fire_vr_col(c,j,i_lig_lit)
 
-  !             nf%bgc_npool_ext_inputs_vr_col(c,j,i_cwd) = nf%bgc_npool_ext_inputs_vr_col(c,j,i_cwd) + nf%fire_mortality_n_to_cwdn_col(c,j) * dt
+      this%biogeo_flux(c)%nflx_output_litr_cwd_vr_col(1,j) = &
+         this%biogeo_flux(c)%nflx_output_litr_cel_vr_col(1,j) + &
+         nitrogenflux_vars%m_decomp_npools_to_fire_vr_col(c,j,i_cwd)
 
-               ! pft-level wood to column-level litter (uncombusted wood)
-  !             nf%bgc_npool_ext_inputs_vr_col(c,j,i_met_lit) = nf%bgc_npool_ext_inputs_vr_col(c,j,i_met_lit) + nf%m_n_to_litr_met_fire_col(c,j)* dt
-  !             nf%bgc_npool_ext_inputs_vr_col(c,j,i_cel_lit) = nf%bgc_npool_ext_inputs_vr_col(c,j,i_cel_lit) + nf%m_n_to_litr_cel_fire_col(c,j)* dt
-  !nf%bgc_npool_ext_inputs_vr_col(c,j,i_lig_lit) = nf%bgc_npool_ext_inputs_vr_col(c,j,i_lig_lit) + nf%m_n_to_litr_lig_fire_col(c,j)* dt
-  ! nitrogen deposition and fixation
+      !phosphorus input
+      !metabolic phosphorus
+      this%biogeo_flux(c)%pflx_input_litr_met_vr_col(1,j) = &
+         this%biogeo_flux(c)%pflx_input_litr_met_vr_col(1,j) + &
+         phosphorusflux_vars%phenology_p_to_litr_met_p_col(c,j) + &  !phenology
+         phosphorusflux_vars%dwt_frootp_to_litr_met_p_col(c,j) + &   !dynamic land cover
+         phosphorusflux_vars%gap_mortality_p_to_litr_met_p_col(c,j) + & !gap mortality
+         phosphorusflux_vars%harvest_p_to_litr_met_p_col(c,j)  + & !harvest
+         phosphorusflux_vars%m_p_to_litr_met_fire_col(c,j)         ! fire mortality
+      !cellulose phosphorus
+      this%biogeo_flux(c)%pflx_input_litr_cel_vr_col(1,j) = &
+         this%biogeo_flux(c)%pflx_input_litr_cel_vr_col(1,j) + &
+         phosphorusflux_vars%phenology_p_to_litr_cel_p_col(c,j) + &  !phenology
+         phosphorusflux_vars%dwt_frootp_to_litr_cel_p_col(c,j) + &   !dynamic land cover
+         phosphorusflux_vars%gap_mortality_p_to_litr_cel_p_col(c,j) + & !gap mortality
+         phosphorusflux_vars%harvest_p_to_litr_cel_p_col(c,j)  + & !harvest
+         phosphorusflux_vars%m_p_to_litr_cel_fire_col(c,j)         ! fire mortality
+      !lignin phosphorus
+      this%biogeo_flux(c)%pflx_input_litr_lig_vr_col(1,j) = &
+         this%biogeo_flux(c)%pflx_input_litr_lig_vr_col(1,j) + &
+         phosphorusflux_vars%phenology_p_to_litr_lig_p_col(c,j) + &  !phenology
+         phosphorusflux_vars%dwt_frootp_to_litr_lig_p_col(c,j) + &   !dynamic land cover
+         phosphorusflux_vars%gap_mortality_p_to_litr_lig_p_col(c,j) + & !gap mortality
+         phosphorusflux_vars%harvest_p_to_litr_lig_p_col(c,j)  + & !harvest
+         phosphorusflux_vars%m_p_to_litr_lig_fire_col(c,j)         ! fire mortality
 
-  !   nf%sminn_nh4_input_vr_col(c,j) = nf%sminn_nh4_input_vr_col(c,j) + nf%ndep_to_sminn_col(c)*dt * ndep_prof(c,j)
-      !now a fraction of fixed nitrogen is first added to plant nitrogen pool
-  !   nf%sminn_nh4_input_vr_col(c,j) = nf%sminn_nh4_input_vr_col(c,j) + nf%nfix_to_sminn_col(c)*dt * nfixation_prof(c,j) * (1._r8-exp(-cnstate_vars%frootc_nfix_scalar_col(c)/frootc_nfix_thc))
+      !fire phosphorus loss
+      this%biogeo_flux(c)%pflx_output_litr_met_vr_col(1,j) = &
+         this%biogeo_flux(c)%pflx_output_litr_met_vr_col(1,j) + &
+         phosphorusflux_vars%m_decomp_ppools_to_fire_vr_col(c,j,i_met_lit)
 
-  !sum up phosphorus input profiles
-  !          pf%decomp_ppools_sourcesink_col(c,j,i_met_lit) = &
-  !               ( pf%phenology_p_to_litr_met_p_col(c,j) + pf%dwt_frootp_to_litr_met_p_col(c,j) ) * dt
+      this%biogeo_flux(c)%pflx_output_litr_cel_vr_col(1,j) = &
+         this%biogeo_flux(c)%pflx_output_litr_cel_vr_col(1,j) + &
+         phosphorusflux_vars%m_decomp_ppools_to_fire_vr_col(c,j,i_cel_lit)
 
-  !          pf%decomp_ppools_sourcesink_col(c,j,i_cel_lit) = &
-  !               ( pf%phenology_p_to_litr_cel_p_col(c,j) + pf%dwt_frootp_to_litr_cel_p_col(c,j) ) * dt
+      this%biogeo_flux(c)%pflx_output_litr_lig_vr_col(1,j) = &
+         this%biogeo_flux(c)%pflx_output_litr_lig_vr_col(1,j) + &
+         phosphorusflux_vars%m_decomp_ppools_to_fire_vr_col(c,j,i_lig_lit)
 
-  !          pf%decomp_ppools_sourcesink_col(c,j,i_lig_lit) = &
-  !               ( pf%phenology_p_to_litr_lig_p_col(c,j) + pf%dwt_frootp_to_litr_lig_p_col(c,j) ) * dt
+      this%biogeo_flux(c)%pflx_output_litr_cwd_vr_col(1,j) = &
+         this%biogeo_flux(c)%pflx_output_litr_cel_vr_col(1,j) + &
+         phosphorusflux_vars%m_decomp_ppools_to_fire_vr_col(c,j,i_cwd)
 
-  !          pf%decomp_ppools_sourcesink_col(c,j,i_cwd)     = &
-  ! ( pf%dwt_livecrootp_to_cwdp_col(c,j) + pf%dwt_deadcrootp_to_cwdp_col(c,j) ) * dt
+      !mineral nitrogen
+      this%biogeo_flux(c)%sflx_minn_input_nh4_vr_col(1,j) = &
+         this%biogeo_flux(c)%sflx_minn_input_nh4_vr_col(1,j) + &
+         nitrogenflux_vars%ndep_to_sminn_col(c) * ndep_prof(c,j) + &
+         nitrogenflux_vars%fert_to_sminn_col(c) * ndep_prof(c,j)
 
-  !          ps%decomp_ppools_vr_col(c,j,i_met_lit) = &
-  !               ps%decomp_ppools_vr_col(c,j,i_met_lit) + pf%gap_mortality_p_to_litr_met_p_col(c,j) * dt
-  !          ps%decomp_ppools_vr_col(c,j,i_cel_lit) = &
-  !               ps%decomp_ppools_vr_col(c,j,i_cel_lit) + pf%gap_mortality_p_to_litr_cel_p_col(c,j) * dt
-  !          ps%decomp_ppools_vr_col(c,j,i_lig_lit) = &
-  !               ps%decomp_ppools_vr_col(c,j,i_lig_lit) + pf%gap_mortality_p_to_litr_lig_p_col(c,j) * dt
-  !          ps%decomp_ppools_vr_col(c,j,i_cwd)     = &
-  ! ps%decomp_ppools_vr_col(c,j,i_cwd) + pf%gap_mortality_p_to_cwdp_col(c,j) * dt
+      !the following could be commented out if a fixation model is done in betr
+      this%biogeo_flux(c)%sflx_minn_nh4_fix_vr_col(1,j) = &
+         this%biogeo_flux(c)%sflx_minn_nh4_fix_vr_col(1,j) + &
+         nitrogenflux_vars%nfix_to_sminn_col(c) * nfixation_prof(c,j) + &
+         nitrogenflux_vars%soyfixn_to_sminn_col(c)* nfixation_prof(c,j)
 
-  !          ps%decomp_ppools_vr_col(c,j,i_met_lit) = &
-  !               ps%decomp_ppools_vr_col(c,j,i_met_lit) + pf%harvest_p_to_litr_met_p_col(c,j) * dt
-  !          ps%decomp_ppools_vr_col(c,j,i_cel_lit) = &
-  !               ps%decomp_ppools_vr_col(c,j,i_cel_lit) + pf%harvest_p_to_litr_cel_p_col(c,j) * dt
-  !          ps%decomp_ppools_vr_col(c,j,i_lig_lit) = &
-  !               ps%decomp_ppools_vr_col(c,j,i_lig_lit) + pf%harvest_p_to_litr_lig_p_col(c,j) * dt
-  !          ps%decomp_ppools_vr_col(c,j,i_cwd)     = &
-  ! ps%decomp_ppools_vr_col(c,j,i_cwd) + pf%harvest_p_to_cwdp_col(c,j) * dt
+      !mineral phosphorus, the deposition is assumed to be of primary form
+      this%biogeo_flux(c)%sflx_minp_input_po4_vr_col(c,j) = &
+         this%biogeo_flux(c)%sflx_minp_input_po4_vr_col(c,j) + &
+         phosphorusflux_vars%pdep_to_sminp_col(c) * pdep_prof(c,j) + &
+         phosphorusflux_vars%fert_p_to_sminp_col(c) * pdep_prof(c,j)
 
-  !          ps%decomp_ppools_vr_col(c,j,i_cwd) = ps%decomp_ppools_vr_col(c,j,i_cwd) + pf%fire_mortality_p_to_cwdp_col(c,j) * dt
-
-            ! pft-level wood to column-level litter (uncombusted wood)
-  ! ps%decomp_ppools_vr_col(c,j,i_met_lit) = ps%decomp_ppools_vr_col(c,j,i_met_lit) + pf%m_p_to_litr_met_fire_col(c,j)* dt
-  ! ps%decomp_ppools_vr_col(c,j,i_cel_lit) = ps%decomp_ppools_vr_col(c,j,i_cel_lit) + pf%m_p_to_litr_cel_fire_col(c,j)* dt
-  ! ps%decomp_ppools_vr_col(c,j,i_lig_lit) = ps%decomp_ppools_vr_col(c,j,i_lig_lit) + pf%m_p_to_litr_lig_fire_col(c,j)* dt
-
-  !mineral phosphorus
-  !deposition
-  ! pdep_to_sminp_col(c)*dt * pdep_prof(c,j)
-  !weathering
-  !primp_to_labilep_vr_col(c,j)
-
+      this%biogeo_flux(c)%sflx_minp_weathering_po4_vr_col(c,j) = &
+         this%biogeo_flux(c)%sflx_minp_weathering_po4_vr_col(c,j) + &
+         phosphorusflux_vars%primp_to_labilep_vr_col(c,j)
+    enddo
+  enddo
+  end associate
   !pull in all state variables and update tracers
   end subroutine ALMBetrPlantSoilBGCSend
 
