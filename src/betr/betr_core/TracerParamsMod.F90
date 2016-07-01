@@ -1071,9 +1071,9 @@ contains
       ratio=0.159e-4_r8*(temp/293.15)**1.5_r8/diffh2o
 !isotopes
    elseif(trcid==betrtracer_vars%id_trc_o18_h2o)then
-      ratio = 0.9723_r8            !from Merlivat, 1978
+      ratio = 0.9691_r8            !0.9723_r8  from Merlivat, 1978, 0.9691 from Cappa et al, 2003
    elseif(trcid==betrtracer_vars%id_trc_d_h2o)then
-      ratio = 0.9755_r8            !from Merlivat, 1978
+      ratio = 0.9839_r8            !0.9755 from Merlivat, 1978, 0.9839 from Cappa et al., 2003
    elseif(trcid==betrtracer_vars%id_trc_c13_co2x)then
       ratio = 0.9957_r8*1.47e-5_r8*(temp/273.15_r8)**1.82_r8/diffh2o
    elseif(trcid==betrtracer_vars%id_trc_c14_co2x)then
