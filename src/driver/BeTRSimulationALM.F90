@@ -282,6 +282,14 @@ contains
          carbonflux_vars%gap_mortality_c_to_litr_lig_c_col(c,j) + & !gap mortality
          carbonflux_vars%harvest_c_to_litr_lig_c_col(c,j)  + & !harvest
          carbonflux_vars%m_c_to_litr_lig_fire_col(c,j)         ! fire mortality
+      !cwd carbon
+      this%biogeo_flux(c)%cflx_input_litr_cwd_vr_col(1,j) = &
+        this%biogeo_flux(c)%cflx_input_litr_cwd_vr_col(1,j) + &
+        carbonflux_vars%dwt_livecrootc_to_cwdc_col(c,j) + &
+        carbonflux_vars%dwt_deadcrootc_to_cwdc_col(c,j) + &
+        carbonflux_vars%gap_mortality_c_to_cwdc_col(c,j) + &
+        carbonflux_vars%harvest_c_to_cwdc_col(c,j) + &
+        carbonflux_vars%fire_mortality_c_to_cwdc_col(c,j)
 
       !fire carbon loss
       this%biogeo_flux(c)%cflx_output_litr_met_vr_col(1,j) = &
@@ -326,6 +334,15 @@ contains
          nitrogenflux_vars%harvest_n_to_litr_lig_n_col(c,j)  + & !harvest
          nitrogenflux_vars%m_n_to_litr_lig_fire_col(c,j)         ! fire mortality
 
+      !cwd nitrogen
+      this%biogeo_flux(c)%nflx_input_litr_cwd_vr_col(1,j) = &
+        this%biogeo_flux(c)%nflx_input_litr_cwd_vr_col(1,j) + &
+        nitrogenflux_vars%dwt_livecrootn_to_cwdn_col(c,j) + &
+        nitrogenflux_vars%dwt_deadcrootn_to_cwdn_col(c,j) + &
+        nitrogenflux_vars%gap_mortality_n_to_cwdn_col(c,j) + &
+        nitrogenflux_vars%harvest_n_to_cwdn_col(c,j) + &
+        nitrogenflux_vars%fire_mortality_n_to_cwdn_col(c,j)
+
       !fire nitrogen loss
       this%biogeo_flux(c)%nflx_output_litr_met_vr_col(1,j) = &
          this%biogeo_flux(c)%nflx_output_litr_met_vr_col(1,j) + &
@@ -368,6 +385,15 @@ contains
          phosphorusflux_vars%gap_mortality_p_to_litr_lig_p_col(c,j) + & !gap mortality
          phosphorusflux_vars%harvest_p_to_litr_lig_p_col(c,j)  + & !harvest
          phosphorusflux_vars%m_p_to_litr_lig_fire_col(c,j)         ! fire mortality
+
+      !cwd phosphorus
+      this%biogeo_flux(c)%pflx_input_litr_cwd_vr_col(1,j) = &
+        this%biogeo_flux(c)%pflx_input_litr_cwd_vr_col(1,j) + &
+        phosphorusflux_vars%dwt_livecrootp_to_cwdp_col(c,j) + &
+        phosphorusflux_vars%dwt_deadcrootp_to_cwdp_col(c,j) + &
+        phosphorusflux_vars%gap_mortality_p_to_cwdp_col(c,j) + &
+        phosphorusflux_vars%harvest_p_to_cwdp_col(c,j) + &
+        phosphorusflux_vars%fire_mortality_p_to_cwdp_col(c,j)
 
       !fire phosphorus loss
       this%biogeo_flux(c)%pflx_output_litr_met_vr_col(1,j) = &
