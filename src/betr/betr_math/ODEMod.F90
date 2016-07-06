@@ -7,7 +7,7 @@ module ODEMod
   ! !USES:
   use bshr_kind_mod , only : r8 => shr_kind_r8
   use betr_ctrl     , only : iulog => biulog
-
+  use gbetrType     , only : gbetr_type
   implicit none
 
   private
@@ -27,7 +27,7 @@ module ODEMod
 contains
 
   !-------------------------------------------------------------------------------
-  subroutine ode_ebbks1(odefun, y0, nprimeq, neq, t, dt, y, pscal)
+  subroutine ode_ebbks1(odefun, extra, y0, nprimeq, neq, t, dt, y, pscal)
     ! !DESCRIPTION:
     !first order accurate explicit BBKS fixed time step positive preserving ode integrator
     !reference: Broekhuizen et al., 2008
@@ -35,6 +35,7 @@ contains
     !
     implicit none
     ! !ARGUMENTS:
+    class(gbetr_type),  intent(in)  :: extra
     integer,            intent(in)  :: nprimeq !number of primary equations that are subject to positive constraint
     integer,            intent(in)  :: neq     !total number of equations
     real(r8),           intent(in)  :: y0(neq) !initial values
@@ -47,13 +48,13 @@ contains
     ! !LOCAL VARIABLES:
     real(r8) :: f(neq)
     real(r8) :: pscal_loc
-    call odefun(y0, dt, t, nprimeq, neq, f)
+    call odefun(extra, y0, dt, t, nprimeq, neq, f)
 
     call ebbks(y0, f, nprimeq, neq, dt, y,pscal_loc)
     if(present(pscal))pscal=pscal_loc
   end subroutine ode_ebbks1
   !-------------------------------------------------------------------------------
-  subroutine ode_ebbks2(odefun, y0, nprimeq, neq, t, dt, y)
+  subroutine ode_ebbks2(odefun, extra, y0, nprimeq, neq, t, dt, y)
     ! !DESCRIPTION:
     !second order accurate explicit BBKS fixed time step positive preserving ode integrator
     !reference: Broekhuizen et al., 2008
@@ -61,6 +62,7 @@ contains
     !
     implicit none
     ! !ARGUMENTS:
+    class(gbetr_type),  intent(inout)  :: extra
     integer,  intent(in)  :: nprimeq    !number of primary equations that are subject to positive constraint
     integer,  intent(in)  :: neq        !total number of equations
     real(r8), intent(in)  :: y0(neq)    !initial values
@@ -76,22 +78,23 @@ contains
     real(r8) :: ti
     integer  :: n
 
-    call odefun(y0, dt, t, nprimeq, neq, f)
+    call odefun(extra, y0, dt, t, nprimeq, neq, f)
     call ebbks(y0, f, nprimeq, neq, dt, y1)
     ti=t+dt
-    call odefun(y1, dt, ti, nprimeq, neq, f1)
+    call odefun(extra, y1, dt, ti, nprimeq, neq, f1)
     do n = 1, neq
        f(n) = (f(n)+f1(n))*0.5_r8
     enddo
     call ebbks(y0, f, nprimeq, neq, dt, y)
   end subroutine ode_ebbks2
   !-------------------------------------------------------------------------------
-  subroutine ode_mbbks1(odefun, y0, nprimeq, neq, t, dt, y, pscal, bstatus)
+  subroutine ode_mbbks1(odefun, extra, y0, nprimeq, neq, t, dt, y, pscal, bstatus)
     ! !DESCRPTION:
     !first order accurate implicit BBKS fixed time step positive preserving ode integrator
     use BetrStatusType    , only : betr_status_type
     implicit none
     ! !ARGUMENTS:
+    class(gbetr_type),  intent(inout)  :: extra
     integer,            intent(in)  :: nprimeq
     integer,            intent(in)  :: neq
     real(r8),           intent(in)  :: y0(neq)
@@ -108,7 +111,7 @@ contains
     real(r8) :: pscal1
 
     call bstatus%reset()
-    call odefun(y0, dt, t, nprimeq, neq, f)
+    call odefun(extra, y0, dt, t, nprimeq, neq, f)
 
     call mbbks(y0, f, nprimeq, neq, dt, y, pscal1, bstatus)
 
@@ -144,13 +147,14 @@ contains
 
   end subroutine get_tscal
   !-------------------------------------------------------------------------------
-  subroutine ode_mbbks2(odefun, y0, nprimeq, neq, t, dt, y, bstatus)
+  subroutine ode_mbbks2(odefun, extra, y0, nprimeq, neq, t, dt, y, bstatus)
     !
     ! !DESCRIPTION:
     !second order implicit bkks ode integration with the adaptive time stepping
     use BetrStatusType    , only : betr_status_type
     implicit none
     ! !ARGUMENTS:
+    class(gbetr_type),  intent(inout)  :: extra
     integer,  intent(in)  :: nprimeq
     integer,  intent(in)  :: neq
     real(r8), intent(in)  :: y0(neq)
@@ -169,12 +173,12 @@ contains
     real(r8) :: nJ, pp
     real(r8) :: pscal
     call bstatus%reset()
-    call odefun(y0, dt, t, nprimeq, neq, f)
+    call odefun(extra, y0, dt, t, nprimeq, neq, f)
 
     call mbbks(y0, f, nprimeq, neq, dt, y1, pscal, bstatus)
     if(bstatus%check_status())return
     ti = t + dt
-    call odefun(y1, dt, ti,nprimeq, neq, f1)
+    call odefun(extra, y1, dt, ti,nprimeq, neq, f1)
 
     pp = 1._r8
     nJ = 0._r8
@@ -269,7 +273,7 @@ contains
   end subroutine mbbks
 
   !-------------------------------------------------------------------------------
-  subroutine ode_adapt_mbbks1(odefun, y0, nprimeq, neq, t, dt, y, bstatus)
+  subroutine ode_adapt_mbbks1(odefun, extra, y0, nprimeq, neq, t, dt, y, bstatus)
     ! !DESCRIPTION:
     !first order implicit bkks ode integration with the adaptive time stepping
     !This could be used as an example for the implementation of time-adaptive
@@ -279,6 +283,7 @@ contains
     use BetrStatusType    , only : betr_status_type
     implicit none
     ! !ARGUMENTS:
+    class(gbetr_type),  intent(inout)  :: extra
     integer,  intent(in)  :: neq      ! number of equations
     real(r8), intent(in)  :: y0(neq)  ! state variable at previous time step
     real(r8), intent(in)  :: t        ! time stamp
@@ -314,7 +319,7 @@ contains
     y=y0
     do
        if(dt2<=dtmin)then
-          call odefun(y, dt2, tt, nprimeq, neq, f)
+          call odefun(extra, y, dt2, tt, nprimeq, neq, f)
           call mbbks(y, f, nprimeq, neq, dt2, yc, pscal, bstatus)
           if(bstatus%check_status())return
           dtr=dtr-dt2
@@ -322,7 +327,7 @@ contains
           y=yc
        else
           !get coarse grid solution
-          call odefun(y, dt2, tt, nprimeq, neq, f)
+          call odefun(extra, y, dt2, tt, nprimeq, neq, f)
           call mbbks(y, f, nprimeq, neq, dt2, yc, pscal, bstatus)
           if(bstatus%check_status())return
           !get fine grid solution
@@ -331,7 +336,7 @@ contains
           if(bstatus%check_status())return
           tt2=tt+dt05
           ycp=yf
-          call odefun(ycp, dt05, tt, nprimeq, neq, f)
+          call odefun(extra, ycp, dt05, tt, nprimeq, neq, f)
           call mbbks(ycp,f,nprimeq, neq,dt05,yf,pscal, bstatus)
           if(bstatus%check_status())return
 
@@ -504,7 +509,7 @@ contains
 
 
   !-------------------------------------------------------------------------------
-  subroutine ode_rk4(odefun, y0, neq, t, dt, y )
+  subroutine ode_rk4(odefun,extra, y0, neq, t, dt, y )
     !
     ! !DESCRIPTION:
     !  4-th order runge-kutta method for ode integration
@@ -520,6 +525,7 @@ contains
     !
     implicit none
     ! !ARGUMENTS:
+    class(gbetr_type),  intent(inout)  :: extra
     integer,  intent(in)  :: neq
     real(r8), intent(in)  :: y0(neq)
     real(r8), intent(in)  :: t
@@ -538,25 +544,25 @@ contains
     ti = t
     dt05 = dt * 0.5_r8
 
-    call odefun(y0, dt05, ti, neq, k1)
+    call odefun(extra, y0, dt05, ti, neq, k1)
 
     y(:) = y0(:)
     call daxpy(neq, dt05, k1, 1, y, 1)
 
     ti = t + dt05
-    call odefun(y, dt05, ti, neq, k2)
+    call odefun(extra, y, dt05, ti, neq, k2)
 
     y(:) = y0(:)
     call daxpy(neq, dt05, k2, 1, y, 1)
 
     ti = t + dt05
-    call odefun( y, dt05, ti, neq, k3)
+    call odefun(extra, y, dt05, ti, neq, k3)
 
     y(:) = y0(:)
     call daxpy(neq, dt, k3, 1, y, 1)
 
     ti = t + dt
-    call odefun(y, dt, ti, neq, k4)
+    call odefun(extra, y, dt, ti, neq, k4)
 
     do n = 1, neq
        kt(n) = k1(n)+2._r8*K2(n)+2._r8*k3(n)+k4(n)
@@ -570,7 +576,7 @@ contains
 
 
   !-------------------------------------------------------------------------------
-  subroutine ode_rk2(odefun, y0, neq, t, dt, y )
+  subroutine ode_rk2(odefun, extra, y0, neq, t, dt, y )
     !
     ! !DESCRIPTION:
     !  2-th order runge-kutta method for ode integration
@@ -587,6 +593,7 @@ contains
     !
     implicit none
     ! !ARGUMENTS:
+    class(gbetr_type),  intent(inout)  :: extra
     integer,  intent(in)  :: neq
     real(r8), intent(in)  :: y0(neq)
     real(r8), intent(in)  :: t
@@ -602,13 +609,13 @@ contains
     ti = t
     dt05 = dt * 0.5_r8
 
-    call odefun(y0, dt, ti, neq, k1)
+    call odefun(extra, y0, dt, ti, neq, k1)
 
     y(:) = y0(:)
     call daxpy(neq, dt05, k1, 1, y, 1)
 
     ti = t + dt05
-    call odefun(y, dt05, ti, neq, k2)
+    call odefun(extra, y, dt05, ti, neq, k2)
 
     y(:) = y0(:)
     call daxpy(neq, dt, k2, 1, y, 1)

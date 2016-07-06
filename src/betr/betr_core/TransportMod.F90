@@ -12,6 +12,7 @@ module TransportMod
   use betr_ctrl     , only : iulog => biulog
   use bshr_kind_mod , only : r8 => shr_kind_r8
   use BetrStatusType , only : betr_status_type
+  use gbetrType     , only : gbetr_type
   implicit none
 
   private
@@ -19,7 +20,7 @@ module TransportMod
   character(len=*), private, parameter :: filename = &
        __FILE__
 
-  type, private :: Extra_type
+  type, extends(gbetr_type), private :: Extra_type
      real(r8), pointer :: zi(:)               !interfaces
      real(r8), pointer :: us(:)               !flow velocity at the interfaces
      integer           :: nlen                !total number of interfaces
@@ -1088,7 +1089,7 @@ contains
      if(bstatus%check_status())return
      time =0._r8
 
-     call ode_rk2(trajectory, zi(3:neq+2), neq, time, dtime, zold)
+     call ode_rk2(trajectory, extra_inst, zi(3:neq+2), neq, time, dtime, zold)
      if(Extra_inst%bstatus%check_status())then
        call bstatus%set_msg(Extra_inst%bstatus%print_msg(),Extra_inst%bstatus%print_err())
      endif
@@ -1097,16 +1098,17 @@ contains
 
    !-------------------------------------------------------------------------------
 
-   subroutine trajectory(y0, dt, ti, neq, dxdt)
+   subroutine trajectory(extra_inst, y0, dt, ti, neq, dxdt)
      !
      ! !DESCRIPTION:
      ! update the trajectory
 
      ! !USES:
      use InterpolationMod, only : Lagrange_interp
-     use BetrStatusType, only : betr_status_type
+     use BetrStatusType  , only : betr_status_type
      implicit none
      ! !ARGUMENTS:
+     class(gbetr_type),  intent(inout)  :: extra_inst
      integer,  intent(in)  :: neq
      real(r8), intent(in)  :: y0(neq)
      real(r8), intent(in)  :: dt
@@ -1119,6 +1121,8 @@ contains
      real(r8)           :: ui(neq)
      character(len=32)  :: subname ='trajectory'
 
+     select type(extra_inst)
+     type is (Extra_type)
      call Extra_inst%bstatus%reset()
      ! remove unused dummy args compiler warnings
      if (dt > 0.0_r8) continue
@@ -1127,6 +1131,7 @@ contains
      call Lagrange_interp(pn, Extra_inst%zi(1:Extra_inst%nlen), &
         Extra_inst%us(1:Extra_inst%nlen), y0, ui, Extra_inst%bstatus)
      if(Extra_inst%bstatus%check_status())return
+     end select
      do j = 1, neq
         dxdt(j) = -ui(j)
      enddo
