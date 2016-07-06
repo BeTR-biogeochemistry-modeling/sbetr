@@ -423,7 +423,11 @@ contains
                     aqucon = safe_div(tracer_conc_mobile(c,j,k),aqu2bulkcef_mobile(c,j,groupid(k)))
                   else
                     !when drainage is negative, tracer comes from groundwater
-                    aqucon = tracer_conc_grndwater(c,k)
+                    if(is_h2o(j))then
+                      aqucon = tracer_conc_grndwater(c,k)
+                    else
+                      aqucon = 0._r8
+                    endif
                   endif
                   !when drainage is negative, assume the flux is magically coming from other groundwater sources
                   tracer_flx_drain(c,k)     = tracer_flx_drain(c,k)  + aqucon * qflx_drain_vr(c,j)

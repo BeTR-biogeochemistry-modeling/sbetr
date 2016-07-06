@@ -1,4 +1,5 @@
 set(BETR_UTIL_SOURCES
+  gbetrType.F90
   betr_constants.F90
   babortutils.F90
   BetrStatusType.F90
