@@ -7,7 +7,6 @@ set(BETR_CORE_SOURCES
   TracerFluxType.F90
   TracerParamsMod.F90
   TracerStateType.F90
-  Tracer_varcon.F90
   TransportMod.F90
   BGCReactionsMod.F90
   PlantSoilBGCMod.F90
