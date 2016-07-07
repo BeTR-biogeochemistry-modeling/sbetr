@@ -16,7 +16,7 @@ module ODEMod
   logical, public, parameter :: ldebug_ode=.false.
 
   public :: ode_mbbks1, ode_adapt_mbbks1
-  public :: ode_ebbks1
+  public :: ode_ebbks1, ode_adapt_ebbks1
   public :: ode_rk4
   public :: ode_rk2
 
@@ -621,4 +621,80 @@ contains
     call daxpy(neq, dt, k2, 1, y, 1)
   end subroutine ode_rk2
 
+  !-------------------------------------------------------------------------------
+  subroutine ode_adapt_ebbks1(odefun, extra, y0, nprimeq, neq, t, dt, y)
+    ! !DESCRIPTION:
+    !first order implicit bkks ode integration with the adaptive time stepping
+    !This could be used as an example for the implementation of time-adaptive
+    !mbbks1.
+    ! !NOTE:
+    ! this code should only be used for mass positive ODE integration
+    implicit none
+    ! !ARGUMENTS:
+    class(gbetr_type),  intent(inout)  :: extra
+    real(r8), intent(in)  :: y0(neq)  ! state variable at previous time step
+    real(r8), intent(in)  :: t        ! time stamp
+    real(r8), intent(in)  :: dt       ! time stepping
+    integer,  intent(in)  :: nprimeq  !
+    integer,  intent(in)  :: neq      ! number of equations
+    real(r8), intent(out) :: y(neq)   ! updated state variable
+    external :: odefun
+
+    ! !LOCAL VARIABLES:
+    real(r8) :: yc(neq)    !coarse time stepping solution
+    real(r8) :: yf(neq)    !fine time stepping solution
+    real(r8) :: ycp(neq)   !temporary variable
+    real(r8) :: f(neq)   ! derivative
+    real(r8) :: dt2
+    real(r8) :: dtr
+    real(r8) :: dt05
+    real(r8) :: dtmin
+    real(r8) :: tt,tt2     !temporary variables
+    logical  :: acc
+    real(r8) :: rerr, dt_scal, pscal
+    integer  :: n, nJ
+
+    dt2=dt
+    dtmin=dt/64._r8
+    dtr=dt
+    tt=0._r8
+    !make a copy of the solution at the current time step
+    y=y0
+    do
+       if(dt2<=dtmin)then
+          call odefun(extra, y, dt2, tt, nprimeq, neq, f)
+          call ebbks(y, f, nprimeq, neq, dt2, yc, pscal)
+          dtr=dtr-dt2
+          tt=tt+dt2
+          y=yc
+       else
+          !get coarse grid solution
+          call odefun(extra, y, dt2, tt, nprimeq, neq, f)
+          call ebbks(y, f, nprimeq, neq, dt2, yc, pscal)
+
+          !get fine grid solution
+          dt05=dt2*0.5_r8
+          call ebbks(y,f,nprimeq, neq,dt05, yf, pscal)
+          tt2=tt+dt05
+          ycp=yf
+          call odefun(extra, ycp, dt05, tt, nprimeq, neq, f)
+          call ebbks(ycp,f,nprimeq, neq,dt05,yf,pscal)
+
+          !determine the relative error
+          rerr=get_rerr_v(yc,yf, neq)
+
+          !determine time scalar factor
+          call get_tscal(rerr,dt_scal,acc)
+
+          if(acc)then
+             dtr=dtr-dt2
+             tt=tt+dt2
+             y=yf
+          endif
+          dt2=dt2*dt_scal
+          dt2=min(dt2,dtr)
+       endif
+       if(abs(dtr/dt)<1.e-4_r8)exit
+    enddo
+  end subroutine ode_adapt_ebbks1
 end module ODEMod
