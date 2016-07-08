@@ -1,7 +1,6 @@
 set(BETR_CORE_SOURCES
   BeTRTracerType.F90
   TracerBaseType.F90
-  KineticsMod.F90
   TracerBoundaryCondType.F90
   TracerCoeffType.F90
   TracerFluxType.F90
