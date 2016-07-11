@@ -213,19 +213,18 @@ module BGCReactionsMod
      end subroutine InitCold_interface
 
      !-------------------------------------------------------------------------------
-     subroutine readParams_interface(this, ncid, betrtracer_vars)
+     subroutine readParams_interface(this, name_list_buffer, betrtracer_vars)
        !
        ! !DESCRIPTION:
        ! template for readParams
        ! !USES:
-       use ncdio_pio                , only : file_desc_t
        use BeTRTracerType           , only : BeTRTracer_Type
 
        ! !ARGUMENTS:
        import :: bgc_reaction_type
 
        class(bgc_reaction_type)          , intent(inout)    :: this
-       type(file_desc_t)                 , intent(inout) :: ncid  ! pio netCDF file id
+       character(len=*)                  , intent(in)  :: name_list_buffer
        type(BeTRTracer_Type)             , intent(inout) :: betrtracer_vars
 
      end subroutine readParams_interface

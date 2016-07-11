@@ -13,7 +13,6 @@ module MockBGCReactionsType
   use BeTR_decompMod           , only : bounds_type  => betr_bounds_type
   use BGCReactionsMod          , only : bgc_reaction_type
   use tracer_varcon            , only : bndcond_as_conc, bndcond_as_flux
-  use ColumnType               , only : col
   use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
   implicit none
 
@@ -429,23 +428,21 @@ contains
   end subroutine InitCold
 
   !-----------------------------------------------------------------------
-  subroutine readParams(this, ncid, betrtracer_vars)
+  subroutine readParams(this, name_list_buffer, betrtracer_vars)
     !
     ! !DESCRIPTION:
     ! read in module specific parameters
     !
     ! !USES:
-    use ncdio_pio      , only : file_desc_t
     use BeTRTracerType , only : BeTRTracer_Type
     implicit none
     ! !ARGUMENTS:
     class(bgc_reaction_mock_run_type) , intent(inout)    :: this
     type(BeTRTracer_Type)             , intent(inout) :: betrtracer_vars
-    type(file_desc_t)                 , intent(inout) :: ncid  ! pio netCDF file id
+    character(len=*)                  , intent(in)  :: name_list_buffer
 
     ! remove compiler warnings for unused dummy args
     if (this%dummy_compiler_warning)           continue
-    if (ncid%fh > 0)                           continue
     if (len(betrtracer_vars%betr_simname) > 0) continue
 
     !do nothing here

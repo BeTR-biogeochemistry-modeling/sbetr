@@ -367,7 +367,7 @@ contains
   end subroutine InitCold
 
   !------------------------------------------------------------------------
-  subroutine Restart(this, bounds, ncid, flag, betrtracer_vars)
+  subroutine Restart(this, bounds, flag, betrtracer_vars)
     !
     ! !DESCRIPTION:
     ! Read/Write module information to/from restart file.
@@ -375,12 +375,10 @@ contains
     ! Now it is purposely empty, but will be potentially useful in the future
     ! !USES:
     use BetrTracerType , only : betrtracer_type
-    use ncdio_pio      , only : file_desc_t
     !
     ! !ARGUMENTS:
     class(TracerFlux_type), intent(inout) :: this
     type(bounds_type)     , intent(in)    :: bounds
-    type(file_desc_t)     , intent(inout) :: ncid                                         ! netcdf id
     character(len=*)      , intent(in)    :: flag                                         ! 'read' or 'write'
     type(BeTRTracer_Type) , intent(in)    :: betrtracer_vars
     !
@@ -391,7 +389,6 @@ contains
     ! remove compiler warnings for unused dummy args
     if (size(this%tracer_flx_top_soil_col) > 0) continue
     if (bounds%begc > 0)                        continue
-    if (ncid%fh > 0)                            continue
     if (len(flag) > 0)                          continue
     if (len(betrtracer_vars%betr_simname) > 0)  continue
 

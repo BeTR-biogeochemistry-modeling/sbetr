@@ -11,7 +11,6 @@ set(BETR_CORE_SOURCES
   PlantSoilBGCMod.F90
   )
 
-include_directories(${CMAKE_BINARY_DIR}/src/stub_clm)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_math)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_grid)

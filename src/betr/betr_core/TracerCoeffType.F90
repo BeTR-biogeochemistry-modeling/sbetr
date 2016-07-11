@@ -68,7 +68,7 @@ contains
   end subroutine Init
 
   !------------------------------------------------------------------------
-  subroutine Restart(this, bounds, ncid, flag, betrtracer_vars)
+  subroutine Restart(this, bounds, flag, betrtracer_vars)
     !
     ! !DESCRIPTION:
     ! Read/Write module information to/from restart file.
@@ -77,14 +77,11 @@ contains
     ! !USES:
     use BetrTracerType , only : betrtracer_type
     use betr_varcon    , only : spval  => bspval
-    use restUtilMod    , only : restartvar
-    use ncdio_pio      , only : file_desc_t
-    use ncdio_pio      , only : ncd_double
+
     !
     ! !ARGUMENTS:
     class(TracerCoeff_type), intent(inout) :: this
     type(bounds_type)    , intent(in)    :: bounds
-    type(file_desc_t)    , intent(inout) :: ncid                                         ! netcdf id
     character(len=*)     , intent(in)    :: flag                                         ! 'read' or 'write'
     type(BeTRTracer_Type), intent(in)    :: betrtracer_vars
     !
@@ -96,9 +93,6 @@ contains
     if (len(betrtracer_vars%betr_simname) > 0) continue
     if (bounds%begc > 0) continue
 
-    call restartvar(ncid=ncid, flag=flag, varname='annsum_counter_betr', xtype=ncd_double,  &
-         dim1name='column', long_name='',  units='', &
-         interpinic_flag='interp' , readvar=readvar, data=this%annsum_counter_col)
 
   end subroutine Restart
 
