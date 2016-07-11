@@ -45,7 +45,7 @@ module BGCReactionsMod
 
   abstract interface
      !----------------------------------------------------------------------
-     subroutine Init_betrbgc_interface(this, bounds, lbj, ubj, betrtracer_vars, bstatus)
+     subroutine Init_betrbgc_interface(this, bounds, lbj, ubj, betrtracer_vars, namelist_buffer, bstatus)
        !
        ! !DESCRIPTION:
        ! template for init_betrbgc
@@ -54,13 +54,17 @@ module BGCReactionsMod
        use BeTRTracerType  , only : BeTRtracer_type
        use BeTR_decompMod  , only : betr_bounds_type
        use BetrStatusType  , only : betr_status_type
+       use gbetrType       , only : gbetr_type
+
        !
        ! !ARGUMENTS:
        import :: bgc_reaction_type
+       implicit none
        class(bgc_reaction_type) , intent(inout)    :: this
        type(betr_bounds_type)   , intent(in)    :: bounds
        integer                  , intent(in)    :: lbj, ubj
        type(BeTRtracer_type )   , intent(inout) :: betrtracer_vars
+       character(len=*)         , intent(in)    :: namelist_buffer
        type(betr_status_type)   , intent(out)   :: bstatus
 
      end subroutine Init_betrbgc_interface

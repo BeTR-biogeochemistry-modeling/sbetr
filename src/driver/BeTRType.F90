@@ -142,7 +142,7 @@ contains
 
     call this%tracers%init_scalars()
 
-    call this%bgc_reaction%Init_betrbgc(bounds, lbj, ubj, this%tracers, bstatus)
+    call this%bgc_reaction%Init_betrbgc(bounds, lbj, ubj, this%tracers, namelist_buffer, bstatus)
     if(bstatus%check_status())return
 
     call this%aereconds%Init(bounds)
@@ -158,7 +158,7 @@ contains
     call this%tracerboundaryconds%Init(bounds, this%tracers)
 
     !inside Init_plant_soilbgc, specific plant soil bgc coupler data type will be created
-    call this%plant_soilbgc%Init_plant_soilbgc(bounds, lbj, ubj)
+    call this%plant_soilbgc%Init_plant_soilbgc(bounds, lbj, ubj, namelist_buffer)
 
     !initialize state variable
     call this%bgc_reaction%initCold(bounds, col, this%tracers, biophysforc, this%tracerstates)

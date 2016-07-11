@@ -28,7 +28,7 @@ end type plant_soilbgc_type
 
   abstract interface
   !----------------------------------------------------------------------
-  subroutine Init_plant_soilbgc_interface(this, bounds, lbj, ubj)
+  subroutine Init_plant_soilbgc_interface(this, bounds, lbj, ubj, namelist_buffer)
 
   !
   ! !DESCRIPTION:
@@ -39,8 +39,10 @@ end type plant_soilbgc_type
 
   ! !ARGUMENTS:
   import :: plant_soilbgc_type
+  implicit none
   class(plant_soilbgc_type) , intent(inout) :: this
   type(betr_bounds_type)    , intent(in) :: bounds
+  character(len=*)          , intent(in) :: namelist_buffer
   integer                   , intent(in) :: lbj, ubj
 
   end subroutine Init_plant_soilbgc_interface
