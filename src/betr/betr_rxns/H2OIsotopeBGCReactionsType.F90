@@ -44,8 +44,9 @@ module H2OIsotopeBGCReactionsType
      procedure :: init_boundary_condition_type  ! initialize type of top boundary conditions
      procedure :: do_tracer_equilibration       ! do equilibrium tracer chemistry
      procedure :: initCold
-     procedure :: readParams
      procedure :: lsm_betr_flux_state_receive
+
+     procedure, private :: readParams
    end type bgc_reaction_h2oiso_type
 
    interface bgc_reaction_h2oiso_type

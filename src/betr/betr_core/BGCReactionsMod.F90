@@ -35,9 +35,6 @@ module BGCReactionsMod
      !do cold initialization of different tracers
      procedure(initCold_interface)                        , deferred :: initCold
 
-     !read in implementation specific parameters
-     procedure(readParams_interface)                      , deferred :: readParams
-
      !send back soil state flux variables to other parts of lsm
      procedure(lsm_betr_flux_state_receive_interface)     , deferred :: lsm_betr_flux_state_receive
 
@@ -215,23 +212,6 @@ module BGCReactionsMod
 
 
      end subroutine InitCold_interface
-
-     !-------------------------------------------------------------------------------
-     subroutine readParams_interface(this, name_list_buffer, betrtracer_vars)
-       !
-       ! !DESCRIPTION:
-       ! template for readParams
-       ! !USES:
-       use BeTRTracerType           , only : BeTRTracer_Type
-
-       ! !ARGUMENTS:
-       import :: bgc_reaction_type
-
-       class(bgc_reaction_type)          , intent(inout)    :: this
-       character(len=*)                  , intent(in)  :: name_list_buffer
-       type(BeTRTracer_Type)             , intent(inout) :: betrtracer_vars
-
-     end subroutine readParams_interface
 
      !-------------------------------------------------------------------------------
      subroutine lsm_betr_flux_state_receive_interface(this, bounds,num_soilc, filter_soilc, &

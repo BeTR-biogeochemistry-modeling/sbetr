@@ -33,8 +33,8 @@ module MockBGCReactionsType
      procedure :: init_boundary_condition_type          ! initialize type of top boundary conditions
      procedure :: do_tracer_equilibration               ! do equilibrium tracer chemistry
      procedure :: InitCold                              ! do cold initialization
-     procedure :: readParams                            ! read in parameters
-     procedure :: lsm_betr_flux_state_receive       !
+     procedure :: lsm_betr_flux_state_receive           !
+     procedure, private :: readParams                   ! read in parameters
   end type bgc_reaction_mock_run_type
 
   interface bgc_reaction_mock_run_type
