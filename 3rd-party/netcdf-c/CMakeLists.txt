@@ -481,6 +481,8 @@ ENDIF()
 # * HDF5_INCLUDE_DIR
 # *
 ##
+message(STATUS "now start the hdf5 section")
+
 OPTION(USE_HDF5 "Use HDF5." ${ENABLE_NETCDF_4})
 IF(USE_HDF5 OR ENABLE_NETCDF_4)
   SET(USE_HDF5 ON)
@@ -491,10 +493,13 @@ IF(USE_HDF5 OR ENABLE_NETCDF_4)
   # .cmake files.  If this is the case, they should
   # specify HDF5_HL_LIB, HDF5_LIB, HDF5_INCLUDE_DIR manually.
   ##
+  message(STATUS "USE HDF5 OR ENABLE NETCDF_4 ${HDF5_C_LIBRARY} ${HDF5_HL_LIBRARY} ${HDF5_INCLUDE_DIR}")
   IF(HDF5_C_LIBRARY AND HDF5_HL_LIBRARY AND HDF5_INCLUDE_DIR)
-    SET(HDF5_LIBRARIES ${HDF5_C_LIBRARY} ${HDF5_HL_LIBRARY})
+    message(STATUS "HDF5 WAS ALREADY SETUP")
+    SET(HDF5_C_LIBRARIES ${HDF5_C_LIBRARY} ${HDF5_HL_LIBRARY})
     MESSAGE(STATUS "Using HDF5 C Library: ${HDF5_C_LIBRARY}")
     MESSAGE(STATUS "Using HDF5 HL LIbrary: ${HDF5_HL_LIBRARY}")
+    INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
   ELSE(HDF5_C_LIBRARY AND HDF5_HL_LIBRARY AND HDF5_INCLUDE_DIR) # We are seeking out HDF5 with Find Package.
     ###
     # For now we assume that if we are building netcdf
@@ -503,6 +508,7 @@ IF(USE_HDF5 OR ENABLE_NETCDF_4)
     # we will use a static library.  This can be toggled
     # by explicitely modifying NC_FIND_SHARED_LIBS.
     ##
+    message(STATUS "We are seeking out HDF5 with Find Package.")
     IF(NC_FIND_SHARED_LIBS)
       SET(NC_HDF5_LINK_TYPE "shared")
       SET(NC_HDF5_LINK_TYPE_UPPER "SHARED")
@@ -512,7 +518,7 @@ IF(USE_HDF5 OR ENABLE_NETCDF_4)
       SET(NC_HDF5_LINK_TYPE_UPPER "STATIC")
       ADD_DEFINITIONS(-DH5_BUILT_AS_STATIC_LIB)
     ENDIF(NC_FIND_SHARED_LIBS)
-
+    message(STATUS "Find the C and HL libraries. ${MSVC}")
     #####
     # First, find the C and HL libraries.
     #
@@ -524,6 +530,7 @@ IF(USE_HDF5 OR ENABLE_NETCDF_4)
       SET(SEARCH_PACKAGE_NAME ${HDF5_PACKAGE_NAME})
       FIND_PACKAGE(HDF5 NAMES ${SEARCH_PACKAGE_NAME} COMPONENTS C HL NO_MODULES REQUIRED ${NC_HDF5_LINK_TYPE})
     ELSE(MSVC)
+      message(STATUS "CALL find package")
       FIND_PACKAGE(HDF5 COMPONENTS C HL REQUIRED)
     ENDIF(MSVC)
 
@@ -531,10 +538,11 @@ IF(USE_HDF5 OR ENABLE_NETCDF_4)
     # Next, check the HDF5 version. This will inform which
     # HDF5 variables we need to munge.
     ##
-
+    message(STATUS "Assert HDF5 version meets minimum required version")
     ##
     # Assert HDF5 version meets minimum required version.
     ##
+    MESSAGE(STATUS "SET HDF5 VERSION")
     SET(HDF5_VERSION_REQUIRED 1.8.10)
 
     IF(HDF5_VERSION_STRING AND NOT HDF5_VERSION)
@@ -551,7 +559,7 @@ IF(USE_HDF5 OR ENABLE_NETCDF_4)
         MESSAGE(STATUS "Found HDF5 libraries version ${HDF5_VERSION}")
       ENDIF()
     ENDIF()
-
+    message(STATUS "Include the HDF5 include directory.")
     ##
     # Include the HDF5 include directory.
     ##
@@ -579,7 +587,7 @@ IF(USE_HDF5 OR ENABLE_NETCDF_4)
       ENDIF(${HDF5_VERSION} VERSION_GREATER "1.8.15")
 
     ELSE(MSVC)
-
+      message(STATUS "HDF5_C_LIBRARIES ${HDF5_C_LIBRARIES}")
       # Depending on the install, either HDF5_hdf_library or
       # HDF5_C_LIBRARIES may be defined.  We must check for either.
       IF(HDF5_C_LIBRARIES AND NOT HDF5_hdf5_LIBRARY)
@@ -588,7 +596,7 @@ IF(USE_HDF5 OR ENABLE_NETCDF_4)
 
     ENDIF(MSVC)
   ENDIF(HDF5_C_LIBRARY AND HDF5_HL_LIBRARY AND HDF5_INCLUDE_DIR)
-
+  message(STATUS "HDF5_LIBRARY CHECK finished")
   ###
   # The following options are not used in Windows.
   ###
@@ -656,6 +664,7 @@ IF(USE_HDF5 OR ENABLE_NETCDF_4)
 
   #Check to see if H5Z_SZIP exists in HDF5_Libraries. If so, we must use szip.
   CHECK_LIBRARY_EXISTS(hdf5 H5Z_SZIP "" USE_SZIP)
+  message(STATUS "USE_SZIP ${USE_SZIP}")
   IF(USE_SZIP)
     FIND_LIBRARY(SZIP NAMES szip sz)
     IF(SZIP)
@@ -666,7 +675,7 @@ IF(USE_HDF5 OR ENABLE_NETCDF_4)
     #FIND_PACKAGE(SZIP NO_MODULE REQUIRED)
     #INCLUDE_DIRECTORIES(${SZIP_INCLUDE_DIR})
   ENDIF()
-
+  message(STATUS "szip_include_dir ${SZIP_INCLUDE_DIR}")
   SET(H5_USE_16_API 1)
   OPTION(NC_ENABLE_HDF_16_API "Enable HDF5 1.6.x Compatibility(Required)" ON)
   IF(NOT NC_ENABLE_HDF_16_API)
@@ -674,13 +683,14 @@ IF(USE_HDF5 OR ENABLE_NETCDF_4)
   ENDIF()
 
   # Check for ZLib, but only if using HDF5.
-  FIND_PACKAGE(ZLIB)
-  IF(NOT ZLIB_LIBRARY)
-    MESSAGE(FATAL_ERROR "HDF5 Support specified, cannot find ZLib.")
-  ENDIF()
+#  FIND_PACKAGE(ZLIB)
+#  IF(NOT ZLIB_LIBRARY)
+#    MESSAGE(FATAL_ERROR "HDF5 Support specified, cannot find ZLib.")
+#  ENDIF()
   SET(USE_ZLIB ON)
   INCLUDE_DIRECTORIES(${ZLIB_INCLUDE_DIRS})
 
+  message(STATUS "zlib_include_dirs ${ZLIB_INCLUDE_DIRS}")
   ##
   # Check to see if libhdf5 contains
   # 'H5free_memory'.
@@ -1102,7 +1112,7 @@ IF(NOT HAVE_UNISTD_H)
 ENDIF()
 
 CHECK_INCLUDE_FILE("alloca.h"  HAVE_ALLOCA_H)
-CHECK_INCLUDE_FILE("malloc.h"    HAVE_MALLOC_H)
+CHECK_INCLUDE_FILE("sys/malloc.h"    HAVE_MALLOC_H)
 CHECK_INCLUDE_FILE("ctype.h"   HAVE_CTYPE_H)
 CHECK_INCLUDE_FILE("dirent.h"  HAVE_DIRENT_H)
 CHECK_INCLUDE_FILE("dlfcn.h"   HAVE_DLFCN_H)
@@ -1128,7 +1138,7 @@ CHECK_INCLUDE_FILE("sys/resource.h" HAVE_SYS_RESOURCE_H)
 CHECK_INCLUDE_FILE("fcntl.h"  HAVE_FCNTL_H)
 CHECK_INCLUDE_FILE("inttypes.h"  HAVE_INTTYPES_H)
 CHECK_INCLUDE_FILE("pstdint.h"  HAVE_PSTDINT_H)
-CHECK_INCLUDE_FILE("endian.h" HAVE_ENDIAN_H)
+CHECK_INCLUDE_FILE("machine/endian.h" HAVE_ENDIAN_H)
 CHECK_INCLUDE_FILE("BaseTsd.h"  HAVE_BASETSD_H)
 CHECK_INCLUDE_FILE("stddef.h"   HAVE_STDDEF_H)
 
@@ -1194,6 +1204,7 @@ CHECK_FUNCTION_EXISTS(sysconf HAVE_SYSCONF)
 CHECK_FUNCTION_EXISTS(getrlimit HAVE_GETRLIMIT)
 CHECK_FUNCTION_EXISTS(_filelengthi64 HAVE_FILE_LENGTH_I64)
 
+message(STATUS "ALL_TLL_LIBS ${ALL_TLL_LIBS}")
 #####
 # End system inspection checks.
 #####
@@ -1684,7 +1695,10 @@ SET(CC_VERSION "${CMAKE_C_COMPILER}")
 # Build *FLAGS for libnetcdf.settings.
 SET(CFLAGS "${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE}}")
 SET(CPPFLAGS "${CMAKE_CPP_FLAGS} ${CMAKE_CPP_FLAGS_${CMAKE_BUILD_TYPE}}")
-SET(LDFLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${CMAKE_SHARED_LINKER_FLAGS_${CMAKE_BUILD_TYPE}}")
+SET(LDFLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${CMAKE_SHARED_LINKER_FLAGS_${CMAKE_BUILD_TYPE}} -v")
+message(STATUS "CFLAGS ${CFLAGS}")
+message(STATUS "CPPFLAGS ${CPPFLAGS}")
+message(STATUS "LDFLAGS ${LDFLAGS}")
 
 is_disabled(BUILD_SHARED_LIBS enable_static)
 is_enabled(BUILD_SHARED_LIBS enable_shared)
