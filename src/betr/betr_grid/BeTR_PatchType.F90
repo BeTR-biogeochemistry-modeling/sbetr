@@ -6,6 +6,7 @@ implicit none
    integer,  pointer :: column(:)  !column index
    integer,  pointer :: itype(:)   !patch vegetation
    real(r8), pointer :: crop(:)    !crop pft: 0. = not crop, 1. = crop pft
+   integer :: npfts
   contains
     procedure, public :: init
   end type betr_patch_type

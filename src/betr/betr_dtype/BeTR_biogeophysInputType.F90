@@ -12,6 +12,7 @@ implicit none
     real(r8), pointer :: annsum_npp_patch(:)    => null()  !annual npp
     real(r8), pointer :: agnpp_patch(:)         => null()
     real(r8), pointer :: bgnpp_patch(:)         => null()
+    real(r8), pointer :: rr_patch(:)            => null()  !root respiration
     !waterstate
     real(r8), pointer :: h2osoi_liq_col(:,:)    => null()    !liquid water (kg/m2) (new) (-nlevsno+1:nlevgrnd)
     real(r8), pointer :: h2osoi_ice_col(:,:)    => null()    !ice lens (kg/m2) (new) (-nlevsno+1:nlevgrnd)
@@ -113,7 +114,7 @@ contains
   allocate (this%annsum_npp_patch(  begp:endp))  !annual npp
   allocate (this%agnpp_patch(       begp:endp))
   allocate (this%bgnpp_patch(       begp:endp))
-
+  allocate (this%rr_patch(begp:endp))
   !waterstate
   allocate (this%frac_h2osfc_col (  begc:endc         ) ) ! col fractional area with surface water greater than zero
   allocate (this%finundated_col(    begc:endc         ) ) ! fraction of column that is inundated, this is for bgc caclulation in betr

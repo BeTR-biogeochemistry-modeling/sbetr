@@ -62,7 +62,7 @@ contains
 !-------------------------------------------------------------------------------
 
   subroutine ALMInit(this, base_filename, namelist_buffer, &
-       bounds, col, pft, waterstate)
+       bounds, lun, col, pft, waterstate)
     !DESCRIPTION
     !Initialize BeTR for ALM
     !
@@ -74,6 +74,7 @@ contains
     use landunit_varcon , only : istcrop, istice, istsoil
     use clm_varpar      , only : nlevsno, nlevsoi, nlevtrc_soil
     use ColumnType      , only : column_type
+    use LandunitType   , only : landunit_type
     !betr types
     use betr_constants      , only : betr_filename_length
     use betr_constants      , only : betr_namelist_buffer_size
@@ -86,6 +87,7 @@ contains
     character(len=betr_filename_length)      , intent(in)    :: base_filename
     character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
     type(bounds_type)                        , intent(in)    :: bounds
+    type(landunit_type)                      , intent(in) :: lun
     type(column_type)                        , intent(in) :: col
     type(patch_type)                         , intent(in) :: pft
     type(waterstate_type)                    , intent(inout) :: waterstate
@@ -106,7 +108,7 @@ contains
 
     ! now call the base simulation init to continue initialization
     call this%BeTRInit(base_filename, namelist_buffer, &
-         bounds, col, pft, waterstate)
+         bounds, lun, col, pft, waterstate)
 
   end subroutine ALMInit
 !-------------------------------------------------------------------------------
@@ -117,7 +119,7 @@ contains
    !USES
     use ColumnType        , only : column_type
     use PatchType         , only : patch_type
-    use LandunitType      , only : lun
+    use LandunitType      , only : landunit_type
     use clm_varpar        , only : nlevsno, nlevsoi, nlevtrc_soil
     use tracer_varcon     , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
     implicit none
@@ -166,7 +168,7 @@ contains
    !USES
     use ColumnType     , only : column_type
     use WaterFluxType  , only : waterflux_type
-    use LandunitType   , only : lun
+    use LandunitType   , only : landunit_type
     use clm_varpar     , only : nlevsno, nlevsoi, nlevtrc_soil
 
     use betr_decompMod , only : betr_bounds_type
@@ -410,28 +412,30 @@ contains
   end subroutine ALMCalcSmpL
 
   !------------------------------------------------------------------------
-  subroutine ALMSetBiophysForcing(this, bounds, col, carbonflux_vars, waterstate_vars, &
+  subroutine ALMSetBiophysForcing(this, bounds, col, pft, carbonflux_vars, waterstate_vars, &
     waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
     chemstate_vars, soilstate_vars, cnstate_vars)
   !DESCRIPTION
   !pass in biogeophysical variables for running betr
   !USES
-    use ColumnType        , only : column_type
-    use SoilStateType     , only : soilstate_type
-    use WaterStateType    , only : Waterstate_Type
-    use TemperatureType   , only : temperature_type
-    use ChemStateType     , only : chemstate_type
-    use WaterfluxType     , only : waterflux_type
-    use atm2lndType       , only : atm2lnd_type
-    use SoilHydrologyType , only : soilhydrology_type
-    use CNStateType       , only : cnstate_type
-    use CNCarbonFluxType  , only : carbonflux_type
-    use CanopyStateType   , only : canopystate_type
-    use clm_varpar        , only : nlevsno, nlevsoi
+  use PatchType         , only : patch_type
+  use ColumnType        , only : column_type
+  use SoilStateType     , only : soilstate_type
+  use WaterStateType    , only : Waterstate_Type
+  use TemperatureType   , only : temperature_type
+  use ChemStateType     , only : chemstate_type
+  use WaterfluxType     , only : waterflux_type
+  use atm2lndType       , only : atm2lnd_type
+  use SoilHydrologyType , only : soilhydrology_type
+  use CNStateType       , only : cnstate_type
+  use CNCarbonFluxType  , only : carbonflux_type
+  use CanopyStateType   , only : canopystate_type
+  use clm_varpar        , only : nlevsno, nlevsoi
   implicit none
   !ARGUMENTS
   class(betr_simulation_alm_type) , intent(inout)        :: this
   type(bounds_type)               , intent(in)           :: bounds
+  type(patch_type)            , intent(in) :: pft
   type(column_type)           , intent(in)    :: col ! column type
   type(cnstate_type)          , optional, intent(in) :: cnstate_vars
   type(carbonflux_type)       , optional, intent(in) :: carbonflux_vars
@@ -444,13 +448,24 @@ contains
   type(chemstate_type)        , optional, intent(in) :: chemstate_vars
   type(soilstate_type)        , optional, intent(in) :: soilstate_vars
 
+  integer :: p, pi, c
 
-  call this%BeTRSetBiophysForcing(bounds, col, 1, nlevsoi, carbonflux_vars, waterstate_vars, &
+  call this%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi, carbonflux_vars, waterstate_vars, &
       waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
       chemstate_vars, soilstate_vars)
 
   !the following will be ALM specific
   !big leaf model
+  do c = bounds%begc, bounds%endc
+    do pi = 1, betr_maxpatch_pft
+      if (pi <= col%npfts(c)) then
+        p = col%pfti(c) + pi - 1
+        if (pft%active(p)) then
+          this%biophys_forc(c)%rr_patch(pi) = carbonflux_vars%rr_patch(p)
+        endif
+      endif
+    enddo
+  enddo
   !dvgm
   !
   end subroutine ALMSetBiophysForcing

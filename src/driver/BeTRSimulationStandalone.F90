@@ -61,7 +61,7 @@ contains
 
   !-------------------------------------------------------------------------------
 
-  subroutine StandaloneInit(this, base_filename, namelist_buffer, bounds, col, pft, waterstate)
+  subroutine StandaloneInit(this, base_filename, namelist_buffer, bounds, lun, col, pft, waterstate)
 
     !DESCRIPTION
     !initialize standalone betr
@@ -73,7 +73,7 @@ contains
     use BeTR_pftvarconType  , only : betr_pftvarcon
     use PatchType           , only : patch_type
     use ColumnType          , only : column_type
-    use LandunitType        , only : lun
+    use LandunitType        , only : landunit_type
     use pftvarcon           , only : noveg, nc4_grass, nc3_arctic_grass, nc3_nonarctic_grass
     use WaterStateType      , only : waterstate_type
     use CNStateType         , only : cnstate_type
@@ -86,6 +86,7 @@ contains
     character(len=betr_filename_length)      , intent(in)    :: base_filename
     character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
     type(bounds_type)                        , intent(in)    :: bounds
+    type(landunit_type)                      , intent(in) :: lun
     type(column_type)                        , intent(in)    :: col
     type(patch_type)                         , intent(in)    :: pft
     type(waterstate_type)                    , intent(inout) :: waterstate
@@ -111,7 +112,7 @@ contains
 
     ! now call the base simulation init to continue initialization
     call this%BeTRInit(base_filename, namelist_buffer, &
-         bounds, col, pft, waterstate)
+         bounds, lun, col, pft, waterstate)
 
     !pass necessary data
 
@@ -209,13 +210,14 @@ contains
   end subroutine StandaloneStepWithDrainage
 
   !------------------------------------------------------------------------
-  subroutine StandaloneSetBiophysForcing(this, bounds, col,  carbonflux_vars, waterstate_vars, &
+  subroutine StandaloneSetBiophysForcing(this, bounds, col, pft,  carbonflux_vars, waterstate_vars, &
     waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
     chemstate_vars, soilstate_vars, cnstate_vars)
   !DESCRIPTION
   !pass in biogeophysical variables for running betr
   !USES
   use ColumnType        , only : column_type
+  use PatchType         , only : patch_type
   use SoilStateType     , only : soilstate_type
   use WaterStateType    , only : Waterstate_Type
   use TemperatureType   , only : temperature_type
@@ -232,6 +234,7 @@ contains
   class(betr_simulation_standalone_type) , intent(inout)        :: this
   type(bounds_type)                      , intent(in)           :: bounds
   type(column_type)                      , intent(in)    :: col ! column type
+  type(patch_type)                       , intent(in) :: pft
   type(cnstate_type)                     , optional, intent(in) :: cnstate_vars
   type(carbonflux_type)                  , optional, intent(in) :: carbonflux_vars
   type(Waterstate_Type)                  , optional, intent(in) :: Waterstate_vars
@@ -243,7 +246,7 @@ contains
   type(chemstate_type)                   , optional, intent(in) :: chemstate_vars
   type(soilstate_type)                   , optional, intent(in) :: soilstate_vars
 
-  call this%BeTRSetBiophysForcing(bounds, col, 1, nlevsoi, carbonflux_vars, waterstate_vars, &
+  call this%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi, carbonflux_vars, waterstate_vars, &
       waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
       chemstate_vars, soilstate_vars)
 
