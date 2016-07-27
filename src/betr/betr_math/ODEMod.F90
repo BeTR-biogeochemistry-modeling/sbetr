@@ -35,7 +35,7 @@ contains
     !
     implicit none
     ! !ARGUMENTS:
-    class(gbetr_type),  intent(in)  :: extra
+    class(gbetr_type),  intent(inout)  :: extra
     integer,            intent(in)  :: nprimeq !number of primary equations that are subject to positive constraint
     integer,            intent(in)  :: neq     !total number of equations
     real(r8),           intent(in)  :: y0(neq) !initial values
@@ -593,7 +593,7 @@ contains
     !
     implicit none
     ! !ARGUMENTS:
-    class(gbetr_type),  intent(inout)  :: extra
+    class(gbetr_type),  pointer  :: extra
     integer,  intent(in)  :: neq
     real(r8), intent(in)  :: y0(neq)
     real(r8), intent(in)  :: t
