@@ -263,7 +263,6 @@ contains
     use BGCReactionsMod        , only : bgc_reaction_type
     use PlantSoilBGCMod        , only : plant_soilbgc_type
     use BeTR_aerocondType      , only : betr_aerecond_type
-    use betr_ctrl              , only : is_active_betr_bgc
     use BetrBGCMod             , only : calc_ebullition
     use BetrBGCMod             , only : stage_tracer_transport
     use BetrBGCMod             , only : surface_tracer_hydropath_update
@@ -353,13 +352,13 @@ contains
          this%tracerfluxes%tracer_flx_ebu_col(bounds%begc:bounds%endc, 1:this%tracers%nvolatile_tracers), &
          this%ebullition_on, betr_status)
     if(betr_status%check_status())return
-    if (is_active_betr_bgc) then
-       !update nitrogen storage pool
-       call this%plant_soilbgc%plant_soilbgc_summary(bounds, lbj, ubj, num_soilc, &
-            filter_soilc,                                                         &
-            col%dz(bounds%begc:bounds%endc,1:ubj),                                &
-            this%tracers, this%tracerfluxes, betr_status)
-    endif
+
+    !update nitrogen storage pool
+    call this%plant_soilbgc%plant_soilbgc_summary(bounds, lbj, ubj, num_soilc, &
+          filter_soilc,                                                         &
+          col%dz(bounds%begc:bounds%endc,1:ubj),                                &
+          this%tracers, this%tracerfluxes, betr_status)
+    
   end subroutine step_without_drainage
 
 
