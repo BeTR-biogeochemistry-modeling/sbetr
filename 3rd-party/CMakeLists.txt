@@ -255,7 +255,7 @@ if (NOT EXISTS ${NETCDF_LIBRARY})
   endif()
 
   message("Building and installing netcdf-c library...")
-  execute_process(COMMAND make install -j4
+  execute_process(COMMAND make install -j1
                   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/netcdf-c
                   OUTPUT_VARIABLE netcdf_build_log ERROR_VARIABLE netcdf_build_err
                   RESULT_VARIABLE stat)
