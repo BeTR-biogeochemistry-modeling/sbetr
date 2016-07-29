@@ -32,6 +32,7 @@ module WaterfluxType
     real(r8), pointer :: qflx_h2osfc2topsoi_col   (:)   ! col liquid water coming from surface standing water top soil (mm H2O/s)
     real(r8), pointer :: qflx_snow2topsoi_col     (:)   ! col liquid water coming from residual snow to topsoil (mm H2O/s)
     real(r8), pointer :: qflx_tran_veg_patch      (:)
+    real(r8), pointer :: qflx_rootsoi_patch       (:,:) ! pft root and soil water exchange [mm H2O/s] [+ into atmosphere]
   contains
     procedure          :: Init
     procedure, private :: InitAllocate
@@ -83,6 +84,7 @@ module WaterfluxType
     allocate(this%qflx_snow2topsoi_col     (begc:endc))              ; this%qflx_snow2topsoi_col     (:)   = nan
     allocate(this%qflx_h2osfc2topsoi_col   (begc:endc))              ; this%qflx_h2osfc2topsoi_col   (:)   = nan
     allocate(this%qflx_tran_veg_patch      (begp:endp))              ; this%qflx_tran_veg_patch      (:)   = nan
+    allocate(this%qflx_rootsoi_patch       (begp:endp,lbj:ubj))      ; this%qflx_rootsoi_patch       (:,:) = nan
     allocate( this%qflx_totdrain_col       (begc:endc))              ; this%qflx_totdrain_col        (:)   = nan
   end subroutine InitAllocate
 

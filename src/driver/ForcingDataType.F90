@@ -33,6 +33,7 @@ module ForcingDataType
      real(r8), pointer                   :: h2osoi_ice(:,:)
      real(r8), pointer                   :: qflx_infl(:)       !surface infiltration, mm/s
      real(r8), pointer                   :: qflx_rootsoi(:,:)  !transpiration at depth, m/s
+     real(r8), pointer                   :: qflx_rootsoi_patch(:,:)  !transpiration at depth, m/s
      real(r8), pointer                   :: pbot(:)            !amtospheric pressure, Pa
      real(r8), pointer                   :: tbot(:)            !atmoshperic temperature, kelvin
      real(r8), pointer                   :: h2osoi_icevol(:,:)
@@ -308,8 +309,8 @@ contains
 
   ! ----------------------------------------------------------------------
 
-  subroutine UpdateForcing(this, grid, bounds, lbj, ubj, numf, filter, ttime, col, atm2lnd_vars, &
-       soilhydrology_vars, soilstate_vars,waterstate_vars,waterflux_vars,                        &
+  subroutine UpdateForcing(this, grid, bounds, lbj, ubj, numf, filter, ttime, col, pft, &
+       atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars,waterflux_vars, &
        temperature_vars,chemstate_vars, jtops)
     !
     ! DESCRIPTIONS
@@ -323,11 +324,13 @@ contains
     use SoilStateType     , only : soilstate_type
     use ChemStateType     , only : chemstate_type
     use ColumnType        , only : column_type
+    use PatchType         , only : patch_type
     use decompMod         , only : bounds_type
     use SoilHydrologyType , only : soilhydrology_type
     use atm2lndType       , only : atm2lnd_type
     use BeTR_TimeMod      , only : betr_time_type
     use BeTR_GridMod      , only : betr_grid_type
+    use betr_varcon       , only : betr_maxpatch_pft
     implicit none
     !arguments
     class(ForcingData_type)  , intent(in)    :: this
@@ -344,10 +347,11 @@ contains
     type(waterflux_type)     , intent(inout) :: waterflux_vars
     type(temperature_type)   , intent(inout) :: temperature_vars
     type(column_type)        , intent(inout) :: col
+    type(patch_type)         , intent(in)    :: pft
     type(soilhydrology_type) , intent(inout) :: soilhydrology_vars
     integer                  , intent(inout) :: jtops(bounds%begc:bounds%endc)
 
-    integer            :: j, fc, c, tstep
+    integer            :: j, fc, c, tstep, p, pi
     character(len=255) :: subname='update_forcing'
 
     !X!write(*, *) 'Updating forcing data'
@@ -382,7 +386,14 @@ contains
              soilstate_vars%bsw_col(c,j)            = grid%bsw(j)
              temperature_vars%t_soisno_col(c,j)     = this%t_soi(tstep,j)
              waterflux_vars%qflx_rootsoi_col(c,j)   = this%qflx_rootsoi(tstep,j)  !water exchange between soil and root, m/H2O/s
-
+             do pi = 1, betr_maxpatch_pft
+               if (pi <= col%npfts(c)) then
+                 p = col%pfti(c) + pi - 1
+                 if (pft%active(p)) then
+                   waterflux_vars%qflx_rootsoi_patch(p,j) = waterflux_vars%qflx_rootsoi_col(c,j)
+                 endif
+               endif
+             enddo
              col%dz(c,j)                            = grid%dzsoi(j)
              col%zi(c,j)                            = grid%zisoi(j)
              col%z(c,j)                             = grid%zsoi(j)

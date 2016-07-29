@@ -330,7 +330,7 @@ contains
          this%plant_soilbgc, betr_status)
     if(betr_status%check_status())return
 
-    call tracer_gws_transport(betr_time, bounds, col, num_soilc, filter_soilc         , &
+    call tracer_gws_transport(betr_time, bounds, col, pft, num_soilc, filter_soilc, &
       Rfactor, biophysforc, biogeo_flux, this%tracers, this%tracerboundaryconds  , &
       this%tracercoeffs,  this%tracerstates, this%tracerfluxes, this%bgc_reaction, &
       this%advection_on, this%diffusion_on, betr_status)
@@ -358,7 +358,7 @@ contains
           filter_soilc,                                                         &
           col%dz(bounds%begc:bounds%endc,1:ubj),                                &
           this%tracers, this%tracerfluxes, betr_status)
-    
+
   end subroutine step_without_drainage
 
 

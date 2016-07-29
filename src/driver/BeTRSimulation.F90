@@ -756,6 +756,7 @@ contains
       this%biophys_forc(c)%qflx_h2osfc2topsoi_col(cc)   = waterflux_vars%qflx_h2osfc2topsoi_col(c)
       this%biophys_forc(c)%qflx_snow2topsoi_col(cc)     = waterflux_vars%qflx_snow2topsoi_col(c)
       this%biophys_forc(c)%qflx_rootsoi_col(cc,lbj:ubj) = waterflux_vars%qflx_rootsoi_col(c,lbj:ubj)
+
       this%biogeo_flux(c)%qflx_adv_col(cc,lbj-1:ubj)    = waterflux_vars%qflx_adv_col(c,lbj-1:ubj)
       this%biogeo_flux(c)%qflx_drain_vr_col(cc,lbj:ubj) = waterflux_vars%qflx_drain_vr_col(c,lbj:ubj)
 
@@ -765,6 +766,7 @@ contains
          p = col%pfti(c) + pi - 1
          if (pft%active(p)) then
            this%biophys_forc(c)%qflx_tran_veg_patch(pi)     = waterflux_vars%qflx_tran_veg_patch(p)
+           this%biophys_forc(c)%qflx_rootsoi_patch(pi,lbj:ubj) = waterflux_vars%qflx_rootsoi_patch(p,lbj:ubj)
          endif
        endif
     enddo

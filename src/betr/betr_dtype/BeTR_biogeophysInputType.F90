@@ -30,6 +30,7 @@ implicit none
     !waterflux
     real(r8), pointer :: qflx_surf_col            (:)      => null()  !surface runoff (mm H2O /s)
     real(r8), pointer :: qflx_rootsoi_col         (:,:)    => null() ! col root and soil water exchange [mm H2O/s] [+ into root]
+    real(r8), pointer :: qflx_rootsoi_patch       (:,:)    => null()
     real(r8), pointer :: qflx_dew_grnd_col        (:)      => null() ! col ground surface dew formation (mm H2O /s) [+] (+ = to atm); usually eflx_bot >= 0)
     real(r8), pointer :: qflx_dew_snow_col        (:)      => null() ! col surface dew added to snow pack (mm H2O /s) [+]
     real(r8), pointer :: qflx_sub_snow_vol_col    (:)      => null()
@@ -140,6 +141,7 @@ contains
   allocate(this%qflx_snow2topsoi_col     (begc:endc         ) ) ! col liquid water coming from residual snow to topsoil (mm H2O/s)
   allocate(this%qflx_tran_veg_patch      (begp:endp         ) )
   allocate(this%qflx_rootsoi_col         (begc:endc,lbj:ubj ) ) ! col root and soil water exchange [mm H2O/s] [+ into root]
+  allocate(this%qflx_rootsoi_patch       (begp:endp,lbj:ubj ) ) ! col root and soil water exchange [mm H2O/s] [+ into root]
 
   !temperature
   allocate(this%t_soi_10cm(                     begc:endc         )) !soil temperature in top 10cm of soil (Kelvin)

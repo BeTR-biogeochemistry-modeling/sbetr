@@ -135,7 +135,7 @@ contains
   !print*,'obtain waterstate_vars for initilizations that need it'
   call forcing_data%UpdateForcing(grid_data,                                            &
        bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, time_vars, col, &
-       atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars             ,   &
+       pft, atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars    ,   &
        waterflux_vars, temperature_vars, chemstate_vars, simulation%jtops)
 
   !print*,'initial water state variable output',time_vars%tstep
@@ -183,7 +183,7 @@ contains
     !from either user specified file or clm history file
 
     call forcing_data%UpdateForcing(grid_data,                                            &
-         bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, time_vars, col, &
+      bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, time_vars, col, pft, &
       atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars,                   &
       waterflux_vars, temperature_vars, chemstate_vars, simulation%jtops)
 
