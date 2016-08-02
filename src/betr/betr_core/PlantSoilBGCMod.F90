@@ -49,8 +49,8 @@ end type plant_soilbgc_type
 
 
   !----------------------------------------------------------------------
-  subroutine plant_soilbgc_summary_interface(this,bounds, lbj, ubj, numf, &
-       filter, dz, betrtracer_vars, tracerflux_vars, betr_status)
+  subroutine plant_soilbgc_summary_interface(this,bounds, lbj, ubj, pft, numf, &
+       filter, dtime, dz, betrtracer_vars, tracerflux_vars, betr_status)
 
   ! !USES:
   use BeTRTracerType , only : BeTRtracer_type
@@ -58,14 +58,17 @@ end type plant_soilbgc_type
   use BeTR_decompMod , only : betr_bounds_type
   use bshr_kind_mod  , only : r8 => shr_kind_r8
   use BetrStatusType , only : betr_status_type
+  use BeTR_PatchType , only : betr_patch_type
   ! !ARGUMENTS:
   import :: plant_soilbgc_type
 
   class(plant_soilbgc_type) , intent(inout) :: this
   type(betr_bounds_type)    , intent(in) :: bounds
   integer                   , intent(in) :: lbj, ubj
+  type(betr_patch_type)     , intent(in) :: pft
   integer                   , intent(in) :: numf
   integer                   , intent(in) :: filter(:)
+  real(r8)                  , intent(in) :: dtime
   real(r8)                  , intent(in) :: dz(bounds%begc:bounds%endc,1:ubj)
   type(BeTRtracer_type )    , intent(in) :: betrtracer_vars
   type(tracerflux_type)     , intent(in) :: tracerflux_vars

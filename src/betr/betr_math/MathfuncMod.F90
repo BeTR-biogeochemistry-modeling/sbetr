@@ -321,7 +321,6 @@ contains
     SHR_ASSERT_ALL((size(x)  == size(y)), errMsg(mod_filename,__LINE__), bstatus)
     if(bstatus%check_status())return
 
-    n = size(x)
     ! use subroutine from blas
     !DOUBLE PRECISION FUNCTION ddot(N,DX,INCX,DY,INCY)
     !

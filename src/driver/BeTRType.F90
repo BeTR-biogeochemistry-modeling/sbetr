@@ -354,9 +354,9 @@ contains
     if(betr_status%check_status())return
 
     !update nitrogen storage pool
-    call this%plant_soilbgc%plant_soilbgc_summary(bounds, lbj, ubj, num_soilc, &
-          filter_soilc,                                                         &
-          col%dz(bounds%begc:bounds%endc,1:ubj),                                &
+    call this%plant_soilbgc%plant_soilbgc_summary(bounds, lbj, ubj, pft, &
+          num_soilc, filter_soilc,  dtime                              , &
+          col%dz(bounds%begc:bounds%endc,1:ubj)                        , &
           this%tracers, this%tracerfluxes, betr_status)
 
   end subroutine step_without_drainage
