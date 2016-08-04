@@ -214,7 +214,7 @@ contains
 
        cell_increment = int(size(data) / num_cells)
 
-       do cell = 1, num_cells, cell_increment
+       do cell = 1, size(data), cell_increment
           local_val = data(cell)
           if(abs(local_val)<1.e-50_r8)local_val=0._r8
           write(this%output, '("cell ", i4, " = ", e21.13)') cell, local_val
