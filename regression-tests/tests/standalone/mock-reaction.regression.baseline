@@ -6,6 +6,8 @@ mean =   0.0000000000000E+00
 cell    1 =   0.0000000000000E+00
 cell    3 =   0.0000000000000E+00
 cell    5 =   0.0000000000000E+00
+cell    7 =   0.0000000000000E+00
+cell    9 =   0.0000000000000E+00
 
 [N2_gas_partial_pressure]
 category = pressure
@@ -15,6 +17,8 @@ mean =   0.0000000000000E+00
 cell    1 =   0.0000000000000E+00
 cell    3 =   0.0000000000000E+00
 cell    5 =   0.0000000000000E+00
+cell    7 =   0.0000000000000E+00
+cell    9 =   0.0000000000000E+00
 
 [O2_total_aqueous_conc]
 category = concentration
@@ -24,6 +28,8 @@ mean =   0.0000000000000E+00
 cell    1 =   0.0000000000000E+00
 cell    3 =   0.0000000000000E+00
 cell    5 =   0.0000000000000E+00
+cell    7 =   0.0000000000000E+00
+cell    9 =   0.0000000000000E+00
 
 [O2_gas_partial_pressure]
 category = pressure
@@ -33,6 +39,8 @@ mean =   0.0000000000000E+00
 cell    1 =   0.0000000000000E+00
 cell    3 =   0.0000000000000E+00
 cell    5 =   0.0000000000000E+00
+cell    7 =   0.0000000000000E+00
+cell    9 =   0.0000000000000E+00
 
 [AR_total_aqueous_conc]
 category = concentration
@@ -42,6 +50,8 @@ mean =   0.0000000000000E+00
 cell    1 =   0.0000000000000E+00
 cell    3 =   0.0000000000000E+00
 cell    5 =   0.0000000000000E+00
+cell    7 =   0.0000000000000E+00
+cell    9 =   0.0000000000000E+00
 
 [AR_gas_partial_pressure]
 category = pressure
@@ -51,6 +61,8 @@ mean =   0.0000000000000E+00
 cell    1 =   0.0000000000000E+00
 cell    3 =   0.0000000000000E+00
 cell    5 =   0.0000000000000E+00
+cell    7 =   0.0000000000000E+00
+cell    9 =   0.0000000000000E+00
 
 [CO2x_total_aqueous_conc]
 category = concentration
@@ -60,6 +72,8 @@ mean =   0.0000000000000E+00
 cell    1 =   0.0000000000000E+00
 cell    3 =   0.0000000000000E+00
 cell    5 =   0.0000000000000E+00
+cell    7 =   0.0000000000000E+00
+cell    9 =   0.0000000000000E+00
 
 [CO2x_gas_partial_pressure]
 category = pressure
@@ -69,6 +83,8 @@ mean =   0.0000000000000E+00
 cell    1 =   0.0000000000000E+00
 cell    3 =   0.0000000000000E+00
 cell    5 =   0.0000000000000E+00
+cell    7 =   0.0000000000000E+00
+cell    9 =   0.0000000000000E+00
 
 [CH4_total_aqueous_conc]
 category = concentration
@@ -78,6 +94,8 @@ mean =   0.0000000000000E+00
 cell    1 =   0.0000000000000E+00
 cell    3 =   0.0000000000000E+00
 cell    5 =   0.0000000000000E+00
+cell    7 =   0.0000000000000E+00
+cell    9 =   0.0000000000000E+00
 
 [CH4_gas_partial_pressure]
 category = pressure
@@ -87,6 +105,8 @@ mean =   0.0000000000000E+00
 cell    1 =   0.0000000000000E+00
 cell    3 =   0.0000000000000E+00
 cell    5 =   0.0000000000000E+00
+cell    7 =   0.0000000000000E+00
+cell    9 =   0.0000000000000E+00
 
 [DOC_total_aqueous_conc]
 category = concentration
@@ -96,6 +116,8 @@ mean =   0.5605539352826E-03
 cell    1 =   0.0000000000000E+00
 cell    3 =   0.0000000000000E+00
 cell    5 =   0.0000000000000E+00
+cell    7 =   0.5605539352826E-02
+cell    9 =   0.0000000000000E+00
 
 [total_gas_pressure]
 category = pressure
@@ -105,6 +127,8 @@ mean =   0.0000000000000E+00
 cell    1 =   0.0000000000000E+00
 cell    3 =   0.0000000000000E+00
 cell    5 =   0.0000000000000E+00
+cell    7 =   0.0000000000000E+00
+cell    9 =   0.0000000000000E+00
 
 [advective flux]
 category = velocity
@@ -114,4 +138,7 @@ mean =   0.5000000000000E-05
 cell    1 =   0.5000000000000E-05
 cell    3 =   0.5000000000000E-05
 cell    5 =   0.5000000000000E-05
+cell    7 =   0.5000000000000E-05
+cell    9 =   0.5000000000000E-05
+cell   11 =   0.5000000000000E-05
 
