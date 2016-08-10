@@ -142,7 +142,7 @@ contains
 
     call this%tracers%init_scalars()
 
-    call this%bgc_reaction%Init_betrbgc(bounds, lbj, ubj, this%tracers, bstatus)
+    call this%bgc_reaction%Init_betrbgc(bounds, lbj, ubj, this%tracers, namelist_buffer, bstatus)
     if(bstatus%check_status())return
 
     call this%aereconds%Init(bounds)
@@ -158,7 +158,7 @@ contains
     call this%tracerboundaryconds%Init(bounds, this%tracers)
 
     !inside Init_plant_soilbgc, specific plant soil bgc coupler data type will be created
-    call this%plant_soilbgc%Init_plant_soilbgc(bounds, lbj, ubj)
+    call this%plant_soilbgc%Init_plant_soilbgc(bounds, lbj, ubj, namelist_buffer)
 
     !initialize state variable
     call this%bgc_reaction%initCold(bounds, col, this%tracers, biophysforc, this%tracerstates)
@@ -263,7 +263,6 @@ contains
     use BGCReactionsMod        , only : bgc_reaction_type
     use PlantSoilBGCMod        , only : plant_soilbgc_type
     use BeTR_aerocondType      , only : betr_aerecond_type
-    use betr_ctrl              , only : is_active_betr_bgc
     use BetrBGCMod             , only : calc_ebullition
     use BetrBGCMod             , only : stage_tracer_transport
     use BetrBGCMod             , only : surface_tracer_hydropath_update
@@ -285,7 +284,7 @@ contains
     integer                          , intent(in)    :: num_soilp
     integer                          , intent(in)    :: filter_soilp(:)            ! pft filter
     type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
-    type(betr_biogeo_flux_type)      , intent(in)    :: biogeo_flux
+    type(betr_biogeo_flux_type)      , intent(inout) :: biogeo_flux
     type(betr_biogeo_state_type)     , intent(inout) :: biogeo_state
     type(betr_status_type)           , intent(out)   :: betr_status
 
@@ -328,10 +327,10 @@ contains
          this%tracerstates,                                    &
          this%tracerfluxes,                                    &
          this%tracerboundaryconds,                             &
-         this%plant_soilbgc, betr_status)
+         this%plant_soilbgc, biogeo_flux, betr_status)
     if(betr_status%check_status())return
 
-    call tracer_gws_transport(betr_time, bounds, col, num_soilc, filter_soilc         , &
+    call tracer_gws_transport(betr_time, bounds, col, pft, num_soilc, filter_soilc, &
       Rfactor, biophysforc, biogeo_flux, this%tracers, this%tracerboundaryconds  , &
       this%tracercoeffs,  this%tracerstates, this%tracerfluxes, this%bgc_reaction, &
       this%advection_on, this%diffusion_on, betr_status)
@@ -353,13 +352,13 @@ contains
          this%tracerfluxes%tracer_flx_ebu_col(bounds%begc:bounds%endc, 1:this%tracers%nvolatile_tracers), &
          this%ebullition_on, betr_status)
     if(betr_status%check_status())return
-    if (is_active_betr_bgc) then
-       !update nitrogen storage pool
-       call this%plant_soilbgc%plant_soilbgc_summary(bounds, lbj, ubj, num_soilc, &
-            filter_soilc,                                                         &
-            col%dz(bounds%begc:bounds%endc,1:ubj),                                &
-            this%tracers, this%tracerfluxes, betr_status)
-    endif
+
+    !update nitrogen storage pool
+    call this%plant_soilbgc%plant_soilbgc_summary(bounds, lbj, ubj, pft, &
+          num_soilc, filter_soilc,  dtime                              , &
+          col%dz(bounds%begc:bounds%endc,1:ubj)                        , &
+          this%tracers, this%tracerfluxes, betr_status)
+
   end subroutine step_without_drainage
 
 

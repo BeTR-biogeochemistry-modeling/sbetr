@@ -14,6 +14,11 @@ implicit none
     real(r8), pointer :: qflx_totdrain_col        (:)   => null() ! col total liquid water drainage  (m/time step), updated in betr
 
 
+    real(r8), pointer :: hr_vr_col(:,:)       => null()  !vertically resolved heterotrophic respiration, g C/m2/s
+    real(r8), pointer :: f_denit_vr_col(:,:)  => null()  !vertically resolved denitrification, g N /m2/s
+    real(r8), pointer :: f_nit_vr_col(:,:)    => null()  !vertically resolved nitrification, g N/m2/s
+    real(r8), pointer :: f_n2o_nit_vr(:,:)    => null()  !vertically resolved n2o production from nitrification, gN/m2/s
+
     contains
       procedure, public  :: Init
       procedure, private :: InitAllocate
@@ -65,6 +70,11 @@ contains
   allocate(this%qflx_infl_col            (begc:endc)  )  !infiltration (mm H2O /s)
   allocate(this%qflx_drain_vr_col        (begc:endc,lbj:ubj) ) ! col liquid water losted as drainage (m /time step)
   allocate(this%qflx_totdrain_col        (begc:endc)   ) ! col total liquid water drainage  (m/time step), updated in betr
+
+  allocate(this%hr_vr_col(begc:endc,lbj:ubj))
+  allocate(this%f_denit_vr_col(begc:endc,lbj:ubj))
+  allocate(this%f_nit_vr_col(begc:endc,lbj:ubj))
+  allocate(this%f_n2o_nit_vr(begc:endc,lbj:ubj))
 
   end subroutine InitAllocate
 

@@ -131,7 +131,7 @@ contains
   end subroutine InitCold
 
   !------------------------------------------------------------------------
-  subroutine Restart(this, bounds, ncid, flag)
+  subroutine Restart(this, bounds, flag)
     !
     ! !DESCRIPTION:
     ! Read/Write module information to/from restart file.
@@ -139,13 +139,11 @@ contains
     ! !USES:
     use betr_varcon , only : spval  => bspval
     use betr_ctrl   , only : iulog => biulog
-    use ncdio_pio   , only : file_desc_t
     !
     ! !ARGUMENTS:
     class(tracerboundarycond_type), intent(inout)  :: this
     type(bounds_type)   , intent(in)    :: bounds
-    type(file_desc_t)   , intent(inout) :: ncid                                         ! netcdf id
-    character(len=*)    , intent(in)    :: flag                                         ! 'read' or 'write'
+    character(len=*)    , intent(in)    :: flag                                 ! 'read' or 'write'
     !
     ! !LOCAL VARIABLES:
     integer :: j,c     ! indices
@@ -154,7 +152,6 @@ contains
     ! remove compiler warnings for unused dummy args
     if (size(this%jtops_col) > 0) continue
     if (bounds%begc > 0) continue
-    if (ncid%fh > 0) continue
     if (len(flag) > 0) continue
 
   end subroutine Restart

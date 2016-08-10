@@ -29,6 +29,7 @@ implicit none
     !waterflux
     real(r8), pointer :: qflx_surf_col            (:)      => null()  !surface runoff (mm H2O /s)
     real(r8), pointer :: qflx_rootsoi_col         (:,:)    => null() ! col root and soil water exchange [mm H2O/s] [+ into root]
+    real(r8), pointer :: qflx_rootsoi_patch       (:,:)    => null()
     real(r8), pointer :: qflx_dew_grnd_col        (:)      => null() ! col ground surface dew formation (mm H2O /s) [+] (+ = to atm); usually eflx_bot >= 0)
     real(r8), pointer :: qflx_dew_snow_col        (:)      => null() ! col surface dew added to snow pack (mm H2O /s) [+]
     real(r8), pointer :: qflx_sub_snow_vol_col    (:)      => null()
@@ -101,7 +102,14 @@ implicit none
     real(r8), pointer :: sflx_minp_input_po4_vr_col(:,:)  => null() !mineral phosphorus input through deposition & fertilization
     real(r8), pointer :: sflx_minp_weathering_po4_vr_col(:,:)  => null() !mineral phosphorus input through weathering
 
-    real(r8), pointer :: sflx_minn_nh4_fix_vr_col(:,:) => null()    !nitrogen fixation
+
+    real(r8), pointer :: sflx_minn_nh4_fix_nomic_vr_col(:,:) => null()    !nitrogen fixation from non-microbe explicit calculation
+    real(r8), pointer :: rr_patch(:,:)
+    real(r8), pointer :: froot_prof_patch(:,:)
+    real(r8), pointer :: frootc_patch(:)
+    real(r8), pointer :: cn_scalar_patch(:)
+    real(r8), pointer :: cp_scalar_patch(:)
+
   contains
     procedure, public  :: Init
     procedure, private :: InitAllocate
@@ -146,12 +154,15 @@ contains
 
   ! cnstate_vars
   allocate(this%isoilorder(begc:endc))  ! soil order
-
+  allocate(this%frootc_patch(begp:endp))
+  allocate(this%cn_scalar_patch(begp:endp))
+  allocate(this%cp_scalar_patch(begp:endp))
   !carbon flux
   allocate (this%annsum_npp_patch(  begp:endp))  !annual npp
   allocate (this%agnpp_patch(       begp:endp))
   allocate (this%bgnpp_patch(       begp:endp))
-
+  allocate(this%rr_patch (begp:endp, lbj:ubj))
+  allocate(this%froot_prof_patch(begp:endp, lbj:ubj))
   !waterstate
   allocate (this%frac_h2osfc_col (  begc:endc         ) ) ! col fractional area with surface water greater than zero
   allocate (this%finundated_col(    begc:endc         ) ) ! fraction of column that is inundated, this is for bgc caclulation in betr
@@ -177,6 +188,7 @@ contains
   allocate(this%qflx_snow2topsoi_col     (begc:endc         ) ) ! col liquid water coming from residual snow to topsoil (mm H2O/s)
   allocate(this%qflx_tran_veg_patch      (begp:endp         ) )
   allocate(this%qflx_rootsoi_col         (begc:endc,lbj:ubj ) ) ! col root and soil water exchange [mm H2O/s] [+ into root]
+  allocate(this%qflx_rootsoi_patch       (begp:endp,lbj:ubj ) ) ! col root and soil water exchange [mm H2O/s] [+ into root]
 
   !temperature
   allocate(this%t_soi_10cm(                     begc:endc         )) !soil temperature in top 10cm of soil (Kelvin)
@@ -243,7 +255,8 @@ contains
   allocate(this%sflx_minn_input_nh4_vr_col(begc:endc,lbj:ubj)) !mineral nh4 input through deposition & fertilization
   allocate(this%sflx_minn_input_no3_vr_col(begc:endc,lbj:ubj)) !mineral no3 input through deposition & fertilization
   allocate(this%sflx_minp_input_po4_vr_col(begc:endc,lbj:ubj)) !mineral phosphorus input through weathering, deposition & fertilization
-  allocate(this%sflx_minn_nh4_fix_vr_col(begc:endc,lbj:ubj))   !nh4 from fixation
+
+  allocate(this%sflx_minn_nh4_fix_nomic_vr_col(begc:endc,lbj:ubj))   !nh4 from fixation
   allocate(this%sflx_minp_weathering_po4_vr_col(begc:endc,lbj:ubj)) !p from weathering
 
   end subroutine InitAllocate
@@ -285,7 +298,9 @@ contains
   this%sflx_minn_input_nh4_vr_col(:,:)= value_column
   this%sflx_minn_input_no3_vr_col(:,:)= value_column
   this%sflx_minp_input_po4_vr_col(:,:)= value_column
-  this%sflx_minn_nh4_fix_vr_col(:,:)= value_column
+
+  this%sflx_minn_nh4_fix_nomic_vr_col(:,:)= value_column
+
   this%sflx_minp_weathering_po4_vr_col(:,:) = value_column
   end subroutine reset
 end module BeTR_biogeophysInputType

@@ -255,7 +255,7 @@ contains
 
   !-------------------------------------------------------------------------------
 
-  subroutine tracer_gws_transport(betr_time, bounds, col, num_soilc, &
+  subroutine tracer_gws_transport(betr_time, bounds, col, pft, num_soilc, &
     filter_soilc, Rfactor, biophysforc, biogeo_flux, &
     betrtracer_vars, tracerboundarycond_vars, tracercoeff_vars, &
     tracerstate_vars, tracerflux_vars, bgc_reaction, advection_on, &
@@ -272,11 +272,13 @@ contains
     use BeTR_TimeMod           , only : betr_time_type
     use BetrStatusType         , only : betr_status_type
     use betr_columnType        , only : betr_column_type
+    use BeTR_PatchType         , only : betr_patch_type
     implicit none
     !ARGUMENTS
     class(betr_time_type)            , intent(in)    :: betr_time
     type(bounds_type)                , intent(in)    :: bounds                     ! bounds
     type(betr_column_type)           , intent(in)    :: col
+    type(betr_patch_type)            , intent(in)    :: pft
     integer                          , intent(in)    :: num_soilc                  ! number of columns in column filter_soilc
     integer                          , intent(in)    :: filter_soilc(:)            ! column filter_soilc
     real(r8)                         , intent(in)    :: Rfactor(bounds%begc: , bounds%lbj: ,1: ) !retardation factor
@@ -307,6 +309,7 @@ contains
 
     !do gas+aqueous diffusion and advection
     call tracer_gw_transport(betr_time, bounds, lbj, ubj, &
+         col, pft,                                        &
          tracerboundarycond_vars%jtops_col,               &
          num_soilc,                                       &
          filter_soilc,                                    &
@@ -533,9 +536,10 @@ contains
   end subroutine tracer_solid_transport
 
   !-------------------------------------------------------------------------------
-  subroutine tracer_gw_transport(betr_time, bounds, lbj, ubj, jtops, num_soilc, filter_soilc, Rfactor,     &
-       dz, zi,  transp_pathway, advection_on, diffusion_on, betrtracer_vars, tracerboundarycond_vars, &
-       tracercoeff_vars, biophysforc, biogeo_flux, bgc_reaction, tracerstate_vars, tracerflux_vars, bstatus)
+  subroutine tracer_gw_transport(betr_time, bounds, lbj, ubj, col, pft, jtops, num_soilc, filter_soilc,&
+       Rfactor, dz, zi,  transp_pathway, advection_on, diffusion_on, betrtracer_vars, &
+       tracerboundarycond_vars, tracercoeff_vars, biophysforc, biogeo_flux, bgc_reaction, &
+       tracerstate_vars, tracerflux_vars, bstatus)
     !
     ! !DESCRIPTION:
     ! do dual-phase (gas+aqueous) vertical tracer transport
@@ -548,11 +552,15 @@ contains
     use BGCReactionsMod        , only : bgc_reaction_type
     use BeTR_TimeMod           , only : betr_time_type
     use BetrStatusType         , only : betr_status_type
+    use betr_columnType        , only : betr_column_type
+    use BeTR_PatchType         , only : betr_patch_type
     implicit none
     ! !ARGUMENTS:
     class(betr_time_type)            , intent(in)    :: betr_time
     type(bounds_type)                , intent(in)    :: bounds
     integer                          , intent(in)    :: lbj, ubj
+    type(betr_column_type)           , intent(in)    :: col
+    type(betr_patch_type)            , intent(in)    :: pft
     integer                          , intent(in)    :: num_soilc                           ! number of columns in column filter_soilc
     integer                          , intent(in)    :: filter_soilc(:)                     ! column filter_soilc
     integer                          , intent(in)    :: jtops(bounds%begc: )                ! top label of each column
@@ -629,6 +637,7 @@ contains
        elseif (transp_pathway(kk) == advection_scheme .and. advection_on)then
           jtops0(:) = 1
           call do_tracer_advection(betr_time, bounds, lbj, ubj, &
+               col, pft, &
                jtops0,                                          &
                num_soilc,                                       &
                filter_soilc,                                    &
@@ -648,9 +657,9 @@ contains
   end subroutine tracer_gw_transport
 
   !-------------------------------------------------------------------------------
-  subroutine do_tracer_advection(betr_time, bounds, lbj, ubj, jtops, num_soilc, filter_soilc, &
-       betrtracer_vars, dz, zi, dtime,  biophysforc, biogeo_flux,            &
-       tracercoeff_vars, tracerstate_vars, tracerflux_vars, bstatus)
+  subroutine do_tracer_advection(betr_time, bounds, lbj, ubj, col, pft, &
+       jtops, num_soilc, filter_soilc, betrtracer_vars, dz, zi, dtime,  &
+       biophysforc, biogeo_flux, tracercoeff_vars, tracerstate_vars, tracerflux_vars, bstatus)
     !
     ! !DESCRIPTION:
     ! do aqueous advection for dissolved tracers, the advection of gasesous phase is done through pressure
@@ -668,10 +677,14 @@ contains
     use BeTR_TimeMod    , only : betr_time_type
     use BetrStatusType  , only : betr_status_type
     use betr_constants  , only : betr_errmsg_len
+    use betr_columnType , only : betr_column_type
+    use BeTR_PatchType  , only : betr_patch_type
     implicit none
     !ARGUMENTS
     class(betr_time_type)            , intent(in)    :: betr_time!
     type(bounds_type)                , intent(in)    :: bounds
+    type(betr_column_type)           , intent(in)    :: col
+    type(betr_patch_type)            , intent(in)    :: pft
     integer                          , intent(in)    :: lbj, ubj
     integer                          , intent(in)    :: num_soilc                           ! number of columns in column filter_soilc
     integer                          , intent(in)    :: jtops(bounds%begc: )
@@ -710,7 +723,7 @@ contains
     real(r8)             :: c_courant
     integer              :: num_loops                                           !number of loops as determined by the courant number condition
     logical              :: lexit_loop
-    integer              :: c, fc, j, l, k, ntrcs, trcid,kk
+    integer              :: c, p, fc, j, l, k, ntrcs, trcid,kk
     integer              :: ngwmobile_tracers
     logical              :: lshock
     real(r8), parameter  :: err_relative_threshold=1.e-2_r8                     !relative error threshold
@@ -735,9 +748,10 @@ contains
     if(bstatus%check_status())return
 !x    print*,'do_advection'
     associate(                                                                         &
-         qflx_adv                  => biogeo_flux%qflx_adv_col                    ,    & !real(r8) (:,:)[intent(in)], advective velocity defined at layer interfatemperature_vars
-         qflx_rootsoi              => biophysforc%qflx_rootsoi_col                ,    & !real(r8) (:,:)[intent(in)], water flux between plant and soil at different layers
-         h2osoi_liqvol             => biophysforc%h2osoi_liqvol_col               ,    & !real(r8) (:,:)[intent(in)]
+         qflx_adv                  => biogeo_flux%qflx_adv_col                       , & !real(r8) (:,:)[intent(in)], advective velocity defined at layer interfatemperature_vars
+         qflx_rootsoi              => biophysforc%qflx_rootsoi_col                   , & !real(r8) (:,:)[intent(in)], water flux between plant and soil at different layers
+         qflx_rootsoi_patch        => biophysforc%qflx_rootsoi_patch                 , &
+         h2osoi_liqvol             => biophysforc%h2osoi_liqvol_col                  , & !real(r8) (:,:)[intent(in)]
          is_advective              => betrtracer_vars%is_advective                   , & !logical(:) [intent(in)], indicator whether the tracer undergoes advection
          is_mobile                 => betrtracer_vars%is_mobile                      , & !
          is_h2o                    => betrtracer_vars%is_h2o                         , & !logical(:) [intent(in)], indicator whether the tracer is h2o
@@ -752,6 +766,7 @@ contains
          tracer_flx_leaching       => tracerflux_vars%tracer_flx_leaching_col        , & !
          tracer_flx_surfrun        => tracerflux_vars%tracer_flx_surfrun_col         , & !
          tracer_flx_vtrans         => tracerflux_vars%tracer_flx_vtrans_col          , & !
+         tracer_flx_vtrans_patch   => tracerflux_vars%tracer_flx_vtrans_patch        , & !
          tracer_flx_vtrans_vr      => tracerflux_vars%tracer_flx_vtrans_vr_col       , & !
          tracer_flx_infl           => tracerflux_vars%tracer_flx_infl_col              & !
          )
@@ -942,6 +957,15 @@ contains
                      tracer_flx_leaching(c,trcid) = tracer_flx_leaching(c, trcid) + leaching_mass(c,k)
                      tracer_flx_surfrun(c,trcid)  = tracer_flx_surfrun(c, trcid) + seep_mass(c,k)
                      tracer_flx_vtrans_vr(c, lbj:ubj, trcid) = transp_mass_vr(c,lbj:ubj,k)
+
+                     !the following implementation assumes there is only one column
+                     do p = 1, pft%npfts
+                       tracer_flx_vtrans_patch(p,trcid) = 0._r8
+                       do l=lbj, ubj
+                         tracer_flx_vtrans_patch(p,trcid) = tracer_flx_vtrans_patch(p,trcid) + &
+                            tracer_flx_vtrans_vr(c, l, trcid) * safe_div(qflx_rootsoi_patch(p,j),qflx_rootsoi(c,l))
+                       enddo
+                     enddo
                   endif
                enddo
             enddo

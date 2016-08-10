@@ -8,6 +8,7 @@ implicit none
 
   type, public :: carbonflux_type
     real(r8), pointer :: rr_col                                    (:)     ! column (gC/m2/s) root respiration (fine root MR + total root GR) (p2c)
+    real(r8), pointer :: rr_patch                                  (:)     ! column (gC/m2/s) root respiration (fine root MR + total root GR) (p2c)
     real(r8), pointer :: annsum_npp_patch                          (:) ! patch annual sum of NPP (gC/m2/yr)
     real(r8), pointer :: agnpp_patch                               (:)     ! (gC/m2/s) aboveground NPP
     real(r8), pointer :: bgnpp_patch                               (:)     ! (gC/m2/s) belowground NPP
@@ -74,7 +75,9 @@ contains
     begp = bounds%begp; endp= bounds%endp
     begc = bounds%begc; endc= bounds%endc
 
-    allocate(this%rr_col                            (begc:endc))                  ; this%rr_col                    (:)  =nan
+    allocate(this%rr_col                  (begc:endc))                  ; this%rr_col                    (:)  =nan
+    allocate(this%rr_patch                (begp:endp))                  ; this%rr_patch                    (:)  =nan
+
     allocate(this%annsum_npp_patch      (begp:endp)) ; this%annsum_npp_patch      (:) = nan
     allocate(this%agnpp_patch                       (begp:endp)) ; this%agnpp_patch                               (:) = nan
     allocate(this%bgnpp_patch                       (begp:endp)) ; this%bgnpp_patch                               (:) = nan

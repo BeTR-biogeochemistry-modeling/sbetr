@@ -32,7 +32,7 @@ module TransportMod
   end type Extra_type
 
   ! FIXME(bja, 201604) these instance variables need to be removed
-  type(Extra_type), private :: Extra_inst
+  class(Extra_type), pointer, private :: Extra_inst
   !default configuration parameters
   real(r8), private :: cntheta
   logical, private :: debug_loc=.false.
@@ -64,6 +64,17 @@ contains
     debug_loc = yesno
   end subroutine set_debug_transp
 
+  !-------------------------------------------------------------------------------
+  function create_Extra_type()
+
+  implicit none
+  class(Extra_type), pointer :: extra
+  class(Extra_type), pointer :: create_extra_type
+
+  allocate(extra)
+  create_extra_type => extra
+  
+  end function create_extra_type 
   !-------------------------------------------------------------------------------
   subroutine InitAllocate(this, lbj, ubj)
     !
@@ -863,6 +874,8 @@ contains
      SHR_ASSERT_ALL((size(trcin,3) == ntrcs), errMsg(filename,__LINE__),bstatus)
      if(bstatus%check_status())return
 
+     Extra_inst => create_extra_type()
+
      call Extra_inst%InitAllocate(1,ubj-lbj+6)
      halfdt_col(:) = .false.
 
@@ -1077,6 +1090,7 @@ contains
      integer :: neq  ! number of equations
      real(r8):: time
      character(len=32) :: subname = 'backward_advection'
+     class(gbetr_type), pointer :: gtype
 
      call bstatus%reset()
      SHR_ASSERT_ALL((size(zi)        == size(us)),     errMsg(filename,__LINE__),bstatus)
@@ -1088,8 +1102,8 @@ contains
      call Extra_inst%AAssign(zi,us, bstatus)
      if(bstatus%check_status())return
      time =0._r8
-
-     call ode_rk2(trajectory, extra_inst, zi(3:neq+2), neq, time, dtime, zold)
+     gtype => Extra_inst
+     call ode_rk2(trajectory, gtype, zi(3:neq+2), neq, time, dtime, zold)
      if(Extra_inst%bstatus%check_status())then
        call bstatus%set_msg(Extra_inst%bstatus%print_msg(),Extra_inst%bstatus%print_err())
      endif
@@ -1098,7 +1112,7 @@ contains
 
    !-------------------------------------------------------------------------------
 
-   subroutine trajectory(extra_inst, y0, dt, ti, neq, dxdt)
+   subroutine trajectory(extra, y0, dt, ti, neq, dxdt)
      !
      ! !DESCRIPTION:
      ! update the trajectory
@@ -1108,7 +1122,7 @@ contains
      use BetrStatusType  , only : betr_status_type
      implicit none
      ! !ARGUMENTS:
-     class(gbetr_type),  intent(inout)  :: extra_inst
+     class(gbetr_type),  pointer :: extra
      integer,  intent(in)  :: neq
      real(r8), intent(in)  :: y0(neq)
      real(r8), intent(in)  :: dt
@@ -1120,9 +1134,15 @@ contains
      integer, parameter :: pn = 1
      real(r8)           :: ui(neq)
      character(len=32)  :: subname ='trajectory'
+!     class(Extra_type), pointer :: extra_inst
 
-     select type(extra_inst)
-     type is (Extra_type)
+      !The select type is now not used before intel compiler does not support such use at the moment
+      !basically, intel compiler does not support passing a generic data type as a dummy arugment
+      !to a user defined external function, such as done here. It will be used in the future if intel
+      !fixes this compiler bug. Jinyun Tang, July 27, 2016.    
+!     select type(extra)
+!     class is (Extra_type)
+!     extra_inst => extra
      call Extra_inst%bstatus%reset()
      ! remove unused dummy args compiler warnings
      if (dt > 0.0_r8) continue
@@ -1131,7 +1151,7 @@ contains
      call Lagrange_interp(pn, Extra_inst%zi(1:Extra_inst%nlen), &
         Extra_inst%us(1:Extra_inst%nlen), y0, ui, Extra_inst%bstatus)
      if(Extra_inst%bstatus%check_status())return
-     end select
+!     end select
      do j = 1, neq
         dxdt(j) = -ui(j)
      enddo

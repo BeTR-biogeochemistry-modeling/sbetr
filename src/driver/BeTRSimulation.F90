@@ -14,7 +14,7 @@ module BeTRSimulation
   use tracer_varcon  , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
   use BeTR_decompMod , only : betr_bounds_type
   use decompMod      , only : bounds_type
-  use PatchType      , only : pft
+
   ! !USES:
   use BetrType                 , only : betr_type, create_betr_type
   use betr_ctrl                , only : max_betr_hist_type, betr_offline
@@ -119,7 +119,7 @@ contains
 
   !-------------------------------------------------------------------------------
   subroutine BeTRSimulationInit(this, base_filename, namelist_buffer, &
-       bounds, col, pft, waterstate)
+       bounds, lun, col, pft, waterstate)
     !
     ! DESCRIPTIONS
     ! Dummy routine for inheritance purposes. don't use.
@@ -129,11 +129,13 @@ contains
     use betr_constants , only : betr_namelist_buffer_size, betr_filename_length
     use ColumnType      , only : column_type
     use PatchType      , only : patch_type
+    use LandunitType   , only : landunit_type
     implicit none
 
     class(betr_simulation_type)              , intent(inout) :: this
     character(len=betr_filename_length)      , intent(in)    :: base_filename
     character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
+    type(landunit_type)                      , intent(in) :: lun
     type(column_type)                        , intent(in) :: col
     type(patch_type)                         , intent(in) :: pft
     type(bounds_type)                        , intent(in)    :: bounds
@@ -176,7 +178,7 @@ contains
 !-------------------------------------------------------------------------------
 
   subroutine BeTRInit(this, base_filename, namelist_buffer, &
-       bounds, col, pft, waterstate)
+       bounds, lun, col, pft, waterstate)
     !
     ! DESCRIPTION
     ! initialize BeTR
@@ -186,7 +188,7 @@ contains
     use betr_constants , only : betr_namelist_buffer_size
     use betr_constants , only : betr_filename_length
     use betr_varcon    , only : betr_maxpatch_pft
-    use LandunitType   , only : lun
+    use LandunitType   , only : landunit_type
     use landunit_varcon, only : istsoil, istcrop
     use ColumnType     , only : column_type
     use PatchType      , only : patch_type
@@ -196,6 +198,7 @@ contains
     character(len=betr_filename_length)      , intent(in)    :: base_filename
     character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
     type(bounds_type)                        , intent(in)    :: bounds
+    type(landunit_type)                      , intent(in) :: lun
     type(column_type)                        , intent(in) :: col
     type(patch_type)                         , intent(in) :: pft
     type(waterstate_type)                    , intent(in)    :: waterstate
@@ -242,7 +245,7 @@ contains
       endif
     enddo
     call this%BeTRSetcps(bounds, col, pft)
-    call this%BeTRSetBiophysForcing(bounds, col, betr_bounds%lbj, betr_bounds%ubj, &
+    call this%BeTRSetBiophysForcing(bounds, col, pft, betr_bounds%lbj, betr_bounds%ubj, &
         waterstate_vars = waterstate)
 
     do c = bounds%begc, bounds%endc
@@ -668,27 +671,29 @@ contains
   end subroutine WriteRegressionOutput
 
   !------------------------------------------------------------------------
-  subroutine BeTRSimulationSetBiophysForcing(this, bounds,  col, lbj, ubj, carbonflux_vars, waterstate_vars, &
+  subroutine BeTRSimulationSetBiophysForcing(this, bounds,  col, pft, lbj, ubj, carbonflux_vars, waterstate_vars, &
     waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
     chemstate_vars, soilstate_vars)
   !DESCRIPTION
   !pass in biogeophysical variables for running betr
   !USES
-    use SoilStateType     , only : soilstate_type
-    use WaterStateType    , only : Waterstate_Type
-    use TemperatureType   , only : temperature_type
-    use ChemStateType     , only : chemstate_type
-    use WaterfluxType     , only : waterflux_type
-    use atm2lndType       , only : atm2lnd_type
-    use SoilHydrologyType , only : soilhydrology_type
-    use CNCarbonFluxType  , only : carbonflux_type
-    use CanopyStateType   , only : canopystate_type
-    use ColumnType        , only : column_type
+  use SoilStateType     , only : soilstate_type
+  use WaterStateType    , only : Waterstate_Type
+  use TemperatureType   , only : temperature_type
+  use ChemStateType     , only : chemstate_type
+  use WaterfluxType     , only : waterflux_type
+  use atm2lndType       , only : atm2lnd_type
+  use SoilHydrologyType , only : soilhydrology_type
+  use CNCarbonFluxType  , only : carbonflux_type
+  use CanopyStateType   , only : canopystate_type
+  use ColumnType        , only : column_type
+  use PatchType         , only : patch_type
   implicit none
   !ARGUMENTS
   class(betr_simulation_type) , intent(inout)        :: this
   type(bounds_type)           , intent(in)           :: bounds
-  type(column_type)                      , intent(in)    :: col ! column type
+  type(patch_type)            , intent(in) :: pft
+  type(column_type)           , intent(in)    :: col ! column type
   integer                     , intent(in)           :: lbj, ubj
   type(carbonflux_type)       , optional, intent(in) :: carbonflux_vars
   type(Waterstate_Type)       , optional, intent(in) :: Waterstate_vars
@@ -751,6 +756,7 @@ contains
       this%biophys_forc(c)%qflx_h2osfc2topsoi_col(cc)   = waterflux_vars%qflx_h2osfc2topsoi_col(c)
       this%biophys_forc(c)%qflx_snow2topsoi_col(cc)     = waterflux_vars%qflx_snow2topsoi_col(c)
       this%biophys_forc(c)%qflx_rootsoi_col(cc,lbj:ubj) = waterflux_vars%qflx_rootsoi_col(c,lbj:ubj)
+
       this%biogeo_flux(c)%qflx_adv_col(cc,lbj-1:ubj)    = waterflux_vars%qflx_adv_col(c,lbj-1:ubj)
       this%biogeo_flux(c)%qflx_drain_vr_col(cc,lbj:ubj) = waterflux_vars%qflx_drain_vr_col(c,lbj:ubj)
 
@@ -760,6 +766,7 @@ contains
          p = col%pfti(c) + pi - 1
          if (pft%active(p)) then
            this%biophys_forc(c)%qflx_tran_veg_patch(pi)     = waterflux_vars%qflx_tran_veg_patch(p)
+           this%biophys_forc(c)%qflx_rootsoi_patch(pi,lbj:ubj) = waterflux_vars%qflx_rootsoi_patch(p,lbj:ubj)
          endif
        endif
     enddo
@@ -1597,13 +1604,15 @@ contains
 
     if(present(pft))then
       this%betr_pft(c)%column(:)=1
+      this%betr_pft(c)%npfts = 0
       do pi = 1, betr_maxpatch_pft
         if (pi <= col%npfts(c)) then
           p = col%pfti(c) + pi - 1
           if (pft%active(p)) then
             this%betr_pft(c)%wtcol(pi) = pft%wtcol(p)
             this%betr_pft(c)%itype(pi) = pft%itype(p)
-            this%betr_pft(c)%crop(pi) = crop(pi)
+            this%betr_pft(c)%crop(pi) = crop(pi)         !the crop looks weird here, jyt
+            this%betr_pft(c)%npfts = this%betr_pft(c)%npfts + 1
           endif
         endif
       enddo

@@ -35,9 +35,6 @@ module BGCReactionsMod
      !do cold initialization of different tracers
      procedure(initCold_interface)                        , deferred :: initCold
 
-     !read in implementation specific parameters
-     procedure(readParams_interface)                      , deferred :: readParams
-
      !send back soil state flux variables to other parts of lsm
      procedure(lsm_betr_flux_state_receive_interface)     , deferred :: lsm_betr_flux_state_receive
 
@@ -45,7 +42,7 @@ module BGCReactionsMod
 
   abstract interface
      !----------------------------------------------------------------------
-     subroutine Init_betrbgc_interface(this, bounds, lbj, ubj, betrtracer_vars, bstatus)
+     subroutine Init_betrbgc_interface(this, bounds, lbj, ubj, betrtracer_vars, namelist_buffer, bstatus)
        !
        ! !DESCRIPTION:
        ! template for init_betrbgc
@@ -54,20 +51,24 @@ module BGCReactionsMod
        use BeTRTracerType  , only : BeTRtracer_type
        use BeTR_decompMod  , only : betr_bounds_type
        use BetrStatusType  , only : betr_status_type
+       use gbetrType       , only : gbetr_type
+
        !
        ! !ARGUMENTS:
        import :: bgc_reaction_type
+       implicit none
        class(bgc_reaction_type) , intent(inout)    :: this
        type(betr_bounds_type)   , intent(in)    :: bounds
        integer                  , intent(in)    :: lbj, ubj
        type(BeTRtracer_type )   , intent(inout) :: betrtracer_vars
+       character(len=*)         , intent(in)    :: namelist_buffer
        type(betr_status_type)   , intent(out)   :: bstatus
 
      end subroutine Init_betrbgc_interface
      !----------------------------------------------------------------------
      subroutine calc_bgc_reaction_interface(this, bounds, col, lbj, ubj, num_soilc, filter_soilc, &
           num_soilp,filter_soilp, jtops, dtime, betrtracer_vars, tracercoeff_vars,  biophysforc,    &
-          tracerstate_vars, tracerflux_vars,  tracerboundarycond_vars, plant_soilbgc, betr_status)
+          tracerstate_vars, tracerflux_vars,  tracerboundarycond_vars, plant_soilbgc, biogeo_flux, betr_status)
        !
        ! !DESCRIPTION:
        ! template for calc_bgc_reaction
@@ -84,6 +85,7 @@ module BGCReactionsMod
        use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
        use BetrStatusType           , only : betr_status_type
        use betr_columnType          , only : betr_column_type
+       use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
        ! !ARGUMENTS:
        import :: bgc_reaction_type
        class(bgc_reaction_type)         , intent(inout)   :: this
@@ -103,6 +105,7 @@ module BGCReactionsMod
        type(tracerflux_type)            , intent(inout) :: tracerflux_vars
        type(tracerboundarycond_type)    , intent(inout) :: tracerboundarycond_vars !
        class(plant_soilbgc_type)        , intent(inout) :: plant_soilbgc
+       type(betr_biogeo_flux_type)      , intent(inout) :: biogeo_flux
        type(betr_status_type)           , intent(out)   :: betr_status
 
      end subroutine calc_bgc_reaction_interface
@@ -211,24 +214,6 @@ module BGCReactionsMod
 
 
      end subroutine InitCold_interface
-
-     !-------------------------------------------------------------------------------
-     subroutine readParams_interface(this, ncid, betrtracer_vars)
-       !
-       ! !DESCRIPTION:
-       ! template for readParams
-       ! !USES:
-       use ncdio_pio                , only : file_desc_t
-       use BeTRTracerType           , only : BeTRTracer_Type
-
-       ! !ARGUMENTS:
-       import :: bgc_reaction_type
-
-       class(bgc_reaction_type)          , intent(inout)    :: this
-       type(file_desc_t)                 , intent(inout) :: ncid  ! pio netCDF file id
-       type(BeTRTracer_Type)             , intent(inout) :: betrtracer_vars
-
-     end subroutine readParams_interface
 
      !-------------------------------------------------------------------------------
      subroutine lsm_betr_flux_state_receive_interface(this, bounds,num_soilc, filter_soilc, &

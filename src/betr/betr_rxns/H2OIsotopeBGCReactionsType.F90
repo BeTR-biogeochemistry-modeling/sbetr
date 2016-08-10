@@ -21,7 +21,6 @@ module H2OIsotopeBGCReactionsType
 ! !USES
   use bshr_log_mod             , only : errMsg => shr_log_errMsg
   use bshr_kind_mod            , only : r8 => shr_kind_r8
-  use decompMod                , only : bounds_type
   use BGCReactionsMod          , only : bgc_reaction_type
   use tracer_varcon            , only : bndcond_as_conc, bndcond_as_flux
   use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
@@ -45,8 +44,9 @@ module H2OIsotopeBGCReactionsType
      procedure :: init_boundary_condition_type  ! initialize type of top boundary conditions
      procedure :: do_tracer_equilibration       ! do equilibrium tracer chemistry
      procedure :: initCold
-     procedure :: readParams
      procedure :: lsm_betr_flux_state_receive
+
+     procedure, private :: readParams
    end type bgc_reaction_h2oiso_type
 
    interface bgc_reaction_h2oiso_type
@@ -100,7 +100,7 @@ module H2OIsotopeBGCReactionsType
 
 !-------------------------------------------------------------------------------
 
-  subroutine Init_betrbgc(this, bounds, lbj, ubj, betrtracer_vars, bstatus)
+  subroutine Init_betrbgc(this, bounds, lbj, ubj, betrtracer_vars, namelist_buffer, bstatus)
   !
   ! DESCRIPTION
   ! initialize the betrbgc
@@ -109,11 +109,13 @@ module H2OIsotopeBGCReactionsType
   use MathfuncMod    , only : addone
   use BeTR_decompMod , only : betr_bounds_type
   use BetrStatusType , only : betr_status_type
+  use gbetrType      , only : gbetr_type
   implicit none
   class(bgc_reaction_h2oiso_type) , intent(inout)    :: this
   type(betr_bounds_type)          , intent(in)    :: bounds
   integer                         , intent(in)    :: lbj, ubj
   type(BeTRtracer_type )          , intent(inout) :: betrtracer_vars
+  character(len=*)                , intent(in)    :: namelist_buffer
   type(betr_status_type)          , intent(out)   :: bstatus
 
   !local variables
@@ -290,7 +292,7 @@ module H2OIsotopeBGCReactionsType
 
   subroutine calc_bgc_reaction(this, bounds, col, lbj, ubj, num_soilc, filter_soilc,              &
        num_soilp,filter_soilp, jtops, dtime, betrtracer_vars, tracercoeff_vars, biophysforc, &
-       tracerstate_vars, tracerflux_vars, tracerboundarycond_vars, plant_soilbgc, betr_status)
+       tracerstate_vars, tracerflux_vars, tracerboundarycond_vars, plant_soilbgc, biogeo_flux,  betr_status)
 
   !
   ! do bgc reaction
@@ -308,6 +310,7 @@ module H2OIsotopeBGCReactionsType
   use BetrStatusType         , only : betr_status_type
   use betr_constants         , only : betr_errmsg_len
   use betr_columnType        , only : betr_column_type
+  use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
   !ARGUMENTS
   class(bgc_reaction_h2oiso_type)  , intent(inout) :: this                       !
   type(betr_bounds_type)           , intent(in)    :: bounds ! bounds
@@ -326,6 +329,7 @@ module H2OIsotopeBGCReactionsType
   type(tracerflux_type)            , intent(inout) :: tracerflux_vars            !
   type(tracerboundarycond_type)    , intent(inout) :: tracerboundarycond_vars !
   class(plant_soilbgc_type)        , intent(inout) :: plant_soilbgc
+  type(betr_biogeo_flux_type)      , intent(inout) :: biogeo_flux
   type(betr_status_type)           , intent(out)   :: betr_status
 
   !local variables
@@ -615,23 +619,21 @@ module H2OIsotopeBGCReactionsType
 
 
   !-----------------------------------------------------------------------
-  subroutine readParams(this, ncid, betrtracer_vars)
+  subroutine readParams(this, name_list_buffer, betrtracer_vars)
     !
     ! !DESCRIPTION:
     ! read in module specific parameters
     !
     ! !USES:
-    use ncdio_pio      , only : file_desc_t
     use BeTRTracerType , only : BeTRTracer_Type
     implicit none
     ! !ARGUMENTS:
     class(bgc_reaction_h2oiso_type) , intent(inout)    :: this
     type(BeTRTracer_Type)           , intent(inout) :: betrtracer_vars
-    type(file_desc_t)               , intent(inout) :: ncid  ! pio netCDF file id
+    character(len=*)                  , intent(in)  :: name_list_buffer
 
     ! remove compiler warnings for unused dummy args
     if (this%dummy_compiler_warning) continue
-    if (ncid%fh > 0) continue
     if (len(betrtracer_vars%betr_simname) > 0) continue
     !do nothing here for the moment, but contents will eventually be filled in here
 
@@ -648,7 +650,6 @@ module H2OIsotopeBGCReactionsType
     use bshr_kind_mod   , only : r8 => shr_kind_r8
     use tracerfluxType  , only : tracerflux_type
     use tracerstatetype , only : tracerstate_type
-    use decompMod       , only : bounds_type
     use BeTRTracerType  , only : BeTRTracer_Type
     use BeTR_decompMod  , only : betr_bounds_type
     implicit none

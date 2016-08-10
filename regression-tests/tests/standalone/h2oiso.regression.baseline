@@ -6,6 +6,8 @@ mean =   0.4112281093821E+01
 cell    1 =   0.6086524186252E+01
 cell    3 =   0.4763466087183E+01
 cell    5 =   0.4015557941797E+01
+cell    7 =   0.3422539534197E+01
+cell    9 =   0.3492728881059E+01
 
 [N2_gas_partial_pressure]
 category = pressure
@@ -15,6 +17,8 @@ mean =   0.7832655093218E+00
 cell    1 =   0.7808334698453E+00
 cell    3 =   0.7809636071907E+00
 cell    5 =   0.7814193870321E+00
+cell    7 =   0.7828058567434E+00
+cell    9 =   0.7867619305448E+00
 
 [O2_total_aqueous_conc]
 category = concentration
@@ -24,6 +28,8 @@ mean =   0.1118831817755E+01
 cell    1 =   0.1662444848666E+01
 cell    3 =   0.1304389206890E+01
 cell    5 =   0.1100456305011E+01
+cell    7 =   0.9349711350380E+00
+cell    9 =   0.9293900445777E+00
 
 [O2_gas_partial_pressure]
 category = pressure
@@ -33,6 +39,8 @@ mean =   0.2073203154385E+00
 cell    1 =   0.2094578669961E+00
 cell    3 =   0.2093447339213E+00
 cell    5 =   0.2089432300388E+00
+cell    7 =   0.2077252849618E+00
+cell    9 =   0.2042483554269E+00
 
 [AR_total_aqueous_conc]
 category = concentration
@@ -42,6 +50,8 @@ mean =   0.4949886366512E-01
 cell    1 =   0.7432772863832E-01
 cell    3 =   0.5830245760230E-01
 cell    5 =   0.4906882951219E-01
+cell    7 =   0.4133917618140E-01
+cell    9 =   0.3997060573729E-01
 
 [AR_gas_partial_pressure]
 category = pressure
@@ -51,6 +61,8 @@ mean =   0.9099494612816E-02
 cell    1 =   0.9339883991881E-02
 cell    3 =   0.9327669399893E-02
 cell    5 =   0.9282737554541E-02
+cell    7 =   0.9145081476868E-02
+cell    9 =   0.8752130904418E-02
 
 [CO2x_total_aqueous_conc]
 category = concentration
@@ -60,6 +72,8 @@ mean =   0.3411669885085E-02
 cell    1 =   0.5092882850426E-02
 cell    3 =   0.4227596937204E-02
 cell    5 =   0.3691792434483E-02
+cell    7 =   0.3139761197680E-02
+cell    9 =   0.2143117425627E-02
 
 [CO2x_gas_partial_pressure]
 category = pressure
@@ -69,6 +83,8 @@ mean =   0.3129335218290E-03
 cell    1 =   0.3669891849929E-03
 cell    3 =   0.3622017223487E-03
 cell    5 =   0.3528656839882E-03
+cell    7 =   0.3220216428390E-03
+cell    9 =   0.2358979302750E-03
 
 [CH4_total_aqueous_conc]
 category = concentration
@@ -78,6 +94,8 @@ mean =   0.9449661327786E-05
 cell    1 =   0.1419089713791E-04
 cell    3 =   0.1112326429127E-04
 cell    5 =   0.9355347924364E-05
+cell    7 =   0.7882686145362E-05
+cell    9 =   0.7654126083572E-05
 
 [CH4_gas_partial_pressure]
 category = pressure
@@ -87,6 +105,8 @@ mean =   0.1747105135141E-05
 cell    1 =   0.1789981705618E-05
 cell    3 =   0.1787765813129E-05
 cell    5 =   0.1779690616924E-05
+cell    7 =   0.1755175086837E-05
+cell    9 =   0.1685193623237E-05
 
 [BLK_H2O_total_aqueous_conc]
 category = concentration
@@ -96,6 +116,8 @@ mean =   0.3023273342138E+03
 cell    1 =   0.3067235516508E+03
 cell    3 =   0.2914257887003E+03
 cell    5 =   0.2999883153555E+03
+cell    7 =   0.3123035402931E+03
+cell    9 =   0.2924760270799E+03
 
 [BLK_H2O_gas_partial_pressure]
 category = pressure
@@ -105,6 +127,8 @@ mean =                   NaN
 cell    1 =                   NaN
 cell    3 =                   NaN
 cell    5 =                   NaN
+cell    7 =                   NaN
+cell    9 =                   NaN
 
 [O18_H2O_total_aqueous_conc]
 category = concentration
@@ -114,6 +138,8 @@ mean =   0.3023273342138E+03
 cell    1 =   0.3067235516508E+03
 cell    3 =   0.2914257887003E+03
 cell    5 =   0.2999883153555E+03
+cell    7 =   0.3123035402931E+03
+cell    9 =   0.2924760270799E+03
 
 [O18_H2O_gas_partial_pressure]
 category = pressure
@@ -123,6 +149,8 @@ mean =                   NaN
 cell    1 =                   NaN
 cell    3 =                   NaN
 cell    5 =                   NaN
+cell    7 =                   NaN
+cell    9 =                   NaN
 
 [D_H2O_total_aqueous_conc]
 category = concentration
@@ -132,6 +160,8 @@ mean =   0.3023273342138E+03
 cell    1 =   0.3067235516508E+03
 cell    3 =   0.2914257887003E+03
 cell    5 =   0.2999883153555E+03
+cell    7 =   0.3123035402931E+03
+cell    9 =   0.2924760270799E+03
 
 [D_H2O_gas_partial_pressure]
 category = pressure
@@ -141,6 +171,8 @@ mean =                   NaN
 cell    1 =                   NaN
 cell    3 =                   NaN
 cell    5 =                   NaN
+cell    7 =                   NaN
+cell    9 =                   NaN
 
 [total_gas_pressure]
 category = pressure
@@ -150,6 +182,8 @@ mean =   0.8475773333182E+05
 cell    1 =   0.9058934312186E+05
 cell    3 =   0.8995778773222E+05
 cell    5 =   0.8827344986530E+05
+cell    7 =   0.8482663305196E+05
+cell    9 =   0.7740321827594E+05
 
 [advective flux]
 category = velocity
@@ -159,4 +193,7 @@ mean =   0.4250315580842E-08
 cell    1 =   0.0000000000000E+00
 cell    3 =  -0.8144046101461E-08
 cell    5 =   0.5958011229309E-09
+cell    7 =   0.1148380546242E-07
+cell    9 =   0.1486620431369E-07
+cell   11 =   0.8752790563449E-08
 

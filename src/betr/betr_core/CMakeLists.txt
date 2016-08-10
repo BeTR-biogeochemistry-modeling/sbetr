@@ -1,19 +1,16 @@
 set(BETR_CORE_SOURCES
   BeTRTracerType.F90
   TracerBaseType.F90
-  KineticsMod.F90
   TracerBoundaryCondType.F90
   TracerCoeffType.F90
   TracerFluxType.F90
   TracerParamsMod.F90
   TracerStateType.F90
-  Tracer_varcon.F90
   TransportMod.F90
   BGCReactionsMod.F90
   PlantSoilBGCMod.F90
   )
 
-include_directories(${CMAKE_BINARY_DIR}/src/stub_clm)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_math)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_grid)

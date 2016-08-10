@@ -28,7 +28,7 @@ end type plant_soilbgc_type
 
   abstract interface
   !----------------------------------------------------------------------
-  subroutine Init_plant_soilbgc_interface(this, bounds, lbj, ubj)
+  subroutine Init_plant_soilbgc_interface(this, bounds, lbj, ubj, namelist_buffer)
 
   !
   ! !DESCRIPTION:
@@ -39,16 +39,18 @@ end type plant_soilbgc_type
 
   ! !ARGUMENTS:
   import :: plant_soilbgc_type
+  implicit none
   class(plant_soilbgc_type) , intent(inout) :: this
   type(betr_bounds_type)    , intent(in) :: bounds
+  character(len=*)          , intent(in) :: namelist_buffer
   integer                   , intent(in) :: lbj, ubj
 
   end subroutine Init_plant_soilbgc_interface
 
 
   !----------------------------------------------------------------------
-  subroutine plant_soilbgc_summary_interface(this,bounds, lbj, ubj, numf, &
-       filter, dz, betrtracer_vars, tracerflux_vars, betr_status)
+  subroutine plant_soilbgc_summary_interface(this,bounds, lbj, ubj, pft, numf, &
+       filter, dtime, dz, betrtracer_vars, tracerflux_vars, betr_status)
 
   ! !USES:
   use BeTRTracerType , only : BeTRtracer_type
@@ -56,6 +58,7 @@ end type plant_soilbgc_type
   use BeTR_decompMod , only : betr_bounds_type
   use bshr_kind_mod  , only : r8 => shr_kind_r8
   use BetrStatusType , only : betr_status_type
+  use BeTR_PatchType , only : betr_patch_type
   ! !ARGUMENTS:
   import :: plant_soilbgc_type
 
@@ -63,7 +66,9 @@ end type plant_soilbgc_type
   type(betr_bounds_type)    , intent(in) :: bounds
   integer                   , intent(in) :: lbj, ubj
   integer                   , intent(in) :: numf
+  type(betr_patch_type)     , intent(in) :: pft
   integer                   , intent(in) :: filter(:)
+  real(r8)                  , intent(in) :: dtime
   real(r8)                  , intent(in) :: dz(bounds%begc:bounds%endc,1:ubj)
   type(BeTRtracer_type )    , intent(in) :: betrtracer_vars
   type(tracerflux_type)     , intent(in) :: tracerflux_vars
@@ -91,7 +96,8 @@ end type plant_soilbgc_type
   end subroutine integrate_vr_flux_interface
   !----------------------------------------------------------------------
 
-  subroutine lsm_betr_plant_soilbgc_recv_interface(this, bounds, numf, filter, biogeo_fluxes)
+  subroutine lsm_betr_plant_soilbgc_recv_interface(this, bounds, numf, filter, &
+     betr_pft, biogeo_fluxes)
   !DESCRIPTION
   !return plant nutrient yield
   !
@@ -99,20 +105,22 @@ end type plant_soilbgc_type
   use BeTR_decompMod       , only : betr_bounds_type
   use BeTR_biogeoStateType , only : betr_biogeo_state_type
   use BeTR_biogeoFluxType  , only : betr_biogeo_flux_type
+  use BeTR_PatchType, only : betr_patch_type
   ! !ARGUMENTS:
   import :: plant_soilbgc_type
-
+  implicit none
   class(plant_soilbgc_type)   , intent(inout)    :: this
   type(betr_bounds_type)      , intent(in)    :: bounds
   integer                     , intent(in)    :: numf
   integer                     , intent(in)    :: filter(:)
+  type(betr_patch_type) , intent(in) :: betr_pft
   type(betr_biogeo_flux_type) , intent(inout) :: biogeo_fluxes
 
 
   end subroutine lsm_betr_plant_soilbgc_recv_interface
   !----------------------------------------------------------------------
   subroutine lsm_betr_plant_soilbgc_send_interface(this, bounds, numf, &
-                 filter, biogeo_states, biogeo_fluxes, ecophyscon_vars)
+                 filter, betr_pft, biogeo_forc, biogeo_states, biogeo_fluxes, ecophyscon_vars)
   !DESCRIPTION
   ! initialize feedback variables for plant soil bgc interactions
   !
@@ -121,6 +129,8 @@ end type plant_soilbgc_type
   use BeTR_biogeoFluxType  , only : betr_biogeo_flux_type
   use BeTR_decompMod       , only : betr_bounds_type
   use BeTR_EcophysConType  , only : betr_ecophyscon_type
+  use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
+  use BeTR_PatchType, only : betr_patch_type
   ! !ARGUMENTS:
   import :: plant_soilbgc_type
 
@@ -128,6 +138,8 @@ end type plant_soilbgc_type
   type(betr_bounds_type)       , intent(in) :: bounds
   integer                      , intent(in) :: numf
   integer                      , intent(in) :: filter(:)
+  type(betr_patch_type)        , intent(in) :: betr_pft
+  type(betr_biogeophys_input_type), intent(in):: biogeo_forc
   type(betr_biogeo_state_type) , intent(in) :: biogeo_states
   type(betr_biogeo_flux_type)  , intent(in) :: biogeo_fluxes
   type(betr_ecophyscon_type)   , intent(in) :: ecophyscon_vars

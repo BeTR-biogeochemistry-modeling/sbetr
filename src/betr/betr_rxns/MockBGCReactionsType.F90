@@ -13,7 +13,6 @@ module MockBGCReactionsType
   use BeTR_decompMod           , only : bounds_type  => betr_bounds_type
   use BGCReactionsMod          , only : bgc_reaction_type
   use tracer_varcon            , only : bndcond_as_conc, bndcond_as_flux
-  use ColumnType               , only : col
   use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
   implicit none
 
@@ -34,8 +33,8 @@ module MockBGCReactionsType
      procedure :: init_boundary_condition_type          ! initialize type of top boundary conditions
      procedure :: do_tracer_equilibration               ! do equilibrium tracer chemistry
      procedure :: InitCold                              ! do cold initialization
-     procedure :: readParams                            ! read in parameters
-     procedure :: lsm_betr_flux_state_receive       !
+     procedure :: lsm_betr_flux_state_receive           !
+     procedure, private :: readParams                   ! read in parameters
   end type bgc_reaction_mock_run_type
 
   interface bgc_reaction_mock_run_type
@@ -87,7 +86,7 @@ contains
   end subroutine init_boundary_condition_type
 
   !-------------------------------------------------------------------------------
-  subroutine Init_betrbgc(this, bounds, lbj, ubj, betrtracer_vars, bstatus)
+  subroutine Init_betrbgc(this, bounds, lbj, ubj, betrtracer_vars, namelist_buffer, bstatus)
     !
     ! DESCRIPTION:
     ! initialize the betrbgc
@@ -96,11 +95,14 @@ contains
     use BeTRTracerType , only : betrtracer_type
     use MathfuncMod    , only : addone
     use BetrStatusType , only : betr_status_type
+    use gbetrType      , only : gbetr_type
+    implicit none
     ! !ARGUMENTS:
     class(bgc_reaction_mock_run_type), intent(inout)    :: this
     type(bounds_type)                , intent(in)    :: bounds
     integer                          , intent(in)    :: lbj, ubj
     type(BeTRtracer_type )           , intent(inout) :: betrtracer_vars
+    character(len=*)                 , intent(in)    :: namelist_buffer
     type(betr_status_type)           , intent(out)   :: bstatus
     character(len=*), parameter                      :: subname ='Init_betrbgc'
 
@@ -244,7 +246,7 @@ contains
   !-------------------------------------------------------------------------------
   subroutine calc_bgc_reaction(this, bounds, col, lbj, ubj, num_soilc, filter_soilc,               &
        num_soilp,filter_soilp, jtops, dtime, betrtracer_vars, tracercoeff_vars,  biophysforc, &
-       tracerstate_vars, tracerflux_vars, tracerboundarycond_vars, plant_soilbgc, betr_status)
+       tracerstate_vars, tracerflux_vars, tracerboundarycond_vars, plant_soilbgc, biogeo_flux, betr_status)
     !
     ! !DESCRIPTION:
     ! do bgc reaction
@@ -258,6 +260,7 @@ contains
     use PlantSoilBGCMod        , only : plant_soilbgc_type
     use BetrStatusType         , only : betr_status_type
     use betr_columnType        , only : betr_column_type
+    use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
     implicit none
     !ARGUMENTS
     class(bgc_reaction_mock_run_type) , intent(inout) :: this                       !
@@ -277,6 +280,7 @@ contains
     type(tracerflux_type)             , intent(inout) :: tracerflux_vars
     type(tracerboundarycond_type)     , intent(inout) :: tracerboundarycond_vars !
     class(plant_soilbgc_type)         , intent(inout) ::  plant_soilbgc
+    type(betr_biogeo_flux_type)      , intent(inout) :: biogeo_flux
     type(betr_status_type)            , intent(out)   :: betr_status
     character(len=*)                 , parameter     :: subname ='calc_bgc_reaction'
 
@@ -429,23 +433,21 @@ contains
   end subroutine InitCold
 
   !-----------------------------------------------------------------------
-  subroutine readParams(this, ncid, betrtracer_vars)
+  subroutine readParams(this, name_list_buffer, betrtracer_vars)
     !
     ! !DESCRIPTION:
     ! read in module specific parameters
     !
     ! !USES:
-    use ncdio_pio      , only : file_desc_t
     use BeTRTracerType , only : BeTRTracer_Type
     implicit none
     ! !ARGUMENTS:
     class(bgc_reaction_mock_run_type) , intent(inout)    :: this
     type(BeTRTracer_Type)             , intent(inout) :: betrtracer_vars
-    type(file_desc_t)                 , intent(inout) :: ncid  ! pio netCDF file id
+    character(len=*)                  , intent(in)  :: name_list_buffer
 
     ! remove compiler warnings for unused dummy args
     if (this%dummy_compiler_warning)           continue
-    if (ncid%fh > 0)                           continue
     if (len(betrtracer_vars%betr_simname) > 0) continue
 
     !do nothing here

@@ -26,6 +26,7 @@ module KineticsMod
      module procedure ecacomplex_cell_norm_v1s,ecacomplex_cell_norm_v1e, ecacomplex_cell_norm_m
   end interface ecacomplex_cell_norm
 
+  private :: ECA_normflux
 contains
   !-------------------------------------------------------------------------------
   subroutine mmcomplex_v1s(kd,ee,ss,siej)
@@ -224,6 +225,7 @@ contains
      integer :: ii,jj
      integer :: i, j, k
      real(r8) :: dnm1, dnm2
+     real(r8), dimension(:), allocatable :: Fr, Fc
 
      call bstatus%reset()
      ii = size(ss)       !number of substrates, dim 1
@@ -234,26 +236,42 @@ contains
         if(bstatus%check_status())return
      endif
      siej = 0._r8
-     do i = 1, ii
-        dnm1 = 0._r8
-        do k = 1, jj
-           if(kd(i,k)>0._r8 .and. (kd(i,k)<.9*kd_infty))then
-              dnm1 = dnm1 + ee(k)/kd(i,k)
-           endif
-        enddo
-        do j = 1, jj
-           dnm2 = 0._r8
-           if(kd(i,j)>0._r8 .and. (kd(i,j)<.9*kd_infty) )then
-              do k = 1, ii
-                 if(kd(k,j)>0._r8 .and. (kd(k,j)<.9*kd_infty))then
-                    dnm2=dnm2 + ss(k)/kd(k,j)
-                 endif
-              enddo
-              siej(i,j) = ss(i)*ee(j)/(kd(i,j)*(1._r8+dnm1+dnm2))
-           endif
-        enddo
+     allocate(Fr(1:ii))
+     allocate(Fc(1:jj))
+     call ECA_normflux(ii, jj, kd, ss,ee, Fc,Fr)
+     do j = 1, jj
+       do i = 1, ii
+         if(kd(i,j)>0._r8 .and. (kd(i,j)<.9*kd_infty))then
+           siej(i,j) = ss(i)*ee(j)/(kd(i,j)*(1._r8+Fc(j)+Fr(i)))
+         endif
+       enddo
      enddo
+     if(allocated(Fr))deallocate(Fr)
+     if(allocated(Fc))deallocate(Fc)
    end subroutine ecacomplex_m
+   !-------------------------------------------------------------------------------
+   subroutine ECA_normflux(ii, jj, kd, ss,ee, Fc,Fr)
+   implicit none
+   !ARGUMENTS
+   integer , intent(in)  :: ii, jj
+   real(r8), intent(in)  :: kd(1:ii,1:jj)
+   real(r8), intent(in)  :: ss(1:ii)
+   real(r8), intent(in)  :: ee(1:jj)
+   real(r8), intent(out) :: Fc(1:jj)
+   real(r8), intent(out) :: Fr(1:ii)
+
+   integer :: i, j
+   Fc = 0._r8; Fr=0._r8
+   do j = 1, jj
+     do i = 1, ii
+       if(kd(i,j)>0._r8 .and. (kd(i,j)<.9*kd_infty))then
+         Fc(j) = Fc(j) + ss(i)/kd(i,j)
+         Fr(i) = Fr(i) + ee(j)/kd(i,j)
+       endif
+     enddo
+   enddo
+
+   end subroutine ECA_normflux
    !-------------------------------------------------------------------------------
    subroutine ecacomplex_cell_norm_m(kd,ss,ee,siej, bstatus)
      ! !DESCRIPTION:

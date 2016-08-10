@@ -42,7 +42,7 @@ module H2OIsotopePlantSoilBGCType
   end function constructor
 
   !-------------------------------------------------------------------------------
-  subroutine Init_plant_soilbgc(this, bounds, lbj, ubj)
+  subroutine Init_plant_soilbgc(this, bounds, lbj, ubj, namelist_buffer)
 
   !
   ! !DESCRIPTION:
@@ -50,10 +50,12 @@ module H2OIsotopePlantSoilBGCType
   !
   ! !USES:
   use BeTR_decompMod             , only : betr_bounds_type
+  use gbetrType                  , only : gbetr_type
   implicit none
   ! !ARGUMENTS:
   class(plant_soilbgc_h2oiso_run_type) , intent(inout) :: this
   type(betr_bounds_type)               , intent(in) :: bounds
+  character(len=*)                     , intent(in) :: namelist_buffer
   integer                              , intent(in) :: lbj, ubj
 
   ! remove compiler warnings for unused dummy args
@@ -66,8 +68,8 @@ module H2OIsotopePlantSoilBGCType
 
 
   !----------------------------------------------------------------------
-  subroutine plant_soilbgc_summary(this,bounds, lbj, ubj, numf, &
-       filter, dz, betrtracer_vars, tracerflux_vars, betr_status)
+  subroutine plant_soilbgc_summary(this,bounds, lbj, ubj, pft, numf, &
+       filter, dtime, dz, betrtracer_vars, tracerflux_vars, betr_status)
 
   ! !USES:
   use BeTRTracerType , only : BeTRtracer_type
@@ -75,13 +77,16 @@ module H2OIsotopePlantSoilBGCType
   use BeTR_decompMod , only : betr_bounds_type
   use bshr_kind_mod  , only : r8 => shr_kind_r8
   use BetrStatusType , only : betr_status_type
+  use BeTR_PatchType , only : betr_patch_type
   implicit none
   ! !ARGUMENTS:
   class(plant_soilbgc_h2oiso_run_type) , intent(inout) :: this
   type(betr_bounds_type)               , intent(in) :: bounds
   integer                              , intent(in) :: lbj, ubj
+  type(betr_patch_type)                , intent(in) :: pft
   integer                              , intent(in) :: numf
   integer                              , intent(in) :: filter(:)
+  real(r8)                             , intent(in) :: dtime
   real(r8)                             , intent(in) :: dz(bounds%begc:bounds%endc,1:ubj)
   type(BeTRtracer_type )               , intent(in) :: betrtracer_vars
   type(tracerflux_type)                , intent(in) :: tracerflux_vars
@@ -124,18 +129,20 @@ module H2OIsotopePlantSoilBGCType
 
   !----------------------------------------------------------------------
 
-  subroutine lsm_betr_plant_soilbgc_recv(this, bounds, numf, filter, biogeo_fluxes)
+  subroutine lsm_betr_plant_soilbgc_recv(this, bounds, numf, filter, betr_pft,  biogeo_fluxes)
   !
   !DESCRIPTION
   !return plant nutrient yield
   use BeTR_decompMod      , only : betr_bounds_type
   use BeTR_biogeoFluxType , only : betr_biogeo_flux_type
+  use BeTR_PatchType, only : betr_patch_type
   ! !ARGUMENTS:
   implicit none
   class(plant_soilbgc_h2oiso_run_type) , intent(inout)    :: this
   type(betr_bounds_type)               , intent(in)    :: bounds
   integer                              , intent(in)    :: numf
   integer                              , intent(in)    :: filter(:)
+  type(betr_patch_type) , intent(in) :: betr_pft
   type(betr_biogeo_flux_type)          , intent(inout) :: biogeo_fluxes
 
   ! remove compiler warnings for unused dummy args
@@ -150,7 +157,7 @@ module H2OIsotopePlantSoilBGCType
   !----------------------------------------------------------------------
 
   subroutine lsm_betr_plant_soilbgc_send(this, bounds, numf, filter,  &
-    biogeo_states, biogeo_fluxes, ecophyscon_vars)
+    betr_pft, biogeo_forc, biogeo_states, biogeo_fluxes, ecophyscon_vars)
   !
   !DESCRIPTION
   ! initialize feedback variables for plant soil bgc interactions
@@ -160,12 +167,16 @@ module H2OIsotopePlantSoilBGCType
   use BeTR_biogeoFluxType  , only : betr_biogeo_flux_type
   use BeTR_decompMod       , only : betr_bounds_type
   use BeTR_EcophysConType  , only : betr_ecophyscon_type
+  use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
+  use BeTR_PatchType, only : betr_patch_type
   implicit none
   ! !ARGUMENTS:
   class(plant_soilbgc_h2oiso_run_type) , intent(inout) :: this
   type(betr_bounds_type)               , intent(in) :: bounds
   integer                              , intent(in) :: numf
   integer                              , intent(in) :: filter(:)
+  type(betr_patch_type)                , intent(in) :: betr_pft
+  type(betr_biogeophys_input_type), intent(in):: biogeo_forc
   type(betr_biogeo_state_type)         , intent(in) :: biogeo_states
   type(betr_biogeo_flux_type)          , intent(in) :: biogeo_fluxes
   type(betr_ecophyscon_type)           , intent(in) :: ecophyscon_vars

@@ -65,7 +65,7 @@ contains
 
   !-------------------------------------------------------------------------------
 
-  subroutine CLMInit(this, base_filename, namelist_buffer, bounds, col, pft, waterstate)
+  subroutine CLMInit(this, base_filename, namelist_buffer, bounds, lun, col, pft, waterstate)
     !DESCRIPTION
     !initialize interface
     !
@@ -73,9 +73,10 @@ contains
     use betr_constants      , only : betr_namelist_buffer_size
     use betr_constants      , only : betr_filename_length
     use BeTR_pftvarconType  , only : betr_pftvarcon
-    use LandunitType        , only : lun
+    use LandunitType        , only : landunit_type
     use ColumnType          , only : column_type
     use PatchType           , only : patch_type
+    use LandunitType        , only : landunit_type
     use pftvarcon           , only : noveg, nc4_grass, nc3_arctic_grass, nc3_nonarctic_grass
     use WaterStateType      , only : waterstate_type
     use landunit_varcon     , only : istcrop, istice, istsoil
@@ -88,6 +89,7 @@ contains
     character(len=betr_filename_length)      , intent(in)    :: base_filename
     character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
     type(bounds_type)                        , intent(in)    :: bounds
+    type(landunit_type)                      , intent(in) :: lun
     type(column_type)                        , intent(in) :: col
     type(patch_type)                         , intent(in) :: pft
     type(waterstate_type)                    , intent(inout) :: waterstate
@@ -111,7 +113,7 @@ contains
     ! simulation type.
     ! now call the base simulation init to continue initialization
     call this%BeTRInit(base_filename, namelist_buffer, &
-         bounds, col, pft, waterstate)
+         bounds, lun, col, pft, waterstate)
 
   end subroutine CLMInit
 
@@ -125,8 +127,7 @@ contains
     use ColumnType        , only : column_type
     use tracer_varcon     , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
     use PatchType         , only : patch_type
-    use LandunitType      , only : lun
-    use pftvarcon         , only : crop
+    use LandunitType      , only : landunit_type
     use clm_varpar        , only : nlevsno, nlevsoi, nlevtrc_soil
     implicit none
     ! !ARGUMENTS :
@@ -176,7 +177,7 @@ contains
     use MathfuncMod    , only : safe_div
     use WaterFluxType  , only : waterflux_type
     use betr_decompMod , only : betr_bounds_type
-    use LandunitType   , only : lun
+    use LandunitType   , only : landunit_type
     use tracer_varcon  , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
     use clm_varpar     , only : nlevsno, nlevsoi, nlevtrc_soil
     implicit none
@@ -257,7 +258,7 @@ contains
     ! External interface called by CLM
     !
     !USES
-    use LandunitType    , only : lun
+    use LandunitType    , only : landunit_type
     use clm_varcon      , only : denh2o,spval
     use landunit_varcon , only : istsoil, istcrop
     use betr_decompMod  , only : betr_bounds_type
@@ -450,7 +451,7 @@ contains
   end subroutine clm_h2oiso_consistency_check
 
   !------------------------------------------------------------------------
-  subroutine CLMSetBiophysForcing(this, bounds, col, carbonflux_vars, waterstate_vars, &
+  subroutine CLMSetBiophysForcing(this, bounds, col, pft, carbonflux_vars, waterstate_vars, &
     waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
     chemstate_vars, soilstate_vars)
   !DESCRIPTION
@@ -467,10 +468,12 @@ contains
   use CanopyStateType   , only : canopystate_type
   use clm_varpar        , only : nlevsno, nlevsoi
   use ColumnType        , only : column_type
+  use PatchType         , only : patch_type
   implicit none
   !ARGUMENTS
   class(betr_simulation_clm_type) , intent(inout)        :: this
   type(bounds_type)               , intent(in)           :: bounds
+  type(patch_type)                , intent(in) :: pft
   type(column_type)               , intent(in)    :: col ! column type
   type(carbonflux_type)           , optional, intent(in) :: carbonflux_vars
   type(Waterstate_Type)           , optional, intent(in) :: Waterstate_vars
@@ -482,7 +485,7 @@ contains
   type(chemstate_type)            , optional, intent(in) :: chemstate_vars
   type(soilstate_type)            , optional, intent(in) :: soilstate_vars
 
-  call this%BeTRSetBiophysForcing(bounds, col, 1, nlevsoi, carbonflux_vars, waterstate_vars, &
+  call this%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi, carbonflux_vars, waterstate_vars, &
       waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
       chemstate_vars, soilstate_vars)
 

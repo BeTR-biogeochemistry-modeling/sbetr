@@ -227,7 +227,7 @@ contains
     ! !USES:
     use betr_ctrl      , only : iulog  => biulog
     use BeTRTracerType , only : BeTRTracer_Type
-    use MathfuncMod, only : addone
+    use MathfuncMod    , only : addone
     !
     implicit none
     ! !ARGUMENTS:
