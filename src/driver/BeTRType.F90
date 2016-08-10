@@ -284,7 +284,7 @@ contains
     integer                          , intent(in)    :: num_soilp
     integer                          , intent(in)    :: filter_soilp(:)            ! pft filter
     type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
-    type(betr_biogeo_flux_type)      , intent(in)    :: biogeo_flux
+    type(betr_biogeo_flux_type)      , intent(inout) :: biogeo_flux
     type(betr_biogeo_state_type)     , intent(inout) :: biogeo_state
     type(betr_status_type)           , intent(out)   :: betr_status
 
@@ -327,7 +327,7 @@ contains
          this%tracerstates,                                    &
          this%tracerfluxes,                                    &
          this%tracerboundaryconds,                             &
-         this%plant_soilbgc, betr_status)
+         this%plant_soilbgc, biogeo_flux, betr_status)
     if(betr_status%check_status())return
 
     call tracer_gws_transport(betr_time, bounds, col, pft, num_soilc, filter_soilc, &

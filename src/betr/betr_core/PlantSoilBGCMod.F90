@@ -65,8 +65,8 @@ end type plant_soilbgc_type
   class(plant_soilbgc_type) , intent(inout) :: this
   type(betr_bounds_type)    , intent(in) :: bounds
   integer                   , intent(in) :: lbj, ubj
-  type(betr_patch_type)     , intent(in) :: pft
   integer                   , intent(in) :: numf
+  type(betr_patch_type)     , intent(in) :: pft
   integer                   , intent(in) :: filter(:)
   real(r8)                  , intent(in) :: dtime
   real(r8)                  , intent(in) :: dz(bounds%begc:bounds%endc,1:ubj)
@@ -96,7 +96,8 @@ end type plant_soilbgc_type
   end subroutine integrate_vr_flux_interface
   !----------------------------------------------------------------------
 
-  subroutine lsm_betr_plant_soilbgc_recv_interface(this, bounds, numf, filter, biogeo_fluxes)
+  subroutine lsm_betr_plant_soilbgc_recv_interface(this, bounds, numf, filter, &
+     betr_pft, biogeo_fluxes)
   !DESCRIPTION
   !return plant nutrient yield
   !
@@ -104,13 +105,15 @@ end type plant_soilbgc_type
   use BeTR_decompMod       , only : betr_bounds_type
   use BeTR_biogeoStateType , only : betr_biogeo_state_type
   use BeTR_biogeoFluxType  , only : betr_biogeo_flux_type
+  use BeTR_PatchType, only : betr_patch_type
   ! !ARGUMENTS:
   import :: plant_soilbgc_type
-
+  implicit none
   class(plant_soilbgc_type)   , intent(inout)    :: this
   type(betr_bounds_type)      , intent(in)    :: bounds
   integer                     , intent(in)    :: numf
   integer                     , intent(in)    :: filter(:)
+  type(betr_patch_type) , intent(in) :: betr_pft
   type(betr_biogeo_flux_type) , intent(inout) :: biogeo_fluxes
 
 

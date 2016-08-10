@@ -129,18 +129,20 @@ module H2OIsotopePlantSoilBGCType
 
   !----------------------------------------------------------------------
 
-  subroutine lsm_betr_plant_soilbgc_recv(this, bounds, numf, filter, biogeo_fluxes)
+  subroutine lsm_betr_plant_soilbgc_recv(this, bounds, numf, filter, betr_pft,  biogeo_fluxes)
   !
   !DESCRIPTION
   !return plant nutrient yield
   use BeTR_decompMod      , only : betr_bounds_type
   use BeTR_biogeoFluxType , only : betr_biogeo_flux_type
+  use BeTR_PatchType, only : betr_patch_type
   ! !ARGUMENTS:
   implicit none
   class(plant_soilbgc_h2oiso_run_type) , intent(inout)    :: this
   type(betr_bounds_type)               , intent(in)    :: bounds
   integer                              , intent(in)    :: numf
   integer                              , intent(in)    :: filter(:)
+  type(betr_patch_type) , intent(in) :: betr_pft
   type(betr_biogeo_flux_type)          , intent(inout) :: biogeo_fluxes
 
   ! remove compiler warnings for unused dummy args

@@ -461,7 +461,7 @@ contains
       if (pi <= col%npfts(c)) then
         p = col%pfti(c) + pi - 1
         if (pft%active(p)) then
-          this%biophys_forc(c)%rr_patch(pi) = carbonflux_vars%rr_patch(p)
+          this%biophys_forc(c)%rr_patch(pi,1:nlevsoi) = carbonflux_vars%rr_patch(p) !* root_prof(p,1:nlevsoi)
         endif
       endif
     enddo

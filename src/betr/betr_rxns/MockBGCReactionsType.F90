@@ -246,7 +246,7 @@ contains
   !-------------------------------------------------------------------------------
   subroutine calc_bgc_reaction(this, bounds, col, lbj, ubj, num_soilc, filter_soilc,               &
        num_soilp,filter_soilp, jtops, dtime, betrtracer_vars, tracercoeff_vars,  biophysforc, &
-       tracerstate_vars, tracerflux_vars, tracerboundarycond_vars, plant_soilbgc, betr_status)
+       tracerstate_vars, tracerflux_vars, tracerboundarycond_vars, plant_soilbgc, biogeo_flux, betr_status)
     !
     ! !DESCRIPTION:
     ! do bgc reaction
@@ -260,6 +260,7 @@ contains
     use PlantSoilBGCMod        , only : plant_soilbgc_type
     use BetrStatusType         , only : betr_status_type
     use betr_columnType        , only : betr_column_type
+    use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
     implicit none
     !ARGUMENTS
     class(bgc_reaction_mock_run_type) , intent(inout) :: this                       !
@@ -279,6 +280,7 @@ contains
     type(tracerflux_type)             , intent(inout) :: tracerflux_vars
     type(tracerboundarycond_type)     , intent(inout) :: tracerboundarycond_vars !
     class(plant_soilbgc_type)         , intent(inout) ::  plant_soilbgc
+    type(betr_biogeo_flux_type)      , intent(inout) :: biogeo_flux
     type(betr_status_type)            , intent(out)   :: betr_status
     character(len=*)                 , parameter     :: subname ='calc_bgc_reaction'
 
