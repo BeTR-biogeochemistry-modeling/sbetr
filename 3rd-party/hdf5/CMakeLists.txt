@@ -407,7 +407,7 @@ if (HDF5_ENABLE_COVERAGE)
   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -fprofile-arcs -ftest-coverage")
   set (LDFLAGS "${LDFLAGS} -fprofile-arcs -ftest-coverage")
 endif (HDF5_ENABLE_COVERAGE)
-
+message(STATUS "LDFLAGS ${LDFLAGS}")
 #-----------------------------------------------------------------------------
 # Option to indicate using dmalloc
 #-----------------------------------------------------------------------------
