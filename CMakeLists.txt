@@ -6,6 +6,7 @@ set (BETR_MAJOR_VERSION 0)
 set (BETR_MINOR_VERSION 1)
 set (BETR_PATCH_VERSION 0)
 set (BETR_VERSION "${BETR_MAJOR_VERSION}.${BETR_MINOR_VERSION}.${BETR_PATCH_VERSION}")
+set (BETR_BGC 1)
 
 # Adjust CMake's module path.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
@@ -33,6 +34,7 @@ endif()
 if (NOT CMAKE_INSTALL_PREFIX)
   set(CMAKE_INSTALL_PREFIX /usr/local)
 endif()
+
 
 # set the number of cores to something reasonable so we don't over
 # subscribe a laptop or exceed hpc login node restrictions. could
@@ -108,7 +110,7 @@ else ()
   endif ()
 endif ()
 
-# Here we make sure CMake-installed binaries use the correct runpath, and 
+# Here we make sure CMake-installed binaries use the correct runpath, and
 # that the path is not stripped during installation.
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
@@ -156,7 +158,7 @@ add_subdirectory(src)
 # Benchmarks.
 #X#add_subdirectory(benchmarks)
 
-# Now that we have gathered all our libraries, generate an betr.cmake 
+# Now that we have gathered all our libraries, generate an betr.cmake
 # file that contains all the vital information.
 configure_file(
   "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Templates/betr.cmake.in"
@@ -166,4 +168,3 @@ configure_file(
 
 # Install miscellaneous build/test files.
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/betr.cmake DESTINATION share/betr)
-

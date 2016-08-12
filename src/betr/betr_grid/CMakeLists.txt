@@ -9,7 +9,6 @@ set(BETR_GRID_SOURCES
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)
 
 
-
 include(add_betr_library)
 add_betr_library(betr_grid ${BETR_GRID_SOURCES})
 
