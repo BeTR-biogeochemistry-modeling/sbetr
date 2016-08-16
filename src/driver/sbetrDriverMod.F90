@@ -40,6 +40,9 @@ contains
   use clm_instMod           , only : temperature_vars
   use clm_instMod           , only : waterflux_vars
   use clm_instMod           , only : waterstate_vars
+  use clm_instMod           , only : cnstate_vars
+  use clm_instMod           , only : nitrogenflux_vars
+  use clm_instMod           , only : phosphorusflux_vars
   use ColumnType            , only : col
   use clmgridMod            , only : init_clm_vertgrid
   use clm_initializeMod     , only : initialize
@@ -54,11 +57,11 @@ contains
   use PatchType             , only : pft
   use landunit_varcon       , only : istsoil
   use clm_varpar            , only : nlevsno, nlevsoi
+
   implicit none
   !arguments
   character(len=betr_filename_length)      , intent(in) :: base_filename
   character(len=betr_namelist_buffer_size) , intent(in) :: namelist_buffer
-
 
   !local variables
   class(betr_simulation_type), pointer :: simulation
@@ -77,8 +80,13 @@ contains
   class(ForcingData_type), allocatable :: forcing_data
   class(betr_grid_type), allocatable :: grid_data
   class(betr_time_type), allocatable :: time_vars
+
   character(len=256) :: restfile
   integer :: nstep
+  logical :: do_standalone=.false.
+  logical :: do_alm=.false.
+  logical :: do_clm=.false.
+
   !initialize parameters
   call read_name_list(namelist_buffer, simulator_name, continue_run)
   simulation => create_betr_simulation(simulator_name)
@@ -148,10 +156,13 @@ contains
   select type(simulation)
   class is (betr_simulation_standalone_type)
     print*,'simulation using standalone-betr'
+    do_standalone=.true.
   class is (betr_simulation_alm_type)
     print*,'simulation using alm-betr'
+    do_alm=.true.
   class is (betr_simulation_clm_type)
     print*,'simulation using clm-betr'
+    do_clm=.true.
   class default
   end select
 
@@ -205,13 +216,36 @@ contains
     !the following call could be lsm specific, so that
     !different lsm could use different definitions of input
     !variables, e.g. clm doesn't use cnstate_vars as public variables
-    call simulation%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi,  &
-      carbonflux_vars=carbonflux_vars,       &
-      waterstate_vars=waterstate_vars,         waterflux_vars=waterflux_vars,         &
-      temperature_vars=temperature_vars,       soilhydrology_vars=soilhydrology_vars, &
-      atm2lnd_vars=atm2lnd_vars,               canopystate_vars=canopystate_vars,     &
-      chemstate_vars=chemstate_vars,           soilstate_vars=soilstate_vars)
+    select type(simulation)
+    class is (betr_simulation_alm_type)
+      call simulation%SetBiophysForcing(bounds, col, pft,                               &
+        carbonflux_vars=carbonflux_vars,                                                &
+        waterstate_vars=waterstate_vars,         waterflux_vars=waterflux_vars,         &
+        temperature_vars=temperature_vars,       soilhydrology_vars=soilhydrology_vars, &
+        atm2lnd_vars=atm2lnd_vars,               canopystate_vars=canopystate_vars,     &
+        chemstate_vars=chemstate_vars,           soilstate_vars=soilstate_vars, &
+        cnstate_vars = cnstate_vars)
+
+        call simulation%PlantSoilBGCSend(bounds, simulation%num_soilc, simulation%filter_soilc,&
+          cnstate_vars,  carbonflux_vars,  nitrogenflux_vars, phosphorusflux_vars)
+    class default
+      call simulation%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi,               &
+        carbonflux_vars=carbonflux_vars,                                                &
+        waterstate_vars=waterstate_vars,         waterflux_vars=waterflux_vars,         &
+        temperature_vars=temperature_vars,       soilhydrology_vars=soilhydrology_vars, &
+        atm2lnd_vars=atm2lnd_vars,               canopystate_vars=canopystate_vars,     &
+        chemstate_vars=chemstate_vars,           soilstate_vars=soilstate_vars)
+    end select
+
+
     call simulation%StepWithoutDrainage(time_vars, bounds, col, pft)
+
+    select type(simulation)
+    class is (betr_simulation_alm_type)
+      call simulation%PlantSoilBGCRecv(bounds, simulation%num_soilc, simulation%filter_soilc,&
+       carbonflux_vars, nitrogenflux_vars, phosphorusflux_vars)
+    class default
+    end select
 
     !print*,'with drainge'
     !set forcing variable for drainage
@@ -234,19 +268,19 @@ contains
        simulation%filter_soilc, time_vars, waterflux_vars%qflx_adv_col)
 
     call time_vars%proc_nextstep()
-    !print*,'write restart file? is not functionning at the moment'
+
     if(time_vars%its_time_to_write_restart()) then
        !set restfname
        nstep = time_vars%get_nstep()
        write(restfname,'(A,I8.8,A)')trim(base_filename)//'.',nstep,'.rst.nc'
        call write_restinfo(restfname, nstep)
-       !print*, 'open restart file'
+
        call simulation%BeTRRestartOpen(restfname, flag='write', ncid=ncid)
-       ! print*,'define restart file'
+
        call simulation%BeTRRestart(bounds, ncid, simulation%num_soilc, simulation%filter_soilc, flag='define')
-       ! print*,'write restart file'
+
        call simulation%BeTRRestart(bounds, ncid, simulation%num_soilc, simulation%filter_soilc, flag='write')
-       ! print*,'close file'
+
        call simulation%BeTRRestartClose(ncid)
     endif
 
@@ -320,8 +354,6 @@ end subroutine sbetrBGC_driver
     simulator_name_arg = simulator_name
 
   end subroutine read_name_list
-
-
 
   !-------------------------------------------------------------------------------
 

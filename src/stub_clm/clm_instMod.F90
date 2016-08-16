@@ -74,6 +74,8 @@ module clm_instMod
 
   call nitrogenstate_vars%Init(bounds)
 
+  call nitrogenflux_vars%Init(bounds)
+
   call cnstate_vars%Init(bounds)
 
   call canopystate_vars%Init(bounds)

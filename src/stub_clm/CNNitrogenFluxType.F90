@@ -86,7 +86,7 @@ contains
     allocate(this%f_nit_col                   (begc:endc)); this%f_nit_col             (:)   = nan
     allocate(this%f_denit_col                 (begc:endc)); this%f_denit_col           (:)   = nan
     allocate(this%fert_to_sminn_col          (begc:endc)); this%fert_to_sminn_col    (:) = nan
-
+    allocate(this%nfix_to_sminn_col          (begc:endc)); this%nfix_to_sminn_col(:) = nan
 
     allocate(this%soyfixn_to_sminn_col(begc:endc)); this%soyfixn_to_sminn_col(:) = nan
     allocate(this%m_decomp_npools_to_fire_vr_col(begc:endc,1:nlevdecomp_full,1:7)); this%m_decomp_npools_to_fire_vr_col(:,:,:) =nan
@@ -167,7 +167,7 @@ contains
     this%harvest_n_to_litr_met_n_col(:,:) = 0._r8
     this%m_n_to_litr_cel_fire_col(:,:) = 0._r8
     this%m_n_to_litr_met_fire_col(:,:) = 0._r8
-
+    this%nfix_to_sminn_col(:) = 0._r8
   end subroutine initCold
 
 

@@ -133,10 +133,11 @@ contains
     end if
 
     lbj = bounds%lbj;  ubj = bounds%ubj
-
+    !read in top level control parameters
     call this%ReadNamelist(namelist_buffer, bstatus)
     if(bstatus%check_status())return
 
+    !read in application specific parameters
     call this%create_betr_application(this%bgc_reaction, this%plant_soilbgc, this%reaction_method, bstatus)
     if(bstatus%check_status())return
 

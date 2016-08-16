@@ -268,6 +268,7 @@ contains
          carbonflux_vars%gap_mortality_c_to_litr_met_c_col(c,j) + & !gap mortality
          carbonflux_vars%harvest_c_to_litr_met_c_col(c,j)  + & !harvest
          carbonflux_vars%m_c_to_litr_met_fire_col(c,j)         ! fire mortality
+
       !cellulose carbon
       this%biophys_forc(c)%cflx_input_litr_cel_vr_col(1,j) = &
          this%biophys_forc(c)%cflx_input_litr_cel_vr_col(1,j) + &
@@ -276,6 +277,7 @@ contains
          carbonflux_vars%gap_mortality_c_to_litr_cel_c_col(c,j) + & !gap mortality
          carbonflux_vars%harvest_c_to_litr_cel_c_col(c,j)  + & !harvest
          carbonflux_vars%m_c_to_litr_cel_fire_col(c,j)         ! fire mortality
+
       !lignin carbon
       this%biophys_forc(c)%cflx_input_litr_lig_vr_col(1,j) = &
          this%biophys_forc(c)%cflx_input_litr_lig_vr_col(1,j) + &
@@ -284,6 +286,7 @@ contains
          carbonflux_vars%gap_mortality_c_to_litr_lig_c_col(c,j) + & !gap mortality
          carbonflux_vars%harvest_c_to_litr_lig_c_col(c,j)  + & !harvest
          carbonflux_vars%m_c_to_litr_lig_fire_col(c,j)         ! fire mortality
+
       !cwd carbon
       this%biophys_forc(c)%cflx_input_litr_cwd_vr_col(1,j) = &
         this%biophys_forc(c)%cflx_input_litr_cwd_vr_col(1,j) + &

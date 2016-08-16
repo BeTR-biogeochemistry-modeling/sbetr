@@ -95,6 +95,8 @@ contains
       this%rc14_atm_patch(p)              = c14ratio
     enddo
 
+
+    this%nfixation_prof_col(:,:) = 0._r8
   end subroutine initCold
 
 end module CNStateType

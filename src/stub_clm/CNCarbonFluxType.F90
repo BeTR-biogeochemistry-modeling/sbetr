@@ -103,6 +103,7 @@ contains
     allocate(this%m_c_to_litr_cel_fire_col(begc:endc,1:nlevdecomp_full)); this%m_c_to_litr_cel_fire_col(:,:) = nan
     allocate(this%m_c_to_litr_lig_fire_col(begc:endc,1:nlevdecomp_full)); this%m_c_to_litr_lig_fire_col(:,:) = nan
     allocate(this%fire_mortality_c_to_cwdc_col (begc:endc,1:nlevdecomp_full)); this%fire_mortality_c_to_cwdc_col (:,:) = nan
+    allocate(this%phenology_c_to_litr_lig_c_col(begc:endc,1:nlevdecomp_full)); this%phenology_c_to_litr_lig_c_col(:,:) = nan
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------
@@ -154,7 +155,7 @@ contains
     this%m_c_to_litr_cel_fire_col(:,:) = 0._r8
     this%m_c_to_litr_lig_fire_col(:,:) = 0._r8
     this%fire_mortality_c_to_cwdc_col (:,:) = 0._r8
-
+    this%phenology_c_to_litr_lig_c_col(:,:) = 0._r8
   end subroutine initCold
 
 end module CNCarbonFluxType
