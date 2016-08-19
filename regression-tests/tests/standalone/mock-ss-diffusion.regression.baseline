@@ -9,8 +9,8 @@ cell    5 =   0.1184097858758E+01
 cell    7 =   0.8224077377422E+00
 cell    9 =   0.1519290056321E+00
 
-[N2_gas_partial_pressure]
-category = pressure
+[N2_gas_partial_fraction]
+category = pfraction
 min =   0.7808331712302E+00
 max =   0.8638245645221E+00
 mean =   0.7977977603103E+00
@@ -31,8 +31,8 @@ cell    5 =   0.3542578362587E+00
 cell    7 =   0.2386973533176E+00
 cell    9 =   0.3495574525559E-01
 
-[O2_gas_partial_pressure]
-category = pressure
+[O2_gas_partial_fraction]
+category = pfraction
 min =   0.1321183193748E+00
 max =   0.2094581280421E+00
 mean =   0.1938015959718E+00
@@ -53,8 +53,8 @@ cell    5 =   0.1595678083418E-01
 cell    7 =   0.1044862965310E-01
 cell    9 =   0.1288408409052E-02
 
-[AR_gas_partial_pressure]
-category = pressure
+[AR_gas_partial_fraction]
+category = pfraction
 min =   0.4056160497165E-02
 max =   0.9339915290304E-02
 mean =   0.8191045047341E-02
@@ -75,8 +75,8 @@ cell    5 =   0.2918858642401E-02
 cell    7 =   0.7234901329833E-03
 cell    9 =   0.2065623231381E-05
 
-[CO2x_gas_partial_pressure]
-category = pressure
+[CO2x_gas_partial_fraction]
+category = pfraction
 min =   0.9737041544735E-07
 max =   0.3669954530989E-03
 mean =   0.2080075251236E-03
@@ -97,8 +97,8 @@ cell    5 =   0.2989879561773E-05
 cell    7 =   0.1969245689193E-05
 cell    9 =   0.2535979961242E-06
 
-[CH4_gas_partial_pressure]
-category = pressure
+[CH4_gas_partial_fraction]
+category = pfraction
 min =   0.8582354341942E-06
 max =   0.1789984275605E-05
 mean =   0.1591145424753E-05
@@ -141,4 +141,3 @@ cell    5 =   0.5000000000000E-05
 cell    7 =   0.5000000000000E-05
 cell    9 =   0.5000000000000E-05
 cell   11 =   0.5000000000000E-05
-

@@ -17,7 +17,7 @@ module BeTRSimulation
 
   ! !USES:
   use BetrType                 , only : betr_type, create_betr_type
-  use betr_ctrl                , only : max_betr_hist_type, betr_offline
+  use betr_ctrl                , only : max_betr_hist_type, betr_offline, max_betr_rest_type
   use betr_constants           , only : betr_string_length
   use betr_constants           , only : betr_filename_length
   use betr_regression_module   , only : betr_regression_type
@@ -632,7 +632,7 @@ contains
     integer                           :: jj, tt, begc, endc, c
     character(len=betr_string_length) :: category
     character(len=betr_string_length) :: name
-
+    integer :: loc_id
     ! FIXME(bja, 201603) should we output units as well...?
     begc = 1
     endc = 1
@@ -649,10 +649,12 @@ contains
                   this%betr(c)%tracerstates%tracer_conc_mobile_col(begc, :, tt))
           end if
           if (tt <= this%betr(c)%tracers%nvolatile_tracers) then
-             category = 'pressure'
-             name = trim(this%betr(c)%tracers%tracernames(tt)) // '_gas_partial_pressure'
+             if(.not. this%betr(c)%tracers%is_volatile(tt))cycle
+             category = 'pfraction'
+             loc_id=this%betr(c)%tracers%volatileid(tt)
+             name = trim(this%betr(c)%tracers%tracernames(tt)) // '_gas_partial_fraction'
              call this%regression%WriteData(category, name, &
-                  this%betr(c)%tracerstates%tracer_P_gas_frac_col(begc, :, tt))
+                  this%betr(c)%tracerstates%tracer_P_gas_frac_col(begc, :, loc_id))
           end if
        end do
 
@@ -1471,8 +1473,8 @@ contains
   real(r8), pointer :: states_2d(:,:,:)
   integer :: nrest_1d, nrest_2d
   integer :: c, jj, fc
-  character(len=255) :: rest_varname_1d(200)
-  character(len=255) :: rest_varname_2d(200)
+  character(len=255) :: rest_varname_1d(max_betr_rest_type)
+  character(len=255) :: rest_varname_2d(max_betr_rest_type)
   logical :: readvar      ! determine if variable is on initial file
   real(r8), pointer :: ptr1d(:)
   real(r8), pointer :: ptr2d(:,:)
