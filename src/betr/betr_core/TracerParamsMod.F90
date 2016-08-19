@@ -641,7 +641,7 @@ contains
             if(is_h2o(j))then
               !this is a (bad) reverse hack because the hydrology code does not consider water vapor transport
               !jyt, Feb, 18, 2016.
-              aqu2bulkcef_mobile(c,n,j) = h2osoi_liqvol(c,n)
+              aqu2bulkcef_mobile(c,n,j) = max(h2osoi_liqvol(c,n),1.e-12_r8)
             else
               aqu2bulkcef_mobile(c,n,j) = air_vol(c,n)/bunsencef_col(c,n,k)+h2osoi_liqvol(c,n)
             endif
@@ -660,7 +660,7 @@ contains
         do fc = 1, numf
           c = filter(fc)
           if(n>=jtops(c))then
-            aqu2bulkcef_mobile(c, n, j) = h2osoi_liqvol(c,n)
+            aqu2bulkcef_mobile(c, n, j) = max(h2osoi_liqvol(c,n),1.e-12_r8)
           endif
         enddo
       enddo
@@ -1325,6 +1325,7 @@ contains
     !if (len(betrtracer_vars%betr_simname) > 0) continue
 
    associate(                                          &
+    nvolatile_tracer_groups => betrtracer_vars%nvolatile_tracer_groups, &
     qflx_adv            =>    biogeo_flux%qflx_adv_col & !real(r8) (:)  [intent(in)], infiltration, mm/s
    )
 
@@ -1332,7 +1333,7 @@ contains
    if(betr_status%check_status())return
    SHR_ASSERT_ALL((ubound(bunsencef_topsoi,1) == bounds%endc ), errMsg(filename,__LINE__), betr_status)
    if(betr_status%check_status())return
-   SHR_ASSERT_ALL((ubound(bunsencef_topsoi,2) == betrtracer_vars%nvolatile_tracers), errMsg(filename,__LINE__), betr_status)
+   SHR_ASSERT_ALL((ubound(bunsencef_topsoi,2) == nvolatile_tracer_groups), errMsg(filename,__LINE__), betr_status)
    if(betr_status%check_status())return
    SHR_ASSERT_ALL((ubound(tracer_flx_infl,1) == bounds%endc), errMsg(filename,__LINE__), betr_status)
    if(betr_status%check_status())return

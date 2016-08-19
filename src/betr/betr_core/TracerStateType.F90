@@ -502,7 +502,7 @@ contains
             endif
          else
             kk = jj - ngwmobile_tracers
-            id=addone(nrest_2d);rest_varname_2d(id)=trim(tracernames(jj))//'TRACER_CONC_SOLID_PASSIVE'
+            id=addone(nrest_2d);rest_varname_2d(id)=trim(tracernames(jj))//'_TRACER_CONC_SOLID_PASSIVE'
          endif
       enddo
     end associate
