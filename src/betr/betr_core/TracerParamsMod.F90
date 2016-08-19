@@ -483,7 +483,7 @@ contains
              !Henry's law constants
              henrycef_col(c,n,k)=get_henrycef(t_soisno(c,n), trcid, betrtracer_vars)
              scal = get_equilibrium_scal(t_soisno(c,n), soi_pH(c,n), trcid,betrtracer_vars)
-             if(n==1)print*,'henry',k,betrtracer_vars%tracernames(trcid),henrycef_col(c,n,k), scal, soi_pH(c,n)
+!             if(n==1)print*,'henry',k,betrtracer_vars%tracernames(trcid),henrycef_col(c,n,k), scal, soi_pH(c,n)
              henrycef_col(c,n,k)=henrycef_col(c,n,k) * scal
              aqu2neutralcef_col(c,n,j)=1._r8/scal   !this will convert the bulk aqueous phase into neutral phase
            endif
@@ -570,7 +570,7 @@ contains
            c = filter(fc)
            if(n>=jtops(c))then
              bunsencef_col(c,n, k)= henrycef_col(c,n,k)*t_soisno(c,n)/12.2_r8
-             if(n==1)print*,k,betrtracer_vars%tracernames(trcid),henrycef_col(c,n,k)
+!             if(n==1)print*,k,betrtracer_vars%tracernames(trcid),henrycef_col(c,n,k)
              !add the pH effect for tracers that can exist in multiple aqueous phases
              if(is_h2o(trcid))then
                !for water isotopes
@@ -711,7 +711,7 @@ contains
       co2logK1 = co2reflogK1+co2dH1*(1._r8/(2.303_r8*R*Tref)-1._r8/(2.303_r8*R*temp))
       co2logK2 = co2reflogK2+co2dH2*(1._r8/(2.303_r8*R*Tref)-1._r8/(2.303_r8*R*temp))
       rscal = 1._r8+10._r8**(co2logK1)*10._r8**(-pH)*(1._r8+10._r8**(co2logK2)*10._r8**(-pH))*1.e3_r8
-      print*,'rscal',rscal,temp,co2logK1,co2logK2
+!      print*,'rscal',rscal,temp,co2logK1,co2logK2
    elseif(tracer==betrtracer_vars%id_trc_nh3x)then
       !NH3H2O <--> NH4(+) + OH(-)
       rscal = 1._r8+10._r8**(nh3logK)*10._r8**(-pH)
@@ -1372,8 +1372,8 @@ contains
            tracer_flx_infl(c,j) = bunsencef_topsoi(c,betrtracer_vars%volatilegroupid(j)) * &
                 tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1,j) * qflx_adv(c,0)
 
-         print*,'trcflx',j,betrtracer_vars%tracernames(j),tracer_flx_infl(c,j),&
-            bunsencef_topsoi(c,betrtracer_vars%volatilegroupid(j))
+!         print*,'trcflx',j,betrtracer_vars%tracernames(j),tracer_flx_infl(c,j),&
+!            bunsencef_topsoi(c,betrtracer_vars%volatilegroupid(j))
          else
            tracer_flx_infl(c,j) = 0._r8
          endif
