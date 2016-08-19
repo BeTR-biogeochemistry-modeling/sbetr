@@ -1464,6 +1464,7 @@ contains
   use ncdio_pio      , only : file_desc_t, ncd_defvar, ncd_defdim
   use ncdio_pio      , only : ncd_double, ncd_enddef, ncd_putvar
   use ncdio_pio      , only : ncd_getvar
+  use betr_ctrl, only : max_betr_hist_type
   implicit none
   ! !ARGUMENTS:
   class(betr_simulation_type) , intent(inout) :: this
@@ -1478,8 +1479,8 @@ contains
   real(r8), pointer :: states_2d(:,:,:)
   integer :: nrest_1d, nrest_2d
   integer :: c, jj, fc
-  character(len=255) :: rest_varname_1d(200)
-  character(len=255) :: rest_varname_2d(200)
+  character(len=255) :: rest_varname_1d(max_betr_hist_type)
+  character(len=255) :: rest_varname_2d(max_betr_hist_type)
   logical :: readvar      ! determine if variable is on initial file
   real(r8), pointer :: ptr1d(:)
   real(r8), pointer :: ptr2d(:,:)

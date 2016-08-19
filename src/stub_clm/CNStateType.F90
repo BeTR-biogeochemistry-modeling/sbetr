@@ -53,6 +53,7 @@ contains
     !------------------------------------------------------------------------
 
     begp = bounds%begp; endp= bounds%endp
+    begc = bounds%begc; endc= bounds%endc
     allocate(this%rc14_atm_patch              (begp:endp)) ;    this%rc14_atm_patch              (:) = nan
     allocate(this%froot_prof_patch    (begp:endp,1:nlevdecomp_full)) ; this%froot_prof_patch    (:,:) = spval
     allocate(this%nfixation_prof_col  (begc:endc,1:nlevdecomp_full)) ; this%nfixation_prof_col  (:,:) = spval
@@ -94,8 +95,7 @@ contains
     do p = bounds%begp,bounds%endp
       this%rc14_atm_patch(p)              = c14ratio
     enddo
-
-
+    this%ndep_prof_col(:,:) = 0._r8
     this%nfixation_prof_col(:,:) = 0._r8
   end subroutine initCold
 
