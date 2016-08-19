@@ -118,7 +118,7 @@ contains
   case ("h2oiso")
      yesno = .true.
   case default
-     write(*, *)subname //' ERROR: unknown default method: ', method
+     write(*, *)subname //' Warning: unknown default method: ', method
      yesno = .false.
   end select
 

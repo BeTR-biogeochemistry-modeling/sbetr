@@ -9,7 +9,7 @@ module BetrBGCMod
   use bshr_kind_mod            , only : r8 => shr_kind_r8
   use bshr_log_mod             , only : errMsg => shr_log_errMsg
   use BeTR_decompMod           , only : bounds_type  => betr_bounds_type
-  use betr_ctrl                , only : iulog  => biulog, do_betr_otuput
+  use betr_ctrl                , only : iulog  => biulog
   use betr_constants           , only : betr_string_length
   use betr_varcon              , only : denh2o => bdenh2o
   use MathfuncMod              , only : dot_sum
@@ -476,7 +476,7 @@ contains
                            !if the tracer update is very tinty, then set it to zero
                            if(abs(dtracer(c,l,k))<tiny_val)dtracer(c,l,k) = 0._r8
 
-                           if(tracer_conc_solid_passive_col(c,l,trcid)<0._r8 .and. do_betr_otuput)then
+                           if(tracer_conc_solid_passive_col(c,l,trcid)<0._r8)then
                               write(msg,*)'nstep=',betr_time%get_nstep(),'col=',c,'l=',l,'trcid=',trcid, &
                                    new_line('A')//'dtime=',dtime_loc(c), &
                                    new_line('A')//'trc=',tracer_conc_solid_passive_col(c,l,trcid),&
@@ -504,7 +504,7 @@ contains
 
                      err_tracer(c, k) = dot_sum(dtracer(c,jtops(c):ubj, k), dz(c,jtops(c):ubj),betr_status)
                      if(betr_status%check_status())return
-                     if(abs(err_tracer(c,k))>=err_min_solid .and. do_betr_otuput)then
+                     if(abs(err_tracer(c,k))>=err_min_solid)then
                         call betr_status%set_msg('mass balance error for tracer ' &
                            //tracernames(trcid)//' in '//trim(subname)//errMsg(mod_filename, __LINE__), err=-1)
                         return
@@ -942,16 +942,14 @@ contains
                      if(abs(err_relative)<err_relative_threshold)then
                         leaching_mass(c,k) = leaching_mass(c,k) - err_tracer(c,k)
                      else
-                        if(do_betr_otuput)then
-                          write(msg,'(A,5X,I8,5X,I8,5X,A,6(5X,A,5X,E18.10))')'nstep=', betr_time%get_nstep(), c, &
+                        write(msg,'(A,5X,I8,5X,I8,5X,A,6(5X,A,5X,E18.10))')'nstep=', betr_time%get_nstep(), c, &
                              tracernames(trcid),' err=',err_tracer(c,k),&
                              ' transp=',transp_mass(c,k),' lech=',&
                              leaching_mass(c,k),' infl=',inflx_top(c,k),' dmass=',dmass(c,k), ' mass0=', &
                              mass0,'err_rel=',err_relative
-                          msg=trim(msg)//'advection mass balance error for tracer '//tracernames(j)//errMsg(mod_filename, __LINE__)
-                          call bstatus%set_msg(msg, err=-1)
-                          return
-                        endif
+                        msg=trim(msg)//'advection mass balance error for tracer '//tracernames(j)//errMsg(mod_filename, __LINE__)
+                        call bstatus%set_msg(msg, err=-1)
+                        return
                      endif
                      tracer_flx_vtrans(c, trcid)  = tracer_flx_vtrans(c,trcid) + transp_mass(c,k)
                      tracer_flx_leaching(c,trcid) = tracer_flx_leaching(c, trcid) + leaching_mass(c,k)
@@ -1151,6 +1149,7 @@ contains
                  bot_concflux( : , : ,dif_trc_group(1:ntrcs)),                               &
                  update_col,                                                                 &
                  dtracer(:,lbj:ubj,1:ntrcs))
+
             if(bstatus%check_status())return
             !do tracer update
             do fc = 1, num_soilc
@@ -1167,7 +1166,7 @@ contains
                         if(tracer_conc_mobile_col(c,l,trcid)<-dtracer(c,l,k))then
                            !if the tracer update is very tinty, then set it to zero
                            if(abs(dtracer(c,l,k))<tiny_val)dtracer(c,l,k) = 0._r8
-                           if(tracer_conc_mobile_col(c,l,trcid)<0._r8 .and. do_betr_otuput)then
+                           if(tracer_conc_mobile_col(c,l,trcid)<0._r8)then
                               !write error message and stop
                               write(msg,*) 'trcname=',tracernames(trcid),'c=',c,'l=',l, &
                                  new_line('A')//'trc=',tracer_conc_mobile_col(c,l,trcid),'dtracer=',dtracer(c,l,k),&
@@ -1190,7 +1189,7 @@ contains
                   enddo
 
                   !time stepping screening
-                  if(dtime_loc(c)<1.e-3_r8 .and. do_betr_otuput)then
+                  if(dtime_loc(c)<1.e-3_r8)then
                      write(msg,*)'diffusion time step < 1.e-3_r8', dtime_loc(c), 'col ',c
                      do k = 1, ntrcs
                         write(msg1,*)'tracer '//tracernames(trcid),get_cntheta(), &
@@ -1251,16 +1250,15 @@ contains
                                 diff_surf(c,k) * dtime_loc(c)
                         endif
                      else
-                        if(do_betr_otuput)then
-                          write(msg,*) 'mass bal error dif '//tracernames(trcid), mass1,'col=',c, &
+                        write(msg,*) 'mass bal error dif '//trim(tracernames(trcid)), 'mass 0/1',mass0, mass1,'col=',c, &
                                new_line('A')//'err=', err_tracer(c,k), 'dmass=',dmass(c,k), ' dif=', diff_surf(c,k)*dtime_loc(c), &
                              ' prod=',dot_sum(x=local_source(c,jtops(c):ubj,k),y=dz(c,jtops(c):ubj),bstatus=bstatus)*dtime_loc(c)
-                          if(bstatus%check_status())return
-                          msg=trim(msg)//'mass balance error for tracer '//tracernames(trcid)//' in ' &
-                           //trim(subname)//errMsg(mod_filename, __LINE__)
-                          call bstatus%set_msg(msg=msg, err=-1)
-                          return
-                        endif
+                        print*,'dtracer',dtracer(c,jtops(c):ubj, k)
+                        if(bstatus%check_status())return
+                        msg=trim(msg)//new_line('A')//'mass balance error for tracer '//trim(tracernames(trcid))//' in ' &
+                           //trim(subname)//new_line('A')//errMsg(mod_filename, __LINE__)
+                        call bstatus%set_msg(msg=msg, err=-1)
+                        return
                      endif
                   enddo
                endif

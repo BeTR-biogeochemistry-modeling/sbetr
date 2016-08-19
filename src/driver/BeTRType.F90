@@ -1179,13 +1179,14 @@ contains
 
   subroutine get_hist_size(this, num_state1d, num_state2d, num_flux1d, num_flux2d, &
          nmlist_hist1d_state_buffer, nmlist_hist2d_state_buffer, &
-         nmlist_hist1d_flux_buffer, nmlist_hist2d_flux_buffer)
+         nmlist_hist1d_flux_buffer, nmlist_hist2d_flux_buffer, bstatus)
   !
   ! DESCRIPTION
   ! return number of variables for history output
   !
   ! USES
   use betr_ctrl, only : max_betr_hist_type
+  use BetrStatusType      , only : betr_status_type
   implicit none
   !ARGUMENTS
   class(betr_type)  ,     intent(inout) :: this
@@ -1197,12 +1198,30 @@ contains
   character(len=255), intent(out) :: nmlist_hist2d_state_buffer(max_betr_hist_type)
   character(len=255), intent(out) :: nmlist_hist1d_flux_buffer(max_betr_hist_type)
   character(len=255), intent(out) :: nmlist_hist2d_flux_buffer(max_betr_hist_type)
+  type(betr_status_type)    , intent(out) :: bstatus
   integer :: j
 
+  call bstatus%reset()
   num_state1d = this%tracerstates%num_hist1d
+  if(num_state1d > max_betr_hist_type)then
+    call bstatus%set_msg(msg='# of 1d state variables are defined more than allowed', err=-1)
+    return
+  endif
   num_state2d = this%tracerstates%num_hist2d
+  if(num_state2d > max_betr_hist_type)then
+    call bstatus%set_msg(msg='# of 2d state variables are defined more than allowed', err=-1)
+    return
+  endif
   num_flux1d  = this%tracerfluxes%num_hist1d
+  if(num_flux1d > max_betr_hist_type)then
+    call bstatus%set_msg(msg='# of 1d flux variables are defined more than allowed', err=-1)
+    return
+  endif
   num_flux2d  = this%tracerfluxes%num_hist2d
+  if(num_flux2d > max_betr_hist_type)then
+    call bstatus%set_msg(msg='# of 2d flux variables are defined more than allowed', err=-1)
+    return
+  endif
 
   do j = 1, num_state1d
     nmlist_hist1d_state_buffer(j) = this%tracerstates%nmlist_hist1d_buffer(j)

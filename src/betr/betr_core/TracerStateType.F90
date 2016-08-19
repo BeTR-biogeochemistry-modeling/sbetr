@@ -266,9 +266,6 @@ contains
 
             id=addone(idtemp2d);this%tracer_conc_mobile_col(:, :, jj) = states_2d(:,:,id)
 
-          !x  do ll = lbj, ubj
-          !x    print*,'read',this%tracer_conc_mobile_col(:,ll,jj),states_2d(:,ll,id)
-          !x  enddo
             if(is_adsorb(jj))then
               id=addone(idtemp2d);this%tracer_conc_solid_equil_col(:, :, adsorbid(jj)) = states_2d(:,:,id)
             endif
@@ -288,9 +285,6 @@ contains
 
             id=addone(idtemp2d);states_2d(:,:,id) = this%tracer_conc_mobile_col(:, :, jj)
 
-          !x  do ll = lbj, ubj
-          !x    print*,this%tracer_conc_mobile_col(:,ll,jj),states_2d(:,ll,id)
-          !x  enddo
             if(is_adsorb(jj))then
               id=addone(idtemp2d);states_2d(:,:,id) = this%tracer_conc_solid_equil_col(:, :, adsorbid(jj))
             endif
@@ -502,9 +496,10 @@ contains
             endif
          else
             kk = jj - ngwmobile_tracers
-            id=addone(nrest_2d);rest_varname_2d(id)=trim(tracernames(jj))//'TRACER_CONC_SOLID_PASSIVE'
+            id=addone(nrest_2d);rest_varname_2d(id)=trim(tracernames(jj))//'_TRACER_CONC_SOLID_PASSIVE'
          endif
       enddo
+
     end associate
 
   end subroutine get_restartvars

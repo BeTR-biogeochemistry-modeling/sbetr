@@ -264,9 +264,14 @@ contains
     call this%betr(c)%get_hist_size(this%num_hist_state1d, this%num_hist_state2d, &
       this%num_hist_flux1d, this%num_hist_flux2d, &
       this%nmlist_hist1d_state_buffer, this%nmlist_hist2d_state_buffer, &
-      this%nmlist_hist1d_flux_buffer, this%nmlist_hist2d_flux_buffer)
+      this%nmlist_hist1d_flux_buffer, this%nmlist_hist2d_flux_buffer, this%bstatus(c))
 
-    !print*,'create hist files',betr_offline
+    if(this%bstatus(c)%check_status())then
+      call this%bsimstatus%setcol(c)
+      call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
+      if(this%bsimstatus%check_status())call endrun(msg=this%bsimstatus%print_msg())
+    endif
+
     if(betr_offline)then
       call this%CreateOfflineHistory(bounds, betr_nlevtrc_soil, &
          this%num_hist_state1d, this%num_hist_state2d, &
@@ -1144,12 +1149,14 @@ contains
 
   do jj = 1, num_flux2d
     !read name list
+    !print*,this%nmlist_hist2d_flux_buffer(jj)
     read(this%nmlist_hist2d_flux_buffer(jj), nml=hist2d_fmt, iostat=nml_error, iomsg=ioerror_msg)
+
     if(nml_error/=0)then
       write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
     endif
     if(betr_offline)then
-      print*,jj,trim(fname)
+      !print*,'2d flux',jj,trim(fname)
       call hist_def_fld2d (ncid, varname=fname, nf90_type=ncd_float, dim1name = "ncol",&
             dim2name="levtrc", long_name=long_name, units=units)
     else
@@ -1167,7 +1174,7 @@ contains
       write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
     endif
     if(betr_offline)then
-      print*,jj,trim(fname)
+      !print*,'1d flux',jj,trim(fname)
       call hist_def_fld1d (ncid, varname=fname,  nf90_type=ncd_float, &
         dim1name="ncol", long_name=long_name, units=units)
     else
@@ -1489,6 +1496,7 @@ contains
   if(trim(flag)/='define')then
     !assign initial conditions
     call this%BeTRSetBounds(betr_bounds)
+    !x print*,nrest_1d,nrest_2d
     do fc = 1, numf
       c = filter(fc)
       call this%betr(c)%set_restvar(betr_bounds, 1, betr_nlevtrc_soil, nrest_1d,&
@@ -1520,6 +1528,7 @@ contains
       enddo
 
       do jj =1, nrest_2d
+        !x print*,jj,trim(rest_varname_2d(jj))
         call ncd_defvar(ncid, trim(rest_varname_2d(jj)),ncd_double,dim1name='column',  &
           dim2name='levtrc', long_name='', units = '',  missing_value=spval, fill_value=spval)
       enddo

@@ -73,8 +73,8 @@ contains
 
   allocate(extra)
   create_extra_type => extra
-  
-  end function create_extra_type 
+
+  end function create_extra_type
   !-------------------------------------------------------------------------------
   subroutine InitAllocate(this, lbj, ubj)
     !
@@ -1139,7 +1139,7 @@ contains
       !The select type is now not used before intel compiler does not support such use at the moment
       !basically, intel compiler does not support passing a generic data type as a dummy arugment
       !to a user defined external function, such as done here. It will be used in the future if intel
-      !fixes this compiler bug. Jinyun Tang, July 27, 2016.    
+      !fixes this compiler bug. Jinyun Tang, July 27, 2016.
 !     select type(extra)
 !     class is (Extra_type)
 !     extra_inst => extra
