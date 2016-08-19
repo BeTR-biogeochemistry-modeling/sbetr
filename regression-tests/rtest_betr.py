@@ -666,12 +666,14 @@ class Tolerances(object):
     GENERAL = 'general'
     CONC = 'concentration'
     PRESSURE = 'pressure'
+    FRACTION = 'pfraction'
     VELOCITY = 'velocity'
     # DISCRETE = 'discrete'
     _KNOWN_CATEGORIES = [
         GENERAL,
         CONC,
         PRESSURE,
+        FRACTION,
         VELOCITY,
     ]
 

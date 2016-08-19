@@ -9,8 +9,8 @@ cell    5 =   0.4015557941797E+01
 cell    7 =   0.3422539534197E+01
 cell    9 =   0.3492728881059E+01
 
-[N2_gas_partial_pressure]
-category = pressure
+[N2_gas_partial_fraction]
+category = pfraction
 min =   0.7808334698453E+00
 max =   0.7918492303380E+00
 mean =   0.7832655093218E+00
@@ -31,8 +31,8 @@ cell    5 =   0.1100456305011E+01
 cell    7 =   0.9349711350380E+00
 cell    9 =   0.9293900445777E+00
 
-[O2_gas_partial_pressure]
-category = pressure
+[O2_gas_partial_fraction]
+category = pfraction
 min =   0.1997719995750E+00
 max =   0.2094578669961E+00
 mean =   0.2073203154385E+00
@@ -53,8 +53,8 @@ cell    5 =   0.4906882951219E-01
 cell    7 =   0.4133917618140E-01
 cell    9 =   0.3997060573729E-01
 
-[AR_gas_partial_pressure]
-category = pressure
+[AR_gas_partial_fraction]
+category = pfraction
 min =   0.8245991378618E-02
 max =   0.9339883991881E-02
 mean =   0.9099494612816E-02
@@ -75,8 +75,8 @@ cell    5 =   0.3691792434483E-02
 cell    7 =   0.3139761197680E-02
 cell    9 =   0.2143117425627E-02
 
-[CO2x_gas_partial_pressure]
-category = pressure
+[CO2x_gas_partial_fraction]
+category = pfraction
 min =   0.1311836227356E-03
 max =   0.3669891849929E-03
 mean =   0.3129335218290E-03
@@ -97,8 +97,8 @@ cell    5 =   0.9355347924364E-05
 cell    7 =   0.7882686145362E-05
 cell    9 =   0.7654126083572E-05
 
-[CH4_gas_partial_pressure]
-category = pressure
+[CH4_gas_partial_fraction]
+category = pfraction
 min =   0.1595085650258E-05
 max =   0.1789981705618E-05
 mean =   0.1747105135141E-05
@@ -119,8 +119,8 @@ cell    5 =   0.2999883153555E+03
 cell    7 =   0.3123035402931E+03
 cell    9 =   0.2924760270799E+03
 
-[BLK_H2O_gas_partial_pressure]
-category = pressure
+[BLK_H2O_gas_partial_fraction]
+category = pfraction
 min =                   NaN
 max =                   NaN
 mean =                   NaN
@@ -141,8 +141,8 @@ cell    5 =   0.2999883153555E+03
 cell    7 =   0.3123035402931E+03
 cell    9 =   0.2924760270799E+03
 
-[O18_H2O_gas_partial_pressure]
-category = pressure
+[O18_H2O_gas_partial_fraction]
+category = pfraction
 min =                   NaN
 max =                   NaN
 mean =                   NaN
@@ -163,8 +163,8 @@ cell    5 =   0.2999883153555E+03
 cell    7 =   0.3123035402931E+03
 cell    9 =   0.2924760270799E+03
 
-[D_H2O_gas_partial_pressure]
-category = pressure
+[D_H2O_gas_partial_fraction]
+category = pfraction
 min =                   NaN
 max =                   NaN
 mean =                   NaN
@@ -196,4 +196,3 @@ cell    5 =   0.5958011229309E-09
 cell    7 =   0.1148380546242E-07
 cell    9 =   0.1486620431369E-07
 cell   11 =   0.8752790563449E-08
-

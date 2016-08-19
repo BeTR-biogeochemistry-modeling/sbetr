@@ -643,6 +643,7 @@ contains
             if(is_h2o(j))then
               !this is a (bad) reverse hack because the hydrology code does not consider water vapor transport
               !jyt, Feb, 18, 2016, 1.e-12_r8 is a value for avoiding NaN
+
               aqu2bulkcef_mobile(c,n,j) = max(h2osoi_liqvol(c,n),1.e-12_r8)
             else
               aqu2bulkcef_mobile(c,n,j) = air_vol(c,n)/bunsencef_col(c,n,k)+h2osoi_liqvol(c,n)

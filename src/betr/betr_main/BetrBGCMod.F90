@@ -787,7 +787,6 @@ contains
       update_col  (:) = .true.
       time_remain (:) = 0._r8
       dtime_loc   (:) = 0._r8
-
       !loop over all tracers
       do j = 1, ngwmobile_tracer_groups
          ntrcs = 0
@@ -801,8 +800,8 @@ contains
                endif
             endif
          enddo
+         !convert bulk mobile phase into aqueous phase'
          if(ntrcs==0)cycle
-         !convert bulk mobile phase into aqueous phase
          do k = 1, ntrcs
             do fc = 1, num_soilc
                c = filter_soilc(fc)
@@ -920,7 +919,7 @@ contains
                endif
             enddo
 
-            !do error budget and tracer flux update
+            !print*,'!do error budget and tracer flux update'
             do k = 1, ntrcs
                trcid = adv_trc_group(k)
                do fc = 1, num_soilc
@@ -948,10 +947,9 @@ contains
                              ' transp=',transp_mass(c,k),' lech=',&
                              leaching_mass(c,k),' infl=',inflx_top(c,k),' dmass=',dmass(c,k), ' mass0=', &
                              mass0,'err_rel=',err_relative
-                        print*,msg
-                        msg=trim(msg)//new_line('A')//'advection mass balance error for tracer '//tracernames(j) &
-                           //new_line('A')//errMsg(mod_filename, __LINE__)
 
+                        msg=trim(msg)//new_line('A')//'advection mass balance error for tracer '//tracernames(j) &
+                          //new_line('A')//errMsg(mod_filename, __LINE__)
                         call bstatus%set_msg(msg, err=-1)
                         return
                      endif
@@ -1257,7 +1255,7 @@ contains
                         write(msg,*) 'mass bal error dif '//trim(tracernames(trcid)), 'mass 0/1',mass0, mass1,'col=',c, &
                                new_line('A')//'err=', err_tracer(c,k), 'dmass=',dmass(c,k), ' dif=', diff_surf(c,k)*dtime_loc(c), &
                              ' prod=',dot_sum(x=local_source(c,jtops(c):ubj,k),y=dz(c,jtops(c):ubj),bstatus=bstatus)*dtime_loc(c)
-                        print*,'dtracer',dtracer(c,jtops(c):ubj, k)
+
                         if(bstatus%check_status())return
                         msg=trim(msg)//new_line('A')//'mass balance error for tracer '//trim(tracernames(trcid))//' in ' &
                            //trim(subname)//new_line('A')//errMsg(mod_filename, __LINE__)

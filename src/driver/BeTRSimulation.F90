@@ -658,7 +658,7 @@ contains
           end if
           if (tt <= this%betr(c)%tracers%nvolatile_tracers) then
              if(.not. this%betr(c)%tracers%is_volatile(tt))cycle
-             category = 'fraction'
+             category = 'pfraction'
              loc_id=this%betr(c)%tracers%volatileid(tt)
              name = trim(this%betr(c)%tracers%tracernames(tt)) // '_gas_partial_fraction'
              call this%regression%WriteData(category, name, &
