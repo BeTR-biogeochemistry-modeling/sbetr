@@ -807,7 +807,7 @@ contains
             do fc = 1, num_soilc
                c = filter_soilc(fc)
                inflx_top(c, k) = tracer_flx_infl(c,adv_trc_group(k))
-               print*,'infltop',adv_trc_group(k),tracer_flx_infl(c,adv_trc_group(k))
+               !x print*,'infltop',adv_trc_group(k),tracer_flx_infl(c,adv_trc_group(k))
                !set to 0 to ensure outgoing boundary condition is imposed, this may not be correct for water isotopes
                inflx_bot(c,k) = 0._r8
                trc_bot(c,k) = tracer_conc_grndwater_col(c,adv_trc_group(k))

@@ -140,21 +140,21 @@ contains
     call time_vars%print_cur_time()
   endif
 
-  print*,'obtain waterstate_vars for initilizations that need it'
+  !x print*,'obtain waterstate_vars for initilizations that need it'
   call forcing_data%UpdateForcing(grid_data,                                            &
        bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, time_vars, col, &
        pft, atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars    ,   &
        waterflux_vars, temperature_vars, chemstate_vars, simulation%jtops)
 
-  print*,'af init update',forcing_data%t_soi(1,:)
+  !x print*,'af init update',forcing_data%t_soi(1,:)
   !print*,'initial water state variable output',time_vars%tstep
   call calc_qadv(ubj, simulation%num_soilc, &
        simulation%filter_soilc, waterstate_vars)
 
-  print*,'bf sim init',forcing_data%t_soi(1,:)
+  !x print*,'bf sim init',forcing_data%t_soi(1,:)
   !print*,'base_filename:',trim(base_filename)
   call  simulation%Init(base_filename, namelist_buffer, bounds, lun, col, pft, waterstate_vars)
-  print*,'af sim init',forcing_data%t_soi(1,:)
+  !x print*,'af sim init',forcing_data%t_soi(1,:)
 
   select type(simulation)
   class is (betr_simulation_standalone_type)
@@ -183,7 +183,7 @@ contains
     call time_vars%proc_initstep()
   endif
 
-  print*,'bf loop',forcing_data%t_soi(1,:)
+  !x print*,'bf loop',forcing_data%t_soi(1,:)
   do
     record = record + 1
 
@@ -192,7 +192,7 @@ contains
 
     call simulation%PreDiagSoilColWaterFlux(simulation%num_soilc,  simulation%filter_soilc)
 
-    print*,'update forcing for betr'
+    !x print*,'update forcing for betr'
     !set envrionmental forcing by reading foring data: temperature, moisture, atmospheric resistance
     !from either user specified file or clm history file
 

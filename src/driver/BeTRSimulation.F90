@@ -308,7 +308,7 @@ contains
     elseif(trim(flag)=='write')then
       call ncd_pio_createfile(ncid, trim(fname))
     endif
-
+    print*,'creating file succeeded'
   end subroutine BeTRSimulationRestartOpen
 
 
@@ -639,6 +639,7 @@ contains
     integer                           :: jj, tt, begc, endc, c
     character(len=betr_string_length) :: category
     character(len=betr_string_length) :: name
+    integer :: loc_id
 
     ! FIXME(bja, 201603) should we output units as well...?
     begc = 1
@@ -656,10 +657,12 @@ contains
                   this%betr(c)%tracerstates%tracer_conc_mobile_col(begc, :, tt))
           end if
           if (tt <= this%betr(c)%tracers%nvolatile_tracers) then
-             category = 'pressure'
-             name = trim(this%betr(c)%tracers%tracernames(tt)) // '_gas_partial_pressure'
+             if(.not. this%betr(c)%tracers%is_volatile(tt))cycle
+             category = 'fraction'
+             loc_id=this%betr(c)%tracers%volatileid(tt)
+             name = trim(this%betr(c)%tracers%tracernames(tt)) // '_gas_partial_fraction'
              call this%regression%WriteData(category, name, &
-                  this%betr(c)%tracerstates%tracer_P_gas_frac_col(begc, :, tt))
+                  this%betr(c)%tracerstates%tracer_P_gas_frac_col(begc, :, loc_id))
           end if
        end do
 

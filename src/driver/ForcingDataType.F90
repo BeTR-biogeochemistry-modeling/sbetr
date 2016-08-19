@@ -143,7 +143,7 @@ contains
 
     call this%Init(num_levels, num_time)
     call this%ReadForcingData(grid)
-    print*,'read data tsoi',this%t_soi(1,:)
+    !x print*,'read data tsoi',this%t_soi(1,:)
   end subroutine ReadData
 
   !------------------------------------------------------------------------
@@ -385,7 +385,6 @@ contains
              soilstate_vars%eff_porosity_col(c,j)   = grid%watsat(j)-this%h2osoi_icevol(tstep,j)
              soilstate_vars%bsw_col(c,j)            = grid%bsw(j)
              temperature_vars%t_soisno_col(c,j)     = this%t_soi(tstep,j)
-             if(tstep==1)print*,'temp',tstep,this%t_soi(tstep,j)
              waterflux_vars%qflx_rootsoi_col(c,j)   = this%qflx_rootsoi(tstep,j)  !water exchange between soil and root, m/H2O/s
              do pi = 1, betr_maxpatch_pft
                if (pi <= col%npfts(c)) then

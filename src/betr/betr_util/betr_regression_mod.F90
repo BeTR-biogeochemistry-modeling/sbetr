@@ -138,7 +138,7 @@ contains
 
     integer :: output = 16
 
-    write(stdout, '(a, a)') 'Writing regression output to .', this%filename
+    write(stdout, '(a, a)') 'Writing regression output to ', this%filename
 
     open(this%output, file=this%filename, status='REPLACE')
 
