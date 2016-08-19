@@ -1267,12 +1267,12 @@ contains
    rest_varname_2d)
   !
   !DESCRIPTION
-  use betr_ctrl, only : max_betr_hist_type
+  use betr_ctrl, only : max_betr_rest_type
   implicit none
   class(betr_type)  ,     intent(inout) :: this
   integer, intent(out) :: nrest_1d, nrest_2d
-  character(len=255), intent(out) :: rest_varname_1d(max_betr_hist_type)
-  character(len=255), intent(out) :: rest_varname_2d(max_betr_hist_type)
+  character(len=255), intent(out) :: rest_varname_1d(max_betr_rest_type)
+  character(len=255), intent(out) :: rest_varname_2d(max_betr_rest_type)
 
   call this%tracerstates%get_restartvars(nrest_1d, nrest_2d,rest_varname_1d, &
    rest_varname_2d, this%tracers)

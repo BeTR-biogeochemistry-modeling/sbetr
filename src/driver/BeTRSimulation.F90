@@ -17,7 +17,7 @@ module BeTRSimulation
 
   ! !USES:
   use BetrType                 , only : betr_type, create_betr_type
-  use betr_ctrl                , only : max_betr_hist_type, betr_offline
+  use betr_ctrl                , only : max_betr_hist_type, betr_offline, max_betr_rest_type
   use betr_constants           , only : betr_string_length
   use betr_constants           , only : betr_filename_length
   use betr_regression_module   , only : betr_regression_type
@@ -244,6 +244,7 @@ contains
         this%active_col(c) = .false.
       endif
     enddo
+
     call this%BeTRSetcps(bounds, col, pft)
     call this%BeTRSetBiophysForcing(bounds, col, pft, betr_bounds%lbj, betr_bounds%ubj, &
         waterstate_vars = waterstate)
@@ -283,6 +284,7 @@ contains
     endif
     call this%regression%Init(base_filename, namelist_buffer, this%bsimstatus)
     if(this%bsimstatus%check_status())call endrun(msg=this%bsimstatus%print_msg())
+
   end subroutine BeTRInit
 
   !---------------------------------------------------------------------------------
@@ -1174,7 +1176,7 @@ contains
       write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
     endif
     if(betr_offline)then
-      !print*,'1d flux',jj,trim(fname)
+      print*,'1d flux',jj,trim(fname)
       call hist_def_fld1d (ncid, varname=fname,  nf90_type=ncd_float, &
         dim1name="ncol", long_name=long_name, units=units)
     else
@@ -1479,8 +1481,8 @@ contains
   real(r8), pointer :: states_2d(:,:,:)
   integer :: nrest_1d, nrest_2d
   integer :: c, jj, fc
-  character(len=255) :: rest_varname_1d(max_betr_hist_type)
-  character(len=255) :: rest_varname_2d(max_betr_hist_type)
+  character(len=255) :: rest_varname_1d(max_betr_rest_type)
+  character(len=255) :: rest_varname_2d(max_betr_rest_type)
   logical :: readvar      ! determine if variable is on initial file
   real(r8), pointer :: ptr1d(:)
   real(r8), pointer :: ptr2d(:,:)

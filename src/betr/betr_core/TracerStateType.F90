@@ -459,14 +459,14 @@ contains
   !
   !DESCRIPTION
   !set restr files
-  use betr_ctrl, only : max_betr_hist_type
+  use betr_ctrl, only : max_betr_rest_type
   use MathfuncMod, only : addone
   use BeTRTracerType , only : BeTRTracer_Type
   implicit none
   class(TracerState_type), intent(inout) :: this
   integer, intent(out) :: nrest_1d, nrest_2d
-  character(len=255), intent(out) :: rest_varname_1d(max_betr_hist_type)
-  character(len=255), intent(out) :: rest_varname_2d(max_betr_hist_type)
+  character(len=255), intent(out) :: rest_varname_1d(max_betr_rest_type)
+  character(len=255), intent(out) :: rest_varname_2d(max_betr_rest_type)
   type(BeTRTracer_Type)  , intent(in)  :: betrtracer_vars
   integer :: jj, kk,id
 

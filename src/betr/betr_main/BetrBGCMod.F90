@@ -807,6 +807,7 @@ contains
             do fc = 1, num_soilc
                c = filter_soilc(fc)
                inflx_top(c, k) = tracer_flx_infl(c,adv_trc_group(k))
+               print*,'infltop',adv_trc_group(k),tracer_flx_infl(c,adv_trc_group(k))
                !set to 0 to ensure outgoing boundary condition is imposed, this may not be correct for water isotopes
                inflx_bot(c,k) = 0._r8
                trc_bot(c,k) = tracer_conc_grndwater_col(c,adv_trc_group(k))
@@ -942,12 +943,15 @@ contains
                      if(abs(err_relative)<err_relative_threshold)then
                         leaching_mass(c,k) = leaching_mass(c,k) - err_tracer(c,k)
                      else
-                        write(msg,'(A,5X,I8,5X,I8,5X,A,6(5X,A,5X,E18.10))')'nstep=', betr_time%get_nstep(), c, &
+                        write(msg,'(A,5X,I8,5X,I8,5X,A,7(5X,A,5X,E18.10))')'nstep=', betr_time%get_nstep(), c, &
                              tracernames(trcid),' err=',err_tracer(c,k),&
                              ' transp=',transp_mass(c,k),' lech=',&
                              leaching_mass(c,k),' infl=',inflx_top(c,k),' dmass=',dmass(c,k), ' mass0=', &
                              mass0,'err_rel=',err_relative
-                        msg=trim(msg)//'advection mass balance error for tracer '//tracernames(j)//errMsg(mod_filename, __LINE__)
+                        print*,msg
+                        msg=trim(msg)//new_line('A')//'advection mass balance error for tracer '//tracernames(j) &
+                           //new_line('A')//errMsg(mod_filename, __LINE__)
+
                         call bstatus%set_msg(msg, err=-1)
                         return
                      endif
