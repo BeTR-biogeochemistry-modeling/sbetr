@@ -681,6 +681,7 @@ contains
    !dlogK/dT=dH/(2.303RT^2)
    !logK=logK(T_0)+dH*(1/(2.303R*T_0)-1/(2.303R*T))
    !
+   ! Fang and Moncrieff, 1999, A model for soil CO2 production and transport 1:
    ! through the scale, the bulk aqueous tracer is, rscal * aqueous(netural)
    ! !USES
    !
@@ -691,13 +692,14 @@ contains
    type(betrtracer_type) , intent(in) :: betrtracer_vars                                          ! betr configuration information
 
    !local variables
+   !log value of dissociation constants, obtained under molar concentration (mol/dm3)
    real(r8), parameter :: Tref=298.15 ! Kelvin
    real(r8), parameter :: co2reflogK1=-6.352_r8   !25 Celcius
    real(r8), parameter :: co2reflogK2=-10.33_r8   !25 Celcisum
    real(r8), parameter :: co2dH1=-2.0e3_r8 ! J/mol
    real(r8), parameter :: co2dH2=-3.5e3_r8 ! J/mol
-   real(r8), parameter :: nh3logK=9.24_r8
-   real(r8), parameter :: no3logK=1.30_r8
+   real(r8), parameter :: nh3logK=9.24_r8  ! from Maggi et al. (2008)
+   real(r8), parameter :: no3logK=1.30_r8  ! from Maggi et al. (2008)
    real(r8), parameter :: R=8.3144
    real(r8)            :: co2logK1, co2logK2, rscal
    character(len=255)  :: subname ='get_equilibrium_scal'
@@ -705,16 +707,17 @@ contains
    if(tracer==betrtracer_vars%id_trc_co2x)then
       !H2CO3  <--> H(+)+HCO3(-)    K1
       !HCO3(-)<--> H(+)+CO3(2-)    K2
-      !I have to check why I need 1.e3_r8 for conversion
+      !1.e3_r8 converts from mol/dm3 to mol/m3
       co2logK1 = co2reflogK1+co2dH1*(1._r8/(2.303_r8*R*Tref)-1._r8/(2.303_r8*R*temp))
       co2logK2 = co2reflogK2+co2dH2*(1._r8/(2.303_r8*R*Tref)-1._r8/(2.303_r8*R*temp))
       rscal = 1._r8+10._r8**(co2logK1)*10._r8**(-pH)*(1._r8+10._r8**(co2logK2)*10._r8**(-pH))*1.e3_r8
    elseif(tracer==betrtracer_vars%id_trc_nh3x)then
       !NH3H2O <--> NH4(+) + OH(-)
-      rscal = 1._r8+10._r8**(nh3logK)*10._r8**(-pH)
+      !10._r8**(-pH) gives mol / dm3
+      rscal = 1._r8+10._r8**(nh3logK)*10._r8**(-pH)*1.e3_r8
    elseif(tracer==betrtracer_vars%id_trc_no3x)then
       !HNO3 <--> NO3(-) + H(+)
-      rscal = 1._r8+10._r8**(no3logK)*10._r8**(-pH)
+      rscal = 1._r8+10._r8**(no3logK)*10._r8**(-pH)*1.e3_r8
    else
       rscal = 1._r8  ! no rescal for other tracers
    endif
