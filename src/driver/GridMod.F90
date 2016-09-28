@@ -42,6 +42,8 @@ module BeTR_GridMod
 
      real(r8), public, pointer :: bsw(:) ! clap-hornberg parameter
      real(r8), public, pointer :: watsat(:) ! saturated volumetric water content
+     real(r8), public, pointer :: sucsat(:)
+     real(r8), public, pointer :: pctsand(:)
    contains
      procedure, public  :: Init
      procedure, public  :: ReadNamelist
@@ -91,7 +93,7 @@ contains
     write(*, *) 'zisoi = ', this%zisoi
     write(*, *) 'bsw = ', this%bsw
     write(*, *) 'watsat = ', this%watsat
-
+    write(*, *) 'sucsat = ', this%sucsat
   end subroutine Init
 
   ! ---------------------------------------------------------------------------
@@ -116,6 +118,11 @@ contains
     allocate(this%watsat(1:this%nlevgrnd))
     this%watsat = bspval
 
+    allocate(this%sucsat(1:this%nlevgrnd))
+    this%sucsat = bspval
+
+    allocate(this%pctsand(1:this%nlevgrnd))
+    this%pctsand = bspval
   end subroutine InitAllocate
 
   ! ---------------------------------------------------------------------------
@@ -218,6 +225,16 @@ contains
        this%bsw(j) = data(num_columns, j)
     enddo
 
+    call ncd_getvar(ncf_in, 'SUCSAT', data)
+    do j = 1, this%nlevgrnd
+       this%sucsat(j) = data(num_columns, j)
+    enddo
+
+    call ncd_getvar(ncf_in, 'PCTSAND', data)
+    do j = 1, this%nlevgrnd
+      this%pctsand(j) = data(num_columns, j)
+    enddo
+      
     if (this%grid_type == dataset_grid) then
        call ncd_getvar(ncf_in, 'DZSOI', data)
        do j = 1, this%nlevgrnd

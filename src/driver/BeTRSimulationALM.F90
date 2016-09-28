@@ -348,6 +348,7 @@ contains
         nitrogenflux_vars%harvest_n_to_cwdn_col(c,j) + &
         nitrogenflux_vars%fire_mortality_n_to_cwdn_col(c,j)
 
+
       !fire nitrogen loss
       this%biophys_forc(c)%nflx_output_litr_met_vr_col(1,j) = &
          this%biophys_forc(c)%nflx_output_litr_met_vr_col(1,j) + &
@@ -623,7 +624,6 @@ contains
           s_node = max(h2osoi_vol(c,j)/watsat(c,j), 0.01_r8)
           call soil_water_retention_curve%soil_suction(sucsat(c,j), s_node, bsw(c,j), smp_l(c,j))
         endif
-
       endif
     enddo
   enddo

@@ -38,6 +38,7 @@ module ForcingDataType
      real(r8), pointer                   :: tbot(:)            !atmoshperic temperature, kelvin
      real(r8), pointer                   :: h2osoi_icevol(:,:)
      real(r8), pointer                   :: qbot(:)            !water flux at bottom boundary, mm/s
+     real(r8), pointer                   :: soilpsi(:)
    contains
      procedure, public :: Init
      procedure, public :: ReadData
@@ -330,7 +331,7 @@ contains
     use atm2lndType       , only : atm2lnd_type
     use BeTR_TimeMod      , only : betr_time_type
     use BeTR_GridMod      , only : betr_grid_type
-    use betr_varcon       , only : betr_maxpatch_pft
+    use betr_varcon       , only : betr_maxpatch_pft, denh2o=> bdenh2o, denice => bdenice
     implicit none
     !arguments
     class(ForcingData_type)  , intent(in)    :: this
@@ -384,6 +385,8 @@ contains
              waterstate_vars%h2osoi_icevol_col(c,j) = this%h2osoi_icevol(tstep,j)
              soilstate_vars%eff_porosity_col(c,j)   = grid%watsat(j)-this%h2osoi_icevol(tstep,j)
              soilstate_vars%bsw_col(c,j)            = grid%bsw(j)
+             soilstate_vars%sucsat_col(c,j)         = grid%sucsat(j)
+             soilstate_vars%cellsand_col(c,lbj:ubj) = grid%pctsand(j)
              temperature_vars%t_soisno_col(c,j)     = this%t_soi(tstep,j)
              waterflux_vars%qflx_rootsoi_col(c,j)   = this%qflx_rootsoi(tstep,j)  !water exchange between soil and root, m/H2O/s
              do pi = 1, betr_maxpatch_pft
@@ -423,6 +426,10 @@ contains
           c = filter(fc)
           waterstate_vars%h2osoi_liq_col(c,j) = this%h2osoi_liq(tstep,j)
           waterstate_vars%h2osoi_ice_col(c,j) = this%h2osoi_ice(tstep,j)
+
+          waterstate_vars%h2osoi_vol_col(c,j) = waterstate_vars%h2osoi_liqvol_col(c,j) + &
+            waterstate_vars%h2osoi_icevol_col(c,j)
+          waterstate_vars%h2osoi_vol_col(c,j) = min(waterstate_vars%h2osoi_vol_col(c,j), grid%watsat(j))  
        enddo
     enddo
   end subroutine UpdateForcing

@@ -43,6 +43,7 @@ contains
   use clm_instMod           , only : cnstate_vars
   use clm_instMod           , only : nitrogenflux_vars
   use clm_instMod           , only : phosphorusflux_vars
+  use clm_instMod           , only : soil_water_retention_curve
   use ColumnType            , only : col
   use clmgridMod            , only : init_clm_vertgrid
   use clm_initializeMod     , only : initialize
@@ -221,6 +222,11 @@ contains
     !variables, e.g. clm doesn't use cnstate_vars as public variables
     select type(simulation)
     class is (betr_simulation_alm_type)
+
+      call simulation%CalcSmpL(bounds, 1, nlevsoi, simulation%num_soilc, &
+        simulation%filter_soilc, temperature_vars%t_soisno_col, &
+        soilstate_vars, waterstate_vars, soil_water_retention_curve)
+
       call simulation%SetBiophysForcing(bounds, col, pft,                               &
         carbonflux_vars=carbonflux_vars,                                                &
         waterstate_vars=waterstate_vars,         waterflux_vars=waterflux_vars,         &
@@ -286,7 +292,7 @@ contains
 
        call simulation%BeTRRestartClose(ncid)
     endif
-
+    print*,'step'
     if(time_vars%its_time_to_exit()) then
        exit
     end if

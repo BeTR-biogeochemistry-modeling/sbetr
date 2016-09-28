@@ -22,9 +22,12 @@ module clm_varpar
   integer :: nlevdecomp  = nlevtrc_soil
   integer :: ndecomp_pools
   integer :: ndecomp_cascade_transitions
-  integer :: i_met_lit, i_cel_lit, i_lig_lit, i_cwd
+  integer :: i_met_lit = 1
+  integer :: i_cel_lit = 2
+  integer :: i_lig_lit = 3
+  integer :: i_cwd = 4
 
   integer, parameter :: ivis        =   1     ! index for visible band
   integer, parameter :: inir        =   2     ! index for near-infrared band
-  integer :: maxpatch_pft        ! max number of plant functional types in naturally vegetated landunit (namelist setting)  
+  integer :: maxpatch_pft        ! max number of plant functional types in naturally vegetated landunit (namelist setting)
 end module clm_varpar
