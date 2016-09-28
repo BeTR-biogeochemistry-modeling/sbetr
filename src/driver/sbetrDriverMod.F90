@@ -235,8 +235,12 @@ contains
         chemstate_vars=chemstate_vars,           soilstate_vars=soilstate_vars, &
         cnstate_vars = cnstate_vars)
 
-        call simulation%PlantSoilBGCSend(bounds, simulation%num_soilc, simulation%filter_soilc,&
-          cnstate_vars,  carbonflux_vars,  nitrogenflux_vars, phosphorusflux_vars)
+      call input_substrates((record==1), bounds, col, simulation%num_soilc, simulation%filter_soilc,&
+          cnstate_vars, carbonflux_vars,  nitrogenflux_vars, phosphorusflux_vars)
+
+      call simulation%PlantSoilBGCSend(bounds, simulation%num_soilc, simulation%filter_soilc,&
+        cnstate_vars,  carbonflux_vars,  nitrogenflux_vars, phosphorusflux_vars)
+
     class default
       call simulation%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi,               &
         carbonflux_vars=carbonflux_vars,                                                &
@@ -292,7 +296,7 @@ contains
 
        call simulation%BeTRRestartClose(ncid)
     endif
-    print*,'step'
+
     if(time_vars%its_time_to_exit()) then
        exit
     end if
@@ -427,4 +431,81 @@ end subroutine sbetrBGC_driver
   write(rpt_unit,*)trim(fname), nstep
   close(rpt_unit)
   end subroutine write_restinfo
+
+  !-------------------------------------------------------------------------------
+  subroutine input_substrates(yesno, bounds, col, num_soilc, filter_soilc,&
+    cnstate_vars, carbonflux_vars,  nitrogenflux_vars, phosphorusflux_vars)
+
+  !
+  ! DESCRIPTIONS
+  ! add substrates for the decompositition test
+  use ColumnType     , only : column_type
+  use decompMod             , only : bounds_type
+  use CNCarbonFluxType, only : carbonflux_type
+  use CNNitrogenFluxType, only : nitrogenflux_type
+  use PhosphorusFluxType, only : phosphorusflux_type
+  use CNStateType, only : cnstate_type
+  use clm_varpar, only : i_cwd, i_met_lit, i_cel_lit, i_lig_lit
+  use clm_varpar            , only : nlevsoi
+  implicit none
+  logical           , intent(in)  :: yesno
+  type(bounds_type) , intent(in)  :: bounds
+  type(column_type) , intent(in)  :: col ! column type
+  integer           , intent(in)  :: num_soilc
+  integer           , intent(in)  :: filter_soilc(:)
+  type(cnstate_type), intent(inout)  :: cnstate_vars
+  type(carbonflux_type), intent(inout):: carbonflux_vars
+  type(nitrogenflux_type), intent(inout):: nitrogenflux_vars
+  type(phosphorusflux_type), intent(inout):: phosphorusflux_vars
+
+  integer :: fc, j, c
+  real(r8):: val_c
+  real(r8):: val_n, val_p
+  real(r8):: tdz(bounds%begc:bounds%endc)
+
+  if(yesno)then
+    val_c = 1.e-6_r8
+    val_n = 1.e-10_r8
+    val_p = 1.e-12_r8
+  else
+    val_c = 0._r8
+  endif
+  do fc = 1, num_soilc
+    c = filter_soilc(fc)
+    nitrogenflux_vars%ndep_to_sminn_col(c) = val_n
+    phosphorusflux_vars%pdep_to_sminp_col(c) = val_p
+  enddo
+  do j = 1, nlevsoi
+    do fc = 1, num_soilc
+      c = filter_soilc(fc)
+      tdz(c)=sum(col%dz(c,1:nlevsoi))
+    enddo
+  enddo
+
+  do j = 1, nlevsoi
+    do fc = 1, num_soilc
+      c = filter_soilc(fc)
+      carbonflux_vars%phenology_c_to_litr_met_c_col(c,j) = val_c !gC/m3/s
+      carbonflux_vars%phenology_c_to_litr_cel_c_col(c,j) = val_c !gC/m3/s
+      carbonflux_vars%phenology_c_to_litr_lig_c_col(c,j) = val_c !gC/m3/s
+
+      nitrogenflux_vars%phenology_n_to_litr_met_n_col(c,j) = val_c/90._r8 !gN/m3/s
+      nitrogenflux_vars%phenology_n_to_litr_cel_n_col(c,j) = val_c/90._r8 !gN/m3/s
+      nitrogenflux_vars%phenology_n_to_litr_lig_n_col(c,j) = val_c/90._r8 !gN/m3/s
+
+      phosphorusflux_vars%phenology_p_to_litr_met_p_col(c,j) = val_c/1600._r8 !gP/m3/s
+      phosphorusflux_vars%phenology_p_to_litr_cel_p_col(c,j) = val_c/1600._r8 !gP/m3/s
+      phosphorusflux_vars%phenology_p_to_litr_lig_p_col(c,j) = val_c/1600._r8 !gP/m3/s
+
+      cnstate_vars%ndep_prof_col(c,j) = col%dz(c,j)/tdz(c)
+      cnstate_vars%pdep_prof_col(c,j) = col%dz(c,j)/tdz(c)
+
+    enddo
+  enddo
+
+  end subroutine input_substrates
+  !-------------------------------------------------------------------------------
+
+
+
 end module sbetrDriverMod
