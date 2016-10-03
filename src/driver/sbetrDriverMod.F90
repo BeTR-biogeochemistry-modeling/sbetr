@@ -462,13 +462,15 @@ end subroutine sbetrBGC_driver
   real(r8):: val_c
   real(r8):: val_n, val_p
   real(r8):: tdz(bounds%begc:bounds%endc)
-
+  
   if(yesno)then
     val_c = 1.e-6_r8
     val_n = 1.e-10_r8
     val_p = 1.e-12_r8
   else
     val_c = 0._r8
+    val_n = 0._r8
+    val_p = 0._r8
   endif
   do fc = 1, num_soilc
     c = filter_soilc(fc)

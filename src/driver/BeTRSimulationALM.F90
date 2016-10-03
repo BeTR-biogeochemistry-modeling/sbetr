@@ -430,13 +430,14 @@ contains
          nitrogenflux_vars%nfix_to_sminn_col(c) * nfixation_prof(c,j) + &
          nitrogenflux_vars%soyfixn_to_sminn_col(c)* nfixation_prof(c,j)
 
+
       !mineral phosphorus, the deposition is assumed to be of primary form
-      this%biophys_forc(c)%sflx_minp_input_po4_vr_col(c,j) = &
-         this%biophys_forc(c)%sflx_minp_input_po4_vr_col(c,j) + &
+      this%biophys_forc(c)%sflx_minp_input_po4_vr_col(1,j) = &
+         this%biophys_forc(c)%sflx_minp_input_po4_vr_col(1,j) + &
          phosphorusflux_vars%pdep_to_sminp_col(c) * pdep_prof(c,j) + &
          phosphorusflux_vars%fert_p_to_sminp_col(c) * pdep_prof(c,j)
 
-      this%biophys_forc(c)%sflx_minp_weathering_po4_vr_col(c,j) = &
+      this%biophys_forc(c)%sflx_minp_weathering_po4_vr_col(1,j) = &
          this%biophys_forc(c)%sflx_minp_weathering_po4_vr_col(c,j) + &
          phosphorusflux_vars%primp_to_labilep_vr_col(c,j)
     enddo
