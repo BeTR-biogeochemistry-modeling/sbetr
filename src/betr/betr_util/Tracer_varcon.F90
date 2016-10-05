@@ -22,7 +22,7 @@ module Tracer_varcon
   ! !PUBLIC TYPES:
 
   public
-  
+
   real(r8), parameter :: SHR_CONST_VSMOW_O18 = 2005.20e-6_R8 ! ratio of 18O/16O in Vienna Standard Mean Ocean Water (VSMOW)
   real(r8), parameter :: SHR_CONST_VSMOW_O17 = 379.9e-6_R8   ! ratio of 17O/16O in Vienna Standard Mean Ocean Water (VSMOW)
   real(r8), parameter :: SHR_CONST_VSMOW_D = 155.76e-6_R8    ! ratio of D/H in Vienna Standard Mean Ocean Water (VSMOW)
@@ -31,7 +31,8 @@ module Tracer_varcon
   real(r8), parameter :: catomw = 12.011_r8     ! molar mass of C atoms (g/mol)
   real(r8), parameter :: natomw = 14.007_r8     ! molar mass of N atoms (g/mol)
   real(r8), parameter :: patomw = 30.97_r8      ! molar mass of P atmos (g/mol)
-
+  real(r8), parameter :: c13atomw = 13._r8      ! molar mass of C13 atmos (g/mol)
+  real(r8), parameter :: c14atomw = 14._r8      ! molar mass of C14 atmos (g/mol) 
   integer, parameter  :: bndcond_as_conc = 1 ! top boundary conditions as tracer concentration
   integer, parameter  :: bndcond_as_flux = 2 ! top boundary condition as tracer flux
 
@@ -56,7 +57,7 @@ module Tracer_varcon
 !X!     real(r8), public :: co2_refix_scal = 0.0_r8 ! how much fraction of co2 in the xylem is refixed in leaf
 !X!  end type betr_respiration_parameters_type
 
-     
+
 !X!  type, public :: betr_soil_chem_constants_type
 !X!     real(r8), public :: site_pH = 7._r8 ! pH value of the site
 !X!  end type betr_soil_chem_constants_type

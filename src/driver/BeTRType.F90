@@ -1187,6 +1187,7 @@ contains
   ! USES
   use betr_ctrl, only : max_betr_hist_type
   use BetrStatusType      , only : betr_status_type
+  use betr_constants , only : stdout
   implicit none
   !ARGUMENTS
   class(betr_type)  ,     intent(inout) :: this
@@ -1204,21 +1205,25 @@ contains
   call bstatus%reset()
   num_state1d = this%tracerstates%num_hist1d
   if(num_state1d > max_betr_hist_type)then
+    write(stdout,*)'num_state1d limit',num_state1d, max_betr_hist_type
     call bstatus%set_msg(msg='# of 1d state variables are defined more than allowed', err=-1)
     return
   endif
   num_state2d = this%tracerstates%num_hist2d
   if(num_state2d > max_betr_hist_type)then
+    write(stdout,*)'num_state2d limit',num_state2d, max_betr_hist_type
     call bstatus%set_msg(msg='# of 2d state variables are defined more than allowed', err=-1)
     return
   endif
   num_flux1d  = this%tracerfluxes%num_hist1d
   if(num_flux1d > max_betr_hist_type)then
+    write(stdout,*)'num_flux1d limit',num_flux1d, max_betr_hist_type
     call bstatus%set_msg(msg='# of 1d flux variables are defined more than allowed', err=-1)
     return
   endif
   num_flux2d  = this%tracerfluxes%num_hist2d
   if(num_flux2d > max_betr_hist_type)then
+    write(stdout,*)'num_flux2d limit',num_flux2d, max_betr_hist_type
     call bstatus%set_msg(msg='# of 2d flux variables are defined more than allowed', err=-1)
     return
   endif
