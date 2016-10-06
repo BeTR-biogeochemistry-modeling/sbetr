@@ -77,7 +77,8 @@ module BetrType
      procedure, public  :: get_hist_size
      procedure, private :: ReadNamelist
      procedure, private :: create_betr_application
-     procedure, public  :: HistRetrieve
+     procedure, public  :: HistRetrieveState
+     procedure, public  :: HistRetrieveFlux
      procedure, public  :: set_restvar
      procedure, public  :: get_restartvar
   end type betr_type
@@ -1246,26 +1247,37 @@ contains
   end subroutine get_hist_size
 
   !------------------------------------------------------------------------
-  subroutine HistRetrieve(this, bounds, lbj, ubj, num_state1d, num_state2d, &
-     num_flux1d, num_flux2d, states_1d, states_2d, fluxes_1d, fluxes_2d)
+  subroutine HistRetrieveState(this, bounds, lbj, ubj, &
+     num_state1d, num_state2d, states_1d, states_2d)
   implicit none
   class(betr_type)  ,     intent(inout) :: this
   type(bounds_type) , intent(in)    :: bounds               ! bounds
   integer, intent(in) :: lbj, ubj
   integer           ,     intent(in)   :: num_state1d
   integer           ,     intent(in)   :: num_state2d
-  integer           ,     intent(in)   :: num_flux1d
-  integer           ,     intent(in)   :: num_flux2d
   real(r8)          , intent(out) :: states_1d(bounds%begc:bounds%endc,1:num_state1d)
   real(r8)          , intent(out) :: states_2d(bounds%begc:bounds%endc,lbj:ubj, 1:num_state2d)
-  real(r8)          , intent(out) :: fluxes_1d(bounds%begc:bounds%endc,1:num_flux1d)
-  real(r8)          , intent(out) :: fluxes_2d(bounds%begc:bounds%endc,lbj:ubj, 1:num_flux2d)
 
   call this%tracerstates%retrieve_hist(bounds, lbj, ubj, states_2d, states_1d, this%tracers)
 
+
+  end subroutine HistRetrieveState
+
+  !------------------------------------------------------------------------
+  subroutine HistRetrieveFlux(this, bounds, lbj, ubj, &
+     num_flux1d, num_flux2d,  fluxes_1d, fluxes_2d)
+  implicit none
+  class(betr_type)  ,     intent(inout) :: this
+  type(bounds_type) , intent(in)    :: bounds               ! bounds
+  integer, intent(in) :: lbj, ubj
+  integer           ,     intent(in)   :: num_flux1d
+  integer           ,     intent(in)   :: num_flux2d
+  real(r8)          , intent(out) :: fluxes_1d(bounds%begc:bounds%endc,1:num_flux1d)
+  real(r8)          , intent(out) :: fluxes_2d(bounds%begc:bounds%endc,lbj:ubj, 1:num_flux2d)
+
   call this%tracerfluxes%retrieve_hist(bounds, lbj, ubj, fluxes_2d, fluxes_1d, this%tracers)
 
-  end subroutine HistRetrieve
+  end subroutine HistRetrieveFlux
 
   !------------------------------------------------------------------------
   subroutine get_restartvar(this, nrest_1d, nrest_2d,rest_varname_1d, &
