@@ -21,9 +21,9 @@ module TransportMod
        __FILE__
 
   type, extends(gbetr_type), private :: Extra_type
-     real(r8), pointer :: zi(:)               !interfaces
-     real(r8), pointer :: us(:)               !flow velocity at the interfaces
-     integer           :: nlen                !total number of interfaces
+     real(r8), pointer :: zi(:)  => null()             !interfaces
+     real(r8), pointer :: us(:)  => null()             !flow velocity at the interfaces
+     integer           :: nlen                         !total number of interfaces
      type(betr_status_type) :: bstatus
    contains
      procedure, public :: InitAllocate

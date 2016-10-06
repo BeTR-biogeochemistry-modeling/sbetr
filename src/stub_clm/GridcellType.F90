@@ -24,24 +24,24 @@ module GridcellType
   type, public :: gridcell_type
 
      ! topological mapping functionality, local 1d gdc arrays
-     integer , pointer :: gindex           (:) ! global index
-     real(r8), pointer :: area             (:) ! total land area, gridcell (km^2)
-     real(r8), pointer :: lat              (:) ! latitude (radians)
-     real(r8), pointer :: lon              (:) ! longitude (radians)
-     real(r8), pointer :: latdeg           (:) ! latitude (degrees)
-     real(r8), pointer :: londeg           (:) ! longitude (degrees)
+     integer , pointer :: gindex           (:) => null() ! global index
+     real(r8), pointer :: area             (:)=> null() ! total land area, gridcell (km^2)
+     real(r8), pointer :: lat              (:) => null() ! latitude (radians)
+     real(r8), pointer :: lon              (:)=> null() ! longitude (radians)
+     real(r8), pointer :: latdeg           (:)=> null() ! latitude (degrees)
+     real(r8), pointer :: londeg           (:)=> null() ! longitude (degrees)
 
      ! Daylength
-     real(r8) , pointer :: max_dayl        (:) ! maximum daylength for this grid cell (s)
-     real(r8) , pointer :: dayl            (:) ! daylength (seconds)
-     real(r8) , pointer :: prev_dayl       (:) ! daylength from previous timestep (seconds)
+     real(r8) , pointer :: max_dayl        (:) => null()! maximum daylength for this grid cell (s)
+     real(r8) , pointer :: dayl            (:) => null()! daylength (seconds)
+     real(r8) , pointer :: prev_dayl       (:)=> null() ! daylength from previous timestep (seconds)
 
      ! indices into landunit-level arrays for landunits in this grid cell (ispval implies
      ! this landunit doesn't exist on this grid cell) [1:max_lunit, begg:endg]
      ! (note that the spatial dimension is last here, in contrast to most 2-d variables;
      ! this is for efficiency, since most loops will go over g in the outer loop, and
      ! landunit type in the inner loop)
-     integer , pointer :: landunit_indices (:,:)
+     integer , pointer :: landunit_indices (:,:) => null()
 
    contains
 

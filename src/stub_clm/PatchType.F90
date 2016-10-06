@@ -45,17 +45,17 @@ module PatchType
   !
   type, public :: patch_type
      ! g/l/c/p hierarchy, local g/l/c/p cells only
-     integer , pointer :: column   (:) ! index into column level quantities
-     real(r8), pointer :: wtcol    (:) ! weight (relative to column)
-     integer , pointer :: landunit (:) ! index into landunit level quantities
-     real(r8), pointer :: wtlunit  (:) ! weight (relative to landunit)
-     integer , pointer :: gridcell (:) ! index into gridcell level quantities
-     real(r8), pointer :: wtgcell  (:) ! weight (relative to gridcell)
+     integer , pointer :: column   (:) => null()! index into column level quantities
+     real(r8), pointer :: wtcol    (:) => null()! weight (relative to column)
+     integer , pointer :: landunit (:) => null()! index into landunit level quantities
+     real(r8), pointer :: wtlunit  (:) => null()! weight (relative to landunit)
+     integer , pointer :: gridcell (:)=> null() ! index into gridcell level quantities
+     real(r8), pointer :: wtgcell  (:) => null()! weight (relative to gridcell)
 
      ! topological mapping functionality
-     integer , pointer :: itype    (:) ! patch vegetation
-     integer , pointer :: mxy      (:) ! m index for laixy(i,j,m),etc. (undefined for special landunits)
-     logical , pointer :: active   (:) ! true=>do computations on this patch
+     integer , pointer :: itype    (:) => null()! patch vegetation
+     integer , pointer :: mxy      (:) => null()! m index for laixy(i,j,m),etc. (undefined for special landunits)
+     logical , pointer :: active   (:) => null()! true=>do computations on this patch
 
    contains
 

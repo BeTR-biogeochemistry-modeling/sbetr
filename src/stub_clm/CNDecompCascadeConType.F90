@@ -21,22 +21,22 @@ module CNDecompCascadeConType
      !-- properties of each pathway along decomposition cascade
 
      !-- properties of each decomposing pool
-     logical           , pointer  :: floating_cn_ratio_decomp_pools(:) ! TRUE => pool has fixed C:N ratio
-     logical           , pointer  :: floating_cp_ratio_decomp_pools(:) ! TRUE => pool has fixed C:N ratio
-     character(len=8)  , pointer  :: decomp_pool_name_restart(:)       ! name of pool for restart files
-     character(len=8)  , pointer  :: decomp_pool_name_history(:)       ! name of pool for history files
-     character(len=20) , pointer  :: decomp_pool_name_long(:)          ! name of pool for netcdf long names
-     character(len=8)  , pointer  :: decomp_pool_name_short(:)         ! name of pool for netcdf short names
-     logical           , pointer  :: is_litter(:)                      ! TRUE => pool is a litter pool
-     logical           , pointer  :: is_soil(:)                        ! TRUE => pool is a soil pool
-     logical           , pointer  :: is_cwd(:)                         ! TRUE => pool is a cwd pool
-     real(r8)          , pointer  :: initial_cn_ratio(:)               ! c:n ratio for initialization of pools
-     real(r8)          , pointer  :: initial_cp_ratio(:)               ! c:n ratio for initialization of pools
-     real(r8)          , pointer  :: initial_stock(:)                  ! initial concentration for seeding at spinup
-     logical           , pointer  :: is_metabolic(:)                   ! TRUE => pool is metabolic material
-     logical           , pointer  :: is_cellulose(:)                   ! TRUE => pool is cellulose
-     logical           , pointer  :: is_lignin(:)                      ! TRUE => pool is lignin
-     real(r8)          , pointer  :: spinup_factor(:)                  ! factor by which to scale AD and relevant processes by
+     logical           , pointer  :: floating_cn_ratio_decomp_pools(:) => null() ! TRUE => pool has fixed C:N ratio
+     logical           , pointer  :: floating_cp_ratio_decomp_pools(:) => null() ! TRUE => pool has fixed C:N ratio
+     character(len=8)  , pointer  :: decomp_pool_name_restart(:)    => null()   ! name of pool for restart files
+     character(len=8)  , pointer  :: decomp_pool_name_history(:)   => null()    ! name of pool for history files
+     character(len=20) , pointer  :: decomp_pool_name_long(:)    => null()      ! name of pool for netcdf long names
+     character(len=8)  , pointer  :: decomp_pool_name_short(:)   => null()      ! name of pool for netcdf short names
+     logical           , pointer  :: is_litter(:)          => null()            ! TRUE => pool is a litter pool
+     logical           , pointer  :: is_soil(:)          => null()              ! TRUE => pool is a soil pool
+     logical           , pointer  :: is_cwd(:)             => null()            ! TRUE => pool is a cwd pool
+     real(r8)          , pointer  :: initial_cn_ratio(:)   => null()            ! c:n ratio for initialization of pools
+     real(r8)          , pointer  :: initial_cp_ratio(:)  => null()             ! c:n ratio for initialization of pools
+     real(r8)          , pointer  :: initial_stock(:)    => null()              ! initial concentration for seeding at spinup
+     logical           , pointer  :: is_metabolic(:)     => null()              ! TRUE => pool is metabolic material
+     logical           , pointer  :: is_cellulose(:)     => null()              ! TRUE => pool is cellulose
+     logical           , pointer  :: is_lignin(:)       => null()               ! TRUE => pool is lignin
+     real(r8)          , pointer  :: spinup_factor(:)    => null()              ! factor by which to scale AD and relevant processes by
   end type decomp_cascade_type
 
   type(decomp_cascade_type), public :: decomp_cascade_con

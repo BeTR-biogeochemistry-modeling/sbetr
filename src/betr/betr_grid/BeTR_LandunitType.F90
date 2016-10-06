@@ -8,8 +8,8 @@ module BeTR_LandunitType
   type, public :: betr_landunit_type
 
      ! topological mapping functionality
-     integer , pointer :: itype     (:) ! landunit type
-     logical , pointer :: ifspecial (:) ! true=>landunit is not vegetated
+     integer , pointer :: itype     (:) => null() ! landunit type
+     logical , pointer :: ifspecial (:) => null() ! true=>landunit is not vegetated
   end type betr_landunit_type
 
   type(betr_landunit_type), public :: betr_lun  !geomorphological landunits

@@ -16,12 +16,12 @@ module TracerBoundaryCondType
 
   !--------------------------------------------------------------------------------
   type, public :: tracerboundarycond_type
-     real(r8), pointer :: tracer_gwdif_concflux_top_col( : , : , : ) !tracer concentration or incoming flux imposed at top boundary for dual diffusion calculation
-     real(r8), pointer :: condc_toplay_col       ( : , : )           !conductance at the column-air interface
-     real(r8), pointer :: bot_concflux_col       ( : , : , : )       !bottom boundary condition
-     integer,  pointer :: topbc_type             ( : )               !type of top boundary condition, it depends on tracer type
-     integer,  pointer :: botbc_type             ( : )               !type of bottom boundary condition, it depends on tracer type
-     integer,  pointer :: jtops_col              ( : )               !index of the top numerical node
+     real(r8), pointer :: tracer_gwdif_concflux_top_col( : , : , : ) => null() !tracer concentration or incoming flux imposed at top boundary for dual diffusion calculation
+     real(r8), pointer :: condc_toplay_col       ( : , : )       => null()    !conductance at the column-air interface
+     real(r8), pointer :: bot_concflux_col       ( : , : , : )   => null()    !bottom boundary condition
+     integer,  pointer :: topbc_type             ( : )       => null()        !type of top boundary condition, it depends on tracer type
+     integer,  pointer :: botbc_type             ( : )       => null()        !type of bottom boundary condition, it depends on tracer type
+     integer,  pointer :: jtops_col              ( : )       => null()        !index of the top numerical node
    contains
      procedure, public  :: Init
      procedure, public  :: Restart

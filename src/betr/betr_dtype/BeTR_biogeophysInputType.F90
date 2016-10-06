@@ -104,11 +104,11 @@ implicit none
 
 
     real(r8), pointer :: sflx_minn_nh4_fix_nomic_vr_col(:,:) => null()    !nitrogen fixation from non-microbe explicit calculation, gN/m3/s
-    real(r8), pointer :: rr_patch(:,:)
-    real(r8), pointer :: froot_prof_patch(:,:)
-    real(r8), pointer :: frootc_patch(:)
-    real(r8), pointer :: cn_scalar_patch(:)
-    real(r8), pointer :: cp_scalar_patch(:)
+    real(r8), pointer :: rr_patch(:,:)  => null()
+    real(r8), pointer :: froot_prof_patch(:,:) => null()
+    real(r8), pointer :: frootc_patch(:) => null()
+    real(r8), pointer :: cn_scalar_patch(:) => null()
+    real(r8), pointer :: cp_scalar_patch(:) => null()
 
   contains
     procedure, public  :: Init

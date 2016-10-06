@@ -53,8 +53,8 @@ module BetrType
      type(tracerboundarycond_type) , public              :: tracerboundaryconds
      type(betr_aerecond_type)      , private             :: aereconds
 
-     real(r8)                      , private, pointer    :: h2osoi_liq_copy(:,:)
-     real(r8)                      , private, pointer    :: h2osoi_ice_copy(:,:)
+     real(r8)                      , private, pointer    :: h2osoi_liq_copy(:,:) => null()
+     real(r8)                      , private, pointer    :: h2osoi_ice_copy(:,:) => null()
 
      ! FIXME(bja, 201603) replace LSM specific types!
 

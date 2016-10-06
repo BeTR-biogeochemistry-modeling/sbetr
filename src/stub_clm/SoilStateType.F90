@@ -15,17 +15,17 @@ module SoilStateType
   ! column physical state variables structure
   !----------------------------------------------------
   type, public :: soilstate_type
-    real(r8), pointer :: bsw_col(:,:)              !Clapp and Hornberger "b" (nlevgrnd)
-    real(r8), pointer :: watsat_col(:,:)           !volumetric soil water at saturation (porosity) (nlevgrnd)
-    real(r8), pointer :: eff_porosity_col(:,:)     !effective porosity = porosity - vol_ice (nlevgrnd)
-    real(r8), pointer :: soilpsi_col          (:,:) ! col soil water potential in each soil layer (MPa) (CN)
-    real(r8), pointer :: cellorg_col          (:,:) ! col organic matter for gridcell containing column (1:nlevsoi)
-    real(r8), pointer :: cellclay_col         (:,:) ! clay value for gridcell containing column (1:nlevsoi)
-    real(r8), pointer :: cellsand_col         (:,:) ! sand value for gridcell containing column (1:nlevsoi)
-    real(r8), pointer :: bd_col               (:,:) ! col bulk density of dry soil material [kg/m^3] (CN)
-    real(r8), pointer :: watfc_col            (:,:) ! col volumetric soil water at field capacity (nlevsoi)
-    real(r8), pointer :: sucsat_col           (:,:) ! col minimum soil suction (mm) (nlevgrnd)
-    real(r8), pointer :: rootfr_patch         (:,:) ! patch fraction of roots in each soil layer (nlevgrnd)
+    real(r8), pointer :: bsw_col(:,:)        => null()      !Clapp and Hornberger "b" (nlevgrnd)
+    real(r8), pointer :: watsat_col(:,:)      => null()     !volumetric soil water at saturation (porosity) (nlevgrnd)
+    real(r8), pointer :: eff_porosity_col(:,:) => null()    !effective porosity = porosity - vol_ice (nlevgrnd)
+    real(r8), pointer :: soilpsi_col          (:,:) => null() ! col soil water potential in each soil layer (MPa) (CN)
+    real(r8), pointer :: cellorg_col          (:,:)=> null() ! col organic matter for gridcell containing column (1:nlevsoi)
+    real(r8), pointer :: cellclay_col         (:,:) => null()! clay value for gridcell containing column (1:nlevsoi)
+    real(r8), pointer :: cellsand_col         (:,:) => null()! sand value for gridcell containing column (1:nlevsoi)
+    real(r8), pointer :: bd_col               (:,:)=> null() ! col bulk density of dry soil material [kg/m^3] (CN)
+    real(r8), pointer :: watfc_col            (:,:)=> null() ! col volumetric soil water at field capacity (nlevsoi)
+    real(r8), pointer :: sucsat_col           (:,:)=> null() ! col minimum soil suction (mm) (nlevgrnd)
+    real(r8), pointer :: rootfr_patch         (:,:) => null()! patch fraction of roots in each soil layer (nlevgrnd)
   contains
     procedure, public  :: Init
     procedure, private :: InitAllocate

@@ -21,19 +21,19 @@ module TracerCoeffType
   ! Column tracer phase conversion/transport parameters structure
   !-------------------------------------------------------------------------------
   type, public,  extends(tracerbase_type) ::  TracerCoeff_type
-     real(r8), pointer :: aqu2neutralcef_col        (:,:,:)      !aqueous tracer into neutral aqueous tracer
-     real(r8), pointer :: aqu2bulkcef_mobile_col    (:,:,:)      !coefficient to convert bulk concentration into aqueous phase, (nlevsno+nlevtrc_soil)
-     real(r8), pointer :: gas2bulkcef_mobile_col    (:,:,:)      !coefficient to convert bulk concentration into gaseous phase, (nlevsno+nlevlak+nlevtrc_soil)
-     real(r8), pointer :: aqu2equilsolidcef_col     (:,:,:)      !coefficient to convert solid phase (including ice) into aqueous phase
-     real(r8), pointer :: henrycef_col              (:,:,:)      !henry's law constant
-     real(r8), pointer :: bunsencef_col             (:,:,:)      !bunsen solubility
-     real(r8), pointer :: tracer_diffusivity_air_col(:,:)        !diffusivity in the air
-     real(r8), pointer :: aere_cond_col             (:,:)        !column level aerenchyma conductance (m/s)
-     real(r8), pointer :: scal_aere_cond_col        (:,:)        !column level scaling factor for arenchyma or parenchyma transport
-     real(r8), pointer :: diffgas_topsno_col        (:,:)        !gas diffusivity in top snow layer, this is not used currently
-     real(r8), pointer :: diffgas_topsoi_col        (:,:)        !gas diffusivity in top soil layer, this is not used currently
-     real(r8), pointer :: hmconductance_col         (:,:,:)      !geometrically weighted conductances (nlevsno+nlevtrc_soil)
-     real(r8), pointer :: annsum_counter_col        (:)
+     real(r8), pointer :: aqu2neutralcef_col        (:,:,:)  => null()    !aqueous tracer into neutral aqueous tracer
+     real(r8), pointer :: aqu2bulkcef_mobile_col    (:,:,:)  => null()    !coefficient to convert bulk concentration into aqueous phase, (nlevsno+nlevtrc_soil)
+     real(r8), pointer :: gas2bulkcef_mobile_col    (:,:,:)  => null()    !coefficient to convert bulk concentration into gaseous phase, (nlevsno+nlevlak+nlevtrc_soil)
+     real(r8), pointer :: aqu2equilsolidcef_col     (:,:,:)  => null()    !coefficient to convert solid phase (including ice) into aqueous phase
+     real(r8), pointer :: henrycef_col              (:,:,:)  => null()    !henry's law constant
+     real(r8), pointer :: bunsencef_col             (:,:,:)  => null()    !bunsen solubility
+     real(r8), pointer :: tracer_diffusivity_air_col(:,:)   => null()     !diffusivity in the air
+     real(r8), pointer :: aere_cond_col             (:,:)   => null()     !column level aerenchyma conductance (m/s)
+     real(r8), pointer :: scal_aere_cond_col        (:,:)  => null()      !column level scaling factor for arenchyma or parenchyma transport
+     real(r8), pointer :: diffgas_topsno_col        (:,:)   => null()     !gas diffusivity in top snow layer, this is not used currently
+     real(r8), pointer :: diffgas_topsoi_col        (:,:)   => null()     !gas diffusivity in top soil layer, this is not used currently
+     real(r8), pointer :: hmconductance_col         (:,:,:)  => null()    !geometrically weighted conductances (nlevsno+nlevtrc_soil)
+     real(r8), pointer :: annsum_counter_col        (:) => null()
    contains
      procedure, public  :: Init
      procedure, public  :: Restart

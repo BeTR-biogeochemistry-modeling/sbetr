@@ -36,14 +36,14 @@ module BeTR_GridMod
 
      integer,  public          :: nlevgrnd
      real(r8), public          :: delta_z
-     real(r8), public, pointer :: zsoi(:)  !soil depth, node center 1 : nlevsoi
-     real(r8), public, pointer :: zisoi(:) !soil depth, interface,  0 : nlevsoi
-     real(r8), public, pointer :: dzsoi(:) !soil layer thickness
+     real(r8), public, pointer :: zsoi(:)  => null() !soil depth, node center 1 : nlevsoi
+     real(r8), public, pointer :: zisoi(:) => null() !soil depth, interface,  0 : nlevsoi
+     real(r8), public, pointer :: dzsoi(:) => null() !soil layer thickness
 
-     real(r8), public, pointer :: bsw(:) ! clap-hornberg parameter
-     real(r8), public, pointer :: watsat(:) ! saturated volumetric water content
-     real(r8), public, pointer :: sucsat(:)
-     real(r8), public, pointer :: pctsand(:)
+     real(r8), public, pointer :: bsw(:) => null() ! clap-hornberg parameter
+     real(r8), public, pointer :: watsat(:) => null() ! saturated volumetric water content
+     real(r8), public, pointer :: sucsat(:)=> null()
+     real(r8), public, pointer :: pctsand(:)=> null()
    contains
      procedure, public  :: Init
      procedure, public  :: ReadNamelist
@@ -234,7 +234,7 @@ contains
     do j = 1, this%nlevgrnd
       this%pctsand(j) = data(num_columns, j)
     enddo
-      
+
     if (this%grid_type == dataset_grid) then
        call ncd_getvar(ncf_in, 'DZSOI', data)
        do j = 1, this%nlevgrnd

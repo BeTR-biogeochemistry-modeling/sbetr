@@ -16,9 +16,9 @@ module TemperatureType
 ! column energy state variables structure
 !----------------------------------------------------
   type, public :: temperature_type
-    real(r8), pointer :: t_soisno_col(:,:)         !soil temperature (Kelvin)  (-nlevsno+1:nlevgrnd)
-    real(r8), pointer :: t_soi_10cm(:)         !soil temperature in top 10cm of soil (Kelvin)
-    real(r8), pointer :: t_veg_patch              (:)   ! patch vegetation temperature (Kelvin)
+    real(r8), pointer :: t_soisno_col(:,:)   => null()      !soil temperature (Kelvin)  (-nlevsno+1:nlevgrnd)
+    real(r8), pointer :: t_soi_10cm(:)     => null()    !soil temperature in top 10cm of soil (Kelvin)
+    real(r8), pointer :: t_veg_patch              (:) => null()  ! patch vegetation temperature (Kelvin)
   contains
      procedure, public  :: Init
      procedure, private :: InitAllocate

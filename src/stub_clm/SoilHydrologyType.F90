@@ -9,9 +9,9 @@ implicit none
 
   type, public :: soilhydrology_type
 
-  real(r8), pointer :: fracice_col       (:,:)   ! col fractional impermeability (-)
-  real(r8), pointer :: zwts_col           (:)    ! the shallower between zwt_perch and zwt
-  real(r8), pointer :: qflx_bot_col      (:)     ! bottom of soil col flux, (mm/s)  
+  real(r8), pointer :: fracice_col       (:,:)  => null() ! col fractional impermeability (-)
+  real(r8), pointer :: zwts_col           (:)  => null()  ! the shallower between zwt_perch and zwt
+  real(r8), pointer :: qflx_bot_col      (:)  => null()   ! bottom of soil col flux, (mm/s)  
   contains
     procedure, public  :: Init
     procedure, private :: InitAllocate

@@ -16,23 +16,23 @@ module WaterfluxType
   ! column water flux variables structure
   !----------------------------------------------------
   type, public :: waterflux_type
-    real(r8), pointer :: qflx_adv_col(:,:)       !advection velocity from one layer to another, (0:nlevgrnd), positive downward
-    real(r8), pointer :: qflx_infl_col(:)	       !infiltration (mm H2O /s)
-    real(r8), pointer :: qflx_surf_col(:)	       !surface runoff (mm H2O /s)
-    real(r8), pointer :: h2oliq_vol_tendency(:,:)         !temporal change of water during the solution of soil water movement
-    real(r8), pointer :: qflx_gross_evap_soil_col (:)   ! col gross infiltration from soil, this satisfies the relationship qflx_infl_col = qflx_gross_infl_soil_col-qflx_gross_evap_soil_col
-    real(r8), pointer :: qflx_gross_infl_soil_col (:)   ! col gross infiltration, before considering the evaporation, mm/s
-    real(r8), pointer :: qflx_rootsoi_col         (:,:) ! col root and soil water exchange [mm H2O/s] [+ into root]
-    real(r8), pointer :: qflx_drain_vr_col        (:,:) ! col liquid water losted as drainage (m /time step)
-    real(r8), pointer :: qflx_totdrain_col        (:)   ! col total liquid water drainage  (m/time step), updated in betr
-    real(r8), pointer :: qflx_dew_grnd_col        (:)   ! col ground surface dew formation (mm H2O /s) [+] (+ = to atm); usually eflx_bot >= 0)
-    real(r8), pointer :: qflx_dew_snow_col        (:)   ! col surface dew added to snow pack (mm H2O /s) [+]
-    real(r8), pointer :: qflx_sub_snow_vol_col    (:)
-    real(r8), pointer :: qflx_sub_snow_col        (:)   ! col sublimation rate from snow pack (mm H2O /s) [+]
-    real(r8), pointer :: qflx_h2osfc2topsoi_col   (:)   ! col liquid water coming from surface standing water top soil (mm H2O/s)
-    real(r8), pointer :: qflx_snow2topsoi_col     (:)   ! col liquid water coming from residual snow to topsoil (mm H2O/s)
-    real(r8), pointer :: qflx_tran_veg_patch      (:)
-    real(r8), pointer :: qflx_rootsoi_patch       (:,:) ! pft root and soil water exchange [mm H2O/s] [+ into atmosphere]
+    real(r8), pointer :: qflx_adv_col(:,:)    => null()   !advection velocity from one layer to another, (0:nlevgrnd), positive downward
+    real(r8), pointer :: qflx_infl_col(:)	    => null()   !infiltration (mm H2O /s)
+    real(r8), pointer :: qflx_surf_col(:)	    => null()   !surface runoff (mm H2O /s)
+    real(r8), pointer :: h2oliq_vol_tendency(:,:)   => null()      !temporal change of water during the solution of soil water movement
+    real(r8), pointer :: qflx_gross_evap_soil_col (:) => null()  ! col gross infiltration from soil, this satisfies the relationship qflx_infl_col = qflx_gross_infl_soil_col-qflx_gross_evap_soil_col
+    real(r8), pointer :: qflx_gross_infl_soil_col (:) => null()  ! col gross infiltration, before considering the evaporation, mm/s
+    real(r8), pointer :: qflx_rootsoi_col         (:,:)=> null() ! col root and soil water exchange [mm H2O/s] [+ into root]
+    real(r8), pointer :: qflx_drain_vr_col        (:,:)=> null() ! col liquid water losted as drainage (m /time step)
+    real(r8), pointer :: qflx_totdrain_col        (:) => null()  ! col total liquid water drainage  (m/time step), updated in betr
+    real(r8), pointer :: qflx_dew_grnd_col        (:)=> null()   ! col ground surface dew formation (mm H2O /s) [+] (+ = to atm); usually eflx_bot >= 0)
+    real(r8), pointer :: qflx_dew_snow_col        (:) => null()  ! col surface dew added to snow pack (mm H2O /s) [+]
+    real(r8), pointer :: qflx_sub_snow_vol_col    (:)=> null()
+    real(r8), pointer :: qflx_sub_snow_col        (:)=> null()   ! col sublimation rate from snow pack (mm H2O /s) [+]
+    real(r8), pointer :: qflx_h2osfc2topsoi_col   (:) => null()  ! col liquid water coming from surface standing water top soil (mm H2O/s)
+    real(r8), pointer :: qflx_snow2topsoi_col     (:) => null()  ! col liquid water coming from residual snow to topsoil (mm H2O/s)
+    real(r8), pointer :: qflx_tran_veg_patch      (:)=> null()
+    real(r8), pointer :: qflx_rootsoi_patch       (:,:) => null()! pft root and soil water exchange [mm H2O/s] [+ into atmosphere]
   contains
     procedure          :: Init
     procedure, private :: InitAllocate

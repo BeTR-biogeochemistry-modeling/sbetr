@@ -15,11 +15,11 @@ module BeTR_aerocondType
 ! !PUBLIC DATA:
 !
   type, public :: betr_aerecond_type
-   real(r8), pointer :: tempavg_agnpp_patch  (:) !  temporary average above-ground NPP (gC/m2/s)
-   real(r8), pointer :: annavg_agnpp_patch   (:) !  annual average above-ground NPP (gC/m2/s)
-   real(r8), pointer :: tempavg_bgnpp_patch  (:) !  temporary average below-ground NPP (gC/m2/s)
-   real(r8), pointer :: annavg_bgnpp_patch   (:) !  annual average below-ground NPP (gC/m2/s)
-   real(r8), pointer :: plant_frootsc_patch  (:) !
+   real(r8), pointer :: tempavg_agnpp_patch  (:) => null() !  temporary average above-ground NPP (gC/m2/s)
+   real(r8), pointer :: annavg_agnpp_patch   (:) => null() !  annual average above-ground NPP (gC/m2/s)
+   real(r8), pointer :: tempavg_bgnpp_patch  (:)=> null() !  temporary average below-ground NPP (gC/m2/s)
+   real(r8), pointer :: annavg_bgnpp_patch   (:) => null() !  annual average below-ground NPP (gC/m2/s)
+   real(r8), pointer :: plant_frootsc_patch  (:) => null() !
   contains
      procedure , public  :: Init
      procedure , private :: InitAllocate

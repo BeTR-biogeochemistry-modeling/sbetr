@@ -15,7 +15,7 @@ module ChemStateType
   ! column chemical state variables structure
   !----------------------------------------------------
   type, public :: chemstate_type
-    real(r8), pointer :: soil_pH(:,:)    ! soil pH (-nlevsno+1:nlevgrnd)
+    real(r8), pointer :: soil_pH(:,:) => null()   ! soil pH (-nlevsno+1:nlevgrnd)
 
   contains
     procedure, public  :: Init

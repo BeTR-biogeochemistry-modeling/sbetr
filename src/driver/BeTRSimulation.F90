@@ -38,15 +38,15 @@ module BeTRSimulation
        __FILE__
 
   type, public :: betr_simulation_type
-     type(betr_type)                     , public, pointer  :: betr(:)
-     type(betr_biogeophys_input_type)    , public, pointer  :: biophys_forc(:)
-     type(betr_biogeo_state_type)        , public, pointer  :: biogeo_state(:)
-     type(betr_biogeo_flux_type)         , public, pointer  :: biogeo_flux(:)
-     type(betr_status_type)              , public, pointer  :: bstatus(:)
+     type(betr_type)                     , public, pointer  :: betr(:)  => null()
+     type(betr_biogeophys_input_type)    , public, pointer  :: biophys_forc(:) => null()
+     type(betr_biogeo_state_type)        , public, pointer  :: biogeo_state(:) => null()
+     type(betr_biogeo_flux_type)         , public, pointer  :: biogeo_flux(:) => null()
+     type(betr_status_type)              , public, pointer  :: bstatus(:) => null()
      type(betr_status_sim_type)          , public, pointer  :: bsimstatus
-     logical                             , public, pointer :: active_col(:)
-     type(betr_column_type)              , public, pointer :: betr_col(:)
-     type(betr_patch_type)               , public, pointer :: betr_pft(:)
+     logical                             , public, pointer :: active_col(:) => null()
+     type(betr_column_type)              , public, pointer :: betr_col(:) => null()
+     type(betr_patch_type)               , public, pointer :: betr_pft(:) => null()
      character(len=betr_filename_length) , private :: base_filename
      character(len=betr_filename_length) , private :: hist_filename
 
@@ -57,12 +57,12 @@ module BeTRSimulation
      integer, public                              :: num_jtops
      integer, public, allocatable                 :: jtops(:)
      integer, public                              :: num_soilc
-     integer, public, allocatable                 :: filter_soilc(:)
+     integer, public, allocatable                 :: filter_soilc(:)  
 
-     real(r8), pointer :: states_2d(:,:,:) !(col, lay,var)
-     real(r8), pointer :: states_1d(:,:)   !(col, var)
-     real(r8), pointer :: fluxes_2d(:,:,:) !(col, lay,var)
-     real(r8), pointer :: fluxes_1d(:,:)   !(col, var)
+     real(r8), pointer :: states_2d(:,:,:) => null() !(col, lay,var)
+     real(r8), pointer :: states_1d(:,:)   => null() !(col, var)
+     real(r8), pointer :: fluxes_2d(:,:,:) => null() !(col, lay,var)
+     real(r8), pointer :: fluxes_1d(:,:)   => null() !(col, var)
      character(len=255) :: nmlist_hist1d_state_buffer(max_betr_hist_type)
      character(len=255) :: nmlist_hist2d_state_buffer(max_betr_hist_type)
      character(len=255) :: nmlist_hist1d_flux_buffer(max_betr_hist_type)

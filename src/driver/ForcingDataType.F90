@@ -27,18 +27,18 @@ module ForcingDataType
      integer                             :: num_levels
      integer                             :: num_time
      integer                             :: num_columns
-     real(r8), pointer                   :: t_soi(:,:)
-     real(r8), pointer                   :: h2osoi_liqvol(:,:)
-     real(r8), pointer                   :: h2osoi_liq(:,:)
-     real(r8), pointer                   :: h2osoi_ice(:,:)
-     real(r8), pointer                   :: qflx_infl(:)       !surface infiltration, mm/s
-     real(r8), pointer                   :: qflx_rootsoi(:,:)  !transpiration at depth, m/s
-     real(r8), pointer                   :: qflx_rootsoi_patch(:,:)  !transpiration at depth, m/s
-     real(r8), pointer                   :: pbot(:)            !amtospheric pressure, Pa
-     real(r8), pointer                   :: tbot(:)            !atmoshperic temperature, kelvin
-     real(r8), pointer                   :: h2osoi_icevol(:,:)
-     real(r8), pointer                   :: qbot(:)            !water flux at bottom boundary, mm/s
-     real(r8), pointer                   :: soilpsi(:)
+     real(r8), pointer                   :: t_soi(:,:)  => null()
+     real(r8), pointer                   :: h2osoi_liqvol(:,:) => null()
+     real(r8), pointer                   :: h2osoi_liq(:,:) => null()
+     real(r8), pointer                   :: h2osoi_ice(:,:) => null()
+     real(r8), pointer                   :: qflx_infl(:)     => null()  !surface infiltration, mm/s
+     real(r8), pointer                   :: qflx_rootsoi(:,:) => null()  !transpiration at depth, m/s
+     real(r8), pointer                   :: qflx_rootsoi_patch(:,:) => null()  !transpiration at depth, m/s
+     real(r8), pointer                   :: pbot(:)      => null()      !amtospheric pressure, Pa
+     real(r8), pointer                   :: tbot(:)       => null()     !atmoshperic temperature, kelvin
+     real(r8), pointer                   :: h2osoi_icevol(:,:)=> null()
+     real(r8), pointer                   :: qbot(:)       => null()     !water flux at bottom boundary, mm/s
+     real(r8), pointer                   :: soilpsi(:)=> null()
    contains
      procedure, public :: Init
      procedure, public :: ReadData
