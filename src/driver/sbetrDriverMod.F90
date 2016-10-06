@@ -476,6 +476,7 @@ end subroutine sbetrBGC_driver
     c = filter_soilc(fc)
     nitrogenflux_vars%ndep_to_sminn_col(c) = val_n
     phosphorusflux_vars%pdep_to_sminp_col(c) = val_p
+    print*,'fert',phosphorusflux_vars%fert_p_to_sminp_col(c)
   enddo
   do j = 1, nlevsoi
     do fc = 1, num_soilc

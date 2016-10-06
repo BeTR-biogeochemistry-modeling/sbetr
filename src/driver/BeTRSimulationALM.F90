@@ -436,7 +436,9 @@ contains
          this%biophys_forc(c)%sflx_minp_input_po4_vr_col(1,j) + &
          phosphorusflux_vars%pdep_to_sminp_col(c) * pdep_prof(c,j) + &
          phosphorusflux_vars%fert_p_to_sminp_col(c) * pdep_prof(c,j)
-
+      print*,'lay p',j,this%biophys_forc(c)%sflx_minp_input_po4_vr_col(1,j), &
+         phosphorusflux_vars%pdep_to_sminp_col(c), &
+         phosphorusflux_vars%fert_p_to_sminp_col(c), pdep_prof(c,j)
       this%biophys_forc(c)%sflx_minp_weathering_po4_vr_col(1,j) = &
          this%biophys_forc(c)%sflx_minp_weathering_po4_vr_col(c,j) + &
          phosphorusflux_vars%primp_to_labilep_vr_col(c,j)

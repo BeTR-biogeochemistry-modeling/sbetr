@@ -157,9 +157,9 @@ contains
     this%m_p_to_litr_lig_fire_col(:,:) = 0._r8
     this%fire_mortality_p_to_cwdp_col(:,:) = 0._r8
     this%primp_to_labilep_vr_col(:,:) = 0._r8
-    this%pdep_to_sminp_col(begc:endc) = 0._r8
-    this%pdep_to_sminp_col(begc:endc) = 0._r8
-    this%fert_p_to_sminp_col(begc:endc) = 0._r8
+    this%pdep_to_sminp_col(:) = 0._r8
+    this%pdep_to_sminp_col(:) = 0._r8
+    this%fert_p_to_sminp_col(:) = 0._r8
 
   end subroutine initCold
 

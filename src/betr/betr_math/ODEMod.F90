@@ -19,9 +19,14 @@ module ODEMod
   public :: ode_ebbks1, ode_adapt_ebbks1
   public :: ode_rk4
   public :: ode_rk2
+  public :: get_tscal
+  public :: ebbks
+  public :: get_rerr
+
 
   interface get_rerr
-     module procedure get_rerr_v, get_rerr_s
+     module procedure get_rerr_v
+     module procedure get_rerr_s
   end interface get_rerr
 
 contains
@@ -631,7 +636,7 @@ contains
     ! this code should only be used for mass positive ODE integration
     implicit none
     ! !ARGUMENTS:
-    class(gbetr_type),  intent(inout)  :: extra
+    class(gbetr_type), target :: extra
     real(r8), intent(in)  :: y0(neq)  ! state variable at previous time step
     real(r8), intent(in)  :: t        ! time stamp
     real(r8), intent(in)  :: dt       ! time stepping
@@ -661,6 +666,7 @@ contains
     !make a copy of the solution at the current time step
     y=y0
     do
+       print*,'ode',dt2,dtmin
        if(dt2<=dtmin)then
           call odefun(extra, y, dt2, tt, nprimeq, neq, f)
           call ebbks(y, f, nprimeq, neq, dt2, yc, pscal)
@@ -668,8 +674,9 @@ contains
           tt=tt+dt2
           y=yc
        else
-          !get coarse grid solution
+          print*,'get coarse grid solution'
           call odefun(extra, y, dt2, tt, nprimeq, neq, f)
+          print*,'ebbks'
           call ebbks(y, f, nprimeq, neq, dt2, yc, pscal)
 
           !get fine grid solution
@@ -677,7 +684,7 @@ contains
           call ebbks(y,f,nprimeq, neq,dt05, yf, pscal)
           tt2=tt+dt05
           ycp=yf
-          call odefun(extra, ycp, dt05, tt, nprimeq, neq, f)
+          call odefun(extra,ycp, dt05, tt, nprimeq, neq, f)
           call ebbks(ycp,f,nprimeq, neq,dt05,yf,pscal)
 
           !determine the relative error
