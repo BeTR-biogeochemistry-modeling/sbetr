@@ -95,6 +95,7 @@ module BeTRTracerType
    integer, pointer :: solid_passive_tracer_groupid(:,:)  => null()
    integer, pointer :: tracer_group_memid(:,:)            => null()       !grp, gmem
    character(len=betr_var_name_length),pointer :: tracernames(:)    => null()               !array with tracer names
+   character(len=betr_var_name_length),pointer :: tracerfamilyname(:)=> null()
    character(len=betr_var_name_length),pointer :: units(:) => null()
    real(r8),pointer :: gram_mole_wt(:)      => null()                     !molecular weight of the master species, [g/mol]
    real(r8),pointer :: vtrans_scal(:)       => null()                     !scaling factor for plant tracer uptake through transpiration, for non-water neutral aqueous tracers
@@ -205,6 +206,7 @@ module BeTRTracerType
   allocate(this%h2oid              (this%nh2o_tracers));         this%h2oid(:)           = nanid
   allocate(this%frozenid           (this%ngwmobile_tracers));    this%frozenid(:)        = nanid
   allocate(this%tracernames        (this%ntracers));             this%tracernames(:)     = ''
+  allocate(this%tracerfamilyname   (this%ntracers));             this%tracerfamilyname(:)= ''
   allocate(this%units              (this%ntracers));             this%units(:)           = 'mol m-3'
   allocate(this%vtrans_scal        (this%ngwmobile_tracers));    this%vtrans_scal(:)     = 0._r8   !no transport through xylem transpiration
 
@@ -229,7 +231,7 @@ module BeTRTracerType
 subroutine set_tracer(this, bstatus, trc_id, trc_name, is_trc_mobile, is_trc_advective, trc_group_id, &
    trc_group_mem, is_trc_diffusive, is_trc_volatile, trc_volatile_id, trc_volatile_group_id, &
    is_trc_h2o, trc_vtrans_scal, is_trc_adsorb, trc_adsorbid, trc_adsorbgroupid             , &
-   is_trc_frozen, trc_frozenid)
+   is_trc_frozen, trc_frozenid, trc_family_name)
 
 ! !DESCRIPTION:
 ! set up tracer property based on input configurations
@@ -254,11 +256,17 @@ subroutine set_tracer(this, bstatus, trc_id, trc_name, is_trc_mobile, is_trc_adv
   integer ,optional  , intent(in) :: trc_adsorbgroupid
   logical ,optional  , intent(in) :: is_trc_frozen
   integer ,optional  , intent(in) :: trc_frozenid
+  character(len=*),optional,intent(in) :: trc_family_name
   type(betr_status_type), intent(out)   :: bstatus
 
   call bstatus%reset()
 
   this%tracernames      (trc_id)    = trim(trc_name)
+  if(present(trc_family_name))then
+    this%tracerfamilyname(trc_id)   = trim(trc_family_name)
+  else
+    this%tracerfamilyname(trc_id)   = this%tracernames(trc_id)
+  endif
   this%is_mobile        (trc_id)    = is_trc_mobile
   this%groupid          (trc_id)    = trc_group_id
   this%tracer_group_memid(trc_group_id,trc_group_mem) = trc_id
