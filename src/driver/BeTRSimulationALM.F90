@@ -254,6 +254,7 @@ contains
   do fc = 1, num_soilc
     c = filter_soilc(fc)
     call this%biophys_forc(c)%reset(value_column=0._r8)
+    this%biophys_forc(c)%isoilorder(1) = 1                 !this needs update
   enddo
   !sum up carbon input profiles
   do j = bounds%lbj, bounds%ubj

@@ -862,7 +862,6 @@ contains
                      trcid = adv_trc_group(k)
                      dmass(c, k) = dot_sum(tracer_conc_mobile_col(c, jtops(c):ubj, trcid), &
                       dz(c, jtops(c):ubj),bstatus)
-!x                     print*,'init_mass',bstatus%check_status(),trim(bstatus%print_msg())
                      if(bstatus%check_status())return
                   enddo
                endif
@@ -1674,6 +1673,7 @@ contains
     if (lbj > 0) continue
 
     associate(                                                                  &
+         tracernames           => betrtracer_vars%tracernames                 , &
          ngwmobile_tracers     => betrtracer_vars%ngwmobile_tracers           , & !
          groupid               => betrtracer_vars%groupid                     , & !
          is_advective          => betrtracer_vars%is_advective                , & !

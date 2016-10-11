@@ -331,7 +331,6 @@ contains
          this%tracerboundaryconds,                             &
          this%plant_soilbgc, biogeo_flux, betr_status)
     if(betr_status%check_status())return
-
     call tracer_gws_transport(betr_time, bounds, col, pft, num_soilc, filter_soilc, &
       Rfactor, biophysforc, biogeo_flux, this%tracers, this%tracerboundaryconds  , &
       this%tracercoeffs,  this%tracerstates, this%tracerfluxes, this%bgc_reaction, &
