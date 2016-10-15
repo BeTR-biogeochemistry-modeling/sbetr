@@ -20,6 +20,8 @@ module clm_instMod
   use PhosphorusFluxType     , only : phosphorusflux_type
   use PhosphorusStateType    , only : phosphorusstate_type
   use SoilWaterRetentionCurveFactoryMod, only : create_soil_water_retention_curve
+  use SoilWaterRetentionCurveMod , only : soil_water_retention_curve_type  
+
   implicit none
   save
   public
@@ -40,6 +42,7 @@ module clm_instMod
   type(canopystate_type)      :: canopystate_vars
   type(phosphorusstate_type)  :: phosphorusstate_vars
   type(phosphorusflux_type)   :: phosphorusflux_vars
+  class(soil_water_retention_curve_type), allocatable :: soil_water_retention_curve
   contains
 
   subroutine clm_inst(bounds)
@@ -74,6 +77,8 @@ module clm_instMod
 
   call nitrogenstate_vars%Init(bounds)
 
+  call nitrogenflux_vars%Init(bounds)
+
   call cnstate_vars%Init(bounds)
 
   call canopystate_vars%Init(bounds)
@@ -83,6 +88,9 @@ module clm_instMod
   call phosphorusstate_vars%Init(bounds)
 
   call phosphorusflux_vars%Init(bounds)
+
+  allocate(soil_water_retention_curve, &
+       source=create_soil_water_retention_curve())
 
 
   end subroutine clm_inst

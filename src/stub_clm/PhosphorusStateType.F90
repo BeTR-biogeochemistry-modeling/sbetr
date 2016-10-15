@@ -6,29 +6,29 @@ module PhosphorusStateType
 implicit none
 
   type, public :: phosphorusstate_type
-    real(r8), pointer :: decomp_ppools_col            (:,:)   ! col (gP/m2)  decomposing (litter, cwd, soil) P pools
-    real(r8), pointer :: sminp_col                    (:)     ! col (gP/m2) soil mineral P
-    real(r8), pointer :: solutionp_col                (:)         ! col (gP/m2) soil solution P
-    real(r8), pointer :: labilep_col                  (:)         ! col (gP/m2) soil labile mineral P
-    real(r8), pointer :: secondp_col                  (:)         ! col (gP/m2) soil secondary mineralP
-    real(r8), pointer :: occlp_col                    (:)         ! col (gP/m2) soil occluded mineral P
-    real(r8), pointer :: primp_col                    (:)         ! col (gP/m2) soil parimary mineral P
-    real(r8), pointer :: totlitp_col                  (:)     ! col (gP/m2) total litter phosphorus
-    real(r8), pointer :: totsomp_col                  (:)     ! col (gP/m2) total soil organic matter phosphorus
-    real(r8), pointer :: totecosysp_col               (:)     ! col (gP/m2) total ecosystem phosphorus, incl veg
-    real(r8), pointer :: totcolp_col                  (:)     ! col (gP/m2) total column phosphorus, incl veg
-    real(r8), pointer :: cwdp_col                     (:)     ! col (gP/m2) Diagnostic: coarse woody debris P
+    real(r8), pointer :: decomp_ppools_col            (:,:)  => null() ! col (gP/m2)  decomposing (litter, cwd, soil) P pools
+    real(r8), pointer :: sminp_col                    (:)   => null()  ! col (gP/m2) soil mineral P
+    real(r8), pointer :: solutionp_col                (:)  => null()       ! col (gP/m2) soil solution P
+    real(r8), pointer :: labilep_col                  (:)   => null()      ! col (gP/m2) soil labile mineral P
+    real(r8), pointer :: secondp_col                  (:)   => null()      ! col (gP/m2) soil secondary mineralP
+    real(r8), pointer :: occlp_col                    (:)  => null()       ! col (gP/m2) soil occluded mineral P
+    real(r8), pointer :: primp_col                    (:)  => null()       ! col (gP/m2) soil parimary mineral P
+    real(r8), pointer :: totlitp_col                  (:)  => null()   ! col (gP/m2) total litter phosphorus
+    real(r8), pointer :: totsomp_col                  (:) => null()    ! col (gP/m2) total soil organic matter phosphorus
+    real(r8), pointer :: totecosysp_col               (:) => null()    ! col (gP/m2) total ecosystem phosphorus, incl veg
+    real(r8), pointer :: totcolp_col                  (:) => null()    ! col (gP/m2) total column phosphorus, incl veg
+    real(r8), pointer :: cwdp_col                     (:) => null()    ! col (gP/m2) Diagnostic: coarse woody debris P
 
     ! patch averaged to column variables
-    real(r8), pointer :: totvegp_col                  (:)     ! col (gP/m2) total vegetation phosphorus (p2c)
+    real(r8), pointer :: totvegp_col                  (:)  => null()   ! col (gP/m2) total vegetation phosphorus (p2c)
 
-    real(r8), pointer :: decomp_ppools_vr_col         (:,:,:)     ! col (gP/m3) vertically-resolved decomposing (litter, cwd, soil) P pools
-    real(r8), pointer :: solutionp_vr_col             (:,:)       ! col (gP/m3) vertically-resolved soil solution P
-    real(r8), pointer :: labilep_vr_col               (:,:)       ! col (gP/m3) vertically-resolved soil labile mineral P
-    real(r8), pointer :: secondp_vr_col               (:,:)       ! col (gP/m3) vertically-resolved soil secondary mineralP
-    real(r8), pointer :: occlp_vr_col                 (:,:)       ! col (gP/m3) vertically-resolved soil occluded mineral P
-    real(r8), pointer :: primp_vr_col                 (:,:)       ! col (gP/m3) vertically-resolved soil parimary mineral P
-    real(r8), pointer :: sminp_vr_col                 (:,:)       ! col (gP/m3) vertically-resolved soil total mineral P, diagnostic
+    real(r8), pointer :: decomp_ppools_vr_col         (:,:,:) => null()    ! col (gP/m3) vertically-resolved decomposing (litter, cwd, soil) P pools
+    real(r8), pointer :: solutionp_vr_col             (:,:)  => null()     ! col (gP/m3) vertically-resolved soil solution P
+    real(r8), pointer :: labilep_vr_col               (:,:) => null()      ! col (gP/m3) vertically-resolved soil labile mineral P
+    real(r8), pointer :: secondp_vr_col               (:,:)  => null()     ! col (gP/m3) vertically-resolved soil secondary mineralP
+    real(r8), pointer :: occlp_vr_col                 (:,:) => null()      ! col (gP/m3) vertically-resolved soil occluded mineral P
+    real(r8), pointer :: primp_vr_col                 (:,:)  => null()     ! col (gP/m3) vertically-resolved soil parimary mineral P
+    real(r8), pointer :: sminp_vr_col                 (:,:)  => null()     ! col (gP/m3) vertically-resolved soil total mineral P, diagnostic
 
   contains
 

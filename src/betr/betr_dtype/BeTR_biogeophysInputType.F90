@@ -67,47 +67,49 @@ implicit none
     real(r8), pointer :: sucsat_col           (:,:)    => null() ! col minimum soil suction (mm) (nlevgrnd)
     real(r8), pointer :: rootfr_patch         (:,:)    => null() ! patch fraction of roots in each soil layer (nlevgrnd)
 
-    real(r8), pointer :: cflx_input_litr_met_vr_col(:,:) => null() ! metabolic litter input
-    real(r8), pointer :: cflx_input_litr_cel_vr_col(:,:) => null() ! cellulose litter input
-    real(r8), pointer :: cflx_input_litr_lig_vr_col(:,:) => null() ! lignin litter input
-    real(r8), pointer :: cflx_input_litr_cwd_vr_col(:,:) => null() ! coarse woody debries input
+    real(r8), pointer :: cflx_input_litr_met_vr_col(:,:) => null() ! metabolic litter input, gC/m3/s
+    real(r8), pointer :: cflx_input_litr_cel_vr_col(:,:) => null() ! cellulose litter input, gC/m3/s
+    real(r8), pointer :: cflx_input_litr_lig_vr_col(:,:) => null() ! lignin litter input   , gC/m3/s
+    real(r8), pointer :: cflx_input_litr_cwd_vr_col(:,:) => null() ! coarse woody debries input, gC/m3/s
     !The only loss is through fire and no som is lost through burning
-    real(r8), pointer :: cflx_output_litr_met_vr_col(:,:) => null() ! metabolic litter input
-    real(r8), pointer :: cflx_output_litr_cel_vr_col(:,:) => null() ! cellulose litter input
-    real(r8), pointer :: cflx_output_litr_lig_vr_col(:,:) => null() ! lignin litter input
-    real(r8), pointer :: cflx_output_litr_cwd_vr_col(:,:) => null() ! coarse woody debries input
+    real(r8), pointer :: cflx_output_litr_met_vr_col(:,:) => null() ! metabolic litter input, gC/m3/s
+    real(r8), pointer :: cflx_output_litr_cel_vr_col(:,:) => null() ! cellulose litter input, gC/m3/s
+    real(r8), pointer :: cflx_output_litr_lig_vr_col(:,:) => null() ! lignin litter input, gC/m3/s
+    real(r8), pointer :: cflx_output_litr_cwd_vr_col(:,:) => null() ! coarse woody debris input, gC/m3/s
 
-    real(r8), pointer :: nflx_input_litr_met_vr_col(:,:) => null() ! metabolic litter input
-    real(r8), pointer :: nflx_input_litr_cel_vr_col(:,:) => null() ! cellulose litter input
-    real(r8), pointer :: nflx_input_litr_lig_vr_col(:,:) => null() ! lignin litter input
-    real(r8), pointer :: nflx_input_litr_cwd_vr_col(:,:) => null() ! coarse woody debries input
+    real(r8), pointer :: nflx_input_litr_met_vr_col(:,:) => null() ! metabolic litter input, gC/m3/s
+    real(r8), pointer :: nflx_input_litr_cel_vr_col(:,:) => null() ! cellulose litter input, gC/m3/s
+    real(r8), pointer :: nflx_input_litr_lig_vr_col(:,:) => null() ! lignin litter input, gC/m3/s
+    real(r8), pointer :: nflx_input_litr_cwd_vr_col(:,:) => null() ! coarse woody debris input, gC/m3/s
     !The only loss is through fire and no som is lost through burning
-    real(r8), pointer :: nflx_output_litr_met_vr_col(:,:) => null() ! metabolic litter input
-    real(r8), pointer :: nflx_output_litr_cel_vr_col(:,:) => null() ! cellulose litter input
-    real(r8), pointer :: nflx_output_litr_lig_vr_col(:,:) => null() ! lignin litter input
-    real(r8), pointer :: nflx_output_litr_cwd_vr_col(:,:) => null() ! coarse woody debries input
+    real(r8), pointer :: nflx_output_litr_met_vr_col(:,:) => null() ! metabolic litter input, gN/m3/s
+    real(r8), pointer :: nflx_output_litr_cel_vr_col(:,:) => null() ! cellulose litter input, gN/m3/s
+    real(r8), pointer :: nflx_output_litr_lig_vr_col(:,:) => null() ! lignin litter input   , gN/m3/s
+    real(r8), pointer :: nflx_output_litr_cwd_vr_col(:,:) => null() ! coarse woody debris input, gN/m3/s
 
-    real(r8), pointer :: pflx_input_litr_met_vr_col(:,:) => null() ! metabolic litter input
-    real(r8), pointer :: pflx_input_litr_cel_vr_col(:,:) => null() ! cellulose litter input
-    real(r8), pointer :: pflx_input_litr_lig_vr_col(:,:) => null() ! lignin litter input
-    real(r8), pointer :: pflx_input_litr_cwd_vr_col(:,:) => null() ! coarse woody debries input
+    real(r8), pointer :: pflx_input_litr_met_vr_col(:,:) => null() ! metabolic litter input, gP/m3/s
+    real(r8), pointer :: pflx_input_litr_cel_vr_col(:,:) => null() ! cellulose litter input, gP/m3/s
+    real(r8), pointer :: pflx_input_litr_lig_vr_col(:,:) => null() ! lignin litter input, gP/m3/s
+    real(r8), pointer :: pflx_input_litr_cwd_vr_col(:,:) => null() ! coarse woody debris input, gP/m3/s
     !The only loss is through fire and no som is lost through burning
-    real(r8), pointer :: pflx_output_litr_met_vr_col(:,:) => null() ! metabolic litter input
-    real(r8), pointer :: pflx_output_litr_cel_vr_col(:,:) => null() ! cellulose litter input
-    real(r8), pointer :: pflx_output_litr_lig_vr_col(:,:) => null() ! lignin litter input
-    real(r8), pointer :: pflx_output_litr_cwd_vr_col(:,:) => null() ! coarse woody debries input
+    real(r8), pointer :: pflx_output_litr_met_vr_col(:,:) => null() ! metabolic litter input, gP/m3/s
+    real(r8), pointer :: pflx_output_litr_cel_vr_col(:,:) => null() ! cellulose litter input, gP/m3/s
+    real(r8), pointer :: pflx_output_litr_lig_vr_col(:,:) => null() ! lignin litter input, gP/m3/s
+    real(r8), pointer :: pflx_output_litr_cwd_vr_col(:,:) => null() ! coarse woody debris input, gP/m3/s
 
-    real(r8), pointer :: sflx_minn_input_nh4_vr_col(:,:)  => null() !mineral nh4 input through deposition & fertilization
-    real(r8), pointer :: sflx_minn_input_no3_vr_col(:,:)  => null() !mineral no3 input through deposition & fertilization
-    real(r8), pointer :: sflx_minp_input_po4_vr_col(:,:)  => null() !mineral phosphorus input through deposition & fertilization
-    real(r8), pointer :: sflx_minp_weathering_po4_vr_col(:,:)  => null() !mineral phosphorus input through weathering
+    real(r8), pointer :: sflx_minn_input_nh4_vr_col(:,:)  => null() !mineral nh4 input through deposition & fertilization, gN/m3/s
+    real(r8), pointer :: sflx_minn_input_no3_vr_col(:,:)  => null() !mineral no3 input through deposition & fertilization, gN/m3/s
+    real(r8), pointer :: sflx_minp_input_po4_vr_col(:,:)  => null() !mineral phosphorus input through deposition & fertilization, gN/m3/s
+    real(r8), pointer :: sflx_minp_weathering_po4_vr_col(:,:)  => null() !mineral phosphorus input through weathering, gN/m3/s
 
-    real(r8), pointer :: sflx_minn_nh4_fix_nomic_vr_col(:,:) => null()    !nitrogen fixation from non-microbe explicit calculation
-    real(r8), pointer :: rr_patch(:,:)
-    real(r8), pointer :: froot_prof_patch(:,:)
-    real(r8), pointer :: frootc_patch(:)
-    real(r8), pointer :: cn_scalar_patch(:)
-    real(r8), pointer :: cp_scalar_patch(:)
+
+    real(r8), pointer :: sflx_minn_nh4_fix_nomic_vr_col(:,:) => null()    !nitrogen fixation from non-microbe explicit calculation, gN/m3/s
+    real(r8), pointer :: rr_patch(:,:)  => null()
+    real(r8), pointer :: froot_prof_patch(:,:) => null()
+    real(r8), pointer :: frootc_patch(:) => null()
+    real(r8), pointer :: cn_scalar_patch(:) => null()
+    real(r8), pointer :: cp_scalar_patch(:) => null()
+
   contains
     procedure, public  :: Init
     procedure, private :: InitAllocate
@@ -253,6 +255,7 @@ contains
   allocate(this%sflx_minn_input_nh4_vr_col(begc:endc,lbj:ubj)) !mineral nh4 input through deposition & fertilization
   allocate(this%sflx_minn_input_no3_vr_col(begc:endc,lbj:ubj)) !mineral no3 input through deposition & fertilization
   allocate(this%sflx_minp_input_po4_vr_col(begc:endc,lbj:ubj)) !mineral phosphorus input through weathering, deposition & fertilization
+
   allocate(this%sflx_minn_nh4_fix_nomic_vr_col(begc:endc,lbj:ubj))   !nh4 from fixation
   allocate(this%sflx_minp_weathering_po4_vr_col(begc:endc,lbj:ubj)) !p from weathering
 
@@ -295,7 +298,9 @@ contains
   this%sflx_minn_input_nh4_vr_col(:,:)= value_column
   this%sflx_minn_input_no3_vr_col(:,:)= value_column
   this%sflx_minp_input_po4_vr_col(:,:)= value_column
+
   this%sflx_minn_nh4_fix_nomic_vr_col(:,:)= value_column
+
   this%sflx_minp_weathering_po4_vr_col(:,:) = value_column
   end subroutine reset
 end module BeTR_biogeophysInputType

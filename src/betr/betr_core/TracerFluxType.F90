@@ -23,42 +23,42 @@ module TracerFluxType
   type, public, extends(tracerbase_type) :: TracerFlux_type
 
      !tracer flux defined at the column level
-     real(r8), pointer :: tracer_flx_top_soil_col(:,:)    !tracer fluxes available for infiltration+runoff
-     real(r8), pointer :: tracer_flx_can_loss_col(:,:)    !tracer loss from canopy
-     real(r8), pointer :: tracer_flx_snowmelt_col(:,:)    !tracer loss from snow melting
-     real(r8), pointer :: tracer_flx_infl_col(:,:)        !tracer fluxes available for infiltration
-     real(r8), pointer :: tracer_flx_netphyloss_col(:,:)  !total tracer loos through all possible physical pathways: drainage (+ runoff), leaching, ebullition, diffusion, minus precipitation/infiltration
-     real(r8), pointer :: tracer_flx_netpro_col(:,:)      !total tracer production through chemical processes
-     real(r8), pointer :: tracer_flx_dstor_col(:,:)       !net storage of tracer due to input-output, ideally, dstor=netpro-netloss at various scales
-     real(r8), pointer :: tracer_flx_ebu_col(:,:)         !tracer emitted as bubbles, mol, lake, volatile
-     real(r8), pointer :: tracer_flx_prec_col(:,:)        !tracer added to a column from precipitation, mol
-     real(r8), pointer :: tracer_flx_dif_col(:,:)         !tracer emitted through diffusion, unsat, volatile
+     real(r8), pointer :: tracer_flx_top_soil_col(:,:)  => null()  !tracer fluxes available for infiltration+runoff
+     real(r8), pointer :: tracer_flx_can_loss_col(:,:)  => null()  !tracer loss from canopy
+     real(r8), pointer :: tracer_flx_snowmelt_col(:,:) => null()   !tracer loss from snow melting
+     real(r8), pointer :: tracer_flx_infl_col(:,:)     => null()   !tracer fluxes available for infiltration
+     real(r8), pointer :: tracer_flx_netphyloss_col(:,:) => null() !total tracer loos through all possible physical pathways: drainage (+ runoff), leaching, ebullition, diffusion, minus precipitation/infiltration
+     real(r8), pointer :: tracer_flx_netpro_col(:,:)   => null()   !total tracer production through chemical processes
+     real(r8), pointer :: tracer_flx_dstor_col(:,:)    => null()   !net storage of tracer due to input-output, ideally, dstor=netpro-netloss at various scales
+     real(r8), pointer :: tracer_flx_ebu_col(:,:)     => null()    !tracer emitted as bubbles, mol, lake, volatile
+     real(r8), pointer :: tracer_flx_prec_col(:,:)   => null()     !tracer added to a column from precipitation, mol
+     real(r8), pointer :: tracer_flx_dif_col(:,:)    => null()     !tracer emitted through diffusion, unsat, volatile
 
-     real(r8), pointer :: tracer_flx_drain_col(:,:)       !tracer removal through subface drainage
-     real(r8), pointer :: tracer_flx_surfemi_col(:,:)     !total emitted tracer fluxes at surface, volatile, including ebullition, diffusion, arenchyma transport
-     real(r8), pointer :: tracer_flx_leaching_col(:,:)    !leaching fluxes
-     real(r8), pointer :: tracer_flx_surfrun_col(:,:)     !tracer loss thru runoff, mol tracer / second
-     real(r8), pointer :: tracer_flx_netpro_vr_col(:,:,:) !total source strength for the tracers, chemical production, root exudation, excludes incoming root transport (by exchange with air) and (infiltration?)
-     real(r8), pointer :: tracer_flx_tparchm_col(:,:)     !total tracer flux through plant aerenchyma transport, for volatile species only, mol/m^2/s
-     real(r8), pointer :: tracer_flx_parchm_vr_col(:,:,:) !vertical resolved tracer flux through aerenchyma transport, for volatile species only, mol/m^3/s
-     real(r8), pointer :: tracer_flx_totleached_col(:,:)  !total leaching flux, vertical + lateral leaching
+     real(r8), pointer :: tracer_flx_drain_col(:,:)   => null()    !tracer removal through subface drainage
+     real(r8), pointer :: tracer_flx_surfemi_col(:,:)  => null()   !total emitted tracer fluxes at surface, volatile, including ebullition, diffusion, arenchyma transport
+     real(r8), pointer :: tracer_flx_leaching_col(:,:)  => null()  !leaching fluxes
+     real(r8), pointer :: tracer_flx_surfrun_col(:,:)   => null()  !tracer loss thru runoff, mol tracer / second
+     real(r8), pointer :: tracer_flx_netpro_vr_col(:,:,:) => null()!total source strength for the tracers, chemical production, root exudation, excludes incoming root transport (by exchange with air) and (infiltration?)
+     real(r8), pointer :: tracer_flx_tparchm_col(:,:)    => null() !total tracer flux through plant aerenchyma transport, for volatile species only, mol/m^2/s
+     real(r8), pointer :: tracer_flx_parchm_vr_col(:,:,:) => null()!vertical resolved tracer flux through aerenchyma transport, for volatile species only, mol/m^3/s
+     real(r8), pointer :: tracer_flx_totleached_col(:,:) => null() !total leaching flux, vertical + lateral leaching
 
-     real(r8), pointer :: tracer_flx_vtrans_col(:,:)      !column level tracer flux through transpiration
-     real(r8), pointer :: tracer_flx_vtrans_vr_col(:,:,:) !
-     !real(r8), pointer :: tracer_flx_snowloss_col(:,:)    !tracer flux lost from snow dynamics, place holder
+     real(r8), pointer :: tracer_flx_vtrans_col(:,:)     => null() !column level tracer flux through transpiration
+     real(r8), pointer :: tracer_flx_vtrans_vr_col(:,:,:) => null()!
+     !real(r8), pointer :: tracer_flx_snowloss_col(:,:)  => null()  !tracer flux lost from snow dynamics, place holder
 
      !tracer fluxes defined at the pft level
-     real(r8), pointer :: tracer_flx_vtrans_patch(:,:)             !tracer goes to the pathway of plant transpiration, currently not released, if it is nutrient, assumed it is taken by plants completely
-     real(r8), pointer :: tracer_flx_snowfall_grnd_patch(:,:)
-     real(r8), pointer :: tracer_flx_rainfall_grnd_patch(:,:)
-     real(r8), pointer :: tracer_flx_prec_intr_patch(:,:)          !interception of tracer from wet deposition [mol/s]
-     real(r8), pointer :: tracer_flx_prec_grnd_patch(:,:)          !tracer onto ground including from canopy runoff [mol /s]
-     real(r8), pointer :: tracer_flx_snwcp_liq_patch(:,:)          !excess rainfall tracer due to snow capping [mol /s]
-     real(r8), pointer :: tracer_flx_snwcp_ice_patch(:,:)          !excess snowfall tracer due to snow capping [mol /s], this is used for aerosol type and water type tracer input
-     real(r8), pointer :: tracer_flx_dew_grnd_col(:,:)             !tracer flux to ground coming from dew formation
-     real(r8), pointer :: tracer_flx_dew_snow_col(:,:)             !tracer flux to snow coming from dew formation
-     real(r8), pointer :: tracer_flx_sub_snow_col(:,:)             !tracer flux loss from snow sublimation
-     real(r8), pointer :: tracer_flx_h2osfc_snow_residual_col(:,:) !tracer flux coming from residual standing water and residual snow
+     real(r8), pointer :: tracer_flx_vtrans_patch(:,:)      => null()       !tracer goes to the pathway of plant transpiration, currently not released, if it is nutrient, assumed it is taken by plants completely
+     real(r8), pointer :: tracer_flx_snowfall_grnd_patch(:,:)=> null()
+     real(r8), pointer :: tracer_flx_rainfall_grnd_patch(:,:)=> null()
+     real(r8), pointer :: tracer_flx_prec_intr_patch(:,:) => null()         !interception of tracer from wet deposition [mol/s]
+     real(r8), pointer :: tracer_flx_prec_grnd_patch(:,:) => null()         !tracer onto ground including from canopy runoff [mol /s]
+     real(r8), pointer :: tracer_flx_snwcp_liq_patch(:,:)  => null()        !excess rainfall tracer due to snow capping [mol /s]
+     real(r8), pointer :: tracer_flx_snwcp_ice_patch(:,:)  => null()        !excess snowfall tracer due to snow capping [mol /s], this is used for aerosol type and water type tracer input
+     real(r8), pointer :: tracer_flx_dew_grnd_col(:,:)     => null()        !tracer flux to ground coming from dew formation
+     real(r8), pointer :: tracer_flx_dew_snow_col(:,:)     => null()        !tracer flux to snow coming from dew formation
+     real(r8), pointer :: tracer_flx_sub_snow_col(:,:)      => null()       !tracer flux loss from snow sublimation
+     real(r8), pointer :: tracer_flx_h2osfc_snow_residual_col(:,:) => null() !tracer flux coming from residual standing water and residual snow
 
    contains
      procedure, public  :: Init

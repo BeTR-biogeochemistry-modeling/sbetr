@@ -19,7 +19,7 @@ module LandunitType
   use shr_kind_mod   , only : r8 => shr_kind_r8
   use shr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
   use clm_varcon     , only : ispval
-  use decompMod      , only : bounds_type  
+  use decompMod      , only : bounds_type
   !
   ! !PUBLIC TYPES:
   implicit none
@@ -28,30 +28,30 @@ module LandunitType
   !
   type, public :: landunit_type
      ! g/l/c/p hierarchy, local g/l/c/p cells only
-     integer , pointer :: gridcell     (:) ! index into gridcell level quantities
-     real(r8), pointer :: wtgcell      (:) ! weight (relative to gridcell)
-     integer , pointer :: coli         (:) ! beginning column index per landunit
-     integer , pointer :: colf         (:) ! ending column index for each landunit
-     integer , pointer :: ncolumns     (:) ! number of columns for each landunit
-     integer , pointer :: pfti         (:) ! beginning pft index for each landunit
-     integer , pointer :: pftf         (:) ! ending pft index for each landunit
-     integer , pointer :: npfts        (:) ! number of patches for each landunit
+     integer , pointer :: gridcell     (:) => null()! index into gridcell level quantities
+     real(r8), pointer :: wtgcell      (:)=> null() ! weight (relative to gridcell)
+     integer , pointer :: coli         (:) => null()! beginning column index per landunit
+     integer , pointer :: colf         (:) => null()! ending column index for each landunit
+     integer , pointer :: ncolumns     (:) => null()! number of columns for each landunit
+     integer , pointer :: pfti         (:) => null()! beginning pft index for each landunit
+     integer , pointer :: pftf         (:) => null()! ending pft index for each landunit
+     integer , pointer :: npfts        (:) => null()! number of patches for each landunit
 
      ! topological mapping functionality
-     integer , pointer :: itype        (:) ! landunit type
-     logical , pointer :: ifspecial    (:) ! true=>landunit is not vegetated
-     logical , pointer :: lakpoi       (:) ! true=>lake point
-     logical , pointer :: urbpoi       (:) ! true=>urban point
-     logical , pointer :: glcmecpoi    (:) ! true=>glacier_mec point
-     logical , pointer :: active       (:) ! true=>do computations on this landunit
+     integer , pointer :: itype        (:) => null()! landunit type
+     logical , pointer :: ifspecial    (:) => null()! true=>landunit is not vegetated
+     logical , pointer :: lakpoi       (:) => null()! true=>lake point
+     logical , pointer :: urbpoi       (:) => null()! true=>urban point
+     logical , pointer :: glcmecpoi    (:) => null()! true=>glacier_mec point
+     logical , pointer :: active       (:) => null()! true=>do computations on this landunit
 
      ! urban properties
-     real(r8), pointer :: canyon_hwr   (:) ! urban landunit canyon height to width ratio (-)
-     real(r8), pointer :: wtroad_perv  (:) ! urban landunit weight of pervious road column to total road (-)
-     real(r8), pointer :: wtlunit_roof (:) ! weight of roof with respect to urban landunit (-)
-     real(r8), pointer :: ht_roof      (:) ! height of urban roof (m)
-     real(r8), pointer :: z_0_town     (:) ! urban landunit momentum roughness length (m)
-     real(r8), pointer :: z_d_town     (:) ! urban landunit displacement height (m)
+     real(r8), pointer :: canyon_hwr   (:)=> null() ! urban landunit canyon height to width ratio (-)
+     real(r8), pointer :: wtroad_perv  (:) => null()! urban landunit weight of pervious road column to total road (-)
+     real(r8), pointer :: wtlunit_roof (:)=> null() ! weight of roof with respect to urban landunit (-)
+     real(r8), pointer :: ht_roof      (:)=> null() ! height of urban roof (m)
+     real(r8), pointer :: z_0_town     (:) => null()! urban landunit momentum roughness length (m)
+     real(r8), pointer :: z_d_town     (:)=> null() ! urban landunit displacement height (m)
 
    contains
 

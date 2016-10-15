@@ -7,9 +7,9 @@ module clmgridMod
 implicit none
 
   private
-  real(r8), public, pointer :: zsoi(:)  !soil depth, node center 1 : nlevsoi
-  real(r8), public, pointer :: zisoi(:) !soil depth, interface,  0 : nlevsoi
-  real(r8), public, pointer :: dzsoi(:) !soil layer thickness
+  real(r8), public, pointer :: zsoi(:)  => null() !soil depth, node center 1 : nlevsoi
+  real(r8), public, pointer :: zisoi(:) => null() !soil depth, interface,  0 : nlevsoi
+  real(r8), public, pointer :: dzsoi(:) => null() !soil layer thickness
 
   public :: init_clm_vertgrid
 contains

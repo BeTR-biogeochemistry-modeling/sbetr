@@ -1,7 +1,7 @@
 module func_data_type_mod
   ! NOTE(bja, 201604) this type needs to be defined in a separate
   ! module to avoid a dependency problems.
-  
+
   use bshr_kind_mod, only : r8 => shr_kind_r8
 
   implicit none
@@ -17,7 +17,7 @@ module func_data_type_mod
   ! give them meaningful names.
   !
   type, public:: func_data_type
-     real(r8), pointer :: aj(:)
+     real(r8), pointer :: aj(:) => null()
      real(r8) :: iJ
      integer :: nJ
   end type func_data_type

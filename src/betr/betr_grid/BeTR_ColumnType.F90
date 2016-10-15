@@ -10,13 +10,13 @@ module BeTR_ColumnType
 
   type, public :: betr_column_type
      ! g/l/c/p hierarchy, local g/l/c/p cells only
-   integer , pointer :: snl      (:)   ! number of snow layers
-   real(r8), pointer :: dz       (:,:) ! layer thickness (m)  (-nlevsno+1:nlevgrnd)
-   real(r8), pointer :: zi       (:,:) ! interface level below a "z" level (m) (-nlevsno+0:nlevgrnd)
-   real(r8), pointer :: z        (:,:) ! interface level below a "z" level (m) (-nlevsno+0:nlevgrnd)
-   integer , pointer :: pfti     (:)   ! beginning pft index for each column
-   integer , pointer :: pftf     (:)   ! ending pft index for each column
-   integer , pointer :: npfts    (:)   ! number of patches for each column
+   integer , pointer :: snl      (:)   => null() ! number of snow layers
+   real(r8), pointer :: dz       (:,:) => null() ! layer thickness (m)  (-nlevsno+1:nlevgrnd)
+   real(r8), pointer :: zi       (:,:) => null() ! interface level below a "z" level (m) (-nlevsno+0:nlevgrnd)
+   real(r8), pointer :: z        (:,:) => null() ! interface level below a "z" level (m) (-nlevsno+0:nlevgrnd)
+   integer , pointer :: pfti     (:)   => null() ! beginning pft index for each column
+   integer , pointer :: pftf     (:)   => null() ! ending pft index for each column
+   integer , pointer :: npfts    (:)   => null() ! number of patches for each column
   contains
     procedure, public :: Init
   end type betr_column_type

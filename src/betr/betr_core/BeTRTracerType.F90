@@ -69,35 +69,36 @@ module BeTRTracerType
    integer :: id_trc_o17_o2                                      ! tag for O(17)O and its related species
    integer, pointer :: id_trc_h2o_tags(:)                        !tagged h2o tracers
 
-   logical, pointer :: is_volatile(:)                            !flag for volatile species,  true/false, (yes/no)
-   logical, pointer :: is_diffusive(:)
-   logical, pointer :: is_adsorb(:)                              !flag for adsorbable species, true/false (year/no), in equilibrium with aqueous phase and/or gaseous phase
-   logical, pointer :: is_advective(:)                           !flag for advective species, some species, like non-dissolved som does not undergo advection, rather bioturbation is the major mechanism for vertical transport
-   logical, pointer :: is_mobile(:)                              !flag indicating whether the tracer is mobile or inert, when it is innert, do not move it around
-   logical, pointer :: is_h2o(:)                                 !flag for water isotope
-   logical, pointer :: is_co2tag(:)                              !tagged co2 tracer?
-   logical, pointer :: is_dom(:)                                 !true if it is a dom tracer, place holder for rtm bgc
-   logical, pointer :: is_isotope(:)
-   logical, pointer :: is_frozen(:)                              !true if the tracer could be frozen
-   integer, pointer :: refisoid(:)                               !reference tracer for isotope calculation, this is setup only for non-h2o isotope now
-   integer, pointer :: adsorbid(:)                               !which tracer is adsorbed
-   integer, pointer :: volatileid(:)
-   integer, pointer :: h2oid(:)
-   integer, pointer :: adsorbgroupid(:)
-   integer, pointer :: volatilegroupid(:)                        !
-   integer, pointer :: groupid(:)
-   integer, pointer :: frozenid(:)
+   logical, pointer :: is_volatile(:)    => null()                       !flag for volatile species,  true/false, (yes/no)
+   logical, pointer :: is_diffusive(:)  => null()
+   logical, pointer :: is_adsorb(:)     => null()                         !flag for adsorbable species, true/false (year/no), in equilibrium with aqueous phase and/or gaseous phase
+   logical, pointer :: is_advective(:)  => null()                         !flag for advective species, some species, like non-dissolved som does not undergo advection, rather bioturbation is the major mechanism for vertical transport
+   logical, pointer :: is_mobile(:)     => null()                         !flag indicating whether the tracer is mobile or inert, when it is innert, do not move it around
+   logical, pointer :: is_h2o(:)        => null()                         !flag for water isotope
+   logical, pointer :: is_co2tag(:)     => null()                         !tagged co2 tracer?
+   logical, pointer :: is_dom(:)        => null()                         !true if it is a dom tracer, place holder for rtm bgc
+   logical, pointer :: is_isotope(:)   => null()
+   logical, pointer :: is_frozen(:)    => null()                          !true if the tracer could be frozen
+   integer, pointer :: refisoid(:)     => null()                          !reference tracer for isotope calculation, this is setup only for non-h2o isotope now
+   integer, pointer :: adsorbid(:)     => null()                          !which tracer is adsorbed
+   integer, pointer :: volatileid(:)  => null()
+   integer, pointer :: h2oid(:)    => null()
+   integer, pointer :: adsorbgroupid(:)  => null()
+   integer, pointer :: volatilegroupid(:)  => null()                      !
+   integer, pointer :: groupid(:) => null()
+   integer, pointer :: frozenid(:) => null()
 
    logical :: is_tagged_h2o =.false.                             !no tagged h2o run by default
-   real(r8),pointer :: tracer_solid_passive_diffus_scal_group(:) !reference diffusivity for solid phase tracer, for modeling turbation
-   real(r8),pointer :: tracer_solid_passive_diffus_thc_group(:)  !threshold diffusivity for solid phase tracer, for modeling turbation
+   real(r8),pointer :: tracer_solid_passive_diffus_scal_group(:) => null() !reference diffusivity for solid phase tracer, for modeling turbation
+   real(r8),pointer :: tracer_solid_passive_diffus_thc_group(:) => null() !threshold diffusivity for solid phase tracer, for modeling turbation
 
-   integer, pointer :: solid_passive_tracer_groupid(:,:)
-   integer, pointer :: tracer_group_memid(:,:)                   !grp, gmem
-   character(len=betr_var_name_length),pointer :: tracernames(:)                   !array with tracer names
-   character(len=betr_var_name_length),pointer :: units(:)
-   real(r8),pointer :: gram_mole_wt(:)                           !molecular weight of the master species, [g/mol]
-   real(r8),pointer :: vtrans_scal(:)                            !scaling factor for plant tracer uptake through transpiration, for non-water neutral aqueous tracers
+   integer, pointer :: solid_passive_tracer_groupid(:,:)  => null()
+   integer, pointer :: tracer_group_memid(:,:)            => null()       !grp, gmem
+   character(len=betr_var_name_length),pointer :: tracernames(:)    => null()               !array with tracer names
+   character(len=betr_var_name_length),pointer :: tracerfamilyname(:)=> null()
+   character(len=betr_var_name_length),pointer :: units(:) => null()
+   real(r8),pointer :: gram_mole_wt(:)      => null()                     !molecular weight of the master species, [g/mol]
+   real(r8),pointer :: vtrans_scal(:)       => null()                     !scaling factor for plant tracer uptake through transpiration, for non-water neutral aqueous tracers
 
   contains
      procedure, public  :: Init
@@ -205,6 +206,7 @@ module BeTRTracerType
   allocate(this%h2oid              (this%nh2o_tracers));         this%h2oid(:)           = nanid
   allocate(this%frozenid           (this%ngwmobile_tracers));    this%frozenid(:)        = nanid
   allocate(this%tracernames        (this%ntracers));             this%tracernames(:)     = ''
+  allocate(this%tracerfamilyname   (this%ntracers));             this%tracerfamilyname(:)= ''
   allocate(this%units              (this%ntracers));             this%units(:)           = 'mol m-3'
   allocate(this%vtrans_scal        (this%ngwmobile_tracers));    this%vtrans_scal(:)     = 0._r8   !no transport through xylem transpiration
 
@@ -229,7 +231,7 @@ module BeTRTracerType
 subroutine set_tracer(this, bstatus, trc_id, trc_name, is_trc_mobile, is_trc_advective, trc_group_id, &
    trc_group_mem, is_trc_diffusive, is_trc_volatile, trc_volatile_id, trc_volatile_group_id, &
    is_trc_h2o, trc_vtrans_scal, is_trc_adsorb, trc_adsorbid, trc_adsorbgroupid             , &
-   is_trc_frozen, trc_frozenid)
+   is_trc_frozen, trc_frozenid, trc_family_name)
 
 ! !DESCRIPTION:
 ! set up tracer property based on input configurations
@@ -254,11 +256,17 @@ subroutine set_tracer(this, bstatus, trc_id, trc_name, is_trc_mobile, is_trc_adv
   integer ,optional  , intent(in) :: trc_adsorbgroupid
   logical ,optional  , intent(in) :: is_trc_frozen
   integer ,optional  , intent(in) :: trc_frozenid
+  character(len=*),optional,intent(in) :: trc_family_name
   type(betr_status_type), intent(out)   :: bstatus
 
   call bstatus%reset()
 
   this%tracernames      (trc_id)    = trim(trc_name)
+  if(present(trc_family_name))then
+    this%tracerfamilyname(trc_id)   = trim(trc_family_name)
+  else
+    this%tracerfamilyname(trc_id)   = this%tracernames(trc_id)
+  endif
   this%is_mobile        (trc_id)    = is_trc_mobile
   this%groupid          (trc_id)    = trc_group_id
   this%tracer_group_memid(trc_group_id,trc_group_mem) = trc_id

@@ -806,6 +806,7 @@ contains
             do fc = 1, num_soilc
                c = filter_soilc(fc)
                inflx_top(c, k) = tracer_flx_infl(c,adv_trc_group(k))
+               !x print*,'infltop',adv_trc_group(k),tracer_flx_infl(c,adv_trc_group(k))
                !set to 0 to ensure outgoing boundary condition is imposed, this may not be correct for water isotopes
                inflx_bot(c,k) = 0._r8
                trc_bot(c,k) = tracer_conc_grndwater_col(c,adv_trc_group(k))
@@ -861,7 +862,6 @@ contains
                      trcid = adv_trc_group(k)
                      dmass(c, k) = dot_sum(tracer_conc_mobile_col(c, jtops(c):ubj, trcid), &
                       dz(c, jtops(c):ubj),bstatus)
-!x                     print*,'init_mass',bstatus%check_status(),trim(bstatus%print_msg())
                      if(bstatus%check_status())return
                   enddo
                endif
@@ -946,6 +946,7 @@ contains
                              ' transp=',transp_mass(c,k),' lech=',&
                              leaching_mass(c,k),' infl=',inflx_top(c,k),' dmass=',dmass(c,k), ' mass0=', &
                              mass0,'err_rel=',err_relative
+
                         msg=trim(msg)//new_line('A')//'advection mass balance error for tracer '//tracernames(j) &
                           //new_line('A')//errMsg(mod_filename, __LINE__)
                         call bstatus%set_msg(msg, err=-1)
@@ -1149,6 +1150,7 @@ contains
                  bot_concflux( : , : ,dif_trc_group(1:ntrcs)),                               &
                  update_col,                                                                 &
                  dtracer(:,lbj:ubj,1:ntrcs))
+
             if(bstatus%check_status())return
             !do tracer update
             do fc = 1, num_soilc
@@ -1249,9 +1251,10 @@ contains
                                 diff_surf(c,k) * dtime_loc(c)
                         endif
                      else
-                        write(msg,*) 'mass bal error dif '//trim(tracernames(trcid)), mass1,'col=',c, &
+                        write(msg,*) 'mass bal error dif '//trim(tracernames(trcid)), 'mass 0/1',mass0, mass1,'col=',c, &
                                new_line('A')//'err=', err_tracer(c,k), 'dmass=',dmass(c,k), ' dif=', diff_surf(c,k)*dtime_loc(c), &
                              ' prod=',dot_sum(x=local_source(c,jtops(c):ubj,k),y=dz(c,jtops(c):ubj),bstatus=bstatus)*dtime_loc(c)
+
                         if(bstatus%check_status())return
                         msg=trim(msg)//new_line('A')//'mass balance error for tracer '//trim(tracernames(trcid))//' in ' &
                            //trim(subname)//new_line('A')//errMsg(mod_filename, __LINE__)
@@ -1670,6 +1673,7 @@ contains
     if (lbj > 0) continue
 
     associate(                                                                  &
+         tracernames           => betrtracer_vars%tracernames                 , &
          ngwmobile_tracers     => betrtracer_vars%ngwmobile_tracers           , & !
          groupid               => betrtracer_vars%groupid                     , & !
          is_advective          => betrtracer_vars%is_advective                , & !

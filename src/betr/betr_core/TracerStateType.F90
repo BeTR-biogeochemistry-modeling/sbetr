@@ -26,7 +26,6 @@ module TracerStateType
      real(r8), pointer :: tracer_conc_surfwater_col     (:,:)      !tracer concentration in the hydraulic head
      real(r8), pointer :: tracer_conc_aquifer_col       (:,:)      !tracer concentration in the flux to aquifer
      real(r8), pointer :: tracer_conc_grndwater_col     (:,:)      !tracer concentration in the flux to groundwater, include lateral drainage and discharge to aquifer
-     real(r8), pointer :: tracer_col_molarmass_col      (:,:)      !for error tracking, column tracer mass
      real(r8), pointer :: tracer_conc_atm_col           (:,:)      !colum volatile tracer in the atmosphere
      real(r8), pointer :: tracer_P_gas_col              (:,:)      !total gas pressure at different depth, sum of different gas species.
      real(r8), pointer :: tracer_P_gas_frac_col         (:,:,:)    !fraction of the volatile species in the overall pressure
@@ -35,7 +34,7 @@ module TracerStateType
      real(r8), pointer :: tracer_conc_solid_equil_col   (:,:,:)    !tracer concentration in adsorbed/solid phase for each layer (mol/m3) (soil), which is in equilibrium with mobile phase
      real(r8), pointer :: tracer_conc_solid_passive_col (:,:,:)    !tracer concentration in passive solid phase, which is not in equilibrium with mobile phase. e.g. polymers, or protected monomers, or ice
      real(r8), pointer :: tracer_conc_frozen_col        (:,:,:)    !place holder, tracer concentration in frozen layer for unsaturated part for nonvolatile species
-     !real(r8), pointer :: tracer_conc_bubble_col        (:,:,:)    !place holder, a bubble pool to track the lake ebullition in freeze-thaw period, [col, levels, tracer]
+     !real(r8), pointer :: tracer_conc_bubble_col        (:,:,:)   !place holder, a bubble pool to track the lake ebullition in freeze-thaw period, [col, levels, tracer]
      real(r8), pointer :: beg_tracer_molarmass_col      (:,:)      !column integrated tracer mass
      real(r8), pointer :: end_tracer_molarmass_col      (:,:)      !column integrated tracer mass
      real(r8), pointer :: errtracer_col                 (:,:)      !column mass balance error
@@ -114,7 +113,6 @@ contains
     allocate(this%tracer_conc_surfwater_col     (begc:endc, 1:ngwmobile_tracers)) ; this%tracer_conc_surfwater_col(:,:) = nan
     allocate(this%tracer_conc_aquifer_col       (begc:endc, 1:ngwmobile_tracers)) ; this%tracer_conc_aquifer_col  (:,:) = nan
     allocate(this%tracer_conc_grndwater_col     (begc:endc, 1:ngwmobile_tracers)) ; this%tracer_conc_grndwater_col(:,:) = nan
-    allocate(this%tracer_col_molarmass_col      (begc:endc, 1:ntracers))          ; this%tracer_col_molarmass_col (:,:) = nan
     allocate(this%tracer_soi_molarmass_col      (begc:endc, 1:ntracers))          ; this%tracer_soi_molarmass_col (:,:) = nan
     allocate(this%errtracer_col                 (begc:endc, 1:ntracers))          ; this%errtracer_col            (:,:) = nan
     allocate(this%tracer_conc_atm_col           (begc:endc, 1:nvolatile_tracers))
@@ -212,7 +210,6 @@ contains
          call this%add_hist_var1d (fname=trim(tracernames(jj))//'_TRCER_COL_MOLAMASS', units='mol m-2', &
               avgflag='A', long_name='total molar mass in the column (soi+snow) for '//trim(tracernames(jj)), &
               default='inactive')
-
       enddo
 
     end associate
@@ -266,9 +263,6 @@ contains
 
             id=addone(idtemp2d);this%tracer_conc_mobile_col(:, :, jj) = states_2d(:,:,id)
 
-          !x  do ll = lbj, ubj
-          !x    print*,'read',this%tracer_conc_mobile_col(:,ll,jj),states_2d(:,ll,id)
-          !x  enddo
             if(is_adsorb(jj))then
               id=addone(idtemp2d);this%tracer_conc_solid_equil_col(:, :, adsorbid(jj)) = states_2d(:,:,id)
             endif
@@ -288,9 +282,6 @@ contains
 
             id=addone(idtemp2d);states_2d(:,:,id) = this%tracer_conc_mobile_col(:, :, jj)
 
-          !x  do ll = lbj, ubj
-          !x    print*,this%tracer_conc_mobile_col(:,ll,jj),states_2d(:,ll,id)
-          !x  enddo
             if(is_adsorb(jj))then
               id=addone(idtemp2d);states_2d(:,:,id) = this%tracer_conc_solid_equil_col(:, :, adsorbid(jj))
             endif
@@ -450,9 +441,7 @@ contains
     endif
 
     state_1d(begc:endc, addone(idtemp1d))=this%tracer_soi_molarmass_col(begc:endc, jj)
-
-    state_1d(begc:endc, addone(idtemp1d))= this%tracer_col_molarmass_col(begc:endc, jj)
-
+    state_1d(begc:endc, addone(idtemp1d))=this%end_tracer_molarmass_col(begc:endc, jj)
   enddo
 
   end associate
@@ -505,6 +494,7 @@ contains
             id=addone(nrest_2d);rest_varname_2d(id)=trim(tracernames(jj))//'_TRACER_CONC_SOLID_PASSIVE'
          endif
       enddo
+
     end associate
 
   end subroutine get_restartvars

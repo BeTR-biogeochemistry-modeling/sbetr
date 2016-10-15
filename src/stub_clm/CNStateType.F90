@@ -6,13 +6,14 @@ module CNStateType
 implicit none
 
   type, public :: cnstate_type
-     real(r8), pointer :: rc14_atm_patch               (:)     ! patch C14O2/C12O2 in atmosphere
-     real(r8), pointer :: froot_prof_patch             (:,:)
-     real(r8), pointer :: nfixation_prof_col           (:,:)   ! col (1/m) profile for N fixation additions
-     integer  ,pointer  :: isoilorder                  (:)     ! col global soil order data
-     real(r8), pointer :: cn_scalar                    (:)     ! cn scaling factor for root n uptake kinetics (no units)
-     real(r8), pointer :: cp_scalar                    (:)     ! cp scaling factor for root p uptake kinetics (no units)
-     real(r8), pointer :: ndep_prof_col                (:,:)
+     real(r8), pointer :: rc14_atm_patch               (:)   => null()  ! patch C14O2/C12O2 in atmosphere
+     real(r8), pointer :: froot_prof_patch             (:,:)=> null()
+     real(r8), pointer :: nfixation_prof_col           (:,:) => null()  ! col (1/m) profile for N fixation additions
+     integer  ,pointer :: isoilorder                   (:)  => null()   ! col global soil order data
+     real(r8), pointer :: cn_scalar                    (:)  => null()   ! cn scaling factor for root n uptake kinetics (no units)
+     real(r8), pointer :: cp_scalar                    (:)   => null()  ! cp scaling factor for root p uptake kinetics (no units)
+     real(r8), pointer :: ndep_prof_col                (:,:)=> null()
+     real(r8), pointer :: pdep_prof_col                (:,:)=> null()
   contains
 
     procedure, public  :: Init
@@ -52,10 +53,14 @@ contains
     !------------------------------------------------------------------------
 
     begp = bounds%begp; endp= bounds%endp
+    begc = bounds%begc; endc= bounds%endc
     allocate(this%rc14_atm_patch              (begp:endp)) ;    this%rc14_atm_patch              (:) = nan
     allocate(this%froot_prof_patch    (begp:endp,1:nlevdecomp_full)) ; this%froot_prof_patch    (:,:) = spval
     allocate(this%nfixation_prof_col  (begc:endc,1:nlevdecomp_full)) ; this%nfixation_prof_col  (:,:) = spval
     allocate(this%isoilorder            (begc:endc))                 ; this%isoilorder(:) = ispval
+    allocate(this%ndep_prof_col (begc:endc, 1:nlevdecomp_full)); this%ndep_prof_col(:,:) = spval
+    allocate(this%pdep_prof_col (begc:endc, 1:nlevdecomp_full)); this%pdep_prof_col(:,:) = spval
+
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------
@@ -90,7 +95,8 @@ contains
     do p = bounds%begp,bounds%endp
       this%rc14_atm_patch(p)              = c14ratio
     enddo
-
+    this%ndep_prof_col(:,:) = 0._r8
+    this%nfixation_prof_col(:,:) = 0._r8
   end subroutine initCold
 
 end module CNStateType

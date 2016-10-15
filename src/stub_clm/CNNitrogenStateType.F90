@@ -6,12 +6,12 @@ module CNNitrogenStateType
 implicit none
 
   type, public :: nitrogenstate_type
-    real(r8), pointer :: decomp_npools_vr_col         (:,:,:) ! col (gN/m3) vertically-resolved decomposing (litter, cwd, soil) N pools
-    real(r8), pointer :: smin_no3_vr_col              (:,:)   ! col (gN/m3) vertically-resolved soil mineral NO3
-    real(r8), pointer :: smin_no3_col                 (:)     ! col (gN/m2) soil mineral NO3 pool
-    real(r8), pointer :: smin_nh4_vr_col              (:,:)   ! col (gN/m3) vertically-resolved soil mineral NH4
-    real(r8), pointer :: smin_nh4_col                 (:)     ! col (gN/m2) soil mineral NH4 pool
-    real(r8), pointer :: sminn_vr_col                 (:,:)   ! col (gN/m3) vertically-resolved soil mineral N
+    real(r8), pointer :: decomp_npools_vr_col         (:,:,:) => null()! col (gN/m3) vertically-resolved decomposing (litter, cwd, soil) N pools
+    real(r8), pointer :: smin_no3_vr_col              (:,:)  => null() ! col (gN/m3) vertically-resolved soil mineral NO3
+    real(r8), pointer :: smin_no3_col                 (:)   => null()  ! col (gN/m2) soil mineral NO3 pool
+    real(r8), pointer :: smin_nh4_vr_col              (:,:)=> null()   ! col (gN/m3) vertically-resolved soil mineral NH4
+    real(r8), pointer :: smin_nh4_col                 (:)   => null()  ! col (gN/m2) soil mineral NH4 pool
+    real(r8), pointer :: sminn_vr_col                 (:,:)=> null()   ! col (gN/m3) vertically-resolved soil mineral N
 
   contains
 

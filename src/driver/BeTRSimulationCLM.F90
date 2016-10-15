@@ -35,8 +35,8 @@ module BeTRSimulationCLM
      procedure, public :: Init                      => CLMInit
      procedure, public :: StepWithoutDrainage       => CLMStepWithoutDrainage
      procedure, public :: StepWithDrainage          => CLMStepWithDrainage
-     !clm unique subroutines
      procedure, public :: SetBiophysForcing         => CLMSetBiophysForcing
+     !clm unique subroutines
      procedure, public :: ConsistencyCheck          => clm_h2oiso_consistency_check
      procedure, public :: DiagnoseDtracerFreezeThaw => CLMDiagnoseDtracerFreezeThaw
      procedure, public :: CalcDewSubFlux            => CLMCalcDewSubFlux

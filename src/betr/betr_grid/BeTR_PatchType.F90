@@ -2,10 +2,10 @@ module BeTR_PatchType
   use bshr_kind_mod, only: r8 => shr_kind_r8
 implicit none
   type, public :: betr_patch_type
-   real(r8), pointer :: wtcol(:)   !weight relative to a column
-   integer,  pointer :: column(:)  !column index
-   integer,  pointer :: itype(:)   !patch vegetation
-   real(r8), pointer :: crop(:)    !crop pft: 0. = not crop, 1. = crop pft
+   real(r8), pointer :: wtcol(:)  => null()  !weight relative to a column
+   integer,  pointer :: column(:) => null() !column index
+   integer,  pointer :: itype(:) => null()  !patch vegetation
+   real(r8), pointer :: crop(:)  => null()  !crop pft: 0. = not crop, 1. = crop pft
    integer :: npfts
   contains
     procedure, public :: init

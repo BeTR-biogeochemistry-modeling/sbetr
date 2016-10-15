@@ -34,21 +34,21 @@ module ColumnType
   !----------------------------------------------------
 
   type, public :: column_type
-    integer , pointer :: snl(:)                !number of snow layers
-    real(r8), pointer :: zi(:,:)               !interface level below a "z" level (m) (-nlevsno+0:nlevgrnd)
-    real(r8), pointer :: dz(:,:)               !layer thickness (m)  (-nlevsno+1:nlevgrnd)
-    real(r8), pointer :: z(:,:)                !layer depth (m) (-nlevsno+1:nlevgrnd)
+    integer , pointer :: snl(:)            => null()    !number of snow layers
+    real(r8), pointer :: zi(:,:)       => null()        !interface level below a "z" level (m) (-nlevsno+0:nlevgrnd)
+    real(r8), pointer :: dz(:,:)        => null()       !layer thickness (m)  (-nlevsno+1:nlevgrnd)
+    real(r8), pointer :: z(:,:)       => null()         !layer depth (m) (-nlevsno+1:nlevgrnd)
 
-    integer , pointer :: pfti                 (:)   ! beginning pft index for each column
-    integer , pointer :: pftf                 (:)   ! ending pft index for each column
-    real(r8), pointer :: wtgcell              (:)   ! weight (relative to gridcell)
-    integer , pointer :: gridcell             (:)   ! index into gridcell level quantities
+    integer , pointer :: pfti                 (:)  => null() ! beginning pft index for each column
+    integer , pointer :: pftf                 (:)  => null() ! ending pft index for each column
+    real(r8), pointer :: wtgcell              (:)  => null() ! weight (relative to gridcell)
+    integer , pointer :: gridcell             (:)  => null() ! index into gridcell level quantities
 
-     logical , pointer :: active               (:)   ! true=>do computations on this column
-     integer , pointer :: landunit             (:)   ! index into landunit level quantities
-     integer , pointer :: itype                (:)   ! column type
-     real(r8), pointer :: wtlunit              (:)   ! weight (relative to landunit)
-     integer , pointer :: npfts                (:)   ! number of patches for each column
+     logical , pointer :: active               (:) => null()  ! true=>do computations on this column
+     integer , pointer :: landunit             (:) => null()  ! index into landunit level quantities
+     integer , pointer :: itype                (:) => null()  ! column type
+     real(r8), pointer :: wtlunit              (:) => null()  ! weight (relative to landunit)
+     integer , pointer :: npfts                (:)  => null() ! number of patches for each column
   contains
     procedure          :: Init
     procedure, private :: InitAllocate

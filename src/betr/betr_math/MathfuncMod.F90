@@ -30,6 +30,7 @@ module MathfuncMod
   public :: minp
   public :: pd_decomp
   public :: num2str
+  public :: fpmax
 
   interface cumsum
      module procedure cumsum_v, cumsum_m
@@ -566,4 +567,19 @@ contains
        reaction_rates(j) = reaction_rates(j)*rscal(j)
     enddo
   end subroutine  apply_reaction_rscal
+
+  !-------------------------------------------------------------------------------
+
+  function fpmax(inval)result(ans)
+  !
+  ! DESCRIPTION
+  ! return positive values
+  implicit none
+  real(r8), intent(in) :: inval
+
+  real(r8) :: ans
+
+  ans = max(inval, 0._r8)
+  return
+  end function fpmax  
 end module MathfuncMod

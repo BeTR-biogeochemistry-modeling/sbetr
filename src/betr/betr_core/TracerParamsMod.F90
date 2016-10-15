@@ -468,7 +468,8 @@ contains
     is_volatile                => betrtracer_vars%is_volatile             , & !logical[intent(in)], is a volatile tracer?
     is_h2o                     => betrtracer_vars%is_h2o                  , & !logical[intent(in)], is a h2o tracer?
     tracer_group_memid         => betrtracer_vars%tracer_group_memid      , & !integer[intent(in)], tracer id
-    volatilegroupid            => betrtracer_vars%volatilegroupid           & !integer[intent(in)], location in the volatile vector
+    volatilegroupid            => betrtracer_vars%volatilegroupid         , & !integer[intent(in)], location in the volatile vector
+    tracerfamilyname           => betrtracer_vars%tracerfamilyname          &
    )
 
    do j = 1, ngwmobile_tracer_groups
@@ -482,7 +483,7 @@ contains
            if(n>=jtops(c))then
              !Henry's law constants
              henrycef_col(c,n,k)=get_henrycef(t_soisno(c,n), trcid, betrtracer_vars)
-             scal = get_equilibrium_scal(t_soisno(c,n), soi_pH(c,n), trcid,betrtracer_vars)
+             scal = get_equilibrium_scal(t_soisno(c,n), soi_pH(c,n), tracerfamilyname(trcid),betrtracer_vars)
              henrycef_col(c,n,k)=henrycef_col(c,n,k) * scal
              aqu2neutralcef_col(c,n,j)=1._r8/scal   !this will convert the bulk aqueous phase into neutral phase
            endif
@@ -569,6 +570,7 @@ contains
            c = filter(fc)
            if(n>=jtops(c))then
              bunsencef_col(c,n, k)= henrycef_col(c,n,k)*t_soisno(c,n)/12.2_r8
+!             if(n==1)print*,k,betrtracer_vars%tracernames(trcid),henrycef_col(c,n,k)
              !add the pH effect for tracers that can exist in multiple aqueous phases
              if(is_h2o(trcid))then
                !for water isotopes
@@ -640,7 +642,8 @@ contains
             !aqueous to bulk mobile phase
             if(is_h2o(j))then
               !this is a (bad) reverse hack because the hydrology code does not consider water vapor transport
-              !jyt, Feb, 18, 2016.
+              !jyt, Feb, 18, 2016, 1.e-12_r8 is a value for avoiding NaN
+
               aqu2bulkcef_mobile(c,n,j) = max(h2osoi_liqvol(c,n),1.e-12_r8)
             else
               aqu2bulkcef_mobile(c,n,j) = air_vol(c,n)/bunsencef_col(c,n,k)+h2osoi_liqvol(c,n)
@@ -688,7 +691,7 @@ contains
    use BeTRTracerType     , only : betrtracer_type
    implicit none
    real(r8)              , intent(in) :: temp, pH
-   integer               , intent(in) :: tracer
+   character(len=*)      , intent(in) :: tracer
    type(betrtracer_type) , intent(in) :: betrtracer_vars                                          ! betr configuration information
 
    !local variables
@@ -704,18 +707,19 @@ contains
    real(r8)            :: co2logK1, co2logK2, rscal
    character(len=255)  :: subname ='get_equilibrium_scal'
 
-   if(tracer==betrtracer_vars%id_trc_co2x)then
+   if(trim(tracer)=='CO2x')then
       !H2CO3  <--> H(+)+HCO3(-)    K1
       !HCO3(-)<--> H(+)+CO3(2-)    K2
       !1.e3_r8 converts from mol/dm3 to mol/m3
       co2logK1 = co2reflogK1+co2dH1*(1._r8/(2.303_r8*R*Tref)-1._r8/(2.303_r8*R*temp))
       co2logK2 = co2reflogK2+co2dH2*(1._r8/(2.303_r8*R*Tref)-1._r8/(2.303_r8*R*temp))
       rscal = 1._r8+10._r8**(co2logK1)*10._r8**(-pH)*(1._r8+10._r8**(co2logK2)*10._r8**(-pH))*1.e3_r8
-   elseif(tracer==betrtracer_vars%id_trc_nh3x)then
+
+   elseif(trim(tracer)=='NH3x')then
       !NH3H2O <--> NH4(+) + OH(-)
       !10._r8**(-pH) gives mol / dm3
       rscal = 1._r8+10._r8**(nh3logK)*10._r8**(-pH)*1.e3_r8
-   elseif(tracer==betrtracer_vars%id_trc_no3x)then
+   elseif(trim(tracer)=='NO3x')then
       !HNO3 <--> NO3(-) + H(+)
       rscal = 1._r8+10._r8**(no3logK)*10._r8**(-pH)*1.e3_r8
    else
@@ -1371,9 +1375,13 @@ contains
            !improvement when tracers are allowed to transport inside snow, such that the tracer infiltration is derived from mass balance in snow
            tracer_flx_infl(c,j) = bunsencef_topsoi(c,betrtracer_vars%volatilegroupid(j)) * &
                 tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1,j) * qflx_adv(c,0)
+
+!         print*,'trcflx',j,betrtracer_vars%tracernames(j),tracer_flx_infl(c,j),&
+!            bunsencef_topsoi(c,betrtracer_vars%volatilegroupid(j))
          else
            tracer_flx_infl(c,j) = 0._r8
          endif
+
        enddo
      endif
    enddo

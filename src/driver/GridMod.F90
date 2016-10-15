@@ -36,12 +36,14 @@ module BeTR_GridMod
 
      integer,  public          :: nlevgrnd
      real(r8), public          :: delta_z
-     real(r8), public, pointer :: zsoi(:)  !soil depth, node center 1 : nlevsoi
-     real(r8), public, pointer :: zisoi(:) !soil depth, interface,  0 : nlevsoi
-     real(r8), public, pointer :: dzsoi(:) !soil layer thickness
+     real(r8), public, pointer :: zsoi(:)  => null() !soil depth, node center 1 : nlevsoi
+     real(r8), public, pointer :: zisoi(:) => null() !soil depth, interface,  0 : nlevsoi
+     real(r8), public, pointer :: dzsoi(:) => null() !soil layer thickness
 
-     real(r8), public, pointer :: bsw(:) ! clap-hornberg parameter
-     real(r8), public, pointer :: watsat(:) ! saturated volumetric water content
+     real(r8), public, pointer :: bsw(:) => null() ! clap-hornberg parameter
+     real(r8), public, pointer :: watsat(:) => null() ! saturated volumetric water content
+     real(r8), public, pointer :: sucsat(:)=> null()
+     real(r8), public, pointer :: pctsand(:)=> null()
    contains
      procedure, public  :: Init
      procedure, public  :: ReadNamelist
@@ -91,7 +93,7 @@ contains
     write(*, *) 'zisoi = ', this%zisoi
     write(*, *) 'bsw = ', this%bsw
     write(*, *) 'watsat = ', this%watsat
-
+    write(*, *) 'sucsat = ', this%sucsat
   end subroutine Init
 
   ! ---------------------------------------------------------------------------
@@ -116,6 +118,11 @@ contains
     allocate(this%watsat(1:this%nlevgrnd))
     this%watsat = bspval
 
+    allocate(this%sucsat(1:this%nlevgrnd))
+    this%sucsat = bspval
+
+    allocate(this%pctsand(1:this%nlevgrnd))
+    this%pctsand = bspval
   end subroutine InitAllocate
 
   ! ---------------------------------------------------------------------------
@@ -216,6 +223,16 @@ contains
     call ncd_getvar(ncf_in, 'BSW', data)
     do j = 1, this%nlevgrnd
        this%bsw(j) = data(num_columns, j)
+    enddo
+
+    call ncd_getvar(ncf_in, 'SUCSAT', data)
+    do j = 1, this%nlevgrnd
+       this%sucsat(j) = data(num_columns, j)
+    enddo
+
+    call ncd_getvar(ncf_in, 'PCTSAND', data)
+    do j = 1, this%nlevgrnd
+      this%pctsand(j) = data(num_columns, j)
     enddo
 
     if (this%grid_type == dataset_grid) then

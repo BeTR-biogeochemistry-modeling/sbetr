@@ -27,17 +27,18 @@ module ForcingDataType
      integer                             :: num_levels
      integer                             :: num_time
      integer                             :: num_columns
-     real(r8), pointer                   :: t_soi(:,:)
-     real(r8), pointer                   :: h2osoi_liqvol(:,:)
-     real(r8), pointer                   :: h2osoi_liq(:,:)
-     real(r8), pointer                   :: h2osoi_ice(:,:)
-     real(r8), pointer                   :: qflx_infl(:)       !surface infiltration, mm/s
-     real(r8), pointer                   :: qflx_rootsoi(:,:)  !transpiration at depth, m/s
-     real(r8), pointer                   :: qflx_rootsoi_patch(:,:)  !transpiration at depth, m/s
-     real(r8), pointer                   :: pbot(:)            !amtospheric pressure, Pa
-     real(r8), pointer                   :: tbot(:)            !atmoshperic temperature, kelvin
-     real(r8), pointer                   :: h2osoi_icevol(:,:)
-     real(r8), pointer                   :: qbot(:)            !water flux at bottom boundary, mm/s
+     real(r8), pointer                   :: t_soi(:,:)  => null()
+     real(r8), pointer                   :: h2osoi_liqvol(:,:) => null()
+     real(r8), pointer                   :: h2osoi_liq(:,:) => null()
+     real(r8), pointer                   :: h2osoi_ice(:,:) => null()
+     real(r8), pointer                   :: qflx_infl(:)     => null()  !surface infiltration, mm/s
+     real(r8), pointer                   :: qflx_rootsoi(:,:) => null()  !transpiration at depth, m/s
+     real(r8), pointer                   :: qflx_rootsoi_patch(:,:) => null()  !transpiration at depth, m/s
+     real(r8), pointer                   :: pbot(:)      => null()      !amtospheric pressure, Pa
+     real(r8), pointer                   :: tbot(:)       => null()     !atmoshperic temperature, kelvin
+     real(r8), pointer                   :: h2osoi_icevol(:,:)=> null()
+     real(r8), pointer                   :: qbot(:)       => null()     !water flux at bottom boundary, mm/s
+     real(r8), pointer                   :: soilpsi(:)=> null()
    contains
      procedure, public :: Init
      procedure, public :: ReadData
@@ -143,7 +144,7 @@ contains
 
     call this%Init(num_levels, num_time)
     call this%ReadForcingData(grid)
-
+    !x print*,'read data tsoi',this%t_soi(1,:)
   end subroutine ReadData
 
   !------------------------------------------------------------------------
@@ -330,7 +331,7 @@ contains
     use atm2lndType       , only : atm2lnd_type
     use BeTR_TimeMod      , only : betr_time_type
     use BeTR_GridMod      , only : betr_grid_type
-    use betr_varcon       , only : betr_maxpatch_pft
+    use betr_varcon       , only : betr_maxpatch_pft, denh2o=> bdenh2o, denice => bdenice
     implicit none
     !arguments
     class(ForcingData_type)  , intent(in)    :: this
@@ -383,7 +384,10 @@ contains
              waterstate_vars%air_vol_col(c,j)       = grid%watsat(j)-waterstate_vars%h2osoi_liqvol_col(c,j)
              waterstate_vars%h2osoi_icevol_col(c,j) = this%h2osoi_icevol(tstep,j)
              soilstate_vars%eff_porosity_col(c,j)   = grid%watsat(j)-this%h2osoi_icevol(tstep,j)
+             soilstate_vars%watsat_col(c,j)         = grid%watsat(j)
              soilstate_vars%bsw_col(c,j)            = grid%bsw(j)
+             soilstate_vars%sucsat_col(c,j)         = grid%sucsat(j)
+             soilstate_vars%cellsand_col(c,lbj:ubj) = grid%pctsand(j)
              temperature_vars%t_soisno_col(c,j)     = this%t_soi(tstep,j)
              waterflux_vars%qflx_rootsoi_col(c,j)   = this%qflx_rootsoi(tstep,j)  !water exchange between soil and root, m/H2O/s
              do pi = 1, betr_maxpatch_pft
@@ -423,6 +427,10 @@ contains
           c = filter(fc)
           waterstate_vars%h2osoi_liq_col(c,j) = this%h2osoi_liq(tstep,j)
           waterstate_vars%h2osoi_ice_col(c,j) = this%h2osoi_ice(tstep,j)
+
+          waterstate_vars%h2osoi_vol_col(c,j) = waterstate_vars%h2osoi_liqvol_col(c,j) + &
+            waterstate_vars%h2osoi_icevol_col(c,j)
+          waterstate_vars%h2osoi_vol_col(c,j) = min(waterstate_vars%h2osoi_vol_col(c,j), grid%watsat(j))
        enddo
     enddo
   end subroutine UpdateForcing

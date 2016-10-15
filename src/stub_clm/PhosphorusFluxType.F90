@@ -6,30 +6,33 @@ module PhosphorusFluxType
 implicit none
 
   type, public :: phosphorusflux_type
-    real(r8), pointer :: sminp_leached_col                         (:)     !col inorganic P leaching loss, gP/m2/time step
-    real(r8), pointer :: sminp_runoff_col                          (:)     !col inorganic P runoff loss, gP/m2/time step
-    real(r8), pointer :: biochem_pmin_vr_col                       (:,:)   ! col vertically-resolved total biochemical P mineralization (gP/m3/s)
-    real(r8), pointer :: phenology_p_to_litr_met_p_col             (:,:)
-    real(r8), pointer :: dwt_frootp_to_litr_met_p_col              (:,:)
-    real(r8), pointer :: phenology_p_to_litr_cel_p_col             (:,:)
-    real(r8), pointer :: dwt_livecrootp_to_cwdp_col                (:,:)
-    real(r8), pointer :: phenology_p_to_litr_lig_p_col             (:,:)
-    real(r8), pointer :: m_decomp_ppools_to_fire_vr_col            (:,:,:)
-    real(r8), pointer :: dwt_deadcrootp_to_cwdp_col                (:,:)
-    real(r8), pointer :: dwt_frootp_to_litr_lig_p_col              (:,:)
-    real(r8), pointer :: dwt_frootp_to_litr_cel_p_col              (:,:)
-    real(r8), pointer :: gap_mortality_p_to_litr_met_p_col         (:,:)
-    real(r8), pointer :: gap_mortality_p_to_cwdp_col               (:,:)
-    real(r8), pointer :: gap_mortality_p_to_litr_lig_p_col         (:,:)
-    real(r8), pointer :: gap_mortality_p_to_litr_cel_p_col         (:,:)
-    real(r8), pointer :: harvest_p_to_litr_met_p_col               (:,:)
-    real(r8), pointer :: harvest_p_to_cwdp_col                     (:,:)
-    real(r8), pointer :: harvest_p_to_litr_lig_p_col               (:,:)
-    real(r8), pointer :: harvest_p_to_litr_cel_p_col               (:,:)
-    real(r8), pointer :: m_p_to_litr_met_fire_col                  (:,:)
-    real(r8), pointer :: m_p_to_litr_cel_fire_col                  (:,:)
-    real(r8), pointer :: m_p_to_litr_lig_fire_col                  (:,:)
-    real(r8), pointer :: fire_mortality_p_to_cwdp_col              (:,:)
+    real(r8), pointer :: sminp_leached_col                         (:)    => null() !col inorganic P leaching loss, gP/m2/time step
+    real(r8), pointer :: sminp_runoff_col                          (:)   => null()  !col inorganic P runoff loss, gP/m2/time step
+    real(r8), pointer :: biochem_pmin_vr_col                       (:,:) => null()  ! col vertically-resolved total biochemical P mineralization (gP/m3/s)
+    real(r8), pointer :: phenology_p_to_litr_met_p_col             (:,:)=> null()
+    real(r8), pointer :: dwt_frootp_to_litr_met_p_col              (:,:)=> null()
+    real(r8), pointer :: phenology_p_to_litr_cel_p_col             (:,:)=> null()
+    real(r8), pointer :: dwt_livecrootp_to_cwdp_col                (:,:)=> null()
+    real(r8), pointer :: phenology_p_to_litr_lig_p_col             (:,:)=> null()
+    real(r8), pointer :: m_decomp_ppools_to_fire_vr_col            (:,:,:)=> null()
+    real(r8), pointer :: dwt_deadcrootp_to_cwdp_col                (:,:)=> null()
+    real(r8), pointer :: dwt_frootp_to_litr_lig_p_col              (:,:)=> null()
+    real(r8), pointer :: dwt_frootp_to_litr_cel_p_col              (:,:)=> null()
+    real(r8), pointer :: gap_mortality_p_to_litr_met_p_col         (:,:)=> null()
+    real(r8), pointer :: gap_mortality_p_to_cwdp_col               (:,:)=> null()
+    real(r8), pointer :: gap_mortality_p_to_litr_lig_p_col         (:,:)=> null()
+    real(r8), pointer :: gap_mortality_p_to_litr_cel_p_col         (:,:)=> null()
+    real(r8), pointer :: harvest_p_to_litr_met_p_col               (:,:)=> null()
+    real(r8), pointer :: harvest_p_to_cwdp_col                     (:,:)=> null()
+    real(r8), pointer :: harvest_p_to_litr_lig_p_col               (:,:)=> null()
+    real(r8), pointer :: harvest_p_to_litr_cel_p_col               (:,:)=> null()
+    real(r8), pointer :: m_p_to_litr_met_fire_col                  (:,:)=> null()
+    real(r8), pointer :: m_p_to_litr_cel_fire_col                  (:,:)=> null()
+    real(r8), pointer :: m_p_to_litr_lig_fire_col                  (:,:)=> null()
+    real(r8), pointer :: fire_mortality_p_to_cwdp_col              (:,:)=> null()
+    real(r8), pointer :: primp_to_labilep_vr_col                   (:,:)=> null()
+    real(r8), pointer :: pdep_to_sminp_col                         (:)=> null()
+    real(r8), pointer :: fert_p_to_sminp_col                       (:)=> null()
   contains
 
     procedure, public  :: Init
@@ -72,10 +75,35 @@ contains
     begp = bounds%begp; endp= bounds%endp
     begc = bounds%begc; endc= bounds%endc
 
-    allocate(this%sminp_leached_col           (begc:endc              ))     ;this%sminp_leached_col                (:)    = nan
-    allocate(this%sminp_runoff_col           (begc:endc              ))      ;this%sminp_runoff_col                (:)    = nan
-    allocate(this%biochem_pmin_vr_col       (begc:endc,1:nlevdecomp_full))   ;this%biochem_pmin_vr_col               (:,:) = nan
+    allocate(this%sminp_leached_col     (begc:endc              ))     ;this%sminp_leached_col          (:)    = nan
+    allocate(this%sminp_runoff_col      (begc:endc              ))      ;this%sminp_runoff_col         (:)    = nan
+    allocate(this%biochem_pmin_vr_col   (begc:endc,1:nlevdecomp_full))   ;this%biochem_pmin_vr_col      (:,:) = nan
 
+    allocate(this%phenology_p_to_litr_met_p_col(begc:endc, 1:nlevdecomp_full)); this%phenology_p_to_litr_met_p_col(:,:) = nan
+    allocate(this%dwt_frootp_to_litr_met_p_col(begc:endc, 1:nlevdecomp_full)); this%dwt_frootp_to_litr_met_p_col(:,:) = nan
+    allocate(this%phenology_p_to_litr_cel_p_col(begc:endc,1:nlevdecomp_full)); this%phenology_p_to_litr_cel_p_col(:,:) = nan
+    allocate(this%dwt_livecrootp_to_cwdp_col(begc:endc,1:nlevdecomp_full)); this%dwt_livecrootp_to_cwdp_col(:,:) = nan
+    allocate(this%phenology_p_to_litr_lig_p_col(begc:endc, 1:nlevdecomp_full)); this%phenology_p_to_litr_lig_p_col(:,:) = nan
+    allocate(this%m_decomp_ppools_to_fire_vr_col(begc:endc,1:nlevdecomp_full,1:7)); this%m_decomp_ppools_to_fire_vr_col(:,:,:) = nan
+    allocate(this%dwt_deadcrootp_to_cwdp_col(begc:endc, 1:nlevdecomp_full)); this%dwt_deadcrootp_to_cwdp_col(:,:) = nan
+    allocate(this%dwt_frootp_to_litr_lig_p_col(begc:endc,1:nlevdecomp_full)); this%dwt_frootp_to_litr_lig_p_col(:,:) = nan
+    allocate(this%dwt_frootp_to_litr_cel_p_col(begc:endc,1:nlevdecomp_full)); this%dwt_frootp_to_litr_cel_p_col(:,:) = nan
+    allocate(this%gap_mortality_p_to_litr_met_p_col(begc:endc,1:nlevdecomp_full)); this%gap_mortality_p_to_litr_met_p_col(:,:) = nan
+    allocate(this%gap_mortality_p_to_cwdp_col(begc:endc,1:nlevdecomp_full)); this%gap_mortality_p_to_cwdp_col(:,:) = nan
+    allocate(this%gap_mortality_p_to_litr_lig_p_col(begc:endc,1:nlevdecomp_full)); this%gap_mortality_p_to_litr_lig_p_col(:,:) = nan
+    allocate(this%gap_mortality_p_to_litr_cel_p_col(begc:endc,1:nlevdecomp_full)); this%gap_mortality_p_to_litr_cel_p_col(:,:) = nan
+    allocate(this%harvest_p_to_litr_met_p_col(begc:endc,1:nlevdecomp_full)); this%harvest_p_to_litr_met_p_col(:,:) = nan
+    allocate(this%harvest_p_to_cwdp_col(begc:endc,1:nlevdecomp_full)); this%harvest_p_to_cwdp_col(:,:) = nan
+    allocate(this%harvest_p_to_litr_lig_p_col(begc:endc,1:nlevdecomp_full)); this%harvest_p_to_litr_lig_p_col(:,:) = nan
+    allocate(this%harvest_p_to_litr_cel_p_col(begc:endc,1:nlevdecomp_full)); this%harvest_p_to_litr_cel_p_col(:,:) = nan
+    allocate(this%m_p_to_litr_met_fire_col(begc:endc,1:nlevdecomp_full)); this%m_p_to_litr_met_fire_col(:,:) = nan
+    allocate(this%m_p_to_litr_cel_fire_col(begc:endc,1:nlevdecomp_full)); this%m_p_to_litr_cel_fire_col(:,:) = nan
+    allocate(this%m_p_to_litr_lig_fire_col(begc:endc,1:nlevdecomp_full)); this%m_p_to_litr_lig_fire_col(:,:) = nan
+    allocate(this%fire_mortality_p_to_cwdp_col(begc:endc,1:nlevdecomp_full)); this%fire_mortality_p_to_cwdp_col(:,:) = nan
+    allocate(this%primp_to_labilep_vr_col(begc:endc,1:nlevdecomp_full)); this%primp_to_labilep_vr_col(:,:) = nan
+    allocate(this%pdep_to_sminp_col(begc:endc)); this%pdep_to_sminp_col(begc:endc) = nan
+    allocate(this%pdep_to_sminp_col(begc:endc)); this%pdep_to_sminp_col(begc:endc) = nan
+    allocate(this%fert_p_to_sminp_col(begc:endc)); this%fert_p_to_sminp_col(begc:endc) = nan
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------
@@ -107,7 +135,31 @@ contains
     integer               :: begg, endg
 
 
-
+    this%phenology_p_to_litr_met_p_col(:,:) = 0._r8
+    this%dwt_frootp_to_litr_met_p_col(:,:) = 0._r8
+    this%phenology_p_to_litr_cel_p_col(:,:) = 0._r8
+    this%dwt_livecrootp_to_cwdp_col(:,:) = 0._r8
+    this%phenology_p_to_litr_lig_p_col(:,:) = 0._r8
+    this%m_decomp_ppools_to_fire_vr_col(:,:,:) = 0._r8
+    this%dwt_deadcrootp_to_cwdp_col(:,:) = 0._r8
+    this%dwt_frootp_to_litr_lig_p_col(:,:) = 0._r8
+    this%dwt_frootp_to_litr_cel_p_col(:,:) = 0._r8
+    this%gap_mortality_p_to_litr_met_p_col(:,:) = 0._r8
+    this%gap_mortality_p_to_cwdp_col(:,:) = 0._r8
+    this%gap_mortality_p_to_litr_lig_p_col(:,:) = 0._r8
+    this%gap_mortality_p_to_litr_cel_p_col(:,:) = 0._r8
+    this%harvest_p_to_litr_met_p_col(:,:) = 0._r8
+    this%harvest_p_to_cwdp_col(:,:) = 0._r8
+    this%harvest_p_to_litr_lig_p_col(:,:) = 0._r8
+    this%harvest_p_to_litr_cel_p_col(:,:) = 0._r8
+    this%m_p_to_litr_met_fire_col(:,:) = 0._r8
+    this%m_p_to_litr_cel_fire_col(:,:) = 0._r8
+    this%m_p_to_litr_lig_fire_col(:,:) = 0._r8
+    this%fire_mortality_p_to_cwdp_col(:,:) = 0._r8
+    this%primp_to_labilep_vr_col(:,:) = 0._r8
+    this%pdep_to_sminp_col(:) = 0._r8
+    this%pdep_to_sminp_col(:) = 0._r8
+    this%fert_p_to_sminp_col(:) = 0._r8
 
   end subroutine initCold
 

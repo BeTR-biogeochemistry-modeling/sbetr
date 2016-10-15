@@ -53,8 +53,8 @@ module BetrType
      type(tracerboundarycond_type) , public              :: tracerboundaryconds
      type(betr_aerecond_type)      , private             :: aereconds
 
-     real(r8)                      , private, pointer    :: h2osoi_liq_copy(:,:)
-     real(r8)                      , private, pointer    :: h2osoi_ice_copy(:,:)
+     real(r8)                      , private, pointer    :: h2osoi_liq_copy(:,:) => null()
+     real(r8)                      , private, pointer    :: h2osoi_ice_copy(:,:) => null()
 
      ! FIXME(bja, 201603) replace LSM specific types!
 
@@ -77,7 +77,8 @@ module BetrType
      procedure, public  :: get_hist_size
      procedure, private :: ReadNamelist
      procedure, private :: create_betr_application
-     procedure, public  :: HistRetrieve
+     procedure, public  :: HistRetrieveState
+     procedure, public  :: HistRetrieveFlux
      procedure, public  :: set_restvar
      procedure, public  :: get_restartvar
   end type betr_type
@@ -133,10 +134,11 @@ contains
     end if
 
     lbj = bounds%lbj;  ubj = bounds%ubj
-
+    !read in top level control parameters
     call this%ReadNamelist(namelist_buffer, bstatus)
     if(bstatus%check_status())return
 
+    !read in application specific parameters
     call this%create_betr_application(this%bgc_reaction, this%plant_soilbgc, this%reaction_method, bstatus)
     if(bstatus%check_status())return
 
@@ -329,7 +331,6 @@ contains
          this%tracerboundaryconds,                             &
          this%plant_soilbgc, biogeo_flux, betr_status)
     if(betr_status%check_status())return
-
     call tracer_gws_transport(betr_time, bounds, col, pft, num_soilc, filter_soilc, &
       Rfactor, biophysforc, biogeo_flux, this%tracers, this%tracerboundaryconds  , &
       this%tracercoeffs,  this%tracerstates, this%tracerfluxes, this%bgc_reaction, &
@@ -1178,13 +1179,15 @@ contains
 
   subroutine get_hist_size(this, num_state1d, num_state2d, num_flux1d, num_flux2d, &
          nmlist_hist1d_state_buffer, nmlist_hist2d_state_buffer, &
-         nmlist_hist1d_flux_buffer, nmlist_hist2d_flux_buffer)
+         nmlist_hist1d_flux_buffer, nmlist_hist2d_flux_buffer, bstatus)
   !
   ! DESCRIPTION
   ! return number of variables for history output
   !
   ! USES
   use betr_ctrl, only : max_betr_hist_type
+  use BetrStatusType      , only : betr_status_type
+  use betr_constants , only : stdout
   implicit none
   !ARGUMENTS
   class(betr_type)  ,     intent(inout) :: this
@@ -1196,12 +1199,34 @@ contains
   character(len=255), intent(out) :: nmlist_hist2d_state_buffer(max_betr_hist_type)
   character(len=255), intent(out) :: nmlist_hist1d_flux_buffer(max_betr_hist_type)
   character(len=255), intent(out) :: nmlist_hist2d_flux_buffer(max_betr_hist_type)
+  type(betr_status_type)    , intent(out) :: bstatus
   integer :: j
 
+  call bstatus%reset()
   num_state1d = this%tracerstates%num_hist1d
+  if(num_state1d > max_betr_hist_type)then
+    write(stdout,*)'num_state1d limit',num_state1d, max_betr_hist_type
+    call bstatus%set_msg(msg='# of 1d state variables are defined more than allowed', err=-1)
+    return
+  endif
   num_state2d = this%tracerstates%num_hist2d
+  if(num_state2d > max_betr_hist_type)then
+    write(stdout,*)'num_state2d limit',num_state2d, max_betr_hist_type
+    call bstatus%set_msg(msg='# of 2d state variables are defined more than allowed', err=-1)
+    return
+  endif
   num_flux1d  = this%tracerfluxes%num_hist1d
+  if(num_flux1d > max_betr_hist_type)then
+    write(stdout,*)'num_flux1d limit',num_flux1d, max_betr_hist_type
+    call bstatus%set_msg(msg='# of 1d flux variables are defined more than allowed', err=-1)
+    return
+  endif
   num_flux2d  = this%tracerfluxes%num_hist2d
+  if(num_flux2d > max_betr_hist_type)then
+    write(stdout,*)'num_flux2d limit',num_flux2d, max_betr_hist_type
+    call bstatus%set_msg(msg='# of 2d flux variables are defined more than allowed', err=-1)
+    return
+  endif
 
   do j = 1, num_state1d
     nmlist_hist1d_state_buffer(j) = this%tracerstates%nmlist_hist1d_buffer(j)
@@ -1221,26 +1246,37 @@ contains
   end subroutine get_hist_size
 
   !------------------------------------------------------------------------
-  subroutine HistRetrieve(this, bounds, lbj, ubj, num_state1d, num_state2d, &
-     num_flux1d, num_flux2d, states_1d, states_2d, fluxes_1d, fluxes_2d)
+  subroutine HistRetrieveState(this, bounds, lbj, ubj, &
+     num_state1d, num_state2d, states_1d, states_2d)
   implicit none
   class(betr_type)  ,     intent(inout) :: this
   type(bounds_type) , intent(in)    :: bounds               ! bounds
   integer, intent(in) :: lbj, ubj
   integer           ,     intent(in)   :: num_state1d
   integer           ,     intent(in)   :: num_state2d
-  integer           ,     intent(in)   :: num_flux1d
-  integer           ,     intent(in)   :: num_flux2d
   real(r8)          , intent(out) :: states_1d(bounds%begc:bounds%endc,1:num_state1d)
   real(r8)          , intent(out) :: states_2d(bounds%begc:bounds%endc,lbj:ubj, 1:num_state2d)
-  real(r8)          , intent(out) :: fluxes_1d(bounds%begc:bounds%endc,1:num_flux1d)
-  real(r8)          , intent(out) :: fluxes_2d(bounds%begc:bounds%endc,lbj:ubj, 1:num_flux2d)
 
   call this%tracerstates%retrieve_hist(bounds, lbj, ubj, states_2d, states_1d, this%tracers)
 
+
+  end subroutine HistRetrieveState
+
+  !------------------------------------------------------------------------
+  subroutine HistRetrieveFlux(this, bounds, lbj, ubj, &
+     num_flux1d, num_flux2d,  fluxes_1d, fluxes_2d)
+  implicit none
+  class(betr_type)  ,     intent(inout) :: this
+  type(bounds_type) , intent(in)    :: bounds               ! bounds
+  integer, intent(in) :: lbj, ubj
+  integer           ,     intent(in)   :: num_flux1d
+  integer           ,     intent(in)   :: num_flux2d
+  real(r8)          , intent(out) :: fluxes_1d(bounds%begc:bounds%endc,1:num_flux1d)
+  real(r8)          , intent(out) :: fluxes_2d(bounds%begc:bounds%endc,lbj:ubj, 1:num_flux2d)
+
   call this%tracerfluxes%retrieve_hist(bounds, lbj, ubj, fluxes_2d, fluxes_1d, this%tracers)
 
-  end subroutine HistRetrieve
+  end subroutine HistRetrieveFlux
 
   !------------------------------------------------------------------------
   subroutine get_restartvar(this, nrest_1d, nrest_2d,rest_varname_1d, &

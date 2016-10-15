@@ -5,10 +5,10 @@ module CanopyStateType
 implicit none
 
   type, public :: canopystate_type
-     real(r8) , pointer :: altmax_col               (:)   ! col maximum annual depth of thaw
-     real(r8) , pointer :: altmax_lastyear_col      (:)   ! col prior year maximum annual depth of thaw
-     real(r8),  pointer :: lbl_rsc_h2o_patch        (:)   ! laminar boundary layer resistance for water over dry leaf (s/m)
-     real(r8) , pointer :: elai_patch               (:)   ! patch canopy one-sided leaf area index with burying by snow
+     real(r8) , pointer :: altmax_col               (:)  => null() ! col maximum annual depth of thaw
+     real(r8) , pointer :: altmax_lastyear_col      (:)  => null() ! col prior year maximum annual depth of thaw
+     real(r8),  pointer :: lbl_rsc_h2o_patch        (:)  => null() ! laminar boundary layer resistance for water over dry leaf (s/m)
+     real(r8) , pointer :: elai_patch               (:)  => null() ! patch canopy one-sided leaf area index with burying by snow
   contains
 
     procedure, public  :: Init
@@ -52,7 +52,7 @@ contains
     allocate(this%altmax_col               (begc:endc))           ; this%altmax_col               (:)   = spval
     allocate(this%altmax_lastyear_col      (begc:endc))           ; this%altmax_lastyear_col      (:)   = spval
     allocate(this%lbl_rsc_h2o_patch        (begp:endp))           ; this%lbl_rsc_h2o_patch        (:)   = nan
-    allocate(this%elai_patch               (begp:endp))           ; this%elai_patch               (:)   = nan    
+    allocate(this%elai_patch               (begp:endp))           ; this%elai_patch               (:)   = nan
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------

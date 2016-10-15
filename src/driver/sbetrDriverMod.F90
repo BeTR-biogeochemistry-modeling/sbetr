@@ -40,6 +40,10 @@ contains
   use clm_instMod           , only : temperature_vars
   use clm_instMod           , only : waterflux_vars
   use clm_instMod           , only : waterstate_vars
+  use clm_instMod           , only : cnstate_vars
+  use clm_instMod           , only : nitrogenflux_vars
+  use clm_instMod           , only : phosphorusflux_vars
+  use clm_instMod           , only : soil_water_retention_curve
   use ColumnType            , only : col
   use clmgridMod            , only : init_clm_vertgrid
   use clm_initializeMod     , only : initialize
@@ -54,11 +58,11 @@ contains
   use PatchType             , only : pft
   use landunit_varcon       , only : istsoil
   use clm_varpar            , only : nlevsno, nlevsoi
+
   implicit none
   !arguments
   character(len=betr_filename_length)      , intent(in) :: base_filename
   character(len=betr_namelist_buffer_size) , intent(in) :: namelist_buffer
-
 
   !local variables
   class(betr_simulation_type), pointer :: simulation
@@ -77,8 +81,13 @@ contains
   class(ForcingData_type), allocatable :: forcing_data
   class(betr_grid_type), allocatable :: grid_data
   class(betr_time_type), allocatable :: time_vars
+
   character(len=256) :: restfile
   integer :: nstep
+  logical :: do_standalone=.false.
+  logical :: do_alm=.false.
+  logical :: do_clm=.false.
+
   !initialize parameters
   call read_name_list(namelist_buffer, simulator_name, continue_run)
   simulation => create_betr_simulation(simulator_name)
@@ -132,26 +141,32 @@ contains
     call time_vars%print_cur_time()
   endif
 
-  !print*,'obtain waterstate_vars for initilizations that need it'
+  !x print*,'obtain waterstate_vars for initilizations that need it'
   call forcing_data%UpdateForcing(grid_data,                                            &
        bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, time_vars, col, &
        pft, atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars    ,   &
        waterflux_vars, temperature_vars, chemstate_vars, simulation%jtops)
 
+  !x print*,'af init update',forcing_data%t_soi(1,:)
   !print*,'initial water state variable output',time_vars%tstep
   call calc_qadv(ubj, simulation%num_soilc, &
        simulation%filter_soilc, waterstate_vars)
 
+  !x print*,'bf sim init',forcing_data%t_soi(1,:)
   !print*,'base_filename:',trim(base_filename)
   call  simulation%Init(base_filename, namelist_buffer, bounds, lun, col, pft, waterstate_vars)
+  !x print*,'af sim init',forcing_data%t_soi(1,:)
 
   select type(simulation)
   class is (betr_simulation_standalone_type)
     print*,'simulation using standalone-betr'
+    do_standalone=.true.
   class is (betr_simulation_alm_type)
     print*,'simulation using alm-betr'
+    do_alm=.true.
   class is (betr_simulation_clm_type)
     print*,'simulation using clm-betr'
+    do_clm=.true.
   class default
   end select
 
@@ -169,7 +184,7 @@ contains
     call time_vars%proc_initstep()
   endif
 
-
+  !x print*,'bf loop',forcing_data%t_soi(1,:)
   do
     record = record + 1
 
@@ -178,7 +193,7 @@ contains
 
     call simulation%PreDiagSoilColWaterFlux(simulation%num_soilc,  simulation%filter_soilc)
 
-    ! print*,'update forcing for betr'
+    !x print*,'update forcing for betr'
     !set envrionmental forcing by reading foring data: temperature, moisture, atmospheric resistance
     !from either user specified file or clm history file
 
@@ -205,13 +220,45 @@ contains
     !the following call could be lsm specific, so that
     !different lsm could use different definitions of input
     !variables, e.g. clm doesn't use cnstate_vars as public variables
-    call simulation%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi,  &
-      carbonflux_vars=carbonflux_vars,       &
-      waterstate_vars=waterstate_vars,         waterflux_vars=waterflux_vars,         &
-      temperature_vars=temperature_vars,       soilhydrology_vars=soilhydrology_vars, &
-      atm2lnd_vars=atm2lnd_vars,               canopystate_vars=canopystate_vars,     &
-      chemstate_vars=chemstate_vars,           soilstate_vars=soilstate_vars)
+    select type(simulation)
+    class is (betr_simulation_alm_type)
+
+      call simulation%CalcSmpL(bounds, 1, nlevsoi, simulation%num_soilc, &
+        simulation%filter_soilc, temperature_vars%t_soisno_col, &
+        soilstate_vars, waterstate_vars, soil_water_retention_curve)
+
+      call simulation%SetBiophysForcing(bounds, col, pft,                               &
+        carbonflux_vars=carbonflux_vars,                                                &
+        waterstate_vars=waterstate_vars,         waterflux_vars=waterflux_vars,         &
+        temperature_vars=temperature_vars,       soilhydrology_vars=soilhydrology_vars, &
+        atm2lnd_vars=atm2lnd_vars,               canopystate_vars=canopystate_vars,     &
+        chemstate_vars=chemstate_vars,           soilstate_vars=soilstate_vars, &
+        cnstate_vars = cnstate_vars)
+
+      call input_substrates((record==1), bounds, col, simulation%num_soilc, simulation%filter_soilc,&
+          cnstate_vars, carbonflux_vars,  nitrogenflux_vars, phosphorusflux_vars)
+
+      call simulation%PlantSoilBGCSend(bounds, simulation%num_soilc, simulation%filter_soilc,&
+        cnstate_vars,  carbonflux_vars,  nitrogenflux_vars, phosphorusflux_vars)
+
+    class default
+      call simulation%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi,               &
+        carbonflux_vars=carbonflux_vars,                                                &
+        waterstate_vars=waterstate_vars,         waterflux_vars=waterflux_vars,         &
+        temperature_vars=temperature_vars,       soilhydrology_vars=soilhydrology_vars, &
+        atm2lnd_vars=atm2lnd_vars,               canopystate_vars=canopystate_vars,     &
+        chemstate_vars=chemstate_vars,           soilstate_vars=soilstate_vars)
+    end select
+
+
     call simulation%StepWithoutDrainage(time_vars, bounds, col, pft)
+
+    select type(simulation)
+    class is (betr_simulation_alm_type)
+      call simulation%PlantSoilBGCRecv(bounds, simulation%num_soilc, simulation%filter_soilc,&
+       carbonflux_vars, nitrogenflux_vars, phosphorusflux_vars)
+    class default
+    end select
 
     !print*,'with drainge'
     !set forcing variable for drainage
@@ -234,19 +281,19 @@ contains
        simulation%filter_soilc, time_vars, waterflux_vars%qflx_adv_col)
 
     call time_vars%proc_nextstep()
-    !print*,'write restart file? is not functionning at the moment'
+
     if(time_vars%its_time_to_write_restart()) then
        !set restfname
        nstep = time_vars%get_nstep()
        write(restfname,'(A,I8.8,A)')trim(base_filename)//'.',nstep,'.rst.nc'
        call write_restinfo(restfname, nstep)
-       !print*, 'open restart file'
+
        call simulation%BeTRRestartOpen(restfname, flag='write', ncid=ncid)
-       ! print*,'define restart file'
+
        call simulation%BeTRRestart(bounds, ncid, simulation%num_soilc, simulation%filter_soilc, flag='define')
-       ! print*,'write restart file'
+
        call simulation%BeTRRestart(bounds, ncid, simulation%num_soilc, simulation%filter_soilc, flag='write')
-       ! print*,'close file'
+
        call simulation%BeTRRestartClose(ncid)
     endif
 
@@ -321,8 +368,6 @@ end subroutine sbetrBGC_driver
 
   end subroutine read_name_list
 
-
-
   !-------------------------------------------------------------------------------
 
   subroutine calc_qadv(ubj, numf, filter, waterstate_vars)
@@ -386,4 +431,83 @@ end subroutine sbetrBGC_driver
   write(rpt_unit,*)trim(fname), nstep
   close(rpt_unit)
   end subroutine write_restinfo
+
+  !-------------------------------------------------------------------------------
+  subroutine input_substrates(yesno, bounds, col, num_soilc, filter_soilc,&
+    cnstate_vars, carbonflux_vars,  nitrogenflux_vars, phosphorusflux_vars)
+
+  !
+  ! DESCRIPTIONS
+  ! add substrates for the decompositition test
+  use ColumnType     , only : column_type
+  use decompMod             , only : bounds_type
+  use CNCarbonFluxType, only : carbonflux_type
+  use CNNitrogenFluxType, only : nitrogenflux_type
+  use PhosphorusFluxType, only : phosphorusflux_type
+  use CNStateType, only : cnstate_type
+  use clm_varpar, only : i_cwd, i_met_lit, i_cel_lit, i_lig_lit
+  use clm_varpar            , only : nlevsoi
+  implicit none
+  logical           , intent(in)  :: yesno
+  type(bounds_type) , intent(in)  :: bounds
+  type(column_type) , intent(in)  :: col ! column type
+  integer           , intent(in)  :: num_soilc
+  integer           , intent(in)  :: filter_soilc(:)
+  type(cnstate_type), intent(inout)  :: cnstate_vars
+  type(carbonflux_type), intent(inout):: carbonflux_vars
+  type(nitrogenflux_type), intent(inout):: nitrogenflux_vars
+  type(phosphorusflux_type), intent(inout):: phosphorusflux_vars
+
+  integer :: fc, j, c
+  real(r8):: val_c
+  real(r8):: val_n, val_p
+  real(r8):: tdz(bounds%begc:bounds%endc)
+  
+  if(yesno)then
+    val_c = 1.e-6_r8
+    val_n = 1.e-10_r8
+    val_p = 1.e-12_r8
+  else
+    val_c = 0._r8
+    val_n = 0._r8
+    val_p = 0._r8
+  endif
+  do fc = 1, num_soilc
+    c = filter_soilc(fc)
+    nitrogenflux_vars%ndep_to_sminn_col(c) = val_n
+    phosphorusflux_vars%pdep_to_sminp_col(c) = val_p
+  enddo
+  do j = 1, nlevsoi
+    do fc = 1, num_soilc
+      c = filter_soilc(fc)
+      tdz(c)=sum(col%dz(c,1:nlevsoi))
+    enddo
+  enddo
+
+  do j = 1, nlevsoi
+    do fc = 1, num_soilc
+      c = filter_soilc(fc)
+      carbonflux_vars%phenology_c_to_litr_met_c_col(c,j) = val_c !gC/m3/s
+      carbonflux_vars%phenology_c_to_litr_cel_c_col(c,j) = val_c !gC/m3/s
+      carbonflux_vars%phenology_c_to_litr_lig_c_col(c,j) = val_c !gC/m3/s
+
+      nitrogenflux_vars%phenology_n_to_litr_met_n_col(c,j) = val_c/90._r8 !gN/m3/s
+      nitrogenflux_vars%phenology_n_to_litr_cel_n_col(c,j) = val_c/90._r8 !gN/m3/s
+      nitrogenflux_vars%phenology_n_to_litr_lig_n_col(c,j) = val_c/90._r8 !gN/m3/s
+
+      phosphorusflux_vars%phenology_p_to_litr_met_p_col(c,j) = val_c/1600._r8 !gP/m3/s
+      phosphorusflux_vars%phenology_p_to_litr_cel_p_col(c,j) = val_c/1600._r8 !gP/m3/s
+      phosphorusflux_vars%phenology_p_to_litr_lig_p_col(c,j) = val_c/1600._r8 !gP/m3/s
+
+      cnstate_vars%ndep_prof_col(c,j) = col%dz(c,j)/tdz(c)
+      cnstate_vars%pdep_prof_col(c,j) = col%dz(c,j)/tdz(c)
+
+    enddo
+  enddo
+
+  end subroutine input_substrates
+  !-------------------------------------------------------------------------------
+
+
+
 end module sbetrDriverMod

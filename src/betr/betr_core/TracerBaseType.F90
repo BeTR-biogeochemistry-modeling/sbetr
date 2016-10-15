@@ -23,7 +23,6 @@ contains
   this%num_hist1d = 0
   this%num_hist2d = 0
   end subroutine tracer_base_init
-  !-----------------------------------------------------------------------
 
   !-----------------------------------------------------------------------
   subroutine add_hist_var2d(this, fname, units, type2d,  &
@@ -61,6 +60,7 @@ contains
     //' long_name='//quote//trim(long_name)//quote//new_line('A') &
     //' default='//quote//trim(default_loc)//quote//new_line('A') &
     //'/'
+
   end subroutine add_hist_var2d
 
   !-----------------------------------------------------------------------
@@ -97,6 +97,8 @@ contains
     //' long_name='//quote//trim(long_name)//quote//new_line('A') &
     //' default='//quote//trim(default_loc)//quote//new_line('A') &
     //'/'
+
+
   end subroutine add_hist_var1d
 
 end module TracerBaseType
