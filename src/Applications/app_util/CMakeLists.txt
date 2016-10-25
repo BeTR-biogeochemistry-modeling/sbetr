@@ -7,7 +7,7 @@ include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_core)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/bgcfarm_util)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/CENT_ECACNP)
-
+include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/CENT_ECADCNP)
 
 
 include(add_betr_library)

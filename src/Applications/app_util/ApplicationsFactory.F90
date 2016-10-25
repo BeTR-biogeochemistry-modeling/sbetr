@@ -53,7 +53,8 @@ contains
     use betr_ctrl       , only : iulog  => biulog
     use betr_constants  , only : betr_errmsg_len
     use BetrStatusType  , only : betr_status_type
-    use BGCReactionsCentECACNPType, only : bgc_reaction_CENTURY_ECACNP_type
+    use BGCReactionsCentECACnpType, only : bgc_reaction_CENTURY_ECACNP_type
+    use BGCReactionsCentECADcnpType, only : bgc_reaction_CENTURY_ECADCNP_type
     implicit none
     ! !ARGUMENTS:
     character(len=*), intent(in)          :: method
@@ -68,6 +69,8 @@ contains
     select case(trim(method))
     case ("eca_cnp")
        allocate(bgc_reaction, source=bgc_reaction_CENTURY_ECACNP_type())
+    case ("eca_dcnp")
+       allocate(bgc_reaction, source=bgc_reaction_CENTURY_ECADCNP_type())
     case default
        write(msg,*)subname //' ERROR: unknown method: ', method
        msg = trim(msg)//new_line('A')//errMsg(mod_filename, __LINE__)
@@ -86,7 +89,9 @@ contains
   use betr_ctrl       , only : iulog  => biulog
   use betr_constants  , only : betr_errmsg_len
   use BetrStatusType  , only : betr_status_type
-  use PlantSoilBGCECAType, only : plant_soilbgc_ECA_type
+  use PlantSoilBgcCnpType, only : plant_soilbgc_cnp_type
+  use PlantSoilBgcDcnpType, only : plant_soilbgc_dcnp_type
+
   implicit none
   ! !ARGUMENTS:
   character(len=*), intent(in)          :: method
@@ -100,7 +105,9 @@ contains
 
   select case(trim(method))
   case ("eca_cnp")
-     allocate(plant_soilbgc, source=plant_soilbgc_ECA_type())
+     allocate(plant_soilbgc, source=plant_soilbgc_cnp_type())
+  case ("eca_dcnp")
+     allocate(plant_soilbgc, source=plant_soilbgc_dcnp_type())
   case default
      write(msg, *)subname //' ERROR: unknown method: ', method
      msg = trim(msg)//new_line('A')//errMsg(mod_filename, __LINE__)
