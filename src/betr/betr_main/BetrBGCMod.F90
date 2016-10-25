@@ -326,7 +326,7 @@ contains
          bgc_reaction,                                    &
          tracerstate_vars,                                &
          tracerflux_vars, betr_status)
-!x    print*,'gw_fin',betr_status%check_status(),trim(betr_status%print_msg())
+
     if(betr_status%check_status())return
     !do solid phase turbation
     call tracer_solid_transport(betr_time, bounds, 1, ubj,                         &
@@ -746,7 +746,7 @@ contains
     if(bstatus%check_status())return
     SHR_ASSERT_ALL((ubound(zi,2)  == ubj),                   errMsg(mod_filename,__LINE__),bstatus)
     if(bstatus%check_status())return
-!x    print*,'do_advection'
+
     associate(                                                                         &
          qflx_adv                  => biogeo_flux%qflx_adv_col                       , & !real(r8) (:,:)[intent(in)], advective velocity defined at layer interfatemperature_vars
          qflx_rootsoi              => biophysforc%qflx_rootsoi_col                   , & !real(r8) (:,:)[intent(in)], water flux between plant and soil at different layers
@@ -806,7 +806,6 @@ contains
             do fc = 1, num_soilc
                c = filter_soilc(fc)
                inflx_top(c, k) = tracer_flx_infl(c,adv_trc_group(k))
-               !x print*,'infltop',adv_trc_group(k),tracer_flx_infl(c,adv_trc_group(k))
                !set to 0 to ensure outgoing boundary condition is imposed, this may not be correct for water isotopes
                inflx_bot(c,k) = 0._r8
                trc_bot(c,k) = tracer_conc_grndwater_col(c,adv_trc_group(k))
@@ -850,7 +849,7 @@ contains
             update_col(c)=.true.
             time_remain(c) = dtime
          enddo
-!x         print*,'advection loop'
+
          do
             !zero leaching flux, leaching is outgoing only.
             leaching_mass=0._r8
@@ -866,7 +865,7 @@ contains
                   enddo
                endif
             enddo
-!x            print*,'do semi'
+
             ! do semi-lagrangian tracer transport
             call semi_lagrange_adv_backward(bounds, bstatus,lbj, ubj,                             &
                  jtops,                                                                           &

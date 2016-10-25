@@ -331,7 +331,7 @@ end subroutine sbetrBGC_driver
     character(len=*), parameter            :: subname = 'read_name_list'
     character(len=betr_string_length_long) :: simulator_name
     character(len=betr_string_length_long) :: ioerror_msg
-
+    character(len=betr_string_length_long) :: tempstr='daoiga'
     !-----------------------------------------------------------------------
 
     namelist / sbetr_driver / simulator_name, continue_run
@@ -462,7 +462,7 @@ end subroutine sbetrBGC_driver
   real(r8):: val_c
   real(r8):: val_n, val_p
   real(r8):: tdz(bounds%begc:bounds%endc)
-  
+
   if(yesno)then
     val_c = 1.e-6_r8
     val_n = 1.e-10_r8
