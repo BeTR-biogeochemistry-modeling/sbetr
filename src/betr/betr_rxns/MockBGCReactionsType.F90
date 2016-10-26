@@ -419,10 +419,6 @@ contains
       tracerstate_vars%tracer_conc_aquifer_col(c,:)            = 0._r8
       tracerstate_vars%tracer_conc_grndwater_col(c,:)          = 0._r8
       tracerstate_vars%tracer_conc_mobile_col(c,7, betrtracer_vars%id_trc_doc) = 1._r8  !point source
-      !solid tracers
-      if(betrtracer_vars%ngwmobile_tracers < betrtracer_vars%ntracers)then
-        tracerstate_vars%tracer_conc_solid_passive_col(c,:,:) = 0._r8
-      endif
 
       if(betrtracer_vars%nsolid_equil_tracers>0)then
         tracerstate_vars%tracer_conc_solid_equil_col(c, :, :) = 0._r8

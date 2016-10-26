@@ -32,7 +32,7 @@ module TracerStateType
      real(r8), pointer :: tracer_soi_molarmass_col      (:,:)      !vertically integrated tracer content (mol tracer/m2), only in the soil
      real(r8), pointer :: tracer_conc_mobile_col        (:,:,:)    !tracer concentration in each layer (mol/m3) (snow/ponding water + soil)
      real(r8), pointer :: tracer_conc_solid_equil_col   (:,:,:)    !tracer concentration in adsorbed/solid phase for each layer (mol/m3) (soil), which is in equilibrium with mobile phase
-     real(r8), pointer :: tracer_conc_solid_passive_col (:,:,:)    !tracer concentration in passive solid phase, which is not in equilibrium with mobile phase. e.g. polymers, or protected monomers, or ice
+!x     real(r8), pointer :: tracer_conc_solid_passive_col (:,:,:)    !tracer concentration in passive solid phase, which is not in equilibrium with mobile phase. e.g. polymers, or protected monomers, or ice
      real(r8), pointer :: tracer_conc_frozen_col        (:,:,:)    !place holder, tracer concentration in frozen layer for unsaturated part for nonvolatile species
      !real(r8), pointer :: tracer_conc_bubble_col        (:,:,:)   !place holder, a bubble pool to track the lake ebullition in freeze-thaw period, [col, levels, tracer]
      real(r8), pointer :: beg_tracer_molarmass_col      (:,:)      !column integrated tracer mass
@@ -46,7 +46,7 @@ module TracerStateType
      procedure, public  :: int_mass_mobile_col
      procedure, public  :: int_mass_frozen_col
      procedure, public  :: int_mass_adsorb_col
-     procedure, public  :: int_mass_solid_col
+!x     procedure, public  :: int_mass_solid_col
      procedure, private :: InitAllocate
      procedure, private :: InitHistory
      procedure, public  :: retrieve_hist
@@ -117,14 +117,14 @@ contains
     allocate(this%errtracer_col                 (begc:endc, 1:ntracers))          ; this%errtracer_col            (:,:) = nan
     allocate(this%tracer_conc_atm_col           (begc:endc, 1:nvolatile_tracers))
     this%tracer_conc_atm_col      (:,:) = nan
-    allocate(this%tracer_conc_mobile_col        (begc:endc, lbj:ubj, 1:ngwmobile_tracers))
+    allocate(this%tracer_conc_mobile_col        (begc:endc, lbj:ubj, 1:ntracers))
     this%tracer_conc_mobile_col       (:,:,:) =  nan
 
     allocate(this%tracer_conc_solid_equil_col   (begc:endc, lbj:ubj, 1:nsolid_equil_tracers))
     this%tracer_conc_solid_equil_col  (:,:,:) = nan
 
-    allocate(this%tracer_conc_solid_passive_col (begc:endc, lbj:ubj, 1:nsolid_passive_tracers))
-    this%tracer_conc_solid_passive_col(:,:,:) = nan
+!x    allocate(this%tracer_conc_solid_passive_col (begc:endc, lbj:ubj, 1:nsolid_passive_tracers))
+!x    this%tracer_conc_solid_passive_col(:,:,:) = nan
 
     allocate(this%tracer_P_gas_frac_col         (begc:endc, lbj:ubj, 1:nvolatile_tracers))
     this%tracer_P_gas_frac_col        (:,:,:) = nan
@@ -171,6 +171,10 @@ contains
            avgflag='A', long_name='total gas pressure')
 
       do jj = 1, ntracers
+
+         call this%add_hist_var2d (fname=trim(tracernames(jj))//'_TRACER_CONC_BULK', units='mol m-3', type2d='levtrc',  &
+           avgflag='A', long_name='gw-mobile phase for tracer '//trim(tracernames(jj)))
+
          if(jj<= ngwmobile_tracers)then
 
             call this%add_hist_var1d (fname=trim(tracernames(jj))//'_TRACER_CONC_SURFWATER', units='mol m-3', &
@@ -185,9 +189,6 @@ contains
                  avgflag='A', long_name='groundwater concentration for tracer '//trim(tracernames(jj)), &
                  default='inactive')
 
-            call this%add_hist_var2d (fname=trim(tracernames(jj))//'_TRACER_CONC_MOBILE', units='mol m-3', type2d='levtrc',  &
-                 avgflag='A', long_name='gw-mobile phase for tracer '//trim(tracernames(jj)))
-
             if(is_volatile(jj) .and. (.not. is_h2o(jj)) .and. (.not. is_isotope(jj)))then
                call this%add_hist_var2d (fname=trim(tracernames(jj))//'_TRACER_P_GAS_FRAC', units='none', type2d='levtrc',  &
                     avgflag='A', long_name='fraction of gas phase contributed by '//trim(tracernames(jj)))
@@ -197,11 +198,6 @@ contains
                call this%add_hist_var2d (fname=trim(tracernames(jj))//'_TRACER_CONC_FROZEN', units='mol m-3', type2d='levtrc',  &
                     avgflag='A', long_name='frozen phase for tracer '//trim(tracernames(jj)))
             endif
-         else
-            kk = jj - ngwmobile_tracers
-            call this%add_hist_var2d (fname=trim(tracernames(jj))//'TRACER_CONC_SOLID_PASSIVE', units='mol m-3', type2d='levtrc',  &
-                 avgflag='A', long_name='passive solid phase for tracer '//trim(tracernames(jj)), &
-                 default='inactive')
          endif
          call this%add_hist_var1d (fname=trim(tracernames(jj))//'_TRCER_SOI_MOLAMASS', units='mol m-2', &
               avgflag='A', long_name='total molar mass in soil for '//trim(tracernames(jj)), &
@@ -257,11 +253,11 @@ contains
      idtemp1d = 0; idtemp2d= 0
      if(trim(flag)=='read')then
        do jj = 1, ntracers
+         id=addone(idtemp2d);this%tracer_conc_mobile_col(:, :, jj) = states_2d(:,:,id)
+
          if(jj<= ngwmobile_tracers)then
 
             id=addone(idtemp1d);this%tracer_conc_aquifer_col(:, jj) = states_1d(:,id)
-
-            id=addone(idtemp2d);this%tracer_conc_mobile_col(:, :, jj) = states_2d(:,:,id)
 
             if(is_adsorb(jj))then
               id=addone(idtemp2d);this%tracer_conc_solid_equil_col(:, :, adsorbid(jj)) = states_2d(:,:,id)
@@ -269,18 +265,15 @@ contains
             if(is_frozen(jj))then
               id=addone(idtemp2d);this%tracer_conc_frozen_col(:, :, frozenid(jj)) = states_2d(:,:,id)
             endif
-         else
-            kk = jj - ngwmobile_tracers
-            id=addone(idtemp2d);this%tracer_conc_solid_passive_col(:, :, kk)   = states_2d(:,:,id)
          endif
        enddo
      elseif(trim(flag)=='write')then
        do jj = 1, ntracers
+         id=addone(idtemp2d);states_2d(:,:,id) = this%tracer_conc_mobile_col(:, :, jj)
+
          if(jj<= ngwmobile_tracers)then
 
             id=addone(idtemp1d);states_1d(:,id) = this%tracer_conc_aquifer_col(:, jj)
-
-            id=addone(idtemp2d);states_2d(:,:,id) = this%tracer_conc_mobile_col(:, :, jj)
 
             if(is_adsorb(jj))then
               id=addone(idtemp2d);states_2d(:,:,id) = this%tracer_conc_solid_equil_col(:, :, adsorbid(jj))
@@ -288,9 +281,6 @@ contains
             if(is_frozen(jj))then
               id=addone(idtemp2d);states_2d(:,:,id) = this%tracer_conc_frozen_col(:, :, frozenid(jj))
             endif
-         else
-            kk = jj - ngwmobile_tracers
-            id=addone(idtemp2d);states_2d(:,:,id) = this%tracer_conc_solid_passive_col(:, :, kk)
          endif
       enddo
 
@@ -368,21 +358,21 @@ contains
   end function int_mass_adsorb_col
 
   !-----------------------------------------------------------------------
-  function int_mass_solid_col(this, lbj, ubj, c, j, dz, bstatus)result(int_mass)
-  !DESCRIPTION
-  !integrate solid tracer mass
-  use BetrStatusType         , only : betr_status_type
-  implicit none
-  class(TracerState_type), intent(inout) :: this
-  integer, intent(in)     :: lbj, ubj
-  integer, intent(in)     :: c, j
-  real(r8), intent(in)    :: dz(lbj:ubj)
-  type(betr_status_type)  , intent(out)   :: bstatus
-  real(r8)                :: int_mass
-  call bstatus%reset()
-  int_mass = dot_sum(this%tracer_conc_solid_passive_col(c,lbj:ubj,j), dz, bstatus)
+!x  function int_mass_solid_col(this, lbj, ubj, c, j, dz, bstatus)result(int_mass)
+!x  !DESCRIPTION
+!x  !integrate solid tracer mass
+!x  use BetrStatusType         , only : betr_status_type
+!x  implicit none
+!x  class(TracerState_type), intent(inout) :: this
+!x  integer, intent(in)     :: lbj, ubj
+!x  integer, intent(in)     :: c, j
+!x  real(r8), intent(in)    :: dz(lbj:ubj)
+!x  type(betr_status_type)  , intent(out)   :: bstatus
+!x  real(r8)                :: int_mass
+!x  call bstatus%reset()
+!x  int_mass = dot_sum(this%tracer_conc_solid_passive_col(c,lbj:ubj,j), dz, bstatus)
 
-  end function int_mass_solid_col
+!x  end function int_mass_solid_col
 
   !----------------------------------------------------------------
   subroutine retrieve_hist(this, bounds, lbj, ubj, state_2d, state_1d, betrtracer_vars)
@@ -418,6 +408,8 @@ contains
   state_2d(begc:endc, lbj:ubj, addone(idtemp2d))= this%tracer_P_gas_col(begc:endc, lbj:ubj)
 
   do jj = 1, ntracers
+    state_2d(begc:endc, lbj:ubj, addone(idtemp2d))= this%tracer_conc_mobile_col(begc:endc, lbj:ubj, jj)
+
     if(jj<= ngwmobile_tracers)then
 
       state_1d(begc:endc,addone(idtemp1d)) = this%tracer_conc_surfwater_col(begc:endc,jj)
@@ -426,8 +418,6 @@ contains
 
       state_1d(begc:endc, addone(idtemp1d))=this%tracer_conc_grndwater_col(begc:endc, jj)
 
-      state_2d(begc:endc, lbj:ubj, addone(idtemp2d))= this%tracer_conc_mobile_col(begc:endc, lbj:ubj, jj)
-
       if(is_volatile(jj) .and. (.not. is_h2o(jj)) .and. (.not. is_isotope(jj)))then
         state_2d(begc:endc, lbj:ubj, addone(idtemp2d))= this%tracer_P_gas_frac_col(begc:endc,lbj:ubj, volatileid(jj))
       endif
@@ -435,9 +425,6 @@ contains
       if(is_frozen(jj))then
         state_2d(begc:endc, lbj:ubj, addone(idtemp2d)) = this%tracer_conc_frozen_col(begc:endc,lbj:ubj, frozenid(jj))
       endif
-    else
-      kk = jj - ngwmobile_tracers
-      state_2d(begc:endc, lbj:ubj, addone(idtemp2d)) = this%tracer_conc_solid_passive_col(begc:endc, lbj:ubj, kk)
     endif
 
     state_1d(begc:endc, addone(idtemp1d))=this%tracer_soi_molarmass_col(begc:endc, jj)
@@ -478,10 +465,10 @@ contains
     nrest_1d = 0; nrest_2d = 0
 
       do jj = 1, ntracers
+         id=addone(nrest_2d); rest_varname_2d(id)=trim(tracernames(jj))//'_TRACER_CONC_BULK'
+
          if(jj<= ngwmobile_tracers)then
             id = addone(nrest_1d); rest_varname_1d(id)=trim(tracernames(jj))//'_TRACER_CONC_AQUIFER'
-
-            id=addone(nrest_2d); rest_varname_2d(id)=trim(tracernames(jj))//'_TRACER_CONC_MOIBLE'
 
             if(is_adsorb(jj))then
                id=addone(nrest_2d);rest_varname_2d(id)=trim(tracernames(jj))//'_TRACER_CONC_SOLID_EQUIL'
@@ -489,9 +476,6 @@ contains
             if(is_frozen(jj))then
               id=addone(nrest_2d);rest_varname_2d(id)=trim(tracernames(jj))//'_TRACER_CONC_FROZEN'
             endif
-         else
-            kk = jj - ngwmobile_tracers
-            id=addone(nrest_2d);rest_varname_2d(id)=trim(tracernames(jj))//'_TRACER_CONC_SOLID_PASSIVE'
          endif
       enddo
 

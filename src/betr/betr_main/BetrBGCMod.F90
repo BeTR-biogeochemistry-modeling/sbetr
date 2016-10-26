@@ -405,7 +405,7 @@ contains
          tracer_group_memid            =>  betrtracer_vars%tracer_group_memid                 , &
          is_mobile                     =>  betrtracer_vars%is_mobile                          , &
          tracer_flx_netpro_vr          =>  tracerflux_vars%tracer_flx_netpro_vr_col           , & !
-         tracer_conc_solid_passive_col =>  tracerstate_vars%tracer_conc_solid_passive_col       &
+         tracer_conc_mobile_col        =>  tracerstate_vars%tracer_conc_mobile_col              &
          )
 
       SHR_ASSERT_ALL((ubound(hmconductance_col,1) == bounds%endc), errMsg(mod_filename,__LINE__),betr_status)
@@ -431,7 +431,7 @@ contains
          ntrcs = 0
          difs_trc_group(:) = 0
          do k = 1, nmem_max
-            trcid = tracer_group_memid(j, k)-ngwmobile_tracers
+            trcid = tracer_group_memid(j, k)
             if(trcid>0)then
                if(is_mobile(tracer_group_memid(j, k)))then
                   ntrcs = ntrcs + 1
@@ -454,7 +454,7 @@ contains
          do
             !do diffusive transport
             call DiffusTransp(bounds, betr_status, lbj, ubj, jtops, num_soilc, &
-                 filter_soilc, ntrcs, tracer_conc_solid_passive_col(:,:,difs_trc_group(1:ntrcs)),  &
+                 filter_soilc, ntrcs, tracer_conc_mobile_col(:,:,difs_trc_group(1:ntrcs)),  &
                  hmconductance_col(:,:,j),                                             &
                  dtime_loc,                                                            &
                  dz,                                                                   &
@@ -472,14 +472,14 @@ contains
                   do k = 1, ntrcs
                      trcid = difs_trc_group(k)
                      do l = jtops(c), ubj
-                        if(tracer_conc_solid_passive_col(c,l,trcid)<-dtracer(c,l,k))then
+                        if(tracer_conc_mobile_col(c,l,trcid)<-dtracer(c,l,k))then
                            !if the tracer update is very tinty, then set it to zero
                            if(abs(dtracer(c,l,k))<tiny_val)dtracer(c,l,k) = 0._r8
 
-                           if(tracer_conc_solid_passive_col(c,l,trcid)<0._r8)then
+                           if(tracer_conc_mobile_col(c,l,trcid)<0._r8)then
                               write(msg,*)'nstep=',betr_time%get_nstep(),'col=',c,'l=',l,'trcid=',trcid, &
                                    new_line('A')//'dtime=',dtime_loc(c), &
-                                   new_line('A')//'trc=',tracer_conc_solid_passive_col(c,l,trcid),&
+                                   new_line('A')//'trc=',tracer_conc_mobile_col(c,l,trcid),&
                                    'dtracer=',dtracer(c,l,k), &
                                    new_line('A')//'stopped for negative tracer '//&
                                    trim(betrtracer_vars%tracernames(j))//' '//trim(subname)//errMsg(mod_filename, __LINE__)
@@ -500,7 +500,7 @@ contains
 
                      !do error budget for good calculation
                      call daxpy(ubj-jtops(c)+1, 1._r8, dtracer(c,jtops(c):ubj,k), 1, &
-                          tracer_conc_solid_passive_col(c,jtops(c):ubj,trcid),1)
+                          tracer_conc_mobile_col(c,jtops(c):ubj,trcid),1)
 
                      err_tracer(c, k) = dot_sum(dtracer(c,jtops(c):ubj, k), dz(c,jtops(c):ubj),betr_status)
                      if(betr_status%check_status())return

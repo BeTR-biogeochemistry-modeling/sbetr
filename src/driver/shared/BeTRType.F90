@@ -916,7 +916,6 @@ contains
    associate(                                                                           &
       tracer_conc_frozen_col        => this%tracerstates%tracer_conc_frozen_col ,       &
       tracer_conc_mobile_col        => this%tracerstates%tracer_conc_mobile_col ,       &
-      tracer_conc_solid_passive_col => this%tracerstates%tracer_conc_solid_passive_col, &
       ntracers                      => this%tracers%ntracers,                           &
       ngwmobile_tracers             => this%tracers%ngwmobile_tracers ,                 &
       is_frozen                     => this%tracers%is_frozen                           &
@@ -942,8 +941,6 @@ contains
         endif
      else
        !x!currently, no solid tracer is allowed to mix with snow
-       !! jj1=jj-ngwmobile_tracers
-       !x!tracer_conc_solid_passive_col
        !x!copy
        !x!remapping
      endif
@@ -990,7 +987,6 @@ contains
    associate(                                                                           &
       tracer_conc_frozen_col        => this%tracerstates%tracer_conc_frozen_col ,       &
       tracer_conc_mobile_col        => this%tracerstates%tracer_conc_mobile_col ,       &
-      tracer_conc_solid_passive_col => this%tracerstates%tracer_conc_solid_passive_col, &
       ntracers                      => this%tracers%ntracers,                           &
       ngwmobile_tracers             => this%tracers%ngwmobile_tracers ,                 &
       is_frozen                     => this%tracers%is_frozen                           &
@@ -1017,8 +1013,6 @@ contains
         endif
      else
        !x!currently, no solid tracer is allowed to mix with snow
-       !! jj1=jj-ngwmobile_tracers
-       !x!tracer_conc_solid_passive_col
        !x!copy
        !x!remapping
      endif
@@ -1050,7 +1044,6 @@ contains
    associate(                                                                           &
       tracer_conc_frozen_col        => this%tracerstates%tracer_conc_frozen_col ,       &
       tracer_conc_mobile_col        => this%tracerstates%tracer_conc_mobile_col ,       &
-      tracer_conc_solid_passive_col => this%tracerstates%tracer_conc_solid_passive_col, &
       ntracers                      => this%tracers%ntracers,                           &
       ngwmobile_tracers             => this%tracers%ngwmobile_tracers ,                 &
       is_frozen                     => this%tracers%is_frozen ,                         &
@@ -1098,7 +1091,6 @@ contains
    associate(                                                                           &
       tracer_conc_frozen_col        => this%tracerstates%tracer_conc_frozen_col ,       &
       tracer_conc_mobile_col        => this%tracerstates%tracer_conc_mobile_col ,       &
-      tracer_conc_solid_passive_col => this%tracerstates%tracer_conc_solid_passive_col, &
       ntracers                      => this%tracers%ntracers,                           &
       ngwmobile_tracers             => this%tracers%ngwmobile_tracers ,                 &
       is_frozen                     => this%tracers%is_frozen ,                         &
