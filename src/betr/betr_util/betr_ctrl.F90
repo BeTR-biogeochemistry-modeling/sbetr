@@ -6,7 +6,7 @@ implicit none
   logical, public :: use_pH_data = .false.
   logical, public :: betr_use_cn =.false.
   integer, public :: biulog = 6        ! "stdout" log file unit number, default is 6
-  logical, public :: do_betr_otuput = .true.
+  logical, public :: do_betr_output = .true.
   integer, parameter, public :: max_betr_hist_type=400
   integer, parameter, public :: max_betr_rest_type=400
   logical, public :: betr_offline = .true.

@@ -78,7 +78,7 @@ module TracerBalanceMod
       !
       ! !USES:
 
-      use betr_ctrl     , only : iulog  => biulog, do_betr_otuput
+      use betr_ctrl     , only : iulog  => biulog, do_betr_output
       use betr_varcon   , only : namec  => bnamec
       use tracer_varcon , only : catomw,natomw
       use BeTR_TimeMod  , only : betr_time_type
@@ -143,7 +143,7 @@ module TracerBalanceMod
                  err_rel = errtracer(c,kk)/max(abs(beg_tracer_molarmass(c,kk)),abs(end_tracer_molarmass(c,kk)))
               endif
 
-              if(abs(err_rel)>err_min_rel .and. do_betr_otuput)then
+              if(abs(err_rel)>err_min_rel .and. do_betr_output)then
                  write(msg,*)'error exceeds the tolerance for tracer '//tracernames(kk), &
                       ' err=',errtracer(c,kk), ' col=',c, &
                       new_line('A')//'nstep=', betr_time%get_nstep(), &
@@ -162,7 +162,7 @@ module TracerBalanceMod
            bal_flx=0._r8
            do kk = ngwmobile_tracers+1, ntracers
               errtracer(c,kk) = beg_tracer_molarmass(c,kk)-end_tracer_molarmass(c,kk) + tracer_flx_netpro(c,kk)
-              if(abs(errtracer(c,kk))>err_min .and. do_betr_otuput)then
+              if(abs(errtracer(c,kk))>err_min .and. do_betr_output)then
                  write(msg,*)'error exceeds the tolerance for tracer '//tracernames(kk), 'err=',errtracer(c,kk), 'col=',c, &
                      new_line('A')//'nstep=',betr_time%get_nstep(),'is_mobile=',is_mobile(kk), &
                      new_line('A')//'begmass=', beg_tracer_molarmass(c,kk), 'endmass=', end_tracer_molarmass(c,kk), &

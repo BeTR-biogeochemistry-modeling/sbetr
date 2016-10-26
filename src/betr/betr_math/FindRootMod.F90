@@ -7,7 +7,7 @@ module FindRootMod
   ! !USES:
   use bshr_kind_mod , only : r8 => shr_kind_r8
   use bshr_log_mod  , only : errMsg => shr_log_errMsg
-  use betr_ctrl     , only : iulog  => biulog, do_betr_otuput
+  use betr_ctrl     , only : iulog  => biulog, do_betr_output
   use MathfuncMod   , only : is_bounded
 
   implicit none
@@ -422,7 +422,7 @@ contains
     b=x2
     fa=f1
     fb=f2
-    if((fa > 0._r8 .and. fb > 0._r8).or.(fa < 0._r8 .and. fb < 0._r8) .and. do_betr_otuput)then
+    if((fa > 0._r8 .and. fb > 0._r8).or.(fa < 0._r8 .and. fb < 0._r8) .and. do_betr_output)then
        write(msg,*) 'root must be bracketed for brent', new_line('A')//'a=',a,' b=',b,' fa=',fa,' fb=',fb
        call bstatus%set_msg(msg=msg, err=-1)
     endif

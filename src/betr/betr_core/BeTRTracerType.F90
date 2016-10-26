@@ -9,7 +9,7 @@ module BeTRTracerType
   use bshr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
   use bshr_log_mod    , only : errMsg => shr_log_errMsg
   use betr_constants  , only : betr_var_name_length
-  use betr_ctrl       , only : do_betr_otuput
+  use betr_ctrl       , only : do_betr_output
   !
   implicit none
   private
@@ -288,12 +288,12 @@ subroutine set_tracer(this, bstatus, trc_id, trc_name, is_trc_mobile, is_trc_adv
   if(present(is_trc_volatile))then
     this%is_volatile      (trc_id)    = is_trc_volatile
     if(this%is_volatile   (trc_id)) then
-      if(.not.present(trc_volatile_id) .and. do_betr_otuput)then
+      if(.not.present(trc_volatile_id) .and. do_betr_output)then
         call bstatus%set_msg(msg='volatile tracer id is not provided for ' &
             //trim(trc_name)//errMsg(mod_filename, __LINE__),err=-1)
         return
       endif
-      if(.not.present(trc_volatile_group_id) .and. do_betr_otuput)then
+      if(.not.present(trc_volatile_group_id) .and. do_betr_output)then
         call bstatus%set_msg(msg='volatile tracer group id is not provided for ' &
             //trim(trc_name)//errMsg(mod_filename, __LINE__), err=-1)
         return
@@ -318,12 +318,12 @@ subroutine set_tracer(this, bstatus, trc_id, trc_name, is_trc_mobile, is_trc_adv
   if(present(is_trc_adsorb))then
     this%is_adsorb(trc_id) = is_trc_adsorb
     if(is_trc_adsorb)then
-      if(.not.present(trc_adsorbid) .and. do_betr_otuput)then
+      if(.not.present(trc_adsorbid) .and. do_betr_output)then
         call bstatus%set_msg(msg='adsorb tracer id is not provided for ' &
             //trim(trc_name)//errMsg(mod_filename, __LINE__), err=-1)
         return
       endif
-      if(.not.present(trc_adsorbgroupid) .and. do_betr_otuput)then
+      if(.not.present(trc_adsorbgroupid) .and. do_betr_output)then
         call bstatus%set_msg(msg='adsorb tracer group id is not provided for ' &
            //trim(trc_name)//errMsg(mod_filename, __LINE__), err=-1)
         return
@@ -337,7 +337,7 @@ subroutine set_tracer(this, bstatus, trc_id, trc_name, is_trc_mobile, is_trc_adv
   if(present(is_trc_frozen))then
     this%is_frozen(trc_id) = is_trc_frozen
     if(is_trc_frozen)then
-      if(.not. present(trc_frozenid) .and. do_betr_otuput)then
+      if(.not. present(trc_frozenid) .and. do_betr_output)then
         call bstatus%set_msg(msg='frozen tracer id is not provided for ' &
             //trim(trc_name)//errMsg(mod_filename, __LINE__), err=-1)
         return
