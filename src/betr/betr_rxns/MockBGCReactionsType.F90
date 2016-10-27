@@ -110,8 +110,8 @@ contains
     integer :: itemp_g
     integer :: itemp_s
     integer :: itemp_gwm_grp
-    integer :: dum
-    integer :: itemp_grp, itemp_v, itemp_vgrp
+    integer :: dum, itemp
+    integer :: itemp_grp, itemp_v, itemp_vgrp, itemp_trc
 
     call bstatus%reset()
     ! remove compiler warnings for unused dummy args
@@ -125,16 +125,33 @@ contains
     itemp_s       = 0;
     itemp_gwm_grp = 0
 
-    betrtracer_vars%id_trc_n2  = addone(itemp_gwm); dum = addone(itemp_g); dum = addone(itemp_gwm_grp)
-    betrtracer_vars%id_trc_o2  = addone(itemp_gwm); dum = addone(itemp_g); dum = addone(itemp_gwm_grp)
-    betrtracer_vars%id_trc_ar  = addone(itemp_gwm); dum = addone(itemp_g); dum = addone(itemp_gwm_grp)
-    betrtracer_vars%id_trc_co2x= addone(itemp_gwm); dum = addone(itemp_g); dum = addone(itemp_gwm_grp)
-    betrtracer_vars%id_trc_ch4 = addone(itemp_gwm); dum = addone(itemp_g); dum = addone(itemp_gwm_grp)
-    betrtracer_vars%id_trc_doc = addone(itemp_gwm); dum = addone(itemp_gwm_grp)
+    !volatile tracers
+    itemp = 0; itemp_trc=0
+    call betrtracer_vars%add_tracer_group(trc_grp_cnt=addone(itemp), mem = 1, &
+      trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_n2, &
+      trc_grp_beg=betrtracer_vars%id_trc_beg_n2, is_trc_gw=.true., is_trc_volatile = .true.)
 
-    betrtracer_vars%ngwmobile_tracers      = itemp_gwm ;  betrtracer_vars%ngwmobile_tracer_groups= itemp_gwm_grp
-    betrtracer_vars%nsolid_passive_tracers = itemp_s   ;  betrtracer_vars%nsolid_passive_tracer_groups = itemp_s
-    betrtracer_vars%nvolatile_tracer_groups= itemp_g
+    call betrtracer_vars%add_tracer_group(trc_grp_cnt=addone(itemp), mem = 1, &
+      trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_o2, &
+      trc_grp_beg=betrtracer_vars%id_trc_beg_o2, is_trc_gw=.true., is_trc_volatile = .true.)
+
+    call betrtracer_vars%add_tracer_group(trc_grp_cnt=addone(itemp), mem = 1, &
+      trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_ar,&
+      trc_grp_beg= betrtracer_vars%id_trc_beg_ar, is_trc_gw=.true., is_trc_volatile = .true.)
+
+    call betrtracer_vars%add_tracer_group(trc_grp_cnt=addone(itemp), mem = 1, &
+      trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_co2x, &
+      trc_grp_beg=betrtracer_vars%id_trc_beg_co2x, is_trc_gw=.true., is_trc_volatile = .true.)
+
+    call betrtracer_vars%add_tracer_group(trc_grp_cnt=addone(itemp), mem = 1, &
+      trc_cnt=itemp_trc, trc_grp= betrtracer_vars%id_trc_ch4, &
+      trc_grp_beg= betrtracer_vars%id_trc_beg_ch4, is_trc_gw=.true., is_trc_volatile = .true.)
+
+    call betrtracer_vars%add_tracer_group(trc_grp_cnt=addone(itemp), mem = 1, &
+      trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_doc, &
+      trc_grp_beg=betrtracer_vars%id_trc_beg_doc, is_trc_gw=.true., is_trc_volatile = .false.)
+
+
     betrtracer_vars%nmem_max               = 1
 
     call betrtracer_vars%Init()

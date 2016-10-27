@@ -379,7 +379,8 @@ end subroutine set_tracer
   logical, optional, intent(in)  :: is_trc_passive
 
   trc_grp = trc_grp_cnt
-
+  this%ntracers = this%ntracers + mem
+  
   if(present(is_trc_gw))then
     if(is_trc_gw)then
       this%ngwmobile_tracers= this%ngwmobile_tracers + mem
@@ -392,6 +393,7 @@ end subroutine set_tracer
       this%nvolatile_tracer_groups      = this%nvolatile_tracer_groups + 1               !
     endif
   endif
+
   if(present(is_trc_passive))then
     if(is_trc_passive)then
       this%nsolid_passive_tracer_groups = this%nsolid_passive_tracer_groups + 1
