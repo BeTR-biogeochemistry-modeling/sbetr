@@ -2,12 +2,12 @@ module TracerBaseType
 use betr_ctrl, only : max_betr_hist_type
 implicit none
 
+  private
 
-
-  type, private :: node
+  type, private :: list_t
     character(len=255)  :: name
-    type(node), pointer :: next
-  end type node
+    type(list_t), pointer :: next => null()
+  end type list_t
 
   type, public :: tracerbase_type
      integer :: num_hist1d
@@ -21,11 +21,61 @@ implicit none
      procedure, public :: sort_hist_list
   end type tracerbase_type
 
-  type(node), private, pointer :: head1d, tail1d
-  type(node), private, pointer :: head2d, tail2d
+  type(list_t), pointer :: head1d => null()
+  type(list_t), pointer :: tail1d => null()
+  type(list_t), pointer :: head2d => null()
+  type(list_t), pointer :: tail2d => null()
 
 
 contains
+  !-----------------------------------------------------------------------
+  subroutine list_init(self, name)
+  implicit none
+  type(list_t), pointer :: self
+  character(len=255), intent(in) :: name
+
+  allocate(self)
+  nullify(self%next)
+  self%name=name
+
+  end subroutine list_init
+  !-----------------------------------------------------------------------
+  subroutine list_insert(self, name)
+
+  implicit none
+  type(list_t), pointer :: self
+  character(len=255), intent(in) :: name
+  type(list_t), pointer :: next
+
+  allocate(next)
+  next%name=name
+  next%next=> self
+  self => next
+
+  end subroutine list_insert
+  !-----------------------------------------------------------------------
+  subroutine list_free(self)
+  implicit none
+  type(list_t), pointer :: self
+  type(list_t), pointer :: current
+  type(list_t), pointer :: elem
+
+  elem => self
+  do while(associated(elem))
+    current => elem
+    elem => current%next
+    deallocate(current)
+  enddo
+  end subroutine list_free
+  !-----------------------------------------------------------------------
+  function list_next(self)result(next)
+
+  implicit none
+  type(list_t), pointer :: self
+  type(list_t), pointer :: next
+
+  next => self%next
+  end function list_next
 
   !-----------------------------------------------------------------------
   subroutine tracer_base_init(this)
@@ -54,7 +104,6 @@ contains
 
   character(len=20) :: default_loc = "active"
   character(len=255):: tempstr
-  type(node), pointer :: temp_node
   character(len=1)  :: quote = ''''
 
   !use the following format to read
@@ -76,15 +125,9 @@ contains
     //'/'
 
   if(this%num_hist2d==1)then
-    allocate(head2d)
-    head2d%name=tempstr
-    nullify(head2d%next)
+    call list_init(head2d, tempstr)
   else
-    allocate(temp_node)
-    temp_node%name=tempstr
-    temp_node%next=>head2d
-    head2d=>temp_node
-    nullify(temp_node)
+    call list_insert(head2d, tempstr)
   endif
 
   end subroutine add_hist_var2d
@@ -107,7 +150,6 @@ contains
 
   character(len=1)  :: quote = ''''
   character(len=255):: tempstr
-  type(node), pointer :: temp_node
   !use the following format to read
   !x namelist /hist1d_fmt/    &
   !x fname, units, avgflag,type2d,long_name, default
@@ -126,15 +168,9 @@ contains
     //'/'
 
   if(this%num_hist1d==1)then
-    allocate(head1d)
-    head1d%name=tempstr
-    nullify(head1d%next)
+    call list_init(head1d, tempstr)
   else
-    allocate(temp_node)
-    temp_node%name=tempstr
-    temp_node%next=>head1d
-    head1d=>temp_node
-    nullify(temp_node)
+    call list_insert(head1d, tempstr)
   endif
 
   end subroutine add_hist_var1d
@@ -143,68 +179,75 @@ contains
 
   implicit none
   class(tracerbase_type), intent(inout) :: this
-  type(node), pointer :: temp_node, temp1_node
+  type(list_t), pointer :: temp_node, temp1_node, next
   integer :: jj
 
-  !flip 1d history fields
-  allocate(tail1d)
-  tail1d%name=head1d%name
-  nullify(tail1d%next)
+  !allocate memories
+  allocate(this%nmlist_hist1d_buffer(this%num_hist1d))
+  allocate(this%nmlist_hist2d_buffer(this%num_hist2d))
 
-  temp_node=>head1d%next
+  !flip 1d history fields
+  call list_init(tail1d, head1d%name)
+
+  temp_node=>list_next(head1d)
   do while(associated(temp_node))
-    allocate(temp1_node)
-    temp1_node%name=temp_node%name
-    temp1_node%next=>tail1d
-    tail1d => temp1_node
-    temp_node=> temp_node%next
+    call list_insert(tail1d, temp_node%name)
+    if(associated(temp_node%next))then
+      temp_node=list_next(temp_node)
+    else
+      exit
+    endif
   enddo
 
-  allocate(this%nmlist_hist1d_buffer(this%num_hist1d))
   jj = 0
-  nullify(temp1_node)
   temp1_node=>tail1d
   do while(associated(temp1_node))
     jj = jj + 1
     this%nmlist_hist1d_buffer(jj)=temp1_node%name
-    temp1_node=> temp1_node%next
+    if(associated(temp1_node%next))then
+      temp1_node=list_next(temp1_node)
+    else
+      exit
+    endif
   enddo
 !x  if(jj/=this%num_hist1d)then
 !x    print*,'bang'
 !x  endif
 
   !flip 2d history fields
-  allocate(tail2d)
-  tail2d%name=head2d%name
-  nullify(tail2d%next)
+  call list_init(tail2d, head2d%name)
 
   temp_node=>head2d%next
   do while(associated(temp_node))
-    allocate(temp1_node)
-    temp1_node%name=temp_node%name
-    temp1_node%next=>tail2d
-    tail2d => temp1_node
-    temp_node=> temp_node%next
+    call list_insert(tail2d, temp_node%name)
+    if(associated(temp_node%next))then
+      temp_node=> list_next(temp_node)
+    else
+      exit
+    endif
   enddo
 
-  allocate(this%nmlist_hist2d_buffer(this%num_hist2d))
   jj = 0
-  nullify(temp1_node)
   temp1_node=>tail2d
   do while(associated(temp1_node))
     jj = jj + 1
+
     this%nmlist_hist2d_buffer(jj)=temp1_node%name
-    temp1_node=> temp1_node%next
+    if(associated(temp1_node%next))then
+      temp1_node=> list_next(temp1_node)
+    else
+      exit
+    endif
   enddo
-  nullify(temp1_node)
 
 !x  if(jj/=this%num_hist2d)then
 !x    print*,'bang'
 !x  endif
-  nullify(tail1d)
-  nullify(tail2d)
-  nullify(head1d)
-  nullify(head2d)
+  print*,'free lists'
+  call list_free(tail1d)
+  call list_free(tail2d)
+  call list_free(head1d)
+  call list_free(head2d)
   end subroutine sort_hist_list
 
 end module TracerBaseType
