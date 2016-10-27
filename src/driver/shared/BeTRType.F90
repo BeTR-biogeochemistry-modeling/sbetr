@@ -75,6 +75,7 @@ module BetrType
      procedure, public  :: tracer_DivideSnowLayers
      procedure, public  :: tracer_CombineSnowLayers
      procedure, public  :: get_hist_size
+     procedure, public  :: get_hist_info
      procedure, private :: ReadNamelist
      procedure, private :: create_betr_application
      procedure, public  :: HistRetrieveState
@@ -602,7 +603,7 @@ contains
   if(bstatus%check_status())return
   err=beg_tracer_molarmass(c,trcid)-totmass  &
        + tracer_flx_netpro(c,trcid)-tracer_flx_netphyloss(c,trcid)
-!x  print*,'err',err
+
   end associate
   end subroutine check_mass_err
 
@@ -1169,9 +1170,7 @@ contains
 
    !------------------------------------------------------------------------
 
-  subroutine get_hist_size(this, num_state1d, num_state2d, num_flux1d, num_flux2d, &
-         nmlist_hist1d_state_buffer, nmlist_hist2d_state_buffer, &
-         nmlist_hist1d_flux_buffer, nmlist_hist2d_flux_buffer, bstatus)
+  subroutine get_hist_size(this, num_state1d, num_state2d, num_flux1d, num_flux2d)
   !
   ! DESCRIPTION
   ! return number of variables for history output
@@ -1187,38 +1186,42 @@ contains
   integer           ,     intent(out)   :: num_state2d
   integer           ,     intent(out)   :: num_flux1d
   integer           ,     intent(out)   :: num_flux2d
-  character(len=255), intent(out) :: nmlist_hist1d_state_buffer(max_betr_hist_type)
-  character(len=255), intent(out) :: nmlist_hist2d_state_buffer(max_betr_hist_type)
-  character(len=255), intent(out) :: nmlist_hist1d_flux_buffer(max_betr_hist_type)
-  character(len=255), intent(out) :: nmlist_hist2d_flux_buffer(max_betr_hist_type)
-  type(betr_status_type)    , intent(out) :: bstatus
   integer :: j
 
-  call bstatus%reset()
   num_state1d = this%tracerstates%num_hist1d
-  if(num_state1d > max_betr_hist_type)then
-    write(stdout,*)'num_state1d limit',num_state1d, max_betr_hist_type
-    call bstatus%set_msg(msg='# of 1d state variables are defined more than allowed', err=-1)
-    return
-  endif
+
   num_state2d = this%tracerstates%num_hist2d
-  if(num_state2d > max_betr_hist_type)then
-    write(stdout,*)'num_state2d limit',num_state2d, max_betr_hist_type
-    call bstatus%set_msg(msg='# of 2d state variables are defined more than allowed', err=-1)
-    return
-  endif
+
   num_flux1d  = this%tracerfluxes%num_hist1d
-  if(num_flux1d > max_betr_hist_type)then
-    write(stdout,*)'num_flux1d limit',num_flux1d, max_betr_hist_type
-    call bstatus%set_msg(msg='# of 1d flux variables are defined more than allowed', err=-1)
-    return
-  endif
+
   num_flux2d  = this%tracerfluxes%num_hist2d
-  if(num_flux2d > max_betr_hist_type)then
-    write(stdout,*)'num_flux2d limit',num_flux2d, max_betr_hist_type
-    call bstatus%set_msg(msg='# of 2d flux variables are defined more than allowed', err=-1)
-    return
-  endif
+
+  end subroutine get_hist_size
+   !------------------------------------------------------------------------
+
+  subroutine get_hist_info(this, num_state1d, num_state2d, num_flux1d, num_flux2d, &
+         nmlist_hist1d_state_buffer, nmlist_hist2d_state_buffer, &
+         nmlist_hist1d_flux_buffer, nmlist_hist2d_flux_buffer)
+  !
+  ! DESCRIPTION
+  ! return number of variables for history output
+  !
+  ! USES
+  use betr_ctrl, only : max_betr_hist_type
+  use BetrStatusType      , only : betr_status_type
+  use betr_constants , only : stdout
+  implicit none
+  !ARGUMENTS
+  class(betr_type)  ,     intent(inout) :: this
+  integer           ,     intent(in)   :: num_state1d
+  integer           ,     intent(in)   :: num_state2d
+  integer           ,     intent(in)   :: num_flux1d
+  integer           ,     intent(in)   :: num_flux2d
+  character(len=255), intent(out) :: nmlist_hist1d_state_buffer(num_state1d)
+  character(len=255), intent(out) :: nmlist_hist2d_state_buffer(num_state2d)
+  character(len=255), intent(out) :: nmlist_hist1d_flux_buffer(num_flux1d)
+  character(len=255), intent(out) :: nmlist_hist2d_flux_buffer(num_flux2d)
+  integer :: j
 
   do j = 1, num_state1d
     nmlist_hist1d_state_buffer(j) = this%tracerstates%nmlist_hist1d_buffer(j)
@@ -1235,7 +1238,7 @@ contains
   do j = 1, num_flux2d
     nmlist_hist2d_flux_buffer(j) = this%tracerfluxes%nmlist_hist2d_buffer(j)
   enddo
-  end subroutine get_hist_size
+  end subroutine get_hist_info
 
   !------------------------------------------------------------------------
   subroutine HistRetrieveState(this, bounds, lbj, ubj, &

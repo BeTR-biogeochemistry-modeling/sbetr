@@ -207,7 +207,7 @@ contains
               avgflag='A', long_name='total molar mass in the column (soi+snow) for '//trim(tracernames(jj)), &
               default='inactive')
       enddo
-
+      call this%sort_hist_list()
     end associate
   end subroutine InitHistory
 

@@ -17,7 +17,7 @@ module BeTRSimulation
 
   ! !USES:
   use BetrType                 , only : betr_type, create_betr_type
-  use betr_ctrl                , only : max_betr_hist_type, betr_offline, max_betr_rest_type
+  use betr_ctrl                , only : max_betr_hist_type, betr_offline, max_betr_rest_type, biulog
   use betr_constants           , only : betr_string_length
   use betr_constants           , only : betr_filename_length
   use betr_regression_module   , only : betr_regression_type
@@ -59,10 +59,10 @@ module BeTRSimulation
      integer, public                              :: num_soilc
      integer, public, allocatable                 :: filter_soilc(:)
 
-     character(len=255) :: nmlist_hist1d_state_buffer(max_betr_hist_type)
-     character(len=255) :: nmlist_hist2d_state_buffer(max_betr_hist_type)
-     character(len=255) :: nmlist_hist1d_flux_buffer(max_betr_hist_type)
-     character(len=255) :: nmlist_hist2d_flux_buffer(max_betr_hist_type)
+     character(len=255), allocatable :: nmlist_hist1d_state_buffer(:)
+     character(len=255), allocatable :: nmlist_hist2d_state_buffer(:)
+     character(len=255), allocatable :: nmlist_hist1d_flux_buffer(:)
+     character(len=255), allocatable :: nmlist_hist2d_flux_buffer(:)
 
      integer :: num_hist_state1d
      integer :: num_hist_state2d
@@ -107,7 +107,7 @@ module BeTRSimulation
      procedure, private:: hist_create_fluxes
      procedure, private:: hist_output_states
      procedure, private:: hist_output_fluxes
-
+     procedure, private:: init_hist_buffer
   end type betr_simulation_type
 
   public :: BeTRSimulationInit
@@ -206,6 +206,7 @@ contains
     integer :: c, l
     !print*,'base_filename',trim(base_filename)
 
+    biulog = iulog
     this%base_filename = base_filename
 
     !allocate memory
@@ -260,16 +261,21 @@ contains
     !identify variables that are used for output
     c = bounds%begc
     call this%betr(c)%get_hist_size(this%num_hist_state1d, this%num_hist_state2d, &
+      this%num_hist_flux1d, this%num_hist_flux2d)
+
+    call this%init_hist_buffer()
+
+    call this%betr(c)%get_hist_info(this%num_hist_state1d, this%num_hist_state2d, &
       this%num_hist_flux1d, this%num_hist_flux2d, &
       this%nmlist_hist1d_state_buffer, this%nmlist_hist2d_state_buffer, &
-      this%nmlist_hist1d_flux_buffer, this%nmlist_hist2d_flux_buffer, this%bstatus(c))
+      this%nmlist_hist1d_flux_buffer, this%nmlist_hist2d_flux_buffer)
 
     if(this%bstatus(c)%check_status())then
       call this%bsimstatus%setcol(c)
       call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
       if(this%bsimstatus%check_status())call endrun(msg=this%bsimstatus%print_msg())
     endif
-
+    print*,'finish get_hist_info'
     if(betr_offline)then
       call this%CreateOfflineHistory(bounds, betr_nlevtrc_soil, &
          this%num_hist_state1d, this%num_hist_state2d, &
@@ -283,7 +289,18 @@ contains
     if(this%bsimstatus%check_status())call endrun(msg=this%bsimstatus%print_msg())
 
   end subroutine BeTRInit
+  !---------------------------------------------------------------------------------
 
+  subroutine init_hist_buffer(this)
+  implicit none
+  class(betr_simulation_type) , intent(inout) :: this
+
+  allocate(this%nmlist_hist1d_state_buffer(this%num_hist_state1d)); this%nmlist_hist1d_state_buffer(:)=''
+  allocate(this%nmlist_hist2d_state_buffer(this%num_hist_state2d)); this%nmlist_hist2d_state_buffer(:)=''
+  allocate(this%nmlist_hist1d_flux_buffer(this%num_hist_flux1d)); this%nmlist_hist1d_flux_buffer(:)=''
+  allocate(this%nmlist_hist2d_flux_buffer(this%num_hist_flux2d)); this%nmlist_hist2d_flux_buffer(:)=''
+
+  end subroutine init_hist_buffer
   !---------------------------------------------------------------------------------
   subroutine BeTRSimulationRestartOpen(this, fname, flag, ncid)
     !
@@ -515,10 +532,10 @@ contains
     call  hist_def_fld2d(ncid, varname="QFLX_ADV", nf90_type=nf90_float,dim1name="ncol",     &
            dim2name="levtrc",long_name="advective flux / velocity", units="m/s")
 
-    print*,'hist_create_states'
+    write(iulog,*)'hist_create_states'
     call this%hist_create_states(bounds, betr_nlevtrc_soil, num_hist_state1d, num_hist_state2d, ncid=ncid)
 
-    print*,'hist_create_fluxes'
+    write(iulog,*)'hist_create_fluxes'
     call this%hist_create_fluxes(bounds, betr_nlevtrc_soil, num_hist_flux1d, num_hist_flux2d, ncid=ncid)
 
     call ncd_enddef(ncid)
@@ -569,7 +586,7 @@ contains
       call ncd_pio_openfile_for_write(ncid, this%hist_filename)
 
       if (mod(time_vars%time, 86400._r8)==0) then
-         print*,'day', time_vars%time/86400._r8
+         write(iulog,*)'day', time_vars%time/86400._r8
       end if
       call ncd_putvar(ncid, "time", record, time_vars%time)
 
@@ -1148,14 +1165,13 @@ contains
 
   do jj = 1, num_flux2d
     !read name list
-    !print*,this%nmlist_hist2d_flux_buffer(jj)
     read(this%nmlist_hist2d_flux_buffer(jj), nml=hist2d_fmt, iostat=nml_error, iomsg=ioerror_msg)
 
     if(nml_error/=0)then
-      write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
+      write(biulog,*)'reading ',jj,'-th namelist failed'//ioerror_msg
     endif
     if(betr_offline)then
-      !print*,'2d flux',jj,trim(fname)
+      write(biulog,*)'2d flux',jj,trim(fname)
       call hist_def_fld2d (ncid, varname=fname, nf90_type=ncd_float, dim1name = "ncol",&
             dim2name="levtrc", long_name=long_name, units=units)
     else
@@ -1170,10 +1186,10 @@ contains
     !read name list
     read(this%nmlist_hist1d_flux_buffer(jj), nml=hist1d_fmt, iostat=nml_error, iomsg=ioerror_msg)
     if(nml_error/=0)then
-      write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
+      write(biulog,*)'reading ',jj,'-th namelist failed'//ioerror_msg
     endif
     if(betr_offline)then
-      print*,'1d flux',jj,trim(fname)
+      write(biulog,*)'1d flux',jj,trim(fname)
       call hist_def_fld1d (ncid, varname=fname,  nf90_type=ncd_float, &
         dim1name="ncol", long_name=long_name, units=units)
     else
@@ -1244,11 +1260,11 @@ contains
     !read namelist
     read(this%nmlist_hist2d_state_buffer(jj), nml=hist2d_fmt, iostat=nml_error, iomsg=ioerror_msg)
     if(nml_error/=0)then
-      write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
+      write(biulog,*)'reading ',jj,'-th namelist failed'//ioerror_msg
     endif
 
     if(betr_offline)then
-      print*,jj,trim(fname)
+      write(biulog,*)'2d state',jj,trim(fname)
       call hist_def_fld2d (ncid=ncid, varname=trim(fname), nf90_type=ncd_float, dim1name = "ncol",&
           dim2name="levtrc", long_name=long_name, units=units)
     else
@@ -1263,10 +1279,10 @@ contains
     !read namelist
     read(this%nmlist_hist1d_state_buffer(jj), nml=hist1d_fmt, iostat=nml_error, iomsg=ioerror_msg)
     if(nml_error/=0)then
-      write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
+      write(biulog,*)'reading ',jj,'-th namelist failed'//ioerror_msg
     endif
     if(betr_offline)then
-      print*,jj,trim(fname)
+      write(biulog,*)'1d state',jj,trim(fname)
       call hist_def_fld1d (ncid, varname=fname,  nf90_type=ncd_float, &
         dim1name="ncol", long_name=long_name, units=units)
     else
@@ -1323,7 +1339,6 @@ contains
 
   namelist /hist1d_fmt/    &
   fname, units, avgflag, long_name, default
-
 
   begc=bounds%begc; endc=bounds%endc
 
@@ -1406,7 +1421,6 @@ contains
 
   namelist /hist1d_fmt/    &
   fname, units, avgflag, long_name, default
-
 
   begc = bounds%begc; endc = bounds%endc
 
@@ -1542,7 +1556,6 @@ contains
   use ncdio_pio      , only : file_desc_t, ncd_defvar, ncd_defdim
   use ncdio_pio      , only : ncd_double, ncd_enddef, ncd_putvar
   use ncdio_pio      , only : ncd_getvar
-  use betr_ctrl, only : max_betr_hist_type
   implicit none
   ! !ARGUMENTS:
   class(betr_simulation_type) , intent(inout) :: this
@@ -1575,7 +1588,7 @@ contains
   if(trim(flag)/='define')then
     !assign initial conditions
     call this%BeTRSetBounds(betr_bounds)
-    !x print*,nrest_1d,nrest_2d
+
     do fc = 1, numf
       c = filter(fc)
       call this%betr(c)%set_restvar(betr_bounds, 1, betr_nlevtrc_soil, nrest_1d,&

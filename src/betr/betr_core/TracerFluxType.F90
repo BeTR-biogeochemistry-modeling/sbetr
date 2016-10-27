@@ -302,7 +302,7 @@ contains
         default='inactive')
 
     enddo
-
+    call this%sort_hist_list()
     end associate
 
   end subroutine InitHistory
