@@ -12,6 +12,7 @@ CC         = not-set
 CXX        = not-set
 FC         = not-set
 travis = not-set
+BGC        = not-set
 # This proxies everything to the builddir cmake.
 
 cputype = $(shell uname -m | sed "s/\\ /_/g")
@@ -21,7 +22,11 @@ BUILDDIR := build/$(systype)-$(cputype)
 CONFIG_FLAGS = -DUNIX=1 -Wno-dev
 
 # Process configuration options.
-
+ifeq ($(BGC), not-set)
+  CONFIG_FLAGS += -DBGC=0
+else
+  CONFIG_FLAGS += -DBGC=1
+endif
 # Travis-CI build
 ifeq ($(travis), not-set)
   CONFIG_FLAGS += -DTRAVIS_CI=0

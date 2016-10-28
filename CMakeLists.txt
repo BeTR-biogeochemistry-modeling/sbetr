@@ -6,7 +6,7 @@ set (BETR_MAJOR_VERSION 0)
 set (BETR_MINOR_VERSION 1)
 set (BETR_PATCH_VERSION 0)
 set (BETR_VERSION "${BETR_MAJOR_VERSION}.${BETR_MINOR_VERSION}.${BETR_PATCH_VERSION}")
-set (BETR_BGC 1)
+
 
 # Adjust CMake's module path.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
@@ -19,6 +19,8 @@ option(BUILD_SHARED_LIBS "Builds shared libraries [ON]." ON)
 option(XSDK_WITH_NETCDF "Enables support for netcdf [OFF]." ON)
 option(TPL_NETCDF_LIBRARIES "List of absolute paths to netcdf link libraries [].")
 option(TPL_NETCDF_INCLUDE_DIRS "List of absolute paths to netcdf include directories [].")
+
+
 
 # For now, we disable shared libs on Macs.
 if (APPLE)
@@ -82,6 +84,7 @@ enable_language(C)
 enable_language(CXX)
 enable_language(Fortran)
 
+
 # We declare the project here.
 project (betr)
 
@@ -90,6 +93,13 @@ message("-- CXX compiler is ${CMAKE_CXX_COMPILER} (${CMAKE_CXX_COMPILER_ID})")
 message("-- Fortran compiler is ${CMAKE_Fortran_COMPILER} (${CMAKE_Fortran_COMPILER_ID})")
 
 set_up_compilers()
+
+if (BGC)
+  set (BETR_BGC 1)
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -DBETR_BGC")
+else()
+  set (BETR_BGC 0)
+endif()
 
 # Figure out the system type.
 set(BETR_HAVE_BOOL 1) # All reasonable C99 compilers have this now.
