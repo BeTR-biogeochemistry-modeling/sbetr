@@ -27,7 +27,7 @@ set(BETR_LIBRARIES betr_driver_standalone;${BETR_LIBRARIES})
 #X#add_subdirectory(tests)
 
 if (NOT CMAKE_INSTALL_PREFIX STREQUAL "INSTALL_DISABLED")
-  install(TARGETS betr_driver_standalone DESTINATION bin)
+  install(TARGETS betr_driver_standalone DESTINATION lib)
   file(GLOB HEADERS *.h)
   install(FILES ${HEADERS} DESTINATION include/betr/driver/standalone)
 endif()

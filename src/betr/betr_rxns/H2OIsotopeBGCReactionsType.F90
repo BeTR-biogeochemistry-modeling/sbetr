@@ -120,10 +120,8 @@ module H2OIsotopeBGCReactionsType
 
   !local variables
   character(len=*)       , parameter :: subname ='Init_betrbgc'
-  integer :: itemp_gwm
-  integer :: itemp_g
-  integer :: itemp_s
-  integer :: itemp_gwm_grp
+  integer :: itemp, itemp_trc
+
   integer :: dum
   integer :: itemp_grp, itemp_v, itemp_vgrp, itemp_adsgrp
   integer :: itemp_frz
@@ -135,62 +133,94 @@ module H2OIsotopeBGCReactionsType
   if (lbj > 0) continue
   if (ubj > 0) continue
 
-  itemp_gwm     = 0
-  itemp_g       = 0
-  itemp_s       = 0
-  itemp_gwm_grp = 0
-  itemp_adsgrp  = 0
-  betrtracer_vars%id_trc_n2  = addone(itemp_gwm)     ; itemp_gwm_grp = addone(itemp_gwm_grp);
-  betrtracer_vars%id_trc_o2  = addone(itemp_gwm)     ; itemp_gwm_grp = addone(itemp_gwm_grp);
-  betrtracer_vars%id_trc_ar  = addone(itemp_gwm)     ; itemp_gwm_grp = addone(itemp_gwm_grp);
-  betrtracer_vars%id_trc_co2x= addone(itemp_gwm)     ; itemp_gwm_grp = addone(itemp_gwm_grp);
-  betrtracer_vars%id_trc_ch4 = addone(itemp_gwm)     ; itemp_gwm_grp = addone(itemp_gwm_grp);
-  betrtracer_vars%id_trc_blk_h2o = addone(itemp_gwm) ; itemp_gwm_grp = addone(itemp_gwm_grp);
-  betrtracer_vars%id_trc_o18_h2o = addone(itemp_gwm) ; itemp_gwm_grp = addone(itemp_gwm_grp);
-  betrtracer_vars%id_trc_d_h2o = addone(itemp_gwm)   ; itemp_gwm_grp = addone(itemp_gwm_grp);
+  !volatile tracers
+  itemp = 0; itemp_trc=0
+  call betrtracer_vars%add_tracer_group(trc_grp_cnt=addone(itemp), mem = 1, &
+      trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_n2, &
+      trc_grp_beg=betrtracer_vars%id_trc_beg_n2,&
+      trc_grp_end=betrtracer_vars%id_trc_end_n2, is_trc_gw=.true., is_trc_volatile = .true.)
 
-  betrtracer_vars%ngwmobile_tracers      = itemp_gwm;   betrtracer_vars%ngwmobile_tracer_groups= itemp_gwm_grp;
-  betrtracer_vars%nvolatile_tracer_groups= itemp_gwm;
+  call betrtracer_vars%add_tracer_group(trc_grp_cnt=addone(itemp), mem = 1, &
+      trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_o2, &
+      trc_grp_beg=betrtracer_vars%id_trc_beg_o2, &
+      trc_grp_end=betrtracer_vars%id_trc_end_o2, &
+      is_trc_gw=.true., is_trc_volatile = .true.)
+
+  call betrtracer_vars%add_tracer_group(trc_grp_cnt=addone(itemp), mem = 1, &
+      trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_ar,&
+      trc_grp_beg= betrtracer_vars%id_trc_beg_ar, &
+      trc_grp_end= betrtracer_vars%id_trc_end_ar, &
+      is_trc_gw=.true., is_trc_volatile = .true.)
+
+  call betrtracer_vars%add_tracer_group(trc_grp_cnt=addone(itemp), mem = 1, &
+      trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_co2x, &
+      trc_grp_beg=betrtracer_vars%id_trc_beg_co2x, &
+      trc_grp_end=betrtracer_vars%id_trc_end_co2x, &
+      is_trc_gw=.true., is_trc_volatile = .true.)
+
+  call betrtracer_vars%add_tracer_group(trc_grp_cnt=addone(itemp), mem = 1, &
+      trc_cnt=itemp_trc, trc_grp= betrtracer_vars%id_trc_ch4, &
+      trc_grp_beg= betrtracer_vars%id_trc_beg_ch4, &
+      trc_grp_end= betrtracer_vars%id_trc_end_ch4, &
+      is_trc_gw=.true., is_trc_volatile = .true.)
+
+  call betrtracer_vars%add_tracer_group(trc_grp_cnt=addone(itemp), mem = 1, &
+      trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_blk_h2o, &
+      trc_grp_beg=betrtracer_vars%id_trc_beg_blk_h2o, &
+      trc_grp_end=betrtracer_vars%id_trc_end_blk_h2o, &
+      is_trc_gw=.true., is_trc_volatile = .true.)
+
+  call betrtracer_vars%add_tracer_group(trc_grp_cnt=addone(itemp), mem = 1, &
+      trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_o18_h2o, &
+      trc_grp_beg=betrtracer_vars%id_trc_beg_o18_h2o, &
+      trc_grp_end=betrtracer_vars%id_trc_end_o18_h2o, &
+      is_trc_gw=.true., is_trc_volatile = .true.)
+
+  call betrtracer_vars%add_tracer_group(trc_grp_cnt=addone(itemp), mem = 1, &
+      trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_d_h2o, &
+      trc_grp_beg=betrtracer_vars%id_trc_beg_d_h2o, &
+      trc_grp_end=betrtracer_vars%id_trc_end_d_h2o, &
+      is_trc_gw=.true., is_trc_volatile = .true.)
+
   betrtracer_vars%nmem_max               = 1
 
   call betrtracer_vars%Init()
 
-  itemp_grp = 0    !group id
   itemp_v = 0      !volatile id
   itemp_vgrp = 0   !volatile group
   itemp_frz = 0    !frozen tracer id
   call betrtracer_vars%set_tracer(bstatus=bstatus, trc_id = betrtracer_vars%id_trc_n2, trc_name='N2'  ,      &
-       is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = addone(itemp_grp),   &
+       is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = betrtracer_vars%id_trc_n2,   &
        trc_group_mem= 1,  is_trc_volatile=.true., trc_volatile_id = addone(itemp_v)     ,   &
        trc_volatile_group_id = addone(itemp_vgrp))
   if(bstatus%check_status())return
 
   call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_o2, trc_name='O2'  ,      &
-       is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = addone(itemp_grp),   &
+       is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = betrtracer_vars%id_trc_o2,   &
        trc_group_mem = 1, is_trc_volatile=.true., trc_volatile_id = addone(itemp_v)     ,   &
        trc_volatile_group_id = addone(itemp_vgrp))
   if(bstatus%check_status())return
 
   call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_ar, trc_name='AR'  ,      &
-       is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = addone(itemp_grp),   &
+       is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = betrtracer_vars%id_trc_ar,   &
        trc_group_mem = 1, is_trc_volatile=.true., trc_volatile_id = addone(itemp_v)     ,   &
        trc_volatile_group_id = addone(itemp_vgrp))
   if(bstatus%check_status())return
 
   call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_co2x, trc_name='CO2x',    &
-       is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = addone(itemp_grp)  , &
+       is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = betrtracer_vars%id_trc_co2x  , &
        trc_group_mem = 1, is_trc_volatile=.true., trc_volatile_id = addone(itemp_v)       , &
        trc_volatile_group_id = addone(itemp_vgrp))
   if(bstatus%check_status())return
 
   call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_ch4, trc_name='CH4',      &
-       is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = addone(itemp_grp),   &
+       is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = betrtracer_vars%id_trc_ch4,   &
        trc_group_mem = 1, is_trc_volatile=.true., trc_volatile_id = addone(itemp_v)     ,   &
        trc_volatile_group_id = addone(itemp_vgrp))
   if(bstatus%check_status())return
 
   call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_blk_h2o, trc_name='BLK_H2O' ,   &
-       is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = addone(itemp_grp)      ,   &
+       is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = betrtracer_vars%id_trc_blk_h2o      ,   &
        trc_group_mem = 1, is_trc_diffusive =.false., is_trc_volatile=.true.                   ,   &
        trc_volatile_id = addone(itemp_v), trc_volatile_group_id = addone(itemp_vgrp)          ,   &
        is_trc_h2o=.true., trc_vtrans_scal=1._r8, is_trc_frozen=.true.,  &
@@ -198,7 +228,7 @@ module H2OIsotopeBGCReactionsType
   if(bstatus%check_status())return
 
   call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_o18_h2o, trc_name='O18_H2O' ,   &
-       is_trc_mobile=.true., is_trc_advective = .true., trc_group_id =  addone(itemp_grp)     ,   &
+       is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = betrtracer_vars%id_trc_o18_h2o     ,   &
        trc_group_mem = 1, is_trc_diffusive =.false., is_trc_volatile=.true.                   ,   &
        trc_volatile_id = addone(itemp_v), trc_volatile_group_id = addone(itemp_vgrp)          ,   &
        is_trc_h2o=.true., trc_vtrans_scal=1._r8, is_trc_frozen=.true.,  &
@@ -206,7 +236,7 @@ module H2OIsotopeBGCReactionsType
   if(bstatus%check_status())return
 
   call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_d_h2o, trc_name='D_H2O' ,   &
-       is_trc_mobile=.true., is_trc_advective = .true., trc_group_id =  addone(itemp_grp)     ,   &
+       is_trc_mobile=.true., is_trc_advective = .true., trc_group_id =  betrtracer_vars%id_trc_d_h2o  ,   &
        trc_group_mem = 1, is_trc_diffusive =.false., is_trc_volatile=.true.                   ,   &
        trc_volatile_id = addone(itemp_v), trc_volatile_group_id = addone(itemp_vgrp)          ,   &
        is_trc_h2o=.true., trc_vtrans_scal=1._r8, is_trc_frozen=.true., &

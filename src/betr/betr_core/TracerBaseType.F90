@@ -243,7 +243,7 @@ contains
 !x  if(jj/=this%num_hist2d)then
 !x    print*,'bang'
 !x  endif
-  print*,'free lists'
+!x  print*,'free lists'
   call list_free(tail1d)
   call list_free(tail2d)
   call list_free(head1d)

@@ -152,10 +152,10 @@ contains
   call calc_qadv(ubj, simulation%num_soilc, &
        simulation%filter_soilc, waterstate_vars)
 
-  !x print*,'bf sim init',forcing_data%t_soi(1,:)
+  !x print*,'bf sim init'
   !print*,'base_filename:',trim(base_filename)
   call  simulation%Init(base_filename, namelist_buffer, bounds, lun, col, pft, waterstate_vars)
-  !x print*,'af sim init',forcing_data%t_soi(1,:)
+  !x print*,'af sim init'
 
   select type(simulation)
   class is (betr_simulation_standalone_type)
@@ -184,11 +184,11 @@ contains
     call time_vars%proc_initstep()
   endif
 
-  !x print*,'bf loop',forcing_data%t_soi(1,:)
+  !x print*,'bf loop'
   do
     record = record + 1
 
-    !print*,'prepare for diagnosing water flux'
+    !x print*,'prepare for diagnosing water flux'
     call simulation%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi, waterstate_vars=waterstate_vars)
 
     call simulation%PreDiagSoilColWaterFlux(simulation%num_soilc,  simulation%filter_soilc)
@@ -205,7 +205,7 @@ contains
     call simulation%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi, waterstate_vars=waterstate_vars, &
       waterflux_vars=waterflux_vars, soilhydrology_vars = soilhydrology_vars)
 
-    !print*,'diagnose water flux'
+    !x print*,'diagnose water flux'
     call simulation%DiagAdvWaterFlux(time_vars, simulation%num_soilc, &
       simulation%filter_soilc)
 
@@ -216,7 +216,7 @@ contains
     if(record==0)cycle
     call simulation%BeginMassBalanceCheck(bounds)
 
-    !print*,'without drainage'
+    !x print*,'without drainage'
     !the following call could be lsm specific, so that
     !different lsm could use different definitions of input
     !variables, e.g. clm doesn't use cnstate_vars as public variables
@@ -250,7 +250,6 @@ contains
         chemstate_vars=chemstate_vars,           soilstate_vars=soilstate_vars)
     end select
 
-
     call simulation%StepWithoutDrainage(time_vars, bounds, col, pft)
 
     select type(simulation)
@@ -260,13 +259,13 @@ contains
     class default
     end select
 
-    !print*,'with drainge'
+    !x print*,'with drainge'
     !set forcing variable for drainage
     call simulation%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi,&
        waterflux_vars=waterflux_vars )
     call simulation%StepWithDrainage(bounds, col)
 
-    !print*,'do mass balance check'
+    !x print*,'do mass balance check'
     call simulation%MassBalanceCheck(time_vars, bounds)
 
     !specific for water tracer transport
@@ -276,7 +275,7 @@ contains
     !update time stamp
     call time_vars%update_time_stamp()
 
-    !print*,'write output'
+    !x print*,'write output'
     call simulation%WriteOfflineHistory(bounds, record, simulation%num_soilc,  &
        simulation%filter_soilc, time_vars, waterflux_vars%qflx_adv_col)
 
@@ -296,7 +295,7 @@ contains
 
        call simulation%BeTRRestartClose(ncid)
     endif
-
+    !x print*,'next step'
     if(time_vars%its_time_to_exit()) then
        exit
     end if

@@ -1693,7 +1693,7 @@ contains
       c = pft%column(p)
 
       ! Calculate aerenchyma diffusion
-      if (j > jwt(c) .and. t_soisno(c,j) > tfrz .and. pft%itype(p) /= pftvarcon%noveg) then
+      if (j > jwt(c) .and. t_soisno(c,j) > tfrz .and. pftvarcon%is_grass_patch(pft%itype(p))) then
         ! Attn EK: This calculation of aerenchyma properties is very uncertain. Let's check in once all
         ! the new components are in; if there is any tuning to be done to get a realistic global flux,
         ! this would probably be the place.  We will have to document clearly in the Tech Note
@@ -1726,8 +1726,7 @@ contains
         endif
         n_tiller = m_tiller / 0.22_r8
 
-        if (pft%itype(p) == pftvarcon%nc3_arctic_grass .or. pft%crop(pft%itype(p)) == 1 .or. &
-          pft%itype(p) == pftvarcon%nc3_nonarctic_grass .or. pft%itype(p) == pftvarcon%nc4_grass) then
+        if (pftvarcon%is_grass_patch(pft%itype(p)) .or. pft%crop(pft%itype(p)) == 1) then
           poros_tiller = 0.3_r8  ! Colmer 2003
         else
           poros_tiller = 0.3_r8 * nongrassporosratio
