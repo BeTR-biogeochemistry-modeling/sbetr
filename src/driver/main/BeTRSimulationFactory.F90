@@ -18,7 +18,7 @@ module BeTRSimulationFactory
 contains
 
 !-------------------------------------------------------------------------------
-  function create_betr_simulation(simulator_name) result(simulator)
+  function create_betr_simulation(simulator_name, boffline) result(simulator)
     !DESCRIPTION
     ! create a betr simulation object
     !
@@ -27,10 +27,14 @@ contains
     use BeTRSimulationStandalone , only : create_betr_simulation_standalone
     use BeTRSimulationCLM        , only : create_betr_simulation_clm
     use BeTRSimulationALM        , only : create_betr_simulation_alm
+    use betr_ctrl                , only : betr_offline
     implicit none
     !ARGUMENTS
     character(len=*), intent(in)         :: simulator_name
+    logical, intent(in) :: boffline
     class(betr_simulation_type), pointer :: simulator
+
+    betr_offline=boffline
 
     select case(trim(simulator_name))
        case ("standalone")

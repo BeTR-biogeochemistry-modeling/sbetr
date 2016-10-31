@@ -312,7 +312,7 @@ contains
     !ARGUMENTS
     class(betr_simulation_type) , intent(inout) :: this
     character(len=*), intent(in) :: fname
-    class(file_desc_t)          , intent(out) :: ncid ! netcdf id
+    type(file_desc_t)          , intent(out) :: ncid ! netcdf id
     character(len=*), intent(in) :: flag
 
     integer :: c
@@ -337,7 +337,7 @@ contains
     implicit none
     !ARGUMENTS
     class(betr_simulation_type) , intent(inout) :: this
-    class(file_desc_t)          , intent(inout) :: ncid ! netcdf id
+    type(file_desc_t)          , intent(inout) :: ncid ! netcdf id
 
     call ncd_pio_closefile(ncid)
   end subroutine BeTRSimulationRestartClose
@@ -583,7 +583,6 @@ contains
          volatileid        => this%betr(c)%tracers%volatileid,        &
          tracernames       => this%betr(c)%tracers%tracernames        &
          )
-
       call ncd_pio_openfile_for_write(ncid, this%hist_filename)
 
       if (mod(time_vars%time, 86400._r8)==0) then
@@ -1561,7 +1560,7 @@ contains
   ! !ARGUMENTS:
   class(betr_simulation_type) , intent(inout) :: this
   type(bounds_type)    , intent(in)    :: bounds
-  class(file_desc_t)   , intent(inout) :: ncid                                         ! netcdf id
+  type(file_desc_t)   , intent(inout) :: ncid                                         ! netcdf id
   character(len=*)     , intent(in)    :: flag ! 'read' or 'write'
   integer, intent(in) :: numf
   integer, intent(in) :: filter(:)
@@ -1677,7 +1676,7 @@ contains
   ! !ARGUMENTS:
   class(betr_simulation_type) , intent(inout) :: this
   type(bounds_type)    , intent(in)    :: bounds
-  class(file_desc_t)   , intent(inout) :: ncid                                         ! netcdf id
+  type(file_desc_t)   , intent(inout) :: ncid                                         ! netcdf id
   character(len=*)     , intent(in)    :: flag ! 'read' or 'write'
   integer, intent(in) :: numf
   integer, intent(in) :: filter(:)

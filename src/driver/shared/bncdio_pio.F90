@@ -227,7 +227,7 @@ module bncdio_pio
 ! !ARGUMENTS:
 
   implicit none
-  class(file_desc_t), intent(in) :: ncid    ! file id
+  type(file_desc_t), intent(in) :: ncid    ! file id
   character(len=*), intent(in) :: dimname   !dimension name
   integer, intent(in) :: value              ! dimension length
 !
@@ -270,7 +270,7 @@ module bncdio_pio
   use abortutils, only : endrun
 ! !ARGUMENTS:
   implicit none
-  class(file_desc_t),      intent(in) :: ncid
+  type(file_desc_t),      intent(in) :: ncid
   character(len=*)       , intent(in) :: varname   ! Varible name to check
   class(Var_desc_t)     , intent(out) :: vardesc   ! Output variable descriptor
   logical               , intent(out) :: readvar   ! If variable exists or not
@@ -314,7 +314,7 @@ module bncdio_pio
     ! !USES:
     !
     ! !ARGUMENTS:
-    class(file_desc_t),intent(inout) :: ncid      ! netcdf file id
+    type(file_desc_t),intent(inout) :: ncid      ! netcdf file id
     integer           ,intent(in)    :: varid     ! netcdf var id
     character(len=*)  ,intent(in)    :: attrib    ! netcdf attrib
     logical           ,intent(out)   :: att_found ! true if the attribute was found
@@ -388,7 +388,7 @@ module bncdio_pio
   use shr_kind_mod, only : r8 => shr_kind_r8
 ! !ARGUMENTS:
   implicit none
-  class(file_desc_t)     , intent(inout)  :: ncid                    ! input unit
+  type(file_desc_t)     , intent(inout)  :: ncid                    ! input unit
   character(len=*), intent(in)  :: varname                 ! variable name
   integer         , intent(in)  :: xtype                   ! external type
   character(len=*), intent(in), optional :: dim1name       ! dimension name
@@ -502,7 +502,7 @@ module bncdio_pio
   use netcdf
 !**********************************************************************
   implicit none
-  class(file_desc_t), intent(in) :: ncid
+  type(file_desc_t), intent(in) :: ncid
   integer, intent(in) :: rec
   integer, intent(in) :: data
   character(len=*),intent(in) :: varname
@@ -526,7 +526,7 @@ module bncdio_pio
   use shr_kind_mod, only : r8 => shr_kind_r8
 !**********************************************************************
   implicit none
-  class(file_desc_t), intent(in) :: ncid
+  type(file_desc_t), intent(in) :: ncid
   integer, intent(in) :: rec
   real(r8), intent(in) :: data
   character(len=*),intent(in) :: varname
@@ -548,7 +548,7 @@ module bncdio_pio
 
 !**********************************************************************
   implicit none
-  class(file_desc_t), intent(in) :: ncid
+  type(file_desc_t), intent(in) :: ncid
   integer, intent(in) :: rec
   integer, dimension(:), intent(in) :: data
   character(len=*), intent(in) :: varname
@@ -570,7 +570,7 @@ module bncdio_pio
   use shr_kind_mod, only : r8 => shr_kind_r8
 !**********************************************************************
   implicit none
-  class(file_desc_t), intent(in) :: ncid
+  type(file_desc_t), intent(in) :: ncid
   integer, intent(in) :: rec
   real(r8),dimension(:), intent(in) :: data
 
@@ -594,7 +594,7 @@ module bncdio_pio
   use netcdf
 !**********************************************************************
   implicit none
-  class(file_desc_t), intent(in) :: ncid
+  type(file_desc_t), intent(in) :: ncid
   integer,           intent(in) :: rec
   integer, dimension(:,:), intent(in) :: data
   character(len=*), intent(in) :: varname
@@ -618,7 +618,7 @@ module bncdio_pio
 
 !**********************************************************************
   implicit none
-  class(file_desc_t), intent(in) :: ncid
+  type(file_desc_t), intent(in) :: ncid
   integer,           intent(in) :: rec
   real(r8),dimension(:,:), intent(in) :: data
 
@@ -643,7 +643,7 @@ module bncdio_pio
   use netcdf
 !**********************************************************************
   implicit none
-  class(file_desc_t), intent(in) :: ncid
+  type(file_desc_t), intent(in) :: ncid
   integer, intent(in) :: rec
   integer, dimension(:,:,:), intent(in) :: data
   character(len=*), intent(in) :: varname
@@ -666,7 +666,7 @@ module bncdio_pio
   use shr_kind_mod, only : r8 => shr_kind_r8
 !**********************************************************************
   implicit none
-  class(file_desc_t), intent(in) :: ncid
+  type(file_desc_t), intent(in) :: ncid
   integer, intent(in) :: rec
   real(r8),dimension(:,:,:), intent(in) :: data
 
@@ -689,7 +689,7 @@ module bncdio_pio
   use netcdf
 !**********************************************************************
   implicit none
-  class(file_desc_t), intent(in) :: ncid
+  type(file_desc_t), intent(in) :: ncid
   integer, intent(in) :: rec
   character(len=*),intent(in) :: varname
   integer, intent(out) :: data
@@ -714,7 +714,7 @@ module bncdio_pio
     use shr_kind_mod, only : r8 => shr_kind_r8
   !**********************************************************************
     implicit none
-    class(file_desc_t), intent(in) :: ncid
+    type(file_desc_t), intent(in) :: ncid
     character(len=*),intent(in) :: varname
     REAL(r8), dimension(:), intent(out) :: data
 
@@ -738,7 +738,7 @@ module bncdio_pio
       use shr_kind_mod, only : r8 => shr_kind_r8
     !**********************************************************************
       implicit none
-      class(file_desc_t), intent(in) :: ncid
+      type(file_desc_t), intent(in) :: ncid
       character(len=*),intent(in) :: varname
       REAL(r8), dimension(:,:), intent(out) :: data
 
@@ -761,7 +761,7 @@ module bncdio_pio
         use shr_kind_mod, only : r8 => shr_kind_r8
       !**********************************************************************
         implicit none
-        class(file_desc_t), intent(in) :: ncid
+        type(file_desc_t), intent(in) :: ncid
         character(len=*),intent(in) :: varname
         REAL(r8), dimension(:,:,:), intent(out) :: data
 
@@ -784,7 +784,7 @@ module bncdio_pio
           use shr_kind_mod, only : r8 => shr_kind_r8
         !**********************************************************************
           implicit none
-          class(file_desc_t), intent(in) :: ncid
+          type(file_desc_t), intent(in) :: ncid
           character(len=*),intent(in) :: varname
           REAL(r8), dimension(:,:,:,:), intent(out) :: data
 
@@ -807,7 +807,7 @@ module bncdio_pio
   use shr_kind_mod, only : r8 => shr_kind_r8
 !**********************************************************************
   implicit none
-  class(file_desc_t), intent(in) :: ncid
+  type(file_desc_t), intent(in) :: ncid
   integer,           intent(in) :: rec
   character(len=*),intent(in) :: varname
   REAL(r8), intent(out) :: data
@@ -832,7 +832,7 @@ module bncdio_pio
   use netcdf
 !**********************************************************************
   implicit none
-  class(file_desc_t), intent(in) :: ncid
+  type(file_desc_t), intent(in) :: ncid
   integer,           intent(in) :: rec
   integer, dimension(:), intent(out) :: data
   character(len=*), intent(in) :: varname
@@ -855,7 +855,7 @@ module bncdio_pio
   use shr_kind_mod, only : r8 => shr_kind_r8
 !**********************************************************************
   implicit none
-  class(file_desc_t), intent(in) :: ncid
+  type(file_desc_t), intent(in) :: ncid
   integer,           intent(in) :: rec
   real(r8),dimension(:), intent(out) :: data
 
@@ -882,7 +882,7 @@ module bncdio_pio
 
 !**********************************************************************
   implicit none
-  class(file_desc_t), intent(in) :: ncid
+  type(file_desc_t), intent(in) :: ncid
   integer, intent(in) :: rec
   integer, dimension(:,:), intent(out) :: data
   character(len=*), intent(in) :: varname
@@ -905,7 +905,7 @@ module bncdio_pio
   use shr_kind_mod, only : r8 => shr_kind_r8
 !**********************************************************************
   implicit none
-  class(file_desc_t), intent(in) :: ncid
+  type(file_desc_t), intent(in) :: ncid
   integer, intent(in) :: rec
   real(r8),dimension(:,:), intent(out) :: data
 
@@ -929,7 +929,7 @@ module bncdio_pio
 
 !**********************************************************************
   implicit none
-  class(file_desc_t), intent(in) :: ncid
+  type(file_desc_t), intent(in) :: ncid
   integer, intent(in) :: rec
   integer, dimension(:,:,:), intent(out) :: data
   character(len=*), intent(in) :: varname
@@ -952,7 +952,7 @@ module bncdio_pio
   use shr_kind_mod, only : r8 => shr_kind_r8
 !**********************************************************************
   implicit none
-  class(file_desc_t), intent(in) :: ncid
+  type(file_desc_t), intent(in) :: ncid
   integer,           intent(in) :: rec
   real(r8),dimension(:,:,:), intent(out) :: data
 
@@ -977,7 +977,7 @@ module bncdio_pio
 ! !ARGUMENTS:
    use netcdf
    implicit none
-   class(file_desc_t), intent(in) :: ncid
+   type(file_desc_t), intent(in) :: ncid
    character(len=*), intent(in) :: dimname
 !
 ! !REVISION HISTORY:
@@ -1026,7 +1026,7 @@ module bncdio_pio
     ! Create a new NetCDF file with PIO
     !
     ! !ARGUMENTS:
-    class(file_desc_t), intent(inout) :: file    ! PIO file descriptor
+    type(file_desc_t), intent(inout) :: file    ! PIO file descriptor
     character(len=*) ,  intent(in)    :: fname   ! File name to create
     !
     !-----------------------------------------------------------------------
@@ -1043,7 +1043,7 @@ module bncdio_pio
     ! Close a NetCDF PIO file
     !
     ! !ARGUMENTS:
-    class(file_desc_t), intent(inout) :: file   ! PIO file handle to close
+    type(file_desc_t), intent(inout) :: file   ! PIO file handle to close
     !-----------------------------------------------------------------------
 
     call check_ret(nf90_close(file%fh), 'ncd_pio_closefile')
@@ -1057,7 +1057,7 @@ module bncdio_pio
     ! Open a NetCDF PIO file
     !
     ! !ARGUMENTS:
-    class(file_desc_t) , intent(inout) :: file   ! Output PIO file handle
+    type(file_desc_t) , intent(inout) :: file   ! Output PIO file handle
     character(len=*)   , intent(in)    :: fname  ! Input fname to open
     integer            , intent(in)    :: mode   ! file mode
     !
@@ -1078,7 +1078,7 @@ module bncdio_pio
     ! Open a NetCDF PIO file
     !
     ! !ARGUMENTS:
-    class(file_desc_t) , intent(inout) :: file   ! Output PIO file handle
+    type(file_desc_t) , intent(inout) :: file   ! Output PIO file handle
     character(len=*)   , intent(in)    :: fname  ! Input fname to open
     !
     ! !LOCAL VARIABLES:
@@ -1097,7 +1097,7 @@ module bncdio_pio
     ! enddef netcdf file
     !
     ! !ARGUMENTS:
-    class(file_desc_t),intent(inout) :: ncid      ! netcdf file id
+    type(file_desc_t),intent(inout) :: ncid      ! netcdf file id
     !
     ! !LOCAL VARIABLES:
     integer :: status   ! error status
@@ -1115,7 +1115,7 @@ module bncdio_pio
     ! put integer attributes
     !
     ! !ARGUMENTS:
-    class(file_desc_t),intent(inout) :: ncid      ! netcdf file id
+    type(file_desc_t),intent(inout) :: ncid      ! netcdf file id
     integer           ,intent(in)    :: varid     ! netcdf var id
     character(len=*)  ,intent(in)    :: attrib    ! netcdf attrib
     integer           ,intent(in)    :: value     ! netcdf attrib value
@@ -1137,7 +1137,7 @@ module bncdio_pio
     ! put real attributes
     !
     ! !ARGUMENTS:
-    class(file_desc_t),intent(inout) :: ncid      ! netcdf file id
+    type(file_desc_t),intent(inout) :: ncid      ! netcdf file id
     integer           ,intent(in)    :: varid     ! netcdf var id
     character(len=*)  ,intent(in)    :: attrib    ! netcdf attrib
     real(r8)          ,intent(in)    :: value     ! netcdf attrib value
@@ -1164,7 +1164,7 @@ module bncdio_pio
     ! put character attributes
     !
     ! !ARGUMENTS:
-    class(file_desc_t),intent(inout) :: ncid      ! netcdf file id
+    type(file_desc_t),intent(inout) :: ncid      ! netcdf file id
     integer           ,intent(in)    :: varid     ! netcdf var id
     character(len=*)  ,intent(in)    :: attrib    ! netcdf attrib
     character(len=*)  ,intent(in)    :: value     ! netcdf attrib value
@@ -1187,7 +1187,7 @@ module bncdio_pio
     ! !USES:
     !
     ! !ARGUMENTS:
-    class(file_desc_t),intent(inout) :: ncid      ! netcdf file id
+    type(file_desc_t),intent(inout) :: ncid      ! netcdf file id
     integer           ,intent(in)    :: varid     ! netcdf var id
     character(len=*)  ,intent(in)    :: attrib    ! netcdf attrib
     character(len=*)  ,intent(out)   :: value     ! netcdf attrib value
@@ -1210,7 +1210,7 @@ module bncdio_pio
     ! define dimension
     !
     ! !ARGUMENTS:
-    class(file_desc_t), intent(in) :: ncid      ! netcdf file id
+    type(file_desc_t), intent(in) :: ncid      ! netcdf file id
     character(len=*)  , intent(in) :: attrib    ! netcdf attrib
     integer           , intent(in) :: value     ! netcdf attrib value
     integer           , intent(out):: dimid     ! netcdf dimension id
@@ -1231,7 +1231,7 @@ module bncdio_pio
     ! inquire on a dimension id
     !
     ! !ARGUMENTS:
-    class(file_desc_t),intent(inout) :: ncid   ! netcdf file id
+    type(file_desc_t),intent(inout) :: ncid   ! netcdf file id
     character(len=*) , intent(in) :: name      ! dimension name
     integer          , intent(out):: dimid     ! dimension id
     logical,optional , intent(out):: dimexist  ! if this dimension exists or not
@@ -1260,7 +1260,7 @@ module bncdio_pio
     ! inquire dim name
     !
     ! !ARGUMENTS:
-    class(file_desc_t), intent(in) :: ncid      ! netcdf file id
+    type(file_desc_t), intent(in) :: ncid      ! netcdf file id
     integer           , intent(in) :: dimid     ! dimension id
     character(len=*)  , intent(out):: dname     ! dimension name
     !
@@ -1279,7 +1279,7 @@ module bncdio_pio
     ! enddef netcdf file
     !
     ! !ARGUMENTS:
-    class(file_desc_t), intent(inout) :: ncid       ! netcdf file id
+    type(file_desc_t), intent(inout) :: ncid       ! netcdf file id
     integer           , intent(inout) :: dimid      ! dimension id
     integer           , intent(out)   :: len        ! dimension len
     character(len=*), optional, intent(in) :: name  ! dimension name
@@ -1301,7 +1301,7 @@ module bncdio_pio
   subroutine ncd_inqfdims(ncid, isgrid2d, ni, nj, ns)
     !
     ! !ARGUMENTS:
-    class(file_desc_t), intent(inout):: ncid
+    type(file_desc_t), intent(inout):: ncid
     logical           , intent(out)  :: isgrid2d
     integer           , intent(out)  :: ni
     integer           , intent(out)  :: nj
@@ -1373,7 +1373,7 @@ module bncdio_pio
     ! inquire variable name
     !
     ! !ARGUMENTS:
-    class(file_desc_t), intent(in)   :: ncid      ! netcdf file id
+    type(file_desc_t), intent(in)   :: ncid      ! netcdf file id
     integer           , intent(in)   :: varid     ! variable id
     character(len=*)  , intent(out)  :: vname     ! variable vname
     type(Var_desc_t)  , intent(inout):: vardesc   ! variable descriptor
@@ -1398,7 +1398,7 @@ module bncdio_pio
     ! Inquire on a variable ID
     !
     ! !ARGUMENTS:
-    class(file_desc_t), intent(inout) :: ncid      ! netcdf file id
+    type(file_desc_t), intent(inout) :: ncid      ! netcdf file id
     character(len=*)  , intent(in)    :: name      ! variable name
     integer           , intent(out)   :: varid     ! variable id
     type(Var_desc_t)  , intent(out)   :: vardesc   ! variable descriptor
@@ -1432,7 +1432,7 @@ module bncdio_pio
     ! netcdf I/O of global character array with start indices input
     !
     ! !ARGUMENTS:
-    class(file_desc_t),intent(inout) :: ncid             ! netcdf file id
+    type(file_desc_t),intent(inout) :: ncid             ! netcdf file id
     character(len=*) , intent(in)    :: flag             ! 'read' or 'write'
     type(var_desc_t) , intent(in)    :: vardesc          ! local vardesc pointer
     character(len=*) , intent(inout) :: data             ! raw data for this index
@@ -1450,7 +1450,7 @@ module bncdio_pio
     ! netcdf I/O of global integer variable
     !
     ! !ARGUMENTS:
-    class(file_desc_t) , intent(inout) :: ncid      ! netcdf file id
+    type(file_desc_t) , intent(inout) :: ncid      ! netcdf file id
     character(len=*)   , intent(in)    :: flag      ! 'read' or 'write'
     character(len=*)   , intent(in)    :: varname   ! variable name
     logical            , intent(inout) :: data ! raw data
@@ -1477,7 +1477,7 @@ module bncdio_pio
     ! netcdf I/O of global integer variable
     !
     ! !ARGUMENTS:
-    class(file_desc_t) , intent(inout) :: ncid      ! netcdf file id
+    type(file_desc_t) , intent(inout) :: ncid      ! netcdf file id
     character(len=*)   , intent(in)    :: flag      ! 'read' or 'write'
     character(len=*)   , intent(in)    :: varname   ! variable name
     logical            , intent(inout) :: data(:) ! raw data
@@ -1503,7 +1503,7 @@ module bncdio_pio
     ! netcdf I/O of global variable
     !
     ! !ARGUMENTS:
-    class(file_desc_t),         intent(inout) :: ncid         ! netcdf file id
+    type(file_desc_t),         intent(inout) :: ncid         ! netcdf file id
     character(len=*),           intent(in)    :: flag         ! 'read' or 'write'
     character(len=*),           intent(in)    :: varname      ! variable name
     integer(i4)         ,           intent(inout) :: data ! raw data
@@ -1531,7 +1531,7 @@ module bncdio_pio
     ! netcdf I/O of global variable
     !
     ! !ARGUMENTS:
-    class(file_desc_t),         intent(inout) :: ncid         ! netcdf file id
+    type(file_desc_t),         intent(inout) :: ncid         ! netcdf file id
     character(len=*),           intent(in)    :: flag         ! 'read' or 'write'
     character(len=*),           intent(in)    :: varname      ! variable name
     integer(i4)         ,           intent(inout) :: data(:) ! raw data
@@ -1560,7 +1560,7 @@ module bncdio_pio
     ! netcdf I/O of global variable
     !
     ! !ARGUMENTS:
-    class(file_desc_t),         intent(inout) :: ncid         ! netcdf file id
+    type(file_desc_t),         intent(inout) :: ncid         ! netcdf file id
     character(len=*),           intent(in)    :: flag         ! 'read' or 'write'
     character(len=*),           intent(in)    :: varname      ! variable name
     integer(i4)         ,           intent(inout) :: data(:,:) ! raw data
@@ -1589,7 +1589,7 @@ module bncdio_pio
     ! netcdf I/O of global variable
     !
     ! !ARGUMENTS:
-    class(file_desc_t),         intent(inout) :: ncid         ! netcdf file id
+    type(file_desc_t),         intent(inout) :: ncid         ! netcdf file id
     character(len=*),           intent(in)    :: flag         ! 'read' or 'write'
     character(len=*),           intent(in)    :: varname      ! variable name
     integer(i4)         ,           intent(inout) :: data(:,:,:) ! raw data
@@ -1617,7 +1617,7 @@ module bncdio_pio
     ! netcdf I/O of global variable
     !
     ! !ARGUMENTS:
-    class(file_desc_t),         intent(inout) :: ncid         ! netcdf file id
+    type(file_desc_t),         intent(inout) :: ncid         ! netcdf file id
     character(len=*),           intent(in)    :: flag         ! 'read' or 'write'
     character(len=*),           intent(in)    :: varname      ! variable name
     real(r8)         ,           intent(inout) :: data ! raw data
@@ -1645,7 +1645,7 @@ module bncdio_pio
     ! netcdf I/O of global variable
     !
     ! !ARGUMENTS:
-    class(file_desc_t),         intent(inout) :: ncid         ! netcdf file id
+    type(file_desc_t),         intent(inout) :: ncid         ! netcdf file id
     character(len=*),           intent(in)    :: flag         ! 'read' or 'write'
     character(len=*),           intent(in)    :: varname      ! variable name
     real(r8)         ,           intent(inout) :: data(:) ! raw data
@@ -1673,7 +1673,7 @@ module bncdio_pio
     ! netcdf I/O of global variable
     !
     ! !ARGUMENTS:
-    class(file_desc_t),         intent(inout) :: ncid         ! netcdf file id
+    type(file_desc_t),         intent(inout) :: ncid         ! netcdf file id
     character(len=*),           intent(in)    :: flag         ! 'read' or 'write'
     character(len=*),           intent(in)    :: varname      ! variable name
     real(r8)         ,           intent(inout) :: data(:,:) ! raw data
@@ -1701,7 +1701,7 @@ module bncdio_pio
     ! netcdf I/O of global variable
     !
     ! !ARGUMENTS:
-    class(file_desc_t),         intent(inout) :: ncid         ! netcdf file id
+    type(file_desc_t),         intent(inout) :: ncid         ! netcdf file id
     character(len=*),           intent(in)    :: flag         ! 'read' or 'write'
     character(len=*),           intent(in)    :: varname      ! variable name
     real(r8)         ,           intent(inout) :: data(:,:,:) ! raw data
@@ -1729,7 +1729,7 @@ module bncdio_pio
     ! netcdf I/O of global variable
     !
     ! !ARGUMENTS:
-    class(file_desc_t),         intent(inout) :: ncid         ! netcdf file id
+    type(file_desc_t),         intent(inout) :: ncid         ! netcdf file id
     character(len=*),           intent(in)    :: flag         ! 'read' or 'write'
     character(len=*),           intent(in)    :: varname      ! variable name
     character(len=*)         ,           intent(inout) :: data ! raw data
@@ -1754,7 +1754,7 @@ module bncdio_pio
     ! netcdf I/O of global variable
     !
     ! !ARGUMENTS:
-    class(file_desc_t),         intent(inout) :: ncid         ! netcdf file id
+    type(file_desc_t),         intent(inout) :: ncid         ! netcdf file id
     character(len=*),           intent(in)    :: flag         ! 'read' or 'write'
     character(len=*),           intent(in)    :: varname      ! variable name
     character(len=*)         ,           intent(inout) :: data(:) ! raw data
@@ -1779,7 +1779,7 @@ module bncdio_pio
     ! netcdf I/O of global variable
     !
     ! !ARGUMENTS:
-    class(file_desc_t),         intent(inout) :: ncid         ! netcdf file id
+    type(file_desc_t),         intent(inout) :: ncid         ! netcdf file id
     character(len=*),           intent(in)    :: flag         ! 'read' or 'write'
     character(len=*),           intent(in)    :: varname      ! variable name
     character(len=*)         ,           intent(inout) :: data(:,:) ! raw data
@@ -1804,7 +1804,7 @@ module bncdio_pio
     ! netcdf I/O for 1d
     !
     ! !ARGUMENTS:
-    class(file_desc_t), intent(inout)        :: ncid          ! netcdf file id
+    type(file_desc_t), intent(inout)        :: ncid          ! netcdf file id
     character(len=*) , intent(in)            :: flag          ! 'read' or 'write'
     character(len=*) , intent(in)            :: varname       ! variable name
     integer(i4)          , pointer               :: data(:)       ! local decomposition data
@@ -1840,7 +1840,7 @@ module bncdio_pio
     ! netcdf I/O for 1d
     !
     ! !ARGUMENTS:
-    class(file_desc_t), intent(inout)        :: ncid          ! netcdf file id
+    type(file_desc_t), intent(inout)        :: ncid          ! netcdf file id
     character(len=*) , intent(in)            :: flag          ! 'read' or 'write'
     character(len=*) , intent(in)            :: varname       ! variable name
     real(r8)          , pointer               :: data(:)       ! local decomposition data
@@ -1876,7 +1876,7 @@ module bncdio_pio
     ! netcdf I/O for 1d
     !
     ! !ARGUMENTS:
-    class(file_desc_t), intent(inout)        :: ncid          ! netcdf file id
+    type(file_desc_t), intent(inout)        :: ncid          ! netcdf file id
     character(len=*) , intent(in)            :: flag          ! 'read' or 'write'
     character(len=*) , intent(in)            :: varname       ! variable name
     logical          , pointer               :: data(:)       ! local decomposition data
@@ -1913,7 +1913,7 @@ module bncdio_pio
     ! Netcdf i/o of 2d
     !
     ! !ARGUMENTS:
-    class(file_desc_t), intent(inout) :: ncid         ! netcdf file id
+    type(file_desc_t), intent(inout) :: ncid         ! netcdf file id
     character(len=*) , intent(in)  :: flag            ! 'read' or 'write'
     character(len=*) , intent(in)  :: varname         ! variable name
     integer(i4)          , pointer     :: data(:,:)       ! local decomposition input data
@@ -1932,7 +1932,7 @@ module bncdio_pio
     ! Netcdf i/o of 2d
     !
     ! !ARGUMENTS:
-    class(file_desc_t), intent(inout) :: ncid         ! netcdf file id
+    type(file_desc_t), intent(inout) :: ncid         ! netcdf file id
     character(len=*) , intent(in)  :: flag            ! 'read' or 'write'
     character(len=*) , intent(in)  :: varname         ! variable name
     real(r8)          , pointer     :: data(:,:)       ! local decomposition input data
@@ -1950,7 +1950,7 @@ module bncdio_pio
     ! Netcdf i/o of 3d
     !
     ! !ARGUMENTS:
-    class(file_desc_t), intent(inout) :: ncid         ! netcdf file id
+    type(file_desc_t), intent(inout) :: ncid         ! netcdf file id
     character(len=*) , intent(in)  :: flag            ! 'read' or 'write'
     character(len=*) , intent(in)  :: varname         ! variable name
     integer(i4)          , pointer     :: data(:,:,:)     ! local decomposition input data
@@ -1984,7 +1984,7 @@ module bncdio_pio
     ! Netcdf i/o of 3d
     !
     ! !ARGUMENTS:
-    class(file_desc_t), intent(inout) :: ncid         ! netcdf file id
+    type(file_desc_t), intent(inout) :: ncid         ! netcdf file id
     character(len=*) , intent(in)  :: flag            ! 'read' or 'write'
     character(len=*) , intent(in)  :: varname         ! variable name
     real(r8)          , pointer     :: data(:,:,:)     ! local decomposition input data

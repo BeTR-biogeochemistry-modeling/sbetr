@@ -90,7 +90,7 @@ contains
 
   !initialize parameters
   call read_name_list(namelist_buffer, simulator_name, continue_run)
-  simulation => create_betr_simulation(simulator_name)
+  simulation => create_betr_simulation(simulator_name, boffline=.true.)
 
   !set up mask
   bounds%begc = 1
