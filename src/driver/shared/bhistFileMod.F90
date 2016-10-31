@@ -13,6 +13,7 @@ implicit none
   integer , public , parameter :: no_snow_zero = 2                ! average in a 0 value for times when the snow layer isn't prese
 contains
 
+
   subroutine hist_file_create(ncid, nlevgrnd, ncol)
   !
   ! DESCRIPTIONS
@@ -20,8 +21,8 @@ contains
   ! Create a netcdf file
   !
   use betr_varcon, only : spval  => bspval
-  use ncdio_pio, only : check_ret, ncd_defvar, file_desc_t
-  use ncdio_pio, only : ncd_defdim, ncd_unlimited, ncd_float
+  use bncdio_pio, only : ncd_defvar, file_desc_t
+  use bncdio_pio, only : ncd_defdim, ncd_unlimited, ncd_float
   implicit none
   class(file_desc_t), intent(inout) :: ncid
   integer,            intent(in) :: nlevgrnd  ! number of vertical layers
@@ -54,7 +55,7 @@ contains
   ! DESCRIPTION
   ! define 1d field
   !
-  use ncdio_pio,  only : ncd_defvar,file_desc_t
+  use bncdio_pio,  only : ncd_defvar,file_desc_t
   use betr_varcon, only : spval => bspval
   implicit none
   class(file_desc_t), intent(inout) :: ncid                    !file id
@@ -78,7 +79,7 @@ contains
   ! DESCRIPTION
   ! define 1d field
   !
-  use ncdio_pio, only : ncd_defvar, file_desc_t
+  use bncdio_pio, only : ncd_defvar, file_desc_t
   use betr_varcon, only : spval => bspval
   implicit none
   class(file_desc_t), intent(inout) :: ncid                   !file id

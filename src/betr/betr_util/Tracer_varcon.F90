@@ -38,6 +38,8 @@ module Tracer_varcon
 
   logical, parameter  :: l2ndadvsolver = .false. ! by default use 1st order solver for advection
 
+  logical :: is_active_betr_bgc=.false.
+  logical :: do_betr_leaching=.false.
   save
 
   integer, public :: betr_nlevsoi

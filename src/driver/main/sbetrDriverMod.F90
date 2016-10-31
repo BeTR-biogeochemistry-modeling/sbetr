@@ -30,7 +30,7 @@ contains
   use shr_kind_mod          , only : r8 => shr_kind_r8
   use clm_varpar            , only : nlevtrc_soil
   use decompMod             , only : bounds_type
-  use ncdio_pio             , only : file_desc_t
+  use bncdio_pio             , only : file_desc_t
   use clm_instMod           , only : atm2lnd_vars
   use clm_instMod           , only : canopystate_vars
   use clm_instMod           , only : carbonflux_vars

@@ -1913,6 +1913,7 @@ end subroutine shr_string_setDebug
 
 subroutine shr_string_abort(string)
 
+   use bshr_sys_mod, only : shr_sys_abort
    implicit none
 
 ! !INPUT/OUTPUT PARAMETERS:

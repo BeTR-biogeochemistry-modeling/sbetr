@@ -1,4 +1,4 @@
-module ncdio_pio
+module bncdio_pio
 
 !-----------------------------------------------------------------------
 !BOP
@@ -2013,4 +2013,4 @@ module ncdio_pio
   end subroutine ncd_io_3d_double
 
 
-  end module ncdio_pio
+  end module bncdio_pio

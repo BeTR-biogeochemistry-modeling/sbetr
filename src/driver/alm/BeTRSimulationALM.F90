@@ -257,7 +257,7 @@ contains
     this%biophys_forc(c)%isoilorder(1) = 1                 !this needs update
   enddo
   !sum up carbon input profiles
-  do j = bounds%lbj, bounds%ubj
+  do j = betr_bounds%lbj, betr_bounds%ubj
     do fc = 1, num_soilc
       c = filter_soilc(fc)
       !carbon input

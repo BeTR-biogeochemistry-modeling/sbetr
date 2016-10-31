@@ -96,6 +96,7 @@ module BeTRSimulation
      procedure, public :: WriteRegressionOutput
      !the following are used to interact with lsm
      procedure, public :: BeTRRestart             => BeTRSimulationRestart
+     procedure, public :: BeTRRestartOffline      => BeTRSimulationRestartOffline
      procedure, public :: BeTRRestartOpen         => BeTRSimulationRestartOpen
      procedure, public :: BeTRRestartClose        => BeTRSimulationRestartClose
      procedure, private :: BeTRCreateHistory      => BeTRSimulationCreateHistory
@@ -308,7 +309,7 @@ contains
     ! open restart file, note it is only used in the stand alone mode
     ! note
     ! !USES:
-    use ncdio_pio, only : file_desc_t, ncd_nowrite, ncd_pio_openfile, ncd_pio_createfile
+    use bncdio_pio, only : file_desc_t, ncd_nowrite, ncd_pio_openfile, ncd_pio_createfile
     implicit none
     !ARGUMENTS
     class(betr_simulation_type) , intent(inout) :: this
@@ -332,7 +333,7 @@ contains
     !! DESCRIPTION
     ! initialize for restart run
     ! !USES:
-    use ncdio_pio, only : file_desc_t, ncd_pio_closefile
+    use bncdio_pio, only : file_desc_t, ncd_pio_closefile
     implicit none
     !ARGUMENTS
     class(betr_simulation_type) , intent(inout) :: this
@@ -480,12 +481,12 @@ contains
   !
   ! USES
     use netcdf          , only : nf90_float
-    use ncdio_pio       , only : file_desc_t
-    use ncdio_pio       , only : ncd_pio_createfile
-    use ncdio_pio       , only : ncd_pio_closefile
-    use ncdio_pio       , only : ncd_enddef
-    use ncdio_pio       , only : ncd_defvar
-    use ncdio_pio       , only : ncd_putvar
+    use bncdio_pio       , only : file_desc_t
+    use bncdio_pio       , only : ncd_pio_createfile
+    use bncdio_pio       , only : ncd_pio_closefile
+    use bncdio_pio       , only : ncd_enddef
+    use bncdio_pio       , only : ncd_defvar
+    use bncdio_pio       , only : ncd_putvar
     use bhistFileMod    , only : hist_file_create, hist_def_fld1d, hist_def_fld2d
     use betr_varcon     , only : bspval
     use betr_columnType , only : betr_column_type
@@ -552,10 +553,10 @@ contains
     ! output hist file, only for standalone applications
     !
     ! USES
-    use ncdio_pio    , only : file_desc_t
-    use ncdio_pio    , only : ncd_pio_openfile_for_write
-    use ncdio_pio    , only : ncd_putvar
-    use ncdio_pio    , only : ncd_pio_closefile
+    use bncdio_pio    , only : file_desc_t
+    use bncdio_pio    , only : ncd_pio_openfile_for_write
+    use bncdio_pio    , only : ncd_putvar
+    use bncdio_pio    , only : ncd_pio_closefile
     use BeTR_TimeMod , only : betr_time_type
     use betr_varcon  , only : spval => bspval
     implicit none
@@ -753,14 +754,14 @@ contains
       this%biophys_forc(c)%frac_h2osfc_col(cc)           = waterstate_vars%frac_h2osfc_col(c)
       this%biophys_forc(c)%h2osoi_liq_col(cc,lbj:ubj)    = waterstate_vars%h2osoi_liq_col(c,lbj:ubj)
       this%biophys_forc(c)%h2osoi_ice_col(cc,lbj:ubj)    = waterstate_vars%h2osoi_ice_col(c,lbj:ubj)
-      this%biophys_forc(c)%h2osoi_liq_old(cc,lbj:ubj)    = waterstate_vars%h2osoi_liq_old(c,lbj:ubj)
-      this%biophys_forc(c)%h2osoi_ice_old(cc,lbj:ubj)    = waterstate_vars%h2osoi_ice_old(c,lbj:ubj)
+      this%biophys_forc(c)%h2osoi_liq_old(cc,lbj:ubj)    = waterstate_vars%h2osoi_liq_old_col(c,lbj:ubj)
+      this%biophys_forc(c)%h2osoi_ice_old(cc,lbj:ubj)    = waterstate_vars%h2osoi_ice_old_col(c,lbj:ubj)
       this%biophys_forc(c)%h2osoi_liqvol_col(cc,lbj:ubj) = waterstate_vars%h2osoi_liqvol_col(c,lbj:ubj)
       this%biophys_forc(c)%h2osoi_icevol_col(cc,lbj:ubj) = waterstate_vars%h2osoi_icevol_col(c,lbj:ubj)
       this%biophys_forc(c)%h2osoi_vol_col(cc,lbj:ubj)    = waterstate_vars%h2osoi_vol_col(c,lbj:ubj)
       this%biophys_forc(c)%air_vol_col(cc,lbj:ubj)       = waterstate_vars%air_vol_col(c,lbj:ubj)
-      this%biophys_forc(c)%rho_vap(cc,lbj:ubj)           = waterstate_vars%rho_vap(c,lbj:ubj)
-      this%biophys_forc(c)%rhvap_soi(cc,lbj:ubj)         = waterstate_vars%rhvap_soi(c,lbj:ubj)
+      this%biophys_forc(c)%rho_vap(cc,lbj:ubj)           = waterstate_vars%rho_vap_col(c,lbj:ubj)
+      this%biophys_forc(c)%rhvap_soi(cc,lbj:ubj)         = waterstate_vars%rhvap_soi_col(c,lbj:ubj)
       this%biophys_forc(c)%smp_l_col(cc,lbj:ubj)         = waterstate_vars%smp_l_col(c,lbj:ubj)
   endif
   if(present(waterflux_vars))then
@@ -792,7 +793,7 @@ contains
     enddo
   endif
   if(present(temperature_vars))then
-      this%biophys_forc(c)%t_soi_10cm(cc)           = temperature_vars%t_soi_10cm(c)
+      this%biophys_forc(c)%t_soi_10cm(cc)           = temperature_vars%t_soi10cm_col(c)
       this%biophys_forc(c)%t_soisno_col(cc,lbj:ubj) = temperature_vars%t_soisno_col(c,lbj:ubj)
     do pi = 1, betr_maxpatch_pft
        this%biophys_forc(c)%t_veg_patch(pi) = 0._r8
@@ -1118,7 +1119,7 @@ contains
   use betr_varcon         , only : spval => bspval
   use histFileMod         , only: hist_addfld1d, hist_addfld2d
   use bhistFileMod        , only : hist_def_fld2d , hist_def_fld1d
-  use ncdio_pio           , only : file_desc_t, ncd_float
+  use bncdio_pio           , only : file_desc_t, ncd_float
   implicit none
   class(betr_simulation_type) , intent(inout) :: this
   integer, intent(in) :: betr_nlevtrc_soil
@@ -1211,7 +1212,7 @@ contains
   use histFileMod   , only: hist_addfld1d, hist_addfld2d
   use bhistFileMod        , only : hist_def_fld2d , hist_def_fld1d
   use betr_varcon         , only : spval => bspval
-  use ncdio_pio , only : file_desc_t, ncd_float
+  use bncdio_pio , only : file_desc_t, ncd_float
   implicit none
   !ARGUMENTS
   class(betr_simulation_type) , intent(inout) :: this
@@ -1305,7 +1306,7 @@ contains
   !
   use betr_varcon         , only : spval => bspval
   use histFileMod         , only: hist_addfld1d, hist_addfld2d
-  use ncdio_pio           , only :   file_desc_t, ncd_putvar
+  use bncdio_pio           , only :   file_desc_t, ncd_putvar
   implicit none
   class(betr_simulation_type) , intent(inout) :: this
   integer, intent(in) :: betr_nlevtrc_soil
@@ -1386,7 +1387,7 @@ contains
   !create history file for betr states variables
   use histFileMod   , only: hist_addfld1d, hist_addfld2d
   use betr_varcon         , only : spval => bspval
-  use ncdio_pio , only : file_desc_t, ncd_putvar
+  use bncdio_pio , only : file_desc_t, ncd_putvar
   implicit none
   !ARGUMENTS
   class(betr_simulation_type) , intent(inout) :: this
@@ -1547,15 +1548,15 @@ contains
 
   end subroutine BeTRSimulationRetrieveHistoryFlux
   !------------------------------------------------------------------------
-  subroutine BeTRSimulationRestart(this, bounds, ncid, numf, filter, flag)
+  subroutine BeTRSimulationRestartOffline(this, bounds, ncid, numf, filter, flag)
   !DESCRIPTION
   !create or read restart file
-  use ncdio_pio      , only : file_desc_t
   use betr_varcon    , only : spval => bspval
   use restUtilMod    , only : restartvar
-  use ncdio_pio      , only : file_desc_t, ncd_defvar, ncd_defdim
-  use ncdio_pio      , only : ncd_double, ncd_enddef, ncd_putvar
-  use ncdio_pio      , only : ncd_getvar
+  use bncdio_pio      , only : file_desc_t,ncd_double
+  use bncdio_pio      , only : ncd_defvar, ncd_defdim
+  use bncdio_pio      , only : ncd_enddef, ncd_putvar
+  use bncdio_pio      , only : ncd_getvar
   implicit none
   ! !ARGUMENTS:
   class(betr_simulation_type) , intent(inout) :: this
@@ -1596,81 +1597,126 @@ contains
     enddo
   endif
 
-  if(betr_offline)then
-    ! print*,'offline restart', flag
-    if(flag=='define')then
-      ! print*,'define restart file'
-      ! define the dimensions
-      !the temporal dimension is infinite
+  ! print*,'offline restart', flag
+  if(flag=='define')then
+    ! print*,'define restart file'
+    ! define the dimensions
+    !the temporal dimension is infinite
 
-      !number of vertical layers
-      call ncd_defdim(ncid, 'levtrc', betr_nlevsoi, recordDimID)
+    !number of vertical layers
+    call ncd_defdim(ncid, 'levtrc', betr_nlevsoi, recordDimID)
 
-      !number of columns
-      call ncd_defdim(ncid, 'column', this%num_soilc, recordDimID)
+    !number of columns
+    call ncd_defdim(ncid, 'column', this%num_soilc, recordDimID)
 
-      !define the time dimension
-      call ncd_defvar(ncid, 'time',ncd_double, long_name='', &
+    !define the time dimension
+    call ncd_defvar(ncid, 'time',ncd_double, long_name='', &
          units = '',  missing_value=spval, fill_value=spval)
 
-      do jj = 1, nrest_1d
-        !x print*,jj,trim(rest_varname_1d(jj))
-        call ncd_defvar(ncid, trim(rest_varname_1d(jj)),ncd_double,dim1name='column',  &
-          long_name='', units = '',  missing_value=spval, fill_value=spval)
-      enddo
-
-      do jj =1, nrest_2d
-        !x print*,jj,trim(rest_varname_2d(jj))
-        call ncd_defvar(ncid, trim(rest_varname_2d(jj)),ncd_double,dim1name='column',  &
-          dim2name='levtrc', long_name='', units = '',  missing_value=spval, fill_value=spval)
-      enddo
-      call ncd_enddef(ncid)
-
-    elseif(flag=='write')then
-      ! print*,'write restart file'
-      do jj = 1, nrest_1d
-         ptr1d => states_1d(:, jj)
-         call ncd_putvar(ncid, trim(rest_varname_1d(jj)), 1, ptr1d)
-      enddo
-
-      do jj = 1, nrest_2d
-        ptr2d => states_2d(:, :, jj)
-        call ncd_putvar(ncid, trim(rest_varname_2d(jj)), 1, ptr2d)
-      enddo
-    elseif(flag=='read')then
-      ! print*,'read restart file'
-      do jj = 1, nrest_1d
-         ptr1d => states_1d(:, jj)
-         call ncd_getvar(ncid, trim(rest_varname_1d(jj)), ptr1d)
-      enddo
-
-      do jj = 1, nrest_2d
-        ptr2d => states_2d(:, :, jj)
-        call ncd_getvar(ncid, trim(rest_varname_2d(jj)), ptr2d)
-      enddo
-
-      ! print*,'assign values to state variables',flag
-      do fc = 1, numf
-        c = filter(fc)
-        call this%betr(c)%set_restvar(betr_bounds, 1, betr_nlevtrc_soil, nrest_1d,&
-          nrest_2d, states_1d(c:c,:), states_2d(c:c,:,:), flag)
-      enddo
-    endif
-  else
     do jj = 1, nrest_1d
-      ptr1d => states_1d(:, jj)
-      call restartvar(ncid=ncid, flag=flag, varname=trim(rest_varname_1d(jj)), &
-         xtype=ncd_double,  dim1name='column', long_name='',  units='', &
-         interpinic_flag='interp' , readvar=readvar, data=ptr1d)
+        !x print*,jj,trim(rest_varname_1d(jj))
+      call ncd_defvar(ncid, trim(rest_varname_1d(jj)),ncd_double,dim1name='column',  &
+          long_name='', units = '',  missing_value=spval, fill_value=spval)
     enddo
+
+    do jj =1, nrest_2d
+      !x print*,jj,trim(rest_varname_2d(jj))
+      call ncd_defvar(ncid, trim(rest_varname_2d(jj)),ncd_double,dim1name='column',  &
+        dim2name='levtrc', long_name='', units = '',  missing_value=spval, fill_value=spval)
+    enddo
+    call ncd_enddef(ncid)
+
+  elseif(flag=='write')then
+    ! print*,'write restart file'
+    do jj = 1, nrest_1d
+       ptr1d => states_1d(:, jj)
+       call ncd_putvar(ncid, trim(rest_varname_1d(jj)), 1, ptr1d)
+    enddo
+
     do jj = 1, nrest_2d
       ptr2d => states_2d(:, :, jj)
-      call restartvar(ncid=ncid, flag=flag, varname=trim(rest_varname_2d(jj)), xtype=ncd_double,  &
-        dim1name='column',dim2name='levtrc', switchdim=.true., &
-        long_name='',  units='', fill_value=spval, &
-        interpinic_flag='interp', readvar=readvar, data=ptr2d)
+      call ncd_putvar(ncid, trim(rest_varname_2d(jj)), 1, ptr2d)
+    enddo
+  elseif(flag=='read')then
+      ! print*,'read restart file'
+    do jj = 1, nrest_1d
+       ptr1d => states_1d(:, jj)
+       call ncd_getvar(ncid, trim(rest_varname_1d(jj)), ptr1d)
+    enddo
+
+    do jj = 1, nrest_2d
+      ptr2d => states_2d(:, :, jj)
+      call ncd_getvar(ncid, trim(rest_varname_2d(jj)), ptr2d)
+    enddo
+
+    ! print*,'assign values to state variables',flag
+    do fc = 1, numf
+      c = filter(fc)
+      call this%betr(c)%set_restvar(betr_bounds, 1, betr_nlevtrc_soil, nrest_1d,&
+        nrest_2d, states_1d(c:c,:), states_2d(c:c,:,:), flag)
     enddo
   endif
+  end subroutine BeTRSimulationRestartOffline
+
+  !------------------------------------------------------------------------
+  subroutine BeTRSimulationRestart(this, bounds, ncid, numf, filter, flag)
+  !DESCRIPTION
+  !create or read restart file
+  use betr_varcon    , only : spval => bspval
+  use restUtilMod    , only : restartvar
+  use ncdio_pio      , only : file_desc_t,ncd_double
+  implicit none
+  ! !ARGUMENTS:
+  class(betr_simulation_type) , intent(inout) :: this
+  type(bounds_type)    , intent(in)    :: bounds
+  class(file_desc_t)   , intent(inout) :: ncid                                         ! netcdf id
+  character(len=*)     , intent(in)    :: flag ! 'read' or 'write'
+  integer, intent(in) :: numf
+  integer, intent(in) :: filter(:)
+
+  !local variables
+  real(r8), pointer :: states_1d(:,:)
+  real(r8), pointer :: states_2d(:,:,:)
+  integer :: nrest_1d, nrest_2d
+  integer :: c, jj, fc
+  character(len=255) :: rest_varname_1d(max_betr_rest_type)
+  character(len=255) :: rest_varname_2d(max_betr_rest_type)
+  logical :: readvar      ! determine if variable is on initial file
+  real(r8), pointer :: ptr1d(:)
+  real(r8), pointer :: ptr2d(:,:)
+  type(betr_bounds_type)     :: betr_bounds
+  integer :: recordDimID
+
+  c = bounds%begc
+  call this%betr(c)%get_restartvar(nrest_1d, nrest_2d,rest_varname_1d, &
+     rest_varname_2d)
+
+  allocate(states_1d(bounds%begc:bounds%endc, 1:nrest_1d)); states_1d(:,:)=spval
+  allocate(states_2d(bounds%begc:bounds%endc, 1:betr_nlevtrc_soil, 1:nrest_2d)); states_2d(:,:,:)=spval
+
+  if(trim(flag)/='define')then
+    !assign initial conditions
+    call this%BeTRSetBounds(betr_bounds)
+
+    do fc = 1, numf
+      c = filter(fc)
+      call this%betr(c)%set_restvar(betr_bounds, 1, betr_nlevtrc_soil, nrest_1d,&
+        nrest_2d, states_1d(c:c,:), states_2d(c:c,:,:), flag)
+    enddo
+  endif
+
+  do jj = 1, nrest_1d
+    ptr1d => states_1d(:, jj)
+    call restartvar(ncid=ncid, flag=flag, varname=trim(rest_varname_1d(jj)), &
+       xtype=ncd_double,  dim1name='column', long_name='',  units='', &
+       interpinic_flag='interp' , readvar=readvar, data=ptr1d)
+  enddo
+  do jj = 1, nrest_2d
+    ptr2d => states_2d(:, :, jj)
+    call restartvar(ncid=ncid, flag=flag, varname=trim(rest_varname_2d(jj)), xtype=ncd_double,  &
+      dim1name='column',dim2name='levtrc', switchdim=.true., &
+      long_name='',  units='', interpinic_flag='interp',readvar=readvar, data=ptr2d)
+  enddo
 
   deallocate(states_1d)
   deallocate(states_2d)

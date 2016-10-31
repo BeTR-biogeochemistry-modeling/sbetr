@@ -313,15 +313,19 @@ contains
     ! !ARGUMENTS:
     real(r8), dimension(:), intent(in) :: x
     real(r8), dimension(:), intent(in) :: y
-    type(betr_status_type), intent(out) :: bstatus
+    type(betr_status_type), optional, intent(out) :: bstatus
     ! !LOCAL VARIABLES:
     integer  :: n, j
     real(r8) :: ans
-
-    call bstatus%reset()
-    SHR_ASSERT_ALL((size(x)  == size(y)), errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
-
+    type(betr_status_type) :: bstatus1 
+   
+    call bstatus1%reset()
+    SHR_ASSERT_ALL((size(x)  == size(y)), errMsg(mod_filename,__LINE__), bstatus1)
+    if(present(bstatus))then
+      call bstatus%reset()
+      call bstatus%set_msg(bstatus1%print_msg(),bstatus1%print_err())
+      if(bstatus%check_status())return
+    endif
     ! use subroutine from blas
     !DOUBLE PRECISION FUNCTION ddot(N,DX,INCX,DY,INCY)
     !
