@@ -173,7 +173,7 @@ contains
   !read initial condition from restart file is needed
   if(continue_run)then
     call simulation%BeTRRestartOpen(restfname, flag='read', ncid=ncid)
-    call simulation%BeTRRestart(bounds, ncid, simulation%num_soilc, simulation%filter_soilc, flag='read')
+    call simulation%BeTRRestartOffline(bounds, ncid, simulation%num_soilc, simulation%filter_soilc, flag='read')
     call simulation%BeTRRestartClose(ncid)
     !the following aligns forcing data with correct time stamp
     call time_vars%set_nstep(nstep)
@@ -289,9 +289,9 @@ contains
 
        call simulation%BeTRRestartOpen(restfname, flag='write', ncid=ncid)
 
-       call simulation%BeTRRestart(bounds, ncid, simulation%num_soilc, simulation%filter_soilc, flag='define')
+       call simulation%BeTRRestartOffline(bounds, ncid, simulation%num_soilc, simulation%filter_soilc, flag='define')
 
-       call simulation%BeTRRestart(bounds, ncid, simulation%num_soilc, simulation%filter_soilc, flag='write')
+       call simulation%BeTRRestartOffline(bounds, ncid, simulation%num_soilc, simulation%filter_soilc, flag='write')
 
        call simulation%BeTRRestartClose(ncid)
     endif
@@ -390,8 +390,8 @@ end subroutine sbetrBGC_driver
     do j = 1, ubj
        do fc = 1, numf
           c = filter(fc)
-          waterstate_vars%h2osoi_liq_old(c, j) = waterstate_vars%h2osoi_liq_col(c, j)
-          waterstate_vars%h2osoi_ice_old(c, j) = waterstate_vars%h2osoi_ice_col(c, j)
+          waterstate_vars%h2osoi_liq_old_col(c, j) = waterstate_vars%h2osoi_liq_col(c, j)
+          waterstate_vars%h2osoi_ice_old_col(c, j) = waterstate_vars%h2osoi_ice_col(c, j)
        end do
     end do
 

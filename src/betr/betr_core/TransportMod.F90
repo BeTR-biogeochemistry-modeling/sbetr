@@ -24,15 +24,14 @@ module TransportMod
      real(r8), pointer :: zi(:)  => null()             !interfaces
      real(r8), pointer :: us(:)  => null()             !flow velocity at the interfaces
      integer           :: nlen                         !total number of interfaces
-     type(betr_status_type) :: bstatus
-   contains
-     procedure, public :: InitAllocate
-     procedure, public :: DDeallocate
-     procedure, public :: AAssign
+!x     type(betr_status_type) :: bstatus
   end type Extra_type
 
+
   ! FIXME(bja, 201604) these instance variables need to be removed
-  class(Extra_type), pointer, private :: Extra_inst
+  type(Extra_type), pointer, private :: Extra_inst
+  type(betr_status_type) :: Extra_bstatus
+
   !default configuration parameters
   real(r8), private :: cntheta
   logical, private :: debug_loc=.false.
@@ -55,6 +54,7 @@ module TransportMod
   ! are public only for unit testing purposes. They are not part of
   ! the public API for this module and should not be used externally.
   public :: mass_curve_correct_
+
 
 contains
 
@@ -82,10 +82,9 @@ contains
     ! allocate memory for arrays of the specified data type
 
     ! !ARGUMENTS:
-    class(Extra_type), intent(inout)  :: this
+    type(Extra_type), pointer  :: this
     integer, intent(in) :: lbj, ubj
     character(len=32) :: subname ='InitAllocate'
-
 
     allocate(this%zi(lbj:ubj))
     allocate(this%us(lbj:ubj))
@@ -99,11 +98,11 @@ contains
     ! Deallocate memories
     !
     ! !ARGUMENTS:
-    class(Extra_type), intent(inout) :: this
+    type(Extra_type), pointer :: this
     character(len=32) :: subname ='DDeallocate'
     deallocate(this%zi)
     deallocate(this%us)
-
+    deallocate(this)
   end subroutine DDeallocate
 
   !-------------------------------------------------------------------------------
@@ -116,7 +115,7 @@ contains
     use BetrStatusType         , only : betr_status_type
     implicit none
     ! !ARGUMENTS:
-    class(Extra_type), intent(inout) :: this
+    type(Extra_type), pointer :: this
     real(r8), dimension(:), intent(in) :: zi_t
     real(r8), dimension(:), intent(in) :: us_t
     type(betr_status_type), intent(out):: bstatus
@@ -874,9 +873,11 @@ contains
      SHR_ASSERT_ALL((size(trcin,3) == ntrcs), errMsg(filename,__LINE__),bstatus)
      if(bstatus%check_status())return
 
-     Extra_inst => create_extra_type()
+     nullify(Extra_inst)
 
-     call Extra_inst%InitAllocate(1,ubj-lbj+6)
+     allocate(Extra_inst) ! => create_extra_type()
+
+     call InitAllocate(Extra_inst, 1,ubj-lbj+6)
      halfdt_col(:) = .false.
 
      do fc = 1, numfl
@@ -997,7 +998,9 @@ contains
         enddo
 
      enddo
-     call Extra_inst%DDeallocate()
+     call DDeallocate(Extra_inst)
+!x     call deallocate(Extra_inst)
+     nullify(Extra_inst)
    end subroutine semi_lagrange_adv_backward
    !-------------------------------------------------------------------------------
    subroutine cmass_mono_smoother(cmass,mass_thc)
@@ -1099,13 +1102,13 @@ contains
      if(bstatus%check_status())return
 
      neq = size(zold)
-     call Extra_inst%AAssign(zi,us, bstatus)
+     call AAssign(Extra_inst,zi,us, bstatus)
      if(bstatus%check_status())return
      time =0._r8
      gtype => Extra_inst
      call ode_rk2(trajectory, gtype, zi(3:neq+2), neq, time, dtime, zold)
-     if(Extra_inst%bstatus%check_status())then
-       call bstatus%set_msg(Extra_inst%bstatus%print_msg(),Extra_inst%bstatus%print_err())
+     if(Extra_bstatus%check_status())then
+       call bstatus%set_msg(Extra_bstatus%print_msg(),Extra_bstatus%print_err())
      endif
 
    end subroutine backward_advection
@@ -1134,24 +1137,23 @@ contains
      integer, parameter :: pn = 1
      real(r8)           :: ui(neq)
      character(len=32)  :: subname ='trajectory'
-!     class(Extra_type), pointer :: extra_inst
 
       !The select type is now not used before intel compiler does not support such use at the moment
       !basically, intel compiler does not support passing a generic data type as a dummy arugment
       !to a user defined external function, such as done here. It will be used in the future if intel
       !fixes this compiler bug. Jinyun Tang, July 27, 2016.
-!     select type(extra)
-!     class is (Extra_type)
-!     extra_inst => extra
-     call Extra_inst%bstatus%reset()
+!x     select type(extra)
+!x     class is (Extra_type)
+!x     extra_inst => extra
+      call Extra_bstatus%reset()
      ! remove unused dummy args compiler warnings
      if (dt > 0.0_r8) continue
      if (ti > 0.0_r8) continue
 
      call Lagrange_interp(pn, Extra_inst%zi(1:Extra_inst%nlen), &
-        Extra_inst%us(1:Extra_inst%nlen), y0, ui, Extra_inst%bstatus)
-     if(Extra_inst%bstatus%check_status())return
-!     end select
+        Extra_inst%us(1:Extra_inst%nlen), y0, ui, Extra_bstatus)
+     if(Extra_bstatus%check_status())return
+!x     end select
      do j = 1, neq
         dxdt(j) = -ui(j)
      enddo

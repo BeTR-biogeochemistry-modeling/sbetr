@@ -63,12 +63,10 @@ module BeTRSimulation
      character(len=255), allocatable :: nmlist_hist2d_state_buffer(:)
      character(len=255), allocatable :: nmlist_hist1d_flux_buffer(:)
      character(len=255), allocatable :: nmlist_hist2d_flux_buffer(:)
-
      integer :: num_hist_state1d
      integer :: num_hist_state2d
      integer :: num_hist_flux1d
      integer :: num_hist_flux2d
-
      ! FIXME(bja, 201603) most of these types should be private!
 
      ! NOTE(bja, 201603) BeTR types only, no LSM specific types here!
@@ -317,6 +315,7 @@ contains
     class(file_desc_t)          , intent(out) :: ncid ! netcdf id
     character(len=*), intent(in) :: flag
 
+    integer :: c
     print*,'open restart file ',trim(fname), ' for ',trim(flag)
     if(trim(flag)=='read')then
       call ncd_pio_openfile(ncid, trim(fname), ncd_nowrite)
@@ -324,6 +323,7 @@ contains
       call ncd_pio_createfile(ncid, trim(fname))
     endif
     print*,'creating file succeeded'
+
   end subroutine BeTRSimulationRestartOpen
 
 
@@ -1571,8 +1571,8 @@ contains
   real(r8), pointer :: states_2d(:,:,:)
   integer :: nrest_1d, nrest_2d
   integer :: c, jj, fc
-  character(len=255) :: rest_varname_1d(max_betr_rest_type)
-  character(len=255) :: rest_varname_2d(max_betr_rest_type)
+  character(len=255),allocatable :: rest_varname_1d(:)
+  character(len=255),allocatable :: rest_varname_2d(:)
   logical :: readvar      ! determine if variable is on initial file
   real(r8), pointer :: ptr1d(:)
   real(r8), pointer :: ptr2d(:,:)
@@ -1580,8 +1580,10 @@ contains
   integer :: recordDimID
 
   c = bounds%begc
-  call this%betr(c)%get_restartvar(nrest_1d, nrest_2d,rest_varname_1d, &
-     rest_varname_2d)
+  call this%betr(c)%get_restartvar_size(nrest_1d, nrest_2d)
+  allocate(rest_varname_1d(nrest_1d));  allocate(rest_varname_2d(nrest_2d))
+  call this%betr(c)%get_restartvar_info(nrest_1d, nrest_2d,rest_varname_1d, &
+    rest_varname_2d)
 
   allocate(states_1d(bounds%begc:bounds%endc, 1:nrest_1d)); states_1d(:,:)=spval
   allocate(states_2d(bounds%begc:bounds%endc, 1:betr_nlevtrc_soil, 1:nrest_2d)); states_2d(:,:,:)=spval
@@ -1656,6 +1658,12 @@ contains
         nrest_2d, states_1d(c:c,:), states_2d(c:c,:,:), flag)
     enddo
   endif
+
+  deallocate(states_1d)
+  deallocate(states_2d)
+  deallocate(rest_varname_1d)
+  deallocate(rest_varname_2d)
+
   end subroutine BeTRSimulationRestartOffline
 
   !------------------------------------------------------------------------
@@ -1679,8 +1687,8 @@ contains
   real(r8), pointer :: states_2d(:,:,:)
   integer :: nrest_1d, nrest_2d
   integer :: c, jj, fc
-  character(len=255) :: rest_varname_1d(max_betr_rest_type)
-  character(len=255) :: rest_varname_2d(max_betr_rest_type)
+  character(len=255), allocatable :: rest_varname_1d(:)
+  character(len=255), allocatable :: rest_varname_2d(:)
   logical :: readvar      ! determine if variable is on initial file
   real(r8), pointer :: ptr1d(:)
   real(r8), pointer :: ptr2d(:,:)
@@ -1688,8 +1696,10 @@ contains
   integer :: recordDimID
 
   c = bounds%begc
-  call this%betr(c)%get_restartvar(nrest_1d, nrest_2d,rest_varname_1d, &
-     rest_varname_2d)
+  call this%betr(c)%get_restartvar_size(nrest_1d, nrest_2d)
+  allocate(rest_varname_1d(nrest_1d));  allocate(rest_varname_2d(nrest_2d))
+  call this%betr(c)%get_restartvar_info(nrest_1d, nrest_2d,rest_varname_1d, &
+    rest_varname_2d)
 
   allocate(states_1d(bounds%begc:bounds%endc, 1:nrest_1d)); states_1d(:,:)=spval
   allocate(states_2d(bounds%begc:bounds%endc, 1:betr_nlevtrc_soil, 1:nrest_2d)); states_2d(:,:,:)=spval
@@ -1720,6 +1730,8 @@ contains
 
   deallocate(states_1d)
   deallocate(states_2d)
+  deallocate(rest_varname_1d)
+  deallocate(rest_varname_2d)
   end subroutine BeTRSimulationRestart
   !------------------------------------------------------------------------
   subroutine BeTRSimulationSetcps(this, bounds, col, pft)

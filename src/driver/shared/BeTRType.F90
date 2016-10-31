@@ -81,7 +81,8 @@ module BetrType
      procedure, public  :: HistRetrieveState
      procedure, public  :: HistRetrieveFlux
      procedure, public  :: set_restvar
-     procedure, public  :: get_restartvar
+     procedure, public  :: get_restartvar_size
+     procedure, public  :: get_restartvar_info
   end type betr_type
 
   public :: create_betr_type
@@ -1146,7 +1147,7 @@ contains
   use ReactionsFactory    , only : create_betr_def_application
 #if (defined BETR_BGC)
   use ApplicationsFactory , only : create_betr_usr_application
-#endif  
+#endif
   use BetrStatusType      , only : betr_status_type
   implicit none
   !ARGUMENTS
@@ -1277,21 +1278,35 @@ contains
   end subroutine HistRetrieveFlux
 
   !------------------------------------------------------------------------
-  subroutine get_restartvar(this, nrest_1d, nrest_2d,rest_varname_1d, &
-   rest_varname_2d)
+  subroutine get_restartvar_size(this, nrest_1d, nrest_2d)
   !
   !DESCRIPTION
   use betr_ctrl, only : max_betr_rest_type
   implicit none
   class(betr_type)  ,     intent(inout) :: this
   integer, intent(out) :: nrest_1d, nrest_2d
+
+  call this%tracerstates%get_restartvars_size(nrest_1d, nrest_2d, this%tracers)
+
+  end subroutine get_restartvar_size
+
+  !------------------------------------------------------------------------
+  subroutine get_restartvar_info(this, nrest_1d, nrest_2d,rest_varname_1d, &
+   rest_varname_2d)
+  !
+  !DESCRIPTION
+  use betr_ctrl, only : max_betr_rest_type
+  implicit none
+  class(betr_type)  ,     intent(inout) :: this
+  integer, intent(in) :: nrest_1d, nrest_2d
   character(len=255), intent(out) :: rest_varname_1d(max_betr_rest_type)
   character(len=255), intent(out) :: rest_varname_2d(max_betr_rest_type)
 
-  call this%tracerstates%get_restartvars(nrest_1d, nrest_2d,rest_varname_1d, &
+  call this%tracerstates%get_restartvars_info(nrest_1d, nrest_2d,rest_varname_1d, &
    rest_varname_2d, this%tracers)
 
-  end subroutine get_restartvar
+  end subroutine get_restartvar_info
+
 
   !------------------------------------------------------------------------
   subroutine set_restvar(this, bounds, lbj, ubj, nrest_1d, nrest_2d, states_1d, states_2d, flag)

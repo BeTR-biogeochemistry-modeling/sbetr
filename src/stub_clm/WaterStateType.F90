@@ -17,15 +17,15 @@ module WaterstateType
 
     real(r8), pointer :: h2osoi_liq_col(:,:)    => null()   !liquid water (kg/m2) (new) (-nlevsno+1:nlevgrnd)
     real(r8), pointer :: h2osoi_ice_col(:,:)    => null()   !ice lens (kg/m2) (new) (-nlevsno+1:nlevgrnd)
-    real(r8), pointer :: h2osoi_liq_old(:,:)    => null()   !liquid water (kg/m2) (old) (-nlevsno+1:nlevgrnd)
-    real(r8), pointer :: h2osoi_ice_old(:,:)    => null()   !ice lens (kg/m2) (old) (-nlevsno+1:nlevgrnd)
+    real(r8), pointer :: h2osoi_liq_old_col(:,:)    => null()   !liquid water (kg/m2) (old) (-nlevsno+1:nlevgrnd)
+    real(r8), pointer :: h2osoi_ice_old_col(:,:)    => null()   !ice lens (kg/m2) (old) (-nlevsno+1:nlevgrnd)
     real(r8), pointer :: h2osoi_liqvol_col(:,:)  => null()  !volumetric liquid water content
     real(r8), pointer :: h2osoi_icevol_col(:,:)  => null()  !volumetric ice water content
     real(r8), pointer :: h2osoi_vol_col(:,:)     => null()  !volumetric water content, total
     real(r8), pointer :: air_vol_col(:,:)       => null()   !volume possessed by air
     real(r8), pointer :: finundated_col         (:)  => null() ! fraction of column that is inundated, this is for bgc caclulation in betr
-    real(r8), pointer :: rho_vap(:,:)              => null()  !concentration of bulk water vapor, assume in equilibrium with the liquid water
-    real(r8), pointer :: rhvap_soi(:,:)             => null()    !soil relative humidity
+    real(r8), pointer :: rho_vap_col(:,:)              => null()  !concentration of bulk water vapor, assume in equilibrium with the liquid water
+    real(r8), pointer :: rhvap_soi_col(:,:)             => null()    !soil relative humidity
     real(r8), pointer :: smp_l_col              (:,:) => null()! col liquid phase soil matric potential, mm
     real(r8), pointer :: frac_h2osfc_col        (:)  => null() ! col fractional area with surface water greater than zero
   contains
@@ -67,14 +67,14 @@ module WaterstateType
 
     allocate(this%h2osoi_liq_col(begc:endc, lbj:ubj))     ; this%h2osoi_liq_col(:,:) = nan
     allocate(this%h2osoi_ice_col(begc:endc, lbj:ubj))     ; this%h2osoi_ice_col(:,:) = nan
-    allocate(this%h2osoi_liq_old(begc:endc, lbj:ubj))     ; this%h2osoi_liq_old(:,:) = nan
-    allocate(this%h2osoi_ice_old(begc:endc, lbj:ubj))     ; this%h2osoi_ice_old(:,:) = nan
+    allocate(this%h2osoi_liq_old_col(begc:endc, lbj:ubj))     ; this%h2osoi_liq_old_col(:,:) = nan
+    allocate(this%h2osoi_ice_old_col(begc:endc, lbj:ubj))     ; this%h2osoi_ice_old_col(:,:) = nan
     allocate(this%h2osoi_liqvol_col(begc:endc, lbj:ubj))  ; this%h2osoi_liqvol_col(:,:) = nan
     allocate(this%h2osoi_icevol_col(begc:endc, lbj:ubj))  ; this%h2osoi_icevol_col(:,:) = nan
     allocate(this%h2osoi_vol_col(begc:endc, lbj:ubj))     ; this%h2osoi_vol_col(:,:) = nan
     allocate(this%air_vol_col(begc:endc, lbj:ubj))        ; this%air_vol_col(:,:) = nan
-    allocate(this%rho_vap(begc:endc, lbj:ubj))            ; this%air_vol_col(:,:) = nan
-    allocate(this%rhvap_soi(begc:endc, lbj:ubj))          ; this%rhvap_soi(:,:) = nan
+    allocate(this%rho_vap_col(begc:endc, lbj:ubj))            ; this%air_vol_col(:,:) = nan
+    allocate(this%rhvap_soi_col(begc:endc, lbj:ubj))          ; this%rhvap_soi_col(:,:) = nan
     allocate(this%smp_l_col  (begc:endc,lbj:ubj))         ; this%smp_l_col              (:,:) = nan
     allocate(this%finundated_col         (begc:endc))                     ; this%finundated_col         (:)   = nan
     allocate(this%frac_h2osfc_col        (begc:endc))                     ; this%frac_h2osfc_col        (:)   = nan

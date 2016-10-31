@@ -29,16 +29,16 @@ module ForcingDataType
      integer                             :: num_columns
      real(r8), pointer                   :: t_soi(:,:)  => null()
      real(r8), pointer                   :: h2osoi_liqvol(:,:) => null()
+     real(r8), pointer                   :: h2osoi_icevol(:,:)=> null()
      real(r8), pointer                   :: h2osoi_liq(:,:) => null()
      real(r8), pointer                   :: h2osoi_ice(:,:) => null()
      real(r8), pointer                   :: qflx_infl(:)     => null()  !surface infiltration, mm/s
      real(r8), pointer                   :: qflx_rootsoi(:,:) => null()  !transpiration at depth, m/s
-     real(r8), pointer                   :: qflx_rootsoi_patch(:,:) => null()  !transpiration at depth, m/s
+!x     real(r8), pointer                 :: qflx_rootsoi_patch(:,:) => null()  !transpiration at depth, m/s
      real(r8), pointer                   :: pbot(:)      => null()      !amtospheric pressure, Pa
      real(r8), pointer                   :: tbot(:)       => null()     !atmoshperic temperature, kelvin
-     real(r8), pointer                   :: h2osoi_icevol(:,:)=> null()
      real(r8), pointer                   :: qbot(:)       => null()     !water flux at bottom boundary, mm/s
-     real(r8), pointer                   :: soilpsi(:)=> null()
+!x     real(r8), pointer                 :: soilpsi(:)=> null()
    contains
      procedure, public :: Init
      procedure, public :: ReadData
@@ -141,7 +141,7 @@ contains
             "grid and forcing. "//errmsg(mod_filename, __LINE__))
 
     end if
-
+    print*,'total temporal snapshots ',num_time
     call this%Init(num_levels, num_time)
     call this%ReadForcingData(grid)
     !x print*,'read data tsoi',this%t_soi(1,:)

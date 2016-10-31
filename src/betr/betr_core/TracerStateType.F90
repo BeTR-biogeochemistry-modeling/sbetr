@@ -50,7 +50,8 @@ module TracerStateType
      procedure, private :: InitAllocate
      procedure, private :: InitHistory
      procedure, public  :: retrieve_hist
-     procedure, public  :: get_restartvars
+     procedure, public  :: get_restartvars_size
+     procedure, public  :: get_restartvars_info
   end type TracerState_type
 
 contains
@@ -436,7 +437,7 @@ contains
 
   !----------------------------------------------------------------
 
-  subroutine get_restartvars(this, nrest_1d, nrest_2d,rest_varname_1d, &
+  subroutine get_restartvars_info(this, nrest_1d, nrest_2d,rest_varname_1d, &
     rest_varname_2d,  betrtracer_vars)
   !
   !DESCRIPTION
@@ -446,9 +447,55 @@ contains
   use BeTRTracerType , only : BeTRTracer_Type
   implicit none
   class(TracerState_type), intent(inout) :: this
+  integer, intent(in) :: nrest_1d, nrest_2d
+  character(len=255), intent(out) :: rest_varname_1d(nrest_1d)
+  character(len=255), intent(out) :: rest_varname_2d(nrest_2d)
+  type(BeTRTracer_Type)  , intent(in)  :: betrtracer_vars
+  integer :: jj, kk,id, id_1d, id_2d
+
+    associate(                                                       &
+         ntracers          =>  betrtracer_vars%ntracers            , &
+         ngwmobile_tracers =>  betrtracer_vars%ngwmobile_tracers   , &
+         is_adsorb         =>  betrtracer_vars%is_adsorb           , &
+         adsorbid          =>  betrtracer_vars%adsorbid            , &
+         tracernames       =>  betrtracer_vars%tracernames         , &
+         is_frozen         =>  betrtracer_vars%is_frozen           , &
+         frozenid          =>  betrtracer_vars%frozenid              &
+         )
+
+    id_1d = 0; id_2d = 0
+
+      do jj = 1, ntracers
+         id_2d = id_2d + 1; rest_varname_2d(id_2d)=trim(tracernames(jj))//'_TRACER_CONC_BULK'
+
+         if(jj<= ngwmobile_tracers)then
+            id_1d =id_1d + 1; rest_varname_1d(id_1d)=trim(tracernames(jj))//'_TRACER_CONC_AQUIFER'
+
+            if(is_adsorb(jj))then
+               id_2d = id_2d + 1;rest_varname_2d(id_2d)=trim(tracernames(jj))//'_TRACER_CONC_SOLID_EQUIL'
+            endif
+            if(is_frozen(jj))then
+              id_2d=id_2d+1;rest_varname_2d(id_2d)=trim(tracernames(jj))//'_TRACER_CONC_FROZEN'
+            endif
+         endif
+      enddo
+
+    end associate
+
+  end subroutine get_restartvars_info
+
+  !----------------------------------------------------------------
+  subroutine get_restartvars_size(this, nrest_1d, nrest_2d,  betrtracer_vars)
+  !
+  !DESCRIPTION
+  !set restr files
+  use betr_ctrl, only : max_betr_rest_type
+  use MathfuncMod, only : addone
+  use BeTRTracerType , only : BeTRTracer_Type
+  implicit none
+  class(TracerState_type), intent(inout) :: this
   integer, intent(out) :: nrest_1d, nrest_2d
-  character(len=255), intent(out) :: rest_varname_1d(max_betr_rest_type)
-  character(len=255), intent(out) :: rest_varname_2d(max_betr_rest_type)
+
   type(BeTRTracer_Type)  , intent(in)  :: betrtracer_vars
   integer :: jj, kk,id
 
@@ -465,23 +512,20 @@ contains
     nrest_1d = 0; nrest_2d = 0
 
       do jj = 1, ntracers
-         id=addone(nrest_2d); rest_varname_2d(id)=trim(tracernames(jj))//'_TRACER_CONC_BULK'
-
+         nrest_2d= nrest_2d + 1
          if(jj<= ngwmobile_tracers)then
-            id = addone(nrest_1d); rest_varname_1d(id)=trim(tracernames(jj))//'_TRACER_CONC_AQUIFER'
-
+            nrest_1d = nrest_1d + 1
             if(is_adsorb(jj))then
-               id=addone(nrest_2d);rest_varname_2d(id)=trim(tracernames(jj))//'_TRACER_CONC_SOLID_EQUIL'
+               nrest_2d = nrest_2d + 1
             endif
             if(is_frozen(jj))then
-              id=addone(nrest_2d);rest_varname_2d(id)=trim(tracernames(jj))//'_TRACER_CONC_FROZEN'
+              nrest_2d = nrest_2d + 1
             endif
          endif
       enddo
 
     end associate
 
-  end subroutine get_restartvars
-
+  end subroutine get_restartvars_size
 
 end module TracerStateType
