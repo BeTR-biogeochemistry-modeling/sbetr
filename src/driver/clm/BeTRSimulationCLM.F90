@@ -32,7 +32,8 @@ module BeTRSimulationCLM
      ! NOTE(bja, 201603) CLM stubb types go here!
 
    contains
-     procedure, public :: Init                      => CLMInit
+     procedure, public :: InitOnline                => CLMInit
+     procedure, public :: Init                      => CLMInitOffline
      procedure, public :: StepWithoutDrainage       => CLMStepWithoutDrainage
      procedure, public :: StepWithDrainage          => CLMStepWithDrainage
      procedure, public :: SetBiophysForcing         => CLMSetBiophysForcing
@@ -65,7 +66,59 @@ contains
 
   !-------------------------------------------------------------------------------
 
-  subroutine CLMInit(this, base_filename, namelist_buffer, bounds, lun, col, pft, waterstate)
+  subroutine CLMInit(this, bounds, lun, col, pft, waterstate, namelist_buffer)
+    !DESCRIPTION
+    !initialize interface
+    !
+    !USES
+    use betr_constants      , only : betr_namelist_buffer_size
+    use betr_constants      , only : betr_filename_length
+    use BeTR_pftvarconType  , only : betr_pftvarcon
+    use LandunitType        , only : landunit_type
+    use ColumnType          , only : column_type
+    use PatchType           , only : patch_type
+    use LandunitType        , only : landunit_type
+    use pftvarcon           , only : noveg, nc4_grass, nc3_arctic_grass, nc3_nonarctic_grass
+    use WaterStateType      , only : waterstate_type
+    use landunit_varcon     , only : istcrop, istice, istsoil
+    use BeTR_landvarconType , only : betr_landvarcon
+    use tracer_varcon       , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
+    use clm_varpar          , only : nlevsno, nlevsoi, nlevtrc_soil
+    implicit none
+    !ARGUMENTS
+    class(betr_simulation_clm_type)          , intent(inout) :: this
+    character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
+    type(bounds_type)                        , intent(in)    :: bounds
+    type(landunit_type)                      , intent(in) :: lun
+    type(column_type)                        , intent(in) :: col
+    type(patch_type)                         , intent(in) :: pft
+    type(waterstate_type)                    , intent(inout) :: waterstate
+
+    betr_nlevsoi                       = nlevsoi
+    betr_nlevsno                       = nlevsno
+    betr_nlevtrc_soil                  = nlevtrc_soil
+
+
+    betr_pftvarcon%nc3_arctic_grass    = nc3_arctic_grass
+    betr_pftvarcon%nc3_nonarctic_grass = nc3_nonarctic_grass
+    betr_pftvarcon%nc4_grass           = nc4_grass
+    betr_pftvarcon%noveg               = noveg
+
+    betr_landvarcon%istsoil            = istsoil
+    betr_landvarcon%istcrop            = istcrop
+    betr_landvarcon%istice             = istice
+
+
+    ! allocate the reaction types that may only be known to this
+    ! simulation type.
+    ! now call the base simulation init to continue initialization
+    call this%BeTRInit(bounds, lun, col, pft, waterstate, namelist_buffer)
+
+  end subroutine CLMInit
+
+  !-------------------------------------------------------------------------------
+
+  subroutine CLMInitOffline(this, bounds, lun, col, pft, waterstate, namelist_buffer,base_filename)
     !DESCRIPTION
     !initialize interface
     !
@@ -112,12 +165,9 @@ contains
     ! allocate the reaction types that may only be known to this
     ! simulation type.
     ! now call the base simulation init to continue initialization
-    call this%BeTRInit(base_filename, namelist_buffer, &
-         bounds, lun, col, pft, waterstate)
+    call this%BeTRInit(bounds, lun, col, pft, waterstate,namelist_buffer,base_filename )
 
-  end subroutine CLMInit
-
-
+  end subroutine CLMInitOffline
   !---------------------------------------------------------------------------------
   subroutine CLMStepWithoutDrainage(this, betr_time, bounds, col, pft)
    !DESCRIPTION

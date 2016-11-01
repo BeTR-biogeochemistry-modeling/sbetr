@@ -34,7 +34,7 @@ module BeTRSimulationStandalone
      ! class.
 
    contains
-     procedure, public :: Init                => StandaloneInit
+     procedure, public :: Init                => StandaloneInitOffline
      procedure, public :: StepWithoutDrainage => StandaloneStepWithoutDrainage
      procedure, public :: StepWithDrainage    => StandaloneStepWithDrainage
      procedure, public :: SetBiophysForcing   => StandaloneSetBiophysForcing
@@ -61,7 +61,7 @@ contains
 
   !-------------------------------------------------------------------------------
 
-  subroutine StandaloneInit(this, base_filename, namelist_buffer, bounds, lun, col, pft, waterstate)
+  subroutine StandaloneInitOffline(this, bounds, lun, col, pft, waterstate, namelist_buffer, base_filename)
 
     !DESCRIPTION
     !initialize standalone betr
@@ -111,12 +111,11 @@ contains
     ! in betr%Init().
 
     ! now call the base simulation init to continue initialization
-    call this%BeTRInit(base_filename, namelist_buffer, &
-         bounds, lun, col, pft, waterstate)
+    call this%BeTRInit(bounds, lun, col, pft, waterstate, namelist_buffer, base_filename)
 
     !pass necessary data
 
-  end subroutine StandaloneInit
+  end subroutine StandaloneInitOffline
 
 
   !---------------------------------------------------------------------------------

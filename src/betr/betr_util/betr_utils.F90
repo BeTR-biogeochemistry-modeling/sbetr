@@ -40,5 +40,17 @@ contains
 
   write(ans,fmt),num
   return
-  end function num2str     
+  end function num2str
+  ! ----------------------------------------------------------------------
+  function log2str(logval)result(str)
+  implicit none
+  logical, intent(in) :: logval
+  character(len=8) :: str
+
+  if(logval)then
+    str='.true.'
+  else
+    str='.false.'
+  endif
+  end function log2str
 end module betr_utils

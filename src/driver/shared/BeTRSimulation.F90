@@ -74,8 +74,8 @@ module BeTRSimulation
    contains
      procedure, public :: BeTRInit
      procedure, public :: BeTRSetFilter
-     procedure, public :: Init                    => BeTRSimulationInit
-     procedure, public :: InitOffline             => BeTRSimulationInitOffline
+     procedure, public :: InitOnline              => BeTRSimulationInit
+     procedure, public :: Init                    => BeTRSimulationInitOffline
      procedure, public :: ConsistencyCheck        => BeTRSimulationConsistencyCheck
      procedure, public :: PreDiagSoilColWaterFlux => BeTRSimulationPreDiagSoilColWaterFlux
      procedure, public :: DiagAdvWaterFlux        => BeTRSimulationDiagAdvWaterFlux
@@ -206,7 +206,7 @@ contains
     do p = 1, maxpft_per_col
       this%filter_soilp(p) = p
     enddo
-    betr_offline=boffline    
+    betr_offline=boffline
   end subroutine BeTRSetFilter
 !-------------------------------------------------------------------------------
 

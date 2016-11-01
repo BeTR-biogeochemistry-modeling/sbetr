@@ -90,7 +90,7 @@ contains
 
   !initialize parameters
   call read_name_list(namelist_buffer, simulator_name, continue_run)
-  simulation => create_betr_simulation(simulator_name, boffline=.true.)
+  simulation => create_betr_simulation(simulator_name)
 
   !set up mask
   bounds%begc = 1
@@ -130,7 +130,7 @@ contains
 
   call spmd_init
   !print*,'set filters to load initialization data from input'
-  call simulation%BeTRSetFilter()
+  call simulation%BeTRSetFilter(maxpft_per_col=1, boffline=.true.)
 
   if(continue_run)then
     ! print*,'continue from restart file'
@@ -154,7 +154,7 @@ contains
 
   !x print*,'bf sim init'
   !print*,'base_filename:',trim(base_filename)
-  call  simulation%Init(base_filename, namelist_buffer, bounds, lun, col, pft, waterstate_vars)
+  call  simulation%Init(bounds, lun, col, pft, waterstate_vars,namelist_buffer, base_filename)
   !x print*,'af sim init'
 
   select type(simulation)

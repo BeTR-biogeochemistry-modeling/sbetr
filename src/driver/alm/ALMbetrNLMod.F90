@@ -4,7 +4,7 @@ module ALMBeTRNLMod
     use betr_constants , only : betr_namelist_buffer_size
 implicit none
 
-  
+
 
   character(len=betr_namelist_buffer_size), public :: betr_namelist_buffer
   public :: betr_readNL
@@ -21,6 +21,7 @@ contains
     use fileutils     , only : getavu, relavu, opnfil
     use shr_nl_mod    , only : shr_nl_find_group_name
     use shr_mpi_mod   , only : shr_mpi_bcast
+    use betr_utils    , only : log2str
     implicit none
     ! !ARGUMENTS:
     character(len=*), intent(IN) :: NLFilename              ! Namelist filename
@@ -31,11 +32,21 @@ contains
     character(len=32)            :: subname = 'betr_readNL' ! subroutine name
     !-----------------------------------------------------------------------
 
-    namelist / betr_inparm / bgc_method
+    character(len=betr_string_length)      :: reaction_method
+    logical                                :: advection_on, diffusion_on, reaction_on, ebullition_on
+
+    namelist / betr_inparm / reaction_method, &
+      advection_on, diffusion_on, reaction_on, ebullition_on
 
     ! ----------------------------------------------------------------------
     ! Read namelist from standard input.
     ! ----------------------------------------------------------------------
+
+    reaction_method = ''
+    advection_on    = .true.
+    diffusion_on    = .true.
+    reaction_on     = .true.
+    ebullition_on   =.true.
 
     if ( masterproc )then
 
@@ -53,8 +64,21 @@ contains
 
     end if
     ! Broadcast namelist variables read in
-    call shr_mpi_bcast(bgc_method, mpicom)
+    call shr_mpi_bcast(reaction_method, mpicom)
+    call shr_mpi_bcast(advection_on, mpicom)
+    call shr_mpi_bcast(diffusion_on, mpicom)
+    call shr_mpi_bcast(reaction_on, mpicom)
+    call shr_mpi_bcast(ebullition_on, mpicom)
+
+    write(betr_namelist_buffer,*) '&betr_parameters'//new_line('A'), &
+      ' reaction_method='//quote/trim(reaction_method)//quote//new_line('A'), &
+      ' advection_on=',trim(log2str(advection_on)),new_line('A'), &
+      ' diffusion_on=',trim(log2str(diffusion_on)),new_line('A'), &
+      ' reaction_on=',trim(log2str(reaction_on)),new_line('A'), &
+      ' ebullition_on=',trim(log2str(ebullition_on)),new_line('A')//'/'
 
   end subroutine betr_readNL
-  
+
+
+
 end module ALMBeTRNLMod

@@ -28,8 +28,8 @@ module BeTRSimulationALM
   type, public, extends(betr_simulation_type) :: betr_simulation_alm_type
      type(betr_ecophyscon_type) :: betr_ecophyscon
    contains
-     procedure :: Init                              => ALMInit
-     procedure :: InitOffline                       => ALMInitOffline
+     procedure :: InitOnline                        => ALMInit
+     procedure :: Init                              => ALMInitOffline
      procedure, public :: StepWithoutDrainage       => ALMStepWithoutDrainage
      procedure, public :: StepWithDrainage          => ALMStepWithDrainage
      procedure, public :: SetBiophysForcing         => ALMSetBiophysForcing
