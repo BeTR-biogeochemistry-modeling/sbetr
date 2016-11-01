@@ -48,6 +48,7 @@ module ForcingDataType
      procedure, public :: infiltration
      procedure, private :: InitAllocate
      procedure, private :: ReadNameList
+     procedure, public  :: destroy
   end type ForcingData_type
 
 contains
@@ -79,6 +80,30 @@ contains
     call this%InitAllocate()
 
   end subroutine Init
+
+
+
+
+    !------------------------------------------------------------------------
+    subroutine Destroy(this)
+      !DESCRIPTION
+      !allocate memory
+      implicit none
+      class(ForcingData_type), intent(inout) :: this
+      !at this moment the variable size is fixed
+
+      deallocate(this%t_soi)
+      deallocate(this%h2osoi_liqvol)
+      deallocate(this%h2osoi_icevol)
+      deallocate(this%h2osoi_liq)
+      deallocate(this%h2osoi_ice)
+      deallocate(this%qflx_infl)
+      deallocate(this%qflx_rootsoi)
+      deallocate(this%pbot)
+      deallocate(this%qbot)
+      deallocate(this%tbot)
+
+    end subroutine Destroy
 
   !------------------------------------------------------------------------
   subroutine InitAllocate(this)

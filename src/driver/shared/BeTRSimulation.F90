@@ -67,6 +67,16 @@ module BeTRSimulation
      integer :: num_hist_state2d
      integer :: num_hist_flux1d
      integer :: num_hist_flux2d
+
+     integer :: num_rest_state1d
+     integer :: num_rest_state2d
+     real(r8), pointer :: hist_states_2d(:,:,:)
+     real(r8), pointer :: hist_states_1d(:,:)
+     real(r8), pointer :: rest_states_2d(:,:,:)
+     real(r8), pointer :: rest_states_1d(:,:)
+     real(r8), pointer :: hist_fluxes_1d(:,:)
+     real(r8), pointer :: hist_fluxes_2d(:,:,:)
+
      ! FIXME(bja, 201603) most of these types should be private!
 
      ! NOTE(bja, 201603) BeTR types only, no LSM specific types here!
@@ -95,11 +105,13 @@ module BeTRSimulation
      procedure, public :: WriteOfflineHistory     => hist_write
      procedure, public :: WriteRegressionOutput
      !the following are used to interact with lsm
+
      procedure, public :: BeTRRestart             => BeTRSimulationRestart
      procedure, public :: BeTRRestartOffline      => BeTRSimulationRestartOffline
      procedure, public :: BeTRRestartOpen         => BeTRSimulationRestartOpen
      procedure, public :: BeTRRestartClose        => BeTRSimulationRestartClose
      procedure, private :: BeTRCreateHistory      => BeTRSimulationCreateHistory
+     procedure, public  :: HistRetrieval           => BeTRSimulationHistRetrieval
      procedure, private :: BeTRRetrieveHistoryState    => BeTRSimulationRetrieveHistoryState
      procedure, private :: BeTRRetrieveHistoryFlux    => BeTRSimulationRetrieveHistoryFlux
      procedure, public :: BeTRSetcps              => BeTRSimulationSetcps
@@ -108,7 +120,9 @@ module BeTRSimulation
      procedure, private:: hist_create_fluxes
      procedure, private:: hist_output_states
      procedure, private:: hist_output_fluxes
-     procedure, private:: init_hist_buffer
+     procedure, private:: RestAlloc               => BeTRSimulationRestartAlloc
+     procedure, private:: HistAlloc               => BeTRSimulationHistoryAlloc
+
   end type betr_simulation_type
 
   public :: BeTRSimulationInit
@@ -120,10 +134,10 @@ contains
   class(betr_simulation_type)              , intent(inout) :: this
   real(r8), intent(in) :: dtime
   integer, intent(in) :: nelapstep
-  
+
 
   call this%betr_time%setClock(dtime, nelapstep)
-  
+
   end subroutine SetClock
   !-------------------------------------------------------------------------------
   subroutine BeTRSimulationInit(this, bounds, lun, col, pft, waterstate, namelist_buffer)
@@ -307,12 +321,12 @@ contains
     enddo
     if(this%bsimstatus%check_status())call endrun(msg=this%bsimstatus%print_msg())
 
-    !identify variables that are used for output
+    !identify variables that are used for history output
     c = bounds%begc
     call this%betr(c)%get_hist_size(this%num_hist_state1d, this%num_hist_state2d, &
       this%num_hist_flux1d, this%num_hist_flux2d)
 
-    call this%init_hist_buffer()
+    call this%HistAlloc(bounds)
 
     call this%betr(c)%get_hist_info(this%num_hist_state1d, this%num_hist_state2d, &
       this%num_hist_flux1d, this%num_hist_flux2d, &
@@ -324,7 +338,7 @@ contains
       call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
       if(this%bsimstatus%check_status())call endrun(msg=this%bsimstatus%print_msg())
     endif
-    print*,'finish get_hist_info'
+
     if(betr_offline)then
       call this%CreateOfflineHistory(bounds, betr_nlevtrc_soil, &
          this%num_hist_state1d, this%num_hist_state2d, &
@@ -334,6 +348,10 @@ contains
          this%num_hist_state1d, this%num_hist_state2d, &
             this%num_hist_flux1d, this%num_hist_flux2d)
     endif
+    !identify restart variables
+    call this%betr(c)%get_restartvar_size(this%num_rest_state1d, this%num_rest_state2d)
+
+    call this%RestAlloc(bounds)
 
     if(present(base_filename)) then
       call this%regression%Init(base_filename, namelist_buffer, this%bsimstatus)
@@ -341,17 +359,52 @@ contains
     endif
   end subroutine BeTRInit
   !---------------------------------------------------------------------------------
-
-  subroutine init_hist_buffer(this)
+  subroutine BeTRSimulationRestartAlloc(this, bounds)
+  use betr_varcon         , only : spval => bspval
   implicit none
-  class(betr_simulation_type) , intent(inout) :: this
+  !ARGUMENTS
+  class(betr_simulation_type)              , intent(inout) :: this
+  type(bounds_type)                        , intent(in)    :: bounds
 
+  integer :: begc, endc
+
+  begc = bounds%begc; endc=bounds%endc
+
+
+  allocate(this%rest_states_1d(begc:endc, 1:this%num_rest_state1d))
+  this%rest_states_1d(:,:)=spval
+  allocate(this%rest_states_2d(begc:endc, 1:betr_nlevtrc_soil, 1:this%num_rest_state2d))
+  this%rest_states_2d(:,:,:)=spval
+
+  end subroutine BeTRSimulationRestartAlloc
+  !---------------------------------------------------------------------------------
+
+  subroutine BeTRSimulationHistoryAlloc(this, bounds)
+  implicit none
+  !ARGUMENTS
+  class(betr_simulation_type)              , intent(inout) :: this
+  type(bounds_type)                        , intent(in)    :: bounds
+
+  integer :: begc, endc
+
+  begc = bounds%begc; endc=bounds%endc
+  !state variables
   allocate(this%nmlist_hist1d_state_buffer(this%num_hist_state1d)); this%nmlist_hist1d_state_buffer(:)=''
   allocate(this%nmlist_hist2d_state_buffer(this%num_hist_state2d)); this%nmlist_hist2d_state_buffer(:)=''
+
+  allocate(this%hist_states_2d(begc:endc, 1:betr_nlevtrc_soil, 1:this%num_hist_state2d))
+  allocate(this%hist_states_1d(begc:endc, 1:this%num_hist_state1d))
+
+  !flux variables
   allocate(this%nmlist_hist1d_flux_buffer(this%num_hist_flux1d)); this%nmlist_hist1d_flux_buffer(:)=''
   allocate(this%nmlist_hist2d_flux_buffer(this%num_hist_flux2d)); this%nmlist_hist2d_flux_buffer(:)=''
 
-  end subroutine init_hist_buffer
+  allocate(this%hist_fluxes_2d(begc:endc, 1:betr_nlevtrc_soil, 1:this%num_hist_flux2d))
+  allocate(this%hist_fluxes_1d(begc:endc, 1:this%num_hist_flux1d))
+
+  end subroutine BeTRSimulationHistoryAlloc
+
+
   !---------------------------------------------------------------------------------
   subroutine BeTRSimulationRestartOpen(this, fname, flag, ncid)
     !
@@ -644,9 +697,11 @@ contains
         call ncd_putvar(ncid, 'QFLX_ADV', record, velocity(c:c, 1:betr_nlevtrc_soil))
       enddo
 
+      call this%HistRetrieval(bounds, numf, filter)
 
       call this%hist_output_states(ncid, record, bounds, numf, filter, betr_nlevtrc_soil, &
             this%num_hist_state1d, this%num_hist_state2d)
+
 
       call this%hist_output_fluxes(ncid, record, bounds, numf, filter, betr_nlevtrc_soil, &
            this%num_hist_flux1d, this%num_hist_flux2d)
@@ -654,6 +709,23 @@ contains
       call ncd_pio_closefile(ncid)
     end associate
   end subroutine hist_write
+
+  !---------------------------------------------------------------------------------
+
+  subroutine BeTRSimulationHistRetrieval(this, bounds, numf, filter)
+  use tracer_varcon  , only : betr_nlevtrc_soil
+  implicit none
+  !ARGUMENTS
+   class(betr_simulation_type) , intent(inout) :: this
+   type(bounds_type)           , intent(in)    :: bounds
+   integer, intent(in) :: numf
+   integer, intent(in) :: filter(:)
+
+  call this%BeTRRetrieveHistoryState(bounds, numf, filter)
+
+  call this%BeTRRetrieveHistoryFlux(bounds, numf, filter)
+
+  end subroutine BeTRSimulationHistRetrieval
 
   !---------------------------------------------------------------------------------
   subroutine BeTRSimulationConsistencyCheck(this, &
@@ -1187,8 +1259,6 @@ contains
 
   real(r8), pointer :: data2dptr(:,:) ! temp. pointers for slicing larger arrays
   real(r8), pointer :: data1dptr(:)   ! temp. pointers for slicing larger arrays
-  real(r8), pointer :: fluxes_1d(:,:)
-  real(r8), pointer :: fluxes_2d(:,:,:)
 
   namelist /hist2d_fmt/    &
   fname, units, avgflag,type2d,long_name, default
@@ -1202,14 +1272,6 @@ contains
 
   begc=bounds%begc; endc=bounds%endc
 
-  if(num_flux2d >0)then
-    allocate(fluxes_2d(begc:endc, 1:betr_nlevtrc_soil, 1:num_flux2d))
-  endif
-  if(num_flux1d>0)then
-    allocate(fluxes_1d(begc:endc, 1:num_flux1d))
-  endif
-
-
   do jj = 1, num_flux2d
     !read name list
     read(this%nmlist_hist2d_flux_buffer(jj), nml=hist2d_fmt, iostat=nml_error, iomsg=ioerror_msg)
@@ -1222,8 +1284,8 @@ contains
       call hist_def_fld2d (ncid, varname=fname, nf90_type=ncd_float, dim1name = "ncol",&
             dim2name="levtrc", long_name=long_name, units=units)
     else
-      fluxes_2d(begc:endc,1:betr_nlevtrc_soil, jj) = spval
-      data2dptr => fluxes_2d(begc:endc,1:betr_nlevtrc_soil, jj)
+      this%hist_fluxes_2d(begc:endc,1:betr_nlevtrc_soil, jj) = spval
+      data2dptr => this%hist_fluxes_2d(begc:endc,1:betr_nlevtrc_soil, jj)
       call hist_addfld2d (fname=fname, units=units, type2d=type2d,  &
            avgflag=avgflag, long_name=long_name,  ptr_col=data2dptr, default=default)
     endif
@@ -1240,15 +1302,14 @@ contains
       call hist_def_fld1d (ncid, varname=fname,  nf90_type=ncd_float, &
         dim1name="ncol", long_name=long_name, units=units)
     else
-      fluxes_1d(begc:endc,jj) = spval
-      data1dptr => fluxes_1d(begc:endc, jj)
+      this%hist_fluxes_1d(begc:endc,jj) = spval
+      data1dptr => this%hist_fluxes_1d(begc:endc, jj)
       call hist_addfld1d (fname=fname, units=units,  avgflag=avgflag, long_name=long_name, &
         ptr_col=data1dptr, default=default)
     endif
 
   enddo
-  deallocate(fluxes_1d)
-  deallocate(fluxes_2d)
+
   end subroutine hist_create_fluxes
 
   !------------------------------------------------------------------------
@@ -1280,8 +1341,7 @@ contains
   character(len=200):: ioerror_msg
   real(r8), pointer :: data2dptr(:,:) ! temp. pointers for slicing larger arrays
   real(r8), pointer :: data1dptr(:)   ! temp. pointers for slicing larger arrays
-  real(r8), pointer :: states_2d(:,:,:)
-  real(r8), pointer :: states_1d(:,:)
+
   character(len=*), parameter :: subname = 'hist_create_states'
 
   namelist /hist2d_fmt/    &
@@ -1296,12 +1356,6 @@ contains
 
   begc = bounds%begc; endc = bounds%endc
 
-  if(num_state2d>0)then
-    allocate(states_2d(bounds%begc:bounds%endc, 1:betr_nlevtrc_soil, 1:num_state2d))
-  endif
-  if(num_state1d>0)then
-    allocate(states_1d(bounds%begc:bounds%endc, 1:num_state1d))
-  endif
 
   do jj = 1, num_state2d
     !read namelist
@@ -1315,8 +1369,8 @@ contains
       call hist_def_fld2d (ncid=ncid, varname=trim(fname), nf90_type=ncd_float, dim1name = "ncol",&
           dim2name="levtrc", long_name=long_name, units=units)
     else
-      states_2d(begc:endc,1:betr_nlevtrc_soil, jj) = spval
-      data2dptr => states_2d(begc:endc,1:betr_nlevtrc_soil, jj)
+      this%hist_states_2d(begc:endc,1:betr_nlevtrc_soil, jj) = spval
+      data2dptr => this%hist_states_2d(begc:endc,1:betr_nlevtrc_soil, jj)
       call hist_addfld2d (fname=fname, units=units, type2d=type2d,  &
            avgflag=avgflag, long_name=long_name,  ptr_col=data2dptr, default=default)
     endif
@@ -1333,14 +1387,13 @@ contains
       call hist_def_fld1d (ncid, varname=fname,  nf90_type=ncd_float, &
         dim1name="ncol", long_name=long_name, units=units)
     else
-      states_1d(begc:endc,jj) = spval
-      data1dptr => states_1d(begc:endc,jj)
+      this%hist_states_1d(begc:endc,jj) = spval
+      data1dptr => this%hist_states_1d(begc:endc,jj)
       call hist_addfld1d (fname=fname, units=units, avgflag=avgflag, &
           long_name=long_name, ptr_col=data1dptr, default=default)
     endif
   enddo
-  deallocate(states_1d)
-  deallocate(states_2d)
+
   end subroutine hist_create_states
   !------------------------------------------------------------------------
 
@@ -1378,8 +1431,6 @@ contains
   real(r8), pointer :: data2dptr(:,:) ! temp. pointers for slicing larger arrays
   real(r8), pointer :: data1dptr(:)   ! temp. pointers for slicing larger arrays
 
-  real(r8), pointer :: fluxes_1d(:,:)
-  real(r8), pointer :: fluxes_2d(:,:,:)
 
   namelist /hist2d_fmt/    &
   fname, units, avgflag,type2d,long_name, default
@@ -1389,23 +1440,13 @@ contains
 
   begc=bounds%begc; endc=bounds%endc
 
-  if(num_flux2d >0)then
-    allocate(fluxes_2d(begc:endc, 1:betr_nlevtrc_soil, 1:num_flux2d))
-  endif
-  if(num_flux1d>0)then
-    allocate(fluxes_1d(begc:endc, 1:num_flux1d))
-  endif
-
-  call this%BeTRRetrieveHistoryFlux(bounds, 1, betr_nlevtrc_soil, numf, filter, &
-     num_flux1d, num_flux2d, fluxes_1d, fluxes_2d)
-
   do jj = 1, num_flux2d
     !read name list
     read(this%nmlist_hist2d_flux_buffer(jj), nml=hist2d_fmt, iostat=nml_error, iomsg=ioerror_msg)
     if(nml_error/=0)then
       write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
     endif
-    data2dptr => fluxes_2d(begc:endc,1:betr_nlevtrc_soil, jj)
+    data2dptr => this%hist_fluxes_2d(begc:endc,1:betr_nlevtrc_soil, jj)
 
     call ncd_putvar(ncid, fname, record, data2dptr)
 
@@ -1417,14 +1458,12 @@ contains
     if(nml_error/=0)then
       write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
     endif
-    data1dptr => fluxes_1d(begc:endc, jj)
+    data1dptr => this%hist_fluxes_1d(begc:endc, jj)
 
     call ncd_putvar(ncid,fname, record, data1dptr)
 
   enddo
 
-  deallocate(fluxes_1d)
-  deallocate(fluxes_2d)
   end subroutine hist_output_fluxes
   !------------------------------------------------------------------------
   subroutine hist_output_states(this,  ncid,  record, bounds, numf, filter, &
@@ -1458,8 +1497,6 @@ contains
   character(len=200):: ioerror_msg
   real(r8), pointer :: data2dptr(:,:) ! temp. pointers for slicing larger arrays
   real(r8), pointer :: data1dptr(:)   ! temp. pointers for slicing larger arrays
-  real(r8), pointer :: states_2d(:,:,:)
-  real(r8), pointer :: states_1d(:,:)
 
   character(len=*), parameter :: subname = 'hist_output_states'
 
@@ -1471,15 +1508,6 @@ contains
 
   begc = bounds%begc; endc = bounds%endc
 
-  if(num_state2d>0)then
-    allocate(states_2d(bounds%begc:bounds%endc, 1:betr_nlevtrc_soil, 1:num_state2d))
-  endif
-  if(num_state1d>0)then
-    allocate(states_1d(bounds%begc:bounds%endc, 1:num_state1d))
-  endif
-
-  call this%BeTRRetrieveHistoryState(bounds, 1, betr_nlevtrc_soil, numf,&
-     filter,num_state1d, num_state2d, states_1d, states_2d)
 
   do jj = 1, num_state2d
     !read namelist
@@ -1488,7 +1516,7 @@ contains
       write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
     endif
 
-    data2dptr => states_2d(begc:endc,1:betr_nlevtrc_soil, jj)
+    data2dptr => this%hist_states_2d(begc:endc,1:betr_nlevtrc_soil, jj)
 
     call ncd_putvar(ncid,fname, record, data2dptr)
 
@@ -1501,14 +1529,12 @@ contains
       write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
     endif
 
-    data1dptr => states_1d(begc:endc,jj)
+    data1dptr => this%hist_states_1d(begc:endc,jj)
 
     call ncd_putvar(ncid,fname, record, data1dptr)
 
   enddo
 
-  deallocate(states_1d)
-  deallocate(states_2d)
   end subroutine hist_output_states
   !------------------------------------------------------------------------
   subroutine BeTRSimulationCreateHistory(this, bounds, betr_nlevtrc_soil,&
@@ -1532,20 +1558,15 @@ contains
 
   end subroutine BeTRSimulationCreateHistory
   !------------------------------------------------------------------------
-  subroutine BeTRSimulationRetrieveHistoryState(this, bounds, lbj, ubj, numf, filter, &
-    num_state1d, num_state2d, states_1d, states_2d)
+  subroutine BeTRSimulationRetrieveHistoryState(this, bounds, numf, filter)
   use betr_varcon     , only : spval => bspval
+  use tracer_varcon  , only : betr_nlevtrc_soil
   implicit none
   !ARGUMENTS
   class(betr_simulation_type) , intent(inout) :: this
   type(bounds_type)           , intent(in)    :: bounds
-  integer, intent(in) :: lbj, ubj
   integer, intent(in) :: numf
   integer, intent(in) :: filter(:)
-  integer, intent(in) :: num_state1d
-  integer, intent(in) :: num_state2d
-  real(r8), intent(out):: states_1d(bounds%begc:bounds%endc, 1:num_state1d)
-  real(r8), intent(out):: states_2d(bounds%begc:bounds%endc, lbj:ubj, 1:num_state2d)
 
   !TEMPORARY VARIABLES
   integer :: fc, c
@@ -1553,43 +1574,39 @@ contains
 
   call this%BeTRSetBounds(betr_bounds)
 
-  states_1d(:,:) = spval
-  states_2d(:,:,:)=spval
   do fc = 1, numf
     c = filter(fc)
     if(.not. this%active_col(c))cycle
     call this%betr(c)%HistRetrieveState(betr_bounds, 1, betr_nlevtrc_soil, &
-       num_state1d, num_state2d,states_1d(c:c,:), states_2d(c:c,1:betr_nlevtrc_soil,:))
+       this%num_hist_state1d, this%num_hist_state2d,&
+       this%hist_states_1d(c:c,:), this%hist_states_2d(c:c,1:betr_nlevtrc_soil,:))
   enddo
 
   end subroutine BeTRSimulationRetrieveHistoryState
   !------------------------------------------------------------------------
-  subroutine BeTRSimulationRetrieveHistoryFlux(this, bounds,lbj,ubj, numf, filter,&
-     num_flux1d, num_flux2d, fluxes_1d, fluxes_2d)
+  subroutine BeTRSimulationRetrieveHistoryFlux(this, bounds, numf, filter)
   use betr_varcon     , only : spval => bspval
+  use tracer_varcon  , only :  betr_nlevtrc_soil  
   implicit none
   !ARGUMENTS
   class(betr_simulation_type) , intent(inout) :: this
   type(bounds_type)           , intent(in)    :: bounds
-  integer, intent(in) :: lbj, ubj
-  integer, intent(in) :: num_flux1d, num_flux2d
   integer, intent(in) :: numf
   integer, intent(in) :: filter(:)
-  real(r8), intent(out) :: fluxes_1d(bounds%begc:bounds%endc,1:num_flux1d)
-  real(r8), intent(out) :: fluxes_2d(bounds%begc:bounds%endc,lbj:ubj,1:num_flux2d)
 
   !TEMPORARY VARIABLES
   integer :: fc, c
   type(betr_bounds_type)     :: betr_bounds
 
   call this%BeTRSetBounds(betr_bounds)
-  fluxes_1d(:,:)=spval
-  fluxes_2d(:,:,:)=spval
+  this%hist_fluxes_1d(:,:)=spval
+  this%hist_fluxes_2d(:,:,:)=spval
   do fc = 1, numf
     c = filter(fc)
     if(.not. this%active_col(c))cycle
     call this%betr(c)%HistRetrieveFlux(betr_bounds, 1, betr_nlevtrc_soil, &
-       num_flux1d,num_flux2d, fluxes_1d(c:c,:),fluxes_2d(c:c,1:betr_nlevtrc_soil,:))
+       this%num_hist_flux1d,this%num_hist_flux2d, &
+       this%hist_fluxes_1d(c:c,:),this%hist_fluxes_2d(c:c,1:betr_nlevtrc_soil,:))
   enddo
 
   end subroutine BeTRSimulationRetrieveHistoryFlux
@@ -1613,9 +1630,7 @@ contains
   integer, intent(in) :: filter(:)
 
   !local variables
-  real(r8), pointer :: states_1d(:,:)
-  real(r8), pointer :: states_2d(:,:,:)
-  integer :: nrest_1d, nrest_2d
+
   integer :: c, jj, fc
   character(len=255),allocatable :: rest_varname_1d(:)
   character(len=255),allocatable :: rest_varname_2d(:)
@@ -1625,25 +1640,16 @@ contains
   type(betr_bounds_type)     :: betr_bounds
   integer :: recordDimID
 
+
+  allocate(rest_varname_1d(this%num_rest_state1d)); rest_varname_1d=''
+  allocate(rest_varname_2d(this%num_rest_state2d)); rest_varname_2d=''
+
   c = bounds%begc
-  call this%betr(c)%get_restartvar_size(nrest_1d, nrest_2d)
-  allocate(rest_varname_1d(nrest_1d));  allocate(rest_varname_2d(nrest_2d))
-  call this%betr(c)%get_restartvar_info(nrest_1d, nrest_2d,rest_varname_1d, &
-    rest_varname_2d)
+  call this%betr(c)%get_restartvar_info(this%num_rest_state1d, &
+    this%num_rest_state2d,rest_varname_1d, rest_varname_2d)
 
-  allocate(states_1d(bounds%begc:bounds%endc, 1:nrest_1d)); states_1d(:,:)=spval
-  allocate(states_2d(bounds%begc:bounds%endc, 1:betr_nlevtrc_soil, 1:nrest_2d)); states_2d(:,:,:)=spval
-
-  if(trim(flag)/='define')then
-    !assign initial conditions
-    call this%BeTRSetBounds(betr_bounds)
-
-    do fc = 1, numf
-      c = filter(fc)
-      call this%betr(c)%set_restvar(betr_bounds, 1, betr_nlevtrc_soil, nrest_1d,&
-        nrest_2d, states_1d(c:c,:), states_2d(c:c,:,:), flag)
-    enddo
-  endif
+  !assign initial conditions
+  call this%BeTRSetBounds(betr_bounds)
 
   ! print*,'offline restart', flag
   if(flag=='define')then
@@ -1661,13 +1667,13 @@ contains
     call ncd_defvar(ncid, 'time',ncd_double, long_name='', &
          units = '',  missing_value=spval, fill_value=spval)
 
-    do jj = 1, nrest_1d
+    do jj = 1, this%num_rest_state1d
         !x print*,jj,trim(rest_varname_1d(jj))
       call ncd_defvar(ncid, trim(rest_varname_1d(jj)),ncd_double,dim1name='column',  &
           long_name='', units = '',  missing_value=spval, fill_value=spval)
     enddo
 
-    do jj =1, nrest_2d
+    do jj =1, this%num_rest_state2d
       !x print*,jj,trim(rest_varname_2d(jj))
       call ncd_defvar(ncid, trim(rest_varname_2d(jj)),ncd_double,dim1name='column',  &
         dim2name='levtrc', long_name='', units = '',  missing_value=spval, fill_value=spval)
@@ -1675,38 +1681,45 @@ contains
     call ncd_enddef(ncid)
 
   elseif(flag=='write')then
+
+    do fc = 1, numf
+      c = filter(fc)
+      call this%betr(c)%set_restvar(betr_bounds, 1, betr_nlevtrc_soil, &
+        this%num_rest_state1d, this%num_rest_state2d, &
+        this%rest_states_1d(c:c,:), this%rest_states_2d(c:c,:,:), flag)
+    enddo
+
     ! print*,'write restart file'
-    do jj = 1, nrest_1d
-       ptr1d => states_1d(:, jj)
+    do jj = 1, this%num_rest_state1d
+       ptr1d => this%rest_states_1d(:, jj)
        call ncd_putvar(ncid, trim(rest_varname_1d(jj)), 1, ptr1d)
     enddo
 
-    do jj = 1, nrest_2d
-      ptr2d => states_2d(:, :, jj)
+    do jj = 1, this%num_rest_state2d
+      ptr2d => this%rest_states_2d(:, :, jj)
       call ncd_putvar(ncid, trim(rest_varname_2d(jj)), 1, ptr2d)
     enddo
   elseif(flag=='read')then
       ! print*,'read restart file'
-    do jj = 1, nrest_1d
-       ptr1d => states_1d(:, jj)
+    do jj = 1, this%num_rest_state1d
+       ptr1d => this%rest_states_1d(:, jj)
        call ncd_getvar(ncid, trim(rest_varname_1d(jj)), ptr1d)
     enddo
 
-    do jj = 1, nrest_2d
-      ptr2d => states_2d(:, :, jj)
+    do jj = 1, this%num_rest_state2d
+      ptr2d => this%rest_states_2d(:, :, jj)
       call ncd_getvar(ncid, trim(rest_varname_2d(jj)), ptr2d)
     enddo
 
     ! print*,'assign values to state variables',flag
     do fc = 1, numf
       c = filter(fc)
-      call this%betr(c)%set_restvar(betr_bounds, 1, betr_nlevtrc_soil, nrest_1d,&
-        nrest_2d, states_1d(c:c,:), states_2d(c:c,:,:), flag)
+      call this%betr(c)%set_restvar(betr_bounds, 1, betr_nlevtrc_soil, &
+      this%num_rest_state1d,this%num_rest_state2d, &
+      this%rest_states_1d(c:c,:), this%rest_states_2d(c:c,:,:), flag)
     enddo
   endif
 
-  deallocate(states_1d)
-  deallocate(states_2d)
   deallocate(rest_varname_1d)
   deallocate(rest_varname_2d)
 
@@ -1727,8 +1740,6 @@ contains
   character(len=*)     , intent(in)    :: flag ! 'read' or 'write'
 
   !local variables
-  real(r8), pointer :: states_1d(:,:)
-  real(r8), pointer :: states_2d(:,:,:)
   integer :: nrest_1d, nrest_2d
   integer :: c, jj, fc
   character(len=255), allocatable :: rest_varname_1d(:)
@@ -1740,32 +1751,32 @@ contains
   integer :: recordDimID
 
   c = bounds%begc
-  call this%betr(c)%get_restartvar_size(nrest_1d, nrest_2d)
-  allocate(rest_varname_1d(nrest_1d));  allocate(rest_varname_2d(nrest_2d))
-  call this%betr(c)%get_restartvar_info(nrest_1d, nrest_2d,rest_varname_1d, &
-    rest_varname_2d)
 
-  allocate(states_1d(bounds%begc:bounds%endc, 1:nrest_1d)); states_1d(:,:)=spval
-  allocate(states_2d(bounds%begc:bounds%endc, 1:betr_nlevtrc_soil, 1:nrest_2d)); states_2d(:,:,:)=spval
+  allocate(rest_varname_1d(this%num_rest_state1d)); rest_varname_1d=''
+  allocate(rest_varname_2d(this%num_rest_state2d)); rest_varname_2d=''
+
+  c = bounds%begc
+  call this%betr(c)%get_restartvar_info(this%num_rest_state1d, &
+    this%num_rest_state2d,rest_varname_1d, rest_varname_2d)
+
+  call this%BeTRSetBounds(betr_bounds)
 
   if(trim(flag)=='write')then
-    !assign initial conditions
-    call this%BeTRSetBounds(betr_bounds)
-
     do c = bounds%begc, bounds%endc
-      call this%betr(c)%set_restvar(betr_bounds, 1, betr_nlevtrc_soil, nrest_1d,&
-        nrest_2d, states_1d(c:c,:), states_2d(c:c,:,:), flag)
+      call this%betr(c)%set_restvar(betr_bounds, 1, betr_nlevtrc_soil, &
+        this%num_rest_state1d,this%num_rest_state2d, &
+        this%rest_states_1d(c:c,:), this%rest_states_2d(c:c,:,:), flag)
     enddo
   endif
 
-  do jj = 1, nrest_1d
-    ptr1d => states_1d(:, jj)
+  do jj = 1, this%num_rest_state1d
+    ptr1d => this%rest_states_1d(:, jj)
     call restartvar(ncid=ncid, flag=flag, varname=trim(rest_varname_1d(jj)), &
        xtype=ncd_double,  dim1name='column', long_name='',  units='', &
        interpinic_flag='interp' , readvar=readvar, data=ptr1d)
   enddo
-  do jj = 1, nrest_2d
-    ptr2d => states_2d(:, :, jj)
+  do jj = 1, this%num_rest_state2d
+    ptr2d => this%rest_states_2d(:, :, jj)
     call restartvar(ncid=ncid, flag=flag, varname=trim(rest_varname_2d(jj)), xtype=ncd_double,  &
       dim1name='column',dim2name='levtrc', switchdim=.true., &
       long_name='',  units='', interpinic_flag='interp',readvar=readvar, data=ptr2d)
@@ -1773,16 +1784,13 @@ contains
 
   if(trim(flag)=='read')then
     !assign initial conditions
-    call this%BeTRSetBounds(betr_bounds)
-
     do c = bounds%begc, bounds%endc
-      call this%betr(c)%set_restvar(betr_bounds, 1, betr_nlevtrc_soil, nrest_1d,&
-        nrest_2d, states_1d(c:c,:), states_2d(c:c,:,:), flag)
+      call this%betr(c)%set_restvar(betr_bounds, 1, betr_nlevtrc_soil, &
+        this%num_rest_state1d,this%num_rest_state2d, &
+        this%rest_states_1d(c:c,:), this%rest_states_2d(c:c,:,:), flag)
     enddo
   endif
 
-  deallocate(states_1d)
-  deallocate(states_2d)
   deallocate(rest_varname_1d)
   deallocate(rest_varname_2d)
   end subroutine BeTRSimulationRestart

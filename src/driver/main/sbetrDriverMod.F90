@@ -187,7 +187,7 @@ contains
   !x print*,'bf loop'
   do
     record = record + 1
-
+    call simulation%SetClock(dtime=time_vars%get_step_size(), nelapstep=time_vars%get_nstep())
     !x print*,'prepare for diagnosing water flux'
     call simulation%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi, waterstate_vars=waterstate_vars)
 
@@ -206,7 +206,7 @@ contains
       waterflux_vars=waterflux_vars, soilhydrology_vars = soilhydrology_vars)
 
     !x print*,'diagnose water flux'
-    call simulation%DiagAdvWaterFlux(time_vars, simulation%num_soilc, &
+    call simulation%DiagAdvWaterFlux(simulation%num_soilc, &
       simulation%filter_soilc)
 
     !now assign back waterflux_vars
@@ -250,7 +250,7 @@ contains
         chemstate_vars=chemstate_vars,           soilstate_vars=soilstate_vars)
     end select
 
-    call simulation%StepWithoutDrainage(time_vars, bounds, col, pft)
+    call simulation%StepWithoutDrainage(bounds, col, pft)
 
     select type(simulation)
     class is (betr_simulation_alm_type)
@@ -266,7 +266,7 @@ contains
     call simulation%StepWithDrainage(bounds, col)
 
     !x print*,'do mass balance check'
-    call simulation%MassBalanceCheck(time_vars, bounds)
+    call simulation%MassBalanceCheck(bounds)
 
     !specific for water tracer transport
     !call simulation%ConsistencyCheck(bounds, ubj, simulation%num_soilc,    &
@@ -303,7 +303,8 @@ contains
   enddo
 
   call simulation%WriteRegressionOutput(waterflux_vars%qflx_adv_col)
-
+  call forcing_data%destroy()
+  deallocate(forcing_data)
 end subroutine sbetrBGC_driver
 
 ! ----------------------------------------------------------------------
