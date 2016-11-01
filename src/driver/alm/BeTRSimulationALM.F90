@@ -160,7 +160,7 @@ contains
 
   end subroutine ALMInitOffline
 !-------------------------------------------------------------------------------
-  subroutine ALMStepWithoutDrainage(this, betr_time, bounds,  col, pft)
+  subroutine ALMStepWithoutDrainage(this, bounds,  col, pft)
    !DESCRIPTION
    !march one time step without doing drainage
    !
@@ -173,7 +173,6 @@ contains
     implicit none
     ! !ARGUMENTS :
     class(betr_simulation_alm_type) , intent(inout) :: this
-    class(betr_time_type)           , intent(in)    :: betr_time
     type(bounds_type)               , intent(in)    :: bounds ! bounds
     type(column_type)               , intent(in)    :: col ! column type
     type(patch_type)                , intent(in)    :: pft
@@ -194,7 +193,7 @@ contains
 
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
-      call this%betr(c)%step_without_drainage(betr_time, betr_bounds, this%betr_col(c), &
+      call this%betr(c)%step_without_drainage(this%betr_time, betr_bounds, this%betr_col(c), &
          this%betr_pft(c), this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp, &
          this%biophys_forc(c), this%biogeo_flux(c), this%biogeo_state(c), this%bstatus(c))
 
@@ -561,7 +560,7 @@ contains
   end subroutine ALMDiagnoseDtracerFreezeThaw
 
   !------------------------------------------------------------------------
-  subroutine ALMCalcDewSubFlux(this, betr_time, &
+  subroutine ALMCalcDewSubFlux(this,  &
        bounds, col, num_hydrologyc, filter_soilc_hydrologyc)
    !DESCRIPTION
     ! Calculate tracer flux from dew or/and sublimation
@@ -576,7 +575,6 @@ contains
     implicit none
     !ARGUMENTS
     class(betr_simulation_alm_type) , intent(inout) :: this
-    class(betr_time_type)           , intent(in)    :: betr_time
     type(bounds_type)               , intent(in)    :: bounds
     type(column_type)               , intent(in)    :: col ! column type
     integer                         , intent(in)    :: num_hydrologyc ! number of column soil points in column filter_soilc
@@ -592,7 +590,7 @@ contains
     do fc = 1, num_hydrologyc
       c = filter_soilc_hydrologyc(fc)
       if(.not. this%active_col(c))cycle
-      call this%betr(c)%calc_dew_sub_flux(betr_time,           &
+      call this%betr(c)%calc_dew_sub_flux(this%betr_time,           &
          betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, &
         this%biophys_forc(c), this%betr(c)%tracers, this%betr(c)%tracerfluxes, this%betr(c)%tracerstates)
     enddo

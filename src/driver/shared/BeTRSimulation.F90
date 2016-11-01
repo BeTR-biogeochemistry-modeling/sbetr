@@ -51,7 +51,7 @@ module BeTRSimulation
      character(len=betr_filename_length) , private :: hist_filename
 
      type(betr_regression_type), private          :: regression
-
+     type(betr_time_type), public               :: betr_time
      integer, public                              :: num_soilp
      integer, public, allocatable                 :: filter_soilp(:)
      integer, public                              :: num_jtops
@@ -74,6 +74,7 @@ module BeTRSimulation
    contains
      procedure, public :: BeTRInit
      procedure, public :: BeTRSetFilter
+     procedure, public :: SetClock
      procedure, public :: InitOnline              => BeTRSimulationInit
      procedure, public :: Init                    => BeTRSimulationInitOffline
      procedure, public :: ConsistencyCheck        => BeTRSimulationConsistencyCheck
@@ -114,6 +115,16 @@ module BeTRSimulation
 
 contains
 
+  subroutine SetClock(this, dtime, nelapstep)
+  implicit none
+  class(betr_simulation_type)              , intent(inout) :: this
+  real(r8), intent(in) :: dtime
+  integer, intent(in) :: nelapstep
+  
+
+  call this%betr_time%setClock(dtime, nelapstep)
+  
+  end subroutine SetClock
   !-------------------------------------------------------------------------------
   subroutine BeTRSimulationInit(this, bounds, lun, col, pft, waterstate, namelist_buffer)
     !
@@ -177,7 +188,7 @@ contains
     if (size(waterstate%h2osoi_liq_col) > 0) continue
     if (len(base_filename) > 0)              continue
     if (len(namelist_buffer) > 0)            continue
-
+    call this%betr_time%Init(namelist_buffer)
   end subroutine BeTRSimulationInitOffline
 !-------------------------------------------------------------------------------
   subroutine BeTRSetFilter(this, maxpft_per_col, boffline)
@@ -246,6 +257,7 @@ contains
     else
       this%base_filename = ''
     endif
+    call this%betr_time%Init(namelist_buffer)
     !allocate memory
     allocate(this%betr(bounds%begc:bounds%endc), source=create_betr_type())
     allocate(this%biophys_forc(bounds%begc:bounds%endc), source=create_betr_biogeophys_input())
@@ -382,7 +394,7 @@ contains
     call ncd_pio_closefile(ncid)
   end subroutine BeTRSimulationRestartClose
   !---------------------------------------------------------------------------------
-  subroutine BeTRSimulationStepWithoutDrainage(this, betr_time, bounds, col, pft)
+  subroutine BeTRSimulationStepWithoutDrainage(this, bounds, col, pft)
   !DESCRPTION
   !interface for StepWithoutDrainage
   !
@@ -403,14 +415,13 @@ contains
     implicit none
   !ARGUMENTS
     class(betr_simulation_type) , intent(inout) :: this
-    class(betr_time_type)       , intent(in)    :: betr_time
     type(bounds_type)           , intent(in)    :: bounds ! bounds
     type(column_type)           , intent(in)    :: col ! column type
     type(patch_type)            , intent(in)    :: pft
 
     ! remove compiler warnings about unused dummy args
     if (this%num_soilc > 0)                           continue
-    if (betr_time%tstep > 0)                          continue
+    if (this%betr_time%tstep > 0)                          continue
     if (bounds%begc > 0)                              continue
     if (size(col%z) > 0)                              continue
 
@@ -476,7 +487,7 @@ contains
   end  subroutine BeTRSimulationBeginMassBalanceCheck
   !---------------------------------------------------------------------------------
 
-  subroutine BeTRSimulationMassBalanceCheck(this, betr_time, bounds)
+  subroutine BeTRSimulationMassBalanceCheck(this, bounds)
    !DESCRIPTION
    ! do tracer mass balance check
    !
@@ -486,7 +497,6 @@ contains
     implicit none
     !ARGUMENTS
     class(betr_simulation_type) , intent(inout) :: this
-    class(betr_time_type)       , intent(in)    :: betr_time
     type(bounds_type)           , intent(in)    :: bounds
     !TEMPORARY VARIABLES
     type(betr_bounds_type) :: betr_bounds
@@ -497,7 +507,7 @@ contains
 
    do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
-      call betr_tracer_massbalance_check(betr_time, betr_bounds,           &
+      call betr_tracer_massbalance_check(this%betr_time, betr_bounds,           &
          this%betr_col(c), this%num_soilc, this%filter_soilc,           &
          this%betr(c)%tracers, this%betr(c)%tracerstates,                &
          this%betr(c)%tracerfluxes, this%bstatus(c))
@@ -963,7 +973,7 @@ contains
   end subroutine BeTRSimulationPreDiagSoilColWaterFlux
 
   !------------------------------------------------------------------------
-  subroutine BeTRSimulationDiagAdvWaterFlux(this, betr_time, num_hydrologyc, &
+  subroutine BeTRSimulationDiagAdvWaterFlux(this, num_hydrologyc, &
     filter_hydrologyc)
 
   !DESCRIPTION
@@ -975,7 +985,6 @@ contains
   implicit none
   !ARGUMENTS
    class(betr_simulation_type) , intent(inout) :: this
-   class(betr_time_type)       , intent(in)    :: betr_time
    integer                     , intent(in)    :: num_hydrologyc                        ! number of column non-lake points in column filter
    integer                     , intent(in)    :: filter_hydrologyc(:)                  ! column filter for non-lake points
 
@@ -988,15 +997,14 @@ contains
    do fc = 1, num_hydrologyc
      c = filter_hydrologyc(fc)
      if(.not. this%active_col(c))cycle
-     call this%betr(c)%diagnose_advect_water_flux(betr_time,                      &
+     call this%betr(c)%diagnose_advect_water_flux(this%betr_time,              &
        betr_bounds, this%num_soilc, this%filter_soilc,                         &
        this%biophys_forc(c), this%biogeo_flux(c))
    enddo
 
   end subroutine BeTRSimulationDiagAdvWaterFlux
   !------------------------------------------------------------------------
-  subroutine BeTRSimulationDiagDrainWaterFlux(this, betr_time, &
-       num_hydrologyc, filter_hydrologyc)
+  subroutine BeTRSimulationDiagDrainWaterFlux(this, num_hydrologyc, filter_hydrologyc)
   !DESCRIPTION
   ! diagnose water fluxes due to subsurface drainage
   !
@@ -1008,7 +1016,6 @@ contains
   implicit none
   !ARGUMENTS
    class(betr_simulation_type) , intent(inout) :: this
-   class(betr_time_type)       , intent(in)    :: betr_time
    integer                     , intent(in)    :: num_hydrologyc                        ! number of column non-lake points in column filter
    integer                     , intent(in)    :: filter_hydrologyc(:)                  ! column filter for non-lake points
 
@@ -1021,7 +1028,7 @@ contains
    do fc = 1, num_hydrologyc
      c = filter_hydrologyc(fc)
      if(.not. this%active_col(c))cycle
-     call this%betr(c)%diagnose_drainage_water_flux(betr_time, &
+     call this%betr(c)%diagnose_drainage_water_flux(this%betr_time, &
        betr_bounds, this%num_soilc, this%filter_soilc,      &
        this%biophys_forc(c), this%biogeo_flux(c))
   enddo

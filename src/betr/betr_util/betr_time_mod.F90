@@ -30,10 +30,21 @@ module BeTR_TimeMod
      procedure, public :: proc_initstep
      procedure, public :: print_cur_time
      procedure, private :: ReadNamelist
+     procedure, public :: setClock
   end type betr_time_type
 
 contains
 
+  subroutine setClock(this, dtime, nelapstep)
+
+  implicit none
+  class(betr_time_type), intent(inout) :: this
+  real(r8), intent(in) :: dtime
+  integer, intent(in) :: nelapstep
+
+  this%delta_time = dtime
+  this%nelapstep = nelapstep
+  end subroutine setClock
   !-------------------------------------------------------------------------------
   subroutine Init(this, namelist_buffer)
 
@@ -42,13 +53,14 @@ contains
     implicit none
 
     class(betr_time_type), intent(inout) :: this
-    character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
+    character(len=betr_namelist_buffer_size), optional, intent(in) :: namelist_buffer
 
     this%tstep = 1
     this%time  = 0._r8
 
-    call this%ReadNamelist(namelist_buffer)
-
+    if(present(namelist_buffer))then
+      call this%ReadNamelist(namelist_buffer)
+    endif
   end subroutine Init
 
   ! ----------------------------------------------------------------------

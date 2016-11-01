@@ -119,7 +119,7 @@ contains
 
 
   !---------------------------------------------------------------------------------
-  subroutine StandaloneStepWithoutDrainage(this, betr_time, bounds, col, pft)
+  subroutine StandaloneStepWithoutDrainage(this, bounds, col, pft)
     !DESCRIPTION
     !march one step without drainage
     !
@@ -132,7 +132,6 @@ contains
     implicit none
     !ARGUMENTS
     class(betr_simulation_standalone_type) , intent(inout) :: this
-    class(betr_time_type)                  , intent(in)    :: betr_time
     type(bounds_type)                      , intent(in)    :: bounds ! bounds
     type(column_type)                      , intent(in)    :: col ! column type
     type(patch_type)                       , intent(in)    :: pft
@@ -151,7 +150,7 @@ contains
     call this%BeTRSetcps(bounds, col, pft)
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
-      call this%betr(c)%step_without_drainage(betr_time, betr_bounds, this%betr_col(c), &
+      call this%betr(c)%step_without_drainage(this%betr_time, betr_bounds, this%betr_col(c), &
          this%betr_pft(c), this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp, &
          this%biophys_forc(c), this%biogeo_flux(c), this%biogeo_state(c), this%bstatus(c))
 
