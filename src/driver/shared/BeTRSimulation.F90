@@ -75,6 +75,7 @@ module BeTRSimulation
      procedure, public :: BeTRInit
      procedure, public :: BeTRSetFilter
      procedure, public :: Init                    => BeTRSimulationInit
+     procedure, public :: InitOffline             => BeTRSimulationInitOffline
      procedure, public :: ConsistencyCheck        => BeTRSimulationConsistencyCheck
      procedure, public :: PreDiagSoilColWaterFlux => BeTRSimulationPreDiagSoilColWaterFlux
      procedure, public :: DiagAdvWaterFlux        => BeTRSimulationDiagAdvWaterFlux
@@ -114,8 +115,7 @@ module BeTRSimulation
 contains
 
   !-------------------------------------------------------------------------------
-  subroutine BeTRSimulationInit(this, base_filename, namelist_buffer, &
-       bounds, lun, col, pft, waterstate)
+  subroutine BeTRSimulationInit(this, bounds, lun, col, pft, waterstate, namelist_buffer)
     !
     ! DESCRIPTIONS
     ! Dummy routine for inheritance purposes. don't use.
@@ -129,14 +129,45 @@ contains
     implicit none
 
     class(betr_simulation_type)              , intent(inout) :: this
-    character(len=betr_filename_length)      , intent(in)    :: base_filename
+    type(landunit_type)                      , intent(in) :: lun
+    type(column_type)                        , intent(in) :: col
+    type(patch_type)                         , intent(in) :: pft
+    type(bounds_type)                        , intent(in)    :: bounds
     character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
+    type(waterstate_type)                    , intent(inout) :: waterstate
+    character(len=*), parameter :: subname = 'BeTRSimulationInit'
+
+    call endrun(msg="ERROR "//subname//" unimplemented. "//errmsg(mod_filename, __LINE__))
+
+    if (this%num_soilc > 0)                  continue
+    if (bounds%begc > 0)                     continue
+    if (size(waterstate%h2osoi_liq_col) > 0) continue
+    if (len(namelist_buffer) > 0)            continue
+  end subroutine BeTRSimulationInit
+
+  !-------------------------------------------------------------------------------
+  subroutine BeTRSimulationInitOffline(this, bounds, lun, col, pft, waterstate, &
+       namelist_buffer, base_filename)
+    !
+    ! DESCRIPTIONS
+    ! Dummy routine for inheritance purposes. don't use.
+    !
+    !USES
+    use WaterstateType , only : waterstate_type
+    use betr_constants , only : betr_namelist_buffer_size, betr_filename_length
+    use ColumnType      , only : column_type
+    use PatchType      , only : patch_type
+    use LandunitType   , only : landunit_type
+    implicit none
+
+    class(betr_simulation_type)              , intent(inout) :: this
     type(landunit_type)                      , intent(in) :: lun
     type(column_type)                        , intent(in) :: col
     type(patch_type)                         , intent(in) :: pft
     type(bounds_type)                        , intent(in)    :: bounds
     type(waterstate_type)                    , intent(inout) :: waterstate
-
+    character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
+    character(len=betr_filename_length)      , intent(in)    :: base_filename
     character(len=*), parameter :: subname = 'BeTRSimulationInit'
 
     call endrun(msg="ERROR "//subname//" unimplemented. "//errmsg(mod_filename, __LINE__))
@@ -147,18 +178,21 @@ contains
     if (len(base_filename) > 0)              continue
     if (len(namelist_buffer) > 0)            continue
 
-  end subroutine BeTRSimulationInit
-
+  end subroutine BeTRSimulationInitOffline
 !-------------------------------------------------------------------------------
-  subroutine BeTRSetFilter(this)
+  subroutine BeTRSetFilter(this, maxpft_per_col, boffline)
   !
   !DESCRIPTION
   ! set betr filter, only used for standalone applicaitons
+    use betr_ctrl                , only : betr_offline
 
   implicit none
   !ARGUMENTS
   class(betr_simulation_type), intent(inout) :: this
-
+  integer, intent(in) :: maxpft_per_col
+  logical, intent(in) :: boffline
+    integer :: p
+    !by default, surface litter layer is off
     this%num_jtops = 1
     allocate(this%jtops(this%num_jtops))
     this%jtops(:) = 1
@@ -167,14 +201,16 @@ contains
     allocate(this%filter_soilc(this%num_soilc))
     this%filter_soilc(:) = 1
 
-    this%num_soilp = 1
+    this%num_soilp = maxpft_per_col
     allocate(this%filter_soilp(this%num_soilp))
-    this%filter_soilp(:) = 1
+    do p = 1, maxpft_per_col
+      this%filter_soilp(p) = p
+    enddo
+    betr_offline=boffline    
   end subroutine BeTRSetFilter
 !-------------------------------------------------------------------------------
 
-  subroutine BeTRInit(this, base_filename, namelist_buffer, &
-       bounds, lun, col, pft, waterstate)
+  subroutine BeTRInit(this, bounds, lun, col, pft, waterstate, namelist_buffer, base_filename)
     !
     ! DESCRIPTION
     ! initialize BeTR
@@ -191,14 +227,13 @@ contains
     implicit none
     !ARGUMENTS
     class(betr_simulation_type)              , intent(inout) :: this
-    character(len=betr_filename_length)      , intent(in)    :: base_filename
-    character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
     type(bounds_type)                        , intent(in)    :: bounds
     type(landunit_type)                      , intent(in) :: lun
     type(column_type)                        , intent(in) :: col
     type(patch_type)                         , intent(in) :: pft
     type(waterstate_type)                    , intent(in)    :: waterstate
-
+    character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
+    character(len=betr_filename_length)      , optional, intent(in)    :: base_filename
     !TEMPORARY VARIABLES
     character(len=*), parameter :: subname = 'BeTRInit'
     type(betr_bounds_type) :: betr_bounds
@@ -206,8 +241,11 @@ contains
     !print*,'base_filename',trim(base_filename)
 
     biulog = iulog
-    this%base_filename = base_filename
-
+    if(present(base_filename))then
+      this%base_filename = base_filename
+    else
+      this%base_filename = ''
+    endif
     !allocate memory
     allocate(this%betr(bounds%begc:bounds%endc), source=create_betr_type())
     allocate(this%biophys_forc(bounds%begc:bounds%endc), source=create_betr_biogeophys_input())
@@ -284,9 +322,11 @@ contains
          this%num_hist_state1d, this%num_hist_state2d, &
             this%num_hist_flux1d, this%num_hist_flux2d)
     endif
-    call this%regression%Init(base_filename, namelist_buffer, this%bsimstatus)
-    if(this%bsimstatus%check_status())call endrun(msg=this%bsimstatus%print_msg())
 
+    if(present(base_filename)) then
+      call this%regression%Init(base_filename, namelist_buffer, this%bsimstatus)
+      if(this%bsimstatus%check_status())call endrun(msg=this%bsimstatus%print_msg())
+    endif
   end subroutine BeTRInit
   !---------------------------------------------------------------------------------
 
@@ -1666,7 +1706,7 @@ contains
   end subroutine BeTRSimulationRestartOffline
 
   !------------------------------------------------------------------------
-  subroutine BeTRSimulationRestart(this, bounds, ncid, numf, filter, flag)
+  subroutine BeTRSimulationRestart(this, bounds, ncid, flag)
   !DESCRIPTION
   !create or read restart file
   use betr_varcon    , only : spval => bspval
@@ -1678,8 +1718,6 @@ contains
   type(bounds_type)    , intent(in)    :: bounds
   type(file_desc_t)   , intent(inout) :: ncid                                         ! netcdf id
   character(len=*)     , intent(in)    :: flag ! 'read' or 'write'
-  integer, intent(in) :: numf
-  integer, intent(in) :: filter(:)
 
   !local variables
   real(r8), pointer :: states_1d(:,:)
@@ -1703,12 +1741,11 @@ contains
   allocate(states_1d(bounds%begc:bounds%endc, 1:nrest_1d)); states_1d(:,:)=spval
   allocate(states_2d(bounds%begc:bounds%endc, 1:betr_nlevtrc_soil, 1:nrest_2d)); states_2d(:,:,:)=spval
 
-  if(trim(flag)/='define')then
+  if(trim(flag)=='write')then
     !assign initial conditions
     call this%BeTRSetBounds(betr_bounds)
 
-    do fc = 1, numf
-      c = filter(fc)
+    do c = bounds%begc, bounds%endc
       call this%betr(c)%set_restvar(betr_bounds, 1, betr_nlevtrc_soil, nrest_1d,&
         nrest_2d, states_1d(c:c,:), states_2d(c:c,:,:), flag)
     enddo
@@ -1726,6 +1763,16 @@ contains
       dim1name='column',dim2name='levtrc', switchdim=.true., &
       long_name='',  units='', interpinic_flag='interp',readvar=readvar, data=ptr2d)
   enddo
+
+  if(trim(flag)=='read')then
+    !assign initial conditions
+    call this%BeTRSetBounds(betr_bounds)
+
+    do c = bounds%begc, bounds%endc
+      call this%betr(c)%set_restvar(betr_bounds, 1, betr_nlevtrc_soil, nrest_1d,&
+        nrest_2d, states_1d(c:c,:), states_2d(c:c,:,:), flag)
+    enddo
+  endif
 
   deallocate(states_1d)
   deallocate(states_2d)

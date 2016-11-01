@@ -29,6 +29,7 @@ module BeTRSimulationALM
      type(betr_ecophyscon_type) :: betr_ecophyscon
    contains
      procedure :: Init                              => ALMInit
+     procedure :: InitOffline                       => ALMInitOffline
      procedure, public :: StepWithoutDrainage       => ALMStepWithoutDrainage
      procedure, public :: StepWithDrainage          => ALMStepWithDrainage
      procedure, public :: SetBiophysForcing         => ALMSetBiophysForcing
@@ -61,8 +62,7 @@ contains
 
 !-------------------------------------------------------------------------------
 
-  subroutine ALMInit(this, base_filename, namelist_buffer, &
-       bounds, lun, col, pft, waterstate)
+  subroutine ALMInit(this, bounds, lun, col, pft, waterstate, namelist_buffer)
     !DESCRIPTION
     !Initialize BeTR for ALM
     !
@@ -84,8 +84,57 @@ contains
 
     implicit none
     class(betr_simulation_alm_type)          , intent(inout) :: this
-    character(len=betr_filename_length)      , intent(in)    :: base_filename
+    type(bounds_type)                        , intent(in)    :: bounds
+    type(landunit_type)                      , intent(in) :: lun
+    type(column_type)                        , intent(in) :: col
+    type(patch_type)                         , intent(in) :: pft
     character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
+    type(waterstate_type)                    , intent(inout) :: waterstate
+
+    !grid size
+    betr_nlevsoi      = nlevsoi
+    betr_nlevsno      = nlevsno
+    betr_nlevtrc_soil = nlevtrc_soil
+
+    betr_pftvarcon%nc3_arctic_grass    = nc3_arctic_grass
+    betr_pftvarcon%nc3_nonarctic_grass = nc3_nonarctic_grass
+    betr_pftvarcon%nc4_grass           = nc4_grass
+    betr_pftvarcon%noveg               = noveg
+
+    betr_landvarcon%istsoil            = istsoil
+    betr_landvarcon%istcrop            = istcrop
+    betr_landvarcon%istice             = istice
+
+    ! now call the base simulation init to continue initialization
+    call this%BeTRInit(bounds, lun, col, pft, waterstate,namelist_buffer)
+
+  end subroutine ALMInit
+!-------------------------------------------------------------------------------
+
+  subroutine ALMInitOffline(this, bounds, lun, col, pft, waterstate, namelist_buffer, base_filename)
+    !DESCRIPTION
+    !Initialize BeTR for ALM
+    !
+    !USES
+    !data types from alm
+    use PatchType       , only : patch_type
+    use pftvarcon       , only : noveg, nc4_grass, nc3_arctic_grass, nc3_nonarctic_grass
+    use WaterStateType  , only : waterstate_type
+    use landunit_varcon , only : istcrop, istice, istsoil
+    use clm_varpar      , only : nlevsno, nlevsoi, nlevtrc_soil
+    use ColumnType      , only : column_type
+    use LandunitType   , only : landunit_type
+    !betr types
+    use betr_constants      , only : betr_filename_length
+    use betr_constants      , only : betr_namelist_buffer_size
+    use BeTR_pftvarconType  , only : betr_pftvarcon
+    use BeTR_landvarconType , only : betr_landvarcon
+    use BeTR_decompMod      , only : betr_bounds_type
+
+    implicit none
+    class(betr_simulation_alm_type)          , intent(inout) :: this
+    character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
+    character(len=betr_filename_length)      , intent(in)    :: base_filename
     type(bounds_type)                        , intent(in)    :: bounds
     type(landunit_type)                      , intent(in) :: lun
     type(column_type)                        , intent(in) :: col
@@ -107,10 +156,9 @@ contains
     betr_landvarcon%istice             = istice
 
     ! now call the base simulation init to continue initialization
-    call this%BeTRInit(base_filename, namelist_buffer, &
-         bounds, lun, col, pft, waterstate)
+    call this%BeTRInit(bounds, lun, col, pft, waterstate, namelist_buffer, base_filename)
 
-  end subroutine ALMInit
+  end subroutine ALMInitOffline
 !-------------------------------------------------------------------------------
   subroutine ALMStepWithoutDrainage(this, betr_time, bounds,  col, pft)
    !DESCRIPTION
