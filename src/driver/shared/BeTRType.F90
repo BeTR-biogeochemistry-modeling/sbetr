@@ -295,7 +295,7 @@ contains
     ! !LOCAL VARIABLES:
     character(len=255) :: subname = 'run_betr_one_step_without_drainage'
     real(r8)           :: dtime
-    real(r8)           :: Rfactor(bounds%begc:bounds%endc, bounds%lbj:bounds%ubj,1:this%tracers%ngwmobile_tracers) !retardation factor
+    real(r8)           :: Rfactor(bounds%begc:bounds%endc, bounds%lbj:bounds%ubj,1:this%tracers%ngwmobile_tracer_groups) !retardation factor
     integer            :: j
     integer            :: lbj, ubj
 

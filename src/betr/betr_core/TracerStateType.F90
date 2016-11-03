@@ -319,7 +319,9 @@ contains
   real(r8), intent(in)    :: dz(lbj:ubj)
   type(betr_status_type) , intent(out)   :: bstatus
   real(r8)                :: int_mass
+
   call bstatus%reset()
+
   int_mass = dot_sum(this%tracer_conc_mobile_col(c,lbj:ubj,j), dz, bstatus)
 
   end function int_mass_mobile_col
@@ -336,7 +338,9 @@ contains
   real(r8), intent(in)    :: dz(lbj:ubj)
   type(betr_status_type)  , intent(out)   :: bstatus
   real(r8)                :: int_mass
+  
   call bstatus%reset()
+
   int_mass = dot_sum(this%tracer_conc_frozen_col(c,lbj:ubj,j), dz, bstatus)
 
   end function int_mass_frozen_col

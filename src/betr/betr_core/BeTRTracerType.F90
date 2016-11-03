@@ -200,23 +200,23 @@ module BeTRTracerType
   class(BeTRtracer_type), intent(inout) :: this
   integer, parameter :: nanid=-1
 
-  allocate(this%is_volatile        (this%ngwmobile_tracers));    this%is_volatile(:)     = .false.
-  allocate(this%is_adsorb          (this%ngwmobile_tracers));    this%is_adsorb(:)       = .false.
+  allocate(this%is_volatile        (this%ntracers));    this%is_volatile(:)     = .false.
+  allocate(this%is_adsorb          (this%ntracers));    this%is_adsorb(:)       = .false.
   allocate(this%is_advective       (this%ntracers));             this%is_advective(:)    = .false.
   allocate(this%is_diffusive       (this%ntracers));             this%is_diffusive(:)    = .true.
   allocate(this%is_mobile          (this%ntracers));             this%is_mobile(:)       = .false.
-  allocate(this%is_h2o             (this%ngwmobile_tracers));    this%is_h2o(:)          = .false.
-  allocate(this%is_co2tag          (this%ngwmobile_tracers));    this%is_co2tag(:)       = .false.
-  allocate(this%is_dom             (this%ngwmobile_tracers));    this%is_dom(:)          = .false.
-  allocate(this%is_isotope         (this%ngwmobile_tracers));    this%is_isotope(:)      = .false.
-  allocate(this%is_frozen          (this%ngwmobile_tracers));    this%is_frozen(:)       = .false.
-  allocate(this%adsorbgroupid      (this%ngwmobile_tracers));    this%adsorbgroupid(:)   = nanid
-  allocate(this%adsorbid           (this%ngwmobile_tracers));    this%adsorbid(:)        = nanid
+  allocate(this%is_h2o             (this%ntracers));    this%is_h2o(:)          = .false.
+  allocate(this%is_co2tag          (this%ntracers));    this%is_co2tag(:)       = .false.
+  allocate(this%is_dom             (this%ntracers));    this%is_dom(:)          = .false.
+  allocate(this%is_isotope         (this%ntracers));    this%is_isotope(:)      = .false.
+  allocate(this%is_frozen          (this%ntracers));    this%is_frozen(:)       = .false.
+  allocate(this%adsorbgroupid      (this%ntracers));    this%adsorbgroupid(:)   = nanid
+  allocate(this%adsorbid           (this%ntracers));    this%adsorbid(:)        = nanid
 
-  allocate(this%volatileid         (this%ngwmobile_tracers));    this%volatileid(:)      = nanid
-  allocate(this%volatilegroupid    (this%ngwmobile_tracers));    this%volatilegroupid(:) = nanid
+  allocate(this%volatileid         (this%ntracers));    this%volatileid(:)      = nanid
+  allocate(this%volatilegroupid    (this%ntracers));    this%volatilegroupid(:) = nanid
   allocate(this%h2oid              (this%nh2o_tracers));         this%h2oid(:)           = nanid
-  allocate(this%frozenid           (this%ngwmobile_tracers));    this%frozenid(:)        = nanid
+  allocate(this%frozenid           (this%ntracers));    this%frozenid(:)        = nanid
   allocate(this%tracernames        (this%ntracers));             this%tracernames(:)     = ''
   allocate(this%tracerfamilyname   (this%ntracers));             this%tracerfamilyname(:)= ''
   allocate(this%units              (this%ntracers));             this%units(:)           = 'mol m-3'
@@ -348,9 +348,7 @@ subroutine set_tracer(this, bstatus, trc_id, trc_name, is_trc_mobile, is_trc_adv
       this%nfrozen_tracers = this%nfrozen_tracers + 1
     endif
   endif
-end subroutine set_tracer
-
-
+  end subroutine set_tracer
 
   !--------------------------------------------------------------------------------
   function is_solidtransport(this)result(yesno)

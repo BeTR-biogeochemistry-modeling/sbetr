@@ -77,7 +77,7 @@ contains
           write(*, *) 'WARNING: no forcing data type specified, using transient.'
        end select
 
-    call this%InitAllocate()
+    call this%InitAllocate(this%num_time)
 
   end subroutine Init
 
@@ -106,23 +106,24 @@ contains
     end subroutine Destroy
 
   !------------------------------------------------------------------------
-  subroutine InitAllocate(this)
+  subroutine InitAllocate(this, num_time)
     !DESCRIPTION
     !allocate memory
     implicit none
     class(ForcingData_type), intent(inout) :: this
+    integer, intent(in) :: num_time
     !at this moment the variable size is fixed
 
-    allocate(this%t_soi(this%num_time, this%num_levels))
-    allocate(this%h2osoi_liqvol(this%num_time, this%num_levels))
-    allocate(this%h2osoi_icevol(this%num_time, this%num_levels))
-    allocate(this%h2osoi_liq(this%num_time, this%num_levels))
-    allocate(this%h2osoi_ice(this%num_time, this%num_levels))
-    allocate(this%qflx_infl(this%num_time))
-    allocate(this%qflx_rootsoi(this%num_time, this%num_levels))
-    allocate(this%pbot(this%num_time))
-    allocate(this%qbot(this%num_time))
-    allocate(this%tbot(this%num_time))
+    allocate(this%t_soi(num_time, this%num_levels))
+    allocate(this%h2osoi_liqvol(num_time, this%num_levels))
+    allocate(this%h2osoi_icevol(num_time, this%num_levels))
+    allocate(this%h2osoi_liq(num_time, this%num_levels))
+    allocate(this%h2osoi_ice(num_time, this%num_levels))
+    allocate(this%qflx_infl(num_time))
+    allocate(this%qflx_rootsoi(num_time, this%num_levels))
+    allocate(this%pbot(num_time))
+    allocate(this%qbot(num_time))
+    allocate(this%tbot(num_time))
 
   end subroutine InitAllocate
 
@@ -166,7 +167,7 @@ contains
             "grid and forcing. "//errmsg(mod_filename, __LINE__))
 
     end if
-    print*,'total temporal snapshots ',num_time
+
     call this%Init(num_levels, num_time)
     call this%ReadForcingData(grid)
     !x print*,'read data tsoi',this%t_soi(1,:)

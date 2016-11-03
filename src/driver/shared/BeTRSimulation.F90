@@ -525,9 +525,9 @@ contains
 
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
-      call begin_betr_tracer_massbalance(betr_bounds,         &
-         this%betr_col(c), this%num_soilc, this%filter_soilc,                   &
-         this%betr(c)%tracers, this%betr(c)%tracerstates,     &
+      call begin_betr_tracer_massbalance(betr_bounds,             &
+         this%betr_col(c), this%num_soilc, this%filter_soilc,     &
+         this%betr(c)%tracers, this%betr(c)%tracerstates,         &
          this%betr(c)%tracerfluxes, this%bstatus(c))
       if(this%bstatus(c)%check_status())then
         call this%bsimstatus%setcol(c)
@@ -1586,7 +1586,7 @@ contains
   !------------------------------------------------------------------------
   subroutine BeTRSimulationRetrieveHistoryFlux(this, bounds, numf, filter)
   use betr_varcon     , only : spval => bspval
-  use tracer_varcon  , only :  betr_nlevtrc_soil  
+  use tracer_varcon  , only :  betr_nlevtrc_soil
   implicit none
   !ARGUMENTS
   class(betr_simulation_type) , intent(inout) :: this

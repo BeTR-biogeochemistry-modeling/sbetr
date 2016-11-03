@@ -157,20 +157,6 @@ module TracerBalanceMod
                  return
               endif
            enddo
-!x           bal_beg=0._r8
-!x           bal_end=0._r8
-!x           bal_flx=0._r8
-!x           do kk = ngwmobile_tracers+1, ntracers
-!x              errtracer(c,kk) = beg_tracer_molarmass(c,kk)-end_tracer_molarmass(c,kk) + tracer_flx_netpro(c,kk)
-!x              if(abs(errtracer(c,kk))>err_min .and. do_betr_output)then
-!x                 write(msg,*)'error exceeds the tolerance for tracer '//tracernames(kk), 'err=',errtracer(c,kk), 'col=',c, &
-!x                     new_line('A')//'nstep=',betr_time%get_nstep(),'is_mobile=',is_mobile(kk), &
-!x                     new_line('A')//'begmass=', beg_tracer_molarmass(c,kk), 'endmass=', end_tracer_molarmass(c,kk), &
-!x                      ' netpro=', tracer_flx_netpro(c,kk),new_line('A'), errMsg(mod_filename, __LINE__)
-!x                 call betr_status%set_msg(msg=msg, err=-1)
-!x                 return
-!x              endif
-!x           enddo
 
            call tracerflux_vars%Temporal_average(c,dtime)
         enddo
@@ -245,15 +231,6 @@ module TracerBalanceMod
               endif
            enddo
         enddo
-!x        do jj = 1, nsolid_passive_tracers
-!x           kk = jj + ngwmobile_tracers
-!x           do fc = 1, numf
-!x              c = filter(fc)
-!x              tracer_molarmass_col(c,kk) = tracerstate_vars%int_mass_solid_col(1,nlevtrc_soil,&
-!x                c,jj, dz(c,1:nlevtrc_soil),betr_status)
-!x              if(betr_status%check_status())return
-!x           enddo
-!x        enddo
       end associate
     end subroutine betr_tracer_mass_summary
 end module TracerBalanceMod

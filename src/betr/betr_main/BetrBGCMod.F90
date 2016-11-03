@@ -165,7 +165,7 @@ contains
     if(betr_status%check_status())return
     SHR_ASSERT_ALL((ubound(Rfactor,2) == bounds%ubj ), errMsg(mod_filename,__LINE__),betr_status)
     if(betr_status%check_status())return
-    SHR_ASSERT_ALL((ubound(Rfactor,3) == betrtracer_vars%ngwmobile_tracers), errMsg(mod_filename,__LINE__),betr_status)
+    SHR_ASSERT_ALL((ubound(Rfactor,3) == betrtracer_vars%ngwmobile_tracer_groups), errMsg(mod_filename,__LINE__),betr_status)
     if(betr_status%check_status())return
 
     lbj = bounds%lbj; ubj = bounds%ubj
@@ -301,7 +301,7 @@ contains
     if(betr_status%check_status())return
     SHR_ASSERT_ALL((ubound(Rfactor,2) == bounds%ubj ), errMsg(mod_filename,__LINE__),betr_status)
     if(betr_status%check_status())return
-    SHR_ASSERT_ALL((ubound(Rfactor,3) == betrtracer_vars%ngwmobile_tracers), errMsg(mod_filename,__LINE__),betr_status)
+    SHR_ASSERT_ALL((ubound(Rfactor,3) == betrtracer_vars%ngwmobile_tracer_groups), errMsg(mod_filename,__LINE__),betr_status)
     if(betr_status%check_status())return
 
     lbj = bounds%lbj; ubj = bounds%ubj
