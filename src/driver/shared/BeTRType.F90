@@ -311,12 +311,18 @@ contains
          this%tracerboundaryconds, this%tracerfluxes, this%bgc_reaction,             &
          Rfactor, this%advection_on, betr_status)
     if(betr_status%check_status())return
-
+!    print*,'bf hydro'
+!    do j = 1, this%tracers%ntracers
+!      print*,j,this%tracers%tracernames(j),this%tracerstates%tracer_conc_mobile_col(1,1,j)
+!    enddo
     call surface_tracer_hydropath_update(betr_time, bounds, col, &
        num_soilc, filter_soilc,  biophysforc, this%tracers, this%tracerstates,    &
        this%tracercoeffs,  this%tracerfluxes, betr_status)
     if(betr_status%check_status())return
-
+!    print*,'bf reaction'
+!    do j = 1, this%tracers%ntracers
+!      print*,j,this%tracers%tracernames(j),this%tracerstates%tracer_conc_mobile_col(1,1,j)
+!    enddo
     if(this%reaction_on)                                       &
     call this%bgc_reaction%calc_bgc_reaction(bounds, col, lbj, ubj, &
          num_soilc,                                            &
@@ -333,6 +339,11 @@ contains
          this%tracerboundaryconds,                             &
          this%plant_soilbgc, biogeo_flux, betr_status)
     if(betr_status%check_status())return
+!    print*,'af reaction'
+!    do j = 1, this%tracers%ntracers
+!      print*,j,this%tracers%tracernames(j),this%tracerstates%tracer_conc_mobile_col(1,1,j)
+!    enddo
+
     call tracer_gws_transport(betr_time, bounds, col, pft, num_soilc, filter_soilc, &
       Rfactor, biophysforc, biogeo_flux, this%tracers, this%tracerboundaryconds  , &
       this%tracercoeffs,  this%tracerstates, this%tracerfluxes, this%bgc_reaction, &
@@ -355,7 +366,12 @@ contains
          this%tracerfluxes%tracer_flx_ebu_col(bounds%begc:bounds%endc, 1:this%tracers%nvolatile_tracers), &
          this%ebullition_on, betr_status)
     if(betr_status%check_status())return
-
+!    do j = 1, this%tracers%ntracers
+!      if(this%tracers%is_adsorb(j) .or. trim(this%tracers%tracernames(j))=='P_SOL')then
+!       print*,this%tracers%tracernames(j)
+!       print*,this%tracerstates%tracer_conc_mobile_col(1,:,j)
+!      endif
+!    enddo
     !update nitrogen storage pool
     call this%plant_soilbgc%plant_soilbgc_summary(bounds, lbj, ubj, pft, &
           num_soilc, filter_soilc,  dtime                              , &

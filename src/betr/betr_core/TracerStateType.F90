@@ -120,7 +120,6 @@ contains
     this%tracer_conc_atm_col      (:,:) = nan
     allocate(this%tracer_conc_mobile_col        (begc:endc, lbj:ubj, 1:ntracers))
     this%tracer_conc_mobile_col       (:,:,:) =  nan
-    print*,'equil_solid',nsolid_equil_tracers
     allocate(this%tracer_conc_solid_equil_col   (begc:endc, lbj:ubj, 1:nsolid_equil_tracers))
     this%tracer_conc_solid_equil_col  (:,:,:) = nan
 

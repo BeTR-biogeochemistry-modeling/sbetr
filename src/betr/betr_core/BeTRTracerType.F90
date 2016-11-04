@@ -123,7 +123,6 @@ module BeTRTracerType
     implicit none
     class(BeTRtracer_type), intent(inout) :: this
 
-    this%ntracers=this%ngwmobile_tracers+this%nsolid_passive_tracers
     this%ntracer_groups = this%nsolid_passive_tracer_groups + this%ngwmobile_tracer_groups
 
     call this%InitAllocate()

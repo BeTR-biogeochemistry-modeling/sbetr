@@ -217,22 +217,18 @@ module TracerBalanceMod
               tracer_molarmass_col(c,jj) = &
                  tracerstate_vars%int_mass_mobile_col(1,nlevtrc_soil,c,jj,dz(c,1:nlevtrc_soil),betr_status)
               if(betr_status%check_status())return
-              print*,'mass1',betrtracer_vars%tracernames(jj),tracer_molarmass_col(c,jj) 
-              if(trim(betrtracer_vars%tracernames(jj))=='P_SOL')print*,tracer_conc_mobile(c,:,jj)
               if(is_adsorb(jj))then
                  tracer_molarmass_col(c,jj) = tracer_molarmass_col(c,jj) + &
                       tracerstate_vars%int_mass_adsorb_col(1,nlevtrc_soil,c,adsorbid(jj),&
                       dz(c,1:nlevtrc_soil),betr_status)
                  if(betr_status%check_status())return
               endif
-              print*,'mass2',betrtracer_vars%tracernames(jj),tracer_molarmass_col(c,jj) 
               if(is_frozen(jj))then
                  tracer_molarmass_col(c,jj) = tracer_molarmass_col(c,jj) + &
                       tracerstate_vars%int_mass_frozen_col(1,nlevtrc_soil,c,&
                       frozenid(jj),dz(c,1:nlevtrc_soil),betr_status)
                  if(betr_status%check_status())return
               endif
-              print*,'mass3',betrtracer_vars%tracernames(jj),tracer_molarmass_col(c,jj) 
            enddo
         enddo
       end associate
