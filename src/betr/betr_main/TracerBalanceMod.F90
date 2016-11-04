@@ -145,12 +145,13 @@ module TracerBalanceMod
 
               if(abs(err_rel)>err_min_rel .and. do_betr_output)then
                  write(msg,*)'error exceeds the tolerance for tracer '//tracernames(kk), &
-                      ' err=',errtracer(c,kk), ' col=',c, &
-                      new_line('A')//'nstep=', betr_time%get_nstep(), &
-                      new_line('A')//'netpro=',tracer_flx_netpro(c,kk),' netphyloss=',tracer_flx_netphyloss(c,kk),&
-                      new_line('A')//' begm=',beg_tracer_molarmass(c,kk), &
-                      new_line('A')//' endm=',end_tracer_molarmass(c,kk), &
-                      new_line('A')//errMsg(mod_filename, __LINE__)
+                      new_line('A'),'err=',errtracer(c,kk), ' col=',c, &
+                      new_line('A'),'nstep=', betr_time%get_nstep(), &
+                      new_line('A'),'netpro=',tracer_flx_netpro(c,kk),&
+                      new_line('A'),'netphyloss=',tracer_flx_netphyloss(c,kk),&
+                      new_line('A'),'begm=',beg_tracer_molarmass(c,kk), &
+                      new_line('A'),'endm=',end_tracer_molarmass(c,kk), &
+                      new_line('A'),errMsg(mod_filename, __LINE__)
                  call tracerflux_vars%flux_display(c,kk,betrtracer_vars, msg1)
                  msg = trim(msg)//new_line('A')//trim(msg1)
                  call betr_status%set_msg(msg=msg, err=-1)
@@ -216,19 +217,22 @@ module TracerBalanceMod
               tracer_molarmass_col(c,jj) = &
                  tracerstate_vars%int_mass_mobile_col(1,nlevtrc_soil,c,jj,dz(c,1:nlevtrc_soil),betr_status)
               if(betr_status%check_status())return
-
+              print*,'mass1',betrtracer_vars%tracernames(jj),tracer_molarmass_col(c,jj) 
+              if(trim(betrtracer_vars%tracernames(jj))=='P_SOL')print*,tracer_conc_mobile(c,:,jj)
               if(is_adsorb(jj))then
                  tracer_molarmass_col(c,jj) = tracer_molarmass_col(c,jj) + &
                       tracerstate_vars%int_mass_adsorb_col(1,nlevtrc_soil,c,adsorbid(jj),&
                       dz(c,1:nlevtrc_soil),betr_status)
                  if(betr_status%check_status())return
               endif
+              print*,'mass2',betrtracer_vars%tracernames(jj),tracer_molarmass_col(c,jj) 
               if(is_frozen(jj))then
                  tracer_molarmass_col(c,jj) = tracer_molarmass_col(c,jj) + &
                       tracerstate_vars%int_mass_frozen_col(1,nlevtrc_soil,c,&
                       frozenid(jj),dz(c,1:nlevtrc_soil),betr_status)
                  if(betr_status%check_status())return
               endif
+              print*,'mass3',betrtracer_vars%tracernames(jj),tracer_molarmass_col(c,jj) 
            enddo
         enddo
       end associate

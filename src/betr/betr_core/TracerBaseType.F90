@@ -3,17 +3,17 @@ use betr_ctrl, only : max_betr_hist_type
 implicit none
 
   private
-
+  integer, parameter :: loc_str_len=255
   type, private :: list_t
-    character(len=255)  :: name
+    character(len=loc_str_len)  :: name
     type(list_t), pointer :: next => null()
   end type list_t
 
   type, public :: tracerbase_type
      integer :: num_hist1d
      integer :: num_hist2d
-     character(len=255), allocatable :: nmlist_hist1d_buffer(:)
-     character(len=255), allocatable :: nmlist_hist2d_buffer(:)
+     character(len=loc_str_len), allocatable :: nmlist_hist1d_buffer(:)
+     character(len=loc_str_len), allocatable :: nmlist_hist2d_buffer(:)
   contains
      procedure, public :: tracer_base_init
      procedure, public :: add_hist_var2d
@@ -32,7 +32,7 @@ contains
   subroutine list_init(self, name)
   implicit none
   type(list_t), pointer :: self
-  character(len=255), intent(in) :: name
+  character(len=loc_str_len), intent(in) :: name
 
   allocate(self)
   nullify(self%next)
@@ -44,7 +44,7 @@ contains
 
   implicit none
   type(list_t), pointer :: self
-  character(len=255), intent(in) :: name
+  character(len=loc_str_len), intent(in) :: name
   type(list_t), pointer :: next
 
   allocate(next)
@@ -103,7 +103,7 @@ contains
   character(len=*),optional, intent(in) :: default
 
   character(len=20) :: default_loc = "active"
-  character(len=255):: tempstr
+  character(len=loc_str_len):: tempstr
   character(len=1)  :: quote = ''''
 
   !use the following format to read
@@ -123,7 +123,6 @@ contains
     //' long_name='//quote//trim(long_name)//quote//new_line('A') &
     //' default='//quote//trim(default_loc)//quote//new_line('A') &
     //'/'
-
   if(this%num_hist2d==1)then
     call list_init(head2d, tempstr)
   else
@@ -149,7 +148,7 @@ contains
   character(len=20) :: default_loc = "active"
 
   character(len=1)  :: quote = ''''
-  character(len=255):: tempstr
+  character(len=loc_str_len):: tempstr
   !use the following format to read
   !x namelist /hist1d_fmt/    &
   !x fname, units, avgflag,type2d,long_name, default
@@ -210,9 +209,6 @@ contains
       exit
     endif
   enddo
-!x  if(jj/=this%num_hist1d)then
-!x    print*,'bang'
-!x  endif
 
   !flip 2d history fields
   call list_init(tail2d, head2d%name)

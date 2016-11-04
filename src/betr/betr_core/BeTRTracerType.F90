@@ -273,11 +273,11 @@ subroutine set_tracer(this, bstatus, trc_id, trc_name, is_trc_mobile, is_trc_adv
 
   call bstatus%reset()
 
-  this%tracernames      (trc_id)    = trim(trc_name)
+  this%tracernames      (trc_id)=trim(trc_name)
   if(present(trc_family_name))then
-    this%tracerfamilyname(trc_id)   = trim(trc_family_name)
+    this%tracerfamilyname(trc_id)=trim(trc_family_name)
   else
-    this%tracerfamilyname(trc_id)   = this%tracernames(trc_id)
+    this%tracerfamilyname(trc_id)=trim(this%tracernames(trc_id))
   endif
   this%is_mobile        (trc_id)    = is_trc_mobile
   this%groupid          (trc_id)    = trc_group_id
