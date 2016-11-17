@@ -617,7 +617,6 @@ contains
          betrtracer_vars,                                       &
          tracercoeff_vars, tracerstate_vars,bstatus)
     if(bstatus%check_status())return
-!x    print*,'do_transport'
     !do diffusive and advective transport, assuming aqueous and gaseous phase are in equilbrium
     do kk = 1 , 2
        if (transp_pathway(kk) == diffusion_scheme .and. diffusion_on) then
@@ -734,7 +733,6 @@ contains
     character(len=255)   :: subname = 'do_tracer_advection'
     character(len=betr_errmsg_len) :: msg
 
-!x    print*,'do_advection'
     call bstatus%reset()
     SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/))      , errMsg(mod_filename,__LINE__),bstatus)
     if(bstatus%check_status())return
@@ -884,7 +882,7 @@ contains
                  tracer_conc_mobile_col(bounds%begc:bounds%endc, lbj:ubj,adv_trc_group(1:ntrcs)), &
                  trc_conc_out(:,:,1:ntrcs),                                                       &
                  leaching_mass(bounds%begc:bounds%endc,1:ntrcs), seep_mass(bounds%begc:bounds%endc, 1:ntrcs))
-!x            print*,'semilag',bstatus%check_status(),trim(bstatus%print_msg())
+
             if(bstatus%check_status())return
             !do soil-root tracer exchange
             do k = 1, ntrcs
@@ -917,7 +915,6 @@ contains
                endif
             enddo
 
-            !print*,'!do error budget and tracer flux update'
             do k = 1, ntrcs
                trcid = adv_trc_group(k)
                do fc = 1, num_soilc

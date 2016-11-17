@@ -40,7 +40,7 @@ contains
     character(len=1), parameter  :: quote = ''''
     namelist / betr_inparm / reaction_method, &
       advection_on, diffusion_on, reaction_on, ebullition_on
-
+    logical :: esm_on
     ! ----------------------------------------------------------------------
     ! Read namelist from standard input.
     ! ----------------------------------------------------------------------
@@ -49,8 +49,8 @@ contains
     advection_on    = .true.
     diffusion_on    = .true.
     reaction_on     = .true.
-    ebullition_on   =.true.
-
+    ebullition_on   = .true.
+    esm_on          = .true.
     if ( masterproc )then
 
        unitn = getavu()
@@ -75,6 +75,7 @@ contains
 
     write(betr_namelist_buffer,*) '&betr_parameters'//new_line('A'), &
       ' reaction_method='//quote//trim(reaction_method)//quote//new_line('A'), &
+      ' esm_on=',trim(log2str(esm_on)),new_line('A'),&
       ' advection_on=',trim(log2str(advection_on)),new_line('A'), &
       ' diffusion_on=',trim(log2str(diffusion_on)),new_line('A'), &
       ' reaction_on=',trim(log2str(reaction_on)),new_line('A'), &

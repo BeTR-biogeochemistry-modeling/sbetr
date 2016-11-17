@@ -11,7 +11,7 @@ implicit none
 
   real(r8), pointer :: fracice_col       (:,:)  => null() ! col fractional impermeability (-)
   real(r8), pointer :: zwts_col           (:)  => null()  ! the shallower between zwt_perch and zwt
-  real(r8), pointer :: qflx_bot_col      (:)  => null()   ! bottom of soil col flux, (mm/s)  
+  real(r8), pointer :: qcharge_col      (:)  => null()   ! bottom of soil col flux, (mm/s)  
   contains
     procedure, public  :: Init
     procedure, private :: InitAllocate
@@ -53,6 +53,6 @@ implicit none
 
     allocate(this%fracice_col       (begc:endc,lbj:ubj))        ; this%fracice_col       (:,:)   = nan
     allocate(this%zwts_col           (begc:endc))                ; this%zwts_col         (:)     = nan
-    allocate(this%qflx_bot_col      (begc:endc))                 ; this%qflx_bot_col      (:)     = nan
+    allocate(this%qcharge_col      (begc:endc))                 ; this%qcharge_col      (:)     = nan
   end subroutine InitAllocate
 end Module SoilHydrologyType

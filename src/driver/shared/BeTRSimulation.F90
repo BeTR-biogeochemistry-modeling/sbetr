@@ -232,6 +232,7 @@ contains
       this%filter_soilp(p) = p
     enddo
     betr_offline=boffline
+    betr_maxpatch_pft = maxpft_per_col
   end subroutine BeTRSetFilter
 !-------------------------------------------------------------------------------
 
@@ -298,14 +299,12 @@ contains
       call this%betr_col(c)%Init(betr_bounds)
 
       call this%betr_pft(c)%Init(betr_bounds)
-
       if (lun%itype(l) == istsoil .or. lun%itype(l) == istcrop) then
         this%active_col(c) = .true.
       else
         this%active_col(c) = .false.
       endif
     enddo
-
     call this%BeTRSetcps(bounds, col, pft)
     call this%BeTRSetBiophysForcing(bounds, col, pft, betr_bounds%lbj, betr_bounds%ubj, &
         waterstate_vars = waterstate)
@@ -720,7 +719,6 @@ contains
    type(bounds_type)           , intent(in)    :: bounds
    integer, intent(in) :: numf
    integer, intent(in) :: filter(:)
-
   call this%BeTRRetrieveHistoryState(bounds, numf, filter)
 
   call this%BeTRRetrieveHistoryFlux(bounds, numf, filter)
@@ -830,12 +828,13 @@ contains
   use CanopyStateType   , only : canopystate_type
   use ColumnType        , only : column_type
   use PatchType         , only : patch_type
+  use MathfuncMod       , only : isnan => bisnan
   implicit none
   !ARGUMENTS
   class(betr_simulation_type) , intent(inout)        :: this
   type(bounds_type)           , intent(in)           :: bounds
-  type(patch_type)            , intent(in) :: pft
-  type(column_type)           , intent(in)    :: col ! column type
+  type(patch_type)            , intent(in)           :: pft
+  type(column_type)           , intent(in)           :: col ! column type
   integer                     , intent(in)           :: lbj, ubj
   type(carbonflux_type)       , optional, intent(in) :: carbonflux_vars
   type(Waterstate_Type)       , optional, intent(in) :: Waterstate_vars
@@ -849,28 +848,37 @@ contains
 
   !TEMPORARY VARIABLES
   integer :: p, pi, cc, c
-
+  integer :: npft_loc
   cc = 1
 
   do c = bounds%begc, bounds%endc
-  if(.not. this%active_col(c))cycle
-  if(present(carbonflux_vars))then
-    do pi = 1, betr_maxpatch_pft
-       this%biophys_forc(c)%annsum_npp_patch(pi) = 0._r8
-       this%biophys_forc(c)%agnpp_patch(pi) = 0._r8
-       this%biophys_forc(c)%bgnpp_patch(pi)  = 0._r8
-       if (pi <= col%npfts(c)) then
-         p = col%pfti(c) + pi - 1
-         if (pft%active(p)) then
-           this%biophys_forc(c)%annsum_npp_patch(pi) = carbonflux_vars%annsum_npp_patch(p)
-           this%biophys_forc(c)%agnpp_patch(pi)      = carbonflux_vars%agnpp_patch(p)
-           this%biophys_forc(c)%bgnpp_patch(pi)      = carbonflux_vars%bgnpp_patch(p)
-         endif
-       endif
-    enddo
-  endif
-  !assign waterstate
-  if(present(waterstate_vars))then
+    if(.not. this%active_col(c))cycle
+    if(present(carbonflux_vars))then
+      npft_loc = ubound(carbonflux_vars%annsum_npp_patch,1)-lbound(carbonflux_vars%annsum_npp_patch,1)+1
+      if(col%pfti(c) /= lbound(carbonflux_vars%annsum_npp_patch,1) .and. npft_loc/=col%npfts(c))then
+        do pi = 1, betr_maxpatch_pft
+          this%biophys_forc(c)%annsum_npp_patch(pi) = 0._r8
+          this%biophys_forc(c)%agnpp_patch(pi) = 0._r8
+          this%biophys_forc(c)%bgnpp_patch(pi)  = 0._r8
+        enddo
+      else
+        do pi = 1, betr_maxpatch_pft
+          this%biophys_forc(c)%annsum_npp_patch(pi) = 0._r8
+          this%biophys_forc(c)%agnpp_patch(pi) = 0._r8
+          this%biophys_forc(c)%bgnpp_patch(pi)  = 0._r8
+          if (pi <= col%npfts(c)) then
+            p = col%pfti(c) + pi - 1
+            if (pft%active(p)) then
+              this%biophys_forc(c)%annsum_npp_patch(pi) = carbonflux_vars%annsum_npp_patch(p)
+              this%biophys_forc(c)%agnpp_patch(pi)      = carbonflux_vars%agnpp_patch(p)
+              this%biophys_forc(c)%bgnpp_patch(pi)      = carbonflux_vars%bgnpp_patch(p)
+            endif
+          endif
+        enddo
+      endif
+    endif
+    !assign waterstate
+    if(present(waterstate_vars))then
       this%biophys_forc(c)%finundated_col(cc)            = waterstate_vars%finundated_col(c)
       this%biophys_forc(c)%frac_h2osfc_col(cc)           = waterstate_vars%frac_h2osfc_col(c)
       this%biophys_forc(c)%h2osoi_liq_col(cc,lbj:ubj)    = waterstate_vars%h2osoi_liq_col(c,lbj:ubj)
@@ -884,8 +892,8 @@ contains
       this%biophys_forc(c)%rho_vap(cc,lbj:ubj)           = waterstate_vars%rho_vap_col(c,lbj:ubj)
       this%biophys_forc(c)%rhvap_soi(cc,lbj:ubj)         = waterstate_vars%rhvap_soi_col(c,lbj:ubj)
       this%biophys_forc(c)%smp_l_col(cc,lbj:ubj)         = waterstate_vars%smp_l_col(c,lbj:ubj)
-  endif
-  if(present(waterflux_vars))then
+    endif
+    if(present(waterflux_vars))then
       this%biogeo_flux(c)%qflx_infl_col(cc)             = waterflux_vars%qflx_infl_col(c)
       this%biogeo_flux(c)%qflx_totdrain_col(cc)         = waterflux_vars%qflx_totdrain_col(c)
       this%biogeo_flux(c)%qflx_gross_evap_soil_col(cc)  = waterflux_vars%qflx_gross_evap_soil_col(c)
@@ -902,7 +910,7 @@ contains
       this%biogeo_flux(c)%qflx_adv_col(cc,lbj-1:ubj)    = waterflux_vars%qflx_adv_col(c,lbj-1:ubj)
       this%biogeo_flux(c)%qflx_drain_vr_col(cc,lbj:ubj) = waterflux_vars%qflx_drain_vr_col(c,lbj:ubj)
 
-    do pi = 1, betr_maxpatch_pft
+      do pi = 1, betr_maxpatch_pft
        this%biophys_forc(c)%qflx_tran_veg_patch(pi) = 0._r8
        if (pi <= col%npfts(c)) then
          p = col%pfti(c) + pi - 1
@@ -911,51 +919,51 @@ contains
            this%biophys_forc(c)%qflx_rootsoi_patch(pi,lbj:ubj) = waterflux_vars%qflx_rootsoi_patch(p,lbj:ubj)
          endif
        endif
-    enddo
-  endif
-  if(present(temperature_vars))then
+      enddo
+    endif
+    if(present(temperature_vars))then
       this%biophys_forc(c)%t_soi_10cm(cc)           = temperature_vars%t_soi10cm_col(c)
       this%biophys_forc(c)%t_soisno_col(cc,lbj:ubj) = temperature_vars%t_soisno_col(c,lbj:ubj)
-    do pi = 1, betr_maxpatch_pft
-       this%biophys_forc(c)%t_veg_patch(pi) = 0._r8
-       if (pi <= col%npfts(c)) then
-         p = col%pfti(c) + pi - 1
-         if (pft%active(p)) then
+      do pi = 1, betr_maxpatch_pft
+        this%biophys_forc(c)%t_veg_patch(pi) = 0._r8
+        if (pi <= col%npfts(c)) then
+          p = col%pfti(c) + pi - 1
+          if (pft%active(p)) then
            this%biophys_forc(c)%t_veg_patch(pi)         = temperature_vars%t_veg_patch(p)
-         endif
-       endif
-    enddo
-  endif
-  if(present(soilhydrology_vars))then
-      this%biophys_forc(c)%qflx_bot_col(cc)        = soilhydrology_vars%qflx_bot_col(c)
+          endif
+        endif
+      enddo
+    endif
+    if(present(soilhydrology_vars))then
+      this%biophys_forc(c)%qflx_bot_col(cc)        = soilhydrology_vars%qcharge_col(c)
       this%biophys_forc(c)%fracice_col(cc,lbj:ubj) = soilhydrology_vars%fracice_col(c,lbj:ubj)
-  endif
+    endif
 
-  if(present(atm2lnd_vars))then
+    if(present(atm2lnd_vars))then
       this%biophys_forc(c)%forc_pbot_downscaled_col(cc) = atm2lnd_vars%forc_pbot_downscaled_col(c)
       this%biophys_forc(c)%forc_t_downscaled_col(cc)    = atm2lnd_vars%forc_t_downscaled_col(c)
-  endif
+    endif
 
-  if(present(canopystate_vars))then
-    this%biophys_forc(c)%altmax_col(cc)          = canopystate_vars%altmax_col(c)
-    this%biophys_forc(c)%altmax_lastyear_col(cc) = canopystate_vars%altmax_lastyear_col(c)
+    if(present(canopystate_vars))then
+      this%biophys_forc(c)%altmax_col(cc)          = canopystate_vars%altmax_col(c)
+      this%biophys_forc(c)%altmax_lastyear_col(cc) = canopystate_vars%altmax_lastyear_col(c)
 
-    do pi = 1, betr_maxpatch_pft
-       this%biophys_forc(c)%lbl_rsc_h2o_patch(pi) = 0._r8
-       this%biophys_forc(c)%elai_patch(pi)        = 0._r8
-       if (pi <= col%npfts(c)) then
-         p = col%pfti(c) + pi - 1
-         if (pft%active(p)) then
-           this%biophys_forc(c)%lbl_rsc_h2o_patch(pi) = canopystate_vars%lbl_rsc_h2o_patch(p)
-           this%biophys_forc(c)%elai_patch(pi)        = canopystate_vars%elai_patch(p)
-         endif
-       endif
-    enddo
-  endif
-  if(present(chemstate_vars))then
-    this%biophys_forc(c)%soil_pH(cc,lbj:ubj) = chemstate_vars%soil_pH(c,lbj:ubj)
-  endif
-  if(present(soilstate_vars))then
+      do pi = 1, betr_maxpatch_pft
+        this%biophys_forc(c)%lbl_rsc_h2o_patch(pi) = 0._r8
+        this%biophys_forc(c)%elai_patch(pi)        = 0._r8
+        if (pi <= col%npfts(c)) then
+          p = col%pfti(c) + pi - 1
+          if (pft%active(p)) then
+            this%biophys_forc(c)%lbl_rsc_h2o_patch(pi) = canopystate_vars%lbl_rsc_h2o_patch(p)
+            this%biophys_forc(c)%elai_patch(pi)        = canopystate_vars%elai_patch(p)
+          endif
+        endif
+      enddo
+    endif
+    if(present(chemstate_vars))then
+      this%biophys_forc(c)%soil_pH(cc,lbj:ubj) = chemstate_vars%soil_pH(c,lbj:ubj)
+    endif
+    if(present(soilstate_vars))then
       this%biophys_forc(c)%bsw_col(cc,lbj:ubj)          = soilstate_vars%bsw_col(c,lbj:ubj)
       this%biophys_forc(c)%watsat_col(cc,lbj:ubj)       = soilstate_vars%watsat_col(c,lbj:ubj)
       this%biophys_forc(c)%eff_porosity_col(cc,lbj:ubj) = soilstate_vars%eff_porosity_col(c,lbj:ubj)
@@ -966,16 +974,16 @@ contains
       this%biophys_forc(c)%watfc_col(cc,lbj:ubj)        = soilstate_vars%watfc_col(c,lbj:ubj)
       this%biophys_forc(c)%sucsat_col(cc,lbj:ubj)       = soilstate_vars%sucsat_col(c,lbj:ubj)
 
-    do pi = 1, betr_maxpatch_pft
-       this%biophys_forc(c)%rootfr_patch(pi,lbj:ubj) = 0._r8
-       if (pi <= col%npfts(c)) then
-         p = col%pfti(c) + pi - 1
-         if (pft%active(p)) then
-           this%biophys_forc(c)%rootfr_patch(pi,lbj:ubj) = soilstate_vars%rootfr_patch(p,lbj:ubj)
-         endif
-       endif
-    enddo
-   endif
+      do pi = 1, betr_maxpatch_pft
+        this%biophys_forc(c)%rootfr_patch(pi,lbj:ubj) = 0._r8
+        if (pi <= col%npfts(c)) then
+          p = col%pfti(c) + pi - 1
+          if (pft%active(p)) then
+            this%biophys_forc(c)%rootfr_patch(pi,lbj:ubj) = soilstate_vars%rootfr_patch(p,lbj:ubj)
+          endif
+        endif
+      enddo
+    endif
   enddo
   end subroutine BeTRSimulationSetBiophysForcing
 
@@ -997,19 +1005,21 @@ contains
   type(waterflux_type)        , optional, intent(inout) :: waterflux_vars
 
   integer :: begp, begc, endp, endc
-  integer :: p, c
+  integer :: p, c, cc
 
+  cc = 1
   if(present(carbonflux_vars))then
     !do nothing
   endif
   if(present(waterflux_vars))then
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
-      waterflux_vars%qflx_infl_col(c)            = this%biogeo_flux(c)%qflx_infl_col(c)
-      waterflux_vars%qflx_adv_col(c,lbj-1:ubj)   = this%biogeo_flux(c)%qflx_adv_col(c,lbj-1:ubj)
-      waterflux_vars%qflx_totdrain_col(c)        = this%biogeo_flux(c)%qflx_totdrain_col(c)
-      waterflux_vars%qflx_gross_evap_soil_col(c) = this%biogeo_flux(c)%qflx_gross_evap_soil_col(c)
-      waterflux_vars%qflx_gross_infl_soil_col(c) = this%biogeo_flux(c)%qflx_gross_infl_soil_col(c)
+      waterflux_vars%qflx_infl_col(c)            = this%biogeo_flux(c)%qflx_infl_col(cc)
+      waterflux_vars%qflx_adv_col(c,lbj-1:ubj)   = this%biogeo_flux(c)%qflx_adv_col(cc,lbj-1:ubj)
+      waterflux_vars%qflx_totdrain_col(c)        = this%biogeo_flux(c)%qflx_totdrain_col(cc)
+      waterflux_vars%qflx_gross_evap_soil_col(c) = this%biogeo_flux(c)%qflx_gross_evap_soil_col(cc)
+      waterflux_vars%qflx_gross_infl_soil_col(c) = this%biogeo_flux(c)%qflx_gross_infl_soil_col(cc)
+      waterflux_vars%qflx_drain_vr_col(c,1:ubj)  = this%biogeo_flux(c)%qflx_drain_vr_col(cc,1:ubj)
     enddo
   endif
 
@@ -1053,7 +1063,7 @@ contains
   !
   ! USES
   !
-
+  use tracer_varcon            , only : nlevsoi  => betr_nlevsoi
   implicit none
   !ARGUMENTS
    class(betr_simulation_type) , intent(inout) :: this
@@ -1062,10 +1072,9 @@ contains
 
    !TEMPORARY VARIABLES
    type(betr_bounds_type)     :: betr_bounds
-   integer :: fc, c
+   integer :: fc, c, j
 
    call this%BeTRSetBounds(betr_bounds)
-
    do fc = 1, num_hydrologyc
      c = filter_hydrologyc(fc)
      if(.not. this%active_col(c))cycle
@@ -1760,7 +1769,6 @@ contains
     this%num_rest_state2d,rest_varname_1d, rest_varname_2d)
 
   call this%BeTRSetBounds(betr_bounds)
-
   if(trim(flag)=='write')then
     do c = bounds%begc, bounds%endc
       call this%betr(c)%set_restvar(betr_bounds, 1, betr_nlevtrc_soil, &
@@ -1804,6 +1812,7 @@ contains
   use ColumnType            , only : column_type
   use PatchType             , only : patch_type
   use pftvarcon             , only : crop
+  use tracer_varcon         , only : betr_nlevsoi
   !ARGUMENTS
   implicit none
   class(betr_simulation_type) , intent(inout) :: this
@@ -1815,9 +1824,9 @@ contains
 
   do c = bounds%begc, bounds%endc
     this%betr_col(c)%snl(1) = col%snl(c)
-    this%betr_col(c)%zi(1,:)= col%zi(c,:)
-    this%betr_col(c)%dz(1,:)= col%dz(c,:)
-    this%betr_col(c)%z(1,:)= col%z(c,:)
+    this%betr_col(c)%zi(1,0:betr_nlevsoi)= col%zi(c,0:betr_nlevsoi)
+    this%betr_col(c)%dz(1,1:betr_nlevsoi)= col%dz(c,1:betr_nlevsoi)
+    this%betr_col(c)%z(1,1:betr_nlevsoi)= col%z(c,1:betr_nlevsoi)
     this%betr_col(c)%pfti(1)= col%pfti(c)
     this%betr_col(c)%pftf(1)= col%pftf(c)
     this%betr_col(c)%npfts(1)= col%npfts(c)

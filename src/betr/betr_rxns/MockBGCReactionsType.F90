@@ -250,7 +250,6 @@ contains
       do fc = 1, num_soilc
          c = filter_soilc(fc)
          irt = 1.e3_r8/(forc_tbot(c)*rgas)
-
          !eventually, the following code will be implemented using polymorphism
          tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_n2)   = forc_pbot(c)*0.78084_r8*irt  !mol m-3, contant boundary condition, as concentration
          tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_o2)   = forc_pbot(c)*0.20946_r8*irt  !mol m-3, contant boundary condition, as concentration
