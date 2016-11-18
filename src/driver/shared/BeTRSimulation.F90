@@ -89,6 +89,7 @@ module BeTRSimulation
      procedure, public :: Init                    => BeTRSimulationInitOffline
      procedure, public :: ConsistencyCheck        => BeTRSimulationConsistencyCheck
      procedure, public :: PreDiagSoilColWaterFlux => BeTRSimulationPreDiagSoilColWaterFlux
+     procedure, public :: DiagnoseDtracerFreezeThaw=> BeTRSimulationDiagnoseDtracerFreezeThaw
      procedure, public :: DiagAdvWaterFlux        => BeTRSimulationDiagAdvWaterFlux
      procedure, public :: DiagDrainWaterFlux      => BeTRSimulationDiagDrainWaterFlux
      procedure, public :: BeginSnowLayerAdjst     => BeTRSimulationBeginTracerSnowLayerAdjst
@@ -569,8 +570,11 @@ contains
         exit
       endif
    enddo
-   if(this%bsimstatus%check_status()) &
+   if(this%bsimstatus%check_status()) then
+      print*,this%bsimstatus%cindex
+      print*,trim(this%bsimstatus%print_msg())
       call endrun(msg=trim(this%bsimstatus%print_msg()))
+   endif
   end subroutine BeTRSimulationMassBalanceCheck
 
 !-------------------------------------------------------------------------------
@@ -850,7 +854,6 @@ contains
   integer :: p, pi, cc, c
   integer :: npft_loc
   cc = 1
-
   do c = bounds%begc, bounds%endc
     if(.not. this%active_col(c))cycle
     if(present(carbonflux_vars))then
@@ -883,8 +886,6 @@ contains
       this%biophys_forc(c)%frac_h2osfc_col(cc)           = waterstate_vars%frac_h2osfc_col(c)
       this%biophys_forc(c)%h2osoi_liq_col(cc,lbj:ubj)    = waterstate_vars%h2osoi_liq_col(c,lbj:ubj)
       this%biophys_forc(c)%h2osoi_ice_col(cc,lbj:ubj)    = waterstate_vars%h2osoi_ice_col(c,lbj:ubj)
-      this%biophys_forc(c)%h2osoi_liq_old(cc,lbj:ubj)    = waterstate_vars%h2osoi_liq_old_col(c,lbj:ubj)
-      this%biophys_forc(c)%h2osoi_ice_old(cc,lbj:ubj)    = waterstate_vars%h2osoi_ice_old_col(c,lbj:ubj)
       this%biophys_forc(c)%h2osoi_liqvol_col(cc,lbj:ubj) = waterstate_vars%h2osoi_liqvol_col(c,lbj:ubj)
       this%biophys_forc(c)%h2osoi_icevol_col(cc,lbj:ubj) = waterstate_vars%h2osoi_icevol_col(c,lbj:ubj)
       this%biophys_forc(c)%h2osoi_vol_col(cc,lbj:ubj)    = waterstate_vars%h2osoi_vol_col(c,lbj:ubj)
@@ -1006,7 +1007,6 @@ contains
 
   integer :: begp, begc, endp, endc
   integer :: p, c, cc
-
   cc = 1
   if(present(carbonflux_vars))then
     !do nothing
@@ -1053,6 +1053,41 @@ contains
        this%filter_soilc, this%biophys_forc(c))
    enddo
   end subroutine BeTRSimulationPreDiagSoilColWaterFlux
+
+  !------------------------------------------------------------------------
+  subroutine BeTRSimulationDiagnoseDtracerFreezeThaw(this, bounds, num_nolakec, filter_nolakec, col)
+  !
+  ! DESCRIPTION
+  ! aqueous tracer partition based on freeze-thaw
+  !
+  ! USES
+  use ColumnType            , only : column_type
+  use WaterStateType        , only : waterstate_type
+  implicit none
+  !
+  ! Arguments
+  class(betr_simulation_type), intent(inout)   :: this
+  type(bounds_type)     , intent(in) :: bounds
+  integer               , intent(in) :: num_nolakec                        ! number of column non-lake points in column filter
+  integer               , intent(in) :: filter_nolakec(:)                  ! column filter for non-lake points
+!  type(waterstate_type), intent(in) :: waterstate_vars
+  type(column_type)     , intent(in) :: col                                ! column type
+
+  !temporary variables
+  type(betr_bounds_type)     :: betr_bounds
+  integer :: fc, c
+
+  call this%BeTRSetBounds(betr_bounds)
+
+  call this%BeTRSetcps(bounds, col)
+
+  do fc = 1, num_nolakec
+    c = filter_nolakec(fc)
+    if(.not. this%active_col(c))cycle
+    call this%betr(c)%diagnose_dtracer_freeze_thaw(betr_bounds, this%num_soilc, this%filter_soilc,  &
+      this%biophys_forc(c))
+  enddo
+  end subroutine BeTRSimulationDiagnoseDtracerFreezeThaw
 
   !------------------------------------------------------------------------
   subroutine BeTRSimulationDiagAdvWaterFlux(this, num_hydrologyc, &

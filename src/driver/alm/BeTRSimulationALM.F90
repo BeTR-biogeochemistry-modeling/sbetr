@@ -34,7 +34,6 @@ module BeTRSimulationALM
      procedure, public :: StepWithDrainage          => ALMStepWithDrainage
      procedure, public :: SetBiophysForcing         => ALMSetBiophysForcing
      !unique subroutines
-     procedure, public :: DiagnoseDtracerFreezeThaw => ALMDiagnoseDtracerFreezeThaw
      procedure, public :: CalcDewSubFlux            => ALMCalcDewSubFlux
      procedure, public :: SoilFluxStateRecv         => ALMBetrSoilFluxStateRecv
      procedure, public :: CalcSmpL                  => ALMCalcSmpL
@@ -542,43 +541,6 @@ contains
   end subroutine ALMBetrPlantSoilBGCRecv
   !------------------------------------------------------------------------
 
-  subroutine ALMDiagnoseDtracerFreezeThaw(this, bounds, num_nolakec, filter_nolakec, col, lun)
-  !
-  ! DESCRIPTION
-  ! aqueous tracer partition based on freeze-thaw
-  !
-  ! USES
-  use ColumnType            , only : column_type
-  use LandunitType          , only : landunit_type
-  use WaterStateType        , only : waterstate_type
-  implicit none
-  !
-  ! Arguments
-  class(betr_simulation_alm_type), intent(inout)   :: this
-  type(bounds_type)     , intent(in) :: bounds
-  integer               , intent(in) :: num_nolakec                        ! number of column non-lake points in column filter
-  integer               , intent(in) :: filter_nolakec(:)                  ! column filter for non-lake points
-  type(landunit_type)   , intent(in) :: lun
-!  type(waterstate_type), intent(in) :: waterstate_vars
-  type(column_type)     , intent(in) :: col                                ! column type
-
-  !temporary variables
-  type(betr_bounds_type)     :: betr_bounds
-  integer :: fc, c
-
-  call this%BeTRSetBounds(betr_bounds)
-
-  call this%BeTRSetcps(bounds, col)
-
-  do fc = 1, num_nolakec
-    c = filter_nolakec(fc)
-    if(.not. this%active_col(c))cycle
-    call this%betr(c)%diagnose_dtracer_freeze_thaw(betr_bounds, this%num_soilc, this%filter_soilc,  &
-      this%biophys_forc(c))
-  enddo
-  end subroutine ALMDiagnoseDtracerFreezeThaw
-
-  !------------------------------------------------------------------------
   subroutine ALMCalcDewSubFlux(this,  &
        bounds, col, num_hydrologyc, filter_soilc_hydrologyc)
    !DESCRIPTION
