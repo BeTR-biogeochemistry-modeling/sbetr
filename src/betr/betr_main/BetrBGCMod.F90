@@ -1247,8 +1247,9 @@ contains
                                 diff_surf(c,k) * dtime_loc(c)
                         endif
                      else
-                        write(msg,*) 'mass bal error dif '//trim(tracernames(trcid))//new_line('A'), 'mass 0/1',mass0, mass1,'col=',c, &
-                               new_line('A')//'err=', err_tracer(c,k), 'dmass=',dmass(c,k), ' dif=', diff_surf(c,k)*dtime_loc(c), &
+                        write(msg,*) 'mass bal error dif '//trim(tracernames(trcid))//new_line('A'), 'mass 0/1',mass0, &
+                             mass1,'col=',c, &
+                             new_line('A')//'err=', err_tracer(c,k), 'dmass=',dmass(c,k), ' dif=', diff_surf(c,k)*dtime_loc(c), &
                              ' prod=',dot_sum(x=local_source(c,jtops(c):ubj,k),y=dz(c,jtops(c):ubj),bstatus=bstatus)*dtime_loc(c)
 
                         if(bstatus%check_status())return

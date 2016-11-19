@@ -275,15 +275,16 @@ contains
     endif
     call this%betr_time%Init(namelist_buffer)
     !allocate memory
-    allocate(this%betr(bounds%begc:bounds%endc), source=create_betr_type())
-    allocate(this%biophys_forc(bounds%begc:bounds%endc), source=create_betr_biogeophys_input())
-    allocate(this%biogeo_flux(bounds%begc:bounds%endc), source=create_betr_biogeoFlux())
-    allocate(this%biogeo_state(bounds%begc:bounds%endc), source=create_betr_biogeo_state())
-    allocate(this%bstatus(bounds%begc:bounds%endc), source=create_betr_status_type())
-    allocate(this%betr_col(bounds%begc:bounds%endc), source=create_betr_column_type())
-    allocate(this%betr_pft(bounds%begc:bounds%endc), source=create_betr_patch_type())
+    allocate(this%betr(bounds%begc:bounds%endc))
+    allocate(this%biophys_forc(bounds%begc:bounds%endc))
+    allocate(this%biogeo_flux(bounds%begc:bounds%endc))
+    allocate(this%biogeo_state(bounds%begc:bounds%endc))
+    allocate(this%bstatus(bounds%begc:bounds%endc))
+    allocate(this%betr_col(bounds%begc:bounds%endc))
+    allocate(this%betr_pft(bounds%begc:bounds%endc))
     allocate(this%active_col(bounds%begc:bounds%endc))
-    allocate(this%bsimstatus, source = create_betr_status_sim_type())
+    allocate(this%bsimstatus)
+
     call this%bsimstatus%reset()
 
     !grid horizontal bounds
@@ -1055,7 +1056,7 @@ contains
   end subroutine BeTRSimulationPreDiagSoilColWaterFlux
 
   !------------------------------------------------------------------------
-  subroutine BeTRSimulationDiagnoseDtracerFreezeThaw(this, bounds, num_nolakec, filter_nolakec, col)
+  subroutine BeTRSimulationDiagnoseDtracerFreezeThaw(this, bounds, num_nolakec, filter_nolakec, col, lun)
   !
   ! DESCRIPTION
   ! aqueous tracer partition based on freeze-thaw
@@ -1063,6 +1064,7 @@ contains
   ! USES
   use ColumnType            , only : column_type
   use WaterStateType        , only : waterstate_type
+  use LandunitType          , only : landunit_type
   implicit none
   !
   ! Arguments
@@ -1072,6 +1074,7 @@ contains
   integer               , intent(in) :: filter_nolakec(:)                  ! column filter for non-lake points
 !  type(waterstate_type), intent(in) :: waterstate_vars
   type(column_type)     , intent(in) :: col                                ! column type
+  type(landunit_type)   , intent(in)  :: lun
 
   !temporary variables
   type(betr_bounds_type)     :: betr_bounds
