@@ -142,7 +142,6 @@ module TracerBalanceMod
               else
                  err_rel = errtracer(c,kk)/max(abs(beg_tracer_molarmass(c,kk)),abs(end_tracer_molarmass(c,kk)))
               endif
-
               if(abs(err_rel)>err_min_rel .and. do_betr_output)then
                  write(msg,*)'error exceeds the tolerance for tracer '//tracernames(kk), &
                       new_line('A'),'err=',errtracer(c,kk), ' col=',c, &
@@ -154,6 +153,8 @@ module TracerBalanceMod
                       new_line('A'),errMsg(mod_filename, __LINE__)
                  call tracerflux_vars%flux_display(c,kk,betrtracer_vars, msg1)
                  msg = trim(msg)//new_line('A')//trim(msg1)
+                 print*,trim(msg)
+                 pause
                  call betr_status%set_msg(msg=msg, err=-1)
                  return
               endif
@@ -229,6 +230,7 @@ module TracerBalanceMod
                       frozenid(jj),dz(c,1:nlevtrc_soil),betr_status)
                  if(betr_status%check_status())return
               endif
+
            enddo
         enddo
       end associate

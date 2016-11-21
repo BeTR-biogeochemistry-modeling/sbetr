@@ -15,8 +15,6 @@ implicit none
     !waterstate
     real(r8), pointer :: h2osoi_liq_col(:,:)    => null()    !liquid water (kg/m2) (new) (-nlevsno+1:nlevgrnd)
     real(r8), pointer :: h2osoi_ice_col(:,:)    => null()    !ice lens (kg/m2) (new) (-nlevsno+1:nlevgrnd)
-    real(r8), pointer :: h2osoi_liq_old(:,:)    => null()    !liquid water (kg/m2) (old) (-nlevsno+1:nlevgrnd)
-    real(r8), pointer :: h2osoi_ice_old(:,:)    => null()    !ice lens (kg/m2) (old) (-nlevsno+1:nlevgrnd)
     real(r8), pointer :: h2osoi_liqvol_col(:,:) => null()   !volumetric liquid water content
     real(r8), pointer :: h2osoi_icevol_col(:,:) => null()   !volumetric ice water content
     real(r8), pointer :: h2osoi_vol_col(:,:)    => null()    !volumetric water content, total
@@ -182,8 +180,6 @@ contains
   allocate (this%finundated_col(    begc:endc         ) ) ! fraction of column that is inundated, this is for bgc caclulation in betr
   allocate (this%h2osoi_liq_col(    begc:endc,lbj:ubj ) ) !liquid water (kg/m2) (new) (-nlevsno+1:nlevgrnd)
   allocate (this%h2osoi_ice_col(    begc:endc,lbj:ubj ) ) !ice lens (kg/m2) (new) (-nlevsno+1:nlevgrnd)
-  allocate (this%h2osoi_liq_old(    begc:endc,lbj:ubj ) ) !liquid water (kg/m2) (old) (-nlevsno+1:nlevgrnd)
-  allocate (this%h2osoi_ice_old(    begc:endc,lbj:ubj ) ) !ice lens (kg/m2) (old) (-nlevsno+1:nlevgrnd)
   allocate (this%h2osoi_liqvol_col( begc:endc,lbj:ubj ) ) !volumetric liquid water content
   allocate (this%h2osoi_icevol_col( begc:endc,lbj:ubj ) ) !volumetric ice water content
   allocate (this%h2osoi_vol_col(    begc:endc,lbj:ubj ) ) !volumetric water content, total

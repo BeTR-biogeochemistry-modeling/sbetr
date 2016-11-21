@@ -570,7 +570,6 @@ contains
            c = filter(fc)
            if(n>=jtops(c))then
              bunsencef_col(c,n, k)= henrycef_col(c,n,k)*t_soisno(c,n)/12.2_r8
-!             if(n==1)print*,k,betrtracer_vars%tracernames(trcid),henrycef_col(c,n,k)
              !add the pH effect for tracers that can exist in multiple aqueous phases
              if(is_h2o(trcid))then
                !for water isotopes
@@ -1376,8 +1375,6 @@ contains
            tracer_flx_infl(c,j) = bunsencef_topsoi(c,betrtracer_vars%volatilegroupid(j)) * &
                 tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1,j) * qflx_adv(c,0)
 
-!         print*,'trcflx',j,betrtracer_vars%tracernames(j),tracer_flx_infl(c,j),&
-!            bunsencef_topsoi(c,betrtracer_vars%volatilegroupid(j))
          else
            tracer_flx_infl(c,j) = 0._r8
          endif
@@ -1691,7 +1688,6 @@ contains
     do fp = 1, num_soilp
       p = filter_soilp (fp)
       c = pft%column(p)
-
       ! Calculate aerenchyma diffusion
       if (j > jwt(c) .and. t_soisno(c,j) > tfrz .and. pftvarcon%is_grass_patch(pft%itype(p))) then
         ! Attn EK: This calculation of aerenchyma properties is very uncertain. Let's check in once all

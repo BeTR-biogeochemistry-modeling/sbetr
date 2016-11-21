@@ -319,7 +319,6 @@ contains
   call bstatus%reset()
 
   int_mass = dot_sum(this%tracer_conc_mobile_col(c,lbj:ubj,j), dz, bstatus)
-
   end function int_mass_mobile_col
 
   !-----------------------------------------------------------------------
@@ -431,7 +430,6 @@ contains
     state_1d(begc:endc, addone(idtemp1d))=this%tracer_soi_molarmass_col(begc:endc, jj)
     state_1d(begc:endc, addone(idtemp1d))=this%end_tracer_molarmass_col(begc:endc, jj)
   enddo
-
   end associate
   end subroutine retrieve_hist
 

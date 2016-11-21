@@ -34,12 +34,12 @@ module BeTRSimulationALM
      procedure, public :: StepWithDrainage          => ALMStepWithDrainage
      procedure, public :: SetBiophysForcing         => ALMSetBiophysForcing
      !unique subroutines
-     procedure, public :: DiagnoseDtracerFreezeThaw => ALMDiagnoseDtracerFreezeThaw
      procedure, public :: CalcDewSubFlux            => ALMCalcDewSubFlux
      procedure, public :: SoilFluxStateRecv         => ALMBetrSoilFluxStateRecv
      procedure, public :: CalcSmpL                  => ALMCalcSmpL
      procedure, public :: PlantSoilBGCSend          => ALMBetrPlantSoilBGCSend
      procedure, public :: PlantSoilBGCRecv          => ALMBetrPlantSoilBGCRecv
+     procedure, public :: set_active                => ALMset_active
   end type betr_simulation_alm_type
 
   public :: create_betr_simulation_alm
@@ -207,6 +207,24 @@ contains
       call endrun(msg=this%bsimstatus%print_msg())
   end subroutine ALMStepWithoutDrainage
 
+  !---------------------------------------------------------------------------------
+  subroutine ALMset_active(this,bounds,col)
+  
+  !
+  !DESCRIPTION
+  !activate columuns that are active in alm
+  use ColumnType     , only : column_type
+  implicit none
+  ! !ARGUMENTS:
+  class(betr_simulation_alm_type) , intent(inout) :: this
+  type(bounds_type)               , intent(in)    :: bounds
+  type(column_type)               , intent(in)    :: col ! column type
+  
+  integer :: c
+  do c = bounds%begc, bounds%endc
+    this%active_col(c) = (this%active_col(c) .and. col%active(c))
+  enddo
+  end subroutine ALMset_active  
   !---------------------------------------------------------------------------------
   subroutine ALMStepWithDrainage(this, bounds,  col)
    !DESCRIPTION
@@ -523,43 +541,6 @@ contains
   end subroutine ALMBetrPlantSoilBGCRecv
   !------------------------------------------------------------------------
 
-  subroutine ALMDiagnoseDtracerFreezeThaw(this, bounds, num_nolakec, filter_nolakec, col, lun)
-  !
-  ! DESCRIPTION
-  ! aqueous tracer partition based on freeze-thaw
-  !
-  ! USES
-  use ColumnType            , only : column_type
-  use LandunitType          , only : landunit_type
-  use WaterStateType        , only : waterstate_type
-  implicit none
-  !
-  ! Arguments
-  class(betr_simulation_alm_type), intent(inout)   :: this
-  type(bounds_type)     , intent(in) :: bounds
-  integer               , intent(in) :: num_nolakec                        ! number of column non-lake points in column filter
-  integer               , intent(in) :: filter_nolakec(:)                  ! column filter for non-lake points
-  type(landunit_type)   , intent(in) :: lun
-!  type(waterstate_type), intent(in) :: waterstate_vars
-  type(column_type)     , intent(in) :: col                                ! column type
-
-  !temporary variables
-  type(betr_bounds_type)     :: betr_bounds
-  integer :: fc, c
-
-  call this%BeTRSetBounds(betr_bounds)
-
-  call this%BeTRSetcps(bounds, col)
-
-  do fc = 1, num_nolakec
-    c = filter_nolakec(fc)
-    if(.not. this%active_col(c))cycle
-    call this%betr(c)%diagnose_dtracer_freeze_thaw(betr_bounds, this%num_soilc, this%filter_soilc,  &
-      this%biophys_forc(c))
-  enddo
-  end subroutine ALMDiagnoseDtracerFreezeThaw
-
-  !------------------------------------------------------------------------
   subroutine ALMCalcDewSubFlux(this,  &
        bounds, col, num_hydrologyc, filter_soilc_hydrologyc)
    !DESCRIPTION
@@ -716,6 +697,7 @@ contains
   type(soilstate_type)        , optional, intent(in) :: soilstate_vars
 
   integer :: p, pi, c
+  integer :: npft_loc
 
   call this%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi, carbonflux_vars, waterstate_vars, &
       waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
@@ -724,15 +706,23 @@ contains
 
   !the following will be ALM specific
   !big leaf model
+  !set profiles autotrohpic respiration
   do c = bounds%begc, bounds%endc
-    do pi = 1, betr_maxpatch_pft
-      if (pi <= col%npfts(c)) then
-        p = col%pfti(c) + pi - 1
-        if (pft%active(p)) then
-          this%biophys_forc(c)%rr_patch(pi,1:nlevsoi) = carbonflux_vars%rr_patch(p) !* root_prof(p,1:nlevsoi)
+    npft_loc = ubound(carbonflux_vars%rr_patch,1)-lbound(carbonflux_vars%rr_patch,1)+1
+    if(npft_loc /= col%npfts(c) .and. col%pfti(c) /= lbound(carbonflux_vars%rr_patch,1)) then
+      do pi = 1, betr_maxpatch_pft
+        this%biophys_forc(c)%rr_patch(pi,1:nlevsoi) = 0._r8
+      enddo
+    else
+      do pi = 1, betr_maxpatch_pft
+        if (pi <= col%npfts(c)) then
+          p = col%pfti(c) + pi - 1
+          if (pft%active(p)) then
+            this%biophys_forc(c)%rr_patch(pi,1:nlevsoi) = carbonflux_vars%rr_patch(p) !* root_prof(p,1:nlevsoi)
+          endif
         endif
-      endif
-    enddo
+      enddo
+    endif
   enddo
   !dvgm
   !

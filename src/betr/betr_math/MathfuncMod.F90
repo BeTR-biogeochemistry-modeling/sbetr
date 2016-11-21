@@ -31,7 +31,7 @@ module MathfuncMod
   public :: pd_decomp
   public :: num2str
   public :: fpmax
-
+  public :: bisnan
   interface cumsum
      module procedure cumsum_v, cumsum_m
   end interface cumsum
@@ -586,4 +586,17 @@ contains
   ans = max(inval, 0._r8)
   return
   end function fpmax  
+
+  !-------------------------------------------------------------------------------
+  function bisnan(inval)result(ans)
+  
+  !DESCRIPTION
+  !determine if the variable is nan
+  implicit none
+  real(r8), intent(in) :: inval
+
+  logical :: ans
+
+  ans = (inval/=inval)
+  end function bisnan 
 end module MathfuncMod

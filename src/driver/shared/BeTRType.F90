@@ -202,13 +202,13 @@ contains
     character(len=betr_string_length)      :: reaction_method
     character(len=betr_string_length_long) :: ioerror_msg
     logical                                :: advection_on, diffusion_on, reaction_on, ebullition_on
-
+    logical                                :: esm_on
     !-----------------------------------------------------------------------
 
     namelist / betr_parameters /                  &
          reaction_method,                         &
          advection_on, diffusion_on, reaction_on, &
-         ebullition_on
+         ebullition_on, esm_on
 
     call bstatus%reset()
     reaction_method = ''
@@ -216,7 +216,7 @@ contains
     diffusion_on    = .true.
     reaction_on     = .true.
     ebullition_on   =.true.
-
+    esm_on          =.false.
     ! ----------------------------------------------------------------------
     ! Read namelist from standard input.
     ! ----------------------------------------------------------------------
@@ -230,7 +230,7 @@ contains
        end if
     end if
 
-    if (.true.) then
+    if (.not. esm_on) then
        write(stdout, *)
        write(stdout, *) '--------------------'
        write(stdout, *)
@@ -449,6 +449,7 @@ contains
                   endif
                   !when drainage is negative, assume the flux is magically coming from other groundwater sources
                   tracer_flx_drain(c,k)     = tracer_flx_drain(c,k)  + aqucon * qflx_drain_vr(c,j)
+!                  print*,'c,j,k,drain',c,j,k,tracer_conc_mobile(c,j,k),qflx_drain_vr(c,j)
                   tracer_conc_mobile(c,j,k) =  tracer_conc_mobile(c,j,k) - aqucon * qflx_drain_vr(c,j)/dz(c,j)
                   if(tracer_conc_mobile(c,j,k)<0._r8)then
                      tracer_flx_drain(c,k) = tracer_flx_drain(c,k)+tracer_conc_mobile(c,j,k)*dz(c,j)
@@ -1273,7 +1274,6 @@ contains
   real(r8)          , intent(out) :: states_2d(bounds%begc:bounds%endc,lbj:ubj, 1:num_state2d)
 
   call this%tracerstates%retrieve_hist(bounds, lbj, ubj, states_2d, states_1d, this%tracers)
-
 
   end subroutine HistRetrieveState
 
