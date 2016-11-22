@@ -1,4 +1,4 @@
-module shr_nl_mod
+module bshr_nl_mod
 
 ! Utilities for namelist reading
 ! Adapted Fall 2012 from CAM's namelist_utils.
@@ -85,4 +85,4 @@ subroutine shr_nl_find_group_name(unit, group, status)
 
 end subroutine shr_nl_find_group_name
 
-end module shr_nl_mod
+end module bshr_nl_mod
