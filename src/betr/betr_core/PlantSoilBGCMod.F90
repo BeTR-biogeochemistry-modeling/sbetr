@@ -23,6 +23,7 @@ type, abstract :: plant_soilbgc_type
    procedure(integrate_vr_flux_interface)                     , deferred :: integrate_vr_flux
    !send in bgc inputs
    procedure(lsm_betr_plant_soilbgc_send_interface)          , deferred  :: lsm_betr_plant_soilbgc_send
+
 end type plant_soilbgc_type
 
 
@@ -50,7 +51,7 @@ end type plant_soilbgc_type
 
   !----------------------------------------------------------------------
   subroutine plant_soilbgc_summary_interface(this,bounds, lbj, ubj, pft, numf, &
-       filter, dtime, dz, betrtracer_vars, tracerflux_vars, betr_status)
+       filter, dtime, dz, betrtracer_vars, tracerflux_vars, biogeo_flux, betr_status)
 
   ! !USES:
   use BeTRTracerType , only : BeTRtracer_type
@@ -59,6 +60,7 @@ end type plant_soilbgc_type
   use bshr_kind_mod  , only : r8 => shr_kind_r8
   use BetrStatusType , only : betr_status_type
   use BeTR_PatchType , only : betr_patch_type
+  use BeTR_biogeoFluxType  , only : betr_biogeo_flux_type
   ! !ARGUMENTS:
   import :: plant_soilbgc_type
 
@@ -72,6 +74,7 @@ end type plant_soilbgc_type
   real(r8)                  , intent(in) :: dz(bounds%begc:bounds%endc,1:ubj)
   type(BeTRtracer_type )    , intent(in) :: betrtracer_vars
   type(tracerflux_type)     , intent(in) :: tracerflux_vars
+  type(betr_biogeo_flux_type)      , intent(inout) :: biogeo_flux
   type(betr_status_type)    , intent(out):: betr_status
 
   end subroutine plant_soilbgc_summary_interface

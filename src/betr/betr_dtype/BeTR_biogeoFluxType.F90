@@ -3,6 +3,10 @@ module BeTR_biogeoFluxType
   !module for flux data exchange between lsm and betr
   use bshr_kind_mod  , only : r8 => shr_kind_r8
   use betr_decompMod , only : betr_bounds_type
+  use tracer_varcon, only : use_c13_betr, use_c14_betr
+  use BeTR_carbonfluxRecvType, only : betr_carbonflux_recv_type
+  use BeTR_nitrogenfluxRecvType, only : betr_nitrogenflux_recv_type
+  use BeTR_phosphorusfluxRecvType, only : betr_phosphorusflux_recv_type
 implicit none
 
   type betr_biogeo_flux_type
@@ -14,14 +18,16 @@ implicit none
     real(r8), pointer :: qflx_totdrain_col        (:)   => null() ! col total liquid water drainage  (m/time step), updated in betr
 
 
-    real(r8), pointer :: hr_vr_col(:,:)       => null()  !vertically resolved heterotrophic respiration, g C/m2/s
-    real(r8), pointer :: f_denit_vr_col(:,:)  => null()  !vertically resolved denitrification, g N /m2/s
-    real(r8), pointer :: f_nit_vr_col(:,:)    => null()  !vertically resolved nitrification, g N/m2/s
-    real(r8), pointer :: f_n2o_nit_vr(:,:)    => null()  !vertically resolved n2o production from nitrification, gN/m2/s
+    type(betr_carbonflux_recv_type) :: c12flux_vars
+    type(betr_carbonflux_recv_type) :: c13flux_vars
+    type(betr_carbonflux_recv_type) :: c14flux_vars
+    type(betr_nitrogenflux_recv_type) :: n14flux_vars
+    type(betr_phosphorusflux_recv_type) :: p31flux_vars
 
     contains
       procedure, public  :: Init
       procedure, private :: InitAllocate
+      procedure, public  :: reset
   end type betr_biogeo_flux_type
 
   public :: create_betr_biogeoFlux
@@ -47,6 +53,16 @@ contains
   class(betr_biogeo_flux_type), intent(inout)  :: this
   type(betr_bounds_type), intent(in) :: bounds
 
+  call this%c12flux_vars%Init(bounds)
+  if(use_c13_betr)then
+    call this%c13flux_vars%Init(bounds)
+  endif
+  if(use_c14_betr)then
+    call this%c14flux_vars%Init(bounds)
+  endif
+  call this%n14flux_vars%Init(bounds)
+  call this%p31flux_vars%Init(bounds)
+
   call this%InitAllocate(bounds)
   end subroutine Init
 
@@ -71,13 +87,24 @@ contains
   allocate(this%qflx_drain_vr_col        (begc:endc,lbj:ubj) ) ! col liquid water losted as drainage (m /time step)
   allocate(this%qflx_totdrain_col        (begc:endc)   ) ! col total liquid water drainage  (m/time step), updated in betr
 
-  allocate(this%hr_vr_col(begc:endc,lbj:ubj))
-  allocate(this%f_denit_vr_col(begc:endc,lbj:ubj))
-  allocate(this%f_nit_vr_col(begc:endc,lbj:ubj))
-  allocate(this%f_n2o_nit_vr(begc:endc,lbj:ubj))
-
   end subroutine InitAllocate
 
+  !------------------------------------------------------------------------
+  subroutine reset(this, value_column)
+  implicit none
+  class(betr_biogeo_flux_type)  :: this
+  real(r8), intent(in) :: value_column
 
+  call this%c12flux_vars%reset(value_column)
+  if(use_c13_betr)then
+    call this%c13flux_vars%reset(value_column)
+  endif
+  if(use_c14_betr)then
+    call this%c14flux_vars%reset(value_column)
+  endif
+  call this%n14flux_vars%reset(value_column)
+  call this%p31flux_vars%reset(value_column)
+
+  end subroutine reset
 
 end module BeTR_biogeoFluxType

@@ -65,7 +65,7 @@ module MockPlantSoilBGCType
 
   !----------------------------------------------------------------------
   subroutine plant_soilbgc_summary(this,bounds, lbj, ubj, pft, numf, &
-       filter, dtime, dz, betrtracer_vars, tracerflux_vars, betr_status)
+       filter, dtime, dz, betrtracer_vars, tracerflux_vars, biogeo_flux, betr_status)
   !DESCRIPTION
   !summarize bgc coupling flux variables
   ! !USES:
@@ -74,6 +74,7 @@ module MockPlantSoilBGCType
   use bshr_kind_mod  , only : r8 => shr_kind_r8
   use BetrStatusType , only : betr_status_type
   use BeTR_PatchType , only : betr_patch_type
+  use BeTR_biogeoFluxType  , only : betr_biogeo_flux_type
   implicit none
   ! !ARGUMENTS:
   class(plant_soilbgc_mock_run_type) , intent(inout) :: this
@@ -86,6 +87,7 @@ module MockPlantSoilBGCType
   real(r8)                           , intent(in) :: dz(bounds%begc:bounds%endc,1:ubj)
   type(BeTRtracer_type )             , intent(in) :: betrtracer_vars
   type(tracerflux_type)              , intent(in) :: tracerflux_vars
+  type(betr_biogeo_flux_type)        , intent(inout) :: biogeo_flux
   type(betr_status_type)             , intent(out):: betr_status
 
   call betr_status%reset()

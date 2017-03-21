@@ -3,17 +3,17 @@ module ALMBeTRNLMod
   use shr_log_mod , only: errMsg => shr_log_errMsg
   use betr_constants , only : betr_namelist_buffer_size
   use abortutils , only: endrun
+  use betr_constants, only : betr_string_length
 implicit none
 
-
-
+  character(len=betr_string_length), public :: reaction_method
   character(len=betr_namelist_buffer_size), public :: betr_namelist_buffer
   public :: betr_readNL
 contains
 
 
   !-------------------------------------------------------------------------------
-  subroutine betr_readNL(NLFilename)
+  subroutine betr_readNL(NLFilename, use_c13, use_c14)
     !
     ! !DESCRIPTION:
     ! read namelist for betr configuration
@@ -24,10 +24,13 @@ contains
     use shr_mpi_mod   , only : shr_mpi_bcast
     use betr_utils    , only : log2str
     use clm_varctl    , only : iulog
-    use betr_constants, only : betr_string_length
+
+    use tracer_varcon , only : use_c13_betr, use_c14_betr
     implicit none
     ! !ARGUMENTS:
     character(len=*), intent(IN) :: NLFilename              ! Namelist filename
+    logical,          intent(in) :: use_c13
+    logical,          intent(in) :: use_c14
                                                             !
                                                             ! !LOCAL VARIABLES:
     integer                      :: ierr                    ! error code
@@ -35,8 +38,7 @@ contains
     character(len=32)            :: subname = 'betr_readNL' ! subroutine name
     !-----------------------------------------------------------------------
 
-    character(len=betr_string_length)      :: reaction_method
-    logical                                :: advection_on, diffusion_on, reaction_on, ebullition_on
+    logical                                :: advection_on, diffusion_on, ebullition_on, reaction_on
     character(len=1), parameter  :: quote = ''''
     namelist / betr_inparm / reaction_method, &
       advection_on, diffusion_on, reaction_on, ebullition_on
@@ -51,6 +53,8 @@ contains
     reaction_on     = .true.
     ebullition_on   = .true.
     esm_on          = .true.
+    use_c13_betr    = use_c13
+    use_c14_betr    = use_c14
     if ( masterproc )then
 
        unitn = getavu()

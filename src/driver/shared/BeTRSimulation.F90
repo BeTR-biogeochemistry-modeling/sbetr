@@ -51,7 +51,7 @@ module BeTRSimulation
      character(len=betr_filename_length) , private :: hist_filename
 
      type(betr_regression_type), private          :: regression
-     type(betr_time_type), public               :: betr_time
+     type(betr_time_type), public                 :: betr_time
      integer, public                              :: num_soilp
      integer, public, allocatable                 :: filter_soilp(:)
      integer, public                              :: num_jtops
@@ -76,7 +76,7 @@ module BeTRSimulation
      real(r8), pointer :: rest_states_1d(:,:)
      real(r8), pointer :: hist_fluxes_1d(:,:)
      real(r8), pointer :: hist_fluxes_2d(:,:,:)
-
+     logical, private :: active_soibgc
      ! FIXME(bja, 201603) most of these types should be private!
 
      ! NOTE(bja, 201603) BeTR types only, no LSM specific types here!
@@ -104,9 +104,10 @@ module BeTRSimulation
      procedure, public :: RetrieveBiogeoFlux      => BeTRSimulationRetrieveBiogeoFlux
      procedure, public :: CreateOfflineHistory    => hist_htapes_create
      procedure, public :: WriteOfflineHistory     => hist_write
+
      procedure, public :: WriteRegressionOutput
      !the following are used to interact with lsm
-
+     procedure, public :: do_soibgc
      procedure, public :: BeTRRestart             => BeTRSimulationRestart
      procedure, public :: BeTRRestartOffline      => BeTRSimulationRestartOffline
      procedure, public :: BeTRRestartOpen         => BeTRSimulationRestartOpen
@@ -265,6 +266,7 @@ contains
     character(len=*), parameter :: subname = 'BeTRInit'
     type(betr_bounds_type) :: betr_bounds
     integer :: c, l
+    logical :: asoibgc
     !print*,'base_filename',trim(base_filename)
 
     biulog = iulog
@@ -301,6 +303,7 @@ contains
       call this%betr_col(c)%Init(betr_bounds)
 
       call this%betr_pft(c)%Init(betr_bounds)
+
       if (lun%itype(l) == istsoil .or. lun%itype(l) == istcrop) then
         this%active_col(c) = .true.
       else
@@ -313,13 +316,15 @@ contains
 
     do c = bounds%begc, bounds%endc
       call this%betr(c)%Init(namelist_buffer, betr_bounds, this%betr_col(c), &
-          this%biophys_forc(c), this%bstatus(c))
+          this%biophys_forc(c), asoibgc, this%bstatus(c))
+      if(c==bounds%begc)this%active_soibgc=asoibgc
       if(this%bstatus(c)%check_status())then
         call this%bsimstatus%setcol(c)
         call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
         exit
       endif
     enddo
+
     if(this%bsimstatus%check_status())call endrun(msg=this%bsimstatus%print_msg())
 
     !identify variables that are used for history output
@@ -1907,5 +1912,16 @@ contains
   betr_bounds%begl = 1; betr_bounds%endl = 1
   betr_bounds%begg = 1; betr_bounds%endg = 1
   end subroutine BeTRSimulationSetBounds
+
+  !------------------------------------------------------------------------
+  function do_soibgc(this)result(yesno)
+
+  implicit none
+  class(betr_simulation_type) , intent(inout) :: this
+
+  logical :: yesno
+  yesno = this%active_soibgc
+  return
+  end function do_soibgc
 
 end module BeTRSimulation

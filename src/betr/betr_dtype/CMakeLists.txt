@@ -1,6 +1,15 @@
 set(BETR_DTYPE_SOURCES
   BeTR_aerocondType.F90
   BeTR_EcophysConType.F90
+  BeTR_carbonfluxType.F90
+  BeTR_nitrogenfluxType.F90
+  BeTR_phosphorusfluxType.F90
+  BeTR_carbonfluxRecvType.F90
+  BeTR_nitrogenfluxRecvType.F90
+  BeTR_phosphorusfluxRecvType.F90
+  BeTR_carbonstateRecvType.F90
+  BeTR_nitrogenstateRecvType.F90
+  BeTR_phosphorusstateRecvType.F90
   BeTR_biogeophysInputType.F90
   BeTR_biogeoStateType.F90
   BeTR_biogeoFluxType.F90
