@@ -47,7 +47,7 @@ contains
     ! Read namelist from standard input.
     ! ----------------------------------------------------------------------
 
-    reaction_method = ''
+    reaction_method = 'mock_run'
     advection_on    = .true.
     diffusion_on    = .true.
     reaction_on     = .true.
