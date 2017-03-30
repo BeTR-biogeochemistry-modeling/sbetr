@@ -263,10 +263,15 @@ contains
 
   !--------------------------------------------------------------------
   subroutine ReadNamelist(this, namelist_buffer, bstatus)
+  !
+  ! DESCRIPTION
+  ! reading bgc parameters
+  ! will be updated later
   use betr_constants , only : stdout, betr_string_length_long, betr_namelist_buffer_size
   use BetrStatusType , only : betr_status_type
   use betr_ctrl      , only : iulog => biulog
   use bshr_log_mod   , only : errMsg => shr_log_errMsg
+
   implicit none
   class(BiogeoCon_type), intent(inout) :: this
   character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
@@ -286,7 +291,7 @@ contains
   use_c13 = .false.
   use_c14 = .false.
 
-  if ( .true. )then
+  if ( .false. )then
      ioerror_msg=''
      read(namelist_buffer, nml=soibgc_parameters, iostat=nml_error, iomsg=ioerror_msg)
      if (nml_error /= 0) then
@@ -305,9 +310,7 @@ contains
      write(stdout, *)
      write(stdout, *) '--------------------'
   endif
-  print*,'use_c13 14',use_c13,use_c14
   this%use_c13 = use_c13
   this%use_c14 = use_c14
-  print*,'xxxuse_c13 14',use_c13,use_c14
   end subroutine ReadNamelist
 end module BiogeoConType

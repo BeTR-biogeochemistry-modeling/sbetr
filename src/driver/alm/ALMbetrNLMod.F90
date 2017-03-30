@@ -60,7 +60,7 @@ contains
        unitn = getavu()
        write(iulog,*) 'Read in betr_inparm  namelist'
        call opnfil (NLFilename, unitn, 'F')
-       call shr_nl_find_group_name(unitn, 'clm_CanopyHydrology_inparm', status=ierr)
+       call shr_nl_find_group_name(unitn, 'betr_inparm', status=ierr)
        if (ierr == 0) then
           read(unitn, betr_inparm, iostat=ierr)
           if (ierr /= 0) then
