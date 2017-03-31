@@ -19,6 +19,8 @@ module ApplicationsFactory
        __FILE__
   private
   public :: create_betr_usr_application
+  public :: AppLoadParameters
+
 contains
 
   subroutine create_betr_usr_application(bgc_reaction, plant_soilbgc, method, bstatus)
@@ -112,4 +114,29 @@ contains
   end select
 
   end function create_plant_soilbgc_type
+
+
+  !-------------------------------------------------------------------------------
+  subroutine AppLoadParameters(bgc_namelist_buffer, reaction_method, bstatus)
+  !
+  ! DESCRIPTION
+  ! read in the parameters for specified bgc implementation
+  use BiogeoConType, only : bgc_con_eca
+  use betr_constants , only : betr_namelist_buffer_size_ext
+  use BetrStatusType , only : betr_status_type
+  implicit none
+  character(len=betr_namelist_buffer_size_ext), intent(in) :: bgc_namelist_buffer
+  character(len=*), intent(in) :: reaction_method
+  type(betr_status_type), intent(out)   :: bstatus
+  character(len=255) :: msg
+
+   select case (trim(reaction_method))
+   case ("eca_cnp")
+     call  bgc_con_eca%Init(bgc_namelist_buffer, bstatus)
+   case default
+     msg = "no parameter file to read for the specified bgc method"//errmsg(__FILE__, __LINE__)
+     call bstatus%set_msg(msg=msg,err=-1)
+   end select
+
+  end subroutine  AppLoadParameters
 end module ApplicationsFactory

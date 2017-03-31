@@ -45,6 +45,7 @@ module BgcReactionsCentECACnpType
   use BetrStatusType        , only : betr_status_type
   use BiogeoConType         , only : BiogeoCon_type
   use BgcCentCnpIndexType   , only : centurybgc_index_type
+  use BiogeoConType         , only : bgc_con_eca
   implicit none
 
   save
@@ -60,7 +61,7 @@ module BgcReactionsCentECACnpType
     bgc_reaction_CENTURY_ECACNP_type
     type(centurybgceca_type), private, pointer :: centuryeca(:,:)
     type(centuryeca_forc_type), private, pointer :: centuryforc(:,:)
-    type(BiogeoCon_type), private :: biogeo_con
+
     type(centurybgc_index_type),private :: centurybgc_index
     logical, private :: use_c13
     logical, private :: use_c14
@@ -163,9 +164,9 @@ contains
 
     if (this%dummy_compiler_warning) continue
     !initialize model parameters
-    call this%biogeo_con%Init(namelist_buffer, bstatus)
+    call bgc_con_eca%Init(namelist_buffer, bstatus)
 
-    call this%centurybgc_index%Init(this%biogeo_con%use_c13, this%biogeo_con%use_c14, betr_maxpatch_pft)
+    call this%centurybgc_index%Init(bgc_con_eca%use_c13, bgc_con_eca%use_c14, betr_maxpatch_pft)
 
     if(bstatus%check_status())return
 
@@ -178,14 +179,14 @@ contains
     !initialize
     do j = lbj, ubj
       do c = bounds%begc, bounds%endc
-        call this%centuryeca(c,j)%Init(this%biogeo_con, bstatus)
+        call this%centuryeca(c,j)%Init(bgc_con_eca, bstatus)
         if(bstatus%check_status())return
         call this%centuryforc(c,j)%Init(this%centurybgc_index)
 
       enddo
     enddo
-    this%use_c13 = this%biogeo_con%use_c13
-    this%use_c14 = this%biogeo_con%use_c14
+    this%use_c13 = bgc_con_eca%use_c13
+    this%use_c14 = bgc_con_eca%use_c14
     print*,'l;dgladagausexx 13 14',this%use_c13, this%use_c14
     !set up betr
     nelm =this%centurybgc_index%nelms

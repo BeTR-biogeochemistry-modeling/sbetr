@@ -115,14 +115,16 @@ implicit none
    procedure, private :: set_defpar_default
    procedure, private :: ReadNamelist
  end type BiogeoCon_type
+
+ type(BiogeoCon_type), public :: bgc_con_eca
 contains
   !--------------------------------------------------------------------
   subroutine Init(this, namelist_buffer, bstatus)
-  use betr_constants , only : betr_namelist_buffer_size
+  use betr_constants , only : betr_namelist_buffer_size_ext
   use BetrStatusType , only : betr_status_type
   implicit none
   class(BiogeoCon_type), intent(inout) :: this
-  character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
+  character(len=betr_namelist_buffer_size_ext) , intent(in)    :: namelist_buffer
   type(betr_status_type)                   , intent(out) :: bstatus
 
   call bstatus%reset()
@@ -267,14 +269,14 @@ contains
   ! DESCRIPTION
   ! reading bgc parameters
   ! will be updated later
-  use betr_constants , only : stdout, betr_string_length_long, betr_namelist_buffer_size
+  use betr_constants , only : stdout, betr_string_length_long, betr_namelist_buffer_size_ext
   use BetrStatusType , only : betr_status_type
   use betr_ctrl      , only : iulog => biulog
   use bshr_log_mod   , only : errMsg => shr_log_errMsg
-
+  use tracer_varcon, only : use_c13_betr, use_c14_betr
   implicit none
   class(BiogeoCon_type), intent(inout) :: this
-  character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
+  character(len=betr_namelist_buffer_size_ext) , intent(in)    :: namelist_buffer
   type(betr_status_type)                   , intent(out) :: bstatus
 
 
@@ -283,7 +285,7 @@ contains
   integer                                :: nml_error
   character(len=betr_string_length_long) :: ioerror_msg
   logical :: use_c13, use_c14
-  namelist / soibgc_parameters /                  &
+  namelist / soibgc_ecaparam /                  &
        use_c13, use_c14
 
 
@@ -293,9 +295,9 @@ contains
 
   if ( .false. )then
      ioerror_msg=''
-     read(namelist_buffer, nml=soibgc_parameters, iostat=nml_error, iomsg=ioerror_msg)
+     read(namelist_buffer, nml=soibgc_ecaparam, iostat=nml_error, iomsg=ioerror_msg)
      if (nml_error /= 0) then
-        call bstatus%set_msg(msg="ERROR reading soibgc_parameters namelist "//errmsg(filename, __LINE__),err=-1)
+        call bstatus%set_msg(msg="ERROR reading soibgc_ecaparam namelist "//errmsg(filename, __LINE__),err=-1)
         return
      end if
   end if
@@ -304,13 +306,13 @@ contains
      write(stdout, *)
      write(stdout, *) '--------------------'
      write(stdout, *)
-     write(stdout, *) ' soibgc_parameters namelist settings :'
+     write(stdout, *) ' soibgc_ecaparam namelist settings :'
      write(stdout, *)
-     write(stdout, soibgc_parameters)
+     write(stdout, soibgc_ecaparam)
      write(stdout, *)
      write(stdout, *) '--------------------'
   endif
-  this%use_c13 = use_c13
-  this%use_c14 = use_c14
+  this%use_c13 = use_c13_betr
+  this%use_c14 = use_c14_betr
   end subroutine ReadNamelist
 end module BiogeoConType
