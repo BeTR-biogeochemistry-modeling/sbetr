@@ -1165,9 +1165,7 @@ contains
   !create betr applications based on method
   !USES
   use ReactionsFactory    , only : create_betr_def_application
-#if (defined BETR_BGC)
   use ApplicationsFactory , only : create_betr_usr_application
-#endif
   use BetrStatusType      , only : betr_status_type
   implicit none
   !ARGUMENTS
@@ -1186,14 +1184,12 @@ contains
   asoibgc = .false.
   !if it is a default case, create it
   call create_betr_def_application(bgc_reaction, plant_soilbgc, method, yesno)
-#if (defined BETR_BGC)
   if(.not. yesno)then
     call create_betr_usr_application(bgc_reaction, plant_soilbgc, method, bstatus)
   endif
-  if(trim(method) =='BECACNP')then
+  if(trim(method) =='eca_cnp')then
     asoibgc = .true.
   endif
-#endif
   end subroutine create_betr_application
 
    !------------------------------------------------------------------------
