@@ -4,12 +4,13 @@ module BeTR_nitrogenfluxRecvType
 implicit none
 
   type, public :: betr_nitrogenflux_recv_type
-    real(r8), pointer :: f_denit_vr_col(:,:)
+    real(r8), pointer :: f_denit_vr_col(:,:)  => null()
     real(r8), pointer :: f_nit_vr_col(:,:)
     real(r8), pointer :: f_n2o_nit_vr(:,:)
 
     real(r8), pointer :: smin_no3_to_plant_patch(:)
     real(r8), pointer :: smin_nh4_to_plant_patch(:)
+    real(r8), pointer :: fire_decomp_nloss_col(:) => null()
 
     real(r8), pointer :: f_nit_col(:)
     real(r8), pointer :: f_denit_col(:)
@@ -61,6 +62,7 @@ implicit none
   allocate(this%f_n2o_nit_col(begc:endc))
   allocate(this%smin_no3_leached_col(begc:endc))
   allocate(this%smin_no3_runoff_col(begc:endc))
+  allocate(this%fire_decomp_nloss_col(begc:endc))
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------
@@ -82,6 +84,6 @@ implicit none
   this%f_n2o_nit_col(:) = value_column
   this%smin_no3_leached_col(:) = value_column
   this%smin_no3_runoff_col(:) = value_column
-
+  this%fire_decomp_nloss_col(:) = value_column
   end subroutine reset
 end module BeTR_nitrogenfluxRecvType

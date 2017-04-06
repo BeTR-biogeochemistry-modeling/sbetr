@@ -6,6 +6,9 @@ implicit none
   type, public :: betr_phosphorusflux_recv_type
     real(r8), pointer :: sminp_leached_col(:) => null()
     real(r8), pointer :: sminp_to_plant_patch(:) => null() !integrated phosphate goes to plant at patch (gN/m2/s)
+    real(r8), pointer :: fire_decomp_ploss_col(:) => null()
+    real(r8), pointer :: supplement_to_sminp_col(:) => null()
+    real(r8), pointer :: secondp_to_occlp_col(:) => null()
   contains
     procedure, public  :: Init
     procedure, private :: InitAllocate
@@ -40,6 +43,9 @@ implicit none
 
   allocate(this%sminp_leached_col(begc:endc))
   allocate(this%sminp_to_plant_patch(begp:endp))
+  allocate(this%fire_decomp_ploss_col(begc:endc))
+  allocate(this%supplement_to_sminp_col(begc:endc))
+  allocate(this%secondp_to_occlp_col(begc:endc))
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------
@@ -50,5 +56,8 @@ implicit none
 
   this%sminp_leached_col(:) = value_column
   this%sminp_to_plant_patch(:) = value_column
+  this%fire_decomp_ploss_col(:) = value_column
+  this%supplement_to_sminp_col(:) = value_column
+  this%secondp_to_occlp_col(:) = value_column
   end subroutine reset
 end module BeTR_phosphorusfluxRecvType

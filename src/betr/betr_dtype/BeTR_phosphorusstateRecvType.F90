@@ -9,9 +9,9 @@ implicit none
     real(r8), pointer :: totsomp_col(:) => null()
     real(r8), pointer :: totlitp_1m_col(:) => null()
     real(r8), pointer :: totsomp_1m_col(:) => null()
-    real(r8), pointer :: solutionp_col(:) => null()
-    real(r8), pointer :: labilep_col(:) => null()
-    real(r8), pointer :: secondp_col(:) => null()
+    real(r8), pointer :: sminp_col(:) => null()
+    real(r8), pointer :: occlp_col(:) => null()
+
   contains
     procedure, public  :: Init
     procedure, private :: InitAllocate
@@ -49,9 +49,9 @@ implicit none
   allocate(this%totsomp_col(begc:endc))
   allocate(this%totlitp_1m_col(begc:endc))
   allocate(this%totsomp_1m_col(begc:endc))
-  allocate(this%solutionp_col(begc:endc))
-  allocate(this%labilep_col(begc:endc))
-  allocate(this%secondp_col(begc:endc))
+  allocate(this%sminp_col(begc:endc))
+  allocate(this%occlp_col(begc:endc))
+
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------
@@ -65,8 +65,8 @@ implicit none
   this%totsomp_col(:) = value_column
   this%totlitp_1m_col(:) = value_column
   this%totsomp_1m_col(:) = value_column
-  this%solutionp_col(:) = value_column
-  this%labilep_col(:) = value_column
-  this%secondp_col(:) = value_column
+  this%sminp_col(:) = value_column
+  this%occlp_col(:) = value_column
+
   end subroutine reset
 end module BeTR_phosphorusstateRecvType

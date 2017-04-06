@@ -15,7 +15,6 @@ module BeTRSimulationALM
   use BeTRSimulation      , only : betr_simulation_type
   use BeTR_TimeMod        , only : betr_time_type
   use EcophysConType      , only : ecophyscon_type
-  use BeTR_EcophysConType , only : betr_ecophyscon_type
   use tracer_varcon       , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
   use betr_decompMod      , only : betr_bounds_type
   use betr_varcon         , only : betr_maxpatch_pft
@@ -26,7 +25,6 @@ module BeTRSimulationALM
        __FILE__
 
   type, public, extends(betr_simulation_type) :: betr_simulation_alm_type
-     type(betr_ecophyscon_type) :: betr_ecophyscon
    contains
      procedure :: InitOnline                        => ALMInit
      procedure :: Init                              => ALMInitOffline
@@ -313,7 +311,7 @@ contains
 
   !temporary variables
   type(betr_bounds_type) :: betr_bounds
-  integer :: c, fc, j
+  integer :: c, fc, j, c_l
   ! remove compiler warnings
   if (this%num_soilc > 0)     continue
   if (bounds%begc > 0)        continue
@@ -323,7 +321,9 @@ contains
   associate(                                           &
     ndep_prof     => cnstate_vars%ndep_prof_col     ,  &
     pdep_prof     => cnstate_vars%pdep_prof_col     ,  &
-    nfixation_prof=> cnstate_vars%nfixation_prof_col   &
+    nfixation_prof=> cnstate_vars%nfixation_prof_col,  &
+    frac_loss_lit_to_fire_col=> cnstate_vars%frac_loss_lit_to_fire_col, &
+    frac_loss_cwd_to_fire_col=> cnstate_vars%frac_loss_cwd_to_fire_col  &
   )
   call this%BeTRSetBounds(betr_bounds)
 
@@ -331,10 +331,13 @@ contains
   call this%set_transient_kinetics_par(betr_bounds, col, pft, num_soilc, filter_soilc, PlantMicKinetics_vars)
 
   !set biophysical forcing
+  c_l = 1
   do fc = 1, num_soilc
     c = filter_soilc(fc)
     call this%biophys_forc(c)%reset(value_column=0._r8)
-    this%biophys_forc(c)%isoilorder(1) = 1                 !this needs update
+    this%biophys_forc(c)%isoilorder(c_l) = 1                 !this needs update
+    this%biophys_forc(c)%frac_loss_lit_to_fire_col(c_l) =frac_loss_lit_to_fire_col(c)
+    this%biophys_forc(c)%frac_loss_cwd_to_fire_col(c_l) =frac_loss_cwd_to_fire_col(c)
   enddo
 
   !sum up carbon input profiles
@@ -646,22 +649,31 @@ contains
 
     !recollect soil respirations,
     c12flux_vars%hr_col(c) = this%biogeo_flux(c)%c12flux_vars%hr_col(c_l)
+    c12flux_vars%fire_decomp_closs_col(c) = this%biogeo_flux(c)%c12flux_vars%fire_decomp_closs_col(c_l)
+
     if(use_c13_betr)then
       c13flux_vars%hr_col(c) = this%biogeo_flux(c)%c13flux_vars%hr_col(c_l)
+      c13flux_vars%fire_decomp_closs_col(c) = this%biogeo_flux(c)%c13flux_vars%fire_decomp_closs_col(c_l)
     endif
     if(use_c14_betr)then
       c14flux_vars%hr_col(c) = this%biogeo_flux(c)%c14flux_vars%hr_col(c_l)
+      c14flux_vars%fire_decomp_closs_col(c) = this%biogeo_flux(c)%c14flux_vars%fire_decomp_closs_col(c_l)
     endif
+
     !recollect  nitrifications, nitrifier-N2O loss, denitrifications
     n14flux_vars%f_nit_col(c) = this%biogeo_flux(c)%n14flux_vars%f_nit_col(c_l)
     n14flux_vars%f_denit_col(c)= this%biogeo_flux(c)%n14flux_vars%f_denit_col(c_l)
     n14flux_vars%f_n2o_nit_col(c)=this%biogeo_flux(c)%n14flux_vars%f_n2o_nit_col(c_l)
     n14flux_vars%smin_no3_leached_col(c)=this%biogeo_flux(c)%n14flux_vars%smin_no3_leached_col(c_l)
     n14flux_vars%smin_no3_runoff_col(c)=this%biogeo_flux(c)%n14flux_vars%smin_no3_runoff_col(c_l)
+    n14flux_vars%fire_decomp_nloss_col(c) = this%biogeo_flux(c)%n14flux_vars%fire_decomp_nloss_col(c_l)
     !no nh4 volatilization and runoff/leaching loss at this moment
 
     !recollect mineral phosphorus loss
     p31flux_vars%sminp_leached_col(c) = this%biogeo_flux(c)%p31flux_vars%sminp_leached_col(c_l)
+    p31flux_vars%supplement_to_sminp_col(c) = this%biogeo_flux(c)%p31flux_vars%supplement_to_sminp_col(c_l)
+    p31flux_vars%secondp_to_occlp_col(c) = this%biogeo_flux(c)%p31flux_vars%secondp_to_occlp_col(c_l)
+    p31flux_vars%fire_decomp_ploss_col(c) = this%biogeo_flux(c)%p31flux_vars%fire_decomp_ploss_col(c_l)
 
     !recollect soil organic carbon, soil organic nitrogen, and soil organic phosphorus
     c12state_vars%cwdc_col(c) = this%biogeo_state(c)%c12state_vars%cwdc_col(c_l)
@@ -700,9 +712,9 @@ contains
     !recollect inorganic nitrogen (smin_nh4, smin_no3), and inorganic phosphorus (disolvable and protected)
     n14state_vars%sminn_col(c) = this%biogeo_state(c)%n14state_vars%sminn_col(c_l)
 
-    p31state_vars%solutionp_col(c) = this%biogeo_state(c)%p31state_vars%solutionp_col(c_l)
-    p31state_vars%labilep_col(c) = this%biogeo_state(c)%p31state_vars%labilep_col(c_l)
-    p31state_vars%secondp_col(c) = this%biogeo_state(c)%p31state_vars%secondp_col(c_l)
+    p31state_vars%sminp_col(c) = this%biogeo_state(c)%p31state_vars%sminp_col(c_l)
+    p31state_vars%occlp_col(c) = this%biogeo_state(c)%p31state_vars%occlp_col(c_l)
+
   enddo
 
   end subroutine ALMBetrPlantSoilBGCRecv

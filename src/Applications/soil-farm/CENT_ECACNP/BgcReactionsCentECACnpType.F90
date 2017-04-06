@@ -187,7 +187,7 @@ contains
     enddo
     this%use_c13 = bgc_con_eca%use_c13
     this%use_c14 = bgc_con_eca%use_c14
-    print*,'l;dgladagausexx 13 14',this%use_c13, this%use_c14
+
     !set up betr
     nelm =this%centurybgc_index%nelms
     c_loc=this%centurybgc_index%c_loc
@@ -250,18 +250,21 @@ contains
     endif
 
     !non-volatile tracers
+    !nitrate
     call betrtracer_vars%add_tracer_group(trc_grp_cnt=addone(itemp),  mem = 1, &
       trc_cnt = itemp_trc, trc_grp=betrtracer_vars%id_trc_no3x, &
       trc_grp_beg=betrtracer_vars%id_trc_beg_no3x, &
       trc_grp_end=betrtracer_vars%id_trc_end_no3x, &
       is_trc_gw=.true., is_trc_volatile = .false.)
 
+    !dissolved nh3x, no volatilization is allowed at this moment.
     call betrtracer_vars%add_tracer_group(trc_grp_cnt=addone(itemp), mem = 1, &
       trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_nh3x, &
       trc_grp_beg=betrtracer_vars%id_trc_beg_nh3x, &
       trc_grp_end=betrtracer_vars%id_trc_end_nh3x, &
       is_trc_gw=.true., is_trc_volatile = .false.)
 
+    !soluble phosphate
     call betrtracer_vars%add_tracer_group(trc_grp_cnt=addone(itemp), mem = 1, &
       trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_p_sol, &
       trc_grp_beg=betrtracer_vars%id_trc_beg_p_sol, &
@@ -301,6 +304,7 @@ contains
       trc_grp_beg=betrtracer_vars%id_trc_beg_som, &
       trc_grp_end=betrtracer_vars%id_trc_end_som, &
       is_trc_passive=.true.)
+
     !group of solid phase mineral phosphorus
     call betrtracer_vars%add_tracer_group(trc_grp_cnt=addone(itemp), mem = 2, &
       trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_minp, &
@@ -342,8 +346,6 @@ contains
          trc_volatile_id = addone(itemp_v),  trc_volatile_group_id = addone(itemp_vgrp))
     if(bstatus%check_status())return
 
-    print*,'use_c13xxx',this%use_c13
-    print*,'use_c14xxx',this%use_c14
 
     if(this%use_c13)then
       call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_c13_co2x, &
@@ -362,6 +364,7 @@ contains
          trc_family_name='CO2x')
       if(bstatus%check_status())return
     endif
+
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_ch4, &
          trc_name='CH4', is_trc_mobile=.true., is_trc_advective = .true., &
          trc_group_id = betrtracer_vars%id_trc_ch4, trc_group_mem = 1, is_trc_volatile=.true., &
@@ -391,6 +394,7 @@ contains
          trc_vtrans_scal=1._r8)
     if(bstatus%check_status())return
 
+    !add dissolvable organic matter, by default is innert.
     itemp_mem=0
     trcid =  betrtracer_vars%id_trc_beg_dom+c_loc-1
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, &
@@ -560,6 +564,7 @@ contains
     !define woody group
     wood_cnt=0
     itemp_mem=0
+    !coarse root woody components, equivalent to default cwd
     trcid = betrtracer_vars%id_trc_beg_wood+wood_cnt*nelm+c_loc-1
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='CWDC' ,    &
          is_trc_mobile=.false., is_trc_advective = .false., &
@@ -597,6 +602,7 @@ contains
       if(bstatus%check_status())return
     endif
 
+    !large woody debries
     wood_cnt=wood_cnt+1
     trcid = betrtracer_vars%id_trc_beg_wood+wood_cnt*nelm+c_loc-1
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='LWDC' ,    &
@@ -626,6 +632,7 @@ contains
          trc_family_name='LWD')
       if(bstatus%check_status())return
     endif
+
     if(this%use_c14)then
       trcid = betrtracer_vars%id_trc_beg_wood+wood_cnt*nelm+c14_loc-1
       call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='LWDC_C14' ,    &
@@ -634,7 +641,7 @@ contains
          trc_family_name='LWD')
       if(bstatus%check_status())return
     endif
-
+    !fine coarse woody debries
     wood_cnt=wood_cnt+1
     trcid = betrtracer_vars%id_trc_beg_wood+wood_cnt*nelm+c_loc-1
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='FWDC' ,    &
@@ -656,6 +663,7 @@ contains
          trc_group_id = betrtracer_vars%id_trc_wood, trc_group_mem= addone(itemp_mem), &
          trc_family_name='FWD')
     if(bstatus%check_status())return
+
     if(this%use_c13)then
       trcid = betrtracer_vars%id_trc_beg_wood+wood_cnt*nelm+c13_loc-1
       call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='FWDC_C13' ,    &

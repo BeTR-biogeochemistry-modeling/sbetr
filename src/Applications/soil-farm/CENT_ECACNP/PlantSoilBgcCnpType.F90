@@ -221,7 +221,7 @@ module PlantSoilBgcCnpType
   end subroutine lsm_betr_plant_soilbgc_recv
   !----------------------------------------------------------------------
   subroutine lsm_betr_plant_soilbgc_send(this, bounds, numf, &
-                 filter, betr_pft, biogeo_forc, biogeo_states, biogeo_fluxes, ecophyscon_vars)
+                 filter, betr_pft, biogeo_forc, biogeo_states, biogeo_fluxes)
   !DESCRIPTION
   ! initialize feedback variables for plant soil bgc interactions
   !
@@ -229,7 +229,6 @@ module PlantSoilBgcCnpType
   use BeTR_biogeoStateType , only : betr_biogeo_state_type
   use BeTR_biogeoFluxType  , only : betr_biogeo_flux_type
   use BeTR_decompMod       , only : betr_bounds_type
-  use BeTR_EcophysConType  , only : betr_ecophyscon_type
   use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
   use BeTR_PatchType, only : betr_patch_type
   implicit none
@@ -242,7 +241,6 @@ module PlantSoilBgcCnpType
   type(betr_biogeophys_input_type), intent(in):: biogeo_forc
   type(betr_biogeo_state_type) , intent(in) :: biogeo_states
   type(betr_biogeo_flux_type)  , intent(in) :: biogeo_fluxes
-  type(betr_ecophyscon_type)   , intent(in) :: ecophyscon_vars
 
   integer :: p, c
   !set pft

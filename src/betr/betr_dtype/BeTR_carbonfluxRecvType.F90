@@ -6,6 +6,7 @@ implicit none
   type, public :: betr_carbonflux_recv_type
     real(r8), pointer :: hr_col(:) => null()
     real(r8), pointer :: hr_vr_col(:,:) => null()
+    real(r8), pointer :: fire_decomp_closs_col(:) => null()
   contains
     procedure, public  :: Init
     procedure, private :: InitAllocate
@@ -41,10 +42,9 @@ implicit none
 
   allocate(this%hr_col(begc:endc))
   allocate(this%hr_vr_col(begc:endc,lbj:ubj))
+  allocate(this%fire_decomp_closs_col(begc:endc))
 
   end subroutine InitAllocate
-
-
 
   !------------------------------------------------------------------------
   subroutine reset(this, value_column)
@@ -54,6 +54,6 @@ implicit none
 
   this%hr_col(:) = value_column
   this%hr_vr_col(:,:) = value_column
-
+  this%fire_decomp_closs_col(:) = value_column
   end subroutine reset
 end module BeTR_carbonfluxRecvType

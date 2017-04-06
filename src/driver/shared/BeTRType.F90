@@ -26,7 +26,6 @@ module BetrType
   use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
   use BeTR_biogeoStateType     , only : betr_biogeo_state_type
   use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
-  use BeTR_EcophysConType      , only : betr_ecophyscon_type
   use PlantNutKineticsMod      , only : PlantNutKinetics_type
   implicit none
 
@@ -104,7 +103,7 @@ contains
   end function create_betr_type
 
 !-------------------------------------------------------------------------------
-  subroutine Init(this, namelist_buffer, bounds, col, biophysforc, asoibgc, bstatus, ecophyscon)
+  subroutine Init(this, namelist_buffer, bounds, col, biophysforc, asoibgc, bstatus)
 
     ! FIXME(bja, 201604) need to remove waterstate, cnstate and
     ! ecophyscon from this routine.
@@ -125,18 +124,10 @@ contains
     type(betr_biogeophys_input_type)         , intent(in)           :: biophysforc
     logical                                  , intent(out)          :: asoibgc
     type(betr_status_type)                   , intent(out)          :: bstatus
-    type(betr_ecophyscon_type)               , intent(in), optional :: ecophyscon
 
     !temporary variables
-    type(betr_ecophyscon_type) :: junk
     character(len=1024) :: msg
     integer             :: lbj, ubj
-
-    if (present(ecophyscon)) then
-       msg = 'ERROR: ecophyscon not implemented in BeTR class '//errMsg(filename,__LINE__)
-       call bstatus%set_msg(msg=msg, err=-1)
-       return
-    end if
 
     lbj = bounds%lbj;  ubj = bounds%ubj
     !read in top level control parameters

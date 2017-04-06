@@ -277,21 +277,38 @@ contains
   implicit none
   class(BiogeoCon_type), intent(inout) :: this
   character(len=betr_namelist_buffer_size_ext) , intent(in)    :: namelist_buffer
-  type(betr_status_type)                   , intent(out) :: bstatus
+  type(betr_status_type), intent(out) :: bstatus
 
 
   !
   ! !LOCAL VARIABLES:
   integer                                :: nml_error
   character(len=betr_string_length_long) :: ioerror_msg
-  logical :: use_c13, use_c14
+  real(r8) :: tau_decay_lit1
+  real(r8) :: tau_decay_lit2
+  real(r8) :: tau_decay_lit3
+  real(r8) :: tau_decay_som1
+  real(r8) :: tau_decay_som2
+  real(r8) :: tau_decay_som3
+  real(r8) :: tau_decay_cwd
+
+  real(r8), parameter :: year_sec=86400._r8*365._r8
   namelist / soibgc_ecaparam /                  &
-       use_c13, use_c14
+       tau_decay_lit1, tau_decay_lit2, tau_decay_lit3, &
+       tau_decay_som1, tau_decay_som2, tau_decay_som3
 
 
   call bstatus%reset()
-  use_c13 = .false.
-  use_c14 = .false.
+
+  !years
+  tau_decay_lit1          = 0.066_r8
+  tau_decay_lit2          = 0.25_r8
+  tau_decay_lit3          = 0.25_r8
+  tau_decay_som1          = 0.17_r8
+  tau_decay_som2          = 6.1_r8
+  tau_decay_som3          = 270._r8
+  tau_decay_cwd           = 4.1_r8
+
 
   if ( .false. )then
      ioerror_msg=''
@@ -302,17 +319,16 @@ contains
      end if
   end if
 
-  if (.true.) then
-     write(stdout, *)
-     write(stdout, *) '--------------------'
-     write(stdout, *)
-     write(stdout, *) ' soibgc_ecaparam namelist settings :'
-     write(stdout, *)
-     write(stdout, soibgc_ecaparam)
-     write(stdout, *)
-     write(stdout, *) '--------------------'
-  endif
   this%use_c13 = use_c13_betr
   this%use_c14 = use_c14_betr
+
+  this%k_decay_lit1          = 1._r8/(tau_decay_lit1*year_sec)    !1/second
+  this%k_decay_lit2          = 1._r8/(tau_decay_lit2*year_sec)    !1/second
+  this%k_decay_lit3          = 1._r8/(tau_decay_lit3*year_sec)    !1/second
+  this%k_decay_som1          = 1._r8/(tau_decay_som1*year_sec)    !1/second
+  this%k_decay_som2          = 1._r8/(tau_decay_som2*year_sec)    !1/second
+  this%k_decay_som3          = 1._r8/(tau_decay_som3*year_sec)    !1/second
+  this%k_decay_cwd           = 1._r8/(tau_decay_cwd*year_sec)     !1/second
+
   end subroutine ReadNamelist
 end module BiogeoConType

@@ -12,6 +12,9 @@ implicit none
   type betr_biogeophys_input_type
     ! cnstate_vars
     integer, pointer :: isoilorder(:)           => null()  ! soil order
+    real(r8), pointer:: frac_loss_lit_to_fire_col(:) => null() !fraction of litter cnp loss through fire
+    real(r8), pointer:: frac_loss_cwd_to_fire_col(:) => null() !fraction of cwd cnp loss through fire
+
     !carbon flux
     real(r8), pointer :: annsum_npp_patch(:)    => null()  !annual npp
     real(r8), pointer :: agnpp_patch(:)         => null()
