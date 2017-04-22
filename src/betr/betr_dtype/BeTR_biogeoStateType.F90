@@ -45,11 +45,13 @@ contains
 
   call this%c12state_vars%Init(bounds)
   if(use_c13_betr)then
-    call this%c12state_vars%Init(bounds)
+    call this%c13state_vars%Init(bounds)
   endif
   if(use_c14_betr)then
-    call this%c12state_vars%Init(bounds)
+    call this%c14state_vars%Init(bounds)
   endif
+  call this%n14state_vars%Init(bounds)
+  call this%p31state_vars%Init(bounds)
   call this%InitAllocate(bounds)
   end subroutine Init
 

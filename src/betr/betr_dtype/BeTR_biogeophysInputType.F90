@@ -144,6 +144,8 @@ contains
   allocate (this%bgnpp_patch(       begp:endp))
   allocate(this%rr_patch (begp:endp, lbj:ubj))
   allocate(this%froot_prof_patch(begp:endp, lbj:ubj))
+  allocate(this%frac_loss_lit_to_fire_col(begc:endc)) !fraction of litter cnp loss through fire
+  allocate(this%frac_loss_cwd_to_fire_col(begc:endc)) !fraction of cwd cnp loss through fire  
   !waterstate
   allocate (this%frac_h2osfc_col (  begc:endc         ) ) ! col fractional area with surface water greater than zero
   allocate (this%finundated_col(    begc:endc         ) ) ! fraction of column that is inundated, this is for bgc caclulation in betr
