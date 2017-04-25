@@ -26,7 +26,11 @@ module KineticsMod
      module procedure ecacomplex_cell_norm_v1s,ecacomplex_cell_norm_v1e, ecacomplex_cell_norm_m
   end interface ecacomplex_cell_norm
 
-  private :: ECA_normflux
+
+  public :: ECA_normflux
+  public :: supeca_normflux
+  public :: supecaijk
+  public :: ecaij
 contains
   !-------------------------------------------------------------------------------
   subroutine mmcomplex_v1s(kd,ee,ss,siej)
@@ -241,16 +245,38 @@ contains
      call ECA_normflux(ii, jj, kd, ss,ee, Fc,Fr)
      do j = 1, jj
        do i = 1, ii
-         if(kd(i,j)>0._r8 .and. (kd(i,j)<.9*kd_infty))then
-           siej(i,j) = ss(i)*ee(j)/(kd(i,j)*(1._r8+Fc(j)+Fr(i)))
-         endif
+         siej(i,j) = ecaij(i, j, ii, jj, kd, ss, ee, Fc, Fr)
        enddo
      enddo
      if(allocated(Fr))deallocate(Fr)
      if(allocated(Fc))deallocate(Fc)
    end subroutine ecacomplex_m
+
+   !-------------------------------------------------------------------------------
+   function ecaij(i, j, ii, jj, kd, ss, ee, Fc, Fr) result(cij)
+
+   implicit none
+   integer, intent(in)  :: i, j
+   integer, intent(in)  :: ii, jj
+   real(r8), intent(in) :: kd(1:ii,1:jj)
+   real(r8), intent(in) :: ss(1:ii)
+   real(r8), intent(in) :: ee(1:jj)
+   real(r8), intent(in) :: Fc(1:jj)
+   real(r8), intent(in) :: Fr(1:ii)
+
+   real(r8) :: cij
+
+   if(is_active_kd(kd(i,j)))then
+     cij = ee(j) * ss(i)/kd(i,j)/(1._r8 + Fc(j) + Fr(i))
+   else
+     cij = 0._r8
+   endif
+   end function ecaij
    !-------------------------------------------------------------------------------
    subroutine ECA_normflux(ii, jj, kd, ss,ee, Fc,Fr)
+   !
+   !DESCRIPTION
+   !compute the normalized ECA row and column fluxes
    implicit none
    !ARGUMENTS
    integer , intent(in)  :: ii, jj
@@ -264,7 +290,7 @@ contains
    Fc = 0._r8; Fr=0._r8
    do j = 1, jj
      do i = 1, ii
-       if(kd(i,j)>0._r8 .and. (kd(i,j)<.9*kd_infty))then
+       if(is_active_kd(kd(i,j)))then
          Fc(j) = Fc(j) + ss(i)/kd(i,j)
          Fr(i) = Fr(i) + ee(j)/kd(i,j)
        endif
@@ -272,6 +298,89 @@ contains
    enddo
 
    end subroutine ECA_normflux
+   !-------------------------------------------------------------------------------
+   function is_active_kd(kd)result(ans)
+   implicit none
+   real(r8), intent(in) :: kd
+
+   logical :: ans
+
+   ans = kd >0._r8 .and. (kd<.9*kd_infty)
+   end function is_active_kd
+   !-------------------------------------------------------------------------------
+
+   function supecaijk(i,j,k, ii,jj,kk, kdae, kdbe, aa, bb, ee, Fcak, Fcbk, &
+      Frai, Frbj, Gaik, Gbjk) result(cijk)
+
+   !compute the supeca complex
+   implicit none
+   integer, intent(in) :: i, j, k
+   integer, intent(in) :: ii, jj, kk
+   real(r8), intent(in) :: kdae(1:ii,1:kk)
+   real(r8), intent(in) :: kdbe(1:jj,1:kk)
+   real(r8), intent(in) :: aa(1:ii)
+   real(r8), intent(in) :: bb(1:jj)
+   real(r8), intent(in) :: ee(1:kk)
+   real(r8), intent(in) :: Fcak(1:kk)
+   real(r8), intent(in) :: Fcbk(1:kk)
+   real(r8), intent(in) :: Frai(1:ii)
+   real(r8), intent(in) :: Frbj(1:jj)
+   real(r8), intent(in) :: Gaik(1:ii,1:kk)
+   real(r8), intent(in) :: Gbjk(1:jj,1:kk)
+
+   real(r8) :: cijk
+   real(r8) :: Gabijk, Fcabk, denorm
+
+   cijk = 0._r8
+   if(is_active_kd(kdae(i,k)))then
+      if(is_active_kd(kdbe(j,k)))then
+        !double substrate
+        !compute the denorminator
+        Fcabk = Fcak(k) + Fcbk(k)
+        Gabijk = Gaik(i,k) + Gbjk(j,k)
+        denorm = Gaik(i,k) * Gbjk(j,k) * Fcabk / Gabijk + Fcabk - &
+           (Fcak(k) * Gbjk(j,k) + Gaik(i,k)*Fcbk(k) - Gaik(i,k) * Gbjk(j,k))/Gabijk
+        cijk =ee(k) * aa(i)/Kdae(i,k) * bb(j) / Kdbe(j,k) /denorm
+      endif
+   endif
+   end function supecaijk
+
+   !-------------------------------------------------------------------------------
+   subroutine supeca_normflux(ii,jj, kk, kdae,kdbe, aa, bb, ee, Fcak, Fcbk, &
+      Frai, Frbj, Gaik, Gbjk)
+   !compute normalized supeca flux
+   implicit none
+   integer, intent(in)  :: ii
+   integer, intent(in)  :: jj
+   integer, intent(in)  :: kk
+   real(r8), intent(in) :: kdae(1:ii,1:kk)
+   real(r8), intent(in) :: kdbe(1:jj,1:kk)
+   real(r8), intent(in) :: aa(1:ii)
+   real(r8), intent(in) :: bb(1:jj)
+   real(r8), intent(in) :: ee(1:kk)
+   real(r8), intent(out):: Fcak(1:kk)
+   real(r8), intent(out):: Fcbk(1:kk)
+   real(r8), intent(out):: Frai(1:ii)
+   real(r8), intent(out):: Frbj(1:jj)
+   real(r8), intent(out):: Gaik(1:ii,1:kk)
+   real(r8), intent(out):: Gbjk(1:jj,1:kk)
+
+   integer :: i, j, k
+
+   call  ECA_normflux(ii, kk, kdae, aa, ee, Fcak, Frai)
+
+   call  ECA_normflux(jj, kk, kdbe, bb, ee, Fcbk, Frbj)
+
+   do k = 1, kk
+     do i = 1, ii
+       Gaik(i,k) = Fcak(k) + Frai(i)
+     enddo
+     do j = 1, jj
+       Gbjk(j,k) = Fcbk(k) + Frbj(j)
+     enddo
+   enddo
+
+   end subroutine supeca_normflux
    !-------------------------------------------------------------------------------
    subroutine ecacomplex_cell_norm_m(kd,ss,ee,siej, bstatus)
      ! !DESCRIPTION:
