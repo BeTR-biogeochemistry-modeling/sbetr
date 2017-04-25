@@ -4,6 +4,8 @@ module BeTR_phosphorusfluxType
   use betr_decompMod , only : betr_bounds_type
 implicit none
 
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
   type, public :: betr_phosphorusflux_type
 
     real(r8), pointer :: pflx_input_litr_met_vr_col(:,:) => null() ! metabolic litter input, gP/m3/s

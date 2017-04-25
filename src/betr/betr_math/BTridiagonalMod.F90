@@ -9,6 +9,8 @@ module BTridiagonalMod
   ! !PUBLIC TYPES:
 
   implicit none
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
   !
   ! !PUBLIC MEMBER FUNCTIONS:
   public :: Tridiagonal

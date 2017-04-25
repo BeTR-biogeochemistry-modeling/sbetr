@@ -7,7 +7,8 @@ module BeTR_ColumnType
   implicit none
   save
   private
-
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
   type, public :: betr_column_type
      ! g/l/c/p hierarchy, local g/l/c/p cells only
    integer , pointer :: snl      (:)   => null() ! number of snow layers

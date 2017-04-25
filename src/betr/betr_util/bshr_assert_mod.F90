@@ -24,6 +24,8 @@ use bshr_infnan_mod, only: shr_infnan_isnan
 
 implicit none
 private
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
 save
 
 ! Assert that a logical is true.

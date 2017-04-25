@@ -1,6 +1,5 @@
 set(BETR_DTYPE_SOURCES
   BeTR_aerocondType.F90
-  BeTR_EcophysConType.F90
   BeTR_carbonfluxType.F90
   BeTR_nitrogenfluxType.F90
   BeTR_phosphorusfluxType.F90

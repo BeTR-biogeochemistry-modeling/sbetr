@@ -37,7 +37,10 @@ implicit none
      real(r8), pointer :: harvest_n_to_litr_met_n_col               (:,:)=> null()
      real(r8), pointer :: m_n_to_litr_cel_fire_col                  (:,:)=> null()
      real(r8), pointer :: m_n_to_litr_met_fire_col                  (:,:)=> null()
-     real(r8), pointer :: fert_to_sminn_col                        (:)=> null()
+     real(r8), pointer :: fert_to_sminn_col                         (:) => null()
+     real(r8), pointer :: smin_nh4_to_plant_patch                   (:) => null()
+     real(r8), pointer :: smin_no3_to_plant_patch                   (:) => null()
+     real(r8), pointer :: fire_decomp_nloss_col                     (:) => null()
 
   contains
 

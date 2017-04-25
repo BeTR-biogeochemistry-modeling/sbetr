@@ -8,7 +8,8 @@ module MockPlantSoilBGCType
   implicit none
 
   private
-
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
   public :: plant_soilbgc_mock_run_type
 
   type, extends(plant_soilbgc_type) :: &

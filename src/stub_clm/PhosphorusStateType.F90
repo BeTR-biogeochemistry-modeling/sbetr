@@ -18,7 +18,8 @@ implicit none
     real(r8), pointer :: totecosysp_col               (:) => null()    ! col (gP/m2) total ecosystem phosphorus, incl veg
     real(r8), pointer :: totcolp_col                  (:) => null()    ! col (gP/m2) total column phosphorus, incl veg
     real(r8), pointer :: cwdp_col                     (:) => null()    ! col (gP/m2) Diagnostic: coarse woody debris P
-
+    real(r8), pointer :: totlitp_1m_col               (:) => null()
+    real(r8), pointer :: totsomp_1m_col               (:) => null()
     ! patch averaged to column variables
     real(r8), pointer :: totvegp_col                  (:)  => null()   ! col (gP/m2) total vegetation phosphorus (p2c)
 

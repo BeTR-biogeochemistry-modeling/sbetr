@@ -26,7 +26,6 @@ module BeTRSimulationCLM
 
   type, public, extends(betr_simulation_type) :: betr_simulation_clm_type
 
-     type(betr_ecophyscon_type) :: betr_ecophyscon
 
      ! NOTE(bja, 201603) CLM stubb types go here!
 

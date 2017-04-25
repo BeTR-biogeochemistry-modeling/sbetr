@@ -10,7 +10,8 @@ module BGCReactionsMod
   implicit none
 
   private
-
+  character(len=*), parameter :: mod_filename = &
+       __FILE__
   public ::  bgc_reaction_type
 
   type, abstract :: bgc_reaction_type

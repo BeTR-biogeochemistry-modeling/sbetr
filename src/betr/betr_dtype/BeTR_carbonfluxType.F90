@@ -3,6 +3,8 @@ module BeTR_carbonfluxType
   use betr_decompMod , only : betr_bounds_type
 implicit none
 
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
   type, public :: betr_carbonflux_type
 
     real(r8), pointer :: cflx_input_litr_met_vr_col(:,:) => null() ! metabolic litter input, gC/m3/s

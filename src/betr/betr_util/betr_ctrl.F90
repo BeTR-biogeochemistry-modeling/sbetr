@@ -2,7 +2,8 @@ module betr_ctrl
 !
 !logical switches for global control of betr functions
 implicit none
-
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
   logical, public :: use_pH_data = .false.
   logical, public :: betr_use_cn =.false.
   integer, public :: biulog = 6        ! "stdout" log file unit number, default is 6

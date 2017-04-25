@@ -3,6 +3,8 @@ module BeTR_phosphorusfluxRecvType
   use betr_decompMod , only : betr_bounds_type
 implicit none
 
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
   type, public :: betr_phosphorusflux_recv_type
     real(r8), pointer :: sminp_leached_col(:) => null()
     real(r8), pointer :: sminp_to_plant_patch(:) => null() !integrated phosphate goes to plant at patch (gN/m2/s)

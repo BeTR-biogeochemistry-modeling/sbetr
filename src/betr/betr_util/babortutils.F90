@@ -8,6 +8,8 @@ module babortutils
   !-----------------------------------------------------------------------
 
   private
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
   save
 
   public :: endrun

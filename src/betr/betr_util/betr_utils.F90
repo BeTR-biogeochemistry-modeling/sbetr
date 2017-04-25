@@ -1,7 +1,8 @@
 module betr_utils
 
   implicit none
-
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
 contains
   ! ----------------------------------------------------------------------
   function remove_filename_extension(filename) result(basename)

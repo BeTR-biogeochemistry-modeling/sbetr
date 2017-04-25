@@ -2,6 +2,8 @@ module BeTR_landvarconType
   !DESCRIPTION
   !module for land type constants
 implicit none
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
   type, public :: betr_landvarcon_type
     integer,  public :: istsoil      !soil         landunit type (natural vegetation)
     integer,  public :: istcrop      !crop         landunit type

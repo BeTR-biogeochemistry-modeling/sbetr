@@ -6,7 +6,8 @@ module H2OIsotopePlantSoilBGCType
   implicit none
 
   private
-
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
   public :: plant_soilbgc_h2oiso_run_type
 
   type, extends(plant_soilbgc_type) :: &

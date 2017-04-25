@@ -1,6 +1,8 @@
 module BeTR_PatchType
   use bshr_kind_mod, only: r8 => shr_kind_r8
 implicit none
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
   type, public :: betr_patch_type
    real(r8), pointer :: wtcol(:)  => null()  !weight relative to a column
    integer,  pointer :: column(:) => null() !column index

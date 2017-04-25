@@ -12,7 +12,12 @@ implicit none
     real(r8), pointer :: smin_nh4_vr_col              (:,:)=> null()   ! col (gN/m3) vertically-resolved soil mineral NH4
     real(r8), pointer :: smin_nh4_col                 (:)   => null()  ! col (gN/m2) soil mineral NH4 pool
     real(r8), pointer :: sminn_vr_col                 (:,:)=> null()   ! col (gN/m3) vertically-resolved soil mineral N
-
+    real(r8), pointer :: sminn_col                    (:) => null()
+    real(r8), pointer :: cwdn_col                     (:) => null()
+    real(r8), pointer :: totsomn_col                  (:) => null()
+    real(r8), pointer :: totsomn_1m_col               (:) => null()
+    real(r8), pointer :: totlitn_1m_col               (:) => null()
+    real(r8), pointer :: totlitn_col                  (:) => null()
   contains
 
     procedure, public  :: Init

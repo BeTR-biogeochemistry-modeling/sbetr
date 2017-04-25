@@ -3,6 +3,8 @@ module BeTR_nitrogenstateRecvType
   use betr_decompMod , only : betr_bounds_type
 implicit none
 
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
   type, public :: betr_nitrogenstate_recv_type
     real(r8), pointer :: cwdn_col(:) => null()
     real(r8), pointer :: totlitn_col(:) => null()

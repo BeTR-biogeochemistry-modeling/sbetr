@@ -42,7 +42,8 @@ MODULE bshr_sys_mod
 ! PUBLIC: Public interfaces
 
    private
-
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
    public :: shr_sys_system  ! make a system call
    public :: shr_sys_chdir   ! change current working dir
    public :: shr_sys_getenv  ! get an environment variable

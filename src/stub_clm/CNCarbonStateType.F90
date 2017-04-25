@@ -8,6 +8,11 @@ implicit none
   type, public :: carbonstate_type
     real(r8), pointer :: decomp_cpools_vr_col    (:,:,:) => null() ! col (gC/m3) vertically-resolved decomposing (litter, cwd, soil) c pools
     real(r8), pointer :: frootc_patch             (:)    => null() ! (gC/m2) fine root C
+    real(r8), pointer :: totlitc_1m_col          (:) => null()
+    real(r8), pointer :: totlitc_col             (:) => null()
+    real(r8), pointer :: totsomc_col             (:) => null()
+    real(r8), pointer :: cwdc_col                (:) => null()
+    real(r8), pointer :: totsomc_1m_col          (:) => null()
   contains
 
     procedure, public  :: Init

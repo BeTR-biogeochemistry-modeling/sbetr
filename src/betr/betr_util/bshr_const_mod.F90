@@ -7,7 +7,9 @@ MODULE bshr_const_mod
 
    use bshr_kind_mod, only : SHR_KIND_IN
    use bshr_kind_mod, only : SHR_KIND_R8
-
+   implicit none
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
    integer(SHR_KIND_IN),parameter,private :: R8 = SHR_KIND_R8 ! rename for local readability only
 
    !----------------------------------------------------------------------------

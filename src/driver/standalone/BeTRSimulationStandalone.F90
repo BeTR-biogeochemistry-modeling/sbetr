@@ -27,7 +27,6 @@ module BeTRSimulationStandalone
 
   type, public, extends(betr_simulation_type) :: betr_simulation_standalone_type
      ! NOTE(bja, 201603) LSM specific types here!
-     type(betr_ecophyscon_type) :: betr_ecophyscon
 
      ! NOTE(bja, 201603) most (all?) BeTR types go into the base
      ! class.

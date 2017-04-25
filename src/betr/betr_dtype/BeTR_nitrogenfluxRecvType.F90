@@ -3,6 +3,8 @@ module BeTR_nitrogenfluxRecvType
   use betr_decompMod , only : betr_bounds_type
 implicit none
 
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
   type, public :: betr_nitrogenflux_recv_type
     real(r8), pointer :: f_denit_vr_col(:,:)  => null()
     real(r8), pointer :: f_nit_vr_col(:,:)

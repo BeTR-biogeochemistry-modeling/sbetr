@@ -5,7 +5,8 @@ module bshr_nl_mod
 
 implicit none
 private
-
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
 save
 
 public :: &

@@ -4,6 +4,8 @@ module bhistFileMod
   use bshr_kind_mod, only : r8 => shr_kind_r8
 implicit none
   private
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
   save
   public :: hist_file_create
   public :: hist_def_fld2d

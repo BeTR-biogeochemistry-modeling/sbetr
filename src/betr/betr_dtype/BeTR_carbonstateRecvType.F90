@@ -3,6 +3,8 @@ module BeTR_carbonstateRecvType
   use betr_decompMod , only : betr_bounds_type
 implicit none
 
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
   type, public :: betr_carbonstate_recv_type
      real(r8), pointer :: cwdc_col(:) => null()
      real(r8), pointer :: totlitc_col(:)  => null()

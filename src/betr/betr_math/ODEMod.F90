@@ -11,7 +11,8 @@ module ODEMod
   implicit none
 
   private
-
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
   real(r8),        parameter :: tiny = 1.e-23_r8
   logical, public, parameter :: ldebug_ode=.false.
 

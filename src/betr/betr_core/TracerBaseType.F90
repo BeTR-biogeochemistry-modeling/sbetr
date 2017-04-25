@@ -3,6 +3,8 @@ use betr_ctrl, only : max_betr_hist_type
 implicit none
 
   private
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
   integer, parameter :: loc_str_len=255
   type, private :: list_t
     character(len=loc_str_len)  :: name

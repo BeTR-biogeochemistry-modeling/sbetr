@@ -1,7 +1,8 @@
 module BeTR_pftvarconType
 
 implicit none
-
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
   type, public :: betr_pftvarcon_type
    integer :: nc3_arctic_grass       !value for C3 arctic grass
    integer :: nc3_nonarctic_grass    !value for C3 non-arctic grass
@@ -35,7 +36,7 @@ contains
   integer, intent(in) :: vtype
   logical :: yesno
 
-  yesno = (vtype /=  this%noveg) 
+  yesno = (vtype /=  this%noveg)
   end function is_veg_patch
 
 end module BeTR_pftvarconType

@@ -8,7 +8,8 @@ module betr_varcon
                            SHR_CONST_PDB, SHR_CONST_PI, SHR_CONST_CDAY,       &
                            SHR_CONST_RGAS
   implicit none
-
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
   character(len=16), parameter :: bnamec  = 'column'       ! name of columns
   character(len=16), parameter :: bnamep  = 'pft'          ! name of patches
   real(r8), public,  parameter :: bspval = 1.e36_r8  ! special value for real data

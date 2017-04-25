@@ -5,7 +5,8 @@ module func_data_type_mod
   use bshr_kind_mod, only : r8 => shr_kind_r8
 
   implicit none
-
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
   !
   ! Kitchen sink container that can be used to pass data into call
   ! back functions. To keep the size down:

@@ -33,16 +33,17 @@ contains
   use bncdio_pio             , only : file_desc_t
   use clm_instMod           , only : atm2lnd_vars
   use clm_instMod           , only : canopystate_vars
-  use clm_instMod           , only : carbonflux_vars
-  use clm_instMod           , only : chemstate_vars
+  use clm_instMod           , only : carbonstate_vars, c13state_vars, c14state_vars
+  use clm_instMod           , only : carbonflux_vars, c13_cflx_vars, c14_cflx_vars
+  use clm_instMod           , only : chemstate_vars, plantMicKinetics_vars
   use clm_instMod           , only : soilhydrology_vars
   use clm_instMod           , only : soilstate_vars
   use clm_instMod           , only : temperature_vars
   use clm_instMod           , only : waterflux_vars
   use clm_instMod           , only : waterstate_vars
   use clm_instMod           , only : cnstate_vars
-  use clm_instMod           , only : nitrogenflux_vars
-  use clm_instMod           , only : phosphorusflux_vars
+  use clm_instMod           , only : nitrogenflux_vars, nitrogenstate_vars
+  use clm_instMod           , only : phosphorusflux_vars, phosphorusstate_vars
   use clm_instMod           , only : soil_water_retention_curve
   use ColumnType            , only : col
   use clmgridMod            , only : init_clm_vertgrid
@@ -238,8 +239,9 @@ contains
       call input_substrates((record==1), bounds, col, simulation%num_soilc, simulation%filter_soilc,&
           cnstate_vars, carbonflux_vars,  nitrogenflux_vars, phosphorusflux_vars)
 
-      call simulation%PlantSoilBGCSend(bounds, simulation%num_soilc, simulation%filter_soilc,&
-        cnstate_vars,  carbonflux_vars,  nitrogenflux_vars, phosphorusflux_vars)
+      call simulation%PlantSoilBGCSend(bounds, col, pft, simulation%num_soilc, simulation%filter_soilc,&
+        cnstate_vars,  carbonflux_vars, c13_cflx_vars, c14_cflx_vars,  nitrogenflux_vars, phosphorusflux_vars, &
+        plantMicKinetics_vars)
 
     class default
       call simulation%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi,               &
@@ -254,8 +256,9 @@ contains
 
     select type(simulation)
     class is (betr_simulation_alm_type)
-      call simulation%PlantSoilBGCRecv(bounds, simulation%num_soilc, simulation%filter_soilc,&
-       carbonflux_vars, nitrogenflux_vars, phosphorusflux_vars)
+      call simulation%PlantSoilBGCRecv(bounds, col, pft, simulation%num_soilc, simulation%filter_soilc,&
+       carbonstate_vars, carbonflux_vars, c13state_vars, c13_cflx_vars, c14state_vars, c14_cflx_vars, &
+       nitrogenstate_vars, nitrogenflux_vars, phosphorusstate_vars, phosphorusflux_vars)
     class default
     end select
 

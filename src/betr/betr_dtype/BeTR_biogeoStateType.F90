@@ -8,6 +8,8 @@ module BeTR_biogeoStateType
   use tracer_varcon, only : use_c13_betr, use_c14_betr
 implicit none
 
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
   type betr_biogeo_state_type
     real(r8), pointer :: zwts_col           (:)   => null() ! the shallower between zwt_perch and zwt
 

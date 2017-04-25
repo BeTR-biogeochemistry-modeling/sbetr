@@ -13,7 +13,6 @@ add_betr_library(betr_bgc ${BETR_BGC_SOURCES})
 set(BETR_LIBRARIES betr_bgc;${BETR_LIBRARIES} PARENT_SCOPE)
 set(BETR_LIBRARIES betr_bgc;${BETR_LIBRARIES})
 
-add_subdirectory(tests)
 
 if (NOT CMAKE_INSTALL_PREFIX STREQUAL "INSTALL_DISABLED")
   install(TARGETS betr_bgc DESTINATION lib)

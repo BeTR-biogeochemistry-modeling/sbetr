@@ -19,8 +19,9 @@ module clm_instMod
   use CanopyStateType        , only : canopystate_type
   use PhosphorusFluxType     , only : phosphorusflux_type
   use PhosphorusStateType    , only : phosphorusstate_type
+  use PlantMicKineticsMod    , only : PlantMicKinetics_type
   use SoilWaterRetentionCurveFactoryMod, only : create_soil_water_retention_curve
-  use SoilWaterRetentionCurveMod , only : soil_water_retention_curve_type  
+  use SoilWaterRetentionCurveMod , only : soil_water_retention_curve_type
 
   implicit none
   save
@@ -34,14 +35,15 @@ module clm_instMod
   type(chemstate_type)        :: chemstate_vars    !column chemical state variables
   type(soilhydrology_type)    :: soilhydrology_vars!
   type(atm2lnd_type)          :: atm2lnd_vars
-  type(carbonstate_type)      :: carbonstate_vars
-  type(carbonflux_type)       :: carbonflux_vars
+  type(carbonstate_type)      :: carbonstate_vars, c13state_vars, c14state_vars
+  type(carbonflux_type)       :: carbonflux_vars, c13_cflx_vars, c14_cflx_vars
   type(nitrogenstate_type)    :: nitrogenstate_vars
   type(nitrogenflux_type)     :: nitrogenflux_vars
   type(cnstate_type)          :: cnstate_vars
   type(canopystate_type)      :: canopystate_vars
   type(phosphorusstate_type)  :: phosphorusstate_vars
   type(phosphorusflux_type)   :: phosphorusflux_vars
+  type(PlantMicKinetics_type) :: PlantMicKinetics_vars
   class(soil_water_retention_curve_type), allocatable :: soil_water_retention_curve
   contains
 

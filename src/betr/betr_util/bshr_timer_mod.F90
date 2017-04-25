@@ -32,7 +32,8 @@ module bshr_timer_mod
    implicit none
 
    private  ! restricted access
-
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
    public  :: shr_timer_init
    public  :: shr_timer_get
    public  :: shr_timer_start

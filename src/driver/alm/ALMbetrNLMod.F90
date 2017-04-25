@@ -5,7 +5,8 @@ module ALMBeTRNLMod
   use abortutils , only: endrun
   use betr_constants, only : betr_string_length
 implicit none
-
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
   character(len=betr_string_length), public :: reaction_method
   character(len=betr_namelist_buffer_size), public :: betr_namelist_buffer
   public :: betr_readNL

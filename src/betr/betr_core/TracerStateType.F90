@@ -17,6 +17,8 @@ module TracerStateType
   implicit none
 
   private
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
   !
   ! !PUBLIC DATA:
   !
@@ -333,7 +335,7 @@ contains
   real(r8), intent(in)    :: dz(lbj:ubj)
   type(betr_status_type)  , intent(out)   :: bstatus
   real(r8)                :: int_mass
-  
+
   call bstatus%reset()
 
   int_mass = dot_sum(this%tracer_conc_frozen_col(c,lbj:ubj,j), dz, bstatus)

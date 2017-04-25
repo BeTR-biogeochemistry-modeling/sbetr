@@ -18,7 +18,8 @@ Module bshr_mpi_mod
 
    implicit none
    private
-
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
 ! PUBLIC: Public interfaces
 
    public :: shr_mpi_chkerr

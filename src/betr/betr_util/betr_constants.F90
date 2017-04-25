@@ -1,7 +1,8 @@
 module betr_constants
 
   implicit none
-
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
   integer, parameter :: stdout = 6
   integer, parameter :: betr_var_name_length = 36
   integer, parameter :: betr_string_length = 128

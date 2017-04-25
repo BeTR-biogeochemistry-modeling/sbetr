@@ -9,6 +9,8 @@ module BeTR_biogeoFluxType
   use BeTR_phosphorusfluxRecvType, only : betr_phosphorusflux_recv_type
 implicit none
 
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
   type betr_biogeo_flux_type
     real(r8), pointer :: qflx_adv_col             (:,:) => null() !advection velocity from one layer to another, (0:nlevgrnd), positive downward
     real(r8), pointer :: qflx_gross_evap_soil_col (:)   => null() ! col gross infiltration from soil, this satisfies the relationship qflx_infl_col = qflx_gross_infl_soil_col-qflx_gross_evap_soil_col

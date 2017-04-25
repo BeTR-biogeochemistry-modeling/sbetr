@@ -33,6 +33,10 @@ implicit none
     real(r8), pointer :: primp_to_labilep_vr_col                   (:,:)=> null()
     real(r8), pointer :: pdep_to_sminp_col                         (:)=> null()
     real(r8), pointer :: fert_p_to_sminp_col                       (:)=> null()
+    real(r8), pointer :: sminp_to_plant_patch                      (:)=> null()
+    real(r8), pointer :: supplement_to_sminp_col                   (:)=> null()
+    real(r8), pointer :: secondp_to_occlp_col                      (:)=> null()
+    real(r8), pointer :: fire_decomp_ploss_col                     (:)=> null()
   contains
 
     procedure, public  :: Init

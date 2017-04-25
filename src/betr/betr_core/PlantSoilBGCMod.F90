@@ -7,6 +7,9 @@ module PlantSoilBGCMod
 ! !USES:
   use BeTR_decompMod         , only : betr_bounds_type
 implicit none
+
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
 type, abstract :: plant_soilbgc_type
    private
    ! dummy var to remove compiler warnings

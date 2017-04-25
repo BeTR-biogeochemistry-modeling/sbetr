@@ -2,7 +2,8 @@ module BeTR_decompMod
 
   ! !PUBLIC TYPES:
   implicit none
-
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
   type, public :: betr_bounds_type
     integer :: begg, endg       ! beginning and ending gridcell index
     integer :: begl, endl       ! beginning and ending landunit index

@@ -14,6 +14,8 @@ module TracerCoeffType
   implicit none
 
   private
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
   !
   ! !PUBLIC DATA:
   !

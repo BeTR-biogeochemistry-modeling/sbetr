@@ -19,6 +19,8 @@ module TracerParamsMod
   implicit none
   save
   private
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
   !
   ! !PUBLIC MEMBER FUNCTIONS:
   public :: tracer_param_init

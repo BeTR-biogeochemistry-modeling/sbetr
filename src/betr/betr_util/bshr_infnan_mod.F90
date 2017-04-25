@@ -63,6 +63,8 @@ use bshr_kind_mod, only: i4 => shr_kind_i4, i8 => shr_kind_i8
 #endif
 
 implicit none
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
 private
 save
 

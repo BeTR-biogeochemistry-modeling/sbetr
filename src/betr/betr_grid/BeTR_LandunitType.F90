@@ -5,6 +5,8 @@ module BeTR_LandunitType
   implicit none
   save
   private
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
   type, public :: betr_landunit_type
 
      ! topological mapping functionality

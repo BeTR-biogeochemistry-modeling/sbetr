@@ -2,7 +2,8 @@ module BeTR_phosphorusstateRecvType
   use bshr_kind_mod  , only : r8 => shr_kind_r8
   use betr_decompMod , only : betr_bounds_type
 implicit none
-
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
   type, public :: betr_phosphorusstate_recv_type
     real(r8), pointer :: cwdp_col(:) => null()
     real(r8), pointer :: totlitp_col(:) => null()

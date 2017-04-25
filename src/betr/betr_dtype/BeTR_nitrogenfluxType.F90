@@ -3,6 +3,8 @@ module BeTR_nitrogenfluxType
   use betr_decompMod , only : betr_bounds_type
 implicit none
 
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
   type, public :: betr_nitrogenflux_type
     real(r8), pointer :: nflx_input_litr_met_vr_col(:,:) => null() ! metabolic litter input, gC/m3/s
     real(r8), pointer :: nflx_input_litr_cel_vr_col(:,:) => null() ! cellulose litter input, gC/m3/s

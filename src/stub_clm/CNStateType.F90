@@ -14,6 +14,8 @@ implicit none
      real(r8), pointer :: cp_scalar                    (:)   => null()  ! cp scaling factor for root p uptake kinetics (no units)
      real(r8), pointer :: ndep_prof_col                (:,:)=> null()
      real(r8), pointer :: pdep_prof_col                (:,:)=> null()
+     real(r8), pointer :: frac_loss_lit_to_fire_col    (:) => null()
+     real(r8), pointer :: frac_loss_cwd_to_fire_col    (:) => null()
   contains
 
     procedure, public  :: Init

@@ -37,7 +37,8 @@ module bshr_string_mod
 
    implicit none
    private
-
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
 ! !PUBLIC TYPES:
 
    ! no public types
