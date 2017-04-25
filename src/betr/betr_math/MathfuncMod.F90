@@ -32,6 +32,10 @@ module MathfuncMod
   public :: num2str
   public :: fpmax
   public :: bisnan
+  public :: apvb
+  interface apvb
+    module procedure apvb_v, apvb_s
+  end interface apvb
   interface cumsum
      module procedure cumsum_v, cumsum_m
   end interface cumsum
@@ -48,6 +52,41 @@ module MathfuncMod
     procedure, public :: apply_reaction_rscal
   end type lom_type
 contains
+  !-------------------------------------------------------------------------------
+  subroutine apvb_s(a, brr, sgn)
+  !
+  ! DESCRIPTION
+  ! compute a = a + sum(brr)
+  implicit none
+  real(r8), intent(inout) :: a
+  real(r8), intent(in) :: brr
+  real(r8), optional, intent(in) :: sgn
+  real(r8) :: sgn_loc
+
+  sgn_loc = 1._r8
+  if(present(sgn))sgn_loc = sgn
+
+  a = a + sgn_loc * brr
+
+  end subroutine apvb_s
+
+  !-------------------------------------------------------------------------------
+  subroutine apvb_v(a, brr, sgn)
+  !
+  ! DESCRIPTION
+  ! compute a = a + sum(brr)
+  implicit none
+  real(r8), intent(inout) :: a
+  real(r8), dimension(:), intent(in) :: brr
+  real(r8), optional, intent(in) :: sgn
+  real(r8) :: sgn_loc
+
+  sgn_loc = 1._r8
+  if(present(sgn))sgn_loc = sgn
+
+  a = a + sgn_loc * sum(brr)
+
+  end subroutine apvb_v
   !-------------------------------------------------------------------------------
   function heviside(x)result(ans)
     !
@@ -317,8 +356,8 @@ contains
     ! !LOCAL VARIABLES:
     integer  :: n, j
     real(r8) :: ans
-    type(betr_status_type) :: bstatus1 
-   
+    type(betr_status_type) :: bstatus1
+
     call bstatus1%reset()
     SHR_ASSERT_ALL((size(x)  == size(y)), errMsg(mod_filename,__LINE__), bstatus1)
     if(present(bstatus))then
@@ -585,11 +624,11 @@ contains
 
   ans = max(inval, 0._r8)
   return
-  end function fpmax  
+  end function fpmax
 
   !-------------------------------------------------------------------------------
   function bisnan(inval)result(ans)
-  
+
   !DESCRIPTION
   !determine if the variable is nan
   implicit none
@@ -598,5 +637,5 @@ contains
   logical :: ans
 
   ans = (inval/=inval)
-  end function bisnan 
+  end function bisnan
 end module MathfuncMod

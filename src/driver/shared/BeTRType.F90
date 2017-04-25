@@ -1,3 +1,4 @@
+
 module BetrType
 
 #include "bshr_assert.h"
@@ -25,8 +26,7 @@ module BetrType
   use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
   use BeTR_biogeoStateType     , only : betr_biogeo_state_type
   use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
-  use BeTR_EcophysConType      , only : betr_ecophyscon_type
-
+  use PlantNutKineticsMod      , only : PlantNutKinetics_type
   implicit none
 
   private
@@ -51,6 +51,7 @@ module BetrType
      type(TracerFlux_type)         , public              :: tracerfluxes
      type(TracerState_type)        , public              :: tracerstates
      type(tracerboundarycond_type) , public              :: tracerboundaryconds
+     type(PlantNutKinetics_type)   , public              :: plantNutkinetics
      type(betr_aerecond_type)      , private             :: aereconds
 
      real(r8)                      , private, pointer    :: h2osoi_liq_copy(:,:) => null()
@@ -102,7 +103,7 @@ contains
   end function create_betr_type
 
 !-------------------------------------------------------------------------------
-  subroutine Init(this, namelist_buffer, bounds, col, biophysforc, bstatus, ecophyscon)
+  subroutine Init(this, namelist_buffer, bounds, col, biophysforc, asoibgc, bstatus)
 
     ! FIXME(bja, 201604) need to remove waterstate, cnstate and
     ! ecophyscon from this routine.
@@ -121,19 +122,12 @@ contains
     type(betr_bounds_type)                   , intent(in)           :: bounds
     type(betr_column_type)                   , intent(in)           :: col
     type(betr_biogeophys_input_type)         , intent(in)           :: biophysforc
+    logical                                  , intent(out)          :: asoibgc
     type(betr_status_type)                   , intent(out)          :: bstatus
-    type(betr_ecophyscon_type)               , intent(in), optional :: ecophyscon
 
     !temporary variables
-    type(betr_ecophyscon_type) :: junk
     character(len=1024) :: msg
-    integer               :: lbj, ubj
-
-    if (present(ecophyscon)) then
-       msg = 'ERROR: ecophyscon not implemented in BeTR class '//errMsg(filename,__LINE__)
-       call bstatus%set_msg(msg=msg, err=-1)
-       return
-    end if
+    integer             :: lbj, ubj
 
     lbj = bounds%lbj;  ubj = bounds%ubj
     !read in top level control parameters
@@ -141,8 +135,13 @@ contains
     if(bstatus%check_status())return
 
     !read in application specific parameters
-    call this%create_betr_application(this%bgc_reaction, this%plant_soilbgc, this%reaction_method, bstatus)
+    call this%create_betr_application(this%bgc_reaction, this%plant_soilbgc, this%reaction_method,&
+        asoibgc, bstatus)
     if(bstatus%check_status())return
+
+    if(asoibgc)then
+      call this%plantNutkinetics%Init(bounds)
+    endif
 
     call this%tracers%init_scalars()
 
@@ -366,17 +365,12 @@ contains
          this%tracerfluxes%tracer_flx_ebu_col(bounds%begc:bounds%endc, 1:this%tracers%nvolatile_tracers), &
          this%ebullition_on, betr_status)
     if(betr_status%check_status())return
-!    do j = 1, this%tracers%ntracers
-!      if(this%tracers%is_adsorb(j) .or. trim(this%tracers%tracernames(j))=='P_SOL')then
-!       print*,this%tracers%tracernames(j)
-!       print*,this%tracerstates%tracer_conc_mobile_col(1,:,j)
-!      endif
-!    enddo
-    !update nitrogen storage pool
+
+    !update nutrient uptake fluxes
     call this%plant_soilbgc%plant_soilbgc_summary(bounds, lbj, ubj, pft, &
           num_soilc, filter_soilc,  dtime                              , &
           col%dz(bounds%begc:bounds%endc,1:ubj)                        , &
-          this%tracers, this%tracerfluxes, betr_status)
+          this%tracers, this%tracerfluxes, biogeo_flux, betr_status)
 
   end subroutine step_without_drainage
 
@@ -1157,14 +1151,12 @@ contains
 
   end subroutine tracer_snowcapping
    !------------------------------------------------------------------------
-  subroutine create_betr_application(this, bgc_reaction, plant_soilbgc, method, bstatus)
+  subroutine create_betr_application(this, bgc_reaction, plant_soilbgc, method, asoibgc, bstatus)
   !DESCRIPTION
   !create betr applications based on method
   !USES
   use ReactionsFactory    , only : create_betr_def_application
-#if (defined BETR_BGC)
   use ApplicationsFactory , only : create_betr_usr_application
-#endif
   use BetrStatusType      , only : betr_status_type
   implicit none
   !ARGUMENTS
@@ -1172,21 +1164,23 @@ contains
   class(bgc_reaction_type)  ,  allocatable, intent(out)  :: bgc_reaction
   class(plant_soilbgc_type) ,  allocatable, intent(out)  :: plant_soilbgc
   character(len=*)          ,               intent(in)   :: method
+  logical                   , intent(out) :: asoibgc
   type(betr_status_type)    , intent(out) :: bstatus
+
   !temporary variable
   logical :: yesno
 
   call bstatus%reset()
-   ! remove compiler warnings about unused dummy args
-  if(len_trim(this%reaction_method)>0)continue
 
+  asoibgc = .false.
   !if it is a default case, create it
   call create_betr_def_application(bgc_reaction, plant_soilbgc, method, yesno)
-#if (defined BETR_BGC)
   if(.not. yesno)then
     call create_betr_usr_application(bgc_reaction, plant_soilbgc, method, bstatus)
   endif
-#endif
+  if(trim(method) =='eca_cnp')then
+    asoibgc = .true.
+  endif
   end subroutine create_betr_application
 
    !------------------------------------------------------------------------

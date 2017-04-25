@@ -65,7 +65,7 @@ module MockPlantSoilBGCType
 
   !----------------------------------------------------------------------
   subroutine plant_soilbgc_summary(this,bounds, lbj, ubj, pft, numf, &
-       filter, dtime, dz, betrtracer_vars, tracerflux_vars, betr_status)
+       filter, dtime, dz, betrtracer_vars, tracerflux_vars, biogeo_flux, betr_status)
   !DESCRIPTION
   !summarize bgc coupling flux variables
   ! !USES:
@@ -74,6 +74,7 @@ module MockPlantSoilBGCType
   use bshr_kind_mod  , only : r8 => shr_kind_r8
   use BetrStatusType , only : betr_status_type
   use BeTR_PatchType , only : betr_patch_type
+  use BeTR_biogeoFluxType  , only : betr_biogeo_flux_type
   implicit none
   ! !ARGUMENTS:
   class(plant_soilbgc_mock_run_type) , intent(inout) :: this
@@ -86,6 +87,7 @@ module MockPlantSoilBGCType
   real(r8)                           , intent(in) :: dz(bounds%begc:bounds%endc,1:ubj)
   type(BeTRtracer_type )             , intent(in) :: betrtracer_vars
   type(tracerflux_type)              , intent(in) :: tracerflux_vars
+  type(betr_biogeo_flux_type)        , intent(inout) :: biogeo_flux
   type(betr_status_type)             , intent(out):: betr_status
 
   call betr_status%reset()
@@ -154,7 +156,7 @@ module MockPlantSoilBGCType
   !----------------------------------------------------------------------
 
   subroutine lsm_betr_plant_soilbgc_send(this, bounds, numf, filter,  &
-    betr_pft, biogeo_forc, biogeo_states, biogeo_fluxes, ecophyscon_vars)
+    betr_pft, biogeo_forc, biogeo_states, biogeo_fluxes)
   !
   !DESCRIPTION
   ! initialize feedback variables for plant soil bgc interactions
@@ -163,7 +165,6 @@ module MockPlantSoilBGCType
   use BeTR_biogeoStateType , only : betr_biogeo_state_type
   use BeTR_biogeoFluxType  , only : betr_biogeo_flux_type
   use BeTR_decompMod       , only : betr_bounds_type
-  use BeTR_EcophysConType  , only : betr_ecophyscon_type
   use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
   use BeTR_PatchType, only : betr_patch_type
   ! !ARGUMENTS:
@@ -175,7 +176,6 @@ module MockPlantSoilBGCType
   type(betr_biogeophys_input_type), intent(in):: biogeo_forc
   type(betr_biogeo_state_type)       , intent(in) :: biogeo_states
   type(betr_biogeo_flux_type)        , intent(in) :: biogeo_fluxes
-  type(betr_ecophyscon_type)         , intent(in) :: ecophyscon_vars
 
   ! remove compiler warnings for unused dummy args
   if (this%dummy_compiler_warning)       continue
@@ -184,7 +184,6 @@ module MockPlantSoilBGCType
   if (size(filter) > 0)                  continue
   if (size(biogeo_states%zwts_col)>0)    continue
   if(size(biogeo_fluxes%qflx_adv_col)>0) continue
-  if(size(ecophyscon_vars%noveg)>0)      continue
 
   end subroutine lsm_betr_plant_soilbgc_send
 end module MockPlantSoilBGCType

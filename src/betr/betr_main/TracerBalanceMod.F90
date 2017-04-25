@@ -153,8 +153,6 @@ module TracerBalanceMod
                       new_line('A'),errMsg(mod_filename, __LINE__)
                  call tracerflux_vars%flux_display(c,kk,betrtracer_vars, msg1)
                  msg = trim(msg)//new_line('A')//trim(msg1)
-                 print*,trim(msg)
-                 pause
                  call betr_status%set_msg(msg=msg, err=-1)
                  return
               endif

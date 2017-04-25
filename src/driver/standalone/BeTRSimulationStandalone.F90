@@ -17,7 +17,6 @@ module BeTRSimulationStandalone
   use BeTRSimulation      , only : betr_simulation_type
   use tracer_varcon       , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
   use EcophysConType      , only : ecophyscon_type
-  use BeTR_EcophysConType , only : betr_ecophyscon_type
   use betr_varcon         , only : betr_maxpatch_pft
   implicit none
 

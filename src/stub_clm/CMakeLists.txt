@@ -39,6 +39,7 @@ set(BETR_STUB_CLM_SOURCES
   column_varcon.F90
   debuginfoMod.F90
   decompMod.F90
+  PlantMicKineticsMod.F90
   fileutils.F90
   getdatetime.F90
   histFileMod.F90

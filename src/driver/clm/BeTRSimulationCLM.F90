@@ -13,7 +13,6 @@ module BeTRSimulationCLM
   use shr_log_mod         , only : errMsg => shr_log_errMsg
   use decompMod           , only : bounds_type
   use EcophysConType      , only : ecophyscon_type
-  use BeTR_EcophysConType , only : betr_ecophyscon_type
   use BeTRSimulation      , only : betr_simulation_type
   use betr_decompMod      , only : betr_bounds_type
   use BeTR_TimeMod        , only : betr_time_type

@@ -38,7 +38,7 @@ contains
   character(len=*), intent(in) :: fmt
   character(len=betr_string_length_long) :: ans
 
-  write(ans,fmt),num
+  write(ans,fmt)num
   return
   end function num2str
   ! ----------------------------------------------------------------------

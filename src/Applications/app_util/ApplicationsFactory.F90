@@ -19,6 +19,8 @@ module ApplicationsFactory
        __FILE__
   private
   public :: create_betr_usr_application
+  public :: AppLoadParameters
+
 contains
 
   subroutine create_betr_usr_application(bgc_reaction, plant_soilbgc, method, bstatus)
@@ -54,7 +56,6 @@ contains
     use betr_constants  , only : betr_errmsg_len
     use BetrStatusType  , only : betr_status_type
     use BGCReactionsCentECACnpType, only : bgc_reaction_CENTURY_ECACNP_type
-    use BGCReactionsCentECADcnpType, only : bgc_reaction_CENTURY_ECADCNP_type
     implicit none
     ! !ARGUMENTS:
     character(len=*), intent(in)          :: method
@@ -69,8 +70,6 @@ contains
     select case(trim(method))
     case ("eca_cnp")
        allocate(bgc_reaction, source=bgc_reaction_CENTURY_ECACNP_type())
-    case ("eca_dcnp")
-       allocate(bgc_reaction, source=bgc_reaction_CENTURY_ECADCNP_type())
     case default
        write(msg,*)subname //' ERROR: unknown method: ', method
        msg = trim(msg)//new_line('A')//errMsg(mod_filename, __LINE__)
@@ -90,7 +89,7 @@ contains
   use betr_constants  , only : betr_errmsg_len
   use BetrStatusType  , only : betr_status_type
   use PlantSoilBgcCnpType, only : plant_soilbgc_cnp_type
-  use PlantSoilBgcDcnpType, only : plant_soilbgc_dcnp_type
+!  use PlantSoilBgcDcnpType, only : plant_soilbgc_dcnp_type
 
   implicit none
   ! !ARGUMENTS:
@@ -106,8 +105,8 @@ contains
   select case(trim(method))
   case ("eca_cnp")
      allocate(plant_soilbgc, source=plant_soilbgc_cnp_type())
-  case ("eca_dcnp")
-     allocate(plant_soilbgc, source=plant_soilbgc_dcnp_type())
+!  case ("eca_dcnp")
+!     allocate(plant_soilbgc, source=plant_soilbgc_dcnp_type())
   case default
      write(msg, *)subname //' ERROR: unknown method: ', method
      msg = trim(msg)//new_line('A')//errMsg(mod_filename, __LINE__)
@@ -115,4 +114,29 @@ contains
   end select
 
   end function create_plant_soilbgc_type
+
+
+  !-------------------------------------------------------------------------------
+  subroutine AppLoadParameters(bgc_namelist_buffer, reaction_method, bstatus)
+  !
+  ! DESCRIPTION
+  ! read in the parameters for specified bgc implementation
+  use BiogeoConType, only : bgc_con_eca
+  use betr_constants , only : betr_namelist_buffer_size_ext
+  use BetrStatusType , only : betr_status_type
+  implicit none
+  character(len=betr_namelist_buffer_size_ext), intent(in) :: bgc_namelist_buffer
+  character(len=*), intent(in) :: reaction_method
+  type(betr_status_type), intent(out)   :: bstatus
+  character(len=255) :: msg
+
+   select case (trim(reaction_method))
+   case ("eca_cnp")
+     call  bgc_con_eca%Init(bgc_namelist_buffer, bstatus)
+   case default
+     msg = "no parameter file to read for the specified bgc method"//errmsg(__FILE__, __LINE__)
+     call bstatus%set_msg(msg=msg,err=-1)
+   end select
+
+  end subroutine  AppLoadParameters
 end module ApplicationsFactory
