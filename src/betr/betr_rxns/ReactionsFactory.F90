@@ -107,6 +107,7 @@ contains
   function is_reaction_exist(method)result(yesno)
   !DESCRIPTION
   !determine if it is a default betr application
+  use betr_ctrl                  , only : iulog  => biulog
   implicit none
   character(len=*), intent(in) :: method
   character(len=*), parameter  :: subname = 'is_reaction_exist'
@@ -118,7 +119,7 @@ contains
   case ("h2oiso")
      yesno = .true.
   case default
-     write(*, *)subname //' Warning: unknown default method: ', method
+     write(iulog, *)subname //' Warning: unknown default method: '//trim(method)//'. Looking for user defined method.'
      yesno = .false.
   end select
 
