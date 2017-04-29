@@ -8,11 +8,12 @@ implicit none
   type, public :: betr_carbonflux_recv_type
     real(r8), pointer :: hr_col(:) => null()
     real(r8), pointer :: hr_vr_col(:,:) => null()
-    real(r8), pointer :: fire_decomp_closs_col(:) => null()
+    real(r8), pointer :: fire_decomp_closs_col(:) => null()  !will be summarized from the specific bgc model
   contains
     procedure, public  :: Init
     procedure, private :: InitAllocate
     procedure, public  :: reset
+    procedure, public  :: summary
   end type betr_carbonflux_recv_type
 
  contains
@@ -54,8 +55,27 @@ implicit none
   class(betr_carbonflux_recv_type)  :: this
   real(r8), intent(in) :: value_column
 
-  this%hr_col(:) = value_column
   this%hr_vr_col(:,:) = value_column
   this%fire_decomp_closs_col(:) = value_column
   end subroutine reset
+
+
+  !------------------------------------------------------------------------
+  subroutine summary(this, bounds, lbj, ubj, dz)
+
+  implicit none
+  class(betr_carbonflux_recv_type), intent(inout)  :: this
+  type(betr_bounds_type), intent(in) :: bounds
+  integer , intent(in) :: lbj, ubj
+  real(r8), intent(in) :: dz(bounds%begc:bounds%endc,lbj:ubj)
+
+  integer :: c, j
+
+  this%hr_col(:) = 0._r8
+  do j = lbj, ubj
+    do c=bounds%begc, bounds%endc
+      this%hr_col(c) = this%hr_col(c) + dz(c,j) * this%hr_vr_col(c,j)
+    enddo
+  enddo
+  end subroutine summary  
 end module BeTR_carbonfluxRecvType

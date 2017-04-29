@@ -1588,7 +1588,7 @@ contains
         (ystatesf(this%centurybgc_index%lid_n2o_nit) - &
          ystates0(this%centurybgc_index%lid_n2o_nit))*natomw/dtime
 
-      biogeo_flux%n14flux_vars%f_n2o_nit_vr(c,j) = &
+      biogeo_flux%n14flux_vars%f_n2o_nit_vr_col(c,j) = &
         (ystatesf(this%centurybgc_index%lid_no3_den) - &
          ystates0(this%centurybgc_index%lid_no3_den))*natomw/dtime
 

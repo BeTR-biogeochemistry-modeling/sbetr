@@ -76,7 +76,7 @@ module BeTRSimulation
      real(r8), pointer :: rest_states_1d(:,:)
      real(r8), pointer :: hist_fluxes_1d(:,:)
      real(r8), pointer :: hist_fluxes_2d(:,:,:)
-     logical, private :: active_soibgc
+     logical,  public :: active_soibgc
      ! FIXME(bja, 201603) most of these types should be private!
 
      ! NOTE(bja, 201603) BeTR types only, no LSM specific types here!
@@ -296,10 +296,6 @@ contains
       l = col%landunit(c)
       call this%biophys_forc(c)%Init(betr_bounds)
 
-      call this%biogeo_state(c)%Init(betr_bounds)
-
-      call this%biogeo_flux(c)%Init(betr_bounds)
-
       call this%betr_col(c)%Init(betr_bounds)
 
       call this%betr_pft(c)%Init(betr_bounds)
@@ -327,6 +323,12 @@ contains
 
     if(this%bsimstatus%check_status())call endrun(msg=this%bsimstatus%print_msg())
 
+    do c = bounds%begc, bounds%endc
+
+      call this%biogeo_state(c)%Init(betr_bounds, this%active_soibgc)
+
+      call this%biogeo_flux(c)%Init(betr_bounds, this%active_soibgc)
+    enddo
     !identify variables that are used for history output
     c = bounds%begc
     call this%betr(c)%get_hist_size(this%num_hist_state1d, this%num_hist_state2d, &

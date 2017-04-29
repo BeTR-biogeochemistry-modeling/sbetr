@@ -192,6 +192,9 @@ contains
 
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
+      call this%biogeo_state(c)%reset(value_column=0._r8, active_soibgc=this%active_soibgc)
+      call this%biogeo_flux(c)%reset(value_column=0._r8, active_soibgc=this%active_soibgc)
+
       call this%betr(c)%step_without_drainage(this%betr_time, betr_bounds, this%betr_col(c), &
          this%betr_pft(c), this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp, &
          this%biophys_forc(c), this%biogeo_flux(c), this%biogeo_state(c), this%bstatus(c))
@@ -633,9 +636,21 @@ contains
   type(nitrogenflux_type), intent(inout):: n14flux_vars
   type(phosphorusflux_type), intent(inout):: p31flux_vars
   integer :: c, fc, p, pi, c_l
+  
+    !TEMPORARY VARIABLES
+  type(betr_bounds_type)     :: betr_bounds
+  integer :: begc_l, endc_l
 
-
+  !summarize the fluxes and state variables 
   c_l = 1
+  call this%BeTRSetBounds(betr_bounds)
+  begc_l = betr_bounds%begc; endc_l=betr_bounds%endc;
+  do fc = 1, num_soilc
+    c = filter_soilc(fc)
+    call this%biogeo_flux(c)%summary(betr_bounds, 1, betr_nlevtrc_soil, this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil))
+    call this%biogeo_state(c)%summary(betr_bounds, 1, betr_nlevtrc_soil,this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil), &
+       this%betr_col(c)%zi(begc_l:endc_l,1:betr_nlevtrc_soil))
+  enddo
   !retrieve plant nutrient uptake from biogeo_flux
   do fc = 1, num_soilc
     c = filter_soilc(fc)
@@ -681,7 +696,7 @@ contains
     c12state_vars%totsomc_col(c) = this%biogeo_state(c)%c12state_vars%totsomc_col(c_l)
     c12state_vars%totlitc_1m_col(c) = this%biogeo_state(c)%c12state_vars%totlitc_1m_col(c_l)
     c12state_vars%totsomc_1m_col(c) = this%biogeo_state(c)%c12state_vars%totsomc_1m_col(c_l)
-
+    write(iulog,*)'almbetr cwd, lit, som',c12state_vars%cwdc_col(c),c12state_vars%totlitc_col(c),c12state_vars%totsomc_col(c)
     if(use_c13_betr)then
       c13state_vars%cwdc_col(c) = this%biogeo_state(c)%c13state_vars%cwdc_col(c_l)
       c13state_vars%totlitc_col(c) = this%biogeo_state(c)%c13state_vars%totlitc_col(c_l)

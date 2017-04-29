@@ -30,6 +30,7 @@ implicit none
       procedure, public  :: Init
       procedure, private :: InitAllocate
       procedure, public  :: reset
+      procedure, public  :: Summary
   end type betr_biogeo_flux_type
 
   public :: create_betr_biogeoFlux
@@ -49,22 +50,24 @@ contains
   end function create_betr_biogeoFlux
 
   !------------------------------------------------------------------------
-  subroutine Init(this, bounds)
+  subroutine Init(this, bounds, active_soibgc)
 
   implicit none
   class(betr_biogeo_flux_type), intent(inout)  :: this
   type(betr_bounds_type), intent(in) :: bounds
+  logical, intent(in) :: active_soibgc
 
-  call this%c12flux_vars%Init(bounds)
-  if(use_c13_betr)then
-    call this%c13flux_vars%Init(bounds)
+  if(active_soibgc)then
+    call this%c12flux_vars%Init(bounds)
+    if(use_c13_betr)then
+      call this%c13flux_vars%Init(bounds)
+    endif
+    if(use_c14_betr)then
+      call this%c14flux_vars%Init(bounds)
+    endif
+    call this%n14flux_vars%Init(bounds)
+    call this%p31flux_vars%Init(bounds)
   endif
-  if(use_c14_betr)then
-    call this%c14flux_vars%Init(bounds)
-  endif
-  call this%n14flux_vars%Init(bounds)
-  call this%p31flux_vars%Init(bounds)
-
   call this%InitAllocate(bounds)
   end subroutine Init
 
@@ -92,21 +95,48 @@ contains
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------
-  subroutine reset(this, value_column)
+  subroutine reset(this, value_column, active_soibgc)
   implicit none
   class(betr_biogeo_flux_type)  :: this
   real(r8), intent(in) :: value_column
+  logical, intent(in) :: active_soibgc
 
-  call this%c12flux_vars%reset(value_column)
-  if(use_c13_betr)then
-    call this%c13flux_vars%reset(value_column)
+  if(active_soibgc)then
+    call this%c12flux_vars%reset(value_column)
+    if(use_c13_betr)then
+      call this%c13flux_vars%reset(value_column)
+    endif
+    if(use_c14_betr)then
+      call this%c14flux_vars%reset(value_column)
+    endif
+    call this%n14flux_vars%reset(value_column)
+    call this%p31flux_vars%reset(value_column)
   endif
-  if(use_c14_betr)then
-    call this%c14flux_vars%reset(value_column)
-  endif
-  call this%n14flux_vars%reset(value_column)
-  call this%p31flux_vars%reset(value_column)
-
   end subroutine reset
+  !------------------------------------------------------------------------
+  subroutine summary(this, bounds, lbj, ubj, dz)
+
+  implicit none
+  class(betr_biogeo_flux_type),intent(inout)  :: this
+  type(betr_bounds_type), intent(in) :: bounds
+  integer , intent(in) :: lbj, ubj
+  real(r8), intent(in) :: dz(bounds%begc:bounds%endc,lbj:ubj)
+
+
+  !integrate 
+  call this%c12flux_vars%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj))
+
+  if(use_c13_betr)then
+     call this%c13flux_vars%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj))
+  endif
+
+  if(use_c14_betr)then
+     call this%c14flux_vars%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj))
+  endif
+
+  call this%n14flux_vars%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj))
+
+  call this%p31flux_vars%summary(bounds, lbj, ubj, dz)
+  end subroutine summary
 
 end module BeTR_biogeoFluxType
