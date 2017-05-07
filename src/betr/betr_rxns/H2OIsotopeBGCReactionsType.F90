@@ -45,7 +45,8 @@ module H2OIsotopeBGCReactionsType
      procedure :: do_tracer_equilibration       ! do equilibrium tracer chemistry
      procedure :: initCold
      procedure :: lsm_betr_flux_state_receive
-
+     procedure :: set_kinetics_par
+     procedure :: retrieve_lnd2atm
      procedure, private :: readParams
    end type bgc_reaction_h2oiso_type
 
@@ -67,6 +68,18 @@ module H2OIsotopeBGCReactionsType
 
   end function constructor
 
+  !----------------------------------------------------------------------
+  subroutine set_kinetics_par(this, lbj, ubj,nactpft, plantNutkinetics)
+  use PlantNutKineticsMod, only : PlantNutKinetics_type
+
+  ! !ARGUMENTS:
+  class(bgc_reaction_h2oiso_type)         , intent(inout)    :: this                       !
+  class(PlantNutKinetics_type), intent(in) :: plantNutkinetics
+  integer, intent(in) :: lbj, ubj
+  integer, intent(in) :: nactpft
+
+
+  end subroutine set_kinetics_par
 !-------------------------------------------------------------------------------
   subroutine init_boundary_condition_type(this, bounds, betrtracer_vars, tracerboundarycond_vars )
   !
@@ -97,6 +110,30 @@ module H2OIsotopeBGCReactionsType
 
   end subroutine init_boundary_condition_type
 
+
+   !----------------------------------------------------------------------
+   subroutine retrieve_lnd2atm(this, bounds, num_soilc, filter_soilc, tracerflux_vars, &
+   betrtracer_vars, biogeo_flux)
+
+   use tracerfluxType           , only : tracerflux_type
+   use BeTR_decompMod           , only : betr_bounds_type
+   use BeTRTracerType           , only : BeTRTracer_Type
+   use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
+   implicit none
+   class(bgc_reaction_h2oiso_type) , intent(inout) :: this
+   type(betr_bounds_type)           , intent(in)    :: bounds                      ! bounds
+   integer                          , intent(in)    :: num_soilc                   ! number of columns in column filter
+   integer                          , intent(in)    :: filter_soilc(:)             ! column filter
+   type(betrtracer_type)            , intent(in)    :: betrtracer_vars             ! betr configuration information
+   type(tracerflux_type)            , intent(in)    :: tracerflux_vars
+   type(betr_biogeo_flux_type)      , intent(inout) :: biogeo_flux
+
+
+
+   if (this%dummy_compiler_warning) continue
+   if (bounds%begc > 0)             continue
+
+   end subroutine retrieve_lnd2atm
 
 !-------------------------------------------------------------------------------
 

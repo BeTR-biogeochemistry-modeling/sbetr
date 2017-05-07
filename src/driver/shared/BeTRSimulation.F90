@@ -102,6 +102,7 @@ module BeTRSimulation
      procedure, public :: MassBalanceCheck        => BeTRSimulationMassBalanceCheck
      procedure, public :: BeTRSetBiophysForcing   => BeTRSimulationSetBiophysForcing
      procedure, public :: RetrieveBiogeoFlux      => BeTRSimulationRetrieveBiogeoFlux
+     procedure, public :: DiagnoseLnd2atm         => BeTRSimulationDiagnoseLnd2atm
      procedure, public :: CreateOfflineHistory    => hist_htapes_create
      procedure, public :: WriteOfflineHistory     => hist_write
 
@@ -487,7 +488,29 @@ contains
     if (size(col%z) > 0)                              continue
 
   end subroutine BeTRSimulationStepWithoutDrainage
+  !---------------------------------------------------------------------------------
+  subroutine BeTRSimulationDiagnoseLnd2atm(this, bounds,  col, lnd2atm_vars)
+   !
+   !DESCRIPTION
+   !interface for using diagnose land fluxes to atm and river copmonents
+   !
+   !USES
+    use ColumnType    , only : column_type
+    use MathfuncMod   , only : safe_div
+    use lnd2atmType    , only : lnd2atm_type
+    implicit none
+    !ARGUMENTS
+    class(betr_simulation_type) , intent(inout) :: this
+    type(bounds_type)           , intent(in)    :: bounds
+    type(column_type)           , intent(in)    :: col ! column type
+    type(lnd2atm_type)          , intent(inout) :: lnd2atm_vars
 
+    ! remove compiler warnings about unused dummy args
+    if (this%num_soilc > 0) continue
+    if (bounds%begc > 0)    continue
+    if (size(col%z) > 0)    continue
+
+  end subroutine BeTRSimulationDiagnoseLnd2atm
   !---------------------------------------------------------------------------------
   subroutine BeTRSimulationStepWithDrainage(this, bounds,  col)
    !
@@ -497,7 +520,6 @@ contains
    !USES
     use ColumnType    , only : column_type
     use MathfuncMod   , only : safe_div
-    use WaterFluxType , only : waterflux_type
     implicit none
     !ARGUMENTS
     class(betr_simulation_type) , intent(inout) :: this
@@ -1856,7 +1878,7 @@ contains
   use decompMod             , only : bounds_type
   use ColumnType            , only : column_type
   use PatchType             , only : patch_type
-  use pftvarcon             , only : crop
+  use pftvarcon             , only : noveg, crop
   use tracer_varcon         , only : betr_nlevsoi
   !ARGUMENTS
   implicit none
@@ -1864,7 +1886,7 @@ contains
   type(bounds_type), intent(in) :: bounds
   type(column_type), intent(in) :: col
   type(patch_type), optional, intent(in) :: pft
-  integer :: c, p, pi
+  integer :: c, p, pi, pp
 
 
   do c = bounds%begc, bounds%endc
@@ -1879,17 +1901,19 @@ contains
     if(present(pft))then
       this%betr_pft(c)%column(:)=1
       this%betr_pft(c)%npfts = 0
+      pp = 0
       do pi = 1, betr_maxpatch_pft
         if (pi <= col%npfts(c)) then
           p = col%pfti(c) + pi - 1
-          if (pft%active(p)) then
-            this%betr_pft(c)%wtcol(pi) = pft%wtcol(p)
-            this%betr_pft(c)%itype(pi) = pft%itype(p)
-            this%betr_pft(c)%crop(pi) = crop(pi)         !the crop looks weird here, jyt
-            this%betr_pft(c)%npfts = this%betr_pft(c)%npfts + 1
+          if (pft%active(p) .and. (pft%itype(p) .ne. noveg)) then
+            pp = pp + 1
+            this%betr_pft(c)%wtcol(pp) = pft%wtcol(p)
+            this%betr_pft(c)%itype(pp) = pft%itype(p)
+            this%betr_pft(c)%crop(pp) = crop(pi)         !the crop looks weird here, jyt
           endif
         endif
       enddo
+      this%betr_pft(c)%npfts = pp
     endif
   enddo
 

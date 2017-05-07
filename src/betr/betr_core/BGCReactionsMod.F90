@@ -39,6 +39,9 @@ module BGCReactionsMod
      !send back soil state flux variables to other parts of lsm
      procedure(lsm_betr_flux_state_receive_interface)     , deferred :: lsm_betr_flux_state_receive
 
+     procedure(set_kinetics_par_interface)                , deferred :: set_kinetics_par
+
+     procedure(retrieve_lnd2atm_interface)                , deferred :: retrieve_lnd2atm
   end type bgc_reaction_type
 
   abstract interface
@@ -110,6 +113,38 @@ module BGCReactionsMod
        type(betr_status_type)           , intent(out)   :: betr_status
 
      end subroutine calc_bgc_reaction_interface
+
+     !----------------------------------------------------------------------
+     subroutine retrieve_lnd2atm_interface(this, bounds, num_soilc, filter_soilc, tracerflux_vars, &
+     betrtracer_vars, biogeo_flux)
+
+     use tracerfluxType           , only : tracerflux_type
+     use BeTR_decompMod           , only : betr_bounds_type
+     use BeTRTracerType           , only : BeTRTracer_Type
+     use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
+     import :: bgc_reaction_type
+     class(bgc_reaction_type)         , intent(inout) :: this                       !
+     type(betr_bounds_type)           , intent(in)    :: bounds                      ! bounds
+     integer                          , intent(in)    :: num_soilc                   ! number of columns in column filter
+     integer                          , intent(in)    :: filter_soilc(:)             ! column filter
+     type(betrtracer_type)            , intent(in)    :: betrtracer_vars             ! betr configuration information
+     type(tracerflux_type)            , intent(in)    :: tracerflux_vars
+     type(betr_biogeo_flux_type)      , intent(inout) :: biogeo_flux
+
+
+     end subroutine retrieve_lnd2atm_interface
+     !----------------------------------------------------------------------
+     subroutine set_kinetics_par_interface(this, lbj, ubj, nactpft, plantNutkinetics)
+     use PlantNutKineticsMod, only : PlantNutKinetics_type
+
+     ! !ARGUMENTS:
+     import :: bgc_reaction_type
+     class(bgc_reaction_type)         , intent(inout)    :: this                       !
+     class(PlantNutKinetics_type), intent(in) :: plantNutkinetics
+     integer, intent(in) :: lbj, ubj
+     integer, intent(in) :: nactpft
+
+     end subroutine set_kinetics_par_interface
      !----------------------------------------------------------------------
 
      subroutine set_boundary_conditions_interface(this, bounds, num_soilc, filter_soilc, dz_top, &

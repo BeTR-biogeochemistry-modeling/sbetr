@@ -37,6 +37,7 @@ module BeTRSimulationALM
      procedure, public :: CalcSmpL                  => ALMCalcSmpL
      procedure, public :: PlantSoilBGCSend          => ALMBetrPlantSoilBGCSend
      procedure, public :: PlantSoilBGCRecv          => ALMBetrPlantSoilBGCRecv
+     procedure, public :: DiagnoseLnd2atm           => ALMDiagnoseLnd2atm
      procedure, public :: set_active                => ALMset_active
      procedure, private:: set_transient_kinetics_par
   end type betr_simulation_alm_type
@@ -227,24 +228,24 @@ contains
     this%active_col(c) = (this%active_col(c) .and. col%active(c))
   enddo
   end subroutine ALMset_active
+
   !---------------------------------------------------------------------------------
   subroutine ALMStepWithDrainage(this, bounds,  col)
+   !
    !DESCRIPTION
-   ! march one step with drainage
+   !interface for using diagnose land fluxes to atm and river copmonents
    !
    !USES
-    use ColumnType     , only : column_type
-    use WaterFluxType  , only : waterflux_type
-    use LandunitType   , only : landunit_type
+    use ColumnType    , only : column_type
+    use MathfuncMod   , only : safe_div
+    use lnd2atmType    , only : lnd2atm_type
     use clm_varpar     , only : nlevsno, nlevsoi, nlevtrc_soil
-
-    use betr_decompMod , only : betr_bounds_type
     use tracer_varcon  , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
     implicit none
-    ! !ARGUMENTS:
+    !ARGUMENTS
     class(betr_simulation_alm_type) , intent(inout) :: this
-    type(bounds_type)               , intent(in)    :: bounds
-    type(column_type)               , intent(in)    :: col ! column type
+    type(bounds_type)           , intent(in)    :: bounds
+    type(column_type)           , intent(in)    :: col ! column type
 
     !temporary variables
     type(betr_bounds_type) :: betr_bounds
@@ -274,7 +275,89 @@ contains
       endif
     enddo
 
+
   end subroutine ALMStepWithDrainage
+
+  !---------------------------------------------------------------------------------
+  subroutine ALMDiagnoseLnd2atm(this, bounds,  col, lnd2atm_vars)
+   !DESCRIPTION
+   ! march one step with drainage
+   !
+   !USES
+    use ColumnType     , only : column_type
+    use subgridAveMod  , only : c2g
+    use LandunitType   , only : landunit_type
+    use clm_varpar     , only : nlevsno, nlevsoi, nlevtrc_soil
+    use lnd2atmType    , only : lnd2atm_type
+    use betr_decompMod , only : betr_bounds_type
+    use tracer_varcon  , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
+    use ALMBeTRNLMod    , only : reaction_method
+    implicit none
+    ! !ARGUMENTS:
+    class(betr_simulation_alm_type) , intent(inout) :: this
+    type(bounds_type)               , intent(in)    :: bounds
+    type(column_type)               , intent(in)    :: col ! column type
+    type(lnd2atm_type)              , intent(inout) :: lnd2atm_vars
+
+    !temporary variables
+    type(betr_bounds_type) :: betr_bounds
+    integer                :: lbj, ubj ! lower and upper bounds, make sure they are > 0
+    integer                :: c, c_l
+    real(r8)  :: qflx_rofliq_qsur_doc_col(bounds%begc:bounds%endc)
+    real(r8)  :: qflx_rofliq_qsur_dic_col(bounds%begc:bounds%endc)
+    real(r8)  :: qflx_rofliq_qsub_doc_col(bounds%begc:bounds%endc)
+    real(r8)  :: qflx_rofliq_qsub_dic_col(bounds%begc:bounds%endc)
+
+    associate(  &
+     begc => bounds%begc, &
+     endc => bounds%endc, &
+     begg => bounds%begg, &
+     endg => bounds%endg, &
+     qflx_rofliq_qsur_doc_grc  => lnd2atm_vars%qflx_rofliq_qsur_doc_grc, &
+     qflx_rofliq_qsur_dic_grc  => lnd2atm_vars%qflx_rofliq_qsur_dic_grc, &
+     qflx_rofliq_qsub_doc_grc  => lnd2atm_vars%qflx_rofliq_qsub_doc_grc, &
+     qflx_rofliq_qsub_dic_grc  => lnd2atm_vars%qflx_rofliq_qsub_dic_grc  &
+    )
+
+    call this%BeTRSetBounds(betr_bounds)
+
+    do c = bounds%begc, bounds%endc
+      if(.not. this%active_col(c))cycle
+         call this%betr(c)%diagnoselnd2atm(betr_bounds,      &
+           this%num_soilc, this%filter_soilc, this%biogeo_flux(c))
+    enddo
+
+
+    if(trim(reaction_method)=='doc_dic')then
+
+      c_l = 1
+      do c = bounds%begc, bounds%endc
+        if(.not. this%active_col(c))cycle
+        qflx_rofliq_qsur_doc_col(c)=this%biogeo_flux(c)%qflx_rofliq_qsur_doc_col(c_l)
+        qflx_rofliq_qsur_dic_col(c)=this%biogeo_flux(c)%qflx_rofliq_qsur_dic_col(c_l)
+        qflx_rofliq_qsub_doc_col(c)=this%biogeo_flux(c)%qflx_rofliq_qsub_doc_col(c_l)
+        qflx_rofliq_qsub_dic_col(c)=this%biogeo_flux(c)%qflx_rofliq_qsub_dic_col(c_l)
+      enddo
+
+
+      call c2g( bounds, &
+           qflx_rofliq_qsur_doc_col(begc:endc), qflx_rofliq_qsur_doc_grc(begg:endg),     &
+           c2l_scale_type= 'unity', l2g_scale_type='unity' )
+
+      call c2g( bounds, &
+           qflx_rofliq_qsur_dic_col(begc:endc), qflx_rofliq_qsur_dic_grc(begg:endg),     &
+           c2l_scale_type= 'unity', l2g_scale_type='unity' )
+
+      call c2g( bounds, &
+           qflx_rofliq_qsub_doc_grc(begc:endc), qflx_rofliq_qsub_doc_grc(begg:endg),     &
+           c2l_scale_type= 'unity', l2g_scale_type='unity' )
+
+      call c2g( bounds, &
+           qflx_rofliq_qsub_doc_grc(begc:endc), qflx_rofliq_qsub_doc_grc(begg:endg),     &
+           c2l_scale_type= 'unity', l2g_scale_type='unity' )
+    endif
+    end associate
+  end subroutine ALMDiagnoseLnd2atm
 
   !------------------------------------------------------------------------
   subroutine ALMBetrPlantSoilBGCSend(this, bounds, col, pft, num_soilc,  filter_soilc, cnstate_vars, &
@@ -618,6 +701,7 @@ contains
   use PhosphorusFluxType  , only : phosphorusflux_type
   use PhosphorusStateType , only : phosphorusstate_type
   use tracer_varcon       , only : use_c13_betr, use_c14_betr
+  use pftvarcon           , only : noveg
   implicit none
   class(betr_simulation_alm_type), intent(inout)  :: this
   type(bounds_type) , intent(in)  :: bounds
@@ -636,12 +720,12 @@ contains
   type(nitrogenflux_type), intent(inout):: n14flux_vars
   type(phosphorusflux_type), intent(inout):: p31flux_vars
   integer :: c, fc, p, pi, c_l
-  
+
     !TEMPORARY VARIABLES
   type(betr_bounds_type)     :: betr_bounds
   integer :: begc_l, endc_l
 
-  !summarize the fluxes and state variables 
+  !summarize the fluxes and state variables
   c_l = 1
   call this%BeTRSetBounds(betr_bounds)
   begc_l = betr_bounds%begc; endc_l=betr_bounds%endc;
@@ -654,12 +738,14 @@ contains
   !retrieve plant nutrient uptake from biogeo_flux
   do fc = 1, num_soilc
     c = filter_soilc(fc)
+    pi = 0
     do p = col%pfti(c), col%pftf(c)
-      pi = p-col%pfti(c) + 1
-      n14flux_vars%smin_nh4_to_plant_patch(p) = this%biogeo_flux(c)%n14flux_vars%smin_nh4_to_plant_patch(pi)
-      n14flux_vars%smin_no3_to_plant_patch(p) = this%biogeo_flux(c)%n14flux_vars%smin_no3_to_plant_patch(pi)
-
-      p31flux_vars%sminp_to_plant_patch(p)  = this%biogeo_flux(c)%p31flux_vars%sminp_to_plant_patch(pi)
+      if (pft%active(p) .and. (pft%itype(p) .ne. noveg)) then
+        pi = pi + 1
+        n14flux_vars%smin_nh4_to_plant_patch(p) = this%biogeo_flux(c)%n14flux_vars%smin_nh4_to_plant_patch(pi)
+        n14flux_vars%smin_no3_to_plant_patch(p) = this%biogeo_flux(c)%n14flux_vars%smin_no3_to_plant_patch(pi)
+        p31flux_vars%sminp_to_plant_patch(p)  = this%biogeo_flux(c)%p31flux_vars%sminp_to_plant_patch(pi)
+      endif
     enddo
 
     !recollect soil respirations,
@@ -856,7 +942,7 @@ contains
   !------------------------------------------------------------------------
   subroutine ALMSetBiophysForcing(this, bounds, col, pft, carbonflux_vars, waterstate_vars, &
     waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
-    chemstate_vars, soilstate_vars, cnstate_vars)
+    chemstate_vars, soilstate_vars, cnstate_vars, carbonstate_vars)
   !DESCRIPTION
   !pass in biogeophysical variables for running betr
   !USES
@@ -873,6 +959,8 @@ contains
   use CNCarbonFluxType  , only : carbonflux_type
   use CanopyStateType   , only : canopystate_type
   use clm_varpar        , only : nlevsno, nlevsoi
+  use ALMBeTRNLMod    , only : reaction_method
+  use CNCarbonStateType   , only : carbonstate_type
   implicit none
   !ARGUMENTS
   class(betr_simulation_alm_type) , intent(inout)        :: this
@@ -889,8 +977,10 @@ contains
   type(canopystate_type)      , optional, intent(in) :: canopystate_vars
   type(chemstate_type)        , optional, intent(in) :: chemstate_vars
   type(soilstate_type)        , optional, intent(in) :: soilstate_vars
+  type(carbonstate_type)      , optional, intent(in) :: carbonstate_vars
 
-  integer :: p, pi, c
+
+  integer :: p, pi, c, j, c_l
   integer :: npft_loc
 
   call this%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi, carbonflux_vars, waterstate_vars, &
@@ -919,7 +1009,20 @@ contains
     endif
   enddo
   !dvgm
-  !
+  if(trim(reaction_method)=='doc_dic')then
+     c_l=1
+     do j = 1, nlevsoi
+        do c = bounds%begc, bounds%endc
+          if(col%active(c))then
+             !for simplicity, atomic weight of carbon is set to 12._r8 g/mol
+             this%biophys_forc(c)%dic_prod_vr_col(c_l,j) = (carbonflux_vars%hr_vr_col(c,j) + &
+                cnstate_vars%nfixation_prof_col(c,j)*carbonflux_vars%rr_col(c))/12._r8
+             this%biophys_forc(c)%doc_prod_vr_col(c_l,j) = (carbonstate_vars%decomp_cpools_vr_col(c,j,6) - &
+                carbonstate_vars%decomp_som2c_vr_col(c,j))/this%betr_time%delta_time/12._r8
+          endif
+        enddo
+      enddo
+  endif
   end subroutine ALMSetBiophysForcing
   !------------------------------------------------------------------------
   subroutine set_transient_kinetics_par(this, betr_bounds, col, pft, num_soilc, filter_soilc, PlantMicKinetics_vars)
@@ -929,6 +1032,7 @@ contains
   use ColumnType         , only : column_type
   use PatchType          , only : patch_type
   use ALMBeTRNLMod    , only : reaction_method
+  use pftvarcon             , only : noveg
   implicit none
   class(betr_simulation_alm_type), intent(inout)  :: this
   type(betr_bounds_type), intent(in) :: betr_bounds
@@ -938,7 +1042,7 @@ contains
   integer, intent(in) :: filter_soilc(:)
   type(PlantMicKinetics_type), intent(in) :: PlantMicKinetics_vars
 
-  integer :: j, fc, c, p, pi
+  integer :: j, fc, c, p, pi, pp, c_l
 
   associate(      &
     plant_nh4_vmax_vr_patch => PlantMicKinetics_vars%plant_nh4_vmax_vr_patch, &
@@ -949,46 +1053,55 @@ contains
     plant_p_km_vr_patch     => PlantMicKinetics_vars%plant_p_km_vr_patch , &
     plant_eff_ncompet_b_vr_patch => PlantMicKinetics_vars%plant_eff_ncompet_b_vr_patch , &
     plant_eff_pcompet_b_vr_patch => PlantMicKinetics_vars%plant_eff_pcompet_b_vr_patch , &
+    minsurf_nh4_compet_vr_col => PlantMicKinetics_vars%minsurf_nh4_compet_vr_col, &
     minsurf_p_compet_vr_col => PlantMicKinetics_vars%minsurf_p_compet_vr_col &
   )
+  c_l = 1
   do j =1, betr_bounds%ubj
     do fc = 1, num_soilc
       c = filter_soilc(fc)
+      pp = 0
       do pi = 1, betr_maxpatch_pft
         if (pi <= col%npfts(c)) then
           p = col%pfti(c) + pi - 1
-          if (pft%active(p)) then
-            this%betr(c)%plantNutkinetics%plant_nh4_vmax_vr_patch(pi,j) = plant_nh4_vmax_vr_patch(p,j)
-            this%betr(c)%plantNutkinetics%plant_no3_vmax_vr_patch(pi,j) = plant_no3_vmax_vr_patch(p,j)
-            this%betr(c)%plantNutkinetics%plant_p_vmax_vr_patch(pi,j) = plant_p_vmax_vr_patch(p,j)
-            this%betr(c)%plantNutkinetics%plant_nh4_km_vr_patch(pi,j) = plant_nh4_km_vr_patch(p,j)
-            this%betr(c)%plantNutkinetics%plant_no3_km_vr_patch(pi,j) = plant_no3_km_vr_patch(p,j)
-            this%betr(c)%plantNutkinetics%plant_p_km_vr_patch(pi,j) = plant_p_km_vr_patch(p,j)
-            this%betr(c)%plantNutkinetics%plant_eff_ncompet_b_vr_patch(p,j)=plant_eff_ncompet_b_vr_patch(p,j)
-            this%betr(c)%plantNutkinetics%plant_eff_pcompet_b_vr_patch(p,j)=plant_eff_pcompet_b_vr_patch(p,j)
+          if (pft%active(p) .and. (pft%itype(p) .ne. noveg)) then
+            pp = pp + 1
+            this%betr(c)%plantNutkinetics%plant_nh4_vmax_vr_patch(pp,j) = plant_nh4_vmax_vr_patch(p,j)
+            this%betr(c)%plantNutkinetics%plant_no3_vmax_vr_patch(pp,j) = plant_no3_vmax_vr_patch(p,j)
+            this%betr(c)%plantNutkinetics%plant_p_vmax_vr_patch(pp,j) = plant_p_vmax_vr_patch(p,j)
+            this%betr(c)%plantNutkinetics%plant_nh4_km_vr_patch(pp,j) = plant_nh4_km_vr_patch(p,j)
+            this%betr(c)%plantNutkinetics%plant_no3_km_vr_patch(pp,j) = plant_no3_km_vr_patch(p,j)
+            this%betr(c)%plantNutkinetics%plant_p_km_vr_patch(pp,j) = plant_p_km_vr_patch(p,j)
+            this%betr(c)%plantNutkinetics%plant_eff_ncompet_b_vr_patch(pp,j)=plant_eff_ncompet_b_vr_patch(p,j)
+            this%betr(c)%plantNutkinetics%plant_eff_pcompet_b_vr_patch(pp,j)=plant_eff_pcompet_b_vr_patch(p,j)
           endif
         endif
       enddo
-      this%betr(c)%plantNutkinetics%minsurf_p_compet_vr_col(c,j) = minsurf_p_compet_vr_col(c,j)
+      this%betr(c)%nactpft = pp
+      this%betr(c)%plantNutkinetics%minsurf_p_compet_vr_col(c_l,j) = minsurf_p_compet_vr_col(c,j)
+      this%betr(c)%plantNutkinetics%minsurf_nh4_compet_vr_col(c_l,j) = minsurf_nh4_compet_vr_col(c,j)
     enddo
   enddo
 
-  !the following parameters are specific to ECACNP
-  if(trim(reaction_method)=='BECACNP')then
+  !the following parameters are specific to ECACNP, and I assume they are
+  !grid specific as they currently used in alm-cnp.
+  if(trim(reaction_method)=='eca_cnp')then
     do j =1, betr_bounds%ubj
       do fc = 1, num_soilc
         c = filter_soilc(fc)
-        this%betr(c)%plantNutkinetics%km_minsurf_p_vr_col(c,j) = PlantMicKinetics_vars%km_minsurf_p_vr_col(c,j)
-        this%betr(c)%plantNutkinetics%km_decomp_nh4_vr_col(c,j) = PlantMicKinetics_vars%km_decomp_nh4_vr_col(c,j)
-        this%betr(c)%plantNutkinetics%km_decomp_nh4_vr_col(c,j) = PlantMicKinetics_vars%km_decomp_no3_vr_col(c,j)
-        this%betr(c)%plantNutkinetics%km_decomp_p_vr_col(c,j)=PlantMicKinetics_vars%km_decomp_p_vr_col(c,j)
-        this%betr(c)%plantNutkinetics%km_nit_nh4_vr_col(c,j)=PlantMicKinetics_vars%km_nit_nh4_vr_col(c,j)
-        this%betr(c)%plantNutkinetics%km_den_no3_vr_col(c,j)=PlantMicKinetics_vars%km_den_no3_vr_col(c,j)
+        this%betr(c)%plantNutkinetics%km_minsurf_p_vr_col(c_l,j) = PlantMicKinetics_vars%km_minsurf_p_vr_col(c,j)
+        this%betr(c)%plantNutkinetics%km_decomp_nh4_vr_col(c_l,j) = PlantMicKinetics_vars%km_decomp_nh4_vr_col(c,j)
+        this%betr(c)%plantNutkinetics%km_decomp_no3_vr_col(c_l,j) = PlantMicKinetics_vars%km_decomp_no3_vr_col(c,j)
+        this%betr(c)%plantNutkinetics%km_decomp_p_vr_col(c_l,j)=PlantMicKinetics_vars%km_decomp_p_vr_col(c,j)
+        this%betr(c)%plantNutkinetics%km_nit_nh4_vr_col(c_l,j)=PlantMicKinetics_vars%km_nit_nh4_vr_col(c,j)
+        this%betr(c)%plantNutkinetics%km_den_no3_vr_col(c_l,j)=PlantMicKinetics_vars%km_den_no3_vr_col(c,j)
 
 
         !effective p competing decomposers
-        this%betr(c)%plantNutkinetics%decomp_eff_ncompet_b_vr_col(c,j) = PlantMicKinetics_vars%decomp_eff_ncompet_b_vr_col(c,j)
-        this%betr(c)%plantNutkinetics%decomp_eff_pcompet_b_vr_col(c,j) = PlantMicKinetics_vars%decomp_eff_pcompet_b_vr_col(c,j)
+        this%betr(c)%plantNutkinetics%decomp_eff_ncompet_b_vr_col(c_l,j) = PlantMicKinetics_vars%decomp_eff_ncompet_b_vr_col(c,j)
+        this%betr(c)%plantNutkinetics%decomp_eff_pcompet_b_vr_col(c_l,j) = PlantMicKinetics_vars%decomp_eff_pcompet_b_vr_col(c,j)
+        this%betr(c)%plantNutkinetics%den_eff_ncompet_b_vr_col(c_l,j) = PlantMicKinetics_vars%den_eff_ncompet_b_vr_col(c,j)
+        this%betr(c)%plantNutkinetics%nit_eff_ncompet_b_vr_col(c_l,j) = PlantMicKinetics_vars%nit_eff_ncompet_b_vr_col(c,j)
 
       enddo
     enddo

@@ -886,6 +886,7 @@ contains
             !do soil-root tracer exchange
             do k = 1, ntrcs
                trcid = adv_trc_group(k)
+
                do l = lbj, ubj
                   do fc = 1, num_soilc
                      c = filter_soilc(fc)
@@ -936,7 +937,7 @@ contains
                      if(abs(err_relative)<err_relative_threshold)then
                         leaching_mass(c,k) = leaching_mass(c,k) - err_tracer(c,k)
                      else
-                        write(msg,'(A,5X,I8,5X,I8,5X,A,7(5X,A,5X,E18.10))')'nstep=', betr_time%get_nstep(), c, &
+                        write(msg,'(2(A,1X,I8),5X,A,7(5X,A,5X,E18.10))')'nstep=', betr_time%get_nstep(), ', col=',c, &
                              tracernames(trcid),' err=',err_tracer(c,k),&
                              ' transp=',transp_mass(c,k),' lech=',&
                              leaching_mass(c,k),' infl=',inflx_top(c,k),' dmass=',dmass(c,k), ' mass0=', &

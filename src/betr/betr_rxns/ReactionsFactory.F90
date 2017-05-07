@@ -56,6 +56,7 @@ contains
     use betr_ctrl                  , only : iulog  => biulog
     use BetrStatusType             , only : betr_status_type
     use betr_constants             , only : betr_errmsg_len
+    use DIOCBGCReactionsType, only : bgc_reaction_dioc_run_type    
     implicit none
     ! !ARGUMENTS:
     class(bgc_reaction_type) , allocatable :: bgc_reaction
@@ -68,6 +69,8 @@ contains
        allocate(bgc_reaction, source=bgc_reaction_mock_run_type())
     case ("h2oiso")
        allocate(bgc_reaction, source=bgc_reaction_h2oiso_type())
+    case ("doc_dic")
+       allocate(bgc_reaction, source=bgc_reaction_dioc_run_type())
     case default
 !x       write(iulog,*)subname //' ERROR: unknown method: ', method
 !x       call endrun(msg=errMsg(mod_filename, __LINE__))
@@ -85,6 +88,7 @@ contains
   use MockPlantSoilBGCType       , only : plant_soilbgc_mock_run_type
   use H2OIsotopePlantSoilBGCType , only : plant_soilbgc_h2oiso_run_type
   use betr_ctrl                  , only : iulog  => biulog
+  use DIOCPlantSoilBGCType, only : plant_soilbgc_dioc_run_type
   implicit none
   ! !ARGUMENTS:
   class(plant_soilbgc_type) , allocatable :: plant_soilbgc
@@ -96,6 +100,9 @@ contains
      allocate(plant_soilbgc, source=plant_soilbgc_mock_run_type())
   case ("h2oiso")
      allocate(plant_soilbgc, source=plant_soilbgc_h2oiso_run_type())
+  case ("doc_dic")
+     allocate(plant_soilbgc, source=plant_soilbgc_dioc_run_type())
+
   case default
 !x     write(*, *)subname //' ERROR: unknown method: ', method
 !x     call endrun(msg=errMsg(mod_filename, __LINE__))
@@ -117,6 +124,8 @@ contains
   case ("mock_run")
      yesno = .true.
   case ("h2oiso")
+     yesno = .true.
+  case ("doc_dic")
      yesno = .true.
   case default
      write(iulog, *)subname //' Warning: unknown default method: '//trim(method)//'. Looking for user defined method.'

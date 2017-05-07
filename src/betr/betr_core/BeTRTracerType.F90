@@ -9,7 +9,7 @@ module BeTRTracerType
   use bshr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
   use bshr_log_mod    , only : errMsg => shr_log_errMsg
   use betr_constants  , only : betr_var_name_length
-  use betr_ctrl       , only : do_betr_output
+  use betr_ctrl       , only : do_betr_output,iulog => biulog
   !
   implicit none
   private
@@ -124,7 +124,9 @@ module BeTRTracerType
     class(BeTRtracer_type), intent(inout) :: this
 
     this%ntracer_groups = this%nsolid_passive_tracer_groups + this%ngwmobile_tracer_groups
-
+    !write(iulog,*)'BeTR: total tracer goups',this%ntracer_groups
+    !write(iulog,*)'BeTR: total solid passive tracer groups',this%nsolid_passive_tracer_groups
+    !write(iulog,*)'BeTR: total mobile tracer groups', this%ngwmobile_tracer_groups
     call this%InitAllocate()
   end subroutine Init
 !--------------------------------------------------------------------------------
@@ -235,6 +237,7 @@ module BeTRTracerType
 
   allocate(this%groupid(this%ntracers)); this%groupid(:) = nanid
 
+  !write(iulog,*)'BeTR: total number of tracers',this%ntracers
   end subroutine InitAllocate
 
 !--------------------------------------------------------------------------------
