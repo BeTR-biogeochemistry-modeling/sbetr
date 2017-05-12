@@ -143,7 +143,7 @@ contains
 
   end subroutine SetClock
   !-------------------------------------------------------------------------------
-  subroutine BeTRSimulationInit(this, bounds, lun, col, pft, waterstate, namelist_buffer)
+  subroutine BeTRSimulationInit(this, bounds, lun, col, pft, waterstate, namelist_buffer, masterproc)
     !
     ! DESCRIPTIONS
     ! Dummy routine for inheritance purposes. don't use.
@@ -163,6 +163,7 @@ contains
     type(bounds_type)                        , intent(in)    :: bounds
     character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
     type(waterstate_type)                    , intent(inout) :: waterstate
+    logical,                        optional , intent(in)    :: masterproc 
     character(len=*), parameter :: subname = 'BeTRSimulationInit'
 
     call endrun(msg="ERROR "//subname//" unimplemented. "//errmsg(mod_filename, __LINE__))
@@ -239,7 +240,8 @@ contains
   end subroutine BeTRSetFilter
 !-------------------------------------------------------------------------------
 
-  subroutine BeTRInit(this, bounds, lun, col, pft, waterstate, namelist_buffer, base_filename)
+  subroutine BeTRInit(this, bounds, lun, col, pft, waterstate, namelist_buffer, &
+     base_filename, masterproc)
     !
     ! DESCRIPTION
     ! initialize BeTR
@@ -260,9 +262,10 @@ contains
     type(landunit_type)                      , intent(in) :: lun
     type(column_type)                        , intent(in) :: col
     type(patch_type)                         , intent(in) :: pft
-    type(waterstate_type)                    , intent(in)    :: waterstate
-    character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
+    type(waterstate_type)                    , intent(in) :: waterstate
+    character(len=betr_namelist_buffer_size) , intent(in) :: namelist_buffer
     character(len=betr_filename_length)      , optional, intent(in)    :: base_filename
+    logical,                      optional   , intent(in) :: masterproc
     !TEMPORARY VARIABLES
     character(len=*), parameter :: subname = 'BeTRInit'
     type(betr_bounds_type) :: betr_bounds
@@ -276,7 +279,11 @@ contains
     else
       this%base_filename = ''
     endif
-    call this%betr_time%Init(namelist_buffer)
+    if(present(masterproc))then
+      call this%betr_time%Init(namelist_buffer, masterproc)
+    else
+      call this%betr_time%Init(namelist_buffer)
+    endif
     !allocate memory
     allocate(this%betr(bounds%begc:bounds%endc))
     allocate(this%biophys_forc(bounds%begc:bounds%endc))

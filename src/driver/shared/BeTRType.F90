@@ -86,6 +86,7 @@ module BetrType
      procedure, public  :: get_restartvar_size
      procedure, public  :: get_restartvar_info
      procedure, public  :: diagnoselnd2atm
+     procedure, public  :: retrieve_biostates
   end type betr_type
 
   public :: create_betr_type
@@ -338,7 +339,7 @@ contains
          this%tracerstates,                                    &
          this%tracerfluxes,                                    &
          this%tracerboundaryconds,                             &
-         this%plant_soilbgc, biogeo_flux, betr_status)
+         this%plant_soilbgc, biogeo_flux,  betr_status)
     if(betr_status%check_status())return
 
     call tracer_gws_transport(betr_time, bounds, col, pft, num_soilc, filter_soilc, &
@@ -372,7 +373,24 @@ contains
 
   end subroutine step_without_drainage
 
+  !--------------------------------------------------------------------------------
+  subroutine retrieve_biostates(this, bounds, lbj, ubj,  num_soilc, filter_soilc, jtops, &
+    biogeo_state)
 
+  implicit none
+  ! !ARGUMENTS:
+  class(betr_type)                     , intent(inout) :: this
+  type(bounds_type)                    , intent(in)  :: bounds                      ! bounds
+  integer                              , intent(in) :: lbj, ubj
+  integer                              , intent(in) :: jtops(bounds%begc:bounds%endc)
+  integer                              , intent(in)    :: num_soilc                   ! number of columns in column filter
+  integer                              , intent(in)    :: filter_soilc(:)             ! column filter
+  type(betr_biogeo_state_type)         , intent(inout) :: biogeo_state
+
+  call this%bgc_reaction%retrieve_biostates(bounds, lbj, ubj, jtops, num_soilc, &
+     filter_soilc, this%tracers, this%tracerstates, biogeo_state)
+
+  end subroutine retrieve_biostates
   !--------------------------------------------------------------------------------
   subroutine step_with_drainage(this, bounds, col, num_soilc, filter_soilc, jtops, &
     biogeo_flux, betr_status)

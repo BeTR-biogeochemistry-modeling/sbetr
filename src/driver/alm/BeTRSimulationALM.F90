@@ -62,7 +62,7 @@ contains
 
 !-------------------------------------------------------------------------------
 
-  subroutine ALMInit(this, bounds, lun, col, pft, waterstate, namelist_buffer)
+  subroutine ALMInit(this, bounds, lun, col, pft, waterstate, namelist_buffer, masterproc)
     !DESCRIPTION
     !Initialize BeTR for ALM
     !
@@ -89,6 +89,7 @@ contains
     type(column_type)                        , intent(in) :: col
     type(patch_type)                         , intent(in) :: pft
     character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
+    logical,                      optional   , intent(in) :: masterproc
     type(waterstate_type)                    , intent(inout) :: waterstate
 
     !grid size
@@ -106,8 +107,11 @@ contains
     betr_landvarcon%istice             = istice
 
     ! now call the base simulation init to continue initialization
-    call this%BeTRInit(bounds, lun, col, pft, waterstate,namelist_buffer)
-
+    if(present(masterproc))then
+      call this%BeTRInit(bounds, lun, col, pft, waterstate, namelist_buffer, masterproc=masterproc)
+    else
+      call this%BeTRInit(bounds, lun, col, pft, waterstate, namelist_buffer)
+    endif
   end subroutine ALMInit
 !-------------------------------------------------------------------------------
 
@@ -273,6 +277,8 @@ contains
         call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
         exit
       endif
+      call this%betr(c)%retrieve_biostates(betr_bounds,      &
+         1, betr_nlevsoi, this%num_soilc, this%filter_soilc, this%jtops, this%biogeo_state(c))
     enddo
 
 
@@ -674,11 +680,12 @@ contains
 
       !mineral phosphorus, the deposition is assumed to be of primary form
       call apvb(this%biophys_forc(c)%p31flx%pflx_minp_input_po4_vr_col(1,j) , &
-         (/phosphorusflux_vars%pdep_to_sminp_col(c)                  , &
-         phosphorusflux_vars%fert_p_to_sminp_col(c)/),   pdep_prof(c,j))
+         (/phosphorusflux_vars%fert_p_to_sminp_col(c)/),   pdep_prof(c,j))
 
       call apvb(this%biophys_forc(c)%p31flx%pflx_minp_weathering_po4_vr_col(1,j), &
          phosphorusflux_vars%primp_to_labilep_vr_col(c,j))
+
+      write(iulog,*)'weathering',this%biophys_forc(c)%p31flx%pflx_minp_weathering_po4_vr_col(1,j)
     enddo
   enddo
   end associate
@@ -782,7 +789,7 @@ contains
     c12state_vars%totsomc_col(c) = this%biogeo_state(c)%c12state_vars%totsomc_col(c_l)
     c12state_vars%totlitc_1m_col(c) = this%biogeo_state(c)%c12state_vars%totlitc_1m_col(c_l)
     c12state_vars%totsomc_1m_col(c) = this%biogeo_state(c)%c12state_vars%totsomc_1m_col(c_l)
-    write(iulog,*)'almbetr cwd, lit, som',c12state_vars%cwdc_col(c),c12state_vars%totlitc_col(c),c12state_vars%totsomc_col(c)
+
     if(use_c13_betr)then
       c13state_vars%cwdc_col(c) = this%biogeo_state(c)%c13state_vars%cwdc_col(c_l)
       c13state_vars%totlitc_col(c) = this%biogeo_state(c)%c13state_vars%totlitc_col(c_l)
@@ -812,10 +819,13 @@ contains
 
     !recollect inorganic nitrogen (smin_nh4, smin_no3), and inorganic phosphorus (disolvable and protected)
     n14state_vars%sminn_col(c) = this%biogeo_state(c)%n14state_vars%sminn_col(c_l)
-
     p31state_vars%sminp_col(c) = this%biogeo_state(c)%p31state_vars%sminp_col(c_l)
     p31state_vars%occlp_col(c) = this%biogeo_state(c)%p31state_vars%occlp_col(c_l)
 
+    write(iulog,'(A,6(X,E20.10)))')'almbetr p cwd, lit, som',p31state_vars%cwdp_col(c),p31state_vars%totlitp_col(c), &
+       p31state_vars%totsomp_col(c), p31state_vars%sminp_col(c), p31state_vars%occlp_col(c), &
+       p31state_vars%cwdp_col(c)+p31state_vars%totlitp_col(c)+ &
+          p31state_vars%totsomp_col(c)+p31state_vars%sminp_col(c)+p31state_vars%occlp_col(c)
   enddo
 
   end subroutine ALMBetrPlantSoilBGCRecv

@@ -80,6 +80,7 @@ module BgcReactionsCentECACnpType
     procedure, private :: set_century_forc
     procedure, private :: retrieve_output
     procedure :: retrieve_lnd2atm
+    procedure :: retrieve_biostates
   end type bgc_reaction_CENTURY_ECACNP_type
 
   interface bgc_reaction_CENTURY_ECACNP_type
@@ -349,7 +350,7 @@ contains
     !group of microbial biomass
     ngroupmems = nelm
     call betrtracer_vars%add_tracer_group(trc_grp_cnt=addone(itemp),mem = ngroupmems, &
-      trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_som, &
+      trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_Bm, &
       trc_grp_beg=betrtracer_vars%id_trc_beg_Bm, &
       trc_grp_end=betrtracer_vars%id_trc_end_Bm, &
       is_trc_passive=.true.)
@@ -367,8 +368,7 @@ contains
       trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_minp, &
       trc_grp_beg=betrtracer_vars%id_trc_beg_minp, &
       trc_grp_end=betrtracer_vars%id_trc_end_minp, &
-      is_trc_passive=.false.)
-
+      is_trc_passive=.true.)
     betrtracer_vars%nmem_max                     = nelm*3                       ! maximum number of group elements
 
     call betrtracer_vars%Init()
@@ -739,29 +739,27 @@ contains
          trc_family_name='FWD')
       if(bstatus%check_status())return
     endif
-
     !------------------------------------------------------------------------------------
     !define som group
     Bm_cnt=0;itemp_mem=0
     trcid = betrtracer_vars%id_trc_beg_Bm+Bm_cnt*nelm+c_loc-1
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='SOM1C', &
          is_trc_mobile=.true., is_trc_advective = .false., &
-         trc_group_id = betrtracer_vars%id_trc_som, trc_group_mem = addone(itemp_mem), &
+         trc_group_id = betrtracer_vars%id_trc_Bm, trc_group_mem = addone(itemp_mem), &
          trc_family_name='SOM1')
     if(bstatus%check_status())return
-
 
     trcid = betrtracer_vars%id_trc_beg_Bm+Bm_cnt*nelm+n_loc-1
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='SOM1N', &
          is_trc_mobile=.true., is_trc_advective = .false., &
-         trc_group_id = betrtracer_vars%id_trc_som, trc_group_mem = addone(itemp_mem), &
+         trc_group_id = betrtracer_vars%id_trc_Bm, trc_group_mem = addone(itemp_mem), &
          trc_family_name='SOM1')
     if(bstatus%check_status())return
 
     trcid = betrtracer_vars%id_trc_beg_Bm+Bm_cnt*nelm+p_loc-1
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='SOM1P', &
          is_trc_mobile=.true., is_trc_advective = .false., &
-         trc_group_id = betrtracer_vars%id_trc_som, trc_group_mem = addone(itemp_mem), &
+         trc_group_id = betrtracer_vars%id_trc_Bm, trc_group_mem = addone(itemp_mem), &
          trc_family_name='SOM1')
     if(bstatus%check_status())return
 
@@ -769,7 +767,7 @@ contains
       trcid = betrtracer_vars%id_trc_beg_Bm+Bm_cnt*nelm+c13_loc-1
       call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='SOM1C_C13',&
          is_trc_mobile=.true., is_trc_advective = .false., &
-         trc_group_id = betrtracer_vars%id_trc_som, trc_group_mem = addone(itemp_mem), &
+         trc_group_id = betrtracer_vars%id_trc_Bm, trc_group_mem = addone(itemp_mem), &
          trc_family_name='SOM1')
       if(bstatus%check_status())return
     endif
@@ -778,7 +776,7 @@ contains
       trcid = betrtracer_vars%id_trc_beg_Bm+Bm_cnt*nelm+c14_loc-1
       call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='SOM1C_C14', &
          is_trc_mobile=.true., is_trc_advective = .false., &
-         trc_group_id = betrtracer_vars%id_trc_som,  trc_group_mem = addone(itemp_mem), &
+         trc_group_id = betrtracer_vars%id_trc_Bm,  trc_group_mem = addone(itemp_mem), &
          trc_family_name='SOM1')
       if(bstatus%check_status())return
     endif
@@ -825,7 +823,6 @@ contains
     !------------------------------------------------------------------------------------
     !new group
     itemp_mem=0
-    write(*,*)'minp beg end', betrtracer_vars%id_trc_beg_minp,  betrtracer_vars%id_trc_end_minp
     trcid = betrtracer_vars%id_trc_beg_minp
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='P_2ND' ,    &
          is_trc_mobile=.false., is_trc_advective = .false., &
@@ -921,7 +918,8 @@ contains
 
   subroutine calc_bgc_reaction(this, bounds, col, lbj, ubj, num_soilc, filter_soilc, &
        num_soilp,filter_soilp, jtops, dtime, betrtracer_vars, tracercoeff_vars, biophysforc,    &
-       tracerstate_vars, tracerflux_vars, tracerboundarycond_vars, plant_soilbgc, biogeo_flux, betr_status)
+       tracerstate_vars, tracerflux_vars, tracerboundarycond_vars, plant_soilbgc, &
+       biogeo_flux,  betr_status)
 
     !
     ! !DESCRIPTION:
@@ -942,6 +940,7 @@ contains
     use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
     use betr_columnType          , only : betr_column_type
     use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
+    use BeTR_biogeoStateType     , only : betr_biogeo_state_type
     implicit none
     ! !ARGUMENTS
     class(bgc_reaction_CENTURY_ECACNP_type) , intent(inout) :: this
@@ -1243,6 +1242,7 @@ contains
         this%centuryforc(c,j)%ystates(this%centurybgc_index%lid_c14_co2)= &
           fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_c14_co2x))
       endif
+
       this%centuryforc(c,j)%ystates(this%centurybgc_index%lid_ch4)= &
            fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_ch4))
       this%centuryforc(c,j)%ystates(this%centurybgc_index%lid_nh4)= &
@@ -1269,34 +1269,39 @@ contains
       this%centuryforc(c,j)%pflx_input_litr_cel = biophysforc%p31flx%pflx_input_litr_cel_vr_col(c,j)
       this%centuryforc(c,j)%pflx_input_litr_lig = biophysforc%p31flx%pflx_input_litr_lig_vr_col(c,j)
       this%centuryforc(c,j)%pflx_input_litr_cwd = biophysforc%p31flx%pflx_input_litr_cwd_vr_col(c,j)
-      !loss
-      this%centuryforc(c,j)%cflx_output_litr_met= biophysforc%c12flx%cflx_output_litr_met_vr_col(c,j)
-      this%centuryforc(c,j)%cflx_output_litr_cel= biophysforc%c12flx%cflx_output_litr_cel_vr_col(c,j)
-      this%centuryforc(c,j)%cflx_output_litr_lig= biophysforc%c12flx%cflx_output_litr_lig_vr_col(c,j)
-      this%centuryforc(c,j)%cflx_output_litr_cwd= biophysforc%c12flx%cflx_output_litr_cwd_vr_col(c,j)
-      this%centuryforc(c,j)%cflx_output_litr_fwd= biophysforc%c12flx%cflx_output_litr_fwd_vr_col(c,j)
-      this%centuryforc(c,j)%cflx_output_litr_lwd= biophysforc%c12flx%cflx_output_litr_lwd_vr_col(c,j)
 
-      this%centuryforc(c,j)%nflx_output_litr_met= biophysforc%n14flx%nflx_output_litr_met_vr_col(c,j)
-      this%centuryforc(c,j)%nflx_output_litr_cel= biophysforc%n14flx%nflx_output_litr_cel_vr_col(c,j)
-      this%centuryforc(c,j)%nflx_output_litr_lig= biophysforc%n14flx%nflx_output_litr_lig_vr_col(c,j)
-      this%centuryforc(c,j)%nflx_output_litr_cwd= biophysforc%n14flx%nflx_output_litr_cwd_vr_col(c,j)
-      this%centuryforc(c,j)%nflx_output_litr_fwd= biophysforc%n14flx%nflx_output_litr_fwd_vr_col(c,j)
-      this%centuryforc(c,j)%nflx_output_litr_lwd= biophysforc%n14flx%nflx_output_litr_lwd_vr_col(c,j)
+      !Currently losses occur primary through burning by fire, now only burning fraction is passed in.
+      !actual loss is computed.
+      !this%centuryforc(c,j)%cflx_output_litr_met= biophysforc%c12flx%cflx_output_litr_met_vr_col(c,j)
+      !this%centuryforc(c,j)%cflx_output_litr_cel= biophysforc%c12flx%cflx_output_litr_cel_vr_col(c,j)
+      !this%centuryforc(c,j)%cflx_output_litr_lig= biophysforc%c12flx%cflx_output_litr_lig_vr_col(c,j)
+      !this%centuryforc(c,j)%cflx_output_litr_cwd= biophysforc%c12flx%cflx_output_litr_cwd_vr_col(c,j)
+      !this%centuryforc(c,j)%cflx_output_litr_fwd= biophysforc%c12flx%cflx_output_litr_fwd_vr_col(c,j)
+      !this%centuryforc(c,j)%cflx_output_litr_lwd= biophysforc%c12flx%cflx_output_litr_lwd_vr_col(c,j)
 
-      this%centuryforc(c,j)%pflx_output_litr_met= biophysforc%p31flx%pflx_output_litr_met_vr_col(c,j)
-      this%centuryforc(c,j)%pflx_output_litr_cel= biophysforc%p31flx%pflx_output_litr_cel_vr_col(c,j)
-      this%centuryforc(c,j)%pflx_output_litr_lig= biophysforc%p31flx%pflx_output_litr_lig_vr_col(c,j)
-      this%centuryforc(c,j)%pflx_output_litr_cwd= biophysforc%p31flx%pflx_output_litr_cwd_vr_col(c,j)
-      this%centuryforc(c,j)%pflx_output_litr_fwd= biophysforc%p31flx%pflx_output_litr_fwd_vr_col(c,j)
-      this%centuryforc(c,j)%pflx_output_litr_lwd= biophysforc%p31flx%pflx_output_litr_lwd_vr_col(c,j)
+      !this%centuryforc(c,j)%nflx_output_litr_met= biophysforc%n14flx%nflx_output_litr_met_vr_col(c,j)
+      !this%centuryforc(c,j)%nflx_output_litr_cel= biophysforc%n14flx%nflx_output_litr_cel_vr_col(c,j)
+      !this%centuryforc(c,j)%nflx_output_litr_lig= biophysforc%n14flx%nflx_output_litr_lig_vr_col(c,j)
+      !this%centuryforc(c,j)%nflx_output_litr_cwd= biophysforc%n14flx%nflx_output_litr_cwd_vr_col(c,j)
+      !this%centuryforc(c,j)%nflx_output_litr_fwd= biophysforc%n14flx%nflx_output_litr_fwd_vr_col(c,j)
+      !this%centuryforc(c,j)%nflx_output_litr_lwd= biophysforc%n14flx%nflx_output_litr_lwd_vr_col(c,j)
 
-
+      !this%centuryforc(c,j)%pflx_output_litr_met= biophysforc%p31flx%pflx_output_litr_met_vr_col(c,j)
+      !this%centuryforc(c,j)%pflx_output_litr_cel= biophysforc%p31flx%pflx_output_litr_cel_vr_col(c,j)
+      !this%centuryforc(c,j)%pflx_output_litr_lig= biophysforc%p31flx%pflx_output_litr_lig_vr_col(c,j)
+      !this%centuryforc(c,j)%pflx_output_litr_cwd= biophysforc%p31flx%pflx_output_litr_cwd_vr_col(c,j)
+      !this%centuryforc(c,j)%pflx_output_litr_fwd= biophysforc%p31flx%pflx_output_litr_fwd_vr_col(c,j)
+      !this%centuryforc(c,j)%pflx_output_litr_lwd= biophysforc%p31flx%pflx_output_litr_lwd_vr_col(c,j)
+      !mineral nutrient input
       this%centuryforc(c,j)%sflx_minn_input_nh4 = biophysforc%n14flx%nflx_minn_input_nh4_vr_col(c,j)     !nh4 from deposition and fertilization
       this%centuryforc(c,j)%sflx_minn_nh4_fix_nomic = biophysforc%n14flx%nflx_minn_nh4_fix_nomic_vr_col(c,j)       !nh4 from fixation
       this%centuryforc(c,j)%sflx_minp_input_po4 = biophysforc%p31flx%pflx_minp_input_po4_vr_col(c,j)     !inorganic P from deposition and fertilization
       this%centuryforc(c,j)%sflx_minp_weathering_po4 = biophysforc%p31flx%pflx_minp_weathering_po4_vr_col(c,j)
 
+      !burning fraction
+      this%centuryforc(c,j)%frac_loss_lit_to_fire = biophysforc%frac_loss_lit_to_fire_col(c)
+      this%centuryforc(c,j)%frac_loss_cwd_to_fire = biophysforc%frac_loss_cwd_to_fire_col(c)
+      !environmental variables
       this%centuryforc(c,j)%temp   = biophysforc%t_soisno_col(c,j)            !temperature
       this%centuryforc(c,j)%depz   = col%z(c,j)            !depth of the soil
       this%centuryforc(c,j)%dzsoi  = col%dz(c,j)            !soil thickness
@@ -1313,7 +1318,7 @@ contains
       this%centuryforc(c,j)%watfc = biophysforc%watfc_col(c,j)
       this%centuryforc(c,j)%cellorg = biophysforc%cellorg_col(c,j)
       this%centuryforc(c,j)%pH = biophysforc%soil_pH(c,j)
-
+      !conductivity for plant-aided gas transport
       this%centuryforc(c,j)%aren_cond_n2 = &
           tracercoeff_vars%aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_n2)) * &
           tracercoeff_vars%scal_aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_n2))
@@ -1342,7 +1347,7 @@ contains
       this%centuryforc(c,j)%aren_cond_ch4 = &
           tracercoeff_vars%aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_ch4)) * &
           tracercoeff_vars%scal_aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_ch4))
-
+      !phase conversion parameter
       this%centuryforc(c,j)%ch4_g2b = &
           tracercoeff_vars%gas2bulkcef_mobile_col(c,j,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_ch4))
       this%centuryforc(c,j)%co2_g2b = &
@@ -1357,7 +1362,7 @@ contains
           tracercoeff_vars%gas2bulkcef_mobile_col(c,j,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_n2o))
       this%centuryforc(c,j)%o2_w2b = &
           tracercoeff_vars%aqu2bulkcef_mobile_col(c,j,betrtracer_vars%groupid(betrtracer_vars%id_trc_o2))            !conversion parameter for o2 from aqueous to bulk conc
-
+      !atmospheric pressure for gas ventilation.
       this%centuryforc(c,j)%conc_atm_n2 = &
           tracerstate_vars%tracer_conc_atm_col(c,betrtracer_vars%volatileid(betrtracer_vars%id_trc_n2))  !n2 concentration in atmosphere, mol n2/m3
       this%centuryforc(c,j)%conc_atm_n2o= &
@@ -1409,7 +1414,7 @@ contains
   use betr_varcon              , only : spinup_state => bspinup_state
   use PlantSoilBGCMod          , only : plant_soilbgc_type
   use PlantSoilBgcCnpType      , only : plant_soilbgc_cnp_type
-  use tracer_varcon, only : catomw, natomw, patomw
+  use tracer_varcon            , only : catomw, natomw, patomw
   implicit none
   class(bgc_reaction_CENTURY_ECACNP_type) , intent(inout)    :: this
   integer                              , intent(in) :: c, j
@@ -1422,6 +1427,7 @@ contains
   type(tracerflux_type)                , intent(inout) :: tracerflux_vars
   class(plant_soilbgc_type)            , intent(inout) :: plant_soilbgc
   type(betr_biogeo_flux_type)          , intent(inout) :: biogeo_flux
+
   integer :: k, k1, k2, jj, p
   integer :: trcid
 
@@ -1690,5 +1696,172 @@ contains
    if (bounds%begc > 0)             continue
 
    end subroutine retrieve_lnd2atm
+
+   !----------------------------------------------------------------------
+   subroutine retrieve_biostates(this, bounds, lbj, ubj, jtops, num_soilc, filter_soilc, &
+       betrtracer_vars, tracerstate_vars, biogeo_state)
+   !
+   !retrieve state variables for lsm mass balance check
+   use tracer_varcon, only : catomw, natomw, patomw, c13atomw, c14atomw
+   use BeTRTracerType           , only : BeTRTracer_Type
+   use tracerstatetype          , only : tracerstate_type
+   use BeTR_biogeoStateType     , only : betr_biogeo_state_type
+   use BeTR_decompMod           , only : betr_bounds_type
+   implicit none
+   class(bgc_reaction_CENTURY_ECACNP_type) , intent(inout)    :: this
+   type(betr_bounds_type)               , intent(in)  :: bounds                      ! bounds
+   integer                              , intent(in) :: lbj, ubj
+   integer                              , intent(in) :: jtops(bounds%begc:bounds%endc)
+   integer                              , intent(in)    :: num_soilc                   ! number of columns in column filter
+   integer                              , intent(in)    :: filter_soilc(:)             ! column filter
+   type(betrtracer_type)                , intent(in) :: betrtracer_vars               ! betr configuration information
+   type(tracerstate_type)               , intent(inout) :: tracerstate_vars
+   type(betr_biogeo_state_type)         , intent(inout) :: biogeo_state
+   integer :: nelm
+   integer :: c_loc, c13_loc, c14_loc
+   integer :: n_loc, p_loc
+   integer :: c, fc, j, kk
+
+    c_loc=this%centurybgc_index%c_loc
+    n_loc=this%centurybgc_index%n_loc
+    p_loc=this%centurybgc_index%p_loc
+    c13_loc=this%centurybgc_index%c13_loc
+    c14_loc=this%centurybgc_index%c14_loc
+    nelm =this%centurybgc_index%nelms
+
+   do j = lbj, ubj
+     do fc = 1, num_soilc
+        c = filter_soilc(fc)
+        if(j<jtops(c))cycle
+
+        !add litter
+        do kk = betrtracer_vars%id_trc_beg_litr, betrtracer_vars%id_trc_end_litr, nelm
+          biogeo_state%c12state_vars%totlitc_vr_col(c,j) = biogeo_state%c12state_vars%totlitc_vr_col(c,j) + &
+            catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)
+
+          biogeo_state%n14state_vars%totlitn_vr_col(c,j) = biogeo_state%n14state_vars%totlitn_vr_col(c,j) + &
+            natomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc)
+
+          biogeo_state%p31state_vars%totlitp_vr_col(c,j) = biogeo_state%p31state_vars%totlitp_vr_col(c,j) + &
+            patomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc)
+
+          if(this%use_c13)then
+            biogeo_state%c13state_vars%totlitc_vr_col(c,j) = biogeo_state%c13state_vars%totlitc_vr_col(c,j) + &
+              c13atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc)
+          endif
+
+          if(this%use_c14)then
+            biogeo_state%c14state_vars%totlitc_vr_col(c,j) = biogeo_state%c14state_vars%totlitc_vr_col(c,j) + &
+              c14atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc)
+          endif
+
+        enddo
+
+        !add cwd
+        do kk = betrtracer_vars%id_trc_beg_wood, betrtracer_vars%id_trc_end_wood, nelm
+          biogeo_state%c12state_vars%cwdc_vr_col(c,j) = biogeo_state%c12state_vars%cwdc_vr_col(c,j) + &
+            catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)
+
+          biogeo_state%n14state_vars%cwdn_vr_col(c,j) = biogeo_state%n14state_vars%cwdn_vr_col(c,j) + &
+            natomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc)
+
+          biogeo_state%p31state_vars%cwdp_vr_col(c,j) = biogeo_state%p31state_vars%cwdp_vr_col(c,j) + &
+            patomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc)
+
+          if(this%use_c13)then
+            biogeo_state%c13state_vars%cwdc_vr_col(c,j) = biogeo_state%c13state_vars%cwdc_vr_col(c,j) + &
+              c13atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc)
+          endif
+
+          if(this%use_c14)then
+            biogeo_state%c14state_vars%cwdc_vr_col(c,j) = biogeo_state%c14state_vars%cwdc_vr_col(c,j) + &
+              c14atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc)
+          endif
+        enddo
+
+        !add som
+        !DOM
+        do kk = betrtracer_vars%id_trc_beg_dom, betrtracer_vars%id_trc_end_dom, nelm
+          biogeo_state%c12state_vars%totsomc_vr_col(c,j) = biogeo_state%c12state_vars%totsomc_vr_col(c,j) + &
+            catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)
+
+          biogeo_state%n14state_vars%totsomn_vr_col(c,j) = biogeo_state%n14state_vars%totsomn_vr_col(c,j) + &
+            natomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc)
+
+          biogeo_state%p31state_vars%totsomp_vr_col(c,j) = biogeo_state%p31state_vars%totsomp_vr_col(c,j) + &
+            patomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc)
+
+          if(this%use_c13)then
+            biogeo_state%c13state_vars%totsomc_vr_col(c,j) = biogeo_state%c13state_vars%totsomc_vr_col(c,j) + &
+              c13atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc)
+          endif
+
+          if(this%use_c14)then
+            biogeo_state%c14state_vars%totsomc_vr_col(c,j) = biogeo_state%c14state_vars%totsomc_vr_col(c,j) + &
+              c14atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc)
+          endif
+        enddo
+
+        !Microbial biomass
+        do kk = betrtracer_vars%id_trc_beg_Bm, betrtracer_vars%id_trc_end_Bm, nelm
+          biogeo_state%c12state_vars%totsomc_vr_col(c,j) = biogeo_state%c12state_vars%totsomc_vr_col(c,j) + &
+            catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)
+
+          biogeo_state%n14state_vars%totsomn_vr_col(c,j) = biogeo_state%n14state_vars%totsomn_vr_col(c,j) + &
+            natomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc)
+
+          biogeo_state%p31state_vars%totsomp_vr_col(c,j) = biogeo_state%p31state_vars%totsomp_vr_col(c,j) + &
+            patomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc)
+
+          if(this%use_c13)then
+            biogeo_state%c13state_vars%totsomc_vr_col(c,j) = biogeo_state%c13state_vars%totsomc_vr_col(c,j) + &
+              c13atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc)
+          endif
+
+          if(this%use_c14)then
+            biogeo_state%c14state_vars%totsomc_vr_col(c,j) = biogeo_state%c14state_vars%totsomc_vr_col(c,j) + &
+              c14atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc)
+          endif
+        enddo
+
+        do kk = betrtracer_vars%id_trc_beg_som, betrtracer_vars%id_trc_end_som, nelm
+          biogeo_state%c12state_vars%totsomc_vr_col(c,j) = biogeo_state%c12state_vars%totsomc_vr_col(c,j) + &
+            catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)
+
+          biogeo_state%n14state_vars%totsomn_vr_col(c,j) = biogeo_state%n14state_vars%totsomn_vr_col(c,j) + &
+            natomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc)
+
+          biogeo_state%p31state_vars%totsomp_vr_col(c,j) = biogeo_state%p31state_vars%totsomp_vr_col(c,j) + &
+            patomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc)
+
+          if(this%use_c13)then
+            biogeo_state%c13state_vars%totsomc_vr_col(c,j) = biogeo_state%c13state_vars%totsomc_vr_col(c,j) + &
+              c13atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc)
+          endif
+
+          if(this%use_c14)then
+            biogeo_state%c14state_vars%totsomc_vr_col(c,j) = biogeo_state%c14state_vars%totsomc_vr_col(c,j) + &
+              c14atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc)
+          endif
+        enddo
+
+        !non occluded phosphorus, soluble and adsorbed
+        biogeo_state%p31state_vars%sminp_vr_col(c,j) = biogeo_state%p31state_vars%sminp_vr_col(c,j) + patomw * &
+           (tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_beg_minp) + &
+            tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_p_sol))
+
+        !occluded
+        biogeo_state%p31state_vars%occlp_vr_col(c,j) = biogeo_state%p31state_vars%occlp_vr_col(c,j) + patomw * &
+           tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_end_minp)
+
+        !mineral nitrogen
+        biogeo_state%n14state_vars%sminn_vr_col(c,j) = biogeo_state%n14state_vars%sminn_vr_col(c,j) + natomw * &
+           (tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_nh3x) + &
+            tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_no3x))
+     enddo
+   enddo
+
+   end subroutine retrieve_biostates
+
 
 end module BgcReactionsCentECACnpType

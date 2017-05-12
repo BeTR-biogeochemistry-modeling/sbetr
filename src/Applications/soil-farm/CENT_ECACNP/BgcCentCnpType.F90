@@ -216,7 +216,7 @@ contains
   !add all external input
   call this%add_ext_input(dtime, this%centurybgc_index, centuryeca_forc)
 !  call this%sumup_cnp_mass('afext input')
-
+  if(.false.)then
   !initialize decomposition scaling factors
   call this%decompkf_eca%set_decompk_scalar(ystates1(lid_o2), centuryeca_forc)
 
@@ -267,7 +267,7 @@ contains
   call ode_adapt_ebbks1(this, yf, nprimvars, nstvars, time, dtime, ystates1)
 
 !  call this%sumup_cnp_mass('afdecomp')
-
+  endif
   !add all external output
   call this%rm_ext_output(dtime, this%centurybgc_index, centuryeca_forc)
 !  call this%sumup_cnp_mass('afext output')
@@ -642,55 +642,55 @@ contains
   )
 
   jj=lit1;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
-  this%ystates1(kc) =this%ystates1(kc) + centuryeca_forc%cflx_output_litr_met*dtime/catomw
-  this%ystates1(kn) =this%ystates1(kn) + centuryeca_forc%nflx_output_litr_met*dtime/natomw
-  this%ystates1(kp) =this%ystates1(kp) + centuryeca_forc%pflx_output_litr_met*dtime/patomw
+!  this%ystates1(kc) =this%ystates1(kc) + centuryeca_forc%cflx_output_litr_met*dtime/catomw
+!  this%ystates1(kn) =this%ystates1(kn) + centuryeca_forc%nflx_output_litr_met*dtime/natomw
+!  this%ystates1(kp) =this%ystates1(kp) + centuryeca_forc%pflx_output_litr_met*dtime/patomw
   if(this%use_c13)then
     kc13=(jj-1)*nelms+c13_loc
-    this%ystates1(kc13) =this%ystates1(kc13) + centuryeca_forc%cflx_output_litr_met_c13*dtime/c13atomw
+!    this%ystates1(kc13) =this%ystates1(kc13) + centuryeca_forc%cflx_output_litr_met_c13*dtime/c13atomw
   endif
   if(this%use_c14)then
     kc14=(jj-1)*nelms+c14_loc
-    this%ystates1(kc14) =this%ystates1(kc14) + centuryeca_forc%cflx_output_litr_met_c14*dtime/c14atomw
+!    this%ystates1(kc14) =this%ystates1(kc14) + centuryeca_forc%cflx_output_litr_met_c14*dtime/c14atomw
   endif
 
   jj=lit2;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
-  this%ystates1(kc) =this%ystates1(kc) + centuryeca_forc%cflx_output_litr_cel*dtime/catomw
-  this%ystates1(kn) =this%ystates1(kn) + centuryeca_forc%nflx_output_litr_cel*dtime/natomw
-  this%ystates1(kp) =this%ystates1(kp) + centuryeca_forc%pflx_output_litr_cel*dtime/patomw
+!  this%ystates1(kc) =this%ystates1(kc) + centuryeca_forc%cflx_output_litr_cel*dtime/catomw
+!  this%ystates1(kn) =this%ystates1(kn) + centuryeca_forc%nflx_output_litr_cel*dtime/natomw
+!  this%ystates1(kp) =this%ystates1(kp) + centuryeca_forc%pflx_output_litr_cel*dtime/patomw
   if(this%use_c13)then
     kc13=(jj-1)*nelms+c13_loc
-    this%ystates1(kc13) =this%ystates1(kc13) + centuryeca_forc%cflx_output_litr_cel_c13*dtime/c13atomw
+!    this%ystates1(kc13) =this%ystates1(kc13) + centuryeca_forc%cflx_output_litr_cel_c13*dtime/c13atomw
   endif
   if(this%use_c14)then
     kc14=(jj-1)*nelms+c14_loc
-    this%ystates1(kc14) =this%ystates1(kc14) + centuryeca_forc%cflx_output_litr_cel_c14*dtime/c14atomw
+!    this%ystates1(kc14) =this%ystates1(kc14) + centuryeca_forc%cflx_output_litr_cel_c14*dtime/c14atomw
   endif
 
   jj=lit3;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
-  this%ystates1(kc) =this%ystates1(kc) + centuryeca_forc%cflx_output_litr_lig*dtime/catomw
-  this%ystates1(kn) =this%ystates1(kn) + centuryeca_forc%nflx_output_litr_lig*dtime/natomw
-  this%ystates1(kp) =this%ystates1(kp) + centuryeca_forc%pflx_output_litr_lig*dtime/patomw
+!  this%ystates1(kc) =this%ystates1(kc) + centuryeca_forc%cflx_output_litr_lig*dtime/catomw
+!  this%ystates1(kn) =this%ystates1(kn) + centuryeca_forc%nflx_output_litr_lig*dtime/natomw
+!  this%ystates1(kp) =this%ystates1(kp) + centuryeca_forc%pflx_output_litr_lig*dtime/patomw
   if(this%use_c13)then
     kc13=(jj-1)*nelms+c13_loc
-    this%ystates1(kc13) =this%ystates1(kc13) + centuryeca_forc%cflx_output_litr_lig_c13*dtime/c13atomw
+!    this%ystates1(kc13) =this%ystates1(kc13) + centuryeca_forc%cflx_output_litr_lig_c13*dtime/c13atomw
   endif
   if(this%use_c14)then
     kc14=(jj-1)*nelms+c14_loc
-    this%ystates1(kc14) =this%ystates1(kc14) + centuryeca_forc%cflx_output_litr_lig_c14*dtime/c14atomw
+!    this%ystates1(kc14) =this%ystates1(kc14) + centuryeca_forc%cflx_output_litr_lig_c14*dtime/c14atomw
   endif
 
   jj=cwd;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
-  this%ystates1(kc) =this%ystates1(kc) + centuryeca_forc%cflx_output_litr_cwd*dtime/catomw
-  this%ystates1(kn) =this%ystates1(kn) + centuryeca_forc%nflx_output_litr_cwd*dtime/natomw
-  this%ystates1(kp) =this%ystates1(kp) + centuryeca_forc%pflx_output_litr_cwd*dtime/patomw
+!  this%ystates1(kc) =this%ystates1(kc) + centuryeca_forc%cflx_output_litr_cwd*dtime/catomw
+!  this%ystates1(kn) =this%ystates1(kn) + centuryeca_forc%nflx_output_litr_cwd*dtime/natomw
+!  this%ystates1(kp) =this%ystates1(kp) + centuryeca_forc%pflx_output_litr_cwd*dtime/patomw
   if(this%use_c13)then
     kc13=(jj-1)*nelms+c13_loc
-    this%ystates1(kc13) =this%ystates1(kc13) + centuryeca_forc%cflx_output_litr_cwd_c13*dtime/c13atomw
+!    this%ystates1(kc13) =this%ystates1(kc13) + centuryeca_forc%cflx_output_litr_cwd_c13*dtime/c13atomw
   endif
   if(this%use_c14)then
     kc14=(jj-1)*nelms+c14_loc
-    this%ystates1(kc14) =this%ystates1(kc14) + centuryeca_forc%cflx_output_litr_cwd_c14*dtime/c14atomw
+!    this%ystates1(kc14) =this%ystates1(kc14) + centuryeca_forc%cflx_output_litr_cwd_c14*dtime/c14atomw
   endif
 
   end associate

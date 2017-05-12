@@ -114,7 +114,6 @@ contains
   call bstatus%reset()
 
   call this%InitAllocate()
-  write(*,*)'set default parameter'
   call this%set_defpar_default()
 
   !update parameter from namelist

@@ -37,6 +37,7 @@ module MockBGCReactionsType
      procedure :: set_kinetics_par
      procedure :: retrieve_lnd2atm
      procedure, private :: readParams                   ! read in parameters
+     procedure :: retrieve_biostates
   end type bgc_reaction_mock_run_type
 
   interface bgc_reaction_mock_run_type
@@ -285,7 +286,8 @@ contains
   !-------------------------------------------------------------------------------
   subroutine calc_bgc_reaction(this, bounds, col, lbj, ubj, num_soilc, filter_soilc,               &
        num_soilp,filter_soilp, jtops, dtime, betrtracer_vars, tracercoeff_vars,  biophysforc, &
-       tracerstate_vars, tracerflux_vars, tracerboundarycond_vars, plant_soilbgc, biogeo_flux, betr_status)
+       tracerstate_vars, tracerflux_vars, tracerboundarycond_vars, plant_soilbgc, &
+       biogeo_flux,  betr_status)
     !
     ! !DESCRIPTION:
     ! do bgc reaction
@@ -300,6 +302,7 @@ contains
     use BetrStatusType         , only : betr_status_type
     use betr_columnType        , only : betr_column_type
     use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
+    use BeTR_biogeoStateType     , only : betr_biogeo_state_type
     implicit none
     !ARGUMENTS
     class(bgc_reaction_mock_run_type) , intent(inout) :: this                       !
@@ -318,8 +321,8 @@ contains
     type(tracerstate_type)            , intent(inout) :: tracerstate_vars
     type(tracerflux_type)             , intent(inout) :: tracerflux_vars
     type(tracerboundarycond_type)     , intent(inout) :: tracerboundarycond_vars !
-    class(plant_soilbgc_type)         , intent(inout) ::  plant_soilbgc
-    type(betr_biogeo_flux_type)      , intent(inout) :: biogeo_flux
+    class(plant_soilbgc_type)         , intent(inout) :: plant_soilbgc
+    type(betr_biogeo_flux_type)       , intent(inout) :: biogeo_flux
     type(betr_status_type)            , intent(out)   :: betr_status
     character(len=*)                 , parameter     :: subname ='calc_bgc_reaction'
 
@@ -544,5 +547,32 @@ contains
    if (bounds%begc > 0)             continue
 
    end subroutine retrieve_lnd2atm
+
+
+   !----------------------------------------------------------------------
+   subroutine retrieve_biostates(this, bounds, lbj, ubj, jtops,num_soilc, filter_soilc, &
+      betrtracer_vars, tracerstate_vars, biogeo_state)
+   !
+   !retrieve state variables for lsm mass balance check
+   use tracer_varcon, only : catomw, natomw, patomw, c13atomw, c14atomw
+   use BeTR_decompMod           , only : betr_bounds_type
+   use BeTRTracerType           , only : BeTRTracer_Type
+   use tracerstatetype          , only : tracerstate_type
+    use BeTR_biogeoStateType     , only : betr_biogeo_state_type
+   implicit none
+   class(bgc_reaction_mock_run_type) , intent(inout) :: this               !
+   type(betr_bounds_type)               , intent(in)  :: bounds                      ! bounds
+   integer                              , intent(in) :: lbj, ubj
+   integer                              , intent(in) :: jtops(bounds%begc:bounds%endc)
+   integer                              , intent(in)    :: num_soilc                   ! number of columns in column filter
+   integer                              , intent(in)    :: filter_soilc(:)             ! column filter
+   type(betrtracer_type)                , intent(in) :: betrtracer_vars               ! betr configuration information
+   type(tracerstate_type)               , intent(inout) :: tracerstate_vars
+   type(betr_biogeo_state_type)         , intent(inout) :: biogeo_state
+
+   if (this%dummy_compiler_warning) continue
+   if (bounds%begc > 0)             continue
+
+   end subroutine retrieve_biostates
 
 end module MockBGCReactionsType
