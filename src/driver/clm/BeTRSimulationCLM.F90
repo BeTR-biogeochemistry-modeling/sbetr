@@ -64,7 +64,7 @@ contains
 
   !-------------------------------------------------------------------------------
 
-  subroutine CLMInit(this, bounds, lun, col, pft, waterstate, namelist_buffer)
+  subroutine CLMInit(this, bounds, lun, col, pft, waterstate, namelist_buffer, masterproc)
     !DESCRIPTION
     !initialize interface
     !
@@ -91,7 +91,7 @@ contains
     type(column_type)                        , intent(in) :: col
     type(patch_type)                         , intent(in) :: pft
     type(waterstate_type)                    , intent(inout) :: waterstate
-
+    logical,                        optional , intent(in)    :: masterproc
     betr_nlevsoi                       = nlevsoi
     betr_nlevsno                       = nlevsno
     betr_nlevtrc_soil                  = nlevtrc_soil
@@ -110,8 +110,11 @@ contains
     ! allocate the reaction types that may only be known to this
     ! simulation type.
     ! now call the base simulation init to continue initialization
-    call this%BeTRInit(bounds, lun, col, pft, waterstate, namelist_buffer)
-
+    if(present(masterproc))then
+      call this%BeTRInit(bounds, lun, col, pft, waterstate, namelist_buffer, masterproc=masterproc)
+    else
+      call this%BeTRInit(bounds, lun, col, pft, waterstate, namelist_buffer)
+    endif
   end subroutine CLMInit
 
   !-------------------------------------------------------------------------------

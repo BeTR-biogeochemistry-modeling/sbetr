@@ -13,6 +13,7 @@ implicit none
     real(r8), pointer :: totsomc_col             (:) => null()
     real(r8), pointer :: cwdc_col                (:) => null()
     real(r8), pointer :: totsomc_1m_col          (:) => null()
+    real(r8), pointer :: decomp_som2c_vr_col     (:,:)=> null()
   contains
 
     procedure, public  :: Init
