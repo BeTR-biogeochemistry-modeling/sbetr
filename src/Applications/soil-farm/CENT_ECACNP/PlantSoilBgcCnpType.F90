@@ -16,10 +16,6 @@ module PlantSoilBgcCnpType
     plant_soilbgc_cnp_type
 
     real(r8),pointer :: rt_vr_col(:,:) => null()
-    integer, pointer :: plant_vtype(:,:) => null()
-    integer, pointer :: plant_ntypes(:) => null()
-    real(r8),pointer :: plant_froot_np(:,:) => null()
-    real(r8),pointer :: plant_froot_nn(:,:) => null()
     real(r8),pointer :: plant_root_exudates_c(:) => null()
     real(r8),pointer :: plant_root_exudates_n(:) => null()
     real(r8),pointer :: plant_root_exudates_p(:) => null()
@@ -101,11 +97,6 @@ module PlantSoilBgcCnpType
 
   allocate(this%rt_vr_col(begc:endc,1:ubj)); this%rt_vr_col(:,:) = 0._r8
 
-  allocate(this%plant_vtype(begc:endc,1:betr_maxpatch_pft)); this%plant_vtype(:,:) = 0
-  allocate(this%plant_ntypes(begc:endc)); this%plant_ntypes(:) = 0
-  allocate(this%plant_froot_nn(begp:endp,1:ubj)); this%plant_froot_nn(:,:)= 0._r8
-  allocate(this%plant_froot_np(begp:endp,1:ubj)); this%plant_froot_np(:,:)= 0._r8
-
 
   allocate(this%plant_minn_nh4_active_yield_flx_vr_patch  (begp:endp,1:ubj)) !patch level mineral nitrogen yeild from soil bgc calculation
   allocate(this%plant_minn_no3_active_yield_flx_vr_patch  (begp:endp,1:ubj)) !patch level mineral nitrogen yeild from soil bgc calculation
@@ -163,14 +154,18 @@ module PlantSoilBgcCnpType
     biogeo_flux%n14flux_vars%smin_nh4_to_plant_patch(p) =  &
       tracer_flx_vtrans_patch(p, id_trc_nh3x) * natomw / dtime + &
       dot_product(this%plant_minn_nh4_active_yield_flx_vr_patch(p,1:ubj), dz(c,1:ubj))
+    biogeo_flux%n14flux_vars%smin_nh4_to_plant_patch(p) = biogeo_flux%n14flux_vars%smin_nh4_to_plant_patch(p)/pft%wtcol(p)
 
     biogeo_flux%n14flux_vars%smin_no3_to_plant_patch(p) = &
       tracer_flx_vtrans_patch(p, id_trc_no3x) * natomw / dtime + &
       dot_product(this%plant_minn_no3_active_yield_flx_vr_patch(p,1:ubj), dz(c,1:ubj))
+    biogeo_flux%n14flux_vars%smin_no3_to_plant_patch(p) = biogeo_flux%n14flux_vars%smin_no3_to_plant_patch(p)/pft%wtcol(p)
 
     biogeo_flux%p31flux_vars%sminp_to_plant_patch(p) =  &
       tracer_flx_vtrans_patch(p, id_trc_p_sol) * patomw / dtime + &
       dot_product(this%plant_minp_active_yield_flx_vr_patch(p,1:ubj), dz(c,1:ubj))
+    biogeo_flux%p31flux_vars%sminp_to_plant_patch(p) = biogeo_flux%p31flux_vars%sminp_to_plant_patch(p)/pft%wtcol(p)  
+
 
   enddo
 
@@ -243,13 +238,6 @@ module PlantSoilBgcCnpType
   type(betr_biogeo_flux_type)  , intent(in) :: biogeo_fluxes
 
   integer :: p, c
-  !set pft
-  this%plant_ntypes(:) = 0
-  do p = 1, betr_pft%npfts
-    c = betr_pft%column(p)
-    this%plant_vtype(c,p) = betr_pft%itype(p)
-    this%plant_ntypes(c) = this%plant_ntypes(c) + 1
-  enddo
 
   !set flux profiles, e.g. root respiration
   call this%set_profiles_vars(bounds, numf, filter, betr_pft, biogeo_forc, biogeo_fluxes)
@@ -284,14 +272,6 @@ module PlantSoilBgcCnpType
     do p = 1, betr_pft%npfts
       c = betr_pft%column(p)
       this%rt_vr_col(c,j)  = this%rt_vr_col(c,j) + biogeo_forc%rr_patch(p,j) * betr_pft%wtcol(p) !gC/m2/s
-
-      !effective root transporter for n uptake, the transporter density scalar will be added in the competition module
-      this%plant_froot_nn(p, j) = biogeo_forc%froot_prof_patch(p,j) * betr_pft%wtcol(p) * &
-          biogeo_forc%frootc_patch(p) * biogeo_forc%cn_scalar_patch(p)
-
-      !effective root transporter for p uptake, the transporter density scalar will be added in the competition module
-      this%plant_froot_np(p, j) = biogeo_forc%froot_prof_patch(p,j) * betr_pft%wtcol(p) * &
-          biogeo_forc%frootc_patch(p) * biogeo_forc%cp_scalar_patch(p)
     enddo
   enddo
 

@@ -89,7 +89,6 @@ contains
   use betr_constants  , only : betr_errmsg_len
   use BetrStatusType  , only : betr_status_type
   use PlantSoilBgcCnpType, only : plant_soilbgc_cnp_type
-!  use PlantSoilBgcDcnpType, only : plant_soilbgc_dcnp_type
 
   implicit none
   ! !ARGUMENTS:
@@ -105,8 +104,6 @@ contains
   select case(trim(method))
   case ("eca_cnp")
      allocate(plant_soilbgc, source=plant_soilbgc_cnp_type())
-!  case ("eca_dcnp")
-!     allocate(plant_soilbgc, source=plant_soilbgc_dcnp_type())
   case default
      write(msg, *)subname //' ERROR: unknown method: ', method
      msg = trim(msg)//new_line('A')//errMsg(mod_filename, __LINE__)
@@ -130,12 +127,18 @@ contains
   type(betr_status_type), intent(out)   :: bstatus
   character(len=255) :: msg
 
+  call bstatus%reset()
    select case (trim(reaction_method))
    case ("eca_cnp")
      call  bgc_con_eca%Init(bgc_namelist_buffer, bstatus)
+     !do nothing
    case default
-     msg = "no parameter file to read for the specified bgc method"//errmsg(__FILE__, __LINE__)
-     call bstatus%set_msg(msg=msg,err=-1)
+     if(trim(bgc_namelist_buffer)=='none')then
+       !do nothing
+     else
+       msg = "no parameter file to read for the specified bgc method"//errmsg(__FILE__, __LINE__)
+       call bstatus%set_msg(msg=msg,err=-1)
+     endif
    end select
 
   end subroutine  AppLoadParameters

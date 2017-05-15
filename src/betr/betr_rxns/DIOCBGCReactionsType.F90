@@ -1,4 +1,4 @@
-module MockBGCReactionsType
+module DIOCBGCReactionsType
 
 #include "bshr_assert.h"
   !
@@ -21,10 +21,10 @@ module MockBGCReactionsType
   character(len=*), parameter :: mod_filename = &
        __FILE__
 
-  public :: bgc_reaction_mock_run_type
+  public :: bgc_reaction_dioc_run_type
 
   type, extends(bgc_reaction_type) :: &
-       bgc_reaction_mock_run_type
+       bgc_reaction_dioc_run_type
   private
   contains
      procedure :: Init_betrbgc                          ! initialize betr bgc
@@ -35,23 +35,23 @@ module MockBGCReactionsType
      procedure :: InitCold                              ! do cold initialization
      procedure :: lsm_betr_flux_state_receive           !
      procedure :: set_kinetics_par
-     procedure :: retrieve_lnd2atm
      procedure, private :: readParams                   ! read in parameters
+     procedure :: retrieve_lnd2atm
      procedure :: retrieve_biostates
-  end type bgc_reaction_mock_run_type
+  end type bgc_reaction_dioc_run_type
 
-  interface bgc_reaction_mock_run_type
+  interface bgc_reaction_dioc_run_type
      module procedure constructor
-  end interface bgc_reaction_mock_run_type
+  end interface bgc_reaction_dioc_run_type
 
 contains
   !-------------------------------------------------------------------------------
-  type(bgc_reaction_mock_run_type) function constructor()
+  type(bgc_reaction_dioc_run_type) function constructor()
   !
   ! !DESCRIPTION:
-  ! create an object of type bgc_reaction_mock_run_type.
+  ! create an object of type bgc_reaction_dioc_run_type.
   ! Right now it is purposely empty
-    type(bgc_reaction_mock_run_type), allocatable :: bgc
+    type(bgc_reaction_dioc_run_type), allocatable :: bgc
     allocate(bgc)
     constructor = bgc
   end function constructor
@@ -60,7 +60,7 @@ contains
   use PlantNutKineticsMod, only : PlantNutKinetics_type
 
   ! !ARGUMENTS:
-  class(bgc_reaction_mock_run_type)         , intent(inout)    :: this                       !
+  class(bgc_reaction_dioc_run_type)         , intent(inout)    :: this                       !
   class(PlantNutKinetics_type), intent(in) :: plantNutkinetics
   integer, intent(in) :: lbj, ubj
   integer, intent(in) :: nactpft
@@ -79,7 +79,7 @@ contains
     use BeTRTracerType        , only : betrtracer_type
 
     ! !ARGUMENTS:
-    class(bgc_reaction_mock_run_type), intent(inout) :: this
+    class(bgc_reaction_dioc_run_type), intent(inout) :: this
     type(BeTRtracer_type),             intent(in) :: betrtracer_vars
     type(bounds_type),                 intent(in) :: bounds
     type(tracerboundarycond_type),     intent(in) :: tracerboundarycond_vars
@@ -111,7 +111,7 @@ contains
     use gbetrType      , only : gbetr_type
     implicit none
     ! !ARGUMENTS:
-    class(bgc_reaction_mock_run_type), intent(inout)    :: this
+    class(bgc_reaction_dioc_run_type), intent(inout)    :: this
     type(bounds_type)                , intent(in)    :: bounds
     integer                          , intent(in)    :: lbj, ubj
     type(BeTRtracer_type )           , intent(inout) :: betrtracer_vars
@@ -232,7 +232,7 @@ contains
     use BetrStatusType         , only : betr_status_type
     implicit none
     ! !ARGUMENTS:
-    class(bgc_reaction_mock_run_type) , intent(inout)    :: this                       !
+    class(bgc_reaction_dioc_run_type) , intent(inout)    :: this                       !
     type(bounds_type)                 , intent(in)    :: bounds                     !
     integer                           , intent(in)    :: num_soilc                  ! number of columns in column filter_soilc
     integer                           , intent(in)    :: filter_soilc(:)            ! column filter_soilc
@@ -305,7 +305,7 @@ contains
     use BeTR_biogeoStateType     , only : betr_biogeo_state_type
     implicit none
     !ARGUMENTS
-    class(bgc_reaction_mock_run_type) , intent(inout) :: this                       !
+    class(bgc_reaction_dioc_run_type) , intent(inout) :: this                       !
     type(bounds_type)                 , intent(in)    :: bounds                      ! bounds
     type(betr_column_type)            , intent(in)    :: col
     integer                           , intent(in)    :: num_soilc                   ! number of columns in column filter
@@ -321,8 +321,8 @@ contains
     type(tracerstate_type)            , intent(inout) :: tracerstate_vars
     type(tracerflux_type)             , intent(inout) :: tracerflux_vars
     type(tracerboundarycond_type)     , intent(inout) :: tracerboundarycond_vars !
-    class(plant_soilbgc_type)         , intent(inout) :: plant_soilbgc
-    type(betr_biogeo_flux_type)       , intent(inout) :: biogeo_flux
+    class(plant_soilbgc_type)         , intent(inout) ::  plant_soilbgc
+    type(betr_biogeo_flux_type)      , intent(inout) :: biogeo_flux
     type(betr_status_type)            , intent(out)   :: betr_status
     character(len=*)                 , parameter     :: subname ='calc_bgc_reaction'
 
@@ -332,15 +332,16 @@ contains
     associate(                                                                    &
     tracer_mobile_phase            => tracerstate_vars%tracer_conc_mobile_col  ,  &
     tracer_flx_netpro_vr           => tracerflux_vars%tracer_flx_netpro_vr_col ,  &
-    id_trc_doc                     => betrtracer_vars%id_trc_doc                  &
+    dic_prod_vr                    => biophysforc%dic_prod_vr_col              ,  &
+    doc_prod_vr                    => biophysforc%doc_prod_vr_col              ,  &
+    id_trc_doc                     => betrtracer_vars%id_trc_doc               ,  &
+    id_trc_co2x                    => betrtracer_vars%id_trc_co2x                 &
     )
     ! remove compiler warnings for unused dummy args
     if (this%dummy_compiler_warning)                          continue
     if (bounds%begc > 0)                                      continue
     if (ubj > lbj)                                            continue
     if (size(jtops) > 0)                                      continue
-    if (num_soilc > 0)                                        continue
-    if (size(filter_soilc) > 0)                               continue
     if (num_soilp > 0)                                        continue
     if (size(filter_soilp) > 0)                               continue
     if (dtime > 0.0)                                          continue
@@ -356,8 +357,14 @@ contains
     do ll = 1, ubj
       do fc = 1, num_soilc
         c = filter_soilc(fc)
-        tracer_flx_netpro_vr(c,ll,id_trc_doc)=tracer_mobile_phase(c,ll,id_trc_doc)*(exp(-1.e-6_r8*dtime)-1._r8)
+        tracer_flx_netpro_vr(c,ll,id_trc_doc)= doc_prod_vr(c,ll)*dtime
         tracer_mobile_phase(c,ll,id_trc_doc) = tracer_mobile_phase(c,ll,id_trc_doc)+tracer_flx_netpro_vr(c,ll,id_trc_doc)
+        if(tracer_mobile_phase(c,ll,id_trc_doc)<0._r8)then
+           tracer_flx_netpro_vr(c,ll,id_trc_doc)= tracer_flx_netpro_vr(c,ll,id_trc_doc)-tracer_mobile_phase(c,ll,id_trc_doc)
+           tracer_mobile_phase(c,ll,id_trc_doc)=0._r8
+        endif
+        tracer_flx_netpro_vr(c,ll,id_trc_co2x)= dic_prod_vr(c,ll)*dtime
+        tracer_mobile_phase(c,ll,id_trc_co2x) = tracer_mobile_phase(c,ll,id_trc_co2x)+tracer_flx_netpro_vr(c,ll,id_trc_co2x)
       enddo
     enddo
    end associate
@@ -379,7 +386,7 @@ contains
     use BetrStatusType  , only : betr_status_type
     implicit none
     ! !ARGUMENTS:
-    class(bgc_reaction_mock_run_type) , intent(inout)    :: this
+    class(bgc_reaction_dioc_run_type) , intent(inout)    :: this
     type(bounds_type)                 , intent(in)    :: bounds
     integer                           , intent(in)    :: lbj, ubj
     integer                           , intent(in)    :: jtops(bounds%begc: )        ! top label of each column
@@ -428,7 +435,7 @@ contains
     use betr_columnType     , only : betr_column_type
     implicit none
     ! !ARGUMENTS:
-    class(bgc_reaction_mock_run_type) , intent(inout)    :: this
+    class(bgc_reaction_dioc_run_type) , intent(inout)    :: this
     type(bounds_type)                 , intent(in)    :: bounds
     type(betr_column_type)            , intent(in)    :: col
     type(BeTRTracer_Type)             , intent(in)    :: betrtracer_vars
@@ -460,7 +467,7 @@ contains
       tracerstate_vars%tracer_conc_surfwater_col(c,:)          = 0._r8
       tracerstate_vars%tracer_conc_aquifer_col(c,:)            = 0._r8
       tracerstate_vars%tracer_conc_grndwater_col(c,:)          = 0._r8
-      tracerstate_vars%tracer_conc_mobile_col(c,7, betrtracer_vars%id_trc_doc) = 1._r8  !point source
+      tracerstate_vars%tracer_conc_mobile_col(c,7, betrtracer_vars%id_trc_doc) = 0._r8  !point source
 
       if(betrtracer_vars%nsolid_equil_tracers>0)then
         tracerstate_vars%tracer_conc_solid_equil_col(c, :, :) = 0._r8
@@ -480,7 +487,7 @@ contains
     use BeTRTracerType , only : BeTRTracer_Type
     implicit none
     ! !ARGUMENTS:
-    class(bgc_reaction_mock_run_type) , intent(inout)    :: this
+    class(bgc_reaction_dioc_run_type) , intent(inout)    :: this
     type(BeTRTracer_Type)             , intent(inout) :: betrtracer_vars
     character(len=*)                  , intent(in)  :: name_list_buffer
 
@@ -505,7 +512,7 @@ contains
     use BeTRTracerType  , only : BeTRTracer_Type
     implicit none
     ! !ARGUMENTS:
-    class(bgc_reaction_mock_run_type) , intent(inout) :: this               !
+    class(bgc_reaction_dioc_run_type) , intent(inout) :: this               !
     type(bounds_type)                 , intent(in) :: bounds             ! bounds
     integer                           , intent(in) :: num_soilc
     integer                           , intent(in) :: filter_soilc(:)
@@ -534,7 +541,7 @@ contains
    use BeTRTracerType           , only : BeTRTracer_Type
    use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
    implicit none
-   class(bgc_reaction_mock_run_type) , intent(inout) :: this               !
+   class(bgc_reaction_dioc_run_type) , intent(inout) :: this               !
    type(betr_bounds_type)           , intent(in)    :: bounds                      ! bounds
    integer                          , intent(in)    :: num_soilc                   ! number of columns in column filter
    integer                          , intent(in)    :: filter_soilc(:)             ! column filter
@@ -542,10 +549,22 @@ contains
    type(tracerflux_type)            , intent(in)    :: tracerflux_vars
    type(betr_biogeo_flux_type)      , intent(inout) :: biogeo_flux
 
+   integer :: c, fc
 
-   if (this%dummy_compiler_warning) continue
-   if (bounds%begc > 0)             continue
-
+   associate( &
+    id_trc_doc                     => betrtracer_vars%id_trc_doc               ,  &
+    id_trc_co2x                    => betrtracer_vars%id_trc_co2x                 &
+   )
+   do fc = 1, num_soilc
+     c = filter_soilc(fc)
+     biogeo_flux%qflx_rofliq_qsur_doc_col(c) = max(tracerflux_vars%tracer_flx_surfrun_col(c,id_trc_doc),0._r8)*12._r8
+     biogeo_flux%qflx_rofliq_qsur_dic_col(c) = max(tracerflux_vars%tracer_flx_surfrun_col(c,id_trc_co2x),0._r8)*12._r8
+     biogeo_flux%qflx_rofliq_qsub_doc_col(c) = max(tracerflux_vars%tracer_flx_leaching_col(c,id_trc_doc) + &
+        tracerflux_vars%tracer_flx_drain_col(c,id_trc_doc),0._r8)*12._r8
+     biogeo_flux%qflx_rofliq_qsub_dic_col(c) = max(tracerflux_vars%tracer_flx_leaching_col(c,id_trc_co2x) + &
+        tracerflux_vars%tracer_flx_drain_col(c,id_trc_co2x),0._r8)*12._r8
+   enddo
+   end associate
    end subroutine retrieve_lnd2atm
 
 
@@ -555,12 +574,12 @@ contains
    !
    !retrieve state variables for lsm mass balance check
    use tracer_varcon, only : catomw, natomw, patomw, c13atomw, c14atomw
-   use BeTR_decompMod           , only : betr_bounds_type
    use BeTRTracerType           , only : BeTRTracer_Type
    use tracerstatetype          , only : tracerstate_type
-    use BeTR_biogeoStateType     , only : betr_biogeo_state_type
+   use BeTR_biogeoStateType     , only : betr_biogeo_state_type
+   use BeTR_decompMod           , only : betr_bounds_type
    implicit none
-   class(bgc_reaction_mock_run_type) , intent(inout) :: this               !
+   class(bgc_reaction_dioc_run_type) , intent(inout) :: this               !
    type(betr_bounds_type)               , intent(in)  :: bounds                      ! bounds
    integer                              , intent(in) :: lbj, ubj
    integer                              , intent(in) :: jtops(bounds%begc:bounds%endc)
@@ -574,5 +593,4 @@ contains
    if (bounds%begc > 0)             continue
 
    end subroutine retrieve_biostates
-
-end module MockBGCReactionsType
+end module DIOCBGCReactionsType

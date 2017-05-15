@@ -76,7 +76,7 @@ module BeTRSimulation
      real(r8), pointer :: rest_states_1d(:,:)
      real(r8), pointer :: hist_fluxes_1d(:,:)
      real(r8), pointer :: hist_fluxes_2d(:,:,:)
-     logical, private :: active_soibgc
+     logical,  public :: active_soibgc
      ! FIXME(bja, 201603) most of these types should be private!
 
      ! NOTE(bja, 201603) BeTR types only, no LSM specific types here!
@@ -102,6 +102,7 @@ module BeTRSimulation
      procedure, public :: MassBalanceCheck        => BeTRSimulationMassBalanceCheck
      procedure, public :: BeTRSetBiophysForcing   => BeTRSimulationSetBiophysForcing
      procedure, public :: RetrieveBiogeoFlux      => BeTRSimulationRetrieveBiogeoFlux
+     procedure, public :: DiagnoseLnd2atm         => BeTRSimulationDiagnoseLnd2atm
      procedure, public :: CreateOfflineHistory    => hist_htapes_create
      procedure, public :: WriteOfflineHistory     => hist_write
 
@@ -142,7 +143,7 @@ contains
 
   end subroutine SetClock
   !-------------------------------------------------------------------------------
-  subroutine BeTRSimulationInit(this, bounds, lun, col, pft, waterstate, namelist_buffer)
+  subroutine BeTRSimulationInit(this, bounds, lun, col, pft, waterstate, namelist_buffer, masterproc)
     !
     ! DESCRIPTIONS
     ! Dummy routine for inheritance purposes. don't use.
@@ -162,6 +163,7 @@ contains
     type(bounds_type)                        , intent(in)    :: bounds
     character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
     type(waterstate_type)                    , intent(inout) :: waterstate
+    logical,                        optional , intent(in)    :: masterproc 
     character(len=*), parameter :: subname = 'BeTRSimulationInit'
 
     call endrun(msg="ERROR "//subname//" unimplemented. "//errmsg(mod_filename, __LINE__))
@@ -238,7 +240,8 @@ contains
   end subroutine BeTRSetFilter
 !-------------------------------------------------------------------------------
 
-  subroutine BeTRInit(this, bounds, lun, col, pft, waterstate, namelist_buffer, base_filename)
+  subroutine BeTRInit(this, bounds, lun, col, pft, waterstate, namelist_buffer, &
+     base_filename, masterproc)
     !
     ! DESCRIPTION
     ! initialize BeTR
@@ -259,9 +262,10 @@ contains
     type(landunit_type)                      , intent(in) :: lun
     type(column_type)                        , intent(in) :: col
     type(patch_type)                         , intent(in) :: pft
-    type(waterstate_type)                    , intent(in)    :: waterstate
-    character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
+    type(waterstate_type)                    , intent(in) :: waterstate
+    character(len=betr_namelist_buffer_size) , intent(in) :: namelist_buffer
     character(len=betr_filename_length)      , optional, intent(in)    :: base_filename
+    logical,                      optional   , intent(in) :: masterproc
     !TEMPORARY VARIABLES
     character(len=*), parameter :: subname = 'BeTRInit'
     type(betr_bounds_type) :: betr_bounds
@@ -275,7 +279,11 @@ contains
     else
       this%base_filename = ''
     endif
-    call this%betr_time%Init(namelist_buffer)
+    if(present(masterproc))then
+      call this%betr_time%Init(namelist_buffer, masterproc)
+    else
+      call this%betr_time%Init(namelist_buffer)
+    endif
     !allocate memory
     allocate(this%betr(bounds%begc:bounds%endc))
     allocate(this%biophys_forc(bounds%begc:bounds%endc))
@@ -295,10 +303,6 @@ contains
     do c = bounds%begc, bounds%endc
       l = col%landunit(c)
       call this%biophys_forc(c)%Init(betr_bounds)
-
-      call this%biogeo_state(c)%Init(betr_bounds)
-
-      call this%biogeo_flux(c)%Init(betr_bounds)
 
       call this%betr_col(c)%Init(betr_bounds)
 
@@ -327,6 +331,12 @@ contains
 
     if(this%bsimstatus%check_status())call endrun(msg=this%bsimstatus%print_msg())
 
+    do c = bounds%begc, bounds%endc
+
+      call this%biogeo_state(c)%Init(betr_bounds, this%active_soibgc)
+
+      call this%biogeo_flux(c)%Init(betr_bounds, this%active_soibgc)
+    enddo
     !identify variables that are used for history output
     c = bounds%begc
     call this%betr(c)%get_hist_size(this%num_hist_state1d, this%num_hist_state2d, &
@@ -485,7 +495,29 @@ contains
     if (size(col%z) > 0)                              continue
 
   end subroutine BeTRSimulationStepWithoutDrainage
+  !---------------------------------------------------------------------------------
+  subroutine BeTRSimulationDiagnoseLnd2atm(this, bounds,  col, lnd2atm_vars)
+   !
+   !DESCRIPTION
+   !interface for using diagnose land fluxes to atm and river copmonents
+   !
+   !USES
+    use ColumnType    , only : column_type
+    use MathfuncMod   , only : safe_div
+    use lnd2atmType    , only : lnd2atm_type
+    implicit none
+    !ARGUMENTS
+    class(betr_simulation_type) , intent(inout) :: this
+    type(bounds_type)           , intent(in)    :: bounds
+    type(column_type)           , intent(in)    :: col ! column type
+    type(lnd2atm_type)          , intent(inout) :: lnd2atm_vars
 
+    ! remove compiler warnings about unused dummy args
+    if (this%num_soilc > 0) continue
+    if (bounds%begc > 0)    continue
+    if (size(col%z) > 0)    continue
+
+  end subroutine BeTRSimulationDiagnoseLnd2atm
   !---------------------------------------------------------------------------------
   subroutine BeTRSimulationStepWithDrainage(this, bounds,  col)
    !
@@ -495,7 +527,6 @@ contains
    !USES
     use ColumnType    , only : column_type
     use MathfuncMod   , only : safe_div
-    use WaterFluxType , only : waterflux_type
     implicit none
     !ARGUMENTS
     class(betr_simulation_type) , intent(inout) :: this
@@ -1854,7 +1885,7 @@ contains
   use decompMod             , only : bounds_type
   use ColumnType            , only : column_type
   use PatchType             , only : patch_type
-  use pftvarcon             , only : crop
+  use pftvarcon             , only : noveg, crop
   use tracer_varcon         , only : betr_nlevsoi
   !ARGUMENTS
   implicit none
@@ -1862,7 +1893,7 @@ contains
   type(bounds_type), intent(in) :: bounds
   type(column_type), intent(in) :: col
   type(patch_type), optional, intent(in) :: pft
-  integer :: c, p, pi
+  integer :: c, p, pi, pp
 
 
   do c = bounds%begc, bounds%endc
@@ -1877,17 +1908,19 @@ contains
     if(present(pft))then
       this%betr_pft(c)%column(:)=1
       this%betr_pft(c)%npfts = 0
+      pp = 0
       do pi = 1, betr_maxpatch_pft
         if (pi <= col%npfts(c)) then
           p = col%pfti(c) + pi - 1
-          if (pft%active(p)) then
-            this%betr_pft(c)%wtcol(pi) = pft%wtcol(p)
-            this%betr_pft(c)%itype(pi) = pft%itype(p)
-            this%betr_pft(c)%crop(pi) = crop(pi)         !the crop looks weird here, jyt
-            this%betr_pft(c)%npfts = this%betr_pft(c)%npfts + 1
+          if (pft%active(p) .and. (pft%itype(p) .ne. noveg)) then
+            pp = pp + 1
+            this%betr_pft(c)%wtcol(pp) = pft%wtcol(p)
+            this%betr_pft(c)%itype(pp) = pft%itype(p)
+            this%betr_pft(c)%crop(pp) = crop(pi)         !the crop looks weird here, jyt
           endif
         endif
       enddo
+      this%betr_pft(c)%npfts = pp
     endif
   enddo
 

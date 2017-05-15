@@ -13,6 +13,7 @@ implicit none
     real(r8), pointer :: agnpp_patch                               (:)  => null()   ! (gC/m2/s) aboveground NPP
     real(r8), pointer :: bgnpp_patch                               (:)  => null()   ! (gC/m2/s) belowground NPP
     real(r8), pointer :: hr_col                                    (:)=> null()
+    real(r8), pointer :: hr_vr_col                                 (:,:) => null()
     real(r8), pointer :: phenology_c_to_litr_met_c_col             (:,:)=> null()
     real(r8), pointer :: phenology_c_to_litr_cel_c_col             (:,:)=> null()
     real(r8), pointer :: phenology_c_to_litr_lig_c_col             (:,:)=> null()

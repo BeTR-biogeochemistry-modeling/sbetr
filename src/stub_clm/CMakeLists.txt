@@ -13,6 +13,7 @@ set(BETR_STUB_CLM_SOURCES
   GridcellType.F90
   LandunitType.F90
   PatchType.F90
+  lnd2atmType.F90
   PhosphorusFluxType.F90
   PhosphorusStateType.F90
   QSatMod.F90

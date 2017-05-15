@@ -41,7 +41,8 @@ module BetrType
      logical                           :: advection_on = .true.
      logical                           :: reaction_on  = .true.
      logical                           :: ebullition_on= .true.
-
+     integer                           :: nactpft
+     logical                           :: active_soibgc
      ! internal types
      class(bgc_reaction_type)      , allocatable, public :: bgc_reaction
      class(plant_soilbgc_type)     , allocatable, public :: plant_soilbgc
@@ -84,6 +85,8 @@ module BetrType
      procedure, public  :: set_restvar
      procedure, public  :: get_restartvar_size
      procedure, public  :: get_restartvar_info
+     procedure, public  :: diagnoselnd2atm
+     procedure, public  :: retrieve_biostates
   end type betr_type
 
   public :: create_betr_type
@@ -139,6 +142,7 @@ contains
         asoibgc, bstatus)
     if(bstatus%check_status())return
 
+    this%active_soibgc = asoibgc
     if(asoibgc)then
       call this%plantNutkinetics%Init(bounds)
     endif
@@ -310,18 +314,17 @@ contains
          this%tracerboundaryconds, this%tracerfluxes, this%bgc_reaction,             &
          Rfactor, this%advection_on, betr_status)
     if(betr_status%check_status())return
-!    print*,'bf hydro'
-!    do j = 1, this%tracers%ntracers
-!      print*,j,this%tracers%tracernames(j),this%tracerstates%tracer_conc_mobile_col(1,1,j)
-!    enddo
+
     call surface_tracer_hydropath_update(betr_time, bounds, col, &
        num_soilc, filter_soilc,  biophysforc, this%tracers, this%tracerstates,    &
        this%tracercoeffs,  this%tracerfluxes, betr_status)
     if(betr_status%check_status())return
-!    print*,'bf reaction'
-!    do j = 1, this%tracers%ntracers
-!      print*,j,this%tracers%tracernames(j),this%tracerstates%tracer_conc_mobile_col(1,1,j)
-!    enddo
+
+    if(this%active_soibgc)then
+      !set up kinetic parameters that are passed in from the mother lsm. Mostly they
+      !are plant-nutrient related parameters.
+      call this%bgc_reaction%set_kinetics_par(1, ubj, this%nactpft, this%plantNutkinetics)
+    endif
     if(this%reaction_on)                                       &
     call this%bgc_reaction%calc_bgc_reaction(bounds, col, lbj, ubj, &
          num_soilc,                                            &
@@ -336,12 +339,8 @@ contains
          this%tracerstates,                                    &
          this%tracerfluxes,                                    &
          this%tracerboundaryconds,                             &
-         this%plant_soilbgc, biogeo_flux, betr_status)
+         this%plant_soilbgc, biogeo_flux,  betr_status)
     if(betr_status%check_status())return
-!    print*,'af reaction'
-!    do j = 1, this%tracers%ntracers
-!      print*,j,this%tracers%tracernames(j),this%tracerstates%tracer_conc_mobile_col(1,1,j)
-!    enddo
 
     call tracer_gws_transport(betr_time, bounds, col, pft, num_soilc, filter_soilc, &
       Rfactor, biophysforc, biogeo_flux, this%tracers, this%tracerboundaryconds  , &
@@ -374,7 +373,24 @@ contains
 
   end subroutine step_without_drainage
 
+  !--------------------------------------------------------------------------------
+  subroutine retrieve_biostates(this, bounds, lbj, ubj,  num_soilc, filter_soilc, jtops, &
+    biogeo_state)
 
+  implicit none
+  ! !ARGUMENTS:
+  class(betr_type)                     , intent(inout) :: this
+  type(bounds_type)                    , intent(in)  :: bounds                      ! bounds
+  integer                              , intent(in) :: lbj, ubj
+  integer                              , intent(in) :: jtops(bounds%begc:bounds%endc)
+  integer                              , intent(in)    :: num_soilc                   ! number of columns in column filter
+  integer                              , intent(in)    :: filter_soilc(:)             ! column filter
+  type(betr_biogeo_state_type)         , intent(inout) :: biogeo_state
+
+  call this%bgc_reaction%retrieve_biostates(bounds, lbj, ubj, jtops, num_soilc, &
+     filter_soilc, this%tracers, this%tracerstates, biogeo_state)
+
+  end subroutine retrieve_biostates
   !--------------------------------------------------------------------------------
   subroutine step_with_drainage(this, bounds, col, num_soilc, filter_soilc, jtops, &
     biogeo_flux, betr_status)
@@ -435,7 +451,7 @@ contains
                     aqucon = safe_div(tracer_conc_mobile(c,j,k),aqu2bulkcef_mobile(c,j,groupid(k)))
                   else
                     !when drainage is negative, tracer comes from groundwater
-                    if(is_h2o(j))then
+                    if(is_h2o(k))then
                       aqucon = tracer_conc_grndwater(c,k)
                     else
                       aqucon = 0._r8
@@ -443,7 +459,6 @@ contains
                   endif
                   !when drainage is negative, assume the flux is magically coming from other groundwater sources
                   tracer_flx_drain(c,k)     = tracer_flx_drain(c,k)  + aqucon * qflx_drain_vr(c,j)
-!                  print*,'c,j,k,drain',c,j,k,tracer_conc_mobile(c,j,k),qflx_drain_vr(c,j)
                   tracer_conc_mobile(c,j,k) =  tracer_conc_mobile(c,j,k) - aqucon * qflx_drain_vr(c,j)/dz(c,j)
                   if(tracer_conc_mobile(c,j,k)<0._r8)then
                      tracer_flx_drain(c,k) = tracer_flx_drain(c,k)+tracer_conc_mobile(c,j,k)*dz(c,j)
@@ -462,6 +477,29 @@ contains
   end subroutine step_with_drainage
 
 
+  !--------------------------------------------------------------------------------
+  subroutine diagnoselnd2atm(this, bounds, num_soilc, filter_soilc,  &
+    biogeo_flux)
+    !
+    ! !DESCRIPTION:
+    ! do tracer update due to drainage
+    !
+    ! !USES:
+    use BetrStatusType  , only : betr_status_type
+    use betr_columnType , only : betr_column_type
+    implicit none
+    ! !ARGUMENTS:
+    class(betr_type)            , intent(inout) :: this
+    type(bounds_type)           , intent(in)    :: bounds
+    integer                     , intent(in)    :: num_soilc                          ! number of columns in column filter_soilc
+    integer                     , intent(in)    :: filter_soilc(:)                    ! column filter_soilc
+    type(betr_biogeo_flux_type) , intent(inout) :: biogeo_flux
+
+
+    call this%bgc_reaction%retrieve_lnd2atm(bounds, num_soilc, filter_soilc, &
+       this%tracerfluxes, this%tracers, biogeo_flux)
+
+  end subroutine diagnoselnd2atm
   !--------------------------------------------------------------------------------
   subroutine calc_dew_sub_flux(this, betr_time, bounds, col, num_hydrologyc, &
       filter_soilc_hydrologyc,  biophysforc, betrtracer_vars, tracerflux_vars, tracerstate_vars)

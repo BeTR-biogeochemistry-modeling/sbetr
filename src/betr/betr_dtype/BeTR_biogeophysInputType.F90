@@ -78,7 +78,8 @@ implicit none
     real(r8), pointer :: frootc_patch(:) => null()
     real(r8), pointer :: cn_scalar_patch(:) => null()
     real(r8), pointer :: cp_scalar_patch(:) => null()
-
+    real(r8), pointer :: dic_prod_vr_col(:,:) => null()
+    real(r8), pointer :: doc_prod_vr_col(:,:) => null()
     !carbon fluxes
     type(betr_carbonflux_type) :: c12flx
     type(betr_carbonflux_type) :: c13flx
@@ -207,6 +208,8 @@ contains
   allocate(this%sucsat_col           (begc:endc,lbj:ubj) ) ! col minimum soil suction (mm) (nlevgrnd)
   allocate(this%rootfr_patch         (begp:endp,lbj:ubj) ) ! patch fraction of roots in each soil layer (nlevgrnd)
 
+  allocate(this%dic_prod_vr_col(begc:endc,lbj:ubj))
+  allocate(this%doc_prod_vr_col(begc:endc,lbj:ubj))
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------

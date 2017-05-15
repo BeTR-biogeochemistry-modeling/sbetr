@@ -19,6 +19,7 @@ implicit none
     real(r8), pointer :: plant_eff_ncompet_b_vr_patch(:,:)
     real(r8), pointer :: plant_eff_pcompet_b_vr_patch(:,:)
     real(r8), pointer :: minsurf_p_compet_vr_col(:,:)
+    real(r8), pointer :: minsurf_nh4_compet_vr_col(:,:)
 
     !the following is only for eca-cnp bgc, for other applications
     !some of the parameters will be read through the interface
@@ -30,6 +31,8 @@ implicit none
     real(r8), pointer :: km_den_no3_vr_col(:,:)
     real(r8), pointer :: decomp_eff_ncompet_b_vr_col(:,:)
     real(r8), pointer :: decomp_eff_pcompet_b_vr_col(:,:)
+    real(r8), pointer :: den_eff_ncompet_b_vr_col(:,:)
+    real(r8), pointer :: nit_eff_ncompet_b_vr_col(:,:)
   contains
     procedure, public  :: Init
     procedure, public  :: InitAllocate
@@ -69,6 +72,7 @@ implicit none
      allocate(this%plant_eff_ncompet_b_vr_patch(begp:endp,1:ubj)); this%plant_eff_ncompet_b_vr_patch(:,:) = nan
      allocate(this%plant_eff_pcompet_b_vr_patch(begp:endp,1:ubj)); this%plant_eff_pcompet_b_vr_patch(:,:) = nan
 
+     allocate(this%minsurf_nh4_compet_vr_col(begc:endc,1:ubj)); this%minsurf_nh4_compet_vr_col(:,:) = nan
      allocate(this%minsurf_p_compet_vr_col(begc:endc,1:ubj)); this%minsurf_p_compet_vr_col(:,:) = nan
      allocate(this%km_minsurf_p_vr_col(begc:endc,1:ubj)); this%km_minsurf_p_vr_col(:,:) = nan
      allocate(this%km_decomp_nh4_vr_col(begc:endc, 1:ubj)); this%km_decomp_nh4_vr_col(:,:) = nan
@@ -78,6 +82,9 @@ implicit none
      allocate(this%km_den_no3_vr_col(begc:endc,1:ubj)); this%km_den_no3_vr_col(:,:) = nan
      allocate(this%decomp_eff_ncompet_b_vr_col(begc:endc,1:ubj)); this%decomp_eff_ncompet_b_vr_col(:,:)=nan
      allocate(this%decomp_eff_pcompet_b_vr_col(begc:endc,1:ubj)); this%decomp_eff_pcompet_b_vr_col(:,:)=nan
+     allocate(this%den_eff_ncompet_b_vr_col(begc:endc,1:ubj)); this%den_eff_ncompet_b_vr_col(:,:)=nan
+     allocate(this%nit_eff_ncompet_b_vr_col(begc:endc,1:ubj)); this%nit_eff_ncompet_b_vr_col(:,:)=nan
+
     end subroutine InitAllocate
     !------------------------------------------------------------------------
     subroutine InitCold(this, bounds)
