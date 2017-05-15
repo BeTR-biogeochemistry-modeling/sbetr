@@ -46,7 +46,7 @@ contains
   this%nelapstep = nelapstep
   end subroutine setClock
   !-------------------------------------------------------------------------------
-  subroutine Init(this, namelist_buffer)
+  subroutine Init(this, namelist_buffer, masterproc)
 
     use betr_constants, only : betr_namelist_buffer_size
 
@@ -54,18 +54,22 @@ contains
 
     class(betr_time_type), intent(inout) :: this
     character(len=betr_namelist_buffer_size), optional, intent(in) :: namelist_buffer
-
+    logical, optional, intent(in) :: masterproc
     this%tstep = 1
     this%time  = 0._r8
 
     if(present(namelist_buffer))then
-      call this%ReadNamelist(namelist_buffer)
+      if(present(masterproc))then
+        call this%ReadNamelist(namelist_buffer, masterproc)
+      else
+        call this%ReadNamelist(namelist_buffer)
+      endif
     endif
   end subroutine Init
 
   ! ----------------------------------------------------------------------
 
-  subroutine ReadNamelist(this, namelist_buffer)
+  subroutine ReadNamelist(this, namelist_buffer, masterproc)
     !
     ! !DESCRIPTION:
     ! read namelist for betr configuration
@@ -78,6 +82,7 @@ contains
     ! !ARGUMENTS:
     class(betr_time_type), intent(inout) :: this
     character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
+    logical, optional, intent(in) :: masterproc
     !
     ! !LOCAL VARIABLES:
     integer :: nml_error
@@ -86,7 +91,7 @@ contains
     real(r8) :: delta_time
     real(r8) :: stop_time
     real(r8) :: restart_dtime
-
+    logical :: masterproc_loc
     !-----------------------------------------------------------------------
 
     namelist / betr_time / delta_time, stop_time, restart_dtime
@@ -96,7 +101,8 @@ contains
 
     ! FIXME(bja, 201603) assign some defaults, should eventually remove
     ! when all input files are updated.
-
+    masterproc_loc=.true.
+    if(present(masterproc))masterproc_loc=masterproc
     delta_time = 1800._r8   !half hourly time step
     stop_time = delta_time*48._r8*365._r8*2._r8
     restart_dtime = -1._r8
@@ -113,7 +119,7 @@ contains
        end if
     end if
 
-    if (.true.) then
+    if (masterproc_loc) then
        write(stdout, *)
        write(stdout, *) '--------------------'
        write(stdout, *)

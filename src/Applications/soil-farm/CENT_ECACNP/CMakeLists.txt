@@ -14,6 +14,7 @@ set(CENT_ECACNP_SOURCES
 if (BETR_BGC EQUAL 1)
   include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)
   include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_math)
+  include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_bgc)
   include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_grid)
   include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_dtype)
   include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_core)

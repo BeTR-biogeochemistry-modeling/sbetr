@@ -87,22 +87,6 @@ implicit none
   logical :: use_c14
 
   !ECA nutrient competition
-  real(r8), pointer :: vmax_minn_mic(:)      => null()    !maximum mineral N uptake rate for decomposers
-  real(r8), pointer :: vmax_minp_mic(:)     => null()     !maximum mineral P uptake rate for decomposers
-  real(r8), pointer :: vmax_den(:)          => null()     !maximum denitrification rate
-  real(r8), pointer :: vmax_nit(:)          => null()     !maximum nitrification rate
-  real(r8), pointer :: vmax_minn_plant(:)   => null()     !number of maximum pft
-  real(r8), pointer :: vmax_minp_plant(:)      => null()  !number of maximum pft
-  real(r8), pointer :: kaff_minn_no3_plant(:)  => null()  !number of maximum pft
-  real(r8), pointer :: kaff_minn_nh4_plant(:)  => null()  !number of maximum pft
-  real(r8), pointer :: kaff_minp_plant(:)      => null()  !number of maximum pft
-  real(r8), pointer :: kaff_minn_nh4_mic(:)   => null()   !decomposer affinity for NH4, number of maximum pft
-  real(r8), pointer :: kaff_minn_no3_mic(:)   => null()   !decomposer affinity for NO3, number of maximum pft
-  real(r8), pointer :: kaff_minp_mic(:)       => null()   !decomposer affinity for mineral P, number of maximum pft
-  real(r8), pointer :: kaff_minn_nh4_nit(:)   => null()   !nitrifier affinity for NH4
-  real(r8), pointer :: kaff_minn_no3_den(:)    => null()  !denitrifier affinity for NO3
-  real(r8), pointer :: kaff_minn_nh4_msurf(:)  => null()  !number of soil orders
-  real(r8), pointer :: kaff_minp_msurf(:)     => null()   !number of soil orders
   real(r8), pointer :: vmax_minp_secondary_to_occlude(:)  => null() !maximum conversion rate of secondary P into occluded P
   real(r8), pointer :: vmax_minp_soluble_to_secondary(:)  => null() !maximum conversion rate of soluble P into secondary P
 
@@ -130,7 +114,6 @@ contains
   call bstatus%reset()
 
   call this%InitAllocate()
-
   call this%set_defpar_default()
 
   !update parameter from namelist
@@ -143,28 +126,12 @@ contains
   implicit none
   class(BiogeoCon_type), intent(inout) :: this
 
-  allocate(this%vmax_minn_plant(betr_maxpatch_pft))
-  allocate(this%vmax_minp_plant(betr_maxpatch_pft))
-  allocate(this%kaff_minn_no3_plant(betr_maxpatch_pft))
-  allocate(this%kaff_minn_nh4_plant(betr_maxpatch_pft))
-  allocate(this%kaff_minp_plant(betr_maxpatch_pft))
 
-  allocate(this%kaff_minn_nh4_msurf(betr_max_soilorder))
-  allocate(this%kaff_minp_msurf(betr_max_soilorder))
-  allocate(this%kaff_minn_nh4_mic(betr_max_soilorder))
-  allocate(this%kaff_minn_no3_mic(betr_max_soilorder))
-  allocate(this%kaff_minp_mic(betr_max_soilorder))
   allocate(this%vmax_minp_secondary_to_occlude(betr_max_soilorder))
   allocate(this%minp_secondary_decay(betr_max_soilorder))
   allocate(this%vmax_minp_soluble_to_secondary(betr_max_soilorder))
-  allocate(this%kaff_minn_nh4_nit(betr_max_soilorder))
-  allocate(this%kaff_minn_no3_den(betr_max_soilorder))
 
   !the following will be actually calculated from CNP bgc
-  allocate(this%vmax_nit(betr_max_soilorder))
-  allocate(this%vmax_den(betr_max_soilorder))
-  allocate(this%vmax_minp_mic(betr_max_soilorder))
-  allocate(this%vmax_minn_mic(betr_max_soilorder))
   end subroutine InitAllocate
   !--------------------------------------------------------------------
   subroutine set_defpar_default(this)
@@ -221,22 +188,6 @@ contains
   this%surface_tension_water = 73.e-3_r8  ! (J/m^2), Arah and Vinten, 1995
 
   !ECA nutrient competition
-  this%vmax_minn_mic(:)                  = 1.e-4_r8
-  this%vmax_minp_mic(:)                  = 1.e-5_r8
-  this%vmax_den(:)                       = 1.e-4_r8
-  this%vmax_nit(:)                       = 1.e-4_r8
-  this%vmax_minn_plant(:)                = 1.e-4_r8        !number of maximum pft
-  this%vmax_minp_plant(:)                = 1.e-5_r8        !number of maximum pft
-  this%kaff_minn_no3_plant(:)            = 1._r8    !number of maximum pft
-  this%kaff_minn_nh4_plant(:)            = 1._r8    !number of maximum pft
-  this%kaff_minp_plant(:)                = 1._r8      !number of maximum pft
-  this%kaff_minn_nh4_mic(:)              = 1._r8
-  this%kaff_minn_no3_mic(:)              = 1._r8
-  this%kaff_minp_mic(:)                  = 1._r8    !number of maximum pft
-  this%kaff_minn_nh4_nit(:)              = 1._r8
-  this%kaff_minn_no3_den(:)              = 1._r8
-  this%kaff_minn_nh4_msurf(:)            = 1._r8  !number of soil orders
-  this%kaff_minp_msurf(:)                = 1._r8   !number of soil orders
   this%vmax_minp_secondary_to_occlude(:) = 1.e-5_r8
   this%vmax_minp_soluble_to_secondary(:) = 1.e-5_r8
   !inorganic phosphorus cycling

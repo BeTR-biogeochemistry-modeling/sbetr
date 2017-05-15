@@ -76,7 +76,7 @@ implicit none
   end subroutine InitPar
   !-------------------------------------------------------------------------------
 
-  subroutine calc_anaerobic_frac(this, o2b, centuryeca_forc, o2_decomp_depth, anaerobic_frac)
+  subroutine calc_anaerobic_frac(this, o2b, centuryeca_forc, o2_decomp_depth, anaerobic_frac, diffus)
     !
     ! !DESCRIPTION:
     !
@@ -94,12 +94,13 @@ implicit none
     type(centuryeca_forc_type), intent(in)    :: centuryeca_forc
     real(r8),                   intent(in)    :: o2_decomp_depth !potential o2 consumption, as deduced from aerobic heteorotrophic decomposition, mol o2/m3/s
     real(r8),                   intent(out)   :: anaerobic_frac       !fraction of aerobic soil
+    real(r8),                   intent(out)   :: diffus
+
     ! !LOCAL VARIABLES:
     real(r8), parameter :: rho_w  = 1.e3_r8        ![kg/m3]
     real(r8) :: f_a
     real(r8) :: eps
     real(r8) :: om_frac
-    real(r8) :: diffus
     real(r8) :: organic_max
     real(r8) :: rij_kro_a
     real(r8) :: rij_kro_alpha
@@ -169,7 +170,7 @@ implicit none
 
   !-------------------------------------------------------------------------------
   subroutine calc_nitrif_denitrif_rate(this, centuryeca_forc, decompkf_eca,smin_nh4, smin_no3, &
-      anaerobic_frac, pot_f_nit_mol_per_sec, pot_co2_hr, n2_n2o_ratio_denit, pot_f_nit, pot_f_denit)
+      anaerobic_frac, diffus, pot_f_nit_mol_per_sec, pot_co2_hr, n2_n2o_ratio_denit, pot_f_nit, pot_f_denit)
     !
     ! !DESCRIPTION:
     ! calculate nitrification denitrification rate
@@ -193,6 +194,7 @@ implicit none
     real(r8)                   , intent(in)  :: smin_nh4
     real(r8)                   , intent(in)  :: smin_no3              !soil no3 concentration [mol N/m3]
     type(DecompCent_type)      , intent(in)  :: decompkf_eca
+    real(r8)                   , intent(in)  :: diffus
     real(r8)                   , intent(out) :: n2_n2o_ratio_denit    !ratio of n2 to n2o in denitrification
     real(r8)                   , intent(out) :: pot_f_nit             !nitrification rate of nh4
     real(r8)                   , intent(out) :: pot_f_denit           !potential denitrification rate of no3
@@ -212,7 +214,6 @@ implicit none
     real(r8) :: fmax_denit_nitrate
     real(r8) :: f_denit_base
     real(r8) :: ratio_k1
-    real(r8) :: diffus
     real(r8) :: ratio_no3_co2
     real(r8) :: wfps
     real(r8) :: fr_WFPS
@@ -446,12 +447,13 @@ implicit none
   !local variables
   real(r8) :: n2_n2o_ratio_denit
   real(r8) :: anaerobic_frac
+  real(r8) :: diffus
 
-  call this%calc_anaerobic_frac(o2b, centuryeca_forc, o2_decomp_depth, anaerobic_frac)
+  call this%calc_anaerobic_frac(o2b, centuryeca_forc, o2_decomp_depth, anaerobic_frac, diffus)
 
   !calculate potential denitrification and denitrification
   call this%calc_nitrif_denitrif_rate(centuryeca_forc, decompkf_eca, &
-      smin_nh4, smin_no3, anaerobic_frac, pot_f_nit_mol_per_sec, pot_co2_hr,&
+      smin_nh4, smin_no3, anaerobic_frac,diffus, pot_f_nit_mol_per_sec, pot_co2_hr,&
       n2_n2o_ratio_denit, pot_f_nit, pot_f_denit)
 
   !calcualte cascade matrix for nitrification denitrification

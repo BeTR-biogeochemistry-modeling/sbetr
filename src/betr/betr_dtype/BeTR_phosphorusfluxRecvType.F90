@@ -7,14 +7,17 @@ implicit none
        __FILE__
   type, public :: betr_phosphorusflux_recv_type
     real(r8), pointer :: sminp_leached_col(:) => null()
-    real(r8), pointer :: sminp_to_plant_patch(:) => null() !integrated phosphate goes to plant at patch (gN/m2/s)
-    real(r8), pointer :: fire_decomp_ploss_col(:) => null()
+    real(r8), pointer :: sminp_to_plant_patch(:) => null()   !integrated phosphate goes to plant at patch (gN/m2/s), will be summarized within the bgc model
+    real(r8), pointer :: fire_decomp_ploss_col(:) => null()  !will be summarized within the bgc model
     real(r8), pointer :: supplement_to_sminp_col(:) => null()
     real(r8), pointer :: secondp_to_occlp_col(:) => null()
+    real(r8), pointer :: supplement_to_sminp_vr_col(:,:) => null()
+    real(r8), pointer :: secondp_to_occlp_vr_col(:,:) => null()
   contains
     procedure, public  :: Init
     procedure, private :: InitAllocate
     procedure, public  :: reset
+    procedure, public  :: summary
   end type betr_phosphorusflux_recv_type
 
  contains
@@ -48,6 +51,8 @@ implicit none
   allocate(this%fire_decomp_ploss_col(begc:endc))
   allocate(this%supplement_to_sminp_col(begc:endc))
   allocate(this%secondp_to_occlp_col(begc:endc))
+  allocate(this%supplement_to_sminp_vr_col(begc:endc, lbj:ubj))
+  allocate(this%secondp_to_occlp_vr_col(begc:endc, lbj:ubj))
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------
@@ -56,10 +61,28 @@ implicit none
   class(betr_phosphorusflux_recv_type)  :: this
   real(r8), intent(in) :: value_column
 
-  this%sminp_leached_col(:) = value_column
-  this%sminp_to_plant_patch(:) = value_column
-  this%fire_decomp_ploss_col(:) = value_column
-  this%supplement_to_sminp_col(:) = value_column
-  this%secondp_to_occlp_col(:) = value_column
+  this%supplement_to_sminp_vr_col(:,:) = value_column
+  this%secondp_to_occlp_vr_col(:,:) = value_column
   end subroutine reset
+
+  !------------------------------------------------------------------------
+  subroutine summary(this, bounds, lbj, ubj, dz)
+
+  implicit none
+  class(betr_phosphorusflux_recv_type),intent(inout)  :: this
+  type(betr_bounds_type), intent(in) :: bounds
+  integer , intent(in) :: lbj, ubj
+  real(r8), intent(in) :: dz(bounds%begc:bounds%endc,lbj:ubj)
+  integer :: c, j
+  this%supplement_to_sminp_col(:) = 0._r8
+  this%secondp_to_occlp_col(:) = 0._r8
+
+  do j = lbj, ubj
+    do c = bounds%begc, bounds%endc
+      this%supplement_to_sminp_col(c) = this%supplement_to_sminp_col(c) + dz(c,j) * this%supplement_to_sminp_vr_col(c,j)
+      this%secondp_to_occlp_col(c) = this%secondp_to_occlp_col(c) + dz(c,j) * this%secondp_to_occlp_vr_col(c,j)
+    enddo
+  enddo
+
+  end subroutine summary
 end module BeTR_phosphorusfluxRecvType

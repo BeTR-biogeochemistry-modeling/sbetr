@@ -30,7 +30,7 @@ module BgcCentCnpType
     type(DecompCent_type),private        :: decompkf_eca
     type(century_nitden_type), private   :: nitden
     type(CentSom_type), private          :: censom
-    type(Compet_ECA_type), private       :: competECA
+    type(Compet_ECA_type), public        :: competECA
     type(centurybgc_index_type), private :: centurybgc_index
     real(r8), pointer                    :: ystates0(:)
     real(r8), pointer                    :: ystates1(:)
@@ -38,8 +38,6 @@ module BgcCentCnpType
     real(r8), pointer                    :: cascade_matrix(:,:)
     real(r8), pointer                    :: cascade_matrixd(:,:)
     real(r8), pointer                    :: cascade_matrixp(:,:)
-    real(r8), pointer                    :: plant_froot_nn(:)
-    real(r8), pointer                    :: plant_froot_np(:)
     real(r8), pointer                    :: alpha_n(:)
     real(r8), pointer                    :: alpha_p(:)
     real(r8)                             :: pot_f_nit
@@ -47,12 +45,12 @@ module BgcCentCnpType
     real(r8)                             :: rt_ar
     real(r8)                             :: frac_p_sec_to_sol
     real(r8), pointer                    :: minp_secondary_decay(:)
+    real(r8), pointer                    :: mumax_minp_soluble_to_secondary(:)
     integer                              :: plant_ntypes
 
     real(r8), pointer                    :: scal_f(:)
     real(r8), pointer                    :: conv_f(:)
     real(r8), pointer                    :: conc_f(:)
-    integer, pointer                     :: plant_vtype(:)
     integer                              :: soilorder
     real(r8)                             :: msurf_nh4
     real(r8)                             :: msurf_minp
@@ -107,12 +105,14 @@ contains
 
   call this%nitden%Init(biogeo_con)
 
-  call this%competECA%Init(biogeo_con)
+  call this%competECA%Init()
 
   this%frac_p_sec_to_sol = biogeo_con%frac_p_sec_to_sol
 
-  this%minp_secondary_decay(:) = biogeo_con%minp_secondary_decay(:)
+  this%minp_secondary_decay = biogeo_con%minp_secondary_decay
 
+  this%mumax_minp_soluble_to_secondary = biogeo_con%vmax_minp_soluble_to_secondary
+  
   this%use_c13 = biogeo_con%use_c13
 
   this%use_c14 = biogeo_con%use_c14
@@ -145,13 +145,11 @@ contains
   allocate(this%cascade_matrixd(1:nprimvars, 1:nreactions)); this%cascade_matrixd(:,:) = 0._r8
   allocate(this%cascade_matrixp(1:nprimvars, 1:nreactions)); this%cascade_matrixp(:,:) = 0._r8
 
-  allocate(this%plant_froot_nn(betr_maxpatch_pft)); this%plant_froot_nn(:) = 0._r8
-  allocate(this%plant_froot_np(betr_maxpatch_pft)); this%plant_froot_np(:) = 0._r8
-  allocate(this%plant_vtype(betr_maxpatch_pft)); this%plant_vtype(:) = 0
+
   allocate(this%alpha_n(nom_pools)); this%alpha_n(:) = 0._r8
   allocate(this%alpha_p(nom_pools)); this%alpha_p(:) = 0._r8
   allocate(this%minp_secondary_decay(betr_max_soilorder)); this%minp_secondary_decay(:) = 0._r8
-
+  allocate(this%mumax_minp_soluble_to_secondary(betr_max_soilorder)); this%mumax_minp_soluble_to_secondary(:) = 0._r8
   end associate
   end subroutine InitAllocate
 
@@ -218,7 +216,7 @@ contains
   !add all external input
   call this%add_ext_input(dtime, this%centurybgc_index, centuryeca_forc)
 !  call this%sumup_cnp_mass('afext input')
-
+  if(.false.)then
   !initialize decomposition scaling factors
   call this%decompkf_eca%set_decompk_scalar(ystates1(lid_o2), centuryeca_forc)
 
@@ -269,7 +267,7 @@ contains
   call ode_adapt_ebbks1(this, yf, nprimvars, nstvars, time, dtime, ystates1)
 
 !  call this%sumup_cnp_mass('afdecomp')
-
+  endif
   !add all external output
   call this%rm_ext_output(dtime, this%centurybgc_index, centuryeca_forc)
 !  call this%sumup_cnp_mass('afext output')
@@ -503,11 +501,7 @@ contains
   this%conc_f(lid_n2o) = centuryeca_forc%conc_atm_n2o
   this%conv_f(lid_n2o) = 1._r8/centuryeca_forc%n2o_g2b
 
-  this%plant_froot_nn(:) = centuryeca_forc%plant_froot_nn(:)
-  this%plant_froot_np(:) = centuryeca_forc%plant_froot_np(:)
-
   this%plant_ntypes = centuryeca_forc%plant_ntypes
-  this%plant_vtype(:)  = centuryeca_forc%plant_vtype(:)
   this%soilorder = centuryeca_forc%soilorder
 
   this%msurf_nh4 = centuryeca_forc%msurf_nh4
@@ -648,55 +642,55 @@ contains
   )
 
   jj=lit1;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
-  this%ystates1(kc) =this%ystates1(kc) + centuryeca_forc%cflx_output_litr_met*dtime/catomw
-  this%ystates1(kn) =this%ystates1(kn) + centuryeca_forc%nflx_output_litr_met*dtime/natomw
-  this%ystates1(kp) =this%ystates1(kp) + centuryeca_forc%pflx_output_litr_met*dtime/patomw
+!  this%ystates1(kc) =this%ystates1(kc) + centuryeca_forc%cflx_output_litr_met*dtime/catomw
+!  this%ystates1(kn) =this%ystates1(kn) + centuryeca_forc%nflx_output_litr_met*dtime/natomw
+!  this%ystates1(kp) =this%ystates1(kp) + centuryeca_forc%pflx_output_litr_met*dtime/patomw
   if(this%use_c13)then
     kc13=(jj-1)*nelms+c13_loc
-    this%ystates1(kc13) =this%ystates1(kc13) + centuryeca_forc%cflx_output_litr_met_c13*dtime/c13atomw
+!    this%ystates1(kc13) =this%ystates1(kc13) + centuryeca_forc%cflx_output_litr_met_c13*dtime/c13atomw
   endif
   if(this%use_c14)then
     kc14=(jj-1)*nelms+c14_loc
-    this%ystates1(kc14) =this%ystates1(kc14) + centuryeca_forc%cflx_output_litr_met_c14*dtime/c14atomw
+!    this%ystates1(kc14) =this%ystates1(kc14) + centuryeca_forc%cflx_output_litr_met_c14*dtime/c14atomw
   endif
 
   jj=lit2;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
-  this%ystates1(kc) =this%ystates1(kc) + centuryeca_forc%cflx_output_litr_cel*dtime/catomw
-  this%ystates1(kn) =this%ystates1(kn) + centuryeca_forc%nflx_output_litr_cel*dtime/natomw
-  this%ystates1(kp) =this%ystates1(kp) + centuryeca_forc%pflx_output_litr_cel*dtime/patomw
+!  this%ystates1(kc) =this%ystates1(kc) + centuryeca_forc%cflx_output_litr_cel*dtime/catomw
+!  this%ystates1(kn) =this%ystates1(kn) + centuryeca_forc%nflx_output_litr_cel*dtime/natomw
+!  this%ystates1(kp) =this%ystates1(kp) + centuryeca_forc%pflx_output_litr_cel*dtime/patomw
   if(this%use_c13)then
     kc13=(jj-1)*nelms+c13_loc
-    this%ystates1(kc13) =this%ystates1(kc13) + centuryeca_forc%cflx_output_litr_cel_c13*dtime/c13atomw
+!    this%ystates1(kc13) =this%ystates1(kc13) + centuryeca_forc%cflx_output_litr_cel_c13*dtime/c13atomw
   endif
   if(this%use_c14)then
     kc14=(jj-1)*nelms+c14_loc
-    this%ystates1(kc14) =this%ystates1(kc14) + centuryeca_forc%cflx_output_litr_cel_c14*dtime/c14atomw
+!    this%ystates1(kc14) =this%ystates1(kc14) + centuryeca_forc%cflx_output_litr_cel_c14*dtime/c14atomw
   endif
 
   jj=lit3;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
-  this%ystates1(kc) =this%ystates1(kc) + centuryeca_forc%cflx_output_litr_lig*dtime/catomw
-  this%ystates1(kn) =this%ystates1(kn) + centuryeca_forc%nflx_output_litr_lig*dtime/natomw
-  this%ystates1(kp) =this%ystates1(kp) + centuryeca_forc%pflx_output_litr_lig*dtime/patomw
+!  this%ystates1(kc) =this%ystates1(kc) + centuryeca_forc%cflx_output_litr_lig*dtime/catomw
+!  this%ystates1(kn) =this%ystates1(kn) + centuryeca_forc%nflx_output_litr_lig*dtime/natomw
+!  this%ystates1(kp) =this%ystates1(kp) + centuryeca_forc%pflx_output_litr_lig*dtime/patomw
   if(this%use_c13)then
     kc13=(jj-1)*nelms+c13_loc
-    this%ystates1(kc13) =this%ystates1(kc13) + centuryeca_forc%cflx_output_litr_lig_c13*dtime/c13atomw
+!    this%ystates1(kc13) =this%ystates1(kc13) + centuryeca_forc%cflx_output_litr_lig_c13*dtime/c13atomw
   endif
   if(this%use_c14)then
     kc14=(jj-1)*nelms+c14_loc
-    this%ystates1(kc14) =this%ystates1(kc14) + centuryeca_forc%cflx_output_litr_lig_c14*dtime/c14atomw
+!    this%ystates1(kc14) =this%ystates1(kc14) + centuryeca_forc%cflx_output_litr_lig_c14*dtime/c14atomw
   endif
 
   jj=cwd;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
-  this%ystates1(kc) =this%ystates1(kc) + centuryeca_forc%cflx_output_litr_cwd*dtime/catomw
-  this%ystates1(kn) =this%ystates1(kn) + centuryeca_forc%nflx_output_litr_cwd*dtime/natomw
-  this%ystates1(kp) =this%ystates1(kp) + centuryeca_forc%pflx_output_litr_cwd*dtime/patomw
+!  this%ystates1(kc) =this%ystates1(kc) + centuryeca_forc%cflx_output_litr_cwd*dtime/catomw
+!  this%ystates1(kn) =this%ystates1(kn) + centuryeca_forc%nflx_output_litr_cwd*dtime/natomw
+!  this%ystates1(kp) =this%ystates1(kp) + centuryeca_forc%pflx_output_litr_cwd*dtime/patomw
   if(this%use_c13)then
     kc13=(jj-1)*nelms+c13_loc
-    this%ystates1(kc13) =this%ystates1(kc13) + centuryeca_forc%cflx_output_litr_cwd_c13*dtime/c13atomw
+!    this%ystates1(kc13) =this%ystates1(kc13) + centuryeca_forc%cflx_output_litr_cwd_c13*dtime/c13atomw
   endif
   if(this%use_c14)then
     kc14=(jj-1)*nelms+c14_loc
-    this%ystates1(kc14) =this%ystates1(kc14) + centuryeca_forc%cflx_output_litr_cwd_c14*dtime/c14atomw
+!    this%ystates1(kc14) =this%ystates1(kc14) + centuryeca_forc%cflx_output_litr_cwd_c14*dtime/c14atomw
   endif
 
   end associate
@@ -734,7 +728,7 @@ contains
   real(r8) :: ECA_flx_no3_plants(this%plant_ntypes)
   real(r8) :: ECA_factor_msurf_nh4
   real(r8) :: ECA_flx_phosphorus_plants(this%plant_ntypes)
-  real(r8) :: ECA_flx_msurf_minp
+  real(r8) :: ECA_factor_minp_msurf
   real(r8) :: ECA_factor_phosphorus_mic
   real(r8) :: ECA_factor_nh4_mic
   real(r8) :: ECA_factor_no3_mic
@@ -785,15 +779,15 @@ contains
   !do ECA nutrient scaling
   !
   call this%competECA%run_compet_nitrogen(ystate(lid_nh4),ystate(lid_no3),mic_pot_nn_flx,&
-     this%pot_f_nit, this%pot_f_denit, this%plant_ntypes, this%plant_froot_nn, &
-     this%plant_vtype, this%msurf_nh4, this%soilorder, ECA_factor_nit, &
+     this%pot_f_nit, this%pot_f_denit, this%plant_ntypes, &
+     this%msurf_nh4, ECA_factor_nit, &
      ECA_factor_den, ECA_factor_nh4_mic, ECA_factor_no3_mic, &
      ECA_flx_nh4_plants,ECA_flx_no3_plants, ECA_factor_msurf_nh4)
 
   ECA_factor_nitrogen_mic = ECA_factor_nh4_mic + ECA_factor_no3_mic
   call this%competECA%run_compet_phosphorus(ystate(lid_minp_soluble), mic_pot_np_flx, &
-     this%plant_ntypes, this%plant_froot_np, this%plant_vtype, this%msurf_minp, this%soilorder, &
-     ECA_factor_phosphorus_mic, ECA_flx_phosphorus_plants, ECA_flx_msurf_minp)
+     this%plant_ntypes, this%msurf_minp, &
+     ECA_factor_phosphorus_mic, ECA_factor_minp_msurf, ECA_flx_phosphorus_plants)
 
   !apply ECA factor to obtain actual reaction rate, decomposition
   !plant, nit, den nutrient uptake,
@@ -812,7 +806,8 @@ contains
 
   rrates(lid_nh4_nit_reac) = this%pot_f_nit*ECA_factor_nit
   rrates(lid_no3_den_reac) = this%pot_f_denit*ECA_factor_den
-  rrates(lid_minp_soluble_to_secp_reac) =  ECA_flx_msurf_minp !calculate from eca competition
+  rrates(lid_minp_soluble_to_secp_reac) =  ECA_factor_minp_msurf * this%msurf_minp &
+       * this%mumax_minp_soluble_to_secondary(this%soilorder) !calculate from eca competition
   rrates(lid_autr_rt_reac) = this%rt_ar                            !authotrophic respiration
   rrates(lid_plant_minn_no3_up_reac) = sum(ECA_flx_no3_plants)     !calculate by ECA competition
   rrates(lid_plant_minn_nh4_up_reac) = sum(ECA_flx_nh4_plants)     !calculate by ECA competition

@@ -12,6 +12,7 @@ set(BETR_CORE_SOURCES
   )
 
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)
+include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_bgc)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_math)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_grid)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_dtype)

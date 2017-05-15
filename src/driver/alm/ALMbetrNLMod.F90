@@ -77,10 +77,11 @@ contains
           end if
        end if
        call relavu( unitn )
-
        if(trim(AppParNLFile)/='')then
          appfile_on=.true.
          call LoadFile2String(AppParNLFile, bgc_namelist_buffer)
+       else
+         bgc_namelist_buffer='none'
        endif
     end if
     call shr_mpi_bcast(appfile_on, mpicom)
@@ -101,11 +102,9 @@ contains
       ' diffusion_on=',trim(log2str(diffusion_on)),new_line('A'), &
       ' reaction_on=',trim(log2str(reaction_on)),new_line('A'), &
       ' ebullition_on=',trim(log2str(ebullition_on)),new_line('A')//'/'
-    if(appfile_on)then
-      call bstatus%reset()
-      call AppLoadParameters(bgc_namelist_buffer, reaction_method, bstatus)
-      if(bstatus%check_status())call endrun(msg=bstatus%print_msg())
-    endif
+
+    call AppLoadParameters(bgc_namelist_buffer, reaction_method, bstatus)
+    if(bstatus%check_status())call endrun(msg=bstatus%print_msg())
   end subroutine betr_readNL
 
   !-------------------------------------------------------------------------------
