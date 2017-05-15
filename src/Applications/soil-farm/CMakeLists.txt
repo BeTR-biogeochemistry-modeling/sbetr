@@ -9,4 +9,8 @@ endif()
 # adding to parent scope?
 
 #set(BETR_LIBRARIES bgcfarm_util;cent_ecacnp;cent_ecadcnp;${BETR_LIBRARIES} PARENT_SCOPE)
+if (UGM)
 set(BETR_LIBRARIES bgcfarm_util;cent_ecacnp;UGM-M;${BETR_LIBRARIES} PARENT_SCOPE)
+else()
+set(BETR_LIBRARIES bgcfarm_util;cent_ecacnp;${BETR_LIBRARIES} PARENT_SCOPE)
+endif()
