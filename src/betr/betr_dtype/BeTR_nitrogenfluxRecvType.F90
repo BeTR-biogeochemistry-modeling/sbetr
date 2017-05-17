@@ -12,6 +12,7 @@ implicit none
 
     real(r8), pointer :: smin_no3_to_plant_patch(:)  => null() !will be summarized within the bgc model
     real(r8), pointer :: smin_nh4_to_plant_patch(:)  => null() !will be summarized within the bgc model
+    real(r8), pointer :: fire_decomp_nloss_vr_col(:,:) => null()  !will be summarized within the bgc model
     real(r8), pointer :: fire_decomp_nloss_col(:) => null()  !will be summarized within the bgc model
 
     real(r8), pointer :: f_nit_col(:) => null()
@@ -66,6 +67,7 @@ implicit none
   allocate(this%smin_no3_leached_col(begc:endc))
   allocate(this%smin_no3_runoff_col(begc:endc))
   allocate(this%fire_decomp_nloss_col(begc:endc))
+  allocate(this%fire_decomp_nloss_vr_col(begc:endc,lbj:ubj))
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------
@@ -78,7 +80,7 @@ implicit none
   this%f_denit_vr_col(:,:) = value_column
   this%f_nit_vr_col(:,:) = value_column
   this%f_n2o_nit_vr_col(:,:) = value_column
-
+  this%fire_decomp_nloss_vr_col(:,:) = value_column
   end subroutine reset
 
   !------------------------------------------------------------------------
@@ -95,13 +97,15 @@ implicit none
   this%f_nit_col(:) = 0._r8
   this%f_denit_col(:) = 0._r8
   this%f_n2o_nit_col(:) = 0._r8
-  
+  this%fire_decomp_nloss_col(:) = 0._r8
   do j = lbj, ubj
     do c = bounds%begc, bounds%endc
       this%f_nit_col(c) = this%f_nit_col(c) + dz(c,j) * this%f_nit_vr_col(c,j)
       this%f_denit_col(c) = this%f_denit_col(c) + dz(c,j)* this%f_denit_vr_col(c,j)
       this%f_n2o_nit_col(c) = this%f_n2o_nit_col(c) + dz(c,j)*this%f_n2o_nit_vr_col(c,j)
+      this%fire_decomp_nloss_col(c) = this%fire_decomp_nloss_col(c) + dz(c,j) * &
+         this%fire_decomp_nloss_vr_col(c,j)
     enddo
-  enddo 
+  enddo
   end subroutine summary
 end module BeTR_nitrogenfluxRecvType

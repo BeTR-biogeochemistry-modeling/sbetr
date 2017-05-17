@@ -8,6 +8,7 @@ implicit none
   type, public :: betr_phosphorusflux_recv_type
     real(r8), pointer :: sminp_leached_col(:) => null()
     real(r8), pointer :: sminp_to_plant_patch(:) => null()   !integrated phosphate goes to plant at patch (gN/m2/s), will be summarized within the bgc model
+    real(r8), pointer :: fire_decomp_ploss_vr_col(:,:) => null()  !will be summarized within the bgc model
     real(r8), pointer :: fire_decomp_ploss_col(:) => null()  !will be summarized within the bgc model
     real(r8), pointer :: supplement_to_sminp_col(:) => null()
     real(r8), pointer :: secondp_to_occlp_col(:) => null()
@@ -53,6 +54,7 @@ implicit none
   allocate(this%secondp_to_occlp_col(begc:endc))
   allocate(this%supplement_to_sminp_vr_col(begc:endc, lbj:ubj))
   allocate(this%secondp_to_occlp_vr_col(begc:endc, lbj:ubj))
+  allocate(this%fire_decomp_ploss_vr_col(begc:endc,lbj:ubj))
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------
@@ -63,6 +65,7 @@ implicit none
 
   this%supplement_to_sminp_vr_col(:,:) = value_column
   this%secondp_to_occlp_vr_col(:,:) = value_column
+  this%fire_decomp_ploss_vr_col(:,:) = value_column
   end subroutine reset
 
   !------------------------------------------------------------------------
@@ -76,11 +79,12 @@ implicit none
   integer :: c, j
   this%supplement_to_sminp_col(:) = 0._r8
   this%secondp_to_occlp_col(:) = 0._r8
-
+  this%fire_decomp_ploss_col(:) = 0._r8
   do j = lbj, ubj
     do c = bounds%begc, bounds%endc
       this%supplement_to_sminp_col(c) = this%supplement_to_sminp_col(c) + dz(c,j) * this%supplement_to_sminp_vr_col(c,j)
       this%secondp_to_occlp_col(c) = this%secondp_to_occlp_col(c) + dz(c,j) * this%secondp_to_occlp_vr_col(c,j)
+      this%fire_decomp_ploss_col(c) = this%fire_decomp_ploss_col(c) + dz(c,j) * this%fire_decomp_ploss_vr_col(c,j)
     enddo
   enddo
 
