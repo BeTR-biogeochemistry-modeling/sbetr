@@ -10,6 +10,7 @@ module BeTRTracerType
   use bshr_log_mod    , only : errMsg => shr_log_errMsg
   use betr_constants  , only : betr_var_name_length
   use betr_ctrl       , only : do_betr_output,iulog => biulog
+  use tracer_varcon   , only : sorp_isotherm_linear,  sorp_isotherm_langmuir
   !
   implicit none
   private
@@ -88,6 +89,7 @@ module BeTRTracerType
    integer, pointer :: volatileid(:)  => null()
    integer, pointer :: h2oid(:)    => null()
    integer, pointer :: adsorbgroupid(:)  => null()
+   integer, pointer :: adsorb_isotherm(:) => null()
    integer, pointer :: volatilegroupid(:)  => null()                      !
    integer, pointer :: groupid(:) => null()
    integer, pointer :: frozenid(:) => null()
@@ -212,6 +214,7 @@ module BeTRTracerType
   allocate(this%is_isotope         (this%ntracers));    this%is_isotope(:)      = .false.
   allocate(this%is_frozen          (this%ntracers));    this%is_frozen(:)       = .false.
   allocate(this%adsorbgroupid      (this%ntracers));    this%adsorbgroupid(:)   = nanid
+  allocate(this%adsorb_isotherm    (this%ntracers));    this%adsorb_isotherm(:) = nanid
   allocate(this%adsorbid           (this%ntracers));    this%adsorbid(:)        = nanid
 
   allocate(this%volatileid         (this%ntracers));    this%volatileid(:)      = nanid
@@ -244,7 +247,7 @@ module BeTRTracerType
 
 subroutine set_tracer(this, bstatus, trc_id, trc_name, is_trc_mobile, is_trc_advective, trc_group_id, &
    trc_group_mem, is_trc_diffusive, is_trc_volatile, trc_volatile_id, trc_volatile_group_id, &
-   is_trc_h2o, trc_vtrans_scal, is_trc_adsorb, trc_adsorbid, trc_adsorbgroupid             , &
+   is_trc_h2o, trc_vtrans_scal, is_trc_adsorb, trc_adsorbid, trc_adsorbgroupid, trc_sorpisotherm, &
    is_trc_frozen, trc_frozenid, trc_family_name)
 
 ! !DESCRIPTION:
@@ -268,6 +271,7 @@ subroutine set_tracer(this, bstatus, trc_id, trc_name, is_trc_mobile, is_trc_adv
   logical ,optional  , intent(in) :: is_trc_adsorb
   integer ,optional  , intent(in) :: trc_adsorbid
   integer ,optional  , intent(in) :: trc_adsorbgroupid
+  character(len=*), optional, intent(in) :: trc_sorpisotherm
   logical ,optional  , intent(in) :: is_trc_frozen
   integer ,optional  , intent(in) :: trc_frozenid
   character(len=*),optional,intent(in) :: trc_family_name
@@ -332,9 +336,19 @@ subroutine set_tracer(this, bstatus, trc_id, trc_name, is_trc_mobile, is_trc_adv
            //trim(trc_name)//errMsg(mod_filename, __LINE__), err=-1)
         return
       endif
+      if(.not.present(trc_sorpisotherm) .and. do_betr_output)then
+        call bstatus%set_msg(msg='adsorb isotherm is not provided for ' &
+           //trim(trc_name)//errMsg(mod_filename, __LINE__), err=-1)
+        return
+      endif
       this%adsorbid(trc_id) = trc_adsorbid
       this%adsorbgroupid(trc_id) = trc_adsorbgroupid
       this%nsolid_equil_tracers = this%nsolid_equil_tracers + 1
+      if(trim(trc_sorpisotherm)=='LANGMUIR')then
+         this%adsorb_isotherm(trc_id)=sorp_isotherm_langmuir
+      elseif(trim(trc_sorpisotherm)=='LINEAR')then
+         this%adsorb_isotherm(trc_id)=sorp_isotherm_linear
+      endif
     endif
   endif
 
