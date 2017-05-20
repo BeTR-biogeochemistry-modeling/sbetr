@@ -44,6 +44,8 @@ module Tracer_varcon
   logical :: use_c14_betr=.false.
   logical :: is_nitrogen_active = .true.
   logical :: is_phosphorus_active=.true.
+  integer, parameter :: sorp_isotherm_linear=1
+  integer, parameter :: sorp_isotherm_langmuir=2
   save
 
   integer, public :: betr_nlevsoi
@@ -105,5 +107,33 @@ module Tracer_varcon
 !X!     real(r8), public :: atm_drh_h2o, atm_tratio_h2o, atm_o18ro16_h2o, atm_o17ro16_h2o
 !X!     real(r8), public :: atm_c13rc12_ch4, atm_c14rc12_ch4, atm_drh_ch4
 !X!  end type betr_atm_isotope_composition_type
+   public :: set_cnpbgc
+   contains
 
+!-------------------------------------------------------------------------------
+    subroutine set_cnpbgc(cnpset)
+    !
+    !DESCRIPTION
+    !set n and p switches of the betr bgc model
+    implicit none
+    character(len=*), intent(in) :: cnpset
+    !set
+    select case (trim(cnpset))
+    case ('C')
+      is_nitrogen_active = .false.
+      is_phosphorus_active=.false.
+    case ('CN')
+      is_nitrogen_active = .true.
+      is_phosphorus_active=.false.
+    case ('CP')
+      is_nitrogen_active = .false.
+      is_phosphorus_active=.true.
+    case ('CNP')
+      is_nitrogen_active = .true.
+      is_phosphorus_active=.true.
+    case default
+      is_nitrogen_active = .true.
+      is_phosphorus_active=.true.
+    end select
+    end subroutine set_cnpbgc
 end module Tracer_varcon

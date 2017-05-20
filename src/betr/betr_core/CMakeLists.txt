@@ -4,7 +4,6 @@ set(BETR_CORE_SOURCES
   TracerBoundaryCondType.F90
   TracerCoeffType.F90
   TracerFluxType.F90
-  TracerParamsMod.F90
   TracerStateType.F90
   TransportMod.F90
   BGCReactionsMod.F90

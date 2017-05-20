@@ -311,7 +311,7 @@ contains
     call stage_tracer_transport(betr_time, bounds, col, pft, num_soilc,&
          filter_soilc, num_soilp, filter_soilp, biophysforc,      &
          biogeo_state, biogeo_flux, this%aereconds, this%tracers, this%tracercoeffs, &
-         this%tracerboundaryconds, this%tracerfluxes, this%bgc_reaction,             &
+         this%tracerboundaryconds, this%tracerstates, this%tracerfluxes, this%bgc_reaction, &
          Rfactor, this%advection_on, betr_status)
     if(betr_status%check_status())return
 

@@ -111,7 +111,7 @@ contains
        filter_soilc, num_soilp, filter_soilp, &
        biophysforc, biogeo_state, biogeo_flux, aerecond_vars,    &
        betrtracer_vars, tracercoeff_vars,                        &
-       tracerboundarycond_vars, tracerflux_vars, bgc_reaction, Rfactor, &
+       tracerboundarycond_vars, tracerstate_vars, tracerflux_vars, bgc_reaction, Rfactor, &
        advection_on, betr_status)
     !DESCRIPTION
     !set relevant coefficients for tracer transport
@@ -149,6 +149,7 @@ contains
     type(betr_aerecond_type)         , intent(inout) :: aerecond_vars
     type(tracerboundarycond_type)    , intent(inout) :: tracerboundarycond_vars
     type(tracercoeff_type)           , intent(inout) :: tracercoeff_vars
+    type(TracerState_type)           , intent(in)    :: tracerstate_vars
     type(tracerflux_type)            , intent(inout) :: tracerflux_vars
     real(r8)                         , intent(out)   :: Rfactor(bounds%begc: , bounds%lbj: ,1: ) !retardation factor
     logical                          , intent(in)    :: advection_on
@@ -200,13 +201,14 @@ contains
     biophysforc%soil_pH(bounds%begc:bounds%endc,1:ubj)=7._r8
 
     call set_phase_convert_coeff(bounds, lbj, ubj, &
-         tracerboundarycond_vars%jtops_col,        &
-         num_soilc,                                &
-         filter_soilc,                             &
+         tracerboundarycond_vars%jtops_col       , &
+         num_soilc                               , &
+         filter_soilc                            , &
          col%dz(bounds%begc:bounds%endc, lbj:ubj), &
          biophysforc = biophysforc               , &
-         betrtracer_vars=betrtracer_vars,          &
-         tracercoeff_vars=tracercoeff_vars,        &
+         betrtracer_vars=betrtracer_vars         , &
+         tracerstate_vars=tracerstate_vars       , &
+         tracercoeff_vars=tracercoeff_vars       , &
          betr_status = betr_status)
     if(betr_status%check_status())return
 
