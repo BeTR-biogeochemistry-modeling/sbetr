@@ -61,7 +61,6 @@ module BgcCentCnpType
     procedure, public  :: runbgc
     procedure, private :: calc_cascade_matrix
     procedure, private :: init_states
-    procedure, private :: rm_ext_output
     procedure, private :: add_ext_input
     procedure, private :: InitAllocate
     procedure, private :: arenchyma_gas_transport
@@ -112,7 +111,7 @@ contains
   this%minp_secondary_decay = biogeo_con%minp_secondary_decay
 
   this%mumax_minp_soluble_to_secondary = biogeo_con%vmax_minp_soluble_to_secondary
-  
+
   this%use_c13 = biogeo_con%use_c13
 
   this%use_c14 = biogeo_con%use_c14
@@ -206,17 +205,17 @@ contains
   this%rt_ar = rt_ar
   frc_c13 = safe_div(rt_ar_c13,rt_ar); frc_c14 = safe_div(rt_ar_c14,rt_ar)
   call bstatus%reset()
-!x  print*,trim(subname)
+
   !initialize state variables
   call this%init_states(this%centurybgc_index, centuryeca_forc)
   ystates0(:) = this%ystates0(:)
-!x  print*,'bfext input'
+
 
 !  call this%sumup_cnp_mass('bfext input')
   !add all external input
   call this%add_ext_input(dtime, this%centurybgc_index, centuryeca_forc)
 !  call this%sumup_cnp_mass('afext input')
-  if(.false.)then
+
   !initialize decomposition scaling factors
   call this%decompkf_eca%set_decompk_scalar(ystates1(lid_o2), centuryeca_forc)
 
@@ -263,14 +262,10 @@ contains
   yf = ystates1
 
 !  call this%sumup_cnp_mass('bfdecomp')
-!x  print*,'bgc_intg'
+
   call ode_adapt_ebbks1(this, yf, nprimvars, nstvars, time, dtime, ystates1)
 
 !  call this%sumup_cnp_mass('afdecomp')
-  endif
-  !add all external output
-  call this%rm_ext_output(dtime, this%centurybgc_index, centuryeca_forc)
-!  call this%sumup_cnp_mass('afext output')
 
   ystatesf(:) = ystates1(:)
 
@@ -612,89 +607,6 @@ contains
   end associate
   end subroutine add_ext_input
 
-  !--------------------------------------------------------------------
-  subroutine rm_ext_output(this, dtime, centurybgc_index, centuryeca_forc)
-  use BgcCentCnpIndexType       , only : centurybgc_index_type
-  use BgcCentCnpForcType        , only : centuryeca_forc_type
-  use tracer_varcon             , only : catomw, natomw, patomw, c13atomw, c14atomw
-  implicit none
-  class(centurybgceca_type)   , intent(inout) :: this
-  real(r8)                    , intent(in) :: dtime
-  type(centurybgc_index_type) , intent(in) :: centurybgc_index
-  type(centuryeca_forc_type)  , intent(in) :: centuryeca_forc
-
-  integer :: kc, kn, kp, jj, kc13, kc14
-
-  associate(                         &
-    lit1 =>  centurybgc_index%lit1 , &
-    lit2 =>  centurybgc_index%lit2 , &
-    lit3 =>  centurybgc_index%lit3 , &
-    cwd =>  centurybgc_index%cwd   , &
-    c13_loc=>  centurybgc_index%c13_loc,&
-    c14_loc=>  centurybgc_index%c14_loc,&
-    c_loc=>  centurybgc_index%c_loc,&
-    n_loc=>  centurybgc_index%n_loc,&
-    p_loc=>  centurybgc_index%p_loc,&
-    som1 =>  centurybgc_index%som1 , &
-    som2 =>  centurybgc_index%som2 , &
-    som3 =>  centurybgc_index%som3 , &
-    nelms => centurybgc_index%nelms  &
-  )
-
-  jj=lit1;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
-!  this%ystates1(kc) =this%ystates1(kc) + centuryeca_forc%cflx_output_litr_met*dtime/catomw
-!  this%ystates1(kn) =this%ystates1(kn) + centuryeca_forc%nflx_output_litr_met*dtime/natomw
-!  this%ystates1(kp) =this%ystates1(kp) + centuryeca_forc%pflx_output_litr_met*dtime/patomw
-  if(this%use_c13)then
-    kc13=(jj-1)*nelms+c13_loc
-!    this%ystates1(kc13) =this%ystates1(kc13) + centuryeca_forc%cflx_output_litr_met_c13*dtime/c13atomw
-  endif
-  if(this%use_c14)then
-    kc14=(jj-1)*nelms+c14_loc
-!    this%ystates1(kc14) =this%ystates1(kc14) + centuryeca_forc%cflx_output_litr_met_c14*dtime/c14atomw
-  endif
-
-  jj=lit2;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
-!  this%ystates1(kc) =this%ystates1(kc) + centuryeca_forc%cflx_output_litr_cel*dtime/catomw
-!  this%ystates1(kn) =this%ystates1(kn) + centuryeca_forc%nflx_output_litr_cel*dtime/natomw
-!  this%ystates1(kp) =this%ystates1(kp) + centuryeca_forc%pflx_output_litr_cel*dtime/patomw
-  if(this%use_c13)then
-    kc13=(jj-1)*nelms+c13_loc
-!    this%ystates1(kc13) =this%ystates1(kc13) + centuryeca_forc%cflx_output_litr_cel_c13*dtime/c13atomw
-  endif
-  if(this%use_c14)then
-    kc14=(jj-1)*nelms+c14_loc
-!    this%ystates1(kc14) =this%ystates1(kc14) + centuryeca_forc%cflx_output_litr_cel_c14*dtime/c14atomw
-  endif
-
-  jj=lit3;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
-!  this%ystates1(kc) =this%ystates1(kc) + centuryeca_forc%cflx_output_litr_lig*dtime/catomw
-!  this%ystates1(kn) =this%ystates1(kn) + centuryeca_forc%nflx_output_litr_lig*dtime/natomw
-!  this%ystates1(kp) =this%ystates1(kp) + centuryeca_forc%pflx_output_litr_lig*dtime/patomw
-  if(this%use_c13)then
-    kc13=(jj-1)*nelms+c13_loc
-!    this%ystates1(kc13) =this%ystates1(kc13) + centuryeca_forc%cflx_output_litr_lig_c13*dtime/c13atomw
-  endif
-  if(this%use_c14)then
-    kc14=(jj-1)*nelms+c14_loc
-!    this%ystates1(kc14) =this%ystates1(kc14) + centuryeca_forc%cflx_output_litr_lig_c14*dtime/c14atomw
-  endif
-
-  jj=cwd;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
-!  this%ystates1(kc) =this%ystates1(kc) + centuryeca_forc%cflx_output_litr_cwd*dtime/catomw
-!  this%ystates1(kn) =this%ystates1(kn) + centuryeca_forc%nflx_output_litr_cwd*dtime/natomw
-!  this%ystates1(kp) =this%ystates1(kp) + centuryeca_forc%pflx_output_litr_cwd*dtime/patomw
-  if(this%use_c13)then
-    kc13=(jj-1)*nelms+c13_loc
-!    this%ystates1(kc13) =this%ystates1(kc13) + centuryeca_forc%cflx_output_litr_cwd_c13*dtime/c13atomw
-  endif
-  if(this%use_c14)then
-    kc14=(jj-1)*nelms+c14_loc
-!    this%ystates1(kc14) =this%ystates1(kc14) + centuryeca_forc%cflx_output_litr_cwd_c14*dtime/c14atomw
-  endif
-
-  end associate
-  end subroutine rm_ext_output
 
   !--------------------------------------------------------------------
   subroutine bgc_integrate(this, ystate, dtime, time, nprimvars, nstvars, dydt)

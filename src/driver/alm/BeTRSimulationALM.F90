@@ -685,7 +685,6 @@ contains
       call apvb(this%biophys_forc(c)%p31flx%pflx_minp_weathering_po4_vr_col(1,j), &
          phosphorusflux_vars%primp_to_labilep_vr_col(c,j))
 
-      write(iulog,*)'weathering',this%biophys_forc(c)%p31flx%pflx_minp_weathering_po4_vr_col(1,j)
     enddo
   enddo
   end associate
@@ -822,10 +821,6 @@ contains
     p31state_vars%sminp_col(c) = this%biogeo_state(c)%p31state_vars%sminp_col(c_l)
     p31state_vars%occlp_col(c) = this%biogeo_state(c)%p31state_vars%occlp_col(c_l)
 
-    write(iulog,'(A,6(X,E20.10)))')'almbetr p cwd, lit, som',p31state_vars%cwdp_col(c),p31state_vars%totlitp_col(c), &
-       p31state_vars%totsomp_col(c), p31state_vars%sminp_col(c), p31state_vars%occlp_col(c), &
-       p31state_vars%cwdp_col(c)+p31state_vars%totlitp_col(c)+ &
-          p31state_vars%totsomp_col(c)+p31state_vars%sminp_col(c)+p31state_vars%occlp_col(c)
   enddo
 
   end subroutine ALMBetrPlantSoilBGCRecv

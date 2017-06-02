@@ -77,10 +77,11 @@ module BgcReactionsCentECACnpType
     procedure :: readParams
     procedure :: lsm_betr_flux_state_receive
     procedure :: set_kinetics_par
-    procedure, private :: set_century_forc
-    procedure, private :: retrieve_output
     procedure :: retrieve_lnd2atm
     procedure :: retrieve_biostates
+    procedure, private :: set_century_forc
+    procedure, private :: retrieve_output
+    procedure, private :: rm_ext_output
   end type bgc_reaction_CENTURY_ECACNP_type
 
   interface bgc_reaction_CENTURY_ECACNP_type
@@ -453,14 +454,14 @@ contains
          trc_vtrans_scal=1._r8)
     if(bstatus%check_status())return
 
-    !add dissolvable organic matter, by default is innert.
+    !add dissolvable organic matter, by default is inert.
     itemp_mem=0
     trcid =  betrtracer_vars%id_trc_beg_dom+c_loc-1
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, &
          trc_name='SOM2C', is_trc_mobile=.true., is_trc_advective = .true., &
          trc_group_id = betrtracer_vars%id_trc_dom, trc_group_mem = addone(itemp_mem),&
          is_trc_volatile=.false., is_trc_adsorb = .true., trc_adsorbid=addone(itemp_ads), &
-         trc_adsorbgroupid=addone(itemp_ads_grp), trc_family_name='DOM')
+         trc_adsorbgroupid=addone(itemp_ads_grp), trc_sorpisotherm='LANGMUIR',trc_family_name='DOM')
     if(bstatus%check_status())return
 
     trcid = betrtracer_vars%id_trc_beg_dom+n_loc-1
@@ -468,7 +469,7 @@ contains
          trc_name='SOM2N', is_trc_mobile=.true., is_trc_advective = .true., &
          trc_group_id = betrtracer_vars%id_trc_dom, trc_group_mem = addone(itemp_mem), &
          is_trc_volatile=.false., is_trc_adsorb = .true., trc_adsorbid=addone(itemp_ads), &
-         trc_adsorbgroupid=itemp_ads_grp, trc_family_name='DOM')
+         trc_adsorbgroupid=itemp_ads_grp, trc_sorpisotherm='LANGMUIR',trc_family_name='DOM')
     if(bstatus%check_status())return
 
     trcid = betrtracer_vars%id_trc_beg_dom+p_loc-1
@@ -476,7 +477,7 @@ contains
          trc_name='SOM2P', is_trc_mobile=.true., is_trc_advective = .true., &
          trc_group_id = betrtracer_vars%id_trc_dom, trc_group_mem = addone(itemp_mem), &
          is_trc_volatile=.false., is_trc_adsorb = .true., trc_adsorbid=addone(itemp_ads), &
-         trc_adsorbgroupid=itemp_ads_grp, trc_family_name='DOM')
+         trc_adsorbgroupid=itemp_ads_grp, trc_sorpisotherm='LANGMUIR',trc_family_name='DOM')
     if(bstatus%check_status())return
 
     if(this%use_c13)then
@@ -485,7 +486,7 @@ contains
          trc_name='SOM2C_C13', is_trc_mobile=.true., is_trc_advective = .true., &
          trc_group_id = betrtracer_vars%id_trc_dom, trc_group_mem = addone(itemp_mem), &
          is_trc_volatile=.false., is_trc_adsorb = .true., trc_adsorbid=addone(itemp_ads), &
-         trc_adsorbgroupid=itemp_ads_grp, trc_family_name='DOM')
+         trc_adsorbgroupid=itemp_ads_grp,trc_sorpisotherm='LANGMUIR', trc_family_name='DOM')
       if(bstatus%check_status())return
     endif
 
@@ -495,7 +496,7 @@ contains
          trc_name='SOM2C_C14', is_trc_mobile=.true., is_trc_advective = .true., &
          trc_group_id = betrtracer_vars%id_trc_dom, trc_group_mem = addone(itemp_mem), &
          is_trc_volatile=.false., is_trc_adsorb = .true., trc_adsorbid=addone(itemp_ads), &
-         trc_adsorbgroupid=itemp_ads_grp, trc_family_name='DOM')
+         trc_adsorbgroupid=itemp_ads_grp, trc_sorpisotherm='LANGMUIR',trc_family_name='DOM')
       if(bstatus%check_status())return
     endif
     !------------------------------------------------------------------------------------
@@ -996,7 +997,11 @@ contains
 
         call this%centuryeca(c,j)%runbgc(is_surf, dtime, this%centuryforc(c,j),nstates, ystates0, ystatesf, betr_status)
 
-        call this%retrieve_output(c, j, nstates, ystates0, ystatesf, dtime, betrtracer_vars, tracerflux_vars,&
+       !apply loss through fire,
+       call this%rm_ext_output(c, j, dtime, nstates, ystatesf, this%centurybgc_index,&
+           this%centuryforc(c,j), biogeo_flux)
+
+       call this%retrieve_output(c, j, nstates, ystates0, ystatesf, dtime, betrtracer_vars, tracerflux_vars,&
            tracerstate_vars, plant_soilbgc, biogeo_flux)
       enddo
     enddo
@@ -1005,6 +1010,122 @@ contains
     deallocate(ystates0)
     deallocate(ystatesf)
   end subroutine calc_bgc_reaction
+
+  !--------------------------------------------------------------------
+  subroutine rm_ext_output(this, c, j, dtime, nstates, ystatesf, centurybgc_index, centuryeca_forc, biogeo_flux)
+  !
+  ! DESCRIPTION
+  ! apply om loss through fire
+
+  use BgcCentCnpIndexType       , only : centurybgc_index_type
+  use BgcCentCnpForcType        , only : centuryeca_forc_type
+  use tracer_varcon             , only : catomw, natomw, patomw, c13atomw, c14atomw
+  use BeTR_biogeoFluxType       , only : betr_biogeo_flux_type
+  implicit none
+  class(bgc_reaction_CENTURY_ECACNP_type) , intent(inout) :: this
+  integer                     , intent(in) :: c, j
+  real(r8)                    , intent(in) :: dtime
+  integer                     , intent(in) :: nstates
+  real(r8)                    , intent(inout):: ystatesf(1:nstates)
+  type(centurybgc_index_type) , intent(in) :: centurybgc_index
+  type(centuryeca_forc_type)  , intent(in) :: centuryeca_forc
+  type(betr_biogeo_flux_type) , intent(inout) :: biogeo_flux
+  integer :: kc, kn, kp, jj, kc13, kc14
+  real(r8):: flit_loss, fcwd_loss
+  integer :: jx
+
+  integer :: loc_indx(3)
+  associate(                         &
+    lit1 =>  centurybgc_index%lit1 , &
+    lit2 =>  centurybgc_index%lit2 , &
+    lit3 =>  centurybgc_index%lit3 , &
+    cwd =>  centurybgc_index%cwd   , &
+    lwd =>  centurybgc_index%lwd   , &
+    fwd =>  centurybgc_index%fwd   , &
+    c13_loc=>  centurybgc_index%c13_loc,&
+    c14_loc=>  centurybgc_index%c14_loc,&
+    c_loc=>  centurybgc_index%c_loc,&
+    n_loc=>  centurybgc_index%n_loc,&
+    p_loc=>  centurybgc_index%p_loc,&
+    som1 =>  centurybgc_index%som1 , &
+    som2 =>  centurybgc_index%som2 , &
+    som3 =>  centurybgc_index%som3 , &
+    nelms => centurybgc_index%nelms, &
+    frac_loss_lit_to_fire => centuryeca_forc%frac_loss_lit_to_fire, &
+    frac_loss_cwd_to_fire => centuryeca_forc%frac_loss_cwd_to_fire, &
+    fire_decomp_c12loss_vr_col => biogeo_flux%c12flux_vars%fire_decomp_closs_vr_col, &
+    fire_decomp_c13loss_vr_col => biogeo_flux%c13flux_vars%fire_decomp_closs_vr_col, &
+    fire_decomp_c14loss_vr_col => biogeo_flux%c14flux_vars%fire_decomp_closs_vr_col, &
+    fire_decomp_nloss_vr_col => biogeo_flux%n14flux_vars%fire_decomp_nloss_vr_col, &
+    fire_decomp_ploss_vr_col => biogeo_flux%p31flux_vars%fire_decomp_ploss_vr_col  &
+  )
+
+  flit_loss = 1._r8 - exp(-frac_loss_lit_to_fire*dtime)
+  fcwd_loss = 1._r8 - exp(-frac_loss_cwd_to_fire*dtime)
+
+  loc_indx=(/lit1,lit2,lit3/)
+  do jx = 1, 3
+    jj = loc_indx(jx)
+    kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
+    fire_decomp_c12loss_vr_col(c,j) = fire_decomp_c12loss_vr_col(c,j) + &
+       ystatesf(kc) * flit_loss * catomw
+    ystatesf(kc) = ystatesf(kc) * (1._r8-flit_loss)
+
+    fire_decomp_nloss_vr_col(c,j) = fire_decomp_nloss_vr_col(c,j) + &
+      ystatesf(kn) * flit_loss*natomw
+    ystatesf(kn) = ystatesf(kn) * (1._r8-flit_loss)
+
+    fire_decomp_ploss_vr_col(c,j) = fire_decomp_ploss_vr_col(c,j) + &
+      ystatesf(kp) * flit_loss*patomw
+    ystatesf(kp) =ystatesf(kp) * (1._r8-flit_loss)
+
+    if(this%use_c13)then
+      kc13=(jj-1)*nelms+c13_loc
+      fire_decomp_c13loss_vr_col(c,j) = fire_decomp_c13loss_vr_col(c,j) + &
+       ystatesf(kc13) * flit_loss * c13atomw
+      ystatesf(kc13) = ystatesf(kc13) * (1._r8-flit_loss)
+    endif
+    if(this%use_c14)then
+      kc14=(jj-1)*nelms+c14_loc
+      fire_decomp_c14loss_vr_col(c,j) = fire_decomp_c14loss_vr_col(c,j) + &
+        ystatesf(kc14) * flit_loss * c14atomw
+      ystatesf(kc14) = ystatesf(kc14) * (1._r8-flit_loss)
+    endif
+  enddo
+
+
+  loc_indx=(/cwd, lwd, fwd/)
+  do jx = 1, 3
+    jj = loc_indx(jx)
+    kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
+    fire_decomp_c12loss_vr_col(c,j) = fire_decomp_c12loss_vr_col(c,j) + &
+       ystatesf(kc) * fcwd_loss * catomw
+    ystatesf(kc) = ystatesf(kc) * (1._r8-fcwd_loss)
+
+    fire_decomp_nloss_vr_col(c,j) = fire_decomp_nloss_vr_col(c,j) + &
+      ystatesf(kn) * fcwd_loss*natomw
+    ystatesf(kn) = ystatesf(kn) * (1._r8-fcwd_loss)
+
+    fire_decomp_ploss_vr_col(c,j) = fire_decomp_ploss_vr_col(c,j) + &
+      ystatesf(kp) * fcwd_loss*patomw
+    ystatesf(kp) =ystatesf(kp) * (1._r8-fcwd_loss)
+
+    if(this%use_c13)then
+      kc13=(jj-1)*nelms+c13_loc
+      fire_decomp_c13loss_vr_col(c,j) = fire_decomp_c13loss_vr_col(c,j) + &
+       ystatesf(kc13) * fcwd_loss * c13atomw
+      ystatesf(kc13) = ystatesf(kc13) * (1._r8-fcwd_loss)
+    endif
+    if(this%use_c14)then
+      kc14=(jj-1)*nelms+c14_loc
+      fire_decomp_c14loss_vr_col(c,j) = fire_decomp_c14loss_vr_col(c,j) + &
+        ystatesf(kc14) * fcwd_loss * c14atomw
+      ystatesf(kc14) = ystatesf(kc14) * (1._r8-fcwd_loss)
+    endif
+  enddo
+
+  end associate
+  end subroutine rm_ext_output
 
   !-------------------------------------------------------------------------------
   subroutine do_tracer_equilibration(this, bounds, lbj, ubj, jtops, num_soilc, filter_soilc, &
