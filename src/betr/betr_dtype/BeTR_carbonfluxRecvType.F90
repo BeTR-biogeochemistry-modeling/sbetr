@@ -7,6 +7,9 @@ implicit none
        __FILE__
   type, public :: betr_carbonflux_recv_type
     real(r8), pointer :: hr_col(:) => null()
+    real(r8), pointer :: som_c_leached_col(:) => null()
+    real(r8), pointer :: som_c_runoff_col(:) => null()
+    real(r8), pointer :: som_c_qdrain_col(:) => null()
     real(r8), pointer :: hr_vr_col(:,:) => null()
     real(r8), pointer :: fire_decomp_closs_vr_col(:,:) => null()  !will be summarized from the specific bgc model
     real(r8), pointer :: fire_decomp_closs_col(:) => null()  !will be summarized from the specific bgc model
@@ -46,6 +49,9 @@ implicit none
 
   allocate(this%hr_col(begc:endc))
   allocate(this%fire_decomp_closs_col(begc:endc))
+  allocate(this%som_c_leached_col(begc:endc))
+  allocate(this%som_c_runoff_col(begc:endc))
+  allocate(this%som_c_qdrain_col(begc:endc))
   allocate(this%hr_vr_col(begc:endc,lbj:ubj))
   allocate(this%fire_decomp_closs_vr_col(begc:endc,lbj:ubj))
   end subroutine InitAllocate
@@ -58,6 +64,10 @@ implicit none
 
   this%hr_vr_col(:,:) = value_column
   this%fire_decomp_closs_vr_col(:,:) = value_column
+  this%som_c_leached_col(:) = value_column
+  this%som_c_qdrain_col(:) = value_column
+  this%som_c_runoff_col(:) = value_column
+
   end subroutine reset
 
 

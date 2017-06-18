@@ -154,19 +154,25 @@ module PlantSoilBgcCnpType
     biogeo_flux%n14flux_vars%smin_nh4_to_plant_patch(p) =  &
       tracer_flx_vtrans_patch(p, id_trc_nh3x) * natomw / dtime + &
       dot_product(this%plant_minn_nh4_active_yield_flx_vr_patch(p,1:ubj), dz(c,1:ubj))
+
     biogeo_flux%n14flux_vars%smin_nh4_to_plant_patch(p) = biogeo_flux%n14flux_vars%smin_nh4_to_plant_patch(p)/pft%wtcol(p)
 
     biogeo_flux%n14flux_vars%smin_no3_to_plant_patch(p) = &
       tracer_flx_vtrans_patch(p, id_trc_no3x) * natomw / dtime + &
       dot_product(this%plant_minn_no3_active_yield_flx_vr_patch(p,1:ubj), dz(c,1:ubj))
+
     biogeo_flux%n14flux_vars%smin_no3_to_plant_patch(p) = biogeo_flux%n14flux_vars%smin_no3_to_plant_patch(p)/pft%wtcol(p)
 
     biogeo_flux%p31flux_vars%sminp_to_plant_patch(p) =  &
       tracer_flx_vtrans_patch(p, id_trc_p_sol) * patomw / dtime + &
       dot_product(this%plant_minp_active_yield_flx_vr_patch(p,1:ubj), dz(c,1:ubj))
-    biogeo_flux%p31flux_vars%sminp_to_plant_patch(p) = biogeo_flux%p31flux_vars%sminp_to_plant_patch(p)/pft%wtcol(p)  
 
+    biogeo_flux%p31flux_vars%sminp_to_plant_patch(p) = biogeo_flux%p31flux_vars%sminp_to_plant_patch(p)/pft%wtcol(p)
 
+    if(.false.)then
+    biogeo_flux%n14flux_vars%smin_nh4_to_plant_patch(p) = 0._r8
+    biogeo_flux%n14flux_vars%smin_no3_to_plant_patch(p) = 0._r8
+    endif
   enddo
 
   end associate

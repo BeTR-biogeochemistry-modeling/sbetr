@@ -263,7 +263,7 @@ contains
 
 !  call this%sumup_cnp_mass('bfdecomp')
 
-  call ode_adapt_ebbks1(this, yf, nprimvars, nstvars, time, dtime, ystates1)
+!  call ode_adapt_ebbks1(this, yf, nprimvars, nstvars, time, dtime, ystates1)
 
 !  call this%sumup_cnp_mass('afdecomp')
 
@@ -523,6 +523,8 @@ contains
     lit2 =>  centurybgc_index%lit2, &
     lit3 =>  centurybgc_index%lit3, &
     cwd =>   centurybgc_index%cwd, &
+    fwd =>   centurybgc_index%fwd, &
+    lwd =>   centurybgc_index%lwd, &
     c_loc=>  centurybgc_index%c_loc,&
     c13_loc=>  centurybgc_index%c13_loc,&
     c14_loc=>  centurybgc_index%c14_loc,&
@@ -547,7 +549,6 @@ contains
     kc14=(jj-1)*nelms+c14_loc
     this%ystates1(kc14) =this%ystates0(kc14) + centuryeca_forc%cflx_input_litr_met_c14*dtime/c14atomw
   endif
-
 
   jj=lit2;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
   this%ystates1(kc) =this%ystates0(kc) + centuryeca_forc%cflx_input_litr_cel*dtime/catomw
@@ -590,19 +591,41 @@ contains
     this%ystates1(kc14) =this%ystates0(kc14) + centuryeca_forc%cflx_input_litr_cwd_c14*dtime/c14atomw
   endif
 
+  jj=fwd;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
+  this%ystates1(kc) =this%ystates0(kc) + centuryeca_forc%cflx_input_litr_fwd*dtime/catomw
+  this%ystates1(kn) =this%ystates0(kn) + centuryeca_forc%nflx_input_litr_fwd*dtime/natomw
+  this%ystates1(kp) =this%ystates0(kp) + centuryeca_forc%pflx_input_litr_fwd*dtime/patomw
+
+  if(this%use_c13)then
+    kc13=(jj-1)*nelms+c13_loc
+    this%ystates1(kc13) =this%ystates0(kc13) + centuryeca_forc%cflx_input_litr_fwd_c13*dtime/c13atomw
+  endif
+  if(this%use_c14)then
+    kc14=(jj-1)*nelms+c14_loc
+    this%ystates1(kc14) =this%ystates0(kc14) + centuryeca_forc%cflx_input_litr_fwd_c14*dtime/c14atomw
+  endif
+
+  jj=lwd;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
+  this%ystates1(kc) =this%ystates0(kc) + centuryeca_forc%cflx_input_litr_lwd*dtime/catomw
+  this%ystates1(kn) =this%ystates0(kn) + centuryeca_forc%nflx_input_litr_lwd*dtime/natomw
+  this%ystates1(kp) =this%ystates0(kp) + centuryeca_forc%pflx_input_litr_lwd*dtime/patomw
+
+  if(this%use_c13)then
+    kc13=(jj-1)*nelms+c13_loc
+    this%ystates1(kc13) =this%ystates0(kc13) + centuryeca_forc%cflx_input_litr_lwd_c13*dtime/c13atomw
+  endif
+  if(this%use_c14)then
+    kc14=(jj-1)*nelms+c14_loc
+    this%ystates1(kc14) =this%ystates0(kc14) + centuryeca_forc%cflx_input_litr_lwd_c14*dtime/c14atomw
+  endif
 
   this%ystates1(lid_nh4) =this%ystates0(lid_nh4) + dtime * &
       (centuryeca_forc%sflx_minn_input_nh4 + &
         centuryeca_forc%sflx_minn_nh4_fix_nomic)/natomw
-!x  print*,'ninput', centuryeca_forc%sflx_minn_input_nh4,  &
-!x          centuryeca_forc%sflx_minn_nh4_fix_nomic
 
   this%ystates1(lid_minp_soluble) =this%ystates0(lid_minp_soluble) + dtime * &
       (centuryeca_forc%sflx_minp_input_po4 + &
         centuryeca_forc%sflx_minp_weathering_po4)/patomw
-!  print*,'minp',this%ystates1(lid_minp_soluble)
-!  print*,'minpput', centuryeca_forc%sflx_minp_input_po4, &
-!          centuryeca_forc%sflx_minp_weathering_po4
 
   end associate
   end subroutine add_ext_input

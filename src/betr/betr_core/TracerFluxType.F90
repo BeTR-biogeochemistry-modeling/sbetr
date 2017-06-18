@@ -128,7 +128,6 @@ contains
     nsolid_passive_tracers = betrtracer_vars%nsolid_passive_tracers
 
     allocate(this%tracer_flx_prec_col             (begc:endc, 1:ntracers)); this%tracer_flx_prec_col           (:,:) = spval
-    allocate(this%tracer_flx_vtrans_patch         (begp:endp, 1:ntracers)); this%tracer_flx_vtrans_patch       (:,:) = spval
     allocate(this%tracer_flx_snowfall_grnd_patch  (begp:endp, 1:ntracers)); this%tracer_flx_snowfall_grnd_patch(:,:) = spval
     allocate(this%tracer_flx_rainfall_grnd_patch  (begp:endp, 1:ntracers)); this%tracer_flx_rainfall_grnd_patch(:,:) = spval
     allocate(this%tracer_flx_prec_intr_patch      (begp:endp, 1:ntracers)); this%tracer_flx_prec_intr_patch    (:,:) = spval
@@ -148,6 +147,7 @@ contains
        allocate(this%tracer_flx_dew_grnd_col    (begc:endc, 1:ngwmobile_tracers)); this%tracer_flx_dew_grnd_col (:,:) = spval
        allocate(this%tracer_flx_dew_snow_col    (begc:endc, 1:ngwmobile_tracers)); this%tracer_flx_dew_snow_col (:,:) = spval
        allocate(this%tracer_flx_sub_snow_col    (begc:endc, 1:ngwmobile_tracers)); this%tracer_flx_sub_snow_col (:,:) = spval
+       allocate(this%tracer_flx_vtrans_patch    (begp:endp, 1:ngwmobile_tracers)); this%tracer_flx_vtrans_patch(:,:) = spval
 
        allocate(this%tracer_flx_h2osfc_snow_residual_col(begc:endc, 1:ngwmobile_tracers))
        this%tracer_flx_h2osfc_snow_residual_col(:,:) = spval

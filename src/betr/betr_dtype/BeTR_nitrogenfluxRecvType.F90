@@ -14,12 +14,16 @@ implicit none
     real(r8), pointer :: smin_nh4_to_plant_patch(:)  => null() !will be summarized within the bgc model
     real(r8), pointer :: fire_decomp_nloss_vr_col(:,:) => null()  !will be summarized within the bgc model
     real(r8), pointer :: fire_decomp_nloss_col(:) => null()  !will be summarized within the bgc model
+    real(r8), pointer :: som_n_leached_col(:) => null()
+    real(r8), pointer :: som_n_runoff_col(:) => null()
+    real(r8), pointer :: som_n_qdrain_col(:) => null()
 
     real(r8), pointer :: f_nit_col(:) => null()
     real(r8), pointer :: f_denit_col(:)  => null()
     real(r8), pointer :: f_n2o_nit_col(:)  => null()
     real(r8), pointer :: smin_no3_leached_col(:) => null()
     real(r8), pointer :: smin_no3_runoff_col(:) => null()
+    real(r8), pointer :: smin_no3_qdrain_col(:) => null()
   contains
     procedure, public  :: Init
     procedure, private :: InitAllocate
@@ -66,6 +70,10 @@ implicit none
   allocate(this%f_n2o_nit_col(begc:endc))
   allocate(this%smin_no3_leached_col(begc:endc))
   allocate(this%smin_no3_runoff_col(begc:endc))
+  allocate(this%som_n_leached_col(begc:endc))
+  allocate(this%som_n_runoff_col(begc:endc))
+  allocate(this%som_n_qdrain_col(begc:endc))
+  allocate(this%smin_no3_qdrain_col(begc:endc))
   allocate(this%fire_decomp_nloss_col(begc:endc))
   allocate(this%fire_decomp_nloss_vr_col(begc:endc,lbj:ubj))
   end subroutine InitAllocate
@@ -81,6 +89,10 @@ implicit none
   this%f_nit_vr_col(:,:) = value_column
   this%f_n2o_nit_vr_col(:,:) = value_column
   this%fire_decomp_nloss_vr_col(:,:) = value_column
+  this%som_n_leached_col(:) = value_column
+  this%som_n_runoff_col(:) = value_column
+  this%som_n_qdrain_col(:) = value_column
+
   end subroutine reset
 
   !------------------------------------------------------------------------

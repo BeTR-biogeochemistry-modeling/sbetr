@@ -749,7 +749,7 @@ contains
     associate(                                                                         &
          qflx_adv                  => biogeo_flux%qflx_adv_col                       , & !real(r8) (:,:)[intent(in)], advective velocity defined at layer interfatemperature_vars
          qflx_rootsoi              => biophysforc%qflx_rootsoi_col                   , & !real(r8) (:,:)[intent(in)], water flux between plant and soil at different layers
-         qflx_rootsoi_patch        => biophysforc%qflx_rootsoi_patch                 , &
+         qflx_rootsoi_frac_patch   => biophysforc%qflx_rootsoi_frac_patch            , &
          h2osoi_liqvol             => biophysforc%h2osoi_liqvol_col                  , & !real(r8) (:,:)[intent(in)]
          is_advective              => betrtracer_vars%is_advective                   , & !logical(:) [intent(in)], indicator whether the tracer undergoes advection
          is_mobile                 => betrtracer_vars%is_mobile                      , & !
@@ -960,7 +960,7 @@ contains
                        tracer_flx_vtrans_patch(p,trcid) = 0._r8
                        do l=lbj, ubj
                          tracer_flx_vtrans_patch(p,trcid) = tracer_flx_vtrans_patch(p,trcid) + &
-                            tracer_flx_vtrans_vr(c, l, trcid) * safe_div(qflx_rootsoi_patch(p,j),qflx_rootsoi(c,l))
+                            tracer_flx_vtrans_vr(c, l, trcid) * qflx_rootsoi_frac_patch(p,l)
                        enddo
                      enddo
                   endif
