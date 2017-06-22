@@ -236,6 +236,7 @@ contains
     !the following avoids over-estimation of potential hr which is used for nitri-denit estimation
     pot_om_decay_rates(jj) = min(pot_om_decay_rates(jj), ystates(kc)/dtime)
   enddo
+
   call this%calc_cascade_matrix(is_surf, centurybgc_index, pct_sand, pct_clay, alpha_n, alpha_p, cascade_matrix)
 
   !calculate potential respiration rates by summarizing all om decomposition pathways
@@ -330,6 +331,7 @@ contains
     cascade_matrix(lid_co2                ,reac)  = rf_l1s1_bgc
     cascade_matrix(lid_nh4                ,reac)  = safe_div(1._r8,this%cn_ratios(lit1)) - &
         cascade_matrix((som1-1)*nelms+n_loc   ,reac)
+
     cascade_matrix(lid_minp_soluble         ,reac)  = safe_div(1._r8,this%cp_ratios(lit1)) - &
         cascade_matrix((som1-1)*nelms+p_loc   ,reac)
 
@@ -342,6 +344,7 @@ contains
       cascade_matrix(lid_c14_co2              , reac) = safe_div(rf_l1s1_bgc,this%cc14_ratios(lit1))
       cascade_matrix((som1-1)*nelms+c14_loc   , reac) = safe_div(1._r8-rf_l1s1_bgc,this%cc14_ratios(lit1))
     endif
+
     if(this%use_c13)then
       cascade_matrix((lit1-1)*nelms+c13_loc   , reac) = -safe_div(1._r8,this%cc13_ratios(lit1))
       cascade_matrix(lid_c13_co2              , reac) = safe_div(rf_l1s1_bgc,this%cc13_ratios(lit1))
@@ -367,6 +370,7 @@ contains
     cascade_matrix(lid_co2                ,reac)   =  rf_l2s1_bgc
     cascade_matrix(lid_nh4                ,reac)   = safe_div(1._r8,this%cn_ratios(lit2)) - &
           cascade_matrix((som1-1)*nelms+n_loc   ,reac)
+
     cascade_matrix(lid_minp_soluble         ,reac)   = safe_div(1._r8,this%cp_ratios(lit2)) - &
           cascade_matrix((som1-1)*nelms+p_loc   ,reac)
 
@@ -404,6 +408,7 @@ contains
     cascade_matrix(lid_co2                ,reac) = rf_l3s2_bgc
     cascade_matrix(lid_nh4                ,reac) = safe_div(1._r8,this%cn_ratios(lit3)) - &
          cascade_matrix((som2-1)*nelms+n_loc   ,reac)
+
     cascade_matrix(lid_minp_soluble      ,reac) = safe_div(1._r8,this%cp_ratios(lit3)) - &
          cascade_matrix((som2-1)*nelms+p_loc   ,reac)
 
@@ -438,6 +443,7 @@ contains
     else
       rf_s1 = 0.17_r8 + 0.0068_r8*pct_sand
     endif
+
     f1 = fpmax(1._r8 - rf_s1 - f2)
 
     cascade_matrix((som1-1)*nelms+c_loc   ,reac)  = -1._r8
@@ -457,6 +463,7 @@ contains
     cascade_matrix(lid_nh4                ,reac) = safe_div(1._r8,this%cn_ratios(som1)) - &
            cascade_matrix((som2-1)*nelms+n_loc   ,reac)- &
            cascade_matrix((som3-1)*nelms+n_loc   ,reac)
+
     cascade_matrix(lid_minp_soluble         ,reac) = safe_div(1._r8,this%cp_ratios(som1))-&
            cascade_matrix((som2-1)*nelms+p_loc   ,reac)- &
            cascade_matrix((som3-1)*nelms+p_loc   ,reac)
@@ -545,6 +552,7 @@ contains
     cascade_matrix(lid_co2                ,reac) = rf_s3s1_bgc
     cascade_matrix(lid_nh4                ,reac) = safe_div(1._r8,this%cn_ratios(som3)) - &
         cascade_matrix((som1-1)*nelms+n_loc   ,reac)
+
     cascade_matrix(lid_minp_soluble         ,reac) = safe_div(1._r8,this%cp_ratios(som3)) - &
         cascade_matrix((som1-1)*nelms+p_loc   ,reac)
 
@@ -567,6 +575,9 @@ contains
       cascade_matrix(lid_c13_co2              , reac) =  safe_div(rf_s3s1_bgc,this%cc13_ratios(som3))
       cascade_matrix((som1-1)*nelms+c13_loc   , reac) =  safe_div(1._r8-rf_s3s1_bgc,this%cc13_ratios(som3))
     endif
+
+    !print*,'cp_ratio',maxval(this%cp_ratios),minval(this%cp_ratios)
+    !print*,'cn_ratio',maxval(this%cn_ratios),minval(this%cn_ratios)
 
     !---------------------------------------------------------------------------------
     !reaction 7, the partition cwd into som1 and som2
@@ -592,6 +603,7 @@ contains
     cascade_matrix(lid_nh4                ,reac) = safe_div(1._r8,this%cn_ratios(cwd)) - &
        cascade_matrix((som1-1)*nelms+n_loc   ,reac) - &
        cascade_matrix((som2-1)*nelms+n_loc   ,reac)
+
     cascade_matrix(lid_minp_soluble         ,reac) = safe_div(1._r8,this%cp_ratios(cwd)) - &
        cascade_matrix((som1-1)*nelms+p_loc   ,reac) - &
        cascade_matrix((som2-1)*nelms+p_loc   ,reac)
@@ -638,6 +650,7 @@ contains
     cascade_matrix(lid_nh4                ,reac) = safe_div(1._r8,this%cn_ratios(lwd)) - &
        cascade_matrix((som1-1)*nelms+n_loc   ,reac) - &
        cascade_matrix((som2-1)*nelms+n_loc   ,reac)
+
     cascade_matrix(lid_minp_soluble         ,reac) = safe_div(1._r8,this%cp_ratios(lwd)) - &
        cascade_matrix((som1-1)*nelms+p_loc   ,reac) - &
        cascade_matrix((som2-1)*nelms+p_loc   ,reac)
@@ -659,6 +672,7 @@ contains
       cascade_matrix((som1-1)*nelms+c13_loc  , reac) =  safe_div(f1,this%cc13_ratios(lwd))
       cascade_matrix((som2-1)*nelms+c13_loc  , reac) =  safe_div(f2,this%cc13_ratios(lwd))
     endif
+
     !---------------------------------------------------------------------------------
     !reaction 9, the partition fwd into som1 and som2
     reac = fwd_dek_reac
@@ -683,6 +697,7 @@ contains
     cascade_matrix(lid_nh4                ,reac) = safe_div(1._r8,this%cn_ratios(fwd)) - &
        cascade_matrix((som1-1)*nelms+n_loc   ,reac) - &
        cascade_matrix((som2-1)*nelms+n_loc   ,reac)
+
     cascade_matrix(lid_minp_soluble         ,reac) = safe_div(1._r8,this%cp_ratios(fwd)) - &
        cascade_matrix((som1-1)*nelms+p_loc   ,reac) - &
        cascade_matrix((som2-1)*nelms+p_loc   ,reac)

@@ -24,7 +24,11 @@ module PlantSoilBgcCnpType
     real(r8), pointer :: plant_minn_nh4_active_yield_flx_vr_patch  (:,:)  => null() !patch level mineral nitrogen yeild from soil bgc calculation
     real(r8), pointer :: plant_minn_no3_active_yield_flx_vr_patch  (:,:)  => null() !patch level mineral nitrogen yeild from soil bgc calculation
     real(r8), pointer :: plant_minp_active_yield_flx_vr_patch   (:,:)  => null() !column level mineral phosphorus yeild from soil bgc calculation
-
+    real(r8), pointer :: plant_minn_nh4_active_yield_flx_vr_col  (:,:)  => null() !patch level mineral nitrogen yeild from soil bgc calculation
+    real(r8), pointer :: plant_minn_no3_active_yield_flx_vr_col  (:,:)  => null() !patch level mineral nitrogen yeild from soil bgc calculation
+    real(r8), pointer :: plant_minp_active_yield_flx_vr_col(:,:) => null()
+    real(r8), pointer :: plant_minn_active_yield_flx_col(:) => null()
+    real(r8), pointer :: plant_minp_active_yield_flx_col(:) => null()
     real(r8), pointer :: plant_minn_nh4_passive_yield_flx_vr_patch  (:,:)  => null() !patch level mineral nitrogen yeild from soil bgc calculation
     real(r8), pointer :: plant_minn_no3_passive_yield_flx_vr_patch  (:,:)  => null() !patch level mineral nitrogen yeild from soil bgc calculation
     real(r8), pointer :: plant_minp_passive_yield_flx_vr_patch   (:,:)  => null() !column level mineral phosphorus yeild from soil bgc calculation
@@ -106,7 +110,12 @@ module PlantSoilBgcCnpType
   allocate(this%plant_minn_no3_passive_yield_flx_vr_patch  (begp:endp,1:ubj)) !patch level mineral nitrogen yeild from soil bgc calculation
   allocate(this%plant_minp_passive_yield_flx_vr_patch  (begp:endp,1:ubj)) !column level mineral phosphorus yeild from soil bgc calculation
 
+  allocate(this%plant_minn_nh4_active_yield_flx_vr_col  (begc:endc,1:ubj)) !patch level mineral nitrogen yeild from soil bgc calculation
+  allocate(this%plant_minn_no3_active_yield_flx_vr_col  (begc:endc,1:ubj)) !patch level mineral nitrogen yeild from soil bgc calculation
+  allocate(this%plant_minp_active_yield_flx_vr_col  (begc:endc,1:ubj)) !column level mineral phosphorus yeild from soil bgc calculation
 
+  allocate(this%plant_minn_active_yield_flx_col(begc:endc))
+  allocate(this%plant_minp_active_yield_flx_col(begc:endc))
   end subroutine InitAllocate
   !----------------------------------------------------------------------
   subroutine plant_soilbgc_summary(this, bounds, lbj, ubj, pft, numf, &

@@ -542,16 +542,20 @@ contains
    end subroutine retrieve_lnd2atm
 
    !-------------------------------------------------------------------------------
-     subroutine debug_info(this, num_soilc, filter_soilc, biogeo_state, header)
+     subroutine debug_info(this, bounds, num_soilc, filter_soilc, dzsoi, betrtracer_vars, tracerstate_vars, header)
 
-    use BeTR_biogeoStateType     , only : betr_biogeo_state_type
-
+   use BeTRTracerType           , only : BeTRTracer_Type
+   use tracerstatetype          , only : tracerstate_type
+   use BeTR_decompMod           , only : betr_bounds_type
      ! !ARGUMENTS:
     implicit none
    class(bgc_reaction_mock_run_type) , intent(inout) :: this      !
-     integer                              , intent(in)    :: num_soilc                   ! number of columns in column filter
-     integer                              , intent(in)    :: filter_soilc(:)             ! column filter
-     type(betr_biogeo_state_type)         , intent(in)    :: biogeo_state
+   type(betr_bounds_type)               , intent(in) :: bounds                      ! bounds
+   integer                              , intent(in) :: num_soilc                   ! number of columns in column filter
+   integer                              , intent(in) :: filter_soilc(:)             ! column filter
+   real(r8)                             , intent(in) :: dzsoi(bounds%begc:bounds%endc,bounds%lbj:bounds%ubj)
+   type(betrtracer_type)                , intent(in) :: betrtracer_vars             ! betr configuration information
+   type(tracerstate_type)               , intent(in) :: tracerstate_vars
      character(len=*), intent(in) :: header
    if (this%dummy_compiler_warning) continue
      end subroutine debug_info

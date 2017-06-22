@@ -376,16 +376,23 @@ contains
   end subroutine step_without_drainage
 
   !--------------------------------------------------------------------------------
-  subroutine debug_info(this, num_soilc, filter_soilc,  biogeo_state, header)
+  subroutine debug_info(this, bounds, col, num_soilc, filter_soilc, header)
+
+  use betr_columnType        , only : betr_column_type
 
   implicit none
   ! !ARGUMENTS:
   class(betr_type)                     , intent(inout) :: this
+  type(bounds_type)                    , intent(in)    :: bounds
+  type(betr_column_type)               , intent(in)    :: col
   integer                              , intent(in)    :: num_soilc                   ! number of columns in column filter
   integer                              , intent(in)    :: filter_soilc(:)             ! column filter
-  type(betr_biogeo_state_type)         , intent(in) :: biogeo_state
   character(len=*), intent(in) :: header
-  call this%bgc_reaction%debug_info(num_soilc, filter_soilc,  biogeo_state, header)
+
+
+  call this%bgc_reaction%debug_info(bounds, num_soilc, filter_soilc, &
+       col%dz(bounds%begc:bounds%endc, bounds%lbj:bounds%ubj), &
+       this%tracers, this%tracerstates, header)
 
   end subroutine debug_info
 

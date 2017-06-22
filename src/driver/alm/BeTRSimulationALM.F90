@@ -212,7 +212,7 @@ contains
       call this%biogeo_state(c)%summary(betr_bounds, 1, betr_nlevtrc_soil,this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil), &
        this%betr_col(c)%zi(begc_l:endc_l,1:betr_nlevtrc_soil))
 
-      !call this%betr(c)%debug_info(this%num_soilc, this%filter_soilc, this%biogeo_state(c), 'bef w/o drain')
+      call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'bef w/o drain')
 !--------
       call this%betr(c)%step_without_drainage(this%betr_time, betr_bounds, this%betr_col(c), &
          this%betr_pft(c), this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp, &
@@ -223,7 +223,6 @@ contains
         call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
         exit
       endif
-
 !--------------
 !  debug
       call this%biogeo_state(c)%reset(value_column=0._r8, active_soibgc=this%active_soibgc)
@@ -234,7 +233,7 @@ contains
       call this%biogeo_state(c)%summary(betr_bounds, 1, betr_nlevtrc_soil,this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil), &
        this%betr_col(c)%zi(begc_l:endc_l,1:betr_nlevtrc_soil))
 
-      !call this%betr(c)%debug_info(this%num_soilc, this%filter_soilc, this%biogeo_state(c), 'aft w/o drain')
+      call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'aft w/o drain')
 !--------
     enddo
     if(this%bsimstatus%check_status()) &
@@ -297,6 +296,7 @@ contains
 
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
+      call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'bfdrain')
       call this%betr(c)%step_with_drainage(betr_bounds,      &
          this%betr_col(c),this%num_soilc, this%filter_soilc, this%jtops, &
          this%biogeo_flux(c), this%bstatus(c))
@@ -317,7 +317,7 @@ contains
       endif
 
 ! debug
-      !call this%betr(c)%debug_info(this%num_soilc, this%filter_soilc, this%biogeo_state(c), 'afdrain')
+      call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'afdrain')
     enddo
 
 

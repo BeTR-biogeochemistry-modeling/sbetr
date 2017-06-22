@@ -412,6 +412,7 @@ implicit none
        this%lid_n2o_paere  = addone(itemp);  this%lid_n2o_aren_reac = addone(ireac)   !
        call list_insert(list_name, 'n2o_paere')
     endif
+
     if(maxpft>0)then
       allocate(this%lid_plant_minn_no3_pft(maxpft));
       allocate(this%lid_plant_minn_nh4_pft(maxpft));

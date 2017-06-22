@@ -65,6 +65,7 @@ module BgcCentCnpType
     procedure, private :: InitAllocate
     procedure, private :: arenchyma_gas_transport
     procedure, private :: sumup_cnp_mass
+    procedure, private :: sumup_cnp_msflx
     procedure, private :: bgc_integrate
   end type centurybgceca_type
   logical, public :: ldebug_bgc =.false.
@@ -181,6 +182,10 @@ contains
   real(r8) :: o2_decomp_depth
   real(r8) :: time
   real(r8) :: frc_c13, frc_c14
+  real(r8) :: c_mass1, n_mass1, p_mass1
+  real(r8) :: c_mass2, n_mass2, p_mass2
+  real(r8) :: c_flx, n_flx, p_flx
+  real(r8) :: c_inf, n_inf, p_inf
   integer :: jj
   character(len=*),parameter :: subname = 'runbgc'
   associate(                                            &
@@ -210,17 +215,17 @@ contains
   call this%init_states(this%centurybgc_index, centuryeca_forc)
   ystates0(:) = this%ystates0(:)
 
+  call this%sumup_cnp_msflx(ystates0, c_mass1,n_mass1,p_mass1)
 
-!  call this%sumup_cnp_mass('bfext input')
   !add all external input
-  call this%add_ext_input(dtime, this%centurybgc_index, centuryeca_forc)
+  call this%add_ext_input(dtime, this%centurybgc_index, centuryeca_forc, c_inf, n_inf, p_inf)
 !  call this%sumup_cnp_mass('afext input')
 
   !initialize decomposition scaling factors
   call this%decompkf_eca%set_decompk_scalar(ystates1(lid_o2), centuryeca_forc)
 
   !initialize all entries to zero
-  cascade_matrix = 0._r8
+  cascade_matrix(:,:) = 0._r8
 
   !calculate default stoichiometry entries
   call this%calc_cascade_matrix(this%centurybgc_index, cascade_matrix, frc_c13, frc_c14)
@@ -246,6 +251,11 @@ contains
     ystates1(lid_nh4), ystates1(lid_no3), ystates1(lid_o2), o2_decomp_depth, &
     pot_f_nit_mol_per_sec, pot_co2_hr, this%pot_f_nit, this%pot_f_denit, cascade_matrix)
 
+  !---------------------
+  !turn off nitrification and denitrification
+  !this%pot_f_denit = 0._r8
+  !this%pot_f_nit = 0._r8
+  !---------------------
   !do integration, in each integration, the stoichiometric matrix is kept as constant
   !so the reaction rate is a function of state variables. Further, for simplicity,
   !the nitrification and denitrification rates have been assumed as linear function
@@ -259,15 +269,25 @@ contains
   if(bstatus%check_status())return
 
   time = 0._r8
-  yf = ystates1
+  yf(:) = ystates1(:)
 
-!  call this%sumup_cnp_mass('bfdecomp')
+!  call this%sumup_cnp_mass('bfdecomp',c_mass1,n_mass1,p_mass1)
 
-!  call ode_adapt_ebbks1(this, yf, nprimvars, nstvars, time, dtime, ystates1)
+  call ode_adapt_ebbks1(this, yf, nprimvars, nstvars, time, dtime, ystates1)
 
-!  call this%sumup_cnp_mass('afdecomp')
+!  call this%sumup_cnp_mass('afdecomp',c_mass2,n_mass2,p_mass2)
+
+!  write(*,'(A,3(X,E20.10))')'cnp mass diff',c_mass2-c_mass1,n_mass2-n_mass1,p_mass2-p_mass1
+  !print*,'sz',size(ystatesf),size(ystates1)
 
   ystatesf(:) = ystates1(:)
+
+!  print*,'szx',maxval(ystatesf),maxval(ystates1)
+  call this%sumup_cnp_msflx(ystatesf, c_mass2,n_mass2,p_mass2, c_flx, n_flx, p_flx)
+!  write(*,'(A,3(X,E20.10))')'cnp bal', &
+!                            c_mass2 - c_mass1-c_inf+c_flx, &
+!                            n_mass2 - n_mass1-n_inf+n_flx, &
+!                            p_mass2 - p_mass1-p_inf+p_flx
 
   end associate
   end subroutine runbgc
@@ -505,7 +525,7 @@ contains
   end associate
   end subroutine init_states
   !--------------------------------------------------------------------
-  subroutine add_ext_input(this, dtime, centurybgc_index, centuryeca_forc)
+  subroutine add_ext_input(this, dtime, centurybgc_index, centuryeca_forc, c_inf, n_inf, p_inf)
   use BgcCentCnpIndexType       , only : centurybgc_index_type
   use BgcCentCnpForcType        , only : centuryeca_forc_type
   use tracer_varcon             , only : catomw, natomw, patomw,c13atomw,c14atomw
@@ -514,7 +534,7 @@ contains
   real(r8), intent(in) :: dtime
   type(centurybgc_index_type)  , intent(in) :: centurybgc_index
   type(centuryeca_forc_type)  , intent(in) :: centuryeca_forc
-
+  real(r8), optional, intent(out) :: c_inf, n_inf, p_inf
   integer :: kc, kn, kp,kc13,kc14
   integer :: jj
 
@@ -541,6 +561,17 @@ contains
   this%ystates1(kc) =this%ystates0(kc) + centuryeca_forc%cflx_input_litr_met*dtime/catomw
   this%ystates1(kn) =this%ystates0(kn) + centuryeca_forc%nflx_input_litr_met*dtime/natomw
   this%ystates1(kp) =this%ystates0(kp) + centuryeca_forc%pflx_input_litr_met*dtime/patomw
+
+  if(present(c_inf))then
+    c_inf = this%ystates1(kc) - this%ystates0(kc)
+  endif
+  if(present(n_inf))then
+    n_inf = this%ystates1(kn) - this%ystates0(kn)
+  endif
+  if(present(p_inf))then
+    p_inf = this%ystates1(kp) - this%ystates0(kp)
+  endif
+
   if(this%use_c13)then
     kc13=(jj-1)*nelms+c13_loc
     this%ystates1(kc13) =this%ystates0(kc13) + centuryeca_forc%cflx_input_litr_met_c13*dtime/c13atomw
@@ -554,6 +585,16 @@ contains
   this%ystates1(kc) =this%ystates0(kc) + centuryeca_forc%cflx_input_litr_cel*dtime/catomw
   this%ystates1(kn) =this%ystates0(kn) + centuryeca_forc%nflx_input_litr_cel*dtime/natomw
   this%ystates1(kp) =this%ystates0(kp) + centuryeca_forc%pflx_input_litr_cel*dtime/patomw
+
+  if(present(c_inf))then
+    c_inf = c_inf + this%ystates1(kc) - this%ystates0(kc)
+  endif
+  if(present(n_inf))then
+    n_inf = n_inf + this%ystates1(kn) - this%ystates0(kn)
+  endif
+  if(present(p_inf))then
+    p_inf = p_inf + this%ystates1(kp) - this%ystates0(kp)
+  endif
   if(this%use_c13)then
     kc13=(jj-1)*nelms+c13_loc
     this%ystates1(kc13) =this%ystates0(kc13) + centuryeca_forc%cflx_input_litr_cel_c13*dtime/c13atomw
@@ -568,6 +609,15 @@ contains
   this%ystates1(kn) =this%ystates0(kn) + centuryeca_forc%nflx_input_litr_lig*dtime/natomw
   this%ystates1(kp) =this%ystates0(kp) + centuryeca_forc%pflx_input_litr_lig*dtime/patomw
 
+  if(present(c_inf))then
+    c_inf = c_inf + this%ystates1(kc) - this%ystates0(kc)
+  endif
+  if(present(n_inf))then
+    n_inf = n_inf + this%ystates1(kn) - this%ystates0(kn)
+  endif
+  if(present(p_inf))then
+    p_inf = p_inf + this%ystates1(kp) - this%ystates0(kp)
+  endif
   if(this%use_c13)then
     kc13=(jj-1)*nelms+c13_loc
     this%ystates1(kc13) =this%ystates0(kc13) + centuryeca_forc%cflx_input_litr_lig_c13*dtime/c13atomw
@@ -582,6 +632,15 @@ contains
   this%ystates1(kn) =this%ystates0(kn) + centuryeca_forc%nflx_input_litr_cwd*dtime/natomw
   this%ystates1(kp) =this%ystates0(kp) + centuryeca_forc%pflx_input_litr_cwd*dtime/patomw
 
+  if(present(c_inf))then
+    c_inf = c_inf + this%ystates1(kc) - this%ystates0(kc)
+  endif
+  if(present(n_inf))then
+    n_inf = n_inf + this%ystates1(kn) - this%ystates0(kn)
+  endif
+  if(present(p_inf))then
+    p_inf = p_inf + this%ystates1(kp) - this%ystates0(kp)
+  endif
   if(this%use_c13)then
     kc13=(jj-1)*nelms+c13_loc
     this%ystates1(kc13) =this%ystates0(kc13) + centuryeca_forc%cflx_input_litr_cwd_c13*dtime/c13atomw
@@ -596,6 +655,15 @@ contains
   this%ystates1(kn) =this%ystates0(kn) + centuryeca_forc%nflx_input_litr_fwd*dtime/natomw
   this%ystates1(kp) =this%ystates0(kp) + centuryeca_forc%pflx_input_litr_fwd*dtime/patomw
 
+  if(present(c_inf))then
+    c_inf = c_inf + this%ystates1(kc) - this%ystates0(kc)
+  endif
+  if(present(n_inf))then
+    n_inf = n_inf + this%ystates1(kn) - this%ystates0(kn)
+  endif
+  if(present(p_inf))then
+    p_inf = p_inf + this%ystates1(kp) - this%ystates0(kp)
+  endif
   if(this%use_c13)then
     kc13=(jj-1)*nelms+c13_loc
     this%ystates1(kc13) =this%ystates0(kc13) + centuryeca_forc%cflx_input_litr_fwd_c13*dtime/c13atomw
@@ -610,6 +678,15 @@ contains
   this%ystates1(kn) =this%ystates0(kn) + centuryeca_forc%nflx_input_litr_lwd*dtime/natomw
   this%ystates1(kp) =this%ystates0(kp) + centuryeca_forc%pflx_input_litr_lwd*dtime/patomw
 
+  if(present(c_inf))then
+    c_inf = c_inf + this%ystates1(kc) - this%ystates0(kc)
+  endif
+  if(present(n_inf))then
+    n_inf = n_inf + this%ystates1(kn) - this%ystates0(kn)
+  endif
+  if(present(p_inf))then
+    p_inf = p_inf + this%ystates1(kp) - this%ystates0(kp)
+  endif
   if(this%use_c13)then
     kc13=(jj-1)*nelms+c13_loc
     this%ystates1(kc13) =this%ystates0(kc13) + centuryeca_forc%cflx_input_litr_lwd_c13*dtime/c13atomw
@@ -627,6 +704,13 @@ contains
       (centuryeca_forc%sflx_minp_input_po4 + &
         centuryeca_forc%sflx_minp_weathering_po4)/patomw
 
+  if(present(n_inf))then
+    n_inf = n_inf + this%ystates1(lid_nh4) - this%ystates0(lid_nh4)
+  endif
+
+  if(present(p_inf))then
+    p_inf = p_inf + this%ystates1(lid_minp_soluble) - this%ystates0(lid_minp_soluble)
+  endif
   end associate
   end subroutine add_ext_input
 
@@ -866,13 +950,14 @@ contains
   end subroutine arenchyma_gas_transport
 
   !--------------------------------------------------------------------
-  subroutine sumup_cnp_mass(this, header)
+  subroutine sumup_cnp_msflx(this, ystates1, c_mass, n_mass, p_mass,c_flx,n_flx,p_flx)
   implicit none
   class(centurybgceca_type)     , intent(in) :: this
-  character(len=*), intent(in) :: header
-
+  real(r8), intent(in)  :: ystates1(this%centurybgc_index%nstvars)
+  real(r8), intent(out) :: c_mass, n_mass, p_mass
+  real(r8), optional, intent(out) :: c_flx, n_flx, p_flx
   !local variables
-  real(r8) :: c_mass, n_mass, p_mass
+
   integer :: kc, kn, kp, jj
   associate(                        &
     c_loc=>  this%centurybgc_index%c_loc,&
@@ -884,6 +969,8 @@ contains
     lit2 =>  this%centurybgc_index%lit2, &
     lit3 =>  this%centurybgc_index%lit3, &
     cwd =>   this%centurybgc_index%cwd, &
+    lwd =>   this%centurybgc_index%lwd, &
+    fwd =>   this%centurybgc_index%fwd, &
     som1 =>  this%centurybgc_index%som1, &
     som2 =>  this%centurybgc_index%som2, &
     som3 =>  this%centurybgc_index%som3, &
@@ -896,6 +983,93 @@ contains
     lid_minp_soluble =>  this%centurybgc_index%lid_minp_soluble,  &
     lid_minp_secondary => this%centurybgc_index%lid_minp_secondary, &
     lid_minp_occlude => this%centurybgc_index%lid_minp_occlude, &
+    lid_plant_minp => this%centurybgc_index%lid_plant_minp  &
+  )
+
+  c_mass = 0._r8; n_mass = 0._r8; p_mass = 0._r8;
+  if(present(c_flx))c_flx=0._r8
+  if(present(n_flx))n_flx=0._r8
+  if(present(p_flx))p_flx=0._r8
+
+  jj=lit1;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
+  c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
+
+  jj=lit2;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
+  c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
+
+  jj=lit3;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
+  c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
+
+  jj=cwd;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
+  c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
+
+  jj=lwd;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
+  c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
+
+  jj=fwd;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
+  c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
+
+  jj=som1;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
+  c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
+
+  jj=som2;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
+  c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
+
+  jj=som3;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
+  c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
+
+
+  n_mass = n_mass + ystates1(lid_nh4) + ystates1(lid_no3)
+
+  p_mass = p_mass + ystates1(lid_minp_soluble) + ystates1(lid_minp_secondary) + ystates1(lid_minp_occlude)
+
+  if(present(c_flx))then
+    c_flx = c_flx + ystates1(lid_co2_hr)
+  endif
+  if(present(n_flx))then
+    n_flx=n_flx + ystates1(lid_plant_minn_nh4) + ystates1(lid_plant_minn_no3) &
+     + ystates1(lid_n2o_nit) + ystates1(lid_no3_den)
+  endif
+  if(present(p_flx))then
+    p_flx=p_flx + ystates1(lid_plant_minp)
+  endif
+  if(p_mass>1.e10_r8)stop
+  end associate
+  end subroutine sumup_cnp_msflx
+
+  !--------------------------------------------------------------------
+  subroutine sumup_cnp_mass(this, header, c_mass, n_mass, p_mass)
+  implicit none
+  class(centurybgceca_type)     , intent(in) :: this
+  character(len=*), intent(in) :: header
+  real(r8), intent(out) :: c_mass, n_mass, p_mass
+  !local variables
+
+  integer :: kc, kn, kp, jj
+  associate(                        &
+    c_loc=>  this%centurybgc_index%c_loc,&
+    n_loc=>  this%centurybgc_index%n_loc,&
+    p_loc=>  this%centurybgc_index%p_loc,&
+    lid_n2o => this%centurybgc_index%lid_n2o,&
+    lid_n2 => this%centurybgc_index%lid_n2,&
+    lit1 =>  this%centurybgc_index%lit1, &
+    lit2 =>  this%centurybgc_index%lit2, &
+    lit3 =>  this%centurybgc_index%lit3, &
+    cwd =>   this%centurybgc_index%cwd, &
+    lwd =>   this%centurybgc_index%lwd, &
+    fwd =>   this%centurybgc_index%fwd, &
+    som1 =>  this%centurybgc_index%som1, &
+    som2 =>  this%centurybgc_index%som2, &
+    som3 =>  this%centurybgc_index%som3, &
+    nelms => this%centurybgc_index%nelms, &
+    lid_nh4=> this%centurybgc_index%lid_nh4, &
+    lid_no3=> this%centurybgc_index%lid_no3, &
+    lid_plant_minn_nh4 => this%centurybgc_index%lid_plant_minn_nh4, &
+    lid_plant_minn_no3 => this%centurybgc_index%lid_plant_minn_no3, &
+    lid_co2 => this%centurybgc_index%lid_co2, &
+    lid_minp_soluble =>  this%centurybgc_index%lid_minp_soluble,  &
+    lid_minp_secondary => this%centurybgc_index%lid_minp_secondary, &
+    lid_minp_occlude => this%centurybgc_index%lid_minp_occlude, &
     lid_plant_minp => this%centurybgc_index%lid_plant_minp, &
     ystates1 => this%ystates1  &
   )
@@ -904,7 +1078,7 @@ contains
 
   jj=lit1;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
   c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
-  print*,'lit1 c n p',ystates1(kc),ystates1(kn),ystates1(kp)
+!  write(*,'(A,3(X,E20.10))')'lit1 c n p',ystates1(kc),ystates1(kn),ystates1(kp)
   jj=lit2;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
   c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
 
@@ -912,6 +1086,12 @@ contains
   c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
 
   jj=cwd;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
+  c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
+
+  jj=lwd;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
+  c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
+
+  jj=fwd;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
   c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
 
   jj=som1;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
@@ -925,23 +1105,21 @@ contains
 
 
 !x  print*,'total om',c_mass,n_mass,p_mass
-  c_mass = c_mass + ystates1(lid_co2_hr)
+  c_mass = c_mass + ystates1(lid_co2)
 !x  print*,'hr',ystates1(lid_co2_hr)
 !x  print*,'no3, n2o, no3_den',ystates1(lid_nh4),ystates1(lid_no3), ystates1(lid_n2o_nit), ystates1(lid_no3_den)
-  print*,'minp',ystates1(lid_minp_soluble), ystates1(lid_minp_secondary), ystates1(lid_minp_occlude)
-  n_mass = n_mass + ystates1(lid_nh4) + ystates1(lid_no3)+ ystates1(lid_n2o_nit) + ystates1(lid_no3_den) + &
+!  write(*,'(A,3(X,E20.10))')'minp',ystates1(lid_minp_soluble), ystates1(lid_minp_secondary), ystates1(lid_minp_occlude)
+  n_mass = n_mass + ystates1(lid_nh4) + ystates1(lid_no3)+ 2._r8*ystates1(lid_n2) +2._r8*ystates1(lid_n2o) + &
            ystates1(lid_plant_minn_nh4) + ystates1(lid_plant_minn_no3)
 
   p_mass = p_mass + ystates1(lid_minp_soluble) + ystates1(lid_minp_secondary) + ystates1(lid_minp_occlude) + &
            ystates1(lid_plant_minp)
 
-  print*,'c,n,p mass',c_mass,n_mass,p_mass,ystates1(lid_plant_minn_nh4), &
-     ystates1(lid_plant_minn_no3), ystates1(lid_plant_minp)
+!  write(*,'(A,6(X,E20.10))')'c,n,p mass',c_mass,n_mass,p_mass,ystates1(lid_plant_minn_nh4), &
+!     ystates1(lid_plant_minn_no3), ystates1(lid_plant_minp)
   if(p_mass>1.e10_r8)stop
   end associate
   end subroutine sumup_cnp_mass
-
-
 
   !-------------------------------------------------------------------------------
   subroutine ode_adapt_ebbks1(me, y0, nprimeq, neq, t, dt, y)
@@ -1003,7 +1181,7 @@ contains
           call ebbks(ycp,f,nprimeq, neq,dt05,yf,pscal)
 
           !determine the relative error
-          rerr=get_rerr(yc,yf, neq)
+          rerr=get_rerr(yc,yf, neq)*exp(1._r8-1._r8/pscal)
 
           !determine time scalar factor
           call get_tscal(rerr,dt_scal,acc)
