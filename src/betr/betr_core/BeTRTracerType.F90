@@ -105,7 +105,7 @@ module BeTRTracerType
    character(len=betr_var_name_length),pointer :: units(:) => null()
    real(r8),pointer :: gram_mole_wt(:)      => null()                     !molecular weight of the master species, [g/mol]
    real(r8),pointer :: vtrans_scal(:)       => null()                     !scaling factor for plant tracer uptake through transpiration, for non-water neutral aqueous tracers
-
+   logical :: debug
   contains
      procedure, public  :: Init
      procedure, public  :: init_scalars
@@ -130,6 +130,7 @@ module BeTRTracerType
     !write(iulog,*)'BeTR: total solid passive tracer groups',this%nsolid_passive_tracer_groups
     !write(iulog,*)'BeTR: total mobile tracer groups', this%ngwmobile_tracer_groups
     call this%InitAllocate()
+    this%debug = .false.
   end subroutine Init
 !--------------------------------------------------------------------------------
   subroutine init_scalars(this)

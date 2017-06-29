@@ -162,6 +162,7 @@ contains
   use MathfuncMod               , only : pd_decomp
   use BetrStatusType            , only : betr_status_type
   use MathfuncMod               , only : safe_div
+  use tracer_varcon             , only : catomw, natomw, patomw
   implicit none
   class(centurybgceca_type)  , intent(inout) :: this
   logical                    , intent(in) :: is_surf
@@ -201,12 +202,16 @@ contains
     nstvars   => this%centurybgc_index%nstvars        , &
     nprimvars => this%centurybgc_index%nprimvars      , &
     nreactions=> this%centurybgc_index%nreactions     , &
+    lid_plant_minn_nh4  => this%centurybgc_index%lid_plant_minn_nh4       , &
+    lid_plant_minn_no3  => this%centurybgc_index%lid_plant_minn_no3       , &
+    lid_n2o_nit => this%centurybgc_index%lid_n2o_nit,&
+    lid_no3_den => this%centurybgc_index%lid_no3_den,&
     cascade_matrix=> this%cascade_matrix              , &
     cascade_matrixp=> this%cascade_matrixp            , &
     cascade_matrixd=> this%cascade_matrixd            , &
     ystates1 => this%ystates1                           &
   )
-
+  !this%centurybgc_index%debug = centuryeca_forc%debug
   this%rt_ar = rt_ar
   frc_c13 = safe_div(rt_ar_c13,rt_ar); frc_c14 = safe_div(rt_ar_c14,rt_ar)
   call bstatus%reset()
@@ -219,6 +224,7 @@ contains
 
   !add all external input
   call this%add_ext_input(dtime, this%centurybgc_index, centuryeca_forc, c_inf, n_inf, p_inf)
+  c_inf = c_inf * catomw; n_inf=n_inf * natomw; p_inf=p_inf * patomw
 !  call this%sumup_cnp_mass('afext input')
 
   !initialize decomposition scaling factors
@@ -284,10 +290,18 @@ contains
 
 !  print*,'szx',maxval(ystatesf),maxval(ystates1)
   call this%sumup_cnp_msflx(ystatesf, c_mass2,n_mass2,p_mass2, c_flx, n_flx, p_flx)
-!  write(*,'(A,3(X,E20.10))')'cnp bal', &
-!                            c_mass2 - c_mass1-c_inf+c_flx, &
-!                            n_mass2 - n_mass1-n_inf+n_flx, &
-!                            p_mass2 - p_mass1-p_inf+p_flx
+
+  if(centuryeca_forc%debug)then
+     write(*,'(A,10(X,E20.10))')'cnp bal', &
+     c_mass2*centuryeca_forc%dzsoi, &
+     n_mass2*centuryeca_forc%dzsoi, &
+     p_mass2*centuryeca_forc%dzsoi, &
+     c_mass2 - c_mass1-c_inf+c_flx, &
+     n_mass2 - n_mass1-n_inf+n_flx, &
+     p_mass2 - p_mass1-p_inf+p_flx, &
+     ystatesf(lid_plant_minn_nh4), ystatesf(lid_plant_minn_no3), &
+     ystatesf(lid_n2o_nit), ystatesf(lid_no3_den)
+  endif
 
   end associate
   end subroutine runbgc
@@ -892,6 +906,7 @@ contains
   real(r8), intent(in) :: dtime
 
   integer :: j
+  real(r8) :: y0
   associate(                             &
     lid_n2 => centurybgc_index%lid_n2,   &
     lid_o2 => centurybgc_index%lid_o2,   &
@@ -902,32 +917,42 @@ contains
     lid_ar => centurybgc_index%lid_ar,   &
     lid_ch4 => centurybgc_index%lid_ch4  &
   )
-  j = lid_n2
+  j = lid_n2; y0=this%ystates1(j)
   call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
+  this%ystates1(centurybgc_index%lid_n2_paere) = this%ystates1(j)-y0
 
-  j = lid_o2
+  j = lid_o2; y0=this%ystates1(j)
   call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
+  this%ystates1(centurybgc_index%lid_o2_paere) = this%ystates1(j)-y0
 
-  j = lid_ar
+  j = lid_ar; y0=this%ystates1(j)
   call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
+  this%ystates1(centurybgc_index%lid_ar_paere) = this%ystates1(j)-y0
 
-  j = lid_ch4
+  j = lid_ch4; y0=this%ystates1(j)
   call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
+  this%ystates1(centurybgc_index%lid_ch4_paere) = this%ystates1(j)-y0
 
-  j = lid_co2
+  j = lid_co2; y0=this%ystates1(j)
   call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
+  this%ystates1(centurybgc_index%lid_co2_paere) = this%ystates1(j)-y0
 
   if(this%use_c13)then
-    j = lid_c13_co2
+    j = lid_c13_co2; y0=this%ystates1(j)
     call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
+    this%ystates1(centurybgc_index%lid_c13_co2_paere) = this%ystates1(j)-y0
+
   endif
 
   if(this%use_c14)then
-    j = lid_c14_co2
+    j = lid_c14_co2; y0=this%ystates1(j)
     call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
+    this%ystates1(centurybgc_index%lid_c14_co2_paere) = this%ystates1(j)-y0
+
   endif
-  j = lid_n2o
+  j = lid_n2o; y0=this%ystates1(j)
   call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
+  this%ystates1(centurybgc_index%lid_n2o_paere) = this%ystates1(j)-y0
 
   end associate
   contains
@@ -951,6 +976,7 @@ contains
 
   !--------------------------------------------------------------------
   subroutine sumup_cnp_msflx(this, ystates1, c_mass, n_mass, p_mass,c_flx,n_flx,p_flx)
+  use tracer_varcon, only : catomw, natomw, patomw
   implicit none
   class(centurybgceca_type)     , intent(in) :: this
   real(r8), intent(in)  :: ystates1(this%centurybgc_index%nstvars)
@@ -1023,17 +1049,23 @@ contains
 
   p_mass = p_mass + ystates1(lid_minp_soluble) + ystates1(lid_minp_secondary) + ystates1(lid_minp_occlude)
 
+  c_mass = c_mass * catomw
+  n_mass = n_mass * natomw
+  p_mass = p_mass * patomw
   if(present(c_flx))then
     c_flx = c_flx + ystates1(lid_co2_hr)
+    c_flx = c_flx * catomw
   endif
   if(present(n_flx))then
     n_flx=n_flx + ystates1(lid_plant_minn_nh4) + ystates1(lid_plant_minn_no3) &
      + ystates1(lid_n2o_nit) + ystates1(lid_no3_den)
+    n_flx = n_flx * natomw
   endif
   if(present(p_flx))then
     p_flx=p_flx + ystates1(lid_plant_minp)
+    p_flx = p_flx * patomw
   endif
-  if(p_mass>1.e10_r8)stop
+
   end associate
   end subroutine sumup_cnp_msflx
 

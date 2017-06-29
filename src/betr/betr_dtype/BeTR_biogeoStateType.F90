@@ -99,7 +99,7 @@ contains
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------
-  subroutine summary(this, bounds, lbj, ubj, dz, zs)
+  subroutine summary(this, bounds, lbj, ubj, dz, zs, active_soibgc)
 
   implicit none
   class(betr_biogeo_state_type),intent(inout)  :: this
@@ -107,16 +107,19 @@ contains
   integer , intent(in) :: lbj, ubj
   real(r8), intent(in) :: dz(bounds%begc:bounds%endc,lbj:ubj)
   real(r8), intent(in) :: zs(bounds%begc:bounds%endc,lbj:ubj)
- 
-  call this%c12state_vars%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj), zs(bounds%begc:bounds%endc,lbj:ubj))
-  if(use_c13_betr)then
-    call this%c13state_vars%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj), zs(bounds%begc:bounds%endc,lbj:ubj))
-  endif
-  if(use_c14_betr)then
-    call this%c14state_vars%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj),zs(bounds%begc:bounds%endc,lbj:ubj))
-  endif
+  logical,  intent(in) :: active_soibgc
 
-  call this%n14state_vars%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj), zs(bounds%begc:bounds%endc,lbj:ubj))
-  call this%p31state_vars%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj), zs(bounds%begc:bounds%endc,lbj:ubj))
+  if(active_soibgc)then
+    call this%c12state_vars%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj), zs(bounds%begc:bounds%endc,lbj:ubj))
+    if(use_c13_betr)then
+      call this%c13state_vars%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj), zs(bounds%begc:bounds%endc,lbj:ubj))
+    endif
+    if(use_c14_betr)then
+      call this%c14state_vars%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj),zs(bounds%begc:bounds%endc,lbj:ubj))
+    endif
+
+    call this%n14state_vars%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj), zs(bounds%begc:bounds%endc,lbj:ubj))
+    call this%p31state_vars%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj), zs(bounds%begc:bounds%endc,lbj:ubj))
+  endif
   end subroutine summary
 end module BeTR_biogeoStateType

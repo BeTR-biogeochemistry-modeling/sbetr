@@ -8,7 +8,7 @@ implicit none
        __FILE__
 
   type, public :: centuryeca_forc_type
-
+    logical :: debug
     real(r8), pointer :: ystates(:)
     !input
     real(r8) :: cflx_input_litr_met   !g C/m2/s
@@ -231,6 +231,7 @@ contains
   call this%InitAllocate(centurybgc_index)
 
   call this%set_defpar()
+  this%debug =.false.
   end subroutine Init
 
   !--------------------------------------------------------------------

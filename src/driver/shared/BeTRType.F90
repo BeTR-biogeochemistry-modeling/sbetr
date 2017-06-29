@@ -1254,6 +1254,7 @@ contains
   asoibgc = .false.
   !if it is a default case, create it
   call create_betr_def_application(bgc_reaction, plant_soilbgc, method, yesno)
+
   if(.not. yesno)then
     call create_betr_usr_application(bgc_reaction, plant_soilbgc, method, bstatus)
   endif

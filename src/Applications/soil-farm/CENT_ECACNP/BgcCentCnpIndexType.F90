@@ -96,7 +96,7 @@ implicit none
      integer, pointer :: lid_plant_minn_no3_pft(:)=> null()
      integer, pointer :: lid_plant_minn_nh4_pft(:)=> null()
      integer, pointer :: lid_plant_minp_pft(:)=> null()
-
+     logical :: debug
      character(len=loc_name_len), allocatable :: varnames(:)
    contains
      procedure, public  :: Init
@@ -214,6 +214,8 @@ implicit none
   call this%InitAllocate()
 
   call this%set_primvar_reac_ids()
+
+  this%debug = .false.
   end subroutine Init
   !-------------------------------------------------------------------------------
 
