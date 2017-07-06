@@ -29,7 +29,6 @@ module TransportMod
 
 
   ! FIXME(bja, 201604) these instance variables need to be removed
-  type(Extra_type), pointer, private :: Extra_inst
   type(betr_status_type) :: Extra_bstatus
 
   !default configuration parameters
@@ -63,7 +62,51 @@ contains
     logical, intent(in) :: yesno
     debug_loc = yesno
   end subroutine set_debug_transp
+  !-------------------------------------------------------------------------------
+  subroutine ode_rk2(extra, y0, neq, t, dt, y )
+    !
+    ! !DESCRIPTION:
+    !  2-th order runge-kutta method for ode integration
+    !   Solve differential equations with a non-adaptive method of order 2.
+    !   call rk2(y, ODEFUN,t, dt,Y0, neq) integrates
+    !   the system of differential equations y' = f(t,y) by stepping from T to
+    !   t+dt. Function ODEFUN(T,Y) must return f(t,y) in a column vector.
+    !   The vector Y0 is the initial conditions at T0. Each row in the solution
+    !   array Y corresponds to a time specified in TSPAN.
 
+    !
+    !   This is a non-adaptive solver. The step sequence is determined by TSPAN
+    !   but the derivative function ODEFUN is evaluated multiple times per step.
+    !
+    implicit none
+    ! !ARGUMENTS:
+    class(gbetr_type),  pointer  :: extra
+    integer,  intent(in)  :: neq
+    real(r8), intent(in)  :: y0(neq)
+    real(r8), intent(in)  :: t
+    real(r8), intent(in)  :: dt
+    real(r8), intent(out) :: y(neq)
+    ! !LOCAL VARIABLES:
+    real(r8) :: k1(neq)
+    real(r8) :: k2(neq)
+    real(r8) :: ti, dt05
+    integer :: n
+    external :: odefun
+
+    ti = t
+    dt05 = dt * 0.5_r8
+
+    call trajectory(extra, y0, dt, ti, neq, k1)
+
+    y(:) = y0(:)
+    call daxpy(neq, dt05, k1, 1, y, 1)
+
+    ti = t + dt05
+    call trajectory(extra, y, dt05, ti, neq, k2)
+
+    y(:) = y0(:)
+    call daxpy(neq, dt, k2, 1, y, 1)
+  end subroutine ode_rk2
   !-------------------------------------------------------------------------------
   function create_Extra_type()
 
@@ -76,19 +119,23 @@ contains
 
   end function create_extra_type
   !-------------------------------------------------------------------------------
+
   subroutine InitAllocate(this, lbj, ubj)
     !
     ! !DESCRIPTION:
     ! allocate memory for arrays of the specified data type
 
     ! !ARGUMENTS:
-    type(Extra_type), pointer  :: this
+    class(gbetr_type), pointer  :: this
     integer, intent(in) :: lbj, ubj
     character(len=32) :: subname ='InitAllocate'
 
-    allocate(this%zi(lbj:ubj))
-    allocate(this%us(lbj:ubj))
 
+    select type(this)
+    class is (Extra_type)
+      allocate(this%zi(lbj:ubj))
+      allocate(this%us(lbj:ubj))
+    end select
   end subroutine InitAllocate
   !-------------------------------------------------------------------------------
 
@@ -98,11 +145,14 @@ contains
     ! Deallocate memories
     !
     ! !ARGUMENTS:
-    type(Extra_type), pointer :: this
+    class(gbetr_type), pointer :: this
     character(len=32) :: subname ='DDeallocate'
-    deallocate(this%zi)
-    deallocate(this%us)
-    deallocate(this)
+
+    select type(this)
+    class is (Extra_type)
+      deallocate(this%zi)
+      deallocate(this%us)
+    end select
   end subroutine DDeallocate
 
   !-------------------------------------------------------------------------------
@@ -115,7 +165,7 @@ contains
     use BetrStatusType         , only : betr_status_type
     implicit none
     ! !ARGUMENTS:
-    type(Extra_type), pointer :: this
+    class(gbetr_type), pointer :: this
     real(r8), dimension(:), intent(in) :: zi_t
     real(r8), dimension(:), intent(in) :: us_t
     type(betr_status_type), intent(out):: bstatus
@@ -130,10 +180,12 @@ contains
 
     SHR_ASSERT_ALL((n1 == n2),        errMsg(filename,__LINE__), bstatus)
     if(bstatus%check_status())return
-
-    this%zi(1:n1) = zi_t
-    this%us(1:n2) = us_t
-    this%nlen = n1
+    select type(this)
+    class is (Extra_type)
+      this%zi(1:n1) = zi_t
+      this%us(1:n2) = us_t
+      this%nlen = n1
+    end select
   end subroutine AAssign
   !-------------------------------------------------------------------------------
   function get_cntheta()result(ans)
@@ -821,6 +873,7 @@ contains
      real(r8) :: dinfl_mass
      character(len=32) :: subname='semi_lagrange_adv_backward'
 
+
      call bstatus%reset()
      SHR_ASSERT_ALL((ubound(lbn)        == (/bounds%endc/)),         errMsg(filename,__LINE__),bstatus)
      if(bstatus%check_status())return
@@ -873,11 +926,14 @@ contains
      SHR_ASSERT_ALL((size(trcin,3) == ntrcs), errMsg(filename,__LINE__),bstatus)
      if(bstatus%check_status())return
 
-     nullify(Extra_inst)
+!x     nullify(Extra_inst)
 
-     allocate(Extra_inst) ! => create_extra_type()
+!x     allocate(Extra_inst) ! => create_extra_type()
 
-     call InitAllocate(Extra_inst, 1,ubj-lbj+6)
+!x     gtype=> extra_inst
+
+!x     call InitAllocate(gtype, 1,ubj-lbj+6)
+
      halfdt_col(:) = .false.
 
      do fc = 1, numfl
@@ -998,9 +1054,7 @@ contains
         enddo
 
      enddo
-     call DDeallocate(Extra_inst)
-!x     call deallocate(Extra_inst)
-     nullify(Extra_inst)
+
    end subroutine semi_lagrange_adv_backward
    !-------------------------------------------------------------------------------
    subroutine cmass_mono_smoother(cmass,mass_thc)
@@ -1080,7 +1134,6 @@ contains
      ! do backward trajectory track of the boundaries
      !
      ! !USES:
-     use ODEMod           , only : ode_rk4, ode_rk2
      use BetrStatusType   , only : betr_status_type
      implicit none
      ! !ARGUMENTS:
@@ -1094,6 +1147,8 @@ contains
      real(r8):: time
      character(len=32) :: subname = 'backward_advection'
      class(gbetr_type), pointer :: gtype
+     type(extra_type), pointer :: extra_inst
+     integer :: nl
 
      call bstatus%reset()
      SHR_ASSERT_ALL((size(zi)        == size(us)),     errMsg(filename,__LINE__),bstatus)
@@ -1101,15 +1156,28 @@ contains
      SHR_ASSERT_ALL((size(zi)        == size(zold)+4), errMsg(filename,__LINE__), bstatus)
      if(bstatus%check_status())return
 
+     nullify(Extra_inst)
+
+     allocate(Extra_inst) ! => create_extra_type()
+
+     gtype=> extra_inst
+     nl = size(zi)
+     call InitAllocate(gtype, 1, nl)
+
      neq = size(zold)
-     call AAssign(Extra_inst,zi,us, bstatus)
+
+     call AAssign(gtype,zi,us, bstatus)
+
      if(bstatus%check_status())return
      time =0._r8
-     gtype => Extra_inst
-     call ode_rk2(trajectory, gtype, zi(3:neq+2), neq, time, dtime, zold)
+
+     call ode_rk2(gtype, zi(3:neq+2), neq, time, dtime, zold)
      if(Extra_bstatus%check_status())then
        call bstatus%set_msg(Extra_bstatus%print_msg(),Extra_bstatus%print_err())
      endif
+
+     call DDeallocate(gtype)
+     nullify(Extra_inst)
 
    end subroutine backward_advection
 
@@ -1138,22 +1206,26 @@ contains
      real(r8)           :: ui(neq)
      character(len=32)  :: subname ='trajectory'
 
-      !The select type is now not used before intel compiler does not support such use at the moment
-      !basically, intel compiler does not support passing a generic data type as a dummy arugment
-      !to a user defined external function, such as done here. It will be used in the future if intel
-      !fixes this compiler bug. Jinyun Tang, July 27, 2016.
-!x     select type(extra)
-!x     class is (Extra_type)
-!x     extra_inst => extra
-      call Extra_bstatus%reset()
+
      ! remove unused dummy args compiler warnings
      if (dt > 0.0_r8) continue
      if (ti > 0.0_r8) continue
+     ui = 0._r8
+     !The select type is now not used before intel compiler does not support such use at the moment
+     !basically, intel compiler does not support passing a generic data type as a dummy arugment
+     !to a user defined external function, such as done here. It will be used in the future if intel
+     !fixes this compiler bug. Jinyun Tang, July 27, 2016.
+     select type(extra)
+     class is (Extra_type)
 
-     call Lagrange_interp(pn, Extra_inst%zi(1:Extra_inst%nlen), &
-        Extra_inst%us(1:Extra_inst%nlen), y0, ui, Extra_bstatus)
-     if(Extra_bstatus%check_status())return
-!x     end select
+       call Extra_bstatus%reset()
+
+       call Lagrange_interp(pn, Extra%zi(1:Extra%nlen), &
+         Extra%us(1:Extra%nlen), y0, ui, Extra_bstatus)
+
+       if(Extra_bstatus%check_status())return
+
+     end select
      do j = 1, neq
         dxdt(j) = -ui(j)
      enddo

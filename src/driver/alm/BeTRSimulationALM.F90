@@ -7,7 +7,7 @@ module BeTRSimulationALM
   !
 #include "shr_assert.h"
   use abortutils          , only : endrun
-  use clm_varctl          , only : iulog
+  use clm_varctl          , only : iulog,use_cn
   use shr_log_mod         , only : errMsg => shr_log_errMsg
   use shr_kind_mod        , only : r8 => shr_kind_r8
   use BeTRSimulation      , only : betr_simulation_type
@@ -906,7 +906,6 @@ contains
         c13state_vars%totlitc_1m_col(c) = this%biogeo_state(c)%c13state_vars%totlitc_1m_col(c_l)
         c13state_vars%totsomc_1m_col(c) = this%biogeo_state(c)%c13state_vars%totsomc_1m_col(c_l)
       endif
-
       if(use_c14_betr)then
         c14state_vars%cwdc_col(c) = this%biogeo_state(c)%c14state_vars%cwdc_col(c_l)
         c14state_vars%totlitc_col(c) = this%biogeo_state(c)%c14state_vars%totlitc_col(c_l)
@@ -1113,14 +1112,20 @@ contains
         this%biophys_forc(c)%rr_patch(pi,1:nlevsoi) = 0._r8
       enddo
     else
-      do pi = 1, betr_maxpatch_pft
-        if (pi <= col%npfts(c)) then
-          p = col%pfti(c) + pi - 1
-          if (pft%active(p)) then
-            this%biophys_forc(c)%rr_patch(pi,1:nlevsoi) = carbonflux_vars%rr_patch(p) !* root_prof(p,1:nlevsoi)
+      if(use_cn)then
+        do pi = 1, betr_maxpatch_pft
+          if (pi <= col%npfts(c)) then
+            p = col%pfti(c) + pi - 1
+            if (pft%active(p)) then
+              this%biophys_forc(c)%rr_patch(pi,1:nlevsoi) = carbonflux_vars%rr_patch(p) !* root_prof(p,1:nlevsoi)
+            endif
           endif
-        endif
-      enddo
+        enddo
+      else
+        do pi = 1, betr_maxpatch_pft
+          this%biophys_forc(c)%rr_patch(pi,1:nlevsoi) = 0._r8
+        enddo
+      endif
     endif
   enddo
   !dvgm

@@ -902,18 +902,29 @@ contains
           this%biophys_forc(c)%bgnpp_patch(pi)  = 0._r8
         enddo
       else
-        pp = 0
-        do pi = 1, betr_maxpatch_pft
-          if (pi <= col%npfts(c)) then
-            p = col%pfti(c) + pi - 1
-            if (pft%active(p)) then
-              pp = pp + 1
-              this%biophys_forc(c)%annsum_npp_patch(pp) = carbonflux_vars%annsum_npp_patch(p)
-              this%biophys_forc(c)%agnpp_patch(pp)      = carbonflux_vars%agnpp_patch(p)
-              this%biophys_forc(c)%bgnpp_patch(pp)      = carbonflux_vars%bgnpp_patch(p)
+        if(use_cn)then
+          pp = 0
+          do pi = 1, betr_maxpatch_pft
+            if (pi <= col%npfts(c)) then
+              p = col%pfti(c) + pi - 1
+              if (pft%active(p)) then
+                pp = pp + 1
+                this%biophys_forc(c)%annsum_npp_patch(pp) = carbonflux_vars%annsum_npp_patch(p)
+                this%biophys_forc(c)%agnpp_patch(pp)      = carbonflux_vars%agnpp_patch(p)
+                this%biophys_forc(c)%bgnpp_patch(pp)      = carbonflux_vars%bgnpp_patch(p)
+              endif
             endif
+          enddo
+        else
+          npft_loc = ubound(carbonflux_vars%annsum_npp_patch,1)-lbound(carbonflux_vars%annsum_npp_patch,1)+1
+          if(col%pfti(c) /= lbound(carbonflux_vars%annsum_npp_patch,1) .and. npft_loc/=col%npfts(c))then
+            do pi = 1, betr_maxpatch_pft
+              this%biophys_forc(c)%annsum_npp_patch(pi) = 0._r8
+              this%biophys_forc(c)%agnpp_patch(pi) = 0._r8
+              this%biophys_forc(c)%bgnpp_patch(pi)  = 0._r8
+            enddo
           endif
-        enddo
+        endif
       endif
     endif
     !assign waterstate
@@ -942,7 +953,7 @@ contains
       this%biophys_forc(c)%qflx_sub_snow_col(cc)        = waterflux_vars%qflx_sub_snow_col(c)
       this%biophys_forc(c)%qflx_h2osfc2topsoi_col(cc)   = waterflux_vars%qflx_h2osfc2topsoi_col(c)
       this%biophys_forc(c)%qflx_snow2topsoi_col(cc)     = waterflux_vars%qflx_snow2topsoi_col(c)
-      this%biophys_forc(c)%qflx_rootsoi_col(cc,lbj:ubj) = waterflux_vars%qflx_rootsoi_col(c,lbj:ubj)
+      this%biophys_forc(c)%qflx_rootsoi_col(cc,lbj:ubj) = waterflux_vars%qflx_rootsoi_col(c,lbj:ubj)*1.e-3_r8
 
       this%biogeo_flux(c)%qflx_adv_col(cc,lbj-1:ubj)    = waterflux_vars%qflx_adv_col(c,lbj-1:ubj)
       this%biogeo_flux(c)%qflx_drain_vr_col(cc,lbj:ubj) = waterflux_vars%qflx_drain_vr_col(c,lbj:ubj)
