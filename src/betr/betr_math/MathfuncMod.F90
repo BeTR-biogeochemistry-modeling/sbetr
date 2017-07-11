@@ -33,6 +33,7 @@ module MathfuncMod
   public :: fpmax
   public :: bisnan
   public :: apvb
+  public :: countelm
   interface apvb
     module procedure apvb_v, apvb_s
   end interface apvb
@@ -52,6 +53,21 @@ module MathfuncMod
     procedure, public :: apply_reaction_rscal
   end type lom_type
 contains
+  !-------------------------------------------------------------------------------
+  function countelm(ibeg, iend, igap)result(ans)
+  implicit none
+  integer, intent(in) :: ibeg   !begin of the counter
+  integer, intent(in) :: iend   !end of the counter
+  integer, optional, intent(in) :: igap   !gap between two consecutive numbers
+
+  integer :: ans
+
+  if(present(igap))then
+    ans = (iend-ibeg)/igap + 1
+  else
+    ans = (iend-ibeg) + 1
+  endif
+  end function countelm
   !-------------------------------------------------------------------------------
   subroutine apvb_s(a, brr, sgn)
   !

@@ -65,7 +65,6 @@ contains
     AppParNLFile    = ''
     appfile_on      = .false.
     if ( masterproc )then
-
        unitn = getavu()
        write(iulog,*) 'Read in betr_inparm  namelist'
        call opnfil (NLFilename, unitn, 'F')
@@ -95,6 +94,14 @@ contains
     call shr_mpi_bcast(reaction_on, mpicom)
     call shr_mpi_bcast(ebullition_on, mpicom)
 
+    if(masterproc)then
+      write(iulog,*)'&betr_parameters'
+      write(iulog,*)'reaction_method=',trim(reaction_method)
+      write(iulog,*)'advection_on   =',advection_on
+      write(iulog,*)'diffusion_on   =',diffusion_on
+      write(iulog,*)'reaction_on    =',reaction_on
+      write(iulog,*)'ebullition_on  =',ebullition_on
+    endif
     write(betr_namelist_buffer,*) '&betr_parameters'//new_line('A'), &
       ' reaction_method='//quote//trim(reaction_method)//quote//new_line('A'), &
       ' esm_on=',trim(log2str(esm_on)),new_line('A'),&

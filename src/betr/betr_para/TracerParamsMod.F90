@@ -622,7 +622,7 @@ contains
    type(betr_status_type)           , intent(out)   :: betr_status
    !local variables
    integer            :: j, n, k, fc, c , trcid  ! indices
-   real(r8) :: Kd, KL, xs, Xsat
+   real(r8) :: Kd, KL, xs, Xsat, scal
    real(r8), parameter :: tiny_val = 1.e-12_r8
    character(len=255) :: subname = 'calc_dual_phase_convert_coeff'
 
@@ -643,6 +643,8 @@ contains
     air_vol                    => biophysforc%air_vol_col                      , & !Input: [real(r8)(:,:)], air vol
     watsat                     => biophysforc%watsat_col                       , & !Input: [real(r8)(:,:)]
     isoilorder                 => biophysforc%isoilorder                       , & !Input: [integer(:)]
+    soil_pH                    => biophysforc%soil_pH                          , & !Input:
+    t_soisno                   => biophysforc%t_soisno_col                     , & !Input:
     tracer_conc_mobile         =>  tracerstate_vars%tracer_conc_mobile_col     , & !Input
     bunsencef_col              => tracercoeff_vars%bunsencef_col               , & !Input: [real(r8)(:,:)], bunsen coeff
     aqu2bulkcef_mobile         => tracercoeff_vars%aqu2bulkcef_mobile_col      , & !Output:[real(r8)(:,:)], phase conversion coeff
@@ -673,6 +675,43 @@ contains
           endif
         enddo
       enddo
+      if(is_adsorb(trcid))then
+        if(adsorb_isotherm(trcid)==sorp_isotherm_linear)then
+          do n = lbj, ubj
+            do fc = 1, numf
+              c = filter(fc)
+              if(n>=jtops(c))then
+                scal = get_equilibrium_scal(t_soisno(c,n), soil_pH(c,n), tracerfamilyname(trcid),betrtracer_vars)
+                Kd=get_lnsorb_Kd(tracerfamilyname(j))
+                if(scal/=1._r8)then
+                 !Because bunsen = bunsen0*scal
+                 !
+                  Kd = (scal-1._r8)/(1._r8+scal)*Kd
+                endif
+                aqu2bulkcef_mobile(c,n,j) = air_vol(c,n)/bunsencef_col(c,n,k) + (1._r8 +  Kd)*h2osoi_liqvol(c,n)
+              endif
+            enddo
+          enddo
+        elseif(adsorb_isotherm(trcid)==sorp_isotherm_langmuir)then
+          call get_lgsorb_KL_Xsat(tracerfamilyname(j), isoilorder(c), KL, Xsat)
+          do n = lbj, ubj
+            do fc = 1, numf
+              c = filter(fc)
+              if(n>=jtops(c))then
+                xs = Xsat/watsat(c,j) * h2osoi_liqvol(c,n)
+                if(scal/=1._r8)then
+                  KL=KL*scal/(scal-1._r8) * (air_vol(c,n)/bunsencef_col(c,n,k)+h2osoi_liqvol(c,n))
+                else
+                  KL=KL * (air_vol(c,n)/bunsencef_col(c,n,k)+h2osoi_liqvol(c,n))
+                endif
+                Kd = xs/(KL +tracer_conc_mobile(c,n,trcid))
+                aqu2bulkcef_mobile(c,n,j) = (air_vol(c,n)/bunsencef_col(c,n,k)+h2osoi_liqvol(c,n)) * (1._r8+Kd)
+                gas2bulkcef_mobile(c,n,k) = aqu2bulkcef_mobile(c,n,j)*bunsencef_col(c,n,k)
+              endif
+            enddo
+          enddo
+        endif
+      endif
     else
       !when linear adsorption is used for some adsorptive aqueous tracers, the aqu2bulkcef will be the retardation factor
       !for the moment, it is set to one for all non-volatile tracers
@@ -697,12 +736,12 @@ contains
             enddo
           enddo
         elseif(adsorb_isotherm(trcid)==sorp_isotherm_langmuir)then
+          !the adsorption parameter should be a function of soil type, or soil order
+          call get_lgsorb_KL_Xsat(tracerfamilyname(j), isoilorder(c), KL, Xsat)
           do n = lbj, ubj
             do fc = 1, numf
               c = filter(fc)
               if(n>=jtops(c))then
-                !the adsorption parameter should be a function of soil type, or soil order
-                call get_lgsorb_KL_Xsat(tracerfamilyname(j), isoilorder(c), KL, Xsat)
                 KL= h2osoi_liqvol(c,n) * KL
                 xs = Xsat/watsat(c,j) * h2osoi_liqvol(c,n)
                 Kd = xs/(KL + tracer_conc_mobile(c,n,trcid))

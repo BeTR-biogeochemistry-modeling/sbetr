@@ -37,13 +37,16 @@ module BGCReactionsMod
      procedure(initCold_interface)                        , deferred :: initCold
 
      !send back soil state flux variables to other parts of lsm
-     procedure(lsm_betr_flux_state_receive_interface)     , deferred :: lsm_betr_flux_state_receive
+     procedure(retrieve_biogeoflux_interface)     , deferred :: retrieve_biogeoflux
 
      procedure(set_kinetics_par_interface)                , deferred :: set_kinetics_par
 
      procedure(retrieve_lnd2atm_interface)                , deferred :: retrieve_lnd2atm
 
      procedure(retrieve_biostates_interface)              , deferred :: retrieve_biostates
+
+     procedure(debug_info_interface)                      , deferred :: debug_info
+
   end type bgc_reaction_type
 
   abstract interface
@@ -256,27 +259,44 @@ module BGCReactionsMod
      end subroutine InitCold_interface
 
      !-------------------------------------------------------------------------------
-     subroutine lsm_betr_flux_state_receive_interface(this, bounds,num_soilc, filter_soilc, &
-          tracerstate_vars, tracerflux_vars,  betrtracer_vars)
+     subroutine retrieve_biogeoflux_interface(this, num_soilc, filter_soilc, tracerflux_vars, &
+     betrtracer_vars, biogeo_flux)
 
-       ! !DESCRIPTION:
-       ! template for lsm_betr_flux_state_receive
-       ! !USES:
-       use BeTR_decompMod           , only : betr_bounds_type
-       use tracerfluxType           , only : tracerflux_type
-       use tracerstatetype          , only : tracerstate_type
-       use BeTRTracerType           , only : BeTRTracer_Type
-       ! !ARGUMENTS:
-       import :: bgc_reaction_type
-       class(bgc_reaction_type)   , intent(inout) :: this                  !
-       type(betr_bounds_type)     , intent(in) :: bounds                ! bounds
-       integer                    , intent(in) :: num_soilc
-       integer                    , intent(in) :: filter_soilc(:)
-       type(betrtracer_type)      , intent(in) :: betrtracer_vars       ! betr configuration information
-       type(tracerstate_type)     , intent(in) :: tracerstate_vars      !
-       type(tracerflux_type)      , intent(in) :: tracerflux_vars       !
+     use tracerfluxType           , only : tracerflux_type
+     use BeTR_decompMod           , only : betr_bounds_type
+     use BeTRTracerType           , only : BeTRTracer_Type
+     use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
+     ! !ARGUMENTS:
+     import :: bgc_reaction_type
+     class(bgc_reaction_type)   , intent(inout) :: this                  !
+     integer                          , intent(in)    :: num_soilc                   ! number of columns in column filter
+     integer                          , intent(in)    :: filter_soilc(:)             ! column filter
+     type(betrtracer_type)            , intent(in)    :: betrtracer_vars             ! betr configuration information
+     type(tracerflux_type)            , intent(in)    :: tracerflux_vars
+     type(betr_biogeo_flux_type)      , intent(inout) :: biogeo_flux
 
-     end subroutine lsm_betr_flux_state_receive_interface
+
+     end subroutine retrieve_biogeoflux_interface
+
+     !-------------------------------------------------------------------------------
+     subroutine debug_info_interface(this, bounds, num_soilc, filter_soilc, dzsoi, betrtracer_vars, tracerstate_vars, header)
+
+     use BeTRTracerType           , only : BeTRTracer_Type
+     use tracerstatetype          , only : tracerstate_type
+     use BeTR_decompMod           , only : betr_bounds_type
+     use bshr_kind_mod            , only : r8 => shr_kind_r8
+     ! !ARGUMENTS:
+     import :: bgc_reaction_type
+     class(bgc_reaction_type)   , intent(inout) :: this                  !
+     type(betr_bounds_type)               , intent(in) :: bounds                      ! bounds
+     integer                              , intent(in) :: num_soilc                   ! number of columns in column filter
+     integer                              , intent(in) :: filter_soilc(:)             ! column filter
+     real(r8)                             , intent(in) :: dzsoi(bounds%begc:bounds%endc,bounds%lbj:bounds%ubj)
+     type(betrtracer_type)                , intent(in) :: betrtracer_vars             ! betr configuration information
+     type(tracerstate_type)               , intent(in) :: tracerstate_vars
+     character(len=*), intent(in) :: header
+
+     end subroutine debug_info_interface
 
      !-------------------------------------------------------------------------------
      subroutine retrieve_biostates_interface(this, bounds, lbj, ubj, jtops, num_soilc, filter_soilc, &
@@ -295,9 +315,9 @@ module BGCReactionsMod
      type(betr_bounds_type)               , intent(in)  :: bounds                      ! bounds
      integer                              , intent(in) :: lbj, ubj
      integer                              , intent(in) :: jtops(bounds%begc:bounds%endc)
-     integer                              , intent(in)    :: num_soilc                   ! number of columns in column filter
-     integer                              , intent(in)    :: filter_soilc(:)             ! column filter
-     type(betrtracer_type)                , intent(in) :: betrtracer_vars               ! betr configuration information
+     integer                              , intent(in)  :: num_soilc                   ! number of columns in column filter
+     integer                              , intent(in)  :: filter_soilc(:)             ! column filter
+     type(betrtracer_type)                , intent(in)  :: betrtracer_vars               ! betr configuration information
      type(tracerstate_type)               , intent(inout) :: tracerstate_vars
      type(betr_biogeo_state_type)         , intent(inout) :: biogeo_state
 

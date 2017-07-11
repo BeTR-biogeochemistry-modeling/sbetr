@@ -56,7 +56,7 @@ contains
     use betr_ctrl                  , only : iulog  => biulog
     use BetrStatusType             , only : betr_status_type
     use betr_constants             , only : betr_errmsg_len
-    use DIOCBGCReactionsType, only : bgc_reaction_dioc_run_type    
+    use DIOCBGCReactionsType, only : bgc_reaction_dioc_run_type
     implicit none
     ! !ARGUMENTS:
     class(bgc_reaction_type) , allocatable :: bgc_reaction
@@ -128,7 +128,7 @@ contains
   case ("doc_dic")
      yesno = .true.
   case default
-     write(iulog, *)subname //' Warning: unknown default method: '//trim(method)//'. Looking for user defined method.'
+     !write(iulog, *)subname //' Warning: unknown default method: '//trim(method)//'. Looking for user defined method.'
      yesno = .false.
   end select
 

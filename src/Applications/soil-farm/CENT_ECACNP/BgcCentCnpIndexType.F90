@@ -17,6 +17,7 @@ implicit none
 
   type, public :: centurybgc_index_type
      integer           :: nom_pools                              !not include coarse wood debris
+
      integer           :: nom_tot_elms
      integer           :: lit1, lit1_dek_reac
      integer           :: lit2, lit2_dek_reac
@@ -95,7 +96,7 @@ implicit none
      integer, pointer :: lid_plant_minn_no3_pft(:)=> null()
      integer, pointer :: lid_plant_minn_nh4_pft(:)=> null()
      integer, pointer :: lid_plant_minp_pft(:)=> null()
-
+     logical :: debug
      character(len=loc_name_len), allocatable :: varnames(:)
    contains
      procedure, public  :: Init
@@ -213,6 +214,8 @@ implicit none
   call this%InitAllocate()
 
   call this%set_primvar_reac_ids()
+
+  this%debug = .false.
   end subroutine Init
   !-------------------------------------------------------------------------------
 
@@ -237,8 +240,8 @@ implicit none
     ! for the century model, the primary species are seven om pools and nh4, no3 and plant nitrogen
     !
     ! !USES:
-    use MathfuncMod            , only : addone
-    use betr_utils, only : num2str
+    use MathfuncMod   , only : addone, countelm
+    use betr_utils    , only : num2str
     use betr_constants, only : betr_string_length_long
     implicit none
     class(centurybgc_index_type) :: this
@@ -306,11 +309,11 @@ implicit none
     call add_ompool_name(list_name, 'som2', use_c13, use_c14, do_init=.false.)
     this%dom_end=this%dom_beg-1+this%nelms
 
-    this%nom_pools = ((this%litr_end-this%litr_beg+1)+&
-       (this%wood_end-this%wood_beg+1) + &
-       (this%som_end-this%som_beg+1) + &
-       (this%Bm_end-this%Bm_beg+1) + &
-       (this%dom_end-this%dom_beg+1))/this%nelms   !include coarse wood debris
+    this%nom_pools = (countelm(this%litr_beg, this%litr_end)+&
+       countelm(this%wood_beg,this%wood_end) + &
+       countelm(this%som_beg,this%som_end) + &
+       countelm(this%Bm_beg,this%Bm_end) + &
+       countelm(this%dom_beg,this%dom_end))/this%nelms   !include coarse wood debris
 
     itemp               = this%nom_pools*this%nelms
 
@@ -411,6 +414,7 @@ implicit none
        this%lid_n2o_paere  = addone(itemp);  this%lid_n2o_aren_reac = addone(ireac)   !
        call list_insert(list_name, 'n2o_paere')
     endif
+
     if(maxpft>0)then
       allocate(this%lid_plant_minn_no3_pft(maxpft));
       allocate(this%lid_plant_minn_nh4_pft(maxpft));

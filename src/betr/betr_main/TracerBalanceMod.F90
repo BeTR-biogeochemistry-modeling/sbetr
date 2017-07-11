@@ -105,7 +105,7 @@ module TracerBalanceMod
       real(r8) :: err_rel, bal_beg, bal_end, bal_flx
       real(r8), parameter :: err_min = 1.e-8_r8
       real(r8), parameter :: err_min_rel=1.e-3_r8
-      integer    :: lbj, ubj
+      integer    :: lbj, ubj, jl
       character(len=betr_errmsg_len) :: msg, msg1
 
       call betr_status%reset()
@@ -142,6 +142,17 @@ module TracerBalanceMod
               else
                  err_rel = errtracer(c,kk)/max(abs(beg_tracer_molarmass(c,kk)),abs(end_tracer_molarmass(c,kk)))
               endif
+              if(kk == betrtracer_vars%id_trc_no3x .and. .false.)then
+                  write(*,*)'err=',errtracer(c,kk), ' col=',c
+                  write(*,*)'nstep=', betr_time%get_nstep()
+                  write(*,*)'netpro=',tracer_flx_netpro(c,kk)*natomw
+                  write(*,*)'netphyloss=',tracer_flx_netphyloss(c,kk)*natomw
+                  write(*,*)'begm=',beg_tracer_molarmass(c,kk)*natomw
+                  write(*,*)'endm=',end_tracer_molarmass(c,kk)*natomw
+                  call tracerflux_vars%flux_display(c,kk,betrtracer_vars, msg1)
+                  write(*,*)trim(msg1)
+
+               endif
               if(abs(err_rel)>err_min_rel .and. do_betr_output)then
                  write(msg,*)'error exceeds the tolerance for tracer '//tracernames(kk), &
                       new_line('A'),'err=',errtracer(c,kk), ' col=',c, &
@@ -216,12 +227,14 @@ module TracerBalanceMod
               tracer_molarmass_col(c,jj) = &
                  tracerstate_vars%int_mass_mobile_col(1,nlevtrc_soil,c,jj,dz(c,1:nlevtrc_soil),betr_status)
               if(betr_status%check_status())return
+
               if(is_adsorb(jj))then
                  tracer_molarmass_col(c,jj) = tracer_molarmass_col(c,jj) + &
                       tracerstate_vars%int_mass_adsorb_col(1,nlevtrc_soil,c,adsorbid(jj),&
                       dz(c,1:nlevtrc_soil),betr_status)
                  if(betr_status%check_status())return
               endif
+
               if(is_frozen(jj))then
                  tracer_molarmass_col(c,jj) = tracer_molarmass_col(c,jj) + &
                       tracerstate_vars%int_mass_frozen_col(1,nlevtrc_soil,c,&

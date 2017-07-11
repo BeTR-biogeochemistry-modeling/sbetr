@@ -163,7 +163,7 @@ contains
     type(bounds_type)                        , intent(in)    :: bounds
     character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
     type(waterstate_type)                    , intent(inout) :: waterstate
-    logical,                        optional , intent(in)    :: masterproc 
+    logical,                        optional , intent(in)    :: masterproc
     character(len=*), parameter :: subname = 'BeTRSimulationInit'
 
     call endrun(msg="ERROR "//subname//" unimplemented. "//errmsg(mod_filename, __LINE__))
@@ -888,7 +888,7 @@ contains
   type(soilstate_type)        , optional, intent(in) :: soilstate_vars
 
   !TEMPORARY VARIABLES
-  integer :: p, pi, cc, c
+  integer :: p, pi, cc, c, l, pp
   integer :: npft_loc
   cc = 1
   do c = bounds%begc, bounds%endc
@@ -902,19 +902,29 @@ contains
           this%biophys_forc(c)%bgnpp_patch(pi)  = 0._r8
         enddo
       else
-        do pi = 1, betr_maxpatch_pft
-          this%biophys_forc(c)%annsum_npp_patch(pi) = 0._r8
-          this%biophys_forc(c)%agnpp_patch(pi) = 0._r8
-          this%biophys_forc(c)%bgnpp_patch(pi)  = 0._r8
-          if (pi <= col%npfts(c)) then
-            p = col%pfti(c) + pi - 1
-            if (pft%active(p)) then
-              this%biophys_forc(c)%annsum_npp_patch(pi) = carbonflux_vars%annsum_npp_patch(p)
-              this%biophys_forc(c)%agnpp_patch(pi)      = carbonflux_vars%agnpp_patch(p)
-              this%biophys_forc(c)%bgnpp_patch(pi)      = carbonflux_vars%bgnpp_patch(p)
+        if(use_cn)then
+          pp = 0
+          do pi = 1, betr_maxpatch_pft
+            if (pi <= col%npfts(c)) then
+              p = col%pfti(c) + pi - 1
+              if (pft%active(p)) then
+                pp = pp + 1
+                this%biophys_forc(c)%annsum_npp_patch(pp) = carbonflux_vars%annsum_npp_patch(p)
+                this%biophys_forc(c)%agnpp_patch(pp)      = carbonflux_vars%agnpp_patch(p)
+                this%biophys_forc(c)%bgnpp_patch(pp)      = carbonflux_vars%bgnpp_patch(p)
+              endif
             endif
+          enddo
+        else
+          npft_loc = ubound(carbonflux_vars%annsum_npp_patch,1)-lbound(carbonflux_vars%annsum_npp_patch,1)+1
+          if(col%pfti(c) /= lbound(carbonflux_vars%annsum_npp_patch,1) .and. npft_loc/=col%npfts(c))then
+            do pi = 1, betr_maxpatch_pft
+              this%biophys_forc(c)%annsum_npp_patch(pi) = 0._r8
+              this%biophys_forc(c)%agnpp_patch(pi) = 0._r8
+              this%biophys_forc(c)%bgnpp_patch(pi)  = 0._r8
+            enddo
           endif
-        enddo
+        endif
       endif
     endif
     !assign waterstate
@@ -943,18 +953,18 @@ contains
       this%biophys_forc(c)%qflx_sub_snow_col(cc)        = waterflux_vars%qflx_sub_snow_col(c)
       this%biophys_forc(c)%qflx_h2osfc2topsoi_col(cc)   = waterflux_vars%qflx_h2osfc2topsoi_col(c)
       this%biophys_forc(c)%qflx_snow2topsoi_col(cc)     = waterflux_vars%qflx_snow2topsoi_col(c)
-      this%biophys_forc(c)%qflx_rootsoi_col(cc,lbj:ubj) = waterflux_vars%qflx_rootsoi_col(c,lbj:ubj)
+      this%biophys_forc(c)%qflx_rootsoi_col(cc,lbj:ubj) = waterflux_vars%qflx_rootsoi_col(c,lbj:ubj)*1.e-3_r8
 
       this%biogeo_flux(c)%qflx_adv_col(cc,lbj-1:ubj)    = waterflux_vars%qflx_adv_col(c,lbj-1:ubj)
       this%biogeo_flux(c)%qflx_drain_vr_col(cc,lbj:ubj) = waterflux_vars%qflx_drain_vr_col(c,lbj:ubj)
-
+      pp = 0
       do pi = 1, betr_maxpatch_pft
-       this%biophys_forc(c)%qflx_tran_veg_patch(pi) = 0._r8
        if (pi <= col%npfts(c)) then
          p = col%pfti(c) + pi - 1
          if (pft%active(p)) then
-           this%biophys_forc(c)%qflx_tran_veg_patch(pi)     = waterflux_vars%qflx_tran_veg_patch(p)
-           this%biophys_forc(c)%qflx_rootsoi_patch(pi,lbj:ubj) = waterflux_vars%qflx_rootsoi_patch(p,lbj:ubj)
+           pp = pp + 1
+           this%biophys_forc(c)%qflx_tran_veg_patch(pp)     = waterflux_vars%qflx_tran_veg_patch(p)
+           this%biophys_forc(c)%qflx_rootsoi_frac_patch(pp,lbj:ubj) = waterflux_vars%qflx_rootsoi_frac_patch(p,lbj:ubj)
          endif
        endif
       enddo
@@ -962,12 +972,13 @@ contains
     if(present(temperature_vars))then
       this%biophys_forc(c)%t_soi_10cm(cc)           = temperature_vars%t_soi10cm_col(c)
       this%biophys_forc(c)%t_soisno_col(cc,lbj:ubj) = temperature_vars%t_soisno_col(c,lbj:ubj)
+      pp = 0
       do pi = 1, betr_maxpatch_pft
-        this%biophys_forc(c)%t_veg_patch(pi) = 0._r8
         if (pi <= col%npfts(c)) then
           p = col%pfti(c) + pi - 1
           if (pft%active(p)) then
-           this%biophys_forc(c)%t_veg_patch(pi)         = temperature_vars%t_veg_patch(p)
+            pp = pp + 1
+            this%biophys_forc(c)%t_veg_patch(pp)         = temperature_vars%t_veg_patch(p)
           endif
         endif
       enddo
@@ -985,15 +996,14 @@ contains
     if(present(canopystate_vars))then
       this%biophys_forc(c)%altmax_col(cc)          = canopystate_vars%altmax_col(c)
       this%biophys_forc(c)%altmax_lastyear_col(cc) = canopystate_vars%altmax_lastyear_col(c)
-
+      pp = 0
       do pi = 1, betr_maxpatch_pft
-        this%biophys_forc(c)%lbl_rsc_h2o_patch(pi) = 0._r8
-        this%biophys_forc(c)%elai_patch(pi)        = 0._r8
         if (pi <= col%npfts(c)) then
           p = col%pfti(c) + pi - 1
           if (pft%active(p)) then
-            this%biophys_forc(c)%lbl_rsc_h2o_patch(pi) = canopystate_vars%lbl_rsc_h2o_patch(p)
-            this%biophys_forc(c)%elai_patch(pi)        = canopystate_vars%elai_patch(p)
+            pp = pp + 1
+            this%biophys_forc(c)%lbl_rsc_h2o_patch(pp) = canopystate_vars%lbl_rsc_h2o_patch(p)
+            this%biophys_forc(c)%elai_patch(pp)        = canopystate_vars%elai_patch(p)
           endif
         endif
       enddo
@@ -1011,13 +1021,13 @@ contains
       this%biophys_forc(c)%bd_col(cc,lbj:ubj)           = soilstate_vars%bd_col(c,lbj:ubj)
       this%biophys_forc(c)%watfc_col(cc,lbj:ubj)        = soilstate_vars%watfc_col(c,lbj:ubj)
       this%biophys_forc(c)%sucsat_col(cc,lbj:ubj)       = soilstate_vars%sucsat_col(c,lbj:ubj)
-
+      pp = 0
       do pi = 1, betr_maxpatch_pft
-        this%biophys_forc(c)%rootfr_patch(pi,lbj:ubj) = 0._r8
         if (pi <= col%npfts(c)) then
           p = col%pfti(c) + pi - 1
           if (pft%active(p)) then
-            this%biophys_forc(c)%rootfr_patch(pi,lbj:ubj) = soilstate_vars%rootfr_patch(p,lbj:ubj)
+            pp = pp + 1
+            this%biophys_forc(c)%rootfr_patch(pp,lbj:ubj) = soilstate_vars%rootfr_patch(p,lbj:ubj)
           endif
         endif
       enddo

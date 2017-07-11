@@ -87,6 +87,8 @@ module BetrType
      procedure, public  :: get_restartvar_info
      procedure, public  :: diagnoselnd2atm
      procedure, public  :: retrieve_biostates
+     procedure, public  :: retrieve_biofluxes
+     procedure, public  :: debug_info
   end type betr_type
 
   public :: create_betr_type
@@ -374,6 +376,27 @@ contains
   end subroutine step_without_drainage
 
   !--------------------------------------------------------------------------------
+  subroutine debug_info(this, bounds, col, num_soilc, filter_soilc, header)
+
+  use betr_columnType        , only : betr_column_type
+
+  implicit none
+  ! !ARGUMENTS:
+  class(betr_type)                     , intent(inout) :: this
+  type(bounds_type)                    , intent(in)    :: bounds
+  type(betr_column_type)               , intent(in)    :: col
+  integer                              , intent(in)    :: num_soilc                   ! number of columns in column filter
+  integer                              , intent(in)    :: filter_soilc(:)             ! column filter
+  character(len=*), intent(in) :: header
+
+
+  call this%bgc_reaction%debug_info(bounds, num_soilc, filter_soilc, &
+       col%dz(bounds%begc:bounds%endc, bounds%lbj:bounds%ubj), &
+       this%tracers, this%tracerstates, header)
+
+  end subroutine debug_info
+
+  !--------------------------------------------------------------------------------
   subroutine retrieve_biostates(this, bounds, lbj, ubj,  num_soilc, filter_soilc, jtops, &
     biogeo_state)
 
@@ -391,6 +414,24 @@ contains
      filter_soilc, this%tracers, this%tracerstates, biogeo_state)
 
   end subroutine retrieve_biostates
+
+  !--------------------------------------------------------------------------------
+  subroutine retrieve_biofluxes(this, num_soilc, filter_soilc, &
+    biogeo_flux)
+
+  use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
+  implicit none
+  ! !ARGUMENTS:
+  class(betr_type)                     , intent(inout) :: this
+  integer                              , intent(in)    :: num_soilc                   ! number of columns in column filter
+  integer                              , intent(in)    :: filter_soilc(:)             ! column filter
+  type(betr_biogeo_flux_type)      , intent(inout) :: biogeo_flux
+
+  call this%bgc_reaction%retrieve_biogeoflux(num_soilc, &
+     filter_soilc, this%tracerfluxes, this%tracers, biogeo_flux)
+
+  end subroutine retrieve_biofluxes
+
   !--------------------------------------------------------------------------------
   subroutine step_with_drainage(this, bounds, col, num_soilc, filter_soilc, jtops, &
     biogeo_flux, betr_status)
@@ -1213,6 +1254,7 @@ contains
   asoibgc = .false.
   !if it is a default case, create it
   call create_betr_def_application(bgc_reaction, plant_soilbgc, method, yesno)
+
   if(.not. yesno)then
     call create_betr_usr_application(bgc_reaction, plant_soilbgc, method, bstatus)
   endif
