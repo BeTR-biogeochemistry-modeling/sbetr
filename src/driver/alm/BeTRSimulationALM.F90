@@ -14,7 +14,6 @@ module BeTRSimulationALM
   use decompMod           , only : bounds_type
   use BeTRSimulation      , only : betr_simulation_type
   use BeTR_TimeMod        , only : betr_time_type
-  use EcophysConType      , only : ecophyscon_type
   use tracer_varcon       , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
   use betr_decompMod      , only : betr_bounds_type
   use betr_varcon         , only : betr_maxpatch_pft
@@ -68,13 +67,13 @@ contains
     !
     !USES
     !data types from alm
-    use PatchType       , only : patch_type
+    use VegetationType  , only : vegetation_physical_properties_type
     use pftvarcon       , only : noveg, nc4_grass, nc3_arctic_grass, nc3_nonarctic_grass
     use WaterStateType  , only : waterstate_type
     use landunit_varcon , only : istcrop, istice, istsoil
     use clm_varpar      , only : nlevsno, nlevsoi, nlevtrc_soil
-    use ColumnType      , only : column_type
-    use LandunitType   , only : landunit_type
+    use ColumnType      , only : column_physical_properties_type
+    use LandunitType    , only : landunit_physical_properties_type
     !betr types
     use betr_constants      , only : betr_filename_length
     use betr_constants      , only : betr_namelist_buffer_size
@@ -85,9 +84,9 @@ contains
     implicit none
     class(betr_simulation_alm_type)          , intent(inout) :: this
     type(bounds_type)                        , intent(in)    :: bounds
-    type(landunit_type)                      , intent(in) :: lun
-    type(column_type)                        , intent(in) :: col
-    type(patch_type)                         , intent(in) :: pft
+    type(landunit_physical_properties_type)  , intent(in) :: lun
+    type(column_physical_properties_type)    , intent(in) :: col
+    type(vegetation_physical_properties_type), intent(in) :: pft
     character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
     logical,                      optional   , intent(in) :: masterproc
     type(waterstate_type)                    , intent(inout) :: waterstate
@@ -121,13 +120,13 @@ contains
     !
     !USES
     !data types from alm
-    use PatchType       , only : patch_type
+    use VegetationType  , only : vegetation_physical_properties_type
     use pftvarcon       , only : noveg, nc4_grass, nc3_arctic_grass, nc3_nonarctic_grass
     use WaterStateType  , only : waterstate_type
     use landunit_varcon , only : istcrop, istice, istsoil
     use clm_varpar      , only : nlevsno, nlevsoi, nlevtrc_soil
-    use ColumnType      , only : column_type
-    use LandunitType   , only : landunit_type
+    use ColumnType      , only : column_physical_properties_type
+    use LandunitType    , only : landunit_physical_properties_type
     !betr types
     use betr_constants      , only : betr_filename_length
     use betr_constants      , only : betr_namelist_buffer_size
@@ -140,9 +139,9 @@ contains
     character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
     character(len=betr_filename_length)      , intent(in)    :: base_filename
     type(bounds_type)                        , intent(in)    :: bounds
-    type(landunit_type)                      , intent(in) :: lun
-    type(column_type)                        , intent(in) :: col
-    type(patch_type)                         , intent(in) :: pft
+    type(landunit_physical_properties_type)  , intent(in)    :: lun
+    type(column_physical_properties_type)    , intent(in)    :: col
+    type(vegetation_physical_properties_type), intent(in)    :: pft
     type(waterstate_type)                    , intent(inout) :: waterstate
 
     !grid size
@@ -169,17 +168,17 @@ contains
    !march one time step without doing drainage
    !
    !USES
-    use ColumnType        , only : column_type
-    use PatchType         , only : patch_type
-    use LandunitType      , only : landunit_type
+    use ColumnType        , only : column_physical_properties_type
+    use VegetationType    , only : vegetation_physical_properties_type
+    use LandunitType      , only : landunit_physical_properties_type
     use clm_varpar        , only : nlevsno, nlevsoi, nlevtrc_soil
     use tracer_varcon     , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
     implicit none
     ! !ARGUMENTS :
-    class(betr_simulation_alm_type) , intent(inout) :: this
-    type(bounds_type)               , intent(in)    :: bounds ! bounds
-    type(column_type)               , intent(in)    :: col ! column type
-    type(patch_type)                , intent(in)    :: pft
+    class(betr_simulation_alm_type)          , intent(inout) :: this
+    type(bounds_type)                        , intent(in)    :: bounds ! bounds
+    type(column_physical_properties_type)    , intent(in)    :: col ! column type
+    type(vegetation_physical_properties_type), intent(in)    :: pft
     !TEMPORARY VARIABLES
     type(betr_bounds_type)     :: betr_bounds
     integer :: c, c_l, begc_l, endc_l
@@ -250,12 +249,12 @@ contains
   !
   !DESCRIPTION
   !activate columuns that are active in alm
-  use ColumnType     , only : column_type
+  use ColumnType     , only : column_physical_properties_type
   implicit none
   ! !ARGUMENTS:
   class(betr_simulation_alm_type) , intent(inout) :: this
   type(bounds_type)               , intent(in)    :: bounds
-  type(column_type)               , intent(in)    :: col ! column type
+  type(column_physical_properties_type)               , intent(in)    :: col ! column type
 
   integer :: c
   do c = bounds%begc, bounds%endc
@@ -270,7 +269,7 @@ contains
    !interface for using diagnose land fluxes to atm and river copmonents
    !
    !USES
-    use ColumnType    , only : column_type
+    use ColumnType    , only : column_physical_properties_type
     use MathfuncMod   , only : safe_div
     use lnd2atmType    , only : lnd2atm_type
     use clm_varpar     , only : nlevsno, nlevsoi, nlevtrc_soil
@@ -279,7 +278,7 @@ contains
     !ARGUMENTS
     class(betr_simulation_alm_type) , intent(inout) :: this
     type(bounds_type)           , intent(in)    :: bounds
-    type(column_type)           , intent(in)    :: col ! column type
+    type(column_physical_properties_type)           , intent(in)    :: col ! column type
 
     !temporary variables
     type(betr_bounds_type) :: betr_bounds
@@ -332,9 +331,9 @@ contains
    ! march one step with drainage
    !
    !USES
-    use ColumnType     , only : column_type
+    use ColumnType     , only : column_physical_properties_type
     use subgridAveMod  , only : c2g
-    use LandunitType   , only : landunit_type
+    use LandunitType   , only : landunit_physical_properties_type
     use clm_varpar     , only : nlevsno, nlevsoi, nlevtrc_soil
     use lnd2atmType    , only : lnd2atm_type
     use betr_decompMod , only : betr_bounds_type
@@ -344,7 +343,7 @@ contains
     ! !ARGUMENTS:
     class(betr_simulation_alm_type) , intent(inout) :: this
     type(bounds_type)               , intent(in)    :: bounds
-    type(column_type)               , intent(in)    :: col ! column type
+    type(column_physical_properties_type)               , intent(in)    :: col ! column type
     type(lnd2atm_type)              , intent(inout) :: lnd2atm_vars
 
     !temporary variables
@@ -426,13 +425,13 @@ contains
   use PlantMicKineticsMod, only : PlantMicKinetics_type
   use mathfuncMod, only : apvb
   use tracer_varcon, only : use_c13_betr, use_c14_betr
-  use ColumnType         , only : column_type
-  use PatchType          , only : patch_type
+  use ColumnType    , only : column_physical_properties_type
+  use VegetationType, only : vegetation_physical_properties_type
   implicit none
   class(betr_simulation_alm_type), intent(inout)  :: this
   type(bounds_type) , intent(in)  :: bounds
-  type(column_type) , intent(in)  :: col ! column type
-  type(patch_type)  , intent(in)  :: pft ! pft type
+  type(column_physical_properties_type) , intent(in)  :: col ! column type
+  type(vegetation_physical_properties_type)  , intent(in)  :: pft ! pft type
   integer           , intent(in)  :: num_soilc
   integer           , intent(in)  :: filter_soilc(:)
   type(cnstate_type), intent(in)  :: cnstate_vars
@@ -752,8 +751,8 @@ contains
    n14state_vars, n14flux_vars, p31state_vars, p31flux_vars)
   !this returns the flux back to ALM after doing soil BGC
   !this specifically returns plant nutrient yield
-  use PatchType         , only : patch_type
-  use ColumnType        , only : column_type
+  use VegetationType         , only : vegetation_physical_properties_type
+  use ColumnType        , only : column_physical_properties_type
   use CNCarbonFluxType    , only : carbonflux_type
   use CNCarbonStateType   , only : carbonstate_type
   use CNNitrogenFluxType  , only : nitrogenflux_type
@@ -767,8 +766,8 @@ contains
   implicit none
   class(betr_simulation_alm_type), intent(inout)  :: this
   type(bounds_type) , intent(in)  :: bounds
-  type(patch_type)            , intent(in) :: pft
-  type(column_type)           , intent(in)    :: col ! column type
+  type(vegetation_physical_properties_type)            , intent(in) :: pft
+  type(column_physical_properties_type)           , intent(in)    :: col ! column type
   integer           , intent(in)  :: num_soilc
   integer           , intent(in)  :: filter_soilc(:)
   type(carbonstate_type), intent(inout) :: c12state_vars
@@ -940,7 +939,7 @@ contains
     ! Calculate tracer flux from dew or/and sublimation
     !External interface called by ALM
 
-    use ColumnType      , only : column_type
+    use ColumnType      , only : column_physical_properties_type
     use WaterfluxType   , only : waterflux_type
     use WaterstateType  , only : waterstate_type
     use clm_varcon      , only : denh2o,spval
@@ -948,11 +947,11 @@ contains
     use betr_decompMod  , only : betr_bounds_type
     implicit none
     !ARGUMENTS
-    class(betr_simulation_alm_type) , intent(inout) :: this
-    type(bounds_type)               , intent(in)    :: bounds
-    type(column_type)               , intent(in)    :: col ! column type
-    integer                         , intent(in)    :: num_hydrologyc ! number of column soil points in column filter_soilc
-    integer                         , intent(in)    :: filter_soilc_hydrologyc(:) ! column filter_soilc for soil points
+    class(betr_simulation_alm_type)      , intent(inout) :: this
+    type(bounds_type)                    , intent(in)    :: bounds
+    type(column_physical_properties_type), intent(in)    :: col ! column type
+    integer                              , intent(in)    :: num_hydrologyc ! number of column soil points in column filter_soilc
+    integer                              , intent(in)    :: filter_soilc_hydrologyc(:) ! column filter_soilc for soil points
 
     !temporary variables
     type(betr_bounds_type)     :: betr_bounds
@@ -1059,8 +1058,8 @@ contains
   !DESCRIPTION
   !pass in biogeophysical variables for running betr
   !USES
-  use PatchType         , only : patch_type
-  use ColumnType        , only : column_type
+  use VegetationType    , only : vegetation_physical_properties_type
+  use ColumnType        , only : column_physical_properties_type
   use SoilStateType     , only : soilstate_type
   use WaterStateType    , only : Waterstate_Type
   use TemperatureType   , only : temperature_type
@@ -1077,21 +1076,21 @@ contains
   use tracer_varcon     , only : catomw
   implicit none
   !ARGUMENTS
-  class(betr_simulation_alm_type) , intent(inout)        :: this
-  type(bounds_type)               , intent(in)           :: bounds
-  type(patch_type)            , intent(in) :: pft
-  type(column_type)           , intent(in)    :: col ! column type
-  type(cnstate_type)          , optional, intent(in) :: cnstate_vars
-  type(carbonflux_type)       , optional, intent(in) :: carbonflux_vars
-  type(Waterstate_Type)       , optional, intent(in) :: Waterstate_vars
-  type(waterflux_type)        , optional, intent(in) :: waterflux_vars
-  type(temperature_type)      , optional, intent(in) :: temperature_vars
-  type(soilhydrology_type)    , optional, intent(in) :: soilhydrology_vars
-  type(atm2lnd_type)          , optional, intent(in) :: atm2lnd_vars
-  type(canopystate_type)      , optional, intent(in) :: canopystate_vars
-  type(chemstate_type)        , optional, intent(in) :: chemstate_vars
-  type(soilstate_type)        , optional, intent(in) :: soilstate_vars
-  type(carbonstate_type)      , optional, intent(in) :: carbonstate_vars
+  class(betr_simulation_alm_type)          , intent(inout)        :: this
+  type(bounds_type)                        , intent(in)           :: bounds
+  type(vegetation_physical_properties_type), intent(in)           :: pft
+  type(column_physical_properties_type)    , intent(in)           :: col ! column type
+  type(cnstate_type)                       , optional, intent(in) :: cnstate_vars
+  type(carbonflux_type)                    , optional, intent(in) :: carbonflux_vars
+  type(Waterstate_Type)                    , optional, intent(in) :: Waterstate_vars
+  type(waterflux_type)                     , optional, intent(in) :: waterflux_vars
+  type(temperature_type)                   , optional, intent(in) :: temperature_vars
+  type(soilhydrology_type)                 , optional, intent(in) :: soilhydrology_vars
+  type(atm2lnd_type)                       , optional, intent(in) :: atm2lnd_vars
+  type(canopystate_type)                   , optional, intent(in) :: canopystate_vars
+  type(chemstate_type)                     , optional, intent(in) :: chemstate_vars
+  type(soilstate_type)                     , optional, intent(in) :: soilstate_vars
+  type(carbonstate_type)                   , optional, intent(in) :: carbonstate_vars
 
 
   integer :: p, pi, c, j, c_l
@@ -1149,15 +1148,15 @@ contains
   !DESCRIPTION
   !set kinetic parameters for column c
   use PlantMicKineticsMod, only : PlantMicKinetics_type
-  use ColumnType         , only : column_type
-  use PatchType          , only : patch_type
+  use ColumnType         , only : column_physical_properties_type
+  use VegetationType     , only : vegetation_physical_properties_type
   use ALMBeTRNLMod    , only : reaction_method
   use pftvarcon             , only : noveg
   implicit none
   class(betr_simulation_alm_type), intent(inout)  :: this
   type(betr_bounds_type), intent(in) :: betr_bounds
-  type(column_type)     , intent(in)    :: col ! column type
-  type(patch_type)      , intent(in) :: pft
+  type(column_physical_properties_type)     , intent(in)    :: col ! column type
+  type(vegetation_physical_properties_type) , intent(in) :: pft
   integer, intent(in) :: num_soilc
   integer, intent(in) :: filter_soilc(:)
   type(PlantMicKinetics_type), intent(in) :: PlantMicKinetics_vars
