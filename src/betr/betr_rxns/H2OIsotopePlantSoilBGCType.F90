@@ -1,6 +1,6 @@
 module H2OIsotopePlantSoilBGCType
 
-
+#include "bshr_assert.h"
   use PlantSoilBGCMod , only : plant_soilbgc_type
 
   implicit none
@@ -89,13 +89,16 @@ module H2OIsotopePlantSoilBGCType
   integer                              , intent(in) :: numf
   integer                              , intent(in) :: filter(:)
   real(r8)                             , intent(in) :: dtime
-  real(r8)                             , intent(in) :: dz(bounds%begc:bounds%endc,1:ubj)
+  real(r8)                             , intent(in) :: dz(bounds%begc: ,1: )
   type(BeTRtracer_type )               , intent(in) :: betrtracer_vars
   type(tracerflux_type)                , intent(in) :: tracerflux_vars
   type(betr_biogeo_flux_type)          , intent(inout) :: biogeo_flux
   type(betr_status_type)               , intent(out)   :: betr_status
 
   call betr_status%reset()
+  SHR_ASSERT_ALL(ubound(dz)==(/bounds%endc,ubj/), errMsg(filename,__LINE__), betr_status)
+  if(betr_status%check_status())return
+
   ! remove compiler warnings for unused dummy args
   if (this%dummy_compiler_warning)                       continue
   if (bounds%begc > 0)                                   continue

@@ -74,7 +74,7 @@ end type plant_soilbgc_type
   type(betr_patch_type)     , intent(in) :: pft
   integer                   , intent(in) :: filter(:)
   real(r8)                  , intent(in) :: dtime
-  real(r8)                  , intent(in) :: dz(bounds%begc:bounds%endc,1:ubj)
+  real(r8)                  , intent(in) :: dz(bounds%begc: ,1: )
   type(BeTRtracer_type )    , intent(in) :: betrtracer_vars
   type(tracerflux_type)     , intent(in) :: tracerflux_vars
   type(betr_biogeo_flux_type)      , intent(inout) :: biogeo_flux
