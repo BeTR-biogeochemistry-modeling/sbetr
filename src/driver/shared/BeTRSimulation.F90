@@ -14,6 +14,10 @@ module BeTRSimulation
   use tracer_varcon  , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
   use BeTR_decompMod , only : betr_bounds_type
   use decompMod      , only : bounds_type
+  use ColumnType     , only : column_type => column_physical_properties_type
+!  use PatchType      , only : patch_type  => vegetation_physical_properties_type
+  use VegetationType , only : patch_type  => vegetation_physical_properties_type
+  use LandunitType   , only : landunit_type => landunit_physical_properties_type
 
   ! !USES:
   use BetrType                 , only : betr_type, create_betr_type
@@ -151,9 +155,6 @@ contains
     !USES
     use WaterstateType , only : waterstate_type
     use betr_constants , only : betr_namelist_buffer_size, betr_filename_length
-    use ColumnType      , only : column_type
-    use PatchType      , only : patch_type
-    use LandunitType   , only : landunit_type
     implicit none
 
     class(betr_simulation_type)              , intent(inout) :: this
@@ -184,9 +185,6 @@ contains
     !USES
     use WaterstateType , only : waterstate_type
     use betr_constants , only : betr_namelist_buffer_size, betr_filename_length
-    use ColumnType      , only : column_type
-    use PatchType      , only : patch_type
-    use LandunitType   , only : landunit_type
     implicit none
 
     class(betr_simulation_type)              , intent(inout) :: this
@@ -251,10 +249,7 @@ contains
     use betr_constants , only : betr_namelist_buffer_size
     use betr_constants , only : betr_filename_length
     use betr_varcon    , only : betr_maxpatch_pft
-    use LandunitType   , only : landunit_type
     use landunit_varcon, only : istsoil, istcrop
-    use ColumnType     , only : column_type
-    use PatchType      , only : patch_type
     implicit none
     !ARGUMENTS
     class(betr_simulation_type)              , intent(inout) :: this
@@ -473,13 +468,11 @@ contains
     use TemperatureType   , only : temperature_type
     use ChemStateType     , only : chemstate_type
     use WaterfluxType     , only : waterflux_type
-    use ColumnType        , only : column_type
     use atm2lndType       , only : atm2lnd_type
     use SoilHydrologyType , only : soilhydrology_type
     use CNCarbonFluxType  , only : carbonflux_type
     use CanopyStateType   , only : canopystate_type
     use BeTR_TimeMod      , only : betr_time_type
-    use PatchType         , only : patch_type
     use pftvarcon         , only : crop
     implicit none
   !ARGUMENTS
@@ -502,7 +495,6 @@ contains
    !interface for using diagnose land fluxes to atm and river copmonents
    !
    !USES
-    use ColumnType    , only : column_type
     use MathfuncMod   , only : safe_div
     use lnd2atmType    , only : lnd2atm_type
     implicit none
@@ -525,7 +517,6 @@ contains
    !interface for using StepWithDrainage
    !
    !USES
-    use ColumnType    , only : column_type
     use MathfuncMod   , only : safe_div
     implicit none
     !ARGUMENTS
@@ -867,8 +858,6 @@ contains
   use SoilHydrologyType , only : soilhydrology_type
   use CNCarbonFluxType  , only : carbonflux_type
   use CanopyStateType   , only : canopystate_type
-  use ColumnType        , only : column_type
-  use PatchType         , only : patch_type
   use MathfuncMod       , only : isnan => bisnan
   implicit none
   !ARGUMENTS
@@ -1108,9 +1097,7 @@ contains
   ! aqueous tracer partition based on freeze-thaw
   !
   ! USES
-  use ColumnType            , only : column_type
   use WaterStateType        , only : waterstate_type
-  use LandunitType          , only : landunit_type
   implicit none
   !
   ! Arguments
@@ -1893,8 +1880,6 @@ contains
   ! set up columns
   !USES
   use decompMod             , only : bounds_type
-  use ColumnType            , only : column_type
-  use PatchType             , only : patch_type
   use pftvarcon             , only : noveg, crop
   use tracer_varcon         , only : betr_nlevsoi
   !ARGUMENTS

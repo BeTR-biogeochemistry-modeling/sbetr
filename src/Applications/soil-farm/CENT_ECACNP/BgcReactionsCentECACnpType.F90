@@ -46,6 +46,7 @@ module BgcReactionsCentECACnpType
   use BiogeoConType         , only : BiogeoCon_type
   use BgcCentCnpIndexType   , only : centurybgc_index_type
   use BiogeoConType         , only : bgc_con_eca
+  use BetrStatusType        , only : betr_status_type
   implicit none
 
   save
@@ -979,7 +980,7 @@ contains
     if(betr_status%check_status())return
 
     if(betrtracer_vars%debug)call this%debug_info(bounds, num_soilc, filter_soilc, col%dz(bounds%begc:bounds%endc,bounds%lbj:bounds%ubj),&
-        betrtracer_vars, tracerstate_vars,  'before bgcreact')
+        betrtracer_vars, tracerstate_vars,  'before bgcreact', betr_status)
 
     nstates = this%centurybgc_index%nstvars
     allocate(ystates0(nstates))
@@ -987,7 +988,7 @@ contains
 
     !pass in fluxes and state varaibles into the 1D soil bgc model
     call this%set_century_forc(bounds, col, lbj, ubj, jtops, num_soilc, filter_soilc, &
-        biophysforc, plant_soilbgc, betrtracer_vars, tracercoeff_vars, tracerstate_vars)
+        biophysforc, plant_soilbgc, betrtracer_vars, tracercoeff_vars, tracerstate_vars,betr_status)
 
     select type(plant_soilbgc)
     type is(plant_soilbgc_cnp_type)
@@ -1037,7 +1038,7 @@ contains
         write(*,*)'sminp act plant uptake',plant_soilbgc%plant_minp_active_yield_flx_col(bounds%begc:bounds%endc)
       end select
       call this%debug_info(bounds, num_soilc, filter_soilc, col%dz(bounds%begc:bounds%endc,bounds%lbj:bounds%ubj),&
-        betrtracer_vars, tracerstate_vars,  'after bgcreact')
+        betrtracer_vars, tracerstate_vars,  'after bgcreact',betr_status)
     endif
   end subroutine calc_bgc_reaction
 
@@ -1343,7 +1344,7 @@ contains
 
   !------------------------------------------------------------------------------
   subroutine set_century_forc(this, bounds, col, lbj, ubj, jtops, num_soilc, filter_soilc, &
-      biophysforc, plant_soilbgc, betrtracer_vars, tracercoeff_vars, tracerstate_vars)
+      biophysforc, plant_soilbgc, betrtracer_vars, tracercoeff_vars, tracerstate_vars, betr_status)
   !DESCRIPTION
   !set up forcing for running bgc
   use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
@@ -1360,7 +1361,7 @@ contains
   class(bgc_reaction_CENTURY_ECACNP_type) , intent(inout)    :: this
   type(bounds_type)                    , intent(in) :: bounds                         ! bounds
   type(betr_column_type)               , intent(in) :: col
-  integer                              , intent(in) :: jtops(bounds%begc:bounds%endc) ! top index of each column
+  integer                              , intent(in) :: jtops(bounds%begc: ) ! top index of each column
   integer                              , intent(in) :: lbj, ubj                       ! lower and upper bounds, make sure they are > 0
   integer                              , intent(in) :: num_soilc       ! number of columns in column filter
   integer                              , intent(in) :: filter_soilc(:) ! column filter
@@ -1369,6 +1370,7 @@ contains
   type(betrtracer_type)                , intent(in) :: betrtracer_vars               ! betr configuration information
   type(tracerstate_type)               , intent(in) :: tracerstate_vars
   type(tracercoeff_type)               , intent(in) :: tracercoeff_vars
+  type(betr_status_type)               , intent(out)   :: betr_status
 
   integer :: j, fc, c
   integer :: k1, k2
@@ -1384,6 +1386,9 @@ contains
      Bm_beg  =>  this%centurybgc_index%Bm_beg     , &
      Bm_end  =>  this%centurybgc_index%Bm_end       &
   )
+  call betr_status%reset()
+  SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__),betr_status)
+  if(betr_status%check_status())return
   do j = lbj, ubj
     do fc = 1, num_soilc
       c = filter_soilc(fc)
@@ -1915,7 +1920,7 @@ contains
    end subroutine retrieve_lnd2atm
 
    !-------------------------------------------------------------------------------
-   subroutine debug_info(this, bounds, num_soilc, filter_soilc, dzsoi, betrtracer_vars, tracerstate_vars,  header)
+   subroutine debug_info(this, bounds, num_soilc, filter_soilc, dzsoi, betrtracer_vars, tracerstate_vars,  header, betr_status)
 
    use BeTR_decompMod           , only : betr_bounds_type
    use BeTRTracerType           , only : BeTRTracer_Type
@@ -1928,13 +1933,18 @@ contains
    type(betr_bounds_type)               , intent(in) :: bounds                      ! bounds
    integer                              , intent(in) :: num_soilc                   ! number of columns in column filter
    integer                              , intent(in) :: filter_soilc(:)             ! column filter
-   real(r8)                             , intent(in) :: dzsoi(bounds%begc:bounds%endc,bounds%lbj:bounds%ubj)
+   real(r8)                             , intent(in) :: dzsoi(bounds%begc: ,bounds%lbj: )
    type(betrtracer_type)                , intent(in) :: betrtracer_vars             ! betr configuration information
    type(tracerstate_type)               , intent(in) :: tracerstate_vars
-   character(len=*), intent(in) :: header
+   character(len=*)                     , intent(in) :: header
+   type(betr_status_type)               , intent(out):: betr_status
    integer :: fc, c
    integer :: c_loc, n_loc, p_loc, nelm, j, kk
    real(r8):: c_mass, n_mass, p_mass
+
+   call betr_status%reset()
+   SHR_ASSERT_ALL(ubound(dzsoi)  == (/bounds%endc, bounds%ubj/),   errMsg(mod_filename,__LINE__),betr_status)
+   if(betr_status%check_status())return
 
    write(*,*)header
    write(*,*)'----------------------------------------'
@@ -2050,7 +2060,7 @@ contains
 
    !----------------------------------------------------------------------
    subroutine retrieve_biostates(this, bounds, lbj, ubj, jtops, num_soilc, filter_soilc, &
-       betrtracer_vars, tracerstate_vars, biogeo_state)
+       betrtracer_vars, tracerstate_vars, biogeo_state, betr_status)
    !
    !retrieve state variables for lsm mass balance check
    use tracer_varcon, only : catomw, natomw, patomw, c13atomw, c14atomw
@@ -2062,16 +2072,22 @@ contains
    class(bgc_reaction_CENTURY_ECACNP_type) , intent(inout)    :: this
    type(betr_bounds_type)               , intent(in)  :: bounds                      ! bounds
    integer                              , intent(in) :: lbj, ubj
-   integer                              , intent(in) :: jtops(bounds%begc:bounds%endc)
+   integer                              , intent(in) :: jtops(bounds%begc: )
    integer                              , intent(in)    :: num_soilc                   ! number of columns in column filter
    integer                              , intent(in)    :: filter_soilc(:)             ! column filter
    type(betrtracer_type)                , intent(in) :: betrtracer_vars               ! betr configuration information
    type(tracerstate_type)               , intent(inout) :: tracerstate_vars
    type(betr_biogeo_state_type)         , intent(inout) :: biogeo_state
+   type(betr_status_type)               , intent(out)   :: betr_status
+
    integer :: nelm
    integer :: c_loc, c13_loc, c14_loc
    integer :: n_loc, p_loc
    integer :: c, fc, j, kk
+
+    call betr_status%reset()
+    SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__),betr_status)
+    if(betr_status%check_status())return
 
     c_loc=this%centurybgc_index%c_loc
     n_loc=this%centurybgc_index%n_loc

@@ -12,6 +12,7 @@ module BetrType
   use BeTR_decompMod           , only : bounds_type  => betr_bounds_type
   use betr_ctrl                , only : iulog  => biulog
   use betr_constants           , only : betr_string_length
+  use BetrStatusType           , only : betr_status_type
   use tracer_varcon            , only : nlevsoi  => betr_nlevsoi
   use tracer_varcon            , only : nlevsno => betr_nlevsno
   use betr_varcon              , only : spval => bspval
@@ -376,7 +377,7 @@ contains
   end subroutine step_without_drainage
 
   !--------------------------------------------------------------------------------
-  subroutine debug_info(this, bounds, col, num_soilc, filter_soilc, header)
+  subroutine debug_info(this, bounds, col, num_soilc, filter_soilc, header, betr_status)
 
   use betr_columnType        , only : betr_column_type
 
@@ -387,18 +388,18 @@ contains
   type(betr_column_type)               , intent(in)    :: col
   integer                              , intent(in)    :: num_soilc                   ! number of columns in column filter
   integer                              , intent(in)    :: filter_soilc(:)             ! column filter
-  character(len=*), intent(in) :: header
-
+  character(len=*)                     , intent(in)    :: header
+  type(betr_status_type)               , intent(out)   :: betr_status
 
   call this%bgc_reaction%debug_info(bounds, num_soilc, filter_soilc, &
        col%dz(bounds%begc:bounds%endc, bounds%lbj:bounds%ubj), &
-       this%tracers, this%tracerstates, header)
+       this%tracers, this%tracerstates, header, betr_status)
 
   end subroutine debug_info
 
   !--------------------------------------------------------------------------------
   subroutine retrieve_biostates(this, bounds, lbj, ubj,  num_soilc, filter_soilc, jtops, &
-    biogeo_state)
+    biogeo_state, betr_status)
 
   implicit none
   ! !ARGUMENTS:
@@ -409,9 +410,10 @@ contains
   integer                              , intent(in)    :: num_soilc                   ! number of columns in column filter
   integer                              , intent(in)    :: filter_soilc(:)             ! column filter
   type(betr_biogeo_state_type)         , intent(inout) :: biogeo_state
+  type(betr_status_type)               , intent(out)   :: betr_status
 
   call this%bgc_reaction%retrieve_biostates(bounds, lbj, ubj, jtops, num_soilc, &
-     filter_soilc, this%tracers, this%tracerstates, biogeo_state)
+     filter_soilc, this%tracers, this%tracerstates, biogeo_state, betr_status)
 
   end subroutine retrieve_biostates
 

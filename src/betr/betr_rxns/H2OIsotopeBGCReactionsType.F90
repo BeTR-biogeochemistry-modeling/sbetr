@@ -24,6 +24,7 @@ module H2OIsotopeBGCReactionsType
   use BGCReactionsMod          , only : bgc_reaction_type
   use tracer_varcon            , only : bndcond_as_conc, bndcond_as_flux
   use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
+  use BetrStatusType           , only : betr_status_type
   implicit none
 
   private
@@ -732,7 +733,7 @@ module H2OIsotopeBGCReactionsType
 
   end subroutine retrieve_biogeoflux
    !-------------------------------------------------------------------------------
-  subroutine debug_info(this, bounds, num_soilc, filter_soilc, dzsoi, betrtracer_vars, tracerstate_vars, header)
+  subroutine debug_info(this, bounds, num_soilc, filter_soilc, dzsoi, betrtracer_vars, tracerstate_vars, header, betr_status)
 
    use BeTRTracerType           , only : BeTRTracer_Type
    use tracerstatetype          , only : tracerstate_type
@@ -743,15 +744,20 @@ module H2OIsotopeBGCReactionsType
    type(betr_bounds_type)               , intent(in) :: bounds                      ! bounds
    integer                              , intent(in) :: num_soilc                   ! number of columns in column filter
    integer                              , intent(in) :: filter_soilc(:)             ! column filter
-   real(r8)                             , intent(in) :: dzsoi(bounds%begc:bounds%endc,bounds%lbj:bounds%ubj)
+   real(r8)                             , intent(in) :: dzsoi(bounds%begc: ,bounds%lbj: )
    type(betrtracer_type)                , intent(in) :: betrtracer_vars             ! betr configuration information
    type(tracerstate_type)               , intent(in) :: tracerstate_vars
-     character(len=*), intent(in) :: header
+   character(len=*)                     , intent(in) :: header
+   type(betr_status_type)               , intent(out):: betr_status
+   call betr_status%reset()
+   SHR_ASSERT_ALL((ubound(dzsoi)  == (/bounds%endc, bounds%ubj/)),   errMsg(mod_filename,__LINE__), betr_status)
+   if(betr_status%check_status())return   
+
    if (this%dummy_compiler_warning) continue
      end subroutine debug_info
    !----------------------------------------------------------------------
    subroutine retrieve_biostates(this, bounds, lbj, ubj, jtops, num_soilc, filter_soilc, &
-     betrtracer_vars, tracerstate_vars, biogeo_state)
+     betrtracer_vars, tracerstate_vars, biogeo_state, betr_status)
    !
    !retrieve state variables for lsm mass balance check
    use tracer_varcon, only : catomw, natomw, patomw, c13atomw, c14atomw
@@ -763,14 +769,18 @@ module H2OIsotopeBGCReactionsType
    class(bgc_reaction_h2oiso_type) , intent(inout) :: this               !
    type(betr_bounds_type)               , intent(in)  :: bounds                      ! bounds
    integer                              , intent(in) :: lbj, ubj
-   integer                              , intent(in) :: jtops(bounds%begc:bounds%endc)
+   integer                              , intent(in) :: jtops(bounds%begc: )
    integer                              , intent(in)    :: num_soilc                   ! number of columns in column filter
    integer                              , intent(in)    :: filter_soilc(:)             ! column filter
    type(betrtracer_type)                , intent(in) :: betrtracer_vars               ! betr configuration information
    type(tracerstate_type)               , intent(inout) :: tracerstate_vars
    type(betr_biogeo_state_type)         , intent(inout) :: biogeo_state
+   type(betr_status_type)               , intent(out)   :: betr_status
 
-
+   call betr_status%reset()
+   SHR_ASSERT_ALL((ubound(jtops)  == (/bounds%endc/)),   errMsg(mod_filename,__LINE__), betr_status)
+   if(betr_status%check_status())return
+   
    if (this%dummy_compiler_warning) continue
    if (bounds%begc > 0)             continue
 
