@@ -14,10 +14,13 @@ module BeTRSimulationALM
   use decompMod           , only : bounds_type
   use BeTRSimulation      , only : betr_simulation_type
   use BeTR_TimeMod        , only : betr_time_type
-  use EcophysConType      , only : ecophyscon_type
   use tracer_varcon       , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
   use betr_decompMod      , only : betr_bounds_type
   use betr_varcon         , only : betr_maxpatch_pft
+!  use PatchType           , only : patch_type 
+  use VegetationType      , only : patch_type => vegetation_physical_properties_type
+  use ColumnType          , only : column_type => column_physical_properties_type
+  use LandunitType        , only : landunit_type => landunit_physical_properties_type
   implicit none
 
   private
@@ -68,13 +71,10 @@ contains
     !
     !USES
     !data types from alm
-    use PatchType       , only : patch_type
     use pftvarcon       , only : noveg, nc4_grass, nc3_arctic_grass, nc3_nonarctic_grass
     use WaterStateType  , only : waterstate_type
     use landunit_varcon , only : istcrop, istice, istsoil
     use clm_varpar      , only : nlevsno, nlevsoi, nlevtrc_soil
-    use ColumnType      , only : column_type
-    use LandunitType   , only : landunit_type
     !betr types
     use betr_constants      , only : betr_filename_length
     use betr_constants      , only : betr_namelist_buffer_size
@@ -121,13 +121,10 @@ contains
     !
     !USES
     !data types from alm
-    use PatchType       , only : patch_type
     use pftvarcon       , only : noveg, nc4_grass, nc3_arctic_grass, nc3_nonarctic_grass
     use WaterStateType  , only : waterstate_type
     use landunit_varcon , only : istcrop, istice, istsoil
     use clm_varpar      , only : nlevsno, nlevsoi, nlevtrc_soil
-    use ColumnType      , only : column_type
-    use LandunitType   , only : landunit_type
     !betr types
     use betr_constants      , only : betr_filename_length
     use betr_constants      , only : betr_namelist_buffer_size
@@ -169,9 +166,6 @@ contains
    !march one time step without doing drainage
    !
    !USES
-    use ColumnType        , only : column_type
-    use PatchType         , only : patch_type
-    use LandunitType      , only : landunit_type
     use clm_varpar        , only : nlevsno, nlevsoi, nlevtrc_soil
     use tracer_varcon     , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
     implicit none
@@ -250,7 +244,6 @@ contains
   !
   !DESCRIPTION
   !activate columuns that are active in alm
-  use ColumnType     , only : column_type
   implicit none
   ! !ARGUMENTS:
   class(betr_simulation_alm_type) , intent(inout) :: this
@@ -270,7 +263,6 @@ contains
    !interface for using diagnose land fluxes to atm and river copmonents
    !
    !USES
-    use ColumnType    , only : column_type
     use MathfuncMod   , only : safe_div
     use lnd2atmType    , only : lnd2atm_type
     use clm_varpar     , only : nlevsno, nlevsoi, nlevtrc_soil
@@ -332,9 +324,7 @@ contains
    ! march one step with drainage
    !
    !USES
-    use ColumnType     , only : column_type
     use subgridAveMod  , only : c2g
-    use LandunitType   , only : landunit_type
     use clm_varpar     , only : nlevsno, nlevsoi, nlevtrc_soil
     use lnd2atmType    , only : lnd2atm_type
     use betr_decompMod , only : betr_bounds_type
@@ -426,8 +416,6 @@ contains
   use PlantMicKineticsMod, only : PlantMicKinetics_type
   use mathfuncMod, only : apvb
   use tracer_varcon, only : use_c13_betr, use_c14_betr
-  use ColumnType         , only : column_type
-  use PatchType          , only : patch_type
   implicit none
   class(betr_simulation_alm_type), intent(inout)  :: this
   type(bounds_type) , intent(in)  :: bounds
@@ -752,8 +740,6 @@ contains
    n14state_vars, n14flux_vars, p31state_vars, p31flux_vars)
   !this returns the flux back to ALM after doing soil BGC
   !this specifically returns plant nutrient yield
-  use PatchType         , only : patch_type
-  use ColumnType        , only : column_type
   use CNCarbonFluxType    , only : carbonflux_type
   use CNCarbonStateType   , only : carbonstate_type
   use CNNitrogenFluxType  , only : nitrogenflux_type
@@ -940,7 +926,6 @@ contains
     ! Calculate tracer flux from dew or/and sublimation
     !External interface called by ALM
 
-    use ColumnType      , only : column_type
     use WaterfluxType   , only : waterflux_type
     use WaterstateType  , only : waterstate_type
     use clm_varcon      , only : denh2o,spval
@@ -1059,8 +1044,6 @@ contains
   !DESCRIPTION
   !pass in biogeophysical variables for running betr
   !USES
-  use PatchType         , only : patch_type
-  use ColumnType        , only : column_type
   use SoilStateType     , only : soilstate_type
   use WaterStateType    , only : Waterstate_Type
   use TemperatureType   , only : temperature_type
@@ -1149,8 +1132,6 @@ contains
   !DESCRIPTION
   !set kinetic parameters for column c
   use PlantMicKineticsMod, only : PlantMicKinetics_type
-  use ColumnType         , only : column_type
-  use PatchType          , only : patch_type
   use ALMBeTRNLMod    , only : reaction_method
   use pftvarcon             , only : noveg
   implicit none
