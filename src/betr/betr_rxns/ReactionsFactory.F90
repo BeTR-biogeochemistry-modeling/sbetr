@@ -37,14 +37,14 @@ contains
   logical, intent(out) :: yesno
   yesno = is_reaction_exist(method)
   if(yesno)then
-    allocate(bgc_reaction, source=create_bgc_reaction_type(method))
-    allocate(plant_soilbgc, source=create_plant_soilbgc_type(method))
+    call create_bgc_reaction_type(bgc_reaction, method)
+    call create_plant_soilbgc_type(plant_soilbgc, method)
   endif
 
   end subroutine create_betr_def_application
 !-------------------------------------------------------------------------------
 
-  function create_bgc_reaction_type(method) result(bgc_reaction)
+  subroutine create_bgc_reaction_type(bgc_reaction, method)
     !
     ! !DESCRIPTION:
     ! create and return an object of bgc_reaction
@@ -59,7 +59,7 @@ contains
     use DIOCBGCReactionsType, only : bgc_reaction_dioc_run_type
     implicit none
     ! !ARGUMENTS:
-    class(bgc_reaction_type) , allocatable :: bgc_reaction
+    class(bgc_reaction_type),  allocatable, intent(out) :: bgc_reaction
     character(len=*)         , intent(in)  :: method
     !local variables
     character(len=*)         , parameter   :: subname = 'create_bgc_reaction_type'
@@ -76,10 +76,10 @@ contains
 !x       call endrun(msg=errMsg(mod_filename, __LINE__))
        !do nothing
     end select
-  end function create_bgc_reaction_type
+  end subroutine create_bgc_reaction_type
   !-------------------------------------------------------------------------------
 
-  function create_plant_soilbgc_type(method)result(plant_soilbgc)
+  subroutine create_plant_soilbgc_type(plant_soilbgc, method)
   !DESCRIPTION
   !create plant soil bgc type
   !
@@ -91,7 +91,7 @@ contains
   use DIOCPlantSoilBGCType, only : plant_soilbgc_dioc_run_type
   implicit none
   ! !ARGUMENTS:
-  class(plant_soilbgc_type) , allocatable :: plant_soilbgc
+  class(plant_soilbgc_type), allocatable, intent(out) :: plant_soilbgc
   character(len=*)          , intent(in)  :: method
   character(len=*)          , parameter   :: subname = 'create_standalone_plant_soilbgc_type'
 
@@ -109,7 +109,7 @@ contains
    !do nothing
   end select
 
-  end function create_plant_soilbgc_type
+  end subroutine create_plant_soilbgc_type
   !-------------------------------------------------------------------------------
   function is_reaction_exist(method)result(yesno)
   !DESCRIPTION
