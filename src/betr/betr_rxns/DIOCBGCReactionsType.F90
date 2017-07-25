@@ -579,7 +579,7 @@ contains
    character(len=*)                     , intent(in) :: header
    type(betr_status_type)               , intent(out):: betr_status
    call betr_status%reset()
-   SHR_ASSERT_ALL(ubound(dz)==(/bounds%endc,bounds%ubj/), errMsg(filename,__LINE__), betr_status)
+   SHR_ASSERT_ALL(ubound(dzsoi)==(/bounds%endc,bounds%ubj/), errMsg(filename,__LINE__), betr_status)
    if(betr_status%check_status())return
 
    if (this%dummy_compiler_warning) continue
