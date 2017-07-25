@@ -36,16 +36,17 @@ contains
   type(betr_status_type), intent(out) :: bstatus
 
 
-  allocate(bgc_reaction, source=create_bgc_reaction_type(method,bstatus))
+  call create_bgc_reaction_type(bgc_reaction, method,bstatus)
+
   if(bstatus%check_status())return
 
-  allocate(plant_soilbgc, source=create_plant_soilbgc_type(method,bstatus))
+  call create_plant_soilbgc_type(plant_soilbgc, method,bstatus)
 
   end subroutine create_betr_usr_application
 
 !-------------------------------------------------------------------------------
 
-  function create_bgc_reaction_type(method, bstatus) result(bgc_reaction)
+  subroutine create_bgc_reaction_type(bgc_reaction, method, bstatus)
     !
     ! !DESCRIPTION:
     ! create and return an object of bgc_reaction
@@ -58,11 +59,10 @@ contains
     use BGCReactionsCentECACnpType, only : bgc_reaction_CENTURY_ECACNP_type
     implicit none
     ! !ARGUMENTS:
+    class(bgc_reaction_type),  allocatable, intent(inout) :: bgc_reaction
     character(len=*), intent(in)          :: method
     type(betr_status_type), intent(out)   :: bstatus
 
-    ! temporary varaibles
-    class(bgc_reaction_type), allocatable :: bgc_reaction
     character(len=*), parameter           :: subname = 'create_bgc_reaction_type'
     character(len=betr_errmsg_len) :: msg
 
@@ -75,10 +75,10 @@ contains
        msg = trim(msg)//new_line('A')//errMsg(mod_filename, __LINE__)
        call bstatus%set_msg(msg=msg,err=-1)
     end select
-  end function create_bgc_reaction_type
+  end subroutine create_bgc_reaction_type
   !-------------------------------------------------------------------------------
 
-  function create_plant_soilbgc_type(method, bstatus)result(plant_soilbgc)
+  subroutine create_plant_soilbgc_type(plant_soilbgc, method, bstatus)
 
   !DESCRIPTION
   !create and return an object of plant_soilbgc
@@ -92,10 +92,11 @@ contains
 
   implicit none
   ! !ARGUMENTS:
+  class(plant_soilbgc_type), allocatable, intent(inout) :: plant_soilbgc
   character(len=*), intent(in)          :: method
   type(betr_status_type), intent(out)   :: bstatus
-  !temporary variables
-  class(plant_soilbgc_type) , allocatable :: plant_soilbgc
+
+
   character(len=*)          , parameter   :: subname = 'create_plant_soilbgc_type'
   character(len=betr_errmsg_len) :: msg
 
@@ -110,7 +111,7 @@ contains
      call bstatus%set_msg(msg=msg,err=-1)
   end select
 
-  end function create_plant_soilbgc_type
+  end subroutine create_plant_soilbgc_type
 
 
   !-------------------------------------------------------------------------------
