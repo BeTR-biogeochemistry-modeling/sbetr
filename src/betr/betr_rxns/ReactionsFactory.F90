@@ -56,10 +56,10 @@ contains
     use betr_ctrl                  , only : iulog  => biulog
     use BetrStatusType             , only : betr_status_type
     use betr_constants             , only : betr_errmsg_len
-    use DIOCBGCReactionsType, only : bgc_reaction_dioc_run_type
+    use DIOCBGCReactionsType       , only : bgc_reaction_dioc_run_type
     implicit none
     ! !ARGUMENTS:
-    class(bgc_reaction_type),  allocatable, intent(out) :: bgc_reaction
+    class(bgc_reaction_type),  allocatable, intent(inout) :: bgc_reaction
     character(len=*)         , intent(in)  :: method
     !local variables
     character(len=*)         , parameter   :: subname = 'create_bgc_reaction_type'
@@ -88,10 +88,10 @@ contains
   use MockPlantSoilBGCType       , only : plant_soilbgc_mock_run_type
   use H2OIsotopePlantSoilBGCType , only : plant_soilbgc_h2oiso_run_type
   use betr_ctrl                  , only : iulog  => biulog
-  use DIOCPlantSoilBGCType, only : plant_soilbgc_dioc_run_type
+  use DIOCPlantSoilBGCType       , only : plant_soilbgc_dioc_run_type
   implicit none
   ! !ARGUMENTS:
-  class(plant_soilbgc_type), allocatable, intent(out) :: plant_soilbgc
+  class(plant_soilbgc_type), allocatable, intent(inout) :: plant_soilbgc
   character(len=*)          , intent(in)  :: method
   character(len=*)          , parameter   :: subname = 'create_standalone_plant_soilbgc_type'
 

@@ -59,7 +59,7 @@ contains
     use BGCReactionsCentECACnpType, only : bgc_reaction_CENTURY_ECACNP_type
     implicit none
     ! !ARGUMENTS:
-    class(bgc_reaction_type),  allocatable, intent(out) :: bgc_reaction
+    class(bgc_reaction_type),  allocatable, intent(inout) :: bgc_reaction
     character(len=*), intent(in)          :: method
     type(betr_status_type), intent(out)   :: bstatus
 
@@ -92,7 +92,7 @@ contains
 
   implicit none
   ! !ARGUMENTS:
-  class(plant_soilbgc_type), allocatable, intent(out) :: plant_soilbgc
+  class(plant_soilbgc_type), allocatable, intent(inout) :: plant_soilbgc
   character(len=*), intent(in)          :: method
   type(betr_status_type), intent(out)   :: bstatus
 
