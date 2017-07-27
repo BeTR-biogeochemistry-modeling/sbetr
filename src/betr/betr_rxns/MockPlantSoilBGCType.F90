@@ -6,6 +6,7 @@ module MockPlantSoilBGCType
   !USES
   use PlantSoilBGCMod , only : plant_soilbgc_type
   use betr_decompMod  , only : bounds_type => betr_bounds_type
+  use bshr_log_mod    , only : errMsg => shr_log_errMsg
   implicit none
 
   private
@@ -93,7 +94,7 @@ module MockPlantSoilBGCType
   type(betr_status_type)             , intent(out):: betr_status
 
   call betr_status%reset()
-  SHR_ASSERT_ALL(ubound(dz)==(/bounds%endc,ubj/), errMsg(filename,__LINE__), betr_status)
+  SHR_ASSERT_ALL((ubound(dz)==(/bounds%endc,ubj/)), errMsg(mod_filename,__LINE__), betr_status)
   if(betr_status%check_status())return
 
   ! remove compiler warnings for unused dummy args

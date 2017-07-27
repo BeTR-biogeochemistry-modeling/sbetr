@@ -872,7 +872,7 @@ contains
     integer :: fc, c
 
     call betr_status%reset()
-    SHR_ASSERT_ALL(ubound(dz_top)  == (/bounds%endc/),   errMsg(mod_filename,__LINE__),betr_status)
+    SHR_ASSERT_ALL((ubound(dz_top)  == (/bounds%endc/)),   errMsg(mod_filename,__LINE__),betr_status)
     if(betr_status%check_status())return
     if (this%dummy_compiler_warning) continue
     associate(                                       &
@@ -1943,7 +1943,7 @@ contains
    real(r8):: c_mass, n_mass, p_mass
 
    call betr_status%reset()
-   SHR_ASSERT_ALL(ubound(dzsoi)  == (/bounds%endc, bounds%ubj/),   errMsg(mod_filename,__LINE__),betr_status)
+   SHR_ASSERT_ALL((ubound(dzsoi)  == (/bounds%endc, bounds%ubj/)),   errMsg(mod_filename,__LINE__),betr_status)
    if(betr_status%check_status())return
 
    write(*,*)header
