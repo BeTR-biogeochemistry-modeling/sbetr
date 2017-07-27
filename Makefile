@@ -34,6 +34,11 @@ ifeq ($(UGM), not-set)
 else
 	CONFIG_FLAGS += -DUGM=1
 endif
+
+ifeq ($(SBETR), not-set)
+else
+	CONFIG_FLAGS += -DSBETR=1
+endif
 # Travis-CI build
 ifeq ($(travis), not-set)
   CONFIG_FLAGS += -DTRAVIS_CI=0

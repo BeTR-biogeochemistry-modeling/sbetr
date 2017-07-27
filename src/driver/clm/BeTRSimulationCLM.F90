@@ -356,13 +356,13 @@ contains
 
     call this%BeTRSetBounds(betr_bounds)
 
-    do fc = 1, num_soilc
-      c = filter_soilc(fc)
-      if(.not. this%active_col(c))cycle
-      call this%betr(c)%bgc_reaction%lsm_betr_flux_state_receive(betr_bounds, &
-         this%num_soilc, this%filter_soilc,                                   &
-         this%betr(c)%tracerstates, this%betr(c)%tracerfluxes,  this%betr(c)%tracers)
-    enddo
+!    do fc = 1, num_soilc
+!      c = filter_soilc(fc)
+!      if(.not. this%active_col(c))cycle
+!      call this%betr(c)%bgc_reaction%lsm_betr_flux_state_receive(betr_bounds, &
+!         this%num_soilc, this%filter_soilc,                                   &
+!         this%betr(c)%tracerstates, this%betr(c)%tracerfluxes,  this%betr(c)%tracers)
+!    enddo
   end subroutine CLMBetrSoilFluxStateRecv
 
   !------------------------------------------------------------------------

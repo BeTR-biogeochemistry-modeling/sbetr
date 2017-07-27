@@ -37,6 +37,8 @@ implicit none
     real(r8), pointer :: supplement_to_sminp_col                   (:)=> null()
     real(r8), pointer :: secondp_to_occlp_col                      (:)=> null()
     real(r8), pointer :: fire_decomp_ploss_col                     (:)=> null()
+    real(r8), pointer :: som_p_leached_col                         (:) => null()
+
   contains
 
     procedure, public  :: Init
@@ -108,6 +110,8 @@ contains
     allocate(this%pdep_to_sminp_col(begc:endc)); this%pdep_to_sminp_col(begc:endc) = nan
     allocate(this%pdep_to_sminp_col(begc:endc)); this%pdep_to_sminp_col(begc:endc) = nan
     allocate(this%fert_p_to_sminp_col(begc:endc)); this%fert_p_to_sminp_col(begc:endc) = nan
+    allocate(this%som_p_leached_col(begc:endc)); this%som_p_leached_col(:) = nan
+
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------

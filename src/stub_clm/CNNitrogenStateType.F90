@@ -18,6 +18,7 @@ implicit none
     real(r8), pointer :: totsomn_1m_col               (:) => null()
     real(r8), pointer :: totlitn_1m_col               (:) => null()
     real(r8), pointer :: totlitn_col                  (:) => null()
+    real(r8), pointer :: pnup_pfrootc_patch           (:) => null()
   contains
 
     procedure, public  :: Init
@@ -64,7 +65,7 @@ contains
     allocate(this%smin_no3_col             (begc:endc))                   ; this%smin_no3_col             (:)   = nan
     allocate(this%smin_nh4_col             (begc:endc))                   ; this%smin_nh4_col             (:)   = nan
     allocate(this%sminn_vr_col             (begc:endc,1:nlevdecomp_full)) ; this%sminn_vr_col             (:,:) = nan
-
+    allocate(this%pnup_pfrootc_patch (begp:endp)); this%pnup_pfrootc_patch (:) = nan
 
   end subroutine InitAllocate
 

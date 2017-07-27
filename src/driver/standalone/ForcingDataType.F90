@@ -257,7 +257,7 @@ contains
     call ncd_getvar(ncf_in_forc, 'QFLX_ROOTSOI', data_2d)
     do j2 = 1, this%num_levels
        do j1 = 1, this%num_time
-          this%qflx_rootsoi(j1, j2) = data_2d(this%num_columns, j2, j1)
+          this%qflx_rootsoi(j1, j2) = data_2d(this%num_columns, j2, j1)*1.e3_r8
        enddo
     enddo
 

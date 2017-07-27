@@ -17,10 +17,15 @@ module BeTRSimulationALM
   use tracer_varcon       , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
   use betr_decompMod      , only : betr_bounds_type
   use betr_varcon         , only : betr_maxpatch_pft
-!  use PatchType           , only : patch_type 
+#if (defined SBETR)
+  use PatchType      , only : patch_type
+  use ColumnType     , only : column_type
+  use LandunitType   , only : landunit_type
+#else
   use VegetationType      , only : patch_type => vegetation_physical_properties_type
   use ColumnType          , only : column_type => column_physical_properties_type
   use LandunitType        , only : landunit_type => landunit_physical_properties_type
+#endif
   implicit none
 
   private

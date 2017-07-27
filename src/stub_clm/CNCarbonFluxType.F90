@@ -36,6 +36,7 @@ implicit none
     real(r8), pointer :: m_c_to_litr_lig_fire_col                  (:,:)=> null()
     real(r8), pointer :: fire_mortality_c_to_cwdc_col              (:,:)=> null()
     real(r8), pointer :: fire_decomp_closs_col                     (:) => null()
+    real(r8), pointer :: som_c_leached_col                         (:) => null()
   contains
 
     procedure, public  :: Init
@@ -106,6 +107,8 @@ contains
     allocate(this%m_c_to_litr_lig_fire_col(begc:endc,1:nlevdecomp_full)); this%m_c_to_litr_lig_fire_col(:,:) = nan
     allocate(this%fire_mortality_c_to_cwdc_col (begc:endc,1:nlevdecomp_full)); this%fire_mortality_c_to_cwdc_col (:,:) = nan
     allocate(this%phenology_c_to_litr_lig_c_col(begc:endc,1:nlevdecomp_full)); this%phenology_c_to_litr_lig_c_col(:,:) = nan
+    allocate(this%som_c_leached_col(begc:endc)); this%som_c_leached_col(:) = nan
+
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------

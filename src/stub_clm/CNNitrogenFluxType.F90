@@ -41,6 +41,8 @@ implicit none
      real(r8), pointer :: smin_nh4_to_plant_patch                   (:) => null()
      real(r8), pointer :: smin_no3_to_plant_patch                   (:) => null()
      real(r8), pointer :: fire_decomp_nloss_col                     (:) => null()
+     real(r8), pointer :: denit_col                                 (:) => null()
+     real(r8), pointer :: som_n_leached_col                         (:) => null()
 
   contains
 
@@ -114,6 +116,8 @@ contains
     allocate(this%harvest_n_to_litr_met_n_col(begc:endc,1:nlevdecomp_full)); this%harvest_n_to_litr_met_n_col(:,:) = nan
     allocate(this%m_n_to_litr_cel_fire_col(begc:endc,1:nlevdecomp_full)); this%m_n_to_litr_cel_fire_col(:,:) = nan
     allocate(this%m_n_to_litr_met_fire_col(begc:endc,1:nlevdecomp_full)); this%m_n_to_litr_met_fire_col(:,:) = nan
+    allocate(this%denit_col(begc:endc)); this%denit_col(:) = nan
+    allocate(this%som_n_leached_col(begc:endc)); this%som_n_leached_col(:) = nan
 
   end subroutine InitAllocate
 

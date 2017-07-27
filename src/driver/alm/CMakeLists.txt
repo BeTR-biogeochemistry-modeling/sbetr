@@ -21,6 +21,9 @@ include(add_betr_library)
 add_betr_library(betr_driver_alm ${BETR_DRIVER_ALM_SOURCES})
 
 #set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -w")
+if (SBETR)
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -DSBETR")
+endif()
 
 set(BETR_LIBRARIES betr_driver_alm;${BETR_LIBRARIES} PARENT_SCOPE)
 set(BETR_LIBRARIES betr_driver_alm;${BETR_LIBRARIES})
