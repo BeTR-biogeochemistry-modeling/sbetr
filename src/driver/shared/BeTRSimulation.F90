@@ -39,6 +39,7 @@ module BeTRSimulation
   use BetrStatusSimType        , only : betr_status_sim_type, create_betr_status_sim_type
   use betr_columnType          , only : betr_column_type, create_betr_column_type
   use betr_patchType           , only : betr_patch_type, create_betr_patch_type
+  use betr_varcon              , only : spval => bspval
   implicit none
 
   private
@@ -376,7 +377,6 @@ contains
   end subroutine BeTRInit
   !---------------------------------------------------------------------------------
   subroutine BeTRSimulationRestartAlloc(this, bounds)
-  use betr_varcon         , only : spval => bspval
   implicit none
   !ARGUMENTS
   class(betr_simulation_type)              , intent(inout) :: this
@@ -697,7 +697,6 @@ contains
     use bncdio_pio    , only : ncd_putvar
     use bncdio_pio    , only : ncd_pio_closefile
     use BeTR_TimeMod , only : betr_time_type
-    use betr_varcon  , only : spval => bspval
     implicit none
     !ARGUMENTS
     class(betr_simulation_type) , intent(inout) :: this
@@ -1139,7 +1138,6 @@ contains
   !
   ! USES
   !
-  use tracer_varcon            , only : nlevsoi  => betr_nlevsoi
   implicit none
   !ARGUMENTS
    class(betr_simulation_type) , intent(inout) :: this
@@ -1319,7 +1317,6 @@ contains
   !DESCRIPTION
   !create history file for betr fluxes
   !
-  use betr_varcon         , only : spval => bspval
   use histFileMod         , only: hist_addfld1d, hist_addfld2d
   use bhistFileMod        , only : hist_def_fld2d , hist_def_fld1d
   use bncdio_pio           , only : file_desc_t, ncd_float
@@ -1403,7 +1400,6 @@ contains
   !create history file for betr states variables
   use histFileMod   , only: hist_addfld1d, hist_addfld2d
   use bhistFileMod        , only : hist_def_fld2d , hist_def_fld1d
-  use betr_varcon         , only : spval => bspval
   use bncdio_pio , only : file_desc_t, ncd_float
   implicit none
   !ARGUMENTS
@@ -1488,7 +1484,6 @@ contains
   !DESCRIPTION
   !create history file for betr fluxes
   !
-  use betr_varcon         , only : spval => bspval
   use histFileMod         , only: hist_addfld1d, hist_addfld2d
   use bncdio_pio           , only :   file_desc_t, ncd_putvar
   implicit none
@@ -1556,7 +1551,6 @@ contains
   !
   !create history file for betr states variables
   use histFileMod   , only: hist_addfld1d, hist_addfld2d
-  use betr_varcon         , only : spval => bspval
   use bncdio_pio , only : file_desc_t, ncd_putvar
   implicit none
   !ARGUMENTS
@@ -1626,7 +1620,6 @@ contains
      num_state1d, num_state2d, num_flux1d, num_flux2d)
   !
   !links the variable to output
-  use betr_varcon         , only : spval => bspval
   implicit none
   !ARGUMENTS
   class(betr_simulation_type) , intent(inout) :: this
@@ -1644,7 +1637,6 @@ contains
   end subroutine BeTRSimulationCreateHistory
   !------------------------------------------------------------------------
   subroutine BeTRSimulationRetrieveHistoryState(this, bounds, numf, filter)
-  use betr_varcon     , only : spval => bspval
   use tracer_varcon  , only : betr_nlevtrc_soil
   implicit none
   !ARGUMENTS
@@ -1670,7 +1662,6 @@ contains
   end subroutine BeTRSimulationRetrieveHistoryState
   !------------------------------------------------------------------------
   subroutine BeTRSimulationRetrieveHistoryFlux(this, bounds, numf, filter)
-  use betr_varcon     , only : spval => bspval
   use tracer_varcon  , only :  betr_nlevtrc_soil
   implicit none
   !ARGUMENTS
@@ -1699,7 +1690,6 @@ contains
   subroutine BeTRSimulationRestartOffline(this, bounds, ncid, numf, filter, flag)
   !DESCRIPTION
   !create or read restart file
-  use betr_varcon    , only : spval => bspval
   use restUtilMod    , only : restartvar
   use bncdio_pio      , only : file_desc_t,ncd_double
   use bncdio_pio      , only : ncd_defvar, ncd_defdim
@@ -1814,7 +1804,6 @@ contains
   subroutine BeTRSimulationRestart(this, bounds, ncid, flag)
   !DESCRIPTION
   !create or read restart file
-  use betr_varcon    , only : spval => bspval
   use restUtilMod    , only : restartvar
   use ncdio_pio      , only : file_desc_t,ncd_double
   implicit none
