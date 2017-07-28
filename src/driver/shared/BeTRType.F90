@@ -217,7 +217,7 @@ contains
          ebullition_on, esm_on
 
     call bstatus%reset()
-    reaction_method = ''
+    reaction_method = 'mock_run'
     advection_on    = .true.
     diffusion_on    = .true.
     reaction_on     = .true.
@@ -227,7 +227,7 @@ contains
     ! Read namelist from standard input.
     ! ----------------------------------------------------------------------
 
-    if ( .true. )then
+    if ( index(trim(namelist_buffer),'betr_parameters')/=0 )then
        ioerror_msg=''
        read(namelist_buffer, nml=betr_parameters, iostat=nml_error, iomsg=ioerror_msg)
        if (nml_error /= 0) then
