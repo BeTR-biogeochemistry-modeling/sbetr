@@ -7,7 +7,7 @@ module ALMBeTRNLMod
 implicit none
   character(len=*), private, parameter :: mod_filename = &
        __FILE__
-  character(len=betr_string_length), public :: reaction_method
+
   character(len=betr_namelist_buffer_size), public :: betr_namelist_buffer
   public :: betr_readNL
 contains
@@ -25,6 +25,7 @@ contains
     use shr_mpi_mod   , only : shr_mpi_bcast
     use betr_utils    , only : log2str
     use clm_varctl    , only : iulog
+    use tracer_varcon  , only : advection_on, diffusion_on, reaction_on, ebullition_on, reaction_method
     use ApplicationsFactory, only : AppLoadParameters
     use tracer_varcon , only : use_c13_betr, use_c14_betr
     use BetrStatusType  , only : betr_status_type
@@ -41,13 +42,12 @@ contains
     type(betr_status_type)       :: bstatus
     !-----------------------------------------------------------------------
 
-    logical       :: advection_on, diffusion_on, ebullition_on, reaction_on
     character(len=255):: AppParNLFile
     character(len=1), parameter  :: quote = ''''
     namelist / betr_inparm / reaction_method, &
       advection_on, diffusion_on, reaction_on, ebullition_on, &
       AppParNLFile
-    logical :: esm_on
+
     character(len=betr_namelist_buffer_size_ext) :: bgc_namelist_buffer
     logical :: appfile_on
     ! ----------------------------------------------------------------------
@@ -59,7 +59,7 @@ contains
     diffusion_on    = .true.
     reaction_on     = .true.
     ebullition_on   = .true.
-    esm_on          = .true.
+
     use_c13_betr    = use_c13
     use_c14_betr    = use_c14
     AppParNLFile    = ''
@@ -83,6 +83,7 @@ contains
          bgc_namelist_buffer='none'
        endif
     end if
+
     call shr_mpi_bcast(appfile_on, mpicom)
     !pass parameters to all files
     call shr_mpi_bcast(bgc_namelist_buffer, mpicom)
@@ -104,7 +105,6 @@ contains
     endif
     write(betr_namelist_buffer,*) '&betr_parameters'//new_line('A'), &
       ' reaction_method='//quote//trim(reaction_method)//quote//new_line('A'), &
-      ' esm_on=',trim(log2str(esm_on)),new_line('A'),&
       ' advection_on=',trim(log2str(advection_on)),new_line('A'), &
       ' diffusion_on=',trim(log2str(diffusion_on)),new_line('A'), &
       ' reaction_on=',trim(log2str(reaction_on)),new_line('A'), &

@@ -195,6 +195,7 @@ contains
     use bshr_log_mod   , only : errMsg => shr_log_errMsg
     use betr_constants , only : stdout, betr_string_length_long, betr_namelist_buffer_size
     use BetrStatusType , only : betr_status_type
+    use tracer_varcon  , only : advection_on, diffusion_on, reaction_on, ebullition_on, reaction_method
     implicit none
     ! !ARGUMENTS:
     class(betr_type)                         , intent(inout) :: this
@@ -205,49 +206,47 @@ contains
     ! !LOCAL VARIABLES:
     integer                                :: nml_error
     character(len=*), parameter            :: subname = 'ReadNamelist'
-    character(len=betr_string_length)      :: reaction_method
     character(len=betr_string_length_long) :: ioerror_msg
-    logical                                :: advection_on, diffusion_on, reaction_on, ebullition_on
-    logical                                :: esm_on
+
     !-----------------------------------------------------------------------
 
-    namelist / betr_parameters /                  &
-         reaction_method,                         &
-         advection_on, diffusion_on, reaction_on, &
-         ebullition_on, esm_on
+!    namelist / betr_parameters /                  &
+!         reaction_method,                         &
+!         advection_on, diffusion_on, reaction_on, &
+!         ebullition_on, esm_on
 
     call bstatus%reset()
-    reaction_method = 'mock_run'
-    advection_on    = .true.
-    diffusion_on    = .true.
-    reaction_on     = .true.
-    ebullition_on   =.true.
-    esm_on          =.false.
+!    reaction_method = 'mock_run'
+!    advection_on    = .true.
+!    diffusion_on    = .true.
+!    reaction_on     = .true.
+!    ebullition_on   =.true.
+
     ! ----------------------------------------------------------------------
     ! Read namelist from standard input.
     ! ----------------------------------------------------------------------
 
-    if ( index(trim(namelist_buffer),'betr_parameters')/=0 )then
-       ioerror_msg=''
-       read(namelist_buffer, nml=betr_parameters, iostat=nml_error, iomsg=ioerror_msg)
-       if (nml_error /= 0) then
-          call bstatus%set_msg(msg="ERROR reading betr_parameters namelist "//errmsg(filename, __LINE__),err=-1)
-          return
-       end if
-    end if
+    !if ( index(trim(namelist_buffer),'betr_parameters')/=0 )then
+    !   ioerror_msg=''
+    !   read(namelist_buffer, nml=betr_parameters, iostat=nml_error, iomsg=ioerror_msg)
+    !   if (nml_error /= 0) then
+    !      call bstatus%set_msg(msg="ERROR reading betr_parameters namelist "//errmsg(filename, __LINE__),err=-1)
+    !      return
+    !   end if
+    !end if
 
-    if (.not. esm_on) then
-       write(stdout, *)
-       write(stdout, *) '--------------------'
-       write(stdout, *)
-       write(stdout, *) ' betr bgc type :'
-       write(stdout, *)
-       write(stdout, *) ' betr_parameters namelist settings :'
-       write(stdout, *)
-       write(stdout, betr_parameters)
-       write(stdout, *)
-       write(stdout, *) '--------------------'
-    endif
+    !if (.not. esm_on) then
+    !   write(stdout, *)
+    !   write(stdout, *) '--------------------'
+    !   write(stdout, *)
+    !   write(stdout, *) ' betr bgc type :'
+    !   write(stdout, *)
+    !   write(stdout, *) ' betr_parameters namelist settings :'
+    !   write(stdout, *)
+    !   write(stdout, betr_parameters)
+    !   write(stdout, *)
+    !   write(stdout, *) '--------------------'
+    !endif
 
     this%reaction_method = reaction_method
     this%advection_on    = advection_on

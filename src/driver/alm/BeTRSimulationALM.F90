@@ -352,7 +352,7 @@ contains
     use lnd2atmType    , only : lnd2atm_type
     use betr_decompMod , only : betr_bounds_type
     use tracer_varcon  , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
-    use ALMBeTRNLMod    , only : reaction_method
+    use tracer_varcon  , only : reaction_method
     implicit none
     ! !ARGUMENTS:
     class(betr_simulation_alm_type) , intent(inout) :: this
@@ -1078,7 +1078,7 @@ contains
   use CNCarbonFluxType  , only : carbonflux_type
   use CanopyStateType   , only : canopystate_type
   use clm_varpar        , only : nlevsno, nlevsoi
-  use ALMBeTRNLMod      , only : reaction_method
+  use tracer_varcon     , only : reaction_method
   use CNCarbonStateType , only : carbonstate_type
   use tracer_varcon     , only : catomw
   implicit none
@@ -1155,7 +1155,7 @@ contains
   !DESCRIPTION
   !set kinetic parameters for column c
   use PlantMicKineticsMod, only : PlantMicKinetics_type
-  use ALMBeTRNLMod    , only : reaction_method
+  use tracer_varcon      , only : reaction_method
   use pftvarcon             , only : noveg
   implicit none
   class(betr_simulation_alm_type), intent(inout)  :: this

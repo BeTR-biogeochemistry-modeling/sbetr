@@ -15,7 +15,7 @@ module Tracer_varcon
   !
   ! !USES:
   use bshr_kind_mod, only : r8 => shr_kind_r8
-
+  use betr_constants, only : betr_string_length
   implicit none
   character(len=*), private, parameter :: mod_filename = &
        __FILE__
@@ -46,6 +46,9 @@ module Tracer_varcon
   logical :: is_phosphorus_active=.true.
   integer, parameter :: sorp_isotherm_linear=1
   integer, parameter :: sorp_isotherm_langmuir=2
+
+  logical  :: advection_on, diffusion_on, reaction_on, ebullition_on
+  character(len=betr_string_length), public :: reaction_method
   save
 
   integer, public :: betr_nlevsoi
