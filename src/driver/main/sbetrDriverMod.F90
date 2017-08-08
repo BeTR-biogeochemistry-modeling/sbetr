@@ -322,7 +322,7 @@ end subroutine sbetrBGC_driver
     use abortutils     , only : endrun
     use shr_log_mod    , only : errMsg => shr_log_errMsg
     use betr_constants , only : stdout, betr_string_length_long, betr_namelist_buffer_size
-
+    use tracer_varcon  , only : advection_on, diffusion_on, reaction_on, ebullition_on, reaction_method
     implicit none
     ! !ARGUMENTS:
     character(len=betr_namelist_buffer_size) , intent(in)  :: namelist_buffer
@@ -338,6 +338,11 @@ end subroutine sbetrBGC_driver
     !-----------------------------------------------------------------------
 
     namelist / sbetr_driver / simulator_name, continue_run
+
+    namelist / betr_parameters /                  &
+         reaction_method,                         &
+         advection_on, diffusion_on, reaction_on, &
+         ebullition_on
 
     continue_run=.false.
     simulator_name = ''
@@ -363,6 +368,37 @@ end subroutine sbetrBGC_driver
        write(stdout, *) ' sbetr_driver namelist settings :'
        write(stdout, *)
        write(stdout, sbetr_driver)
+       write(stdout, *)
+       write(stdout, *) '--------------------'
+    endif
+
+    reaction_method = ''
+    advection_on    = .true.
+    diffusion_on    = .true.
+    reaction_on     = .true.
+    ebullition_on   =.true.
+
+    ! ----------------------------------------------------------------------
+    ! Read namelist from standard input.
+    ! ----------------------------------------------------------------------
+
+    if ( .true. )then
+       ioerror_msg=''
+       read(namelist_buffer, nml=betr_parameters, iostat=nml_error, iomsg=ioerror_msg)
+       if (nml_error /= 0) then
+          call endrun(msg="ERROR reading betr_parameters namelist "//errmsg(mod_filename, __LINE__))
+       end if
+    end if
+
+    if (.true.) then
+       write(stdout, *)
+       write(stdout, *) '--------------------'
+       write(stdout, *)
+       write(stdout, *) ' betr bgc type :'
+       write(stdout, *)
+       write(stdout, *) ' betr_parameters namelist settings :'
+       write(stdout, *)
+       write(stdout, betr_parameters)
        write(stdout, *)
        write(stdout, *) '--------------------'
     endif
