@@ -13,6 +13,7 @@ CXX        = not-set
 FC         = not-set
 travis     = not-set
 BGC        = not-set
+SBETR      = not-set
 UGM        = not-set
 # This proxies everything to the builddir cmake.
 
@@ -24,9 +25,9 @@ CONFIG_FLAGS = -DUNIX=1 -Wno-dev
 
 # Process configuration options.
 ifeq ($(BGC), not-set)
-	CONFIG_FLAGS += -DBGC=0
-else
 	CONFIG_FLAGS += -DBGC=1
+else
+	CONFIG_FLAGS += -DBGC=${BGC}
 endif
 
 ifeq ($(UGM), not-set)
@@ -36,7 +37,6 @@ else
 endif
 
 ifeq ($(SBETR), not-set)
-else
 	CONFIG_FLAGS += -DSBETR=1
 endif
 # Travis-CI build

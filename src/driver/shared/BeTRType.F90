@@ -1296,16 +1296,17 @@ contains
    !------------------------------------------------------------------------
 
   subroutine get_hist_info(this, num_state1d, num_state2d, num_flux1d, num_flux2d, &
-         nmlist_hist1d_state_buffer, nmlist_hist2d_state_buffer, &
-         nmlist_hist1d_flux_buffer, nmlist_hist2d_flux_buffer)
+         state_hist1d_var, state_hist2d_var, &
+         flux_hist1d_var, flux_hist2d_var)
   !
   ! DESCRIPTION
   ! return number of variables for history output
   !
   ! USES
-  use betr_ctrl, only : max_betr_hist_type
+  use betr_ctrl           , only : max_betr_hist_type
   use BetrStatusType      , only : betr_status_type
-  use betr_constants , only : stdout
+  use betr_constants      , only : stdout
+  use BeTRHistVarType     , only : betr_hist_var_type, hist_var_copy
   implicit none
   !ARGUMENTS
   class(betr_type)  ,     intent(inout) :: this
@@ -1313,26 +1314,26 @@ contains
   integer           ,     intent(in)   :: num_state2d
   integer           ,     intent(in)   :: num_flux1d
   integer           ,     intent(in)   :: num_flux2d
-  character(len=255), intent(out) :: nmlist_hist1d_state_buffer(num_state1d)
-  character(len=255), intent(out) :: nmlist_hist2d_state_buffer(num_state2d)
-  character(len=255), intent(out) :: nmlist_hist1d_flux_buffer(num_flux1d)
-  character(len=255), intent(out) :: nmlist_hist2d_flux_buffer(num_flux2d)
+  type(betr_hist_var_type), intent(out) :: state_hist1d_var(1: )
+  type(betr_hist_var_type), intent(out) :: state_hist2d_var(1: )
+  type(betr_hist_var_type), intent(out) :: flux_hist1d_var(1: )
+  type(betr_hist_var_type), intent(out) :: flux_hist2d_var(1: )
   integer :: j
 
   do j = 1, num_state1d
-    nmlist_hist1d_state_buffer(j) = this%tracerstates%nmlist_hist1d_buffer(j)
+    call hist_var_copy(state_hist1d_var(j), this%tracerstates%hist1d_var(j))
   enddo
 
   do j = 1, num_state2d
-    nmlist_hist2d_state_buffer(j) =this%tracerstates%nmlist_hist2d_buffer(j)
+    call hist_var_copy(state_hist2d_var(j),this%tracerstates%hist2d_var(j))
   enddo
 
   do j = 1, num_flux1d
-    nmlist_hist1d_flux_buffer(j) = this%tracerfluxes%nmlist_hist1d_buffer(j)
+    call hist_var_copy(flux_hist1d_var(j), this%tracerfluxes%hist1d_var(j))
   enddo
 
   do j = 1, num_flux2d
-    nmlist_hist2d_flux_buffer(j) = this%tracerfluxes%nmlist_hist2d_buffer(j)
+    call hist_var_copy(flux_hist2d_var(j), this%tracerfluxes%hist2d_var(j))
   enddo
   end subroutine get_hist_info
 

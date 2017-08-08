@@ -1,4 +1,5 @@
 set(BETR_CORE_SOURCES
+  BeTRHistVarType.F90
   BeTRTracerType.F90
   TracerBaseType.F90
   TracerBoundaryCondType.F90

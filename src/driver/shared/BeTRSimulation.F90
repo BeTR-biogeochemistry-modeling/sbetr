@@ -40,6 +40,7 @@ module BeTRSimulation
   use betr_columnType          , only : betr_column_type, create_betr_column_type
   use betr_patchType           , only : betr_patch_type, create_betr_patch_type
   use betr_varcon              , only : spval => bspval
+  use BeTRHistVarType          , only : betr_hist_var_type
   implicit none
 
   private
@@ -69,10 +70,10 @@ module BeTRSimulation
      integer, public                              :: num_soilc
      integer, public, allocatable                 :: filter_soilc(:)
 
-     character(len=255), allocatable :: nmlist_hist1d_state_buffer(:)
-     character(len=255), allocatable :: nmlist_hist2d_state_buffer(:)
-     character(len=255), allocatable :: nmlist_hist1d_flux_buffer(:)
-     character(len=255), allocatable :: nmlist_hist2d_flux_buffer(:)
+     type(betr_hist_var_type), allocatable :: state_hist1d_var(:)
+     type(betr_hist_var_type), allocatable :: state_hist2d_var(:)
+     type(betr_hist_var_type), allocatable :: flux_hist1d_var(:)
+     type(betr_hist_var_type), allocatable :: flux_hist2d_var(:)
      integer :: num_hist_state1d
      integer :: num_hist_state2d
      integer :: num_hist_flux1d
@@ -347,8 +348,8 @@ contains
 
     call this%betr(c)%get_hist_info(this%num_hist_state1d, this%num_hist_state2d, &
       this%num_hist_flux1d, this%num_hist_flux2d, &
-      this%nmlist_hist1d_state_buffer, this%nmlist_hist2d_state_buffer, &
-      this%nmlist_hist1d_flux_buffer, this%nmlist_hist2d_flux_buffer)
+      this%state_hist1d_var(1:this%num_hist_state1d), this%state_hist2d_var(1:this%num_hist_state2d), &
+      this%flux_hist1d_var(1:this%num_hist_flux1d), this%flux_hist2d_var(1:this%num_hist_flux2d))
 
     if(this%bstatus(c)%check_status())then
       call this%bsimstatus%setcol(c)
@@ -405,15 +406,15 @@ contains
 
   begc = bounds%begc; endc=bounds%endc
   !state variables
-  allocate(this%nmlist_hist1d_state_buffer(this%num_hist_state1d)); this%nmlist_hist1d_state_buffer(:)=''
-  allocate(this%nmlist_hist2d_state_buffer(this%num_hist_state2d)); this%nmlist_hist2d_state_buffer(:)=''
+  allocate(this%state_hist1d_var(this%num_hist_state1d))
+  allocate(this%state_hist2d_var(this%num_hist_state2d))
 
   allocate(this%hist_states_2d(begc:endc, 1:betr_nlevtrc_soil, 1:this%num_hist_state2d))
   allocate(this%hist_states_1d(begc:endc, 1:this%num_hist_state1d))
 
   !flux variables
-  allocate(this%nmlist_hist1d_flux_buffer(this%num_hist_flux1d)); this%nmlist_hist1d_flux_buffer(:)=''
-  allocate(this%nmlist_hist2d_flux_buffer(this%num_hist_flux2d)); this%nmlist_hist2d_flux_buffer(:)=''
+  allocate(this%flux_hist1d_var(this%num_hist_flux1d))
+  allocate(this%flux_hist2d_var(this%num_hist_flux2d))
 
   allocate(this%hist_fluxes_2d(begc:endc, 1:betr_nlevtrc_soil, 1:this%num_hist_flux2d))
   allocate(this%hist_fluxes_1d(begc:endc, 1:this%num_hist_flux1d))
@@ -1329,24 +1330,11 @@ contains
   type(file_desc_t) ,   optional,  intent(inout)   :: ncid
   !local variables
   integer :: jj, begc, endc
-  character(len=100) :: fname
-  character(len=30) :: units
-  character(len=20) :: avgflag
-  character(len=20) :: type2d
-  character(len=200) :: long_name
-  character(len=20) :: default
-  integer :: nml_error
-  character(len=200):: ioerror_msg
+
   character(len=*), parameter :: subname = 'hist_create_fluxes'
 
   real(r8), pointer :: data2dptr(:,:) ! temp. pointers for slicing larger arrays
   real(r8), pointer :: data1dptr(:)   ! temp. pointers for slicing larger arrays
-
-  namelist /hist2d_fmt/    &
-  fname, units, avgflag,type2d,long_name, default
-
-  namelist /hist1d_fmt/    &
-  fname, units, avgflag, long_name, default
 
   if(betr_offline .and. (.not. present(ncid)))then
     call endrun(msg="ncid not defined in "//subname//errmsg(mod_filename, __LINE__))
@@ -1355,39 +1343,40 @@ contains
   begc=bounds%begc; endc=bounds%endc
 
   do jj = 1, num_flux2d
-    !read name list
-    read(this%nmlist_hist2d_flux_buffer(jj), nml=hist2d_fmt, iostat=nml_error, iomsg=ioerror_msg)
 
-    if(nml_error/=0)then
-      write(biulog,*)'reading ',jj,'-th namelist failed'//ioerror_msg
-    endif
     if(betr_offline)then
-      write(biulog,*)'2d flux',jj,trim(fname)
-      call hist_def_fld2d (ncid, varname=fname, nf90_type=ncd_float, dim1name = "ncol",&
-            dim2name="levtrc", long_name=long_name, units=units)
+
+      call hist_def_fld2d (ncid, varname=this%flux_hist2d_var(jj)%varname, &
+            nf90_type=ncd_float, dim1name = "ncol",&
+            dim2name="levtrc", long_name=this%flux_hist2d_var(jj)%long_name, &
+            units=this%flux_hist2d_var(jj)%units)
     else
       this%hist_fluxes_2d(begc:endc,1:betr_nlevtrc_soil, jj) = spval
       data2dptr => this%hist_fluxes_2d(begc:endc,1:betr_nlevtrc_soil, jj)
-      call hist_addfld2d (fname=fname, units=units, type2d=type2d,  &
-           avgflag=avgflag, long_name=long_name,  ptr_col=data2dptr, default=default)
+      call hist_addfld2d (fname=this%flux_hist2d_var(jj)%varname, &
+           units=this%flux_hist1d_var(jj)%units, type2d="levtrc",  &
+           avgflag=this%flux_hist2d_var(jj)%avg_flag, &
+           long_name=this%flux_hist2d_var(jj)%long_name,  ptr_col=data2dptr, &
+           default=this%flux_hist2d_var(jj)%use_default)
     endif
   enddo
 
   do jj = 1, num_flux1d
-    !read name list
-    read(this%nmlist_hist1d_flux_buffer(jj), nml=hist1d_fmt, iostat=nml_error, iomsg=ioerror_msg)
-    if(nml_error/=0)then
-      write(biulog,*)'reading ',jj,'-th namelist failed'//ioerror_msg
-    endif
+
     if(betr_offline)then
-      write(biulog,*)'1d flux',jj,trim(fname)
-      call hist_def_fld1d (ncid, varname=fname,  nf90_type=ncd_float, &
-        dim1name="ncol", long_name=long_name, units=units)
+
+      call hist_def_fld1d (ncid, varname=this%flux_hist1d_var(jj)%varname, &
+        nf90_type=ncd_float, &
+        dim1name="ncol", long_name=this%flux_hist1d_var(jj)%long_name,&
+        units=this%flux_hist1d_var(jj)%units)
     else
       this%hist_fluxes_1d(begc:endc,jj) = spval
       data1dptr => this%hist_fluxes_1d(begc:endc, jj)
-      call hist_addfld1d (fname=fname, units=units,  avgflag=avgflag, long_name=long_name, &
-        ptr_col=data1dptr, default=default)
+      call hist_addfld1d (fname=this%flux_hist1d_var(jj)%varname, &
+        units=this%flux_hist1d_var(jj)%units,  &
+        avgflag=this%flux_hist1d_var(jj)%avg_flag, &
+        long_name=this%flux_hist1d_var(jj)%long_name, &
+        ptr_col=data1dptr, default=this%flux_hist1d_var(jj)%use_default)
     endif
 
   enddo
@@ -1412,24 +1401,12 @@ contains
   !local variables
   integer :: begc, endc
   integer :: jj
-  character(len=100) :: fname
-  character(len=30) :: units
-  character(len=20) :: avgflag
-  character(len=20) :: type2d
-  character(len=200) :: long_name
-  character(len=20) :: default
-  integer :: nml_error
-  character(len=200):: ioerror_msg
+
   real(r8), pointer :: data2dptr(:,:) ! temp. pointers for slicing larger arrays
   real(r8), pointer :: data1dptr(:)   ! temp. pointers for slicing larger arrays
 
   character(len=*), parameter :: subname = 'hist_create_states'
 
-  namelist /hist2d_fmt/    &
-  fname, units, avgflag,type2d,long_name, default
-
-  namelist /hist1d_fmt/    &
-  fname, units, avgflag, long_name, default
 
   if(betr_offline .and. (.not. present(ncid)))then
     call endrun(msg="ncid not defined in "//subname//errmsg(mod_filename, __LINE__))
@@ -1437,41 +1414,40 @@ contains
 
   begc = bounds%begc; endc = bounds%endc
 
-
   do jj = 1, num_state2d
     !read namelist
-    read(this%nmlist_hist2d_state_buffer(jj), nml=hist2d_fmt, iostat=nml_error, iomsg=ioerror_msg)
-    if(nml_error/=0)then
-      write(biulog,*)'reading ',jj,'-th namelist failed'//ioerror_msg
-    endif
 
     if(betr_offline)then
-      write(biulog,*)'2d state',jj,trim(fname)
-      call hist_def_fld2d (ncid=ncid, varname=trim(fname), nf90_type=ncd_float, dim1name = "ncol",&
-          dim2name="levtrc", long_name=long_name, units=units)
+
+      call hist_def_fld2d (ncid=ncid, varname=this%state_hist2d_var(jj)%varname, &
+          nf90_type=ncd_float, dim1name = "ncol",&
+          dim2name="levtrc", long_name=this%state_hist2d_var(jj)%long_name,&
+          units=this%state_hist2d_var(jj)%units)
     else
       this%hist_states_2d(begc:endc,1:betr_nlevtrc_soil, jj) = spval
       data2dptr => this%hist_states_2d(begc:endc,1:betr_nlevtrc_soil, jj)
-      call hist_addfld2d (fname=fname, units=units, type2d=type2d,  &
-           avgflag=avgflag, long_name=long_name,  ptr_col=data2dptr, default=default)
+      call hist_addfld2d (fname=this%state_hist2d_var(jj)%varname, &
+           units=this%state_hist2d_var(jj)%units, type2d="levtrc",  &
+           avgflag=this%state_hist2d_var(jj)%avg_flag, &
+           long_name=this%state_hist2d_var(jj)%long_name, &
+           ptr_col=data2dptr, default=this%state_hist2d_var(jj)%use_default)
     endif
   enddo
 
   do jj = 1, num_state1d
-    !read namelist
-    read(this%nmlist_hist1d_state_buffer(jj), nml=hist1d_fmt, iostat=nml_error, iomsg=ioerror_msg)
-    if(nml_error/=0)then
-      write(biulog,*)'reading ',jj,'-th namelist failed'//ioerror_msg
-    endif
+
     if(betr_offline)then
-      write(biulog,*)'1d state',jj,trim(fname)
-      call hist_def_fld1d (ncid, varname=fname,  nf90_type=ncd_float, &
-        dim1name="ncol", long_name=long_name, units=units)
+
+      call hist_def_fld1d (ncid, varname=this%state_hist1d_var(jj)%varname,  nf90_type=ncd_float, &
+        dim1name="ncol", long_name=this%state_hist1d_var(jj)%long_name, units=this%state_hist1d_var(jj)%units)
     else
       this%hist_states_1d(begc:endc,jj) = spval
       data1dptr => this%hist_states_1d(begc:endc,jj)
-      call hist_addfld1d (fname=fname, units=units, avgflag=avgflag, &
-          long_name=long_name, ptr_col=data1dptr, default=default)
+      call hist_addfld1d (fname=this%state_hist1d_var(jj)%varname, &
+          units=this%state_hist1d_var(jj)%units,      &
+          avgflag=this%state_hist1d_var(jj)%avg_flag, &
+          long_name=this%state_hist1d_var(jj)%long_name, &
+          ptr_col=data1dptr, default=this%state_hist1d_var(jj)%use_default)
     endif
   enddo
 
@@ -1498,49 +1474,26 @@ contains
   type(file_desc_t) ,     intent(inout)   :: ncid
   !local variables
   integer :: jj, begc, endc
-  character(len=100) :: fname
-  character(len=30) :: units
-  character(len=20) :: avgflag
-  character(len=20) :: type2d
-  character(len=200) :: long_name
-  character(len=20) :: default
-  integer :: nml_error
-  character(len=200):: ioerror_msg
+
   character(len=*), parameter :: subname = 'hist_output_fluxes'
 
   real(r8), pointer :: data2dptr(:,:) ! temp. pointers for slicing larger arrays
   real(r8), pointer :: data1dptr(:)   ! temp. pointers for slicing larger arrays
 
 
-  namelist /hist2d_fmt/    &
-  fname, units, avgflag,type2d,long_name, default
-
-  namelist /hist1d_fmt/    &
-  fname, units, avgflag, long_name, default
-
   begc=bounds%begc; endc=bounds%endc
 
   do jj = 1, num_flux2d
-    !read name list
-    read(this%nmlist_hist2d_flux_buffer(jj), nml=hist2d_fmt, iostat=nml_error, iomsg=ioerror_msg)
-    if(nml_error/=0)then
-      write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
-    endif
-    data2dptr => this%hist_fluxes_2d(begc:endc,1:betr_nlevtrc_soil, jj)
 
-    call ncd_putvar(ncid, fname, record, data2dptr)
+    data2dptr => this%hist_fluxes_2d(begc:endc,1:betr_nlevtrc_soil, jj)
+    call ncd_putvar(ncid, this%flux_hist2d_var(jj)%varname, record, data2dptr)
 
   enddo
 
   do jj = 1, num_flux1d
-    !read name list
-    read(this%nmlist_hist1d_flux_buffer(jj), nml=hist1d_fmt, iostat=nml_error, iomsg=ioerror_msg)
-    if(nml_error/=0)then
-      write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
-    endif
-    data1dptr => this%hist_fluxes_1d(begc:endc, jj)
 
-    call ncd_putvar(ncid,fname, record, data1dptr)
+    data1dptr => this%hist_fluxes_1d(begc:endc, jj)
+    call ncd_putvar(ncid,this%flux_hist1d_var(jj)%varname, record, data1dptr)
 
   enddo
 
@@ -1566,51 +1519,29 @@ contains
   !local variables
   integer :: begc, endc
   integer :: jj
-  character(len=100) :: fname
-  character(len=30) :: units
-  character(len=20) :: avgflag
-  character(len=20) :: type2d
-  character(len=200) :: long_name
-  character(len=20) :: default
-  integer :: nml_error
-  character(len=200):: ioerror_msg
+
   real(r8), pointer :: data2dptr(:,:) ! temp. pointers for slicing larger arrays
   real(r8), pointer :: data1dptr(:)   ! temp. pointers for slicing larger arrays
 
   character(len=*), parameter :: subname = 'hist_output_states'
 
-  namelist /hist2d_fmt/    &
-  fname, units, avgflag,type2d,long_name, default
-
-  namelist /hist1d_fmt/    &
-  fname, units, avgflag, long_name, default
 
   begc = bounds%begc; endc = bounds%endc
 
 
   do jj = 1, num_state2d
-    !read namelist
-    read(this%nmlist_hist2d_state_buffer(jj), nml=hist2d_fmt, iostat=nml_error, iomsg=ioerror_msg)
-    if(nml_error/=0)then
-      write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
-    endif
 
     data2dptr => this%hist_states_2d(begc:endc,1:betr_nlevtrc_soil, jj)
 
-    call ncd_putvar(ncid,fname, record, data2dptr)
+    call ncd_putvar(ncid,this%state_hist2d_var(jj)%varname, record, data2dptr)
 
   enddo
 
   do jj = 1, num_state1d
-    !read namelist
-    read(this%nmlist_hist1d_state_buffer(jj), nml=hist1d_fmt, iostat=nml_error, iomsg=ioerror_msg)
-    if(nml_error/=0)then
-      write(*,*)'reading ',jj,'-th namelist failed'//ioerror_msg
-    endif
 
     data1dptr => this%hist_states_1d(begc:endc,jj)
 
-    call ncd_putvar(ncid,fname, record, data1dptr)
+    call ncd_putvar(ncid,this%state_hist1d_var(jj)%varname, record, data1dptr)
 
   enddo
 

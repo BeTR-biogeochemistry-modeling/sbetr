@@ -153,7 +153,7 @@ contains
     ! !LOCAL VARIABLES:
     integer :: begc, endc
     integer :: jj, kk
-
+    integer :: it, num2d, num1d
     associate(                                                       &
          ntracers          =>  betrtracer_vars%ntracers            , &
          ngwmobile_tracers =>  betrtracer_vars%ngwmobile_tracers   , &
@@ -166,47 +166,53 @@ contains
          frozenid          =>  betrtracer_vars%frozenid              &
          )
 
-      call this%add_hist_var2d(fname='TRACER_P_GAS', units='Pa', type2d='levtrc',  &
+      num2d = 0; num1d= 0
+
+      do it = 1, 2
+
+        call this%add_hist_var2d(it, num2d, fname='TRACER_P_GAS', units='Pa', type2d='levtrc',  &
            avgflag='A', long_name='total gas pressure')
 
-      do jj = 1, ntracers
+        do jj = 1, ntracers
 
-         call this%add_hist_var2d (fname=trim(tracernames(jj))//'_TRACER_CONC_BULK', units='mol m-3', type2d='levtrc',  &
+          call this%add_hist_var2d (it, num2d, fname=trim(tracernames(jj))//'_TRACER_CONC_BULK', units='mol m-3', type2d='levtrc',  &
            avgflag='A', long_name='gw-mobile phase for tracer '//trim(tracernames(jj)))
 
-         if(jj<= ngwmobile_tracers)then
+          if(jj<= ngwmobile_tracers)then
 
-            call this%add_hist_var1d (fname=trim(tracernames(jj))//'_TRACER_CONC_SURFWATER', units='mol m-3', &
+            call this%add_hist_var1d (it, num1d, fname=trim(tracernames(jj))//'_TRACER_CONC_SURFWATER', units='mol m-3', &
                  avgflag='A', long_name='head concentration for tracer '//trim(tracernames(jj)), &
                  default='inactive')
 
-            call this%add_hist_var1d (fname=trim(tracernames(jj))//'_TRACER_CONC_AQUIFER', units='mol m-3', &
+            call this%add_hist_var1d (it, num1d, fname=trim(tracernames(jj))//'_TRACER_CONC_AQUIFER', units='mol m-3', &
                  avgflag='A', long_name='quifier concentration for tracer '//trim(tracernames(jj)), &
                  default='inactive')
 
-            call this%add_hist_var1d (fname=trim(tracernames(jj))//'_TRACER_CONC_GRNDWATER', units='mol m-3', &
+            call this%add_hist_var1d (it, num1d, fname=trim(tracernames(jj))//'_TRACER_CONC_GRNDWATER', units='mol m-3', &
                  avgflag='A', long_name='groundwater concentration for tracer '//trim(tracernames(jj)), &
                  default='inactive')
 
             if(is_volatile(jj) .and. (.not. is_h2o(jj)) .and. (.not. is_isotope(jj)))then
-               call this%add_hist_var2d (fname=trim(tracernames(jj))//'_TRACER_P_GAS_FRAC', units='none', type2d='levtrc',  &
+               call this%add_hist_var2d (it, num2d, fname=trim(tracernames(jj))//'_TRACER_P_GAS_FRAC', units='none', type2d='levtrc',  &
                     avgflag='A', long_name='fraction of gas phase contributed by '//trim(tracernames(jj)))
             endif
 
             if(is_frozen(jj))then
-               call this%add_hist_var2d (fname=trim(tracernames(jj))//'_TRACER_CONC_FROZEN', units='mol m-3', type2d='levtrc',  &
+               call this%add_hist_var2d (it, num2d, fname=trim(tracernames(jj))//'_TRACER_CONC_FROZEN', units='mol m-3', type2d='levtrc',  &
                     avgflag='A', long_name='frozen phase for tracer '//trim(tracernames(jj)))
             endif
-         endif
-         call this%add_hist_var1d (fname=trim(tracernames(jj))//'_TRCER_SOI_MOLAMASS', units='mol m-2', &
+          endif
+          call this%add_hist_var1d (it, num1d, fname=trim(tracernames(jj))//'_TRCER_SOI_MOLAMASS', units='mol m-2', &
               avgflag='A', long_name='total molar mass in soil for '//trim(tracernames(jj)), &
               default='inactive')
 
-         call this%add_hist_var1d (fname=trim(tracernames(jj))//'_TRCER_COL_MOLAMASS', units='mol m-2', &
+          call this%add_hist_var1d (it, num1d, fname=trim(tracernames(jj))//'_TRCER_COL_MOLAMASS', units='mol m-2', &
               avgflag='A', long_name='total molar mass in the column (soi+snow) for '//trim(tracernames(jj)), &
               default='inactive')
+        enddo
+        if(it==1)call this%alloc_hist_list(num1d, num2d)
+        num2d = 0; num1d= 0
       enddo
-      call this%sort_hist_list()
     end associate
   end subroutine InitHistory
 

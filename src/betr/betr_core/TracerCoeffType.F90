@@ -181,7 +181,7 @@ contains
     integer :: jj, kk, trcid
     real(r8), pointer :: data2dptr(:,:) ! temp. pointers for slicing larger arrays
     real(r8), pointer :: data1dptr(:)   ! temp. pointers for slicing larger arrays
-
+    integer :: num2d, num1d, it
     !use the interface provided from CLM
     associate(                                                                     &
          ntracer_groups       => betrtracer_vars%ntracer_groups                  , &
@@ -192,40 +192,46 @@ contains
          volatilegroupid      => betrtracer_vars%volatilegroupid                 , &
          tracernames          => betrtracer_vars%tracernames                       &
          )
-      do jj = 1, ntracer_groups
+
+     num2d = 0; num1d= 0
+     do it = 1, 2
+       do jj = 1, ntracer_groups
          trcid = tracer_group_memid(jj,1)
          if(jj <= ngwmobile_tracer_groups)then
 
             if(is_volatile(trcid))then
                kk = volatilegroupid(jj)
 
-               call this%add_hist_var1d (fname='SCAL_ARENCHYMA_'//tracernames(trcid), units='none',                &
+               call this%add_hist_var1d (it, num1d, fname='SCAL_ARENCHYMA_'//tracernames(trcid), units='none',                &
                     avgflag='A', long_name='scaling factor for tracer transport through arenchyma for '//trim(tracernames(trcid)), &
                     default='inactive')
 
-               call this%add_hist_var1d (fname='ARENCHYMA_'//tracernames(trcid), units='m/s',                         &
+               call this%add_hist_var1d (it, num1d, fname='ARENCHYMA_'//tracernames(trcid), units='m/s',                         &
                     avgflag='A', long_name='conductance for tracer transport through arenchyma for '//trim(tracernames(trcid)),    &
                     default='inactive')
 
-               call this%add_hist_var1d (fname='CDIFF_TOPSOI_'//tracernames(trcid), units='none',                     &
+               call this%add_hist_var1d (it, num1d, fname='CDIFF_TOPSOI_'//tracernames(trcid), units='none',                     &
                     avgflag='A', long_name='gas diffusivity in top soil layer for '//trim(tracernames(trcid)),                     &
                     default='inactive')
 
-               call this%add_hist_var2d (fname='CGAS2BULK_'//tracernames(trcid), units='none', type2d='levtrc',          &
+               call this%add_hist_var2d (it, num2d, fname='CGAS2BULK_'//tracernames(trcid), units='none', type2d='levtrc',          &
                     avgflag='A', long_name='converting factor from gas to bulk phase for '//trim(tracernames(trcid)),              &
                     default='inactive')
             endif
 
-            call this%add_hist_var2d (fname='CAQU2BULK_vr_'//tracernames(trcid), units='none', type2d='levtrc',            &
+            call this%add_hist_var2d (it, num2d, fname='CAQU2BULK_vr_'//tracernames(trcid), units='none', type2d='levtrc',            &
                  avgflag='A', long_name='converting factor from aqeous to bulk phase for '//trim(tracernames(trcid)),              &
                  default='inactive')
 
          endif
 
-         call this%add_hist_var2d (fname='HMCONDC_vr_'//tracernames(trcid), units='none', type2d='levtrc',            &
+         call this%add_hist_var2d (it, num2d, fname='HMCONDC_vr_'//tracernames(trcid), units='none', type2d='levtrc',            &
               avgflag='A', long_name='bulk conductance for '//trim(tracernames(trcid)),                           &
               default='inactive')
       enddo
+      if(it==1)call this%alloc_hist_list(num1d, num2d)
+      num2d = 0; num1d= 0
+    enddo
 
     end associate
   end subroutine InitHistory
