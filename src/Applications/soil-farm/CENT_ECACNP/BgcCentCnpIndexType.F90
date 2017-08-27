@@ -84,8 +84,6 @@ implicit none
      integer           :: lid_c14_co2_paere
      integer           :: lid_ch4_paere
      integer           :: lid_n2o_paere
-
-     integer           :: lid_nh4_supp
      integer           :: nprimvars                              !total number of primary variables
      integer           :: nstvars                                !number of equations for the state variabile vector
      integer           :: nreactions                             !seven decomposition pathways plus nitrification, denitrification and plant immobilization
@@ -96,6 +94,7 @@ implicit none
      integer, pointer :: lid_plant_minn_no3_pft(:)=> null()
      integer, pointer :: lid_plant_minn_nh4_pft(:)=> null()
      integer, pointer :: lid_plant_minp_pft(:)=> null()
+
      logical :: debug
      character(len=loc_name_len), allocatable :: varnames(:)
    contains
@@ -192,7 +191,7 @@ implicit none
   end subroutine add_ompool_name
 
   !-------------------------------------------------------------------------------
-  subroutine Init(this, use_c13, use_c14, maxpft)
+  subroutine Init(this, use_c13, use_c14, non_limit, nop_limit, maxpft)
     !
     ! DESCRIPTION:
     ! Initialize centurybgc type
@@ -202,6 +201,8 @@ implicit none
   class(centurybgc_index_type), intent(inout) :: this
   logical, intent(in) :: use_c13
   logical, intent(in) :: use_c14
+  logical, intent(in) :: non_limit
+  logical, intent(in) :: nop_limit
   integer, optional, intent(in) :: maxpft
 
   ! !LOCAL VARIABLES:
@@ -209,7 +210,7 @@ implicit none
 
   maxpft_loc = 0
   if(present(maxpft))maxpft_loc=maxpft
-  call this%InitPars(maxpft_loc, use_c14, use_c13)
+  call this%InitPars(maxpft_loc, use_c14, use_c13, non_limit, nop_limit)
 
   call this%InitAllocate()
 
@@ -219,7 +220,7 @@ implicit none
   end subroutine Init
   !-------------------------------------------------------------------------------
 
-  subroutine InitPars(this, maxpft, use_c14, use_c13)
+  subroutine InitPars(this, maxpft, use_c14, use_c13, non_limit, nop_limit)
     !
     ! !DESCRIPTION:
     !  describe the layout of the stoichiometric matrix for the reactions
@@ -248,6 +249,8 @@ implicit none
     integer, intent(in) :: maxpft
     logical, intent(in) :: use_c13
     logical, intent(in) :: use_c14
+    logical, intent(in) :: non_limit
+    logical, intent(in) :: nop_limit
     ! !LOCAL VARIABLES:
     integer :: itemp
     integer :: ireac   !counter of reactions
@@ -318,13 +321,6 @@ implicit none
     itemp               = this%nom_pools*this%nelms
 
     this%nom_tot_elms    = itemp
-    this%lid_nh4        = addone(itemp); this%lid_nh4_nit_reac = addone(ireac)       !this is also used to indicate the nitrification reaction
-    call list_insert(list_name, 'nh4')
-    this%lid_no3        = addone(itemp); this%lid_no3_den_reac = addone(ireac)       !this is also used to indicate the denitrification reaction
-    call list_insert(list_name, 'no3')
-
-    this%lid_minp_soluble=addone(itemp); this%lid_minp_soluble_to_secp_reac = addone(ireac)
-    call list_insert(list_name, 'minp_soluble')
 
     this%lid_minp_secondary = addone(itemp); this%lid_minp_secondary_to_sol_occ_reac=addone(ireac)
     call list_insert(list_name, 'minp_secondary')
@@ -355,7 +351,27 @@ implicit none
 
     this%lid_n2o        = addone(itemp);call list_insert(list_name, 'n2o')
     this%lid_n2         = addone(itemp);call list_insert(list_name, 'n2')
-    this%nprimvars      = itemp     !primary state variables 14 + 6
+
+    this%nprimvars      = itemp
+
+    this%lid_nh4        = addone(itemp)
+    this%lid_no3        = addone(itemp)
+    if(.not. non_limit)then
+      !when N is unlimited, nh4 and no3 are not primary variables
+      this%nprimvars = this%nprimvars + 2
+    endif
+    this%lid_nh4_nit_reac = addone(ireac)       !this is also used to indicate the nitrification reaction
+    this%lid_no3_den_reac = addone(ireac)       !this is also used to indicate the denitrification reaction
+    call list_insert(list_name, 'nh4')
+    call list_insert(list_name, 'no3')
+
+    this%lid_minp_soluble_to_secp_reac = addone(ireac)
+    this%lid_minp_soluble=addone(itemp);
+    call list_insert(list_name, 'minp_soluble')
+    if(.not. nop_limit)then
+      !when P is unlimited, P is not a primary variable
+      this%nprimvars      = this%nprimvars + 1     !primary state variables 14 + 6
+    endif
 
     !diagnostic variables
     this%lid_plant_minn_nh4 = addone(itemp)  !this is used to indicate plant mineral nitrogen uptake

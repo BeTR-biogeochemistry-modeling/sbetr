@@ -864,6 +864,7 @@ contains
   use CNCarbonFluxType  , only : carbonflux_type
   use CanopyStateType   , only : canopystate_type
   use MathfuncMod       , only : isnan => bisnan
+  use pftvarcon         , only : noveg
   implicit none
   !ARGUMENTS
   class(betr_simulation_type) , intent(inout)        :: this
@@ -901,7 +902,7 @@ contains
           do pi = 1, betr_maxpatch_pft
             if (pi <= col%npfts(c)) then
               p = col%pfti(c) + pi - 1
-              if (pft%active(p)) then
+              if (pft%active(p) .and. pft%itype(p)/=noveg) then
                 pp = pp + 1
                 this%biophys_forc(c)%annsum_npp_patch(pp) = carbonflux_vars%annsum_npp_patch(p)
                 this%biophys_forc(c)%agnpp_patch(pp)      = carbonflux_vars%agnpp_patch(p)
@@ -955,10 +956,11 @@ contains
       do pi = 1, betr_maxpatch_pft
        if (pi <= col%npfts(c)) then
          p = col%pfti(c) + pi - 1
-         if (pft%active(p)) then
+         if (pft%active(p) .and. pft%itype(p)/=noveg) then
            pp = pp + 1
            this%biophys_forc(c)%qflx_tran_veg_patch(pp)     = waterflux_vars%qflx_tran_veg_patch(p)
            this%biophys_forc(c)%qflx_rootsoi_frac_patch(pp,lbj:ubj) = waterflux_vars%qflx_rootsoi_frac_patch(p,lbj:ubj)
+
          endif
        endif
       enddo
@@ -970,7 +972,7 @@ contains
       do pi = 1, betr_maxpatch_pft
         if (pi <= col%npfts(c)) then
           p = col%pfti(c) + pi - 1
-          if (pft%active(p)) then
+          if (pft%active(p) .and. pft%itype(p)/=noveg) then
             pp = pp + 1
             this%biophys_forc(c)%t_veg_patch(pp)         = temperature_vars%t_veg_patch(p)
           endif
@@ -994,7 +996,7 @@ contains
       do pi = 1, betr_maxpatch_pft
         if (pi <= col%npfts(c)) then
           p = col%pfti(c) + pi - 1
-          if (pft%active(p)) then
+          if (pft%active(p) .and. pft%itype(p)/=noveg) then
             pp = pp + 1
             this%biophys_forc(c)%lbl_rsc_h2o_patch(pp) = canopystate_vars%lbl_rsc_h2o_patch(p)
             this%biophys_forc(c)%elai_patch(pp)        = canopystate_vars%elai_patch(p)
@@ -1019,7 +1021,7 @@ contains
       do pi = 1, betr_maxpatch_pft
         if (pi <= col%npfts(c)) then
           p = col%pfti(c) + pi - 1
-          if (pft%active(p)) then
+          if (pft%active(p) .and. pft%itype(p)/=noveg) then
             pp = pp + 1
             this%biophys_forc(c)%rootfr_patch(pp,lbj:ubj) = soilstate_vars%rootfr_patch(p,lbj:ubj)
           endif
@@ -1832,7 +1834,7 @@ contains
       do pi = 1, betr_maxpatch_pft
         if (pi <= col%npfts(c)) then
           p = col%pfti(c) + pi - 1
-          if (pft%active(p) .and. (pft%itype(p) .ne. noveg)) then
+          if (pft%active(p) .and. (pft%itype(p) /= noveg)) then
             pp = pp + 1
             this%betr_pft(c)%wtcol(pp) = pft%wtcol(p)
             this%betr_pft(c)%itype(pp) = pft%itype(p)

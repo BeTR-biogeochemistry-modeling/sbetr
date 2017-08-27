@@ -89,7 +89,9 @@ implicit none
   contains
     procedure, public  :: Init
     procedure, private :: InitAllocate
+    procedure, public  :: summary
     procedure, public  :: reset
+    procedure, public  :: frac_normalize
   end type betr_biogeophys_input_type
 
   public :: create_betr_biogeophys_input
@@ -171,7 +173,7 @@ contains
   allocate(this%qflx_snow2topsoi_col     (begc:endc         ) ) ! col liquid water coming from residual snow to topsoil (mm H2O/s)
   allocate(this%qflx_tran_veg_patch      (begp:endp         ) )
   allocate(this%qflx_rootsoi_col         (begc:endc,lbj:ubj ) ) ! col root and soil water exchange [mm H2O/s] [+ into root]
-  allocate(this%qflx_rootsoi_frac_patch       (begp:endp,lbj:ubj ) ) ! col root and soil water exchange [mm H2O/s] [+ into root]
+  allocate(this%qflx_rootsoi_frac_patch  (begp:endp,lbj:ubj ) ) ! col root and soil water exchange [mm H2O/s] [+ into root]
 
   !temperature
   allocate(this%t_soi_10cm(                     begc:endc         )) !soil temperature in top 10cm of soil (Kelvin)
@@ -226,6 +228,54 @@ contains
   if(use_c13_betr)call this%c13flx%reset(value_column)
   if(use_c14_betr)call this%c14flx%reset(value_column)
 
-
   end subroutine reset
+
+  !------------------------------------------------------------------------
+  subroutine summary(this, bounds, lbj, ubj, dz)
+  use tracer_varcon, only : use_c13_betr, use_c14_betr
+  implicit none
+  class(betr_biogeophys_input_type),intent(inout)  :: this
+  type(betr_bounds_type), intent(in) :: bounds
+  integer , intent(in) :: lbj, ubj
+  real(r8), intent(in) :: dz(bounds%begc:bounds%endc,lbj:ubj)
+
+  !integrate
+  call this%c12flx%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj))
+
+  if(use_c13_betr)then
+     call this%c13flx%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj))
+  endif
+
+  if(use_c14_betr)then
+     call this%c14flx%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj))
+  endif
+
+  call this%n14flx%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj))
+
+  call this%p31flx%summary(bounds, lbj, ubj, dz)
+  end subroutine summary
+
+  !------------------------------------------------------------------------
+  subroutine frac_normalize(this, npfts, lbj, ubj)
+  !
+  ! DESCRIPTION
+  ! normalize some fractional data
+  implicit none
+  class(betr_biogeophys_input_type),intent(inout)  :: this
+  integer , intent(in) :: npfts
+  integer , intent(in) :: lbj, ubj
+
+  integer :: j, p
+  real(r8) :: nrmscal
+
+  do j = lbj, ubj
+    nrmscal= sum(this%qflx_rootsoi_frac_patch(1:npfts,j))
+    if(nrmscal/=0._r8)then
+      do p = 1, npfts
+        this%qflx_rootsoi_frac_patch(p,j) = this%qflx_rootsoi_frac_patch(p,j) / nrmscal
+      end do
+    endif
+  enddo
+
+  end subroutine frac_normalize
 end module BeTR_biogeophysInputType

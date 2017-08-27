@@ -356,12 +356,12 @@ contains
     if (cascade_matrix(lid_nh4, reac) < 0._r8)alpha_n(reac)=1._r8
     if (cascade_matrix(lid_minp_soluble,reac) < 0._r8)alpha_p(reac)=1._r8
     if(debug)then
-      write(*,*)'lit1 carbon',cascade_matrix((lit1-1)*nelms+c_loc   ,reac)+cascade_matrix((som1-1)*nelms+c_loc   ,reac)+&
-        cascade_matrix(lid_co2             ,reac)
-      write(*,*)'lit1 nitrogen',cascade_matrix((lit1-1)*nelms+n_loc   ,reac)+cascade_matrix((som1-1)*nelms+n_loc   ,reac)+&
-       cascade_matrix(lid_nh4         ,reac)
-      write(*,*)'lit2 phosp',cascade_matrix((lit1-1)*nelms+p_loc   ,reac)+cascade_matrix((som1-1)*nelms+p_loc   ,reac)+&
-       cascade_matrix(lid_minp_soluble        ,reac)
+!      write(*,*)'lit1 carbon',cascade_matrix((lit1-1)*nelms+c_loc   ,reac)+cascade_matrix((som1-1)*nelms+c_loc   ,reac)+&
+!        cascade_matrix(lid_co2             ,reac)
+!      write(*,*)'lit1 nitrogen',cascade_matrix((lit1-1)*nelms+n_loc   ,reac)+cascade_matrix((som1-1)*nelms+n_loc   ,reac)+&
+!       cascade_matrix(lid_nh4         ,reac)
+!      write(*,*)'lit2 phosp',reac,cascade_matrix((lit1-1)*nelms+p_loc   ,reac)+cascade_matrix((som1-1)*nelms+p_loc   ,reac),&
+!       cascade_matrix(lid_minp_soluble        ,reac)
     endif
     !---------------------------------------------------------------------------------
     !reaction 2, lit2 -> s1
@@ -403,12 +403,12 @@ contains
       cascade_matrix((som1-1)*nelms+c13_loc   , reac) =  safe_div(1._r8-rf_l2s1_bgc,this%cc13_ratios(lit2))
     endif
     if(debug)then
-      write(*,*)'lit2 carbon',cascade_matrix((lit2-1)*nelms+c_loc   ,reac) + cascade_matrix((som1-1)*nelms+c_loc   ,reac)+&
-         cascade_matrix(lid_co2                ,reac)
-      write(*,*)'lit2 nitrogen',cascade_matrix((lit2-1)*nelms+n_loc   ,reac) + cascade_matrix((som1-1)*nelms+n_loc   ,reac)+&
-        cascade_matrix(lid_nh4                ,reac)
-      write(*,*)'lit2 phosp',cascade_matrix((lit2-1)*nelms+p_loc   ,reac) + cascade_matrix((som1-1)*nelms+p_loc   ,reac)+&
-        cascade_matrix(lid_minp_soluble                ,reac)
+!      write(*,*)'lit2 carbon',cascade_matrix((lit2-1)*nelms+c_loc   ,reac) + cascade_matrix((som1-1)*nelms+c_loc   ,reac)+&
+!         cascade_matrix(lid_co2                ,reac)
+!      write(*,*)'lit2 nitrogen',cascade_matrix((lit2-1)*nelms+n_loc   ,reac) + cascade_matrix((som1-1)*nelms+n_loc   ,reac)+&
+!        cascade_matrix(lid_nh4                ,reac)
+!      write(*,*)'lit2 phosp',reac,cascade_matrix((lit2-1)*nelms+p_loc   ,reac) + cascade_matrix((som1-1)*nelms+p_loc   ,reac),&
+!        cascade_matrix(lid_minp_soluble                ,reac)
     endif
     !---------------------------------------------------------------------------------
     !reaction 3, lit3->s2
@@ -450,12 +450,12 @@ contains
       cascade_matrix((som2-1)*nelms+c13_loc   , reac) =  safe_div(1._r8-rf_l3s2_bgc,this%cc13_ratios(lit3))
     endif
     if(debug)then
-      write(*,*)'lit3 carbon',cascade_matrix((lit3-1)*nelms+c_loc   ,reac) + cascade_matrix((som2-1)*nelms+c_loc   ,reac) + &
-         cascade_matrix(lid_co2                ,reac)
-      write(*,*)'lit3 nitrogen',cascade_matrix((lit3-1)*nelms+n_loc   ,reac) + cascade_matrix((som2-1)*nelms+n_loc   ,reac) + &
-         cascade_matrix(lid_nh4                ,reac)
-      write(*,*)'lit3 phosp',cascade_matrix((lit3-1)*nelms+p_loc   ,reac) + cascade_matrix((som2-1)*nelms+p_loc   ,reac) + &
-         cascade_matrix(lid_minp_soluble                ,reac)
+!      write(*,*)'lit3 carbon',cascade_matrix((lit3-1)*nelms+c_loc   ,reac) + cascade_matrix((som2-1)*nelms+c_loc   ,reac) + &
+!         cascade_matrix(lid_co2                ,reac)
+!      write(*,*)'lit3 nitrogen',cascade_matrix((lit3-1)*nelms+n_loc   ,reac) + cascade_matrix((som2-1)*nelms+n_loc   ,reac) + &
+!         cascade_matrix(lid_nh4                ,reac)
+!      write(*,*)'lit3 phosp',reac,cascade_matrix((lit3-1)*nelms+p_loc   ,reac) + cascade_matrix((som2-1)*nelms+p_loc   ,reac), &
+!         cascade_matrix(lid_minp_soluble                ,reac)
     endif
     !---------------------------------------------------------------------------------
     !double check those stoichiometry parameters
@@ -520,12 +520,12 @@ contains
     endif
 
     if(debug)then
-      write(*,*)'som1 carbon',cascade_matrix((som1-1)*nelms+c_loc   ,reac) +cascade_matrix((som2-1)*nelms+c_loc   ,reac)+&
-         cascade_matrix((som3-1)*nelms+c_loc   ,reac) + cascade_matrix(lid_co2                ,reac)
-      write(*,*)'som1 nitrogen',cascade_matrix((som1-1)*nelms+n_loc   ,reac) +cascade_matrix((som2-1)*nelms+n_loc   ,reac)+&
-         cascade_matrix((som3-1)*nelms+n_loc   ,reac) + cascade_matrix(lid_nh4                ,reac)
-      write(*,*)'som1 phosp',cascade_matrix((som1-1)*nelms+p_loc   ,reac) +cascade_matrix((som2-1)*nelms+p_loc   ,reac)+&
-         cascade_matrix((som3-1)*nelms+p_loc   ,reac) + cascade_matrix(lid_minp_soluble       ,reac)
+!      write(*,*)'som1 carbon',cascade_matrix((som1-1)*nelms+c_loc   ,reac) +cascade_matrix((som2-1)*nelms+c_loc   ,reac)+&
+!         cascade_matrix((som3-1)*nelms+c_loc   ,reac) + cascade_matrix(lid_co2                ,reac)
+!      write(*,*)'som1 nitrogen',cascade_matrix((som1-1)*nelms+n_loc   ,reac) +cascade_matrix((som2-1)*nelms+n_loc   ,reac)+&
+!         cascade_matrix((som3-1)*nelms+n_loc   ,reac) + cascade_matrix(lid_nh4                ,reac)
+!      write(*,*)'som1 phosp',reac,cascade_matrix((som1-1)*nelms+p_loc   ,reac) +cascade_matrix((som2-1)*nelms+p_loc   ,reac),&
+!         cascade_matrix((som3-1)*nelms+p_loc   ,reac) + cascade_matrix(lid_minp_soluble       ,reac)
     endif
     !---------------------------------------------------------------------------------
     !reaction 5, som2->som1, som3
@@ -577,12 +577,12 @@ contains
       cascade_matrix((som3-1)*nelms+c13_loc   , reac) = safe_div(f1,this%cc13_ratios(som2))
     endif
     if(debug)then
-      write(*,*)'som2 carbon',cascade_matrix((som2-1)*nelms+c_loc   ,reac) + cascade_matrix((som1-1)*nelms+c_loc   ,reac) + &
-        cascade_matrix((som3-1)*nelms+c_loc   ,reac) + cascade_matrix(lid_co2                ,reac)
-      write(*,*)'som2 nitrogen',cascade_matrix((som2-1)*nelms+n_loc   ,reac) + cascade_matrix((som1-1)*nelms+n_loc   ,reac) + &
-        cascade_matrix((som3-1)*nelms+n_loc   ,reac) + cascade_matrix(lid_nh4                ,reac)
-      write(*,*)'som2 phosp',cascade_matrix((som2-1)*nelms+p_loc   ,reac) + cascade_matrix((som1-1)*nelms+p_loc   ,reac) + &
-        cascade_matrix((som3-1)*nelms+p_loc   ,reac) + cascade_matrix(lid_minp_soluble                ,reac)
+!      write(*,*)'som2 carbon',cascade_matrix((som2-1)*nelms+c_loc   ,reac) + cascade_matrix((som1-1)*nelms+c_loc   ,reac) + &
+!        cascade_matrix((som3-1)*nelms+c_loc   ,reac) + cascade_matrix(lid_co2                ,reac)
+!      write(*,*)'som2 nitrogen',cascade_matrix((som2-1)*nelms+n_loc   ,reac) + cascade_matrix((som1-1)*nelms+n_loc   ,reac) + &
+!        cascade_matrix((som3-1)*nelms+n_loc   ,reac) + cascade_matrix(lid_nh4                ,reac)
+!      write(*,*)'som2 phosp',reac,cascade_matrix((som2-1)*nelms+p_loc   ,reac) + cascade_matrix((som1-1)*nelms+p_loc   ,reac), &
+!        cascade_matrix((som3-1)*nelms+p_loc   ,reac) + cascade_matrix(lid_minp_soluble                ,reac)
     endif
     !---------------------------------------------------------------------------------
     !reaction 6, s3-> s1
@@ -625,12 +625,13 @@ contains
       cascade_matrix((som1-1)*nelms+c13_loc   , reac) =  safe_div(1._r8-rf_s3s1_bgc,this%cc13_ratios(som3))
     endif
     if(debug)then
-      write(*,*)'som3 carbon',cascade_matrix((som3-1)*nelms+c_loc   ,reac)  + cascade_matrix((som1-1)*nelms+c_loc   ,reac) + &
-         cascade_matrix(lid_co2                ,reac)
-      write(*,*)'som3 nitrogen',cascade_matrix((som3-1)*nelms+n_loc   ,reac)  + cascade_matrix((som1-1)*nelms+n_loc   ,reac) + &
-         cascade_matrix(lid_nh4                ,reac)
-      write(*,*)'som3 phosp',cascade_matrix((som3-1)*nelms+p_loc   ,reac)  + cascade_matrix((som1-1)*nelms+p_loc   ,reac) + &
-         cascade_matrix(lid_minp_soluble                ,reac)
+!       write(*,*)'cpratio',rf_s3s1_bgc,this%cp_ratios(som1),this%cp_ratios(som3)
+!      write(*,*)'som3 carbon',cascade_matrix((som3-1)*nelms+c_loc   ,reac)  + cascade_matrix((som1-1)*nelms+c_loc   ,reac) + &
+!         cascade_matrix(lid_co2                ,reac)
+!      write(*,*)'som3 nitrogen',cascade_matrix((som3-1)*nelms+n_loc   ,reac)  + cascade_matrix((som1-1)*nelms+n_loc   ,reac) + &
+!         cascade_matrix(lid_nh4                ,reac)
+!      write(*,*)'som3 phosp',reac,cascade_matrix((som3-1)*nelms+p_loc   ,reac)  + cascade_matrix((som1-1)*nelms+p_loc   ,reac), &
+!         cascade_matrix(lid_minp_soluble                ,reac)
     !print*,'cp_ratio',maxval(this%cp_ratios),minval(this%cp_ratios)
     !print*,'cn_ratio',maxval(this%cn_ratios),minval(this%cn_ratios)
 
@@ -689,12 +690,12 @@ contains
     endif
     if(debug)then
       !write(*,*)'cwd f1 f2',f1,f2
-      write(*,*)'cwd carbon', cascade_matrix((cwd-1)*nelms+c_loc    ,reac) + cascade_matrix((som1-1)*nelms+c_loc   ,reac) + &
-        cascade_matrix((som2-1)*nelms+c_loc   ,reac) + cascade_matrix(lid_co2                ,reac)
-      write(*,*)'cwd nitrogen', cascade_matrix((cwd-1)*nelms+n_loc    ,reac) + cascade_matrix((som1-1)*nelms+n_loc   ,reac) + &
-        cascade_matrix((som2-1)*nelms+n_loc   ,reac) +cascade_matrix(lid_nh4         ,reac)
-      write(*,*)'cwd phosp', cascade_matrix((cwd-1)*nelms+p_loc    ,reac) + cascade_matrix((som1-1)*nelms+p_loc   ,reac) + &
-        cascade_matrix((som2-1)*nelms+p_loc   ,reac) +cascade_matrix(lid_minp_soluble         ,reac)
+!      write(*,*)'cwd carbon', cascade_matrix((cwd-1)*nelms+c_loc    ,reac) + cascade_matrix((som1-1)*nelms+c_loc   ,reac) + &
+!        cascade_matrix((som2-1)*nelms+c_loc   ,reac) + cascade_matrix(lid_co2                ,reac)
+!      write(*,*)'cwd nitrogen', cascade_matrix((cwd-1)*nelms+n_loc    ,reac) + cascade_matrix((som1-1)*nelms+n_loc   ,reac) + &
+!        cascade_matrix((som2-1)*nelms+n_loc   ,reac) +cascade_matrix(lid_nh4         ,reac)
+!      write(*,*)'cwd phosp',reac, cascade_matrix((cwd-1)*nelms+p_loc    ,reac) + cascade_matrix((som1-1)*nelms+p_loc   ,reac)+ &
+!        cascade_matrix((som2-1)*nelms+p_loc   ,reac),cascade_matrix(lid_minp_soluble         ,reac)
     endif
     !---------------------------------------------------------------------------------
     !reaction 8, the partition lwd into som1 and som2
@@ -750,12 +751,12 @@ contains
     endif
     if(debug)then
       !write(*,*)'lwd f1 f2', f1, f2
-      write(*,*)'lwd carbon', cascade_matrix((lwd-1)*nelms+c_loc    ,reac) + cascade_matrix((som1-1)*nelms+c_loc   ,reac) + &
-        cascade_matrix((som2-1)*nelms+c_loc   ,reac) + cascade_matrix(lid_co2                ,reac)
-      write(*,*)'lwd nitrogen', cascade_matrix((lwd-1)*nelms+n_loc    ,reac) + cascade_matrix((som1-1)*nelms+n_loc   ,reac) + &
-        cascade_matrix((som2-1)*nelms+n_loc   ,reac) +cascade_matrix(lid_nh4         ,reac)
-      write(*,*)'lwd phosp', cascade_matrix((lwd-1)*nelms+p_loc    ,reac) + cascade_matrix((som1-1)*nelms+p_loc   ,reac) + &
-        cascade_matrix((som2-1)*nelms+p_loc   ,reac) +cascade_matrix(lid_minp_soluble         ,reac)
+!      write(*,*)'lwd carbon', cascade_matrix((lwd-1)*nelms+c_loc    ,reac) + cascade_matrix((som1-1)*nelms+c_loc   ,reac) + &
+!        cascade_matrix((som2-1)*nelms+c_loc   ,reac) + cascade_matrix(lid_co2                ,reac)
+!      write(*,*)'lwd nitrogen', cascade_matrix((lwd-1)*nelms+n_loc    ,reac) + cascade_matrix((som1-1)*nelms+n_loc   ,reac) + &
+!        cascade_matrix((som2-1)*nelms+n_loc   ,reac) +cascade_matrix(lid_nh4         ,reac)
+!      write(*,*)'lwd phosp',reac, cascade_matrix((lwd-1)*nelms+p_loc    ,reac) + cascade_matrix((som1-1)*nelms+p_loc   ,reac)+ &
+!        cascade_matrix((som2-1)*nelms+p_loc   ,reac),cascade_matrix(lid_minp_soluble         ,reac)
     endif
     !---------------------------------------------------------------------------------
     !reaction 9, the partition fwd into som1 and som2
@@ -811,12 +812,12 @@ contains
     endif
     if(debug)then
       !write(*,*)'fwd f1 f2', f1, f2
-      write(*,*)'fwd carbon', cascade_matrix((fwd-1)*nelms+c_loc    ,reac) + cascade_matrix((som1-1)*nelms+c_loc   ,reac) + &
-        cascade_matrix((som2-1)*nelms+c_loc   ,reac) + cascade_matrix(lid_co2                ,reac)
-      write(*,*)'fwd nitrogen', cascade_matrix((fwd-1)*nelms+n_loc    ,reac) + cascade_matrix((som1-1)*nelms+n_loc   ,reac) + &
-        cascade_matrix((som2-1)*nelms+n_loc   ,reac) +cascade_matrix(lid_nh4         ,reac)
-      write(*,*)'fwd phosp', cascade_matrix((fwd-1)*nelms+p_loc    ,reac) + cascade_matrix((som1-1)*nelms+p_loc   ,reac) + &
-        cascade_matrix((som2-1)*nelms+p_loc   ,reac) +cascade_matrix(lid_minp_soluble ,reac)
+!      write(*,*)'fwd carbon', cascade_matrix((fwd-1)*nelms+c_loc    ,reac) + cascade_matrix((som1-1)*nelms+c_loc   ,reac) + &
+!        cascade_matrix((som2-1)*nelms+c_loc   ,reac) + cascade_matrix(lid_co2                ,reac)
+!      write(*,*)'fwd nitrogen', cascade_matrix((fwd-1)*nelms+n_loc    ,reac) + cascade_matrix((som1-1)*nelms+n_loc   ,reac) + &
+!        cascade_matrix((som2-1)*nelms+n_loc   ,reac) +cascade_matrix(lid_nh4         ,reac)
+!      write(*,*)'fwd phosp', reac,cascade_matrix((fwd-1)*nelms+p_loc    ,reac) + cascade_matrix((som1-1)*nelms+p_loc   ,reac) + &
+!        cascade_matrix((som2-1)*nelms+p_loc   ,reac),cascade_matrix(lid_minp_soluble ,reac)
     endif
   end associate
   end subroutine calc_cascade_matrix
@@ -894,13 +895,15 @@ contains
   type(centurybgc_index_type)   , intent(in) :: centurybgc_index
   real(r8), intent(in) :: ystates(centurybgc_index%nstvars)
   integer :: jj
-  integer :: kc, kn, kp, kc1, kc2
-
+  integer :: kc, kn, kp, kc13, kc14, kc1, kc2
+  real(r8):: rat
   associate(                         &
     nelms => centurybgc_index%nelms, &
     c_loc => centurybgc_index%c_loc, &
     n_loc => centurybgc_index%n_loc, &
     p_loc => centurybgc_index%p_loc, &
+    c13_loc => centurybgc_index%c13_loc, &
+    c14_loc => centurybgc_index%c14_loc, &
     lit2  => centurybgc_index%lit2 , &
     lit3  => centurybgc_index%lit3   &
   )
@@ -911,21 +914,20 @@ contains
     kn = (jj-1) * nelms + n_loc
     kp = (jj-1) * nelms + p_loc
 
-    if(ystates(kc)==0._r8)then
-      this%cn_ratios(jj) = this%def_cn(jj)
-      this%cp_ratios(jj) = this%def_cp(jj)
-      if(this%use_c13)then
-      endif
-      if(this%use_c14)then
-        this%cc14_ratios(jj) = this%def_cc14(jj)
-      endif
-      if(this%use_c13)then
-        this%cc13_ratios(jj) = this%def_cc13(jj)
-      endif
-    else
-      this%cn_ratios(jj) = safe_div(ystates(kc),ystates(kn))
-      this%cp_ratios(jj) = safe_div(ystates(kc),ystates(kp))
+    rat=ystates(kc)/(ystates(kc)+1.e-14_r8)
+    this%cn_ratios(jj) = this%def_cn(jj)*(1._r8-rat)+ystates(kc)/max(ystates(kn),1.e-20_r8)
+    this%cp_ratios(jj) = this%def_cp(jj)*(1._r8-rat)+ystates(kc)/max(ystates(kp),1.e-20_r8)
+
+    if(this%use_c14)then
+      kc14 = (jj-1) * nelms + c14_loc
+      this%cc14_ratios(jj) = this%def_cc14(jj)*(1._r8-rat)+ystates(kc)/max(ystates(kc14),1.e-20_r8)
     endif
+    if(this%use_c13)then
+      kc13 = (jj-1) * nelms + c13_loc
+      kc13 = (jj-1) * nelms + c13_loc
+      this%cc13_ratios(jj) = this%def_cc13(jj)*(1._r8-rat)+ystates(kc)/max(ystates(kc13),1.e-20_r8)
+    endif
+
   enddo
   kc1 = (lit2-1)*nelms+c_loc
   kc2 = (lit3-1)*nelms+c_loc

@@ -199,7 +199,7 @@ contains
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
       call this%biogeo_flux(c)%reset(value_column=0._r8, active_soibgc=this%active_soibgc)
-
+      call this%biophys_forc(c)%frac_normalize(this%betr_pft(c)%npfts, 1, betr_nlevtrc_soil)
 !!
 !--------------
 !  debug
@@ -216,11 +216,8 @@ contains
 
         call this%biogeo_state(c)%summary(betr_bounds, 1, betr_nlevtrc_soil,this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil), &
           this%betr_col(c)%zi(begc_l:endc_l,1:betr_nlevtrc_soil), this%active_soibgc)
-
-      if(.false.)then
-        call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'bef w/o drain',this%bstatus(c))
-        this%betr(c)%tracers%debug=.true.
-      endif
+      !if(c==102)this%betr(c)%tracers%debug=.true.
+      !if(c==102)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'bef w/o drain',this%bstatus(c))
 !--------
       call this%betr(c)%step_without_drainage(this%betr_time, betr_bounds, this%betr_col(c), &
          this%betr_pft(c), this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp, &
@@ -231,6 +228,9 @@ contains
         call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
         exit
       endif
+      !if(c==102)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'bef w/o drain',this%bstatus(c))
+      !if(c==102)this%betr(c)%tracers%debug=.false.
+
 !--------------
 !  debug
       call this%biogeo_state(c)%reset(value_column=0._r8, active_soibgc=this%active_soibgc)
@@ -308,7 +308,7 @@ contains
 
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
-      if(.false.)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'bfdrain', this%bstatus(c))
+      !if(c==102)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'bfdrain', this%bstatus(c))
       call this%betr(c)%step_with_drainage(betr_bounds,      &
          this%betr_col(c),this%num_soilc, this%filter_soilc, this%jtops, &
          this%biogeo_flux(c), this%bstatus(c))
@@ -334,7 +334,7 @@ contains
           this%betr_col(c)%zi(begc_l:endc_l,1:betr_nlevtrc_soil),this%active_soibgc)
 
 ! debug
-      if(.false.)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'afdrain', this%bstatus(c))
+      !if(c==102)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'afdrain', this%bstatus(c))
     enddo
     if(this%bsimstatus%check_status()) &
       call endrun(msg=this%bsimstatus%print_msg())
@@ -456,12 +456,7 @@ contains
 
   !temporary variables
   type(betr_bounds_type) :: betr_bounds
-  integer :: c, fc, j, c_l
-  ! remove compiler warnings
-  if (this%num_soilc > 0)     continue
-  if (bounds%begc > 0)        continue
-  if (num_soilc > 0)          continue
-  if (size(filter_soilc) > 0) continue
+  integer :: c, fc, j, c_l, begc_l, endc_l
 
   associate(                                           &
     ndep_prof     => cnstate_vars%ndep_prof_col     ,  &
@@ -753,6 +748,18 @@ contains
     enddo
   enddo
 
+  !summarize the fluxes and state variables
+  !c_l = 1
+  !begc_l = betr_bounds%begc; endc_l=betr_bounds%endc;
+  !do fc = 1, num_soilc
+  !  c = filter_soilc(fc)
+  !  call this%biophys_forc(c)%summary(betr_bounds, 1, betr_nlevtrc_soil, this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil))
+  !  if(c==102)then
+  !    print*,'cinput',this%biophys_forc(c)%c12flx%cflx_input_col(c_l)*1800._r8
+  !    print*,'ninput',this%biophys_forc(c)%n14flx%nflx_input_col(c_l)*1800._r8
+  !    print*,'pinput',this%biophys_forc(c)%p31flx%pflx_input_col(c_l)*1800._r8
+  !  endif
+  !enddo
   end associate
   !pull in all state variables and update tracers
   end subroutine ALMBetrPlantSoilBGCSend
@@ -878,7 +885,7 @@ contains
       !fire loss
       n14flux_vars%smin_no3_runoff_col(c)=this%biogeo_flux(c)%n14flux_vars%smin_no3_runoff_col(c_l)
       n14flux_vars%fire_decomp_nloss_col(c) = this%biogeo_flux(c)%n14flux_vars%fire_decomp_nloss_col(c_l)
-
+      n14flux_vars%supplement_to_sminn_col(c) = this%biogeo_flux(c)%n14flux_vars%supplement_to_sminn_col(c_l)
       !no nh4 volatilization and runoff/leaching loss at this moment
 
       !recollect mineral phosphorus loss

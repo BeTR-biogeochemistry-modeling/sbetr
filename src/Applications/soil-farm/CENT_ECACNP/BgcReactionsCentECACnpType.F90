@@ -67,6 +67,8 @@ module BgcReactionsCentECACnpType
     type(centurybgc_index_type) :: centurybgc_index
     logical :: use_c13
     logical :: use_c14
+    logical :: nop_limit
+    logical :: non_limit
     integer :: nactpft               ! number of active pfts
   contains
     procedure :: Init_betrbgc                 ! initialize betr bgc
@@ -206,7 +208,7 @@ contains
     type(bounds_type)                    , intent(in)    :: bounds
     integer                              , intent(in)    :: lbj, ubj        ! lower and upper bounds, make sure they are > 0
     type(BeTRtracer_type )               , intent(inout) :: betrtracer_vars !
-    character(len=*), intent(in) :: namelist_buffer
+    character(len=*)                     , intent(in) :: namelist_buffer
     type(betr_status_type)               , intent(out)   :: bstatus
 
     ! !LOCAL VARIABLES:
@@ -223,7 +225,8 @@ contains
 
     if (this%dummy_compiler_warning) continue
 
-    call this%centurybgc_index%Init(bgc_con_eca%use_c13, bgc_con_eca%use_c14, betr_maxpatch_pft)
+    call this%centurybgc_index%Init(bgc_con_eca%use_c13, bgc_con_eca%use_c14, &
+       bgc_con_eca%non_limit, bgc_con_eca%nop_limit, betr_maxpatch_pft)
 
     if(bstatus%check_status())return
 
@@ -244,6 +247,8 @@ contains
     enddo
     this%use_c13 = bgc_con_eca%use_c13
     this%use_c14 = bgc_con_eca%use_c14
+    this%nop_limit=bgc_con_eca%nop_limit
+    this%non_limit=bgc_con_eca%non_limit
 
     !set up betr
     nelm =this%centurybgc_index%nelms
@@ -1001,17 +1006,21 @@ contains
         c = filter_soilc(fc)
         if(j<jtops(c))cycle
         is_surf=(j<=0)
-        !do century eca bgc simulation
-        !print*,'-----------------------------------'
-        !print*,'run bgc lay',j
         this%centuryforc(c,j)%debug=betrtracer_vars%debug
+
+        !do century eca bgc simulation
+        !if(this%centuryforc(c,j)%debug)then
+        !  print*,'-----------------------------------'
+        !  print*,'run bgc lay',j
+        !endif
+
         call this%centuryeca(c,j)%runbgc(is_surf, dtime, this%centuryforc(c,j),nstates, ystates0, ystatesf, betr_status)
 
-        if(.not. betrtracer_vars%debug)then
+!        if(.not. betrtracer_vars%debug)then
           !apply loss through fire,
           call this%rm_ext_output(c, j, dtime, nstates, ystatesf, this%centurybgc_index,&
              this%centuryforc(c,j), biogeo_flux)
-        endif
+!        endif
         this%centurybgc_index%debug=betrtracer_vars%debug
         call this%retrieve_output(c, j, nstates, ystates0, ystatesf, dtime, betrtracer_vars, tracerflux_vars,&
            tracerstate_vars, plant_soilbgc, biogeo_flux)
@@ -1632,7 +1641,7 @@ contains
   integer                              , intent(in) :: c, j
   integer                              , intent(in) :: nstates
   real(r8)                             , intent(in) :: ystates0(nstates)
-  real(r8)                             , intent(in) :: ystatesf(nstates)
+  real(r8)                             , intent(inout) :: ystatesf(nstates)
   real(r8)                             , intent(in) :: dtime
   type(betrtracer_type)                , intent(in) :: betrtracer_vars               ! betr configuration information
   type(tracerstate_type)               , intent(inout) :: tracerstate_vars
@@ -1709,19 +1718,92 @@ contains
       tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_ch4) = &
         ystatesf(this%centurybgc_index%lid_ch4)
 
-      tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_nh3x) = &
-        ystatesf(this%centurybgc_index%lid_nh4)
+      if(this%non_limit)then
+        if(betrtracer_vars%debug)then
+          print*,'suppn1',ystatesf(this%centurybgc_index%lid_nh4), ystatesf(this%centurybgc_index%lid_no3)
+        endif
+        if(ystatesf(this%centurybgc_index%lid_nh4)>0._r8)then
+          tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_nh3x) = &
+            ystatesf(this%centurybgc_index%lid_nh4)
 
-      tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_no3x) = &
-        ystatesf(this%centurybgc_index%lid_no3)
+          biogeo_flux%n14flux_vars%supplement_to_sminn_vr_col(c,j) = 0._r8
+        else
+          tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_nh3x) = 0._r8
+
+          biogeo_flux%n14flux_vars%supplement_to_sminn_vr_col(c,j) = &
+              -ystatesf(this%centurybgc_index%lid_nh4)*natomw/dtime
+          ystatesf(this%centurybgc_index%lid_nh4)=0._r8
+        endif
+
+        if(ystatesf(this%centurybgc_index%lid_no3)>0._r8)then
+          tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_no3x) = &
+            ystatesf(this%centurybgc_index%lid_no3)
+
+        else
+          tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_no3x) = 0._r8
+
+          !The deficit of NO3 is made up by NH4, this suggest the definition of N-unlimitation
+          !is problematic
+          biogeo_flux%n14flux_vars%supplement_to_sminn_vr_col(c,j) =    &
+             biogeo_flux%n14flux_vars%supplement_to_sminn_vr_col(c,j) - &
+             ystatesf(this%centurybgc_index%lid_no3)*natomw/dtime
+          ystatesf(this%centurybgc_index%lid_no3) = 0._r8
+        endif
+!        if(betrtracer_vars%debug)then
+!          print*,'suppn',biogeo_flux%n14flux_vars%supplement_to_sminn_vr_col(c,j)
+!        endif
+      else
+        tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_nh3x) = &
+          ystatesf(this%centurybgc_index%lid_nh4)
+
+        tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_no3x) = &
+          ystatesf(this%centurybgc_index%lid_no3)
+      endif
 
       tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_n2o) = &
         ystatesf(this%centurybgc_index%lid_n2o)
 
-      tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_p_sol) = &
-        ystatesf(this%centurybgc_index%lid_minp_soluble)
+      if(this%nop_limit)then
+        !if(betrtracer_vars%debug)then
+        !  print*,'retrie yf mp',ystatesf(this%centurybgc_index%lid_minp_soluble),ystates0(this%centurybgc_index%lid_minp_soluble)
+        !endif
+        if(ystatesf(this%centurybgc_index%lid_minp_soluble)>0._r8)then
+          tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_p_sol) = &
+            ystatesf(this%centurybgc_index%lid_minp_soluble)
+
+          !no P-limitation in this time step
+          biogeo_flux%p31flux_vars%supplement_to_sminp_vr_col(c,j) = 0._r8
+        else
+          !active P-limitation
+          tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_p_sol) =  0._r8
+
+          biogeo_flux%p31flux_vars%supplement_to_sminp_vr_col(c,j) = &
+            -ystatesf(this%centurybgc_index%lid_minp_soluble)*patomw/dtime
+          ystatesf(this%centurybgc_index%lid_minp_soluble) = 0._r8
+        endif
+        !if(betrtracer_vars%debug)then
+        !  print*,'supppp',biogeo_flux%p31flux_vars%supplement_to_sminp_vr_col(c,j)
+        !endif
+      else
+        tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_p_sol) = &
+          ystatesf(this%centurybgc_index%lid_minp_soluble)
+
+      endif
 
       !tracer fluxes
+      tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_nh3x) =  &
+        ystatesf(this%centurybgc_index%lid_nh4) - &
+        ystates0(this%centurybgc_index%lid_nh4)
+
+      tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_no3x)  =  &
+        ystatesf(this%centurybgc_index%lid_no3) - &
+        ystates0(this%centurybgc_index%lid_no3)
+
+
+      tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_p_sol) =      &
+        ystatesf(this%centurybgc_index%lid_minp_soluble) - &
+        ystates0(this%centurybgc_index%lid_minp_soluble)
+
       tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_o2) ) = &
          ystatesf(this%centurybgc_index%lid_o2_paere )  - &
          ystates0(this%centurybgc_index%lid_o2_paere)
@@ -1760,13 +1842,6 @@ contains
           ystates0(this%centurybgc_index%lid_n2o_paere)
       endif
 
-      tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_nh3x) =  &
-        ystatesf(this%centurybgc_index%lid_nh4) - &
-        ystates0(this%centurybgc_index%lid_nh4)
-
-      tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_no3x)  =  &
-        ystatesf(this%centurybgc_index%lid_no3) - &
-        ystates0(this%centurybgc_index%lid_no3)
 
       tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_n2) = &
         ystatesf(this%centurybgc_index%lid_n2) - &
@@ -1804,9 +1879,6 @@ contains
         ystatesf(this%centurybgc_index%lid_ar) - &
         ystates0(this%centurybgc_index%lid_ar)
 
-      tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_p_sol) =      &
-        ystatesf(this%centurybgc_index%lid_minp_soluble) - &
-        ystates0(this%centurybgc_index%lid_minp_soluble)
 
       !get net production for om pools
       do k = 1, litr_end-litr_beg + 1
@@ -1853,9 +1925,7 @@ contains
       biogeo_flux%n14flux_vars%f_denit_vr_col(c,j)= &
         (ystatesf(this%centurybgc_index%lid_no3_den) - &
          ystates0(this%centurybgc_index%lid_no3_den))*natomw/dtime
-      if(this%centurybgc_index%debug)then
-        write(*,*)'cjf no3 den',j,ystatesf(this%centurybgc_index%lid_no3_den)
-      endif
+
       biogeo_flux%n14flux_vars%f_nit_vr_col(c,j) = &
         (ystatesf(this%centurybgc_index%lid_nh4_nit) - &
          ystates0(this%centurybgc_index%lid_nh4_nit))*natomw/dtime
@@ -1940,21 +2010,19 @@ contains
    type(betr_status_type)               , intent(out):: betr_status
    integer :: fc, c
    integer :: c_loc, n_loc, p_loc, nelm, j, kk
-   real(r8):: c_mass, n_mass, p_mass
+   real(r8):: c_mass, n_mass, p_mass, minp, min_nh4,min_no3
 
    call betr_status%reset()
    SHR_ASSERT_ALL((ubound(dzsoi)  == (/bounds%endc, bounds%ubj/)),   errMsg(mod_filename,__LINE__),betr_status)
    if(betr_status%check_status())return
 
-   write(*,*)header
-   write(*,*)'----------------------------------------'
-
+   write(*,*)trim(header)//': debug info c n p mass'
 
    c_loc=this%centurybgc_index%c_loc
    n_loc=this%centurybgc_index%n_loc
    p_loc=this%centurybgc_index%p_loc
    nelm =this%centurybgc_index%nelms
-   c_mass = 0._r8; n_mass = 0._r8; p_mass = 0._r8
+   c_mass = 0._r8; n_mass = 0._r8; p_mass = 0._r8; min_nh4=0._r8; min_no3=0._r8;minp=0._r8
    do j = 1, bounds%ubj
      do fc = 1, num_soilc
         c = filter_soilc(fc)
@@ -2048,13 +2116,22 @@ contains
            (tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_nh3x) + &
             tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_no3x)) * dzsoi(c,j)
 
+        minp = minp + patomw * &
+           (tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_beg_minp) + &
+            tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_p_sol)) * dzsoi(c,j)
+        min_nh4=min_nh4+ natomw * &
+           tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_nh3x) * dzsoi(c,j)
+        min_no3=min_no3+ natomw * &
+           tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_no3x) * dzsoi(c,j)
      enddo
    enddo
-   write(*,*)'debug info c n p mass'
+
    write(*,*)'c_mass    =', c_mass
    write(*,*)'n_mass    =', n_mass
    write(*,*)'p_mass    =', p_mass
-
+   write(*,*)'min_nh4   =', min_nh4
+   write(*,*)'min_no3   =', min_no3
+   write(*,*)'minp      =', minp
    write(*,*)'----------------------------------------'
    end subroutine debug_info
 

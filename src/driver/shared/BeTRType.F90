@@ -344,11 +344,13 @@ contains
          this%plant_soilbgc, biogeo_flux,  betr_status)
     if(betr_status%check_status())return
 
+    if(this%tracers%debug)call this%debug_info(bounds, col, num_soilc, filter_soilc, 'bef gwstransp',betr_status)
     call tracer_gws_transport(betr_time, bounds, col, pft, num_soilc, filter_soilc, &
       Rfactor, biophysforc, biogeo_flux, this%tracers, this%tracerboundaryconds  , &
       this%tracercoeffs,  this%tracerstates, this%tracerfluxes, this%bgc_reaction, &
       this%advection_on, this%diffusion_on, betr_status)
     if(betr_status%check_status())return
+    if(this%tracers%debug)call this%debug_info(bounds, col, num_soilc, filter_soilc, 'aff gwstransp',betr_status)
 
     call calc_ebullition(bounds, 1, ubj,                                                                  &
          this%tracerboundaryconds%jtops_col,                                                              &

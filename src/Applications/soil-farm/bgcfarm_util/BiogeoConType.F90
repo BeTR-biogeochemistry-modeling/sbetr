@@ -85,7 +85,8 @@ implicit none
 
   logical :: use_c13
   logical :: use_c14
-
+  logical :: nop_limit                                              !switch for P limitation
+  logical :: non_limit
   !ECA nutrient competition
   real(r8), pointer :: vmax_minp_secondary_to_occlude(:)  => null() !maximum conversion rate of secondary P into occluded P
   real(r8), pointer :: vmax_minp_soluble_to_secondary(:)  => null() !maximum conversion rate of soluble P into secondary P
@@ -125,7 +126,6 @@ contains
   use betr_varcon, only : betr_maxpatch_pft, betr_max_soilorder
   implicit none
   class(BiogeoCon_type), intent(inout) :: this
-
 
   allocate(this%vmax_minp_secondary_to_occlude(betr_max_soilorder))
   allocate(this%minp_secondary_decay(betr_max_soilorder))
@@ -196,7 +196,8 @@ contains
 
   this%use_c13 = .false.
   this%use_c14 = .false.
-
+  this%nop_limit=.false.
+  this%non_limit=.false.
   this%init_cc13_met = 0._r8
   this%init_cc13_cel = 0._r8
   this%init_cc13_lig = 0._r8
@@ -224,12 +225,11 @@ contains
   use BetrStatusType , only : betr_status_type
   use betr_ctrl      , only : iulog => biulog
   use bshr_log_mod   , only : errMsg => shr_log_errMsg
-  use tracer_varcon, only : use_c13_betr, use_c14_betr
+  use tracer_varcon  , only : use_c13_betr, use_c14_betr, is_nitrogen_active, is_phosphorus_active
   implicit none
   class(BiogeoCon_type), intent(inout) :: this
   character(len=betr_namelist_buffer_size_ext) , intent(in)    :: namelist_buffer
   type(betr_status_type), intent(out) :: bstatus
-
 
   !
   ! !LOCAL VARIABLES:
@@ -260,7 +260,6 @@ contains
   tau_decay_som3          = 270._r8
   tau_decay_cwd           = 4.1_r8
 
-
   if ( .false. )then
      ioerror_msg=''
      read(namelist_buffer, nml=soibgc_ecaparam, iostat=nml_error, iomsg=ioerror_msg)
@@ -272,7 +271,8 @@ contains
 
   this%use_c13 = use_c13_betr
   this%use_c14 = use_c14_betr
-
+  this%nop_limit=.not. is_phosphorus_active
+  this%non_limit=.not. is_nitrogen_active
   this%k_decay_lit1          = 1._r8/(tau_decay_lit1*year_sec)    !1/second
   this%k_decay_lit2          = 1._r8/(tau_decay_lit2*year_sec)    !1/second
   this%k_decay_lit3          = 1._r8/(tau_decay_lit3*year_sec)    !1/second

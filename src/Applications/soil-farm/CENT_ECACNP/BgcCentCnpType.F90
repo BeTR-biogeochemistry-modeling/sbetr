@@ -5,17 +5,17 @@ module BgcCentCnpType
   ! subroutines for stoichiometric configuration of the century bgc
   ! !History, created by Jinyun Tang, Dec, 2014.
   ! !USES:
-  use bshr_kind_mod       , only : r8 => shr_kind_r8
-  use bshr_log_mod        , only : errMsg => shr_log_errMsg
-  use betr_varcon         , only : spval => bspval, spinup_state => bspinup_state
+  use bshr_kind_mod             , only : r8 => shr_kind_r8
+  use bshr_log_mod              , only : errMsg => shr_log_errMsg
+  use betr_varcon               , only : spval => bspval, spinup_state => bspinup_state
   use BgcCentCnpDecompType      , only : DecompCent_type
-  use BgcCentCnpIndexType , only : centurybgc_index_type
-  use BgcCentCnpNitDenType   , only : century_nitden_type
-  use gbetrType           , only : gbetr_type
-  use BgcCentSOMType         , only : CentSom_type
-  use BgcCentCnpCompetType       , only : Compet_ECA_type
-  use BiogeoConType       , only : BiogeoCon_type
-  use BetrStatusType      , only : betr_status_type
+  use BgcCentCnpIndexType       , only : centurybgc_index_type
+  use BgcCentCnpNitDenType      , only : century_nitden_type
+  use gbetrType                 , only : gbetr_type
+  use BgcCentSOMType            , only : CentSom_type
+  use BgcCentCnpCompetType      , only : Compet_ECA_type
+  use BiogeoConType             , only : BiogeoCon_type
+  use BetrStatusType            , only : betr_status_type
   implicit none
   private
   character(len=*), private, parameter :: mod_filename = &
@@ -47,7 +47,8 @@ module BgcCentCnpType
     real(r8), pointer                    :: minp_secondary_decay(:)
     real(r8), pointer                    :: mumax_minp_soluble_to_secondary(:)
     integer                              :: plant_ntypes
-
+    logical                              :: nop_limit
+    logical                              :: non_limit
     real(r8), pointer                    :: scal_f(:)
     real(r8), pointer                    :: conv_f(:)
     real(r8), pointer                    :: conc_f(:)
@@ -56,6 +57,7 @@ module BgcCentCnpType
     real(r8)                             :: msurf_minp
     logical, private                     :: use_c13
     logical, private                     :: use_c14
+
   contains
     procedure, public  :: init
     procedure, public  :: runbgc
@@ -93,7 +95,11 @@ contains
   type(betr_status_type), intent(out) :: bstatus
 
   call bstatus%reset()
-  call this%centurybgc_index%Init(biogeo_con%use_c13, biogeo_con%use_c14, betr_maxpatch_pft)
+  call this%centurybgc_index%Init(biogeo_con%use_c13, biogeo_con%use_c14, &
+     biogeo_con%non_limit, biogeo_con%nop_limit, betr_maxpatch_pft)
+
+  this%nop_limit=biogeo_con%nop_limit
+  this%non_limit=biogeo_con%non_limit
 
   call this%InitAllocate(this%centurybgc_index)
 
@@ -141,7 +147,7 @@ contains
   allocate(this%conv_f(nprimvars));  this%conv_f(:) = 0._r8
   allocate(this%conc_f(nprimvars));  this%conc_f(:) = 0._r8
 
-  allocate(this%cascade_matrix(nstvars,  nreactions)); this%cascade_matrix(:,:) = 0._r8
+  allocate(this%cascade_matrix (1:nstvars  , 1:nreactions)); this%cascade_matrix(:,:) = 0._r8
   allocate(this%cascade_matrixd(1:nprimvars, 1:nreactions)); this%cascade_matrixd(:,:) = 0._r8
   allocate(this%cascade_matrixp(1:nprimvars, 1:nreactions)); this%cascade_matrixp(:,:) = 0._r8
 
@@ -206,12 +212,13 @@ contains
     lid_plant_minn_no3  => this%centurybgc_index%lid_plant_minn_no3       , &
     lid_n2o_nit => this%centurybgc_index%lid_n2o_nit,&
     lid_no3_den => this%centurybgc_index%lid_no3_den,&
-    cascade_matrix=> this%cascade_matrix              , &
+    lid_minp_soluble=> this%centurybgc_index%lid_minp_soluble, &
+    cascade_matrix => this%cascade_matrix             , &
     cascade_matrixp=> this%cascade_matrixp            , &
     cascade_matrixd=> this%cascade_matrixd            , &
     ystates1 => this%ystates1                           &
   )
-  !this%centurybgc_index%debug = centuryeca_forc%debug
+  this%centurybgc_index%debug = centuryeca_forc%debug
   this%rt_ar = rt_ar
   frc_c13 = safe_div(rt_ar_c13,rt_ar); frc_c14 = safe_div(rt_ar_c14,rt_ar)
   call bstatus%reset()
@@ -220,7 +227,7 @@ contains
   call this%init_states(this%centurybgc_index, centuryeca_forc)
   ystates0(:) = this%ystates0(:)
 
-  call this%sumup_cnp_msflx(ystates0, c_mass1,n_mass1,p_mass1)
+!  call this%sumup_cnp_msflx(ystates0, c_mass1,n_mass1,p_mass1)
 
   !add all external input
   call this%add_ext_input(dtime, this%centurybgc_index, centuryeca_forc, c_inf, n_inf, p_inf)
@@ -236,11 +243,20 @@ contains
   !calculate default stoichiometry entries
   call this%calc_cascade_matrix(this%centurybgc_index, cascade_matrix, frc_c13, frc_c14)
 
+  if(this%centurybgc_index%debug)then
+!    do jj = 1, nreactions
+!      print*,'afdefs jj',jj,cascade_matrix(lid_minp_soluble,jj)
+!    enddo
+  endif
   !run century decomposition, return decay rates, cascade matrix, potential hr
   call this%censom%run_decomp(is_surf, this%centurybgc_index, dtime, ystates1(1:nom_tot_elms),&
       this%decompkf_eca, centuryeca_forc%pct_sand, centuryeca_forc%pct_clay,this%alpha_n, this%alpha_p, &
       cascade_matrix, this%k_decay(1:nom_pools), pot_co2_hr, bstatus)
-
+  if(this%centurybgc_index%debug)then
+!    do jj = 1, nreactions
+!      print*,'afdecomjj',jj,cascade_matrix(lid_minp_soluble,jj)
+!    enddo
+  endif
 !  call this%sumup_cnp_mass('af run_decomp')
   if(bstatus%check_status())return
 
@@ -256,7 +272,11 @@ contains
   call this%nitden%run_nitden(this%centurybgc_index, centuryeca_forc, this%decompkf_eca, &
     ystates1(lid_nh4), ystates1(lid_no3), ystates1(lid_o2), o2_decomp_depth, &
     pot_f_nit_mol_per_sec, pot_co2_hr, this%pot_f_nit, this%pot_f_denit, cascade_matrix)
-
+  if(this%centurybgc_index%debug)then
+!    do jj = 1, nreactions
+!      print*,'adfdnitden jj',jj,cascade_matrix(lid_minp_soluble,jj)
+!    enddo
+  endif
   !---------------------
   !turn off nitrification and denitrification
   !this%pot_f_denit = 0._r8
@@ -269,6 +289,13 @@ contains
 
   call this%arenchyma_gas_transport(this%centurybgc_index, dtime)
 
+  if(this%centurybgc_index%debug)then
+!    print*,'primdd',lid_minp_soluble,nprimvars
+!    do jj = 1, nreactions
+!      print*,'xdapdd jj',jj,cascade_matrix(lid_minp_soluble,jj)
+!    enddo
+  endif
+
   !do the stoichiometric matrix separation
   call pd_decomp(nprimvars, nreactions, cascade_matrix(1:nprimvars, 1:nreactions), &
      cascade_matrixp, cascade_matrixd, bstatus)
@@ -278,6 +305,12 @@ contains
   yf(:) = ystates1(:)
 
 !  call this%sumup_cnp_mass('bfdecomp',c_mass1,n_mass1,p_mass1)
+
+  if(this%centurybgc_index%debug)then
+!    do jj = 1, nreactions
+!      print*,'pdd jj',jj,cascade_matrixd(lid_minp_soluble,jj),cascade_matrix(lid_minp_soluble,jj)
+!    enddo
+  endif
 
   call ode_adapt_ebbks1(this, yf, nprimvars, nstvars, time, dtime, ystates1)
 
@@ -289,19 +322,19 @@ contains
   ystatesf(:) = ystates1(:)
 
 !  print*,'szx',maxval(ystatesf),maxval(ystates1)
-  call this%sumup_cnp_msflx(ystatesf, c_mass2,n_mass2,p_mass2, c_flx, n_flx, p_flx)
+!  call this%sumup_cnp_msflx(ystatesf, c_mass2,n_mass2,p_mass2, c_flx, n_flx, p_flx)
 
-  if(centuryeca_forc%debug)then
-     write(*,'(A,10(X,E20.10))')'cnp bal', &
-     c_mass2*centuryeca_forc%dzsoi, &
-     n_mass2*centuryeca_forc%dzsoi, &
-     p_mass2*centuryeca_forc%dzsoi, &
-     c_mass2 - c_mass1-c_inf+c_flx, &
-     n_mass2 - n_mass1-n_inf+n_flx, &
-     p_mass2 - p_mass1-p_inf+p_flx, &
-     ystatesf(lid_plant_minn_nh4), ystatesf(lid_plant_minn_no3), &
-     ystatesf(lid_n2o_nit), ystatesf(lid_no3_den)
-  endif
+!  if(centuryeca_forc%debug)then
+!     write(*,'(A,10(X,E20.10))')'cnp bal', &
+!     c_mass2*centuryeca_forc%dzsoi, &
+!     n_mass2*centuryeca_forc%dzsoi, &
+!     p_mass2*centuryeca_forc%dzsoi, &
+!     c_mass2 - c_mass1-c_inf+c_flx, &
+!     n_mass2 - n_mass1-n_inf+n_flx, &
+!     p_mass2 - p_mass1-p_inf+p_flx, &
+!     ystatesf(lid_plant_minn_nh4), ystatesf(lid_plant_minn_no3), &
+!     ystatesf(lid_n2o_nit), ystatesf(lid_no3_den)
+!  endif
 
   end associate
   end subroutine runbgc
@@ -809,18 +842,21 @@ contains
   call this%censom%calc_pot_min_np_flx(dtime, this%centurybgc_index,  ystate, this%k_decay,&
     this%cascade_matrix, this%alpha_n, this%alpha_p, pot_decomp, mic_pot_nn_flx, mic_pot_np_flx)
 
+
   !do ECA nutrient scaling
   !
-  call this%competECA%run_compet_nitrogen(ystate(lid_nh4),ystate(lid_no3),mic_pot_nn_flx,&
+  call this%competECA%run_compet_nitrogen(this%non_limit,ystate(lid_nh4),ystate(lid_no3),mic_pot_nn_flx,&
      this%pot_f_nit, this%pot_f_denit, this%plant_ntypes, &
      this%msurf_nh4, ECA_factor_nit, &
      ECA_factor_den, ECA_factor_nh4_mic, ECA_factor_no3_mic, &
      ECA_flx_nh4_plants,ECA_flx_no3_plants, ECA_factor_msurf_nh4)
 
   ECA_factor_nitrogen_mic = ECA_factor_nh4_mic + ECA_factor_no3_mic
-  call this%competECA%run_compet_phosphorus(ystate(lid_minp_soluble), mic_pot_np_flx, &
-     this%plant_ntypes, this%msurf_minp, &
-     ECA_factor_phosphorus_mic, ECA_factor_minp_msurf, ECA_flx_phosphorus_plants)
+
+
+  call this%competECA%run_compet_phosphorus(this%nop_limit, ystate(lid_minp_soluble), mic_pot_np_flx, &
+      this%plant_ntypes, this%msurf_minp, ECA_factor_phosphorus_mic, ECA_factor_minp_msurf,&
+      ECA_flx_phosphorus_plants)
 
   !apply ECA factor to obtain actual reaction rate, decomposition
   !plant, nit, den nutrient uptake,
@@ -846,8 +882,13 @@ contains
   rrates(lid_plant_minn_nh4_up_reac) = sum(ECA_flx_nh4_plants)     !calculate by ECA competition
   rrates(lid_plant_minp_up_reac) =     sum(ECA_flx_phosphorus_plants) !calculate by ECA competition
   rrates(lid_minp_secondary_to_sol_occ_reac)= ystate(lid_minp_secondary) * this%minp_secondary_decay(this%soilorder)
-
   !the following treatment is to ensure mass balance
+  if(this%centurybgc_index%debug)then
+!    print*,'plant p uptake', rrates(lid_plant_minp_up_reac),rrates(lid_minp_soluble_to_secp_reac)
+!    do jj = 1, nreactions
+!      print*,'cascd jj',jj,this%cascade_matrixd(lid_minp_soluble,jj),rrates(jj)
+!    enddo
+  endif
   if(this%plant_ntypes==1)then
     do jj = 1, this%plant_ntypes
       this%cascade_matrixd(lid_plant_minn_no3_pft(jj),lid_plant_minn_no3_up_reac) = 1._r8
@@ -871,7 +912,11 @@ contains
     this%cascade_matrixd(lid_plant_minp_pft(jj),lid_plant_minp_up_reac) = &
       1._r8 - sum(this%cascade_matrixd(lid_plant_minp_pft(1:jj-1),lid_plant_minp_up_reac))
   endif
-
+  if(this%centurybgc_index%debug)then
+!    do jj = 1, nreactions
+!      print*,'cadfaascd jj',jj,this%cascade_matrixd(lid_minp_soluble,jj),rrates(jj)
+!    enddo
+  endif
   it=0
   do
     call calc_dtrend_som_bgc(nprimvars, nreactions, this%cascade_matrixp(1:nprimvars, 1:nreactions), rrates, p_dt)
@@ -894,7 +939,12 @@ contains
     endif
     it = it + 1
   enddo
-
+  if(this%centurybgc_index%debug)then
+!    print*,'dydt p sol',dydt(lid_minp_soluble)
+!    do jj = 1, nreactions
+!      print*,'casc jj',jj,this%cascade_matrixd(lid_minp_soluble,jj),this%cascade_matrix(lid_minp_soluble,jj)
+!    enddo
+  endif
   end associate
   end subroutine bgc_integrate
   !--------------------------------------------------------------------
@@ -1213,7 +1263,7 @@ contains
           call ebbks(ycp,f,nprimeq, neq,dt05,yf,pscal)
 
           !determine the relative error
-          rerr=get_rerr(yc,yf, neq)*exp(1._r8-1._r8/pscal)
+          rerr=get_rerr(yc,yf, neq)*exp(1._r8-1._r8/(pscal+1.e-20))
 
           !determine time scalar factor
           call get_tscal(rerr,dt_scal,acc)
