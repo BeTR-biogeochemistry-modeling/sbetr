@@ -43,7 +43,7 @@ implicit none
      real(r8), pointer :: fire_decomp_nloss_col                     (:) => null()
      real(r8), pointer :: denit_col                                 (:) => null()
      real(r8), pointer :: som_n_leached_col                         (:) => null()
-
+     real(r8), pointer :: supplement_to_sminn_col(:)
   contains
 
     procedure, public  :: Init
@@ -118,7 +118,7 @@ contains
     allocate(this%m_n_to_litr_met_fire_col(begc:endc,1:nlevdecomp_full)); this%m_n_to_litr_met_fire_col(:,:) = nan
     allocate(this%denit_col(begc:endc)); this%denit_col(:) = nan
     allocate(this%som_n_leached_col(begc:endc)); this%som_n_leached_col(:) = nan
-
+    allocate(this%supplement_to_sminn_col(begc:endc)); this%supplement_to_sminn_col(:) = nan
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------
@@ -175,6 +175,7 @@ contains
     this%m_n_to_litr_cel_fire_col(:,:) = 0._r8
     this%m_n_to_litr_met_fire_col(:,:) = 0._r8
     this%nfix_to_sminn_col(:) = 0._r8
+    this%supplement_to_sminn_col(:) = 0._r8
   end subroutine initCold
 
 
