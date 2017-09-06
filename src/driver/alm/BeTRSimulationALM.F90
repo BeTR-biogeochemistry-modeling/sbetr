@@ -462,6 +462,7 @@ contains
     ndep_prof     => cnstate_vars%ndep_prof_col     ,  &
     pdep_prof     => cnstate_vars%pdep_prof_col     ,  &
     nfixation_prof=> cnstate_vars%nfixation_prof_col,  &
+    biochem_pmin_vr=> phosphorusflux_vars%biochem_pmin_vr_col, &
     frac_loss_lit_to_fire_col=> cnstate_vars%frac_loss_lit_to_fire_col, &
     frac_loss_cwd_to_fire_col=> cnstate_vars%frac_loss_cwd_to_fire_col  &
   )
@@ -478,7 +479,7 @@ contains
     this%biophys_forc(c)%isoilorder(c_l) = 1                 !this needs update
     this%biophys_forc(c)%frac_loss_lit_to_fire_col(c_l) =frac_loss_lit_to_fire_col(c)
     this%biophys_forc(c)%frac_loss_cwd_to_fire_col(c_l) =frac_loss_cwd_to_fire_col(c)
-
+    this%biophys_forc(c)%biochem_pmin_vr(c_l,1:betr_nlevsoi)= biochem_pmin_vr(c,1:betr_nlevsoi)
     call this%biophys_forc(c)%c12flx%reset(value_column=0._r8)
     call this%biophys_forc(c)%n14flx%reset(value_column=0._r8)
     call this%biophys_forc(c)%p31flx%reset(value_column=0._r8)
@@ -826,9 +827,10 @@ contains
           n14flux_vars%smin_nh4_to_plant_patch(p) = this%biogeo_flux(c)%n14flux_vars%smin_nh4_to_plant_patch(pi)
           n14flux_vars%smin_no3_to_plant_patch(p) = this%biogeo_flux(c)%n14flux_vars%smin_no3_to_plant_patch(pi)
           p31flux_vars%sminp_to_plant_patch(p)  = this%biogeo_flux(c)%p31flux_vars%sminp_to_plant_patch(pi)
-          !compute relative n return.
+          !compute relative n return, note the following computation is different from ALM-ECA-CNP, because
+          !betr includes transpiration incuded nitrogen uptake, which has not direct temperature sensitivity.
           n14state_vars%pnup_pfrootc_patch(p) = safe_div(n14flux_vars%smin_nh4_to_plant_patch(p)+ n14flux_vars%smin_no3_to_plant_patch(p), &
-            c12state_vars%frootc_patch(p))
+            c12state_vars%frootc_patch(p))/max(this%biophys_forc(c)%cn_scalar_patch(pi),1.e-20_r8)
         else
           n14flux_vars%smin_nh4_to_plant_patch(p) = 0._r8
           n14flux_vars%smin_no3_to_plant_patch(p) = 0._r8
@@ -1107,14 +1109,18 @@ contains
   type(carbonstate_type)      , optional, intent(in) :: carbonstate_vars
 
 
-  integer :: p, pi, c, j, c_l
+  integer :: p, pi, c, j, c_l, pp
   integer :: npft_loc
 
   call this%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi, carbonflux_vars, waterstate_vars, &
       waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
       chemstate_vars, soilstate_vars)
 
-
+  associate(                                                &
+    cn_scalar            => cnstate_vars%cn_scalar        , &
+    cp_scalar            => cnstate_vars%cp_scalar        , &
+    rootfr               => soilstate_vars%rootfr_patch     &
+  )
   !the following will be ALM specific
   !big leaf model
   !set profiles autotrohpic respiration
@@ -1126,11 +1132,17 @@ contains
       enddo
     else
       if(use_cn)then
+        pp = 0
         do pi = 1, betr_maxpatch_pft
           if (pi <= col%npfts(c)) then
             p = col%pfti(c) + pi - 1
             if (pft%active(p)) then
-              this%biophys_forc(c)%rr_patch(pi,1:nlevsoi) = carbonflux_vars%rr_patch(p) !* root_prof(p,1:nlevsoi)
+              pp = pp + 1
+              this%biophys_forc(c)%cn_scalar_patch(pp) = cn_scalar(p)
+              this%biophys_forc(c)%cp_scalar_patch(pp) = cp_scalar(p)
+              do j = 1, nlevsoi
+                this%biophys_forc(c)%rr_patch(pp,j) = carbonflux_vars%rr_patch(p) * rootfr(p,j)
+              enddo
             endif
           endif
         enddo
@@ -1156,6 +1168,7 @@ contains
         enddo
       enddo
   endif
+  end associate
   end subroutine ALMSetBiophysForcing
   !------------------------------------------------------------------------
   subroutine set_transient_kinetics_par(this, betr_bounds, col, pft, num_soilc, filter_soilc, PlantMicKinetics_vars)

@@ -576,6 +576,7 @@ contains
   use BgcCentCnpIndexType       , only : centurybgc_index_type
   use BgcCentCnpForcType        , only : centuryeca_forc_type
   use tracer_varcon             , only : catomw, natomw, patomw,c13atomw,c14atomw
+  use MathfuncMod               , only : safe_div
   implicit none
   class(centurybgceca_type)     , intent(inout) :: this
   real(r8), intent(in) :: dtime
@@ -584,7 +585,7 @@ contains
   real(r8), optional, intent(out) :: c_inf, n_inf, p_inf
   integer :: kc, kn, kp,kc13,kc14
   integer :: jj
-
+  real(r8):: totp, pmin_frac, pmin_cleave
   associate(                        &
     lit1 =>  centurybgc_index%lit1, &
     lit2 =>  centurybgc_index%lit2, &
@@ -592,6 +593,14 @@ contains
     cwd =>   centurybgc_index%cwd, &
     fwd =>   centurybgc_index%fwd, &
     lwd =>   centurybgc_index%lwd, &
+    litr_beg =>  centurybgc_index%litr_beg, &
+    som_beg =>  centurybgc_index%som_beg, &
+    dom_beg =>  centurybgc_index%dom_beg, &
+    wood_beg =>  centurybgc_index%wood_beg, &
+    litr_end =>  centurybgc_index%litr_end, &
+    som_end =>  centurybgc_index%som_end, &
+    dom_end =>  centurybgc_index%dom_end, &
+    wood_end =>  centurybgc_index%wood_end, &
     c_loc=>  centurybgc_index%c_loc,&
     c13_loc=>  centurybgc_index%c13_loc,&
     c14_loc=>  centurybgc_index%c14_loc,&
@@ -604,6 +613,7 @@ contains
     lid_nh4=> centurybgc_index%lid_nh4, &
     lid_minp_soluble =>  centurybgc_index%lid_minp_soluble  &
   )
+
   jj=lit1;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
   this%ystates1(kc) =this%ystates0(kc) + centuryeca_forc%cflx_input_litr_met*dtime/catomw
   this%ystates1(kn) =this%ystates0(kn) + centuryeca_forc%nflx_input_litr_met*dtime/natomw
@@ -711,6 +721,7 @@ contains
   if(present(p_inf))then
     p_inf = p_inf + this%ystates1(kp) - this%ystates0(kp)
   endif
+
   if(this%use_c13)then
     kc13=(jj-1)*nelms+c13_loc
     this%ystates1(kc13) =this%ystates0(kc13) + centuryeca_forc%cflx_input_litr_fwd_c13*dtime/c13atomw
@@ -734,6 +745,7 @@ contains
   if(present(p_inf))then
     p_inf = p_inf + this%ystates1(kp) - this%ystates0(kp)
   endif
+
   if(this%use_c13)then
     kc13=(jj-1)*nelms+c13_loc
     this%ystates1(kc13) =this%ystates0(kc13) + centuryeca_forc%cflx_input_litr_lwd_c13*dtime/c13atomw
@@ -751,6 +763,46 @@ contains
       (centuryeca_forc%sflx_minp_input_po4 + &
         centuryeca_forc%sflx_minp_weathering_po4)/patomw
 
+  !phosphatase cleaves PO4 from organic pools and put them into soluble mineral pool
+  !compute total organic P
+  !litr, wood, som, dom
+  totp = 0._r8
+  do jj = litr_beg, litr_end, nelms
+    kp = jj-1 + p_loc
+    totp = totp + this%ystates1(kp)
+  enddo
+  do jj = wood_beg, wood_end, nelms
+    kp = jj-1 + p_loc
+    totp = totp + this%ystates1(kp)
+  enddo
+  do jj = som_beg, som_end, nelms
+    kp = jj-1 + p_loc
+    totp = totp + this%ystates1(kp)
+  enddo
+  do jj = dom_beg, dom_end, nelms
+    kp = jj-1 + p_loc
+    totp = totp + this%ystates1(kp)
+  enddo
+
+  pmin_cleave=totp * min(centuryeca_forc%biochem_pmin*dtime/patomw,1._r8)
+  pmin_frac= 1._r8 - safe_div(pmin_cleave, totp)
+  do jj = litr_beg, litr_end, nelms
+    kp = jj-1 + p_loc
+    this%ystates1(kp) = this%ystates1(kp) * pmin_frac
+  enddo
+  do jj = wood_beg, wood_end, nelms
+    kp = jj-1 + p_loc
+    this%ystates1(kp) = this%ystates1(kp) * pmin_frac
+  enddo
+  do jj = som_beg, som_end, nelms
+    kp = jj-1 + p_loc
+    this%ystates1(kp) = this%ystates1(kp) * pmin_frac
+  enddo
+  do jj = dom_beg, dom_end, nelms
+    kp = jj-1 + p_loc
+    this%ystates1(kp) = this%ystates1(kp) * pmin_frac
+  enddo
+  this%ystates1(lid_minp_soluble) =this%ystates1(lid_minp_soluble) + pmin_cleave
   if(present(n_inf))then
     n_inf = n_inf + this%ystates1(lid_nh4) - this%ystates0(lid_nh4)
   endif

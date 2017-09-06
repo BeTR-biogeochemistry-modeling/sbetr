@@ -73,6 +73,7 @@ implicit none
     real(r8), pointer :: sucsat_col           (:,:)    => null() ! col minimum soil suction (mm) (nlevgrnd)
     real(r8), pointer :: rootfr_patch         (:,:)    => null() ! patch fraction of roots in each soil layer (nlevgrnd)
 
+
     real(r8), pointer :: rr_patch(:,:)  => null()
     real(r8), pointer :: froot_prof_patch(:,:) => null()
     real(r8), pointer :: frootc_patch(:) => null()
@@ -80,6 +81,7 @@ implicit none
     real(r8), pointer :: cp_scalar_patch(:) => null()
     real(r8), pointer :: dic_prod_vr_col(:,:) => null()
     real(r8), pointer :: doc_prod_vr_col(:,:) => null()
+    real(r8), pointer :: biochem_pmin_vr(:,:) => null()
     !carbon fluxes
     type(betr_carbonflux_type) :: c12flx
     type(betr_carbonflux_type) :: c13flx
@@ -212,6 +214,7 @@ contains
 
   allocate(this%dic_prod_vr_col(begc:endc,lbj:ubj))
   allocate(this%doc_prod_vr_col(begc:endc,lbj:ubj))
+  allocate(this%biochem_pmin_vr(begc:endc,lbj:ubj))
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------
