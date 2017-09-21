@@ -90,6 +90,7 @@ module BetrType
      procedure, public  :: retrieve_biostates
      procedure, public  :: retrieve_biofluxes
      procedure, public  :: debug_info
+     procedure, public  :: set_bgc_spinup
   end type betr_type
 
   public :: create_betr_type
@@ -292,7 +293,7 @@ contains
     integer                          , intent(in)    :: filter_soilc(:)            ! column filter_soilc
     integer                          , intent(in)    :: num_soilp
     integer                          , intent(in)    :: filter_soilp(:)            ! pft filter
-    type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
+    type(betr_biogeophys_input_type) , intent(inout) :: biophysforc
     type(betr_biogeo_flux_type)      , intent(inout) :: biogeo_flux
     type(betr_biogeo_state_type)     , intent(inout) :: biogeo_state
     type(betr_status_type)           , intent(out)   :: betr_status
@@ -519,8 +520,22 @@ contains
 
     end associate
   end subroutine step_with_drainage
+  !--------------------------------------------------------------------------------
+  subroutine set_bgc_spinup(this, bounds, lbj, ubj, num_soilc, filter_soilc, biophysforc)
 
+  implicit none
+  ! !ARGUMENTS:
+  class(betr_type)            , intent(inout) :: this
+  type(bounds_type)           , intent(in)    :: bounds
+  integer, intent(in) :: ubj, lbj
+  integer, intent(in) :: num_soilc
+  integer, intent(in) :: filter_soilc(:)
+  type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
 
+  call this%bgc_reaction%set_bgc_spinup(bounds, lbj, ubj, num_soilc, filter_soilc, biophysforc, &
+    this%tracers, this%tracerstates)
+
+  end subroutine set_bgc_spinup
   !--------------------------------------------------------------------------------
   subroutine diagnoselnd2atm(this, bounds, num_soilc, filter_soilc,  &
     biogeo_flux)

@@ -242,16 +242,17 @@ contains
          is_volatile                            => betrtracer_vars%is_volatile                            , & ! logical[intent(in)], is a volatile tracer?
          is_h2o                                 => betrtracer_vars%is_h2o                                 , & ! logical[intent(in)], is a h2o tracer?
          volatilegroupid                        => betrtracer_vars%volatilegroupid                        , & ! integer[intent(in)], location in the volatile vector
-         air_vol                                => biophysforc%air_vol_col                            ,     & ! volume possessed by air
-         h2osoi_liqvol                          => biophysforc%h2osoi_liqvol_col                      ,     & ! soil volume possessed by liquid water
-         altmax                                 => biophysforc%altmax_col                            ,      & ! Input:  [real(r8) (:)   ]  maximum annual depth of thaw
-         altmax_lastyear                        => biophysforc%altmax_lastyear_col                   ,      & ! Input:  [real(r8) (:)   ]  prior year maximum annual depth o
+         air_vol                                => biophysforc%air_vol_col                                , & ! volume possessed by air
+         h2osoi_liqvol                          => biophysforc%h2osoi_liqvol_col                          , & ! soil volume possessed by liquid water
+         altmax                                 => biophysforc%altmax_col                                 , & ! Input:  [real(r8) (:)   ]  maximum annual depth of thaw
+         altmax_lastyear                        => biophysforc%altmax_lastyear_col                        , & ! Input:  [real(r8) (:)   ]  prior year maximum annual depth o
          tracer_solid_passive_diffus_scal_group => betrtracer_vars%tracer_solid_passive_diffus_scal_group , & !scaling factor for solid phase diffusivity
          tracer_solid_passive_diffus_thc_group  => betrtracer_vars%tracer_solid_passive_diffus_thc_group  , & !threshold for solid phase diffusivity
          tau_gas                                => tau_soi%tau_gas                                        , & ! real(r8)[intent(in)], gaseous tortuosity
          tau_liq                                => tau_soi%tau_liq                                        , & ! real(r8)[intent(in)], aqueous tortuosity
          zi                                     => col%zi                                                 , & ! real(r8)[intent(in)],
-         t_soisno                               => biophysforc%t_soisno_col                                 & ! Input: [real(r8)(:,:)]
+         t_soisno                               => biophysforc%t_soisno_col                               , & ! Input: [real(r8)(:,:)]
+         move_scalar                            => betrtracer_vars%move_scalar                              &
          )
 
       bulkdiffus(:,:,:) = 1.e-40_r8                            !initialize to a very small number
@@ -282,6 +283,7 @@ contains
                      endif
                      !to prevent division by zero
                      bulkdiffus(c,n,j)=max(bulkdiffus(c,n,j),minval_diffus)
+                     bulkdiffus(c,n,j)=bulkdiffus(c,n,j)*move_scalar(j)
                   endif
                enddo
             enddo
@@ -296,6 +298,7 @@ contains
                      bulkdiffus(c,n,j)=diffaqu*h2osoi_liqvol(c,n)*tau_liq(c,n)
                      !to prevent division by zero
                      bulkdiffus(c,n,j)=max(bulkdiffus(c,n,j),minval_diffus) !avoid division by zero in following calculations
+                     bulkdiffus(c,n,j)=bulkdiffus(c,n,j)*move_scalar(j)
                   endif
                enddo
             enddo
@@ -331,6 +334,7 @@ contains
                   ! completely frozen soils--no mixing
                   bulkdiffus(c,n,j) = 1e-4_r8 / (86400._r8 * 365._r8) * 1.e-36_r8  !set to very small number for numerical purpose
                endif
+               bulkdiffus(c,n,j) = bulkdiffus(c,n,j) * move_scalar(j)
             enddo
          enddo
       enddo

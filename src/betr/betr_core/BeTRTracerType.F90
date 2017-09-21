@@ -74,26 +74,26 @@ module BeTRTracerType
    integer :: id_trc_o17_o2, id_trc_beg_o17_o2, id_trc_end_o17_o2                                      ! tag for O(17)O and its related species
    integer, pointer :: id_trc_h2o_tags(:)                        !tagged h2o tracers
 
-   logical, pointer :: is_volatile(:)    => null()                       !flag for volatile species,  true/false, (yes/no)
-   logical, pointer :: is_diffusive(:)  => null()
-   logical, pointer :: is_adsorb(:)     => null()                         !flag for adsorbable species, true/false (year/no), in equilibrium with aqueous phase and/or gaseous phase
-   logical, pointer :: is_advective(:)  => null()                         !flag for advective species, some species, like non-dissolved som does not undergo advection, rather bioturbation is the major mechanism for vertical transport
-   logical, pointer :: is_mobile(:)     => null()                         !flag indicating whether the tracer is mobile or inert, when it is innert, do not move it around
-   logical, pointer :: is_h2o(:)        => null()                         !flag for water isotope
-   logical, pointer :: is_co2tag(:)     => null()                         !tagged co2 tracer?
-   logical, pointer :: is_dom(:)        => null()                         !true if it is a dom tracer, place holder for rtm bgc
-   logical, pointer :: is_isotope(:)   => null()
-   logical, pointer :: is_frozen(:)    => null()                          !true if the tracer could be frozen
-   integer, pointer :: refisoid(:)     => null()                          !reference tracer for isotope calculation, this is setup only for non-h2o isotope now
-   integer, pointer :: adsorbid(:)     => null()                          !which tracer is adsorbed
-   integer, pointer :: volatileid(:)  => null()
-   integer, pointer :: h2oid(:)    => null()
-   integer, pointer :: adsorbgroupid(:)  => null()
+   logical, pointer :: is_volatile(:)     => null()                       !flag for volatile species,  true/false, (yes/no)
+   logical, pointer :: is_diffusive(:)    => null()
+   logical, pointer :: is_adsorb(:)       => null()                         !flag for adsorbable species, true/false (year/no), in equilibrium with aqueous phase and/or gaseous phase
+   logical, pointer :: is_advective(:)    => null()                         !flag for advective species, some species, like non-dissolved som does not undergo advection, rather bioturbation is the major mechanism for vertical transport
+   logical, pointer :: is_mobile(:)       => null()                         !flag indicating whether the tracer is mobile or inert, when it is innert, do not move it around
+   logical, pointer :: is_h2o(:)          => null()                         !flag for water isotope
+   logical, pointer :: is_co2tag(:)       => null()                         !tagged co2 tracer?
+   logical, pointer :: is_dom(:)          => null()                         !true if it is a dom tracer, place holder for rtm bgc
+   logical, pointer :: is_isotope(:)      => null()
+   logical, pointer :: is_frozen(:)       => null()                          !true if the tracer could be frozen
+   integer, pointer :: refisoid(:)        => null()                          !reference tracer for isotope calculation, this is setup only for non-h2o isotope now
+   integer, pointer :: adsorbid(:)        => null()                          !which tracer is adsorbed
+   integer, pointer :: volatileid(:)      => null()
+   integer, pointer :: h2oid(:)           => null()
+   integer, pointer :: adsorbgroupid(:)   => null()
    integer, pointer :: adsorb_isotherm(:) => null()
-   integer, pointer :: volatilegroupid(:)  => null()                      !
-   integer, pointer :: groupid(:) => null()
-   integer, pointer :: frozenid(:) => null()
-
+   integer, pointer :: volatilegroupid(:) => null()                      !
+   integer, pointer :: groupid(:)         => null()
+   integer, pointer :: frozenid(:)        => null()
+   real(r8), pointer :: move_scalar(:)    => null()
    logical :: is_tagged_h2o =.false.                             !no tagged h2o run by default
    real(r8),pointer :: tracer_solid_passive_diffus_scal_group(:) => null() !reference diffusivity for solid phase tracer, for modeling turbation
    real(r8),pointer :: tracer_solid_passive_diffus_thc_group(:) => null() !threshold diffusivity for solid phase tracer, for modeling turbation
@@ -204,34 +204,34 @@ module BeTRTracerType
   class(BeTRtracer_type), intent(inout) :: this
   integer, parameter :: nanid=-1
 
-  allocate(this%is_volatile        (this%ntracers));    this%is_volatile(:)     = .false.
-  allocate(this%is_adsorb          (this%ntracers));    this%is_adsorb(:)       = .false.
-  allocate(this%is_advective       (this%ntracers));             this%is_advective(:)    = .false.
-  allocate(this%is_diffusive       (this%ntracers));             this%is_diffusive(:)    = .true.
-  allocate(this%is_mobile          (this%ntracers));             this%is_mobile(:)       = .false.
-  allocate(this%is_h2o             (this%ntracers));    this%is_h2o(:)          = .false.
-  allocate(this%is_co2tag          (this%ntracers));    this%is_co2tag(:)       = .false.
-  allocate(this%is_dom             (this%ntracers));    this%is_dom(:)          = .false.
-  allocate(this%is_isotope         (this%ntracers));    this%is_isotope(:)      = .false.
-  allocate(this%is_frozen          (this%ntracers));    this%is_frozen(:)       = .false.
-  allocate(this%adsorbgroupid      (this%ntracers));    this%adsorbgroupid(:)   = nanid
-  allocate(this%adsorb_isotherm    (this%ntracers));    this%adsorb_isotherm(:) = nanid
-  allocate(this%adsorbid           (this%ntracers));    this%adsorbid(:)        = nanid
-
-  allocate(this%volatileid         (this%ntracers));    this%volatileid(:)      = nanid
-  allocate(this%volatilegroupid    (this%ntracers));    this%volatilegroupid(:) = nanid
-  allocate(this%h2oid              (this%nh2o_tracers));         this%h2oid(:)           = nanid
-  allocate(this%frozenid           (this%ntracers));    this%frozenid(:)        = nanid
-  allocate(this%tracernames        (this%ntracers));             this%tracernames(:)     = ''
-  allocate(this%tracerfamilyname   (this%ntracers));             this%tracerfamilyname(:)= ''
-  allocate(this%units              (this%ntracers));             this%units(:)           = 'mol m-3'
+  allocate(this%is_volatile        (this%ntracers));      this%is_volatile(:)     = .false.
+  allocate(this%is_adsorb          (this%ntracers));      this%is_adsorb(:)       = .false.
+  allocate(this%is_advective       (this%ntracers));      this%is_advective(:)    = .false.
+  allocate(this%is_diffusive       (this%ntracers));      this%is_diffusive(:)    = .true.
+  allocate(this%is_mobile          (this%ntracers));      this%is_mobile(:)       = .false.
+  allocate(this%is_h2o             (this%ntracers));      this%is_h2o(:)          = .false.
+  allocate(this%is_co2tag          (this%ntracers));      this%is_co2tag(:)       = .false.
+  allocate(this%is_dom             (this%ntracers));      this%is_dom(:)          = .false.
+  allocate(this%is_isotope         (this%ntracers));      this%is_isotope(:)      = .false.
+  allocate(this%is_frozen          (this%ntracers));      this%is_frozen(:)       = .false.
+  allocate(this%adsorbgroupid      (this%ntracers));      this%adsorbgroupid(:)   = nanid
+  allocate(this%adsorb_isotherm    (this%ntracers));      this%adsorb_isotherm(:) = nanid
+  allocate(this%adsorbid           (this%ntracers));      this%adsorbid(:)        = nanid
+  allocate(this%volatileid         (this%ntracers));      this%volatileid(:)      = nanid
+  allocate(this%volatilegroupid    (this%ntracers));      this%volatilegroupid(:) = nanid
+  allocate(this%h2oid              (this%nh2o_tracers));  this%h2oid(:)           = nanid
+  allocate(this%frozenid           (this%ntracers));      this%frozenid(:)        = nanid
+  allocate(this%tracernames        (this%ntracers));      this%tracernames(:)     = ''
+  allocate(this%tracerfamilyname   (this%ntracers));      this%tracerfamilyname(:)= ''
+  allocate(this%units              (this%ntracers));      this%units(:)           = 'mol m-3'
   allocate(this%vtrans_scal        (this%ngwmobile_tracers));    this%vtrans_scal(:)     = 0._r8   !no transport through xylem transpiration
+  allocate(this%move_scalar        (this%ntracer_groups));      this%move_scalar(:)     = 1._r8
 
   allocate(this%tracer_solid_passive_diffus_scal_group(this%nsolid_passive_tracer_groups));
   this%tracer_solid_passive_diffus_scal_group(:) = 1._r8
 
   allocate(this%tracer_solid_passive_diffus_thc_group (this%nsolid_passive_tracer_groups));
-  this%tracer_solid_passive_diffus_thc_group(:) = 1e-4_r8 / (86400._r8 * 365._r8) * 1.e-36_r8
+  this%tracer_solid_passive_diffus_thc_group(:) = 1.e-4_r8 / (86400._r8 * 365._r8) * 1.e-36_r8
 
   allocate(this%tracer_group_memid(this%ntracer_groups, this%nmem_max));
   this%tracer_group_memid(:,:) = nanid

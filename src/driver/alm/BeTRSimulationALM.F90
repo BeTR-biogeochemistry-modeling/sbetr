@@ -172,7 +172,11 @@ contains
    !
    !USES
     use clm_varpar        , only : nlevsno, nlevsoi, nlevtrc_soil
+    use clm_varctl        , only : spinup_state
     use tracer_varcon     , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
+    use betr_ctrl         , only : betr_spinup_state
+    use betr_varcon       , only : kyr_spinup
+    use clm_time_manager  , only : get_curr_date
     implicit none
     ! !ARGUMENTS :
     class(betr_simulation_alm_type) , intent(inout) :: this
@@ -182,6 +186,30 @@ contains
     !TEMPORARY VARIABLES
     type(betr_bounds_type)     :: betr_bounds
     integer :: c, c_l, begc_l, endc_l
+    integer :: year, mon, day, sec
+
+    call get_curr_date(year, mon, day, sec)
+
+    if(spinup_state==1)then
+       if(year<kyr_spinup)then
+         !period does nothing to spinup scalar
+         betr_spinup_state=1
+       elseif(year<kyr_spinup*2)then
+         !period accumulate spinup scalar
+         betr_spinup_state=2
+       else
+          !period apply spinup scalar
+          betr_spinup_state=3
+       endif
+    else
+       betr_spinup_state=0
+    endif
+
+    if(betr_spinup_state>=2)then
+      do c = bounds%begc, bounds%endc
+        this%biophys_forc(c)%scalaravg_col(c_l) = this%scalaravg_col(c)
+      enddo
+    endif
 
     call this%bsimstatus%reset()
 
@@ -252,6 +280,7 @@ contains
     enddo
     if(this%bsimstatus%check_status()) &
       call endrun(msg=this%bsimstatus%print_msg())
+
   end subroutine ALMStepWithoutDrainage
 
   !---------------------------------------------------------------------------------

@@ -7,7 +7,7 @@ module BgcCentCnpType
   ! !USES:
   use bshr_kind_mod             , only : r8 => shr_kind_r8
   use bshr_log_mod              , only : errMsg => shr_log_errMsg
-  use betr_varcon               , only : spval => bspval, spinup_state => bspinup_state
+  use betr_varcon               , only : spval => bspval
   use BgcCentCnpDecompType      , only : DecompCent_type
   use BgcCentCnpIndexType       , only : centurybgc_index_type
   use BgcCentCnpNitDenType      , only : century_nitden_type
@@ -160,7 +160,8 @@ contains
   end subroutine InitAllocate
 
   !-------------------------------------------------------------------------------
-  subroutine runbgc(this,  is_surf, dtime, centuryeca_forc, nstates, ystates0, ystatesf, bstatus)
+  subroutine runbgc(this,  is_surf, dtime, centuryeca_forc, nstates, ystates0, ystatesf, spinup_scalar, &
+      spinup_flg, bstatus)
 
   !DESCRIPTION
   !do bgc model integration for one step
@@ -178,7 +179,8 @@ contains
   real(r8)                   , intent(out):: ystates0(nstates)
   real(r8)                   , intent(out):: ystatesf(nstates)
   type(betr_status_type)     , intent(out) :: bstatus
-
+  integer                    , intent(in)  ::  spinup_flg
+  real(r8)                   , intent(inout):: spinup_scalar
 
   !local variables
   real(r8) :: pot_om_decay_rates(this%centurybgc_index%nom_pools)
@@ -243,20 +245,11 @@ contains
   !calculate default stoichiometry entries
   call this%calc_cascade_matrix(this%centurybgc_index, cascade_matrix, frc_c13, frc_c14)
 
-  if(this%centurybgc_index%debug)then
-!    do jj = 1, nreactions
-!      print*,'afdefs jj',jj,cascade_matrix(lid_minp_soluble,jj)
-!    enddo
-  endif
   !run century decomposition, return decay rates, cascade matrix, potential hr
   call this%censom%run_decomp(is_surf, this%centurybgc_index, dtime, ystates1(1:nom_tot_elms),&
       this%decompkf_eca, centuryeca_forc%pct_sand, centuryeca_forc%pct_clay,this%alpha_n, this%alpha_p, &
-      cascade_matrix, this%k_decay(1:nom_pools), pot_co2_hr, bstatus)
-  if(this%centurybgc_index%debug)then
-!    do jj = 1, nreactions
-!      print*,'afdecomjj',jj,cascade_matrix(lid_minp_soluble,jj)
-!    enddo
-  endif
+      cascade_matrix, this%k_decay(1:nom_pools), pot_co2_hr, spinup_scalar, spinup_flg, bstatus)
+
 !  call this%sumup_cnp_mass('af run_decomp')
   if(bstatus%check_status())return
 
@@ -347,6 +340,7 @@ contains
     ! !USES:
     use MathfuncMod               , only : safe_div
     use BgcCentCnpIndexType       , only : centurybgc_index_type
+    use betr_ctrl                 , only : spinup_state => betr_spinup_state
     implicit none
     ! !ARGUMENTS:
     class(centurybgceca_type)     , intent(in) :: this

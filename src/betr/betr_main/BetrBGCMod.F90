@@ -759,6 +759,7 @@ contains
          nmem_max                  => betrtracer_vars%nmem_max                       , & !
          tracer_group_memid        => betrtracer_vars%tracer_group_memid             , & !
          tracernames               => betrtracer_vars%tracernames                    , & !
+         move_scalar               => betrtracer_vars%move_scalar                    , & !
          tracer_conc_mobile_col    => tracerstate_vars%tracer_conc_mobile_col        , & !
          tracer_conc_grndwater_col => tracerstate_vars%tracer_conc_grndwater_col     , & !
          aqu2bulkcef_mobile_col    => tracercoeff_vars%aqu2bulkcef_mobile_col        , & !
@@ -834,6 +835,8 @@ contains
                else
                  qflx_rootsoi_local(c,l) = safe_div(qflx_rootsoi(c,l),aqu2bulkcef_mobile_col(c,l,j),eps=loc_eps)
                endif
+               qflx_adv_local(c,l)=qflx_adv_local(c,l)*move_scalar(j)
+               qflx_rootsoi_local(c,l) = qflx_rootsoi_local(c,l)*move_scalar(j)
             enddo
          enddo
 

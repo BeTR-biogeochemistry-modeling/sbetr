@@ -62,6 +62,7 @@ implicit none
     procedure, private :: InitAllocate
     procedure, private :: InitPar
     procedure, private :: calc_potential_aerobic_hr
+    procedure, private :: apply_spinupf
   end type CentSom_type
 contains
 
@@ -188,13 +189,14 @@ contains
 
   subroutine run_decomp(this, is_surf, centurybgc_index, dtime, ystates,&
       decompkf_eca, pct_sand, pct_clay, alpha_n, alpha_p, cascade_matrix, &
-      k_decay, pot_co2_hr, bstatus)
+      k_decay, pot_co2_hr, spinup_scalar, spinup_flg, bstatus)
   !
   !DESCRIPTION
   !
   use BgcCentCnpIndexType , only : centurybgc_index_type
-  use BgcCentCnpDecompType      , only : DecompCent_type
+  use BgcCentCnpDecompType, only : DecompCent_type
   use BetrStatusType      , only : betr_status_type
+  use betr_ctrl           , only : betr_spinup_state
   implicit none
   class(CentSom_type)         , intent(inout) :: this
   type(centurybgc_index_type) , intent(in) :: centurybgc_index
@@ -204,7 +206,9 @@ contains
   logical                     , intent(in) :: is_surf
   real(r8)                    , intent(in) :: pct_sand
   real(r8)                    , intent(in) :: pct_clay
+  integer                     , intent(in) :: spinup_flg
   real(r8)                    , intent(inout) :: cascade_matrix(centurybgc_index%nstvars, centurybgc_index%nreactions)
+  real(r8)                    , intent(inout) :: spinup_scalar
   real(r8)                    , intent(out) :: k_decay(1:ncentpools)
   real(r8)                    , intent(out) :: pot_co2_hr
   real(r8)                    , intent(out) :: alpha_n(1:ncentpools)
@@ -226,6 +230,10 @@ contains
 
   !calculate potential decay coefficient (1/s)
   call this%calc_som_decay_k(centurybgc_index, decompkf_eca, k_decay)
+
+  if(spinup_flg/=0)then
+    call this%apply_spinupf(centurybgc_index, decompkf_eca, k_decay, spinup_scalar, spinup_flg)
+  endif
 
   !calculate potential decay rates (mol C / s)
   call this%calc_som_decay_r(centurybgc_index, dtime, k_decay(1:ncentpools), &
@@ -969,7 +977,43 @@ contains
     enddo
     end associate
   end subroutine calc_som_decay_r
+  !-------------------------------------------------------------------------------
 
+  subroutine apply_spinupf(this, centurybgc_index, decompkf_eca, k_decay, spinup_scalar, spinup_flg)
+  use BgcCentCnpIndexType       , only : centurybgc_index_type
+  use BgcCentCnpDecompType      , only : DecompCent_type
+  use betr_varcon               , only : kyr_spinup
+  implicit none
+  class(CentSom_type)     , intent(inout) :: this
+  type(DecompCent_type), intent(in) :: decompkf_eca
+  type(centurybgc_index_type)   , intent(in)    :: centurybgc_index
+  real(r8)                      , intent(inout) :: k_decay(ncentpools)
+  real(r8)                      , intent(inout) :: spinup_scalar
+  integer                       , intent(in)    :: spinup_flg
+  integer :: jj
+
+  associate(   &
+   t_scalar       => decompkf_eca%t_scalar        , & ! Intput: [real(r8) (:,:)   ]  soil temperature scalar for decomp
+   w_scalar       => decompkf_eca%w_scalar        , & ! Intput: [real(r8) (:,:)   ]  soil water scalar for decomp
+   o_scalar       => decompkf_eca%o_scalar        , & ! Intput: [real(r8) (:,:)   ]  fraction by which decomposition is limited by anoxia
+   som1           => centurybgc_index%som1        , & !
+   som2           => centurybgc_index%som2        , & !
+   som3           => centurybgc_index%som3          & !
+  )
+
+  if(spinup_flg==2)then
+    !cumulated more than 2 * kyr_spinup
+    do jj = 1, ncentpools
+      k_decay(jj) = k_decay(jj)/max(spinup_scalar,1.e-2_r8)
+    enddo
+  elseif(spinup_flg==1)then
+    !cumulated more than kyr_spinup but less than 2 * kyr_spinup
+    spinup_scalar = spinup_scalar + t_scalar * w_scalar * o_scalar / (365._r8 * 86400._r8 * kyr_spinup)
+  endif
+
+  end associate
+
+  end subroutine apply_spinupf
   !-------------------------------------------------------------------------------
   subroutine calc_som_decay_k(this, centurybgc_index, decompkf_eca, k_decay)
 
@@ -1012,6 +1056,8 @@ contains
   k_decay(fwd)  = k_decay(fwd) * exp(-3._r8*this%fwd_flig)
   k_decay(lit2) = k_decay(lit2)* exp(-3._r8*this%lit_flig)
   k_decay(lit3) = k_decay(lit3)* exp(-3._r8*this%lit_flig)
+
+
   end associate
   end subroutine calc_som_decay_k
   !-------------------------------------------------------------------------------

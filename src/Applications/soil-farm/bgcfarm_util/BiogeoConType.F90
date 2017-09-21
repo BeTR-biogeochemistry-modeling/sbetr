@@ -94,10 +94,12 @@ implicit none
   !inorganic phosphorus cycling
   real(r8) :: frac_p_sec_to_sol                !fraction of released secondary phosphorus that goes into soluble form
   real(r8), pointer :: minp_secondary_decay(:) => null() !decay rate of secondary phosphorus
+  real(r8), pointer :: spinup_factor(:)
  contains
-   procedure, public :: Init
+   procedure, public  :: Init
    procedure, private :: InitAllocate
    procedure, private :: set_defpar_default
+   procedure, public  :: apply_spinup_factor
    procedure, private :: ReadNamelist
  end type BiogeoCon_type
 
@@ -120,6 +122,8 @@ contains
   !update parameter from namelist
   call this%ReadNamelist(namelist_buffer, bstatus)
 
+  call this%apply_spinup_factor()
+
   end subroutine Init
   !--------------------------------------------------------------------
   subroutine InitAllocate(this)
@@ -130,7 +134,7 @@ contains
   allocate(this%vmax_minp_secondary_to_occlude(betr_max_soilorder))
   allocate(this%minp_secondary_decay(betr_max_soilorder))
   allocate(this%vmax_minp_soluble_to_secondary(betr_max_soilorder))
-
+  allocate(this%spinup_factor(9))
   !the following will be actually calculated from CNP bgc
   end subroutine InitAllocate
   !--------------------------------------------------------------------
@@ -160,6 +164,8 @@ contains
   this%k_decay_som2          = 1._r8/(6.1_r8*86400._r8*365._r8)     !1/second
   this%k_decay_som3          = 1._r8/(270._r8*86400._r8*365._r8)    !1/second
   this%k_decay_cwd           = 1._r8/(4.1_r8*86400._r8*365._r8)     !1/second
+  this%k_decay_fwd           = 1._r8/(4.1_r8*86400._r8*365._r8)     !1/second
+  this%k_decay_lwd           = 1._r8/(4.1_r8*86400._r8*365._r8)     !1/second
 
   this%init_cn_met  = 90._r8  !mass based
   this%init_cn_cel  = 90._r8  !mass based
@@ -242,11 +248,14 @@ contains
   real(r8) :: tau_decay_som2
   real(r8) :: tau_decay_som3
   real(r8) :: tau_decay_cwd
+  real(r8) :: tau_decay_fwd
+  real(r8) :: tau_decay_lwd
 
   real(r8), parameter :: year_sec=86400._r8*365._r8
   namelist / soibgc_ecaparam /                  &
        tau_decay_lit1, tau_decay_lit2, tau_decay_lit3, &
-       tau_decay_som1, tau_decay_som2, tau_decay_som3
+       tau_decay_som1, tau_decay_som2, tau_decay_som3, &
+       tau_decay_cwd, tau_decay_fwd, tau_decay_lwd
 
 
   call bstatus%reset()
@@ -259,7 +268,8 @@ contains
   tau_decay_som2          = 6.1_r8
   tau_decay_som3          = 270._r8
   tau_decay_cwd           = 4.1_r8
-
+  tau_decay_fwd           = 4.1_r8
+  tau_decay_lwd           = 4.1_r8
   if ( .false. )then
      ioerror_msg=''
      read(namelist_buffer, nml=soibgc_ecaparam, iostat=nml_error, iomsg=ioerror_msg)
@@ -280,6 +290,40 @@ contains
   this%k_decay_som2          = 1._r8/(tau_decay_som2*year_sec)    !1/second
   this%k_decay_som3          = 1._r8/(tau_decay_som3*year_sec)    !1/second
   this%k_decay_cwd           = 1._r8/(tau_decay_cwd*year_sec)     !1/second
+  this%k_decay_fwd           = 1._r8/(tau_decay_fwd*year_sec)     !1/second
+  this%k_decay_lwd           = 1._r8/(tau_decay_lwd*year_sec)     !1/second
+
+  !the order is, lit1, lit2, lit3, cwd, lwd, fwd, som1, som3, som2
+  this%spinup_factor(1) = 1._r8
+  this%spinup_factor(2) = 1._r8
+  this%spinup_factor(3) = 1._r8
+
+  this%spinup_factor(4) = 1._r8
+  this%spinup_factor(5) = 1._r8
+  this%spinup_factor(6) = 1._r8
+
+  this%spinup_factor(7) = tau_decay_som1/tau_decay_lit1
+  this%spinup_factor(8) = tau_decay_som3/tau_decay_lit1
+  this%spinup_factor(9) = tau_decay_som2/tau_decay_lit1
 
   end subroutine ReadNamelist
+
+  !--------------------------------------------------------------------
+  subroutine apply_spinup_factor(this)
+  use betr_ctrl, only : betr_spinup_state
+  implicit none
+  class(BiogeoCon_type), intent(inout) :: this
+
+  if(betr_spinup_state==1)then
+    this%k_decay_lit1 = this%k_decay_lit1 * this%spinup_factor(1)
+    this%k_decay_lit2 = this%k_decay_lit2 * this%spinup_factor(2)
+    this%k_decay_lit3 = this%k_decay_lit3 * this%spinup_factor(3)
+    this%k_decay_cwd = this%k_decay_cwd * this%spinup_factor(4)
+    this%k_decay_lwd = this%k_decay_lwd * this%spinup_factor(5)
+    this%k_decay_fwd = this%k_decay_fwd * this%spinup_factor(6)
+    this%k_decay_som1 = this%k_decay_som1 * this%spinup_factor(7)
+    this%k_decay_som3 = this%k_decay_som3 * this%spinup_factor(8)
+    this%k_decay_som2 = this%k_decay_som2 * this%spinup_factor(9)
+  endif
+  end subroutine apply_spinup_factor
 end module BiogeoConType

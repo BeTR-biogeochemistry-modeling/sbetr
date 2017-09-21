@@ -51,6 +51,7 @@ module H2OIsotopeBGCReactionsType
      procedure, private :: readParams
      procedure :: retrieve_biostates
      procedure :: debug_info
+     procedure :: set_bgc_spinup
    end type bgc_reaction_h2oiso_type
 
    interface bgc_reaction_h2oiso_type
@@ -83,6 +84,28 @@ module H2OIsotopeBGCReactionsType
 
 
   end subroutine set_kinetics_par
+
+  !-------------------------------------------------------------------------------
+  subroutine set_bgc_spinup(this, bounds, lbj, ubj, num_soilc, filter_soilc, biophysforc, &
+  tracers, tracerstate_vars)
+  use tracerstatetype        , only : tracerstate_type
+  use BeTRTracerType         , only : betrtracer_type
+  use BeTR_decompMod         , only : betr_bounds_type
+  implicit none
+    class(bgc_reaction_h2oiso_type)         , intent(inout)    :: this                       !
+    type(betr_bounds_type)                       , intent(in) :: bounds
+    integer                                 , intent(in) :: lbj, ubj
+    integer                                 , intent(in) :: num_soilc
+    integer                                 , intent(in) :: filter_soilc(:)
+    type(betr_biogeophys_input_type)        , intent(in)    :: biophysforc
+    type(BeTRtracer_type)                   , intent(inout) :: tracers
+    type(tracerstate_type)                  , intent(inout) :: tracerstate_vars
+
+    if (this%dummy_compiler_warning) continue
+    if (bounds%begc > 0) continue
+
+  end subroutine set_bgc_spinup
+
 !-------------------------------------------------------------------------------
   subroutine init_boundary_condition_type(this, bounds, betrtracer_vars, tracerboundarycond_vars )
   !
@@ -395,7 +418,7 @@ module H2OIsotopeBGCReactionsType
   integer                          , intent(in)    :: lbj, ubj                   ! lower and upper bounds, make sure they are > 0
   real(r8)                         , intent(in)    :: dtime                      ! model time step
   type(betrtracer_type)            , intent(in)    :: betrtracer_vars            ! betr configuration information
-  type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
+  type(betr_biogeophys_input_type) , intent(inout) :: biophysforc
   type(tracercoeff_type)           , intent(in)    :: tracercoeff_vars           !
   type(tracerstate_type)           , intent(inout) :: tracerstate_vars           !
   type(tracerflux_type)            , intent(inout) :: tracerflux_vars            !
@@ -751,7 +774,7 @@ module H2OIsotopeBGCReactionsType
    type(betr_status_type)               , intent(out):: betr_status
    call betr_status%reset()
    SHR_ASSERT_ALL((ubound(dzsoi)  == (/bounds%endc, bounds%ubj/)),   errMsg(mod_filename,__LINE__), betr_status)
-   if(betr_status%check_status())return   
+   if(betr_status%check_status())return
 
    if (this%dummy_compiler_warning) continue
      end subroutine debug_info
@@ -780,7 +803,7 @@ module H2OIsotopeBGCReactionsType
    call betr_status%reset()
    SHR_ASSERT_ALL((ubound(jtops)  == (/bounds%endc/)),   errMsg(mod_filename,__LINE__), betr_status)
    if(betr_status%check_status())return
-   
+
    if (this%dummy_compiler_warning) continue
    if (bounds%begc > 0)             continue
 

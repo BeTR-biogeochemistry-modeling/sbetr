@@ -1,7 +1,7 @@
 module BgcCentCnpIndexType
 
   use bshr_kind_mod  , only : r8 => shr_kind_r8
-  use betr_varcon    , only : spinup_state => bspinup_state
+  use betr_ctrl    , only : spinup_state => betr_spinup_state
 implicit none
 
   private
@@ -404,7 +404,7 @@ implicit none
 
     !aerechyma transport
     this%lid_o2_paere   = addone(itemp); call list_insert(list_name, 'o2_paere')
-    if ( spinup_state /= 1 ) then
+    if ( spinup_state == 0 ) then
        this%lid_ar_paere   = addone(itemp);  this%lid_ar_aren_reac  = addone(ireac)   !
        call list_insert(list_name, 'ar_paere')
 

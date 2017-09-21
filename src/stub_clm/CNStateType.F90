@@ -16,6 +16,7 @@ implicit none
      real(r8), pointer :: pdep_prof_col                (:,:)=> null()
      real(r8), pointer :: frac_loss_lit_to_fire_col    (:) => null()
      real(r8), pointer :: frac_loss_cwd_to_fire_col    (:) => null()
+     real(r8), pointer :: scalaravg_col                (:) => null()   ! column average scalar for decompostion (for ad_spinup)
   contains
 
     procedure, public  :: Init
@@ -62,7 +63,7 @@ contains
     allocate(this%isoilorder            (begc:endc))                 ; this%isoilorder(:) = ispval
     allocate(this%ndep_prof_col (begc:endc, 1:nlevdecomp_full)); this%ndep_prof_col(:,:) = spval
     allocate(this%pdep_prof_col (begc:endc, 1:nlevdecomp_full)); this%pdep_prof_col(:,:) = spval
-
+    allocate(this%scalaravg_col       (begc:endc))                   ; this%scalaravg_col       (:)   = nan
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------

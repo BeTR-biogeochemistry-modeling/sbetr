@@ -42,5 +42,5 @@ module betr_varcon
 
   integer, public :: betr_maxpatch_pft = 1
   integer, public :: betr_max_soilorder = 1
-  integer, public :: bspinup_state = 0
+  real(r8), public :: kyr_spinup=20._r8
 end module betr_varcon

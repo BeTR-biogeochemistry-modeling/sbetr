@@ -24,7 +24,8 @@ contains
     use shr_nl_mod    , only : shr_nl_find_group_name
     use shr_mpi_mod   , only : shr_mpi_bcast
     use betr_utils    , only : log2str
-    use clm_varctl    , only : iulog
+    use clm_varctl    , only : iulog, spinup_state
+    use betr_ctrl     , only : betr_spinup_state
     use tracer_varcon  , only : advection_on, diffusion_on, reaction_on, ebullition_on, reaction_method
     use ApplicationsFactory, only : AppLoadParameters
     use tracer_varcon , only : use_c13_betr, use_c14_betr
@@ -50,6 +51,9 @@ contains
 
     character(len=betr_namelist_buffer_size_ext) :: bgc_namelist_buffer
     logical :: appfile_on
+
+    !initialize spinup state
+    betr_spinup_state=spinup_state
     ! ----------------------------------------------------------------------
     ! Read namelist from standard input.
     ! ----------------------------------------------------------------------
@@ -112,6 +116,7 @@ contains
 
     call AppLoadParameters(bgc_namelist_buffer, reaction_method, bstatus)
     if(bstatus%check_status())call endrun(msg=bstatus%print_msg())
+
   end subroutine betr_readNL
 
   !-------------------------------------------------------------------------------

@@ -87,6 +87,7 @@ module BeTRSimulation
      real(r8), pointer :: rest_states_1d(:,:)
      real(r8), pointer :: hist_fluxes_1d(:,:)
      real(r8), pointer :: hist_fluxes_2d(:,:,:)
+     real(r8), pointer :: scalaravg_col(:)
      logical,  public :: active_soibgc
      ! FIXME(bja, 201603) most of these types should be private!
 
@@ -330,6 +331,11 @@ contains
         exit
       endif
     enddo
+    !allocate spinup factor
+    if(this%do_soibgc())then
+      allocate(this%scalaravg_col(bounds%begc:bounds%endc))
+      this%scalaravg_col(:) = 0._r8
+    endif
 
     if(this%bsimstatus%check_status())call endrun(msg=this%bsimstatus%print_msg())
 
@@ -1738,7 +1744,11 @@ contains
   !DESCRIPTION
   !create or read restart file
   use restUtilMod    , only : restartvar
-  use ncdio_pio      , only : file_desc_t,ncd_double
+  use ncdio_pio      , only : file_desc_t,ncd_double, ncd_int
+  use clm_varctl     , only : spinup_state
+  use clm_time_manager, only : get_nstep
+  use betr_ctrl      , only : exit_spinup, enter_spinup
+  use tracer_varcon  , only : reaction_method
   implicit none
   ! !ARGUMENTS:
   class(betr_simulation_type) , intent(inout) :: this
@@ -1756,9 +1766,13 @@ contains
   real(r8), pointer :: ptr2d(:,:)
   type(betr_bounds_type)     :: betr_bounds
   integer :: recordDimID
+  integer  :: idata
+  integer  :: restart_file_spinup_state
+  integer  :: c_l
 
+  c_l = 1
   c = bounds%begc
-
+  restart_file_spinup_state =0
   allocate(rest_varname_1d(this%num_rest_state1d)); rest_varname_1d=''
   allocate(rest_varname_2d(this%num_rest_state2d)); rest_varname_2d=''
 
@@ -1768,6 +1782,12 @@ contains
 
   call this%BeTRSetBounds(betr_bounds)
   if(trim(flag)=='write')then
+    if(this%do_soibgc())then
+      idata = spinup_state
+      do c = bounds%begc, bounds%endc
+        this%scalaravg_col(c) = this%biophys_forc(c)%scalaravg_col(c_l)
+      enddo
+    endif
     do c = bounds%begc, bounds%endc
       call this%betr(c)%set_restvar(betr_bounds, 1, betr_nlevtrc_soil, &
         this%num_rest_state1d,this%num_rest_state2d, &
@@ -1775,6 +1795,26 @@ contains
     enddo
   endif
 
+  if(this%do_soibgc())then
+
+    call restartvar(ncid=ncid, flag=flag, varname='spinup_state', xtype=ncd_int,  &
+             long_name='Spinup state of the model that wrote this restart file: ' &
+             // ' 0 = normal model mode, 1 = AD spinup', units='', &
+             interpinic_flag='copy', readvar=readvar,  data=idata)
+
+    call restartvar(ncid=ncid, flag=flag, varname='scalaravg_col', xtype=ncd_double, &
+         dim1name='column', long_name='', units='', &
+         interpinic_flag = 'interp', readvar=readvar, data=this%scalaravg_col)
+
+    if(trim(flag)=='read')then
+      if (readvar) then
+        restart_file_spinup_state = idata
+      else
+        restart_file_spinup_state = spinup_state
+      endif
+    endif
+
+  endif
   do jj = 1, this%num_rest_state1d
     ptr1d => this%rest_states_1d(:, jj)
     call restartvar(ncid=ncid, flag=flag, varname=trim(rest_varname_1d(jj)), &
@@ -1789,12 +1829,33 @@ contains
   enddo
 
   if(trim(flag)=='read')then
+
     !assign initial conditions
     do c = bounds%begc, bounds%endc
       call this%betr(c)%set_restvar(betr_bounds, 1, betr_nlevtrc_soil, &
         this%num_rest_state1d,this%num_rest_state2d, &
         this%rest_states_1d(c:c,:), this%rest_states_2d(c:c,:,:), flag)
     enddo
+
+    if(this%do_soibgc())then
+      exit_spinup = (spinup_state == 0 .and. restart_file_spinup_state == 1 )
+      enter_spinup = (spinup_state == 1 .and. restart_file_spinup_state == 0)
+      if(get_nstep() >= 2)then
+        exit_spinup = .false.; enter_spinup=.false.
+      endif
+
+      do c = bounds%begc, bounds%endc
+        this%biophys_forc(c)%scalaravg_col(c_l) = this%scalaravg_col(c)
+      enddo
+
+      if(exit_spinup .or. enter_spinup)then
+        do c = bounds%begc, bounds%endc
+          if(.not. this%active_col(c))cycle
+          call this%betr(c)%set_bgc_spinup(betr_bounds, 1,  betr_nlevtrc_soil, this%num_soilc, &
+             this%filter_soilc(:), this%biophys_forc(c))
+        enddo
+      endif
+    endif
   endif
 
   deallocate(rest_varname_1d)

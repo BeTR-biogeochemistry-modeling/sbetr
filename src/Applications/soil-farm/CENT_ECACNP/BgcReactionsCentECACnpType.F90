@@ -83,6 +83,7 @@ module BgcReactionsCentECACnpType
     procedure :: retrieve_lnd2atm
     procedure :: retrieve_biostates
     procedure :: debug_info
+    procedure :: set_bgc_spinup
     procedure, private :: set_century_forc
     procedure, private :: retrieve_output
     procedure, private :: rm_ext_output
@@ -139,6 +140,218 @@ contains
 
     end associate
   end subroutine init_boundary_condition_type
+
+  !-------------------------------------------------------------------------------
+  subroutine set_bgc_spinup(this, bounds, lbj, ubj, num_soilc, filter_soilc, biophysforc, &
+  tracers, tracerstate_vars)
+
+  !
+  !DESCRIPTION
+  !set initial conditions for regular or spinup runs. It makes two assumptions
+  !1. the initial conditions are defined
+  !2. spinup scalar was defiend with sufficient temporal average.
+  use tracerstatetype        , only : tracerstate_type
+  use BeTRTracerType         , only : betrtracer_type
+  use betr_ctrl              , only : exit_spinup, enter_spinup
+  use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
+  implicit none
+  class(bgc_reaction_CENTURY_ECACNP_type) , intent(inout)    :: this      !
+  type(bounds_type)                       , intent(in) :: bounds
+  integer                                 , intent(in) :: lbj, ubj
+  integer                                 , intent(in) :: num_soilc
+  integer                                 , intent(in) :: filter_soilc(:)
+  type(betr_biogeophys_input_type)        , intent(in)    :: biophysforc
+  type(BeTRtracer_type)                   , intent(inout) :: tracers
+  type(tracerstate_type)                  , intent(inout) :: tracerstate_vars
+  integer :: kk, c, j
+
+  associate(                                                           &
+   tracer_conc_mobile_col  => tracerstate_vars%tracer_conc_mobile_col, &
+   tracer_conc_frozen_col  => tracerstate_vars%tracer_conc_frozen_col, &
+   scalaravg_col           => biophysforc%scalaravg_col              , &
+   nelm                    => this%centurybgc_index%nelms            , &
+   c_loc                   => this%centurybgc_index%c_loc            , &
+   n_loc                   => this%centurybgc_index%n_loc            , &
+   p_loc                   => this%centurybgc_index%p_loc            , &
+   c13_loc                 => this%centurybgc_index%c13_loc          , &
+   c14_loc                 => this%centurybgc_index%c14_loc            &
+  )
+
+
+  if(enter_spinup)then
+    !scale the state variables into the fast space, and provide the scalar to configure
+    !tracers
+     do j = lbj, ubj
+       do c = bounds%begc, bounds%endc
+         !som1
+         do kk = tracers%id_trc_beg_Bm, tracers%id_trc_end_Bm, nelm
+           tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc) = &
+             tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc) &
+             * scalaravg_col(c) * bgc_con_eca%spinup_factor(7)
+
+           tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc) = &
+             tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc) &
+             * scalaravg_col(c) * bgc_con_eca%spinup_factor(7)
+
+           tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc) = &
+             tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc) &
+             * scalaravg_col(c) * bgc_con_eca%spinup_factor(7)
+
+           if(this%use_c13)then
+             tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc) = &
+               tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc) &
+               * scalaravg_col(c) * bgc_con_eca%spinup_factor(7)
+           endif
+           if(this%use_c14)then
+             tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc) = &
+               tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc) &
+               * scalaravg_col(c) * bgc_con_eca%spinup_factor(7)
+           endif
+         enddo
+
+         !som3
+         do kk = tracers%id_trc_beg_som, tracers%id_trc_end_som, nelm
+           tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc) = &
+             tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc) &
+             * scalaravg_col(c) * bgc_con_eca%spinup_factor(8)
+
+           tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc) = &
+             tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc) &
+             * scalaravg_col(c) * bgc_con_eca%spinup_factor(8)
+
+           tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc) = &
+             tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc) &
+             * scalaravg_col(c) * bgc_con_eca%spinup_factor(8)
+
+           if(this%use_c13)then
+             tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc) = &
+               tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc) &
+               * scalaravg_col(c) * bgc_con_eca%spinup_factor(8)
+           endif
+           if(this%use_c14)then
+             tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc) = &
+               tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc) &
+               * scalaravg_col(c) * bgc_con_eca%spinup_factor(8)
+           endif
+         enddo
+         !som2
+         do kk = tracers%id_trc_beg_dom, tracers%id_trc_end_dom, nelm
+           tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc) = &
+             tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc) &
+             *  scalaravg_col(c) * bgc_con_eca%spinup_factor(9)
+
+           tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc) = &
+             tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc) &
+             * scalaravg_col(c) * bgc_con_eca%spinup_factor(9)
+
+           tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc) = &
+             tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc) &
+             * scalaravg_col(c) * bgc_con_eca%spinup_factor(9)
+
+           if(this%use_c13)then
+             tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc) = &
+              tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc) &
+              * scalaravg_col(c) * bgc_con_eca%spinup_factor(9)
+           endif
+           if(this%use_c14)then
+             tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc) = &
+              tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc) &
+              * scalaravg_col(c)  * bgc_con_eca%spinup_factor(9)
+           endif
+         enddo
+       enddo
+    enddo
+  endif
+  if(exit_spinup)then
+    !scale the state variable back to the slow space
+     do j = lbj, ubj
+       do c = bounds%begc, bounds%endc
+         !som1
+         do kk = tracers%id_trc_beg_Bm, tracers%id_trc_end_Bm, nelm
+           tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc) = &
+             tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc) &
+             / scalaravg_col(c) / bgc_con_eca%spinup_factor(7)
+
+           tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc) = &
+             tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc) &
+             / scalaravg_col(c) / bgc_con_eca%spinup_factor(7)
+
+           tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc) = &
+             tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc) &
+             / scalaravg_col(c) / bgc_con_eca%spinup_factor(7)
+
+           if(this%use_c13)then
+             tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc) = &
+               tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc) &
+               / scalaravg_col(c) / bgc_con_eca%spinup_factor(7)
+
+           endif
+           if(this%use_c14)then
+             tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc) = &
+               tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc) &
+               / scalaravg_col(c) / bgc_con_eca%spinup_factor(7)
+
+           endif
+         enddo
+
+         !som3
+         do kk = tracers%id_trc_beg_som, tracers%id_trc_end_som, nelm
+           tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc) = &
+             tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc) &
+             / scalaravg_col(c) / bgc_con_eca%spinup_factor(8)
+
+           tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc) = &
+             tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc) &
+             / scalaravg_col(c) / bgc_con_eca%spinup_factor(8)
+
+           tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc) = &
+             tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc) &
+             / scalaravg_col(c) / bgc_con_eca%spinup_factor(8)
+
+           if(this%use_c13)then
+             tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc) = &
+               tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc) &
+               / scalaravg_col(c) / bgc_con_eca%spinup_factor(8)
+           endif
+           if(this%use_c14)then
+             tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc) = &
+               tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc) &
+               / scalaravg_col(c) / bgc_con_eca%spinup_factor(8)
+           endif
+         enddo
+
+         !som2
+         do kk = tracers%id_trc_beg_dom, tracers%id_trc_end_dom, nelm
+           tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc) = &
+             tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc) &
+             /  scalaravg_col(c) / bgc_con_eca%spinup_factor(9)
+
+           tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc) = &
+             tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc) &
+             / scalaravg_col(c) / bgc_con_eca%spinup_factor(9)
+
+           tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc) = &
+             tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc) &
+             / scalaravg_col(c) / bgc_con_eca%spinup_factor(9)
+
+           if(this%use_c13)then
+             tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc) = &
+               tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc) &
+               / scalaravg_col(c) / bgc_con_eca%spinup_factor(9)
+
+           endif
+           if(this%use_c14)then
+             tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc) = &
+               tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc) &
+               / scalaravg_col(c)  / bgc_con_eca%spinup_factor(9)
+           endif
+         enddo
+       enddo
+    enddo
+  endif
+
+  end associate
+  end subroutine set_bgc_spinup
 
   !----------------------------------------------------------------------
   subroutine set_kinetics_par(this, lbj, ubj, nactpft, plantNutkinetics)
@@ -951,6 +1164,7 @@ contains
     use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
     use BeTR_biogeoStateType     , only : betr_biogeo_state_type
     use PlantSoilBgcCnpType      , only : plant_soilbgc_cnp_type
+    use betr_ctrl                , only : betr_spinup_state
     implicit none
     ! !ARGUMENTS
     class(bgc_reaction_CENTURY_ECACNP_type) , intent(inout) :: this
@@ -965,7 +1179,7 @@ contains
     real(r8)                             , intent(in) :: dtime                         ! model time step
     type(betrtracer_type)                , intent(in) :: betrtracer_vars               ! betr configuration information
     type(tracercoeff_type)               , intent(in) :: tracercoeff_vars
-    type(betr_biogeophys_input_type)     , intent(in)    :: biophysforc
+    type(betr_biogeophys_input_type)     , intent(inout) :: biophysforc
     type(tracerboundarycond_type)        , intent(inout) :: tracerboundarycond_vars !
     type(tracerstate_type)               , intent(inout) :: tracerstate_vars
     type(tracerflux_type)                , intent(inout) :: tracerflux_vars
@@ -980,6 +1194,7 @@ contains
     integer :: nstates
     real(r8), allocatable :: ystates0(:)
     real(r8), allocatable :: ystatesf(:)
+    integer :: spinup_flg
 
     call betr_status%reset()
     SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__),betr_status)
@@ -1014,8 +1229,19 @@ contains
         !  print*,'-----------------------------------'
         !  print*,'run bgc lay',j
         !endif
+        !1: AD-stage 1, 2: AD-stage 2, AD-stage 3
 
-        call this%centuryeca(c,j)%runbgc(is_surf, dtime, this%centuryforc(c,j),nstates, ystates0, ystatesf, betr_status)
+        if(betr_spinup_state==2)then
+           spinup_flg=1
+           if(j/=4)spinup_flg=0
+        elseif(betr_spinup_state==3)then
+           spinup_flg=2
+        else
+           spinup_flg = 0
+        endif
+
+        call this%centuryeca(c,j)%runbgc(is_surf, dtime, this%centuryforc(c,j),nstates, &
+            ystates0, ystatesf, biophysforc%scalaravg_col(c), spinup_flg, betr_status)
 
 !        if(.not. betrtracer_vars%debug)then
           !apply loss through fire,
@@ -1050,6 +1276,7 @@ contains
       call this%debug_info(bounds, num_soilc, filter_soilc, col%dz(bounds%begc:bounds%endc,bounds%lbj:bounds%ubj),&
         betrtracer_vars, tracerstate_vars,  'after bgcreact',betr_status)
     endif
+
   end subroutine calc_bgc_reaction
 
   !--------------------------------------------------------------------
@@ -1633,7 +1860,7 @@ contains
   use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
   use tracerfluxType           , only : tracerflux_type
   use tracerstatetype          , only : tracerstate_type
-  use betr_varcon              , only : spinup_state => bspinup_state
+  use betr_ctrl                , only : betr_spinup_state
   use PlantSoilBGCMod          , only : plant_soilbgc_type
   use PlantSoilBgcCnpType      , only : plant_soilbgc_cnp_type
   use tracer_varcon            , only : catomw, natomw, patomw
@@ -1809,7 +2036,7 @@ contains
          ystatesf(this%centurybgc_index%lid_o2_paere )  - &
          ystates0(this%centurybgc_index%lid_o2_paere)
 
-      if ( spinup_state /= 1 ) then
+      if ( betr_spinup_state == 0 ) then
         tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_n2)  ) = &
           ystatesf(this%centurybgc_index%lid_n2_paere)  - &
           ystates0(this%centurybgc_index%lid_n2_paere)

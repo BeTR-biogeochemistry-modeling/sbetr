@@ -40,6 +40,7 @@ module DIOCBGCReactionsType
      procedure :: retrieve_lnd2atm
      procedure :: retrieve_biostates
      procedure :: debug_info
+     procedure :: set_bgc_spinup
   end type bgc_reaction_dioc_run_type
 
   interface bgc_reaction_dioc_run_type
@@ -69,6 +70,25 @@ contains
 
   end subroutine set_kinetics_par
   !-------------------------------------------------------------------------------
+  subroutine set_bgc_spinup(this, bounds, lbj, ubj, num_soilc, filter_soilc, biophysforc, &
+  tracers, tracerstate_vars)
+    use tracerstatetype        , only : tracerstate_type
+    use BeTRTracerType        , only : betrtracer_type
+  implicit none
+    class(bgc_reaction_dioc_run_type), intent(inout) :: this
+    type(bounds_type)                       , intent(in) :: bounds
+    integer                                 , intent(in) :: lbj, ubj
+    integer                                 , intent(in) :: num_soilc
+    integer                                 , intent(in) :: filter_soilc(:)
+    type(betr_biogeophys_input_type)        , intent(in)    :: biophysforc
+    type(BeTRtracer_type)                   , intent(inout) :: tracers
+    type(tracerstate_type)                  , intent(inout) :: tracerstate_vars
+
+    if (this%dummy_compiler_warning) continue
+    if (bounds%begc > 0) continue
+
+  end subroutine set_bgc_spinup
+  !-------------------------------------------------------------------------------
   subroutine init_boundary_condition_type(this, bounds, betrtracer_vars, tracerboundarycond_vars )
     !
     ! !DESCRIPTION:
@@ -78,7 +98,6 @@ contains
     use BeTRTracerType        , only : betrtracer_type
     use TracerBoundaryCondType, only : tracerboundarycond_type
     use tracer_varcon         , only : bndcond_as_conc, bndcond_as_flux
-    use BeTRTracerType        , only : betrtracer_type
 
     ! !ARGUMENTS:
     class(bgc_reaction_dioc_run_type), intent(inout) :: this
@@ -176,7 +195,6 @@ contains
       trc_grp_beg=betrtracer_vars%id_trc_beg_doc, &
       trc_grp_end=betrtracer_vars%id_trc_end_doc, &
       is_trc_gw=.true., is_trc_volatile = .false.)
-
 
     betrtracer_vars%nmem_max               = 1
 
@@ -305,6 +323,7 @@ contains
     use betr_columnType        , only : betr_column_type
     use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
     use BeTR_biogeoStateType     , only : betr_biogeo_state_type
+
     implicit none
     !ARGUMENTS
     class(bgc_reaction_dioc_run_type) , intent(inout) :: this                       !
@@ -318,7 +337,7 @@ contains
     integer                           , intent(in)    :: lbj, ubj                    ! lower and upper bounds, make sure they are > 0
     real(r8)                          , intent(in)    :: dtime                       ! model time step
     type(betrtracer_type)             , intent(in)    :: betrtracer_vars             ! betr configuration information
-    type(betr_biogeophys_input_type)  , intent(in)    :: biophysforc
+    type(betr_biogeophys_input_type)  , intent(inout) :: biophysforc
     type(tracercoeff_type)            , intent(in)    :: tracercoeff_vars
     type(tracerstate_type)            , intent(inout) :: tracerstate_vars
     type(tracerflux_type)             , intent(inout) :: tracerflux_vars
@@ -326,6 +345,8 @@ contains
     class(plant_soilbgc_type)         , intent(inout) ::  plant_soilbgc
     type(betr_biogeo_flux_type)      , intent(inout) :: biogeo_flux
     type(betr_status_type)            , intent(out)   :: betr_status
+
+    !local variables
     character(len=*)                 , parameter     :: subname ='calc_bgc_reaction'
 
     integer :: c, fc, ll
