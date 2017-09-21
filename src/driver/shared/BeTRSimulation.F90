@@ -1797,16 +1797,15 @@ contains
 
   if(this%do_soibgc())then
 
-    call restartvar(ncid=ncid, flag=flag, varname='spinup_state', xtype=ncd_int,  &
-             long_name='Spinup state of the model that wrote this restart file: ' &
-             // ' 0 = normal model mode, 1 = AD spinup', units='', &
-             interpinic_flag='copy', readvar=readvar,  data=idata)
-
-    call restartvar(ncid=ncid, flag=flag, varname='scalaravg_col', xtype=ncd_double, &
+    call restartvar(ncid=ncid, flag=flag, varname='spinscalar', xtype=ncd_double, &
          dim1name='column', long_name='', units='', &
          interpinic_flag = 'interp', readvar=readvar, data=this%scalaravg_col)
 
     if(trim(flag)=='read')then
+      call restartvar(ncid=ncid, flag=flag, varname='spinup_state', xtype=ncd_int,  &
+             long_name='Spinup state of the model that wrote this restart file: ' &
+             // ' 0 = normal model mode, 1 = AD spinup', units='', &
+             interpinic_flag='copy', readvar=readvar,  data=idata)
       if (readvar) then
         restart_file_spinup_state = idata
       else
