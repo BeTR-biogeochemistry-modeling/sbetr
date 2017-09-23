@@ -1747,7 +1747,7 @@ contains
   use ncdio_pio      , only : file_desc_t,ncd_double, ncd_int
   use clm_varctl     , only : spinup_state
   use clm_time_manager, only : get_nstep
-  use betr_ctrl      , only : exit_spinup, enter_spinup
+  use betr_ctrl      , only : exit_spinup, enter_spinup,betr_spinup_state
   use tracer_varcon  , only : reaction_method
   implicit none
   ! !ARGUMENTS:
@@ -1801,6 +1801,11 @@ contains
          dim1name='column', long_name='', units='', &
          interpinic_flag = 'interp', readvar=readvar, data=this%scalaravg_col)
 
+    call restartvar(ncid=ncid, flag=flag, varname='betr_spinup_state', xtype=ncd_int,  &
+           long_name='Spinup state of betr model that wrote this restart file: ' &
+           // ' 0,1,2=not ready for spinup scalar, 3 = apply spinup scalar', units='', &
+           interpinic_flag='copy', readvar=readvar,  data=betr_spinup_state)
+    
     if(trim(flag)=='read')then
       call restartvar(ncid=ncid, flag=flag, varname='spinup_state', xtype=ncd_int,  &
              long_name='Spinup state of the model that wrote this restart file: ' &
@@ -1826,7 +1831,6 @@ contains
       dim1name='column',dim2name='levtrc', switchdim=.true., &
       long_name='',  units='', interpinic_flag='interp',readvar=readvar, data=ptr2d)
   enddo
-
   if(trim(flag)=='read')then
 
     !assign initial conditions
@@ -1846,8 +1850,8 @@ contains
       do c = bounds%begc, bounds%endc
         this%biophys_forc(c)%scalaravg_col(c_l) = this%scalaravg_col(c)
       enddo
-
       if(exit_spinup .or. enter_spinup)then
+        call this%BeTRSetBounds(betr_bounds)
         do c = bounds%begc, bounds%endc
           if(.not. this%active_col(c))cycle
           call this%betr(c)%set_bgc_spinup(betr_bounds, 1,  betr_nlevtrc_soil, this%num_soilc, &
