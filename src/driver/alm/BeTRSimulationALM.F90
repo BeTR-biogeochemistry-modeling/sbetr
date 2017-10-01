@@ -244,8 +244,8 @@ contains
 
         call this%biogeo_state(c)%summary(betr_bounds, 1, betr_nlevtrc_soil,this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil), &
           this%betr_col(c)%zi(begc_l:endc_l,1:betr_nlevtrc_soil), this%active_soibgc)
-      !if(c==102)this%betr(c)%tracers%debug=.true.
-      !if(c==102)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'bef w/o drain',this%bstatus(c))
+      this%betr(c)%tracers%debug=(c==68 .and. .false.)
+      if(this%betr(c)%tracers%debug)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'bef w/o drain',this%bstatus(c))
 !--------
       call this%betr(c)%step_without_drainage(this%betr_time, betr_bounds, this%betr_col(c), &
          this%betr_pft(c), this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp, &
@@ -256,8 +256,8 @@ contains
         call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
         exit
       endif
-      !if(c==102)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'bef w/o drain',this%bstatus(c))
-      !if(c==102)this%betr(c)%tracers%debug=.false.
+      if(this%betr(c)%tracers%debug)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'bef w/o drain',this%bstatus(c))
+
 
 !--------------
 !  debug
@@ -275,7 +275,7 @@ contains
       call this%biogeo_state(c)%summary(betr_bounds, 1, betr_nlevtrc_soil,this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil), &
          this%betr_col(c)%zi(begc_l:endc_l,1:betr_nlevtrc_soil), this%active_soibgc)
 
-      if(.false.)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'aft w/o drain',this%bstatus(c))
+      if(this%betr(c)%tracers%debug)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'aft w/o drain',this%bstatus(c))
 !--------
     enddo
     if(this%bsimstatus%check_status()) &
@@ -337,7 +337,8 @@ contains
 
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
-      !if(c==102)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'bfdrain', this%bstatus(c))
+      this%betr(c)%tracers%debug=(c==68 .and. .false.)
+      if(this%betr(c)%tracers%debug)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'bfdrain', this%bstatus(c))
       call this%betr(c)%step_with_drainage(betr_bounds,      &
          this%betr_col(c),this%num_soilc, this%filter_soilc, this%jtops, &
          this%biogeo_flux(c), this%bstatus(c))
@@ -363,7 +364,7 @@ contains
           this%betr_col(c)%zi(begc_l:endc_l,1:betr_nlevtrc_soil),this%active_soibgc)
 
 ! debug
-      !if(c==102)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'afdrain', this%bstatus(c))
+      if(this%betr(c)%tracers%debug)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'afdrain', this%bstatus(c))
     enddo
     if(this%bsimstatus%check_status()) &
       call endrun(msg=this%bsimstatus%print_msg())
@@ -902,7 +903,7 @@ contains
           this%biogeo_flux(c)%n14flux_vars%som_n_runoff_col(c_l) + &
           this%biogeo_flux(c)%n14flux_vars%som_n_qdrain_col(c_l)
 
-      if(.false.)then
+      if(c==68 .and. .false.)then
         write(*,*)'betr smin_no3_leach=',this%biogeo_flux(c)%n14flux_vars%smin_no3_leached_col(c_l)*1800._r8
         write(*,*)'betr smin_no3_qdrai=',this%biogeo_flux(c)%n14flux_vars%smin_no3_qdrain_col(c_l)*1800._r8
         write(*,*)'betr som_n_leach   =',this%biogeo_flux(c)%n14flux_vars%som_n_leached_col(c_l)*1800._r8
@@ -957,8 +958,8 @@ contains
         c14state_vars%cwdc_col(c) = this%biogeo_state(c)%c14state_vars%cwdc_col(c_l)
         c14state_vars%totlitc_col(c) = this%biogeo_state(c)%c14state_vars%totlitc_col(c_l)
         c14state_vars%totsomc_col(c) = this%biogeo_state(c)%c14state_vars%totsomc_col(c_l)
-        c13state_vars%totlitc_1m_col(c) = this%biogeo_state(c)%c13state_vars%totlitc_1m_col(c_l)
-        c13state_vars%totsomc_1m_col(c) = this%biogeo_state(c)%c13state_vars%totsomc_1m_col(c_l)
+        c14state_vars%totlitc_1m_col(c) = this%biogeo_state(c)%c14state_vars%totlitc_1m_col(c_l)
+        c14state_vars%totsomc_1m_col(c) = this%biogeo_state(c)%c14state_vars%totsomc_1m_col(c_l)
       endif
       n14state_vars%cwdn_col(c) = this%biogeo_state(c)%n14state_vars%cwdn_col(c_l)
       n14state_vars%totlitn_col(c) = this%biogeo_state(c)%n14state_vars%totlitn_col(c_l)

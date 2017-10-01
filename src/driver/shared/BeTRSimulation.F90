@@ -567,6 +567,7 @@ contains
       if(.not. this%active_col(c))cycle
       call begin_betr_tracer_massbalance(betr_bounds,             &
          this%betr_col(c), this%num_soilc, this%filter_soilc,     &
+         this%num_soilp, this%filter_soilp, &
          this%betr(c)%tracers, this%betr(c)%tracerstates,         &
          this%betr(c)%tracerfluxes, this%bstatus(c))
       if(this%bstatus(c)%check_status())then
@@ -594,16 +595,17 @@ contains
     !TEMPORARY VARIABLES
     type(betr_bounds_type) :: betr_bounds
     integer :: c
-
+    logical :: ldebug
     !set lbj and ubj
     call this%BeTRSetBounds(betr_bounds)
 
    do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
+      ldebug=(c==68) .and. .false.
       call betr_tracer_massbalance_check(this%betr_time, betr_bounds,           &
          this%betr_col(c), this%num_soilc, this%filter_soilc,           &
          this%betr(c)%tracers, this%betr(c)%tracerstates,                &
-         this%betr(c)%tracerfluxes, this%bstatus(c))
+         this%betr(c)%tracerfluxes, this%bstatus(c), ldebug)
       if(this%bstatus(c)%check_status())then
         call this%bsimstatus%setcol(c)
         call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
@@ -966,10 +968,15 @@ contains
            pp = pp + 1
            this%biophys_forc(c)%qflx_tran_veg_patch(pp)     = waterflux_vars%qflx_tran_veg_patch(p)
            this%biophys_forc(c)%qflx_rootsoi_frac_patch(pp,lbj:ubj) = waterflux_vars%qflx_rootsoi_frac_patch(p,lbj:ubj)
-
          endif
        endif
       enddo
+      if(c==68 .and. .false.)then
+        print*,'checksum'
+        do l=1, ubj
+          print*,'l',l,sum(this%biophys_forc(c)%qflx_rootsoi_frac_patch(1:pp,l))
+        enddo
+      endif
     endif
     if(present(temperature_vars))then
       this%biophys_forc(c)%t_soi_10cm(cc)           = temperature_vars%t_soi10cm_col(c)
@@ -1805,7 +1812,7 @@ contains
            long_name='Spinup state of betr model that wrote this restart file: ' &
            // ' 0,1,2=not ready for spinup scalar, 3 = apply spinup scalar', units='', &
            interpinic_flag='copy', readvar=readvar,  data=betr_spinup_state)
-    
+
     if(trim(flag)=='read')then
       call restartvar(ncid=ncid, flag=flag, varname='spinup_state', xtype=ncd_int,  &
              long_name='Spinup state of the model that wrote this restart file: ' &

@@ -341,6 +341,7 @@ contains
       this%tracer_flx_prec_grnd_patch(p,:)      = 0._r8
       this%tracer_flx_snwcp_liq_patch(p,:)      = 0._r8
       this%tracer_flx_snwcp_ice_patch(p,:)      = 0._r8
+      this%tracer_flx_vtrans_patch(p,:)         = 0._r8
     enddo
 
     do c = begc, endc
@@ -367,7 +368,6 @@ contains
       this%tracer_flx_h2osfc_snow_residual_col(c,:) = 0._r8
       this%tracer_flx_totleached_col (c,:) = 0._r8
     enddo
-
 
   end subroutine InitCold
 
@@ -401,7 +401,7 @@ contains
    end subroutine Restart
 
   !-----------------------------------------------------------------------
-  subroutine Reset(this, bounds, numf, filter)
+  subroutine Reset(this, bounds, numf, filter, numfp, filterp)
     !
     ! !DESCRIPTION:
     ! Intitialize SNICAR variables for fresh snow column
@@ -411,9 +411,11 @@ contains
     type(bounds_type)    , intent(in)  :: bounds
     integer              , intent(in)  :: numf
     integer              , intent(in)  :: filter(:)
+    integer              , intent(in)  :: numfp
+    integer              , intent(in)  :: filterp(:)
     !-----------------------------------------------------------------------
 
-    integer :: fc, column
+    integer :: fc, column, fp, p
 
     ! remove compiler warnings for unused dummy args
     if (bounds%begc > 0) continue
@@ -444,7 +446,17 @@ contains
       this%tracer_flx_netpro_vr_col  (column,:,:)   = 0._r8
       this%tracer_flx_totleached_col (column,:)   = 0._r8
     enddo
-
+    do fp = 1, numfp
+      p = filterp(fp)
+      this%tracer_flx_vtrans_patch(p,:)         = 0._r8
+      this%tracer_flx_snowfall_grnd_patch(p,:)  = 0._r8
+      this%tracer_flx_rainfall_grnd_patch(p,:)  = 0._r8
+      this%tracer_flx_prec_intr_patch(p,:)      = 0._r8
+      this%tracer_flx_prec_grnd_patch(p,:)      = 0._r8
+      this%tracer_flx_snwcp_liq_patch(p,:)      = 0._r8
+      this%tracer_flx_snwcp_ice_patch(p,:)      = 0._r8
+      this%tracer_flx_vtrans_patch(p,:)         = 0._r8      
+    enddo
   end subroutine Reset
 
 !----------------------------------------
@@ -582,16 +594,22 @@ contains
       !the total net physical loss currently includes infiltration, surface runoff, transpiration aided transport,
       !lateral drainage, vertical leaching
       !for volatile tracers, this includes surface emission surface three different pathways
-      write(msg,*)tracernames(jj), new_line('A')//'infl=',this%tracer_flx_infl_col(c,jj),&
-           ',drain=',  this%tracer_flx_drain_col(c,jj),    &
-           ',surfrun=',this%tracer_flx_surfrun_col(c,jj),',vtrans=', this%tracer_flx_vtrans_col(c,jj),&
-           ',leaching=', this%tracer_flx_leaching_col(c,jj),',dew_grnd=',this%tracer_flx_dew_grnd_col(c, jj),&
-           ',dew_snow=', this%tracer_flx_dew_snow_col(c, jj),',sub_snow=',this%tracer_flx_sub_snow_col(c,jj)
+      write(msg,*)tracernames(jj), new_line('A'),&
+           'infl=',this%tracer_flx_infl_col(c,jj),new_line('A'),&
+           'drain=',  this%tracer_flx_drain_col(c,jj),  new_line('A'),  &
+           'surfrun=',this%tracer_flx_surfrun_col(c,jj),new_line('A'),  &
+           'vtrans=', this%tracer_flx_vtrans_col(c,jj), new_line('A'),   &
+           'vtransp=',sum(this%tracer_flx_vtrans_patch(:,jj)),new_line('A'),&
+           'leaching=', this%tracer_flx_leaching_col(c,jj),new_line('A'), &
+           'dew_grnd=',this%tracer_flx_dew_grnd_col(c, jj),new_line('A'), &
+           'dew_snow=', this%tracer_flx_dew_snow_col(c, jj),new_line('A'), &
+           'sub_snow=',this%tracer_flx_sub_snow_col(c,jj)
 
       if(is_volatile(jj))then
          kk = volatileid(jj)
-         write(msg1,*) ',tpartm=', this%tracer_flx_tparchm_col(c,kk),',dif=', this%tracer_flx_dif_col(c,kk),  &
-              ',ebu=',this%tracer_flx_ebu_col(c,kk)
+         write(msg1,*) 'tpartm=', this%tracer_flx_tparchm_col(c,kk),new_line('A'),&
+              'dif=', this%tracer_flx_dif_col(c,kk),  new_line('A'),&
+              'ebu=',this%tracer_flx_ebu_col(c,kk)
       endif
       msg = trim(msg)//new_line('A')//trim(msg1)
 

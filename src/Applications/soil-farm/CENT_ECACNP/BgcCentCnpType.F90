@@ -55,6 +55,10 @@ module BgcCentCnpType
     integer                              :: soilorder
     real(r8)                             :: msurf_nh4
     real(r8)                             :: msurf_minp
+    real(r8), private                    :: c14decay_const
+    real(r8), private                    :: c14decay_som_const
+    real(r8), private                    :: c14decay_dom_const
+    real(r8), private                    :: c14decay_Bm_const
     logical, private                     :: use_c13
     logical, private                     :: use_c14
 
@@ -69,6 +73,7 @@ module BgcCentCnpType
     procedure, private :: sumup_cnp_mass
     procedure, private :: sumup_cnp_msflx
     procedure, private :: bgc_integrate
+    procedure, private :: c14decay
   end type centurybgceca_type
   logical, public :: ldebug_bgc =.false.
 
@@ -90,9 +95,9 @@ contains
   subroutine init(this,  biogeo_con,  bstatus)
   use betr_varcon         , only : betr_maxpatch_pft
   implicit none
-  class(centurybgceca_type), intent(inout) :: this
-  type(BiogeoCon_type),intent(in) :: biogeo_con
-  type(betr_status_type), intent(out) :: bstatus
+  class(centurybgceca_type) , intent(inout) :: this
+  type(BiogeoCon_type)      , intent(in) :: biogeo_con
+  type(betr_status_type)    , intent(out) :: bstatus
 
   call bstatus%reset()
   call this%centurybgc_index%Init(biogeo_con%use_c13, biogeo_con%use_c14, &
@@ -122,7 +127,12 @@ contains
   this%use_c13 = biogeo_con%use_c13
 
   this%use_c14 = biogeo_con%use_c14
-
+  if(this%use_c14)then
+    this%c14decay_const=biogeo_con%c14decay_const
+    this%c14decay_som_const=biogeo_con%c14decay_som_const
+    this%c14decay_dom_const=biogeo_con%c14decay_dom_const
+    this%c14decay_Bm_const=biogeo_con%c14decay_Bm_const
+  endif
   end subroutine init
   !-------------------------------------------------------------------------------
 
@@ -265,11 +275,7 @@ contains
   call this%nitden%run_nitden(this%centurybgc_index, centuryeca_forc, this%decompkf_eca, &
     ystates1(lid_nh4), ystates1(lid_no3), ystates1(lid_o2), o2_decomp_depth, &
     pot_f_nit_mol_per_sec, pot_co2_hr, this%pot_f_nit, this%pot_f_denit, cascade_matrix)
-  if(this%centurybgc_index%debug)then
-!    do jj = 1, nreactions
-!      print*,'adfdnitden jj',jj,cascade_matrix(lid_minp_soluble,jj)
-!    enddo
-  endif
+
   !---------------------
   !turn off nitrification and denitrification
   !this%pot_f_denit = 0._r8
@@ -282,13 +288,6 @@ contains
 
   call this%arenchyma_gas_transport(this%centurybgc_index, dtime)
 
-  if(this%centurybgc_index%debug)then
-!    print*,'primdd',lid_minp_soluble,nprimvars
-!    do jj = 1, nreactions
-!      print*,'xdapdd jj',jj,cascade_matrix(lid_minp_soluble,jj)
-!    enddo
-  endif
-
   !do the stoichiometric matrix separation
   call pd_decomp(nprimvars, nreactions, cascade_matrix(1:nprimvars, 1:nreactions), &
      cascade_matrixp, cascade_matrixd, bstatus)
@@ -299,38 +298,95 @@ contains
 
 !  call this%sumup_cnp_mass('bfdecomp',c_mass1,n_mass1,p_mass1)
 
-  if(this%centurybgc_index%debug)then
-!    do jj = 1, nreactions
-!      print*,'pdd jj',jj,cascade_matrixd(lid_minp_soluble,jj),cascade_matrix(lid_minp_soluble,jj)
-!    enddo
-  endif
-
   call ode_adapt_ebbks1(this, yf, nprimvars, nstvars, time, dtime, ystates1)
 
 !  call this%sumup_cnp_mass('afdecomp',c_mass2,n_mass2,p_mass2)
 
-!  write(*,'(A,3(X,E20.10))')'cnp mass diff',c_mass2-c_mass1,n_mass2-n_mass1,p_mass2-p_mass1
-  !print*,'sz',size(ystatesf),size(ystates1)
+
+  if(this%use_c14)then
+    call this%c14decay(this%centurybgc_index, dtime, spinup_scalar, spinup_flg, ystates1)
+  endif
 
   ystatesf(:) = ystates1(:)
 
-!  print*,'szx',maxval(ystatesf),maxval(ystates1)
-!  call this%sumup_cnp_msflx(ystatesf, c_mass2,n_mass2,p_mass2, c_flx, n_flx, p_flx)
-
-!  if(centuryeca_forc%debug)then
-!     write(*,'(A,10(X,E20.10))')'cnp bal', &
-!     c_mass2*centuryeca_forc%dzsoi, &
-!     n_mass2*centuryeca_forc%dzsoi, &
-!     p_mass2*centuryeca_forc%dzsoi, &
-!     c_mass2 - c_mass1-c_inf+c_flx, &
-!     n_mass2 - n_mass1-n_inf+n_flx, &
-!     p_mass2 - p_mass1-p_inf+p_flx, &
-!     ystatesf(lid_plant_minn_nh4), ystatesf(lid_plant_minn_no3), &
-!     ystatesf(lid_n2o_nit), ystatesf(lid_no3_den)
-!  endif
-
   end associate
   end subroutine runbgc
+  !-------------------------------------------------------------------------------
+  subroutine c14decay(this, centurybgc_index, dtime, spinup_scalar, spinup_flg, ystates1)
+
+  !apply c14 decay to om pools
+  use BgcCentCnpIndexType       , only : centurybgc_index_type
+
+  implicit none
+  ! !ARGUMENTS:
+  class(centurybgceca_type)     , intent(in) :: this
+  type(centurybgc_index_type)   , intent(in) :: centurybgc_index
+  integer, intent(in) :: spinup_flg
+  real(r8), intent(in) :: spinup_scalar
+  real(r8), intent(in) :: dtime
+  real(r8), intent(inout) :: ystates1(:)
+
+  integer :: jj
+  integer :: kc14
+
+  associate(                                &
+    litr_beg =>  centurybgc_index%litr_beg, &
+    Bm_beg =>  centurybgc_index%Bm_beg    , &
+    som_beg =>  centurybgc_index%som_beg  , &
+    dom_beg =>  centurybgc_index%dom_beg  , &
+    wood_beg =>  centurybgc_index%wood_beg, &
+    litr_end =>  centurybgc_index%litr_end, &
+    som_end =>  centurybgc_index%som_end  , &
+    Bm_end =>  centurybgc_index%Bm_end    , &
+    dom_end =>  centurybgc_index%dom_end  , &
+    wood_end =>  centurybgc_index%wood_end, &
+    c14_loc=>  centurybgc_index%c14_loc   , &
+    nelms => centurybgc_index%nelms         &
+  )
+
+  do jj = litr_beg, litr_end, nelms
+    kc14=jj-1+c14_loc
+    ystates1(kc14) = ystates1(kc14)*(1._r8 - this%c14decay_const * dtime)
+  enddo
+
+  do jj = wood_beg, wood_end, nelms
+    kc14=jj-1+c14_loc
+    ystates1(kc14) = ystates1(kc14)*(1._r8 - this%c14decay_const * dtime)
+  enddo
+
+  if(spinup_flg==2)then
+    do jj = som_beg, som_end, nelms
+      kc14=jj-1+c14_loc
+      ystates1(kc14) = ystates1(kc14)*exp( - this%c14decay_som_const * dtime /max(spinup_scalar,1.e-2_r8))
+    enddo
+
+    do jj = dom_beg, dom_end, nelms
+      kc14=jj-1+c14_loc
+      ystates1(kc14) = ystates1(kc14)*exp(- this%c14decay_dom_const * dtime /max(spinup_scalar,1.e-2_r8))
+    enddo
+
+    do jj = Bm_beg, Bm_end, nelms
+      kc14=jj-1+c14_loc
+      ystates1(kc14) = ystates1(kc14)*exp(- this%c14decay_Bm_const * dtime /max(spinup_scalar,1.e-2_r8))
+    enddo
+  else
+    do jj = som_beg, som_end, nelms
+      kc14=jj-1+c14_loc
+      ystates1(kc14) = ystates1(kc14)*exp( - this%c14decay_som_const * dtime)
+    enddo
+
+    do jj = dom_beg, dom_end, nelms
+      kc14=jj-1+c14_loc
+      ystates1(kc14) = ystates1(kc14)*exp(- this%c14decay_dom_const * dtime)
+    enddo
+
+    do jj = Bm_beg, Bm_end, nelms
+      kc14=jj-1+c14_loc
+      ystates1(kc14) = ystates1(kc14)*exp(- this%c14decay_Bm_const * dtime)
+    enddo
+  endif
+  end associate
+  end subroutine c14decay
   !-------------------------------------------------------------------------------
   subroutine calc_cascade_matrix(this,centurybgc_index, cascade_matrix, frc_c13, frc_c14)
     !

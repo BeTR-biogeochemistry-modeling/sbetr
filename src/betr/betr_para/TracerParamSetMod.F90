@@ -21,8 +21,8 @@ contains
   real(r8), intent(out) :: KL
   real(r8), intent(out) :: Xsat
 
-  KL =1._r8
-  Xsat = 0._r8
+  KL =1._r8    !mol /m3
+  Xsat = 10._r8   ! mol/m3
 
 
   end subroutine get_lgsorb_KL_Xsat

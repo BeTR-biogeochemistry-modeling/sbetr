@@ -948,7 +948,7 @@ contains
                              leaching_mass(c,k),' infl=',inflx_top(c,k),' dmass=',dmass(c,k), ' mass0=', &
                              mass0,'err_rel=',err_relative
 
-                        msg=trim(msg)//new_line('A')//'advection mass balance error for tracer '//tracernames(j) &
+                        msg=trim(msg)//new_line('A')//'advection mass balance error for tracer '//tracernames(trcid) &
                           //new_line('A')//errMsg(mod_filename, __LINE__)
                         call bstatus%set_msg(msg, err=-1)
                         return
@@ -959,13 +959,16 @@ contains
                      tracer_flx_vtrans_vr(c, lbj:ubj, trcid) = transp_mass_vr(c,lbj:ubj,k)
 
                      !the following implementation assumes there is only one column
+
                      do p = 1, pft%npfts
-                       tracer_flx_vtrans_patch(p,trcid) = 0._r8
                        do l=lbj, ubj
                          tracer_flx_vtrans_patch(p,trcid) = tracer_flx_vtrans_patch(p,trcid) + &
                             tracer_flx_vtrans_vr(c, l, trcid) * qflx_rootsoi_frac_patch(p,l)
                        enddo
                      enddo
+                     if(betrtracer_vars%debug .and. trcid==betrtracer_vars%id_trc_no3x)then
+                       print*,'cno3',tracer_flx_vtrans(c, trcid), sum(tracer_flx_vtrans_patch(1:pft%npfts,trcid))
+                     endif
                   endif
                enddo
             enddo

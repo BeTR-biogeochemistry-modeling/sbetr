@@ -82,6 +82,10 @@ implicit none
   real(r8) :: init_cc14_som1
   real(r8) :: init_cc14_som2
   real(r8) :: init_cc14_som3
+  real(r8) :: c14decay_const
+  real(r8) :: c14decay_som_const
+  real(r8) :: c14decay_dom_const
+  real(r8) :: c14decay_bm_const
 
   logical :: use_c13
   logical :: use_c14
@@ -141,7 +145,14 @@ contains
   subroutine set_defpar_default(this)
   implicit none
   class(BiogeoCon_type), intent(inout) :: this
+  real(r8) :: half_life
 
+  half_life = 5568._r8 ! yr
+  half_life = half_life * 86400._r8 * 365._r8
+  this%c14decay_const = - log(0.5_r8) / half_life
+  this%c14decay_som_const  =this%c14decay_const
+  this%c14decay_dom_const  =this%c14decay_const
+  this%c14decay_Bm_const  =this%c14decay_const
   !decomposition
   this%Q10                   = 2._r8
   this%froz_q10              = 10._r8
@@ -324,6 +335,11 @@ contains
     this%k_decay_som1 = this%k_decay_som1 * this%spinup_factor(7)
     this%k_decay_som3 = this%k_decay_som3 * this%spinup_factor(8)
     this%k_decay_som2 = this%k_decay_som2 * this%spinup_factor(9)
+
+    this%c14decay_Bm_const   =this%c14decay_Bm_const * this%spinup_factor(7)
+    this%c14decay_som_const  =this%c14decay_som_const * this%spinup_factor(8)
+    this%c14decay_dom_const  =this%c14decay_dom_const * this%spinup_factor(9)
+
   endif
   end subroutine apply_spinup_factor
 end module BiogeoConType

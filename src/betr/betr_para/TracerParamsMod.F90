@@ -747,7 +747,7 @@ contains
               c = filter(fc)
               if(n>=jtops(c))then
                 KL= h2osoi_liqvol(c,n) * KL
-                xs = Xsat/watsat(c,j) * h2osoi_liqvol(c,n)
+                xs = Xsat/watsat(c,n) * h2osoi_liqvol(c,n)
                 Kd = xs/(KL + tracer_conc_mobile(c,n,trcid))
                 aqu2bulkcef_mobile(c, n, j) = aqu2bulkcef_mobile(c, n, j) * (1._r8+Kd)
               endif
