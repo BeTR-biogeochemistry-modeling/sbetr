@@ -275,7 +275,7 @@ contains
   call this%nitden%run_nitden(this%centurybgc_index, centuryeca_forc, this%decompkf_eca, &
     ystates1(lid_nh4), ystates1(lid_no3), ystates1(lid_o2), o2_decomp_depth, &
     pot_f_nit_mol_per_sec, pot_co2_hr, this%pot_f_nit, this%pot_f_denit, cascade_matrix)
-
+  if(this%centurybgc_index%debug)print*,'co2_pot',pot_co2_hr
   !---------------------
   !turn off nitrification and denitrification
   !this%pot_f_denit = 0._r8
@@ -686,6 +686,7 @@ contains
   if(this%use_c14)then
     kc14=(jj-1)*nelms+c14_loc
     this%ystates1(kc14) =this%ystates0(kc14) + centuryeca_forc%cflx_input_litr_met_c14*dtime/c14atomw
+    if(centurybgc_index%debug)print*,'c14 lit1',this%ystates1(kc14)
   endif
 
   jj=lit2;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
@@ -709,6 +710,7 @@ contains
   if(this%use_c14)then
     kc14=(jj-1)*nelms+c14_loc
     this%ystates1(kc14) =this%ystates0(kc14) + centuryeca_forc%cflx_input_litr_cel_c14*dtime/c14atomw
+    if(centurybgc_index%debug)print*,'c14 lit2',this%ystates1(kc14)
   endif
 
   jj=lit3;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
@@ -732,6 +734,7 @@ contains
   if(this%use_c14)then
     kc14=(jj-1)*nelms+c14_loc
     this%ystates1(kc14) =this%ystates0(kc14) + centuryeca_forc%cflx_input_litr_lig_c14*dtime/c14atomw
+    if(centurybgc_index%debug)print*,'c14 lit3',this%ystates1(kc14)
   endif
 
   jj=cwd;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
@@ -755,6 +758,7 @@ contains
   if(this%use_c14)then
     kc14=(jj-1)*nelms+c14_loc
     this%ystates1(kc14) =this%ystates0(kc14) + centuryeca_forc%cflx_input_litr_cwd_c14*dtime/c14atomw
+    if(centurybgc_index%debug)print*,'c14 cwd',this%ystates1(kc14)
   endif
 
   jj=fwd;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
@@ -971,6 +975,7 @@ contains
       this%cascade_matrixd(lid_nh4,jj) = this%cascade_matrix(lid_nh4,jj)-this%cascade_matrixd(lid_no3,jj)
     endif
     if(this%alpha_p(jj)>0._r8)scal = min(scal, ECA_factor_phosphorus_mic)
+
     if(scal /= 1._r8)pot_decomp(jj)=pot_decomp(jj)*scal
     rrates(jj) = pot_decomp(jj)
   enddo
@@ -987,9 +992,9 @@ contains
   !the following treatment is to ensure mass balance
   if(this%centurybgc_index%debug)then
 !    print*,'plant p uptake', rrates(lid_plant_minp_up_reac),rrates(lid_minp_soluble_to_secp_reac)
-!    do jj = 1, nreactions
-!      print*,'cascd jj',jj,this%cascade_matrixd(lid_minp_soluble,jj),rrates(jj)
-!    enddo
+    do jj = 1, nreactions
+      print*,'bfcascd jj',jj,rrates(jj)
+    enddo
   endif
   if(this%plant_ntypes==1)then
     do jj = 1, this%plant_ntypes
@@ -1014,12 +1019,13 @@ contains
     this%cascade_matrixd(lid_plant_minp_pft(jj),lid_plant_minp_up_reac) = &
       1._r8 - sum(this%cascade_matrixd(lid_plant_minp_pft(1:jj-1),lid_plant_minp_up_reac))
   endif
-  if(this%centurybgc_index%debug)then
+!  if(this%centurybgc_index%debug)then
 !    do jj = 1, nreactions
 !      print*,'cadfaascd jj',jj,this%cascade_matrixd(lid_minp_soluble,jj),rrates(jj)
 !    enddo
-  endif
+!  endif
   it=0
+  rscal=0._r8
   do
     call calc_dtrend_som_bgc(nprimvars, nreactions, this%cascade_matrixp(1:nprimvars, 1:nreactions), rrates, p_dt)
 
@@ -1028,7 +1034,12 @@ contains
     !update the state variables
     call lom%calc_state_pscal(nprimvars, dtime, ystate(1:nprimvars), p_dt(1:nprimvars),  d_dt(1:nprimvars), &
         pscal(1:nprimvars), lneg, bstatus)
-
+    if(this%centurybgc_index%debug)then
+      print*,'prim test',lneg
+      do jj = 1, nprimvars
+        print*,jj,pscal(jj),this%centurybgc_index%varnames(jj)
+      enddo
+    endif
     if(lneg .and. it<=itmax)then
       call lom%calc_reaction_rscal(nprimvars, nreactions,  pscal(1:nprimvars), &
         this%cascade_matrixd(1:nprimvars, 1:nreactions),rscal, bstatus)
@@ -1042,10 +1053,9 @@ contains
     it = it + 1
   enddo
   if(this%centurybgc_index%debug)then
-!    print*,'dydt p sol',dydt(lid_minp_soluble)
-!    do jj = 1, nreactions
-!      print*,'casc jj',jj,this%cascade_matrixd(lid_minp_soluble,jj),this%cascade_matrix(lid_minp_soluble,jj)
-!    enddo
+    do jj = 1, nreactions
+      print*,'casc jj',jj,rrates(jj),rscal(jj)
+    enddo
   endif
   end associate
   end subroutine bgc_integrate

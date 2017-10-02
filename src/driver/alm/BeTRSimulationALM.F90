@@ -258,7 +258,6 @@ contains
       endif
       if(this%betr(c)%tracers%debug)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'bef w/o drain',this%bstatus(c))
 
-
 !--------------
 !  debug
       call this%biogeo_state(c)%reset(value_column=0._r8, active_soibgc=this%active_soibgc)
@@ -277,6 +276,7 @@ contains
 
       if(this%betr(c)%tracers%debug)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'aft w/o drain',this%bstatus(c))
 !--------
+      if(this%betr(c)%tracers%debug)call endrun("hr test")
     enddo
     if(this%bsimstatus%check_status()) &
       call endrun(msg=this%bsimstatus%print_msg())
@@ -665,6 +665,7 @@ contains
 
         call apvb(this%biophys_forc(c)%c14flx%cflx_output_litr_cwd_vr_col(1,j), &
            carbonflux_vars%m_decomp_cpools_to_fire_vr_col(c,j,i_cwd))
+
       endif
 
       !nitrogen input
@@ -870,6 +871,7 @@ contains
 
       !recollect soil respirations, fire and hydraulic loss
       c12flux_vars%hr_col(c) = this%biogeo_flux(c)%c12flux_vars%hr_col(c_l)
+
       c12flux_vars%fire_decomp_closs_col(c) = this%biogeo_flux(c)%c12flux_vars%fire_decomp_closs_col(c_l)
       c12flux_vars%som_c_leached_col(c) = &
         this%biogeo_flux(c)%c12flux_vars%som_c_leached_col(c_l) + &
