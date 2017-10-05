@@ -215,17 +215,18 @@ contains
     call this%betr_time%Init(namelist_buffer)
   end subroutine BeTRSimulationInitOffline
 !-------------------------------------------------------------------------------
-  subroutine BeTRSetFilter(this, maxpft_per_col, boffline)
+  subroutine BeTRSetFilter(this, maxpft_per_col, nsoilorder, boffline)
   !
   !DESCRIPTION
   ! set betr filter, only used for standalone applicaitons
     use betr_ctrl                , only : betr_offline
-
+  use betr_varcon                , only : betr_max_soilorder
   implicit none
   !ARGUMENTS
   class(betr_simulation_type), intent(inout) :: this
   integer, intent(in) :: maxpft_per_col
-  logical, intent(in) :: boffline
+  integer, optional, intent(in) :: nsoilorder
+  logical, optional, intent(in) :: boffline
     integer :: p
     !by default, surface litter layer is off
     this%num_jtops = 1
@@ -241,8 +242,17 @@ contains
     do p = 1, maxpft_per_col
       this%filter_soilp(p) = p
     enddo
-    betr_offline=boffline
+    if(present(boffline))then
+      betr_offline=boffline
+    else
+      betr_offline=.true.
+    endif
     betr_maxpatch_pft = maxpft_per_col
+    if(present(nsoilorder))then
+      betr_max_soilorder= nsoilorder
+    else
+      betr_max_soilorder=1
+    endif
   end subroutine BeTRSetFilter
 !-------------------------------------------------------------------------------
 

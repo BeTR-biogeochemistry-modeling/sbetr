@@ -43,7 +43,7 @@ module BgcCentCnpType
     real(r8)                             :: pot_f_nit
     real(r8)                             :: pot_f_denit
     real(r8)                             :: rt_ar
-    real(r8)                             :: frac_p_sec_to_sol
+    real(r8), pointer                    :: frac_p_sec_to_sol(:)
     real(r8), pointer                    :: minp_secondary_decay(:)
     real(r8), pointer                    :: mumax_minp_soluble_to_secondary(:)
     integer                              :: plant_ntypes
@@ -118,11 +118,11 @@ contains
 
   call this%competECA%Init()
 
-  this%frac_p_sec_to_sol = biogeo_con%frac_p_sec_to_sol
+  this%frac_p_sec_to_sol(:) = biogeo_con%frac_p_sec_to_sol(:)
 
-  this%minp_secondary_decay = biogeo_con%minp_secondary_decay
+  this%minp_secondary_decay(:) = biogeo_con%minp_secondary_decay(:)
 
-  this%mumax_minp_soluble_to_secondary = biogeo_con%vmax_minp_soluble_to_secondary
+  this%mumax_minp_soluble_to_secondary(:) = biogeo_con%vmax_minp_soluble_to_secondary(:)
 
   this%use_c13 = biogeo_con%use_c13
 
@@ -164,6 +164,7 @@ contains
 
   allocate(this%alpha_n(nom_pools)); this%alpha_n(:) = 0._r8
   allocate(this%alpha_p(nom_pools)); this%alpha_p(:) = 0._r8
+  allocate(this%frac_p_sec_to_sol(betr_max_soilorder)); this%frac_p_sec_to_sol(:) = 0._r8
   allocate(this%minp_secondary_decay(betr_max_soilorder)); this%minp_secondary_decay(:) = 0._r8
   allocate(this%mumax_minp_soluble_to_secondary(betr_max_soilorder)); this%mumax_minp_soluble_to_secondary(:) = 0._r8
   end associate
@@ -472,8 +473,8 @@ contains
     !reaction 11, inorganic P non-equilibrium desorption
     ! p_secondary -> P_soluble + P_occlude
     reac = lid_minp_secondary_to_sol_occ_reac
-    cascade_matrix(lid_minp_soluble,  reac) = this%frac_p_sec_to_sol
-    cascade_matrix(lid_minp_occlude  ,  reac) = 1._r8 - this%frac_p_sec_to_sol
+    cascade_matrix(lid_minp_soluble,  reac) = this%frac_p_sec_to_sol(this%soilorder)
+    cascade_matrix(lid_minp_occlude  ,  reac) = 1._r8 - this%frac_p_sec_to_sol(this%soilorder)
     cascade_matrix(lid_minp_secondary, reac) = -1._r8
 
     !----------------------------------------------------------------------
