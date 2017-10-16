@@ -8,6 +8,7 @@ module BgcCentCnpType
   use bshr_kind_mod             , only : r8 => shr_kind_r8
   use bshr_log_mod              , only : errMsg => shr_log_errMsg
   use betr_varcon               , only : spval => bspval
+  use betr_ctrl                 , only : spinup_state => betr_spinup_state
   use BgcCentCnpDecompType      , only : DecompCent_type
   use BgcCentCnpIndexType       , only : centurybgc_index_type
   use BgcCentCnpNitDenType      , only : century_nitden_type
@@ -239,7 +240,7 @@ contains
   !initialize state variables
   call this%init_states(this%centurybgc_index, centuryeca_forc)
   ystates0(:) = this%ystates0(:)
-
+    
 !  call this%sumup_cnp_msflx(ystates0, c_mass1,n_mass1,p_mass1)
 
   !add all external input
@@ -276,7 +277,10 @@ contains
   call this%nitden%run_nitden(this%centurybgc_index, centuryeca_forc, this%decompkf_eca, &
     ystates1(lid_nh4), ystates1(lid_no3), ystates1(lid_o2), o2_decomp_depth, &
     pot_f_nit_mol_per_sec, pot_co2_hr, this%pot_f_nit, this%pot_f_denit, cascade_matrix)
-  if(this%centurybgc_index%debug)print*,'co2_pot',pot_co2_hr
+!  if(this%centurybgc_index%debug)then
+!    print*,'co2_pot',pot_co2_hr
+    
+!  endif
   !---------------------
   !turn off nitrification and denitrification
   !this%pot_f_denit = 0._r8
@@ -687,7 +691,7 @@ contains
   if(this%use_c14)then
     kc14=(jj-1)*nelms+c14_loc
     this%ystates1(kc14) =this%ystates0(kc14) + centuryeca_forc%cflx_input_litr_met_c14*dtime/c14atomw
-    if(centurybgc_index%debug)print*,'c14 lit1',this%ystates1(kc14)
+!    if(centurybgc_index%debug)print*,'c14 lit1',this%ystates1(kc14)
   endif
 
   jj=lit2;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
@@ -711,7 +715,7 @@ contains
   if(this%use_c14)then
     kc14=(jj-1)*nelms+c14_loc
     this%ystates1(kc14) =this%ystates0(kc14) + centuryeca_forc%cflx_input_litr_cel_c14*dtime/c14atomw
-    if(centurybgc_index%debug)print*,'c14 lit2',this%ystates1(kc14)
+!    if(centurybgc_index%debug)print*,'c14 lit2',this%ystates1(kc14)
   endif
 
   jj=lit3;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
@@ -735,7 +739,7 @@ contains
   if(this%use_c14)then
     kc14=(jj-1)*nelms+c14_loc
     this%ystates1(kc14) =this%ystates0(kc14) + centuryeca_forc%cflx_input_litr_lig_c14*dtime/c14atomw
-    if(centurybgc_index%debug)print*,'c14 lit3',this%ystates1(kc14)
+!    if(centurybgc_index%debug)print*,'c14 lit3',this%ystates1(kc14)
   endif
 
   jj=cwd;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
@@ -759,7 +763,7 @@ contains
   if(this%use_c14)then
     kc14=(jj-1)*nelms+c14_loc
     this%ystates1(kc14) =this%ystates0(kc14) + centuryeca_forc%cflx_input_litr_cwd_c14*dtime/c14atomw
-    if(centurybgc_index%debug)print*,'c14 cwd',this%ystates1(kc14)
+!    if(centurybgc_index%debug)print*,'c14 cwd',this%ystates1(kc14)
   endif
 
   jj=fwd;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
@@ -817,7 +821,9 @@ contains
   this%ystates1(lid_minp_soluble) =this%ystates0(lid_minp_soluble) + dtime * &
       (centuryeca_forc%sflx_minp_input_po4 + &
         centuryeca_forc%sflx_minp_weathering_po4)/patomw
-
+!  if(this%centurybgc_index%debug)then
+!    print*,'minp',this%ystates0(lid_minp_soluble),centuryeca_forc%sflx_minp_input_po4,centuryeca_forc%sflx_minp_weathering_po4
+!  endif
   !phosphatase cleaves PO4 from organic pools and put them into soluble mineral pool
   !compute total organic P
   !litr, wood, som, dom
@@ -952,6 +958,7 @@ contains
 
   !do ECA nutrient scaling
   !
+  this%competECA%debug=this%centurybgc_index%debug
   call this%competECA%run_compet_nitrogen(this%non_limit,ystate(lid_nh4),ystate(lid_no3),mic_pot_nn_flx,&
      this%pot_f_nit, this%pot_f_denit, this%plant_ntypes, &
      this%msurf_nh4, ECA_factor_nit, &
@@ -976,27 +983,35 @@ contains
       this%cascade_matrixd(lid_nh4,jj) = this%cascade_matrix(lid_nh4,jj)-this%cascade_matrixd(lid_no3,jj)
     endif
     if(this%alpha_p(jj)>0._r8)scal = min(scal, ECA_factor_phosphorus_mic)
-
+!    if(this%centurybgc_index%debug)&
+!    print*,'ptdcomp',jj,pot_decomp(jj),ECA_factor_nitrogen_mic,ECA_factor_phosphorus_mic
     if(scal /= 1._r8)pot_decomp(jj)=pot_decomp(jj)*scal
     rrates(jj) = pot_decomp(jj)
+    if(rrates(jj)/=rrates(jj))then 
+      write(*,*)'not a number rror',rrates(jj)
+    stop
+    endif
   enddo
 
   rrates(lid_nh4_nit_reac) = this%pot_f_nit*ECA_factor_nit
   rrates(lid_no3_den_reac) = this%pot_f_denit*ECA_factor_den
   rrates(lid_minp_soluble_to_secp_reac) =  ECA_factor_minp_msurf * this%msurf_minp &
        * this%mumax_minp_soluble_to_secondary(this%soilorder) !calculate from eca competition
+!  if(this%centurybgc_index%debug) &
+!  write(*,'(A,X,I4,3(X,E20.10))')'rrse',lid_minp_soluble_to_secp_reac, ECA_factor_minp_msurf, this%msurf_minp ,this%mumax_minp_soluble_to_secondary(this%soilorder)
+
   rrates(lid_autr_rt_reac) = this%rt_ar                            !authotrophic respiration
   rrates(lid_plant_minn_no3_up_reac) = sum(ECA_flx_no3_plants)     !calculate by ECA competition
   rrates(lid_plant_minn_nh4_up_reac) = sum(ECA_flx_nh4_plants)     !calculate by ECA competition
   rrates(lid_plant_minp_up_reac) =     sum(ECA_flx_phosphorus_plants) !calculate by ECA competition
   rrates(lid_minp_secondary_to_sol_occ_reac)= ystate(lid_minp_secondary) * this%minp_secondary_decay(this%soilorder)
   !the following treatment is to ensure mass balance
-  if(this%centurybgc_index%debug)then
+!  if(this%centurybgc_index%debug)then
 !    print*,'plant p uptake', rrates(lid_plant_minp_up_reac),rrates(lid_minp_soluble_to_secp_reac)
-    do jj = 1, nreactions
-      print*,'bfcascd jj',jj,rrates(jj)
-    enddo
-  endif
+!    do jj = 1, nreactions
+!      print*,'bfcascd jj',jj,rrates(jj)
+!    enddo
+!  endif
   if(this%plant_ntypes==1)then
     do jj = 1, this%plant_ntypes
       this%cascade_matrixd(lid_plant_minn_no3_pft(jj),lid_plant_minn_no3_up_reac) = 1._r8
@@ -1035,12 +1050,12 @@ contains
     !update the state variables
     call lom%calc_state_pscal(nprimvars, dtime, ystate(1:nprimvars), p_dt(1:nprimvars),  d_dt(1:nprimvars), &
         pscal(1:nprimvars), lneg, bstatus)
-    if(this%centurybgc_index%debug)then
-      print*,'prim test',lneg
-      do jj = 1, nprimvars
-        print*,jj,pscal(jj),this%centurybgc_index%varnames(jj)
-      enddo
-    endif
+!    if(this%centurybgc_index%debug)then
+!      print*,'prim test',lneg
+!      do jj = 1, nprimvars
+!        print*,jj,pscal(jj),this%centurybgc_index%varnames(jj)
+!      enddo
+!    endif
     if(lneg .and. it<=itmax)then
       call lom%calc_reaction_rscal(nprimvars, nreactions,  pscal(1:nprimvars), &
         this%cascade_matrixd(1:nprimvars, 1:nreactions),rscal, bstatus)
@@ -1053,11 +1068,14 @@ contains
     endif
     it = it + 1
   enddo
-  if(this%centurybgc_index%debug)then
-    do jj = 1, nreactions
-      print*,'casc jj',jj,rrates(jj),rscal(jj)
-    enddo
-  endif
+!  if(this%centurybgc_index%debug)then
+!    do jj = 1, nreactions
+!      print*,'casc jj',jj,rrates(jj),rscal(jj)
+!    enddo
+!    do jj = 1, nprimvars
+!      print*, 'nprim',jj,dydt(jj)
+!    enddo
+!  endif
   end associate
   end subroutine bgc_integrate
   !--------------------------------------------------------------------
@@ -1080,43 +1098,45 @@ contains
     lid_ar => centurybgc_index%lid_ar,   &
     lid_ch4 => centurybgc_index%lid_ch4  &
   )
-  j = lid_n2; y0=this%ystates1(j)
-  call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
-  this%ystates1(centurybgc_index%lid_n2_paere) = this%ystates1(j)-y0
 
   j = lid_o2; y0=this%ystates1(j)
   call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
   this%ystates1(centurybgc_index%lid_o2_paere) = this%ystates1(j)-y0
 
-  j = lid_ar; y0=this%ystates1(j)
-  call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
-  this%ystates1(centurybgc_index%lid_ar_paere) = this%ystates1(j)-y0
-
-  j = lid_ch4; y0=this%ystates1(j)
-  call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
-  this%ystates1(centurybgc_index%lid_ch4_paere) = this%ystates1(j)-y0
-
-  j = lid_co2; y0=this%ystates1(j)
-  call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
-  this%ystates1(centurybgc_index%lid_co2_paere) = this%ystates1(j)-y0
-
-  if(this%use_c13)then
-    j = lid_c13_co2; y0=this%ystates1(j)
+  if( spinup_state /= 1)then
+    j = lid_n2; y0=this%ystates1(j)
     call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
-    this%ystates1(centurybgc_index%lid_c13_co2_paere) = this%ystates1(j)-y0
+    this%ystates1(centurybgc_index%lid_n2_paere) = this%ystates1(j)-y0
 
-  endif
-
-  if(this%use_c14)then
-    j = lid_c14_co2; y0=this%ystates1(j)
+    j = lid_ar; y0=this%ystates1(j)
     call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
-    this%ystates1(centurybgc_index%lid_c14_co2_paere) = this%ystates1(j)-y0
+    this%ystates1(centurybgc_index%lid_ar_paere) = this%ystates1(j)-y0
 
+    j = lid_ch4; y0=this%ystates1(j)
+    call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
+    this%ystates1(centurybgc_index%lid_ch4_paere) = this%ystates1(j)-y0
+
+    j = lid_co2; y0=this%ystates1(j)
+    call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
+    this%ystates1(centurybgc_index%lid_co2_paere) = this%ystates1(j)-y0
+
+    if(this%use_c13)then
+      j = lid_c13_co2; y0=this%ystates1(j)
+      call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
+      this%ystates1(centurybgc_index%lid_c13_co2_paere) = this%ystates1(j)-y0
+
+    endif
+
+    if(this%use_c14)then
+      j = lid_c14_co2; y0=this%ystates1(j)
+      call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
+      this%ystates1(centurybgc_index%lid_c14_co2_paere) = this%ystates1(j)-y0
+
+    endif
+    j = lid_n2o; y0=this%ystates1(j)
+    call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
+    this%ystates1(centurybgc_index%lid_n2o_paere) = this%ystates1(j)-y0
   endif
-  j = lid_n2o; y0=this%ystates1(j)
-  call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
-  this%ystates1(centurybgc_index%lid_n2o_paere) = this%ystates1(j)-y0
-
   end associate
   contains
     subroutine exp_ode_int(dt, c1, c2, c3, y0)
@@ -1312,7 +1332,10 @@ contains
 
 !  write(*,'(A,6(X,E20.10))')'c,n,p mass',c_mass,n_mass,p_mass,ystates1(lid_plant_minn_nh4), &
 !     ystates1(lid_plant_minn_no3), ystates1(lid_plant_minp)
-  if(p_mass>1.e10_r8)stop
+  if(p_mass>1.e10_r8)then
+     print*,'sum cnp bad mass',p_mass
+     stop
+  endif
   end associate
   end subroutine sumup_cnp_mass
 

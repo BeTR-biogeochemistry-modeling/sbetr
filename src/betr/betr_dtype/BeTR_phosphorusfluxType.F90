@@ -26,7 +26,7 @@ implicit none
 
     real(r8), pointer :: pflx_minp_input_po4_vr_col(:,:)  => null() !mineral phosphorus input through deposition & fertilization, gN/m3/s
     real(r8), pointer :: pflx_minp_weathering_po4_vr_col(:,:)  => null() !mineral phosphorus input through weathering, gN/m3/s
-
+    real(r8), pointer :: pminp_input_col(:) => null()
   contains
     procedure, public  :: Init
     procedure, public  :: reset
@@ -77,7 +77,7 @@ implicit none
   allocate(this%pflx_minp_input_po4_vr_col(begc:endc,lbj:ubj)) !mineral phosphorus input through weathering, deposition & fertilization
 
   allocate(this%pflx_minp_weathering_po4_vr_col(begc:endc,lbj:ubj)) !p from weathering
-
+  allocate(this%pminp_input_col(begc:endc))
 
   end subroutine InitAllocate
 
@@ -120,6 +120,7 @@ implicit none
   integer :: j, c
 
   this%pflx_input_col(:) = 0._r8
+  this%pminp_input_col(:) = 0._r8
   do j = lbj, ubj
     do c = bounds%begc, bounds%endc
       this%pflx_input_col(c) = this%pflx_input_col(c) + dz(c,j) * &
@@ -128,7 +129,11 @@ implicit none
          this%pflx_input_litr_lig_vr_col(c,j) + &
          this%pflx_input_litr_cwd_vr_col(c,j) + &
          this%pflx_input_litr_fwd_vr_col(c,j) + &
-         this%pflx_input_litr_lwd_vr_col(c,j))
+         this%pflx_input_litr_lwd_vr_col(c,j)) 
+
+      this%pminp_input_col(c) = this%pminp_input_col(c) + dz(c,j) * &
+        (this%pflx_minp_input_po4_vr_col(c,j) + &
+         this%pflx_minp_weathering_po4_vr_col(c,j))
     enddo
   enddo
   end subroutine summary

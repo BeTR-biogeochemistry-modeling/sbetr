@@ -2310,11 +2310,11 @@ contains
       biogeo_flux%c12flux_vars%hr_vr_col(c,j) = &
         (ystatesf(this%centurybgc_index%lid_co2_hr) - &
         ystates0(this%centurybgc_index%lid_co2_hr))*catomw/dtime
-      if(betrtracer_vars%debug)then
-        print*,'hr',j,biogeo_flux%c12flux_vars%hr_vr_col(c,j)
-        print*,'i,f',ystates0(this%centurybgc_index%lid_co2_hr),&
-           ystatesf(this%centurybgc_index%lid_co2_hr)
-      endif
+!      if(betrtracer_vars%debug)then
+!        print*,'hr',j,biogeo_flux%c12flux_vars%hr_vr_col(c,j)
+!        print*,'i,f',ystates0(this%centurybgc_index%lid_co2_hr),&
+!           ystatesf(this%centurybgc_index%lid_co2_hr)
+!      endif
       biogeo_flux%n14flux_vars%f_denit_vr_col(c,j)= &
         (ystatesf(this%centurybgc_index%lid_no3_den) - &
          ystates0(this%centurybgc_index%lid_no3_den))*natomw/dtime

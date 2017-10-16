@@ -41,12 +41,18 @@ contains
   this%error = 0
   end subroutine reset
 !-------------------------------------------------------------------------------
-  subroutine set_msg(this, msg, err)
+  subroutine set_msg(this, msg, err, c)
   implicit none
   class(betr_status_type), intent(inout)  :: this
   character(len=*), intent(in) :: msg
   integer, intent(in) :: err
-  this%msg = trim(msg)
+  integer, optional, intent(in) :: c
+  
+  if(present(c))then
+    write(this%msg,'(A,A,I6.6)')trim(msg),' col=',c
+  else
+    write(this%msg,'(A)')trim(msg)
+  endif
   this%error = err
   end subroutine set_msg
 !-------------------------------------------------------------------------------

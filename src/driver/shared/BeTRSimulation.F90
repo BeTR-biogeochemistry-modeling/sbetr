@@ -253,6 +253,7 @@ contains
     else
       betr_max_soilorder=1
     endif
+    print*,'betr_max_soilorder',betr_max_soilorder
   end subroutine BeTRSetFilter
 !-------------------------------------------------------------------------------
 

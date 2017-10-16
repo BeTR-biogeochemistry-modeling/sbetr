@@ -175,6 +175,7 @@ contains
     use clm_varctl        , only : spinup_state
     use tracer_varcon     , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
     use betr_ctrl         , only : betr_spinup_state
+    use MathfuncMod       , only : num2str
     use betr_varcon       , only : kyr_spinup
     use clm_time_manager  , only : get_curr_date
     implicit none
@@ -223,7 +224,7 @@ contains
     call this%BeTRSetcps(bounds, col, pft)
 
     c_l = 1; begc_l = betr_bounds%begc; endc_l=betr_bounds%endc;
-
+!    print*,'enter without drainage'
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
       call this%biogeo_flux(c)%reset(value_column=0._r8, active_soibgc=this%active_soibgc)
@@ -238,22 +239,23 @@ contains
 
       if(this%bstatus(c)%check_status())then
         call this%bsimstatus%setcol(c)
-        call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
+        call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err(),c)
         exit
       endif
 
         call this%biogeo_state(c)%summary(betr_bounds, 1, betr_nlevtrc_soil,this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil), &
           this%betr_col(c)%zi(begc_l:endc_l,1:betr_nlevtrc_soil), this%active_soibgc)
-      this%betr(c)%tracers%debug=(c==68 .and. .false.)
+!      this%betr(c)%tracers%debug=(c==2330 .and. .true.)
       if(this%betr(c)%tracers%debug)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'bef w/o drain',this%bstatus(c))
 !--------
+      if(this%betr(c)%tracers%debug)print*,'stepwithdraing inpr'
       call this%betr(c)%step_without_drainage(this%betr_time, betr_bounds, this%betr_col(c), &
          this%betr_pft(c), this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp, &
          this%biophys_forc(c), this%biogeo_flux(c), this%biogeo_state(c), this%bstatus(c))
 
       if(this%bstatus(c)%check_status())then
         call this%bsimstatus%setcol(c)
-        call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
+        call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err(),c)
         exit
       endif
       if(this%betr(c)%tracers%debug)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'bef w/o drain',this%bstatus(c))
@@ -267,7 +269,7 @@ contains
 
       if(this%bstatus(c)%check_status())then
         call this%bsimstatus%setcol(c)
-        call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
+        call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err(),c)
         exit
       endif
 
@@ -276,11 +278,11 @@ contains
 
       if(this%betr(c)%tracers%debug)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'aft w/o drain',this%bstatus(c))
 !--------
-      if(this%betr(c)%tracers%debug)call endrun("hr test")
     enddo
-    if(this%bsimstatus%check_status()) &
+!    print*,'out without drainage'
+    if(this%bsimstatus%check_status())then
       call endrun(msg=this%bsimstatus%print_msg())
-
+    endif
   end subroutine ALMStepWithoutDrainage
 
   !---------------------------------------------------------------------------------
@@ -461,14 +463,14 @@ contains
   !Because of possible harvest activity that is
   !related to dynamic land use, input profiles are computed in alm.
   !
-  use CNCarbonFluxType, only : carbonflux_type
-  use CNNitrogenFluxType, only : nitrogenflux_type
-  use PhosphorusFluxType, only : phosphorusflux_type
-  use CNStateType, only : cnstate_type
-  use clm_varpar, only : i_cwd, i_met_lit, i_cel_lit, i_lig_lit
+  use CNCarbonFluxType   , only : carbonflux_type
+  use CNNitrogenFluxType , only : nitrogenflux_type
+  use PhosphorusFluxType , only : phosphorusflux_type
+  use CNStateType        , only : cnstate_type
+  use clm_varpar         , only : i_cwd, i_met_lit, i_cel_lit, i_lig_lit
   use PlantMicKineticsMod, only : PlantMicKinetics_type
-  use mathfuncMod, only : apvb
-  use tracer_varcon, only : use_c13_betr, use_c14_betr
+  use mathfuncMod        , only : apvb,bisnan
+  use tracer_varcon      , only : use_c13_betr, use_c14_betr
   implicit none
   class(betr_simulation_alm_type), intent(inout)  :: this
   type(bounds_type) , intent(in)  :: bounds
@@ -536,7 +538,14 @@ contains
          carbonflux_vars%gap_mortality_c_to_litr_met_c_col(c,j)     , & !gap mortality
          carbonflux_vars%harvest_c_to_litr_met_c_col(c,j)           , & !harvest
          carbonflux_vars%m_c_to_litr_met_fire_col(c,j)/))              ! fire mortality
-
+!      if(c==2284)then
+!         print*,'c j',c,j
+!         print*,'carbonflux_vars%phenology_c_to_litr_met_c_col',carbonflux_vars%phenology_c_to_litr_met_c_col(c,j)
+!         print*,'carbonflux_vars%dwt_frootc_to_litr_met_c_col',carbonflux_vars%dwt_frootc_to_litr_met_c_col(c,j)
+!         print*,'carbonflux_vars%gap_mortality_c_to_litr_met_c_col',carbonflux_vars%gap_mortality_c_to_litr_met_c_col(c,j)
+!         print*,'carbonflux_vars%harvest_c_to_litr_met_c_col',carbonflux_vars%harvest_c_to_litr_met_c_col(c,j)
+!         print*,'carbonflux_vars%m_c_to_litr_met_fire_col',carbonflux_vars%m_c_to_litr_met_fire_col(c,j) 
+!      endif
       !cellulose carbon
       call apvb(this%biophys_forc(c)%c12flx%cflx_input_litr_cel_vr_col(1,j)   , &
          (/carbonflux_vars%phenology_c_to_litr_cel_c_col(c,j)          , &  !phenology
@@ -573,6 +582,18 @@ contains
 
       call apvb(this%biophys_forc(c)%c12flx%cflx_output_litr_cwd_vr_col(1,j), &
          carbonflux_vars%m_decomp_cpools_to_fire_vr_col(c,j,i_cwd))
+
+!      if(c==229)then
+!        print*,'j=',j
+!        print*,'met',this%biophys_forc(c)%c12flx%cflx_input_litr_met_vr_col(1,j)
+!        print*,'cel',this%biophys_forc(c)%c12flx%cflx_input_litr_cel_vr_col(1,j)
+!        print*,'lig',this%biophys_forc(c)%c12flx%cflx_input_litr_lig_vr_col(1,j)
+!        print*,'cwd',this%biophys_forc(c)%c12flx%cflx_input_litr_cwd_vr_col(1,j)
+!        print*,'firemet',this%biophys_forc(c)%c12flx%cflx_output_litr_met_vr_col(1,j)
+!        print*,'firecel',this%biophys_forc(c)%c12flx%cflx_output_litr_cel_vr_col(1,j)
+!        print*,'firelig',this%biophys_forc(c)%c12flx%cflx_output_litr_lig_vr_col(1,j)
+!        print*,'firecwd',this%biophys_forc(c)%c12flx%cflx_output_litr_cwd_vr_col(1,j)
+!      endif
       !!------------------------------------------------------------------------
       if(use_c13_betr)then
         !metabolic carbon
@@ -677,6 +698,14 @@ contains
          nitrogenflux_vars%harvest_n_to_litr_met_n_col(c,j)          , & !harvest
          nitrogenflux_vars%m_n_to_litr_met_fire_col(c,j)/))              ! fire mortality
 
+!      if(c==2330)then
+!         print*,'c j',c,j
+!         print*,'nitrogenflux_vars%phenology_n_to_litr_met_n_col',nitrogenflux_vars%phenology_n_to_litr_met_n_col(c,j)
+!         print*,'nitrogenflux_vars%gap_mortality_n_to_litr_met_n_col',nitrogenflux_vars%gap_mortality_n_to_litr_met_n_col(c,j)
+!         print*,'nitrogenflux_vars%harvest_n_to_litr_met_n_col',nitrogenflux_vars%harvest_n_to_litr_met_n_col(c,j)
+!         print*,'nitrogenflux_vars%m_n_to_litr_met_fire_col',nitrogenflux_vars%m_n_to_litr_met_fire_col(c,j)
+!      endif
+
       !cellulose nitrogen
       call apvb(this%biophys_forc(c)%n14flx%nflx_input_litr_cel_vr_col(c_l,j), &
          (/nitrogenflux_vars%phenology_n_to_litr_cel_n_col(c,j)     , & !phenology
@@ -776,22 +805,23 @@ contains
 
       call apvb(this%biophys_forc(c)%p31flx%pflx_minp_weathering_po4_vr_col(c_l,j), &
          phosphorusflux_vars%primp_to_labilep_vr_col(c,j))
-
     enddo
   enddo
 
   !summarize the fluxes and state variables
-  !c_l = 1
-  !begc_l = betr_bounds%begc; endc_l=betr_bounds%endc;
-  !do fc = 1, num_soilc
-  !  c = filter_soilc(fc)
-  !  call this%biophys_forc(c)%summary(betr_bounds, 1, betr_nlevtrc_soil, this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil))
-  !  if(c==102)then
-  !    print*,'cinput',this%biophys_forc(c)%c12flx%cflx_input_col(c_l)*1800._r8
-  !    print*,'ninput',this%biophys_forc(c)%n14flx%nflx_input_col(c_l)*1800._r8
-  !    print*,'pinput',this%biophys_forc(c)%p31flx%pflx_input_col(c_l)*1800._r8
-  !  endif
-  !enddo
+!  c_l = 1
+!  begc_l = betr_bounds%begc; endc_l=betr_bounds%endc;
+! do fc = 1, num_soilc
+!    c = filter_soilc(fc)
+!  c=2330   
+!    call this%biophys_forc(c)%summary(betr_bounds, 1, betr_nlevtrc_soil, this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil))
+!    print*,'cinput',c,this%biophys_forc(c)%c12flx%cflx_input_col(c_l)*1800._r8
+!    print*,'ninput',c,this%biophys_forc(c)%n14flx%nflx_input_col(c_l)*1800._r8
+!    print*,'pinput',c,this%biophys_forc(c)%p31flx%pflx_input_col(c_l)*1800._r8
+!    print*,'minpinput',c,this%biophys_forc(c)%p31flx%pminp_input_col(c_l)*1800._r8
+!  enddo
+!  stop
+!  print*,'ALMBetrPlantSoilBGCSend'
   end associate
   !pull in all state variables and update tracers
   end subroutine ALMBetrPlantSoilBGCSend
@@ -905,7 +935,7 @@ contains
           this%biogeo_flux(c)%n14flux_vars%som_n_runoff_col(c_l) + &
           this%biogeo_flux(c)%n14flux_vars%som_n_qdrain_col(c_l)
 
-      if(c==68 .and. .false.)then
+      if(c==1207 .and. .false.)then
         write(*,*)'betr smin_no3_leach=',this%biogeo_flux(c)%n14flux_vars%smin_no3_leached_col(c_l)*1800._r8
         write(*,*)'betr smin_no3_qdrai=',this%biogeo_flux(c)%n14flux_vars%smin_no3_qdrain_col(c_l)*1800._r8
         write(*,*)'betr som_n_leach   =',this%biogeo_flux(c)%n14flux_vars%som_n_leached_col(c_l)*1800._r8
@@ -932,7 +962,6 @@ contains
       p31flux_vars%supplement_to_sminp_col(c) = this%biogeo_flux(c)%p31flux_vars%supplement_to_sminp_col(c_l)
       p31flux_vars%secondp_to_occlp_col(c) = this%biogeo_flux(c)%p31flux_vars%secondp_to_occlp_col(c_l)
       p31flux_vars%fire_decomp_ploss_col(c) = this%biogeo_flux(c)%p31flux_vars%fire_decomp_ploss_col(c_l)
-
       p31flux_vars%som_p_leached_col(c) = &
           this%biogeo_flux(c)%p31flux_vars%som_p_leached_col(c_l) + &
           this%biogeo_flux(c)%p31flux_vars%som_p_runoff_col(c_l) + &

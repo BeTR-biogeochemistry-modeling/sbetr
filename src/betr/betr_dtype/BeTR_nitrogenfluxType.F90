@@ -25,6 +25,7 @@ implicit none
     real(r8), pointer :: nflx_minn_input_nh4_vr_col(:,:)  => null() !mineral nh4 input through deposition & fertilization, gN/m3/s
     real(r8), pointer :: nflx_minn_input_no3_vr_col(:,:)  => null() !mineral no3 input through deposition & fertilization, gN/m3/s
     real(r8), pointer :: nflx_minn_nh4_fix_nomic_vr_col(:,:) => null()    !nitrogen fixation from non-microbe explicit calculation, gN/m3/s
+    real(r8), pointer :: nflx_minninput_col(:) => null()
   contains
     procedure, public  :: Init
     procedure, public  :: reset
@@ -73,7 +74,7 @@ implicit none
   allocate(this%nflx_minn_input_nh4_vr_col(begc:endc,lbj:ubj)) !mineral nh4 input through deposition & fertilization
   allocate(this%nflx_minn_input_no3_vr_col(begc:endc,lbj:ubj)) !mineral no3 input through deposition & fertilization
   allocate(this%nflx_minn_nh4_fix_nomic_vr_col(begc:endc,lbj:ubj))   !nh4 from fixation
-
+  allocate(this%nflx_minninput_col(begc:endc))
   end subroutine InitAllocate
 
 
@@ -115,6 +116,7 @@ implicit none
   integer :: j, c
 
   this%nflx_input_col(:) = 0._r8
+  this%nflx_minninput_col(:) =0._r8
   do j = lbj, ubj
     do c = bounds%begc, bounds%endc
       this%nflx_input_col(c) = this%nflx_input_col(c) + dz(c,j) * &
@@ -123,7 +125,11 @@ implicit none
          this%nflx_input_litr_lig_vr_col(c,j) + &
          this%nflx_input_litr_cwd_vr_col(c,j) + &
          this%nflx_input_litr_fwd_vr_col(c,j) + &
-         this%nflx_input_litr_lwd_vr_col(c,j))
+         this%nflx_input_litr_lwd_vr_col(c,j)) 
+       this%nflx_minninput_col(c) = this%nflx_minninput_col(c) + dz(c,j) * &
+         (this%nflx_minn_nh4_fix_nomic_vr_col(c,j)+&
+         this%nflx_minn_input_nh4_vr_col(c,j) + &
+         this%nflx_minn_input_no3_vr_col(c,j))
     enddo
   enddo
   end subroutine summary

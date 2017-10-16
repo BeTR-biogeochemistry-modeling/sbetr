@@ -892,14 +892,6 @@ contains
             do k = 1, ntrcs
                trcid = adv_trc_group(k)
 
-               do l = lbj, ubj
-                  do fc = 1, num_soilc
-                     c = filter_soilc(fc)
-                     if(update_col(c) .and. (.not. halfdt_col(c)) .and. l>=jtops(c))then
-                        tracer_conc_mobile_col(c,l,trcid)=trc_conc_out(c,l,k)
-                     endif
-                  enddo
-               enddo
                transp_mass_vr(:,:, k) = 0._r8
                transp_mass(:, k) = 0._r8
 
@@ -913,21 +905,18 @@ contains
                        is_h2o(trcid),                                                  &
                        update_col,                                                     &
                        halfdt_col,                                                     &
-                       tracer_conc_mobile_col(bounds%begc:bounds%endc, lbj:ubj,trcid), &
+                       trc_conc_out(bounds%begc:bounds%endc, lbj:ubj,k),               &
                        transp_mass_vr(bounds%begc:bounds%endc, lbj:ubj, k)           , &
                        transp_mass(bounds%begc:bounds%endc, k),bstatus)
                  if(bstatus%check_status())return
                endif
-            enddo
 
-            do k = 1, ntrcs
-               trcid = adv_trc_group(k)
                do fc = 1, num_soilc
                   c = filter_soilc(fc)
 
                   if(update_col(c) .and. (.not. halfdt_col(c)))then
                      mass0   = dmass(c, k)
-                     dmass(c, k) =  dot_sum(tracer_conc_mobile_col(c,jtops(c):ubj,trcid), &
+                     dmass(c, k) =  dot_sum(trc_conc_out(c,jtops(c):ubj,k), &
                         dz(c,jtops(c):ubj),bstatus)- dmass(c, k)
                      if(bstatus%check_status())return
                      err_tracer(c, k) = dmass(c, k) - inflx_top(c,k) * dtime_loc(c) + leaching_mass(c,k) + &
@@ -947,7 +936,9 @@ contains
                              ' transp=',transp_mass(c,k),' lech=',&
                              leaching_mass(c,k),' infl=',inflx_top(c,k),' dmass=',dmass(c,k), ' mass0=', &
                              mass0,'err_rel=',err_relative
-
+                        do l = jtops(c), ubj
+                          write(*,*)'adv aqu',l,qflx_adv(c,l),aqu2bulkcef_mobile_col(c,l,j),tracer_conc_mobile_col(c,l,trcid)
+                        enddo
                         msg=trim(msg)//new_line('A')//'advection mass balance error for tracer '//tracernames(trcid) &
                           //new_line('A')//errMsg(mod_filename, __LINE__)
                         call bstatus%set_msg(msg, err=-1)
@@ -969,6 +960,11 @@ contains
                      if(betrtracer_vars%debug .and. trcid==betrtracer_vars%id_trc_no3x)then
                        print*,'cno3',tracer_flx_vtrans(c, trcid), sum(tracer_flx_vtrans_patch(1:pft%npfts,trcid))
                      endif
+                     do l = lbj, ubj
+                       if(update_col(c) .and. (.not. halfdt_col(c)) .and. l>=jtops(c))then
+                         tracer_conc_mobile_col(c,l,trcid)=trc_conc_out(c,l,k)
+                       endif
+                     enddo
                   endif
                enddo
             enddo
