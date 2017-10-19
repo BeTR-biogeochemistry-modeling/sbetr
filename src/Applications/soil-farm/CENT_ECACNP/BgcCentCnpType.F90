@@ -521,8 +521,7 @@ contains
     reac                               = lid_o2_aren_reac
     cascade_matrix(lid_o2, reac)       = -1._r8
     cascade_matrix(lid_o2_paere, reac) = 1._r8
-
-    if ( spinup_state /= 1 ) then
+    if ( spinup_state == 0 ) then
        reac                                = lid_ch4_aren_reac
        cascade_matrix(lid_ch4, reac)       = -1._r8
        cascade_matrix(lid_ch4_paere, reac) = 1._r8
@@ -666,7 +665,8 @@ contains
     som3 =>  centurybgc_index%som3, &
     nelms => centurybgc_index%nelms, &
     lid_nh4=> centurybgc_index%lid_nh4, &
-    lid_minp_soluble =>  centurybgc_index%lid_minp_soluble  &
+    lid_minp_soluble =>  centurybgc_index%lid_minp_soluble,  &
+    lid_minp_immob => centurybgc_index%lid_minp_immob &
   )
 
   jj=lit1;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
@@ -864,6 +864,7 @@ contains
     this%ystates1(kp) = this%ystates1(kp) * pmin_frac
   enddo
   this%ystates1(lid_minp_soluble) =this%ystates1(lid_minp_soluble) + pmin_cleave
+  if(this%centurybgc_index%debug)print*,'soluble',this%ystates1(lid_minp_soluble), pmin_cleave, this%ystates1(lid_minp_immob)
   if(present(n_inf))then
     n_inf = n_inf + this%ystates1(lid_nh4) - this%ystates0(lid_nh4)
   endif
@@ -987,10 +988,6 @@ contains
 !    print*,'ptdcomp',jj,pot_decomp(jj),ECA_factor_nitrogen_mic,ECA_factor_phosphorus_mic
     if(scal /= 1._r8)pot_decomp(jj)=pot_decomp(jj)*scal
     rrates(jj) = pot_decomp(jj)
-    if(rrates(jj)/=rrates(jj))then 
-      write(*,*)'not a number rror',rrates(jj)
-    stop
-    endif
   enddo
 
   rrates(lid_nh4_nit_reac) = this%pot_f_nit*ECA_factor_nit
@@ -998,16 +995,20 @@ contains
   rrates(lid_minp_soluble_to_secp_reac) =  ECA_factor_minp_msurf * this%msurf_minp &
        * this%mumax_minp_soluble_to_secondary(this%soilorder) !calculate from eca competition
 !  if(this%centurybgc_index%debug) &
-!  write(*,'(A,X,I4,3(X,E20.10))')'rrse',lid_minp_soluble_to_secp_reac, ECA_factor_minp_msurf, this%msurf_minp ,this%mumax_minp_soluble_to_secondary(this%soilorder)
+!  write(*,*)'ECA mic',ECA_factor_phosphorus_mic,ECA_factor_minp_msurf
 
   rrates(lid_autr_rt_reac) = this%rt_ar                            !authotrophic respiration
   rrates(lid_plant_minn_no3_up_reac) = sum(ECA_flx_no3_plants)     !calculate by ECA competition
   rrates(lid_plant_minn_nh4_up_reac) = sum(ECA_flx_nh4_plants)     !calculate by ECA competition
   rrates(lid_plant_minp_up_reac) =     sum(ECA_flx_phosphorus_plants) !calculate by ECA competition
   rrates(lid_minp_secondary_to_sol_occ_reac)= ystate(lid_minp_secondary) * this%minp_secondary_decay(this%soilorder)
+
+  if(this%centurybgc_index%debug)then
+!    print*,'plant nn',rrates(lid_plant_minn_no3_up_reac),rrates(lid_plant_minn_nh4_up_reac) 
+    print*,'plant p',rrates(lid_plant_minp_up_reac) 
+  endif
   !the following treatment is to ensure mass balance
 !  if(this%centurybgc_index%debug)then
-!    print*,'plant p uptake', rrates(lid_plant_minp_up_reac),rrates(lid_minp_soluble_to_secp_reac)
 !    do jj = 1, nreactions
 !      print*,'bfcascd jj',jj,rrates(jj)
 !    enddo
@@ -1035,11 +1036,20 @@ contains
     this%cascade_matrixd(lid_plant_minp_pft(jj),lid_plant_minp_up_reac) = &
       1._r8 - sum(this%cascade_matrixd(lid_plant_minp_pft(1:jj-1),lid_plant_minp_up_reac))
   endif
-!  if(this%centurybgc_index%debug)then
+
+  do jj = 1, this%plant_ntypes
+     this%cascade_matrix(lid_plant_minn_nh4_pft(jj),lid_plant_minn_nh4_up_reac) = this%cascade_matrixd(lid_plant_minn_nh4_pft(jj),lid_plant_minn_nh4_up_reac)
+     this%cascade_matrix(lid_plant_minn_no3_pft(jj),lid_plant_minn_no3_up_reac) =this%cascade_matrixd(lid_plant_minn_no3_pft(jj),lid_plant_minn_no3_up_reac)
+     this%cascade_matrix(lid_plant_minp_pft(jj),lid_plant_minp_up_reac) = this%cascade_matrixd(lid_plant_minp_pft(jj),lid_plant_minp_up_reac)
+  enddo
+  if(this%centurybgc_index%debug)then
+    do jj = 1, this%plant_ntypes
+      print*,'casp',lid_plant_minp_pft(jj),this%cascade_matrixd(lid_plant_minp_pft(jj),lid_plant_minp_up_reac),ECA_flx_phosphorus_plants(jj)
+    enddo
 !    do jj = 1, nreactions
 !      print*,'cadfaascd jj',jj,this%cascade_matrixd(lid_minp_soluble,jj),rrates(jj)
 !    enddo
-!  endif
+  endif
   it=0
   rscal=0._r8
   do
@@ -1076,6 +1086,11 @@ contains
 !      print*, 'nprim',jj,dydt(jj)
 !    enddo
 !  endif
+  if(this%centurybgc_index%debug)then
+    do jj = 1, this%plant_ntypes
+      print*,'jj',jj,dydt(lid_plant_minp_pft(jj)),rrates(lid_plant_minp_up_reac)
+    enddo
+  endif
   end associate
   end subroutine bgc_integrate
   !--------------------------------------------------------------------
@@ -1103,7 +1118,7 @@ contains
   call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
   this%ystates1(centurybgc_index%lid_o2_paere) = this%ystates1(j)-y0
 
-  if( spinup_state /= 1)then
+  if( spinup_state == 0)then
     j = lid_n2; y0=this%ystates1(j)
     call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
     this%ystates1(centurybgc_index%lid_n2_paere) = this%ystates1(j)-y0

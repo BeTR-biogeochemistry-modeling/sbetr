@@ -1434,10 +1434,9 @@ contains
         write(*,*)'sminn act plant uptake',plant_soilbgc%plant_minn_active_yield_flx_col(bounds%begc:bounds%endc)
         write(*,*)'sminp act plant uptake',plant_soilbgc%plant_minp_active_yield_flx_col(bounds%begc:bounds%endc)
       end select
-      call this%debug_info(bounds, num_soilc, filter_soilc, col%dz(bounds%begc:bounds%endc,bounds%lbj:bounds%ubj),&
-        betrtracer_vars, tracerstate_vars,  'after bgcreact',betr_status)
+!      call this%debug_info(bounds, num_soilc, filter_soilc, col%dz(bounds%begc:bounds%endc,bounds%lbj:bounds%ubj),&
+!        betrtracer_vars, tracerstate_vars,  'after bgcreact',betr_status)
     endif
-
   end subroutine calc_bgc_reaction
 
   !--------------------------------------------------------------------
@@ -1791,6 +1790,7 @@ contains
     do fc = 1, num_soilc
       c = filter_soilc(fc)
       if(j<jtops(c))cycle
+      this%centuryforc(c,j)%plant_ntypes = this%nactpft
       this%centuryforc(c,j)%ystates(:) = 0._r8
 
       !litter
@@ -2153,9 +2153,10 @@ contains
         ystatesf(this%centurybgc_index%lid_n2o)
 
       if(this%nop_limit)then
-        !if(betrtracer_vars%debug)then
-        !  print*,'retrie yf mp',ystatesf(this%centurybgc_index%lid_minp_soluble),ystates0(this%centurybgc_index%lid_minp_soluble)
-        !endif
+        if(betrtracer_vars%debug)then
+          print*,'retrie yf mp',ystatesf(this%centurybgc_index%lid_minp_soluble),ystates0(this%centurybgc_index%lid_minp_soluble)
+          print*,'immob mp',ystatesf(this%centurybgc_index%lid_minp_immob),ystates0(this%centurybgc_index%lid_minp_immob)
+        endif
         if(ystatesf(this%centurybgc_index%lid_minp_soluble)>0._r8)then
           tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_p_sol) = &
             ystatesf(this%centurybgc_index%lid_minp_soluble)
@@ -2170,9 +2171,9 @@ contains
             -ystatesf(this%centurybgc_index%lid_minp_soluble)*patomw/dtime
           ystatesf(this%centurybgc_index%lid_minp_soluble) = 0._r8
         endif
-        !if(betrtracer_vars%debug)then
-        !  print*,'supppp',biogeo_flux%p31flux_vars%supplement_to_sminp_vr_col(c,j)
-        !endif
+        if(betrtracer_vars%debug)then
+          print*,'supppp',biogeo_flux%p31flux_vars%supplement_to_sminp_vr_col(c,j)
+        endif
       else
         tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_p_sol) = &
           ystatesf(this%centurybgc_index%lid_minp_soluble)
@@ -2341,7 +2342,9 @@ contains
       plant_soilbgc%plant_minp_active_yield_flx_vr_patch(p,j) = &
           (ystatesf(this%centurybgc_index%lid_plant_minp_pft(p)) - &
            ystates0(this%centurybgc_index%lid_plant_minp_pft(p)))*patomw/dtime
-
+      if(betrtracer_vars%debug)then
+         print*,'minp pft',p,j,plant_soilbgc%plant_minp_active_yield_flx_vr_patch(p,j)
+      endif
     enddo
 
     plant_soilbgc%plant_minn_no3_active_yield_flx_vr_col(c,j) = &
@@ -2355,6 +2358,9 @@ contains
     plant_soilbgc%plant_minp_active_yield_flx_vr_col(c,j) = &
           (ystatesf(this%centurybgc_index%lid_plant_minp) - &
            ystates0(this%centurybgc_index%lid_plant_minp))*patomw/dtime
+    if(betrtracer_vars%debug)then
+      print*,'minp col',c,j,plant_soilbgc%plant_minp_active_yield_flx_vr_col(c,j)
+    endif
 
   end select
   end associate

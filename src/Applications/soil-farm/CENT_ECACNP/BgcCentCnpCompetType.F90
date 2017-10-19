@@ -220,10 +220,10 @@ contains
 !    print*,'substrate',sminp_soluble
 !    print*,'ECA_factor_minp_msurf',ECA_factor_minp_msurf
 !  endif
-  if(ECA_factor_minp_msurf/=ECA_factor_minp_msurf)stop
   if(nop_lim)then
     !no P limitation is imposed on biological reactions
     ECA_factor_phosphorus_mic = 1._r8
+    ECA_factor_minp_msurf = 0._r8
     do jj = 1, plant_ntypes
       ECA_flx_phosphorus_plants(jj) = this%mumax_minp_plant(jj) * &
         this%plant_froot_np(jj)

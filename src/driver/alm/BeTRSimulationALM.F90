@@ -245,7 +245,7 @@ contains
 
         call this%biogeo_state(c)%summary(betr_bounds, 1, betr_nlevtrc_soil,this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil), &
           this%betr_col(c)%zi(begc_l:endc_l,1:betr_nlevtrc_soil), this%active_soibgc)
-!      this%betr(c)%tracers%debug=(c==2330 .and. .true.)
+      this%betr(c)%tracers%debug=(c==1596 .and. .false.)
       if(this%betr(c)%tracers%debug)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'bef w/o drain',this%bstatus(c))
 !--------
       if(this%betr(c)%tracers%debug)print*,'stepwithdraing inpr'
@@ -1262,15 +1262,17 @@ contains
     minsurf_p_compet_vr_col => PlantMicKinetics_vars%minsurf_p_compet_vr_col &
   )
   c_l = 1
-  do j =1, betr_bounds%ubj
-    do fc = 1, num_soilc
-      c = filter_soilc(fc)
-      pp = 0
-      do pi = 1, betr_maxpatch_pft
-        if (pi <= col%npfts(c)) then
-          p = col%pfti(c) + pi - 1
-          if (pft%active(p) .and. (pft%itype(p) .ne. noveg)) then
-            pp = pp + 1
+  do fc = 1, num_soilc
+    c = filter_soilc(fc)
+    pp = 0
+!    if(c==4445)print*,'pftss',c,betr_maxpatch_pft,col%npfts(c)
+    do pi = 1, betr_maxpatch_pft
+      if (pi <= col%npfts(c)) then
+        p = col%pfti(c) + pi - 1
+!        print*,'colpf,',col%pfti(c),p
+        if (pft%active(p) .and. (pft%itype(p) .ne. noveg)) then
+          pp = pp + 1
+          do j =1, betr_bounds%ubj
             this%betr(c)%plantNutkinetics%plant_nh4_vmax_vr_patch(pp,j) = plant_nh4_vmax_vr_patch(p,j)
             this%betr(c)%plantNutkinetics%plant_no3_vmax_vr_patch(pp,j) = plant_no3_vmax_vr_patch(p,j)
             this%betr(c)%plantNutkinetics%plant_p_vmax_vr_patch(pp,j) = plant_p_vmax_vr_patch(p,j)
@@ -1279,10 +1281,17 @@ contains
             this%betr(c)%plantNutkinetics%plant_p_km_vr_patch(pp,j) = plant_p_km_vr_patch(p,j)
             this%betr(c)%plantNutkinetics%plant_eff_ncompet_b_vr_patch(pp,j)=plant_eff_ncompet_b_vr_patch(p,j)
             this%betr(c)%plantNutkinetics%plant_eff_pcompet_b_vr_patch(pp,j)=plant_eff_pcompet_b_vr_patch(p,j)
-          endif
+!            if(c==4445)then
+!              print*,'col',c,j,p
+!              print*,'nh4',this%betr(c)%plantNutkinetics%plant_nh4_vmax_vr_patch(pp,j),this%betr(c)%plantNutkinetics%plant_no3_vmax_vr_patch(pp,j)
+!              print*,'minp',this%betr(c)%plantNutkinetics%plant_p_vmax_vr_patch(pp,j)
+!            endif
+          enddo
         endif
-      enddo
-      this%betr(c)%nactpft = pp
+      endif
+    enddo
+    this%betr(c)%nactpft = pp
+    do j = 1, betr_bounds%ubj
       this%betr(c)%plantNutkinetics%minsurf_p_compet_vr_col(c_l,j) = minsurf_p_compet_vr_col(c,j)
       this%betr(c)%plantNutkinetics%minsurf_nh4_compet_vr_col(c_l,j) = minsurf_nh4_compet_vr_col(c,j)
     enddo
