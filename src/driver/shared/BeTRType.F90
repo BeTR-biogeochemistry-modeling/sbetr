@@ -530,7 +530,7 @@ contains
   integer, intent(in) :: ubj, lbj
   integer, intent(in) :: num_soilc
   integer, intent(in) :: filter_soilc(:)
-  type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
+  type(betr_biogeophys_input_type) , intent(inout)    :: biophysforc
 
   call this%bgc_reaction%set_bgc_spinup(bounds, lbj, ubj, num_soilc, filter_soilc, biophysforc, &
     this%tracers, this%tracerstates)

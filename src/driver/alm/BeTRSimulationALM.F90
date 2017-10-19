@@ -192,6 +192,7 @@ contains
     call get_curr_date(year, mon, day, sec)
 
     if(spinup_state==1)then
+       !AD spinup
        if(year<kyr_spinup)then
          !period does nothing to spinup scalar
          betr_spinup_state=1
@@ -544,7 +545,7 @@ contains
 !         print*,'carbonflux_vars%dwt_frootc_to_litr_met_c_col',carbonflux_vars%dwt_frootc_to_litr_met_c_col(c,j)
 !         print*,'carbonflux_vars%gap_mortality_c_to_litr_met_c_col',carbonflux_vars%gap_mortality_c_to_litr_met_c_col(c,j)
 !         print*,'carbonflux_vars%harvest_c_to_litr_met_c_col',carbonflux_vars%harvest_c_to_litr_met_c_col(c,j)
-!         print*,'carbonflux_vars%m_c_to_litr_met_fire_col',carbonflux_vars%m_c_to_litr_met_fire_col(c,j) 
+!         print*,'carbonflux_vars%m_c_to_litr_met_fire_col',carbonflux_vars%m_c_to_litr_met_fire_col(c,j)
 !      endif
       !cellulose carbon
       call apvb(this%biophys_forc(c)%c12flx%cflx_input_litr_cel_vr_col(1,j)   , &
@@ -813,7 +814,7 @@ contains
 !  begc_l = betr_bounds%begc; endc_l=betr_bounds%endc;
 ! do fc = 1, num_soilc
 !    c = filter_soilc(fc)
-!  c=2330   
+!  c=2330
 !    call this%biophys_forc(c)%summary(betr_bounds, 1, betr_nlevtrc_soil, this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil))
 !    print*,'cinput',c,this%biophys_forc(c)%c12flx%cflx_input_col(c_l)*1800._r8
 !    print*,'ninput',c,this%biophys_forc(c)%n14flx%nflx_input_col(c_l)*1800._r8

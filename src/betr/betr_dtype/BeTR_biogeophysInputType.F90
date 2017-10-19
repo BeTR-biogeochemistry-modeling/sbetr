@@ -83,6 +83,7 @@ implicit none
     real(r8), pointer :: doc_prod_vr_col(:,:) => null()
     real(r8), pointer :: biochem_pmin_vr(:,:) => null()
     real(r8), pointer :: scalaravg_col(:) => null()
+    real(r8), pointer :: dom_scalar_col(:) => null()
     !carbon fluxes
     type(betr_carbonflux_type) :: c12flx
     type(betr_carbonflux_type) :: c13flx
@@ -217,6 +218,7 @@ contains
   allocate(this%doc_prod_vr_col(begc:endc,lbj:ubj))
   allocate(this%biochem_pmin_vr(begc:endc,lbj:ubj))
   allocate(this%scalaravg_col(begc:endc))
+  allocate(this%dom_scalar_col(begc:endc)); this%dom_scalar_col(:) = 1._r8
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------

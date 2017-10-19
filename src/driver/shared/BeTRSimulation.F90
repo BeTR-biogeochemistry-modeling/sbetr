@@ -88,6 +88,7 @@ module BeTRSimulation
      real(r8), pointer :: hist_fluxes_1d(:,:)
      real(r8), pointer :: hist_fluxes_2d(:,:,:)
      real(r8), pointer :: scalaravg_col(:)
+     real(r8), pointer :: dom_scalar_col(:)
      logical,  public :: active_soibgc
      ! FIXME(bja, 201603) most of these types should be private!
 
@@ -343,8 +344,8 @@ contains
     enddo
     !allocate spinup factor
     if(this%do_soibgc())then
-      allocate(this%scalaravg_col(bounds%begc:bounds%endc))
-      this%scalaravg_col(:) = 0._r8
+      allocate(this%scalaravg_col(bounds%begc:bounds%endc));this%scalaravg_col(:) = 0._r8
+      allocate(this%dom_scalar_col(bounds%begc:bounds%endc));this%dom_scalar_col(:)=1._r8
     endif
 
     if(this%bsimstatus%check_status())call endrun(msg=this%bsimstatus%print_msg())
@@ -1803,6 +1804,7 @@ contains
       idata = spinup_state
       do c = bounds%begc, bounds%endc
         this%scalaravg_col(c) = this%biophys_forc(c)%scalaravg_col(c_l)
+        this%dom_scalar_col(c) = this%biophys_forc(c)%dom_scalar_col(c_l)
       enddo
     endif
     do c = bounds%begc, bounds%endc
@@ -1817,6 +1819,10 @@ contains
     call restartvar(ncid=ncid, flag=flag, varname='spinscalar', xtype=ncd_double, &
          dim1name='column', long_name='', units='', &
          interpinic_flag = 'interp', readvar=readvar, data=this%scalaravg_col)
+
+     call restartvar(ncid=ncid, flag=flag, varname='domspinscalar', xtype=ncd_double, &
+         dim1name='column', long_name='', units='', &
+         interpinic_flag = 'interp', readvar=readvar, data=this%dom_scalar_col)
 
     call restartvar(ncid=ncid, flag=flag, varname='betr_spinup_state', xtype=ncd_int,  &
            long_name='Spinup state of betr model that wrote this restart file: ' &
@@ -1866,6 +1872,7 @@ contains
 
       do c = bounds%begc, bounds%endc
         this%biophys_forc(c)%scalaravg_col(c_l) = this%scalaravg_col(c)
+        this%biophys_forc(c)%dom_scalar_col(c_l)= this%dom_scalar_col(c)
       enddo
       if(exit_spinup .or. enter_spinup)then
         call this%BeTRSetBounds(betr_bounds)

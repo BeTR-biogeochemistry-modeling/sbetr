@@ -80,7 +80,7 @@ contains
     integer                                 , intent(in) :: lbj, ubj
     integer                                 , intent(in) :: num_soilc
     integer                                 , intent(in) :: filter_soilc(:)
-    type(betr_biogeophys_input_type)        , intent(in)    :: biophysforc
+    type(betr_biogeophys_input_type)        , intent(inout) :: biophysforc
     type(BeTRtracer_type)                   , intent(inout) :: tracers
     type(tracerstate_type)                  , intent(inout) :: tracerstate_vars
 

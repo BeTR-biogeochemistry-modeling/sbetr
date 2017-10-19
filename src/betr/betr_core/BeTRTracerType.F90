@@ -249,7 +249,7 @@ module BeTRTracerType
 subroutine set_tracer(this, bstatus, trc_id, trc_name, is_trc_mobile, is_trc_advective, trc_group_id, &
    trc_group_mem, is_trc_diffusive, is_trc_volatile, trc_volatile_id, trc_volatile_group_id, &
    is_trc_h2o, trc_vtrans_scal, is_trc_adsorb, trc_adsorbid, trc_adsorbgroupid, trc_sorpisotherm, &
-   is_trc_frozen, trc_frozenid, trc_family_name)
+   is_trc_dom, is_trc_frozen, trc_frozenid, trc_family_name)
 
 ! !DESCRIPTION:
 ! set up tracer property based on input configurations
@@ -273,6 +273,7 @@ subroutine set_tracer(this, bstatus, trc_id, trc_name, is_trc_mobile, is_trc_adv
   integer ,optional  , intent(in) :: trc_adsorbid
   integer ,optional  , intent(in) :: trc_adsorbgroupid
   character(len=*), optional, intent(in) :: trc_sorpisotherm
+  logical, optional  , intent(in) :: is_trc_dom
   logical ,optional  , intent(in) :: is_trc_frozen
   integer ,optional  , intent(in) :: trc_frozenid
   character(len=*),optional,intent(in) :: trc_family_name
@@ -352,7 +353,7 @@ subroutine set_tracer(this, bstatus, trc_id, trc_name, is_trc_mobile, is_trc_adv
       endif
     endif
   endif
-
+  if(present(is_trc_dom))this%is_dom(trc_id)=is_trc_dom
   if(present(is_trc_frozen))then
     this%is_frozen(trc_id) = is_trc_frozen
     if(is_trc_frozen)then

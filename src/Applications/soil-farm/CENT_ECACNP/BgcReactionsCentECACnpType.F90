@@ -160,7 +160,7 @@ contains
   integer                                 , intent(in) :: lbj, ubj
   integer                                 , intent(in) :: num_soilc
   integer                                 , intent(in) :: filter_soilc(:)
-  type(betr_biogeophys_input_type)        , intent(in)    :: biophysforc
+  type(betr_biogeophys_input_type)        , intent(inout) :: biophysforc
   type(BeTRtracer_type)                   , intent(inout) :: tracers
   type(tracerstate_type)                  , intent(inout) :: tracerstate_vars
   integer :: kk, c, j
@@ -169,6 +169,7 @@ contains
    tracer_conc_mobile_col  => tracerstate_vars%tracer_conc_mobile_col, &
    tracer_conc_frozen_col  => tracerstate_vars%tracer_conc_frozen_col, &
    scalaravg_col           => biophysforc%scalaravg_col              , &
+   dom_scalar              => biophysforc%dom_scalar_col             , &
    nelm                    => this%centurybgc_index%nelms            , &
    c_loc                   => this%centurybgc_index%c_loc            , &
    n_loc                   => this%centurybgc_index%n_loc            , &
@@ -177,11 +178,19 @@ contains
    c14_loc                 => this%centurybgc_index%c14_loc            &
   )
 
-
   if(enter_spinup)then
     !scale the state variables into the fast space, and provide the scalar to configure
     !tracers
-     do j = lbj, ubj
+    if(betr_spinup_state==3)then
+      do c = bounds%begc, bounds%endc
+        dom_scalar(c)=bgc_con_eca%spinup_factor(9) * scalaravg_col(c)
+      enddo
+    else
+      do c = bounds%begc, bounds%endc
+        dom_scalar(c)=bgc_con_eca%spinup_factor(9)
+      enddo
+    endif
+    do j = lbj, ubj
        do c = bounds%begc, bounds%endc
          !som1
          do kk = tracers%id_trc_beg_Bm, tracers%id_trc_end_Bm, nelm
@@ -259,6 +268,7 @@ contains
                  * bgc_con_eca%spinup_factor(9)
            endif
          enddo
+
          if(betr_spinup_state==3)then
            !som1
            do kk = tracers%id_trc_beg_Bm, tracers%id_trc_end_Bm, nelm
@@ -311,6 +321,7 @@ contains
                  * scalaravg_col(c)
              endif
            enddo
+
            !som2
            do kk = tracers%id_trc_beg_dom, tracers%id_trc_end_dom, nelm
              tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc) = &
@@ -340,8 +351,12 @@ contains
        enddo
     enddo
   endif
+
   if(exit_spinup)then
     !scale the state variable back to the slow space
+     do c = bounds%begc, bounds%endc
+       dom_scalar(c) = 1._r8
+     enddo
      do j = lbj, ubj
        do c = bounds%begc, bounds%endc
          !som1
@@ -424,6 +439,7 @@ contains
                  / bgc_con_eca%spinup_factor(9)
            endif
          enddo
+
          if(betr_spinup_state==3)then
            !som1
            do kk = tracers%id_trc_beg_Bm, tracers%id_trc_end_Bm, nelm
@@ -841,7 +857,7 @@ contains
          trc_name='SOM2C', is_trc_mobile=.true., is_trc_advective = .true., &
          trc_group_id = betrtracer_vars%id_trc_dom, trc_group_mem = addone(itemp_mem),&
          is_trc_volatile=.false., is_trc_adsorb = .true., trc_adsorbid=addone(itemp_ads), &
-         trc_adsorbgroupid=addone(itemp_ads_grp), trc_sorpisotherm='LANGMUIR',trc_family_name='DOM')
+         trc_adsorbgroupid=addone(itemp_ads_grp), trc_sorpisotherm='LANGMUIR', is_trc_dom=.true.,trc_family_name='DOM')
     if(bstatus%check_status())return
 
     trcid = betrtracer_vars%id_trc_beg_dom+n_loc-1
@@ -849,7 +865,7 @@ contains
          trc_name='SOM2N', is_trc_mobile=.true., is_trc_advective = .true., &
          trc_group_id = betrtracer_vars%id_trc_dom, trc_group_mem = addone(itemp_mem), &
          is_trc_volatile=.false., is_trc_adsorb = .true., trc_adsorbid=addone(itemp_ads), &
-         trc_adsorbgroupid=itemp_ads_grp, trc_sorpisotherm='LANGMUIR',trc_family_name='DOM')
+         trc_adsorbgroupid=itemp_ads_grp, trc_sorpisotherm='LANGMUIR', is_trc_dom=.true.,trc_family_name='DOM')
     if(bstatus%check_status())return
 
     trcid = betrtracer_vars%id_trc_beg_dom+p_loc-1
@@ -857,7 +873,7 @@ contains
          trc_name='SOM2P', is_trc_mobile=.true., is_trc_advective = .true., &
          trc_group_id = betrtracer_vars%id_trc_dom, trc_group_mem = addone(itemp_mem), &
          is_trc_volatile=.false., is_trc_adsorb = .true., trc_adsorbid=addone(itemp_ads), &
-         trc_adsorbgroupid=itemp_ads_grp, trc_sorpisotherm='LANGMUIR',trc_family_name='DOM')
+         trc_adsorbgroupid=itemp_ads_grp, trc_sorpisotherm='LANGMUIR', is_trc_dom=.true., trc_family_name='DOM')
     if(bstatus%check_status())return
 
     if(this%use_c13)then
@@ -866,7 +882,7 @@ contains
          trc_name='SOM2C_C13', is_trc_mobile=.true., is_trc_advective = .true., &
          trc_group_id = betrtracer_vars%id_trc_dom, trc_group_mem = addone(itemp_mem), &
          is_trc_volatile=.false., is_trc_adsorb = .true., trc_adsorbid=addone(itemp_ads), &
-         trc_adsorbgroupid=itemp_ads_grp,trc_sorpisotherm='LANGMUIR', trc_family_name='DOM')
+         trc_adsorbgroupid=itemp_ads_grp,trc_sorpisotherm='LANGMUIR', is_trc_dom=.true., trc_family_name='DOM')
       if(bstatus%check_status())return
     endif
 
@@ -876,7 +892,7 @@ contains
          trc_name='SOM2C_C14', is_trc_mobile=.true., is_trc_advective = .true., &
          trc_group_id = betrtracer_vars%id_trc_dom, trc_group_mem = addone(itemp_mem), &
          is_trc_volatile=.false., is_trc_adsorb = .true., trc_adsorbid=addone(itemp_ads), &
-         trc_adsorbgroupid=itemp_ads_grp, trc_sorpisotherm='LANGMUIR',trc_family_name='DOM')
+         trc_adsorbgroupid=itemp_ads_grp, trc_sorpisotherm='LANGMUIR', is_trc_dom=.true., trc_family_name='DOM')
       if(bstatus%check_status())return
     endif
     !------------------------------------------------------------------------------------

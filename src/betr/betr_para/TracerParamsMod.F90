@@ -637,6 +637,7 @@ contains
     tracer_group_memid         => betrtracer_vars%tracer_group_memid           , & !Input: [integer(:)], tracer id
     is_h2o                     => betrtracer_vars%is_h2o                       , & !Input: [logical(:)], is h2o tracer?
     is_volatile                => betrtracer_vars%is_volatile                  , & !Input: [logical(:)], is a volatile tracer?
+    is_dom                     => betrtracer_vars%is_dom                       , & !Input: [logical(:)], is a dom tracer
     volatilegroupid            => betrtracer_vars%volatilegroupid              , & !Input: [logical(:)], location in the volatile vector
     adsorbgroupid              => betrtracer_vars%adsorbgroupid                , & !Input: [Integer(:)], tracer id
     is_adsorb                  => betrtracer_vars%is_adsorb                    , & !Input: [logical(:)]
@@ -649,6 +650,7 @@ contains
     isoilorder                 => biophysforc%isoilorder                       , & !Input: [integer(:)]
     soil_pH                    => biophysforc%soil_pH                          , & !Input:
     t_soisno                   => biophysforc%t_soisno_col                     , & !Input:
+    dom_scalar                 => biophysforc%dom_scalar_col                   , & !Input:
     tracer_conc_mobile         =>  tracerstate_vars%tracer_conc_mobile_col     , & !Input
     bunsencef_col              => tracercoeff_vars%bunsencef_col               , & !Input: [real(r8)(:,:)], bunsen coeff
     aqu2bulkcef_mobile         => tracercoeff_vars%aqu2bulkcef_mobile_col      , & !Output:[real(r8)(:,:)], phase conversion coeff
@@ -742,6 +744,10 @@ contains
         elseif(adsorb_isotherm(trcid)==sorp_isotherm_langmuir)then
           !the adsorption parameter should be a function of soil type, or soil order
           call get_lgsorb_KL_Xsat(tracerfamilyname(j), isoilorder(c), KL, Xsat)
+          if(is_dom(trcid))then
+            Xsat=Xsat * dom_scalar(c)
+            KL  = KL * dom_scalar(c)
+          endif
           do n = lbj, ubj
             do fc = 1, numf
               c = filter(fc)
