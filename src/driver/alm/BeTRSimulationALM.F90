@@ -91,7 +91,7 @@ contains
     class(betr_simulation_alm_type)          , intent(inout) :: this
     type(bounds_type)                        , intent(in)    :: bounds
     type(landunit_type)                      , intent(in) :: lun
-    type(column_type)                        , intent(in) :: col
+    type(column_type)                        , intent(inout) :: col
     type(patch_type)                         , intent(in) :: pft
     character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
     logical,                      optional   , intent(in) :: masterproc
@@ -110,7 +110,6 @@ contains
     betr_landvarcon%istsoil            = istsoil
     betr_landvarcon%istcrop            = istcrop
     betr_landvarcon%istice             = istice
-
     ! now call the base simulation init to continue initialization
     if(present(masterproc))then
       call this%BeTRInit(bounds, lun, col, pft, waterstate, namelist_buffer, masterproc=masterproc)
@@ -143,7 +142,7 @@ contains
     character(len=betr_filename_length)      , intent(in)    :: base_filename
     type(bounds_type)                        , intent(in)    :: bounds
     type(landunit_type)                      , intent(in) :: lun
-    type(column_type)                        , intent(in) :: col
+    type(column_type)                        , intent(inout) :: col
     type(patch_type)                         , intent(in) :: pft
     type(waterstate_type)                    , intent(inout) :: waterstate
 
@@ -177,7 +176,7 @@ contains
     use betr_ctrl         , only : betr_spinup_state
     use MathfuncMod       , only : num2str
     use betr_varcon       , only : kyr_spinup
-    use clm_time_manager  , only : get_curr_date
+    use clm_time_manager  , only : get_curr_date,is_end_curr_day,is_beg_curr_day
     implicit none
     ! !ARGUMENTS :
     class(betr_simulation_alm_type) , intent(inout) :: this
@@ -191,23 +190,30 @@ contains
 
     call get_curr_date(year, mon, day, sec)
 
+    c_l=1
     if(spinup_state==1)then
        !AD spinup
-       if(year<kyr_spinup)then
+       if(year<=kyr_spinup)then
          !period does nothing to spinup scalar
          betr_spinup_state=1
-       elseif(year<kyr_spinup*2)then
+       elseif(year<=kyr_spinup*2)then
          !period accumulate spinup scalar
          betr_spinup_state=2
        else
           !period apply spinup scalar
           betr_spinup_state=3
        endif
+      do c = bounds%begc, bounds%endc
+        this%biophys_forc(c)%dom_scalar_col(c_l)=this%dom_scalar_col(c)
+      enddo
     else
        betr_spinup_state=0
     endif
 
     if(betr_spinup_state>=2)then
+      if(year==kyr_spinup+1 .and. mon==1 .and. day==1 .and. is_beg_curr_day())then
+        this%scalaravg_col(:) = 0._r8
+      endif
       do c = bounds%begc, bounds%endc
         this%biophys_forc(c)%scalaravg_col(c_l) = this%scalaravg_col(c)
       enddo
@@ -246,10 +252,9 @@ contains
 
         call this%biogeo_state(c)%summary(betr_bounds, 1, betr_nlevtrc_soil,this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil), &
           this%betr_col(c)%zi(begc_l:endc_l,1:betr_nlevtrc_soil), this%active_soibgc)
-      this%betr(c)%tracers%debug=(c==1596 .and. .false.)
+!      this%betr(c)%tracers%debug=(c==1596 .and. .false.)
       if(this%betr(c)%tracers%debug)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'bef w/o drain',this%bstatus(c))
 !--------
-      if(this%betr(c)%tracers%debug)print*,'stepwithdraing inpr'
       call this%betr(c)%step_without_drainage(this%betr_time, betr_bounds, this%betr_col(c), &
          this%betr_pft(c), this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp, &
          this%biophys_forc(c), this%biogeo_flux(c), this%biogeo_state(c), this%bstatus(c))
@@ -259,7 +264,6 @@ contains
         call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err(),c)
         exit
       endif
-      if(this%betr(c)%tracers%debug)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'bef w/o drain',this%bstatus(c))
 
 !--------------
 !  debug
@@ -283,6 +287,27 @@ contains
 !    print*,'out without drainage'
     if(this%bsimstatus%check_status())then
       call endrun(msg=this%bsimstatus%print_msg())
+    endif
+    if(betr_spinup_state>0)then
+      do c = bounds%begc, bounds%endc
+        if(.not. this%active_col(c))cycle
+        this%dom_scalar_col(c) = this%biophys_forc(c)%dom_scalar_col(c_l)
+      enddo
+    endif
+    if(betr_spinup_state>=2)then
+      c_l=1
+      do c = bounds%begc, bounds%endc
+        if( this%active_col(c)) then
+          this%scalaravg_col(c)=this%biophys_forc(c)%scalaravg_col(c_l)
+        endif
+      enddo
+      if(year==kyr_spinup*2 .and. mon==12 .and. day==31 .and. is_end_curr_day())then
+        do c = bounds%begc, bounds%endc
+          if(.not. this%active_col(c))cycle
+          this%scalaravg_col(c)= max(this%scalaravg_col(c),1.e-2_r8)
+          this%dom_scalar_col(c) = this%dom_scalar_col(c) * this%scalaravg_col(c)
+        enddo
+      endif
     endif
   end subroutine ALMStepWithoutDrainage
 
@@ -340,7 +365,6 @@ contains
 
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
-      this%betr(c)%tracers%debug=(c==68 .and. .false.)
       if(this%betr(c)%tracers%debug)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'bfdrain', this%bstatus(c))
       call this%betr(c)%step_with_drainage(betr_bounds,      &
          this%betr_col(c),this%num_soilc, this%filter_soilc, this%jtops, &
@@ -1134,7 +1158,7 @@ contains
   !------------------------------------------------------------------------
   subroutine ALMSetBiophysForcing(this, bounds, col, pft, carbonflux_vars, waterstate_vars, &
     waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
-    chemstate_vars, soilstate_vars, cnstate_vars, carbonstate_vars)
+    chemstate_vars, soilstate_vars, cnstate_vars, carbonstate_vars, phosphorusstate_vars)
   !DESCRIPTION
   !pass in biogeophysical variables for running betr
   !USES
@@ -1152,6 +1176,7 @@ contains
   use tracer_varcon     , only : reaction_method
   use CNCarbonStateType , only : carbonstate_type
   use tracer_varcon     , only : catomw
+  use PhosphorusStateType , only : phosphorusstate_type
   implicit none
   !ARGUMENTS
   class(betr_simulation_alm_type) , intent(inout)        :: this
@@ -1169,14 +1194,34 @@ contains
   type(chemstate_type)        , optional, intent(in) :: chemstate_vars
   type(soilstate_type)        , optional, intent(in) :: soilstate_vars
   type(carbonstate_type)      , optional, intent(in) :: carbonstate_vars
-
+  type(phosphorusstate_type)  , optional, intent(in) :: phosphorusstate_vars
 
   integer :: p, pi, c, j, c_l, pp
   integer :: npft_loc
 
+  if(present(carbonflux_vars)) &
   call this%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi, carbonflux_vars, waterstate_vars, &
       waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
       chemstate_vars, soilstate_vars)
+
+
+  if(present(phosphorusstate_vars))then 
+    c_l=1
+    do c = bounds%begc, bounds%endc
+      this%biophys_forc(c)%solutionp_vr_col(c_l,1:nlevsoi) = phosphorusstate_vars%solutionp_vr_col(c,1:nlevsoi)
+      this%biophys_forc(c)%labilep_vr_col(c_l,1:nlevsoi) = phosphorusstate_vars%labilep_vr_col(c,1:nlevsoi)
+      this%biophys_forc(c)%secondp_vr_col(c_l,1:nlevsoi) =phosphorusstate_vars%secondp_vr_col(c,1:nlevsoi)
+      this%biophys_forc(c)%occlp_vr_col(c_l,1:nlevsoi) =  phosphorusstate_vars%occlp_vr_col(c,1:nlevsoi)
+    enddo
+  endif
+
+  if(present(carbonflux_vars)) then
+    call this%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi, carbonflux_vars, waterstate_vars, &
+      waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
+      chemstate_vars, soilstate_vars)
+  else
+    return
+  endif
 
   associate(                                                &
     cn_scalar            => cnstate_vars%cn_scalar        , &

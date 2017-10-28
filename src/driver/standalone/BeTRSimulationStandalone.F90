@@ -85,7 +85,7 @@ contains
     character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
     type(bounds_type)                        , intent(in)    :: bounds
     type(landunit_type)                      , intent(in) :: lun
-    type(column_type)                        , intent(in)    :: col
+    type(column_type)                        , intent(inout)    :: col
     type(patch_type)                         , intent(in)    :: pft
     type(waterstate_type)                    , intent(inout) :: waterstate
 

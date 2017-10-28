@@ -112,6 +112,7 @@ contains
   subroutine Init(this, namelist_buffer, bstatus)
   use betr_constants , only : betr_namelist_buffer_size_ext
   use BetrStatusType , only : betr_status_type
+  use betr_ctrl     , only : betr_spinup_state
   implicit none
   class(BiogeoCon_type), intent(inout) :: this
   character(len=betr_namelist_buffer_size_ext) , intent(in)    :: namelist_buffer
@@ -125,8 +126,9 @@ contains
   !update parameter from namelist
   call this%ReadNamelist(namelist_buffer, bstatus)
 
-  call this%apply_spinup_factor()
-
+  if(betr_spinup_state/=0)then
+    call this%apply_spinup_factor()
+  endif
   end subroutine Init
   !--------------------------------------------------------------------
   subroutine InitAllocate(this)
@@ -241,6 +243,7 @@ contains
   use betr_constants , only : stdout, betr_string_length_long, betr_namelist_buffer_size_ext
   use BetrStatusType , only : betr_status_type
   use betr_ctrl      , only : iulog => biulog
+  use betr_ctrl      , only : betr_spinup_state
   use bshr_log_mod   , only : errMsg => shr_log_errMsg
   use tracer_varcon  , only : use_c13_betr, use_c14_betr, is_nitrogen_active, is_phosphorus_active
   implicit none
@@ -312,11 +315,11 @@ contains
   this%spinup_factor(4) = 1._r8
   this%spinup_factor(5) = 1._r8
   this%spinup_factor(6) = 1._r8
+  print*,'betr_spinup_state=',betr_spinup_state
 
   this%spinup_factor(7) = tau_decay_som1/tau_decay_lit1
   this%spinup_factor(8) = tau_decay_som3/tau_decay_lit1
   this%spinup_factor(9) = tau_decay_som2/tau_decay_lit1
-
   end subroutine ReadNamelist
 
   !--------------------------------------------------------------------

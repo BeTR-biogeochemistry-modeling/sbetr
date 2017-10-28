@@ -864,7 +864,7 @@ contains
     this%ystates1(kp) = this%ystates1(kp) * pmin_frac
   enddo
   this%ystates1(lid_minp_soluble) =this%ystates1(lid_minp_soluble) + pmin_cleave
-  if(this%centurybgc_index%debug)print*,'soluble',this%ystates1(lid_minp_soluble), pmin_cleave, this%ystates1(lid_minp_immob)
+!  if(this%centurybgc_index%debug)print*,'soluble',this%ystates1(lid_minp_soluble), pmin_cleave, this%ystates1(lid_minp_immob)
   if(present(n_inf))then
     n_inf = n_inf + this%ystates1(lid_nh4) - this%ystates0(lid_nh4)
   endif
@@ -1003,10 +1003,10 @@ contains
   rrates(lid_plant_minp_up_reac) =     sum(ECA_flx_phosphorus_plants) !calculate by ECA competition
   rrates(lid_minp_secondary_to_sol_occ_reac)= ystate(lid_minp_secondary) * this%minp_secondary_decay(this%soilorder)
 
-  if(this%centurybgc_index%debug)then
+!  if(this%centurybgc_index%debug)then
 !    print*,'plant nn',rrates(lid_plant_minn_no3_up_reac),rrates(lid_plant_minn_nh4_up_reac) 
-    print*,'plant p',rrates(lid_plant_minp_up_reac) 
-  endif
+!    print*,'plant p',rrates(lid_plant_minp_up_reac) 
+!  endif
   !the following treatment is to ensure mass balance
 !  if(this%centurybgc_index%debug)then
 !    do jj = 1, nreactions
@@ -1015,41 +1015,49 @@ contains
 !  endif
   if(this%plant_ntypes==1)then
     do jj = 1, this%plant_ntypes
-      this%cascade_matrixd(lid_plant_minn_no3_pft(jj),lid_plant_minn_no3_up_reac) = 1._r8
-      this%cascade_matrixd(lid_plant_minn_nh4_pft(jj),lid_plant_minn_nh4_up_reac) = 1._r8
-      this%cascade_matrixd(lid_plant_minp_pft(jj),lid_plant_minp_up_reac) = 1._r8
+      this%cascade_matrix(lid_plant_minn_no3_pft(jj),lid_plant_minn_no3_up_reac) = 1._r8
+      this%cascade_matrix(lid_plant_minn_nh4_pft(jj),lid_plant_minn_nh4_up_reac) = 1._r8
+      this%cascade_matrix(lid_plant_minp_pft(jj),lid_plant_minp_up_reac) = 1._r8
     enddo
   elseif(this%plant_ntypes>=2)then
     do jj = 1, this%plant_ntypes-1
-      this%cascade_matrixd(lid_plant_minn_no3_pft(jj),lid_plant_minn_no3_up_reac) = &
+      this%cascade_matrix(lid_plant_minn_no3_pft(jj),lid_plant_minn_no3_up_reac) = &
            safe_div(ECA_flx_no3_plants(jj),rrates(lid_plant_minn_no3_up_reac))
-      this%cascade_matrixd(lid_plant_minn_nh4_pft(jj),lid_plant_minn_nh4_up_reac) = &
+      this%cascade_matrix(lid_plant_minn_nh4_pft(jj),lid_plant_minn_nh4_up_reac) = &
            safe_div(ECA_flx_nh4_plants(jj),rrates(lid_plant_minn_nh4_up_reac))
-      this%cascade_matrixd(lid_plant_minp_pft(jj),lid_plant_minp_up_reac) = &
+      this%cascade_matrix(lid_plant_minp_pft(jj),lid_plant_minp_up_reac) = &
            safe_div(ECA_flx_phosphorus_plants(jj),rrates(lid_plant_minp_up_reac))
     enddo
     jj = this%plant_ntypes
-    this%cascade_matrixd(lid_plant_minn_no3_pft(jj),lid_plant_minn_no3_up_reac) = &
-      1._r8 - sum(this%cascade_matrixd(lid_plant_minn_no3_pft(1:jj-1),lid_plant_minn_no3_up_reac))
-    this%cascade_matrixd(lid_plant_minn_nh4_pft(jj),lid_plant_minn_nh4_up_reac) = &
-      1._r8 - sum(this%cascade_matrixd(lid_plant_minn_nh4_pft(1:jj-1),lid_plant_minn_nh4_up_reac))
-    this%cascade_matrixd(lid_plant_minp_pft(jj),lid_plant_minp_up_reac) = &
-      1._r8 - sum(this%cascade_matrixd(lid_plant_minp_pft(1:jj-1),lid_plant_minp_up_reac))
+    this%cascade_matrix(lid_plant_minn_no3_pft(jj),lid_plant_minn_no3_up_reac) = &
+      1._r8 - sum(this%cascade_matrix(lid_plant_minn_no3_pft(1:jj-1),lid_plant_minn_no3_up_reac))
+    this%cascade_matrix(lid_plant_minn_nh4_pft(jj),lid_plant_minn_nh4_up_reac) = &
+      1._r8 - sum(this%cascade_matrix(lid_plant_minn_nh4_pft(1:jj-1),lid_plant_minn_nh4_up_reac))
+    this%cascade_matrix(lid_plant_minp_pft(jj),lid_plant_minp_up_reac) = &
+      1._r8 - sum(this%cascade_matrix(lid_plant_minp_pft(1:jj-1),lid_plant_minp_up_reac))
   endif
 
-  do jj = 1, this%plant_ntypes
-     this%cascade_matrix(lid_plant_minn_nh4_pft(jj),lid_plant_minn_nh4_up_reac) = this%cascade_matrixd(lid_plant_minn_nh4_pft(jj),lid_plant_minn_nh4_up_reac)
-     this%cascade_matrix(lid_plant_minn_no3_pft(jj),lid_plant_minn_no3_up_reac) =this%cascade_matrixd(lid_plant_minn_no3_pft(jj),lid_plant_minn_no3_up_reac)
-     this%cascade_matrix(lid_plant_minp_pft(jj),lid_plant_minp_up_reac) = this%cascade_matrixd(lid_plant_minp_pft(jj),lid_plant_minp_up_reac)
-  enddo
-  if(this%centurybgc_index%debug)then
-    do jj = 1, this%plant_ntypes
-      print*,'casp',lid_plant_minp_pft(jj),this%cascade_matrixd(lid_plant_minp_pft(jj),lid_plant_minp_up_reac),ECA_flx_phosphorus_plants(jj)
-    enddo
+!  do jj = 1, this%plant_ntypes
+!     if(this%centurybgc_index%debug)print*,lid_plant_minn_nh4_pft(jj),lid_plant_minn_no3_pft(jj)
+!     this%cascade_matrix(lid_plant_minn_nh4_pft(jj),lid_plant_minn_nh4_up_reac) = this%cascade_matrixd(lid_plant_minn_nh4_pft(jj),lid_plant_minn_nh4_up_reac)
+!     this%cascade_matrix(lid_plant_minn_no3_pft(jj),lid_plant_minn_no3_up_reac) =this%cascade_matrixd(lid_plant_minn_no3_pft(jj),lid_plant_minn_no3_up_reac)
+!     this%cascade_matrix(lid_plant_minp_pft(jj),lid_plant_minp_up_reac) = this%cascade_matrixd(lid_plant_minp_pft(jj),lid_plant_minp_up_reac)
+!  enddo
+!  if(this%centurybgc_index%debug)then
+!     print*,'checksum nh4',sum(this%cascade_matrix(lid_plant_minn_nh4_pft(1:this%plant_ntypes),lid_plant_minn_nh4_up_reac))    
+!     print*,'checksum no3',sum(this%cascade_matrix(lid_plant_minn_no3_pft(1:this%plant_ntypes),lid_plant_minn_no3_up_reac))
+!     print*,'ntype',this%plant_ntypes
+!    do jj = 1, this%plant_ntypes
+!      print*,'casp',lid_plant_minp_pft(jj),this%cascade_matrixd(lid_plant_minp_pft(jj),lid_plant_minp_up_reac),ECA_flx_phosphorus_plants(jj)
+!    enddo
 !    do jj = 1, nreactions
 !      print*,'cadfaascd jj',jj,this%cascade_matrixd(lid_minp_soluble,jj),rrates(jj)
 !    enddo
-  endif
+!     print*,this%cascade_matrix(lid_plant_minn_no3_pft(1:this%plant_ntypes),lid_plant_minn_no3_up_reac)
+!     print*,'eca',ECA_flx_no3_plants
+!     print*,'sumrac',sum(ECA_flx_no3_plants),rrates(lid_plant_minn_no3_up_reac)
+!     stop
+!  endif
   it=0
   rscal=0._r8
   do
@@ -1086,11 +1094,11 @@ contains
 !      print*, 'nprim',jj,dydt(jj)
 !    enddo
 !  endif
-  if(this%centurybgc_index%debug)then
-    do jj = 1, this%plant_ntypes
-      print*,'jj',jj,dydt(lid_plant_minp_pft(jj)),rrates(lid_plant_minp_up_reac)
-    enddo
-  endif
+!  if(this%centurybgc_index%debug)then
+!    do jj = 1, this%plant_ntypes
+!      print*,'jj',jj,dydt(lid_plant_minp_pft(jj)),rrates(lid_plant_minp_up_reac)
+!    enddo
+!  endif
   end associate
   end subroutine bgc_integrate
   !--------------------------------------------------------------------

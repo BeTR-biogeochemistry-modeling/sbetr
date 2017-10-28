@@ -84,6 +84,10 @@ implicit none
     real(r8), pointer :: biochem_pmin_vr(:,:) => null()
     real(r8), pointer :: scalaravg_col(:) => null()
     real(r8), pointer :: dom_scalar_col(:) => null()
+    real(r8), pointer :: solutionp_vr_col(:,:) => null()
+    real(r8), pointer :: labilep_vr_col(:,:) => null()
+    real(r8), pointer :: secondp_vr_col(:,:) => null()
+    real(r8), pointer :: occlp_vr_col(:,:) => null()
     !carbon fluxes
     type(betr_carbonflux_type) :: c12flx
     type(betr_carbonflux_type) :: c13flx
@@ -213,6 +217,11 @@ contains
   allocate(this%watfc_col            (begc:endc,lbj:ubj) ) ! col volumetric soil water at field capacity (nlevsoi)
   allocate(this%sucsat_col           (begc:endc,lbj:ubj) ) ! col minimum soil suction (mm) (nlevgrnd)
   allocate(this%rootfr_patch         (begp:endp,lbj:ubj) ) ! patch fraction of roots in each soil layer (nlevgrnd)
+
+  allocate(this%solutionp_vr_col(begc:endc,lbj:ubj)) 
+  allocate(this%labilep_vr_col(begc:endc,lbj:ubj)) 
+  allocate(this%secondp_vr_col(begc:endc,lbj:ubj)) 
+  allocate(this%occlp_vr_col(begc:endc,lbj:ubj)) 
 
   allocate(this%dic_prod_vr_col(begc:endc,lbj:ubj))
   allocate(this%doc_prod_vr_col(begc:endc,lbj:ubj))

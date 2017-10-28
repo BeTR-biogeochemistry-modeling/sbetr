@@ -936,7 +936,7 @@ contains
   if(spinup_flg==2)then
     !cumulated more than 2 * kyr_spinup
     do jj = 1, ncentpools
-      k_decay(jj) = k_decay(jj)/max(spinup_scalar,1.e-2_r8)
+      k_decay(jj) = k_decay(jj)/spinup_scalar
     enddo
   elseif(spinup_flg==1)then
     !cumulated more than kyr_spinup but less than 2 * kyr_spinup

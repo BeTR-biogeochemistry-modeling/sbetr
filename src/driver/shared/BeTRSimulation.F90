@@ -118,6 +118,7 @@ module BeTRSimulation
      procedure, public :: DiagnoseLnd2atm         => BeTRSimulationDiagnoseLnd2atm
      procedure, public :: CreateOfflineHistory    => hist_htapes_create
      procedure, public :: WriteOfflineHistory     => hist_write
+     procedure, public :: SetSpinup               => BeTRSimulationSetSpinup     
 
      procedure, public :: WriteRegressionOutput
      !the following are used to interact with lsm
@@ -138,7 +139,7 @@ module BeTRSimulation
      procedure, private:: hist_output_fluxes
      procedure, private:: RestAlloc               => BeTRSimulationRestartAlloc
      procedure, private:: HistAlloc               => BeTRSimulationHistoryAlloc
-
+     procedure, private:: set_activecol
   end type betr_simulation_type
 
   public :: BeTRSimulationInit
@@ -168,7 +169,7 @@ contains
 
     class(betr_simulation_type)              , intent(inout) :: this
     type(landunit_type)                      , intent(in) :: lun
-    type(column_type)                        , intent(in) :: col
+    type(column_type)                        , intent(inout) :: col
     type(patch_type)                         , intent(in) :: pft
     type(bounds_type)                        , intent(in)    :: bounds
     character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
@@ -198,7 +199,7 @@ contains
 
     class(betr_simulation_type)              , intent(inout) :: this
     type(landunit_type)                      , intent(in) :: lun
-    type(column_type)                        , intent(in) :: col
+    type(column_type)                        , intent(inout) :: col
     type(patch_type)                         , intent(in) :: pft
     type(bounds_type)                        , intent(in)    :: bounds
     type(waterstate_type)                    , intent(inout) :: waterstate
@@ -256,7 +257,26 @@ contains
     endif
   end subroutine BeTRSetFilter
 !-------------------------------------------------------------------------------
+  subroutine set_activecol(this, col)
 
+
+
+    class(betr_simulation_type)              , intent(inout) :: this
+    type(column_type)                        , intent(inout) :: col
+
+    logical :: do_debug
+    integer :: cc
+    do_debug=.false.
+    if(do_debug)then 
+      cc=1
+      col%active(:) =.false.
+      col%active(cc)=.true.
+      this%betr(cc)%tracers%debug=.true.
+    endif 
+  !    col%active(c_act)=.true.
+    
+  end subroutine set_activecol
+!-------------------------------------------------------------------------------
   subroutine BeTRInit(this, bounds, lun, col, pft, waterstate, namelist_buffer, &
      base_filename, masterproc)
     !
@@ -274,7 +294,7 @@ contains
     class(betr_simulation_type)              , intent(inout) :: this
     type(bounds_type)                        , intent(in)    :: bounds
     type(landunit_type)                      , intent(in) :: lun
-    type(column_type)                        , intent(in) :: col
+    type(column_type)                        , intent(inout) :: col
     type(patch_type)                         , intent(in) :: pft
     type(waterstate_type)                    , intent(in) :: waterstate
     character(len=betr_namelist_buffer_size) , intent(in) :: namelist_buffer
@@ -283,7 +303,7 @@ contains
     !TEMPORARY VARIABLES
     character(len=*), parameter :: subname = 'BeTRInit'
     type(betr_bounds_type) :: betr_bounds
-    integer :: c, l
+    integer :: c, l, c_l
     logical :: asoibgc
     !print*,'base_filename',trim(base_filename)
 
@@ -342,10 +362,18 @@ contains
         exit
       endif
     enddo
+    call this%set_activecol(col)
     !allocate spinup factor
     if(this%do_soibgc())then
       allocate(this%scalaravg_col(bounds%begc:bounds%endc));this%scalaravg_col(:) = 0._r8
       allocate(this%dom_scalar_col(bounds%begc:bounds%endc));this%dom_scalar_col(:)=1._r8
+      c_l=1
+      do c = bounds%begc, bounds%endc
+        if(.not. this%active_col(c))cycle
+        call this%betr(c)%set_bgc_spinup(betr_bounds, 1,  betr_nlevtrc_soil, this%num_soilc, &
+             this%filter_soilc(:), this%biophys_forc(c))
+        this%dom_scalar_col(c)=this%biophys_forc(c)%dom_scalar_col(c_l)
+      enddo      
     endif
 
     if(this%bsimstatus%check_status())call endrun(msg=this%bsimstatus%print_msg())
@@ -1874,20 +1902,38 @@ contains
         this%biophys_forc(c)%scalaravg_col(c_l) = this%scalaravg_col(c)
         this%biophys_forc(c)%dom_scalar_col(c_l)= this%dom_scalar_col(c)
       enddo
-      if(exit_spinup .or. enter_spinup)then
-        call this%BeTRSetBounds(betr_bounds)
-        do c = bounds%begc, bounds%endc
-          if(.not. this%active_col(c))cycle
-          call this%betr(c)%set_bgc_spinup(betr_bounds, 1,  betr_nlevtrc_soil, this%num_soilc, &
-             this%filter_soilc(:), this%biophys_forc(c))
-        enddo
-      endif
     endif
   endif
 
   deallocate(rest_varname_1d)
   deallocate(rest_varname_2d)
   end subroutine BeTRSimulationRestart
+
+  !------------------------------------------------------------------------
+
+  subroutine BeTRSimulationSetSpinup(this, bounds)
+  !
+  ! set spinup for betr bgc runs
+  use betr_ctrl      , only : exit_spinup, enter_spinup,betr_spinup_state
+  implicit none
+  class(betr_simulation_type) , intent(inout) :: this
+  type(bounds_type), intent(in) :: bounds
+  type(betr_bounds_type)     :: betr_bounds
+  integer :: c
+
+
+  if(exit_spinup .or. enter_spinup)then
+     call this%BeTRSetBounds(betr_bounds)
+     do c = bounds%begc, bounds%endc
+       if(.not. this%active_col(c))cycle
+       call this%betr(c)%set_bgc_spinup(betr_bounds, 1,  betr_nlevtrc_soil, this%num_soilc, &
+             this%filter_soilc(:), this%biophys_forc(c))
+     enddo
+  endif
+  if(exit_spinup)betr_spinup_state=0
+
+  end subroutine BeTRSimulationSetSpinup
+  
   !------------------------------------------------------------------------
   subroutine BeTRSimulationSetcps(this, bounds, col, pft)
   !

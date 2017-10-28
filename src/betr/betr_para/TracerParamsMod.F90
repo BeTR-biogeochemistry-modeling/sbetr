@@ -747,6 +747,7 @@ contains
           if(is_dom(trcid))then
             Xsat=Xsat * dom_scalar(c)
             KL  = KL * dom_scalar(c)
+!            print*,'dom',dom_scalar(c)
           endif
           do n = lbj, ubj
             do fc = 1, numf

@@ -114,14 +114,14 @@ module Tracer_varcon
    contains
 
 !-------------------------------------------------------------------------------
-    subroutine set_betr_cnpbgc(suplnitro,suplphos)
+    subroutine set_betr_cnpbgc(suplnitro,suplphos, spinup_state)
     !
     !DESCRIPTION
     !set n and p switches of the betr bgc model
     implicit none
     character(len=*), intent(in) :: suplnitro
     character(len=*), intent(in) :: suplphos
-
+    integer         , intent(in) :: spinup_state
     integer :: cnpset
 
     !set
@@ -143,5 +143,7 @@ module Tracer_varcon
       is_nitrogen_active = .true.
       is_phosphorus_active=.true.
     end select
+    !make sure P has full supply during spinup
+    if(spinup_state==1)is_phosphorus_active=.false.
     end subroutine set_betr_cnpbgc
 end module Tracer_varcon
