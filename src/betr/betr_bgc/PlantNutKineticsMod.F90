@@ -24,6 +24,7 @@ implicit none
     !the following is only for eca-cnp bgc, for other applications
     !some of the parameters will be read through the interface
     real(r8), pointer :: km_minsurf_p_vr_col(:,:)
+    real(r8), pointer :: km_minsurf_nh4_vr_col(:,:)
     real(r8), pointer :: km_decomp_nh4_vr_col(:,:)
     real(r8), pointer :: km_decomp_no3_vr_col(:,:)
     real(r8), pointer :: km_decomp_p_vr_col(:,:)
@@ -75,6 +76,7 @@ implicit none
      allocate(this%minsurf_nh4_compet_vr_col(begc:endc,1:ubj)); this%minsurf_nh4_compet_vr_col(:,:) = nan
      allocate(this%minsurf_p_compet_vr_col(begc:endc,1:ubj)); this%minsurf_p_compet_vr_col(:,:) = nan
      allocate(this%km_minsurf_p_vr_col(begc:endc,1:ubj)); this%km_minsurf_p_vr_col(:,:) = nan
+     allocate(this%km_minsurf_nh4_vr_col(begc:endc,1:ubj)); this%km_minsurf_nh4_vr_col(:,:) = nan
      allocate(this%km_decomp_nh4_vr_col(begc:endc, 1:ubj)); this%km_decomp_nh4_vr_col(:,:) = nan
      allocate(this%km_decomp_no3_vr_col(begc:endc,1:ubj)); this%km_decomp_no3_vr_col(:,:) = nan
      allocate(this%km_decomp_p_vr_col(begc:endc,1:ubj)); this%km_decomp_p_vr_col(:,:) = nan

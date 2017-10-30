@@ -1205,7 +1205,7 @@ contains
       chemstate_vars, soilstate_vars)
 
 
-  if(present(phosphorusstate_vars))then 
+  if(present(phosphorusstate_vars))then
     c_l=1
     do c = bounds%begc, bounds%endc
       this%biophys_forc(c)%solutionp_vr_col(c_l,1:nlevsoi) = phosphorusstate_vars%solutionp_vr_col(c,1:nlevsoi)
@@ -1350,6 +1350,7 @@ contains
       do fc = 1, num_soilc
         c = filter_soilc(fc)
         this%betr(c)%plantNutkinetics%km_minsurf_p_vr_col(c_l,j) = PlantMicKinetics_vars%km_minsurf_p_vr_col(c,j)
+        this%betr(c)%plantNutkinetics%km_minsurf_nh4_vr_col(c_l,j)=PlantMicKinetics_vars%km_minsurf_nh4_vr_col(c,j)
         this%betr(c)%plantNutkinetics%km_decomp_nh4_vr_col(c_l,j) = PlantMicKinetics_vars%km_decomp_nh4_vr_col(c,j)
         this%betr(c)%plantNutkinetics%km_decomp_no3_vr_col(c_l,j) = PlantMicKinetics_vars%km_decomp_no3_vr_col(c,j)
         this%betr(c)%plantNutkinetics%km_decomp_p_vr_col(c_l,j)=PlantMicKinetics_vars%km_decomp_p_vr_col(c,j)

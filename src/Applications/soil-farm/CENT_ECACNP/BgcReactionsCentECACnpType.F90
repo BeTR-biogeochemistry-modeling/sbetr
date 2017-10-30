@@ -179,7 +179,7 @@ contains
    c14_loc                 => this%centurybgc_index%c14_loc            &
   )
 
-  
+
   if(.not. exit_spinup .and. betr_spinup_state/=0) then
     do c = bounds%begc, bounds%endc
       dom_scalar(c)=1._r8/bgc_con_eca%spinup_factor(9)
@@ -521,7 +521,7 @@ contains
            enddo
          endif !end betr_spinup_state
          !set phosphorus
-         tracerstate_vars%tracer_conc_mobile_col(c,j,tracers%id_trc_p_sol) = &   
+         tracerstate_vars%tracer_conc_mobile_col(c,j,tracers%id_trc_p_sol) = &
            (biophysforc%solutionp_vr_col(c,j) + biophysforc%labilep_vr_col(c,j))/patomw
          !secondary p
          tracerstate_vars%tracer_conc_mobile_col(c,j,tracers%id_trc_beg_minp) = &
@@ -571,7 +571,7 @@ contains
     this%centuryeca(c_l,j)%competECA%kaff_minn_nh4_nit= plantNutkinetics%km_nit_nh4_vr_col(c_l,j)
     this%centuryeca(c_l,j)%competECA%kaff_minn_no3_den= plantNutkinetics%km_den_no3_vr_col(c_l,j)
     !mineral surfaces
-    this%centuryeca(c_l,j)%competECA%kaff_minn_nh4_msurf= 0._r8   !this is ignored at this moment
+    this%centuryeca(c_l,j)%competECA%kaff_minn_nh4_msurf= plantNutkinetics%km_minsurf_nh4_vr_col(c_l,j)   !this is ignored at this moment
     this%centuryeca(c_l,j)%competECA%kaff_minp_msurf= plantNutkinetics%km_minsurf_p_vr_col(c_l,j)
 
     !effective p competing decomposers
