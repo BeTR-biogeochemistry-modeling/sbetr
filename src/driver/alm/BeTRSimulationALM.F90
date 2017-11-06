@@ -1031,8 +1031,11 @@ contains
 
       !recollect inorganic nitrogen (smin_nh4, smin_no3), and inorganic phosphorus (disolvable and protected)
       n14state_vars%sminn_col(c) = this%biogeo_state(c)%n14state_vars%sminn_col(c_l)
+      n14state_vars%smin_nh4_col(c)=this%biogeo_state(c)%n14state_vars%sminn_nh4_col(c_l)
+      n14state_vars%smin_no3_col(c)=this%biogeo_state(c)%n14state_vars%sminn_no3_col(c_l)
       p31state_vars%sminp_col(c) = this%biogeo_state(c)%p31state_vars%sminp_col(c_l)
       p31state_vars%occlp_col(c) = this%biogeo_state(c)%p31state_vars%occlp_col(c_l)
+!      print*,'minn c',c,n14state_vars%sminn_col(c)
     enddo
   endif
   end subroutine ALMBetrPlantSoilBGCRecv
@@ -1205,7 +1208,7 @@ contains
       chemstate_vars, soilstate_vars)
 
 
-  if(present(phosphorusstate_vars))then
+  if(present(phosphorusstate_vars))then 
     c_l=1
     do c = bounds%begc, bounds%endc
       this%biophys_forc(c)%solutionp_vr_col(c_l,1:nlevsoi) = phosphorusstate_vars%solutionp_vr_col(c,1:nlevsoi)
