@@ -18,7 +18,7 @@ implicit none
     real(r8), pointer :: kaff_minp_plant(:)    => null()    !number of maximum pft
     real(r8), pointer :: plant_froot_nn(:) => null()
     real(r8), pointer :: plant_froot_np(:) => null()
-
+    real(r8), pointer :: plant_eff_frootc_patch(:) => null()
     real(r8) :: compet_bn_mic   !decomposer n competition transporter
     real(r8) :: compet_bp_mic   !decomposer p competition transporter
     real(r8) :: compet_bn_den
@@ -63,6 +63,7 @@ contains
   allocate(this%kaff_minp_plant(betr_maxpatch_pft))
   allocate(this%plant_froot_nn(betr_maxpatch_pft));
   allocate(this%plant_froot_np(betr_maxpatch_pft));
+  allocate(this%plant_eff_frootc_patch(betr_maxpatch_pft))
   end subroutine InitAllocate
 
   !-------------------------------------------------------------------------------

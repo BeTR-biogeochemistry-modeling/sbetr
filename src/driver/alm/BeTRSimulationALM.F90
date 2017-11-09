@@ -563,14 +563,7 @@ contains
          carbonflux_vars%gap_mortality_c_to_litr_met_c_col(c,j)     , & !gap mortality
          carbonflux_vars%harvest_c_to_litr_met_c_col(c,j)           , & !harvest
          carbonflux_vars%m_c_to_litr_met_fire_col(c,j)/))              ! fire mortality
-!      if(c==2284)then
-!         print*,'c j',c,j
-!         print*,'carbonflux_vars%phenology_c_to_litr_met_c_col',carbonflux_vars%phenology_c_to_litr_met_c_col(c,j)
-!         print*,'carbonflux_vars%dwt_frootc_to_litr_met_c_col',carbonflux_vars%dwt_frootc_to_litr_met_c_col(c,j)
-!         print*,'carbonflux_vars%gap_mortality_c_to_litr_met_c_col',carbonflux_vars%gap_mortality_c_to_litr_met_c_col(c,j)
-!         print*,'carbonflux_vars%harvest_c_to_litr_met_c_col',carbonflux_vars%harvest_c_to_litr_met_c_col(c,j)
-!         print*,'carbonflux_vars%m_c_to_litr_met_fire_col',carbonflux_vars%m_c_to_litr_met_fire_col(c,j)
-!      endif
+
       !cellulose carbon
       call apvb(this%biophys_forc(c)%c12flx%cflx_input_litr_cel_vr_col(1,j)   , &
          (/carbonflux_vars%phenology_c_to_litr_cel_c_col(c,j)          , &  !phenology
@@ -608,17 +601,7 @@ contains
       call apvb(this%biophys_forc(c)%c12flx%cflx_output_litr_cwd_vr_col(1,j), &
          carbonflux_vars%m_decomp_cpools_to_fire_vr_col(c,j,i_cwd))
 
-!      if(c==229)then
-!        print*,'j=',j
-!        print*,'met',this%biophys_forc(c)%c12flx%cflx_input_litr_met_vr_col(1,j)
-!        print*,'cel',this%biophys_forc(c)%c12flx%cflx_input_litr_cel_vr_col(1,j)
-!        print*,'lig',this%biophys_forc(c)%c12flx%cflx_input_litr_lig_vr_col(1,j)
-!        print*,'cwd',this%biophys_forc(c)%c12flx%cflx_input_litr_cwd_vr_col(1,j)
-!        print*,'firemet',this%biophys_forc(c)%c12flx%cflx_output_litr_met_vr_col(1,j)
-!        print*,'firecel',this%biophys_forc(c)%c12flx%cflx_output_litr_cel_vr_col(1,j)
-!        print*,'firelig',this%biophys_forc(c)%c12flx%cflx_output_litr_lig_vr_col(1,j)
-!        print*,'firecwd',this%biophys_forc(c)%c12flx%cflx_output_litr_cwd_vr_col(1,j)
-!      endif
+
       !!------------------------------------------------------------------------
       if(use_c13_betr)then
         !metabolic carbon
@@ -723,14 +706,6 @@ contains
          nitrogenflux_vars%harvest_n_to_litr_met_n_col(c,j)          , & !harvest
          nitrogenflux_vars%m_n_to_litr_met_fire_col(c,j)/))              ! fire mortality
 
-!      if(c==2330)then
-!         print*,'c j',c,j
-!         print*,'nitrogenflux_vars%phenology_n_to_litr_met_n_col',nitrogenflux_vars%phenology_n_to_litr_met_n_col(c,j)
-!         print*,'nitrogenflux_vars%gap_mortality_n_to_litr_met_n_col',nitrogenflux_vars%gap_mortality_n_to_litr_met_n_col(c,j)
-!         print*,'nitrogenflux_vars%harvest_n_to_litr_met_n_col',nitrogenflux_vars%harvest_n_to_litr_met_n_col(c,j)
-!         print*,'nitrogenflux_vars%m_n_to_litr_met_fire_col',nitrogenflux_vars%m_n_to_litr_met_fire_col(c,j)
-!      endif
-
       !cellulose nitrogen
       call apvb(this%biophys_forc(c)%n14flx%nflx_input_litr_cel_vr_col(c_l,j), &
          (/nitrogenflux_vars%phenology_n_to_litr_cel_n_col(c,j)     , & !phenology
@@ -833,20 +808,6 @@ contains
     enddo
   enddo
 
-  !summarize the fluxes and state variables
-!  c_l = 1
-!  begc_l = betr_bounds%begc; endc_l=betr_bounds%endc;
-! do fc = 1, num_soilc
-!    c = filter_soilc(fc)
-!  c=2330
-!    call this%biophys_forc(c)%summary(betr_bounds, 1, betr_nlevtrc_soil, this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil))
-!    print*,'cinput',c,this%biophys_forc(c)%c12flx%cflx_input_col(c_l)*1800._r8
-!    print*,'ninput',c,this%biophys_forc(c)%n14flx%nflx_input_col(c_l)*1800._r8
-!    print*,'pinput',c,this%biophys_forc(c)%p31flx%pflx_input_col(c_l)*1800._r8
-!    print*,'minpinput',c,this%biophys_forc(c)%p31flx%pminp_input_col(c_l)*1800._r8
-!  enddo
-!  stop
-!  print*,'ALMBetrPlantSoilBGCSend'
   end associate
   !pull in all state variables and update tracers
   end subroutine ALMBetrPlantSoilBGCSend
@@ -915,8 +876,8 @@ contains
           p31flux_vars%sminp_to_plant_patch(p)  = this%biogeo_flux(c)%p31flux_vars%sminp_to_plant_patch(pi)
           !compute relative n return, note the following computation is different from ALM-ECA-CNP, because
           !betr includes transpiration incuded nitrogen uptake, which has not direct temperature sensitivity.
-          n14state_vars%pnup_pfrootc_patch(p) = safe_div(n14flux_vars%smin_nh4_to_plant_patch(p)+ n14flux_vars%smin_no3_to_plant_patch(p), &
-            c12state_vars%frootc_patch(p))/max(this%biophys_forc(c)%cn_scalar_patch(pi),1.e-20_r8)
+          n14state_vars%pnup_pfrootc_patch(p) = this%biogeo_flux(c)%pnup_pfrootc_patch(pi)
+
         else
           n14flux_vars%smin_nh4_to_plant_patch(p) = 0._r8
           n14flux_vars%smin_no3_to_plant_patch(p) = 0._r8
@@ -959,14 +920,6 @@ contains
           this%biogeo_flux(c)%n14flux_vars%som_n_leached_col(c_l) + &
           this%biogeo_flux(c)%n14flux_vars%som_n_runoff_col(c_l) + &
           this%biogeo_flux(c)%n14flux_vars%som_n_qdrain_col(c_l)
-
-      if(c==1207 .and. .false.)then
-        write(*,*)'betr smin_no3_leach=',this%biogeo_flux(c)%n14flux_vars%smin_no3_leached_col(c_l)*1800._r8
-        write(*,*)'betr smin_no3_qdrai=',this%biogeo_flux(c)%n14flux_vars%smin_no3_qdrain_col(c_l)*1800._r8
-        write(*,*)'betr som_n_leach   =',this%biogeo_flux(c)%n14flux_vars%som_n_leached_col(c_l)*1800._r8
-        write(*,*)'betr som_n_runoff  =',this%biogeo_flux(c)%n14flux_vars%som_n_runoff_col(c_l)*1800._r8
-        write(*,*)'betr som_n_drain   =',this%biogeo_flux(c)%n14flux_vars%som_n_qdrain_col(c_l)*1800._r8
-      endif
 
       !the following is for consistency with the ALM definitation, which computes
       !som_n_leached_col as a numerical roundoff
@@ -1035,7 +988,7 @@ contains
       n14state_vars%smin_no3_col(c)=this%biogeo_state(c)%n14state_vars%sminn_no3_col(c_l)
       p31state_vars%sminp_col(c) = this%biogeo_state(c)%p31state_vars%sminp_col(c_l)
       p31state_vars%occlp_col(c) = this%biogeo_state(c)%p31state_vars%occlp_col(c_l)
-!      print*,'minn c',c,n14state_vars%sminn_col(c)
+
     enddo
   endif
   end subroutine ALMBetrPlantSoilBGCRecv
@@ -1208,7 +1161,7 @@ contains
       chemstate_vars, soilstate_vars)
 
 
-  if(present(phosphorusstate_vars))then 
+  if(present(phosphorusstate_vars))then
     c_l=1
     do c = bounds%begc, bounds%endc
       this%biophys_forc(c)%solutionp_vr_col(c_l,1:nlevsoi) = phosphorusstate_vars%solutionp_vr_col(c,1:nlevsoi)
@@ -1285,7 +1238,7 @@ contains
   !DESCRIPTION
   !set kinetic parameters for column c
   use PlantMicKineticsMod, only : PlantMicKinetics_type
-  use tracer_varcon      , only : reaction_method
+  use tracer_varcon      , only : reaction_method,natomw,patomw
   use pftvarcon             , only : noveg
   implicit none
   class(betr_simulation_alm_type), intent(inout)  :: this
@@ -1308,41 +1261,38 @@ contains
     plant_eff_ncompet_b_vr_patch => PlantMicKinetics_vars%plant_eff_ncompet_b_vr_patch , &
     plant_eff_pcompet_b_vr_patch => PlantMicKinetics_vars%plant_eff_pcompet_b_vr_patch , &
     minsurf_nh4_compet_vr_col => PlantMicKinetics_vars%minsurf_nh4_compet_vr_col, &
-    minsurf_p_compet_vr_col => PlantMicKinetics_vars%minsurf_p_compet_vr_col &
+    minsurf_p_compet_vr_col => PlantMicKinetics_vars%minsurf_p_compet_vr_col , &
+    plant_eff_frootc_vr_patch => PlantMicKinetics_vars%plant_eff_frootc_vr_patch &
   )
   c_l = 1
   do fc = 1, num_soilc
     c = filter_soilc(fc)
     pp = 0
-!    if(c==4445)print*,'pftss',c,betr_maxpatch_pft,col%npfts(c)
+
     do pi = 1, betr_maxpatch_pft
       if (pi <= col%npfts(c)) then
         p = col%pfti(c) + pi - 1
-!        print*,'colpf,',col%pfti(c),p
+
         if (pft%active(p) .and. (pft%itype(p) .ne. noveg)) then
           pp = pp + 1
           do j =1, betr_bounds%ubj
             this%betr(c)%plantNutkinetics%plant_nh4_vmax_vr_patch(pp,j) = plant_nh4_vmax_vr_patch(p,j)
             this%betr(c)%plantNutkinetics%plant_no3_vmax_vr_patch(pp,j) = plant_no3_vmax_vr_patch(p,j)
             this%betr(c)%plantNutkinetics%plant_p_vmax_vr_patch(pp,j) = plant_p_vmax_vr_patch(p,j)
-            this%betr(c)%plantNutkinetics%plant_nh4_km_vr_patch(pp,j) = plant_nh4_km_vr_patch(p,j)
-            this%betr(c)%plantNutkinetics%plant_no3_km_vr_patch(pp,j) = plant_no3_km_vr_patch(p,j)
-            this%betr(c)%plantNutkinetics%plant_p_km_vr_patch(pp,j) = plant_p_km_vr_patch(p,j)
-            this%betr(c)%plantNutkinetics%plant_eff_ncompet_b_vr_patch(pp,j)=plant_eff_ncompet_b_vr_patch(p,j)
-            this%betr(c)%plantNutkinetics%plant_eff_pcompet_b_vr_patch(pp,j)=plant_eff_pcompet_b_vr_patch(p,j)
-!            if(c==4445)then
-!              print*,'col',c,j,p
-!              print*,'nh4',this%betr(c)%plantNutkinetics%plant_nh4_vmax_vr_patch(pp,j),this%betr(c)%plantNutkinetics%plant_no3_vmax_vr_patch(pp,j)
-!              print*,'minp',this%betr(c)%plantNutkinetics%plant_p_vmax_vr_patch(pp,j)
-!            endif
+            this%betr(c)%plantNutkinetics%plant_nh4_km_vr_patch(pp,j) = plant_nh4_km_vr_patch(p,j)/natomw
+            this%betr(c)%plantNutkinetics%plant_no3_km_vr_patch(pp,j) = plant_no3_km_vr_patch(p,j)/natomw
+            this%betr(c)%plantNutkinetics%plant_p_km_vr_patch(pp,j) = plant_p_km_vr_patch(p,j)/natomw
+            this%betr(c)%plantNutkinetics%plant_eff_ncompet_b_vr_patch(pp,j)=plant_eff_ncompet_b_vr_patch(p,j)/natomw
+            this%betr(c)%plantNutkinetics%plant_eff_pcompet_b_vr_patch(pp,j)=plant_eff_pcompet_b_vr_patch(p,j)/patomw
+            this%betr(c)%plantNutkinetics%plant_eff_frootc_vr_patch(pp,j) = plant_eff_frootc_vr_patch(p,j)
           enddo
         endif
       endif
     enddo
     this%betr(c)%nactpft = pp
     do j = 1, betr_bounds%ubj
-      this%betr(c)%plantNutkinetics%minsurf_p_compet_vr_col(c_l,j) = minsurf_p_compet_vr_col(c,j)
-      this%betr(c)%plantNutkinetics%minsurf_nh4_compet_vr_col(c_l,j) = minsurf_nh4_compet_vr_col(c,j)
+      this%betr(c)%plantNutkinetics%minsurf_p_compet_vr_col(c_l,j) = minsurf_p_compet_vr_col(c,j)/patomw
+      this%betr(c)%plantNutkinetics%minsurf_nh4_compet_vr_col(c_l,j) = minsurf_nh4_compet_vr_col(c,j)/patomw
     enddo
   enddo
 
@@ -1352,20 +1302,19 @@ contains
     do j =1, betr_bounds%ubj
       do fc = 1, num_soilc
         c = filter_soilc(fc)
-        this%betr(c)%plantNutkinetics%km_minsurf_p_vr_col(c_l,j) = PlantMicKinetics_vars%km_minsurf_p_vr_col(c,j)
-        this%betr(c)%plantNutkinetics%km_minsurf_nh4_vr_col(c_l,j)=PlantMicKinetics_vars%km_minsurf_nh4_vr_col(c,j)
-        this%betr(c)%plantNutkinetics%km_decomp_nh4_vr_col(c_l,j) = PlantMicKinetics_vars%km_decomp_nh4_vr_col(c,j)
-        this%betr(c)%plantNutkinetics%km_decomp_no3_vr_col(c_l,j) = PlantMicKinetics_vars%km_decomp_no3_vr_col(c,j)
-        this%betr(c)%plantNutkinetics%km_decomp_p_vr_col(c_l,j)=PlantMicKinetics_vars%km_decomp_p_vr_col(c,j)
-        this%betr(c)%plantNutkinetics%km_nit_nh4_vr_col(c_l,j)=PlantMicKinetics_vars%km_nit_nh4_vr_col(c,j)
-        this%betr(c)%plantNutkinetics%km_den_no3_vr_col(c_l,j)=PlantMicKinetics_vars%km_den_no3_vr_col(c,j)
-
+        this%betr(c)%plantNutkinetics%km_minsurf_p_vr_col(c_l,j) = PlantMicKinetics_vars%km_minsurf_p_vr_col(c,j)/patomw
+        this%betr(c)%plantNutkinetics%km_minsurf_nh4_vr_col(c_l,j)=PlantMicKinetics_vars%km_minsurf_nh4_vr_col(c,j)/patomw
+        this%betr(c)%plantNutkinetics%km_decomp_nh4_vr_col(c_l,j) = PlantMicKinetics_vars%km_decomp_nh4_vr_col(c,j)/natomw
+        this%betr(c)%plantNutkinetics%km_decomp_no3_vr_col(c_l,j) = PlantMicKinetics_vars%km_decomp_no3_vr_col(c,j)/natomw
+        this%betr(c)%plantNutkinetics%km_decomp_p_vr_col(c_l,j)=PlantMicKinetics_vars%km_decomp_p_vr_col(c,j)/patomw
+        this%betr(c)%plantNutkinetics%km_nit_nh4_vr_col(c_l,j)=PlantMicKinetics_vars%km_nit_nh4_vr_col(c,j)/natomw
+        this%betr(c)%plantNutkinetics%km_den_no3_vr_col(c_l,j)=PlantMicKinetics_vars%km_den_no3_vr_col(c,j)/natomw
 
         !effective p competing decomposers
-        this%betr(c)%plantNutkinetics%decomp_eff_ncompet_b_vr_col(c_l,j) = PlantMicKinetics_vars%decomp_eff_ncompet_b_vr_col(c,j)
-        this%betr(c)%plantNutkinetics%decomp_eff_pcompet_b_vr_col(c_l,j) = PlantMicKinetics_vars%decomp_eff_pcompet_b_vr_col(c,j)
-        this%betr(c)%plantNutkinetics%den_eff_ncompet_b_vr_col(c_l,j) = PlantMicKinetics_vars%den_eff_ncompet_b_vr_col(c,j)
-        this%betr(c)%plantNutkinetics%nit_eff_ncompet_b_vr_col(c_l,j) = PlantMicKinetics_vars%nit_eff_ncompet_b_vr_col(c,j)
+        this%betr(c)%plantNutkinetics%decomp_eff_ncompet_b_vr_col(c_l,j) = PlantMicKinetics_vars%decomp_eff_ncompet_b_vr_col(c,j)/natomw
+        this%betr(c)%plantNutkinetics%decomp_eff_pcompet_b_vr_col(c_l,j) = PlantMicKinetics_vars%decomp_eff_pcompet_b_vr_col(c,j)/patomw
+        this%betr(c)%plantNutkinetics%den_eff_ncompet_b_vr_col(c_l,j) = PlantMicKinetics_vars%den_eff_ncompet_b_vr_col(c,j)/natomw
+        this%betr(c)%plantNutkinetics%nit_eff_ncompet_b_vr_col(c_l,j) = PlantMicKinetics_vars%nit_eff_ncompet_b_vr_col(c,j)/natomw
 
       enddo
     enddo

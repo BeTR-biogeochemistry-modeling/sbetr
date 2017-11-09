@@ -16,6 +16,7 @@ implicit none
     real(r8), pointer :: plant_nh4_km_vr_patch(:,:)
     real(r8), pointer :: plant_no3_km_vr_patch(:,:)
     real(r8), pointer :: plant_p_km_vr_patch(:,:)
+    real(r8), pointer :: plant_eff_frootc_vr_patch(:,:)
     real(r8), pointer :: plant_eff_ncompet_b_vr_patch(:,:)
     real(r8), pointer :: plant_eff_pcompet_b_vr_patch(:,:)
     real(r8), pointer :: minsurf_p_compet_vr_col(:,:)
@@ -69,7 +70,7 @@ implicit none
      allocate(this%plant_no3_km_vr_patch(begp:endp, 1:ubj)); this%plant_no3_km_vr_patch(:,:) = nan
      allocate(this%plant_nh4_km_vr_patch(begp:endp, 1:ubj)); this%plant_nh4_km_vr_patch(:,:) = nan
      allocate(this%plant_p_km_vr_patch(begp:endp, 1:ubj)); this%plant_p_km_vr_patch(:,:) = nan
-
+     allocate(this%plant_eff_frootc_vr_patch(begp:endp,1:ubj)); this%plant_eff_frootc_vr_patch(:,:) = nan
      allocate(this%plant_eff_ncompet_b_vr_patch(begp:endp,1:ubj)); this%plant_eff_ncompet_b_vr_patch(:,:) = nan
      allocate(this%plant_eff_pcompet_b_vr_patch(begp:endp,1:ubj)); this%plant_eff_pcompet_b_vr_patch(:,:) = nan
 

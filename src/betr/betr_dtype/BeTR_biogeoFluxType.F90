@@ -18,7 +18,7 @@ implicit none
     real(r8), pointer :: qflx_infl_col            (:)   => null()  !infiltration (mm H2O /s)
     real(r8), pointer :: qflx_drain_vr_col        (:,:) => null() ! col liquid water losted as drainage (m /time step)
     real(r8), pointer :: qflx_totdrain_col        (:)   => null() ! col total liquid water drainage  (m/time step), updated in betr
-
+    real(r8), pointer :: pnup_pfrootc_patch       (:)   => null()
     !the following variables are for temporary use, and will be revised later
     real(r8), pointer  :: qflx_rofliq_qsur_doc_col(:) => null()
     real(r8), pointer  :: qflx_rofliq_qsur_dic_col(:) => null()
@@ -101,6 +101,7 @@ contains
   allocate(this%qflx_rofliq_qsur_dic_col(begc:endc))
   allocate(this%qflx_rofliq_qsub_doc_col(begc:endc))
   allocate(this%qflx_rofliq_qsub_dic_col(begc:endc))
+  allocate(this%pnup_pfrootc_patch(begp:endp))
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------
@@ -128,6 +129,7 @@ contains
   this%qflx_rofliq_qsur_dic_col(:) = value_column
   this%qflx_rofliq_qsub_doc_col(:) = value_column
   this%qflx_rofliq_qsub_dic_col(:) = value_column
+  this%pnup_pfrootc_patch(:) = value_column
   end subroutine reset
   !------------------------------------------------------------------------
   subroutine summary(this, bounds, lbj, ubj, dz)
