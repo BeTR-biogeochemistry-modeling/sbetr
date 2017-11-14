@@ -615,8 +615,8 @@ contains
     cascade_matrix((som1-1)*nelms+p_loc   ,reac) = safe_div(f1,this%cp_ratios(som1))
 
     cascade_matrix((som2-1)*nelms+c_loc   ,reac) = f2
-    cascade_matrix((som2-1)*nelms+n_loc   ,reac) = safe_div(f2,this%cn_ratios(lit3))
-    cascade_matrix((som2-1)*nelms+p_loc   ,reac) = safe_div(f2,this%cp_ratios(lit3))
+    cascade_matrix((som2-1)*nelms+n_loc   ,reac) = safe_div(f2,this%cn_ratios(som2))
+    cascade_matrix((som2-1)*nelms+p_loc   ,reac) = safe_div(f2,this%cp_ratios(som2))
 
     cascade_matrix(lid_co2                ,reac) = - cascade_matrix((cwd-1)*nelms+c_loc    ,reac) - &
                                                      cascade_matrix((som1-1)*nelms+c_loc   ,reac) - &
