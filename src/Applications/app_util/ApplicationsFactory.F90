@@ -20,6 +20,7 @@ module ApplicationsFactory
   private
   public :: create_betr_usr_application
   public :: AppLoadParameters
+  public :: AppInitParameters
 
 contains
 
@@ -115,7 +116,30 @@ contains
 
 
   !-------------------------------------------------------------------------------
-  subroutine AppLoadParameters(bgc_namelist_buffer, reaction_method, bstatus)
+  subroutine AppLoadParameters(ncid)
+  !
+  ! DESCRIPTION
+  ! read in the parameters for specified bgc implementation
+  use BiogeoConType  , only : bgc_con_eca
+  use tracer_varcon  , only : reaction_method
+  use ncdio_pio      , only : file_desc_t
+  implicit none
+  type(file_desc_t), intent(in)  :: ncid
+
+
+   select case (trim(reaction_method))
+   case ("eca_cnp")
+     call  bgc_con_eca%readPars(ncid)
+   case default
+     !do nothing
+   end select
+
+  end subroutine  AppLoadParameters
+
+
+
+  !-------------------------------------------------------------------------------
+  subroutine AppInitParameters(bgc_namelist_buffer, reaction_method, bstatus)
   !
   ! DESCRIPTION
   ! read in the parameters for specified bgc implementation
@@ -142,5 +166,6 @@ contains
      endif
    end select
 
-  end subroutine  AppLoadParameters
+  end subroutine  AppInitParameters
+
 end module ApplicationsFactory

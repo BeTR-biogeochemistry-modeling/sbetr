@@ -48,6 +48,7 @@ module BeTRSimulationALM
      procedure, public :: DiagnoseLnd2atm           => ALMDiagnoseLnd2atm
      procedure, public :: set_active                => ALMset_active
      procedure, private:: set_transient_kinetics_par
+     procedure, public :: readParams                => ALMreadParams
   end type betr_simulation_alm_type
 
   public :: create_betr_simulation_alm
@@ -67,7 +68,19 @@ contains
     create_betr_simulation_alm => simulation
 
   end function create_betr_simulation_alm
+!-------------------------------------------------------------------------------
+  subroutine ALMreadParams(this, ncid)
 
+  use ncdio_pio                , only :  file_desc_t
+  use ApplicationsFactory      , only : AppLoadParameters
+  implicit none
+  class(betr_simulation_alm_type)          , intent(inout) :: this
+  type(file_desc_t)  :: ncid  ! pio netCDF file id    
+  !read in parameters
+
+
+  call AppLoadParameters(ncid)  
+  end subroutine ALMreadParams
 !-------------------------------------------------------------------------------
 
   subroutine ALMInit(this, bounds, lun, col, pft, waterstate, namelist_buffer, masterproc)

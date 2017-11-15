@@ -104,6 +104,7 @@ implicit none
    procedure, private :: set_defpar_default
    procedure, public  :: apply_spinup_factor
    procedure, private :: ReadNamelist
+   procedure, public  :: readPars
  end type BiogeoCon_type
 
  type(BiogeoCon_type), public :: bgc_con_eca
@@ -345,4 +346,17 @@ contains
 
   endif
   end subroutine apply_spinup_factor
+
+  !--------------------------------------------------------------------
+
+  subroutine readPars(this, ncid)
+
+  use ncdio_pio       , only : file_desc_t
+
+  implicit none
+  class(BiogeoCon_type), intent(inout) :: this
+  type(file_desc_t)    , intent(in)  :: ncid  ! pio netCDF file id
+
+  end subroutine readPars
+
 end module BiogeoConType

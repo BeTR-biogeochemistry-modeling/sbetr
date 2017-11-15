@@ -28,7 +28,7 @@ contains
     use clm_varctl    , only : iulog, spinup_state
     use betr_ctrl     , only : betr_spinup_state
     use tracer_varcon  , only : advection_on, diffusion_on, reaction_on, ebullition_on, reaction_method
-    use ApplicationsFactory, only : AppLoadParameters
+    use ApplicationsFactory, only : AppInitParameters
     use tracer_varcon , only : use_c13_betr, use_c14_betr
     use BetrStatusType  , only : betr_status_type
     implicit none
@@ -117,7 +117,7 @@ contains
       ' reaction_on=',trim(log2str(reaction_on)),new_line('A'), &
       ' ebullition_on=',trim(log2str(ebullition_on)),new_line('A')//'/'
 
-    call AppLoadParameters(bgc_namelist_buffer, reaction_method, bstatus)
+    call AppInitParameters(bgc_namelist_buffer, reaction_method, bstatus)
     if(bstatus%check_status())call endrun(msg=bstatus%print_msg())
 
   end subroutine betr_readNL
