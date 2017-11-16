@@ -48,6 +48,8 @@ module BGCReactionsMod
      procedure(debug_info_interface)                      , deferred :: debug_info
 
      procedure(set_bgc_spinup_interface)                  , deferred :: set_bgc_spinup
+
+     procedure(UpdateParas_interface)                     , deferred :: UpdateParas
   end type bgc_reaction_type
 
   abstract interface
@@ -75,6 +77,20 @@ module BGCReactionsMod
        type(betr_status_type)   , intent(out)   :: bstatus
 
      end subroutine Init_betrbgc_interface
+
+  !-------------------------------------------------------------------------------
+  subroutine UpdateParas_interface(this, bounds, lbj, ubj)
+
+   use BeTR_decompMod  , only : betr_bounds_type
+  ! !ARGUMENTS:
+  import :: bgc_reaction_type
+  implicit none
+  class(bgc_reaction_type) , intent(inout)    :: this
+  type(betr_bounds_type)                    , intent(in)    :: bounds
+  integer                              , intent(in)    :: lbj, ubj        ! lower and upper bounds, make sure they are > 0
+
+
+  end subroutine UpdateParas_interface
   !-------------------------------------------------------------------------------
   subroutine set_bgc_spinup_interface(this, bounds, lbj, ubj, num_soilc, filter_soilc, biophysforc, &
   tracers, tracerstate_vars)

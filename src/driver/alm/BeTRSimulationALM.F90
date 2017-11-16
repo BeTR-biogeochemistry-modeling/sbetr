@@ -73,13 +73,28 @@ contains
 
   use ncdio_pio                , only :  file_desc_t
   use ApplicationsFactory      , only : AppLoadParameters
+  use BetrStatusType           , only : betr_status_type
   implicit none
   class(betr_simulation_alm_type)          , intent(inout) :: this
-  type(file_desc_t)  :: ncid  ! pio netCDF file id    
+  type(file_desc_t), intent(inout)  :: ncid  ! pio netCDF file id
+
+  !temporary variables
+  type(betr_status_type)   :: bstatus
+  type(betr_bounds_type)   :: betr_bounds
+  integer :: c
+
   !read in parameters
+  call AppLoadParameters(ncid, bstatus)
 
+  if(bstatus%check_status())then
+    call endrun(msg=bstatus%print_msg())
+  endif
 
-  call AppLoadParameters(ncid)  
+  call this%BeTRSetBounds(betr_bounds)
+  do c = betr_bounds%begc, betr_bounds%endc
+    if(.not. this%active_col(c))cycle
+    call this%betr(c)%UpdateParas(betr_bounds)
+  enddo
   end subroutine ALMreadParams
 !-------------------------------------------------------------------------------
 

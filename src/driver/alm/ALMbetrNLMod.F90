@@ -55,7 +55,7 @@ contains
     logical :: appfile_on
 
     !initialize spinup state
-    betr_spinup_state=spinup_state
+    betr_spinup_state =spinup_state
     betr_max_soilorder=nsoilorder
     ! ----------------------------------------------------------------------
     ! Read namelist from standard input.

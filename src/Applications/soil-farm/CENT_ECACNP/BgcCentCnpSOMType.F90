@@ -60,7 +60,7 @@ implicit none
     procedure, private :: calc_som_decay_r
     procedure, private :: calc_cnp_ratios
     procedure, private :: InitAllocate
-    procedure, private :: InitPar
+    procedure, public  :: UpdateParas
     procedure, private :: calc_potential_aerobic_hr
     procedure, private :: apply_spinupf
   end type CentSom_type
@@ -82,7 +82,6 @@ contains
 
   call this%InitAllocate()
 
-  call this%InitPar(centurybgc_index, biogeo_con)
   end subroutine Init
 !------------------------------------------
   subroutine InitAllocate (this)
@@ -101,7 +100,7 @@ contains
   allocate(this%def_cc14(ncentpools));this%def_cc14(:) = 0._r8
   end subroutine InitAllocate
 !------------------------------------------
-  subroutine InitPar(this,centurybgc_index,  biogeo_con)
+  subroutine UpdateParas(this,centurybgc_index,  biogeo_con)
   !
   ! intialize model parameters
   use BiogeoConType , only : BiogeoCon_type
@@ -184,7 +183,7 @@ contains
     this%def_cc14(centurybgc_index%som3) = biogeo_con%init_cc14_som3
   endif
 
-  end subroutine InitPar
+  end subroutine UpdateParas
 !------------------------------------------
 
   subroutine run_decomp(this, is_surf, centurybgc_index, dtime, ystates,&

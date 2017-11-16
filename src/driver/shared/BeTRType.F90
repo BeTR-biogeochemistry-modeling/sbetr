@@ -63,6 +63,7 @@ module BetrType
 
    contains
      procedure, public  :: Init
+     procedure, public  :: UpdateParas
      procedure, public  :: step_without_drainage
      procedure, public  :: step_with_drainage
      procedure, public  :: calc_dew_sub_flux
@@ -109,6 +110,21 @@ contains
 
   end function create_betr_type
 
+!-------------------------------------------------------------------------------
+  subroutine UpdateParas(this, bounds)
+
+  use BeTR_decompMod  , only : betr_bounds_type
+  !update parameters after reading customized parameters from external file
+  implicit none
+  class(betr_type)            , intent(inout)        :: this
+  type(betr_bounds_type)      , intent(in)           :: bounds
+  integer             :: lbj, ubj
+
+  lbj = bounds%lbj;  ubj = bounds%ubj
+
+  call this%bgc_reaction%UpdateParas(bounds, lbj, ubj)
+
+  end subroutine UpdateParas
 !-------------------------------------------------------------------------------
   subroutine Init(this, namelist_buffer, bounds, col, biophysforc, asoibgc, bstatus)
 

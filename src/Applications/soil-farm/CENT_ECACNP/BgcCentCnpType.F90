@@ -66,6 +66,7 @@ module BgcCentCnpType
   contains
     procedure, public  :: init
     procedure, public  :: runbgc
+    procedure, public  :: UpdateParas
     procedure, private :: calc_cascade_matrix
     procedure, private :: init_states
     procedure, private :: add_ext_input
@@ -92,6 +93,38 @@ contains
     create_centuryeca_type => bgc
 
   end function create_centuryeca_type
+
+  !-------------------------------------------------------------------------------
+  subroutine UpdateParas(this,  biogeo_con)
+  use betr_varcon         , only : betr_maxpatch_pft, betr_max_soilorder
+  implicit none
+  class(centurybgceca_type) , intent(inout) :: this
+  type(BiogeoCon_type)      , intent(in) :: biogeo_con
+
+  integer :: sr
+
+  do sr = 1, betr_max_soilorder
+    this%frac_p_sec_to_sol(sr) = biogeo_con%frac_p_sec_to_sol(sr)
+
+    this%minp_secondary_decay(sr) = biogeo_con%minp_secondary_decay(sr)
+
+    this%mumax_minp_soluble_to_secondary(sr) = biogeo_con%vmax_minp_soluble_to_secondary(sr)
+  enddo
+
+  call this%nitden%UpdateParas(biogeo_con)
+
+  if(this%use_c14)then
+    this%c14decay_const=biogeo_con%c14decay_const
+    this%c14decay_som_const=biogeo_con%c14decay_som_const
+    this%c14decay_dom_const=biogeo_con%c14decay_dom_const
+    this%c14decay_Bm_const=biogeo_con%c14decay_Bm_const
+  endif
+
+  call this%censom%UpdateParas(this%centurybgc_index, biogeo_con)
+
+  call this%decompkf_eca%UpdateParas(biogeo_con)
+
+  end subroutine UpdateParas
   !-------------------------------------------------------------------------------
   subroutine init(this,  biogeo_con,  bstatus)
   use betr_varcon         , only : betr_maxpatch_pft
@@ -119,22 +152,13 @@ contains
 
   call this%competECA%Init()
 
-  this%frac_p_sec_to_sol(:) = biogeo_con%frac_p_sec_to_sol(:)
-
-  this%minp_secondary_decay(:) = biogeo_con%minp_secondary_decay(:)
-
-  this%mumax_minp_soluble_to_secondary(:) = biogeo_con%vmax_minp_soluble_to_secondary(:)
-
   this%use_c13 = biogeo_con%use_c13
 
   this%use_c14 = biogeo_con%use_c14
-  if(this%use_c14)then
-    this%c14decay_const=biogeo_con%c14decay_const
-    this%c14decay_som_const=biogeo_con%c14decay_som_const
-    this%c14decay_dom_const=biogeo_con%c14decay_dom_const
-    this%c14decay_Bm_const=biogeo_con%c14decay_Bm_const
-  endif
+
+  call this%UpdateParas(biogeo_con)
   end subroutine init
+
   !-------------------------------------------------------------------------------
 
   subroutine InitAllocate(this, centurybgc_index)
@@ -240,7 +264,7 @@ contains
   !initialize state variables
   call this%init_states(this%centurybgc_index, centuryeca_forc)
   ystates0(:) = this%ystates0(:)
-    
+
 !  call this%sumup_cnp_msflx(ystates0, c_mass1,n_mass1,p_mass1)
 
   !add all external input
@@ -279,7 +303,7 @@ contains
     pot_f_nit_mol_per_sec, pot_co2_hr, this%pot_f_nit, this%pot_f_denit, cascade_matrix)
 !  if(this%centurybgc_index%debug)then
 !    print*,'co2_pot',pot_co2_hr
-    
+
 !  endif
   !---------------------
   !turn off nitrification and denitrification
@@ -1004,8 +1028,8 @@ contains
   rrates(lid_minp_secondary_to_sol_occ_reac)= ystate(lid_minp_secondary) * this%minp_secondary_decay(this%soilorder)
 
 !  if(this%centurybgc_index%debug)then
-!    print*,'plant nn',rrates(lid_plant_minn_no3_up_reac),rrates(lid_plant_minn_nh4_up_reac) 
-!    print*,'plant p',rrates(lid_plant_minp_up_reac) 
+!    print*,'plant nn',rrates(lid_plant_minn_no3_up_reac),rrates(lid_plant_minn_nh4_up_reac)
+!    print*,'plant p',rrates(lid_plant_minp_up_reac)
 !  endif
   !the following treatment is to ensure mass balance
 !  if(this%centurybgc_index%debug)then
@@ -1044,7 +1068,7 @@ contains
 !     this%cascade_matrix(lid_plant_minp_pft(jj),lid_plant_minp_up_reac) = this%cascade_matrixd(lid_plant_minp_pft(jj),lid_plant_minp_up_reac)
 !  enddo
 !  if(this%centurybgc_index%debug)then
-!     print*,'checksum nh4',sum(this%cascade_matrix(lid_plant_minn_nh4_pft(1:this%plant_ntypes),lid_plant_minn_nh4_up_reac))    
+!     print*,'checksum nh4',sum(this%cascade_matrix(lid_plant_minn_nh4_pft(1:this%plant_ntypes),lid_plant_minn_nh4_up_reac))
 !     print*,'checksum no3',sum(this%cascade_matrix(lid_plant_minn_no3_pft(1:this%plant_ntypes),lid_plant_minn_no3_up_reac))
 !     print*,'ntype',this%plant_ntypes
 !    do jj = 1, this%plant_ntypes

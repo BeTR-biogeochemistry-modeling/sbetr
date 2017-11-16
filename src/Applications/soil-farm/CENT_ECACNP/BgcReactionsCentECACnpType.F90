@@ -84,6 +84,7 @@ module BgcReactionsCentECACnpType
     procedure :: retrieve_biostates
     procedure :: debug_info
     procedure :: set_bgc_spinup
+    procedure :: UpdateParas
     procedure, private :: set_century_forc
     procedure, private :: retrieve_output
     procedure, private :: rm_ext_output
@@ -109,7 +110,22 @@ contains
    constructor = bgc
   end function constructor
 
+  !-------------------------------------------------------------------------------
+  subroutine UpdateParas(this, bounds, lbj, ubj)
+  implicit none
+  class(bgc_reaction_CENTURY_ECACNP_type), intent(inout) :: this
+  type(bounds_type)                    , intent(in)    :: bounds
+  integer                              , intent(in)    :: lbj, ubj        ! lower and upper bounds, make sure they are > 0
 
+  integer :: c, j
+
+  do j = lbj, ubj
+    do c = bounds%begc, bounds%endc
+      call this%centuryeca(c,j)%UpdateParas(bgc_con_eca)
+    enddo
+  enddo
+
+  end subroutine UpdateParas
   !-------------------------------------------------------------------------------
   subroutine init_boundary_condition_type(this, bounds, betrtracer_vars, tracerboundarycond_vars )
     !
@@ -638,8 +654,8 @@ contains
       do c = bounds%begc, bounds%endc
         call this%centuryeca(c,j)%Init(bgc_con_eca, bstatus)
         if(bstatus%check_status())return
-        call this%centuryforc(c,j)%Init(this%centurybgc_index)
 
+        call this%centuryforc(c,j)%Init(this%centurybgc_index)
       enddo
     enddo
     this%use_c13 = bgc_con_eca%use_c13

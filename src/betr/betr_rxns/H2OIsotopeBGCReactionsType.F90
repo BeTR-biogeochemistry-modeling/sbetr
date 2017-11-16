@@ -52,6 +52,7 @@ module H2OIsotopeBGCReactionsType
      procedure :: retrieve_biostates
      procedure :: debug_info
      procedure :: set_bgc_spinup
+     procedure :: UpdateParas
    end type bgc_reaction_h2oiso_type
 
    interface bgc_reaction_h2oiso_type
@@ -71,6 +72,18 @@ module H2OIsotopeBGCReactionsType
     constructor = bgc
 
   end function constructor
+  !-------------------------------------------------------------------------------
+  subroutine UpdateParas(this, bounds, lbj, ubj)
+  use BeTR_decompMod         , only : betr_bounds_type
+  implicit none
+  class(bgc_reaction_h2oiso_type)         , intent(inout)    :: this
+  type(betr_bounds_type)                    , intent(in)    :: bounds
+  integer                              , intent(in)    :: lbj, ubj        ! lower and upper bounds, make sure they are > 0
+
+  integer :: c, j
+
+  !do nothing
+  end subroutine UpdateParas
 
   !----------------------------------------------------------------------
   subroutine set_kinetics_par(this, lbj, ubj,nactpft, plantNutkinetics)
