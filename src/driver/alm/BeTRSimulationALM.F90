@@ -69,15 +69,16 @@ contains
 
   end function create_betr_simulation_alm
 !-------------------------------------------------------------------------------
-  subroutine ALMreadParams(this, ncid)
+  subroutine ALMreadParams(this, ncid, bounds)
 
   use ncdio_pio                , only :  file_desc_t
   use ApplicationsFactory      , only : AppLoadParameters
   use BetrStatusType           , only : betr_status_type
+  use decompMod                , only : bounds_type
   implicit none
   class(betr_simulation_alm_type)          , intent(inout) :: this
   type(file_desc_t), intent(inout)  :: ncid  ! pio netCDF file id
-
+  type(bounds_type), intent(in) :: bounds
   !temporary variables
   type(betr_status_type)   :: bstatus
   type(betr_bounds_type)   :: betr_bounds
@@ -91,7 +92,7 @@ contains
   endif
 
   call this%BeTRSetBounds(betr_bounds)
-  do c = betr_bounds%begc, betr_bounds%endc
+  do c = bounds%begc, bounds%endc
     if(.not. this%active_col(c))cycle
     call this%betr(c)%UpdateParas(betr_bounds)
   enddo

@@ -141,9 +141,9 @@ contains
   class(BiogeoCon_type), intent(inout) :: this
 
 
-  allocate(this%minp_secondary_decay(betr_max_soilorder))
-  allocate(this%vmax_minp_soluble_to_secondary(betr_max_soilorder))
-  allocate(this%frac_p_sec_to_sol(betr_max_soilorder))
+  allocate(this%minp_secondary_decay(0:betr_max_soilorder))
+  allocate(this%vmax_minp_soluble_to_secondary(0:betr_max_soilorder))
+  allocate(this%frac_p_sec_to_sol(0:betr_max_soilorder))
   allocate(this%spinup_factor(9))
   !the following will be actually calculated from CNP bgc
   end subroutine InitAllocate
