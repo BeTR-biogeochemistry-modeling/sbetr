@@ -21,7 +21,7 @@ module ApplicationsFactory
   public :: create_betr_usr_application
   public :: AppLoadParameters
   public :: AppInitParameters
-
+  public :: AppSetSpinup
 contains
 
   subroutine create_betr_usr_application(bgc_reaction, plant_soilbgc, method, bstatus)
@@ -168,5 +168,17 @@ contains
    end select
 
   end subroutine  AppInitParameters
+  !-------------------------------------------------------------------------------
+  subroutine AppSetSpinup()
 
+  use BiogeoConType  , only : bgc_con_eca
+  use tracer_varcon  , only : reaction_method
+  implicit none
+
+  select case (trim(reaction_method))
+  case ("eca_cnp")
+     call  bgc_con_eca%set_spinup_factor()
+  end select
+
+  end subroutine AppSetSpinup
 end module ApplicationsFactory

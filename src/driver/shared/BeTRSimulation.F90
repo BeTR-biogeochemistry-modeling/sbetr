@@ -1897,7 +1897,6 @@ contains
       if(get_nstep() >= 2)then
         exit_spinup = .false.; enter_spinup=.false.
       endif
-
       do c = bounds%begc, bounds%endc
         this%biophys_forc(c)%scalaravg_col(c_l) = this%scalaravg_col(c)
         this%biophys_forc(c)%dom_scalar_col(c_l)= this%dom_scalar_col(c)
@@ -1915,14 +1914,15 @@ contains
   !
   ! set spinup for betr bgc runs
   use betr_ctrl      , only : exit_spinup, enter_spinup,betr_spinup_state
+  use ApplicationsFactory, only : AppSetSpinup
   implicit none
   class(betr_simulation_type) , intent(inout) :: this
   type(bounds_type), intent(in) :: bounds
   type(betr_bounds_type)     :: betr_bounds
   integer :: c
 
-
   if(exit_spinup .or. enter_spinup)then
+     call AppSetSpinup()
      call this%BeTRSetBounds(betr_bounds)
      do c = bounds%begc, bounds%endc
        if(.not. this%active_col(c))cycle
@@ -1931,7 +1931,7 @@ contains
      enddo
   endif
   if(exit_spinup)betr_spinup_state=0
-
+  
   end subroutine BeTRSimulationSetSpinup
   
   !------------------------------------------------------------------------

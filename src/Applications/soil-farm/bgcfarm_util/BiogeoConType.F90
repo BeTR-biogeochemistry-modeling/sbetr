@@ -106,6 +106,7 @@ implicit none
    procedure, public  :: apply_spinup_factor
    procedure, private :: ReadNamelist
    procedure, public  :: readPars
+   procedure, public  :: set_spinup_factor
  end type BiogeoCon_type
 
  type(BiogeoCon_type), public :: bgc_con_eca
@@ -306,18 +307,7 @@ contains
   class(BiogeoCon_type), intent(inout) :: this
 
 
-  !the order is, lit1, lit2, lit3, cwd, lwd, fwd, som1, som3, som2
-  this%spinup_factor(1) = 1._r8
-  this%spinup_factor(2) = 1._r8
-  this%spinup_factor(3) = 1._r8
-
-  this%spinup_factor(4) = 1._r8
-  this%spinup_factor(5) = 1._r8
-  this%spinup_factor(6) = 1._r8
-
-  this%spinup_factor(7) = this%k_decay_lit1/this%k_decay_som1
-  this%spinup_factor(8) = this%k_decay_lit1/this%k_decay_som3
-  this%spinup_factor(9) = this%k_decay_lit1/this%k_decay_som2
+  call this%set_spinup_factor()
 
   if(betr_spinup_state==1)then
     this%k_decay_lit1 = this%k_decay_lit1 * this%spinup_factor(1)
@@ -591,4 +581,24 @@ contains
 
   end subroutine readPars
 
+!--------------------------------------------------------------------
+  subroutine set_spinup_factor(this)
+
+  implicit none
+  class(BiogeoCon_type), intent(inout) :: this
+
+  !the order is, lit1, lit2, lit3, cwd, lwd, fwd, som1, som3, som2
+  this%spinup_factor(1) = 1._r8
+  this%spinup_factor(2) = 1._r8
+  this%spinup_factor(3) = 1._r8
+
+  this%spinup_factor(4) = 1._r8
+  this%spinup_factor(5) = 1._r8
+  this%spinup_factor(6) = 1._r8
+
+  this%spinup_factor(7) = this%k_decay_lit1/this%k_decay_som1
+  this%spinup_factor(8) = this%k_decay_lit1/this%k_decay_som3
+  this%spinup_factor(9) = this%k_decay_lit1/this%k_decay_som2
+
+  end subroutine set_spinup_factor
 end module BiogeoConType

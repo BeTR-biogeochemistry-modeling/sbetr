@@ -201,7 +201,6 @@ contains
       dom_scalar(c)=1._r8/bgc_con_eca%spinup_factor(9)
     enddo
   endif
-
   if(enter_spinup)then
     !scale the state variables into the fast space, and provide the scalar to configure
     !tracers
@@ -401,7 +400,6 @@ contains
 
            endif
          enddo
-
          !som3
          do kk = tracers%id_trc_beg_som, tracers%id_trc_end_som, nelm
            tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc) = &
