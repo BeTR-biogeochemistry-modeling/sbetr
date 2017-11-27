@@ -69,7 +69,7 @@ module BeTRSimulation
      integer, public, allocatable                 :: jtops(:)
      integer, public                              :: num_soilc
      integer, public, allocatable                 :: filter_soilc(:)
-
+     integer, public :: spinup_count
      type(betr_hist_var_type), allocatable :: state_hist1d_var(:)
      type(betr_hist_var_type), allocatable :: state_hist2d_var(:)
      type(betr_hist_var_type), allocatable :: flux_hist1d_var(:)
@@ -1857,6 +1857,11 @@ contains
            // ' 0,1,2=not ready for spinup scalar, 3 = apply spinup scalar', units='', &
            interpinic_flag='copy', readvar=readvar,  data=betr_spinup_state)
 
+    call restartvar(ncid=ncid, flag=flag, varname='spinup_count', xtype=ncd_int,  &
+           long_name='Spinup count of the model that wrote this restart file: ' &
+           // ' 0 <=2 skip mass bal check, 3 = do mass bal check', units='', &
+           interpinic_flag='copy', readvar=readvar,  data=this%spinup_count)
+
     if(trim(flag)=='read')then
       call restartvar(ncid=ncid, flag=flag, varname='spinup_state', xtype=ncd_int,  &
              long_name='Spinup state of the model that wrote this restart file: ' &
@@ -1867,6 +1872,7 @@ contains
       else
         restart_file_spinup_state = spinup_state
       endif
+
     endif
 
   endif

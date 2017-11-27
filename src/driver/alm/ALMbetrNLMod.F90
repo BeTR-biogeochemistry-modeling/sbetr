@@ -27,7 +27,7 @@ contains
     use betr_varcon   , only : betr_maxpatch_pft, betr_max_soilorder
     use clm_varctl    , only : iulog, spinup_state
     use betr_ctrl     , only : betr_spinup_state
-    use tracer_varcon  , only : advection_on, diffusion_on, reaction_on, ebullition_on, reaction_method
+    use tracer_varcon  , only : advection_on, diffusion_on, reaction_on, ebullition_on, reaction_method, AA_spinup_on
     use ApplicationsFactory, only : AppInitParameters
     use tracer_varcon , only : use_c13_betr, use_c14_betr
     use BetrStatusType  , only : betr_status_type
@@ -49,7 +49,7 @@ contains
     character(len=1), parameter  :: quote = ''''
     namelist / betr_inparm / reaction_method, &
       advection_on, diffusion_on, reaction_on, ebullition_on, &
-      AppParNLFile
+      AppParNLFile, AA_spinup_on
 
     character(len=betr_namelist_buffer_size_ext) :: bgc_namelist_buffer
     logical :: appfile_on
@@ -66,7 +66,7 @@ contains
     diffusion_on    = .true.
     reaction_on     = .true.
     ebullition_on   = .true.
-
+    AA_spinup_on    = .false.
     use_c13_betr    = use_c13
     use_c14_betr    = use_c14
     AppParNLFile    = ''
@@ -101,7 +101,7 @@ contains
     call shr_mpi_bcast(diffusion_on, mpicom)
     call shr_mpi_bcast(reaction_on, mpicom)
     call shr_mpi_bcast(ebullition_on, mpicom)
-
+    call shr_mpi_bcast(AA_spinup_on, mpicom)
     if(masterproc)then
       write(iulog,*)'&betr_parameters'
       write(iulog,*)'reaction_method=',trim(reaction_method)
@@ -109,6 +109,7 @@ contains
       write(iulog,*)'diffusion_on   =',diffusion_on
       write(iulog,*)'reaction_on    =',reaction_on
       write(iulog,*)'ebullition_on  =',ebullition_on
+      write(iulog,*)'AA_spinup_on   =',AA_spinup_on
     endif
     write(betr_namelist_buffer,*) '&betr_parameters'//new_line('A'), &
       ' reaction_method='//quote//trim(reaction_method)//quote//new_line('A'), &

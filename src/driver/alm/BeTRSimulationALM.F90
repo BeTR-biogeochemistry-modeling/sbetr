@@ -33,6 +33,7 @@ module BeTRSimulationALM
        __FILE__
 
   type, public, extends(betr_simulation_type) :: betr_simulation_alm_type
+   private 
    contains
      procedure :: InitOnline                        => ALMInit
      procedure :: Init                              => ALMInitOffline
@@ -49,6 +50,7 @@ module BeTRSimulationALM
      procedure, public :: set_active                => ALMset_active
      procedure, private:: set_transient_kinetics_par
      procedure, public :: readParams                => ALMreadParams
+     procedure, public :: skip_balcheck
   end type betr_simulation_alm_type
 
   public :: create_betr_simulation_alm
@@ -97,6 +99,17 @@ contains
     call this%betr(c)%UpdateParas(betr_bounds)
   enddo
   end subroutine ALMreadParams
+
+!-------------------------------------------------------------------------------
+  function skip_balcheck(this)result(stats)
+  implicit none
+  class(betr_simulation_alm_type)          , intent(inout) :: this
+
+  logical :: stats
+
+  stats = this%spinup_count < 3
+  return 
+  end function skip_balcheck
 !-------------------------------------------------------------------------------
 
   subroutine ALMInit(this, bounds, lun, col, pft, waterstate, namelist_buffer, masterproc)
@@ -139,6 +152,7 @@ contains
     betr_landvarcon%istsoil            = istsoil
     betr_landvarcon%istcrop            = istcrop
     betr_landvarcon%istice             = istice
+    this%spinup_count = 0
     ! now call the base simulation init to continue initialization
     if(present(masterproc))then
       call this%BeTRInit(bounds, lun, col, pft, waterstate, namelist_buffer, masterproc=masterproc)
@@ -201,8 +215,8 @@ contains
    !USES
     use clm_varpar        , only : nlevsno, nlevsoi, nlevtrc_soil
     use clm_varctl        , only : spinup_state
-    use tracer_varcon     , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
-    use betr_ctrl         , only : betr_spinup_state
+    use tracer_varcon     , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil, AA_spinup_on
+    use betr_ctrl         , only : betr_spinup_state, enter_spinup
     use MathfuncMod       , only : num2str
     use betr_varcon       , only : kyr_spinup
     use clm_time_manager  , only : get_curr_date,is_end_curr_day,is_beg_curr_day
@@ -218,36 +232,51 @@ contains
     integer :: year, mon, day, sec
 
     call get_curr_date(year, mon, day, sec)
-
     c_l=1
-    if(spinup_state==1)then
-       !AD spinup
-       if(year<=kyr_spinup)then
-         !period does nothing to spinup scalar
-         betr_spinup_state=1
-       elseif(year<=kyr_spinup*2)then
-         !period accumulate spinup scalar
-         betr_spinup_state=2
-       else
-          !period apply spinup scalar
-          betr_spinup_state=3
-       endif
-      do c = bounds%begc, bounds%endc
-        this%biophys_forc(c)%dom_scalar_col(c_l)=this%dom_scalar_col(c)
-      enddo
-    else
-       betr_spinup_state=0
-    endif
-
-    if(betr_spinup_state>=2)then
-      if(year==kyr_spinup+1 .and. mon==1 .and. day==1 .and. is_beg_curr_day())then
-        this%scalaravg_col(:) = 0._r8
+    if(this%active_soibgc)then
+      if(spinup_state==1)then
+        if(AA_spinup_on)then
+        !AD spinup
+          if(year<=kyr_spinup)then
+            !period does nothing to spinup scalar
+            betr_spinup_state=1
+          elseif(year<=kyr_spinup*2)then
+            !period accumulate spinup scalar
+            betr_spinup_state=2
+          else
+            !period apply spinup scalar
+            betr_spinup_state=3
+            this%spinup_count=this%spinup_count+1
+            this%spinup_count= min(this%spinup_count,3)
+          endif
+        else
+          betr_spinup_state=1
+        endif
+        do c = bounds%begc, bounds%endc
+          this%biophys_forc(c)%dom_scalar_col(c_l)=this%dom_scalar_col(c)
+        enddo
+      else
+        betr_spinup_state=0
       endif
-      do c = bounds%begc, bounds%endc
-        this%biophys_forc(c)%scalaravg_col(c_l) = this%scalaravg_col(c)
-      enddo
-    endif
 
+      if(betr_spinup_state>=2)then
+        if(year==kyr_spinup+1 .and. mon==1 .and. day==1 .and. is_beg_curr_day())then
+          this%scalaravg_col(:) = 0._r8
+        endif
+        do c = bounds%begc, bounds%endc
+          this%biophys_forc(c)%scalaravg_col(c_l) = this%scalaravg_col(c)
+        enddo
+      endif
+      if(betr_spinup_state==3 .and. this%spinup_count==1)then
+        enter_spinup =.true.
+        do c = bounds%begc, bounds%endc
+          if(.not. this%active_col(c))cycle   
+          call this%betr(c)%set_bgc_spinup(betr_bounds, 1,  betr_nlevtrc_soil, this%num_soilc, &
+            this%filter_soilc(:), this%biophys_forc(c), spinup_stage=2)
+        enddo
+        enter_spinup=.false.
+      endif
+    endif
     call this%bsimstatus%reset()
 
     !pass necessary data for correct subroutine call
