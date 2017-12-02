@@ -133,7 +133,6 @@ contains
   this%k_decay_lwd    =  biogeo_con%k_decay_lwd
   this%k_decay_fwd    =  biogeo_con%k_decay_fwd
 
-
   this%def_cn(centurybgc_index%lit1) = biogeo_con%init_cn_met * natomw/catomw
   this%def_cn(centurybgc_index%lit2) = biogeo_con%init_cn_cel * natomw/catomw
   this%def_cn(centurybgc_index%lit3) = biogeo_con%init_cn_lig * natomw/catomw
@@ -225,8 +224,8 @@ contains
   )
   call bstatus%reset()
 
-  call this%calc_cnp_ratios(centurybgc_index, ystates)
-
+  call this%calc_cnp_ratios(centurybgc_index, ystates, bstatus)
+  if (bstatus%check_status())return
   !calculate potential decay coefficient (1/s)
   call this%calc_som_decay_k(centurybgc_index, decompkf_eca, k_decay)
 
@@ -819,20 +818,24 @@ contains
   end subroutine calc_potential_aerobic_hr
 
   !-----------------------------------------------------------------------
-  subroutine calc_cnp_ratios(this, centurybgc_index, ystates)
+  subroutine calc_cnp_ratios(this, centurybgc_index, ystates, bstatus)
   !
   ! DESCRIPTION
   ! compute the cnp ratios for the om pools
+  use BetrStatusType      , only : betr_status_type
   use MathfuncMod         , only : safe_div
   use BgcCentCnpIndexType       , only : centurybgc_index_type
   implicit none
   class(CentSom_type), intent(inout) :: this
   type(centurybgc_index_type)   , intent(in) :: centurybgc_index
   real(r8), intent(in) :: ystates(centurybgc_index%nstvars)
+  type(betr_status_type)      , intent(out) :: bstatus
   integer :: jj
   integer :: kc, kn, kp, kc13, kc14, kc1, kc2
   real(r8):: rat
+  character(len=255) :: msg
   real(r8), parameter :: tiny_val=1.e-30_r8
+  
   associate(                         &
     nelms => centurybgc_index%nelms, &
     c_loc => centurybgc_index%c_loc, &
@@ -849,11 +852,19 @@ contains
     kc = (jj-1) * nelms + c_loc
     kn = (jj-1) * nelms + n_loc
     kp = (jj-1) * nelms + p_loc
-
-    rat=ystates(kc)/(ystates(kc)+1.e-14_r8)
-    this%cn_ratios(jj) = this%def_cn(jj)*(1._r8-rat)+safe_div(ystates(kc),ystates(kn))
-    this%cp_ratios(jj) = this%def_cp(jj)*(1._r8-rat)+safe_div(ystates(kc),ystates(kp))
-
+    if(ystates(kc)<1.e-14_r8)then
+      rat = 0._r8
+    else
+      rat=ystates(kc)/(ystates(kc)+1.e-14_r8)
+    endif
+    this%cn_ratios(jj) = this%def_cn(jj)*(1._r8-rat)+safe_div(ystates(kc),ystates(kn))*rat
+    this%cp_ratios(jj) = this%def_cp(jj)*(1._r8-rat)+safe_div(ystates(kc),ystates(kp))*rat
+    if(this%cn_ratios(jj) >= this%cp_ratios(jj))then
+      write(msg,*)'phosphorus wierdo',jj,ystates(kc),ystates(kn),ystates(kp), rat, this%def_cn(jj),this%def_cp(jj),&
+         this%cn_ratios(jj),this%cp_ratios(jj) 
+      call bstatus%set_msg(msg,err=-1)
+      return
+    endif
     if(this%use_c14)then
       kc14 = (jj-1) * nelms + c14_loc
       this%cc14_ratios(jj) = this%def_cc14(jj)*(1._r8-rat)+safe_div(ystates(kc),ystates(kc14))

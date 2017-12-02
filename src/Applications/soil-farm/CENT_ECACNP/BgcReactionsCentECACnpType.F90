@@ -388,7 +388,6 @@ contains
              tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc) &
                * bgc_con_eca%spinup_factor(7)
 
-           print*,'p1',j,tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc)
            if(this%use_c13)then
              tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc) = &
                tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc) &
@@ -404,22 +403,18 @@ contains
          enddo
          !som3
          do kk = tracers%id_trc_beg_som, tracers%id_trc_end_som, nelm
-           print*,'p3c',tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc) 
            tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc) = &
              tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc) &
               * bgc_con_eca%spinup_factor(8)
 
-           print*,'p3n',tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc)
            tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc) = &
              tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc) &
               * bgc_con_eca%spinup_factor(8)
 
-           print*,'p3p',j,tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc)
            tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc) = &
              tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc) &
              * bgc_con_eca%spinup_factor(8)
 
-           print*,'p3',j,tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc)
            if(this%use_c13)then
              tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc) = &
                tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc) &
@@ -446,7 +441,6 @@ contains
              tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc) &
               * bgc_con_eca%spinup_factor(9)
 
-           print*,'p2',j,tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc)
            if(this%use_c13)then
              tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc) = &
                tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc) &
@@ -474,7 +468,6 @@ contains
              tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc) = &
                tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc) &
                / scalaravg_col(c)
-             print*,'ps1',j,tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc)
              if(this%use_c13)then
                tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc) = &
                  tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc) &
@@ -497,11 +490,9 @@ contains
              tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc) = &
                tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc) &
                / scalaravg_col(c)
-             print*,'ps32',tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc)
              tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc) = &
                tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc) &
                / scalaravg_col(c)
-             print*,'ps3',j,tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc)
              if(this%use_c13)then
                tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc) = &
                  tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc) &
@@ -523,11 +514,9 @@ contains
              tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc) = &
                tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc) &
                / scalaravg_col(c)
-             print*,'psxx2',j,tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc)
              tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc) = &
                tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc) &
                / scalaravg_col(c)
-             print*,'ps2',j,tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc)
              if(this%use_c13)then
                tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc) = &
                  tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc) &
@@ -550,7 +539,6 @@ contains
          !occlude p
          tracerstate_vars%tracer_conc_mobile_col(c,j,tracers%id_trc_end_minp) = &
            biophysforc%occlp_vr_col(c,j)/patomw
-         print*,''
        enddo
     enddo
   endif

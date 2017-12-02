@@ -189,6 +189,8 @@ contains
   this%init_cn_cel  = 90._r8  !mass based
   this%init_cn_lig  = 90._r8  !mass based
   this%init_cn_cwd  = 90._r8  !mass based
+  this%init_cn_fwd  = 90._r8  !mass based
+  this%init_cn_lwd  = 90._r8  !mass based
   this%init_cn_som1 = 8._r8   !mass based
   this%init_cn_som2 = 11._r8  !mass based
   this%init_cn_som3 = 11._r8  !mass based
@@ -197,6 +199,8 @@ contains
   this%init_cp_cel  = 2000._r8
   this%init_cp_lig  = 2500._r8
   this%init_cp_cwd  = 4500._r8
+  this%init_cp_lwd  = 4500._r8!mass based
+  this%init_cp_fwd  = 4500._r8!mass based
   this%init_cp_som1 = 110._r8 !mass based
   this%init_cp_som2 = 320._r8 !mass based
   this%init_cp_som3 = 114._r8 !mass based
