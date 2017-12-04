@@ -57,6 +57,7 @@ contains
     use betr_constants  , only : betr_errmsg_len
     use BetrStatusType  , only : betr_status_type
     use BGCReactionsCentECACnpType, only : bgc_reaction_CENTURY_ECACNP_type
+    use BGCReactionsSummsType, only : bgc_reaction_summs_type
     implicit none
     ! !ARGUMENTS:
     class(bgc_reaction_type),  allocatable, intent(inout) :: bgc_reaction
@@ -70,6 +71,8 @@ contains
     select case(trim(method))
     case ("eca_cnp")
        allocate(bgc_reaction, source=bgc_reaction_CENTURY_ECACNP_type())
+    case ("summs")
+       allocate(bgc_reaction, source=bgc_reaction_summs_type())
     case default
        write(msg,*)subname //' ERROR: unknown method: ', method
        msg = trim(msg)//new_line('A')//errMsg(mod_filename, __LINE__)
@@ -89,6 +92,7 @@ contains
   use betr_constants  , only : betr_errmsg_len
   use BetrStatusType  , only : betr_status_type
   use PlantSoilBgcCnpType, only : plant_soilbgc_cnp_type
+  use PlantSoilBgcSummsType, only : plant_soilbgc_cnp_type
 
   implicit none
   ! !ARGUMENTS:
@@ -105,6 +109,8 @@ contains
   select case(trim(method))
   case ("eca_cnp")
      allocate(plant_soilbgc, source=plant_soilbgc_cnp_type())
+  case ("summs")
+     allocate(plant_soilbgc, source=plant_soilbgc_summs_type())
   case default
      write(msg, *)subname //' ERROR: unknown method: ', method
      msg = trim(msg)//new_line('A')//errMsg(mod_filename, __LINE__)
@@ -120,6 +126,7 @@ contains
   ! DESCRIPTION
   ! read in the parameters for specified bgc implementation
   use BiogeoConType, only : bgc_con_eca
+  use BgcConSummsType, only: bgc_con_summs
   use betr_constants , only : betr_namelist_buffer_size_ext
   use BetrStatusType , only : betr_status_type
   implicit none
@@ -132,6 +139,8 @@ contains
    select case (trim(reaction_method))
    case ("eca_cnp")
      call  bgc_con_eca%Init(bgc_namelist_buffer, bstatus)
+   case ("summs")
+     call  bgc_con_summs%Init(bgc_namelist_buffer, bstatus)
      !do nothing
    case default
      if(trim(bgc_namelist_buffer)=='none')then

@@ -1,10 +1,11 @@
 set(BGCFARM_UTIL_SOURCES
  BiogeoConType.F90
+ BgcConSummsType.F90
 )
 
 if (BETR_BGC EQUAL 1)
   include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)
-  include(add_betr_library)
+  include(add_beta_library)
   add_betr_library(bgcfarm_util ${BGCFARM_UTIL_SOURCES})
 
   set(BETR_LIBRARIES bgcfarm_util;${BETR_LIBRARIES} PARENT_SCOPE)
