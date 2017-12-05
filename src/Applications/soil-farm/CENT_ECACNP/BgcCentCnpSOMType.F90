@@ -834,7 +834,7 @@ contains
   integer :: kc, kn, kp, kc13, kc14, kc1, kc2
   real(r8):: rat
   character(len=255) :: msg
-  real(r8), parameter :: tiny_val=1.e-30_r8
+  real(r8), parameter :: tiny_val=1.e-10_r8
   
   associate(                         &
     nelms => centurybgc_index%nelms, &
@@ -844,7 +844,8 @@ contains
     c13_loc => centurybgc_index%c13_loc, &
     c14_loc => centurybgc_index%c14_loc, &
     lit2  => centurybgc_index%lit2 , &
-    lit3  => centurybgc_index%lit3   &
+    lit3  => centurybgc_index%lit3 , &
+    is_cenpool_som => centurybgc_index%is_cenpool_som & 
   )
 
   !for om pools
@@ -852,14 +853,14 @@ contains
     kc = (jj-1) * nelms + c_loc
     kn = (jj-1) * nelms + n_loc
     kp = (jj-1) * nelms + p_loc
-    if(ystates(kc)<1.e-14_r8)then
+    if(ystates(kc)<tiny_val)then
       rat = 0._r8
     else
-      rat=ystates(kc)/(ystates(kc)+1.e-14_r8)
+      rat=ystates(kc)/(ystates(kc)+tiny_val)
     endif
     this%cn_ratios(jj) = this%def_cn(jj)*(1._r8-rat)+safe_div(ystates(kc),ystates(kn))*rat
     this%cp_ratios(jj) = this%def_cp(jj)*(1._r8-rat)+safe_div(ystates(kc),ystates(kp))*rat
-    if(this%cn_ratios(jj) >= this%cp_ratios(jj))then
+    if(this%cn_ratios(jj) >= this%cp_ratios(jj) .and. is_cenpool_som(jj))then
       write(msg,*)'phosphorus wierdo',jj,ystates(kc),ystates(kn),ystates(kp), rat, this%def_cn(jj),this%def_cp(jj),&
          this%cn_ratios(jj),this%cp_ratios(jj) 
       call bstatus%set_msg(msg,err=-1)

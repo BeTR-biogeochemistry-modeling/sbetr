@@ -94,7 +94,7 @@ implicit none
      integer, pointer :: lid_plant_minn_no3_pft(:)=> null()
      integer, pointer :: lid_plant_minn_nh4_pft(:)=> null()
      integer, pointer :: lid_plant_minp_pft(:)=> null()
-
+     logical, pointer :: is_cenpool_som(:) => null()
      logical :: debug
      character(len=loc_name_len), allocatable :: varnames(:)
    contains
@@ -317,6 +317,10 @@ implicit none
        countelm(this%som_beg,this%som_end) + &
        countelm(this%Bm_beg,this%Bm_end) + &
        countelm(this%dom_beg,this%dom_end))/this%nelms   !include coarse wood debris
+    allocate(this%is_cenpool_som(this%nom_pools)); this%is_cenpool_som(:)=.false.
+    this%is_cenpool_som(this%som1)=.true.
+    this%is_cenpool_som(this%som2)=.true.
+    this%is_cenpool_som(this%som3)=.true.
 
     itemp               = this%nom_pools*this%nelms
 
