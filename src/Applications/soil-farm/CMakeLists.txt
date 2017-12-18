@@ -1,6 +1,6 @@
 add_subdirectory(bgcfarm_util)
+add_subdirectory(SUMMS)
 add_subdirectory(CENT_ECACNP)
-add_subdirectory(summs)
 
 if (UGM)
   add_subdirectory(UGM-M)
@@ -11,7 +11,7 @@ endif()
 
 #set(BETR_LIBRARIES bgcfarm_util;cent_ecacnp;cent_ecadcnp;${BETR_LIBRARIES} PARENT_SCOPE)
 if (UGM)
-set(BETR_LIBRARIES bgcfarm_util;cent_ecacnp;summs;UGM-M;${BETR_LIBRARIES} PARENT_SCOPE)
+set(BETR_LIBRARIES bgcfarm_util;cent_ecacnp;SUMMS;UGM-M;${BETR_LIBRARIES} PARENT_SCOPE)
 else()
-set(BETR_LIBRARIES bgcfarm_util;cent_ecacnp;summs;${BETR_LIBRARIES} PARENT_SCOPE)
+set(BETR_LIBRARIES bgcfarm_util;SUMMS;cent_ecacnp;${BETR_LIBRARIES} PARENT_SCOPE)
 endif()

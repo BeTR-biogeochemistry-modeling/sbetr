@@ -124,7 +124,7 @@ implicit none
   !inorganic phosphorus cycling
   real(r8), pointer :: frac_p_sec_to_sol(:)    => null()   !fraction of released secondary phosphorus that goes into soluble form
   real(r8), pointer :: minp_secondary_decay(:) => null()   !decay rate of secondary phosphorus
-  !real(r8), pointer :: spinup_factor(:)
+  real(r8), pointer :: spinup_factor(:)
  contains
    procedure, public  :: Init
    procedure, private :: InitAllocate
@@ -139,7 +139,7 @@ contains
   subroutine Init(this, namelist_buffer, bstatus)
   use betr_constants , only : betr_namelist_buffer_size_ext
   use BetrStatusType , only : betr_status_type
-  !use betr_ctrl     , only : betr_spinup_state
+  use betr_ctrl     , only : betr_spinup_state
   implicit none
   class(BgcConSumms_type), intent(inout) :: this
   character(len=betr_namelist_buffer_size_ext) , intent(in)    :: namelist_buffer
@@ -152,8 +152,9 @@ contains
 
   !update parameter from namelist - add back later
   !call this%ReadNamelist(namelist_buffer, bstatus)
+
   !if(betr_spinup_state/=0)then
-  !  call this%apply_spinup_factor()
+    !call this%apply_spinup_factor()
   !endif
   end subroutine Init
   !--------------------------------------------------------------------
