@@ -166,15 +166,16 @@ contains
 
   associate(                                                           &
    tracer_conc_mobile_col  => tracerstate_vars%tracer_conc_mobile_col, &
-   tracer_conc_frozen_col  => tracerstate_vars%tracer_conc_frozen_col, &
+   !tracer_conc_frozen_col  => tracerstate_vars%tracer_conc_frozen_col, &
    !scalaravg_col           => biophysforc%scalaravg_col              , &
    !dom_scalar              => biophysforc%dom_scalar_col             , &
-   nelm                    => this%centurybgc_index%nelms            , &
-   c_loc                   => this%centurybgc_index%c_loc            , &
-   n_loc                   => this%centurybgc_index%n_loc            , &
-   p_loc                   => this%centurybgc_index%p_loc            , &
-   c13_loc                 => this%centurybgc_index%c13_loc          , &
-   c14_loc                 => this%centurybgc_index%c14_loc            &
+   !nelm                    => this%centurybgc_index%nelms            , &
+   !c_loc                   => this%centurybgc_index%c_loc            , &
+   !n_loc                   => this%centurybgc_index%n_loc            , &
+   !p_loc                   => this%centurybgc_index%p_loc            , &
+   !c13_loc                 => this%centurybgc_index%c13_loc          , &
+   !c14_loc                 => this%centurybgc_index%c14_loc            &
+   tracer_conc_frozen_col  => tracerstate_vars%tracer_conc_frozen_col &
   )
 
 

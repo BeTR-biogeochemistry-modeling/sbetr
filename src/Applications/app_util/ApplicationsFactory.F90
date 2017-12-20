@@ -57,7 +57,7 @@ contains
     use betr_constants  , only : betr_errmsg_len
     use BetrStatusType  , only : betr_status_type
     use BGCReactionsCentECACnpType, only : bgc_reaction_CENTURY_ECACNP_type
-    use BGCReactionsSummsType, only : bgc_reaction_summs_type
+    use BgcReactionsSummsType, only : bgc_reaction_summs_type
     implicit none
     ! !ARGUMENTS:
     class(bgc_reaction_type),  allocatable, intent(inout) :: bgc_reaction
@@ -92,7 +92,7 @@ contains
   use betr_constants  , only : betr_errmsg_len
   use BetrStatusType  , only : betr_status_type
   use PlantSoilBgcCnpType, only : plant_soilbgc_cnp_type
-  use PlantSoilBgcSummsType, only : plant_soilbgc_cnp_type
+  use PlantSoilBgcSummsType, only : plant_soilbgc_summs_type
 
   implicit none
   ! !ARGUMENTS:
