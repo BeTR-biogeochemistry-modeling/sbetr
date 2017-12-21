@@ -92,6 +92,7 @@ module BetrType
      procedure, public  :: retrieve_biofluxes
      procedure, public  :: debug_info
      procedure, public  :: set_bgc_spinup
+     procedure, public  :: Set_iP_prof
   end type betr_type
 
   public :: create_betr_type
@@ -201,6 +202,19 @@ contains
 
   end subroutine Init
 
+!-------------------------------------------------------------------------------
+  subroutine Set_iP_prof(this, bounds, lbj, ubj, biophysforc)
+
+  implicit none
+  ! !ARGUMENTS:
+  class(betr_type)            , intent(inout) :: this
+  type(bounds_type)           , intent(in)    :: bounds
+  integer                     , intent(in) :: ubj, lbj
+  type(betr_biogeophys_input_type) , intent(inout)    :: biophysforc
+
+  call this%bgc_reaction%init_iP_prof(bounds, lbj, ubj, biophysforc, this%tracers, this%tracerstates)
+
+  end subroutine Set_iP_prof
 !-------------------------------------------------------------------------------
   subroutine ReadNamelist(this, namelist_buffer, bstatus)
     !
@@ -537,23 +551,21 @@ contains
     end associate
   end subroutine step_with_drainage
   !--------------------------------------------------------------------------------
-  subroutine set_bgc_spinup(this, bounds, lbj, ubj, num_soilc, filter_soilc, biophysforc, spinup_stage)
+  subroutine set_bgc_spinup(this, bounds, lbj, ubj,  biophysforc, spinup_stage)
 
   implicit none
   ! !ARGUMENTS:
   class(betr_type)            , intent(inout) :: this
   type(bounds_type)           , intent(in)    :: bounds
-  integer, intent(in) :: ubj, lbj
-  integer, intent(in) :: num_soilc
-  integer, intent(in) :: filter_soilc(:)
+  integer                     , intent(in)    :: ubj, lbj
   type(betr_biogeophys_input_type) , intent(inout)    :: biophysforc
   integer, optional, intent(in) :: spinup_stage
 
   integer :: spinup_stage_loc
-  
+
   spinup_stage_loc=0
   if(present(spinup_stage))spinup_stage_loc=spinup_stage
-  call this%bgc_reaction%set_bgc_spinup(bounds, lbj, ubj, num_soilc, filter_soilc, biophysforc, &
+  call this%bgc_reaction%set_bgc_spinup(bounds, lbj, ubj,  biophysforc, &
     this%tracers, this%tracerstates, spinup_stage_loc)
 
   end subroutine set_bgc_spinup

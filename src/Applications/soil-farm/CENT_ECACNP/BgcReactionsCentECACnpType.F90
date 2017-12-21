@@ -85,6 +85,7 @@ module BgcReactionsCentECACnpType
     procedure :: debug_info
     procedure :: set_bgc_spinup
     procedure :: UpdateParas
+    procedure :: init_iP_prof
     procedure, private :: set_century_forc
     procedure, private :: retrieve_output
     procedure, private :: rm_ext_output
@@ -158,8 +159,8 @@ contains
   end subroutine init_boundary_condition_type
 
   !-------------------------------------------------------------------------------
-  subroutine set_bgc_spinup(this, bounds, lbj, ubj, num_soilc, filter_soilc, biophysforc, &
-  tracers, tracerstate_vars, spinup_stage)
+  subroutine set_bgc_spinup(this, bounds, lbj, ubj, biophysforc, &
+    tracers, tracerstate_vars, spinup_stage)
 
   !
   !DESCRIPTION
@@ -175,14 +176,12 @@ contains
   class(bgc_reaction_CENTURY_ECACNP_type) , intent(inout)    :: this      !
   type(bounds_type)                       , intent(in) :: bounds
   integer                                 , intent(in) :: lbj, ubj
-  integer                                 , intent(in) :: num_soilc
-  integer                                 , intent(in) :: filter_soilc(:)
   type(betr_biogeophys_input_type)        , intent(inout) :: biophysforc
   type(BeTRtracer_type)                   , intent(inout) :: tracers
   type(tracerstate_type)                  , intent(inout) :: tracerstate_vars
   integer                                 , intent(in) :: spinup_stage
   integer :: kk, c, j
-  
+
   associate(                                                           &
    tracer_conc_mobile_col  => tracerstate_vars%tracer_conc_mobile_col, &
    tracer_conc_frozen_col  => tracerstate_vars%tracer_conc_frozen_col, &
@@ -372,6 +371,7 @@ contains
      do c = bounds%begc, bounds%endc
        dom_scalar(c) = 1._r8
      enddo
+     call this%init_iP_prof(bounds, lbj, ubj, biophysforc, tracers, tracerstate_vars)
      do j = lbj, ubj
        do c = bounds%begc, bounds%endc
          !som1
@@ -530,22 +530,47 @@ contains
              endif
            enddo
          endif !end betr_spinup_state
-         !set phosphorus
-         tracerstate_vars%tracer_conc_mobile_col(c,j,tracers%id_trc_p_sol) = &
-           (biophysforc%solutionp_vr_col(c,j) + biophysforc%labilep_vr_col(c,j))/patomw
-         !secondary p
-         tracerstate_vars%tracer_conc_mobile_col(c,j,tracers%id_trc_beg_minp) = &
-           biophysforc%secondp_vr_col(c,j)/patomw
-         !occlude p
-         tracerstate_vars%tracer_conc_mobile_col(c,j,tracers%id_trc_end_minp) = &
-           biophysforc%occlp_vr_col(c,j)/patomw
+
        enddo
     enddo
+
   endif
 
   end associate
   end subroutine set_bgc_spinup
+  !----------------------------------------------------------------------
+  subroutine init_iP_prof(this, bounds, lbj, ubj, biophysforc, tracers, tracerstate_vars)
+  !
+  !DESCRIPTION
+  ! set up initial inorganic P profile
+  use tracer_varcon, only : patomw
+  use BeTR_biogeophysInputType         , only : betr_biogeophys_input_type
+  use BeTRTracerType                   , only : betrtracer_type
+  use tracerstatetype                  , only : tracerstate_type
+  implicit none
+  ! !ARGUMENTS:
+  class(bgc_reaction_CENTURY_ECACNP_type)  , intent(inout)    :: this
+  type(bounds_type)                        , intent(in) :: bounds
+  integer                                  , intent(in) :: lbj, ubj
+  type(betr_biogeophys_input_type)        , intent(inout) :: biophysforc
+  type(BeTRtracer_type)                    , intent(inout) :: tracers
+  type(tracerstate_type)                   , intent(inout) :: tracerstate_vars
 
+  integer :: c, j
+  do j = lbj, ubj
+    do c = bounds%begc, bounds%endc
+      !set phosphorus
+      tracerstate_vars%tracer_conc_mobile_col(c,j,tracers%id_trc_p_sol) = &
+           (biophysforc%solutionp_vr_col(c,j) + biophysforc%labilep_vr_col(c,j))/patomw
+      !secondary p
+      tracerstate_vars%tracer_conc_mobile_col(c,j,tracers%id_trc_beg_minp) = &
+           biophysforc%secondp_vr_col(c,j)/patomw
+      !occlude p
+      tracerstate_vars%tracer_conc_mobile_col(c,j,tracers%id_trc_end_minp) = &
+           biophysforc%occlp_vr_col(c,j)/patomw
+    enddo
+  enddo
+  end subroutine init_iP_prof
   !----------------------------------------------------------------------
   subroutine set_kinetics_par(this, lbj, ubj, nactpft, plantNutkinetics)
   use PlantNutKineticsMod, only : PlantNutKinetics_type
@@ -605,10 +630,10 @@ contains
     !
     ! !USES:
     use BeTRTracerType                   , only : betrtracer_type
-    use BeTRTracerType                   , only : betrtracer_type
     use MathfuncMod                      , only : addone
     use betr_varcon                      , only : betr_maxpatch_pft
     use betr_constants                   , only : betr_namelist_buffer_size_ext
+    use tracer_varcon                    , only : fix_ip
     implicit none
     ! !ARGUMENTS:
     class(bgc_reaction_CENTURY_ECACNP_type) , intent(inout)    :: this
@@ -863,7 +888,7 @@ contains
     if(bstatus%check_status())return
 
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_p_sol, &
-         trc_name='P_SOL', is_trc_mobile=.true., is_trc_advective = .true., &
+         trc_name='P_SOL', is_trc_mobile=.true. .and. (.not. fix_ip), is_trc_advective = .true. .and. (.not. fix_ip), &
          trc_group_id = betrtracer_vars%id_trc_p_sol, trc_group_mem = 1, is_trc_volatile=.false., &
          trc_vtrans_scal=1._r8)
     if(bstatus%check_status())return
@@ -2057,7 +2082,7 @@ contains
   use betr_ctrl                , only : betr_spinup_state
   use PlantSoilBGCMod          , only : plant_soilbgc_type
   use PlantSoilBgcCnpType      , only : plant_soilbgc_cnp_type
-  use tracer_varcon            , only : catomw, natomw, patomw
+  use tracer_varcon            , only : catomw, natomw, patomw, fix_ip
   implicit none
   class(bgc_reaction_CENTURY_ECACNP_type) , intent(inout)    :: this
   integer                              , intent(in) :: c, j
@@ -2109,12 +2134,6 @@ contains
       tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_dom:betrtracer_vars%id_trc_end_dom) = &
         ystatesf(dom_beg:dom_end)
 
-      k1= betrtracer_vars%id_trc_beg_minp; k2 = this%centurybgc_index%lid_minp_secondary
-      tracerstate_vars%tracer_conc_mobile_col(c,j,k1) = ystatesf(k2)
-
-      k1 = betrtracer_vars%id_trc_end_minp;   k2 = this%centurybgc_index%lid_minp_occlude
-      tracerstate_vars%tracer_conc_mobile_col(c,j,k1) = ystatesf(k2)
-
       tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_n2) = &
         ystatesf(this%centurybgc_index%lid_n2)
 
@@ -2141,9 +2160,7 @@ contains
         ystatesf(this%centurybgc_index%lid_ch4)
 
       if(this%non_limit)then
-!        if(betrtracer_vars%debug)then
-!          print*,'suppn1',ystatesf(this%centurybgc_index%lid_nh4), ystatesf(this%centurybgc_index%lid_no3)
-!        endif
+
         if(ystatesf(this%centurybgc_index%lid_nh4)>0._r8)then
           tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_nh3x) = &
             ystatesf(this%centurybgc_index%lid_nh4)
@@ -2171,9 +2188,6 @@ contains
              ystatesf(this%centurybgc_index%lid_no3)*natomw/dtime
           ystatesf(this%centurybgc_index%lid_no3) = 0._r8
         endif
-!        if(betrtracer_vars%debug)then
-!          print*,'suppn',biogeo_flux%n14flux_vars%supplement_to_sminn_vr_col(c,j)
-!        endif
       else
         tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_nh3x) = &
           ystatesf(this%centurybgc_index%lid_nh4)
@@ -2185,34 +2199,48 @@ contains
       tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_n2o) = &
         ystatesf(this%centurybgc_index%lid_n2o)
 
-      if(this%nop_limit)then
-!        if(betrtracer_vars%debug)then
-!          print*,'retrie yf mp',ystatesf(this%centurybgc_index%lid_minp_soluble),ystates0(this%centurybgc_index%lid_minp_soluble)
-!          print*,'immob mp',ystatesf(this%centurybgc_index%lid_minp_immob),ystates0(this%centurybgc_index%lid_minp_immob)
-!        endif
-        if(ystatesf(this%centurybgc_index%lid_minp_soluble)>0._r8)then
+      if(.not. fix_ip)then
+        k1= betrtracer_vars%id_trc_beg_minp; k2 = this%centurybgc_index%lid_minp_secondary
+        tracerstate_vars%tracer_conc_mobile_col(c,j,k1) = ystatesf(k2)
+
+        k1 = betrtracer_vars%id_trc_end_minp;   k2 = this%centurybgc_index%lid_minp_occlude
+        tracerstate_vars%tracer_conc_mobile_col(c,j,k1) = ystatesf(k2)
+
+        if(this%nop_limit)then
+
+          if(ystatesf(this%centurybgc_index%lid_minp_soluble)>0._r8)then
+            tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_p_sol) = &
+              ystatesf(this%centurybgc_index%lid_minp_soluble)
+
+            !no P-limitation in this time step
+            biogeo_flux%p31flux_vars%supplement_to_sminp_vr_col(c,j) = 0._r8
+          else
+            !active P-limitation
+            tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_p_sol) =  0._r8
+
+            biogeo_flux%p31flux_vars%supplement_to_sminp_vr_col(c,j) = &
+              -ystatesf(this%centurybgc_index%lid_minp_soluble)*patomw/dtime
+            ystatesf(this%centurybgc_index%lid_minp_soluble) = 0._r8
+          endif
+        else
           tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_p_sol) = &
             ystatesf(this%centurybgc_index%lid_minp_soluble)
-
-          !no P-limitation in this time step
-          biogeo_flux%p31flux_vars%supplement_to_sminp_vr_col(c,j) = 0._r8
-        else
-          !active P-limitation
-          tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_p_sol) =  0._r8
-
-          biogeo_flux%p31flux_vars%supplement_to_sminp_vr_col(c,j) = &
-            -ystatesf(this%centurybgc_index%lid_minp_soluble)*patomw/dtime
-          ystatesf(this%centurybgc_index%lid_minp_soluble) = 0._r8
         endif
-!        if(betrtracer_vars%debug)then
-!          print*,'supppp',biogeo_flux%p31flux_vars%supplement_to_sminp_vr_col(c,j)
-!        endif
-      else
-        tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_p_sol) = &
-          ystatesf(this%centurybgc_index%lid_minp_soluble)
+        !fluxes
+        tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_p_sol) =      &
+          ystatesf(this%centurybgc_index%lid_minp_soluble) - &
+          ystates0(this%centurybgc_index%lid_minp_soluble)
 
+        trcid = betrtracer_vars%id_trc_beg_minp
+        tracer_flx_netpro_vr(c,j, trcid) = &
+          ystatesf(this%centurybgc_index%lid_minp_secondary) - &
+          ystates0(this%centurybgc_index%lid_minp_secondary)
+
+        trcid = betrtracer_vars%id_trc_end_minp
+        tracer_flx_netpro_vr(c,j, trcid) =  &
+          ystatesf(this%centurybgc_index%lid_minp_occlude) - &
+          ystates0(this%centurybgc_index%lid_minp_occlude)
       endif
-
       !tracer fluxes
       tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_nh3x) =  &
         ystatesf(this%centurybgc_index%lid_nh4) - &
@@ -2221,11 +2249,6 @@ contains
       tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_no3x)  =  &
         ystatesf(this%centurybgc_index%lid_no3) - &
         ystates0(this%centurybgc_index%lid_no3)
-
-
-      tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_p_sol) =      &
-        ystatesf(this%centurybgc_index%lid_minp_soluble) - &
-        ystates0(this%centurybgc_index%lid_minp_soluble)
 
       tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_o2) ) = &
          ystatesf(this%centurybgc_index%lid_o2_paere )  - &
@@ -2264,7 +2287,6 @@ contains
           ystatesf(this%centurybgc_index%lid_n2o_paere)  - &
           ystates0(this%centurybgc_index%lid_n2o_paere)
       endif
-
 
       tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_n2) = &
         ystatesf(this%centurybgc_index%lid_n2) - &
@@ -2329,15 +2351,6 @@ contains
         tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)
       enddo
 
-      trcid = betrtracer_vars%id_trc_beg_minp
-      tracer_flx_netpro_vr(c,j, trcid) = &
-        ystatesf(this%centurybgc_index%lid_minp_secondary) - &
-        ystates0(this%centurybgc_index%lid_minp_secondary)
-
-      trcid = betrtracer_vars%id_trc_end_minp
-      tracer_flx_netpro_vr(c,j, trcid) =  &
-        ystatesf(this%centurybgc_index%lid_minp_occlude) - &
-        ystates0(this%centurybgc_index%lid_minp_occlude)
       !plant soil bgc
 
       !biogeo_flux
@@ -2348,11 +2361,7 @@ contains
       biogeo_flux%p31flux_vars%secondp_to_occlp_vr_col(c,j) = &
          (ystatesf(this%centurybgc_index%lid_minp_occlude) - &
           ystates0(this%centurybgc_index%lid_minp_occlude))*patomw/dtime
-!      if(betrtracer_vars%debug)then
-!        print*,'hr',j,biogeo_flux%c12flux_vars%hr_vr_col(c,j)
-!        print*,'i,f',ystates0(this%centurybgc_index%lid_co2_hr),&
-!           ystatesf(this%centurybgc_index%lid_co2_hr)
-!      endif
+
       biogeo_flux%n14flux_vars%f_denit_vr_col(c,j)= &
         (ystatesf(this%centurybgc_index%lid_no3_den) - &
          ystates0(this%centurybgc_index%lid_no3_den))*natomw/dtime
@@ -2379,9 +2388,7 @@ contains
       plant_soilbgc%plant_minp_active_yield_flx_vr_patch(p,j) = &
           (ystatesf(this%centurybgc_index%lid_plant_minp_pft(p)) - &
            ystates0(this%centurybgc_index%lid_plant_minp_pft(p)))*patomw/dtime
-!      if(betrtracer_vars%debug)then
-!         print*,'minp pft',p,j,plant_soilbgc%plant_minp_active_yield_flx_vr_patch(p,j)
-!      endif
+
     enddo
 
     plant_soilbgc%plant_minn_no3_active_yield_flx_vr_col(c,j) = &
@@ -2395,9 +2402,6 @@ contains
     plant_soilbgc%plant_minp_active_yield_flx_vr_col(c,j) = &
           (ystatesf(this%centurybgc_index%lid_plant_minp) - &
            ystates0(this%centurybgc_index%lid_plant_minp))*patomw/dtime
-!    if(betrtracer_vars%debug)then
-!      print*,'minp col',c,j,plant_soilbgc%plant_minp_active_yield_flx_vr_col(c,j)
-!    endif
 
   end select
   end associate

@@ -118,7 +118,7 @@ module BeTRSimulation
      procedure, public :: DiagnoseLnd2atm         => BeTRSimulationDiagnoseLnd2atm
      procedure, public :: CreateOfflineHistory    => hist_htapes_create
      procedure, public :: WriteOfflineHistory     => hist_write
-     procedure, public :: SetSpinup               => BeTRSimulationSetSpinup     
+     procedure, public :: SetSpinup               => BeTRSimulationSetSpinup
 
      procedure, public :: WriteRegressionOutput
      !the following are used to interact with lsm
@@ -267,14 +267,14 @@ contains
     logical :: do_debug
     integer :: cc
     do_debug=.false.
-    if(do_debug)then 
+    if(do_debug)then
       cc=1
       col%active(:) =.false.
       col%active(cc)=.true.
       this%betr(cc)%tracers%debug=.true.
-    endif 
+    endif
   !    col%active(c_act)=.true.
-    
+
   end subroutine set_activecol
 !-------------------------------------------------------------------------------
   subroutine BeTRInit(this, bounds, lun, col, pft, waterstate, namelist_buffer, &
@@ -370,10 +370,9 @@ contains
       c_l=1
       do c = bounds%begc, bounds%endc
         if(.not. this%active_col(c))cycle
-        call this%betr(c)%set_bgc_spinup(betr_bounds, 1,  betr_nlevtrc_soil, this%num_soilc, &
-             this%filter_soilc(:), this%biophys_forc(c))
+        call this%betr(c)%set_bgc_spinup(betr_bounds, 1,  betr_nlevtrc_soil, this%biophys_forc(c))
         this%dom_scalar_col(c)=this%biophys_forc(c)%dom_scalar_col(c_l)
-      enddo      
+      enddo
     endif
 
     if(this%bsimstatus%check_status())call endrun(msg=this%bsimstatus%print_msg())
@@ -1932,14 +1931,13 @@ contains
      call this%BeTRSetBounds(betr_bounds)
      do c = bounds%begc, bounds%endc
        if(.not. this%active_col(c))cycle
-       call this%betr(c)%set_bgc_spinup(betr_bounds, 1,  betr_nlevtrc_soil, this%num_soilc, &
-             this%filter_soilc(:), this%biophys_forc(c))
+       call this%betr(c)%set_bgc_spinup(betr_bounds, 1,  betr_nlevtrc_soil, this%biophys_forc(c))
      enddo
   endif
   if(exit_spinup)betr_spinup_state=0
-  
+
   end subroutine BeTRSimulationSetSpinup
-  
+
   !------------------------------------------------------------------------
   subroutine BeTRSimulationSetcps(this, bounds, col, pft)
   !

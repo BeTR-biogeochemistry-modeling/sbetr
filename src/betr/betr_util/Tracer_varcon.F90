@@ -44,6 +44,7 @@ module Tracer_varcon
   logical :: use_c14_betr=.false.
   logical :: is_nitrogen_active = .true.
   logical :: is_phosphorus_active=.true.
+  logical :: fix_ip = .false.
   integer, parameter :: sorp_isotherm_linear=1
   integer, parameter :: sorp_isotherm_langmuir=2
 

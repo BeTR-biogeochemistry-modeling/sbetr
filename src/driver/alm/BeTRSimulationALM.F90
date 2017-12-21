@@ -33,7 +33,7 @@ module BeTRSimulationALM
        __FILE__
 
   type, public, extends(betr_simulation_type) :: betr_simulation_alm_type
-   private 
+   private
    contains
      procedure :: InitOnline                        => ALMInit
      procedure :: Init                              => ALMInitOffline
@@ -50,7 +50,9 @@ module BeTRSimulationALM
      procedure, public :: set_active                => ALMset_active
      procedure, private:: set_transient_kinetics_par
      procedure, public :: readParams                => ALMreadParams
+     procedure, public :: set_iP_prof
      procedure, public :: skip_balcheck
+     procedure, public :: checkpmassyes
   end type betr_simulation_alm_type
 
   public :: create_betr_simulation_alm
@@ -70,6 +72,41 @@ contains
     create_betr_simulation_alm => simulation
 
   end function create_betr_simulation_alm
+!-------------------------------------------------------------------------------
+
+  function checkpmassyes(this)result(yesno)
+  use tracer_varcon, only : fix_ip
+  implicit none
+  class(betr_simulation_alm_type)          , intent(inout) :: this
+
+  logical :: yesno
+
+  yesno = .not. fix_ip
+
+  end function checkpmassyes
+!-------------------------------------------------------------------------------
+  subroutine Set_iP_prof(this, bounds)
+  !
+  !set initial inorganic P profile
+  use decompMod       , only : bounds_type
+  use clm_varpar      , only : nlevtrc_soil
+  implicit none
+  class(betr_simulation_alm_type)          , intent(inout) :: this
+  type(bounds_type), intent(in) :: bounds
+
+  integer :: c
+  type(betr_bounds_type)   :: betr_bounds
+
+  call this%BeTRSetBounds(betr_bounds)
+
+  betr_nlevtrc_soil = nlevtrc_soil
+
+  do c = bounds%begc, bounds%endc
+    if(.not. this%active_col(c))cycle
+    call this%betr(c)%Set_iP_prof(betr_bounds, 1,  betr_nlevtrc_soil, this%biophys_forc(c))
+  enddo
+
+  end subroutine Set_iP_prof
 !-------------------------------------------------------------------------------
   subroutine ALMreadParams(this, ncid, bounds)
 
@@ -108,7 +145,7 @@ contains
   logical :: stats
 
   stats = this%spinup_count < 3
-  return 
+  return
   end function skip_balcheck
 !-------------------------------------------------------------------------------
 
@@ -270,9 +307,8 @@ contains
       if(betr_spinup_state==3 .and. this%spinup_count==1)then
         enter_spinup =.true.
         do c = bounds%begc, bounds%endc
-          if(.not. this%active_col(c))cycle   
-          call this%betr(c)%set_bgc_spinup(betr_bounds, 1,  betr_nlevtrc_soil, this%num_soilc, &
-            this%filter_soilc(:), this%biophys_forc(c), spinup_stage=2)
+          if(.not. this%active_col(c))cycle
+          call this%betr(c)%set_bgc_spinup(betr_bounds, 1,  betr_nlevtrc_soil, this%biophys_forc(c), spinup_stage=2)
         enddo
         enter_spinup=.false.
       endif

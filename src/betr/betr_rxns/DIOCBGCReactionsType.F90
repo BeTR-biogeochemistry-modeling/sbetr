@@ -42,6 +42,7 @@ module DIOCBGCReactionsType
      procedure :: debug_info
      procedure :: set_bgc_spinup
      procedure :: UpdateParas
+     procedure :: init_iP_prof
   end type bgc_reaction_dioc_run_type
 
   interface bgc_reaction_dioc_run_type
@@ -69,23 +70,49 @@ contains
   integer                              , intent(in)    :: lbj, ubj        ! lower and upper bounds, make sure they are > 0
 
   integer :: c, j
-
+  if (this%dummy_compiler_warning) continue
   !do nothing
   end subroutine UpdateParas
 
+
+  !----------------------------------------------------------------------
+  subroutine init_iP_prof(this, bounds, lbj, ubj, biophysforc, tracers, tracerstate_vars)
+  !
+  !DESCRIPTION
+  ! set up initial inorganic P profile
+  use tracer_varcon, only : patomw
+  use tracerstatetype        , only : tracerstate_type
+  use BeTRTracerType        , only : betrtracer_type
+  implicit none
+  ! !ARGUMENTS:
+  class(bgc_reaction_dioc_run_type)         , intent(inout)    :: this
+  type(bounds_type)                        , intent(in) :: bounds
+  integer                                  , intent(in) :: lbj, ubj
+  type(betr_biogeophys_input_type)        , intent(inout) :: biophysforc
+  type(BeTRtracer_type)                    , intent(inout) :: tracers
+  type(tracerstate_type)                   , intent(inout) :: tracerstate_vars
+
+
+  if (this%dummy_compiler_warning) continue
+  if (bounds%begc > 0) continue
+
+  end subroutine init_iP_prof
   !----------------------------------------------------------------------
   subroutine set_kinetics_par(this, lbj, ubj, nactpft, plantNutkinetics)
   use PlantNutKineticsMod, only : PlantNutKinetics_type
-
+  implicit none
   ! !ARGUMENTS:
-  class(bgc_reaction_dioc_run_type)         , intent(inout)    :: this                       !
+  class(bgc_reaction_dioc_run_type)         , intent(inout)    :: this
   class(PlantNutKinetics_type), intent(in) :: plantNutkinetics
   integer, intent(in) :: lbj, ubj
   integer, intent(in) :: nactpft
 
+
+  if (this%dummy_compiler_warning) continue
+
   end subroutine set_kinetics_par
   !-------------------------------------------------------------------------------
-  subroutine set_bgc_spinup(this, bounds, lbj, ubj, num_soilc, filter_soilc, biophysforc, &
+  subroutine set_bgc_spinup(this, bounds, lbj, ubj,  biophysforc, &
   tracers, tracerstate_vars, spinup_stage)
     use tracerstatetype        , only : tracerstate_type
     use BeTRTracerType        , only : betrtracer_type
@@ -93,8 +120,6 @@ contains
     class(bgc_reaction_dioc_run_type), intent(inout) :: this
     type(bounds_type)                       , intent(in) :: bounds
     integer                                 , intent(in) :: lbj, ubj
-    integer                                 , intent(in) :: num_soilc
-    integer                                 , intent(in) :: filter_soilc(:)
     type(betr_biogeophys_input_type)        , intent(inout) :: biophysforc
     type(BeTRtracer_type)                   , intent(inout) :: tracers
     type(tracerstate_type)                  , intent(inout) :: tracerstate_vars
