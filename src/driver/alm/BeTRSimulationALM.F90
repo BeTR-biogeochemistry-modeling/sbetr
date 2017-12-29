@@ -328,6 +328,7 @@ contains
 !    print*,'enter without drainage'
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
+      this%betr(c)%tracers%debug=col%debug_flag(c)
       call this%biogeo_flux(c)%reset(value_column=0._r8, active_soibgc=this%active_soibgc)
       call this%biophys_forc(c)%frac_normalize(this%betr_pft(c)%npfts, 1, betr_nlevtrc_soil)
 !!
@@ -608,7 +609,7 @@ contains
   !temporary variables
   type(betr_bounds_type) :: betr_bounds
   integer :: c, fc, j, c_l, begc_l, endc_l
-
+  real(r8) :: fport
   associate(                                           &
     ndep_prof     => cnstate_vars%ndep_prof_col     ,  &
     pdep_prof     => cnstate_vars%pdep_prof_col     ,  &
@@ -901,7 +902,17 @@ contains
          phosphorusflux_vars%primp_to_labilep_vr_col(c,j))
     enddo
   enddo
-
+  do fc = 1, num_soilc
+    c = filter_soilc(fc)
+    if(col%debug_flag(c))then
+      write(*,*)'ndep in=',nitrogenflux_vars%ndep_to_sminn_col(c)
+      fport = 0._r8
+      do j = 1, betr_bounds%ubj
+        fport=fport +ndep_prof(c,j)*this%betr_col(c)%dz(c_l,j)
+      enddo
+      write(*,*)'fport=',fport
+    endif
+  enddo
   end associate
   !pull in all state variables and update tracers
   end subroutine ALMBetrPlantSoilBGCSend

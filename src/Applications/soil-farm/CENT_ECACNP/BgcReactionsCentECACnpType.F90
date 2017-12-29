@@ -1413,7 +1413,7 @@ contains
     real(r8), allocatable :: ystates0(:)
     real(r8), allocatable :: ystatesf(:)
     integer :: spinup_flg
-
+    real(r8) :: tnmass(num_soilc),n_mass, c_mass1, n_mass1, p_mass1
     call betr_status%reset()
     SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__),betr_status)
     if(betr_status%check_status())return
@@ -1428,12 +1428,14 @@ contains
     !pass in fluxes and state varaibles into the 1D soil bgc model
     call this%set_century_forc(bounds, col, lbj, ubj, jtops, num_soilc, filter_soilc, &
         biophysforc, plant_soilbgc, betrtracer_vars, tracercoeff_vars, tracerstate_vars,betr_status)
+    tnmass(:)=0._r8
 
     select type(plant_soilbgc)
     type is(plant_soilbgc_cnp_type)
       plant_soilbgc%plant_minn_active_yield_flx_col(:) = 0._r8
       plant_soilbgc%plant_minp_active_yield_flx_col(:) = 0._r8
     end select
+    tnmass(:)=0._r8
     !run simulation layer by layer
     do j = lbj, ubj
       do fc = 1, num_soilc
@@ -1459,9 +1461,10 @@ contains
         else
            spinup_flg = 0
         endif
-        call this%centuryeca(c,j)%runbgc(is_surf, dtime, this%centuryforc(c,j),nstates, &
-            ystates0, ystatesf, biophysforc%scalaravg_col(c), spinup_flg, betr_status)
 
+        call this%centuryeca(c,j)%runbgc(is_surf, dtime, this%centuryforc(c,j),nstates, &
+            ystates0, ystatesf, biophysforc%scalaravg_col(c), spinup_flg, n_mass, betr_status)
+        if(betr_status%check_status())return
 !        if(.not. betrtracer_vars%debug)then
           !apply loss through fire,
           call this%rm_ext_output(c, j, dtime, nstates, ystatesf, this%centurybgc_index,&
@@ -1482,7 +1485,7 @@ contains
         end select
       enddo
     enddo
-
+    
     deallocate(ystates0)
     deallocate(ystatesf)
 
@@ -1492,8 +1495,8 @@ contains
         write(*,*)'sminn act plant uptake',plant_soilbgc%plant_minn_active_yield_flx_col(bounds%begc:bounds%endc)
         write(*,*)'sminp act plant uptake',plant_soilbgc%plant_minp_active_yield_flx_col(bounds%begc:bounds%endc)
       end select
-!      call this%debug_info(bounds, num_soilc, filter_soilc, col%dz(bounds%begc:bounds%endc,bounds%lbj:bounds%ubj),&
-!        betrtracer_vars, tracerstate_vars,  'after bgcreact',betr_status)
+      call this%debug_info(bounds, num_soilc, filter_soilc, col%dz(bounds%begc:bounds%endc,bounds%lbj:bounds%ubj),&
+        betrtracer_vars, tracerstate_vars,  'after bgcreact',betr_status)
     endif
   end subroutine calc_bgc_reaction
 

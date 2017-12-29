@@ -627,7 +627,7 @@ contains
    !local variables
    integer            :: j, n, k, fc, c , trcid  ! indices
    real(r8) :: Kd, KL, xs, Xsat, scal
-   real(r8), parameter :: tiny_val = 1.e-12_r8
+   real(r8), parameter :: tiny_val = 1.e-3_r8
    character(len=255) :: subname = 'calc_dual_phase_convert_coeff'
 
    call betr_status%reset()

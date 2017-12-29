@@ -1842,7 +1842,6 @@ contains
   endif
 
   if(this%do_soibgc())then
-
     call restartvar(ncid=ncid, flag=flag, varname='spinscalar', xtype=ncd_double, &
          dim1name='column', long_name='', units='', &
          interpinic_flag = 'interp', readvar=readvar, data=this%scalaravg_col)
@@ -1903,7 +1902,7 @@ contains
         exit_spinup = .false.; enter_spinup=.false.
       endif
       do c = bounds%begc, bounds%endc
-        this%biophys_forc(c)%scalaravg_col(c_l) = this%scalaravg_col(c)
+        this%biophys_forc(c)%scalaravg_col(c_l) = max(this%scalaravg_col(c),0.01_r8)
         this%biophys_forc(c)%dom_scalar_col(c_l)= this%dom_scalar_col(c)
       enddo
     endif

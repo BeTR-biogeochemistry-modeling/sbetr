@@ -73,9 +73,10 @@ module BgcCentCnpType
     procedure, private :: InitAllocate
     procedure, private :: arenchyma_gas_transport
     procedure, private :: sumup_cnp_mass
-    procedure, private :: sumup_cnp_msflx
+    procedure, public  :: sumup_cnp_msflx
     procedure, private :: bgc_integrate
     procedure, private :: c14decay
+    procedure, private :: checksum_cascade
   end type centurybgceca_type
   logical, public :: ldebug_bgc =.false.
 
@@ -196,8 +197,155 @@ contains
   end subroutine InitAllocate
 
   !-------------------------------------------------------------------------------
+
+
+  subroutine checksum_cascade(this, centurybgc_index)
+
+  use BgcCentCnpIndexType       , only : centurybgc_index_type
+
+  implicit none
+  ! !ARGUMENTS:
+  class(centurybgceca_type)     , intent(in) :: this
+  type(centurybgc_index_type)   , intent(in) :: centurybgc_index
+
+  real(r8) :: resc, resn, resp
+  integer  :: reac
+ 
+  associate(                                                   &
+    cascade_matrix => this%cascade_matrix                    , &
+    lit1      => centurybgc_index%lit1                       , & !
+    lit2      => centurybgc_index%lit2                       , & !
+    lit3      => centurybgc_index%lit3                       , & !
+    som1      => centurybgc_index%som1                       , & !
+    som2      => centurybgc_index%som2                       , & !
+    som3      => centurybgc_index%som3                       , & !
+    cwd       => centurybgc_index%cwd                        , & !
+    lwd       => centurybgc_index%lwd                        , & !
+    fwd       => centurybgc_index%fwd                        , & !
+    c_loc     => centurybgc_index%c_loc                      , & !
+    n_loc     => centurybgc_index%n_loc                      , & !
+    p_loc     => centurybgc_index%p_loc                      , & !
+    c13_loc   => centurybgc_index%c13_loc                    , & !
+    c14_loc   => centurybgc_index%c14_loc                    , & !
+    nelms     => centurybgc_index%nelms                      , & !
+    lid_o2    => centurybgc_index%lid_o2                     , & !
+    lid_co2   => centurybgc_index%lid_co2                    , & !
+    lid_nh4   => centurybgc_index%lid_nh4                    , & !
+    lid_c14_co2=> centurybgc_index%lid_c14_co2               , & !
+    lid_c13_co2=> centurybgc_index%lid_c13_co2               , & !
+    lid_co2_hr => centurybgc_index%lid_co2_hr                , &
+    lid_minn_nh4_immob=> centurybgc_index%lid_minn_nh4_immob , &
+    lid_minp_immob => centurybgc_index%lid_minp_immob        , &
+    lid_minp_soluble=> centurybgc_index%lid_minp_soluble     , &
+    lit1_dek_reac => centurybgc_index%lit1_dek_reac          , &
+    lit2_dek_reac => centurybgc_index%lit2_dek_reac          , &
+    lit3_dek_reac => centurybgc_index%lit3_dek_reac          , &
+    som1_dek_reac => centurybgc_index%som1_dek_reac          , &
+    som2_dek_reac => centurybgc_index%som2_dek_reac          , &
+    som3_dek_reac => centurybgc_index%som3_dek_reac          , &
+    cwd_dek_reac => centurybgc_index%cwd_dek_reac            , &
+    lwd_dek_reac => centurybgc_index%lwd_dek_reac            , &
+    fwd_dek_reac => centurybgc_index%fwd_dek_reac            , &
+    lid_n2   => centurybgc_index%lid_n2                      , & !
+    lid_n2o   => centurybgc_index%lid_n2o                    , & !
+    lid_no3   => centurybgc_index%lid_no3                    , & !
+    lid_nh4_nit_reac => centurybgc_index%lid_nh4_nit_reac    , & !
+    lid_no3_den_reac => centurybgc_index%lid_no3_den_reac      & !
+  )
+  reac=lit1_dek_reac
+  resc = cascade_matrix((lit1-1)*nelms + c_loc, reac) + cascade_matrix((som1-1)*nelms + c_loc, reac) + &
+     cascade_matrix(lid_co2, reac)  
+  resn = cascade_matrix((lit1-1)*nelms + n_loc, reac) + cascade_matrix((som1-1)*nelms + n_loc, reac) + &
+     cascade_matrix(lid_nh4, reac)
+  resp = cascade_matrix((lit1-1)*nelms + p_loc, reac) + cascade_matrix((som1-1)*nelms + p_loc, reac) + &
+     cascade_matrix(lid_minp_soluble, reac)
+  write(*,'(A,3(X,E20.10))')'lit1 resc, resn, resp =',resc,resn, resp
+
+  reac = lit2_dek_reac
+  resc = cascade_matrix((lit2-1)*nelms + c_loc, reac) + cascade_matrix((som1-1)*nelms + c_loc, reac) + &
+     cascade_matrix(lid_co2, reac) 
+  resn = cascade_matrix((lit2-1)*nelms + n_loc, reac) + cascade_matrix((som1-1)*nelms + n_loc, reac) + &
+     cascade_matrix(lid_nh4, reac)
+  resp = cascade_matrix((lit2-1)*nelms + p_loc, reac) + cascade_matrix((som1-1)*nelms + p_loc, reac) + &
+     cascade_matrix(lid_minp_soluble, reac)
+  write(*,'(A,3(X,E20.10))')'lit2 resc, resn, resp =',resc,resn, resp
+
+  reac = lit3_dek_reac
+  resc = cascade_matrix((lit3-1)*nelms + c_loc, reac) + cascade_matrix((som2-1)*nelms + c_loc, reac) + &
+     cascade_matrix(lid_co2, reac)
+  resn = cascade_matrix((lit3-1)*nelms + n_loc, reac) + cascade_matrix((som2-1)*nelms + n_loc, reac) + &
+     cascade_matrix(lid_nh4, reac)
+  resp = cascade_matrix((lit3-1)*nelms + p_loc, reac) + cascade_matrix((som2-1)*nelms + p_loc, reac) + &
+     cascade_matrix(lid_minp_soluble, reac)
+  write(*,'(A,3(X,E20.10))')'lit3 resc, resn, resp =',resc,resn, resp
+
+  reac = som1_dek_reac
+  resc = cascade_matrix((som1-1)*nelms + c_loc, reac) + cascade_matrix((som3-1)*nelms + c_loc, reac) + &
+     cascade_matrix((som2-1)*nelms + c_loc, reac) + cascade_matrix(lid_co2, reac)
+  resn = cascade_matrix((som1-1)*nelms + n_loc, reac) + cascade_matrix((som3-1)*nelms + n_loc, reac) + &
+     cascade_matrix((som2-1)*nelms + n_loc, reac) + cascade_matrix(lid_nh4, reac)
+  resp = cascade_matrix((som1-1)*nelms + p_loc, reac) + cascade_matrix((som3-1)*nelms + p_loc, reac) + &
+     cascade_matrix((som2-1)*nelms + p_loc, reac) + cascade_matrix(lid_minp_soluble, reac)
+  write(*,'(A,3(X,E20.10))')'som1 resc, resn, resp =',resc,resn, resp
+
+  reac = som2_dek_reac
+  resc = cascade_matrix((som2-1)*nelms + c_loc, reac) + cascade_matrix((som1-1)*nelms + c_loc, reac) + &
+     cascade_matrix((som3-1)*nelms + c_loc, reac) + cascade_matrix(lid_co2, reac)
+  resn = cascade_matrix((som2-1)*nelms + n_loc, reac) + cascade_matrix((som1-1)*nelms + n_loc, reac) + &
+     cascade_matrix((som3-1)*nelms + n_loc, reac) + cascade_matrix(lid_nh4, reac)
+  resp = cascade_matrix((som2-1)*nelms + p_loc, reac) + cascade_matrix((som1-1)*nelms + p_loc, reac) + &
+     cascade_matrix((som3-1)*nelms + p_loc, reac) + cascade_matrix(lid_minp_soluble, reac)
+  write(*,'(A,3(X,E20.10))')'som2 resc, resn, resp =',resc,resn, resp
+
+  reac = som3_dek_reac
+  resc = cascade_matrix((som3-1)*nelms + c_loc, reac) + cascade_matrix((som1-1)*nelms + c_loc, reac) + &
+     cascade_matrix(lid_co2, reac)
+  resn = cascade_matrix((som3-1)*nelms + n_loc, reac) + cascade_matrix((som1-1)*nelms + n_loc, reac) + &
+     cascade_matrix(lid_nh4, reac)
+  resp = cascade_matrix((som3-1)*nelms + p_loc, reac) + cascade_matrix((som1-1)*nelms + p_loc, reac) + &
+     cascade_matrix(lid_minp_soluble, reac)
+  write(*,'(A,3(X,E20.10))')'som3 resc, resn, resp =',resc,resn, resp
+
+  reac = cwd_dek_reac
+  resc = cascade_matrix((cwd-1)*nelms + c_loc, reac) + cascade_matrix((som1-1)*nelms + c_loc, reac) + &
+     cascade_matrix((som2-1)*nelms + c_loc, reac) + cascade_matrix(lid_co2, reac)
+  resn = cascade_matrix((cwd-1)*nelms + n_loc, reac) + cascade_matrix((som1-1)*nelms + n_loc, reac) + &
+     cascade_matrix((som2-1)*nelms + n_loc, reac) + cascade_matrix(lid_nh4, reac)
+  resp = cascade_matrix((cwd-1)*nelms + p_loc, reac) + cascade_matrix((som1-1)*nelms + p_loc, reac) + &
+     cascade_matrix((som2-1)*nelms + p_loc, reac) + cascade_matrix(lid_minp_soluble, reac)
+  write(*,'(A,3(X,E20.10))')'cwd resc, resn, resp =',resc,resn, resp
+
+  reac = lwd_dek_reac
+  resc = cascade_matrix((lwd-1)*nelms + c_loc, reac) + cascade_matrix((som1-1)*nelms + c_loc, reac) + &
+     cascade_matrix((som2-1)*nelms + c_loc, reac) + cascade_matrix(lid_co2, reac)
+  resn = cascade_matrix((lwd-1)*nelms + n_loc, reac) + cascade_matrix((som1-1)*nelms + n_loc, reac) + &
+     cascade_matrix((som2-1)*nelms + n_loc, reac) + cascade_matrix(lid_nh4, reac)
+  resp = cascade_matrix((lwd-1)*nelms + p_loc, reac) + cascade_matrix((som1-1)*nelms + p_loc, reac) + &
+     cascade_matrix((som2-1)*nelms + p_loc, reac) + cascade_matrix(lid_minp_soluble, reac)
+  write(*,'(A,3(X,E20.10))')'lwd resc, resn, resp =',resc,resn, resp
+
+  reac = fwd_dek_reac
+  resc = cascade_matrix((fwd-1)*nelms + c_loc, reac) + cascade_matrix((som1-1)*nelms + c_loc, reac) + &
+     cascade_matrix((som2-1)*nelms + c_loc, reac) + cascade_matrix(lid_co2, reac)
+  resn = cascade_matrix((fwd-1)*nelms + n_loc, reac) + cascade_matrix((som1-1)*nelms + n_loc, reac) + &
+     cascade_matrix((som2-1)*nelms + n_loc, reac) + cascade_matrix(lid_nh4, reac)
+  resp = cascade_matrix((fwd-1)*nelms + p_loc, reac) + cascade_matrix((som1-1)*nelms + p_loc, reac) + &
+     cascade_matrix((som2-1)*nelms + p_loc, reac) + cascade_matrix(lid_minp_soluble, reac)
+  write(*,'(A,3(X,E20.10))')'fwd resc, resn, resp =',resc,resn, resp
+
+  reac = lid_nh4_nit_reac 
+  resn = cascade_matrix(lid_nh4, reac) + cascade_matrix(lid_no3, reac) + 2._r8 * cascade_matrix(lid_n2o, reac)
+  write(*,'(A,(X,E20.10))')'nit, resn =',resn
+
+  reac = lid_no3_den_reac
+  resn = cascade_matrix(lid_no3, reac) + cascade_matrix(lid_n2o, reac) * 2._r8 + cascade_matrix(lid_n2, reac) * 2._r8
+  write(*,'(A,3(X,E20.10))')'den, resn =',resn
+  end associate
+  end subroutine checksum_cascade
+
+  !-------------------------------------------------------------------------------
   subroutine runbgc(this,  is_surf, dtime, centuryeca_forc, nstates, ystates0, ystatesf, spinup_scalar, &
-      spinup_flg, bstatus)
+      spinup_flg, n_mass, bstatus)
 
   !DESCRIPTION
   !do bgc model integration for one step
@@ -208,15 +356,16 @@ contains
   use tracer_varcon             , only : catomw, natomw, patomw
   implicit none
   class(centurybgceca_type)  , intent(inout) :: this
-  logical                    , intent(in) :: is_surf
-  real(r8)                   , intent(in) :: dtime
-  type(centuryeca_forc_type) , intent(in) :: centuryeca_forc
-  integer                    , intent(in) :: nstates
-  real(r8)                   , intent(out):: ystates0(nstates)
-  real(r8)                   , intent(out):: ystatesf(nstates)
-  type(betr_status_type)     , intent(out) :: bstatus
-  integer                    , intent(in)  ::  spinup_flg
-  real(r8)                   , intent(inout):: spinup_scalar
+  logical                    , intent(in)    :: is_surf
+  real(r8)                   , intent(in)    :: dtime
+  type(centuryeca_forc_type) , intent(in)    :: centuryeca_forc
+  integer                    , intent(in)    :: nstates
+  real(r8)                   , intent(out)   :: ystates0(nstates)
+  real(r8)                   , intent(out)   :: ystatesf(nstates)
+  real(r8)                   , intent(out)   :: n_mass
+  type(betr_status_type)     , intent(out)   :: bstatus
+  integer                    , intent(in)    :: spinup_flg
+  real(r8)                   , intent(inout) :: spinup_scalar
 
   !local variables
   real(r8) :: pot_om_decay_rates(this%centurybgc_index%nom_pools)
@@ -265,13 +414,10 @@ contains
   call this%init_states(this%centurybgc_index, centuryeca_forc)
   ystates0(:) = this%ystates0(:)
 
-!  call this%sumup_cnp_msflx(ystates0, c_mass1,n_mass1,p_mass1)
 
   !add all external input
-  call this%add_ext_input(dtime, this%centurybgc_index, centuryeca_forc, c_inf, n_inf, p_inf)
-  c_inf = c_inf * catomw; n_inf=n_inf * natomw; p_inf=p_inf * patomw
+   call this%add_ext_input(dtime, this%centurybgc_index, centuryeca_forc, c_inf, n_inf, p_inf)
 !  call this%sumup_cnp_mass('afext input')
-
   !initialize decomposition scaling factors
   call this%decompkf_eca%set_decompk_scalar(ystates1(lid_o2), centuryeca_forc)
 
@@ -285,7 +431,6 @@ contains
   call this%censom%run_decomp(is_surf, this%centurybgc_index, dtime, ystates1(1:nom_tot_elms),&
       this%decompkf_eca, centuryeca_forc%pct_sand, centuryeca_forc%pct_clay,this%alpha_n, this%alpha_p, &
       cascade_matrix, this%k_decay(1:nom_pools), pot_co2_hr, spinup_scalar, spinup_flg, bstatus)
-
 !  call this%sumup_cnp_mass('af run_decomp')
   if(bstatus%check_status())return
 
@@ -301,10 +446,6 @@ contains
   call this%nitden%run_nitden(this%centurybgc_index, centuryeca_forc, this%decompkf_eca, &
     ystates1(lid_nh4), ystates1(lid_no3), ystates1(lid_o2), o2_decomp_depth, &
     pot_f_nit_mol_per_sec, pot_co2_hr, this%pot_f_nit, this%pot_f_denit, cascade_matrix)
-!  if(this%centurybgc_index%debug)then
-!    print*,'co2_pot',pot_co2_hr
-
-!  endif
   !---------------------
   !turn off nitrification and denitrification
   !this%pot_f_denit = 0._r8
@@ -314,9 +455,7 @@ contains
   !so the reaction rate is a function of state variables. Further, for simplicity,
   !the nitrification and denitrification rates have been assumed as linear function
   !nh4 and no3 in soil.
-
   call this%arenchyma_gas_transport(this%centurybgc_index, dtime)
-
   !do the stoichiometric matrix separation
   call pd_decomp(nprimvars, nreactions, cascade_matrix(1:nprimvars, 1:nreactions), &
      cascade_matrixp, cascade_matrixd, bstatus)
@@ -326,16 +465,14 @@ contains
   yf(:) = ystates1(:)
 
 !  call this%sumup_cnp_mass('bfdecomp',c_mass1,n_mass1,p_mass1)
-
-  call ode_adapt_ebbks1(this, yf, nprimvars, nstvars, time, dtime, ystates1)
-
+   call ode_adapt_ebbks1(this, yf, nprimvars, nstvars, time, dtime, ystates1)
 !  call this%sumup_cnp_mass('afdecomp',c_mass2,n_mass2,p_mass2)
 
 
   if(this%use_c14)then
     call this%c14decay(this%centurybgc_index, dtime, spinup_scalar, spinup_flg, ystates1)
   endif
-
+  n_mass=0._r8
   ystatesf(:) = ystates1(:)
 
   end associate
@@ -664,6 +801,7 @@ contains
   integer :: kc, kn, kp,kc13,kc14
   integer :: jj
   real(r8):: totp, pmin_frac, pmin_cleave
+  real(r8):: tmul
   associate(                        &
     lit1 =>  centurybgc_index%lit1, &
     lit2 =>  centurybgc_index%lit2, &
@@ -691,11 +829,12 @@ contains
     lid_nh4=> centurybgc_index%lid_nh4, &
     lid_minp_soluble =>  centurybgc_index%lid_minp_soluble,  &
     lid_minp_immob => centurybgc_index%lid_minp_immob &
-  )
+  ) 
+  tmul=1._r8
 
   jj=lit1;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
   this%ystates1(kc) =this%ystates0(kc) + centuryeca_forc%cflx_input_litr_met*dtime/catomw
-  this%ystates1(kn) =this%ystates0(kn) + centuryeca_forc%nflx_input_litr_met*dtime/natomw
+  this%ystates1(kn) =this%ystates0(kn) + centuryeca_forc%nflx_input_litr_met*dtime/natomw * tmul
   this%ystates1(kp) =this%ystates0(kp) + centuryeca_forc%pflx_input_litr_met*dtime/patomw
 
   if(present(c_inf))then
@@ -744,7 +883,7 @@ contains
 
   jj=lit3;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
   this%ystates1(kc) =this%ystates0(kc) + centuryeca_forc%cflx_input_litr_lig*dtime/catomw
-  this%ystates1(kn) =this%ystates0(kn) + centuryeca_forc%nflx_input_litr_lig*dtime/natomw
+  this%ystates1(kn) =this%ystates0(kn) + centuryeca_forc%nflx_input_litr_lig*dtime/natomw * tmul
   this%ystates1(kp) =this%ystates0(kp) + centuryeca_forc%pflx_input_litr_lig*dtime/patomw
 
   if(present(c_inf))then
@@ -768,7 +907,7 @@ contains
 
   jj=cwd;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
   this%ystates1(kc) =this%ystates0(kc) + centuryeca_forc%cflx_input_litr_cwd*dtime/catomw
-  this%ystates1(kn) =this%ystates0(kn) + centuryeca_forc%nflx_input_litr_cwd*dtime/natomw
+  this%ystates1(kn) =this%ystates0(kn) + centuryeca_forc%nflx_input_litr_cwd*dtime/natomw * tmul
   this%ystates1(kp) =this%ystates0(kp) + centuryeca_forc%pflx_input_litr_cwd*dtime/patomw
 
   if(present(c_inf))then
@@ -792,7 +931,7 @@ contains
 
   jj=fwd;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
   this%ystates1(kc) =this%ystates0(kc) + centuryeca_forc%cflx_input_litr_fwd*dtime/catomw
-  this%ystates1(kn) =this%ystates0(kn) + centuryeca_forc%nflx_input_litr_fwd*dtime/natomw
+  this%ystates1(kn) =this%ystates0(kn) + centuryeca_forc%nflx_input_litr_fwd*dtime/natomw * tmul
   this%ystates1(kp) =this%ystates0(kp) + centuryeca_forc%pflx_input_litr_fwd*dtime/patomw
 
   if(present(c_inf))then
@@ -816,7 +955,7 @@ contains
 
   jj=lwd;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
   this%ystates1(kc) =this%ystates0(kc) + centuryeca_forc%cflx_input_litr_lwd*dtime/catomw
-  this%ystates1(kn) =this%ystates0(kn) + centuryeca_forc%nflx_input_litr_lwd*dtime/natomw
+  this%ystates1(kn) =this%ystates0(kn) + centuryeca_forc%nflx_input_litr_lwd*dtime/natomw * tmul
   this%ystates1(kp) =this%ystates0(kp) + centuryeca_forc%pflx_input_litr_lwd*dtime/patomw
 
   if(present(c_inf))then
@@ -840,7 +979,7 @@ contains
 
   this%ystates1(lid_nh4) =this%ystates0(lid_nh4) + dtime * &
       (centuryeca_forc%sflx_minn_input_nh4 + &
-        centuryeca_forc%sflx_minn_nh4_fix_nomic)/natomw
+        centuryeca_forc%sflx_minn_nh4_fix_nomic)/natomw * tmul 
 
   this%ystates1(lid_minp_soluble) =this%ystates0(lid_minp_soluble) + dtime * &
       (centuryeca_forc%sflx_minp_input_po4 + &
@@ -1295,7 +1434,7 @@ contains
     p_flx=p_flx + ystates1(lid_plant_minp)
     p_flx = p_flx * patomw
   endif
-
+!  write(*,'(A,3(X,E20.10))')'c n p, mass',c_mass, n_mass, p_mass
   end associate
   end subroutine sumup_cnp_msflx
 

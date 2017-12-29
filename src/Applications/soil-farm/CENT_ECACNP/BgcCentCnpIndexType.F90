@@ -488,6 +488,8 @@ implicit none
     lit2  => this%lit2                       ,    &
     lit3  => this%lit3                       ,    &
     cwd  => this%cwd                         ,    &
+    lwd  => this%lwd                         ,    &
+    fwd  => this%fwd                         ,    &
     som1  => this%som1                       ,    &
     som2  => this%som2                       ,    &
     som3  => this%som3                       ,    &
@@ -529,6 +531,9 @@ implicit none
   reac = this%cwd_dek_reac; this%primvarid(reac) = (cwd-1)*nelms+c_loc
   !x is_aerobic_reac(reac) = .true.
 
+  reac = this%fwd_dek_reac; this%primvarid(reac) = (fwd-1)*nelms+c_loc
+
+  reac = this%lwd_dek_reac; this%primvarid(reac) = (lwd-1)*nelms+c_loc
   !reaction 8, nitrification
   reac = this%lid_nh4_nit_reac; this%primvarid(reac) = this%lid_nh4
   !x is_aerobic_reac(reac) = .true.

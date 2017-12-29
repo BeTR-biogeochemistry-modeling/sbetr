@@ -858,8 +858,16 @@ contains
     else
       rat=ystates(kc)/(ystates(kc)+tiny_val)
     endif
-    this%cn_ratios(jj) = this%def_cn(jj)*(1._r8-rat)+safe_div(ystates(kc),ystates(kn))*rat
-    this%cp_ratios(jj) = this%def_cp(jj)*(1._r8-rat)+safe_div(ystates(kc),ystates(kp))*rat
+    if(ystates(kn)<tiny_val*this%def_cn(jj))then
+      this%cn_ratios(jj)= this%def_cn(jj)
+    else
+      this%cn_ratios(jj) = this%def_cn(jj)*(1._r8-rat)+safe_div(ystates(kc),ystates(kn))*rat
+    endif
+    if(ystates(kp)<tiny_val*this%def_cp(jj))then
+      this%cp_ratios(jj)=this%def_cp(jj)
+    else
+      this%cp_ratios(jj) = this%def_cp(jj)*(1._r8-rat)+safe_div(ystates(kc),ystates(kp))*rat
+    endif
     if(this%cn_ratios(jj) >= this%cp_ratios(jj) .and. is_cenpool_som(jj))then
       write(msg,*)'phosphorus wierdo',jj,ystates(kc),ystates(kn),ystates(kp), rat, this%def_cn(jj),this%def_cp(jj),&
          this%cn_ratios(jj),this%cp_ratios(jj) 
