@@ -997,8 +997,8 @@ contains
       c12flux_vars%fire_decomp_closs_col(c) = this%biogeo_flux(c)%c12flux_vars%fire_decomp_closs_col(c_l)
       c12flux_vars%som_c_leached_col(c) = &
         this%biogeo_flux(c)%c12flux_vars%som_c_leached_col(c_l) + &
-        this%biogeo_flux(c)%c12flux_vars%som_c_runoff_col(c_l) + &
         this%biogeo_flux(c)%c12flux_vars%som_c_qdrain_col(c_l)
+      c12flux_vars%som_c_runoff_col(c) = this%biogeo_flux(c)%c12flux_vars%som_c_runoff_col(c_l) 
       !the following is for consistency with the ALM definitation, which computes
 
       !som_c_leached_col as a numerical roundoff
@@ -1024,9 +1024,8 @@ contains
           this%biogeo_flux(c)%n14flux_vars%smin_no3_qdrain_col(c_l)
       n14flux_vars%som_n_leached_col(c) = &
           this%biogeo_flux(c)%n14flux_vars%som_n_leached_col(c_l) + &
-          this%biogeo_flux(c)%n14flux_vars%som_n_runoff_col(c_l) + &
           this%biogeo_flux(c)%n14flux_vars%som_n_qdrain_col(c_l)
-
+      n14flux_vars%som_n_runoff_col(c) = this%biogeo_flux(c)%n14flux_vars%som_n_runoff_col(c_l)
       !the following is for consistency with the ALM definitation, which computes
       !som_n_leached_col as a numerical roundoff
       n14flux_vars%som_n_leached_col(c) = - n14flux_vars%som_n_leached_col(c)
@@ -1038,7 +1037,7 @@ contains
 
       !recollect mineral phosphorus loss
       !Remark: now hydraulic mineral p loss lumps all three fluxes, Jinyun Tang
-      p31flux_vars%sminp_runoff_col(c)=this%biogeo_flux(c)%p31flux_vars%sminp_runoff_col(c_l) 
+      p31flux_vars%sminp_runoff_col(c)=this%biogeo_flux(c)%p31flux_vars%sminp_runoff_col(c_l)
       p31flux_vars%sminp_leached_col(c) = &
          this%biogeo_flux(c)%p31flux_vars%sminp_leached_col(c_l) + &
          this%biogeo_flux(c)%p31flux_vars%sminp_qdrain_col(c_l)
@@ -1048,9 +1047,8 @@ contains
       p31flux_vars%fire_decomp_ploss_col(c) = this%biogeo_flux(c)%p31flux_vars%fire_decomp_ploss_col(c_l)
       p31flux_vars%som_p_leached_col(c) = &
           this%biogeo_flux(c)%p31flux_vars%som_p_leached_col(c_l) + &
-          this%biogeo_flux(c)%p31flux_vars%som_p_runoff_col(c_l) + &
           this%biogeo_flux(c)%p31flux_vars%som_p_qdrain_col(c_l)
-
+      p31flux_vars%som_p_runoff_col(c) = this%biogeo_flux(c)%p31flux_vars%som_p_runoff_col(c_l)
       !the following is for consistency with the ALM definitation, which computes
       !som_p_leached_col as a numerical roundoff
       p31flux_vars%som_p_leached_col(c) = -p31flux_vars%som_p_leached_col(c)

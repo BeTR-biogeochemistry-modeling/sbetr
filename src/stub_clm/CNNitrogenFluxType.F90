@@ -43,7 +43,8 @@ implicit none
      real(r8), pointer :: fire_decomp_nloss_col                     (:) => null()
      real(r8), pointer :: denit_col                                 (:) => null()
      real(r8), pointer :: som_n_leached_col                         (:) => null()
-     real(r8), pointer :: supplement_to_sminn_col(:)
+     real(r8), pointer :: supplement_to_sminn_col                   (:) => null()
+     real(r8), pointer :: som_n_runoff_col                          (:) => null()
   contains
 
     procedure, public  :: Init
