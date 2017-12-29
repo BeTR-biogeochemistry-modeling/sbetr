@@ -1038,9 +1038,9 @@ contains
 
       !recollect mineral phosphorus loss
       !Remark: now hydraulic mineral p loss lumps all three fluxes, Jinyun Tang
+      p31flux_vars%sminp_runoff_col(c)=this%biogeo_flux(c)%p31flux_vars%sminp_runoff_col(c_l) 
       p31flux_vars%sminp_leached_col(c) = &
          this%biogeo_flux(c)%p31flux_vars%sminp_leached_col(c_l) + &
-         this%biogeo_flux(c)%p31flux_vars%sminp_runoff_col(c_l) + &
          this%biogeo_flux(c)%p31flux_vars%sminp_qdrain_col(c_l)
 
       p31flux_vars%supplement_to_sminp_col(c) = this%biogeo_flux(c)%p31flux_vars%supplement_to_sminp_col(c_l)
