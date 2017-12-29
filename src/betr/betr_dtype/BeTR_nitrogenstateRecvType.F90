@@ -1,6 +1,7 @@
 module BeTR_nitrogenstateRecvType
   use bshr_kind_mod  , only : r8 => shr_kind_r8
   use betr_decompMod , only : betr_bounds_type
+  use tracer_varcon  , only : reaction_method
 implicit none
 
   character(len=*), private, parameter :: mod_filename = &
@@ -20,6 +21,12 @@ implicit none
     real(r8), pointer :: sminn_vr_col(:,:) => null()
     real(r8), pointer :: sminn_nh4_vr_col(:,:) => null()
     real(r8), pointer :: sminn_no3_vr_col(:,:) => null()
+    real(r8), pointer :: som1n_col(:) => null()
+    real(r8), pointer :: som2n_col(:) => null()
+    real(r8), pointer :: som3n_col(:) => null()
+    real(r8), pointer :: som1n_vr_col(:,:) => null()
+    real(r8), pointer :: som2n_vr_col(:,:) => null()
+    real(r8), pointer :: som3n_vr_col(:,:) => null()
 
   contains
     procedure, public  :: Init
@@ -63,7 +70,14 @@ implicit none
   allocate(this%sminn_no3_col(begc:endc))
   allocate(this%totlitn_1m_col(begc:endc))
   allocate(this%totsomn_1m_col(begc:endc))
-
+  if(trim(reaction_method)=='eca_cnp')then
+    allocate(this%som1n_col(begc:endc));  this%som1n_col(:) = nan
+    allocate(this%som2n_col(begc:endc));  this%som2n_col(:) = nan
+    allocate(this%som3n_col(begc:endc));  this%som3n_col(:) = nan
+    allocate(this%som1n_vr_col(begc:endc, lbj:ubj));  this%som1n_vr_col(:,:) = nan
+    allocate(this%som2n_vr_col(begc:endc, lbj:ubj));  this%som2n_vr_col(:,:) = nan
+    allocate(this%som3n_vr_col(begc:endc, lbj:ubj));  this%som3n_vr_col(:,:) = nan
+  endif
   allocate(this%cwdn_vr_col(begc:endc,lbj:ubj)); this%cwdn_vr_col(:,:) = nan
   allocate(this%totlitn_vr_col(begc:endc,lbj:ubj)); this%totlitn_vr_col(:,:)=nan
   allocate(this%totsomn_vr_col(begc:endc,lbj:ubj)); this%totsomn_vr_col(:,:) =nan
@@ -85,6 +99,11 @@ implicit none
   this%sminn_nh4_vr_col(:,:) = value_column
   this%sminn_no3_vr_col(:,:) = value_column
 
+  if(trim(reaction_method)=='eca_cnp')then
+    this%som1n_vr_col(:,:) = value_column
+    this%som2n_vr_col(:,:) = value_column
+    this%som3n_vr_col(:,:) = value_column
+  endif
   end subroutine reset
 
   !------------------------------------------------------------------------
@@ -108,6 +127,19 @@ implicit none
   this%sminn_no3_col(:) = 0._r8
   this%totlitn_1m_col(:) = 0._r8
   this%totsomn_1m_col(:) = 0._r8
+
+  if(trim(reaction_method)=='eca_cnp')then
+    this%som1n_col(:) = 0._r8
+    this%som2n_col(:) = 0._r8
+    this%som3n_col(:) = 0._r8
+    do j = lbj, ubj
+      do c = bounds%begc, bounds%endc
+        this%som1n_col(c) =   this%som1n_col(c) + dz(c,j)*this%som1n_vr_col(c,j)
+        this%som2n_col(c) =   this%som2n_col(c) + dz(c,j)*this%som2n_vr_col(c,j)
+        this%som3n_col(c) =   this%som3n_col(c) + dz(c,j)*this%som3n_vr_col(c,j)
+      enddo
+    enddo
+  endif
   do j = lbj, ubj
     do c = bounds%begc, bounds%endc
       this%cwdn_col(c) = this%cwdn_col(c) + dz(c,j) * this%cwdn_vr_col(c,j)
@@ -116,6 +148,7 @@ implicit none
       this%sminn_col(c) = this%sminn_col(c) + dz(c,j)*this%sminn_vr_col(c,j)
       this%sminn_nh4_col(c) = this%sminn_nh4_col(c) + dz(c,j)*this%sminn_nh4_vr_col(c,j)
       this%sminn_no3_col(c) = this%sminn_no3_col(c) + dz(c,j)*this%sminn_no3_vr_col(c,j)
+
       if(zs(c,j)<1._r8)then
         if(zs(c,j+1)>1._r8)then
           this%totlitn_1m_col(c) = this%totlitn_1m_col(c) + (dz(c,j)-(zs(c,j)-1._r8))*this%totlitn_vr_col(c,j)

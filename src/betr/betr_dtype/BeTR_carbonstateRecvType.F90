@@ -1,6 +1,7 @@
 module BeTR_carbonstateRecvType
   use bshr_kind_mod  , only : r8 => shr_kind_r8
   use betr_decompMod , only : betr_bounds_type
+  use tracer_varcon  , only : reaction_method
 implicit none
 
   character(len=*), private, parameter :: mod_filename = &
@@ -14,6 +15,13 @@ implicit none
      real(r8), pointer :: cwdc_vr_col(:,:) => null()
      real(r8), pointer :: totlitc_vr_col(:,:) => null()
      real(r8), pointer :: totsomc_vr_col(:,:) => null()
+     real(r8), pointer :: som1c_col(:) => null()
+     real(r8), pointer :: som2c_col(:) => null()
+     real(r8), pointer :: som3c_col(:) => null()
+     real(r8), pointer :: som1c_vr_col(:,:) => null()
+     real(r8), pointer :: som2c_vr_col(:,:) => null()
+     real(r8), pointer :: som3c_vr_col(:,:) => null()
+
  contains
     procedure, public  :: Init
     procedure, private :: InitAllocate
@@ -54,6 +62,14 @@ implicit none
   allocate(this%totlitc_1m_col(begc:endc))
   allocate(this%totsomc_1m_col(begc:endc))
 
+  if(trim(reaction_method)=='eca_cnp')then
+    allocate(this%som1c_col(begc:endc));  this%som1c_col(:) = nan
+    allocate(this%som2c_col(begc:endc));  this%som2c_col(:) = nan
+    allocate(this%som3c_col(begc:endc));  this%som3c_col(:) = nan
+    allocate(this%som1c_vr_col(begc:endc, lbj:ubj));  this%som1c_vr_col(:,:) = nan
+    allocate(this%som2c_vr_col(begc:endc, lbj:ubj));  this%som2c_vr_col(:,:) = nan
+    allocate(this%som3c_vr_col(begc:endc, lbj:ubj));  this%som3c_vr_col(:,:) = nan
+  endif
   allocate(this%cwdc_vr_col(begc:endc,lbj:ubj)); this%cwdc_vr_col(:,:)   = nan
   allocate(this%totlitc_vr_col(begc:endc,lbj:ubj)); this%totlitc_vr_col(:,:) = nan
   allocate(this%totsomc_vr_col(begc:endc,lbj:ubj)); this%totsomc_vr_col(:,:) = nan
@@ -71,8 +87,12 @@ implicit none
   this%cwdc_vr_col(:,:) = value_column
   this%totlitc_vr_col(:,:) = value_column
   this%totsomc_vr_col(:,:) = value_column
-  
-  
+
+  if(trim(reaction_method)=='eca_cnp')then
+    this%som1c_vr_col(:,:) = value_column
+    this%som2c_vr_col(:,:) = value_column
+    this%som3c_vr_col(:,:) = value_column
+  endif
   end subroutine reset
 
 
@@ -93,7 +113,20 @@ implicit none
   this%totsomc_col(:) = 0._r8
   this%totlitc_1m_col(:) = 0._r8
   this%totsomc_1m_col(:) = 0._r8
-  do j = lbj, ubj 
+
+  if(trim(reaction_method)=='eca_cnp')then
+    this%som1c_col(:) = 0.0_r8
+    this%som2c_col(:) = 0.0_r8
+    this%som3c_col(:) = 0.0_r8
+    do j = lbj, ubj
+      do c = bounds%begc, bounds%endc
+        this%som1c_col(c) = this%som1c_col(c) + dz(c,j)*this%som1c_vr_col(c,j)
+        this%som2c_col(c) = this%som2c_col(c) + dz(c,j)*this%som2c_vr_col(c,j)
+        this%som3c_col(c) = this%som3c_col(c) + dz(c,j)*this%som3c_vr_col(c,j)
+      enddo
+    enddo
+  endif
+  do j = lbj, ubj
     do c = bounds%begc, bounds%endc
       this%cwdc_col(c) = this%cwdc_col(c) + dz(c,j) * this%cwdc_vr_col(c,j)
       this%totlitc_col(c) = this%totlitc_col(c) + dz(c,j)*this%totlitc_vr_col(c,j)

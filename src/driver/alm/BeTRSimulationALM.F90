@@ -336,8 +336,8 @@ contains
 !  debug
       call this%biogeo_state(c)%reset(value_column=0._r8, active_soibgc=this%active_soibgc)
 
-      call this%betr(c)%retrieve_biostates(betr_bounds,      &
-         1, betr_nlevsoi, this%num_soilc, this%filter_soilc, this%jtops, this%biogeo_state(c),this%bstatus(c))
+      call this%betr(c)%retrieve_biostates(betr_bounds, 1, betr_nlevsoi, this%num_soilc, &
+        this%filter_soilc, this%jtops, this%biogeo_state(c),this%bstatus(c))
 
       if(this%bstatus(c)%check_status())then
         call this%bsimstatus%setcol(c)
@@ -933,6 +933,7 @@ contains
   use tracer_varcon       , only : use_c13_betr, use_c14_betr
   use pftvarcon           , only : noveg
   use MathfuncMod         , only : safe_div
+  use tracer_varcon       , only : reaction_method
   implicit none
   class(betr_simulation_alm_type), intent(inout)  :: this
   type(bounds_type) , intent(in)  :: bounds
@@ -1094,6 +1095,30 @@ contains
       p31state_vars%sminp_col(c) = this%biogeo_state(c)%p31state_vars%sminp_col(c_l)
       p31state_vars%occlp_col(c) = this%biogeo_state(c)%p31state_vars%occlp_col(c_l)
 
+      if(trim(reaction_method)=='eca_cnp')then
+        c12state_vars%som1c_col(c) = this%biogeo_state(c)%c12state_vars%som1c_col(c_l)
+        c12state_vars%som2c_col(c) = this%biogeo_state(c)%c12state_vars%som2c_col(c_l)
+        c12state_vars%som3c_col(c) = this%biogeo_state(c)%c12state_vars%som3c_col(c_l)
+        if(use_c13_betr)then
+          c13state_vars%som1c_col(c) = this%biogeo_state(c)%c13state_vars%som1c_col(c_l)
+          c13state_vars%som2c_col(c) = this%biogeo_state(c)%c13state_vars%som2c_col(c_l)
+          c13state_vars%som3c_col(c) = this%biogeo_state(c)%c13state_vars%som3c_col(c_l)
+        endif
+        if(use_c14_betr)then
+          c14state_vars%som1c_col(c) = this%biogeo_state(c)%c14state_vars%som1c_col(c_l)
+          c14state_vars%som2c_col(c) = this%biogeo_state(c)%c14state_vars%som2c_col(c_l)
+          c14state_vars%som3c_col(c) = this%biogeo_state(c)%c14state_vars%som3c_col(c_l)
+        endif
+        n14state_vars%som1n_col(c) = this%biogeo_state(c)%n14state_vars%som1n_col(c_l)
+        n14state_vars%som2n_col(c) = this%biogeo_state(c)%n14state_vars%som2n_col(c_l)
+        n14state_vars%som3n_col(c) = this%biogeo_state(c)%n14state_vars%som3n_col(c_l)
+
+        p31state_vars%som1p_col(c) = this%biogeo_state(c)%p31state_vars%som1p_col(c_l)
+        p31state_vars%som2p_col(c) = this%biogeo_state(c)%p31state_vars%som2p_col(c_l)
+        p31state_vars%som3p_col(c) = this%biogeo_state(c)%p31state_vars%som3p_col(c_l)
+
+
+      endif
     enddo
   endif
   end subroutine ALMBetrPlantSoilBGCRecv
