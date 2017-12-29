@@ -49,6 +49,7 @@ module ColumnType
      integer , pointer :: itype                (:) => null()  ! column type
      real(r8), pointer :: wtlunit              (:) => null()  ! weight (relative to landunit)
      integer , pointer :: npfts                (:)  => null() ! number of patches for each column
+     logical , pointer :: debug_flag           (:) => null()
   contains
     procedure          :: Init
     procedure, private :: InitAllocate
@@ -95,5 +96,6 @@ module ColumnType
     allocate(this%npfts(begc:endc))
     allocate(this%pfti(begc:endc))
     allocate(this%pftf(begc:endc))
+    allocate(this%debug_flag(begc:endc))  ; this%debug_flag(:)=.false.
   end subroutine InitAllocate
 end module ColumnType
