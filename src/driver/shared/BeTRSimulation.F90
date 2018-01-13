@@ -169,7 +169,7 @@ contains
     type(column_type)                        , intent(in) :: col
     type(patch_type)                         , intent(in) :: pft
     type(bounds_type)                        , intent(in)    :: bounds
-    character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
+    character(len=*)                         , intent(in)    :: namelist_buffer
     type(waterstate_type)                    , intent(inout) :: waterstate
     logical,                        optional , intent(in)    :: masterproc
     character(len=*), parameter :: subname = 'BeTRSimulationInit'
@@ -200,8 +200,8 @@ contains
     type(patch_type)                         , intent(in) :: pft
     type(bounds_type)                        , intent(in)    :: bounds
     type(waterstate_type)                    , intent(inout) :: waterstate
-    character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
-    character(len=betr_filename_length)      , intent(in)    :: base_filename
+    character(len=*)                         , intent(in)    :: namelist_buffer
+    character(len=*)                         , intent(in)    :: base_filename
     character(len=*), parameter :: subname = 'BeTRSimulationInit'
 
     call endrun(msg="ERROR "//subname//" unimplemented. "//errmsg(mod_filename, __LINE__))
@@ -265,8 +265,8 @@ contains
     type(column_type)                        , intent(in) :: col
     type(patch_type)                         , intent(in) :: pft
     type(waterstate_type)                    , intent(in) :: waterstate
-    character(len=betr_namelist_buffer_size) , intent(in) :: namelist_buffer
-    character(len=betr_filename_length)      , optional, intent(in)    :: base_filename
+    character(len=*)                         , intent(in) :: namelist_buffer
+    character(len=*)                         , optional, intent(in)    :: base_filename
     logical,                      optional   , intent(in) :: masterproc
     !TEMPORARY VARIABLES
     character(len=*), parameter :: subname = 'BeTRInit'

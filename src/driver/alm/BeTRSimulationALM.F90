@@ -93,7 +93,7 @@ contains
     type(landunit_type)                      , intent(in) :: lun
     type(column_type)                        , intent(in) :: col
     type(patch_type)                         , intent(in) :: pft
-    character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
+    character(len=*)                         , intent(in)    :: namelist_buffer
     logical,                      optional   , intent(in) :: masterproc
     type(waterstate_type)                    , intent(inout) :: waterstate
 
@@ -139,8 +139,8 @@ contains
 
     implicit none
     class(betr_simulation_alm_type)          , intent(inout) :: this
-    character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
-    character(len=betr_filename_length)      , intent(in)    :: base_filename
+    character(len=*)                         , intent(in)    :: namelist_buffer
+    character(len=*)                         , intent(in)    :: base_filename
     type(bounds_type)                        , intent(in)    :: bounds
     type(landunit_type)                      , intent(in) :: lun
     type(column_type)                        , intent(in) :: col
@@ -214,11 +214,12 @@ contains
         exit
       endif
 
-        call this%biogeo_state(c)%summary(betr_bounds, 1, betr_nlevtrc_soil,this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil), &
+        call this%biogeo_state(c)%summary(betr_bounds, 1, betr_nlevtrc_soil,this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil),&
           this%betr_col(c)%zi(begc_l:endc_l,1:betr_nlevtrc_soil), this%active_soibgc)
 
       if(.false.)then
-        call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'bef w/o drain',this%bstatus(c))
+        call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'bef w/o drain',&
+             this%bstatus(c))
         this%betr(c)%tracers%debug=.true.
       endif
 !--------
@@ -247,7 +248,8 @@ contains
       call this%biogeo_state(c)%summary(betr_bounds, 1, betr_nlevtrc_soil,this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil), &
          this%betr_col(c)%zi(begc_l:endc_l,1:betr_nlevtrc_soil), this%active_soibgc)
 
-      if(.false.)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'aft w/o drain',this%bstatus(c))
+      if(.false.)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'aft w/o drain',&
+           this%bstatus(c))
 !--------
     enddo
     if(this%bsimstatus%check_status()) &
@@ -308,7 +310,8 @@ contains
 
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
-      if(.false.)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'bfdrain', this%bstatus(c))
+      if(.false.)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'bfdrain',&
+           this%bstatus(c))
       call this%betr(c)%step_with_drainage(betr_bounds,      &
          this%betr_col(c),this%num_soilc, this%filter_soilc, this%jtops, &
          this%biogeo_flux(c), this%bstatus(c))
@@ -334,7 +337,8 @@ contains
           this%betr_col(c)%zi(begc_l:endc_l,1:betr_nlevtrc_soil),this%active_soibgc)
 
 ! debug
-      if(.false.)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'afdrain', this%bstatus(c))
+      if(.false.)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'afdrain', &
+           this%bstatus(c))
     enddo
     if(this%bsimstatus%check_status()) &
       call endrun(msg=this%bsimstatus%print_msg())
@@ -820,7 +824,8 @@ contains
           n14flux_vars%smin_no3_to_plant_patch(p) = this%biogeo_flux(c)%n14flux_vars%smin_no3_to_plant_patch(pi)
           p31flux_vars%sminp_to_plant_patch(p)  = this%biogeo_flux(c)%p31flux_vars%sminp_to_plant_patch(pi)
           !compute relative n return.
-          n14state_vars%pnup_pfrootc_patch(p) = safe_div(n14flux_vars%smin_nh4_to_plant_patch(p)+ n14flux_vars%smin_no3_to_plant_patch(p), &
+          n14state_vars%pnup_pfrootc_patch(p) = safe_div(n14flux_vars%smin_nh4_to_plant_patch(p)&
+               + n14flux_vars%smin_no3_to_plant_patch(p), &
             c12state_vars%frootc_patch(p))
         else
           n14flux_vars%smin_nh4_to_plant_patch(p) = 0._r8

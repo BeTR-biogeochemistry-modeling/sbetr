@@ -77,8 +77,8 @@ contains
   ! DESCRIPTION
   ! constructor
     implicit none
-    class(centurybgceca_type), pointer :: create_centuryeca_type
-    class(centurybgceca_type), pointer :: bgc
+    type(centurybgceca_type), pointer :: create_centuryeca_type
+    type(centurybgceca_type), pointer :: bgc
 
     allocate(bgc)
     create_centuryeca_type => bgc
@@ -292,7 +292,7 @@ contains
   call this%sumup_cnp_msflx(ystatesf, c_mass2,n_mass2,p_mass2, c_flx, n_flx, p_flx)
 
   if(centuryeca_forc%debug)then
-     write(*,'(A,10(X,E20.10))')'cnp bal', &
+     write(*,'(A,10(1X,E20.10))')'cnp bal', &
      c_mass2*centuryeca_forc%dzsoi, &
      n_mass2*centuryeca_forc%dzsoi, &
      p_mass2*centuryeca_forc%dzsoi, &
@@ -1165,11 +1165,11 @@ contains
     implicit none
     ! !ARGUMENTS:
     class(centurybgceca_type),  intent(inout)  :: me
+    integer,  intent(in)  :: neq      ! number of equations
     real(r8), intent(in)  :: y0(neq)  ! state variable at previous time step
     real(r8), intent(in)  :: t        ! time stamp
     real(r8), intent(in)  :: dt       ! time stepping
     integer,  intent(in)  :: nprimeq  !
-    integer,  intent(in)  :: neq      ! number of equations
     real(r8), intent(out) :: y(neq)   ! updated state variable
 
     ! !LOCAL VARIABLES:

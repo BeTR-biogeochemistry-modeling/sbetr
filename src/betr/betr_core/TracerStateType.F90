@@ -193,13 +193,13 @@ contains
                  default='inactive')
 
             if(is_volatile(jj) .and. (.not. is_h2o(jj)) .and. (.not. is_isotope(jj)))then
-               call this%add_hist_var2d (it, num2d, fname=trim(tracernames(jj))//'_TRACER_P_GAS_FRAC', units='none', type2d='levtrc',  &
-                    avgflag='A', long_name='fraction of gas phase contributed by '//trim(tracernames(jj)))
+               call this%add_hist_var2d (it, num2d, fname=trim(tracernames(jj))//'_TRACER_P_GAS_FRAC', units='none', &
+                    type2d='levtrc', avgflag='A', long_name='fraction of gas phase contributed by '//trim(tracernames(jj)))
             endif
 
             if(is_frozen(jj))then
-               call this%add_hist_var2d (it, num2d, fname=trim(tracernames(jj))//'_TRACER_CONC_FROZEN', units='mol m-3', type2d='levtrc',  &
-                    avgflag='A', long_name='frozen phase for tracer '//trim(tracernames(jj)))
+               call this%add_hist_var2d (it, num2d, fname=trim(tracernames(jj))//'_TRACER_CONC_FROZEN', units='mol m-3', &
+                    type2d='levtrc', avgflag='A', long_name='frozen phase for tracer '//trim(tracernames(jj)))
             endif
           endif
           call this%add_hist_var1d (it, num1d, fname=trim(tracernames(jj))//'_TRCER_SOI_MOLAMASS', units='mol m-2', &
