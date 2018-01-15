@@ -638,11 +638,11 @@ contains
     implicit none
     ! !ARGUMENTS:
     class(gbetr_type), target :: extra
+    integer,  intent(in)  :: neq      ! number of equations
     real(r8), intent(in)  :: y0(neq)  ! state variable at previous time step
     real(r8), intent(in)  :: t        ! time stamp
     real(r8), intent(in)  :: dt       ! time stepping
     integer,  intent(in)  :: nprimeq  !
-    integer,  intent(in)  :: neq      ! number of equations
     real(r8), intent(out) :: y(neq)   ! updated state variable
     external :: odefun
 

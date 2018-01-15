@@ -948,7 +948,7 @@ contains
                      tracer_flx_leaching(c,trcid) = tracer_flx_leaching(c, trcid) + leaching_mass(c,k)
                      tracer_flx_surfrun(c,trcid)  = tracer_flx_surfrun(c, trcid) + seep_mass(c,k)
                      tracer_flx_vtrans_vr(c, lbj:ubj, trcid) = transp_mass_vr(c,lbj:ubj,k)
-                     
+
                      !the following implementation assumes there is only one column
 
                      do p = 1, pft%npfts

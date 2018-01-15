@@ -19,7 +19,7 @@ module InterpolationMod
   public :: Lagrange_interp
   public :: pchip_polycc
   public :: pchip_interp
-
+  public :: cmass_interp
 contains
 
   !-------------------------------------------------------------------------------
@@ -380,4 +380,142 @@ contains
     end function psi
   end subroutine pchip_interp
 
+  !------------------------------------------------------------
+  function loc_x(m, x, xi, bstatus)result(i_loc)
+
+  ! !DESCRIPTION:
+  ! locate xi within the input vector x
+  use BetrStatusType   , only : betr_status_type
+  use betr_constants   , only : betr_errmsg_len
+  implicit none
+  integer , intent(in) :: m
+  real(r8), intent(in) :: x(1:m)
+  real(r8), intent(in) :: xi
+  type(betr_status_type), intent(out) :: bstatus
+
+  !local variables
+  integer :: jj
+  integer :: i_loc
+  character(len=betr_errmsg_len) :: msg
+
+  call bstatus%reset()
+
+  i_loc = -1
+  if (xi < x(1) .or. xi > x(m)) then
+    msg='the target value is outside the range of given x '//errMsg(mod_filename, __LINE__)
+    call bstatus%set_msg(msg=msg, err=-1)
+    return
+  else
+    do jj = 1, m-1
+      if ( xi >= x(jj) .and. xi<x(jj+1)) then
+        i_loc=jj
+        exit
+      endif
+    enddo
+    if(i_loc==-1)then
+      if(xi==x(m))i_loc=m
+    endif
+  endif
+  return
+  end function loc_x
+
+  !------------------------------------------------------------
+  function loc_xj(m, x, xi, j0)result(i_loc)
+
+  ! !DESCRIPTION:
+  ! locate xi within the input vector x
+  use BetrStatusType   , only : betr_status_type
+  use betr_constants   , only : betr_errmsg_len
+  implicit none
+  integer , intent(in) :: m
+  real(r8), intent(in) :: x(1:m)
+  real(r8), intent(in) :: xi
+  integer , intent(in) :: j0
+
+  !local variables
+  integer :: jj
+  integer :: i_loc
+
+  i_loc=-1
+  do jj = j0, m-1
+    if ( xi >= x(jj) .and. xi<x(jj+1)) then
+      i_loc=jj
+      exit
+    endif
+  enddo
+  if(i_loc==-1)then
+    if(xi==x(m))i_loc=m
+  endif
+  return
+  end function loc_xj
+
+
+  !------------------------------------------------------------
+  function twopoint_linterp(x1,x2,f1,f2, xi)result(fy)
+
+  ! !DESCRIPTION:
+  ! two point linear interpolation
+  implicit none
+  real(r8), intent(in) :: x1, x2
+  real(r8), intent(in) :: f1, f2
+  real(r8), intent(in) :: xi
+
+  !temporary variables
+  real(r8) :: fy
+  real(r8) :: d
+  real(r8), parameter :: tiny_val=1.e-20_r8
+
+  d=x2-x1
+  if(abs(d)<tiny_val)then
+    fy=(f1+f2)*0.5_r8
+  else
+    fy=f2*(xi-x1)/d+f1*(x2-xi)/d
+  endif
+
+  end function twopoint_linterp
+
+  !------------------------------------------------------------
+
+  subroutine cmass_interp(nx, x, ny, Y, nxi, xi, YI, bstatus)
+
+  ! DESCRIPTION
+  ! linear monotonic interpolation based on cumulative mass
+  ! locate xi within the input vector x
+  use BetrStatusType   , only : betr_status_type
+  implicit none
+  integer , intent(in) :: nx
+  real(r8), intent(in) :: x(1:nx)
+  integer , intent(in) :: ny
+  real(r8), intent(in) :: Y(1:nx,1:ny)
+  integer , intent(in) :: nxi
+  real(r8), intent(in) :: xi(1:nxi)
+  real(r8), intent(out):: Yi(1:nxi,1:ny)
+  type(betr_status_type), intent(out) :: bstatus
+
+  !local variables
+  integer :: j0, j1, j2
+
+  !check for end point
+  j0=loc_x(nx, x, xi(nxi), bstatus)
+  if(bstatus%check_status())return
+
+  !check for start point
+  j0=loc_x(nx, x, xi(1), bstatus)
+  if(bstatus%check_status())return
+
+  do j1 = 1, nxi
+    if (j1/=1) then
+      j0=loc_xj(nx, x, xi(j1), j0)
+    endif
+    if(j0==nx)then
+      do j2 = 1, ny
+        yi(j1,j2)=y(nx,j2)
+      enddo
+    else
+      do j2 = 1, ny
+        yi(j1,j2)=twopoint_linterp(x(j0),x(j0+1),Y(j0,j2),Y(j0+1,j2), xi(j1))
+      enddo
+    endif
+  enddo
+  end subroutine cmass_interp
 end module InterpolationMod
