@@ -20,6 +20,8 @@ module InterpolationMod
   public :: pchip_polycc
   public :: pchip_interp
   public :: cmass_interp
+  public :: loc_x, loc_xj
+  public :: bmass_interp, mass_interp
 contains
 
   !-------------------------------------------------------------------------------
@@ -57,10 +59,10 @@ contains
     else
        disp1=disp-1
     endif
-
+    pos=0
     do k = 1, ni
        ! find the position of z in array x
-       pos = find_idx(x, xi(k))
+       pos = find_idx(x, xi(k), pos)
        if(pos == -100) then
           !left boundary
           yi(k) = y(1)
@@ -124,7 +126,7 @@ contains
     end do
   end function Lagrange_poly
   !------------------------------------------------------------
-  function find_idx(xvect, x)result(k)
+  function find_idx(xvect, x, k0)result(k)
     !
     ! !DESCRIPTION:
     ! locate the position of x in xvect
@@ -133,7 +135,7 @@ contains
     ! !ARGUMENTS:
     real(r8), dimension(:), intent(in) :: xvect       ! vector of x-values
     real(r8),               intent(in) :: x
-
+    integer ,               intent(in) :: k0
     integer :: i, k, n
 
     ! array dimension
@@ -148,8 +150,8 @@ contains
     elseif(x==xvect(n))then
        k=n-1
     else
-       ! find index k so that x[k] < x < x[k+1]
-       do i = 1, n-1
+       ! find index k so that x[k] <= x < x[k+1]
+       do i = max(k0,1), n-1
           if ((xvect(i) <= x) .and. (x < xvect(i+1))) then
              k = i
              exit
@@ -345,9 +347,10 @@ contains
     n=size(xi)  !total number of points to be interpolated
 
     yi(:)=0._r8
+    id=0
     do j = 1, n
 
-       id=find_idx(x,xi(j))
+       id=find_idx(x,xi(j),id)
        h=x(id+1)-x(id)
        t1=(x(id+1)-xi(j))/h
        t2=(xi(j)-x(id))/h
@@ -518,4 +521,84 @@ contains
     endif
   enddo
   end subroutine cmass_interp
+
+  !------------------------------------------------------------
+  subroutine mass_interp(zh, mass_curve,zl, zr, mass_new, bstatus)
+
+  !DESCRIPTION
+  !compute the tracer mass encompassed by left and right boundaries
+  !this interpolation is for inner node
+  use BetrStatusType   , only : betr_status_type
+  use MathfuncMod      , only : cumsum
+  implicit none
+  real(r8), dimension(:), intent(in) :: zh
+  real(r8), dimension(:), intent(in) :: mass_curve
+  real(r8),               intent(in) :: zl
+  real(r8),               intent(in) :: zr
+  real(r8),               intent(out):: mass_new
+  type(betr_status_type), intent(out)   :: bstatus
+
+  real(r8) :: massl
+  real(r8) :: massr
+  real(r8) :: cmass_curve(size(zh))
+  integer  :: nn
+
+  call bstatus%reset()
+  SHR_ASSERT_ALL((size(zh)  == size(mass_curve)),   errMsg(mod_filename,__LINE__),bstatus)
+  if(bstatus%check_status())return
+
+  nn = size(zh)
+
+  call cumsum(bstatus, mass_curve, cmass_curve)
+  if(bstatus%check_status())return
+
+  massl=twopoint_linterp(zh(1),zh(2),cmass_curve(1),cmass_curve(2), zl)
+  massr=twopoint_linterp(zh(nn),zh(nn-1),cmass_curve(nn),cmass_curve(nn-1), zr)
+
+  mass_new=massr-massl
+
+  end subroutine mass_interp
+
+
+  !------------------------------------------------------------
+  subroutine bmass_interp(zh, mass_curve,zl, zr, mass_new, bstatus)
+  !DESCRIPTION
+  !compute the tracer mass encompassed by left and right boundaries
+  !this interpolation is for boundary node
+  use BetrStatusType   , only : betr_status_type
+  use MathfuncMod      , only : cumsum
+  implicit none
+  real(r8), dimension(:), intent(in) :: zh
+  real(r8), dimension(:), intent(in) :: mass_curve
+  real(r8),               intent(in) :: zl
+  real(r8),               intent(in) :: zr
+  real(r8),               intent(out):: mass_new
+  type(betr_status_type), intent(out)   :: bstatus
+
+  real(r8) :: massl
+  real(r8) :: massr
+  real(r8) :: cmass_curve(size(zh))
+  integer  :: nn
+  integer  :: j0
+
+  call bstatus%reset()
+  SHR_ASSERT_ALL((size(zh)  == size(mass_curve)),   errMsg(mod_filename,__LINE__),bstatus)
+  if(bstatus%check_status())return
+
+  nn = size(zh)
+
+  call cumsum(bstatus, mass_curve, cmass_curve)
+  if(bstatus%check_status())return
+
+  j0=loc_x(nn, zh, zl, bstatus)
+  if(bstatus%check_status())return
+
+  massl=twopoint_linterp(zh(j0),zh(j0+1),cmass_curve(j0),cmass_curve(j0+1), zl)
+
+  j0=loc_xj(nn, zh, zr, j0)
+  massr=twopoint_linterp(zh(j0),zh(j0+1),cmass_curve(j0),cmass_curve(j0+1), zr)
+
+  mass_new=massr-massl
+
+  end subroutine bmass_interp
 end module InterpolationMod
