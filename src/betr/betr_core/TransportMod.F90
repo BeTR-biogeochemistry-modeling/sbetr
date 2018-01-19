@@ -93,28 +93,17 @@ contains
     integer :: n
     external :: odefun
 
-    ti = t
     dt05 = dt * 0.5_r8
 
+    ti = t
     call trajectory(extra, y0, dt, ti, neq, k1)
 
     y(:) = y0(:)
-    if(debug_loc)then
-      print*,'k1'
-      do n = 1, neq
-        print*,n,k1(n)
-      enddo
-    endif
     call daxpy(neq, dt05, k1, 1, y, 1)
      
     ti = t + dt05
     call trajectory(extra, y, dt05, ti, neq, k2)
-    if(debug_loc)then
-      print*,'k2'
-      do n = 1, neq
-        print*,n,k2(n)
-      enddo
-    endif
+
     y(:) = y0(:)
     call daxpy(neq, dt, k2, 1, y, 1)
 
@@ -884,7 +873,7 @@ contains
      real(r8) :: utmp
      real(r8) :: dinfl_mass
      character(len=32) :: subname='semi_lagrange_adv_backward'
-     real(r8), parameter :: tiny_trc=1.e-40_r8
+     real(r8), parameter :: tiny_trc=1.e-20_r8
      real(r8), parameter :: tiny_dist=1.e-13_r8
      call bstatus%reset()
      SHR_ASSERT_ALL((ubound(lbn)        == (/bounds%endc/)),         errMsg(filename,__LINE__),bstatus)
@@ -1045,6 +1034,9 @@ contains
          do ntr = 1, ntrcs
            call mass_interp(zh(jl-1:jr),mass_curve(jl-1:jr,ntr),zold(j-1),zold(j),mass_new(j,ntr), bstatus)
            if(bstatus%check_status())return
+           if(abs(mass_new(j,ntr))<tiny_trc)then
+             mass_new(j,ntr)=0._r8
+           endif
          enddo
          jl=jr
         enddo
@@ -1243,17 +1235,7 @@ contains
 
        call Lagrange_interp(pn, Extra%zi(1:Extra%nlen), &
          Extra%us(1:Extra%nlen), y0, ui, Extra_bstatus)
-       if(debug_loc)then
-         print*,'us'
-         do j = 1, Extra%nlen
-           print*,j,Extra%zi(j),Extra%us(j)
-         enddo
 
-         print*,'zi'
-         do j = 1, neq
-           print*,j,y0(j)
-         enddo
-       endif
        if(Extra_bstatus%check_status())return
 
      end select

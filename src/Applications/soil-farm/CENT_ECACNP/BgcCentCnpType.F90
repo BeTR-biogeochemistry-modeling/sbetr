@@ -209,7 +209,7 @@ contains
   type(centurybgc_index_type)   , intent(in) :: centurybgc_index
 
   real(r8) :: resc, resn, resp
-  integer  :: reac
+  integer  :: reac,jj
  
   associate(                                                   &
     cascade_matrix => this%cascade_matrix                    , &
@@ -252,6 +252,9 @@ contains
     lid_nh4_nit_reac => centurybgc_index%lid_nh4_nit_reac    , & !
     lid_no3_den_reac => centurybgc_index%lid_no3_den_reac      & !
   )
+  print*,'checksum'
+  print*,'som1c ','som1n ','som1p'
+
   reac=lit1_dek_reac
   resc = cascade_matrix((lit1-1)*nelms + c_loc, reac) + cascade_matrix((som1-1)*nelms + c_loc, reac) + &
      cascade_matrix(lid_co2, reac)  
@@ -406,6 +409,7 @@ contains
     ystates1 => this%ystates1                           &
   )
   this%centurybgc_index%debug = centuryeca_forc%debug
+  if(this%centurybgc_index%debug)print*,'enter runbgc'
   this%rt_ar = rt_ar
   frc_c13 = safe_div(rt_ar_c13,rt_ar); frc_c14 = safe_div(rt_ar_c14,rt_ar)
   call bstatus%reset()
@@ -426,7 +430,7 @@ contains
 
   !calculate default stoichiometry entries
   call this%calc_cascade_matrix(this%centurybgc_index, cascade_matrix, frc_c13, frc_c14)
-
+!  if(this%centurybgc_index%debug)call this%checksum_cascade(this%centurybgc_index)
   !run century decomposition, return decay rates, cascade matrix, potential hr
   call this%censom%run_decomp(is_surf, this%centurybgc_index, dtime, ystates1(1:nom_tot_elms),&
       this%decompkf_eca, centuryeca_forc%pct_sand, centuryeca_forc%pct_clay,this%alpha_n, this%alpha_p, &
@@ -468,13 +472,17 @@ contains
    call ode_adapt_ebbks1(this, yf, nprimvars, nstvars, time, dtime, ystates1)
 !  call this%sumup_cnp_mass('afdecomp',c_mass2,n_mass2,p_mass2)
 
-
+!  if(this%centurybgc_index%debug)call this%checksum_cascade(this%centurybgc_index)
   if(this%use_c14)then
     call this%c14decay(this%centurybgc_index, dtime, spinup_scalar, spinup_flg, ystates1)
   endif
-  n_mass=0._r8
-  ystatesf(:) = ystates1(:)
 
+  call this%censom%stoichiometry_fix(this%centurybgc_index, ystates1)
+  ystatesf(:) = ystates1(:)
+  if(this%centurybgc_index%debug)then
+    print*,'after decomp'
+    call this%censom%calc_cnp_ratios(this%centurybgc_index, ystatesf, bstatus)
+  endif
   end associate
   end subroutine runbgc
   !-------------------------------------------------------------------------------
@@ -1091,6 +1099,13 @@ contains
     nom_pools => this%centurybgc_index%nom_pools                                                , &
     lid_nh4 => this%centurybgc_index%lid_nh4                                                    , &
     lid_no3 => this%centurybgc_index%lid_no3                                                    , &
+    som1    => this%centurybgc_index%som1                                                       , &
+    som2    => this%centurybgc_index%som2                                                       , &
+    som3    => this%centurybgc_index%som3                                                       , &
+    c_loc   => this%centurybgc_index%c_loc                                                      , &
+    n_loc   => this%centurybgc_index%n_loc                                                      , &
+    p_loc   => this%centurybgc_index%p_loc                                                      , &
+    nelms   => this%centurybgc_index%nelms                                                      , &
     lid_plant_minn_no3_pft=> this%centurybgc_index%lid_plant_minn_no3_pft                       , &
     lid_plant_minn_nh4_pft=> this%centurybgc_index%lid_plant_minn_nh4_pft                       , &
     lid_plant_minp_pft=> this%centurybgc_index%lid_plant_minp_pft                               , &
@@ -1257,11 +1272,12 @@ contains
 !      print*, 'nprim',jj,dydt(jj)
 !    enddo
 !  endif
-!  if(this%centurybgc_index%debug)then
-!    do jj = 1, this%plant_ntypes
-!      print*,'jj',jj,dydt(lid_plant_minp_pft(jj)),rrates(lid_plant_minp_up_reac)
-!    enddo
-!  endif
+  if(this%centurybgc_index%debug)then
+    !
+    jj = som3
+    write(*,'(A,5(X,E25.15))')'dydt som3',dydt((jj-1)*nelms+c_loc),dydt((jj-1)*nelms+n_loc),dydt((jj-1)*nelms+p_loc),&
+      dydt((jj-1)*nelms+c_loc)/dydt((jj-1)*nelms+n_loc),dydt((jj-1)*nelms+c_loc)/dydt((jj-1)*nelms+p_loc)
+  endif
   end associate
   end subroutine bgc_integrate
   !--------------------------------------------------------------------

@@ -789,6 +789,7 @@ contains
       dtime_loc   (:) = 0._r8
       !loop over all tracers
       do j = 1, ngwmobile_tracer_groups
+         call set_debug_transp(j==betrtracer_vars%id_trc_dom .and. betrtracer_vars%debug)
          ntrcs = 0
          adv_trc_group(:) = 0
          do k = 1, nmem_max

@@ -139,12 +139,13 @@ contains
 
 !-------------------------------------------------------------------------------
   function skip_balcheck(this)result(stats)
+  use betr_ctrl         , only : betr_spinup_state
   implicit none
   class(betr_simulation_alm_type)          , intent(inout) :: this
 
   logical :: stats
 
-  stats = this%spinup_count < 3
+  stats = (this%spinup_count < 3) .and. (betr_spinup_state==3)
   return
   end function skip_balcheck
 !-------------------------------------------------------------------------------

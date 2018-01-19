@@ -97,6 +97,7 @@ implicit none
      logical, pointer :: is_cenpool_som(:) => null()
      logical :: debug
      character(len=loc_name_len), allocatable :: varnames(:)
+     character(len=loc_name_len), allocatable :: ompoolnames(:)
    contains
      procedure, public  :: Init
      procedure, private :: InitPars
@@ -171,17 +172,20 @@ implicit none
   enddo
   end subroutine copy_name
   !-------------------------------------------------------------------------------
-  subroutine add_ompool_name(list_name, prefix, use_c13, use_c14, do_init)
+  subroutine add_ompool_name(list_name, list_pool,prefix, use_c13, use_c14, do_init)
   implicit none
   type(list_t), pointer :: list_name
+  type(list_t), pointer :: list_pool
   character(len=*), intent(in) :: prefix
   logical, intent(in) :: use_c13, use_c14
   logical, intent(in) :: do_init
 
   if(do_init)then
     call list_init(list_name, trim(prefix)//'_c')
+    call list_init(list_pool, trim(prefix))
   else
     call list_insert(list_name, trim(prefix)//'_c')
+    call list_insert(list_pool, trim(prefix))
   endif
   call list_insert(list_name, trim(prefix)//'_n')
   call list_insert(list_name, trim(prefix)//'_p')
@@ -258,6 +262,7 @@ implicit none
     integer :: ielem
     integer :: jj
     type(list_t), pointer :: list_name => null()
+    type(list_t), pointer :: list_pool => null()
     character(len=loc_name_len) :: postfix
 
     itemp = 0
@@ -278,38 +283,38 @@ implicit none
     !litter group
     this%litr_beg=1
     this%lit1 = addone(itemp); this%lit1_dek_reac = addone(ireac)
-    call add_ompool_name(list_name, 'lit1', use_c13, use_c14, do_init=.true.)
+    call add_ompool_name(list_name, list_pool,'lit1', use_c13, use_c14, do_init=.true.)
     this%lit2 = addone(itemp); this%lit2_dek_reac = addone(ireac)
-    call add_ompool_name(list_name, 'lit2', use_c13, use_c14, do_init=.false.)
+    call add_ompool_name(list_name, list_pool,'lit2', use_c13, use_c14, do_init=.false.)
     this%lit3 = addone(itemp); this%lit3_dek_reac = addone(ireac)
-    call add_ompool_name(list_name, 'lit3', use_c13, use_c14, do_init=.false.)
+    call add_ompool_name(list_name, list_pool,'lit3', use_c13, use_c14, do_init=.false.)
     this%litr_end=this%litr_beg-1+3*this%nelms
 
     !woody group
     this%wood_beg=this%litr_end+1
     this%cwd  = addone(itemp); this%cwd_dek_reac  = addone(ireac)
-    call add_ompool_name(list_name, 'cwd', use_c13, use_c14, do_init=.false.)
+    call add_ompool_name(list_name, list_pool,'cwd', use_c13, use_c14, do_init=.false.)
     this%lwd  = addone(itemp); this%lwd_dek_reac  = addone(ireac)
-    call add_ompool_name(list_name, 'lwd', use_c13, use_c14, do_init=.false.)
+    call add_ompool_name(list_name, list_pool,'lwd', use_c13, use_c14, do_init=.false.)
     this%fwd  = addone(itemp); this%fwd_dek_reac  = addone(ireac)
-    call add_ompool_name(list_name, 'fwd', use_c13, use_c14, do_init=.false.)
+    call add_ompool_name(list_name, list_pool,'fwd', use_c13, use_c14, do_init=.false.)
     this%wood_end=this%wood_beg-1+3*this%nelms
 
     !som group
     this%Bm_beg=this%wood_end+1
     this%som1 = addone(itemp); this%som1_dek_reac = addone(ireac)
-    call add_ompool_name(list_name, 'Bm', use_c13, use_c14, do_init=.false.)
+    call add_ompool_name(list_name, list_pool,'som1_Bm', use_c13, use_c14, do_init=.false.)
     this%Bm_end=this%Bm_beg-1+this%nelms
 
     this%som_beg=this%Bm_end+1
     this%som3 = addone(itemp); this%som3_dek_reac = addone(ireac)
-    call add_ompool_name(list_name, 'som3', use_c13, use_c14, do_init=.false.)
+    call add_ompool_name(list_name, list_pool,'som3', use_c13, use_c14, do_init=.false.)
     this%som_end=this%som_beg-1+this%nelms
 
     !dom group
     this%dom_beg=this%som_end+1
     this%som2 = addone(itemp); this%som2_dek_reac = addone(ireac)  !put som2 at the end because it is defined as dom
-    call add_ompool_name(list_name, 'som2', use_c13, use_c14, do_init=.false.)
+    call add_ompool_name(list_name, list_pool,'som2', use_c13, use_c14, do_init=.false.)
     this%dom_end=this%dom_beg-1+this%nelms
 
     this%nom_pools = (countelm(this%litr_beg, this%litr_end)+&
@@ -457,9 +462,13 @@ implicit none
     allocate(this%is_aerobic_reac(ireac)); this%is_aerobic_reac(:)=.false.
 
     allocate(this%varnames(this%nstvars))
-    call copy_name(this%nstvars, list_name, this%varnames(1:this%nstvars))
-    call list_free(list_name)
+    allocate(this%ompoolnames(this%nom_pools))
 
+    call copy_name(this%nstvars, list_name, this%varnames(1:this%nstvars))
+    call copy_name(this%nom_pools, list_pool, this%ompoolnames(1:this%nom_pools))
+
+    call list_free(list_name)
+    call list_free(list_pool)
   end subroutine InitPars
   !-------------------------------------------------------------------------------
 

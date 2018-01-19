@@ -89,6 +89,7 @@ module BgcReactionsCentECACnpType
     procedure, private :: set_century_forc
     procedure, private :: retrieve_output
     procedure, private :: rm_ext_output
+    procedure, private :: precision_filter
   end type bgc_reaction_CENTURY_ECACNP_type
 
   interface bgc_reaction_CENTURY_ECACNP_type
@@ -1414,6 +1415,7 @@ contains
     real(r8), allocatable :: ystatesf(:)
     integer :: spinup_flg
     real(r8) :: tnmass(num_soilc),n_mass, c_mass1, n_mass1, p_mass1
+    character(len=5) :: laystr
     call betr_status%reset()
     SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__),betr_status)
     if(betr_status%check_status())return
@@ -1442,7 +1444,7 @@ contains
         c = filter_soilc(fc)
         if(j<jtops(c))cycle
         is_surf=(j<=0)
-        this%centuryforc(c,j)%debug=betrtracer_vars%debug
+        this%centuryforc(c,j)%debug=betrtracer_vars%debug .and. j==2
 
         !do century eca bgc simulation
         !if(this%centuryforc(c,j)%debug)then
@@ -1461,15 +1463,20 @@ contains
         else
            spinup_flg = 0
         endif
-
+        if(this%centuryforc(c,j)%debug)print*,'runbgc',j
         call this%centuryeca(c,j)%runbgc(is_surf, dtime, this%centuryforc(c,j),nstates, &
             ystates0, ystatesf, biophysforc%scalaravg_col(c), spinup_flg, n_mass, betr_status)
-        if(betr_status%check_status())return
+        if(betr_status%check_status())then
+          write(laystr,'(I2.2)')j 
+          betr_status%msg=trim(betr_status%msg)//' lay '//trim(laystr)
+          return
+        endif
 !        if(.not. betrtracer_vars%debug)then
           !apply loss through fire,
           call this%rm_ext_output(c, j, dtime, nstates, ystatesf, this%centurybgc_index,&
              this%centuryforc(c,j), biogeo_flux)
 !        endif
+        call this%precision_filter(nstates, ystatesf)
         this%centurybgc_index%debug=betrtracer_vars%debug
         call this%retrieve_output(c, j, nstates, ystates0, ystatesf, dtime, betrtracer_vars, tracerflux_vars,&
            tracerstate_vars, plant_soilbgc, biogeo_flux)
@@ -1489,15 +1496,15 @@ contains
     deallocate(ystates0)
     deallocate(ystatesf)
 
-    if(betrtracer_vars%debug)then
-      select type(plant_soilbgc)
-      type is(plant_soilbgc_cnp_type)
-        write(*,*)'sminn act plant uptake',plant_soilbgc%plant_minn_active_yield_flx_col(bounds%begc:bounds%endc)
-        write(*,*)'sminp act plant uptake',plant_soilbgc%plant_minp_active_yield_flx_col(bounds%begc:bounds%endc)
-      end select
-      call this%debug_info(bounds, num_soilc, filter_soilc, col%dz(bounds%begc:bounds%endc,bounds%lbj:bounds%ubj),&
-        betrtracer_vars, tracerstate_vars,  'after bgcreact',betr_status)
-    endif
+!    if(betrtracer_vars%debug)then
+!      select type(plant_soilbgc)
+!      type is(plant_soilbgc_cnp_type)
+!        write(*,*)'sminn act plant uptake',plant_soilbgc%plant_minn_active_yield_flx_col(bounds%begc:bounds%endc)
+!        write(*,*)'sminp act plant uptake',plant_soilbgc%plant_minp_active_yield_flx_col(bounds%begc:bounds%endc)
+!      end select
+!      call this%debug_info(bounds, num_soilc, filter_soilc, col%dz(bounds%begc:bounds%endc,bounds%lbj:bounds%ubj),&
+!        betrtracer_vars, tracerstate_vars,  'after bgcreact',betr_status)
+!    endif
   end subroutine calc_bgc_reaction
 
   !--------------------------------------------------------------------
@@ -1832,6 +1839,7 @@ contains
 
   integer :: j, fc, c
   integer :: k1, k2
+  real(r8), parameter :: tiny_cval =1.e-16_r8
   associate( &
      litr_beg =>  this%centurybgc_index%litr_beg  , &
      litr_end =>  this%centurybgc_index%litr_end  , &
@@ -1865,15 +1873,15 @@ contains
       !som
       this%centuryforc(c,j)%ystates(som_beg:som_end)= &
           tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_som:betrtracer_vars%id_trc_end_som)
-
+      if(this%centuryforc(c,j)%ystates(som_beg)<=tiny_cval)this%centuryforc(c,j)%ystates(som_beg:som_end)=0._r8
       !dom
       this%centuryforc(c,j)%ystates(dom_beg:dom_end)= &
           tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_dom:betrtracer_vars%id_trc_end_dom)
-
+      if(this%centuryforc(c,j)%ystates(dom_beg)<=tiny_cval)this%centuryforc(c,j)%ystates(dom_beg:dom_end)=0._r8 
       !microbial biomass
       this%centuryforc(c,j)%ystates(Bm_beg:Bm_end)= &
           tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_Bm:betrtracer_vars%id_trc_end_Bm)
-
+      if(this%centuryforc(c,j)%ystates(Bm_beg)<=tiny_cval)this%centuryforc(c,j)%ystates(Bm_beg:Bm_end)=0._r8
       !non-soluble phase of mineral p
       k1= betrtracer_vars%id_trc_beg_minp; k2 = this%centurybgc_index%lid_minp_secondary
       this%centuryforc(c,j)%ystates(k2) = fpmax(tracerstate_vars%tracer_conc_mobile_col(c,j,k1))
@@ -2071,6 +2079,60 @@ contains
   end select
   end associate
   end subroutine set_century_forc
+
+  !------------------------------------------------------------------------------
+  subroutine precision_filter(this, nstates, ystatesf)
+
+  !
+  ! DESCRIPTION
+  ! reset tiny som values to zero. 
+  ! when the carbon amount is below some minimum value, the relative magnitudes
+  ! of N and P for SOM pool may be close to random error. Occaisonly,
+  ! the P amount may be larger than N amount, causing the code to crash. 
+  ! This fix set C, N and P to zero when C is below a threshold.
+  implicit none
+  class(bgc_reaction_CENTURY_ECACNP_type) , intent(inout)    :: this
+  integer                              , intent(in) :: nstates
+  real(r8)                             , intent(inout) :: ystatesf(nstates)
+
+  real(r8), parameter :: tiny_val=1.e-13_r8
+  integer :: jj
+  integer :: kc, kn, kp, kc13, kc14
+  associate(                              &
+    nelms   => this%centurybgc_index%nelms, &
+    c_loc   => this%centurybgc_index%c_loc, &
+    n_loc   => this%centurybgc_index%n_loc, &
+    p_loc   => this%centurybgc_index%p_loc, &
+    c13_loc => this%centurybgc_index%c13_loc, &
+    c14_loc => this%centurybgc_index%c14_loc, &
+    lit2    => this%centurybgc_index%lit2 , &
+    lit3    => this%centurybgc_index%lit3 , &
+    ncentpools => this%centurybgc_index%nom_pools, &
+    is_cenpool_som => this%centurybgc_index%is_cenpool_som & 
+  )
+  do jj = 1, ncentpools
+    kc = (jj-1) * nelms + c_loc
+    kn = (jj-1) * nelms + n_loc
+    kp = (jj-1) * nelms + p_loc
+    if( ystatesf(kc) <= tiny_val  .and. is_cenpool_som(jj))then
+      ystatesf(kc)=0._r8
+      ystatesf(kn)=0._r8
+      ystatesf(kp)=0._r8
+      if(this%use_c14)then
+        kc14 = (jj-1) * nelms + c14_loc
+        ystatesf(kc14)=0._r8
+      endif
+      if(this%use_c13)then
+        kc13 = (jj-1) * nelms + c13_loc
+        ystatesf(kc13)=0._r8
+      endif
+    endif
+  enddo
+
+
+  end associate  
+    
+  end subroutine precision_filter
   !------------------------------------------------------------------------------
   subroutine retrieve_output(this, c, j, nstates, ystates0, ystatesf, dtime, betrtracer_vars, tracerflux_vars,&
      tracerstate_vars, plant_soilbgc, biogeo_flux)
@@ -2460,7 +2522,7 @@ contains
    call betr_status%reset()
    SHR_ASSERT_ALL((ubound(dzsoi)  == (/bounds%endc, bounds%ubj/)),   errMsg(mod_filename,__LINE__),betr_status)
    if(betr_status%check_status())return
-
+   return
    write(*,*)trim(header)//': debug info c n p mass'
 
    c_loc=this%centurybgc_index%c_loc

@@ -555,7 +555,7 @@ contains
   massl=twopoint_linterp(zh(1),zh(2),cmass_curve(1),cmass_curve(2), zl)
   massr=twopoint_linterp(zh(nn),zh(nn-1),cmass_curve(nn),cmass_curve(nn-1), zr)
 
-  mass_new=massr-massl
+  mass_new=max(massr-massl,0._r8)
 
   end subroutine mass_interp
 
@@ -598,7 +598,7 @@ contains
   j0=loc_xj(nn, zh, zr, j0)
   massr=twopoint_linterp(zh(j0),zh(j0+1),cmass_curve(j0),cmass_curve(j0+1), zr)
 
-  mass_new=massr-massl
+  mass_new=max(massr-massl,0._r8)
 
   end subroutine bmass_interp
 end module InterpolationMod
