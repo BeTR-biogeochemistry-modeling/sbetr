@@ -173,7 +173,7 @@ contains
     type(landunit_type)                      , intent(in) :: lun
     type(column_type)                        , intent(inout) :: col
     type(patch_type)                         , intent(in) :: pft
-    character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
+    character(len=*)                         , intent(in)    :: namelist_buffer
     logical,                      optional   , intent(in) :: masterproc
     type(waterstate_type)                    , intent(inout) :: waterstate
 
@@ -219,8 +219,8 @@ contains
 
     implicit none
     class(betr_simulation_alm_type)          , intent(inout) :: this
-    character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
-    character(len=betr_filename_length)      , intent(in)    :: base_filename
+    character(len=*)                         , intent(in)    :: namelist_buffer
+    character(len=*)                         , intent(in)    :: base_filename
     type(bounds_type)                        , intent(in)    :: bounds
     type(landunit_type)                      , intent(in) :: lun
     type(column_type)                        , intent(inout) :: col
@@ -999,7 +999,7 @@ contains
       c12flux_vars%som_c_leached_col(c) = &
         this%biogeo_flux(c)%c12flux_vars%som_c_leached_col(c_l) + &
         this%biogeo_flux(c)%c12flux_vars%som_c_qdrain_col(c_l)
-      c12flux_vars%som_c_runoff_col(c) = this%biogeo_flux(c)%c12flux_vars%som_c_runoff_col(c_l) 
+      c12flux_vars%som_c_runoff_col(c) = this%biogeo_flux(c)%c12flux_vars%som_c_runoff_col(c_l)
       !the following is for consistency with the ALM definitation, which computes
 
       !som_c_leached_col as a numerical roundoff
