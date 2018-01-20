@@ -17,12 +17,56 @@ module InterpolationMod
        __FILE__
 
   public :: Lagrange_interp
+  public :: mono_Linear_interp
   public :: pchip_polycc
   public :: pchip_interp
   public :: cmass_interp
   public :: loc_x, loc_xj
   public :: bmass_interp, mass_interp
 contains
+
+  !-------------------------------------------------------------------------------
+  subroutine mono_Linear_interp(nx, x, y, nxi, xi, yi, bstatus)
+    !
+    ! !DESCRIPTION:
+    ! do order pn lagrangian interpolation
+    use BetrStatusType, only : betr_status_type
+    implicit none
+    ! !ARGUMENTS:
+    integer,    intent(in)  :: nx    !order of interpolation
+    real(r8),   intent(in)  :: x(1:nx)   !location of data
+    real(r8),   intent(in)  :: y(1:nx)   !value of data
+    integer,    intent(in)  :: nxi
+    real(r8),   intent(in)  :: xi(1:nxi)  !target points to be evaluated
+    real(r8),   intent(out) :: yi(1:nxi) !target values
+    type(betr_status_type), intent(out) :: bstatus
+    ! !LOCAL VARIABLES:
+    integer :: k
+    integer :: pos, disp, disp1
+
+
+    call bstatus%reset()
+    do k = 1, nxi
+       ! find the position of z in array x
+       !pos = find_idx(x, xi(k), pos)
+       if(k==1)then
+         pos=loc_x(nx, x, xi(1), bstatus)
+       else
+         pos=loc_xj(nx, x, xi(k), pos)
+       endif
+
+       if(pos==0)then
+         yi(k)=y(1)
+       elseif(pos==nx)then
+         yi(k)=y(nx)
+       else
+         ! call linear interpolation
+         yi(k)=twopoint_linterp(x(pos),x(pos+1),Y(pos),Y(pos+1), xi(k))
+       endif
+
+    enddo
+
+  end subroutine mono_Linear_interp
 
   !-------------------------------------------------------------------------------
   subroutine Lagrange_interp(pn, x, y, xi, yi, bstatus)
@@ -409,15 +453,21 @@ contains
     call bstatus%set_msg(msg=msg, err=-1)
     return
   else
+    if(xi==x(1))then
+      i_loc=0
+      return
+    elseif(xi==x(m))then
+      i_loc=m
+      return
+    endif
+
     do jj = 1, m-1
       if ( xi >= x(jj) .and. xi<x(jj+1)) then
         i_loc=jj
         exit
       endif
     enddo
-    if(i_loc==-1)then
-      if(xi==x(m))i_loc=m
-    endif
+
   endif
   return
   end function loc_x

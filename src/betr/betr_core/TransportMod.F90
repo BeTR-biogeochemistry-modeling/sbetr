@@ -1034,9 +1034,9 @@ contains
          do ntr = 1, ntrcs
            call mass_interp(zh(jl-1:jr),mass_curve(jl-1:jr,ntr),zold(j-1),zold(j),mass_new(j,ntr), bstatus)
            if(bstatus%check_status())return
-           if(abs(mass_new(j,ntr))<tiny_trc)then
-             mass_new(j,ntr)=0._r8
-           endif
+!           if(abs(mass_new(j,ntr))<tiny_trc)then
+!             mass_new(j,ntr)=0._r8
+!           endif
          enddo
          jl=jr
         enddo
@@ -1202,7 +1202,7 @@ contains
      ! update the trajectory
 
      ! !USES:
-     use InterpolationMod, only : Lagrange_interp
+     use InterpolationMod, only : mono_Linear_interp
      use BetrStatusType  , only : betr_status_type
      implicit none
      ! !ARGUMENTS:
@@ -1233,8 +1233,8 @@ contains
 
        call Extra_bstatus%reset()
 
-       call Lagrange_interp(pn, Extra%zi(1:Extra%nlen), &
-         Extra%us(1:Extra%nlen), y0, ui, Extra_bstatus)
+       call mono_Linear_interp(Extra%nlen, Extra%zi(1:Extra%nlen), &
+         Extra%us(1:Extra%nlen), neq, y0, ui, Extra_bstatus)
 
        if(Extra_bstatus%check_status())return
 
