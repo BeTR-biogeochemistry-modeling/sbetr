@@ -100,7 +100,7 @@ contains
 
     y(:) = y0(:)
     call daxpy(neq, dt05, k1, 1, y, 1)
-     
+
     ti = t + dt05
     call trajectory(extra, y, dt05, ti, neq, k2)
 
@@ -873,7 +873,7 @@ contains
      real(r8) :: utmp
      real(r8) :: dinfl_mass
      character(len=32) :: subname='semi_lagrange_adv_backward'
-     real(r8), parameter :: tiny_trc=1.e-20_r8
+     real(r8), parameter :: tiny_trc=1.e-16_r8
      real(r8), parameter :: tiny_dist=1.e-13_r8
      call bstatus%reset()
      SHR_ASSERT_ALL((ubound(lbn)        == (/bounds%endc/)),         errMsg(filename,__LINE__),bstatus)
@@ -1017,10 +1017,10 @@ contains
         !compute seepage if necessary using jl
         if(present(seep_mass))then
           if(zold(0)>zh(2))then
-            do ntr = 1, ntrcs 
+            do ntr = 1, ntrcs
               !do boundary mass interpolation
               call bmass_interp(zh(0:jl),mass_curve(0:jl,ntr),zh(2),zold(0),seep_mass(c,ntr), bstatus)
-              if(bstatus%check_status())return 
+              if(bstatus%check_status())return
             enddo
           else
             seep_mass(c,1:ntrcs) = 0._r8
@@ -1047,12 +1047,12 @@ contains
             do ntr = 1, ntrcs
               !do boundary mass interpolation
               call bmass_interp(zh(jr-1:lengthp2),mass_curve(jr-1:lengthp2,ntr),zold(length),zh(ubj-lbn(c)+3),leaching_mass(c,ntr), bstatus)
-              if(bstatus%check_status())return  
+              if(bstatus%check_status())return
             enddo
           else
             leaching_mass(c,1:ntrcs)=0._r8
           endif
-        endif 
+        endif
 
         do ntr = 1, ntrcs
            do k = lbn(c), ubj
@@ -1060,7 +1060,7 @@ contains
               trcou(c,k, ntr)=mass_new(j, ntr)/dz(c,k)
            enddo
         enddo
-        if(debug_loc)then          
+        if(debug_loc)then
           print*,'newtrc'
           do  k = lbn(c), ubj
             write(*,'(I2,3(X,E25.16))')k,(trcou(c,k,ntr),ntr=1,ntrcs)
