@@ -248,7 +248,7 @@ contains
                  / bgc_con_eca%spinup_factor(7)
              endif
 
-             
+
            enddo
            !som3
            do kk = tracers%id_trc_beg_som, tracers%id_trc_end_som, nelm
@@ -679,10 +679,10 @@ contains
     if(bstatus%check_status())return
 
     !create the models
-    allocate(this%centuryeca(bounds%begc:bounds%endc,lbj:ubj), source=create_centuryeca_type())
+    allocate(this%centuryeca(bounds%begc:bounds%endc,lbj:ubj)) !, source=create_centuryeca_type())
 
     !create model specific forcing data structure
-    allocate(this%centuryforc(bounds%begc:bounds%endc,lbj:ubj), source=create_century_forc_type())
+    allocate(this%centuryforc(bounds%begc:bounds%endc,lbj:ubj)) !, source=create_century_forc_type())
 
     !initialize
     do j = lbj, ubj
@@ -1482,7 +1482,7 @@ contains
         call this%centuryeca(c,j)%runbgc(is_surf, dtime, this%centuryforc(c,j),nstates, &
             ystates0, ystatesf, biophysforc%scalaravg_col(c), spinup_flg, n_mass, betr_status)
         if(betr_status%check_status())then
-          write(laystr,'(I2.2)')j 
+          write(laystr,'(I2.2)')j
           betr_status%msg=trim(betr_status%msg)//' lay '//trim(laystr)
           return
         endif
@@ -1892,7 +1892,7 @@ contains
       !dom
       this%centuryforc(c,j)%ystates(dom_beg:dom_end)= &
           tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_dom:betrtracer_vars%id_trc_end_dom)
-      if(this%centuryforc(c,j)%ystates(dom_beg)<=tiny_cval)this%centuryforc(c,j)%ystates(dom_beg:dom_end)=0._r8 
+      if(this%centuryforc(c,j)%ystates(dom_beg)<=tiny_cval)this%centuryforc(c,j)%ystates(dom_beg:dom_end)=0._r8
       !microbial biomass
       this%centuryforc(c,j)%ystates(Bm_beg:Bm_end)= &
           tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_Bm:betrtracer_vars%id_trc_end_Bm)
@@ -2101,10 +2101,10 @@ contains
 
   !
   ! DESCRIPTION
-  ! reset tiny som values to zero. 
+  ! reset tiny som values to zero.
   ! when the carbon amount is below some minimum value, the relative magnitudes
   ! of N and P for SOM pool may be close to random error. Occaisonly,
-  ! the P amount may be larger than N amount, causing the code to crash. 
+  ! the P amount may be larger than N amount, causing the code to crash.
   ! This fix set C, N and P to zero when C is below a threshold.
   implicit none
   class(bgc_reaction_CENTURY_ECACNP_type) , intent(inout)    :: this
@@ -2124,7 +2124,7 @@ contains
     lit2    => this%centurybgc_index%lit2 , &
     lit3    => this%centurybgc_index%lit3 , &
     ncentpools => this%centurybgc_index%nom_pools, &
-    is_cenpool_som => this%centurybgc_index%is_cenpool_som & 
+    is_cenpool_som => this%centurybgc_index%is_cenpool_som &
   )
   do jj = 1, ncentpools
     kc = (jj-1) * nelms + c_loc
@@ -2146,8 +2146,8 @@ contains
   enddo
 
 
-  end associate  
-    
+  end associate
+
   end subroutine precision_filter
   !------------------------------------------------------------------------------
   subroutine retrieve_output(this, c, j, nstates, ystates0, ystatesf, dtime, betrtracer_vars, tracerflux_vars,&

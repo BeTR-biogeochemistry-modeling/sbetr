@@ -428,6 +428,7 @@ contains
    ! compute henry's law constant for volatile tracers
    use BeTRTracerType     , only : betrtracer_type
    use BetrStatusType     , only : betr_status_type
+   use betr_constants     , only : betr_var_name_length
    implicit none
    !arguments
    type(bounds_type),      intent(in) :: bounds  ! bounds
@@ -437,7 +438,7 @@ contains
    integer,                intent(in) :: filter(:)                                     ! column filter
    real(r8),               intent(in) :: t_soisno(bounds%begc: ,  lbj: )   !soil temperature
    real(r8),               intent(in) :: soi_pH(bounds%begc: , lbj: )      !pH profile
-   type(betrtracer_type),  intent(in) :: betrtracer_vars        ! betr configuration information
+   type(betrtracer_type),  intent(inout):: betrtracer_vars        ! betr configuration information
 
    real(r8)            ,   intent(inout):: aqu2neutralcef_col(bounds%begc: , lbj: , 1: ) !conversion parameter between bulk aqueous and neutral aqueous tracer
    real(r8)            ,   intent(inout):: henrycef_col(bounds%begc: , lbj: ,  1: )       !henry's constant, mol/L/atm = M/atm
@@ -447,6 +448,7 @@ contains
    real(r8) :: scal
    character(len=255) :: subname='calc_henrys_coeff'
    integer :: nvolatile_tracer_groups, ngwmobile_tracer_groups
+   character(len=betr_var_name_length) :: tracerfamilyname
 
    call betr_status%reset()
    ngwmobile_tracer_groups = betrtracer_vars%ngwmobile_tracer_groups
@@ -480,13 +482,14 @@ contains
     is_volatile                => betrtracer_vars%is_volatile             , & !logical[intent(in)], is a volatile tracer?
     is_h2o                     => betrtracer_vars%is_h2o                  , & !logical[intent(in)], is a h2o tracer?
     tracer_group_memid         => betrtracer_vars%tracer_group_memid      , & !integer[intent(in)], tracer id
-    volatilegroupid            => betrtracer_vars%volatilegroupid         , & !integer[intent(in)], location in the volatile vector
-    tracerfamilyname           => betrtracer_vars%tracerfamilyname          &
+    volatilegroupid            => betrtracer_vars%volatilegroupid           & !integer[intent(in)], location in the volatile vector
+
    )
 
    do j = 1, ngwmobile_tracer_groups
      !for tagged co2 simulations, the henry's constants are assumed same for all co2 tracers
      trcid= tracer_group_memid(j, 1)
+     tracerfamilyname = betrtracer_vars%get_tracerfamilyname(trcid)
      if(is_volatile(trcid) .and. (.not. is_h2o(trcid)))then
        k = volatilegroupid(trcid)
        do n = lbj, ubj
@@ -495,7 +498,7 @@ contains
            if(n>=jtops(c))then
              !Henry's law constants
              henrycef_col(c,n,k)=get_henrycef(t_soisno(c,n), trcid, betrtracer_vars)
-             scal = get_equilibrium_scal(t_soisno(c,n), soi_pH(c,n), tracerfamilyname(trcid),betrtracer_vars)
+             scal = get_equilibrium_scal(t_soisno(c,n), soi_pH(c,n), tracerfamilyname,betrtracer_vars)
              henrycef_col(c,n,k)=henrycef_col(c,n,k) * scal
              aqu2neutralcef_col(c,n,j)=1._r8/scal   !this will convert the bulk aqueous phase into neutral phase
            endif
@@ -612,6 +615,7 @@ contains
    use BetrStatusType     , only : betr_status_type
    use tracer_varcon      , only : sorp_isotherm_linear, sorp_isotherm_langmuir
    use tracerstatetype    , only : tracerstate_type
+   use betr_constants     , only : betr_var_name_length
    implicit none
    !arguments
    type(bounds_type)                , intent(in)    :: bounds                      ! bounds
@@ -619,7 +623,7 @@ contains
    integer                          , intent(in)    :: jtops(bounds%begc: )        ! top label of each column
    integer                          , intent(in)    :: numf                        ! number of columns in column filter
    integer                          , intent(in)    :: filter(:)                   ! column filter
-   type(betrtracer_type)            , intent(in)    :: betrtracer_vars             ! betr configuration information
+   type(betrtracer_type)            , intent(inout) :: betrtracer_vars             ! betr configuration information
    type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
    type(tracerstate_type)           , intent(in)    :: tracerstate_vars            !
    type(tracercoeff_type)           , intent(inout) :: tracercoeff_vars            ! structure containing tracer transport parameters
@@ -628,6 +632,8 @@ contains
    integer            :: j, n, k, fc, c , trcid  ! indices
    real(r8) :: Kd, KL, xs, Xsat, scal
    real(r8), parameter :: tiny_val = 1.e-3_r8
+
+   character(len=betr_var_name_length) :: tracerfamilyname
    character(len=255) :: subname = 'calc_dual_phase_convert_coeff'
 
    call betr_status%reset()
@@ -642,7 +648,6 @@ contains
     adsorbgroupid              => betrtracer_vars%adsorbgroupid                , & !Input: [Integer(:)], tracer id
     is_adsorb                  => betrtracer_vars%is_adsorb                    , & !Input: [logical(:)]
     adsorb_isotherm            => betrtracer_vars%adsorb_isotherm              , & !Input: [integer]
-    tracerfamilyname           => betrtracer_vars%tracerfamilyname             , & !Input: [char(:)], tracer family name
     h2osoi_liqvol              => biophysforc%h2osoi_liqvol_col                , & !Input: [real(r8)(:,:)], liquid h2o vol
     h2osoi_icevol              => biophysforc%h2osoi_icevol_col                , & !Input: [real(r8)(:,:)], ice h2o vol
     air_vol                    => biophysforc%air_vol_col                      , & !Input: [real(r8)(:,:)], air vol
@@ -659,6 +664,7 @@ contains
    )
   do j = 1, ngwmobile_tracer_groups
     trcid = tracer_group_memid(j,1)
+    tracerfamilyname=betrtracer_vars%get_tracerfamilyname(trcid)
     if(is_volatile(trcid))then
       k = volatilegroupid(trcid)
       do n = lbj, ubj
@@ -682,13 +688,14 @@ contains
         enddo
       enddo
       if(is_adsorb(trcid))then
+
         if(adsorb_isotherm(trcid)==sorp_isotherm_linear)then
           do n = lbj, ubj
             do fc = 1, numf
               c = filter(fc)
               if(n>=jtops(c))then
-                scal = get_equilibrium_scal(t_soisno(c,n), soil_pH(c,n), tracerfamilyname(trcid),betrtracer_vars)
-                Kd=get_lnsorb_Kd(tracerfamilyname(j))
+                scal = get_equilibrium_scal(t_soisno(c,n), soil_pH(c,n), tracerfamilyname,betrtracer_vars)
+                Kd=get_lnsorb_Kd(tracerfamilyname)
                 if(scal/=1._r8)then
                  !Because bunsen = bunsen0*scal
                  !
@@ -699,7 +706,7 @@ contains
             enddo
           enddo
         elseif(adsorb_isotherm(trcid)==sorp_isotherm_langmuir)then
-          call get_lgsorb_KL_Xsat(tracerfamilyname(j), isoilorder(c), KL, Xsat)
+          call get_lgsorb_KL_Xsat(tracerfamilyname, isoilorder(c), KL, Xsat)
           do n = lbj, ubj
             do fc = 1, numf
               c = filter(fc)
@@ -736,14 +743,14 @@ contains
             do fc = 1, numf
               c = filter(fc)
               if(n>=jtops(c))then
-                Kd=get_lnsorb_Kd(tracerfamilyname(j))
+                Kd=get_lnsorb_Kd(tracerfamilyname)
                 aqu2bulkcef_mobile(c, n, j) = aqu2bulkcef_mobile(c, n, j) * (1._r8+Kd)
               endif
             enddo
           enddo
         elseif(adsorb_isotherm(trcid)==sorp_isotherm_langmuir)then
           !the adsorption parameter should be a function of soil type, or soil order
-          call get_lgsorb_KL_Xsat(tracerfamilyname(j), isoilorder(c), KL, Xsat)
+          call get_lgsorb_KL_Xsat(tracerfamilyname, isoilorder(c), KL, Xsat)
           if(is_dom(trcid))then
             Xsat=Xsat * dom_scalar(c)
             KL  = KL * dom_scalar(c)
@@ -924,7 +931,7 @@ contains
    integer                          , intent(in)    :: numf                 ! number of columns in column filter
    integer                          , intent(in)    :: filter(:)            ! column filter
    real(r8)                         , intent(in)    :: dz(bounds%begc: ,lbj: )
-   type(betrtracer_type)            , intent(in)    :: betrtracer_vars             ! betr configuration information
+   type(betrtracer_type)            , intent(inout) :: betrtracer_vars             ! betr configuration information
    type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
    type(TracerState_type)           , intent(in)    :: tracerstate_vars
    type(tracercoeff_type)           , intent(inout) :: tracercoeff_vars ! structure containing tracer transport parameters

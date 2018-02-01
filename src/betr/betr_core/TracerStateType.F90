@@ -72,7 +72,7 @@ contains
     class(TracerState_type), intent(inout) :: this
     type(bounds_type)    , intent(in) :: bounds
     integer              , intent(in) :: lbj, ubj
-    type(BeTRTracer_Type), intent(in) :: betrtracer_vars
+    type(BeTRTracer_Type), intent(inout) :: betrtracer_vars
 
     call this%InitAllocate(bounds, lbj, ubj, betrtracer_vars)
     call this%tracer_base_init()
@@ -144,16 +144,18 @@ contains
     !
     ! !USES:
     use BeTRTracerType, only: BeTRTracer_Type
+    use betr_constants  , only : betr_var_name_length
     !
     ! !ARGUMENTS:
     class(TracerState_type), intent(inout) :: this
     type(bounds_type)    , intent(in) :: bounds
-    type(BeTRTracer_Type), intent(in) :: betrtracer_vars
+    type(BeTRTracer_Type), intent(inout) :: betrtracer_vars
     !
     ! !LOCAL VARIABLES:
     integer :: begc, endc
     integer :: jj, kk
     integer :: it, num2d, num1d
+    character(len=betr_var_name_length) :: tracername
     associate(                                                       &
          ntracers          =>  betrtracer_vars%ntracers            , &
          ngwmobile_tracers =>  betrtracer_vars%ngwmobile_tracers   , &
@@ -161,7 +163,6 @@ contains
          is_isotope        =>  betrtracer_vars%is_isotope          , &
          is_h2o            =>  betrtracer_vars%is_h2o              , &
          volatileid        =>  betrtracer_vars%volatileid          , &
-         tracernames       =>  betrtracer_vars%tracernames         , &
          is_frozen         =>  betrtracer_vars%is_frozen           , &
          frozenid          =>  betrtracer_vars%frozenid              &
          )
@@ -174,40 +175,40 @@ contains
            avgflag='A', long_name='total gas pressure')
 
         do jj = 1, ntracers
-
-          call this%add_hist_var2d (it, num2d, fname=trim(tracernames(jj))//'_TRACER_CONC_BULK', units='mol m-3', type2d='levtrc',  &
-           avgflag='A', long_name='gw-mobile phase for tracer '//trim(tracernames(jj)))
+          tracername =  betrtracer_vars%get_tracername(jj)
+          call this%add_hist_var2d (it, num2d, fname=trim(tracername)//'_TRACER_CONC_BULK', units='mol m-3', type2d='levtrc',  &
+           avgflag='A', long_name='gw-mobile phase for tracer '//trim(tracername))
 
           if(jj<= ngwmobile_tracers)then
 
-            call this%add_hist_var1d (it, num1d, fname=trim(tracernames(jj))//'_TRACER_CONC_SURFWATER', units='mol m-3', &
-                 avgflag='A', long_name='head concentration for tracer '//trim(tracernames(jj)), &
+            call this%add_hist_var1d (it, num1d, fname=trim(tracername)//'_TRACER_CONC_SURFWATER', units='mol m-3', &
+                 avgflag='A', long_name='head concentration for tracer '//trim(tracername), &
                  default='inactive')
 
-            call this%add_hist_var1d (it, num1d, fname=trim(tracernames(jj))//'_TRACER_CONC_AQUIFER', units='mol m-3', &
-                 avgflag='A', long_name='quifier concentration for tracer '//trim(tracernames(jj)), &
+            call this%add_hist_var1d (it, num1d, fname=trim(tracername)//'_TRACER_CONC_AQUIFER', units='mol m-3', &
+                 avgflag='A', long_name='quifier concentration for tracer '//trim(tracername), &
                  default='inactive')
 
-            call this%add_hist_var1d (it, num1d, fname=trim(tracernames(jj))//'_TRACER_CONC_GRNDWATER', units='mol m-3', &
-                 avgflag='A', long_name='groundwater concentration for tracer '//trim(tracernames(jj)), &
+            call this%add_hist_var1d (it, num1d, fname=trim(tracername)//'_TRACER_CONC_GRNDWATER', units='mol m-3', &
+                 avgflag='A', long_name='groundwater concentration for tracer '//trim(tracername), &
                  default='inactive')
 
             if(is_volatile(jj) .and. (.not. is_h2o(jj)) .and. (.not. is_isotope(jj)))then
-               call this%add_hist_var2d (it, num2d, fname=trim(tracernames(jj))//'_TRACER_P_GAS_FRAC', units='none', type2d='levtrc',  &
-                    avgflag='A', long_name='fraction of gas phase contributed by '//trim(tracernames(jj)))
+               call this%add_hist_var2d (it, num2d, fname=trim(tracername)//'_TRACER_P_GAS_FRAC', units='none', type2d='levtrc',  &
+                    avgflag='A', long_name='fraction of gas phase contributed by '//trim(tracername))
             endif
 
             if(is_frozen(jj))then
-               call this%add_hist_var2d (it, num2d, fname=trim(tracernames(jj))//'_TRACER_CONC_FROZEN', units='mol m-3', type2d='levtrc',  &
-                    avgflag='A', long_name='frozen phase for tracer '//trim(tracernames(jj)))
+               call this%add_hist_var2d (it, num2d, fname=trim(tracername)//'_TRACER_CONC_FROZEN', units='mol m-3', type2d='levtrc',  &
+                    avgflag='A', long_name='frozen phase for tracer '//trim(tracername))
             endif
           endif
-          call this%add_hist_var1d (it, num1d, fname=trim(tracernames(jj))//'_TRCER_SOI_MOLAMASS', units='mol m-2', &
-              avgflag='A', long_name='total molar mass in soil for '//trim(tracernames(jj)), &
+          call this%add_hist_var1d (it, num1d, fname=trim(tracername)//'_TRCER_SOI_MOLAMASS', units='mol m-2', &
+              avgflag='A', long_name='total molar mass in soil for '//trim(tracername), &
               default='inactive')
 
-          call this%add_hist_var1d (it, num1d, fname=trim(tracernames(jj))//'_TRCER_COL_MOLAMASS', units='mol m-2', &
-              avgflag='A', long_name='total molar mass in the column (soi+snow) for '//trim(tracernames(jj)), &
+          call this%add_hist_var1d (it, num1d, fname=trim(tracername)//'_TRCER_COL_MOLAMASS', units='mol m-2', &
+              avgflag='A', long_name='total molar mass in the column (soi+snow) for '//trim(tracername), &
               default='inactive')
         enddo
         if(it==1)call this%alloc_hist_list(num1d, num2d)
@@ -451,13 +452,15 @@ contains
   use betr_ctrl, only : max_betr_rest_type
   use MathfuncMod, only : addone
   use BeTRTracerType , only : BeTRTracer_Type
+  use betr_constants  , only : betr_var_name_length
   implicit none
   class(TracerState_type), intent(inout) :: this
   integer, intent(in) :: nrest_1d, nrest_2d
   character(len=255), intent(out) :: rest_varname_1d(nrest_1d)
   character(len=255), intent(out) :: rest_varname_2d(nrest_2d)
-  type(BeTRTracer_Type)  , intent(in)  :: betrtracer_vars
+  type(BeTRTracer_Type)  , intent(inout)  :: betrtracer_vars
   integer :: jj, kk,id, id_1d, id_2d
+  character(len=betr_var_name_length) :: tracername
 
     associate(                                                       &
          ntracers          =>  betrtracer_vars%ntracers            , &
@@ -472,16 +475,17 @@ contains
     id_1d = 0; id_2d = 0
 
       do jj = 1, ntracers
-         id_2d = id_2d + 1; rest_varname_2d(id_2d)=trim(tracernames(jj))//'_TRACER_CONC_BULK'
+         tracername =  betrtracer_vars%get_tracername(jj)
+         id_2d = id_2d + 1; rest_varname_2d(id_2d)=trim(tracername)//'_TRACER_CONC_BULK'
 
          if(jj<= ngwmobile_tracers)then
-            id_1d =id_1d + 1; rest_varname_1d(id_1d)=trim(tracernames(jj))//'_TRACER_CONC_AQUIFER'
+            id_1d =id_1d + 1; rest_varname_1d(id_1d)=trim(tracername)//'_TRACER_CONC_AQUIFER'
 
             if(is_adsorb(jj))then
-               id_2d = id_2d + 1;rest_varname_2d(id_2d)=trim(tracernames(jj))//'_TRACER_CONC_SOLID_EQUIL'
+               id_2d = id_2d + 1;rest_varname_2d(id_2d)=trim(tracername)//'_TRACER_CONC_SOLID_EQUIL'
             endif
             if(is_frozen(jj))then
-              id_2d=id_2d+1;rest_varname_2d(id_2d)=trim(tracernames(jj))//'_TRACER_CONC_FROZEN'
+              id_2d=id_2d+1;rest_varname_2d(id_2d)=trim(tracername)//'_TRACER_CONC_FROZEN'
             endif
          endif
       enddo
