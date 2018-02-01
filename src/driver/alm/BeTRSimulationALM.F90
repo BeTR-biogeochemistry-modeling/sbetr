@@ -887,8 +887,11 @@ contains
 
       !mineral nitrogen
       call apvb(this%biophys_forc(c)%n14flx%nflx_minn_input_nh4_vr_col(c_l,j) , &
-         (/nitrogenflux_vars%ndep_to_sminn_col(c)                    , &
+         (/nitrogenflux_vars%ndep_to_smin_nh3_col(c)                    , &
          nitrogenflux_vars%fert_to_sminn_col(c)/),  ndep_prof(c,j))
+
+      call apvb(this%biophys_forc(c)%n14flx%nflx_minn_input_no3_vr_col(c_l,j) , &
+         (/nitrogenflux_vars%ndep_to_smin_no3_col(c)/),  ndep_prof(c,j))
 
       !the following could be commented out if a fixation model is done in betr
       call apvb(this%biophys_forc(c)%n14flx%nflx_minn_nh4_fix_nomic_vr_col(c_l,j) , &

@@ -144,6 +144,7 @@ implicit none
 
     real(r8) :: biochem_pmin
     real(r8) :: sflx_minn_input_nh4       !nh4 from deposition and fertilization
+    real(r8) :: sflx_minn_input_no3       !no3 from deposition and fertilization
     real(r8) :: sflx_minn_nh4_fix_nomic         !nh4 from fixation
     real(r8) :: sflx_minp_input_po4       !inorganic P from deposition and fertilization
     real(r8) :: sflx_minp_weathering_po4

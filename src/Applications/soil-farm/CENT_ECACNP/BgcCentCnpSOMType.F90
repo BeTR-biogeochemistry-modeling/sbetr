@@ -201,7 +201,7 @@ contains
   class(CentSom_type)         , intent(inout) :: this
   type(centurybgc_index_type) , intent(in) :: centurybgc_index
   real(r8)                    , intent(in) :: dtime
-  real(r8)                    , intent(in) :: ystates(1:centurybgc_index%nom_tot_elms)
+  real(r8)                    , intent(inout) :: ystates(1:centurybgc_index%nom_tot_elms)
   type(DecompCent_type)       , intent(in) :: decompkf_eca
   logical                     , intent(in) :: is_surf
   real(r8)                    , intent(in) :: pct_sand
@@ -820,14 +820,16 @@ contains
   implicit none
   class(CentSom_type), intent(inout) :: this
   type(centurybgc_index_type)   , intent(in) :: centurybgc_index
-  real(r8), intent(in) :: ystates(centurybgc_index%nstvars)
+  real(r8)                      , intent(inout) :: ystates(centurybgc_index%nstvars)
   type(betr_status_type)      , intent(out) :: bstatus
   integer :: jj
   integer :: kc, kn, kp, kc13, kc14, kc1, kc2
   real(r8):: rat
+  real(r8) :: difn
+  real(r8) :: stoibal_ncon
   character(len=255) :: msg
   real(r8), parameter :: tiny_val=1.e-14_r8
-  
+  real(r8), parameter :: tiny_ncon = 1.e-15_r8 
   associate(                         &
     nelms => centurybgc_index%nelms, &
     c_loc => centurybgc_index%c_loc, &
@@ -863,12 +865,17 @@ contains
     if(centurybgc_index%debug)then
        write(*,'(A,X,I2,5(X,E20.10))')'cnp',jj,ystates(kc),ystates(kn),ystates(kp),1._r8/this%icn_ratios(jj),1._r8/this%icp_ratios(jj)
     endif
-    if(ystates(kp)>ystates(kn) .and. is_cenpool_som(jj))then
-      write(msg,*)'phosphorus weirdo',jj,trim(ompoolnames(jj)),ystates(kc),ystates(kn),ystates(kp), rat, this%def_cn(jj),this%def_cp(jj),&
-         1._r8/this%icn_ratios(jj),1._r8/this%icp_ratios(jj) 
-      print*,msg
-      call bstatus%set_msg(msg,err=-1)
-      return
+    if(is_cenpool_som(jj) .and. ystates(kc)>tiny_val)then
+      stoibal_ncon = ystates(kc)*this%icn_ratios(jj)
+      difn=ystates(kn)-stoibal_ncon
+      if(difn<-tiny_ncon)then
+        ystates(kn)=stoibal_ncon
+      endif
+ !     write(msg,*)'phosphorus weirdo',jj,trim(ompoolnames(jj)),ystates(kc),ystates(kn),ystates(kp), rat, this%def_cn(jj),this%def_cp(jj),&
+ !        1._r8/this%icn_ratios(jj),1._r8/this%icp_ratios(jj) 
+ !     print*,msg
+ !     call bstatus%set_msg(msg,err=-1)
+ !     return
     endif
     if(this%use_c14)then
       kc14 = (jj-1) * nelms + c14_loc
@@ -916,23 +923,41 @@ contains
     n_loc => centurybgc_index%n_loc, &
     c13_loc => centurybgc_index%c13_loc, &
     c14_loc => centurybgc_index%c14_loc, &
+    som1  => centurybgc_index%som1 , &
+    som2  => centurybgc_index%som2 , &
+    som3  => centurybgc_index%som3 , &
     is_cenpool_som => centurybgc_index%is_cenpool_som, &
     ompoolnames => centurybgc_index%ompoolnames &
   )
 
 
   !for om pools
-  do jj = 1, ncentpools
-    if(is_cenpool_som(jj))then
-      kc = (jj-1) * nelms + c_loc
-      kn = (jj-1) * nelms + n_loc
-      stoibal_ncon = ystates(kc)*this%icn_ratios(jj)
-      difn=ystates(kn)-stoibal_ncon
-      if(difn<-tiny_ncon)then
-        ystates(kn)=stoibal_ncon
-      endif
-    endif
-  enddo
+  jj = som1
+  kc = (jj-1) * nelms + c_loc
+  kn = (jj-1) * nelms + n_loc
+  stoibal_ncon = ystates(kc)*this%icn_ratios(jj)
+  difn=ystates(kn)-stoibal_ncon
+  if(difn<-tiny_ncon)then
+    ystates(kn)=stoibal_ncon
+  endif
+
+  jj = som2
+  kc = (jj-1) * nelms + c_loc
+  kn = (jj-1) * nelms + n_loc
+  stoibal_ncon = ystates(kc)*this%icn_ratios(jj)
+  difn=ystates(kn)-stoibal_ncon
+  if(difn<-tiny_ncon)then
+    ystates(kn)=stoibal_ncon
+  endif
+
+  jj = som3
+  kc = (jj-1) * nelms + c_loc
+  kn = (jj-1) * nelms + n_loc
+  stoibal_ncon = ystates(kc)*this%icn_ratios(jj)
+  difn=ystates(kn)-stoibal_ncon
+  if(difn<-tiny_ncon)then
+    ystates(kn)=stoibal_ncon
+  endif
 
   end associate   
   end subroutine stoichiometry_fix

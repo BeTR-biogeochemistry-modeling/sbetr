@@ -590,6 +590,7 @@ contains
 
   implicit none
   class(BiogeoCon_type), intent(inout) :: this
+  real(r8) :: k_decay_ref
 
   !the order is, lit1, lit2, lit3, cwd, lwd, fwd, som1, som3, som2
   this%spinup_factor(1) = 1._r8
@@ -600,9 +601,10 @@ contains
   this%spinup_factor(5) = 1._r8
   this%spinup_factor(6) = 1._r8
 
-  this%spinup_factor(7) = this%k_decay_lit1/this%k_decay_som1
-  this%spinup_factor(8) = this%k_decay_lit1/this%k_decay_som3
-  this%spinup_factor(9) = this%k_decay_lit1/this%k_decay_som2
+  k_decay_ref=this%k_decay_som1
+  this%spinup_factor(7) = k_decay_ref/this%k_decay_som1
+  this%spinup_factor(8) = k_decay_ref/this%k_decay_som3
+  this%spinup_factor(9) = k_decay_ref/this%k_decay_som2
 
   end subroutine set_spinup_factor
 end module BiogeoConType

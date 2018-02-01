@@ -145,6 +145,6 @@ module Tracer_varcon
       is_phosphorus_active=.true.
     end select
     !make sure P has full supply during spinup
-    if(spinup_state==1)is_phosphorus_active=.false.
+    !if(spinup_state==1)is_phosphorus_active=.false.
     end subroutine set_betr_cnpbgc
 end module Tracer_varcon

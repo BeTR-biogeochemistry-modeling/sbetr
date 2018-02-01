@@ -181,7 +181,7 @@ contains
   type(BeTRtracer_type)                   , intent(inout) :: tracers
   type(tracerstate_type)                  , intent(inout) :: tracerstate_vars
   integer                                 , intent(in) :: spinup_stage
-  integer :: kk, c, j
+  integer :: kk, c, j, c_l
 
   associate(                                                           &
    tracer_conc_mobile_col  => tracerstate_vars%tracer_conc_mobile_col, &
@@ -193,7 +193,8 @@ contains
    n_loc                   => this%centurybgc_index%n_loc            , &
    p_loc                   => this%centurybgc_index%p_loc            , &
    c13_loc                 => this%centurybgc_index%c13_loc          , &
-   c14_loc                 => this%centurybgc_index%c14_loc            &
+   c14_loc                 => this%centurybgc_index%c14_loc          , &
+   move_scalar             => tracers%move_scalar                      &
   )
 
 
@@ -202,9 +203,23 @@ contains
       dom_scalar(c)=1._r8/bgc_con_eca%spinup_factor(9)
     enddo
   endif
+
+  if(betr_spinup_state/=0)then
+    move_scalar(tracers%id_trc_Bm) = bgc_con_eca%spinup_factor(7)
+    move_scalar(tracers%id_trc_som) = bgc_con_eca%spinup_factor(8)
+    move_scalar(tracers%id_trc_dom)=bgc_con_eca%spinup_factor(9)
+  endif
+
   if(enter_spinup)then
     !scale the state variables into the fast space, and provide the scalar to configure
     !tracers
+    if(betr_spinup_state==3)then
+      !the following assume scalaravg_col is same for all columns, which is valid when coupled to lsm.
+      c_l=1
+      move_scalar(tracers%id_trc_Bm)=move_scalar(tracers%id_trc_Bm)/scalaravg_col(c_l)
+      move_scalar(tracers%id_trc_dom)= move_scalar(tracers%id_trc_dom)/ scalaravg_col(c_l)
+      move_scalar(tracers%id_trc_som) = move_scalar(tracers%id_trc_som) / scalaravg_col(c_l)
+    endif
     do j = lbj, ubj
        do c = bounds%begc, bounds%endc
          !som1
@@ -232,8 +247,9 @@ contains
                  tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc) &
                  / bgc_con_eca%spinup_factor(7)
              endif
-           enddo
 
+             
+           enddo
            !som3
            do kk = tracers%id_trc_beg_som, tracers%id_trc_end_som, nelm
              tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc) = &
@@ -281,10 +297,11 @@ contains
              if(this%use_c14)then
                tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc) = &
                 tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc) &
-                 * bgc_con_eca%spinup_factor(9)
+                 / bgc_con_eca%spinup_factor(9)
              endif
            enddo
          endif
+
          if(betr_spinup_state==3)then
            !som1
            do kk = tracers%id_trc_beg_Bm, tracers%id_trc_end_Bm, nelm
@@ -311,7 +328,6 @@ contains
                  * scalaravg_col(c)
              endif
            enddo
-
            !som3
            do kk = tracers%id_trc_beg_som, tracers%id_trc_end_som, nelm
              tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc) = &
@@ -337,7 +353,6 @@ contains
                  * scalaravg_col(c)
              endif
            enddo
-
            !som2
            do kk = tracers%id_trc_beg_dom, tracers%id_trc_end_dom, nelm
              tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc) = &
@@ -1972,6 +1987,7 @@ contains
 
       !mineral nutrient input
       this%centuryforc(c,j)%sflx_minn_input_nh4 = biophysforc%n14flx%nflx_minn_input_nh4_vr_col(c,j)     !nh4 from deposition and fertilization
+      this%centuryforc(c,j)%sflx_minn_input_no3 = biophysforc%n14flx%nflx_minn_input_no3_vr_col(c,j)
       this%centuryforc(c,j)%sflx_minn_nh4_fix_nomic = biophysforc%n14flx%nflx_minn_nh4_fix_nomic_vr_col(c,j)       !nh4 from fixation
       this%centuryforc(c,j)%sflx_minp_input_po4 = biophysforc%p31flx%pflx_minp_input_po4_vr_col(c,j)     !inorganic P from deposition and fertilization
       this%centuryforc(c,j)%sflx_minp_weathering_po4 = biophysforc%p31flx%pflx_minp_weathering_po4_vr_col(c,j)

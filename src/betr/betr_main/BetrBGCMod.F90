@@ -937,8 +937,9 @@ contains
                              ' transp=',transp_mass(c,k),' lech=',&
                              leaching_mass(c,k),' infl=',inflx_top(c,k),' dmass=',dmass(c,k), ' mass0=', &
                              mass0,'err_rel=',err_relative
+                        write(*,*)'surf adv',qflx_adv_local(c,jtops(c)-1)
                         do l = jtops(c), ubj
-                          write(*,*)'adv aqu',l,qflx_adv(c,l),aqu2bulkcef_mobile_col(c,l,j),tracer_conc_mobile_col(c,l,trcid)
+                          write(*,'(A,X,I2,4(X,E20.10))')'adv aqu',l,qflx_adv_local(c,l),qflx_adv(c,l),aqu2bulkcef_mobile_col(c,l,j),tracer_conc_mobile_col(c,l,trcid)
                         enddo
                         msg=trim(msg)//new_line('A')//'advection mass balance error for tracer '//tracernames(trcid) &
                           //new_line('A')//errMsg(mod_filename, __LINE__)
@@ -958,9 +959,6 @@ contains
                             tracer_flx_vtrans_vr(c, l, trcid) * qflx_rootsoi_frac_patch(p,l)
                        enddo
                      enddo
-                     if(betrtracer_vars%debug .and. trcid==betrtracer_vars%id_trc_no3x)then
-                       print*,'cno3',tracer_flx_vtrans(c, trcid), sum(tracer_flx_vtrans_patch(1:pft%npfts,trcid))
-                     endif
                      do l = lbj, ubj
                        if(update_col(c) .and. (.not. halfdt_col(c)) .and. l>=jtops(c))then
                          tracer_conc_mobile_col(c,l,trcid)=trc_conc_out(c,l,k)

@@ -974,9 +974,12 @@ contains
       this%biophys_forc(c)%frac_h2osfc_col(cc)           = waterstate_vars%frac_h2osfc_col(c)
       this%biophys_forc(c)%h2osoi_liq_col(cc,lbj:ubj)    = waterstate_vars%h2osoi_liq_col(c,lbj:ubj)
       this%biophys_forc(c)%h2osoi_ice_col(cc,lbj:ubj)    = waterstate_vars%h2osoi_ice_col(c,lbj:ubj)
-      this%biophys_forc(c)%h2osoi_liqvol_col(cc,lbj:ubj) = waterstate_vars%h2osoi_liqvol_col(c,lbj:ubj)
       this%biophys_forc(c)%h2osoi_icevol_col(cc,lbj:ubj) = waterstate_vars%h2osoi_icevol_col(c,lbj:ubj)
-      this%biophys_forc(c)%h2osoi_vol_col(cc,lbj:ubj)    = waterstate_vars%h2osoi_vol_col(c,lbj:ubj)
+      do l = lbj, ubj 
+        this%biophys_forc(c)%h2osoi_liqvol_col(cc,l)     = max(0.01_r8,waterstate_vars%h2osoi_liqvol_col(c,l))
+        this%biophys_forc(c)%h2osoi_vol_col(cc,l)        = this%biophys_forc(c)%h2osoi_liqvol_col(cc,l) + &
+                                                           this%biophys_forc(c)%h2osoi_icevol_col(cc,l)
+      enddo
       this%biophys_forc(c)%air_vol_col(cc,lbj:ubj)       = waterstate_vars%air_vol_col(c,lbj:ubj)
       this%biophys_forc(c)%rho_vap(cc,lbj:ubj)           = waterstate_vars%rho_vap_col(c,lbj:ubj)
       this%biophys_forc(c)%rhvap_soi(cc,lbj:ubj)         = waterstate_vars%rhvap_soi_col(c,lbj:ubj)

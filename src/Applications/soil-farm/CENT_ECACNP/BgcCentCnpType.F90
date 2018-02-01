@@ -87,8 +87,8 @@ contains
   ! DESCRIPTION
   ! constructor
     implicit none
-    class(centurybgceca_type), pointer :: create_centuryeca_type
-    class(centurybgceca_type), pointer :: bgc
+    type(centurybgceca_type), pointer :: create_centuryeca_type
+    type(centurybgceca_type), pointer :: bgc
 
     allocate(bgc)
     create_centuryeca_type => bgc
@@ -477,12 +477,12 @@ contains
     call this%c14decay(this%centurybgc_index, dtime, spinup_scalar, spinup_flg, ystates1)
   endif
 
-  call this%censom%stoichiometry_fix(this%centurybgc_index, ystates1)
+!  call this%censom%stoichiometry_fix(this%centurybgc_index, ystates1)
   ystatesf(:) = ystates1(:)
-  if(this%centurybgc_index%debug)then
-    print*,'after decomp'
-    call this%censom%calc_cnp_ratios(this%centurybgc_index, ystatesf, bstatus)
-  endif
+!  if(this%centurybgc_index%debug)then
+!    print*,'after decomp'
+!    call this%censom%calc_cnp_ratios(this%centurybgc_index, ystatesf, bstatus)
+!  endif
   end associate
   end subroutine runbgc
   !-------------------------------------------------------------------------------
@@ -835,6 +835,7 @@ contains
     som3 =>  centurybgc_index%som3, &
     nelms => centurybgc_index%nelms, &
     lid_nh4=> centurybgc_index%lid_nh4, &
+    lid_no3=> centurybgc_index%lid_no3, &
     lid_minp_soluble =>  centurybgc_index%lid_minp_soluble,  &
     lid_minp_immob => centurybgc_index%lid_minp_immob &
   ) 
@@ -988,6 +989,9 @@ contains
   this%ystates1(lid_nh4) =this%ystates0(lid_nh4) + dtime * &
       (centuryeca_forc%sflx_minn_input_nh4 + &
         centuryeca_forc%sflx_minn_nh4_fix_nomic)/natomw * tmul 
+
+  this%ystates1(lid_no3) = this%ystates0(lid_no3) + dtime * &
+      centuryeca_forc%sflx_minn_input_no3/natomw * tmul 
 
   this%ystates1(lid_minp_soluble) =this%ystates0(lid_minp_soluble) + dtime * &
       (centuryeca_forc%sflx_minp_input_po4 + &
