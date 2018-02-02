@@ -37,6 +37,7 @@ implicit none
     real(r8), pointer :: fire_mortality_c_to_cwdc_col              (:,:)=> null()
     real(r8), pointer :: fire_decomp_closs_col                     (:) => null()
     real(r8), pointer :: som_c_leached_col                         (:) => null()
+    real(r8), pointer :: som_c_runoff_col                          (:) => null()
   contains
 
     procedure, public  :: Init

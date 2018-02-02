@@ -38,7 +38,7 @@ implicit none
     real(r8), pointer :: secondp_to_occlp_col                      (:)=> null()
     real(r8), pointer :: fire_decomp_ploss_col                     (:)=> null()
     real(r8), pointer :: som_p_leached_col                         (:) => null()
-
+    real(r8), pointer :: som_p_runoff_col                          (:) => null()
   contains
 
     procedure, public  :: Init

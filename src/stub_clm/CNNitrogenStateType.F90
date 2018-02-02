@@ -19,6 +19,10 @@ implicit none
     real(r8), pointer :: totlitn_1m_col               (:) => null()
     real(r8), pointer :: totlitn_col                  (:) => null()
     real(r8), pointer :: pnup_pfrootc_patch           (:) => null()
+    real(r8), pointer :: som1n_col                    (:) => null()
+    real(r8), pointer :: som2n_col                    (:) => null()
+    real(r8), pointer :: som3n_col                    (:) => null()
+
   contains
 
     procedure, public  :: Init

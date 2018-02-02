@@ -81,13 +81,14 @@ module TracerBalanceMod
       !
       ! !USES:
 
-      use betr_ctrl     , only : iulog  => biulog, do_betr_output
-      use betr_varcon   , only : namec  => bnamec
-      use tracer_varcon , only : catomw,natomw
-      use BeTR_TimeMod  , only : betr_time_type
-      use BetrStatusType, only : betr_status_type
-      use betr_constants, only : betr_errmsg_len
-      use betr_columnType, only : betr_column_type
+      use betr_ctrl       , only : iulog  => biulog, do_betr_output
+      use betr_varcon     , only : namec  => bnamec
+      use tracer_varcon   , only : catomw,natomw
+      use BeTR_TimeMod    , only : betr_time_type
+      use BetrStatusType  , only : betr_status_type
+      use betr_constants  , only : betr_errmsg_len
+      use betr_columnType , only : betr_column_type
+      use betr_constants  , only : betr_var_name_length
       implicit none
 
       ! !ARGUMENTS:
@@ -96,7 +97,7 @@ module TracerBalanceMod
       type(betr_column_type) , intent(in)    :: col
       integer                , intent(in)    :: numf             ! number of columns in column filter
       integer                , intent(in)    :: filter(:)        ! column filter
-      type(BeTRtracer_type)  , intent(in)    :: betrtracer_vars
+      type(BeTRtracer_type)  , intent(inout) :: betrtracer_vars
       type(TracerFlux_type)  , intent(inout) :: tracerflux_vars
       type(TracerState_type) , intent(inout) :: tracerState_vars
       type(betr_status_type) , intent(out)   :: betr_status
@@ -110,6 +111,7 @@ module TracerBalanceMod
       real(r8), parameter :: err_min_rel=1.e-3_r8
       integer    :: lbj, ubj, jl
       character(len=betr_errmsg_len) :: msg, msg1
+      character(len=betr_var_name_length) :: tracername
 
       call betr_status%reset()
       associate(                                                                            &
@@ -121,7 +123,6 @@ module TracerBalanceMod
            is_mobile                 => betrtracer_vars%is_mobile                         , &
            errtracer                 => tracerstate_vars%errtracer_col                    , &
            ngwmobile_tracers         => betrtracer_vars%ngwmobile_tracers                 , &
-           tracernames               => betrtracer_vars%tracernames                       , &
            ntracers                  => betrtracer_vars%ntracers                            &
            )
       lbj = bounds%lbj
@@ -157,7 +158,8 @@ module TracerBalanceMod
 
                endif
               if(abs(err_rel)>err_min_rel .and. do_betr_output)then
-                 write(msg,*)'error exceeds the tolerance for tracer '//tracernames(kk), &
+                 tracername=betrtracer_vars%get_tracername(kk)
+                 write(msg,*)'error exceeds the tolerance for tracer '//tracername, &
                       new_line('A'),'err=',errtracer(c,kk), ' col=',c, &
                       new_line('A'),'nstep=', betr_time%get_nstep(), &
                       new_line('A'),'netpro=',tracer_flx_netpro(c,kk),&

@@ -24,6 +24,7 @@ implicit none
     real(r8) :: rij_kro_delta
     real(r8) :: nitrif_n2o_loss_frac
     real(r8) :: surface_tension_water
+    real(r8) :: k_nitr_max
   contains
     procedure, public :: init
     procedure, public :: calc_nitrif_denitrif_rate
@@ -32,7 +33,7 @@ implicit none
     procedure, public :: calc_pot_nitr
     procedure, private:: calc_anaerobic_frac
     procedure, private:: calc_cascade_matrix
-    procedure, private:: InitPar
+    procedure, public :: UpdateParas
   end type century_nitden_type
 
   contains
@@ -44,12 +45,12 @@ implicit none
   class(century_nitden_type) , intent(inout) :: this
   type(BiogeoCon_type)       , intent(in) :: biogeo_con
 
-  call this%InitPar(biogeo_con)
+  !do memory allocation thing
 
   end subroutine init
 
   !-------------------------------------------------------------------------------
-  subroutine InitPar(this, biogeo_con)
+  subroutine UpdateParas(this, biogeo_con)
   use BiogeoConType, only : BiogeoCon_type
   implicit none
   class(century_nitden_type), intent(inout) :: this
@@ -63,7 +64,7 @@ implicit none
   this%rij_kro_gamma = biogeo_con%rij_kro_gamma
   this%rij_kro_delta =  biogeo_con%rij_kro_delta
   this%surface_tension_water = biogeo_con%surface_tension_water
-
+  this%k_nitr_max    = biogeo_con%k_nitr_max
   this%d_con_g(1,:)=(/0.1875_r8, 0.0013_r8/) ! CH4
   this%d_con_g(2,:)=(/0.1759_r8, 0.00117_r8/) ! O2
   this%d_con_g(3,:)=(/0.1325_r8, 0.0009_r8/) ! CO2
@@ -73,7 +74,7 @@ implicit none
   this%d_con_w(3,:)=(/0.939_r8, 0.02671_r8, 0.0004095_r8/) ! CO2
 
   this%nitrif_n2o_loss_frac = 6.e-4_r8
-  end subroutine InitPar
+  end subroutine UpdateParas
   !-------------------------------------------------------------------------------
 
   subroutine calc_anaerobic_frac(this, o2b, centuryeca_forc, o2_decomp_depth, anaerobic_frac, diffus)
@@ -220,7 +221,6 @@ implicit none
     real(r8) :: co2diff_con(2) = (/0.1325_r8, 0.0009_r8/)
     real(r8) :: g_per_m3__to__ug_per_gsoil
     real(r8) :: g_per_m3_sec__to__ug_per_gsoil_day
-    real(r8) :: k_nitr_max
 
     associate(                                         &
          bd         =>    centuryeca_forc%bd         , & !
@@ -317,7 +317,6 @@ implicit none
 
   !local variables
   real(r8) :: k_nitr
-  real(r8) :: k_nitr_max
   real(r8) :: k_nitr_t
   real(r8) :: k_nitr_ph
   real(r8) :: k_nitr_h2o
@@ -325,11 +324,10 @@ implicit none
   associate(                                    &
      pH           =>    centuryeca_forc%pH    , &
      t_scalar     =>    decompkf_eca%t_scalar , & ! Input: [real(r8) (:,:)   ]  soil temperature scalar for decomp
-     w_scalar     =>    decompkf_eca%w_scalar   & ! Input: [real(r8) (:,:)   ]  soil water scalar for decomp
+     w_scalar     =>    decompkf_eca%w_scalar , & ! Input: [real(r8) (:,:)   ]  soil water scalar for decomp
+     k_nitr_max   =>    this%k_nitr_max         &
   )
 
-  ! Set maximum nitrification rate constant
-  k_nitr_max =  0.1_r8 / secspday   ! [1/sec] 10%/day  Parton et al., 2001
 
   !---------------- nitrification
   ! follows CENTURY nitrification scheme (Parton et al., (2001, 1996))
@@ -385,8 +383,8 @@ implicit none
   !NH4(+) + (2-f)O2 + (2-f)OH(-)-> (1-f)NO3(-) + (f/2)N2O + (3-f/2) H2O
   cascade_matrix(lid_nh4 ,reac) = -1._r8
   cascade_matrix(lid_o2  ,reac) = -(2._r8 - this%nitrif_n2o_loss_frac)
-  cascade_matrix(lid_no3 ,reac) = 1._r8  - this%nitrif_n2o_loss_frac
   cascade_matrix(lid_n2o, reac) = 0.5_r8 * this%nitrif_n2o_loss_frac
+  cascade_matrix(lid_no3 ,reac) = 1._r8  - cascade_matrix(lid_n2o, reac) * 2._r8
 
   cascade_matrix(lid_nh4_nit,reac) = 1._r8
   cascade_matrix(lid_n2o_nit,reac) = this%nitrif_n2o_loss_frac

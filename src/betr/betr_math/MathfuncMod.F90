@@ -20,7 +20,7 @@ module MathfuncMod
   public :: cumsum
   public :: swap
   public :: minmax
-  public :: cumdif
+  public :: cumpdiff
   public :: diff
   public :: safe_div
   public :: dot_sum
@@ -253,6 +253,7 @@ contains
     integer :: idim_loc
 
     call bstatus%reset()
+    idim_loc=1
     if(present(idim))idim_loc=idim
 
     SHR_ASSERT_ALL((size(x,1)   == size(y,1)),        errMsg(mod_filename,__LINE__), bstatus)
@@ -278,7 +279,7 @@ contains
   end subroutine cumsum_m
 
   !-------------------------------------------------------------------------------
-  subroutine cumdif(x, y, bstatus)
+  subroutine cumpdiff(x, y, bstatus)
     !
     ! !DESCRIPTION:
     ! do nearest neighbor finite difference
@@ -297,11 +298,12 @@ contains
     if(bstatus%check_status())return
 
     n = size(x)
-    call diff(x,y(2:n), bstatus)
-    if(bstatus%check_status())return
-    y(1)=x(1)
+    y(1)=max(x(1),0._r8)
+    do j = 2, n
+      y(j) = max(x(j)-x(j-1),0._r8)
+    enddo
+  end subroutine cumpdiff
 
-  end subroutine cumdif
   !-------------------------------------------------------------------------------
 
   subroutine diff(x,y, bstatus)

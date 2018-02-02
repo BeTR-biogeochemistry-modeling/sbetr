@@ -20,7 +20,8 @@ module ApplicationsFactory
   private
   public :: create_betr_usr_application
   public :: AppLoadParameters
-
+  public :: AppInitParameters
+  public :: AppSetSpinup
 contains
 
   subroutine create_betr_usr_application(bgc_reaction, plant_soilbgc, method, bstatus)
@@ -121,7 +122,31 @@ contains
 
 
   !-------------------------------------------------------------------------------
-  subroutine AppLoadParameters(bgc_namelist_buffer, reaction_method, bstatus)
+  subroutine AppLoadParameters(ncid, bstatus)
+  !
+  ! DESCRIPTION
+  ! read in the parameters for specified bgc implementation
+  use BiogeoConType  , only : bgc_con_eca
+  use tracer_varcon  , only : reaction_method
+  use ncdio_pio      , only : file_desc_t
+  use BetrStatusType , only : betr_status_type
+  implicit none
+  type(file_desc_t), intent(inout)  :: ncid
+  type(betr_status_type) , intent(out) :: bstatus
+
+   select case (trim(reaction_method))
+   case ("eca_cnp")
+     call  bgc_con_eca%readPars(ncid, bstatus)
+   case default
+     !do nothing
+   end select
+
+  end subroutine  AppLoadParameters
+
+
+
+  !-------------------------------------------------------------------------------
+  subroutine AppInitParameters(bgc_namelist_buffer, reaction_method, bstatus)
   !
   ! DESCRIPTION
   ! read in the parameters for specified bgc implementation
@@ -151,5 +176,18 @@ contains
      endif
    end select
 
-  end subroutine  AppLoadParameters
+  end subroutine  AppInitParameters
+  !-------------------------------------------------------------------------------
+  subroutine AppSetSpinup()
+
+  use BiogeoConType  , only : bgc_con_eca
+  use tracer_varcon  , only : reaction_method
+  implicit none
+
+  select case (trim(reaction_method))
+  case ("eca_cnp")
+     call  bgc_con_eca%set_spinup_factor()
+  end select
+
+  end subroutine AppSetSpinup
 end module ApplicationsFactory

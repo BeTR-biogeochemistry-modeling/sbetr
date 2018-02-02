@@ -94,7 +94,7 @@ mean =   0.9449567467755E-05
 cell    1 =   0.1419089711605E-04
 cell    3 =   0.1112325727603E-04
 cell    5 =   0.9355318065381E-05
-cell    7 =   0.7882587750858E-05
+cell    7 =   0.7882587750859E-05
 cell    9 =   0.7653856197656E-05
 
 [CH4_gas_partial_fraction]
@@ -110,19 +110,19 @@ cell    9 =   0.1685183022996E-05
 
 [BLK_H2O_total_aqueous_conc]
 category = concentration
-min =   0.2914257887003E+03
-max =   0.3338400251540E+03
-mean =   0.3023273342138E+03
-cell    1 =   0.3067235516508E+03
-cell    3 =   0.2914257887003E+03
-cell    5 =   0.2999883153555E+03
-cell    7 =   0.3123035402931E+03
+min =   0.2914257882641E+03
+max =   0.3338400251541E+03
+mean =   0.3023273339982E+03
+cell    1 =   0.3067235510650E+03
+cell    3 =   0.2914257882641E+03
+cell    5 =   0.2999883150954E+03
+cell    7 =   0.3123035402779E+03
 cell    9 =   0.2924760270799E+03
 
 [BLK_H2O_gas_partial_fraction]
 category = pfraction
-min =              Infinity
-max =             -Infinity
+min =                   NaN
+max =                   NaN
 mean =                   NaN
 cell    1 =                   NaN
 cell    3 =                   NaN
@@ -132,19 +132,19 @@ cell    9 =                   NaN
 
 [O18_H2O_total_aqueous_conc]
 category = concentration
-min =   0.2914257887003E+03
-max =   0.3338400251540E+03
-mean =   0.3023273342138E+03
-cell    1 =   0.3067235516508E+03
-cell    3 =   0.2914257887003E+03
-cell    5 =   0.2999883153555E+03
-cell    7 =   0.3123035402931E+03
+min =   0.2914257882641E+03
+max =   0.3338400251541E+03
+mean =   0.3023273339982E+03
+cell    1 =   0.3067235510650E+03
+cell    3 =   0.2914257882641E+03
+cell    5 =   0.2999883150954E+03
+cell    7 =   0.3123035402779E+03
 cell    9 =   0.2924760270799E+03
 
 [O18_H2O_gas_partial_fraction]
 category = pfraction
-min =              Infinity
-max =             -Infinity
+min =                   NaN
+max =                   NaN
 mean =                   NaN
 cell    1 =                   NaN
 cell    3 =                   NaN
@@ -154,19 +154,19 @@ cell    9 =                   NaN
 
 [D_H2O_total_aqueous_conc]
 category = concentration
-min =   0.2914257887003E+03
-max =   0.3338400251540E+03
-mean =   0.3023273342138E+03
-cell    1 =   0.3067235516508E+03
-cell    3 =   0.2914257887003E+03
-cell    5 =   0.2999883153555E+03
-cell    7 =   0.3123035402931E+03
+min =   0.2914257882641E+03
+max =   0.3338400251541E+03
+mean =   0.3023273339982E+03
+cell    1 =   0.3067235510650E+03
+cell    3 =   0.2914257882641E+03
+cell    5 =   0.2999883150954E+03
+cell    7 =   0.3123035402779E+03
 cell    9 =   0.2924760270799E+03
 
 [D_H2O_gas_partial_fraction]
 category = pfraction
-min =              Infinity
-max =             -Infinity
+min =                   NaN
+max =                   NaN
 mean =                   NaN
 cell    1 =                   NaN
 cell    3 =                   NaN

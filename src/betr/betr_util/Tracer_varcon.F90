@@ -44,10 +44,11 @@ module Tracer_varcon
   logical :: use_c14_betr=.false.
   logical :: is_nitrogen_active = .true.
   logical :: is_phosphorus_active=.true.
+  logical :: fix_ip = .false.
   integer, parameter :: sorp_isotherm_linear=1
   integer, parameter :: sorp_isotherm_langmuir=2
 
-  logical  :: advection_on, diffusion_on, reaction_on, ebullition_on
+  logical  :: advection_on, diffusion_on, reaction_on, ebullition_on,AA_spinup_on
   character(len=betr_string_length), public :: reaction_method
   save
 
@@ -144,6 +145,6 @@ module Tracer_varcon
       is_phosphorus_active=.true.
     end select
     !make sure P has full supply during spinup
-    if(spinup_state==1)is_phosphorus_active=.false.
+    !if(spinup_state==1)is_phosphorus_active=.false.
     end subroutine set_betr_cnpbgc
 end module Tracer_varcon

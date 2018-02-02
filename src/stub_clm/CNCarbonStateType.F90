@@ -14,6 +14,10 @@ implicit none
     real(r8), pointer :: cwdc_col                (:) => null()
     real(r8), pointer :: totsomc_1m_col          (:) => null()
     real(r8), pointer :: decomp_som2c_vr_col     (:,:)=> null()
+    real(r8), pointer :: som1c_col               (:) => null()
+    real(r8), pointer :: som2c_col               (:) => null()
+    real(r8), pointer :: som3c_col               (:) => null()
+
   contains
 
     procedure, public  :: Init

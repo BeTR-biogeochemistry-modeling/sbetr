@@ -48,6 +48,10 @@ module BGCReactionsMod
      procedure(debug_info_interface)                      , deferred :: debug_info
 
      procedure(set_bgc_spinup_interface)                  , deferred :: set_bgc_spinup
+
+     procedure(UpdateParas_interface)                     , deferred :: UpdateParas
+
+     procedure(init_iP_prof_interface)                    , deferred :: init_iP_prof
   end type bgc_reaction_type
 
   abstract interface
@@ -75,9 +79,44 @@ module BGCReactionsMod
        type(betr_status_type)   , intent(out)   :: bstatus
 
      end subroutine Init_betrbgc_interface
+
+
+  !----------------------------------------------------------------------
+  subroutine init_iP_prof_interface(this, bounds, lbj, ubj, biophysforc, tracers, tracerstate_vars)
+  !
+  !DESCRIPTION
+  ! set up initial inorganic P profile
+  use BeTR_decompMod  , only : betr_bounds_type
+  use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
+  use tracerstatetype        , only : tracerstate_type
+  use BeTRTracerType        , only : betrtracer_type
+  ! !ARGUMENTS:
+  import :: bgc_reaction_type
+  implicit none
+  class(bgc_reaction_type) , intent(inout)    :: this
+  type(betr_bounds_type)                  , intent(in) :: bounds
+  integer                                  , intent(in) :: lbj, ubj
+  type(betr_biogeophys_input_type)        , intent(inout) :: biophysforc
+  type(BeTRtracer_type)                    , intent(inout) :: tracers
+  type(tracerstate_type)                   , intent(inout) :: tracerstate_vars
+
+  end subroutine init_iP_prof_interface
   !-------------------------------------------------------------------------------
-  subroutine set_bgc_spinup_interface(this, bounds, lbj, ubj, num_soilc, filter_soilc, biophysforc, &
-  tracers, tracerstate_vars)
+  subroutine UpdateParas_interface(this, bounds, lbj, ubj)
+
+   use BeTR_decompMod  , only : betr_bounds_type
+  ! !ARGUMENTS:
+  import :: bgc_reaction_type
+  implicit none
+  class(bgc_reaction_type) , intent(inout)    :: this
+  type(betr_bounds_type)                    , intent(in)    :: bounds
+  integer                              , intent(in)    :: lbj, ubj        ! lower and upper bounds, make sure they are > 0
+
+
+  end subroutine UpdateParas_interface
+  !-------------------------------------------------------------------------------
+  subroutine set_bgc_spinup_interface(this, bounds, lbj, ubj,  biophysforc, &
+  tracers, tracerstate_vars, spinup_stage)
     use tracerstatetype        , only : tracerstate_type
     use BeTRTracerType        , only : betrtracer_type
     use BeTR_decompMod        , only : betr_bounds_type
@@ -89,12 +128,10 @@ module BGCReactionsMod
     class(bgc_reaction_type) , intent(inout)    :: this
     type(betr_bounds_type)                  , intent(in) :: bounds
     integer                                 , intent(in) :: lbj, ubj
-    integer                                 , intent(in) :: num_soilc
-    integer                                 , intent(in) :: filter_soilc(:)
     type(betr_biogeophys_input_type)        , intent(inout) :: biophysforc
     type(BeTRtracer_type)                   , intent(inout) :: tracers
     type(tracerstate_type)                  , intent(inout) :: tracerstate_vars
-
+    integer                                 , intent(in) :: spinup_stage
   end subroutine set_bgc_spinup_interface
      !----------------------------------------------------------------------
      subroutine calc_bgc_reaction_interface(this, bounds, col, lbj, ubj, num_soilc, filter_soilc, &

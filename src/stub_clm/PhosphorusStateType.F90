@@ -30,6 +30,9 @@ implicit none
     real(r8), pointer :: occlp_vr_col                 (:,:) => null()      ! col (gP/m3) vertically-resolved soil occluded mineral P
     real(r8), pointer :: primp_vr_col                 (:,:)  => null()     ! col (gP/m3) vertically-resolved soil parimary mineral P
     real(r8), pointer :: sminp_vr_col                 (:,:)  => null()     ! col (gP/m3) vertically-resolved soil total mineral P, diagnostic
+    real(r8), pointer :: som1p_col                    (:) => null()
+    real(r8), pointer :: som2p_col                    (:) => null()
+    real(r8), pointer :: som3p_col                    (:) => null()
 
   contains
 

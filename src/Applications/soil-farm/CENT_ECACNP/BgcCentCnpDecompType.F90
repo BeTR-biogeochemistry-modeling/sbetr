@@ -23,12 +23,14 @@ implicit none
   real(r8) :: Q10
   real(r8) :: froz_q10
   real(r8) :: decomp_depth_efolding
+  real(r8) :: minpsi
+  real(r8) :: k_m_o2
   contains
     procedure, public  :: Init
     procedure, public  :: set_decompk_scalar
     procedure, private :: InitCold
     procedure, private :: InitAllocate
-    procedure, private :: initPar
+    procedure, public  :: UpdateParas
   end type DecompCent_type
 
  contains
@@ -44,8 +46,6 @@ implicit none
   call this%InitAllocate ()
 
   call this%InitCold ()
-
-  call this%InitPar(biogeo_con)
 
  end subroutine Init
  !------------------------------------------------------------------------
@@ -81,7 +81,7 @@ implicit none
   end subroutine initCold
 
   !-----------------------------------------------------------------------
-  subroutine InitPar(this, biogeo_con)
+  subroutine UpdateParas(this, biogeo_con)
 
   use BiogeoConType, only : BiogeoCon_type
   implicit none
@@ -92,7 +92,9 @@ implicit none
   this%Q10 = biogeo_con%Q10
   this%froz_q10 = biogeo_con%froz_q10
   this%decomp_depth_efolding = biogeo_con%decomp_depth_efolding
-  end subroutine InitPar
+  this%minpsi= biogeo_con%minpsi_bgc
+  this%k_m_o2=biogeo_con%k_m_o2_bgc
+  end subroutine UpdateParas
   !-----------------------------------------------------------------------
   subroutine set_decompk_scalar(this, o2b, centuryeca_forc)
 
@@ -106,7 +108,6 @@ implicit none
 
   ! !LOCAL VARIABLES:
   real(r8), parameter :: normalization_tref = 15._r8 ! reference temperature for normalizaion (degrees C)
-  real(r8)            :: minpsi
   real(r8)            :: maxpsi
   real(r8)            :: normalization_factor
   real(r8)            :: catanf_30
@@ -114,15 +115,17 @@ implicit none
   real(r8)            :: o2w
   real(r8)            :: psi
 
-  associate(                                            &
-    temp          => centuryeca_forc%temp    ,          &
-    depz          => centuryeca_forc%depz    ,          &
-    o2_w2b        => centuryeca_forc%o2_w2b  ,          &
-    sucsat        => centuryeca_forc%sucsat  ,          & ! Input:  [real(r8) (:,:)] minimum soil suction [mm]
-    soilpsi       => centuryeca_forc%soilpsi ,          & ! Input:  [real(r8) (:,:)] soilwater pontential in each soil layer [MPa]
-    Q10           => this%Q10                ,          &
-    froz_q10      => this%froz_q10           ,          &
-    decomp_depth_efolding => this%decomp_depth_efolding &
+  associate(                                             &
+    temp          => centuryeca_forc%temp              , &
+    depz          => centuryeca_forc%depz              , &
+    o2_w2b        => centuryeca_forc%o2_w2b            , &
+    sucsat        => centuryeca_forc%sucsat            , & ! Input:  [real(r8) (:,:)] minimum soil suction [mm]
+    soilpsi       => centuryeca_forc%soilpsi           , & ! Input:  [real(r8) (:,:)] soilwater pontential in each soil layer [MPa]
+    Q10           => this%Q10                          , &
+    froz_q10      => this%froz_q10                     , &
+    decomp_depth_efolding => this%decomp_depth_efolding, &
+    k_m_o2        => this%k_m_o2                       , &
+    minpsi        => this%minpsi                         &
   )
 
   catanf_30 = catanf(30._r8)
@@ -141,7 +144,6 @@ implicit none
   this%t_scalar = this%t_scalar * normalization_factor
 
   !h2osoi_liqure scalar, also follows what Charlie has done
-  minpsi = -10.0_r8
   this%w_scalar     = 1._r8
   maxpsi = sucsat * (-9.8e-6_r8)   !kg -> MPa
   psi = min(soilpsi,maxpsi)
@@ -157,7 +159,7 @@ implicit none
   !oxygen scalar, this is different from what CLM4.5bgc does, I use a M-M formulation to indicate O2 stress
   !and the O2 budget is done on the fly
   o2w = o2b / o2_w2b
-  this%o_scalar = o2w/(o2w+0.02_r8)   !the value 0.22 mol O3/m3 is from Arah and Kirk, 2000
+  this%o_scalar = o2w/(o2w+k_m_o2)   !the value 0.22 mol O3/m3 is from Arah and Kirk, 2000
 
   !depth scalar, according to Koven et al. (2013), BG, the depth scalar is needed to resolve the radiocarbon profile
   this%depth_scalar = exp(-depz/decomp_depth_efolding)

@@ -16,6 +16,8 @@ implicit none
      real(r8), pointer :: soyfixn_to_sminn_col                      (:)=> null()
      real(r8), pointer :: m_decomp_npools_to_fire_vr_col            (:,:,:)=> null()
      real(r8), pointer :: ndep_to_sminn_col                         (:)=> null()
+     real(r8), pointer :: ndep_to_smin_nh3_col                         (:)=> null()
+     real(r8), pointer :: ndep_to_smin_no3_col                         (:)=> null()
      real(r8), pointer :: dwt_livecrootn_to_cwdn_col                (:,:)=> null()
      real(r8), pointer :: phenology_n_to_litr_lig_n_col             (:,:)=> null()
      real(r8), pointer :: nfix_to_sminn_col                         (:)=> null()
@@ -43,7 +45,8 @@ implicit none
      real(r8), pointer :: fire_decomp_nloss_col                     (:) => null()
      real(r8), pointer :: denit_col                                 (:) => null()
      real(r8), pointer :: som_n_leached_col                         (:) => null()
-     real(r8), pointer :: supplement_to_sminn_col(:)
+     real(r8), pointer :: supplement_to_sminn_col                   (:) => null()
+     real(r8), pointer :: som_n_runoff_col                          (:) => null()
   contains
 
     procedure, public  :: Init
@@ -96,6 +99,8 @@ contains
     allocate(this%soyfixn_to_sminn_col(begc:endc)); this%soyfixn_to_sminn_col(:) = nan
     allocate(this%m_decomp_npools_to_fire_vr_col(begc:endc,1:nlevdecomp_full,1:7)); this%m_decomp_npools_to_fire_vr_col(:,:,:) =nan
     allocate(this%ndep_to_sminn_col(begc:endc)); this%ndep_to_sminn_col(:) = nan
+    allocate(this%ndep_to_smin_nh3_col(begc:endc)); this%ndep_to_smin_nh3_col(:) = nan
+    allocate(this%ndep_to_smin_no3_col(begc:endc)); this%ndep_to_smin_no3_col(:) = nan
     allocate(this%dwt_livecrootn_to_cwdn_col(begc:endc,1:nlevdecomp_full)); this%dwt_livecrootn_to_cwdn_col(:,:) = nan
     allocate(this%phenology_n_to_litr_lig_n_col(begc:endc,1:nlevdecomp_full)); this%phenology_n_to_litr_lig_n_col(:,:) = nan
     allocate(this%dwt_deadcrootn_to_cwdn_col(begc:endc,1:nlevdecomp_full)); this%dwt_deadcrootn_to_cwdn_col(:,:) = nan
@@ -154,6 +159,8 @@ contains
     this%soyfixn_to_sminn_col(:) = 0._r8
     this%m_decomp_npools_to_fire_vr_col(:,:,:) = 0._r8
     this%ndep_to_sminn_col(:) = 0._r8
+    this%ndep_to_smin_nh3_col(:) = 0._r8
+    this%ndep_to_smin_no3_col(:) = 0._r8
     this%dwt_livecrootn_to_cwdn_col(:,:) = 0._r8
     this%phenology_n_to_litr_lig_n_col(:,:) = 0._r8
     this%dwt_deadcrootn_to_cwdn_col(:,:) = 0._r8

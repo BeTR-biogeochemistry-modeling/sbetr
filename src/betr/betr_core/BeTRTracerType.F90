@@ -113,6 +113,8 @@ module BeTRTracerType
      procedure, private :: InitAllocate
      procedure, public  :: is_solidtransport
      procedure, public  :: add_tracer_group
+     procedure, public  :: get_tracername
+     procedure, public  :: get_tracerfamilyname
   end type BeTRtracer_type
 
 
@@ -132,6 +134,27 @@ module BeTRTracerType
     call this%InitAllocate()
     this%debug = .false.
   end subroutine Init
+!--------------------------------------------------------------------------------
+  function get_tracername(this, trcid) result(name)
+  implicit none
+  class(BeTRtracer_type), intent(inout) :: this
+  integer, intent(in) :: trcid
+
+  character(len=betr_var_name_length) :: name
+
+  name = this%tracernames(trcid)
+  end function get_tracername
+!--------------------------------------------------------------------------------
+  function get_tracerfamilyname(this, trcid) result(name)
+  implicit none
+  class(BeTRtracer_type), intent(inout) :: this
+  integer, intent(in) :: trcid
+
+  character(len=betr_var_name_length) :: name
+
+  name = this%tracerfamilyname(trcid)
+  end function get_tracerfamilyname
+
 !--------------------------------------------------------------------------------
   subroutine init_scalars(this)
 

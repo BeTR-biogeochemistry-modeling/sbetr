@@ -93,9 +93,9 @@ contains
     integer :: n
     external :: odefun
 
-    ti = t
     dt05 = dt * 0.5_r8
 
+    ti = t
     call trajectory(extra, y0, dt, ti, neq, k1)
 
     y(:) = y0(:)
@@ -106,6 +106,7 @@ contains
 
     y(:) = y0(:)
     call daxpy(neq, dt, k2, 1, y, 1)
+
   end subroutine ode_rk2
   !-------------------------------------------------------------------------------
   function create_Extra_type()
@@ -826,8 +827,8 @@ contains
      ! !USES:
      use bshr_kind_mod    , only : r8 => shr_kind_r8
      use BeTR_decompMod   , only : bounds_type  => betr_bounds_type
-     use MathfuncMod      , only : cumsum, cumdif, safe_div, dot_sum, asc_sort_vec
-     use InterpolationMod , only : Lagrange_interp
+     use MathfuncMod      , only : cumsum, cumpdiff, safe_div, dot_sum, asc_sort_vec
+     use InterpolationMod , only : bmass_interp, mass_interp, loc_x,loc_xj
      use BetrStatusType   , only : betr_status_type
      implicit none
      ! !ARGUMENTS:
@@ -855,14 +856,14 @@ contains
      ! !LOCAL VARIABLES:
      integer, parameter :: pn = 1                !first order lagrangian interpolation to avoid overshooting
      integer  :: j, fc, c, k
-     integer  :: ntr                             !indices for tracer
+     integer  :: ntr, jl, jr                     !indices for tracer
      integer  :: length, lengthp2
      real(r8) :: mass_curve(0:ubj-lbj+5 , ntrcs) !total number of nodes + two ghost cells at each boundary
      real(r8) :: cmass_curve(0:ubj-lbj+5, ntrcs)
+     real(r8) :: zh(0:ubj-lbj+5)
+     real(r8) :: uh(0:ubj-lbj+5)
      real(r8) :: mass_new(0:ubj-lbj+1   , ntrcs)
-     real(r8) :: cmass_new(0:ubj-lbj+1  , ntrcs)
      real(r8) :: zold(0:ubj-lbj+1)
-     real(r8) :: di(0:ubj-lbj+5)
      real(r8) :: zghostl(1:2)                    !ghost grid left interface at the left boundary
      real(r8) :: zghostr(1:2)                    !ghost grid left interface at the right boundary
      real(r8) :: ughostl(1:2)                    !flow velocity at the ghost grid leff interface at the left boundary
@@ -872,8 +873,8 @@ contains
      real(r8) :: utmp
      real(r8) :: dinfl_mass
      character(len=32) :: subname='semi_lagrange_adv_backward'
-
-
+     real(r8), parameter :: tiny_trc=1.e-16_r8
+     real(r8), parameter :: tiny_dist=1.e-13_r8
      call bstatus%reset()
      SHR_ASSERT_ALL((ubound(lbn)        == (/bounds%endc/)),         errMsg(filename,__LINE__),bstatus)
      if(bstatus%check_status())return
@@ -947,19 +948,20 @@ contains
         !define ghost boundary
         !NOTE: because of the setup, the left boundary and right boundary should have non-zero flow
         utmp = us(c,lbn(c)-1)
-        zghostl(1) = -abs(utmp)*dtime(c)*2._r8 + zi(c,lbn(c)-1)-2.e-20_r8
-        zghostl(2) = -abs(utmp)*dtime(c)       + zi(c,lbn(c)-1)-1.e-20_r8
+        zghostl(1) = zi(c,lbn(c)-1) - (abs(utmp)*dtime(c)*2._r8+tiny_dist)*2._r8
+        zghostl(2) = zi(c,lbn(c)-1) - (abs(utmp)*dtime(c)      +tiny_dist)
         ughostl(1) = us(c,lbn(c)-1)
         ughostl(2) = us(c,lbn(c)-1)
 
-        zghostr(1) = zi(c,ubj) + abs(us(c,ubj)) * dtime(c)        + 1.e-14_r8
-        zghostr(2) = zi(c,ubj) + abs(us(c,ubj)) * dtime(c) * 2._r8+ 2.e-14_r8
+        zghostr(1) = zi(c,ubj) + (abs(us(c,ubj)) * dtime(c)    + tiny_dist)
+        zghostr(2) = zi(c,ubj) + (abs(us(c,ubj)) * dtime(c)    + tiny_dist)*2._r8
 
         ughostr(1) = us(c,ubj)
         ughostr(2) = us(c,ubj)
 
-        call backward_advection((/zghostl, zi(c, lbn(c)-1:ubj),zghostr/), (/ughostl, us(c, lbn(c)-1:ubj), ughostr/), &
-             dtime(c), zold(0:length), bstatus)
+        zh(0:lengthp2)=(/zghostl,zi(c,lbn(c)-1:ubj),zghostr/)
+        uh(0:lengthp2)=(/ughostl, us(c, lbn(c)-1:ubj), ughostr/)
+        call backward_advection(zh(0:lengthp2), uh(0:lengthp2), dtime(c), zold(0:length), bstatus)
 
         if(bstatus%check_status())return
 
@@ -1009,50 +1011,61 @@ contains
            endif
         enddo
 
-        !compute cumulative mass curve
-        call cumsum(bstatus, mass_curve(0:lengthp2,1:ntrcs), cmass_curve(0:lengthp2, 1:ntrcs),idim=1)
+        !locate the left corner
+        jl=loc_x(lengthp2+1,zh, zold(0), bstatus)
         if(bstatus%check_status())return
-        !do mass interpolation
+        !compute seepage if necessary using jl
+        if(present(seep_mass))then
+          if(zold(0)>zh(2))then
+            do ntr = 1, ntrcs
+              !do boundary mass interpolation
+              call bmass_interp(zh(0:jl),mass_curve(0:jl,ntr),zh(2),zold(0),seep_mass(c,ntr), bstatus)
+              if(bstatus%check_status())return
+            enddo
+          else
+            seep_mass(c,1:ntrcs) = 0._r8
+          endif
+        endif
+
+        do j = 1, length
+         !locate jr
+         jr=loc_xj(lengthp2+1,zh,zold(j),jl)
+         !do interpolation
+         do ntr = 1, ntrcs
+           call mass_interp(zh(jl-1:jr),mass_curve(jl-1:jr,ntr),zold(j-1),zold(j),mass_new(j,ntr), bstatus)
+           if(bstatus%check_status())return
+!           if(abs(mass_new(j,ntr))<tiny_trc)then
+!             mass_new(j,ntr)=0._r8
+!           endif
+         enddo
+         jl=jr
+        enddo
+
+        !compute leaching, using jr
+        if(present(leaching_mass))then
+          if(zold(length)<zh(ubj-lbn(c)+3))then
+            do ntr = 1, ntrcs
+              !do boundary mass interpolation
+              call bmass_interp(zh(jr-1:lengthp2),mass_curve(jr-1:lengthp2,ntr),zold(length),zh(ubj-lbn(c)+3),leaching_mass(c,ntr), bstatus)
+              if(bstatus%check_status())return
+            enddo
+          else
+            leaching_mass(c,1:ntrcs)=0._r8
+          endif
+        endif
+
         do ntr = 1, ntrcs
-
-           ! now use linear interpolation to maintain mass balance
-           call Lagrange_interp(pn, (/zghostl,zi(c,lbn(c)-1:ubj),zghostr/), cmass_curve(0:lengthp2, ntr), &
-             zold(0:length), cmass_new(0:length, ntr), bstatus)
-           if(bstatus%check_status())return
-           !ensure mass is increasing monotonically
-           call asc_sort_vec(cmass_new(0:length,ntr))
-
-           !ensure no negative leaching
-           call cmass_mono_smoother(cmass_new(0:length, ntr),cmass_curve(ubj-lbn(c)+3, ntr))
-
-           !diagnose the leaching flux
-           if(present(leaching_mass))then
-              leaching_mass(c, ntr) = cmass_curve(ubj-lbn(c)+3, ntr)-cmass_new(length, ntr) !add the numerical error to leaching
-           endif
-
-           !obtain the grid concentration
-           call cumdif(cmass_new(0:length, ntr), mass_new(0:length, ntr), bstatus)
-           if(bstatus%check_status())return
-           !this calculates tracer loss from seepage
-           if(present(seep_mass))then
-             seep_mass(c,ntr) = max(cmass_new(0,ntr)-cmass_curve(2,ntr),0._r8)
-           endif
            do k = lbn(c), ubj
               j = k - lbn(c) + 1
-              !correct for small negative values
-              if(mass_new(j, ntr)<0._r8)then
-                 write(iulog,*)j,mass_new(j, ntr),cmass_new(j, ntr),cmass_new(j-1, ntr)
-                 call bstatus%set_msg(msg='negative tracer '//errMsg(filename, __LINE__), err=-1)
-                 return
-                 if(present(leaching_mass))then
-                    leaching_mass(c, ntr) = leaching_mass(c, ntr)+mass_new(j, ntr) !add the numerical error to leaching
-                 endif
-                 mass_new(j, ntr) = mass_curve_correct_(mass_new(j, ntr))
-              endif
               trcou(c,k, ntr)=mass_new(j, ntr)/dz(c,k)
            enddo
         enddo
-
+        if(debug_loc)then
+          print*,'newtrc'
+          do  k = lbn(c), ubj
+            write(*,'(I2,3(X,E25.16))')k,(trcou(c,k,ntr),ntr=1,ntrcs)
+          enddo
+        endif
      enddo
 
    end subroutine semi_lagrange_adv_backward
@@ -1189,7 +1202,7 @@ contains
      ! update the trajectory
 
      ! !USES:
-     use InterpolationMod, only : Lagrange_interp
+     use InterpolationMod, only : mono_Linear_interp
      use BetrStatusType  , only : betr_status_type
      implicit none
      ! !ARGUMENTS:
@@ -1220,8 +1233,8 @@ contains
 
        call Extra_bstatus%reset()
 
-       call Lagrange_interp(pn, Extra%zi(1:Extra%nlen), &
-         Extra%us(1:Extra%nlen), y0, ui, Extra_bstatus)
+       call mono_Linear_interp(Extra%nlen, Extra%zi(1:Extra%nlen), &
+         Extra%us(1:Extra%nlen), neq, y0, ui, Extra_bstatus)
 
        if(Extra_bstatus%check_status())return
 

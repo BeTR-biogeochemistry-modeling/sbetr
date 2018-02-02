@@ -33,6 +33,7 @@ module BeTRSimulationALM
        __FILE__
 
   type, public, extends(betr_simulation_type) :: betr_simulation_alm_type
+   private
    contains
      procedure :: InitOnline                        => ALMInit
      procedure :: Init                              => ALMInitOffline
@@ -48,6 +49,10 @@ module BeTRSimulationALM
      procedure, public :: DiagnoseLnd2atm           => ALMDiagnoseLnd2atm
      procedure, public :: set_active                => ALMset_active
      procedure, private:: set_transient_kinetics_par
+     procedure, public :: readParams                => ALMreadParams
+     procedure, public :: set_iP_prof
+     procedure, public :: skip_balcheck
+     procedure, public :: checkpmassyes
   end type betr_simulation_alm_type
 
   public :: create_betr_simulation_alm
@@ -67,7 +72,82 @@ contains
     create_betr_simulation_alm => simulation
 
   end function create_betr_simulation_alm
+!-------------------------------------------------------------------------------
 
+  function checkpmassyes(this)result(yesno)
+  use tracer_varcon, only : fix_ip
+  implicit none
+  class(betr_simulation_alm_type)          , intent(inout) :: this
+
+  logical :: yesno
+
+  yesno = .not. fix_ip
+
+  end function checkpmassyes
+!-------------------------------------------------------------------------------
+  subroutine Set_iP_prof(this, bounds)
+  !
+  !set initial inorganic P profile
+  use decompMod       , only : bounds_type
+  use clm_varpar      , only : nlevtrc_soil
+  implicit none
+  class(betr_simulation_alm_type)          , intent(inout) :: this
+  type(bounds_type), intent(in) :: bounds
+
+  integer :: c
+  type(betr_bounds_type)   :: betr_bounds
+
+  call this%BeTRSetBounds(betr_bounds)
+
+  betr_nlevtrc_soil = nlevtrc_soil
+
+  do c = bounds%begc, bounds%endc
+    if(.not. this%active_col(c))cycle
+    call this%betr(c)%Set_iP_prof(betr_bounds, 1,  betr_nlevtrc_soil, this%biophys_forc(c))
+  enddo
+
+  end subroutine Set_iP_prof
+!-------------------------------------------------------------------------------
+  subroutine ALMreadParams(this, ncid, bounds)
+
+  use ncdio_pio                , only :  file_desc_t
+  use ApplicationsFactory      , only : AppLoadParameters
+  use BetrStatusType           , only : betr_status_type
+  use decompMod                , only : bounds_type
+  implicit none
+  class(betr_simulation_alm_type)          , intent(inout) :: this
+  type(file_desc_t), intent(inout)  :: ncid  ! pio netCDF file id
+  type(bounds_type), intent(in) :: bounds
+  !temporary variables
+  type(betr_status_type)   :: bstatus
+  type(betr_bounds_type)   :: betr_bounds
+  integer :: c
+
+  !read in parameters
+  call AppLoadParameters(ncid, bstatus)
+
+  if(bstatus%check_status())then
+    call endrun(msg=bstatus%print_msg())
+  endif
+
+  call this%BeTRSetBounds(betr_bounds)
+  do c = bounds%begc, bounds%endc
+    if(.not. this%active_col(c))cycle
+    call this%betr(c)%UpdateParas(betr_bounds)
+  enddo
+  end subroutine ALMreadParams
+
+!-------------------------------------------------------------------------------
+  function skip_balcheck(this)result(stats)
+  use betr_ctrl         , only : betr_spinup_state
+  implicit none
+  class(betr_simulation_alm_type)          , intent(inout) :: this
+
+  logical :: stats
+
+  stats = (this%spinup_count < 3) .and. (betr_spinup_state==3)
+  return
+  end function skip_balcheck
 !-------------------------------------------------------------------------------
 
   subroutine ALMInit(this, bounds, lun, col, pft, waterstate, namelist_buffer, masterproc)
@@ -93,7 +173,7 @@ contains
     type(landunit_type)                      , intent(in) :: lun
     type(column_type)                        , intent(inout) :: col
     type(patch_type)                         , intent(in) :: pft
-    character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
+    character(len=*)                         , intent(in)    :: namelist_buffer
     logical,                      optional   , intent(in) :: masterproc
     type(waterstate_type)                    , intent(inout) :: waterstate
 
@@ -110,6 +190,7 @@ contains
     betr_landvarcon%istsoil            = istsoil
     betr_landvarcon%istcrop            = istcrop
     betr_landvarcon%istice             = istice
+    this%spinup_count = 0
     ! now call the base simulation init to continue initialization
     if(present(masterproc))then
       call this%BeTRInit(bounds, lun, col, pft, waterstate, namelist_buffer, masterproc=masterproc)
@@ -138,8 +219,8 @@ contains
 
     implicit none
     class(betr_simulation_alm_type)          , intent(inout) :: this
-    character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
-    character(len=betr_filename_length)      , intent(in)    :: base_filename
+    character(len=*)                         , intent(in)    :: namelist_buffer
+    character(len=*)                         , intent(in)    :: base_filename
     type(bounds_type)                        , intent(in)    :: bounds
     type(landunit_type)                      , intent(in) :: lun
     type(column_type)                        , intent(inout) :: col
@@ -172,8 +253,8 @@ contains
    !USES
     use clm_varpar        , only : nlevsno, nlevsoi, nlevtrc_soil
     use clm_varctl        , only : spinup_state
-    use tracer_varcon     , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
-    use betr_ctrl         , only : betr_spinup_state
+    use tracer_varcon     , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil, AA_spinup_on
+    use betr_ctrl         , only : betr_spinup_state, enter_spinup
     use MathfuncMod       , only : num2str
     use betr_varcon       , only : kyr_spinup
     use clm_time_manager  , only : get_curr_date,is_end_curr_day,is_beg_curr_day
@@ -189,36 +270,50 @@ contains
     integer :: year, mon, day, sec
 
     call get_curr_date(year, mon, day, sec)
-
     c_l=1
-    if(spinup_state==1)then
-       !AD spinup
-       if(year<=kyr_spinup)then
-         !period does nothing to spinup scalar
-         betr_spinup_state=1
-       elseif(year<=kyr_spinup*2)then
-         !period accumulate spinup scalar
-         betr_spinup_state=2
-       else
-          !period apply spinup scalar
-          betr_spinup_state=3
-       endif
-      do c = bounds%begc, bounds%endc
-        this%biophys_forc(c)%dom_scalar_col(c_l)=this%dom_scalar_col(c)
-      enddo
-    else
-       betr_spinup_state=0
-    endif
-
-    if(betr_spinup_state>=2)then
-      if(year==kyr_spinup+1 .and. mon==1 .and. day==1 .and. is_beg_curr_day())then
-        this%scalaravg_col(:) = 0._r8
+    if(this%active_soibgc)then
+      if(spinup_state==1)then
+        if(AA_spinup_on)then
+        !AD spinup
+          if(year<=kyr_spinup)then
+            !period does nothing to spinup scalar
+            betr_spinup_state=1
+          elseif(year<=kyr_spinup*2)then
+            !period accumulate spinup scalar
+            betr_spinup_state=2
+          else
+            !period apply spinup scalar
+            betr_spinup_state=3
+            this%spinup_count=this%spinup_count+1
+            this%spinup_count= min(this%spinup_count,3)
+          endif
+        else
+          betr_spinup_state=1
+        endif
+        do c = bounds%begc, bounds%endc
+          this%biophys_forc(c)%dom_scalar_col(c_l)=this%dom_scalar_col(c)
+        enddo
+      else
+        betr_spinup_state=0
       endif
-      do c = bounds%begc, bounds%endc
-        this%biophys_forc(c)%scalaravg_col(c_l) = this%scalaravg_col(c)
-      enddo
-    endif
 
+      if(betr_spinup_state>=2)then
+        if(year==kyr_spinup+1 .and. mon==1 .and. day==1 .and. is_beg_curr_day())then
+          this%scalaravg_col(:) = 0._r8
+        endif
+        do c = bounds%begc, bounds%endc
+          this%biophys_forc(c)%scalaravg_col(c_l) = this%scalaravg_col(c)
+        enddo
+      endif
+      if(betr_spinup_state==3 .and. this%spinup_count==1)then
+        enter_spinup =.true.
+        do c = bounds%begc, bounds%endc
+          if(.not. this%active_col(c))cycle
+          call this%betr(c)%set_bgc_spinup(betr_bounds, 1,  betr_nlevtrc_soil, this%biophys_forc(c), spinup_stage=2)
+        enddo
+        enter_spinup=.false.
+      endif
+    endif
     call this%bsimstatus%reset()
 
     !pass necessary data for correct subroutine call
@@ -234,6 +329,7 @@ contains
 !    print*,'enter without drainage'
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
+      this%betr(c)%tracers%debug=col%debug_flag(c)
       call this%biogeo_flux(c)%reset(value_column=0._r8, active_soibgc=this%active_soibgc)
       call this%biophys_forc(c)%frac_normalize(this%betr_pft(c)%npfts, 1, betr_nlevtrc_soil)
 !!
@@ -241,8 +337,8 @@ contains
 !  debug
       call this%biogeo_state(c)%reset(value_column=0._r8, active_soibgc=this%active_soibgc)
 
-      call this%betr(c)%retrieve_biostates(betr_bounds,      &
-         1, betr_nlevsoi, this%num_soilc, this%filter_soilc, this%jtops, this%biogeo_state(c),this%bstatus(c))
+      call this%betr(c)%retrieve_biostates(betr_bounds, 1, betr_nlevsoi, this%num_soilc, &
+        this%filter_soilc, this%jtops, this%biogeo_state(c),this%bstatus(c))
 
       if(this%bstatus(c)%check_status())then
         call this%bsimstatus%setcol(c)
@@ -514,7 +610,7 @@ contains
   !temporary variables
   type(betr_bounds_type) :: betr_bounds
   integer :: c, fc, j, c_l, begc_l, endc_l
-
+  real(r8) :: fport
   associate(                                           &
     ndep_prof     => cnstate_vars%ndep_prof_col     ,  &
     pdep_prof     => cnstate_vars%pdep_prof_col     ,  &
@@ -791,8 +887,11 @@ contains
 
       !mineral nitrogen
       call apvb(this%biophys_forc(c)%n14flx%nflx_minn_input_nh4_vr_col(c_l,j) , &
-         (/nitrogenflux_vars%ndep_to_sminn_col(c)                    , &
+         (/nitrogenflux_vars%ndep_to_smin_nh3_col(c)                    , &
          nitrogenflux_vars%fert_to_sminn_col(c)/),  ndep_prof(c,j))
+
+      call apvb(this%biophys_forc(c)%n14flx%nflx_minn_input_no3_vr_col(c_l,j) , &
+         (/nitrogenflux_vars%ndep_to_smin_no3_col(c)/),  ndep_prof(c,j))
 
       !the following could be commented out if a fixation model is done in betr
       call apvb(this%biophys_forc(c)%n14flx%nflx_minn_nh4_fix_nomic_vr_col(c_l,j) , &
@@ -807,7 +906,17 @@ contains
          phosphorusflux_vars%primp_to_labilep_vr_col(c,j))
     enddo
   enddo
-
+  do fc = 1, num_soilc
+    c = filter_soilc(fc)
+    if(col%debug_flag(c))then
+      write(*,*)'ndep in=',nitrogenflux_vars%ndep_to_sminn_col(c)
+      fport = 0._r8
+      do j = 1, betr_bounds%ubj
+        fport=fport +ndep_prof(c,j)*this%betr_col(c)%dz(c_l,j)
+      enddo
+      write(*,*)'fport=',fport
+    endif
+  enddo
   end associate
   !pull in all state variables and update tracers
   end subroutine ALMBetrPlantSoilBGCSend
@@ -828,6 +937,7 @@ contains
   use tracer_varcon       , only : use_c13_betr, use_c14_betr
   use pftvarcon           , only : noveg
   use MathfuncMod         , only : safe_div
+  use tracer_varcon       , only : reaction_method
   implicit none
   class(betr_simulation_alm_type), intent(inout)  :: this
   type(bounds_type) , intent(in)  :: bounds
@@ -891,8 +1001,8 @@ contains
       c12flux_vars%fire_decomp_closs_col(c) = this%biogeo_flux(c)%c12flux_vars%fire_decomp_closs_col(c_l)
       c12flux_vars%som_c_leached_col(c) = &
         this%biogeo_flux(c)%c12flux_vars%som_c_leached_col(c_l) + &
-        this%biogeo_flux(c)%c12flux_vars%som_c_runoff_col(c_l) + &
         this%biogeo_flux(c)%c12flux_vars%som_c_qdrain_col(c_l)
+      c12flux_vars%som_c_runoff_col(c) = this%biogeo_flux(c)%c12flux_vars%som_c_runoff_col(c_l)
       !the following is for consistency with the ALM definitation, which computes
 
       !som_c_leached_col as a numerical roundoff
@@ -918,9 +1028,8 @@ contains
           this%biogeo_flux(c)%n14flux_vars%smin_no3_qdrain_col(c_l)
       n14flux_vars%som_n_leached_col(c) = &
           this%biogeo_flux(c)%n14flux_vars%som_n_leached_col(c_l) + &
-          this%biogeo_flux(c)%n14flux_vars%som_n_runoff_col(c_l) + &
           this%biogeo_flux(c)%n14flux_vars%som_n_qdrain_col(c_l)
-
+      n14flux_vars%som_n_runoff_col(c) = this%biogeo_flux(c)%n14flux_vars%som_n_runoff_col(c_l)
       !the following is for consistency with the ALM definitation, which computes
       !som_n_leached_col as a numerical roundoff
       n14flux_vars%som_n_leached_col(c) = - n14flux_vars%som_n_leached_col(c)
@@ -932,9 +1041,9 @@ contains
 
       !recollect mineral phosphorus loss
       !Remark: now hydraulic mineral p loss lumps all three fluxes, Jinyun Tang
+      p31flux_vars%sminp_runoff_col(c)=this%biogeo_flux(c)%p31flux_vars%sminp_runoff_col(c_l)
       p31flux_vars%sminp_leached_col(c) = &
          this%biogeo_flux(c)%p31flux_vars%sminp_leached_col(c_l) + &
-         this%biogeo_flux(c)%p31flux_vars%sminp_runoff_col(c_l) + &
          this%biogeo_flux(c)%p31flux_vars%sminp_qdrain_col(c_l)
 
       p31flux_vars%supplement_to_sminp_col(c) = this%biogeo_flux(c)%p31flux_vars%supplement_to_sminp_col(c_l)
@@ -942,9 +1051,8 @@ contains
       p31flux_vars%fire_decomp_ploss_col(c) = this%biogeo_flux(c)%p31flux_vars%fire_decomp_ploss_col(c_l)
       p31flux_vars%som_p_leached_col(c) = &
           this%biogeo_flux(c)%p31flux_vars%som_p_leached_col(c_l) + &
-          this%biogeo_flux(c)%p31flux_vars%som_p_runoff_col(c_l) + &
           this%biogeo_flux(c)%p31flux_vars%som_p_qdrain_col(c_l)
-
+      p31flux_vars%som_p_runoff_col(c) = this%biogeo_flux(c)%p31flux_vars%som_p_runoff_col(c_l)
       !the following is for consistency with the ALM definitation, which computes
       !som_p_leached_col as a numerical roundoff
       p31flux_vars%som_p_leached_col(c) = -p31flux_vars%som_p_leached_col(c)
@@ -989,6 +1097,30 @@ contains
       p31state_vars%sminp_col(c) = this%biogeo_state(c)%p31state_vars%sminp_col(c_l)
       p31state_vars%occlp_col(c) = this%biogeo_state(c)%p31state_vars%occlp_col(c_l)
 
+      if(trim(reaction_method)=='eca_cnp')then
+        c12state_vars%som1c_col(c) = this%biogeo_state(c)%c12state_vars%som1c_col(c_l)
+        c12state_vars%som2c_col(c) = this%biogeo_state(c)%c12state_vars%som2c_col(c_l)
+        c12state_vars%som3c_col(c) = this%biogeo_state(c)%c12state_vars%som3c_col(c_l)
+        if(use_c13_betr)then
+          c13state_vars%som1c_col(c) = this%biogeo_state(c)%c13state_vars%som1c_col(c_l)
+          c13state_vars%som2c_col(c) = this%biogeo_state(c)%c13state_vars%som2c_col(c_l)
+          c13state_vars%som3c_col(c) = this%biogeo_state(c)%c13state_vars%som3c_col(c_l)
+        endif
+        if(use_c14_betr)then
+          c14state_vars%som1c_col(c) = this%biogeo_state(c)%c14state_vars%som1c_col(c_l)
+          c14state_vars%som2c_col(c) = this%biogeo_state(c)%c14state_vars%som2c_col(c_l)
+          c14state_vars%som3c_col(c) = this%biogeo_state(c)%c14state_vars%som3c_col(c_l)
+        endif
+        n14state_vars%som1n_col(c) = this%biogeo_state(c)%n14state_vars%som1n_col(c_l)
+        n14state_vars%som2n_col(c) = this%biogeo_state(c)%n14state_vars%som2n_col(c_l)
+        n14state_vars%som3n_col(c) = this%biogeo_state(c)%n14state_vars%som3n_col(c_l)
+
+        p31state_vars%som1p_col(c) = this%biogeo_state(c)%p31state_vars%som1p_col(c_l)
+        p31state_vars%som2p_col(c) = this%biogeo_state(c)%p31state_vars%som2p_col(c_l)
+        p31state_vars%som3p_col(c) = this%biogeo_state(c)%p31state_vars%som3p_col(c_l)
+
+
+      endif
     enddo
   endif
   end subroutine ALMBetrPlantSoilBGCRecv

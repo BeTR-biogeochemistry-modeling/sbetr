@@ -48,6 +48,7 @@ module Tracer_varcon
   integer, parameter :: sorp_isotherm_langmuir=2
 
   logical  :: advection_on, diffusion_on, reaction_on, ebullition_on
+  logical  :: AA_spinup_on
   character(len=betr_string_length), public :: reaction_method
   save
 

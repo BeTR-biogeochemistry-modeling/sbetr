@@ -69,7 +69,7 @@ module BeTRSimulation
      integer, public, allocatable                 :: jtops(:)
      integer, public                              :: num_soilc
      integer, public, allocatable                 :: filter_soilc(:)
-
+     integer, public :: spinup_count
      type(betr_hist_var_type), allocatable :: state_hist1d_var(:)
      type(betr_hist_var_type), allocatable :: state_hist2d_var(:)
      type(betr_hist_var_type), allocatable :: flux_hist1d_var(:)
@@ -118,7 +118,7 @@ module BeTRSimulation
      procedure, public :: DiagnoseLnd2atm         => BeTRSimulationDiagnoseLnd2atm
      procedure, public :: CreateOfflineHistory    => hist_htapes_create
      procedure, public :: WriteOfflineHistory     => hist_write
-     procedure, public :: SetSpinup               => BeTRSimulationSetSpinup     
+     procedure, public :: SetSpinup               => BeTRSimulationSetSpinup
 
      procedure, public :: WriteRegressionOutput
      !the following are used to interact with lsm
@@ -172,7 +172,7 @@ contains
     type(column_type)                        , intent(inout) :: col
     type(patch_type)                         , intent(in) :: pft
     type(bounds_type)                        , intent(in)    :: bounds
-    character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
+    character(len=*)                         , intent(in)    :: namelist_buffer
     type(waterstate_type)                    , intent(inout) :: waterstate
     logical,                        optional , intent(in)    :: masterproc
     character(len=*), parameter :: subname = 'BeTRSimulationInit'
@@ -203,8 +203,8 @@ contains
     type(patch_type)                         , intent(in) :: pft
     type(bounds_type)                        , intent(in)    :: bounds
     type(waterstate_type)                    , intent(inout) :: waterstate
-    character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
-    character(len=betr_filename_length)      , intent(in)    :: base_filename
+    character(len=*)                         , intent(in)    :: namelist_buffer
+    character(len=*)                         , intent(in)    :: base_filename
     character(len=*), parameter :: subname = 'BeTRSimulationInit'
 
     call endrun(msg="ERROR "//subname//" unimplemented. "//errmsg(mod_filename, __LINE__))
@@ -267,14 +267,14 @@ contains
     logical :: do_debug
     integer :: cc
     do_debug=.false.
-    if(do_debug)then 
+    if(do_debug)then
       cc=1
       col%active(:) =.false.
       col%active(cc)=.true.
       this%betr(cc)%tracers%debug=.true.
-    endif 
+    endif
   !    col%active(c_act)=.true.
-    
+
   end subroutine set_activecol
 !-------------------------------------------------------------------------------
   subroutine BeTRInit(this, bounds, lun, col, pft, waterstate, namelist_buffer, &
@@ -297,8 +297,8 @@ contains
     type(column_type)                        , intent(inout) :: col
     type(patch_type)                         , intent(in) :: pft
     type(waterstate_type)                    , intent(in) :: waterstate
-    character(len=betr_namelist_buffer_size) , intent(in) :: namelist_buffer
-    character(len=betr_filename_length)      , optional, intent(in)    :: base_filename
+    character(len=*)                         , intent(in) :: namelist_buffer
+    character(len=*)               , optional, intent(in) :: base_filename
     logical,                      optional   , intent(in) :: masterproc
     !TEMPORARY VARIABLES
     character(len=*), parameter :: subname = 'BeTRInit'
@@ -370,10 +370,9 @@ contains
       c_l=1
       do c = bounds%begc, bounds%endc
         if(.not. this%active_col(c))cycle
-        call this%betr(c)%set_bgc_spinup(betr_bounds, 1,  betr_nlevtrc_soil, this%num_soilc, &
-             this%filter_soilc(:), this%biophys_forc(c))
+        call this%betr(c)%set_bgc_spinup(betr_bounds, 1,  betr_nlevtrc_soil, this%biophys_forc(c))
         this%dom_scalar_col(c)=this%biophys_forc(c)%dom_scalar_col(c_l)
-      enddo      
+      enddo
     endif
 
     if(this%bsimstatus%check_status())call endrun(msg=this%bsimstatus%print_msg())
@@ -975,9 +974,12 @@ contains
       this%biophys_forc(c)%frac_h2osfc_col(cc)           = waterstate_vars%frac_h2osfc_col(c)
       this%biophys_forc(c)%h2osoi_liq_col(cc,lbj:ubj)    = waterstate_vars%h2osoi_liq_col(c,lbj:ubj)
       this%biophys_forc(c)%h2osoi_ice_col(cc,lbj:ubj)    = waterstate_vars%h2osoi_ice_col(c,lbj:ubj)
-      this%biophys_forc(c)%h2osoi_liqvol_col(cc,lbj:ubj) = waterstate_vars%h2osoi_liqvol_col(c,lbj:ubj)
       this%biophys_forc(c)%h2osoi_icevol_col(cc,lbj:ubj) = waterstate_vars%h2osoi_icevol_col(c,lbj:ubj)
-      this%biophys_forc(c)%h2osoi_vol_col(cc,lbj:ubj)    = waterstate_vars%h2osoi_vol_col(c,lbj:ubj)
+      do l = lbj, ubj 
+        this%biophys_forc(c)%h2osoi_liqvol_col(cc,l)     = max(0.01_r8,waterstate_vars%h2osoi_liqvol_col(c,l))
+        this%biophys_forc(c)%h2osoi_vol_col(cc,l)        = this%biophys_forc(c)%h2osoi_liqvol_col(cc,l) + &
+                                                           this%biophys_forc(c)%h2osoi_icevol_col(cc,l)
+      enddo
       this%biophys_forc(c)%air_vol_col(cc,lbj:ubj)       = waterstate_vars%air_vol_col(c,lbj:ubj)
       this%biophys_forc(c)%rho_vap(cc,lbj:ubj)           = waterstate_vars%rho_vap_col(c,lbj:ubj)
       this%biophys_forc(c)%rhvap_soi(cc,lbj:ubj)         = waterstate_vars%rhvap_soi_col(c,lbj:ubj)
@@ -1843,7 +1845,6 @@ contains
   endif
 
   if(this%do_soibgc())then
-
     call restartvar(ncid=ncid, flag=flag, varname='spinscalar', xtype=ncd_double, &
          dim1name='column', long_name='', units='', &
          interpinic_flag = 'interp', readvar=readvar, data=this%scalaravg_col)
@@ -1857,6 +1858,11 @@ contains
            // ' 0,1,2=not ready for spinup scalar, 3 = apply spinup scalar', units='', &
            interpinic_flag='copy', readvar=readvar,  data=betr_spinup_state)
 
+    call restartvar(ncid=ncid, flag=flag, varname='spinup_count', xtype=ncd_int,  &
+           long_name='Spinup count of the model that wrote this restart file: ' &
+           // ' 0 <=2 skip mass bal check, 3 = do mass bal check', units='', &
+           interpinic_flag='copy', readvar=readvar,  data=this%spinup_count)
+
     if(trim(flag)=='read')then
       call restartvar(ncid=ncid, flag=flag, varname='spinup_state', xtype=ncd_int,  &
              long_name='Spinup state of the model that wrote this restart file: ' &
@@ -1867,6 +1873,7 @@ contains
       else
         restart_file_spinup_state = spinup_state
       endif
+
     endif
 
   endif
@@ -1897,9 +1904,8 @@ contains
       if(get_nstep() >= 2)then
         exit_spinup = .false.; enter_spinup=.false.
       endif
-
       do c = bounds%begc, bounds%endc
-        this%biophys_forc(c)%scalaravg_col(c_l) = this%scalaravg_col(c)
+        this%biophys_forc(c)%scalaravg_col(c_l) = max(this%scalaravg_col(c),0.01_r8)
         this%biophys_forc(c)%dom_scalar_col(c_l)= this%dom_scalar_col(c)
       enddo
     endif
@@ -1915,25 +1921,25 @@ contains
   !
   ! set spinup for betr bgc runs
   use betr_ctrl      , only : exit_spinup, enter_spinup,betr_spinup_state
+  use ApplicationsFactory, only : AppSetSpinup
   implicit none
   class(betr_simulation_type) , intent(inout) :: this
   type(bounds_type), intent(in) :: bounds
   type(betr_bounds_type)     :: betr_bounds
   integer :: c
 
-
   if(exit_spinup .or. enter_spinup)then
+     call AppSetSpinup()
      call this%BeTRSetBounds(betr_bounds)
      do c = bounds%begc, bounds%endc
        if(.not. this%active_col(c))cycle
-       call this%betr(c)%set_bgc_spinup(betr_bounds, 1,  betr_nlevtrc_soil, this%num_soilc, &
-             this%filter_soilc(:), this%biophys_forc(c))
+       call this%betr(c)%set_bgc_spinup(betr_bounds, 1,  betr_nlevtrc_soil, this%biophys_forc(c))
      enddo
   endif
   if(exit_spinup)betr_spinup_state=0
 
   end subroutine BeTRSimulationSetSpinup
-  
+
   !------------------------------------------------------------------------
   subroutine BeTRSimulationSetcps(this, bounds, col, pft)
   !

@@ -63,6 +63,7 @@ module BetrType
 
    contains
      procedure, public  :: Init
+     procedure, public  :: UpdateParas
      procedure, public  :: step_without_drainage
      procedure, public  :: step_with_drainage
      procedure, public  :: calc_dew_sub_flux
@@ -91,6 +92,7 @@ module BetrType
      procedure, public  :: retrieve_biofluxes
      procedure, public  :: debug_info
      procedure, public  :: set_bgc_spinup
+     procedure, public  :: Set_iP_prof
   end type betr_type
 
   public :: create_betr_type
@@ -109,6 +111,21 @@ contains
 
   end function create_betr_type
 
+!-------------------------------------------------------------------------------
+  subroutine UpdateParas(this, bounds)
+
+  use BeTR_decompMod  , only : betr_bounds_type
+  !update parameters after reading customized parameters from external file
+  implicit none
+  class(betr_type)            , intent(inout)        :: this
+  type(betr_bounds_type)      , intent(in)           :: bounds
+  integer             :: lbj, ubj
+
+  lbj = bounds%lbj;  ubj = bounds%ubj
+
+  call this%bgc_reaction%UpdateParas(bounds, lbj, ubj)
+
+  end subroutine UpdateParas
 !-------------------------------------------------------------------------------
   subroutine Init(this, namelist_buffer, bounds, col, biophysforc, asoibgc, bstatus)
 
@@ -185,6 +202,19 @@ contains
 
   end subroutine Init
 
+!-------------------------------------------------------------------------------
+  subroutine Set_iP_prof(this, bounds, lbj, ubj, biophysforc)
+
+  implicit none
+  ! !ARGUMENTS:
+  class(betr_type)            , intent(inout) :: this
+  type(bounds_type)           , intent(in)    :: bounds
+  integer                     , intent(in) :: ubj, lbj
+  type(betr_biogeophys_input_type) , intent(inout)    :: biophysforc
+
+  call this%bgc_reaction%init_iP_prof(bounds, lbj, ubj, biophysforc, this%tracers, this%tracerstates)
+
+  end subroutine Set_iP_prof
 !-------------------------------------------------------------------------------
   subroutine ReadNamelist(this, namelist_buffer, bstatus)
     !
@@ -345,7 +375,7 @@ contains
          this%plant_soilbgc, biogeo_flux,  betr_status)
     if(betr_status%check_status())return
 
-    if(this%tracers%debug)call this%debug_info(bounds, col, num_soilc, filter_soilc, 'bef gwstransp',betr_status)
+    if(this%tracers%debug)call this%debug_info(bounds, col, num_soilc, filter_soilc, 'afbgc react\n bef gwstransp',betr_status)
     call tracer_gws_transport(betr_time, bounds, col, pft, num_soilc, filter_soilc, &
       Rfactor, biophysforc, biogeo_flux, this%tracers, this%tracerboundaryconds  , &
       this%tracercoeffs,  this%tracerstates, this%tracerfluxes, this%bgc_reaction, &
@@ -521,19 +551,22 @@ contains
     end associate
   end subroutine step_with_drainage
   !--------------------------------------------------------------------------------
-  subroutine set_bgc_spinup(this, bounds, lbj, ubj, num_soilc, filter_soilc, biophysforc)
+  subroutine set_bgc_spinup(this, bounds, lbj, ubj,  biophysforc, spinup_stage)
 
   implicit none
   ! !ARGUMENTS:
   class(betr_type)            , intent(inout) :: this
   type(bounds_type)           , intent(in)    :: bounds
-  integer, intent(in) :: ubj, lbj
-  integer, intent(in) :: num_soilc
-  integer, intent(in) :: filter_soilc(:)
+  integer                     , intent(in)    :: ubj, lbj
   type(betr_biogeophys_input_type) , intent(inout)    :: biophysforc
+  integer, optional, intent(in) :: spinup_stage
 
-  call this%bgc_reaction%set_bgc_spinup(bounds, lbj, ubj, num_soilc, filter_soilc, biophysforc, &
-    this%tracers, this%tracerstates)
+  integer :: spinup_stage_loc
+
+  spinup_stage_loc=0
+  if(present(spinup_stage))spinup_stage_loc=spinup_stage
+  call this%bgc_reaction%set_bgc_spinup(bounds, lbj, ubj,  biophysforc, &
+    this%tracers, this%tracerstates, spinup_stage_loc)
 
   end subroutine set_bgc_spinup
   !--------------------------------------------------------------------------------
