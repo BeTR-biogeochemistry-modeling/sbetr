@@ -36,6 +36,7 @@ module BeTRSimulationStandalone
      procedure, public :: StepWithoutDrainage => StandaloneStepWithoutDrainage
      procedure, public :: StepWithDrainage    => StandaloneStepWithDrainage
      procedure, public :: SetBiophysForcing   => StandaloneSetBiophysForcing
+     procedure, public :: PlantSoilBGCSend    => StandalonePlantSoilBGCSend
   end type betr_simulation_standalone_type
 
   public :: create_betr_simulation_standalone
@@ -248,4 +249,45 @@ contains
 
   !the following will be standalone bgc specific
   end subroutine StandaloneSetBiophysForcing
+
+
+
+  !------------------------------------------------------------------------
+  subroutine StandalonePlantSoilBGCSend(this, bounds, col, pft, num_soilc,  filter_soilc, cnstate_vars, &
+    carbonflux_vars,  c13_cflx_vars, c14_cflx_vars, nitrogenflux_vars, phosphorusflux_vars, &
+    PlantMicKinetics_vars)
+
+  !read in biogeochemical fluxes from alm for soil bgc modeling
+  !these are C, N and P fluxes from root input, surface litter input
+  !atmospheric deposition, fire (negative), and fertilization
+  !Because of possible harvest activity that is
+  !related to dynamic land use, input profiles are computed in alm.
+  !
+  use ColumnType         , only : column_type
+  use PatchType          , only : patch_type
+  use CNCarbonFluxType   , only : carbonflux_type
+  use CNNitrogenFluxType , only : nitrogenflux_type
+  use PhosphorusFluxType , only : phosphorusflux_type
+  use CNStateType        , only : cnstate_type
+  use clm_varpar         , only : i_cwd, i_met_lit, i_cel_lit, i_lig_lit
+  use PlantMicKineticsMod, only : PlantMicKinetics_type
+  use mathfuncMod        , only : apvb,bisnan
+  use tracer_varcon      , only : use_c13_betr, use_c14_betr
+  implicit none
+  class(betr_simulation_standalone_type) , intent(inout)        :: this
+  type(bounds_type) , intent(in)  :: bounds
+  type(column_type) , intent(in)  :: col ! column type
+  type(patch_type)  , intent(in)  :: pft ! pft type
+  integer           , intent(in)  :: num_soilc
+  integer           , intent(in)  :: filter_soilc(:)
+  type(cnstate_type), intent(in)  :: cnstate_vars
+  type(carbonflux_type), intent(in):: carbonflux_vars
+  type(carbonflux_type), intent(in):: c13_cflx_vars
+  type(carbonflux_type), intent(in):: c14_cflx_vars
+  type(nitrogenflux_type), intent(in):: nitrogenflux_vars
+  type(phosphorusflux_type), intent(in):: phosphorusflux_vars
+  type(PlantMicKinetics_type), intent(in) :: PlantMicKinetics_vars
+
+
+  end subroutine StandalonePlantSoilBGCSend
 end module BeTRSimulationStandalone

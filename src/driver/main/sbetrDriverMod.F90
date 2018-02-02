@@ -243,6 +243,20 @@ contains
         cnstate_vars,  carbonflux_vars, c13_cflx_vars, c14_cflx_vars,  nitrogenflux_vars, phosphorusflux_vars, &
         plantMicKinetics_vars)
 
+    class is (betr_simulation_standalone_type)
+      call simulation%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi,               &
+        carbonflux_vars=carbonflux_vars,                                                &
+        waterstate_vars=waterstate_vars,         waterflux_vars=waterflux_vars,         &
+        temperature_vars=temperature_vars,       soilhydrology_vars=soilhydrology_vars, &
+        atm2lnd_vars=atm2lnd_vars,               canopystate_vars=canopystate_vars,     &
+        chemstate_vars=chemstate_vars,           soilstate_vars=soilstate_vars)
+      if(simulation%do_soibgc())then
+        print*,'do active soil bgc'
+
+        call simulation%PlantSoilBGCSend(bounds, col, pft, simulation%num_soilc, simulation%filter_soilc,&
+          cnstate_vars,  carbonflux_vars, c13_cflx_vars, c14_cflx_vars,  nitrogenflux_vars, phosphorusflux_vars, &
+        plantMicKinetics_vars)
+      endif
     class default
       call simulation%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi,               &
         carbonflux_vars=carbonflux_vars,                                                &
@@ -305,7 +319,9 @@ contains
 
   enddo
 
-  call simulation%WriteRegressionOutput(waterflux_vars%qflx_adv_col)
+  if(simulation%do_regress_test())then
+    call simulation%WriteRegressionOutput(waterflux_vars%qflx_adv_col)
+  endif
   call forcing_data%destroy()
   deallocate(forcing_data)
 end subroutine sbetrBGC_driver

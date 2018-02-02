@@ -271,7 +271,7 @@ contains
 
     call get_curr_date(year, mon, day, sec)
     c_l=1
-    if(this%active_soibgc)then
+    if(this%do_soibgc())then
       if(spinup_state==1)then
         if(AA_spinup_on)then
         !AD spinup
@@ -330,12 +330,12 @@ contains
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
       this%betr(c)%tracers%debug=col%debug_flag(c)
-      call this%biogeo_flux(c)%reset(value_column=0._r8, active_soibgc=this%active_soibgc)
+      call this%biogeo_flux(c)%reset(value_column=0._r8, active_soibgc=this%do_soibgc())
       call this%biophys_forc(c)%frac_normalize(this%betr_pft(c)%npfts, 1, betr_nlevtrc_soil)
 !!
 !--------------
 !  debug
-      call this%biogeo_state(c)%reset(value_column=0._r8, active_soibgc=this%active_soibgc)
+      call this%biogeo_state(c)%reset(value_column=0._r8, active_soibgc=this%do_soibgc())
 
       call this%betr(c)%retrieve_biostates(betr_bounds, 1, betr_nlevsoi, this%num_soilc, &
         this%filter_soilc, this%jtops, this%biogeo_state(c),this%bstatus(c))
@@ -347,7 +347,7 @@ contains
       endif
 
         call this%biogeo_state(c)%summary(betr_bounds, 1, betr_nlevtrc_soil,this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil), &
-          this%betr_col(c)%zi(begc_l:endc_l,1:betr_nlevtrc_soil), this%active_soibgc)
+          this%betr_col(c)%zi(begc_l:endc_l,1:betr_nlevtrc_soil), this%do_soibgc())
 !      this%betr(c)%tracers%debug=(c==1596 .and. .false.)
       if(this%betr(c)%tracers%debug)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'bef w/o drain',this%bstatus(c))
 !--------
@@ -363,7 +363,7 @@ contains
 
 !--------------
 !  debug
-      call this%biogeo_state(c)%reset(value_column=0._r8, active_soibgc=this%active_soibgc)
+      call this%biogeo_state(c)%reset(value_column=0._r8, active_soibgc=this%do_soibgc())
 
       call this%betr(c)%retrieve_biostates(betr_bounds,      &
          1, betr_nlevsoi, this%num_soilc, this%filter_soilc, this%jtops, this%biogeo_state(c), this%bstatus(c))
@@ -375,7 +375,7 @@ contains
       endif
 
       call this%biogeo_state(c)%summary(betr_bounds, 1, betr_nlevtrc_soil,this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil), &
-         this%betr_col(c)%zi(begc_l:endc_l,1:betr_nlevtrc_soil), this%active_soibgc)
+         this%betr_col(c)%zi(begc_l:endc_l,1:betr_nlevtrc_soil), this%do_soibgc())
 
       if(this%betr(c)%tracers%debug)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'aft w/o drain',this%bstatus(c))
 !--------
@@ -472,7 +472,7 @@ contains
         exit
       endif
 
-      call this%biogeo_state(c)%reset(value_column=0._r8, active_soibgc=this%active_soibgc)
+      call this%biogeo_state(c)%reset(value_column=0._r8, active_soibgc=this%do_soibgc())
 
       call this%betr(c)%retrieve_biostates(betr_bounds,      &
          1, betr_nlevsoi, this%num_soilc, this%filter_soilc, this%jtops, this%biogeo_state(c),this%bstatus(c))
@@ -484,7 +484,7 @@ contains
       endif
 
       call this%biogeo_state(c)%summary(betr_bounds, 1, betr_nlevtrc_soil,this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil), &
-          this%betr_col(c)%zi(begc_l:endc_l,1:betr_nlevtrc_soil),this%active_soibgc)
+          this%betr_col(c)%zi(begc_l:endc_l,1:betr_nlevtrc_soil),this%do_soibgc())
 
 ! debug
       if(this%betr(c)%tracers%debug)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'afdrain', this%bstatus(c))
@@ -966,7 +966,7 @@ contains
   call this%BeTRSetBounds(betr_bounds)
   begc_l = betr_bounds%begc; endc_l=betr_bounds%endc;
 
-  if(this%active_soibgc)then
+  if(this%do_soibgc())then
     do fc = 1, num_soilc
       c = filter_soilc(fc)
       call this%betr(c)%retrieve_biofluxes(this%num_soilc, this%filter_soilc, this%biogeo_flux(c))

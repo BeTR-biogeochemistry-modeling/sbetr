@@ -89,7 +89,7 @@ module BeTRSimulation
      real(r8), pointer :: hist_fluxes_2d(:,:,:)
      real(r8), pointer :: scalaravg_col(:)
      real(r8), pointer :: dom_scalar_col(:)
-     logical,  public :: active_soibgc
+     logical,  private :: active_soibgc
      ! FIXME(bja, 201603) most of these types should be private!
 
      ! NOTE(bja, 201603) BeTR types only, no LSM specific types here!
@@ -140,6 +140,7 @@ module BeTRSimulation
      procedure, private:: RestAlloc               => BeTRSimulationRestartAlloc
      procedure, private:: HistAlloc               => BeTRSimulationHistoryAlloc
      procedure, private:: set_activecol
+     procedure, public :: do_regress_test
   end type betr_simulation_type
 
   public :: BeTRSimulationInit
@@ -975,7 +976,7 @@ contains
       this%biophys_forc(c)%h2osoi_liq_col(cc,lbj:ubj)    = waterstate_vars%h2osoi_liq_col(c,lbj:ubj)
       this%biophys_forc(c)%h2osoi_ice_col(cc,lbj:ubj)    = waterstate_vars%h2osoi_ice_col(c,lbj:ubj)
       this%biophys_forc(c)%h2osoi_icevol_col(cc,lbj:ubj) = waterstate_vars%h2osoi_icevol_col(c,lbj:ubj)
-      do l = lbj, ubj 
+      do l = lbj, ubj
         this%biophys_forc(c)%h2osoi_liqvol_col(cc,l)     = max(0.01_r8,waterstate_vars%h2osoi_liqvol_col(c,l))
         this%biophys_forc(c)%h2osoi_vol_col(cc,l)        = this%biophys_forc(c)%h2osoi_liqvol_col(cc,l) + &
                                                            this%biophys_forc(c)%h2osoi_icevol_col(cc,l)
@@ -2018,5 +2019,13 @@ contains
   yesno = this%active_soibgc
   return
   end function do_soibgc
+  !------------------------------------------------------------------------
+  function do_regress_test(this) result(yesno)
 
+  implicit none
+  class(betr_simulation_type) , intent(inout) :: this
+  logical :: yesno
+
+  yesno = this%regression%write_regression_output
+  end function do_regress_test
 end module BeTRSimulation
