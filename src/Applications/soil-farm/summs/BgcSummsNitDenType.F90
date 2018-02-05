@@ -11,7 +11,7 @@ implicit none
 
  !real(r8), parameter :: nitrif_n2o_loss_frac = 0.02_r8  ! fraction of N lost as N2O in nitrification (Parton et al., 2001)
 
-  type, public :: century_nitden_type
+  type, public :: summs_nitden_type
     real(r8) :: d_con_g(3,2)    ! gas diffusivity constants (spp, #) (cm^2/s) (mult. by 10^-9)
     real(r8) :: d_con_w(3,3)    ! water diffusivity constants (spp, #)  (mult. by 10^-4)
 
@@ -24,6 +24,7 @@ implicit none
     real(r8) :: rij_kro_delta
     real(r8) :: nitrif_n2o_loss_frac
     real(r8) :: surface_tension_water
+    real(r8) :: k_nitr_max
   contains
     procedure, public :: init
     procedure, public :: calc_nitrif_denitrif_rate
@@ -32,38 +33,38 @@ implicit none
     procedure, public :: calc_pot_nitr
     procedure, private:: calc_anaerobic_frac
     procedure, private:: calc_cascade_matrix
-    procedure, private:: InitPar
-  end type century_nitden_type
+    procedure, public :: UpdateParas
+  end type summs_nitden_type
 
   contains
 
   !-------------------------------------------------------------------------------
-  subroutine init(this, biogeo_con)
+  subroutine init(this, bgc_con_summs)
   use BgcConSummsType, only : BgcConSumms_type
   implicit none
-  class(century_nitden_type) , intent(inout) :: this
-  type(BgcConSumms_type)       , intent(in) :: biogeo_con
+  class(summs_nitden_type) , intent(inout) :: this
+  type(BgcConSumms_type)       , intent(in) :: bgc_con_summs
 
-  call this%InitPar(biogeo_con)
+  !do memory allocation thing
 
   end subroutine init
 
   !-------------------------------------------------------------------------------
-  subroutine InitPar(this, biogeo_con)
+  subroutine UpdateParas(this, bgc_con_summs)
   use BgcConSummsType, only : BgcConSumms_type
   implicit none
-  class(century_nitden_type), intent(inout) :: this
-  type(BgcConSumms_type),intent(in) :: biogeo_con
+  class(summs_nitden_type), intent(inout) :: this
+  type(BgcConSumms_type),intent(in) :: bgc_con_summs
 
-  this%organic_max  = biogeo_con%organic_max
+  this%organic_max  = bgc_con_summs%organic_max
 
-  this%rij_kro_a = biogeo_con%rij_kro_a
-  this%rij_kro_alpha = biogeo_con%rij_kro_alpha
-  this%rij_kro_beta = biogeo_con%rij_kro_beta
-  this%rij_kro_gamma = biogeo_con%rij_kro_gamma
-  this%rij_kro_delta =  biogeo_con%rij_kro_delta
-  this%surface_tension_water = biogeo_con%surface_tension_water
-
+  this%rij_kro_a = bgc_con_summs%rij_kro_a
+  this%rij_kro_alpha = bgc_con_summs%rij_kro_alpha
+  this%rij_kro_beta = bgc_con_summs%rij_kro_beta
+  this%rij_kro_gamma = bgc_con_summs%rij_kro_gamma
+  this%rij_kro_delta =  bgc_con_summs%rij_kro_delta
+  this%surface_tension_water = bgc_con_summs%surface_tension_water
+  this%k_nitr_max    = bgc_con_summs%k_nitr_max
   this%d_con_g(1,:)=(/0.1875_r8, 0.0013_r8/) ! CH4
   this%d_con_g(2,:)=(/0.1759_r8, 0.00117_r8/) ! O2
   this%d_con_g(3,:)=(/0.1325_r8, 0.0009_r8/) ! CO2
@@ -73,7 +74,7 @@ implicit none
   this%d_con_w(3,:)=(/0.939_r8, 0.02671_r8, 0.0004095_r8/) ! CO2
 
   this%nitrif_n2o_loss_frac = 6.e-4_r8
-  end subroutine InitPar
+  end subroutine UpdateParas
   !-------------------------------------------------------------------------------
 
   subroutine calc_anaerobic_frac(this, o2b, summs_forc, o2_decomp_depth, anaerobic_frac, diffus)
@@ -89,7 +90,7 @@ implicit none
     use MathfuncMod        , only : safe_div
     implicit none
     ! !ARGUMENTS:                               !indices
-    class(century_nitden_type), intent(inout) :: this
+    class(summs_nitden_type), intent(inout) :: this
     real(r8),                   intent(in)    :: o2b  ! mol /m3
     type(summseca_forc_type),      intent(in)    :: summs_forc
     real(r8),                   intent(in)    :: o2_decomp_depth !potential o2 consumption, as deduced from aerobic heteorotrophic decomposition, mol o2/m3/s
@@ -186,7 +187,7 @@ implicit none
     use BgcSummsForcType , only : summseca_forc_type
     implicit none
     ! !ARGUMENTS:
-    class(century_nitden_type) , intent(inout) :: this
+    class(summs_nitden_type) , intent(inout) :: this
     type(summseca_forc_type) , intent(in) :: summs_forc
     real(r8)                   , intent(in)  :: pot_f_nit_mol_per_sec
     real(r8)                   , intent(in)  :: pot_co2_hr            !potential aerobic heteotrophic respiration, mol CO2/m3/s
@@ -309,7 +310,7 @@ implicit none
   use BgcSummsForcType , only : summseca_forc_type
   use BgcSummsDecompType     , only : DecompSumms_type
   implicit none
-  class(century_nitden_type) , intent(inout) :: this
+  class(summs_nitden_type) , intent(inout) :: this
   real(r8)                   , intent(in) :: smin_nh4
   type(summseca_forc_type) , intent(in) :: summs_forc
   type(DecompSumms_type)      , intent(in) :: decompkf_eca
@@ -323,13 +324,11 @@ implicit none
   real(r8) :: k_nitr_h2o
 
   associate(                                    &
-     pH           =>    summs_forc%pH    , &
+     pH           =>    summs_forc%pH         , &
      t_scalar     =>    decompkf_eca%t_scalar , & ! Input: [real(r8) (:,:)   ]  soil temperature scalar for decomp
-     w_scalar     =>    decompkf_eca%w_scalar   & ! Input: [real(r8) (:,:)   ]  soil water scalar for decomp
+     w_scalar     =>    decompkf_eca%w_scalar , & ! Input: [real(r8) (:,:)   ]  soil water scalar for decomp
+     k_nitr_max   =>    this%k_nitr_max         &
   )
-
-  ! Set maximum nitrification rate constant
-  k_nitr_max =  0.1_r8 / secspday   ! [1/sec] 10%/day  Parton et al., 2001
 
   !---------------- nitrification
   ! follows CENTURY nitrification scheme (Parton et al., (2001, 1996))
@@ -358,7 +357,7 @@ implicit none
 
   use BgcSummsIndexType, only : summsbgc_index_type
   implicit none
-  class(century_nitden_type)  , intent(inout) :: this
+  class(summs_nitden_type)  , intent(inout) :: this
   type(summsbgc_index_type) , intent(in) :: summsbgc_index
   real(r8)                    , intent(in) :: n2_n2o_ratio_denit
   real(r8)                    , intent(inout)    :: cascade_matrix(summsbgc_index%nstvars, summsbgc_index%nreactions)
@@ -414,7 +413,7 @@ implicit none
   ! the first part cost 0.5 mol oxygen for the formation of
   ! 1 mol NH2OH.
   implicit none
-  class(century_nitden_type), intent(inout) :: this
+  class(summs_nitden_type), intent(inout) :: this
   real(r8) :: ans
 
   ans = (2._r8 + 0.5_r8*this%nitrif_n2o_loss_frac)
@@ -430,7 +429,7 @@ implicit none
   use BgcSummsForcType  , only : summseca_forc_type
   use BgcSummsIndexType , only : summsbgc_index_type
   implicit none
-  class(century_nitden_type)  , intent(inout) :: this
+  class(summs_nitden_type)  , intent(inout) :: this
   type(summsbgc_index_type) , intent(in) :: summsbgc_index
   type(summseca_forc_type)  , intent(in) :: summs_forc
   type(DecompSumms_type)       , intent(in) :: decompkf_eca

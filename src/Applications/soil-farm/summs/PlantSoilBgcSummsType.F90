@@ -182,8 +182,16 @@ module PlantSoilBgcSummsType
 
     biogeo_flux%p31flux_vars%sminp_to_plant_patch(p) = biogeo_flux%p31flux_vars%sminp_to_plant_patch(p)/pft%wtcol(p)
 
+    if(betrtracer_vars%debug)then
+!      write(*,'(A,X,I2,4(X,E20.12))')'vtraflx c pft',p, &
+!         tracerflux_vars%tracer_flx_vtrans_col(c, id_trc_nh3x)* natomw, &
+!         tracer_flx_vtrans_patch(p, id_trc_nh3x)* natomw, &
+!         tracerflux_vars%tracer_flx_vtrans_col(c, id_trc_no3x)* natomw, &
+!         tracer_flx_vtrans_patch(p, id_trc_no3x) * natomw
+       print*,'plant minp ac',p,biogeo_flux%p31flux_vars%sminp_to_plant_patch(p)
+    endif
   enddo
-
+  if(betrtracer_vars%debug)print*,'pft wcoltot',pft%npfts,sum(pft%wtcol(1:pft%npfts))
   end associate
   end subroutine plant_soilbgc_summary
 

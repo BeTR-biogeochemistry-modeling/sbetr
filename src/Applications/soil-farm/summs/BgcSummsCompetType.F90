@@ -18,7 +18,7 @@ implicit none
     real(r8), pointer :: kaff_minp_plant(:)    => null()    !number of maximum pft
     real(r8), pointer :: plant_froot_nn(:) => null()
     real(r8), pointer :: plant_froot_np(:) => null()
-
+    real(r8), pointer :: plant_eff_frootc_patch(:) => null()
     real(r8) :: compet_bn_mic   !decomposer n competition transporter
     real(r8) :: compet_bp_mic   !decomposer p competition transporter
     real(r8) :: compet_bn_den
@@ -30,7 +30,7 @@ implicit none
     real(r8) :: kaff_minn_no3_den
     real(r8) :: kaff_minn_nh4_msurf
     real(r8) :: kaff_minp_msurf
-
+    logical  :: debug
   contains
     procedure, public :: Init
     procedure, private:: InitAllocate
@@ -63,11 +63,12 @@ contains
   allocate(this%kaff_minp_plant(betr_maxpatch_pft))
   allocate(this%plant_froot_nn(betr_maxpatch_pft));
   allocate(this%plant_froot_np(betr_maxpatch_pft));
+  allocate(this%plant_eff_frootc_patch(betr_maxpatch_pft))
   end subroutine InitAllocate
 
   !-------------------------------------------------------------------------------
 
-  subroutine run_compet_nitrogen(this, smin_nh4, smin_no3, mic_pot_nn_flx, pot_f_nit, &
+  subroutine run_compet_nitrogen(this, non_limit, smin_nh4, smin_no3, mic_pot_nn_flx, pot_f_nit, &
    pot_f_denit, plant_ntypes, msurf_nh4, &
    ECA_factor_nit, ECA_factor_den, ECA_factor_nh4_mic, &
     ECA_factor_no3_mic, ECA_flx_nh4_plants,ECA_flx_no3_plants, ECA_factor_msurf_nh4)
@@ -76,6 +77,7 @@ contains
   use BetrStatusType , only : betr_status_type
   implicit none
   class(Compet_ECA_type), intent(inout) :: this
+  logical , intent(in) :: non_limit
   real(r8), intent(in) :: smin_nh4
   real(r8), intent(in) :: smin_no3
   real(r8), intent(in) :: mic_pot_nn_flx
@@ -126,10 +128,31 @@ contains
   entity(:)=(/b_nit,b_den,b_mic,msurf_nh4,this%plant_froot_nn(1:plant_ntypes)/)
   !do ECA calculation
   call ecacomplex_cell_norm(kaff,substrate,entity, se_complex, bstatus)
+  if(non_limit)then
+    ECA_factor_nit = 1._r8
+    ECA_factor_den = 1._r8
+    ECA_factor_nh4_mic = 1._r8
+    ECA_factor_no3_mic = 1._r8
+    do jj = 1, plant_ntypes
+      ECA_flx_nh4_plants(jj) = this%mumax_minn_nh4_plant(jj) * &
+        this%plant_froot_nn(jj)
+
+      ECA_flx_no3_plants(jj) = this%mumax_minn_no3_plant(jj) * &
+        this%plant_froot_nn(jj)
+    enddo
+  else
   ECA_factor_nit = se_complex(1,1)
   ECA_factor_den = se_complex(2,2)
   ECA_factor_nh4_mic = se_complex(1,3)
   ECA_factor_no3_mic = se_complex(2,3)
+ do jj = 1, plant_ntypes
+      ECA_flx_nh4_plants(jj) = this%mumax_minn_nh4_plant(jj) * &
+        this%plant_froot_nn(jj) * se_complex(1,4+jj)
+
+      ECA_flx_no3_plants(jj) = this%mumax_minn_no3_plant(jj) * &
+        this%plant_froot_nn(jj) * se_complex(2,4+jj)
+    enddo
+  endif
   ECA_factor_msurf_nh4 = se_complex(1,4)
   do jj = 1, plant_ntypes
     ECA_flx_nh4_plants(jj) = this%mumax_minn_nh4_plant(jj) * &
@@ -145,13 +168,19 @@ contains
   end subroutine run_compet_nitrogen
   !-------------------------------------------------------------------------------
 
-  subroutine run_compet_phosphorus(this, sminp_soluble, mic_pot_np_flx, plant_ntypes,&
+  subroutine run_compet_phosphorus(this, nop_lim, sminp_soluble, mic_pot_np_flx, plant_ntypes,&
      msurf_minp, ECA_factor_phosphorus_mic, ECA_factor_minp_msurf, ECA_flx_phosphorus_plants)
+  
+
+  !
+  !DESCRIPTION
+  ! do eca competition of phosphorususe KineticsMod    , only : ecacomplex_cell_norm
   use KineticsMod    , only : ecacomplex_cell_norm
   use BetrStatusType , only : betr_status_type
   implicit none
   class(Compet_ECA_type), intent(inout) :: this
   real(r8), intent(in) :: sminp_soluble
+  logical , intent(in) :: nop_lim               !logical indicator of P limitation
   real(r8), intent(in) :: mic_pot_np_flx
   integer , intent(in) :: plant_ntypes
   real(r8), intent(in) :: msurf_minp
@@ -183,15 +212,36 @@ contains
   entity(:)=(/b_mic,msurf_minp,this%plant_froot_np(1:plant_ntypes)/)
   substrate(:)=(/sminp_soluble/)
 
+  !given P is under competitation by microbes, plants and mineral surfaces
+  !the definitation of P limitation is quite ambiguous. Following what
+  !is done in ALM-ECA-CNP and ALM-CNP, P limitation is only applied
+  !to biological uptake. P-limitation to mineral sorption is not
+  !considered.
+
   !do ECA calculation
   call ecacomplex_cell_norm(kaff,substrate,entity, se_complex, bstatus)
-  ECA_factor_phosphorus_mic = se_complex(1,1)
-  ECA_factor_minp_msurf = se_complex(1,2)
-  do jj = 1, plant_ntypes
-    ECA_flx_phosphorus_plants(jj) = this%mumax_minp_plant(jj) * &
-      this%plant_froot_np(jj) * se_complex(1,2+jj)
-  enddo
-
+ ECA_factor_minp_msurf = se_complex(1,2)
+!  if(this%debug)then
+!    print*,'nop_lim=',nop_lim,plant_ntypes,kaff
+!    print*,'entity',entity
+!    print*,'substrate',sminp_soluble
+!    print*,'ECA_factor_minp_msurf',ECA_factor_minp_msurf
+!  endif
+  if(nop_lim)then
+    !no P limitation is imposed on biological reactions
+    ECA_factor_phosphorus_mic = 1._r8
+    ECA_factor_minp_msurf = 0._r8
+    do jj = 1, plant_ntypes
+      ECA_flx_phosphorus_plants(jj) = this%mumax_minp_plant(jj) * &
+        this%plant_froot_np(jj)
+    enddo
+  else
+    ECA_factor_phosphorus_mic = se_complex(1,1)
+    do jj = 1, plant_ntypes
+      ECA_flx_phosphorus_plants(jj) = this%mumax_minp_plant(jj) * &
+        this%plant_froot_np(jj) * se_complex(1,2+jj)
+    enddo
+  endif
 
   deallocate(kaff)
   deallocate(substrate)

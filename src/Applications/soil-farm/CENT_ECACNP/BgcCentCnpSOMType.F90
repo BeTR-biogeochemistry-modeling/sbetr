@@ -842,6 +842,7 @@ contains
     is_cenpool_som => centurybgc_index%is_cenpool_som, &
     ompoolnames => centurybgc_index%ompoolnames & 
   )
+  
   !for om pools
   do jj = 1, ncentpools
     kc = (jj-1) * nelms + c_loc

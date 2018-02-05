@@ -23,6 +23,7 @@ implicit none
   real(r8) :: Q10
   real(r8) :: froz_q10
   real(r8) :: decomp_depth_efolding
+  real(r8) :: minpsi
 
   real(r8) :: vmax_mic
   real(r8) :: vmax_enz
@@ -54,7 +55,7 @@ implicit none
     procedure, public  :: set_decompk_scalar
     procedure, private :: InitCold
     procedure, private :: InitAllocate
-    procedure, private :: initPar
+    procedure, public  :: UpdateParas
   end type DecompSumms_type
 
  contains
@@ -70,8 +71,6 @@ implicit none
   call this%InitAllocate ()
 
   call this%InitCold ()
-
-  call this%InitPar(bgcsumms_con)
 
  end subroutine Init
  !------------------------------------------------------------------------
@@ -107,7 +106,7 @@ implicit none
   end subroutine initCold
 
   !-----------------------------------------------------------------------
-  subroutine InitPar(this, bgcsumms_con)
+  subroutine UpdateParas(this, bgcsumms_con)
 
   use BgcConSummsType, only : BgcConSumms_type
   implicit none
@@ -137,7 +136,7 @@ implicit none
     this%ref_kaff_mono_msurf    = bgcsumms_con%ref_kaff_mono_msurf
     this%ref_kaff_enz_msurf     = bgcsumms_con%ref_kaff_enz_msurf
 
-  end subroutine InitPar
+  end subroutine UpdateParas
   !-----------------------------------------------------------------------
   subroutine set_decompk_scalar(this, o2b, summs_forc)
 
@@ -148,25 +147,17 @@ implicit none
   ! !ARGUMENTS:
   class(DecompSumms_type)     , intent(inout) :: this
   real(r8)                    , intent(in) :: o2b
-  type(summseca_forc_type)       , intent(in) :: summs_forc
+  type(summseca_forc_type)    , intent(in) :: summs_forc
 
   ! !LOCAL VARIABLES:
   real(r8), parameter :: normalization_tref = 15._r8 ! reference temperature for normalizaion (degrees C)
   real(r8)            :: tref = 288.15 ! reference temperature (K)
-  real(r8)            :: minpsi
   real(r8)            :: maxpsi
   real(r8)            :: normalization_factor
   real(r8)            :: catanf_30
   real(r8)            :: t1
   real(r8)            :: o2w
   real(r8)            :: psi
-  !real(r8)            :: depz
-  !real(r8)            :: Q10
-  !real(r8)            :: froz_q10
-  !real(r8)            :: decomp_depth_efolding
-  !real(r8)            :: o2_w2b
-  !real(r8)            :: soilpsi
-  !real(r8)            :: sucsat
 
         ! Set up parameters to estimate the fraction of active enzymes at the current temperature
         real(r8) :: rgas = 8.31446 ! Universal gas constant (J/K/mol)
@@ -202,8 +193,9 @@ implicit none
     Q10           => this%Q10           ,          &
     froz_q10      => this%froz_q10      ,          &
     decomp_depth_efolding => this%decomp_depth_efolding , &
+    minpsi        => this%minpsi                        , &
     ea_vmax_mic   => this%ea_vmax_mic                   , &
-    ea_vmax_enz   => this%ea_vmax_enz                    , &
+    ea_vmax_enz   => this%ea_vmax_enz                   , &
     ea_kaff_mono_mic   => this%ea_kaff_mono_mic   , &
     ea_kaff_enz_poly   => this%ea_kaff_enz_poly    , &
     ea_mr_mic          => this%ea_mr_mic             , &
@@ -274,7 +266,6 @@ implicit none
     this%kaff_enz_msurf   = ref_kaff_enz_msurf*exp(ea_kaff_enz_msurf*tinv)
 
   !h2osoi_liqure scalar, also follows what Charlie has done
-  minpsi = -10.0_r8
   this%w_scalar     = 1._r8
   maxpsi = sucsat * (-9.8e-6_r8)   !kg -> MPa
   psi = min(soilpsi,maxpsi)

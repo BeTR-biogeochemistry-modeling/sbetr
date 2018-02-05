@@ -93,11 +93,15 @@ implicit none
   logical :: nop_limit                                              !switch for P limitation
   logical :: non_limit
   !ECA nutrient competition
-  real(r8), pointer :: vmax_minp_soluble_to_secondary(:)  => null() !maximum conversion rate of soluble P into secondary P
+  !real(r8), pointer :: vmax_minp_soluble_to_secondary(:)  => null() !maximum conversion rate of soluble P into secondary P
+  real(r8) :: vmax_minp_soluble_to_secondary  !maximum conversion rate of soluble P into secondary P
 
   !inorganic phosphorus cycling
-  real(r8), pointer :: frac_p_sec_to_sol(:)    => null()   !fraction of released secondary phosphorus that goes into soluble form
-  real(r8), pointer :: minp_secondary_decay(:) => null()   !decay rate of secondary phosphorus
+  !real(r8), pointer :: frac_p_sec_to_sol(:)    => null()   !fraction of released secondary phosphorus that goes into soluble form
+  !real(r8), pointer :: minp_secondary_decay(:) => null()   !decay rate of secondary phosphorus
+  real(r8) :: frac_p_sec_to_sol     !fraction of released secondary phosphorus that goes into soluble form
+  real(r8) :: minp_secondary_decay   !decay rate of secondary phosphorus
+ 
   real(r8), pointer :: spinup_factor(:)
  contains
    procedure, public  :: Init
@@ -142,9 +146,9 @@ contains
   class(BiogeoCon_type), intent(inout) :: this
 
 
-  allocate(this%minp_secondary_decay(0:betr_max_soilorder))
-  allocate(this%vmax_minp_soluble_to_secondary(0:betr_max_soilorder))
-  allocate(this%frac_p_sec_to_sol(0:betr_max_soilorder))
+  !allocate(this%minp_secondary_decay(0:betr_max_soilorder))
+  !allocate(this%vmax_minp_soluble_to_secondary(0:betr_max_soilorder))
+  !allocate(this%frac_p_sec_to_sol(0:betr_max_soilorder))
   allocate(this%spinup_factor(9))
   !the following will be actually calculated from CNP bgc
   end subroutine InitAllocate
@@ -216,11 +220,11 @@ contains
   this%surface_tension_water = 73.e-3_r8  ! (J/m^2), Arah and Vinten, 1995
 
   !ECA nutrient competition
-  this%vmax_minp_soluble_to_secondary(:) = 1.e-9_r8  !1/s on the order of 1.e-9 1/s
+  this%vmax_minp_soluble_to_secondary = 1.e-9_r8  !1/s on the order of 1.e-9 1/s
   !inorganic phosphorus cycling
   !Note: (1._r8-frac_p_sec_to_sol)*minp_secondary_decay = occlusion rate
-  this%frac_p_sec_to_sol(:)              = 0.95_r8    !fraction of released secondary phosphorus that goes into soluble form, occ rate is on the order of  1.e-13 1/s
-  this%minp_secondary_decay(:)           = 1.e-11_r8  !decay rate of secondary phosphorus, 1/s, this is on the order of 1.e-11 1/s
+  this%frac_p_sec_to_sol              = 0.95_r8    !fraction of released secondary phosphorus that goes into soluble form, occ rate is on the order of  1.e-13 1/s
+  this%minp_secondary_decay           = 1.e-11_r8  !decay rate of secondary phosphorus, 1/s, this is on the order of 1.e-11 1/s
 
   this%use_c13 = .false.
   this%use_c14 = .false.

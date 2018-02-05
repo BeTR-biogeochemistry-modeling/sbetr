@@ -12,6 +12,7 @@ set(SUMMS_SOURCES
   SOMStateVarUpdateSumms.F90
   BgcReactionsSummsType.F90
   PlantSoilBgcSummsType.F90
+  SummsECAOutType.F90
 )
 
 if (BETR_BGC EQUAL 1)

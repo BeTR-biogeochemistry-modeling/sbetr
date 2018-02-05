@@ -9,8 +9,8 @@ implicit none
 
   type, public :: summseca_forc_type
     logical :: debug
-    !real(r8), pointer :: ystates(:)
-    real(r8), dimension(:), allocatable :: ystates
+    real(r8), pointer :: ystates(:)
+    !real(r8), dimension(:), allocatable :: ystates
     !input
     real(r8) :: cflx_input_litr_met   !g C/m2/s
     real(r8) :: cflx_input_litr_cel   !g C/m2/s
@@ -78,7 +78,9 @@ implicit none
     real(r8) :: frac_loss_lit_to_fire
     real(r8) :: frac_loss_cwd_to_fire
 
+    real(r8) :: biochem_pmin
     real(r8) :: sflx_minn_input_nh4       !nh4 from deposition and fertilization
+    real(r8) :: sflx_minn_input_no3       !no3 from deposition and fertilization
     real(r8) :: sflx_minn_nh4_fix_nomic         !nh4 from fixation
     real(r8) :: sflx_minp_input_po4       !inorganic P from deposition and fertilization
     real(r8) :: sflx_minp_weathering_po4
