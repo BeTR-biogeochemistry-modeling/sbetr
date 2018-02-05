@@ -20,8 +20,7 @@ module ncdio_pio
   use shr_kind_mod, only : r8 => shr_kind_r8, i4 => shr_kind_i4
   use shr_log_mod , only : errMsg => shr_log_errMsg
   use shr_assert_mod
-  use clm_varctl  , only : single_column, iulog
-  use spmdMod     , only : masterproc
+
   implicit none
 
   character(len=*), parameter :: mod_filename = &
@@ -55,7 +54,7 @@ module ncdio_pio
   public :: ncd_getvar         ! read data
   public :: ncd_io
 
-
+  public :: ncd_init
   interface ncd_putvar
     module procedure ncd_putvar_int
     module procedure ncd_putvar_real_sp
@@ -201,6 +200,8 @@ module ncdio_pio
   integer,parameter,public :: ncd_nofill    = nf90_nofill
   integer,parameter,public :: ncd_unlimited = nf90_unlimited
   integer, parameter :: ncd_log = -nf90_int
+  logical :: single_column
+  integer :: iulog
 !
 
 ! !PRIVATE METHODS:
@@ -209,8 +210,17 @@ module ncdio_pio
 !-----------------------------------------------------------------------
 
   contains
+    subroutine ncd_init(single_col, biulog)
 
 
+    implicit none
+    logical, intent(in) :: single_col
+    integer, intent(in) :: biulog
+
+
+    single_column = single_col
+    iulog = biulog
+    end subroutine ncd_init
 !
 
 !-----------------------------------------------------------------------
@@ -421,7 +431,6 @@ module ncdio_pio
   character(len=32) :: subname='ncd_def_var' ! subroutine name
 !-----------------------------------------------------------------------
 
-  if (.not. masterproc) return
   !print*,'define:',trim(varname)
     ! Determine dimension ids for variable
   ncid_local = ncid%fh
@@ -1413,7 +1422,7 @@ module ncdio_pio
        readvar = .false.
        ret = nf90_inq_varid(ncid%fh,name,varid)
        if (ret /= nf90_noerr) then
-          if (masterproc) write(iulog,*) subname//': variable ',trim(name),' is not on dataset'
+          write(iulog,*) subname//': variable ',trim(name),' is not on dataset'
           readvar = .false.
        else
           readvar = .true.

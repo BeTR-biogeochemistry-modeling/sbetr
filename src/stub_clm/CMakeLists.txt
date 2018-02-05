@@ -27,7 +27,6 @@ set(BETR_STUB_CLM_SOURCES
   TridiagonalMod.F90
   WaterFluxType.F90
   WaterStateType.F90
-  abortutils.F90
   accumulMod.F90
   atm2lndType.F90
   clm_initializeMod.F90
@@ -45,7 +44,6 @@ set(BETR_STUB_CLM_SOURCES
   getdatetime.F90
   histFileMod.F90
   landunit_varcon.F90
-  ncdio_pio.F90
   pftvarcon.F90
   restUtilMod.F90
   soilorder_varcon.F90
@@ -55,7 +53,7 @@ set(BETR_STUB_CLM_SOURCES
 
 include_directories(${CMAKE_BINARY_DIR}/src/shr)
 include_directories(${CMAKE_BINARY_DIR}/src/esmf_wrf_timemgr)
-
+include_directories(${CMAKE_BINARY_DIR}/src/io_util)
 include(add_betr_library)
 add_betr_library(betr_stub_clm ${BETR_STUB_CLM_SOURCES})
 
