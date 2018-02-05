@@ -1,4 +1,7 @@
 module BeTR_TimeMod
+!
+! DESCRIPTION
+! the module contains subroutine to march the time
 
   use bshr_kind_mod  , only : r8 => shr_kind_r8
   use bshr_kind_mod  , only : i8 => shr_kind_i8
@@ -14,9 +17,13 @@ module BeTR_TimeMod
      real(r8) :: delta_time
      real(r8) :: stop_time
      real(r8) :: time
+     real(r8) :: toy
      real(r8) :: restart_dtime
      integer  :: tstep
-     integer :: nelapstep
+     integer  :: nelapstep
+     integer  :: dow, dom, doy
+     integer  :: moy, cyears
+     real(r8) :: tod
    contains
      procedure, public :: Init
      procedure, public :: its_time_to_write_restart
@@ -26,13 +33,19 @@ module BeTR_TimeMod
      procedure, public :: get_nstep
      procedure, public :: get_days_per_year
      procedure, public :: get_step_size
-     procedure, public :: proc_nextstep
+     procedure, private:: proc_nextstep
      procedure, public :: proc_initstep
      procedure, public :: print_cur_time
      procedure, private :: ReadNamelist
      procedure, public :: setClock
+     procedure, public :: its_a_new_hour
+     procedure, public :: its_a_new_day
+     procedure, public :: its_a_new_week
+     procedure, public :: its_a_new_month
+     procedure, public :: its_a_new_year
   end type betr_time_type
 
+  integer, parameter, private :: daz(12)=(/31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31/)
 contains
 
   subroutine setClock(this, dtime, nelapstep)
@@ -53,11 +66,17 @@ contains
     implicit none
 
     class(betr_time_type), intent(inout) :: this
-    character(len=betr_namelist_buffer_size), optional, intent(in) :: namelist_buffer
+    character(len=*), optional, intent(in) :: namelist_buffer
     logical, optional, intent(in) :: masterproc
     this%tstep = 1
     this%time  = 0._r8
-
+    this%tod   = 0._r8
+    this%toy   = 0._r8
+    this%cyears = 0._r8
+    this%dow    = 0
+    this%dom    = 0
+    this%doy    = 0
+    this%moy    = 1
     if(present(namelist_buffer))then
       if(present(masterproc))then
         call this%ReadNamelist(namelist_buffer, masterproc)
@@ -81,16 +100,16 @@ contains
     implicit none
     ! !ARGUMENTS:
     class(betr_time_type), intent(inout) :: this
-    character(len=betr_namelist_buffer_size), intent(in) :: namelist_buffer
+    character(len=*), intent(in) :: namelist_buffer
     logical, optional, intent(in) :: masterproc
     !
     ! !LOCAL VARIABLES:
     integer :: nml_error
     character(len=*), parameter :: subname = 'betr_time%ReadNamelist'
     character(len=betr_string_length_long) :: ioerror_msg
-    real(r8) :: delta_time
-    real(r8) :: stop_time
-    real(r8) :: restart_dtime
+    real(r8) :: delta_time         !model time step
+    real(r8) :: stop_time          !when to stop
+    real(r8) :: restart_dtime      !when to write restart file
     logical :: masterproc_loc
     !-----------------------------------------------------------------------
 
@@ -103,8 +122,8 @@ contains
     ! when all input files are updated.
     masterproc_loc=.true.
     if(present(masterproc))masterproc_loc=masterproc
-    delta_time = 1800._r8   !half hourly time step
-    stop_time = delta_time*48._r8*365._r8*2._r8
+    delta_time = 1800._r8                !half hourly time step
+    stop_time = 86400._r8*365._r8*2._r8  !two years by default
     restart_dtime = -1._r8
 
     ! ----------------------------------------------------------------------
@@ -186,14 +205,40 @@ contains
 
     character(len=80) :: subname='update_time_stamp'
 
+    real(r8), parameter :: secpyear= 86400._r8*365._r8
+
     this%time = this%time + this%delta_time
+    this%toy  = this%toy + this%delta_time
 
     this%tstep = this%tstep + 1
-    ! NOTE(bja, 201603) ???
-    if(mod(this%tstep, 48 * 365) == 0) then
+    !
+    ! reset the clock every year, and assuming the time step
+    ! size is always
+    if(mod(this%toy, secpyear) == 0) then
        this%tstep = 1
     end if
 
+    !update time of the day
+    this%tod=this%tod+this%delta_time
+
+    !update varaibles when it is to start a new day
+    if(this%its_a_new_day())then
+      this%tod=0._r8
+      this%dom=this%dom+1
+      this%dow = mod(this%dow + 1, 7)
+      this%doy = this%doy + 1
+    endif
+
+    if(this%its_a_new_month())then
+      this%moy=this%moy+1
+      if(this%moy==13)then
+        this%moy=1
+        this%doy=mod(this%doy,365)
+      endif
+      this%dom=0
+    endif
+    if(this%its_a_new_year())this%cyears=this%cyears+1
+    call this%proc_nextstep()
   end subroutine update_time_stamp
 
   !-------------------------------------------------------------------------------
@@ -237,7 +282,9 @@ contains
 
     this%nelapstep = nstep
 
-    this%tstep = max(mod(nstep+1,48*365),1)
+    if(this%its_a_new_year())then
+      this%tstep = 1
+    endif
 
     this%time  = nstep*this%delta_time
 
@@ -287,7 +334,71 @@ contains
   implicit none
   class(betr_time_type), intent(in) :: this
 
-  print*,'time=',this%time,'tstep=',this%tstep,'nelapstep=',this%nelapstep
+  print*,'time=',this%time
+  print*,'tod =',this%tod
+  print*,'dow =',this%dow
+  print*,'dom =',this%dom
+  print*,'doy =',this%doy
+  print*,'moy =',this%moy
 
   end subroutine print_cur_time
+  !-------------------------------------------------------------------------------
+  function its_a_new_hour(this)result(yesno)
+  implicit none
+  class(betr_time_type), intent(in) :: this
+  logical :: yesno
+
+
+  yesno= abs(mod(this%tod, 3600.0))<1.e-3_r8
+
+  end function its_a_new_hour
+
+  !-------------------------------------------------------------------------------
+
+  function its_a_new_day(this)result(yesno)
+  implicit none
+  class(betr_time_type), intent(in) :: this
+  logical :: yesno
+
+
+  yesno= abs(mod(this%tod, 86400.0))<1.e-3_r8
+
+  end function its_a_new_day
+
+  !-------------------------------------------------------------------------------
+
+  function its_a_new_week(this)result(yesno)
+  implicit none
+  class(betr_time_type), intent(in) :: this
+  logical :: yesno
+
+
+  yesno= (this%dow == 0 .and. this%tod<1.e-3_r8)
+
+  end function its_a_new_week
+
+  !-------------------------------------------------------------------------------
+
+  function its_a_new_month(this)result(yesno)
+  implicit none
+  class(betr_time_type), intent(in) :: this
+  logical :: yesno
+
+
+  yesno = ((this%dom == daz(this%moy) .or. this%dom==0) .and. this%tod < 1.e-3_r8)
+
+  end function its_a_new_month
+
+  !-------------------------------------------------------------------------------
+  function its_a_new_year(this)result(yesno)
+  implicit none
+  class(betr_time_type), intent(in) :: this
+  logical :: yesno
+
+
+  yesno = (this%moy == 1 .and. this%dom == 0 .and. this%tod < 1.e-3_r8)
+
+  end function its_a_new_year
+  !-------------------------------------------------------------------------------
+
 end module BeTR_TimeMod

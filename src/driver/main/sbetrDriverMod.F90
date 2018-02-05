@@ -295,8 +295,6 @@ contains
     call simulation%WriteOfflineHistory(bounds, record, simulation%num_soilc,  &
        simulation%filter_soilc, time_vars, waterflux_vars%qflx_adv_col)
 
-    call time_vars%proc_nextstep()
-
     if(time_vars%its_time_to_write_restart()) then
        !set restfname
        nstep = time_vars%get_nstep()
