@@ -269,7 +269,7 @@ implicit none
 
     itemp = 0
     ireac = 0
-    ielem= 0
+    ielem = 0
 
     this%c_loc = addone(ielem)
     this%n_loc = addone(ielem)

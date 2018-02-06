@@ -683,6 +683,7 @@ contains
     if(bstatus%check_status())return
 
     !create the models
+    allocate(this%summseca(bounds%begc:bounds%endc,lbj:ubj)) !, source=create_centuryeca_type())
 
     !create model specific forcing data structure
     allocate(this%summsforc(bounds%begc:bounds%endc,lbj:ubj)) !, source=create_summseca_forc_type())
