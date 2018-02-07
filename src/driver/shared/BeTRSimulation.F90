@@ -143,8 +143,6 @@ module BeTRSimulation
      procedure, public :: do_regress_test
   end type betr_simulation_type
 
-  public :: BeTRSimulationInit
-
 contains
 
   subroutine SetClock(this, dtime, nelapstep)

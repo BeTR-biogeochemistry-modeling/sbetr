@@ -66,7 +66,6 @@ contains
     !initialize standalone betr
     !
     !USES
-    use BeTRSimulation      , only : BeTRSimulationInit
     use betr_constants      , only : betr_namelist_buffer_size
     use betr_constants      , only : betr_filename_length
     use BeTR_pftvarconType  , only : betr_pftvarcon
