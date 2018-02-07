@@ -64,19 +64,19 @@ implicit none
     procedure, public  :: UpdateParas
     procedure, private :: calc_potential_aerobic_hr
     procedure, private :: apply_spinupf
-   
+
   end type CentSom_type
 contains
 
   subroutine Init(this, centurybgc_index, biogeo_con, bstatus)
 
   use BgcCentCnpIndexType , only : centurybgc_index_type
-  use BiogeoConType       , only : BiogeoCon_type
+  use CentParaType       , only : CentPara_type
   use BetrStatusType      , only : betr_status_type
   implicit none
   class(CentSom_type)         , intent(inout) :: this
   type(centurybgc_index_type) , intent(in)    :: centurybgc_index
-  type(BiogeoCon_type)        , intent(in)    :: biogeo_con
+  type(CentPara_type)        , intent(in)    :: biogeo_con
   type(betr_status_type)      , intent(out)   :: bstatus
 
   call bstatus%reset()
@@ -105,13 +105,13 @@ contains
   subroutine UpdateParas(this,centurybgc_index,  biogeo_con)
   !
   ! intialize model parameters
-  use BiogeoConType , only : BiogeoCon_type
+  use CentParaType , only : CentPara_type
   use BgcCentCnpIndexType , only : centurybgc_index_type
   use tracer_varcon    , only : catomw, natomw, patomw
   implicit none
   class(CentSom_type)  , intent(inout) :: this
   type(centurybgc_index_type) , intent(in) :: centurybgc_index
-  type(BiogeoCon_type) , intent(in)    :: biogeo_con
+  type(CentPara_type) , intent(in)    :: biogeo_con
 
   this%rf_l1s1_bgc    = biogeo_con%rf_l1s1_bgc
   this%rf_l2s1_bgc    = biogeo_con%rf_l2s1_bgc
@@ -829,7 +829,7 @@ contains
   real(r8) :: stoibal_ncon
   character(len=255) :: msg
   real(r8), parameter :: tiny_val=1.e-14_r8
-  real(r8), parameter :: tiny_ncon = 1.e-15_r8 
+  real(r8), parameter :: tiny_ncon = 1.e-15_r8
   associate(                         &
     nelms => centurybgc_index%nelms, &
     c_loc => centurybgc_index%c_loc, &
@@ -840,7 +840,7 @@ contains
     lit2  => centurybgc_index%lit2 , &
     lit3  => centurybgc_index%lit3 , &
     is_cenpool_som => centurybgc_index%is_cenpool_som, &
-    ompoolnames => centurybgc_index%ompoolnames & 
+    ompoolnames => centurybgc_index%ompoolnames &
   )
   !for om pools
   do jj = 1, ncentpools
@@ -872,7 +872,7 @@ contains
         ystates(kn)=stoibal_ncon
       endif
  !     write(msg,*)'phosphorus weirdo',jj,trim(ompoolnames(jj)),ystates(kc),ystates(kn),ystates(kp), rat, this%def_cn(jj),this%def_cp(jj),&
- !        1._r8/this%icn_ratios(jj),1._r8/this%icp_ratios(jj) 
+ !        1._r8/this%icn_ratios(jj),1._r8/this%icp_ratios(jj)
  !     print*,msg
  !     call bstatus%set_msg(msg,err=-1)
  !     return
@@ -900,11 +900,11 @@ contains
   end subroutine calc_cnp_ratios
 
   !-------------------------------------------------------------------------------
-  subroutine stoichiometry_fix(this, centurybgc_index,ystates) 
+  subroutine stoichiometry_fix(this, centurybgc_index,ystates)
 
   !
   ! DESCRIPTION
-  ! this fixes the stoichiometric drift due to limite precision of 
+  ! this fixes the stoichiometric drift due to limite precision of
   ! double precision.
   use BgcCentCnpIndexType       , only : centurybgc_index_type
   implicit none
@@ -959,7 +959,7 @@ contains
     ystates(kn)=stoibal_ncon
   endif
 
-  end associate   
+  end associate
   end subroutine stoichiometry_fix
 
   !-------------------------------------------------------------------------------

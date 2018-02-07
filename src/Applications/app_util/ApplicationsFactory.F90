@@ -120,7 +120,7 @@ contains
   !
   ! DESCRIPTION
   ! read in the parameters for specified bgc implementation
-  use BiogeoConType  , only : bgc_con_eca
+  use CentParaType   , only : cent_para
   use tracer_varcon  , only : reaction_method
   use ncdio_pio      , only : file_desc_t
   use BetrStatusType , only : betr_status_type
@@ -130,7 +130,7 @@ contains
 
    select case (trim(reaction_method))
    case ("eca_cnp")
-     call  bgc_con_eca%readPars(ncid, bstatus)
+     call  cent_para%readPars(ncid, bstatus)
    case default
      !do nothing
    end select
@@ -144,7 +144,7 @@ contains
   !
   ! DESCRIPTION
   ! read in the parameters for specified bgc implementation
-  use BiogeoConType, only : bgc_con_eca
+  use CentParaType   , only : cent_para
   use betr_constants , only : betr_namelist_buffer_size_ext
   use BetrStatusType , only : betr_status_type
   implicit none
@@ -156,7 +156,7 @@ contains
   call bstatus%reset()
    select case (trim(reaction_method))
    case ("eca_cnp")
-     call  bgc_con_eca%Init(bgc_namelist_buffer, bstatus)
+     call  cent_para%Init(bgc_namelist_buffer, bstatus)
      !do nothing
    case default
      if(trim(bgc_namelist_buffer)=='none')then
@@ -171,13 +171,13 @@ contains
   !-------------------------------------------------------------------------------
   subroutine AppSetSpinup()
 
-  use BiogeoConType  , only : bgc_con_eca
+  use CentParaType  , only : cent_para
   use tracer_varcon  , only : reaction_method
   implicit none
 
   select case (trim(reaction_method))
   case ("eca_cnp")
-     call  bgc_con_eca%set_spinup_factor()
+     call  cent_para%set_spinup_factor()
   end select
 
   end subroutine AppSetSpinup

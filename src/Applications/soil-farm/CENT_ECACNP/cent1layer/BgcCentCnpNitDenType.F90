@@ -40,10 +40,10 @@ implicit none
 
   !-------------------------------------------------------------------------------
   subroutine init(this, biogeo_con)
-  use BiogeoConType, only : BiogeoCon_type
+  use CentParaType, only : CentPara_type
   implicit none
   class(century_nitden_type) , intent(inout) :: this
-  type(BiogeoCon_type)       , intent(in) :: biogeo_con
+  type(CentPara_type)       , intent(in) :: biogeo_con
 
   !do memory allocation thing
 
@@ -51,10 +51,10 @@ implicit none
 
   !-------------------------------------------------------------------------------
   subroutine UpdateParas(this, biogeo_con)
-  use BiogeoConType, only : BiogeoCon_type
+  use CentParaType, only : CentPara_type
   implicit none
   class(century_nitden_type), intent(inout) :: this
-  type(BiogeoCon_type),intent(in) :: biogeo_con
+  type(CentPara_type),intent(in) :: biogeo_con
 
   this%organic_max  = biogeo_con%organic_max
 

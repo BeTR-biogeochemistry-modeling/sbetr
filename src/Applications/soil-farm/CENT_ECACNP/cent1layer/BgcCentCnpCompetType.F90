@@ -3,7 +3,6 @@ module BgcCentCnpCompetType
 ! code to do ECA based competition
   ! !USES:
   use bshr_kind_mod       , only : r8 => shr_kind_r8
-  use BiogeoConType , only : BiogeoCon_type
 implicit none
   private
   character(len=*), private, parameter :: mod_filename = &

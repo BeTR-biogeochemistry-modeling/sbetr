@@ -15,7 +15,7 @@ module BgcCentCnpType
   use gbetrType                 , only : gbetr_type
   use BgcCentSOMType            , only : CentSom_type
   use BgcCentCnpCompetType      , only : Compet_ECA_type
-  use BiogeoConType             , only : BiogeoCon_type
+  use CentParaType             , only : CentPara_type
   use BetrStatusType            , only : betr_status_type
   implicit none
   private
@@ -100,7 +100,7 @@ contains
   use betr_varcon         , only : betr_maxpatch_pft, betr_max_soilorder
   implicit none
   class(centurybgceca_type) , intent(inout) :: this
-  type(BiogeoCon_type)      , intent(in) :: biogeo_con
+  type(CentPara_type)      , intent(in) :: biogeo_con
 
   integer :: sr
 
@@ -131,7 +131,7 @@ contains
   use betr_varcon         , only : betr_maxpatch_pft
   implicit none
   class(centurybgceca_type) , intent(inout) :: this
-  type(BiogeoCon_type)      , intent(in) :: biogeo_con
+  type(CentPara_type)      , intent(in) :: biogeo_con
   type(betr_status_type)    , intent(out) :: bstatus
 
   call bstatus%reset()
@@ -210,7 +210,7 @@ contains
 
   real(r8) :: resc, resn, resp
   integer  :: reac,jj
- 
+
   associate(                                                   &
     cascade_matrix => this%cascade_matrix                    , &
     lit1      => centurybgc_index%lit1                       , & !
@@ -257,7 +257,7 @@ contains
 
   reac=lit1_dek_reac
   resc = cascade_matrix((lit1-1)*nelms + c_loc, reac) + cascade_matrix((som1-1)*nelms + c_loc, reac) + &
-     cascade_matrix(lid_co2, reac)  
+     cascade_matrix(lid_co2, reac)
   resn = cascade_matrix((lit1-1)*nelms + n_loc, reac) + cascade_matrix((som1-1)*nelms + n_loc, reac) + &
      cascade_matrix(lid_nh4, reac)
   resp = cascade_matrix((lit1-1)*nelms + p_loc, reac) + cascade_matrix((som1-1)*nelms + p_loc, reac) + &
@@ -266,7 +266,7 @@ contains
 
   reac = lit2_dek_reac
   resc = cascade_matrix((lit2-1)*nelms + c_loc, reac) + cascade_matrix((som1-1)*nelms + c_loc, reac) + &
-     cascade_matrix(lid_co2, reac) 
+     cascade_matrix(lid_co2, reac)
   resn = cascade_matrix((lit2-1)*nelms + n_loc, reac) + cascade_matrix((som1-1)*nelms + n_loc, reac) + &
      cascade_matrix(lid_nh4, reac)
   resp = cascade_matrix((lit2-1)*nelms + p_loc, reac) + cascade_matrix((som1-1)*nelms + p_loc, reac) + &
@@ -336,7 +336,7 @@ contains
      cascade_matrix((som2-1)*nelms + p_loc, reac) + cascade_matrix(lid_minp_soluble, reac)
   write(*,'(A,3(X,E20.10))')'fwd resc, resn, resp =',resc,resn, resp
 
-  reac = lid_nh4_nit_reac 
+  reac = lid_nh4_nit_reac
   resn = cascade_matrix(lid_nh4, reac) + cascade_matrix(lid_no3, reac) + 2._r8 * cascade_matrix(lid_n2o, reac)
   write(*,'(A,(X,E20.10))')'nit, resn =',resn
 
@@ -838,7 +838,7 @@ contains
     lid_no3=> centurybgc_index%lid_no3, &
     lid_minp_soluble =>  centurybgc_index%lid_minp_soluble,  &
     lid_minp_immob => centurybgc_index%lid_minp_immob &
-  ) 
+  )
   tmul=1._r8
 
   jj=lit1;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
@@ -988,10 +988,10 @@ contains
 
   this%ystates1(lid_nh4) =this%ystates0(lid_nh4) + dtime * &
       (centuryeca_forc%sflx_minn_input_nh4 + &
-        centuryeca_forc%sflx_minn_nh4_fix_nomic)/natomw * tmul 
+        centuryeca_forc%sflx_minn_nh4_fix_nomic)/natomw * tmul
 
   this%ystates1(lid_no3) = this%ystates0(lid_no3) + dtime * &
-      centuryeca_forc%sflx_minn_input_no3/natomw * tmul 
+      centuryeca_forc%sflx_minn_input_no3/natomw * tmul
 
   this%ystates1(lid_minp_soluble) =this%ystates0(lid_minp_soluble) + dtime * &
       (centuryeca_forc%sflx_minp_input_po4 + &

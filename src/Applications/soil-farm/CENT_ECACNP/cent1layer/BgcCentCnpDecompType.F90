@@ -38,10 +38,10 @@ implicit none
  !------------------------------------------------------------------------
  subroutine Init(this, biogeo_con)
 
-  use BiogeoConType, only : BiogeoCon_type
+  use CentParaType, only : CentPara_type
   implicit none
   class(DecompCent_type), intent(inout) :: this
-  type(BiogeoCon_type),intent(in) :: biogeo_con
+  type(CentPara_type),intent(in) :: biogeo_con
 
   call this%InitAllocate ()
 
@@ -83,10 +83,10 @@ implicit none
   !-----------------------------------------------------------------------
   subroutine UpdateParas(this, biogeo_con)
 
-  use BiogeoConType, only : BiogeoCon_type
+  use CentParaType, only : CentPara_type
   implicit none
   class(DecompCent_type) , intent(inout) :: this
-  type(BiogeoCon_type)   , intent(in) :: biogeo_con
+  type(CentPara_type)   , intent(in) :: biogeo_con
 
   ! set "Q10" parameter
   this%Q10 = biogeo_con%Q10
