@@ -24,9 +24,19 @@ implicit none
     real(r8), pointer :: som1n_col(:) => null()
     real(r8), pointer :: som2n_col(:) => null()
     real(r8), pointer :: som3n_col(:) => null()
+    real(r8), pointer :: polyn_col(:) => null()
+    real(r8), pointer :: monon_col(:) => null()
+    real(r8), pointer :: micn_col(:) => null()
+    real(r8), pointer :: enzn_col(:) => null()
+    real(r8), pointer :: resn_col(:) => null()
     real(r8), pointer :: som1n_vr_col(:,:) => null()
     real(r8), pointer :: som2n_vr_col(:,:) => null()
     real(r8), pointer :: som3n_vr_col(:,:) => null()
+    real(r8), pointer :: polyn_vr_col(:,:) => null()
+    real(r8), pointer :: monon_vr_col(:,:) => null()
+    real(r8), pointer :: micn_vr_col(:,:) => null()
+    real(r8), pointer :: enzn_vr_col(:,:) => null()
+    real(r8), pointer :: resn_vr_col(:,:) => null()
 
   contains
     procedure, public  :: Init
@@ -78,6 +88,19 @@ implicit none
     allocate(this%som2n_vr_col(begc:endc, lbj:ubj));  this%som2n_vr_col(:,:) = nan
     allocate(this%som3n_vr_col(begc:endc, lbj:ubj));  this%som3n_vr_col(:,:) = nan
   endif
+  if(trim(reaction_method)=='summs')then
+    allocate(this%polyn_col(begc:endc));  this%polyn_col(:) = nan
+    allocate(this%monon_col(begc:endc));  this%monon_col(:) = nan
+    allocate(this%enzn_col(begc:endc));   this%enzn_col(:) = nan
+    allocate(this%micn_col(begc:endc));   this%micn_col(:) = nan
+    allocate(this%enzn_col(begc:endc));   this%enzn_col(:) = nan
+    allocate(this%resn_col(begc:endc));   this%resn_col(:) = nan
+    allocate(this%polyn_vr_col(begc:endc, lbj:ubj));  this%polyn_vr_col(:,:) = nan
+    allocate(this%monon_vr_col(begc:endc, lbj:ubj));  this%monon_vr_col(:,:) = nan
+    allocate(this%micn_vr_col(begc:endc, lbj:ubj));   this%micn_vr_col(:,:) = nan
+    allocate(this%enzn_vr_col(begc:endc, lbj:ubj));   this%enzn_vr_col(:,:) = nan
+    allocate(this%resn_vr_col(begc:endc, lbj:ubj));   this%resn_vr_col(:,:) = nan
+  endif
   allocate(this%cwdn_vr_col(begc:endc,lbj:ubj)); this%cwdn_vr_col(:,:) = nan
   allocate(this%totlitn_vr_col(begc:endc,lbj:ubj)); this%totlitn_vr_col(:,:)=nan
   allocate(this%totsomn_vr_col(begc:endc,lbj:ubj)); this%totsomn_vr_col(:,:) =nan
@@ -103,6 +126,13 @@ implicit none
     this%som1n_vr_col(:,:) = value_column
     this%som2n_vr_col(:,:) = value_column
     this%som3n_vr_col(:,:) = value_column
+  endif
+  if(trim(reaction_method)=='summs')then
+    this%polyn_vr_col(:,:) = value_column
+    this%monon_vr_col(:,:) = value_column
+    this%micn_vr_col(:,:)  = value_column
+    this%enzn_vr_col(:,:)  = value_column
+    this%resn_vr_col(:,:)  = value_column
   endif
   end subroutine reset
 
@@ -140,6 +170,24 @@ implicit none
       enddo
     enddo
   endif
+
+  if(trim(reaction_method)=='summs')then
+    this%polyn_col(:) = 0.0_r8
+    this%monon_col(:) = 0.0_r8
+    this%micn_col(:)  = 0.0_r8
+    this%enzn_col(:)  = 0.0_r8
+    this%resn_col(:)  = 0.0_r8
+    do j = lbj, ubj
+      do c = bounds%begc, bounds%endc
+        this%polyn_col(c) = this%polyn_col(c) + dz(c,j)*this%polyn_vr_col(c,j)
+        this%monon_col(c) = this%monon_col(c) + dz(c,j)*this%monon_vr_col(c,j)
+        this%micn_col(c)  = this%micn_col(c) + dz(c,j)*this%micn_vr_col(c,j)
+        this%enzn_col(c)  = this%enzn_col(c) + dz(c,j)*this%enzn_vr_col(c,j)
+        this%resn_col(c)  = this%resn_col(c) + dz(c,j)*this%resn_vr_col(c,j)
+      enddo
+    enddo
+  endif
+
   do j = lbj, ubj
     do c = bounds%begc, bounds%endc
       this%cwdn_col(c) = this%cwdn_col(c) + dz(c,j) * this%cwdn_vr_col(c,j)

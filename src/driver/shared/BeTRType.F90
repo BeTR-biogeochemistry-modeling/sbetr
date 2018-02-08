@@ -1309,7 +1309,7 @@ contains
   if(.not. yesno)then
     call create_betr_usr_application(bgc_reaction, plant_soilbgc, method, bstatus)
   endif
-  if(trim(method) =='eca_cnp')then
+  if(trim(method) =='eca_cnp' .or. trim(method)=='summs')then
     asoibgc = .true.
   endif
   end subroutine create_betr_application

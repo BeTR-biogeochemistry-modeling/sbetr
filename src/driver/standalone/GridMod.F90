@@ -225,14 +225,14 @@ contains
        this%bsw(j) = data(num_columns, j)
     enddo
 
-    call ncd_getvar(ncf_in, 'SUCSAT', data)
+!    call ncd_getvar(ncf_in, 'SUCSAT', data)
     do j = 1, this%nlevgrnd
-       this%sucsat(j) = data(num_columns, j)
+       this%sucsat(j) = this%watsat(j) + 9.8_r8 !data(num_columns, j)
     enddo
 
-    call ncd_getvar(ncf_in, 'PCTSAND', data)
+!    call ncd_getvar(ncf_in, 'PCTSAND', data)
     do j = 1, this%nlevgrnd
-      this%pctsand(j) = data(num_columns, j)
+      this%pctsand(j) = this%watsat(j) + 41 !data(num_columns, j)
     enddo
 
     if (this%grid_type == dataset_grid) then

@@ -62,7 +62,7 @@ contains
     ! Read namelist from standard input.
     ! ----------------------------------------------------------------------
 
-    reaction_method = 'mock_run'
+    reaction_method = 'summs'!'eca_cnp'!'mock_run'!
     advection_on    = .true.
     diffusion_on    = .true.
     reaction_on     = .true.

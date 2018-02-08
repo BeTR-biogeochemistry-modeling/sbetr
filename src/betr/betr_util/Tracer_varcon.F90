@@ -39,7 +39,7 @@ module Tracer_varcon
 
   logical, parameter  :: l2ndadvsolver = .false. ! by default use 1st order solver for advection
 
-  logical :: is_active_betr_bgc=.false.
+  logical :: is_active_betr_bgc=.false.!.true.
   logical :: use_c13_betr=.false.
   logical :: use_c14_betr=.false.
   logical :: is_nitrogen_active = .true.

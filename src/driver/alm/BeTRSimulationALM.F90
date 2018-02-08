@@ -1430,7 +1430,7 @@ contains
 
   !the following parameters are specific to ECACNP, and I assume they are
   !grid specific as they currently used in alm-cnp.
-  if(trim(reaction_method)=='eca_cnp')then
+  if(trim(reaction_method)=='eca_cnp' .or. trim(reaction_method)=='summs')then
     do j =1, betr_bounds%ubj
       do fc = 1, num_soilc
         c = filter_soilc(fc)
@@ -1451,6 +1451,7 @@ contains
       enddo
     enddo
   endif
+
   end associate
   end subroutine set_transient_kinetics_par
 end module BeTRSimulationALM

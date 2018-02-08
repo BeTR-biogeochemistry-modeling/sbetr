@@ -1,5 +1,6 @@
 set(BGCFARM_UTIL_SOURCES
  BiogeoConType.F90
+ BgcConSummsType.F90
 )
 
 include_directories(${CMAKE_BINARY_DIR}/src/shr)
