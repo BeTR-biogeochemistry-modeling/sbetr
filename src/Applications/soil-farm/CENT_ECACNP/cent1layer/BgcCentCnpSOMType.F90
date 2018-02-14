@@ -135,7 +135,7 @@ contains
   this%k_decay_lwd    =  biogeo_con%k_decay_lwd
   this%k_decay_fwd    =  biogeo_con%k_decay_fwd
 
-  this%def_cn(centurybgc_index%lit1) = biogeo_con%init_cn_met * natomw/catomw
+  this%def_cn(centurybgc_index%lit1) = biogeo_con%init_cn_met * natomw/catomw; 
   this%def_cn(centurybgc_index%lit2) = biogeo_con%init_cn_cel * natomw/catomw
   this%def_cn(centurybgc_index%lit3) = biogeo_con%init_cn_lig * natomw/catomw
   this%def_cn(centurybgc_index%cwd)  = biogeo_con%init_cn_cwd * natomw/catomw

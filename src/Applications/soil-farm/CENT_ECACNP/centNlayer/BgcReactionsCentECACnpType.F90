@@ -119,7 +119,6 @@ contains
   integer                              , intent(in)    :: lbj, ubj        ! lower and upper bounds, make sure they are > 0
 
   integer :: c, j
-
   do j = lbj, ubj
     do c = bounds%begc, bounds%endc
       call this%centuryeca(c,j)%UpdateParas(cent_para)

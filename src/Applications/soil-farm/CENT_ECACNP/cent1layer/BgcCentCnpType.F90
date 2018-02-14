@@ -1268,14 +1268,14 @@ contains
     endif
     it = it + 1
   enddo
-!  if(this%centurybgc_index%debug)then
-!    do jj = 1, nreactions
-!      print*,'casc jj',jj,rrates(jj),rscal(jj)
-!    enddo
-!    do jj = 1, nprimvars
-!      print*, 'nprim',jj,dydt(jj)
-!    enddo
-!  endif
+  if(this%centurybgc_index%debug)then
+    do jj = 1, nreactions
+      print*,'casc jj',jj,rrates(jj),rscal(jj)
+    enddo
+    do jj = 1, nprimvars
+      print*, 'nprim',jj,dydt(jj)
+    enddo
+  endif
   if(this%centurybgc_index%debug)then
     !
     jj = som3

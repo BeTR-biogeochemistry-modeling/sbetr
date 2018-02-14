@@ -71,7 +71,7 @@ implicit none
  contains
    procedure, public  :: bgc_con_Init
    procedure, private :: InitAllocate
-   procedure, private :: set_defpar_default
+   procedure, private :: set_defpar_default_base
    procedure, public  :: readPars_bgc
  end type BiogeoCon_type
 
@@ -89,9 +89,7 @@ contains
   call bstatus%reset()
 
   call this%InitAllocate()
-
-  call this%set_defpar_default()
-
+  call this%set_defpar_default_base()
   this%use_c13 = use_c13_betr
   this%use_c14 = use_c14_betr
   this%nop_limit=.not. is_phosphorus_active
@@ -113,12 +111,12 @@ contains
   !the following will be actually calculated from CNP bgc
   end subroutine InitAllocate
   !--------------------------------------------------------------------
-  subroutine set_defpar_default(this)
+  subroutine set_defpar_default_base(this)
   use bshr_const_mod  , only : year_sec=>SHR_CONST_YEARSECS
   implicit none
   class(BiogeoCon_type), intent(inout) :: this
   real(r8) :: half_life
-
+  
   half_life = 5568._r8 ! yr
   half_life = half_life * year_sec
   this%c14decay_const = - log(0.5_r8) / half_life
@@ -171,7 +169,8 @@ contains
   this%init_cc14_som1= 0._r8
   this%init_cc14_som2= 0._r8
   this%init_cc14_som3= 0._r8
-  end subroutine set_defpar_default
+
+  end subroutine set_defpar_default_base
 
   !--------------------------------------------------------------------
 
