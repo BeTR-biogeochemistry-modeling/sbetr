@@ -33,6 +33,7 @@ module BeTR_TimeMod
      procedure, public :: get_nstep
      procedure, public :: get_days_per_year
      procedure, public :: get_step_size
+     procedure, public :: get_cur_time
      procedure, private:: proc_nextstep
      procedure, public :: proc_initstep
      procedure, public :: print_cur_time
@@ -58,6 +59,15 @@ contains
   this%delta_time = dtime
   this%nelapstep = nelapstep
   end subroutine setClock
+  !-------------------------------------------------------------------------------
+  function get_cur_time(this)result(ans)
+
+  implicit none
+  class(betr_time_type), intent(inout) :: this
+  real(r8) :: ans
+
+  ans = this%time
+  end function get_cur_time
   !-------------------------------------------------------------------------------
   subroutine Init(this, namelist_buffer, masterproc)
 

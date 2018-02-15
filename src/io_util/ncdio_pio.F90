@@ -23,7 +23,7 @@ module ncdio_pio
 
   implicit none
 
-  character(len=*), parameter :: mod_filename = &
+  character(len=*), private, parameter :: mod_filename = &
        __FILE__
 
   private
@@ -60,7 +60,7 @@ module ncdio_pio
     module procedure ncd_putvar_real_sp
     module procedure ncd_putvar_int_1d
     module procedure ncd_putvar_real_sp_1d
-
+    module procedure ncd_putvar_real_sp_all_1d
     module procedure ncd_putvar_int_2d
     module procedure ncd_putvar_real_sp_2d
     module procedure ncd_putvar_int_3d
@@ -594,6 +594,29 @@ module ncdio_pio
      start = (/1,rec/)),'ncd_putvar_real_sp_1d')
 
   end subroutine ncd_putvar_real_sp_1d
+
+  !----------------------------------------------------------------------
+    subroutine ncd_putvar_real_sp_all_1d(ncid, varname,  data)
+    !
+    ! DESCRIPTIONS
+    ! put 1d real array to file
+    use netcdf
+    use shr_kind_mod, only : r8 => shr_kind_r8
+  !**********************************************************************
+    implicit none
+    class(file_desc_t), intent(in) :: ncid
+    real(r8),dimension(:), intent(in) :: data
+
+    character(len=*), intent(in) :: varname
+    integer :: varid
+    logical :: readvar
+    type(Var_desc_t)  :: vardesc
+
+    call check_var(ncid, trim(varname), vardesc, readvar)
+
+    call check_ret( nf90_put_var(ncid%fh, vardesc%varid, data),'ncd_putvar_real_sp_all_1d')
+
+    end subroutine ncd_putvar_real_sp_all_1d
 !*****************************************************************
 
   subroutine ncd_putvar_int_2d(ncid, varname, rec, data)
