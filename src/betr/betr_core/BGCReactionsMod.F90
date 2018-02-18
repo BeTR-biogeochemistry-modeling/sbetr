@@ -102,16 +102,17 @@ module BGCReactionsMod
 
   end subroutine init_iP_prof_interface
   !-------------------------------------------------------------------------------
-  subroutine UpdateParas_interface(this, bounds, lbj, ubj)
+  subroutine UpdateParas_interface(this, bounds, lbj, ubj, bstatus)
 
    use BeTR_decompMod  , only : betr_bounds_type
+   use BetrStatusType  , only : betr_status_type
   ! !ARGUMENTS:
   import :: bgc_reaction_type
   implicit none
   class(bgc_reaction_type) , intent(inout)    :: this
   type(betr_bounds_type)                    , intent(in)    :: bounds
   integer                              , intent(in)    :: lbj, ubj        ! lower and upper bounds, make sure they are > 0
-
+  type(betr_status_type)           , intent(out)   :: bstatus
 
   end subroutine UpdateParas_interface
   !-------------------------------------------------------------------------------

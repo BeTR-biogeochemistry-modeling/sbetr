@@ -77,7 +77,7 @@ implicit none
   end subroutine UpdateParas
   !-------------------------------------------------------------------------------
 
-  subroutine calc_anaerobic_frac(this, o2b, centuryeca_forc, o2_decomp_depth, anaerobic_frac, diffus)
+  subroutine calc_anaerobic_frac(this, o2b, bgc_forc, o2_decomp_depth, anaerobic_frac, diffus)
     !
     ! !DESCRIPTION:
     !
@@ -86,13 +86,13 @@ implicit none
     ! o2_decomp_depth = oxygen consumption from hr + potential nitrification
     ! !USES:
     use betr_varcon        , only : grav => bgrav
-    use BgcCentCnpForcType , only : centuryeca_forc_type
+    use JarBgcForcType     , only : JarBGC_forc_type
     use MathfuncMod        , only : safe_div
     implicit none
     ! !ARGUMENTS:                               !indices
     class(century_nitden_type), intent(inout) :: this
     real(r8),                   intent(in)    :: o2b  ! mol /m3
-    type(centuryeca_forc_type), intent(in)    :: centuryeca_forc
+    type(JarBGC_forc_type), intent(in)    :: bgc_forc
     real(r8),                   intent(in)    :: o2_decomp_depth !potential o2 consumption, as deduced from aerobic heteorotrophic decomposition, mol o2/m3/s
     real(r8),                   intent(out)   :: anaerobic_frac       !fraction of aerobic soil
     real(r8),                   intent(out)   :: diffus
@@ -118,15 +118,15 @@ implicit none
     real(r8) :: o2g
 
     associate(                                        &
-         temp       =>    centuryeca_forc%temp      , &
-         h2osoi_vol =>    centuryeca_forc%h2osoi_vol, &
-         air_vol    =>    centuryeca_forc%air_vol   , &
-         watsat     =>    centuryeca_forc%watsat    , &
-         watfc      =>    centuryeca_forc%watfc     , &
-         bsw        =>    centuryeca_forc%bsw       , &
-         soilpsi    =>    centuryeca_forc%soilpsi   , &
-         o2_g2b     =>    centuryeca_forc%o2_g2b    , &
-         cellorg    =>    centuryeca_forc%cellorg     &
+         temp       =>    bgc_forc%temp      , &
+         h2osoi_vol =>    bgc_forc%h2osoi_vol, &
+         air_vol    =>    bgc_forc%air_vol   , &
+         watsat     =>    bgc_forc%watsat    , &
+         watfc      =>    bgc_forc%watfc     , &
+         bsw        =>    bgc_forc%bsw       , &
+         soilpsi    =>    bgc_forc%soilpsi   , &
+         o2_g2b     =>    bgc_forc%o2_g2b    , &
+         cellorg    =>    bgc_forc%cellorg     &
       )
       o2g = o2b / o2_g2b
       surface_tension_water = this%surface_tension_water
@@ -170,7 +170,7 @@ implicit none
   end subroutine calc_anaerobic_frac
 
   !-------------------------------------------------------------------------------
-  subroutine calc_nitrif_denitrif_rate(this, centuryeca_forc, decompkf_eca,smin_nh4, smin_no3, &
+  subroutine calc_nitrif_denitrif_rate(this, bgc_forc, decompkf_eca,smin_nh4, smin_no3, &
       anaerobic_frac, diffus, pot_f_nit_mol_per_sec, pot_co2_hr, n2_n2o_ratio_denit, pot_f_nit, pot_f_denit)
     !
     ! !DESCRIPTION:
@@ -184,11 +184,11 @@ implicit none
     use bshr_const_mod     , only : SHR_CONST_TKFRZ
     use BgcCentCnpDecompType     , only : DecompCent_type
     use tracer_varcon      , only : catomw, natomw
-    use BgcCentCnpForcType , only : centuryeca_forc_type
+    use JarBgcForcType , only : JarBGC_forc_type
     implicit none
     ! !ARGUMENTS:
     class(century_nitden_type) , intent(inout) :: this
-    type(centuryeca_forc_type) , intent(in) :: centuryeca_forc
+    type(JarBGC_forc_type) , intent(in) :: bgc_forc
     real(r8)                   , intent(in)  :: pot_f_nit_mol_per_sec
     real(r8)                   , intent(in)  :: pot_co2_hr            !potential aerobic heteotrophic respiration, mol CO2/m3/s
     real(r8)                   , intent(in)  :: anaerobic_frac        !fraction of anaerobic soil
@@ -223,13 +223,13 @@ implicit none
     real(r8) :: g_per_m3_sec__to__ug_per_gsoil_day
 
     associate(                                         &
-         bd         =>    centuryeca_forc%bd         , & !
-         temp       =>    centuryeca_forc%temp       , &
-         dz         =>    centuryeca_forc%dzsoi      , &
-         watsat     =>    centuryeca_forc%watsat     , & !
-         h2osoi_vol =>    centuryeca_forc%h2osoi_vol , & !
-         h2osoi_liq =>    centuryeca_forc%h2osoi_liq , & !
-         finundated =>    centuryeca_forc%finundated , & ! Input: [real(r8) (:)]
+         bd         =>    bgc_forc%bd         , & !
+         temp       =>    bgc_forc%temp       , &
+         dz         =>    bgc_forc%dzsoi      , &
+         watsat     =>    bgc_forc%watsat     , & !
+         h2osoi_vol =>    bgc_forc%h2osoi_vol , & !
+         h2osoi_liq =>    bgc_forc%h2osoi_liq , & !
+         finundated =>    bgc_forc%finundated , & ! Input: [real(r8) (:)]
          t_scalar   =>    decompkf_eca%t_scalar      , & ! Input: [real(r8) (:,:)   ]  soil temperature scalar for decomp
          w_scalar   =>    decompkf_eca%w_scalar        & ! Input: [real(r8) (:,:)   ]  soil water scalar for decomp
          )
@@ -301,17 +301,17 @@ implicit none
   end subroutine calc_nitrif_denitrif_rate
 
   !-------------------------------------------------------------------------------
-  subroutine calc_pot_nitr(this, smin_nh4, centuryeca_forc, decompkf_eca, pot_f_nit_mol_per_sec)
+  subroutine calc_pot_nitr(this, smin_nh4, bgc_forc, decompkf_eca, pot_f_nit_mol_per_sec)
   !DESCRIPTION
   !calculate potential nitrificaiton rate
 
   use betr_varcon        , only : rpi => brpi, secspday => bsecspday
-  use BgcCentCnpForcType , only : centuryeca_forc_type
+  use JarBgcForcType , only : JarBGC_forc_type
   use BgcCentCnpDecompType     , only : DecompCent_type
   implicit none
   class(century_nitden_type) , intent(inout) :: this
   real(r8)                   , intent(in) :: smin_nh4
-  type(centuryeca_forc_type) , intent(in) :: centuryeca_forc
+  type(JarBGC_forc_type) , intent(in) :: bgc_forc
   type(DecompCent_type)      , intent(in) :: decompkf_eca
   real(r8)                   , intent(out) :: pot_f_nit_mol_per_sec
 
@@ -322,7 +322,7 @@ implicit none
   real(r8) :: k_nitr_h2o
 
   associate(                                    &
-     pH           =>    centuryeca_forc%pH    , &
+     pH           =>    bgc_forc%pH    , &
      t_scalar     =>    decompkf_eca%t_scalar , & ! Input: [real(r8) (:,:)   ]  soil temperature scalar for decomp
      w_scalar     =>    decompkf_eca%w_scalar , & ! Input: [real(r8) (:,:)   ]  soil water scalar for decomp
      k_nitr_max   =>    this%k_nitr_max         &
@@ -419,18 +419,18 @@ implicit none
 
   end function get_nit_o2_scef
   !---------------------------------------------------------------------------------
-  subroutine run_nitden(this, centurybgc_index,centuryeca_forc, decompkf_eca,&
+  subroutine run_nitden(this, centurybgc_index,bgc_forc, decompkf_eca,&
     smin_nh4, smin_no3, o2b, o2_decomp_depth, pot_f_nit_mol_per_sec, pot_co2_hr, &
     pot_f_nit, pot_f_denit, cascade_matrix)
   !this returns the vamx for nitrification and denitrification
   !also return is the stoichiometry matrix for nitden processes
   use BgcCentCnpDecompType      , only : DecompCent_type
-  use BgcCentCnpForcType  , only : centuryeca_forc_type
+  use JarBgcForcType  , only : JarBGC_forc_type
   use BgcCentCnpIndexType , only : centurybgc_index_type
   implicit none
   class(century_nitden_type)  , intent(inout) :: this
   type(centurybgc_index_type) , intent(in) :: centurybgc_index
-  type(centuryeca_forc_type)  , intent(in) :: centuryeca_forc
+  type(JarBGC_forc_type)  , intent(in) :: bgc_forc
   type(DecompCent_type)       , intent(in) :: decompkf_eca
   real(r8)                    , intent(in) :: o2b
   real(r8)                    , intent(in) :: o2_decomp_depth
@@ -447,10 +447,10 @@ implicit none
   real(r8) :: anaerobic_frac
   real(r8) :: diffus
 
-  call this%calc_anaerobic_frac(o2b, centuryeca_forc, o2_decomp_depth, anaerobic_frac, diffus)
+  call this%calc_anaerobic_frac(o2b, bgc_forc, o2_decomp_depth, anaerobic_frac, diffus)
 
   !calculate potential denitrification and denitrification
-  call this%calc_nitrif_denitrif_rate(centuryeca_forc, decompkf_eca, &
+  call this%calc_nitrif_denitrif_rate(bgc_forc, decompkf_eca, &
       smin_nh4, smin_no3, anaerobic_frac,diffus, pot_f_nit_mol_per_sec, pot_co2_hr,&
       n2_n2o_ratio_denit, pot_f_nit, pot_f_denit)
 

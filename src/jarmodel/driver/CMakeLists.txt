@@ -1,4 +1,5 @@
 set(JARMODEL_DRIVER_SOURCES
+  JarModelFactory.F90
   jarmodel.F90
 )
 include_directories(${CMAKE_BINARY_DIR}/src/shr)

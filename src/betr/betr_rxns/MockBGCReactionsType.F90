@@ -62,15 +62,16 @@ contains
   end function constructor
 
   !-------------------------------------------------------------------------------
-  subroutine UpdateParas(this, bounds, lbj, ubj)
+  subroutine UpdateParas(this, bounds, lbj, ubj, bstatus)
   implicit none
   class(bgc_reaction_mock_run_type)         , intent(inout)    :: this
   type(bounds_type)                    , intent(in)    :: bounds
   integer                              , intent(in)    :: lbj, ubj        ! lower and upper bounds, make sure they are > 0
-
+  type(betr_status_type)               , intent(out)   :: bstatus
   integer :: c, j
 
   if (this%dummy_compiler_warning) continue
+  call bstatus%reset()
   !do nothing
   end subroutine UpdateParas
 

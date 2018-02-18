@@ -112,7 +112,7 @@ contains
   end function create_betr_type
 
 !-------------------------------------------------------------------------------
-  subroutine UpdateParas(this, bounds)
+  subroutine UpdateParas(this, bounds, bstatus)
 
   use BeTR_decompMod  , only : betr_bounds_type
   !update parameters after reading customized parameters from external file
@@ -120,10 +120,10 @@ contains
   class(betr_type)            , intent(inout)        :: this
   type(betr_bounds_type)      , intent(in)           :: bounds
   integer             :: lbj, ubj
-
+  type(betr_status_type)           , intent(out)   :: bstatus
   lbj = bounds%lbj;  ubj = bounds%ubj
 
-  call this%bgc_reaction%UpdateParas(bounds, lbj, ubj)
+  call this%bgc_reaction%UpdateParas(bounds, lbj, ubj, bstatus)
 
   end subroutine UpdateParas
 !-------------------------------------------------------------------------------

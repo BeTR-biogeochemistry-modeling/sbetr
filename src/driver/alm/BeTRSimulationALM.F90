@@ -133,8 +133,12 @@ contains
   call this%BeTRSetBounds(betr_bounds)
   do c = bounds%begc, bounds%endc
     if(.not. this%active_col(c))cycle
-    call this%betr(c)%UpdateParas(betr_bounds)
+    call this%betr(c)%UpdateParas(betr_bounds, bstatus)
+    if(bstatus%check_status())then
+      call endrun(msg=bstatus%print_msg())
+    endif
   enddo
+
   end subroutine ALMreadParams
 
 !-------------------------------------------------------------------------------

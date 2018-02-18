@@ -1,5 +1,7 @@
 set(BGCFARM_UTIL_SOURCES
  BiogeoConType.F90
+ JarBgcForcType.F90
+ BeTRJarModel.F90
 )
 
 include_directories(${CMAKE_BINARY_DIR}/src/shr)

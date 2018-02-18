@@ -96,15 +96,15 @@ implicit none
   this%k_m_o2=biogeo_con%k_m_o2_bgc
   end subroutine UpdateParas
   !-----------------------------------------------------------------------
-  subroutine set_decompk_scalar(this, o2b, centuryeca_forc)
+  subroutine set_decompk_scalar(this, o2b, bgc_forc)
 
-  use BgcCentCnpForcType , only : centuryeca_forc_type
+  use JarBgcForcType , only : JarBGC_forc_type
   use bshr_const_mod     , only : SHR_CONST_TKFRZ
   implicit none
   ! !ARGUMENTS:
   class(DecompCent_type)     , intent(inout) :: this
   real(r8)                   , intent(in) :: o2b
-  type(centuryeca_forc_type) , intent(in) :: centuryeca_forc
+  type(JarBGC_forc_type) , intent(in) :: bgc_forc
 
   ! !LOCAL VARIABLES:
   real(r8), parameter :: normalization_tref = 15._r8 ! reference temperature for normalizaion (degrees C)
@@ -116,11 +116,11 @@ implicit none
   real(r8)            :: psi
 
   associate(                                             &
-    temp          => centuryeca_forc%temp              , &
-    depz          => centuryeca_forc%depz              , &
-    o2_w2b        => centuryeca_forc%o2_w2b            , &
-    sucsat        => centuryeca_forc%sucsat            , & ! Input:  [real(r8) (:,:)] minimum soil suction [mm]
-    soilpsi       => centuryeca_forc%soilpsi           , & ! Input:  [real(r8) (:,:)] soilwater pontential in each soil layer [MPa]
+    temp          => bgc_forc%temp              , &
+    depz          => bgc_forc%depz              , &
+    o2_w2b        => bgc_forc%o2_w2b            , &
+    sucsat        => bgc_forc%sucsat            , & ! Input:  [real(r8) (:,:)] minimum soil suction [mm]
+    soilpsi       => bgc_forc%soilpsi           , & ! Input:  [real(r8) (:,:)] soilwater pontential in each soil layer [MPa]
     Q10           => this%Q10                          , &
     froz_q10      => this%froz_q10                     , &
     decomp_depth_efolding => this%decomp_depth_efolding, &

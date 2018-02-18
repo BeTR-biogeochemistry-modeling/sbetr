@@ -40,8 +40,8 @@ module BgcReactionsCentECACnpType
   use BGCReactionsMod       , only : bgc_reaction_type
   use betr_varcon           , only : spval => bspval, ispval => bispval
   use tracer_varcon         , only : bndcond_as_conc, bndcond_as_flux
-  use BgcCentCnpType        , only : create_centuryeca_type, centurybgceca_type
-  use BgcCentCnpForcType    , only : centuryeca_forc_type, create_century_forc_type
+  use BgcCentCnpType        , only : centurybgceca_type
+  use JarBgcForcType        , only : JarBGC_forc_type
   use BetrStatusType        , only : betr_status_type
   use BgcCentCnpIndexType   , only : centurybgc_index_type
   use CentParaType          , only : cent_para
@@ -61,7 +61,7 @@ module BgcReactionsCentECACnpType
     bgc_reaction_CENTURY_ECACNP_type
      private
     type(centurybgceca_type), pointer :: centuryeca(:,:)
-    type(centuryeca_forc_type), pointer :: centuryforc(:,:)
+    type(JarBGC_forc_type), pointer :: centuryforc(:,:)
 
     type(centurybgc_index_type) :: centurybgc_index
     logical :: use_c13
@@ -112,16 +112,17 @@ contains
   end function constructor
 
   !-------------------------------------------------------------------------------
-  subroutine UpdateParas(this, bounds, lbj, ubj)
+  subroutine UpdateParas(this, bounds, lbj, ubj, bstatus)
   implicit none
   class(bgc_reaction_CENTURY_ECACNP_type), intent(inout) :: this
   type(bounds_type)                    , intent(in)    :: bounds
   integer                              , intent(in)    :: lbj, ubj        ! lower and upper bounds, make sure they are > 0
-
+  type(betr_status_type)               , intent(out)   :: bstatus
   integer :: c, j
   do j = lbj, ubj
     do c = bounds%begc, bounds%endc
-      call this%centuryeca(c,j)%UpdateParas(cent_para)
+      call this%centuryeca(c,j)%UpdateParas(cent_para, bstatus)
+      if(bstatus%check_status())return
     enddo
   enddo
 
@@ -688,7 +689,7 @@ contains
         call this%centuryeca(c,j)%Init(cent_para, bstatus)
         if(bstatus%check_status())return
 
-        call this%centuryforc(c,j)%Init(this%centurybgc_index)
+        call this%centuryforc(c,j)%Init(this%centurybgc_index%nstvars)
       enddo
     enddo
     this%use_c13 = cent_para%use_c13
@@ -1527,7 +1528,7 @@ contains
   ! apply om loss through fire
 
   use BgcCentCnpIndexType       , only : centurybgc_index_type
-  use BgcCentCnpForcType        , only : centuryeca_forc_type
+  use JarBgcForcType            , only : JarBGC_forc_type
   use tracer_varcon             , only : catomw, natomw, patomw, c13atomw, c14atomw
   use BeTR_biogeoFluxType       , only : betr_biogeo_flux_type
   implicit none
@@ -1537,7 +1538,7 @@ contains
   integer                     , intent(in) :: nstates
   real(r8)                    , intent(inout):: ystatesf(1:nstates)
   type(centurybgc_index_type) , intent(in) :: centurybgc_index
-  type(centuryeca_forc_type)  , intent(in) :: centuryeca_forc
+  type(JarBGC_forc_type)      , intent(in) :: centuryeca_forc
   type(betr_biogeo_flux_type) , intent(inout) :: biogeo_flux
   integer :: kc, kn, kp, jj, kc13, kc14
   real(r8):: flit_loss, fcwd_loss

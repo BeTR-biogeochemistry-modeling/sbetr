@@ -15,8 +15,10 @@ module BgcCentCnpType
   use gbetrType                 , only : gbetr_type
   use BgcCentSOMType            , only : CentSom_type
   use BgcCentCnpCompetType      , only : Compet_ECA_type
-  use CentParaType             , only : CentPara_type
+  use BiogeoConType             , only : BiogeoCon_type
+  use CentParaType              , only : CentPara_type
   use BetrStatusType            , only : betr_status_type
+  use BeTRJarModel              , only : jar_model_type
   implicit none
   private
   character(len=*), private, parameter :: mod_filename = &
@@ -27,7 +29,7 @@ module BgcCentCnpType
   !it increase the memory for each instance of centurybgceca_type, but enables
   !the ode function to be called by the ode solver
 
-  type, extends(gbetr_type), public :: centurybgceca_type
+  type, extends(jar_model_type), public :: centurybgceca_type
     type(DecompCent_type),private        :: decompkf_eca
     type(century_nitden_type), private   :: nitden
     type(CentSom_type), private          :: censom
@@ -64,101 +66,123 @@ module BgcCentCnpType
     logical, private                     :: use_c14
 
   contains
-    procedure, public  :: init
-    procedure, public  :: runbgc
-    procedure, public  :: UpdateParas
+    procedure, public  :: init          => init_ecacnp
+    procedure, public  :: runbgc        => runbgc_ecacnp
+    procedure, public  :: UpdateParas   => UpdateParas_ecacnp
+    procedure, public  :: sumup_cnp_msflx => sumup_cnp_msflx_ecacnp
     procedure, private :: calc_cascade_matrix
     procedure, private :: init_states
     procedure, private :: add_ext_input
     procedure, private :: InitAllocate
     procedure, private :: arenchyma_gas_transport
     procedure, private :: sumup_cnp_mass
-    procedure, public  :: sumup_cnp_msflx
     procedure, private :: bgc_integrate
     procedure, private :: c14decay
     procedure, private :: checksum_cascade
   end type centurybgceca_type
   logical, public :: ldebug_bgc =.false.
 
-  public :: create_centuryeca_type
+  public :: create_jarmodel_centuryeca
 contains
 
-  function create_centuryeca_type()
+  function create_jarmodel_centuryeca()
   ! DESCRIPTION
   ! constructor
     implicit none
-    type(centurybgceca_type), pointer :: create_centuryeca_type
-    type(centurybgceca_type), pointer :: bgc
+    class(centurybgceca_type), pointer :: create_jarmodel_centuryeca
+    class(centurybgceca_type), pointer :: bgc
 
     allocate(bgc)
-    create_centuryeca_type => bgc
+    create_jarmodel_centuryeca => bgc
 
-  end function create_centuryeca_type
+  end function create_jarmodel_centuryeca
 
   !-------------------------------------------------------------------------------
-  subroutine UpdateParas(this,  biogeo_con)
+  subroutine UpdateParas_ecacnp(this,  biogeo_con, bstatus)
   use betr_varcon         , only : betr_maxpatch_pft, betr_max_soilorder
   implicit none
   class(centurybgceca_type) , intent(inout) :: this
-  type(CentPara_type)      , intent(in) :: biogeo_con
-
+  class(BiogeoCon_type)       , intent(in) :: biogeo_con
+  type(betr_status_type)     , intent(out)   :: bstatus
   integer :: sr
+  character(len=256) :: msg
 
-  do sr = 1, betr_max_soilorder
-    this%frac_p_sec_to_sol(sr) = biogeo_con%frac_p_sec_to_sol(sr)
+  select type(biogeo_con)
+  type is(CentPara_type)
 
-    this%minp_secondary_decay(sr) = biogeo_con%minp_secondary_decay(sr)
+    do sr = 1, betr_max_soilorder
+      this%frac_p_sec_to_sol(sr) = biogeo_con%frac_p_sec_to_sol(sr)
 
-    this%mumax_minp_soluble_to_secondary(sr) = biogeo_con%vmax_minp_soluble_to_secondary(sr)
-  enddo
+      this%minp_secondary_decay(sr) = biogeo_con%minp_secondary_decay(sr)
 
-  call this%nitden%UpdateParas(biogeo_con)
+      this%mumax_minp_soluble_to_secondary(sr) = biogeo_con%vmax_minp_soluble_to_secondary(sr)
+    enddo
 
-  if(this%use_c14)then
-    this%c14decay_const=biogeo_con%c14decay_const
-    this%c14decay_som_const=biogeo_con%c14decay_som_const
-    this%c14decay_dom_const=biogeo_con%c14decay_dom_const
-    this%c14decay_Bm_const=biogeo_con%c14decay_Bm_const
-  endif
+    call this%nitden%UpdateParas(biogeo_con)
 
-  call this%censom%UpdateParas(this%centurybgc_index, biogeo_con)
+    if(this%use_c14)then
+      this%c14decay_const=biogeo_con%c14decay_const
+      this%c14decay_som_const=biogeo_con%c14decay_som_const
+      this%c14decay_dom_const=biogeo_con%c14decay_dom_const
+      this%c14decay_Bm_const=biogeo_con%c14decay_Bm_const
+    endif
 
-  call this%decompkf_eca%UpdateParas(biogeo_con)
+    call this%censom%UpdateParas(this%centurybgc_index, biogeo_con)
 
-  end subroutine UpdateParas
+    call this%decompkf_eca%UpdateParas(biogeo_con)
+  class default
+    call bstatus%reset()
+    write(msg,'(A)')'Wrong parameter type passed in for UpdateParas in ' &
+      // errMsg(mod_filename,__LINE__)
+    call bstatus%set_msg(msg,err=-1)
+    return
+  end select
+  end subroutine UpdateParas_ecacnp
   !-------------------------------------------------------------------------------
-  subroutine init(this,  biogeo_con,  bstatus)
+  subroutine init_ecacnp(this,  biogeo_con,  bstatus)
   use betr_varcon         , only : betr_maxpatch_pft
   implicit none
   class(centurybgceca_type) , intent(inout) :: this
-  type(CentPara_type)      , intent(in) :: biogeo_con
+  class(BiogeoCon_type)       , intent(in) :: biogeo_con
   type(betr_status_type)    , intent(out) :: bstatus
 
-  call bstatus%reset()
-  call this%centurybgc_index%Init(biogeo_con%use_c13, biogeo_con%use_c14, &
+  character(len=256) :: msg
+  write(this%jarname, '(A)')'ecacnp'
+
+  select type(biogeo_con)
+  type is(CentPara_type)
+    call bstatus%reset()
+    call this%centurybgc_index%Init(biogeo_con%use_c13, biogeo_con%use_c14, &
      biogeo_con%non_limit, biogeo_con%nop_limit, betr_maxpatch_pft)
 
-  this%nop_limit=biogeo_con%nop_limit
-  this%non_limit=biogeo_con%non_limit
+    this%nop_limit=biogeo_con%nop_limit
+    this%non_limit=biogeo_con%non_limit
 
-  call this%InitAllocate(this%centurybgc_index)
+    call this%InitAllocate(this%centurybgc_index)
 
-  call this%censom%Init(this%centurybgc_index, biogeo_con, bstatus)
+    call this%censom%Init(this%centurybgc_index, biogeo_con, bstatus)
 
-  if(bstatus%check_status())return
+    if(bstatus%check_status())return
 
-  call this%decompkf_eca%Init(biogeo_con)
+    call this%decompkf_eca%Init(biogeo_con)
 
-  call this%nitden%Init(biogeo_con)
+    call this%nitden%Init(biogeo_con)
 
-  call this%competECA%Init()
+    call this%competECA%Init()
 
-  this%use_c13 = biogeo_con%use_c13
+    this%use_c13 = biogeo_con%use_c13
 
-  this%use_c14 = biogeo_con%use_c14
+    this%use_c14 = biogeo_con%use_c14
 
-  call this%UpdateParas(biogeo_con)
-  end subroutine init
+    call this%UpdateParas(biogeo_con, bstatus)
+  class default
+    call bstatus%reset()
+    write(msg,'(A)')'Wrong parameter type passed in for init_ecacnp in ' &
+      // errMsg(mod_filename,__LINE__)
+    call bstatus%set_msg(msg,err=-1)
+    return
+  end select
+  end subroutine init_ecacnp
 
   !-------------------------------------------------------------------------------
 
@@ -347,12 +371,12 @@ contains
   end subroutine checksum_cascade
 
   !-------------------------------------------------------------------------------
-  subroutine runbgc(this,  is_surf, dtime, centuryeca_forc, nstates, ystates0, ystatesf, spinup_scalar, &
+  subroutine runbgc_ecacnp(this,  is_surf, dtime, bgc_forc, nstates, ystates0, ystatesf, spinup_scalar, &
       spinup_flg, n_mass, bstatus)
 
   !DESCRIPTION
   !do bgc model integration for one step
-  use BgcCentCnpForcType        , only : centuryeca_forc_type
+  use JarBgcForcType        , only : JarBGC_forc_type
   use MathfuncMod               , only : pd_decomp
   use BetrStatusType            , only : betr_status_type
   use MathfuncMod               , only : safe_div
@@ -361,7 +385,7 @@ contains
   class(centurybgceca_type)  , intent(inout) :: this
   logical                    , intent(in)    :: is_surf
   real(r8)                   , intent(in)    :: dtime
-  type(centuryeca_forc_type) , intent(in)    :: centuryeca_forc
+  type(JarBGC_forc_type)     , intent(in)    :: bgc_forc
   integer                    , intent(in)    :: nstates
   real(r8)                   , intent(out)   :: ystates0(nstates)
   real(r8)                   , intent(out)   :: ystatesf(nstates)
@@ -384,12 +408,12 @@ contains
   real(r8) :: c_flx, n_flx, p_flx
   real(r8) :: c_inf, n_inf, p_inf
   integer :: jj
-  character(len=*),parameter :: subname = 'runbgc'
+  character(len=*),parameter :: subname = 'runbgc_ecacnp'
   associate(                                            &
-    pctsand   => centuryeca_forc%pct_sand             , &  !sand in %
-    rt_ar     => centuryeca_forc%rt_ar                , &  !root autotrophic respiration
-    rt_ar_c13 => centuryeca_forc%rt_ar_c13            , &  !root autotrophic respiration
-    rt_ar_c14 => centuryeca_forc%rt_ar_c14            , &  !root autotrophic respiration
+    pctsand   => bgc_forc%pct_sand             , &  !sand in %
+    rt_ar     => bgc_forc%rt_ar                , &  !root autotrophic respiration
+    rt_ar_c13 => bgc_forc%rt_ar_c13            , &  !root autotrophic respiration
+    rt_ar_c14 => bgc_forc%rt_ar_c14            , &  !root autotrophic respiration
     lid_nh4   => this%centurybgc_index%lid_nh4        , &  !position id of nh4
     lid_no3   => this%centurybgc_index%lid_no3        , &  !
     lid_o2    => this%centurybgc_index%lid_o2         , &  !
@@ -408,22 +432,22 @@ contains
     cascade_matrixd=> this%cascade_matrixd            , &
     ystates1 => this%ystates1                           &
   )
-  this%centurybgc_index%debug = centuryeca_forc%debug
-  if(this%centurybgc_index%debug)print*,'enter runbgc'
+  this%centurybgc_index%debug = bgc_forc%debug
+  if(this%centurybgc_index%debug)print*,'enter runbgc_ecacnp'
   this%rt_ar = rt_ar
   frc_c13 = safe_div(rt_ar_c13,rt_ar); frc_c14 = safe_div(rt_ar_c14,rt_ar)
   call bstatus%reset()
 
   !initialize state variables
-  call this%init_states(this%centurybgc_index, centuryeca_forc)
+  call this%init_states(this%centurybgc_index, bgc_forc)
   ystates0(:) = this%ystates0(:)
 
 
   !add all external input
-   call this%add_ext_input(dtime, this%centurybgc_index, centuryeca_forc, c_inf, n_inf, p_inf)
+   call this%add_ext_input(dtime, this%centurybgc_index, bgc_forc, c_inf, n_inf, p_inf)
 !  call this%sumup_cnp_mass('afext input')
   !initialize decomposition scaling factors
-  call this%decompkf_eca%set_decompk_scalar(ystates1(lid_o2), centuryeca_forc)
+  call this%decompkf_eca%set_decompk_scalar(ystates1(lid_o2), bgc_forc)
 
   !initialize all entries to zero
   cascade_matrix(:,:) = 0._r8
@@ -433,12 +457,12 @@ contains
 !  if(this%centurybgc_index%debug)call this%checksum_cascade(this%centurybgc_index)
   !run century decomposition, return decay rates, cascade matrix, potential hr
   call this%censom%run_decomp(is_surf, this%centurybgc_index, dtime, ystates1(1:nom_tot_elms),&
-      this%decompkf_eca, centuryeca_forc%pct_sand, centuryeca_forc%pct_clay,this%alpha_n, this%alpha_p, &
+      this%decompkf_eca, bgc_forc%pct_sand, bgc_forc%pct_clay,this%alpha_n, this%alpha_p, &
       cascade_matrix, this%k_decay(1:nom_pools), pot_co2_hr, spinup_scalar, spinup_flg, bstatus)
 !  call this%sumup_cnp_mass('af run_decomp')
   if(bstatus%check_status())return
 
-  call this%nitden%calc_pot_nitr(ystates1(lid_nh4), centuryeca_forc, this%decompkf_eca, pot_f_nit_mol_per_sec)
+  call this%nitden%calc_pot_nitr(ystates1(lid_nh4), bgc_forc, this%decompkf_eca, pot_f_nit_mol_per_sec)
 
   !calculate potential o2 consumption
   o2_decomp_depth = pot_co2_hr + rt_ar + pot_f_nit_mol_per_sec * this%nitden%get_nit_o2_scef()
@@ -447,7 +471,7 @@ contains
   o2_decomp_depth = max(o2_decomp_depth,1.e-40_r8)
 
   !run nitrification-denitrification, returns cascade_matrix, decay rates
-  call this%nitden%run_nitden(this%centurybgc_index, centuryeca_forc, this%decompkf_eca, &
+  call this%nitden%run_nitden(this%centurybgc_index, bgc_forc, this%decompkf_eca, &
     ystates1(lid_nh4), ystates1(lid_no3), ystates1(lid_o2), o2_decomp_depth, &
     pot_f_nit_mol_per_sec, pot_co2_hr, this%pot_f_nit, this%pot_f_denit, cascade_matrix)
   !---------------------
@@ -484,7 +508,7 @@ contains
 !    call this%censom%calc_cnp_ratios(this%centurybgc_index, ystatesf, bstatus)
 !  endif
   end associate
-  end subroutine runbgc
+  end subroutine runbgc_ecacnp
   !-------------------------------------------------------------------------------
   subroutine c14decay(this, centurybgc_index, dtime, spinup_scalar, spinup_flg, ystates1)
 
@@ -727,14 +751,14 @@ contains
   end associate
   end subroutine calc_cascade_matrix
   !--------------------------------------------------------------------
-  subroutine init_states(this, centurybgc_index, centuryeca_forc)
+  subroutine init_states(this, centurybgc_index, bgc_forc)
 
   use BgcCentCnpIndexType       , only : centurybgc_index_type
-  use BgcCentCnpForcType        , only : centuryeca_forc_type
+  use JarBgcForcType            , only : JarBGC_forc_type
   implicit none
   class(centurybgceca_type)     , intent(inout) :: this
   type(centurybgc_index_type)  , intent(in) :: centurybgc_index
-  type(centuryeca_forc_type)  , intent(in) :: centuryeca_forc
+  type(JarBGC_forc_type)  , intent(in) :: bgc_forc
 
   integer :: j
   associate(                           &
@@ -747,64 +771,64 @@ contains
     lid_ar => centurybgc_index%lid_ar, &
     lid_ch4 => centurybgc_index%lid_ch4  &
   )
-  this%ystates0(:) = centuryeca_forc%ystates(:)
+  this%ystates0(:) = bgc_forc%ystates(:)
   this%ystates1(:) = this%ystates0(:)
 
   !set conversion parameters for arenchyma transport
-  this%scal_f(lid_n2) = centuryeca_forc%aren_cond_n2
-  this%conc_f(lid_n2) = centuryeca_forc%conc_atm_n2
-  this%conv_f(lid_n2) = 1._r8/centuryeca_forc%n2_g2b
+  this%scal_f(lid_n2) = bgc_forc%aren_cond_n2
+  this%conc_f(lid_n2) = bgc_forc%conc_atm_n2
+  this%conv_f(lid_n2) = 1._r8/bgc_forc%n2_g2b
 
-  this%scal_f(lid_o2) = centuryeca_forc%aren_cond_o2
-  this%conc_f(lid_o2) = centuryeca_forc%conc_atm_o2
-  this%conv_f(lid_o2) = 1._r8/centuryeca_forc%o2_g2b
+  this%scal_f(lid_o2) = bgc_forc%aren_cond_o2
+  this%conc_f(lid_o2) = bgc_forc%conc_atm_o2
+  this%conv_f(lid_o2) = 1._r8/bgc_forc%o2_g2b
 
-  this%scal_f(lid_ar) = centuryeca_forc%aren_cond_ar
-  this%conc_f(lid_ar) = centuryeca_forc%conc_atm_ar
-  this%conv_f(lid_ar) = 1._r8/centuryeca_forc%ar_g2b
+  this%scal_f(lid_ar) = bgc_forc%aren_cond_ar
+  this%conc_f(lid_ar) = bgc_forc%conc_atm_ar
+  this%conv_f(lid_ar) = 1._r8/bgc_forc%ar_g2b
 
-  this%scal_f(lid_co2) = centuryeca_forc%aren_cond_co2
-  this%conc_f(lid_co2) = centuryeca_forc%conc_atm_co2
-  this%conv_f(lid_co2) = 1._r8/centuryeca_forc%co2_g2b
+  this%scal_f(lid_co2) = bgc_forc%aren_cond_co2
+  this%conc_f(lid_co2) = bgc_forc%conc_atm_co2
+  this%conv_f(lid_co2) = 1._r8/bgc_forc%co2_g2b
 
   if(this%use_c13)then
-    this%scal_f(lid_c13_co2) = centuryeca_forc%aren_cond_co2_c13
-    this%conc_f(lid_c13_co2) = centuryeca_forc%conc_atm_co2_c13
-    this%conv_f(lid_c13_co2) = 1._r8/centuryeca_forc%co2_g2b
+    this%scal_f(lid_c13_co2) = bgc_forc%aren_cond_co2_c13
+    this%conc_f(lid_c13_co2) = bgc_forc%conc_atm_co2_c13
+    this%conv_f(lid_c13_co2) = 1._r8/bgc_forc%co2_g2b
   endif
 
   if(this%use_c14)then
-    this%scal_f(lid_c14_co2) = centuryeca_forc%aren_cond_co2_c14
-    this%conc_f(lid_c14_co2) = centuryeca_forc%conc_atm_co2_c14
+    this%scal_f(lid_c14_co2) = bgc_forc%aren_cond_co2_c14
+    this%conc_f(lid_c14_co2) = bgc_forc%conc_atm_co2_c14
   endif
 
-  this%scal_f(lid_ch4) = centuryeca_forc%aren_cond_ch4
-  this%conc_f(lid_ch4) = centuryeca_forc%conc_atm_ch4
-  this%conv_f(lid_ch4) = 1._r8/centuryeca_forc%ch4_g2b
+  this%scal_f(lid_ch4) = bgc_forc%aren_cond_ch4
+  this%conc_f(lid_ch4) = bgc_forc%conc_atm_ch4
+  this%conv_f(lid_ch4) = 1._r8/bgc_forc%ch4_g2b
 
-  this%scal_f(lid_n2o) = centuryeca_forc%aren_cond_n2o
-  this%conc_f(lid_n2o) = centuryeca_forc%conc_atm_n2o
-  this%conv_f(lid_n2o) = 1._r8/centuryeca_forc%n2o_g2b
+  this%scal_f(lid_n2o) = bgc_forc%aren_cond_n2o
+  this%conc_f(lid_n2o) = bgc_forc%conc_atm_n2o
+  this%conv_f(lid_n2o) = 1._r8/bgc_forc%n2o_g2b
 
-  this%plant_ntypes = centuryeca_forc%plant_ntypes
-  this%soilorder = centuryeca_forc%soilorder
+  this%plant_ntypes = bgc_forc%plant_ntypes
+  this%soilorder = bgc_forc%soilorder
 
-  this%msurf_nh4 = centuryeca_forc%msurf_nh4
-  this%msurf_minp = centuryeca_forc%msurf_minp
+  this%msurf_nh4 = bgc_forc%msurf_nh4
+  this%msurf_minp = bgc_forc%msurf_minp
 
   end associate
   end subroutine init_states
   !--------------------------------------------------------------------
-  subroutine add_ext_input(this, dtime, centurybgc_index, centuryeca_forc, c_inf, n_inf, p_inf)
+  subroutine add_ext_input(this, dtime, centurybgc_index, bgc_forc, c_inf, n_inf, p_inf)
   use BgcCentCnpIndexType       , only : centurybgc_index_type
-  use BgcCentCnpForcType        , only : centuryeca_forc_type
+  use JarBgcForcType        , only : JarBGC_forc_type
   use tracer_varcon             , only : catomw, natomw, patomw,c13atomw,c14atomw
   use MathfuncMod               , only : safe_div
   implicit none
   class(centurybgceca_type)     , intent(inout) :: this
   real(r8), intent(in) :: dtime
   type(centurybgc_index_type)  , intent(in) :: centurybgc_index
-  type(centuryeca_forc_type)  , intent(in) :: centuryeca_forc
+  type(JarBGC_forc_type)  , intent(in) :: bgc_forc
   real(r8), optional, intent(out) :: c_inf, n_inf, p_inf
   integer :: kc, kn, kp,kc13,kc14
   integer :: jj
@@ -842,9 +866,9 @@ contains
   tmul=1._r8
 
   jj=lit1;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
-  this%ystates1(kc) =this%ystates0(kc) + centuryeca_forc%cflx_input_litr_met*dtime/catomw
-  this%ystates1(kn) =this%ystates0(kn) + centuryeca_forc%nflx_input_litr_met*dtime/natomw * tmul
-  this%ystates1(kp) =this%ystates0(kp) + centuryeca_forc%pflx_input_litr_met*dtime/patomw
+  this%ystates1(kc) =this%ystates0(kc) + bgc_forc%cflx_input_litr_met*dtime/catomw
+  this%ystates1(kn) =this%ystates0(kn) + bgc_forc%nflx_input_litr_met*dtime/natomw * tmul
+  this%ystates1(kp) =this%ystates0(kp) + bgc_forc%pflx_input_litr_met*dtime/patomw
 
   if(present(c_inf))then
     c_inf = this%ystates1(kc) - this%ystates0(kc)
@@ -858,18 +882,18 @@ contains
 
   if(this%use_c13)then
     kc13=(jj-1)*nelms+c13_loc
-    this%ystates1(kc13) =this%ystates0(kc13) + centuryeca_forc%cflx_input_litr_met_c13*dtime/c13atomw
+    this%ystates1(kc13) =this%ystates0(kc13) + bgc_forc%cflx_input_litr_met_c13*dtime/c13atomw
   endif
   if(this%use_c14)then
     kc14=(jj-1)*nelms+c14_loc
-    this%ystates1(kc14) =this%ystates0(kc14) + centuryeca_forc%cflx_input_litr_met_c14*dtime/c14atomw
+    this%ystates1(kc14) =this%ystates0(kc14) + bgc_forc%cflx_input_litr_met_c14*dtime/c14atomw
 !    if(centurybgc_index%debug)print*,'c14 lit1',this%ystates1(kc14)
   endif
 
   jj=lit2;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
-  this%ystates1(kc) =this%ystates0(kc) + centuryeca_forc%cflx_input_litr_cel*dtime/catomw
-  this%ystates1(kn) =this%ystates0(kn) + centuryeca_forc%nflx_input_litr_cel*dtime/natomw
-  this%ystates1(kp) =this%ystates0(kp) + centuryeca_forc%pflx_input_litr_cel*dtime/patomw
+  this%ystates1(kc) =this%ystates0(kc) + bgc_forc%cflx_input_litr_cel*dtime/catomw
+  this%ystates1(kn) =this%ystates0(kn) + bgc_forc%nflx_input_litr_cel*dtime/natomw
+  this%ystates1(kp) =this%ystates0(kp) + bgc_forc%pflx_input_litr_cel*dtime/patomw
 
   if(present(c_inf))then
     c_inf = c_inf + this%ystates1(kc) - this%ystates0(kc)
@@ -882,18 +906,18 @@ contains
   endif
   if(this%use_c13)then
     kc13=(jj-1)*nelms+c13_loc
-    this%ystates1(kc13) =this%ystates0(kc13) + centuryeca_forc%cflx_input_litr_cel_c13*dtime/c13atomw
+    this%ystates1(kc13) =this%ystates0(kc13) + bgc_forc%cflx_input_litr_cel_c13*dtime/c13atomw
   endif
   if(this%use_c14)then
     kc14=(jj-1)*nelms+c14_loc
-    this%ystates1(kc14) =this%ystates0(kc14) + centuryeca_forc%cflx_input_litr_cel_c14*dtime/c14atomw
+    this%ystates1(kc14) =this%ystates0(kc14) + bgc_forc%cflx_input_litr_cel_c14*dtime/c14atomw
 !    if(centurybgc_index%debug)print*,'c14 lit2',this%ystates1(kc14)
   endif
 
   jj=lit3;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
-  this%ystates1(kc) =this%ystates0(kc) + centuryeca_forc%cflx_input_litr_lig*dtime/catomw
-  this%ystates1(kn) =this%ystates0(kn) + centuryeca_forc%nflx_input_litr_lig*dtime/natomw * tmul
-  this%ystates1(kp) =this%ystates0(kp) + centuryeca_forc%pflx_input_litr_lig*dtime/patomw
+  this%ystates1(kc) =this%ystates0(kc) + bgc_forc%cflx_input_litr_lig*dtime/catomw
+  this%ystates1(kn) =this%ystates0(kn) + bgc_forc%nflx_input_litr_lig*dtime/natomw * tmul
+  this%ystates1(kp) =this%ystates0(kp) + bgc_forc%pflx_input_litr_lig*dtime/patomw
 
   if(present(c_inf))then
     c_inf = c_inf + this%ystates1(kc) - this%ystates0(kc)
@@ -906,18 +930,18 @@ contains
   endif
   if(this%use_c13)then
     kc13=(jj-1)*nelms+c13_loc
-    this%ystates1(kc13) =this%ystates0(kc13) + centuryeca_forc%cflx_input_litr_lig_c13*dtime/c13atomw
+    this%ystates1(kc13) =this%ystates0(kc13) + bgc_forc%cflx_input_litr_lig_c13*dtime/c13atomw
   endif
   if(this%use_c14)then
     kc14=(jj-1)*nelms+c14_loc
-    this%ystates1(kc14) =this%ystates0(kc14) + centuryeca_forc%cflx_input_litr_lig_c14*dtime/c14atomw
+    this%ystates1(kc14) =this%ystates0(kc14) + bgc_forc%cflx_input_litr_lig_c14*dtime/c14atomw
 !    if(centurybgc_index%debug)print*,'c14 lit3',this%ystates1(kc14)
   endif
 
   jj=cwd;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
-  this%ystates1(kc) =this%ystates0(kc) + centuryeca_forc%cflx_input_litr_cwd*dtime/catomw
-  this%ystates1(kn) =this%ystates0(kn) + centuryeca_forc%nflx_input_litr_cwd*dtime/natomw * tmul
-  this%ystates1(kp) =this%ystates0(kp) + centuryeca_forc%pflx_input_litr_cwd*dtime/patomw
+  this%ystates1(kc) =this%ystates0(kc) + bgc_forc%cflx_input_litr_cwd*dtime/catomw
+  this%ystates1(kn) =this%ystates0(kn) + bgc_forc%nflx_input_litr_cwd*dtime/natomw * tmul
+  this%ystates1(kp) =this%ystates0(kp) + bgc_forc%pflx_input_litr_cwd*dtime/patomw
 
   if(present(c_inf))then
     c_inf = c_inf + this%ystates1(kc) - this%ystates0(kc)
@@ -930,18 +954,18 @@ contains
   endif
   if(this%use_c13)then
     kc13=(jj-1)*nelms+c13_loc
-    this%ystates1(kc13) =this%ystates0(kc13) + centuryeca_forc%cflx_input_litr_cwd_c13*dtime/c13atomw
+    this%ystates1(kc13) =this%ystates0(kc13) + bgc_forc%cflx_input_litr_cwd_c13*dtime/c13atomw
   endif
   if(this%use_c14)then
     kc14=(jj-1)*nelms+c14_loc
-    this%ystates1(kc14) =this%ystates0(kc14) + centuryeca_forc%cflx_input_litr_cwd_c14*dtime/c14atomw
+    this%ystates1(kc14) =this%ystates0(kc14) + bgc_forc%cflx_input_litr_cwd_c14*dtime/c14atomw
 !    if(centurybgc_index%debug)print*,'c14 cwd',this%ystates1(kc14)
   endif
 
   jj=fwd;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
-  this%ystates1(kc) =this%ystates0(kc) + centuryeca_forc%cflx_input_litr_fwd*dtime/catomw
-  this%ystates1(kn) =this%ystates0(kn) + centuryeca_forc%nflx_input_litr_fwd*dtime/natomw * tmul
-  this%ystates1(kp) =this%ystates0(kp) + centuryeca_forc%pflx_input_litr_fwd*dtime/patomw
+  this%ystates1(kc) =this%ystates0(kc) + bgc_forc%cflx_input_litr_fwd*dtime/catomw
+  this%ystates1(kn) =this%ystates0(kn) + bgc_forc%nflx_input_litr_fwd*dtime/natomw * tmul
+  this%ystates1(kp) =this%ystates0(kp) + bgc_forc%pflx_input_litr_fwd*dtime/patomw
 
   if(present(c_inf))then
     c_inf = c_inf + this%ystates1(kc) - this%ystates0(kc)
@@ -955,17 +979,17 @@ contains
 
   if(this%use_c13)then
     kc13=(jj-1)*nelms+c13_loc
-    this%ystates1(kc13) =this%ystates0(kc13) + centuryeca_forc%cflx_input_litr_fwd_c13*dtime/c13atomw
+    this%ystates1(kc13) =this%ystates0(kc13) + bgc_forc%cflx_input_litr_fwd_c13*dtime/c13atomw
   endif
   if(this%use_c14)then
     kc14=(jj-1)*nelms+c14_loc
-    this%ystates1(kc14) =this%ystates0(kc14) + centuryeca_forc%cflx_input_litr_fwd_c14*dtime/c14atomw
+    this%ystates1(kc14) =this%ystates0(kc14) + bgc_forc%cflx_input_litr_fwd_c14*dtime/c14atomw
   endif
 
   jj=lwd;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
-  this%ystates1(kc) =this%ystates0(kc) + centuryeca_forc%cflx_input_litr_lwd*dtime/catomw
-  this%ystates1(kn) =this%ystates0(kn) + centuryeca_forc%nflx_input_litr_lwd*dtime/natomw * tmul
-  this%ystates1(kp) =this%ystates0(kp) + centuryeca_forc%pflx_input_litr_lwd*dtime/patomw
+  this%ystates1(kc) =this%ystates0(kc) + bgc_forc%cflx_input_litr_lwd*dtime/catomw
+  this%ystates1(kn) =this%ystates0(kn) + bgc_forc%nflx_input_litr_lwd*dtime/natomw * tmul
+  this%ystates1(kp) =this%ystates0(kp) + bgc_forc%pflx_input_litr_lwd*dtime/patomw
 
   if(present(c_inf))then
     c_inf = c_inf + this%ystates1(kc) - this%ystates0(kc)
@@ -979,25 +1003,25 @@ contains
 
   if(this%use_c13)then
     kc13=(jj-1)*nelms+c13_loc
-    this%ystates1(kc13) =this%ystates0(kc13) + centuryeca_forc%cflx_input_litr_lwd_c13*dtime/c13atomw
+    this%ystates1(kc13) =this%ystates0(kc13) + bgc_forc%cflx_input_litr_lwd_c13*dtime/c13atomw
   endif
   if(this%use_c14)then
     kc14=(jj-1)*nelms+c14_loc
-    this%ystates1(kc14) =this%ystates0(kc14) + centuryeca_forc%cflx_input_litr_lwd_c14*dtime/c14atomw
+    this%ystates1(kc14) =this%ystates0(kc14) + bgc_forc%cflx_input_litr_lwd_c14*dtime/c14atomw
   endif
 
   this%ystates1(lid_nh4) =this%ystates0(lid_nh4) + dtime * &
-      (centuryeca_forc%sflx_minn_input_nh4 + &
-        centuryeca_forc%sflx_minn_nh4_fix_nomic)/natomw * tmul
+      (bgc_forc%sflx_minn_input_nh4 + &
+        bgc_forc%sflx_minn_nh4_fix_nomic)/natomw * tmul
 
   this%ystates1(lid_no3) = this%ystates0(lid_no3) + dtime * &
-      centuryeca_forc%sflx_minn_input_no3/natomw * tmul
+      bgc_forc%sflx_minn_input_no3/natomw * tmul
 
   this%ystates1(lid_minp_soluble) =this%ystates0(lid_minp_soluble) + dtime * &
-      (centuryeca_forc%sflx_minp_input_po4 + &
-        centuryeca_forc%sflx_minp_weathering_po4)/patomw
+      (bgc_forc%sflx_minp_input_po4 + &
+        bgc_forc%sflx_minp_weathering_po4)/patomw
 !  if(this%centurybgc_index%debug)then
-!    print*,'minp',this%ystates0(lid_minp_soluble),centuryeca_forc%sflx_minp_input_po4,centuryeca_forc%sflx_minp_weathering_po4
+!    print*,'minp',this%ystates0(lid_minp_soluble),bgc_forc%sflx_minp_input_po4,bgc_forc%sflx_minp_weathering_po4
 !  endif
   !phosphatase cleaves PO4 from organic pools and put them into soluble mineral pool
   !compute total organic P
@@ -1020,7 +1044,7 @@ contains
     totp = totp + this%ystates1(kp)
   enddo
 
-  pmin_cleave=totp * min(centuryeca_forc%biochem_pmin*dtime/patomw,1._r8)
+  pmin_cleave=totp * min(bgc_forc%biochem_pmin*dtime/patomw,1._r8)
   pmin_frac= 1._r8 - safe_div(pmin_cleave, totp)
   do jj = litr_beg, litr_end, nelms
     kp = jj-1 + p_loc
@@ -1364,13 +1388,15 @@ contains
   end subroutine arenchyma_gas_transport
 
   !--------------------------------------------------------------------
-  subroutine sumup_cnp_msflx(this, ystates1, c_mass, n_mass, p_mass,c_flx,n_flx,p_flx)
+  subroutine sumup_cnp_msflx_ecacnp(this, ystates1, c_mass, n_mass, p_mass,c_flx,n_flx,p_flx, bstatus)
+
   use tracer_varcon, only : catomw, natomw, patomw
   implicit none
   class(centurybgceca_type)     , intent(in) :: this
-  real(r8), intent(in)  :: ystates1(this%centurybgc_index%nstvars)
+  real(r8), intent(in)  :: ystates1(:)
   real(r8), intent(out) :: c_mass, n_mass, p_mass
   real(r8), optional, intent(out) :: c_flx, n_flx, p_flx
+  type(betr_status_type), optional, intent(out)   :: bstatus
   !local variables
 
   integer :: kc, kn, kp, jj
@@ -1400,6 +1426,7 @@ contains
     lid_minp_occlude => this%centurybgc_index%lid_minp_occlude, &
     lid_plant_minp => this%centurybgc_index%lid_plant_minp  &
   )
+  SHR_ASSERT_ALL((size(ystates1) == this%centurybgc_index%nstvars), errMsg(mod_filename,__LINE__),bstatus)
 
   c_mass = 0._r8; n_mass = 0._r8; p_mass = 0._r8;
   if(present(c_flx))c_flx=0._r8
@@ -1456,7 +1483,7 @@ contains
   endif
 !  write(*,'(A,3(X,E20.10))')'c n p, mass',c_mass, n_mass, p_mass
   end associate
-  end subroutine sumup_cnp_msflx
+  end subroutine sumup_cnp_msflx_ecacnp
 
   !--------------------------------------------------------------------
   subroutine sumup_cnp_mass(this, header, c_mass, n_mass, p_mass)
