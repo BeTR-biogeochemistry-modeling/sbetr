@@ -188,7 +188,7 @@ implicit none
     call list_init(list_pool, trim(prefix))
   else
     call list_insert(list_name, trim(prefix)//'_c')
-    call list_insert(list_name, 'mol C m-3')
+    call list_insert(list_unit, 'mol C m-3')
     call list_insert(list_pool, trim(prefix))
   endif
   call list_insert(list_name, trim(prefix)//'_n')
