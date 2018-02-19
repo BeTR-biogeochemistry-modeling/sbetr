@@ -58,7 +58,21 @@ implicit none
  end type CentPara_type
 
  type(CentPara_type), public :: cent_para
+ public :: create_jarpars_centuryeca
 contains
+
+  function create_jarpars_centuryeca()
+  ! DESCRIPTION
+  ! constructor
+    implicit none
+    class(CentPara_type), pointer :: create_jarpars_centuryeca
+    class(CentPara_type), pointer :: bgc
+
+    allocate(bgc)
+    create_jarpars_centuryeca => bgc
+
+  end function create_jarpars_centuryeca
+
   !--------------------------------------------------------------------
   subroutine centpara_init(this, namelist_buffer, bstatus)
   use betr_constants , only : betr_namelist_buffer_size_ext
