@@ -14,7 +14,8 @@ implicit none
     procedure, public  :: runbgc        => JarModel_runbgc
     procedure, public  :: UpdateParas   => JarModel_UpdateParas
     procedure, public  :: sumup_cnp_msflx => JarModel_sumup_cnp_msflx
-
+    procedure, public  :: getvarllen    => JarModel_getvarllen
+    procedure, public  :: getvarlist    => JarModel_getvarlist
   end type jar_model_type
 
   contains
@@ -29,8 +30,28 @@ implicit none
 
   call bstatus%reset()
   end subroutine JarModel_init
+  !-------------------------------------------------------------------------------
+  subroutine JarModel_getvarlist(this, nstvars, varnames, varunits)
+  implicit none
+  class(jar_model_type)      , intent(inout) :: this
+  integer, intent(in) :: nstvars
+  character(len=*), intent(out) :: varnames(1:nstvars)
+  character(len=*), intent(out) :: varunits(1:nstvars)
 
 
+  if(nstvars>=0)return
+  end subroutine JarModel_getvarlist
+
+  !-------------------------------------------------------------------------------
+  function JarModel_getvarllen(this)result(ans)
+
+  implicit none
+  class(jar_model_type)      , intent(inout) :: this
+  integer :: ans
+
+  ans = 0
+
+  end function JarModel_getvarllen
   !-------------------------------------------------------------------------------
   subroutine JarModel_runbgc(this,  is_surf, dtime, bgc_forc, nstates, ystates0, ystatesf, spinup_scalar, &
       spinup_flg, n_mass, bstatus)

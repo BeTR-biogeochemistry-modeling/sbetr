@@ -70,6 +70,8 @@ module BgcCentCnpType
     procedure, public  :: runbgc        => runbgc_ecacnp
     procedure, public  :: UpdateParas   => UpdateParas_ecacnp
     procedure, public  :: sumup_cnp_msflx => sumup_cnp_msflx_ecacnp
+    procedure, public  :: getvarllen    => getvarllen_ecacnp
+    procedure, public  :: getvarlist    => getvarlist_ecacnp
     procedure, private :: calc_cascade_matrix
     procedure, private :: init_states
     procedure, private :: add_ext_input
@@ -96,6 +98,31 @@ contains
     create_jarmodel_centuryeca => bgc
 
   end function create_jarmodel_centuryeca
+
+  !-------------------------------------------------------------------------------
+  function getvarllen_ecacnp(this)result(ans)
+
+  implicit none
+  class(centurybgceca_type) , intent(inout) :: this
+  integer :: ans
+
+  ans = this%centurybgc_index%nstvars
+
+  end function getvarllen_ecacnp
+  !-------------------------------------------------------------------------------
+  subroutine getvarlist_ecacnp(this, nstvars, varnames, varunits)
+  implicit none
+  class(centurybgceca_type) , intent(inout) :: this
+  integer, intent(in) :: nstvars
+  character(len=*), intent(out) :: varnames(1:nstvars)
+  character(len=*), intent(out) :: varunits(1:nstvars)
+  integer :: n
+
+  do n = 1, nstvars
+    write(varnames(n),'(A)')trim(this%centurybgc_index%varnames(n))
+    write(varunits(n),'(A)')trim(this%centurybgc_index%varunits(n))
+  enddo
+  end subroutine getvarlist_ecacnp
 
   !-------------------------------------------------------------------------------
   subroutine UpdateParas_ecacnp(this,  biogeo_con, bstatus)
@@ -377,10 +404,10 @@ contains
   !DESCRIPTION
   !do bgc model integration for one step
   use JarBgcForcType        , only : JarBGC_forc_type
-  use MathfuncMod               , only : pd_decomp
-  use BetrStatusType            , only : betr_status_type
-  use MathfuncMod               , only : safe_div
-  use tracer_varcon             , only : catomw, natomw, patomw
+  use MathfuncMod           , only : pd_decomp
+  use BetrStatusType        , only : betr_status_type
+  use MathfuncMod           , only : safe_div
+  use tracer_varcon         , only : catomw, natomw, patomw
   implicit none
   class(centurybgceca_type)  , intent(inout) :: this
   logical                    , intent(in)    :: is_surf

@@ -97,6 +97,7 @@ implicit none
      logical, pointer :: is_cenpool_som(:) => null()
      logical :: debug
      character(len=loc_name_len), allocatable :: varnames(:)
+     character(len=loc_name_len), allocatable :: varunits(:)
      character(len=loc_name_len), allocatable :: ompoolnames(:)
    contains
      procedure, public  :: Init
@@ -172,9 +173,10 @@ implicit none
   enddo
   end subroutine copy_name
   !-------------------------------------------------------------------------------
-  subroutine add_ompool_name(list_name, list_pool,prefix, use_c13, use_c14, do_init)
+  subroutine add_ompool_name(list_name, list_unit, list_pool,prefix, use_c13, use_c14, do_init)
   implicit none
   type(list_t), pointer :: list_name
+  type(list_t), pointer :: list_unit
   type(list_t), pointer :: list_pool
   character(len=*), intent(in) :: prefix
   logical, intent(in) :: use_c13, use_c14
@@ -182,16 +184,25 @@ implicit none
 
   if(do_init)then
     call list_init(list_name, trim(prefix)//'_c')
+    call list_init(list_unit, 'mol C m-3')
     call list_init(list_pool, trim(prefix))
   else
     call list_insert(list_name, trim(prefix)//'_c')
+    call list_insert(list_name, 'mol C m-3')
     call list_insert(list_pool, trim(prefix))
   endif
   call list_insert(list_name, trim(prefix)//'_n')
+  call list_insert(list_unit, 'mol N m-3')
   call list_insert(list_name, trim(prefix)//'_p')
-  if(use_c13)call list_insert(list_name, trim(prefix)//'_c13')
-  if(use_c14)call list_insert(list_name, trim(prefix)//'_c14')
-
+  call list_insert(list_unit, 'mol P m-3')
+  if(use_c13)then
+    call list_insert(list_name, trim(prefix)//'_c13')
+    call list_insert(list_unit, 'mol C13 m-3')
+  endif
+  if(use_c14)then
+    call list_insert(list_name, trim(prefix)//'_c14')
+    call list_insert(list_unit, 'mol C14 m-3')
+  endif
   end subroutine add_ompool_name
 
   !-------------------------------------------------------------------------------
@@ -262,6 +273,7 @@ implicit none
     integer :: ielem
     integer :: jj
     type(list_t), pointer :: list_name => null()
+    type(list_t), pointer :: list_unit => null()
     type(list_t), pointer :: list_pool => null()
     character(len=loc_name_len) :: postfix
 
@@ -283,38 +295,38 @@ implicit none
     !litter group
     this%litr_beg=1
     this%lit1 = addone(itemp); this%lit1_dek_reac = addone(ireac)
-    call add_ompool_name(list_name, list_pool,'lit1', use_c13, use_c14, do_init=.true.)
+    call add_ompool_name(list_name, list_unit, list_pool,'lit1', use_c13, use_c14, do_init=.true.)
     this%lit2 = addone(itemp); this%lit2_dek_reac = addone(ireac)
-    call add_ompool_name(list_name, list_pool,'lit2', use_c13, use_c14, do_init=.false.)
+    call add_ompool_name(list_name, list_unit, list_pool,'lit2', use_c13, use_c14, do_init=.false.)
     this%lit3 = addone(itemp); this%lit3_dek_reac = addone(ireac)
-    call add_ompool_name(list_name, list_pool,'lit3', use_c13, use_c14, do_init=.false.)
+    call add_ompool_name(list_name, list_unit, list_pool,'lit3', use_c13, use_c14, do_init=.false.)
     this%litr_end=this%litr_beg-1+3*this%nelms
 
     !woody group
     this%wood_beg=this%litr_end+1
     this%cwd  = addone(itemp); this%cwd_dek_reac  = addone(ireac)
-    call add_ompool_name(list_name, list_pool,'cwd', use_c13, use_c14, do_init=.false.)
+    call add_ompool_name(list_name, list_unit, list_pool,'cwd', use_c13, use_c14, do_init=.false.)
     this%lwd  = addone(itemp); this%lwd_dek_reac  = addone(ireac)
-    call add_ompool_name(list_name, list_pool,'lwd', use_c13, use_c14, do_init=.false.)
+    call add_ompool_name(list_name, list_unit, list_pool,'lwd', use_c13, use_c14, do_init=.false.)
     this%fwd  = addone(itemp); this%fwd_dek_reac  = addone(ireac)
-    call add_ompool_name(list_name, list_pool,'fwd', use_c13, use_c14, do_init=.false.)
+    call add_ompool_name(list_name, list_unit, list_pool,'fwd', use_c13, use_c14, do_init=.false.)
     this%wood_end=this%wood_beg-1+3*this%nelms
 
     !som group
     this%Bm_beg=this%wood_end+1
     this%som1 = addone(itemp); this%som1_dek_reac = addone(ireac)
-    call add_ompool_name(list_name, list_pool,'som1_Bm', use_c13, use_c14, do_init=.false.)
+    call add_ompool_name(list_name, list_unit, list_pool,'som1_Bm', use_c13, use_c14, do_init=.false.)
     this%Bm_end=this%Bm_beg-1+this%nelms
 
     this%som_beg=this%Bm_end+1
     this%som3 = addone(itemp); this%som3_dek_reac = addone(ireac)
-    call add_ompool_name(list_name, list_pool,'som3', use_c13, use_c14, do_init=.false.)
+    call add_ompool_name(list_name, list_unit, list_pool,'som3', use_c13, use_c14, do_init=.false.)
     this%som_end=this%som_beg-1+this%nelms
 
     !dom group
     this%dom_beg=this%som_end+1
     this%som2 = addone(itemp); this%som2_dek_reac = addone(ireac)  !put som2 at the end because it is defined as dom
-    call add_ompool_name(list_name, list_pool,'som2', use_c13, use_c14, do_init=.false.)
+    call add_ompool_name(list_name, list_unit, list_pool,'som2', use_c13, use_c14, do_init=.false.)
     this%dom_end=this%dom_beg-1+this%nelms
 
     this%nom_pools = (countelm(this%litr_beg, this%litr_end)+&
@@ -322,6 +334,7 @@ implicit none
        countelm(this%som_beg,this%som_end) + &
        countelm(this%Bm_beg,this%Bm_end) + &
        countelm(this%dom_beg,this%dom_end))/this%nelms   !include coarse wood debris
+
     allocate(this%is_cenpool_som(this%nom_pools)); this%is_cenpool_som(:)=.false.
     this%is_cenpool_som(this%som1)=.true.
     this%is_cenpool_som(this%som2)=.true.
@@ -333,33 +346,34 @@ implicit none
 
     this%lid_minp_secondary = addone(itemp); this%lid_minp_secondary_to_sol_occ_reac=addone(ireac)
     call list_insert(list_name, 'minp_secondary')
+    call list_insert(list_unit, 'mol P m-3')
 
     this%lid_minp_occlude = addone(itemp);
     call list_insert(list_name, 'minp_occlude')
-
+    call list_insert(list_unit, 'mol P m-3')
     this%lid_plant_minn_nh4_up_reac = addone(ireac)
     this%lid_plant_minn_no3_up_reac = addone(ireac)
     this%lid_plant_minp_up_reac = addone(ireac)
     this%lid_autr_rt_reac = addone(ireac)
 
     !non-reactive primary variables
-    this%lid_ch4        = addone(itemp);call list_insert(list_name, 'ch4')
-    this%lid_ar         = addone(itemp);call list_insert(list_name, 'ar')
+    this%lid_ch4        = addone(itemp);call list_insert(list_name, 'ch4'); call list_insert(list_unit, 'mol C m-3')
+    this%lid_ar         = addone(itemp);call list_insert(list_name, 'ar'); call list_insert(list_unit, 'mol m-3')
 
     !second primary variables
-    this%lid_o2         = addone(itemp);call list_insert(list_name, 'o2')
+    this%lid_o2         = addone(itemp);call list_insert(list_name, 'o2'); call list_insert(list_unit, 'mol m-3')
 
-    this%lid_co2        = addone(itemp);call list_insert(list_name, 'co2')
+    this%lid_co2        = addone(itemp);call list_insert(list_name, 'co2');call list_insert(list_unit,'mol m-3')
 
     if(use_c13)then
-      this%lid_c13_co2        = addone(itemp);call list_insert(list_name, 'co2_c13')
+      this%lid_c13_co2 = addone(itemp);call list_insert(list_name, 'co2_c13'); call list_insert(list_unit, 'mol C13 m-3')
     endif
     if(use_c14)then
-      this%lid_c14_co2        = addone(itemp);call list_insert(list_name, 'co2_c14')
+      this%lid_c14_co2 = addone(itemp);call list_insert(list_name, 'co2_c14'); call list_insert(list_unit, 'mol C14 m-3')
     endif
 
-    this%lid_n2o        = addone(itemp);call list_insert(list_name, 'n2o')
-    this%lid_n2         = addone(itemp);call list_insert(list_name, 'n2')
+    this%lid_n2o        = addone(itemp);call list_insert(list_name, 'n2o'); call list_insert(list_unit,'mol N2O m-3')
+    this%lid_n2         = addone(itemp);call list_insert(list_name, 'n2'); call list_insert(list_unit, 'mol N2 m-3')
 
     this%nprimvars      = itemp
 
@@ -371,12 +385,12 @@ implicit none
     endif
     this%lid_nh4_nit_reac = addone(ireac)       !this is also used to indicate the nitrification reaction
     this%lid_no3_den_reac = addone(ireac)       !this is also used to indicate the denitrification reaction
-    call list_insert(list_name, 'nh4')
-    call list_insert(list_name, 'no3')
+    call list_insert(list_name, 'nh4'); call list_insert(list_unit, 'mol N m-3')
+    call list_insert(list_name, 'no3'); call list_insert(list_unit, 'mol N m-3')
 
     this%lid_minp_soluble_to_secp_reac = addone(ireac)
     this%lid_minp_soluble=addone(itemp);
-    call list_insert(list_name, 'minp_soluble')
+    call list_insert(list_name, 'minp_soluble'); call list_insert(list_unit, 'mol P m-3')
     if(.not. nop_limit)then
       !when P is unlimited, P is not a primary variable
       this%nprimvars      = this%nprimvars + 1     !primary state variables 14 + 6
@@ -384,60 +398,68 @@ implicit none
 
     !diagnostic variables
     this%lid_plant_minn_nh4 = addone(itemp)  !this is used to indicate plant mineral nitrogen uptake
-    call list_insert(list_name, 'plant_minn_nh4')
+    call list_insert(list_name, 'plant_minn_nh4'); call list_insert(list_unit, 'mol P m-3')
 
     this%lid_plant_minn_no3 = addone(itemp)  !this is used to indicate plant mineral nitrogen uptake
-    call list_insert(list_name, 'plant_minn_no3')
+    call list_insert(list_name, 'plant_minn_no3'); call list_insert(list_unit, 'mol N mol-3')
 
     this%lid_plant_minp = addone(itemp)
-    call list_insert(list_name, 'plant_minp')
+    call list_insert(list_name, 'plant_minp'); call list_insert(list_unit, 'mol P m-3')
 
     this%lid_autr_rt      = addone(itemp)           !this is used to indicate plant autotrophic root respiration
-    call list_insert(list_name, 'autr_rt')
+    call list_insert(list_name, 'autr_rt'); call list_insert(list_unit,'mol C m-3')
 
     this%lid_o2_aren_reac  = addone(ireac)
 
-    this%lid_n2o_nit        = addone(itemp); call list_insert(list_name, 'n2o_nit')
+    this%lid_n2o_nit  = addone(itemp);
+    call list_insert(list_name, 'n2o_nit'); call list_insert(list_unit, 'mol N2O m-3')
 
-    this%lid_co2_hr         = addone(itemp); call list_insert(list_name, 'co2_hr')
+    this%lid_co2_hr   = addone(itemp);
+    call list_insert(list_name, 'co2_hr'); call list_insert(list_unit,'mol C m-3')
 
-    this%lid_no3_den        = addone(itemp); call list_insert(list_name, 'no3_den')
+    this%lid_no3_den  = addone(itemp);
+    call list_insert(list_name, 'no3_den'); call list_insert(list_unit, 'mol N m-3')
 
-    this%lid_minn_nh4_immob = addone(itemp); call list_insert(list_name, 'minn_nh4_immob')
+    this%lid_minn_nh4_immob = addone(itemp);
+    call list_insert(list_name, 'minn_nh4_immob'); call list_insert(list_unit, 'mol N m-3')
 
-    this%lid_minn_no3_immob = addone(itemp); call list_insert(list_name, 'minn_no3_immob')
+    this%lid_minn_no3_immob = addone(itemp);
+    call list_insert(list_name, 'minn_no3_immob'); call list_insert(list_unit, 'mol N m-3')
 
-    this%lid_minp_immob = addone(itemp); call list_insert(list_name, 'minp_immob')
+    this%lid_minp_immob = addone(itemp);
+    call list_insert(list_name, 'minp_immob'); call list_insert(list_unit, 'mol P m-3')
 
-    this%lid_nh4_nit        = addone(itemp); call list_insert(list_name, 'nh4_nit')
+    this%lid_nh4_nit        = addone(itemp);
+    call list_insert(list_name, 'nh4_nit'); call list_insert(list_unit,'mol N m-3')
 
     !aerechyma transport
-    this%lid_o2_paere   = addone(itemp); call list_insert(list_name, 'o2_paere')
+    this%lid_o2_paere   = addone(itemp);
+    call list_insert(list_name, 'o2_paere'); call list_insert(list_unit,'mol m-3')
     if ( spinup_state == 0 ) then
        this%lid_ar_paere   = addone(itemp);  this%lid_ar_aren_reac  = addone(ireac)   !
-       call list_insert(list_name, 'ar_paere')
+       call list_insert(list_name, 'ar_paere'); call list_insert(list_unit,'mol m-3')
 
        this%lid_n2_paere   = addone(itemp);  this%lid_n2_aren_reac  = addone(ireac)   !
-       call list_insert(list_name, 'n2_paere')
+       call list_insert(list_name, 'n2_paere'); call list_insert(list_unit,'mol N2 m-3')
 
        this%lid_co2_paere  = addone(itemp);  this%lid_co2_aren_reac = addone(ireac)   !
-       call list_insert(list_name, 'co2_paere')
+       call list_insert(list_name, 'co2_paere'); call list_insert(list_unit,'mol C m-3')
 
        if(use_c13)then
          this%lid_c13_co2_paere  = addone(itemp);  this%lid_c13_co2_aren_reac = addone(ireac)   !
-         call list_insert(list_name, 'c13_co2_paere')
+         call list_insert(list_name, 'c13_co2_paere'); call list_insert(list_unit,'mol C13 m-3')
        endif
 
        if(use_c14)then
          this%lid_c14_co2_paere  = addone(itemp);  this%lid_c14_co2_aren_reac = addone(ireac)   !
-         call list_insert(list_name, 'c14_co2_paere')
+         call list_insert(list_name, 'c14_co2_paere'); call list_insert(list_unit,'mol C14 m-3')
        endif
 
        this%lid_ch4_paere  = addone(itemp);  this%lid_ch4_aren_reac = addone(ireac)   !
-       call list_insert(list_name, 'ch4_paere')
+       call list_insert(list_name, 'ch4_paere'); call list_insert(list_unit, 'mol C m-3')
 
        this%lid_n2o_paere  = addone(itemp);  this%lid_n2o_aren_reac = addone(ireac)   !
-       call list_insert(list_name, 'n2o_paere')
+       call list_insert(list_name, 'n2o_paere'); call list_insert(list_unit,'mol  m-3')
     endif
 
     if(maxpft>0)then
@@ -448,10 +470,13 @@ implicit none
         this%lid_plant_minn_no3_pft(jj) = addone(itemp)
         postfix = num2str(jj,'(I2.2)')
         call list_insert(list_name, 'plant_minn_no3_pft_'//trim(postfix))
+        call list_insert(list_unit, 'mol N m-3')
         this%lid_plant_minn_nh4_pft(jj) = addone(itemp)
         call list_insert(list_name, 'plant_minn_nh4_pft_'//trim(postfix))
+        call list_insert(list_unit,'mol N m-3')
         this%lid_plant_minp_pft(jj)     = addone(itemp)
         call list_insert(list_name, 'plant_minp_pft_'//trim(postfix))
+        call list_insert(list_unit,'mol P m-3')
       enddo
     endif
 
@@ -462,13 +487,16 @@ implicit none
     allocate(this%is_aerobic_reac(ireac)); this%is_aerobic_reac(:)=.false.
 
     allocate(this%varnames(this%nstvars))
+    allocate(this%varunits(this%nstvars))
     allocate(this%ompoolnames(this%nom_pools))
 
     call copy_name(this%nstvars, list_name, this%varnames(1:this%nstvars))
+    call copy_name(this%nstvars, list_unit, this%varunits(1:this%nstvars))
     call copy_name(this%nom_pools, list_pool, this%ompoolnames(1:this%nom_pools))
 
     call list_free(list_name)
     call list_free(list_pool)
+    call list_free(list_unit)
   end subroutine InitPars
   !-------------------------------------------------------------------------------
 

@@ -1,6 +1,5 @@
 set(CENT1LAYER_SOURCES
   BgcCentCnpIndexType.F90
-  BgcCentCnpForcType.F90
   BgcCentCnpCompetType.F90
   BgcCentCnpDecompType.F90
   BgcCentCnpNitDenType.F90
