@@ -49,27 +49,27 @@ implicit none
 
   real(r8), pointer :: spinup_factor(:)
  contains
-   procedure, public  :: Init
+   procedure, public  :: Init => centpara_init
+   procedure, public  :: readPars => centpara_readPars
    procedure, private :: InitAllocate
    procedure, private :: set_defpar_default
    procedure, public  :: apply_spinup_factor
-   procedure, public  :: readPars
    procedure, public  :: set_spinup_factor
  end type CentPara_type
 
  type(CentPara_type), public :: cent_para
 contains
   !--------------------------------------------------------------------
-  subroutine Init(this, namelist_buffer, bstatus)
+  subroutine centpara_init(this, namelist_buffer, bstatus)
   use betr_constants , only : betr_namelist_buffer_size_ext
   use BetrStatusType , only : betr_status_type
   use betr_ctrl      , only : betr_spinup_state
   implicit none
   class(CentPara_type), intent(inout) :: this
-  character(len=betr_namelist_buffer_size_ext) , intent(in)    :: namelist_buffer
+  character(len=*) , intent(in)    :: namelist_buffer
   type(betr_status_type)                   , intent(out) :: bstatus
 
-  call this%bgc_con_Init(bstatus)
+  call this%bcon_Init(bstatus)
 
   call this%InitAllocate()
 
@@ -79,7 +79,7 @@ contains
     call this%apply_spinup_factor()
   endif
 
-  end subroutine Init
+  end subroutine centpara_init
   !--------------------------------------------------------------------
   subroutine InitAllocate(this)
   use betr_varcon, only : betr_maxpatch_pft, betr_max_soilorder
@@ -181,7 +181,7 @@ contains
 
   !--------------------------------------------------------------------
 
-  subroutine readPars(this, ncid, bstatus)
+  subroutine centpara_readPars(this, ncid, bstatus)
   use bshr_log_mod    , only : errMsg => shr_log_errMsg
   use ncdio_pio       , only : file_desc_t, ncd_io
   use BetrStatusType  , only : betr_status_type
@@ -432,7 +432,7 @@ contains
     call this%apply_spinup_factor()
   endif
 
-  end subroutine readPars
+  end subroutine centpara_readPars
 
 !--------------------------------------------------------------------
   subroutine set_spinup_factor(this)

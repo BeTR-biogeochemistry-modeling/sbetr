@@ -69,15 +69,47 @@ implicit none
   real(r8), pointer :: minp_secondary_decay(:) => null()   !decay rate of secondary phosphorus
 
  contains
-   procedure, public  :: bgc_con_Init
+   procedure, public  :: Init => bgc_con_init
+   procedure, public  :: readPars => readPars_bcon
+   procedure, public  :: bcon_Init
    procedure, private :: InitAllocate
    procedure, private :: set_defpar_default_base
    procedure, public  :: readPars_bgc
  end type BiogeoCon_type
 
 contains
+
   !--------------------------------------------------------------------
-  subroutine bgc_con_Init(this,  bstatus)
+  subroutine bgc_con_init(this,  namelist_buffer, bstatus)
+  use betr_constants , only : betr_namelist_buffer_size_ext
+  use BetrStatusType , only : betr_status_type
+  use betr_ctrl      , only : betr_spinup_state
+  use tracer_varcon  , only : use_c13_betr, use_c14_betr, is_nitrogen_active, is_phosphorus_active
+  implicit none
+  class(BiogeoCon_type), intent(inout) :: this
+  character(len=*) , intent(in)    :: namelist_buffer
+  type(betr_status_type)                   , intent(out) :: bstatus
+
+  call bstatus%reset()
+
+  end subroutine bgc_con_init
+  !--------------------------------------------------------------------
+
+  subroutine readPars_bcon(this, ncid, bstatus)
+  use bshr_log_mod    , only : errMsg => shr_log_errMsg
+  use ncdio_pio       , only : file_desc_t, ncd_io
+  use BetrStatusType  , only : betr_status_type
+  use betr_ctrl       , only : betr_spinup_state
+  use bshr_const_mod  , only : year_sec=>SHR_CONST_YEARSECS
+  implicit none
+  class(BiogeoCon_type), intent(inout) :: this
+  type(file_desc_t)    , intent(inout)  :: ncid  ! pio netCDF file id
+  type(betr_status_type) , intent(out) :: bstatus
+
+  call this%readPars_bgc(ncid, bstatus)
+  end subroutine readPars_bcon
+  !--------------------------------------------------------------------
+  subroutine bcon_Init(this,  bstatus)
   use betr_constants , only : betr_namelist_buffer_size_ext
   use BetrStatusType , only : betr_status_type
   use betr_ctrl      , only : betr_spinup_state
@@ -95,7 +127,7 @@ contains
   this%nop_limit=.not. is_phosphorus_active
   this%non_limit=.not. is_nitrogen_active
 
-  end subroutine bgc_con_Init
+  end subroutine bcon_Init
   !--------------------------------------------------------------------
   subroutine InitAllocate(this)
   use betr_varcon, only : betr_maxpatch_pft, betr_max_soilorder
@@ -116,7 +148,7 @@ contains
   implicit none
   class(BiogeoCon_type), intent(inout) :: this
   real(r8) :: half_life
-  
+
   half_life = 5568._r8 ! yr
   half_life = half_life * year_sec
   this%c14decay_const = - log(0.5_r8) / half_life
@@ -188,15 +220,7 @@ contains
   logical            :: readv ! has variable been read in or not
   real(r8)           :: tempr ! temporary to read in constant
   character(len=100) :: tString ! temp. var for reading
-  real(r8) :: tau_decay_lit1
-  real(r8) :: tau_decay_lit2
-  real(r8) :: tau_decay_lit3
-  real(r8) :: tau_decay_som1
-  real(r8) :: tau_decay_som2
-  real(r8) :: tau_decay_som3
-  real(r8) :: tau_decay_cwd
-  real(r8) :: tau_decay_fwd
-  real(r8) :: tau_decay_lwd
+
 
   call bstatus%reset()
 
