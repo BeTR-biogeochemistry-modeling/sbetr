@@ -392,14 +392,14 @@ contains
   write(*,'(A,(X,E20.10))')'nit, resn =',resn
 
   reac = lid_no3_den_reac
-  resn = cascade_matrix(lid_no3, reac) + cascade_matrix(lid_n2o, reac) * 2._r8 + cascade_matrix(lid_n2, reac) * 2._r8
+  resn = cascade_matrix(lid_no3, reac) + cascade_matrix(lid_n2o, reac) * 2._r8 + &
+    cascade_matrix(lid_n2, reac) * 2._r8
   write(*,'(A,3(X,E20.10))')'den, resn =',resn
   end associate
   end subroutine checksum_cascade
 
   !-------------------------------------------------------------------------------
-  subroutine runbgc_ecacnp(this,  is_surf, dtime, bgc_forc, nstates, ystates0, ystatesf, spinup_scalar, &
-      spinup_flg, n_mass, bstatus)
+  subroutine runbgc_ecacnp(this,  is_surflit, dtime, bgc_forc, nstates, ystates0, ystatesf, bstatus)
 
   !DESCRIPTION
   !do bgc model integration for one step
@@ -410,16 +410,13 @@ contains
   use tracer_varcon         , only : catomw, natomw, patomw
   implicit none
   class(centurybgceca_type)  , intent(inout) :: this
-  logical                    , intent(in)    :: is_surf
+  logical                    , intent(in)    :: is_surflit
   real(r8)                   , intent(in)    :: dtime
   type(JarBGC_forc_type)     , intent(in)    :: bgc_forc
   integer                    , intent(in)    :: nstates
   real(r8)                   , intent(out)   :: ystates0(nstates)
   real(r8)                   , intent(out)   :: ystatesf(nstates)
-  real(r8)                   , intent(out)   :: n_mass
   type(betr_status_type)     , intent(out)   :: bstatus
-  integer                    , intent(in)    :: spinup_flg
-  real(r8)                   , intent(inout) :: spinup_scalar
 
   !local variables
   real(r8) :: pot_om_decay_rates(this%centurybgc_index%nom_pools)
@@ -483,9 +480,9 @@ contains
   call this%calc_cascade_matrix(this%centurybgc_index, cascade_matrix, frc_c13, frc_c14)
 !  if(this%centurybgc_index%debug)call this%checksum_cascade(this%centurybgc_index)
   !run century decomposition, return decay rates, cascade matrix, potential hr
-  call this%censom%run_decomp(is_surf, this%centurybgc_index, dtime, ystates1(1:nom_tot_elms),&
+  call this%censom%run_decomp(is_surflit, this%centurybgc_index, dtime, ystates1(1:nom_tot_elms),&
       this%decompkf_eca, bgc_forc%pct_sand, bgc_forc%pct_clay,this%alpha_n, this%alpha_p, &
-      cascade_matrix, this%k_decay(1:nom_pools), pot_co2_hr, spinup_scalar, spinup_flg, bstatus)
+      cascade_matrix, this%k_decay(1:nom_pools), pot_co2_hr, bstatus)
 !  call this%sumup_cnp_mass('af run_decomp')
   if(bstatus%check_status())return
 
@@ -525,7 +522,7 @@ contains
 
 !  if(this%centurybgc_index%debug)call this%checksum_cascade(this%centurybgc_index)
   if(this%use_c14)then
-    call this%c14decay(this%centurybgc_index, dtime, spinup_scalar, spinup_flg, ystates1)
+    call this%c14decay(this%centurybgc_index, dtime, ystates1)
   endif
 
 !  call this%censom%stoichiometry_fix(this%centurybgc_index, ystates1)
@@ -537,7 +534,7 @@ contains
   end associate
   end subroutine runbgc_ecacnp
   !-------------------------------------------------------------------------------
-  subroutine c14decay(this, centurybgc_index, dtime, spinup_scalar, spinup_flg, ystates1)
+  subroutine c14decay(this, centurybgc_index, dtime, ystates1)
 
   !apply c14 decay to om pools
   use BgcCentCnpIndexType       , only : centurybgc_index_type
@@ -546,8 +543,6 @@ contains
   ! !ARGUMENTS:
   class(centurybgceca_type)     , intent(in) :: this
   type(centurybgc_index_type)   , intent(in) :: centurybgc_index
-  integer, intent(in) :: spinup_flg
-  real(r8), intent(in) :: spinup_scalar
   real(r8), intent(in) :: dtime
   real(r8), intent(inout) :: ystates1(:)
 
@@ -579,37 +574,21 @@ contains
     ystates1(kc14) = ystates1(kc14)*(1._r8 - this%c14decay_const * dtime)
   enddo
 
-  if(spinup_flg==2)then
-    do jj = som_beg, som_end, nelms
-      kc14=jj-1+c14_loc
-      ystates1(kc14) = ystates1(kc14)*exp( - this%c14decay_som_const * dtime /max(spinup_scalar,1.e-2_r8))
-    enddo
+  do jj = som_beg, som_end, nelms
+    kc14=jj-1+c14_loc
+    ystates1(kc14) = ystates1(kc14)*exp( - this%c14decay_som_const * dtime)
+  enddo
 
-    do jj = dom_beg, dom_end, nelms
-      kc14=jj-1+c14_loc
-      ystates1(kc14) = ystates1(kc14)*exp(- this%c14decay_dom_const * dtime /max(spinup_scalar,1.e-2_r8))
-    enddo
+  do jj = dom_beg, dom_end, nelms
+    kc14=jj-1+c14_loc
+    ystates1(kc14) = ystates1(kc14)*exp(- this%c14decay_dom_const * dtime)
+  enddo
 
-    do jj = Bm_beg, Bm_end, nelms
-      kc14=jj-1+c14_loc
-      ystates1(kc14) = ystates1(kc14)*exp(- this%c14decay_Bm_const * dtime /max(spinup_scalar,1.e-2_r8))
-    enddo
-  else
-    do jj = som_beg, som_end, nelms
-      kc14=jj-1+c14_loc
-      ystates1(kc14) = ystates1(kc14)*exp( - this%c14decay_som_const * dtime)
-    enddo
+  do jj = Bm_beg, Bm_end, nelms
+    kc14=jj-1+c14_loc
+    ystates1(kc14) = ystates1(kc14)*exp(- this%c14decay_Bm_const * dtime)
+  enddo
 
-    do jj = dom_beg, dom_end, nelms
-      kc14=jj-1+c14_loc
-      ystates1(kc14) = ystates1(kc14)*exp(- this%c14decay_dom_const * dtime)
-    enddo
-
-    do jj = Bm_beg, Bm_end, nelms
-      kc14=jj-1+c14_loc
-      ystates1(kc14) = ystates1(kc14)*exp(- this%c14decay_Bm_const * dtime)
-    enddo
-  endif
   end associate
   end subroutine c14decay
   !-------------------------------------------------------------------------------

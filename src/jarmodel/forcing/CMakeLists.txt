@@ -1,10 +1,11 @@
 set(BETR_JARFORC_SOURCES
   analforc.F90
+  SetJarForcMod.F90
   )
 
 include_directories(${CMAKE_BINARY_DIR}/src/shr)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)
-
+include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/bgcfarm_util)
 
 include(add_betr_library)
 add_betr_library(betr_jar_forc ${BETR_JARFORC_SOURCES})

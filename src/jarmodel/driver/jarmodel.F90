@@ -11,6 +11,7 @@ program main
   use histMod          , only : hist_var_str_len, hist_unit_str_len, hist_freq_str_len
   use  BeTR_TimeMod    , only : betr_time_type
   use shr_kind_mod     , only : r8 => shr_kind_r8
+  use SetJarForcMod    , only : SetJarForc
 implicit none
 
   character(len=*), parameter :: mod_filename = &
@@ -27,8 +28,11 @@ implicit none
   character(len=hist_var_str_len) , allocatable :: varl(:)
   character(len=hist_unit_str_len), allocatable :: unitl(:)
   character(len=hist_freq_str_len), allocatable :: freql(:)
-  real(r8) :: dt
+  real(r8), allocatable :: ystates0(:)
+  real(r8), allocatable :: ystatesf(:)
+  real(r8) :: dtime
   integer :: nvars
+  logical :: is_surflit = .false.  !logical switch for litter decomposition
 
   jarmtype = 'ecacnp'
   !create the jar type
@@ -54,14 +58,25 @@ implicit none
     call endrun(msg=bstatus%print_msg())
   endif
 
+  !set variables
   nvars=jarmodel%getvarllen()
   allocate(varl(nvars)); allocate(unitl(nvars)); allocate(freql(nvars))
+  call jarmodel%getvarlist(nvars, varl, unitl)
   freql(:) = 'day'
+  allocate(ystates0(nvars))
+  allocate(ystatesf(nvars))
 
   !initialize timer
   call timer%Init(namelist_buffer=namelist_buffer)
 
-  dt=timer%get_step_size()
-  !call hist%init(varl, unitl, freql, 'jarmodel')
+  dtime=timer%get_step_size()
+  call hist%init(varl, unitl, freql, 'jarmodel')
+
+  !set forcing
+  call SetJarForc(bgc_forc)
+
+  !run the model
+  call jarmodel%runbgc(is_surflit, dtime, bgc_forc, nvars, ystates0, ystatesf, bstatus)
+
 
 end program main

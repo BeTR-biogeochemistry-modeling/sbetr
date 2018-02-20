@@ -1423,7 +1423,7 @@ contains
     ! !LOCAL VARIABLES:
     character(len=32), parameter :: subname ='calc_bgc_reaction'
     integer                      :: fc, c, j, k
-    logical :: is_surf  !surface litter layer?
+    logical :: is_surflit  !surface litter layer?
     integer :: nstates
     real(r8), allocatable :: ystates0(:)
     real(r8), allocatable :: ystatesf(:)
@@ -1457,7 +1457,7 @@ contains
       do fc = 1, num_soilc
         c = filter_soilc(fc)
         if(j<jtops(c))cycle
-        is_surf=(j<=0)
+        is_surflit=(j<=0)
         this%centuryforc(c,j)%debug=betrtracer_vars%debug .and. j==2
 
         !do century eca bgc simulation
@@ -1478,8 +1478,8 @@ contains
            spinup_flg = 0
         endif
         if(this%centuryforc(c,j)%debug)print*,'runbgc',j
-        call this%centuryeca(c,j)%runbgc(is_surf, dtime, this%centuryforc(c,j),nstates, &
-            ystates0, ystatesf, biophysforc%scalaravg_col(c), spinup_flg, n_mass, betr_status)
+        call this%centuryeca(c,j)%runbgc(is_surflit, dtime, this%centuryforc(c,j),nstates, &
+            ystates0, ystatesf, betr_status)
         if(betr_status%check_status())then
           write(laystr,'(I2.2)')j
           betr_status%msg=trim(betr_status%msg)//' lay '//trim(laystr)

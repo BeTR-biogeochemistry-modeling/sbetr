@@ -32,28 +32,6 @@ implicit none
     real(r8) :: pflx_input_litr_fwd
     real(r8) :: pflx_input_litr_lwd
 
-    !loss
-    !real(r8) :: cflx_output_litr_met
-    !real(r8) :: cflx_output_litr_cel
-    !real(r8) :: cflx_output_litr_lig
-    !real(r8) :: cflx_output_litr_cwd
-    !real(r8) :: cflx_output_litr_fwd
-    !real(r8) :: cflx_output_litr_lwd
-
-    !real(r8) :: nflx_output_litr_met
-    !real(r8) :: nflx_output_litr_cel
-    !real(r8) :: nflx_output_litr_lig
-    !real(r8) :: nflx_output_litr_cwd
-    !real(r8) :: nflx_output_litr_fwd
-    !real(r8) :: nflx_output_litr_lwd
-
-    !real(r8) :: pflx_output_litr_met
-    !real(r8) :: pflx_output_litr_cel
-    !real(r8) :: pflx_output_litr_lig
-    !real(r8) :: pflx_output_litr_cwd
-    !real(r8) :: pflx_output_litr_fwd
-    !real(r8) :: pflx_output_litr_lwd
-
     real(r8) :: cflx_input_litr_met_c13   !g C/m2/s
     real(r8) :: cflx_input_litr_cel_c13   !g C/m2/s
     real(r8) :: cflx_input_litr_lig_c13   !g C/m2/s
@@ -74,28 +52,6 @@ implicit none
     real(r8) :: pflx_input_litr_cwd_c13
     real(r8) :: pflx_input_litr_fwd_c13
     real(r8) :: pflx_input_litr_lwd_c13
-
-    !loss
-    !real(r8) :: cflx_output_litr_met_c13
-    !real(r8) :: cflx_output_litr_cel_c13
-    !real(r8) :: cflx_output_litr_lig_c13
-    !real(r8) :: cflx_output_litr_cwd_c13
-    !real(r8) :: cflx_output_litr_fwd_c13
-    !real(r8) :: cflx_output_litr_lwd_c13
-
-    !real(r8) :: nflx_output_litr_met_c13
-    !real(r8) :: nflx_output_litr_cel_c13
-    !real(r8) :: nflx_output_litr_lig_c13
-    !real(r8) :: nflx_output_litr_cwd_c13
-    !real(r8) :: nflx_output_litr_fwd_c13
-    !real(r8) :: nflx_output_litr_lwd_c13
-
-    !real(r8) :: pflx_output_litr_met_c13
-    !real(r8) :: pflx_output_litr_cel_c13
-    !real(r8) :: pflx_output_litr_lig_c13
-    !real(r8) :: pflx_output_litr_cwd_c13
-    !real(r8) :: pflx_output_litr_fwd_c13
-    !real(r8) :: pflx_output_litr_lwd_c13
 
     real(r8) :: cflx_input_litr_met_c14   !g C/m2/s
     real(r8) :: cflx_input_litr_cel_c14   !g C/m2/s
@@ -120,27 +76,6 @@ implicit none
 
     real(r8) :: frac_loss_lit_to_fire
     real(r8) :: frac_loss_cwd_to_fire
-    !loss
-    !real(r8) :: cflx_output_litr_met_c14
-    !real(r8) :: cflx_output_litr_cel_c14
-    !real(r8) :: cflx_output_litr_lig_c14
-    !real(r8) :: cflx_output_litr_cwd_c14
-    !real(r8) :: cflx_output_litr_fwd_c14
-    !real(r8) :: cflx_output_litr_lwd_c14
-
-    !real(r8) :: nflx_output_litr_met_c14
-    !real(r8) :: nflx_output_litr_cel_c14
-    !real(r8) :: nflx_output_litr_lig_c14
-    !real(r8) :: nflx_output_litr_cwd_c14
-    !real(r8) :: nflx_output_litr_fwd_c14
-    !real(r8) :: nflx_output_litr_lwd_c14
-
-    !real(r8) :: pflx_output_litr_met_c14
-    !real(r8) :: pflx_output_litr_cel_c14
-    !real(r8) :: pflx_output_litr_lig_c14
-    !real(r8) :: pflx_output_litr_cwd_c14
-    !real(r8) :: pflx_output_litr_fwd_c14
-    !real(r8) :: pflx_output_litr_lwd_c14
 
     real(r8) :: biochem_pmin
     real(r8) :: sflx_minn_input_nh4       !nh4 from deposition and fertilization
@@ -281,27 +216,6 @@ contains
   this%pflx_input_litr_fwd =0._r8
   this%pflx_input_litr_lwd =0._r8
 
-    !loss
-!  this%cflx_output_litr_met =0._r8
-!  this%cflx_output_litr_cel =0._r8
-!  this%cflx_output_litr_lig =0._r8
-!  this%cflx_output_litr_cwd =0._r8
-!  this%cflx_output_litr_fwd =0._r8
-!  this%cflx_output_litr_lwd =0._r8
-
-!  this%nflx_output_litr_met =0._r8
-!  this%nflx_output_litr_cel =0._r8
-!  this%nflx_output_litr_lig =0._r8
-!  this%nflx_output_litr_cwd =0._r8
-!  this%nflx_output_litr_fwd =0._r8
-!  this%nflx_output_litr_lwd =0._r8
-
-!  this%pflx_output_litr_met =0._r8
-!  this%pflx_output_litr_cel =0._r8
-!  this%pflx_output_litr_lig =0._r8
-!  this%pflx_output_litr_cwd =0._r8
-!  this%pflx_output_litr_fwd =0._r8
-!  this%pflx_output_litr_lwd =0._r8
 
   !input
   this%cflx_input_litr_met_c13 =0._r8   !g C/m2/s
@@ -325,27 +239,6 @@ contains
   this%pflx_input_litr_fwd_c13 =0._r8
   this%pflx_input_litr_lwd_c13 =0._r8
 
-    !loss
-!  this%cflx_output_litr_met_c13 =0._r8
-!  this%cflx_output_litr_cel_c13 =0._r8
-!  this%cflx_output_litr_lig_c13 =0._r8
-!  this%cflx_output_litr_cwd_c13 =0._r8
-!  this%cflx_output_litr_fwd_c13 =0._r8
-!  this%cflx_output_litr_lwd_c13 =0._r8
-
-!  this%nflx_output_litr_met_c13 =0._r8
-!  this%nflx_output_litr_cel_c13 =0._r8
-!  this%nflx_output_litr_lig_c13 =0._r8
-!  this%nflx_output_litr_cwd_c13 =0._r8
-!  this%nflx_output_litr_fwd_c13 =0._r8
-!  this%nflx_output_litr_lwd_c13 =0._r8
-
-!  this%pflx_output_litr_met_c13 =0._r8
-!  this%pflx_output_litr_cel_c13 =0._r8
-!  this%pflx_output_litr_lig_c13 =0._r8
-!  this%pflx_output_litr_cwd_c13 =0._r8
-!  this%pflx_output_litr_fwd_c13 =0._r8
-!  this%pflx_output_litr_lwd_c13 =0._r8
 
   !input
   this%cflx_input_litr_met_c14 =0._r8   !g C/m2/s
@@ -369,30 +262,8 @@ contains
   this%pflx_input_litr_fwd_c14 =0._r8
   this%pflx_input_litr_lwd_c14 =0._r8
 
-    !loss
-!  this%cflx_output_litr_met_c14 =0._r8
-!  this%cflx_output_litr_cel_c14 =0._r8
-!  this%cflx_output_litr_lig_c14 =0._r8
-!  this%cflx_output_litr_cwd_c14 =0._r8
-!  this%cflx_output_litr_fwd_c14 =0._r8
-!  this%cflx_output_litr_lwd_c14 =0._r8
-
-!  this%nflx_output_litr_met_c14 =0._r8
-!  this%nflx_output_litr_cel_c14 =0._r8
-!  this%nflx_output_litr_lig_c14 =0._r8
-!  this%nflx_output_litr_cwd_c14 =0._r8
-!  this%nflx_output_litr_fwd_c14 =0._r8
-!  this%nflx_output_litr_lwd_c14 =0._r8
-
-!  this%pflx_output_litr_met_c14 =0._r8
-!  this%pflx_output_litr_cel_c14 =0._r8
-!  this%pflx_output_litr_lig_c14 =0._r8
-!  this%pflx_output_litr_cwd_c14 =0._r8
-!  this%pflx_output_litr_fwd_c14 =0._r8
-!  this%pflx_output_litr_lwd_c14 =0._r8
-
   this%sflx_minn_input_nh4      =0._r8       !nh4 from deposition and fertilization
-  this%sflx_minn_nh4_fix_nomic        =0._r8      !nh4 from fixation
+  this%sflx_minn_nh4_fix_nomic  =0._r8      !nh4 from fixation
   this%sflx_minp_input_po4      =0._r8      !inorganic P from deposition and fertilization
   this%sflx_minp_weathering_po4 =0._r8
 

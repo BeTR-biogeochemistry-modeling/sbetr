@@ -53,22 +53,19 @@ implicit none
 
   end function JarModel_getvarllen
   !-------------------------------------------------------------------------------
-  subroutine JarModel_runbgc(this,  is_surf, dtime, bgc_forc, nstates, ystates0, ystatesf, spinup_scalar, &
-      spinup_flg, n_mass, bstatus)
+  subroutine JarModel_runbgc(this,  is_surflit, dtime, bgc_forc, nstates, ystates0, ystatesf, bstatus)
 
   use JarBgcForcType            , only : JarBGC_forc_type
   implicit none
   class(jar_model_type)      , intent(inout) :: this
-  logical                    , intent(in)    :: is_surf
+  logical                    , intent(in)    :: is_surflit
   real(r8)                   , intent(in)    :: dtime
   type(JarBGC_forc_type)     , intent(in)    :: bgc_forc
   integer                    , intent(in)    :: nstates
   real(r8)                   , intent(out)   :: ystates0(nstates)
   real(r8)                   , intent(out)   :: ystatesf(nstates)
-  real(r8)                   , intent(out)   :: n_mass
   type(betr_status_type)     , intent(out)   :: bstatus
-  integer                    , intent(in)    :: spinup_flg
-  real(r8)                   , intent(inout) :: spinup_scalar
+
 
   call bstatus%reset()
   end subroutine JarModel_runbgc

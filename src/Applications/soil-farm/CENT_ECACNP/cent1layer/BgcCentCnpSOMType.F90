@@ -135,7 +135,7 @@ contains
   this%k_decay_lwd    =  biogeo_con%k_decay_lwd
   this%k_decay_fwd    =  biogeo_con%k_decay_fwd
 
-  this%def_cn(centurybgc_index%lit1) = biogeo_con%init_cn_met * natomw/catomw; 
+  this%def_cn(centurybgc_index%lit1) = biogeo_con%init_cn_met * natomw/catomw;
   this%def_cn(centurybgc_index%lit2) = biogeo_con%init_cn_cel * natomw/catomw
   this%def_cn(centurybgc_index%lit3) = biogeo_con%init_cn_lig * natomw/catomw
   this%def_cn(centurybgc_index%cwd)  = biogeo_con%init_cn_cwd * natomw/catomw
@@ -187,9 +187,9 @@ contains
   end subroutine UpdateParas
 !------------------------------------------
 
-  subroutine run_decomp(this, is_surf, centurybgc_index, dtime, ystates,&
+  subroutine run_decomp(this, is_surflit, centurybgc_index, dtime, ystates,&
       decompkf_eca, pct_sand, pct_clay, alpha_n, alpha_p, cascade_matrix, &
-      k_decay, pot_co2_hr, spinup_scalar, spinup_flg, bstatus)
+      k_decay, pot_co2_hr, bstatus)
   !
   !DESCRIPTION
   !
@@ -203,12 +203,10 @@ contains
   real(r8)                    , intent(in) :: dtime
   real(r8)                    , intent(inout) :: ystates(1:centurybgc_index%nom_tot_elms)
   type(DecompCent_type)       , intent(in) :: decompkf_eca
-  logical                     , intent(in) :: is_surf
+  logical                     , intent(in) :: is_surflit
   real(r8)                    , intent(in) :: pct_sand
   real(r8)                    , intent(in) :: pct_clay
-  integer                     , intent(in) :: spinup_flg
   real(r8)                    , intent(inout) :: cascade_matrix(centurybgc_index%nstvars, centurybgc_index%nreactions)
-  real(r8)                    , intent(inout) :: spinup_scalar
   real(r8)                    , intent(out) :: k_decay(1:ncentpools)
   real(r8)                    , intent(out) :: pot_co2_hr
   real(r8)                    , intent(out) :: alpha_n(1:ncentpools)
@@ -231,10 +229,6 @@ contains
   !calculate potential decay coefficient (1/s)
   call this%calc_som_decay_k(centurybgc_index, decompkf_eca, k_decay)
 
-  if(spinup_flg/=0)then
-    call this%apply_spinupf(centurybgc_index, decompkf_eca, k_decay, spinup_scalar, spinup_flg)
-  endif
-
   !calculate potential decay rates (mol C / s)
   call this%calc_som_decay_r(centurybgc_index, dtime, k_decay(1:ncentpools), &
       ystates(1:nom_tot_elms), pot_om_decay_rates)
@@ -245,7 +239,7 @@ contains
     pot_om_decay_rates(jj) = min(pot_om_decay_rates(jj), ystates(kc)/dtime)
   enddo
 
-  call this%calc_cascade_matrix(is_surf, centurybgc_index, pct_sand, pct_clay, alpha_n, alpha_p, cascade_matrix)
+  call this%calc_cascade_matrix(is_surflit, centurybgc_index, pct_sand, pct_clay, alpha_n, alpha_p, cascade_matrix)
 
   !calculate potential respiration rates by summarizing all om decomposition pathways
   call this%calc_potential_aerobic_hr(centurybgc_index, pot_om_decay_rates, &
@@ -254,7 +248,7 @@ contains
   end subroutine run_decomp
 !------------------------------------------
 
-  subroutine calc_cascade_matrix(this, is_surf, centurybgc_index, pct_sand, pct_clay, alpha_n, alpha_p, cascade_matrix)
+  subroutine calc_cascade_matrix(this, is_surflit, centurybgc_index, pct_sand, pct_clay, alpha_n, alpha_p, cascade_matrix)
   !
   ! DESCRIPTION
   ! calculate cascade matrix for decomposition
@@ -266,7 +260,7 @@ contains
   implicit none
   class(CentSom_type),           intent(inout) :: this
   type(centurybgc_index_type)  , intent(in)    :: centurybgc_index
-  logical                      , intent(in)    :: is_surf
+  logical                      , intent(in)    :: is_surflit
   real(r8)                     , intent(in)    :: pct_sand
   real(r8)                     , intent(in)    :: pct_clay
   real(r8)                     , intent(out)   :: alpha_n(ncentpools) !indicating factor for nitrogen limitation
@@ -448,7 +442,7 @@ contains
     ! +(1/cp_ratios(SOM1)-f1/cp_ratios(SOM2)-f2/cp_ratios(SOM3))*min_p
     reac = som1_dek_reac
     f2=0.003_r8 + 0.00032_r8*pct_clay
-    if(is_surf)then
+    if(is_surflit)then
       rf_s1 = 0.6_r8
     else
       rf_s1 = 0.17_r8 + 0.0068_r8*pct_sand
