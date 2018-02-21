@@ -138,6 +138,7 @@ implicit none
     integer :: soilorder
     real(r8):: msurf_nh4
     real(r8):: msurf_minp
+    real(r8):: air_temp
   contains
     procedure, public :: init
     procedure, private:: initAllocate
@@ -278,6 +279,7 @@ contains
   this%bsw    =0._r8
   this%bd     =0._r8             !bulk density
   this%pct_sand=0._r8
+  this%pct_clay=0._r8
   this%h2osoi_vol=0._r8
   this%h2osoi_liq=0._r8
   this%air_vol=0._r8
@@ -322,5 +324,6 @@ contains
   this%msurf_minp=0._r8
 
   this%ystates(:) = 0._r8
+  this%air_temp = 298.15_r8
   end subroutine set_defpar
 end module JarBgcForcType

@@ -4,6 +4,8 @@ set(BETR_JARFORC_SOURCES
   )
 
 include_directories(${CMAKE_BINARY_DIR}/src/shr)
+include_directories(${CMAKE_BINARY_DIR}/src/io_util)
+include_directories(${CMAKE_BINARY_DIR}/src/stub_clm)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/bgcfarm_util)
 

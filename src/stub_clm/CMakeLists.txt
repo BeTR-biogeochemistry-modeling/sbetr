@@ -10,6 +10,7 @@ set(BETR_STUB_CLM_SOURCES
   ChemStateType.F90
   ColumnType.F90
   EcophysConType.F90
+  FuncPedotransferMod.F90
   GridcellType.F90
   LandunitType.F90
   PatchType.F90

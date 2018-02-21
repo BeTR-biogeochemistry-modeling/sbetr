@@ -14,16 +14,18 @@ implicit none
   real(r8) :: froz_q10
   real(r8) :: decomp_depth_efolding
 
-  real(r8) :: rf_l1s1_bgc
-  real(r8) :: rf_l2s1_bgc
+  real(r8) :: rf_l1s1_bgc(2)
+  real(r8) :: rf_l2s1_bgc(2)
   real(r8) :: rf_l3s2_bgc
   real(r8) :: rf_s2s1_bgc
   real(r8) :: rf_s3s1_bgc
+  real(r8) :: rf_s1s2a_bgc(2)
+  real(r8) :: rf_s1s2b_bgc(2)
 
-  real(r8) :: k_decay_lit1
-  real(r8) :: k_decay_lit2
-  real(r8) :: k_decay_lit3
-  real(r8) :: k_decay_som1
+  real(r8) :: k_decay_lit1(2)
+  real(r8) :: k_decay_lit2(2)
+  real(r8) :: k_decay_lit3(2)
+  real(r8) :: k_decay_som1(2)
   real(r8) :: k_decay_som2
   real(r8) :: k_decay_som3
   real(r8) :: k_decay_cwd
@@ -115,6 +117,33 @@ contains
   class(CentPara_type), intent(inout) :: this
   real(r8) :: half_life
 
+  !the following note is from daycent
+  !3.90000           'DEC1(1)'  surface litter, structural, 1/y
+  !4.90000           'DEC1(2)'  soil, structural, 1/y
+  !14.80000          'DEC2(1)'  surface litter, metabolic, 1/y
+  !18.50000          'DEC2(2)'  soil, metabolic, 1/y
+  !6.00000           'DEC3(1)'  surface litter, som1, 1/y
+  !7.30000           'DEC3(2)'  soil, som1, 1/y
+  !0.00450           'DEC4'     soil, som3, 1/y
+  !0.20000           'DEC5'     soil, som2, 1/y
+  !1.50000           'DECW1'    dead fine branch
+  !0.50000           'DECW2'    dead large wood component
+  !0.60000           'DECW3'    dead coarse root component
+  !0.45000           'PS1CO2(1)', surface
+  !0.55000           'PS1CO2(2)', soil
+  !0.60000           'P1CO2A(1)'
+  !0.17000           'P1CO2A(2)'
+  !0.00000           'P1CO2B(1)'
+  !0.68000           'P1CO2B(2)'
+  !p1co2 = p1co2a + p1co2 * sand, som1->som2,som3, co2 resp frac, on surface, som1->som2
+  !0.45000           'PS1CO2(1)', surface litter, struct to som1 and som2
+  !0.55000           'PS1CO2(2)', soil, struct to som1 and som2
+  !0.30000           'RSPLIG', fraction of lignin flow lost to respiration
+  !0.55000           'PMCO2(1)' , surface litter, meta to som1, co2 resp frac
+  !0.55000           'PMCO2(2)' , soil meta to som1, co2 resp frac
+  !0.55000           'P2CO2', som2->som1,som3, co2 resp frac
+  !0.55000           'P3CO2', som3->som1, co2 resp frac
+
   half_life = 5568._r8 ! yr
   half_life = half_life * year_sec
   this%c14decay_const = - log(0.5_r8) / half_life
@@ -126,25 +155,27 @@ contains
   this%froz_q10              = 10._r8
   this%decomp_depth_efolding = 1._r8
 
-  !following is based on Table 15.4 in CLM4.5 tech note
-  this%rf_l1s1_bgc           = 0.55_r8
-  this%rf_l2s1_bgc           = 0.5_r8
-  this%rf_l3s2_bgc           = 0.5_r8
+  !following is based on century parameterization
+  this%rf_l1s1_bgc           = (/0.55_r8, 0.55_r8/)
+  this%rf_l2s1_bgc           = (/0.45_r8, 0.55_r8/)
+  this%rf_l3s2_bgc           = 0.3_r8
   this%rf_s2s1_bgc           = 0.55_r8
   this%rf_s3s1_bgc           = 0.55_r8
+  this%rf_s1s2a_bgc          = (/0.60_r8,0.17_r8/)
+  this%rf_s1s2b_bgc          = (/0._r8, 0.68_r8/)
   this%cwd_fcel_bgc          = 0.76_r8
   this%cwd_flig_bgc          = 0.24_r8
 
-  !following is based on Table 15.3 in CLM4.5 tech note
-  this%k_decay_lit1          = 1._r8/(0.066_r8*year_sec)   !1/second
-  this%k_decay_lit2          = 1._r8/(0.25_r8*year_sec)    !1/second
-  this%k_decay_lit3          = 1._r8/(0.25_r8*year_sec)    !1/second
-  this%k_decay_som1          = 1._r8/(0.17_r8*year_sec)    !1/second
-  this%k_decay_som2          = 1._r8/(6.1_r8*year_sec)     !1/second
-  this%k_decay_som3          = 1._r8/(270._r8*year_sec)    !1/second
-  this%k_decay_cwd           = 1._r8/(4.1_r8*year_sec)     !1/second
-  this%k_decay_fwd           = 1._r8/(4.1_r8*year_sec)     !1/second
-  this%k_decay_lwd           = 1._r8/(4.1_r8*year_sec)     !1/second
+  !following is based on century parameterization
+  this%k_decay_lit1          = (/14.8_r8,18.5_r8/)/year_sec    !1/second
+  this%k_decay_lit2          = (/3.9_r8 ,4.9_r8/) /year_sec    !1/second
+  this%k_decay_lit3          = (/3.9_r8 ,4.9_r8/) /year_sec    !1/second
+  this%k_decay_som1          = (/6.7_r8, 7.3_r8/) /year_sec    !1/second
+  this%k_decay_som2          = 0.2_r8/year_sec                 !1/second
+  this%k_decay_som3          = 0.0045_r8/year_sec              !1/second
+  this%k_decay_cwd           = 0.6_r8/year_sec                 !1/second
+  this%k_decay_fwd           = 1.5_r8/year_sec                 !1/second
+  this%k_decay_lwd           = 0.5_r8/year_sec                 !1/second
 
   !nitrification-denitrification
   this%nitrif_n2o_loss_frac  = 1.e-4_r8   !Arah and Vinten, 1995
@@ -262,31 +293,31 @@ contains
   call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
   if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
   if(bstatus%check_status())return
-  this%rf_l1s1_bgc=tempr
+!  this%rf_l1s1_bgc=tempr
 
   tString='rf_l2s1_bgc'
   call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
   if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
   if(bstatus%check_status())return
-  this%rf_l2s1_bgc=tempr
+!  this%rf_l2s1_bgc=tempr
 
   tString='rf_l3s2_bgc'
   call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
   if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
   if(bstatus%check_status())return
-  this%rf_l3s2_bgc=tempr
+!  this%rf_l3s2_bgc=tempr
 
   tString='rf_s2s1_bgc'
   call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
   if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
   if(bstatus%check_status())return
-  this%rf_s2s1_bgc=tempr
+!  this%rf_s2s1_bgc=tempr
 
   tString='rf_s3s1_bgc'
   call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
   if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
   if(bstatus%check_status())return
-  this%rf_s3s1_bgc=tempr
+!  this%rf_s3s1_bgc=tempr
 
   tString='cwd_fcel'
   call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
@@ -432,15 +463,16 @@ contains
   if ( .not. readv ) call bstatus%set_msg(msg=' ERROR: error in reading in soil order frac_p_sec_to_sol'//errMsg(__FILE__, __LINE__), err=-1)
   if(bstatus%check_status())return
 
-  this%k_decay_lit1          = 1._r8/(tau_decay_lit1*year_sec)    !1/second
-  this%k_decay_lit2          = 1._r8/(tau_decay_lit2*year_sec)    !1/second
-  this%k_decay_lit3          = 1._r8/(tau_decay_lit3*year_sec)    !1/second
-  this%k_decay_som1          = 1._r8/(tau_decay_som1*year_sec)    !1/second
-  this%k_decay_som2          = 1._r8/(tau_decay_som2*year_sec)    !1/second
-  this%k_decay_som3          = 1._r8/(tau_decay_som3*year_sec)    !1/second
-  this%k_decay_cwd           = 1._r8/(tau_decay_cwd*year_sec)     !1/second
-  this%k_decay_fwd           = 1._r8/(tau_decay_fwd*year_sec)     !1/second
-  this%k_decay_lwd           = 1._r8/(tau_decay_lwd*year_sec)     !1/second
+!   the following are purposely commented out to use default parameters from century, Jinyun Tang, Feb 21, 2018
+!  this%k_decay_lit1          = 1._r8/(tau_decay_lit1*year_sec)    !1/second
+!  this%k_decay_lit2          = 1._r8/(tau_decay_lit2*year_sec)    !1/second
+!  this%k_decay_lit3          = 1._r8/(tau_decay_lit3*year_sec)    !1/second
+!  this%k_decay_som1          = 1._r8/(tau_decay_som1*year_sec)    !1/second
+!  this%k_decay_som2          = 1._r8/(tau_decay_som2*year_sec)    !1/second
+!  this%k_decay_som3          = 1._r8/(tau_decay_som3*year_sec)    !1/second
+!  this%k_decay_cwd           = 1._r8/(tau_decay_cwd*year_sec)     !1/second
+!  this%k_decay_fwd           = 1._r8/(tau_decay_fwd*year_sec)     !1/second
+!  this%k_decay_lwd           = 1._r8/(tau_decay_lwd*year_sec)     !1/second
 
   if(betr_spinup_state/=0)then
     call this%apply_spinup_factor()
@@ -464,8 +496,8 @@ contains
   this%spinup_factor(5) = 1._r8
   this%spinup_factor(6) = 1._r8
 
-  k_decay_ref=this%k_decay_som1
-  this%spinup_factor(7) = k_decay_ref/this%k_decay_som1
+  k_decay_ref=this%k_decay_som1(1)
+  this%spinup_factor(7) = k_decay_ref/this%k_decay_som1(1)
   this%spinup_factor(8) = k_decay_ref/this%k_decay_som3
   this%spinup_factor(9) = k_decay_ref/this%k_decay_som2
 
