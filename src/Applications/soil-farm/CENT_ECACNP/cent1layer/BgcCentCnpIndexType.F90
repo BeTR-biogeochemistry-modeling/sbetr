@@ -33,7 +33,7 @@ implicit none
      integer           :: som_beg,  som_end   !som group
      integer           :: dom_beg,  dom_end   !dom group
      integer           :: Bm_beg,  Bm_end   !dom group
-
+     integer           :: pom_beg, pom_end
      integer           :: c_loc
      integer           :: n_loc
      integer           :: p_loc
@@ -312,22 +312,27 @@ implicit none
     call add_ompool_name(list_name, list_unit, list_pool,'fwd', use_c13, use_c14, do_init=.false.)
     this%wood_end=this%wood_beg-1+3*this%nelms
 
-    !som group
+    !microbial biomass group
     this%Bm_beg=this%wood_end+1
     this%som1 = addone(itemp); this%som1_dek_reac = addone(ireac)
-    call add_ompool_name(list_name, list_unit, list_pool,'som1_Bm', use_c13, use_c14, do_init=.false.)
+    call add_ompool_name(list_name, list_unit, list_pool,'SOM1_MB', use_c13, use_c14, do_init=.false.)
     this%Bm_end=this%Bm_beg-1+this%nelms
 
-    this%som_beg=this%Bm_end+1
+    this%pom_beg=this%Bm_end+1
+    this%som2 = addone(itemp); this%som2_dek_reac = addone(ireac)
+    call add_ompool_name(list_name, list_unit, list_pool,'SOM2_POM', use_c13, use_c14, do_init=.false.)
+    this%pom_end=this%pom_beg-1+this%nelms
+
+    this%som_beg=this%pom_end+1
     this%som3 = addone(itemp); this%som3_dek_reac = addone(ireac)
     call add_ompool_name(list_name, list_unit, list_pool,'som3', use_c13, use_c14, do_init=.false.)
     this%som_end=this%som_beg-1+this%nelms
 
     !dom group
-    this%dom_beg=this%som_end+1
-    this%som2 = addone(itemp); this%som2_dek_reac = addone(ireac)  !put som2 at the end because it is defined as dom
-    call add_ompool_name(list_name, list_unit, list_pool,'som2', use_c13, use_c14, do_init=.false.)
-    this%dom_end=this%dom_beg-1+this%nelms
+    !this%dom_beg=this%som_end+1
+    !this%som2 = addone(itemp); this%som2_dek_reac = addone(ireac)  !put som2 at the end because it is defined as dom
+    !call add_ompool_name(list_name, list_unit, list_pool,'som2', use_c13, use_c14, do_init=.false.)
+    !this%dom_end=this%dom_beg-1+this%nelms
 
     this%nom_pools = (countelm(this%litr_beg, this%litr_end)+&
        countelm(this%wood_beg,this%wood_end) + &

@@ -52,6 +52,7 @@ module BeTRTracerType
    integer :: id_trc_no3x, id_trc_beg_no3x, id_trc_end_no3x                       ! tag for no3 and its related species, no3x(HNO3,NO3(-))
    integer :: id_trc_no2x, id_trc_beg_no2x, id_trc_end_no2x                       ! tag for no2 and its related species, no2x(HNO2,NO2(-))
    integer :: id_trc_dom, id_trc_beg_dom, id_trc_end_dom                         ! tag for generic dissolved organic matter
+   integer :: id_trc_pom, id_trc_beg_pom, id_trc_end_pom                          ! tag for particulate organic matter
    integer :: id_trc_doc, id_trc_beg_doc, id_trc_end_doc                         ! tag for generic dissolved organic carbon, used for testing single carbon pool model
    integer :: id_trc_p_sol, id_trc_beg_p_sol, id_trc_end_p_sol                   ! tag for soluble inorganic P, this includes P in equilibrium adsorption
 
@@ -193,6 +194,7 @@ module BeTRTracerType
   this%id_trc_no3x                  = 0; this%id_trc_beg_no3x = 0; this%id_trc_end_no3x = 0      ! tag for no3 and its related species, no3x(HNO3,NO3(-))
   this%id_trc_no2x                  = 0; this%id_trc_beg_no2x = 0; this%id_trc_end_no2x = 0       ! tag for no2 and its related species, no2x(HNO2,NO2(-))
   this%id_trc_dom                   = 0; this%id_trc_beg_dom = 0;  this%id_trc_end_dom = 0      ! tag for generic dissolved organic matter
+  this%id_trc_pom                   = 0; this%id_trc_beg_pom = 0;  this%id_trc_end_pom = 0      ! tag for particulate organic matter
   this%id_trc_doc                   = 0; this%id_trc_beg_doc = 0; this%id_trc_end_doc = 0      ! tag for generic dissolved organic matter
   this%id_trc_p_sol                 = 0; this%id_trc_beg_p_sol = 0; this%id_trc_end_p_sol = 0
   this%id_trc_o18_h2o               = 0; this%id_trc_beg_o18_h2o=0; this%id_trc_end_o18_h2o=0      ! tag for H2O(18)
