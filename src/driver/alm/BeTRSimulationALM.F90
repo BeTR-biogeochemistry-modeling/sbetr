@@ -826,7 +826,7 @@ contains
           !compute relative n return.
           n14state_vars%pnup_pfrootc_patch(p) = safe_div(n14flux_vars%smin_nh4_to_plant_patch(p)&
                + n14flux_vars%smin_no3_to_plant_patch(p), &
-            c12state_vars%frootc_patch(p))
+            c12state_vars%froot_patch(p))
         else
           n14flux_vars%smin_nh4_to_plant_patch(p) = 0._r8
           n14flux_vars%smin_no3_to_plant_patch(p) = 0._r8
@@ -907,37 +907,37 @@ contains
       p31flux_vars%som_p_leached_col(c) = -p31flux_vars%som_p_leached_col(c)
 
       !recollect soil organic carbon, soil organic nitrogen, and soil organic phosphorus
-      c12state_vars%cwdc_col(c) = this%biogeo_state(c)%c12state_vars%cwdc_col(c_l)
-      c12state_vars%totlitc_col(c) = this%biogeo_state(c)%c12state_vars%totlitc_col(c_l)
-      c12state_vars%totsomc_col(c) = this%biogeo_state(c)%c12state_vars%totsomc_col(c_l)
-      c12state_vars%totlitc_1m_col(c) = this%biogeo_state(c)%c12state_vars%totlitc_1m_col(c_l)
-      c12state_vars%totsomc_1m_col(c) = this%biogeo_state(c)%c12state_vars%totsomc_1m_col(c_l)
+      c12state_vars%cwd_col(c) = this%biogeo_state(c)%c12state_vars%cwdc_col(c_l)
+      c12state_vars%totlit_col(c) = this%biogeo_state(c)%c12state_vars%totlitc_col(c_l)
+      c12state_vars%totsom_col(c) = this%biogeo_state(c)%c12state_vars%totsomc_col(c_l)
+      c12state_vars%totlit_1m_col(c) = this%biogeo_state(c)%c12state_vars%totlitc_1m_col(c_l)
+      c12state_vars%totsom_1m_col(c) = this%biogeo_state(c)%c12state_vars%totsomc_1m_col(c_l)
 
       if(use_c13_betr)then
-        c13state_vars%cwdc_col(c) = this%biogeo_state(c)%c13state_vars%cwdc_col(c_l)
-        c13state_vars%totlitc_col(c) = this%biogeo_state(c)%c13state_vars%totlitc_col(c_l)
-        c13state_vars%totsomc_col(c) = this%biogeo_state(c)%c13state_vars%totsomc_col(c_l)
-        c13state_vars%totlitc_1m_col(c) = this%biogeo_state(c)%c13state_vars%totlitc_1m_col(c_l)
-        c13state_vars%totsomc_1m_col(c) = this%biogeo_state(c)%c13state_vars%totsomc_1m_col(c_l)
+        c13state_vars%cwd_col(c) = this%biogeo_state(c)%c13state_vars%cwdc_col(c_l)
+        c13state_vars%totlit_col(c) = this%biogeo_state(c)%c13state_vars%totlitc_col(c_l)
+        c13state_vars%totsom_col(c) = this%biogeo_state(c)%c13state_vars%totsomc_col(c_l)
+        c13state_vars%totlit_1m_col(c) = this%biogeo_state(c)%c13state_vars%totlitc_1m_col(c_l)
+        c13state_vars%totsom_1m_col(c) = this%biogeo_state(c)%c13state_vars%totsomc_1m_col(c_l)
       endif
       if(use_c14_betr)then
-        c14state_vars%cwdc_col(c) = this%biogeo_state(c)%c14state_vars%cwdc_col(c_l)
-        c14state_vars%totlitc_col(c) = this%biogeo_state(c)%c14state_vars%totlitc_col(c_l)
-        c14state_vars%totsomc_col(c) = this%biogeo_state(c)%c14state_vars%totsomc_col(c_l)
-        c13state_vars%totlitc_1m_col(c) = this%biogeo_state(c)%c13state_vars%totlitc_1m_col(c_l)
-        c13state_vars%totsomc_1m_col(c) = this%biogeo_state(c)%c13state_vars%totsomc_1m_col(c_l)
+        c14state_vars%cwd_col(c) = this%biogeo_state(c)%c14state_vars%cwdc_col(c_l)
+        c14state_vars%totlit_col(c) = this%biogeo_state(c)%c14state_vars%totlitc_col(c_l)
+        c14state_vars%totsom_col(c) = this%biogeo_state(c)%c14state_vars%totsomc_col(c_l)
+        c13state_vars%totlit_1m_col(c) = this%biogeo_state(c)%c13state_vars%totlitc_1m_col(c_l)
+        c13state_vars%totsom_1m_col(c) = this%biogeo_state(c)%c13state_vars%totsomc_1m_col(c_l)
       endif
-      n14state_vars%cwdn_col(c) = this%biogeo_state(c)%n14state_vars%cwdn_col(c_l)
-      n14state_vars%totlitn_col(c) = this%biogeo_state(c)%n14state_vars%totlitn_col(c_l)
-      n14state_vars%totsomn_col(c) = this%biogeo_state(c)%n14state_vars%totsomn_col(c_l)
-      n14state_vars%totlitn_1m_col(c) = this%biogeo_state(c)%n14state_vars%totlitn_1m_col(c_l)
-      n14state_vars%totsomn_1m_col(c) = this%biogeo_state(c)%n14state_vars%totsomn_1m_col(c_l)
+      n14state_vars%cwd_col(c) = this%biogeo_state(c)%n14state_vars%cwdn_col(c_l)
+      n14state_vars%totlit_col(c) = this%biogeo_state(c)%n14state_vars%totlitn_col(c_l)
+      n14state_vars%totsom_col(c) = this%biogeo_state(c)%n14state_vars%totsomn_col(c_l)
+      n14state_vars%totlit_1m_col(c) = this%biogeo_state(c)%n14state_vars%totlitn_1m_col(c_l)
+      n14state_vars%totsom_1m_col(c) = this%biogeo_state(c)%n14state_vars%totsomn_1m_col(c_l)
 
-      p31state_vars%cwdp_col(c) = this%biogeo_state(c)%p31state_vars%cwdp_col(c_l)
-      p31state_vars%totlitp_col(c) = this%biogeo_state(c)%p31state_vars%totlitp_col(c_l)
-      p31state_vars%totsomp_col(c) = this%biogeo_state(c)%p31state_vars%totsomp_col(c_l)
-      p31state_vars%totlitp_1m_col(c) = this%biogeo_state(c)%p31state_vars%totlitp_1m_col(c_l)
-      p31state_vars%totsomp_1m_col(c) = this%biogeo_state(c)%p31state_vars%totsomp_1m_col(c_l)
+      p31state_vars%cwd_col(c) = this%biogeo_state(c)%p31state_vars%cwdp_col(c_l)
+      p31state_vars%totlit_col(c) = this%biogeo_state(c)%p31state_vars%totlitp_col(c_l)
+      p31state_vars%totsom_col(c) = this%biogeo_state(c)%p31state_vars%totsomp_col(c_l)
+      p31state_vars%totlit_1m_col(c) = this%biogeo_state(c)%p31state_vars%totlitp_1m_col(c_l)
+      p31state_vars%totsom_1m_col(c) = this%biogeo_state(c)%p31state_vars%totsomp_1m_col(c_l)
 
       !recollect inorganic nitrogen (smin_nh4, smin_no3), and inorganic phosphorus (disolvable and protected)
       n14state_vars%sminn_col(c) = this%biogeo_state(c)%n14state_vars%sminn_col(c_l)
@@ -1148,7 +1148,7 @@ contains
              !for simplicity, atomic weight of carbon is set to 12._r8 g/mol
              this%biophys_forc(c)%dic_prod_vr_col(c_l,j) = (carbonflux_vars%hr_vr_col(c,j) + &
                 cnstate_vars%nfixation_prof_col(c,j)*carbonflux_vars%rr_col(c))/catomw
-             this%biophys_forc(c)%doc_prod_vr_col(c_l,j) = (carbonstate_vars%decomp_cpools_vr_col(c,j,6) - &
+             this%biophys_forc(c)%doc_prod_vr_col(c_l,j) = (carbonstate_vars%decomp_pools_vr_col(c,j,6) - &
                 carbonstate_vars%decomp_som2c_vr_col(c,j))/this%betr_time%delta_time/catomw
           endif
         enddo
