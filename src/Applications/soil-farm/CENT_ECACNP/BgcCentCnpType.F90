@@ -77,8 +77,8 @@ contains
   ! DESCRIPTION
   ! constructor
     implicit none
-    type(centurybgceca_type), pointer :: create_centuryeca_type
-    type(centurybgceca_type), pointer :: bgc
+    class(centurybgceca_type), pointer :: create_centuryeca_type
+    class(centurybgceca_type), pointer :: bgc
 
     allocate(bgc)
     create_centuryeca_type => bgc
