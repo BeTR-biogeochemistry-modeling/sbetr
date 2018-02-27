@@ -348,8 +348,7 @@ contains
       endif
     enddo
     call this%BeTRSetcps(bounds, col, pft)
-    call this%BeTRSetBiophysForcing(bounds, col, pft, betr_bounds%lbj, betr_bounds%ubj, &
-        waterstate_vars = waterstate)
+    call this%BeTRSetBiophysForcing(bounds, col, pft, betr_bounds%lbj, betr_bounds%ubj)
 
     do c = bounds%begc, bounds%endc
       call this%betr(c)%Init(namelist_buffer, betr_bounds, this%betr_col(c), &

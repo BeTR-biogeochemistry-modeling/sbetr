@@ -347,11 +347,11 @@ contains
     cascade_matrix(lid_o2                 ,reac)  = -cascade_matrix(lid_co2                ,reac)
     cascade_matrix(lid_nh4                ,reac)  = -cascade_matrix((lit1-1)*nelms+n_loc   ,reac) - &
         cascade_matrix((som1-1)*nelms+n_loc   ,reac)
-    cascade_matrix(lid_minp_soluble         ,reac)  = -cascade_matrix((lit1-1)*nelms+p_loc   ,reac) - &
+    cascade_matrix(lid_minp_soluble       ,reac)  = -cascade_matrix((lit1-1)*nelms+p_loc   ,reac) - &
         cascade_matrix((som1-1)*nelms+p_loc   ,reac)
 
     cascade_matrix(lid_minn_nh4_immob     ,reac)  = -cascade_matrix(lid_nh4         ,reac)
-    cascade_matrix(lid_co2_hr             ,reac) = cascade_matrix(lid_co2           ,reac)
+    cascade_matrix(lid_co2_hr             ,reac)  = cascade_matrix(lid_co2           ,reac)
     cascade_matrix(lid_minp_immob         ,reac)  = -cascade_matrix(lid_minp_soluble  ,reac)
 
     if(this%use_c14)then
@@ -386,7 +386,7 @@ contains
     cascade_matrix(lid_nh4                ,reac)   = -cascade_matrix((lit2-1)*nelms+n_loc   ,reac) - &
                                                       cascade_matrix((som1-1)*nelms+n_loc   ,reac)
 
-    cascade_matrix(lid_minp_soluble         ,reac)   = -cascade_matrix((lit2-1)*nelms+p_loc   ,reac) - &
+    cascade_matrix(lid_minp_soluble         ,reac) = -cascade_matrix((lit2-1)*nelms+p_loc   ,reac) - &
                                                        cascade_matrix((som1-1)*nelms+p_loc   ,reac)
 
     cascade_matrix(lid_minn_nh4_immob     ,reac)   = -cascade_matrix(lid_nh4         ,reac)
@@ -424,13 +424,12 @@ contains
     cascade_matrix(lid_o2                 ,reac) = -cascade_matrix(lid_co2   ,reac)
     cascade_matrix(lid_nh4                ,reac) = -cascade_matrix((lit3-1)*nelms+n_loc   ,reac) - &
                                                     cascade_matrix((som2-1)*nelms+n_loc   ,reac)
-    cascade_matrix(lid_minp_soluble      ,reac) = -cascade_matrix((lit3-1)*nelms+p_loc   ,reac) - &
+    cascade_matrix(lid_minp_soluble       ,reac) = -cascade_matrix((lit3-1)*nelms+p_loc   ,reac) - &
                                                    cascade_matrix((som2-1)*nelms+p_loc   ,reac)
 
     cascade_matrix(lid_minn_nh4_immob     ,reac) = -cascade_matrix(lid_nh4         ,reac)
     cascade_matrix(lid_minp_immob         ,reac) = -cascade_matrix(lid_minp_soluble  ,reac)
     cascade_matrix(lid_co2_hr             ,reac) = cascade_matrix(lid_co2        ,reac)
-
 
     if (cascade_matrix(lid_nh4, reac) < 0._r8)alpha_n(reac)=1._r8
     if (cascade_matrix(lid_minp_soluble,reac) < 0._r8)alpha_p(reac)=1._r8
@@ -477,9 +476,9 @@ contains
                                                    -cascade_matrix((som2-1)*nelms+n_loc   ,reac)  &
                                                    -cascade_matrix((som3-1)*nelms+n_loc   ,reac)
 
-    cascade_matrix(lid_minp_soluble         ,reac) = -cascade_matrix((som1-1)*nelms+p_loc   ,reac)  &
-                                                     -cascade_matrix((som2-1)*nelms+p_loc   ,reac)  &
-                                                     -cascade_matrix((som3-1)*nelms+p_loc   ,reac)
+    cascade_matrix(lid_minp_soluble       ,reac) = -cascade_matrix((som1-1)*nelms+p_loc   ,reac)  &
+                                                   -cascade_matrix((som2-1)*nelms+p_loc   ,reac)  &
+                                                   -cascade_matrix((som3-1)*nelms+p_loc   ,reac)
 
     cascade_matrix(lid_minn_nh4_immob     ,reac) = -cascade_matrix(lid_nh4         ,reac)
     cascade_matrix(lid_minp_immob         ,reac) = -cascade_matrix(lid_minp_soluble  ,reac)
@@ -601,9 +600,60 @@ contains
     f1 = cwd_fcel*(1._r8-rf_l2s1_bgc(lay))
     f2 = (1._r8-cwd_fcel)*(1._r8-rf_l3s2_bgc)
 
-    cascade_matrix((cwd-1)*nelms+c_loc    ,reac) = -1._r8
-    cascade_matrix((cwd-1)*nelms+n_loc    ,reac) = -this%icn_ratios(cwd)
-    cascade_matrix((cwd-1)*nelms+p_loc    ,reac) = -this%icp_ratios(cwd)
+    call wood_decomp_cascade(cwd, reac, f1, f2)
+
+    !---------------------------------------------------------------------------------
+    !reaction 8, the partition lwd into som1 and som2
+    reac = lwd_dek_reac
+    !lwd + o2 -> (1-flig)((1-rf_l2s1_bgc)*SOM1+rf_l2s1_bgc*CO2) + flig*((1-rf_l3s2_bgc)*SOM2+rf_l3s2_bgc*CO2)
+    !    + (1/cn_ratios(cwd)-f1/cn_ratios(som1)-f2/cn_ratios(som2))
+    !    + (1/cp_ratios(cwd)-f1/cp_ratios(som1)-f2/cp_ratios(som2))
+    f1 = lwd_fcel*(1-rf_l2s1_bgc(lay))
+    f2 = (1._r8-lwd_fcel)*(1-rf_l3s2_bgc)
+
+    call wood_decomp_cascade(lwd, reac, f1, f2)
+
+    !---------------------------------------------------------------------------------
+    !reaction 9, the partition fwd into som1 and som2
+    reac = fwd_dek_reac
+    !fwd + o2 -> (1-flig)((1-rf_l2s1_bgc)*SOM1+rf_l2s1_bgc*CO2) + flig*((1-rf_l3s2_bgc)*SOM2+rf_l3s2_bgc*CO2)
+    !    + (1/cn_ratios(cwd)-f1/cn_ratios(som1)-f2/cn_ratios(som2))
+    !    + (1/cp_ratios(cwd)-f1/cp_ratios(som1)-f2/cp_ratios(som2))
+    f1 = fwd_fcel*(1-rf_l2s1_bgc(lay))
+    f2 = (1._r8-fwd_fcel)*(1-rf_l3s2_bgc)
+
+    call wood_decomp_cascade(fwd, reac, f1, f2)
+
+  end associate
+  contains
+
+    subroutine wood_decomp_cascade(iwd, reac, f1, f2)
+
+    implicit none
+    integer , intent(in) :: iwd, reac
+    real(r8), intent(in):: f1, f2
+    associate(                                                   &
+      c_loc     => centurybgc_index%c_loc                      , & !
+      n_loc     => centurybgc_index%n_loc                      , & !
+      p_loc     => centurybgc_index%p_loc                      , & !
+      c13_loc   => centurybgc_index%c13_loc                    , & !
+      c14_loc   => centurybgc_index%c14_loc                    , & !
+      nelms     => centurybgc_index%nelms                      , & !
+      lid_o2    => centurybgc_index%lid_o2                     , & !
+      lid_co2   => centurybgc_index%lid_co2                    , & !
+      lid_nh4   => centurybgc_index%lid_nh4                    , & !
+      lid_c14_co2=> centurybgc_index%lid_c14_co2               , & !
+      lid_c13_co2=> centurybgc_index%lid_c13_co2               , & !
+      lid_co2_hr => centurybgc_index%lid_co2_hr                , &
+      lid_minn_nh4_immob=> centurybgc_index%lid_minn_nh4_immob , &
+      lid_minp_immob => centurybgc_index%lid_minp_immob        , &
+      lid_minp_soluble=> centurybgc_index%lid_minp_soluble     , &
+      som1      => centurybgc_index%som1                       , & !
+      som2      => centurybgc_index%som2                         & !
+    )
+    cascade_matrix((iwd-1)*nelms+c_loc    ,reac) = -1._r8
+    cascade_matrix((iwd-1)*nelms+n_loc    ,reac) = -this%icn_ratios(iwd)
+    cascade_matrix((iwd-1)*nelms+p_loc    ,reac) = -this%icp_ratios(iwd)
 
     cascade_matrix((som1-1)*nelms+c_loc   ,reac) = f1
     cascade_matrix((som1-1)*nelms+n_loc   ,reac) = f1*this%icn_ratios(som1)
@@ -616,13 +666,13 @@ contains
     cascade_matrix(lid_co2                ,reac) = 1._r8-f1-f2
 
     cascade_matrix(lid_o2                 ,reac) = -cascade_matrix(lid_co2                ,reac)
-    cascade_matrix(lid_nh4                ,reac) = -cascade_matrix((cwd-1)*nelms+n_loc    ,reac)  &
+    cascade_matrix(lid_nh4                ,reac) = -cascade_matrix((iwd-1)*nelms+n_loc    ,reac)  &
                                                    -cascade_matrix((som1-1)*nelms+n_loc   ,reac)  &
                                                    -cascade_matrix((som2-1)*nelms+n_loc   ,reac)
 
-    cascade_matrix(lid_minp_soluble         ,reac) = -cascade_matrix((cwd-1)*nelms+p_loc    ,reac)  &
-                                                     -cascade_matrix((som1-1)*nelms+p_loc   ,reac)  &
-                                                     -cascade_matrix((som2-1)*nelms+p_loc   ,reac)
+    cascade_matrix(lid_minp_soluble       ,reac) = -cascade_matrix((iwd-1)*nelms+p_loc    ,reac)  &
+                                                   -cascade_matrix((som1-1)*nelms+p_loc   ,reac)  &
+                                                   -cascade_matrix((som2-1)*nelms+p_loc   ,reac)
 
     cascade_matrix(lid_minn_nh4_immob     ,reac) = -cascade_matrix(lid_nh4         ,reac)
     cascade_matrix(lid_minp_immob         ,reac) = -cascade_matrix(lid_minp_soluble  ,reac)
@@ -632,122 +682,18 @@ contains
     if (cascade_matrix(lid_minp_soluble,reac) < 0._r8)alpha_p(reac)=1._r8
 
     if(this%use_c14)then
-      cascade_matrix((cwd-1)*nelms+c14_loc   , reac) = -this%icc14_ratios(cwd)
-      cascade_matrix((som1-1)*nelms+c14_loc  , reac) =  f1*this%icc14_ratios(cwd)
-      cascade_matrix((som2-1)*nelms+c14_loc  , reac) =  f2*this%icc14_ratios(cwd)
+      cascade_matrix((iwd-1)*nelms+c14_loc   , reac) = -this%icc14_ratios(iwd)
+      cascade_matrix((som1-1)*nelms+c14_loc  , reac) =  f1*this%icc14_ratios(iwd)
+      cascade_matrix((som2-1)*nelms+c14_loc  , reac) =  f2*this%icc14_ratios(iwd)
     endif
 
     if(this%use_c14)then
-      cascade_matrix((cwd-1)*nelms+c13_loc   , reac) = -this%icc13_ratios(cwd)
-      cascade_matrix((som1-1)*nelms+c13_loc  , reac) =  f1*this%icc13_ratios(cwd)
-      cascade_matrix((som2-1)*nelms+c13_loc  , reac) =  f2*this%icc13_ratios(cwd)
+      cascade_matrix((iwd-1)*nelms+c13_loc   , reac) = -this%icc13_ratios(iwd)
+      cascade_matrix((som1-1)*nelms+c13_loc  , reac) =  f1*this%icc13_ratios(iwd)
+      cascade_matrix((som2-1)*nelms+c13_loc  , reac) =  f2*this%icc13_ratios(iwd)
     endif
-
-    !---------------------------------------------------------------------------------
-    !reaction 8, the partition lwd into som1 and som2
-    reac = lwd_dek_reac
-    !lwd + o2 -> (1-flig)((1-rf_l2s1_bgc)*SOM1+rf_l2s1_bgc*CO2) + flig*((1-rf_l3s2_bgc)*SOM2+rf_l3s2_bgc*CO2)
-    !    + (1/cn_ratios(cwd)-f1/cn_ratios(som1)-f2/cn_ratios(som2))
-    !    + (1/cp_ratios(cwd)-f1/cp_ratios(som1)-f2/cp_ratios(som2))
-    f1 = lwd_fcel*(1-rf_l2s1_bgc(lay))
-    f2 = (1._r8-lwd_fcel)*(1-rf_l3s2_bgc)
-
-    cascade_matrix((lwd-1)*nelms+c_loc    ,reac) = -1._r8
-    cascade_matrix((lwd-1)*nelms+n_loc    ,reac) = -this%icn_ratios(lwd)
-    cascade_matrix((lwd-1)*nelms+p_loc    ,reac) = -this%icp_ratios(lwd)
-
-    cascade_matrix((som1-1)*nelms+c_loc   ,reac) = f1
-    cascade_matrix((som1-1)*nelms+n_loc   ,reac) = f1*this%icn_ratios(som1)
-    cascade_matrix((som1-1)*nelms+p_loc   ,reac) = f1*this%icp_ratios(som1)
-
-    cascade_matrix((som2-1)*nelms+c_loc   ,reac) = f2
-    cascade_matrix((som2-1)*nelms+n_loc   ,reac) = f2*this%icn_ratios(som2)
-    cascade_matrix((som2-1)*nelms+p_loc   ,reac) = f2*this%icp_ratios(som2)
-
-    cascade_matrix(lid_co2                ,reac) = 1._r8-f1-f2
-
-    cascade_matrix(lid_o2                 ,reac) = -cascade_matrix(lid_co2  ,reac)
-
-    cascade_matrix(lid_nh4                ,reac) = -cascade_matrix((lwd-1)*nelms+n_loc    ,reac)  &
-                                                   -cascade_matrix((som1-1)*nelms+n_loc   ,reac)  &
-                                                   -cascade_matrix((som2-1)*nelms+n_loc   ,reac)
-
-    cascade_matrix(lid_minp_soluble         ,reac) = -cascade_matrix((lwd-1)*nelms+p_loc    ,reac)  &
-                                                     -cascade_matrix((som1-1)*nelms+p_loc   ,reac)  &
-                                                     -cascade_matrix((som2-1)*nelms+p_loc   ,reac)
-
-    cascade_matrix(lid_minn_nh4_immob     ,reac) = -cascade_matrix(lid_nh4         ,reac)
-    cascade_matrix(lid_minp_immob         ,reac) = -cascade_matrix(lid_minp_soluble  ,reac)
-    cascade_matrix(lid_co2_hr             ,reac) = cascade_matrix(lid_co2        ,reac)
-
-    if (cascade_matrix(lid_nh4, reac) < 0._r8)alpha_n(reac)=1._r8
-    if (cascade_matrix(lid_minp_soluble,reac) < 0._r8)alpha_p(reac)=1._r8
-
-    if(this%use_c14)then
-      cascade_matrix((lwd-1)*nelms+c14_loc   , reac) = -this%icc14_ratios(lwd)
-      cascade_matrix((som1-1)*nelms+c14_loc  , reac) =  f1*this%icc14_ratios(lwd)
-      cascade_matrix((som2-1)*nelms+c14_loc  , reac) =  f2*this%icc14_ratios(lwd)
-    endif
-
-    if(this%use_c14)then
-      cascade_matrix((lwd-1)*nelms+c13_loc   , reac) = -this%icc13_ratios(lwd)
-      cascade_matrix((som1-1)*nelms+c13_loc  , reac) =  f1*this%icc13_ratios(lwd)
-      cascade_matrix((som2-1)*nelms+c13_loc  , reac) =  f2*this%icc13_ratios(lwd)
-    endif
-
-    !---------------------------------------------------------------------------------
-    !reaction 9, the partition fwd into som1 and som2
-    reac = fwd_dek_reac
-    !fwd + o2 -> (1-flig)((1-rf_l2s1_bgc)*SOM1+rf_l2s1_bgc*CO2) + flig*((1-rf_l3s2_bgc)*SOM2+rf_l3s2_bgc*CO2)
-    !    + (1/cn_ratios(cwd)-f1/cn_ratios(som1)-f2/cn_ratios(som2))
-    !    + (1/cp_ratios(cwd)-f1/cp_ratios(som1)-f2/cp_ratios(som2))
-    f1 = fwd_fcel*(1-rf_l2s1_bgc(lay))
-    f2 = (1._r8-fwd_fcel)*(1-rf_l3s2_bgc)
-
-    cascade_matrix((fwd-1)*nelms+c_loc    ,reac) = -1._r8
-    cascade_matrix((fwd-1)*nelms+n_loc    ,reac) = -this%icn_ratios(fwd)
-    cascade_matrix((fwd-1)*nelms+p_loc    ,reac) = -this%icp_ratios(fwd)
-
-    cascade_matrix((som1-1)*nelms+c_loc   ,reac) = f1
-    cascade_matrix((som1-1)*nelms+n_loc   ,reac) = f1*this%icn_ratios(som1)
-    cascade_matrix((som1-1)*nelms+p_loc   ,reac) = f1*this%icp_ratios(som1)
-
-    cascade_matrix((som2-1)*nelms+c_loc   ,reac) = f2
-    cascade_matrix((som2-1)*nelms+n_loc   ,reac) = f2*this%icn_ratios(som2)
-    cascade_matrix((som2-1)*nelms+p_loc   ,reac) = f2*this%icp_ratios(som2)
-
-    cascade_matrix(lid_co2                ,reac) = 1._r8-f1-f2
-
-    cascade_matrix(lid_o2                 ,reac) = -cascade_matrix(lid_co2  ,reac)
-
-    cascade_matrix(lid_nh4                ,reac) = -cascade_matrix((fwd-1)*nelms+n_loc    ,reac)  &
-                                                   -cascade_matrix((som1-1)*nelms+n_loc   ,reac)  &
-                                                   -cascade_matrix((som2-1)*nelms+n_loc   ,reac)
-
-    cascade_matrix(lid_minp_soluble         ,reac) = -cascade_matrix((fwd-1)*nelms+p_loc    ,reac)  &
-                                                     -cascade_matrix((som1-1)*nelms+p_loc   ,reac)  &
-                                                     -cascade_matrix((som2-1)*nelms+p_loc   ,reac)
-
-    cascade_matrix(lid_minn_nh4_immob     ,reac) = -cascade_matrix(lid_nh4         ,reac)
-    cascade_matrix(lid_minp_immob         ,reac) = -cascade_matrix(lid_minp_soluble  ,reac)
-    cascade_matrix(lid_co2_hr             ,reac) = cascade_matrix(lid_co2        ,reac)
-
-    if (cascade_matrix(lid_nh4, reac) < 0._r8)alpha_n(reac)=1._r8
-    if (cascade_matrix(lid_minp_soluble,reac) < 0._r8)alpha_p(reac)=1._r8
-
-    if(this%use_c14)then
-      cascade_matrix((fwd-1)*nelms+c14_loc   , reac) = -this%icc14_ratios(fwd)
-      cascade_matrix((som1-1)*nelms+c14_loc  , reac) =  f1*this%icc14_ratios(fwd)
-      cascade_matrix((som2-1)*nelms+c14_loc  , reac) =  f2*this%icc14_ratios(fwd)
-    endif
-
-    if(this%use_c14)then
-      cascade_matrix((fwd-1)*nelms+c13_loc   , reac) = -this%icc13_ratios(fwd)
-      cascade_matrix((som1-1)*nelms+c13_loc  , reac) =  f1*this%icc13_ratios(fwd)
-      cascade_matrix((som2-1)*nelms+c13_loc  , reac) =  f2*this%icc13_ratios(fwd)
-    endif
-
-  end associate
+    end associate
+    end subroutine wood_decomp_cascade
   end subroutine calc_cascade_matrix
 
   !-----------------------------------------------------------------------
@@ -914,15 +860,7 @@ contains
   type(centurybgc_index_type)   , intent(in) :: centurybgc_index
   real(r8)                      , intent(inout) :: ystates(centurybgc_index%nstvars)
 
-
-  real(r8) :: difn
-  real(r8) :: stoibal_ncon
-  integer  :: jj, kc, kn
-  real(r8), parameter :: tiny_ncon = 1.e-15_r8
-  associate(                         &
-    nelms => centurybgc_index%nelms, &
-    c_loc => centurybgc_index%c_loc, &
-    n_loc => centurybgc_index%n_loc, &
+  associate(                             &
     c13_loc => centurybgc_index%c13_loc, &
     c14_loc => centurybgc_index%c14_loc, &
     som1  => centurybgc_index%som1 , &
@@ -934,34 +872,37 @@ contains
 
 
   !for om pools
-  jj = som1
-  kc = (jj-1) * nelms + c_loc
-  kn = (jj-1) * nelms + n_loc
-  stoibal_ncon = ystates(kc)*this%icn_ratios(jj)
-  difn=ystates(kn)-stoibal_ncon
-  if(difn<-tiny_ncon)then
-    ystates(kn)=stoibal_ncon
-  endif
+  call stoi_fix(som1)
 
-  jj = som2
-  kc = (jj-1) * nelms + c_loc
-  kn = (jj-1) * nelms + n_loc
-  stoibal_ncon = ystates(kc)*this%icn_ratios(jj)
-  difn=ystates(kn)-stoibal_ncon
-  if(difn<-tiny_ncon)then
-    ystates(kn)=stoibal_ncon
-  endif
+  call stoi_fix(som2)
 
-  jj = som3
-  kc = (jj-1) * nelms + c_loc
-  kn = (jj-1) * nelms + n_loc
-  stoibal_ncon = ystates(kc)*this%icn_ratios(jj)
-  difn=ystates(kn)-stoibal_ncon
-  if(difn<-tiny_ncon)then
-    ystates(kn)=stoibal_ncon
-  endif
+  call stoi_fix(som3)
 
   end associate
+  contains
+    subroutine stoi_fix(jj)
+    implicit none
+    integer, intent(in) :: jj
+    real(r8) :: difn
+    real(r8) :: stoibal_ncon
+    integer  :: kc, kn
+    real(r8), parameter :: tiny_ncon = 1.e-15_r8
+
+    associate(                       &
+      nelms => centurybgc_index%nelms, &
+      c_loc => centurybgc_index%c_loc, &
+      n_loc => centurybgc_index%n_loc  &
+    )
+
+    kc = (jj-1) * nelms + c_loc
+    kn = (jj-1) * nelms + n_loc
+    stoibal_ncon = ystates(kc)*this%icn_ratios(jj)
+    difn=ystates(kn)-stoibal_ncon
+    if(difn<-tiny_ncon)then
+      ystates(kn)=stoibal_ncon
+    endif
+    end associate
+    end subroutine stoi_fix
   end subroutine stoichiometry_fix
 
   !-------------------------------------------------------------------------------
@@ -1076,7 +1017,6 @@ contains
   k_decay(fwd)  = k_decay(fwd) * exp(-3._r8*this%fwd_flig)
   k_decay(lit2) = k_decay(lit2)* exp(-3._r8*this%lit_flig)
   k_decay(lit3) = k_decay(lit3)* exp(-3._r8*this%lit_flig)
-
 
   end associate
   end subroutine calc_som_decay_k

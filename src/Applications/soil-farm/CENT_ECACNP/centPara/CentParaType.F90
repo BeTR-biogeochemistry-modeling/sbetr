@@ -46,6 +46,7 @@ implicit none
 
   real(r8) :: c14decay_som_const
   real(r8) :: c14decay_dom_const
+  real(r8) :: c14decay_pom_const
   real(r8) :: c14decay_bm_const
   real(r8) :: k_nitr_max
 
@@ -149,6 +150,7 @@ contains
   this%c14decay_const = - log(0.5_r8) / half_life
   this%c14decay_som_const  =this%c14decay_const
   this%c14decay_dom_const  =this%c14decay_const
+  this%c14decay_pom_const  =this%c14decay_const
   this%c14decay_Bm_const  =this%c14decay_const
   !decomposition
   this%Q10                   = 2._r8

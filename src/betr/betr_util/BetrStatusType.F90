@@ -35,7 +35,7 @@ contains
 !-------------------------------------------------------------------------------
   subroutine reset(this)
   implicit none
-  class(betr_status_type), intent(inout)  :: this
+  class(betr_status_type)  :: this
 
   this%msg = ''
   this%error = 0

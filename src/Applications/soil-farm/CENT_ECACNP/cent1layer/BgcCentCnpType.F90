@@ -61,10 +61,15 @@ module BgcCentCnpType
     real(r8), private                    :: c14decay_const
     real(r8), private                    :: c14decay_som_const
     real(r8), private                    :: c14decay_dom_const
+    real(r8), private                    :: c14decay_pom_const
     real(r8), private                    :: c14decay_Bm_const
-    logical, private                     :: use_c13
-    logical, private                     :: use_c14
-
+    logical , private                    :: use_c13
+    logical , private                    :: use_c14
+    real(r8), private                    :: beg_c_mass, beg_c13_mass, beg_c14_mass
+    real(r8), private                    :: beg_n_mass
+    real(r8), private                    :: beg_p_mass
+    real(r8), private                    :: c_inflx,n_inflx, p_inflx
+    logical                              :: bgc_on
   contains
     procedure, public  :: init          => init_ecacnp
     procedure, public  :: runbgc        => runbgc_ecacnp
@@ -81,8 +86,9 @@ module BgcCentCnpType
     procedure, private :: bgc_integrate
     procedure, private :: c14decay
     procedure, private :: checksum_cascade
+    procedure, private :: begin_massbal_check
+    procedure, private :: end_massbal_check
   end type centurybgceca_type
-  logical, public :: ldebug_bgc =.false.
 
   public :: create_jarmodel_centuryeca
 contains
@@ -125,6 +131,60 @@ contains
   end subroutine getvarlist_ecacnp
 
   !-------------------------------------------------------------------------------
+  subroutine begin_massbal_check(this)
+
+  implicit none
+  class(centurybgceca_type) , intent(inout) :: this
+  real(r8) :: c_mass0, n_mass0, p_mass0
+  print*,'begin_massbal_check'
+  call this%sumup_cnp_msflx(this%ystates1, this%beg_c_mass, &
+    this%beg_n_mass, this%beg_p_mass)
+
+  print*,this%beg_c_mass,this%beg_n_mass,this%beg_p_mass
+
+  call this%sumup_cnp_msflx(this%ystates0, c_mass0, &
+    n_mass0, p_mass0)
+  print*,c_mass0,n_mass0,p_mass0
+  end subroutine begin_massbal_check
+  !-------------------------------------------------------------------------------
+
+  subroutine end_massbal_check(this, header)
+
+  implicit none
+  class(centurybgceca_type) , intent(inout) :: this
+  character(len=*), intent(in) :: header
+  real(r8) :: c_mass, n_mass, p_mass
+  real(r8) :: c_flx,n_flx,p_flx
+  type(betr_status_type) :: bstatus
+  real(r8) :: dmass_c, dmass_n, dmass_p
+  real(r8) :: emass_c, emass_n, emass_p
+  real(r8) :: remass_c, remass_n, remass_p
+
+  real(r8), parameter :: tiny_val=1.e-10_r8
+  print*,trim(header)
+  call this%sumup_cnp_msflx(this%ystates1, c_mass, n_mass, p_mass,c_flx,n_flx,p_flx, bstatus)
+
+  dmass_c=c_mass - this%beg_c_mass
+  dmass_n=n_mass - this%beg_n_mass
+  dmass_p=p_mass - this%beg_p_mass
+
+  emass_c=dmass_c + c_flx - this%c_inflx
+  emass_n=dmass_n + n_flx - this%n_inflx
+  emass_p=dmass_p + p_flx - this%p_inflx
+
+  remass_c=emass_c/max(abs(dmass_c),tiny_val)
+  remass_n=emass_n/max(abs(dmass_n),tiny_val)
+  remass_p=emass_p/max(abs(dmass_p),tiny_val)
+
+  write(*,'(A)')'------------------------------------------------------------------------------------------------------'
+  write(*,'(A)')'type             beg_mass             end_mass            dmass                inflx            outflx'
+  write(*, '(A,5(X,E20.10))')'c_mass bal=',this%beg_c_mass, c_mass, emass_c, this%c_inflx, c_flx
+  write(*, '(A,5(X,E20.10))')'n_mass bal=',this%beg_n_mass, n_mass, emass_n, this%n_inflx, n_flx
+  write(*, '(A,5(X,E20.10))')'p_mass bal=',this%beg_p_mass, p_mass, emass_p, this%p_inflx, p_flx
+  if(maxval((/abs(remass_c),abs(remass_n),abs(remass_p)/))>1.e-3_r8)stop
+  end subroutine end_massbal_check
+
+  !-------------------------------------------------------------------------------
   subroutine UpdateParas_ecacnp(this,  biogeo_con, bstatus)
   use betr_varcon         , only : betr_maxpatch_pft, betr_max_soilorder
   implicit none
@@ -151,6 +211,7 @@ contains
       this%c14decay_const=biogeo_con%c14decay_const
       this%c14decay_som_const=biogeo_con%c14decay_som_const
       this%c14decay_dom_const=biogeo_con%c14decay_dom_const
+      this%c14decay_pom_const=biogeo_con%c14decay_pom_const
       this%c14decay_Bm_const=biogeo_con%c14decay_Bm_const
     endif
 
@@ -176,6 +237,7 @@ contains
   character(len=256) :: msg
   write(this%jarname, '(A)')'ecacnp'
 
+  this%bgc_on=.true.
   select type(biogeo_con)
   type is(CentPara_type)
     call bstatus%reset()
@@ -430,7 +492,6 @@ contains
   real(r8) :: c_mass1, n_mass1, p_mass1
   real(r8) :: c_mass2, n_mass2, p_mass2
   real(r8) :: c_flx, n_flx, p_flx
-  real(r8) :: c_inf, n_inf, p_inf
   integer :: jj
   character(len=*),parameter :: subname = 'runbgc_ecacnp'
   associate(                                            &
@@ -464,12 +525,16 @@ contains
 
   !initialize state variables
   call this%init_states(this%centurybgc_index, bgc_forc)
+!  call this%begin_massbal_check()
   ystates0(:) = this%ystates0(:)
 
 
   !add all external input
-   call this%add_ext_input(dtime, this%centurybgc_index, bgc_forc, c_inf, n_inf, p_inf)
-!  call this%sumup_cnp_mass('afext input')
+   call this%add_ext_input(dtime, this%centurybgc_index, bgc_forc, &
+      this%c_inflx, this%n_inflx, this%p_inflx)
+!   call this%end_massbal_check('af add_ext_input')
+
+!  if(this%bgc_on)then
   !initialize decomposition scaling factors
   call this%decompkf_eca%set_decompk_scalar(ystates1(lid_o2), bgc_forc)
 
@@ -478,12 +543,12 @@ contains
 
   !calculate default stoichiometry entries
   call this%calc_cascade_matrix(this%centurybgc_index, cascade_matrix, frc_c13, frc_c14)
-!  if(this%centurybgc_index%debug)call this%checksum_cascade(this%centurybgc_index)
+  !if(this%centurybgc_index%debug)call this%checksum_cascade(this%centurybgc_index)
   !run century decomposition, return decay rates, cascade matrix, potential hr
   call this%censom%run_decomp(is_surflit, this%centurybgc_index, dtime, ystates1(1:nom_tot_elms),&
       this%decompkf_eca, bgc_forc%pct_sand, bgc_forc%pct_clay,this%alpha_n, this%alpha_p, &
       cascade_matrix, this%k_decay(1:nom_pools), pot_co2_hr, bstatus)
-!  call this%sumup_cnp_mass('af run_decomp')
+
   if(bstatus%check_status())return
 
   call this%nitden%calc_pot_nitr(ystates1(lid_nh4), bgc_forc, this%decompkf_eca, pot_f_nit_mol_per_sec)
@@ -516,21 +581,19 @@ contains
   time = 0._r8
   yf(:) = ystates1(:)
 
-!  call this%sumup_cnp_mass('bfdecomp',c_mass1,n_mass1,p_mass1)
    call ode_adapt_ebbks1(this, yf, nprimvars, nstvars, time, dtime, ystates1)
-!  call this%sumup_cnp_mass('afdecomp',c_mass2,n_mass2,p_mass2)
 
-!  if(this%centurybgc_index%debug)call this%checksum_cascade(this%centurybgc_index)
+  !if(this%centurybgc_index%debug)call this%checksum_cascade(this%centurybgc_index)
   if(this%use_c14)then
     call this%c14decay(this%centurybgc_index, dtime, ystates1)
   endif
 
 !  call this%censom%stoichiometry_fix(this%centurybgc_index, ystates1)
-  ystatesf(:) = ystates1(:)
-!  if(this%centurybgc_index%debug)then
-!    print*,'after decomp'
-!    call this%censom%calc_cnp_ratios(this%centurybgc_index, ystatesf, bstatus)
+
+!  if(this%centurybgc_index%debug)call this%end_massbal_check('bf exit runbgc')
 !  endif
+  ystatesf(:) = ystates1(:)
+
   end associate
   end subroutine runbgc_ecacnp
   !-------------------------------------------------------------------------------
@@ -554,42 +617,44 @@ contains
     Bm_beg =>  centurybgc_index%Bm_beg    , &
     som_beg =>  centurybgc_index%som_beg  , &
     dom_beg =>  centurybgc_index%dom_beg  , &
+    pom_beg =>  centurybgc_index%pom_beg  , &
     wood_beg =>  centurybgc_index%wood_beg, &
     litr_end =>  centurybgc_index%litr_end, &
     som_end =>  centurybgc_index%som_end  , &
     Bm_end =>  centurybgc_index%Bm_end    , &
     dom_end =>  centurybgc_index%dom_end  , &
+    pom_end => centurybgc_index%pom_end   , &
     wood_end =>  centurybgc_index%wood_end, &
     c14_loc=>  centurybgc_index%c14_loc   , &
     nelms => centurybgc_index%nelms         &
   )
 
-  do jj = litr_beg, litr_end, nelms
-    kc14=jj-1+c14_loc
-    ystates1(kc14) = ystates1(kc14)*(1._r8 - this%c14decay_const * dtime)
-  enddo
+  call somc14_decay(litr_beg, litr_end, nelms, c14_loc, this%c14decay_const)
 
-  do jj = wood_beg, wood_end, nelms
-    kc14=jj-1+c14_loc
-    ystates1(kc14) = ystates1(kc14)*(1._r8 - this%c14decay_const * dtime)
-  enddo
+  call somc14_decay(wood_beg, wood_end, nelms, c14_loc, this%c14decay_const)
 
-  do jj = som_beg, som_end, nelms
-    kc14=jj-1+c14_loc
-    ystates1(kc14) = ystates1(kc14)*exp( - this%c14decay_som_const * dtime)
-  enddo
+  call somc14_decay(som_beg, som_end, nelms, c14_loc, this%c14decay_som_const)
 
-  do jj = dom_beg, dom_end, nelms
-    kc14=jj-1+c14_loc
-    ystates1(kc14) = ystates1(kc14)*exp(- this%c14decay_dom_const * dtime)
-  enddo
+  call somc14_decay(dom_beg, dom_end, nelms, c14_loc, this%c14decay_dom_const)
 
-  do jj = Bm_beg, Bm_end, nelms
-    kc14=jj-1+c14_loc
-    ystates1(kc14) = ystates1(kc14)*exp(- this%c14decay_Bm_const * dtime)
-  enddo
+  call somc14_decay(pom_beg, pom_end, nelms, c14_loc, this%c14decay_pom_const)
+
+  call somc14_decay( Bm_beg, Bm_end, nelms, c14_loc, this%c14decay_Bm_const)
 
   end associate
+  contains
+    subroutine somc14_decay(ebeg, eend, nelms, c14_loc, decay_const)
+    implicit none
+    integer, intent(in) :: ebeg, eend, nelms
+    integer, intent(in) :: c14_loc
+    real(r8),intent(in) :: decay_const
+    integer :: jj, kc14
+    do jj = ebeg, eend, nelms
+      kc14=jj-1+c14_loc
+      ystates1(kc14) = ystates1(kc14)*exp(- decay_const * dtime)
+    enddo
+
+    end subroutine somc14_decay
   end subroutine c14decay
   !-------------------------------------------------------------------------------
   subroutine calc_cascade_matrix(this,centurybgc_index, cascade_matrix, frc_c13, frc_c14)
@@ -839,7 +904,8 @@ contains
   integer :: kc, kn, kp,kc13,kc14
   integer :: jj
   real(r8):: totp, pmin_frac, pmin_cleave
-  real(r8):: tmul
+  real(r8):: totc, totn
+  real(r8):: c_inf_loc, n_inf_loc, p_inf_loc
   associate(                        &
     lit1 =>  centurybgc_index%lit1, &
     lit2 =>  centurybgc_index%lit2, &
@@ -849,11 +915,15 @@ contains
     lwd =>   centurybgc_index%lwd, &
     litr_beg =>  centurybgc_index%litr_beg, &
     som_beg =>  centurybgc_index%som_beg, &
+    Bm_beg  =>  centurybgc_index%Bm_beg, &
     dom_beg =>  centurybgc_index%dom_beg, &
+    pom_beg =>  centurybgc_index%pom_beg, &
     wood_beg =>  centurybgc_index%wood_beg, &
     litr_end =>  centurybgc_index%litr_end, &
     som_end =>  centurybgc_index%som_end, &
     dom_end =>  centurybgc_index%dom_end, &
+    pom_end =>  centurybgc_index%pom_end, &
+    Bm_end =>  centurybgc_index%Bm_end, &
     wood_end =>  centurybgc_index%wood_end, &
     c_loc=>  centurybgc_index%c_loc,&
     c13_loc=>  centurybgc_index%c13_loc,&
@@ -869,215 +939,176 @@ contains
     lid_minp_soluble =>  centurybgc_index%lid_minp_soluble,  &
     lid_minp_immob => centurybgc_index%lid_minp_immob &
   )
-  tmul=1._r8
 
-  jj=lit1;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
-  this%ystates1(kc) =this%ystates0(kc) + bgc_forc%cflx_input_litr_met*dtime/catomw
-  this%ystates1(kn) =this%ystates0(kn) + bgc_forc%nflx_input_litr_met*dtime/natomw * tmul
-  this%ystates1(kp) =this%ystates0(kp) + bgc_forc%pflx_input_litr_met*dtime/patomw
+  c_inf_loc=0._r8; n_inf_loc=0._r8; p_inf_loc=0._r8
+  !*********************************************
+  ! organic substrates
+  !*********************************************
+  call add_som_pool(lit1, bgc_forc%cflx_input_litr_met, &
+    bgc_forc%nflx_input_litr_met, bgc_forc%pflx_input_litr_met, &
+    bgc_forc%cflx_input_litr_met_c13, bgc_forc%cflx_input_litr_met_c14, &
+    c_inf_loc, n_inf_loc, p_inf_loc)
 
-  if(present(c_inf))then
-    c_inf = this%ystates1(kc) - this%ystates0(kc)
-  endif
-  if(present(n_inf))then
-    n_inf = this%ystates1(kn) - this%ystates0(kn)
-  endif
-  if(present(p_inf))then
-    p_inf = this%ystates1(kp) - this%ystates0(kp)
-  endif
+  call add_som_pool(lit2, bgc_forc%cflx_input_litr_cel, &
+    bgc_forc%nflx_input_litr_cel, bgc_forc%pflx_input_litr_cel, &
+    bgc_forc%cflx_input_litr_cel_c13, bgc_forc%cflx_input_litr_cel_c14, &
+    c_inf_loc, n_inf_loc, p_inf_loc)
 
-  if(this%use_c13)then
-    kc13=(jj-1)*nelms+c13_loc
-    this%ystates1(kc13) =this%ystates0(kc13) + bgc_forc%cflx_input_litr_met_c13*dtime/c13atomw
-  endif
-  if(this%use_c14)then
-    kc14=(jj-1)*nelms+c14_loc
-    this%ystates1(kc14) =this%ystates0(kc14) + bgc_forc%cflx_input_litr_met_c14*dtime/c14atomw
-!    if(centurybgc_index%debug)print*,'c14 lit1',this%ystates1(kc14)
-  endif
+  call add_som_pool(lit3, bgc_forc%cflx_input_litr_lig, &
+    bgc_forc%nflx_input_litr_lig, bgc_forc%pflx_input_litr_lig, &
+    bgc_forc%cflx_input_litr_lig_c13, bgc_forc%cflx_input_litr_lig_c14, &
+    c_inf_loc, n_inf_loc, p_inf_loc)
 
-  jj=lit2;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
-  this%ystates1(kc) =this%ystates0(kc) + bgc_forc%cflx_input_litr_cel*dtime/catomw
-  this%ystates1(kn) =this%ystates0(kn) + bgc_forc%nflx_input_litr_cel*dtime/natomw
-  this%ystates1(kp) =this%ystates0(kp) + bgc_forc%pflx_input_litr_cel*dtime/patomw
+  call add_som_pool(cwd, bgc_forc%cflx_input_litr_cwd, &
+    bgc_forc%nflx_input_litr_cwd, bgc_forc%pflx_input_litr_cwd, &
+    bgc_forc%cflx_input_litr_cwd_c13, bgc_forc%cflx_input_litr_cwd_c14, &
+    c_inf_loc, n_inf_loc, p_inf_loc)
 
-  if(present(c_inf))then
-    c_inf = c_inf + this%ystates1(kc) - this%ystates0(kc)
-  endif
-  if(present(n_inf))then
-    n_inf = n_inf + this%ystates1(kn) - this%ystates0(kn)
-  endif
-  if(present(p_inf))then
-    p_inf = p_inf + this%ystates1(kp) - this%ystates0(kp)
-  endif
-  if(this%use_c13)then
-    kc13=(jj-1)*nelms+c13_loc
-    this%ystates1(kc13) =this%ystates0(kc13) + bgc_forc%cflx_input_litr_cel_c13*dtime/c13atomw
-  endif
-  if(this%use_c14)then
-    kc14=(jj-1)*nelms+c14_loc
-    this%ystates1(kc14) =this%ystates0(kc14) + bgc_forc%cflx_input_litr_cel_c14*dtime/c14atomw
-!    if(centurybgc_index%debug)print*,'c14 lit2',this%ystates1(kc14)
-  endif
+  call add_som_pool(fwd, bgc_forc%cflx_input_litr_fwd, &
+    bgc_forc%nflx_input_litr_fwd, bgc_forc%pflx_input_litr_fwd, &
+    bgc_forc%cflx_input_litr_fwd_c13, bgc_forc%cflx_input_litr_fwd_c14, &
+    c_inf_loc, n_inf_loc, p_inf_loc)
 
-  jj=lit3;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
-  this%ystates1(kc) =this%ystates0(kc) + bgc_forc%cflx_input_litr_lig*dtime/catomw
-  this%ystates1(kn) =this%ystates0(kn) + bgc_forc%nflx_input_litr_lig*dtime/natomw * tmul
-  this%ystates1(kp) =this%ystates0(kp) + bgc_forc%pflx_input_litr_lig*dtime/patomw
+  call add_som_pool(lwd, bgc_forc%cflx_input_litr_lwd, &
+    bgc_forc%nflx_input_litr_lwd, bgc_forc%pflx_input_litr_lwd, &
+    bgc_forc%cflx_input_litr_lwd_c13, bgc_forc%cflx_input_litr_lwd_c14, &
+    c_inf_loc, n_inf_loc, p_inf_loc)
 
-  if(present(c_inf))then
-    c_inf = c_inf + this%ystates1(kc) - this%ystates0(kc)
-  endif
-  if(present(n_inf))then
-    n_inf = n_inf + this%ystates1(kn) - this%ystates0(kn)
-  endif
-  if(present(p_inf))then
-    p_inf = p_inf + this%ystates1(kp) - this%ystates0(kp)
-  endif
-  if(this%use_c13)then
-    kc13=(jj-1)*nelms+c13_loc
-    this%ystates1(kc13) =this%ystates0(kc13) + bgc_forc%cflx_input_litr_lig_c13*dtime/c13atomw
-  endif
-  if(this%use_c14)then
-    kc14=(jj-1)*nelms+c14_loc
-    this%ystates1(kc14) =this%ystates0(kc14) + bgc_forc%cflx_input_litr_lig_c14*dtime/c14atomw
-!    if(centurybgc_index%debug)print*,'c14 lit3',this%ystates1(kc14)
-  endif
+   if(present(c_inf))c_inf=c_inf_loc
+   if(present(n_inf))n_inf=n_inf_loc
+   if(present(p_inf))p_inf=p_inf_loc
 
-  jj=cwd;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
-  this%ystates1(kc) =this%ystates0(kc) + bgc_forc%cflx_input_litr_cwd*dtime/catomw
-  this%ystates1(kn) =this%ystates0(kn) + bgc_forc%nflx_input_litr_cwd*dtime/natomw * tmul
-  this%ystates1(kp) =this%ystates0(kp) + bgc_forc%pflx_input_litr_cwd*dtime/patomw
-
-  if(present(c_inf))then
-    c_inf = c_inf + this%ystates1(kc) - this%ystates0(kc)
-  endif
-  if(present(n_inf))then
-    n_inf = n_inf + this%ystates1(kn) - this%ystates0(kn)
-  endif
-  if(present(p_inf))then
-    p_inf = p_inf + this%ystates1(kp) - this%ystates0(kp)
-  endif
-  if(this%use_c13)then
-    kc13=(jj-1)*nelms+c13_loc
-    this%ystates1(kc13) =this%ystates0(kc13) + bgc_forc%cflx_input_litr_cwd_c13*dtime/c13atomw
-  endif
-  if(this%use_c14)then
-    kc14=(jj-1)*nelms+c14_loc
-    this%ystates1(kc14) =this%ystates0(kc14) + bgc_forc%cflx_input_litr_cwd_c14*dtime/c14atomw
-!    if(centurybgc_index%debug)print*,'c14 cwd',this%ystates1(kc14)
-  endif
-
-  jj=fwd;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
-  this%ystates1(kc) =this%ystates0(kc) + bgc_forc%cflx_input_litr_fwd*dtime/catomw
-  this%ystates1(kn) =this%ystates0(kn) + bgc_forc%nflx_input_litr_fwd*dtime/natomw * tmul
-  this%ystates1(kp) =this%ystates0(kp) + bgc_forc%pflx_input_litr_fwd*dtime/patomw
-
-  if(present(c_inf))then
-    c_inf = c_inf + this%ystates1(kc) - this%ystates0(kc)
-  endif
-  if(present(n_inf))then
-    n_inf = n_inf + this%ystates1(kn) - this%ystates0(kn)
-  endif
-  if(present(p_inf))then
-    p_inf = p_inf + this%ystates1(kp) - this%ystates0(kp)
-  endif
-
-  if(this%use_c13)then
-    kc13=(jj-1)*nelms+c13_loc
-    this%ystates1(kc13) =this%ystates0(kc13) + bgc_forc%cflx_input_litr_fwd_c13*dtime/c13atomw
-  endif
-  if(this%use_c14)then
-    kc14=(jj-1)*nelms+c14_loc
-    this%ystates1(kc14) =this%ystates0(kc14) + bgc_forc%cflx_input_litr_fwd_c14*dtime/c14atomw
-  endif
-
-  jj=lwd;kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
-  this%ystates1(kc) =this%ystates0(kc) + bgc_forc%cflx_input_litr_lwd*dtime/catomw
-  this%ystates1(kn) =this%ystates0(kn) + bgc_forc%nflx_input_litr_lwd*dtime/natomw * tmul
-  this%ystates1(kp) =this%ystates0(kp) + bgc_forc%pflx_input_litr_lwd*dtime/patomw
-
-  if(present(c_inf))then
-    c_inf = c_inf + this%ystates1(kc) - this%ystates0(kc)
-  endif
-  if(present(n_inf))then
-    n_inf = n_inf + this%ystates1(kn) - this%ystates0(kn)
-  endif
-  if(present(p_inf))then
-    p_inf = p_inf + this%ystates1(kp) - this%ystates0(kp)
-  endif
-
-  if(this%use_c13)then
-    kc13=(jj-1)*nelms+c13_loc
-    this%ystates1(kc13) =this%ystates0(kc13) + bgc_forc%cflx_input_litr_lwd_c13*dtime/c13atomw
-  endif
-  if(this%use_c14)then
-    kc14=(jj-1)*nelms+c14_loc
-    this%ystates1(kc14) =this%ystates0(kc14) + bgc_forc%cflx_input_litr_lwd_c14*dtime/c14atomw
-  endif
-
+  !*********************************************
+  !inorganic substrates
+  !*********************************************
   this%ystates1(lid_nh4) =this%ystates0(lid_nh4) + dtime * &
       (bgc_forc%sflx_minn_input_nh4 + &
-        bgc_forc%sflx_minn_nh4_fix_nomic)/natomw * tmul
+        bgc_forc%sflx_minn_nh4_fix_nomic)/natomw
 
   this%ystates1(lid_no3) = this%ystates0(lid_no3) + dtime * &
-      bgc_forc%sflx_minn_input_no3/natomw * tmul
+      bgc_forc%sflx_minn_input_no3/natomw
+
+  if(present(n_inf))then
+    n_inf = n_inf + this%ystates1(lid_nh4) - this%ystates0(lid_nh4)
+    n_inf = n_inf + this%ystates1(lid_no3) - this%ystates0(lid_no3)
+  endif
 
   this%ystates1(lid_minp_soluble) =this%ystates0(lid_minp_soluble) + dtime * &
       (bgc_forc%sflx_minp_input_po4 + &
         bgc_forc%sflx_minp_weathering_po4)/patomw
-!  if(this%centurybgc_index%debug)then
-!    print*,'minp',this%ystates0(lid_minp_soluble),bgc_forc%sflx_minp_input_po4,bgc_forc%sflx_minp_weathering_po4
-!  endif
-  !phosphatase cleaves PO4 from organic pools and put them into soluble mineral pool
-  !compute total organic P
-  !litr, wood, som, dom
-  totp = 0._r8
-  do jj = litr_beg, litr_end, nelms
-    kp = jj-1 + p_loc
-    totp = totp + this%ystates1(kp)
-  enddo
-  do jj = wood_beg, wood_end, nelms
-    kp = jj-1 + p_loc
-    totp = totp + this%ystates1(kp)
-  enddo
-  do jj = som_beg, som_end, nelms
-    kp = jj-1 + p_loc
-    totp = totp + this%ystates1(kp)
-  enddo
-  do jj = dom_beg, dom_end, nelms
-    kp = jj-1 + p_loc
-    totp = totp + this%ystates1(kp)
-  enddo
-
-  pmin_cleave=totp * min(bgc_forc%biochem_pmin*dtime/patomw,1._r8)
-  pmin_frac= 1._r8 - safe_div(pmin_cleave, totp)
-  do jj = litr_beg, litr_end, nelms
-    kp = jj-1 + p_loc
-    this%ystates1(kp) = this%ystates1(kp) * pmin_frac
-  enddo
-  do jj = wood_beg, wood_end, nelms
-    kp = jj-1 + p_loc
-    this%ystates1(kp) = this%ystates1(kp) * pmin_frac
-  enddo
-  do jj = som_beg, som_end, nelms
-    kp = jj-1 + p_loc
-    this%ystates1(kp) = this%ystates1(kp) * pmin_frac
-  enddo
-  do jj = dom_beg, dom_end, nelms
-    kp = jj-1 + p_loc
-    this%ystates1(kp) = this%ystates1(kp) * pmin_frac
-  enddo
-  this%ystates1(lid_minp_soluble) =this%ystates1(lid_minp_soluble) + pmin_cleave
-!  if(this%centurybgc_index%debug)print*,'soluble',this%ystates1(lid_minp_soluble), pmin_cleave, this%ystates1(lid_minp_immob)
-  if(present(n_inf))then
-    n_inf = n_inf + this%ystates1(lid_nh4) - this%ystates0(lid_nh4)
-  endif
-
   if(present(p_inf))then
     p_inf = p_inf + this%ystates1(lid_minp_soluble) - this%ystates0(lid_minp_soluble)
   endif
+  !*********************************************
+  !apply phosphatase
+  !kinetic studies indicate phosphatase can react with both
+  !dom and polymers, some dom will inhibit phosphatse in aquatic
+  !environment
+  !*********************************************
+  !phosphatase cleaves PO4 from organic pools and put them into soluble mineral pool
+  !compute total organic P
+  !litr, wood, Bm, som, pom, dom
+  totp = 0._r8
+  totp = totp + sum_some(litr_beg, litr_end, nelms, p_loc)
+  totp = totp + sum_some(wood_beg, wood_end, nelms, p_loc)
+  totp = totp + sum_some(Bm_beg, Bm_end, nelms, p_loc)
+  totp = totp + sum_some(som_beg, som_end, nelms, p_loc)
+  totp = totp + sum_some(pom_beg, pom_end, nelms, p_loc)
+  totp = totp + sum_some(dom_beg, dom_end, nelms, p_loc)
+
+  pmin_frac= exp(-bgc_forc%biochem_pmin*dtime)
+  pmin_cleave=0._r8
+  call somp_decay(litr_beg, litr_end, nelms, p_loc, pmin_frac, pmin_cleave)
+  call somp_decay(wood_beg, wood_end, nelms, p_loc, pmin_frac, pmin_cleave)
+  call somp_decay(Bm_beg, Bm_end, nelms, p_loc, pmin_frac, pmin_cleave)
+  call somp_decay(som_beg, som_end, nelms, p_loc, pmin_frac, pmin_cleave)
+  call somp_decay(pom_beg, pom_end, nelms, p_loc, pmin_frac, pmin_cleave)
+  call somp_decay(dom_beg, dom_end, nelms, p_loc, pmin_frac, pmin_cleave)
+
+  this%ystates1(lid_minp_soluble) =this%ystates1(lid_minp_soluble) + pmin_cleave
+
+  if(present(c_inf))c_inf=c_inf*catomw
+  if(present(n_inf))n_inf=n_inf*natomw
+  if(present(p_inf))p_inf=p_inf*patomw
   end associate
+  contains
+   !----------------------------------------------------------------
+    subroutine add_som_pool(jj, cflx_input, nflx_input, pflx_input, &
+      c13_flx_input, c14_flx_input, c_inf, n_inf, p_inf)
+    implicit none
+    integer , intent(in) :: jj
+    real(r8), intent(in) :: cflx_input, c13_flx_input, c14_flx_input
+    real(r8), intent(in) :: nflx_input
+    real(r8), intent(in) :: pflx_input
+    real(r8), optional, intent(inout) :: c_inf
+    real(r8), optional, intent(inout) :: n_inf
+    real(r8), optional, intent(inout) :: p_inf
+
+    integer :: kc, kn, kp, kc13, kc14
+    associate(                            &
+     c_loc   =>  centurybgc_index%c_loc  ,&
+     c13_loc =>  centurybgc_index%c13_loc,&
+     c14_loc =>  centurybgc_index%c14_loc,&
+     n_loc   =>  centurybgc_index%n_loc  ,&
+     p_loc   =>  centurybgc_index%p_loc  ,&
+     nelms   =>  centurybgc_index%nelms   &
+    )
+    kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
+    this%ystates1(kc) =this%ystates0(kc) + cflx_input*dtime/catomw
+    this%ystates1(kn) =this%ystates0(kn) + nflx_input*dtime/natomw
+    this%ystates1(kp) =this%ystates0(kp) + pflx_input*dtime/patomw
+    if(present(c_inf))then
+      c_inf = c_inf + this%ystates1(kc) - this%ystates0(kc)
+    endif
+    if(present(n_inf))then
+      n_inf = n_inf+this%ystates1(kn) - this%ystates0(kn)
+    endif
+    if(present(p_inf))then
+      p_inf = p_inf+this%ystates1(kp) - this%ystates0(kp)
+    endif
+
+    if(this%use_c13)then
+      kc13=(jj-1)*nelms+c13_loc
+      this%ystates1(kc13) =this%ystates0(kc13) + c13_flx_input*dtime/c13atomw
+    endif
+    if(this%use_c14)then
+      kc14=(jj-1)*nelms+c14_loc
+      this%ystates1(kc14) =this%ystates0(kc14) + c14_flx_input*dtime/c14atomw
+    endif
+    end associate
+    end subroutine add_som_pool
+   !----------------------------------------------------------------
+    function sum_some(ebeg, eend, nelms, e_loc)result(ans)
+    implicit none
+    integer, intent(in) :: ebeg, eend, nelms, e_loc
+
+    real(r8) :: ans
+    integer :: jj, ke
+
+    ans = 0._r8
+    do jj = ebeg, eend, nelms
+      ke = jj-1 + e_loc
+      ans = ans + this%ystates1(ke)
+    enddo
+
+    end function sum_some
+   !----------------------------------------------------------------
+    subroutine somp_decay(ebeg, eend, nelms, p_loc, pmin_frac, pmin_cleave)
+    implicit none
+    integer , intent(in) :: ebeg, eend, nelms, p_loc
+    real(r8), intent(in):: pmin_frac
+    real(r8), intent(inout) :: pmin_cleave
+
+    integer :: jj, kp
+    real(r8):: ytemp
+
+    do jj = ebeg, eend, nelms
+      kp = jj-1 + p_loc
+      ytemp = this%ystates1(kp) * pmin_frac    
+      pmin_cleave=pmin_cleave + max(this%ystates1(kp)-ytemp,0._r8)
+      this%ystates1(kp) = ytemp
+    enddo
+    end subroutine somp_decay
   end subroutine add_ext_input
 
 
@@ -1299,18 +1330,18 @@ contains
     it = it + 1
   enddo
   if(this%centurybgc_index%debug)then
-    do jj = 1, nreactions
-      print*,'casc jj',jj,rrates(jj),rscal(jj)
-    enddo
-    do jj = 1, nprimvars
-      print*, 'nprim',jj,dydt(jj)
-    enddo
+!    do jj = 1, nreactions
+!      print*,'casc jj',jj,rrates(jj),rscal(jj)
+!    enddo
+!    do jj = 1, nprimvars
+!      print*, 'nprim',jj,dydt(jj)
+!    enddo
   endif
   if(this%centurybgc_index%debug)then
     !
-    jj = som3
-    write(*,'(A,5(X,E25.15))')'dydt som3',dydt((jj-1)*nelms+c_loc),dydt((jj-1)*nelms+n_loc),dydt((jj-1)*nelms+p_loc),&
-      dydt((jj-1)*nelms+c_loc)/dydt((jj-1)*nelms+n_loc),dydt((jj-1)*nelms+c_loc)/dydt((jj-1)*nelms+p_loc)
+!    jj = som3
+!    write(*,'(A,6(X,E25.15))')'dydt som3',dydt((jj-1)*nelms+c_loc),dydt((jj-1)*nelms+n_loc),dydt((jj-1)*nelms+p_loc),&
+!      dydt((jj-1)*nelms+c_loc)/dydt((jj-1)*nelms+n_loc),dydt((jj-1)*nelms+c_loc)/dydt((jj-1)*nelms+p_loc)
   endif
   end associate
   end subroutine bgc_integrate
@@ -1432,12 +1463,112 @@ contains
     lid_minp_occlude => this%centurybgc_index%lid_minp_occlude, &
     lid_plant_minp => this%centurybgc_index%lid_plant_minp  &
   )
-  SHR_ASSERT_ALL((size(ystates1) == this%centurybgc_index%nstvars), errMsg(mod_filename,__LINE__),bstatus)
+  if(present(bstatus)) &
+    SHR_ASSERT_ALL((size(ystates1) == this%centurybgc_index%nstvars), errMsg(mod_filename,__LINE__),bstatus)
 
   c_mass = 0._r8; n_mass = 0._r8; p_mass = 0._r8;
   if(present(c_flx))c_flx=0._r8
   if(present(n_flx))n_flx=0._r8
   if(present(p_flx))p_flx=0._r8
+
+  call sum_omjj(lit1, c_mass, n_mass, p_mass)
+  call sum_omjj(lit2, c_mass, n_mass, p_mass)
+  call sum_omjj(lit3, c_mass, n_mass, p_mass)
+  call sum_omjj(cwd, c_mass, n_mass, p_mass)
+  call sum_omjj(lwd, c_mass, n_mass, p_mass)
+  call sum_omjj(fwd, c_mass, n_mass, p_mass)
+  call sum_omjj(som1, c_mass, n_mass, p_mass)
+  call sum_omjj(som2, c_mass, n_mass, p_mass)
+  call sum_omjj(som3, c_mass, n_mass, p_mass)
+
+  n_mass = n_mass + ystates1(lid_nh4) + ystates1(lid_no3)
+
+  p_mass = p_mass + ystates1(lid_minp_soluble) + ystates1(lid_minp_secondary) + ystates1(lid_minp_occlude)
+
+  c_mass = c_mass * catomw
+  n_mass = n_mass * natomw
+  p_mass = p_mass * patomw
+
+  if(present(c_flx))then
+    c_flx = c_flx + ystates1(lid_co2_hr)
+    c_flx = c_flx * catomw
+    print*,'co2_hr', ystates1(lid_co2_hr)
+  endif
+
+  if(present(n_flx))then
+    n_flx=n_flx + ystates1(lid_plant_minn_nh4) + ystates1(lid_plant_minn_no3) &
+     + ystates1(lid_n2o_nit) + ystates1(lid_no3_den)
+    n_flx = n_flx * natomw
+    print*,'n loss',ystates1(lid_plant_minn_nh4) + ystates1(lid_plant_minn_no3)+ystates1(lid_n2o_nit) + ystates1(lid_no3_den)
+  endif
+
+  if(present(p_flx))then
+    p_flx=p_flx + ystates1(lid_plant_minp)
+    p_flx = p_flx * patomw
+    print*,'plos',ystates1(lid_plant_minp)
+  endif
+
+  end associate
+  contains
+    subroutine sum_omjj(jj,c_mass,n_mass,p_mass)
+
+    implicit none
+    integer,  intent(in) :: jj
+    real(r8), intent(inout):: c_mass, n_mass, p_mass
+
+    integer :: kc, kn, kp
+
+    associate(                             &
+      c_loc=>  this%centurybgc_index%c_loc,&
+      n_loc=>  this%centurybgc_index%n_loc,&
+      p_loc=>  this%centurybgc_index%p_loc,&
+      nelms => this%centurybgc_index%nelms &
+    )
+    kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
+    c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
+    end associate
+    end subroutine sum_omjj 
+  end subroutine sumup_cnp_msflx_ecacnp
+
+  !--------------------------------------------------------------------
+  subroutine sumup_cnp_mass(this, header, c_mass, n_mass, p_mass)
+  use tracer_varcon         , only : catomw, natomw, patomw
+  implicit none
+  class(centurybgceca_type)     , intent(in) :: this
+  character(len=*), intent(in) :: header
+  real(r8), intent(out) :: c_mass, n_mass, p_mass
+  !local variables
+
+  integer :: kc, kn, kp, jj
+  associate(                        &
+    c_loc=>  this%centurybgc_index%c_loc,&
+    n_loc=>  this%centurybgc_index%n_loc,&
+    p_loc=>  this%centurybgc_index%p_loc,&
+    lid_n2o => this%centurybgc_index%lid_n2o,&
+    lid_n2 => this%centurybgc_index%lid_n2,&
+    lit1 =>  this%centurybgc_index%lit1, &
+    lit2 =>  this%centurybgc_index%lit2, &
+    lit3 =>  this%centurybgc_index%lit3, &
+    cwd =>   this%centurybgc_index%cwd, &
+    lwd =>   this%centurybgc_index%lwd, &
+    fwd =>   this%centurybgc_index%fwd, &
+    som1 =>  this%centurybgc_index%som1, &
+    som2 =>  this%centurybgc_index%som2, &
+    som3 =>  this%centurybgc_index%som3, &
+    nelms => this%centurybgc_index%nelms, &
+    lid_nh4=> this%centurybgc_index%lid_nh4, &
+    lid_no3=> this%centurybgc_index%lid_no3, &
+    lid_plant_minn_nh4 => this%centurybgc_index%lid_plant_minn_nh4, &
+    lid_plant_minn_no3 => this%centurybgc_index%lid_plant_minn_no3, &
+    lid_co2 => this%centurybgc_index%lid_co2, &
+    lid_minp_soluble =>  this%centurybgc_index%lid_minp_soluble,  &
+    lid_minp_secondary => this%centurybgc_index%lid_minp_secondary, &
+    lid_minp_occlude => this%centurybgc_index%lid_minp_occlude, &
+    lid_plant_minp => this%centurybgc_index%lid_plant_minp, &
+    ystates1 => this%ystates1  &
+  )
+  print*,header
+  c_mass = 0._r8; n_mass = 0._r8; p_mass = 0._r8;
 
   jj=lit1;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
   c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
@@ -1474,103 +1605,6 @@ contains
   c_mass = c_mass * catomw
   n_mass = n_mass * natomw
   p_mass = p_mass * patomw
-  if(present(c_flx))then
-    c_flx = c_flx + ystates1(lid_co2_hr)
-    c_flx = c_flx * catomw
-  endif
-  if(present(n_flx))then
-    n_flx=n_flx + ystates1(lid_plant_minn_nh4) + ystates1(lid_plant_minn_no3) &
-     + ystates1(lid_n2o_nit) + ystates1(lid_no3_den)
-    n_flx = n_flx * natomw
-  endif
-  if(present(p_flx))then
-    p_flx=p_flx + ystates1(lid_plant_minp)
-    p_flx = p_flx * patomw
-  endif
-!  write(*,'(A,3(X,E20.10))')'c n p, mass',c_mass, n_mass, p_mass
-  end associate
-  end subroutine sumup_cnp_msflx_ecacnp
-
-  !--------------------------------------------------------------------
-  subroutine sumup_cnp_mass(this, header, c_mass, n_mass, p_mass)
-  implicit none
-  class(centurybgceca_type)     , intent(in) :: this
-  character(len=*), intent(in) :: header
-  real(r8), intent(out) :: c_mass, n_mass, p_mass
-  !local variables
-
-  integer :: kc, kn, kp, jj
-  associate(                        &
-    c_loc=>  this%centurybgc_index%c_loc,&
-    n_loc=>  this%centurybgc_index%n_loc,&
-    p_loc=>  this%centurybgc_index%p_loc,&
-    lid_n2o => this%centurybgc_index%lid_n2o,&
-    lid_n2 => this%centurybgc_index%lid_n2,&
-    lit1 =>  this%centurybgc_index%lit1, &
-    lit2 =>  this%centurybgc_index%lit2, &
-    lit3 =>  this%centurybgc_index%lit3, &
-    cwd =>   this%centurybgc_index%cwd, &
-    lwd =>   this%centurybgc_index%lwd, &
-    fwd =>   this%centurybgc_index%fwd, &
-    som1 =>  this%centurybgc_index%som1, &
-    som2 =>  this%centurybgc_index%som2, &
-    som3 =>  this%centurybgc_index%som3, &
-    nelms => this%centurybgc_index%nelms, &
-    lid_nh4=> this%centurybgc_index%lid_nh4, &
-    lid_no3=> this%centurybgc_index%lid_no3, &
-    lid_plant_minn_nh4 => this%centurybgc_index%lid_plant_minn_nh4, &
-    lid_plant_minn_no3 => this%centurybgc_index%lid_plant_minn_no3, &
-    lid_co2 => this%centurybgc_index%lid_co2, &
-    lid_minp_soluble =>  this%centurybgc_index%lid_minp_soluble,  &
-    lid_minp_secondary => this%centurybgc_index%lid_minp_secondary, &
-    lid_minp_occlude => this%centurybgc_index%lid_minp_occlude, &
-    lid_plant_minp => this%centurybgc_index%lid_plant_minp, &
-    ystates1 => this%ystates1  &
-  )
-  print*,trim(header)
-  c_mass = 0._r8; n_mass = 0._r8; p_mass = 0._r8;
-
-  jj=lit1;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
-  c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
-!  write(*,'(A,3(X,E20.10))')'lit1 c n p',ystates1(kc),ystates1(kn),ystates1(kp)
-  jj=lit2;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
-  c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
-
-  jj=lit3;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
-  c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
-
-  jj=cwd;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
-  c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
-
-  jj=lwd;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
-  c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
-
-  jj=fwd;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
-  c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
-
-  jj=som1;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
-  c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
-
-  jj=som2;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
-  c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
-
-  jj=som3;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
-  c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
-
-
-!x  print*,'total om',c_mass,n_mass,p_mass
-  c_mass = c_mass + ystates1(lid_co2)
-!x  print*,'hr',ystates1(lid_co2_hr)
-!x  print*,'no3, n2o, no3_den',ystates1(lid_nh4),ystates1(lid_no3), ystates1(lid_n2o_nit), ystates1(lid_no3_den)
-!  write(*,'(A,3(X,E20.10))')'minp',ystates1(lid_minp_soluble), ystates1(lid_minp_secondary), ystates1(lid_minp_occlude)
-  n_mass = n_mass + ystates1(lid_nh4) + ystates1(lid_no3)+ 2._r8*ystates1(lid_n2) +2._r8*ystates1(lid_n2o) + &
-           ystates1(lid_plant_minn_nh4) + ystates1(lid_plant_minn_no3)
-
-  p_mass = p_mass + ystates1(lid_minp_soluble) + ystates1(lid_minp_secondary) + ystates1(lid_minp_occlude) + &
-           ystates1(lid_plant_minp)
-
-!  write(*,'(A,6(X,E20.10))')'c,n,p mass',c_mass,n_mass,p_mass,ystates1(lid_plant_minn_nh4), &
-!     ystates1(lid_plant_minn_no3), ystates1(lid_plant_minp)
   if(p_mass>1.e10_r8)then
      print*,'sum cnp bad mass',p_mass
      stop
