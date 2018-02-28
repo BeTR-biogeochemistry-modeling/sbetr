@@ -5,7 +5,6 @@ set(CENT1LAYER_SOURCES
   BgcCentCnpNitDenType.F90
   BgcCentCnpSOMType.F90
   BgcCentCnpType.F90
-  SOMStateVarUpdateMod.F90
 )
 
 
