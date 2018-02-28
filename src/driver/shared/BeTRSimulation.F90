@@ -258,8 +258,7 @@ contains
 !-------------------------------------------------------------------------------
   subroutine set_activecol(this, col)
 
-
-
+  implicit none
     class(betr_simulation_type)              , intent(inout) :: this
     type(column_type)                        , intent(inout) :: col
 
@@ -348,7 +347,9 @@ contains
       endif
     enddo
     call this%BeTRSetcps(bounds, col, pft)
-    call this%BeTRSetBiophysForcing(bounds, col, pft, betr_bounds%lbj, betr_bounds%ubj)
+    !the following pass in of waterstate_vars is needed for doing h2o isotopes
+    call this%BeTRSetBiophysForcing(bounds, col, pft, betr_bounds%lbj, betr_bounds%ubj, &
+      waterstate_vars = waterstate)
 
     do c = bounds%begc, bounds%endc
       call this%betr(c)%Init(namelist_buffer, betr_bounds, this%betr_col(c), &
