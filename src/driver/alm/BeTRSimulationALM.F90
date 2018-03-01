@@ -1101,7 +1101,7 @@ contains
       p31state_vars%sminp_col(c) = this%biogeo_state(c)%p31state_vars%sminp_col(c_l)
       p31state_vars%occlp_col(c) = this%biogeo_state(c)%p31state_vars%occlp_col(c_l)
 
-      if(trim(reaction_method)=='eca_cnp' .or. trim(reaction_method)=='cdom_ecacnp')then
+      if(index(reaction_method,'ecacnp')/=0)then
         c12state_vars%som1c_col(c) = this%biogeo_state(c)%c12state_vars%som1c_col(c_l)
         c12state_vars%som2c_col(c) = this%biogeo_state(c)%c12state_vars%som2c_col(c_l)
         c12state_vars%som3c_col(c) = this%biogeo_state(c)%c12state_vars%som3c_col(c_l)
@@ -1434,7 +1434,7 @@ contains
 
   !the following parameters are specific to ECACNP, and I assume they are
   !grid specific as they currently used in alm-cnp.
-  if(trim(reaction_method)=='eca_cnp' .or. trim(reaction_method)=='cdom_ecacnp')then
+  if(index(reaction_method,'ecacnp')/=0)then
     do j =1, betr_bounds%ubj
       do fc = 1, num_soilc
         c = filter_soilc(fc)

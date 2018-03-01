@@ -72,7 +72,7 @@ contains
 
     call bstatus%reset()
     select case(trim(method))
-    case ("eca_cnp")
+    case ("ecacnp")
        asoibgc=.true.
        allocate(bgc_reaction, source=bgc_reaction_CENTURY_ECACNP_type())
     case ("cdom_ecacnp")
@@ -111,7 +111,7 @@ contains
   call bstatus%reset()
 
   select case(trim(method))
-  case ("eca_cnp")
+  case ("ecacnp")
      allocate(plant_soilbgc, source=plant_soilbgc_cnp_type())
   case ("cdom_ecacnp")
      allocate(plant_soilbgc, source=plant_soilbgc_cdomcnp_type())
@@ -139,7 +139,7 @@ contains
   type(betr_status_type) , intent(out) :: bstatus
 
    select case (trim(reaction_method))
-   case ("eca_cnp")
+   case ("ecacnp")
      call cent_para%readPars(ncid, bstatus)
    case ("cdom_ecacnp")
      call cdom_para%readPars(ncid, bstatus)
@@ -168,7 +168,7 @@ contains
 
   call bstatus%reset()
    select case (trim(reaction_method))
-   case ("eca_cnp")
+   case ("ecacnp")
      call  cent_para%Init(bgc_namelist_buffer, bstatus)
      !do nothing
    case ("cdom_ecacnp")
@@ -192,7 +192,7 @@ contains
   implicit none
 
   select case (trim(reaction_method))
-  case ("eca_cnp")
+  case ("ecacnp")
      call  cent_para%set_spinup_factor()
   case ("cdom_ecacnp")
      call cdom_para%set_spinup_factor()
