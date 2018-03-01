@@ -24,7 +24,7 @@ module ApplicationsFactory
   public :: AppSetSpinup
 contains
 
-  subroutine create_betr_usr_application(bgc_reaction, plant_soilbgc, method, bstatus)
+  subroutine create_betr_usr_application(bgc_reaction, plant_soilbgc, method, asoibgc, bstatus)
   !DESCRIPTION
   !create betr applications
   !
@@ -34,10 +34,11 @@ contains
   class(bgc_reaction_type),  allocatable, intent(out) :: bgc_reaction
   class(plant_soilbgc_type), allocatable, intent(out) :: plant_soilbgc
   character(len=*),                       intent(in)  :: method
+  logical,                                intent(out) :: asoibgc
   type(betr_status_type), intent(out) :: bstatus
 
 
-  call create_bgc_reaction_type(bgc_reaction, method,bstatus)
+  call create_bgc_reaction_type(bgc_reaction, method,asoibgc,bstatus)
 
   if(bstatus%check_status())return
 
@@ -47,7 +48,7 @@ contains
 
 !-------------------------------------------------------------------------------
 
-  subroutine create_bgc_reaction_type(bgc_reaction, method, bstatus)
+  subroutine create_bgc_reaction_type(bgc_reaction, method, asoibgc, bstatus)
     !
     ! !DESCRIPTION:
     ! create and return an object of bgc_reaction
@@ -65,15 +66,17 @@ contains
     class(bgc_reaction_type),  allocatable, intent(inout) :: bgc_reaction
     character(len=*), intent(in)          :: method
     type(betr_status_type), intent(out)   :: bstatus
-
+    logical,                intent(out)   :: asoibgc
     character(len=*), parameter           :: subname = 'create_bgc_reaction_type'
     character(len=betr_errmsg_len) :: msg
 
     call bstatus%reset()
     select case(trim(method))
     case ("eca_cnp")
+       asoibgc=.true.
        allocate(bgc_reaction, source=bgc_reaction_CENTURY_ECACNP_type())
     case ("cdom_ecacnp")
+       asoibgc=.true.
        allocate(bgc_reaction, source=bgc_reaction_cdom_ecacnp_type())
     case default
        write(msg,*)subname //' ERROR: unknown method: ', method

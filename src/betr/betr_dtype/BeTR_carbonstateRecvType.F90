@@ -62,7 +62,7 @@ implicit none
   allocate(this%totlitc_1m_col(begc:endc))
   allocate(this%totsomc_1m_col(begc:endc))
 
-  if(trim(reaction_method)=='eca_cnp')then
+  if(trim(reaction_method)=='eca_cnp' .or. trim(reaction_method)=='cdom_ecacnp')then
     allocate(this%som1c_col(begc:endc));  this%som1c_col(:) = nan
     allocate(this%som2c_col(begc:endc));  this%som2c_col(:) = nan
     allocate(this%som3c_col(begc:endc));  this%som3c_col(:) = nan
@@ -88,7 +88,7 @@ implicit none
   this%totlitc_vr_col(:,:) = value_column
   this%totsomc_vr_col(:,:) = value_column
 
-  if(trim(reaction_method)=='eca_cnp')then
+  if(trim(reaction_method)=='eca_cnp' .or. trim(reaction_method)=='cdom_ecacnp')then
     this%som1c_vr_col(:,:) = value_column
     this%som2c_vr_col(:,:) = value_column
     this%som3c_vr_col(:,:) = value_column
@@ -114,7 +114,7 @@ implicit none
   this%totlitc_1m_col(:) = 0._r8
   this%totsomc_1m_col(:) = 0._r8
 
-  if(trim(reaction_method)=='eca_cnp')then
+  if(trim(reaction_method)=='eca_cnp' .or. trim(reaction_method)=='cdom_ecacnp')then
     this%som1c_col(:) = 0.0_r8
     this%som2c_col(:) = 0.0_r8
     this%som3c_col(:) = 0.0_r8

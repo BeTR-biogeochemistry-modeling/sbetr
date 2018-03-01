@@ -1307,10 +1307,7 @@ contains
   call create_betr_def_application(bgc_reaction, plant_soilbgc, method, yesno)
 
   if(.not. yesno)then
-    call create_betr_usr_application(bgc_reaction, plant_soilbgc, method, bstatus)
-  endif
-  if(trim(method) =='eca_cnp')then
-    asoibgc = .true.
+    call create_betr_usr_application(bgc_reaction, plant_soilbgc, method, asoibgc, bstatus)
   endif
   end subroutine create_betr_application
 
