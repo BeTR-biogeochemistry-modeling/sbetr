@@ -179,35 +179,35 @@ module BeTRTracerType
   this%nfrozen_tracers              = 0
   this%nh2o_tracers                 = 0      ! number of h2o tracers, this will be used to compute vapor gradient and thermal gradient driven isotopic flow
 
-  this%id_trc_ch4          = 0; this%id_trc_beg_ch4 = 0;this%id_trc_end_ch4 = 0     ! tag for methane
-  this%id_trc_o2           = 0; this%id_trc_beg_o2 = 0; this%id_trc_end_o2 = 0      ! tag for co2
-  this%id_trc_n2           = 0; this%id_trc_beg_n2 = 0; this%id_trc_end_n2 = 0      ! tag for n2
-  this%id_trc_no            = 0; this%id_trc_beg_no = 0; this%id_trc_end_no = 0      ! tag for no
-  this%id_trc_n2o                   = 0; this%id_trc_beg_n2o= 0; this%id_trc_end_n2o= 0      ! tag for n2o
-  this%id_trc_ar                    = 0; this%id_trc_beg_ar = 0      ! tag for ar
-  this%id_trc_air_co2x              = 0      ! tag for atmospheric co2
-  this%id_trc_arrt_co2x             = 0      ! tag for autotrophic co2
-  this%id_trc_hrsoi_co2x            = 0      ! tag for heterotrophic co2
+  this%id_trc_ch4            = 0; this%id_trc_beg_ch4 = 0;this%id_trc_end_ch4 = -1     ! tag for methane
+  this%id_trc_o2             = 0; this%id_trc_beg_o2 = 0; this%id_trc_end_o2  = -1      ! tag for co2
+  this%id_trc_n2             = 0; this%id_trc_beg_n2 = 0; this%id_trc_end_n2  = -1      ! tag for n2
+  this%id_trc_no             = 0; this%id_trc_beg_no = 0; this%id_trc_end_no  = -1      ! tag for no
+  this%id_trc_n2o            = 0; this%id_trc_beg_n2o= 0; this%id_trc_end_n2o = -1      ! tag for n2o
+  this%id_trc_ar             = 0; this%id_trc_beg_ar = 0; this%id_trc_end_ar  = -1      ! tag for ar
+  this%id_trc_air_co2x       = 0      ! tag for atmospheric co2
+  this%id_trc_arrt_co2x      = 0      ! tag for autotrophic co2
+  this%id_trc_hrsoi_co2x     = 0      ! tag for heterotrophic co2
 
-  this%id_trc_co2x                  = 0; this%id_trc_beg_co2x = 0; this%id_trc_end_co2x = 0      ! tag for co2 and its related species, co2x(CO2, H2CO3, HCO3(-), CO3(2-)),
-  this%id_trc_nh3x                  = 0; this%id_trc_beg_nh3x = 0; this%id_trc_end_nh3x = 0      ! tag for nh3 and its related species, nh3x(NH3, NH4OH,NH4(+))
-  this%id_trc_no3x                  = 0; this%id_trc_beg_no3x = 0; this%id_trc_end_no3x = 0      ! tag for no3 and its related species, no3x(HNO3,NO3(-))
-  this%id_trc_no2x                  = 0; this%id_trc_beg_no2x = 0; this%id_trc_end_no2x = 0       ! tag for no2 and its related species, no2x(HNO2,NO2(-))
-  this%id_trc_dom                   = 0; this%id_trc_beg_dom = 0;  this%id_trc_end_dom = 0      ! tag for generic dissolved organic matter
-  this%id_trc_pom                   = 0; this%id_trc_beg_pom = 0;  this%id_trc_end_pom = 0      ! tag for particulate organic matter
-  this%id_trc_doc                   = 0; this%id_trc_beg_doc = 0; this%id_trc_end_doc = 0      ! tag for generic dissolved organic matter
-  this%id_trc_p_sol                 = 0; this%id_trc_beg_p_sol = 0; this%id_trc_end_p_sol = 0
-  this%id_trc_o18_h2o               = 0; this%id_trc_beg_o18_h2o=0; this%id_trc_end_o18_h2o=0      ! tag for H2O(18)
-  this%id_trc_o17_h2o               = 0; this%id_trc_beg_o17_h2o=0; this%id_trc_end_o17_h2o=0      ! tag for H2O(17)
-  this%id_trc_d_h2o                 = 0; this%id_trc_beg_d_h2o=0; this%id_trc_end_d_h2o=0      ! tag for DHO
-  this%id_trc_c13_co2x              = 0; this%id_trc_beg_c13_co2x = 0; this%id_trc_end_c13_co2x = 0      ! tag for C(13)O2 and its related species
-  this%id_trc_c14_co2x              = 0; this%id_trc_beg_c14_co2x = 0; this%id_trc_end_c14_co2x = 0      ! tag for C(14)O2 and its related species
-  this%id_trc_o18_co2x              = 0; this%id_trc_beg_o18_co2x = 0; this%id_trc_end_o18_co2x = 0       ! tag for O(18)CO and its related species
-  this%id_trc_o17_co2x              = 0; this%id_trc_beg_o17_co2x = 0; this%id_trc_end_o17_co2x = 0      ! tag for O(17)CO and its related species
-  this%id_trc_o18_h2o_ice           = 0      ! tag for H2O(18) in ice
-  this%id_trc_d_h2o_ice             = 0      ! tag for HDO in ice
-  this%id_trc_o18_o2                = 0; this%id_trc_beg_o18_o2 = 0; this%id_trc_end_o18_o2 = 0      ! tag for O(18)O and its related species
-  this%id_trc_o17_o2                = 0; this%id_trc_beg_o17_o2 = 0; this%id_trc_end_o17_o2 =0      ! tag for O(17)O and its related species
+  this%id_trc_co2x           = 0; this%id_trc_beg_co2x = 0; this%id_trc_end_co2x = -1      ! tag for co2 and its related species, co2x(CO2, H2CO3, HCO3(-), CO3(2-)),
+  this%id_trc_nh3x           = 0; this%id_trc_beg_nh3x = 0; this%id_trc_end_nh3x = -1      ! tag for nh3 and its related species, nh3x(NH3, NH4OH,NH4(+))
+  this%id_trc_no3x           = 0; this%id_trc_beg_no3x = 0; this%id_trc_end_no3x = -1      ! tag for no3 and its related species, no3x(HNO3,NO3(-))
+  this%id_trc_no2x           = 0; this%id_trc_beg_no2x = 0; this%id_trc_end_no2x = -1      ! tag for no2 and its related species, no2x(HNO2,NO2(-))
+  this%id_trc_dom            = 0; this%id_trc_beg_dom  = 0;  this%id_trc_end_dom =  -1       ! tag for generic dissolved organic matter
+  this%id_trc_pom            = 0; this%id_trc_beg_pom  = 0;  this%id_trc_end_pom = -1       ! tag for particulate organic matter
+  this%id_trc_doc            = 0; this%id_trc_beg_doc  = 0; this%id_trc_end_doc = -1        ! tag for generic dissolved organic matter
+  this%id_trc_p_sol          = 0; this%id_trc_beg_p_sol = 0; this%id_trc_end_p_sol = -1
+  this%id_trc_o18_h2o        = 0; this%id_trc_beg_o18_h2o=0; this%id_trc_end_o18_h2o=-1      ! tag for H2O(18)
+  this%id_trc_o17_h2o        = 0; this%id_trc_beg_o17_h2o=0; this%id_trc_end_o17_h2o=-1      ! tag for H2O(17)
+  this%id_trc_d_h2o          = 0; this%id_trc_beg_d_h2o=0; this%id_trc_end_d_h2o=0      ! tag for DHO
+  this%id_trc_c13_co2x       = 0; this%id_trc_beg_c13_co2x = 0; this%id_trc_end_c13_co2x = 0      ! tag for C(13)O2 and its related species
+  this%id_trc_c14_co2x       = 0; this%id_trc_beg_c14_co2x = 0; this%id_trc_end_c14_co2x = 0      ! tag for C(14)O2 and its related species
+  this%id_trc_o18_co2x       = 0; this%id_trc_beg_o18_co2x = 0; this%id_trc_end_o18_co2x = 0       ! tag for O(18)CO and its related species
+  this%id_trc_o17_co2x       = 0; this%id_trc_beg_o17_co2x = 0; this%id_trc_end_o17_co2x = 0      ! tag for O(17)CO and its related species
+  this%id_trc_o18_h2o_ice    = 0      ! tag for H2O(18) in ice
+  this%id_trc_d_h2o_ice      = 0      ! tag for HDO in ice
+  this%id_trc_o18_o2         = 0; this%id_trc_beg_o18_o2 = 0; this%id_trc_end_o18_o2 = 0      ! tag for O(18)O and its related species
+  this%id_trc_o17_o2         = 0; this%id_trc_beg_o17_o2 = 0; this%id_trc_end_o17_o2 =0      ! tag for O(17)O and its related species
 
   this%id_trc_litr = 0; this%id_trc_beg_litr=0; this%id_trc_end_litr=0
   this%id_trc_wood = 0; this%id_trc_beg_wood=0; this%id_trc_end_wood=0

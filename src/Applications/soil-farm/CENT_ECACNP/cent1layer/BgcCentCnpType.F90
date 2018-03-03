@@ -1104,7 +1104,7 @@ contains
 
     do jj = ebeg, eend, nelms
       kp = jj-1 + p_loc
-      ytemp = this%ystates1(kp) * pmin_frac    
+      ytemp = this%ystates1(kp) * pmin_frac
       pmin_cleave=pmin_cleave + max(this%ystates1(kp)-ytemp,0._r8)
       this%ystates1(kp) = ytemp
     enddo
@@ -1152,7 +1152,7 @@ contains
   real(r8) :: ECA_factor_den
   real(r8) :: ECA_factor_nit
   integer  :: jj, it
-  integer, parameter  :: itmax = 100
+  integer, parameter  :: itmax = 10
   type(lom_type) :: lom
   type(betr_status_type) :: bstatus
   logical :: lneg
@@ -1527,7 +1527,7 @@ contains
     kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
     c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
     end associate
-    end subroutine sum_omjj 
+    end subroutine sum_omjj
   end subroutine sumup_cnp_msflx_ecacnp
 
   !--------------------------------------------------------------------

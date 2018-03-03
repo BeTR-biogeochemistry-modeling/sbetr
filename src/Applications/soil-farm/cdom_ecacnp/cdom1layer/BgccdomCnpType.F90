@@ -59,10 +59,10 @@ module BgccdomCnpType
     real(r8)                             :: msurf_nh4
     real(r8)                             :: msurf_minp
     real(r8), private                    :: c14decay_const
-    real(r8), private                    :: c14decay_som_const
+    real(r8), private                    :: c14decay_humus_const
     real(r8), private                    :: c14decay_dom_const
     real(r8), private                    :: c14decay_pom_const
-    real(r8), private                    :: c14decay_Bm_const
+    real(r8), private                    :: c14decay_micbiom_const
     logical , private                    :: use_c13
     logical , private                    :: use_c14
     real(r8), private                    :: beg_c_mass, beg_c13_mass, beg_c14_mass
@@ -209,10 +209,10 @@ contains
 
     if(this%use_c14)then
       this%c14decay_const=biogeo_con%c14decay_const
-      this%c14decay_som_const=biogeo_con%c14decay_som_const
+      this%c14decay_humus_const=biogeo_con%c14decay_humus_const
       this%c14decay_dom_const=biogeo_con%c14decay_dom_const
       this%c14decay_pom_const=biogeo_con%c14decay_pom_const
-      this%c14decay_Bm_const=biogeo_con%c14decay_Bm_const
+      this%c14decay_micbiom_const=biogeo_con%c14decay_micbiom_const
     endif
 
     call this%censom%UpdateParas(this%cdombgc_index, biogeo_con)
@@ -324,129 +324,132 @@ contains
   real(r8) :: resc, resn, resp
   integer  :: reac,jj
 
-  associate(                                                   &
-    cascade_matrix => this%cascade_matrix                    , &
-    lit1      => cdombgc_index%lit1                       , & !
-    lit2      => cdombgc_index%lit2                       , & !
-    lit3      => cdombgc_index%lit3                       , & !
-    som1      => cdombgc_index%som1                       , & !
-    som2      => cdombgc_index%som2                       , & !
-    som3      => cdombgc_index%som3                       , & !
-    cwd       => cdombgc_index%cwd                        , & !
-    lwd       => cdombgc_index%lwd                        , & !
-    fwd       => cdombgc_index%fwd                        , & !
-    c_loc     => cdombgc_index%c_loc                      , & !
-    n_loc     => cdombgc_index%n_loc                      , & !
-    p_loc     => cdombgc_index%p_loc                      , & !
-    c13_loc   => cdombgc_index%c13_loc                    , & !
-    c14_loc   => cdombgc_index%c14_loc                    , & !
-    nelms     => cdombgc_index%nelms                      , & !
-    lid_o2    => cdombgc_index%lid_o2                     , & !
-    lid_co2   => cdombgc_index%lid_co2                    , & !
-    lid_nh4   => cdombgc_index%lid_nh4                    , & !
-    lid_c14_co2=> cdombgc_index%lid_c14_co2               , & !
-    lid_c13_co2=> cdombgc_index%lid_c13_co2               , & !
-    lid_co2_hr => cdombgc_index%lid_co2_hr                , &
+  associate(                                                &
+    cascade_matrix    => this%cascade_matrix              , &
+    lmet              => cdombgc_index%lmet               , & !
+    lcel              => cdombgc_index%lcel               , & !
+    llig              => cdombgc_index%llig               , & !
+    mic               => cdombgc_index%mic                , & !
+    pom               => cdombgc_index%pom                , & !
+    dom               => cdombgc_index%dom                , & !
+    humus             => cdombgc_index%humus              , & !
+    cwd               => cdombgc_index%cwd                , & !
+    lwd               => cdombgc_index%lwd                , & !
+    fwd               => cdombgc_index%fwd                , & !
+    c_loc             => cdombgc_index%c_loc              , & !
+    n_loc             => cdombgc_index%n_loc              , & !
+    p_loc             => cdombgc_index%p_loc              , & !
+    c13_loc           => cdombgc_index%c13_loc            , & !
+    c14_loc           => cdombgc_index%c14_loc            , & !
+    nelms             => cdombgc_index%nelms              , & !
+    lid_o2            => cdombgc_index%lid_o2             , & !
+    lid_co2           => cdombgc_index%lid_co2            , & !
+    lid_nh4           => cdombgc_index%lid_nh4            , & !
+    lid_c14_co2       => cdombgc_index%lid_c14_co2        , & !
+    lid_c13_co2       => cdombgc_index%lid_c13_co2        , & !
+    lid_co2_hr        => cdombgc_index%lid_co2_hr         , &
     lid_minn_nh4_immob=> cdombgc_index%lid_minn_nh4_immob , &
-    lid_minp_immob => cdombgc_index%lid_minp_immob        , &
-    lid_minp_soluble=> cdombgc_index%lid_minp_soluble     , &
-    lit1_dek_reac => cdombgc_index%lit1_dek_reac          , &
-    lit2_dek_reac => cdombgc_index%lit2_dek_reac          , &
-    lit3_dek_reac => cdombgc_index%lit3_dek_reac          , &
-    som1_dek_reac => cdombgc_index%som1_dek_reac          , &
-    som2_dek_reac => cdombgc_index%som2_dek_reac          , &
-    som3_dek_reac => cdombgc_index%som3_dek_reac          , &
-    cwd_dek_reac => cdombgc_index%cwd_dek_reac            , &
-    lwd_dek_reac => cdombgc_index%lwd_dek_reac            , &
-    fwd_dek_reac => cdombgc_index%fwd_dek_reac            , &
-    lid_n2   => cdombgc_index%lid_n2                      , & !
-    lid_n2o   => cdombgc_index%lid_n2o                    , & !
-    lid_no3   => cdombgc_index%lid_no3                    , & !
-    lid_nh4_nit_reac => cdombgc_index%lid_nh4_nit_reac    , & !
-    lid_no3_den_reac => cdombgc_index%lid_no3_den_reac      & !
+    lid_minp_immob    => cdombgc_index%lid_minp_immob     , &
+    lid_minp_soluble  => cdombgc_index%lid_minp_soluble   , &
+    lmet_dek_reac     => cdombgc_index%lmet_dek_reac      , &
+    lcel_dek_reac     => cdombgc_index%lcel_dek_reac      , &
+    llig_dek_reac     => cdombgc_index%llig_dek_reac      , &
+    mic_dek_reac      => cdombgc_index%mic_dek_reac       , &
+    pom_dek_reac      => cdombgc_index%pom_dek_reac       , &
+    humus_dek_reac    => cdombgc_index%humus_dek_reac     , &
+    cwd_dek_reac      => cdombgc_index%cwd_dek_reac       , &
+    lwd_dek_reac      => cdombgc_index%lwd_dek_reac       , &
+    fwd_dek_reac      => cdombgc_index%fwd_dek_reac       , &
+    dom_dek_reac      => cdombgc_index%dom_dek_reac       , &
+    lid_n2            => cdombgc_index%lid_n2             , & !
+    lid_n2o           => cdombgc_index%lid_n2o            , & !
+    lid_no3           => cdombgc_index%lid_no3            , & !
+    lid_nh4_nit_reac  => cdombgc_index%lid_nh4_nit_reac   , & !
+    lid_no3_den_reac  => cdombgc_index%lid_no3_den_reac     & !
   )
   print*,'checksum'
-  print*,'som1c ','som1n ','som1p'
+  print*,'micc ','micn ','micp'
 
-  reac=lit1_dek_reac
-  resc = cascade_matrix((lit1-1)*nelms + c_loc, reac) + cascade_matrix((som1-1)*nelms + c_loc, reac) + &
+  reac=lmet_dek_reac
+  resc = cascade_matrix((lmet-1)*nelms + c_loc, reac) + cascade_matrix((dom-1)*nelms + c_loc, reac)
+
+  resn = cascade_matrix((lmet-1)*nelms + n_loc, reac) + cascade_matrix((dom-1)*nelms + n_loc, reac)
+
+  resp = cascade_matrix((lmet-1)*nelms + p_loc, reac) + cascade_matrix((dom-1)*nelms + p_loc, reac)
+
+  write(*,'(A,3(X,E20.10))')'lmet resc, resn, resp =',resc,resn, resp
+
+  reac = lcel_dek_reac
+  resc = cascade_matrix((lcel-1)*nelms + c_loc, reac) + cascade_matrix((dom-1)*nelms + c_loc, reac)
+
+  resn = cascade_matrix((lcel-1)*nelms + n_loc, reac) + cascade_matrix((dom-1)*nelms + n_loc, reac)
+
+  resp = cascade_matrix((lcel-1)*nelms + p_loc, reac) + cascade_matrix((dom-1)*nelms + p_loc, reac)
+
+  write(*,'(A,3(X,E20.10))')'lcel resc, resn, resp =',resc,resn, resp
+
+  reac = llig_dek_reac
+  resc = cascade_matrix((llig-1)*nelms + c_loc, reac) + cascade_matrix((pom-1)*nelms + c_loc, reac) + &
      cascade_matrix(lid_co2, reac)
-  resn = cascade_matrix((lit1-1)*nelms + n_loc, reac) + cascade_matrix((som1-1)*nelms + n_loc, reac) + &
-     cascade_matrix(lid_nh4, reac)
-  resp = cascade_matrix((lit1-1)*nelms + p_loc, reac) + cascade_matrix((som1-1)*nelms + p_loc, reac) + &
-     cascade_matrix(lid_minp_soluble, reac)
-  write(*,'(A,3(X,E20.10))')'lit1 resc, resn, resp =',resc,resn, resp
+  resn = cascade_matrix((llig-1)*nelms + n_loc, reac) + cascade_matrix((pom-1)*nelms + n_loc, reac)
 
-  reac = lit2_dek_reac
-  resc = cascade_matrix((lit2-1)*nelms + c_loc, reac) + cascade_matrix((som1-1)*nelms + c_loc, reac) + &
-     cascade_matrix(lid_co2, reac)
-  resn = cascade_matrix((lit2-1)*nelms + n_loc, reac) + cascade_matrix((som1-1)*nelms + n_loc, reac) + &
-     cascade_matrix(lid_nh4, reac)
-  resp = cascade_matrix((lit2-1)*nelms + p_loc, reac) + cascade_matrix((som1-1)*nelms + p_loc, reac) + &
-     cascade_matrix(lid_minp_soluble, reac)
-  write(*,'(A,3(X,E20.10))')'lit2 resc, resn, resp =',resc,resn, resp
+  resp = cascade_matrix((llig-1)*nelms + p_loc, reac) + cascade_matrix((pom-1)*nelms + p_loc, reac)
 
-  reac = lit3_dek_reac
-  resc = cascade_matrix((lit3-1)*nelms + c_loc, reac) + cascade_matrix((som2-1)*nelms + c_loc, reac) + &
-     cascade_matrix(lid_co2, reac)
-  resn = cascade_matrix((lit3-1)*nelms + n_loc, reac) + cascade_matrix((som2-1)*nelms + n_loc, reac) + &
-     cascade_matrix(lid_nh4, reac)
-  resp = cascade_matrix((lit3-1)*nelms + p_loc, reac) + cascade_matrix((som2-1)*nelms + p_loc, reac) + &
-     cascade_matrix(lid_minp_soluble, reac)
-  write(*,'(A,3(X,E20.10))')'lit3 resc, resn, resp =',resc,resn, resp
+  write(*,'(A,3(X,E20.10))')'llig resc, resn, resp =',resc,resn, resp
 
-  reac = som1_dek_reac
-  resc = cascade_matrix((som1-1)*nelms + c_loc, reac) + cascade_matrix((som3-1)*nelms + c_loc, reac) + &
-     cascade_matrix((som2-1)*nelms + c_loc, reac) + cascade_matrix(lid_co2, reac)
-  resn = cascade_matrix((som1-1)*nelms + n_loc, reac) + cascade_matrix((som3-1)*nelms + n_loc, reac) + &
-     cascade_matrix((som2-1)*nelms + n_loc, reac) + cascade_matrix(lid_nh4, reac)
-  resp = cascade_matrix((som1-1)*nelms + p_loc, reac) + cascade_matrix((som3-1)*nelms + p_loc, reac) + &
-     cascade_matrix((som2-1)*nelms + p_loc, reac) + cascade_matrix(lid_minp_soluble, reac)
-  write(*,'(A,3(X,E20.10))')'som1 resc, resn, resp =',resc,resn, resp
+  reac = mic_dek_reac
+  resc = cascade_matrix((mic-1)*nelms + c_loc, reac) + cascade_matrix((humus-1)*nelms + c_loc, reac) + &
+     cascade_matrix((pom-1)*nelms + c_loc, reac) + cascade_matrix(lid_co2, reac)
+  resn = cascade_matrix((mic-1)*nelms + n_loc, reac) + cascade_matrix((humus-1)*nelms + n_loc, reac) + &
+     cascade_matrix((pom-1)*nelms + n_loc, reac)
+  resp = cascade_matrix((mic-1)*nelms + p_loc, reac) + cascade_matrix((humus-1)*nelms + p_loc, reac) + &
+     cascade_matrix((pom-1)*nelms + p_loc, reac)
+  write(*,'(A,3(X,E20.10))')'mic resc, resn, resp =',resc,resn, resp
 
-  reac = som2_dek_reac
-  resc = cascade_matrix((som2-1)*nelms + c_loc, reac) + cascade_matrix((som1-1)*nelms + c_loc, reac) + &
-     cascade_matrix((som3-1)*nelms + c_loc, reac) + cascade_matrix(lid_co2, reac)
-  resn = cascade_matrix((som2-1)*nelms + n_loc, reac) + cascade_matrix((som1-1)*nelms + n_loc, reac) + &
-     cascade_matrix((som3-1)*nelms + n_loc, reac) + cascade_matrix(lid_nh4, reac)
-  resp = cascade_matrix((som2-1)*nelms + p_loc, reac) + cascade_matrix((som1-1)*nelms + p_loc, reac) + &
-     cascade_matrix((som3-1)*nelms + p_loc, reac) + cascade_matrix(lid_minp_soluble, reac)
-  write(*,'(A,3(X,E20.10))')'som2 resc, resn, resp =',resc,resn, resp
+  reac = dom_dek_reac
+  resc = cascade_matrix((dom-1)*nelms + c_loc, reac) + cascade_matrix((mic-1)*nelms + c_loc, reac) + &
+      cascade_matrix(lid_co2, reac)
+  resn = cascade_matrix((dom-1)*nelms + n_loc, reac) + cascade_matrix((mic-1)*nelms + n_loc, reac)
+  resp = cascade_matrix((dom-1)*nelms + p_loc, reac) + cascade_matrix((mic-1)*nelms + p_loc, reac)
+  write(*,'(A,3(X,E20.10))')'mic resc, resn, resp =',resc,resn, resp
 
-  reac = som3_dek_reac
-  resc = cascade_matrix((som3-1)*nelms + c_loc, reac) + cascade_matrix((som1-1)*nelms + c_loc, reac) + &
-     cascade_matrix(lid_co2, reac)
-  resn = cascade_matrix((som3-1)*nelms + n_loc, reac) + cascade_matrix((som1-1)*nelms + n_loc, reac) + &
-     cascade_matrix(lid_nh4, reac)
-  resp = cascade_matrix((som3-1)*nelms + p_loc, reac) + cascade_matrix((som1-1)*nelms + p_loc, reac) + &
-     cascade_matrix(lid_minp_soluble, reac)
-  write(*,'(A,3(X,E20.10))')'som3 resc, resn, resp =',resc,resn, resp
+  reac = pom_dek_reac
+  resc = cascade_matrix((pom-1)*nelms + c_loc, reac) + cascade_matrix((dom-1)*nelms + c_loc, reac)
+  resn = cascade_matrix((pom-1)*nelms + n_loc, reac) + cascade_matrix((dom-1)*nelms + n_loc, reac)
+  resp = cascade_matrix((pom-1)*nelms + p_loc, reac) + cascade_matrix((dom-1)*nelms + p_loc, reac)
+  write(*,'(A,3(X,E20.10))')'pom resc, resn, resp =',resc,resn, resp
+
+  reac = humus_dek_reac
+  resc = cascade_matrix((humus-1)*nelms + c_loc, reac) + cascade_matrix((dom-1)*nelms + c_loc, reac)
+  resn = cascade_matrix((humus-1)*nelms + n_loc, reac) + cascade_matrix((dom-1)*nelms + n_loc, reac)
+  resp = cascade_matrix((humus-1)*nelms + p_loc, reac) + cascade_matrix((dom-1)*nelms + p_loc, reac)
+  write(*,'(A,3(X,E20.10))')'humus resc, resn, resp =',resc,resn, resp
 
   reac = cwd_dek_reac
-  resc = cascade_matrix((cwd-1)*nelms + c_loc, reac) + cascade_matrix((som1-1)*nelms + c_loc, reac) + &
-     cascade_matrix((som2-1)*nelms + c_loc, reac) + cascade_matrix(lid_co2, reac)
-  resn = cascade_matrix((cwd-1)*nelms + n_loc, reac) + cascade_matrix((som1-1)*nelms + n_loc, reac) + &
-     cascade_matrix((som2-1)*nelms + n_loc, reac) + cascade_matrix(lid_nh4, reac)
-  resp = cascade_matrix((cwd-1)*nelms + p_loc, reac) + cascade_matrix((som1-1)*nelms + p_loc, reac) + &
-     cascade_matrix((som2-1)*nelms + p_loc, reac) + cascade_matrix(lid_minp_soluble, reac)
+  resc = cascade_matrix((cwd-1)*nelms + c_loc, reac) + cascade_matrix((lcel-1)*nelms + c_loc, reac) + &
+     cascade_matrix((llig-1)*nelms + c_loc, reac)
+  resn = cascade_matrix((cwd-1)*nelms + n_loc, reac) + cascade_matrix((lcel-1)*nelms + n_loc, reac) + &
+     cascade_matrix((llig-1)*nelms + n_loc, reac)
+  resp = cascade_matrix((cwd-1)*nelms + p_loc, reac) + cascade_matrix((lcel-1)*nelms + p_loc, reac) + &
+     cascade_matrix((llig-1)*nelms + p_loc, reac)
   write(*,'(A,3(X,E20.10))')'cwd resc, resn, resp =',resc,resn, resp
 
   reac = lwd_dek_reac
-  resc = cascade_matrix((lwd-1)*nelms + c_loc, reac) + cascade_matrix((som1-1)*nelms + c_loc, reac) + &
-     cascade_matrix((som2-1)*nelms + c_loc, reac) + cascade_matrix(lid_co2, reac)
-  resn = cascade_matrix((lwd-1)*nelms + n_loc, reac) + cascade_matrix((som1-1)*nelms + n_loc, reac) + &
-     cascade_matrix((som2-1)*nelms + n_loc, reac) + cascade_matrix(lid_nh4, reac)
-  resp = cascade_matrix((lwd-1)*nelms + p_loc, reac) + cascade_matrix((som1-1)*nelms + p_loc, reac) + &
-     cascade_matrix((som2-1)*nelms + p_loc, reac) + cascade_matrix(lid_minp_soluble, reac)
+  resc = cascade_matrix((lwd-1)*nelms + c_loc, reac) + cascade_matrix((lcel-1)*nelms + c_loc, reac) + &
+     cascade_matrix((llig-1)*nelms + c_loc, reac)
+  resn = cascade_matrix((lwd-1)*nelms + n_loc, reac) + cascade_matrix((lcel-1)*nelms + n_loc, reac) + &
+     cascade_matrix((llig-1)*nelms + n_loc, reac)
+  resp = cascade_matrix((lwd-1)*nelms + p_loc, reac) + cascade_matrix((lcel-1)*nelms + p_loc, reac) + &
+     cascade_matrix((llig-1)*nelms + p_loc, reac)
   write(*,'(A,3(X,E20.10))')'lwd resc, resn, resp =',resc,resn, resp
 
   reac = fwd_dek_reac
-  resc = cascade_matrix((fwd-1)*nelms + c_loc, reac) + cascade_matrix((som1-1)*nelms + c_loc, reac) + &
-     cascade_matrix((som2-1)*nelms + c_loc, reac) + cascade_matrix(lid_co2, reac)
-  resn = cascade_matrix((fwd-1)*nelms + n_loc, reac) + cascade_matrix((som1-1)*nelms + n_loc, reac) + &
-     cascade_matrix((som2-1)*nelms + n_loc, reac) + cascade_matrix(lid_nh4, reac)
-  resp = cascade_matrix((fwd-1)*nelms + p_loc, reac) + cascade_matrix((som1-1)*nelms + p_loc, reac) + &
-     cascade_matrix((som2-1)*nelms + p_loc, reac) + cascade_matrix(lid_minp_soluble, reac)
+  resc = cascade_matrix((fwd-1)*nelms + c_loc, reac) + cascade_matrix((lcel-1)*nelms + c_loc, reac) + &
+     cascade_matrix((llig-1)*nelms + c_loc, reac)
+  resn = cascade_matrix((fwd-1)*nelms + n_loc, reac) + cascade_matrix((lcel-1)*nelms + n_loc, reac) + &
+     cascade_matrix((llig-1)*nelms + n_loc, reac)
+  resp = cascade_matrix((fwd-1)*nelms + p_loc, reac) + cascade_matrix((lcel-1)*nelms + p_loc, reac) + &
+     cascade_matrix((llig-1)*nelms + p_loc, reac)
   write(*,'(A,3(X,E20.10))')'fwd resc, resn, resp =',resc,resn, resp
 
   reac = lid_nh4_nit_reac
@@ -612,34 +615,34 @@ contains
   integer :: jj
   integer :: kc14
 
-  associate(                                &
-    litr_beg =>  cdombgc_index%litr_beg, &
-    Bm_beg =>  cdombgc_index%Bm_beg    , &
-    som_beg =>  cdombgc_index%som_beg  , &
-    dom_beg =>  cdombgc_index%dom_beg  , &
-    pom_beg =>  cdombgc_index%pom_beg  , &
-    wood_beg =>  cdombgc_index%wood_beg, &
-    litr_end =>  cdombgc_index%litr_end, &
-    som_end =>  cdombgc_index%som_end  , &
-    Bm_end =>  cdombgc_index%Bm_end    , &
-    dom_end =>  cdombgc_index%dom_end  , &
-    pom_end => cdombgc_index%pom_end   , &
-    wood_end =>  cdombgc_index%wood_end, &
-    c14_loc=>  cdombgc_index%c14_loc   , &
-    nelms => cdombgc_index%nelms         &
+  associate(                                       &
+    litr_beg =>  cdombgc_index%litr_beg          , &
+    micbiom_beg =>  cdombgc_index%micbiom_beg    , &
+    humus_beg =>  cdombgc_index%humus_beg        , &
+    dom_beg =>  cdombgc_index%dom_beg            , &
+    pom_beg =>  cdombgc_index%pom_beg            , &
+    wood_beg =>  cdombgc_index%wood_beg          , &
+    litr_end =>  cdombgc_index%litr_end          , &
+    humus_end =>  cdombgc_index%humus_end        , &
+    micbiom_end =>  cdombgc_index%micbiom_end    , &
+    dom_end =>  cdombgc_index%dom_end            , &
+    pom_end => cdombgc_index%pom_end             , &
+    wood_end =>  cdombgc_index%wood_end          , &
+    c14_loc=>  cdombgc_index%c14_loc             , &
+    nelms => cdombgc_index%nelms                   &
   )
 
   call somc14_decay(litr_beg, litr_end, nelms, c14_loc, this%c14decay_const)
 
   call somc14_decay(wood_beg, wood_end, nelms, c14_loc, this%c14decay_const)
 
-  call somc14_decay(som_beg, som_end, nelms, c14_loc, this%c14decay_som_const)
+  call somc14_decay(humus_beg, humus_end, nelms, c14_loc, this%c14decay_humus_const)
 
   call somc14_decay(dom_beg, dom_end, nelms, c14_loc, this%c14decay_dom_const)
 
   call somc14_decay(pom_beg, pom_end, nelms, c14_loc, this%c14decay_pom_const)
 
-  call somc14_decay( Bm_beg, Bm_end, nelms, c14_loc, this%c14decay_Bm_const)
+  call somc14_decay(micbiom_beg, micbiom_end, nelms, c14_loc, this%c14decay_micbiom_const)
 
   end associate
   contains
@@ -907,32 +910,32 @@ contains
   real(r8):: totc, totn
   real(r8):: c_inf_loc, n_inf_loc, p_inf_loc
   associate(                        &
-    lit1 =>  cdombgc_index%lit1, &
-    lit2 =>  cdombgc_index%lit2, &
-    lit3 =>  cdombgc_index%lit3, &
+    lmet =>  cdombgc_index%lmet, &
+    lcel =>  cdombgc_index%lcel, &
+    llig =>  cdombgc_index%llig, &
     cwd =>   cdombgc_index%cwd, &
     fwd =>   cdombgc_index%fwd, &
     lwd =>   cdombgc_index%lwd, &
     litr_beg =>  cdombgc_index%litr_beg, &
-    som_beg =>  cdombgc_index%som_beg, &
-    Bm_beg  =>  cdombgc_index%Bm_beg, &
+    humus_beg =>  cdombgc_index%humus_beg, &
+    micbiom_beg  =>  cdombgc_index%micbiom_beg, &
     dom_beg =>  cdombgc_index%dom_beg, &
     pom_beg =>  cdombgc_index%pom_beg, &
     wood_beg =>  cdombgc_index%wood_beg, &
     litr_end =>  cdombgc_index%litr_end, &
-    som_end =>  cdombgc_index%som_end, &
+    humus_end =>  cdombgc_index%humus_end, &
     dom_end =>  cdombgc_index%dom_end, &
     pom_end =>  cdombgc_index%pom_end, &
-    Bm_end =>  cdombgc_index%Bm_end, &
+    micbiom_end =>  cdombgc_index%micbiom_end, &
     wood_end =>  cdombgc_index%wood_end, &
     c_loc=>  cdombgc_index%c_loc,&
     c13_loc=>  cdombgc_index%c13_loc,&
     c14_loc=>  cdombgc_index%c14_loc,&
     n_loc=>  cdombgc_index%n_loc,&
     p_loc=>  cdombgc_index%p_loc,&
-    som1 =>  cdombgc_index%som1, &
-    som2 =>  cdombgc_index%som2, &
-    som3 =>  cdombgc_index%som3, &
+    mic =>  cdombgc_index%mic, &
+    pom =>  cdombgc_index%pom, &
+    humus =>  cdombgc_index%humus, &
     nelms => cdombgc_index%nelms, &
     lid_nh4=> cdombgc_index%lid_nh4, &
     lid_no3=> cdombgc_index%lid_no3, &
@@ -944,17 +947,17 @@ contains
   !*********************************************
   ! organic substrates
   !*********************************************
-  call add_som_pool(lit1, bgc_forc%cflx_input_litr_met, &
+  call add_som_pool(lmet, bgc_forc%cflx_input_litr_met, &
     bgc_forc%nflx_input_litr_met, bgc_forc%pflx_input_litr_met, &
     bgc_forc%cflx_input_litr_met_c13, bgc_forc%cflx_input_litr_met_c14, &
     c_inf_loc, n_inf_loc, p_inf_loc)
 
-  call add_som_pool(lit2, bgc_forc%cflx_input_litr_cel, &
+  call add_som_pool(lcel, bgc_forc%cflx_input_litr_cel, &
     bgc_forc%nflx_input_litr_cel, bgc_forc%pflx_input_litr_cel, &
     bgc_forc%cflx_input_litr_cel_c13, bgc_forc%cflx_input_litr_cel_c14, &
     c_inf_loc, n_inf_loc, p_inf_loc)
 
-  call add_som_pool(lit3, bgc_forc%cflx_input_litr_lig, &
+  call add_som_pool(llig, bgc_forc%cflx_input_litr_lig, &
     bgc_forc%nflx_input_litr_lig, bgc_forc%pflx_input_litr_lig, &
     bgc_forc%cflx_input_litr_lig_c13, bgc_forc%cflx_input_litr_lig_c14, &
     c_inf_loc, n_inf_loc, p_inf_loc)
@@ -1011,8 +1014,7 @@ contains
   totp = 0._r8
   totp = totp + sum_some(litr_beg, litr_end, nelms, p_loc)
   totp = totp + sum_some(wood_beg, wood_end, nelms, p_loc)
-  totp = totp + sum_some(Bm_beg, Bm_end, nelms, p_loc)
-  totp = totp + sum_some(som_beg, som_end, nelms, p_loc)
+  totp = totp + sum_some(humus_beg, humus_end, nelms, p_loc)
   totp = totp + sum_some(pom_beg, pom_end, nelms, p_loc)
   totp = totp + sum_some(dom_beg, dom_end, nelms, p_loc)
 
@@ -1020,8 +1022,7 @@ contains
   pmin_cleave=0._r8
   call somp_decay(litr_beg, litr_end, nelms, p_loc, pmin_frac, pmin_cleave)
   call somp_decay(wood_beg, wood_end, nelms, p_loc, pmin_frac, pmin_cleave)
-  call somp_decay(Bm_beg, Bm_end, nelms, p_loc, pmin_frac, pmin_cleave)
-  call somp_decay(som_beg, som_end, nelms, p_loc, pmin_frac, pmin_cleave)
+  call somp_decay(humus_beg, humus_end, nelms, p_loc, pmin_frac, pmin_cleave)
   call somp_decay(pom_beg, pom_end, nelms, p_loc, pmin_frac, pmin_cleave)
   call somp_decay(dom_beg, dom_end, nelms, p_loc, pmin_frac, pmin_cleave)
 
@@ -1152,7 +1153,7 @@ contains
   real(r8) :: ECA_factor_den
   real(r8) :: ECA_factor_nit
   integer  :: jj, it
-  integer, parameter  :: itmax = 100
+  integer, parameter  :: itmax = 10
   type(lom_type) :: lom
   type(betr_status_type) :: bstatus
   logical :: lneg
@@ -1164,9 +1165,9 @@ contains
     nom_pools => this%cdombgc_index%nom_pools                                                , &
     lid_nh4 => this%cdombgc_index%lid_nh4                                                    , &
     lid_no3 => this%cdombgc_index%lid_no3                                                    , &
-    som1    => this%cdombgc_index%som1                                                       , &
-    som2    => this%cdombgc_index%som2                                                       , &
-    som3    => this%cdombgc_index%som3                                                       , &
+    mic    => this%cdombgc_index%mic                                                       , &
+    pom    => this%cdombgc_index%pom                                                       , &
+    humus    => this%cdombgc_index%humus                                                       , &
     c_loc   => this%cdombgc_index%c_loc                                                      , &
     n_loc   => this%cdombgc_index%n_loc                                                      , &
     p_loc   => this%cdombgc_index%p_loc                                                      , &
@@ -1198,7 +1199,6 @@ contains
 
   call this%censom%calc_pot_min_np_flx(dtime, this%cdombgc_index,  ystate, this%k_decay,&
     this%cascade_matrix, this%alpha_n, this%alpha_p, pot_decomp, mic_pot_nn_flx, mic_pot_np_flx)
-
 
   !do ECA nutrient scaling
   !
@@ -1339,8 +1339,8 @@ contains
   endif
   if(this%cdombgc_index%debug)then
     !
-!    jj = som3
-!    write(*,'(A,6(X,E25.15))')'dydt som3',dydt((jj-1)*nelms+c_loc),dydt((jj-1)*nelms+n_loc),dydt((jj-1)*nelms+p_loc),&
+!    jj = humus
+!    write(*,'(A,6(X,E25.15))')'dydt humus',dydt((jj-1)*nelms+c_loc),dydt((jj-1)*nelms+n_loc),dydt((jj-1)*nelms+p_loc),&
 !      dydt((jj-1)*nelms+c_loc)/dydt((jj-1)*nelms+n_loc),dydt((jj-1)*nelms+c_loc)/dydt((jj-1)*nelms+p_loc)
   endif
   end associate
@@ -1443,15 +1443,15 @@ contains
     p_loc=>  this%cdombgc_index%p_loc,&
     lid_n2o_nit => this%cdombgc_index%lid_n2o_nit,&
     lid_no3_den => this%cdombgc_index%lid_no3_den,&
-    lit1 =>  this%cdombgc_index%lit1, &
-    lit2 =>  this%cdombgc_index%lit2, &
-    lit3 =>  this%cdombgc_index%lit3, &
+    lmet =>  this%cdombgc_index%lmet, &
+    lcel =>  this%cdombgc_index%lcel, &
+    llig =>  this%cdombgc_index%llig, &
     cwd =>   this%cdombgc_index%cwd, &
     lwd =>   this%cdombgc_index%lwd, &
     fwd =>   this%cdombgc_index%fwd, &
-    som1 =>  this%cdombgc_index%som1, &
-    som2 =>  this%cdombgc_index%som2, &
-    som3 =>  this%cdombgc_index%som3, &
+    mic =>  this%cdombgc_index%mic, &
+    pom =>  this%cdombgc_index%pom, &
+    humus =>  this%cdombgc_index%humus, &
     nelms => this%cdombgc_index%nelms, &
     lid_nh4=> this%cdombgc_index%lid_nh4, &
     lid_no3=> this%cdombgc_index%lid_no3, &
@@ -1471,15 +1471,15 @@ contains
   if(present(n_flx))n_flx=0._r8
   if(present(p_flx))p_flx=0._r8
 
-  call sum_omjj(lit1, c_mass, n_mass, p_mass)
-  call sum_omjj(lit2, c_mass, n_mass, p_mass)
-  call sum_omjj(lit3, c_mass, n_mass, p_mass)
+  call sum_omjj(lmet, c_mass, n_mass, p_mass)
+  call sum_omjj(lcel, c_mass, n_mass, p_mass)
+  call sum_omjj(llig, c_mass, n_mass, p_mass)
   call sum_omjj(cwd, c_mass, n_mass, p_mass)
   call sum_omjj(lwd, c_mass, n_mass, p_mass)
   call sum_omjj(fwd, c_mass, n_mass, p_mass)
-  call sum_omjj(som1, c_mass, n_mass, p_mass)
-  call sum_omjj(som2, c_mass, n_mass, p_mass)
-  call sum_omjj(som3, c_mass, n_mass, p_mass)
+  call sum_omjj(mic, c_mass, n_mass, p_mass)
+  call sum_omjj(pom, c_mass, n_mass, p_mass)
+  call sum_omjj(humus, c_mass, n_mass, p_mass)
 
   n_mass = n_mass + ystates1(lid_nh4) + ystates1(lid_no3)
 
@@ -1546,15 +1546,15 @@ contains
     p_loc=>  this%cdombgc_index%p_loc,&
     lid_n2o => this%cdombgc_index%lid_n2o,&
     lid_n2 => this%cdombgc_index%lid_n2,&
-    lit1 =>  this%cdombgc_index%lit1, &
-    lit2 =>  this%cdombgc_index%lit2, &
-    lit3 =>  this%cdombgc_index%lit3, &
+    lmet =>  this%cdombgc_index%lmet, &
+    lcel =>  this%cdombgc_index%lcel, &
+    llig =>  this%cdombgc_index%llig, &
     cwd =>   this%cdombgc_index%cwd, &
     lwd =>   this%cdombgc_index%lwd, &
     fwd =>   this%cdombgc_index%fwd, &
-    som1 =>  this%cdombgc_index%som1, &
-    som2 =>  this%cdombgc_index%som2, &
-    som3 =>  this%cdombgc_index%som3, &
+    mic =>  this%cdombgc_index%mic, &
+    pom =>  this%cdombgc_index%pom, &
+    humus =>  this%cdombgc_index%humus, &
     nelms => this%cdombgc_index%nelms, &
     lid_nh4=> this%cdombgc_index%lid_nh4, &
     lid_no3=> this%cdombgc_index%lid_no3, &
@@ -1570,13 +1570,13 @@ contains
   print*,header
   c_mass = 0._r8; n_mass = 0._r8; p_mass = 0._r8;
 
-  jj=lit1;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
+  jj=lmet;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
   c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
 
-  jj=lit2;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
+  jj=lcel;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
   c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
 
-  jj=lit3;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
+  jj=llig;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
   c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
 
   jj=cwd;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
@@ -1588,13 +1588,13 @@ contains
   jj=fwd;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
   c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
 
-  jj=som1;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
+  jj=mic;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
   c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
 
-  jj=som2;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
+  jj=pom;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
   c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
 
-  jj=som3;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
+  jj=humus;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
   c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
 
 

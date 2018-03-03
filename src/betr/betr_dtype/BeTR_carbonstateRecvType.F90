@@ -21,7 +21,7 @@ implicit none
      real(r8), pointer :: som1c_vr_col(:,:) => null()
      real(r8), pointer :: som2c_vr_col(:,:) => null()
      real(r8), pointer :: som3c_vr_col(:,:) => null()
-
+     real(r8), pointer :: domc_vr_col(:,:) => null()
  contains
     procedure, public  :: Init
     procedure, private :: InitAllocate
@@ -73,7 +73,7 @@ implicit none
   allocate(this%cwdc_vr_col(begc:endc,lbj:ubj)); this%cwdc_vr_col(:,:)   = nan
   allocate(this%totlitc_vr_col(begc:endc,lbj:ubj)); this%totlitc_vr_col(:,:) = nan
   allocate(this%totsomc_vr_col(begc:endc,lbj:ubj)); this%totsomc_vr_col(:,:) = nan
-
+  allocate(this%domc_vr_col(begc:endc, lbj:ubj)); this%domc_vr_col(:,:)=nan
   end subroutine InitAllocate
 
 
@@ -93,6 +93,7 @@ implicit none
     this%som2c_vr_col(:,:) = value_column
     this%som3c_vr_col(:,:) = value_column
   endif
+  this%domc_vr_col(:,:) = value_column
   end subroutine reset
 
 

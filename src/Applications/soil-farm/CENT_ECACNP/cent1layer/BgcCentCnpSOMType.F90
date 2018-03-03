@@ -687,7 +687,7 @@ contains
       cascade_matrix((som2-1)*nelms+c14_loc  , reac) =  f2*this%icc14_ratios(iwd)
     endif
 
-    if(this%use_c14)then
+    if(this%use_c13)then
       cascade_matrix((iwd-1)*nelms+c13_loc   , reac) = -this%icc13_ratios(iwd)
       cascade_matrix((som1-1)*nelms+c13_loc  , reac) =  f1*this%icc13_ratios(iwd)
       cascade_matrix((som2-1)*nelms+c13_loc  , reac) =  f2*this%icc13_ratios(iwd)
