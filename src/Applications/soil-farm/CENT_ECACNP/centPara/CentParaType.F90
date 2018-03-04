@@ -50,6 +50,22 @@ implicit none
   real(r8) :: c14decay_bm_const
   real(r8) :: k_nitr_max
 
+  real(r8) :: init_cn_som1
+  real(r8) :: init_cn_som2
+  real(r8) :: init_cn_som3
+
+  real(r8) :: init_cp_som1
+  real(r8) :: init_cp_som2
+  real(r8) :: init_cp_som3
+
+  real(r8) :: init_cc14_som1
+  real(r8) :: init_cc14_som2
+  real(r8) :: init_cc14_som3
+
+  real(r8) :: init_cc13_som1
+  real(r8) :: init_cc13_som2
+  real(r8) :: init_cc13_som3
+
   real(r8), pointer :: spinup_factor(:)
  contains
    procedure, public  :: Init => centpara_init
@@ -195,6 +211,21 @@ contains
   !Note: (1._r8-frac_p_sec_to_sol)*minp_secondary_decay = occlusion rate
   this%frac_p_sec_to_sol(:)              = 0.95_r8    !fraction of released secondary phosphorus that goes into soluble form, occ rate is on the order of  1.e-13 1/s
   this%minp_secondary_decay(:)           = 1.e-11_r8  !decay rate of secondary phosphorus, 1/s, this is on the order of 1.e-11 1/s
+
+  this%init_cc14_som1= 0._r8
+  this%init_cc14_som2= 0._r8
+  this%init_cc14_som3= 0._r8
+
+  this%init_cc13_som1= 0._r8
+  this%init_cc13_som2= 0._r8
+  this%init_cc13_som3= 0._r8
+
+  this%init_cp_som1 = 110._r8 !mass based
+  this%init_cp_som2 = 320._r8 !mass based
+  this%init_cp_som3 = 114._r8 !mass based
+  this%init_cn_som1 = 8._r8   !mass based
+  this%init_cn_som2 = 11._r8  !mass based
+  this%init_cn_som3 = 11._r8  !mass based
 
   end subroutine set_defpar_default
 

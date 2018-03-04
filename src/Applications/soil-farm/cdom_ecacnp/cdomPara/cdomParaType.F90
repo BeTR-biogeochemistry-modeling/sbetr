@@ -54,6 +54,26 @@ implicit none
   real(r8) :: k_nitr_max
 
   real(r8), pointer :: spinup_factor(:)
+
+  real(r8) :: init_cn_mic
+  real(r8) :: init_cn_pom
+  real(r8) :: init_cn_humus
+  real(r8) :: init_cn_dom
+
+  real(r8) :: init_cp_mic
+  real(r8) :: init_cp_pom
+  real(r8) :: init_cp_humus
+  real(r8) :: init_cp_dom
+
+  real(r8) :: init_cc14_mic
+  real(r8) :: init_cc14_pom
+  real(r8) :: init_cc14_humus
+  real(r8) :: init_cc14_dom
+
+  real(r8) :: init_cc13_mic
+  real(r8) :: init_cc13_pom
+  real(r8) :: init_cc13_humus
+  real(r8) :: init_cc13_dom
  contains
    procedure, public  :: Init => centpara_init
    procedure, public  :: readPars => centpara_readPars
@@ -202,6 +222,24 @@ contains
   !Note: (1._r8-frac_p_sec_to_sol)*minp_secondary_decay = occlusion rate
   this%frac_p_sec_to_sol(:)              = 0.95_r8    !fraction of released secondary phosphorus that goes into soluble form, occ rate is on the order of  1.e-13 1/s
   this%minp_secondary_decay(:)           = 1.e-11_r8  !decay rate of secondary phosphorus, 1/s, this is on the order of 1.e-11 1/s
+
+  this%init_cc14_mic= 0._r8
+  this%init_cc14_pom= 0._r8
+  this%init_cc14_humus= 0._r8
+
+  this%init_cc13_mic= 0._r8
+  this%init_cc13_pom= 0._r8
+  this%init_cc13_humus= 0._r8
+
+  this%init_cp_mic = 110._r8 !mass based
+  this%init_cp_pom = 320._r8 !mass based
+  this%init_cp_humus = 114._r8 !mass based
+  this%init_cp_dom  = 110._r8
+
+  this%init_cn_mic = 8._r8   !mass based
+  this%init_cn_pom = 11._r8  !mass based
+  this%init_cn_humus = 11._r8  !mass based
+  this%init_cn_dom  = 8._r8
 
   end subroutine set_defpar_default
 

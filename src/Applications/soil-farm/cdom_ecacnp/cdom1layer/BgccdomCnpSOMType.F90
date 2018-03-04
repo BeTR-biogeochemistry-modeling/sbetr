@@ -183,9 +183,9 @@ contains
   this%def_cn(cdombgc_index%lwd)  = biogeo_con%init_cn_lwd * natomw/catomw
   this%def_cn(cdombgc_index%fwd)  = biogeo_con%init_cn_fwd * natomw/catomw
 
-  this%def_cn(cdombgc_index%mic) = biogeo_con%init_cn_som1 * natomw/catomw
-  this%def_cn(cdombgc_index%pom) = biogeo_con%init_cn_som2 * natomw/catomw
-  this%def_cn(cdombgc_index%humus) = biogeo_con%init_cn_som3 * natomw/catomw
+  this%def_cn(cdombgc_index%mic) = biogeo_con%init_cn_mic * natomw/catomw
+  this%def_cn(cdombgc_index%pom) = biogeo_con%init_cn_pom * natomw/catomw
+  this%def_cn(cdombgc_index%humus) = biogeo_con%init_cn_humus * natomw/catomw
 
   this%def_cp(cdombgc_index%lmet) = biogeo_con%init_cp_met * patomw/catomw
   this%def_cp(cdombgc_index%lcel) = biogeo_con%init_cp_cel * patomw/catomw
@@ -194,9 +194,9 @@ contains
   this%def_cp(cdombgc_index%lwd)  = biogeo_con%init_cp_lwd * patomw/catomw
   this%def_cp(cdombgc_index%fwd)  = biogeo_con%init_cp_fwd * patomw/catomw
 
-  this%def_cp(cdombgc_index%mic) = biogeo_con%init_cp_som1 * patomw/catomw
-  this%def_cp(cdombgc_index%pom) = biogeo_con%init_cp_som2 * patomw/catomw
-  this%def_cp(cdombgc_index%humus) = biogeo_con%init_cp_som3 * patomw/catomw
+  this%def_cp(cdombgc_index%mic) = biogeo_con%init_cp_mic * patomw/catomw
+  this%def_cp(cdombgc_index%pom) = biogeo_con%init_cp_pom * patomw/catomw
+  this%def_cp(cdombgc_index%humus) = biogeo_con%init_cp_humus * patomw/catomw
 
   this%use_c13=biogeo_con%use_c13
   this%use_c14=biogeo_con%use_c14
@@ -208,9 +208,9 @@ contains
     this%def_cc13(cdombgc_index%cwd)  = biogeo_con%init_cc13_cwd
     this%def_cc13(cdombgc_index%lwd)  = biogeo_con%init_cc13_lwd
     this%def_cc13(cdombgc_index%fwd)  = biogeo_con%init_cc13_fwd
-    this%def_cc13(cdombgc_index%mic) = biogeo_con%init_cc13_som1
-    this%def_cc13(cdombgc_index%pom) = biogeo_con%init_cc13_som2
-    this%def_cc13(cdombgc_index%humus) = biogeo_con%init_cc13_som3
+    this%def_cc13(cdombgc_index%mic) = biogeo_con%init_cc13_mic
+    this%def_cc13(cdombgc_index%pom) = biogeo_con%init_cc13_pom
+    this%def_cc13(cdombgc_index%humus) = biogeo_con%init_cc13_humus
   endif
 
   if(this%use_c14)then
@@ -220,9 +220,9 @@ contains
     this%def_cc14(cdombgc_index%cwd)  = biogeo_con%init_cc14_cwd
     this%def_cc14(cdombgc_index%lwd)  = biogeo_con%init_cc14_lwd
     this%def_cc14(cdombgc_index%fwd)  = biogeo_con%init_cc14_fwd
-    this%def_cc14(cdombgc_index%mic) = biogeo_con%init_cc14_som1
-    this%def_cc14(cdombgc_index%pom) = biogeo_con%init_cc14_som2
-    this%def_cc14(cdombgc_index%humus) = biogeo_con%init_cc14_som3
+    this%def_cc14(cdombgc_index%mic) = biogeo_con%init_cc14_mic
+    this%def_cc14(cdombgc_index%pom) = biogeo_con%init_cc14_pom
+    this%def_cc14(cdombgc_index%humus)= biogeo_con%init_cc14_humus
   endif
 
   end subroutine UpdateParas

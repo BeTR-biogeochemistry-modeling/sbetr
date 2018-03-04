@@ -21,9 +21,6 @@ implicit none
   real(r8) :: init_cn_cwd
   real(r8) :: init_cn_lwd
   real(r8) :: init_cn_fwd
-  real(r8) :: init_cn_som1
-  real(r8) :: init_cn_som2
-  real(r8) :: init_cn_som3
 
   real(r8) :: init_cp_met
   real(r8) :: init_cp_cel
@@ -31,9 +28,6 @@ implicit none
   real(r8) :: init_cp_cwd
   real(r8) :: init_cp_lwd
   real(r8) :: init_cp_fwd
-  real(r8) :: init_cp_som1
-  real(r8) :: init_cp_som2
-  real(r8) :: init_cp_som3
 
   real(r8) :: init_cc13_met
   real(r8) :: init_cc13_cel
@@ -41,9 +35,6 @@ implicit none
   real(r8) :: init_cc13_cwd
   real(r8) :: init_cc13_lwd
   real(r8) :: init_cc13_fwd
-  real(r8) :: init_cc13_som1
-  real(r8) :: init_cc13_som2
-  real(r8) :: init_cc13_som3
 
   real(r8) :: init_cc14_met
   real(r8) :: init_cc14_cel
@@ -51,9 +42,6 @@ implicit none
   real(r8) :: init_cc14_cwd
   real(r8) :: init_cc14_lwd
   real(r8) :: init_cc14_fwd
-  real(r8) :: init_cc14_som1
-  real(r8) :: init_cc14_som2
-  real(r8) :: init_cc14_som3
 
   real(r8) :: c14decay_const
 
@@ -161,9 +149,7 @@ contains
   this%init_cn_cwd  = 90._r8  !mass based
   this%init_cn_fwd  = 90._r8  !mass based
   this%init_cn_lwd  = 90._r8  !mass based
-  this%init_cn_som1 = 8._r8   !mass based
-  this%init_cn_som2 = 11._r8  !mass based
-  this%init_cn_som3 = 11._r8  !mass based
+
 
   this%init_cp_met  = 1600._r8
   this%init_cp_cel  = 2000._r8
@@ -171,9 +157,6 @@ contains
   this%init_cp_cwd  = 4500._r8
   this%init_cp_lwd  = 4500._r8!mass based
   this%init_cp_fwd  = 4500._r8!mass based
-  this%init_cp_som1 = 110._r8 !mass based
-  this%init_cp_som2 = 320._r8 !mass based
-  this%init_cp_som3 = 114._r8 !mass based
 
   !ECA nutrient competition
   this%vmax_minp_soluble_to_secondary(:) = 1.e-9_r8  !1/s on the order of 1.e-9 1/s
@@ -190,17 +173,11 @@ contains
   this%init_cc13_cel = 0._r8
   this%init_cc13_lig = 0._r8
   this%init_cc13_cwd = 0._r8
-  this%init_cc13_som1= 0._r8
-  this%init_cc13_som2= 0._r8
-  this%init_cc13_som3= 0._r8
 
   this%init_cc14_met = 0._r8
   this%init_cc14_cel = 0._r8
   this%init_cc14_lig = 0._r8
   this%init_cc14_cwd = 0._r8
-  this%init_cc14_som1= 0._r8
-  this%init_cc14_som2= 0._r8
-  this%init_cc14_som3= 0._r8
 
   end subroutine set_defpar_default_base
 
