@@ -1220,7 +1220,7 @@ contains
   !plant, nit, den nutrient uptake,
   do jj = 1, nom_pools
     scal = 1._r8
-    if(this%alpha_n(jj)>0._r8)then
+    if(this%alpha_n(jj)>0._r8 .and. (.not. this%non_limit))then
       scal = min(scal, ECA_factor_nitrogen_mic)
       this%cascade_matrixd(lid_no3,jj) = this%cascade_matrix(lid_nh4,jj) * &
           safe_div(ECA_factor_no3_mic,ECA_factor_nitrogen_mic)

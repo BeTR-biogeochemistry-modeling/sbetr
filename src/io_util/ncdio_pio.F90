@@ -1697,6 +1697,11 @@ module ncdio_pio
     type(var_desc_t)  :: vardesc            ! local vardesc pointer
     real(r8) :: temp(1)
     character(len=*),parameter :: subname='ncd_io_1d_double_glob'
+
+    if(flag=='read')then
+      call ncd_getvar_real_sp_all_1d(ncid, varname, data)
+      if(present(readvar))readvar=.true.
+    endif
   end subroutine ncd_io_1d_double_glob
 
   subroutine ncd_io_2d_double_glob(varname, data, flag, ncid, readvar, nt, posNOTonfile)
@@ -1708,7 +1713,7 @@ module ncdio_pio
     class(file_desc_t),         intent(inout) :: ncid         ! netcdf file id
     character(len=*),           intent(in)    :: flag         ! 'read' or 'write'
     character(len=*),           intent(in)    :: varname      ! variable name
-    real(r8)         ,           intent(inout) :: data(:,:) ! raw data
+    real(r8)        ,           intent(inout) :: data(:,:) ! raw data
     logical         , optional, intent(out)   :: readvar      ! was var read?
     integer         , optional, intent(in)    :: nt           ! time sample index
     logical         , optional, intent(in)    :: posNOTonfile ! position is NOT on this file
@@ -1725,6 +1730,12 @@ module ncdio_pio
     type(var_desc_t)  :: vardesc            ! local vardesc pointer
     real(r8) :: temp(1)
     character(len=*),parameter :: subname='ncd_io_2d_double_glob'
+
+
+    if(trim(flag)=='read')then
+      call ncd_getvar_real_sp_all_2d(ncid, varname, data)
+      if(present(readvar))readvar=.true.
+    endif
   end subroutine ncd_io_2d_double_glob
 
   subroutine ncd_io_3d_double_glob(varname, data, flag, ncid, readvar, nt, posNOTonfile)

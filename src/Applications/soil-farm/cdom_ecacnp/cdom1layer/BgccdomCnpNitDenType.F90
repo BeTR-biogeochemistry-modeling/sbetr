@@ -155,9 +155,10 @@ implicit none
 
       ! calculate anoxic fraction of soils
       ! use rijtema and kroess model after Riley et al., 2000
-      ! caclulated r_psi as a function of psi
-      r_min = 2._r8 * surface_tension_water / (rho_w * grav * abs(soilpsi))
-      r_max = 2._r8 * surface_tension_water / (rho_w * grav * 0.1_r8)
+      ! caclulated r_psi as a function of psi, the following
+      ! corrects an error from ELM in applying the Young-Laplace equation
+      r_min = 2._r8 * surface_tension_water / (1.e6_r8 * abs(soilpsi))
+      r_max = 2._r8 * surface_tension_water / (1.e6_r8 * 0.1_r8)
       r_psi = sqrt(r_min * r_max)
       ratio_diffusivity_water_gas = &
          (this%d_con_g(2,1) + this%d_con_g(2,2)*temp ) * 1.e-4_r8 / &
