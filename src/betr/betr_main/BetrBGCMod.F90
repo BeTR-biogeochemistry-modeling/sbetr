@@ -51,8 +51,8 @@ contains
 
 
   subroutine surface_tracer_hydropath_update(betr_time, bounds, col, &
-     num_soilc, filter_soilc, &
-     biophysforc, betrtracer_vars, tracerstate_vars, &
+     num_soilc, filter_soilc, biophysforc, advection_on, &
+     betrtracer_vars, tracerstate_vars, &
      tracercoeff_vars,  tracerflux_vars, betr_status)
     !
     ! !DESCRIPTIONS
@@ -75,6 +75,7 @@ contains
     integer                          , intent(in)    :: filter_soilc(:)            ! column filter_soilc
     class(betrtracer_type)           , intent(in)    :: betrtracer_vars            ! betr configuration information
     type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
+    logical                          , intent(in)    :: advection_on
     type(tracerstate_type)           , intent(inout) :: tracerstate_vars
     type(tracercoeff_type)           , intent(inout) :: tracercoeff_vars
     type(tracerflux_type)            , intent(inout) :: tracerflux_vars
@@ -92,6 +93,7 @@ contains
        tracerflux_vars, betr_status)
     if(betr_status%check_status())return
 
+    if(.not. advection_on)return
     ! do tracer wash with surface runoff
     call calc_tracer_surface_runoff(betr_time, bounds, lbj, ubj, &
        num_soilc,                                                &

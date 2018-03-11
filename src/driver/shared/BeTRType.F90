@@ -349,7 +349,8 @@ contains
     if(betr_status%check_status())return
 
     call surface_tracer_hydropath_update(betr_time, bounds, col, &
-       num_soilc, filter_soilc,  biophysforc, this%tracers, this%tracerstates,    &
+       num_soilc, filter_soilc,  biophysforc, this%advection_on, &
+       this%tracers, this%tracerstates,    &
        this%tracercoeffs,  this%tracerfluxes, betr_status)
     if(betr_status%check_status())return
 

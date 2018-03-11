@@ -26,10 +26,10 @@ module BgccdomCnpType
 
   !Note:
   !Keeping cdombgc_index as a private member is a workaround to call the ode solver
-  !it increase the memory for each instance of centurybgceca_type, but enables
+  !it increase the memory for each instance of cdombgceca_type, but enables
   !the ode function to be called by the ode solver
 
-  type, extends(jar_model_type), public :: centurybgceca_type
+  type, extends(jar_model_type), public :: cdombgceca_type
     type(Decompcdom_type),private        :: decompkf_eca
     type(century_nitden_type), private   :: nitden
     type(cdomSom_type), private          :: censom
@@ -71,12 +71,12 @@ module BgccdomCnpType
     real(r8), private                    :: c_inflx,n_inflx, p_inflx
     logical                              :: bgc_on
   contains
-    procedure, public  :: init          => init_ecacnp
-    procedure, public  :: runbgc        => runbgc_ecacnp
-    procedure, public  :: UpdateParas   => UpdateParas_ecacnp
-    procedure, public  :: sumup_cnp_msflx => sumup_cnp_msflx_ecacnp
-    procedure, public  :: getvarllen    => getvarllen_ecacnp
-    procedure, public  :: getvarlist    => getvarlist_ecacnp
+    procedure, public  :: init          => init_cdomeca
+    procedure, public  :: runbgc        => runbgc_cdomeca
+    procedure, public  :: UpdateParas   => UpdateParas_cdomeca
+    procedure, public  :: sumup_cnp_msflx => sumup_cnp_msflx_cdomeca
+    procedure, public  :: getvarllen    => getvarllen_cdomeca
+    procedure, public  :: getvarlist    => getvarlist_cdomeca
     procedure, private :: calc_cascade_matrix
     procedure, private :: init_states
     procedure, private :: add_ext_input
@@ -88,37 +88,37 @@ module BgccdomCnpType
     procedure, private :: checksum_cascade
     procedure, private :: begin_massbal_check
     procedure, private :: end_massbal_check
-  end type centurybgceca_type
+  end type cdombgceca_type
 
-  public :: create_jarmodel_centuryeca
+  public :: create_jarmodel_cdomcnp
 contains
 
-  function create_jarmodel_centuryeca()
+  function create_jarmodel_cdomcnp()
   ! DESCRIPTION
   ! constructor
     implicit none
-    class(centurybgceca_type), pointer :: create_jarmodel_centuryeca
-    class(centurybgceca_type), pointer :: bgc
+    class(cdombgceca_type), pointer :: create_jarmodel_cdomcnp
+    class(cdombgceca_type), pointer :: bgc
 
     allocate(bgc)
-    create_jarmodel_centuryeca => bgc
+    create_jarmodel_cdomcnp => bgc
 
-  end function create_jarmodel_centuryeca
+  end function create_jarmodel_cdomcnp
 
   !-------------------------------------------------------------------------------
-  function getvarllen_ecacnp(this)result(ans)
+  function getvarllen_cdomeca(this)result(ans)
 
   implicit none
-  class(centurybgceca_type) , intent(inout) :: this
+  class(cdombgceca_type) , intent(inout) :: this
   integer :: ans
 
   ans = this%cdombgc_index%nstvars
 
-  end function getvarllen_ecacnp
+  end function getvarllen_cdomeca
   !-------------------------------------------------------------------------------
-  subroutine getvarlist_ecacnp(this, nstvars, varnames, varunits)
+  subroutine getvarlist_cdomeca(this, nstvars, varnames, varunits)
   implicit none
-  class(centurybgceca_type) , intent(inout) :: this
+  class(cdombgceca_type) , intent(inout) :: this
   integer, intent(in) :: nstvars
   character(len=*), intent(out) :: varnames(1:nstvars)
   character(len=*), intent(out) :: varunits(1:nstvars)
@@ -128,13 +128,13 @@ contains
     write(varnames(n),'(A)')trim(this%cdombgc_index%varnames(n))
     write(varunits(n),'(A)')trim(this%cdombgc_index%varunits(n))
   enddo
-  end subroutine getvarlist_ecacnp
+  end subroutine getvarlist_cdomeca
 
   !-------------------------------------------------------------------------------
   subroutine begin_massbal_check(this)
 
   implicit none
-  class(centurybgceca_type) , intent(inout) :: this
+  class(cdombgceca_type) , intent(inout) :: this
   real(r8) :: c_mass0, n_mass0, p_mass0
   print*,'begin_massbal_check'
   call this%sumup_cnp_msflx(this%ystates1, this%beg_c_mass, &
@@ -151,7 +151,7 @@ contains
   subroutine end_massbal_check(this, header)
 
   implicit none
-  class(centurybgceca_type) , intent(inout) :: this
+  class(cdombgceca_type) , intent(inout) :: this
   character(len=*), intent(in) :: header
   real(r8) :: c_mass, n_mass, p_mass
   real(r8) :: c_flx,n_flx,p_flx
@@ -185,10 +185,10 @@ contains
   end subroutine end_massbal_check
 
   !-------------------------------------------------------------------------------
-  subroutine UpdateParas_ecacnp(this,  biogeo_con, bstatus)
+  subroutine UpdateParas_cdomeca(this,  biogeo_con, bstatus)
   use betr_varcon         , only : betr_maxpatch_pft, betr_max_soilorder
   implicit none
-  class(centurybgceca_type) , intent(inout) :: this
+  class(cdombgceca_type) , intent(inout) :: this
   class(BiogeoCon_type)       , intent(in) :: biogeo_con
   type(betr_status_type)     , intent(out)   :: bstatus
   integer :: sr
@@ -225,17 +225,17 @@ contains
     call bstatus%set_msg(msg,err=-1)
     return
   end select
-  end subroutine UpdateParas_ecacnp
+  end subroutine UpdateParas_cdomeca
   !-------------------------------------------------------------------------------
-  subroutine init_ecacnp(this,  biogeo_con,  bstatus)
+  subroutine init_cdomeca(this,  biogeo_con,  bstatus)
   use betr_varcon         , only : betr_maxpatch_pft
   implicit none
-  class(centurybgceca_type) , intent(inout) :: this
+  class(cdombgceca_type) , intent(inout) :: this
   class(BiogeoCon_type)       , intent(in) :: biogeo_con
   type(betr_status_type)    , intent(out) :: bstatus
 
   character(len=256) :: msg
-  write(this%jarname, '(A)')'ecacnp'
+  write(this%jarname, '(A)')'cdomeca'
 
   this%bgc_on=.true.
   select type(biogeo_con)
@@ -266,12 +266,12 @@ contains
     call this%UpdateParas(biogeo_con, bstatus)
   class default
     call bstatus%reset()
-    write(msg,'(A)')'Wrong parameter type passed in for init_ecacnp in ' &
+    write(msg,'(A)')'Wrong parameter type passed in for init_cdomeca in ' &
       // errMsg(mod_filename,__LINE__)
     call bstatus%set_msg(msg,err=-1)
     return
   end select
-  end subroutine init_ecacnp
+  end subroutine init_cdomeca
 
   !-------------------------------------------------------------------------------
 
@@ -279,7 +279,7 @@ contains
   use BgccdomCnpIndexType , only : cdombgc_index_type
   use betr_varcon         , only : betr_maxpatch_pft, betr_max_soilorder
   implicit none
-  class(centurybgceca_type)   , intent(inout) :: this
+  class(cdombgceca_type)   , intent(inout) :: this
   type(cdombgc_index_type) , intent(in):: cdombgc_index
 
   associate(                                   &
@@ -318,7 +318,7 @@ contains
 
   implicit none
   ! !ARGUMENTS:
-  class(centurybgceca_type)     , intent(in) :: this
+  class(cdombgceca_type)     , intent(in) :: this
   type(cdombgc_index_type)   , intent(in) :: cdombgc_index
 
   real(r8) :: resc, resn, resp
@@ -464,7 +464,7 @@ contains
   end subroutine checksum_cascade
 
   !-------------------------------------------------------------------------------
-  subroutine runbgc_ecacnp(this,  is_surflit, dtime, bgc_forc, nstates, ystates0, ystatesf, bstatus)
+  subroutine runbgc_cdomeca(this,  is_surflit, dtime, bgc_forc, nstates, ystates0, ystatesf, bstatus)
 
   !DESCRIPTION
   !do bgc model integration for one step
@@ -474,7 +474,7 @@ contains
   use MathfuncMod           , only : safe_div
   use tracer_varcon         , only : catomw, natomw, patomw
   implicit none
-  class(centurybgceca_type)  , intent(inout) :: this
+  class(cdombgceca_type)  , intent(inout) :: this
   logical                    , intent(in)    :: is_surflit
   real(r8)                   , intent(in)    :: dtime
   type(JarBGC_forc_type)     , intent(in)    :: bgc_forc
@@ -496,7 +496,7 @@ contains
   real(r8) :: c_mass2, n_mass2, p_mass2
   real(r8) :: c_flx, n_flx, p_flx
   integer :: jj
-  character(len=*),parameter :: subname = 'runbgc_ecacnp'
+  character(len=*),parameter :: subname = 'runbgc_cdomeca'
   associate(                                            &
     pctsand   => bgc_forc%pct_sand             , &  !sand in %
     rt_ar     => bgc_forc%rt_ar                , &  !root autotrophic respiration
@@ -521,7 +521,7 @@ contains
     ystates1 => this%ystates1                           &
   )
   this%cdombgc_index%debug = bgc_forc%debug
-  if(this%cdombgc_index%debug)print*,'enter runbgc_ecacnp'
+  if(this%cdombgc_index%debug)print*,'enter runbgc_cdomeca'
   this%rt_ar = rt_ar
   frc_c13 = safe_div(rt_ar_c13,rt_ar); frc_c14 = safe_div(rt_ar_c14,rt_ar)
   call bstatus%reset()
@@ -546,7 +546,7 @@ contains
 
   !calculate default stoichiometry entries
   call this%calc_cascade_matrix(this%cdombgc_index, cascade_matrix, frc_c13, frc_c14)
-  !if(this%cdombgc_index%debug)call this%checksum_cascade(this%cdombgc_index)
+  if(this%cdombgc_index%debug)call this%checksum_cascade(this%cdombgc_index)
   !run century decomposition, return decay rates, cascade matrix, potential hr
   call this%censom%run_decomp(is_surflit, this%cdombgc_index, dtime, ystates1(1:nom_tot_elms),&
       this%decompkf_eca, bgc_forc%pct_sand, bgc_forc%pct_clay,this%alpha_n, this%alpha_p, &
@@ -580,25 +580,23 @@ contains
   call pd_decomp(nprimvars, nreactions, cascade_matrix(1:nprimvars, 1:nreactions), &
      cascade_matrixp, cascade_matrixd, bstatus)
   if(bstatus%check_status())return
-
   time = 0._r8
-  yf(:) = ystates1(:)
 
-   call ode_adapt_ebbks1(this, yf, nprimvars, nstvars, time, dtime, ystates1)
+  yf(:) = ystates1(:)
+  call ode_adapt_ebbks1(this, yf, nprimvars, nstvars, time, dtime, ystates1)
 
   !if(this%cdombgc_index%debug)call this%checksum_cascade(this%cdombgc_index)
   if(this%use_c14)then
     call this%c14decay(this%cdombgc_index, dtime, ystates1)
   endif
-
 !  call this%censom%stoichiometry_fix(this%cdombgc_index, ystates1)
 
-!  if(this%cdombgc_index%debug)call this%end_massbal_check('bf exit runbgc')
+  if(this%cdombgc_index%debug)call this%end_massbal_check('bf exit runbgc')
 !  endif
   ystatesf(:) = ystates1(:)
 
   end associate
-  end subroutine runbgc_ecacnp
+  end subroutine runbgc_cdomeca
   !-------------------------------------------------------------------------------
   subroutine c14decay(this, cdombgc_index, dtime, ystates1)
 
@@ -607,7 +605,7 @@ contains
 
   implicit none
   ! !ARGUMENTS:
-  class(centurybgceca_type)     , intent(in) :: this
+  class(cdombgceca_type)     , intent(in) :: this
   type(cdombgc_index_type)   , intent(in) :: cdombgc_index
   real(r8), intent(in) :: dtime
   real(r8), intent(inout) :: ystates1(:)
@@ -671,7 +669,7 @@ contains
     use betr_ctrl                 , only : spinup_state => betr_spinup_state
     implicit none
     ! !ARGUMENTS:
-    class(centurybgceca_type)     , intent(in) :: this
+    class(cdombgceca_type)     , intent(in) :: this
     type(cdombgc_index_type)   , intent(in) :: cdombgc_index
     real(r8)                      , intent(inout)   :: cascade_matrix(cdombgc_index%nstvars, cdombgc_index%nreactions)
     real(r8)                      , intent(in) :: frc_c13, frc_c14
@@ -830,7 +828,7 @@ contains
   use BgccdomCnpIndexType       , only : cdombgc_index_type
   use JarBgcForcType            , only : JarBGC_forc_type
   implicit none
-  class(centurybgceca_type)     , intent(inout) :: this
+  class(cdombgceca_type)     , intent(inout) :: this
   type(cdombgc_index_type)  , intent(in) :: cdombgc_index
   type(JarBGC_forc_type)  , intent(in) :: bgc_forc
 
@@ -899,7 +897,7 @@ contains
   use tracer_varcon             , only : catomw, natomw, patomw,c13atomw,c14atomw
   use MathfuncMod               , only : safe_div
   implicit none
-  class(centurybgceca_type)     , intent(inout) :: this
+  class(cdombgceca_type)     , intent(inout) :: this
   real(r8), intent(in) :: dtime
   type(cdombgc_index_type)  , intent(in) :: cdombgc_index
   type(JarBGC_forc_type)  , intent(in) :: bgc_forc
@@ -1123,7 +1121,7 @@ contains
   use SOMStateVarUpdateMod , only : calc_dtrend_som_bgc
   use MathfuncMod          , only : lom_type, safe_div
   implicit none
-  class(centurybgceca_type) , intent(inout) :: this
+  class(cdombgceca_type) , intent(inout) :: this
   integer                   , intent(in) :: nstvars
   integer                   , intent(in) :: nprimvars
   real(r8)                  , intent(in) :: dtime
@@ -1349,7 +1347,7 @@ contains
   subroutine arenchyma_gas_transport(this, cdombgc_index, dtime)
   use BgccdomCnpIndexType       , only : cdombgc_index_type
   implicit none
-  class(centurybgceca_type)     , intent(inout) :: this
+  class(cdombgceca_type)     , intent(inout) :: this
   type(cdombgc_index_type)  , intent(in) :: cdombgc_index
   real(r8), intent(in) :: dtime
 
@@ -1425,11 +1423,11 @@ contains
   end subroutine arenchyma_gas_transport
 
   !--------------------------------------------------------------------
-  subroutine sumup_cnp_msflx_ecacnp(this, ystates1, c_mass, n_mass, p_mass,c_flx,n_flx,p_flx, bstatus)
+  subroutine sumup_cnp_msflx_cdomeca(this, ystates1, c_mass, n_mass, p_mass,c_flx,n_flx,p_flx, bstatus)
 
   use tracer_varcon, only : catomw, natomw, patomw
   implicit none
-  class(centurybgceca_type)     , intent(in) :: this
+  class(cdombgceca_type)     , intent(in) :: this
   real(r8), intent(in)  :: ystates1(:)
   real(r8), intent(out) :: c_mass, n_mass, p_mass
   real(r8), optional, intent(out) :: c_flx, n_flx, p_flx
@@ -1528,13 +1526,13 @@ contains
     c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
     end associate
     end subroutine sum_omjj
-  end subroutine sumup_cnp_msflx_ecacnp
+  end subroutine sumup_cnp_msflx_cdomeca
 
   !--------------------------------------------------------------------
   subroutine sumup_cnp_mass(this, header, c_mass, n_mass, p_mass)
   use tracer_varcon         , only : catomw, natomw, patomw
   implicit none
-  class(centurybgceca_type)     , intent(in) :: this
+  class(cdombgceca_type)     , intent(in) :: this
   character(len=*), intent(in) :: header
   real(r8), intent(out) :: c_mass, n_mass, p_mass
   !local variables
@@ -1623,7 +1621,7 @@ contains
     use ODEMOD, only : ebbks, get_rerr, get_tscal
     implicit none
     ! !ARGUMENTS:
-    class(centurybgceca_type),  intent(inout)  :: me
+    class(cdombgceca_type),  intent(inout)  :: me
     real(r8), intent(in)  :: y0(neq)  ! state variable at previous time step
     real(r8), intent(in)  :: t        ! time stamp
     real(r8), intent(in)  :: dt       ! time stepping

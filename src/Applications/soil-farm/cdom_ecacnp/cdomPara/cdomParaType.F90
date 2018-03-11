@@ -282,7 +282,7 @@ contains
   real(r8)           :: tempr(1) ! temporary to read in constant
   character(len=100) :: tString ! temp. var for reading
   real(r8)           :: temparr(1:2,1:1)
-
+  return
   call this%readPars_bgc(ncid, bstatus)
   if(bstatus%check_status())return
   tString='surface_tension_water'

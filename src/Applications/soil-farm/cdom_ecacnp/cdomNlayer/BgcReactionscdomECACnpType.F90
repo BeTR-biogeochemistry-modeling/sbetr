@@ -40,7 +40,7 @@ module BgcReactionscdomECACnpType
   use BGCReactionsMod       , only : bgc_reaction_type
   use betr_varcon           , only : spval => bspval, ispval => bispval
   use tracer_varcon         , only : bndcond_as_conc, bndcond_as_flux
-  use BgccdomCnpType        , only : centurybgceca_type
+  use BgccdomCnpType        , only : cdombgceca_type
   use JarBgcForcType        , only : JarBGC_forc_type
   use BetrStatusType        , only : betr_status_type
   use BgccdomCnpIndexType   , only : cdombgc_index_type
@@ -60,7 +60,7 @@ module BgcReactionscdomECACnpType
   type, public, extends(bgc_reaction_type) :: &
     bgc_reaction_cdom_ecacnp_type
      private
-    type(centurybgceca_type), pointer :: centuryeca(:,:)
+    type(cdombgceca_type), pointer :: cdomeca(:,:)
     type(JarBGC_forc_type), pointer :: centuryforc(:,:)
 
     type(cdombgc_index_type) :: cdombgc_index
@@ -121,7 +121,7 @@ contains
   integer :: c, j
   do j = lbj, ubj
     do c = bounds%begc, bounds%endc
-      call this%centuryeca(c,j)%UpdateParas(cdom_para, bstatus)
+      call this%cdomeca(c,j)%UpdateParas(cdom_para, bstatus)
       if(bstatus%check_status())return
     enddo
   enddo
@@ -390,33 +390,33 @@ contains
   this%nactpft = nactpft
   do j = lbj, ubj
     do p = 1, nactpft
-      this%centuryeca(c_l,j)%competECA%mumax_minn_nh4_plant(p) = plantNutkinetics%plant_nh4_vmax_vr_patch(p,j)
-      this%centuryeca(c_l,j)%competECA%mumax_minn_no3_plant(p) = plantNutkinetics%plant_no3_vmax_vr_patch(p,j)
-      this%centuryeca(c_l,j)%competECA%mumax_minp_plant(p) = plantNutkinetics%plant_p_vmax_vr_patch(p,j)
-      this%centuryeca(c_l,j)%competECA%kaff_minn_no3_plant(p)= plantNutkinetics%plant_no3_km_vr_patch(p,j)
-      this%centuryeca(c_l,j)%competECA%kaff_minn_nh4_plant(p)= plantNutkinetics%plant_nh4_km_vr_patch(p,j)
-      this%centuryeca(c_l,j)%competECA%kaff_minp_plant(p)   = plantNutkinetics%plant_p_km_vr_patch(p,j)
-      this%centuryeca(c_l,j)%competECA%plant_froot_nn(p) = plantNutkinetics%plant_eff_ncompet_b_vr_patch(p,j)
-      this%centuryeca(c_l,j)%competECA%plant_froot_np(p) = plantNutkinetics%plant_eff_pcompet_b_vr_patch(p,j)
+      this%cdomeca(c_l,j)%competECA%mumax_minn_nh4_plant(p) = plantNutkinetics%plant_nh4_vmax_vr_patch(p,j)
+      this%cdomeca(c_l,j)%competECA%mumax_minn_no3_plant(p) = plantNutkinetics%plant_no3_vmax_vr_patch(p,j)
+      this%cdomeca(c_l,j)%competECA%mumax_minp_plant(p) = plantNutkinetics%plant_p_vmax_vr_patch(p,j)
+      this%cdomeca(c_l,j)%competECA%kaff_minn_no3_plant(p)= plantNutkinetics%plant_no3_km_vr_patch(p,j)
+      this%cdomeca(c_l,j)%competECA%kaff_minn_nh4_plant(p)= plantNutkinetics%plant_nh4_km_vr_patch(p,j)
+      this%cdomeca(c_l,j)%competECA%kaff_minp_plant(p)   = plantNutkinetics%plant_p_km_vr_patch(p,j)
+      this%cdomeca(c_l,j)%competECA%plant_froot_nn(p) = plantNutkinetics%plant_eff_ncompet_b_vr_patch(p,j)
+      this%cdomeca(c_l,j)%competECA%plant_froot_np(p) = plantNutkinetics%plant_eff_pcompet_b_vr_patch(p,j)
     enddo
     !affinity parameters
     !decompoers
-    this%centuryeca(c_l,j)%competECA%kaff_minn_nh4_mic= plantNutkinetics%km_decomp_nh4_vr_col(c_l,j)
-    this%centuryeca(c_l,j)%competECA%kaff_minn_no3_mic= plantNutkinetics%km_decomp_no3_vr_col(c_l,j)
-    this%centuryeca(c_l,j)%competECA%kaff_minp_mic=  plantNutkinetics%km_decomp_p_vr_col(c_l,j)
+    this%cdomeca(c_l,j)%competECA%kaff_minn_nh4_mic= plantNutkinetics%km_decomp_nh4_vr_col(c_l,j)
+    this%cdomeca(c_l,j)%competECA%kaff_minn_no3_mic= plantNutkinetics%km_decomp_no3_vr_col(c_l,j)
+    this%cdomeca(c_l,j)%competECA%kaff_minp_mic=  plantNutkinetics%km_decomp_p_vr_col(c_l,j)
 
     !nitrofiers and denitrifiers
-    this%centuryeca(c_l,j)%competECA%kaff_minn_nh4_nit= plantNutkinetics%km_nit_nh4_vr_col(c_l,j)
-    this%centuryeca(c_l,j)%competECA%kaff_minn_no3_den= plantNutkinetics%km_den_no3_vr_col(c_l,j)
+    this%cdomeca(c_l,j)%competECA%kaff_minn_nh4_nit= plantNutkinetics%km_nit_nh4_vr_col(c_l,j)
+    this%cdomeca(c_l,j)%competECA%kaff_minn_no3_den= plantNutkinetics%km_den_no3_vr_col(c_l,j)
     !mineral surfaces
-    this%centuryeca(c_l,j)%competECA%kaff_minn_nh4_msurf= plantNutkinetics%km_minsurf_nh4_vr_col(c_l,j)   !this is ignored at this moment
-    this%centuryeca(c_l,j)%competECA%kaff_minp_msurf= plantNutkinetics%km_minsurf_p_vr_col(c_l,j)
+    this%cdomeca(c_l,j)%competECA%kaff_minn_nh4_msurf= plantNutkinetics%km_minsurf_nh4_vr_col(c_l,j)   !this is ignored at this moment
+    this%cdomeca(c_l,j)%competECA%kaff_minp_msurf= plantNutkinetics%km_minsurf_p_vr_col(c_l,j)
 
     !effective p competing decomposers
-    this%centuryeca(c_l,j)%competECA%compet_bn_mic = plantNutkinetics%decomp_eff_ncompet_b_vr_col(c_l,j)
-    this%centuryeca(c_l,j)%competECA%compet_bp_mic = plantNutkinetics%decomp_eff_pcompet_b_vr_col(c_l,j)
-    this%centuryeca(c_l,j)%competECA%compet_bn_den = plantNutkinetics%den_eff_ncompet_b_vr_col(c_l,j)
-    this%centuryeca(c_l,j)%competECA%compet_bn_nit = plantNutkinetics%nit_eff_ncompet_b_vr_col(c_l,j)
+    this%cdomeca(c_l,j)%competECA%compet_bn_mic = plantNutkinetics%decomp_eff_ncompet_b_vr_col(c_l,j)
+    this%cdomeca(c_l,j)%competECA%compet_bp_mic = plantNutkinetics%decomp_eff_pcompet_b_vr_col(c_l,j)
+    this%cdomeca(c_l,j)%competECA%compet_bn_den = plantNutkinetics%den_eff_ncompet_b_vr_col(c_l,j)
+    this%cdomeca(c_l,j)%competECA%compet_bn_nit = plantNutkinetics%nit_eff_ncompet_b_vr_col(c_l,j)
 
     this%centuryforc(c_l,j)%msurf_nh4 = plantNutkinetics%minsurf_nh4_compet_vr_col(c_l,j)   !this  number needs update
     this%centuryforc(c_l,j)%msurf_minp= plantNutkinetics%minsurf_p_compet_vr_col(c_l,j)    !this  number needs update
@@ -477,7 +477,7 @@ contains
     if(bstatus%check_status())return
 
     !create the models
-    allocate(this%centuryeca(bounds%begc:bounds%endc,lbj:ubj))
+    allocate(this%cdomeca(bounds%begc:bounds%endc,lbj:ubj))
 
     !create model specific forcing data structure
     allocate(this%centuryforc(bounds%begc:bounds%endc,lbj:ubj))
@@ -485,7 +485,7 @@ contains
     !initialize
     do j = lbj, ubj
       do c = bounds%begc, bounds%endc
-        call this%centuryeca(c,j)%Init(cdom_para, bstatus)
+        call this%cdomeca(c,j)%Init(cdom_para, bstatus)
         if(bstatus%check_status())return
 
         call this%centuryforc(c,j)%Init(this%cdombgc_index%nstvars)
@@ -574,7 +574,7 @@ contains
       trc_grp_end=betrtracer_vars%id_trc_end_p_sol, &
       is_trc_gw=.true., is_trc_volatile = .false.)
 
-    ngroupmems=nelm  !dom
+    ngroupmems=nelm+1  !dom, element + energy
     call betrtracer_vars%add_tracer_group(trc_grp_cnt=addone(itemp), mem = ngroupmems, &
       trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_dom, &
       trc_grp_beg=betrtracer_vars%id_trc_beg_dom, &
@@ -1235,10 +1235,10 @@ contains
         if(j<jtops(c))cycle
         is_surflit=(j<=0)
         this%centuryforc(c,j)%debug=betrtracer_vars%debug
-        this%centuryeca(c,j)%bgc_on=.not. betrtracer_vars%debug
+        this%cdomeca(c,j)%bgc_on=.not. betrtracer_vars%debug
 
         if(this%centuryforc(c,j)%debug)print*,'runbgc',j
-        call this%centuryeca(c,j)%runbgc(is_surflit, dtime, this%centuryforc(c,j),nstates, &
+        call this%cdomeca(c,j)%runbgc(is_surflit, dtime, this%centuryforc(c,j),nstates, &
             ystates0, ystatesf, betr_status)
         if(betr_status%check_status())then
           write(laystr,'(I2.2)')j
@@ -1266,23 +1266,21 @@ contains
         end select
       enddo
     enddo
-
     deallocate(ystates0)
     deallocate(ystatesf)
-
-!    if(betrtracer_vars%debug)then
+    if(betrtracer_vars%debug)then
 !      select type(plant_soilbgc)
 !      type is(plant_soilbgc_cdomcnp_type)
 !        write(*,*)'sminn act plant uptake',plant_soilbgc%plant_minn_active_yield_flx_col(bounds%begc:bounds%endc)
 !        write(*,*)'sminp act plant uptake',plant_soilbgc%plant_minp_active_yield_flx_col(bounds%begc:bounds%endc)
 !      end select
-!      call this%debug_info(bounds, num_soilc, filter_soilc, col%dz(bounds%begc:bounds%endc,bounds%lbj:bounds%ubj),&
-!        betrtracer_vars, tracerstate_vars,  'after bgcreact',betr_status)
-!    endif
+      call this%debug_info(bounds, num_soilc, filter_soilc, col%dz(bounds%begc:bounds%endc,bounds%lbj:bounds%ubj),&
+        betrtracer_vars, tracerstate_vars,  'after bgcreact',betr_status)
+    endif
   end subroutine calc_bgc_reaction
 
   !--------------------------------------------------------------------
-  subroutine rm_ext_output(this, c, j, dtime, nstates, ystatesf, cdombgc_index, centuryeca_forc, biogeo_flux)
+  subroutine rm_ext_output(this, c, j, dtime, nstates, ystatesf, cdombgc_index, cdomeca_forc, biogeo_flux)
   !
   ! DESCRIPTION
   ! apply om loss through fire
@@ -1298,7 +1296,7 @@ contains
   integer                     , intent(in) :: nstates
   real(r8)                    , intent(inout):: ystatesf(1:nstates)
   type(cdombgc_index_type) , intent(in) :: cdombgc_index
-  type(JarBGC_forc_type)      , intent(in) :: centuryeca_forc
+  type(JarBGC_forc_type)      , intent(in) :: cdomeca_forc
   type(betr_biogeo_flux_type) , intent(inout) :: biogeo_flux
   integer :: kc, kn, kp, jj, kc13, kc14
   real(r8):: flit_loss, fcwd_loss
@@ -1321,8 +1319,8 @@ contains
     pom =>  cdombgc_index%pom , &
     humus =>  cdombgc_index%humus , &
     nelms => cdombgc_index%nelms, &
-    frac_loss_lit_to_fire => centuryeca_forc%frac_loss_lit_to_fire, &
-    frac_loss_cwd_to_fire => centuryeca_forc%frac_loss_cwd_to_fire, &
+    frac_loss_lit_to_fire => cdomeca_forc%frac_loss_lit_to_fire, &
+    frac_loss_cwd_to_fire => cdomeca_forc%frac_loss_cwd_to_fire, &
     fire_decomp_c12loss_vr_col => biogeo_flux%c12flux_vars%fire_decomp_closs_vr_col, &
     fire_decomp_c13loss_vr_col => biogeo_flux%c13flux_vars%fire_decomp_closs_vr_col, &
     fire_decomp_c14loss_vr_col => biogeo_flux%c14flux_vars%fire_decomp_closs_vr_col, &
@@ -2158,33 +2156,27 @@ contains
         ystatesf(this%cdombgc_index%lid_ar) - &
         ystates0(this%cdombgc_index%lid_ar)
 
-
       !get net production for om pools
       do k = 1, litr_end-litr_beg + 1
         k1 = litr_beg+k-1; k2 = betrtracer_vars%id_trc_beg_litr + k-1
         tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)
       enddo
-
       do k = 1, wood_end-wood_beg + 1
         k1 = wood_beg+k-1; k2 = betrtracer_vars%id_trc_beg_wood + k-1
         tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)
       enddo
-
       do k = 1, micbiom_end-micbiom_beg + 1
         k1 = micbiom_beg+k-1; k2 = betrtracer_vars%id_trc_beg_Bm+ k-1
         tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)
       enddo
-
-      do k = 1, humus_end-humus_beg + 1
+      do k = 1, humus_end-humus_beg + 1   
         k1 = humus_beg+k-1; k2 = betrtracer_vars%id_trc_beg_som+ k-1
         tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)
       enddo
-
       do k = 1, pom_end-pom_beg + 1
         k1 = pom_beg+k-1; k2 = betrtracer_vars%id_trc_beg_pom+ k-1
         tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)
       enddo
-
       do k = 1, dom_end-dom_beg + 1
         k1 = dom_beg+k-1; k2 = betrtracer_vars%id_trc_beg_dom+ k-1
         tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)
@@ -2296,7 +2288,6 @@ contains
    call betr_status%reset()
    SHR_ASSERT_ALL((ubound(dzsoi)  == (/bounds%endc, bounds%ubj/)),   errMsg(mod_filename,__LINE__),betr_status)
    if(betr_status%check_status())return
-   return
    write(*,*)trim(header)//': debug info c n p mass'
 
    c_loc=this%cdombgc_index%c_loc
@@ -2309,81 +2300,21 @@ contains
         c = filter_soilc(fc)
 
         !add litter
-        do kk = betrtracer_vars%id_trc_beg_litr, betrtracer_vars%id_trc_end_litr, nelm
-          c_mass = c_mass  + &
-            catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc) * dzsoi(c,j)
-
-          n_mass = n_mass  + &
-            natomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc) * dzsoi(c,j)
-
-          p_mass = p_mass  + &
-            patomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc) * dzsoi(c,j)
-
-        enddo
+        call add_som_cnp(c,j,betrtracer_vars%id_trc_beg_litr, betrtracer_vars%id_trc_end_litr, nelm, c_mass, n_mass, p_mass)
 
         !add cwd
-        do kk = betrtracer_vars%id_trc_beg_wood, betrtracer_vars%id_trc_end_wood, nelm
-          c_mass = c_mass + &
-            catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc) * dzsoi(c,j)
+        call add_som_cnp(c,j,betrtracer_vars%id_trc_beg_wood, betrtracer_vars%id_trc_end_wood, nelm, c_mass, n_mass, p_mass)
 
-          n_mass = n_mass + &
-            natomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc) * dzsoi(c,j)
+        !add dom
+        call add_som_cnp(c,j,betrtracer_vars%id_trc_beg_dom, betrtracer_vars%id_trc_end_dom, nelm+1, c_mass, n_mass, p_mass)
 
-          p_mass = p_mass + &
-            patomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc) * dzsoi(c,j)
+        !add POM
+        call add_som_cnp(c,j,betrtracer_vars%id_trc_beg_pom, betrtracer_vars%id_trc_end_pom, nelm, c_mass, n_mass, p_mass)
 
-        enddo
+        !add Microbial biomass
+        call add_som_cnp(c,j,betrtracer_vars%id_trc_beg_Bm, betrtracer_vars%id_trc_end_Bm, nelm, c_mass, n_mass, p_mass)
 
-        !add som
-        !DOM
-        do kk = betrtracer_vars%id_trc_beg_dom, betrtracer_vars%id_trc_end_dom, nelm
-          c_mass = c_mass + &
-            catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc) * dzsoi(c,j)
-
-          n_mass = n_mass + &
-            natomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc) * dzsoi(c,j)
-
-          p_mass = p_mass + &
-            patomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc) * dzsoi(c,j)
-
-        enddo
-
-        do kk = betrtracer_vars%id_trc_beg_pom, betrtracer_vars%id_trc_end_pom, nelm
-          c_mass = c_mass + &
-            catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc) * dzsoi(c,j)
-
-          n_mass = n_mass + &
-            natomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc) * dzsoi(c,j)
-
-          p_mass = p_mass + &
-            patomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc) * dzsoi(c,j)
-
-        enddo
-
-        !Microbial biomass
-        do kk = betrtracer_vars%id_trc_beg_Bm, betrtracer_vars%id_trc_end_Bm, nelm
-          c_mass = c_mass + &
-            catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc) * dzsoi(c,j)
-
-          n_mass = n_mass + &
-            natomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc) * dzsoi(c,j)
-
-          p_mass = p_mass + &
-            patomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc) * dzsoi(c,j)
-
-        enddo
-
-        do kk = betrtracer_vars%id_trc_beg_som, betrtracer_vars%id_trc_end_som, nelm
-          c_mass = c_mass + &
-            catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc) * dzsoi(c,j)
-
-          n_mass = n_mass + &
-            natomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc) * dzsoi(c,j)
-
-          p_mass = p_mass + &
-            patomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc) * dzsoi(c,j)
-
-        enddo
+        call add_som_cnp(c,j,betrtracer_vars%id_trc_beg_som, betrtracer_vars%id_trc_end_som, nelm, c_mass, n_mass, p_mass)
 
         !non occluded phosphorus, soluble and adsorbed
         p_mass = p_mass + patomw * &
@@ -2412,14 +2343,33 @@ contains
      enddo
    enddo
 
-   write(*,*)'c_mass    =', c_mass
-   write(*,*)'n_mass    =', n_mass
-   write(*,*)'p_mass    =', p_mass
+   write(*,*)'c_mass  g m-2  =', c_mass
+   write(*,*)'n_mass  g m-2  =', n_mass
+   write(*,*)'p_mass  g m-2  =', p_mass
    write(*,*)'p_massocl =', p_massocl
    write(*,*)'min_nh4   =', min_nh4
    write(*,*)'min_no3   =', min_no3
    write(*,*)'minp      =', minp
    write(*,*)'----------------------------------------'
+   contains
+     subroutine add_som_cnp(c,j,ibeg,iend,nelm, c_mass, n_mass, p_mass)
+
+     implicit none
+     integer, intent(in) :: c, j
+     integer, intent(in) :: ibeg, iend, nelm
+     real(r8), intent(inout) :: c_mass, n_mass, p_mass
+     integer :: kk
+     do kk = ibeg, iend, nelm
+       c_mass = c_mass + &
+         catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc) * dzsoi(c,j)
+
+       n_mass = n_mass + &
+         natomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc) * dzsoi(c,j)
+
+       p_mass = p_mass + &
+         patomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc) * dzsoi(c,j)
+     enddo
+     end subroutine add_som_cnp
    end subroutine debug_info
 
    !----------------------------------------------------------------------
@@ -2488,7 +2438,7 @@ contains
 
         enddo
 
-        !add cwd
+        !add wood
         do kk = betrtracer_vars%id_trc_beg_wood, betrtracer_vars%id_trc_end_wood, nelm
           biogeo_state%c12state_vars%cwdc_vr_col(c,j) = biogeo_state%c12state_vars%cwdc_vr_col(c,j) + &
             catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)
@@ -2512,7 +2462,7 @@ contains
 
         !add som
         !DOM
-        call sum_totsom(c, j, betrtracer_vars%id_trc_beg_dom, betrtracer_vars%id_trc_end_dom, nelm)
+        call sum_totsom(c, j, betrtracer_vars%id_trc_beg_dom, betrtracer_vars%id_trc_end_dom, nelm+1)
         do kk = betrtracer_vars%id_trc_beg_dom, betrtracer_vars%id_trc_end_dom, nelm
           biogeo_state%c12state_vars%domc_vr_col(c,j) =  &
             catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)
@@ -2556,7 +2506,7 @@ contains
               c14atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc)
           endif
         enddo
-
+        !humus
         call sum_totsom(c, j, betrtracer_vars%id_trc_beg_som, betrtracer_vars%id_trc_end_som, nelm)
         do kk = betrtracer_vars%id_trc_beg_som, betrtracer_vars%id_trc_end_som, nelm
           biogeo_state%c12state_vars%som3c_vr_col(c,j) =  &

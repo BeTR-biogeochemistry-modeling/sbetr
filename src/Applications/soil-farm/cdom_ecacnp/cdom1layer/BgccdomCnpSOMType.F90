@@ -176,12 +176,13 @@ contains
   this%k_decay_lwd    =  biogeo_con%k_decay_lwd
   this%k_decay_fwd    =  biogeo_con%k_decay_fwd
 
-  this%def_cn(cdombgc_index%lmet) = biogeo_con%init_cn_met * natomw/catomw;
+  this%def_cn(cdombgc_index%lmet) = biogeo_con%init_cn_met * natomw/catomw
   this%def_cn(cdombgc_index%lcel) = biogeo_con%init_cn_cel * natomw/catomw
   this%def_cn(cdombgc_index%llig) = biogeo_con%init_cn_lig * natomw/catomw
   this%def_cn(cdombgc_index%cwd)  = biogeo_con%init_cn_cwd * natomw/catomw
   this%def_cn(cdombgc_index%lwd)  = biogeo_con%init_cn_lwd * natomw/catomw
   this%def_cn(cdombgc_index%fwd)  = biogeo_con%init_cn_fwd * natomw/catomw
+  this%def_cn(cdombgc_index%dom)  = biogeo_con%init_cn_dom * natomw/catomw
 
   this%def_cn(cdombgc_index%mic) = biogeo_con%init_cn_mic * natomw/catomw
   this%def_cn(cdombgc_index%pom) = biogeo_con%init_cn_pom * natomw/catomw
@@ -194,6 +195,7 @@ contains
   this%def_cp(cdombgc_index%lwd)  = biogeo_con%init_cp_lwd * patomw/catomw
   this%def_cp(cdombgc_index%fwd)  = biogeo_con%init_cp_fwd * patomw/catomw
 
+  this%def_cp(cdombgc_index%dom)  = biogeo_con%init_cp_dom * patomw/catomw
   this%def_cp(cdombgc_index%mic) = biogeo_con%init_cp_mic * patomw/catomw
   this%def_cp(cdombgc_index%pom) = biogeo_con%init_cp_pom * patomw/catomw
   this%def_cp(cdombgc_index%humus) = biogeo_con%init_cp_humus * patomw/catomw

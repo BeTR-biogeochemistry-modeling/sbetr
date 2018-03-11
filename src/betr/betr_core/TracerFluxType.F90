@@ -580,7 +580,7 @@ contains
     integer                , intent(in)  :: c     ! column index
     integer                , intent(in)  :: jj
     character(len=betr_errmsg_len), intent(out) :: msg
-    character(len=betr_errmsg_len) :: msg1
+    character(len=betr_errmsg_len) :: msg1, msg2
     !local variables
     integer :: kk
     character(len=betr_var_name_length) :: tracername
@@ -590,14 +590,18 @@ contains
          nvolatile_tracers      => betrtracer_vars%nvolatile_tracers     , &
          ngwmobile_tracers      => betrtracer_vars%ngwmobile_tracers     , &
          is_volatile            => betrtracer_vars%is_volatile           , &
-         volatileid             => betrtracer_vars%volatileid              &
+         volatileid             => betrtracer_vars%volatileid            , &
+         is_advective           => betrtracer_vars%is_advective            &
          )
+
+      msg1='';msg2=''
       tracername = betrtracer_vars%get_tracername(jj)
       !the total net physical loss currently includes infiltration, surface runoff, transpiration aided transport,
       !lateral drainage, vertical leaching
       !for volatile tracers, this includes surface emission surface three different pathways
-      write(msg,*)tracername, new_line('A'),&
-           'infl=',this%tracer_flx_infl_col(c,jj),new_line('A'),&
+      write(msg,*)tracername, new_line('A')
+      if(is_advective(jj))then 
+        write(msg2,*) 'infl=',this%tracer_flx_infl_col(c,jj),new_line('A'),&
            'drain=',  this%tracer_flx_drain_col(c,jj),  new_line('A'),  &
            'surfrun=',this%tracer_flx_surfrun_col(c,jj),new_line('A'),  &
            'vtrans=', this%tracer_flx_vtrans_col(c,jj), new_line('A'),   &
@@ -606,14 +610,14 @@ contains
            'dew_grnd=',this%tracer_flx_dew_grnd_col(c, jj),new_line('A'), &
            'dew_snow=', this%tracer_flx_dew_snow_col(c, jj),new_line('A'), &
            'sub_snow=',this%tracer_flx_sub_snow_col(c,jj)
-
+      endif
       if(is_volatile(jj))then
          kk = volatileid(jj)
          write(msg1,*) 'tpartm=', this%tracer_flx_tparchm_col(c,kk),new_line('A'),&
               'dif=', this%tracer_flx_dif_col(c,kk),  new_line('A'),&
               'ebu=',this%tracer_flx_ebu_col(c,kk)
       endif
-      msg = trim(msg)//new_line('A')//trim(msg1)
+      msg = trim(msg)//new_line('A')//trim(msg2)//new_line('A')//trim(msg1)
 
     end associate
   end subroutine Flux_display
