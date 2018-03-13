@@ -1236,7 +1236,7 @@ contains
       if(.not. this%active_col(c))cycle
       if(j>=1)then
         if(t_soisno(c,j)<tfrz)then
-          smp_l(c,j)= hfus*(tfrz-t_soisno(c,j))/(grav*t_soisno(c,j)) * 1000._r8  !(mm)
+          smp_l(c,j)= -hfus*(tfrz-t_soisno(c,j))/(grav*t_soisno(c,j)) * 1000._r8  !(mm)
         else
           s_node = max(h2osoi_vol(c,j)/watsat(c,j), 0.01_r8)
           call soil_water_retention_curve%soil_suction(sucsat(c,j), s_node, bsw(c,j), smp_l(c,j))

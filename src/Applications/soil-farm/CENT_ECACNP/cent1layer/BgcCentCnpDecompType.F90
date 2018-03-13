@@ -147,7 +147,6 @@ implicit none
   this%w_scalar     = 1._r8
   maxpsi = sucsat * (-9.8e-6_r8)   !kg -> MPa
   psi = min(soilpsi,maxpsi)
-
   ! decomp only if soilpsi is higher than minpsi, some modification is needed for the following
   ! double check the paper by Wilson and Griffin, 1975
   if (psi > minpsi) then

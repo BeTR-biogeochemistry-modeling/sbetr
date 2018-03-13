@@ -1011,13 +1011,13 @@ contains
   k_decay(cwd)  = this%k_decay_cwd  * t_scalar * w_scalar * o_scalar * depth_scalar
   k_decay(lwd)  = this%k_decay_lwd  * t_scalar * w_scalar * o_scalar * depth_scalar
   k_decay(fwd)  = this%k_decay_fwd  * t_scalar * w_scalar * o_scalar * depth_scalar
+
   !impose the ligin effect
   k_decay(cwd)  = k_decay(cwd) * exp(-3._r8*this%cwd_flig)
   k_decay(lwd)  = k_decay(lwd) * exp(-3._r8*this%lwd_flig)
   k_decay(fwd)  = k_decay(fwd) * exp(-3._r8*this%fwd_flig)
   k_decay(lit2) = k_decay(lit2)* exp(-3._r8*this%lit_flig)
   k_decay(lit3) = k_decay(lit3)* exp(-3._r8*this%lit_flig)
-
   end associate
   end subroutine calc_som_decay_k
   !-------------------------------------------------------------------------------

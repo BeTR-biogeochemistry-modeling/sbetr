@@ -173,7 +173,9 @@ contains
 
   this%k_decay_dom  = 8._r8/year_sec   ! a rough guess
   this%km_mic_som   = 3._r8 !3 mol/m3  ! another rough guess
-
+  this%k_nitr_max   = 1.1574074e-06_r8 ! 1/s
+  this%minpsi_bgc   = -10._r8 ! M Pa
+  this%k_m_o2_bgc   = 0.22_r8
   half_life = 5568._r8 ! yr
   half_life = half_life * year_sec
   this%c14decay_const = - log(0.5_r8) / half_life

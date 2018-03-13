@@ -288,7 +288,9 @@ begin
    fout->k_decay_lwd=(/0.5/)
    fout->k_decay_dom=(/8.0/)
    fout->km_mic_som=(/3.0/)
-
+   fout->k_m_o2_bgc = (/0.22/)
+   fout->k_nitr_max = (/1.1574074e-06/)
+   fout->minpsi_bgc =(/-10.0/)
    aa=1.5*10^(-7.48)
    fout->nitrif_n2o_loss_frac=(/1.e-4/)
    fout->organic_max = (/160.0/)
