@@ -178,9 +178,9 @@ contains
 
   write(*,'(A)')'------------------------------------------------------------------------------------------------------'
   write(*,'(A)')'type             beg_mass             end_mass            dmass                inflx            outflx'
-  write(*, '(A,5(X,E20.10))')'c_mass bal=',this%beg_c_mass, c_mass, emass_c, this%c_inflx, c_flx
-  write(*, '(A,5(X,E20.10))')'n_mass bal=',this%beg_n_mass, n_mass, emass_n, this%n_inflx, n_flx
-  write(*, '(A,5(X,E20.10))')'p_mass bal=',this%beg_p_mass, p_mass, emass_p, this%p_inflx, p_flx
+  write(*, '(A,5(X,E30.20))')'c_mass bal=',this%beg_c_mass, c_mass, emass_c, this%c_inflx, c_flx
+  write(*, '(A,5(X,E30.20))')'n_mass bal=',this%beg_n_mass, n_mass, emass_n, this%n_inflx, n_flx
+  write(*, '(A,5(X,E30.20))')'p_mass bal=',this%beg_p_mass, p_mass, emass_p, this%p_inflx, p_flx
   if(maxval((/abs(remass_c),abs(remass_n),abs(remass_p)/))>1.e-3_r8)stop
   end subroutine end_massbal_check
 
@@ -411,7 +411,7 @@ contains
       cascade_matrix(lid_co2, reac)
   resn = cascade_matrix((dom-1)*nelms + n_loc, reac) + cascade_matrix((mic-1)*nelms + n_loc, reac)
   resp = cascade_matrix((dom-1)*nelms + p_loc, reac) + cascade_matrix((mic-1)*nelms + p_loc, reac)
-  write(*,'(A,3(X,E20.10))')'mic resc, resn, resp =',resc,resn, resp
+  write(*,'(A,3(X,E20.10))')'dom resc, resn, resp =',resc,resn, resp
 
   reac = pom_dek_reac
   resc = cascade_matrix((pom-1)*nelms + c_loc, reac) + cascade_matrix((dom-1)*nelms + c_loc, reac)
@@ -460,6 +460,18 @@ contains
   resn = cascade_matrix(lid_no3, reac) + cascade_matrix(lid_n2o, reac) * 2._r8 + &
     cascade_matrix(lid_n2, reac) * 2._r8
   write(*,'(A,3(X,E20.10))')'den, resn =',resn
+
+  print*,'this%plant_ntypes=',this%plant_ntypes
+
+  reac=this%cdombgc_index%lid_plant_minn_no3_up_reac
+  resn=sum(cascade_matrix(this%cdombgc_index%lid_plant_minn_no3_pft(1:this%plant_ntypes),reac))
+  print*,'plant no3 uptake',resn
+  reac=this%cdombgc_index%lid_plant_minn_nh4_up_reac
+  resn=sum(cascade_matrix(this%cdombgc_index%lid_plant_minn_nh4_pft(1:this%plant_ntypes),reac))
+  print*,'plant nh4 uptake',resn
+  reac=this%cdombgc_index%lid_plant_minp_up_reac
+  resp=sum(cascade_matrix(this%cdombgc_index%lid_plant_minp_pft(1:this%plant_ntypes),reac))
+  print*,'plant p uptake',resp
   end associate
   end subroutine checksum_cascade
 
@@ -528,14 +540,14 @@ contains
 
   !initialize state variables
   call this%init_states(this%cdombgc_index, bgc_forc)
-!  call this%begin_massbal_check()
+  if(this%cdombgc_index%debug)call this%begin_massbal_check()
   ystates0(:) = this%ystates0(:)
 
 
   !add all external input
    call this%add_ext_input(dtime, this%cdombgc_index, bgc_forc, &
       this%c_inflx, this%n_inflx, this%p_inflx)
-!   call this%end_massbal_check('af add_ext_input')
+  if(this%cdombgc_index%debug)call this%end_massbal_check('af add_ext_input')
 
 !  if(this%bgc_on)then
   !initialize decomposition scaling factors
@@ -547,6 +559,8 @@ contains
   !calculate default stoichiometry entries
   call this%calc_cascade_matrix(this%cdombgc_index, cascade_matrix, frc_c13, frc_c14)
   if(this%cdombgc_index%debug)call this%checksum_cascade(this%cdombgc_index)
+
+  if(this%cdombgc_index%debug)call this%end_massbal_check('bf run_decomp')
   !run century decomposition, return decay rates, cascade matrix, potential hr
   call this%censom%run_decomp(is_surflit, this%cdombgc_index, dtime, ystates1(1:nom_tot_elms),&
       this%decompkf_eca, bgc_forc%pct_sand, bgc_forc%pct_clay,this%alpha_n, this%alpha_p, &
@@ -584,14 +598,20 @@ contains
 
   yf(:) = ystates1(:)
   call ode_adapt_ebbks1(this, yf, nprimvars, nstvars, time, dtime, ystates1)
-
+  
   !if(this%cdombgc_index%debug)call this%checksum_cascade(this%cdombgc_index)
   if(this%use_c14)then
     call this%c14decay(this%cdombgc_index, dtime, ystates1)
   endif
 !  call this%censom%stoichiometry_fix(this%cdombgc_index, ystates1)
 
-  if(this%cdombgc_index%debug)call this%end_massbal_check('bf exit runbgc')
+  if(this%cdombgc_index%debug)then
+    do jj = 1, nstvars
+      print*,jj,yf(jj),ystates1(jj)-yf(jj)
+    enddo
+    call this%end_massbal_check('bf exit runbgc')
+    pause
+  endif
 !  endif
   ystatesf(:) = ystates1(:)
 
@@ -1292,7 +1312,8 @@ contains
 !      print*,'casp',lid_plant_minp_pft(jj),this%cascade_matrixd(lid_plant_minp_pft(jj),lid_plant_minp_up_reac),ECA_flx_phosphorus_plants(jj)
 !    enddo
 !    do jj = 1, nreactions
-!      print*,'cadfaascd jj',jj,this%cascade_matrixd(lid_minp_soluble,jj),rrates(jj)
+!      if(jj>=1)rrates(jj)=0._r8
+!      print*,'rrates jj',jj,rrates(jj)
 !    enddo
 !     print*,this%cascade_matrix(lid_plant_minn_no3_pft(1:this%plant_ntypes),lid_plant_minn_no3_up_reac)
 !     print*,'eca',ECA_flx_no3_plants
@@ -1327,20 +1348,20 @@ contains
     endif
     it = it + 1
   enddo
-  if(this%cdombgc_index%debug)then
+!  if(this%cdombgc_index%debug)then
 !    do jj = 1, nreactions
 !      print*,'casc jj',jj,rrates(jj),rscal(jj)
 !    enddo
 !    do jj = 1, nprimvars
 !      print*, 'nprim',jj,dydt(jj)
 !    enddo
-  endif
-  if(this%cdombgc_index%debug)then
+!  endif
+!  if(this%cdombgc_index%debug)then
     !
 !    jj = humus
 !    write(*,'(A,6(X,E25.15))')'dydt humus',dydt((jj-1)*nelms+c_loc),dydt((jj-1)*nelms+n_loc),dydt((jj-1)*nelms+p_loc),&
 !      dydt((jj-1)*nelms+c_loc)/dydt((jj-1)*nelms+n_loc),dydt((jj-1)*nelms+c_loc)/dydt((jj-1)*nelms+p_loc)
-  endif
+!  endif
   end associate
   end subroutine bgc_integrate
   !--------------------------------------------------------------------
@@ -1450,6 +1471,7 @@ contains
     mic =>  this%cdombgc_index%mic, &
     pom =>  this%cdombgc_index%pom, &
     humus =>  this%cdombgc_index%humus, &
+    dom  => this%cdombgc_index%dom , &
     nelms => this%cdombgc_index%nelms, &
     lid_nh4=> this%cdombgc_index%lid_nh4, &
     lid_no3=> this%cdombgc_index%lid_no3, &
@@ -1469,16 +1491,16 @@ contains
   if(present(n_flx))n_flx=0._r8
   if(present(p_flx))p_flx=0._r8
 
-  call sum_omjj(lmet, c_mass, n_mass, p_mass)
-  call sum_omjj(lcel, c_mass, n_mass, p_mass)
-  call sum_omjj(llig, c_mass, n_mass, p_mass)
-  call sum_omjj(cwd, c_mass, n_mass, p_mass)
-  call sum_omjj(lwd, c_mass, n_mass, p_mass)
-  call sum_omjj(fwd, c_mass, n_mass, p_mass)
-  call sum_omjj(mic, c_mass, n_mass, p_mass)
-  call sum_omjj(pom, c_mass, n_mass, p_mass)
+  call sum_omjj(lmet , c_mass, n_mass, p_mass)
+  call sum_omjj(lcel , c_mass, n_mass, p_mass)
+  call sum_omjj(llig , c_mass, n_mass, p_mass)
+  call sum_omjj(cwd  , c_mass, n_mass, p_mass)
+  call sum_omjj(lwd  , c_mass, n_mass, p_mass)
+  call sum_omjj(fwd  , c_mass, n_mass, p_mass)
+  call sum_omjj(mic  , c_mass, n_mass, p_mass)
+  call sum_omjj(pom  , c_mass, n_mass, p_mass)
   call sum_omjj(humus, c_mass, n_mass, p_mass)
-
+  call sum_omjj(dom  , c_mass, n_mass, p_mass)
   n_mass = n_mass + ystates1(lid_nh4) + ystates1(lid_no3)
 
   p_mass = p_mass + ystates1(lid_minp_soluble) + ystates1(lid_minp_secondary) + ystates1(lid_minp_occlude)
@@ -1490,20 +1512,20 @@ contains
   if(present(c_flx))then
     c_flx = c_flx + ystates1(lid_co2_hr)
     c_flx = c_flx * catomw
-    print*,'co2_hr', ystates1(lid_co2_hr)
+    print*,'co2_hr', ystates1(lid_co2_hr)*catomw
   endif
 
   if(present(n_flx))then
     n_flx=n_flx + ystates1(lid_plant_minn_nh4) + ystates1(lid_plant_minn_no3) &
      + ystates1(lid_n2o_nit) + ystates1(lid_no3_den)
     n_flx = n_flx * natomw
-    print*,'n loss',ystates1(lid_plant_minn_nh4) + ystates1(lid_plant_minn_no3)+ystates1(lid_n2o_nit) + ystates1(lid_no3_den)
+    print*,'n loss',(ystates1(lid_plant_minn_nh4) + ystates1(lid_plant_minn_no3)+ystates1(lid_n2o_nit) + ystates1(lid_no3_den))*natomw
   endif
 
   if(present(p_flx))then
     p_flx=p_flx + ystates1(lid_plant_minp)
     p_flx = p_flx * patomw
-    print*,'plos',ystates1(lid_plant_minp)
+    print*,'plos',ystates1(lid_plant_minp)*patomw
   endif
 
   end associate

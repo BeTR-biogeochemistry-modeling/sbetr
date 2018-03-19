@@ -685,6 +685,7 @@ contains
     lcel  => cdombgc_index%lcel , &
     llig  => cdombgc_index%llig , &
     is_ompool_som => cdombgc_index%is_ompool_som, &
+    is_dom_pool => cdombgc_index%is_dom_pool, &
     ompoolnames => cdombgc_index%ompoolnames &
   )
   !compute the respiration efficiency for dom
@@ -713,15 +714,15 @@ contains
     if(cdombgc_index%debug)then
        write(*,'(A,X,I2,5(X,E20.10))')'cnp',jj,ystates(kc),ystates(kn),ystates(kp),1._r8/this%icn_ratios(jj),1._r8/this%icp_ratios(jj)
     endif
-    if(is_ompool_som(jj) .and. ystates(kc)>tiny_val)then
+    if(is_ompool_som(jj) .and. ystates(kc)>tiny_val .and. .not. is_dom_pool(jj))then
       stoibal_ncon = ystates(kc)*this%icn_ratios(jj)
       difn=ystates(kn)-stoibal_ncon
       if(difn<-tiny_ncon)then
         ystates(kn)=stoibal_ncon
       endif
- !     write(msg,*)'phosphorus weirdo',jj,trim(ompoolnames(jj)),ystates(kc),ystates(kn),ystates(kp), rat, this%def_cn(jj),this%def_cp(jj),&
- !        1._r8/this%icn_ratios(jj),1._r8/this%icp_ratios(jj)
- !     print*,msg
+!      write(msg,*)'phosphorus weirdo',jj,trim(ompoolnames(jj)),ystates(kc),ystates(kn),ystates(kp), rat, this%def_cn(jj),this%def_cp(jj),&
+!         1._r8/this%icn_ratios(jj),1._r8/this%icp_ratios(jj)
+!      print*,msg
  !     call bstatus%set_msg(msg,err=-1)
  !     return
     endif
