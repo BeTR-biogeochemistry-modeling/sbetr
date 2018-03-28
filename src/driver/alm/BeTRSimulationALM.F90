@@ -261,7 +261,7 @@ contains
     use betr_ctrl         , only : betr_spinup_state, enter_spinup
     use MathfuncMod       , only : num2str
     use betr_varcon       , only : kyr_spinup
-    use clm_time_manager  , only : get_curr_date,is_end_curr_day,is_beg_curr_day
+    use clm_time_manager  , only : get_curr_date,is_end_curr_day,is_beg_curr_day,get_nstep
     implicit none
     ! !ARGUMENTS :
     class(betr_simulation_alm_type) , intent(inout) :: this
@@ -334,6 +334,7 @@ contains
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
       this%betr(c)%tracers%debug=col%debug_flag(c)
+      
       call this%biogeo_flux(c)%reset(value_column=0._r8, active_soibgc=this%do_soibgc())
       call this%biophys_forc(c)%frac_normalize(this%betr_pft(c)%npfts, 1, betr_nlevtrc_soil)
 !!
@@ -935,6 +936,7 @@ contains
   use CNCarbonStateType   , only : carbonstate_type
   use CNNitrogenFluxType  , only : nitrogenflux_type
   use CNNitrogenStateType , only : nitrogenstate_type
+  use clm_time_manager    , only : get_nstep
   !!! add phosphorus
   use PhosphorusFluxType  , only : phosphorusflux_type
   use PhosphorusStateType , only : phosphorusstate_type
@@ -987,6 +989,7 @@ contains
           pi = pi + 1
           n14flux_vars%smin_nh4_to_plant_patch(p) = this%biogeo_flux(c)%n14flux_vars%smin_nh4_to_plant_patch(pi)
           n14flux_vars%smin_no3_to_plant_patch(p) = this%biogeo_flux(c)%n14flux_vars%smin_no3_to_plant_patch(pi)
+!          if(c==20024)print*,p,n14flux_vars%smin_nh4_to_plant_patch(p),n14flux_vars%smin_no3_to_plant_patch(p)
           p31flux_vars%sminp_to_plant_patch(p)  = this%biogeo_flux(c)%p31flux_vars%sminp_to_plant_patch(pi)
           !compute relative n return, note the following computation is different from ALM-ECA-CNP, because
           !betr includes transpiration incuded nitrogen uptake, which has not direct temperature sensitivity.
@@ -1098,6 +1101,7 @@ contains
       n14state_vars%sminn_col(c) = this%biogeo_state(c)%n14state_vars%sminn_col(c_l)
       n14state_vars%smin_nh4_col(c)=this%biogeo_state(c)%n14state_vars%sminn_nh4_col(c_l)
       n14state_vars%smin_no3_col(c)=this%biogeo_state(c)%n14state_vars%sminn_no3_col(c_l)
+      
       p31state_vars%sminp_col(c) = this%biogeo_state(c)%p31state_vars%sminp_col(c_l)
       p31state_vars%occlp_col(c) = this%biogeo_state(c)%p31state_vars%occlp_col(c_l)
 

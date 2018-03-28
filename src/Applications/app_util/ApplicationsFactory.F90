@@ -138,6 +138,7 @@ contains
   type(file_desc_t), intent(inout)  :: ncid
   type(betr_status_type) , intent(out) :: bstatus
 
+  
    select case (trim(reaction_method))
    case ("ecacnp")
      call cent_para%readPars(ncid, bstatus)

@@ -509,14 +509,17 @@ contains
     SHR_ASSERT_ALL((ubound(AD)          == (/m,n/)), errMsg(mod_filename,__LINE__), bstatus)
     if(bstatus%check_status())return
 
-    AP(:,:) = 0._r8
-    AD(:,:) = 0._r8
-
-    where(A>0._r8)
-       AP=A
-    elsewhere
-       AD=A
-    endwhere
+    do j=1, n
+      do i = 1, m
+        if(A(i,j)>0._r8)then
+          AP(i,j)=A(i,j)
+          AD(i,j)=0._r8
+        else
+          AP(i,j)=0._r8
+          AD(i,j)=A(i,j)
+        endif
+      enddo
+    enddo
   end subroutine pd_decomp
   !--------------------------------------------------------------------------------
 
@@ -562,14 +565,17 @@ contains
     real(r8) :: yt
     integer  :: j
     real(r8),parameter :: p_par=0.999_r8
+    real(r8), parameter :: tiny_val=-1.e-14_r8
+    real(r8) :: tmp
 
     call bstatus%reset()
     lneg =.false.
 
     do j = 1, nprimvars
        yt = ystate(j) + (p_dt(j)+d_dt(j))*dtime
-       if(yt<0._r8)then
-          pscal(j) = -(p_dt(j)*dtime+ystate(j))/(dtime*d_dt(j))*p_par
+       if(yt<tiny_val)then
+          tmp = dtime*d_dt(j)
+          pscal(j) = -(p_dt(j)*dtime+ystate(j))/tmp*p_par
           lneg=.true.
           if(pscal(j)<0._r8)then
              msg = 'ngeative p in calc_state_pscal'//errmsg(mod_filename, __LINE__)

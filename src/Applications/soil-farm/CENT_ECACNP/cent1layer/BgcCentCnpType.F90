@@ -581,8 +581,10 @@ contains
   time = 0._r8
   yf(:) = ystates1(:)
 
-   call ode_adapt_ebbks1(this, yf, nprimvars, nstvars, time, dtime, ystates1)
-
+  call ode_adapt_ebbks1(this, yf, nprimvars, nstvars, time, dtime, ystates1)
+  if(ystates1(lid_n2o_nit)<0._r8)then
+    print*,'nh4',ystates1(lid_nh4),ystates1(lid_no3)
+  endif
   !if(this%centurybgc_index%debug)call this%checksum_cascade(this%centurybgc_index)
   if(this%use_c14)then
     call this%c14decay(this%centurybgc_index, dtime, ystates1)
@@ -1311,12 +1313,7 @@ contains
     !update the state variables
     call lom%calc_state_pscal(nprimvars, dtime, ystate(1:nprimvars), p_dt(1:nprimvars),  d_dt(1:nprimvars), &
         pscal(1:nprimvars), lneg, bstatus)
-!    if(this%centurybgc_index%debug)then
-!      print*,'prim test',lneg
-!      do jj = 1, nprimvars
-!        print*,jj,pscal(jj),this%centurybgc_index%varnames(jj)
-!      enddo
-!    endif
+
     if(lneg .and. it<=itmax)then
       call lom%calc_reaction_rscal(nprimvars, nreactions,  pscal(1:nprimvars), &
         this%cascade_matrixd(1:nprimvars, 1:nreactions),rscal, bstatus)
@@ -1329,20 +1326,21 @@ contains
     endif
     it = it + 1
   enddo
-  if(this%centurybgc_index%debug)then
+!  if(this%centurybgc_index%debug)then
+  
 !    do jj = 1, nreactions
 !      print*,'casc jj',jj,rrates(jj),rscal(jj)
 !    enddo
 !    do jj = 1, nprimvars
 !      print*, 'nprim',jj,dydt(jj)
 !    enddo
-  endif
-  if(this%centurybgc_index%debug)then
+!  endif
+!  if(this%centurybgc_index%debug)then
     !
 !    jj = som3
 !    write(*,'(A,6(X,E25.15))')'dydt som3',dydt((jj-1)*nelms+c_loc),dydt((jj-1)*nelms+n_loc),dydt((jj-1)*nelms+p_loc),&
 !      dydt((jj-1)*nelms+c_loc)/dydt((jj-1)*nelms+n_loc),dydt((jj-1)*nelms+c_loc)/dydt((jj-1)*nelms+p_loc)
-  endif
+!  endif
   end associate
   end subroutine bgc_integrate
   !--------------------------------------------------------------------
