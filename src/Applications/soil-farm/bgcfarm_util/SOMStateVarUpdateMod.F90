@@ -20,6 +20,7 @@ contains
     !
     ! !DESCRIPTION:
     ! return the temporal trend of the state variables
+    use LinearAlgebraMod, only : sparse_gemv
     implicit none
     ! !ARGUMENTS:
     integer,  intent(in) :: nx, ny
@@ -32,7 +33,7 @@ contains
     ! BLAS INTERFACE
     ! y:= alpha * A * x + beta * y
     ! DGEMV(TRANS,M,N,ALPHA,A,LDA,X,INCX,BETA,Y,INCY)
-    call dgemv('N', nx, ny, 1._r8, cascade_matrix, nx, reaction_rates, 1, 0._r8, dxdt, 1)
+    call sparse_gemv('N', nx, ny, cascade_matrix, nx, reaction_rates, ny, dxdt)
 
   end subroutine calc_dtrend_som_bgc
 

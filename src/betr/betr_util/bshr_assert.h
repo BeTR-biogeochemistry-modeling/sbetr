@@ -5,8 +5,9 @@
 #else
 #define SHR_ASSERT(assert, msg, bstatus) call shr_assert(assert, msg, bstatus)
 #define SHR_ASSERT_ALL(assert, msg, bstatus) call shr_assert_all(assert, msg, bstatus)
+#define SHR_ASSERT_ALL_EXT(assert, msg) call shr_assert_all_ext(assert, msg)
 #define SHR_ASSERT_ANY(assert, msg, bstatus) call shr_assert_any(assert, msg, bstatus)
 #endif
 use bshr_assert_mod, only : shr_assert
-use bshr_assert_mod, only : shr_assert_all
+use bshr_assert_mod, only : shr_assert_all, shr_assert_all_ext
 use bshr_assert_mod, only : shr_assert_any
