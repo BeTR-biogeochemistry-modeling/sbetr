@@ -27,7 +27,9 @@ contains
   integer :: ii, jj
   if(transp == 'N')then
     !compute dxdt = a * b
+#if (defined SBETR)
     SHR_ASSERT_ALL_EXT(((/nx,ny/) == (/nz,nb/)),   errMsg(mod_filename,__LINE__))
+#endif
     dxdt(:) = 0._r8
     do jj = 1, ny
       do ii = 1, nx
@@ -38,7 +40,9 @@ contains
     enddo
   else
     !compute dxdt = a' * b
+#if (defined SBETR)
     SHR_ASSERT_ALL_EXT(((/ny,nx/) == (/nz,nb/)),   errMsg(mod_filename,__LINE__))
+#endif
     dxdt(:) = 0._r8
     do jj = 1, ny
       do ii = 1, nx

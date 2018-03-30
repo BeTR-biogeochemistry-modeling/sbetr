@@ -33,7 +33,7 @@ contains
     ! BLAS INTERFACE
     ! y:= alpha * A * x + beta * y
     ! DGEMV(TRANS,M,N,ALPHA,A,LDA,X,INCX,BETA,Y,INCY)
-    call sparse_gemv('N', nx, ny, cascade_matrix, nx, reaction_rates, ny, dxdt)
+    call sparse_gemv('N', nx, ny, cascade_matrix, ny, reaction_rates, nx, dxdt)
 
   end subroutine calc_dtrend_som_bgc
 
