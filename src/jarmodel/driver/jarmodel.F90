@@ -12,6 +12,7 @@ program main
   use  BeTR_TimeMod    , only : betr_time_type
   use shr_kind_mod     , only : r8 => shr_kind_r8
   use SetJarForcMod    , only : SetJarForc
+  use SoilForcType     , only : soil_forc_type
 implicit none
 
   character(len=*), parameter :: mod_filename = &
@@ -20,6 +21,7 @@ implicit none
   class(jar_model_type),  pointer :: jarmodel
   class(BiogeoCon_type),  pointer :: jarpars
   type(JarBGC_forc_type) :: bgc_forc
+  type(soil_forc_type) :: soil_forc
   type(betr_status_type) :: bstatus
   type(histf_type) :: hist
   type(betr_time_type) :: timer
@@ -73,7 +75,7 @@ implicit none
   call hist%init(varl, unitl, freql, 'jarmodel')
 
   !set forcing
-  call SetJarForc(bgc_forc)
+  call SetJarForc(bgc_forc, soil_forc)
 
   !run the model
   call jarmodel%runbgc(is_surflit, dtime, bgc_forc, nvars, ystates0, ystatesf, bstatus)

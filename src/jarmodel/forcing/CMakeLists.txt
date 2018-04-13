@@ -1,5 +1,8 @@
 set(BETR_JARFORC_SOURCES
   analforc.F90
+  SoilForcType.F90
+  AtmForcType.F90
+  OMForcType.F90
   SetJarForcMod.F90
   )
 
