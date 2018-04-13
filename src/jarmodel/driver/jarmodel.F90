@@ -13,6 +13,10 @@ program main
   use shr_kind_mod     , only : r8 => shr_kind_r8
   use SetJarForcMod    , only : SetJarForc
   use SoilForcType     , only : soil_forc_type
+  use AtmForcType      , only : atm_forc_type
+  use OMForcType       , only : om_forc_type
+  use ForcDataType     , only : load_forc
+
 implicit none
 
   character(len=*), parameter :: mod_filename = &
@@ -22,6 +26,8 @@ implicit none
   class(BiogeoCon_type),  pointer :: jarpars
   type(JarBGC_forc_type) :: bgc_forc
   type(soil_forc_type) :: soil_forc
+  type(om_forc_type) :: om_forc
+  type(atm_forc_type) :: atm_forc
   type(betr_status_type) :: bstatus
   type(histf_type) :: hist
   type(betr_time_type) :: timer
@@ -74,11 +80,23 @@ implicit none
   dtime=timer%get_step_size()
   call hist%init(varl, unitl, freql, 'jarmodel')
 
-  !set forcing
+  !read in forcing
+  call load_forc(soil_forc)
+
+  !set constant forcing
   call SetJarForc(bgc_forc, soil_forc)
 
   !run the model
-  call jarmodel%runbgc(is_surflit, dtime, bgc_forc, nvars, ystates0, ystatesf, bstatus)
+  do
+    !update forcing
+    call load_forc(om_forc, atm_forc, soil_forc, timer%tstep)
 
+    call SetJarForc(bgc_forc, om_forc, atm_forc, soil_forc)
+
+    call jarmodel%runbgc(is_surflit, dtime, bgc_forc, nvars, ystates0, ystatesf, bstatus)
+    call timer%update_time_stamp()
+    call hist%hist_wrap(ystatesf, timer)
+    if(timer%its_time_to_exit())exit
+  enddo
 
 end program main

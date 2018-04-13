@@ -6,6 +6,8 @@ module SetJarForcMod
 
 implicit none
 private
+  character(len=*), parameter :: mod_filename = &
+       __FILE__
   public :: SetJarForc
   interface SetJarForc
     module procedure SetJarForc_const,SetJarForc_transient
@@ -25,20 +27,17 @@ contains
 
   end function ppm2molv
 
-
-
   !--------------------------------------------------------------------
   subroutine SetJarForc_transient(jar_forc, om_forc, atm_forc, soil_forc)
 
   use SoilForcType, only : soil_forc_type
-  use AtmForcType, only : atm_forc_type
-  use OMForcType, only : om_forc_type
+  use AtmForcType , only : atm_forc_type
+  use OMForcType  , only : om_forc_type
   implicit none
   type(JarBGC_forc_type), intent(inout) :: jar_forc
-  type(om_forc_type), intent(in) :: om_forc
-  type(atm_forc_type), intent(in) :: atm_forc
-  type(soil_forc_type), intent(in) :: soil_forc
-
+  type(om_forc_type)    , intent(in) :: om_forc
+  type(atm_forc_type)   , intent(in) :: atm_forc
+  type(soil_forc_type)  , intent(in) :: soil_forc
   !all mass fluxes are in the unit of g C/m2/s
 
   jar_forc%cflx_input_litr_met = om_forc%cflx_input_litr_met
@@ -90,17 +89,17 @@ contains
   real(r8) :: patm_pascal = 1.01325e5 !Pa
   !all mass fluxes are in the unit of g C/m2/s
 
-  jar_forc%depz   = soil_forc%depz             !depth of the soil
-  jar_forc%dzsoi  = soil_forc%dzsoi             !soil thickness
-  jar_forc%sucsat = soil_forc%sucsat             ! Input:  [real(r8) (:,:)] minimum soil suction [mm]
-  jar_forc%bsw    = soil_forc%bsw
-  jar_forc%bd     = soil_forc%bd             !bulk density
+  jar_forc%depz    = soil_forc%depz             !depth of the soil
+  jar_forc%dzsoi   = soil_forc%dzsoi             !soil thickness
+  jar_forc%sucsat  = soil_forc%sucsat             ! Input:  [real(r8) (:,:)] minimum soil suction [mm]
+  jar_forc%bsw     = soil_forc%bsw
+  jar_forc%bd      = soil_forc%bd             !bulk density
   jar_forc%pct_sand= soil_forc%pct_sand
   jar_forc%pct_clay= soil_forc%pct_clay
-  jar_forc%watsat= soil_forc%watsat
-  jar_forc%watfc= soil_forc%watfc
-  jar_forc%cellorg= soil_forc%cellorg
-  jar_forc%pH= soil_forc%pH
+  jar_forc%watsat  = soil_forc%watsat
+  jar_forc%watfc   = soil_forc%watfc
+  jar_forc%cellorg = soil_forc%cellorg
+  jar_forc%pH      = soil_forc%pH
 
   jar_forc%plant_froot_nn(:)=0._r8
   jar_forc%plant_froot_np(:)=0._r8

@@ -13,7 +13,7 @@ implicit none
   real(r8) :: h2osoi_liq             !liquid water content, [kg/m2]
   real(r8) :: air_vol                !volumetric air, [m3/m3]
   real(r8) :: finundated             !innudated fraction of the soil, [none]
-  real(r8) :: soilpsi                !soilwater pontential  [MPa]
+  real(r8) :: soilpsi                !soilwater pontential  [MPa], positive
   real(r8) :: depz                   !depth of the soil sampled, [m]
   real(r8) :: dzsoi                  !soil thickness, [m]
   real(r8) :: sucsat                 ! minimum soil suction [mm]
@@ -27,6 +27,7 @@ implicit none
   real(r8) :: pH                     ! soil pH
   real(r8) :: hksat                  ! saturated hydraulic conductivity of mineral soil, [mm/s]
   real(r8) :: hk                     ! hydraulic conductivity [mm/s]
+  real(r8) :: zwt                    ! water table depth [m]
   contains
     procedure, public :: init
     procedure, public :: update
@@ -60,6 +61,8 @@ contains
 
   subroutine update(this)
 
+  use betr_varcon , only : grav => bgrav
+  use betr_varcon , only : hfus => bhfus,tfrz => btfrz
   implicit none
   class(soil_forc_type), intent(inout) :: this
 
@@ -71,7 +74,15 @@ contains
   s= max(h2oliq_vol/this%watsat,1.e-3_r8)
   icefrac = (this%h2osoi_vol-h2oliq_vol)/this%watsat
   imped = 10._r8**(-e_ice*icefrac)
+
   call soil_hk(this%hksat, imped, s, this%bsw, this%hk)
+
+  if(this%temp<tfrz)then
+    this%soilpsi = -hfus*(tfrz-this%temp)/(grav*this%temp) * 1000._r8   ![mm]
+  else
+    call soil_suction(this%sucsat, s, this%bsw, this%soilpsi)
+  endif
+  this%soilpsi = max(this%soilpsi * grav*1.e-6_r8, -15._r8)
   end subroutine update
   !-----------------------------------------------------------------------
   subroutine set_soil_hydro_property(sand, clay, om_frac, zsoi, bd, watsat, bsw, sucsat, hksat)

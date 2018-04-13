@@ -3,6 +3,7 @@ set(BETR_JARFORC_SOURCES
   SoilForcType.F90
   AtmForcType.F90
   OMForcType.F90
+  ForcDataType.F90
   SetJarForcMod.F90
   )
 
