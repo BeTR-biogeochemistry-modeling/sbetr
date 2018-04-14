@@ -101,6 +101,7 @@ contains
   jar_forc%cellorg = soil_forc%cellorg
   jar_forc%pH      = soil_forc%pH
 
+  print*,'here',size(jar_forc%plant_froot_nn)
   jar_forc%plant_froot_nn(:)=0._r8
   jar_forc%plant_froot_np(:)=0._r8
   jar_forc%plant_vtype(:)=0

@@ -27,7 +27,6 @@ implicit none
    real(r8), pointer :: air_temp(:)
    real(r8), pointer :: temp(:)
    real(r8), pointer :: finudated(:)
-   real(r8), pointer :: zwt(:)
    real(r8) :: dzsoi
    real(r8) :: zsoi
    real(r8) :: pct_sand
@@ -57,6 +56,12 @@ contains
   allocate(this%air_temp(data_len))  ; this%air_temp(:) = 298._r8
   allocate(this%finudated(data_len)); this%finudated(:) = 0._r8
   allocate(this%temp(data_len))      ; this%temp(:) = 283._r8
+  this%dzsoi=0.1_r8
+  this%zsoi=0.05_r8
+  this%pct_sand=30._r8
+  this%pct_clay=15._r8
+  this%cellorg=50._r8
+
   end subroutine init
 
   !--------------------------------------------------------------------
@@ -66,7 +71,7 @@ contains
   character(len=*), intent(in) :: nc_forc_file
 
   integer :: data_len
-
+  data_len=1
   !determine data length
   call forc_data%init(data_len)
   forc_data%data_len = data_len
@@ -79,7 +84,7 @@ contains
 
   use SoilForcType, only : soil_forc_type
   implicit none
-  type(soil_forc_type), intent(inout) :: soil_forc
+  class(soil_forc_type), intent(inout) :: soil_forc
 
 
   soil_forc%pct_clay = forc_data%pct_clay
@@ -88,7 +93,7 @@ contains
   soil_forc%dzsoi    = forc_data%dzsoi
   soil_forc%depz     = forc_data%zsoi
   soil_forc%pH       = forc_data%pH
-
+  call soil_forc%init()
   end subroutine load_forc_const
   !--------------------------------------------------------------------
 
@@ -118,7 +123,7 @@ contains
   soil_forc%air_vol    = forc_data%air_vol(rec)
   soil_forc%temp       = forc_data%temp(rec)
   soil_forc%finundated = forc_data%finudated(rec)
-  soil_forc%zwt        = forc_data%zwt(rec)
+
 
   end subroutine load_forc_transient
 

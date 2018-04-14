@@ -15,7 +15,7 @@ program main
   use SoilForcType     , only : soil_forc_type
   use AtmForcType      , only : atm_forc_type
   use OMForcType       , only : om_forc_type
-  use ForcDataType     , only : load_forc
+  use ForcDataType     , only : load_forc, init_forc
 
 implicit none
 
@@ -40,6 +40,7 @@ implicit none
   real(r8), allocatable :: ystatesf(:)
   real(r8) :: dtime
   integer :: nvars
+  character(len=257) :: nc_forc_file ='junkfile.nc'
   logical :: is_surflit = .false.  !logical switch for litter decomposition
 
   jarmtype = 'ecacnp'
@@ -80,13 +81,17 @@ implicit none
   dtime=timer%get_step_size()
   call hist%init(varl, unitl, freql, 'jarmodel')
 
+  call bgc_forc%Init(nvars)
   !read in forcing
+  call init_forc(nc_forc_file)
+  print*,'load constant forcing'
+
   call load_forc(soil_forc)
 
-  !set constant forcing
+  print*,'set constant forcing'
   call SetJarForc(bgc_forc, soil_forc)
 
-  !run the model
+  print*,'run the model'
   do
     !update forcing
     call load_forc(om_forc, atm_forc, soil_forc, timer%tstep)

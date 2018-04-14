@@ -27,7 +27,6 @@ implicit none
   real(r8) :: pH                     ! soil pH
   real(r8) :: hksat                  ! saturated hydraulic conductivity of mineral soil, [mm/s]
   real(r8) :: hk                     ! hydraulic conductivity [mm/s]
-  real(r8) :: zwt                    ! water table depth [m]
   contains
     procedure, public :: init
     procedure, public :: update
@@ -37,21 +36,17 @@ implicit none
 contains
 
 
-  subroutine init(this, pct_sand, pct_clay, zsoi, om_frac)
+  subroutine init(this)
 
   implicit none
   class(soil_forc_type), intent(inout) :: this
-  real(r8), intent(in) :: pct_sand   !% of sand
-  real(r8), intent(in) :: pct_clay   !% of clay
-  real(r8), intent(in) :: zsoi       !mid depth of soil, m
-  real(r8), intent(in) :: om_frac    !fraction of soil as om
+
+  real(r8) :: om_frac
+  real(r8), parameter :: organic_max = 160._r8
 
 
-  this%pct_clay = pct_clay
-  this%pct_sand = pct_sand
-  this%depz = zsoi
-
-  call set_soil_hydro_property(pct_sand, pct_clay, om_frac, zsoi, this%bd, &
+  om_frac= (this%cellorg/organic_max)**2._r8
+  call set_soil_hydro_property(this%pct_sand, this%pct_clay, om_frac, this%depz, this%bd, &
        this%watsat,this%bsw, this%sucsat, this%hksat)
 
 
