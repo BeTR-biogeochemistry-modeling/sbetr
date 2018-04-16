@@ -78,6 +78,7 @@ module ncdio_pio
     module procedure ncd_getvar_int_3d
     module procedure ncd_getvar_real_sp_3d
 
+    module procedure ncd_getvar_real_sp_scalar
     module procedure ncd_getvar_real_sp_all_1d
     module procedure ncd_getvar_real_sp_all_2d
     module procedure ncd_getvar_real_sp_all_3d
@@ -854,7 +855,30 @@ module ncdio_pio
     start = (/rec/)),'ncd_getvar_real_sp')
 
   end subroutine ncd_getvar_real_sp
+!----------------------------------------------------------------------
 
+  subroutine ncd_getvar_real_sp_scalar(ncid, varname,  data)
+  !
+  !DESCRIPTION
+  ! read a real scalar
+  use netcdf
+  use shr_kind_mod, only : r8 => shr_kind_r8
+!**********************************************************************
+  implicit none
+  class(file_desc_t), intent(in) :: ncid
+  character(len=*),intent(in) :: varname
+  REAL(r8), intent(out) :: data
+
+  integer :: varid
+  logical :: readvar
+  type(Var_desc_t)  :: vardesc
+
+  call check_var(ncid, trim(varname), vardesc, readvar)
+
+  call check_ret( nf90_get_var(ncid%fh, vardesc%varid, data),&
+    'ncd_getvar_real_sp_scalar')
+
+  end subroutine ncd_getvar_real_sp_scalar
 !----------------------------------------------------------------------
   subroutine ncd_getvar_int_1d(ncid, varname, rec, data)
   !

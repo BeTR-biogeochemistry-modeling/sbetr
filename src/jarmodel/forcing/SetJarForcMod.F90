@@ -23,7 +23,7 @@ contains
   real(r8), intent(in) :: temp_kelvin
   real(r8) :: molv
 
-  molv = patm_pascal/(Rgas_kmol*1.e-3*temp_kelvin)
+  molv = patm_pascal/(Rgas_kmol*1.e-3*temp_kelvin) * ppmv * 1.e-6_r8
 
   end function ppm2molv
 
@@ -101,7 +101,6 @@ contains
   jar_forc%cellorg = soil_forc%cellorg
   jar_forc%pH      = soil_forc%pH
 
-  print*,'here',size(jar_forc%plant_froot_nn)
   jar_forc%plant_froot_nn(:)=0._r8
   jar_forc%plant_froot_np(:)=0._r8
   jar_forc%plant_vtype(:)=0

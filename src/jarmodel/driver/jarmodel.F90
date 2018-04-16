@@ -1,5 +1,51 @@
+
 program main
 
+  use betr_constants   , only : stdout, betr_filename_length, betr_namelist_buffer_size
+  use betr_utils       , only : remove_filename_extension, namelist_to_buffer
+implicit none
+
+
+  integer :: arg_count
+  integer :: args
+  character(len=betr_filename_length)      :: namelist_filename
+  character(len=betr_namelist_buffer_size) :: namelist_buffer
+  character(len=betr_filename_length)      :: base_filename
+
+  arg_count = command_argument_count()
+  if (arg_count /= 1) then
+     write(stdout, '(a, i3)') 'ERROR: must pass exactly one arguement one the command line, received ', arg_count
+     call usage()
+     call abort()
+  end if
+
+  call get_command_argument(1, namelist_filename)
+  base_filename = remove_filename_extension(namelist_filename)
+  write(stdout, '(a, a)') 'Using base filename for output : ', trim(base_filename)
+
+  write(stdout, '(a, a)') 'Reading namelist filename : ', trim(namelist_filename)
+  namelist_buffer = ''
+
+  call namelist_to_buffer(namelist_filename, namelist_buffer)
+
+  call run_model(namelist_buffer)
+
+end program main
+
+
+
+! ----------------------------------------------------------------------
+subroutine usage()
+  !DESCRIPTION
+  !display something
+  use betr_constants, only : stdout
+ implicit none
+  write(stdout, *) 'jarmodel - standalone driver for BeTR jarmodel library.'
+  write(stdout, *) 'usage: jarmodel namelist_filename'
+end subroutine usage
+
+! ----------------------------------------------------------------------
+subroutine run_model(namelist_buffer)
   use BeTRJarModel     , only : jar_model_type
   use JarModelFactory  , only : create_jar_model, create_jar_pars
   use JarBgcForcType   , only : JarBGC_forc_type
@@ -9,19 +55,21 @@ program main
   use abortutils       , only : endrun
   use histMod          , only : histf_type
   use histMod          , only : hist_var_str_len, hist_unit_str_len, hist_freq_str_len
-  use  BeTR_TimeMod    , only : betr_time_type
+  use BeTR_TimeMod     , only : betr_time_type
   use shr_kind_mod     , only : r8 => shr_kind_r8
   use SetJarForcMod    , only : SetJarForc
   use SoilForcType     , only : soil_forc_type
   use AtmForcType      , only : atm_forc_type
   use OMForcType       , only : om_forc_type
   use ForcDataType     , only : load_forc, init_forc
+  use betr_constants   , only : betr_string_length_long
+  use bshr_log_mod    , only : errMsg => shr_log_errMsg
+  implicit none
+  character(len=*), intent(in) :: namelist_buffer
 
-implicit none
-
+  !LOCAL VARIABLES
   character(len=*), parameter :: mod_filename = &
        __FILE__
-
   class(jar_model_type),  pointer :: jarmodel
   class(BiogeoCon_type),  pointer :: jarpars
   type(JarBGC_forc_type) :: bgc_forc
@@ -31,8 +79,7 @@ implicit none
   type(betr_status_type) :: bstatus
   type(histf_type) :: hist
   type(betr_time_type) :: timer
-  character(len=24) :: jarmtype
-  character(len=*), parameter :: namelist_buffer="junk_data"
+  character(len=24) :: jarmodel_name
   character(len=hist_var_str_len) , allocatable :: varl(:)
   character(len=hist_unit_str_len), allocatable :: unitl(:)
   character(len=hist_freq_str_len), allocatable :: freql(:)
@@ -40,14 +87,24 @@ implicit none
   real(r8), allocatable :: ystatesf(:)
   real(r8) :: dtime
   integer :: nvars
-  character(len=257) :: nc_forc_file ='junkfile.nc'
-  logical :: is_surflit = .false.  !logical switch for litter decomposition
 
-  jarmtype = 'ecacnp'
+  logical :: is_surflit = .false.  !logical switch for litter decomposition
+  integer                                :: nml_error
+  character(len=betr_string_length_long) :: ioerror_msg
+
+  namelist / jar_driver / jarmodel_name, is_surflit
+  if ( .true. )then
+     ioerror_msg=''
+     read(namelist_buffer, nml=jar_driver, iostat=nml_error, iomsg=ioerror_msg)
+     if (nml_error /= 0) then
+        call endrun(msg="ERROR reading forcing_inparm namelist "//errmsg(mod_filename, __LINE__))
+     end if
+  end if
+  print*,'jarmodel_name',jarmodel_name
   !create the jar type
 
-  jarmodel => create_jar_model(jarmtype)
-  jarpars  => create_jar_pars(jarmtype)
+  jarmodel => create_jar_model(jarmodel_name)
+  jarpars  => create_jar_pars(jarmodel_name)
 
   !initialize model parameters
   call jarpars%Init(namelist_buffer, bstatus)
@@ -83,15 +140,15 @@ implicit none
 
   call bgc_forc%Init(nvars)
   !read in forcing
-  call init_forc(nc_forc_file)
-  print*,'load constant forcing'
+  call init_forc(namelist_buffer=namelist_buffer)
 
-  call load_forc(soil_forc)
+  !'load constant forcing'
+  call load_forc(soil_forc, atm_forc)
 
-  print*,'set constant forcing'
+  !'set constant forcing'
   call SetJarForc(bgc_forc, soil_forc)
 
-  print*,'run the model'
+  !'run the model'
   do
     !update forcing
     call load_forc(om_forc, atm_forc, soil_forc, timer%tstep)
@@ -100,8 +157,8 @@ implicit none
 
     call jarmodel%runbgc(is_surflit, dtime, bgc_forc, nvars, ystates0, ystatesf, bstatus)
     call timer%update_time_stamp()
+
     call hist%hist_wrap(ystatesf, timer)
     if(timer%its_time_to_exit())exit
   enddo
-
-end program main
+end subroutine run_model

@@ -275,13 +275,11 @@ contains
     ! !DESCRIPTION:
     ! read namelist for betr configuration
     ! !USES:
-    use spmdMod        , only : masterproc, mpicom
-    use fileutils      , only : getavu, relavu, opnfil
-    use shr_nl_mod     , only : shr_nl_find_group_name
-    use shr_mpi_mod    , only : shr_mpi_bcast
-    use clm_varctl     , only : iulog
-    use abortutils     , only : endrun
-    use shr_log_mod    , only : errMsg => shr_log_errMsg
+
+    use bshr_nl_mod    , only : shr_nl_find_group_name
+    use betr_ctrl      , only : iulog => biulog
+    use babortutils    , only : endrun
+    use bshr_log_mod   , only : errMsg => shr_log_errMsg
     use betr_constants , only : stdout
     implicit none
     ! !ARGUMENTS:

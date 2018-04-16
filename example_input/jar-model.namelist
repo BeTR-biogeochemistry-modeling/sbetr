@@ -1,0 +1,11 @@
+&jar_driver
+  jarmodel_name = 'ecacnp'
+/
+
+&betr_time
+delta_time=3600.
+/
+
+&forcing_inparm
+  forcing_filename = 'jarmodel_example.forcing.nc'
+/
