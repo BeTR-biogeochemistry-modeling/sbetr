@@ -11,7 +11,8 @@
 /
 
 &betr_time
-  stop_time = 5184000.0
+  stop_n = 60
+  stop_option='ndays'
 /
 
 &forcing_inparm

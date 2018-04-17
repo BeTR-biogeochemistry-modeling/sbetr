@@ -8,8 +8,8 @@
 /
 
 &betr_time
-  stop_time = 720000.0
-  restart_dtime = 720000.0
+  stop_n = 400
+  stop_option='nsteps'
 /
 
 &forcing_inparm

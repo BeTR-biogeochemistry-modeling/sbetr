@@ -119,11 +119,13 @@ contains
     character(len=betr_string_length_long) :: ioerror_msg
     real(r8) :: delta_time         !model time step
     real(r8) :: stop_time          !when to stop
+    integer  :: stop_n
+    character(len=8)  :: stop_option        !1: step, 2:day, 3:year
     real(r8) :: restart_dtime      !when to write restart file
     logical :: masterproc_loc
     !-----------------------------------------------------------------------
 
-    namelist / betr_time / delta_time, stop_time, restart_dtime
+    namelist / betr_time / delta_time, stop_n, stop_option, restart_dtime
 
     ! FIXME(bja, 201603) Only reading time variables in seconds!
     ! Should enable other values with unit coversions.
@@ -133,7 +135,9 @@ contains
     masterproc_loc=.true.
     if(present(masterproc))masterproc_loc=masterproc
     delta_time = 1800._r8                !half hourly time step
-    stop_time = 86400._r8*365._r8*2._r8  !two years by default
+    stop_n=2       !by default 2 cycle
+    stop_option='nyears'  !by default years
+
     restart_dtime = -1._r8
 
     ! ----------------------------------------------------------------------
@@ -162,7 +166,15 @@ contains
     endif
 
     this%delta_time = delta_time
-    this%stop_time = stop_time
+    this%stop_time = delta_time*stop_n
+    select case (trim(stop_option))
+    case ('ndays')
+      !day
+      this%stop_time= stop_n * 86400._r8
+    case ('nyears')
+      !year
+      this%stop_time= stop_n * 86400._r8 * 365._r8
+    end select
     if(restart_dtime < 0._r8)then
       this%restart_dtime  = this%stop_time
     else
