@@ -157,9 +157,10 @@ implicit none
 
   !oxygen scalar, this is different from what CLM4.5bgc does, I use a M-M formulation to indicate O2 stress
   !and the O2 budget is done on the fly
-  o2w = o2b / o2_w2b
-  this%o_scalar = max(o2w/(o2w+k_m_o2),1.e-20_r8)   !the value 0.22 mol O3/m3 is from Arah and Kirk, 2000
-
+  !o2w = o2b / o2_w2b
+  !this%o_scalar = max(o2w/(o2w+k_m_o2),1.e-20_r8)   !the value 0.22 mol O3/m3 is from Arah and Kirk, 2000
+  !set o_scalar to 1._r8, because century model already imposes a moisture effect
+  this%o_scalar = 1._r8
   !depth scalar, according to Koven et al. (2013), BG, the depth scalar is needed to resolve the radiocarbon profile
   this%depth_scalar = exp(-depz/decomp_depth_efolding)
 
