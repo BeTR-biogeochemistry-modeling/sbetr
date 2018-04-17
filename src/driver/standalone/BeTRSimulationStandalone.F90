@@ -81,8 +81,8 @@ contains
     implicit none
     !ARGUMENTS
     class(betr_simulation_standalone_type)   , intent(inout) :: this
-    character(len=betr_filename_length)      , intent(in)    :: base_filename
-    character(len=betr_namelist_buffer_size) , intent(in)    :: namelist_buffer
+    character(len=*)                         , intent(in)    :: base_filename
+    character(len=*)                         , intent(in)    :: namelist_buffer
     type(bounds_type)                        , intent(in)    :: bounds
     type(landunit_type)                      , intent(in) :: lun
     type(column_type)                        , intent(inout)    :: col
