@@ -582,9 +582,9 @@ contains
   yf(:) = ystates1(:)
 
   call ode_adapt_ebbks1(this, yf, nprimvars, nstvars, time, dtime, ystates1)
-  if(ystates1(lid_n2o_nit)<0._r8)then
-    print*,'nh4',ystates1(lid_nh4),ystates1(lid_no3)
-  endif
+!  if(ystates1(lid_n2o_nit)<0._r8)then
+!    print*,'nh4',ystates1(lid_nh4),ystates1(lid_no3)
+!  endif
   !if(this%centurybgc_index%debug)call this%checksum_cascade(this%centurybgc_index)
   if(this%use_c14)then
     call this%c14decay(this%centurybgc_index, dtime, ystates1)
@@ -842,9 +842,22 @@ contains
     lid_c14_co2 => centurybgc_index%lid_c14_co2, &
     lid_n2o => centurybgc_index%lid_n2o, &
     lid_ar => centurybgc_index%lid_ar, &
-    lid_ch4 => centurybgc_index%lid_ch4  &
+    lid_ch4 => centurybgc_index%lid_ch4,  &
+    lid_co2_hr => centurybgc_index%lid_co2_hr, &
+    lid_n2o_nit => this%centurybgc_index%lid_n2o_nit,&
+    lid_nh4_nit => this%centurybgc_index%lid_nh4_nit, &
+    lid_no3_den => this%centurybgc_index%lid_no3_den,  &
+    lid_minn_nh4_immob=> centurybgc_index%lid_minn_nh4_immob , &
+    lid_minn_no3_immob => centurybgc_index%lid_minn_no3_immob, &
+    lid_minp_immob => centurybgc_index%lid_minp_immob         &
   )
   this%ystates0(:) = bgc_forc%ystates(:)
+  this%ystates0(lid_co2_hr) = 0._r8
+  this%ystates0(lid_n2o_nit)= 0._r8
+  this%ystates0(lid_no3_den)= 0._r8
+  this%ystates0(lid_minn_nh4_immob) =0._r8
+  this%ystates0(lid_minn_no3_immob) =0._r8
+  this%ystates0(lid_minp_immob) =0._r8
   this%ystates1(:) = this%ystates0(:)
 
   !set conversion parameters for arenchyma transport
@@ -1327,7 +1340,7 @@ contains
     it = it + 1
   enddo
 !  if(this%centurybgc_index%debug)then
-  
+
 !    do jj = 1, nreactions
 !      print*,'casc jj',jj,rrates(jj),rscal(jj)
 !    enddo

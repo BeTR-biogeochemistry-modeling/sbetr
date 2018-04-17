@@ -110,6 +110,7 @@ subroutine run_model(namelist_buffer)
 
   !initialize model parameters
   call jarpars%Init(namelist_buffer, bstatus)
+  jarpars%nop_limit = .true.; jarpars%non_limit = .true.
   if(bstatus%check_status())then
     call endrun(msg=bstatus%print_msg())
   endif
