@@ -1104,7 +1104,7 @@ contains
 
     call betr_status%reset()
     SHR_ASSERT_ALL((ubound(dz_top)  == (/bounds%endc/)),   errMsg(mod_filename,__LINE__),betr_status)
-    if(betr_status%check_status())return
+
     if (this%dummy_compiler_warning) continue
     associate(                                       &
          groupid  => betrtracer_vars%groupid    ,    &
@@ -1210,7 +1210,6 @@ contains
     character(len=5) :: laystr
     call betr_status%reset()
     SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__),betr_status)
-    if(betr_status%check_status())return
 
     if(betrtracer_vars%debug)call this%debug_info(bounds, num_soilc, filter_soilc, col%dz(bounds%begc:bounds%endc,bounds%lbj:bounds%ubj),&
         betrtracer_vars, tracerstate_vars,  'before bgcreact', betr_status)
@@ -1429,7 +1428,7 @@ contains
 
     call betr_status%reset()
     SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__),betr_status)
-    if(betr_status%check_status())return
+
     if (this%dummy_compiler_warning) continue
   end subroutine do_tracer_equilibration
 
@@ -1520,7 +1519,7 @@ contains
       endif
       tracerstate_vars%tracer_soi_molarmass_col(c,:)          = 0._r8
       do jj = id_trc_beg_Bm, id_trc_end_Bm,nelm
-        kc=(jj-1)+c_loc; kn=(jj-1)+n_loc; kp=(jj-1)+p_loc 
+        kc=(jj-1)+c_loc; kn=(jj-1)+n_loc; kp=(jj-1)+p_loc
         do l = lbj, ubj
           tracerstate_vars%tracer_conc_mobile_col(c,l,kc) = 1.e-3_r8
           tracerstate_vars%tracer_conc_mobile_col(c,l,kn) = 1.e-3_r8*catomw/(cdom_para%init_cn_mic*natomw)
@@ -1645,7 +1644,7 @@ contains
   )
   call betr_status%reset()
   SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__),betr_status)
-  if(betr_status%check_status())return
+
   do j = lbj, ubj
     do fc = 1, num_soilc
       c = filter_soilc(fc)
@@ -2186,7 +2185,7 @@ contains
         k1 = micbiom_beg+k-1; k2 = betrtracer_vars%id_trc_beg_Bm+ k-1
         tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)
       enddo
-      do k = 1, humus_end-humus_beg + 1   
+      do k = 1, humus_end-humus_beg + 1
         k1 = humus_beg+k-1; k2 = betrtracer_vars%id_trc_beg_som+ k-1
         tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)
       enddo
@@ -2304,7 +2303,7 @@ contains
 
    call betr_status%reset()
    SHR_ASSERT_ALL((ubound(dzsoi)  == (/bounds%endc, bounds%ubj/)),   errMsg(mod_filename,__LINE__),betr_status)
-   if(betr_status%check_status())return
+
    write(*,*)trim(header)//': debug info c n p mass'
 
    c_loc=this%cdombgc_index%c_loc
@@ -2418,7 +2417,6 @@ contains
 
     call betr_status%reset()
     SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__),betr_status)
-    if(betr_status%check_status())return
 
     c_loc=this%cdombgc_index%c_loc
     n_loc=this%cdombgc_index%n_loc

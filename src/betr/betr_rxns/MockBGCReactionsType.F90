@@ -313,7 +313,7 @@ contains
 
     call betr_status%reset()
     SHR_ASSERT_ALL((ubound(dz_top)  == (/bounds%endc/)),   errMsg(mod_filename,__LINE__), betr_status)
-    if(betr_status%check_status())return
+
     ! remove compiler warnings for unused dummy args
     if (this%dummy_compiler_warning)      continue
     if (size(biogeo_flux%qflx_adv_col)>0) continue
@@ -457,7 +457,6 @@ contains
 
     call betr_status%reset()
     SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__), betr_status)
-    if(betr_status%check_status())return
 
     ! remove compiler warnings for unused dummy args
     if (this%dummy_compiler_warning)                          continue
@@ -623,7 +622,7 @@ contains
 
    call betr_status%reset()
    SHR_ASSERT_ALL((ubound(dzsoi)  == (/bounds%endc, bounds%ubj/)),   errMsg(mod_filename,__LINE__), betr_status)
-   if(betr_status%check_status())return
+
    if (this%dummy_compiler_warning) continue
      end subroutine debug_info
    !----------------------------------------------------------------------
@@ -650,7 +649,6 @@ contains
 
    call betr_status%reset()
    SHR_ASSERT_ALL((ubound(jtops)  == (/bounds%endc/)),   errMsg(mod_filename,__LINE__), betr_status)
-   if(betr_status%check_status())return
 
    if (this%dummy_compiler_warning) continue
    if (bounds%begc > 0)             continue

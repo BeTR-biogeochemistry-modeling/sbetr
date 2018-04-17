@@ -381,7 +381,6 @@ module H2OIsotopeBGCReactionsType
 
   call betr_status%reset()
   SHR_ASSERT_ALL((ubound(dz_top)  == (/bounds%endc/)),   errMsg(mod_filename,__LINE__), betr_status)
-  if(betr_status%check_status())return
 
   ! remove compiler warnings for unused dummy args
   if (this%dummy_compiler_warning) continue
@@ -566,7 +565,7 @@ module H2OIsotopeBGCReactionsType
 
   call betr_status%reset()
   SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__), betr_status)
-  if(betr_status%check_status())return
+
     ! remove compiler warnings for unused dummy args
     if (this%dummy_compiler_warning)                          continue
     if (bounds%begc > 0)                                      continue
@@ -636,21 +635,20 @@ module H2OIsotopeBGCReactionsType
 
   call bstatus%reset()
   SHR_ASSERT_ALL((ubound(aqu2equilscef,1)            == bounds%endc), errMsg(mod_filename,__LINE__),bstatus)
-  if(bstatus%check_status())return
+
   SHR_ASSERT_ALL((ubound(aqu2equilscef,2)            == ubj),         errMsg(mod_filename,__LINE__),bstatus)
-  if(bstatus%check_status())return
+
   SHR_ASSERT_ALL((ubound(aqu2bulkcef,1)              == bounds%endc), errMsg(mod_filename,__LINE__),bstatus)
-  if(bstatus%check_status())return
+
   SHR_ASSERT_ALL((ubound(aqu2bulkcef,2)              == ubj),         errMsg(mod_filename,__LINE__),bstatus)
-  if(bstatus%check_status())return
+
   SHR_ASSERT_ALL((ubound(tracer_solid_phase_equil,1) == bounds%endc), errMsg(mod_filename,__LINE__),bstatus)
-  if(bstatus%check_status())return
+
   SHR_ASSERT_ALL((ubound(tracer_solid_phase_equil,2) == ubj),         errMsg(mod_filename,__LINE__),bstatus)
-  if(bstatus%check_status())return
+
   SHR_ASSERT_ALL((ubound(tracer_mobile_phase,1)      == bounds%endc), errMsg(mod_filename,__LINE__),bstatus)
-  if(bstatus%check_status())return
+
   SHR_ASSERT_ALL((ubound(tracer_mobile_phase,2)      == ubj),         errMsg(mod_filename,__LINE__),bstatus)
-  if(bstatus%check_status())return
 
   ! remove compiler warnings for unused dummy args
   if (bounds%begc > 0) continue
@@ -810,7 +808,6 @@ module H2OIsotopeBGCReactionsType
    type(betr_status_type)               , intent(out):: betr_status
    call betr_status%reset()
    SHR_ASSERT_ALL((ubound(dzsoi)  == (/bounds%endc, bounds%ubj/)),   errMsg(mod_filename,__LINE__), betr_status)
-   if(betr_status%check_status())return
 
    if (this%dummy_compiler_warning) continue
      end subroutine debug_info
@@ -838,7 +835,6 @@ module H2OIsotopeBGCReactionsType
 
    call betr_status%reset()
    SHR_ASSERT_ALL((ubound(jtops)  == (/bounds%endc/)),   errMsg(mod_filename,__LINE__), betr_status)
-   if(betr_status%check_status())return
 
    if (this%dummy_compiler_warning) continue
    if (bounds%begc > 0)             continue

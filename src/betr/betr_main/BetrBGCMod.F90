@@ -164,11 +164,10 @@ contains
     call betr_status%reset()
 
     SHR_ASSERT_ALL((ubound(Rfactor,1) == bounds%endc), errMsg(mod_filename,__LINE__),betr_status)
-    if(betr_status%check_status())return
+
     SHR_ASSERT_ALL((ubound(Rfactor,2) == bounds%ubj ), errMsg(mod_filename,__LINE__),betr_status)
-    if(betr_status%check_status())return
+
     SHR_ASSERT_ALL((ubound(Rfactor,3) == betrtracer_vars%ngwmobile_tracer_groups), errMsg(mod_filename,__LINE__),betr_status)
-    if(betr_status%check_status())return
 
     lbj = bounds%lbj; ubj = bounds%ubj
 
@@ -301,11 +300,10 @@ contains
 
     call betr_status%reset()
     SHR_ASSERT_ALL((ubound(Rfactor,1) == bounds%endc), errMsg(mod_filename,__LINE__),betr_status)
-    if(betr_status%check_status())return
+
     SHR_ASSERT_ALL((ubound(Rfactor,2) == bounds%ubj ), errMsg(mod_filename,__LINE__),betr_status)
-    if(betr_status%check_status())return
+
     SHR_ASSERT_ALL((ubound(Rfactor,3) == betrtracer_vars%ngwmobile_tracer_groups), errMsg(mod_filename,__LINE__),betr_status)
-    if(betr_status%check_status())return
 
     lbj = bounds%lbj; ubj = bounds%ubj
     dtime = betr_time%get_step_size()
@@ -413,15 +411,14 @@ contains
          )
 
       SHR_ASSERT_ALL((ubound(hmconductance_col,1) == bounds%endc), errMsg(mod_filename,__LINE__),betr_status)
-      if(betr_status%check_status())return
+
       SHR_ASSERT_ALL((ubound(hmconductance_col,2) == ubj-1), errMsg(mod_filename,__LINE__),betr_status)
-      if(betr_status%check_status())return
+
       SHR_ASSERT_ALL((ubound(hmconductance_col,3) == ntracer_groups), errMsg(mod_filename,__LINE__),betr_status)
-      if(betr_status%check_status())return
+
       SHR_ASSERT_ALL((ubound(dz,1)   == bounds%endc), errMsg(mod_filename,__LINE__),betr_status)
-      if(betr_status%check_status())return
+
       SHR_ASSERT_ALL((ubound(dz,2)   == ubj), errMsg(mod_filename,__LINE__),betr_status)
-      if(betr_status%check_status())return
 
       allocate (difs_trc_group (nmem_max                                   ))
       allocate (dtracer        (bounds%begc:bounds%endc, lbj:ubj, nmem_max ))
@@ -593,21 +590,20 @@ contains
 
     call bstatus%reset()
     SHR_ASSERT_ALL((ubound(jtops)     == (/bounds%endc/)),                          errMsg(mod_filename,__LINE__),bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(dz,1)      == bounds%endc),                              errMsg(mod_filename,__LINE__),bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(dz,2)      == ubj),                                      errMsg(mod_filename,__LINE__),bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(zi,1)      == bounds%endc),                              errMsg(mod_filename,__LINE__),bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(zi,2)      == ubj),                                      errMsg(mod_filename,__LINE__),bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(Rfactor,1) == bounds%endc),                              errMsg(mod_filename,__LINE__),bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(Rfactor,2) ==  ubj ),                                    errMsg(mod_filename,__LINE__),bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(Rfactor,3) ==  betrtracer_vars%ngwmobile_tracer_groups), errMsg(mod_filename,__LINE__),bstatus)
-    if(bstatus%check_status())return
 
     dtime = betr_time%get_step_size()
     !
@@ -743,15 +739,14 @@ contains
 
     call bstatus%reset()
     SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/))      , errMsg(mod_filename,__LINE__),bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(dz,1)  == bounds%endc),           errMsg(mod_filename,__LINE__),bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(dz,2)  == ubj),                   errMsg(mod_filename,__LINE__),bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(zi,1)  == bounds%endc),           errMsg(mod_filename,__LINE__),bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(zi,2)  == ubj),                   errMsg(mod_filename,__LINE__),bstatus)
-    if(bstatus%check_status())return
 
     associate(                                                                         &
          qflx_adv                  => biogeo_flux%qflx_adv_col                       , & !real(r8) (:,:)[intent(in)], advective velocity defined at layer interfatemperature_vars
@@ -1071,23 +1066,22 @@ contains
     ntracer_groups = betrtracer_vars%ntracer_groups
 
     SHR_ASSERT_ALL((ubound(jtops)               == (/bounds%endc/)),     errMsg(mod_filename,__LINE__),bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(dz,1)                == bounds%endc),      errMsg(mod_filename,__LINE__),bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(dz,2)                == ubj),              errMsg(mod_filename,__LINE__),bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(hmconductance_col,1) == bounds%endc),    errMsg(mod_filename,__LINE__),bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(hmconductance_col,2) == ubj-1),           errMsg(mod_filename,__LINE__),bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(hmconductance_col,3) == ntracer_groups),    errMsg(mod_filename,__LINE__),bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(Rfactor,1)           == bounds%endc),     errMsg(mod_filename,__LINE__),bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(Rfactor,2)           == ubj),           errMsg(mod_filename,__LINE__),bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(Rfactor,3) == betrtracer_vars%ngwmobile_tracer_groups), errMsg(mod_filename,__LINE__),bstatus)
-    if(bstatus%check_status())return
 
     associate(                                                                                 &
          is_volatile              =>  betrtracer_vars%is_volatile                            , & !
@@ -1365,14 +1359,12 @@ contains
          )
 
     SHR_ASSERT_ALL((ubound(jtops)   == (/bounds%endc/)) , errMsg(mod_filename,__LINE__),betr_status)
-    if(betr_status%check_status())return
-    SHR_ASSERT_ALL((ubound(Rfactor,1) == bounds%endc)   , errMsg(mod_filename,__LINE__),betr_status)
-    if(betr_status%check_status())return
-    SHR_ASSERT_ALL((ubound(Rfactor,2) == ubj)           , errMsg(mod_filename,__LINE__),betr_status)
-    if(betr_status%check_status())return
-    SHR_ASSERT_ALL((ubound(Rfactor,3) ==  ngwmobile_tracer_groups), errMsg(mod_filename,__LINE__),betr_status)
-    if(betr_status%check_status())return
 
+    SHR_ASSERT_ALL((ubound(Rfactor,1) == bounds%endc)   , errMsg(mod_filename,__LINE__),betr_status)
+
+    SHR_ASSERT_ALL((ubound(Rfactor,2) == ubj)           , errMsg(mod_filename,__LINE__),betr_status)
+
+    SHR_ASSERT_ALL((ubound(Rfactor,3) ==  ngwmobile_tracer_groups), errMsg(mod_filename,__LINE__),betr_status)
 
       do j = lbj, ubj
          do fc = 1, num_soilc
@@ -1441,19 +1433,18 @@ contains
 
     call betr_status%reset()
     SHR_ASSERT_ALL((ubound(jtops)     == (/bounds%endc/))      , errMsg(mod_filename,__LINE__),betr_status)
-    if(betr_status%check_status())return
+
     SHR_ASSERT_ALL((ubound(forc_psrf) == (/bounds%endc/))      , errMsg(mod_filename,__LINE__),betr_status)
-    if(betr_status%check_status())return
+
     SHR_ASSERT_ALL((ubound(fracice,1) == bounds%endc) ,          errMsg(mod_filename,__LINE__),betr_status)
-    if(betr_status%check_status())return
+
     SHR_ASSERT_ALL((ubound(fracice,2) == ubj) ,                  errMsg(mod_filename,__LINE__),betr_status)
-    if(betr_status%check_status())return
+
     SHR_ASSERT_ALL((ubound(dz,1)      == bounds%endc),           errMsg(mod_filename,__LINE__),betr_status)
-    if(betr_status%check_status())return
+
     SHR_ASSERT_ALL((ubound(dz,2)      == ubj),                   errMsg(mod_filename,__LINE__),betr_status)
-    if(betr_status%check_status())return
+
     SHR_ASSERT_ALL((ubound(zwt)       == (/bounds%endc/))      , errMsg(mod_filename,__LINE__),betr_status)
-    if(betr_status%check_status())return
 
     ! remove compiler warnings about unused dummy args
     if (dtime > 0) continue
@@ -1597,25 +1588,24 @@ contains
 
     call bstatus%reset()
     SHR_ASSERT_ALL((ubound(dz)               == (/bounds%endc, ubj/)) , errMsg(mod_filename,__LINE__),bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(update_col)       == (/bounds%endc/))      , errMsg(mod_filename,__LINE__),bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(dtime_loc)        == (/bounds%endc/))      , errMsg(mod_filename,__LINE__),bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(tracer_conc,1)    == bounds%endc) ,          errMsg(mod_filename,__LINE__),bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(tracer_conc,2)    ==  ubj) ,                 errMsg(mod_filename,__LINE__),bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(qflx_rootsoi,1)   == bounds%endc) ,          errMsg(mod_filename,__LINE__),bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(qflx_rootsoi,2)   == ubj) ,                  errMsg(mod_filename,__LINE__),bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(transp_mass_vr,1) == bounds%endc)      ,     errMsg(mod_filename,__LINE__),bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(transp_mass_vr,2) == ubj)      ,             errMsg(mod_filename,__LINE__),bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(transp_mass)      == (/bounds%endc/))      , errMsg(mod_filename,__LINE__),bstatus)
-    if(bstatus%check_status())return
 
     transp_mass(:) = 0._r8
     do fc = 1, num_soilc

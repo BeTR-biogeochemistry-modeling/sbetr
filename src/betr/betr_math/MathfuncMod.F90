@@ -226,7 +226,7 @@ contains
 
     call bstatus%reset()
     SHR_ASSERT_ALL((size(x)   == size(y)), errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     n = size(x)
 
     y(1)=x(1)
@@ -257,9 +257,9 @@ contains
     if(present(idim))idim_loc=idim
 
     SHR_ASSERT_ALL((size(x,1)   == size(y,1)),        errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((size(x,2)   == size(y,2)),        errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     if(idim_loc == 1)then
        !summation along dimension 1
        n = size(x,2)
@@ -295,7 +295,6 @@ contains
     integer :: j
     call bstatus%reset()
     SHR_ASSERT_ALL((size(x)   == size(y)),  errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
 
     n = size(x)
     y(1)=max(x(1),0._r8)
@@ -323,7 +322,6 @@ contains
 
     call bstatus%reset()
     SHR_ASSERT_ALL((size(x)   == size(y)+1),        errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
 
     n = size(x)
     do j = 2, n
@@ -473,7 +471,7 @@ contains
 
     call bstatus%reset()
     SHR_ASSERT_ALL((size(p)   == size(v)), errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     sz = size(p)
     ans = 1._r8
     do j = 1, sz
@@ -503,11 +501,10 @@ contains
 
     call bstatus%reset()
     SHR_ASSERT_ALL((ubound(A)           == (/m,n/)), errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(AP)          == (/m,n/)), errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(AD)          == (/m,n/)), errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
 
     do j=1, n
       do i = 1, m

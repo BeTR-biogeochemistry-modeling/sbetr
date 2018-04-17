@@ -57,10 +57,11 @@ subroutine run_model(namelist_buffer)
   use histMod          , only : hist_var_str_len, hist_unit_str_len, hist_freq_str_len
   use BeTR_TimeMod     , only : betr_time_type
   use shr_kind_mod     , only : r8 => shr_kind_r8
-  use SetJarForcMod    , only : SetJarForc
+  use SetJarForcMod    , only : SetJarForc, setJarStates
   use SoilForcType     , only : soil_forc_type
   use AtmForcType      , only : atm_forc_type
   use OMForcType       , only : om_forc_type
+  use NutForcType      , only : nut_forc_type
   use ForcDataType     , only : load_forc, init_forc
   use betr_constants   , only : betr_string_length_long
   use bshr_log_mod    , only : errMsg => shr_log_errMsg
@@ -73,9 +74,10 @@ subroutine run_model(namelist_buffer)
   class(jar_model_type),  pointer :: jarmodel
   class(BiogeoCon_type),  pointer :: jarpars
   type(JarBGC_forc_type) :: bgc_forc
-  type(soil_forc_type) :: soil_forc
-  type(om_forc_type) :: om_forc
-  type(atm_forc_type) :: atm_forc
+  type(soil_forc_type)   :: soil_forc
+  type(om_forc_type)     :: om_forc
+  type(nut_forc_type)    :: nut_forc
+  type(atm_forc_type)    :: atm_forc
   type(betr_status_type) :: bstatus
   type(histf_type) :: hist
   type(betr_time_type) :: timer
@@ -129,8 +131,8 @@ subroutine run_model(namelist_buffer)
   allocate(varl(nvars)); allocate(unitl(nvars)); allocate(freql(nvars))
   call jarmodel%getvarlist(nvars, varl, unitl)
   freql(:) = 'day'
-  allocate(ystates0(nvars))
-  allocate(ystatesf(nvars))
+  allocate(ystates0(nvars));ystates0(:)=0._r8
+  allocate(ystatesf(nvars));ystatesf(:)=0._r8
 
   !initialize timer
   call timer%Init(namelist_buffer=namelist_buffer)
@@ -151,14 +153,18 @@ subroutine run_model(namelist_buffer)
   !'run the model'
   do
     !update forcing
-    call load_forc(om_forc, atm_forc, soil_forc, timer%tstep)
+    call load_forc(om_forc, nut_forc, atm_forc, soil_forc, timer%tstep)
 
-    call SetJarForc(bgc_forc, om_forc, atm_forc, soil_forc)
+    call SetJarForc(bgc_forc, om_forc, nut_forc, atm_forc, soil_forc)
+
+    call setJarStates(bgc_forc, ystatesf)
 
     call jarmodel%runbgc(is_surflit, dtime, bgc_forc, nvars, ystates0, ystatesf, bstatus)
+
     call timer%update_time_stamp()
 
     call hist%hist_wrap(ystatesf, timer)
+
     if(timer%its_time_to_exit())exit
   enddo
 end subroutine run_model

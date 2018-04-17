@@ -88,11 +88,10 @@ contains
 
     call bstatus%reset()
     SHR_ASSERT_ALL((ubound(x) == ubound(y)),   errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(xi) == ubound(yi)), errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(x) >= pn+1),        errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
 
     ni  = size(xi)
     nx = size(x)
@@ -150,9 +149,9 @@ contains
 
     call bstatus%reset()
     SHR_ASSERT_ALL((size(xvect) == size(yvect)), errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((size(xvect) == pn+1),        errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     ! n = number of data points:length of each data vector
     n = size(xvect)
     ! Initializations of Pz and L
@@ -236,9 +235,9 @@ contains
 
     call bstatus%reset()
     SHR_ASSERT_ALL((size(x) == size(fx)), errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((size(x) == size(di)), errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     region_loc=2
     if(present(region))region_loc=region
 
@@ -383,11 +382,11 @@ contains
 
     call bstatus%reset()
     SHR_ASSERT_ALL((size(x) == size(fx)),  errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((size(x) == size(di)),  errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((size(xi) == size(yi)), errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     n=size(xi)  !total number of points to be interpolated
 
     yi(:)=0._r8
@@ -595,7 +594,6 @@ contains
 
   call bstatus%reset()
   SHR_ASSERT_ALL((size(zh)  == size(mass_curve)),   errMsg(mod_filename,__LINE__),bstatus)
-  if(bstatus%check_status())return
 
   nn = size(zh)
 
@@ -633,7 +631,6 @@ contains
 
   call bstatus%reset()
   SHR_ASSERT_ALL((size(zh)  == size(mass_curve)),   errMsg(mod_filename,__LINE__),bstatus)
-  if(bstatus%check_status())return
 
   nn = size(zh)
 

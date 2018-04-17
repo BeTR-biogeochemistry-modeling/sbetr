@@ -180,7 +180,7 @@ contains
     n2 = size(us_t)
 
     SHR_ASSERT_ALL((n1 == n2),        errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     select type(this)
     class is (Extra_type)
       this%zi(1:n1) = zi_t
@@ -251,13 +251,12 @@ contains
     integer :: n, c, fc
     call bstatus%reset()
     SHR_ASSERT_ALL((ubound(jtop)          == (/bounds%endc/)),      errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(dz)            == (/bounds%endc, ubj/)), errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(bulkdiffus)    == (/bounds%endc, ubj/)), errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(hmconductance) == (/bounds%endc, ubj-1/)), errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
 
     do n=lbj, ubj-1
        do fc = 1, numfl
@@ -319,69 +318,68 @@ contains
 
     call bstatus%reset()
     SHR_ASSERT_ALL((ubound(jtop)            == (/bounds%endc/)),        errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(Rfactor,1)     == bounds%endc),   errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(Rfactor,2)     == ubj),   errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(hmconductance,1)   == bounds%endc), errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(hmconductance,2)   == ubj-1), errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(dz,1)           == bounds%endc),   errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(dz,2)           == ubj),   errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(dtime)           == (/bounds%endc/)),        errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(condc_toplay)    == (/bounds%endc/)),        errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(update_col)      == (/bounds%endc/)),        errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(source,1)    == bounds%endc), errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(source,2)    == ubj), errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(source,3)    == ntrcs), errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(rt,1)       == bounds%endc), errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(rt,2)       ==  ubj), errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(rt,3)       == ntrcs), errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(trcin_mobile,1)  == bounds%endc), errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(trcin_mobile,2)  == ubj), errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(trcin_mobile,3)  == ntrcs), errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(bot_concflx,1)     == bounds%endc)  , errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(bot_concflx,2)     == 2)  , errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(bot_concflx,3)     == ntrcs)  , errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(trc_concflx_air,1) == bounds%endc)  , errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(trc_concflx_air,2) == 2)  , errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(trc_concflx_air,3) == ntrcs)  , errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
 
     if(.not. source_only) then
        SHR_ASSERT_ALL((ubound(at,1)            == bounds%endc),   errMsg(filename,__LINE__), bstatus)
-       if(bstatus%check_status())return
+
        SHR_ASSERT_ALL((ubound(at,2)            == ubj),   errMsg(filename,__LINE__), bstatus)
-       if(bstatus%check_status())return
+
        SHR_ASSERT_ALL((ubound(bt,1)            == bounds%endc),   errMsg(filename,__LINE__), bstatus)
-       if(bstatus%check_status())return
+
        SHR_ASSERT_ALL((ubound(bt,2)            == ubj),   errMsg(filename,__LINE__), bstatus)
-       if(bstatus%check_status())return
+
        SHR_ASSERT_ALL((ubound(ct,1)            == bounds%endc),   errMsg(filename,__LINE__), bstatus)
-       if(bstatus%check_status())return
+
        SHR_ASSERT_ALL((ubound(ct,2)            == ubj),   errMsg(filename,__LINE__), bstatus)
-       if(bstatus%check_status())return
+
     endif
 
     ! FIXME(bja, 201604) this logic should be moved to initialization
@@ -393,7 +391,6 @@ contains
        botbc_ltype = botbc_type
        if(botbc_type==bndcond_as_conc)then
           SHR_ASSERT_ALL((ubound(condc_botlay)    == (/bounds%endc/)), errMsg(filename,__LINE__), bstatus)
-         if(bstatus%check_status())return
        endif
     else
        botbc_ltype = bndcond_as_flux
@@ -519,34 +516,34 @@ contains
    integer :: kk, fc, c
    call bstatus%reset()
    SHR_ASSERT_ALL((ubound(jtop)              == (/bounds%endc/))       , errMsg(filename,__LINE__), bstatus)
-   if(bstatus%check_status())return
+
    SHR_ASSERT_ALL((ubound(dtime)             == (/bounds%endc/))       , errMsg(filename,__LINE__), bstatus)
-   if(bstatus%check_status())return
+
    SHR_ASSERT_ALL((ubound(update_col)        == (/bounds%endc/))       , errMsg(filename,__LINE__), bstatus)
-   if(bstatus%check_status())return
+
    SHR_ASSERT_ALL((ubound(condc_toplay)      == (/bounds%endc/))       , errMsg(filename,__LINE__), bstatus)
-   if(bstatus%check_status())return
+
    SHR_ASSERT_ALL((ubound(dz)                == (/bounds%endc, ubj/))  , errMsg(filename,__LINE__), bstatus)
-   if(bstatus%check_status())return
+
    SHR_ASSERT_ALL((ubound(Rfactor   )        == (/bounds%endc, ubj/))  , errMsg(filename,__LINE__), bstatus)
-   if(bstatus%check_status())return
+
    SHR_ASSERT_ALL((ubound(hmconductance)     == (/bounds%endc, ubj-1/)), errMsg(filename,__LINE__), bstatus)
-   if(bstatus%check_status())return
+
    SHR_ASSERT_ALL((ubound(source)            == (/bounds%endc, ubj,  ntrcs/)), errMsg(filename,__LINE__), bstatus)
-   if(bstatus%check_status())return
+
    SHR_ASSERT_ALL((ubound(dtracer)           == (/bounds%endc, ubj, ntrcs/)) , errMsg(filename,__LINE__), bstatus)
-   if(bstatus%check_status())return
+
    SHR_ASSERT_ALL((ubound(trcin_mobile)      == (/bounds%endc, ubj, ntrcs/)) , errMsg(filename,__LINE__), bstatus)
-   if(bstatus%check_status())return
+
    SHR_ASSERT_ALL((ubound(bot_flux    )      == (/bounds%endc, 2, ntrcs/))   , errMsg(filename,__LINE__), bstatus)
-   if(bstatus%check_status())return
+
    SHR_ASSERT_ALL((ubound(trc_concflx_air)   == (/bounds%endc, 2, ntrcs/))   , errMsg(filename,__LINE__), bstatus)
-   if(bstatus%check_status())return
+
    !assemble the tridiagonal maxtrix
    if(present(botbc_type))then
 
      SHR_ASSERT_ALL((ubound(condc_botlay)    == (/bounds%endc/)),        errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      call DiffusTransp_gw_tridiag(bounds, bstatus,lbj, ubj, jtop, numfl, filter, ntrcs, trcin_mobile, &
         Rfactor, hmconductance, dtime, dz, source, trc_concflx_air,&
         condc_toplay, topbc_type, bot_flux, update_col, source_only=.false.,&
@@ -604,49 +601,48 @@ contains
 
      call bstatus%reset()
      SHR_ASSERT_ALL((ubound(lbn)           == (/bounds%endc/))       , errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(hmconductance,1) == bounds%endc), errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(hmconductance,2) == ubj-1), errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(dz,1)            == bounds%endc)  , errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(dz,2)            == ubj)  , errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(dtime_col)     == (/bounds%endc/))       , errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(update_col)    == (/bounds%endc/))       , errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(at,1)          == bounds%endc)  , errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(at,2)          == ubj)  , errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(bt,1)         == bounds%endc)  , errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(bt,2)         == ubj)  , errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(ct,1)       == bounds%endc)  , errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(ct,2)       == ubj)  , errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(rt,1)       == bounds%endc)  , errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(rt,2)       == ubj)  , errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(rt,3)       == ntrcs)  , errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(source,1)   == bounds%endc), errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(source,2)   == ubj), errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(source,3)   == ntrcs), errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(trcin,1) == bounds%endc), errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(trcin,2) == ubj), errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((size(trcin,3) == ntrcs), errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
 
      !zero flux is imposed both at the top and bottom boundaries
      !set zero outgoing flux
@@ -729,37 +725,36 @@ contains
      character(len=255) :: subname = 'DiffusTransp_solid'
      call bstatus%reset()
      SHR_ASSERT_ALL((ubound(lbn)           == (/bounds%endc/)),        errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(hmconductance,1) == bounds%endc), errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(hmconductance,2) == ubj-1), errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(dz,1)        == bounds%endc),   errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(dz,2)        == ubj),   errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(update_col)    == (/bounds%endc/)),        errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(dtime_col)     == (/bounds%endc/)),        errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(dtracer,1)    == bounds%endc),   errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(dtracer,2)    == ubj),   errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(dtracer,3)    == ntrcs),   errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(source,1)    == bounds%endc),   errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(source,2)    == ubj),   errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(source,3)   == ntrcs),   errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(trcin,1) == bounds%endc), errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(trcin,2) == ubj), errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((size(trcin,3) == ntrcs), errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
 
      !assemble the tridiagonal matrix
      call Diffustransp_solid_tridiag(bounds, bstatus, lbj, ubj, lbn, numfl, filter, ntrcs, trcin,&
@@ -791,9 +786,8 @@ contains
      character(len=32) :: subname ='calc_col_CFL'
      call bstatus%reset()
      SHR_ASSERT_ALL((ubound(us)         == (/ubj+1/)),        errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(dx)         == (/ubj/)),   errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
 
      cfl = 0._r8
      !the column cfl number is defined as the maximum over the whole domain
@@ -877,55 +871,54 @@ contains
      real(r8), parameter :: tiny_dist=1.e-13_r8
      call bstatus%reset()
      SHR_ASSERT_ALL((ubound(lbn)        == (/bounds%endc/)),         errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(dtime)      == (/bounds%endc/)),         errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(dz,1)       == bounds%endc),    errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(dz,2)       == ubj),    errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(update_col) == (/bounds%endc/)),  errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(us,1)       == bounds%endc),    errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(us,2)       == ubj),    errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(zi,1)      == bounds%endc),    errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(zi,2)      == ubj),    errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(inflx_top,1)  == bounds%endc),  errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(inflx_top,2)  == ntrcs),  errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(inflx_bot,1)  == bounds%endc),  errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(inflx_bot,2)  == ntrcs),  errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(trc_bot,1)    == bounds%endc),  errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(trc_bot,2)    == ntrcs),  errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(leaching_mass,1)  == bounds%endc), errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(leaching_mass,2)  == ntrcs), errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(seep_mass,1)  == bounds%endc), errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(seep_mass,2)  == ntrcs), errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(trcou,1)      == bounds%endc),    errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(trcou,2)      == ubj),    errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(trcou,3)      == ntrcs),    errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(trcin,1) == bounds%endc), errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(trcin,2) == ubj), errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((size(trcin,3) == ntrcs), errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
 
 !x     nullify(Extra_inst)
 
@@ -1165,9 +1158,8 @@ contains
 
      call bstatus%reset()
      SHR_ASSERT_ALL((size(zi)        == size(us)),     errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((size(zi)        == size(zold)+4), errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
 
      nullify(Extra_inst)
 

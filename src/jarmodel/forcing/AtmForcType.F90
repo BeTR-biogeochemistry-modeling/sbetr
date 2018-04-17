@@ -19,6 +19,7 @@ implicit none
     real(r8) :: n2o_ppmv
     real(r8) :: no_ppmv
     real(r8) :: nh3_ppmv
+    real(r8) :: ra           !aerodynamic resistance
   contains
     procedure, public :: init
   end type atm_forc_type
@@ -37,5 +38,6 @@ contains
   this%n2o_ppmv= 250.e-3_r8
   this%nh3_ppmv= 0._r8
   this%no_ppmv = 0._r8
+  this%ra      = 0._r8
   end subroutine init
 end module AtmForcType

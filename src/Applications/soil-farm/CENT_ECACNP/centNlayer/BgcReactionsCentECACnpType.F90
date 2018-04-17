@@ -1164,7 +1164,7 @@ contains
 
     call betr_status%reset()
     SHR_ASSERT_ALL((ubound(dz_top)  == (/bounds%endc/)),   errMsg(mod_filename,__LINE__),betr_status)
-    if(betr_status%check_status())return
+
     if (this%dummy_compiler_warning) continue
     associate(                                       &
          groupid  => betrtracer_vars%groupid    ,    &
@@ -1270,7 +1270,6 @@ contains
     character(len=5) :: laystr
     call betr_status%reset()
     SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__),betr_status)
-    if(betr_status%check_status())return
 
     if(betrtracer_vars%debug)call this%debug_info(bounds, num_soilc, filter_soilc, col%dz(bounds%begc:bounds%endc,bounds%lbj:bounds%ubj),&
         betrtracer_vars, tracerstate_vars,  'before bgcreact', betr_status)
@@ -1320,7 +1319,7 @@ contains
           plant_soilbgc%plant_minn_active_yield_flx_col(c)=plant_soilbgc%plant_minn_active_yield_flx_col(c) + &
              (plant_soilbgc%plant_minn_no3_active_yield_flx_vr_col(c,j) + &
               plant_soilbgc%plant_minn_nh4_active_yield_flx_vr_col(c,j))*col%dz(c,j)
-          
+
           plant_soilbgc%plant_minp_active_yield_flx_col(c)=  plant_soilbgc%plant_minp_active_yield_flx_col(c) + &
             plant_soilbgc%plant_minp_active_yield_flx_vr_col(c,j) * col%dz(c,j)
         end select
@@ -1491,7 +1490,7 @@ contains
 
     call betr_status%reset()
     SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__),betr_status)
-    if(betr_status%check_status())return
+
     if (this%dummy_compiler_warning) continue
   end subroutine do_tracer_equilibration
 
@@ -1690,7 +1689,7 @@ contains
   )
   call betr_status%reset()
   SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__),betr_status)
-  if(betr_status%check_status())return
+
   do j = lbj, ubj
     do fc = 1, num_soilc
       c = filter_soilc(fc)
@@ -2355,7 +2354,7 @@ contains
 
    call betr_status%reset()
    SHR_ASSERT_ALL((ubound(dzsoi)  == (/bounds%endc, bounds%ubj/)),   errMsg(mod_filename,__LINE__),betr_status)
-   if(betr_status%check_status())return
+
    return
    write(*,*)trim(header)//': debug info c n p mass'
 
@@ -2511,7 +2510,6 @@ contains
 
     call betr_status%reset()
     SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__),betr_status)
-    if(betr_status%check_status())return
 
     c_loc=this%centurybgc_index%c_loc
     n_loc=this%centurybgc_index%n_loc

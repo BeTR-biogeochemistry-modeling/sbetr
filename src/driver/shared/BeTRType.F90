@@ -500,7 +500,7 @@ contains
 
     call betr_status%reset()
     SHR_ASSERT_ALL((ubound(jtops)  == (/bounds%endc/)), errMsg(filename,__LINE__), betr_status)
-    if(betr_status%check_status())return
+
     associate(                                                                         & !
          ngwmobile_tracers     => this%tracers%ngwmobile_tracers         ,             & !
          groupid               => this%tracers%groupid                    ,            & !
@@ -1052,11 +1052,11 @@ contains
 
    call bstatus%reset()
    SHR_ASSERT_ALL((ubound(divide_matrix ,1)  == bounds%endc)  , errMsg(filename,__LINE__), bstatus)
-   if(bstatus%check_status())return
+
    SHR_ASSERT_ALL((ubound(divide_matrix ,2)  == nlevsno)      , errMsg(filename,__LINE__), bstatus)
-   if(bstatus%check_status())return
+
    SHR_ASSERT_ALL((ubound(divide_matrix ,3)  == nlevsno)      , errMsg(filename,__LINE__), bstatus)
-   if(bstatus%check_status())return
+
    associate(                                                                           &
       tracer_conc_frozen_col        => this%tracerstates%tracer_conc_frozen_col ,       &
       tracer_conc_mobile_col        => this%tracerstates%tracer_conc_mobile_col ,       &
@@ -1122,11 +1122,10 @@ contains
 
    call bstatus%reset()
    SHR_ASSERT_ALL((ubound(combine_matrix,1) == bounds%endc)  , errMsg(filename,__LINE__),bstatus)
-   if(bstatus%check_status())return
+
    SHR_ASSERT_ALL((ubound(combine_matrix,2) == 1)            , errMsg(filename,__LINE__),bstatus)
-   if(bstatus%check_status())return
+
    SHR_ASSERT_ALL((ubound(combine_matrix,3) == 1)            , errMsg(filename,__LINE__),bstatus)
-   if(bstatus%check_status())return
 
    associate(                                                                           &
       tracer_conc_frozen_col        => this%tracerstates%tracer_conc_frozen_col ,       &

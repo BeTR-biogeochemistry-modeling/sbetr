@@ -124,7 +124,6 @@ contains
 
   if(present(hrfreq))then
     SHR_ASSERT_ALL((size(varlist)   == size(hrfreq)), errMsg(mod_filename,__LINE__))
-
   endif
 
   do n = 1, nclocks

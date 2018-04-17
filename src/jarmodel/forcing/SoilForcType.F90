@@ -11,6 +11,7 @@ implicit none
   real(r8) :: temp                   !temperature
   real(r8) :: h2osoi_vol             !volumetric soil moisture, [m3/m3]
   real(r8) :: h2osoi_liq             !liquid water content, [kg/m2]
+  real(r8) :: h2osoi_liqvol          !volumetric liquid water content, [m3/m3]
   real(r8) :: air_vol                !volumetric air, [m3/m3]
   real(r8) :: finundated             !innudated fraction of the soil, [none]
   real(r8) :: soilpsi                !soilwater pontential  [MPa], positive
@@ -27,9 +28,13 @@ implicit none
   real(r8) :: pH                     ! soil pH
   real(r8) :: hksat                  ! saturated hydraulic conductivity of mineral soil, [mm/s]
   real(r8) :: hk                     ! hydraulic conductivity [mm/s]
+  real(r8) :: Diff_Darcy             ! Darcy diffusivity [m2/s]
+  real(r8) :: tauaqu                 ! aqueous tortuosity
+  real(r8) :: taugas                 ! gaseous tortuosity
   contains
-    procedure, public :: init
-    procedure, public :: update
+    procedure, public  :: init
+    procedure, private :: get_tortuosity
+    procedure, public  :: update
   end type soil_forc_type
 
 
@@ -44,13 +49,28 @@ contains
   real(r8) :: om_frac
   real(r8), parameter :: organic_max = 160._r8
 
-
   om_frac= (this%cellorg/organic_max)**2._r8
+
   call set_soil_hydro_property(this%pct_sand, this%pct_clay, om_frac, this%depz, this%bd, &
        this%watsat,this%bsw, this%sucsat, this%hksat)
 
-
   end subroutine init
+  !-----------------------------------------------------------------------
+
+  subroutine get_tortuosity(this)
+
+  implicit none
+  class(soil_forc_type), intent(inout) :: this
+
+  real(r8) :: ice_vol
+  real(r8) :: eff_por
+
+  ice_vol = max(this%h2osoi_vol-this%h2osoi_liqvol,0._r8)
+  eff_por = this%watsat-ice_vol
+
+  this%taugas = (this%air_vol/eff_por)**(3._r8/this%bsw)*this%air_vol
+  this%tauaqu = (min(this%h2osoi_liqvol/eff_por,1._r8))**(this%bsw/3._r8-1._r8)*this%h2osoi_liqvol
+  end subroutine get_tortuosity
 
   !-----------------------------------------------------------------------
 
@@ -58,26 +78,34 @@ contains
 
   use betr_varcon , only : grav => bgrav
   use betr_varcon , only : hfus => bhfus,tfrz => btfrz
+  use betr_varcon , only : denh2o  => bdenh2o
   implicit none
   class(soil_forc_type), intent(inout) :: this
 
   real(r8), parameter :: e_ice=6._r8
-  real(r8) :: h2oliq_vol, icefrac
+  real(r8) :: icefrac
   real(r8) :: s, imped
+  real(r8) :: dsmpds
 
-  h2oliq_vol = this%h2osoi_liq/this%dzsoi
-  s= max(h2oliq_vol/this%watsat,1.e-3_r8)
-  icefrac = (this%h2osoi_vol-h2oliq_vol)/this%watsat
+  this%h2osoi_liqvol = this%h2osoi_liq/(denh2o*this%dzsoi)
+
+  s= max(this%h2osoi_liqvol/this%watsat,1.e-3_r8)
+  icefrac = (this%h2osoi_vol-this%h2osoi_liqvol)/this%watsat
   imped = 10._r8**(-e_ice*icefrac)
 
   call soil_hk(this%hksat, imped, s, this%bsw, this%hk)
 
   if(this%temp<tfrz)then
     this%soilpsi = -hfus*(tfrz-this%temp)/(grav*this%temp) * 1000._r8   ![mm]
+    dsmpds = 0._r8
   else
-    call soil_suction(this%sucsat, s, this%bsw, this%soilpsi)
+    call soil_suction(this%sucsat, s, this%bsw, this%soilpsi, dsmpds)
   endif
   this%soilpsi = max(this%soilpsi * grav*1.e-6_r8, -15._r8)
+  !Darcy diffusivity in m2/s
+  this%Diff_Darcy = this%hk*dsmpds/this%watsat * 1.e-6_r8
+
+  call this%get_tortuosity()
   end subroutine update
   !-----------------------------------------------------------------------
   subroutine set_soil_hydro_property(sand, clay, om_frac, zsoi, bd, watsat, bsw, sucsat, hksat)
@@ -142,8 +170,6 @@ contains
 
   end subroutine set_soil_hydro_property
 
-
-
   !-----------------------------------------------------------------------
   subroutine soil_hk(hksat, imped, s, bsw, hk, dhkds)
     !
@@ -204,5 +230,7 @@ contains
     endif
 
   end subroutine soil_suction
+
+
 
 end module SoilForcType

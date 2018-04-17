@@ -156,16 +156,17 @@ contains
   end subroutine load_forc_const
   !--------------------------------------------------------------------
 
-  subroutine load_forc_transient(om_forc, atm_forc, soil_forc, nstep)
+  subroutine load_forc_transient(om_forc, nut_forc, atm_forc, soil_forc, nstep)
 
   !DESCRIPTION
   !load transient forcing data
   use SoilForcType, only : soil_forc_type
   use AtmForcType , only : atm_forc_type
   use OMForcType  , only : om_forc_type
-
+  use NutForcType , only : nut_forc_type
   implicit none
   type(om_forc_type), intent(inout) :: om_forc
+  type(nut_forc_type), intent(inout):: nut_forc
   type(atm_forc_type), intent(inout):: atm_forc
   type(soil_forc_type),intent(inout):: soil_forc
   integer, intent(in) :: nstep
@@ -182,14 +183,17 @@ contains
   soil_forc%air_vol    = max(forc_data%air_vol(rec),0._r8)
   soil_forc%temp       = forc_data%temp(rec)
   soil_forc%finundated = forc_data%finudated(rec)
-
+  call soil_forc%update()
 
   om_forc%cflx_input_litr_met = 1.e-8_r8
-  om_forc%cflx_input_litr_cel = 0._r8
-  om_forc%cflx_input_litr_lig = 0._r8
-  om_forc%cflx_input_litr_cwd = 0._r8
+  om_forc%cflx_input_litr_cel = 1.e-8_r8
+  om_forc%cflx_input_litr_lig = 1.e-8_r8
+  om_forc%cflx_input_litr_cwd = 1.e-8_r8
   om_forc%cflx_input_litr_fwd = 0._r8
   om_forc%cflx_input_litr_lwd = 0._r8
+  nut_forc%sflx_minn_input_nh4= 1.e-10_r8
+  nut_forc%sflx_minn_input_no3= 0._r8
+  nut_forc%sflx_minp_input_po4= 1.e-12_r8
 
 !  print*,'patm=',atm_forc%patm_pascal
 !  print*,'air_temp=',atm_forc%air_temp
@@ -199,7 +203,5 @@ contains
 !  print*,'inudated=',soil_forc%finundated
 
   end subroutine load_forc_transient
-
-
 
 end module ForcDataType

@@ -151,7 +151,7 @@ module PlantSoilBgcCnpType
 
   call betr_status%reset()
   SHR_ASSERT_ALL((ubound(dz)==(/bounds%endc,ubj/)), errMsg(filename,__LINE__), betr_status)
-  if(betr_status%check_status())return
+
   associate(                                                                &
     tracer_flx_vtrans_patch  => tracerflux_vars%tracer_flx_vtrans_patch   , &
     id_trc_no3x  => betrtracer_vars%id_trc_no3x, &

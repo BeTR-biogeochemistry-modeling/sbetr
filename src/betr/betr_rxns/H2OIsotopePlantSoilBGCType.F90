@@ -98,7 +98,6 @@ module H2OIsotopePlantSoilBGCType
 
   call betr_status%reset()
   SHR_ASSERT_ALL((ubound(dz)==(/bounds%endc,ubj/)), errMsg(mod_filename,__LINE__), betr_status)
-  if(betr_status%check_status())return
 
   ! remove compiler warnings for unused dummy args
   if (this%dummy_compiler_warning)                       continue
