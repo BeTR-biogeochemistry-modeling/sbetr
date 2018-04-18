@@ -26,15 +26,6 @@ implicit none
     !some of the parameters will be read through the interface
     real(r8), pointer :: km_minsurf_p_vr_col(:,:)
     real(r8), pointer :: km_minsurf_nh4_vr_col(:,:)
-    real(r8), pointer :: km_decomp_nh4_vr_col(:,:)
-    real(r8), pointer :: km_decomp_no3_vr_col(:,:)
-    real(r8), pointer :: km_decomp_p_vr_col(:,:)
-    real(r8), pointer :: km_nit_nh4_vr_col(:,:)
-    real(r8), pointer :: km_den_no3_vr_col(:,:)
-    real(r8), pointer :: decomp_eff_ncompet_b_vr_col(:,:)
-    real(r8), pointer :: decomp_eff_pcompet_b_vr_col(:,:)
-    real(r8), pointer :: den_eff_ncompet_b_vr_col(:,:)
-    real(r8), pointer :: nit_eff_ncompet_b_vr_col(:,:)
   contains
     procedure, public  :: Init
     procedure, public  :: InitAllocate
@@ -78,15 +69,6 @@ implicit none
      allocate(this%minsurf_p_compet_vr_col(begc:endc,1:ubj)); this%minsurf_p_compet_vr_col(:,:) = nan
      allocate(this%km_minsurf_p_vr_col(begc:endc,1:ubj)); this%km_minsurf_p_vr_col(:,:) = nan
      allocate(this%km_minsurf_nh4_vr_col(begc:endc,1:ubj)); this%km_minsurf_nh4_vr_col(:,:) = nan
-     allocate(this%km_decomp_nh4_vr_col(begc:endc, 1:ubj)); this%km_decomp_nh4_vr_col(:,:) = nan
-     allocate(this%km_decomp_no3_vr_col(begc:endc,1:ubj)); this%km_decomp_no3_vr_col(:,:) = nan
-     allocate(this%km_decomp_p_vr_col(begc:endc,1:ubj)); this%km_decomp_p_vr_col(:,:) = nan
-     allocate(this%km_nit_nh4_vr_col(begc:endc,1:ubj)); this%km_nit_nh4_vr_col(:,:) = nan
-     allocate(this%km_den_no3_vr_col(begc:endc,1:ubj)); this%km_den_no3_vr_col(:,:) = nan
-     allocate(this%decomp_eff_ncompet_b_vr_col(begc:endc,1:ubj)); this%decomp_eff_ncompet_b_vr_col(:,:)=nan
-     allocate(this%decomp_eff_pcompet_b_vr_col(begc:endc,1:ubj)); this%decomp_eff_pcompet_b_vr_col(:,:)=nan
-     allocate(this%den_eff_ncompet_b_vr_col(begc:endc,1:ubj)); this%den_eff_ncompet_b_vr_col(:,:)=nan
-     allocate(this%nit_eff_ncompet_b_vr_col(begc:endc,1:ubj)); this%nit_eff_ncompet_b_vr_col(:,:)=nan
 
     end subroutine InitAllocate
     !------------------------------------------------------------------------

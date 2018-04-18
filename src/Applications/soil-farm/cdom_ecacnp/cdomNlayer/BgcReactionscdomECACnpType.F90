@@ -401,22 +401,13 @@ contains
     enddo
     !affinity parameters
     !decompoers
-!    this%cdomeca(c_l,j)%competECA%kaff_minn_nh4_mic= plantNutkinetics%km_decomp_nh4_vr_col(c_l,j)
-!    this%cdomeca(c_l,j)%competECA%kaff_minn_no3_mic= plantNutkinetics%km_decomp_no3_vr_col(c_l,j)
-!    this%cdomeca(c_l,j)%competECA%kaff_minp_mic=  plantNutkinetics%km_decomp_p_vr_col(c_l,j)
 
     !nitrofiers and denitrifiers
-!    this%cdomeca(c_l,j)%competECA%kaff_minn_nh4_nit= plantNutkinetics%km_nit_nh4_vr_col(c_l,j)
-!    this%cdomeca(c_l,j)%competECA%kaff_minn_no3_den= plantNutkinetics%km_den_no3_vr_col(c_l,j)
     !mineral surfaces
     this%cdomeca(c_l,j)%competECA%kaff_minn_nh4_msurf= plantNutkinetics%km_minsurf_nh4_vr_col(c_l,j)   !this is ignored at this moment
     this%cdomeca(c_l,j)%competECA%kaff_minp_msurf= plantNutkinetics%km_minsurf_p_vr_col(c_l,j)
 
     !effective p competing decomposers
-    this%cdomeca(c_l,j)%competECA%compet_bn_mic = plantNutkinetics%decomp_eff_ncompet_b_vr_col(c_l,j)
-    this%cdomeca(c_l,j)%competECA%compet_bp_mic = plantNutkinetics%decomp_eff_pcompet_b_vr_col(c_l,j)
-    this%cdomeca(c_l,j)%competECA%compet_bn_den = plantNutkinetics%den_eff_ncompet_b_vr_col(c_l,j)
-    this%cdomeca(c_l,j)%competECA%compet_bn_nit = plantNutkinetics%nit_eff_ncompet_b_vr_col(c_l,j)
 
     this%centuryforc(c_l,j)%msurf_nh4 = plantNutkinetics%minsurf_nh4_compet_vr_col(c_l,j)   !this  number needs update
     this%centuryforc(c_l,j)%msurf_minp= plantNutkinetics%minsurf_p_compet_vr_col(c_l,j)    !this  number needs update
