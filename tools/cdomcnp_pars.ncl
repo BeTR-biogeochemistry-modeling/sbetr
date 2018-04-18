@@ -85,8 +85,11 @@ begin
   filevardef(fout,"minp_secondary_decay","float",(/pfts!0/))
   filevardef(fout,"k_decay_dom","float",(/allpfts!0/))
   filevardef(fout,"km_mic_som","float",(/allpfts!0/))
-
-
+  filevardef(fout,"km_decomp_nh4","float",(/allpfts!0/))
+  filevardef(fout,"km_decomp_no3","float",(/allpfts!0/))
+  filevardef(fout,"km_decomp_p","float",(/allpfts!0/))
+  filevardef(fout,"km_den","float",(/allpfts!0/))
+  filevardef(fout,"km_nit","float",(/allpfts!0/))
 
 ;---define variable attributes
 
@@ -256,6 +259,26 @@ begin
    fatt@units = "none"
    filevarattdef(fout,"nitrif_n2o_loss_frac", fatt)
 
+   fatt@long_name="NH4 affinity for nitrification"
+   fatt@units = "g N/m3"
+   filevarattdef(fout,"km_nit", fatt)
+
+   fatt@long_name="NO3 affinity for denitrification"
+   fatt@units = "g N/m3"
+   filevarattdef(fout,"km_den", fatt)
+
+   fatt@long_name="NH4 affinity for decomposition"
+   fatt@units = "g N/m3"
+   filevarattdef(fout,"km_decomp_nh4", fatt)
+
+   fatt@long_name="NO3 affinity for decomposition"
+   fatt@units = "g N/m3"
+   filevarattdef(fout,"km_decomp_no3", fatt)
+
+   fatt@long_name="P affinity for decomposition"
+   fatt@units = "g P/m3"
+   filevarattdef(fout,"km_decomp_p", fatt)
+
 ;   if (False) then
    fout->cwd_fcel=(/0.76/)
    fout->cwd_flig=(/0.26/)
@@ -321,6 +344,11 @@ begin
                                   1.e-11,1.e-11,1.e-11,1.e-11,1.e-11,1.e-11,\
                                   1.e-11,1.e-11,1.e-11,1.e-11,1.e-11,1.e-11,\
                                   1.e-11/)
+   fout->km_nit = (/0.76/)
+   fout->km_den = (/0.11/)
+   fout->km_decomp_nh4 = (/0.18/)
+   fout->km_decomp_no3 = (/0.41/)
+   fout->km_decomp_p   = (/0.2/)
 ;   end if
    delete(fout)
    end_write_time = get_cpu_time()

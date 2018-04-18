@@ -75,6 +75,11 @@ implicit none
   real(r8) :: init_cc13_pom
   real(r8) :: init_cc13_humus
   real(r8) :: init_cc13_dom
+  real(r8) :: km_decomp_no3
+  real(r8) :: km_decomp_nh4
+  real(r8) :: km_decomp_p
+  real(r8) :: km_den
+  real(r8) :: km_nit
  contains
    procedure, public  :: Init => cdompara_init
    procedure, public  :: readPars => cdompara_readPars
@@ -137,7 +142,7 @@ contains
   end subroutine InitAllocate
   !--------------------------------------------------------------------
   subroutine set_defpar_default(this)
-
+  use tracer_varcon      , only : natomw,patomw
   use bshr_const_mod  , only : year_sec=>SHR_CONST_YEARSECS
   implicit none
   class(cdomPara_type), intent(inout) :: this
@@ -235,6 +240,12 @@ contains
   this%init_cn_pom = 11._r8  !mass based
   this%init_cn_humus = 11._r8  !mass based
   this%init_cn_dom  = 8._r8
+
+  this%km_decomp_no3 = 0.41_r8/natomw
+  this%km_decomp_nh4 = 0.18_r8/natomw
+  this%km_decomp_p   = 0.2_r8/patomw
+  this%km_den        = 0.11_r8/natomw
+  this%km_nit        = 0.76_r8/natomw
 
   end subroutine set_defpar_default
 
@@ -473,6 +484,36 @@ contains
   if(bstatus%check_status())return
   this%km_mic_som=tempr(1)
 
+  tString='km_den'
+  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
+  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
+  if(bstatus%check_status())return
+  this%km_den=tempr(1)
+
+  tString='km_nit'
+  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
+  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
+  if(bstatus%check_status())return
+  this%km_nit=tempr(1)
+
+  tString='km_decomp_nh4'
+  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
+  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
+  if(bstatus%check_status())return
+  this%km_decomp_nh4=tempr(1)
+
+  tString='km_decomp_no3'
+  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
+  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
+  if(bstatus%check_status())return
+  this%km_decomp_no3=tempr(1)
+
+  tString='km_decomp_p'
+  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
+  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
+  if(bstatus%check_status())return
+  this%km_decomp_p=tempr(1)
+
 !   the following are purposely commented out to use default parameters from century, Jinyun Tang, Feb 21, 2018
 
   this%k_decay_lmet(1:2)  = this%k_decay_lmet(1:2) /year_sec    !1/second
@@ -535,7 +576,11 @@ contains
   print*,'rij_kro_delta        =',this%rij_kro_delta
   print*,'surface_tension_water=',this%surface_tension_water
 
-
+  print*,'km_den = ', this%km_den
+  print*,'km_nit = ', this%km_nit
+  print*,'km_decomp_nh4=', this%km_decomp_nh4
+  print*,'km_decomp_no3=', this%km_decomp_no3
+  print*,'km_decomp_p  =', this%km_decomp_p
   end subroutine cdompara_printPars
 
 !--------------------------------------------------------------------

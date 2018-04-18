@@ -66,6 +66,11 @@ implicit none
   real(r8) :: init_cc13_som2
   real(r8) :: init_cc13_som3
   real(r8) :: c14decay_const
+  real(r8) :: km_decomp_no3
+  real(r8) :: km_decomp_nh4
+  real(r8) :: km_decomp_p
+  real(r8) :: km_den
+  real(r8) :: km_nit
   real(r8), pointer :: spinup_factor(:)
  contains
    procedure, public  :: Init => centpara_init
@@ -130,6 +135,7 @@ contains
   !--------------------------------------------------------------------
   subroutine set_defpar_default(this)
 
+  use tracer_varcon      , only : natomw,patomw
   use bshr_const_mod  , only : year_sec=>SHR_CONST_YEARSECS
   implicit none
   class(CentPara_type), intent(inout) :: this
@@ -206,7 +212,7 @@ contains
   this%surface_tension_water = 73.e-3_r8  ! (J/m^2), Arah and Vinten, 1995
   this%minpsi_bgc            = -10._r8    ! M Pa
   this%k_m_o2_bgc            = 0.22_r8
-  this%k_nitr_max            = 1.1574074e-06_r8 
+  this%k_nitr_max            = 1.1574074e-06_r8
   this%init_cp_som1 = 110._r8 !mass based
   this%init_cp_som2 = 320._r8 !mass based
   this%init_cp_som3 = 114._r8 !mass based
@@ -221,6 +227,12 @@ contains
   this%init_cc13_som1= 0._r8
   this%init_cc13_som2= 0._r8
   this%init_cc13_som3= 0._r8
+
+  this%km_decomp_no3 = 0.41_r8/natomw
+  this%km_decomp_nh4 = 0.18_r8/natomw
+  this%km_decomp_p   = 0.2_r8/patomw
+  this%km_den        = 0.11_r8/natomw
+  this%km_nit        = 0.76_r8/natomw
 
   end subroutine set_defpar_default
 
@@ -448,6 +460,36 @@ contains
   if(bstatus%check_status())return
   this%k_nitr_max=tempr(1)
 
+  tString='km_den'
+  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
+  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
+  if(bstatus%check_status())return
+  this%km_den=tempr(1)
+
+  tString='km_nit'
+  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
+  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
+  if(bstatus%check_status())return
+  this%km_nit=tempr(1)
+
+  tString='km_decomp_nh4'
+  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
+  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
+  if(bstatus%check_status())return
+  this%km_decomp_nh4=tempr(1)
+
+  tString='km_decomp_no3'
+  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
+  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
+  if(bstatus%check_status())return
+  this%km_decomp_no3=tempr(1)
+
+  tString='km_decomp_p'
+  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
+  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
+  if(bstatus%check_status())return
+  this%km_decomp_p=tempr(1)
+
 !   the following are purposely commented out to use default parameters from century, Jinyun Tang, Feb 21, 2018
   this%k_decay_lit1(1:2)  = this%k_decay_lit1(1:2) /year_sec    !1/second
   this%k_decay_lit2(1:2)  = this%k_decay_lit2(1:2) /year_sec    !1/second
@@ -537,8 +579,13 @@ contains
   print*,'init_cp_som3=',this%init_cp_som3
   print*,'init_cn_som1=',this%init_cn_som1
   print*,'init_cn_som2=',this%init_cn_som2
-  print*,'init_cn_som3=',this%init_cn_som3 
+  print*,'init_cn_som3=',this%init_cn_som3
 
+  print*,'km_den = ', this%km_den
+  print*,'km_nit = ', this%km_nit
+  print*,'km_decomp_nh4=', this%km_decomp_nh4
+  print*,'km_decomp_no3=', this%km_decomp_no3
+  print*,'km_decomp_p  =', this%km_decomp_p
   end subroutine centpara_printPars
 
 end module CentParaType
