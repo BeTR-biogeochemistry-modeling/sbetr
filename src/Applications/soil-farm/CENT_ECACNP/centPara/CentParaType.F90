@@ -71,6 +71,10 @@ implicit none
   real(r8) :: km_decomp_p
   real(r8) :: km_den
   real(r8) :: km_nit
+  real(r8) :: vmax_decomp_n
+  real(r8) :: vmax_decomp_p
+  real(r8) :: vmax_den
+  real(r8) :: vmax_nit
   real(r8), pointer :: spinup_factor(:)
  contains
    procedure, public  :: Init => centpara_init
@@ -234,6 +238,10 @@ contains
   this%km_den        = 0.11_r8/natomw
   this%km_nit        = 0.76_r8/natomw
 
+  this%vmax_decomp_n= 5.e-3_r8/3600._r8  ! 1/s
+  this%vmax_decomp_p  = 1.e-3_r8/3600._r8  ! 1/s
+  this%vmax_den = 1.8_r8 /86400._r8     ! 1/s
+  this%vmax_nit = 0.67_r8/86400._r8     ! 1/s
   end subroutine set_defpar_default
 
 
@@ -272,6 +280,7 @@ contains
   use BetrStatusType  , only : betr_status_type
   use betr_ctrl       , only : betr_spinup_state
   use bshr_const_mod  , only : year_sec=>SHR_CONST_YEARSECS
+  use tracer_varcon   , only : natomw,patomw
   implicit none
   class(CentPara_type), intent(inout) :: this
   type(file_desc_t)    , intent(inout)  :: ncid  ! pio netCDF file id
@@ -464,31 +473,56 @@ contains
   call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
   if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
   if(bstatus%check_status())return
-  this%km_den=tempr(1)
+  this%km_den=tempr(1)/natomw
 
   tString='km_nit'
   call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
   if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
   if(bstatus%check_status())return
-  this%km_nit=tempr(1)
+  this%km_nit=tempr(1)/natomw
 
   tString='km_decomp_nh4'
   call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
   if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
   if(bstatus%check_status())return
-  this%km_decomp_nh4=tempr(1)
+  this%km_decomp_nh4=tempr(1)/natomw
 
   tString='km_decomp_no3'
   call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
   if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
   if(bstatus%check_status())return
-  this%km_decomp_no3=tempr(1)
+  this%km_decomp_no3=tempr(1)/natomw
 
   tString='km_decomp_p'
   call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
   if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
   if(bstatus%check_status())return
-  this%km_decomp_p=tempr(1)
+  this%km_decomp_p=tempr(1)/patomw
+
+  tString='vmax_decomp_n'
+  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
+  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
+  if(bstatus%check_status())return
+  this%vmax_decomp_n=tempr(1)/3600._r8
+
+  tString='vmax_decomp_p'
+  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
+  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
+  if(bstatus%check_status())return
+  this%vmax_decomp_p=tempr(1)/3600._r8
+
+  tString='vmax_den'
+  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
+  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
+  if(bstatus%check_status())return
+  this%vmax_den=tempr(1)
+
+  tString='vmax_nit'
+  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
+  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
+  if(bstatus%check_status())return
+  this%vmax_nit=tempr(1)
+
 
 !   the following are purposely commented out to use default parameters from century, Jinyun Tang, Feb 21, 2018
   this%k_decay_lit1(1:2)  = this%k_decay_lit1(1:2) /year_sec    !1/second
@@ -586,6 +620,10 @@ contains
   print*,'km_decomp_nh4=', this%km_decomp_nh4
   print*,'km_decomp_no3=', this%km_decomp_no3
   print*,'km_decomp_p  =', this%km_decomp_p
+  print*,'vmax_decomp_p=', this%vmax_decomp_p
+  print*,'vmax_decomp_n=', this%vmax_decomp_n
+  print*,'vmax_den=', this%vmax_den
+  print*,'vmax_nit=', this%vmax_nit
   end subroutine centpara_printPars
 
 end module CentParaType

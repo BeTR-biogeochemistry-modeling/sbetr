@@ -33,10 +33,10 @@ module BgcReactionsCentECACnpType
   !
   ! !USES:
   !
-  use bshr_log_mod           , only : errMsg => shr_log_errMsg
-  use bshr_kind_mod          , only : r8 => shr_kind_r8
-  use bshr_infnan_mod        , only : nan => shr_infnan_nan, assignment(=)
-  use BeTR_decompMod         , only : bounds_type  => betr_bounds_type
+  use bshr_log_mod          , only : errMsg => shr_log_errMsg
+  use bshr_kind_mod         , only : r8 => shr_kind_r8
+  use bshr_infnan_mod       , only : nan => shr_infnan_nan, assignment(=)
+  use BeTR_decompMod        , only : bounds_type  => betr_bounds_type
   use BGCReactionsMod       , only : bgc_reaction_type
   use betr_varcon           , only : spval => bspval, ispval => bispval
   use tracer_varcon         , only : bndcond_as_conc, bndcond_as_flux
@@ -45,7 +45,6 @@ module BgcReactionsCentECACnpType
   use BetrStatusType        , only : betr_status_type
   use BgcCentCnpIndexType   , only : centurybgc_index_type
   use CentParaType          , only : cent_para
-  use BetrStatusType        , only : betr_status_type
   implicit none
 
   save
@@ -402,13 +401,13 @@ contains
     enddo
     !affinity parameters
     !decompoers
-    this%centuryeca(c_l,j)%competECA%kaff_minn_nh4_mic= plantNutkinetics%km_decomp_nh4_vr_col(c_l,j)
-    this%centuryeca(c_l,j)%competECA%kaff_minn_no3_mic= plantNutkinetics%km_decomp_no3_vr_col(c_l,j)
-    this%centuryeca(c_l,j)%competECA%kaff_minp_mic=  plantNutkinetics%km_decomp_p_vr_col(c_l,j)
+!    this%centuryeca(c_l,j)%competECA%kaff_minn_nh4_mic= plantNutkinetics%km_decomp_nh4_vr_col(c_l,j)
+!    this%centuryeca(c_l,j)%competECA%kaff_minn_no3_mic= plantNutkinetics%km_decomp_no3_vr_col(c_l,j)
+!    this%centuryeca(c_l,j)%competECA%kaff_minp_mic=  plantNutkinetics%km_decomp_p_vr_col(c_l,j)
 
     !nitrofiers and denitrifiers
-    this%centuryeca(c_l,j)%competECA%kaff_minn_nh4_nit= plantNutkinetics%km_nit_nh4_vr_col(c_l,j)
-    this%centuryeca(c_l,j)%competECA%kaff_minn_no3_den= plantNutkinetics%km_den_no3_vr_col(c_l,j)
+!    this%centuryeca(c_l,j)%competECA%kaff_minn_nh4_nit= plantNutkinetics%km_nit_nh4_vr_col(c_l,j)
+!    this%centuryeca(c_l,j)%competECA%kaff_minn_no3_den= plantNutkinetics%km_den_no3_vr_col(c_l,j)
     !mineral surfaces
     this%centuryeca(c_l,j)%competECA%kaff_minn_nh4_msurf= plantNutkinetics%km_minsurf_nh4_vr_col(c_l,j)   !this is ignored at this moment
     this%centuryeca(c_l,j)%competECA%kaff_minp_msurf= plantNutkinetics%km_minsurf_p_vr_col(c_l,j)

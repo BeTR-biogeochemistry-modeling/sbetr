@@ -194,6 +194,8 @@ contains
   integer :: sr
   character(len=256) :: msg
 
+  call bstatus%reset()
+
   select type(biogeo_con)
   type is(CentPara_type)
 
@@ -218,8 +220,8 @@ contains
     call this%censom%UpdateParas(this%centurybgc_index, biogeo_con)
 
     call this%decompkf_eca%UpdateParas(biogeo_con)
+
   class default
-    call bstatus%reset()
     write(msg,'(A)')'Wrong parameter type passed in for UpdateParas in ' &
       // errMsg(mod_filename,__LINE__)
     call bstatus%set_msg(msg,err=-1)
@@ -257,13 +259,14 @@ contains
 
     call this%nitden%Init(biogeo_con)
 
-    call this%competECA%Init()
-
+    call this%competECA%Init(biogeo_con, bstatus)
+    if(bstatus%check_status())return
     this%use_c13 = biogeo_con%use_c13
 
     this%use_c14 = biogeo_con%use_c14
 
     call this%UpdateParas(biogeo_con, bstatus)
+    if(bstatus%check_status())return
   class default
     call bstatus%reset()
     write(msg,'(A)')'Wrong parameter type passed in for init_ecacnp in ' &
@@ -855,6 +858,8 @@ contains
   this%ystates0(lid_co2_hr) = 0._r8
   this%ystates0(lid_n2o_nit)= 0._r8
   this%ystates0(lid_no3_den)= 0._r8
+  this%ystates0(lid_nh4_nit)= 0._r8
+  this%ystates0(lid_no3_den)= 0._r8
   this%ystates0(lid_minn_nh4_immob) =0._r8
   this%ystates0(lid_minn_no3_immob) =0._r8
   this%ystates0(lid_minp_immob) =0._r8
@@ -1217,17 +1222,20 @@ contains
 
   !do ECA nutrient scaling
   !
+  this%competECA%compet_bn_nit = this%pot_f_nit/this%nitden%vmax_nit
+  this%competECA%compet_bn_den = this%pot_f_denit/this%nitden%vmax_den
+  this%competECA%compet_bn_mic = mic_pot_nn_flx/this%decompkf_eca%vmax_decomp_n
+
   this%competECA%debug=this%centurybgc_index%debug
-  call this%competECA%run_compet_nitrogen(this%non_limit,ystate(lid_nh4),ystate(lid_no3),mic_pot_nn_flx,&
-     this%pot_f_nit, this%pot_f_denit, this%plant_ntypes, &
-     this%msurf_nh4, ECA_factor_nit, &
+  call this%competECA%run_compet_nitrogen(this%non_limit,ystate(lid_nh4),ystate(lid_no3),&
+     this%plant_ntypes, this%msurf_nh4, ECA_factor_nit, &
      ECA_factor_den, ECA_factor_nh4_mic, ECA_factor_no3_mic, &
      ECA_flx_nh4_plants,ECA_flx_no3_plants, ECA_factor_msurf_nh4)
 
   ECA_factor_nitrogen_mic = ECA_factor_nh4_mic + ECA_factor_no3_mic
 
-
-  call this%competECA%run_compet_phosphorus(this%nop_limit, ystate(lid_minp_soluble), mic_pot_np_flx, &
+  this%competECA%compet_bp_mic = mic_pot_np_flx/this%decompkf_eca%vmax_decomp_p
+  call this%competECA%run_compet_phosphorus(this%nop_limit, ystate(lid_minp_soluble),  &
       this%plant_ntypes, this%msurf_minp, ECA_factor_phosphorus_mic, ECA_factor_minp_msurf,&
       ECA_flx_phosphorus_plants)
 

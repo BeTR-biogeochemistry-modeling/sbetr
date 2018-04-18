@@ -25,6 +25,8 @@ implicit none
     real(r8) :: nitrif_n2o_loss_frac
     real(r8) :: surface_tension_water
     real(r8) :: k_nitr_max
+    real(r8) :: vmax_nit
+    real(r8) :: vmax_den
   contains
     procedure, public :: init
     procedure, public :: calc_nitrif_denitrif_rate
@@ -65,6 +67,8 @@ implicit none
   this%rij_kro_delta =  biogeo_con%rij_kro_delta
   this%surface_tension_water = biogeo_con%surface_tension_water
   this%k_nitr_max    = biogeo_con%k_nitr_max
+  this%vmax_den = biogeo_con%vmax_den
+  this%vmax_nit = biogeo_con%vmax_nit
   this%d_con_g(1,:)=(/0.1875_r8, 0.0013_r8/) ! CH4
   this%d_con_g(2,:)=(/0.1759_r8, 0.00117_r8/) ! O2
   this%d_con_g(3,:)=(/0.1325_r8, 0.0009_r8/) ! CO2

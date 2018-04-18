@@ -18,7 +18,8 @@ implicit none
   real(r8) :: w_scalar       ! fraction by which decomposition is limited by h2osoi_liqure availability
   real(r8) :: t_scalar       ! fraction by which decomposition is limited by temperature
   real(r8) :: depth_scalar   ! depth dependent factor for heteorotrophic respiration
-
+  real(r8) :: vmax_decomp_n
+  real(r8) :: vmax_decomp_p
   !parameters
   real(r8) :: Q10
   real(r8) :: froz_q10
@@ -94,6 +95,8 @@ implicit none
   this%decomp_depth_efolding = biogeo_con%decomp_depth_efolding
   this%minpsi= biogeo_con%minpsi_bgc
   this%k_m_o2=biogeo_con%k_m_o2_bgc
+  this%vmax_decomp_n= biogeo_con%vmax_decomp_n
+  this%vmax_decomp_p= biogeo_con%vmax_decomp_p
   end subroutine UpdateParas
   !-----------------------------------------------------------------------
   subroutine set_decompk_scalar(this, o2b, bgc_forc)

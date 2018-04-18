@@ -90,7 +90,10 @@ begin
   filevardef(fout,"km_decomp_p","float",(/allpfts!0/))
   filevardef(fout,"km_den","float",(/allpfts!0/))
   filevardef(fout,"km_nit","float",(/allpfts!0/))
-
+  filevardef(fout,"vmax_decomp_n","float",(/allpfts!0/))
+  filevardef(fout,"vmax_decomp_p","float",(/allpfts!0/))
+  filevardef(fout,"vmax_nit","float",(/allpfts!0/))
+  filevardef(fout,"vmax_den","float",(/allpfts!0/))
 ;---define variable attributes
 
    fatt=True
@@ -279,6 +282,22 @@ begin
    fatt@units = "g P/m3"
    filevarattdef(fout,"km_decomp_p", fatt)
 
+   fatt@long_name="max N uptake rate for decomposers"
+   fatt@units = "1/hour"
+   filevarattdef(fout,"vmax_decomp_n", fatt)
+
+   fatt@long_name="max P uptake rate for decomposers"
+   fatt@units = "1/hour"
+   filevarattdef(fout,"vmax_decomp_p", fatt)
+
+   fatt@long_name="specific max nitrification rate"
+   fatt@units = "1/day"
+   filevarattdef(fout,"vmax_nit", fatt)
+
+   fatt@long_name="specific max denitrification rate"
+   fatt@units = "1/day"
+   filevarattdef(fout,"vmax_den", fatt)
+
 ;   if (False) then
    fout->cwd_fcel=(/0.76/)
    fout->cwd_flig=(/0.26/)
@@ -349,6 +368,10 @@ begin
    fout->km_decomp_nh4 = (/0.18/)
    fout->km_decomp_no3 = (/0.41/)
    fout->km_decomp_p   = (/0.2/)
+   fout->vmax_decomp_n = (/5.e-3/)
+   fout->vmax_decomp_p = (/1.e-3/)
+   fout->vmax_nit = (/0.67/)
+   fout->vmax_den = (/1.8/)
 ;   end if
    delete(fout)
    end_write_time = get_cpu_time()

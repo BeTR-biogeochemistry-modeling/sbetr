@@ -334,7 +334,7 @@ contains
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
       this%betr(c)%tracers%debug=col%debug_flag(c)
-      
+
       call this%biogeo_flux(c)%reset(value_column=0._r8, active_soibgc=this%do_soibgc())
       call this%biophys_forc(c)%frac_normalize(this%betr_pft(c)%npfts, 1, betr_nlevtrc_soil)
 !!
@@ -1101,7 +1101,7 @@ contains
       n14state_vars%sminn_col(c) = this%biogeo_state(c)%n14state_vars%sminn_col(c_l)
       n14state_vars%smin_nh4_col(c)=this%biogeo_state(c)%n14state_vars%sminn_nh4_col(c_l)
       n14state_vars%smin_no3_col(c)=this%biogeo_state(c)%n14state_vars%sminn_no3_col(c_l)
-      
+
       p31state_vars%sminp_col(c) = this%biogeo_state(c)%p31state_vars%sminp_col(c_l)
       p31state_vars%occlp_col(c) = this%biogeo_state(c)%p31state_vars%occlp_col(c_l)
 
@@ -1444,17 +1444,6 @@ contains
         c = filter_soilc(fc)
         this%betr(c)%plantNutkinetics%km_minsurf_p_vr_col(c_l,j) = PlantMicKinetics_vars%km_minsurf_p_vr_col(c,j)/patomw
         this%betr(c)%plantNutkinetics%km_minsurf_nh4_vr_col(c_l,j)=PlantMicKinetics_vars%km_minsurf_nh4_vr_col(c,j)/patomw
-        this%betr(c)%plantNutkinetics%km_decomp_nh4_vr_col(c_l,j) = PlantMicKinetics_vars%km_decomp_nh4_vr_col(c,j)/natomw
-        this%betr(c)%plantNutkinetics%km_decomp_no3_vr_col(c_l,j) = PlantMicKinetics_vars%km_decomp_no3_vr_col(c,j)/natomw
-        this%betr(c)%plantNutkinetics%km_decomp_p_vr_col(c_l,j)=PlantMicKinetics_vars%km_decomp_p_vr_col(c,j)/patomw
-        this%betr(c)%plantNutkinetics%km_nit_nh4_vr_col(c_l,j)=PlantMicKinetics_vars%km_nit_nh4_vr_col(c,j)/natomw
-        this%betr(c)%plantNutkinetics%km_den_no3_vr_col(c_l,j)=PlantMicKinetics_vars%km_den_no3_vr_col(c,j)/natomw
-
-        !effective p competing decomposers
-        this%betr(c)%plantNutkinetics%decomp_eff_ncompet_b_vr_col(c_l,j) = PlantMicKinetics_vars%decomp_eff_ncompet_b_vr_col(c,j)/natomw
-        this%betr(c)%plantNutkinetics%decomp_eff_pcompet_b_vr_col(c_l,j) = PlantMicKinetics_vars%decomp_eff_pcompet_b_vr_col(c,j)/patomw
-        this%betr(c)%plantNutkinetics%den_eff_ncompet_b_vr_col(c_l,j) = PlantMicKinetics_vars%den_eff_ncompet_b_vr_col(c,j)/natomw
-        this%betr(c)%plantNutkinetics%nit_eff_ncompet_b_vr_col(c_l,j) = PlantMicKinetics_vars%nit_eff_ncompet_b_vr_col(c,j)/natomw
 
       enddo
     enddo

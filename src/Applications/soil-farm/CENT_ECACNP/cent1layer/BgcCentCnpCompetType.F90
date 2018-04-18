@@ -3,6 +3,8 @@ module BgcCentCnpCompetType
 ! code to do ECA based competition
   ! !USES:
   use bshr_kind_mod       , only : r8 => shr_kind_r8
+  use BetrStatusType      , only : betr_status_type
+  use bshr_log_mod        , only : errMsg => shr_log_errMsg
 implicit none
   private
   character(len=*), private, parameter :: mod_filename = &
@@ -39,13 +41,32 @@ implicit none
 
 contains
   !-------------------------------------------------------------------------------
-  subroutine Init(this)
-
+  subroutine Init(this, biogeo_con, bstatus)
+  use BiogeoConType             , only : BiogeoCon_type
+  use CentParaType              , only : CentPara_type
   implicit none
   class(Compet_ECA_type), intent(inout) :: this
+  class(BiogeoCon_type)       , intent(in) :: biogeo_con
+  type(betr_status_type)     , intent(out)   :: bstatus
+
+  character(len=256) :: msg
 
   call this%InitAllocate()
 
+  call bstatus%reset()
+  select type(biogeo_con)
+  type is(CentPara_type)
+    this%kaff_minn_nh4_mic = biogeo_con%km_decomp_nh4
+    this%kaff_minn_no3_mic = biogeo_con%km_decomp_no3
+    this%kaff_minp_mic     = biogeo_con%km_decomp_p
+    this%kaff_minn_nh4_nit = biogeo_con%km_nit
+    this%kaff_minn_no3_den = biogeo_con%km_den
+  class default
+    write(msg,'(A)')'Wrong parameter type passed in for Init in ' &
+      // errMsg(mod_filename,__LINE__)
+    call bstatus%set_msg(msg,err=-1)
+    return
+  end select
   end subroutine Init
   !-------------------------------------------------------------------------------
 
@@ -67,9 +88,8 @@ contains
 
   !-------------------------------------------------------------------------------
 
-  subroutine run_compet_nitrogen(this, non_limit, smin_nh4, smin_no3, mic_pot_nn_flx, pot_f_nit, &
-   pot_f_denit, plant_ntypes, msurf_nh4, &
-   ECA_factor_nit, ECA_factor_den, ECA_factor_nh4_mic, &
+  subroutine run_compet_nitrogen(this, non_limit, smin_nh4, smin_no3,  &
+   plant_ntypes, msurf_nh4, ECA_factor_nit, ECA_factor_den, ECA_factor_nh4_mic, &
     ECA_factor_no3_mic, ECA_flx_nh4_plants,ECA_flx_no3_plants, ECA_factor_msurf_nh4)
 
   use KineticsMod    , only : ecacomplex_cell_norm
@@ -79,9 +99,6 @@ contains
   logical , intent(in) :: non_limit
   real(r8), intent(in) :: smin_nh4
   real(r8), intent(in) :: smin_no3
-  real(r8), intent(in) :: mic_pot_nn_flx
-  real(r8), intent(in) :: pot_f_nit
-  real(r8), intent(in) :: pot_f_denit
   integer , intent(in) :: plant_ntypes
   real(r8), intent(in) :: msurf_nh4
   real(r8), intent(out):: ECA_factor_nit
@@ -161,9 +178,8 @@ contains
   end subroutine run_compet_nitrogen
   !-------------------------------------------------------------------------------
 
-  subroutine run_compet_phosphorus(this, nop_lim,  sminp_soluble, mic_pot_np_flx, plant_ntypes,&
+  subroutine run_compet_phosphorus(this, nop_lim,  sminp_soluble, plant_ntypes,&
      msurf_minp, ECA_factor_phosphorus_mic, ECA_factor_minp_msurf, ECA_flx_phosphorus_plants)
-
 
   !
   !DESCRIPTION
@@ -174,7 +190,6 @@ contains
   class(Compet_ECA_type), intent(inout) :: this
   real(r8), intent(in) :: sminp_soluble
   logical , intent(in) :: nop_lim               !logical indicator of P limitation
-  real(r8), intent(in) :: mic_pot_np_flx
   integer , intent(in) :: plant_ntypes
   real(r8), intent(in) :: msurf_minp
   real(r8), intent(out):: ECA_factor_phosphorus_mic

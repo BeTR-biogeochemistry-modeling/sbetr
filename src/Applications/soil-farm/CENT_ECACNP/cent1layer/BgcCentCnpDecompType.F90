@@ -25,6 +25,8 @@ implicit none
   real(r8) :: decomp_depth_efolding
   real(r8) :: minpsi
   real(r8) :: k_m_o2
+  real(r8) :: vmax_decomp_n
+  real(r8) :: vmax_decomp_p
   contains
     procedure, public  :: Init
     procedure, public  :: set_decompk_scalar
@@ -94,6 +96,8 @@ implicit none
   this%decomp_depth_efolding = biogeo_con%decomp_depth_efolding
   this%minpsi= biogeo_con%minpsi_bgc
   this%k_m_o2=biogeo_con%k_m_o2_bgc
+  this%vmax_decomp_n=biogeo_con%vmax_decomp_n
+  this%vmax_decomp_p=biogeo_con%vmax_decomp_p
   end subroutine UpdateParas
   !-----------------------------------------------------------------------
   subroutine set_decompk_scalar(this, o2b, bgc_forc)
