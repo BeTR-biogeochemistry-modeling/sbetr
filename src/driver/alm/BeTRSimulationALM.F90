@@ -45,6 +45,7 @@ module BeTRSimulationALM
      procedure, public :: SoilFluxStateRecv         => ALMBetrSoilFluxStateRecv
      procedure, public :: CalcSmpL                  => ALMCalcSmpL
      procedure, public :: PlantSoilBGCSend          => ALMBetrPlantSoilBGCSend
+     procedure, public :: RetriveBGCInput           => ALMBeTRRetriveBGCInput
      procedure, public :: PlantSoilBGCRecv          => ALMBetrPlantSoilBGCRecv
      procedure, public :: DiagnoseLnd2atm           => ALMDiagnoseLnd2atm
      procedure, public :: set_active                => ALMset_active
@@ -429,7 +430,65 @@ contains
     this%active_col(c) = (this%active_col(c) .and. col%active(c))
   enddo
   end subroutine ALMset_active
+  !---------------------------------------------------------------------------------
+  subroutine ALMBeTRRetriveBGCInput(this, num_soilc, filter_soilc, carbonflux_vars, nitrogenflux_vars, phosphorusflux_vars)
 
+  use CNCarbonFluxType   , only : carbonflux_type
+  use CNNitrogenFluxType , only : nitrogenflux_type
+  use PhosphorusFluxType , only : phosphorusflux_type
+
+  implicit none
+  class(betr_simulation_alm_type) , intent(inout) :: this
+  integer           , intent(in)  :: num_soilc
+  integer           , intent(in)  :: filter_soilc(:)
+  type(carbonflux_type), intent(inout):: carbonflux_vars
+  type(nitrogenflux_type), intent(inout):: nitrogenflux_vars
+  type(phosphorusflux_type), intent(inout):: phosphorusflux_vars
+
+  integer :: j, c, fc, c_l
+  type(betr_bounds_type) :: betr_bounds
+
+  call this%BeTRSetBounds(betr_bounds)
+
+  c_l=1
+  do j = betr_bounds%lbj, betr_bounds%ubj
+    do fc = 1, num_soilc
+      c = filter_soilc(fc)
+
+      carbonflux_vars%cflx_input_litr_met_vr_col(c,j)=this%biophys_forc(c)%c12flx%cflx_input_litr_met_vr_col(c_l,j)
+
+      carbonflux_vars%cflx_input_litr_cel_vr_col(c,j)=this%biophys_forc(c)%c12flx%cflx_input_litr_cel_vr_col(c_l,j)
+
+      carbonflux_vars%cflx_input_litr_lig_vr_col(c,j)=this%biophys_forc(c)%c12flx%cflx_input_litr_lig_vr_col(c_l,j)
+
+      carbonflux_vars%cflx_input_litr_cwd_vr_col(c,j)=this%biophys_forc(c)%c12flx%cflx_input_litr_cwd_vr_col(c_l,j)
+
+      nitrogenflux_vars%nflx_input_litr_met_vr_col(c,j)=this%biophys_forc(c)%n14flx%nflx_input_litr_met_vr_col(c_l,j)
+
+      nitrogenflux_vars%nflx_input_litr_cel_vr_col(c,j)=this%biophys_forc(c)%n14flx%nflx_input_litr_cel_vr_col(c_l,j)
+
+      nitrogenflux_vars%nflx_input_litr_lig_vr_col(c,j)=this%biophys_forc(c)%n14flx%nflx_input_litr_lig_vr_col(c_l,j)
+
+      nitrogenflux_vars%nflx_input_litr_cwd_vr_col(c,j)=this%biophys_forc(c)%n14flx%nflx_input_litr_cwd_vr_col(c_l,j)
+
+      phosphorusflux_vars%pflx_input_litr_met_vr_col(c,j)=this%biophys_forc(c)%p31flx%pflx_input_litr_met_vr_col(c_l,j)
+
+      phosphorusflux_vars%pflx_input_litr_cel_vr_col(c,j)=this%biophys_forc(c)%p31flx%pflx_input_litr_cel_vr_col(c_l,j)
+
+      phosphorusflux_vars%pflx_input_litr_lig_vr_col(c,j)=this%biophys_forc(c)%p31flx%pflx_input_litr_lig_vr_col(c_l,j)
+
+      phosphorusflux_vars%pflx_input_litr_cwd_vr_col(c,j)=this%biophys_forc(c)%p31flx%pflx_input_litr_cwd_vr_col(c_l,j)
+
+      nitrogenflux_vars%nflx_minn_input_nh4_vr_col(c,j)=this%biophys_forc(c)%n14flx%nflx_minn_input_nh4_vr_col(c_l,j) + &
+        this%biophys_forc(c)%n14flx%nflx_minn_nh4_fix_nomic_vr_col(c_l,j)
+
+      nitrogenflux_vars%nflx_minn_input_no3_vr_col(c,j)=this%biophys_forc(c)%n14flx%nflx_minn_input_no3_vr_col(c_l,j)
+
+      phosphorusflux_vars%pflx_minp_input_po4_vr_col(c,j)=this%biophys_forc(c)%p31flx%pflx_minp_input_po4_vr_col(c_l,j) + &
+        this%biophys_forc(c)%p31flx%pflx_minp_weathering_po4_vr_col(c_l,j)
+    enddo
+  enddo
+  end subroutine ALMBeTRRetriveBGCInput
   !---------------------------------------------------------------------------------
   subroutine ALMStepWithDrainage(this, bounds,  col)
    !
@@ -658,7 +717,7 @@ contains
       !!------------------------------------------------------------------------
       !carbon input
       !metabolic carbon
-      call apvb(this%biophys_forc(c)%c12flx%cflx_input_litr_met_vr_col(1,j), & !
+      call apvb(this%biophys_forc(c)%c12flx%cflx_input_litr_met_vr_col(c_l,j), & !
          (/carbonflux_vars%phenology_c_to_litr_met_c_col(c,j)       , & !phenology
          carbonflux_vars%dwt_frootc_to_litr_met_c_col(c,j)          , & !dynamic land cover
          carbonflux_vars%gap_mortality_c_to_litr_met_c_col(c,j)     , & !gap mortality
@@ -666,7 +725,7 @@ contains
          carbonflux_vars%m_c_to_litr_met_fire_col(c,j)/))              ! fire mortality
 
       !cellulose carbon
-      call apvb(this%biophys_forc(c)%c12flx%cflx_input_litr_cel_vr_col(1,j)   , &
+      call apvb(this%biophys_forc(c)%c12flx%cflx_input_litr_cel_vr_col(c_l,j)   , &
          (/carbonflux_vars%phenology_c_to_litr_cel_c_col(c,j)          , &  !phenology
          carbonflux_vars%dwt_frootc_to_litr_cel_c_col(c,j)             , &  !dynamic land cover
          carbonflux_vars%gap_mortality_c_to_litr_cel_c_col(c,j)        , & !gap mortality
@@ -674,7 +733,7 @@ contains
          carbonflux_vars%m_c_to_litr_cel_fire_col(c,j)/))              ! fire mortality
 
       !lignin carbon
-      call apvb(this%biophys_forc(c)%c12flx%cflx_input_litr_lig_vr_col(1,j) , &
+      call apvb(this%biophys_forc(c)%c12flx%cflx_input_litr_lig_vr_col(c_l,j) , &
          (/carbonflux_vars%phenology_c_to_litr_lig_c_col(c,j)        , & !phenology
          carbonflux_vars%dwt_frootc_to_litr_lig_c_col(c,j)           , & !dynamic land cover
          carbonflux_vars%gap_mortality_c_to_litr_lig_c_col(c,j)      , & !gap mortality
@@ -682,31 +741,18 @@ contains
          carbonflux_vars%m_c_to_litr_lig_fire_col(c,j)/))                ! fire mortality
 
       !cwd carbon
-      call apvb(this%biophys_forc(c)%c12flx%cflx_input_litr_cwd_vr_col(1,j) , &
+      call apvb(this%biophys_forc(c)%c12flx%cflx_input_litr_cwd_vr_col(c_l,j) , &
         (/carbonflux_vars%dwt_livecrootc_to_cwdc_col(c,j)            , &
         carbonflux_vars%dwt_deadcrootc_to_cwdc_col(c,j)              , &
         carbonflux_vars%gap_mortality_c_to_cwdc_col(c,j)             , &
         carbonflux_vars%harvest_c_to_cwdc_col(c,j)                   , &
         carbonflux_vars%fire_mortality_c_to_cwdc_col(c,j)/))
 
-      !fire carbon loss
-      call apvb(this%biophys_forc(c)%c12flx%cflx_output_litr_met_vr_col(1,j), &
-         carbonflux_vars%m_decomp_cpools_to_fire_vr_col(c,j,i_met_lit))
-
-      call apvb(this%biophys_forc(c)%c12flx%cflx_output_litr_cel_vr_col(1,j), &
-         carbonflux_vars%m_decomp_cpools_to_fire_vr_col(c,j,i_cel_lit))
-
-      call apvb(this%biophys_forc(c)%c12flx%cflx_output_litr_lig_vr_col(1,j), &
-         carbonflux_vars%m_decomp_cpools_to_fire_vr_col(c,j,i_lig_lit))
-
-      call apvb(this%biophys_forc(c)%c12flx%cflx_output_litr_cwd_vr_col(1,j), &
-         carbonflux_vars%m_decomp_cpools_to_fire_vr_col(c,j,i_cwd))
-
 
       !!------------------------------------------------------------------------
       if(use_c13_betr)then
         !metabolic carbon
-        call apvb(this%biophys_forc(c)%c13flx%cflx_input_litr_met_vr_col(1,j), & !
+        call apvb(this%biophys_forc(c)%c13flx%cflx_input_litr_met_vr_col(c_l,j), & !
            (/carbonflux_vars%phenology_c_to_litr_met_c_col(c,j)       , & !phenology
            carbonflux_vars%dwt_frootc_to_litr_met_c_col(c,j)          , & !dynamic land cover
            carbonflux_vars%gap_mortality_c_to_litr_met_c_col(c,j)     , & !gap mortality
@@ -714,7 +760,7 @@ contains
            carbonflux_vars%m_c_to_litr_met_fire_col(c,j)/))              ! fire mortality
 
         !cellulose carbon
-        call apvb(this%biophys_forc(c)%c13flx%cflx_input_litr_cel_vr_col(1,j)   , &
+        call apvb(this%biophys_forc(c)%c13flx%cflx_input_litr_cel_vr_col(c_l,j)   , &
            (/carbonflux_vars%phenology_c_to_litr_cel_c_col(c,j)          , &  !phenology
            carbonflux_vars%dwt_frootc_to_litr_cel_c_col(c,j)             , &  !dynamic land cover
            carbonflux_vars%gap_mortality_c_to_litr_cel_c_col(c,j)        , & !gap mortality
@@ -722,7 +768,7 @@ contains
            carbonflux_vars%m_c_to_litr_cel_fire_col(c,j)/))              ! fire mortality
 
         !lignin carbon
-        call apvb(this%biophys_forc(c)%c13flx%cflx_input_litr_lig_vr_col(1,j) , &
+        call apvb(this%biophys_forc(c)%c13flx%cflx_input_litr_lig_vr_col(c_l,j) , &
            (/carbonflux_vars%phenology_c_to_litr_lig_c_col(c,j)        , & !phenology
            carbonflux_vars%dwt_frootc_to_litr_lig_c_col(c,j)           , & !dynamic land cover
            carbonflux_vars%gap_mortality_c_to_litr_lig_c_col(c,j)      , & !gap mortality
@@ -730,29 +776,17 @@ contains
            carbonflux_vars%m_c_to_litr_lig_fire_col(c,j)/))                ! fire mortality
 
         !cwd carbon
-        call apvb(this%biophys_forc(c)%c13flx%cflx_input_litr_cwd_vr_col(1,j) , &
+        call apvb(this%biophys_forc(c)%c13flx%cflx_input_litr_cwd_vr_col(c_l,j) , &
           (/carbonflux_vars%dwt_livecrootc_to_cwdc_col(c,j)            , &
           carbonflux_vars%dwt_deadcrootc_to_cwdc_col(c,j)              , &
           carbonflux_vars%gap_mortality_c_to_cwdc_col(c,j)             , &
           carbonflux_vars%harvest_c_to_cwdc_col(c,j)                   , &
           carbonflux_vars%fire_mortality_c_to_cwdc_col(c,j)/))
 
-        !fire carbon loss
-        call apvb(this%biophys_forc(c)%c13flx%cflx_output_litr_met_vr_col(1,j), &
-           carbonflux_vars%m_decomp_cpools_to_fire_vr_col(c,j,i_met_lit))
-
-        call apvb(this%biophys_forc(c)%c13flx%cflx_output_litr_cel_vr_col(1,j), &
-           carbonflux_vars%m_decomp_cpools_to_fire_vr_col(c,j,i_cel_lit))
-
-        call apvb(this%biophys_forc(c)%c13flx%cflx_output_litr_lig_vr_col(1,j), &
-           carbonflux_vars%m_decomp_cpools_to_fire_vr_col(c,j,i_lig_lit))
-
-        call apvb(this%biophys_forc(c)%c13flx%cflx_output_litr_cwd_vr_col(1,j), &
-           carbonflux_vars%m_decomp_cpools_to_fire_vr_col(c,j,i_cwd))
       endif
       if(use_c14_betr)then
         !metabolic carbon
-        call apvb(this%biophys_forc(c)%c14flx%cflx_input_litr_met_vr_col(1,j), & !
+        call apvb(this%biophys_forc(c)%c14flx%cflx_input_litr_met_vr_col(c_l,j), & !
            (/carbonflux_vars%phenology_c_to_litr_met_c_col(c,j)       , & !phenology
            carbonflux_vars%dwt_frootc_to_litr_met_c_col(c,j)          , & !dynamic land cover
            carbonflux_vars%gap_mortality_c_to_litr_met_c_col(c,j)     , & !gap mortality
@@ -760,7 +794,7 @@ contains
            carbonflux_vars%m_c_to_litr_met_fire_col(c,j)/))              ! fire mortality
 
         !cellulose carbon
-        call apvb(this%biophys_forc(c)%c14flx%cflx_input_litr_cel_vr_col(1,j)   , &
+        call apvb(this%biophys_forc(c)%c14flx%cflx_input_litr_cel_vr_col(c_l,j)   , &
            (/carbonflux_vars%phenology_c_to_litr_cel_c_col(c,j)          , &  !phenology
            carbonflux_vars%dwt_frootc_to_litr_cel_c_col(c,j)             , &  !dynamic land cover
            carbonflux_vars%gap_mortality_c_to_litr_cel_c_col(c,j)        , & !gap mortality
@@ -768,7 +802,7 @@ contains
            carbonflux_vars%m_c_to_litr_cel_fire_col(c,j)/))              ! fire mortality
 
         !lignin carbon
-        call apvb(this%biophys_forc(c)%c14flx%cflx_input_litr_lig_vr_col(1,j) , &
+        call apvb(this%biophys_forc(c)%c14flx%cflx_input_litr_lig_vr_col(c_l,j) , &
            (/carbonflux_vars%phenology_c_to_litr_lig_c_col(c,j)        , & !phenology
            carbonflux_vars%dwt_frootc_to_litr_lig_c_col(c,j)           , & !dynamic land cover
            carbonflux_vars%gap_mortality_c_to_litr_lig_c_col(c,j)      , & !gap mortality
@@ -776,25 +810,12 @@ contains
            carbonflux_vars%m_c_to_litr_lig_fire_col(c,j)/))                ! fire mortality
 
         !cwd carbon
-        call apvb(this%biophys_forc(c)%c14flx%cflx_input_litr_cwd_vr_col(1,j) , &
+        call apvb(this%biophys_forc(c)%c14flx%cflx_input_litr_cwd_vr_col(c_l,j) , &
           (/carbonflux_vars%dwt_livecrootc_to_cwdc_col(c,j)            , &
           carbonflux_vars%dwt_deadcrootc_to_cwdc_col(c,j)              , &
           carbonflux_vars%gap_mortality_c_to_cwdc_col(c,j)             , &
           carbonflux_vars%harvest_c_to_cwdc_col(c,j)                   , &
           carbonflux_vars%fire_mortality_c_to_cwdc_col(c,j)/))
-
-        !fire carbon loss
-        call apvb(this%biophys_forc(c)%c14flx%cflx_output_litr_met_vr_col(1,j), &
-           carbonflux_vars%m_decomp_cpools_to_fire_vr_col(c,j,i_met_lit))
-
-        call apvb(this%biophys_forc(c)%c14flx%cflx_output_litr_cel_vr_col(1,j), &
-           carbonflux_vars%m_decomp_cpools_to_fire_vr_col(c,j,i_cel_lit))
-
-        call apvb(this%biophys_forc(c)%c14flx%cflx_output_litr_lig_vr_col(1,j), &
-           carbonflux_vars%m_decomp_cpools_to_fire_vr_col(c,j,i_lig_lit))
-
-        call apvb(this%biophys_forc(c)%c14flx%cflx_output_litr_cwd_vr_col(1,j), &
-           carbonflux_vars%m_decomp_cpools_to_fire_vr_col(c,j,i_cwd))
 
       endif
 
@@ -831,18 +852,6 @@ contains
         nitrogenflux_vars%harvest_n_to_cwdn_col(c,j)                 , &
         nitrogenflux_vars%fire_mortality_n_to_cwdn_col(c,j)/))
 
-      !fire nitrogen loss
-      call apvb(this%biophys_forc(c)%n14flx%nflx_output_litr_met_vr_col(c_l,j) , &
-         nitrogenflux_vars%m_decomp_npools_to_fire_vr_col(c,j,i_met_lit))
-
-      call apvb(this%biophys_forc(c)%n14flx%nflx_output_litr_cel_vr_col(c_l,j) , &
-         nitrogenflux_vars%m_decomp_npools_to_fire_vr_col(c,j,i_cel_lit))
-
-      call apvb(this%biophys_forc(c)%n14flx%nflx_output_litr_lig_vr_col(c_l,j) , &
-         nitrogenflux_vars%m_decomp_npools_to_fire_vr_col(c,j,i_lig_lit))
-
-      call apvb(this%biophys_forc(c)%n14flx%nflx_output_litr_cwd_vr_col(c_l,j) , &
-         nitrogenflux_vars%m_decomp_npools_to_fire_vr_col(c,j,i_cwd))
 
       !phosphorus input
       !metabolic phosphorus
@@ -877,19 +886,6 @@ contains
         phosphorusflux_vars%harvest_p_to_cwdp_col(c,j)        , &
         phosphorusflux_vars%fire_mortality_p_to_cwdp_col(c,j)/))
 
-      !fire phosphorus loss
-      call apvb(this%biophys_forc(c)%p31flx%pflx_output_litr_met_vr_col(c_l,j) , &
-         phosphorusflux_vars%m_decomp_ppools_to_fire_vr_col(c,j,i_met_lit))
-
-      call apvb(this%biophys_forc(c)%p31flx%pflx_output_litr_cel_vr_col(c_l,j) , &
-         phosphorusflux_vars%m_decomp_ppools_to_fire_vr_col(c,j,i_cel_lit))
-
-      call apvb(this%biophys_forc(c)%p31flx%pflx_output_litr_lig_vr_col(c_l,j) , &
-         phosphorusflux_vars%m_decomp_ppools_to_fire_vr_col(c,j,i_lig_lit))
-
-      call apvb(this%biophys_forc(c)%p31flx%pflx_output_litr_cwd_vr_col(c_l,j) , &
-         phosphorusflux_vars%m_decomp_ppools_to_fire_vr_col(c,j,i_cwd))
-
       !mineral nitrogen
       call apvb(this%biophys_forc(c)%n14flx%nflx_minn_input_nh4_vr_col(c_l,j) , &
          (/nitrogenflux_vars%ndep_to_smin_nh3_col(c)                    , &
@@ -911,17 +907,7 @@ contains
          phosphorusflux_vars%primp_to_labilep_vr_col(c,j))
     enddo
   enddo
-  do fc = 1, num_soilc
-    c = filter_soilc(fc)
-    if(col%debug_flag(c))then
-      write(*,*)'ndep in=',nitrogenflux_vars%ndep_to_sminn_col(c)
-      fport = 0._r8
-      do j = 1, betr_bounds%ubj
-        fport=fport +ndep_prof(c,j)*this%betr_col(c)%dz(c_l,j)
-      enddo
-      write(*,*)'fport=',fport
-    endif
-  enddo
+
   end associate
   !pull in all state variables and update tracers
   end subroutine ALMBetrPlantSoilBGCSend

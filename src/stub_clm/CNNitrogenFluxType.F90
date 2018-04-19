@@ -47,6 +47,12 @@ implicit none
      real(r8), pointer :: som_n_leached_col                         (:) => null()
      real(r8), pointer :: supplement_to_sminn_col                   (:) => null()
      real(r8), pointer :: som_n_runoff_col                          (:) => null()
+     real(r8), pointer :: nflx_input_litr_met_vr_col              (:,:) => null()
+     real(r8), pointer :: nflx_input_litr_cel_vr_col              (:,:) => null()
+     real(r8), pointer :: nflx_input_litr_lig_vr_col              (:,:) => null()
+     real(r8), pointer :: nflx_input_litr_cwd_vr_col              (:,:) => null()
+     real(r8), pointer :: nflx_minn_input_nh4_vr_col              (:,:) => null()
+     real(r8), pointer :: nflx_minn_input_no3_vr_col              (:,:) => null()
   contains
 
     procedure, public  :: Init

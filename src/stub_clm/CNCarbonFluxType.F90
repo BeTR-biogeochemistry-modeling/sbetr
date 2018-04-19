@@ -38,6 +38,11 @@ implicit none
     real(r8), pointer :: fire_decomp_closs_col                     (:) => null()
     real(r8), pointer :: som_c_leached_col                         (:) => null()
     real(r8), pointer :: som_c_runoff_col                          (:) => null()
+    real(r8), pointer :: cflx_input_litr_met_vr_col              (:,:) => null()
+    real(r8), pointer :: cflx_input_litr_cel_vr_col              (:,:) => null()
+    real(r8), pointer :: cflx_input_litr_lig_vr_col              (:,:) => null()
+    real(r8), pointer :: cflx_input_litr_cwd_vr_col              (:,:) => null()
+
   contains
 
     procedure, public  :: Init
