@@ -1153,17 +1153,13 @@ contains
      real(r8):: time
      character(len=32) :: subname = 'backward_advection'
      class(gbetr_type), pointer :: gtype
-     type(extra_type), pointer :: extra_inst
+     type(extra_type), target :: extra_inst
      integer :: nl
 
      call bstatus%reset()
      SHR_ASSERT_ALL((size(zi)        == size(us)),     errMsg(filename,__LINE__),bstatus)
 
      SHR_ASSERT_ALL((size(zi)        == size(zold)+4), errMsg(filename,__LINE__), bstatus)
-
-     nullify(Extra_inst)
-
-     allocate(Extra_inst) ! => create_extra_type()
 
      gtype=> extra_inst
      nl = size(zi)
@@ -1182,7 +1178,7 @@ contains
      endif
 
      call DDeallocate(gtype)
-     nullify(Extra_inst)
+
 
    end subroutine backward_advection
 
