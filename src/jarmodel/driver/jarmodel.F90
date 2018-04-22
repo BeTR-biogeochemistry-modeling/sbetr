@@ -91,10 +91,12 @@ subroutine run_model(namelist_buffer)
   integer :: nvars
 
   logical :: is_surflit = .false.  !logical switch for litter decomposition
+  logical :: nitrogen_stress=.true.
+  logical :: phosphorus_stress=.false.
   integer                                :: nml_error
   character(len=betr_string_length_long) :: ioerror_msg
 
-  namelist / jar_driver / jarmodel_name, is_surflit
+  namelist / jar_driver / jarmodel_name, is_surflit, nitrogen_stress, phosphorus_stress
   if ( .true. )then
      ioerror_msg=''
      read(namelist_buffer, nml=jar_driver, iostat=nml_error, iomsg=ioerror_msg)
@@ -110,7 +112,7 @@ subroutine run_model(namelist_buffer)
 
   !initialize model parameters
   call jarpars%Init(namelist_buffer, bstatus)
-  jarpars%nop_limit = .true. 
+  jarpars%nop_limit = .not. phosphorus_stress; jarpars%non_limit=.not. nitrogen_stress
   if(bstatus%check_status())then
     call endrun(msg=bstatus%print_msg())
   endif

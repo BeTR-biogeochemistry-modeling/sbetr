@@ -11,5 +11,5 @@
 /
 
 &forcing_inparm
-  forcing_filename = 'jarmodel_example.forcing.nc'
+  forcing_filename = '../../../example_input/jarmodel_example.forcing.nc'
 /
