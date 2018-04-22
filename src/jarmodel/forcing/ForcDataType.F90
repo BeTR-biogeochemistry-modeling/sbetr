@@ -28,6 +28,22 @@ implicit none
    real(r8), pointer :: air_temp(:)        !TBOT
    real(r8), pointer :: temp(:)            !TSOI
    real(r8), pointer :: finudated(:)       !not provided, set to zero
+   real(r8), pointer :: nflx_nh4(:)
+   real(r8), pointer :: nflx_no3(:)
+   real(r8), pointer :: pflx_po4(:)
+   real(r8), pointer :: cflx_met(:)
+   real(r8), pointer :: cflx_cel(:)
+   real(r8), pointer :: cflx_lig(:)
+   real(r8), pointer :: cflx_cwd(:)
+   real(r8), pointer :: nflx_met(:)
+   real(r8), pointer :: nflx_cel(:)
+   real(r8), pointer :: nflx_lig(:)
+   real(r8), pointer :: nflx_cwd(:)
+   real(r8), pointer :: pflx_met(:)
+   real(r8), pointer :: pflx_cel(:)
+   real(r8), pointer :: pflx_lig(:)
+   real(r8), pointer :: pflx_cwd(:)
+
    real(r8) :: dzsoi                       !DZSOI
    real(r8) :: zsoi                        !ZSOI
    real(r8) :: pct_sand
@@ -58,6 +74,22 @@ contains
   allocate(this%air_temp(data_len))  ; this%air_temp(:) = 298._r8
   allocate(this%finudated(data_len)) ; this%finudated(:) = 0._r8
   allocate(this%temp(data_len))      ; this%temp(:) = 283._r8
+  allocate(this%cflx_met(data_len))  ; this%cflx_met(:)=0._r8
+  allocate(this%cflx_cel(data_len))  ; this%cflx_cel(:)=0._r8
+  allocate(this%cflx_lig(data_len))  ; this%cflx_lig(:)=0._r8
+  allocate(this%cflx_cwd(data_len))  ; this%cflx_cwd(:)=0._r8
+  allocate(this%nflx_met(data_len))  ; this%nflx_met(:)=0._r8
+  allocate(this%nflx_cel(data_len))  ; this%nflx_cel(:)=0._r8
+  allocate(this%nflx_lig(data_len))  ; this%nflx_lig(:)=0._r8
+  allocate(this%nflx_cwd(data_len))  ; this%nflx_cwd(:)=0._r8
+  allocate(this%pflx_met(data_len))  ; this%pflx_met(:)=0._r8
+  allocate(this%pflx_cel(data_len))  ; this%pflx_cel(:)=0._r8
+  allocate(this%pflx_lig(data_len))  ; this%pflx_lig(:)=0._r8
+  allocate(this%pflx_cwd(data_len))  ; this%pflx_cwd(:)=0._r8
+  allocate(this%nflx_nh4(data_len))  ; this%nflx_nh4(:)=0._r8
+  allocate(this%nflx_no3(data_len))  ; this%nflx_no3(:)=0._r8
+  allocate(this%pflx_po4(data_len))  ; this%pflx_po4(:)=0._r8
+
   this%dzsoi=0.1_r8
   this%zsoi=0.05_r8
   this%pct_sand=30._r8
@@ -88,6 +120,21 @@ contains
   call ncd_getvar(ncf_in_forc, 'pct_clay', this%pct_clay)
   call ncd_getvar(ncf_in_forc, 'pH', this%pH)
   call ncd_getvar(ncf_in_forc, 'cellorg', this%cellorg)
+  call ncd_getvar(ncf_in_forc, 'cflx_met', this%cflx_met)
+  call ncd_getvar(ncf_in_forc, 'cflx_cel', this%cflx_cel)
+  call ncd_getvar(ncf_in_forc, 'cflx_lig', this%cflx_lig)
+  call ncd_getvar(ncf_in_forc, 'cflx_cwd', this%cflx_cwd)
+  call ncd_getvar(ncf_in_forc, 'nflx_met', this%nflx_met)
+  call ncd_getvar(ncf_in_forc, 'nflx_cel', this%nflx_cel)
+  call ncd_getvar(ncf_in_forc, 'nflx_lig', this%nflx_lig)
+  call ncd_getvar(ncf_in_forc, 'nflx_cwd', this%nflx_cwd)
+  call ncd_getvar(ncf_in_forc, 'pflx_met', this%pflx_met)
+  call ncd_getvar(ncf_in_forc, 'pflx_cel', this%pflx_cel)
+  call ncd_getvar(ncf_in_forc, 'pflx_lig', this%pflx_lig)
+  call ncd_getvar(ncf_in_forc, 'pflx_cwd', this%pflx_cwd)
+  call ncd_getvar(ncf_in_forc, 'nflx_nh4', this%nflx_nh4)
+  call ncd_getvar(ncf_in_forc, 'nflx_no3', this%nflx_no3)
+  call ncd_getvar(ncf_in_forc, 'pflx_po4', this%pflx_po4)
 
   call ncd_pio_closefile(ncf_in_forc)
 
@@ -185,15 +232,28 @@ contains
   soil_forc%finundated = forc_data%finudated(rec)
   call soil_forc%update()
 
-  om_forc%cflx_input_litr_met = 1.e-8_r8
-  om_forc%cflx_input_litr_cel = 1.e-8_r8
-  om_forc%cflx_input_litr_lig = 1.e-8_r8
-  om_forc%cflx_input_litr_cwd = 1.e-8_r8
+  om_forc%cflx_input_litr_met = forc_data%cflx_met(rec)
+  om_forc%cflx_input_litr_cel = forc_data%cflx_cel(rec)
+  om_forc%cflx_input_litr_lig = forc_data%cflx_lig(rec)
+  om_forc%cflx_input_litr_cwd = forc_data%cflx_cwd(rec)
   om_forc%cflx_input_litr_fwd = 0._r8
   om_forc%cflx_input_litr_lwd = 0._r8
-  nut_forc%sflx_minn_input_nh4= 1.e-10_r8
-  nut_forc%sflx_minn_input_no3= 0._r8
-  nut_forc%sflx_minp_input_po4= 1.e-12_r8
+  om_forc%nflx_input_litr_met = forc_data%nflx_met(rec)
+  om_forc%nflx_input_litr_cel = forc_data%nflx_cel(rec)
+  om_forc%nflx_input_litr_lig = forc_data%nflx_lig(rec)
+  om_forc%nflx_input_litr_cwd = forc_data%nflx_cwd(rec)
+  om_forc%nflx_input_litr_fwd = 0._r8
+  om_forc%nflx_input_litr_lwd = 0._r8
+  om_forc%pflx_input_litr_met = forc_data%pflx_met(rec)
+  om_forc%pflx_input_litr_cel = forc_data%pflx_cel(rec)
+  om_forc%pflx_input_litr_lig = forc_data%pflx_lig(rec)
+  om_forc%pflx_input_litr_cwd = forc_data%pflx_cwd(rec)
+  om_forc%pflx_input_litr_fwd = 0._r8
+  om_forc%pflx_input_litr_lwd = 0._r8
+
+  nut_forc%sflx_minn_input_nh4= forc_data%nflx_nh4(rec)
+  nut_forc%sflx_minn_input_no3= forc_data%nflx_no3(rec)
+  nut_forc%sflx_minp_input_po4= forc_data%pflx_po4(rec)
 
 !  print*,'patm=',atm_forc%patm_pascal
 !  print*,'air_temp=',atm_forc%air_temp
