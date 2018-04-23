@@ -198,7 +198,6 @@ contains
 
   select type(biogeo_con)
   type is(CentPara_type)
-
     do sr = 1, betr_max_soilorder
       this%frac_p_sec_to_sol(sr) = biogeo_con%frac_p_sec_to_sol(sr)
 

@@ -139,7 +139,7 @@ contains
   implicit none
   class(BiogeoCon_type), intent(inout) :: this
 
-
+  print*,'set_defpar_default'
   this%init_cn_met  = 90._r8  !mass based
   this%init_cn_cel  = 90._r8  !mass based
   this%init_cn_lig  = 90._r8  !mass based

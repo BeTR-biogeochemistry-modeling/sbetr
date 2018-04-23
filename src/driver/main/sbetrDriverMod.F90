@@ -332,10 +332,13 @@ end subroutine sbetrBGC_driver
     ! !USES:
     use spmdMod        , only : masterproc, mpicom
     use clm_varctl     , only : iulog
-    use abortutils     , only : endrun
-    use shr_log_mod    , only : errMsg => shr_log_errMsg
+    use babortutils     , only : endrun
+    use bshr_log_mod    , only : errMsg => shr_log_errMsg
     use betr_constants , only : stdout, betr_string_length_long, betr_namelist_buffer_size
     use tracer_varcon  , only : advection_on, diffusion_on, reaction_on, ebullition_on, reaction_method
+    use ncdio_pio     , only : file_desc_t, ncd_nowrite, ncd_pio_openfile, ncd_pio_closefile
+    use ApplicationsFactory      , only : AppLoadParameters,AppInitParameters
+    use BetrStatusType           , only : betr_status_type
     implicit none
     ! !ARGUMENTS:
     character(len=betr_namelist_buffer_size) , intent(in)  :: namelist_buffer
@@ -348,9 +351,13 @@ end subroutine sbetrBGC_driver
     character(len=betr_string_length_long) :: simulator_name
     character(len=betr_string_length_long) :: ioerror_msg
     character(len=betr_string_length_long) :: tempstr='daoiga'
+    character(len=9) :: run_type
+    character(len=betr_string_length_long) :: param_file
+    type(file_desc_t) :: ncid
+    type(betr_status_type)   :: bstatus
     !-----------------------------------------------------------------------
 
-    namelist / sbetr_driver / simulator_name, continue_run
+    namelist / sbetr_driver / simulator_name, continue_run, run_type, param_file
 
     namelist / betr_parameters /                  &
          reaction_method,                         &
@@ -359,6 +366,7 @@ end subroutine sbetrBGC_driver
 
     continue_run=.false.
     simulator_name = ''
+    run_type ='tracer'
 
     ! ----------------------------------------------------------------------
     ! Read namelist from standard input.
@@ -384,7 +392,6 @@ end subroutine sbetrBGC_driver
        write(stdout, *)
        write(stdout, *) '--------------------'
     endif
-
     reaction_method = ''
     advection_on    = .true.
     diffusion_on    = .true.
@@ -417,6 +424,24 @@ end subroutine sbetrBGC_driver
     endif
 
     simulator_name_arg = simulator_name
+
+
+    if(trim(run_type)=='sbgc')then
+      if(index(trim(param_file),'.nc')==0)then
+        call endrun(msg='no input parameter file is give in '//errMsg(mod_filename, __LINE__))
+      else
+        call ncd_pio_openfile(ncid, trim(param_file), ncd_nowrite)
+        call AppInitParameters(namelist_buffer, reaction_method, bstatus)
+        if(bstatus%check_status())then
+          call endrun(msg=bstatus%print_msg())
+        endif
+        call AppLoadParameters(ncid, bstatus)
+        if(bstatus%check_status())then
+          call endrun(msg=bstatus%print_msg())
+        endif
+        call ncd_pio_closefile(ncid)
+      endif
+    endif
 
   end subroutine read_name_list
 

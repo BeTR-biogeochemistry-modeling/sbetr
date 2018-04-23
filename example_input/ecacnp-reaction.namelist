@@ -1,5 +1,7 @@
 &sbetr_driver
   simulator_name = 'standalone'
+  run_type='sbgc'
+  param_file='../tools/jarmodel.ecacnp_pars.04232018.nc'
 /
 
 &betr_parameters
@@ -20,4 +22,7 @@
 
 &betr_grid
   grid_data_filename = '../regression-tests/input-data/single_pt_example.grid.cdl.nc'
+/
+
+&regression_test
 /

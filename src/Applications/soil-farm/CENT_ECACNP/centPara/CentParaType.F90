@@ -121,7 +121,6 @@ contains
   if(betr_spinup_state/=0)then
     call this%apply_spinup_factor()
   endif
-
   end subroutine centpara_init
   !--------------------------------------------------------------------
   subroutine InitAllocate(this)
@@ -130,9 +129,6 @@ contains
   class(CentPara_type), intent(inout) :: this
 
 
-  allocate(this%minp_secondary_decay(0:betr_max_soilorder))
-  allocate(this%vmax_minp_soluble_to_secondary(0:betr_max_soilorder))
-  allocate(this%frac_p_sec_to_sol(0:betr_max_soilorder))
   allocate(this%spinup_factor(9))
   !the following will be actually calculated from CNP bgc
   end subroutine InitAllocate
@@ -304,7 +300,7 @@ contains
   tString='rij_kro_a'
   call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
   if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__),err=-1)
-  if(bstatus%check_status())return(1)
+  if(bstatus%check_status())return
   this%rij_kro_a=tempr(1)
 
   tString='rij_kro_alpha'

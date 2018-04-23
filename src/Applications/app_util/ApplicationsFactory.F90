@@ -138,7 +138,6 @@ contains
   type(file_desc_t), intent(inout)  :: ncid
   type(betr_status_type) , intent(out) :: bstatus
 
-  
    select case (trim(reaction_method))
    case ("ecacnp")
      call cent_para%readPars(ncid, bstatus)
@@ -162,7 +161,7 @@ contains
   use betr_constants , only : betr_namelist_buffer_size_ext
   use BetrStatusType , only : betr_status_type
   implicit none
-  character(len=betr_namelist_buffer_size_ext), intent(in) :: bgc_namelist_buffer
+  character(len=*), intent(in) :: bgc_namelist_buffer
   character(len=*), intent(in) :: reaction_method
   type(betr_status_type), intent(out)   :: bstatus
   character(len=255) :: msg

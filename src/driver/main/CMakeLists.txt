@@ -5,6 +5,7 @@ set(BETR_DRIVER_SOURCES
   )
 
 include_directories(${CMAKE_BINARY_DIR}/src/shr)
+include_directories(${CMAKE_BINARY_DIR}/src/io_util)
 include_directories(${CMAKE_BINARY_DIR}/src/stub_clm)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/app_util)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)
