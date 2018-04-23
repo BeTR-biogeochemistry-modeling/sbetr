@@ -1,0 +1,23 @@
+&sbetr_driver
+  simulator_name = 'standalone'
+/
+
+&betr_parameters
+  reaction_method = 'ecacnp'
+  advection_on = .true.
+  diffusion_on = .true.
+  reaction_on = .true.
+/
+
+&betr_time
+  stop_n = 60
+  stop_option='ndays'
+/
+
+&forcing_inparm
+  forcing_filename = '../regression-tests/input-data/single_pt_example.bgc.forc.nc'
+/
+
+&betr_grid
+  grid_data_filename = '../regression-tests/input-data/single_pt_example.grid.cdl.nc'
+/

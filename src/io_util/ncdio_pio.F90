@@ -1235,7 +1235,7 @@ module ncdio_pio
   end subroutine ncd_putatt_char
 
 
-  subroutine ncd_getatt_char(ncid,varid,attrib,value)
+  subroutine ncd_getatt_char(ncid,varname,attrib,value)
     !
     ! !DESCRIPTION:
     ! get a character attribute
@@ -1244,18 +1244,25 @@ module ncdio_pio
     !
     ! !ARGUMENTS:
     class(file_desc_t),intent(inout) :: ncid      ! netcdf file id
-    integer           ,intent(in)    :: varid     ! netcdf var id
+    character(len=*)  , intent(in)   :: varname
     character(len=*)  ,intent(in)    :: attrib    ! netcdf attrib
     character(len=*)  ,intent(out)   :: value     ! netcdf attrib value
+
     !
+    integer :: varid
+    logical :: readvar
+    type(Var_desc_t)  :: vardesc
+
     ! !LOCAL VARIABLES:
     integer :: status
 
     character(len=*), parameter :: subname = 'ncd_getatt_char'
     !-----------------------------------------------------------------------
 
-    status = nf90_get_att(ncid%fh,varid,trim(attrib),value)
-
+    call check_var(ncid, trim(varname), vardesc, readvar)
+    if(readvar)then
+      status = nf90_get_att(ncid%fh,varid,trim(attrib),value)
+    endif
   end subroutine ncd_getatt_char
 
     !-----------------------------------------------------------------------

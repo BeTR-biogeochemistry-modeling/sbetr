@@ -181,7 +181,7 @@ contains
     use ncdio_pio    , only : file_desc_t
     use ncdio_pio    , only : ncd_nowrite
     use ncdio_pio    , only : ncd_pio_openfile
-    use ncdio_pio    , only : ncd_getvar
+    use ncdio_pio    , only : ncd_getvar, ncd_getatt
     use ncdio_pio    , only : ncd_pio_closefile
     use BeTR_GridMod , only : betr_grid_type
     implicit none
@@ -194,6 +194,9 @@ contains
     real(r8), allocatable :: data_2d(:,:,:)
     real(r8), allocatable :: data_1d(:,:)
     integer               :: j1, j2
+    real(r8) :: tommps
+    character(len=9) :: units
+
 
     ncf_in_filename_forc=trim(this%forcing_filename)
     call ncd_pio_openfile(ncf_in_forc, ncf_in_filename_forc, mode=ncd_nowrite)
@@ -255,6 +258,13 @@ contains
 
     !X!write(*, *) 'Reading QFLX_ROOTSOI'
     call ncd_getvar(ncf_in_forc, 'QFLX_ROOTSOI', data_2d)
+    call ncd_getatt(ncf_in_forc,'QFLX_ROOTSOI','units',units)
+
+    if(trim(units)=='m/s')then
+      tommps=1.e3_r8
+    else
+      tommps=1._r8
+    endif
     do j2 = 1, this%num_levels
        do j1 = 1, this%num_time
           this%qflx_rootsoi(j1, j2) = data_2d(this%num_columns, j2, j1)*1.e3_r8

@@ -112,7 +112,7 @@ contains
   allocate(time_vars)
   call time_vars%Init(namelist_buffer)
 
-  !x print*,'read forcing'
+  !print*,'read forcing'
   allocate(forcing_data)
   call forcing_data%ReadData(namelist_buffer, grid_data)
 
@@ -389,7 +389,7 @@ end subroutine sbetrBGC_driver
     advection_on    = .true.
     diffusion_on    = .true.
     reaction_on     = .true.
-    ebullition_on   =.true.
+    ebullition_on   = .true.
 
     ! ----------------------------------------------------------------------
     ! Read namelist from standard input.
