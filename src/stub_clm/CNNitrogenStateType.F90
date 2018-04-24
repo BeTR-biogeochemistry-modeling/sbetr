@@ -78,6 +78,7 @@ contains
     allocate(this%som1n_col(begc:endc)); this%som1n_col(:) = nan
     allocate(this%som2n_col(begc:endc)); this%som2n_col(:) = nan
     allocate(this%som3n_col(begc:endc)); this%som3n_col(:) = nan
+    allocate(this%sminn_col(begc:endc)); this%sminn_col(:) = nan
 
   end subroutine InitAllocate
 
