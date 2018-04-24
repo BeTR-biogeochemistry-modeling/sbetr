@@ -905,7 +905,6 @@ contains
 
   this%msurf_nh4 = bgc_forc%msurf_nh4
   this%msurf_minp = bgc_forc%msurf_minp
-
   end associate
   end subroutine init_states
   !--------------------------------------------------------------------

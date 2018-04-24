@@ -59,7 +59,7 @@ implicit none
    procedure, public  :: readPars => readPars_bcon
    procedure, public  :: printPars=> printPars_bcon
    procedure, public  :: bcon_Init
-   procedure, private :: InitAllocate
+   procedure, private :: InitAllocate_bcon
    procedure, private :: set_defpar_default_base
    procedure, public  :: readPars_bgc
    procedure, public  :: prtPars_bgc
@@ -108,8 +108,9 @@ contains
 
   call bstatus%reset()
 
-  call this%InitAllocate()
+  call this%InitAllocate_bcon()
   call this%set_defpar_default_base()
+
   this%use_c13 = use_c13_betr
   this%use_c14 = use_c14_betr
   this%nop_limit=.not. is_phosphorus_active
@@ -120,26 +121,23 @@ contains
 
   end subroutine bcon_Init
   !--------------------------------------------------------------------
-  subroutine InitAllocate(this)
+  subroutine InitAllocate_bcon(this)
   use betr_varcon, only : betr_maxpatch_pft, betr_max_soilorder
 
   implicit none
   class(BiogeoCon_type), intent(inout) :: this
 
-
   allocate(this%minp_secondary_decay(0:betr_max_soilorder))
   allocate(this%vmax_minp_soluble_to_secondary(0:betr_max_soilorder))
   allocate(this%frac_p_sec_to_sol(0:betr_max_soilorder))
-
   !the following will be actually calculated from CNP bgc
-  end subroutine InitAllocate
+  end subroutine InitAllocate_bcon
   !--------------------------------------------------------------------
   subroutine set_defpar_default_base(this)
   use bshr_const_mod  , only : year_sec=>SHR_CONST_YEARSECS
   implicit none
   class(BiogeoCon_type), intent(inout) :: this
 
-  print*,'set_defpar_default'
   this%init_cn_met  = 90._r8  !mass based
   this%init_cn_cel  = 90._r8  !mass based
   this%init_cn_lig  = 90._r8  !mass based

@@ -166,7 +166,8 @@ contains
   type(betr_status_type), intent(out)   :: bstatus
   character(len=255) :: msg
 
-  call bstatus%reset()
+   call bstatus%reset()
+
    select case (trim(reaction_method))
    case ("ecacnp")
      call  cent_para%Init(bgc_namelist_buffer, bstatus)

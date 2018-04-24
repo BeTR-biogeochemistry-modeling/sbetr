@@ -295,7 +295,8 @@ contains
   c_l = 1
   do fc = 1, num_soilc
     c = filter_soilc(fc)
-
+    call this%biophys_forc(c)%reset(value_column=0._r8)
+    this%biophys_forc(c)%isoilorder(c_l) = 1
     call this%biophys_forc(c)%c12flx%reset(value_column=0._r8)
     call this%biophys_forc(c)%n14flx%reset(value_column=0._r8)
     call this%biophys_forc(c)%p31flx%reset(value_column=0._r8)

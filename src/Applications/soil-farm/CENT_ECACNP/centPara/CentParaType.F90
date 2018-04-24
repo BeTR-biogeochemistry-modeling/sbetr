@@ -80,7 +80,7 @@ implicit none
    procedure, public  :: Init => centpara_init
    procedure, public  :: readPars => centpara_readPars
    procedure, public  :: printPars=> centpara_printPars
-   procedure, private :: InitAllocate
+   procedure, private :: InitAllocate_centpara
    procedure, private :: set_defpar_default
    procedure, public  :: apply_spinup_factor
    procedure, public  :: set_spinup_factor
@@ -113,8 +113,9 @@ contains
   type(betr_status_type)   , intent(out) :: bstatus
 
   call this%bcon_Init(bstatus)
+  if(bstatus%check_status())return
 
-  call this%InitAllocate()
+  call this%InitAllocate_centpara()
 
   call this%set_defpar_default()
 
@@ -123,7 +124,7 @@ contains
   endif
   end subroutine centpara_init
   !--------------------------------------------------------------------
-  subroutine InitAllocate(this)
+  subroutine InitAllocate_centpara(this)
   use betr_varcon, only : betr_maxpatch_pft, betr_max_soilorder
   implicit none
   class(CentPara_type), intent(inout) :: this
@@ -131,7 +132,7 @@ contains
 
   allocate(this%spinup_factor(9))
   !the following will be actually calculated from CNP bgc
-  end subroutine InitAllocate
+  end subroutine InitAllocate_centpara
   !--------------------------------------------------------------------
   subroutine set_defpar_default(this)
 

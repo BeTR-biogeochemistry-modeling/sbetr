@@ -433,7 +433,7 @@ end subroutine sbetrBGC_driver
 
     simulator_name_arg = simulator_name
 
-
+    
     if(trim(run_type)=='sbgc')then
       if(index(trim(param_file),'.nc')==0)then
         call endrun(msg='no input parameter file is give in '//errMsg(mod_filename, __LINE__))
