@@ -94,6 +94,13 @@ contains
     allocate(this%occlp_vr_col             (begc:endc,1:nlevdecomp_full)) ; this%occlp_vr_col             (:,:) = nan
     allocate(this%primp_vr_col             (begc:endc,1:nlevdecomp_full)) ; this%primp_vr_col             (:,:) = nan
     allocate(this%sminp_vr_col             (begc:endc,1:nlevdecomp_full)) ; this%sminp_vr_col             (:,:) = nan
+    allocate(this%totlitp_col (begc:endc)); this%totlitp_col(:) = nan
+    allocate(this%totsomp_col(begc:endc)); this%totsomp_col(:) = nan
+    allocate(this%totlitp_1m_col(begc:endc)); this%totlitp_1m_col(:) = nan
+    allocate(this%totsomp_1m_col(begc:endc)); this%totsomp_1m_col(:) = nan
+    allocate(this%som1p_col(begc:endc)); this%som1p_col(:) = nan
+    allocate(this%som2p_col(begc:endc)); this%som2p_col(:) = nan
+    allocate(this%som3p_col(begc:endc)); this%som3p_col(:) = nan
 
   end subroutine InitAllocate
 

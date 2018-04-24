@@ -44,7 +44,8 @@ implicit none
     real(r8), pointer :: pflx_input_litr_lig_vr_col                (:,:) => null()
     real(r8), pointer :: pflx_input_litr_cwd_vr_col                (:,:) => null()
     real(r8), pointer :: pflx_minp_input_po4_vr_col                (:,:) => null()
-
+    real(r8), pointer :: sminp_col(:)
+    real(r8), pointer :: occlp_col(:)
   contains
 
     procedure, public  :: Init
@@ -123,7 +124,12 @@ contains
     allocate(this%pflx_input_litr_lig_vr_col(begc:endc,1:nlevdecomp_full)); this%pflx_input_litr_lig_vr_col(:,:) = nan
     allocate(this%pflx_input_litr_cwd_vr_col(begc:endc,1:nlevdecomp_full)); this%pflx_input_litr_cwd_vr_col(:,:) = nan
     allocate(this%pflx_minp_input_po4_vr_col(begc:endc,1:nlevdecomp_full)); this%pflx_minp_input_po4_vr_col(:,:) = nan
-
+    allocate(this%supplement_to_sminp_col(begc:endc)); this%supplement_to_sminp_col(:) = nan
+    allocate(this%secondp_to_occlp_col(begc:endc)); this%secondp_to_occlp_col(:) = nan
+    allocate(this%fire_decomp_ploss_col(begc:endc)); this%fire_decomp_ploss_col(:) = nan
+    allocate(this%occlp_col(begc:endc)); this%occlp_col(:) = nan
+    allocate(this%sminp_col(begc:endc)); this%sminp_col(:) = nan
+    allocate(this%som_p_runoff_col(begc:endc)); this%som_p_runoff_col(:) = nan
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------

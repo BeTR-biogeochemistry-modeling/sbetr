@@ -263,6 +263,7 @@ contains
         call simulation%PlantSoilBGCSend(bounds, col, pft, simulation%num_soilc, simulation%filter_soilc,&
           cnstate_vars,  carbonflux_vars, c13_cflx_vars, c14_cflx_vars,  nitrogenflux_vars, phosphorusflux_vars, &
         plantMicKinetics_vars)
+
       endif
     class default
       call simulation%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi,               &
@@ -289,6 +290,15 @@ contains
        waterflux_vars=waterflux_vars )
     call simulation%StepWithDrainage(bounds, col)
 
+
+    select type(simulation)
+    class is (betr_simulation_standalone_type)
+      if(simulation%do_soibgc())then
+        call simulation%PlantSoilBGCRecv(bounds, col, pft,  simulation%num_soilc, simulation%filter_soilc,&
+          carbonstate_vars, carbonflux_vars, c13state_vars, c13_cflx_vars, c14state_vars, c14_cflx_vars, &
+          nitrogenstate_vars, nitrogenflux_vars, phosphorusstate_vars, phosphorusflux_vars)
+      endif
+    end select
     !x print*,'do mass balance check'
     call simulation%MassBalanceCheck(bounds)
 

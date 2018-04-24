@@ -70,6 +70,14 @@ contains
     allocate(this%smin_nh4_col             (begc:endc))                   ; this%smin_nh4_col             (:)   = nan
     allocate(this%sminn_vr_col             (begc:endc,1:nlevdecomp_full)) ; this%sminn_vr_col             (:,:) = nan
     allocate(this%pnup_pfrootc_patch (begp:endp)); this%pnup_pfrootc_patch (:) = nan
+    allocate(this%cwdn_col(begc:endc)); this%cwdn_col(:) = nan
+    allocate(this%totlitn_col(begc:endc)); this%totlitn_col(:) = nan
+    allocate(this%totsomn_col(begc:endc)); this%totsomn_col(:) = nan
+    allocate(this%totlitn_1m_col(begc:endc)); this%totlitn_1m_col(:) = nan
+    allocate(this%totsomn_1m_col(begc:endc)); this%totsomn_1m_col(:) = nan
+    allocate(this%som1n_col(begc:endc)); this%som1n_col(:) = nan
+    allocate(this%som2n_col(begc:endc)); this%som2n_col(:) = nan
+    allocate(this%som3n_col(begc:endc)); this%som3n_col(:) = nan
 
   end subroutine InitAllocate
 

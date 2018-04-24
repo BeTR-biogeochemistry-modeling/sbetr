@@ -1,7 +1,7 @@
 &sbetr_driver
   simulator_name = 'standalone'
   run_type='sbgc'
-  param_file='../tools/jarmodel.ecacnp_pars.04232018.nc'
+  param_file='../tools/sbgc.ecacnp_pars.04232018.nc'
 /
 
 &betr_parameters

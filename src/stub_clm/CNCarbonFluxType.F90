@@ -119,8 +119,8 @@ contains
     allocate(this%cflx_input_litr_cel_vr_col(begc:endc,1:nlevdecomp_full)); this%cflx_input_litr_cel_vr_col(:,:) = nan
     allocate(this%cflx_input_litr_lig_vr_col(begc:endc,1:nlevdecomp_full)); this%cflx_input_litr_lig_vr_col(:,:) = nan
     allocate(this%cflx_input_litr_cwd_vr_col(begc:endc,1:nlevdecomp_full)); this%cflx_input_litr_cwd_vr_col(:,:) = nan
-
-
+    allocate(this%fire_decomp_closs_col(begc:endc)); this%fire_decomp_closs_col(:) = nan
+    allocate(this%som_c_runoff_col(begc:endc)); this%som_c_runoff_col(:) = nan
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------

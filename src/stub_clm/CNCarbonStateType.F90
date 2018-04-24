@@ -60,6 +60,15 @@ contains
     begc = bounds%begc; endc= bounds%endc
     allocate(this%decomp_cpools_vr_col(begc:endc,1:nlevdecomp_full,1:ndecomp_pools)); this%decomp_cpools_vr_col(:,:,:)= nan
     allocate(this%frootc_patch             (begp :endp))                   ;     this%frootc_patch             (:)   = nan
+    allocate(this%cwdc_col(begc:endc)); this%cwdc_col(:) = nan
+    allocate(this%totlitc_col(begc:endc)); this%totlitc_col(:) = nan
+    allocate(this%totsomc_col(begc:endc)); this%totsomc_col(:) = nan
+    allocate(this%totlitc_1m_col(begc:endc)); this%totlitc_1m_col(:) = nan
+    allocate(this%totsomc_1m_col(begc:endc)); this%totsomc_1m_col(:) = nan
+    allocate(this%som1c_col(begc:endc)); this%som1c_col(:) = nan
+    allocate(this%som2c_col(begc:endc)); this%som2c_col(:) = nan
+    allocate(this%som3c_col(begc:endc)); this%som3c_col(:) = nan
+
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------

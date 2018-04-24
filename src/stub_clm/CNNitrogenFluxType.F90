@@ -53,6 +53,9 @@ implicit none
      real(r8), pointer :: nflx_input_litr_cwd_vr_col              (:,:) => null()
      real(r8), pointer :: nflx_minn_input_nh4_vr_col              (:,:) => null()
      real(r8), pointer :: nflx_minn_input_no3_vr_col              (:,:) => null()
+     real(r8), pointer :: smin_nh4_col(:)
+     real(r8), pointer :: smin_no3_col(:)
+     real(r8), pointer :: sminn_col(:)
   contains
 
     procedure, public  :: Init
@@ -93,6 +96,7 @@ contains
 
     begp = bounds%begp; endp= bounds%endp
     begc = bounds%begc; endc= bounds%endc
+
     allocate(this%smin_no3_runoff_col         (begc:endc)); this%smin_no3_runoff_col   (:)   = nan
     allocate(this%smin_no3_leached_col        (begc:endc)); this%smin_no3_leached_col  (:)   = nan
     allocate(this%f_n2o_denit_col             (begc:endc)); this%f_n2o_denit_col       (:)   = nan
@@ -137,6 +141,11 @@ contains
     allocate(this%nflx_input_litr_cwd_vr_col(begc:endc,1:nlevdecomp_full)); this%nflx_input_litr_cwd_vr_col(:,:) = nan
     allocate(this%nflx_minn_input_nh4_vr_col(begc:endc,1:nlevdecomp_full)); this%nflx_minn_input_nh4_vr_col(:,:) = nan
     allocate(this%nflx_minn_input_no3_vr_col(begc:endc,1:nlevdecomp_full)); this%nflx_minn_input_no3_vr_col(:,:) = nan
+    allocate(this%fire_decomp_nloss_col(begc:endc)); this%fire_decomp_nloss_col(:) = nan
+    allocate(this%sminn_col(begc:endc)); this%sminn_col(:) = nan
+    allocate(this%smin_nh4_col(begc:endc)); this%smin_nh4_col(:) = nan
+    allocate(this%smin_no3_col(begc:endc)); this%smin_no3_col(:) = nan
+    allocate(this%som_n_runoff_col(begc:endc)); this%som_n_runoff_col(:) = nan
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------
