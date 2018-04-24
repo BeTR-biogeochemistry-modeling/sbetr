@@ -1285,6 +1285,7 @@ contains
         this%centuryeca(c,j)%bgc_on=.not. betrtracer_vars%debug
 
         if(this%centuryforc(c,j)%debug)print*,'runbgc',j
+
         call this%centuryeca(c,j)%runbgc(is_surflit, dtime, this%centuryforc(c,j),nstates, &
             ystates0, ystatesf, betr_status)
         if(betr_status%check_status())then

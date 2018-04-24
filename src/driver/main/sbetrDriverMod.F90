@@ -344,6 +344,7 @@ end subroutine sbetrBGC_driver
     use bshr_log_mod    , only : errMsg => shr_log_errMsg
     use betr_constants , only : stdout, betr_string_length_long, betr_namelist_buffer_size
     use tracer_varcon  , only : advection_on, diffusion_on, reaction_on, ebullition_on, reaction_method
+    use tracer_varcon  , only :  is_nitrogen_active, is_phosphorus_active
     use ncdio_pio     , only : file_desc_t, ncd_nowrite, ncd_pio_openfile, ncd_pio_closefile
     use ApplicationsFactory      , only : AppLoadParameters,AppInitParameters
     use BetrStatusType           , only : betr_status_type
@@ -365,7 +366,8 @@ end subroutine sbetrBGC_driver
     type(betr_status_type)   :: bstatus
     !-----------------------------------------------------------------------
 
-    namelist / sbetr_driver / simulator_name, continue_run, run_type, param_file
+    namelist / sbetr_driver / simulator_name, continue_run, run_type, param_file, &
+        is_nitrogen_active, is_phosphorus_active
 
     namelist / betr_parameters /                  &
          reaction_method,                         &
@@ -375,7 +377,7 @@ end subroutine sbetrBGC_driver
     continue_run=.false.
     simulator_name = ''
     run_type ='tracer'
-
+    is_nitrogen_active=.true.; is_phosphorus_active =.false.
     ! ----------------------------------------------------------------------
     ! Read namelist from standard input.
     ! ----------------------------------------------------------------------
@@ -433,7 +435,7 @@ end subroutine sbetrBGC_driver
 
     simulator_name_arg = simulator_name
 
-    
+
     if(trim(run_type)=='sbgc')then
       if(index(trim(param_file),'.nc')==0)then
         call endrun(msg='no input parameter file is give in '//errMsg(mod_filename, __LINE__))

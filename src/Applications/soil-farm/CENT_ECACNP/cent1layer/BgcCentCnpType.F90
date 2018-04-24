@@ -574,6 +574,7 @@ contains
   !so the reaction rate is a function of state variables. Further, for simplicity,
   !the nitrification and denitrification rates have been assumed as linear function
   !nh4 and no3 in soil.
+
   call this%arenchyma_gas_transport(this%centurybgc_index, dtime)
   !do the stoichiometric matrix separation
   call pd_decomp(nprimvars, nreactions, cascade_matrix(1:nprimvars, 1:nreactions), &
@@ -597,7 +598,7 @@ contains
 !  if(this%centurybgc_index%debug)call this%end_massbal_check('bf exit runbgc')
 !  endif
   ystatesf(:) = ystates1(:)
-
+  
   end associate
   end subroutine runbgc_ecacnp
   !-------------------------------------------------------------------------------
@@ -1271,12 +1272,7 @@ contains
 !    print*,'plant nn',rrates(lid_plant_minn_no3_up_reac),rrates(lid_plant_minn_nh4_up_reac)
 !    print*,'plant p',rrates(lid_plant_minp_up_reac)
 !  endif
-  !the following treatment is to ensure mass balance
-!  if(this%centurybgc_index%debug)then
-!    do jj = 1, nreactions
-!      print*,'bfcascd jj',jj,rrates(jj)
-!    enddo
-!  endif
+
   if(this%plant_ntypes==1)then
     do jj = 1, this%plant_ntypes
       this%cascade_matrix(lid_plant_minn_no3_pft(jj),lid_plant_minn_no3_up_reac) = 1._r8
@@ -1322,6 +1318,7 @@ contains
 !     print*,'sumrac',sum(ECA_flx_no3_plants),rrates(lid_plant_minn_no3_up_reac)
 !     stop
 !  endif
+
   it=0
   rscal=0._r8
   do

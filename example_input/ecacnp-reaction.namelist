@@ -6,9 +6,6 @@
 
 &betr_parameters
   reaction_method = 'ecacnp'
-  advection_on = .true.
-  diffusion_on = .true.
-  reaction_on = .true.
 /
 
 &betr_time
