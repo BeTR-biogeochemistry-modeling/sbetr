@@ -293,7 +293,7 @@ contains
        enddo
     enddo
 
-    call ncd_getvar(ncf_in_forc, 'PFLX_MINN_INPUT_PO4_vr', data_2d)
+    call ncd_getvar(ncf_in_forc, 'PFLX_MINP_INPUT_PO4_vr', data_2d)
     do j2 = 1, this%num_levels
        do j1 = 1, this%num_time
           this%pflx_po4_vr(j1, j2) = data_2d(this%num_columns, j2, j1)
