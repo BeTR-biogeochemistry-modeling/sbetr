@@ -7,7 +7,7 @@ begin
   setfileoption("nc","preFill",False)
   setfileoption("nc","defineMode",True)
 ;---Open a new NetCDF file to write to
-  fout_name="jarmodel.cdomcnp_pars."+DateYMD+".nc"
+  fout_name="sbgc.cdomcnp_pars."+DateYMD+".nc"
   system("rm -f " + fout_name)
   fout=addfile(fout_name, "c")
 ;---create dimensions
