@@ -130,7 +130,7 @@ contains
 
   call spmd_init
   !print*,'set filters to load initialization data from input'
-  call simulation%BeTRSetFilter(maxpft_per_col=1, boffline=.true.)
+  call simulation%BeTRSetFilter(maxpft_per_col=0, boffline=.true.)
 
   if(continue_run)then
     ! print*,'continue from restart file'
@@ -185,6 +185,10 @@ contains
   endif
 
   !x print*,'bf loop'
+  if(simulation%do_soibgc())then
+    call forcing_data%ReadCNPData()
+  endif
+
   do
     record = record + 1
     call simulation%SetClock(dtime=time_vars%get_step_size(), nelapstep=time_vars%get_nstep())
@@ -249,8 +253,12 @@ contains
         temperature_vars=temperature_vars,       soilhydrology_vars=soilhydrology_vars, &
         atm2lnd_vars=atm2lnd_vars,               canopystate_vars=canopystate_vars,     &
         chemstate_vars=chemstate_vars,           soilstate_vars=soilstate_vars)
+
       if(simulation%do_soibgc())then
-        print*,'do active soil bgc'
+        call forcing_data%UpdateCNPForcing(1, nlevsoi, &
+          simulation%num_soilc, simulation%filter_soilc, time_vars,  &
+          carbonflux_vars, c13_cflx_vars, c14_cflx_vars, nitrogenflux_vars, &
+          phosphorusflux_vars, plantMicKinetics_vars)
 
         call simulation%PlantSoilBGCSend(bounds, col, pft, simulation%num_soilc, simulation%filter_soilc,&
           cnstate_vars,  carbonflux_vars, c13_cflx_vars, c14_cflx_vars,  nitrogenflux_vars, phosphorusflux_vars, &

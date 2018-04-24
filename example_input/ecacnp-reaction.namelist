@@ -12,6 +12,7 @@
 /
 
 &betr_time
+  delta_time=3600.
   stop_n = 60
   stop_option='ndays'
 /

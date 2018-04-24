@@ -18,11 +18,21 @@ variables:
 		PCTSAND:units = "%" ;
 		PCTSAND:_FillValue = 9.99999961690316e+35 ;
 		PCTSAND:missing_value = 1.e+36f ;
+  double PCTCLAY(levgrnd, lndgrid) ;
+		PCTCLAY:long_name = "soil clay content" ;
+		PCTCLAY:units = "%" ;
+		PCTCLAY:_FillValue = 1.e+36f ;
+		PCTCLAY:missing_value = 1.e+36f ;
 	double SUCSAT(levgrnd, lndgrid) ;
 		SUCSAT:long_name = "saturated soil matric potential" ;
 		SUCSAT:units = "mm" ;
 		SUCSAT:_FillValue = 1.e+36f ;
 		SUCSAT:missing_value = 1.e+36f ;
+  double CELLORG(levgrnd, lndgrid) ;
+		CELLORG:long_name = "soil organic mass content" ;
+		CELLORG:units = "kg/m3" ;
+		CELLORG:_FillValue = 1.e+36f ;
+		CELLORG:missing_value = 1.e+36f ;
 // global attributes:
 		:title = "Standalone BeTR uniform soil parameters." ;
 		:comment = "NOTE(bja, 201604) created by arbitrarily removing variability from another file!" ;
@@ -80,6 +90,24 @@ data:
   20.000000,
   20.000000;
 
+ PCTCLAY =
+   10.0,
+   10.0,
+   10.0,
+   10.0,
+   10.0,
+   10.0,
+   10.0,
+   10.0,
+   10.0,
+   10.0,
+   10.0,
+   10.0,
+   10.0,
+   10.0,
+   10.0 ;
+
+
  SUCSAT =
   139.0655,
   149.7077,
@@ -96,4 +124,21 @@ data:
   178.32,
   178.32,
   178.32 ;
+
+ CELLORG =
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0 ;
 }

@@ -11,6 +11,7 @@ module BeTRSimulationStandalone
   !
   use abortutils          , only : endrun
   use clm_varctl          , only : iulog
+  use shr_kind_mod        , only : r8 => shr_kind_r8
   use shr_log_mod         , only : errMsg => shr_log_errMsg
   use betr_decompMod      , only : betr_bounds_type
   use decompMod           , only : bounds_type
@@ -287,6 +288,49 @@ contains
   type(phosphorusflux_type), intent(in):: phosphorusflux_vars
   type(PlantMicKinetics_type), intent(in) :: PlantMicKinetics_vars
 
+  integer :: c_l, c, fc, j
+  type(betr_bounds_type)   :: betr_bounds
+  call this%BeTRSetBounds(betr_bounds)
+
+  c_l = 1
+  do fc = 1, num_soilc
+    c = filter_soilc(fc)
+
+    call this%biophys_forc(c)%c12flx%reset(value_column=0._r8)
+    call this%biophys_forc(c)%n14flx%reset(value_column=0._r8)
+    call this%biophys_forc(c)%p31flx%reset(value_column=0._r8)
+
+    if(use_c13_betr)then
+      call this%biophys_forc(c)%c13flx%reset(value_column=0._r8)
+    endif
+
+    if(use_c14_betr)then
+      call this%biophys_forc(c)%c14flx%reset(value_column=0._r8)
+    endif
+  enddo
+
+  do j = betr_bounds%lbj, betr_bounds%ubj
+    do fc = 1, num_soilc
+      c = filter_soilc(fc)
+      this%biophys_forc(c)%c12flx%cflx_input_litr_met_vr_col(c_l,j) = carbonflux_vars%cflx_input_litr_met_vr_col(c,j)
+      this%biophys_forc(c)%c12flx%cflx_input_litr_cel_vr_col(c_l,j) = carbonflux_vars%cflx_input_litr_cel_vr_col(c,j)
+      this%biophys_forc(c)%c12flx%cflx_input_litr_lig_vr_col(c_l,j) = carbonflux_vars%cflx_input_litr_lig_vr_col(c,j)
+      this%biophys_forc(c)%c12flx%cflx_input_litr_cwd_vr_col(c_l,j) = carbonflux_vars%cflx_input_litr_cwd_vr_col(c,j)
+
+      this%biophys_forc(c)%n14flx%nflx_input_litr_met_vr_col(c_l,j) = nitrogenflux_vars%nflx_input_litr_met_vr_col(c,j)
+      this%biophys_forc(c)%n14flx%nflx_input_litr_cel_vr_col(c_l,j) = nitrogenflux_vars%nflx_input_litr_cel_vr_col(c,j)
+      this%biophys_forc(c)%n14flx%nflx_input_litr_lig_vr_col(c_l,j) = nitrogenflux_vars%nflx_input_litr_lig_vr_col(c,j)
+      this%biophys_forc(c)%n14flx%nflx_input_litr_cwd_vr_col(c_l,j) = nitrogenflux_vars%nflx_input_litr_cwd_vr_col(c,j)
+      this%biophys_forc(c)%n14flx%nflx_minn_input_nh4_vr_col(c_l,j) = nitrogenflux_vars%nflx_minn_input_nh4_vr_col(c,j)
+      this%biophys_forc(c)%n14flx%nflx_minn_input_no3_vr_col(c_l,j) = nitrogenflux_vars%nflx_minn_input_no3_vr_col(c,j)
+
+      this%biophys_forc(c)%p31flx%pflx_input_litr_met_vr_col(c_l,j) = phosphorusflux_vars%pflx_input_litr_met_vr_col(c,j)
+      this%biophys_forc(c)%p31flx%pflx_input_litr_cel_vr_col(c_l,j) = phosphorusflux_vars%pflx_input_litr_cel_vr_col(c,j)
+      this%biophys_forc(c)%p31flx%pflx_input_litr_lig_vr_col(c_l,j) = phosphorusflux_vars%pflx_input_litr_lig_vr_col(c,j)
+      this%biophys_forc(c)%p31flx%pflx_input_litr_cwd_vr_col(c_l,j) = phosphorusflux_vars%pflx_input_litr_cwd_vr_col(c,j)
+      this%biophys_forc(c)%p31flx%pflx_minp_input_po4_vr_col(c_l,j) = phosphorusflux_vars%pflx_minp_input_po4_vr_col(c,j)
+    enddo
+  enddo
 
   end subroutine StandalonePlantSoilBGCSend
 end module BeTRSimulationStandalone

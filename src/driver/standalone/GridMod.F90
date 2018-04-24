@@ -44,6 +44,8 @@ module BeTR_GridMod
      real(r8), public, pointer :: watsat(:) => null() ! saturated volumetric water content
      real(r8), public, pointer :: sucsat(:)=> null()
      real(r8), public, pointer :: pctsand(:)=> null()
+     real(r8), public, pointer :: pctclay(:)=> null()
+     real(r8), public, pointer :: cellorg(:)=> null()
    contains
      procedure, public  :: Init
      procedure, public  :: ReadNamelist
@@ -123,6 +125,13 @@ contains
 
     allocate(this%pctsand(1:this%nlevgrnd))
     this%pctsand = bspval
+
+    allocate(this%pctclay(1:this%nlevgrnd))
+    this%pctclay = bspval
+
+    allocate(this%cellorg(1:this%nlevgrnd))
+    this%cellorg = bspval
+
   end subroutine InitAllocate
 
   ! ---------------------------------------------------------------------------
@@ -233,6 +242,16 @@ contains
     call ncd_getvar(ncf_in, 'PCTSAND', data)
     do j = 1, this%nlevgrnd
       this%pctsand(j) = data(num_columns, j)
+    enddo
+
+    call ncd_getvar(ncf_in, 'PCTCLAY', data)
+    do j = 1, this%nlevgrnd
+      this%pctclay(j) = data(num_columns, j)
+    enddo
+
+    call ncd_getvar(ncf_in, 'CELLORG', data)
+    do j = 1, this%nlevgrnd
+       this%cellorg(j) = data(num_columns, j)
     enddo
 
     if (this%grid_type == dataset_grid) then

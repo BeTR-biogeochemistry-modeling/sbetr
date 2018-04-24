@@ -34,19 +34,37 @@ module ForcingDataType
      real(r8), pointer                   :: h2osoi_ice(:,:) => null()
      real(r8), pointer                   :: qflx_infl(:)     => null()  !surface infiltration, mm/s
      real(r8), pointer                   :: qflx_rootsoi(:,:) => null()  !transpiration at depth, m/s
-!x     real(r8), pointer                 :: qflx_rootsoi_patch(:,:) => null()  !transpiration at depth, m/s
      real(r8), pointer                   :: pbot(:)      => null()      !amtospheric pressure, Pa
      real(r8), pointer                   :: tbot(:)       => null()     !atmoshperic temperature, kelvin
      real(r8), pointer                   :: qbot(:)       => null()     !water flux at bottom boundary, mm/s
-!x     real(r8), pointer                 :: soilpsi(:)=> null()
+     real(r8), pointer                   :: finudated(:) => null()
+     real(r8), pointer                   :: nflx_nh4_vr(:,:) => null()
+     real(r8), pointer                   :: nflx_no3_vr(:,:) => null()
+     real(r8), pointer                   :: pflx_po4_vr(:,:) => null()
+     real(r8), pointer                   :: cflx_met_vr(:,:) => null()
+     real(r8), pointer                   :: cflx_cel_vr(:,:) => null()
+     real(r8), pointer                   :: cflx_lig_vr(:,:) => null()
+     real(r8), pointer                   :: cflx_cwd_vr(:,:) => null()
+     real(r8), pointer                   :: nflx_met_vr(:,:) => null()
+     real(r8), pointer                   :: nflx_cel_vr(:,:) => null()
+     real(r8), pointer                   :: nflx_lig_vr(:,:) => null()
+     real(r8), pointer                   :: nflx_cwd_vr(:,:) => null()
+     real(r8), pointer                   :: pflx_met_vr(:,:) => null()
+     real(r8), pointer                   :: pflx_cel_vr(:,:) => null()
+     real(r8), pointer                   :: pflx_lig_vr(:,:) => null()
+     real(r8), pointer                   :: pflx_cwd_vr(:,:) => null()
+
    contains
      procedure, public :: Init
      procedure, public :: ReadData
      procedure, public :: ReadForcingData
+     procedure, public :: ReadCNPData
      procedure, public :: UpdateForcing
+     procedure, public :: UpdateCNPForcing
      procedure, public :: discharge
      procedure, public :: infiltration
      procedure, private :: InitAllocate
+     procedure, private :: InitAllocate_CNP
      procedure, private :: ReadNameList
      procedure, public  :: destroy
   end type ForcingData_type
@@ -77,56 +95,215 @@ contains
           write(*, *) 'WARNING: no forcing data type specified, using transient.'
        end select
 
-    call this%InitAllocate(this%num_time)
+    call this%InitAllocate()
 
   end subroutine Init
 
 
+  !------------------------------------------------------------------------
+  subroutine Destroy(this)
+  !DESCRIPTION
+  !allocate memory
+  implicit none
+  class(ForcingData_type), intent(inout) :: this
+  !at this moment the variable size is fixed
 
+  deallocate(this%t_soi)
+  deallocate(this%h2osoi_liqvol)
+  deallocate(this%h2osoi_icevol)
+  deallocate(this%h2osoi_liq)
+  deallocate(this%h2osoi_ice)
+  deallocate(this%qflx_infl)
+  deallocate(this%qflx_rootsoi)
+  deallocate(this%pbot)
+  deallocate(this%qbot)
+  deallocate(this%tbot)
 
-    !------------------------------------------------------------------------
-    subroutine Destroy(this)
-      !DESCRIPTION
-      !allocate memory
-      implicit none
-      class(ForcingData_type), intent(inout) :: this
-      !at this moment the variable size is fixed
-
-      deallocate(this%t_soi)
-      deallocate(this%h2osoi_liqvol)
-      deallocate(this%h2osoi_icevol)
-      deallocate(this%h2osoi_liq)
-      deallocate(this%h2osoi_ice)
-      deallocate(this%qflx_infl)
-      deallocate(this%qflx_rootsoi)
-      deallocate(this%pbot)
-      deallocate(this%qbot)
-      deallocate(this%tbot)
-
-    end subroutine Destroy
+  end subroutine Destroy
 
   !------------------------------------------------------------------------
-  subroutine InitAllocate(this, num_time)
+  subroutine InitAllocate(this)
     !DESCRIPTION
     !allocate memory
     implicit none
     class(ForcingData_type), intent(inout) :: this
-    integer, intent(in) :: num_time
     !at this moment the variable size is fixed
 
-    allocate(this%t_soi(num_time, this%num_levels))
-    allocate(this%h2osoi_liqvol(num_time, this%num_levels))
-    allocate(this%h2osoi_icevol(num_time, this%num_levels))
-    allocate(this%h2osoi_liq(num_time, this%num_levels))
-    allocate(this%h2osoi_ice(num_time, this%num_levels))
-    allocate(this%qflx_infl(num_time))
-    allocate(this%qflx_rootsoi(num_time, this%num_levels))
-    allocate(this%pbot(num_time))
-    allocate(this%qbot(num_time))
-    allocate(this%tbot(num_time))
+    allocate(this%t_soi(this%num_time, this%num_levels))
+    allocate(this%h2osoi_liqvol(this%num_time, this%num_levels))
+    allocate(this%h2osoi_icevol(this%num_time, this%num_levels))
+    allocate(this%h2osoi_liq(this%num_time, this%num_levels))
+    allocate(this%h2osoi_ice(this%num_time, this%num_levels))
+    allocate(this%qflx_infl(this%num_time))
+    allocate(this%qflx_rootsoi(this%num_time, this%num_levels))
+    allocate(this%pbot(this%num_time))
+    allocate(this%qbot(this%num_time))
+    allocate(this%tbot(this%num_time))
 
   end subroutine InitAllocate
+  !------------------------------------------------------------------------
+  subroutine InitAllocate_CNP(this)
+    !DESCRIPTION
+    !allocate memory
+    implicit none
+    class(ForcingData_type), intent(inout) :: this
+    !at this moment the variable size is fixed
 
+    allocate(this%cflx_met_vr(this%num_time, this%num_levels))
+    allocate(this%cflx_cel_vr(this%num_time, this%num_levels))
+    allocate(this%cflx_lig_vr(this%num_time, this%num_levels))
+    allocate(this%cflx_cwd_vr(this%num_time, this%num_levels))
+    allocate(this%nflx_met_vr(this%num_time, this%num_levels))
+    allocate(this%nflx_cel_vr(this%num_time, this%num_levels))
+    allocate(this%nflx_lig_vr(this%num_time, this%num_levels))
+    allocate(this%nflx_cwd_vr(this%num_time, this%num_levels))
+    allocate(this%pflx_met_vr(this%num_time, this%num_levels))
+    allocate(this%pflx_cel_vr(this%num_time, this%num_levels))
+    allocate(this%pflx_lig_vr(this%num_time, this%num_levels))
+    allocate(this%pflx_cwd_vr(this%num_time, this%num_levels))
+    allocate(this%nflx_nh4_vr(this%num_time, this%num_levels))
+    allocate(this%nflx_no3_vr(this%num_time, this%num_levels))
+    allocate(this%pflx_po4_vr(this%num_time, this%num_levels))
+
+  end subroutine InitAllocate_CNP
+
+  !------------------------------------------------------------------------
+  subroutine ReadCNPData(this)
+    !read infomration about forcing data
+    !USES
+    use ncdio_pio    , only : file_desc_t
+    use ncdio_pio    , only : ncd_nowrite
+    use ncdio_pio    , only : ncd_pio_openfile
+    use ncdio_pio    , only : get_dim_len
+    use ncdio_pio    , only : ncd_getvar
+    use ncdio_pio    , only : ncd_pio_closefile
+    use babortutils  , only : endrun
+    use bshr_log_mod , only : errMsg => shr_log_errMsg
+    use BeTR_GridMod , only : betr_grid_type
+  implicit none
+    class(ForcingData_type), intent(inout)  :: this
+
+    character(len=250)    :: ncf_in_filename_forc
+    type(file_desc_t)     :: ncf_in_forc
+    real(r8), allocatable :: data_2d(:,:,:)
+    integer :: j1, j2
+
+    call this%InitAllocate_CNP()
+
+    ncf_in_filename_forc=trim(this%forcing_filename)
+    call ncd_pio_openfile(ncf_in_forc, ncf_in_filename_forc, mode=ncd_nowrite)
+
+    allocate(data_2d(this%num_columns, this%num_levels, 1:this%num_time))
+
+    call ncd_getvar(ncf_in_forc, 'CFLX_INPUT_LITR_MET_vr', data_2d)
+    do j2 = 1, this%num_levels
+       do j1 = 1, this%num_time
+          this%cflx_met_vr(j1, j2) = data_2d(this%num_columns, j2, j1)
+       enddo
+    enddo
+
+    call ncd_getvar(ncf_in_forc, 'CFLX_INPUT_LITR_CEL_vr', data_2d)
+    do j2 = 1, this%num_levels
+       do j1 = 1, this%num_time
+          this%cflx_cel_vr(j1, j2) = data_2d(this%num_columns, j2, j1)
+       enddo
+    enddo
+
+    call ncd_getvar(ncf_in_forc, 'CFLX_INPUT_LITR_LIG_vr', data_2d)
+    do j2 = 1, this%num_levels
+       do j1 = 1, this%num_time
+          this%cflx_lig_vr(j1, j2) = data_2d(this%num_columns, j2, j1)
+       enddo
+    enddo
+
+    call ncd_getvar(ncf_in_forc, 'CFLX_INPUT_LITR_CWD_vr', data_2d)
+    do j2 = 1, this%num_levels
+       do j1 = 1, this%num_time
+          this%cflx_cwd_vr(j1, j2) = data_2d(this%num_columns, j2, j1)
+       enddo
+    enddo
+
+    call ncd_getvar(ncf_in_forc, 'NFLX_INPUT_LITR_MET_vr', data_2d)
+    do j2 = 1, this%num_levels
+       do j1 = 1, this%num_time
+          this%nflx_met_vr(j1, j2) = data_2d(this%num_columns, j2, j1)
+       enddo
+    enddo
+
+    call ncd_getvar(ncf_in_forc, 'NFLX_INPUT_LITR_CEL_vr', data_2d)
+    do j2 = 1, this%num_levels
+       do j1 = 1, this%num_time
+          this%nflx_cel_vr(j1, j2) = data_2d(this%num_columns, j2, j1)
+       enddo
+    enddo
+
+    call ncd_getvar(ncf_in_forc, 'NFLX_INPUT_LITR_LIG_vr', data_2d)
+    do j2 = 1, this%num_levels
+       do j1 = 1, this%num_time
+          this%nflx_lig_vr(j1, j2) = data_2d(this%num_columns, j2, j1)
+       enddo
+    enddo
+
+    call ncd_getvar(ncf_in_forc, 'NFLX_INPUT_LITR_CWD_vr', data_2d)
+    do j2 = 1, this%num_levels
+       do j1 = 1, this%num_time
+          this%nflx_cwd_vr(j1, j2) = data_2d(this%num_columns, j2, j1)
+       enddo
+    enddo
+
+    call ncd_getvar(ncf_in_forc, 'PFLX_INPUT_LITR_MET_vr', data_2d)
+    do j2 = 1, this%num_levels
+       do j1 = 1, this%num_time
+          this%pflx_met_vr(j1, j2) = data_2d(this%num_columns, j2, j1)
+       enddo
+    enddo
+
+    call ncd_getvar(ncf_in_forc, 'PFLX_INPUT_LITR_CEL_vr', data_2d)
+    do j2 = 1, this%num_levels
+       do j1 = 1, this%num_time
+          this%pflx_cel_vr(j1, j2) = data_2d(this%num_columns, j2, j1)
+       enddo
+    enddo
+
+    call ncd_getvar(ncf_in_forc, 'PFLX_INPUT_LITR_LIG_vr', data_2d)
+    do j2 = 1, this%num_levels
+       do j1 = 1, this%num_time
+          this%pflx_lig_vr(j1, j2) = data_2d(this%num_columns, j2, j1)
+       enddo
+    enddo
+
+    call ncd_getvar(ncf_in_forc, 'PFLX_INPUT_LITR_CWD_vr', data_2d)
+    do j2 = 1, this%num_levels
+       do j1 = 1, this%num_time
+          this%pflx_cwd_vr(j1, j2) = data_2d(this%num_columns, j2, j1)
+       enddo
+    enddo
+
+    call ncd_getvar(ncf_in_forc, 'NFLX_MINN_INPUT_NH4_vr', data_2d)
+    do j2 = 1, this%num_levels
+       do j1 = 1, this%num_time
+          this%nflx_nh4_vr(j1, j2) = data_2d(this%num_columns, j2, j1)
+       enddo
+    enddo
+
+    call ncd_getvar(ncf_in_forc, 'NFLX_MINN_INPUT_NO3_vr', data_2d)
+    do j2 = 1, this%num_levels
+       do j1 = 1, this%num_time
+          this%nflx_no3_vr(j1, j2) = data_2d(this%num_columns, j2, j1)
+       enddo
+    enddo
+
+    call ncd_getvar(ncf_in_forc, 'PFLX_MINN_INPUT_PO4_vr', data_2d)
+    do j2 = 1, this%num_levels
+       do j1 = 1, this%num_time
+          this%pflx_po4_vr(j1, j2) = data_2d(this%num_columns, j2, j1)
+       enddo
+    enddo
+
+    call ncd_pio_closefile(ncf_in_forc)
+
+    deallocate(data_2d)
+  end subroutine ReadCNPData
   !------------------------------------------------------------------------
   subroutine ReadData(this, namelist_buffer, grid)
     !DESCRIPTION
@@ -468,6 +645,60 @@ contains
        enddo
     enddo
   end subroutine UpdateForcing
+
+
+! ----------------------------------------------------------------------
+  subroutine UpdateCNPForcing(this, lbj, ubj, numf, filter, ttime, &
+    carbonflux_vars, c13_cflx_vars, c14_cflx_vars, nitrogenflux_vars, &
+    phosphorusflux_vars, plantMicKinetics_vars)
+
+    use CNNitrogenFluxType, only : nitrogenflux_type
+    use CNCarbonFluxType  , only : carbonflux_type
+    use PhosphorusFluxType, only : phosphorusflux_type
+    use PlantMicKineticsMod, only : PlantMicKinetics_type
+    use BeTR_TimeMod      , only : betr_time_type
+  implicit none
+  !arguments
+    class(ForcingData_type) , intent(in) :: this
+    integer                  , intent(in)    :: lbj, ubj
+    integer                  , intent(in)    :: numf
+    integer                  , intent(in)    :: filter(:)
+    type(betr_time_type)     , intent(in)    :: ttime
+    type(carbonflux_type)    , intent(inout) :: carbonflux_vars
+    type(carbonflux_type)    , intent(inout) :: c13_cflx_vars
+    type(carbonflux_type)    , intent(inout) :: c14_cflx_vars
+    type(nitrogenflux_type)  , intent(inout) :: nitrogenflux_vars
+    type(phosphorusflux_type), intent(inout) :: phosphorusflux_vars
+    type(PlantMicKinetics_type), intent(inout):: plantMicKinetics_vars
+
+    integer :: c, fc, j, tstep
+
+    tstep = ttime%tstep
+
+    do j = lbj, ubj
+      do fc = 1, numf
+        c = filter(fc)
+        carbonflux_vars%cflx_input_litr_met_vr_col(c,j) = this%cflx_met_vr(tstep,j)
+        carbonflux_vars%cflx_input_litr_cel_vr_col(c,j) = this%cflx_cel_vr(tstep,j)
+        carbonflux_vars%cflx_input_litr_lig_vr_col(c,j) = this%cflx_lig_vr(tstep,j)
+        carbonflux_vars%cflx_input_litr_cwd_vr_col(c,j) = this%cflx_cwd_vr(tstep,j)
+
+        nitrogenflux_vars%nflx_input_litr_met_vr_col(c,j) = this%nflx_met_vr(tstep,j)
+        nitrogenflux_vars%nflx_input_litr_cel_vr_col(c,j) = this%nflx_cel_vr(tstep,j)
+        nitrogenflux_vars%nflx_input_litr_lig_vr_col(c,j) = this%nflx_lig_vr(tstep,j)
+        nitrogenflux_vars%nflx_input_litr_cwd_vr_col(c,j) = this%nflx_cwd_vr(tstep,j)
+
+        phosphorusflux_vars%pflx_input_litr_met_vr_col(c,j) = this%pflx_met_vr(tstep,j)
+        phosphorusflux_vars%pflx_input_litr_cel_vr_col(c,j) = this%pflx_cel_vr(tstep,j)
+        phosphorusflux_vars%pflx_input_litr_lig_vr_col(c,j) = this%pflx_lig_vr(tstep,j)
+        phosphorusflux_vars%pflx_input_litr_cwd_vr_col(c,j) = this%pflx_cwd_vr(tstep,j)
+
+        nitrogenflux_vars%nflx_minn_input_nh4_vr_col(c,j) = this%nflx_nh4_vr(tstep,j)
+        nitrogenflux_vars%nflx_minn_input_no3_vr_col(c,j) = this%nflx_no3_vr(tstep,j)
+        phosphorusflux_vars%pflx_minp_input_po4_vr_col(c,j) = this%pflx_po4_vr(tstep,j)
+      enddo
+    enddo
+  end subroutine UpdateCNPForcing
 
   ! ----------------------------------------------------------------------
 

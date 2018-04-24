@@ -130,6 +130,13 @@ contains
     allocate(this%denit_col(begc:endc)); this%denit_col(:) = nan
     allocate(this%som_n_leached_col(begc:endc)); this%som_n_leached_col(:) = nan
     allocate(this%supplement_to_sminn_col(begc:endc)); this%supplement_to_sminn_col(:) = nan
+
+    allocate(this%nflx_input_litr_met_vr_col(begc:endc,1:nlevdecomp_full)); this%nflx_input_litr_met_vr_col(:,:) = nan
+    allocate(this%nflx_input_litr_cel_vr_col(begc:endc,1:nlevdecomp_full)); this%nflx_input_litr_cel_vr_col(:,:) = nan
+    allocate(this%nflx_input_litr_lig_vr_col(begc:endc,1:nlevdecomp_full)); this%nflx_input_litr_lig_vr_col(:,:) = nan
+    allocate(this%nflx_input_litr_cwd_vr_col(begc:endc,1:nlevdecomp_full)); this%nflx_input_litr_cwd_vr_col(:,:) = nan
+    allocate(this%nflx_minn_input_nh4_vr_col(begc:endc,1:nlevdecomp_full)); this%nflx_minn_input_nh4_vr_col(:,:) = nan
+    allocate(this%nflx_minn_input_no3_vr_col(begc:endc,1:nlevdecomp_full)); this%nflx_minn_input_no3_vr_col(:,:) = nan
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------
@@ -189,6 +196,12 @@ contains
     this%m_n_to_litr_met_fire_col(:,:) = 0._r8
     this%nfix_to_sminn_col(:) = 0._r8
     this%supplement_to_sminn_col(:) = 0._r8
+    this%nflx_input_litr_met_vr_col(:,:) = 0._r8
+    this%nflx_input_litr_cel_vr_col(:,:) = 0._r8
+    this%nflx_input_litr_lig_vr_col(:,:) = 0._r8
+    this%nflx_input_litr_cwd_vr_col(:,:) = 0._r8
+    this%nflx_minn_input_nh4_vr_col(:,:) = 0._r8
+    this%nflx_minn_input_no3_vr_col(:,:) = 0._r8
   end subroutine initCold
 
 

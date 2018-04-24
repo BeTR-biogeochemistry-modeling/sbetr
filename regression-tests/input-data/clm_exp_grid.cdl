@@ -23,6 +23,11 @@ variables:
 		PCTSAND:units = "%" ;
 		PCTSAND:_FillValue = 9.99999961690316e+35 ;
 		PCTSAND:missing_value = 1.e+36f ;
+  double PCTCLAY(levgrnd, lndgrid) ;
+		PCTCLAY:long_name = "soil clay content" ;
+		PCTCLAY:units = "%" ;
+		PCTCLAY:_FillValue = 1.e+36f ;
+		PCTCLAY:missing_value = 1.e+36f ;
 	double WATSAT(levgrnd, lndgrid) ;
 		WATSAT:long_name = "saturated soil water content (porosity)" ;
 		WATSAT:units = "mm3/mm3" ;
@@ -46,7 +51,11 @@ variables:
 		lon:units = "degrees_east" ;
 		lon:_FillValue = 9.99999961690316e+35 ;
 		lon:missing_value = 1.e+36f ;
-
+  double CELLORG(levgrnd, lndgrid) ;
+		CELLORG:long_name = "soil organic mass content" ;
+		CELLORG:units = "kg/m3" ;
+		CELLORG:_FillValue = 1.e+36f ;
+		CELLORG:missing_value = 1.e+36f ;
 // global attributes:
 		:title = "CLM History file information" ;
 		:comment = "NOTE: None of the variables are weighted by land fraction!" ;
@@ -142,7 +151,24 @@ data:
   20.000000,
   20.000000,
   20.000000;
-															
+
+ PCTCLAY =
+   9.0,
+   9.0,
+   10.0,
+   10.0,
+   9.0,
+   10.0,
+   10.0,
+   11.0,
+   11.0,
+   11.0,
+   11.0,
+   11.0,
+   11.0,
+   11.0,
+   11.0 ;
+
  WATSAT =
   0.503309488,
   0.467856914,
@@ -184,4 +210,21 @@ data:
     7.82976627, 12.9253206, 21.3264694, 35.1776199 ;
 
  lon = 239.367294 ;
+
+ CELLORG =
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0 ;
 }

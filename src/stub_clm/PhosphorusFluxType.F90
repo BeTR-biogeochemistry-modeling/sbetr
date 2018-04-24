@@ -118,6 +118,12 @@ contains
     allocate(this%fert_p_to_sminp_col(begc:endc)); this%fert_p_to_sminp_col(begc:endc) = nan
     allocate(this%som_p_leached_col(begc:endc)); this%som_p_leached_col(:) = nan
 
+    allocate(this%pflx_input_litr_met_vr_col(begc:endc,1:nlevdecomp_full)); this%pflx_input_litr_met_vr_col(:,:) = nan
+    allocate(this%pflx_input_litr_cel_vr_col(begc:endc,1:nlevdecomp_full)); this%pflx_input_litr_cel_vr_col(:,:) = nan
+    allocate(this%pflx_input_litr_lig_vr_col(begc:endc,1:nlevdecomp_full)); this%pflx_input_litr_lig_vr_col(:,:) = nan
+    allocate(this%pflx_input_litr_cwd_vr_col(begc:endc,1:nlevdecomp_full)); this%pflx_input_litr_cwd_vr_col(:,:) = nan
+    allocate(this%pflx_minp_input_po4_vr_col(begc:endc,1:nlevdecomp_full)); this%pflx_minp_input_po4_vr_col(:,:) = nan
+
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------
@@ -174,6 +180,12 @@ contains
     this%pdep_to_sminp_col(:) = 0._r8
     this%pdep_to_sminp_col(:) = 0._r8
     this%fert_p_to_sminp_col(:) = 0._r8
+
+    this%pflx_input_litr_met_vr_col(:,:) = 0._r8
+    this%pflx_input_litr_cel_vr_col(:,:) = 0._r8
+    this%pflx_input_litr_lig_vr_col(:,:) = 0._r8
+    this%pflx_input_litr_cwd_vr_col(:,:) = 0._r8
+    this%pflx_minp_input_po4_vr_col(:,:) = 0._r8
 
   end subroutine initCold
 

@@ -447,6 +447,7 @@ contains
     call bstatus%reset()
 
     if (this%dummy_compiler_warning) continue
+    this%nactpft = 0
 
     call this%centurybgc_index%Init(cent_para%use_c13, cent_para%use_c14, &
        cent_para%non_limit, cent_para%nop_limit, betr_maxpatch_pft)
