@@ -20,6 +20,7 @@ set(BETR_UTIL_SOURCES
   betr_regression_mod.F90
   betr_utils.F90
   Tracer_varcon.F90
+  listMod.F90
   )
 
 configure_file(bshr_assert.h bshr_assert.h COPYONLY)

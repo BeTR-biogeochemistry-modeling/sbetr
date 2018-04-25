@@ -93,6 +93,7 @@ module BeTRSimulation
      real(r8), pointer :: dom_scalar_col(:)
      logical,  private :: active_soibgc
      real(r8), private :: hist_naccum
+     integer , private :: hist_record
      ! FIXME(bja, 201603) most of these types should be private!
 
      ! NOTE(bja, 201603) BeTR types only, no LSM specific types here!
@@ -131,7 +132,7 @@ module BeTRSimulation
      procedure, public :: BeTRRestartOpen         => BeTRSimulationRestartOpen
      procedure, public :: BeTRRestartClose        => BeTRSimulationRestartClose
      procedure, private :: BeTRCreateHistory      => BeTRSimulationCreateHistory
-     procedure, public  :: HistRetrieval           => BeTRSimulationHistRetrieval
+     procedure, public  :: HistRetrieval          => BeTRSimulationHistRetrieval
      procedure, private :: BeTRRetrieveHistoryState    => BeTRSimulationRetrieveHistoryState
      procedure, private :: BeTRRetrieveHistoryFlux    => BeTRSimulationRetrieveHistoryFlux
      procedure, public :: BeTRSetcps              => BeTRSimulationSetcps
@@ -309,6 +310,7 @@ contains
     logical :: asoibgc
     !print*,'base_filename',trim(base_filename)
 
+    this%hist_record=0
     biulog = iulog
     if(present(base_filename))then
       this%base_filename = base_filename
@@ -743,7 +745,7 @@ contains
   end subroutine hist_htapes_create
 
   !-------------------------------------------------------------------------------
-  subroutine hist_write(this, bounds, record, numf, filter, time_vars, velocity)
+  subroutine hist_write(this, bounds, numf, filter, time_vars, velocity)
     !
     ! DESCRIPTION
     ! output hist file, only for standalone applications
@@ -758,7 +760,6 @@ contains
     !ARGUMENTS
     class(betr_simulation_type) , intent(inout) :: this
     type(bounds_type)           , intent(in)    :: bounds
-    integer                     , intent(in)    :: record
     integer                     , intent(in)    :: numf
     integer                     , intent(in)    :: filter(:)
     type(betr_time_type)        , intent(in)    :: time_vars
@@ -787,18 +788,19 @@ contains
 
       if(time_vars%its_time_to_histflush())then
 
+        this%hist_record=this%hist_record+1
         call ncd_pio_openfile_for_write(ncid, this%hist_filename)
 
-        call ncd_putvar(ncid, "time", record, time_vars%time)
+        call ncd_putvar(ncid, "time", this%hist_record, time_vars%time)
 
         do c = bounds%begc, bounds%endc
-          call ncd_putvar(ncid, 'QFLX_ADV', record, velocity(c:c, 1:betr_nlevtrc_soil))
+          call ncd_putvar(ncid, 'QFLX_ADV', this%hist_record, velocity(c:c, 1:betr_nlevtrc_soil))
         enddo
 
-        call this%hist_output_states(ncid, record, bounds, numf, filter, betr_nlevtrc_soil, &
+        call this%hist_output_states(ncid, this%hist_record, bounds, numf, filter, betr_nlevtrc_soil, &
             this%num_hist_state1d, this%num_hist_state2d)
 
-        call this%hist_output_fluxes(ncid, record, bounds, numf, filter, betr_nlevtrc_soil, &
+        call this%hist_output_fluxes(ncid, this%hist_record, bounds, numf, filter, betr_nlevtrc_soil, &
            this%num_hist_flux1d, this%num_hist_flux2d)
 
         call ncd_pio_closefile(ncid)
@@ -1660,9 +1662,7 @@ contains
 
   character(len=*), parameter :: subname = 'hist_output_states'
 
-
   begc = bounds%begc; endc = bounds%endc
-
 
   do jj = 1, num_state2d
 

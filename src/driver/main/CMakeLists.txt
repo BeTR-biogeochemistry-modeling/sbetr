@@ -1,5 +1,6 @@
 set(BETR_DRIVER_SOURCES
   BeTRSimulationFactory.F90
+  HistBGCMod.F90
   sbetrDriverMod.F90
   mathtest.F90
   )

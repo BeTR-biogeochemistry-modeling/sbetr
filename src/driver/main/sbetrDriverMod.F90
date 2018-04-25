@@ -59,6 +59,9 @@ contains
   use PatchType             , only : pft
   use landunit_varcon       , only : istsoil
   use clm_varpar            , only : nlevsno, nlevsoi
+  use histMod               , only : histf_type
+  use HistBGCMod            , only : hist_bgc_type
+  use tracer_varcon         , only : reaction_method
   implicit none
   !arguments
   character(len=betr_filename_length)      , intent(in) :: base_filename
@@ -87,9 +90,11 @@ contains
   logical :: do_standalone=.false.
   logical :: do_alm=.false.
   logical :: do_clm=.false.
-
+  type(hist_bgc_type) :: histbgc
+  type(histf_type) :: hist
   !initialize parameters
-  call read_name_list(namelist_buffer, simulator_name, continue_run)
+  call read_name_list(namelist_buffer, base_filename, simulator_name, continue_run, histbgc, hist)
+
   simulation => create_betr_simulation(simulator_name)
 
   !set up mask
@@ -310,8 +315,11 @@ contains
     call time_vars%update_time_stamp()
 
     !x print*,'write output'
-    call simulation%WriteOfflineHistory(bounds, record, simulation%num_soilc,  &
+    call simulation%WriteOfflineHistory(bounds, simulation%num_soilc,  &
        simulation%filter_soilc, time_vars, waterflux_vars%qflx_adv_col)
+
+    if(simulation%do_soibgc()) call WriteHistBGC(hist, time_vars, carbonstate_vars, carbonflux_vars, &
+         nitrogenstate_vars, nitrogenflux_vars, phosphorusstate_vars, phosphorusflux_vars, reaction_method)
 
     if(time_vars%its_time_to_write_restart()) then
        !set restfname
@@ -326,6 +334,7 @@ contains
        call simulation%BeTRRestartOffline(bounds, ncid, simulation%num_soilc, simulation%filter_soilc, flag='write')
 
        call simulation%BeTRRestartClose(ncid)
+
     endif
     !x print*,'next step'
     if(time_vars%its_time_to_exit()) then
@@ -343,26 +352,31 @@ end subroutine sbetrBGC_driver
 
 ! ----------------------------------------------------------------------
 
-  subroutine read_name_list(namelist_buffer, simulator_name_arg, continue_run)
+  subroutine read_name_list(namelist_buffer, base_filename, simulator_name_arg, continue_run, histbgc, hist)
     !
     ! !DESCRIPTION:
     ! read namelist for betr configuration
     ! !USES:
-    use spmdMod        , only : masterproc, mpicom
-    use clm_varctl     , only : iulog
-    use babortutils     , only : endrun
-    use bshr_log_mod    , only : errMsg => shr_log_errMsg
-    use betr_constants , only : stdout, betr_string_length_long, betr_namelist_buffer_size
-    use tracer_varcon  , only : advection_on, diffusion_on, reaction_on, ebullition_on, reaction_method
-    use tracer_varcon  , only :  is_nitrogen_active, is_phosphorus_active
-    use ncdio_pio     , only : file_desc_t, ncd_nowrite, ncd_pio_openfile, ncd_pio_closefile
+    use spmdMod                  , only : masterproc, mpicom
+    use clm_varctl               , only : iulog
+    use babortutils              , only : endrun
+    use bshr_log_mod             , only : errMsg => shr_log_errMsg
+    use betr_constants           , only : stdout, betr_string_length_long, betr_namelist_buffer_size
+    use tracer_varcon            , only : advection_on, diffusion_on, reaction_on, ebullition_on, reaction_method
+    use tracer_varcon            , only :  is_nitrogen_active, is_phosphorus_active
+    use ncdio_pio                , only : file_desc_t, ncd_nowrite, ncd_pio_openfile, ncd_pio_closefile
     use ApplicationsFactory      , only : AppLoadParameters,AppInitParameters
     use BetrStatusType           , only : betr_status_type
+    use HistBGCMod               , only : hist_bgc_type
+    use histMod                  , only : histf_type
     implicit none
     ! !ARGUMENTS:
     character(len=betr_namelist_buffer_size) , intent(in)  :: namelist_buffer
+    character(len=*)                         , intent(in)  :: base_filename
     character(len=betr_string_length_long)   , intent(out) :: simulator_name_arg
     logical, intent(out) :: continue_run
+    class(hist_bgc_type), intent(inout) :: histbgc
+    class(histf_type), intent(inout) :: hist
     !
     ! !LOCAL VARIABLES:
     integer                                :: nml_error
@@ -461,10 +475,106 @@ end subroutine sbetrBGC_driver
         endif
         call ncd_pio_closefile(ncid)
       endif
+      call init_hist_bgc(histbgc, base_filename, reaction_method, hist)
+
     endif
 
   end subroutine read_name_list
 
+  !-------------------------------------------------------------------------------
+  subroutine init_hist_bgc(histbgc, base_filename, reaction_method, hist)
+  use histMod          , only : hist_freq_str_len
+  use histMod          , only : histf_type
+  use HistBGCMod       , only : hist_bgc_type
+  implicit none
+  type(hist_bgc_type), intent(inout) :: histbgc
+  character(len=*), intent(in) :: base_filename
+  character(len=*), intent(in) :: reaction_method
+  class(histf_type), intent(inout) :: hist
+  character(len=hist_freq_str_len), allocatable :: freql(:)
+
+  integer :: nhistvars
+
+  call histbgc%Init(trim(reaction_method))
+
+  nhistvars=histbgc%getvarllen()
+
+
+  allocate(freql(nhistvars))
+
+  freql(:) = 'day'
+
+  call hist%init(histbgc%varl, histbgc%unitl, freql, trim(base_filename)//'.'//trim(reaction_method))
+
+  end subroutine init_hist_bgc
+
+  !-------------------------------------------------------------------------------
+  subroutine WriteHistBGC(hist, timer,  carbonstate_vars, carbonflux_vars, &
+     nitrogenstate_vars, nitrogenflux_vars, phosphorusstate_vars, phosphorusflux_vars, reaction_method)
+
+  use histMod          , only : histf_type
+  use CNCarbonFluxType    , only : carbonflux_type
+  use CNCarbonStateType   , only : carbonstate_type
+  use CNNitrogenFluxType  , only : nitrogenflux_type
+  use CNNitrogenStateType , only : nitrogenstate_type
+  use PhosphorusFluxType  , only : phosphorusflux_type
+  use PhosphorusStateType , only : phosphorusstate_type
+  use BeTR_TimeMod     , only : betr_time_type
+  implicit none
+  class(histf_type), intent(inout) :: hist
+  class(betr_time_type), intent(in) :: timer
+  type(carbonstate_type), intent(in) :: carbonstate_vars
+  type(carbonflux_type) , intent(in) :: carbonflux_vars
+  type(nitrogenstate_type), intent(in) :: nitrogenstate_vars
+  type(nitrogenflux_type), intent(in) :: nitrogenflux_vars
+  type(phosphorusstate_type), intent(in) :: phosphorusstate_vars
+  type(phosphorusflux_type), intent(in) :: phosphorusflux_vars
+  character(len=*), intent(in) :: reaction_method
+
+  real(r8), allocatable :: ystates(:)
+  integer :: c_l, id
+  c_l = 1
+  allocate(ystates(hist%nvars))
+  if(index(trim(reaction_method),'ecacnp')/=0)then
+    id = 0
+    id = id + 1; ystates(id) = carbonflux_vars%hr_col(c_l)
+    id = id + 1; ystates(id) = nitrogenflux_vars%f_n2o_nit_col(c_l)
+    id = id + 1; ystates(id) = nitrogenflux_vars%f_denit_col(c_l)
+    id = id + 1; ystates(id) = nitrogenflux_vars%f_nit_col(c_l)
+    id = id + 1; ystates(id) = carbonstate_vars%cwdc_col(c_l)
+    id = id + 1; ystates(id) = carbonstate_vars%totlitc_col(c_l)
+    id = id + 1; ystates(id) = carbonstate_vars%totsomc_col(c_l)
+    id = id + 1; ystates(id) = carbonstate_vars%totlitc_1m_col(c_l)
+    id = id + 1; ystates(id) = carbonstate_vars%totsomc_1m_col(c_l)
+    id = id + 1; ystates(id) = nitrogenstate_vars%cwdn_col(c_l)
+    id = id + 1; ystates(id) = nitrogenstate_vars%totlitn_col(c_l)
+    id = id + 1; ystates(id) = nitrogenstate_vars%totsomn_col(c_l)
+    id = id + 1; ystates(id) = nitrogenstate_vars%totlitn_1m_col(c_l)
+    id = id + 1; ystates(id) = nitrogenstate_vars%totsomn_1m_col(c_l)
+    id = id + 1; ystates(id) = phosphorusstate_vars%cwdp_col(c_l)
+    id = id + 1; ystates(id) = phosphorusstate_vars%totlitp_col(c_l)
+    id = id + 1; ystates(id) = phosphorusstate_vars%totsomp_col(c_l)
+    id = id + 1; ystates(id) = phosphorusstate_vars%totlitp_1m_col(c_l)
+    id = id + 1; ystates(id) = phosphorusstate_vars%totsomp_1m_col(c_l)
+    id = id + 1; ystates(id) = nitrogenstate_vars%smin_nh4_col(c_l)
+    id = id + 1; ystates(id) = nitrogenstate_vars%smin_no3_col(c_l)
+    id = id + 1; ystates(id) = carbonstate_vars%som1c_col(c_l)
+    id = id + 1; ystates(id) = carbonstate_vars%som2c_col(c_l)
+    id = id + 1; ystates(id) = carbonstate_vars%som3c_col(c_l)
+    id = id + 1; ystates(id) = nitrogenstate_vars%som1n_col(c_l)
+    id = id + 1; ystates(id) = nitrogenstate_vars%som2n_col(c_l)
+    id = id + 1; ystates(id) = nitrogenstate_vars%som3n_col(c_l)
+    id = id + 1; ystates(id) = phosphorusstate_vars%som1p_col(c_l)
+    id = id + 1; ystates(id) = phosphorusstate_vars%som2p_col(c_l)
+    id = id + 1; ystates(id) = phosphorusstate_vars%som3p_col(c_l)
+  endif
+  call hist%hist_wrap(ystates, timer)
+  deallocate(ystates)
+  deallocate(ystates)
+
+
+
+  end subroutine WriteHistBGC
   !-------------------------------------------------------------------------------
 
   subroutine calc_qadv(ubj, numf, filter, waterstate_vars)
@@ -603,8 +713,8 @@ end subroutine sbetrBGC_driver
   enddo
 
   end subroutine input_substrates
-  !-------------------------------------------------------------------------------
 
+  !-------------------------------------------------------------------------------
 
 
 end module sbetrDriverMod

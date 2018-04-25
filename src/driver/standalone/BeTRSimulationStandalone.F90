@@ -352,7 +352,6 @@ contains
   use CNNitrogenFluxType  , only : nitrogenflux_type
   use CNNitrogenStateType , only : nitrogenstate_type
   use clm_time_manager    , only : get_nstep
-  !!! add phosphorus
   use PhosphorusFluxType  , only : phosphorusflux_type
   use PhosphorusStateType , only : phosphorusstate_type
   use tracer_varcon       , only : use_c13_betr, use_c14_betr
