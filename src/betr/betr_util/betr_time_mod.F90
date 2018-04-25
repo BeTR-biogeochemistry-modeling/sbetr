@@ -24,6 +24,7 @@ module BeTR_TimeMod
      integer  :: dow, dom, doy
      integer  :: moy, cyears
      real(r8) :: tod
+     integer  :: hist_freq   !negative number, steps, positive number, 1: day, 30:mon, 365:year
    contains
      procedure, public :: Init
      procedure, public :: its_time_to_write_restart
@@ -37,7 +38,8 @@ module BeTR_TimeMod
      procedure, private:: proc_nextstep
      procedure, public :: proc_initstep
      procedure, public :: print_cur_time
-     procedure, private :: ReadNamelist
+     procedure, public :: its_time_to_histflush
+     procedure, private:: ReadNamelist
      procedure, public :: setClock
      procedure, public :: its_a_new_hour
      procedure, public :: its_a_new_day
@@ -87,6 +89,7 @@ contains
     this%dom    = 0
     this%doy    = 0
     this%moy    = 1
+    this%hist_freq=-1
     if(present(namelist_buffer))then
       if(present(masterproc))then
         call this%ReadNamelist(namelist_buffer, masterproc)
@@ -120,12 +123,13 @@ contains
     real(r8) :: delta_time         !model time step
     real(r8) :: stop_time          !when to stop
     integer  :: stop_n
+    integer  :: hist_freq
     character(len=8)  :: stop_option        !1: step, 2:day, 3:year
     real(r8) :: restart_dtime      !when to write restart file
     logical :: masterproc_loc
     !-----------------------------------------------------------------------
 
-    namelist / betr_time / delta_time, stop_n, stop_option, restart_dtime
+    namelist / betr_time / delta_time, stop_n, stop_option, restart_dtime, hist_freq
 
     ! FIXME(bja, 201603) Only reading time variables in seconds!
     ! Should enable other values with unit coversions.
@@ -137,7 +141,7 @@ contains
     delta_time = 1800._r8                !half hourly time step
     stop_n=2       !by default 2 cycle
     stop_option='nyears'  !by default years
-
+    hist_freq=-1   !write every time step
     restart_dtime = -1._r8
 
     ! ----------------------------------------------------------------------
@@ -164,7 +168,7 @@ contains
        write(stdout, *)
        write(stdout, *) '--------------------'
     endif
-
+    this%hist_freq = hist_freq
     this%delta_time = delta_time
     this%stop_time = delta_time*stop_n
     select case (trim(stop_option))
@@ -423,4 +427,27 @@ contains
   end function its_a_new_year
   !-------------------------------------------------------------------------------
 
+  function its_time_to_histflush(this)result(yesno)
+
+  implicit none
+  class(betr_time_type), intent(in) :: this
+  logical :: yesno
+
+  if(this%hist_freq<0)then
+    !by time steps
+    yesno = (mod(this%nelapstep,this%hist_freq)==0)
+  elseif(this%hist_freq==0)then
+    !no history file output until the last time step
+    yesno=this%its_time_to_exit()
+  elseif(this%hist_freq==1)then
+    !by day
+    yesno=this%its_a_new_day()
+  elseif(this%hist_freq==30)then
+    !by month
+    yesno=this%its_a_new_month()
+  elseif(this%hist_freq==365)then
+    !by year
+    yesno=this%its_a_new_year()
+  endif
+  end function its_time_to_histflush
 end module BeTR_TimeMod

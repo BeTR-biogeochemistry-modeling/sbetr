@@ -87,9 +87,12 @@ module BeTRSimulation
      real(r8), pointer :: rest_states_1d(:,:)
      real(r8), pointer :: hist_fluxes_1d(:,:)
      real(r8), pointer :: hist_fluxes_2d(:,:,:)
+     real(r8), pointer :: hist_fluxes_1d_accum(:,:)
+     real(r8), pointer :: hist_fluxes_2d_accum(:,:,:)
      real(r8), pointer :: scalaravg_col(:)
      real(r8), pointer :: dom_scalar_col(:)
      logical,  private :: active_soibgc
+     real(r8), private :: hist_naccum
      ! FIXME(bja, 201603) most of these types should be private!
 
      ! NOTE(bja, 201603) BeTR types only, no LSM specific types here!
@@ -141,6 +144,7 @@ module BeTRSimulation
      procedure, private:: HistAlloc               => BeTRSimulationHistoryAlloc
      procedure, private:: set_activecol
      procedure, public :: do_regress_test
+     procedure, private :: hist_flux_accum
   end type betr_simulation_type
 
 contains
@@ -462,6 +466,13 @@ contains
   allocate(this%hist_fluxes_2d(begc:endc, 1:betr_nlevtrc_soil, 1:this%num_hist_flux2d))
   allocate(this%hist_fluxes_1d(begc:endc, 1:this%num_hist_flux1d))
 
+  if(betr_offline)then
+    allocate(this%hist_fluxes_2d_accum(begc:endc, 1:betr_nlevtrc_soil, 1:this%num_hist_flux2d))
+    allocate(this%hist_fluxes_1d_accum(begc:endc, 1:this%num_hist_flux1d))
+    this%hist_fluxes_1d_accum(:,:) = 0._r8
+    this%hist_fluxes_2d_accum(:,:,:) = 0._r8
+    this%hist_naccum = 0._r8
+  endif
   end subroutine BeTRSimulationHistoryAlloc
 
 
@@ -767,27 +778,36 @@ contains
          volatileid        => this%betr(c)%tracers%volatileid,        &
          tracernames       => this%betr(c)%tracers%tracernames        &
          )
-      call ncd_pio_openfile_for_write(ncid, this%hist_filename)
 
       if (mod(time_vars%time, 86400._r8)==0) then
          write(iulog,*)'day', time_vars%time/86400._r8
       end if
-      call ncd_putvar(ncid, "time", record, time_vars%time)
-
-      do c = bounds%begc, bounds%endc
-        call ncd_putvar(ncid, 'QFLX_ADV', record, velocity(c:c, 1:betr_nlevtrc_soil))
-      enddo
 
       call this%HistRetrieval(bounds, numf, filter)
 
-      call this%hist_output_states(ncid, record, bounds, numf, filter, betr_nlevtrc_soil, &
+      if(time_vars%its_time_to_histflush())then
+
+        call ncd_pio_openfile_for_write(ncid, this%hist_filename)
+
+        call ncd_putvar(ncid, "time", record, time_vars%time)
+
+        do c = bounds%begc, bounds%endc
+          call ncd_putvar(ncid, 'QFLX_ADV', record, velocity(c:c, 1:betr_nlevtrc_soil))
+        enddo
+
+        call this%hist_output_states(ncid, record, bounds, numf, filter, betr_nlevtrc_soil, &
             this%num_hist_state1d, this%num_hist_state2d)
 
-
-      call this%hist_output_fluxes(ncid, record, bounds, numf, filter, betr_nlevtrc_soil, &
+        call this%hist_output_fluxes(ncid, record, bounds, numf, filter, betr_nlevtrc_soil, &
            this%num_hist_flux1d, this%num_hist_flux2d)
 
-      call ncd_pio_closefile(ncid)
+        call ncd_pio_closefile(ncid)
+      else
+        call this%hist_flux_accum(bounds, numf, filter, betr_nlevtrc_soil, &
+           this%num_hist_flux1d, this%num_hist_flux2d)
+      endif
+
+
     end associate
   end subroutine hist_write
 
@@ -801,6 +821,7 @@ contains
    type(bounds_type)           , intent(in)    :: bounds
    integer, intent(in) :: numf
    integer, intent(in) :: filter(:)
+
   call this%BeTRRetrieveHistoryState(bounds, numf, filter)
 
   call this%BeTRRetrieveHistoryFlux(bounds, numf, filter)
@@ -1528,7 +1549,7 @@ contains
   integer           ,     intent(in)   :: num_flux2d
   type(file_desc_t) ,     intent(inout)   :: ncid
   !local variables
-  integer :: jj, begc, endc
+  integer :: jj, begc, endc, jl, fc, c
 
   character(len=*), parameter :: subname = 'hist_output_fluxes'
 
@@ -1539,20 +1560,76 @@ contains
   begc=bounds%begc; endc=bounds%endc
 
   do jj = 1, num_flux2d
-
-    data2dptr => this%hist_fluxes_2d(begc:endc,1:betr_nlevtrc_soil, jj)
+    do jl = 1, betr_nlevtrc_soil
+      do fc = 1, numf
+        this%hist_fluxes_2d_accum(c,jl,jj)=this%hist_fluxes_2d_accum(c,jl,jj)/this%hist_naccum
+      enddo
+    enddo
+    data2dptr => this%hist_fluxes_2d_accum(begc:endc,1:betr_nlevtrc_soil, jj)
     call ncd_putvar(ncid, this%flux_hist2d_var(jj)%varname, record, data2dptr)
 
   enddo
 
   do jj = 1, num_flux1d
-
-    data1dptr => this%hist_fluxes_1d(begc:endc, jj)
+    do fc = 1, numf
+      this%hist_fluxes_1d_accum(c,jj) = this%hist_fluxes_1d_accum(c,jj)/this%hist_naccum
+    enddo
+    data1dptr => this%hist_fluxes_1d_accum(begc:endc, jj)
     call ncd_putvar(ncid,this%flux_hist1d_var(jj)%varname, record, data1dptr)
 
   enddo
 
+  this%hist_naccum = 0._r8
+  do jj = 1, num_flux2d
+    do jl = 1, betr_nlevtrc_soil
+      do fc = 1, numf
+        this%hist_fluxes_2d_accum(c,jl,jj) = 0._r8
+      enddo
+    enddo
+  enddo
+
+  do jj = 1, num_flux1d
+    do fc = 1, numf
+      this%hist_fluxes_1d_accum(c,jj) = 0._r8
+    enddo
+  enddo
   end subroutine hist_output_fluxes
+
+  !------------------------------------------------------------------------
+  subroutine hist_flux_accum(this, bounds, numf, filter, &
+     betr_nlevtrc_soil, num_flux1d, num_flux2d)
+  implicit none
+  class(betr_simulation_type) , intent(inout) :: this
+  type(bounds_type)           , intent(in)    :: bounds               ! bounds
+  integer                     , intent(in)    :: betr_nlevtrc_soil
+  integer                     , intent(in)    :: numf
+  integer                     , intent(in)    :: filter(:)
+  integer                     , intent(in)    :: num_flux1d
+  integer                     , intent(in)    :: num_flux2d
+
+  integer :: jj, jl, fc, c
+
+  do jj = 1, num_flux2d
+    do jl = 1, betr_nlevtrc_soil
+      do fc = 1, numf
+        c =filter(fc)
+        this%hist_fluxes_2d_accum(c, jl, jj) = &
+          this%hist_fluxes_2d_accum(c, jl, jj) + this%hist_fluxes_2d(c, jl, jj)
+      enddo
+    enddo
+  enddo
+
+  do jj = 1, num_flux1d
+    do fc = 1, numf
+      c =filter(fc)
+      this%hist_fluxes_1d_accum(c, jj) = this%hist_fluxes_1d_accum(c, jj) + &
+         this%hist_fluxes_1d(c, jj)
+    enddo
+  enddo
+
+  this%hist_naccum=this%hist_naccum + 1._r8
+  end subroutine hist_flux_accum
+
   !------------------------------------------------------------------------
   subroutine hist_output_states(this,  ncid,  record, bounds, numf, filter, &
      betr_nlevtrc_soil, num_state1d, num_state2d)
