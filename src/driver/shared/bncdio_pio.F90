@@ -59,6 +59,7 @@ module bncdio_pio
   interface ncd_putvar
     module procedure ncd_putvar_int
     module procedure ncd_putvar_real_sp
+    module procedure ncd_putvar_real_sp_scalar
     module procedure ncd_putvar_int_1d
     module procedure ncd_putvar_real_sp_1d
 
@@ -71,6 +72,7 @@ module bncdio_pio
   interface ncd_getvar
     module procedure ncd_getvar_int
     module procedure ncd_getvar_real_sp
+    module procedure ncd_getvar_real_sp_scalar
     module procedure ncd_getvar_int_1d
     module procedure ncd_getvar_real_sp_1d
 
@@ -540,6 +542,28 @@ module bncdio_pio
 
   end subroutine ncd_putvar_real_sp
 !----------------------------------------------------------------------
+
+  subroutine ncd_putvar_real_sp_scalar(ncid, varname, data)
+  !
+  !DESCRIPTION
+  !put a real scalar to file
+  use netcdf
+  use shr_kind_mod, only : r8 => shr_kind_r8
+!**********************************************************************
+  implicit none
+  type(file_desc_t), intent(in) :: ncid
+  real(r8), intent(in) :: data
+  character(len=*),intent(in) :: varname
+  integer :: ans
+  integer :: xtype, ndims, varid
+  logical :: readvar
+  type(Var_desc_t)  :: vardesc
+
+  call check_var(ncid, trim(varname), vardesc, readvar)
+  call check_ret( nf90_put_var(ncid%fh, vardesc%varid, data),'ncd_putvar_real_sp_scalar')
+
+  end subroutine ncd_putvar_real_sp_scalar
+!----------------------------------------------------------------------
   subroutine ncd_putvar_int_1d(ncid, varname, rec, data)
   !
   ! DESCRIPTION
@@ -626,7 +650,7 @@ module bncdio_pio
   integer :: varid
   logical :: readvar
   type(Var_desc_t)  :: vardesc
-
+  
   call check_var(ncid, trim(varname), vardesc, readvar)
 
   call check_ret( nf90_put_var(ncid%fh, vardesc%varid, data,  &
@@ -822,7 +846,29 @@ module bncdio_pio
     start = (/rec/)),'ncd_getvar_real_sp')
 
   end subroutine ncd_getvar_real_sp
+!----------------------------------------------------------------------
 
+  subroutine ncd_getvar_real_sp_scalar(ncid, varname, data)
+  !
+  !DESCRIPTION
+  ! read a real scalar
+  use netcdf
+  use shr_kind_mod, only : r8 => shr_kind_r8
+!**********************************************************************
+  implicit none
+  type(file_desc_t), intent(in) :: ncid
+  character(len=*),intent(in) :: varname
+  REAL(r8), intent(out) :: data
+
+  integer :: varid
+  logical :: readvar
+  type(Var_desc_t)  :: vardesc
+
+  call check_var(ncid, trim(varname), vardesc, readvar)
+
+  call check_ret( nf90_get_var(ncid%fh, vardesc%varid, data),'ncd_getvar_real_sp_scalar')
+
+  end subroutine ncd_getvar_real_sp_scalar
 !----------------------------------------------------------------------
   subroutine ncd_getvar_int_1d(ncid, varname, rec, data)
   !

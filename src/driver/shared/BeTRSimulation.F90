@@ -1421,8 +1421,8 @@ contains
   do jj = 1, num_flux2d
 
     if(betr_offline)then
-
-      call hist_def_fld2d (ncid, varname=this%flux_hist2d_var(jj)%varname, &
+      if(trim(this%flux_hist2d_var(jj)%use_default)/='inactive')&
+        call hist_def_fld2d (ncid, varname=this%flux_hist2d_var(jj)%varname, &
             nf90_type=ncd_float, dim1name = "ncol",&
             dim2name="levtrc", long_name=this%flux_hist2d_var(jj)%long_name, &
             units=this%flux_hist2d_var(jj)%units)
@@ -1440,7 +1440,7 @@ contains
   do jj = 1, num_flux1d
 
     if(betr_offline)then
-
+      if(trim(this%flux_hist1d_var(jj)%use_default)/='inactive')&
       call hist_def_fld1d (ncid, varname=this%flux_hist1d_var(jj)%varname, &
         nf90_type=ncd_float, &
         dim1name="ncol", long_name=this%flux_hist1d_var(jj)%long_name,&
@@ -1494,8 +1494,8 @@ contains
     !read namelist
 
     if(betr_offline)then
-
-      call hist_def_fld2d (ncid=ncid, varname=this%state_hist2d_var(jj)%varname, &
+      if(trim(this%state_hist2d_var(jj)%use_default)/='inactive') &
+        call hist_def_fld2d (ncid=ncid, varname=this%state_hist2d_var(jj)%varname, &
           nf90_type=ncd_float, dim1name = "ncol",&
           dim2name="levtrc", long_name=this%state_hist2d_var(jj)%long_name,&
           units=this%state_hist2d_var(jj)%units)
@@ -1513,9 +1513,9 @@ contains
   do jj = 1, num_state1d
 
     if(betr_offline)then
-
-      call hist_def_fld1d (ncid, varname=this%state_hist1d_var(jj)%varname,  nf90_type=ncd_float, &
-        dim1name="ncol", long_name=this%state_hist1d_var(jj)%long_name, units=this%state_hist1d_var(jj)%units)
+      if(trim(this%state_hist1d_var(jj)%use_default)/='inactive') &
+        call hist_def_fld1d (ncid, varname=this%state_hist1d_var(jj)%varname,  nf90_type=ncd_float, &
+          dim1name="ncol", long_name=this%state_hist1d_var(jj)%long_name, units=this%state_hist1d_var(jj)%units)
     else
       this%hist_states_1d(begc:endc,jj) = spval
       data1dptr => this%hist_states_1d(begc:endc,jj)
@@ -1558,6 +1558,7 @@ contains
 
 
   begc=bounds%begc; endc=bounds%endc
+  this%hist_naccum = this%hist_naccum+1._r8
 
   do jj = 1, num_flux2d
     do jl = 1, betr_nlevtrc_soil
@@ -1565,18 +1566,20 @@ contains
         this%hist_fluxes_2d_accum(c,jl,jj)=this%hist_fluxes_2d_accum(c,jl,jj)/this%hist_naccum
       enddo
     enddo
-    data2dptr => this%hist_fluxes_2d_accum(begc:endc,1:betr_nlevtrc_soil, jj)
-    call ncd_putvar(ncid, this%flux_hist2d_var(jj)%varname, record, data2dptr)
-
+    if(trim(this%flux_hist2d_var(jj)%use_default)/='inactive') then
+      data2dptr => this%hist_fluxes_2d_accum(begc:endc,1:betr_nlevtrc_soil, jj)
+      call ncd_putvar(ncid, this%flux_hist2d_var(jj)%varname, record, data2dptr)
+    endif
   enddo
 
   do jj = 1, num_flux1d
     do fc = 1, numf
       this%hist_fluxes_1d_accum(c,jj) = this%hist_fluxes_1d_accum(c,jj)/this%hist_naccum
     enddo
-    data1dptr => this%hist_fluxes_1d_accum(begc:endc, jj)
-    call ncd_putvar(ncid,this%flux_hist1d_var(jj)%varname, record, data1dptr)
-
+    if(trim(this%flux_hist1d_var(jj)%use_default)/='inactive')then
+      data1dptr => this%hist_fluxes_1d_accum(begc:endc, jj)
+      call ncd_putvar(ncid,this%flux_hist1d_var(jj)%varname, record, data1dptr)
+    endif
   enddo
 
   this%hist_naccum = 0._r8
@@ -1663,18 +1666,17 @@ contains
 
   do jj = 1, num_state2d
 
-    data2dptr => this%hist_states_2d(begc:endc,1:betr_nlevtrc_soil, jj)
-
-    call ncd_putvar(ncid,this%state_hist2d_var(jj)%varname, record, data2dptr)
-
+    if(trim(this%state_hist2d_var(jj)%use_default)/='inactive') then
+      data2dptr => this%hist_states_2d(begc:endc,1:betr_nlevtrc_soil, jj)
+      call ncd_putvar(ncid,this%state_hist2d_var(jj)%varname, record, data2dptr)
+    endif
   enddo
 
   do jj = 1, num_state1d
-
-    data1dptr => this%hist_states_1d(begc:endc,jj)
-
-    call ncd_putvar(ncid,this%state_hist1d_var(jj)%varname, record, data1dptr)
-
+    if(trim(this%state_hist1d_var(jj)%use_default)/='inactive') then
+      data1dptr => this%hist_states_1d(begc:endc,jj)
+      call ncd_putvar(ncid,this%state_hist1d_var(jj)%varname, record, data1dptr)
+    endif
   enddo
 
   end subroutine hist_output_states
@@ -1789,7 +1791,7 @@ contains
   !assign initial conditions
   call this%BeTRSetBounds(betr_bounds)
 
-  ! print*,'offline restart', flag
+  print*,'offline restart', flag
   if(flag=='define')then
     ! print*,'define restart file'
     ! define the dimensions
@@ -1805,6 +1807,9 @@ contains
     call ncd_defvar(ncid, 'time',ncd_double, long_name='', &
          units = '',  missing_value=spval, fill_value=spval)
 
+    call ncd_defvar(ncid, 'hist_naccum',ncd_double, long_name='', &
+         units = '',  missing_value=spval, fill_value=spval)
+
     do jj = 1, this%num_rest_state1d
         !x print*,jj,trim(rest_varname_1d(jj))
       call ncd_defvar(ncid, trim(rest_varname_1d(jj)),ncd_double,dim1name='column',  &
@@ -1816,7 +1821,19 @@ contains
       call ncd_defvar(ncid, trim(rest_varname_2d(jj)),ncd_double,dim1name='column',  &
         dim2name='levtrc', long_name='', units = '',  missing_value=spval, fill_value=spval)
     enddo
+
+    do jj = 1, this%num_hist_flux1d
+       call ncd_defvar(ncid, trim(this%flux_hist1d_var(jj)%varname)//'_accum',ncd_double,dim1name='column',  &
+           long_name='', units = '',  missing_value=spval, fill_value=spval)
+    enddo
+
+    do jj = 1, this%num_hist_flux2d
+      call ncd_defvar(ncid, trim(this%flux_hist2d_var(jj)%varname)//'_accum',ncd_double,dim1name='column',  &
+        dim2name='levtrc', long_name='', units = '',  missing_value=spval, fill_value=spval)
+    enddo
+
     call ncd_enddef(ncid)
+
 
   elseif(flag=='write')then
 
@@ -1827,7 +1844,7 @@ contains
         this%rest_states_1d(c:c,:), this%rest_states_2d(c:c,:,:), flag)
     enddo
 
-    ! print*,'write restart file'
+    print*,'write restart file'
     do jj = 1, this%num_rest_state1d
        ptr1d => this%rest_states_1d(:, jj)
        call ncd_putvar(ncid, trim(rest_varname_1d(jj)), 1, ptr1d)
@@ -1837,6 +1854,19 @@ contains
       ptr2d => this%rest_states_2d(:, :, jj)
       call ncd_putvar(ncid, trim(rest_varname_2d(jj)), 1, ptr2d)
     enddo
+
+    do jj = 1, this%num_hist_flux1d
+       ptr1d => this%hist_fluxes_1d_accum(:, jj)
+       call ncd_putvar(ncid, trim(this%flux_hist1d_var(jj)%varname)//'_accum', 1, ptr1d)
+    enddo
+
+    do jj = 1, this%num_hist_flux2d
+      ptr2d => this%hist_fluxes_2d_accum(:,:,jj)
+      call ncd_putvar(ncid, trim(this%flux_hist2d_var(jj)%varname)//'_accum', 1, ptr2d)
+    enddo
+
+    call ncd_putvar(ncid,'hist_naccum',this%hist_naccum)
+
   elseif(flag=='read')then
       ! print*,'read restart file'
     do jj = 1, this%num_rest_state1d
@@ -1848,6 +1878,18 @@ contains
       ptr2d => this%rest_states_2d(:, :, jj)
       call ncd_getvar(ncid, trim(rest_varname_2d(jj)), ptr2d)
     enddo
+
+    do jj = 1, this%num_hist_flux1d
+       ptr1d => this%hist_fluxes_1d_accum(:, jj)
+       call ncd_getvar(ncid, trim(this%flux_hist1d_var(jj)%varname)//'_accum', ptr1d)
+    enddo
+
+    do jj = 1, this%num_hist_flux2d
+      ptr2d => this%hist_fluxes_2d_accum(:,:,jj)
+      call ncd_getvar(ncid, trim(this%flux_hist2d_var(jj)%varname)//'_accum', ptr2d)
+    enddo
+
+    call ncd_getvar(ncid,'hist_naccum',this%hist_naccum)
 
     ! print*,'assign values to state variables',flag
     do fc = 1, numf
