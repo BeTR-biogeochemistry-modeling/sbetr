@@ -153,6 +153,9 @@ contains
     call this%BeTRSetcps(bounds, col, pft)
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
+      call this%biogeo_flux(c)%reset(value_column=0._r8, active_soibgc=this%do_soibgc())
+      call this%biophys_forc(c)%frac_normalize(this%betr_pft(c)%npfts, 1, betr_nlevtrc_soil)
+
       call this%betr(c)%step_without_drainage(this%betr_time, betr_bounds, this%betr_col(c), &
          this%betr_pft(c), this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp, &
          this%biophys_forc(c), this%biogeo_flux(c), this%biogeo_state(c), this%bstatus(c))
@@ -186,16 +189,16 @@ contains
     !TEMPORARY VARIABLES
     type(betr_bounds_type) :: betr_bounds
     integer                :: lbj, ubj ! lower and upper bounds, make sure they are > 0
-    integer :: c
+    integer :: c, c_l, begc_l, endc_l
 
     !pass necessary data for correct subroutine call
     !set lbj and ubj
 
-    call this%BeTRSetBounds(betr_bounds)
-
     call this%bsimstatus%reset()
-
+    call this%BeTRSetBounds(betr_bounds)
     call this%BeTRSetcps(bounds, col)
+    c_l = 1; begc_l = betr_bounds%begc; endc_l=betr_bounds%endc;
+
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
       call this%betr(c)%step_with_drainage(betr_bounds, this%betr_col(c), &
@@ -207,6 +210,20 @@ contains
         call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
         exit
       endif
+
+      call this%biogeo_state(c)%reset(value_column=0._r8, active_soibgc=this%do_soibgc())
+
+      call this%betr(c)%retrieve_biostates(betr_bounds,      &
+         1, betr_nlevsoi, this%num_soilc, this%filter_soilc, this%jtops, this%biogeo_state(c),this%bstatus(c))
+
+      if(this%bstatus(c)%check_status())then
+        call this%bsimstatus%setcol(c)
+        call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
+        exit
+      endif
+
+      call this%biogeo_state(c)%summary(betr_bounds, 1, betr_nlevtrc_soil,this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil), &
+          this%betr_col(c)%zi(begc_l:endc_l,1:betr_nlevtrc_soil),this%do_soibgc())
     enddo
   end subroutine StandaloneStepWithDrainage
 
@@ -470,7 +487,7 @@ contains
     c12state_vars%totsomc_col(c) = this%biogeo_state(c)%c12state_vars%totsomc_col(c_l)
     c12state_vars%totlitc_1m_col(c) = this%biogeo_state(c)%c12state_vars%totlitc_1m_col(c_l)
     c12state_vars%totsomc_1m_col(c) = this%biogeo_state(c)%c12state_vars%totsomc_1m_col(c_l)
-
+    print*,'cwdc',c12state_vars%cwdc_col(c)
     if(use_c13_betr)then
       c13state_vars%cwdc_col(c) = this%biogeo_state(c)%c13state_vars%cwdc_col(c_l)
       c13state_vars%totlitc_col(c) = this%biogeo_state(c)%c13state_vars%totlitc_col(c_l)
@@ -505,11 +522,12 @@ contains
 
     p31state_vars%sminp_col(c) = this%biogeo_state(c)%p31state_vars%sminp_col(c_l)
     p31state_vars%occlp_col(c) = this%biogeo_state(c)%p31state_vars%occlp_col(c_l)
-
-    if(index(reaction_method,'ecacnp')/=0)then
+    print*,'smin_nh4',n14state_vars%smin_nh4_col(c)
+    if(index(trim(reaction_method),'ecacnp')/=0)then
       c12state_vars%som1c_col(c) = this%biogeo_state(c)%c12state_vars%som1c_col(c_l)
       c12state_vars%som2c_col(c) = this%biogeo_state(c)%c12state_vars%som2c_col(c_l)
       c12state_vars%som3c_col(c) = this%biogeo_state(c)%c12state_vars%som3c_col(c_l)
+      print*,'som1c',c12state_vars%som1c_col(c)
       if(use_c13_betr)then
         c13state_vars%som1c_col(c) = this%biogeo_state(c)%c13state_vars%som1c_col(c_l)
         c13state_vars%som2c_col(c) = this%biogeo_state(c)%c13state_vars%som2c_col(c_l)
