@@ -27,32 +27,32 @@ module ForcingDataType
      integer                             :: num_levels
      integer                             :: num_time
      integer                             :: num_columns
-     real(r8), pointer                   :: t_soi(:,:)  => null()
-     real(r8), pointer                   :: h2osoi_liqvol(:,:) => null()
-     real(r8), pointer                   :: h2osoi_icevol(:,:)=> null()
-     real(r8), pointer                   :: h2osoi_liq(:,:) => null()
-     real(r8), pointer                   :: h2osoi_ice(:,:) => null()
-     real(r8), pointer                   :: qflx_infl(:)     => null()  !surface infiltration, mm/s
-     real(r8), pointer                   :: qflx_rootsoi(:,:) => null()  !transpiration at depth, m/s
-     real(r8), pointer                   :: pbot(:)      => null()      !amtospheric pressure, Pa
-     real(r8), pointer                   :: tbot(:)       => null()     !atmoshperic temperature, kelvin
-     real(r8), pointer                   :: qbot(:)       => null()     !water flux at bottom boundary, mm/s
-     real(r8), pointer                   :: finudated(:) => null()
-     real(r8), pointer                   :: nflx_nh4_vr(:,:) => null()
-     real(r8), pointer                   :: nflx_no3_vr(:,:) => null()
-     real(r8), pointer                   :: pflx_po4_vr(:,:) => null()
-     real(r8), pointer                   :: cflx_met_vr(:,:) => null()
-     real(r8), pointer                   :: cflx_cel_vr(:,:) => null()
-     real(r8), pointer                   :: cflx_lig_vr(:,:) => null()
-     real(r8), pointer                   :: cflx_cwd_vr(:,:) => null()
-     real(r8), pointer                   :: nflx_met_vr(:,:) => null()
-     real(r8), pointer                   :: nflx_cel_vr(:,:) => null()
-     real(r8), pointer                   :: nflx_lig_vr(:,:) => null()
-     real(r8), pointer                   :: nflx_cwd_vr(:,:) => null()
-     real(r8), pointer                   :: pflx_met_vr(:,:) => null()
-     real(r8), pointer                   :: pflx_cel_vr(:,:) => null()
-     real(r8), pointer                   :: pflx_lig_vr(:,:) => null()
-     real(r8), pointer                   :: pflx_cwd_vr(:,:) => null()
+     real(r8), allocatable               :: t_soi(:,:)
+     real(r8), allocatable               :: h2osoi_liqvol(:,:)
+     real(r8), allocatable               :: h2osoi_icevol(:,:)
+     real(r8), allocatable               :: h2osoi_liq(:,:)
+     real(r8), allocatable               :: h2osoi_ice(:,:)
+     real(r8), allocatable               :: qflx_infl(:)       !surface infiltration, mm/s
+     real(r8), allocatable               :: qflx_rootsoi(:,:)   !transpiration at depth, m/s
+     real(r8), allocatable               :: pbot(:)            !amtospheric pressure, Pa
+     real(r8), allocatable               :: tbot(:)            !atmoshperic temperature, kelvin
+     real(r8), allocatable               :: qbot(:)            !water flux at bottom boundary, mm/s
+     real(r8), allocatable               :: finudated(:)
+     real(r8), allocatable               :: nflx_nh4_vr(:,:)
+     real(r8), allocatable               :: nflx_no3_vr(:,:)
+     real(r8), allocatable               :: pflx_po4_vr(:,:)
+     real(r8), allocatable               :: cflx_met_vr(:,:)
+     real(r8), allocatable               :: cflx_cel_vr(:,:)
+     real(r8), allocatable               :: cflx_lig_vr(:,:)
+     real(r8), allocatable               :: cflx_cwd_vr(:,:)
+     real(r8), allocatable               :: nflx_met_vr(:,:)
+     real(r8), allocatable               :: nflx_cel_vr(:,:)
+     real(r8), allocatable               :: nflx_lig_vr(:,:)
+     real(r8), allocatable               :: nflx_cwd_vr(:,:)
+     real(r8), allocatable               :: pflx_met_vr(:,:)
+     real(r8), allocatable               :: pflx_cel_vr(:,:)
+     real(r8), allocatable               :: pflx_lig_vr(:,:)
+     real(r8), allocatable               :: pflx_cwd_vr(:,:)
 
    contains
      procedure, public :: Init
@@ -108,31 +108,31 @@ contains
   class(ForcingData_type), intent(inout) :: this
   !at this moment the variable size is fixed
 
-  deallocate(this%t_soi)
-  deallocate(this%h2osoi_liqvol)
-  deallocate(this%h2osoi_icevol)
-  deallocate(this%h2osoi_liq)
-  deallocate(this%h2osoi_ice)
-  deallocate(this%qflx_infl)
-  deallocate(this%qflx_rootsoi)
-  deallocate(this%pbot)
-  deallocate(this%qbot)
-  deallocate(this%tbot)
-  deallocate(this%nflx_nh4_vr)
-  deallocate(this%nflx_no3_vr)
-  deallocate(this%pflx_po4_vr)
-  deallocate(this%cflx_met_vr)
-  deallocate(this%cflx_cel_vr)
-  deallocate(this%cflx_lig_vr)
-  deallocate(this%cflx_cwd_vr)
-  deallocate(this%nflx_met_vr)
-  deallocate(this%nflx_cel_vr)
-  deallocate(this%nflx_lig_vr)
-  deallocate(this%nflx_cwd_vr)
-  deallocate(this%pflx_met_vr)
-  deallocate(this%pflx_cel_vr)
-  deallocate(this%pflx_lig_vr)
-  deallocate(this%pflx_cwd_vr)
+  if(allocated(this%t_soi))deallocate(this%t_soi)
+  if(allocated(this%h2osoi_liqvol))deallocate(this%h2osoi_liqvol)
+  if(allocated(this%h2osoi_icevol))deallocate(this%h2osoi_icevol)
+  if(allocated(this%h2osoi_liq))deallocate(this%h2osoi_liq)
+  if(allocated(this%h2osoi_ice))deallocate(this%h2osoi_ice)
+  if(allocated(this%qflx_infl))deallocate(this%qflx_infl)
+  if(allocated(this%qflx_rootsoi))deallocate(this%qflx_rootsoi)
+  if(allocated(this%pbot))deallocate(this%pbot)
+  if(allocated(this%qbot))deallocate(this%qbot)
+  if(allocated(this%tbot))deallocate(this%tbot)
+  if(allocated(this%nflx_nh4_vr))deallocate(this%nflx_nh4_vr)
+  if(allocated(this%nflx_no3_vr))deallocate(this%nflx_no3_vr)
+  if(allocated(this%pflx_po4_vr))deallocate(this%pflx_po4_vr)
+  if(allocated(this%cflx_met_vr))deallocate(this%cflx_met_vr)
+  if(allocated(this%cflx_cel_vr))deallocate(this%cflx_cel_vr)
+  if(allocated(this%cflx_lig_vr))deallocate(this%cflx_lig_vr)
+  if(allocated(this%cflx_cwd_vr))deallocate(this%cflx_cwd_vr)
+  if(allocated(this%nflx_met_vr))deallocate(this%nflx_met_vr)
+  if(allocated(this%nflx_cel_vr))deallocate(this%nflx_cel_vr)
+  if(allocated(this%nflx_lig_vr))deallocate(this%nflx_lig_vr)
+  if(allocated(this%nflx_cwd_vr))deallocate(this%nflx_cwd_vr)
+  if(allocated(this%pflx_met_vr))deallocate(this%pflx_met_vr)
+  if(allocated(this%pflx_cel_vr))deallocate(this%pflx_cel_vr)
+  if(allocated(this%pflx_lig_vr))deallocate(this%pflx_lig_vr)
+  if(allocated(this%pflx_cwd_vr))deallocate(this%pflx_cwd_vr)
   end subroutine Destroy
 
   !------------------------------------------------------------------------
