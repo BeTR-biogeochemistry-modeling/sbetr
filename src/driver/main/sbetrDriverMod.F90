@@ -569,10 +569,7 @@ end subroutine sbetrBGC_driver
     id = id + 1; ystates(id) = phosphorusstate_vars%som3p_col(c_l)
   endif
   call hist%hist_wrap(ystates, timer)
-  deallocate(ystates)
-  deallocate(ystates)
-
-
+  if(allocated(ystates))deallocate(ystates)
 
   end subroutine WriteHistBGC
   !-------------------------------------------------------------------------------

@@ -598,7 +598,7 @@ contains
 !  if(this%centurybgc_index%debug)call this%end_massbal_check('bf exit runbgc')
 !  endif
   ystatesf(:) = ystates1(:)
-  
+
   end associate
   end subroutine runbgc_ecacnp
   !-------------------------------------------------------------------------------
@@ -1094,6 +1094,7 @@ contains
       kc14=(jj-1)*nelms+c14_loc
       this%ystates1(kc14) =this%ystates0(kc14) + c14_flx_input*dtime/c14atomw
     endif
+!    print*,'c n p',this%ystates1(kc),this%ystates1(kn),this%ystates1(kp)
     end associate
     end subroutine add_som_pool
    !----------------------------------------------------------------
@@ -1262,10 +1263,12 @@ contains
 !  if(this%centurybgc_index%debug) &
 !  write(*,*)'ECA mic',ECA_factor_phosphorus_mic,ECA_factor_minp_msurf
 
-  rrates(lid_autr_rt_reac) = this%rt_ar                            !authotrophic respiration
-  rrates(lid_plant_minn_no3_up_reac) = sum(ECA_flx_no3_plants)     !calculate by ECA competition
-  rrates(lid_plant_minn_nh4_up_reac) = sum(ECA_flx_nh4_plants)     !calculate by ECA competition
-  rrates(lid_plant_minp_up_reac) =     sum(ECA_flx_phosphorus_plants) !calculate by ECA competition
+  if(this%plant_ntypes>0)then
+    rrates(lid_autr_rt_reac) = this%rt_ar                            !authotrophic respiration
+    rrates(lid_plant_minn_no3_up_reac) = sum(ECA_flx_no3_plants)     !calculate by ECA competition
+    rrates(lid_plant_minn_nh4_up_reac) = sum(ECA_flx_nh4_plants)     !calculate by ECA competition
+    rrates(lid_plant_minp_up_reac) =     sum(ECA_flx_phosphorus_plants) !calculate by ECA competition
+  endif
   rrates(lid_minp_secondary_to_sol_occ_reac)= ystate(lid_minp_secondary) * this%minp_secondary_decay(this%soilorder)
 
 !  if(this%centurybgc_index%debug)then
@@ -1310,9 +1313,9 @@ contains
 !    do jj = 1, this%plant_ntypes
 !      print*,'casp',lid_plant_minp_pft(jj),this%cascade_matrixd(lid_plant_minp_pft(jj),lid_plant_minp_up_reac),ECA_flx_phosphorus_plants(jj)
 !    enddo
-!    do jj = 1, nreactions
-!      print*,'cadfaascd jj',jj,this%cascade_matrixd(lid_minp_soluble,jj),rrates(jj)
-!    enddo
+    do jj = 1, nreactions
+      print*,'cadfaascd jj',jj,rrates(jj)
+    enddo
 !     print*,this%cascade_matrix(lid_plant_minn_no3_pft(1:this%plant_ntypes),lid_plant_minn_no3_up_reac)
 !     print*,'eca',ECA_flx_no3_plants
 !     print*,'sumrac',sum(ECA_flx_no3_plants),rrates(lid_plant_minn_no3_up_reac)

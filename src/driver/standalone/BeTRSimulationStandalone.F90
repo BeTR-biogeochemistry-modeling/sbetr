@@ -39,6 +39,7 @@ module BeTRSimulationStandalone
      procedure, public :: SetBiophysForcing   => StandaloneSetBiophysForcing
      procedure, public :: PlantSoilBGCSend    => StandalonePlantSoilBGCSend
      procedure, public :: PlantSoilBGCRecv    => StandalonePlantSoilBGCRecv
+     procedure, private :: set_transient_kinetics_par
   end type betr_simulation_standalone_type
 
   public :: create_betr_simulation_standalone
@@ -291,12 +292,15 @@ contains
 
   integer :: c_l, c, fc, j
   type(betr_bounds_type)   :: betr_bounds
+
   call this%BeTRSetBounds(betr_bounds)
 
   c_l = 1
+  !set kinetic parameters
+  call this%set_transient_kinetics_par(betr_bounds, col, pft, num_soilc, filter_soilc, PlantMicKinetics_vars)
+
   do fc = 1, num_soilc
     c = filter_soilc(fc)
-    this%betr(c)%nactpft = 0
     call this%biophys_forc(c)%reset(value_column=0._r8)
     this%biophys_forc(c)%isoilorder(c_l) = 1
     call this%biophys_forc(c)%c12flx%reset(value_column=0._r8)
@@ -394,7 +398,7 @@ contains
 
     !recollect soil respirations, fire and hydraulic loss
     c12flux_vars%hr_col(c) = this%biogeo_flux(c)%c12flux_vars%hr_col(c_l)
-
+    print*,'co2',c12flux_vars%hr_col(c)
     c12flux_vars%fire_decomp_closs_col(c) = this%biogeo_flux(c)%c12flux_vars%fire_decomp_closs_col(c_l)
     c12flux_vars%som_c_leached_col(c) = &
         this%biogeo_flux(c)%c12flux_vars%som_c_leached_col(c_l) + &
@@ -524,4 +528,84 @@ contains
     endif
   enddo
   end subroutine StandalonePlantSoilBGCRecv
+
+  !------------------------------------------------------------------------
+  subroutine set_transient_kinetics_par(this, betr_bounds, col, pft, num_soilc, filter_soilc, PlantMicKinetics_vars)
+  !DESCRIPTION
+  !set kinetic parameters for column c
+  use PlantMicKineticsMod, only : PlantMicKinetics_type
+  use tracer_varcon      , only : reaction_method,natomw,patomw
+  use pftvarcon             , only : noveg
+  use PatchType          , only : patch_type
+  use ColumnType        , only : column_type
+  implicit none
+  class(betr_simulation_standalone_type) , intent(inout) :: this
+  type(betr_bounds_type), intent(in) :: betr_bounds
+  type(column_type)     , intent(in)    :: col ! column type
+  type(patch_type)      , intent(in) :: pft
+  integer, intent(in) :: num_soilc
+  integer, intent(in) :: filter_soilc(:)
+  type(PlantMicKinetics_type), intent(in) :: PlantMicKinetics_vars
+
+  integer :: j, fc, c, p, pi, pp, c_l
+
+  associate(      &
+    plant_nh4_vmax_vr_patch => PlantMicKinetics_vars%plant_nh4_vmax_vr_patch, &
+    plant_no3_vmax_vr_patch => PlantMicKinetics_vars%plant_no3_vmax_vr_patch, &
+    plant_p_vmax_vr_patch   => PlantMicKinetics_vars%plant_p_vmax_vr_patch, &
+    plant_nh4_km_vr_patch   => PlantMicKinetics_vars%plant_nh4_km_vr_patch, &
+    plant_no3_km_vr_patch   => PlantMicKinetics_vars%plant_no3_km_vr_patch, &
+    plant_p_km_vr_patch     => PlantMicKinetics_vars%plant_p_km_vr_patch , &
+    plant_eff_ncompet_b_vr_patch => PlantMicKinetics_vars%plant_eff_ncompet_b_vr_patch , &
+    plant_eff_pcompet_b_vr_patch => PlantMicKinetics_vars%plant_eff_pcompet_b_vr_patch , &
+    minsurf_nh4_compet_vr_col => PlantMicKinetics_vars%minsurf_nh4_compet_vr_col, &
+    minsurf_p_compet_vr_col => PlantMicKinetics_vars%minsurf_p_compet_vr_col , &
+    plant_eff_frootc_vr_patch => PlantMicKinetics_vars%plant_eff_frootc_vr_patch &
+  )
+  c_l = 1
+  do fc = 1, num_soilc
+    c = filter_soilc(fc)
+    pp = 0
+
+    do pi = 1, betr_maxpatch_pft
+      if (pi <= col%npfts(c)) then
+        p = col%pfti(c) + pi - 1
+
+        if (pft%active(p) .and. (pft%itype(p) .ne. noveg)) then
+          pp = pp + 1
+          do j =1, betr_bounds%ubj
+            this%betr(c)%plantNutkinetics%plant_nh4_vmax_vr_patch(pp,j) = 0._r8
+            this%betr(c)%plantNutkinetics%plant_no3_vmax_vr_patch(pp,j) = 0._r8
+            this%betr(c)%plantNutkinetics%plant_p_vmax_vr_patch(pp,j) = 0._r8
+            this%betr(c)%plantNutkinetics%plant_nh4_km_vr_patch(pp,j) = 0._r8
+            this%betr(c)%plantNutkinetics%plant_no3_km_vr_patch(pp,j) = 0._r8
+            this%betr(c)%plantNutkinetics%plant_p_km_vr_patch(pp,j) = 0._r8
+            this%betr(c)%plantNutkinetics%plant_eff_ncompet_b_vr_patch(pp,j)= 0._r8
+            this%betr(c)%plantNutkinetics%plant_eff_pcompet_b_vr_patch(pp,j)= 0._r8
+            this%betr(c)%plantNutkinetics%plant_eff_frootc_vr_patch(pp,j) = 0._r8
+          enddo
+        endif
+      endif
+    enddo
+    this%betr(c)%nactpft = pp
+    do j = 1, betr_bounds%ubj
+      this%betr(c)%plantNutkinetics%minsurf_p_compet_vr_col(c_l,j) = 0._r8
+      this%betr(c)%plantNutkinetics%minsurf_nh4_compet_vr_col(c_l,j) = 0._r8
+    enddo
+  enddo
+
+  !the following parameters are specific to ECACNP, and I assume they are
+  !grid specific as they currently used in alm-cnp.
+  if(index(reaction_method,'ecacnp')/=0)then
+    do j =1, betr_bounds%ubj
+      do fc = 1, num_soilc
+        c = filter_soilc(fc)
+        this%betr(c)%plantNutkinetics%km_minsurf_p_vr_col(c_l,j) = 1._r8
+        this%betr(c)%plantNutkinetics%km_minsurf_nh4_vr_col(c_l,j)=1._r8
+      enddo
+    enddo
+  endif
+  end associate
+  end subroutine set_transient_kinetics_par
+
 end module BeTRSimulationStandalone

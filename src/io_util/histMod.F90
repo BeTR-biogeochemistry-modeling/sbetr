@@ -321,7 +321,7 @@ contains
     case default
       id = clock_month
   end select
-  write(this%ncfname(id),'(A)')trim(gname)//'.'//trim(freq)//'.nc'
+  write(this%ncfname(id),'(A)')trim(gname)//'.hist.'//trim(freq)//'.nc'
   call ncd_pio_createfile(ncid, this%ncfname(id))
 
   !the temporal dimension is infinite

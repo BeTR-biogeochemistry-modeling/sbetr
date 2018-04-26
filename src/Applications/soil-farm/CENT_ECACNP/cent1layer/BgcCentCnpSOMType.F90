@@ -1018,7 +1018,10 @@ contains
   k_decay(fwd)  = k_decay(fwd) * exp(-3._r8*this%fwd_flig)
   k_decay(lit2) = k_decay(lit2)* exp(-3._r8*this%lit_flig)
   k_decay(lit3) = k_decay(lit3)* exp(-3._r8*this%lit_flig)
-
+!  print*,'lay',lay
+!  print*,'decy',this%k_decay_lit1(lay),this%k_decay_lit2(lay),this%k_decay_lit3(lay),this%k_decay_som1,this%k_decay_som2,this%k_decay_som3
+!  print*,'k_decay',(k_decay(jj),jj=1,ncentpools)
+!  print*,'scalar',t_scalar, w_scalar, o_scalar, depth_scalar
   end associate
   end subroutine calc_som_decay_k
   !-------------------------------------------------------------------------------
