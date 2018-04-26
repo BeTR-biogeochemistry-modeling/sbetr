@@ -118,7 +118,21 @@ contains
   deallocate(this%pbot)
   deallocate(this%qbot)
   deallocate(this%tbot)
-
+  deallocate(this%nflx_nh4_vr)
+  deallocate(this%nflx_no3_vr)
+  deallocate(this%pflx_po4_vr)
+  deallocate(this%cflx_met_vr)
+  deallocate(this%cflx_cel_vr)
+  deallocate(this%cflx_lig_vr)
+  deallocate(this%cflx_cwd_vr)
+  deallocate(this%nflx_met_vr)
+  deallocate(this%nflx_cel_vr)
+  deallocate(this%nflx_lig_vr)
+  deallocate(this%nflx_cwd_vr)
+  deallocate(this%pflx_met_vr)
+  deallocate(this%pflx_cel_vr)
+  deallocate(this%pflx_lig_vr)
+  deallocate(this%pflx_cwd_vr)
   end subroutine Destroy
 
   !------------------------------------------------------------------------
