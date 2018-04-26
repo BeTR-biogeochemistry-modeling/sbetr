@@ -1313,9 +1313,9 @@ contains
 !    do jj = 1, this%plant_ntypes
 !      print*,'casp',lid_plant_minp_pft(jj),this%cascade_matrixd(lid_plant_minp_pft(jj),lid_plant_minp_up_reac),ECA_flx_phosphorus_plants(jj)
 !    enddo
-    do jj = 1, nreactions
-      print*,'cadfaascd jj',jj,rrates(jj)
-    enddo
+!    do jj = 1, nreactions
+!      print*,'cadfaascd jj',jj,rrates(jj)
+!    enddo
 !     print*,this%cascade_matrix(lid_plant_minn_no3_pft(1:this%plant_ntypes),lid_plant_minn_no3_up_reac)
 !     print*,'eca',ECA_flx_no3_plants
 !     print*,'sumrac',sum(ECA_flx_no3_plants),rrates(lid_plant_minn_no3_up_reac)

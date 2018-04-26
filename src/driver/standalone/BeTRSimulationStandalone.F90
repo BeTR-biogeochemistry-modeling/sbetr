@@ -9,6 +9,7 @@ module BeTRSimulationStandalone
   !  natively, so is mapping BeTR to BeTR. This class shouldn't be
   !  doing much.
   !
+#include "shr_assert.h"
   use abortutils          , only : endrun
   use clm_varctl          , only : iulog
   use shr_kind_mod        , only : r8 => shr_kind_r8
@@ -39,6 +40,7 @@ module BeTRSimulationStandalone
      procedure, public :: SetBiophysForcing   => StandaloneSetBiophysForcing
      procedure, public :: PlantSoilBGCSend    => StandalonePlantSoilBGCSend
      procedure, public :: PlantSoilBGCRecv    => StandalonePlantSoilBGCRecv
+     procedure, public :: CalcSmpL            => StandaloneCalcSmpL
      procedure, private :: set_transient_kinetics_par
   end type betr_simulation_standalone_type
 
@@ -607,5 +609,63 @@ contains
   endif
   end associate
   end subroutine set_transient_kinetics_par
+
+
+  !------------------------------------------------------------------------
+  subroutine StandaloneCalcSmpL(this, bounds, lbj, ubj, numf, filter, t_soisno, &
+     soilstate_vars, waterstate_vars, soil_water_retention_curve)
+  !DESCRIPTION
+  ! calculate soil suction potential
+  !
+  !USES
+  use SoilStateType              , only : soilstate_type
+  use WaterStateType             , only : waterstate_type
+  use SoilWaterRetentionCurveMod , only : soil_water_retention_curve_type
+  use clm_varcon                 , only : grav,hfus,tfrz
+  implicit none
+  !ARGUMENTS
+  class(betr_simulation_standalone_type) , intent(inout) :: this
+  type(bounds_type)                      , intent(in)    :: bounds  ! bounds
+  integer                                , intent(in)    :: lbj, ubj                                          ! lower and upper bounds, make sure they are > 0
+  integer                                , intent(in)    :: numf                                              ! number of columns in column filter
+  integer                                , intent(in)    :: filter(:)                                         ! column filter
+  real(r8)                               , intent(in)    :: t_soisno(bounds%begc: , lbj: )                    ! soil temperature
+  type(soilstate_type)                   , intent(in)    :: soilstate_vars
+  type(waterstate_type)                  , intent(inout) :: waterstate_vars
+  class(soil_water_retention_curve_type) , intent(in)    :: soil_water_retention_curve
+
+  !local variables
+  real(r8) :: s_node
+  integer  :: fc, c, j
+
+  SHR_ASSERT_ALL((ubound(t_soisno) == (/bounds%endc, ubj/)),errMsg(mod_filename,__LINE__))
+
+  ! remove compiler warnings
+  if (this%num_soilc > 0) continue
+
+  associate(                                                     & !
+    h2osoi_vol        =>    waterstate_vars%h2osoi_vol_col     , & ! Input:  [real(r8) (:,:) ]  volumetric soil moisture
+    smp_l             =>    waterstate_vars%smp_l_col          , & ! Output: [real(r8) (:,:) ]  soil suction (mm)
+    bsw               =>    soilstate_vars%bsw_col             , & ! Input:  [real(r8) (:,:) ]  Clapp and Hornberger "b"
+    watsat            =>    soilstate_vars%watsat_col          , & ! Input:  [real(r8) (:,:) ]  minimum soil suction (mm)
+    sucsat            =>    soilstate_vars%sucsat_col            & ! Input:  [real(r8) (:,:) ]  minimum soil suction (mm)
+  )
+
+  do j = lbj, ubj
+    do fc = 1, numf
+      c = filter(fc)
+      if(.not. this%active_col(c))cycle
+      if(j>=1)then
+        if(t_soisno(c,j)<tfrz)then
+          smp_l(c,j)= -hfus*(tfrz-t_soisno(c,j))/(grav*t_soisno(c,j)) * 1000._r8  !(mm)
+        else
+          s_node = max(h2osoi_vol(c,j)/watsat(c,j), 0.01_r8)
+          call soil_water_retention_curve%soil_suction(sucsat(c,j), s_node, bsw(c,j), smp_l(c,j))
+        endif
+      endif
+    enddo
+  enddo
+  end associate
+  end subroutine StandaloneCalcSmpL
 
 end module BeTRSimulationStandalone

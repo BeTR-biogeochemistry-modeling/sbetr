@@ -211,6 +211,14 @@ contains
       atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars,                   &
       waterflux_vars, temperature_vars, chemstate_vars, simulation%jtops)
 
+    select type(simulation)
+
+    class is (betr_simulation_standalone_type)
+
+      call simulation%CalcSmpL(bounds, 1, nlevsoi, simulation%num_soilc, simulation%filter_soilc, &
+              temperature_vars%t_soisno_col(bounds%begc:bounds%endc,1:nlevsoi), &
+              soilstate_vars, waterstate_vars, soil_water_retention_curve)
+    end select
     call simulation%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi, waterstate_vars=waterstate_vars, &
       waterflux_vars=waterflux_vars, soilhydrology_vars = soilhydrology_vars)
 
