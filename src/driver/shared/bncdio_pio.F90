@@ -652,7 +652,7 @@ module bncdio_pio
   type(Var_desc_t)  :: vardesc
 
   call check_var(ncid, trim(varname), vardesc, readvar)
-  print*,'varname ',trim(varname)
+  
   call check_ret( nf90_put_var(ncid%fh, vardesc%varid, data,  &
      start = (/1,1,rec/)),'ncd_putvar_real_sp_2d')
 

@@ -1456,6 +1456,7 @@ contains
     use betr_columnType   , only : betr_column_type
     use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
     use tracer_varcon     , only : patomw, catomw, natomw
+    use UnitConverMod     , only : ppm2molv
     implicit none
     ! !ARGUMENTS:
     class(bgc_reaction_cdom_ecacnp_type) , intent(inout)    :: this
@@ -1487,8 +1488,18 @@ contains
         p_loc   => this%cdombgc_index%p_loc     , &
         id_trc_beg_Bm=> betrtracer_vars%id_trc_beg_Bm, &
         id_trc_end_Bm=> betrtracer_vars%id_trc_end_Bm, &
-        volatileid => betrtracer_vars%volatileid  &
-         )
+        volatileid => betrtracer_vars%volatileid,  &
+        n2_ppmv    => biophysforc%n2_ppmv_col       , &
+        o2_ppmv    => biophysforc%o2_ppmv_col       , &
+        ar_ppmv    => biophysforc%ar_ppmv_col       , &
+        co2_ppmv   => biophysforc%co2_ppmv_col      , &
+        ch4_ppmv   => biophysforc%ch4_ppmv_col      , &
+        n2o_ppmv   => biophysforc%n2o_ppmv_col      , &
+        nh3_ppmv   => biophysforc%nh3_ppmv_col      , &
+        pbot_pa    => biophysforc%forc_pbot_downscaled_col, &
+        tair       => biophysforc%forc_t_downscaled_col &
+        )
+
     do c = bounds%begc, bounds%endc
 
       !dual phase tracers
@@ -1498,13 +1509,14 @@ contains
       tracerstate_vars%tracer_conc_surfwater_col (c,:                                      )  = 0._r8
       tracerstate_vars%tracer_conc_aquifer_col   (c,:                                      )  = 0._r8
       tracerstate_vars%tracer_conc_grndwater_col (c,:                                      )  = 0._r8
-      tracerstate_vars%tracer_conc_atm_col       (c,volatileid(betrtracer_vars%id_trc_n2   )) = 32.8_r8
-      tracerstate_vars%tracer_conc_atm_col       (c,volatileid(betrtracer_vars%id_trc_o2   )) = 8.78_r8
-      tracerstate_vars%tracer_conc_atm_col       (c,volatileid(betrtracer_vars%id_trc_ar   )) = 0.3924_r8
-      tracerstate_vars%tracer_conc_atm_col       (c,volatileid(betrtracer_vars%id_trc_co2x )) = 0.0168_r8
-      tracerstate_vars%tracer_conc_atm_col       (c,volatileid(betrtracer_vars%id_trc_ch4  )) = 6.939e-5_r8
-      tracerstate_vars%tracer_conc_atm_col       (c,volatileid(betrtracer_vars%id_trc_n2o  )) = 1.195e-5_r8
-      tracerstate_vars%tracer_conc_mobile_col    (c,:, betrtracer_vars%id_trc_o2) = 8.78_r8
+      tracerstate_vars%tracer_conc_atm_col       (c,volatileid(betrtracer_vars%id_trc_n2   )) = ppm2molv(pbot_pa(c), n2_ppmv(c), tair(c))
+      tracerstate_vars%tracer_conc_atm_col       (c,volatileid(betrtracer_vars%id_trc_o2   )) = ppm2molv(pbot_pa(c), o2_ppmv(c), tair(c))
+      tracerstate_vars%tracer_conc_atm_col       (c,volatileid(betrtracer_vars%id_trc_ar   )) = ppm2molv(pbot_pa(c), ar_ppmv(c), tair(c))
+      tracerstate_vars%tracer_conc_atm_col       (c,volatileid(betrtracer_vars%id_trc_co2x )) = ppm2molv(pbot_pa(c), co2_ppmv(c), tair(c))
+      tracerstate_vars%tracer_conc_atm_col       (c,volatileid(betrtracer_vars%id_trc_ch4  )) = ppm2molv(pbot_pa(c), ch4_ppmv(c), tair(c))
+      tracerstate_vars%tracer_conc_atm_col       (c,volatileid(betrtracer_vars%id_trc_n2o  )) = ppm2molv(pbot_pa(c), n2o_ppmv(c), tair(c))
+      tracerstate_vars%tracer_conc_mobile_col    (c,:, betrtracer_vars%id_trc_o2) = ppm2molv(pbot_pa(c), o2_ppmv(c), tair(c))
+
       if(betrtracer_vars%nsolid_equil_tracers>0)then
         tracerstate_vars%tracer_conc_solid_equil_col(c, :, :) = 0._r8
       endif

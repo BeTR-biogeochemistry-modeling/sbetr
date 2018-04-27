@@ -53,6 +53,14 @@ implicit none
     !atm2lnd
     real(r8), pointer :: forc_pbot_downscaled_col      (:) => null() ! downscaled atm pressure (Pa)
     real(r8), pointer :: forc_t_downscaled_col         (:) => null() ! downscaled atm temperature (Kelvin)
+    real(r8), pointer :: n2_ppmv_col                   (:) => null() ! n2 concentration in ppmv
+    real(r8), pointer :: o2_ppmv_col                   (:) => null() ! o2 concentration in ppmv
+    real(r8), pointer :: ar_ppmv_col                   (:) => null() ! ar concentration in ppmv
+    real(r8), pointer :: co2_ppmv_col                  (:) => null() ! co2 concentration in ppmv
+    real(r8), pointer :: ch4_ppmv_col                  (:) => null() ! ch4 concentration in ppmv
+    real(r8), pointer :: n2o_ppmv_col                  (:) => null() ! n2o concentration in ppmv
+    real(r8), pointer :: no_ppmv_col                   (:) => null() ! no concentration in ppmv
+    real(r8), pointer :: nh3_ppmv_col                  (:) => null() ! nh3 concentration in ppmv
     !canopystate
     real(r8) , pointer :: altmax_col               (:) => null() ! col maximum annual depth of thaw
     real(r8) , pointer :: altmax_lastyear_col      (:) => null() ! col prior year maximum annual depth of thaw
@@ -72,8 +80,6 @@ implicit none
     real(r8), pointer :: watfc_col            (:,:)    => null() ! col volumetric soil water at field capacity (nlevsoi)
     real(r8), pointer :: sucsat_col           (:,:)    => null() ! col minimum soil suction (mm) (nlevgrnd)
     real(r8), pointer :: rootfr_patch         (:,:)    => null() ! patch fraction of roots in each soil layer (nlevgrnd)
-
-
     real(r8), pointer :: rr_patch(:,:)  => null()
     real(r8), pointer :: froot_prof_patch(:,:) => null()
     real(r8), pointer :: frootc_patch(:) => null()
@@ -97,6 +103,7 @@ implicit none
   contains
     procedure, public  :: Init
     procedure, private :: InitAllocate
+    procedure, private :: InitCold
     procedure, public  :: summary
     procedure, public  :: reset
     procedure, public  :: frac_normalize
@@ -130,7 +137,25 @@ contains
   if(use_c13_betr)call this%c13flx%Init(bounds)
   if(use_c14_betr)call this%c14flx%Init(bounds)
 
+  call this%InitCold()
   end subroutine Init
+  !------------------------------------------------------------------------
+
+
+  subroutine InitCold(this)
+
+  implicit none
+  class(betr_biogeophys_input_type)  :: this
+
+  this%n2_ppmv_col(:) = 7.8e5_r8
+  this%o2_ppmv_col(:) = 2.1e5_r8
+  this%ar_ppmv_col(:) = 0.9e5_r8
+  this%co2_ppmv_col(:)= 400._r8
+  this%ch4_ppmv_col(:)= 1.8_r8
+  this%n2o_ppmv_col(:)= 250.e-3_r8
+  this%no_ppmv_col(:) = 0._r8
+  this%nh3_ppmv_col(:)= 0._r8
+  end subroutine InitCold
 
   !------------------------------------------------------------------------
   subroutine InitAllocate(this, bounds)
@@ -195,6 +220,14 @@ contains
   !atm2lnd
   allocate(this%forc_pbot_downscaled_col      ( begc:endc)  ) ! downscaled atm pressure (Pa)
   allocate(this%forc_t_downscaled_col         ( begc:endc)  ) ! downscaled atm temperature (Kelvin)
+  allocate(this%n2_ppmv_col(begc:endc))
+  allocate(this%o2_ppmv_col(begc:endc))
+  allocate(this%ar_ppmv_col(begc:endc))
+  allocate(this%co2_ppmv_col(begc:endc))
+  allocate(this%ch4_ppmv_col(begc:endc))
+  allocate(this%n2o_ppmv_col(begc:endc))
+  allocate(this%no_ppmv_col(begc:endc))
+  allocate(this%nh3_ppmv_col(begc:endc))
 
   !canopystate
   allocate(this%altmax_col               (      begc:endc )  ) ! col maximum annual depth of thaw
@@ -218,10 +251,10 @@ contains
   allocate(this%sucsat_col           (begc:endc,lbj:ubj) ) ! col minimum soil suction (mm) (nlevgrnd)
   allocate(this%rootfr_patch         (begp:endp,lbj:ubj) ) ! patch fraction of roots in each soil layer (nlevgrnd)
 
-  allocate(this%solutionp_vr_col(begc:endc,lbj:ubj)) 
-  allocate(this%labilep_vr_col(begc:endc,lbj:ubj)) 
-  allocate(this%secondp_vr_col(begc:endc,lbj:ubj)) 
-  allocate(this%occlp_vr_col(begc:endc,lbj:ubj)) 
+  allocate(this%solutionp_vr_col(begc:endc,lbj:ubj))
+  allocate(this%labilep_vr_col(begc:endc,lbj:ubj))
+  allocate(this%secondp_vr_col(begc:endc,lbj:ubj))
+  allocate(this%occlp_vr_col(begc:endc,lbj:ubj))
 
   allocate(this%dic_prod_vr_col(begc:endc,lbj:ubj))
   allocate(this%doc_prod_vr_col(begc:endc,lbj:ubj))

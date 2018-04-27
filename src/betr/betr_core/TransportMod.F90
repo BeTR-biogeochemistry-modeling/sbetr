@@ -1220,7 +1220,6 @@ contains
      class is (Extra_type)
 
        call Extra_bstatus%reset()
-
        call mono_Linear_interp(Extra%nlen, Extra%zi(1:Extra%nlen), &
          Extra%us(1:Extra%nlen), neq, y0, ui, Extra_bstatus)
 

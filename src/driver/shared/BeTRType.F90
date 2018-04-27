@@ -460,7 +460,7 @@ contains
   class(betr_type)                     , intent(inout) :: this
   integer                              , intent(in)    :: num_soilc                   ! number of columns in column filter
   integer                              , intent(in)    :: filter_soilc(:)             ! column filter
-  type(betr_biogeo_flux_type)      , intent(inout) :: biogeo_flux
+  type(betr_biogeo_flux_type)          , intent(inout) :: biogeo_flux
 
   call this%bgc_reaction%retrieve_biogeoflux(num_soilc, &
      filter_soilc, this%tracerfluxes, this%tracers, biogeo_flux)

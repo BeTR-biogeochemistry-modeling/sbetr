@@ -533,6 +533,7 @@ contains
     real(r8) :: x, dx
     real(r8), parameter :: eps = 1.e-2_r8      !relative accuracy
     real(r8), parameter :: eps1= 1.e-4_r8
+    real(r8), parameter :: epsf= 1.e-20_r8
     integer,  parameter :: itmax = 40          !maximum number of iterations
     real(r8) :: tol,minx,minf
 
@@ -540,14 +541,14 @@ contains
 
     call bstatus%reset()
     call func(x0, func_data, f0)
-    if(f0 == 0._r8)return
+    if(abs(f0) < epsf)return
 
     minx=x0
     minf=f0
     x1 = x0 * 0.99_r8
     call func(x1, func_data, f1)
 
-    if(f1==0._r8)then
+    if(abs(f1)<epsf)then
        x0 = x1
        return
     endif

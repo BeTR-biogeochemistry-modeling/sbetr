@@ -16,23 +16,13 @@ private
   public :: setJarStates
 contains
 
-  function ppm2molv(patm_pascal, ppmv, temp_kelvin)result(molv)
-  use shr_const_mod, only : Rgas_kmol => SHR_CONST_RGAS
-  implicit none
-  real(r8), intent(in) :: Patm_pascal
-  real(r8), intent(in) :: ppmv
-  real(r8), intent(in) :: temp_kelvin
-  real(r8) :: molv
-
-  molv = patm_pascal/(Rgas_kmol*1.e-3*temp_kelvin) * ppmv * 1.e-6_r8
-
-  end function ppm2molv
 
   !--------------------------------------------------------------------
   subroutine SetJarForc_transient(jar_forc, om_forc, nut_forc, atm_forc, soil_forc)
 
   use OMForcType  , only : om_forc_type
   use NutForcType , only : nut_forc_type
+  use UnitConverMod, only : ppm2molv
   implicit none
   type(JarBGC_forc_type), intent(inout) :: jar_forc
   type(nut_forc_type)   , intent(in) :: nut_forc

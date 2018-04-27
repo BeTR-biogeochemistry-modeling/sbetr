@@ -61,6 +61,10 @@ contains
          yi(k)=y(nx)
        else
          ! call linear interpolation
+         if(pos<0)then
+           print*,'pos=',pos,xi(k),x(1),x(nx)
+           stop
+         endif
          yi(k)=twopoint_linterp(x(pos),x(pos+1),Y(pos),Y(pos+1), xi(k))
        endif
 

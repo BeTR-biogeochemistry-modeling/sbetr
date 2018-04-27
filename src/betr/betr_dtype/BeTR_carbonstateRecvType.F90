@@ -127,7 +127,6 @@ implicit none
   endif
   do j = lbj, ubj
     do c = bounds%begc, bounds%endc
-      print*,'cwd ',j,this%cwdc_vr_col(c,j)
       this%cwdc_col(c) = this%cwdc_col(c) + dz(c,j) * this%cwdc_vr_col(c,j)
       this%totlitc_col(c) = this%totlitc_col(c) + dz(c,j)*this%totlitc_vr_col(c,j)
       this%totsomc_col(c) = this%totsomc_col(c) + dz(c,j)*this%totsomc_vr_col(c,j)

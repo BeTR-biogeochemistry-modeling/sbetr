@@ -24,10 +24,7 @@ contains
   KL =1._r8    !mol /m3
   Xsat = 10._r8   ! mol/m3
 
-
   end subroutine get_lgsorb_KL_Xsat
-
-
 
 !-------------------------------------------------------------------------------
   function get_lnsorb_Kd(tracerfamily)result(Kd)

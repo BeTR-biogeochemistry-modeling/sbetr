@@ -153,7 +153,9 @@ contains
     call this%BeTRSetcps(bounds, col, pft)
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
+      call this%biogeo_state(c)%reset(value_column=0._r8, active_soibgc=this%do_soibgc())
       call this%biogeo_flux(c)%reset(value_column=0._r8, active_soibgc=this%do_soibgc())
+
       call this%biophys_forc(c)%frac_normalize(this%betr_pft(c)%npfts, 1, betr_nlevtrc_soil)
 
       call this%betr(c)%step_without_drainage(this%betr_time, betr_bounds, this%betr_col(c), &
@@ -211,19 +213,6 @@ contains
         exit
       endif
 
-      call this%biogeo_state(c)%reset(value_column=0._r8, active_soibgc=this%do_soibgc())
-
-      call this%betr(c)%retrieve_biostates(betr_bounds,      &
-         1, betr_nlevsoi, this%num_soilc, this%filter_soilc, this%jtops, this%biogeo_state(c),this%bstatus(c))
-
-      if(this%bstatus(c)%check_status())then
-        call this%bsimstatus%setcol(c)
-        call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
-        exit
-      endif
-
-      call this%biogeo_state(c)%summary(betr_bounds, 1, betr_nlevtrc_soil,this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil), &
-          this%betr_col(c)%zi(begc_l:endc_l,1:betr_nlevtrc_soil),this%do_soibgc())
     enddo
   end subroutine StandaloneStepWithDrainage
 
@@ -412,12 +401,25 @@ contains
 
   do fc = 1, num_soilc
     c = filter_soilc(fc)
+
+    call this%betr(c)%retrieve_biostates(betr_bounds,      &
+       1, betr_nlevsoi, this%num_soilc, this%filter_soilc, this%jtops, this%biogeo_state(c),this%bstatus(c))
+
+    if(this%bstatus(c)%check_status())then
+      call this%bsimstatus%setcol(c)
+      call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
+      exit
+    endif
     call this%betr(c)%retrieve_biofluxes(this%num_soilc, this%filter_soilc, this%biogeo_flux(c))
+
+    call this%biogeo_state(c)%summary(betr_bounds, 1, betr_nlevtrc_soil,this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil), &
+        this%betr_col(c)%zi(begc_l:endc_l,1:betr_nlevtrc_soil),this%do_soibgc())
+
     call this%biogeo_flux(c)%summary(betr_bounds, 1, betr_nlevtrc_soil, this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil))
 
     !recollect soil respirations, fire and hydraulic loss
     c12flux_vars%hr_col(c) = this%biogeo_flux(c)%c12flux_vars%hr_col(c_l)
-    print*,'co2',c12flux_vars%hr_col(c)
+    !print*,'co2',c12flux_vars%hr_col(c)
     c12flux_vars%fire_decomp_closs_col(c) = this%biogeo_flux(c)%c12flux_vars%fire_decomp_closs_col(c_l)
     c12flux_vars%som_c_leached_col(c) = &
         this%biogeo_flux(c)%c12flux_vars%som_c_leached_col(c_l) + &
@@ -487,7 +489,7 @@ contains
     c12state_vars%totsomc_col(c) = this%biogeo_state(c)%c12state_vars%totsomc_col(c_l)
     c12state_vars%totlitc_1m_col(c) = this%biogeo_state(c)%c12state_vars%totlitc_1m_col(c_l)
     c12state_vars%totsomc_1m_col(c) = this%biogeo_state(c)%c12state_vars%totsomc_1m_col(c_l)
-    print*,'cwdc',c12state_vars%cwdc_col(c)
+    !print*,'cwdc',c12state_vars%cwdc_col(c)
     if(use_c13_betr)then
       c13state_vars%cwdc_col(c) = this%biogeo_state(c)%c13state_vars%cwdc_col(c_l)
       c13state_vars%totlitc_col(c) = this%biogeo_state(c)%c13state_vars%totlitc_col(c_l)
@@ -522,12 +524,12 @@ contains
 
     p31state_vars%sminp_col(c) = this%biogeo_state(c)%p31state_vars%sminp_col(c_l)
     p31state_vars%occlp_col(c) = this%biogeo_state(c)%p31state_vars%occlp_col(c_l)
-    print*,'smin_nh4',n14state_vars%smin_nh4_col(c)
+    !print*,'smin_nh4',n14state_vars%smin_nh4_col(c)
     if(index(trim(reaction_method),'ecacnp')/=0)then
       c12state_vars%som1c_col(c) = this%biogeo_state(c)%c12state_vars%som1c_col(c_l)
       c12state_vars%som2c_col(c) = this%biogeo_state(c)%c12state_vars%som2c_col(c_l)
       c12state_vars%som3c_col(c) = this%biogeo_state(c)%c12state_vars%som3c_col(c_l)
-      print*,'som1c',c12state_vars%som1c_col(c)
+      !print*,'som1c',c12state_vars%som1c_col(c)
       if(use_c13_betr)then
         c13state_vars%som1c_col(c) = this%biogeo_state(c)%c13state_vars%som1c_col(c_l)
         c13state_vars%som2c_col(c) = this%biogeo_state(c)%c13state_vars%som2c_col(c_l)

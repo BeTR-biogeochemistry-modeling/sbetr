@@ -750,39 +750,41 @@ contains
     cascade_matrix(lid_minp_occlude  ,  reac) = 1._r8 - this%frac_p_sec_to_sol(this%soilorder)
     cascade_matrix(lid_minp_secondary, reac) = -1._r8
 
-    !----------------------------------------------------------------------
-    !reaction 12, plant mineral nitrogen nh4 uptake
-    reac = lid_plant_minn_nh4_up_reac
-    !  nh4  -> plant_nitrogen
-    cascade_matrix(lid_nh4, reac)        = -1._r8
-    cascade_matrix(lid_plant_minn_nh4, reac) = 1._r8
+    if(this%plant_ntypes>0)then
+      !----------------------------------------------------------------------
+      !reaction 12, plant mineral nitrogen nh4 uptake
+      reac = lid_plant_minn_nh4_up_reac
+      !  nh4  -> plant_nitrogen
+      cascade_matrix(lid_nh4, reac)        = -1._r8
+      cascade_matrix(lid_plant_minn_nh4, reac) = 1._r8
 
-    !----------------------------------------------------------------------
-    !reaction 13, plant mineral nitrogen no3 uptake
-    reac = lid_plant_minn_no3_up_reac
-    !  no3  -> plant_nitrogen
-    cascade_matrix(lid_no3, reac)        = -1._r8
-    cascade_matrix(lid_plant_minn_no3, reac) = 1._r8
+      !----------------------------------------------------------------------
+      !reaction 13, plant mineral nitrogen no3 uptake
+      reac = lid_plant_minn_no3_up_reac
+      !  no3  -> plant_nitrogen
+      cascade_matrix(lid_no3, reac)        = -1._r8
+      cascade_matrix(lid_plant_minn_no3, reac) = 1._r8
 
-    !----------------------------------------------------------------------
-    !reaction 14, plant mineral phosphorus uptake
-    reac = lid_plant_minp_up_reac
-    ! p_solution -> plant_p
-    cascade_matrix(lid_minp_soluble, reac) = -1._r8
-    cascade_matrix(lid_plant_minp, reac) = 1._r8
+      !----------------------------------------------------------------------
+      !reaction 14, plant mineral phosphorus uptake
+      reac = lid_plant_minp_up_reac
+      ! p_solution -> plant_p
+      cascade_matrix(lid_minp_soluble, reac) = -1._r8
+      cascade_matrix(lid_plant_minp, reac) = 1._r8
 
-    !----------------------------------------------------------------------
-    !reaction 15, ar + o2 -> co2
-    reac = lid_autr_rt_reac
-    cascade_matrix(lid_co2, reac) =  1._r8
-    cascade_matrix(lid_o2,  reac) = -1._r8
+      !----------------------------------------------------------------------
+      !reaction 15, ar + o2 -> co2
+      reac = lid_autr_rt_reac
+      cascade_matrix(lid_co2, reac) =  1._r8
+      cascade_matrix(lid_o2,  reac) = -1._r8
 
-    if(this%use_c13)then
-      cascade_matrix(lid_c13_co2, reac) =  1._r8 * frc_c13
-    endif
+      if(this%use_c13)then
+        cascade_matrix(lid_c13_co2, reac) =  1._r8 * frc_c13
+      endif
 
-    if(this%use_c14)then
-      cascade_matrix(lid_c14_co2, reac) =  1._r8 * frc_c14
+      if(this%use_c14)then
+        cascade_matrix(lid_c14_co2, reac) =  1._r8 * frc_c14
+      endif
     endif
     !--------------------------------------------------------------------
     !arenchyma transport
