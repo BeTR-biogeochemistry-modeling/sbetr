@@ -1,6 +1,6 @@
-set(CDOMNLAYER_SOURCES
-  BgcReactionscdomECACnpType.F90
-  PlantSoilBgccdomCnpType.F90
+set(SIMNLAYER_SOURCES
+  SimicBGCReactionsType.F90
+  SimicPlantSoilBgcType.F90
 )
 
   include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)
@@ -10,18 +10,18 @@ set(CDOMNLAYER_SOURCES
   include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_dtype)
   include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_core)
   include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/bgcfarm_util)
-  include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/cdom_ecacnp/cdomPara)
-  include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/cdom_ecacnp/cdom1layer)
+  include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/simic/simpara)
+  include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/simic/sim1layer)
   include(add_betr_library)
-  add_betr_library(cdomNlayer ${CDOMNLAYER_SOURCES})
+  add_betr_library(simNlayer ${SIMNLAYER_SOURCES})
 
-  set(BETR_LIBRARIES cdomNlayer;${BETR_LIBRARIES} PARENT_SCOPE)
-  set(BETR_LIBRARIES cdomNlayer;${BETR_LIBRARIES})
+  set(BETR_LIBRARIES simNlayer;${BETR_LIBRARIES} PARENT_SCOPE)
+  set(BETR_LIBRARIES simNlayer;${BETR_LIBRARIES})
 
 #X#add_subdirectory(tests)
 
   if (NOT CMAKE_INSTALL_PREFIX STREQUAL "INSTALL_DISABLED")
-    install(TARGETS cdomNlayer DESTINATION lib)
+    install(TARGETS simNlayer DESTINATION lib)
     file(GLOB HEADERS *.h)
-    install(FILES ${HEADERS} DESTINATION include/soil-farm/cdom_ecacnp/cdomNlayer)
+    install(FILES ${HEADERS} DESTINATION include/soil-farm/simic/simNlayer)
   endif()

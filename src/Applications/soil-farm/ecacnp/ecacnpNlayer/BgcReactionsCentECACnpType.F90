@@ -1133,7 +1133,7 @@ contains
     use BeTR_biogeoFluxType   , only : betr_biogeo_flux_type
     use BetrStatusType        , only : betr_status_type
     use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
-    use UnitConverMod         , only : ppm2molv    
+    use UnitConverMod         , only : ppm2molv
     implicit none
     ! !ARGUMENTS:
     class(bgc_reaction_CENTURY_ECACNP_type) , intent(inout)    :: this
@@ -2297,18 +2297,19 @@ contains
            ystates0(this%centurybgc_index%lid_plant_minp_pft(p)))*patomw/dtime
 
     enddo
-
-    plant_soilbgc%plant_minn_no3_active_yield_flx_vr_col(c,j) = &
+    if(this%nactpft>0)then
+      plant_soilbgc%plant_minn_no3_active_yield_flx_vr_col(c,j) = &
           (ystatesf(this%centurybgc_index%lid_plant_minn_no3) - &
           ystates0(this%centurybgc_index%lid_plant_minn_no3))*natomw/dtime
 
-    plant_soilbgc%plant_minn_nh4_active_yield_flx_vr_col(c,j) = &
+      plant_soilbgc%plant_minn_nh4_active_yield_flx_vr_col(c,j) = &
           (ystatesf(this%centurybgc_index%lid_plant_minn_nh4) - &
           ystates0(this%centurybgc_index%lid_plant_minn_nh4))*natomw/dtime
 
-    plant_soilbgc%plant_minp_active_yield_flx_vr_col(c,j) = &
+      plant_soilbgc%plant_minp_active_yield_flx_vr_col(c,j) = &
           (ystatesf(this%centurybgc_index%lid_plant_minp) - &
            ystates0(this%centurybgc_index%lid_plant_minp))*patomw/dtime
+    endif
 
   end select
 

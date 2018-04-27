@@ -11,7 +11,7 @@ set(CDOM1LAYER_SOURCES
   include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)
   include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_math)
   include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/bgcfarm_util)
-  include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/cdom_ecacnp/cdomPara)
+  include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/cdom/cdomPara)
   include(add_betr_library)
   add_betr_library(cdom1layer ${CDOM1LAYER_SOURCES})
 
@@ -23,5 +23,5 @@ set(CDOM1LAYER_SOURCES
   if (NOT CMAKE_INSTALL_PREFIX STREQUAL "INSTALL_DISABLED")
     install(TARGETS cdom1layer DESTINATION lib)
     file(GLOB HEADERS *.h)
-    install(FILES ${HEADERS} DESTINATION include/soil-farm/cdom_ecacnp/cdom1layer)
+    install(FILES ${HEADERS} DESTINATION include/soil-farm/cdom/cdom1layer)
   endif()

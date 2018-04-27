@@ -1,6 +1,6 @@
-set(CENTNLAYER_SOURCES
-  BgcReactionsCentECACnpType.F90
-  PlantSoilBgcCnpType.F90
+set(CDOMNLAYER_SOURCES
+  BgcReactionscdomECACnpType.F90
+  PlantSoilBgccdomCnpType.F90
 )
 
   include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)
@@ -10,18 +10,18 @@ set(CENTNLAYER_SOURCES
   include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_dtype)
   include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_core)
   include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/bgcfarm_util)
-  include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/CENT_ECACNP/centPara)
-  include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/CENT_ECACNP/cent1layer)
+  include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/cdom/cdomPara)
+  include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/cdom/cdom1layer)
   include(add_betr_library)
-  add_betr_library(centNlayer ${CENTNLAYER_SOURCES})
+  add_betr_library(cdomNlayer ${CDOMNLAYER_SOURCES})
 
-  set(BETR_LIBRARIES centNlayer;${BETR_LIBRARIES} PARENT_SCOPE)
-  set(BETR_LIBRARIES centNlayer;${BETR_LIBRARIES})
+  set(BETR_LIBRARIES cdomNlayer;${BETR_LIBRARIES} PARENT_SCOPE)
+  set(BETR_LIBRARIES cdomNlayer;${BETR_LIBRARIES})
 
 #X#add_subdirectory(tests)
 
   if (NOT CMAKE_INSTALL_PREFIX STREQUAL "INSTALL_DISABLED")
-    install(TARGETS centNlayer DESTINATION lib)
+    install(TARGETS cdomNlayer DESTINATION lib)
     file(GLOB HEADERS *.h)
-    install(FILES ${HEADERS} DESTINATION include/soil-farm/CENT_ECACNP/centNlayer)
+    install(FILES ${HEADERS} DESTINATION include/soil-farm/cdom/cdomNlayer)
   endif()

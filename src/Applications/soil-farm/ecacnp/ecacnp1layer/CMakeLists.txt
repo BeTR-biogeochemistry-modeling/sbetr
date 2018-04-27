@@ -1,4 +1,4 @@
-set(CENT1LAYER_SOURCES
+set(ECACNP1LAYER_SOURCES
   BgcCentCnpIndexType.F90
   BgcCentCnpCompetType.F90
   BgcCentCnpDecompType.F90
@@ -11,17 +11,17 @@ set(CENT1LAYER_SOURCES
   include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)
   include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_math)
   include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/bgcfarm_util)
-  include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/CENT_ECACNP/centPara)
+  include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/ecacnp/ecacnpPara)
   include(add_betr_library)
-  add_betr_library(cent1layer ${CENT1LAYER_SOURCES})
+  add_betr_library(ecacnp1layer ${ECACNP1LAYER_SOURCES})
 
-  set(BETR_LIBRARIES cent1layer;${BETR_LIBRARIES} PARENT_SCOPE)
-  set(BETR_LIBRARIES cent1layer;${BETR_LIBRARIES})
+  set(BETR_LIBRARIES ecacnp1layer;${BETR_LIBRARIES} PARENT_SCOPE)
+  set(BETR_LIBRARIES ecacnp1layer;${BETR_LIBRARIES})
 
 #X#add_subdirectory(tests)
 
   if (NOT CMAKE_INSTALL_PREFIX STREQUAL "INSTALL_DISABLED")
-    install(TARGETS cent1layer DESTINATION lib)
+    install(TARGETS ecacnp1layer DESTINATION lib)
     file(GLOB HEADERS *.h)
-    install(FILES ${HEADERS} DESTINATION include/soil-farm/CENT_ECACNP/cent1layer)
+    install(FILES ${HEADERS} DESTINATION include/soil-farm/ecacnp/ecacnp1layer)
   endif()

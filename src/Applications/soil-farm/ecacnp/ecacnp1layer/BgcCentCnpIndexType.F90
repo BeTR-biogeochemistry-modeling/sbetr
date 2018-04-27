@@ -375,8 +375,7 @@ implicit none
 
     this%lid_minp_occlude = addone(itemp);
     call list_insert(list_name, 'minp_occlude',vid)
-    call list_insert(list_unit, 'mol P m-3',uid)
-    print*,'maxpft',maxpft
+    call list_insert(list_unit, 'mol P m-3',uid)    
     if(maxpft>0)then
       this%lid_plant_minn_nh4_up_reac = addone(ireac); call list_insert(list_react, 'plant_minn_nh4_up_reac', itemp0)
       this%lid_plant_minn_no3_up_reac = addone(ireac); call list_insert(list_react, 'plant_minn_no3_up_reac', itemp0)
