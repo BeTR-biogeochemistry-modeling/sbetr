@@ -16,7 +16,7 @@ implicit none
   integer, parameter :: clock_year =5
 
   integer, public, parameter :: hist_var_str_len=40
-  integer, public, parameter :: hist_unit_str_len=12
+  integer, public, parameter :: hist_unit_str_len=16
   integer, public, parameter :: hist_freq_str_len=6
   integer, private, parameter:: hist_fname_str_len=256
   type, public :: histf_type
@@ -38,6 +38,7 @@ implicit none
     integer, pointer :: nm_varid(:) => null()
     integer, pointer :: ny_varid(:) => null()
     integer, pointer :: record(:)   => null()
+    real(r8) :: dtime
   contains
     procedure, public  :: init
     procedure, public  :: hist_wrap
@@ -101,11 +102,10 @@ contains
     call ncd_pio_closefile(ncf)
   endif
 
-
   end subroutine histrst
 
 !--------------------------------------------------------
-  subroutine init(this, varlist, unitlist, hrfreq, gfname)
+  subroutine init(this, varlist, unitlist, hrfreq, gfname, dtime)
   use ncdio_pio, only : ncd_enddef, ncd_pio_closefile
   implicit none
   class(histf_type), intent(inout):: this
@@ -113,19 +113,24 @@ contains
   character(len=hist_unit_str_len), intent(in) :: unitlist(:)
   character(len=hist_freq_str_len), optional, intent(in) :: hrfreq(:)
   character(len=*), optional,  intent(in) :: gfname    !generic filename
-
+  real(r8), optional, intent(in) :: dtime
   character(len=256) :: loc_gfname
   integer :: n, nh, nd, nw, nm, ny
   logical, target :: yes_hour, yes_day, yes_mon, yes_week, yes_year
   type(file_desc_t) :: ncid(nclocks)
   integer :: clock_id
   logical, pointer :: yes_flag
+
   SHR_ASSERT_ALL((size(varlist)   == size(unitlist)), errMsg(mod_filename,__LINE__))
 
   if(present(hrfreq))then
     SHR_ASSERT_ALL((size(varlist)   == size(hrfreq)), errMsg(mod_filename,__LINE__))
   endif
-
+  if(present(dtime))then
+    this%dtime = dtime
+  else
+    this%dtime = 1._r8
+  endif
   do n = 1, nclocks
     ncid(n)%fh=-1
   enddo
@@ -166,7 +171,6 @@ contains
 
   this%varnames(1:this%nvars) = varlist(1:this%nvars)
   this%units(1:this%nvars) = unitlist(1:this%nvars)
-
 
   nh=0
   nd=0
@@ -256,8 +260,8 @@ contains
   type(betr_time_type), intent(in) :: timer
 
   integer :: clockid, id
-  SHR_ASSERT_ALL((size(yval)   == this%nvars), errMsg(mod_filename,__LINE__))
 
+  SHR_ASSERT_ALL((size(yval)   == this%nvars), errMsg(mod_filename,__LINE__))
 
   ! use daxpy - compute y := alpha * x + y
   ! SUBROUTINE DAXPY(N, ALPHA, X, INCX, Y, INCY)
@@ -394,7 +398,7 @@ contains
   call ncd_pio_openfile_for_write(ncid, this%ncfname(clockid))
   do n =1, nvars
     id = varid(n)
-    this%yvals(id) = this%yvals(id)/this%counter(clockid)
+    this%yvals(id) = this%yvals(id)/this%counter(clockid)/this%dtime
     call ncd_putvar(ncid,this%varnames(id),this%record(clockid),this%yvals(id))
     this%yvals(id) = 0._r8
   enddo
