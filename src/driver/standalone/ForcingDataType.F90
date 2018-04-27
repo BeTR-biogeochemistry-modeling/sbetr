@@ -415,7 +415,6 @@ contains
     call ncd_getvar(ncf_in_forc, 'SOILICE', data_2d)
     do j2 = 1, this%num_levels
        do j1 = 1, this%num_time
-
           this%h2osoi_icevol(j1, j2) = data_2d(this%num_columns, j2, j1)/rhoice/grid%dzsoi(j2)
           this%h2osoi_liqvol(j1, j2) = this%h2osoi_liqvol(j1, j2) - this%h2osoi_icevol(j1, j2)
           this%h2osoi_ice(j1, j2) = data_2d(this%num_columns, j2, j1)

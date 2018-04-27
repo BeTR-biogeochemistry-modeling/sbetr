@@ -17,7 +17,7 @@ module InterpolationMod
        __FILE__
 
   public :: Lagrange_interp
-  public :: mono_Linear_interp
+  public :: mono_Linear_interp_trj
   public :: pchip_polycc
   public :: pchip_interp
   public :: cmass_interp
@@ -26,7 +26,7 @@ module InterpolationMod
 contains
 
   !-------------------------------------------------------------------------------
-  subroutine mono_Linear_interp(nx, x, y, nxi, xi, yi, bstatus)
+  subroutine mono_Linear_interp_trj(nx, x, y, nxi, xi, yi, bstatus)
     !
     ! !DESCRIPTION:
     ! do order pn lagrangian interpolation
@@ -62,15 +62,14 @@ contains
        else
          ! call linear interpolation
          if(pos<0)then
-           print*,'pos=',pos,xi(k),x(1),x(nx)
-           stop
+           yi(k) = x(1)
+         else
+           yi(k)=twopoint_linterp(x(pos),x(pos+1),Y(pos),Y(pos+1), xi(k))
          endif
-         yi(k)=twopoint_linterp(x(pos),x(pos+1),Y(pos),Y(pos+1), xi(k))
        endif
-
     enddo
 
-  end subroutine mono_Linear_interp
+  end subroutine mono_Linear_interp_trj
 
   !-------------------------------------------------------------------------------
   subroutine Lagrange_interp(pn, x, y, xi, yi, bstatus)
@@ -493,7 +492,7 @@ contains
   integer :: i_loc
 
   i_loc=-1
-  do jj = j0, m-1
+  do jj = max(j0-1,1), m-1
     if ( xi >= x(jj) .and. xi<x(jj+1)) then
       i_loc=jj
       exit
