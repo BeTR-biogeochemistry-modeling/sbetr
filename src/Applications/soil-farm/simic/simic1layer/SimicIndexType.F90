@@ -1,0 +1,340 @@
+module SimicIndexType
+
+  use bshr_kind_mod  , only : r8 => shr_kind_r8
+  use betr_ctrl    , only : spinup_state => betr_spinup_state
+implicit none
+
+  private
+  character(len=*), private, parameter :: mod_filename = &
+       __FILE__
+
+  integer, parameter :: loc_name_len=64
+
+  type, private :: list_t
+    character(len=loc_name_len) :: name
+    integer :: id
+    type(list_t), pointer :: next => null()
+  end type list_t
+
+  type, public :: simic_index_type
+
+     integer           :: lit1                  !c
+     integer           :: lit2
+     integer           :: lit3
+     integer           :: cwd
+     integer           :: lid_micbl
+     integer           :: lid_doc
+     integer           :: lid_micbd
+     integer           :: lid_n2
+     integer           :: lid_o2
+     integer           :: lid_ar
+     integer           :: lid_co2
+     integer           :: lid_ch4
+     integer           :: lid_co2_hr       !diagnostic variables
+     integer           :: litr_beg, litr_end  !litr group
+     integer           :: wood_beg, wood_end  !wood group
+     integer           :: dom_beg,  dom_end   !dom group
+     integer           :: Bm_beg,  Bm_end   !dom group
+     integer           :: nelms
+     integer           :: nom_tot_elms
+     integer           :: nom_pools
+     integer           :: nprimvars        !total number of primary variables
+     integer           :: nstvars          !number of equations for the state variabile vector
+
+     integer , pointer :: primvarid(:)   => null()
+     logical :: debug
+     character(len=loc_name_len), allocatable :: varnames(:)
+     character(len=loc_name_len), allocatable :: varunits(:)
+     character(len=loc_name_len), allocatable :: ompoolnames(:)
+   contains
+     procedure, public  :: Init
+     procedure, private :: InitPars
+     procedure, private :: InitAllocate
+  end type simic_index_type
+
+  contains
+  !-----------------------------------------------------------------------
+  subroutine list_init(self, name, id)
+  implicit none
+  type(list_t), pointer :: self
+  character(len=*), intent(in) :: name
+  integer, intent(inout) :: id
+
+  allocate(self)
+  nullify(self%next)
+  id=id+1;
+  write(self%name,'(A)')trim(name)
+  self%id=id
+  end subroutine list_init
+  !-----------------------------------------------------------------------
+  subroutine list_insert(self, name, id)
+
+  implicit none
+  type(list_t), pointer :: self
+  character(len=*), intent(in) :: name
+  integer, intent(inout) :: id
+  type(list_t), pointer :: next
+
+  allocate(next)
+  id=id+1
+  write(next%name,'(A)')trim(name)
+  next%id=id
+  next%next=> self
+  self => next
+
+  end subroutine list_insert
+  !-----------------------------------------------------------------------
+  subroutine list_free(self)
+  implicit none
+  type(list_t), pointer :: self
+  type(list_t), pointer :: current
+  type(list_t), pointer :: elem
+
+  elem => self
+  do while(associated(elem))
+    current => elem
+    elem => current%next
+    deallocate(current)
+  enddo
+  end subroutine list_free
+  !-----------------------------------------------------------------------
+  function list_next(self)result(next)
+
+  implicit none
+  type(list_t), pointer :: self
+  type(list_t), pointer :: next
+
+  next => self%next
+  end function list_next
+
+  !-------------------------------------------------------------------------------
+  subroutine copy_name(num_names, list_name, outnames)
+
+  implicit none
+  integer, intent(in) :: num_names
+  type(list_t), pointer :: list_name
+  character(len=loc_name_len), intent(out) :: outnames(num_names)
+
+  type(list_t), pointer :: next
+  integer :: jj
+  next => list_name
+  do jj = num_names, 1, -1
+    write(outnames(jj),'(A)')trim(next%name)
+    next=>list_next(next)
+  enddo
+  end subroutine copy_name
+
+
+  subroutine list_disp(list)
+  implicit none
+  type(list_t), pointer :: list
+  type(list_t), pointer :: next
+
+  next => list
+  do while(associated(next))
+    write(*,'(A30,X,A,I0)')trim(next%name),'=',next%id
+    next=>list_next(next)
+  enddo
+
+  end subroutine list_disp
+  !-------------------------------------------------------------------------------
+  subroutine add_ompool_name(list_name, list_unit, list_pool, prefix, use_c13, use_c14, do_init, vid,uid,pid)
+  implicit none
+  type(list_t), pointer :: list_name
+  type(list_t), pointer :: list_unit
+  type(list_t), pointer :: list_pool
+  character(len=*), intent(in) :: prefix
+  logical, intent(in) :: use_c13, use_c14
+  logical, intent(in) :: do_init
+  integer, intent(inout) :: vid
+  integer, intent(inout) :: uid
+  integer, intent(inout) :: pid
+  if(do_init)then
+    call list_init(list_name, trim(prefix)//'_c',vid)
+    call list_init(list_unit, 'mol C m-3',uid)
+    call list_init(list_pool, trim(prefix),pid)
+  else
+    call list_insert(list_name, trim(prefix)//'_c',vid)
+    call list_insert(list_unit, 'mol C m-3',uid)
+    call list_insert(list_pool, trim(prefix),pid)
+  endif
+  call list_insert(list_name, trim(prefix)//'_n',vid)
+  call list_insert(list_unit, 'mol N m-3',uid)
+  call list_insert(list_name, trim(prefix)//'_p',vid)
+  call list_insert(list_unit, 'mol P m-3',uid)
+  if(use_c13)then
+    vid=vid+1;call list_insert(list_name, trim(prefix)//'_c13',vid)
+    vid=vid+1;call list_insert(list_unit, 'mol C13 m-3',uid)
+  endif
+  if(use_c14)then
+    vid=vid+1;call list_insert(list_name, trim(prefix)//'_c14',vid)
+    vid=vid+1;call list_insert(list_unit, 'mol C14 m-3',uid)
+  endif
+  end subroutine add_ompool_name
+
+  !-------------------------------------------------------------------------------
+  subroutine Init(this, use_c13, use_c14, non_limit, nop_limit, maxpft)
+    !
+    ! DESCRIPTION:
+    ! Initialize simic type
+    ! !USES:
+  implicit none
+  ! !ARGUMENTS:
+  class(simic_index_type), intent(inout) :: this
+  logical, intent(in) :: use_c13
+  logical, intent(in) :: use_c14
+  logical, intent(in) :: non_limit
+  logical, intent(in) :: nop_limit
+  integer, optional, intent(in) :: maxpft
+
+  ! !LOCAL VARIABLES:
+  integer :: maxpft_loc
+
+  maxpft_loc = 0
+  this%dom_beg=0; this%dom_end=-1
+  if(present(maxpft))maxpft_loc=maxpft
+  call this%InitPars(maxpft_loc, use_c14, use_c13, non_limit, nop_limit)
+
+  call this%InitAllocate()
+
+  this%debug = .false.
+  end subroutine Init
+  !-------------------------------------------------------------------------------
+
+  subroutine InitPars(this, maxpft, use_c14, use_c13, non_limit, nop_limit)
+    !
+    ! !DESCRIPTION:
+    !  describe the layout of the stoichiometric matrix for the reactions
+    !           r{1} r{2} r{3} r{4} ... r{n}
+    ! s{1}
+    ! s{2}
+    ! s{3}
+    ! s{4}
+    ! ...
+    ! s{n}
+    ! s{n+1}  nonreactive primary variables
+    ! s{n+2}
+    ! ...
+    ! s{m}
+    ! s{m+1} diagnostic variables
+    ! s{p}
+    ! each reaction is associated with a primary species, the secondary species follows after primary species
+    ! for the century model, the primary species are seven om pools and nh4, no3 and plant nitrogen
+    !
+    ! !USES:
+    use MathfuncMod   , only : addone, countelm
+    use betr_utils    , only : num2str
+    use betr_constants, only : betr_string_length_long
+    implicit none
+    class(simic_index_type) :: this
+    integer, intent(in) :: maxpft
+    logical, intent(in) :: use_c13
+    logical, intent(in) :: use_c14
+    logical, intent(in) :: non_limit
+    logical, intent(in) :: nop_limit
+    ! !LOCAL VARIABLES:
+    integer :: itemp
+    integer :: ireac   !counter of reactions
+    integer :: itemp0, itemp1
+    integer :: ielem
+    integer :: vid,uid,pid
+    integer :: jj
+    type(list_t), pointer :: list_name => null()
+    type(list_t), pointer :: list_unit => null()
+    type(list_t), pointer :: list_pool => null()
+    type(list_t), pointer :: list_react=> null()
+    character(len=loc_name_len) :: postfix
+
+    itemp = 0; itemp0=0
+    ireac = 0
+    ielem= 0
+    vid = 0;uid=0;pid=0
+    this%nelms = 1
+
+    !litter group
+    this%litr_beg=1
+    this%lit1 = addone(itemp);
+    call add_ompool_name(list_name, list_unit, list_pool,'lit1', use_c13, use_c14, do_init=.true., vid=vid,uid=uid,pid=pid)
+    this%lit2 = addone(itemp);
+    call add_ompool_name(list_name, list_unit, list_pool,'lit2', use_c13, use_c14, do_init=.false.,vid=vid,uid=uid,pid=pid)
+    this%lit3 = addone(itemp);
+    call add_ompool_name(list_name, list_unit, list_pool,'lit3', use_c13, use_c14, do_init=.false.,vid=vid,uid=uid,pid=pid)
+    this%litr_end = this%litr_beg -1 + (this%lit3-this%lit1)*this%nelms
+
+    !woody group
+    this%wood_beg=this%litr_end+1
+    this%cwd  = addone(itemp);
+    call add_ompool_name(list_name, list_unit, list_pool,'cwd', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
+    this%wood_end=this%wood_beg-1+(this%cwd-this%cwd+1)*this%nelms
+
+    !microbial biomass group
+    this%Bm_beg=this%wood_end+1
+    this%lid_micbl = addone(itemp)
+    call add_ompool_name(list_name, list_unit, list_pool,'MB_live', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
+    this%lid_micbd = addone(itemp)
+    call add_ompool_name(list_name, list_unit, list_pool,'MB_dead', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
+    this%Bm_end=this%Bm_beg-1+(this%lid_micbd-this%lid_micbl+1)*this%nelms
+
+    this%dom_beg = this%Bm_end + 1
+    this%lid_doc = addone(itemp);
+    call add_ompool_name(list_name, list_unit, list_pool,'DOC', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
+    this%dom_end = this%dom_beg - 1 + (this%lid_doc-this%lid_doc+1)*this%nelms
+
+    this%nom_pools = (countelm(this%litr_beg, this%litr_end)+&
+       countelm(this%wood_beg,this%wood_end) + &
+       countelm(this%Bm_beg,this%Bm_end) + &
+       countelm(this%dom_beg,this%dom_end))/this%nelms   !include coarse wood debris
+
+
+    itemp               = this%nom_pools*this%nelms
+
+    this%nom_tot_elms    = itemp
+
+    !non-reactive primary variables
+    this%lid_ar         = addone(itemp);call list_insert(list_name, 'ar',vid); call list_insert(list_unit, 'mol m-3',uid)
+
+    !second primary variables
+    this%lid_o2         = addone(itemp);call list_insert(list_name, 'o2',vid); call list_insert(list_unit, 'mol m-3',uid)
+
+    this%lid_co2        = addone(itemp);call list_insert(list_name, 'co2',vid);call list_insert(list_unit,'mol m-3',uid)
+
+    this%lid_n2         = addone(itemp);call list_insert(list_name, 'n2',vid); call list_insert(list_unit, 'mol N2 m-3',uid)
+
+    this%lid_ch4        = addone(itemp);call list_insert(list_name, 'ch4',vid); call list_insert(list_unit, 'mol ch4 m-3',uid)
+
+    this%nprimvars      = itemp
+
+    this%lid_co2_hr   = addone(itemp);
+    call list_insert(list_name, 'co2_hr',vid); call list_insert(list_unit,'mol C m-3 s-1',uid)
+
+    this%nstvars          = itemp          !totally 14+32 state variables
+
+    allocate(this%varnames(this%nstvars))
+    allocate(this%varunits(this%nstvars))
+    allocate(this%ompoolnames(this%nom_pools))
+
+    call copy_name(this%nstvars, list_name, this%varnames(1:this%nstvars))
+    call copy_name(this%nstvars, list_unit, this%varunits(1:this%nstvars))
+    call copy_name(this%nom_pools, list_pool, this%ompoolnames(1:this%nom_pools))
+
+!    call list_disp(list_name);call list_disp(list_pool);call list_disp(list_unit)
+
+    call list_free(list_name)
+    call list_free(list_pool)
+    call list_free(list_unit)
+  end subroutine InitPars
+  !-------------------------------------------------------------------------------
+
+  subroutine InitAllocate(this)
+    !
+    ! !DESCRIPTION:
+    ! memory allocation for the data type specified by this
+    !
+  implicit none
+    ! !ARGUMENTS:
+  class(simic_index_type), intent(inout) :: this
+
+
+  end subroutine InitAllocate
+
+end module SimicIndexType

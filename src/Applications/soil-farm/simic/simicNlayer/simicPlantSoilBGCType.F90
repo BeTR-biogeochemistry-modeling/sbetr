@@ -1,4 +1,4 @@
-module MockPlantSoilBGCType
+module SimicPlantSoilBGCType
   !
   !DESCRIPTION
   ! mock interface for plant soil bgc coupling
@@ -12,10 +12,10 @@ module MockPlantSoilBGCType
   private
   character(len=*), private, parameter :: mod_filename = &
        __FILE__
-  public :: plant_soilbgc_mock_run_type
+  public :: simic_plant_soilbgc_type
 
   type, extends(plant_soilbgc_type) :: &
-    plant_soilbgc_mock_run_type
+    simic_plant_soilbgc_type
   private
     contains
     procedure :: Init_plant_soilbgc
@@ -23,21 +23,21 @@ module MockPlantSoilBGCType
     procedure :: integrate_vr_flux
     procedure :: lsm_betr_plant_soilbgc_recv
     procedure :: lsm_betr_plant_soilbgc_send
-  end type plant_soilbgc_mock_run_type
+  end type simic_plant_soilbgc_type
 
-  interface plant_soilbgc_mock_run_type
+  interface simic_plant_soilbgc_type
     module procedure constructor
-  end interface plant_soilbgc_mock_run_type
+  end interface simic_plant_soilbgc_type
 
   contains
 
   !-------------------------------------------------------------------------------
-  type(plant_soilbgc_mock_run_type) function constructor()
+  type(simic_plant_soilbgc_type) function constructor()
   !
   ! !DESCRIPTION:
-  ! create an object of type plant_soilbgc_mock_run_type.
+  ! create an object of type simic_plant_soilbgc_type.
   ! Right now it is purposely empty
-    type(plant_soilbgc_mock_run_type), allocatable :: plants
+    type(simic_plant_soilbgc_type), allocatable :: plants
     allocate(plants)
     constructor = plants
   end function constructor
@@ -52,7 +52,7 @@ module MockPlantSoilBGCType
   use gbetrType      , only : gbetr_type
   implicit none
   ! !ARGUMENTS:
-  class(plant_soilbgc_mock_run_type) , intent(inout) :: this
+  class(simic_plant_soilbgc_type) , intent(inout) :: this
   type(bounds_type)                  , intent(in) :: bounds
   integer                            , intent(in) :: lbj, ubj
   character(len=*)                   , intent(in) :: namelist_buffer
@@ -80,7 +80,7 @@ module MockPlantSoilBGCType
   use BeTR_biogeoFluxType  , only : betr_biogeo_flux_type
   implicit none
   ! !ARGUMENTS:
-  class(plant_soilbgc_mock_run_type) , intent(inout) :: this
+  class(simic_plant_soilbgc_type) , intent(inout) :: this
   type(bounds_type)                  , intent(in) :: bounds
   integer                            , intent(in) :: lbj, ubj
   type(betr_patch_type)              , intent(in) :: pft
@@ -117,7 +117,7 @@ module MockPlantSoilBGCType
 
   implicit none
   ! !ARGUMENTS:
-  class(plant_soilbgc_mock_run_type) , intent(inout) :: this
+  class(simic_plant_soilbgc_type) , intent(inout) :: this
   type(bounds_type)                  , intent(in) :: bounds
   integer                            , intent(in) :: numf
   integer                            , intent(in) :: filter(:)
@@ -142,7 +142,7 @@ module MockPlantSoilBGCType
   use BeTR_PatchType, only : betr_patch_type
   implicit none
   ! !ARGUMENTS:
-  class(plant_soilbgc_mock_run_type) , intent(inout)    :: this
+  class(simic_plant_soilbgc_type) , intent(inout)    :: this
   type(bounds_type)                  , intent(in)    :: bounds
   integer                            , intent(in)    :: numf
   integer                            , intent(in)    :: filter(:)
@@ -173,7 +173,7 @@ module MockPlantSoilBGCType
   use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
   use BeTR_PatchType, only : betr_patch_type
   ! !ARGUMENTS:
-  class(plant_soilbgc_mock_run_type) , intent(inout) :: this
+  class(simic_plant_soilbgc_type) , intent(inout) :: this
   type(betr_bounds_type)             , intent(in) :: bounds
   integer                            , intent(in) :: numf
   integer                            , intent(in) :: filter(:)
@@ -191,4 +191,4 @@ module MockPlantSoilBGCType
   if(size(biogeo_fluxes%qflx_adv_col)>0) continue
 
   end subroutine lsm_betr_plant_soilbgc_send
-end module MockPlantSoilBGCType
+end module SimicPlantSoilBGCType

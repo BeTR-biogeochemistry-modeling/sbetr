@@ -652,7 +652,7 @@ module bncdio_pio
   type(Var_desc_t)  :: vardesc
 
   call check_var(ncid, trim(varname), vardesc, readvar)
-  
+
   call check_ret( nf90_put_var(ncid%fh, vardesc%varid, data,  &
      start = (/1,1,rec/)),'ncd_putvar_real_sp_2d')
 
@@ -1117,7 +1117,7 @@ module bncdio_pio
 
 
   end subroutine ncd_pio_openfile
-
+!-----------------------------------------------------------------------
   subroutine ncd_pio_openfile_for_write(file, fname)
     !
     ! !DESCRIPTION:

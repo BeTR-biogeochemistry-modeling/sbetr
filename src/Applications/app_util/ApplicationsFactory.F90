@@ -60,7 +60,7 @@ contains
     use BetrStatusType  , only : betr_status_type
     use BGCReactionsCentECACnpType, only : bgc_reaction_CENTURY_ECACNP_type
     use BGCReactionscdomECACnpType, only : bgc_reaction_cdom_ecacnp_type
-
+    use SimicBGCReactionsType, only : simic_bgc_reaction_type
     implicit none
     ! !ARGUMENTS:
     class(bgc_reaction_type),  allocatable, intent(inout) :: bgc_reaction
@@ -78,6 +78,9 @@ contains
     case ("cdom_ecacnp")
        asoibgc=.true.
        allocate(bgc_reaction, source=bgc_reaction_cdom_ecacnp_type())
+    case ("simic")
+       asoibgc=.true.
+       allocate(bgc_reaction, source=simic_bgc_reaction_type())
     case default
        write(msg,*)subname //' ERROR: unknown method: ', method
        msg = trim(msg)//new_line('A')//errMsg(mod_filename, __LINE__)
@@ -98,6 +101,7 @@ contains
   use BetrStatusType  , only : betr_status_type
   use PlantSoilBgcCnpType, only : plant_soilbgc_cnp_type
   use PlantSoilBgccdomCnpType, only : plant_soilbgc_cdomcnp_type
+  use SimicPlantSoilBGCType , only : simic_plant_soilbgc_type
   implicit none
   ! !ARGUMENTS:
   class(plant_soilbgc_type), allocatable, intent(inout) :: plant_soilbgc
@@ -115,6 +119,8 @@ contains
      allocate(plant_soilbgc, source=plant_soilbgc_cnp_type())
   case ("cdom_ecacnp")
      allocate(plant_soilbgc, source=plant_soilbgc_cdomcnp_type())
+  case ("simic")
+     allocate(plant_soilbgc, source=simic_plant_soilbgc_type())
   case default
      write(msg, *)subname //' ERROR: unknown method: ', method
      msg = trim(msg)//new_line('A')//errMsg(mod_filename, __LINE__)
@@ -131,6 +137,7 @@ contains
   ! read in the parameters for specified bgc implementation
   use CentParaType   , only : cent_para
   use cdomParaType   , only : cdom_para
+  use simicParaType  , only : simic_para
   use tracer_varcon  , only : reaction_method
   use ncdio_pio      , only : file_desc_t
   use BetrStatusType , only : betr_status_type
@@ -143,6 +150,8 @@ contains
      call cent_para%readPars(ncid, bstatus)
    case ("cdom_ecacnp")
      call cdom_para%readPars(ncid, bstatus)
+   case ("simic")
+     call simic_para%readPars(ncid, bstatus)
    case default
      !do nothing
    end select
@@ -158,6 +167,7 @@ contains
   ! read in the parameters for specified bgc implementation
   use CentParaType   , only : cent_para
   use cdomParaType   , only : cdom_para
+  use simicParaType  , only : simic_para
   use betr_constants , only : betr_namelist_buffer_size_ext
   use BetrStatusType , only : betr_status_type
   implicit none
@@ -174,6 +184,8 @@ contains
      !do nothing
    case ("cdom_ecacnp")
      call cdom_para%Init(bgc_namelist_buffer, bstatus)
+   case ("simic")
+     call simic_para%Init(bgc_namelist_buffer, bstatus)
    case default
      if(trim(bgc_namelist_buffer)=='none')then
        !do nothing

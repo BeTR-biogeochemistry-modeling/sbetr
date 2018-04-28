@@ -11,7 +11,7 @@ module SimicBGCType
   use betr_ctrl                 , only : spinup_state => betr_spinup_state
   use gbetrType                 , only : gbetr_type
   use BiogeoConType             , only : BiogeoCon_type
-  use SimParaType               , only : SimPara_type
+  use simicParaType             , only : simic_para_type
   use BetrStatusType            , only : betr_status_type
   use BeTRJarModel              , only : jar_model_type
   implicit none
@@ -20,11 +20,11 @@ module SimicBGCType
        __FILE__
 
   !Note:
-  !Keeping centurybgc_index as a private member is a workaround to call the ode solver
-  !it increase the memory for each instance of simicbgc_type, but enables
+  !Keeping simic_index as a private member is a workaround to call the ode solver
+  !it increase the memory for each instance of simic_bgc_type, but enables
   !the ode function to be called by the ode solver
 
-  type, extends(jar_model_type), public :: simicbgc_type
+  type, extends(jar_model_type), public :: simic_bgc_type
     real(r8), pointer                    :: ystates0(:)
     real(r8), pointer                    :: ystates1(:)
 
@@ -34,7 +34,7 @@ module SimicBGCType
     procedure, public  :: UpdateParas   => UpdateParas_simic
     procedure, public  :: getvarllen    => getvarllen_simic
     procedure, public  :: getvarlist    => getvarlist_simic
-  end type simicbgc_type
+  end type simic_bgc_type
 
   public :: create_jarmodel_simicbgc
 contains
@@ -43,8 +43,8 @@ contains
   ! DESCRIPTION
   ! constructor
     implicit none
-    class(simicbgc_type), pointer :: create_jarmodel_simicbgc
-    class(simicbgc_type), pointer :: bgc
+    class(simic_bgc_type), pointer :: create_jarmodel_simicbgc
+    class(simic_bgc_type), pointer :: bgc
 
     allocate(bgc)
     create_jarmodel_simicbgc => bgc
@@ -55,7 +55,7 @@ contains
   function getvarllen_simic(this)result(ans)
 
   implicit none
-  class(simicbgc_type) , intent(inout) :: this
+  class(simic_bgc_type) , intent(inout) :: this
   integer :: ans
 
   ans = 1
@@ -64,15 +64,15 @@ contains
   !-------------------------------------------------------------------------------
   subroutine getvarlist_simic(this, nstvars, varnames, varunits)
   implicit none
-  class(simicbgc_type) , intent(inout) :: this
+  class(simic_bgc_type) , intent(inout) :: this
   integer, intent(in) :: nstvars
   character(len=*), intent(out) :: varnames(1:nstvars)
   character(len=*), intent(out) :: varunits(1:nstvars)
   integer :: n
 
   do n = 1, nstvars
-!    write(varnames(n),'(A)')trim(this%centurybgc_index%varnames(n))
-!    write(varunits(n),'(A)')trim(this%centurybgc_index%varunits(n))
+!    write(varnames(n),'(A)')trim(this%simic_index%varnames(n))
+!    write(varunits(n),'(A)')trim(this%simic_index%varunits(n))
   enddo
   end subroutine getvarlist_simic
 
@@ -81,7 +81,7 @@ contains
   subroutine UpdateParas_simic(this,  biogeo_con, bstatus)
   use betr_varcon         , only : betr_maxpatch_pft, betr_max_soilorder
   implicit none
-  class(simicbgc_type) , intent(inout) :: this
+  class(simic_bgc_type) , intent(inout) :: this
   class(BiogeoCon_type)       , intent(in) :: biogeo_con
   type(betr_status_type)     , intent(out)   :: bstatus
   integer :: sr
@@ -90,7 +90,7 @@ contains
   call bstatus%reset()
 
   select type(biogeo_con)
-  type is(SimPara_type)
+  type is(simic_para_type)
 
 
   class default
@@ -104,7 +104,7 @@ contains
   subroutine init_simic(this,  biogeo_con,  bstatus)
   use betr_varcon         , only : betr_maxpatch_pft
   implicit none
-  class(simicbgc_type) , intent(inout) :: this
+  class(simic_bgc_type) , intent(inout) :: this
   class(BiogeoCon_type)       , intent(in) :: biogeo_con
   type(betr_status_type)    , intent(out) :: bstatus
 
@@ -112,7 +112,7 @@ contains
   write(this%jarname, '(A)')'simic'
 
   select type(biogeo_con)
-  type is(SimPara_type)
+  type is(simic_para_type)
     call bstatus%reset()
 
     call this%UpdateParas(biogeo_con, bstatus)
@@ -132,7 +132,7 @@ contains
 
   use betr_varcon         , only : betr_maxpatch_pft, betr_max_soilorder
   implicit none
-  class(simicbgc_type)   , intent(inout) :: this
+  class(simic_bgc_type)   , intent(inout) :: this
 
 
 !  allocate(this%ystates0(nstvars)); this%ystates0(:) = 0._r8
@@ -154,7 +154,7 @@ contains
   use MathfuncMod           , only : safe_div
   use tracer_varcon         , only : catomw, natomw, patomw
   implicit none
-  class(simicbgc_type)  , intent(inout) :: this
+  class(simic_bgc_type)  , intent(inout) :: this
   logical                    , intent(in)    :: is_surflit
   real(r8)                   , intent(in)    :: dtime
   type(JarBGC_forc_type)     , intent(in)    :: bgc_forc

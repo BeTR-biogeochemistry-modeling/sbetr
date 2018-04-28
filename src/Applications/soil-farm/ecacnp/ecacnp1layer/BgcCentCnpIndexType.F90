@@ -325,7 +325,7 @@ implicit none
     call add_ompool_name(list_name, list_unit, list_pool,'lit2', use_c13, use_c14, do_init=.false.,vid=vid,uid=uid,pid=pid)
     this%lit3 = addone(itemp); this%lit3_dek_reac = addone(ireac); call list_insert(list_react, 'lit3_dek_reac', itemp0)
     call add_ompool_name(list_name, list_unit, list_pool,'lit3', use_c13, use_c14, do_init=.false.,vid=vid,uid=uid,pid=pid)
-    this%litr_end=this%litr_beg-1+3*this%nelms
+    this%litr_end=this%litr_beg-1+(this%lit3-this%lit1+1)*this%nelms
 
     !woody group
     this%wood_beg=this%litr_end+1
@@ -335,7 +335,7 @@ implicit none
     call add_ompool_name(list_name, list_unit, list_pool,'lwd', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
     this%fwd  = addone(itemp); this%fwd_dek_reac  = addone(ireac); call list_insert(list_react, 'fwd_dek_reac', itemp0)
     call add_ompool_name(list_name, list_unit, list_pool,'fwd', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
-    this%wood_end=this%wood_beg-1+3*this%nelms
+    this%wood_end=this%wood_beg-1+(this%fwd-this%cwd+1)*this%nelms
 
     !microbial biomass group
     this%Bm_beg=this%wood_end+1
@@ -375,7 +375,7 @@ implicit none
 
     this%lid_minp_occlude = addone(itemp);
     call list_insert(list_name, 'minp_occlude',vid)
-    call list_insert(list_unit, 'mol P m-3',uid)    
+    call list_insert(list_unit, 'mol P m-3',uid)
     if(maxpft>0)then
       this%lid_plant_minn_nh4_up_reac = addone(ireac); call list_insert(list_react, 'plant_minn_nh4_up_reac', itemp0)
       this%lid_plant_minn_no3_up_reac = addone(ireac); call list_insert(list_react, 'plant_minn_no3_up_reac', itemp0)

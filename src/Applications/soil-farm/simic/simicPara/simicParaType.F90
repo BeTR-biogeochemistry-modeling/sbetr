@@ -1,4 +1,4 @@
-module SimParaType
+module simicParaType
   use bshr_kind_mod       , only : r8 => shr_kind_r8
   use BiogeoContype       , only : BiogeoCon_type
 implicit none
@@ -7,7 +7,7 @@ implicit none
   character(len=*), private, parameter :: filename = &
        __FILE__
 
- type, public, extends(BiogeoCon_type) :: SimPara_type
+ type, public, extends(BiogeoCon_type) :: simic_para_type
 
   !decomposition
   real(r8) :: Kaff_EP  !enzyme affinity for litter POM depolymerization, mol C/m3
@@ -29,16 +29,16 @@ implicit none
   real(r8) :: Kaff_DM  !affinity of microbial cell material to mineral surface, mol C/m3
   real(r8) :: Minsurf  !mineral surface area for DOC/enzyme/microbial cell wall material adsorption
  contains
-   procedure, public  :: Init => simpara_init
-   procedure, public  :: readPars => simpara_readPars
-   procedure, public  :: printPars=> simpara_printPars
+   procedure, public  :: Init => simic_para_init
+   procedure, public  :: readPars => simic_para_readPars
+   procedure, public  :: printPars=> simic_para_printPars
    procedure, private :: InitAllocate_simpara
    procedure, private :: set_defpar_default
    procedure, public  :: apply_spinup_factor
    procedure, public  :: set_spinup_factor
- end type SimPara_type
+ end type simic_para_type
 
- type(SimPara_type), public :: cent_para
+ type(simic_para_type), public :: simic_para
  public :: create_jarpars_simic
 contains
 
@@ -46,8 +46,8 @@ contains
   ! DESCRIPTION
   ! constructor
     implicit none
-    class(SimPara_type), pointer :: create_jarpars_simic
-    class(SimPara_type), pointer :: bgc
+    class(simic_para_type), pointer :: create_jarpars_simic
+    class(simic_para_type), pointer :: bgc
 
     allocate(bgc)
     create_jarpars_simic => bgc
@@ -55,12 +55,12 @@ contains
   end function create_jarpars_simic
 
   !--------------------------------------------------------------------
-  subroutine simpara_init(this, namelist_buffer, bstatus)
+  subroutine simic_para_init(this, namelist_buffer, bstatus)
   use betr_constants , only : betr_namelist_buffer_size_ext
   use BetrStatusType , only : betr_status_type
   use betr_ctrl      , only : betr_spinup_state
   implicit none
-  class(SimPara_type), intent(inout) :: this
+  class(simic_para_type), intent(inout) :: this
   character(len=*)         , intent(in)  :: namelist_buffer
   type(betr_status_type)   , intent(out) :: bstatus
 
@@ -74,12 +74,12 @@ contains
   if(betr_spinup_state/=0)then
     call this%apply_spinup_factor()
   endif
-  end subroutine simpara_init
+  end subroutine simic_para_init
   !--------------------------------------------------------------------
   subroutine InitAllocate_simpara(this)
   use betr_varcon, only : betr_maxpatch_pft, betr_max_soilorder
   implicit none
-  class(SimPara_type), intent(inout) :: this
+  class(simic_para_type), intent(inout) :: this
 
 
   !the following will be actually calculated from CNP bgc
@@ -90,7 +90,7 @@ contains
   use tracer_varcon      , only : natomw,patomw
   use bshr_const_mod  , only : year_sec=>SHR_CONST_YEARSECS
   implicit none
-  class(SimPara_type), intent(inout) :: this
+  class(simic_para_type), intent(inout) :: this
   real(r8) :: half_life
 
   !the following note is from daycent
@@ -149,7 +149,7 @@ contains
   subroutine apply_spinup_factor(this)
   use betr_ctrl, only : betr_spinup_state
   implicit none
-  class(SimPara_type), intent(inout) :: this
+  class(simic_para_type), intent(inout) :: this
 
 
   call this%set_spinup_factor()
@@ -161,7 +161,7 @@ contains
 
   !--------------------------------------------------------------------
 
-  subroutine simpara_readPars(this, ncid, bstatus)
+  subroutine simic_para_readPars(this, ncid, bstatus)
   use bshr_log_mod    , only : errMsg => shr_log_errMsg
   use ncdio_pio       , only : file_desc_t, ncd_io
   use BetrStatusType  , only : betr_status_type
@@ -169,7 +169,7 @@ contains
   use bshr_const_mod  , only : year_sec=>SHR_CONST_YEARSECS
   use tracer_varcon   , only : natomw,patomw
   implicit none
-  class(SimPara_type), intent(inout) :: this
+  class(simic_para_type), intent(inout) :: this
   type(file_desc_t)    , intent(inout)  :: ncid  ! pio netCDF file id
   type(betr_status_type) , intent(out) :: bstatus
 
@@ -186,13 +186,13 @@ contains
     call this%apply_spinup_factor()
   endif
 
-  end subroutine simpara_readPars
+  end subroutine simic_para_readPars
 
 !--------------------------------------------------------------------
   subroutine set_spinup_factor(this)
 
   implicit none
-  class(SimPara_type), intent(inout) :: this
+  class(simic_para_type), intent(inout) :: this
   real(r8) :: k_decay_ref
 
 
@@ -200,14 +200,14 @@ contains
   end subroutine set_spinup_factor
 
 !--------------------------------------------------------------------
-  subroutine simpara_printPars(this)
+  subroutine simic_para_printPars(this)
 
   implicit none
-  class(SimPara_type), intent(inout) :: this
+  class(simic_para_type), intent(inout) :: this
 
   call this%prtPars_bgc()
 
 
-  end subroutine simpara_printPars
+  end subroutine simic_para_printPars
 
-end module SimParaType
+end module simicParaType

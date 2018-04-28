@@ -1,5 +1,5 @@
-add_subdirectory(simpara)
-add_subdirectory(sim1layer)
-add_subdirectory(simNlayer)
+add_subdirectory(simicPara)
+add_subdirectory(simic1layer)
+add_subdirectory(simicNlayer)
 
-set(BETR_LIBRARIES simpara sim1layer simNlayer;${BETR_LIBRARIES} PARENT_SCOPE)
+set(BETR_LIBRARIES simicPara simic1layer simicNlayer;${BETR_LIBRARIES} PARENT_SCOPE)

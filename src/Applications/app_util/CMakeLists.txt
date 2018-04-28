@@ -14,6 +14,9 @@ include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/ecacnp/ecacnp
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/cdom/cdomPara)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/cdom/cdom1layer)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/cdom/cdomNlayer)
+include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/simic/simicPara)
+include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/simic/simic1layer)
+include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/simic/simicNlayer)
 
 include(add_betr_library)
 add_betr_library(app_util ${BETR_APP_UTIL_SOURCES})
