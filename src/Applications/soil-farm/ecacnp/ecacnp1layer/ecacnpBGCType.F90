@@ -1,4 +1,4 @@
-module BgcCentCnpType
+module ecacnpBGCType
 #include "bshr_assert.h"
   !
   ! !DESCRIPTION:
@@ -9,14 +9,14 @@ module BgcCentCnpType
   use bshr_log_mod              , only : errMsg => shr_log_errMsg
   use betr_varcon               , only : spval => bspval
   use betr_ctrl                 , only : spinup_state => betr_spinup_state
-  use BgcCentCnpDecompType      , only : DecompCent_type
-  use BgcCentCnpIndexType       , only : centurybgc_index_type
-  use BgcCentCnpNitDenType      , only : century_nitden_type
+  use ecacnpBGCDecompType      , only : DecompCent_type
+  use ecacnpBGCIndexType       , only : centurybgc_index_type
+  use ecacnpBGCNitDenType      , only : century_nitden_type
   use gbetrType                 , only : gbetr_type
   use BgcCentSOMType            , only : CentSom_type
-  use BgcCentCnpCompetType      , only : Compet_ECA_type
+  use ecacnpBGCCompetType      , only : Compet_ECA_type
   use BiogeoConType             , only : BiogeoCon_type
-  use CentParaType              , only : CentPara_type
+  use ecacnpParaType            , only : ecacnp_para_type
   use BetrStatusType            , only : betr_status_type
   use BeTRJarModel              , only : jar_model_type
   implicit none
@@ -90,20 +90,20 @@ module BgcCentCnpType
     procedure, private :: end_massbal_check
   end type centurybgceca_type
 
-  public :: create_jarmodel_centuryeca
+  public :: create_jarmodel_ecacnp
 contains
 
-  function create_jarmodel_centuryeca()
+  function create_jarmodel_ecacnp()
   ! DESCRIPTION
   ! constructor
     implicit none
-    class(centurybgceca_type), pointer :: create_jarmodel_centuryeca
+    class(centurybgceca_type), pointer :: create_jarmodel_ecacnp
     class(centurybgceca_type), pointer :: bgc
 
     allocate(bgc)
-    create_jarmodel_centuryeca => bgc
+    create_jarmodel_ecacnp => bgc
 
-  end function create_jarmodel_centuryeca
+  end function create_jarmodel_ecacnp
 
   !-------------------------------------------------------------------------------
   function getvarllen_ecacnp(this)result(ans)
@@ -197,7 +197,7 @@ contains
   call bstatus%reset()
 
   select type(biogeo_con)
-  type is(CentPara_type)
+  type is(ecacnp_para_type)
     do sr = 1, betr_max_soilorder
       this%frac_p_sec_to_sol(sr) = biogeo_con%frac_p_sec_to_sol(sr)
 
@@ -240,7 +240,7 @@ contains
 
   this%bgc_on=.true.
   select type(biogeo_con)
-  type is(CentPara_type)
+  type is(ecacnp_para_type)
     call bstatus%reset()
     call this%centurybgc_index%Init(biogeo_con%use_c13, biogeo_con%use_c14, &
      biogeo_con%non_limit, biogeo_con%nop_limit, betr_maxpatch_pft)
@@ -278,7 +278,7 @@ contains
   !-------------------------------------------------------------------------------
 
   subroutine InitAllocate(this, centurybgc_index)
-  use BgcCentCnpIndexType , only : centurybgc_index_type
+  use ecacnpBGCIndexType , only : centurybgc_index_type
   use betr_varcon         , only : betr_maxpatch_pft, betr_max_soilorder
   implicit none
   class(centurybgceca_type)   , intent(inout) :: this
@@ -316,7 +316,7 @@ contains
 
   subroutine checksum_cascade(this, centurybgc_index)
 
-  use BgcCentCnpIndexType       , only : centurybgc_index_type
+  use ecacnpBGCIndexType       , only : centurybgc_index_type
 
   implicit none
   ! !ARGUMENTS:
@@ -605,7 +605,7 @@ contains
   subroutine c14decay(this, centurybgc_index, dtime, ystates1)
 
   !apply c14 decay to om pools
-  use BgcCentCnpIndexType       , only : centurybgc_index_type
+  use ecacnpBGCIndexType       , only : centurybgc_index_type
 
   implicit none
   ! !ARGUMENTS:
@@ -669,7 +669,7 @@ contains
     !
     ! !USES:
     use MathfuncMod               , only : safe_div
-    use BgcCentCnpIndexType       , only : centurybgc_index_type
+    use ecacnpBGCIndexType       , only : centurybgc_index_type
     use betr_ctrl                 , only : spinup_state => betr_spinup_state
     implicit none
     ! !ARGUMENTS:
@@ -831,7 +831,7 @@ contains
   !--------------------------------------------------------------------
   subroutine init_states(this, centurybgc_index, bgc_forc)
 
-  use BgcCentCnpIndexType       , only : centurybgc_index_type
+  use ecacnpBGCIndexType       , only : centurybgc_index_type
   use JarBgcForcType            , only : JarBGC_forc_type
   implicit none
   class(centurybgceca_type)     , intent(inout) :: this
@@ -912,7 +912,7 @@ contains
   end subroutine init_states
   !--------------------------------------------------------------------
   subroutine add_ext_input(this, dtime, centurybgc_index, bgc_forc, c_inf, n_inf, p_inf)
-  use BgcCentCnpIndexType       , only : centurybgc_index_type
+  use ecacnpBGCIndexType       , only : centurybgc_index_type
   use JarBgcForcType        , only : JarBGC_forc_type
   use tracer_varcon             , only : catomw, natomw, patomw,c13atomw,c14atomw
   use MathfuncMod               , only : safe_div
@@ -1366,7 +1366,7 @@ contains
   end subroutine bgc_integrate
   !--------------------------------------------------------------------
   subroutine arenchyma_gas_transport(this, centurybgc_index, dtime)
-  use BgcCentCnpIndexType       , only : centurybgc_index_type
+  use ecacnpBGCIndexType       , only : centurybgc_index_type
   implicit none
   class(centurybgceca_type)     , intent(inout) :: this
   type(centurybgc_index_type)  , intent(in) :: centurybgc_index
@@ -1707,4 +1707,4 @@ contains
        if(abs(dtr/dt)<1.e-4_r8)exit
     enddo
   end subroutine ode_adapt_ebbks1
-end module BgcCentCnpType
+end module ecacnpBGCType

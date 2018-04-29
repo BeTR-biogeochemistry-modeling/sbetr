@@ -1,10 +1,10 @@
 set(ECACNP1LAYER_SOURCES
-  BgcCentCnpIndexType.F90
-  BgcCentCnpCompetType.F90
-  BgcCentCnpDecompType.F90
-  BgcCentCnpNitDenType.F90
-  BgcCentCnpSOMType.F90
-  BgcCentCnpType.F90
+  ecacnpBGCIndexType.F90
+  ecacnpBGCCompetType.F90
+  ecacnpBGCDecompType.F90
+  ecacnpBGCNitDenType.F90
+  ecacnpBGCSOMType.F90
+  ecacnpBGCType.F90
 )
 
 

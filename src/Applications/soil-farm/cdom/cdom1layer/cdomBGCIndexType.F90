@@ -1,4 +1,4 @@
-module BgcCentCnpIndexType
+module cdomBGCIndexType
 
   use bshr_kind_mod  , only : r8 => shr_kind_r8
   use betr_ctrl    , only : spinup_state => betr_spinup_state
@@ -16,28 +16,31 @@ implicit none
     type(list_t), pointer :: next => null()
   end type list_t
 
-  type, public :: centurybgc_index_type
+  type, public :: cdombgc_index_type
      integer           :: nom_pools                              !not include coarse wood debris
 
      integer           :: nom_tot_elms
-     integer           :: lit1, lit1_dek_reac
-     integer           :: lit2, lit2_dek_reac
-     integer           :: lit3, lit3_dek_reac
-     integer           :: som1, som1_dek_reac
-     integer           :: som2, som2_dek_reac
-     integer           :: som3, som3_dek_reac
+     integer           :: lmet, lmet_dek_reac
+     integer           :: lcel, lcel_dek_reac
+     integer           :: llig, llig_dek_reac
+     integer           :: mic, mic_dek_reac
+     integer           :: pom, pom_dek_reac
+     integer           :: humus, humus_dek_reac
      integer           :: cwd,  cwd_dek_reac
      integer           :: lwd,  lwd_dek_reac
      integer           :: fwd,  fwd_dek_reac
-     integer           :: litr_beg, litr_end  !litr group
-     integer           :: wood_beg, wood_end  !wood group
-     integer           :: som_beg,  som_end   !som group
-     integer           :: dom_beg,  dom_end   !dom group
-     integer           :: Bm_beg,  Bm_end   !dom group
-     integer           :: pom_beg, pom_end
+     integer           :: dom,  dom_dek_reac
+     integer           :: litr_beg, litr_end          !litr group
+     integer           :: wood_beg, wood_end          !wood group
+     integer           :: pom_beg,  pom_end           !som group
+     integer           :: dom_beg,  dom_end           !dom group
+     integer           :: micbiom_beg,  micbiom_end   !dom group
+     integer           :: humus_beg, humus_end
+     integer           :: nlit, nwood
      integer           :: c_loc
      integer           :: n_loc
      integer           :: p_loc
+     integer           :: e_loc
      integer           :: c13_loc = 0
      integer           :: c14_loc = 0
      integer           :: nelms                                  !number of chemical elements in an om pool
@@ -95,7 +98,8 @@ implicit none
      integer, pointer :: lid_plant_minn_no3_pft(:)=> null()
      integer, pointer :: lid_plant_minn_nh4_pft(:)=> null()
      integer, pointer :: lid_plant_minp_pft(:)=> null()
-     logical, pointer :: is_cenpool_som(:) => null()
+     logical, pointer :: is_ompool_som(:) => null()
+     logical, pointer :: is_dom_pool(:) => null()
      logical :: debug
      character(len=loc_name_len), allocatable :: varnames(:)
      character(len=loc_name_len), allocatable :: varunits(:)
@@ -105,7 +109,7 @@ implicit none
      procedure, private :: InitPars
      procedure, private :: InitAllocate
      procedure, private :: set_primvar_reac_ids
-  end type centurybgc_index_type
+  end type cdombgc_index_type
 
   contains
   !-----------------------------------------------------------------------
@@ -193,7 +197,7 @@ implicit none
 
   end subroutine list_disp
   !-------------------------------------------------------------------------------
-  subroutine add_ompool_name(list_name, list_unit, list_pool, prefix, use_c13, use_c14, do_init, vid,uid,pid)
+  subroutine add_ompool_name(list_name, list_unit, list_pool,prefix, use_c13, use_c14, do_init, vid,uid,pid)
   implicit none
   type(list_t), pointer :: list_name
   type(list_t), pointer :: list_unit
@@ -235,7 +239,7 @@ implicit none
     ! !USES:
   implicit none
   ! !ARGUMENTS:
-  class(centurybgc_index_type), intent(inout) :: this
+  class(cdombgc_index_type), intent(inout) :: this
   logical, intent(in) :: use_c13
   logical, intent(in) :: use_c14
   logical, intent(in) :: non_limit
@@ -283,7 +287,7 @@ implicit none
     use betr_utils    , only : num2str
     use betr_constants, only : betr_string_length_long
     implicit none
-    class(centurybgc_index_type) :: this
+    class(cdombgc_index_type) :: this
     integer, intent(in) :: maxpft
     logical, intent(in) :: use_c13
     logical, intent(in) :: use_c14
@@ -292,17 +296,16 @@ implicit none
     ! !LOCAL VARIABLES:
     integer :: itemp
     integer :: ireac   !counter of reactions
-    integer :: itemp0, itemp1
+    integer :: itemp1
     integer :: ielem
     integer :: vid,uid,pid
     integer :: jj
     type(list_t), pointer :: list_name => null()
     type(list_t), pointer :: list_unit => null()
     type(list_t), pointer :: list_pool => null()
-    type(list_t), pointer :: list_react=> null()
     character(len=loc_name_len) :: postfix
 
-    itemp = 0; itemp0=0
+    itemp = 0
     ireac = 0
     ielem= 0
     vid = 0;uid=0;pid=0
@@ -316,72 +319,83 @@ implicit none
       this%c14_loc = addone(ielem)
     endif
     this%nelms = ielem   !carbon and nitrogen
+    this%e_loc = ielem + 1
 
     !litter group
-    this%litr_beg=1
-    this%lit1 = addone(itemp); this%lit1_dek_reac = addone(ireac); call list_init(list_react, 'lit1_dek_reac', itemp0)
-    call add_ompool_name(list_name, list_unit, list_pool,'lit1', use_c13, use_c14, do_init=.true., vid=vid,uid=uid,pid=pid)
-    this%lit2 = addone(itemp); this%lit2_dek_reac = addone(ireac); call list_insert(list_react, 'lit2_dek_reac', itemp0)
-    call add_ompool_name(list_name, list_unit, list_pool,'lit2', use_c13, use_c14, do_init=.false.,vid=vid,uid=uid,pid=pid)
-    this%lit3 = addone(itemp); this%lit3_dek_reac = addone(ireac); call list_insert(list_react, 'lit3_dek_reac', itemp0)
-    call add_ompool_name(list_name, list_unit, list_pool,'lit3', use_c13, use_c14, do_init=.false.,vid=vid,uid=uid,pid=pid)
-    this%litr_end=this%litr_beg-1+(this%lit3-this%lit1+1)*this%nelms
+    this%litr_beg=1; this%nlit=0
+    this%lmet = addone(itemp); this%lmet_dek_reac = addone(ireac); this%nlit=this%nlit+1
+    call add_ompool_name(list_name, list_unit, list_pool,'Lmet', use_c13, use_c14, do_init=.true., vid=vid,uid=uid,pid=pid)
+    this%lcel = addone(itemp); this%lcel_dek_reac = addone(ireac); this%nlit=this%nlit+1
+    call add_ompool_name(list_name, list_unit, list_pool,'Lcel', use_c13, use_c14, do_init=.false.,vid=vid,uid=uid,pid=pid)
+    this%llig = addone(itemp); this%llig_dek_reac = addone(ireac); this%nlit=this%nlit+1
+    call add_ompool_name(list_name, list_unit, list_pool,'Llig', use_c13, use_c14, do_init=.false.,vid=vid,uid=uid,pid=pid)
+    this%litr_end=this%litr_beg-1+this%nelms*this%nlit
 
     !woody group
-    this%wood_beg=this%litr_end+1
-    this%cwd  = addone(itemp); this%cwd_dek_reac  = addone(ireac); call list_insert(list_react, 'cwd_dek_reac', itemp0)
-    call add_ompool_name(list_name, list_unit, list_pool,'cwd', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
-    this%lwd  = addone(itemp); this%lwd_dek_reac  = addone(ireac); call list_insert(list_react, 'lwd_dek_reac', itemp0)
-    call add_ompool_name(list_name, list_unit, list_pool,'lwd', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
-    this%fwd  = addone(itemp); this%fwd_dek_reac  = addone(ireac); call list_insert(list_react, 'fwd_dek_reac', itemp0)
-    call add_ompool_name(list_name, list_unit, list_pool,'fwd', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
-    this%wood_end=this%wood_beg-1+(this%fwd-this%cwd+1)*this%nelms
+    this%wood_beg=this%litr_end+1; this%nwood=0
+    this%cwd  = addone(itemp); this%cwd_dek_reac  = addone(ireac); this%nwood=this%nwood+1
+    call add_ompool_name(list_name, list_unit, list_pool,'CWD', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
+    this%lwd  = addone(itemp); this%lwd_dek_reac  = addone(ireac); this%nwood=this%nwood+1
+    call add_ompool_name(list_name, list_unit, list_pool,'LWD', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
+    this%fwd  = addone(itemp); this%fwd_dek_reac  = addone(ireac); this%nwood=this%nwood+1
+    call add_ompool_name(list_name, list_unit, list_pool,'FWD', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
+    this%wood_end=this%wood_beg-1+this%nelms*this%nwood
 
     !microbial biomass group
-    this%Bm_beg=this%wood_end+1
-    this%som1 = addone(itemp); this%som1_dek_reac = addone(ireac); call list_insert(list_react, 'som1_dek_reac', itemp0)
-    call add_ompool_name(list_name, list_unit, list_pool,'SOM1_MB', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
-    this%Bm_end=this%Bm_beg-1+this%nelms
+    this%micbiom_beg=this%wood_end+1
+    this%mic = addone(itemp); this%mic_dek_reac = addone(ireac)
+    call add_ompool_name(list_name, list_unit, list_pool,'Micbiom', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
+    this%micbiom_end=this%micbiom_beg-1+this%nelms
 
-    this%pom_beg=this%Bm_end+1
-    this%som2 = addone(itemp); this%som2_dek_reac = addone(ireac); call list_insert(list_react, 'som2_dek_reac', itemp0)
-    call add_ompool_name(list_name, list_unit, list_pool,'SOM2_POM', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
+    this%pom_beg=this%micbiom_end+1
+    this%pom = addone(itemp); this%pom_dek_reac = addone(ireac)
+    call add_ompool_name(list_name, list_unit, list_pool,'POM', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
     this%pom_end=this%pom_beg-1+this%nelms
 
-    this%som_beg=this%pom_end+1
-    this%som3 = addone(itemp); this%som3_dek_reac = addone(ireac); call list_insert(list_react, 'som3_dek_reac', itemp0)
-    call add_ompool_name(list_name, list_unit, list_pool,'som3', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
-    this%som_end=this%som_beg-1+this%nelms
+    this%humus_beg=this%pom_end+1
+    this%humus = addone(itemp); this%humus_dek_reac = addone(ireac)
+    call add_ompool_name(list_name, list_unit, list_pool,'Humus', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
+    this%humus_end=this%humus_beg-1+this%nelms
 
-    this%nom_pools = (countelm(this%litr_beg, this%litr_end)+&
-       countelm(this%wood_beg,this%wood_end) + &
-       countelm(this%som_beg,this%som_end) + &
-       countelm(this%Bm_beg,this%Bm_end) + &
-       countelm(this%pom_beg,this%pom_end))/this%nelms   !include coarse wood debris
+    !dom group
+    this%dom_beg=this%humus_end+1;
+    this%dom = addone(itemp); this%dom_dek_reac = addone(ireac)
+    call add_ompool_name(list_name, list_unit, list_pool,'DOM', use_c13, use_c14, do_init=.false., vid=vid, uid=uid, pid=pid)
+    call list_insert(list_name, 'DOM_e',vid)
+    call list_insert(list_unit, 'mol e m-3',uid)
+    this%dom_end=this%dom_beg-1+this%nelms + 1
 
-    allocate(this%is_cenpool_som(this%nom_pools)); this%is_cenpool_som(:)=.false.
-    this%is_cenpool_som(this%som1)=.true.
-    this%is_cenpool_som(this%som2)=.true.
-    this%is_cenpool_som(this%som3)=.true.
+    this%nom_pools = (countelm(this%litr_beg, this%litr_end)+ &
+       countelm(this%wood_beg, this%wood_end)               + &
+       countelm(this%humus_beg, this%humus_end)             + &
+       countelm(this%micbiom_beg, this%micbiom_end)         + &
+       countelm(this%pom_beg, this%pom_end)                 + &
+       countelm(this%dom_beg, this%dom_end)-1)/this%nelms   !include coarse wood debris
 
-    itemp               = this%nom_pools*this%nelms
+    allocate(this%is_ompool_som(this%nom_pools)); this%is_ompool_som(:)=.false.
+    allocate(this%is_dom_pool(this%nom_pools)); this%is_dom_pool(:) = .false.
+    this%is_ompool_som(this%mic)    =.true.
+    this%is_ompool_som(this%pom)    =.true.
+    this%is_ompool_som(this%humus)  =.true.
+    this%is_ompool_som(this%dom)    =.true.
+    this%is_dom_pool(this%dom)      =.true.
+
+    itemp               = this%nom_pools*this%nelms + 1
 
     this%nom_tot_elms    = itemp
 
     this%lid_minp_secondary = addone(itemp); this%lid_minp_secondary_to_sol_occ_reac=addone(ireac)
-    call list_insert(list_react, 'minp_secondary_to_sol_occ_reac', itemp0)
     call list_insert(list_name, 'minp_secondary',vid)
     call list_insert(list_unit, 'mol P m-3',uid)
 
     this%lid_minp_occlude = addone(itemp);
     call list_insert(list_name, 'minp_occlude',vid)
     call list_insert(list_unit, 'mol P m-3',uid)
-    if(maxpft>0)then
-      this%lid_plant_minn_nh4_up_reac = addone(ireac); call list_insert(list_react, 'plant_minn_nh4_up_reac', itemp0)
-      this%lid_plant_minn_no3_up_reac = addone(ireac); call list_insert(list_react, 'plant_minn_no3_up_reac', itemp0)
-      this%lid_plant_minp_up_reac = addone(ireac); call list_insert(list_react, 'plant_minp_up_reac', itemp0)
-      this%lid_autr_rt_reac = addone(ireac); call list_insert(list_react, 'autr_rt_reac', itemp0)
-    endif
+    this%lid_plant_minn_nh4_up_reac = addone(ireac)
+    this%lid_plant_minn_no3_up_reac = addone(ireac)
+    this%lid_plant_minp_up_reac = addone(ireac)
+    this%lid_autr_rt_reac = addone(ireac)
+
     !non-reactive primary variables
     this%lid_ch4        = addone(itemp);call list_insert(list_name, 'ch4',vid); call list_insert(list_unit, 'mol C m-3',uid)
     this%lid_ar         = addone(itemp);call list_insert(list_name, 'ar',vid); call list_insert(list_unit, 'mol m-3',uid)
@@ -409,12 +423,12 @@ implicit none
       !when N is unlimited, nh4 and no3 are not primary variables
       this%nprimvars = this%nprimvars + 2
     endif
-    this%lid_nh4_nit_reac = addone(ireac); call list_insert(list_react, 'nh4_nit_reac', itemp0)       !this is also used to indicate the nitrification reaction
-    this%lid_no3_den_reac = addone(ireac); call list_insert(list_react, 'no3_den_reac', itemp0)       !this is also used to indicate the denitrification reaction
+    this%lid_nh4_nit_reac = addone(ireac)       !this is also used to indicate the nitrification reaction
+    this%lid_no3_den_reac = addone(ireac)       !this is also used to indicate the denitrification reaction
     call list_insert(list_name, 'nh4',vid); call list_insert(list_unit, 'mol N m-3',uid)
     call list_insert(list_name, 'no3',vid); call list_insert(list_unit, 'mol N m-3',uid)
 
-    this%lid_minp_soluble_to_secp_reac = addone(ireac); call list_insert(list_react, 'minp_soluble_to_secp_reac', itemp0)
+    this%lid_minp_soluble_to_secp_reac = addone(ireac)
     this%lid_minp_soluble=addone(itemp);
     call list_insert(list_name, 'minp_soluble',vid); call list_insert(list_unit, 'mol P m-3',uid)
     if(.not. nop_limit)then
@@ -423,77 +437,69 @@ implicit none
     endif
 
     !diagnostic variables
-    if(maxpft>0)then
-      this%lid_plant_minn_nh4 = addone(itemp)  !this is used to indicate plant mineral nitrogen uptake
-      call list_insert(list_name, 'plant_minn_nh4',vid); call list_insert(list_unit, 'mol P m-3 s-1',uid)
+    this%lid_plant_minn_nh4 = addone(itemp)  !this is used to indicate plant mineral nitrogen uptake
+    call list_insert(list_name, 'plant_minn_nh4',vid); call list_insert(list_unit, 'mol P m-3',uid)
 
-      this%lid_plant_minn_no3 = addone(itemp)  !this is used to indicate plant mineral nitrogen uptake
-      call list_insert(list_name, 'plant_minn_no3',vid); call list_insert(list_unit, 'mol N mol-3 s-1',uid)
+    this%lid_plant_minn_no3 = addone(itemp)  !this is used to indicate plant mineral nitrogen uptake
+    call list_insert(list_name, 'plant_minn_no3',vid); call list_insert(list_unit, 'mol N mol-3',uid)
 
-      this%lid_plant_minp = addone(itemp)
-      call list_insert(list_name, 'plant_minp',vid); call list_insert(list_unit, 'mol P m-3',uid)
+    this%lid_plant_minp = addone(itemp)
+    call list_insert(list_name, 'plant_minp',vid); call list_insert(list_unit, 'mol P m-3',uid)
 
-      this%lid_autr_rt      = addone(itemp)           !this is used to indicate plant autotrophic root respiration
-      call list_insert(list_name, 'autr_rt',vid); call list_insert(list_unit,'mol C m-3 s-1',uid)
-    endif
+    this%lid_autr_rt      = addone(itemp)           !this is used to indicate plant autotrophic root respiration
+    call list_insert(list_name, 'autr_rt',vid); call list_insert(list_unit,'mol C m-3',uid)
+
+    this%lid_o2_aren_reac  = addone(ireac)
+
     this%lid_n2o_nit  = addone(itemp);
-    call list_insert(list_name, 'n2o_nit',vid); call list_insert(list_unit, 'mol N2O m-3 s-1',uid)
+    call list_insert(list_name, 'n2o_nit',vid); call list_insert(list_unit, 'mol N2O m-3',uid)
 
     this%lid_co2_hr   = addone(itemp);
-    call list_insert(list_name, 'co2_hr',vid); call list_insert(list_unit,'mol C m-3 s-1',uid)
+    call list_insert(list_name, 'co2_hr',vid); call list_insert(list_unit,'mol C m-3',uid)
 
     this%lid_no3_den  = addone(itemp);
-    call list_insert(list_name, 'no3_den',vid); call list_insert(list_unit, 'mol N m-3 s-1',uid)
+    call list_insert(list_name, 'no3_den',vid); call list_insert(list_unit, 'mol N m-3',uid)
 
     this%lid_minn_nh4_immob = addone(itemp);
-    call list_insert(list_name, 'minn_nh4_immob',vid); call list_insert(list_unit, 'mol N m-3 s-1',uid)
+    call list_insert(list_name, 'minn_nh4_immob',vid); call list_insert(list_unit, 'mol N m-3',uid)
 
     this%lid_minn_no3_immob = addone(itemp);
-    call list_insert(list_name, 'minn_no3_immob',vid); call list_insert(list_unit, 'mol N m-3 s-1',uid)
+    call list_insert(list_name, 'minn_no3_immob',vid); call list_insert(list_unit, 'mol N m-3',uid)
 
     this%lid_minp_immob = addone(itemp);
-    call list_insert(list_name, 'minp_immob',vid); call list_insert(list_unit, 'mol P m-3 s-1',uid)
+    call list_insert(list_name, 'minp_immob',vid); call list_insert(list_unit, 'mol P m-3',uid)
 
     this%lid_nh4_nit        = addone(itemp);
-    call list_insert(list_name, 'nh4_nit',vid); call list_insert(list_unit,'mol N m-3 s-1',uid)
+    call list_insert(list_name, 'nh4_nit',vid); call list_insert(list_unit,'mol N m-3',uid)
 
     !aerechyma transport
     this%lid_o2_paere   = addone(itemp);
-    this%lid_o2_aren_reac  = addone(ireac); call list_insert(list_react, 'o2_aren_reac', itemp0)
-
-    call list_insert(list_name, 'o2_paere',vid); call list_insert(list_unit,'mol m-3 s-1',uid)
+    call list_insert(list_name, 'o2_paere',vid); call list_insert(list_unit,'mol m-3',uid)
     if ( spinup_state == 0 ) then
-       this%lid_ar_paere   = addone(itemp);
-       this%lid_ar_aren_reac  = addone(ireac);  call list_insert(list_react, 'ar_aren_reac', itemp0)   !
-       call list_insert(list_name, 'ar_paere',vid); call list_insert(list_unit,'mol m-3 s-1',uid)
+       this%lid_ar_paere   = addone(itemp);  this%lid_ar_aren_reac  = addone(ireac)   !
+       call list_insert(list_name, 'ar_paere',vid); call list_insert(list_unit,'mol m-3',uid)
 
-       this%lid_n2_paere   = addone(itemp);
-       this%lid_n2_aren_reac  = addone(ireac); call list_insert(list_react, 'n2_aren_reac', itemp0)      !
-       call list_insert(list_name, 'n2_paere',vid); call list_insert(list_unit,'mol N2 m-3 s-1',uid)
+       this%lid_n2_paere   = addone(itemp);  this%lid_n2_aren_reac  = addone(ireac)   !
+       call list_insert(list_name, 'n2_paere',vid); call list_insert(list_unit,'mol N2 m-3',uid)
 
-       this%lid_co2_paere  = addone(itemp);
-       this%lid_co2_aren_reac = addone(ireac); call list_insert(list_react, 'co2_aren_reac', itemp0)      !
-       call list_insert(list_name, 'co2_paere',vid); call list_insert(list_unit,'mol C m-3 s-1',uid)
+       this%lid_co2_paere  = addone(itemp);  this%lid_co2_aren_reac = addone(ireac)   !
+       call list_insert(list_name, 'co2_paere',vid); call list_insert(list_unit,'mol C m-3',uid)
 
        if(use_c13)then
-         this%lid_c13_co2_paere  = addone(itemp)
-         this%lid_c13_co2_aren_reac = addone(ireac); call list_insert(list_react, 'c13_co2_aren_reac', itemp0)      !
-         call list_insert(list_name, 'c13_co2_paere',vid); call list_insert(list_unit,'mol C13 m-3 s-1',uid)
+         this%lid_c13_co2_paere  = addone(itemp);  this%lid_c13_co2_aren_reac = addone(ireac)   !
+         call list_insert(list_name, 'c13_co2_paere',vid); call list_insert(list_unit,'mol C13 m-3',uid)
        endif
 
        if(use_c14)then
-         this%lid_c14_co2_paere  = addone(itemp);
-         this%lid_c14_co2_aren_reac = addone(ireac); call list_insert(list_react, 'c14_co2_aren_reac', itemp0)      !
-         call list_insert(list_name, 'c14_co2_paere',vid); call list_insert(list_unit,'mol C14 m-3 s-1',uid)
+         this%lid_c14_co2_paere  = addone(itemp);  this%lid_c14_co2_aren_reac = addone(ireac)   !
+         call list_insert(list_name, 'c14_co2_paere',vid); call list_insert(list_unit,'mol C14 m-3',uid)
        endif
 
-       this%lid_ch4_paere  = addone(itemp);
-       this%lid_ch4_aren_reac = addone(ireac); call list_insert(list_react, 'ch4_aren_reac', itemp0)   !
-       call list_insert(list_name, 'ch4_paere',vid); call list_insert(list_unit, 'mol C m-3 s-1',uid)
+       this%lid_ch4_paere  = addone(itemp);  this%lid_ch4_aren_reac = addone(ireac)   !
+       call list_insert(list_name, 'ch4_paere',vid); call list_insert(list_unit, 'mol C m-3',uid)
 
-       this%lid_n2o_paere  = addone(itemp);
-       this%lid_n2o_aren_reac = addone(ireac); call list_insert(list_react, 'n2o_aren_reac', itemp0)   !
-       call list_insert(list_name, 'n2o_paere',vid); call list_insert(list_unit,'mol  m-3 s-1',uid)
+       this%lid_n2o_paere  = addone(itemp);  this%lid_n2o_aren_reac = addone(ireac)   !
+       call list_insert(list_name, 'n2o_paere',vid); call list_insert(list_unit,'mol  m-3',uid)
     endif
 
     if(maxpft>0)then
@@ -504,13 +510,13 @@ implicit none
         this%lid_plant_minn_no3_pft(jj) = addone(itemp)
         postfix = num2str(jj,'(I2.2)')
         call list_insert(list_name, 'plant_minn_no3_pft_'//trim(postfix),vid)
-        call list_insert(list_unit, 'mol N m-3 s-1',uid)
+        call list_insert(list_unit, 'mol N m-3',uid)
         this%lid_plant_minn_nh4_pft(jj) = addone(itemp)
         call list_insert(list_name, 'plant_minn_nh4_pft_'//trim(postfix),vid)
-        call list_insert(list_unit,'mol N m-3 s-1',uid)
+        call list_insert(list_unit,'mol N m-3',uid)
         this%lid_plant_minp_pft(jj)     = addone(itemp)
         call list_insert(list_name, 'plant_minp_pft_'//trim(postfix),vid)
-        call list_insert(list_unit,'mol P m-3 s-1',uid)
+        call list_insert(list_unit,'mol P m-3',uid)
       enddo
     endif
 
@@ -529,12 +535,9 @@ implicit none
     call copy_name(this%nom_pools, list_pool, this%ompoolnames(1:this%nom_pools))
 
 !    call list_disp(list_name);call list_disp(list_pool);call list_disp(list_unit)
-!    call list_disp(list_react)
-
     call list_free(list_name)
     call list_free(list_pool)
     call list_free(list_unit)
-    call list_free(list_react)
   end subroutine InitPars
   !-------------------------------------------------------------------------------
 
@@ -545,7 +548,7 @@ implicit none
     !
   implicit none
     ! !ARGUMENTS:
-  class(centurybgc_index_type), intent(inout) :: this
+  class(cdombgc_index_type), intent(inout) :: this
 
 
 
@@ -554,90 +557,88 @@ implicit none
   subroutine set_primvar_reac_ids(this)
 
   implicit none
-  class(centurybgc_index_type), intent(inout)  :: this
+  class(cdombgc_index_type), intent(inout)  :: this
 
   integer :: reac
 
   associate(                                      &
-    lit1  => this%lit1                       ,    &
-    lit2  => this%lit2                       ,    &
-    lit3  => this%lit3                       ,    &
-    cwd  => this%cwd                         ,    &
-    lwd  => this%lwd                         ,    &
-    fwd  => this%fwd                         ,    &
-    som1  => this%som1                       ,    &
-    som2  => this%som2                       ,    &
-    som3  => this%som3                       ,    &
-    nelms => this%nelms                      ,    &
-    c_loc => this%c_loc                      ,    &
-    n_loc => this%n_loc                      ,    &
-    p_loc => this%p_loc                      ,    &
-    lid_nh4=> this%lid_nh4                   ,    &
-    lid_no3 => this%lid_no3                  ,    &
-    lid_o2 => this%lid_o2                    ,    &
-    lid_minp_soluble=> this%lid_minp_soluble ,    &
+    lmet  => this%lmet                          , &
+    lcel  => this%lcel                          , &
+    llig  => this%llig                          , &
+    cwd  => this%cwd                            , &
+    lwd  => this%lwd                            , &
+    fwd  => this%fwd                            , &
+    mic  => this%mic                            , &
+    pom  => this%pom                            , &
+    humus  => this%humus                        , &
+    dom  => this%dom                            , &
+    nelms => this%nelms                         , &
+    c_loc => this%c_loc                         , &
+    n_loc => this%n_loc                         , &
+    p_loc => this%p_loc                         , &
+    lid_nh4=> this%lid_nh4                      , &
+    lid_no3 => this%lid_no3                     , &
+    lid_o2 => this%lid_o2                       , &
+    lid_minp_soluble=> this%lid_minp_soluble    , &
     lid_minp_secondary => this%lid_minp_secondary &
   )
-  !reaction1, lit1 -> s1
-  reac=this%lit1_dek_reac;     this%primvarid(reac) = (lit1-1)*nelms+c_loc
-  !x is_aerobic_reac(reac) = .true.
+  !reaction 1, lmet -> dom
+  reac=this%lmet_dek_reac;     this%primvarid(reac) = (lmet-1)*nelms + c_loc
 
-  !reaction 2, lit2 -> s1
-  reac =this%lit2_dek_reac;   this%primvarid(reac) = (lit2-1)*nelms+c_loc
-  !x is_aerobic_reac(reac) = .true.
+  !reaction 2, lcel -> dom
+  reac =this%lcel_dek_reac;    this%primvarid(reac) = (lcel-1)*nelms + c_loc
 
-  !reaction 3, lit3->s2
-  reac =this%lit3_dek_reac; this%primvarid(reac) = (lit3-1)*nelms+c_loc
-  !x is_aerobic_reac(reac) = .true.
+  !reaction 3, pom->dom
+  reac = this%pom_dek_reac; this%primvarid(reac) = (pom-1)*nelms + c_loc
 
-  !reaction 4, SOM1 -> f1*SOM2 + f2*SOm3
-  reac =this%som1_dek_reac; this%primvarid(reac) = (som1-1)*nelms+c_loc
-  !x is_aerobic_reac(reac) = .true.
+  !reaction 4, humus -> dom
+  reac =this%humus_dek_reac;  this%primvarid(reac) = (humus-1)*nelms + c_loc
 
-  !reaction 5, som2->som1, som3
-  reac =this%som2_dek_reac;  this%primvarid(reac) = (som2-1)*nelms+c_loc
-  !x is_aerobic_reac(reac) = .true.
+  !reaction 5, llig->pom
+  reac =this%llig_dek_reac; this%primvarid(reac) = (llig-1)*nelms + c_loc
 
-  !reaction 6, s3-> s1
-  reac = this%som3_dek_reac;  this%primvarid(reac) = (som3-1)*nelms+c_loc
-  !x is_aerobic_reac(reac) = .true.
+  !reaction 6, dom -> mic
+  reac = this%dom_dek_reac; this%primvarid(reac) = (dom-1)*nelms + c_loc
 
-  !reaction 7, cwd -> lit1 + lit2
+  !reaction 7, mic -> f1*pom + f2*humus
+  reac =this%mic_dek_reac; this%primvarid(reac) = (mic-1)*nelms + c_loc
+
+  !reaction 8, cwd -> lmet + lcel
   reac = this%cwd_dek_reac; this%primvarid(reac) = (cwd-1)*nelms+c_loc
-  !x is_aerobic_reac(reac) = .true.
 
+  !reaction 9, fwd -> lmet + lcel
   reac = this%fwd_dek_reac; this%primvarid(reac) = (fwd-1)*nelms+c_loc
 
+  !reaction 10, lwd -> lmet + lcel
   reac = this%lwd_dek_reac; this%primvarid(reac) = (lwd-1)*nelms+c_loc
-  !reaction 8, nitrification
-  reac = this%lid_nh4_nit_reac; this%primvarid(reac) = this%lid_nh4
-  !x is_aerobic_reac(reac) = .true.
 
-  !reaction 9, denitrification
+  !reaction 11, nitrification
+  reac = this%lid_nh4_nit_reac; this%primvarid(reac) = this%lid_nh4
+
+  !reaction 12, denitrification
   reac = this%lid_no3_den_reac; this%primvarid(reac) = lid_no3
 
-  !reaction 10, inorganic P non-equilibrium adsorption
+  !reaction 13, inorganic P non-equilibrium adsorption
   !P_solution -> p_secondary
   reac = this%lid_minp_soluble_to_secp_reac; this%primvarid(reac) = lid_minp_soluble
 
-  !reaction 11, inorganic P non-equilibrium desorption
+  !reaction 14, inorganic P non-equilibrium desorption
   ! p_secondary -> P_solution
   reac = this%lid_minp_secondary_to_sol_occ_reac; this%primvarid(reac) = lid_minp_secondary
 
-  !reaction 12, plant mineral nitrogen nh4 uptake
+  !reaction 15, plant mineral nitrogen nh4 uptake
   reac = this%lid_plant_minn_nh4_up_reac; this%primvarid(reac) = lid_nh4
 
-  !reaction 13, plant mineral nitrogen no3 uptake
+  !reaction 16, plant mineral nitrogen no3 uptake
   reac = this%lid_plant_minn_no3_up_reac; this%primvarid(reac) = lid_no3
 
-  !reaction 14, plant mineral phosphorus uptake
+  !reaction 17, plant mineral phosphorus uptake
   reac = this%lid_plant_minp_up_reac; this%primvarid(reac) = lid_minp_soluble
 
-  !reaction 15, autotrophic respiration, ar + o2 -> co2
-  !x reac = lid_ar_rt_reac; is_aerobic_reac(reac) = .true.
+  !reaction 18, autotrophic respiration, ar + o2 -> co2
 
-  !reaction 15, o2 transport through arenchyma
+  !reaction 19, o2 transport through arenchyma
   reac = this%lid_o2_aren_reac; this%primvarid(reac) = lid_o2
   end associate
   end subroutine set_primvar_reac_ids
-end module BgcCentCnpIndexType
+end module cdomBGCIndexType

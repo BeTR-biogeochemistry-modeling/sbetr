@@ -1,4 +1,4 @@
-module BgccdomCnpNitDenType
+module ecacnpBGCNitDenType
 
 !
 ! do nitrification denitrification based on century's methods
@@ -42,10 +42,10 @@ implicit none
 
   !-------------------------------------------------------------------------------
   subroutine init(this, biogeo_con)
-  use cdomParaType, only : cdomPara_type
+  use ecacnpParaType, only : ecacnp_para_type
   implicit none
   class(century_nitden_type) , intent(inout) :: this
-  type(cdomPara_type)       , intent(in) :: biogeo_con
+  type(ecacnp_para_type)       , intent(in) :: biogeo_con
 
   !do memory allocation thing
 
@@ -53,10 +53,10 @@ implicit none
 
   !-------------------------------------------------------------------------------
   subroutine UpdateParas(this, biogeo_con)
-  use cdomParaType, only : cdomPara_type
+  use ecacnpParaType, only : ecacnp_para_type
   implicit none
   class(century_nitden_type), intent(inout) :: this
-  type(cdomPara_type),intent(in) :: biogeo_con
+  type(ecacnp_para_type),intent(in) :: biogeo_con
 
   this%organic_max  = biogeo_con%organic_max
 
@@ -66,9 +66,9 @@ implicit none
   this%rij_kro_gamma = biogeo_con%rij_kro_gamma
   this%rij_kro_delta =  biogeo_con%rij_kro_delta
   this%surface_tension_water = biogeo_con%surface_tension_water
-  this%k_nitr_max    = biogeo_con%k_nitr_max
   this%vmax_den = biogeo_con%vmax_den
   this%vmax_nit = biogeo_con%vmax_nit
+  this%k_nitr_max    = biogeo_con%k_nitr_max
   this%d_con_g(1,:)=(/0.1875_r8, 0.0013_r8/) ! CH4
   this%d_con_g(2,:)=(/0.1759_r8, 0.00117_r8/) ! O2
   this%d_con_g(3,:)=(/0.1325_r8, 0.0009_r8/) ! CO2
@@ -159,10 +159,9 @@ implicit none
 
       ! calculate anoxic fraction of soils
       ! use rijtema and kroess model after Riley et al., 2000
-      ! caclulated r_psi as a function of psi, the following
-      ! corrects an error from ELM in applying the Young-Laplace equation
-      r_min = 2._r8 * surface_tension_water / (1.e6_r8 * abs(soilpsi))
-      r_max = 2._r8 * surface_tension_water / (1.e6_r8 * 0.1_r8)
+      ! caclulated r_psi as a function of psi
+      r_min = 2._r8 * surface_tension_water / (rho_w * grav * abs(soilpsi))
+      r_max = 2._r8 * surface_tension_water / (rho_w * grav * 0.1_r8)
       r_psi = sqrt(r_min * r_max)
       ratio_diffusivity_water_gas = &
          (this%d_con_g(2,1) + this%d_con_g(2,2)*temp ) * 1.e-4_r8 / &
@@ -187,7 +186,7 @@ implicit none
     use betr_varcon        , only : rpi => brpi, secspday => bsecspday
     use MathfuncMod        , only : safe_div
     use bshr_const_mod     , only : SHR_CONST_TKFRZ
-    use BgccdomCnpDecompType     , only : Decompcdom_type
+    use ecacnpBGCDecompType     , only : DecompCent_type
     use tracer_varcon      , only : catomw, natomw
     use JarBgcForcType , only : JarBGC_forc_type
     implicit none
@@ -199,7 +198,7 @@ implicit none
     real(r8)                   , intent(in)  :: anaerobic_frac        !fraction of anaerobic soil
     real(r8)                   , intent(in)  :: smin_nh4
     real(r8)                   , intent(in)  :: smin_no3              !soil no3 concentration [mol N/m3]
-    type(Decompcdom_type)      , intent(in)  :: decompkf_eca
+    type(DecompCent_type)      , intent(in)  :: decompkf_eca
     real(r8)                   , intent(in)  :: diffus
     real(r8)                   , intent(out) :: n2_n2o_ratio_denit    !ratio of n2 to n2o in denitrification
     real(r8)                   , intent(out) :: pot_f_nit             !nitrification rate of nh4
@@ -312,12 +311,12 @@ implicit none
 
   use betr_varcon        , only : rpi => brpi, secspday => bsecspday
   use JarBgcForcType , only : JarBGC_forc_type
-  use BgccdomCnpDecompType     , only : Decompcdom_type
+  use ecacnpBGCDecompType     , only : DecompCent_type
   implicit none
   class(century_nitden_type) , intent(inout) :: this
   real(r8)                   , intent(in) :: smin_nh4
   type(JarBGC_forc_type) , intent(in) :: bgc_forc
-  type(Decompcdom_type)      , intent(in) :: decompkf_eca
+  type(DecompCent_type)      , intent(in) :: decompkf_eca
   real(r8)                   , intent(out) :: pot_f_nit_mol_per_sec
 
   !local variables
@@ -357,29 +356,29 @@ implicit none
   end subroutine calc_pot_nitr
 
   !---------------------------------------------------------------------------------
-  subroutine calc_cascade_matrix(this, cdombgc_index, n2_n2o_ratio_denit, cascade_matrix)
+  subroutine calc_cascade_matrix(this, centurybgc_index, n2_n2o_ratio_denit, cascade_matrix)
 
-  use BgccdomCnpIndexType, only : cdombgc_index_type
+  use ecacnpBGCIndexType, only : centurybgc_index_type
   implicit none
   class(century_nitden_type)  , intent(inout) :: this
-  type(cdombgc_index_type) , intent(in) :: cdombgc_index
+  type(centurybgc_index_type) , intent(in) :: centurybgc_index
   real(r8)                    , intent(in) :: n2_n2o_ratio_denit
-  real(r8)                    , intent(inout)    :: cascade_matrix(cdombgc_index%nstvars, cdombgc_index%nreactions)
+  real(r8)                    , intent(inout)    :: cascade_matrix(centurybgc_index%nstvars, centurybgc_index%nreactions)
 
   integer :: reac
 
   associate(                                                &
-    primvarid    => cdombgc_index%primvarid            , & !
-    lid_nh4   => cdombgc_index%lid_nh4                 , & !
-    lid_o2   => cdombgc_index%lid_o2                   , & !
-    lid_n2   => cdombgc_index%lid_n2                   , & !
-    lid_n2o   => cdombgc_index%lid_n2o                 , & !
-    lid_no3   => cdombgc_index%lid_no3                 , & !
-    lid_no3_den => cdombgc_index%lid_no3_den           , &
-    lid_nh4_nit_reac => cdombgc_index%lid_nh4_nit_reac , & !
-    lid_no3_den_reac => cdombgc_index%lid_no3_den_reac , & !
-    lid_nh4_nit        => cdombgc_index%lid_nh4_nit    , & !
-    lid_n2o_nit=> cdombgc_index%lid_n2o_nit              & !
+    primvarid    => centurybgc_index%primvarid            , & !
+    lid_nh4   => centurybgc_index%lid_nh4                 , & !
+    lid_o2   => centurybgc_index%lid_o2                   , & !
+    lid_n2   => centurybgc_index%lid_n2                   , & !
+    lid_n2o   => centurybgc_index%lid_n2o                 , & !
+    lid_no3   => centurybgc_index%lid_no3                 , & !
+    lid_no3_den => centurybgc_index%lid_no3_den           , &
+    lid_nh4_nit_reac => centurybgc_index%lid_nh4_nit_reac , & !
+    lid_no3_den_reac => centurybgc_index%lid_no3_den_reac , & !
+    lid_nh4_nit        => centurybgc_index%lid_nh4_nit    , & !
+    lid_n2o_nit=> centurybgc_index%lid_n2o_nit              & !
 
   )
   !---------------------------------------------------------------------------------
@@ -424,19 +423,19 @@ implicit none
 
   end function get_nit_o2_scef
   !---------------------------------------------------------------------------------
-  subroutine run_nitden(this, cdombgc_index,bgc_forc, decompkf_eca,&
+  subroutine run_nitden(this, centurybgc_index,bgc_forc, decompkf_eca,&
     smin_nh4, smin_no3, o2b, o2_decomp_depth, pot_f_nit_mol_per_sec, pot_co2_hr, &
     pot_f_nit, pot_f_denit, cascade_matrix)
   !this returns the vamx for nitrification and denitrification
   !also return is the stoichiometry matrix for nitden processes
-  use BgccdomCnpDecompType      , only : Decompcdom_type
+  use ecacnpBGCDecompType      , only : DecompCent_type
   use JarBgcForcType  , only : JarBGC_forc_type
-  use BgccdomCnpIndexType , only : cdombgc_index_type
+  use ecacnpBGCIndexType , only : centurybgc_index_type
   implicit none
   class(century_nitden_type)  , intent(inout) :: this
-  type(cdombgc_index_type) , intent(in) :: cdombgc_index
+  type(centurybgc_index_type) , intent(in) :: centurybgc_index
   type(JarBGC_forc_type)  , intent(in) :: bgc_forc
-  type(Decompcdom_type)       , intent(in) :: decompkf_eca
+  type(DecompCent_type)       , intent(in) :: decompkf_eca
   real(r8)                    , intent(in) :: o2b
   real(r8)                    , intent(in) :: o2_decomp_depth
   real(r8)                    , intent(in) :: smin_nh4  ! mol Nh4/m3
@@ -445,7 +444,7 @@ implicit none
   real(r8)                    , intent(in) :: pot_co2_hr  ! potential co2 emission from heterotrophic respiration
   real(r8)                    , intent(out) :: pot_f_nit  ! mol N /s
   real(r8)                    , intent(out) :: pot_f_denit  ! mol N/s
-  real(r8)                    , intent(inout) :: cascade_matrix(cdombgc_index%nstvars, cdombgc_index%nreactions)
+  real(r8)                    , intent(inout) :: cascade_matrix(centurybgc_index%nstvars, centurybgc_index%nreactions)
 
   !local variables
   real(r8) :: n2_n2o_ratio_denit
@@ -460,7 +459,7 @@ implicit none
       n2_n2o_ratio_denit, pot_f_nit, pot_f_denit)
 
   !calcualte cascade matrix for nitrification denitrification
-  call this%calc_cascade_matrix(cdombgc_index, n2_n2o_ratio_denit, cascade_matrix)
+  call this%calc_cascade_matrix(centurybgc_index, n2_n2o_ratio_denit, cascade_matrix)
   end subroutine run_nitden
 
-end module BgccdomCnpNitDenType
+end module ecacnpBGCNitDenType

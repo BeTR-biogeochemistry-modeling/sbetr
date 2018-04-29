@@ -2,11 +2,12 @@
   jarmodel_name = 'ecacnp'
   phosphorus_stress=.false.
   nitrogen_stress=.true.
+  case_id='exp2'
 /
 
 &betr_time
   delta_time=3600.
-  stop_n = 20
+  stop_n = 1
   stop_option='nyears'
 /
 

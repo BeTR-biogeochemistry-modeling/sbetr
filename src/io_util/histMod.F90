@@ -55,7 +55,7 @@ implicit none
 
 contains
 
-  subroutine histrst(this, gfname, rwflag)
+  subroutine histrst(this, gfname, rwflag, yymmddhhss)
 
   !DESCRIPTION
   !writes file for restart
@@ -68,13 +68,13 @@ contains
   class(histf_type), intent(inout):: this
   character(len=*), intent(in) :: gfname
   character(len=*), intent(in) :: rwflag
-
+  character(len=*), intent(in) :: yymmddhhss
   character(len=128) :: fname
   type(file_desc_t) :: ncf
   real(r8), pointer :: ptr1d(:)
   integer :: recordDimID
 
-  write(fname,'(A)')trim(gfname)//'.hr.nc'
+  write(fname,'(A)')trim(gfname)//'.hr.'//trim(yymmddhhss)//'.nc'
   if(trim(rwflag)=='read')then
     call ncd_pio_openfile(ncf, fname, ncd_nowrite)
     ptr1d => this%yvals

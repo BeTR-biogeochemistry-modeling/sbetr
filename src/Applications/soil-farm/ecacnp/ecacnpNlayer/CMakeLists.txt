@@ -1,6 +1,6 @@
 set(ECACNPNLAYER_SOURCES
-  BgcReactionsCentECACnpType.F90
-  PlantSoilBgcCnpType.F90
+  ecacnpBGCReactionsType.F90
+  ecacnpPlantSoilBGCType.F90
 )
 
   include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)

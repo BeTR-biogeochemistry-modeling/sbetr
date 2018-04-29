@@ -1,4 +1,4 @@
-module BgcReactionscdomECACnpType
+module cdomBGCReactionsType
 
 #include "bshr_assert.h"
 
@@ -37,15 +37,15 @@ module BgcReactionscdomECACnpType
   use bshr_kind_mod          , only : r8 => shr_kind_r8
   use bshr_infnan_mod        , only : nan => shr_infnan_nan, assignment(=)
   use BeTR_decompMod         , only : bounds_type  => betr_bounds_type
-  use BGCReactionsMod       , only : bgc_reaction_type
-  use betr_varcon           , only : spval => bspval, ispval => bispval
-  use tracer_varcon         , only : bndcond_as_conc, bndcond_as_flux
-  use BgccdomCnpType        , only : cdombgceca_type
-  use JarBgcForcType        , only : JarBGC_forc_type
-  use BetrStatusType        , only : betr_status_type
-  use BgccdomCnpIndexType   , only : cdombgc_index_type
-  use cdomParaType          , only : cdom_para
-  use BetrStatusType        , only : betr_status_type
+  use BGCReactionsMod        , only : bgc_reaction_type
+  use betr_varcon            , only : spval => bspval, ispval => bispval
+  use tracer_varcon          , only : bndcond_as_conc, bndcond_as_flux
+  use cdomBGCType            , only : cdombgceca_type
+  use JarBgcForcType         , only : JarBGC_forc_type
+  use BetrStatusType         , only : betr_status_type
+  use cdomBGCIndexType       , only : cdombgc_index_type
+  use cdomParaType           , only : cdom_para
+  use BetrStatusType         , only : betr_status_type
   implicit none
 
   save
@@ -58,7 +58,7 @@ module BgcReactionscdomECACnpType
   logical :: ldebug
   !integer, private :: lpr
   type, public, extends(bgc_reaction_type) :: &
-    bgc_reaction_cdom_ecacnp_type
+    cdom_bgc_reaction_type
      private
     type(cdombgceca_type), pointer :: cdomeca(:,:)
     type(JarBGC_forc_type), pointer :: centuryforc(:,:)
@@ -89,23 +89,23 @@ module BgcReactionscdomECACnpType
     procedure, private :: retrieve_output
     procedure, private :: rm_ext_output
     procedure, private :: precision_filter
-  end type bgc_reaction_cdom_ecacnp_type
+  end type cdom_bgc_reaction_type
 
-  interface bgc_reaction_cdom_ecacnp_type
+  interface cdom_bgc_reaction_type
      module procedure constructor
-  end interface bgc_reaction_cdom_ecacnp_type
+  end interface cdom_bgc_reaction_type
 
 contains
 
 
   !-------------------------------------------------------------------------------
-  type(bgc_reaction_cdom_ecacnp_type) function constructor()
+  type(cdom_bgc_reaction_type) function constructor()
     !
     ! ! DESCRIPTION:
     !
-    ! create an object of type bgc_reaction_cdom_ecacnp_type.
+    ! create an object of type cdom_bgc_reaction_type.
     ! Right now it is purposely empty
-   type(bgc_reaction_cdom_ecacnp_type), allocatable :: bgc
+   type(cdom_bgc_reaction_type), allocatable :: bgc
 
    allocate(bgc)
    constructor = bgc
@@ -114,7 +114,7 @@ contains
   !-------------------------------------------------------------------------------
   subroutine UpdateParas(this, bounds, lbj, ubj, bstatus)
   implicit none
-  class(bgc_reaction_cdom_ecacnp_type), intent(inout) :: this
+  class(cdom_bgc_reaction_type), intent(inout) :: this
   type(bounds_type)                    , intent(in)    :: bounds
   integer                              , intent(in)    :: lbj, ubj        ! lower and upper bounds, make sure they are > 0
   type(betr_status_type)               , intent(out)   :: bstatus
@@ -137,7 +137,7 @@ contains
     use BeTRTracerType              , only : betrtracer_type
 
     ! !ARGUMENTS:
-    class(bgc_reaction_cdom_ecacnp_type), intent(inout) :: this
+    class(cdom_bgc_reaction_type), intent(inout) :: this
     type(bounds_type)               , intent(in) :: bounds
     type(BeTRtracer_type )          ,  intent(in) :: betrtracer_vars
     type(tracerboundarycond_type)   ,  intent(in) :: tracerboundarycond_vars
@@ -173,7 +173,7 @@ contains
   use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
   use tracer_varcon          , only : patomw
   implicit none
-  class(bgc_reaction_cdom_ecacnp_type) , intent(inout)    :: this      !
+  class(cdom_bgc_reaction_type) , intent(inout)    :: this      !
   type(bounds_type)                       , intent(in) :: bounds
   integer                                 , intent(in) :: lbj, ubj
   type(betr_biogeophys_input_type)        , intent(inout) :: biophysforc
@@ -352,7 +352,7 @@ contains
   use tracerstatetype                  , only : tracerstate_type
   implicit none
   ! !ARGUMENTS:
-  class(bgc_reaction_cdom_ecacnp_type)  , intent(inout)    :: this
+  class(cdom_bgc_reaction_type)  , intent(inout)    :: this
   type(bounds_type)                        , intent(in) :: bounds
   integer                                  , intent(in) :: lbj, ubj
   type(betr_biogeophys_input_type)        , intent(inout) :: biophysforc
@@ -379,7 +379,7 @@ contains
   use PlantNutKineticsMod, only : PlantNutKinetics_type
 
   ! !ARGUMENTS:
-  class(bgc_reaction_cdom_ecacnp_type)         , intent(inout)    :: this                       !
+  class(cdom_bgc_reaction_type)         , intent(inout)    :: this                       !
   class(PlantNutKinetics_type), intent(in) :: plantNutkinetics
   integer, intent(in) :: lbj, ubj
   integer, intent(in) :: nactpft  !number of active pfts
@@ -430,7 +430,7 @@ contains
     use tracer_varcon                    , only : fix_ip
     implicit none
     ! !ARGUMENTS:
-    class(bgc_reaction_cdom_ecacnp_type) , intent(inout)    :: this
+    class(cdom_bgc_reaction_type) , intent(inout)    :: this
     type(bounds_type)                    , intent(in)    :: bounds
     integer                              , intent(in)    :: lbj, ubj        ! lower and upper bounds, make sure they are > 0
     type(BeTRtracer_type )               , intent(inout) :: betrtracer_vars !
@@ -1078,7 +1078,7 @@ contains
     use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
     implicit none
     ! !ARGUMENTS:
-    class(bgc_reaction_cdom_ecacnp_type) , intent(inout)    :: this
+    class(cdom_bgc_reaction_type) , intent(inout)    :: this
     type(bounds_type)                    , intent(in)    :: bounds
     integer                              , intent(in)    :: num_soilc               ! number of columns in column filter
     integer                              , intent(in)    :: filter_soilc(:)         ! column filter
@@ -1166,11 +1166,11 @@ contains
     use betr_columnType          , only : betr_column_type
     use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
     use BeTR_biogeoStateType     , only : betr_biogeo_state_type
-    use PlantSoilBgccdomCnpType      , only : plant_soilbgc_cdomcnp_type
+    use cdomPlantSoilBGCType      , only : cdom_plant_soilbgc_type
     use betr_ctrl                , only : betr_spinup_state
     implicit none
     ! !ARGUMENTS
-    class(bgc_reaction_cdom_ecacnp_type) , intent(inout) :: this
+    class(cdom_bgc_reaction_type) , intent(inout) :: this
     type(bounds_type)                    , intent(in) :: bounds                        ! bounds
     type(betr_column_type)               , intent(in) :: col
     integer                              , intent(in) :: num_soilc                     ! number of columns in column filter
@@ -1214,7 +1214,7 @@ contains
         biophysforc, plant_soilbgc, betrtracer_vars, tracercoeff_vars, tracerstate_vars,betr_status)
 
     select type(plant_soilbgc)
-    type is(plant_soilbgc_cdomcnp_type)
+    type is(cdom_plant_soilbgc_type)
       plant_soilbgc%plant_minn_active_yield_flx_col(:) = 0._r8
       plant_soilbgc%plant_minp_active_yield_flx_col(:) = 0._r8
     end select
@@ -1246,7 +1246,7 @@ contains
            tracerstate_vars, plant_soilbgc, biogeo_flux)
 
         select type(plant_soilbgc)
-        type is(plant_soilbgc_cdomcnp_type)
+        type is(cdom_plant_soilbgc_type)
           plant_soilbgc%plant_minn_active_yield_flx_col(c)=plant_soilbgc%plant_minn_active_yield_flx_col(c) + &
              (plant_soilbgc%plant_minn_no3_active_yield_flx_vr_col(c,j) + &
               plant_soilbgc%plant_minn_nh4_active_yield_flx_vr_col(c,j))*col%dz(c,j)
@@ -1260,7 +1260,7 @@ contains
     deallocate(ystatesf)
     if(betrtracer_vars%debug)then
 !      select type(plant_soilbgc)
-!      type is(plant_soilbgc_cdomcnp_type)
+!      type is(cdom_plant_soilbgc_type)
 !        write(*,*)'sminn act plant uptake',plant_soilbgc%plant_minn_active_yield_flx_col(bounds%begc:bounds%endc)
 !        write(*,*)'sminp act plant uptake',plant_soilbgc%plant_minp_active_yield_flx_col(bounds%begc:bounds%endc)
 !      end select
@@ -1275,12 +1275,12 @@ contains
   ! DESCRIPTION
   ! apply om loss through fire
 
-  use BgccdomCnpIndexType       , only : cdombgc_index_type
+  use cdomBGCIndexType       , only : cdombgc_index_type
   use JarBgcForcType            , only : JarBGC_forc_type
   use tracer_varcon             , only : catomw, natomw, patomw, c13atomw, c14atomw
   use BeTR_biogeoFluxType       , only : betr_biogeo_flux_type
   implicit none
-  class(bgc_reaction_cdom_ecacnp_type) , intent(inout) :: this
+  class(cdom_bgc_reaction_type) , intent(inout) :: this
   integer                     , intent(in) :: c, j
   real(r8)                    , intent(in) :: dtime
   integer                     , intent(in) :: nstates
@@ -1403,7 +1403,7 @@ contains
     use BeTRTracerType        , only : betrtracer_type
     use BetrStatusType        , only : betr_status_type
     ! !ARGUMENTS:
-    class(bgc_reaction_cdom_ecacnp_type), intent(inout)    :: this
+    class(cdom_bgc_reaction_type), intent(inout)    :: this
     type(bounds_type),                    intent(in)    :: bounds
     integer,                              intent(in)    :: lbj, ubj
     integer,                              intent(in)    :: jtops(bounds%begc: )        ! top label of each column
@@ -1432,7 +1432,7 @@ contains
     use BeTRTracerType   , only : BeTRTracer_Type
 
     ! !ARGUMENTS:
-    class(bgc_reaction_cdom_ecacnp_type) , intent(inout)    :: this
+    class(cdom_bgc_reaction_type) , intent(inout)    :: this
     character(len=*)                  , intent(in)  :: namelist_buffer
     type(BeTRTracer_Type)                , intent(inout) :: betrtracer_vars
 
@@ -1459,7 +1459,7 @@ contains
     use UnitConverMod     , only : ppm2molv
     implicit none
     ! !ARGUMENTS:
-    class(bgc_reaction_cdom_ecacnp_type) , intent(inout)    :: this
+    class(cdom_bgc_reaction_type) , intent(inout)    :: this
     type(betr_bounds_type)           , intent(in)    :: bounds
     type(betr_column_type)           , intent(in)    :: col
     type(BeTRTracer_Type)            , intent(in)    :: betrtracer_vars
@@ -1542,7 +1542,7 @@ contains
   use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
   use tracer_varcon            , only : natomw, patomw, catomw
   implicit none
-  class(bgc_reaction_cdom_ecacnp_type) , intent(inout)    :: this !!
+  class(cdom_bgc_reaction_type) , intent(inout)    :: this !!
   integer                          , intent(in)    :: num_soilc                   ! number of columns in column filter
   integer                          , intent(in)    :: filter_soilc(:)             ! column filter
   type(betrtracer_type)            , intent(in)    :: betrtracer_vars             ! betr configuration information
@@ -1610,11 +1610,11 @@ contains
   use tracercoeffType          , only : tracercoeff_type
   use betr_columnType          , only : betr_column_type
   use BetrTracerType           , only : betrtracer_type
-  use PlantSoilBgccdomCnpType      , only : plant_soilbgc_cdomcnp_type
+  use cdomPlantSoilBGCType      , only : cdom_plant_soilbgc_type
   use MathfuncMod              , only : fpmax
   use betr_varcon              , only : grav => bgrav
   implicit none
-  class(bgc_reaction_cdom_ecacnp_type) , intent(inout)    :: this
+  class(cdom_bgc_reaction_type) , intent(inout)    :: this
   type(bounds_type)                    , intent(in) :: bounds                         ! bounds
   type(betr_column_type)               , intent(in) :: col
   integer                              , intent(in) :: jtops(bounds%begc: ) ! top index of each column
@@ -1850,7 +1850,7 @@ contains
   enddo
 
   select type(plant_soilbgc)
-  type is(plant_soilbgc_cdomcnp_type)
+  type is(cdom_plant_soilbgc_type)
   do j = lbj, ubj
     do fc = 1, num_soilc
       c = filter_soilc(fc)
@@ -1872,7 +1872,7 @@ contains
   ! the P amount may be larger than N amount, causing the code to crash.
   ! This fix set C, N and P to zero when C is below a threshold.
   implicit none
-  class(bgc_reaction_cdom_ecacnp_type) , intent(inout)    :: this
+  class(cdom_bgc_reaction_type) , intent(inout)    :: this
   integer                              , intent(in) :: nstates
   real(r8)                             , intent(inout) :: ystatesf(nstates)
 
@@ -1927,10 +1927,10 @@ contains
   use tracerstatetype          , only : tracerstate_type
   use betr_ctrl                , only : betr_spinup_state
   use PlantSoilBGCMod          , only : plant_soilbgc_type
-  use PlantSoilBgccdomCnpType      , only : plant_soilbgc_cdomcnp_type
+  use cdomPlantSoilBGCType      , only : cdom_plant_soilbgc_type
   use tracer_varcon            , only : catomw, natomw, patomw, fix_ip
   implicit none
-  class(bgc_reaction_cdom_ecacnp_type) , intent(inout)    :: this
+  class(cdom_bgc_reaction_type) , intent(inout)    :: this
   integer                              , intent(in) :: c, j
   integer                              , intent(in) :: nstates
   real(r8)                             , intent(in) :: ystates0(nstates)
@@ -2225,7 +2225,7 @@ contains
          ystates0(this%cdombgc_index%lid_n2o_nit))*natomw/dtime
 
   select type(plant_soilbgc)
-  type is(plant_soilbgc_cdomcnp_type)
+  type is(cdom_plant_soilbgc_type)
     do p = 1, this%nactpft
       plant_soilbgc%plant_minn_no3_active_yield_flx_vr_patch(p,j) = &
           (ystatesf(this%cdombgc_index%lid_plant_minn_no3_pft(p)) - &
@@ -2269,7 +2269,7 @@ contains
    use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
    use tracer_varcon            , only : natomw, patomw
    implicit none
-   class(bgc_reaction_cdom_ecacnp_type) , intent(inout)    :: this
+   class(cdom_bgc_reaction_type) , intent(inout)    :: this
    type(betr_bounds_type)           , intent(in)    :: bounds                      ! bounds
    integer                          , intent(in)    :: num_soilc                   ! number of columns in column filter
    integer                          , intent(in)    :: filter_soilc(:)             ! column filter
@@ -2291,7 +2291,7 @@ contains
 
    ! !ARGUMENTS:
    implicit none
-   class(bgc_reaction_cdom_ecacnp_type) , intent(inout)    :: this !
+   class(cdom_bgc_reaction_type) , intent(inout)    :: this !
    type(betr_bounds_type)               , intent(in) :: bounds                      ! bounds
    integer                              , intent(in) :: num_soilc                   ! number of columns in column filter
    integer                              , intent(in) :: filter_soilc(:)             ! column filter
@@ -2402,7 +2402,7 @@ contains
    use BeTR_biogeoStateType     , only : betr_biogeo_state_type
    use BeTR_decompMod           , only : betr_bounds_type
    implicit none
-   class(bgc_reaction_cdom_ecacnp_type) , intent(inout)    :: this
+   class(cdom_bgc_reaction_type) , intent(inout)    :: this
    type(betr_bounds_type)               , intent(in)  :: bounds                      ! bounds
    integer                              , intent(in) :: lbj, ubj
    integer                              , intent(in) :: jtops(bounds%begc: )
@@ -2622,4 +2622,4 @@ contains
    end subroutine retrieve_biostates
 
 
-end module BgcReactionscdomECACnpType
+end module cdomBGCReactionsType

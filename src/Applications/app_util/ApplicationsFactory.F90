@@ -58,8 +58,8 @@ contains
     use betr_ctrl       , only : iulog  => biulog
     use betr_constants  , only : betr_errmsg_len
     use BetrStatusType  , only : betr_status_type
-    use BGCReactionsCentECACnpType, only : bgc_reaction_CENTURY_ECACNP_type
-    use BGCReactionscdomECACnpType, only : bgc_reaction_cdom_ecacnp_type
+    use ecacnpBGCReactionsType, only : ecacnp_bgc_reaction_type
+    use cdomBGCReactionsType, only : cdom_bgc_reaction_type
     use SimicBGCReactionsType, only : simic_bgc_reaction_type
     implicit none
     ! !ARGUMENTS:
@@ -74,10 +74,10 @@ contains
     select case(trim(method))
     case ("ecacnp")
        asoibgc=.true.
-       allocate(bgc_reaction, source=bgc_reaction_CENTURY_ECACNP_type())
+       allocate(bgc_reaction, source=ecacnp_bgc_reaction_type())
     case ("cdom_ecacnp")
        asoibgc=.true.
-       allocate(bgc_reaction, source=bgc_reaction_cdom_ecacnp_type())
+       allocate(bgc_reaction, source=cdom_bgc_reaction_type())
     case ("simic")
        asoibgc=.true.
        allocate(bgc_reaction, source=simic_bgc_reaction_type())
@@ -99,8 +99,8 @@ contains
   use betr_ctrl       , only : iulog  => biulog
   use betr_constants  , only : betr_errmsg_len
   use BetrStatusType  , only : betr_status_type
-  use PlantSoilBgcCnpType, only : plant_soilbgc_cnp_type
-  use PlantSoilBgccdomCnpType, only : plant_soilbgc_cdomcnp_type
+  use ecacnpPlantSoilBGCType, only : ecacnp_plant_soilbgc_type
+  use cdomPlantSoilBGCType, only : cdom_plant_soilbgc_type
   use SimicPlantSoilBGCType , only : simic_plant_soilbgc_type
   implicit none
   ! !ARGUMENTS:
@@ -116,9 +116,9 @@ contains
 
   select case(trim(method))
   case ("ecacnp")
-     allocate(plant_soilbgc, source=plant_soilbgc_cnp_type())
+     allocate(plant_soilbgc, source=ecacnp_plant_soilbgc_type())
   case ("cdom_ecacnp")
-     allocate(plant_soilbgc, source=plant_soilbgc_cdomcnp_type())
+     allocate(plant_soilbgc, source=cdom_plant_soilbgc_type())
   case ("simic")
      allocate(plant_soilbgc, source=simic_plant_soilbgc_type())
   case default
@@ -135,7 +135,7 @@ contains
   !
   ! DESCRIPTION
   ! read in the parameters for specified bgc implementation
-  use CentParaType   , only : cent_para
+  use ecacnpParaType   , only : cent_para
   use cdomParaType   , only : cdom_para
   use simicParaType  , only : simic_para
   use tracer_varcon  , only : reaction_method
@@ -165,7 +165,7 @@ contains
   !
   ! DESCRIPTION
   ! read in the parameters for specified bgc implementation
-  use CentParaType   , only : cent_para
+  use ecacnpParaType   , only : cent_para
   use cdomParaType   , only : cdom_para
   use simicParaType  , only : simic_para
   use betr_constants , only : betr_namelist_buffer_size_ext
@@ -199,7 +199,7 @@ contains
   !-------------------------------------------------------------------------------
   subroutine AppSetSpinup()
 
-  use CentParaType  , only : cent_para
+  use ecacnpParaType  , only : cent_para
   use cdomParaType  , only : cdom_para
   use tracer_varcon  , only : reaction_method
   implicit none

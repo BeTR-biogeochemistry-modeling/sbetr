@@ -1,5 +1,5 @@
 set(CENTPARA_SOURCES
- CentParaType.F90
+ ecacnpParaType.F90
 )
 
 include_directories(${CMAKE_BINARY_DIR}/src/shr)

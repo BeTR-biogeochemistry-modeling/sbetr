@@ -1,4 +1,4 @@
-module BgcCentCnpDecompType
+module ecacnpBGCDecompType
 
 !
 ! DESCRIPTIONS
@@ -40,10 +40,10 @@ implicit none
  !------------------------------------------------------------------------
  subroutine Init(this, biogeo_con)
 
-  use CentParaType, only : CentPara_type
+  use ecacnpParaType, only : ecacnp_para_type
   implicit none
   class(DecompCent_type), intent(inout) :: this
-  type(CentPara_type),intent(in) :: biogeo_con
+  type(ecacnp_para_type),intent(in) :: biogeo_con
 
   call this%InitAllocate ()
 
@@ -85,10 +85,10 @@ implicit none
   !-----------------------------------------------------------------------
   subroutine UpdateParas(this, biogeo_con)
 
-  use CentParaType, only : CentPara_type
+  use ecacnpParaType, only : ecacnp_para_type
   implicit none
   class(DecompCent_type) , intent(inout) :: this
-  type(CentPara_type)   , intent(in) :: biogeo_con
+  type(ecacnp_para_type)   , intent(in) :: biogeo_con
 
   ! set "Q10" parameter
   this%Q10 = biogeo_con%Q10
@@ -184,4 +184,4 @@ implicit none
   ans = 11.75_r8 +(29.7_r8 / SHR_CONST_PI) * atan( SHR_CONST_PI * 0.031_r8  * ( t1 - 15.4_r8 ))
 
   end function catanf
-end module BgcCentCnpDecompType
+end module ecacnpBGCDecompType

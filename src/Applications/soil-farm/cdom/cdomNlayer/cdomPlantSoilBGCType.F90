@@ -1,4 +1,4 @@
-module PlantSoilBgcCnpType
+module cdomPlantSoilBGCType
 
 #include "bshr_assert.h"
   use PlantSoilBGCMod , only : plant_soilbgc_type
@@ -11,10 +11,10 @@ module PlantSoilBgcCnpType
 
   character(len=*), private, parameter :: filename = &
        __FILE__
-  public :: plant_soilbgc_cnp_type
+  public :: cdom_plant_soilbgc_type
 
   type, extends(plant_soilbgc_type) :: &
-    plant_soilbgc_cnp_type
+    cdom_plant_soilbgc_type
 
     real(r8),pointer :: rt_vr_col(:,:) => null()
     real(r8),pointer :: plant_root_exudates_c(:) => null()
@@ -42,21 +42,21 @@ module PlantSoilBgcCnpType
     procedure :: lsm_betr_plant_soilbgc_send
     procedure, private :: set_profiles_vars
     procedure, private :: InitAllocate
-  end type plant_soilbgc_cnp_type
+  end type cdom_plant_soilbgc_type
 
-  interface plant_soilbgc_cnp_type
+  interface cdom_plant_soilbgc_type
     module procedure constructor
-  end interface plant_soilbgc_cnp_type
+  end interface cdom_plant_soilbgc_type
 
   contains
 
   !-------------------------------------------------------------------------------
-  type(plant_soilbgc_cnp_type) function constructor()
+  type(cdom_plant_soilbgc_type) function constructor()
   !
   ! !DESCRIPTION:
-  ! create an object of type plant_soilbgc_cnp_type.
+  ! create an object of type cdom_plant_soilbgc_type.
   ! Right now it is purposely empty
-   type(plant_soilbgc_cnp_type), allocatable :: plants
+   type(cdom_plant_soilbgc_type), allocatable :: plants
    allocate(plants)
    constructor = plants
   end function constructor
@@ -73,7 +73,7 @@ module PlantSoilBgcCnpType
   use BeTR_decompMod       , only : betr_bounds_type
   implicit none
   ! !ARGUMENTS:
-  class(plant_soilbgc_cnp_type) , intent(inout) :: this
+  class(cdom_plant_soilbgc_type) , intent(inout) :: this
   type(betr_bounds_type)         , intent(in) :: bounds
   integer                   , intent(in) :: lbj, ubj
   character(len=*)          , intent(in) :: namelist_buffer
@@ -90,7 +90,7 @@ module PlantSoilBgcCnpType
   use betr_varcon         , only : betr_maxpatch_pft
   implicit none
   ! !ARGUMENTS:
-  class(plant_soilbgc_cnp_type) , intent(inout) :: this
+  class(cdom_plant_soilbgc_type) , intent(inout) :: this
   type(betr_bounds_type)         , intent(in) :: bounds
   integer                   , intent(in) :: lbj, ubj
 
@@ -133,7 +133,7 @@ module PlantSoilBgcCnpType
   use BeTR_biogeoFluxType  , only : betr_biogeo_flux_type
   implicit none
   ! !ARGUMENTS:
-  class(plant_soilbgc_cnp_type) , intent(inout) :: this
+  class(cdom_plant_soilbgc_type) , intent(inout) :: this
   type(betr_bounds_type)        , intent(in) :: bounds
   integer                   , intent(in) :: lbj, ubj
   type(betr_patch_type)     , intent(in) :: pft
@@ -204,7 +204,7 @@ module PlantSoilBgcCnpType
   implicit none
   ! !ARGUMENTS:
 
-  class(plant_soilbgc_cnp_type) , intent(inout) :: this
+  class(cdom_plant_soilbgc_type) , intent(inout) :: this
   type(betr_bounds_type)         , intent(in) :: bounds
   integer                   , intent(in) :: numf
   integer                   , intent(in) :: filter(:)
@@ -226,7 +226,7 @@ module PlantSoilBgcCnpType
   implicit none
   ! !ARGUMENTS:
 
-  class(plant_soilbgc_cnp_type) , intent(inout) :: this
+  class(cdom_plant_soilbgc_type) , intent(inout) :: this
   type(betr_bounds_type)      , intent(in)    :: bounds
   integer                     , intent(in)    :: numf
   integer                     , intent(in)    :: filter(:)
@@ -249,7 +249,7 @@ module PlantSoilBgcCnpType
   use BeTR_PatchType, only : betr_patch_type
   implicit none
   ! !ARGUMENTS:
-  class(plant_soilbgc_cnp_type) , intent(inout) :: this
+  class(cdom_plant_soilbgc_type) , intent(inout) :: this
   type(betr_bounds_type)       , intent(in) :: bounds
   integer                      , intent(in) :: numf
   integer                      , intent(in) :: filter(:)
@@ -278,7 +278,7 @@ module PlantSoilBgcCnpType
   use BeTR_PatchType, only : betr_patch_type
   implicit none
   ! !ARGUMENTS:
-  class(plant_soilbgc_cnp_type) , intent(inout) :: this
+  class(cdom_plant_soilbgc_type) , intent(inout) :: this
   type(betr_bounds_type)       , intent(in) :: bounds
   integer                      , intent(in) :: numf
   integer                      , intent(in) :: filter(:)
@@ -298,4 +298,4 @@ module PlantSoilBgcCnpType
 
   end subroutine set_profiles_vars
   !----------------------------------------------------------------------
-end module PlantSoilBgcCnpType
+end module cdomPlantSoilBGCType

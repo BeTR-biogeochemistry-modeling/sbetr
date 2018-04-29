@@ -46,6 +46,7 @@ module BeTR_TimeMod
      procedure, public :: its_a_new_week
      procedure, public :: its_a_new_month
      procedure, public :: its_a_new_year
+     procedure, public :: get_ymdhs
   end type betr_time_type
 
   integer, parameter, private :: daz(12)=(/31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31/)
@@ -84,7 +85,7 @@ contains
     this%time  = 0._r8
     this%tod   = 0._r8
     this%toy   = 0._r8
-    this%cyears = 0._r8
+    this%cyears = 0
     this%dow    = 0
     this%dom    = 0
     this%doy    = 0
@@ -366,8 +367,21 @@ contains
   print*,'dom =',this%dom
   print*,'doy =',this%doy
   print*,'moy =',this%moy
+  print*,'cyears=',this%cyears
 
   end subroutine print_cur_time
+
+
+  !-------------------------------------------------------------------------------
+  subroutine get_ymdhs(this, ymdhs)
+
+  implicit none
+  class(betr_time_type), intent(in) :: this
+  character(len=*), intent(out) :: ymdhs
+
+  write(ymdhs,'(I4.4,I2.2,I2.2,I2.2,I4.4)')this%cyears,this%moy,this%dom,&
+     int(this%tod/3600.0),int(mod(this%tod,3600.0))
+  end subroutine get_ymdhs
   !-------------------------------------------------------------------------------
   function its_a_new_hour(this)result(yesno)
   implicit none

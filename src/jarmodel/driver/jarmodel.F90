@@ -89,14 +89,17 @@ subroutine run_model(namelist_buffer)
   real(r8), allocatable :: ystatesf(:)
   real(r8) :: dtime
   integer :: nvars
-
+  character(len=14) :: yymmddhhss
   logical :: is_surflit = .false.  !logical switch for litter decomposition
   logical :: nitrogen_stress=.true.
   logical :: phosphorus_stress=.false.
   integer                                :: nml_error
   character(len=betr_string_length_long) :: ioerror_msg
+  character(len=64) :: case_id
+  character(len=256):: gname
+  namelist / jar_driver / jarmodel_name, case_id, is_surflit, nitrogen_stress, phosphorus_stress
 
-  namelist / jar_driver / jarmodel_name, is_surflit, nitrogen_stress, phosphorus_stress
+  case_id=''
   if ( .true. )then
      ioerror_msg=''
      read(namelist_buffer, nml=jar_driver, iostat=nml_error, iomsg=ioerror_msg)
@@ -141,7 +144,13 @@ subroutine run_model(namelist_buffer)
   call timer%Init(namelist_buffer=namelist_buffer)
 
   dtime=timer%get_step_size()
-  call hist%init(varl, unitl, freql, 'jarmodel', dtime)
+
+  if(len(trim(case_id))==0)then
+    write(gname,'(A)')'jarmodel'//'.'//trim(jarmodel_name)
+  else
+    write(gname,'(A)')'jarmodel'//'.'//trim(case_id)//'.'//trim(jarmodel_name)
+  endif
+  call hist%init(varl, unitl, freql, gname, dtime)
 
   call bgc_forc%Init(nvars)
   !read in forcing
@@ -170,5 +179,6 @@ subroutine run_model(namelist_buffer)
 
     if(timer%its_time_to_exit())exit
   enddo
-  call hist%histrst('jarmodel', 'write')
+  call timer%get_ymdhs(yymmddhhss)
+  call hist%histrst('jarmodel', 'write', yymmddhhss)
 end subroutine run_model

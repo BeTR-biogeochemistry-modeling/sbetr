@@ -1,4 +1,4 @@
-module BgccdomSOMType
+module cdomBGCSOMType
 !
 !DESCRIPTION
 !module defines the century decomposition
@@ -76,7 +76,7 @@ contains
 
   subroutine Init(this, cdombgc_index, biogeo_con, bstatus)
 
-  use BgccdomCnpIndexType , only : cdombgc_index_type
+  use cdomBGCIndexType , only : cdombgc_index_type
   use cdomParaType       , only : cdomPara_type
   use BetrStatusType      , only : betr_status_type
   implicit none
@@ -97,7 +97,7 @@ contains
 
   !DESCRIPTION
   !compute the respiration coefficient for the dom pool during decomposition
-  use BgccdomCnpIndexType , only : cdombgc_index_type
+  use cdomBGCIndexType , only : cdombgc_index_type
   use tracer_varcon    , only : catomw, natomw, patomw
   implicit none
   class(cdomSom_type)  , intent(inout) :: this
@@ -143,7 +143,7 @@ contains
   !
   ! intialize model parameters
   use cdomParaType , only : cdomPara_type
-  use BgccdomCnpIndexType , only : cdombgc_index_type
+  use cdomBGCIndexType , only : cdombgc_index_type
   use tracer_varcon    , only : catomw, natomw, patomw
   implicit none
   class(cdomSom_type)  , intent(inout) :: this
@@ -236,8 +236,8 @@ contains
   !
   !DESCRIPTION
   !
-  use BgccdomCnpIndexType , only : cdombgc_index_type
-  use BgccdomCnpDecompType, only : Decompcdom_type
+  use cdomBGCIndexType , only : cdombgc_index_type
+  use cdomBGCDecompType, only : Decompcdom_type
   use BetrStatusType      , only : betr_status_type
   use betr_ctrl           , only : betr_spinup_state
   implicit none
@@ -305,7 +305,7 @@ contains
   ! in all the reactions, the nominal carbon oxidation status is assumed as zero, which is apparently not correct.
   ! It is also assumed the recycling of nitrogen and phosphorus during decomposition is 100%, which is likely
   ! not quite right as well.
-  use BgccdomCnpIndexType , only : cdombgc_index_type
+  use cdomBGCIndexType , only : cdombgc_index_type
   use MathfuncMod         , only : safe_div, fpmax
   implicit none
   class(cdomSom_type),           intent(inout) :: this
@@ -628,7 +628,7 @@ contains
     ! !USES:
     use MathfuncMod         , only : dot_sum
     use MathfuncMod         , only : safe_div
-    use BgccdomCnpIndexType       , only : cdombgc_index_type
+    use cdomBGCIndexType       , only : cdombgc_index_type
     use BetrStatusType, only : betr_status_type
     implicit none
     ! !ARGUMENTS:
@@ -662,7 +662,7 @@ contains
   ! compute the cnp ratios for the om pools
   use BetrStatusType      , only : betr_status_type
   use MathfuncMod         , only : safe_div
-  use BgccdomCnpIndexType       , only : cdombgc_index_type
+  use cdomBGCIndexType       , only : cdombgc_index_type
   implicit none
   class(cdomSom_type), intent(inout) :: this
   type(cdombgc_index_type)   , intent(in) :: cdombgc_index
@@ -754,7 +754,7 @@ contains
   ! DESCRIPTION
   ! this fixes the stoichiometric drift due to limite precision of
   ! double precision.
-  use BgccdomCnpIndexType       , only : cdombgc_index_type
+  use cdomBGCIndexType       , only : cdombgc_index_type
   implicit none
   class(cdomSom_type)           , intent(inout) :: this
   type(cdombgc_index_type)   , intent(in) :: cdombgc_index
@@ -812,7 +812,7 @@ contains
     ! calculate degradation for all different pools
     !
     ! !USES:
-    use BgccdomCnpIndexType       , only : cdombgc_index_type
+    use cdomBGCIndexType       , only : cdombgc_index_type
    implicit none
    class(cdomSom_type)     , intent(inout) :: this
    type(cdombgc_index_type) , intent(in)    :: cdombgc_index
@@ -840,8 +840,8 @@ contains
   !-------------------------------------------------------------------------------
 
   subroutine apply_spinupf(this, cdombgc_index, decompkf_eca, k_decay, spinup_scalar, spinup_flg)
-  use BgccdomCnpIndexType       , only : cdombgc_index_type
-  use BgccdomCnpDecompType      , only : Decompcdom_type
+  use cdomBGCIndexType       , only : cdombgc_index_type
+  use cdomBGCDecompType      , only : Decompcdom_type
   use betr_varcon               , only : kyr_spinup
   implicit none
   class(cdomSom_type)     , intent(inout) :: this
@@ -877,8 +877,8 @@ contains
   !-------------------------------------------------------------------------------
   subroutine calc_som_decay_k(this, lay, cdombgc_index, decompkf_eca, micb, k_decay)
 
-  use BgccdomCnpIndexType       , only : cdombgc_index_type
-  use BgccdomCnpDecompType      , only : Decompcdom_type
+  use cdomBGCIndexType       , only : cdombgc_index_type
+  use cdomBGCDecompType      , only : Decompcdom_type
   implicit none
   class(cdomSom_type)        , intent(inout) :: this
   integer                    , intent(in)  :: lay
@@ -919,7 +919,7 @@ contains
   k_decay(fwd)  = k_decay(fwd) * exp(-3._r8*this%fwd_flig)
   k_decay(lcel) = k_decay(lcel)* exp(-3._r8*this%lit_flig)
   k_decay(llig) = k_decay(llig)* exp(-3._r8*this%lit_flig)
-  
+
   !print*,t_scalar,  w_scalar,  o_scalar,  depth_scalar, micb
   !print*,'lmet',this%k_decay_lmet(lay)
   !print*,'lcel',this%k_decay_lcel(lay)
@@ -927,7 +927,7 @@ contains
   !print*,'mic',this%k_decay_mic(lay)
   !print*,'pom',this%k_decay_pom
   !print*,'humus',this%k_decay_humus
-  !print*,'cwd',this%k_decay_cwd 
+  !print*,'cwd',this%k_decay_cwd
   !print*,'lwd',this%k_decay_lwd
   !print*,'fwd',this%k_decay_fwd
   !print*,'k_decay',(k_decay(jj),jj=1,ncentpools)
@@ -936,7 +936,7 @@ contains
   !-------------------------------------------------------------------------------
   subroutine calc_pot_min_np_flx(this, dtime, cdombgc_index, ystates, k_decay, cascade_matrix, &
     alpha_n, alpha_p, pot_decomp, pot_nn_flx, pot_np_flx)
-  use BgccdomCnpIndexType       , only : cdombgc_index_type
+  use cdomBGCIndexType       , only : cdombgc_index_type
   implicit none
   class(cdomSom_type)         , intent(inout) :: this
   real(r8)                    , intent(in) :: dtime
@@ -995,4 +995,4 @@ contains
   end associate
   end subroutine calc_pot_min_np_flx
 
-end module BgccdomSOMType
+end module cdomBGCSOMType

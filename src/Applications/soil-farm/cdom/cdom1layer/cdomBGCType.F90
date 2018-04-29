@@ -1,4 +1,4 @@
-module BgccdomCnpType
+module cdomBGCType
 #include "bshr_assert.h"
   !
   ! !DESCRIPTION:
@@ -9,12 +9,12 @@ module BgccdomCnpType
   use bshr_log_mod              , only : errMsg => shr_log_errMsg
   use betr_varcon               , only : spval => bspval
   use betr_ctrl                 , only : spinup_state => betr_spinup_state
-  use BgccdomCnpDecompType      , only : Decompcdom_type
-  use BgccdomCnpIndexType       , only : cdombgc_index_type
-  use BgccdomCnpNitDenType      , only : century_nitden_type
+  use cdomBGCDecompType         , only : Decompcdom_type
+  use cdomBGCIndexType          , only : cdombgc_index_type
+  use cdomBGCNitDenType         , only : century_nitden_type
   use gbetrType                 , only : gbetr_type
-  use BgccdomSOMType            , only : cdomSom_type
-  use BgccdomCnpCompetType      , only : Compet_ECA_type
+  use cdomBGCSOMType            , only : cdomSom_type
+  use cdomBGCCompetType         , only : Compet_ECA_type
   use BiogeoConType             , only : BiogeoCon_type
   use cdomParaType              , only : cdomPara_type
   use BetrStatusType            , only : betr_status_type
@@ -280,7 +280,7 @@ contains
   !-------------------------------------------------------------------------------
 
   subroutine InitAllocate(this, cdombgc_index)
-  use BgccdomCnpIndexType , only : cdombgc_index_type
+  use cdomBGCIndexType , only : cdombgc_index_type
   use betr_varcon         , only : betr_maxpatch_pft, betr_max_soilorder
   implicit none
   class(cdombgceca_type)   , intent(inout) :: this
@@ -318,7 +318,7 @@ contains
 
   subroutine checksum_cascade(this, cdombgc_index)
 
-  use BgccdomCnpIndexType       , only : cdombgc_index_type
+  use cdomBGCIndexType       , only : cdombgc_index_type
 
   implicit none
   ! !ARGUMENTS:
@@ -625,7 +625,7 @@ contains
   subroutine c14decay(this, cdombgc_index, dtime, ystates1)
 
   !apply c14 decay to om pools
-  use BgccdomCnpIndexType       , only : cdombgc_index_type
+  use cdomBGCIndexType       , only : cdombgc_index_type
 
   implicit none
   ! !ARGUMENTS:
@@ -689,7 +689,7 @@ contains
     !
     ! !USES:
     use MathfuncMod               , only : safe_div
-    use BgccdomCnpIndexType       , only : cdombgc_index_type
+    use cdomBGCIndexType       , only : cdombgc_index_type
     use betr_ctrl                 , only : spinup_state => betr_spinup_state
     implicit none
     ! !ARGUMENTS:
@@ -849,7 +849,7 @@ contains
   !--------------------------------------------------------------------
   subroutine init_states(this, cdombgc_index, bgc_forc)
 
-  use BgccdomCnpIndexType       , only : cdombgc_index_type
+  use cdomBGCIndexType       , only : cdombgc_index_type
   use JarBgcForcType            , only : JarBGC_forc_type
   implicit none
   class(cdombgceca_type)     , intent(inout) :: this
@@ -916,7 +916,7 @@ contains
   end subroutine init_states
   !--------------------------------------------------------------------
   subroutine add_ext_input(this, dtime, cdombgc_index, bgc_forc, c_inf, n_inf, p_inf)
-  use BgccdomCnpIndexType       , only : cdombgc_index_type
+  use cdomBGCIndexType       , only : cdombgc_index_type
   use JarBgcForcType        , only : JarBGC_forc_type
   use tracer_varcon             , only : catomw, natomw, patomw,c13atomw,c14atomw
   use MathfuncMod               , only : safe_div
@@ -1373,7 +1373,7 @@ contains
   end subroutine bgc_integrate
   !--------------------------------------------------------------------
   subroutine arenchyma_gas_transport(this, cdombgc_index, dtime)
-  use BgccdomCnpIndexType       , only : cdombgc_index_type
+  use cdomBGCIndexType       , only : cdombgc_index_type
   implicit none
   class(cdombgceca_type)     , intent(inout) :: this
   type(cdombgc_index_type)  , intent(in) :: cdombgc_index
@@ -1715,4 +1715,4 @@ contains
        if(abs(dtr/dt)<1.e-4_r8)exit
     enddo
   end subroutine ode_adapt_ebbks1
-end module BgccdomCnpType
+end module cdomBGCType

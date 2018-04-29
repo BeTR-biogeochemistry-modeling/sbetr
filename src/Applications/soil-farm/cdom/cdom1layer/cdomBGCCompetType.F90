@@ -1,4 +1,4 @@
-module BgcCentCnpCompetType
+module cdomBGCCompetType
 !
 ! code to do ECA based competition
   ! !USES:
@@ -43,7 +43,7 @@ contains
   !-------------------------------------------------------------------------------
   subroutine Init(this, biogeo_con, bstatus)
   use BiogeoConType             , only : BiogeoCon_type
-  use CentParaType              , only : CentPara_type
+  use cdomParaType              , only : cdomPara_type
   implicit none
   class(Compet_ECA_type), intent(inout) :: this
   class(BiogeoCon_type)       , intent(in) :: biogeo_con
@@ -52,10 +52,9 @@ contains
   character(len=256) :: msg
 
   call this%InitAllocate()
-
   call bstatus%reset()
   select type(biogeo_con)
-  type is(CentPara_type)
+  type is(cdomPara_type)
     this%kaff_minn_nh4_mic = biogeo_con%km_decomp_nh4
     this%kaff_minn_no3_mic = biogeo_con%km_decomp_no3
     this%kaff_minp_mic     = biogeo_con%km_decomp_p
@@ -67,6 +66,7 @@ contains
     call bstatus%set_msg(msg,err=-1)
     return
   end select
+
   end subroutine Init
   !-------------------------------------------------------------------------------
 
@@ -126,22 +126,13 @@ contains
   allocate(entity(tot_entity))
   !form the affinity matrix
   !nh4
-  if(plant_ntypes>0)then
-    kaff(1,:) = (/this%kaff_minn_nh4_nit, 0._r8, &
+  kaff(1,:) = (/this%kaff_minn_nh4_nit, 0._r8, &
       this%kaff_minn_nh4_mic, this%kaff_minn_nh4_msurf, &
       this%kaff_minn_nh4_plant(1:plant_ntypes)/)
   !no3
-    kaff(2,:) = (/0._r8, this%kaff_minn_no3_den,&
+  kaff(2,:) = (/0._r8, this%kaff_minn_no3_den,&
       this%kaff_minn_no3_mic, 0._r8, &
       this%kaff_minn_no3_plant(1:plant_ntypes)/)
-  else
-    kaff(1,:) = (/this%kaff_minn_nh4_nit, 0._r8, &
-      this%kaff_minn_nh4_mic, this%kaff_minn_nh4_msurf/)
-
-    kaff(2,:) = (/0._r8, this%kaff_minn_no3_den,&
-      this%kaff_minn_no3_mic, 0._r8/)
-
-  endif
   !form the substrate vector
   substrate(:)=(/smin_nh4,smin_no3/)
 
@@ -149,11 +140,8 @@ contains
   b_nit = this%compet_bn_nit
   b_den = this%compet_bn_den
   b_mic = this%compet_bn_mic
-  if(plant_ntypes>0)then
-    entity(:)=(/b_nit,b_den,b_mic,msurf_nh4,this%plant_froot_nn(1:plant_ntypes)/)
-  else
-    entity(:)=(/b_nit,b_den,b_mic,msurf_nh4/)
-  endif
+
+  entity(:)=(/b_nit,b_den,b_mic,msurf_nh4,this%plant_froot_nn(1:plant_ntypes)/)
   !do ECA calculation
   call ecacomplex_cell_norm(kaff,substrate,entity, se_complex, bstatus)
   if(non_limit)then
@@ -193,6 +181,7 @@ contains
   subroutine run_compet_phosphorus(this, nop_lim,  sminp_soluble, plant_ntypes,&
      msurf_minp, ECA_factor_phosphorus_mic, ECA_factor_minp_msurf, ECA_flx_phosphorus_plants)
 
+
   !
   !DESCRIPTION
   ! do eca competition of phosphorus
@@ -225,18 +214,11 @@ contains
   allocate(substrate(1))
   allocate(entity(tot_entity))
 
-  if(plant_ntypes>0)then
-    kaff(1,:) = (/this%kaff_minp_mic, this%kaff_minp_msurf, &
+  kaff(1,:) = (/this%kaff_minp_mic, this%kaff_minp_msurf, &
       this%kaff_minp_plant(1:plant_ntypes)/)
-  else
-    kaff(1,:) = (/this%kaff_minp_mic, this%kaff_minp_msurf/)
-  endif
+
   b_mic = this%compet_bp_mic
-  if(plant_ntypes>0)then
-    entity(:)=(/b_mic,msurf_minp,this%plant_froot_np(1:plant_ntypes)/)
-  else
-    entity(:)=(/b_mic,msurf_minp/)
-  endif
+  entity(:)=(/b_mic,msurf_minp,this%plant_froot_np(1:plant_ntypes)/)
   substrate(:)=(/sminp_soluble/)
 
   !given P is under competitation by microbes, plants and mineral surfaces
@@ -276,4 +258,4 @@ contains
   deallocate(se_complex)
   end subroutine run_compet_phosphorus
 
-end module BgcCentCnpCompetType
+end module cdomBGCCompetType

@@ -1,6 +1,6 @@
 set(CDOMNLAYER_SOURCES
-  BgcReactionscdomECACnpType.F90
-  PlantSoilBgccdomCnpType.F90
+  cdomBGCReactionsType.F90
+  cdomPlantSoilBGCType.F90
 )
 
   include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)

@@ -1,4 +1,4 @@
-module CentParaType
+module ecacnpParaType
   use bshr_kind_mod       , only : r8 => shr_kind_r8
   use BiogeoContype       , only : BiogeoCon_type
 implicit none
@@ -7,7 +7,7 @@ implicit none
   character(len=*), private, parameter :: filename = &
        __FILE__
 
- type, public, extends(BiogeoCon_type) :: CentPara_type
+ type, public, extends(BiogeoCon_type) :: ecacnp_para_type
 
   !decomposition
   real(r8) :: Q10
@@ -84,23 +84,23 @@ implicit none
    procedure, private :: set_defpar_default
    procedure, public  :: apply_spinup_factor
    procedure, public  :: set_spinup_factor
- end type CentPara_type
+ end type ecacnp_para_type
 
- type(CentPara_type), public :: cent_para
- public :: create_jarpars_centuryeca
+ type(ecacnp_para_type), public :: cent_para
+ public :: create_jarpars_ecacnp
 contains
 
-  function create_jarpars_centuryeca()
+  function create_jarpars_ecacnp()
   ! DESCRIPTION
   ! constructor
     implicit none
-    class(CentPara_type), pointer :: create_jarpars_centuryeca
-    class(CentPara_type), pointer :: bgc
+    class(ecacnp_para_type), pointer :: create_jarpars_ecacnp
+    class(ecacnp_para_type), pointer :: bgc
 
     allocate(bgc)
-    create_jarpars_centuryeca => bgc
+    create_jarpars_ecacnp => bgc
 
-  end function create_jarpars_centuryeca
+  end function create_jarpars_ecacnp
 
   !--------------------------------------------------------------------
   subroutine centpara_init(this, namelist_buffer, bstatus)
@@ -108,7 +108,7 @@ contains
   use BetrStatusType , only : betr_status_type
   use betr_ctrl      , only : betr_spinup_state
   implicit none
-  class(CentPara_type), intent(inout) :: this
+  class(ecacnp_para_type), intent(inout) :: this
   character(len=*)         , intent(in)  :: namelist_buffer
   type(betr_status_type)   , intent(out) :: bstatus
 
@@ -127,7 +127,7 @@ contains
   subroutine InitAllocate_centpara(this)
   use betr_varcon, only : betr_maxpatch_pft, betr_max_soilorder
   implicit none
-  class(CentPara_type), intent(inout) :: this
+  class(ecacnp_para_type), intent(inout) :: this
 
 
   allocate(this%spinup_factor(9))
@@ -139,7 +139,7 @@ contains
   use tracer_varcon      , only : natomw,patomw
   use bshr_const_mod  , only : year_sec=>SHR_CONST_YEARSECS
   implicit none
-  class(CentPara_type), intent(inout) :: this
+  class(ecacnp_para_type), intent(inout) :: this
   real(r8) :: half_life
 
   !the following note is from daycent
@@ -246,7 +246,7 @@ contains
   subroutine apply_spinup_factor(this)
   use betr_ctrl, only : betr_spinup_state
   implicit none
-  class(CentPara_type), intent(inout) :: this
+  class(ecacnp_para_type), intent(inout) :: this
 
 
   call this%set_spinup_factor()
@@ -279,7 +279,7 @@ contains
   use bshr_const_mod  , only : year_sec=>SHR_CONST_YEARSECS
   use tracer_varcon   , only : natomw,patomw
   implicit none
-  class(CentPara_type), intent(inout) :: this
+  class(ecacnp_para_type), intent(inout) :: this
   type(file_desc_t)    , intent(inout)  :: ncid  ! pio netCDF file id
   type(betr_status_type) , intent(out) :: bstatus
 
@@ -542,7 +542,7 @@ contains
   subroutine set_spinup_factor(this)
 
   implicit none
-  class(CentPara_type), intent(inout) :: this
+  class(ecacnp_para_type), intent(inout) :: this
   real(r8) :: k_decay_ref
 
   !the order is, lit1, lit2, lit3, cwd, lwd, fwd, som1, som3, som2
@@ -565,7 +565,7 @@ contains
   subroutine centpara_printPars(this)
 
   implicit none
-  class(CentPara_type), intent(inout) :: this
+  class(ecacnp_para_type), intent(inout) :: this
 
   call this%prtPars_bgc()
 
@@ -623,4 +623,4 @@ contains
   print*,'vmax_nit=', this%vmax_nit
   end subroutine centpara_printPars
 
-end module CentParaType
+end module ecacnpParaType

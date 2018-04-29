@@ -1,10 +1,10 @@
 set(CDOM1LAYER_SOURCES
-  BgccdomCnpIndexType.F90
-  BgccdomCnpCompetType.F90
-  BgccdomCnpDecompType.F90
-  BgccdomCnpNitDenType.F90
-  BgccdomCnpSOMType.F90
-  BgccdomCnpType.F90
+  cdomBGCIndexType.F90
+  cdomBGCCompetType.F90
+  cdomBGCDecompType.F90
+  cdomBGCNitDenType.F90
+  cdomBGCSOMType.F90
+  cdomBGCType.F90
 )
 
 

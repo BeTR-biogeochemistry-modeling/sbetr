@@ -1,4 +1,4 @@
-module BgccdomCnpDecompType
+module cdomBGCDecompType
 
 !
 ! DESCRIPTIONS
@@ -182,4 +182,4 @@ implicit none
   ans = 11.75_r8 +(29.7_r8 / SHR_CONST_PI) * atan( SHR_CONST_PI * 0.031_r8  * ( t1 - 15.4_r8 ))
 
   end function catanf
-end module BgccdomCnpDecompType
+end module cdomBGCDecompType

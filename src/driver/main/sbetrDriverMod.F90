@@ -85,6 +85,7 @@ contains
   class(betr_grid_type), allocatable :: grid_data
   class(betr_time_type), allocatable :: time_vars
 
+  character(len=14) :: yymmddhhss
   character(len=256) :: restfile
   integer :: nstep
   logical :: do_standalone=.false.
@@ -343,12 +344,15 @@ contains
 
        call simulation%BeTRRestartClose(ncid)
 
+       if(simulation%do_soibgc())then
+         call time_vars%get_ymdhs(yymmddhhss)
+         call hist%histrst(reaction_method, 'write',yymmddhhss)
+      endif
     endif
     !x print*,'next step'
     if(time_vars%its_time_to_exit()) then
        exit
     end if
-
   enddo
 
   if(simulation%do_regress_test())then
@@ -396,10 +400,11 @@ end subroutine sbetrBGC_driver
     character(len=betr_string_length_long) :: param_file
     type(file_desc_t) :: ncid
     type(betr_status_type)   :: bstatus
+    character(len=64) :: case_id
     !-----------------------------------------------------------------------
 
     namelist / sbetr_driver / simulator_name, continue_run, run_type, param_file, &
-        is_nitrogen_active, is_phosphorus_active
+        is_nitrogen_active, is_phosphorus_active, case_id
 
     namelist / betr_parameters /                  &
          reaction_method,                         &
@@ -409,6 +414,7 @@ end subroutine sbetrBGC_driver
     continue_run=.false.
     simulator_name = ''
     run_type ='tracer'
+    case_id=''
     is_nitrogen_active=.true.; is_phosphorus_active =.false.
     ! ----------------------------------------------------------------------
     ! Read namelist from standard input.
@@ -483,14 +489,14 @@ end subroutine sbetrBGC_driver
         endif
         call ncd_pio_closefile(ncid)
       endif
-      call init_hist_bgc(histbgc, base_filename, reaction_method, hist)
+      call init_hist_bgc(histbgc, base_filename, reaction_method, case_id, hist)
 
     endif
 
   end subroutine read_name_list
 
   !-------------------------------------------------------------------------------
-  subroutine init_hist_bgc(histbgc, base_filename, reaction_method, hist)
+  subroutine init_hist_bgc(histbgc, base_filename, reaction_method, case_id, hist)
   use histMod          , only : hist_freq_str_len
   use histMod          , only : histf_type
   use HistBGCMod       , only : hist_bgc_type
@@ -498,10 +504,12 @@ end subroutine sbetrBGC_driver
   type(hist_bgc_type), intent(inout) :: histbgc
   character(len=*), intent(in) :: base_filename
   character(len=*), intent(in) :: reaction_method
+  character(len=*), intent(in) :: case_id
   class(histf_type), intent(inout) :: hist
   character(len=hist_freq_str_len), allocatable :: freql(:)
 
   integer :: nhistvars
+  character(len=256) :: gname
 
   call histbgc%Init(trim(reaction_method))
 
@@ -511,8 +519,12 @@ end subroutine sbetrBGC_driver
   allocate(freql(nhistvars))
 
   freql(:) = 'day'
-
-  call hist%init(histbgc%varl, histbgc%unitl, freql, trim(base_filename)//'.'//trim(reaction_method))
+  if(len(trim(case_id))==0)then
+    write(gname,'(A)')trim(base_filename)//'.'//trim(reaction_method)
+  else
+    write(gname,'(A)')trim(base_filename)//'.'//trim(case_id)//'.'//trim(reaction_method)
+  endif
+  call hist%init(histbgc%varl, histbgc%unitl, freql, gname)
 
   end subroutine init_hist_bgc
 

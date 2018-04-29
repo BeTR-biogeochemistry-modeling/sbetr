@@ -23,7 +23,7 @@ contains
     ! create a betr simulation object
     !
     !USES
-    use BgcCentCnpType, only : create_jarmodel_centuryeca
+    use ecacnpBGCType, only : create_jarmodel_ecacnp
     use BeTRJarModel      , only : jar_model_type
     implicit none
     !ARGUMENTS
@@ -32,7 +32,7 @@ contains
 
     select case(trim(jarmodel_name))
        case ("ecacnp")
-          allocate(jarmodel, source=create_jarmodel_centuryeca())
+          allocate(jarmodel, source=create_jarmodel_ecacnp())
        case default
           write(iulog, *) "ERROR: unknown jarmodel type '", &
                trim(jarmodel_name), "'."
@@ -46,9 +46,9 @@ contains
     ! create a betr simulation object
     !
     !USES
-    use BgcCentCnpType, only : create_jarmodel_centuryeca
+    use ecacnpBGCType, only : create_jarmodel_ecacnp
     use BiogeoConType , only : BiogeoCon_type
-    use CentParaType  , only : create_jarpars_centuryeca
+    use ecacnpParaType  , only : create_jarpars_ecacnp
     implicit none
     !ARGUMENTS
     character(len=*), intent(in)  :: jarmodel_name
@@ -56,7 +56,7 @@ contains
 
     select case(trim(jarmodel_name))
        case ("ecacnp")
-          allocate(jarpars, source=create_jarpars_centuryeca())
+          allocate(jarpars, source=create_jarpars_ecacnp())
        case default
           write(iulog, *) "ERROR: unknown jarmodel type '", &
                trim(jarmodel_name), "'."
