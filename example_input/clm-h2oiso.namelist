@@ -7,6 +7,6 @@
 /
 
 &forcing_inparm
-  grid_filename = "sierra_grid.nc"
-  forcing_filename = 'sierra_halfhour_full_year_clmforc.nc'
+  grid_filename = "../regression-tests/input-data/sierra_grid.nc"
+  forcing_filename = '../regression-tests/input-data/sierra_halfhour_full_year_clmforc.nc'
 /

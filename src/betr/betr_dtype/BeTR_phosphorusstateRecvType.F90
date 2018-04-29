@@ -132,7 +132,7 @@ implicit none
         this%som3p_col(c) =   this%som3p_col(c) + dz(c,j)*this%som3p_vr_col(c,j)
       enddo
     enddo
-  endif
+
   do j = lbj, ubj
     do c = bounds%begc, bounds%endc
       this%cwdp_col(c) = this%cwdp_col(c) + dz(c,j) * this%cwdp_vr_col(c,j)
@@ -155,6 +155,6 @@ implicit none
       endif
     enddo
   enddo
-
+  endif
   end subroutine summary
 end module BeTR_phosphorusstateRecvType

@@ -124,7 +124,7 @@ implicit none
         this%som3c_col(c) = this%som3c_col(c) + dz(c,j)*this%som3c_vr_col(c,j)
       enddo
     enddo
-  endif
+
   do j = lbj, ubj
     do c = bounds%begc, bounds%endc
       this%cwdc_col(c) = this%cwdc_col(c) + dz(c,j) * this%cwdc_vr_col(c,j)
@@ -142,5 +142,6 @@ implicit none
       endif
     enddo
   enddo
+  endif
   end subroutine summary
 end module BeTR_carbonstateRecvType

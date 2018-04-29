@@ -60,6 +60,7 @@ module BeTRSimulation
      type(betr_patch_type)               , public, pointer :: betr_pft(:) => null()
      character(len=betr_filename_length) , private :: base_filename
      character(len=betr_filename_length) , private :: hist_filename
+     character(len=64)                   , private :: case_id
 
      type(betr_regression_type), private          :: regression
      type(betr_time_type), public                 :: betr_time
@@ -191,7 +192,7 @@ contains
 
   !-------------------------------------------------------------------------------
   subroutine BeTRSimulationInitOffline(this, bounds, lun, col, pft, waterstate, &
-       namelist_buffer, base_filename)
+       namelist_buffer, base_filename, case_id)
     !
     ! DESCRIPTIONS
     ! Dummy routine for inheritance purposes. don't use.
@@ -209,6 +210,8 @@ contains
     type(waterstate_type)                    , intent(inout) :: waterstate
     character(len=*)                         , intent(in)    :: namelist_buffer
     character(len=*)                         , intent(in)    :: base_filename
+    character(len=*)                         , intent(in)    :: case_id
+
     character(len=*), parameter :: subname = 'BeTRSimulationInit'
 
     call endrun(msg="ERROR "//subname//" unimplemented. "//errmsg(mod_filename, __LINE__))
@@ -281,7 +284,7 @@ contains
   end subroutine set_activecol
 !-------------------------------------------------------------------------------
   subroutine BeTRInit(this, bounds, lun, col, pft, waterstate, namelist_buffer, &
-     base_filename, masterproc)
+     base_filename, case_id, masterproc)
     !
     ! DESCRIPTION
     ! initialize BeTR
@@ -302,6 +305,7 @@ contains
     type(waterstate_type)                    , intent(in) :: waterstate
     character(len=*)                         , intent(in) :: namelist_buffer
     character(len=*)               , optional, intent(in) :: base_filename
+    character(len=*)               , optional, intent(in) :: case_id
     logical,                      optional   , intent(in) :: masterproc
     !TEMPORARY VARIABLES
     character(len=*), parameter :: subname = 'BeTRInit'
@@ -315,7 +319,13 @@ contains
     if(present(base_filename))then
       this%base_filename = base_filename
     else
-      this%base_filename = ''
+      this%base_filename = 'sbetr'
+    endif
+
+    if(present(case_id))then
+      this%case_id=case_id
+    else
+      this%case_id='exp0'
     endif
     if(present(masterproc))then
       call this%betr_time%Init(namelist_buffer, masterproc)
@@ -718,7 +728,7 @@ contains
          )
 
     ncol = bounds%endc-bounds%begc + 1
-    this%hist_filename = trim(this%base_filename) // '.output.nc'
+    this%hist_filename = trim(this%base_filename) //'.'//trim(this%case_id)// '.output.nc'
     call ncd_pio_createfile(ncid, this%hist_filename)
 
     call hist_file_create(ncid, betr_nlevtrc_soil, ncol)

@@ -93,8 +93,10 @@ contains
   logical :: do_clm=.false.
   type(hist_bgc_type) :: histbgc
   type(histf_type) :: hist
+  character(len=64) :: case_id
+
   !initialize parameters
-  call read_name_list(namelist_buffer, base_filename, simulator_name, continue_run, histbgc, hist)
+  call read_name_list(namelist_buffer, base_filename, case_id, simulator_name, continue_run, histbgc, hist)
 
   simulation => create_betr_simulation(simulator_name)
 
@@ -160,7 +162,7 @@ contains
 
   !x print*,'bf sim init'
   !print*,'base_filename:',trim(base_filename)
-  call  simulation%Init(bounds, lun, col, pft, waterstate_vars,namelist_buffer, base_filename)
+  call  simulation%Init(bounds, lun, col, pft, waterstate_vars,namelist_buffer, base_filename, case_id)
   !x print*,'af sim init'
 
   select type(simulation)
@@ -364,7 +366,7 @@ end subroutine sbetrBGC_driver
 
 ! ----------------------------------------------------------------------
 
-  subroutine read_name_list(namelist_buffer, base_filename, simulator_name_arg, continue_run, histbgc, hist)
+  subroutine read_name_list(namelist_buffer, base_filename, case_id, simulator_name_arg, continue_run, histbgc, hist)
     !
     ! !DESCRIPTION:
     ! read namelist for betr configuration
@@ -385,6 +387,7 @@ end subroutine sbetrBGC_driver
     ! !ARGUMENTS:
     character(len=betr_namelist_buffer_size) , intent(in)  :: namelist_buffer
     character(len=*)                         , intent(in)  :: base_filename
+    character(len=*)                         , intent(out) :: case_id
     character(len=betr_string_length_long)   , intent(out) :: simulator_name_arg
     logical, intent(out) :: continue_run
     class(hist_bgc_type), intent(inout) :: histbgc
@@ -400,7 +403,7 @@ end subroutine sbetrBGC_driver
     character(len=betr_string_length_long) :: param_file
     type(file_desc_t) :: ncid
     type(betr_status_type)   :: bstatus
-    character(len=64) :: case_id
+
     !-----------------------------------------------------------------------
 
     namelist / sbetr_driver / simulator_name, continue_run, run_type, param_file, &
@@ -411,11 +414,12 @@ end subroutine sbetrBGC_driver
          advection_on, diffusion_on, reaction_on, &
          ebullition_on
 
-    continue_run=.false.
     simulator_name = ''
+    continue_run=.false.
     run_type ='tracer'
-    case_id=''
+    param_file=''
     is_nitrogen_active=.true.; is_phosphorus_active =.false.
+    case_id=''
     ! ----------------------------------------------------------------------
     ! Read namelist from standard input.
     ! ----------------------------------------------------------------------
@@ -587,6 +591,8 @@ end subroutine sbetrBGC_driver
     id = id + 1; ystates(id) = phosphorusstate_vars%som1p_col(c_l)
     id = id + 1; ystates(id) = phosphorusstate_vars%som2p_col(c_l)
     id = id + 1; ystates(id) = phosphorusstate_vars%som3p_col(c_l)
+  else
+    if(hist%nvars>0)ystates(:) = 0._r8
   endif
   call hist%hist_wrap(ystates, timer)
   if(allocated(ystates))deallocate(ystates)

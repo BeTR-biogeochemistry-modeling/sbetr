@@ -547,7 +547,7 @@ module ncdio_pio
   type(Var_desc_t)  :: vardesc
 
   call check_var(ncid, trim(varname), vardesc, readvar)
-  call check_ret( nf90_put_var(ncid%fh, vardesc%varid, data,  start = (/rec/)),'ncd_putvar_real_sp')
+  call check_ret( nf90_put_var(ncid%fh, vardesc%varid, data,  start = (/rec/)),'ncd_putvar_real_sp '//trim(varname))
 
   end subroutine ncd_putvar_real_sp
 !----------------------------------------------------------------------

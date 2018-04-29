@@ -141,7 +141,7 @@ implicit none
         this%som3n_col(c) =   this%som3n_col(c) + dz(c,j)*this%som3n_vr_col(c,j)
       enddo
     enddo
-  endif
+
   do j = lbj, ubj
     do c = bounds%begc, bounds%endc
       this%cwdn_col(c) = this%cwdn_col(c) + dz(c,j) * this%cwdn_vr_col(c,j)
@@ -162,5 +162,6 @@ implicit none
       endif
     enddo
   enddo
+  endif
   end subroutine summary
 end module BeTR_nitrogenstateRecvType

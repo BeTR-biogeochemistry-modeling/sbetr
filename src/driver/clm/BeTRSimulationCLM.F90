@@ -119,7 +119,7 @@ contains
 
   !-------------------------------------------------------------------------------
 
-  subroutine CLMInitOffline(this, bounds, lun, col, pft, waterstate, namelist_buffer,base_filename)
+  subroutine CLMInitOffline(this, bounds, lun, col, pft, waterstate, namelist_buffer,base_filename, case_id)
     !DESCRIPTION
     !initialize interface
     !
@@ -141,6 +141,7 @@ contains
     !ARGUMENTS
     class(betr_simulation_clm_type)          , intent(inout) :: this
     character(len=*)                         , intent(in)    :: base_filename
+    character(len=*)                         , intent(in)    :: case_id
     character(len=*)                         , intent(in)    :: namelist_buffer
     type(bounds_type)                        , intent(in)    :: bounds
     type(landunit_type)                      , intent(in) :: lun
@@ -166,7 +167,7 @@ contains
     ! allocate the reaction types that may only be known to this
     ! simulation type.
     ! now call the base simulation init to continue initialization
-    call this%BeTRInit(bounds, lun, col, pft, waterstate,namelist_buffer,base_filename )
+    call this%BeTRInit(bounds, lun, col, pft, waterstate,namelist_buffer,base_filename, case_id )
 
   end subroutine CLMInitOffline
   !---------------------------------------------------------------------------------

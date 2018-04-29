@@ -65,7 +65,7 @@ contains
 
   !-------------------------------------------------------------------------------
 
-  subroutine StandaloneInitOffline(this, bounds, lun, col, pft, waterstate, namelist_buffer, base_filename)
+  subroutine StandaloneInitOffline(this, bounds, lun, col, pft, waterstate, namelist_buffer, base_filename, case_id)
 
     !DESCRIPTION
     !initialize standalone betr
@@ -87,6 +87,7 @@ contains
     !ARGUMENTS
     class(betr_simulation_standalone_type)   , intent(inout) :: this
     character(len=*)                         , intent(in)    :: base_filename
+    character(len=*)                         , intent(in)    :: case_id
     character(len=*)                         , intent(in)    :: namelist_buffer
     type(bounds_type)                        , intent(in)    :: bounds
     type(landunit_type)                      , intent(in) :: lun
@@ -114,7 +115,7 @@ contains
     ! in betr%Init().
 
     ! now call the base simulation init to continue initialization
-    call this%BeTRInit(bounds, lun, col, pft, waterstate, namelist_buffer, base_filename)
+    call this%BeTRInit(bounds, lun, col, pft, waterstate, namelist_buffer, base_filename, case_id)
 
     !pass necessary data
 
@@ -525,6 +526,7 @@ contains
     p31state_vars%sminp_col(c) = this%biogeo_state(c)%p31state_vars%sminp_col(c_l)
     p31state_vars%occlp_col(c) = this%biogeo_state(c)%p31state_vars%occlp_col(c_l)
     !print*,'smin_nh4',n14state_vars%smin_nh4_col(c)
+
     if(index(trim(reaction_method),'ecacnp')/=0)then
       c12state_vars%som1c_col(c) = this%biogeo_state(c)%c12state_vars%som1c_col(c_l)
       c12state_vars%som2c_col(c) = this%biogeo_state(c)%c12state_vars%som2c_col(c_l)

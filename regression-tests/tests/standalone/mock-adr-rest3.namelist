@@ -13,7 +13,7 @@
 /
 
 &forcing_inparm
-  forcing_filename = '../../../example_input/sierra_halfhour_full_year_clmforc.nc'
+  forcing_filename = '../../input-data/sierra_halfhour_full_year_clmforc.nc'
 /
 
 &betr_grid

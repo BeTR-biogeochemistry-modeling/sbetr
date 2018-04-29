@@ -205,7 +205,7 @@ contains
   end subroutine ALMInit
 !-------------------------------------------------------------------------------
 
-  subroutine ALMInitOffline(this, bounds, lun, col, pft, waterstate, namelist_buffer, base_filename)
+  subroutine ALMInitOffline(this, bounds, lun, col, pft, waterstate, namelist_buffer, base_filename, case_id)
     !DESCRIPTION
     !Initialize BeTR for ALM
     !
@@ -226,6 +226,7 @@ contains
     class(betr_simulation_alm_type)          , intent(inout) :: this
     character(len=*)                         , intent(in)    :: namelist_buffer
     character(len=*)                         , intent(in)    :: base_filename
+    character(len=*)                         , intent(in)    :: case_id
     type(bounds_type)                        , intent(in)    :: bounds
     type(landunit_type)                      , intent(in) :: lun
     type(column_type)                        , intent(inout) :: col
