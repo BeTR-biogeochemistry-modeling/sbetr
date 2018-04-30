@@ -1,8 +1,8 @@
 &jar_driver
-  jarmodel_name = 'ecacnp'
+  jarmodel_name = 'simic'
   phosphorus_stress=.false.
   nitrogen_stress=.true.
-  case_id='exp2'
+  case_id='exp1'
 /
 
 &betr_time
