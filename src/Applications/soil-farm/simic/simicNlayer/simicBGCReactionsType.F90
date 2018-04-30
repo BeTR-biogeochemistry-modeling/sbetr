@@ -15,6 +15,10 @@ module SimicBGCReactionsType
   use tracer_varcon            , only : bndcond_as_conc, bndcond_as_flux
   use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
   use BetrStatusType           , only : betr_status_type
+  use simicParaType            , only : simic_para
+  use simicBGCIndexType        , only : simic_index_type
+  use simicBGCType             , only : simic_bgc_type
+  use JarBgcForcType           , only : JarBGC_forc_type
   implicit none
 
   private
@@ -27,6 +31,14 @@ module SimicBGCReactionsType
   type, extends(bgc_reaction_type) :: &
        simic_bgc_reaction_type
   private
+    type(simic_bgc_type), pointer :: simic_bgc(:,:)
+    type(JarBGC_forc_type), pointer :: simic_forc(:,:)
+    type(simic_index_type) :: simic_index
+    logical :: use_c13
+    logical :: use_c14
+    logical :: nop_limit
+    logical :: non_limit
+    integer :: nactpft               ! number of active pfts
   contains
      procedure :: Init_betrbgc                          ! initialize betr bgc
      procedure :: set_boundary_conditions               ! set top/bottom boundary conditions for various tracers
@@ -43,6 +55,8 @@ module SimicBGCReactionsType
      procedure :: set_bgc_spinup
      procedure :: UpdateParas
      procedure :: init_iP_prof
+     procedure, private :: set_tracer
+     procedure, private :: InitAllocate
   end type simic_bgc_reaction_type
 
   interface simic_bgc_reaction_type
@@ -162,6 +176,39 @@ contains
 
   end subroutine set_bgc_spinup
   !-------------------------------------------------------------------------------
+  subroutine InitAllocate(this, bounds, lbj, ubj, bstatus)
+
+  use betr_varcon                      , only : betr_maxpatch_pft
+  implicit none
+  class(simic_bgc_reaction_type), intent(inout)    :: this
+  type(betr_status_type)           , intent(out)   :: bstatus
+  type(bounds_type)                , intent(in)    :: bounds
+  integer                          , intent(in)    :: lbj, ubj
+
+  integer :: j, c
+  this%nactpft = 0
+
+  call this%simic_index%Init(simic_para%use_c13, simic_para%use_c14, &
+     simic_para%non_limit, simic_para%nop_limit, betr_maxpatch_pft)
+
+  if(bstatus%check_status())return
+
+  !create the models
+  allocate(this%simic_bgc(bounds%begc:bounds%endc,lbj:ubj))
+
+  !create model specific forcing data structure
+  allocate(this%simic_forc(bounds%begc:bounds%endc,lbj:ubj))
+
+  !initialize
+  do j = lbj, ubj
+    do c = bounds%begc, bounds%endc
+      call this%simic_bgc(c,j)%Init(simic_para, bstatus)
+      if(bstatus%check_status())return
+        call this%simic_forc(c,j)%Init(this%simic_index%nstvars)
+    enddo
+  enddo
+  end subroutine InitAllocate
+  !-------------------------------------------------------------------------------
   subroutine Init_betrbgc(this, bounds, lbj, ubj, betrtracer_vars, namelist_buffer, bstatus)
     !
     ! DESCRIPTION:
@@ -169,7 +216,6 @@ contains
     !
     ! !USES:
     use BeTRTracerType , only : betrtracer_type
-    use MathfuncMod    , only : addone
     use BetrStatusType , only : betr_status_type
     use gbetrType      , only : gbetr_type
     implicit none
@@ -182,12 +228,6 @@ contains
     type(betr_status_type)           , intent(out)   :: bstatus
     character(len=*), parameter                      :: subname ='Init_betrbgc'
 
-    integer :: itemp_gwm
-    integer :: itemp_g
-    integer :: itemp_s
-    integer :: itemp_gwm_grp
-    integer :: dum, itemp
-    integer :: itemp_grp, itemp_v, itemp_vgrp, itemp_trc
 
     call bstatus%reset()
     ! remove compiler warnings for unused dummy args
@@ -195,6 +235,34 @@ contains
     if (bounds%begc > 0)                       continue
     if (ubj > lbj)                             continue
     if (len(betrtracer_vars%betr_simname) > 0) continue
+
+    call this%InitAllocate(bounds, lbj, ubj, bstatus)
+    if(bstatus%check_status())return
+
+    this%use_c13 = simic_para%use_c13
+    this%use_c14 = simic_para%use_c14
+    this%nop_limit=simic_para%nop_limit
+    this%non_limit=simic_para%non_limit
+
+    call this%set_tracer(betrtracer_vars, bstatus)
+
+  end subroutine Init_betrbgc
+  !-------------------------------------------------------------------------------
+  subroutine set_tracer(this, betrtracer_vars, bstatus)
+
+  use BeTRTracerType  , only : betrtracer_type
+  use MathfuncMod     , only : addone
+  implicit none
+  class(simic_bgc_reaction_type), intent(inout)    :: this
+  type(BeTRtracer_type )           , intent(inout) :: betrtracer_vars
+  type(betr_status_type)           , intent(out)   :: bstatus
+
+  integer :: itemp_gwm
+  integer :: itemp_g
+  integer :: itemp_s
+  integer :: itemp_gwm_grp
+  integer :: dum, itemp
+  integer :: itemp_grp, itemp_v, itemp_vgrp, itemp_trc
 
     itemp_gwm     = 0;
     itemp_g       = 0 ;
@@ -274,9 +342,7 @@ contains
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_doc, trc_name='DOC',      &
          is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = addone(itemp_grp),   &
          trc_group_mem = 1)
-
-  end subroutine Init_betrbgc
-
+  end subroutine set_tracer
   !-------------------------------------------------------------------------------
   subroutine set_boundary_conditions(this, bounds, num_soilc, filter_soilc, dz_top, betrtracer_vars, &
        biophysforc, biogeo_flux, tracerboundarycond_vars, betr_status)

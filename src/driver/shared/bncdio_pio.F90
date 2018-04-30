@@ -419,7 +419,7 @@ module bncdio_pio
   integer :: lxtype
   type(file_desc_t) :: ncid_tmp
   character(len=256) :: str ! temporary
-  character(len=32) :: subname
+  character(len=128) :: subname
 !-----------------------------------------------------------------------
   write(subname,'(A)')'ncd_def_var '//trim(varname)
 
