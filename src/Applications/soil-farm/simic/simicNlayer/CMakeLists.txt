@@ -1,6 +1,6 @@
 set(SIMICNLAYER_SOURCES
   simicBGCReactionsType.F90
-  simicPlantSoilBgcType.F90
+  simicPlantSoilBGCType.F90
 )
 
   include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)
