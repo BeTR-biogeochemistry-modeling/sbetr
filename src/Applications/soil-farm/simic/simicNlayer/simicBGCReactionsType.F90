@@ -57,6 +57,7 @@ module SimicBGCReactionsType
      procedure :: init_iP_prof
      procedure, private :: set_tracer
      procedure, private :: InitAllocate
+     procedure, private :: retrieve_output
   end type simic_bgc_reaction_type
 
   interface simic_bgc_reaction_type
@@ -460,40 +461,45 @@ contains
     type(betr_status_type)            , intent(out)   :: betr_status
     character(len=*)                 , parameter     :: subname ='calc_bgc_reaction'
 
-    integer :: c, fc, ll
+    integer :: c, fc, j
+    character(len=5) :: laystr
+    logical :: is_surflit  !surface litter layer?
+    integer :: nstates
+    real(r8), allocatable :: ystates0(:)
+    real(r8), allocatable :: ystatesf(:)
 
-    call betr_status%reset()
     associate(                                                                    &
     tracer_mobile_phase            => tracerstate_vars%tracer_conc_mobile_col  ,  &
     tracer_flx_netpro_vr           => tracerflux_vars%tracer_flx_netpro_vr_col ,  &
     id_trc_doc                     => betrtracer_vars%id_trc_doc                  &
     )
-    ! remove compiler warnings for unused dummy args
-    if (this%dummy_compiler_warning)                          continue
-    if (bounds%begc > 0)                                      continue
-    if (ubj > lbj)                                            continue
-    if (size(jtops) > 0)                                      continue
-    if (num_soilc > 0)                                        continue
-    if (size(filter_soilc) > 0)                               continue
-    if (num_soilp > 0)                                        continue
-    if (size(filter_soilp) > 0)                               continue
-    if (dtime > 0.0)                                          continue
-    if (len(betrtracer_vars%betr_simname) > 0)                continue
-    if (size(biophysforc%isoilorder) > 0)                     continue
-    if (size(tracercoeff_vars%annsum_counter_col) > 0)        continue
-    if (size(tracerstate_vars%tracer_conc_surfwater_col) > 0) continue
-    if (size(tracerflux_vars%tracer_flx_top_soil_col) > 0)    continue
-    if (size(tracerboundarycond_vars%jtops_col) > 0)          continue
-    if (plant_soilbgc%dummy_compiler_warning)                 continue
+
+    call betr_status%reset()
+
+    nstates = this%simic_index%nstvars
+    allocate(ystates0(nstates))
+    allocate(ystatesf(nstates))
 
     !now assume doc decays with a turnover rate 1.e-6_r8
-    do ll = 1, ubj
+    do j = lbj, ubj
       do fc = 1, num_soilc
         c = filter_soilc(fc)
-        tracer_flx_netpro_vr(c,ll,id_trc_doc)=tracer_mobile_phase(c,ll,id_trc_doc)*(exp(-1.e-6_r8*dtime)-1._r8)
-        tracer_mobile_phase(c,ll,id_trc_doc) = tracer_mobile_phase(c,ll,id_trc_doc)+tracer_flx_netpro_vr(c,ll,id_trc_doc)
+        if(j<jtops(c))cycle
+        is_surflit=(j<=0)
+        call this%simic_bgc(c,j)%runbgc(is_surflit, dtime, this%simic_forc(c,j), nstates, ystates0, ystatesf, betr_status)
+        if(betr_status%check_status())then
+          write(laystr,'(I2.2)')j
+          betr_status%msg=trim(betr_status%msg)//' lay '//trim(laystr)
+          return
+        endif
+
+        call this%retrieve_output(c, j, nstates, ystates0, ystatesf, dtime, betrtracer_vars, tracerflux_vars,&
+           tracerstate_vars, plant_soilbgc, biogeo_flux)
+
       enddo
     enddo
+    deallocate(ystates0)
+    deallocate(ystatesf)
    end associate
   end subroutine calc_bgc_reaction
 
@@ -726,4 +732,54 @@ contains
 
    end subroutine retrieve_biostates
 
+
+  !------------------------------------------------------------------------------
+  subroutine retrieve_output(this, c, j, nstates, ystates0, ystatesf, dtime, betrtracer_vars, tracerflux_vars,&
+     tracerstate_vars, plant_soilbgc, biogeo_flux)
+  !DESCRIPTION
+  !retrieve flux and state variables after evolving the bgc calculation
+  !
+  !USES
+  use BetrTracerType           , only : betrtracer_type
+  use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
+  use tracerfluxType           , only : tracerflux_type
+  use tracerstatetype          , only : tracerstate_type
+  use betr_ctrl                , only : betr_spinup_state
+  use PlantSoilBGCMod          , only : plant_soilbgc_type
+  use simicPlantSoilBGCType    , only : simic_plant_soilbgc_type
+  use tracer_varcon            , only : catomw, natomw, patomw, fix_ip
+  implicit none
+  class(simic_bgc_reaction_type) , intent(inout)    :: this
+  integer                              , intent(in) :: c, j
+  integer                              , intent(in) :: nstates
+  real(r8)                             , intent(in) :: ystates0(nstates)
+  real(r8)                             , intent(inout) :: ystatesf(nstates)
+  real(r8)                             , intent(in) :: dtime
+  type(betrtracer_type)                , intent(in) :: betrtracer_vars               ! betr configuration information
+  type(tracerstate_type)               , intent(inout) :: tracerstate_vars
+  type(tracerflux_type)                , intent(inout) :: tracerflux_vars
+  class(plant_soilbgc_type)            , intent(inout) :: plant_soilbgc
+  type(betr_biogeo_flux_type)          , intent(inout) :: biogeo_flux
+
+  integer :: k, k1, k2, jj, p
+  integer :: trcid
+
+  associate( &
+     litr_beg =>  this%simic_index%litr_beg  , &
+     litr_end =>  this%simic_index%litr_end  , &
+     wood_beg =>  this%simic_index%wood_beg  , &
+     wood_end =>  this%simic_index%wood_end  , &
+     dom_beg =>  this%simic_index%dom_beg    , &
+     dom_end =>  this%simic_index%dom_end    , &
+     Bm_beg  =>  this%simic_index%Bm_beg     , &
+     Bm_end  =>  this%simic_index%Bm_end     , &
+     volatileid            => betrtracer_vars%volatileid                   , &
+     tracer_flx_netpro_vr  => tracerflux_vars%tracer_flx_netpro_vr_col     , & !
+     tracer_flx_parchm_vr  => tracerflux_vars%tracer_flx_parchm_vr_col     , & !
+     ngwmobile_tracers     => betrtracer_vars%ngwmobile_tracers              & !
+  )
+
+
+  end associate
+  end subroutine retrieve_output
 end module SimicBGCReactionsType
