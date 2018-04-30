@@ -1562,7 +1562,6 @@ contains
     do c = bounds%begc, bounds%endc
 
       !dual phase tracers
-
       tracerstate_vars%tracer_conc_mobile_col    (c,:, :                                   )  = 0._r8
       tracerstate_vars%tracer_conc_frozen_col    (c,:, :                                   )  = 0._r8
       tracerstate_vars%tracer_conc_surfwater_col (c,:                                      )  = 0._r8
@@ -1783,7 +1782,6 @@ contains
       this%centuryforc(c,j)%cflx_input_litr_cwd = biophysforc%c12flx%cflx_input_litr_cwd_vr_col(c,j)
       this%centuryforc(c,j)%cflx_input_litr_lwd = biophysforc%c12flx%cflx_input_litr_lwd_vr_col(c,j)
       this%centuryforc(c,j)%cflx_input_litr_fwd = biophysforc%c12flx%cflx_input_litr_fwd_vr_col(c,j)
-
       this%centuryforc(c,j)%nflx_input_litr_met = biophysforc%n14flx%nflx_input_litr_met_vr_col(c,j)
       this%centuryforc(c,j)%nflx_input_litr_cel = biophysforc%n14flx%nflx_input_litr_cel_vr_col(c,j)
       this%centuryforc(c,j)%nflx_input_litr_lig = biophysforc%n14flx%nflx_input_litr_lig_vr_col(c,j)

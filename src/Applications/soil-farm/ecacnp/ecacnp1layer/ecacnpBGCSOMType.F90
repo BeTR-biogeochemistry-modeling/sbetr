@@ -1,4 +1,4 @@
-module BgcCentSOMType
+module ecacnpBGCSOMType
 !
 !DESCRIPTION
 !module defines the century decomposition
@@ -227,7 +227,6 @@ contains
     c_loc => centurybgc_index%c_loc               &
   )
   call bstatus%reset()
-
   if(is_surflit)then
     lay=1
   else
@@ -235,7 +234,6 @@ contains
   endif
   call this%calc_cnp_ratios(centurybgc_index, ystates, bstatus)
   if (bstatus%check_status())return
-  !calculate potential decay coefficient (1/s)
   call this%calc_som_decay_k(lay, centurybgc_index, decompkf_eca, k_decay)
 
   !calculate potential decay rates (mol C / s)
@@ -790,6 +788,7 @@ contains
     is_cenpool_som => centurybgc_index%is_cenpool_som, &
     ompoolnames => centurybgc_index%ompoolnames &
   )
+  call bstatus%reset()
   !for om pools
   do jj = 1, ncentpools
     kc = (jj-1) * nelms + c_loc
@@ -1088,4 +1087,4 @@ contains
   end associate
   end subroutine calc_pot_min_np_flx
 
-end module BgcCentSOMType
+end module ecacnpBGCSOMType

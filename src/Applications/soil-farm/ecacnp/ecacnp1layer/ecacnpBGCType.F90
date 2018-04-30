@@ -9,16 +9,16 @@ module ecacnpBGCType
   use bshr_log_mod              , only : errMsg => shr_log_errMsg
   use betr_varcon               , only : spval => bspval
   use betr_ctrl                 , only : spinup_state => betr_spinup_state
+  use gbetrType                 , only : gbetr_type
+  use BiogeoConType             , only : BiogeoCon_type
+  use BetrStatusType            , only : betr_status_type
+  use BeTRJarModel              , only : jar_model_type
   use ecacnpBGCDecompType      , only : DecompCent_type
   use ecacnpBGCIndexType       , only : centurybgc_index_type
   use ecacnpBGCNitDenType      , only : century_nitden_type
-  use gbetrType                 , only : gbetr_type
-  use BgcCentSOMType            , only : CentSom_type
+  use ecacnpBGCSOMType          , only : CentSom_type
   use ecacnpBGCCompetType      , only : Compet_ECA_type
-  use BiogeoConType             , only : BiogeoCon_type
   use ecacnpParaType            , only : ecacnp_para_type
-  use BetrStatusType            , only : betr_status_type
-  use BeTRJarModel              , only : jar_model_type
   implicit none
   private
   character(len=*), private, parameter :: mod_filename = &
@@ -535,17 +535,15 @@ contains
    call this%add_ext_input(dtime, this%centurybgc_index, bgc_forc, &
       this%c_inflx, this%n_inflx, this%p_inflx)
 !   call this%end_massbal_check('af add_ext_input')
-
 !  if(this%bgc_on)then
   !initialize decomposition scaling factors
   call this%decompkf_eca%set_decompk_scalar(ystates1(lid_o2), bgc_forc)
 
   !initialize all entries to zero
   cascade_matrix(:,:) = 0._r8
-
   !calculate default stoichiometry entries
   call this%calc_cascade_matrix(this%centurybgc_index, cascade_matrix, frc_c13, frc_c14)
-  !if(this%centurybgc_index%debug)call this%checksum_cascade(this%centurybgc_index)
+  !if(this%centurybgc_index%debug)call this%checksum_cascade(this%centurybgc_index)'
   !run century decomposition, return decay rates, cascade matrix, potential hr
   call this%censom%run_decomp(is_surflit, this%centurybgc_index, dtime, ystates1(1:nom_tot_elms),&
       this%decompkf_eca, bgc_forc%pct_sand, bgc_forc%pct_clay,this%alpha_n, this%alpha_p, &
@@ -598,7 +596,6 @@ contains
 !  if(this%centurybgc_index%debug)call this%end_massbal_check('bf exit runbgc')
 !  endif
   ystatesf(:) = ystates1(:)
-
   end associate
   end subroutine runbgc_ecacnp
   !-------------------------------------------------------------------------------
@@ -1096,7 +1093,6 @@ contains
       kc14=(jj-1)*nelms+c14_loc
       this%ystates1(kc14) =this%ystates0(kc14) + c14_flx_input*dtime/c14atomw
     endif
-!    print*,'c n p',this%ystates1(kc),this%ystates1(kn),this%ystates1(kp)
     end associate
     end subroutine add_som_pool
    !----------------------------------------------------------------
@@ -1257,7 +1253,6 @@ contains
     if(scal /= 1._r8)pot_decomp(jj)=pot_decomp(jj)*scal
     rrates(jj) = pot_decomp(jj)
   enddo
-
   rrates(lid_nh4_nit_reac) = this%pot_f_nit*ECA_factor_nit
   rrates(lid_no3_den_reac) = this%pot_f_denit*ECA_factor_den
   rrates(lid_minp_soluble_to_secp_reac) =  ECA_factor_minp_msurf * this%msurf_minp &

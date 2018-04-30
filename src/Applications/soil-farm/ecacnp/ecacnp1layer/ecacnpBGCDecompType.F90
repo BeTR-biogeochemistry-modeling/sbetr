@@ -168,7 +168,6 @@ implicit none
 
   !depth scalar, according to Koven et al. (2013), BG, the depth scalar is needed to resolve the radiocarbon profile
   this%depth_scalar = exp(-depz/decomp_depth_efolding)
-
   end associate
   end subroutine set_decompk_scalar
 
