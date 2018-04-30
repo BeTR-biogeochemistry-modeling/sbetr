@@ -1,4 +1,4 @@
-module SimicIndexType
+module simicBGCIndexType
 
   use bshr_kind_mod  , only : r8 => shr_kind_r8
   use betr_ctrl    , only : spinup_state => betr_spinup_state
@@ -29,8 +29,17 @@ implicit none
      integer           :: lid_o2
      integer           :: lid_ar
      integer           :: lid_co2
+     integer           :: lid_c13_co2
+     integer           :: lid_c14_co2
      integer           :: lid_ch4
      integer           :: lid_co2_hr       !diagnostic variables
+     integer           :: lid_o2_paere
+     integer           :: lid_n2_paere
+     integer           :: lid_ar_paere
+     integer           :: lid_co2_paere
+     integer           :: lid_c13_co2_paere
+     integer           :: lid_c14_co2_paere
+     integer           :: lid_ch4_paere
      integer           :: litr_beg, litr_end  !litr group
      integer           :: wood_beg, wood_end  !wood group
      integer           :: dom_beg,  dom_end   !dom group
@@ -285,7 +294,6 @@ implicit none
        countelm(this%Bm_beg,this%Bm_end) + &
        countelm(this%dom_beg,this%dom_end))/this%nelms   !include coarse wood debris
 
-
     itemp               = this%nom_pools*this%nelms
 
     this%nom_tot_elms    = itemp
@@ -298,14 +306,36 @@ implicit none
 
     this%lid_co2        = addone(itemp);call list_insert(list_name, 'co2',vid);call list_insert(list_unit,'mol m-3',uid)
 
+    if(use_c13)then
+      this%lid_c13_co2  = addone(itemp);call list_insert(list_name, 'c13_co2',vid);call list_insert(list_unit,'mol m-3',uid)
+    endif
+    if(use_c14)then
+      this%lid_c14_co2  = addone(itemp);call list_insert(list_name, 'c14_co2',vid);call list_insert(list_unit,'mol m-3',uid)
+    endif
+
     this%lid_n2         = addone(itemp);call list_insert(list_name, 'n2',vid); call list_insert(list_unit, 'mol N2 m-3',uid)
 
     this%lid_ch4        = addone(itemp);call list_insert(list_name, 'ch4',vid); call list_insert(list_unit, 'mol ch4 m-3',uid)
 
     this%nprimvars      = itemp
 
-    this%lid_co2_hr   = addone(itemp);
-    call list_insert(list_name, 'co2_hr',vid); call list_insert(list_unit,'mol C m-3 s-1',uid)
+    this%lid_co2_hr     = addone(itemp);call list_insert(list_name, 'co2_hr',vid); call list_insert(list_unit,'mol m-3 s-1',uid)
+
+    this%lid_o2_paere  = addone(itemp);call list_insert(list_name, 'o2_paere',vid); call list_insert(list_unit,'mol m-3 s-1',uid)
+
+    this%lid_n2_paere  = addone(itemp);call list_insert(list_name, 'n2_paere',vid); call list_insert(list_unit,'mol m-3 s-1',uid)
+
+    this%lid_ar_paere  = addone(itemp);call list_insert(list_name, 'ar_paere',vid); call list_insert(list_unit,'mol m-3 s-1',uid)
+
+    this%lid_ch4_paere  = addone(itemp);call list_insert(list_name, 'ch4_paere',vid); call list_insert(list_unit,'mol m-3 s-1',uid)
+
+    this%lid_co2_paere  = addone(itemp);call list_insert(list_name, 'co2_paere',vid); call list_insert(list_unit,'mol m-3 s-1',uid)
+    if(use_c13)then
+      this%lid_c13_co2_paere  = addone(itemp);call list_insert(list_name, 'c13_co2_paere',vid); call list_insert(list_unit,'mol m-3 s-1',uid)
+    endif
+    if(use_c14)then
+      this%lid_co2_paere  = addone(itemp);call list_insert(list_name, 'c14_co2_paere',vid); call list_insert(list_unit,'mol m-3 s-1',uid)
+    endif
 
     this%nstvars          = itemp          !totally 14+32 state variables
 
@@ -337,4 +367,4 @@ implicit none
 
   end subroutine InitAllocate
 
-end module SimicIndexType
+end module simicBGCIndexType

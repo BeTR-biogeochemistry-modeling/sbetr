@@ -1,6 +1,6 @@
 set(SIMIC1LAYER_SOURCES
-  SimicIndexType.F90
-  SimicBGCType.F90
+  simicBGCIndexType.F90
+  simicBGCType.F90
 )
 
 

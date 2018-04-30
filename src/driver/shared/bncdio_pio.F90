@@ -419,8 +419,9 @@ module bncdio_pio
   integer :: lxtype
   type(file_desc_t) :: ncid_tmp
   character(len=256) :: str ! temporary
-  character(len=32) :: subname='ncd_def_var' ! subroutine name
+  character(len=32) :: subname
 !-----------------------------------------------------------------------
+  write(subname,'(A)')'ncd_def_var '//trim(varname)
 
   if (.not. masterproc) return
   !print*,'define:',trim(varname)
