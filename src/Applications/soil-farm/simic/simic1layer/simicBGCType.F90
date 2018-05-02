@@ -277,25 +277,27 @@ contains
 
   time = 0._r8
   yf(:) = ystates1(:)
-  print*,'bf micb',this%simic_index%lid_micbl,ystates1(this%simic_index%lid_micbl)
+!  print*,'bf micb',this%simic_index%lid_micbl,ystates1(this%simic_index%lid_micbl)
   call this%ode_adapt_ebbks1(yf, nprimvars, nstvars, time, dtime, ystates1)
-  print*,'af micb',this%simic_index%lid_micbl,ystates1(this%simic_index%lid_micbl)
+!  print*,'af micb',this%simic_index%lid_micbl,ystates1(this%simic_index%lid_micbl)
 
   ystatesf(:) = ystates1(:)
 
   end associate
   end subroutine runbgc_simic
   !-------------------------------------------------------------------------------
-  subroutine simic_rrates(this, simic_index, dtime,  nstates, ystates1, rrates)
+  subroutine simic_rrates(this, simic_index, dtime,  nstates, ystates1, doc_cue, rrates)
   !
   !DESCRIPTION
   !the core of simic model
+
   implicit none
   class(simic_bgc_type)  , intent(inout) :: this
   real(r8)               , intent(in)    :: dtime
   integer                , intent(in)    :: nstates
   real(r8)               , intent(in)    :: ystates1(nstates)
   type(simic_index_type) , intent(in)    :: simic_index
+  real(r8)               , intent(in)    :: doc_cue
   real(r8)               , intent(out)   :: rrates(simic_index%nreactions)
 
   real(r8) :: depolymer_l1,depolymer_l2,depolymer_l3,depolymer_cwd
@@ -368,9 +370,11 @@ contains
   Rh_gpot = Rh_pot - Rm_pot
   Rmx = Rm_pot - Rh_pot
   doc_uptake = Rh_pot
+
   if(Rh_gpot > 0._r8)then
     !active growth
-    doc_uptake = doc_uptake + Rh_gpot * ystates1(lid_cue)/(1._r8-ystates1(lid_cue))
+    !print*,'cue',doc_cue
+    doc_uptake = doc_uptake + Rh_gpot * doc_cue/(1._r8-doc_cue)
   endif
 
   !compute mortality
@@ -390,11 +394,13 @@ contains
   rrates(micbd_depoly_reac)    = depolymer_md
   rrates(micbl_mort_reac)      = mort
   rrates(doc_uptake_reac)      = doc_uptake
-  rrates(o2_resp_reac)         = Rh_gpot
+  rrates(o2_resp_reac)         = Rh_pot
+
 !  print*,'rates'
 !  print*,(rrates(jj),jj=1,simic_index%nreactions)
 !  print*,'states'
 !  print*,(ystates1(jj),jj=1,nstates)
+!  print*,'hr comp',Rh_pot, Rm_pot
   end associate
   end subroutine simic_rrates
   !-------------------------------------------------------------------------------
@@ -647,7 +653,6 @@ contains
   reac = simic_index%doc_uptake_reac
   cascade_matrix(lid_doc, reac)   = -1._r8
   cascade_matrix(lid_micbl, reac) = 1._r8
-
   end associate
   end subroutine calc_cascade_matrix
 
@@ -727,6 +732,7 @@ contains
        endif
        if(abs(dtr/dt)<1.e-4_r8)exit
     enddo
+
   end subroutine ode_adapt_ebbks1
 
   !--------------------------------------------------------------------
@@ -753,13 +759,18 @@ contains
   real(r8) :: p_dt(1:nprimvars)
   real(r8) :: d_dt(1:nprimvars)
   real(r8) :: pscal(1:nprimvars)
+  real(r8) :: doc_cue
 
-  associate(         &
-    nreactions => this%simic_index%nreactions &
+  associate(                                            &
+    lid_cue        => this%simic_index%lid_cue        , &
+    lid_doc        => this%simic_index%lid_doc        , &
+    doc_uptake_reac=> this%simic_index%doc_uptake_reac, &
+    nreactions => this%simic_index%nreactions           &
   )
-
-  call this%simic_rrates(this%simic_index, dtime, nstvars, ystate, rrates)
-
+  doc_cue = safe_div(ystate(lid_cue), ystate(lid_doc))
+  call this%simic_rrates(this%simic_index, dtime, nstvars, ystate, doc_cue, rrates)
+  this%cascade_matrixd(lid_cue, doc_uptake_reac) =  doc_cue
+  this%cascade_matrix(lid_cue, doc_uptake_reac)  = -doc_cue
   it=0
   rscal=0._r8
   do
@@ -783,7 +794,10 @@ contains
     endif
     it = it + 1
   enddo
-
+!  print*,'dydt',dydt(this%simic_index%lid_doc), dydt(this%simic_index%lid_cue)
+!  do jj = 1, nprimvars
+!    print*,jj, dydt(jj)*dtime, ystate(jj)
+!  enddo
   end associate
   end subroutine bgc_integrate
 

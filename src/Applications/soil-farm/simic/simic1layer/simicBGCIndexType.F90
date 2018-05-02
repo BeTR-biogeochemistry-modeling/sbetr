@@ -342,7 +342,7 @@ implicit none
        countelm(this%Bm_beg,this%Bm_end) + &
        countelm(this%dom_beg,this%dom_end))/this%nelms   !include coarse wood debris
 
-    itemp               = this%nom_pools*this%nelms + 1
+    itemp               = this%nom_pools*this%nelms + countelm(this%dom_beg,this%dom_end)
 
     this%nom_tot_elms    = itemp
 
@@ -398,7 +398,7 @@ implicit none
     call copy_name(this%nstvars, list_unit, this%varunits(1:this%nstvars))
     call copy_name(this%nom_pools, list_pool, this%ompoolnames(1:this%nom_pools))
     call copy_name_type(this%nstvars, list_name, this%vartypes(1:this%nstvars))
-!    call list_disp(list_name);call list_disp(list_pool);call list_disp(list_unit)
+    !call list_disp(list_name); call list_disp(list_pool);call list_disp(list_unit)
 
     call list_free(list_name)
     call list_free(list_pool)

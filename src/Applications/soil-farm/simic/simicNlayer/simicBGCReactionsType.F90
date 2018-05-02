@@ -659,7 +659,9 @@ contains
              co2_ppmv   => biophysforc%co2_ppmv_col             , &
              ch4_ppmv   => biophysforc%ch4_ppmv_col             , &
              pbot_pa    => biophysforc%forc_pbot_downscaled_col , &
-             tair       => biophysforc%forc_t_downscaled_col      &
+             tair       => biophysforc%forc_t_downscaled_col    , &
+             id_trc_beg_dom=>betrtracer_vars%id_trc_beg_dom     , &
+             id_trc_end_dom=>betrtracer_vars%id_trc_end_dom       &
 
          )
 
@@ -671,7 +673,7 @@ contains
          tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_ar)    =ppm2molv(pbot_pa(c), ar_ppmv(c), tair(c))!mol m-3, contant boundary condition
          tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_co2x)  =ppm2molv(pbot_pa(c), co2_ppmv(c), tair(c))!mol m-3, contant boundary condition
          tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_ch4)   =ppm2molv(pbot_pa(c), ch4_ppmv(c), tair(c))!mol m-3, contant boundary condition
-         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_doc)  = 0._r8                        !mol m-3, contant boundary condition, as concentration
+         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,id_trc_beg_dom:id_trc_end_dom)  = 0._r8                        !mol m-3, contant boundary condition, as concentration
 
          tracerboundarycond_vars%bot_concflux_col(c,1,:)                                          = 0._r8                        !zero flux boundary condition for diffusion
          tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_n2))           = 2._r8*1.837e-5_r8/dz_top(c)  !m/s surface conductance
@@ -679,7 +681,6 @@ contains
          tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_ar))           = 2._r8*1.532e-5_r8/dz_top(c)  !m/s surface conductance
          tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_co2x))         = 2._r8*1.399e-5_r8/dz_top(c)  !m/s surface conductance
          tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_ch4))          = 2._r8*1.808e-5_r8/dz_top(c)  !m/s surface conductance
-         tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_doc))          = 0._r8                        !m/s surface conductance
       enddo
 
     end associate
@@ -737,8 +738,7 @@ contains
 
     associate(                                                                    &
     tracer_mobile_phase            => tracerstate_vars%tracer_conc_mobile_col  ,  &
-    tracer_flx_netpro_vr           => tracerflux_vars%tracer_flx_netpro_vr_col ,  &
-    id_trc_doc                     => betrtracer_vars%id_trc_doc                  &
+    tracer_flx_netpro_vr           => tracerflux_vars%tracer_flx_netpro_vr_col    &
     )
 
     call betr_status%reset()
@@ -754,6 +754,7 @@ contains
         if(j<jtops(c))cycle
         is_surflit=(j<=0)
         call this%simic_bgc(c,j)%runbgc(is_surflit, dtime, this%simic_forc(c,j), nstates, ystates0, ystatesf, betr_status)
+
         if(betr_status%check_status())then
           write(laystr,'(I2.2)')j
           betr_status%msg=trim(betr_status%msg)//' lay '//trim(laystr)
@@ -845,18 +846,15 @@ contains
     ! !LOCAL VARIABLES:
     integer :: p, c, l, k, j
     integer :: fc                                        ! filter_soilc index
-    integer               :: begc, endc
-    integer               :: begg, endg
+    integer :: begc, endc
+    integer :: begg, endg
+    integer :: trcid
     !-----------------------------------------------------------------------
-
-    ! remove compiler warnings for unused dummy args
-    if (this%dummy_compiler_warning)          continue
-    if (size(biophysforc%h2osoi_liq_col) > 0) continue
 
     begc = bounds%begc; endc= bounds%endc
     begg = bounds%begg; endg= bounds%endg
     !-----------------------------------------------------------------------
-
+    trcid = betrtracer_vars%id_trc_beg_Bm
 
     do c = bounds%begc, bounds%endc
 
@@ -866,12 +864,13 @@ contains
       tracerstate_vars%tracer_conc_surfwater_col(c,:)          = 0._r8
       tracerstate_vars%tracer_conc_aquifer_col(c,:)            = 0._r8
       tracerstate_vars%tracer_conc_grndwater_col(c,:)          = 0._r8
-      tracerstate_vars%tracer_conc_mobile_col(c,:, betrtracer_vars%id_trc_doc) = 1.e-6_r8  !
 
       if(betrtracer_vars%nsolid_equil_tracers>0)then
         tracerstate_vars%tracer_conc_solid_equil_col(c, :, :) = 0._r8
       endif
       tracerstate_vars%tracer_soi_molarmass_col(c,:)          = 0._r8
+      !initialize microbial biomass
+      tracerstate_vars%tracer_conc_mobile_col(c,:,trcid) = 1.e-4_r8
     enddo
 
   end subroutine InitCold
@@ -1135,6 +1134,8 @@ contains
 
     do k = 1, dom_end-dom_beg + 1
       k1 = dom_beg+k-1; k2 = betrtracer_vars%id_trc_beg_dom+ k-1
+      tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)
+      k1 = dom_beg+k; k2 = betrtracer_vars%id_trc_beg_dom+ k
       tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)
     enddo
 
