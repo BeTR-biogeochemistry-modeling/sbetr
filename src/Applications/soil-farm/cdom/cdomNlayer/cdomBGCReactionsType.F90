@@ -40,10 +40,10 @@ module cdomBGCReactionsType
   use BGCReactionsMod        , only : bgc_reaction_type
   use betr_varcon            , only : spval => bspval, ispval => bispval
   use tracer_varcon          , only : bndcond_as_conc, bndcond_as_flux
-  use cdomBGCType            , only : cdombgceca_type
+  use cdomBGCType            , only : cdom_bgc_type
   use JarBgcForcType         , only : JarBGC_forc_type
   use BetrStatusType         , only : betr_status_type
-  use cdomBGCIndexType       , only : cdombgc_index_type
+  use cdomBGCIndexType       , only : cdom_bgc_index_type
   use cdomParaType           , only : cdom_para
   use BetrStatusType         , only : betr_status_type
   implicit none
@@ -60,10 +60,10 @@ module cdomBGCReactionsType
   type, public, extends(bgc_reaction_type) :: &
     cdom_bgc_reaction_type
      private
-    type(cdombgceca_type), pointer :: cdomeca(:,:)
+    type(cdom_bgc_type), pointer :: cdomeca(:,:)
     type(JarBGC_forc_type), pointer :: centuryforc(:,:)
 
-    type(cdombgc_index_type) :: cdombgc_index
+    type(cdom_bgc_index_type) :: cdom_bgc_index
     logical :: use_c13
     logical :: use_c14
     logical :: nop_limit
@@ -187,12 +187,12 @@ contains
    tracer_conc_frozen_col  => tracerstate_vars%tracer_conc_frozen_col, &
    scalaravg_col           => biophysforc%scalaravg_col              , &
    dom_scalar              => biophysforc%dom_scalar_col             , &
-   nelm                    => this%cdombgc_index%nelms            , &
-   c_loc                   => this%cdombgc_index%c_loc            , &
-   n_loc                   => this%cdombgc_index%n_loc            , &
-   p_loc                   => this%cdombgc_index%p_loc            , &
-   c13_loc                 => this%cdombgc_index%c13_loc          , &
-   c14_loc                 => this%cdombgc_index%c14_loc          , &
+   nelm                    => this%cdom_bgc_index%nelms            , &
+   c_loc                   => this%cdom_bgc_index%c_loc            , &
+   n_loc                   => this%cdom_bgc_index%n_loc            , &
+   p_loc                   => this%cdom_bgc_index%p_loc            , &
+   c13_loc                 => this%cdom_bgc_index%c13_loc          , &
+   c14_loc                 => this%cdom_bgc_index%c14_loc          , &
    move_scalar             => tracers%move_scalar                      &
   )
 
@@ -307,11 +307,11 @@ contains
 
     integer :: kk
     associate(                                                 &
-      c_loc        => this%cdombgc_index%c_loc            , &
-      n_loc        => this%cdombgc_index%n_loc            , &
-      p_loc        => this%cdombgc_index%p_loc            , &
-      c13_loc      => this%cdombgc_index%c13_loc          , &
-      c14_loc      => this%cdombgc_index%c14_loc            &
+      c_loc        => this%cdom_bgc_index%c_loc            , &
+      n_loc        => this%cdom_bgc_index%n_loc            , &
+      p_loc        => this%cdom_bgc_index%p_loc            , &
+      c13_loc      => this%cdom_bgc_index%c13_loc          , &
+      c14_loc      => this%cdom_bgc_index%c14_loc            &
     )
 
     do kk = ibeg, iend, nelm
@@ -448,21 +448,21 @@ contains
     logical   :: carbon_only = .false.
 
     associate(                                 &
-     nelm    => this%cdombgc_index%nelms     , &
-     c_loc   => this%cdombgc_index%c_loc     , &
-     n_loc   => this%cdombgc_index%n_loc     , &
-     p_loc   => this%cdombgc_index%p_loc     , &
-     c13_loc => this%cdombgc_index%c13_loc   , &
-     c14_loc => this%cdombgc_index%c14_loc   , &
-     e_loc   => this%cdombgc_index%e_loc     , &
-     nlit    => this%cdombgc_index%nlit      , &
-     nwood   => this%cdombgc_index%nwood       &
+     nelm    => this%cdom_bgc_index%nelms     , &
+     c_loc   => this%cdom_bgc_index%c_loc     , &
+     n_loc   => this%cdom_bgc_index%n_loc     , &
+     p_loc   => this%cdom_bgc_index%p_loc     , &
+     c13_loc => this%cdom_bgc_index%c13_loc   , &
+     c14_loc => this%cdom_bgc_index%c14_loc   , &
+     e_loc   => this%cdom_bgc_index%e_loc     , &
+     nlit    => this%cdom_bgc_index%nlit      , &
+     nwood   => this%cdom_bgc_index%nwood       &
     )
     call bstatus%reset()
 
     if (this%dummy_compiler_warning) continue
 
-    call this%cdombgc_index%Init(cdom_para%use_c13, cdom_para%use_c14, &
+    call this%cdom_bgc_index%Init(cdom_para%use_c13, cdom_para%use_c14, &
        cdom_para%non_limit, cdom_para%nop_limit, betr_maxpatch_pft)
 
     if(bstatus%check_status())return
@@ -479,7 +479,7 @@ contains
         call this%cdomeca(c,j)%Init(cdom_para, bstatus)
         if(bstatus%check_status())return
 
-        call this%centuryforc(c,j)%Init(this%cdombgc_index%nstvars)
+        call this%centuryforc(c,j)%Init(this%cdom_bgc_index%nstvars)
       enddo
     enddo
     this%use_c13 = cdom_para%use_c13
@@ -943,12 +943,12 @@ contains
 
     integer :: trcid
     associate(                                 &
-     nelm    => this%cdombgc_index%nelms     , &
-     c_loc   => this%cdombgc_index%c_loc     , &
-     n_loc   => this%cdombgc_index%n_loc     , &
-     p_loc   => this%cdombgc_index%p_loc     , &
-     c13_loc => this%cdombgc_index%c13_loc   , &
-     c14_loc => this%cdombgc_index%c14_loc     &
+     nelm    => this%cdom_bgc_index%nelms     , &
+     c_loc   => this%cdom_bgc_index%c_loc     , &
+     n_loc   => this%cdom_bgc_index%n_loc     , &
+     p_loc   => this%cdom_bgc_index%p_loc     , &
+     c13_loc => this%cdom_bgc_index%c13_loc   , &
+     c14_loc => this%cdom_bgc_index%c14_loc     &
     )
 
     trcid = trc_lit_beg+litr_cnt*nelm+c_loc-1
@@ -1011,12 +1011,12 @@ contains
     integer :: trcid
 
     associate(                                 &
-     nelm    => this%cdombgc_index%nelms     , &
-     c_loc   => this%cdombgc_index%c_loc     , &
-     n_loc   => this%cdombgc_index%n_loc     , &
-     p_loc   => this%cdombgc_index%p_loc     , &
-     c13_loc => this%cdombgc_index%c13_loc   , &
-     c14_loc => this%cdombgc_index%c14_loc     &
+     nelm    => this%cdom_bgc_index%nelms     , &
+     c_loc   => this%cdom_bgc_index%c_loc     , &
+     n_loc   => this%cdom_bgc_index%n_loc     , &
+     p_loc   => this%cdom_bgc_index%p_loc     , &
+     c13_loc => this%cdom_bgc_index%c13_loc   , &
+     c14_loc => this%cdom_bgc_index%c14_loc     &
     )
     trcid = trc_wood_beg+wood_cnt*nelm+c_loc-1
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, &
@@ -1205,7 +1205,7 @@ contains
     if(betrtracer_vars%debug)call this%debug_info(bounds, num_soilc, filter_soilc, col%dz(bounds%begc:bounds%endc,bounds%lbj:bounds%ubj),&
         betrtracer_vars, tracerstate_vars,  'before bgcreact', betr_status)
 
-    nstates = this%cdombgc_index%nstvars
+    nstates = this%cdom_bgc_index%nstvars
     allocate(ystates0(nstates))
     allocate(ystatesf(nstates))
 
@@ -1237,11 +1237,11 @@ contains
         endif
 !        if(.not. betrtracer_vars%debug)then
           !apply loss through fire,
-          call this%rm_ext_output(c, j, dtime, nstates, ystatesf, this%cdombgc_index,&
+          call this%rm_ext_output(c, j, dtime, nstates, ystatesf, this%cdom_bgc_index,&
              this%centuryforc(c,j), biogeo_flux)
 !        endif
         call this%precision_filter(nstates, ystatesf)
-        this%cdombgc_index%debug=betrtracer_vars%debug
+        this%cdom_bgc_index%debug=betrtracer_vars%debug
         call this%retrieve_output(c, j, nstates, ystates0, ystatesf, dtime, betrtracer_vars, tracerflux_vars,&
            tracerstate_vars, plant_soilbgc, biogeo_flux)
 
@@ -1270,12 +1270,12 @@ contains
   end subroutine calc_bgc_reaction
 
   !--------------------------------------------------------------------
-  subroutine rm_ext_output(this, c, j, dtime, nstates, ystatesf, cdombgc_index, cdomeca_forc, biogeo_flux)
+  subroutine rm_ext_output(this, c, j, dtime, nstates, ystatesf, cdom_bgc_index, cdomeca_forc, biogeo_flux)
   !
   ! DESCRIPTION
   ! apply om loss through fire
 
-  use cdomBGCIndexType       , only : cdombgc_index_type
+  use cdomBGCIndexType       , only : cdom_bgc_index_type
   use JarBgcForcType            , only : JarBGC_forc_type
   use tracer_varcon             , only : catomw, natomw, patomw, c13atomw, c14atomw
   use BeTR_biogeoFluxType       , only : betr_biogeo_flux_type
@@ -1285,7 +1285,7 @@ contains
   real(r8)                    , intent(in) :: dtime
   integer                     , intent(in) :: nstates
   real(r8)                    , intent(inout):: ystatesf(1:nstates)
-  type(cdombgc_index_type) , intent(in) :: cdombgc_index
+  type(cdom_bgc_index_type) , intent(in) :: cdom_bgc_index
   type(JarBGC_forc_type)      , intent(in) :: cdomeca_forc
   type(betr_biogeo_flux_type) , intent(inout) :: biogeo_flux
   integer :: kc, kn, kp, jj, kc13, kc14
@@ -1294,21 +1294,21 @@ contains
 
   integer :: loc_indx(3)
   associate(                         &
-    lmet =>  cdombgc_index%lmet , &
-    lcel =>  cdombgc_index%lcel , &
-    llig =>  cdombgc_index%llig , &
-    cwd =>  cdombgc_index%cwd   , &
-    lwd =>  cdombgc_index%lwd   , &
-    fwd =>  cdombgc_index%fwd   , &
-    c13_loc=>  cdombgc_index%c13_loc,&
-    c14_loc=>  cdombgc_index%c14_loc,&
-    c_loc=>  cdombgc_index%c_loc,&
-    n_loc=>  cdombgc_index%n_loc,&
-    p_loc=>  cdombgc_index%p_loc,&
-    mic =>  cdombgc_index%mic , &
-    pom =>  cdombgc_index%pom , &
-    humus =>  cdombgc_index%humus , &
-    nelms => cdombgc_index%nelms, &
+    lmet =>  cdom_bgc_index%lmet , &
+    lcel =>  cdom_bgc_index%lcel , &
+    llig =>  cdom_bgc_index%llig , &
+    cwd =>  cdom_bgc_index%cwd   , &
+    lwd =>  cdom_bgc_index%lwd   , &
+    fwd =>  cdom_bgc_index%fwd   , &
+    c13_loc=>  cdom_bgc_index%c13_loc,&
+    c14_loc=>  cdom_bgc_index%c14_loc,&
+    c_loc=>  cdom_bgc_index%c_loc,&
+    n_loc=>  cdom_bgc_index%n_loc,&
+    p_loc=>  cdom_bgc_index%p_loc,&
+    mic =>  cdom_bgc_index%mic , &
+    pom =>  cdom_bgc_index%pom , &
+    humus =>  cdom_bgc_index%humus , &
+    nelms => cdom_bgc_index%nelms, &
     frac_loss_lit_to_fire => cdomeca_forc%frac_loss_lit_to_fire, &
     frac_loss_cwd_to_fire => cdomeca_forc%frac_loss_cwd_to_fire, &
     fire_decomp_c12loss_vr_col => biogeo_flux%c12flux_vars%fire_decomp_closs_vr_col, &
@@ -1482,10 +1482,10 @@ contains
     !-----------------------------------------------------------------------
 
     associate(                                    &
-        nelm    => this%cdombgc_index%nelms     , &
-        c_loc   => this%cdombgc_index%c_loc     , &
-        n_loc   => this%cdombgc_index%n_loc     , &
-        p_loc   => this%cdombgc_index%p_loc     , &
+        nelm    => this%cdom_bgc_index%nelms     , &
+        c_loc   => this%cdom_bgc_index%c_loc     , &
+        n_loc   => this%cdom_bgc_index%n_loc     , &
+        p_loc   => this%cdom_bgc_index%p_loc     , &
         id_trc_beg_Bm=> betrtracer_vars%id_trc_beg_Bm, &
         id_trc_end_Bm=> betrtracer_vars%id_trc_end_Bm, &
         volatileid => betrtracer_vars%volatileid,  &
@@ -1559,9 +1559,9 @@ contains
       id_trc_p_sol            => betrtracer_vars%id_trc_p_sol  &
    )
 
-    c_loc=this%cdombgc_index%c_loc
-    n_loc=this%cdombgc_index%n_loc
-    p_loc=this%cdombgc_index%p_loc
+    c_loc=this%cdom_bgc_index%c_loc
+    n_loc=this%cdom_bgc_index%n_loc
+    p_loc=this%cdom_bgc_index%p_loc
 
    !retrieve tracer losses through surface and subsurface runoffs
    !no3 leach, no3 runoff
@@ -1632,18 +1632,18 @@ contains
   integer :: k1, k2
   real(r8), parameter :: tiny_cval =1.e-16_r8
   associate( &
-     litr_beg =>  this%cdombgc_index%litr_beg  , &
-     litr_end =>  this%cdombgc_index%litr_end  , &
-     wood_beg =>  this%cdombgc_index%wood_beg  , &
-     wood_end =>  this%cdombgc_index%wood_end  , &
-     humus_beg =>  this%cdombgc_index%humus_beg    , &
-     humus_end =>  this%cdombgc_index%humus_end    , &
-     dom_beg =>  this%cdombgc_index%dom_beg    , &
-     dom_end =>  this%cdombgc_index%dom_end    , &
-     pom_beg =>  this%cdombgc_index%pom_beg    , &
-     pom_end =>  this%cdombgc_index%pom_end    , &
-     micbiom_beg  =>  this%cdombgc_index%micbiom_beg     , &
-     micbiom_end  =>  this%cdombgc_index%micbiom_end       &
+     litr_beg =>  this%cdom_bgc_index%litr_beg  , &
+     litr_end =>  this%cdom_bgc_index%litr_end  , &
+     wood_beg =>  this%cdom_bgc_index%wood_beg  , &
+     wood_end =>  this%cdom_bgc_index%wood_end  , &
+     humus_beg =>  this%cdom_bgc_index%humus_beg    , &
+     humus_end =>  this%cdom_bgc_index%humus_end    , &
+     dom_beg =>  this%cdom_bgc_index%dom_beg    , &
+     dom_end =>  this%cdom_bgc_index%dom_end    , &
+     pom_beg =>  this%cdom_bgc_index%pom_beg    , &
+     pom_end =>  this%cdom_bgc_index%pom_end    , &
+     micbiom_beg  =>  this%cdom_bgc_index%micbiom_beg     , &
+     micbiom_end  =>  this%cdom_bgc_index%micbiom_end       &
   )
   call betr_status%reset()
   SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__),betr_status)
@@ -1683,46 +1683,46 @@ contains
       if(this%centuryforc(c,j)%ystates(micbiom_beg)<=tiny_cval)this%centuryforc(c,j)%ystates(micbiom_beg:micbiom_end)=0._r8
 
       !non-soluble phase of mineral p
-      k1= betrtracer_vars%id_trc_beg_minp; k2 = this%cdombgc_index%lid_minp_secondary
+      k1= betrtracer_vars%id_trc_beg_minp; k2 = this%cdom_bgc_index%lid_minp_secondary
       this%centuryforc(c,j)%ystates(k2) = fpmax(tracerstate_vars%tracer_conc_mobile_col(c,j,k1))
 
-      k1 = betrtracer_vars%id_trc_end_minp;   k2 = this%cdombgc_index%lid_minp_occlude
+      k1 = betrtracer_vars%id_trc_end_minp;   k2 = this%cdom_bgc_index%lid_minp_occlude
       this%centuryforc(c,j)%ystates(k2) = fpmax(tracerstate_vars%tracer_conc_mobile_col(c,j,k1))
 
-      this%centuryforc(c,j)%ystates(this%cdombgc_index%lid_n2) = &
+      this%centuryforc(c,j)%ystates(this%cdom_bgc_index%lid_n2) = &
            fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_n2))
 
-      this%centuryforc(c,j)%ystates(this%cdombgc_index%lid_o2) = &
+      this%centuryforc(c,j)%ystates(this%cdom_bgc_index%lid_o2) = &
            fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_o2))
 
-      this%centuryforc(c,j)%ystates(this%cdombgc_index%lid_ar) = &
+      this%centuryforc(c,j)%ystates(this%cdom_bgc_index%lid_ar) = &
            fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_ar))
 
-      this%centuryforc(c,j)%ystates(this%cdombgc_index%lid_co2)= &
+      this%centuryforc(c,j)%ystates(this%cdom_bgc_index%lid_co2)= &
            fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_co2x))
 
       if(this%use_c13)then
-        this%centuryforc(c,j)%ystates(this%cdombgc_index%lid_c13_co2)= &
+        this%centuryforc(c,j)%ystates(this%cdom_bgc_index%lid_c13_co2)= &
            fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_c13_co2x))
       endif
       if(this%use_c14)then
-        this%centuryforc(c,j)%ystates(this%cdombgc_index%lid_c14_co2)= &
+        this%centuryforc(c,j)%ystates(this%cdom_bgc_index%lid_c14_co2)= &
           fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_c14_co2x))
       endif
 
-      this%centuryforc(c,j)%ystates(this%cdombgc_index%lid_ch4)= &
+      this%centuryforc(c,j)%ystates(this%cdom_bgc_index%lid_ch4)= &
            fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_ch4))
 
-      this%centuryforc(c,j)%ystates(this%cdombgc_index%lid_nh4)= &
+      this%centuryforc(c,j)%ystates(this%cdom_bgc_index%lid_nh4)= &
            fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_nh3x))
 
-      this%centuryforc(c,j)%ystates(this%cdombgc_index%lid_no3)= &
+      this%centuryforc(c,j)%ystates(this%cdom_bgc_index%lid_no3)= &
            fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_no3x))
 
-      this%centuryforc(c,j)%ystates(this%cdombgc_index%lid_n2o)= &
+      this%centuryforc(c,j)%ystates(this%cdom_bgc_index%lid_n2o)= &
            fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_n2o))
 
-      this%centuryforc(c,j)%ystates(this%cdombgc_index%lid_minp_soluble) = &
+      this%centuryforc(c,j)%ystates(this%cdom_bgc_index%lid_minp_soluble) = &
            fpmax(tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_p_sol))
 
       !input
@@ -1880,16 +1880,16 @@ contains
   integer :: jj
   integer :: kc, kn, kp, kc13, kc14
   associate(                                          &
-    nelms         => this%cdombgc_index%nelms       , &
-    c_loc         => this%cdombgc_index%c_loc       , &
-    n_loc         => this%cdombgc_index%n_loc       , &
-    p_loc         => this%cdombgc_index%p_loc       , &
-    c13_loc       => this%cdombgc_index%c13_loc     , &
-    c14_loc       => this%cdombgc_index%c14_loc     , &
-    lcel          => this%cdombgc_index%lcel        , &
-    llig          => this%cdombgc_index%llig        , &
-    ncentpools    => this%cdombgc_index%nom_pools   , &
-    is_ompool_som => this%cdombgc_index%is_ompool_som &
+    nelms         => this%cdom_bgc_index%nelms       , &
+    c_loc         => this%cdom_bgc_index%c_loc       , &
+    n_loc         => this%cdom_bgc_index%n_loc       , &
+    p_loc         => this%cdom_bgc_index%p_loc       , &
+    c13_loc       => this%cdom_bgc_index%c13_loc     , &
+    c14_loc       => this%cdom_bgc_index%c14_loc     , &
+    lcel          => this%cdom_bgc_index%lcel        , &
+    llig          => this%cdom_bgc_index%llig        , &
+    ncentpools    => this%cdom_bgc_index%nom_pools   , &
+    is_ompool_som => this%cdom_bgc_index%is_ompool_som &
   )
   do jj = 1, ncentpools
     kc = (jj-1) * nelms + c_loc
@@ -1946,20 +1946,20 @@ contains
   integer :: trcid
 
   associate(                                                                &
-    nom_pools             => this%cdombgc_index%nom_pools              , & !
-    nelms                 => this%cdombgc_index%nelms                  , & !
-    litr_beg              => this%cdombgc_index%litr_beg               , & !
-    litr_end              => this%cdombgc_index%litr_end               , & !
-    wood_beg              => this%cdombgc_index%wood_beg               , & !
-    wood_end              => this%cdombgc_index%wood_end               , & !
-    humus_beg             => this%cdombgc_index%humus_beg              , & !
-    humus_end             => this%cdombgc_index%humus_end              , & !
-    dom_beg               => this%cdombgc_index%dom_beg                , & !
-    dom_end               => this%cdombgc_index%dom_end                , & !
-    pom_beg               => this%cdombgc_index%pom_beg                , & !
-    pom_end               => this%cdombgc_index%pom_end                , & !
-    micbiom_beg                => this%cdombgc_index%micbiom_beg                 , & !
-    micbiom_end                => this%cdombgc_index%micbiom_end                 , & !
+    nom_pools             => this%cdom_bgc_index%nom_pools              , & !
+    nelms                 => this%cdom_bgc_index%nelms                  , & !
+    litr_beg              => this%cdom_bgc_index%litr_beg               , & !
+    litr_end              => this%cdom_bgc_index%litr_end               , & !
+    wood_beg              => this%cdom_bgc_index%wood_beg               , & !
+    wood_end              => this%cdom_bgc_index%wood_end               , & !
+    humus_beg             => this%cdom_bgc_index%humus_beg              , & !
+    humus_end             => this%cdom_bgc_index%humus_end              , & !
+    dom_beg               => this%cdom_bgc_index%dom_beg                , & !
+    dom_end               => this%cdom_bgc_index%dom_end                , & !
+    pom_beg               => this%cdom_bgc_index%pom_beg                , & !
+    pom_end               => this%cdom_bgc_index%pom_end                , & !
+    micbiom_beg                => this%cdom_bgc_index%micbiom_beg                 , & !
+    micbiom_end                => this%cdom_bgc_index%micbiom_end                 , & !
     volatileid            => betrtracer_vars%volatileid                   , &
     tracer_flx_netpro_vr  => tracerflux_vars%tracer_flx_netpro_vr_col     , & !
     tracer_flx_parchm_vr  => tracerflux_vars%tracer_flx_parchm_vr_col     , & !
@@ -1985,48 +1985,48 @@ contains
         ystatesf(pom_beg:pom_end)
 
       tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_n2) = &
-        ystatesf(this%cdombgc_index%lid_n2)
+        ystatesf(this%cdom_bgc_index%lid_n2)
 
       tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_o2) = &
-        ystatesf(this%cdombgc_index%lid_o2)
+        ystatesf(this%cdom_bgc_index%lid_o2)
 
       tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_ar) = &
-        ystatesf(this%cdombgc_index%lid_ar)
+        ystatesf(this%cdom_bgc_index%lid_ar)
 
       tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_co2x) = &
-        ystatesf(this%cdombgc_index%lid_co2)
+        ystatesf(this%cdom_bgc_index%lid_co2)
 
       if(this%use_c13)then
         tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_c13_co2x) = &
-          ystatesf(this%cdombgc_index%lid_c13_co2)
+          ystatesf(this%cdom_bgc_index%lid_c13_co2)
       endif
 
       if(this%use_c14)then
         tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_c14_co2x) = &
-          ystatesf(this%cdombgc_index%lid_c14_co2)
+          ystatesf(this%cdom_bgc_index%lid_c14_co2)
       endif
 
       tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_ch4) = &
-        ystatesf(this%cdombgc_index%lid_ch4)
+        ystatesf(this%cdom_bgc_index%lid_ch4)
 
       if(this%non_limit)then
 
-        if(ystatesf(this%cdombgc_index%lid_nh4)>0._r8)then
+        if(ystatesf(this%cdom_bgc_index%lid_nh4)>0._r8)then
           tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_nh3x) = &
-            ystatesf(this%cdombgc_index%lid_nh4)
+            ystatesf(this%cdom_bgc_index%lid_nh4)
 
           biogeo_flux%n14flux_vars%supplement_to_sminn_vr_col(c,j) = 0._r8
         else
           tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_nh3x) = 0._r8
 
           biogeo_flux%n14flux_vars%supplement_to_sminn_vr_col(c,j) = &
-              -ystatesf(this%cdombgc_index%lid_nh4)*natomw/dtime
-          ystatesf(this%cdombgc_index%lid_nh4)=0._r8
+              -ystatesf(this%cdom_bgc_index%lid_nh4)*natomw/dtime
+          ystatesf(this%cdom_bgc_index%lid_nh4)=0._r8
         endif
 
-        if(ystatesf(this%cdombgc_index%lid_no3)>0._r8)then
+        if(ystatesf(this%cdom_bgc_index%lid_no3)>0._r8)then
           tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_no3x) = &
-            ystatesf(this%cdombgc_index%lid_no3)
+            ystatesf(this%cdom_bgc_index%lid_no3)
 
         else
           tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_no3x) = 0._r8
@@ -2035,33 +2035,33 @@ contains
           !is problematic
           biogeo_flux%n14flux_vars%supplement_to_sminn_vr_col(c,j) =    &
              biogeo_flux%n14flux_vars%supplement_to_sminn_vr_col(c,j) - &
-             ystatesf(this%cdombgc_index%lid_no3)*natomw/dtime
-          ystatesf(this%cdombgc_index%lid_no3) = 0._r8
+             ystatesf(this%cdom_bgc_index%lid_no3)*natomw/dtime
+          ystatesf(this%cdom_bgc_index%lid_no3) = 0._r8
         endif
       else
         tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_nh3x) = &
-          ystatesf(this%cdombgc_index%lid_nh4)
+          ystatesf(this%cdom_bgc_index%lid_nh4)
 
         tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_no3x) = &
-          ystatesf(this%cdombgc_index%lid_no3)
+          ystatesf(this%cdom_bgc_index%lid_no3)
       endif
 
       tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_n2o) = &
-        ystatesf(this%cdombgc_index%lid_n2o)
+        ystatesf(this%cdom_bgc_index%lid_n2o)
 
       !not fixing inorganic Phosphorus
       if(.not. fix_ip)then
-        k1= betrtracer_vars%id_trc_beg_minp; k2 = this%cdombgc_index%lid_minp_secondary
+        k1= betrtracer_vars%id_trc_beg_minp; k2 = this%cdom_bgc_index%lid_minp_secondary
         tracerstate_vars%tracer_conc_mobile_col(c,j,k1) = ystatesf(k2)
 
-        k1 = betrtracer_vars%id_trc_end_minp;   k2 = this%cdombgc_index%lid_minp_occlude
+        k1 = betrtracer_vars%id_trc_end_minp;   k2 = this%cdom_bgc_index%lid_minp_occlude
         tracerstate_vars%tracer_conc_mobile_col(c,j,k1) = ystatesf(k2)
 
         if(this%nop_limit)then
 
-          if(ystatesf(this%cdombgc_index%lid_minp_soluble)>0._r8)then
+          if(ystatesf(this%cdom_bgc_index%lid_minp_soluble)>0._r8)then
             tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_p_sol) = &
-              ystatesf(this%cdombgc_index%lid_minp_soluble)
+              ystatesf(this%cdom_bgc_index%lid_minp_soluble)
 
             !no P-limitation in this time step
             biogeo_flux%p31flux_vars%supplement_to_sminp_vr_col(c,j) = 0._r8
@@ -2070,110 +2070,110 @@ contains
             tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_p_sol) =  0._r8
 
             biogeo_flux%p31flux_vars%supplement_to_sminp_vr_col(c,j) = &
-              -ystatesf(this%cdombgc_index%lid_minp_soluble)*patomw/dtime
-            ystatesf(this%cdombgc_index%lid_minp_soluble) = 0._r8
+              -ystatesf(this%cdom_bgc_index%lid_minp_soluble)*patomw/dtime
+            ystatesf(this%cdom_bgc_index%lid_minp_soluble) = 0._r8
           endif
         else
           tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_p_sol) = &
-            ystatesf(this%cdombgc_index%lid_minp_soluble)
+            ystatesf(this%cdom_bgc_index%lid_minp_soluble)
         endif
         !fluxes
         tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_p_sol) =      &
-          ystatesf(this%cdombgc_index%lid_minp_soluble) - &
-          ystates0(this%cdombgc_index%lid_minp_soluble)
+          ystatesf(this%cdom_bgc_index%lid_minp_soluble) - &
+          ystates0(this%cdom_bgc_index%lid_minp_soluble)
 
         trcid = betrtracer_vars%id_trc_beg_minp
         tracer_flx_netpro_vr(c,j, trcid) = &
-          ystatesf(this%cdombgc_index%lid_minp_secondary) - &
-          ystates0(this%cdombgc_index%lid_minp_secondary)
+          ystatesf(this%cdom_bgc_index%lid_minp_secondary) - &
+          ystates0(this%cdom_bgc_index%lid_minp_secondary)
 
         trcid = betrtracer_vars%id_trc_end_minp
         tracer_flx_netpro_vr(c,j, trcid) =  &
-          ystatesf(this%cdombgc_index%lid_minp_occlude) - &
-          ystates0(this%cdombgc_index%lid_minp_occlude)
+          ystatesf(this%cdom_bgc_index%lid_minp_occlude) - &
+          ystates0(this%cdom_bgc_index%lid_minp_occlude)
       endif
       !tracer fluxes
       tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_nh3x) =  &
-        ystatesf(this%cdombgc_index%lid_nh4) - &
-        ystates0(this%cdombgc_index%lid_nh4)
+        ystatesf(this%cdom_bgc_index%lid_nh4) - &
+        ystates0(this%cdom_bgc_index%lid_nh4)
 
       tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_no3x)  =  &
-        ystatesf(this%cdombgc_index%lid_no3) - &
-        ystates0(this%cdombgc_index%lid_no3)
+        ystatesf(this%cdom_bgc_index%lid_no3) - &
+        ystates0(this%cdom_bgc_index%lid_no3)
 
       tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_o2) ) = &
-         ystatesf(this%cdombgc_index%lid_o2_paere )  - &
-         ystates0(this%cdombgc_index%lid_o2_paere)
+         ystatesf(this%cdom_bgc_index%lid_o2_paere )  - &
+         ystates0(this%cdom_bgc_index%lid_o2_paere)
 
       if ( betr_spinup_state == 0 ) then
         tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_n2)  ) = &
-          ystatesf(this%cdombgc_index%lid_n2_paere)  - &
-          ystates0(this%cdombgc_index%lid_n2_paere)
+          ystatesf(this%cdom_bgc_index%lid_n2_paere)  - &
+          ystates0(this%cdom_bgc_index%lid_n2_paere)
 
         tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_ar)  ) = &
-          ystatesf(this%cdombgc_index%lid_ar_paere)  - &
-          ystates0(this%cdombgc_index%lid_ar_paere)
+          ystatesf(this%cdom_bgc_index%lid_ar_paere)  - &
+          ystates0(this%cdom_bgc_index%lid_ar_paere)
 
         tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_co2x)) = &
-          ystatesf(this%cdombgc_index%lid_co2_paere)  - &
-          ystates0(this%cdombgc_index%lid_co2_paere)
+          ystatesf(this%cdom_bgc_index%lid_co2_paere)  - &
+          ystates0(this%cdom_bgc_index%lid_co2_paere)
 
         if(this%use_c13)then
           tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_c13_co2x)) = &
-            ystatesf(this%cdombgc_index%lid_c13_co2_paere)  - &
-            ystates0(this%cdombgc_index%lid_c13_co2_paere)
+            ystatesf(this%cdom_bgc_index%lid_c13_co2_paere)  - &
+            ystates0(this%cdom_bgc_index%lid_c13_co2_paere)
         endif
 
         if(this%use_c14)then
           tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_c14_co2x)) = &
-            ystatesf(this%cdombgc_index%lid_c14_co2_paere)  - &
-            ystates0(this%cdombgc_index%lid_c14_co2_paere)
+            ystatesf(this%cdom_bgc_index%lid_c14_co2_paere)  - &
+            ystates0(this%cdom_bgc_index%lid_c14_co2_paere)
         endif
 
         tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_ch4) ) = &
-          ystatesf(this%cdombgc_index%lid_ch4_paere)  - &
-          ystates0(this%cdombgc_index%lid_ch4_paere)
+          ystatesf(this%cdom_bgc_index%lid_ch4_paere)  - &
+          ystates0(this%cdom_bgc_index%lid_ch4_paere)
 
         tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_n2o) ) = &
-          ystatesf(this%cdombgc_index%lid_n2o_paere)  - &
-          ystates0(this%cdombgc_index%lid_n2o_paere)
+          ystatesf(this%cdom_bgc_index%lid_n2o_paere)  - &
+          ystates0(this%cdom_bgc_index%lid_n2o_paere)
       endif
 
       tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_n2) = &
-        ystatesf(this%cdombgc_index%lid_n2) - &
-        ystates0(this%cdombgc_index%lid_n2)
+        ystatesf(this%cdom_bgc_index%lid_n2) - &
+        ystates0(this%cdom_bgc_index%lid_n2)
 
       tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_co2x ) = &
-        ystatesf(this%cdombgc_index%lid_co2) - &
-        ystates0(this%cdombgc_index%lid_co2)
+        ystatesf(this%cdom_bgc_index%lid_co2) - &
+        ystates0(this%cdom_bgc_index%lid_co2)
 
       if(this%use_c13)then
         tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_c13_co2x ) = &
-          ystatesf(this%cdombgc_index%lid_c13_co2) - &
-          ystates0(this%cdombgc_index%lid_c13_co2)
+          ystatesf(this%cdom_bgc_index%lid_c13_co2) - &
+          ystates0(this%cdom_bgc_index%lid_c13_co2)
       endif
 
       if(this%use_c14)then
         tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_c14_co2x ) = &
-          ystatesf(this%cdombgc_index%lid_c14_co2) - &
-          ystates0(this%cdombgc_index%lid_c14_co2)
+          ystatesf(this%cdom_bgc_index%lid_c14_co2) - &
+          ystates0(this%cdom_bgc_index%lid_c14_co2)
       endif
 
       tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_n2o  ) = &
-        ystatesf(this%cdombgc_index%lid_n2o) - &
-        ystates0(this%cdombgc_index%lid_n2o)
+        ystatesf(this%cdom_bgc_index%lid_n2o) - &
+        ystates0(this%cdom_bgc_index%lid_n2o)
 
       tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_o2   ) = &
-        ystatesf(this%cdombgc_index%lid_o2) - &
-        ystates0(this%cdombgc_index%lid_o2)
+        ystatesf(this%cdom_bgc_index%lid_o2) - &
+        ystates0(this%cdom_bgc_index%lid_o2)
 
       tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_ch4  ) = &
-        ystatesf(this%cdombgc_index%lid_ch4) - &
-        ystates0(this%cdombgc_index%lid_ch4)
+        ystatesf(this%cdom_bgc_index%lid_ch4) - &
+        ystates0(this%cdom_bgc_index%lid_ch4)
 
       tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_ar) = &
-        ystatesf(this%cdombgc_index%lid_ar) - &
-        ystates0(this%cdombgc_index%lid_ar)
+        ystatesf(this%cdom_bgc_index%lid_ar) - &
+        ystates0(this%cdom_bgc_index%lid_ar)
 
       !get net production for om pools
       do k = 1, litr_end-litr_beg + 1
@@ -2205,53 +2205,53 @@ contains
 
       !biogeo_flux
       biogeo_flux%c12flux_vars%hr_vr_col(c,j) = &
-        (ystatesf(this%cdombgc_index%lid_co2_hr) - &
-        ystates0(this%cdombgc_index%lid_co2_hr))*catomw/dtime
+        (ystatesf(this%cdom_bgc_index%lid_co2_hr) - &
+        ystates0(this%cdom_bgc_index%lid_co2_hr))*catomw/dtime
 
       biogeo_flux%p31flux_vars%secondp_to_occlp_vr_col(c,j) = &
-         (ystatesf(this%cdombgc_index%lid_minp_occlude) - &
-          ystates0(this%cdombgc_index%lid_minp_occlude))*patomw/dtime
+         (ystatesf(this%cdom_bgc_index%lid_minp_occlude) - &
+          ystates0(this%cdom_bgc_index%lid_minp_occlude))*patomw/dtime
 
       biogeo_flux%n14flux_vars%f_denit_vr_col(c,j)= &
-        (ystatesf(this%cdombgc_index%lid_no3_den) - &
-         ystates0(this%cdombgc_index%lid_no3_den))*natomw/dtime
+        (ystatesf(this%cdom_bgc_index%lid_no3_den) - &
+         ystates0(this%cdom_bgc_index%lid_no3_den))*natomw/dtime
 
       biogeo_flux%n14flux_vars%f_nit_vr_col(c,j) = &
-        (ystatesf(this%cdombgc_index%lid_nh4_nit) - &
-         ystates0(this%cdombgc_index%lid_nh4_nit))*natomw/dtime
+        (ystatesf(this%cdom_bgc_index%lid_nh4_nit) - &
+         ystates0(this%cdom_bgc_index%lid_nh4_nit))*natomw/dtime
 
       biogeo_flux%n14flux_vars%f_n2o_nit_vr_col(c,j) = &
-        (ystatesf(this%cdombgc_index%lid_n2o_nit) - &
-         ystates0(this%cdombgc_index%lid_n2o_nit))*natomw/dtime
+        (ystatesf(this%cdom_bgc_index%lid_n2o_nit) - &
+         ystates0(this%cdom_bgc_index%lid_n2o_nit))*natomw/dtime
 
   select type(plant_soilbgc)
   type is(cdom_plant_soilbgc_type)
     do p = 1, this%nactpft
       plant_soilbgc%plant_minn_no3_active_yield_flx_vr_patch(p,j) = &
-          (ystatesf(this%cdombgc_index%lid_plant_minn_no3_pft(p)) - &
-          ystates0(this%cdombgc_index%lid_plant_minn_no3_pft(p)))*natomw/dtime
+          (ystatesf(this%cdom_bgc_index%lid_plant_minn_no3_pft(p)) - &
+          ystates0(this%cdom_bgc_index%lid_plant_minn_no3_pft(p)))*natomw/dtime
 
       plant_soilbgc%plant_minn_nh4_active_yield_flx_vr_patch(p,j) = &
-          (ystatesf(this%cdombgc_index%lid_plant_minn_nh4_pft(p)) - &
-          ystates0(this%cdombgc_index%lid_plant_minn_nh4_pft(p)))*natomw/dtime
+          (ystatesf(this%cdom_bgc_index%lid_plant_minn_nh4_pft(p)) - &
+          ystates0(this%cdom_bgc_index%lid_plant_minn_nh4_pft(p)))*natomw/dtime
 
       plant_soilbgc%plant_minp_active_yield_flx_vr_patch(p,j) = &
-          (ystatesf(this%cdombgc_index%lid_plant_minp_pft(p)) - &
-           ystates0(this%cdombgc_index%lid_plant_minp_pft(p)))*patomw/dtime
+          (ystatesf(this%cdom_bgc_index%lid_plant_minp_pft(p)) - &
+           ystates0(this%cdom_bgc_index%lid_plant_minp_pft(p)))*patomw/dtime
 
     enddo
 
     plant_soilbgc%plant_minn_no3_active_yield_flx_vr_col(c,j) = &
-          (ystatesf(this%cdombgc_index%lid_plant_minn_no3) - &
-          ystates0(this%cdombgc_index%lid_plant_minn_no3))*natomw/dtime
+          (ystatesf(this%cdom_bgc_index%lid_plant_minn_no3) - &
+          ystates0(this%cdom_bgc_index%lid_plant_minn_no3))*natomw/dtime
 
     plant_soilbgc%plant_minn_nh4_active_yield_flx_vr_col(c,j) = &
-          (ystatesf(this%cdombgc_index%lid_plant_minn_nh4) - &
-          ystates0(this%cdombgc_index%lid_plant_minn_nh4))*natomw/dtime
+          (ystatesf(this%cdom_bgc_index%lid_plant_minn_nh4) - &
+          ystates0(this%cdom_bgc_index%lid_plant_minn_nh4))*natomw/dtime
 
     plant_soilbgc%plant_minp_active_yield_flx_vr_col(c,j) = &
-          (ystatesf(this%cdombgc_index%lid_plant_minp) - &
-           ystates0(this%cdombgc_index%lid_plant_minp))*patomw/dtime
+          (ystatesf(this%cdom_bgc_index%lid_plant_minp) - &
+           ystates0(this%cdom_bgc_index%lid_plant_minp))*patomw/dtime
 
   end select
 
@@ -2309,10 +2309,10 @@ contains
 
    write(*,*)trim(header)//': debug info c n p mass'
 
-   c_loc=this%cdombgc_index%c_loc
-   n_loc=this%cdombgc_index%n_loc
-   p_loc=this%cdombgc_index%p_loc
-   nelm =this%cdombgc_index%nelms
+   c_loc=this%cdom_bgc_index%c_loc
+   n_loc=this%cdom_bgc_index%n_loc
+   p_loc=this%cdom_bgc_index%p_loc
+   nelm =this%cdom_bgc_index%nelms
    c_mass = 0._r8; n_mass = 0._r8; p_mass = 0._r8; min_nh4=0._r8; min_no3=0._r8;minp=0._r8;p_massocl=0._r8
    do j = 1, bounds%ubj
      do fc = 1, num_soilc
@@ -2421,12 +2421,12 @@ contains
     call betr_status%reset()
     SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__),betr_status)
 
-    c_loc=this%cdombgc_index%c_loc
-    n_loc=this%cdombgc_index%n_loc
-    p_loc=this%cdombgc_index%p_loc
-    c13_loc=this%cdombgc_index%c13_loc
-    c14_loc=this%cdombgc_index%c14_loc
-    nelm =this%cdombgc_index%nelms
+    c_loc=this%cdom_bgc_index%c_loc
+    n_loc=this%cdom_bgc_index%n_loc
+    p_loc=this%cdom_bgc_index%p_loc
+    c13_loc=this%cdom_bgc_index%c13_loc
+    c14_loc=this%cdom_bgc_index%c14_loc
+    nelm =this%cdom_bgc_index%nelms
 
    do j = lbj, ubj
      do fc = 1, num_soilc

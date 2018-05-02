@@ -14,7 +14,8 @@ module betr_varcon
   character(len=16), parameter :: bnamep  = 'pft'          ! name of patches
   real(r8), public,  parameter :: bspval = 1.e36_r8  ! special value for real data
   integer , public,  parameter :: bispval = -9999     ! special value for int data (keep this negative to avoid conflicts with possible valid values)
-
+  integer , public,  parameter :: var_flux_type =1
+  integer , public,  parameter :: var_state_type=2
   real(r8) :: bc14ratio = 1.e-12_r8
 
   real(r8) :: boneatm = 1.01325e5_r8 !one standard atmospheric pressure

@@ -2,6 +2,8 @@ module ecacnpBGCIndexType
 
   use bshr_kind_mod  , only : r8 => shr_kind_r8
   use betr_ctrl    , only : spinup_state => betr_spinup_state
+  use gBGCIndexType  , only : gbgc_index_type
+  use betr_varcon    , only : var_flux_type, var_state_type
 implicit none
 
   private
@@ -13,10 +15,11 @@ implicit none
   type, private :: list_t
     character(len=loc_name_len) :: name
     integer :: id
+    integer :: itype
     type(list_t), pointer :: next => null()
   end type list_t
 
-  type, public :: centurybgc_index_type
+  type, public, extends(gbgc_index_type) :: ecacnp_bgc_index_type
      integer           :: nom_pools                              !not include coarse wood debris
 
      integer           :: nom_tot_elms
@@ -100,40 +103,52 @@ implicit none
      character(len=loc_name_len), allocatable :: varnames(:)
      character(len=loc_name_len), allocatable :: varunits(:)
      character(len=loc_name_len), allocatable :: ompoolnames(:)
+     integer                    , allocatable :: vartypes(:)
    contains
      procedure, public  :: Init
      procedure, private :: InitPars
      procedure, private :: InitAllocate
      procedure, private :: set_primvar_reac_ids
-  end type centurybgc_index_type
+  end type ecacnp_bgc_index_type
 
   contains
   !-----------------------------------------------------------------------
-  subroutine list_init(self, name, id)
+  subroutine list_init(self, name, id, itype)
   implicit none
   type(list_t), pointer :: self
   character(len=*), intent(in) :: name
   integer, intent(inout) :: id
-
+  integer, optional, intent(in) :: itype
   allocate(self)
   nullify(self%next)
   id=id+1;
   write(self%name,'(A)')trim(name)
   self%id=id
+  if(present(itype))then
+    self%itype=itype
+  else
+    self%itype=0
+  endif
   end subroutine list_init
   !-----------------------------------------------------------------------
-  subroutine list_insert(self, name, id)
+  subroutine list_insert(self, name, id, itype)
 
   implicit none
   type(list_t), pointer :: self
   character(len=*), intent(in) :: name
   integer, intent(inout) :: id
+  integer, optional, intent(in) :: itype
   type(list_t), pointer :: next
 
   allocate(next)
   id=id+1
   write(next%name,'(A)')trim(name)
   next%id=id
+  if(present(itype))then
+    next%itype=itype
+  else
+    next%itype=0
+  endif
   next%next=> self
   self => next
 
@@ -178,8 +193,23 @@ implicit none
     next=>list_next(next)
   enddo
   end subroutine copy_name
+  !-------------------------------------------------------------------------------
+  subroutine copy_name_type(num_names, list_name, vartypes)
 
+  implicit none
+  integer, intent(in) :: num_names
+  type(list_t), pointer :: list_name
+  integer, intent(out) :: vartypes(num_names)
 
+  type(list_t), pointer :: next
+  integer :: jj
+  next => list_name
+  do jj = num_names, 1, -1
+    vartypes(jj) = next%itype
+    next=>list_next(next)
+  enddo
+  end subroutine copy_name_type
+  !-------------------------------------------------------------------------------
   subroutine list_disp(list)
   implicit none
   type(list_t), pointer :: list
@@ -205,24 +235,24 @@ implicit none
   integer, intent(inout) :: uid
   integer, intent(inout) :: pid
   if(do_init)then
-    call list_init(list_name, trim(prefix)//'_c',vid)
+    call list_init(list_name, trim(prefix)//'_c',vid, itype=var_state_type)
     call list_init(list_unit, 'mol C m-3',uid)
     call list_init(list_pool, trim(prefix),pid)
   else
-    call list_insert(list_name, trim(prefix)//'_c',vid)
+    call list_insert(list_name, trim(prefix)//'_c',vid, itype=var_state_type)
     call list_insert(list_unit, 'mol C m-3',uid)
     call list_insert(list_pool, trim(prefix),pid)
   endif
-  call list_insert(list_name, trim(prefix)//'_n',vid)
+  call list_insert(list_name, trim(prefix)//'_n',vid, itype=var_state_type)
   call list_insert(list_unit, 'mol N m-3',uid)
-  call list_insert(list_name, trim(prefix)//'_p',vid)
+  call list_insert(list_name, trim(prefix)//'_p',vid, itype=var_state_type)
   call list_insert(list_unit, 'mol P m-3',uid)
   if(use_c13)then
-    vid=vid+1;call list_insert(list_name, trim(prefix)//'_c13',vid)
+    vid=vid+1;call list_insert(list_name, trim(prefix)//'_c13',vid, itype=var_state_type)
     vid=vid+1;call list_insert(list_unit, 'mol C13 m-3',uid)
   endif
   if(use_c14)then
-    vid=vid+1;call list_insert(list_name, trim(prefix)//'_c14',vid)
+    vid=vid+1;call list_insert(list_name, trim(prefix)//'_c14',vid, itype=var_state_type)
     vid=vid+1;call list_insert(list_unit, 'mol C14 m-3',uid)
   endif
   end subroutine add_ompool_name
@@ -231,11 +261,11 @@ implicit none
   subroutine Init(this, use_c13, use_c14, non_limit, nop_limit, maxpft)
     !
     ! DESCRIPTION:
-    ! Initialize centurybgc type
+    ! Initialize ecacnp_bgc type
     ! !USES:
   implicit none
   ! !ARGUMENTS:
-  class(centurybgc_index_type), intent(inout) :: this
+  class(ecacnp_bgc_index_type), intent(inout) :: this
   logical, intent(in) :: use_c13
   logical, intent(in) :: use_c14
   logical, intent(in) :: non_limit
@@ -283,7 +313,7 @@ implicit none
     use betr_utils    , only : num2str
     use betr_constants, only : betr_string_length_long
     implicit none
-    class(centurybgc_index_type) :: this
+    class(ecacnp_bgc_index_type) :: this
     integer, intent(in) :: maxpft
     logical, intent(in) :: use_c13
     logical, intent(in) :: use_c14
@@ -370,11 +400,11 @@ implicit none
 
     this%lid_minp_secondary = addone(itemp); this%lid_minp_secondary_to_sol_occ_reac=addone(ireac)
     call list_insert(list_react, 'minp_secondary_to_sol_occ_reac', itemp0)
-    call list_insert(list_name, 'minp_secondary',vid)
+    call list_insert(list_name, 'minp_secondary',vid, itype=var_state_type)
     call list_insert(list_unit, 'mol P m-3',uid)
 
     this%lid_minp_occlude = addone(itemp);
-    call list_insert(list_name, 'minp_occlude',vid)
+    call list_insert(list_name, 'minp_occlude',vid, itype=var_state_type)
     call list_insert(list_unit, 'mol P m-3',uid)
     if(maxpft>0)then
       this%lid_plant_minn_nh4_up_reac = addone(ireac); call list_insert(list_react, 'plant_minn_nh4_up_reac', itemp0)
@@ -383,23 +413,23 @@ implicit none
       this%lid_autr_rt_reac = addone(ireac); call list_insert(list_react, 'autr_rt_reac', itemp0)
     endif
     !non-reactive primary variables
-    this%lid_ch4        = addone(itemp);call list_insert(list_name, 'ch4',vid); call list_insert(list_unit, 'mol C m-3',uid)
-    this%lid_ar         = addone(itemp);call list_insert(list_name, 'ar',vid); call list_insert(list_unit, 'mol m-3',uid)
+    this%lid_ch4        = addone(itemp);call list_insert(list_name, 'ch4',vid, itype=var_state_type); call list_insert(list_unit, 'mol C m-3',uid)
+    this%lid_ar         = addone(itemp);call list_insert(list_name, 'ar',vid, itype=var_state_type); call list_insert(list_unit, 'mol m-3',uid)
 
     !second primary variables
-    this%lid_o2         = addone(itemp);call list_insert(list_name, 'o2',vid); call list_insert(list_unit, 'mol m-3',uid)
+    this%lid_o2         = addone(itemp);call list_insert(list_name, 'o2',vid, itype=var_state_type); call list_insert(list_unit, 'mol m-3',uid)
 
-    this%lid_co2        = addone(itemp);call list_insert(list_name, 'co2',vid);call list_insert(list_unit,'mol m-3',uid)
+    this%lid_co2        = addone(itemp);call list_insert(list_name, 'co2',vid, itype=var_state_type);call list_insert(list_unit,'mol m-3',uid)
 
     if(use_c13)then
-      this%lid_c13_co2 = addone(itemp);call list_insert(list_name, 'co2_c13',vid); call list_insert(list_unit, 'mol C13 m-3',uid)
+      this%lid_c13_co2 = addone(itemp);call list_insert(list_name, 'co2_c13',vid, itype=var_state_type); call list_insert(list_unit, 'mol C13 m-3',uid)
     endif
     if(use_c14)then
-      this%lid_c14_co2 = addone(itemp);call list_insert(list_name, 'co2_c14',vid); call list_insert(list_unit, 'mol C14 m-3',uid)
+      this%lid_c14_co2 = addone(itemp);call list_insert(list_name, 'co2_c14',vid, itype=var_state_type); call list_insert(list_unit, 'mol C14 m-3',uid)
     endif
 
-    this%lid_n2o        = addone(itemp);call list_insert(list_name, 'n2o',vid); call list_insert(list_unit,'mol N2O m-3',uid)
-    this%lid_n2         = addone(itemp);call list_insert(list_name, 'n2',vid); call list_insert(list_unit, 'mol N2 m-3',uid)
+    this%lid_n2o        = addone(itemp);call list_insert(list_name, 'n2o',vid, itype=var_state_type); call list_insert(list_unit,'mol N2O m-3',uid)
+    this%lid_n2         = addone(itemp);call list_insert(list_name, 'n2',vid, itype=var_state_type); call list_insert(list_unit, 'mol N2 m-3',uid)
 
     this%nprimvars      = itemp
 
@@ -411,12 +441,12 @@ implicit none
     endif
     this%lid_nh4_nit_reac = addone(ireac); call list_insert(list_react, 'nh4_nit_reac', itemp0)       !this is also used to indicate the nitrification reaction
     this%lid_no3_den_reac = addone(ireac); call list_insert(list_react, 'no3_den_reac', itemp0)       !this is also used to indicate the denitrification reaction
-    call list_insert(list_name, 'nh4',vid); call list_insert(list_unit, 'mol N m-3',uid)
-    call list_insert(list_name, 'no3',vid); call list_insert(list_unit, 'mol N m-3',uid)
+    call list_insert(list_name, 'nh4',vid, itype=var_state_type); call list_insert(list_unit, 'mol N m-3',uid)
+    call list_insert(list_name, 'no3',vid, itype=var_state_type); call list_insert(list_unit, 'mol N m-3',uid)
 
     this%lid_minp_soluble_to_secp_reac = addone(ireac); call list_insert(list_react, 'minp_soluble_to_secp_reac', itemp0)
     this%lid_minp_soluble=addone(itemp);
-    call list_insert(list_name, 'minp_soluble',vid); call list_insert(list_unit, 'mol P m-3',uid)
+    call list_insert(list_name, 'minp_soluble',vid, itype=var_state_type); call list_insert(list_unit, 'mol P m-3',uid)
     if(.not. nop_limit)then
       !when P is unlimited, P is not a primary variable
       this%nprimvars      = this%nprimvars + 1     !primary state variables 14 + 6
@@ -425,75 +455,75 @@ implicit none
     !diagnostic variables
     if(maxpft>0)then
       this%lid_plant_minn_nh4 = addone(itemp)  !this is used to indicate plant mineral nitrogen uptake
-      call list_insert(list_name, 'plant_minn_nh4',vid); call list_insert(list_unit, 'mol P m-3 s-1',uid)
+      call list_insert(list_name, 'plant_minn_nh4',vid, itype=var_flux_type); call list_insert(list_unit, 'mol P m-3 s-1',uid)
 
       this%lid_plant_minn_no3 = addone(itemp)  !this is used to indicate plant mineral nitrogen uptake
-      call list_insert(list_name, 'plant_minn_no3',vid); call list_insert(list_unit, 'mol N mol-3 s-1',uid)
+      call list_insert(list_name, 'plant_minn_no3',vid, itype=var_flux_type); call list_insert(list_unit, 'mol N mol-3 s-1',uid)
 
       this%lid_plant_minp = addone(itemp)
-      call list_insert(list_name, 'plant_minp',vid); call list_insert(list_unit, 'mol P m-3',uid)
+      call list_insert(list_name, 'plant_minp',vid, itype=var_flux_type); call list_insert(list_unit, 'mol P m-3 s-1',uid)
 
       this%lid_autr_rt      = addone(itemp)           !this is used to indicate plant autotrophic root respiration
-      call list_insert(list_name, 'autr_rt',vid); call list_insert(list_unit,'mol C m-3 s-1',uid)
+      call list_insert(list_name, 'autr_rt',vid, itype=var_flux_type); call list_insert(list_unit,'mol C m-3 s-1',uid)
     endif
     this%lid_n2o_nit  = addone(itemp);
-    call list_insert(list_name, 'n2o_nit',vid); call list_insert(list_unit, 'mol N2O m-3 s-1',uid)
+    call list_insert(list_name, 'n2o_nit',vid, itype=var_flux_type); call list_insert(list_unit, 'mol N2O m-3 s-1',uid)
 
     this%lid_co2_hr   = addone(itemp);
-    call list_insert(list_name, 'co2_hr',vid); call list_insert(list_unit,'mol C m-3 s-1',uid)
+    call list_insert(list_name, 'co2_hr',vid, itype=var_flux_type); call list_insert(list_unit,'mol C m-3 s-1',uid)
 
     this%lid_no3_den  = addone(itemp);
-    call list_insert(list_name, 'no3_den',vid); call list_insert(list_unit, 'mol N m-3 s-1',uid)
+    call list_insert(list_name, 'no3_den',vid, itype=var_flux_type); call list_insert(list_unit, 'mol N m-3 s-1',uid)
 
     this%lid_minn_nh4_immob = addone(itemp);
-    call list_insert(list_name, 'minn_nh4_immob',vid); call list_insert(list_unit, 'mol N m-3 s-1',uid)
+    call list_insert(list_name, 'minn_nh4_immob',vid, itype=var_flux_type); call list_insert(list_unit, 'mol N m-3 s-1',uid)
 
     this%lid_minn_no3_immob = addone(itemp);
-    call list_insert(list_name, 'minn_no3_immob',vid); call list_insert(list_unit, 'mol N m-3 s-1',uid)
+    call list_insert(list_name, 'minn_no3_immob',vid, itype=var_flux_type); call list_insert(list_unit, 'mol N m-3 s-1',uid)
 
     this%lid_minp_immob = addone(itemp);
-    call list_insert(list_name, 'minp_immob',vid); call list_insert(list_unit, 'mol P m-3 s-1',uid)
+    call list_insert(list_name, 'minp_immob',vid, itype=var_flux_type); call list_insert(list_unit, 'mol P m-3 s-1',uid)
 
     this%lid_nh4_nit        = addone(itemp);
-    call list_insert(list_name, 'nh4_nit',vid); call list_insert(list_unit,'mol N m-3 s-1',uid)
+    call list_insert(list_name, 'nh4_nit',vid, itype=var_flux_type); call list_insert(list_unit,'mol N m-3 s-1',uid)
 
     !aerechyma transport
     this%lid_o2_paere   = addone(itemp);
     this%lid_o2_aren_reac  = addone(ireac); call list_insert(list_react, 'o2_aren_reac', itemp0)
 
-    call list_insert(list_name, 'o2_paere',vid); call list_insert(list_unit,'mol m-3 s-1',uid)
+    call list_insert(list_name, 'o2_paere',vid, itype=var_flux_type); call list_insert(list_unit,'mol m-3 s-1',uid)
     if ( spinup_state == 0 ) then
        this%lid_ar_paere   = addone(itemp);
        this%lid_ar_aren_reac  = addone(ireac);  call list_insert(list_react, 'ar_aren_reac', itemp0)   !
-       call list_insert(list_name, 'ar_paere',vid); call list_insert(list_unit,'mol m-3 s-1',uid)
+       call list_insert(list_name, 'ar_paere',vid, itype=var_flux_type); call list_insert(list_unit,'mol m-3 s-1',uid)
 
        this%lid_n2_paere   = addone(itemp);
        this%lid_n2_aren_reac  = addone(ireac); call list_insert(list_react, 'n2_aren_reac', itemp0)      !
-       call list_insert(list_name, 'n2_paere',vid); call list_insert(list_unit,'mol N2 m-3 s-1',uid)
+       call list_insert(list_name, 'n2_paere',vid, itype=var_flux_type); call list_insert(list_unit,'mol N2 m-3 s-1',uid)
 
        this%lid_co2_paere  = addone(itemp);
        this%lid_co2_aren_reac = addone(ireac); call list_insert(list_react, 'co2_aren_reac', itemp0)      !
-       call list_insert(list_name, 'co2_paere',vid); call list_insert(list_unit,'mol C m-3 s-1',uid)
+       call list_insert(list_name, 'co2_paere',vid, itype=var_flux_type); call list_insert(list_unit,'mol C m-3 s-1',uid)
 
        if(use_c13)then
          this%lid_c13_co2_paere  = addone(itemp)
          this%lid_c13_co2_aren_reac = addone(ireac); call list_insert(list_react, 'c13_co2_aren_reac', itemp0)      !
-         call list_insert(list_name, 'c13_co2_paere',vid); call list_insert(list_unit,'mol C13 m-3 s-1',uid)
+         call list_insert(list_name, 'c13_co2_paere',vid, itype=var_flux_type); call list_insert(list_unit,'mol C13 m-3 s-1',uid)
        endif
 
        if(use_c14)then
          this%lid_c14_co2_paere  = addone(itemp);
          this%lid_c14_co2_aren_reac = addone(ireac); call list_insert(list_react, 'c14_co2_aren_reac', itemp0)      !
-         call list_insert(list_name, 'c14_co2_paere',vid); call list_insert(list_unit,'mol C14 m-3 s-1',uid)
+         call list_insert(list_name, 'c14_co2_paere',vid, itype=var_flux_type); call list_insert(list_unit,'mol C14 m-3 s-1',uid)
        endif
 
        this%lid_ch4_paere  = addone(itemp);
        this%lid_ch4_aren_reac = addone(ireac); call list_insert(list_react, 'ch4_aren_reac', itemp0)   !
-       call list_insert(list_name, 'ch4_paere',vid); call list_insert(list_unit, 'mol C m-3 s-1',uid)
+       call list_insert(list_name, 'ch4_paere',vid, itype=var_flux_type); call list_insert(list_unit, 'mol C m-3 s-1',uid)
 
        this%lid_n2o_paere  = addone(itemp);
        this%lid_n2o_aren_reac = addone(ireac); call list_insert(list_react, 'n2o_aren_reac', itemp0)   !
-       call list_insert(list_name, 'n2o_paere',vid); call list_insert(list_unit,'mol  m-3 s-1',uid)
+       call list_insert(list_name, 'n2o_paere',vid, itype=var_flux_type); call list_insert(list_unit,'mol  m-3 s-1',uid)
     endif
 
     if(maxpft>0)then
@@ -503,13 +533,13 @@ implicit none
       do jj = 1, maxpft
         this%lid_plant_minn_no3_pft(jj) = addone(itemp)
         postfix = num2str(jj,'(I2.2)')
-        call list_insert(list_name, 'plant_minn_no3_pft_'//trim(postfix),vid)
+        call list_insert(list_name, 'plant_minn_no3_pft_'//trim(postfix),vid, itype=var_flux_type)
         call list_insert(list_unit, 'mol N m-3 s-1',uid)
         this%lid_plant_minn_nh4_pft(jj) = addone(itemp)
-        call list_insert(list_name, 'plant_minn_nh4_pft_'//trim(postfix),vid)
+        call list_insert(list_name, 'plant_minn_nh4_pft_'//trim(postfix),vid, itype=var_flux_type)
         call list_insert(list_unit,'mol N m-3 s-1',uid)
         this%lid_plant_minp_pft(jj)     = addone(itemp)
-        call list_insert(list_name, 'plant_minp_pft_'//trim(postfix),vid)
+        call list_insert(list_name, 'plant_minp_pft_'//trim(postfix),vid, itype=var_flux_type)
         call list_insert(list_unit,'mol P m-3 s-1',uid)
       enddo
     endif
@@ -520,6 +550,7 @@ implicit none
     allocate(this%primvarid(ireac)); this%primvarid(:) = -1
     allocate(this%is_aerobic_reac(ireac)); this%is_aerobic_reac(:)=.false.
 
+    allocate(this%vartypes(this%nstvars))
     allocate(this%varnames(this%nstvars))
     allocate(this%varunits(this%nstvars))
     allocate(this%ompoolnames(this%nom_pools))
@@ -527,7 +558,7 @@ implicit none
     call copy_name(this%nstvars, list_name, this%varnames(1:this%nstvars))
     call copy_name(this%nstvars, list_unit, this%varunits(1:this%nstvars))
     call copy_name(this%nom_pools, list_pool, this%ompoolnames(1:this%nom_pools))
-
+    call copy_name_type(this%nstvars, list_name, this%vartypes(1:this%nstvars))
 !    call list_disp(list_name);call list_disp(list_pool);call list_disp(list_unit)
 !    call list_disp(list_react)
 
@@ -545,7 +576,7 @@ implicit none
     !
   implicit none
     ! !ARGUMENTS:
-  class(centurybgc_index_type), intent(inout) :: this
+  class(ecacnp_bgc_index_type), intent(inout) :: this
 
 
 
@@ -554,7 +585,7 @@ implicit none
   subroutine set_primvar_reac_ids(this)
 
   implicit none
-  class(centurybgc_index_type), intent(inout)  :: this
+  class(ecacnp_bgc_index_type), intent(inout)  :: this
 
   integer :: reac
 

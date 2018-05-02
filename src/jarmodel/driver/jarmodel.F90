@@ -85,6 +85,7 @@ subroutine run_model(namelist_buffer)
   character(len=hist_var_str_len) , allocatable :: varl(:)
   character(len=hist_unit_str_len), allocatable :: unitl(:)
   character(len=hist_freq_str_len), allocatable :: freql(:)
+  integer                         , allocatable :: vartypes(:)
   real(r8), allocatable :: ystates0(:)
   real(r8), allocatable :: ystatesf(:)
   real(r8) :: dtime
@@ -134,12 +135,13 @@ subroutine run_model(namelist_buffer)
 
   !set variables
   nvars=jarmodel%getvarllen()
-  allocate(varl(nvars)); allocate(unitl(nvars)); allocate(freql(nvars))
-  call jarmodel%getvarlist(nvars, varl, unitl)
+  allocate(varl(nvars)); allocate(unitl(nvars)); allocate(freql(nvars)); allocate(vartypes(nvars))
+  call jarmodel%getvarlist(nvars, varl, unitl, vartypes)
   freql(:) = 'day'
   allocate(ystates0(nvars));ystates0(:)=0._r8
   allocate(ystatesf(nvars));ystatesf(:)=0._r8
 
+  call jarmodel%init_cold(nvars, ystatesf)
   !initialize timer
   call timer%Init(namelist_buffer=namelist_buffer)
 
@@ -150,7 +152,7 @@ subroutine run_model(namelist_buffer)
   else
     write(gname,'(A)')'jarmodel'//'.'//trim(case_id)//'.'//trim(jarmodel_name)
   endif
-  call hist%init(varl, unitl, freql, gname, dtime)
+  call hist%init(varl, unitl, vartypes, freql, gname, dtime)
 
   call bgc_forc%Init(nvars)
   !read in forcing
@@ -170,7 +172,7 @@ subroutine run_model(namelist_buffer)
     call SetJarForc(bgc_forc, om_forc, nut_forc, atm_forc, soil_forc)
 
     call setJarStates(bgc_forc, ystatesf)
-
+    
     call jarmodel%runbgc(is_surflit, dtime, bgc_forc, nvars, ystates0, ystatesf, bstatus)
 
     call timer%update_time_stamp()

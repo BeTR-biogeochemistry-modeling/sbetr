@@ -4,6 +4,7 @@ module histMod
   use shr_kind_mod, only : r8 => shr_kind_r8, i4 => shr_kind_i4
   use shr_log_mod , only : errMsg => shr_log_errMsg
   use ncdio_pio   , only : file_desc_t
+  use betr_varcon , only : var_flux_type, var_state_type
 implicit none
  private
 
@@ -23,6 +24,7 @@ implicit none
     character(len=40), pointer :: varnames(:) => null()
     character(len=6) , pointer :: hrfreq(:)   => null() !'hour','day','week','month','year'
     character(len=12), pointer :: units(:)    => null()
+    integer          , pointer :: var_type(:) => null() ! var_flux_type= flux, var_state_type=state
     real(r8)         , pointer :: counter(:)  => null()
     character(len=hist_fname_str_len), pointer :: ncfname(:)     => null()
     real(r8)         , pointer :: yvals(:)    => null()
@@ -105,12 +107,13 @@ contains
   end subroutine histrst
 
 !--------------------------------------------------------
-  subroutine init(this, varlist, unitlist, hrfreq, gfname, dtime)
+  subroutine init(this, varlist, unitlist, vartypes, hrfreq, gfname, dtime)
   use ncdio_pio, only : ncd_enddef, ncd_pio_closefile
   implicit none
   class(histf_type), intent(inout):: this
   character(len=hist_var_str_len), intent(in) :: varlist(:)
   character(len=hist_unit_str_len), intent(in) :: unitlist(:)
+  integer                         , intent(in) :: vartypes(:)
   character(len=hist_freq_str_len), optional, intent(in) :: hrfreq(:)
   character(len=*), optional,  intent(in) :: gfname    !generic filename
   real(r8), optional, intent(in) :: dtime
@@ -168,7 +171,7 @@ contains
   endif
 
   call this%initAlloc()
-
+  this%var_type(1:this%nvars) = vartypes(1:this%nvars)
   this%varnames(1:this%nvars) = varlist(1:this%nvars)
   this%units(1:this%nvars) = unitlist(1:this%nvars)
 
@@ -239,6 +242,7 @@ contains
   allocate(this%varnames(this%nvars));this%varnames(:)=''
   allocate(this%hrfreq(this%nvars)); this%hrfreq(:)=''
   allocate(this%counter(nclocks)); this%counter(:)=0._r8
+  allocate(this%var_type(this%nvars)); this%var_type(:)=0
   allocate(this%units(this%nvars))
   allocate(this%yvals(this%nvars)); this%yvals(:) = 0._r8
   allocate(this%ncfname(nclocks)); this%ncfname(:)=''
@@ -398,7 +402,11 @@ contains
   call ncd_pio_openfile_for_write(ncid, this%ncfname(clockid))
   do n =1, nvars
     id = varid(n)
-    this%yvals(id) = this%yvals(id)/this%counter(clockid)/this%dtime
+    if(this%var_type(n)==var_flux_type)then
+      this%yvals(id) = this%yvals(id)/this%counter(clockid)/this%dtime
+    else
+      this%yvals(id) = this%yvals(id)/this%counter(clockid)
+    endif
     call ncd_putvar(ncid,this%varnames(id),this%record(clockid),this%yvals(id))
     this%yvals(id) = 0._r8
   enddo

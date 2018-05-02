@@ -286,7 +286,7 @@ contains
     !temporary variable
     integer :: j
 
-    if (this%delta_z == bspval) then
+    if (abs(this%delta_z-bspval)<1.e-10_r8) then
        call endrun(msg="ERROR reading betr_grid namelist must specify delta_z. "//errmsg(mod_filename, __LINE__))
     end if
 

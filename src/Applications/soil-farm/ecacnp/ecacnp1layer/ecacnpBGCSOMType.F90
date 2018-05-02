@@ -70,19 +70,19 @@ implicit none
   end type CentSom_type
 contains
 
-  subroutine Init(this, centurybgc_index, biogeo_con, bstatus)
+  subroutine Init(this, ecacnp_bgc_index, biogeo_con, bstatus)
 
-  use ecacnpBGCIndexType , only : centurybgc_index_type
+  use ecacnpBGCIndexType , only : ecacnp_bgc_index_type
   use ecacnpParaType       , only : ecacnp_para_type
   use BetrStatusType      , only : betr_status_type
   implicit none
   class(CentSom_type)         , intent(inout) :: this
-  type(centurybgc_index_type) , intent(in)    :: centurybgc_index
+  type(ecacnp_bgc_index_type) , intent(in)    :: ecacnp_bgc_index
   type(ecacnp_para_type)        , intent(in)    :: biogeo_con
   type(betr_status_type)      , intent(out)   :: bstatus
 
   call bstatus%reset()
-  ncentpools = centurybgc_index%nom_pools
+  ncentpools = ecacnp_bgc_index%nom_pools
 
   call this%InitAllocate()
 
@@ -104,15 +104,15 @@ contains
   allocate(this%def_cc14(ncentpools));this%def_cc14(:) = 0._r8
   end subroutine InitAllocate
 !------------------------------------------
-  subroutine UpdateParas(this,centurybgc_index,  biogeo_con)
+  subroutine UpdateParas(this,ecacnp_bgc_index,  biogeo_con)
   !
   ! intialize model parameters
   use ecacnpParaType , only : ecacnp_para_type
-  use ecacnpBGCIndexType , only : centurybgc_index_type
+  use ecacnpBGCIndexType , only : ecacnp_bgc_index_type
   use tracer_varcon    , only : catomw, natomw, patomw
   implicit none
   class(CentSom_type)  , intent(inout) :: this
-  type(centurybgc_index_type) , intent(in) :: centurybgc_index
+  type(ecacnp_bgc_index_type) , intent(in) :: ecacnp_bgc_index
   type(ecacnp_para_type) , intent(in)    :: biogeo_con
 
   this%rf_l1s1_bgc    = biogeo_con%rf_l1s1_bgc
@@ -139,78 +139,78 @@ contains
   this%k_decay_lwd    =  biogeo_con%k_decay_lwd
   this%k_decay_fwd    =  biogeo_con%k_decay_fwd
 
-  this%def_cn(centurybgc_index%lit1) = biogeo_con%init_cn_met * natomw/catomw;
-  this%def_cn(centurybgc_index%lit2) = biogeo_con%init_cn_cel * natomw/catomw
-  this%def_cn(centurybgc_index%lit3) = biogeo_con%init_cn_lig * natomw/catomw
-  this%def_cn(centurybgc_index%cwd)  = biogeo_con%init_cn_cwd * natomw/catomw
-  this%def_cn(centurybgc_index%lwd)  = biogeo_con%init_cn_lwd * natomw/catomw
-  this%def_cn(centurybgc_index%fwd)  = biogeo_con%init_cn_fwd * natomw/catomw
+  this%def_cn(ecacnp_bgc_index%lit1) = biogeo_con%init_cn_met * natomw/catomw;
+  this%def_cn(ecacnp_bgc_index%lit2) = biogeo_con%init_cn_cel * natomw/catomw
+  this%def_cn(ecacnp_bgc_index%lit3) = biogeo_con%init_cn_lig * natomw/catomw
+  this%def_cn(ecacnp_bgc_index%cwd)  = biogeo_con%init_cn_cwd * natomw/catomw
+  this%def_cn(ecacnp_bgc_index%lwd)  = biogeo_con%init_cn_lwd * natomw/catomw
+  this%def_cn(ecacnp_bgc_index%fwd)  = biogeo_con%init_cn_fwd * natomw/catomw
 
-  this%def_cn(centurybgc_index%som1) = biogeo_con%init_cn_som1 * natomw/catomw
-  this%def_cn(centurybgc_index%som2) = biogeo_con%init_cn_som2 * natomw/catomw
-  this%def_cn(centurybgc_index%som3) = biogeo_con%init_cn_som3 * natomw/catomw
+  this%def_cn(ecacnp_bgc_index%som1) = biogeo_con%init_cn_som1 * natomw/catomw
+  this%def_cn(ecacnp_bgc_index%som2) = biogeo_con%init_cn_som2 * natomw/catomw
+  this%def_cn(ecacnp_bgc_index%som3) = biogeo_con%init_cn_som3 * natomw/catomw
 
-  this%def_cp(centurybgc_index%lit1) = biogeo_con%init_cp_met * patomw/catomw
-  this%def_cp(centurybgc_index%lit2) = biogeo_con%init_cp_cel * patomw/catomw
-  this%def_cp(centurybgc_index%lit3) = biogeo_con%init_cp_lig * patomw/catomw
-  this%def_cp(centurybgc_index%cwd)  = biogeo_con%init_cp_cwd * patomw/catomw
-  this%def_cp(centurybgc_index%lwd)  = biogeo_con%init_cp_lwd * patomw/catomw
-  this%def_cp(centurybgc_index%fwd)  = biogeo_con%init_cp_fwd * patomw/catomw
+  this%def_cp(ecacnp_bgc_index%lit1) = biogeo_con%init_cp_met * patomw/catomw
+  this%def_cp(ecacnp_bgc_index%lit2) = biogeo_con%init_cp_cel * patomw/catomw
+  this%def_cp(ecacnp_bgc_index%lit3) = biogeo_con%init_cp_lig * patomw/catomw
+  this%def_cp(ecacnp_bgc_index%cwd)  = biogeo_con%init_cp_cwd * patomw/catomw
+  this%def_cp(ecacnp_bgc_index%lwd)  = biogeo_con%init_cp_lwd * patomw/catomw
+  this%def_cp(ecacnp_bgc_index%fwd)  = biogeo_con%init_cp_fwd * patomw/catomw
 
-  this%def_cp(centurybgc_index%som1) = biogeo_con%init_cp_som1 * patomw/catomw
-  this%def_cp(centurybgc_index%som2) = biogeo_con%init_cp_som2 * patomw/catomw
-  this%def_cp(centurybgc_index%som3) = biogeo_con%init_cp_som3 * patomw/catomw
+  this%def_cp(ecacnp_bgc_index%som1) = biogeo_con%init_cp_som1 * patomw/catomw
+  this%def_cp(ecacnp_bgc_index%som2) = biogeo_con%init_cp_som2 * patomw/catomw
+  this%def_cp(ecacnp_bgc_index%som3) = biogeo_con%init_cp_som3 * patomw/catomw
 
   this%use_c13=biogeo_con%use_c13
   this%use_c14=biogeo_con%use_c14
 
   if(this%use_c13)then
-    this%def_cc13(centurybgc_index%lit1) = biogeo_con%init_cc13_met
-    this%def_cc13(centurybgc_index%lit2) = biogeo_con%init_cc13_cel
-    this%def_cc13(centurybgc_index%lit3) = biogeo_con%init_cc13_lig
-    this%def_cc13(centurybgc_index%cwd)  = biogeo_con%init_cc13_cwd
-    this%def_cc13(centurybgc_index%lwd)  = biogeo_con%init_cc13_lwd
-    this%def_cc13(centurybgc_index%fwd)  = biogeo_con%init_cc13_fwd
-    this%def_cc13(centurybgc_index%som1) = biogeo_con%init_cc13_som1
-    this%def_cc13(centurybgc_index%som2) = biogeo_con%init_cc13_som2
-    this%def_cc13(centurybgc_index%som3) = biogeo_con%init_cc13_som3
+    this%def_cc13(ecacnp_bgc_index%lit1) = biogeo_con%init_cc13_met
+    this%def_cc13(ecacnp_bgc_index%lit2) = biogeo_con%init_cc13_cel
+    this%def_cc13(ecacnp_bgc_index%lit3) = biogeo_con%init_cc13_lig
+    this%def_cc13(ecacnp_bgc_index%cwd)  = biogeo_con%init_cc13_cwd
+    this%def_cc13(ecacnp_bgc_index%lwd)  = biogeo_con%init_cc13_lwd
+    this%def_cc13(ecacnp_bgc_index%fwd)  = biogeo_con%init_cc13_fwd
+    this%def_cc13(ecacnp_bgc_index%som1) = biogeo_con%init_cc13_som1
+    this%def_cc13(ecacnp_bgc_index%som2) = biogeo_con%init_cc13_som2
+    this%def_cc13(ecacnp_bgc_index%som3) = biogeo_con%init_cc13_som3
   endif
 
   if(this%use_c14)then
-    this%def_cc14(centurybgc_index%lit1) = biogeo_con%init_cc14_met
-    this%def_cc14(centurybgc_index%lit2) = biogeo_con%init_cc14_cel
-    this%def_cc14(centurybgc_index%lit3) = biogeo_con%init_cc14_lig
-    this%def_cc14(centurybgc_index%cwd)  = biogeo_con%init_cc14_cwd
-    this%def_cc14(centurybgc_index%lwd)  = biogeo_con%init_cc14_lwd
-    this%def_cc14(centurybgc_index%fwd)  = biogeo_con%init_cc14_fwd
-    this%def_cc14(centurybgc_index%som1) = biogeo_con%init_cc14_som1
-    this%def_cc14(centurybgc_index%som2) = biogeo_con%init_cc14_som2
-    this%def_cc14(centurybgc_index%som3) = biogeo_con%init_cc14_som3
+    this%def_cc14(ecacnp_bgc_index%lit1) = biogeo_con%init_cc14_met
+    this%def_cc14(ecacnp_bgc_index%lit2) = biogeo_con%init_cc14_cel
+    this%def_cc14(ecacnp_bgc_index%lit3) = biogeo_con%init_cc14_lig
+    this%def_cc14(ecacnp_bgc_index%cwd)  = biogeo_con%init_cc14_cwd
+    this%def_cc14(ecacnp_bgc_index%lwd)  = biogeo_con%init_cc14_lwd
+    this%def_cc14(ecacnp_bgc_index%fwd)  = biogeo_con%init_cc14_fwd
+    this%def_cc14(ecacnp_bgc_index%som1) = biogeo_con%init_cc14_som1
+    this%def_cc14(ecacnp_bgc_index%som2) = biogeo_con%init_cc14_som2
+    this%def_cc14(ecacnp_bgc_index%som3) = biogeo_con%init_cc14_som3
   endif
 
   end subroutine UpdateParas
 !------------------------------------------
 
-  subroutine run_decomp(this, is_surflit, centurybgc_index, dtime, ystates,&
+  subroutine run_decomp(this, is_surflit, ecacnp_bgc_index, dtime, ystates,&
       decompkf_eca, pct_sand, pct_clay, alpha_n, alpha_p, cascade_matrix, &
       k_decay, pot_co2_hr, bstatus)
   !
   !DESCRIPTION
   !
-  use ecacnpBGCIndexType , only : centurybgc_index_type
+  use ecacnpBGCIndexType , only : ecacnp_bgc_index_type
   use ecacnpBGCDecompType, only : DecompCent_type
   use BetrStatusType      , only : betr_status_type
   use betr_ctrl           , only : betr_spinup_state
   implicit none
   class(CentSom_type)         , intent(inout) :: this
-  type(centurybgc_index_type) , intent(in) :: centurybgc_index
+  type(ecacnp_bgc_index_type) , intent(in) :: ecacnp_bgc_index
   real(r8)                    , intent(in) :: dtime
-  real(r8)                    , intent(inout) :: ystates(1:centurybgc_index%nom_tot_elms)
+  real(r8)                    , intent(inout) :: ystates(1:ecacnp_bgc_index%nom_tot_elms)
   type(DecompCent_type)       , intent(in) :: decompkf_eca
   logical                     , intent(in) :: is_surflit
   real(r8)                    , intent(in) :: pct_sand
   real(r8)                    , intent(in) :: pct_clay
-  real(r8)                    , intent(inout) :: cascade_matrix(centurybgc_index%nstvars, centurybgc_index%nreactions)
+  real(r8)                    , intent(inout) :: cascade_matrix(ecacnp_bgc_index%nstvars, ecacnp_bgc_index%nreactions)
   real(r8)                    , intent(out) :: k_decay(1:ncentpools)
   real(r8)                    , intent(out) :: pot_co2_hr
   real(r8)                    , intent(out) :: alpha_n(1:ncentpools)
@@ -222,9 +222,9 @@ contains
   integer :: kc, jj, lay
 
   associate(                                      &
-    nelms => centurybgc_index%nelms,              &
-    nom_tot_elms=> centurybgc_index%nom_tot_elms, &
-    c_loc => centurybgc_index%c_loc               &
+    nelms => ecacnp_bgc_index%nelms,              &
+    nom_tot_elms=> ecacnp_bgc_index%nom_tot_elms, &
+    c_loc => ecacnp_bgc_index%c_loc               &
   )
   call bstatus%reset()
   if(is_surflit)then
@@ -232,12 +232,12 @@ contains
   else
     lay=2
   endif
-  call this%calc_cnp_ratios(centurybgc_index, ystates, bstatus)
+  call this%calc_cnp_ratios(ecacnp_bgc_index, ystates, bstatus)
   if (bstatus%check_status())return
-  call this%calc_som_decay_k(lay, centurybgc_index, decompkf_eca, k_decay)
+  call this%calc_som_decay_k(lay, ecacnp_bgc_index, decompkf_eca, k_decay)
 
   !calculate potential decay rates (mol C / s)
-  call this%calc_som_decay_r(centurybgc_index, dtime, k_decay(1:ncentpools), &
+  call this%calc_som_decay_r(ecacnp_bgc_index, dtime, k_decay(1:ncentpools), &
       ystates(1:nom_tot_elms), pot_om_decay_rates)
 
   do jj = 1, ncentpools
@@ -246,71 +246,71 @@ contains
     pot_om_decay_rates(jj) = min(pot_om_decay_rates(jj), ystates(kc)/dtime)
   enddo
 
-  call this%calc_cascade_matrix(lay, centurybgc_index, pct_sand, pct_clay, alpha_n, alpha_p, cascade_matrix)
+  call this%calc_cascade_matrix(lay, ecacnp_bgc_index, pct_sand, pct_clay, alpha_n, alpha_p, cascade_matrix)
 
   !calculate potential respiration rates by summarizing all om decomposition pathways
-  call this%calc_potential_aerobic_hr(centurybgc_index, pot_om_decay_rates, &
+  call this%calc_potential_aerobic_hr(ecacnp_bgc_index, pot_om_decay_rates, &
     cascade_matrix, pot_co2_hr, bstatus)
   end associate
   end subroutine run_decomp
 !------------------------------------------
 
-  subroutine calc_cascade_matrix(this, lay, centurybgc_index, pct_sand, pct_clay, alpha_n, alpha_p, cascade_matrix)
+  subroutine calc_cascade_matrix(this, lay, ecacnp_bgc_index, pct_sand, pct_clay, alpha_n, alpha_p, cascade_matrix)
   !
   ! DESCRIPTION
   ! calculate cascade matrix for decomposition
   ! in all the reactions, the nominal carbon oxidation status is assumed as zero, which is apparently not correct.
   ! It is also assumed the recycling of nitrogen and phosphorus during decomposition is 100%, which is likely
   ! not quite right as well.
-  use ecacnpBGCIndexType , only : centurybgc_index_type
+  use ecacnpBGCIndexType , only : ecacnp_bgc_index_type
   use MathfuncMod         , only : safe_div, fpmax
   implicit none
   class(CentSom_type),           intent(inout) :: this
-  type(centurybgc_index_type)  , intent(in)    :: centurybgc_index
+  type(ecacnp_bgc_index_type)  , intent(in)    :: ecacnp_bgc_index
   integer                      , intent(in)    :: lay
   real(r8)                     , intent(in)    :: pct_sand
   real(r8)                     , intent(in)    :: pct_clay
   real(r8)                     , intent(out)   :: alpha_n(ncentpools) !indicating factor for nitrogen limitation
   real(r8)                     , intent(out)   :: alpha_p(ncentpools) !indicating factor for phosphorus limitation
-  real(r8)                     , intent(inout) :: cascade_matrix(centurybgc_index%nstvars, centurybgc_index%nreactions)
+  real(r8)                     , intent(inout) :: cascade_matrix(ecacnp_bgc_index%nstvars, ecacnp_bgc_index%nreactions)
 
   integer  :: reac,jj
   real(r8) :: f1, f2, rf_s1
 
   associate(                                                   &
-    lit1      => centurybgc_index%lit1                       , & !
-    lit2      => centurybgc_index%lit2                       , & !
-    lit3      => centurybgc_index%lit3                       , & !
-    som1      => centurybgc_index%som1                       , & !
-    som2      => centurybgc_index%som2                       , & !
-    som3      => centurybgc_index%som3                       , & !
-    cwd       => centurybgc_index%cwd                        , & !
-    lwd       => centurybgc_index%lwd                        , & !
-    fwd       => centurybgc_index%fwd                        , & !
-    c_loc     => centurybgc_index%c_loc                      , & !
-    n_loc     => centurybgc_index%n_loc                      , & !
-    p_loc     => centurybgc_index%p_loc                      , & !
-    c13_loc   => centurybgc_index%c13_loc                    , & !
-    c14_loc   => centurybgc_index%c14_loc                    , & !
-    nelms     => centurybgc_index%nelms                      , & !
-    lid_o2    => centurybgc_index%lid_o2                     , & !
-    lid_co2   => centurybgc_index%lid_co2                    , & !
-    lid_nh4   => centurybgc_index%lid_nh4                    , & !
-    lid_c14_co2=> centurybgc_index%lid_c14_co2               , & !
-    lid_c13_co2=> centurybgc_index%lid_c13_co2               , & !
-    lid_co2_hr => centurybgc_index%lid_co2_hr                , &
-    lid_minn_nh4_immob=> centurybgc_index%lid_minn_nh4_immob , &
-    lid_minp_immob => centurybgc_index%lid_minp_immob        , &
-    lid_minp_soluble=> centurybgc_index%lid_minp_soluble     , &
-    lit1_dek_reac => centurybgc_index%lit1_dek_reac          , &
-    lit2_dek_reac => centurybgc_index%lit2_dek_reac          , &
-    lit3_dek_reac => centurybgc_index%lit3_dek_reac          , &
-    som1_dek_reac => centurybgc_index%som1_dek_reac          , &
-    som2_dek_reac => centurybgc_index%som2_dek_reac          , &
-    som3_dek_reac => centurybgc_index%som3_dek_reac          , &
-    cwd_dek_reac => centurybgc_index%cwd_dek_reac            , &
-    lwd_dek_reac => centurybgc_index%lwd_dek_reac            , &
-    fwd_dek_reac => centurybgc_index%fwd_dek_reac            , &
+    lit1      => ecacnp_bgc_index%lit1                       , & !
+    lit2      => ecacnp_bgc_index%lit2                       , & !
+    lit3      => ecacnp_bgc_index%lit3                       , & !
+    som1      => ecacnp_bgc_index%som1                       , & !
+    som2      => ecacnp_bgc_index%som2                       , & !
+    som3      => ecacnp_bgc_index%som3                       , & !
+    cwd       => ecacnp_bgc_index%cwd                        , & !
+    lwd       => ecacnp_bgc_index%lwd                        , & !
+    fwd       => ecacnp_bgc_index%fwd                        , & !
+    c_loc     => ecacnp_bgc_index%c_loc                      , & !
+    n_loc     => ecacnp_bgc_index%n_loc                      , & !
+    p_loc     => ecacnp_bgc_index%p_loc                      , & !
+    c13_loc   => ecacnp_bgc_index%c13_loc                    , & !
+    c14_loc   => ecacnp_bgc_index%c14_loc                    , & !
+    nelms     => ecacnp_bgc_index%nelms                      , & !
+    lid_o2    => ecacnp_bgc_index%lid_o2                     , & !
+    lid_co2   => ecacnp_bgc_index%lid_co2                    , & !
+    lid_nh4   => ecacnp_bgc_index%lid_nh4                    , & !
+    lid_c14_co2=> ecacnp_bgc_index%lid_c14_co2               , & !
+    lid_c13_co2=> ecacnp_bgc_index%lid_c13_co2               , & !
+    lid_co2_hr => ecacnp_bgc_index%lid_co2_hr                , &
+    lid_minn_nh4_immob=> ecacnp_bgc_index%lid_minn_nh4_immob , &
+    lid_minp_immob => ecacnp_bgc_index%lid_minp_immob        , &
+    lid_minp_soluble=> ecacnp_bgc_index%lid_minp_soluble     , &
+    lit1_dek_reac => ecacnp_bgc_index%lit1_dek_reac          , &
+    lit2_dek_reac => ecacnp_bgc_index%lit2_dek_reac          , &
+    lit3_dek_reac => ecacnp_bgc_index%lit3_dek_reac          , &
+    som1_dek_reac => ecacnp_bgc_index%som1_dek_reac          , &
+    som2_dek_reac => ecacnp_bgc_index%som2_dek_reac          , &
+    som3_dek_reac => ecacnp_bgc_index%som3_dek_reac          , &
+    cwd_dek_reac => ecacnp_bgc_index%cwd_dek_reac            , &
+    lwd_dek_reac => ecacnp_bgc_index%lwd_dek_reac            , &
+    fwd_dek_reac => ecacnp_bgc_index%fwd_dek_reac            , &
     cwd_fcel     => this%cwd_fcel                            , &
     cwd_flig     => this%cwd_flig                            , &
     lwd_fcel     => this%lwd_fcel                            , &
@@ -324,7 +324,7 @@ contains
     rf_l1s1_bgc  => this%rf_l1s1_bgc                         , &
     rf_s1s2a_bgc => this%rf_s1s2a_bgc                        , &
     rf_s1s2b_bgc => this%rf_s1s2b_bgc                        , &
-    debug        => centurybgc_index%debug                     &
+    debug        => ecacnp_bgc_index%debug                     &
   )
 
     alpha_n = 0._r8; alpha_p = 0._r8
@@ -631,23 +631,23 @@ contains
     integer , intent(in) :: iwd, reac
     real(r8), intent(in):: f1, f2
     associate(                                                   &
-      c_loc     => centurybgc_index%c_loc                      , & !
-      n_loc     => centurybgc_index%n_loc                      , & !
-      p_loc     => centurybgc_index%p_loc                      , & !
-      c13_loc   => centurybgc_index%c13_loc                    , & !
-      c14_loc   => centurybgc_index%c14_loc                    , & !
-      nelms     => centurybgc_index%nelms                      , & !
-      lid_o2    => centurybgc_index%lid_o2                     , & !
-      lid_co2   => centurybgc_index%lid_co2                    , & !
-      lid_nh4   => centurybgc_index%lid_nh4                    , & !
-      lid_c14_co2=> centurybgc_index%lid_c14_co2               , & !
-      lid_c13_co2=> centurybgc_index%lid_c13_co2               , & !
-      lid_co2_hr => centurybgc_index%lid_co2_hr                , &
-      lid_minn_nh4_immob=> centurybgc_index%lid_minn_nh4_immob , &
-      lid_minp_immob => centurybgc_index%lid_minp_immob        , &
-      lid_minp_soluble=> centurybgc_index%lid_minp_soluble     , &
-      som1      => centurybgc_index%som1                       , & !
-      som2      => centurybgc_index%som2                         & !
+      c_loc     => ecacnp_bgc_index%c_loc                      , & !
+      n_loc     => ecacnp_bgc_index%n_loc                      , & !
+      p_loc     => ecacnp_bgc_index%p_loc                      , & !
+      c13_loc   => ecacnp_bgc_index%c13_loc                    , & !
+      c14_loc   => ecacnp_bgc_index%c14_loc                    , & !
+      nelms     => ecacnp_bgc_index%nelms                      , & !
+      lid_o2    => ecacnp_bgc_index%lid_o2                     , & !
+      lid_co2   => ecacnp_bgc_index%lid_co2                    , & !
+      lid_nh4   => ecacnp_bgc_index%lid_nh4                    , & !
+      lid_c14_co2=> ecacnp_bgc_index%lid_c14_co2               , & !
+      lid_c13_co2=> ecacnp_bgc_index%lid_c13_co2               , & !
+      lid_co2_hr => ecacnp_bgc_index%lid_co2_hr                , &
+      lid_minn_nh4_immob=> ecacnp_bgc_index%lid_minn_nh4_immob , &
+      lid_minp_immob => ecacnp_bgc_index%lid_minp_immob        , &
+      lid_minp_soluble=> ecacnp_bgc_index%lid_minp_soluble     , &
+      som1      => ecacnp_bgc_index%som1                       , & !
+      som2      => ecacnp_bgc_index%som2                         & !
     )
     cascade_matrix((iwd-1)*nelms+c_loc    ,reac) = -1._r8
     cascade_matrix((iwd-1)*nelms+n_loc    ,reac) = -this%icn_ratios(iwd)
@@ -695,7 +695,7 @@ contains
   end subroutine calc_cascade_matrix
 
   !-----------------------------------------------------------------------
-  subroutine calc_potential_aerobic_hr(this, centurybgc_index, pot_decay_rates, &
+  subroutine calc_potential_aerobic_hr(this, ecacnp_bgc_index, pot_decay_rates, &
     cascade_matrix, pot_co2_hr, bstatus)
     !
     ! DESCRIPTION:
@@ -703,14 +703,14 @@ contains
     ! !USES:
     use MathfuncMod         , only : dot_sum
     use MathfuncMod         , only : safe_div
-    use ecacnpBGCIndexType       , only : centurybgc_index_type
+    use ecacnpBGCIndexType       , only : ecacnp_bgc_index_type
     use BetrStatusType, only : betr_status_type
     implicit none
     ! !ARGUMENTS:
     class(CentSom_type), intent(inout) :: this
-    type(centurybgc_index_type)   , intent(in) :: centurybgc_index
+    type(ecacnp_bgc_index_type)   , intent(in) :: ecacnp_bgc_index
     real(r8)                , intent(in) :: pot_decay_rates(ncentpools)
-    real(r8)                , intent(in) :: cascade_matrix(centurybgc_index%nstvars, centurybgc_index%nreactions)
+    real(r8)                , intent(in) :: cascade_matrix(ecacnp_bgc_index%nstvars, ecacnp_bgc_index%nreactions)
     real(r8)                , intent(out):: pot_co2_hr
     type(betr_status_type)  , intent(out) :: bstatus
     ! !LOCAL VARIABLES:
@@ -718,26 +718,26 @@ contains
     integer  :: reac
 
     associate(                                           & !
-         nom_pools => centurybgc_index%nom_pools        , & !
-         lid_co2_hr=> centurybgc_index%lid_co2_hr       , & !
-         lit1      => centurybgc_index%lit1             , & !
-         lit2      => centurybgc_index%lit2             , & !
-         lit3      => centurybgc_index%lit3             , & !
-         som1      => centurybgc_index%som1             , & !
-         som2      => centurybgc_index%som2             , & !
-         som3      => centurybgc_index%som3             , & !
-         cwd       => centurybgc_index%cwd              , & !
-         lwd       => centurybgc_index%lwd              , & !
-         fwd       => centurybgc_index%fwd              , & !
-         lit1_dek_reac=> centurybgc_index%lit1_dek_reac , & !
-         lit2_dek_reac=> centurybgc_index%lit2_dek_reac , & !
-         lit3_dek_reac=> centurybgc_index%lit3_dek_reac , & !
-         som1_dek_reac=> centurybgc_index%som1_dek_reac , & !
-         som2_dek_reac=> centurybgc_index%som2_dek_reac , & !
-         som3_dek_reac=> centurybgc_index%som3_dek_reac , & !
-         cwd_dek_reac=> centurybgc_index%cwd_dek_reac   , & !
-         lwd_dek_reac=> centurybgc_index%lwd_dek_reac   , & !
-         fwd_dek_reac=> centurybgc_index%fwd_dek_reac     & !
+         nom_pools => ecacnp_bgc_index%nom_pools        , & !
+         lid_co2_hr=> ecacnp_bgc_index%lid_co2_hr       , & !
+         lit1      => ecacnp_bgc_index%lit1             , & !
+         lit2      => ecacnp_bgc_index%lit2             , & !
+         lit3      => ecacnp_bgc_index%lit3             , & !
+         som1      => ecacnp_bgc_index%som1             , & !
+         som2      => ecacnp_bgc_index%som2             , & !
+         som3      => ecacnp_bgc_index%som3             , & !
+         cwd       => ecacnp_bgc_index%cwd              , & !
+         lwd       => ecacnp_bgc_index%lwd              , & !
+         fwd       => ecacnp_bgc_index%fwd              , & !
+         lit1_dek_reac=> ecacnp_bgc_index%lit1_dek_reac , & !
+         lit2_dek_reac=> ecacnp_bgc_index%lit2_dek_reac , & !
+         lit3_dek_reac=> ecacnp_bgc_index%lit3_dek_reac , & !
+         som1_dek_reac=> ecacnp_bgc_index%som1_dek_reac , & !
+         som2_dek_reac=> ecacnp_bgc_index%som2_dek_reac , & !
+         som3_dek_reac=> ecacnp_bgc_index%som3_dek_reac , & !
+         cwd_dek_reac=> ecacnp_bgc_index%cwd_dek_reac   , & !
+         lwd_dek_reac=> ecacnp_bgc_index%lwd_dek_reac   , & !
+         fwd_dek_reac=> ecacnp_bgc_index%fwd_dek_reac     & !
          )
 
     cascade_matrix_hr = 0._r8
@@ -756,17 +756,17 @@ contains
   end subroutine calc_potential_aerobic_hr
 
   !-----------------------------------------------------------------------
-  subroutine calc_cnp_ratios(this, centurybgc_index, ystates, bstatus)
+  subroutine calc_cnp_ratios(this, ecacnp_bgc_index, ystates, bstatus)
   !
   ! DESCRIPTION
   ! compute the cnp ratios for the om pools
   use BetrStatusType      , only : betr_status_type
   use MathfuncMod         , only : safe_div
-  use ecacnpBGCIndexType       , only : centurybgc_index_type
+  use ecacnpBGCIndexType       , only : ecacnp_bgc_index_type
   implicit none
   class(CentSom_type), intent(inout) :: this
-  type(centurybgc_index_type)   , intent(in) :: centurybgc_index
-  real(r8)                      , intent(inout) :: ystates(centurybgc_index%nstvars)
+  type(ecacnp_bgc_index_type)   , intent(in) :: ecacnp_bgc_index
+  real(r8)                      , intent(inout) :: ystates(ecacnp_bgc_index%nstvars)
   type(betr_status_type)      , intent(out) :: bstatus
   integer :: jj
   integer :: kc, kn, kp, kc13, kc14, kc1, kc2
@@ -777,16 +777,16 @@ contains
   real(r8), parameter :: tiny_val=1.e-14_r8
   real(r8), parameter :: tiny_ncon = 1.e-15_r8
   associate(                         &
-    nelms => centurybgc_index%nelms, &
-    c_loc => centurybgc_index%c_loc, &
-    n_loc => centurybgc_index%n_loc, &
-    p_loc => centurybgc_index%p_loc, &
-    c13_loc => centurybgc_index%c13_loc, &
-    c14_loc => centurybgc_index%c14_loc, &
-    lit2  => centurybgc_index%lit2 , &
-    lit3  => centurybgc_index%lit3 , &
-    is_cenpool_som => centurybgc_index%is_cenpool_som, &
-    ompoolnames => centurybgc_index%ompoolnames &
+    nelms => ecacnp_bgc_index%nelms, &
+    c_loc => ecacnp_bgc_index%c_loc, &
+    n_loc => ecacnp_bgc_index%n_loc, &
+    p_loc => ecacnp_bgc_index%p_loc, &
+    c13_loc => ecacnp_bgc_index%c13_loc, &
+    c14_loc => ecacnp_bgc_index%c14_loc, &
+    lit2  => ecacnp_bgc_index%lit2 , &
+    lit3  => ecacnp_bgc_index%lit3 , &
+    is_cenpool_som => ecacnp_bgc_index%is_cenpool_som, &
+    ompoolnames => ecacnp_bgc_index%ompoolnames &
   )
   call bstatus%reset()
   !for om pools
@@ -809,7 +809,7 @@ contains
     else
       this%icp_ratios(jj) = 1._r8/this%def_cp(jj)*(1._r8-rat)+ystates(kp)/ystates(kc)*rat
     endif
-    if(centurybgc_index%debug)then
+    if(ecacnp_bgc_index%debug)then
        write(*,'(A,X,I2,5(X,E20.10))')'cnp',jj,ystates(kc),ystates(kn),ystates(kp),1._r8/this%icn_ratios(jj),1._r8/this%icp_ratios(jj)
     endif
     if(is_cenpool_som(jj) .and. ystates(kc)>tiny_val)then
@@ -827,7 +827,7 @@ contains
     if(this%use_c14)then
       kc14 = (jj-1) * nelms + c14_loc
       this%icc14_ratios(jj) = 1._r8/this%def_cc14(jj)*(1._r8-rat)+ystates(kc14)/ystates(kc)
-      if(centurybgc_index%debug)then
+      if(ecacnp_bgc_index%debug)then
         write(*,'(A,X,I4,2(X,E20.10))') 'c14rrr som jj',jj,1._r8/this%def_cc14(jj),this%icc14_ratios(jj)
       endif
     endif
@@ -847,26 +847,26 @@ contains
   end subroutine calc_cnp_ratios
 
   !-------------------------------------------------------------------------------
-  subroutine stoichiometry_fix(this, centurybgc_index,ystates)
+  subroutine stoichiometry_fix(this, ecacnp_bgc_index,ystates)
 
   !
   ! DESCRIPTION
   ! this fixes the stoichiometric drift due to limite precision of
   ! double precision.
-  use ecacnpBGCIndexType       , only : centurybgc_index_type
+  use ecacnpBGCIndexType       , only : ecacnp_bgc_index_type
   implicit none
   class(CentSom_type)           , intent(inout) :: this
-  type(centurybgc_index_type)   , intent(in) :: centurybgc_index
-  real(r8)                      , intent(inout) :: ystates(centurybgc_index%nstvars)
+  type(ecacnp_bgc_index_type)   , intent(in) :: ecacnp_bgc_index
+  real(r8)                      , intent(inout) :: ystates(ecacnp_bgc_index%nstvars)
 
   associate(                             &
-    c13_loc => centurybgc_index%c13_loc, &
-    c14_loc => centurybgc_index%c14_loc, &
-    som1  => centurybgc_index%som1 , &
-    som2  => centurybgc_index%som2 , &
-    som3  => centurybgc_index%som3 , &
-    is_cenpool_som => centurybgc_index%is_cenpool_som, &
-    ompoolnames => centurybgc_index%ompoolnames &
+    c13_loc => ecacnp_bgc_index%c13_loc, &
+    c14_loc => ecacnp_bgc_index%c14_loc, &
+    som1  => ecacnp_bgc_index%som1 , &
+    som2  => ecacnp_bgc_index%som2 , &
+    som3  => ecacnp_bgc_index%som3 , &
+    is_cenpool_som => ecacnp_bgc_index%is_cenpool_som, &
+    ompoolnames => ecacnp_bgc_index%ompoolnames &
   )
 
 
@@ -888,9 +888,9 @@ contains
     real(r8), parameter :: tiny_ncon = 1.e-15_r8
 
     associate(                       &
-      nelms => centurybgc_index%nelms, &
-      c_loc => centurybgc_index%c_loc, &
-      n_loc => centurybgc_index%n_loc  &
+      nelms => ecacnp_bgc_index%nelms, &
+      c_loc => ecacnp_bgc_index%c_loc, &
+      n_loc => ecacnp_bgc_index%n_loc  &
     )
 
     kc = (jj-1) * nelms + c_loc
@@ -905,28 +905,28 @@ contains
   end subroutine stoichiometry_fix
 
   !-------------------------------------------------------------------------------
-  subroutine calc_som_decay_r(this, centurybgc_index, dtime, om_k_decay, om_pools, om_decay_rates)
+  subroutine calc_som_decay_r(this, ecacnp_bgc_index, dtime, om_k_decay, om_pools, om_decay_rates)
     !
     ! !DESCRIPTION:
     ! calculate degradation for all different pools
     !
     ! !USES:
-    use ecacnpBGCIndexType       , only : centurybgc_index_type
+    use ecacnpBGCIndexType       , only : ecacnp_bgc_index_type
    implicit none
    class(CentSom_type)     , intent(inout) :: this
-   type(centurybgc_index_type) , intent(in)    :: centurybgc_index
+   type(ecacnp_bgc_index_type) , intent(in)    :: ecacnp_bgc_index
     real(r8)  , intent(in)    :: dtime
     real(r8)  , intent(in)    :: om_k_decay(ncentpools)
-    real(r8)  , intent(in)    :: om_pools(centurybgc_index%nom_tot_elms)
+    real(r8)  , intent(in)    :: om_pools(ecacnp_bgc_index%nom_tot_elms)
     real(r8)  , intent(out)   :: om_decay_rates(ncentpools)
 
     ! !LOCAL VARIABLES:
     integer :: jj, fc, c, j
     integer :: kc, kn
     associate(                                        &
-         nelms => centurybgc_index%nelms            , &
-         nom_pools => centurybgc_index%nom_pools    , &
-         c_loc => centurybgc_index%c_loc              &
+         nelms => ecacnp_bgc_index%nelms            , &
+         nom_pools => ecacnp_bgc_index%nom_pools    , &
+         c_loc => ecacnp_bgc_index%c_loc              &
     )
 
     !for om pools
@@ -938,14 +938,14 @@ contains
   end subroutine calc_som_decay_r
   !-------------------------------------------------------------------------------
 
-  subroutine apply_spinupf(this, centurybgc_index, decompkf_eca, k_decay, spinup_scalar, spinup_flg)
-  use ecacnpBGCIndexType       , only : centurybgc_index_type
+  subroutine apply_spinupf(this, ecacnp_bgc_index, decompkf_eca, k_decay, spinup_scalar, spinup_flg)
+  use ecacnpBGCIndexType       , only : ecacnp_bgc_index_type
   use ecacnpBGCDecompType      , only : DecompCent_type
   use betr_varcon               , only : kyr_spinup
   implicit none
   class(CentSom_type)     , intent(inout) :: this
   type(DecompCent_type), intent(in) :: decompkf_eca
-  type(centurybgc_index_type)   , intent(in)    :: centurybgc_index
+  type(ecacnp_bgc_index_type)   , intent(in)    :: ecacnp_bgc_index
   real(r8)                      , intent(inout) :: k_decay(ncentpools)
   real(r8)                      , intent(inout) :: spinup_scalar
   integer                       , intent(in)    :: spinup_flg
@@ -955,9 +955,9 @@ contains
    t_scalar       => decompkf_eca%t_scalar        , & ! Intput: [real(r8) (:,:)   ]  soil temperature scalar for decomp
    w_scalar       => decompkf_eca%w_scalar        , & ! Intput: [real(r8) (:,:)   ]  soil water scalar for decomp
    o_scalar       => decompkf_eca%o_scalar        , & ! Intput: [real(r8) (:,:)   ]  fraction by which decomposition is limited by anoxia
-   som1           => centurybgc_index%som1        , & !
-   som2           => centurybgc_index%som2        , & !
-   som3           => centurybgc_index%som3          & !
+   som1           => ecacnp_bgc_index%som1        , & !
+   som2           => ecacnp_bgc_index%som2        , & !
+   som3           => ecacnp_bgc_index%som3          & !
   )
 
   if(spinup_flg==2)then
@@ -974,15 +974,15 @@ contains
 
   end subroutine apply_spinupf
   !-------------------------------------------------------------------------------
-  subroutine calc_som_decay_k(this, lay, centurybgc_index, decompkf_eca, k_decay)
+  subroutine calc_som_decay_k(this, lay, ecacnp_bgc_index, decompkf_eca, k_decay)
 
-  use ecacnpBGCIndexType       , only : centurybgc_index_type
+  use ecacnpBGCIndexType       , only : ecacnp_bgc_index_type
   use ecacnpBGCDecompType      , only : DecompCent_type
   implicit none
   class(CentSom_type)     , intent(inout) :: this
   integer, intent(in) :: lay
   type(DecompCent_type), intent(in) :: decompkf_eca
-  type(centurybgc_index_type)   , intent(in)    :: centurybgc_index
+  type(ecacnp_bgc_index_type)   , intent(in)    :: ecacnp_bgc_index
   real(r8)                      , intent(out)   :: k_decay(ncentpools)
   integer :: jj
 
@@ -991,15 +991,15 @@ contains
    w_scalar       => decompkf_eca%w_scalar        , & ! Intput: [real(r8) (:,:)   ]  soil water scalar for decomp
    o_scalar       => decompkf_eca%o_scalar        , & ! Intput: [real(r8) (:,:)   ]  fraction by which decomposition is limited by anoxia
    depth_scalar   => decompkf_eca%depth_scalar   , & ! Intput: [real(r8) (:,:)   ]  rate constant for decomposition (1./sec)
-   lit1           => centurybgc_index%lit1               , & !
-   lit2           => centurybgc_index%lit2               , & !
-   lit3           => centurybgc_index%lit3               , & !
-   som1           => centurybgc_index%som1               , & !
-   som2           => centurybgc_index%som2               , & !
-   som3           => centurybgc_index%som3               , & !
-   cwd            => centurybgc_index%cwd                , & !
-   lwd            => centurybgc_index%lwd                , & !
-   fwd            => centurybgc_index%fwd                  & !
+   lit1           => ecacnp_bgc_index%lit1               , & !
+   lit2           => ecacnp_bgc_index%lit2               , & !
+   lit3           => ecacnp_bgc_index%lit3               , & !
+   som1           => ecacnp_bgc_index%som1               , & !
+   som2           => ecacnp_bgc_index%som2               , & !
+   som3           => ecacnp_bgc_index%som3               , & !
+   cwd            => ecacnp_bgc_index%cwd                , & !
+   lwd            => ecacnp_bgc_index%lwd                , & !
+   fwd            => ecacnp_bgc_index%fwd                  & !
   )
   k_decay(lit1) = this%k_decay_lit1(lay) * t_scalar * w_scalar * o_scalar * depth_scalar
   k_decay(lit2) = this%k_decay_lit2(lay) * t_scalar * w_scalar * o_scalar * depth_scalar
@@ -1024,16 +1024,16 @@ contains
   end associate
   end subroutine calc_som_decay_k
   !-------------------------------------------------------------------------------
-  subroutine calc_pot_min_np_flx(this, dtime, centurybgc_index, ystates, k_decay, cascade_matrix, &
+  subroutine calc_pot_min_np_flx(this, dtime, ecacnp_bgc_index, ystates, k_decay, cascade_matrix, &
     alpha_n, alpha_p, pot_decomp, pot_nn_flx, pot_np_flx)
-  use ecacnpBGCIndexType       , only : centurybgc_index_type
+  use ecacnpBGCIndexType       , only : ecacnp_bgc_index_type
   implicit none
   class(CentSom_type)         , intent(inout) :: this
   real(r8)                    , intent(in) :: dtime
-  type(centurybgc_index_type) , intent(in) :: centurybgc_index
-  real(r8)                    , intent(in) :: ystates(1:centurybgc_index%nom_tot_elms)
+  type(ecacnp_bgc_index_type) , intent(in) :: ecacnp_bgc_index
+  real(r8)                    , intent(in) :: ystates(1:ecacnp_bgc_index%nom_tot_elms)
   real(r8)                    , intent(in) :: k_decay(1:ncentpools)
-  real(r8)                    , intent(in) :: cascade_matrix(centurybgc_index%nstvars, centurybgc_index%nreactions)
+  real(r8)                    , intent(in) :: cascade_matrix(ecacnp_bgc_index%nstvars, ecacnp_bgc_index%nreactions)
   real(r8)                    , intent(in) :: alpha_n(ncentpools)
   real(r8)                    , intent(in) :: alpha_p(ncentpools)
   real(r8)                    , intent(out) :: pot_decomp(ncentpools)
@@ -1044,30 +1044,30 @@ contains
   integer :: reacs(ncentpools)
 
   associate(                                                    & !
-       nom_pools => centurybgc_index%nom_pools                , & !
-       nom_tot_elms=> centurybgc_index%nom_tot_elms           , & !
-       lid_nh4   => centurybgc_index%lid_nh4                  , & !
-       lid_minp_soluble  => centurybgc_index%lid_minp_soluble , & !
-       lit1      => centurybgc_index%lit1                     , & !
-       lit2      => centurybgc_index%lit2                     , & !
-       lit3      => centurybgc_index%lit3                     , & !
-       som1      => centurybgc_index%som1                     , & !
-       som2      => centurybgc_index%som2                     , & !
-       som3      => centurybgc_index%som3                     , & !
-       cwd       => centurybgc_index%cwd                      , & !
-       lit1_dek_reac=> centurybgc_index%lit1_dek_reac         , & !
-       lit2_dek_reac=> centurybgc_index%lit2_dek_reac         , & !
-       lit3_dek_reac=> centurybgc_index%lit3_dek_reac         , & !
-       som1_dek_reac=> centurybgc_index%som1_dek_reac         , & !
-       som2_dek_reac=> centurybgc_index%som2_dek_reac         , & !
-       som3_dek_reac=> centurybgc_index%som3_dek_reac         , & !
-       cwd_dek_reac=> centurybgc_index%cwd_dek_reac           , & !
-       lwd_dek_reac=> centurybgc_index%lwd_dek_reac           , & !
-       fwd_dek_reac=> centurybgc_index%fwd_dek_reac             & !
+       nom_pools => ecacnp_bgc_index%nom_pools                , & !
+       nom_tot_elms=> ecacnp_bgc_index%nom_tot_elms           , & !
+       lid_nh4   => ecacnp_bgc_index%lid_nh4                  , & !
+       lid_minp_soluble  => ecacnp_bgc_index%lid_minp_soluble , & !
+       lit1      => ecacnp_bgc_index%lit1                     , & !
+       lit2      => ecacnp_bgc_index%lit2                     , & !
+       lit3      => ecacnp_bgc_index%lit3                     , & !
+       som1      => ecacnp_bgc_index%som1                     , & !
+       som2      => ecacnp_bgc_index%som2                     , & !
+       som3      => ecacnp_bgc_index%som3                     , & !
+       cwd       => ecacnp_bgc_index%cwd                      , & !
+       lit1_dek_reac=> ecacnp_bgc_index%lit1_dek_reac         , & !
+       lit2_dek_reac=> ecacnp_bgc_index%lit2_dek_reac         , & !
+       lit3_dek_reac=> ecacnp_bgc_index%lit3_dek_reac         , & !
+       som1_dek_reac=> ecacnp_bgc_index%som1_dek_reac         , & !
+       som2_dek_reac=> ecacnp_bgc_index%som2_dek_reac         , & !
+       som3_dek_reac=> ecacnp_bgc_index%som3_dek_reac         , & !
+       cwd_dek_reac=> ecacnp_bgc_index%cwd_dek_reac           , & !
+       lwd_dek_reac=> ecacnp_bgc_index%lwd_dek_reac           , & !
+       fwd_dek_reac=> ecacnp_bgc_index%fwd_dek_reac             & !
    )
 
   !calculate potential decay rates (mol C / s)
-  call this%calc_som_decay_r(centurybgc_index, dtime, k_decay(1:nom_pools), &
+  call this%calc_som_decay_r(ecacnp_bgc_index, dtime, k_decay(1:nom_pools), &
       ystates(1:nom_tot_elms), pot_decomp)
 
   pot_nn_flx = 0._r8; pot_np_flx = 0._r8

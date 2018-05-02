@@ -529,7 +529,7 @@ end subroutine sbetrBGC_driver
   else
     write(gname,'(A)')trim(base_filename)//'.'//trim(case_id)//'.'//trim(reaction_method)
   endif
-  call hist%init(histbgc%varl, histbgc%unitl, freql, gname)
+  call hist%init(histbgc%varl, histbgc%unitl, histbgc%vartypes, freql, gname)
 
   end subroutine init_hist_bgc
 

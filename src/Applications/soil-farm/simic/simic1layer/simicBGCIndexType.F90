@@ -1,7 +1,9 @@
 module simicBGCIndexType
 
   use bshr_kind_mod  , only : r8 => shr_kind_r8
-  use betr_ctrl    , only : spinup_state => betr_spinup_state
+  use betr_ctrl      , only : spinup_state => betr_spinup_state
+  use gBGCIndexType  , only : gbgc_index_type
+  use betr_varcon    , only : var_flux_type, var_state_type
 implicit none
 
   private
@@ -13,26 +15,27 @@ implicit none
   type, private :: list_t
     character(len=loc_name_len) :: name
     integer :: id
+    integer :: itype
     type(list_t), pointer :: next => null()
   end type list_t
 
-  type, public :: simic_index_type
-
-     integer           :: lit1                  !c
-     integer           :: lit2
-     integer           :: lit3
-     integer           :: cwd
-     integer           :: lid_micbl
-     integer           :: lid_doc
-     integer           :: lid_micbd
+  type, public, extends(gbgc_index_type) :: simic_index_type
+     integer           :: lit1, lit1_depoly_reac                  !c
+     integer           :: lit2, lit2_depoly_reac
+     integer           :: lit3, lit3_depoly_reac
+     integer           :: cwd , cwd_depoly_reac
+     integer           :: lid_micbl, micbl_mort_reac
+     integer           :: lid_doc  , doc_uptake_reac
+     integer           :: lid_micbd, micbd_depoly_reac
      integer           :: lid_n2
-     integer           :: lid_o2
+     integer           :: lid_o2   , o2_resp_reac
      integer           :: lid_ar
      integer           :: lid_co2
      integer           :: lid_c13_co2
      integer           :: lid_c14_co2
      integer           :: lid_ch4
      integer           :: lid_co2_hr       !diagnostic variables
+     integer           :: lid_cue
      integer           :: lid_o2_paere
      integer           :: lid_n2_paere
      integer           :: lid_ar_paere
@@ -45,49 +48,66 @@ implicit none
      integer           :: dom_beg,  dom_end   !dom group
      integer           :: Bm_beg,  Bm_end   !dom group
      integer           :: nelms
+     integer           :: c_loc
+     integer           :: c13_loc
+     integer           :: c14_loc
+     integer           :: e_loc
      integer           :: nom_tot_elms
      integer           :: nom_pools
      integer           :: nprimvars        !total number of primary variables
      integer           :: nstvars          !number of equations for the state variabile vector
-
+     integer           :: nreactions
      integer , pointer :: primvarid(:)   => null()
      logical :: debug
      character(len=loc_name_len), allocatable :: varnames(:)
      character(len=loc_name_len), allocatable :: varunits(:)
      character(len=loc_name_len), allocatable :: ompoolnames(:)
+     integer, allocatable :: vartypes(:)
    contains
      procedure, public  :: Init
      procedure, private :: InitPars
      procedure, private :: InitAllocate
+     procedure, private :: set_primvar_reac_ids
   end type simic_index_type
 
   contains
   !-----------------------------------------------------------------------
-  subroutine list_init(self, name, id)
+  subroutine list_init(self, name, id, itype)
   implicit none
   type(list_t), pointer :: self
   character(len=*), intent(in) :: name
   integer, intent(inout) :: id
-
+  integer, optional, intent(in) :: itype
   allocate(self)
   nullify(self%next)
   id=id+1;
   write(self%name,'(A)')trim(name)
   self%id=id
+  if(present(itype))then
+    self%itype=itype
+  else
+    self%itype=0
+  endif
   end subroutine list_init
   !-----------------------------------------------------------------------
-  subroutine list_insert(self, name, id)
+  subroutine list_insert(self, name, id, itype)
 
   implicit none
   type(list_t), pointer :: self
   character(len=*), intent(in) :: name
   integer, intent(inout) :: id
+  integer, optional, intent(in) :: itype
   type(list_t), pointer :: next
 
   allocate(next)
   id=id+1
   write(next%name,'(A)')trim(name)
   next%id=id
+  if(present(itype))then
+    next%itype=itype
+  else
+    next%itype=0
+  endif
   next%next=> self
   self => next
 
@@ -133,7 +153,23 @@ implicit none
   enddo
   end subroutine copy_name
 
+  !-------------------------------------------------------------------------------
+  subroutine copy_name_type(num_names, list_name, vartypes)
 
+  implicit none
+  integer, intent(in) :: num_names
+  type(list_t), pointer :: list_name
+  integer, intent(out) :: vartypes(num_names)
+
+  type(list_t), pointer :: next
+  integer :: jj
+  next => list_name
+  do jj = num_names, 1, -1
+    vartypes(jj) = next%itype
+    next=>list_next(next)
+  enddo
+  end subroutine copy_name_type
+  !-------------------------------------------------------------------------------
   subroutine list_disp(list)
   implicit none
   type(list_t), pointer :: list
@@ -141,7 +177,7 @@ implicit none
 
   next => list
   do while(associated(next))
-    write(*,'(A30,X,A,I0)')trim(next%name),'=',next%id
+    write(*,'(A30,A,I0)')trim(next%name),' =',next%id
     next=>list_next(next)
   enddo
 
@@ -159,24 +195,21 @@ implicit none
   integer, intent(inout) :: uid
   integer, intent(inout) :: pid
   if(do_init)then
-    call list_init(list_name, trim(prefix)//'_c',vid)
+    call list_init(list_name, trim(prefix)//'_c',vid, itype=var_state_type)
     call list_init(list_unit, 'mol C m-3',uid)
     call list_init(list_pool, trim(prefix),pid)
   else
-    call list_insert(list_name, trim(prefix)//'_c',vid)
+    call list_insert(list_name, trim(prefix)//'_c',vid, itype=var_state_type)
     call list_insert(list_unit, 'mol C m-3',uid)
     call list_insert(list_pool, trim(prefix),pid)
   endif
-  call list_insert(list_name, trim(prefix)//'_n',vid)
-  call list_insert(list_unit, 'mol N m-3',uid)
-  call list_insert(list_name, trim(prefix)//'_p',vid)
-  call list_insert(list_unit, 'mol P m-3',uid)
+
   if(use_c13)then
-    vid=vid+1;call list_insert(list_name, trim(prefix)//'_c13',vid)
+    vid=vid+1;call list_insert(list_name, trim(prefix)//'_c13',vid, itype=var_state_type)
     vid=vid+1;call list_insert(list_unit, 'mol C13 m-3',uid)
   endif
   if(use_c14)then
-    vid=vid+1;call list_insert(list_name, trim(prefix)//'_c14',vid)
+    vid=vid+1;call list_insert(list_name, trim(prefix)//'_c14',vid, itype=var_state_type)
     vid=vid+1;call list_insert(list_unit, 'mol C14 m-3',uid)
   endif
   end subroutine add_ompool_name
@@ -254,39 +287,54 @@ implicit none
     type(list_t), pointer :: list_react=> null()
     character(len=loc_name_len) :: postfix
 
+    if(maxpft>=0)continue
+
     itemp = 0; itemp0=0
     ireac = 0
     ielem= 0
     vid = 0;uid=0;pid=0
-    this%nelms = 1
+    this%c13_loc=0; this%c14_loc=0
+    this%c_loc = addone(ielem)
+
+    if(use_c13)then
+      this%c13_loc= addone(ielem)
+    endif
+    if(use_c14)then
+      this%c14_loc=addone(ielem)
+    endif
+    this%nelms = ielem
+    this%e_loc = ielem + 1
 
     !litter group
     this%litr_beg=1
-    this%lit1 = addone(itemp);
+    this%lit1 = addone(itemp);this%lit1_depoly_reac = addone(ireac); call list_init(list_react, 'lit1_depoly_reac', itemp0)
     call add_ompool_name(list_name, list_unit, list_pool,'lit1', use_c13, use_c14, do_init=.true., vid=vid,uid=uid,pid=pid)
-    this%lit2 = addone(itemp);
+    this%lit2 = addone(itemp);this%lit2_depoly_reac = addone(ireac); call list_insert(list_react, 'lit2_depoly_reac', itemp0)
     call add_ompool_name(list_name, list_unit, list_pool,'lit2', use_c13, use_c14, do_init=.false.,vid=vid,uid=uid,pid=pid)
-    this%lit3 = addone(itemp);
+    this%lit3 = addone(itemp);this%lit3_depoly_reac = addone(ireac); call list_insert(list_react, 'lit3_depoly_reac', itemp0)
     call add_ompool_name(list_name, list_unit, list_pool,'lit3', use_c13, use_c14, do_init=.false.,vid=vid,uid=uid,pid=pid)
-    this%litr_end = this%litr_beg -1 + (this%lit3-this%lit1)*this%nelms
+    this%litr_end = this%litr_beg -1 + (this%lit3-this%lit1+1)*this%nelms
 
     !woody group
     this%wood_beg=this%litr_end+1
-    this%cwd  = addone(itemp);
+    this%cwd  = addone(itemp);this%cwd_depoly_reac  = addone(ireac); call list_insert(list_react, 'cwd_depoly_reac', itemp0)
     call add_ompool_name(list_name, list_unit, list_pool,'cwd', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
     this%wood_end=this%wood_beg-1+(this%cwd-this%cwd+1)*this%nelms
 
     !microbial biomass group
     this%Bm_beg=this%wood_end+1
-    this%lid_micbl = addone(itemp)
+    this%lid_micbl = addone(itemp); this%micbl_mort_reac  = addone(ireac); call list_insert(list_react, 'micbl_mort_reac', itemp0)
     call add_ompool_name(list_name, list_unit, list_pool,'MB_live', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
-    this%lid_micbd = addone(itemp)
+    this%lid_micbd = addone(itemp); this%micbd_depoly_reac = addone(ireac); call list_insert(list_react, 'micbd_depoly_reac', itemp0)
     call add_ompool_name(list_name, list_unit, list_pool,'MB_dead', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
     this%Bm_end=this%Bm_beg-1+(this%lid_micbd-this%lid_micbl+1)*this%nelms
 
     this%dom_beg = this%Bm_end + 1
-    this%lid_doc = addone(itemp);
+    this%lid_doc = addone(itemp);this%doc_uptake_reac  = addone(ireac); call list_insert(list_react, 'doc_uptake_reac', itemp0)
     call add_ompool_name(list_name, list_unit, list_pool,'DOC', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
+    this%lid_cue = this%lid_doc + 1
+    call list_insert(list_name, 'DOC_e',vid)
+    call list_insert(list_unit, 'mol e m-3',uid)
     this%dom_end = this%dom_beg - 1 + (this%lid_doc-this%lid_doc+1)*this%nelms
 
     this%nom_pools = (countelm(this%litr_beg, this%litr_end)+&
@@ -294,51 +342,54 @@ implicit none
        countelm(this%Bm_beg,this%Bm_end) + &
        countelm(this%dom_beg,this%dom_end))/this%nelms   !include coarse wood debris
 
-    itemp               = this%nom_pools*this%nelms
+    itemp               = this%nom_pools*this%nelms + 1
 
     this%nom_tot_elms    = itemp
 
     !non-reactive primary variables
-    this%lid_ar         = addone(itemp);call list_insert(list_name, 'ar',vid); call list_insert(list_unit, 'mol m-3',uid)
+    this%lid_ar         = addone(itemp);call list_insert(list_name, 'ar',vid, itype=var_state_type); call list_insert(list_unit, 'mol m-3',uid)
 
     !second primary variables
-    this%lid_o2         = addone(itemp);call list_insert(list_name, 'o2',vid); call list_insert(list_unit, 'mol m-3',uid)
-
-    this%lid_co2        = addone(itemp);call list_insert(list_name, 'co2',vid);call list_insert(list_unit,'mol m-3',uid)
+    this%lid_o2         = addone(itemp);call list_insert(list_name, 'o2',vid, itype=var_state_type); call list_insert(list_unit, 'mol m-3',uid)
+    this%o2_resp_reac   = addone(ireac); call list_insert(list_react, 'o2_resp_reac', itemp0)
+    this%lid_co2        = addone(itemp);call list_insert(list_name, 'co2',vid, itype=var_state_type);call list_insert(list_unit,'mol m-3',uid)
 
     if(use_c13)then
-      this%lid_c13_co2  = addone(itemp);call list_insert(list_name, 'c13_co2',vid);call list_insert(list_unit,'mol m-3',uid)
+      this%lid_c13_co2  = addone(itemp);call list_insert(list_name, 'c13_co2',vid, itype=var_state_type);call list_insert(list_unit,'mol m-3',uid)
     endif
     if(use_c14)then
-      this%lid_c14_co2  = addone(itemp);call list_insert(list_name, 'c14_co2',vid);call list_insert(list_unit,'mol m-3',uid)
+      this%lid_c14_co2  = addone(itemp);call list_insert(list_name, 'c14_co2',vid, itype=var_state_type);call list_insert(list_unit,'mol m-3',uid)
     endif
 
-    this%lid_n2         = addone(itemp);call list_insert(list_name, 'n2',vid); call list_insert(list_unit, 'mol N2 m-3',uid)
+    this%lid_n2         = addone(itemp);call list_insert(list_name, 'n2',vid, itype=var_state_type); call list_insert(list_unit, 'mol N2 m-3',uid)
 
-    this%lid_ch4        = addone(itemp);call list_insert(list_name, 'ch4',vid); call list_insert(list_unit, 'mol ch4 m-3',uid)
+    this%lid_ch4        = addone(itemp);call list_insert(list_name, 'ch4',vid, itype=var_state_type); call list_insert(list_unit, 'mol ch4 m-3',uid)
 
     this%nprimvars      = itemp
 
-    this%lid_co2_hr     = addone(itemp);call list_insert(list_name, 'co2_hr',vid); call list_insert(list_unit,'mol m-3 s-1',uid)
+    this%lid_co2_hr     = addone(itemp);call list_insert(list_name, 'co2_hr',vid, itype=var_flux_type); call list_insert(list_unit,'mol m-3 s-1',uid)
 
-    this%lid_o2_paere  = addone(itemp);call list_insert(list_name, 'o2_paere',vid); call list_insert(list_unit,'mol m-3 s-1',uid)
+    this%lid_o2_paere  = addone(itemp);call list_insert(list_name, 'o2_paere',vid, itype=var_flux_type); call list_insert(list_unit,'mol m-3 s-1',uid)
 
-    this%lid_n2_paere  = addone(itemp);call list_insert(list_name, 'n2_paere',vid); call list_insert(list_unit,'mol m-3 s-1',uid)
+    this%lid_n2_paere  = addone(itemp);call list_insert(list_name, 'n2_paere',vid, itype=var_flux_type); call list_insert(list_unit,'mol m-3 s-1',uid)
 
-    this%lid_ar_paere  = addone(itemp);call list_insert(list_name, 'ar_paere',vid); call list_insert(list_unit,'mol m-3 s-1',uid)
+    this%lid_ar_paere  = addone(itemp);call list_insert(list_name, 'ar_paere',vid, itype=var_flux_type); call list_insert(list_unit,'mol m-3 s-1',uid)
 
-    this%lid_ch4_paere  = addone(itemp);call list_insert(list_name, 'ch4_paere',vid); call list_insert(list_unit,'mol m-3 s-1',uid)
+    this%lid_ch4_paere  = addone(itemp);call list_insert(list_name, 'ch4_paere',vid, itype=var_flux_type); call list_insert(list_unit,'mol m-3 s-1',uid)
 
-    this%lid_co2_paere  = addone(itemp);call list_insert(list_name, 'co2_paere',vid); call list_insert(list_unit,'mol m-3 s-1',uid)
+    this%lid_co2_paere  = addone(itemp);call list_insert(list_name, 'co2_paere',vid, itype=var_flux_type); call list_insert(list_unit,'mol m-3 s-1',uid)
     if(use_c13)then
-      this%lid_c13_co2_paere  = addone(itemp);call list_insert(list_name, 'c13_co2_paere',vid); call list_insert(list_unit,'mol m-3 s-1',uid)
+      this%lid_c13_co2_paere  = addone(itemp);call list_insert(list_name, 'c13_co2_paere',vid, itype=var_flux_type); call list_insert(list_unit,'mol m-3 s-1',uid)
     endif
     if(use_c14)then
-      this%lid_co2_paere  = addone(itemp);call list_insert(list_name, 'c14_co2_paere',vid); call list_insert(list_unit,'mol m-3 s-1',uid)
+      this%lid_co2_paere  = addone(itemp);call list_insert(list_name, 'c14_co2_paere',vid, itype=var_flux_type); call list_insert(list_unit,'mol m-3 s-1',uid)
     endif
 
     this%nstvars          = itemp          !totally 14+32 state variables
+    this%nreactions = ireac            !
 
+    allocate(this%primvarid(ireac)); this%primvarid(:) = -1
+    allocate(this%vartypes(this%nstvars))
     allocate(this%varnames(this%nstvars))
     allocate(this%varunits(this%nstvars))
     allocate(this%ompoolnames(this%nom_pools))
@@ -346,7 +397,7 @@ implicit none
     call copy_name(this%nstvars, list_name, this%varnames(1:this%nstvars))
     call copy_name(this%nstvars, list_unit, this%varunits(1:this%nstvars))
     call copy_name(this%nom_pools, list_pool, this%ompoolnames(1:this%nom_pools))
-
+    call copy_name_type(this%nstvars, list_name, this%vartypes(1:this%nstvars))
 !    call list_disp(list_name);call list_disp(list_pool);call list_disp(list_unit)
 
     call list_free(list_name)
@@ -364,7 +415,25 @@ implicit none
     ! !ARGUMENTS:
   class(simic_index_type), intent(inout) :: this
 
-
+  if (this%dummy_compiler_warning) continue
   end subroutine InitAllocate
 
+  !-------------------------------------------------------------------------------
+  subroutine set_primvar_reac_ids(this)
+
+  implicit none
+  class(simic_index_type), intent(inout) :: this
+
+  integer :: reac
+
+  reac=this%lit1_depoly_reac;   this%primvarid(reac) = this%lit1
+  reac=this%lit2_depoly_reac;   this%primvarid(reac) = this%lit2
+  reac=this%lit3_depoly_reac;   this%primvarid(reac) = this%lit3
+  reac=this%cwd_depoly_reac;    this%primvarid(reac) = this%cwd
+  reac=this%micbd_depoly_reac;  this%primvarid(reac) = this%lid_micbd
+  reac=this%micbl_mort_reac;    this%primvarid(reac) = this%lid_micbl
+  reac=this%doc_uptake_reac;    this%primvarid(reac) = this%lid_doc
+  reac=this%o2_resp_reac;       this%primvarid(reac) = this%lid_o2
+
+  end subroutine set_primvar_reac_ids
 end module simicBGCIndexType

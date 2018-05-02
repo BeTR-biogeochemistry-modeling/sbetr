@@ -357,29 +357,29 @@ implicit none
   end subroutine calc_pot_nitr
 
   !---------------------------------------------------------------------------------
-  subroutine calc_cascade_matrix(this, cdombgc_index, n2_n2o_ratio_denit, cascade_matrix)
+  subroutine calc_cascade_matrix(this, cdom_bgc_index, n2_n2o_ratio_denit, cascade_matrix)
 
-  use cdomBGCIndexType, only : cdombgc_index_type
+  use cdomBGCIndexType, only : cdom_bgc_index_type
   implicit none
   class(century_nitden_type)  , intent(inout) :: this
-  type(cdombgc_index_type) , intent(in) :: cdombgc_index
+  type(cdom_bgc_index_type) , intent(in) :: cdom_bgc_index
   real(r8)                    , intent(in) :: n2_n2o_ratio_denit
-  real(r8)                    , intent(inout)    :: cascade_matrix(cdombgc_index%nstvars, cdombgc_index%nreactions)
+  real(r8)                    , intent(inout)    :: cascade_matrix(cdom_bgc_index%nstvars, cdom_bgc_index%nreactions)
 
   integer :: reac
 
   associate(                                                &
-    primvarid    => cdombgc_index%primvarid            , & !
-    lid_nh4   => cdombgc_index%lid_nh4                 , & !
-    lid_o2   => cdombgc_index%lid_o2                   , & !
-    lid_n2   => cdombgc_index%lid_n2                   , & !
-    lid_n2o   => cdombgc_index%lid_n2o                 , & !
-    lid_no3   => cdombgc_index%lid_no3                 , & !
-    lid_no3_den => cdombgc_index%lid_no3_den           , &
-    lid_nh4_nit_reac => cdombgc_index%lid_nh4_nit_reac , & !
-    lid_no3_den_reac => cdombgc_index%lid_no3_den_reac , & !
-    lid_nh4_nit        => cdombgc_index%lid_nh4_nit    , & !
-    lid_n2o_nit=> cdombgc_index%lid_n2o_nit              & !
+    primvarid    => cdom_bgc_index%primvarid            , & !
+    lid_nh4   => cdom_bgc_index%lid_nh4                 , & !
+    lid_o2   => cdom_bgc_index%lid_o2                   , & !
+    lid_n2   => cdom_bgc_index%lid_n2                   , & !
+    lid_n2o   => cdom_bgc_index%lid_n2o                 , & !
+    lid_no3   => cdom_bgc_index%lid_no3                 , & !
+    lid_no3_den => cdom_bgc_index%lid_no3_den           , &
+    lid_nh4_nit_reac => cdom_bgc_index%lid_nh4_nit_reac , & !
+    lid_no3_den_reac => cdom_bgc_index%lid_no3_den_reac , & !
+    lid_nh4_nit        => cdom_bgc_index%lid_nh4_nit    , & !
+    lid_n2o_nit=> cdom_bgc_index%lid_n2o_nit              & !
 
   )
   !---------------------------------------------------------------------------------
@@ -424,17 +424,17 @@ implicit none
 
   end function get_nit_o2_scef
   !---------------------------------------------------------------------------------
-  subroutine run_nitden(this, cdombgc_index,bgc_forc, decompkf_eca,&
+  subroutine run_nitden(this, cdom_bgc_index,bgc_forc, decompkf_eca,&
     smin_nh4, smin_no3, o2b, o2_decomp_depth, pot_f_nit_mol_per_sec, pot_co2_hr, &
     pot_f_nit, pot_f_denit, cascade_matrix)
   !this returns the vamx for nitrification and denitrification
   !also return is the stoichiometry matrix for nitden processes
   use cdomBGCDecompType      , only : Decompcdom_type
   use JarBgcForcType  , only : JarBGC_forc_type
-  use cdomBGCIndexType , only : cdombgc_index_type
+  use cdomBGCIndexType , only : cdom_bgc_index_type
   implicit none
   class(century_nitden_type)  , intent(inout) :: this
-  type(cdombgc_index_type) , intent(in) :: cdombgc_index
+  type(cdom_bgc_index_type) , intent(in) :: cdom_bgc_index
   type(JarBGC_forc_type)  , intent(in) :: bgc_forc
   type(Decompcdom_type)       , intent(in) :: decompkf_eca
   real(r8)                    , intent(in) :: o2b
@@ -445,7 +445,7 @@ implicit none
   real(r8)                    , intent(in) :: pot_co2_hr  ! potential co2 emission from heterotrophic respiration
   real(r8)                    , intent(out) :: pot_f_nit  ! mol N /s
   real(r8)                    , intent(out) :: pot_f_denit  ! mol N/s
-  real(r8)                    , intent(inout) :: cascade_matrix(cdombgc_index%nstvars, cdombgc_index%nreactions)
+  real(r8)                    , intent(inout) :: cascade_matrix(cdom_bgc_index%nstvars, cdom_bgc_index%nreactions)
 
   !local variables
   real(r8) :: n2_n2o_ratio_denit
@@ -460,7 +460,7 @@ implicit none
       n2_n2o_ratio_denit, pot_f_nit, pot_f_denit)
 
   !calcualte cascade matrix for nitrification denitrification
-  call this%calc_cascade_matrix(cdombgc_index, n2_n2o_ratio_denit, cascade_matrix)
+  call this%calc_cascade_matrix(cdom_bgc_index, n2_n2o_ratio_denit, cascade_matrix)
   end subroutine run_nitden
 
 end module cdomBGCNitDenType

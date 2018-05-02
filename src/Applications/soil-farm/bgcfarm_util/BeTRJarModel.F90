@@ -16,6 +16,7 @@ implicit none
     procedure, public  :: sumup_cnp_msflx => JarModel_sumup_cnp_msflx
     procedure, public  :: getvarllen    => JarModel_getvarllen
     procedure, public  :: getvarlist    => JarModel_getvarlist
+    procedure, public  :: init_cold     => JarModel_init_cold
   end type jar_model_type
 
   contains
@@ -31,13 +32,13 @@ implicit none
   call bstatus%reset()
   end subroutine JarModel_init
   !-------------------------------------------------------------------------------
-  subroutine JarModel_getvarlist(this, nstvars, varnames, varunits)
+  subroutine JarModel_getvarlist(this, nstvars, varnames, varunits, vartypes)
   implicit none
   class(jar_model_type)      , intent(inout) :: this
   integer, intent(in) :: nstvars
   character(len=*), intent(out) :: varnames(1:nstvars)
   character(len=*), intent(out) :: varunits(1:nstvars)
-
+  integer         , intent(out) :: vartypes(1:nstvars)
 
   if(nstvars>=0)return
   end subroutine JarModel_getvarlist
@@ -92,4 +93,16 @@ implicit none
   !local variables
   call bstatus%reset()
   end subroutine JarModel_sumup_cnp_msflx
+
+
+  !-------------------------------------------------------------------------------
+  subroutine JarModel_init_cold(this, nstvars, ystates)
+
+  implicit none
+  class(jar_model_type)      , intent(inout) :: this
+  integer , intent(in) :: nstvars
+  real(r8), intent(inout) :: ystates(nstvars)
+
+  if(nstvars>=0)continue
+  end subroutine JarModel_init_cold
 end module BeTRJarModel

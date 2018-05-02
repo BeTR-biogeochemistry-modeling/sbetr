@@ -3,6 +3,7 @@ set(BGCFARM_UTIL_SOURCES
  JarBgcForcType.F90
  BeTRJarModel.F90
  SOMStateVarUpdateMod.F90
+ gBGCIndexType.F90
 )
 
 include_directories(${CMAKE_BINARY_DIR}/src/shr)

@@ -25,9 +25,12 @@ implicit none
   real(r8) :: vmax_EP    !maximum depolymerization rate
   real(r8) :: vmax_BC    !maximum DOC assimilation rate
   real(r8) :: alpha_B2E  !scaling parameter from microbial biomass to enzyme
+  real(r8) :: alpha_B2T
   real(r8) :: Kaff_EM  !enzyme affinity for mineral surface, mol C /m3
   real(r8) :: Kaff_DM  !affinity of microbial cell material to mineral surface, mol C/m3
   real(r8) :: Minsurf  !mineral surface area for DOC/enzyme/microbial cell wall material adsorption
+  real(r8) :: Kaff_o2  !oxygen affinity
+  real(r8) :: Kmort_MB
  contains
    procedure, public  :: Init => simic_para_init
    procedure, public  :: readPars => simic_para_readPars
@@ -138,10 +141,13 @@ contains
   this%vmax_EP = 1.e-5_r8
   this%vmax_BC = 1.e-5_r8
   this%alpha_B2E = 0.05_r8
+  this%alpha_B2T = 0.05_r8
   this%Kaff_CM  = 1._r8
   this%Kaff_EM  = 1._r8
   this%Kaff_DM  = 1._r8
   this%Minsurf  = 100._r8
+  this%Kaff_o2  = 0.22_r8
+  this%Kmort_MB = 0.01_r8
   end subroutine set_defpar_default
 
 

@@ -10,7 +10,7 @@ module cdomBGCType
   use betr_varcon               , only : spval => bspval
   use betr_ctrl                 , only : spinup_state => betr_spinup_state
   use cdomBGCDecompType         , only : Decompcdom_type
-  use cdomBGCIndexType          , only : cdombgc_index_type
+  use cdomBGCIndexType          , only : cdom_bgc_index_type
   use cdomBGCNitDenType         , only : century_nitden_type
   use gbetrType                 , only : gbetr_type
   use cdomBGCSOMType            , only : cdomSom_type
@@ -25,16 +25,16 @@ module cdomBGCType
        __FILE__
 
   !Note:
-  !Keeping cdombgc_index as a private member is a workaround to call the ode solver
-  !it increase the memory for each instance of cdombgceca_type, but enables
+  !Keeping cdom_bgc_index as a private member is a workaround to call the ode solver
+  !it increase the memory for each instance of cdom_bgc_type, but enables
   !the ode function to be called by the ode solver
 
-  type, extends(jar_model_type), public :: cdombgceca_type
+  type, extends(jar_model_type), public :: cdom_bgc_type
     type(Decompcdom_type),private        :: decompkf_eca
     type(century_nitden_type), private   :: nitden
     type(cdomSom_type), private          :: censom
     type(Compet_ECA_type), public        :: competECA
-    type(cdombgc_index_type), private :: cdombgc_index
+    type(cdom_bgc_index_type), private :: cdom_bgc_index
     real(r8), pointer                    :: ystates0(:)
     real(r8), pointer                    :: ystates1(:)
     real(r8), pointer                    :: k_decay(:)
@@ -71,12 +71,13 @@ module cdomBGCType
     real(r8), private                    :: c_inflx,n_inflx, p_inflx
     logical                              :: bgc_on
   contains
-    procedure, public  :: init          => init_cdomeca
-    procedure, public  :: runbgc        => runbgc_cdomeca
-    procedure, public  :: UpdateParas   => UpdateParas_cdomeca
-    procedure, public  :: sumup_cnp_msflx => sumup_cnp_msflx_cdomeca
-    procedure, public  :: getvarllen    => getvarllen_cdomeca
-    procedure, public  :: getvarlist    => getvarlist_cdomeca
+    procedure, public  :: init          => init_cdom
+    procedure, public  :: runbgc        => runbgc_cdom
+    procedure, public  :: UpdateParas   => UpdateParas_cdom
+    procedure, public  :: sumup_cnp_msflx => sumup_cnp_msflx_cdom
+    procedure, public  :: getvarllen    => getvarllen_cdom
+    procedure, public  :: getvarlist    => getvarlist_cdom
+    procedure, public  :: init_cold     => init_cold_cdom
     procedure, private :: calc_cascade_matrix
     procedure, private :: init_states
     procedure, private :: add_ext_input
@@ -88,7 +89,7 @@ module cdomBGCType
     procedure, private :: checksum_cascade
     procedure, private :: begin_massbal_check
     procedure, private :: end_massbal_check
-  end type cdombgceca_type
+  end type cdom_bgc_type
 
   public :: create_jarmodel_cdomcnp
 contains
@@ -97,8 +98,8 @@ contains
   ! DESCRIPTION
   ! constructor
     implicit none
-    class(cdombgceca_type), pointer :: create_jarmodel_cdomcnp
-    class(cdombgceca_type), pointer :: bgc
+    class(cdom_bgc_type), pointer :: create_jarmodel_cdomcnp
+    class(cdom_bgc_type), pointer :: bgc
 
     allocate(bgc)
     create_jarmodel_cdomcnp => bgc
@@ -106,35 +107,37 @@ contains
   end function create_jarmodel_cdomcnp
 
   !-------------------------------------------------------------------------------
-  function getvarllen_cdomeca(this)result(ans)
+  function getvarllen_cdom(this)result(ans)
 
   implicit none
-  class(cdombgceca_type) , intent(inout) :: this
+  class(cdom_bgc_type) , intent(inout) :: this
   integer :: ans
 
-  ans = this%cdombgc_index%nstvars
+  ans = this%cdom_bgc_index%nstvars
 
-  end function getvarllen_cdomeca
+  end function getvarllen_cdom
   !-------------------------------------------------------------------------------
-  subroutine getvarlist_cdomeca(this, nstvars, varnames, varunits)
+  subroutine getvarlist_cdom(this, nstvars, varnames, varunits, vartypes)
   implicit none
-  class(cdombgceca_type) , intent(inout) :: this
+  class(cdom_bgc_type) , intent(inout) :: this
   integer, intent(in) :: nstvars
   character(len=*), intent(out) :: varnames(1:nstvars)
   character(len=*), intent(out) :: varunits(1:nstvars)
+  integer         , intent(out) :: vartypes(1:nstvars)
   integer :: n
 
   do n = 1, nstvars
-    write(varnames(n),'(A)')trim(this%cdombgc_index%varnames(n))
-    write(varunits(n),'(A)')trim(this%cdombgc_index%varunits(n))
+    vartypes(n) = this%cdom_bgc_index%vartypes(n)
+    write(varnames(n),'(A)')trim(this%cdom_bgc_index%varnames(n))
+    write(varunits(n),'(A)')trim(this%cdom_bgc_index%varunits(n))
   enddo
-  end subroutine getvarlist_cdomeca
+  end subroutine getvarlist_cdom
 
   !-------------------------------------------------------------------------------
   subroutine begin_massbal_check(this)
 
   implicit none
-  class(cdombgceca_type) , intent(inout) :: this
+  class(cdom_bgc_type) , intent(inout) :: this
   real(r8) :: c_mass0, n_mass0, p_mass0
   print*,'begin_massbal_check'
   call this%sumup_cnp_msflx(this%ystates1, this%beg_c_mass, &
@@ -151,7 +154,7 @@ contains
   subroutine end_massbal_check(this, header)
 
   implicit none
-  class(cdombgceca_type) , intent(inout) :: this
+  class(cdom_bgc_type) , intent(inout) :: this
   character(len=*), intent(in) :: header
   real(r8) :: c_mass, n_mass, p_mass
   real(r8) :: c_flx,n_flx,p_flx
@@ -185,10 +188,10 @@ contains
   end subroutine end_massbal_check
 
   !-------------------------------------------------------------------------------
-  subroutine UpdateParas_cdomeca(this,  biogeo_con, bstatus)
+  subroutine UpdateParas_cdom(this,  biogeo_con, bstatus)
   use betr_varcon         , only : betr_maxpatch_pft, betr_max_soilorder
   implicit none
-  class(cdombgceca_type) , intent(inout) :: this
+  class(cdom_bgc_type) , intent(inout) :: this
   class(BiogeoCon_type)       , intent(in) :: biogeo_con
   type(betr_status_type)     , intent(out)   :: bstatus
   integer :: sr
@@ -216,7 +219,7 @@ contains
       this%c14decay_micbiom_const=biogeo_con%c14decay_micbiom_const
     endif
 
-    call this%censom%UpdateParas(this%cdombgc_index, biogeo_con)
+    call this%censom%UpdateParas(this%cdom_bgc_index, biogeo_con)
 
     call this%decompkf_eca%UpdateParas(biogeo_con)
   class default
@@ -226,12 +229,12 @@ contains
     call bstatus%set_msg(msg,err=-1)
     return
   end select
-  end subroutine UpdateParas_cdomeca
+  end subroutine UpdateParas_cdom
   !-------------------------------------------------------------------------------
-  subroutine init_cdomeca(this,  biogeo_con,  bstatus)
+  subroutine init_cdom(this,  biogeo_con,  bstatus)
   use betr_varcon         , only : betr_maxpatch_pft
   implicit none
-  class(cdombgceca_type) , intent(inout) :: this
+  class(cdom_bgc_type) , intent(inout) :: this
   class(BiogeoCon_type)       , intent(in) :: biogeo_con
   type(betr_status_type)    , intent(out) :: bstatus
 
@@ -242,15 +245,15 @@ contains
   select type(biogeo_con)
   type is(cdomPara_type)
     call bstatus%reset()
-    call this%cdombgc_index%Init(biogeo_con%use_c13, biogeo_con%use_c14, &
+    call this%cdom_bgc_index%Init(biogeo_con%use_c13, biogeo_con%use_c14, &
      biogeo_con%non_limit, biogeo_con%nop_limit, betr_maxpatch_pft)
 
     this%nop_limit=biogeo_con%nop_limit
     this%non_limit=biogeo_con%non_limit
 
-    call this%InitAllocate(this%cdombgc_index)
+    call this%InitAllocate(this%cdom_bgc_index)
 
-    call this%censom%Init(this%cdombgc_index, biogeo_con, bstatus)
+    call this%censom%Init(this%cdom_bgc_index, biogeo_con, bstatus)
 
     if(bstatus%check_status())return
 
@@ -270,27 +273,27 @@ contains
     if(bstatus%check_status())return
   class default
     call bstatus%reset()
-    write(msg,'(A)')'Wrong parameter type passed in for init_cdomeca in ' &
+    write(msg,'(A)')'Wrong parameter type passed in for init_cdom in ' &
       // errMsg(mod_filename,__LINE__)
     call bstatus%set_msg(msg,err=-1)
     return
   end select
-  end subroutine init_cdomeca
+  end subroutine init_cdom
 
   !-------------------------------------------------------------------------------
 
-  subroutine InitAllocate(this, cdombgc_index)
-  use cdomBGCIndexType , only : cdombgc_index_type
+  subroutine InitAllocate(this, cdom_bgc_index)
+  use cdomBGCIndexType , only : cdom_bgc_index_type
   use betr_varcon         , only : betr_maxpatch_pft, betr_max_soilorder
   implicit none
-  class(cdombgceca_type)   , intent(inout) :: this
-  type(cdombgc_index_type) , intent(in):: cdombgc_index
+  class(cdom_bgc_type)   , intent(inout) :: this
+  type(cdom_bgc_index_type) , intent(in):: cdom_bgc_index
 
   associate(                                   &
-    nom_pools=> cdombgc_index%nom_pools,    &
-    nstvars => cdombgc_index%nstvars  ,     &
-    nreactions => cdombgc_index%nreactions, &
-    nprimvars => cdombgc_index%nprimvars    &
+    nom_pools=> cdom_bgc_index%nom_pools,    &
+    nstvars => cdom_bgc_index%nstvars  ,     &
+    nreactions => cdom_bgc_index%nreactions, &
+    nprimvars => cdom_bgc_index%nprimvars    &
   )
 
   allocate(this%ystates0(nstvars)); this%ystates0(:) = 0._r8
@@ -316,60 +319,60 @@ contains
   !-------------------------------------------------------------------------------
 
 
-  subroutine checksum_cascade(this, cdombgc_index)
+  subroutine checksum_cascade(this, cdom_bgc_index)
 
-  use cdomBGCIndexType       , only : cdombgc_index_type
+  use cdomBGCIndexType       , only : cdom_bgc_index_type
 
   implicit none
   ! !ARGUMENTS:
-  class(cdombgceca_type)     , intent(in) :: this
-  type(cdombgc_index_type)   , intent(in) :: cdombgc_index
+  class(cdom_bgc_type)     , intent(in) :: this
+  type(cdom_bgc_index_type)   , intent(in) :: cdom_bgc_index
 
   real(r8) :: resc, resn, resp
   integer  :: reac,jj
 
   associate(                                                &
     cascade_matrix    => this%cascade_matrix              , &
-    lmet              => cdombgc_index%lmet               , & !
-    lcel              => cdombgc_index%lcel               , & !
-    llig              => cdombgc_index%llig               , & !
-    mic               => cdombgc_index%mic                , & !
-    pom               => cdombgc_index%pom                , & !
-    dom               => cdombgc_index%dom                , & !
-    humus             => cdombgc_index%humus              , & !
-    cwd               => cdombgc_index%cwd                , & !
-    lwd               => cdombgc_index%lwd                , & !
-    fwd               => cdombgc_index%fwd                , & !
-    c_loc             => cdombgc_index%c_loc              , & !
-    n_loc             => cdombgc_index%n_loc              , & !
-    p_loc             => cdombgc_index%p_loc              , & !
-    c13_loc           => cdombgc_index%c13_loc            , & !
-    c14_loc           => cdombgc_index%c14_loc            , & !
-    nelms             => cdombgc_index%nelms              , & !
-    lid_o2            => cdombgc_index%lid_o2             , & !
-    lid_co2           => cdombgc_index%lid_co2            , & !
-    lid_nh4           => cdombgc_index%lid_nh4            , & !
-    lid_c14_co2       => cdombgc_index%lid_c14_co2        , & !
-    lid_c13_co2       => cdombgc_index%lid_c13_co2        , & !
-    lid_co2_hr        => cdombgc_index%lid_co2_hr         , &
-    lid_minn_nh4_immob=> cdombgc_index%lid_minn_nh4_immob , &
-    lid_minp_immob    => cdombgc_index%lid_minp_immob     , &
-    lid_minp_soluble  => cdombgc_index%lid_minp_soluble   , &
-    lmet_dek_reac     => cdombgc_index%lmet_dek_reac      , &
-    lcel_dek_reac     => cdombgc_index%lcel_dek_reac      , &
-    llig_dek_reac     => cdombgc_index%llig_dek_reac      , &
-    mic_dek_reac      => cdombgc_index%mic_dek_reac       , &
-    pom_dek_reac      => cdombgc_index%pom_dek_reac       , &
-    humus_dek_reac    => cdombgc_index%humus_dek_reac     , &
-    cwd_dek_reac      => cdombgc_index%cwd_dek_reac       , &
-    lwd_dek_reac      => cdombgc_index%lwd_dek_reac       , &
-    fwd_dek_reac      => cdombgc_index%fwd_dek_reac       , &
-    dom_dek_reac      => cdombgc_index%dom_dek_reac       , &
-    lid_n2            => cdombgc_index%lid_n2             , & !
-    lid_n2o           => cdombgc_index%lid_n2o            , & !
-    lid_no3           => cdombgc_index%lid_no3            , & !
-    lid_nh4_nit_reac  => cdombgc_index%lid_nh4_nit_reac   , & !
-    lid_no3_den_reac  => cdombgc_index%lid_no3_den_reac     & !
+    lmet              => cdom_bgc_index%lmet               , & !
+    lcel              => cdom_bgc_index%lcel               , & !
+    llig              => cdom_bgc_index%llig               , & !
+    mic               => cdom_bgc_index%mic                , & !
+    pom               => cdom_bgc_index%pom                , & !
+    dom               => cdom_bgc_index%dom                , & !
+    humus             => cdom_bgc_index%humus              , & !
+    cwd               => cdom_bgc_index%cwd                , & !
+    lwd               => cdom_bgc_index%lwd                , & !
+    fwd               => cdom_bgc_index%fwd                , & !
+    c_loc             => cdom_bgc_index%c_loc              , & !
+    n_loc             => cdom_bgc_index%n_loc              , & !
+    p_loc             => cdom_bgc_index%p_loc              , & !
+    c13_loc           => cdom_bgc_index%c13_loc            , & !
+    c14_loc           => cdom_bgc_index%c14_loc            , & !
+    nelms             => cdom_bgc_index%nelms              , & !
+    lid_o2            => cdom_bgc_index%lid_o2             , & !
+    lid_co2           => cdom_bgc_index%lid_co2            , & !
+    lid_nh4           => cdom_bgc_index%lid_nh4            , & !
+    lid_c14_co2       => cdom_bgc_index%lid_c14_co2        , & !
+    lid_c13_co2       => cdom_bgc_index%lid_c13_co2        , & !
+    lid_co2_hr        => cdom_bgc_index%lid_co2_hr         , &
+    lid_minn_nh4_immob=> cdom_bgc_index%lid_minn_nh4_immob , &
+    lid_minp_immob    => cdom_bgc_index%lid_minp_immob     , &
+    lid_minp_soluble  => cdom_bgc_index%lid_minp_soluble   , &
+    lmet_dek_reac     => cdom_bgc_index%lmet_dek_reac      , &
+    lcel_dek_reac     => cdom_bgc_index%lcel_dek_reac      , &
+    llig_dek_reac     => cdom_bgc_index%llig_dek_reac      , &
+    mic_dek_reac      => cdom_bgc_index%mic_dek_reac       , &
+    pom_dek_reac      => cdom_bgc_index%pom_dek_reac       , &
+    humus_dek_reac    => cdom_bgc_index%humus_dek_reac     , &
+    cwd_dek_reac      => cdom_bgc_index%cwd_dek_reac       , &
+    lwd_dek_reac      => cdom_bgc_index%lwd_dek_reac       , &
+    fwd_dek_reac      => cdom_bgc_index%fwd_dek_reac       , &
+    dom_dek_reac      => cdom_bgc_index%dom_dek_reac       , &
+    lid_n2            => cdom_bgc_index%lid_n2             , & !
+    lid_n2o           => cdom_bgc_index%lid_n2o            , & !
+    lid_no3           => cdom_bgc_index%lid_no3            , & !
+    lid_nh4_nit_reac  => cdom_bgc_index%lid_nh4_nit_reac   , & !
+    lid_no3_den_reac  => cdom_bgc_index%lid_no3_den_reac     & !
   )
   print*,'checksum'
   print*,'micc ','micn ','micp'
@@ -467,20 +470,20 @@ contains
 
   print*,'this%plant_ntypes=',this%plant_ntypes
 
-  reac=this%cdombgc_index%lid_plant_minn_no3_up_reac
-  resn=sum(cascade_matrix(this%cdombgc_index%lid_plant_minn_no3_pft(1:this%plant_ntypes),reac))
+  reac=this%cdom_bgc_index%lid_plant_minn_no3_up_reac
+  resn=sum(cascade_matrix(this%cdom_bgc_index%lid_plant_minn_no3_pft(1:this%plant_ntypes),reac))
   print*,'plant no3 uptake',resn
-  reac=this%cdombgc_index%lid_plant_minn_nh4_up_reac
-  resn=sum(cascade_matrix(this%cdombgc_index%lid_plant_minn_nh4_pft(1:this%plant_ntypes),reac))
+  reac=this%cdom_bgc_index%lid_plant_minn_nh4_up_reac
+  resn=sum(cascade_matrix(this%cdom_bgc_index%lid_plant_minn_nh4_pft(1:this%plant_ntypes),reac))
   print*,'plant nh4 uptake',resn
-  reac=this%cdombgc_index%lid_plant_minp_up_reac
-  resp=sum(cascade_matrix(this%cdombgc_index%lid_plant_minp_pft(1:this%plant_ntypes),reac))
+  reac=this%cdom_bgc_index%lid_plant_minp_up_reac
+  resp=sum(cascade_matrix(this%cdom_bgc_index%lid_plant_minp_pft(1:this%plant_ntypes),reac))
   print*,'plant p uptake',resp
   end associate
   end subroutine checksum_cascade
 
   !-------------------------------------------------------------------------------
-  subroutine runbgc_cdomeca(this,  is_surflit, dtime, bgc_forc, nstates, ystates0, ystatesf, bstatus)
+  subroutine runbgc_cdom(this,  is_surflit, dtime, bgc_forc, nstates, ystates0, ystatesf, bstatus)
 
   !DESCRIPTION
   !do bgc model integration for one step
@@ -490,7 +493,7 @@ contains
   use MathfuncMod           , only : safe_div
   use tracer_varcon         , only : catomw, natomw, patomw
   implicit none
-  class(cdombgceca_type)  , intent(inout) :: this
+  class(cdom_bgc_type)  , intent(inout) :: this
   logical                    , intent(in)    :: is_surflit
   real(r8)                   , intent(in)    :: dtime
   type(JarBGC_forc_type)     , intent(in)    :: bgc_forc
@@ -500,11 +503,11 @@ contains
   type(betr_status_type)     , intent(out)   :: bstatus
 
   !local variables
-  real(r8) :: pot_om_decay_rates(this%cdombgc_index%nom_pools)
+  real(r8) :: pot_om_decay_rates(this%cdom_bgc_index%nom_pools)
   real(r8) :: pot_co2_hr
   real(r8) :: pot_f_nit_mol_per_sec
   real(r8) :: n2_n2o_ratio_denit
-  real(r8) :: yf(this%cdombgc_index%nstvars)
+  real(r8) :: yf(this%cdom_bgc_index%nstvars)
   real(r8) :: o2_decomp_depth
   real(r8) :: time
   real(r8) :: frc_c13, frc_c14
@@ -512,46 +515,46 @@ contains
   real(r8) :: c_mass2, n_mass2, p_mass2
   real(r8) :: c_flx, n_flx, p_flx
   integer :: jj
-  character(len=*),parameter :: subname = 'runbgc_cdomeca'
+  character(len=*),parameter :: subname = 'runbgc_cdom'
   associate(                                            &
     pctsand   => bgc_forc%pct_sand             , &  !sand in %
     rt_ar     => bgc_forc%rt_ar                , &  !root autotrophic respiration
     rt_ar_c13 => bgc_forc%rt_ar_c13            , &  !root autotrophic respiration
     rt_ar_c14 => bgc_forc%rt_ar_c14            , &  !root autotrophic respiration
-    lid_nh4   => this%cdombgc_index%lid_nh4        , &  !position id of nh4
-    lid_no3   => this%cdombgc_index%lid_no3        , &  !
-    lid_o2    => this%cdombgc_index%lid_o2         , &  !
-    nom_pools => this%cdombgc_index%nom_pools      , &  !number om pools
-    nom_tot_elms=> this%cdombgc_index%nom_tot_elms , &
-    nstvars   => this%cdombgc_index%nstvars        , &
-    nprimvars => this%cdombgc_index%nprimvars      , &
-    nreactions=> this%cdombgc_index%nreactions     , &
-    lid_plant_minn_nh4  => this%cdombgc_index%lid_plant_minn_nh4       , &
-    lid_plant_minn_no3  => this%cdombgc_index%lid_plant_minn_no3       , &
-    lid_n2o_nit => this%cdombgc_index%lid_n2o_nit,&
-    lid_no3_den => this%cdombgc_index%lid_no3_den,&
-    lid_minp_soluble=> this%cdombgc_index%lid_minp_soluble, &
+    lid_nh4   => this%cdom_bgc_index%lid_nh4        , &  !position id of nh4
+    lid_no3   => this%cdom_bgc_index%lid_no3        , &  !
+    lid_o2    => this%cdom_bgc_index%lid_o2         , &  !
+    nom_pools => this%cdom_bgc_index%nom_pools      , &  !number om pools
+    nom_tot_elms=> this%cdom_bgc_index%nom_tot_elms , &
+    nstvars   => this%cdom_bgc_index%nstvars        , &
+    nprimvars => this%cdom_bgc_index%nprimvars      , &
+    nreactions=> this%cdom_bgc_index%nreactions     , &
+    lid_plant_minn_nh4  => this%cdom_bgc_index%lid_plant_minn_nh4       , &
+    lid_plant_minn_no3  => this%cdom_bgc_index%lid_plant_minn_no3       , &
+    lid_n2o_nit => this%cdom_bgc_index%lid_n2o_nit,&
+    lid_no3_den => this%cdom_bgc_index%lid_no3_den,&
+    lid_minp_soluble=> this%cdom_bgc_index%lid_minp_soluble, &
     cascade_matrix => this%cascade_matrix             , &
     cascade_matrixp=> this%cascade_matrixp            , &
     cascade_matrixd=> this%cascade_matrixd            , &
     ystates1 => this%ystates1                           &
   )
-  this%cdombgc_index%debug = bgc_forc%debug
-  if(this%cdombgc_index%debug)print*,'enter runbgc_cdomeca'
+  this%cdom_bgc_index%debug = bgc_forc%debug
+  if(this%cdom_bgc_index%debug)print*,'enter runbgc_cdom'
   this%rt_ar = rt_ar
   frc_c13 = safe_div(rt_ar_c13,rt_ar); frc_c14 = safe_div(rt_ar_c14,rt_ar)
   call bstatus%reset()
 
   !initialize state variables
-  call this%init_states(this%cdombgc_index, bgc_forc)
-  if(this%cdombgc_index%debug)call this%begin_massbal_check()
+  call this%init_states(this%cdom_bgc_index, bgc_forc)
+  if(this%cdom_bgc_index%debug)call this%begin_massbal_check()
   ystates0(:) = this%ystates0(:)
 
 
   !add all external input
-   call this%add_ext_input(dtime, this%cdombgc_index, bgc_forc, &
+   call this%add_ext_input(dtime, this%cdom_bgc_index, bgc_forc, &
       this%c_inflx, this%n_inflx, this%p_inflx)
-  if(this%cdombgc_index%debug)call this%end_massbal_check('af add_ext_input')
+  if(this%cdom_bgc_index%debug)call this%end_massbal_check('af add_ext_input')
 
 !  if(this%bgc_on)then
   !initialize decomposition scaling factors
@@ -561,12 +564,12 @@ contains
   cascade_matrix(:,:) = 0._r8
 
   !calculate default stoichiometry entries
-  call this%calc_cascade_matrix(this%cdombgc_index, cascade_matrix, frc_c13, frc_c14)
-  if(this%cdombgc_index%debug)call this%checksum_cascade(this%cdombgc_index)
+  call this%calc_cascade_matrix(this%cdom_bgc_index, cascade_matrix, frc_c13, frc_c14)
+  if(this%cdom_bgc_index%debug)call this%checksum_cascade(this%cdom_bgc_index)
 
-  if(this%cdombgc_index%debug)call this%end_massbal_check('bf run_decomp')
+  if(this%cdom_bgc_index%debug)call this%end_massbal_check('bf run_decomp')
   !run century decomposition, return decay rates, cascade matrix, potential hr
-  call this%censom%run_decomp(is_surflit, this%cdombgc_index, dtime, ystates1(1:nom_tot_elms),&
+  call this%censom%run_decomp(is_surflit, this%cdom_bgc_index, dtime, ystates1(1:nom_tot_elms),&
       this%decompkf_eca, bgc_forc%pct_sand, bgc_forc%pct_clay,this%alpha_n, this%alpha_p, &
       cascade_matrix, this%k_decay(1:nom_pools), pot_co2_hr, bstatus)
 
@@ -581,7 +584,7 @@ contains
   o2_decomp_depth = max(o2_decomp_depth,1.e-40_r8)
 
   !run nitrification-denitrification, returns cascade_matrix, decay rates
-  call this%nitden%run_nitden(this%cdombgc_index, bgc_forc, this%decompkf_eca, &
+  call this%nitden%run_nitden(this%cdom_bgc_index, bgc_forc, this%decompkf_eca, &
     ystates1(lid_nh4), ystates1(lid_no3), ystates1(lid_o2), o2_decomp_depth, &
     pot_f_nit_mol_per_sec, pot_co2_hr, this%pot_f_nit, this%pot_f_denit, cascade_matrix)
   !---------------------
@@ -593,7 +596,7 @@ contains
   !so the reaction rate is a function of state variables. Further, for simplicity,
   !the nitrification and denitrification rates have been assumed as linear function
   !nh4 and no3 in soil.
-  call this%arenchyma_gas_transport(this%cdombgc_index, dtime)
+  call this%arenchyma_gas_transport(this%cdom_bgc_index, dtime)
   !do the stoichiometric matrix separation
   call pd_decomp(nprimvars, nreactions, cascade_matrix(1:nprimvars, 1:nreactions), &
      cascade_matrixp, cascade_matrixd, bstatus)
@@ -603,13 +606,13 @@ contains
   yf(:) = ystates1(:)
   call ode_adapt_ebbks1(this, yf, nprimvars, nstvars, time, dtime, ystates1)
 
-  !if(this%cdombgc_index%debug)call this%checksum_cascade(this%cdombgc_index)
+  !if(this%cdom_bgc_index%debug)call this%checksum_cascade(this%cdom_bgc_index)
   if(this%use_c14)then
-    call this%c14decay(this%cdombgc_index, dtime, ystates1)
+    call this%c14decay(this%cdom_bgc_index, dtime, ystates1)
   endif
-!  call this%censom%stoichiometry_fix(this%cdombgc_index, ystates1)
+!  call this%censom%stoichiometry_fix(this%cdom_bgc_index, ystates1)
 
-  if(this%cdombgc_index%debug)then
+  if(this%cdom_bgc_index%debug)then
     do jj = 1, nstvars
       print*,jj,yf(jj),ystates1(jj)-yf(jj)
     enddo
@@ -620,17 +623,17 @@ contains
   ystatesf(:) = ystates1(:)
 
   end associate
-  end subroutine runbgc_cdomeca
+  end subroutine runbgc_cdom
   !-------------------------------------------------------------------------------
-  subroutine c14decay(this, cdombgc_index, dtime, ystates1)
+  subroutine c14decay(this, cdom_bgc_index, dtime, ystates1)
 
   !apply c14 decay to om pools
-  use cdomBGCIndexType       , only : cdombgc_index_type
+  use cdomBGCIndexType       , only : cdom_bgc_index_type
 
   implicit none
   ! !ARGUMENTS:
-  class(cdombgceca_type)     , intent(in) :: this
-  type(cdombgc_index_type)   , intent(in) :: cdombgc_index
+  class(cdom_bgc_type)     , intent(in) :: this
+  type(cdom_bgc_index_type)   , intent(in) :: cdom_bgc_index
   real(r8), intent(in) :: dtime
   real(r8), intent(inout) :: ystates1(:)
 
@@ -638,20 +641,20 @@ contains
   integer :: kc14
 
   associate(                                       &
-    litr_beg =>  cdombgc_index%litr_beg          , &
-    micbiom_beg =>  cdombgc_index%micbiom_beg    , &
-    humus_beg =>  cdombgc_index%humus_beg        , &
-    dom_beg =>  cdombgc_index%dom_beg            , &
-    pom_beg =>  cdombgc_index%pom_beg            , &
-    wood_beg =>  cdombgc_index%wood_beg          , &
-    litr_end =>  cdombgc_index%litr_end          , &
-    humus_end =>  cdombgc_index%humus_end        , &
-    micbiom_end =>  cdombgc_index%micbiom_end    , &
-    dom_end =>  cdombgc_index%dom_end            , &
-    pom_end => cdombgc_index%pom_end             , &
-    wood_end =>  cdombgc_index%wood_end          , &
-    c14_loc=>  cdombgc_index%c14_loc             , &
-    nelms => cdombgc_index%nelms                   &
+    litr_beg =>  cdom_bgc_index%litr_beg          , &
+    micbiom_beg =>  cdom_bgc_index%micbiom_beg    , &
+    humus_beg =>  cdom_bgc_index%humus_beg        , &
+    dom_beg =>  cdom_bgc_index%dom_beg            , &
+    pom_beg =>  cdom_bgc_index%pom_beg            , &
+    wood_beg =>  cdom_bgc_index%wood_beg          , &
+    litr_end =>  cdom_bgc_index%litr_end          , &
+    humus_end =>  cdom_bgc_index%humus_end        , &
+    micbiom_end =>  cdom_bgc_index%micbiom_end    , &
+    dom_end =>  cdom_bgc_index%dom_end            , &
+    pom_end => cdom_bgc_index%pom_end             , &
+    wood_end =>  cdom_bgc_index%wood_end          , &
+    c14_loc=>  cdom_bgc_index%c14_loc             , &
+    nelms => cdom_bgc_index%nelms                   &
   )
 
   call somc14_decay(litr_beg, litr_end, nelms, c14_loc, this%c14decay_const)
@@ -682,72 +685,72 @@ contains
     end subroutine somc14_decay
   end subroutine c14decay
   !-------------------------------------------------------------------------------
-  subroutine calc_cascade_matrix(this,cdombgc_index, cascade_matrix, frc_c13, frc_c14)
+  subroutine calc_cascade_matrix(this,cdom_bgc_index, cascade_matrix, frc_c13, frc_c14)
     !
     ! !DESCRIPTION:
     ! calculate cascade matrix for the decomposition model
     !
     ! !USES:
     use MathfuncMod               , only : safe_div
-    use cdomBGCIndexType       , only : cdombgc_index_type
+    use cdomBGCIndexType       , only : cdom_bgc_index_type
     use betr_ctrl                 , only : spinup_state => betr_spinup_state
     implicit none
     ! !ARGUMENTS:
-    class(cdombgceca_type)     , intent(in) :: this
-    type(cdombgc_index_type)   , intent(in) :: cdombgc_index
-    real(r8)                      , intent(inout)   :: cascade_matrix(cdombgc_index%nstvars, cdombgc_index%nreactions)
+    class(cdom_bgc_type)     , intent(in) :: this
+    type(cdom_bgc_index_type)   , intent(in) :: cdom_bgc_index
+    real(r8)                      , intent(inout)   :: cascade_matrix(cdom_bgc_index%nstvars, cdom_bgc_index%nreactions)
     real(r8)                      , intent(in) :: frc_c13, frc_c14
     ! !LOCAL VARIABLES:
     real(r8) :: ftxt, f1, f2
     integer :: k, reac
 
     associate(                                                             & !
-         lid_autr_rt => cdombgc_index%lid_autr_rt                      , & !
-         lid_o2    => cdombgc_index%lid_o2                             , & !
-         lid_co2   => cdombgc_index%lid_co2                            , & !
-         lid_c13_co2=> cdombgc_index%lid_c13_co2                       , & !
-         lid_c14_co2=> cdombgc_index%lid_c14_co2                       , & !
-         lid_nh4   => cdombgc_index%lid_nh4                            , & !
-         lid_ch4   => cdombgc_index%lid_ch4                            , & !
-         lid_ar    => cdombgc_index%lid_ar                             , & !
-         lid_no3   => cdombgc_index%lid_no3                            , & !
-         lid_n2o   => cdombgc_index%lid_n2o                            , & !
-         lid_n2    => cdombgc_index%lid_n2                             , & !
-         lid_co2_hr=> cdombgc_index%lid_co2_hr                         , & !
-         lid_minn_nh4_immob => cdombgc_index%lid_minn_nh4_immob        , & !
-         lid_minn_no3_immob => cdombgc_index%lid_minn_no3_immob        , & !
-         lid_n2_paere => cdombgc_index%lid_n2_paere                    , & !
-         lid_ch4_paere => cdombgc_index%lid_ch4_paere                  , & !
-         lid_n2o_paere => cdombgc_index%lid_n2o_paere                  , & !
-         lid_o2_paere => cdombgc_index%lid_o2_paere                    , & !
-         lid_ar_paere => cdombgc_index%lid_ar_paere                    , & !
-         lid_co2_paere => cdombgc_index%lid_co2_paere                  , & !
-         lid_c13_co2_paere => cdombgc_index%lid_c13_co2_paere          , & !
-         lid_c14_co2_paere => cdombgc_index%lid_c14_co2_paere          , & !
-         lid_minp_soluble => cdombgc_index%lid_minp_soluble            , & !
-         lid_minp_secondary => cdombgc_index%lid_minp_secondary        , & !
-         lid_minp_occlude =>  cdombgc_index%lid_minp_occlude           , & !
-         lid_plant_minp => cdombgc_index%lid_plant_minp                , & !
-         lid_minp_immob => cdombgc_index%lid_minp_immob                , & !
+         lid_autr_rt => cdom_bgc_index%lid_autr_rt                      , & !
+         lid_o2    => cdom_bgc_index%lid_o2                             , & !
+         lid_co2   => cdom_bgc_index%lid_co2                            , & !
+         lid_c13_co2=> cdom_bgc_index%lid_c13_co2                       , & !
+         lid_c14_co2=> cdom_bgc_index%lid_c14_co2                       , & !
+         lid_nh4   => cdom_bgc_index%lid_nh4                            , & !
+         lid_ch4   => cdom_bgc_index%lid_ch4                            , & !
+         lid_ar    => cdom_bgc_index%lid_ar                             , & !
+         lid_no3   => cdom_bgc_index%lid_no3                            , & !
+         lid_n2o   => cdom_bgc_index%lid_n2o                            , & !
+         lid_n2    => cdom_bgc_index%lid_n2                             , & !
+         lid_co2_hr=> cdom_bgc_index%lid_co2_hr                         , & !
+         lid_minn_nh4_immob => cdom_bgc_index%lid_minn_nh4_immob        , & !
+         lid_minn_no3_immob => cdom_bgc_index%lid_minn_no3_immob        , & !
+         lid_n2_paere => cdom_bgc_index%lid_n2_paere                    , & !
+         lid_ch4_paere => cdom_bgc_index%lid_ch4_paere                  , & !
+         lid_n2o_paere => cdom_bgc_index%lid_n2o_paere                  , & !
+         lid_o2_paere => cdom_bgc_index%lid_o2_paere                    , & !
+         lid_ar_paere => cdom_bgc_index%lid_ar_paere                    , & !
+         lid_co2_paere => cdom_bgc_index%lid_co2_paere                  , & !
+         lid_c13_co2_paere => cdom_bgc_index%lid_c13_co2_paere          , & !
+         lid_c14_co2_paere => cdom_bgc_index%lid_c14_co2_paere          , & !
+         lid_minp_soluble => cdom_bgc_index%lid_minp_soluble            , & !
+         lid_minp_secondary => cdom_bgc_index%lid_minp_secondary        , & !
+         lid_minp_occlude =>  cdom_bgc_index%lid_minp_occlude           , & !
+         lid_plant_minp => cdom_bgc_index%lid_plant_minp                , & !
+         lid_minp_immob => cdom_bgc_index%lid_minp_immob                , & !
 
-         lid_autr_rt_reac=> cdombgc_index%lid_autr_rt_reac                 , & !
-         lid_no3_den  => cdombgc_index%lid_no3_den                     , & !
-         lid_plant_minn_nh4_up_reac=> cdombgc_index%lid_plant_minn_nh4_up_reac , & !
-         lid_plant_minn_no3_up_reac=> cdombgc_index%lid_plant_minn_no3_up_reac , & !
-         lid_plant_minn_nh4  => cdombgc_index%lid_plant_minn_nh4       , &
-         lid_plant_minn_no3  => cdombgc_index%lid_plant_minn_no3       , &
-         lid_minp_secondary_to_sol_occ_reac => cdombgc_index%lid_minp_secondary_to_sol_occ_reac    , & !
-         lid_minp_soluble_to_secp_reac => cdombgc_index%lid_minp_soluble_to_secp_reac      , & !
-         lid_plant_minp_up_reac => cdombgc_index%lid_plant_minp_up_reac, & !
+         lid_autr_rt_reac=> cdom_bgc_index%lid_autr_rt_reac                 , & !
+         lid_no3_den  => cdom_bgc_index%lid_no3_den                     , & !
+         lid_plant_minn_nh4_up_reac=> cdom_bgc_index%lid_plant_minn_nh4_up_reac , & !
+         lid_plant_minn_no3_up_reac=> cdom_bgc_index%lid_plant_minn_no3_up_reac , & !
+         lid_plant_minn_nh4  => cdom_bgc_index%lid_plant_minn_nh4       , &
+         lid_plant_minn_no3  => cdom_bgc_index%lid_plant_minn_no3       , &
+         lid_minp_secondary_to_sol_occ_reac => cdom_bgc_index%lid_minp_secondary_to_sol_occ_reac    , & !
+         lid_minp_soluble_to_secp_reac => cdom_bgc_index%lid_minp_soluble_to_secp_reac      , & !
+         lid_plant_minp_up_reac => cdom_bgc_index%lid_plant_minp_up_reac, & !
 
-         lid_n2_aren_reac => cdombgc_index%lid_n2_aren_reac            , & !
-         lid_ch4_aren_reac=> cdombgc_index%lid_ch4_aren_reac           , & !
-         lid_n2o_aren_reac=> cdombgc_index%lid_n2o_aren_reac           , & !
-         lid_o2_aren_reac => cdombgc_index%lid_o2_aren_reac            , & !
-         lid_ar_aren_reac => cdombgc_index%lid_ar_aren_reac            , & !
-         lid_co2_aren_reac=> cdombgc_index%lid_co2_aren_reac           , & !
-         lid_c13_co2_aren_reac=> cdombgc_index%lid_c13_co2_aren_reac   , & !
-         lid_c14_co2_aren_reac=> cdombgc_index%lid_c14_co2_aren_reac     & !
+         lid_n2_aren_reac => cdom_bgc_index%lid_n2_aren_reac            , & !
+         lid_ch4_aren_reac=> cdom_bgc_index%lid_ch4_aren_reac           , & !
+         lid_n2o_aren_reac=> cdom_bgc_index%lid_n2o_aren_reac           , & !
+         lid_o2_aren_reac => cdom_bgc_index%lid_o2_aren_reac            , & !
+         lid_ar_aren_reac => cdom_bgc_index%lid_ar_aren_reac            , & !
+         lid_co2_aren_reac=> cdom_bgc_index%lid_co2_aren_reac           , & !
+         lid_c13_co2_aren_reac=> cdom_bgc_index%lid_c13_co2_aren_reac   , & !
+         lid_c14_co2_aren_reac=> cdom_bgc_index%lid_c14_co2_aren_reac     & !
          )
 
     !higher [nh4] makes lower [no3] competitiveness
@@ -847,25 +850,25 @@ contains
   end associate
   end subroutine calc_cascade_matrix
   !--------------------------------------------------------------------
-  subroutine init_states(this, cdombgc_index, bgc_forc)
+  subroutine init_states(this, cdom_bgc_index, bgc_forc)
 
-  use cdomBGCIndexType       , only : cdombgc_index_type
+  use cdomBGCIndexType       , only : cdom_bgc_index_type
   use JarBgcForcType            , only : JarBGC_forc_type
   implicit none
-  class(cdombgceca_type)     , intent(inout) :: this
-  type(cdombgc_index_type)  , intent(in) :: cdombgc_index
+  class(cdom_bgc_type)     , intent(inout) :: this
+  type(cdom_bgc_index_type)  , intent(in) :: cdom_bgc_index
   type(JarBGC_forc_type)  , intent(in) :: bgc_forc
 
   integer :: j
   associate(                           &
-    lid_n2 => cdombgc_index%lid_n2, &
-    lid_o2 => cdombgc_index%lid_o2, &
-    lid_co2 => cdombgc_index%lid_co2, &
-    lid_c13_co2 => cdombgc_index%lid_c13_co2, &
-    lid_c14_co2 => cdombgc_index%lid_c14_co2, &
-    lid_n2o => cdombgc_index%lid_n2o, &
-    lid_ar => cdombgc_index%lid_ar, &
-    lid_ch4 => cdombgc_index%lid_ch4  &
+    lid_n2 => cdom_bgc_index%lid_n2, &
+    lid_o2 => cdom_bgc_index%lid_o2, &
+    lid_co2 => cdom_bgc_index%lid_co2, &
+    lid_c13_co2 => cdom_bgc_index%lid_c13_co2, &
+    lid_c14_co2 => cdom_bgc_index%lid_c14_co2, &
+    lid_n2o => cdom_bgc_index%lid_n2o, &
+    lid_ar => cdom_bgc_index%lid_ar, &
+    lid_ch4 => cdom_bgc_index%lid_ch4  &
   )
   this%ystates0(:) = bgc_forc%ystates(:)
   this%ystates1(:) = this%ystates0(:)
@@ -915,15 +918,15 @@ contains
   end associate
   end subroutine init_states
   !--------------------------------------------------------------------
-  subroutine add_ext_input(this, dtime, cdombgc_index, bgc_forc, c_inf, n_inf, p_inf)
-  use cdomBGCIndexType       , only : cdombgc_index_type
+  subroutine add_ext_input(this, dtime, cdom_bgc_index, bgc_forc, c_inf, n_inf, p_inf)
+  use cdomBGCIndexType       , only : cdom_bgc_index_type
   use JarBgcForcType        , only : JarBGC_forc_type
   use tracer_varcon             , only : catomw, natomw, patomw,c13atomw,c14atomw
   use MathfuncMod               , only : safe_div
   implicit none
-  class(cdombgceca_type)     , intent(inout) :: this
+  class(cdom_bgc_type)     , intent(inout) :: this
   real(r8), intent(in) :: dtime
-  type(cdombgc_index_type)  , intent(in) :: cdombgc_index
+  type(cdom_bgc_index_type)  , intent(in) :: cdom_bgc_index
   type(JarBGC_forc_type)  , intent(in) :: bgc_forc
   real(r8), optional, intent(out) :: c_inf, n_inf, p_inf
   integer :: kc, kn, kp,kc13,kc14
@@ -932,37 +935,37 @@ contains
   real(r8):: totc, totn
   real(r8):: c_inf_loc, n_inf_loc, p_inf_loc
   associate(                        &
-    lmet =>  cdombgc_index%lmet, &
-    lcel =>  cdombgc_index%lcel, &
-    llig =>  cdombgc_index%llig, &
-    cwd =>   cdombgc_index%cwd, &
-    fwd =>   cdombgc_index%fwd, &
-    lwd =>   cdombgc_index%lwd, &
-    litr_beg =>  cdombgc_index%litr_beg, &
-    humus_beg =>  cdombgc_index%humus_beg, &
-    micbiom_beg  =>  cdombgc_index%micbiom_beg, &
-    dom_beg =>  cdombgc_index%dom_beg, &
-    pom_beg =>  cdombgc_index%pom_beg, &
-    wood_beg =>  cdombgc_index%wood_beg, &
-    litr_end =>  cdombgc_index%litr_end, &
-    humus_end =>  cdombgc_index%humus_end, &
-    dom_end =>  cdombgc_index%dom_end, &
-    pom_end =>  cdombgc_index%pom_end, &
-    micbiom_end =>  cdombgc_index%micbiom_end, &
-    wood_end =>  cdombgc_index%wood_end, &
-    c_loc=>  cdombgc_index%c_loc,&
-    c13_loc=>  cdombgc_index%c13_loc,&
-    c14_loc=>  cdombgc_index%c14_loc,&
-    n_loc=>  cdombgc_index%n_loc,&
-    p_loc=>  cdombgc_index%p_loc,&
-    mic =>  cdombgc_index%mic, &
-    pom =>  cdombgc_index%pom, &
-    humus =>  cdombgc_index%humus, &
-    nelms => cdombgc_index%nelms, &
-    lid_nh4=> cdombgc_index%lid_nh4, &
-    lid_no3=> cdombgc_index%lid_no3, &
-    lid_minp_soluble =>  cdombgc_index%lid_minp_soluble,  &
-    lid_minp_immob => cdombgc_index%lid_minp_immob &
+    lmet =>  cdom_bgc_index%lmet, &
+    lcel =>  cdom_bgc_index%lcel, &
+    llig =>  cdom_bgc_index%llig, &
+    cwd =>   cdom_bgc_index%cwd, &
+    fwd =>   cdom_bgc_index%fwd, &
+    lwd =>   cdom_bgc_index%lwd, &
+    litr_beg =>  cdom_bgc_index%litr_beg, &
+    humus_beg =>  cdom_bgc_index%humus_beg, &
+    micbiom_beg  =>  cdom_bgc_index%micbiom_beg, &
+    dom_beg =>  cdom_bgc_index%dom_beg, &
+    pom_beg =>  cdom_bgc_index%pom_beg, &
+    wood_beg =>  cdom_bgc_index%wood_beg, &
+    litr_end =>  cdom_bgc_index%litr_end, &
+    humus_end =>  cdom_bgc_index%humus_end, &
+    dom_end =>  cdom_bgc_index%dom_end, &
+    pom_end =>  cdom_bgc_index%pom_end, &
+    micbiom_end =>  cdom_bgc_index%micbiom_end, &
+    wood_end =>  cdom_bgc_index%wood_end, &
+    c_loc=>  cdom_bgc_index%c_loc,&
+    c13_loc=>  cdom_bgc_index%c13_loc,&
+    c14_loc=>  cdom_bgc_index%c14_loc,&
+    n_loc=>  cdom_bgc_index%n_loc,&
+    p_loc=>  cdom_bgc_index%p_loc,&
+    mic =>  cdom_bgc_index%mic, &
+    pom =>  cdom_bgc_index%pom, &
+    humus =>  cdom_bgc_index%humus, &
+    nelms => cdom_bgc_index%nelms, &
+    lid_nh4=> cdom_bgc_index%lid_nh4, &
+    lid_no3=> cdom_bgc_index%lid_no3, &
+    lid_minp_soluble =>  cdom_bgc_index%lid_minp_soluble,  &
+    lid_minp_immob => cdom_bgc_index%lid_minp_immob &
   )
 
   c_inf_loc=0._r8; n_inf_loc=0._r8; p_inf_loc=0._r8
@@ -1069,12 +1072,12 @@ contains
 
     integer :: kc, kn, kp, kc13, kc14
     associate(                            &
-     c_loc   =>  cdombgc_index%c_loc  ,&
-     c13_loc =>  cdombgc_index%c13_loc,&
-     c14_loc =>  cdombgc_index%c14_loc,&
-     n_loc   =>  cdombgc_index%n_loc  ,&
-     p_loc   =>  cdombgc_index%p_loc  ,&
-     nelms   =>  cdombgc_index%nelms   &
+     c_loc   =>  cdom_bgc_index%c_loc  ,&
+     c13_loc =>  cdom_bgc_index%c13_loc,&
+     c14_loc =>  cdom_bgc_index%c14_loc,&
+     n_loc   =>  cdom_bgc_index%n_loc  ,&
+     p_loc   =>  cdom_bgc_index%p_loc  ,&
+     nelms   =>  cdom_bgc_index%nelms   &
     )
     kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
     this%ystates1(kc) =this%ystates0(kc) + cflx_input*dtime/catomw
@@ -1145,7 +1148,7 @@ contains
   use SOMStateVarUpdateMod , only : calc_dtrend_som_bgc
   use MathfuncMod          , only : lom_type, safe_div
   implicit none
-  class(cdombgceca_type) , intent(inout) :: this
+  class(cdom_bgc_type) , intent(inout) :: this
   integer                   , intent(in) :: nstvars
   integer                   , intent(in) :: nprimvars
   real(r8)                  , intent(in) :: dtime
@@ -1156,13 +1159,13 @@ contains
   !local variables
   real(r8) :: mic_pot_nn_flx  !potential nitrogen uptake to support decomposition
   real(r8) :: mic_pot_np_flx  !potential phosphorus uptake to support decomposition
-  real(r8) :: pot_decomp(this%cdombgc_index%nom_pools)
-  real(r8) :: rrates(this%cdombgc_index%nreactions)
-  real(r8) :: p_dt(1:this%cdombgc_index%nprimvars)
-  real(r8) :: d_dt(1:this%cdombgc_index%nprimvars)
+  real(r8) :: pot_decomp(this%cdom_bgc_index%nom_pools)
+  real(r8) :: rrates(this%cdom_bgc_index%nreactions)
+  real(r8) :: p_dt(1:this%cdom_bgc_index%nprimvars)
+  real(r8) :: d_dt(1:this%cdom_bgc_index%nprimvars)
   real(r8) :: dydt1(nstvars)
   real(r8) :: pscal(1:nprimvars)
-  real(r8) :: rscal(1:this%cdombgc_index%nreactions)
+  real(r8) :: rscal(1:this%cdom_bgc_index%nreactions)
   real(r8) :: ECA_flx_nh4_plants(this%plant_ntypes)
   real(r8) :: ECA_flx_no3_plants(this%plant_ntypes)
   real(r8) :: ECA_factor_msurf_nh4
@@ -1182,34 +1185,34 @@ contains
   real(r8) :: scal
 
   associate(                                                                                      &
-    nreactions => this%cdombgc_index%nreactions                                              , &
-    nstvars  => this%cdombgc_index%nstvars                                                   , &
-    nom_pools => this%cdombgc_index%nom_pools                                                , &
-    lid_nh4 => this%cdombgc_index%lid_nh4                                                    , &
-    lid_no3 => this%cdombgc_index%lid_no3                                                    , &
-    mic    => this%cdombgc_index%mic                                                       , &
-    pom    => this%cdombgc_index%pom                                                       , &
-    humus    => this%cdombgc_index%humus                                                       , &
-    c_loc   => this%cdombgc_index%c_loc                                                      , &
-    n_loc   => this%cdombgc_index%n_loc                                                      , &
-    p_loc   => this%cdombgc_index%p_loc                                                      , &
-    nelms   => this%cdombgc_index%nelms                                                      , &
-    lid_plant_minn_no3_pft=> this%cdombgc_index%lid_plant_minn_no3_pft                       , &
-    lid_plant_minn_nh4_pft=> this%cdombgc_index%lid_plant_minn_nh4_pft                       , &
-    lid_plant_minp_pft=> this%cdombgc_index%lid_plant_minp_pft                               , &
-    lid_plant_minp    => this%cdombgc_index%lid_plant_minp                                   , &
-    lid_plant_minn_nh4 => this%cdombgc_index%lid_plant_minn_nh4                              , &
-    lid_plant_minn_no3 => this%cdombgc_index%lid_plant_minn_no3                              , &
-    lid_minp_soluble => this%cdombgc_index%lid_minp_soluble                                  , &
-    lid_minp_secondary => this%cdombgc_index%lid_minp_secondary                              , &
-    lid_minp_soluble_to_secp_reac=> this%cdombgc_index%lid_minp_soluble_to_secp_reac         , &
-    lid_autr_rt_reac => this%cdombgc_index%lid_autr_rt_reac                                  , &
-    lid_nh4_nit_reac => this%cdombgc_index%lid_nh4_nit_reac                                  , &
-    lid_no3_den_reac => this%cdombgc_index%lid_no3_den_reac                                  , &
-    lid_plant_minn_nh4_up_reac => this%cdombgc_index%lid_plant_minn_nh4_up_reac              , &
-    lid_plant_minn_no3_up_reac => this%cdombgc_index%lid_plant_minn_no3_up_reac              , &
-    lid_plant_minp_up_reac => this%cdombgc_index%lid_plant_minp_up_reac                      , &
-    lid_minp_secondary_to_sol_occ_reac=> this%cdombgc_index%lid_minp_secondary_to_sol_occ_reac &
+    nreactions => this%cdom_bgc_index%nreactions                                              , &
+    nstvars  => this%cdom_bgc_index%nstvars                                                   , &
+    nom_pools => this%cdom_bgc_index%nom_pools                                                , &
+    lid_nh4 => this%cdom_bgc_index%lid_nh4                                                    , &
+    lid_no3 => this%cdom_bgc_index%lid_no3                                                    , &
+    mic    => this%cdom_bgc_index%mic                                                       , &
+    pom    => this%cdom_bgc_index%pom                                                       , &
+    humus    => this%cdom_bgc_index%humus                                                       , &
+    c_loc   => this%cdom_bgc_index%c_loc                                                      , &
+    n_loc   => this%cdom_bgc_index%n_loc                                                      , &
+    p_loc   => this%cdom_bgc_index%p_loc                                                      , &
+    nelms   => this%cdom_bgc_index%nelms                                                      , &
+    lid_plant_minn_no3_pft=> this%cdom_bgc_index%lid_plant_minn_no3_pft                       , &
+    lid_plant_minn_nh4_pft=> this%cdom_bgc_index%lid_plant_minn_nh4_pft                       , &
+    lid_plant_minp_pft=> this%cdom_bgc_index%lid_plant_minp_pft                               , &
+    lid_plant_minp    => this%cdom_bgc_index%lid_plant_minp                                   , &
+    lid_plant_minn_nh4 => this%cdom_bgc_index%lid_plant_minn_nh4                              , &
+    lid_plant_minn_no3 => this%cdom_bgc_index%lid_plant_minn_no3                              , &
+    lid_minp_soluble => this%cdom_bgc_index%lid_minp_soluble                                  , &
+    lid_minp_secondary => this%cdom_bgc_index%lid_minp_secondary                              , &
+    lid_minp_soluble_to_secp_reac=> this%cdom_bgc_index%lid_minp_soluble_to_secp_reac         , &
+    lid_autr_rt_reac => this%cdom_bgc_index%lid_autr_rt_reac                                  , &
+    lid_nh4_nit_reac => this%cdom_bgc_index%lid_nh4_nit_reac                                  , &
+    lid_no3_den_reac => this%cdom_bgc_index%lid_no3_den_reac                                  , &
+    lid_plant_minn_nh4_up_reac => this%cdom_bgc_index%lid_plant_minn_nh4_up_reac              , &
+    lid_plant_minn_no3_up_reac => this%cdom_bgc_index%lid_plant_minn_no3_up_reac              , &
+    lid_plant_minp_up_reac => this%cdom_bgc_index%lid_plant_minp_up_reac                      , &
+    lid_minp_secondary_to_sol_occ_reac=> this%cdom_bgc_index%lid_minp_secondary_to_sol_occ_reac &
   )
 
   dydt(:) = 0._r8
@@ -1219,7 +1222,7 @@ contains
   !reacting. These include: OM pools, plant nutrient uptake
   !microbial nutrient uptake
 
-  call this%censom%calc_pot_min_np_flx(dtime, this%cdombgc_index,  ystate, this%k_decay,&
+  call this%censom%calc_pot_min_np_flx(dtime, this%cdom_bgc_index,  ystate, this%k_decay,&
     this%cascade_matrix, this%alpha_n, this%alpha_p, pot_decomp, mic_pot_nn_flx, mic_pot_np_flx)
 
   !do ECA nutrient scaling
@@ -1228,7 +1231,7 @@ contains
   this%competECA%compet_bn_den = this%pot_f_denit/this%nitden%vmax_den
   this%competECA%compet_bn_mic = mic_pot_nn_flx/this%decompkf_eca%vmax_decomp_n
 
-  this%competECA%debug=this%cdombgc_index%debug
+  this%competECA%debug=this%cdom_bgc_index%debug
   call this%competECA%run_compet_nitrogen(this%non_limit,ystate(lid_nh4),ystate(lid_no3),&
      this%plant_ntypes, this%msurf_nh4, ECA_factor_nit, &
      ECA_factor_den, ECA_factor_nh4_mic, ECA_factor_no3_mic, &
@@ -1252,7 +1255,7 @@ contains
       this%cascade_matrixd(lid_nh4,jj) = this%cascade_matrix(lid_nh4,jj)-this%cascade_matrixd(lid_no3,jj)
     endif
     if(this%alpha_p(jj)>0._r8)scal = min(scal, ECA_factor_phosphorus_mic)
-!    if(this%cdombgc_index%debug)&
+!    if(this%cdom_bgc_index%debug)&
 !    print*,'ptdcomp',jj,pot_decomp(jj),ECA_factor_nitrogen_mic,ECA_factor_phosphorus_mic
     if(scal /= 1._r8)pot_decomp(jj)=pot_decomp(jj)*scal
     rrates(jj) = pot_decomp(jj)
@@ -1262,7 +1265,7 @@ contains
   rrates(lid_no3_den_reac) = this%pot_f_denit*ECA_factor_den
   rrates(lid_minp_soluble_to_secp_reac) =  ECA_factor_minp_msurf * this%msurf_minp &
        * this%mumax_minp_soluble_to_secondary(this%soilorder) !calculate from eca competition
-!  if(this%cdombgc_index%debug) &
+!  if(this%cdom_bgc_index%debug) &
 !  write(*,*)'ECA mic',ECA_factor_phosphorus_mic,ECA_factor_minp_msurf
 
   rrates(lid_autr_rt_reac) = this%rt_ar                            !authotrophic respiration
@@ -1271,12 +1274,12 @@ contains
   rrates(lid_plant_minp_up_reac) =     sum(ECA_flx_phosphorus_plants) !calculate by ECA competition
   rrates(lid_minp_secondary_to_sol_occ_reac)= ystate(lid_minp_secondary) * this%minp_secondary_decay(this%soilorder)
 
-!  if(this%cdombgc_index%debug)then
+!  if(this%cdom_bgc_index%debug)then
 !    print*,'plant nn',rrates(lid_plant_minn_no3_up_reac),rrates(lid_plant_minn_nh4_up_reac)
 !    print*,'plant p',rrates(lid_plant_minp_up_reac)
 !  endif
   !the following treatment is to ensure mass balance
-!  if(this%cdombgc_index%debug)then
+!  if(this%cdom_bgc_index%debug)then
 !    do jj = 1, nreactions
 !      print*,'bfcascd jj',jj,rrates(jj)
 !    enddo
@@ -1306,12 +1309,12 @@ contains
   endif
 
 !  do jj = 1, this%plant_ntypes
-!     if(this%cdombgc_index%debug)print*,lid_plant_minn_nh4_pft(jj),lid_plant_minn_no3_pft(jj)
+!     if(this%cdom_bgc_index%debug)print*,lid_plant_minn_nh4_pft(jj),lid_plant_minn_no3_pft(jj)
 !     this%cascade_matrix(lid_plant_minn_nh4_pft(jj),lid_plant_minn_nh4_up_reac) = this%cascade_matrixd(lid_plant_minn_nh4_pft(jj),lid_plant_minn_nh4_up_reac)
 !     this%cascade_matrix(lid_plant_minn_no3_pft(jj),lid_plant_minn_no3_up_reac) =this%cascade_matrixd(lid_plant_minn_no3_pft(jj),lid_plant_minn_no3_up_reac)
 !     this%cascade_matrix(lid_plant_minp_pft(jj),lid_plant_minp_up_reac) = this%cascade_matrixd(lid_plant_minp_pft(jj),lid_plant_minp_up_reac)
 !  enddo
-!  if(this%cdombgc_index%debug)then
+!  if(this%cdom_bgc_index%debug)then
 !     print*,'checksum nh4',sum(this%cascade_matrix(lid_plant_minn_nh4_pft(1:this%plant_ntypes),lid_plant_minn_nh4_up_reac))
 !     print*,'checksum no3',sum(this%cascade_matrix(lid_plant_minn_no3_pft(1:this%plant_ntypes),lid_plant_minn_no3_up_reac))
 !     print*,'ntype',this%plant_ntypes
@@ -1337,10 +1340,10 @@ contains
     !update the state variables
     call lom%calc_state_pscal(nprimvars, dtime, ystate(1:nprimvars), p_dt(1:nprimvars),  d_dt(1:nprimvars), &
         pscal(1:nprimvars), lneg, bstatus)
-!    if(this%cdombgc_index%debug)then
+!    if(this%cdom_bgc_index%debug)then
 !      print*,'prim test',lneg
 !      do jj = 1, nprimvars
-!        print*,jj,pscal(jj),this%cdombgc_index%varnames(jj)
+!        print*,jj,pscal(jj),this%cdom_bgc_index%varnames(jj)
 !      enddo
 !    endif
     if(lneg .and. it<=itmax)then
@@ -1355,7 +1358,7 @@ contains
     endif
     it = it + 1
   enddo
-!  if(this%cdombgc_index%debug)then
+!  if(this%cdom_bgc_index%debug)then
 !    do jj = 1, nreactions
 !      print*,'casc jj',jj,rrates(jj),rscal(jj)
 !    enddo
@@ -1363,7 +1366,7 @@ contains
 !      print*, 'nprim',jj,dydt(jj)
 !    enddo
 !  endif
-!  if(this%cdombgc_index%debug)then
+!  if(this%cdom_bgc_index%debug)then
     !
 !    jj = humus
 !    write(*,'(A,6(X,E25.15))')'dydt humus',dydt((jj-1)*nelms+c_loc),dydt((jj-1)*nelms+n_loc),dydt((jj-1)*nelms+p_loc),&
@@ -1372,63 +1375,63 @@ contains
   end associate
   end subroutine bgc_integrate
   !--------------------------------------------------------------------
-  subroutine arenchyma_gas_transport(this, cdombgc_index, dtime)
-  use cdomBGCIndexType       , only : cdombgc_index_type
+  subroutine arenchyma_gas_transport(this, cdom_bgc_index, dtime)
+  use cdomBGCIndexType       , only : cdom_bgc_index_type
   implicit none
-  class(cdombgceca_type)     , intent(inout) :: this
-  type(cdombgc_index_type)  , intent(in) :: cdombgc_index
+  class(cdom_bgc_type)     , intent(inout) :: this
+  type(cdom_bgc_index_type)  , intent(in) :: cdom_bgc_index
   real(r8), intent(in) :: dtime
 
   integer :: j
   real(r8) :: y0
   associate(                             &
-    lid_n2 => cdombgc_index%lid_n2,   &
-    lid_o2 => cdombgc_index%lid_o2,   &
-    lid_co2 => cdombgc_index%lid_co2, &
-    lid_c13_co2 => cdombgc_index%lid_c13_co2, &
-    lid_c14_co2 => cdombgc_index%lid_c14_co2, &
-    lid_n2o => cdombgc_index%lid_n2o, &
-    lid_ar => cdombgc_index%lid_ar,   &
-    lid_ch4 => cdombgc_index%lid_ch4  &
+    lid_n2 => cdom_bgc_index%lid_n2,   &
+    lid_o2 => cdom_bgc_index%lid_o2,   &
+    lid_co2 => cdom_bgc_index%lid_co2, &
+    lid_c13_co2 => cdom_bgc_index%lid_c13_co2, &
+    lid_c14_co2 => cdom_bgc_index%lid_c14_co2, &
+    lid_n2o => cdom_bgc_index%lid_n2o, &
+    lid_ar => cdom_bgc_index%lid_ar,   &
+    lid_ch4 => cdom_bgc_index%lid_ch4  &
   )
 
   j = lid_o2; y0=this%ystates1(j)
   call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
-  this%ystates1(cdombgc_index%lid_o2_paere) = this%ystates1(j)-y0
+  this%ystates1(cdom_bgc_index%lid_o2_paere) = this%ystates1(j)-y0
 
   if( spinup_state == 0)then
     j = lid_n2; y0=this%ystates1(j)
     call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
-    this%ystates1(cdombgc_index%lid_n2_paere) = this%ystates1(j)-y0
+    this%ystates1(cdom_bgc_index%lid_n2_paere) = this%ystates1(j)-y0
 
     j = lid_ar; y0=this%ystates1(j)
     call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
-    this%ystates1(cdombgc_index%lid_ar_paere) = this%ystates1(j)-y0
+    this%ystates1(cdom_bgc_index%lid_ar_paere) = this%ystates1(j)-y0
 
     j = lid_ch4; y0=this%ystates1(j)
     call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
-    this%ystates1(cdombgc_index%lid_ch4_paere) = this%ystates1(j)-y0
+    this%ystates1(cdom_bgc_index%lid_ch4_paere) = this%ystates1(j)-y0
 
     j = lid_co2; y0=this%ystates1(j)
     call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
-    this%ystates1(cdombgc_index%lid_co2_paere) = this%ystates1(j)-y0
+    this%ystates1(cdom_bgc_index%lid_co2_paere) = this%ystates1(j)-y0
 
     if(this%use_c13)then
       j = lid_c13_co2; y0=this%ystates1(j)
       call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
-      this%ystates1(cdombgc_index%lid_c13_co2_paere) = this%ystates1(j)-y0
+      this%ystates1(cdom_bgc_index%lid_c13_co2_paere) = this%ystates1(j)-y0
 
     endif
 
     if(this%use_c14)then
       j = lid_c14_co2; y0=this%ystates1(j)
       call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
-      this%ystates1(cdombgc_index%lid_c14_co2_paere) = this%ystates1(j)-y0
+      this%ystates1(cdom_bgc_index%lid_c14_co2_paere) = this%ystates1(j)-y0
 
     endif
     j = lid_n2o; y0=this%ystates1(j)
     call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
-    this%ystates1(cdombgc_index%lid_n2o_paere) = this%ystates1(j)-y0
+    this%ystates1(cdom_bgc_index%lid_n2o_paere) = this%ystates1(j)-y0
   endif
   end associate
   contains
@@ -1451,11 +1454,11 @@ contains
   end subroutine arenchyma_gas_transport
 
   !--------------------------------------------------------------------
-  subroutine sumup_cnp_msflx_cdomeca(this, ystates1, c_mass, n_mass, p_mass,c_flx,n_flx,p_flx, bstatus)
+  subroutine sumup_cnp_msflx_cdom(this, ystates1, c_mass, n_mass, p_mass,c_flx,n_flx,p_flx, bstatus)
 
   use tracer_varcon, only : catomw, natomw, patomw
   implicit none
-  class(cdombgceca_type)     , intent(in) :: this
+  class(cdom_bgc_type)     , intent(in) :: this
   real(r8), intent(in)  :: ystates1(:)
   real(r8), intent(out) :: c_mass, n_mass, p_mass
   real(r8), optional, intent(out) :: c_flx, n_flx, p_flx
@@ -1464,34 +1467,34 @@ contains
 
   integer :: kc, kn, kp, jj
   associate(                        &
-    c_loc=>  this%cdombgc_index%c_loc,&
-    n_loc=>  this%cdombgc_index%n_loc,&
-    p_loc=>  this%cdombgc_index%p_loc,&
-    lid_n2o_nit => this%cdombgc_index%lid_n2o_nit,&
-    lid_no3_den => this%cdombgc_index%lid_no3_den,&
-    lmet =>  this%cdombgc_index%lmet, &
-    lcel =>  this%cdombgc_index%lcel, &
-    llig =>  this%cdombgc_index%llig, &
-    cwd =>   this%cdombgc_index%cwd, &
-    lwd =>   this%cdombgc_index%lwd, &
-    fwd =>   this%cdombgc_index%fwd, &
-    mic =>  this%cdombgc_index%mic, &
-    pom =>  this%cdombgc_index%pom, &
-    humus =>  this%cdombgc_index%humus, &
-    dom  => this%cdombgc_index%dom , &
-    nelms => this%cdombgc_index%nelms, &
-    lid_nh4=> this%cdombgc_index%lid_nh4, &
-    lid_no3=> this%cdombgc_index%lid_no3, &
-    lid_plant_minn_nh4 => this%cdombgc_index%lid_plant_minn_nh4, &
-    lid_plant_minn_no3 => this%cdombgc_index%lid_plant_minn_no3, &
-    lid_co2_hr => this%cdombgc_index%lid_co2_hr, &
-    lid_minp_soluble =>  this%cdombgc_index%lid_minp_soluble,  &
-    lid_minp_secondary => this%cdombgc_index%lid_minp_secondary, &
-    lid_minp_occlude => this%cdombgc_index%lid_minp_occlude, &
-    lid_plant_minp => this%cdombgc_index%lid_plant_minp  &
+    c_loc=>  this%cdom_bgc_index%c_loc,&
+    n_loc=>  this%cdom_bgc_index%n_loc,&
+    p_loc=>  this%cdom_bgc_index%p_loc,&
+    lid_n2o_nit => this%cdom_bgc_index%lid_n2o_nit,&
+    lid_no3_den => this%cdom_bgc_index%lid_no3_den,&
+    lmet =>  this%cdom_bgc_index%lmet, &
+    lcel =>  this%cdom_bgc_index%lcel, &
+    llig =>  this%cdom_bgc_index%llig, &
+    cwd =>   this%cdom_bgc_index%cwd, &
+    lwd =>   this%cdom_bgc_index%lwd, &
+    fwd =>   this%cdom_bgc_index%fwd, &
+    mic =>  this%cdom_bgc_index%mic, &
+    pom =>  this%cdom_bgc_index%pom, &
+    humus =>  this%cdom_bgc_index%humus, &
+    dom  => this%cdom_bgc_index%dom , &
+    nelms => this%cdom_bgc_index%nelms, &
+    lid_nh4=> this%cdom_bgc_index%lid_nh4, &
+    lid_no3=> this%cdom_bgc_index%lid_no3, &
+    lid_plant_minn_nh4 => this%cdom_bgc_index%lid_plant_minn_nh4, &
+    lid_plant_minn_no3 => this%cdom_bgc_index%lid_plant_minn_no3, &
+    lid_co2_hr => this%cdom_bgc_index%lid_co2_hr, &
+    lid_minp_soluble =>  this%cdom_bgc_index%lid_minp_soluble,  &
+    lid_minp_secondary => this%cdom_bgc_index%lid_minp_secondary, &
+    lid_minp_occlude => this%cdom_bgc_index%lid_minp_occlude, &
+    lid_plant_minp => this%cdom_bgc_index%lid_plant_minp  &
   )
   if(present(bstatus)) &
-    SHR_ASSERT_ALL((size(ystates1) == this%cdombgc_index%nstvars), errMsg(mod_filename,__LINE__),bstatus)
+    SHR_ASSERT_ALL((size(ystates1) == this%cdom_bgc_index%nstvars), errMsg(mod_filename,__LINE__),bstatus)
 
   c_mass = 0._r8; n_mass = 0._r8; p_mass = 0._r8;
   if(present(c_flx))c_flx=0._r8
@@ -1546,52 +1549,52 @@ contains
     integer :: kc, kn, kp
 
     associate(                             &
-      c_loc=>  this%cdombgc_index%c_loc,&
-      n_loc=>  this%cdombgc_index%n_loc,&
-      p_loc=>  this%cdombgc_index%p_loc,&
-      nelms => this%cdombgc_index%nelms &
+      c_loc=>  this%cdom_bgc_index%c_loc,&
+      n_loc=>  this%cdom_bgc_index%n_loc,&
+      p_loc=>  this%cdom_bgc_index%p_loc,&
+      nelms => this%cdom_bgc_index%nelms &
     )
     kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
     c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
     end associate
     end subroutine sum_omjj
-  end subroutine sumup_cnp_msflx_cdomeca
+  end subroutine sumup_cnp_msflx_cdom
 
   !--------------------------------------------------------------------
   subroutine sumup_cnp_mass(this, header, c_mass, n_mass, p_mass)
   use tracer_varcon         , only : catomw, natomw, patomw
   implicit none
-  class(cdombgceca_type)     , intent(in) :: this
+  class(cdom_bgc_type)     , intent(in) :: this
   character(len=*), intent(in) :: header
   real(r8), intent(out) :: c_mass, n_mass, p_mass
   !local variables
 
   integer :: kc, kn, kp, jj
   associate(                        &
-    c_loc=>  this%cdombgc_index%c_loc,&
-    n_loc=>  this%cdombgc_index%n_loc,&
-    p_loc=>  this%cdombgc_index%p_loc,&
-    lid_n2o => this%cdombgc_index%lid_n2o,&
-    lid_n2 => this%cdombgc_index%lid_n2,&
-    lmet =>  this%cdombgc_index%lmet, &
-    lcel =>  this%cdombgc_index%lcel, &
-    llig =>  this%cdombgc_index%llig, &
-    cwd =>   this%cdombgc_index%cwd, &
-    lwd =>   this%cdombgc_index%lwd, &
-    fwd =>   this%cdombgc_index%fwd, &
-    mic =>  this%cdombgc_index%mic, &
-    pom =>  this%cdombgc_index%pom, &
-    humus =>  this%cdombgc_index%humus, &
-    nelms => this%cdombgc_index%nelms, &
-    lid_nh4=> this%cdombgc_index%lid_nh4, &
-    lid_no3=> this%cdombgc_index%lid_no3, &
-    lid_plant_minn_nh4 => this%cdombgc_index%lid_plant_minn_nh4, &
-    lid_plant_minn_no3 => this%cdombgc_index%lid_plant_minn_no3, &
-    lid_co2 => this%cdombgc_index%lid_co2, &
-    lid_minp_soluble =>  this%cdombgc_index%lid_minp_soluble,  &
-    lid_minp_secondary => this%cdombgc_index%lid_minp_secondary, &
-    lid_minp_occlude => this%cdombgc_index%lid_minp_occlude, &
-    lid_plant_minp => this%cdombgc_index%lid_plant_minp, &
+    c_loc=>  this%cdom_bgc_index%c_loc,&
+    n_loc=>  this%cdom_bgc_index%n_loc,&
+    p_loc=>  this%cdom_bgc_index%p_loc,&
+    lid_n2o => this%cdom_bgc_index%lid_n2o,&
+    lid_n2 => this%cdom_bgc_index%lid_n2,&
+    lmet =>  this%cdom_bgc_index%lmet, &
+    lcel =>  this%cdom_bgc_index%lcel, &
+    llig =>  this%cdom_bgc_index%llig, &
+    cwd =>   this%cdom_bgc_index%cwd, &
+    lwd =>   this%cdom_bgc_index%lwd, &
+    fwd =>   this%cdom_bgc_index%fwd, &
+    mic =>  this%cdom_bgc_index%mic, &
+    pom =>  this%cdom_bgc_index%pom, &
+    humus =>  this%cdom_bgc_index%humus, &
+    nelms => this%cdom_bgc_index%nelms, &
+    lid_nh4=> this%cdom_bgc_index%lid_nh4, &
+    lid_no3=> this%cdom_bgc_index%lid_no3, &
+    lid_plant_minn_nh4 => this%cdom_bgc_index%lid_plant_minn_nh4, &
+    lid_plant_minn_no3 => this%cdom_bgc_index%lid_plant_minn_no3, &
+    lid_co2 => this%cdom_bgc_index%lid_co2, &
+    lid_minp_soluble =>  this%cdom_bgc_index%lid_minp_soluble,  &
+    lid_minp_secondary => this%cdom_bgc_index%lid_minp_secondary, &
+    lid_minp_occlude => this%cdom_bgc_index%lid_minp_occlude, &
+    lid_plant_minp => this%cdom_bgc_index%lid_plant_minp, &
     ystates1 => this%ystates1  &
   )
   print*,header
@@ -1650,7 +1653,7 @@ contains
     use ODEMOD, only : ebbks, get_rerr, get_tscal
     implicit none
     ! !ARGUMENTS:
-    class(cdombgceca_type),  intent(inout)  :: me
+    class(cdom_bgc_type),  intent(inout)  :: me
     real(r8), intent(in)  :: y0(neq)  ! state variable at previous time step
     real(r8), intent(in)  :: t        ! time stamp
     real(r8), intent(in)  :: dt       ! time stepping
@@ -1715,4 +1718,15 @@ contains
        if(abs(dtr/dt)<1.e-4_r8)exit
     enddo
   end subroutine ode_adapt_ebbks1
+
+  !-------------------------------------------------------------------------------
+  subroutine init_cold_cdom(this, nstvars, ystates)
+  implicit none
+  class(cdom_bgc_type),  intent(inout)  :: this
+  integer , intent(in) :: nstvars
+  real(r8), intent(inout) :: ystates(nstvars)
+
+  !do nothing
+  if(nstvars>=0)continue
+  end subroutine init_cold_cdom
 end module cdomBGCType

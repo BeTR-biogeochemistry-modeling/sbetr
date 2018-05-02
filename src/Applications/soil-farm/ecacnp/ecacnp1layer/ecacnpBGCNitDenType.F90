@@ -356,29 +356,29 @@ implicit none
   end subroutine calc_pot_nitr
 
   !---------------------------------------------------------------------------------
-  subroutine calc_cascade_matrix(this, centurybgc_index, n2_n2o_ratio_denit, cascade_matrix)
+  subroutine calc_cascade_matrix(this, ecacnp_bgc_index, n2_n2o_ratio_denit, cascade_matrix)
 
-  use ecacnpBGCIndexType, only : centurybgc_index_type
+  use ecacnpBGCIndexType, only : ecacnp_bgc_index_type
   implicit none
   class(century_nitden_type)  , intent(inout) :: this
-  type(centurybgc_index_type) , intent(in) :: centurybgc_index
+  type(ecacnp_bgc_index_type) , intent(in) :: ecacnp_bgc_index
   real(r8)                    , intent(in) :: n2_n2o_ratio_denit
-  real(r8)                    , intent(inout)    :: cascade_matrix(centurybgc_index%nstvars, centurybgc_index%nreactions)
+  real(r8)                    , intent(inout)    :: cascade_matrix(ecacnp_bgc_index%nstvars, ecacnp_bgc_index%nreactions)
 
   integer :: reac
 
   associate(                                                &
-    primvarid    => centurybgc_index%primvarid            , & !
-    lid_nh4   => centurybgc_index%lid_nh4                 , & !
-    lid_o2   => centurybgc_index%lid_o2                   , & !
-    lid_n2   => centurybgc_index%lid_n2                   , & !
-    lid_n2o   => centurybgc_index%lid_n2o                 , & !
-    lid_no3   => centurybgc_index%lid_no3                 , & !
-    lid_no3_den => centurybgc_index%lid_no3_den           , &
-    lid_nh4_nit_reac => centurybgc_index%lid_nh4_nit_reac , & !
-    lid_no3_den_reac => centurybgc_index%lid_no3_den_reac , & !
-    lid_nh4_nit        => centurybgc_index%lid_nh4_nit    , & !
-    lid_n2o_nit=> centurybgc_index%lid_n2o_nit              & !
+    primvarid    => ecacnp_bgc_index%primvarid            , & !
+    lid_nh4   => ecacnp_bgc_index%lid_nh4                 , & !
+    lid_o2   => ecacnp_bgc_index%lid_o2                   , & !
+    lid_n2   => ecacnp_bgc_index%lid_n2                   , & !
+    lid_n2o   => ecacnp_bgc_index%lid_n2o                 , & !
+    lid_no3   => ecacnp_bgc_index%lid_no3                 , & !
+    lid_no3_den => ecacnp_bgc_index%lid_no3_den           , &
+    lid_nh4_nit_reac => ecacnp_bgc_index%lid_nh4_nit_reac , & !
+    lid_no3_den_reac => ecacnp_bgc_index%lid_no3_den_reac , & !
+    lid_nh4_nit        => ecacnp_bgc_index%lid_nh4_nit    , & !
+    lid_n2o_nit=> ecacnp_bgc_index%lid_n2o_nit              & !
 
   )
   !---------------------------------------------------------------------------------
@@ -423,17 +423,17 @@ implicit none
 
   end function get_nit_o2_scef
   !---------------------------------------------------------------------------------
-  subroutine run_nitden(this, centurybgc_index,bgc_forc, decompkf_eca,&
+  subroutine run_nitden(this, ecacnp_bgc_index,bgc_forc, decompkf_eca,&
     smin_nh4, smin_no3, o2b, o2_decomp_depth, pot_f_nit_mol_per_sec, pot_co2_hr, &
     pot_f_nit, pot_f_denit, cascade_matrix)
   !this returns the vamx for nitrification and denitrification
   !also return is the stoichiometry matrix for nitden processes
   use ecacnpBGCDecompType      , only : DecompCent_type
   use JarBgcForcType  , only : JarBGC_forc_type
-  use ecacnpBGCIndexType , only : centurybgc_index_type
+  use ecacnpBGCIndexType , only : ecacnp_bgc_index_type
   implicit none
   class(century_nitden_type)  , intent(inout) :: this
-  type(centurybgc_index_type) , intent(in) :: centurybgc_index
+  type(ecacnp_bgc_index_type) , intent(in) :: ecacnp_bgc_index
   type(JarBGC_forc_type)  , intent(in) :: bgc_forc
   type(DecompCent_type)       , intent(in) :: decompkf_eca
   real(r8)                    , intent(in) :: o2b
@@ -444,7 +444,7 @@ implicit none
   real(r8)                    , intent(in) :: pot_co2_hr  ! potential co2 emission from heterotrophic respiration
   real(r8)                    , intent(out) :: pot_f_nit  ! mol N /s
   real(r8)                    , intent(out) :: pot_f_denit  ! mol N/s
-  real(r8)                    , intent(inout) :: cascade_matrix(centurybgc_index%nstvars, centurybgc_index%nreactions)
+  real(r8)                    , intent(inout) :: cascade_matrix(ecacnp_bgc_index%nstvars, ecacnp_bgc_index%nreactions)
 
   !local variables
   real(r8) :: n2_n2o_ratio_denit
@@ -459,7 +459,7 @@ implicit none
       n2_n2o_ratio_denit, pot_f_nit, pot_f_denit)
 
   !calcualte cascade matrix for nitrification denitrification
-  call this%calc_cascade_matrix(centurybgc_index, n2_n2o_ratio_denit, cascade_matrix)
+  call this%calc_cascade_matrix(ecacnp_bgc_index, n2_n2o_ratio_denit, cascade_matrix)
   end subroutine run_nitden
 
 end module ecacnpBGCNitDenType
