@@ -7,6 +7,10 @@
 
 &betr_parameters
   reaction_method = 'simic'
+  advection_on = .false.
+  diffusion_on = .false.
+  reaction_on  = .true.
+  ebullition_on= .false.
 /
 
 &betr_time

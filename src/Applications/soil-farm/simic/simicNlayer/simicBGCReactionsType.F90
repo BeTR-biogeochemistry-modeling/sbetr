@@ -58,6 +58,7 @@ module SimicBGCReactionsType
      procedure, private :: set_tracer
      procedure, private :: InitAllocate
      procedure, private :: retrieve_output
+     procedure, private :: set_bgc_forc
   end type simic_bgc_reaction_type
 
   interface simic_bgc_reaction_type
@@ -746,13 +747,16 @@ contains
     nstates = this%simic_index%nstvars
     allocate(ystates0(nstates))
     allocate(ystatesf(nstates))
-
+    print*,''
+    call this%set_bgc_forc(bounds, col, lbj, ubj, jtops, num_soilc, filter_soilc, &
+        biophysforc, plant_soilbgc, betrtracer_vars, tracercoeff_vars, tracerstate_vars,betr_status)
     !now assume doc decays with a turnover rate 1.e-6_r8
     do j = lbj, ubj
       do fc = 1, num_soilc
         c = filter_soilc(fc)
         if(j<jtops(c))cycle
         is_surflit=(j<=0)
+        print*,'runbgc',c,j
         call this%simic_bgc(c,j)%runbgc(is_surflit, dtime, this%simic_forc(c,j), nstates, ystates0, ystatesf, betr_status)
 
         if(betr_status%check_status())then
@@ -1056,7 +1060,7 @@ contains
         ystatesf(Bm_beg:Bm_end)
 
     tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_dom:betrtracer_vars%id_trc_end_dom) = &
-        ystatesf(dom_beg:dom_end)
+        ystatesf(dom_beg:dom_end+1)
 
     tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_n2) = &
         ystatesf(this%simic_index%lid_n2)
@@ -1135,8 +1139,10 @@ contains
     do k = 1, dom_end-dom_beg + 1
       k1 = dom_beg+k-1; k2 = betrtracer_vars%id_trc_beg_dom+ k-1
       tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)
+      print*,'bf af',k1,ystatesf(k1), ystates0(k1)
       k1 = dom_beg+k; k2 = betrtracer_vars%id_trc_beg_dom+ k
       tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)
+      print*,'bf af',k1,ystatesf(k1), ystates0(k1)
     enddo
 
     tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_n2) = &
@@ -1192,4 +1198,198 @@ contains
         ystates0(this%simic_index%lid_co2_hr))*catomw/dtime
   end associate
   end subroutine retrieve_output
+
+
+!------------------------------------------------------------------------------
+  subroutine set_bgc_forc(this, bounds, col, lbj, ubj, jtops, num_soilc, filter_soilc, &
+      biophysforc, plant_soilbgc, betrtracer_vars, tracercoeff_vars, tracerstate_vars, betr_status)
+
+  use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
+  use PlantSoilBGCMod          , only : plant_soilbgc_type
+  use tracerstatetype          , only : tracerstate_type
+  use betr_decompMod           , only : betr_bounds_type
+  use tracercoeffType          , only : tracercoeff_type
+  use betr_columnType          , only : betr_column_type
+  use BetrTracerType           , only : betrtracer_type
+  use simicPlantSoilBGCType    , only : simic_plant_soilbgc_type
+  use MathfuncMod              , only : fpmax
+  use betr_varcon              , only : grav => bgrav
+  implicit none
+  class(simic_bgc_reaction_type) , intent(inout) :: this                       !
+  type(bounds_type)                    , intent(in) :: bounds                         ! bounds
+  type(betr_column_type)               , intent(in) :: col
+  integer                              , intent(in) :: jtops(bounds%begc: ) ! top index of each column
+  integer                              , intent(in) :: lbj, ubj                       ! lower and upper bounds, make sure they are > 0
+  integer                              , intent(in) :: num_soilc       ! number of columns in column filter
+  integer                              , intent(in) :: filter_soilc(:) ! column filter
+  type(betr_biogeophys_input_type)     , intent(in) :: biophysforc
+  class(plant_soilbgc_type)            , intent(in) :: plant_soilbgc
+  type(betrtracer_type)                , intent(in) :: betrtracer_vars               ! betr configuration information
+  type(tracerstate_type)               , intent(in) :: tracerstate_vars
+  type(tracercoeff_type)               , intent(in) :: tracercoeff_vars
+  type(betr_status_type)               , intent(out)   :: betr_status
+
+  integer :: j, fc, c
+  integer :: k1, k2
+  real(r8), parameter :: tiny_cval =1.e-16_r8
+  associate( &
+     litr_beg =>  this%simic_index%litr_beg  , &
+     litr_end =>  this%simic_index%litr_end  , &
+     wood_beg =>  this%simic_index%wood_beg  , &
+     wood_end =>  this%simic_index%wood_end  , &
+     dom_beg =>  this%simic_index%dom_beg    , &
+     dom_end =>  this%simic_index%dom_end    , &
+     Bm_beg  =>  this%simic_index%Bm_beg     , &
+     Bm_end  =>  this%simic_index%Bm_end       &
+  )
+  call betr_status%reset()
+  SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__),betr_status)
+
+  do j = lbj, ubj
+    do fc = 1, num_soilc
+      c = filter_soilc(fc)
+      if(j<jtops(c))cycle
+      this%simic_forc(c,j)%plant_ntypes = this%nactpft
+      this%simic_forc(c,j)%ystates(:) = 0._r8
+
+      !litter
+      this%simic_forc(c,j)%ystates(litr_beg:litr_end)= &
+          tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_litr:betrtracer_vars%id_trc_end_litr)
+
+      !wood
+      this%simic_forc(c,j)%ystates(wood_beg:wood_end)= &
+          tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_wood:betrtracer_vars%id_trc_end_wood)
+
+      !dom
+      this%simic_forc(c,j)%ystates(dom_beg:dom_end)= &
+          tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_dom:betrtracer_vars%id_trc_end_dom)
+      if(this%simic_forc(c,j)%ystates(dom_beg)<=tiny_cval)this%simic_forc(c,j)%ystates(dom_beg:dom_end)=0._r8
+
+      !microbial biomass
+      this%simic_forc(c,j)%ystates(Bm_beg:Bm_end)= &
+          tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_Bm:betrtracer_vars%id_trc_end_Bm)
+      if(this%simic_forc(c,j)%ystates(Bm_beg)<=tiny_cval)this%simic_forc(c,j)%ystates(Bm_beg:Bm_end)=0._r8
+
+      !non-soluble phase of mineral p
+
+      this%simic_forc(c,j)%ystates(this%simic_index%lid_n2) = &
+           fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_n2))
+
+      this%simic_forc(c,j)%ystates(this%simic_index%lid_o2) = &
+           fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_o2))
+
+      this%simic_forc(c,j)%ystates(this%simic_index%lid_ar) = &
+           fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_ar))
+
+      this%simic_forc(c,j)%ystates(this%simic_index%lid_co2)= &
+           fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_co2x))
+
+      if(this%use_c13)then
+        this%simic_forc(c,j)%ystates(this%simic_index%lid_c13_co2)= &
+           fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_c13_co2x))
+      endif
+      if(this%use_c14)then
+        this%simic_forc(c,j)%ystates(this%simic_index%lid_c14_co2)= &
+          fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_c14_co2x))
+      endif
+
+      this%simic_forc(c,j)%ystates(this%simic_index%lid_ch4)= &
+           fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_ch4))
+
+
+      !input
+      this%simic_forc(c,j)%cflx_input_litr_met = biophysforc%c12flx%cflx_input_litr_met_vr_col(c,j)
+      this%simic_forc(c,j)%cflx_input_litr_cel = biophysforc%c12flx%cflx_input_litr_cel_vr_col(c,j)
+      this%simic_forc(c,j)%cflx_input_litr_lig = biophysforc%c12flx%cflx_input_litr_lig_vr_col(c,j)
+      this%simic_forc(c,j)%cflx_input_litr_cwd = biophysforc%c12flx%cflx_input_litr_cwd_vr_col(c,j)
+      this%simic_forc(c,j)%cflx_input_litr_lwd = biophysforc%c12flx%cflx_input_litr_lwd_vr_col(c,j)
+      this%simic_forc(c,j)%cflx_input_litr_fwd = biophysforc%c12flx%cflx_input_litr_fwd_vr_col(c,j)
+
+      !environmental variables
+      this%simic_forc(c,j)%temp   = biophysforc%t_soisno_col(c,j)            !temperature
+      this%simic_forc(c,j)%depz   = col%z(c,j)            !depth of the soil
+      this%simic_forc(c,j)%dzsoi  = col%dz(c,j)            !soil thickness
+      this%simic_forc(c,j)%sucsat  = biophysforc%sucsat_col(c,j)            ! Input:  [real(r8) (:,:)] minimum soil suction [mm]
+      this%simic_forc(c,j)%soilpsi = max(biophysforc%smp_l_col(c,j)*grav*1.e-6_r8,-15._r8)    ! Input:  [real(r8) (:,:)] soilwater pontential in each soil layer [MPa]
+      this%simic_forc(c,j)%bsw = biophysforc%bsw_col(c,j)
+      this%simic_forc(c,j)%bd   = biophysforc%bd_col(c,j)              !bulk density
+      this%simic_forc(c,j)%pct_sand = biophysforc%cellsand_col(c,j)
+      this%simic_forc(c,j)%pct_clay = biophysforc%cellclay_col(c,j)
+      this%simic_forc(c,j)%h2osoi_vol = biophysforc%h2osoi_vol_col(c,j)
+      this%simic_forc(c,j)%h2osoi_liq = biophysforc%h2osoi_liq_col(c,j)
+      this%simic_forc(c,j)%air_vol = biophysforc%air_vol_col(c,j)
+      this%simic_forc(c,j)%finundated = biophysforc%finundated_col(c)
+      this%simic_forc(c,j)%watsat = biophysforc%watsat_col(c,j)
+      this%simic_forc(c,j)%watfc = biophysforc%watfc_col(c,j)
+      this%simic_forc(c,j)%cellorg = biophysforc%cellorg_col(c,j)
+      this%simic_forc(c,j)%pH = biophysforc%soil_pH(c,j)
+
+      !conductivity for plant-aided gas transport
+      this%simic_forc(c,j)%aren_cond_n2 = &
+          tracercoeff_vars%aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_n2)) * &
+          tracercoeff_vars%scal_aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_n2))
+      this%simic_forc(c,j)%aren_cond_o2 = &
+          tracercoeff_vars%aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_o2)) * &
+          tracercoeff_vars%scal_aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_o2))
+      this%simic_forc(c,j)%aren_cond_co2 = &
+          tracercoeff_vars%aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_co2x)) * &
+          tracercoeff_vars%scal_aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_co2x))
+      if(this%use_c13)then
+        this%simic_forc(c,j)%aren_cond_co2_c13 = &
+          tracercoeff_vars%aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_c13_co2x)) * &
+          tracercoeff_vars%scal_aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_c13_co2x))
+      endif
+      if(this%use_c14)then
+        this%simic_forc(c,j)%aren_cond_co2_c14 = &
+          tracercoeff_vars%aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_c14_co2x)) * &
+          tracercoeff_vars%scal_aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_c14_co2x))
+      endif
+      this%simic_forc(c,j)%aren_cond_ar = &
+          tracercoeff_vars%aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_ar)) * &
+          tracercoeff_vars%scal_aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_ar))
+      this%simic_forc(c,j)%aren_cond_ch4 = &
+          tracercoeff_vars%aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_ch4)) * &
+          tracercoeff_vars%scal_aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_ch4))
+      !phase conversion parameter
+      this%simic_forc(c,j)%ch4_g2b = &
+          tracercoeff_vars%gas2bulkcef_mobile_col(c,j,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_ch4))
+      this%simic_forc(c,j)%co2_g2b = &
+          tracercoeff_vars%gas2bulkcef_mobile_col(c,j,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_co2x))
+      this%simic_forc(c,j)%o2_g2b = &
+          tracercoeff_vars%gas2bulkcef_mobile_col(c,j,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_o2))
+      this%simic_forc(c,j)%n2_g2b = &
+          tracercoeff_vars%gas2bulkcef_mobile_col(c,j,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_n2))
+      this%simic_forc(c,j)%ar_g2b = &
+          tracercoeff_vars%gas2bulkcef_mobile_col(c,j,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_ar))
+      this%simic_forc(c,j)%o2_w2b = &
+          tracercoeff_vars%aqu2bulkcef_mobile_col(c,j,betrtracer_vars%groupid(betrtracer_vars%id_trc_o2))
+
+      !atmospheric pressure (mol/m3) for gas ventilation.
+      this%simic_forc(c,j)%conc_atm_n2 = &
+          tracerstate_vars%tracer_conc_atm_col(c,betrtracer_vars%volatileid(betrtracer_vars%id_trc_n2))
+      this%simic_forc(c,j)%conc_atm_o2 = &
+          tracerstate_vars%tracer_conc_atm_col(c,betrtracer_vars%volatileid(betrtracer_vars%id_trc_o2))
+      this%simic_forc(c,j)%conc_atm_ar = &
+          tracerstate_vars%tracer_conc_atm_col(c,betrtracer_vars%volatileid(betrtracer_vars%id_trc_ar))
+      this%simic_forc(c,j)%conc_atm_co2 = &
+          tracerstate_vars%tracer_conc_atm_col(c,betrtracer_vars%volatileid(betrtracer_vars%id_trc_co2x))
+      if(this%use_c13)then
+        this%simic_forc(c,j)%conc_atm_co2_c13 = &
+          tracerstate_vars%tracer_conc_atm_col(c,betrtracer_vars%volatileid(betrtracer_vars%id_trc_c13_co2x))
+      endif
+      if(this%use_c14)then
+        this%simic_forc(c,j)%conc_atm_co2_c14 = &
+          tracerstate_vars%tracer_conc_atm_col(c,betrtracer_vars%volatileid(betrtracer_vars%id_trc_c14_co2x))
+      endif
+      this%simic_forc(c,j)%conc_atm_ch4 = &
+          tracerstate_vars%tracer_conc_atm_col(c,betrtracer_vars%volatileid(betrtracer_vars%id_trc_ch4))
+
+      this%simic_forc(c,j)%soilorder = biophysforc%isoilorder(c)
+
+    enddo
+  enddo
+  end associate 
+  end subroutine set_bgc_forc
+
+
 end module SimicBGCReactionsType
