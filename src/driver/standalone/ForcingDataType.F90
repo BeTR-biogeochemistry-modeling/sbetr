@@ -66,7 +66,7 @@ module ForcingDataType
      procedure, private :: InitAllocate
      procedure, private :: InitAllocate_CNP
      procedure, private :: ReadNameList
-     procedure, public  :: destroy
+     procedure, public  :: Destroy
   end type ForcingData_type
 
 contains

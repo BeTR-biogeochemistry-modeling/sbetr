@@ -315,6 +315,7 @@ contains
     !print*,'base_filename',trim(base_filename)
 
     this%hist_record=0
+    this%active_soibgc=.false.
     biulog = iulog
     if(present(base_filename))then
       this%base_filename = base_filename
@@ -728,7 +729,11 @@ contains
          )
 
     ncol = bounds%endc-bounds%begc + 1
-    this%hist_filename = trim(this%base_filename) //'.'//trim(this%case_id)// '.output.nc'
+    if(len(trim(this%case_id))>0)then
+      this%hist_filename = trim(this%base_filename) //'.'//trim(this%case_id)// '.output.nc'
+    else
+      this%hist_filename = trim(this%base_filename) //'.output.nc'
+    endif
     call ncd_pio_createfile(ncid, this%hist_filename)
 
     call hist_file_create(ncid, betr_nlevtrc_soil, ncol)
@@ -799,6 +804,7 @@ contains
       if(time_vars%its_time_to_histflush())then
 
         this%hist_record=this%hist_record+1
+        
         call ncd_pio_openfile_for_write(ncid, this%hist_filename)
 
         call ncd_putvar(ncid, "time", this%hist_record, time_vars%time)

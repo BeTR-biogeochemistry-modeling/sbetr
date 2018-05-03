@@ -193,9 +193,9 @@ contains
   endif
 
   !x print*,'bf loop'
-  if(simulation%do_soibgc())then
-    call forcing_data%ReadCNPData()
-  endif
+!  if(simulation%do_soibgc())then
+!    call forcing_data%ReadCNPData()
+!  endif
 
   do
     record = record + 1
@@ -270,17 +270,17 @@ contains
         atm2lnd_vars=atm2lnd_vars,               canopystate_vars=canopystate_vars,     &
         chemstate_vars=chemstate_vars,           soilstate_vars=soilstate_vars)
 
-      if(simulation%do_soibgc())then
-        call forcing_data%UpdateCNPForcing(1, nlevsoi, &
-          simulation%num_soilc, simulation%filter_soilc, time_vars,  &
-          carbonflux_vars, c13_cflx_vars, c14_cflx_vars, nitrogenflux_vars, &
-          phosphorusflux_vars, plantMicKinetics_vars)
+!      if(simulation%do_soibgc())then
+!        call forcing_data%UpdateCNPForcing(1, nlevsoi, &
+!          simulation%num_soilc, simulation%filter_soilc, time_vars,  &
+!          carbonflux_vars, c13_cflx_vars, c14_cflx_vars, nitrogenflux_vars, &
+!          phosphorusflux_vars, plantMicKinetics_vars)
 
-        call simulation%PlantSoilBGCSend(bounds, col, pft, simulation%num_soilc, simulation%filter_soilc,&
-          cnstate_vars,  carbonflux_vars, c13_cflx_vars, c14_cflx_vars,  nitrogenflux_vars, phosphorusflux_vars, &
-        plantMicKinetics_vars)
+!        call simulation%PlantSoilBGCSend(bounds, col, pft, simulation%num_soilc, simulation%filter_soilc,&
+!          cnstate_vars,  carbonflux_vars, c13_cflx_vars, c14_cflx_vars,  nitrogenflux_vars, phosphorusflux_vars, &
+!        plantMicKinetics_vars)
 
-      endif
+!      endif
     class default
       call simulation%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi,               &
         carbonflux_vars=carbonflux_vars,                                                &
@@ -309,11 +309,11 @@ contains
 
     select type(simulation)
     class is (betr_simulation_standalone_type)
-      if(simulation%do_soibgc())then
-        call simulation%PlantSoilBGCRecv(bounds, col, pft,  simulation%num_soilc, simulation%filter_soilc,&
-          carbonstate_vars, carbonflux_vars, c13state_vars, c13_cflx_vars, c14state_vars, c14_cflx_vars, &
-          nitrogenstate_vars, nitrogenflux_vars, phosphorusstate_vars, phosphorusflux_vars)
-      endif
+!      if(simulation%do_soibgc())then
+!        call simulation%PlantSoilBGCRecv(bounds, col, pft,  simulation%num_soilc, simulation%filter_soilc,&
+!          carbonstate_vars, carbonflux_vars, c13state_vars, c13_cflx_vars, c14state_vars, c14_cflx_vars, &
+!          nitrogenstate_vars, nitrogenflux_vars, phosphorusstate_vars, phosphorusflux_vars)
+!      endif
     end select
     !x print*,'do mass balance check'
     call simulation%MassBalanceCheck(bounds)
@@ -329,13 +329,14 @@ contains
     call simulation%WriteOfflineHistory(bounds, simulation%num_soilc,  &
        simulation%filter_soilc, time_vars, waterflux_vars%qflx_adv_col)
 
-    if(simulation%do_soibgc()) call WriteHistBGC(hist, time_vars, carbonstate_vars, carbonflux_vars, &
-         nitrogenstate_vars, nitrogenflux_vars, phosphorusstate_vars, phosphorusflux_vars, reaction_method)
+!    if(simulation%do_soibgc()) call WriteHistBGC(hist, time_vars, carbonstate_vars, carbonflux_vars, &
+!         nitrogenstate_vars, nitrogenflux_vars, phosphorusstate_vars, phosphorusflux_vars, reaction_method)
 
     if(time_vars%its_time_to_write_restart()) then
        !set restfname
        nstep = time_vars%get_nstep()
        write(restfname,'(A,I8.8,A)')trim(base_filename)//'.',nstep,'.rst.nc'
+
        call write_restinfo(restfname, nstep)
 
        call simulation%BeTRRestartOpen(restfname, flag='write', ncid=ncid)
@@ -346,10 +347,10 @@ contains
 
        call simulation%BeTRRestartClose(ncid)
 
-       if(simulation%do_soibgc())then
-         call time_vars%get_ymdhs(yymmddhhss)
-         call hist%histrst(reaction_method, 'write',yymmddhhss)
-      endif
+!       if(simulation%do_soibgc())then
+!         call time_vars%get_ymdhs(yymmddhhss)
+!         call hist%histrst(reaction_method, 'write',yymmddhhss)
+!      endif
     endif
     !x print*,'next step'
     if(time_vars%its_time_to_exit()) then
@@ -360,7 +361,7 @@ contains
   if(simulation%do_regress_test())then
     call simulation%WriteRegressionOutput(waterflux_vars%qflx_adv_col)
   endif
-  call forcing_data%destroy()
+  call forcing_data%Destroy()
   deallocate(forcing_data)
 end subroutine sbetrBGC_driver
 
