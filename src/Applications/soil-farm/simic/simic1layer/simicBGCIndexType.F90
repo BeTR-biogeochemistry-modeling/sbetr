@@ -335,14 +335,15 @@ implicit none
     this%lid_cue = this%lid_doc + 1
     call list_insert(list_name, 'DOC_e',vid)
     call list_insert(list_unit, 'mol e m-3',uid)
-    this%dom_end = this%dom_beg - 1 + (this%lid_doc-this%lid_doc+1)*this%nelms
-
+    this%dom_end = this%dom_beg - 1 + (this%lid_doc-this%lid_doc+1)*(this%nelms+1)
+    print*,'dom_beg',this%dom_beg, this%dom_end
     this%nom_pools = (countelm(this%litr_beg, this%litr_end)+&
        countelm(this%wood_beg,this%wood_end) + &
-       countelm(this%Bm_beg,this%Bm_end) + &
-       countelm(this%dom_beg,this%dom_end))/this%nelms   !include coarse wood debris
-
-    itemp               = this%nom_pools*this%nelms + countelm(this%dom_beg,this%dom_end)
+       countelm(this%Bm_beg,this%Bm_end))/this%nelms  + &
+       countelm(this%dom_beg,this%dom_end)/(this%nelms+1)   !include coarse wood debris
+    print*,'nom_pools',this%nom_pools
+    itemp               = countelm(this%litr_beg, this%litr_end) + countelm(this%wood_beg,this%wood_end) + &
+        countelm(this%Bm_beg,this%Bm_end)  + countelm(this%dom_beg,this%dom_end)
 
     this%nom_tot_elms    = itemp
 

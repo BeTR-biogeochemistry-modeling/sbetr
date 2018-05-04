@@ -1139,10 +1139,10 @@ contains
     do k = 1, dom_end-dom_beg + 1
       k1 = dom_beg+k-1; k2 = betrtracer_vars%id_trc_beg_dom+ k-1
       tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)
-      print*,'bf af',k1,ystatesf(k1), ystates0(k1)
+      if(j<=1)print*,'bf af',k1,ystatesf(k1), ystates0(k1)
       k1 = dom_beg+k; k2 = betrtracer_vars%id_trc_beg_dom+ k
       tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)
-      print*,'bf af',k1,ystatesf(k1), ystates0(k1)
+      if(j<=1)print*,'bf af',k1,ystatesf(k1), ystates0(k1)
     enddo
 
     tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_n2) = &
@@ -1264,12 +1264,12 @@ contains
       this%simic_forc(c,j)%ystates(dom_beg:dom_end)= &
           tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_dom:betrtracer_vars%id_trc_end_dom)
       if(this%simic_forc(c,j)%ystates(dom_beg)<=tiny_cval)this%simic_forc(c,j)%ystates(dom_beg:dom_end)=0._r8
-
+      if(j<=1)print*,'dom',dom_beg,dom_end
+      
       !microbial biomass
       this%simic_forc(c,j)%ystates(Bm_beg:Bm_end)= &
           tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_Bm:betrtracer_vars%id_trc_end_Bm)
       if(this%simic_forc(c,j)%ystates(Bm_beg)<=tiny_cval)this%simic_forc(c,j)%ystates(Bm_beg:Bm_end)=0._r8
-
       !non-soluble phase of mineral p
 
       this%simic_forc(c,j)%ystates(this%simic_index%lid_n2) = &
