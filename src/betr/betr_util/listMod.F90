@@ -4,7 +4,7 @@ module ListMod
 implicit none
   private
 
-  integer, parameter :: loc_str_len=16
+  integer, parameter :: loc_str_len=64
   type, public :: list_s
      character(len=loc_str_len) :: value
      integer :: id
@@ -114,5 +114,19 @@ contains
     next=>list_next(next)
   enddo
   end subroutine copy_name_type
+
+  !-------------------------------------------------------------------------------
+  subroutine list_disp(list)
+  implicit none
+  type(list_s), pointer :: list
+  type(list_s), pointer :: next
+
+  next => list
+  do while(associated(next))
+    write(*,'(A30,A,I0)')trim(next%value),' =',next%id
+    next=>list_next(next)
+  enddo
+
+  end subroutine list_disp
 
 end module ListMod

@@ -7,6 +7,7 @@ module PlantMicKineticsMod
   use shr_infnan_mod         , only : nan => shr_infnan_nan, assignment(=)
   use decompMod              , only : bounds_type
   use clm_varpar             , only : nlevdecomp_full, nlevgrnd, nlevdecomp
+  use clm_varcon             , only : spval
 implicit none
 
   type, public :: PlantMicKinetics_type
@@ -51,22 +52,22 @@ implicit none
 
      begp = bounds%begp; endp=bounds%endp
      begc = bounds%begc; endc=bounds%endc
-     allocate(this%plant_nh4_vmax_vr_patch(begp:endp, 1:nlevdecomp_full)); this%plant_nh4_vmax_vr_patch(:,:) = nan
-     allocate(this%plant_no3_vmax_vr_patch(begp:endp, 1:nlevdecomp_full)); this%plant_no3_vmax_vr_patch(:,:) = nan
-     allocate(this%plant_p_vmax_vr_patch(begp:endp, 1:nlevdecomp_full)); this%plant_p_vmax_vr_patch(:,:) = nan
-     allocate(this%plant_eff_frootc_vr_patch(begp:endp,1:nlevdecomp_full)); this%plant_eff_frootc_vr_patch(:,:) = nan
-     allocate(this%plant_no3_km_vr_patch(begp:endp, 1:nlevdecomp_full)); this%plant_no3_km_vr_patch(:,:) = nan
-     allocate(this%plant_nh4_km_vr_patch(begp:endp, 1:nlevdecomp_full)); this%plant_nh4_km_vr_patch(:,:) = nan
-     allocate(this%plant_p_km_vr_patch(begp:endp, 1:nlevdecomp_full)); this%plant_p_km_vr_patch(:,:) = nan
+     allocate(this%plant_nh4_vmax_vr_patch(begp:endp, 1:nlevdecomp_full)); this%plant_nh4_vmax_vr_patch(:,:) = spval
+     allocate(this%plant_no3_vmax_vr_patch(begp:endp, 1:nlevdecomp_full)); this%plant_no3_vmax_vr_patch(:,:) = spval
+     allocate(this%plant_p_vmax_vr_patch(begp:endp, 1:nlevdecomp_full)); this%plant_p_vmax_vr_patch(:,:) = spval
+     allocate(this%plant_eff_frootc_vr_patch(begp:endp,1:nlevdecomp_full)); this%plant_eff_frootc_vr_patch(:,:) = spval
+     allocate(this%plant_no3_km_vr_patch(begp:endp, 1:nlevdecomp_full)); this%plant_no3_km_vr_patch(:,:) = spval
+     allocate(this%plant_nh4_km_vr_patch(begp:endp, 1:nlevdecomp_full)); this%plant_nh4_km_vr_patch(:,:) = spval
+     allocate(this%plant_p_km_vr_patch(begp:endp, 1:nlevdecomp_full)); this%plant_p_km_vr_patch(:,:) = spval
 
 
      allocate(this%plant_eff_ncompet_b_vr_patch(begp:endp,1:nlevdecomp_full)); this%plant_eff_ncompet_b_vr_patch(:,:)=nan
      allocate(this%plant_eff_pcompet_b_vr_patch(begp:endp,1:nlevdecomp_full)); this%plant_eff_pcompet_b_vr_patch(:,:)=nan
-     allocate(this%minsurf_p_compet_vr_col(begc:endc,1:nlevdecomp_full)); this%minsurf_p_compet_vr_col(:,:) = nan
-     allocate(this%minsurf_nh4_compet_vr_col(begc:endc, 1:nlevdecomp_full)); this%minsurf_nh4_compet_vr_col(:,:) = nan
+     allocate(this%minsurf_p_compet_vr_col(begc:endc,1:nlevdecomp_full)); this%minsurf_p_compet_vr_col(:,:) = spval
+     allocate(this%minsurf_nh4_compet_vr_col(begc:endc, 1:nlevdecomp_full)); this%minsurf_nh4_compet_vr_col(:,:) = spval
 
-     allocate(this%vmax_minsurf_p_vr_col(begc:endc, 1:nlevdecomp_full)); this%vmax_minsurf_p_vr_col(:,:) = nan
-     allocate(this%km_minsurf_p_vr_col(begc:endc,1:nlevdecomp_full)); this%km_minsurf_p_vr_col(:,:) = nan
+     allocate(this%vmax_minsurf_p_vr_col(begc:endc, 1:nlevdecomp_full)); this%vmax_minsurf_p_vr_col(:,:) = spval
+     allocate(this%km_minsurf_p_vr_col(begc:endc,1:nlevdecomp_full)); this%km_minsurf_p_vr_col(:,:) = spval
      allocate(this%km_minsurf_nh4_vr_col(begc:endc,1:nlevdecomp_full)); this%km_minsurf_nh4_vr_col(:,:)=nan
 
 

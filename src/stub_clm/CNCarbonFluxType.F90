@@ -87,40 +87,40 @@ contains
     allocate(this%rr_col                  (begc:endc))                  ; this%rr_col                    (:)  =nan
     allocate(this%rr_patch                (begp:endp))                  ; this%rr_patch                    (:)  =nan
 
-    allocate(this%annsum_npp_patch      (begp:endp)) ; this%annsum_npp_patch      (:) = nan
-    allocate(this%agnpp_patch                       (begp:endp)) ; this%agnpp_patch                               (:) = nan
-    allocate(this%bgnpp_patch                       (begp:endp)) ; this%bgnpp_patch                               (:) = nan
-    allocate(this%hr_col (begc:endc)); this%hr_col(:) = nan
+    allocate(this%annsum_npp_patch      (begp:endp)) ; this%annsum_npp_patch      (:) = spval
+    allocate(this%agnpp_patch                       (begp:endp)) ; this%agnpp_patch                               (:) = spval
+    allocate(this%bgnpp_patch                       (begp:endp)) ; this%bgnpp_patch                               (:) = spval
+    allocate(this%hr_col (begc:endc)); this%hr_col(:) = spval
 
-    allocate(this%phenology_c_to_litr_met_c_col(begc:endc,1:nlevdecomp_full)); this%phenology_c_to_litr_met_c_col(:,:) = nan
-    allocate(this%phenology_c_to_litr_cel_c_col(begc:endc,1:nlevdecomp_full)); this%phenology_c_to_litr_cel_c_col(:,:) = nan
-    allocate(this%dwt_livecrootc_to_cwdc_col(begc:endc,1:nlevdecomp_full)); this%dwt_livecrootc_to_cwdc_col(:,:) = nan
+    allocate(this%phenology_c_to_litr_met_c_col(begc:endc,1:nlevdecomp_full)); this%phenology_c_to_litr_met_c_col(:,:) = spval
+    allocate(this%phenology_c_to_litr_cel_c_col(begc:endc,1:nlevdecomp_full)); this%phenology_c_to_litr_cel_c_col(:,:) = spval
+    allocate(this%dwt_livecrootc_to_cwdc_col(begc:endc,1:nlevdecomp_full)); this%dwt_livecrootc_to_cwdc_col(:,:) = spval
     allocate(this%m_decomp_cpools_to_fire_vr_col(begc:endc,1:nlevdecomp_full,1:7)); this%m_decomp_cpools_to_fire_vr_col(:,:,:)=nan
-    allocate(this%dwt_deadcrootc_to_cwdc_col(begc:endc,1:nlevdecomp_full)); this%dwt_deadcrootc_to_cwdc_col(:,:) = nan
-    allocate(this%dwt_frootc_to_litr_lig_c_col(begc:endc,1:nlevdecomp_full)); this%dwt_frootc_to_litr_lig_c_col(:,:) = nan
-    allocate(this%dwt_frootc_to_litr_cel_c_col(begc:endc,1:nlevdecomp_full)); this%dwt_frootc_to_litr_cel_c_col(:,:) = nan
-    allocate(this%dwt_frootc_to_litr_met_c_col(begc:endc,1:nlevdecomp_full)); this%dwt_frootc_to_litr_met_c_col(:,:) = nan
-    allocate(this%gap_mortality_c_to_litr_met_c_col(begc:endc,1:nlevdecomp_full)); this%gap_mortality_c_to_litr_met_c_col(:,:) = nan
-    allocate(this%gap_mortality_c_to_litr_cel_c_col(begc:endc,1:nlevdecomp_full)); this%gap_mortality_c_to_litr_cel_c_col(:,:) = nan
-    allocate(this%gap_mortality_c_to_litr_lig_c_col(begc:endc,1:nlevdecomp_full)); this%gap_mortality_c_to_litr_lig_c_col(:,:) = nan
-    allocate(this%gap_mortality_c_to_cwdc_col(begc:endc,1:nlevdecomp_full)); this%gap_mortality_c_to_cwdc_col(:,:) = nan
-    allocate(this%harvest_c_to_litr_met_c_col(begc:endc,1:nlevdecomp_full)); this%harvest_c_to_litr_met_c_col(:,:) = nan
-    allocate(this%harvest_c_to_litr_cel_c_col(begc:endc,1:nlevdecomp_full)); this%harvest_c_to_litr_cel_c_col(:,:) = nan
-    allocate(this%harvest_c_to_litr_lig_c_col(begc:endc,1:nlevdecomp_full)); this%harvest_c_to_litr_lig_c_col(:,:) = nan
-    allocate(this%harvest_c_to_cwdc_col(begc:endc,1:nlevdecomp_full)); this%harvest_c_to_cwdc_col(:,:) = nan
-    allocate(this%m_c_to_litr_met_fire_col(begc:endc,1:nlevdecomp_full)); this%m_c_to_litr_met_fire_col(:,:) = nan
-    allocate(this%m_c_to_litr_cel_fire_col(begc:endc,1:nlevdecomp_full)); this%m_c_to_litr_cel_fire_col(:,:) = nan
-    allocate(this%m_c_to_litr_lig_fire_col(begc:endc,1:nlevdecomp_full)); this%m_c_to_litr_lig_fire_col(:,:) = nan
-    allocate(this%fire_mortality_c_to_cwdc_col (begc:endc,1:nlevdecomp_full)); this%fire_mortality_c_to_cwdc_col (:,:) = nan
-    allocate(this%phenology_c_to_litr_lig_c_col(begc:endc,1:nlevdecomp_full)); this%phenology_c_to_litr_lig_c_col(:,:) = nan
-    allocate(this%som_c_leached_col(begc:endc)); this%som_c_leached_col(:) = nan
+    allocate(this%dwt_deadcrootc_to_cwdc_col(begc:endc,1:nlevdecomp_full)); this%dwt_deadcrootc_to_cwdc_col(:,:) = spval
+    allocate(this%dwt_frootc_to_litr_lig_c_col(begc:endc,1:nlevdecomp_full)); this%dwt_frootc_to_litr_lig_c_col(:,:) = spval
+    allocate(this%dwt_frootc_to_litr_cel_c_col(begc:endc,1:nlevdecomp_full)); this%dwt_frootc_to_litr_cel_c_col(:,:) = spval
+    allocate(this%dwt_frootc_to_litr_met_c_col(begc:endc,1:nlevdecomp_full)); this%dwt_frootc_to_litr_met_c_col(:,:) = spval
+    allocate(this%gap_mortality_c_to_litr_met_c_col(begc:endc,1:nlevdecomp_full)); this%gap_mortality_c_to_litr_met_c_col(:,:) = spval
+    allocate(this%gap_mortality_c_to_litr_cel_c_col(begc:endc,1:nlevdecomp_full)); this%gap_mortality_c_to_litr_cel_c_col(:,:) = spval
+    allocate(this%gap_mortality_c_to_litr_lig_c_col(begc:endc,1:nlevdecomp_full)); this%gap_mortality_c_to_litr_lig_c_col(:,:) = spval
+    allocate(this%gap_mortality_c_to_cwdc_col(begc:endc,1:nlevdecomp_full)); this%gap_mortality_c_to_cwdc_col(:,:) = spval
+    allocate(this%harvest_c_to_litr_met_c_col(begc:endc,1:nlevdecomp_full)); this%harvest_c_to_litr_met_c_col(:,:) = spval
+    allocate(this%harvest_c_to_litr_cel_c_col(begc:endc,1:nlevdecomp_full)); this%harvest_c_to_litr_cel_c_col(:,:) = spval
+    allocate(this%harvest_c_to_litr_lig_c_col(begc:endc,1:nlevdecomp_full)); this%harvest_c_to_litr_lig_c_col(:,:) = spval
+    allocate(this%harvest_c_to_cwdc_col(begc:endc,1:nlevdecomp_full)); this%harvest_c_to_cwdc_col(:,:) = spval
+    allocate(this%m_c_to_litr_met_fire_col(begc:endc,1:nlevdecomp_full)); this%m_c_to_litr_met_fire_col(:,:) = spval
+    allocate(this%m_c_to_litr_cel_fire_col(begc:endc,1:nlevdecomp_full)); this%m_c_to_litr_cel_fire_col(:,:) = spval
+    allocate(this%m_c_to_litr_lig_fire_col(begc:endc,1:nlevdecomp_full)); this%m_c_to_litr_lig_fire_col(:,:) = spval
+    allocate(this%fire_mortality_c_to_cwdc_col (begc:endc,1:nlevdecomp_full)); this%fire_mortality_c_to_cwdc_col (:,:) = spval
+    allocate(this%phenology_c_to_litr_lig_c_col(begc:endc,1:nlevdecomp_full)); this%phenology_c_to_litr_lig_c_col(:,:) = spval
+    allocate(this%som_c_leached_col(begc:endc)); this%som_c_leached_col(:) = spval
 
-    allocate(this%cflx_input_litr_met_vr_col(begc:endc,1:nlevdecomp_full)); this%cflx_input_litr_met_vr_col(:,:) = nan
-    allocate(this%cflx_input_litr_cel_vr_col(begc:endc,1:nlevdecomp_full)); this%cflx_input_litr_cel_vr_col(:,:) = nan
-    allocate(this%cflx_input_litr_lig_vr_col(begc:endc,1:nlevdecomp_full)); this%cflx_input_litr_lig_vr_col(:,:) = nan
-    allocate(this%cflx_input_litr_cwd_vr_col(begc:endc,1:nlevdecomp_full)); this%cflx_input_litr_cwd_vr_col(:,:) = nan
-    allocate(this%fire_decomp_closs_col(begc:endc)); this%fire_decomp_closs_col(:) = nan
-    allocate(this%som_c_runoff_col(begc:endc)); this%som_c_runoff_col(:) = nan
+    allocate(this%cflx_input_litr_met_vr_col(begc:endc,1:nlevdecomp_full)); this%cflx_input_litr_met_vr_col(:,:) = spval
+    allocate(this%cflx_input_litr_cel_vr_col(begc:endc,1:nlevdecomp_full)); this%cflx_input_litr_cel_vr_col(:,:) = spval
+    allocate(this%cflx_input_litr_lig_vr_col(begc:endc,1:nlevdecomp_full)); this%cflx_input_litr_lig_vr_col(:,:) = spval
+    allocate(this%cflx_input_litr_cwd_vr_col(begc:endc,1:nlevdecomp_full)); this%cflx_input_litr_cwd_vr_col(:,:) = spval
+    allocate(this%fire_decomp_closs_col(begc:endc)); this%fire_decomp_closs_col(:) = spval
+    allocate(this%som_c_runoff_col(begc:endc)); this%som_c_runoff_col(:) = spval
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------

@@ -132,29 +132,31 @@ contains
   this%pnup_pfrootc_patch(:) = value_column
   end subroutine reset
   !------------------------------------------------------------------------
-  subroutine summary(this, bounds, lbj, ubj, dz)
+  subroutine summary(this, bounds, lbj, ubj, dz, active_soibgc )
 
   implicit none
   class(betr_biogeo_flux_type),intent(inout)  :: this
   type(betr_bounds_type), intent(in) :: bounds
   integer , intent(in) :: lbj, ubj
   real(r8), intent(in) :: dz(bounds%begc:bounds%endc,lbj:ubj)
+  logical, intent(in) :: active_soibgc
 
+  if(active_soibgc)then
+    !integrate
+    call this%c12flux_vars%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj))
 
-  !integrate
-  call this%c12flux_vars%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj))
+    if(use_c13_betr)then
+      call this%c13flux_vars%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj))
+    endif
 
-  if(use_c13_betr)then
-     call this%c13flux_vars%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj))
+    if(use_c14_betr)then
+      call this%c14flux_vars%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj))
+    endif
+
+    call this%n14flux_vars%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj))
+
+    call this%p31flux_vars%summary(bounds, lbj, ubj, dz)
   endif
-
-  if(use_c14_betr)then
-     call this%c14flux_vars%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj))
-  endif
-
-  call this%n14flux_vars%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj))
-
-  call this%p31flux_vars%summary(bounds, lbj, ubj, dz)
   end subroutine summary
 
 end module BeTR_biogeoFluxType

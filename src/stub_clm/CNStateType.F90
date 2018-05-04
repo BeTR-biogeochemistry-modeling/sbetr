@@ -57,13 +57,13 @@ contains
 
     begp = bounds%begp; endp= bounds%endp
     begc = bounds%begc; endc= bounds%endc
-    allocate(this%rc14_atm_patch              (begp:endp)) ;    this%rc14_atm_patch              (:) = nan
+    allocate(this%rc14_atm_patch              (begp:endp)) ;    this%rc14_atm_patch              (:) = spval
     allocate(this%froot_prof_patch    (begp:endp,1:nlevdecomp_full)) ; this%froot_prof_patch    (:,:) = spval
     allocate(this%nfixation_prof_col  (begc:endc,1:nlevdecomp_full)) ; this%nfixation_prof_col  (:,:) = spval
     allocate(this%isoilorder            (begc:endc))                 ; this%isoilorder(:) = ispval
     allocate(this%ndep_prof_col (begc:endc, 1:nlevdecomp_full)); this%ndep_prof_col(:,:) = spval
     allocate(this%pdep_prof_col (begc:endc, 1:nlevdecomp_full)); this%pdep_prof_col(:,:) = spval
-    allocate(this%scalaravg_col       (begc:endc))                   ; this%scalaravg_col       (:)   = nan
+    allocate(this%scalaravg_col       (begc:endc))                   ; this%scalaravg_col       (:)   = spval
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------

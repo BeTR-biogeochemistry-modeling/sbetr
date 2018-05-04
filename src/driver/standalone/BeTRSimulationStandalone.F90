@@ -152,10 +152,9 @@ contains
     call this%bsimstatus%reset()
 
     call this%BeTRSetcps(bounds, col, pft)
+
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
-      call this%biogeo_state(c)%reset(value_column=0._r8, active_soibgc=this%do_soibgc())
-      call this%biogeo_flux(c)%reset(value_column=0._r8, active_soibgc=this%do_soibgc())
 
       call this%biophys_forc(c)%frac_normalize(this%betr_pft(c)%npfts, 1, betr_nlevtrc_soil)
 
@@ -204,6 +203,7 @@ contains
 
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
+
       call this%betr(c)%step_with_drainage(betr_bounds, this%betr_col(c), &
          this%num_soilc, this%filter_soilc,        &
          this%jtops, this%biogeo_flux(c), this%bstatus(c))
@@ -213,8 +213,8 @@ contains
         call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
         exit
       endif
-
     enddo
+
   end subroutine StandaloneStepWithDrainage
 
   !------------------------------------------------------------------------
@@ -261,8 +261,6 @@ contains
   !the following will be standalone bgc specific
   end subroutine StandaloneSetBiophysForcing
 
-
-
   !------------------------------------------------------------------------
   subroutine StandalonePlantSoilBGCSend(this, bounds, col, pft, num_soilc,  filter_soilc, cnstate_vars, &
     carbonflux_vars,  c13_cflx_vars, c14_cflx_vars, nitrogenflux_vars, phosphorusflux_vars, &
@@ -303,6 +301,15 @@ contains
   type(betr_bounds_type)   :: betr_bounds
 
   call this%BeTRSetBounds(betr_bounds)
+
+
+  !reset and prepare for retrieval
+  do c = bounds%begc, bounds%endc
+    if(.not. this%active_col(c))cycle
+    call this%biogeo_state(c)%reset(value_column=0._r8, active_soibgc=this%do_soibgc())
+    call this%biogeo_flux(c)%reset(value_column=0._r8, active_soibgc=this%do_soibgc())
+  enddo
+  if(.not. this%do_soibgc())return
 
   c_l = 1
   !set kinetic parameters
@@ -400,11 +407,12 @@ contains
   call this%BeTRSetBounds(betr_bounds)
   begc_l = betr_bounds%begc; endc_l=betr_bounds%endc;
 
-  do fc = 1, num_soilc
-    c = filter_soilc(fc)
+  !retrieve and return
+  do c = bounds%begc, bounds%endc
+    if(.not. this%active_col(c))cycle
 
-    call this%betr(c)%retrieve_biostates(betr_bounds,      &
-       1, betr_nlevsoi, this%num_soilc, this%filter_soilc, this%jtops, this%biogeo_state(c),this%bstatus(c))
+    call this%betr(c)%retrieve_biostates(betr_bounds,  1, betr_nlevsoi, &
+       this%num_soilc, this%filter_soilc, this%jtops, this%biogeo_state(c),this%bstatus(c))
 
     if(this%bstatus(c)%check_status())then
       call this%bsimstatus%setcol(c)
@@ -413,10 +421,18 @@ contains
     endif
     call this%betr(c)%retrieve_biofluxes(this%num_soilc, this%filter_soilc, this%biogeo_flux(c))
 
-    call this%biogeo_state(c)%summary(betr_bounds, 1, betr_nlevtrc_soil,this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil), &
-        this%betr_col(c)%zi(begc_l:endc_l,1:betr_nlevtrc_soil),this%do_soibgc())
+    call this%biogeo_state(c)%summary(betr_bounds, 1, betr_nlevtrc_soil,&
+         this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil), &
+         this%betr_col(c)%zi(begc_l:endc_l,1:betr_nlevtrc_soil),this%do_soibgc())
 
-    call this%biogeo_flux(c)%summary(betr_bounds, 1, betr_nlevtrc_soil, this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil))
+    call this%biogeo_flux(c)%summary(betr_bounds, 1, betr_nlevtrc_soil, &
+         this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil),this%do_soibgc())
+  enddo
+
+  if(.not. this%do_soibgc())return
+
+  do fc = 1, num_soilc
+    c = filter_soilc(fc)
 
     !recollect soil respirations, fire and hydraulic loss
     c12flux_vars%hr_col(c) = this%biogeo_flux(c)%c12flux_vars%hr_col(c_l)

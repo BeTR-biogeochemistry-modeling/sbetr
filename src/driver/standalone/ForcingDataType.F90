@@ -37,7 +37,7 @@ module ForcingDataType
      real(r8), allocatable               :: pbot(:)            !amtospheric pressure, Pa
      real(r8), allocatable               :: tbot(:)            !atmoshperic temperature, kelvin
      real(r8), allocatable               :: qbot(:)            !water flux at bottom boundary, mm/s
-     real(r8), allocatable               :: finudated(:)
+     real(r8), allocatable               :: finundated(:)
      real(r8), allocatable               :: nflx_nh4_vr(:,:)
      real(r8), allocatable               :: nflx_no3_vr(:,:)
      real(r8), allocatable               :: pflx_po4_vr(:,:)
@@ -118,6 +118,7 @@ contains
   if(allocated(this%pbot))deallocate(this%pbot)
   if(allocated(this%qbot))deallocate(this%qbot)
   if(allocated(this%tbot))deallocate(this%tbot)
+  if(allocated(this%finundated))deallocate(this%finundated)
   if(allocated(this%nflx_nh4_vr))deallocate(this%nflx_nh4_vr)
   if(allocated(this%nflx_no3_vr))deallocate(this%nflx_no3_vr)
   if(allocated(this%pflx_po4_vr))deallocate(this%pflx_po4_vr)
@@ -153,7 +154,7 @@ contains
     allocate(this%pbot(this%num_time))
     allocate(this%qbot(this%num_time))
     allocate(this%tbot(this%num_time))
-
+    allocate(this%finundated(this%num_time)); this%finundated(:)=0._r8
   end subroutine InitAllocate
   !------------------------------------------------------------------------
   subroutine InitAllocate_CNP(this)

@@ -93,9 +93,9 @@ contains
     write(*, *) 'dzsoi = ', this%dzsoi
     write(*, *) 'zsoi = ', this%zsoi
     write(*, *) 'zisoi = ', this%zisoi
-    write(*, *) 'bsw = ', this%bsw
-    write(*, *) 'watsat = ', this%watsat
-    write(*, *) 'sucsat = ', this%sucsat
+!    write(*, *) 'bsw = ', this%bsw
+!    write(*, *) 'watsat = ', this%watsat
+!    write(*, *) 'sucsat = ', this%sucsat
   end subroutine Init
 
   ! ---------------------------------------------------------------------------
@@ -349,6 +349,7 @@ contains
        this%zisoi(j) = 0.5_r8*(this%zsoi(j) + this%zsoi(j+1))
     enddo
     this%zisoi(this%nlevgrnd) = this%zsoi(this%nlevgrnd) + 0.5_r8*this%dzsoi(this%nlevgrnd)
+    print*,'zisoi',this%nlevgrnd,size(this%zisoi)
   end subroutine set_interface_depths
 
   ! ---------------------------------------------------------------------------

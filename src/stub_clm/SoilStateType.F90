@@ -67,13 +67,13 @@ module SoilStateType
     allocate(this%bsw_col(begc:endc, lbj:ubj))         ; this%bsw_col(:,:) = nan
     allocate(this%watsat_col(begc:endc, lbj:ubj))      ; this%watsat_col(:,:) = nan
     allocate(this%eff_porosity_col(begc:endc, lbj:ubj)); this%eff_porosity_col(:,:) = nan
-    allocate(this%soilpsi_col          (begc:endc,lbj:ubj))            ; this%soilpsi_col          (:,:) = nan
-    allocate(this%cellorg_col          (begc:endc,lbj:ubj))            ; this%cellorg_col          (:,:) = nan
-    allocate(this%cellclay_col         (begc:endc,lbj:ubj))            ; this%cellclay_col         (:,:) = nan
-    allocate(this%cellsand_col         (begc:endc,lbj:ubj))            ; this%cellsand_col         (:,:) = nan
-    allocate(this%bd_col               (begc:endc,lbj:ubj))            ; this%bd_col               (:,:) = nan
-    allocate(this%watfc_col            (begc:endc,lbj:ubj))            ; this%watfc_col            (:,:) = nan
-    allocate(this%sucsat_col           (begc:endc,lbj:ubj))            ; this%sucsat_col           (:,:) = spval
-    allocate(this%rootfr_patch         (begp:endp,lbj:ubj))            ; this%rootfr_patch         (:,:) = nan
+    allocate(this%soilpsi_col          (begc:endc,lbj:ubj)); this%soilpsi_col          (:,:) = spval
+    allocate(this%cellorg_col          (begc:endc,lbj:ubj)); this%cellorg_col          (:,:) = spval
+    allocate(this%cellclay_col         (begc:endc,lbj:ubj)); this%cellclay_col         (:,:) = spval
+    allocate(this%cellsand_col         (begc:endc,lbj:ubj)); this%cellsand_col         (:,:) = spval
+    allocate(this%bd_col               (begc:endc,lbj:ubj)); this%bd_col               (:,:) = spval
+    allocate(this%watfc_col            (begc:endc,lbj:ubj)); this%watfc_col            (:,:) = spval
+    allocate(this%sucsat_col           (begc:endc,lbj:ubj)); this%sucsat_col           (:,:) = spval
+    allocate(this%rootfr_patch         (begp:endp,lbj:ubj)); this%rootfr_patch         (:,:) = spval
   end subroutine InitAllocate
 end module SoilStateType
