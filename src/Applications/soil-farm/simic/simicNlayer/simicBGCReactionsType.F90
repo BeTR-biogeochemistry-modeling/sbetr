@@ -603,9 +603,6 @@ contains
       if(bstatus%check_status())return
     endif
 
-    call betrtracer_vars%disp_betr_tracer()
-    print*,'done'
-    print*,'---------------------------------'
   end associate
   end subroutine set_tracer
   !-------------------------------------------------------------------------------
@@ -746,7 +743,7 @@ contains
     nstates = this%simic_index%nstvars
     allocate(ystates0(nstates))
     allocate(ystatesf(nstates))
-    print*,''
+
     call this%set_bgc_forc(bounds, col, lbj, ubj, jtops, num_soilc, filter_soilc, &
         biophysforc, plant_soilbgc, betrtracer_vars, tracercoeff_vars, tracerstate_vars,betr_status)
     !now assume doc decays with a turnover rate 1.e-6_r8
@@ -755,7 +752,7 @@ contains
         c = filter_soilc(fc)
         if(j<jtops(c))cycle
         is_surflit=(j<=0)
-        print*,'runbgc',c,j
+
         call this%simic_bgc(c,j)%runbgc(is_surflit, dtime, this%simic_forc(c,j), nstates, ystates0, ystatesf, betr_status)
 
         if(betr_status%check_status())then
@@ -769,9 +766,7 @@ contains
 
       enddo
     enddo
-    print*,'calcbgc', tracerstate_vars%tracer_conc_mobile_col(1,1:10,8)
-    print*,'size',size(tracerstate_vars%tracer_conc_mobile_col,1),size(tracerstate_vars%tracer_conc_mobile_col,2), &
-          size(tracerstate_vars%tracer_conc_mobile_col,3)
+
     deallocate(ystates0)
     deallocate(ystatesf)
    end associate
@@ -1054,22 +1049,15 @@ contains
     !tracer states
     tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_litr:betrtracer_vars%id_trc_end_litr) = &
         ystatesf(litr_beg:litr_end)
-    print*,'lit',litr_beg,litr_end,ystatesf(litr_beg:litr_end)
-    print*,'litid',betrtracer_vars%id_trc_beg_litr,betrtracer_vars%id_trc_end_litr
-    print*,'value1',tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_beg_litr:betrtracer_vars%id_trc_end_litr)
 
     tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_wood:betrtracer_vars%id_trc_end_wood) = &
         ystatesf(wood_beg:wood_end)
-    print*,'value11',tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_beg_litr:betrtracer_vars%id_trc_end_litr)
 
     tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_Bm:betrtracer_vars%id_trc_end_Bm) = &
         ystatesf(Bm_beg:Bm_end)
-    print*,'value12',tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_beg_litr:betrtracer_vars%id_trc_end_litr)
 
     tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_dom:betrtracer_vars%id_trc_end_dom) = &
-        ystatesf(dom_beg:dom_end+1)
-    print*,'dom',betrtracer_vars%id_trc_beg_dom,betrtracer_vars%id_trc_end_dom
-    print*,'value2',tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_beg_litr:betrtracer_vars%id_trc_end_litr)
+        ystatesf(dom_beg:dom_end)
 
     tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_n2) = &
         ystatesf(this%simic_index%lid_n2)
@@ -1095,8 +1083,6 @@ contains
 
     tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_ch4) = &
         ystatesf(this%simic_index%lid_ch4)
-
-    print*,'value3',tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_beg_litr:betrtracer_vars%id_trc_end_litr)
 
     !fluxes
     tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_o2) ) = &
@@ -1151,10 +1137,6 @@ contains
     do k = 1, dom_end-dom_beg + 1
       k1 = dom_beg+k-1; k2 = betrtracer_vars%id_trc_beg_dom+ k-1
       tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)
-      if(j<=1)print*,'bf af',k1,ystatesf(k1), ystates0(k1)
-      k1 = dom_beg+k; k2 = betrtracer_vars%id_trc_beg_dom+ k
-      tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)
-      if(j<=1)print*,'bf af',k1,ystatesf(k1), ystates0(k1)
     enddo
 
     tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_n2) = &
@@ -1276,7 +1258,6 @@ contains
       this%simic_forc(c,j)%ystates(dom_beg:dom_end)= &
           tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_dom:betrtracer_vars%id_trc_end_dom)
       if(this%simic_forc(c,j)%ystates(dom_beg)<=tiny_cval)this%simic_forc(c,j)%ystates(dom_beg:dom_end)=0._r8
-      if(j<=1)print*,'dom',dom_beg,dom_end
 
       !microbial biomass
       this%simic_forc(c,j)%ystates(Bm_beg:Bm_end)= &

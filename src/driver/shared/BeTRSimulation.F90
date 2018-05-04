@@ -804,7 +804,7 @@ contains
       if(time_vars%its_time_to_histflush())then
 
         this%hist_record=this%hist_record+1
-        
+
         call ncd_pio_openfile_for_write(ncid, this%hist_filename)
 
         call ncd_putvar(ncid, "time", this%hist_record, time_vars%time)
@@ -824,7 +824,6 @@ contains
         call this%hist_flux_accum(bounds, numf, filter, betr_nlevtrc_soil, &
            this%num_hist_flux1d, this%num_hist_flux2d)
       endif
-
 
     end associate
   end subroutine hist_write
