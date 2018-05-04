@@ -1052,6 +1052,7 @@ contains
     !tracer states
     tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_litr:betrtracer_vars%id_trc_end_litr) = &
         ystatesf(litr_beg:litr_end)
+    print*,'lit',litr_beg,litr_end,ystatesf(litr_beg:litr_end)
 
     tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_wood:betrtracer_vars%id_trc_end_wood) = &
         ystatesf(wood_beg:wood_end)
@@ -1265,7 +1266,7 @@ contains
           tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_dom:betrtracer_vars%id_trc_end_dom)
       if(this%simic_forc(c,j)%ystates(dom_beg)<=tiny_cval)this%simic_forc(c,j)%ystates(dom_beg:dom_end)=0._r8
       if(j<=1)print*,'dom',dom_beg,dom_end
-      
+
       !microbial biomass
       this%simic_forc(c,j)%ystates(Bm_beg:Bm_end)= &
           tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_Bm:betrtracer_vars%id_trc_end_Bm)
@@ -1388,7 +1389,7 @@ contains
 
     enddo
   enddo
-  end associate 
+  end associate
   end subroutine set_bgc_forc
 
 
