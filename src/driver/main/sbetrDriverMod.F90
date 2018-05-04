@@ -149,6 +149,7 @@ contains
     call time_vars%print_cur_time()
   endif
 
+  call grid_data%UpdateGridConst(bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, soilstate_vars)
   !x print*,'obtain waterstate_vars for initilizations that need it'
   call forcing_data%UpdateForcing(grid_data,                                            &
        bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, time_vars, col, &
@@ -310,7 +311,7 @@ contains
     class is (betr_simulation_standalone_type)
       call simulation%PlantSoilBGCRecv(bounds, col, pft,  simulation%num_soilc, simulation%filter_soilc,&
           carbonstate_vars, carbonflux_vars, c13state_vars, c13_cflx_vars, c14state_vars, c14_cflx_vars, &
-          nitrogenstate_vars, nitrogenflux_vars, phosphorusstate_vars, phosphorusflux_vars)      
+          nitrogenstate_vars, nitrogenflux_vars, phosphorusstate_vars, phosphorusflux_vars)
     end select
     !x print*,'do mass balance check'
     call simulation%MassBalanceCheck(bounds)

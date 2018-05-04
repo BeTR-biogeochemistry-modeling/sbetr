@@ -50,6 +50,7 @@ module BeTR_GridMod
      procedure, public  :: Init
      procedure, public  :: ReadNamelist
      procedure, public  :: ReadNetCDFData
+     procedure, public  :: UpdateGridConst
      procedure, private :: InitAllocate
      procedure, private :: uniform_vertical_grid
      procedure, private :: clm_exponential_vertical_grid
@@ -90,12 +91,15 @@ contains
     call this%ReadNetCDFData()
 
     write(*, *) 'dump grid: '
-    write(*, *) 'dzsoi = ', this%dzsoi
-    write(*, *) 'zsoi = ', this%zsoi
-    write(*, *) 'zisoi = ', this%zisoi
-!    write(*, *) 'bsw = ', this%bsw
-!    write(*, *) 'watsat = ', this%watsat
-!    write(*, *) 'sucsat = ', this%sucsat
+    write(*, *) 'dzsoi   =  ', this%dzsoi
+    write(*, *) 'zsoi    =  ', this%zsoi
+    write(*, *) 'zisoi   =  ', this%zisoi
+    write(*, *) 'bsw     =  ', this%bsw
+    write(*, *) 'watsat  =  ', this%watsat
+    write(*, *) 'sucsat  =  ', this%sucsat
+    write(*, *) 'pctsand =  ', this%pctsand
+    write(*, *) 'pctclay =  ', this%pctclay
+    write(*, *) 'cellorg =  ', this%cellorg
   end subroutine Init
 
   ! ---------------------------------------------------------------------------
@@ -353,5 +357,31 @@ contains
   end subroutine set_interface_depths
 
   ! ---------------------------------------------------------------------------
+  subroutine UpdateGridConst(this, bounds, lbj, ubj, numf, filter, soilstate_vars)
+  !
+  !DESCRIPTION
+  !update grid constant variables
+  use SoilStateType, only : soilstate_type
+  use decompMod         , only : bounds_type
+  implicit none
+  class(betr_grid_type), intent(inout) :: this
+  type(bounds_type)        , intent(in)    :: bounds
+  integer                  , intent(in)    :: numf
+  integer                  , intent(in)    :: filter(:)
+  integer                  , intent(in)    :: lbj, ubj
+  type(soilstate_type)     , intent(inout) :: soilstate_vars
+  integer :: c,fc, j
 
+  do j = 1, ubj
+    do fc = 1, numf
+      c = filter(fc)
+      soilstate_vars%watsat_col(c,j)         = this%watsat(j)
+      soilstate_vars%bsw_col(c,j)            = this%bsw(j)
+      soilstate_vars%sucsat_col(c,j)         = this%sucsat(j)
+      soilstate_vars%cellsand_col(c,lbj:ubj) = this%pctsand(j)
+      soilstate_vars%cellclay_col(c,lbj:ubj) = this%pctclay(j)
+      soilstate_vars%cellorg_col(c,lbj:ubj)  = this%cellorg(j)
+    enddo
+  enddo
+  end subroutine UpdateGridConst
 end module BeTR_GridMod

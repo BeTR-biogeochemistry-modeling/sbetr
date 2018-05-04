@@ -179,6 +179,8 @@ contains
     case ('nyears')
       !year
       this%stop_time= stop_n * 86400._r8 * 365._r8
+    case default
+      call endrun(msg="ERROR setting up stop_option "//errmsg(mod_filename, __LINE__))
     end select
     if(restart_dtime < 0._r8)then
       this%restart_dtime  = this%stop_time

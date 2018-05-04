@@ -97,8 +97,8 @@ endif
 
 # Debugging symbols
 ifeq ($(debug), not-set)
-  BUILDDIR := ${BUILDDIR}-Debug
-  CONFIG_FLAGS += -DCMAKE_BUILD_TYPE=Debug
+  BUILDDIR := ${BUILDDIR}-Release
+  CONFIG_FLAGS += -DCMAKE_BUILD_TYPE=Release
 else
   ifeq ($(debug), 0)
     BUILDDIR := ${BUILDDIR}-Release

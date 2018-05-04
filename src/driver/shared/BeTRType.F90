@@ -172,6 +172,7 @@ contains
 
     call this%bgc_reaction%Init_betrbgc(bounds, lbj, ubj, this%tracers, namelist_buffer, bstatus)
     if(bstatus%check_status())return
+    call this%tracers%disp_betr_tracer()
 
     call this%aereconds%Init(bounds)
 
@@ -375,7 +376,8 @@ contains
          this%tracerboundaryconds,                             &
          this%plant_soilbgc, biogeo_flux,  betr_status)
     if(betr_status%check_status())return
-    print*,'betr',this%tracerstates%tracer_conc_mobile_col(1,1:10,8)
+
+    if(size(this%tracerstates%tracer_conc_mobile_col,3)>=8)print*,'betr',this%tracerstates%tracer_conc_mobile_col(1,1:10,8)
     if(this%tracers%debug)call this%debug_info(bounds, col, num_soilc, filter_soilc, 'afbgc react\n bef gwstransp',betr_status)
 
     call tracer_gws_transport(betr_time, bounds, col, pft, num_soilc, filter_soilc, &

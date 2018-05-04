@@ -609,10 +609,6 @@ contains
              waterstate_vars%air_vol_col(c,j)       = grid%watsat(j)-waterstate_vars%h2osoi_liqvol_col(c,j)
              waterstate_vars%h2osoi_icevol_col(c,j) = this%h2osoi_icevol(tstep,j)
              soilstate_vars%eff_porosity_col(c,j)   = grid%watsat(j)-this%h2osoi_icevol(tstep,j)
-             soilstate_vars%watsat_col(c,j)         = grid%watsat(j)
-             soilstate_vars%bsw_col(c,j)            = grid%bsw(j)
-             soilstate_vars%sucsat_col(c,j)         = grid%sucsat(j)
-             soilstate_vars%cellsand_col(c,lbj:ubj) = grid%pctsand(j)
              temperature_vars%t_soisno_col(c,j)     = this%t_soi(tstep,j)
              waterflux_vars%qflx_rootsoi_col(c,j)   = this%qflx_rootsoi(tstep,j)  !water exchange between soil and root, m/H2O/s
              do pi = 1, betr_maxpatch_pft
