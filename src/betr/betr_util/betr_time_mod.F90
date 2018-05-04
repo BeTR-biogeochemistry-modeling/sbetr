@@ -179,6 +179,8 @@ contains
     case ('nyears')
       !year
       this%stop_time= stop_n * 86400._r8 * 365._r8
+    case ('nsteps')
+      this%stop_time = stop_n * this%delta_time  
     case default
       call endrun(msg="ERROR setting up stop_option "//errmsg(mod_filename, __LINE__))
     end select
