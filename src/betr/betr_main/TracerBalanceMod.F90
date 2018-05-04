@@ -160,7 +160,7 @@ module TracerBalanceMod
               if(abs(err_rel)>err_min_rel .and. do_betr_output)then
                  tracername=betrtracer_vars%get_tracername(kk)
                  write(msg,*)'error exceeds the tolerance for tracer '//trim(tracername), &
-                      ' err=',errtracer(c,kk), ' col=',c, &
+                      ' err=',errtracer(c,kk), ' col=',c, ' trcid=',kk,&
                       ' nstep=', betr_time%get_nstep(), &
                       ' netpro=',tracer_flx_netpro(c,kk),&
                       ' netphyloss=',tracer_flx_netphyloss(c,kk),&

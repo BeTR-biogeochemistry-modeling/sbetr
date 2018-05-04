@@ -17,7 +17,7 @@
   delta_time=3600.
   stop_n = 3
   hist_freq = 30
-  stop_option='nyears'
+  stop_option='nsteps'
 /
 
 &forcing_inparm

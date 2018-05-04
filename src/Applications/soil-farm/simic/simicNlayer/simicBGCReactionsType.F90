@@ -770,6 +770,7 @@ contains
 
       enddo
     enddo
+    print*,'calcbgc', tracerstate_vars%tracer_conc_mobile_col(1,1:10,8)
     deallocate(ystates0)
     deallocate(ystatesf)
    end associate
@@ -1053,15 +1054,21 @@ contains
     tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_litr:betrtracer_vars%id_trc_end_litr) = &
         ystatesf(litr_beg:litr_end)
     print*,'lit',litr_beg,litr_end,ystatesf(litr_beg:litr_end)
+    print*,'litid',betrtracer_vars%id_trc_beg_litr,betrtracer_vars%id_trc_end_litr
+    print*,'value1',tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_beg_litr:betrtracer_vars%id_trc_end_litr)
 
     tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_wood:betrtracer_vars%id_trc_end_wood) = &
         ystatesf(wood_beg:wood_end)
+    print*,'value11',tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_beg_litr:betrtracer_vars%id_trc_end_litr)
 
     tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_Bm:betrtracer_vars%id_trc_end_Bm) = &
         ystatesf(Bm_beg:Bm_end)
+    print*,'value12',tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_beg_litr:betrtracer_vars%id_trc_end_litr)
 
     tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_dom:betrtracer_vars%id_trc_end_dom) = &
         ystatesf(dom_beg:dom_end+1)
+    print*,'dom',betrtracer_vars%id_trc_beg_dom,betrtracer_vars%id_trc_end_dom
+    print*,'value2',tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_beg_litr:betrtracer_vars%id_trc_end_litr)
 
     tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_n2) = &
         ystatesf(this%simic_index%lid_n2)
@@ -1088,6 +1095,9 @@ contains
     tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_ch4) = &
         ystatesf(this%simic_index%lid_ch4)
 
+    print*,'value3',tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_beg_litr:betrtracer_vars%id_trc_end_litr)
+
+    !fluxes
     tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_o2) ) = &
          ystatesf(this%simic_index%lid_o2_paere )  - &
          ystates0(this%simic_index%lid_o2_paere)

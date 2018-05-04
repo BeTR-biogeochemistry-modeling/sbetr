@@ -7,7 +7,7 @@
 
 &betr_time
   delta_time=3600.
-  stop_n = 3
+  stop_n = 20
   stop_option='nyears'
 /
 
