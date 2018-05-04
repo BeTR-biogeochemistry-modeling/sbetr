@@ -357,13 +357,6 @@ contains
       trc_grp_end=betrtracer_vars%id_trc_end_Bm, &
       is_trc_passive=.true.)
 
-    ngroupmems = nelm
-    call betrtracer_vars%add_tracer_group(trc_grp_cnt=addone(itemp),mem = ngroupmems, &
-      trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_som, &
-      trc_grp_beg=betrtracer_vars%id_trc_beg_som, &
-      trc_grp_end=betrtracer_vars%id_trc_end_som, &
-      is_trc_passive=.true.)
-
     betrtracer_vars%nmem_max               = 1
 
     call betrtracer_vars%Init()
@@ -610,6 +603,9 @@ contains
       if(bstatus%check_status())return
     endif
 
+    call betrtracer_vars%disp_betr_tracer()
+    print*,'done'
+    print*,'---------------------------------'
   end associate
   end subroutine set_tracer
   !-------------------------------------------------------------------------------
@@ -669,6 +665,10 @@ contains
       do fc = 1, num_soilc
          c = filter_soilc(fc)
          !eventually, the following code will be implemented using polymorphism
+         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,:) = 0._r8
+         tracerboundarycond_vars%bot_concflux_col(c,1,:)  = 0._r8                        !zero flux boundary condition for diffusion
+         tracerboundarycond_vars%condc_toplay_col(c,:)    = 0._r8
+         !set value for specific groups
          tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_n2)    =ppm2molv(pbot_pa(c), n2_ppmv(c), tair(c))    !mol m-3, contant boundary condition
          tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_o2)    =ppm2molv(pbot_pa(c), o2_ppmv(c), tair(c))!mol m-3, contant boundary condition
          tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_ar)    =ppm2molv(pbot_pa(c), ar_ppmv(c), tair(c))!mol m-3, contant boundary condition
@@ -676,7 +676,6 @@ contains
          tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_ch4)   =ppm2molv(pbot_pa(c), ch4_ppmv(c), tair(c))!mol m-3, contant boundary condition
          tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,id_trc_beg_dom:id_trc_end_dom)  = 0._r8                        !mol m-3, contant boundary condition, as concentration
 
-         tracerboundarycond_vars%bot_concflux_col(c,1,:)                                          = 0._r8                        !zero flux boundary condition for diffusion
          tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_n2))           = 2._r8*1.837e-5_r8/dz_top(c)  !m/s surface conductance
          tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_o2))           = 2._r8*1.713e-5_r8/dz_top(c)  !m/s surface conductance
          tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_ar))           = 2._r8*1.532e-5_r8/dz_top(c)  !m/s surface conductance
@@ -771,6 +770,8 @@ contains
       enddo
     enddo
     print*,'calcbgc', tracerstate_vars%tracer_conc_mobile_col(1,1:10,8)
+    print*,'size',size(tracerstate_vars%tracer_conc_mobile_col,1),size(tracerstate_vars%tracer_conc_mobile_col,2), &
+          size(tracerstate_vars%tracer_conc_mobile_col,3)
     deallocate(ystates0)
     deallocate(ystatesf)
    end associate

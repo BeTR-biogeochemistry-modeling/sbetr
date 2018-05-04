@@ -462,6 +462,8 @@ contains
   elseif(this%hist_freq==365)then
     !by year
     yesno=this%its_a_new_year()
+  elseif(this%hist_freq==9999)then
+    yesno=.false.
   endif
   end function its_time_to_histflush
 end module BeTR_TimeMod

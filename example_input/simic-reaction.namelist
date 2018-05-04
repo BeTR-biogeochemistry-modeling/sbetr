@@ -9,15 +9,15 @@
   reaction_method = 'simic'
   advection_on = .false.
   diffusion_on = .false.
-  reaction_on  = .true.
+  reaction_on  = .false.
   ebullition_on= .false.
 /
 
 &betr_time
   delta_time=3600.
   stop_n = 3
-  hist_freq = 30
-  stop_option='nsteps'
+  hist_freq = 9999
+  stop_option='nyears'
 /
 
 &forcing_inparm

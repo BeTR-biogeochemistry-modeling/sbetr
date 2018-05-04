@@ -116,12 +116,10 @@ module BeTRTracerType
      procedure, public  :: add_tracer_group
      procedure, public  :: get_tracername
      procedure, public  :: get_tracerfamilyname
+     procedure, public  :: disp_betr_tracer
   end type BeTRtracer_type
 
-
-
   contains
-
 
   subroutine Init(this)
 
@@ -188,7 +186,7 @@ module BeTRTracerType
   this%id_trc_air_co2x       = 0      ! tag for atmospheric co2
   this%id_trc_arrt_co2x      = 0      ! tag for autotrophic co2
   this%id_trc_hrsoi_co2x     = 0      ! tag for heterotrophic co2
-
+  this%id_trc_minp           = 0; this%id_trc_beg_minp = 0; this%id_trc_end_minp = -1
   this%id_trc_co2x           = 0; this%id_trc_beg_co2x = 0; this%id_trc_end_co2x = -1      ! tag for co2 and its related species, co2x(CO2, H2CO3, HCO3(-), CO3(2-)),
   this%id_trc_nh3x           = 0; this%id_trc_beg_nh3x = 0; this%id_trc_end_nh3x = -1      ! tag for nh3 and its related species, nh3x(NH3, NH4OH,NH4(+))
   this%id_trc_no3x           = 0; this%id_trc_beg_no3x = 0; this%id_trc_end_no3x = -1      ! tag for no3 and its related species, no3x(HNO3,NO3(-))
@@ -448,5 +446,52 @@ subroutine set_tracer(this, bstatus, trc_id, trc_name, is_trc_mobile, is_trc_adv
   trc_grp_end = trc_cnt + mem
   trc_cnt = trc_cnt + mem
   end subroutine add_tracer_group
+  !--------------------------------------------------------------------------------
+  subroutine disp_betr_tracer(this)
+  implicit none
+  class(BeTRtracer_type), intent(inout) :: this
 
+   call disp('n2'     ,this%id_trc_n2       , this%id_trc_beg_n2       , this%id_trc_end_n2)
+   call disp('o2'     ,this%id_trc_o2       , this%id_trc_beg_o2       , this%id_trc_end_o2)
+   call disp('ar'     ,this%id_trc_ar       , this%id_trc_beg_ar       ,this%id_trc_end_ar)
+   call disp('co2'    ,this%id_trc_co2x     , this%id_trc_beg_co2x     , this%id_trc_end_co2x)
+   call disp('ch4'    ,this%id_trc_ch4      , this%id_trc_beg_ch4      , this%id_trc_end_ch4)
+   call disp('Bm'     ,this%id_trc_Bm       , this%id_trc_beg_Bm       , this%id_trc_end_Bm)
+   call disp('no'     ,this%id_trc_no       , this%id_trc_beg_no       , this%id_trc_end_no)
+   call disp('n2o'    ,this%id_trc_n2o      , this%id_trc_beg_n2o      , this%id_trc_end_n2o)
+   call disp('nh3'    ,this%id_trc_nh3x     , this%id_trc_beg_nh3x     , this%id_trc_end_nh3x)
+   call disp('no3'    ,this%id_trc_no3x     , this%id_trc_beg_no3x     , this%id_trc_end_no3x)
+   call disp('no2'    ,this%id_trc_no2x     , this%id_trc_beg_no2x     , this%id_trc_end_no2x)
+   call disp('dom'    ,this%id_trc_dom      , this%id_trc_beg_dom      , this%id_trc_end_dom)
+   call disp('pom'    ,this%id_trc_pom      , this%id_trc_beg_pom      , this%id_trc_end_pom)
+   call disp('doc'    ,this%id_trc_doc      , this%id_trc_beg_doc      , this%id_trc_end_doc)
+   call disp('p_sol'  ,this%id_trc_p_sol    , this%id_trc_beg_p_sol    , this%id_trc_end_p_sol)
+   call disp('h2o'    ,this%id_trc_blk_h2o  , this%id_trc_beg_blk_h2o  , this%id_trc_end_blk_h2o)
+   call disp('o18_h2o',this%id_trc_o18_h2o  , this%id_trc_beg_o18_h2o  , this%id_trc_end_o18_h2o)
+   call disp('o17_h2o',this%id_trc_o17_h2o  , this%id_trc_beg_o17_h2o  , this%id_trc_end_o17_h2o)
+   call disp('d_h2o'  ,this%id_trc_d_h2o    , this%id_trc_beg_d_h2o    , this%id_trc_end_d_h2o)
+   call disp('c13_co2',this%id_trc_c13_co2x , this%id_trc_beg_c13_co2x , this%id_trc_end_c13_co2x)
+   call disp('c14_co2',this%id_trc_c14_co2x , this%id_trc_beg_c14_co2x , this%id_trc_end_c14_co2x)
+   call disp('o18_co2',this%id_trc_o18_co2x , this%id_trc_beg_o18_co2x , this%id_trc_end_o18_co2x)
+   call disp('o17_co2',this%id_trc_o17_co2x , this%id_trc_beg_o17_co2x , this%id_trc_end_o17_co2x)
+   call disp('litr'   ,this%id_trc_litr     , this%id_trc_beg_litr     , this%id_trc_end_litr)
+   call disp('wood'   ,this%id_trc_wood     , this%id_trc_beg_wood     , this%id_trc_end_wood)
+   call disp('som'    ,this%id_trc_som      , this%id_trc_beg_som      , this%id_trc_end_som)
+   call disp('minp'   ,this%id_trc_minp     , this%id_trc_beg_minp     , this%id_trc_end_minp)
+   call disp('o18_o2' ,this%id_trc_o18_o2   , this%id_trc_beg_o18_o2   , this%id_trc_end_o18_o2)
+   call disp('o17_o2' ,this%id_trc_o17_o2   , this%id_trc_beg_o17_o2   , this%id_trc_end_o17_o2)
+   contains
+     subroutine disp(tag,grpid, memid_beg, memid_end)
+     implicit none
+     character(len=*), intent(in) :: tag
+     integer, intent(in) :: grpid, memid_beg, memid_end
+     integer :: jj
+     if(grpid>0)then
+       print*, trim(tag),' group',grpid
+       do jj = memid_beg, memid_end
+         print*,jj,this%tracernames(jj), this%tracerfamilyname(jj)
+       enddo
+     endif
+     end subroutine disp
+  end subroutine disp_betr_tracer
 end module BeTRTracerType
