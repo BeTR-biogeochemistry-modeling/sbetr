@@ -231,7 +231,7 @@ contains
   use MathfuncMod           , only : pd_decomp
   use BetrStatusType        , only : betr_status_type
   use MathfuncMod           , only : safe_div
-  use tracer_varcon         , only : catomw, natomw, patomw
+  use tracer_varcon         , only : catomw, natomw, patomw, input_only
   use MathfuncMod           , only : pd_decomp
   implicit none
   class(simic_bgc_type)  , intent(inout) :: this
@@ -267,20 +267,19 @@ contains
 
   call this%add_ext_input(dtime, this%simic_index, bgc_forc)
 
-  call this%arenchyma_gas_transport(this%simic_index, dtime)
+  if(.not. input_only)then
+    call this%arenchyma_gas_transport(this%simic_index, dtime)
 
-  call this%calc_cascade_matrix(this%simic_index,  cascade_matrix)
+    call this%calc_cascade_matrix(this%simic_index,  cascade_matrix)
 
-  call pd_decomp(nprimvars, nreactions, cascade_matrix(1:nprimvars, 1:nreactions), &
-     cascade_matrixp, cascade_matrixd, bstatus)
-  if(bstatus%check_status())return
+    call pd_decomp(nprimvars, nreactions, cascade_matrix(1:nprimvars, 1:nreactions), &
+       cascade_matrixp, cascade_matrixd, bstatus)
+    if(bstatus%check_status())return
 
-  time = 0._r8
-  yf(:) = ystates1(:)
-!  print*,'bf micb',this%simic_index%lid_micbl,ystates1(this%simic_index%lid_micbl)
-  call this%ode_adapt_ebbks1(yf, nprimvars, nstvars, time, dtime, ystates1)
-!  print*,'af micb',this%simic_index%lid_micbl,ystates1(this%simic_index%lid_micbl)
-
+    time = 0._r8
+    yf(:) = ystates1(:)
+    call this%ode_adapt_ebbks1(yf, nprimvars, nstvars, time, dtime, ystates1)
+  endif
   ystatesf(:) = ystates1(:)
 
   end associate

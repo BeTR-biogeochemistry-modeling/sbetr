@@ -376,7 +376,7 @@ end subroutine sbetrBGC_driver
     use bshr_log_mod             , only : errMsg => shr_log_errMsg
     use betr_constants           , only : stdout, betr_string_length_long, betr_namelist_buffer_size
     use tracer_varcon            , only : advection_on, diffusion_on, reaction_on, ebullition_on, reaction_method
-    use tracer_varcon            , only :  is_nitrogen_active, is_phosphorus_active
+    use tracer_varcon            , only : is_nitrogen_active, is_phosphorus_active, input_only
     use ncdio_pio                , only : file_desc_t, ncd_nowrite, ncd_pio_openfile, ncd_pio_closefile
     use ApplicationsFactory      , only : AppLoadParameters,AppInitParameters
     use BetrStatusType           , only : betr_status_type
@@ -411,7 +411,7 @@ end subroutine sbetrBGC_driver
     namelist / betr_parameters /                  &
          reaction_method,                         &
          advection_on, diffusion_on, reaction_on, &
-         ebullition_on
+         ebullition_on, input_only
 
     simulator_name = ''
     continue_run=.false.
@@ -419,6 +419,7 @@ end subroutine sbetrBGC_driver
     param_file=''
     is_nitrogen_active=.true.; is_phosphorus_active =.false.
     case_id=''
+    input_only=.false.
     ! ----------------------------------------------------------------------
     ! Read namelist from standard input.
     ! ----------------------------------------------------------------------

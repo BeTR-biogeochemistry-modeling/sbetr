@@ -11,6 +11,7 @@
   diffusion_on = .true.
   reaction_on  = .true.
   ebullition_on= .true.
+  input_only   = .true.
 /
 
 &betr_time
