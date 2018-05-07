@@ -146,6 +146,8 @@ implicit none
     do c = bounds%begc, bounds%endc
       this%cwdn_col(c) = this%cwdn_col(c) + dz(c,j) * this%cwdn_vr_col(c,j)
       this%totlitn_col(c) = this%totlitn_col(c) + dz(c,j)*this%totlitn_vr_col(c,j)
+      this%totsomn_vr_col(c,j) = this%som1n_vr_col(c,j) + this%som2n_vr_col(c,j) +  &
+          this%som3n_vr_col(c,j) + this%domn_vr_col(c,j)
       this%totsomn_col(c) = this%totsomn_col(c) + dz(c,j)*this%totsomn_vr_col(c,j)
       this%sminn_col(c) = this%sminn_col(c) + dz(c,j)*this%sminn_vr_col(c,j)
       this%sminn_nh4_col(c) = this%sminn_nh4_col(c) + dz(c,j)*this%sminn_nh4_vr_col(c,j)

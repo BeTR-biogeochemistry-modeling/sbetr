@@ -16,7 +16,7 @@ module SimicBGCReactionsType
   use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
   use BetrStatusType           , only : betr_status_type
   use simicParaType            , only : simic_para
-  use simicBGCIndexType        , only : simic_index_type
+  use simicBGCIndexType        , only : simic_bgc_index_type
   use simicBGCType             , only : simic_bgc_type
   use JarBgcForcType           , only : JarBGC_forc_type
   implicit none
@@ -33,7 +33,7 @@ module SimicBGCReactionsType
   private
     type(simic_bgc_type), pointer :: simic_bgc(:,:)
     type(JarBGC_forc_type), pointer :: simic_forc(:,:)
-    type(simic_index_type) :: simic_index
+    type(simic_bgc_index_type) :: simic_bgc_index
     logical :: use_c13
     logical :: use_c14
     logical :: nop_limit
@@ -190,7 +190,7 @@ contains
   integer :: j, c
   this%nactpft = 0
 
-  call this%simic_index%Init(simic_para%use_c13, simic_para%use_c14, &
+  call this%simic_bgc_index%Init(simic_para%use_c13, simic_para%use_c14, &
      simic_para%non_limit, simic_para%nop_limit, betr_maxpatch_pft)
 
   if(bstatus%check_status())return
@@ -206,7 +206,7 @@ contains
     do c = bounds%begc, bounds%endc
       call this%simic_bgc(c,j)%Init(simic_para, bstatus)
       if(bstatus%check_status())return
-        call this%simic_forc(c,j)%Init(this%simic_index%nstvars)
+        call this%simic_forc(c,j)%Init(this%simic_bgc_index%nstvars)
     enddo
   enddo
   end subroutine InitAllocate
@@ -269,11 +269,11 @@ contains
 
 
     associate(                           &
-    nelm    => this%simic_index%nelms,   &
-    c_loc   => this%simic_index%c_loc,   &
-    c13_loc => this%simic_index%c13_loc, &
-    c14_loc => this%simic_index%c14_loc, &
-    e_loc   => this%simic_index%e_loc    &
+    nelm    => this%simic_bgc_index%nelms,   &
+    c_loc   => this%simic_bgc_index%c_loc,   &
+    c13_loc => this%simic_bgc_index%c13_loc, &
+    c14_loc => this%simic_bgc_index%c14_loc, &
+    e_loc   => this%simic_bgc_index%e_loc    &
     )
     itemp_gwm     = 0;
     itemp_g       = 0 ;
@@ -740,7 +740,7 @@ contains
 
     call betr_status%reset()
 
-    nstates = this%simic_index%nstvars
+    nstates = this%simic_bgc_index%nstvars
     allocate(ystates0(nstates))
     allocate(ystatesf(nstates))
 
@@ -990,12 +990,106 @@ contains
    type(tracerstate_type)               , intent(inout) :: tracerstate_vars
    type(betr_biogeo_state_type)         , intent(inout) :: biogeo_state
    type(betr_status_type)               , intent(out):: betr_status
+   !local variables
+
+   integer :: nelm
+   integer :: c_loc, c13_loc, c14_loc
+   integer :: c, fc, j, kk
+
 
    call betr_status%reset()
    SHR_ASSERT_ALL((ubound(jtops)  == (/bounds%endc/)),   errMsg(mod_filename,__LINE__), betr_status)
 
-   if (this%dummy_compiler_warning) continue
-   if (bounds%begc > 0)             continue
+   c_loc=this%simic_bgc_index%c_loc
+   c13_loc=this%simic_bgc_index%c13_loc
+   c14_loc=this%simic_bgc_index%c14_loc
+   nelm =this%simic_bgc_index%nelms
+
+   do j = lbj, ubj
+     do fc = 1, num_soilc
+        c = filter_soilc(fc)
+        if(j<jtops(c))cycle
+
+        !add litter
+        do kk = betrtracer_vars%id_trc_beg_litr, betrtracer_vars%id_trc_end_litr, nelm
+          biogeo_state%c12state_vars%totlitc_vr_col(c,j) = biogeo_state%c12state_vars%totlitc_vr_col(c,j) + &
+            catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)
+!          print*,'totlit',c,j,biogeo_state%c12state_vars%totlitc_vr_col(c,j)
+          if(this%use_c13)then
+            biogeo_state%c13state_vars%totlitc_vr_col(c,j) = biogeo_state%c13state_vars%totlitc_vr_col(c,j) + &
+              c13atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc)
+          endif
+
+          if(this%use_c14)then
+            biogeo_state%c14state_vars%totlitc_vr_col(c,j) = biogeo_state%c14state_vars%totlitc_vr_col(c,j) + &
+              c14atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc)
+          endif
+
+        enddo
+
+        !add cwd
+        do kk = betrtracer_vars%id_trc_beg_wood, betrtracer_vars%id_trc_end_wood, nelm
+          biogeo_state%c12state_vars%cwdc_vr_col(c,j) = biogeo_state%c12state_vars%cwdc_vr_col(c,j) + &
+            catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)
+
+          if(this%use_c13)then
+            biogeo_state%c13state_vars%cwdc_vr_col(c,j) = biogeo_state%c13state_vars%cwdc_vr_col(c,j) + &
+              c13atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc)
+          endif
+
+          if(this%use_c14)then
+            biogeo_state%c14state_vars%cwdc_vr_col(c,j) = biogeo_state%c14state_vars%cwdc_vr_col(c,j) + &
+              c14atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc)
+          endif
+        enddo
+
+        !Microbial biomass
+        do kk = betrtracer_vars%id_trc_beg_Bm, betrtracer_vars%id_trc_end_Bm-nelm, nelm
+          biogeo_state%c12state_vars%som1c_vr_col(c,j) =  &
+            catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)
+
+          if(this%use_c13)then
+            biogeo_state%c13state_vars%som1c_vr_col(c,j) = &
+              c13atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc)
+          endif
+
+          if(this%use_c14)then
+            biogeo_state%c14state_vars%som1c_vr_col(c,j) =  &
+              c14atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc)
+          endif
+        enddo
+
+        do kk = betrtracer_vars%id_trc_beg_dom, betrtracer_vars%id_trc_end_dom, nelm+1
+          biogeo_state%c12state_vars%som2c_vr_col(c,j) = &
+            catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)
+
+          if(this%use_c13)then
+            biogeo_state%c13state_vars%som2c_vr_col(c,j) =  &
+              c13atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc)
+          endif
+
+          if(this%use_c14)then
+            biogeo_state%c14state_vars%som2c_vr_col(c,j) =  &
+              c14atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc)
+          endif
+        enddo
+
+        do kk = betrtracer_vars%id_trc_beg_Bm+nelm, betrtracer_vars%id_trc_end_Bm, nelm
+          biogeo_state%c12state_vars%som3c_vr_col(c,j) =  &
+            catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)
+
+          if(this%use_c13)then
+            biogeo_state%c13state_vars%som3c_vr_col(c,j) = &
+              c13atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc)
+          endif
+
+          if(this%use_c14)then
+            biogeo_state%c14state_vars%som3c_vr_col(c,j) =  &
+              c14atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc)
+          endif
+        enddo
+     enddo
+   enddo
 
    end subroutine retrieve_biostates
 
@@ -1032,14 +1126,14 @@ contains
   integer :: trcid
 
   associate( &
-     litr_beg =>  this%simic_index%litr_beg  , &
-     litr_end =>  this%simic_index%litr_end  , &
-     wood_beg =>  this%simic_index%wood_beg  , &
-     wood_end =>  this%simic_index%wood_end  , &
-     dom_beg =>  this%simic_index%dom_beg    , &
-     dom_end =>  this%simic_index%dom_end    , &
-     Bm_beg  =>  this%simic_index%Bm_beg     , &
-     Bm_end  =>  this%simic_index%Bm_end     , &
+     litr_beg =>  this%simic_bgc_index%litr_beg  , &
+     litr_end =>  this%simic_bgc_index%litr_end  , &
+     wood_beg =>  this%simic_bgc_index%wood_beg  , &
+     wood_end =>  this%simic_bgc_index%wood_end  , &
+     dom_beg =>  this%simic_bgc_index%dom_beg    , &
+     dom_end =>  this%simic_bgc_index%dom_end    , &
+     Bm_beg  =>  this%simic_bgc_index%Bm_beg     , &
+     Bm_end  =>  this%simic_bgc_index%Bm_end     , &
      volatileid            => betrtracer_vars%volatileid                   , &
      tracer_flx_netpro_vr  => tracerflux_vars%tracer_flx_netpro_vr_col     , & !
      tracer_flx_parchm_vr  => tracerflux_vars%tracer_flx_parchm_vr_col     , & !
@@ -1049,7 +1143,7 @@ contains
     !tracer states
     tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_litr:betrtracer_vars%id_trc_end_litr) = &
         ystatesf(litr_beg:litr_end)
-
+!    print*,'c,j',c,j,ystatesf(litr_beg:litr_end)
     tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_wood:betrtracer_vars%id_trc_end_wood) = &
         ystatesf(wood_beg:wood_end)
 
@@ -1060,63 +1154,63 @@ contains
         ystatesf(dom_beg:dom_end)
 
     tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_n2) = &
-        ystatesf(this%simic_index%lid_n2)
+        ystatesf(this%simic_bgc_index%lid_n2)
 
     tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_o2) = &
-        ystatesf(this%simic_index%lid_o2)
+        ystatesf(this%simic_bgc_index%lid_o2)
 
     tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_ar) = &
-        ystatesf(this%simic_index%lid_ar)
+        ystatesf(this%simic_bgc_index%lid_ar)
 
     tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_co2x) = &
-        ystatesf(this%simic_index%lid_co2)
+        ystatesf(this%simic_bgc_index%lid_co2)
 
     if(this%use_c13)then
       tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_c13_co2x) = &
-          ystatesf(this%simic_index%lid_c13_co2)
+          ystatesf(this%simic_bgc_index%lid_c13_co2)
     endif
 
     if(this%use_c14)then
       tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_c14_co2x) = &
-          ystatesf(this%simic_index%lid_c14_co2)
+          ystatesf(this%simic_bgc_index%lid_c14_co2)
     endif
 
     tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_ch4) = &
-        ystatesf(this%simic_index%lid_ch4)
+        ystatesf(this%simic_bgc_index%lid_ch4)
 
     !fluxes
     tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_o2) ) = &
-         ystatesf(this%simic_index%lid_o2_paere )  - &
-         ystates0(this%simic_index%lid_o2_paere)
+         ystatesf(this%simic_bgc_index%lid_o2_paere )  - &
+         ystates0(this%simic_bgc_index%lid_o2_paere)
 
     if ( betr_spinup_state == 0 ) then
       tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_n2)  ) = &
-          ystatesf(this%simic_index%lid_n2_paere)  - &
-          ystates0(this%simic_index%lid_n2_paere)
+          ystatesf(this%simic_bgc_index%lid_n2_paere)  - &
+          ystates0(this%simic_bgc_index%lid_n2_paere)
 
       tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_ar)  ) = &
-          ystatesf(this%simic_index%lid_ar_paere)  - &
-          ystates0(this%simic_index%lid_ar_paere)
+          ystatesf(this%simic_bgc_index%lid_ar_paere)  - &
+          ystates0(this%simic_bgc_index%lid_ar_paere)
 
       tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_co2x)) = &
-          ystatesf(this%simic_index%lid_co2_paere)  - &
-          ystates0(this%simic_index%lid_co2_paere)
+          ystatesf(this%simic_bgc_index%lid_co2_paere)  - &
+          ystates0(this%simic_bgc_index%lid_co2_paere)
 
       if(this%use_c13)then
         tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_c13_co2x)) = &
-            ystatesf(this%simic_index%lid_c13_co2_paere)  - &
-            ystates0(this%simic_index%lid_c13_co2_paere)
+            ystatesf(this%simic_bgc_index%lid_c13_co2_paere)  - &
+            ystates0(this%simic_bgc_index%lid_c13_co2_paere)
       endif
 
       if(this%use_c14)then
         tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_c14_co2x)) = &
-            ystatesf(this%simic_index%lid_c14_co2_paere)  - &
-            ystates0(this%simic_index%lid_c14_co2_paere)
+            ystatesf(this%simic_bgc_index%lid_c14_co2_paere)  - &
+            ystates0(this%simic_bgc_index%lid_c14_co2_paere)
       endif
 
       tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_ch4) ) = &
-          ystatesf(this%simic_index%lid_ch4_paere)  - &
-          ystates0(this%simic_index%lid_ch4_paere)
+          ystatesf(this%simic_bgc_index%lid_ch4_paere)  - &
+          ystates0(this%simic_bgc_index%lid_ch4_paere)
 
     endif
 
@@ -1140,36 +1234,36 @@ contains
     enddo
 
     tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_n2) = &
-        ystatesf(this%simic_index%lid_n2) - &
-        ystates0(this%simic_index%lid_n2)
+        ystatesf(this%simic_bgc_index%lid_n2) - &
+        ystates0(this%simic_bgc_index%lid_n2)
 
     tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_co2x ) = &
-        ystatesf(this%simic_index%lid_co2) - &
-        ystates0(this%simic_index%lid_co2)
+        ystatesf(this%simic_bgc_index%lid_co2) - &
+        ystates0(this%simic_bgc_index%lid_co2)
 
     if(this%use_c13)then
       tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_c13_co2x ) = &
-          ystatesf(this%simic_index%lid_c13_co2) - &
-          ystates0(this%simic_index%lid_c13_co2)
+          ystatesf(this%simic_bgc_index%lid_c13_co2) - &
+          ystates0(this%simic_bgc_index%lid_c13_co2)
     endif
 
     if(this%use_c14)then
       tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_c14_co2x ) = &
-          ystatesf(this%simic_index%lid_c14_co2) - &
-          ystates0(this%simic_index%lid_c14_co2)
+          ystatesf(this%simic_bgc_index%lid_c14_co2) - &
+          ystates0(this%simic_bgc_index%lid_c14_co2)
     endif
 
     tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_o2   ) = &
-        ystatesf(this%simic_index%lid_o2) - &
-        ystates0(this%simic_index%lid_o2)
+        ystatesf(this%simic_bgc_index%lid_o2) - &
+        ystates0(this%simic_bgc_index%lid_o2)
 
     tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_ch4  ) = &
-        ystatesf(this%simic_index%lid_ch4) - &
-        ystates0(this%simic_index%lid_ch4)
+        ystatesf(this%simic_bgc_index%lid_ch4) - &
+        ystates0(this%simic_bgc_index%lid_ch4)
 
     tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_ar) = &
-        ystatesf(this%simic_index%lid_ar) - &
-        ystates0(this%simic_index%lid_ar)
+        ystatesf(this%simic_bgc_index%lid_ar) - &
+        ystates0(this%simic_bgc_index%lid_ar)
 
     !get net production for om pools
     do k = 1, litr_end-litr_beg + 1
@@ -1188,8 +1282,8 @@ contains
     enddo
 
     biogeo_flux%c12flux_vars%hr_vr_col(c,j) = &
-        (ystatesf(this%simic_index%lid_co2_hr) - &
-        ystates0(this%simic_index%lid_co2_hr))*catomw/dtime
+        (ystatesf(this%simic_bgc_index%lid_co2_hr) - &
+        ystates0(this%simic_bgc_index%lid_co2_hr))*catomw/dtime
   end associate
   end subroutine retrieve_output
 
@@ -1227,14 +1321,14 @@ contains
   integer :: k1, k2
   real(r8), parameter :: tiny_cval =1.e-16_r8
   associate( &
-     litr_beg =>  this%simic_index%litr_beg  , &
-     litr_end =>  this%simic_index%litr_end  , &
-     wood_beg =>  this%simic_index%wood_beg  , &
-     wood_end =>  this%simic_index%wood_end  , &
-     dom_beg =>  this%simic_index%dom_beg    , &
-     dom_end =>  this%simic_index%dom_end    , &
-     Bm_beg  =>  this%simic_index%Bm_beg     , &
-     Bm_end  =>  this%simic_index%Bm_end       &
+     litr_beg =>  this%simic_bgc_index%litr_beg  , &
+     litr_end =>  this%simic_bgc_index%litr_end  , &
+     wood_beg =>  this%simic_bgc_index%wood_beg  , &
+     wood_end =>  this%simic_bgc_index%wood_end  , &
+     dom_beg =>  this%simic_bgc_index%dom_beg    , &
+     dom_end =>  this%simic_bgc_index%dom_end    , &
+     Bm_beg  =>  this%simic_bgc_index%Bm_beg     , &
+     Bm_end  =>  this%simic_bgc_index%Bm_end       &
   )
   call betr_status%reset()
   SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__),betr_status)
@@ -1265,28 +1359,28 @@ contains
       if(this%simic_forc(c,j)%ystates(Bm_beg)<=tiny_cval)this%simic_forc(c,j)%ystates(Bm_beg:Bm_end)=0._r8
       !non-soluble phase of mineral p
 
-      this%simic_forc(c,j)%ystates(this%simic_index%lid_n2) = &
+      this%simic_forc(c,j)%ystates(this%simic_bgc_index%lid_n2) = &
            fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_n2))
 
-      this%simic_forc(c,j)%ystates(this%simic_index%lid_o2) = &
+      this%simic_forc(c,j)%ystates(this%simic_bgc_index%lid_o2) = &
            fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_o2))
 
-      this%simic_forc(c,j)%ystates(this%simic_index%lid_ar) = &
+      this%simic_forc(c,j)%ystates(this%simic_bgc_index%lid_ar) = &
            fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_ar))
 
-      this%simic_forc(c,j)%ystates(this%simic_index%lid_co2)= &
+      this%simic_forc(c,j)%ystates(this%simic_bgc_index%lid_co2)= &
            fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_co2x))
 
       if(this%use_c13)then
-        this%simic_forc(c,j)%ystates(this%simic_index%lid_c13_co2)= &
+        this%simic_forc(c,j)%ystates(this%simic_bgc_index%lid_c13_co2)= &
            fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_c13_co2x))
       endif
       if(this%use_c14)then
-        this%simic_forc(c,j)%ystates(this%simic_index%lid_c14_co2)= &
+        this%simic_forc(c,j)%ystates(this%simic_bgc_index%lid_c14_co2)= &
           fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_c14_co2x))
       endif
 
-      this%simic_forc(c,j)%ystates(this%simic_index%lid_ch4)= &
+      this%simic_forc(c,j)%ystates(this%simic_bgc_index%lid_ch4)= &
            fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_ch4))
 
 

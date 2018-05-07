@@ -69,6 +69,7 @@ contains
     call list_insert(hist_list_var,'totlitc',id1, itype=var_state_type)   ; call list_insert(hist_list_unit,'gC m-2',id2)
     call list_insert(hist_list_var,'DOC',id1, itype=var_state_type)   ; call list_insert(hist_list_unit,'gC m-2',id2)
     call list_insert(hist_list_var,'micb_live',id1, itype=var_state_type)   ; call list_insert(hist_list_unit,'gC m-2',id2)
+    call list_insert(hist_list_var,'micb_dead',id1, itype=var_state_type)   ; call list_insert(hist_list_unit,'gC m-2',id2)
     call list_insert(hist_list_var,'totsomc',id1, itype=var_state_type)   ; call list_insert(hist_list_unit,'gC m-2',id2)
     this%nhistvars=id1
   endif

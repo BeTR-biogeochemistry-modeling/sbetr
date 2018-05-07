@@ -795,8 +795,8 @@ contains
          tracernames       => this%betr(c)%tracers%tracernames        &
          )
 
-      if (mod(time_vars%time, 86400._r8)==0) then
-         write(iulog,*)'day', time_vars%time/86400._r8
+      if (time_vars%its_a_new_year()) then
+         write(iulog,*)'year', time_vars%get_cur_year()
       end if
 
       call this%HistRetrieval(bounds, numf, filter)

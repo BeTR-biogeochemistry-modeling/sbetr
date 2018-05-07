@@ -137,6 +137,8 @@ implicit none
     do c = bounds%begc, bounds%endc
       this%cwdp_col(c) = this%cwdp_col(c) + dz(c,j) * this%cwdp_vr_col(c,j)
       this%totlitp_col(c) = this%totlitp_col(c) + dz(c,j)*this%totlitp_vr_col(c,j)
+      this%totsomp_vr_col(c,j) = this%som1p_vr_col(c,j) + this%som2p_vr_col(c,j) + &
+         this%som3p_vr_col(c,j) + this%domp_vr_col(c,j)
       this%totsomp_col(c) = this%totsomp_col(c) + dz(c,j)*this%totsomp_vr_col(c,j)
       this%sminp_col(c) = this%sminp_col(c) + dz(c,j)*this%sminp_vr_col(c,j)
       this%occlp_col(c) = this%occlp_col(c) + dz(c,j)*this%occlp_vr_col(c,j)

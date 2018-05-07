@@ -19,7 +19,7 @@ implicit none
     type(list_t), pointer :: next => null()
   end type list_t
 
-  type, public, extends(gbgc_index_type) :: simic_index_type
+  type, public, extends(gbgc_index_type) :: simic_bgc_index_type
      integer           :: lit1, lit1_depoly_reac                  !c
      integer           :: lit2, lit2_depoly_reac
      integer           :: lit3, lit3_depoly_reac
@@ -68,7 +68,7 @@ implicit none
      procedure, private :: InitPars
      procedure, private :: InitAllocate
      procedure, private :: set_primvar_reac_ids
-  end type simic_index_type
+  end type simic_bgc_index_type
 
   contains
   !-----------------------------------------------------------------------
@@ -222,7 +222,7 @@ implicit none
     ! !USES:
   implicit none
   ! !ARGUMENTS:
-  class(simic_index_type), intent(inout) :: this
+  class(simic_bgc_index_type), intent(inout) :: this
   logical, intent(in) :: use_c13
   logical, intent(in) :: use_c14
   logical, intent(in) :: non_limit
@@ -268,7 +268,7 @@ implicit none
     use betr_utils    , only : num2str
     use betr_constants, only : betr_string_length_long
     implicit none
-    class(simic_index_type) :: this
+    class(simic_bgc_index_type) :: this
     integer, intent(in) :: maxpft
     logical, intent(in) :: use_c13
     logical, intent(in) :: use_c14
@@ -341,7 +341,7 @@ implicit none
        countelm(this%wood_beg,this%wood_end) + &
        countelm(this%Bm_beg,this%Bm_end))/this%nelms  + &
        countelm(this%dom_beg,this%dom_end)/(this%nelms+1)   !include coarse wood debris
-    
+
     itemp               = countelm(this%litr_beg, this%litr_end) + countelm(this%wood_beg,this%wood_end) + &
         countelm(this%Bm_beg,this%Bm_end)  + countelm(this%dom_beg,this%dom_end)
 
@@ -414,7 +414,7 @@ implicit none
     !
   implicit none
     ! !ARGUMENTS:
-  class(simic_index_type), intent(inout) :: this
+  class(simic_bgc_index_type), intent(inout) :: this
 
   if (this%dummy_compiler_warning) continue
   end subroutine InitAllocate
@@ -423,7 +423,7 @@ implicit none
   subroutine set_primvar_reac_ids(this)
 
   implicit none
-  class(simic_index_type), intent(inout) :: this
+  class(simic_bgc_index_type), intent(inout) :: this
 
   integer :: reac
 

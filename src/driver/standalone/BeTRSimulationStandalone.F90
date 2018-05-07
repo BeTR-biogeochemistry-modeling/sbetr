@@ -436,7 +436,6 @@ contains
 
     !recollect soil respirations, fire and hydraulic loss
     c12flux_vars%hr_col(c) = this%biogeo_flux(c)%c12flux_vars%hr_col(c_l)
-    !print*,'co2',c12flux_vars%hr_col(c)
     c12flux_vars%fire_decomp_closs_col(c) = this%biogeo_flux(c)%c12flux_vars%fire_decomp_closs_col(c_l)
     c12flux_vars%som_c_leached_col(c) = &
         this%biogeo_flux(c)%c12flux_vars%som_c_leached_col(c_l) + &
@@ -543,21 +542,22 @@ contains
     p31state_vars%occlp_col(c) = this%biogeo_state(c)%p31state_vars%occlp_col(c_l)
     !print*,'smin_nh4',n14state_vars%smin_nh4_col(c)
 
+    c12state_vars%som1c_col(c) = this%biogeo_state(c)%c12state_vars%som1c_col(c_l)
+    c12state_vars%som2c_col(c) = this%biogeo_state(c)%c12state_vars%som2c_col(c_l)
+    c12state_vars%som3c_col(c) = this%biogeo_state(c)%c12state_vars%som3c_col(c_l)
+    !print*,'som1c',c12state_vars%som1c_col(c)
+    if(use_c13_betr)then
+      c13state_vars%som1c_col(c) = this%biogeo_state(c)%c13state_vars%som1c_col(c_l)
+      c13state_vars%som2c_col(c) = this%biogeo_state(c)%c13state_vars%som2c_col(c_l)
+      c13state_vars%som3c_col(c) = this%biogeo_state(c)%c13state_vars%som3c_col(c_l)
+    endif
+    if(use_c14_betr)then
+      c14state_vars%som1c_col(c) = this%biogeo_state(c)%c14state_vars%som1c_col(c_l)
+      c14state_vars%som2c_col(c) = this%biogeo_state(c)%c14state_vars%som2c_col(c_l)
+      c14state_vars%som3c_col(c) = this%biogeo_state(c)%c14state_vars%som3c_col(c_l)
+    endif
+
     if(index(trim(reaction_method),'ecacnp')/=0)then
-      c12state_vars%som1c_col(c) = this%biogeo_state(c)%c12state_vars%som1c_col(c_l)
-      c12state_vars%som2c_col(c) = this%biogeo_state(c)%c12state_vars%som2c_col(c_l)
-      c12state_vars%som3c_col(c) = this%biogeo_state(c)%c12state_vars%som3c_col(c_l)
-      !print*,'som1c',c12state_vars%som1c_col(c)
-      if(use_c13_betr)then
-        c13state_vars%som1c_col(c) = this%biogeo_state(c)%c13state_vars%som1c_col(c_l)
-        c13state_vars%som2c_col(c) = this%biogeo_state(c)%c13state_vars%som2c_col(c_l)
-        c13state_vars%som3c_col(c) = this%biogeo_state(c)%c13state_vars%som3c_col(c_l)
-      endif
-      if(use_c14_betr)then
-        c14state_vars%som1c_col(c) = this%biogeo_state(c)%c14state_vars%som1c_col(c_l)
-        c14state_vars%som2c_col(c) = this%biogeo_state(c)%c14state_vars%som2c_col(c_l)
-        c14state_vars%som3c_col(c) = this%biogeo_state(c)%c14state_vars%som3c_col(c_l)
-      endif
       n14state_vars%som1n_col(c) = this%biogeo_state(c)%n14state_vars%som1n_col(c_l)
       n14state_vars%som2n_col(c) = this%biogeo_state(c)%n14state_vars%som2n_col(c_l)
       n14state_vars%som3n_col(c) = this%biogeo_state(c)%n14state_vars%som3n_col(c_l)

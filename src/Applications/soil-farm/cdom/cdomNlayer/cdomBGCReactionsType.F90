@@ -2480,7 +2480,7 @@ contains
 
         !add som
         !DOM
-        call sum_totsom(c, j, betrtracer_vars%id_trc_beg_dom, betrtracer_vars%id_trc_end_dom, nelm+1)
+        !call sum_totsom(c, j, betrtracer_vars%id_trc_beg_dom, betrtracer_vars%id_trc_end_dom, nelm+1)
         do kk = betrtracer_vars%id_trc_beg_dom, betrtracer_vars%id_trc_end_dom, nelm
           biogeo_state%c12state_vars%domc_vr_col(c,j) =  &
             catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)
@@ -2503,7 +2503,7 @@ contains
         enddo
 
         !Microbial biomass
-        call sum_totsom(c, j, betrtracer_vars%id_trc_beg_Bm, betrtracer_vars%id_trc_end_Bm, nelm)
+        !call sum_totsom(c, j, betrtracer_vars%id_trc_beg_Bm, betrtracer_vars%id_trc_end_Bm, nelm)
         do kk = betrtracer_vars%id_trc_beg_Bm, betrtracer_vars%id_trc_end_Bm, nelm
           biogeo_state%c12state_vars%som1c_vr_col(c,j) =  &
             catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)
@@ -2525,7 +2525,7 @@ contains
           endif
         enddo
         !humus
-        call sum_totsom(c, j, betrtracer_vars%id_trc_beg_som, betrtracer_vars%id_trc_end_som, nelm)
+        !call sum_totsom(c, j, betrtracer_vars%id_trc_beg_som, betrtracer_vars%id_trc_end_som, nelm)
         do kk = betrtracer_vars%id_trc_beg_som, betrtracer_vars%id_trc_end_som, nelm
           biogeo_state%c12state_vars%som3c_vr_col(c,j) =  &
             catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)
@@ -2548,7 +2548,7 @@ contains
         enddo
 
         !POM
-        call sum_totsom(c, j, betrtracer_vars%id_trc_beg_pom, betrtracer_vars%id_trc_end_pom, nelm)
+        !call sum_totsom(c, j, betrtracer_vars%id_trc_beg_pom, betrtracer_vars%id_trc_end_pom, nelm)
         do kk = betrtracer_vars%id_trc_beg_pom, betrtracer_vars%id_trc_end_pom, nelm
           biogeo_state%c12state_vars%som2c_vr_col(c,j) = &
             catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)

@@ -47,6 +47,7 @@ module BeTR_TimeMod
      procedure, public :: its_a_new_month
      procedure, public :: its_a_new_year
      procedure, public :: get_ymdhs
+     procedure, public :: get_cur_year
   end type betr_time_type
 
   integer, parameter, private :: daz(12)=(/31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31/)
@@ -180,7 +181,7 @@ contains
       !year
       this%stop_time= stop_n * 86400._r8 * 365._r8
     case ('nsteps')
-      this%stop_time = stop_n * this%delta_time  
+      this%stop_time = stop_n * this%delta_time
     case default
       call endrun(msg="ERROR setting up stop_option "//errmsg(mod_filename, __LINE__))
     end select
@@ -470,4 +471,11 @@ contains
     yesno=.false.
   endif
   end function its_time_to_histflush
+  !-------------------------------------------------------------------------------
+  function get_cur_year(this)result(ans)
+  implicit none
+  class(betr_time_type), intent(in) :: this
+  integer :: ans
+  ans = this%cyears
+  end function get_cur_year
 end module BeTR_TimeMod

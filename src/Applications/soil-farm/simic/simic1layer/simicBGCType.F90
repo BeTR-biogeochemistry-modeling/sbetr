@@ -14,19 +14,19 @@ module simicBGCType
   use simicParaType             , only : simic_para_type
   use BetrStatusType            , only : betr_status_type
   use BeTRJarModel              , only : jar_model_type
-  use simicBGCIndexType            , only : simic_index_type
+  use simicBGCIndexType            , only : simic_bgc_index_type
   implicit none
   private
   character(len=*), private, parameter :: mod_filename = &
        __FILE__
 
   !Note:
-  !Keeping simic_index as a private member is a workaround to call the ode solver
+  !Keeping simic_bgc_index as a private member is a workaround to call the ode solver
   !it increase the memory for each instance of simic_bgc_type, but enables
   !the ode function to be called by the ode solver
 
   type, extends(jar_model_type), public :: simic_bgc_type
-    type(simic_index_type),     private :: simic_index
+    type(simic_bgc_index_type),     private :: simic_bgc_index
     real(r8), pointer                    :: ystates0(:)
     real(r8), pointer                    :: ystates1(:)
     real(r8), pointer                    :: scal_f(:)
@@ -99,8 +99,8 @@ contains
   implicit none
   class(simic_bgc_type) , intent(inout) :: this
   integer :: ans
-  print*,'nvar',this%simic_index%nstvars
-  ans =  this%simic_index%nstvars
+  print*,'nvar',this%simic_bgc_index%nstvars
+  ans =  this%simic_bgc_index%nstvars
 
   end function getvarllen_simic
   !-------------------------------------------------------------------------------
@@ -114,9 +114,9 @@ contains
   integer :: n
 
   do n = 1, nstvars
-    vartypes(n) = this%simic_index%vartypes(n)
-    write(varnames(n),'(A)')trim(this%simic_index%varnames(n))
-    write(varunits(n),'(A)')trim(this%simic_index%varunits(n))
+    vartypes(n) = this%simic_bgc_index%vartypes(n)
+    write(varnames(n),'(A)')trim(this%simic_bgc_index%varnames(n))
+    write(varunits(n),'(A)')trim(this%simic_bgc_index%varunits(n))
   enddo
   end subroutine getvarlist_simic
 
@@ -178,7 +178,7 @@ contains
   select type(biogeo_con)
   type is(simic_para_type)
     call bstatus%reset()
-    call this%simic_index%Init(biogeo_con%use_c13, biogeo_con%use_c14, &
+    call this%simic_bgc_index%Init(biogeo_con%use_c13, biogeo_con%use_c14, &
      biogeo_con%non_limit, biogeo_con%nop_limit, betr_maxpatch_pft)
     call this%UpdateParas(biogeo_con, bstatus)
     if(bstatus%check_status())return
@@ -193,22 +193,22 @@ contains
     return
   end select
 
-  call this%InitAllocate(this%simic_index)
+  call this%InitAllocate(this%simic_bgc_index)
   end subroutine init_simic
 
   !-------------------------------------------------------------------------------
 
-  subroutine InitAllocate(this, simic_index)
+  subroutine InitAllocate(this, simic_bgc_index)
 
   use betr_varcon         , only : betr_maxpatch_pft, betr_max_soilorder
   implicit none
   class(simic_bgc_type)   , intent(inout) :: this
-  type(simic_index_type)  , intent(in) :: simic_index
+  type(simic_bgc_index_type)  , intent(in) :: simic_bgc_index
 
   associate(                                &
-    nstvars => simic_index%nstvars        , &
-    nprimvars=> simic_index%nprimvars     , &
-    nreactions => simic_index%nreactions    &
+    nstvars => simic_bgc_index%nstvars        , &
+    nprimvars=> simic_bgc_index%nprimvars     , &
+    nreactions => simic_bgc_index%nreactions    &
   )
 
   allocate(this%ystates0(nstvars)); this%ystates0(:) = 0._r8
@@ -244,15 +244,15 @@ contains
   type(betr_status_type)     , intent(out)   :: bstatus
 
   real(r8)               :: time = 0._r8
-  real(r8) :: yf(this%simic_index%nstvars)
+  real(r8) :: yf(this%simic_bgc_index%nstvars)
   !local variables
   character(len=*),parameter :: subname = 'runbgc_simic'
 
   associate(                                         &
     ystates1       => this%ystates1                , &
-    nstvars        => this%simic_index%nstvars     , &
-    nreactions     => this%simic_index%nreactions  , &
-    nprimvars      => this%simic_index%nprimvars   , &
+    nstvars        => this%simic_bgc_index%nstvars     , &
+    nreactions     => this%simic_bgc_index%nreactions  , &
+    nprimvars      => this%simic_bgc_index%nprimvars   , &
     cascade_matrix => this%cascade_matrix          , &
     cascade_matrixp=> this%cascade_matrixp         , &
     cascade_matrixd=> this%cascade_matrixd           &
@@ -261,16 +261,16 @@ contains
   this%o2_w2b        = bgc_forc%o2_w2b
 
   !initialize state variables
-  call this%init_states(this%simic_index, bgc_forc)
+  call this%init_states(this%simic_bgc_index, bgc_forc)
 
   ystates0(:) = this%ystates0(:)
 
-  call this%add_ext_input(dtime, this%simic_index, bgc_forc)
+  call this%add_ext_input(dtime, this%simic_bgc_index, bgc_forc)
 
   if(.not. input_only)then
-    call this%arenchyma_gas_transport(this%simic_index, dtime)
+    call this%arenchyma_gas_transport(this%simic_bgc_index, dtime)
 
-    call this%calc_cascade_matrix(this%simic_index,  cascade_matrix)
+    call this%calc_cascade_matrix(this%simic_bgc_index,  cascade_matrix)
 
     call pd_decomp(nprimvars, nreactions, cascade_matrix(1:nprimvars, 1:nreactions), &
        cascade_matrixp, cascade_matrixd, bstatus)
@@ -285,7 +285,7 @@ contains
   end associate
   end subroutine runbgc_simic
   !-------------------------------------------------------------------------------
-  subroutine simic_rrates(this, simic_index, dtime,  nstates, ystates1, doc_cue, rrates)
+  subroutine simic_rrates(this, simic_bgc_index, dtime,  nstates, ystates1, doc_cue, rrates)
   !
   !DESCRIPTION
   !the core of simic model
@@ -295,9 +295,9 @@ contains
   real(r8)               , intent(in)    :: dtime
   integer                , intent(in)    :: nstates
   real(r8)               , intent(in)    :: ystates1(nstates)
-  type(simic_index_type) , intent(in)    :: simic_index
+  type(simic_bgc_index_type) , intent(in)    :: simic_bgc_index
   real(r8)               , intent(in)    :: doc_cue
-  real(r8)               , intent(out)   :: rrates(simic_index%nreactions)
+  real(r8)               , intent(out)   :: rrates(simic_bgc_index%nreactions)
 
   real(r8) :: depolymer_l1,depolymer_l2,depolymer_l3,depolymer_cwd
   real(r8) :: depolymer_norm, depolymer_md
@@ -305,24 +305,24 @@ contains
   real(r8) :: o2w, fo2, mort
   integer  :: jj
   associate(                                            &
-    lit1             => simic_index%lit1              , &
-    lit2             => simic_index%lit2              , &
-    lit3             => simic_index%lit3              , &
-    cwd              => simic_index%cwd               , &
-    lid_doc          => simic_index%lid_doc           , &
-    lid_micbl        => simic_index%lid_micbl         , &
-    lid_micbd        => simic_index%lid_micbd         , &
-    lid_cue          => simic_index%lid_cue           , &
-    lid_o2           => simic_index%lid_o2            , &
-    lid_co2          => simic_index%lid_co2           , &
-    lit1_depoly_reac => simic_index%lit1_depoly_reac  , &
-    lit2_depoly_reac => simic_index%lit2_depoly_reac  , &
-    lit3_depoly_reac => simic_index%lit3_depoly_reac  , &
-    cwd_depoly_reac  => simic_index%cwd_depoly_reac   , &
-    micbd_depoly_reac=> simic_index%micbd_depoly_reac , &
-    micbl_mort_reac  => simic_index%micbl_mort_reac   , &
-    doc_uptake_reac  => simic_index%doc_uptake_reac   , &
-    o2_resp_reac     => simic_index%o2_resp_reac      , &
+    lit1             => simic_bgc_index%lit1              , &
+    lit2             => simic_bgc_index%lit2              , &
+    lit3             => simic_bgc_index%lit3              , &
+    cwd              => simic_bgc_index%cwd               , &
+    lid_doc          => simic_bgc_index%lid_doc           , &
+    lid_micbl        => simic_bgc_index%lid_micbl         , &
+    lid_micbd        => simic_bgc_index%lid_micbd         , &
+    lid_cue          => simic_bgc_index%lid_cue           , &
+    lid_o2           => simic_bgc_index%lid_o2            , &
+    lid_co2          => simic_bgc_index%lid_co2           , &
+    lit1_depoly_reac => simic_bgc_index%lit1_depoly_reac  , &
+    lit2_depoly_reac => simic_bgc_index%lit2_depoly_reac  , &
+    lit3_depoly_reac => simic_bgc_index%lit3_depoly_reac  , &
+    cwd_depoly_reac  => simic_bgc_index%cwd_depoly_reac   , &
+    micbd_depoly_reac=> simic_bgc_index%micbd_depoly_reac , &
+    micbl_mort_reac  => simic_bgc_index%micbl_mort_reac   , &
+    doc_uptake_reac  => simic_bgc_index%doc_uptake_reac   , &
+    o2_resp_reac     => simic_bgc_index%o2_resp_reac      , &
     alpha_B2E        => this%alpha_B2E                , &
     alpha_B2T        => this%alpha_B2T                , &
     Kaff_o2          => this%Kaff_o2                  , &
@@ -396,38 +396,38 @@ contains
   rrates(o2_resp_reac)         = Rh_pot
 
 !  print*,'rates'
-!  print*,(rrates(jj),jj=1,simic_index%nreactions)
+!  print*,(rrates(jj),jj=1,simic_bgc_index%nreactions)
 !  print*,'states'
 !  print*,(ystates1(jj),jj=1,nstates)
 !  print*,'hr comp',Rh_pot, Rm_pot
   end associate
   end subroutine simic_rrates
   !-------------------------------------------------------------------------------
-  subroutine init_states(this, simic_index, bgc_forc)
+  subroutine init_states(this, simic_bgc_index, bgc_forc)
 
-  use simicBGCIndexType            , only : simic_index_type
+  use simicBGCIndexType            , only : simic_bgc_index_type
   use JarBgcForcType            , only : JarBGC_forc_type
   implicit none
   class(simic_bgc_type)  , intent(inout) :: this
-  type(simic_index_type)  , intent(in) :: simic_index
+  type(simic_bgc_index_type)  , intent(in) :: simic_bgc_index
   type(JarBGC_forc_type)  , intent(in) :: bgc_forc
 
   associate(                               &
-    lid_co2_hr  => simic_index%lid_co2_hr, &
-    lid_n2 => simic_index%lid_n2,   &
-    lid_o2 => simic_index%lid_o2,   &
-    lid_co2 => simic_index%lid_co2, &
-    lid_c13_co2 => simic_index%lid_c13_co2, &
-    lid_c14_co2 => simic_index%lid_c14_co2, &
-    lid_ar => simic_index%lid_ar,   &
-    lid_o2_paere => simic_index%lid_o2_paere, &
-    lid_n2_paere => simic_index%lid_n2_paere, &
-    lid_ar_paere => simic_index%lid_ar_paere, &
-    lid_co2_paere => simic_index%lid_co2_paere, &
-    lid_ch4_paere => simic_index%lid_ch4_paere, &
-    lid_c13_co2_paere => simic_index%lid_c13_co2_paere, &
-    lid_c14_co2_paere => simic_index%lid_c14_co2_paere, &
-    lid_ch4 => simic_index%lid_ch4  &
+    lid_co2_hr  => simic_bgc_index%lid_co2_hr, &
+    lid_n2 => simic_bgc_index%lid_n2,   &
+    lid_o2 => simic_bgc_index%lid_o2,   &
+    lid_co2 => simic_bgc_index%lid_co2, &
+    lid_c13_co2 => simic_bgc_index%lid_c13_co2, &
+    lid_c14_co2 => simic_bgc_index%lid_c14_co2, &
+    lid_ar => simic_bgc_index%lid_ar,   &
+    lid_o2_paere => simic_bgc_index%lid_o2_paere, &
+    lid_n2_paere => simic_bgc_index%lid_n2_paere, &
+    lid_ar_paere => simic_bgc_index%lid_ar_paere, &
+    lid_co2_paere => simic_bgc_index%lid_co2_paere, &
+    lid_ch4_paere => simic_bgc_index%lid_ch4_paere, &
+    lid_c13_co2_paere => simic_bgc_index%lid_c13_co2_paere, &
+    lid_c14_co2_paere => simic_bgc_index%lid_c14_co2_paere, &
+    lid_ch4 => simic_bgc_index%lid_ch4  &
   )
 
   this%ystates0(:) = bgc_forc%ystates(:)
@@ -470,23 +470,23 @@ contains
   end subroutine init_states
 
   !--------------------------------------------------------------------
-  subroutine add_ext_input(this, dtime, simic_index, bgc_forc)
+  subroutine add_ext_input(this, dtime, simic_bgc_index, bgc_forc)
 
-  use simicBGCIndexType            , only : simic_index_type
+  use simicBGCIndexType            , only : simic_bgc_index_type
   use JarBgcForcType        , only : JarBGC_forc_type
   use tracer_varcon             , only : catomw, natomw, patomw,c13atomw,c14atomw
   use MathfuncMod               , only : safe_div
   implicit none
   class(simic_bgc_type)  , intent(inout) :: this
   real(r8), intent(in) :: dtime
-  type(simic_index_type)  , intent(in) :: simic_index
+  type(simic_bgc_index_type)  , intent(in) :: simic_bgc_index
   type(JarBGC_forc_type)  , intent(in) :: bgc_forc
 
   associate(                        &
-    lit1 =>  simic_index%lit1, &
-    lit2 =>  simic_index%lit2, &
-    lit3 =>  simic_index%lit3, &
-    cwd =>   simic_index%cwd   &
+    lit1 =>  simic_bgc_index%lit1, &
+    lit2 =>  simic_bgc_index%lit2, &
+    lit3 =>  simic_bgc_index%lit3, &
+    cwd =>   simic_bgc_index%cwd   &
   )
 
   this%ystates1(lit1)=this%ystates0(lit1) +  dtime *  bgc_forc%cflx_input_litr_met
@@ -503,64 +503,64 @@ contains
 
 
   !--------------------------------------------------------------------
-  subroutine arenchyma_gas_transport(this, simic_index, dtime)
-  use simicBGCIndexType       , only : simic_index_type
+  subroutine arenchyma_gas_transport(this, simic_bgc_index, dtime)
+  use simicBGCIndexType       , only : simic_bgc_index_type
   implicit none
   class(simic_bgc_type)     , intent(inout) :: this
-  type(simic_index_type)  , intent(in) :: simic_index
+  type(simic_bgc_index_type)  , intent(in) :: simic_bgc_index
   real(r8), intent(in) :: dtime
 
   integer :: j
   real(r8) :: y0
   associate(                                            &
-    lid_n2            => simic_index%lid_n2           , &
-    lid_o2            => simic_index%lid_o2           , &
-    lid_co2           => simic_index%lid_co2          , &
-    lid_c13_co2       => simic_index%lid_c13_co2      , &
-    lid_c14_co2       => simic_index%lid_c14_co2      , &
-    lid_ar            => simic_index%lid_ar           , &
-    lid_o2_paere      => simic_index%lid_o2_paere     , &
-    lid_n2_paere      => simic_index%lid_n2_paere     , &
-    lid_ar_paere      => simic_index%lid_ar_paere     , &
-    lid_co2_paere     => simic_index%lid_co2_paere    , &
-    lid_ch4_paere     => simic_index%lid_ch4_paere    , &
-    lid_c13_co2_paere => simic_index%lid_c13_co2_paere, &
-    lid_c14_co2_paere => simic_index%lid_c14_co2_paere, &
-    lid_ch4           => simic_index%lid_ch4            &
+    lid_n2            => simic_bgc_index%lid_n2           , &
+    lid_o2            => simic_bgc_index%lid_o2           , &
+    lid_co2           => simic_bgc_index%lid_co2          , &
+    lid_c13_co2       => simic_bgc_index%lid_c13_co2      , &
+    lid_c14_co2       => simic_bgc_index%lid_c14_co2      , &
+    lid_ar            => simic_bgc_index%lid_ar           , &
+    lid_o2_paere      => simic_bgc_index%lid_o2_paere     , &
+    lid_n2_paere      => simic_bgc_index%lid_n2_paere     , &
+    lid_ar_paere      => simic_bgc_index%lid_ar_paere     , &
+    lid_co2_paere     => simic_bgc_index%lid_co2_paere    , &
+    lid_ch4_paere     => simic_bgc_index%lid_ch4_paere    , &
+    lid_c13_co2_paere => simic_bgc_index%lid_c13_co2_paere, &
+    lid_c14_co2_paere => simic_bgc_index%lid_c14_co2_paere, &
+    lid_ch4           => simic_bgc_index%lid_ch4            &
   )
 
   j = lid_o2; y0=this%ystates1(j)
   call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
-  this%ystates1(simic_index%lid_o2_paere) = this%ystates1(j)-y0
+  this%ystates1(simic_bgc_index%lid_o2_paere) = this%ystates1(j)-y0
 
   if( spinup_state == 0)then
     j = lid_n2; y0=this%ystates1(j)
     call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
-    this%ystates1(simic_index%lid_n2_paere) = this%ystates1(j)-y0
+    this%ystates1(simic_bgc_index%lid_n2_paere) = this%ystates1(j)-y0
 
     j = lid_ar; y0=this%ystates1(j)
     call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
-    this%ystates1(simic_index%lid_ar_paere) = this%ystates1(j)-y0
+    this%ystates1(simic_bgc_index%lid_ar_paere) = this%ystates1(j)-y0
 
     j = lid_ch4; y0=this%ystates1(j)
     call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
-    this%ystates1(simic_index%lid_ch4_paere) = this%ystates1(j)-y0
+    this%ystates1(simic_bgc_index%lid_ch4_paere) = this%ystates1(j)-y0
 
     j = lid_co2; y0=this%ystates1(j)
     call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
-    this%ystates1(simic_index%lid_co2_paere) = this%ystates1(j)-y0
+    this%ystates1(simic_bgc_index%lid_co2_paere) = this%ystates1(j)-y0
 
     if(this%use_c13)then
       j = lid_c13_co2; y0=this%ystates1(j)
       call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
-      this%ystates1(simic_index%lid_c13_co2_paere) = this%ystates1(j)-y0
+      this%ystates1(simic_bgc_index%lid_c13_co2_paere) = this%ystates1(j)-y0
 
     endif
 
     if(this%use_c14)then
       j = lid_c14_co2; y0=this%ystates1(j)
       call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
-      this%ystates1(simic_index%lid_c14_co2_paere) = this%ystates1(j)-y0
+      this%ystates1(simic_bgc_index%lid_c14_co2_paere) = this%ystates1(j)-y0
 
     endif
   endif
@@ -586,26 +586,26 @@ contains
 
 
   !--------------------------------------------------------------------
-  subroutine calc_cascade_matrix(this, simic_index,  cascade_matrix)
+  subroutine calc_cascade_matrix(this, simic_bgc_index,  cascade_matrix)
 
   implicit none
   class(simic_bgc_type)     , intent(inout) :: this
-  type(simic_index_type)    , intent(in)    :: simic_index
-  real(r8)                  , intent(inout) :: cascade_matrix(simic_index%nstvars, simic_index%nreactions)
+  type(simic_bgc_index_type)    , intent(in)    :: simic_bgc_index
+  real(r8)                  , intent(inout) :: cascade_matrix(simic_bgc_index%nstvars, simic_bgc_index%nreactions)
   integer :: reac
 
   associate(                                &
-    lit1       => simic_index%lit1        , &
-    lit2       => simic_index%lit2        , &
-    lit3       => simic_index%lit3        , &
-    cwd        => simic_index%cwd         , &
-    lid_doc    => simic_index%lid_doc     , &
-    lid_micbl  => simic_index%lid_micbl   , &
-    lid_micbd  => simic_index%lid_micbd   , &
-    lid_cue    => simic_index%lid_cue     , &
-    lid_o2     => simic_index%lid_o2      , &
-    lid_co2    => simic_index%lid_co2     , &
-    lid_co2_hr => simic_index%lid_co2_hr  , &
+    lit1       => simic_bgc_index%lit1        , &
+    lit2       => simic_bgc_index%lit2        , &
+    lit3       => simic_bgc_index%lit3        , &
+    cwd        => simic_bgc_index%cwd         , &
+    lid_doc    => simic_bgc_index%lid_doc     , &
+    lid_micbl  => simic_bgc_index%lid_micbl   , &
+    lid_micbd  => simic_bgc_index%lid_micbd   , &
+    lid_cue    => simic_bgc_index%lid_cue     , &
+    lid_o2     => simic_bgc_index%lid_o2      , &
+    lid_co2    => simic_bgc_index%lid_co2     , &
+    lid_co2_hr => simic_bgc_index%lid_co2_hr  , &
     cue_met    => this%cue_met            , &
     cue_cel    => this%cue_cel            , &
     cue_lig    => this%cue_lig            , &
@@ -614,42 +614,42 @@ contains
     f_mic2c    => this%f_mic2c              &
   )
 
-  reac = simic_index%lit1_depoly_reac
+  reac = simic_bgc_index%lit1_depoly_reac
   cascade_matrix(lit1, reac)  = -1._r8
   cascade_matrix(lid_doc,reac)=1._r8
   cascade_matrix(lid_cue,reac)=cue_met
 
-  reac = simic_index%lit2_depoly_reac
+  reac = simic_bgc_index%lit2_depoly_reac
   cascade_matrix(lit2, reac)  = -1._r8
   cascade_matrix(lid_doc,reac)=  1._r8
   cascade_matrix(lid_cue,reac)= cue_cel
 
-  reac = simic_index%lit3_depoly_reac
+  reac = simic_bgc_index%lit3_depoly_reac
   cascade_matrix(lit3, reac)  = -1._r8
   cascade_matrix(lid_doc,reac)=1._r8
   cascade_matrix(lid_cue,reac)=cue_lig
 
-  reac = simic_index%cwd_depoly_reac
+  reac = simic_bgc_index%cwd_depoly_reac
   cascade_matrix(cwd, reac)   = -1._r8
   cascade_matrix(lid_doc,reac)=1._r8
   cascade_matrix(lid_cue,reac)=cue_cwd
 
-  reac = simic_index%micbd_depoly_reac
+  reac = simic_bgc_index%micbd_depoly_reac
   cascade_matrix(lid_micbd, reac)  = -1._r8
   cascade_matrix(lid_doc,reac)     = 1._r8
   cascade_matrix(lid_cue,reac)     = 0.5_r8
 
-  reac = simic_index%micbl_mort_reac
+  reac = simic_bgc_index%micbl_mort_reac
   cascade_matrix(lid_micbl, reac)  = -1._r8
   cascade_matrix(lid_micbd,reac)   =  f_mic2D
   cascade_matrix(lid_doc,reac)     =  f_mic2C
 
-  reac = simic_index%o2_resp_reac
+  reac = simic_bgc_index%o2_resp_reac
   cascade_matrix(lid_o2, reac)     = -1._r8
   cascade_matrix(lid_co2_hr,reac)  =  1._r8
   cascade_matrix(lid_co2,reac)  =  1._r8
 
-  reac = simic_index%doc_uptake_reac
+  reac = simic_bgc_index%doc_uptake_reac
   cascade_matrix(lid_doc, reac)   = -1._r8
   cascade_matrix(lid_micbl, reac) = 1._r8
   end associate
@@ -753,7 +753,7 @@ contains
   type(lom_type) :: lom
   type(betr_status_type) :: bstatus
   logical :: lneg
-  real(r8) :: rscal(1:this%simic_index%nreactions)
+  real(r8) :: rscal(1:this%simic_bgc_index%nreactions)
   real(r8) :: rrates(1:nstvars)
   real(r8) :: p_dt(1:nprimvars)
   real(r8) :: d_dt(1:nprimvars)
@@ -761,13 +761,13 @@ contains
   real(r8) :: doc_cue
 
   associate(                                            &
-    lid_cue        => this%simic_index%lid_cue        , &
-    lid_doc        => this%simic_index%lid_doc        , &
-    doc_uptake_reac=> this%simic_index%doc_uptake_reac, &
-    nreactions => this%simic_index%nreactions           &
+    lid_cue        => this%simic_bgc_index%lid_cue        , &
+    lid_doc        => this%simic_bgc_index%lid_doc        , &
+    doc_uptake_reac=> this%simic_bgc_index%doc_uptake_reac, &
+    nreactions => this%simic_bgc_index%nreactions           &
   )
   doc_cue = safe_div(ystate(lid_cue), ystate(lid_doc))
-  call this%simic_rrates(this%simic_index, dtime, nstvars, ystate, doc_cue, rrates)
+  call this%simic_rrates(this%simic_bgc_index, dtime, nstvars, ystate, doc_cue, rrates)
   this%cascade_matrixd(lid_cue, doc_uptake_reac) =  doc_cue
   this%cascade_matrix(lid_cue, doc_uptake_reac)  = -doc_cue
   it=0
@@ -793,7 +793,7 @@ contains
     endif
     it = it + 1
   enddo
-!  print*,'dydt',dydt(this%simic_index%lid_doc), dydt(this%simic_index%lid_cue)
+!  print*,'dydt',dydt(this%simic_bgc_index%lid_doc), dydt(this%simic_bgc_index%lid_cue)
 !  do jj = 1, nprimvars
 !    print*,jj, dydt(jj)*dtime, ystate(jj)
 !  enddo
@@ -809,7 +809,7 @@ contains
   real(r8)                  , intent(inout) :: ystates(nstvars)
 
   associate(                                &
-    lid_micbl => this%simic_index%lid_micbl &
+    lid_micbl => this%simic_bgc_index%lid_micbl &
   )
   ystates(lid_micbl) = 0.001_r8
 
