@@ -6,7 +6,6 @@ module ApplicationsFactory
   ! History:
   !  Created by Jinyun Tang, April 28, 2016
   !
-  !
   ! !USES:
   !
   use bshr_kind_mod          , only : r8 => shr_kind_r8
@@ -108,7 +107,6 @@ contains
   character(len=*), intent(in)          :: method
   type(betr_status_type), intent(out)   :: bstatus
 
-
   character(len=*)          , parameter   :: subname = 'create_plant_soilbgc_type'
   character(len=betr_errmsg_len) :: msg
 
@@ -129,13 +127,12 @@ contains
 
   end subroutine create_plant_soilbgc_type
 
-
   !-------------------------------------------------------------------------------
   subroutine AppLoadParameters(ncid, bstatus)
   !
   ! DESCRIPTION
   ! read in the parameters for specified bgc implementation
-  use ecacnpParaType   , only : cent_para
+  use ecacnpParaType   , only : ecacnp_para
   use cdomParaType   , only : cdom_para
   use simicParaType  , only : simic_para
   use tracer_varcon  , only : reaction_method
@@ -147,7 +144,7 @@ contains
 
    select case (trim(reaction_method))
    case ("ecacnp")
-     call cent_para%readPars(ncid, bstatus)
+     call ecacnp_para%readPars(ncid, bstatus)
    case ("cdom_ecacnp")
      call cdom_para%readPars(ncid, bstatus)
    case ("simic")
@@ -158,14 +155,12 @@ contains
 
   end subroutine  AppLoadParameters
 
-
-
   !-------------------------------------------------------------------------------
   subroutine AppInitParameters(bgc_namelist_buffer, reaction_method, bstatus)
   !
   ! DESCRIPTION
   ! read in the parameters for specified bgc implementation
-  use ecacnpParaType   , only : cent_para
+  use ecacnpParaType   , only : ecacnp_para
   use cdomParaType   , only : cdom_para
   use simicParaType  , only : simic_para
   use betr_constants , only : betr_namelist_buffer_size_ext
@@ -180,7 +175,7 @@ contains
 
    select case (trim(reaction_method))
    case ("ecacnp")
-     call  cent_para%Init(bgc_namelist_buffer, bstatus)
+     call  ecacnp_para%Init(bgc_namelist_buffer, bstatus)
      !do nothing
    case ("cdom_ecacnp")
      call cdom_para%Init(bgc_namelist_buffer, bstatus)
@@ -199,14 +194,14 @@ contains
   !-------------------------------------------------------------------------------
   subroutine AppSetSpinup()
 
-  use ecacnpParaType  , only : cent_para
+  use ecacnpParaType  , only : ecacnp_para
   use cdomParaType  , only : cdom_para
   use tracer_varcon  , only : reaction_method
   implicit none
 
   select case (trim(reaction_method))
   case ("ecacnp")
-     call  cent_para%set_spinup_factor()
+     call  ecacnp_para%set_spinup_factor()
   case ("cdom_ecacnp")
      call cdom_para%set_spinup_factor()
   end select

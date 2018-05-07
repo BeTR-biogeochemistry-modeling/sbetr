@@ -681,44 +681,43 @@ contains
           endif
         enddo
       enddo
-      if(is_adsorb(trcid))then
-
-        if(adsorb_isotherm(trcid)==sorp_isotherm_linear)then
-          do n = lbj, ubj
-            do fc = 1, numf
-              c = filter(fc)
-              if(n>=jtops(c))then
-                scal = get_equilibrium_scal(t_soisno(c,n), soil_pH(c,n), tracerfamilyname,betrtracer_vars)
-                Kd=get_lnsorb_Kd(tracerfamilyname)
-                if(scal/=1._r8)then
+!      if(is_adsorb(trcid))then
+!        if(adsorb_isotherm(trcid)==sorp_isotherm_linear)then
+!          do n = lbj, ubj
+!            do fc = 1, numf
+!              c = filter(fc)
+!              if(n>=jtops(c))then
+!                scal = get_equilibrium_scal(t_soisno(c,n), soil_pH(c,n), tracerfamilyname,betrtracer_vars)
+!                Kd=get_lnsorb_Kd(tracerfamilyname)
+!                if(scal/=1._r8)then
                  !Because bunsen = bunsen0*scal
                  !
-                  Kd = (scal-1._r8)/(1._r8+scal)*Kd
-                endif
-                aqu2bulkcef_mobile(c,n,j) = air_vol(c,n)/bunsencef_col(c,n,k) + (1._r8 +  Kd)*h2osoi_liqvol(c,n)
-              endif
-            enddo
-          enddo
-        elseif(adsorb_isotherm(trcid)==sorp_isotherm_langmuir)then
-          call get_lgsorb_KL_Xsat(tracerfamilyname, isoilorder(c), KL, Xsat)
-          do n = lbj, ubj
-            do fc = 1, numf
-              c = filter(fc)
-              if(n>=jtops(c))then
-                xs = Xsat/watsat(c,j) * h2osoi_liqvol(c,n)
-                if(scal/=1._r8)then
-                  KL=KL*scal/(scal-1._r8) * (air_vol(c,n)/bunsencef_col(c,n,k)+h2osoi_liqvol(c,n))
-                else
-                  KL=KL * (air_vol(c,n)/bunsencef_col(c,n,k)+h2osoi_liqvol(c,n))
-                endif
-                Kd = xs/(KL +tracer_conc_mobile(c,n,trcid))
-                aqu2bulkcef_mobile(c,n,j) = (air_vol(c,n)/bunsencef_col(c,n,k)+h2osoi_liqvol(c,n)) * (1._r8+Kd)
-                gas2bulkcef_mobile(c,n,k) = aqu2bulkcef_mobile(c,n,j)*bunsencef_col(c,n,k)
-              endif
-            enddo
-          enddo
-        endif
-      endif
+!                  Kd = (scal-1._r8)/(1._r8+scal)*Kd
+!                endif
+!                aqu2bulkcef_mobile(c,n,j) = air_vol(c,n)/bunsencef_col(c,n,k) + (1._r8 +  Kd)*h2osoi_liqvol(c,n)
+!              endif
+!            enddo
+!          enddo
+!        elseif(adsorb_isotherm(trcid)==sorp_isotherm_langmuir)then
+!          call get_lgsorb_KL_Xsat(tracerfamilyname, isoilorder(c), KL, Xsat)
+!          do n = lbj, ubj
+!            do fc = 1, numf
+!              c = filter(fc)
+!              if(n>=jtops(c))then
+!                xs = Xsat/watsat(c,j) * h2osoi_liqvol(c,n)
+!                if(scal/=1._r8)then
+!                  KL=KL*scal/(scal-1._r8) * (air_vol(c,n)/bunsencef_col(c,n,k)+h2osoi_liqvol(c,n))
+!                else
+!                  KL=KL * (air_vol(c,n)/bunsencef_col(c,n,k)+h2osoi_liqvol(c,n))
+!                endif
+!                Kd = xs/(KL +tracer_conc_mobile(c,n,trcid))
+!                aqu2bulkcef_mobile(c,n,j) = (air_vol(c,n)/bunsencef_col(c,n,k)+h2osoi_liqvol(c,n)) * (1._r8+Kd)
+!                gas2bulkcef_mobile(c,n,k) = aqu2bulkcef_mobile(c,n,j)*bunsencef_col(c,n,k)
+!              endif
+!            enddo
+!          enddo
+!        endif
+!      endif
     else
       !when linear adsorption is used for some adsorptive aqueous tracers, the aqu2bulkcef will be the retardation factor
       !for the moment, it is set to one for all non-volatile tracers
@@ -731,38 +730,38 @@ contains
           endif
         enddo
       enddo
-      if(is_adsorb(trcid))then
-        if(adsorb_isotherm(trcid)==sorp_isotherm_linear)then
-          do n = lbj, ubj
-            do fc = 1, numf
-              c = filter(fc)
-              if(n>=jtops(c))then
-                Kd=get_lnsorb_Kd(tracerfamilyname)
-                aqu2bulkcef_mobile(c, n, j) = aqu2bulkcef_mobile(c, n, j) * (1._r8+Kd)
-              endif
-            enddo
-          enddo
-        elseif(adsorb_isotherm(trcid)==sorp_isotherm_langmuir)then
-          !the adsorption parameter should be a function of soil type, or soil order
-          call get_lgsorb_KL_Xsat(tracerfamilyname, isoilorder(c), KL, Xsat)
-          if(is_dom(trcid))then
-            Xsat=Xsat * dom_scalar(c)
-            KL  = KL * dom_scalar(c)
+!      if(is_adsorb(trcid))then
+!        if(adsorb_isotherm(trcid)==sorp_isotherm_linear)then
+!          do n = lbj, ubj
+!            do fc = 1, numf
+!              c = filter(fc)
+!              if(n>=jtops(c))then
+!                Kd=get_lnsorb_Kd(tracerfamilyname)
+!                aqu2bulkcef_mobile(c, n, j) = aqu2bulkcef_mobile(c, n, j) * (1._r8+Kd)
+!              endif
+!            enddo
+!          enddo
+!        elseif(adsorb_isotherm(trcid)==sorp_isotherm_langmuir)then
+!          !the adsorption parameter should be a function of soil type, or soil order
+!          call get_lgsorb_KL_Xsat(tracerfamilyname, isoilorder(c), KL, Xsat)
+!          if(is_dom(trcid))then
+!            Xsat=Xsat * dom_scalar(c)
+!            KL  = KL * dom_scalar(c)
 !            print*,'dom',dom_scalar(c)
-          endif
-          do n = lbj, ubj
-            do fc = 1, numf
-              c = filter(fc)
-              if(n>=jtops(c))then
-                KL= h2osoi_liqvol(c,n) * KL
-                xs = Xsat/watsat(c,n) * h2osoi_liqvol(c,n)
-                Kd = xs/(KL + tracer_conc_mobile(c,n,trcid))
-                aqu2bulkcef_mobile(c, n, j) = aqu2bulkcef_mobile(c, n, j) * (1._r8+Kd)
-              endif
-            enddo
-          enddo
-        endif
-      endif
+!          endif
+!          do n = lbj, ubj
+!            do fc = 1, numf
+!              c = filter(fc)
+!              if(n>=jtops(c))then
+!                KL= h2osoi_liqvol(c,n) * KL
+!                xs = Xsat/watsat(c,n) * h2osoi_liqvol(c,n)
+!                Kd = xs/(KL + tracer_conc_mobile(c,n,trcid))
+!                aqu2bulkcef_mobile(c, n, j) = aqu2bulkcef_mobile(c, n, j) * (1._r8+Kd)
+!              endif
+!            enddo
+!          enddo
+!        endif
+!      endif
     endif
   enddo
   end associate

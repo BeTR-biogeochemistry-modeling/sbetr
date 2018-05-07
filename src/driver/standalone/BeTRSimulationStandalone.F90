@@ -631,20 +631,21 @@ contains
     do j = 1, betr_bounds%ubj
       this%betr(c)%plantNutkinetics%minsurf_p_compet_vr_col(c_l,j) = 0._r8
       this%betr(c)%plantNutkinetics%minsurf_nh4_compet_vr_col(c_l,j) = 0._r8
+      this%betr(c)%plantNutkinetics%minsurf_dom_compet_vr_col(c_l,j) = 0._r8
     enddo
   enddo
 
   !the following parameters are specific to ECACNP, and I assume they are
   !grid specific as they currently used in alm-cnp.
-  if(index(reaction_method,'ecacnp')/=0)then
-    do j =1, betr_bounds%ubj
-      do fc = 1, num_soilc
-        c = filter_soilc(fc)
-        this%betr(c)%plantNutkinetics%km_minsurf_p_vr_col(c_l,j) = 1._r8
-        this%betr(c)%plantNutkinetics%km_minsurf_nh4_vr_col(c_l,j)=1._r8
-      enddo
+  do j =1, betr_bounds%ubj
+    do fc = 1, num_soilc
+      c = filter_soilc(fc)
+      this%betr(c)%plantNutkinetics%km_minsurf_p_vr_col(c_l,j) = 1._r8
+      this%betr(c)%plantNutkinetics%km_minsurf_nh4_vr_col(c_l,j)=1._r8
+      this%betr(c)%plantNutkinetics%km_minsurf_dom_vr_col(c_l,j)=1._r8
     enddo
-  endif
+  enddo
+  
   end associate
   end subroutine set_transient_kinetics_par
 

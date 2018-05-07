@@ -40,11 +40,11 @@ module ecacnpBGCReactionsType
   use BGCReactionsMod       , only : bgc_reaction_type
   use betr_varcon           , only : spval => bspval, ispval => bispval
   use tracer_varcon         , only : bndcond_as_conc, bndcond_as_flux
-  use ecacnpBGCType        , only : ecacnp_bgc_type
+  use ecacnpBGCType         , only : ecacnp_bgc_type
   use JarBgcForcType        , only : JarBGC_forc_type
   use BetrStatusType        , only : betr_status_type
-  use ecacnpBGCIndexType   , only : ecacnp_bgc_index_type
-  use ecacnpParaType        , only : cent_para
+  use ecacnpBGCIndexType    , only : ecacnp_bgc_index_type
+  use ecacnpParaType        , only : ecacnp_para
   implicit none
 
   save
@@ -59,9 +59,8 @@ module ecacnpBGCReactionsType
   type, public, extends(bgc_reaction_type) :: &
     ecacnp_bgc_reaction_type
      private
-    type(ecacnp_bgc_type), pointer :: centuryeca(:,:)
-    type(JarBGC_forc_type), pointer :: centuryforc(:,:)
-
+    type(ecacnp_bgc_type), pointer :: ecacnp(:,:)
+    type(JarBGC_forc_type), pointer :: ecacnp_forc(:,:)
     type(ecacnp_bgc_index_type) :: ecacnp_bgc_index
     logical :: use_c13
     logical :: use_c14
@@ -120,7 +119,7 @@ contains
   integer :: c, j
   do j = lbj, ubj
     do c = bounds%begc, bounds%endc
-      call this%centuryeca(c,j)%UpdateParas(cent_para, bstatus)
+      call this%ecacnp(c,j)%UpdateParas(ecacnp_para, bstatus)
       if(bstatus%check_status())return
     enddo
   enddo
@@ -198,14 +197,14 @@ contains
 
   if(.not. exit_spinup .and. betr_spinup_state/=0 .and. spinup_stage/=2) then
     do c = bounds%begc, bounds%endc
-      dom_scalar(c)=1._r8/cent_para%spinup_factor(9)
+      dom_scalar(c)=1._r8/ecacnp_para%spinup_factor(9)
     enddo
   endif
 
   if(betr_spinup_state/=0)then
-    move_scalar(tracers%id_trc_Bm) = cent_para%spinup_factor(7)
-    move_scalar(tracers%id_trc_som) = cent_para%spinup_factor(8)
-    move_scalar(tracers%id_trc_pom)=cent_para%spinup_factor(9)
+    move_scalar(tracers%id_trc_Bm) = ecacnp_para%spinup_factor(7)
+    move_scalar(tracers%id_trc_som) = ecacnp_para%spinup_factor(8)
+    move_scalar(tracers%id_trc_pom)=ecacnp_para%spinup_factor(9)
   endif
 
   if(enter_spinup)then
@@ -223,17 +222,17 @@ contains
          !som1
          if(spinup_stage/=2)then
            call rescale_tracer_group(c, j, tracers%id_trc_beg_Bm, &
-             tracers%id_trc_end_Bm, nelm, 1._r8/cent_para%spinup_factor(7))
+             tracers%id_trc_end_Bm, nelm, 1._r8/ecacnp_para%spinup_factor(7))
 
            call rescale_tracer_group(c, j, tracers%id_trc_beg_som, &
-             tracers%id_trc_end_som, nelm, 1._r8/cent_para%spinup_factor(8))
+             tracers%id_trc_end_som, nelm, 1._r8/ecacnp_para%spinup_factor(8))
 
 ! the treatment of dom will be revised
 !           call rescale_tracer_group(c, j, tracers%id_trc_beg_dom, &
-!             tracers%id_trc_end_dom, nelm, 1._r8/cent_para%spinup_factor(9))
+!             tracers%id_trc_end_dom, nelm, 1._r8/ecacnp_para%spinup_factor(9))
 
            call rescale_tracer_group(c, j, tracers%id_trc_beg_pom, &
-             tracers%id_trc_end_pom, nelm, 1._r8/cent_para%spinup_factor(9))
+             tracers%id_trc_end_pom, nelm, 1._r8/ecacnp_para%spinup_factor(9))
 
          endif
 
@@ -265,16 +264,16 @@ contains
        do c = bounds%begc, bounds%endc
          !som1
          call rescale_tracer_group(c, j, tracers%id_trc_beg_Bm, &
-             tracers%id_trc_end_Bm, nelm, cent_para%spinup_factor(7))
+             tracers%id_trc_end_Bm, nelm, ecacnp_para%spinup_factor(7))
 
          call rescale_tracer_group(c, j, tracers%id_trc_beg_som, &
-             tracers%id_trc_end_som, nelm, cent_para%spinup_factor(8))
+             tracers%id_trc_end_som, nelm, ecacnp_para%spinup_factor(8))
 
 !         call rescale_tracer_group(c, j, tracers%id_trc_beg_dom, &
-!             tracers%id_trc_end_dom, nelm, cent_para%spinup_factor(9))
+!             tracers%id_trc_end_dom, nelm, ecacnp_para%spinup_factor(9))
 
          call rescale_tracer_group(c, j, tracers%id_trc_beg_pom, &
-             tracers%id_trc_end_pom, nelm, cent_para%spinup_factor(9))
+             tracers%id_trc_end_pom, nelm, ecacnp_para%spinup_factor(9))
 
          if(betr_spinup_state==3)then
            !som1
@@ -390,24 +389,24 @@ contains
   this%nactpft = nactpft
   do j = lbj, ubj
     do p = 1, nactpft
-      this%centuryeca(c_l,j)%competECA%mumax_minn_nh4_plant(p) = plantNutkinetics%plant_nh4_vmax_vr_patch(p,j)
-      this%centuryeca(c_l,j)%competECA%mumax_minn_no3_plant(p) = plantNutkinetics%plant_no3_vmax_vr_patch(p,j)
-      this%centuryeca(c_l,j)%competECA%mumax_minp_plant(p) = plantNutkinetics%plant_p_vmax_vr_patch(p,j)
-      this%centuryeca(c_l,j)%competECA%kaff_minn_no3_plant(p)= plantNutkinetics%plant_no3_km_vr_patch(p,j)
-      this%centuryeca(c_l,j)%competECA%kaff_minn_nh4_plant(p)= plantNutkinetics%plant_nh4_km_vr_patch(p,j)
-      this%centuryeca(c_l,j)%competECA%kaff_minp_plant(p)   = plantNutkinetics%plant_p_km_vr_patch(p,j)
-      this%centuryeca(c_l,j)%competECA%plant_froot_nn(p) = plantNutkinetics%plant_eff_ncompet_b_vr_patch(p,j)
-      this%centuryeca(c_l,j)%competECA%plant_froot_np(p) = plantNutkinetics%plant_eff_pcompet_b_vr_patch(p,j)
+      this%ecacnp(c_l,j)%competECA%mumax_minn_nh4_plant(p) = plantNutkinetics%plant_nh4_vmax_vr_patch(p,j)
+      this%ecacnp(c_l,j)%competECA%mumax_minn_no3_plant(p) = plantNutkinetics%plant_no3_vmax_vr_patch(p,j)
+      this%ecacnp(c_l,j)%competECA%mumax_minp_plant(p) = plantNutkinetics%plant_p_vmax_vr_patch(p,j)
+      this%ecacnp(c_l,j)%competECA%kaff_minn_no3_plant(p)= plantNutkinetics%plant_no3_km_vr_patch(p,j)
+      this%ecacnp(c_l,j)%competECA%kaff_minn_nh4_plant(p)= plantNutkinetics%plant_nh4_km_vr_patch(p,j)
+      this%ecacnp(c_l,j)%competECA%kaff_minp_plant(p)   = plantNutkinetics%plant_p_km_vr_patch(p,j)
+      this%ecacnp(c_l,j)%competECA%plant_froot_nn(p) = plantNutkinetics%plant_eff_ncompet_b_vr_patch(p,j)
+      this%ecacnp(c_l,j)%competECA%plant_froot_np(p) = plantNutkinetics%plant_eff_pcompet_b_vr_patch(p,j)
     enddo
 
     !mineral surfaces
-    this%centuryeca(c_l,j)%competECA%kaff_minn_nh4_msurf= plantNutkinetics%km_minsurf_nh4_vr_col(c_l,j)   !this is ignored at this moment
-    this%centuryeca(c_l,j)%competECA%kaff_minp_msurf= plantNutkinetics%km_minsurf_p_vr_col(c_l,j)
+    this%ecacnp(c_l,j)%competECA%kaff_minn_nh4_msurf= plantNutkinetics%km_minsurf_nh4_vr_col(c_l,j)   !this is ignored at this moment
+    this%ecacnp(c_l,j)%competECA%kaff_minp_msurf= plantNutkinetics%km_minsurf_p_vr_col(c_l,j)
 
     !effective p competing decomposers
 
-    this%centuryforc(c_l,j)%msurf_nh4 = plantNutkinetics%minsurf_nh4_compet_vr_col(c_l,j)   !this  number needs update
-    this%centuryforc(c_l,j)%msurf_minp= plantNutkinetics%minsurf_p_compet_vr_col(c_l,j)    !this  number needs update
+    this%ecacnp_forc(c_l,j)%msurf_nh4 = plantNutkinetics%minsurf_nh4_compet_vr_col(c_l,j)   !this  number needs update
+    this%ecacnp_forc(c_l,j)%msurf_minp= plantNutkinetics%minsurf_p_compet_vr_col(c_l,j)    !this  number needs update
 
   enddo
 
@@ -449,30 +448,30 @@ contains
     if (this%dummy_compiler_warning) continue
     this%nactpft = 0
 
-    call this%ecacnp_bgc_index%Init(cent_para%use_c13, cent_para%use_c14, &
-       cent_para%non_limit, cent_para%nop_limit, betr_maxpatch_pft)
+    call this%ecacnp_bgc_index%Init(ecacnp_para%use_c13, ecacnp_para%use_c14, &
+       ecacnp_para%non_limit, ecacnp_para%nop_limit, betr_maxpatch_pft)
 
     if(bstatus%check_status())return
 
     !create the models
-    allocate(this%centuryeca(bounds%begc:bounds%endc,lbj:ubj))
+    allocate(this%ecacnp(bounds%begc:bounds%endc,lbj:ubj))
 
     !create model specific forcing data structure
-    allocate(this%centuryforc(bounds%begc:bounds%endc,lbj:ubj))
+    allocate(this%ecacnp_forc(bounds%begc:bounds%endc,lbj:ubj))
 
     !initialize
     do j = lbj, ubj
       do c = bounds%begc, bounds%endc
-        call this%centuryeca(c,j)%Init(cent_para, bstatus)
+        call this%ecacnp(c,j)%Init(ecacnp_para, bstatus)
         if(bstatus%check_status())return
 
-        call this%centuryforc(c,j)%Init(this%ecacnp_bgc_index%nstvars)
+        call this%ecacnp_forc(c,j)%Init(this%ecacnp_bgc_index%nstvars)
       enddo
     enddo
-    this%use_c13 = cent_para%use_c13
-    this%use_c14 = cent_para%use_c14
-    this%nop_limit=cent_para%nop_limit
-    this%non_limit=cent_para%non_limit
+    this%use_c13 = ecacnp_para%use_c13
+    this%use_c14 = ecacnp_para%use_c14
+    this%nop_limit=ecacnp_para%nop_limit
+    this%non_limit=ecacnp_para%non_limit
 
     !set up betr
     nelm =this%ecacnp_bgc_index%nelms
@@ -1248,7 +1247,7 @@ contains
     integer                              , intent(in) :: lbj, ubj                      ! lower and upper bounds, make sure they are > 0
     real(r8)                             , intent(in) :: dtime                         ! model time step
     type(betrtracer_type)                , intent(in) :: betrtracer_vars               ! betr configuration information
-    type(tracercoeff_type)               , intent(in) :: tracercoeff_vars
+    type(tracercoeff_type)               , intent(inout) :: tracercoeff_vars
     type(betr_biogeophys_input_type)     , intent(inout) :: biophysforc
     type(tracerboundarycond_type)        , intent(inout) :: tracerboundarycond_vars !
     type(tracerstate_type)               , intent(inout) :: tracerstate_vars
@@ -1291,12 +1290,12 @@ contains
         c = filter_soilc(fc)
         if(j<jtops(c))cycle
         is_surflit=(j<=0)
-        this%centuryforc(c,j)%debug=betrtracer_vars%debug
-        this%centuryeca(c,j)%bgc_on=.not. betrtracer_vars%debug
+        this%ecacnp_forc(c,j)%debug=betrtracer_vars%debug
+        this%ecacnp(c,j)%bgc_on=.not. betrtracer_vars%debug
 
-        if(this%centuryforc(c,j)%debug)print*,'runbgc',j
+        if(this%ecacnp_forc(c,j)%debug)print*,'runbgc',j
 
-        call this%centuryeca(c,j)%runbgc(is_surflit, dtime, this%centuryforc(c,j),nstates, &
+        call this%ecacnp(c,j)%runbgc(is_surflit, dtime, this%ecacnp_forc(c,j),nstates, &
             ystates0, ystatesf, betr_status)
         if(betr_status%check_status())then
           write(laystr,'(I2.2)')j
@@ -1306,7 +1305,7 @@ contains
 !        if(.not. betrtracer_vars%debug)then
           !apply loss through fire,
           call this%rm_ext_output(c, j, dtime, nstates, ystatesf, this%ecacnp_bgc_index,&
-             this%centuryforc(c,j), biogeo_flux)
+             this%ecacnp_forc(c,j), biogeo_flux)
 !        endif
         call this%precision_filter(nstates, ystatesf)
         this%ecacnp_bgc_index%debug=betrtracer_vars%debug
@@ -1340,7 +1339,7 @@ contains
   end subroutine calc_bgc_reaction
 
   !--------------------------------------------------------------------
-  subroutine rm_ext_output(this, c, j, dtime, nstates, ystatesf, ecacnp_bgc_index, centuryeca_forc, biogeo_flux)
+  subroutine rm_ext_output(this, c, j, dtime, nstates, ystatesf, ecacnp_bgc_index, ecacnp_forc, biogeo_flux)
   !
   ! DESCRIPTION
   ! apply om loss through fire
@@ -1356,7 +1355,7 @@ contains
   integer                     , intent(in) :: nstates
   real(r8)                    , intent(inout):: ystatesf(1:nstates)
   type(ecacnp_bgc_index_type) , intent(in) :: ecacnp_bgc_index
-  type(JarBGC_forc_type)      , intent(in) :: centuryeca_forc
+  type(JarBGC_forc_type)      , intent(in) :: ecacnp_forc
   type(betr_biogeo_flux_type) , intent(inout) :: biogeo_flux
   integer :: kc, kn, kp, jj, kc13, kc14
   real(r8):: flit_loss, fcwd_loss
@@ -1379,8 +1378,8 @@ contains
     som2 =>  ecacnp_bgc_index%som2 , &
     som3 =>  ecacnp_bgc_index%som3 , &
     nelms => ecacnp_bgc_index%nelms, &
-    frac_loss_lit_to_fire => centuryeca_forc%frac_loss_lit_to_fire, &
-    frac_loss_cwd_to_fire => centuryeca_forc%frac_loss_cwd_to_fire, &
+    frac_loss_lit_to_fire => ecacnp_forc%frac_loss_lit_to_fire, &
+    frac_loss_cwd_to_fire => ecacnp_forc%frac_loss_cwd_to_fire, &
     fire_decomp_c12loss_vr_col => biogeo_flux%c12flux_vars%fire_decomp_closs_vr_col, &
     fire_decomp_c13loss_vr_col => biogeo_flux%c13flux_vars%fire_decomp_closs_vr_col, &
     fire_decomp_c14loss_vr_col => biogeo_flux%c14flux_vars%fire_decomp_closs_vr_col, &
@@ -1702,198 +1701,198 @@ contains
     do fc = 1, num_soilc
       c = filter_soilc(fc)
       if(j<jtops(c))cycle
-      this%centuryforc(c,j)%plant_ntypes = this%nactpft
-      this%centuryforc(c,j)%ystates(:) = 0._r8
+      this%ecacnp_forc(c,j)%plant_ntypes = this%nactpft
+      this%ecacnp_forc(c,j)%ystates(:) = 0._r8
 
       !litter
-      this%centuryforc(c,j)%ystates(litr_beg:litr_end)= &
+      this%ecacnp_forc(c,j)%ystates(litr_beg:litr_end)= &
           tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_litr:betrtracer_vars%id_trc_end_litr)
 
       !wood
-      this%centuryforc(c,j)%ystates(wood_beg:wood_end)= &
+      this%ecacnp_forc(c,j)%ystates(wood_beg:wood_end)= &
           tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_wood:betrtracer_vars%id_trc_end_wood)
 
       !som
-      this%centuryforc(c,j)%ystates(som_beg:som_end)= &
+      this%ecacnp_forc(c,j)%ystates(som_beg:som_end)= &
           tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_som:betrtracer_vars%id_trc_end_som)
-      if(this%centuryforc(c,j)%ystates(som_beg)<=tiny_cval)this%centuryforc(c,j)%ystates(som_beg:som_end)=0._r8
+      if(this%ecacnp_forc(c,j)%ystates(som_beg)<=tiny_cval)this%ecacnp_forc(c,j)%ystates(som_beg:som_end)=0._r8
 
       !dom
-      !this%centuryforc(c,j)%ystates(dom_beg:dom_end)= &
+      !this%ecacnp_forc(c,j)%ystates(dom_beg:dom_end)= &
       !    tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_dom:betrtracer_vars%id_trc_end_dom)
-      !if(this%centuryforc(c,j)%ystates(dom_beg)<=tiny_cval)this%centuryforc(c,j)%ystates(dom_beg:dom_end)=0._r8
+      !if(this%ecacnp_forc(c,j)%ystates(dom_beg)<=tiny_cval)this%ecacnp_forc(c,j)%ystates(dom_beg:dom_end)=0._r8
 
-      this%centuryforc(c,j)%ystates(pom_beg:pom_end)= &
+      this%ecacnp_forc(c,j)%ystates(pom_beg:pom_end)= &
           tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_pom:betrtracer_vars%id_trc_end_pom)
-      if(this%centuryforc(c,j)%ystates(pom_beg)<=tiny_cval)this%centuryforc(c,j)%ystates(pom_beg:pom_end)=0._r8
+      if(this%ecacnp_forc(c,j)%ystates(pom_beg)<=tiny_cval)this%ecacnp_forc(c,j)%ystates(pom_beg:pom_end)=0._r8
 
       !microbial biomass
-      this%centuryforc(c,j)%ystates(Bm_beg:Bm_end)= &
+      this%ecacnp_forc(c,j)%ystates(Bm_beg:Bm_end)= &
           tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_Bm:betrtracer_vars%id_trc_end_Bm)
-      if(this%centuryforc(c,j)%ystates(Bm_beg)<=tiny_cval)this%centuryforc(c,j)%ystates(Bm_beg:Bm_end)=0._r8
+      if(this%ecacnp_forc(c,j)%ystates(Bm_beg)<=tiny_cval)this%ecacnp_forc(c,j)%ystates(Bm_beg:Bm_end)=0._r8
 
       !non-soluble phase of mineral p
       k1= betrtracer_vars%id_trc_beg_minp; k2 = this%ecacnp_bgc_index%lid_minp_secondary
-      this%centuryforc(c,j)%ystates(k2) = fpmax(tracerstate_vars%tracer_conc_mobile_col(c,j,k1))
+      this%ecacnp_forc(c,j)%ystates(k2) = fpmax(tracerstate_vars%tracer_conc_mobile_col(c,j,k1))
 
       k1 = betrtracer_vars%id_trc_end_minp;   k2 = this%ecacnp_bgc_index%lid_minp_occlude
-      this%centuryforc(c,j)%ystates(k2) = fpmax(tracerstate_vars%tracer_conc_mobile_col(c,j,k1))
+      this%ecacnp_forc(c,j)%ystates(k2) = fpmax(tracerstate_vars%tracer_conc_mobile_col(c,j,k1))
 
-      this%centuryforc(c,j)%ystates(this%ecacnp_bgc_index%lid_n2) = &
+      this%ecacnp_forc(c,j)%ystates(this%ecacnp_bgc_index%lid_n2) = &
            fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_n2))
 
-      this%centuryforc(c,j)%ystates(this%ecacnp_bgc_index%lid_o2) = &
+      this%ecacnp_forc(c,j)%ystates(this%ecacnp_bgc_index%lid_o2) = &
            fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_o2))
 
-      this%centuryforc(c,j)%ystates(this%ecacnp_bgc_index%lid_ar) = &
+      this%ecacnp_forc(c,j)%ystates(this%ecacnp_bgc_index%lid_ar) = &
            fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_ar))
 
-      this%centuryforc(c,j)%ystates(this%ecacnp_bgc_index%lid_co2)= &
+      this%ecacnp_forc(c,j)%ystates(this%ecacnp_bgc_index%lid_co2)= &
            fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_co2x))
 
       if(this%use_c13)then
-        this%centuryforc(c,j)%ystates(this%ecacnp_bgc_index%lid_c13_co2)= &
+        this%ecacnp_forc(c,j)%ystates(this%ecacnp_bgc_index%lid_c13_co2)= &
            fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_c13_co2x))
       endif
       if(this%use_c14)then
-        this%centuryforc(c,j)%ystates(this%ecacnp_bgc_index%lid_c14_co2)= &
+        this%ecacnp_forc(c,j)%ystates(this%ecacnp_bgc_index%lid_c14_co2)= &
           fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_c14_co2x))
       endif
 
-      this%centuryforc(c,j)%ystates(this%ecacnp_bgc_index%lid_ch4)= &
+      this%ecacnp_forc(c,j)%ystates(this%ecacnp_bgc_index%lid_ch4)= &
            fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_ch4))
 
-      this%centuryforc(c,j)%ystates(this%ecacnp_bgc_index%lid_nh4)= &
+      this%ecacnp_forc(c,j)%ystates(this%ecacnp_bgc_index%lid_nh4)= &
            fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_nh3x))
 
-      this%centuryforc(c,j)%ystates(this%ecacnp_bgc_index%lid_no3)= &
+      this%ecacnp_forc(c,j)%ystates(this%ecacnp_bgc_index%lid_no3)= &
            fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_no3x))
 
-      this%centuryforc(c,j)%ystates(this%ecacnp_bgc_index%lid_n2o)= &
+      this%ecacnp_forc(c,j)%ystates(this%ecacnp_bgc_index%lid_n2o)= &
            fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_n2o))
 
-      this%centuryforc(c,j)%ystates(this%ecacnp_bgc_index%lid_minp_soluble) = &
+      this%ecacnp_forc(c,j)%ystates(this%ecacnp_bgc_index%lid_minp_soluble) = &
            fpmax(tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_p_sol))
 
       !input
-      this%centuryforc(c,j)%cflx_input_litr_met = biophysforc%c12flx%cflx_input_litr_met_vr_col(c,j)
-      this%centuryforc(c,j)%cflx_input_litr_cel = biophysforc%c12flx%cflx_input_litr_cel_vr_col(c,j)
-      this%centuryforc(c,j)%cflx_input_litr_lig = biophysforc%c12flx%cflx_input_litr_lig_vr_col(c,j)
-      this%centuryforc(c,j)%cflx_input_litr_cwd = biophysforc%c12flx%cflx_input_litr_cwd_vr_col(c,j)
-      this%centuryforc(c,j)%cflx_input_litr_lwd = biophysforc%c12flx%cflx_input_litr_lwd_vr_col(c,j)
-      this%centuryforc(c,j)%cflx_input_litr_fwd = biophysforc%c12flx%cflx_input_litr_fwd_vr_col(c,j)
-      this%centuryforc(c,j)%nflx_input_litr_met = biophysforc%n14flx%nflx_input_litr_met_vr_col(c,j)
-      this%centuryforc(c,j)%nflx_input_litr_cel = biophysforc%n14flx%nflx_input_litr_cel_vr_col(c,j)
-      this%centuryforc(c,j)%nflx_input_litr_lig = biophysforc%n14flx%nflx_input_litr_lig_vr_col(c,j)
-      this%centuryforc(c,j)%nflx_input_litr_cwd = biophysforc%n14flx%nflx_input_litr_cwd_vr_col(c,j)
-      this%centuryforc(c,j)%nflx_input_litr_lwd = biophysforc%n14flx%nflx_input_litr_lwd_vr_col(c,j)
-      this%centuryforc(c,j)%nflx_input_litr_fwd = biophysforc%n14flx%nflx_input_litr_fwd_vr_col(c,j)
+      this%ecacnp_forc(c,j)%cflx_input_litr_met = biophysforc%c12flx%cflx_input_litr_met_vr_col(c,j)
+      this%ecacnp_forc(c,j)%cflx_input_litr_cel = biophysforc%c12flx%cflx_input_litr_cel_vr_col(c,j)
+      this%ecacnp_forc(c,j)%cflx_input_litr_lig = biophysforc%c12flx%cflx_input_litr_lig_vr_col(c,j)
+      this%ecacnp_forc(c,j)%cflx_input_litr_cwd = biophysforc%c12flx%cflx_input_litr_cwd_vr_col(c,j)
+      this%ecacnp_forc(c,j)%cflx_input_litr_lwd = biophysforc%c12flx%cflx_input_litr_lwd_vr_col(c,j)
+      this%ecacnp_forc(c,j)%cflx_input_litr_fwd = biophysforc%c12flx%cflx_input_litr_fwd_vr_col(c,j)
+      this%ecacnp_forc(c,j)%nflx_input_litr_met = biophysforc%n14flx%nflx_input_litr_met_vr_col(c,j)
+      this%ecacnp_forc(c,j)%nflx_input_litr_cel = biophysforc%n14flx%nflx_input_litr_cel_vr_col(c,j)
+      this%ecacnp_forc(c,j)%nflx_input_litr_lig = biophysforc%n14flx%nflx_input_litr_lig_vr_col(c,j)
+      this%ecacnp_forc(c,j)%nflx_input_litr_cwd = biophysforc%n14flx%nflx_input_litr_cwd_vr_col(c,j)
+      this%ecacnp_forc(c,j)%nflx_input_litr_lwd = biophysforc%n14flx%nflx_input_litr_lwd_vr_col(c,j)
+      this%ecacnp_forc(c,j)%nflx_input_litr_fwd = biophysforc%n14flx%nflx_input_litr_fwd_vr_col(c,j)
 
-      this%centuryforc(c,j)%pflx_input_litr_met = biophysforc%p31flx%pflx_input_litr_met_vr_col(c,j)
-      this%centuryforc(c,j)%pflx_input_litr_cel = biophysforc%p31flx%pflx_input_litr_cel_vr_col(c,j)
-      this%centuryforc(c,j)%pflx_input_litr_lig = biophysforc%p31flx%pflx_input_litr_lig_vr_col(c,j)
-      this%centuryforc(c,j)%pflx_input_litr_cwd = biophysforc%p31flx%pflx_input_litr_cwd_vr_col(c,j)
-      this%centuryforc(c,j)%pflx_input_litr_fwd = biophysforc%p31flx%pflx_input_litr_fwd_vr_col(c,j)
-      this%centuryforc(c,j)%pflx_input_litr_lwd = biophysforc%p31flx%pflx_input_litr_lwd_vr_col(c,j)
+      this%ecacnp_forc(c,j)%pflx_input_litr_met = biophysforc%p31flx%pflx_input_litr_met_vr_col(c,j)
+      this%ecacnp_forc(c,j)%pflx_input_litr_cel = biophysforc%p31flx%pflx_input_litr_cel_vr_col(c,j)
+      this%ecacnp_forc(c,j)%pflx_input_litr_lig = biophysforc%p31flx%pflx_input_litr_lig_vr_col(c,j)
+      this%ecacnp_forc(c,j)%pflx_input_litr_cwd = biophysforc%p31flx%pflx_input_litr_cwd_vr_col(c,j)
+      this%ecacnp_forc(c,j)%pflx_input_litr_fwd = biophysforc%p31flx%pflx_input_litr_fwd_vr_col(c,j)
+      this%ecacnp_forc(c,j)%pflx_input_litr_lwd = biophysforc%p31flx%pflx_input_litr_lwd_vr_col(c,j)
 
       !mineral nutrient input
-      this%centuryforc(c,j)%sflx_minn_input_nh4 = biophysforc%n14flx%nflx_minn_input_nh4_vr_col(c,j)     !nh4 from deposition and fertilization
-      this%centuryforc(c,j)%sflx_minn_input_no3 = biophysforc%n14flx%nflx_minn_input_no3_vr_col(c,j)
-      this%centuryforc(c,j)%sflx_minn_nh4_fix_nomic = biophysforc%n14flx%nflx_minn_nh4_fix_nomic_vr_col(c,j)       !nh4 from fixation
-      this%centuryforc(c,j)%sflx_minp_input_po4 = biophysforc%p31flx%pflx_minp_input_po4_vr_col(c,j)     !inorganic P from deposition and fertilization
-      this%centuryforc(c,j)%sflx_minp_weathering_po4 = biophysforc%p31flx%pflx_minp_weathering_po4_vr_col(c,j)
-      this%centuryforc(c,j)%biochem_pmin = biophysforc%biochem_pmin_vr(c,j)
+      this%ecacnp_forc(c,j)%sflx_minn_input_nh4 = biophysforc%n14flx%nflx_minn_input_nh4_vr_col(c,j)     !nh4 from deposition and fertilization
+      this%ecacnp_forc(c,j)%sflx_minn_input_no3 = biophysforc%n14flx%nflx_minn_input_no3_vr_col(c,j)
+      this%ecacnp_forc(c,j)%sflx_minn_nh4_fix_nomic = biophysforc%n14flx%nflx_minn_nh4_fix_nomic_vr_col(c,j)       !nh4 from fixation
+      this%ecacnp_forc(c,j)%sflx_minp_input_po4 = biophysforc%p31flx%pflx_minp_input_po4_vr_col(c,j)     !inorganic P from deposition and fertilization
+      this%ecacnp_forc(c,j)%sflx_minp_weathering_po4 = biophysforc%p31flx%pflx_minp_weathering_po4_vr_col(c,j)
+      this%ecacnp_forc(c,j)%biochem_pmin = biophysforc%biochem_pmin_vr(c,j)
 
       !burning fraction
-      this%centuryforc(c,j)%frac_loss_lit_to_fire = biophysforc%frac_loss_lit_to_fire_col(c)
-      this%centuryforc(c,j)%frac_loss_cwd_to_fire = biophysforc%frac_loss_cwd_to_fire_col(c)
+      this%ecacnp_forc(c,j)%frac_loss_lit_to_fire = biophysforc%frac_loss_lit_to_fire_col(c)
+      this%ecacnp_forc(c,j)%frac_loss_cwd_to_fire = biophysforc%frac_loss_cwd_to_fire_col(c)
       !environmental variables
-      this%centuryforc(c,j)%temp   = biophysforc%t_soisno_col(c,j)            !temperature
-      this%centuryforc(c,j)%depz   = col%z(c,j)            !depth of the soil
-      this%centuryforc(c,j)%dzsoi  = col%dz(c,j)            !soil thickness
-      this%centuryforc(c,j)%sucsat  = biophysforc%sucsat_col(c,j)            ! Input:  [real(r8) (:,:)] minimum soil suction [mm]
-      this%centuryforc(c,j)%soilpsi = max(biophysforc%smp_l_col(c,j)*grav*1.e-6_r8,-15._r8)    ! Input:  [real(r8) (:,:)] soilwater pontential in each soil layer [MPa]
-      this%centuryforc(c,j)%bsw = biophysforc%bsw_col(c,j)
-      this%centuryforc(c,j)%bd   = biophysforc%bd_col(c,j)              !bulk density
-      this%centuryforc(c,j)%pct_sand = biophysforc%cellsand_col(c,j)
-      this%centuryforc(c,j)%pct_clay = biophysforc%cellclay_col(c,j)
-      this%centuryforc(c,j)%h2osoi_vol = biophysforc%h2osoi_vol_col(c,j)
-      this%centuryforc(c,j)%h2osoi_liq = biophysforc%h2osoi_liq_col(c,j)
-      this%centuryforc(c,j)%air_vol = biophysforc%air_vol_col(c,j)
-      this%centuryforc(c,j)%finundated = biophysforc%finundated_col(c)
-      this%centuryforc(c,j)%watsat = biophysforc%watsat_col(c,j)
-      this%centuryforc(c,j)%watfc = biophysforc%watfc_col(c,j)
-      this%centuryforc(c,j)%cellorg = biophysforc%cellorg_col(c,j)
-      this%centuryforc(c,j)%pH = biophysforc%soil_pH(c,j)
+      this%ecacnp_forc(c,j)%temp   = biophysforc%t_soisno_col(c,j)            !temperature
+      this%ecacnp_forc(c,j)%depz   = col%z(c,j)            !depth of the soil
+      this%ecacnp_forc(c,j)%dzsoi  = col%dz(c,j)            !soil thickness
+      this%ecacnp_forc(c,j)%sucsat  = biophysforc%sucsat_col(c,j)            ! Input:  [real(r8) (:,:)] minimum soil suction [mm]
+      this%ecacnp_forc(c,j)%soilpsi = max(biophysforc%smp_l_col(c,j)*grav*1.e-6_r8,-15._r8)    ! Input:  [real(r8) (:,:)] soilwater pontential in each soil layer [MPa]
+      this%ecacnp_forc(c,j)%bsw = biophysforc%bsw_col(c,j)
+      this%ecacnp_forc(c,j)%bd   = biophysforc%bd_col(c,j)              !bulk density
+      this%ecacnp_forc(c,j)%pct_sand = biophysforc%cellsand_col(c,j)
+      this%ecacnp_forc(c,j)%pct_clay = biophysforc%cellclay_col(c,j)
+      this%ecacnp_forc(c,j)%h2osoi_vol = biophysforc%h2osoi_vol_col(c,j)
+      this%ecacnp_forc(c,j)%h2osoi_liq = biophysforc%h2osoi_liq_col(c,j)
+      this%ecacnp_forc(c,j)%air_vol = biophysforc%air_vol_col(c,j)
+      this%ecacnp_forc(c,j)%finundated = biophysforc%finundated_col(c)
+      this%ecacnp_forc(c,j)%watsat = biophysforc%watsat_col(c,j)
+      this%ecacnp_forc(c,j)%watfc = biophysforc%watfc_col(c,j)
+      this%ecacnp_forc(c,j)%cellorg = biophysforc%cellorg_col(c,j)
+      this%ecacnp_forc(c,j)%pH = biophysforc%soil_pH(c,j)
 
       !conductivity for plant-aided gas transport
-      this%centuryforc(c,j)%aren_cond_n2 = &
+      this%ecacnp_forc(c,j)%aren_cond_n2 = &
           tracercoeff_vars%aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_n2)) * &
           tracercoeff_vars%scal_aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_n2))
-      this%centuryforc(c,j)%aren_cond_o2 = &
+      this%ecacnp_forc(c,j)%aren_cond_o2 = &
           tracercoeff_vars%aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_o2)) * &
           tracercoeff_vars%scal_aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_o2))
-      this%centuryforc(c,j)%aren_cond_n2o = &
+      this%ecacnp_forc(c,j)%aren_cond_n2o = &
           tracercoeff_vars%aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_n2o)) * &
           tracercoeff_vars%scal_aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_n2o))
-      this%centuryforc(c,j)%aren_cond_co2 = &
+      this%ecacnp_forc(c,j)%aren_cond_co2 = &
           tracercoeff_vars%aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_co2x)) * &
           tracercoeff_vars%scal_aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_co2x))
       if(this%use_c13)then
-        this%centuryforc(c,j)%aren_cond_co2_c13 = &
+        this%ecacnp_forc(c,j)%aren_cond_co2_c13 = &
           tracercoeff_vars%aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_c13_co2x)) * &
           tracercoeff_vars%scal_aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_c13_co2x))
       endif
       if(this%use_c14)then
-        this%centuryforc(c,j)%aren_cond_co2_c14 = &
+        this%ecacnp_forc(c,j)%aren_cond_co2_c14 = &
           tracercoeff_vars%aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_c14_co2x)) * &
           tracercoeff_vars%scal_aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_c14_co2x))
       endif
-      this%centuryforc(c,j)%aren_cond_ar = &
+      this%ecacnp_forc(c,j)%aren_cond_ar = &
           tracercoeff_vars%aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_ar)) * &
           tracercoeff_vars%scal_aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_ar))
-      this%centuryforc(c,j)%aren_cond_ch4 = &
+      this%ecacnp_forc(c,j)%aren_cond_ch4 = &
           tracercoeff_vars%aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_ch4)) * &
           tracercoeff_vars%scal_aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_ch4))
       !phase conversion parameter
-      this%centuryforc(c,j)%ch4_g2b = &
+      this%ecacnp_forc(c,j)%ch4_g2b = &
           tracercoeff_vars%gas2bulkcef_mobile_col(c,j,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_ch4))
-      this%centuryforc(c,j)%co2_g2b = &
+      this%ecacnp_forc(c,j)%co2_g2b = &
           tracercoeff_vars%gas2bulkcef_mobile_col(c,j,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_co2x))
-      this%centuryforc(c,j)%o2_g2b = &
+      this%ecacnp_forc(c,j)%o2_g2b = &
           tracercoeff_vars%gas2bulkcef_mobile_col(c,j,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_o2))
-      this%centuryforc(c,j)%n2_g2b = &
+      this%ecacnp_forc(c,j)%n2_g2b = &
           tracercoeff_vars%gas2bulkcef_mobile_col(c,j,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_n2))
-      this%centuryforc(c,j)%ar_g2b = &
+      this%ecacnp_forc(c,j)%ar_g2b = &
           tracercoeff_vars%gas2bulkcef_mobile_col(c,j,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_ar))
-      this%centuryforc(c,j)%n2o_g2b = &
+      this%ecacnp_forc(c,j)%n2o_g2b = &
           tracercoeff_vars%gas2bulkcef_mobile_col(c,j,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_n2o))
-      this%centuryforc(c,j)%o2_w2b = &
+      this%ecacnp_forc(c,j)%o2_w2b = &
           tracercoeff_vars%aqu2bulkcef_mobile_col(c,j,betrtracer_vars%groupid(betrtracer_vars%id_trc_o2))
 
       !atmospheric pressure (mol/m3) for gas ventilation.
-      this%centuryforc(c,j)%conc_atm_n2 = &
+      this%ecacnp_forc(c,j)%conc_atm_n2 = &
           tracerstate_vars%tracer_conc_atm_col(c,betrtracer_vars%volatileid(betrtracer_vars%id_trc_n2))
-      this%centuryforc(c,j)%conc_atm_n2o= &
+      this%ecacnp_forc(c,j)%conc_atm_n2o= &
           tracerstate_vars%tracer_conc_atm_col(c,betrtracer_vars%volatileid(betrtracer_vars%id_trc_n2o))
-      this%centuryforc(c,j)%conc_atm_o2 = &
+      this%ecacnp_forc(c,j)%conc_atm_o2 = &
           tracerstate_vars%tracer_conc_atm_col(c,betrtracer_vars%volatileid(betrtracer_vars%id_trc_o2))
-      this%centuryforc(c,j)%conc_atm_ar = &
+      this%ecacnp_forc(c,j)%conc_atm_ar = &
           tracerstate_vars%tracer_conc_atm_col(c,betrtracer_vars%volatileid(betrtracer_vars%id_trc_ar))
-      this%centuryforc(c,j)%conc_atm_co2 = &
+      this%ecacnp_forc(c,j)%conc_atm_co2 = &
           tracerstate_vars%tracer_conc_atm_col(c,betrtracer_vars%volatileid(betrtracer_vars%id_trc_co2x))
       if(this%use_c13)then
-        this%centuryforc(c,j)%conc_atm_co2_c13 = &
+        this%ecacnp_forc(c,j)%conc_atm_co2_c13 = &
           tracerstate_vars%tracer_conc_atm_col(c,betrtracer_vars%volatileid(betrtracer_vars%id_trc_c13_co2x))
       endif
       if(this%use_c14)then
-        this%centuryforc(c,j)%conc_atm_co2_c14 = &
+        this%ecacnp_forc(c,j)%conc_atm_co2_c14 = &
           tracerstate_vars%tracer_conc_atm_col(c,betrtracer_vars%volatileid(betrtracer_vars%id_trc_c14_co2x))
       endif
-      this%centuryforc(c,j)%conc_atm_ch4 = &
+      this%ecacnp_forc(c,j)%conc_atm_ch4 = &
           tracerstate_vars%tracer_conc_atm_col(c,betrtracer_vars%volatileid(betrtracer_vars%id_trc_ch4))
 
-      this%centuryforc(c,j)%soilorder = biophysforc%isoilorder(c)
+      this%ecacnp_forc(c,j)%soilorder = biophysforc%isoilorder(c)
 
     enddo
   enddo
@@ -1903,7 +1902,7 @@ contains
   do j = lbj, ubj
     do fc = 1, num_soilc
       c = filter_soilc(fc)
-      this%centuryforc(c,j)%rt_ar  = plant_soilbgc%rt_vr_col(c,j)            !root autotrophic respiration, mol CO2/m3/s
+      this%ecacnp_forc(c,j)%rt_ar  = plant_soilbgc%rt_vr_col(c,j)            !root autotrophic respiration, mol CO2/m3/s
     enddo
   enddo
   end select

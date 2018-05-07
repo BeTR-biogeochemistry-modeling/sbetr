@@ -380,7 +380,7 @@ contains
     real(r8)                          , intent(in)    :: dtime                       ! model time step
     type(betrtracer_type)             , intent(in)    :: betrtracer_vars             ! betr configuration information
     type(betr_biogeophys_input_type)  , intent(inout) :: biophysforc
-    type(tracercoeff_type)            , intent(in)    :: tracercoeff_vars
+    type(tracercoeff_type)            , intent(inout) :: tracercoeff_vars
     type(tracerstate_type)            , intent(inout) :: tracerstate_vars
     type(tracerflux_type)             , intent(inout) :: tracerflux_vars
     type(tracerboundarycond_type)     , intent(inout) :: tracerboundarycond_vars !

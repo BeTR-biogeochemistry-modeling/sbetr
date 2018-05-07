@@ -104,7 +104,8 @@ implicit none
     real(r8) :: watfc
     real(r8) :: cellorg
     real(r8) :: pH
-
+    real(r8) :: Msurf_OM          !surface area for sorption reaction between om and soil minerals
+    real(r8) :: KM_OM_ref         !this is the reference sorption parameter, which will be adjusted for various DOM species in the model
     real(r8) :: aren_cond_n2
     real(r8) :: aren_cond_o2
     real(r8) :: aren_cond_n2o

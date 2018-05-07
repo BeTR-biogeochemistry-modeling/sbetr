@@ -21,11 +21,12 @@ implicit none
     real(r8), pointer :: plant_eff_pcompet_b_vr_patch(:,:)
     real(r8), pointer :: minsurf_p_compet_vr_col(:,:)
     real(r8), pointer :: minsurf_nh4_compet_vr_col(:,:)
-
+    real(r8), pointer :: minsurf_dom_compet_vr_col(:,:)
     !the following is only for eca-cnp bgc, for other applications
     !some of the parameters will be read through the interface
     real(r8), pointer :: km_minsurf_p_vr_col(:,:)
     real(r8), pointer :: km_minsurf_nh4_vr_col(:,:)
+    real(r8), pointer :: km_minsurf_dom_vr_col(:,:)
   contains
     procedure, public  :: Init
     procedure, public  :: InitAllocate
@@ -67,9 +68,10 @@ implicit none
 
      allocate(this%minsurf_nh4_compet_vr_col(begc:endc,1:ubj)); this%minsurf_nh4_compet_vr_col(:,:) = nan
      allocate(this%minsurf_p_compet_vr_col(begc:endc,1:ubj)); this%minsurf_p_compet_vr_col(:,:) = nan
+     allocate(this%minsurf_dom_compet_vr_col(begc:endc,1:ubj)); this%minsurf_dom_compet_vr_col(:,:) = nan
      allocate(this%km_minsurf_p_vr_col(begc:endc,1:ubj)); this%km_minsurf_p_vr_col(:,:) = nan
      allocate(this%km_minsurf_nh4_vr_col(begc:endc,1:ubj)); this%km_minsurf_nh4_vr_col(:,:) = nan
-
+     allocate(this%km_minsurf_dom_vr_col(begc:endc,1:ubj)); this%km_minsurf_dom_vr_col(:,:) = nan
     end subroutine InitAllocate
     !------------------------------------------------------------------------
     subroutine InitCold(this, bounds)

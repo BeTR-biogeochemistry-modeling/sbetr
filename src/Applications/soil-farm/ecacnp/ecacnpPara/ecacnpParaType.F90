@@ -86,7 +86,7 @@ implicit none
    procedure, public  :: set_spinup_factor
  end type ecacnp_para_type
 
- type(ecacnp_para_type), public :: cent_para
+ type(ecacnp_para_type), public :: ecacnp_para
  public :: create_jarpars_ecacnp
 contains
 
