@@ -25,7 +25,8 @@ implicit none
     real(r8), pointer :: vmax_minsurf_p_vr_col(:,:)
     real(r8), pointer :: km_minsurf_p_vr_col(:,:)
     real(r8), pointer :: km_minsurf_nh4_vr_col(:,:)
-
+    real(r8), pointer :: minsurf_dom_compet_vr_col(:,:)
+    real(r8), pointer :: km_minsurf_dom_vr_col(:,:)
   contains
     procedure, public  :: Init
     procedure, public  :: InitAllocate
@@ -60,16 +61,16 @@ implicit none
      allocate(this%plant_nh4_km_vr_patch(begp:endp, 1:nlevdecomp_full)); this%plant_nh4_km_vr_patch(:,:) = spval
      allocate(this%plant_p_km_vr_patch(begp:endp, 1:nlevdecomp_full)); this%plant_p_km_vr_patch(:,:) = spval
 
-
      allocate(this%plant_eff_ncompet_b_vr_patch(begp:endp,1:nlevdecomp_full)); this%plant_eff_ncompet_b_vr_patch(:,:)=nan
      allocate(this%plant_eff_pcompet_b_vr_patch(begp:endp,1:nlevdecomp_full)); this%plant_eff_pcompet_b_vr_patch(:,:)=nan
      allocate(this%minsurf_p_compet_vr_col(begc:endc,1:nlevdecomp_full)); this%minsurf_p_compet_vr_col(:,:) = spval
      allocate(this%minsurf_nh4_compet_vr_col(begc:endc, 1:nlevdecomp_full)); this%minsurf_nh4_compet_vr_col(:,:) = spval
 
      allocate(this%vmax_minsurf_p_vr_col(begc:endc, 1:nlevdecomp_full)); this%vmax_minsurf_p_vr_col(:,:) = spval
-     allocate(this%km_minsurf_p_vr_col(begc:endc,1:nlevdecomp_full)); this%km_minsurf_p_vr_col(:,:) = spval
-     allocate(this%km_minsurf_nh4_vr_col(begc:endc,1:nlevdecomp_full)); this%km_minsurf_nh4_vr_col(:,:)=nan
-
+     allocate(this%km_minsurf_p_vr_col(begc:endc,1:nlevdecomp_full)); this%km_minsurf_p_vr_col(:,:) = 1._r8
+     allocate(this%km_minsurf_nh4_vr_col(begc:endc,1:nlevdecomp_full)); this%km_minsurf_nh4_vr_col(:,:)=1._r8
+     allocate(this%km_minsurf_dom_vr_col(begc:endc, 1:nlevdecomp_full)); this%km_minsurf_dom_vr_col(:,:) = 1._r8
+     allocate(this%minsurf_dom_compet_vr_col(begc:endc, 1:nlevdecomp_full)); this%minsurf_dom_compet_vr_col(:,:) = 0._r8
 
     end subroutine InitAllocate
     !------------------------------------------------------------------------

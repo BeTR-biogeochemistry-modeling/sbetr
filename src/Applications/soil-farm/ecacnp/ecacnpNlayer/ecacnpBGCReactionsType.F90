@@ -83,7 +83,7 @@ module ecacnpBGCReactionsType
     procedure :: set_bgc_spinup
     procedure :: UpdateParas
     procedure :: init_iP_prof
-    procedure, private :: set_century_forc
+    procedure, private :: set_bgc_forc
     procedure, private :: retrieve_output
     procedure, private :: rm_ext_output
     procedure, private :: precision_filter
@@ -1276,7 +1276,7 @@ contains
     allocate(ystatesf(nstates))
 
     !pass in fluxes and state varaibles into the 1D soil bgc model
-    call this%set_century_forc(bounds, col, lbj, ubj, jtops, num_soilc, filter_soilc, &
+    call this%set_bgc_forc(bounds, col, lbj, ubj, jtops, num_soilc, filter_soilc, &
         biophysforc, plant_soilbgc, betrtracer_vars, tracercoeff_vars, tracerstate_vars,betr_status)
 
     select type(plant_soilbgc)
@@ -1648,7 +1648,7 @@ contains
   end subroutine retrieve_biogeoflux
 
   !------------------------------------------------------------------------------
-  subroutine set_century_forc(this, bounds, col, lbj, ubj, jtops, num_soilc, filter_soilc, &
+  subroutine set_bgc_forc(this, bounds, col, lbj, ubj, jtops, num_soilc, filter_soilc, &
       biophysforc, plant_soilbgc, betrtracer_vars, tracercoeff_vars, tracerstate_vars, betr_status)
   !DESCRIPTION
   !set up forcing for running bgc
@@ -1907,7 +1907,7 @@ contains
   enddo
   end select
   end associate
-  end subroutine set_century_forc
+  end subroutine set_bgc_forc
 
   !------------------------------------------------------------------------------
   subroutine precision_filter(this, nstates, ystatesf)

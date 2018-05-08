@@ -654,7 +654,7 @@ module bncdio_pio
   call check_var(ncid, trim(varname), vardesc, readvar)
 
   call check_ret( nf90_put_var(ncid%fh, vardesc%varid, data,  &
-     start = (/1,1,rec/)),'ncd_putvar_real_sp_2d')
+     start = (/1,1,rec/)),'ncd_putvar_real_sp_2d '//trim(varname))
 
   end subroutine ncd_putvar_real_sp_2d
 !----------------------------------------------------------------------

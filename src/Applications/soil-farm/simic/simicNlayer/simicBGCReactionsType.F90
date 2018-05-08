@@ -123,7 +123,16 @@ contains
   integer, intent(in) :: lbj, ubj
   integer, intent(in) :: nactpft
 
-  if (this%dummy_compiler_warning) continue
+  integer :: c_l, p, j
+  !in the following, only one column is assumed for the bgc
+  c_l = 1
+  this%nactpft = nactpft
+  do j = lbj, ubj
+    !effective p competing decomposers
+    this%simic_forc(c_l,j)%Msurf_OM  = plantNutkinetics%minsurf_dom_compet_vr_col(c_l,j)
+    this%simic_forc(c_l,j)%KM_OM_ref = plantNutkinetics%km_minsurf_dom_vr_col(c_l,j)
+  enddo
+
   end subroutine set_kinetics_par
   !-------------------------------------------------------------------------------
   subroutine init_boundary_condition_type(this, bounds, betrtracer_vars, tracerboundarycond_vars )
@@ -746,13 +755,13 @@ contains
 
     call this%set_bgc_forc(bounds, col, lbj, ubj, jtops, num_soilc, filter_soilc, &
         biophysforc, plant_soilbgc, betrtracer_vars, tracercoeff_vars, tracerstate_vars,betr_status)
-    !now assume doc decays with a turnover rate 1.e-6_r8
+
     do j = lbj, ubj
       do fc = 1, num_soilc
         c = filter_soilc(fc)
         if(j<jtops(c))cycle
         is_surflit=(j<=0)
-
+        !do bgc reaction
         call this%simic_bgc(c,j)%runbgc(is_surflit, dtime, this%simic_forc(c,j), nstates, ystates0, ystatesf, betr_status)
 
         if(betr_status%check_status())then
@@ -766,6 +775,10 @@ contains
 
       enddo
     enddo
+
+    !update phase change coefficients for tracers involved in sorptive reactions
+    !call this%update_phase_coeff(bounds, col, lbj, ubj, jtops, num_soilc, filter_soilc, &
+    !    betrtracer_vars, tracercoeff_vars)
 
     deallocate(ystates0)
     deallocate(ystatesf)
@@ -1477,6 +1490,5 @@ contains
   enddo
   end associate
   end subroutine set_bgc_forc
-
 
 end module SimicBGCReactionsType

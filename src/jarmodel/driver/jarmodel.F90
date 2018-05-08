@@ -172,13 +172,16 @@ subroutine run_model(namelist_buffer)
     call SetJarForc(bgc_forc, om_forc, nut_forc, atm_forc, soil_forc)
 
     call setJarStates(bgc_forc, ystatesf)
-    
+
     call jarmodel%runbgc(is_surflit, dtime, bgc_forc, nvars, ystates0, ystatesf, bstatus)
 
     call timer%update_time_stamp()
 
     call hist%hist_wrap(ystatesf, timer)
 
+    if(timer%its_a_new_year())then
+      write(iulog,*)'year ',timer%get_cur_year()
+    endif
     if(timer%its_time_to_exit())exit
   enddo
   call timer%get_ymdhs(yymmddhhss)

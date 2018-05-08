@@ -631,7 +631,7 @@ contains
     do j = 1, betr_bounds%ubj
       this%betr(c)%plantNutkinetics%minsurf_p_compet_vr_col(c_l,j) = 0._r8
       this%betr(c)%plantNutkinetics%minsurf_nh4_compet_vr_col(c_l,j) = 0._r8
-      this%betr(c)%plantNutkinetics%minsurf_dom_compet_vr_col(c_l,j) = 0._r8
+      this%betr(c)%plantNutkinetics%minsurf_dom_compet_vr_col(c_l,j) = PlantMicKinetics_vars%minsurf_dom_compet_vr_col(c,j)
     enddo
   enddo
 
@@ -642,13 +642,12 @@ contains
       c = filter_soilc(fc)
       this%betr(c)%plantNutkinetics%km_minsurf_p_vr_col(c_l,j) = 1._r8
       this%betr(c)%plantNutkinetics%km_minsurf_nh4_vr_col(c_l,j)=1._r8
-      this%betr(c)%plantNutkinetics%km_minsurf_dom_vr_col(c_l,j)=1._r8
+      this%betr(c)%plantNutkinetics%km_minsurf_dom_vr_col(c_l,j)=PlantMicKinetics_vars%km_minsurf_dom_vr_col(c,j)
     enddo
   enddo
-  
+
   end associate
   end subroutine set_transient_kinetics_par
-
 
   !------------------------------------------------------------------------
   subroutine StandaloneCalcSmpL(this, bounds, lbj, ubj, numf, filter, t_soisno, &
