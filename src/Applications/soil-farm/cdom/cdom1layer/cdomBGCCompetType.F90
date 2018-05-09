@@ -125,14 +125,22 @@ contains
   allocate(substrate(2))
   allocate(entity(tot_entity))
   !form the affinity matrix
-  !nh4
-  kaff(1,:) = (/this%kaff_minn_nh4_nit, 0._r8, &
+  if(plant_ntypes>0)then
+    !nh4
+    kaff(1,:) = (/this%kaff_minn_nh4_nit, 0._r8, &
       this%kaff_minn_nh4_mic, this%kaff_minn_nh4_msurf, &
       this%kaff_minn_nh4_plant(1:plant_ntypes)/)
-  !no3
-  kaff(2,:) = (/0._r8, this%kaff_minn_no3_den,&
+    !no3
+    kaff(2,:) = (/0._r8, this%kaff_minn_no3_den,&
       this%kaff_minn_no3_mic, 0._r8, &
       this%kaff_minn_no3_plant(1:plant_ntypes)/)
+  else
+    kaff(1,:) = (/this%kaff_minn_nh4_nit, 0._r8, &
+      this%kaff_minn_nh4_mic, this%kaff_minn_nh4_msurf/)
+
+    kaff(2,:) = (/0._r8, this%kaff_minn_no3_den,&
+      this%kaff_minn_no3_mic, 0._r8/)
+  endif
   !form the substrate vector
   substrate(:)=(/smin_nh4,smin_no3/)
 
@@ -140,8 +148,11 @@ contains
   b_nit = this%compet_bn_nit
   b_den = this%compet_bn_den
   b_mic = this%compet_bn_mic
-
-  entity(:)=(/b_nit,b_den,b_mic,msurf_nh4,this%plant_froot_nn(1:plant_ntypes)/)
+  if(plant_ntypes>0)then
+    entity(:)=(/b_nit,b_den,b_mic,msurf_nh4,this%plant_froot_nn(1:plant_ntypes)/)
+  else
+    entity(:)=(/b_nit,b_den,b_mic,msurf_nh4/)
+  endif
   !do ECA calculation
   call ecacomplex_cell_norm(kaff,substrate,entity, se_complex, bstatus)
   if(non_limit)then
@@ -214,11 +225,19 @@ contains
   allocate(substrate(1))
   allocate(entity(tot_entity))
 
-  kaff(1,:) = (/this%kaff_minp_mic, this%kaff_minp_msurf, &
+  if(plant_ntypes>0)then
+    kaff(1,:) = (/this%kaff_minp_mic, this%kaff_minp_msurf, &
       this%kaff_minp_plant(1:plant_ntypes)/)
+  else
+    kaff(1,:) = (/this%kaff_minp_mic, this%kaff_minp_msurf/)
+  endif
 
   b_mic = this%compet_bp_mic
-  entity(:)=(/b_mic,msurf_minp,this%plant_froot_np(1:plant_ntypes)/)
+  if(plant_ntypes>0)then
+    entity(:)=(/b_mic,msurf_minp,this%plant_froot_np(1:plant_ntypes)/)
+  else
+    entity(:)=(/b_mic,msurf_minp/)
+  endif
   substrate(:)=(/sminp_soluble/)
 
   !given P is under competitation by microbes, plants and mineral surfaces

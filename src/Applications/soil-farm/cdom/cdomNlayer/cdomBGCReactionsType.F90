@@ -89,6 +89,7 @@ module cdomBGCReactionsType
     procedure, private :: retrieve_output
     procedure, private :: rm_ext_output
     procedure, private :: precision_filter
+    procedure, private :: update_sorpphase_coeff
   end type cdom_bgc_reaction_type
 
   interface cdom_bgc_reaction_type
@@ -1259,15 +1260,19 @@ contains
     enddo
     deallocate(ystates0)
     deallocate(ystatesf)
-    if(betrtracer_vars%debug)then
+!    if(betrtracer_vars%debug)then
 !      select type(plant_soilbgc)
 !      type is(cdom_plant_soilbgc_type)
 !        write(*,*)'sminn act plant uptake',plant_soilbgc%plant_minn_active_yield_flx_col(bounds%begc:bounds%endc)
 !        write(*,*)'sminp act plant uptake',plant_soilbgc%plant_minp_active_yield_flx_col(bounds%begc:bounds%endc)
 !      end select
-      call this%debug_info(bounds, num_soilc, filter_soilc, col%dz(bounds%begc:bounds%endc,bounds%lbj:bounds%ubj),&
-        betrtracer_vars, tracerstate_vars,  'after bgcreact',betr_status)
-    endif
+!      call this%debug_info(bounds, num_soilc, filter_soilc, col%dz(bounds%begc:bounds%endc,bounds%lbj:bounds%ubj),&
+!        betrtracer_vars, tracerstate_vars,  'after bgcreact',betr_status)
+!    endif
+!update phase change coefficients for tracers involved in sorptive reactions
+    call this%update_sorpphase_coeff(bounds, col, lbj, ubj, jtops, num_soilc, filter_soilc, &
+      betrtracer_vars, tracerstate_vars, tracercoeff_vars)
+
   end subroutine calc_bgc_reaction
 
   !--------------------------------------------------------------------
@@ -2241,19 +2246,19 @@ contains
            ystates0(this%cdom_bgc_index%lid_plant_minp_pft(p)))*patomw/dtime
 
     enddo
-
-    plant_soilbgc%plant_minn_no3_active_yield_flx_vr_col(c,j) = &
+    if(this%nactpft>0)then
+      plant_soilbgc%plant_minn_no3_active_yield_flx_vr_col(c,j) = &
           (ystatesf(this%cdom_bgc_index%lid_plant_minn_no3) - &
           ystates0(this%cdom_bgc_index%lid_plant_minn_no3))*natomw/dtime
 
-    plant_soilbgc%plant_minn_nh4_active_yield_flx_vr_col(c,j) = &
+      plant_soilbgc%plant_minn_nh4_active_yield_flx_vr_col(c,j) = &
           (ystatesf(this%cdom_bgc_index%lid_plant_minn_nh4) - &
           ystates0(this%cdom_bgc_index%lid_plant_minn_nh4))*natomw/dtime
 
-    plant_soilbgc%plant_minp_active_yield_flx_vr_col(c,j) = &
+      plant_soilbgc%plant_minp_active_yield_flx_vr_col(c,j) = &
           (ystatesf(this%cdom_bgc_index%lid_plant_minp) - &
            ystates0(this%cdom_bgc_index%lid_plant_minp))*patomw/dtime
-
+    endif
   end select
 
   end associate
@@ -2622,5 +2627,55 @@ contains
      end subroutine sum_totsom
    end subroutine retrieve_biostates
 
+   !------------------------------------------------------------------------------
+   subroutine update_sorpphase_coeff(this, bounds, col, lbj, ubj, jtops, num_soilc, filter_soilc, &
+       betrtracer_vars, tracerstate_vars, tracercoeff_vars)
+   !
+   !DESCRIPTION
+   !update sorption related phase conversion parameter
+   !in this formulation, the amount sorption surface is assumed to scale linearly with moisture
+   !content. Microbes are always assumed in sufficiently moist status, though the activity could be
+   !smaller
+   use tracerstatetype          , only : tracerstate_type
+   use betr_decompMod           , only : betr_bounds_type
+   use tracercoeffType          , only : tracercoeff_type
+   use betr_columnType          , only : betr_column_type
+   use BetrTracerType           , only : betrtracer_type
+   implicit none
+   class(cdom_bgc_reaction_type) , intent(inout)    :: this
+   type(bounds_type)                    , intent(in) :: bounds                         ! bounds
+   type(betr_column_type)               , intent(in) :: col
+   integer                              , intent(in) :: jtops(bounds%begc: ) ! top index of each column
+   integer                              , intent(in) :: lbj, ubj                       ! lower and upper bounds, make sure they are > 0
+   integer                              , intent(in) :: num_soilc       ! number of columns in column filter
+   integer                              , intent(in) :: filter_soilc(:) ! column filter
+   type(betrtracer_type)                , intent(in) :: betrtracer_vars               ! betr configuration information
+   type(tracerstate_type)               , intent(in) :: tracerstate_vars
+   type(tracercoeff_type)            , intent(inout) :: tracercoeff_vars
+
+   real(r8) :: KM_CM, Msurf, KM_EM
+   real(r8) :: denorm
+   integer :: c_l, j, trc_id_c
+   associate(                                                           &
+     aqu2bulkcef_mobile   => tracercoeff_vars%aqu2bulkcef_mobile_col  , & !Output:[real(r8)(:,:)], phase conversion coeff
+     id_trc_dom           => betrtracer_vars%id_trc_dom               , &
+     trcid_dom            => betrtracer_vars%id_trc_beg_dom           , &
+     id_trc_end_dom       => betrtracer_vars%id_trc_end_dom           , &
+     tracer_conc_mobile   => tracerstate_vars%tracer_conc_mobile_col  , &
+     Kaff_CM              => cdom_para%Kaff_CM                        , &
+     c_loc                => this%cdom_bgc_index%c_loc                  &
+   )
+   c_l=1
+   trc_id_c=id_trc_dom+c_loc-1
+   do j = 1, ubj
+     KM_CM=aqu2bulkcef_mobile(c_l,j,trc_id_c)*this%cdom_forc(c_l,j)%KM_OM_ref*Kaff_CM
+     Msurf=this%cdom_forc(c_l,j)%Msurf_OM
+
+     denorm=KM_CM+Msurf+tracer_conc_mobile(c_l,j,trcid_dom)
+     aqu2bulkcef_mobile(c_l,j,trc_id_c) = aqu2bulkcef_mobile(c_l,j,trc_id_c)* &
+       denorm/(denorm-Msurf)
+   enddo
+   end associate
+   end subroutine update_sorpphase_coeff
 
 end module cdomBGCReactionsType

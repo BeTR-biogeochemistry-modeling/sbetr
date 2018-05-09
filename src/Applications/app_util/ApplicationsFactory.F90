@@ -74,7 +74,7 @@ contains
     case ("ecacnp")
        asoibgc=.true.
        allocate(bgc_reaction, source=ecacnp_bgc_reaction_type())
-    case ("cdom_ecacnp")
+    case ("cdom")
        asoibgc=.true.
        allocate(bgc_reaction, source=cdom_bgc_reaction_type())
     case ("simic")
@@ -115,7 +115,7 @@ contains
   select case(trim(method))
   case ("ecacnp")
      allocate(plant_soilbgc, source=ecacnp_plant_soilbgc_type())
-  case ("cdom_ecacnp")
+  case ("cdom")
      allocate(plant_soilbgc, source=cdom_plant_soilbgc_type())
   case ("simic")
      allocate(plant_soilbgc, source=simic_plant_soilbgc_type())
@@ -145,7 +145,7 @@ contains
    select case (trim(reaction_method))
    case ("ecacnp")
      call ecacnp_para%readPars(ncid, bstatus)
-   case ("cdom_ecacnp")
+   case ("cdom")
      call cdom_para%readPars(ncid, bstatus)
    case ("simic")
      call simic_para%readPars(ncid, bstatus)
@@ -177,7 +177,7 @@ contains
    case ("ecacnp")
      call  ecacnp_para%Init(bgc_namelist_buffer, bstatus)
      !do nothing
-   case ("cdom_ecacnp")
+   case ("cdom")
      call cdom_para%Init(bgc_namelist_buffer, bstatus)
    case ("simic")
      call simic_para%Init(bgc_namelist_buffer, bstatus)
@@ -202,7 +202,7 @@ contains
   select case (trim(reaction_method))
   case ("ecacnp")
      call  ecacnp_para%set_spinup_factor()
-  case ("cdom_ecacnp")
+  case ("cdom")
      call cdom_para%set_spinup_factor()
   end select
 

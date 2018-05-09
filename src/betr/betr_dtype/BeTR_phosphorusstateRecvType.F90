@@ -66,14 +66,14 @@ implicit none
   allocate(this%totsomp_1m_col(begc:endc))
   allocate(this%sminp_col(begc:endc));
   allocate(this%occlp_col(begc:endc));
-  if(index(reaction_method,'ecacnp')/=0)then
-    allocate(this%som1p_col(begc:endc)); this%som1p_col(:) = nan
-    allocate(this%som2p_col(begc:endc)); this%som2p_col(:) = nan
-    allocate(this%som3p_col(begc:endc)); this%som3p_col(:) = nan
-    allocate(this%som1p_vr_col(begc:endc, lbj:ubj));  this%som1p_vr_col(:,:) = nan
-    allocate(this%som2p_vr_col(begc:endc, lbj:ubj));  this%som2p_vr_col(:,:) = nan
-    allocate(this%som3p_vr_col(begc:endc, lbj:ubj));  this%som3p_vr_col(:,:) = nan
-  endif
+
+  allocate(this%som1p_col(begc:endc)); this%som1p_col(:) = nan
+  allocate(this%som2p_col(begc:endc)); this%som2p_col(:) = nan
+  allocate(this%som3p_col(begc:endc)); this%som3p_col(:) = nan
+  allocate(this%som1p_vr_col(begc:endc, lbj:ubj));  this%som1p_vr_col(:,:) = nan
+  allocate(this%som2p_vr_col(begc:endc, lbj:ubj));  this%som2p_vr_col(:,:) = nan
+  allocate(this%som3p_vr_col(begc:endc, lbj:ubj));  this%som3p_vr_col(:,:) = nan
+
   allocate(this%cwdp_vr_col(begc:endc,lbj:ubj)); this%cwdp_vr_col(:,:) =nan
   allocate(this%totlitp_vr_col(begc:endc,lbj:ubj)); this%totlitp_vr_col(:,:)=nan
   allocate(this%totsomp_vr_col(begc:endc,lbj:ubj)); this%totsomp_vr_col(:,:)=nan
@@ -93,11 +93,11 @@ implicit none
   this%totsomp_vr_col(:,:) = value_column
   this%sminp_vr_col(:,:) = value_column
   this%occlp_vr_col(:,:) = value_column
-  if(index(reaction_method,'ecacnp')/=0)then
-    this%som1p_vr_col(:,:) = value_column
-    this%som2p_vr_col(:,:) = value_column
-    this%som3p_vr_col(:,:) = value_column
-  endif
+
+  this%som1p_vr_col(:,:) = value_column
+  this%som2p_vr_col(:,:) = value_column
+  this%som3p_vr_col(:,:) = value_column
+
   this%domp_vr_col(:,:) = value_column
   end subroutine reset
 
@@ -121,17 +121,17 @@ implicit none
   this%totsomp_1m_col(:) = 0._r8
   this%sminp_col(:) = 0._r8
   this%occlp_col(:) = 0._r8
-  if(index(reaction_method,'ecacnp')/=0)then
-    this%som1p_col(:) = 0._r8
-    this%som2p_col(:) = 0._r8
-    this%som3p_col(:) = 0._r8
-    do j = lbj, ubj
-      do c = bounds%begc, bounds%endc
-        this%som1p_col(c) =   this%som1p_col(c) + dz(c,j)*this%som1p_vr_col(c,j)
-        this%som2p_col(c) =   this%som2p_col(c) + dz(c,j)*this%som2p_vr_col(c,j)
-        this%som3p_col(c) =   this%som3p_col(c) + dz(c,j)*this%som3p_vr_col(c,j)
-      enddo
+
+  this%som1p_col(:) = 0._r8
+  this%som2p_col(:) = 0._r8
+  this%som3p_col(:) = 0._r8
+  do j = lbj, ubj
+    do c = bounds%begc, bounds%endc
+      this%som1p_col(c) =   this%som1p_col(c) + dz(c,j)*this%som1p_vr_col(c,j)
+      this%som2p_col(c) =   this%som2p_col(c) + dz(c,j)*this%som2p_vr_col(c,j)
+      this%som3p_col(c) =   this%som3p_col(c) + dz(c,j)*this%som3p_vr_col(c,j)
     enddo
+  enddo
 
   do j = lbj, ubj
     do c = bounds%begc, bounds%endc
@@ -157,6 +157,6 @@ implicit none
       endif
     enddo
   enddo
-  endif
+
   end subroutine summary
 end module BeTR_phosphorusstateRecvType

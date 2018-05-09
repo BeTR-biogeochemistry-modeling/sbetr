@@ -70,14 +70,14 @@ implicit none
   allocate(this%sminn_no3_col(begc:endc))
   allocate(this%totlitn_1m_col(begc:endc))
   allocate(this%totsomn_1m_col(begc:endc))
-  if(index(reaction_method,'ecacnp')/=0)then
-    allocate(this%som1n_col(begc:endc));  this%som1n_col(:) = nan
-    allocate(this%som2n_col(begc:endc));  this%som2n_col(:) = nan
-    allocate(this%som3n_col(begc:endc));  this%som3n_col(:) = nan
-    allocate(this%som1n_vr_col(begc:endc, lbj:ubj));  this%som1n_vr_col(:,:) = nan
-    allocate(this%som2n_vr_col(begc:endc, lbj:ubj));  this%som2n_vr_col(:,:) = nan
-    allocate(this%som3n_vr_col(begc:endc, lbj:ubj));  this%som3n_vr_col(:,:) = nan
-  endif
+
+  allocate(this%som1n_col(begc:endc));  this%som1n_col(:) = nan
+  allocate(this%som2n_col(begc:endc));  this%som2n_col(:) = nan
+  allocate(this%som3n_col(begc:endc));  this%som3n_col(:) = nan
+  allocate(this%som1n_vr_col(begc:endc, lbj:ubj));  this%som1n_vr_col(:,:) = nan
+  allocate(this%som2n_vr_col(begc:endc, lbj:ubj));  this%som2n_vr_col(:,:) = nan
+  allocate(this%som3n_vr_col(begc:endc, lbj:ubj));  this%som3n_vr_col(:,:) = nan
+
   allocate(this%cwdn_vr_col(begc:endc,lbj:ubj)); this%cwdn_vr_col(:,:) = nan
   allocate(this%totlitn_vr_col(begc:endc,lbj:ubj)); this%totlitn_vr_col(:,:)=nan
   allocate(this%totsomn_vr_col(begc:endc,lbj:ubj)); this%totsomn_vr_col(:,:) =nan
@@ -100,11 +100,10 @@ implicit none
   this%sminn_nh4_vr_col(:,:) = value_column
   this%sminn_no3_vr_col(:,:) = value_column
 
-  if(index(reaction_method,'ecacnp')/=0)then
-    this%som1n_vr_col(:,:) = value_column
-    this%som2n_vr_col(:,:) = value_column
-    this%som3n_vr_col(:,:) = value_column
-  endif
+  this%som1n_vr_col(:,:) = value_column
+  this%som2n_vr_col(:,:) = value_column
+  this%som3n_vr_col(:,:) = value_column
+
   this%domn_vr_col(:,:)=value_column
   end subroutine reset
 
@@ -130,17 +129,17 @@ implicit none
   this%totlitn_1m_col(:) = 0._r8
   this%totsomn_1m_col(:) = 0._r8
 
-  if(index(reaction_method,'ecacnp')/=0)then
-    this%som1n_col(:) = 0._r8
-    this%som2n_col(:) = 0._r8
-    this%som3n_col(:) = 0._r8
-    do j = lbj, ubj
-      do c = bounds%begc, bounds%endc
-        this%som1n_col(c) =   this%som1n_col(c) + dz(c,j)*this%som1n_vr_col(c,j)
-        this%som2n_col(c) =   this%som2n_col(c) + dz(c,j)*this%som2n_vr_col(c,j)
-        this%som3n_col(c) =   this%som3n_col(c) + dz(c,j)*this%som3n_vr_col(c,j)
-      enddo
+
+  this%som1n_col(:) = 0._r8
+  this%som2n_col(:) = 0._r8
+  this%som3n_col(:) = 0._r8
+  do j = lbj, ubj
+    do c = bounds%begc, bounds%endc
+      this%som1n_col(c) =   this%som1n_col(c) + dz(c,j)*this%som1n_vr_col(c,j)
+      this%som2n_col(c) =   this%som2n_col(c) + dz(c,j)*this%som2n_vr_col(c,j)
+      this%som3n_col(c) =   this%som3n_col(c) + dz(c,j)*this%som3n_vr_col(c,j)
     enddo
+  enddo
 
   do j = lbj, ubj
     do c = bounds%begc, bounds%endc
@@ -164,6 +163,6 @@ implicit none
       endif
     enddo
   enddo
-  endif
+  
   end subroutine summary
 end module BeTR_nitrogenstateRecvType

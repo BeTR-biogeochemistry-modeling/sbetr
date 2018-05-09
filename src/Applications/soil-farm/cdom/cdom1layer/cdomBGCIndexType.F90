@@ -286,7 +286,7 @@ implicit none
 
   call this%InitAllocate()
 
-  call this%set_primvar_reac_ids()
+  call this%set_primvar_reac_ids(maxpft_loc)
 
   this%debug = .false.
   end subroutine Init
@@ -421,9 +421,11 @@ implicit none
     this%lid_minp_occlude = addone(itemp);
     call list_insert(list_name, 'minp_occlude',vid, itype=var_state_type)
     call list_insert(list_unit, 'mol P m-3',uid)
-    this%lid_plant_minn_nh4_up_reac = addone(ireac)
-    this%lid_plant_minn_no3_up_reac = addone(ireac)
-    this%lid_plant_minp_up_reac = addone(ireac)
+    if(maxpft>0)then
+      this%lid_plant_minn_nh4_up_reac = addone(ireac)
+      this%lid_plant_minn_no3_up_reac = addone(ireac)
+      this%lid_plant_minp_up_reac = addone(ireac)
+    endif
     this%lid_autr_rt_reac = addone(ireac)
 
     !non-reactive primary variables
@@ -467,18 +469,19 @@ implicit none
     endif
 
     !diagnostic variables
-    this%lid_plant_minn_nh4 = addone(itemp)  !this is used to indicate plant mineral nitrogen uptake
-    call list_insert(list_name, 'plant_minn_nh4',vid, itype=var_flux_type); call list_insert(list_unit, 'mol P m-3 s-1',uid)
+    if(maxpft>0)then
+      this%lid_plant_minn_nh4 = addone(itemp)  !this is used to indicate plant mineral nitrogen uptake
+      call list_insert(list_name, 'plant_minn_nh4',vid, itype=var_flux_type); call list_insert(list_unit, 'mol P m-3 s-1',uid)
 
-    this%lid_plant_minn_no3 = addone(itemp)  !this is used to indicate plant mineral nitrogen uptake
-    call list_insert(list_name, 'plant_minn_no3',vid, itype=var_flux_type); call list_insert(list_unit, 'mol N mol-3 s-1',uid)
+      this%lid_plant_minn_no3 = addone(itemp)  !this is used to indicate plant mineral nitrogen uptake
+      call list_insert(list_name, 'plant_minn_no3',vid, itype=var_flux_type); call list_insert(list_unit, 'mol N mol-3 s-1',uid)
 
-    this%lid_plant_minp = addone(itemp)
-    call list_insert(list_name, 'plant_minp',vid, itype=var_flux_type); call list_insert(list_unit, 'mol P m-3 s-1',uid)
+      this%lid_plant_minp = addone(itemp)
+      call list_insert(list_name, 'plant_minp',vid, itype=var_flux_type); call list_insert(list_unit, 'mol P m-3 s-1',uid)
 
-    this%lid_autr_rt      = addone(itemp)           !this is used to indicate plant autotrophic root respiration
-    call list_insert(list_name, 'autr_rt',vid, itype=var_flux_type); call list_insert(list_unit,'mol C m-3 s-1',uid)
-
+      this%lid_autr_rt      = addone(itemp)           !this is used to indicate plant autotrophic root respiration
+      call list_insert(list_name, 'autr_rt',vid, itype=var_flux_type); call list_insert(list_unit,'mol C m-3 s-1',uid)
+    endif
     this%lid_o2_aren_reac  = addone(ireac)
 
     this%lid_n2o_nit  = addone(itemp);
@@ -585,11 +588,11 @@ implicit none
 
   end subroutine InitAllocate
   !-------------------------------------------------------------------------------
-  subroutine set_primvar_reac_ids(this)
+  subroutine set_primvar_reac_ids(this,maxpft_loc)
 
   implicit none
   class(cdom_bgc_index_type), intent(inout)  :: this
-
+  integer, intent(in) :: maxpft_loc
   integer :: reac
 
   associate(                                      &
@@ -656,16 +659,16 @@ implicit none
   !reaction 14, inorganic P non-equilibrium desorption
   ! p_secondary -> P_solution
   reac = this%lid_minp_secondary_to_sol_occ_reac; this%primvarid(reac) = lid_minp_secondary
+  if(maxpft_loc>0)then
+    !reaction 15, plant mineral nitrogen nh4 uptake
+    reac = this%lid_plant_minn_nh4_up_reac; this%primvarid(reac) = lid_nh4
 
-  !reaction 15, plant mineral nitrogen nh4 uptake
-  reac = this%lid_plant_minn_nh4_up_reac; this%primvarid(reac) = lid_nh4
+    !reaction 16, plant mineral nitrogen no3 uptake
+    reac = this%lid_plant_minn_no3_up_reac; this%primvarid(reac) = lid_no3
 
-  !reaction 16, plant mineral nitrogen no3 uptake
-  reac = this%lid_plant_minn_no3_up_reac; this%primvarid(reac) = lid_no3
-
-  !reaction 17, plant mineral phosphorus uptake
-  reac = this%lid_plant_minp_up_reac; this%primvarid(reac) = lid_minp_soluble
-
+    !reaction 17, plant mineral phosphorus uptake
+    reac = this%lid_plant_minp_up_reac; this%primvarid(reac) = lid_minp_soluble
+  endif
   !reaction 18, autotrophic respiration, ar + o2 -> co2
 
   !reaction 19, o2 transport through arenchyma

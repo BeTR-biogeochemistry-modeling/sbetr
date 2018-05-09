@@ -35,7 +35,7 @@ implicit none
   real(r8) :: c14decay_cons
   real(r8) :: k_decay_dom  !linear decay rate of dom
   real(r8) :: km_mic_som   !MM parameter for microbial biomass
-
+  real(r8) :: Kaff_CM
   !nitrification-denitrification
   real(r8) :: nitrif_n2o_loss_frac
   real(r8) :: organic_max
@@ -254,6 +254,7 @@ contains
   this%vmax_decomp_p  = 1.e-3_r8/3600._r8  ! 1/s
   this%vmax_den = 1.8_r8 /86400._r8     ! 1/s
   this%vmax_nit = 0.67_r8/86400._r8     ! 1/s
+  this%Kaff_CM  = 1._r8
   end subroutine set_defpar_default
 
 
