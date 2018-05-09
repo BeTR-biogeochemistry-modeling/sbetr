@@ -282,7 +282,7 @@ implicit none
 
   call this%InitAllocate()
 
-  call this%set_primvar_reac_ids()
+  call this%set_primvar_reac_ids(maxpft_loc)
 
   this%debug = .false.
   end subroutine Init
@@ -579,14 +579,13 @@ implicit none
   class(ecacnp_bgc_index_type), intent(inout) :: this
 
 
-
   end subroutine InitAllocate
   !-------------------------------------------------------------------------------
-  subroutine set_primvar_reac_ids(this)
+  subroutine set_primvar_reac_ids(this,maxpft_loc)
 
   implicit none
   class(ecacnp_bgc_index_type), intent(inout)  :: this
-
+  integer, intent(in) :: maxpft_loc
   integer :: reac
 
   associate(                                      &
@@ -612,63 +611,83 @@ implicit none
   !reaction1, lit1 -> s1
   reac=this%lit1_dek_reac;     this%primvarid(reac) = (lit1-1)*nelms+c_loc
   !x is_aerobic_reac(reac) = .true.
+  !print*,'1',reac,size(this%primvarid)
 
   !reaction 2, lit2 -> s1
   reac =this%lit2_dek_reac;   this%primvarid(reac) = (lit2-1)*nelms+c_loc
   !x is_aerobic_reac(reac) = .true.
+  !print*,'2',reac,size(this%primvarid)
 
   !reaction 3, lit3->s2
   reac =this%lit3_dek_reac; this%primvarid(reac) = (lit3-1)*nelms+c_loc
   !x is_aerobic_reac(reac) = .true.
+  !print*,'3',reac,size(this%primvarid)
 
   !reaction 4, SOM1 -> f1*SOM2 + f2*SOm3
   reac =this%som1_dek_reac; this%primvarid(reac) = (som1-1)*nelms+c_loc
   !x is_aerobic_reac(reac) = .true.
+  !print*,'4',reac,size(this%primvarid)
 
   !reaction 5, som2->som1, som3
   reac =this%som2_dek_reac;  this%primvarid(reac) = (som2-1)*nelms+c_loc
   !x is_aerobic_reac(reac) = .true.
+  !print*,'5',reac,size(this%primvarid)
 
   !reaction 6, s3-> s1
   reac = this%som3_dek_reac;  this%primvarid(reac) = (som3-1)*nelms+c_loc
   !x is_aerobic_reac(reac) = .true.
+  !print*,'6',reac,size(this%primvarid)
 
   !reaction 7, cwd -> lit1 + lit2
   reac = this%cwd_dek_reac; this%primvarid(reac) = (cwd-1)*nelms+c_loc
   !x is_aerobic_reac(reac) = .true.
+  !print*,'7',reac,size(this%primvarid)
 
   reac = this%fwd_dek_reac; this%primvarid(reac) = (fwd-1)*nelms+c_loc
+  !print*,'8',reac,size(this%primvarid)
 
   reac = this%lwd_dek_reac; this%primvarid(reac) = (lwd-1)*nelms+c_loc
+  !print*,'9',reac,size(this%primvarid)
+
   !reaction 8, nitrification
   reac = this%lid_nh4_nit_reac; this%primvarid(reac) = this%lid_nh4
   !x is_aerobic_reac(reac) = .true.
+  !print*,'10',reac,size(this%primvarid)
 
   !reaction 9, denitrification
   reac = this%lid_no3_den_reac; this%primvarid(reac) = lid_no3
+  !print*,'11',reac,size(this%primvarid)
 
   !reaction 10, inorganic P non-equilibrium adsorption
   !P_solution -> p_secondary
   reac = this%lid_minp_soluble_to_secp_reac; this%primvarid(reac) = lid_minp_soluble
+  !print*,'12',reac,size(this%primvarid)
 
   !reaction 11, inorganic P non-equilibrium desorption
   ! p_secondary -> P_solution
   reac = this%lid_minp_secondary_to_sol_occ_reac; this%primvarid(reac) = lid_minp_secondary
+  !print*,'13',reac,size(this%primvarid)
 
-  !reaction 12, plant mineral nitrogen nh4 uptake
-  reac = this%lid_plant_minn_nh4_up_reac; this%primvarid(reac) = lid_nh4
+  if(maxpft_loc>0)then
+    !reaction 12, plant mineral nitrogen nh4 uptake
+    reac = this%lid_plant_minn_nh4_up_reac; this%primvarid(reac) = lid_nh4
+    !print*,'14',reac,size(this%primvarid)
 
-  !reaction 13, plant mineral nitrogen no3 uptake
-  reac = this%lid_plant_minn_no3_up_reac; this%primvarid(reac) = lid_no3
+    !reaction 13, plant mineral nitrogen no3 uptake
+    reac = this%lid_plant_minn_no3_up_reac; this%primvarid(reac) = lid_no3
+    !print*,'15',reac,size(this%primvarid)
 
-  !reaction 14, plant mineral phosphorus uptake
-  reac = this%lid_plant_minp_up_reac; this%primvarid(reac) = lid_minp_soluble
-
+    !reaction 14, plant mineral phosphorus uptake
+    reac = this%lid_plant_minp_up_reac; this%primvarid(reac) = lid_minp_soluble
+    !print*,'16',reac,size(this%primvarid)
+  endif
   !reaction 15, autotrophic respiration, ar + o2 -> co2
   !x reac = lid_ar_rt_reac; is_aerobic_reac(reac) = .true.
 
   !reaction 15, o2 transport through arenchyma
   reac = this%lid_o2_aren_reac; this%primvarid(reac) = lid_o2
+  !print*,'17',reac,size(this%primvarid)
   end associate
+  
   end subroutine set_primvar_reac_ids
 end module ecacnpBGCIndexType
