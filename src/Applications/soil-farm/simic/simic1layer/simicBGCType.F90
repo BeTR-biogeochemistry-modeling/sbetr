@@ -57,6 +57,8 @@ module simicBGCType
     real(r8) :: Minsurf  !mineral surface area for DOC/enzyme/microbial cell wall material adsorption
     real(r8) :: Kaff_o2
     real(r8) :: Kmort_MB
+    real(r8) :: Kaff_CM_ref
+    real(r8) :: Kaff_EM_ref
     real(r8), pointer :: cascade_matrix(:,:)
     real(r8), pointer :: cascade_matrixd(:,:)
     real(r8), pointer :: cascade_matrixp(:,:)
@@ -138,7 +140,7 @@ contains
     !decomposition
     this%Kaff_EP  = biogeo_con%Kaff_EP
     this%Kaff_BC  = biogeo_con%Kaff_BC
-    this%Kaff_CM  = biogeo_con%Kaff_CM
+    this%Kaff_CM_ref  = biogeo_con%Kaff_CM
     this%Kaff_ED  = biogeo_con%Kaff_ED
     this%cue_met  = biogeo_con%cue_met
     this%cue_cel  = biogeo_con%cue_cel
@@ -152,9 +154,8 @@ contains
     this%vmax_BC  = biogeo_con%vmax_BC
     this%alpha_B2E= biogeo_con%alpha_B2E
     this%alpha_B2T= biogeo_con%alpha_B2T
-    this%Kaff_EM  = biogeo_con%Kaff_EM
+    this%Kaff_EM_ref  = biogeo_con%Kaff_EM
     this%Kaff_DM  = biogeo_con%Kaff_DM
-    this%Minsurf  = biogeo_con%Minsurf
     this%Kaff_o2  = biogeo_con%Kaff_o2
     this%Kmort_MB = biogeo_con%Kmort_MB
   class default
@@ -268,6 +269,9 @@ contains
   call this%add_ext_input(dtime, this%simic_bgc_index, bgc_forc)
 
   if(.not. input_only)then
+    this%Minsurf = bgc_forc%Msurf_OM
+    this%Kaff_CM   = this%Kaff_CM_ref*bgc_forc%KM_OM_ref
+    this%Kaff_EM   = this%Kaff_EM_ref*bgc_forc%KM_OM_ref
     call this%arenchyma_gas_transport(this%simic_bgc_index, dtime)
 
     call this%calc_cascade_matrix(this%simic_bgc_index,  cascade_matrix)

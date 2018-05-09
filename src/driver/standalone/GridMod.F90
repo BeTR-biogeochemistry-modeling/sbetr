@@ -34,18 +34,20 @@ module BeTR_GridMod
      character(len=betr_string_length)   :: grid_type_str ! uniform, clm
      integer :: grid_type
 
-     integer,  public          :: nlevgrnd
-     real(r8), public          :: delta_z
-     real(r8), public, pointer :: zsoi(:)  => null() !soil depth, node center 1 : nlevsoi
-     real(r8), public, pointer :: zisoi(:) => null() !soil depth, interface,  0 : nlevsoi
-     real(r8), public, pointer :: dzsoi(:) => null() !soil layer thickness
+     integer           :: nlevgrnd
+     real(r8)          :: delta_z
+     real(r8), pointer :: zsoi(:)  => null() !soil depth, node center 1 : nlevsoi
+     real(r8), pointer :: zisoi(:) => null() !soil depth, interface,  0 : nlevsoi
+     real(r8), pointer :: dzsoi(:) => null() !soil layer thickness
 
-     real(r8), public, pointer :: bsw(:) => null() ! clap-hornberg parameter
-     real(r8), public, pointer :: watsat(:) => null() ! saturated volumetric water content
-     real(r8), public, pointer :: sucsat(:)=> null()
-     real(r8), public, pointer :: pctsand(:)=> null()
-     real(r8), public, pointer :: pctclay(:)=> null()
-     real(r8), public, pointer :: cellorg(:)=> null()
+     real(r8), pointer :: bsw(:) => null() ! clap-hornberg parameter
+     real(r8), pointer :: watsat(:) => null() ! saturated volumetric water content
+     real(r8), pointer :: sucsat(:)=> null()
+     real(r8), pointer :: pctsand(:)=> null()
+     real(r8), pointer :: pctclay(:)=> null()
+     real(r8), pointer :: cellorg(:)=> null()
+     real(r8), pointer :: msurf_OM(:) => null()
+     real(r8), pointer :: KM_OM(:)  => null()
    contains
      procedure, public  :: Init
      procedure, public  :: ReadNamelist
@@ -55,7 +57,7 @@ module BeTR_GridMod
      procedure, private :: uniform_vertical_grid
      procedure, private :: clm_exponential_vertical_grid
      procedure, private :: set_interface_depths
-
+     procedure, private :: set_msurf_sorption
   end type betr_grid_type
 
 
@@ -110,31 +112,37 @@ contains
     class(betr_grid_type), intent(inout) :: this
 
     allocate(this%zsoi(1:this%nlevgrnd))
-    this%zsoi = bspval
+    this%zsoi(:) = bspval
 
     allocate(this%zisoi(0:this%nlevgrnd))
-    this%zisoi = bspval
+    this%zisoi(:) = bspval
 
     allocate(this%dzsoi(1:this%nlevgrnd))
-    this%dzsoi = bspval
+    this%dzsoi(:) = bspval
 
     allocate(this%bsw(1:this%nlevgrnd))
-    this%bsw = bspval
+    this%bsw(:) = bspval
 
     allocate(this%watsat(1:this%nlevgrnd))
-    this%watsat = bspval
+    this%watsat(:) = bspval
 
     allocate(this%sucsat(1:this%nlevgrnd))
-    this%sucsat = bspval
+    this%sucsat(:) = bspval
 
     allocate(this%pctsand(1:this%nlevgrnd))
-    this%pctsand = bspval
+    this%pctsand(:) = bspval
 
     allocate(this%pctclay(1:this%nlevgrnd))
-    this%pctclay = bspval
+    this%pctclay(:) = bspval
 
     allocate(this%cellorg(1:this%nlevgrnd))
-    this%cellorg = bspval
+    this%cellorg(:) = bspval
+
+    allocate(this%msurf_OM(1:this%nlevgrnd))
+    this%msurf_OM(:) = bspval
+
+    allocate(this%KM_OM(1:this%nlevgrnd))
+    this%KM_OM(:) = bspval
 
   end subroutine InitAllocate
 
@@ -277,6 +285,7 @@ contains
 
     deallocate(data)
 
+    call this%set_msurf_sorption()
   end subroutine ReadNetCDFData
 
   ! ---------------------------------------------------------------------------
@@ -384,4 +393,16 @@ contains
     enddo
   enddo
   end subroutine UpdateGridConst
+  ! ---------------------------------------------------------------------------
+  subroutine set_msurf_sorption(this)
+
+  implicit none
+  class(betr_grid_type), intent(inout) :: this
+  integer :: j
+  do j = 1, this%nlevgrnd
+    this%msurf_OM(j) = 100._r8
+    this%KM_OM(j) = 1._r8
+  enddo
+  end subroutine set_msurf_sorption
+
 end module BeTR_GridMod

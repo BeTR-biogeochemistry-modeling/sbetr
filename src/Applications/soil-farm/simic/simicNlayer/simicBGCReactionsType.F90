@@ -59,6 +59,7 @@ module SimicBGCReactionsType
      procedure, private :: InitAllocate
      procedure, private :: retrieve_output
      procedure, private :: set_bgc_forc
+     procedure, private :: update_sorpphase_coeff
   end type simic_bgc_reaction_type
 
   interface simic_bgc_reaction_type
@@ -777,8 +778,8 @@ contains
     enddo
 
     !update phase change coefficients for tracers involved in sorptive reactions
-    !call this%update_phase_coeff(bounds, col, lbj, ubj, jtops, num_soilc, filter_soilc, &
-    !    betrtracer_vars, tracercoeff_vars)
+    call this%update_sorpphase_coeff(bounds, col, lbj, ubj, jtops, num_soilc, filter_soilc, &
+        betrtracer_vars, tracerstate_vars, tracercoeff_vars)
 
     deallocate(ystates0)
     deallocate(ystatesf)
@@ -1490,5 +1491,41 @@ contains
   enddo
   end associate
   end subroutine set_bgc_forc
+
+!------------------------------------------------------------------------------
+  subroutine update_sorpphase_coeff(this, bounds, col, lbj, ubj, jtops, num_soilc, filter_soilc, &
+      betrtracer_vars, tracercoeff_vars)
+  !
+  !DESCRIPTION
+  !update sorption related phase conversion parameter
+  !in this formulation, the amount sorption surface is assumed to scale linearly with moisture
+  !content. Microbes are always assumed in sufficiently moist status, though the activity could be
+  !smallar
+  implicit none
+  class(simic_bgc_reaction_type) , intent(inout) :: this                       !
+  type(bounds_type)                    , intent(in) :: bounds                         ! bounds
+  type(betr_column_type)               , intent(in) :: col
+  integer                              , intent(in) :: jtops(bounds%begc: ) ! top index of each column
+  integer                              , intent(in) :: lbj, ubj                       ! lower and upper bounds, make sure they are > 0
+  integer                              , intent(in) :: num_soilc       ! number of columns in column filter
+  integer                              , intent(in) :: filter_soilc(:) ! column filter
+  type(betrtracer_type)                , intent(in) :: betrtracer_vars               ! betr configuration information
+  type(tracerstate_type)               , intent(in) :: tracerstate_vars
+  type(tracercoeff_type)            , intent(inout) :: tracercoeff_vars
+
+  associate(                                                           &
+    aqu2bulkcef_mobile   => tracercoeff_vars%aqu2bulkcef_mobile_col  , & !Output:[real(r8)(:,:)], phase conversion coeff
+    id_trc_dom           => betrtracer_vars%id_trc_dom               , &
+    trcid       => betrtracer_vars%id_trc_beg_dom           , &
+    id_trc_end_dom       => betrtracer_vars%id_trc_end_dom           , &
+    tracer_conc_mobile_col=> tracerstate_vars%tracer_conc_mobile_col   &
+  )
+  !define KM_OM
+  KM_OM=aqu2bulkcef_mobile(c,n,id_trc_dom)*KM_OM_ref
+  aqu2bulkcef_mobile(c,n,id_trc_dom) = aqu2bulkcef_mobile(c,n,id_trc_dom)* &
+      (KM_OM+Msurf+tracer_conc_mobile_col(c,n,trcid))/(KM_OM+tracer_conc_mobile_col(c,n,trcid))
+
+  end associate
+  end subroutine update_sorpphase_coeff
 
 end module SimicBGCReactionsType

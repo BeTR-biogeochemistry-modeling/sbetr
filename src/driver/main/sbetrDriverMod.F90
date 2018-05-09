@@ -151,10 +151,10 @@ contains
 
   call grid_data%UpdateGridConst(bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, soilstate_vars)
   !x print*,'obtain waterstate_vars for initilizations that need it'
-  call forcing_data%UpdateForcing(grid_data,                                            &
-       bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, time_vars, col, &
-       pft, atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars    ,   &
-       waterflux_vars, temperature_vars, chemstate_vars, simulation%jtops)
+  call forcing_data%UpdateForcing(grid_data, bounds, lbj, ubj, simulation%num_soilc, &
+       simulation%filter_soilc, time_vars, col, pft, atm2lnd_vars, soilhydrology_vars, &
+       soilstate_vars,waterstate_vars, waterflux_vars, temperature_vars, chemstate_vars, &
+       plantMicKinetics_vars, simulation%jtops)
 
   !x print*,'af init update',forcing_data%t_soi(1,:)
   !print*,'initial water state variable output',time_vars%tstep
@@ -210,10 +210,10 @@ contains
     !set envrionmental forcing by reading foring data: temperature, moisture, atmospheric resistance
     !from either user specified file or clm history file
 
-    call forcing_data%UpdateForcing(grid_data,                                            &
-      bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, time_vars, col, pft, &
-      atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars,                   &
-      waterflux_vars, temperature_vars, chemstate_vars, simulation%jtops)
+    call forcing_data%UpdateForcing(grid_data,  bounds, lbj, ubj, simulation%num_soilc, &
+      simulation%filter_soilc, time_vars, col, pft, atm2lnd_vars, soilhydrology_vars, &
+      soilstate_vars,waterstate_vars, waterflux_vars, temperature_vars, chemstate_vars, &
+      plantMicKinetics_vars, simulation%jtops)
 
     select type(simulation)
 

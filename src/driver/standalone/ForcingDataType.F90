@@ -537,7 +537,7 @@ contains
 
   subroutine UpdateForcing(this, grid, bounds, lbj, ubj, numf, filter, ttime, col, pft, &
        atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars,waterflux_vars, &
-       temperature_vars,chemstate_vars, jtops)
+       temperature_vars,chemstate_vars, plantMicKinetics_vars, jtops)
     !
     ! DESCRIPTIONS
     ! read environmental forcing to run betr
@@ -557,6 +557,7 @@ contains
     use BeTR_TimeMod      , only : betr_time_type
     use BeTR_GridMod      , only : betr_grid_type
     use betr_varcon       , only : betr_maxpatch_pft, denh2o=> bdenh2o, denice => bdenice
+    use PlantMicKineticsMod, only : PlantMicKinetics_type
     implicit none
     !arguments
     class(ForcingData_type)  , intent(in)    :: this
@@ -575,6 +576,7 @@ contains
     type(column_type)        , intent(inout) :: col
     type(patch_type)         , intent(in)    :: pft
     type(soilhydrology_type) , intent(inout) :: soilhydrology_vars
+    type(PlantMicKinetics_type), intent(inout) :: PlantMicKinetics_vars
     integer                  , intent(inout) :: jtops(bounds%begc:bounds%endc)
 
     integer            :: j, fc, c, tstep, p, pi
@@ -654,8 +656,14 @@ contains
           waterstate_vars%h2osoi_vol_col(c,j) = min(waterstate_vars%h2osoi_vol_col(c,j), grid%watsat(j))
        enddo
     enddo
-  end subroutine UpdateForcing
 
+    do j = 1, ubj
+      do fc = 1, numf
+        PlantMicKinetics_vars%minsurf_dom_compet_vr_col(c,j)=grid%msurf_OM(j)
+        PlantMicKinetics_vars%km_minsurf_dom_vr_col(c,j)=grid%KM_OM(j)
+      enddo
+    enddo
+  end subroutine UpdateForcing
 
 ! ----------------------------------------------------------------------
   subroutine UpdateCNPForcing(this, lbj, ubj, numf, filter, ttime, &
