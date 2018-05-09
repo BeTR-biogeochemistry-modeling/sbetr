@@ -1494,13 +1494,18 @@ contains
 
 !------------------------------------------------------------------------------
   subroutine update_sorpphase_coeff(this, bounds, col, lbj, ubj, jtops, num_soilc, filter_soilc, &
-      betrtracer_vars, tracercoeff_vars)
+      betrtracer_vars, tracerstate_vars, tracercoeff_vars)
   !
   !DESCRIPTION
   !update sorption related phase conversion parameter
   !in this formulation, the amount sorption surface is assumed to scale linearly with moisture
   !content. Microbes are always assumed in sufficiently moist status, though the activity could be
-  !smallar
+  !smaller
+  use tracerstatetype          , only : tracerstate_type
+  use betr_decompMod           , only : betr_bounds_type
+  use tracercoeffType          , only : tracercoeff_type
+  use betr_columnType          , only : betr_column_type
+  use BetrTracerType           , only : betrtracer_type
   implicit none
   class(simic_bgc_reaction_type) , intent(inout) :: this                       !
   type(bounds_type)                    , intent(in) :: bounds                         ! bounds
@@ -1513,18 +1518,36 @@ contains
   type(tracerstate_type)               , intent(in) :: tracerstate_vars
   type(tracercoeff_type)            , intent(inout) :: tracercoeff_vars
 
+  real(r8) :: KM_CM, Msurf, KM_EM
+  real(r8) :: denorm
+  integer :: c_l, j
   associate(                                                           &
     aqu2bulkcef_mobile   => tracercoeff_vars%aqu2bulkcef_mobile_col  , & !Output:[real(r8)(:,:)], phase conversion coeff
     id_trc_dom           => betrtracer_vars%id_trc_dom               , &
-    trcid       => betrtracer_vars%id_trc_beg_dom           , &
+    trcid_Bm             => betrtracer_vars%id_trc_beg_Bm            , &
+    trcid_dom            => betrtracer_vars%id_trc_beg_dom           , &
     id_trc_end_dom       => betrtracer_vars%id_trc_end_dom           , &
-    tracer_conc_mobile_col=> tracerstate_vars%tracer_conc_mobile_col   &
+    tracer_conc_mobile   => tracerstate_vars%tracer_conc_mobile_col  , &
+    Kaff_CM              => simic_para%Kaff_CM                       , &
+    Kaff_EM              => simic_para%Kaff_EM                       , &
+    alpha_B2E            => simic_para%alpha_B2E                     , &
+    alpha_B2T            => simic_para%alpha_B2T                       &
   )
-  !define KM_OM
-  KM_OM=aqu2bulkcef_mobile(c,n,id_trc_dom)*KM_OM_ref
-  aqu2bulkcef_mobile(c,n,id_trc_dom) = aqu2bulkcef_mobile(c,n,id_trc_dom)* &
-      (KM_OM+Msurf+tracer_conc_mobile_col(c,n,trcid))/(KM_OM+tracer_conc_mobile_col(c,n,trcid))
-
+  c_l=1
+  do j = 1, ubj
+    KM_CM=aqu2bulkcef_mobile(c_l,j,id_trc_dom)*this%simic_forc(c_l,j)%KM_OM_ref*Kaff_CM
+    !KM_EM=KM_OM_ref*Kaff_EM
+    Msurf=this%simic_forc(c_l,j)%Msurf_OM
+    !In the following, it is assumed DOM sorption to microbial transporters, and enzyme
+    !adsorption to soil minerals does not significantly affect DOM sorption to mineral surface during transport
+    !This may be untrue in certain circumstances
+    !ET = aqu2bulkcef_mobile(c_l,j,trcid_Bm) * alpha_B2E
+    !BT = aqu2bulkcef_mobile(c_l,j,trcid_Bm) * alpha_B2T
+    !denorm=KM_CM+Msurf+tracer_conc_mobile(c_l,j,trcid_dom)+ET*KM_CM/KM_EM + BT*KM_CM/KM_CB
+    denorm=KM_CM+Msurf+tracer_conc_mobile(c_l,j,trcid_dom)
+    aqu2bulkcef_mobile(c_l,j,id_trc_dom) = aqu2bulkcef_mobile(c_l,j,id_trc_dom)* &
+      denorm/(denorm-Msurf)
+  enddo
   end associate
   end subroutine update_sorpphase_coeff
 

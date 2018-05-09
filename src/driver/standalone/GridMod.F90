@@ -395,13 +395,13 @@ contains
   end subroutine UpdateGridConst
   ! ---------------------------------------------------------------------------
   subroutine set_msurf_sorption(this)
-
+  use tracer_varcon, only : catomw
   implicit none
   class(betr_grid_type), intent(inout) :: this
   integer :: j
   do j = 1, this%nlevgrnd
-    this%msurf_OM(j) = 100._r8
-    this%KM_OM(j) = 1._r8
+    this%msurf_OM(j) = 1300._r8/catomw
+    this%KM_OM(j) = 10._r8/catomw
   enddo
   end subroutine set_msurf_sorption
 

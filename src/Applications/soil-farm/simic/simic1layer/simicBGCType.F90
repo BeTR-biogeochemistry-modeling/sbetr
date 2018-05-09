@@ -53,7 +53,6 @@ module simicBGCType
     real(r8) :: alpha_B2E  !scaling parameter from microbial biomass to hydrolysis enzyme
     real(r8) :: alpha_B2T !scaling parameter from microbial biomass to transporter enzyme
     real(r8) :: Kaff_EM  !enzyme affinity for mineral surface, mol C /m3
-    real(r8) :: Kaff_DM  !affinity of microbial cell material to mineral surface, mol C/m3
     real(r8) :: Minsurf  !mineral surface area for DOC/enzyme/microbial cell wall material adsorption
     real(r8) :: Kaff_o2
     real(r8) :: Kmort_MB
@@ -155,7 +154,6 @@ contains
     this%alpha_B2E= biogeo_con%alpha_B2E
     this%alpha_B2T= biogeo_con%alpha_B2T
     this%Kaff_EM_ref  = biogeo_con%Kaff_EM
-    this%Kaff_DM  = biogeo_con%Kaff_DM
     this%Kaff_o2  = biogeo_con%Kaff_o2
     this%Kmort_MB = biogeo_con%Kmort_MB
   class default
@@ -332,7 +330,6 @@ contains
     Kaff_o2          => this%Kaff_o2                  , &
     Kaff_EP          => this%Kaff_EP                  , &
     Kaff_ED          => this%Kaff_ED                  , &
-    Kaff_DM          => this%Kaff_DM                  , &
     Kaff_EM          => this%Kaff_EM                  , &
     Minsurf          => this%Minsurf                  , &
     vmax_EP          => this%vmax_EP                  , &
