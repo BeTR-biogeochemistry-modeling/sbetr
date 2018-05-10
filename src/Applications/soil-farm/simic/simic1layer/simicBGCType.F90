@@ -61,6 +61,8 @@ module simicBGCType
     real(r8), pointer :: cascade_matrix(:,:)
     real(r8), pointer :: cascade_matrixd(:,:)
     real(r8), pointer :: cascade_matrixp(:,:)
+    real(r8) :: tfng
+    real(r8) :: tfnr
     real(r8) :: o2_w2b
   contains
     procedure, public  :: init          => init_simic
@@ -232,6 +234,7 @@ contains
   use MathfuncMod           , only : safe_div
   use tracer_varcon         , only : catomw, natomw, patomw, input_only
   use MathfuncMod           , only : pd_decomp
+  use EcosysMicDynParamMod  , only : calc_tm_factor
   implicit none
   class(simic_bgc_type)  , intent(inout) :: this
   logical                    , intent(in)    :: is_surflit
@@ -272,6 +275,8 @@ contains
     this%Kaff_EM   = this%Kaff_EM_ref*bgc_forc%KM_OM_ref
     call this%arenchyma_gas_transport(this%simic_bgc_index, dtime)
 
+    call calc_tm_factor(bgc_forc%temp, bgc_forc%soilpsi, this%tfng, this%tfnr)
+
     call this%calc_cascade_matrix(this%simic_bgc_index,  cascade_matrix)
 
     call pd_decomp(nprimvars, nreactions, cascade_matrix(1:nprimvars, 1:nreactions), &
@@ -304,7 +309,7 @@ contains
   real(r8) :: depolymer_l1,depolymer_l2,depolymer_l3,depolymer_cwd
   real(r8) :: depolymer_norm, depolymer_md
   real(r8) :: doc_uptake, Rh_pot, Rh_gpot, Rm_pot, Rmx
-  real(r8) :: o2w, fo2, mort
+  real(r8) :: o2w, fo2, mort, vmax_EP_f
   integer  :: jj
   associate(                                            &
     lit1             => simic_bgc_index%lit1              , &
@@ -340,7 +345,9 @@ contains
     Kaff_BC          => this%Kaff_BC                  , &
     Kaff_CM          => this%Kaff_CM                  , &
     Rm0_spmic        => this%Rm0_spmic                , &
-    vmax_BC          => this%vmax_BC                    &
+    vmax_BC          => this%vmax_BC                  , &
+    tfng             => this%tfng                     , &
+    tfnr             => this%tfnr                       &
   )
   o2w = ystates1(lid_o2) / this%o2_w2b
   fo2= o2w/(Kaff_o2+o2w+alpha_B2T*ystates1(lid_micbl))
@@ -349,22 +356,22 @@ contains
      ystates1(lit2) + ystates1(lit3) + ystates1(cwd) + &
      ystates1(lid_micbd)*Kaff_EP/Kaff_ED + &
      ystates1(lid_micbl)*alpha_B2E+ Minsurf * Kaff_EP/Kaff_EM)
-
-  depolymer_l1 = depolymer_norm * ystates1(lit1) * vmax_EP
-  depolymer_l2 = depolymer_norm * ystates1(lit2) * vmax_EP
-  depolymer_l3 = depolymer_norm * ystates1(lit3) * vmax_EP
-  depolymer_cwd= depolymer_norm * ystates1(cwd)  * vmax_EP
+  vmax_EP_f = vmax_EP * tfng
+  depolymer_l1 = depolymer_norm * ystates1(lit1) * vmax_EP_f
+  depolymer_l2 = depolymer_norm * ystates1(lit2) * vmax_EP_f
+  depolymer_l3 = depolymer_norm * ystates1(lit3) * vmax_EP_f
+  depolymer_cwd= depolymer_norm * ystates1(cwd)  * vmax_EP_f
   depolymer_md = ystates1(lid_micbl) * alpha_B2E /(Kaff_ED + (ystates1(lit1)+ &
      ystates1(lit2) + ystates1(lit3) + ystates1(cwd))*Kaff_ED/Kaff_EP + &
      ystates1(lid_micbd) + ystates1(lid_micbl)*alpha_B2E+ Minsurf * Kaff_ED/Kaff_EM)
-  depolymer_md = depolymer_md * ystates1(lid_micbd) * vmax_EP
+  depolymer_md = depolymer_md * ystates1(lid_micbd) * vmax_EP_f
 
   !potential respiration
   Rh_pot = vmax_BC * ystates1(lid_micbl) * alpha_B2T * ystates1(lid_doc) / &
     (Kaff_BC+ystates1(lid_doc) + ystates1(lid_micbl) * alpha_B2T + &
-    Minsurf * Kaff_BC/Kaff_CM) * fo2
+    Minsurf * Kaff_BC/Kaff_CM) * fo2 * tfng
   !maintenance respiration
-  Rm_pot = Rm0_spmic * ystates1(lid_micbl)
+  Rm_pot = Rm0_spmic * ystates1(lid_micbl) * tfnr
 
   !potential growth respiration
   Rh_gpot = Rh_pot - Rm_pot
