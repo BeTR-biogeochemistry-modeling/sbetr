@@ -58,6 +58,8 @@ module simicBGCType
     real(r8) :: Kmort_MB
     real(r8) :: Kaff_CM_ref
     real(r8) :: Kaff_EM_ref
+    real(r8) :: fpom_vmax
+    real(r8) :: fpom_desorb
     real(r8), pointer :: cascade_matrix(:,:)
     real(r8), pointer :: cascade_matrixd(:,:)
     real(r8), pointer :: cascade_matrixp(:,:)
@@ -102,7 +104,7 @@ contains
   implicit none
   class(simic_bgc_type) , intent(inout) :: this
   integer :: ans
-  print*,'nvar',this%simic_bgc_index%nstvars
+
   ans =  this%simic_bgc_index%nstvars
 
   end function getvarllen_simic
@@ -158,6 +160,8 @@ contains
     this%Kaff_EM_ref  = biogeo_con%Kaff_EM
     this%Kaff_o2  = biogeo_con%Kaff_o2
     this%Kmort_MB = biogeo_con%Kmort_MB
+    this%fpom_vmax= biogeo_con%fpom_vmax
+    this%fpom_desorb=biogeo_con%fpom_desorb
   class default
     write(msg,'(A)')'Wrong parameter type passed in for UpdateParas in ' &
       // errMsg(mod_filename,__LINE__)
@@ -217,7 +221,7 @@ contains
   allocate(this%scal_f(nprimvars));  this%scal_f(:) = 0._r8
   allocate(this%conv_f(nprimvars));  this%conv_f(:) = 0._r8
   allocate(this%conc_f(nprimvars));  this%conc_f(:) = 0._r8
-  allocate(this%cascade_matrix(nstvars, nreactions)); this%cascade_matrix(:,:) = 0._r8
+  allocate(this%cascade_matrix(1:nstvars, 1:nreactions)); this%cascade_matrix(:,:) = 0._r8
   allocate(this%cascade_matrixd(1:nprimvars, 1:nreactions)); this%cascade_matrixd(:,:) = 0._r8
   allocate(this%cascade_matrixp(1:nprimvars, 1:nreactions)); this%cascade_matrixp(:,:) = 0._r8
   end associate
@@ -233,7 +237,6 @@ contains
   use BetrStatusType        , only : betr_status_type
   use MathfuncMod           , only : safe_div
   use tracer_varcon         , only : catomw, natomw, patomw, input_only
-  use MathfuncMod           , only : pd_decomp
   use EcosysMicDynParamMod  , only : calc_tm_factor
   implicit none
   class(simic_bgc_type)  , intent(inout) :: this
@@ -249,12 +252,14 @@ contains
   real(r8) :: yf(this%simic_bgc_index%nstvars)
   !local variables
   character(len=*),parameter :: subname = 'runbgc_simic'
-
+  integer :: jj, id
   associate(                                         &
     ystates1       => this%ystates1                , &
     nstvars        => this%simic_bgc_index%nstvars     , &
     nreactions     => this%simic_bgc_index%nreactions  , &
     nprimvars      => this%simic_bgc_index%nprimvars   , &
+    lid_doc        => this%simic_bgc_index%lid_doc , &
+    lid_doc_e      => this%simic_bgc_index%lid_doc_e , &
     cascade_matrix => this%cascade_matrix          , &
     cascade_matrixp=> this%cascade_matrixp         , &
     cascade_matrixd=> this%cascade_matrixd           &
@@ -268,21 +273,29 @@ contains
   ystates0(:) = this%ystates0(:)
 
   call this%add_ext_input(dtime, this%simic_bgc_index, bgc_forc)
-
+  cascade_matrix(:,:) = 0._r8
   if(.not. input_only)then
     this%Minsurf = bgc_forc%Msurf_OM
     this%Kaff_CM   = this%Kaff_CM_ref*bgc_forc%KM_OM_ref
     this%Kaff_EM   = this%Kaff_EM_ref*bgc_forc%KM_OM_ref
+
     call this%arenchyma_gas_transport(this%simic_bgc_index, dtime)
 
     call calc_tm_factor(bgc_forc%temp, bgc_forc%soilpsi, this%tfng, this%tfnr)
 
     call this%calc_cascade_matrix(this%simic_bgc_index,  cascade_matrix)
 
+    do jj = 1, nreactions
+      print*,'rec0',jj,cascade_matrix(lid_doc,jj),cascade_matrix(lid_doc_e,jj)
+    enddo
+
     call pd_decomp(nprimvars, nreactions, cascade_matrix(1:nprimvars, 1:nreactions), &
        cascade_matrixp, cascade_matrixd, bstatus)
     if(bstatus%check_status())return
 
+    do jj = 1, nreactions
+      print*,'rec',jj,cascade_matrix(lid_doc,jj),cascade_matrix(lid_doc_e,jj)
+    enddo
     time = 0._r8
     yf(:) = ystates1(:)
     call this%ode_adapt_ebbks1(yf, nprimvars, nstvars, time, dtime, ystates1)
@@ -310,6 +323,8 @@ contains
   real(r8) :: depolymer_norm, depolymer_md
   real(r8) :: doc_uptake, Rh_pot, Rh_gpot, Rm_pot, Rmx
   real(r8) :: o2w, fo2, mort, vmax_EP_f
+  real(r8) :: Minsurf, denorm
+  real(r8) :: doc_sorb
   integer  :: jj
   associate(                                            &
     lit1             => simic_bgc_index%lit1              , &
@@ -317,9 +332,10 @@ contains
     lit3             => simic_bgc_index%lit3              , &
     cwd              => simic_bgc_index%cwd               , &
     lid_doc          => simic_bgc_index%lid_doc           , &
+    lid_pom          => simic_bgc_index%lid_pom           , &
     lid_micbl        => simic_bgc_index%lid_micbl         , &
     lid_micbd        => simic_bgc_index%lid_micbd         , &
-    lid_cue          => simic_bgc_index%lid_cue           , &
+    lid_doc_e          => simic_bgc_index%lid_doc_e           , &
     lid_o2           => simic_bgc_index%lid_o2            , &
     lid_co2          => simic_bgc_index%lid_co2           , &
     lit1_depoly_reac => simic_bgc_index%lit1_depoly_reac  , &
@@ -330,13 +346,15 @@ contains
     micbl_mort_reac  => simic_bgc_index%micbl_mort_reac   , &
     doc_uptake_reac  => simic_bgc_index%doc_uptake_reac   , &
     o2_resp_reac     => simic_bgc_index%o2_resp_reac      , &
+    pom_desorb_reac  => simic_bgc_index%pom_desorb_reac   , &
+    doc_sorb_reac    => simic_bgc_index%doc_sorb_reac     , &
     alpha_B2E        => this%alpha_B2E                , &
     alpha_B2T        => this%alpha_B2T                , &
     Kaff_o2          => this%Kaff_o2                  , &
     Kaff_EP          => this%Kaff_EP                  , &
     Kaff_ED          => this%Kaff_ED                  , &
     Kaff_EM          => this%Kaff_EM                  , &
-    Minsurf          => this%Minsurf                  , &
+    Minsurf0         => this%Minsurf                  , &
     vmax_EP          => this%vmax_EP                  , &
     Mrt_spmic        => this%Mrt_spmic                , &
     Kmort_MB         => this%Kmort_MB                 , &
@@ -346,12 +364,14 @@ contains
     Kaff_CM          => this%Kaff_CM                  , &
     Rm0_spmic        => this%Rm0_spmic                , &
     vmax_BC          => this%vmax_BC                  , &
+    fpom_desorb      => this%fpom_desorb              , &
+    fpom_vmax        => this%fpom_vmax                , &
     tfng             => this%tfng                     , &
     tfnr             => this%tfnr                       &
   )
   o2w = ystates1(lid_o2) / this%o2_w2b
   fo2= o2w/(Kaff_o2+o2w+alpha_B2T*ystates1(lid_micbl))
-
+  Minsurf = max(Minsurf0 -ystates1(lid_pom),0._r8)
   depolymer_norm = ystates1(lid_micbl) * alpha_B2E /(Kaff_EP + ystates1(lit1)+ &
      ystates1(lit2) + ystates1(lit3) + ystates1(cwd) + &
      ystates1(lid_micbd)*Kaff_EP/Kaff_ED + &
@@ -370,6 +390,11 @@ contains
   Rh_pot = vmax_BC * ystates1(lid_micbl) * alpha_B2T * ystates1(lid_doc) / &
     (Kaff_BC+ystates1(lid_doc) + ystates1(lid_micbl) * alpha_B2T + &
     Minsurf * Kaff_BC/Kaff_CM) * fo2 * tfng
+
+  denorm = 1._r8+ystates1(lid_doc)/Kaff_CM + ystates1(lid_micbl) * alpha_B2T / Kaff_BC + &
+      Minsurf/Kaff_CM + ystates1(lid_micbl) * alpha_B2E/Kaff_EM
+
+  doc_sorb = fpom_vmax * Minsurf * ystates1(lid_doc) / (denorm * Kaff_CM)
   !maintenance respiration
   Rm_pot = Rm0_spmic * ystates1(lid_micbl) * tfnr
 
@@ -402,7 +427,8 @@ contains
   rrates(micbl_mort_reac)      = mort
   rrates(doc_uptake_reac)      = doc_uptake
   rrates(o2_resp_reac)         = Rh_pot
-
+  rrates(pom_desorb_reac)      = ystates1(lid_pom) * fpom_desorb
+  rrates(doc_sorb_reac)        = doc_sorb
 !  print*,'rates'
 !  print*,(rrates(jj),jj=1,simic_bgc_index%nreactions)
 !  print*,'states'
@@ -599,7 +625,7 @@ contains
   implicit none
   class(simic_bgc_type)     , intent(inout) :: this
   type(simic_bgc_index_type)    , intent(in)    :: simic_bgc_index
-  real(r8)                  , intent(inout) :: cascade_matrix(simic_bgc_index%nstvars, simic_bgc_index%nreactions)
+  real(r8)                  , intent(inout) :: cascade_matrix(1:simic_bgc_index%nstvars, 1:simic_bgc_index%nreactions)
   integer :: reac
 
   associate(                                &
@@ -610,10 +636,12 @@ contains
     lid_doc    => simic_bgc_index%lid_doc     , &
     lid_micbl  => simic_bgc_index%lid_micbl   , &
     lid_micbd  => simic_bgc_index%lid_micbd   , &
-    lid_cue    => simic_bgc_index%lid_cue     , &
+    lid_doc_e  => simic_bgc_index%lid_doc_e   , &
     lid_o2     => simic_bgc_index%lid_o2      , &
     lid_co2    => simic_bgc_index%lid_co2     , &
     lid_co2_hr => simic_bgc_index%lid_co2_hr  , &
+    lid_pom    => simic_bgc_index%lid_pom     , &
+    lid_pom_e    => simic_bgc_index%lid_pom_e , &
     cue_met    => this%cue_met            , &
     cue_cel    => this%cue_cel            , &
     cue_lig    => this%cue_lig            , &
@@ -624,42 +652,70 @@ contains
 
   reac = simic_bgc_index%lit1_depoly_reac
   cascade_matrix(lit1, reac)  = -1._r8
-  cascade_matrix(lid_doc,reac)=1._r8
-  cascade_matrix(lid_cue,reac)=cue_met
+  cascade_matrix(lid_doc,reac)=  1._r8
+  cascade_matrix(lid_doc_e,reac)=cue_met
 
   reac = simic_bgc_index%lit2_depoly_reac
   cascade_matrix(lit2, reac)  = -1._r8
   cascade_matrix(lid_doc,reac)=  1._r8
-  cascade_matrix(lid_cue,reac)= cue_cel
+  cascade_matrix(lid_doc_e,reac)= cue_cel
 
   reac = simic_bgc_index%lit3_depoly_reac
   cascade_matrix(lit3, reac)  = -1._r8
-  cascade_matrix(lid_doc,reac)=1._r8
-  cascade_matrix(lid_cue,reac)=cue_lig
+  cascade_matrix(lid_doc,reac)=  1._r8
+  cascade_matrix(lid_doc_e,reac)=cue_lig
 
   reac = simic_bgc_index%cwd_depoly_reac
   cascade_matrix(cwd, reac)   = -1._r8
-  cascade_matrix(lid_doc,reac)=1._r8
-  cascade_matrix(lid_cue,reac)=cue_cwd
+  cascade_matrix(lid_doc,reac)=  1._r8
+  cascade_matrix(lid_doc_e,reac)=cue_cwd
 
   reac = simic_bgc_index%micbd_depoly_reac
   cascade_matrix(lid_micbd, reac)  = -1._r8
-  cascade_matrix(lid_doc,reac)     = 1._r8
-  cascade_matrix(lid_cue,reac)     = 0.5_r8
+  cascade_matrix(lid_doc,reac)     =  1._r8
+  cascade_matrix(lid_doc_e,reac)   = 0.5_r8
 
   reac = simic_bgc_index%micbl_mort_reac
   cascade_matrix(lid_micbl, reac)  = -1._r8
   cascade_matrix(lid_micbd,reac)   =  f_mic2D
   cascade_matrix(lid_doc,reac)     =  f_mic2C
+  cascade_matrix(lid_doc_e,reac)   =  f_mic2C
 
   reac = simic_bgc_index%o2_resp_reac
   cascade_matrix(lid_o2, reac)     = -1._r8
   cascade_matrix(lid_co2_hr,reac)  =  1._r8
-  cascade_matrix(lid_co2,reac)  =  1._r8
+  cascade_matrix(lid_co2,reac)     =  1._r8
 
   reac = simic_bgc_index%doc_uptake_reac
   cascade_matrix(lid_doc, reac)   = -1._r8
-  cascade_matrix(lid_micbl, reac) = 1._r8
+  cascade_matrix(lid_doc_e, reac) = -1._r8
+  cascade_matrix(lid_micbl, reac) =  1._r8
+  print*,'xxx',reac,cascade_matrix(lid_doc, reac),cascade_matrix(lid_doc, reac)
+
+  reac = simic_bgc_index%doc_sorb_reac
+  cascade_matrix(lid_doc, reac)   = -1._r8
+  cascade_matrix(lid_doc_e, reac) = -1._r8
+  cascade_matrix(lid_pom, reac)   =  1._r8
+  cascade_matrix(lid_pom_e, reac) =  1._r8
+  print*,'xx1',reac,cascade_matrix(lid_doc, reac),cascade_matrix(lid_doc, reac)
+
+  reac = simic_bgc_index%pom_desorb_reac
+  cascade_matrix(lid_pom, reac)   = -1._r8
+  cascade_matrix(lid_pom_e, reac) = -1._r8
+  print*,'xddddx',reac,cascade_matrix(lid_doc, 8),cascade_matrix(lid_doc, 8)
+
+  cascade_matrix(lid_doc, reac)   =  1._r8
+  cascade_matrix(lid_doc_e, reac) =  1._r8
+  print*,'xddd0',reac,cascade_matrix(lid_doc, 8),cascade_matrix(lid_doc, 8)
+  print*,'x0',reac,cascade_matrix(lid_doc, reac),cascade_matrix(lid_doc_e, reac)
+
+  reac=8
+  print*,'digi',reac,cascade_matrix(lid_doc,reac),cascade_matrix(lid_doc_e,reac)
+  print*,size(cascade_matrix,1),size(cascade_matrix,2)
+  do reac = 1, simic_bgc_index%nreactions
+    print*,'regggc0',reac,cascade_matrix(lid_doc,reac),cascade_matrix(lid_doc_e,reac)
+  enddo
+
   end associate
   end subroutine calc_cascade_matrix
 
@@ -768,16 +824,20 @@ contains
   real(r8) :: pscal(1:nprimvars)
   real(r8) :: doc_cue
 
-  associate(                                            &
-    lid_cue        => this%simic_bgc_index%lid_cue        , &
-    lid_doc        => this%simic_bgc_index%lid_doc        , &
-    doc_uptake_reac=> this%simic_bgc_index%doc_uptake_reac, &
-    nreactions => this%simic_bgc_index%nreactions           &
+  associate(                                                  &
+    lid_doc_e        => this%simic_bgc_index%lid_doc_e      , &
+    lid_doc          => this%simic_bgc_index%lid_doc        , &
+    doc_uptake_reac  => this%simic_bgc_index%doc_uptake_reac, &
+    nreactions       => this%simic_bgc_index%nreactions       &
   )
-  doc_cue = safe_div(ystate(lid_cue), ystate(lid_doc))
+  doc_cue = safe_div(ystate(lid_doc_e), ystate(lid_doc))
+  print*,'cue',doc_cue
   call this%simic_rrates(this%simic_bgc_index, dtime, nstvars, ystate, doc_cue, rrates)
-  this%cascade_matrixd(lid_cue, doc_uptake_reac) =  doc_cue
-  this%cascade_matrix(lid_cue, doc_uptake_reac)  = -doc_cue
+
+  do jj = 1, nreactions
+  print*,jj,this%cascade_matrixd(lid_doc_e,jj),this%cascade_matrixp(lid_doc_e,jj), &
+    this%cascade_matrix(lid_doc_e,jj),this%cascade_matrix(lid_doc,jj)
+  enddo
   it=0
   rscal=0._r8
   do
@@ -801,7 +861,8 @@ contains
     endif
     it = it + 1
   enddo
-!  print*,'dydt',dydt(this%simic_bgc_index%lid_doc), dydt(this%simic_bgc_index%lid_cue)
+  print*,'dydt',dydt(this%simic_bgc_index%lid_doc), dydt(this%simic_bgc_index%lid_doc_e)
+  if(dydt(this%simic_bgc_index%lid_doc)< dydt(this%simic_bgc_index%lid_doc_e))stop
 !  do jj = 1, nprimvars
 !    print*,jj, dydt(jj)*dtime, ystate(jj)
 !  enddo

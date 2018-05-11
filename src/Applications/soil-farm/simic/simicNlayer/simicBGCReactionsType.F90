@@ -1547,6 +1547,7 @@ contains
     denorm=KM_CM+Msurf+tracer_conc_mobile(c_l,j,trcid_dom)
     aqu2bulkcef_mobile(c_l,j,id_trc_dom) = aqu2bulkcef_mobile(c_l,j,id_trc_dom)* &
       denorm/(denorm-Msurf)
+
   enddo
   end associate
   end subroutine update_sorpphase_coeff

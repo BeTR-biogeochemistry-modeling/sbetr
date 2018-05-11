@@ -30,6 +30,8 @@ implicit none
   real(r8) :: Minsurf  !mineral surface area for DOC/enzyme/microbial cell wall material adsorption
   real(r8) :: Kaff_o2  !oxygen affinity
   real(r8) :: Kmort_MB
+  real(r8) :: fpom_vmax
+  real(r8) :: fpom_desorb
  contains
    procedure, public  :: Init => simic_para_init
    procedure, public  :: readPars => simic_para_readPars
@@ -137,7 +139,7 @@ contains
   this%Mrt_spmic= 1.e-7_r8
   this%f_mic2C = 0.3_r8
   this%f_mic2D = 0.7_r8
-  this%vmax_EP = 1.e-5_r8
+  this%vmax_EP = 1.e-4_r8
   this%vmax_BC = 5.e-5_r8
   this%alpha_B2E = 0.05_r8
   this%alpha_B2T = 0.05_r8
@@ -146,6 +148,8 @@ contains
   this%Minsurf  = 100._r8
   this%Kaff_o2  = 0.22_r8
   this%Kmort_MB = 0.01_r8
+  this%fpom_vmax= 1._r8/60._r8    !one minute
+  this%fpom_desorb=this%fpom_vmax*0.1_r8
   end subroutine set_defpar_default
 
 

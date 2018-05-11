@@ -25,7 +25,7 @@ implicit none
      integer           :: lit3, lit3_depoly_reac
      integer           :: cwd , cwd_depoly_reac
      integer           :: lid_micbl, micbl_mort_reac
-     integer           :: lid_doc  , doc_uptake_reac
+     integer           :: lid_doc  , doc_uptake_reac, doc_sorb_reac
      integer           :: lid_micbd, micbd_depoly_reac
      integer           :: lid_n2
      integer           :: lid_o2   , o2_resp_reac
@@ -35,7 +35,7 @@ implicit none
      integer           :: lid_c14_co2
      integer           :: lid_ch4
      integer           :: lid_co2_hr       !diagnostic variables
-     integer           :: lid_cue
+     integer           :: lid_doc_e
      integer           :: lid_o2_paere
      integer           :: lid_n2_paere
      integer           :: lid_ar_paere
@@ -46,7 +46,9 @@ implicit none
      integer           :: litr_beg, litr_end  !litr group
      integer           :: wood_beg, wood_end  !wood group
      integer           :: dom_beg,  dom_end   !dom group
-     integer           :: Bm_beg,  Bm_end   !dom group
+     integer           :: Bm_beg,  Bm_end     !Bm group
+     integer           :: pom_beg, pom_end
+     integer           :: lid_pom, lid_pom_e, pom_desorb_reac
      integer           :: nelms
      integer           :: c_loc
      integer           :: c13_loc
@@ -331,19 +333,30 @@ implicit none
 
     this%dom_beg = this%Bm_end + 1
     this%lid_doc = addone(itemp);this%doc_uptake_reac  = addone(ireac); call list_insert(list_react, 'doc_uptake_reac', itemp0)
+    this%doc_sorb_reac  = addone(ireac); call list_insert(list_react, 'doc_sorb_reac', itemp0)
     call add_ompool_name(list_name, list_unit, list_pool,'DOC', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
-    this%lid_cue = this%lid_doc + 1
+    this%lid_doc_e = this%lid_doc + 1
     call list_insert(list_name, 'DOC_e',vid)
     call list_insert(list_unit, 'mol e m-3',uid)
     this%dom_end = this%dom_beg - 1 + (this%lid_doc-this%lid_doc+1)*(this%nelms+1)
 
+    this%pom_beg = this%dom_end + 1
+    this%lid_pom = addone(itemp);this%pom_desorb_reac  = addone(ireac); call list_insert(list_react, 'pom_desorb_reac', itemp0)
+    call add_ompool_name(list_name, list_unit, list_pool,'POM', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
+    this%lid_pom_e = this%lid_pom + 1
+    call list_insert(list_name, 'POM_e',vid)
+    call list_insert(list_unit, 'mol e m-3',uid)
+    this%pom_end = this%pom_beg - 1 + (this%lid_pom-this%lid_pom+1)*(this%nelms+1)
+
     this%nom_pools = (countelm(this%litr_beg, this%litr_end)+&
        countelm(this%wood_beg,this%wood_end) + &
        countelm(this%Bm_beg,this%Bm_end))/this%nelms  + &
-       countelm(this%dom_beg,this%dom_end)/(this%nelms+1)   !include coarse wood debris
+       (countelm(this%dom_beg,this%dom_end) + &
+       countelm(this%pom_beg, this%pom_end))/(this%nelms+1)   !include coarse wood debris
 
     itemp               = countelm(this%litr_beg, this%litr_end) + countelm(this%wood_beg,this%wood_end) + &
-        countelm(this%Bm_beg,this%Bm_end)  + countelm(this%dom_beg,this%dom_end)
+        countelm(this%Bm_beg,this%Bm_end)  + countelm(this%dom_beg,this%dom_end) + &
+        countelm(this%pom_beg,this%pom_end)
 
     this%nom_tot_elms    = itemp
 
@@ -399,11 +412,14 @@ implicit none
     call copy_name(this%nstvars, list_unit, this%varunits(1:this%nstvars))
     call copy_name(this%nom_pools, list_pool, this%ompoolnames(1:this%nom_pools))
     call copy_name_type(this%nstvars, list_name, this%vartypes(1:this%nstvars))
-    !call list_disp(list_name); call list_disp(list_pool);call list_disp(list_unit)
+    call list_disp(list_name); call list_disp(list_pool);call list_disp(list_unit);
+    print*,'nprimvars=',this%nprimvars
+    call list_disp(list_react)
 
     call list_free(list_name)
     call list_free(list_pool)
     call list_free(list_unit)
+
   end subroutine InitPars
   !-------------------------------------------------------------------------------
 
@@ -434,7 +450,9 @@ implicit none
   reac=this%micbd_depoly_reac;  this%primvarid(reac) = this%lid_micbd
   reac=this%micbl_mort_reac;    this%primvarid(reac) = this%lid_micbl
   reac=this%doc_uptake_reac;    this%primvarid(reac) = this%lid_doc
+  reac=this%doc_sorb_reac  ;    this%primvarid(reac) = this%lid_doc
   reac=this%o2_resp_reac;       this%primvarid(reac) = this%lid_o2
+  reac=this%pom_desorb_reac;    this%primvarid(reac) = this%lid_pom
 
   end subroutine set_primvar_reac_ids
 end module simicBGCIndexType

@@ -78,7 +78,7 @@ contains
 
   !--------------------------------------------------------------------
   subroutine SetJarForc_const(jar_forc, soil_forc)
-
+  use tracer_varcon, only : catomw
   implicit none
   type(JarBGC_forc_type), intent(inout) :: jar_forc
   type(soil_forc_type), intent(in) :: soil_forc
@@ -105,7 +105,8 @@ contains
   jar_forc%soilorder=1
   jar_forc%msurf_nh4=0._r8
   jar_forc%msurf_minp=0._r8
-
+  jar_forc%msurf_OM= 1300._r8/catomw
+  jar_forc%KM_OM_ref=10._r8/catomw
   end subroutine SetJarForc_const
 
   !--------------------------------------------------------------------
