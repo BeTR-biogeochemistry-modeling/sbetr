@@ -139,7 +139,7 @@ contains
   this%Mrt_spmic= 1.e-7_r8
   this%f_mic2C = 0.3_r8
   this%f_mic2D = 0.7_r8
-  this%vmax_EP = 1.e-4_r8
+  this%vmax_EP = 5.e-5_r8
   this%vmax_BC = 5.e-5_r8
   this%alpha_B2E = 0.05_r8
   this%alpha_B2T = 0.05_r8

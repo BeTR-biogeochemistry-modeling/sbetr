@@ -166,7 +166,7 @@ subroutine run_model(namelist_buffer)
 
   !'run the model'
   do
-    !update forcing
+    !update forcing'
     call load_forc(om_forc, nut_forc, atm_forc, soil_forc, timer%tstep)
 
     call SetJarForc(bgc_forc, om_forc, nut_forc, atm_forc, soil_forc)
@@ -181,6 +181,7 @@ subroutine run_model(namelist_buffer)
 
     if(timer%its_a_new_year())then
       write(iulog,*)'year ',timer%get_cur_year()
+      !write(iulog,*)'day ',timer%get_cur_day()
     endif
     if(timer%its_time_to_exit())exit
   enddo

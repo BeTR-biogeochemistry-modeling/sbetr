@@ -22,7 +22,7 @@ module BeTR_TimeMod
      integer  :: tstep
      integer  :: nelapstep
      integer  :: dow, dom, doy
-     integer  :: moy, cyears
+     integer  :: moy, cyears, cdays
      real(r8) :: tod
      integer  :: hist_freq   !negative number, steps, positive number, 1: day, 30:mon, 365:year
    contains
@@ -48,6 +48,7 @@ module BeTR_TimeMod
      procedure, public :: its_a_new_year
      procedure, public :: get_ymdhs
      procedure, public :: get_cur_year
+     procedure, public :: get_cur_day
   end type betr_time_type
 
   integer, parameter, private :: daz(12)=(/31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31/)
@@ -87,6 +88,7 @@ contains
     this%tod   = 0._r8
     this%toy   = 0._r8
     this%cyears = 0
+    this%cdays  = 0
     this%dow    = 0
     this%dom    = 0
     this%doy    = 0
@@ -259,6 +261,7 @@ contains
       this%dom=this%dom+1
       this%dow = mod(this%dow + 1, 7)
       this%doy = this%doy + 1
+      this%cdays= this%cdays + 1
     endif
 
     if(this%its_a_new_month())then
@@ -478,4 +481,12 @@ contains
   integer :: ans
   ans = this%cyears
   end function get_cur_year
+  !-------------------------------------------------------------------------------
+  function get_cur_day(this)result(ans)
+  implicit none
+  class(betr_time_type), intent(in) :: this
+  integer :: ans
+  ans = this%cdays
+  end function get_cur_day
+
 end module BeTR_TimeMod

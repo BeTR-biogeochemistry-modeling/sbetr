@@ -366,18 +366,17 @@ contains
   o2w = ystates1(lid_o2) / this%o2_w2b
   fo2= o2w/(Kaff_o2+o2w+alpha_B2T*ystates1(lid_micbl))
   Minsurf = max(Minsurf0 -ystates1(lid_pom),0._r8)
-  depolymer_norm = ystates1(lid_micbl) * alpha_B2E /(Kaff_EP + ystates1(lit1)+ &
-     ystates1(lit2) + ystates1(lit3) + ystates1(cwd) + &
-     ystates1(lid_micbd)*Kaff_EP/Kaff_ED + &
-     ystates1(lid_micbl)*alpha_B2E+ Minsurf * Kaff_EP/Kaff_EM)
+  denorm = ystates1(lid_micbl) * alpha_B2E /(1._r8 + ystates1(lit1)/Kaff_EP+ &
+     ystates1(lit2)/Kaff_EP + ystates1(lit3)/Kaff_EP + ystates1(cwd)/Kaff_EP + &
+     ystates1(lid_micbd)/Kaff_ED + ystates1(lid_micbl)*alpha_B2E/Kaff_ED+ &
+     Minsurf/Kaff_EM)
+  depolymer_norm = denorm/Kaff_EP
   vmax_EP_f = vmax_EP * tfng
   depolymer_l1 = depolymer_norm * ystates1(lit1) * vmax_EP_f
   depolymer_l2 = depolymer_norm * ystates1(lit2) * vmax_EP_f
   depolymer_l3 = depolymer_norm * ystates1(lit3) * vmax_EP_f
   depolymer_cwd= depolymer_norm * ystates1(cwd)  * vmax_EP_f
-  depolymer_md = ystates1(lid_micbl) * alpha_B2E /(Kaff_ED + (ystates1(lit1)+ &
-     ystates1(lit2) + ystates1(lit3) + ystates1(cwd))*Kaff_ED/Kaff_EP + &
-     ystates1(lid_micbd) + ystates1(lid_micbl)*alpha_B2E+ Minsurf * Kaff_ED/Kaff_EM)
+  depolymer_md = denorm /Kaff_ED
   depolymer_md = depolymer_md * ystates1(lid_micbd) * vmax_EP_f
 
   !potential respiration
@@ -737,11 +736,12 @@ contains
           tt=tt+dt2
           y=yc
        else
-          !get coarse grid solution
+          !get coarse grid solution'
           call me%bgc_integrate(y, dt2, tt, nprimeq, neq, f)
+
           call ebbks(y, f, nprimeq, neq, dt2, yc, pscal)
 
-          !get fine grid solution
+          !get fine grid solution'
           dt05=dt2*0.5_r8
           call ebbks(y,f,nprimeq, neq,dt05, yf, pscal)
           tt2=tt+dt05
@@ -749,10 +749,10 @@ contains
           call me%bgc_integrate(ycp, dt05, tt, nprimeq, neq, f)
           call ebbks(ycp,f,nprimeq, neq,dt05,yf,pscal)
 
-          !determine the relative error
+          !determine the relative error'
           rerr=get_rerr(yc,yf, neq)*exp(1._r8-1._r8/(pscal+1.e-20))
 
-          !determine time scalar factor
+          !determine time scalar factor'
           call get_tscal(rerr,dt_scal,acc)
 
           if(acc)then
@@ -816,13 +816,11 @@ contains
 
     call calc_dtrend_som_bgc(nprimvars, nreactions, this%cascade_matrixd(1:nprimvars, 1:nreactions), rrates, d_dt)
 
-    !update the state variables
     call lom%calc_state_pscal(nprimvars, dtime, ystate(1:nprimvars), p_dt,  d_dt, pscal, lneg, bstatus)
 
     if(lneg .and. it<=itmax)then
       call lom%calc_reaction_rscal(nprimvars, nreactions,  pscal, &
         this%cascade_matrixd(1:nprimvars, 1:nreactions),rscal, bstatus)
-
       call lom%apply_reaction_rscal(nreactions, rscal(1:nreactions), rrates(1:nreactions))
     else
       call calc_dtrend_som_bgc(nstvars, nreactions, this%cascade_matrix(1:nstvars, 1:nreactions), &
@@ -831,18 +829,21 @@ contains
     endif
     it = it + 1
   enddo
-!  do jj = 1, nreactions
-!    print*,'rrj',jj,rrates(jj),this%cascade_matrix(this%simic_bgc_index%lid_doc,jj), &
-!      this%cascade_matrix(this%simic_bgc_index%lid_doc_e,jj)
-!  enddo
-!  print*,'dydt1',dot_sum(this%cascade_matrix(this%simic_bgc_index%lid_doc,1:6),rrates(1:6)), &
-!    dot_sum(this%cascade_matrix(this%simic_bgc_index%lid_doc_e,1:6),rrates(1:6))
-!  print*,'dydt2',dot_sum(this%cascade_matrix(this%simic_bgc_index%lid_doc,7:10),rrates(7:10)), &
-!    dot_sum(this%cascade_matrix(this%simic_bgc_index%lid_doc_e,7:10),rrates(7:10))
-!  print*,'dydt',dydt(this%simic_bgc_index%lid_doc), dydt(this%simic_bgc_index%lid_doc_e)
 
-  if(abs(dydt(this%simic_bgc_index%lid_doc)) < abs(dydt(this%simic_bgc_index%lid_doc_e)) &
-    .and. abs(dydt(this%simic_bgc_index%lid_doc_e))>1.e-12_r8)stop
+!  if(abs(dydt(this%simic_bgc_index%lid_doc)) < abs(dydt(this%simic_bgc_index%lid_doc_e)) &
+!    .and. abs(dydt(this%simic_bgc_index%lid_doc_e))>1.e-12_r8)then
+!     do jj = 1, nreactions
+!       print*,'rrj',jj,rrates(jj),this%cascade_matrix(this%simic_bgc_index%lid_doc,jj), &
+!         this%cascade_matrix(this%simic_bgc_index%lid_doc_e,jj)
+!     enddo
+!     print*,'dydt1',dot_sum(this%cascade_matrix(this%simic_bgc_index%lid_doc,1:6),rrates(1:6)), &
+!      dot_sum(this%cascade_matrix(this%simic_bgc_index%lid_doc_e,1:6),rrates(1:6))
+!     print*,'dydt2',dot_sum(this%cascade_matrix(this%simic_bgc_index%lid_doc,7:10),rrates(7:10)), &
+!      dot_sum(this%cascade_matrix(this%simic_bgc_index%lid_doc_e,7:10),rrates(7:10))
+!     print*,'dydt',dydt(this%simic_bgc_index%lid_doc), dydt(this%simic_bgc_index%lid_doc_e)
+
+    !stop
+!  endif
 
   end associate
   contains
