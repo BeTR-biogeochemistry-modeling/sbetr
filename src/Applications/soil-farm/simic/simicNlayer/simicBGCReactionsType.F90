@@ -345,7 +345,15 @@ contains
       trc_grp_end=betrtracer_vars%id_trc_end_dom, &
       is_trc_gw=.true., is_trc_volatile = .false.)
 
+    ngroupmems=nelm+1  !pom, element + energy
+    call betrtracer_vars%add_tracer_group(trc_grp_cnt=addone(itemp), mem = ngroupmems, &
+      trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_pom, &
+      trc_grp_beg=betrtracer_vars%id_trc_beg_pom, &
+      trc_grp_end=betrtracer_vars%id_trc_end_pom, &
+      is_trc_passive=.true.)
+
     !three litter groups
+
     ngroupmems = 3*nelm
     call betrtracer_vars%add_tracer_group(trc_grp_cnt=addone(itemp), mem = ngroupmems, &
       trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_litr, &
@@ -613,6 +621,39 @@ contains
       if(bstatus%check_status())return
     endif
 
+    itemp_mem=0
+    trcid =  betrtracer_vars%id_trc_beg_pom+c_loc-1
+    call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='POM_C' ,    &
+         is_trc_mobile=.false., is_trc_advective = .false., &
+         trc_group_id = betrtracer_vars%id_trc_pom, trc_group_mem= addone(itemp_mem), &
+         trc_family_name='POM')
+    if(bstatus%check_status())return
+
+    trcid = betrtracer_vars%id_trc_beg_pom+e_loc-1
+    call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='POM_e' ,    &
+         is_trc_mobile=.false., is_trc_advective = .false., &
+         trc_group_id = betrtracer_vars%id_trc_pom, trc_group_mem= addone(itemp_mem), &
+         trc_family_name='POM')
+    if(bstatus%check_status())return
+
+    if(this%use_c13)then
+      trcid = betrtracer_vars%id_trc_beg_pom+c13_loc-1
+      call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='POM_C13' ,    &
+         is_trc_mobile=.false., is_trc_advective = .false., &
+         trc_group_id = betrtracer_vars%id_trc_pom, trc_group_mem= addone(itemp_mem), &
+         trc_family_name='POM')
+      if(bstatus%check_status())return
+    endif
+
+    if(this%use_c14)then
+      trcid=betrtracer_vars%id_trc_beg_pom+c14_loc-1
+      call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='POM_C14' ,  &
+         is_trc_mobile=.false., is_trc_advective = .false., &
+         trc_group_id = betrtracer_vars%id_trc_pom, trc_group_mem= addone(itemp_mem), &
+         trc_family_name='POM')
+      if(bstatus%check_status())return
+    endif
+
   end associate
   end subroutine set_tracer
   !-------------------------------------------------------------------------------
@@ -681,7 +722,7 @@ contains
          tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_ar)    =ppm2molv(pbot_pa(c), ar_ppmv(c), tair(c))!mol m-3, contant boundary condition
          tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_co2x)  =ppm2molv(pbot_pa(c), co2_ppmv(c), tair(c))!mol m-3, contant boundary condition
          tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_ch4)   =ppm2molv(pbot_pa(c), ch4_ppmv(c), tair(c))!mol m-3, contant boundary condition
-         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,id_trc_beg_dom:id_trc_end_dom)  = 0._r8                        !mol m-3, contant boundary condition, as concentration
+         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,id_trc_beg_dom:id_trc_end_dom)= 0._r8            !mol m-3, contant boundary condition, as concentration
 
          tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_n2))           = 2._r8*1.837e-5_r8/dz_top(c)  !m/s surface conductance
          tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_o2))           = 2._r8*1.713e-5_r8/dz_top(c)  !m/s surface conductance
@@ -1146,6 +1187,8 @@ contains
      wood_end =>  this%simic_bgc_index%wood_end  , &
      dom_beg =>  this%simic_bgc_index%dom_beg    , &
      dom_end =>  this%simic_bgc_index%dom_end    , &
+     pom_beg =>  this%simic_bgc_index%pom_beg    , &
+     pom_end =>  this%simic_bgc_index%pom_end    , &
      Bm_beg  =>  this%simic_bgc_index%Bm_beg     , &
      Bm_end  =>  this%simic_bgc_index%Bm_end     , &
      volatileid            => betrtracer_vars%volatileid                   , &
@@ -1166,6 +1209,9 @@ contains
 
     tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_dom:betrtracer_vars%id_trc_end_dom) = &
         ystatesf(dom_beg:dom_end)
+
+    tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_pom:betrtracer_vars%id_trc_end_pom) = &
+        ystatesf(pom_beg:pom_end)
 
     tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_n2) = &
         ystatesf(this%simic_bgc_index%lid_n2)
@@ -1244,6 +1290,11 @@ contains
 
     do k = 1, dom_end-dom_beg + 1
       k1 = dom_beg+k-1; k2 = betrtracer_vars%id_trc_beg_dom+ k-1
+      tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)
+    enddo
+
+    do k = 1, pom_end-pom_beg + 1
+      k1 = pom_beg+k-1; k2 = betrtracer_vars%id_trc_beg_pom+ k-1
       tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)
     enddo
 
@@ -1341,6 +1392,8 @@ contains
      wood_end =>  this%simic_bgc_index%wood_end  , &
      dom_beg =>  this%simic_bgc_index%dom_beg    , &
      dom_end =>  this%simic_bgc_index%dom_end    , &
+     pom_beg =>  this%simic_bgc_index%pom_beg    , &
+     pom_end =>  this%simic_bgc_index%pom_end    , &
      Bm_beg  =>  this%simic_bgc_index%Bm_beg     , &
      Bm_end  =>  this%simic_bgc_index%Bm_end       &
   )
@@ -1366,6 +1419,12 @@ contains
       this%simic_forc(c,j)%ystates(dom_beg:dom_end)= &
           tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_dom:betrtracer_vars%id_trc_end_dom)
       if(this%simic_forc(c,j)%ystates(dom_beg)<=tiny_cval)this%simic_forc(c,j)%ystates(dom_beg:dom_end)=0._r8
+
+      !pom
+      this%simic_forc(c,j)%ystates(pom_beg:pom_end)= &
+          tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_pom:betrtracer_vars%id_trc_end_pom)
+      if(this%simic_forc(c,j)%ystates(pom_beg)<=tiny_cval)this%simic_forc(c,j)%ystates(pom_beg:pom_end)=0._r8
+
 
       !microbial biomass
       this%simic_forc(c,j)%ystates(Bm_beg:Bm_end)= &
