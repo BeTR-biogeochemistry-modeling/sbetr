@@ -335,7 +335,7 @@ implicit none
     this%lid_doc = addone(itemp);this%doc_uptake_reac  = addone(ireac); call list_insert(list_react, 'doc_uptake_reac', itemp0)
     this%doc_sorb_reac  = addone(ireac); call list_insert(list_react, 'doc_sorb_reac', itemp0)
     call add_ompool_name(list_name, list_unit, list_pool,'DOC', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
-    this%lid_doc_e = this%lid_doc + 1
+    this%lid_doc_e = addone(itemp)
     call list_insert(list_name, 'DOC_e',vid)
     call list_insert(list_unit, 'mol e m-3',uid)
     this%dom_end = this%dom_beg - 1 + (this%lid_doc-this%lid_doc+1)*(this%nelms+1)
@@ -343,7 +343,7 @@ implicit none
     this%pom_beg = this%dom_end + 1
     this%lid_pom = addone(itemp);this%pom_desorb_reac  = addone(ireac); call list_insert(list_react, 'pom_desorb_reac', itemp0)
     call add_ompool_name(list_name, list_unit, list_pool,'POM', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
-    this%lid_pom_e = this%lid_pom + 1
+    this%lid_pom_e = addone(itemp)
     call list_insert(list_name, 'POM_e',vid)
     call list_insert(list_unit, 'mol e m-3',uid)
     this%pom_end = this%pom_beg - 1 + (this%lid_pom-this%lid_pom+1)*(this%nelms+1)
@@ -412,9 +412,9 @@ implicit none
     call copy_name(this%nstvars, list_unit, this%varunits(1:this%nstvars))
     call copy_name(this%nom_pools, list_pool, this%ompoolnames(1:this%nom_pools))
     call copy_name_type(this%nstvars, list_name, this%vartypes(1:this%nstvars))
-    call list_disp(list_name); call list_disp(list_pool);call list_disp(list_unit);
-    print*,'nprimvars=',this%nprimvars
-    call list_disp(list_react)
+!    call list_disp(list_name); call list_disp(list_pool);call list_disp(list_unit);
+!    print*,'nprimvars=',this%nprimvars
+!    call list_disp(list_react)
 
     call list_free(list_name)
     call list_free(list_pool)

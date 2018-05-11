@@ -181,7 +181,6 @@ contains
   class(JarBGC_forc_type) , intent(inout) :: this
   integer , intent(in) :: nstvars
 
-
   allocate(this%ystates(nstvars))
   allocate(this%plant_froot_nn(betr_maxpatch_pft))
   allocate(this%plant_froot_np(betr_maxpatch_pft))

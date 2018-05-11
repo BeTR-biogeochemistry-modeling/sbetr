@@ -266,6 +266,7 @@ contains
   )
   call bstatus%reset()
   this%o2_w2b        = bgc_forc%o2_w2b
+  cascade_matrix(:,:) = 0._r8
 
   !initialize state variables
   call this%init_states(this%simic_bgc_index, bgc_forc)
@@ -273,7 +274,7 @@ contains
   ystates0(:) = this%ystates0(:)
 
   call this%add_ext_input(dtime, this%simic_bgc_index, bgc_forc)
-  cascade_matrix(:,:) = 0._r8
+
   if(.not. input_only)then
     this%Minsurf = bgc_forc%Msurf_OM
     this%Kaff_CM   = this%Kaff_CM_ref*bgc_forc%KM_OM_ref
@@ -285,17 +286,10 @@ contains
 
     call this%calc_cascade_matrix(this%simic_bgc_index,  cascade_matrix)
 
-    do jj = 1, nreactions
-      print*,'rec0',jj,cascade_matrix(lid_doc,jj),cascade_matrix(lid_doc_e,jj)
-    enddo
-
     call pd_decomp(nprimvars, nreactions, cascade_matrix(1:nprimvars, 1:nreactions), &
        cascade_matrixp, cascade_matrixd, bstatus)
     if(bstatus%check_status())return
 
-    do jj = 1, nreactions
-      print*,'rec',jj,cascade_matrix(lid_doc,jj),cascade_matrix(lid_doc_e,jj)
-    enddo
     time = 0._r8
     yf(:) = ystates1(:)
     call this%ode_adapt_ebbks1(yf, nprimvars, nstvars, time, dtime, ystates1)
@@ -314,10 +308,10 @@ contains
   class(simic_bgc_type)  , intent(inout) :: this
   real(r8)               , intent(in)    :: dtime
   integer                , intent(in)    :: nstates
-  real(r8)               , intent(in)    :: ystates1(nstates)
-  type(simic_bgc_index_type) , intent(in)    :: simic_bgc_index
+  real(r8)               , intent(in)    :: ystates1(1:nstates)
+  type(simic_bgc_index_type) , intent(in):: simic_bgc_index
   real(r8)               , intent(in)    :: doc_cue
-  real(r8)               , intent(out)   :: rrates(simic_bgc_index%nreactions)
+  real(r8)               , intent(out)   :: rrates(1:simic_bgc_index%nreactions)
 
   real(r8) :: depolymer_l1,depolymer_l2,depolymer_l3,depolymer_cwd
   real(r8) :: depolymer_norm, depolymer_md
@@ -405,7 +399,6 @@ contains
 
   if(Rh_gpot > 0._r8)then
     !active growth
-    !print*,'cue',doc_cue
     doc_uptake = doc_uptake + Rh_gpot * doc_cue/(1._r8-doc_cue)
   endif
 
@@ -429,11 +422,7 @@ contains
   rrates(o2_resp_reac)         = Rh_pot
   rrates(pom_desorb_reac)      = ystates1(lid_pom) * fpom_desorb
   rrates(doc_sorb_reac)        = doc_sorb
-!  print*,'rates'
-!  print*,(rrates(jj),jj=1,simic_bgc_index%nreactions)
-!  print*,'states'
-!  print*,(ystates1(jj),jj=1,nstates)
-!  print*,'hr comp',Rh_pot, Rm_pot
+
   end associate
   end subroutine simic_rrates
   !-------------------------------------------------------------------------------
@@ -686,39 +675,20 @@ contains
   cascade_matrix(lid_co2_hr,reac)  =  1._r8
   cascade_matrix(lid_co2,reac)     =  1._r8
 
-  reac = simic_bgc_index%doc_uptake_reac
-  cascade_matrix(lid_doc, reac)   = -1._r8
-  cascade_matrix(lid_doc_e, reac) = -1._r8
-  cascade_matrix(lid_micbl, reac) =  1._r8
-  print*,'xxx',reac,cascade_matrix(lid_doc, reac),cascade_matrix(lid_doc, reac)
-
   reac = simic_bgc_index%doc_sorb_reac
   cascade_matrix(lid_doc, reac)   = -1._r8
-  cascade_matrix(lid_doc_e, reac) = -1._r8
   cascade_matrix(lid_pom, reac)   =  1._r8
-  cascade_matrix(lid_pom_e, reac) =  1._r8
-  print*,'xx1',reac,cascade_matrix(lid_doc, reac),cascade_matrix(lid_doc, reac)
+
+  reac = simic_bgc_index%doc_uptake_reac
+  cascade_matrix(lid_doc, reac)   = -1._r8
+  cascade_matrix(lid_micbl, reac) =  1._r8
 
   reac = simic_bgc_index%pom_desorb_reac
   cascade_matrix(lid_pom, reac)   = -1._r8
-  cascade_matrix(lid_pom_e, reac) = -1._r8
-  print*,'xddddx',reac,cascade_matrix(lid_doc, 8),cascade_matrix(lid_doc, 8)
-
   cascade_matrix(lid_doc, reac)   =  1._r8
-  cascade_matrix(lid_doc_e, reac) =  1._r8
-  print*,'xddd0',reac,cascade_matrix(lid_doc, 8),cascade_matrix(lid_doc, 8)
-  print*,'x0',reac,cascade_matrix(lid_doc, reac),cascade_matrix(lid_doc_e, reac)
-
-  reac=8
-  print*,'digi',reac,cascade_matrix(lid_doc,reac),cascade_matrix(lid_doc_e,reac)
-  print*,size(cascade_matrix,1),size(cascade_matrix,2)
-  do reac = 1, simic_bgc_index%nreactions
-    print*,'regggc0',reac,cascade_matrix(lid_doc,reac),cascade_matrix(lid_doc_e,reac)
-  enddo
 
   end associate
   end subroutine calc_cascade_matrix
-
 
   !-------------------------------------------------------------------------------
   subroutine ode_adapt_ebbks1(me, y0, nprimeq, neq, t, dt, y)
@@ -802,7 +772,7 @@ contains
   subroutine bgc_integrate(this, ystate, dtime, time, nprimvars, nstvars, dydt)
 
   use SOMStateVarUpdateMod , only : calc_dtrend_som_bgc
-  use MathfuncMod          , only : lom_type, safe_div
+  use MathfuncMod          , only : lom_type, safe_div, dot_sum
   implicit none
   class(simic_bgc_type)     , intent(inout) :: this
   integer                   , intent(in) :: nstvars
@@ -818,26 +788,27 @@ contains
   type(betr_status_type) :: bstatus
   logical :: lneg
   real(r8) :: rscal(1:this%simic_bgc_index%nreactions)
-  real(r8) :: rrates(1:nstvars)
+  real(r8) :: rrates(1:this%simic_bgc_index%nreactions)
   real(r8) :: p_dt(1:nprimvars)
   real(r8) :: d_dt(1:nprimvars)
   real(r8) :: pscal(1:nprimvars)
-  real(r8) :: doc_cue
-
+  real(r8) :: doc_cue, pom_cue
+  integer  :: reac
   associate(                                                  &
     lid_doc_e        => this%simic_bgc_index%lid_doc_e      , &
     lid_doc          => this%simic_bgc_index%lid_doc        , &
+    lid_pom_e        => this%simic_bgc_index%lid_pom_e      , &
+    lid_pom          => this%simic_bgc_index%lid_pom        , &
     doc_uptake_reac  => this%simic_bgc_index%doc_uptake_reac, &
     nreactions       => this%simic_bgc_index%nreactions       &
   )
   doc_cue = safe_div(ystate(lid_doc_e), ystate(lid_doc))
-  print*,'cue',doc_cue
+  pom_cue = safe_div(ystate(lid_pom_e), ystate(lid_pom))
+  !print*,'dcue',doc_cue,ystate(lid_doc_e), ystate(lid_doc)
+  !print*,'pcue',pom_cue,ystate(lid_pom_e), ystate(lid_pom)
+  call correct_cascade_matrix_doc(doc_cue, pom_cue)
   call this%simic_rrates(this%simic_bgc_index, dtime, nstvars, ystate, doc_cue, rrates)
 
-  do jj = 1, nreactions
-  print*,jj,this%cascade_matrixd(lid_doc_e,jj),this%cascade_matrixp(lid_doc_e,jj), &
-    this%cascade_matrix(lid_doc_e,jj),this%cascade_matrix(lid_doc,jj)
-  enddo
   it=0
   rscal=0._r8
   do
@@ -846,11 +817,10 @@ contains
     call calc_dtrend_som_bgc(nprimvars, nreactions, this%cascade_matrixd(1:nprimvars, 1:nreactions), rrates, d_dt)
 
     !update the state variables
-    call lom%calc_state_pscal(nprimvars, dtime, ystate(1:nprimvars), p_dt(1:nprimvars),  d_dt(1:nprimvars), &
-        pscal(1:nprimvars), lneg, bstatus)
+    call lom%calc_state_pscal(nprimvars, dtime, ystate(1:nprimvars), p_dt,  d_dt, pscal, lneg, bstatus)
 
     if(lneg .and. it<=itmax)then
-      call lom%calc_reaction_rscal(nprimvars, nreactions,  pscal(1:nprimvars), &
+      call lom%calc_reaction_rscal(nprimvars, nreactions,  pscal, &
         this%cascade_matrixd(1:nprimvars, 1:nreactions),rscal, bstatus)
 
       call lom%apply_reaction_rscal(nreactions, rscal(1:nreactions), rrates(1:nreactions))
@@ -861,12 +831,48 @@ contains
     endif
     it = it + 1
   enddo
-  print*,'dydt',dydt(this%simic_bgc_index%lid_doc), dydt(this%simic_bgc_index%lid_doc_e)
-  if(dydt(this%simic_bgc_index%lid_doc)< dydt(this%simic_bgc_index%lid_doc_e))stop
-!  do jj = 1, nprimvars
-!    print*,jj, dydt(jj)*dtime, ystate(jj)
+!  do jj = 1, nreactions
+!    print*,'rrj',jj,rrates(jj),this%cascade_matrix(this%simic_bgc_index%lid_doc,jj), &
+!      this%cascade_matrix(this%simic_bgc_index%lid_doc_e,jj)
 !  enddo
+!  print*,'dydt1',dot_sum(this%cascade_matrix(this%simic_bgc_index%lid_doc,1:6),rrates(1:6)), &
+!    dot_sum(this%cascade_matrix(this%simic_bgc_index%lid_doc_e,1:6),rrates(1:6))
+!  print*,'dydt2',dot_sum(this%cascade_matrix(this%simic_bgc_index%lid_doc,7:10),rrates(7:10)), &
+!    dot_sum(this%cascade_matrix(this%simic_bgc_index%lid_doc_e,7:10),rrates(7:10))
+!  print*,'dydt',dydt(this%simic_bgc_index%lid_doc), dydt(this%simic_bgc_index%lid_doc_e)
+
+  if(abs(dydt(this%simic_bgc_index%lid_doc)) < abs(dydt(this%simic_bgc_index%lid_doc_e)) &
+    .and. abs(dydt(this%simic_bgc_index%lid_doc_e))>1.e-12_r8)stop
+
   end associate
+  contains
+    subroutine correct_cascade_matrix_doc(doc_cue, pom_cue)
+    implicit none
+    real(r8), intent(in) :: doc_cue
+    real(r8), intent(in) :: pom_cue
+    integer :: reac
+    associate(                                                &
+      lid_doc_e        => this%simic_bgc_index%lid_doc_e    , &
+      lid_pom_e        => this%simic_bgc_index%lid_pom_e      &
+     )
+    reac = this%simic_bgc_index%doc_sorb_reac
+    this%cascade_matrix(lid_doc_e, reac)  = -doc_cue
+    this%cascade_matrix(lid_pom_e, reac)  =  doc_cue
+    this%cascade_matrixd(lid_doc_e, reac) = -doc_cue
+    this%cascade_matrixp(lid_pom_e, reac) =  doc_cue
+
+    reac = this%simic_bgc_index%doc_uptake_reac
+    this%cascade_matrix(lid_doc_e, reac) = -doc_cue
+    this%cascade_matrixd(lid_doc_e, reac)= -doc_cue
+
+    reac = this%simic_bgc_index%pom_desorb_reac
+    this%cascade_matrix(lid_pom_e, reac) = -pom_cue
+    this%cascade_matrix(lid_doc_e, reac) =  pom_cue
+    this%cascade_matrixd(lid_pom_e, reac)= -pom_cue
+    this%cascade_matrixp(lid_doc_e, reac)=  pom_cue
+
+    end associate
+    end subroutine correct_cascade_matrix_doc
   end subroutine bgc_integrate
 
   !-------------------------------------------------------------------------------
