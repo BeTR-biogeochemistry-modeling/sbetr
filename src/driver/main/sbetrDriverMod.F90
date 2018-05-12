@@ -197,7 +197,7 @@ contains
   if(simulation%do_soibgc())then
     call forcing_data%ReadCNPData()
   endif
-
+  
   do
     record = record + 1
     call simulation%SetClock(dtime=time_vars%get_step_size(), nelapstep=time_vars%get_nstep())
@@ -350,8 +350,9 @@ contains
          call hist%histrst(reaction_method, 'write',yymmddhhss)
       endif
     endif
-    !x print*,'next step'
+    !print*,'next step'
     if(time_vars%its_time_to_exit()) then
+       print*,'exit'
        exit
     end if
   enddo
@@ -623,7 +624,7 @@ end subroutine sbetrBGC_driver
     id = id + 1; ystates(id) = nitrogenstate_vars%som3n_col(c_l)
     id = id + 1; ystates(id) = phosphorusstate_vars%som1p_col(c_l)
     id = id + 1; ystates(id) = phosphorusstate_vars%som2p_col(c_l)
-    id = id + 1; ystates(id) = phosphorusstate_vars%som3p_col(c_l)    
+    id = id + 1; ystates(id) = phosphorusstate_vars%som3p_col(c_l)
   elseif(index(trim(reaction_method),'simic')/=0)then
     ystates(:) = 0._r8
     id = 0

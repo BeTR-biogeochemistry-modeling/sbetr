@@ -806,6 +806,10 @@ contains
   pom_cue = safe_div(ystate(lid_pom_e), ystate(lid_pom))
   !print*,'dcue',doc_cue,ystate(lid_doc_e), ystate(lid_doc)
   !print*,'pcue',pom_cue,ystate(lid_pom_e), ystate(lid_pom)
+  if(pom_cue>1._r8)then
+    print*,'error in pom_cue',ystate(lid_pom_e), ystate(lid_pom)
+    stop
+  endif
   call correct_cascade_matrix_doc(doc_cue, pom_cue)
   call this%simic_rrates(this%simic_bgc_index, dtime, nstvars, ystate, doc_cue, rrates)
 
@@ -830,20 +834,20 @@ contains
     it = it + 1
   enddo
 
-!  if(abs(dydt(this%simic_bgc_index%lid_doc)) < abs(dydt(this%simic_bgc_index%lid_doc_e)) &
-!    .and. abs(dydt(this%simic_bgc_index%lid_doc_e))>1.e-12_r8)then
-!     do jj = 1, nreactions
-!       print*,'rrj',jj,rrates(jj),this%cascade_matrix(this%simic_bgc_index%lid_doc,jj), &
-!         this%cascade_matrix(this%simic_bgc_index%lid_doc_e,jj)
-!     enddo
-!     print*,'dydt1',dot_sum(this%cascade_matrix(this%simic_bgc_index%lid_doc,1:6),rrates(1:6)), &
-!      dot_sum(this%cascade_matrix(this%simic_bgc_index%lid_doc_e,1:6),rrates(1:6))
-!     print*,'dydt2',dot_sum(this%cascade_matrix(this%simic_bgc_index%lid_doc,7:10),rrates(7:10)), &
-!      dot_sum(this%cascade_matrix(this%simic_bgc_index%lid_doc_e,7:10),rrates(7:10))
-!     print*,'dydt',dydt(this%simic_bgc_index%lid_doc), dydt(this%simic_bgc_index%lid_doc_e)
-
-    !stop
-!  endif
+  if(abs(dydt(this%simic_bgc_index%lid_pom)) < abs(dydt(this%simic_bgc_index%lid_pom_e)) &
+    .and. abs(dydt(this%simic_bgc_index%lid_pom_e))>1.e-10_r8)then
+     do jj = 1, nreactions
+       print*,'rrj',jj,rrates(jj),this%cascade_matrix(this%simic_bgc_index%lid_pom,jj), &
+         this%cascade_matrix(this%simic_bgc_index%lid_pom_e,jj)
+     enddo
+     print*,'dydt1',dot_sum(this%cascade_matrix(this%simic_bgc_index%lid_pom,1:6),rrates(1:6)), &
+      dot_sum(this%cascade_matrix(this%simic_bgc_index%lid_pom_e,1:6),rrates(1:6))
+     print*,'dydt2',dot_sum(this%cascade_matrix(this%simic_bgc_index%lid_pom,7:10),rrates(7:10)), &
+      dot_sum(this%cascade_matrix(this%simic_bgc_index%lid_pom_e,7:10),rrates(7:10))
+     print*,'dydt',dydt(this%simic_bgc_index%lid_pom), dydt(this%simic_bgc_index%lid_pom_e)
+     print*,'pom',ystate(lid_pom_e), ystate(lid_pom)
+    stop
+  endif
 
   end associate
   contains

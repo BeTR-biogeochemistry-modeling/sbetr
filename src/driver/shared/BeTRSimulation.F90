@@ -1806,7 +1806,7 @@ contains
   !assign initial conditions
   call this%BeTRSetBounds(betr_bounds)
 
-  print*,'offline restart', flag
+  print*,'offline restart ', flag
   if(flag=='define')then
     ! print*,'define restart file'
     ! define the dimensions
