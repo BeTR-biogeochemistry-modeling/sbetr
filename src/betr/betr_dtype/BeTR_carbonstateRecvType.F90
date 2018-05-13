@@ -18,6 +18,7 @@ implicit none
      real(r8), pointer :: som1c_col(:) => null()
      real(r8), pointer :: som2c_col(:) => null()
      real(r8), pointer :: som3c_col(:) => null()
+     real(r8), pointer :: domc_col(:) => null()
      real(r8), pointer :: som1c_vr_col(:,:) => null()
      real(r8), pointer :: som2c_vr_col(:,:) => null()
      real(r8), pointer :: som3c_vr_col(:,:) => null()
@@ -65,6 +66,8 @@ implicit none
   allocate(this%som1c_col(begc:endc));  this%som1c_col(:) = nan
   allocate(this%som2c_col(begc:endc));  this%som2c_col(:) = nan
   allocate(this%som3c_col(begc:endc));  this%som3c_col(:) = nan
+  allocate(this%domc_col(begc:endc));   this%domc_col(:) = nan
+
   allocate(this%som1c_vr_col(begc:endc, lbj:ubj));  this%som1c_vr_col(:,:) = nan
   allocate(this%som2c_vr_col(begc:endc, lbj:ubj));  this%som2c_vr_col(:,:) = nan
   allocate(this%som3c_vr_col(begc:endc, lbj:ubj));  this%som3c_vr_col(:,:) = nan
@@ -73,6 +76,7 @@ implicit none
   allocate(this%totlitc_vr_col(begc:endc,lbj:ubj)); this%totlitc_vr_col(:,:) = nan
   allocate(this%totsomc_vr_col(begc:endc,lbj:ubj)); this%totsomc_vr_col(:,:) = nan
   allocate(this%domc_vr_col(begc:endc, lbj:ubj)); this%domc_vr_col(:,:)=nan
+
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------
@@ -90,7 +94,6 @@ implicit none
   this%som3c_vr_col(:,:) = value_column
   this%domc_vr_col(:,:) = value_column
   end subroutine reset
-
 
   !------------------------------------------------------------------------
   subroutine summary(this, bounds, lbj, ubj, dz, zs)
@@ -113,12 +116,15 @@ implicit none
   this%som1c_col(:) = 0.0_r8
   this%som2c_col(:) = 0.0_r8
   this%som3c_col(:) = 0.0_r8
+  this%domc_col(:)  = 0._r8
   do j = lbj, ubj
     do c = bounds%begc, bounds%endc
       this%som1c_col(c) = this%som1c_col(c) + dz(c,j)*this%som1c_vr_col(c,j)
       this%som2c_col(c) = this%som2c_col(c) + dz(c,j)*this%som2c_vr_col(c,j)
       this%som3c_col(c) = this%som3c_col(c) + dz(c,j)*this%som3c_vr_col(c,j)
       this%cwdc_col(c) = this%cwdc_col(c) + dz(c,j) * this%cwdc_vr_col(c,j)
+      this%domc_col(c) = this%domc_col(c) + dz(c,j) * this%domc_vr_col(c,j)
+
       this%totlitc_col(c) = this%totlitc_col(c) + dz(c,j)*this%totlitc_vr_col(c,j)
       this%totsomc_vr_col(c,j) = this%som1c_vr_col(c,j) + this%som2c_vr_col(c,j) + &
          this%som3c_vr_col(c,j) + this%domc_vr_col(c,j)

@@ -17,7 +17,7 @@ implicit none
     real(r8), pointer :: som1c_col               (:) => null()
     real(r8), pointer :: som2c_col               (:) => null()
     real(r8), pointer :: som3c_col               (:) => null()
-
+    real(r8), pointer :: domc_col               (:) => null()
   contains
 
     procedure, public  :: Init
@@ -68,7 +68,7 @@ contains
     allocate(this%som1c_col(begc:endc)); this%som1c_col(:) = spval
     allocate(this%som2c_col(begc:endc)); this%som2c_col(:) = spval
     allocate(this%som3c_col(begc:endc)); this%som3c_col(:) = spval
-
+    allocate(this%domc_col(begc:endc)); this%domc_col(:) = spval
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------

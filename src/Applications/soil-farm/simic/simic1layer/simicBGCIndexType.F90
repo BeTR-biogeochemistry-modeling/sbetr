@@ -25,7 +25,7 @@ implicit none
      integer           :: lit3, lit3_depoly_reac
      integer           :: cwd , cwd_depoly_reac
      integer           :: lid_micbl, micbl_mort_reac
-     integer           :: lid_doc  , doc_uptake_reac, doc_sorb_reac
+     integer           :: lid_doc, doc_uptake_reac, doc_sorb_reac
      integer           :: lid_micbd, micbd_depoly_reac
      integer           :: lid_n2
      integer           :: lid_o2   , o2_resp_reac

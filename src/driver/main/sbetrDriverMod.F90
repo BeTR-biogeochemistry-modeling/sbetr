@@ -197,7 +197,7 @@ contains
   if(simulation%do_soibgc())then
     call forcing_data%ReadCNPData()
   endif
-  
+
   do
     record = record + 1
     call simulation%SetClock(dtime=time_vars%get_step_size(), nelapstep=time_vars%get_nstep())
@@ -631,9 +631,10 @@ end subroutine sbetrBGC_driver
     id = id + 1; ystates(id) = carbonflux_vars%hr_col(c_l)
     id = id + 1; ystates(id) = carbonstate_vars%cwdc_col(c_l)
     id = id + 1; ystates(id) = carbonstate_vars%totlitc_col(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%som2c_col(c_l)
+    id = id + 1; ystates(id) = carbonstate_vars%domc_col(c_l)
     id = id + 1; ystates(id) = carbonstate_vars%som1c_col(c_l)
     id = id + 1; ystates(id) = carbonstate_vars%som3c_col(c_l)
+    id = id + 1; ystates(id) = carbonstate_vars%som2c_col(c_l)
     id = id + 1; ystates(id) = carbonstate_vars%totsomc_col(c_l)
   else
     if(hist%nvars>0)ystates(:) = 0._r8

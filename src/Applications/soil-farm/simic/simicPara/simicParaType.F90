@@ -18,6 +18,7 @@ implicit none
   real(r8) :: cue_cel  !assimilation efficiency of DOC from cellulose polymer
   real(r8) :: cue_lig  !assimilation efficiency of DOC from lignin polymer
   real(r8) :: cue_cwd  !assimilation efficiency of DOC from cwd polymer
+  real(r8) :: cue_bm   !assimilation efficiency of DOC from microbial biomass
   real(r8) :: Rm0_spmic  !specific microbial maintenance respiration, 1/s
   real(r8) :: Mrt_spmic  !specific microbial mortality, 1/s
   real(r8) :: f_mic2C    !fraction of dead microbial biomass into DOC upon death
@@ -129,12 +130,13 @@ contains
 
   !decomposition
   this%Kaff_EP  = 1.e-3_r8
-  this%Kaff_BC  = 1.e-3_r8
+  this%Kaff_BC  = 1.e-4_r8
   this%Kaff_ED  = 1.e-3_r8
   this%cue_met  = 0.5_r8
   this%cue_cel  = 0.4_r8
   this%cue_lig  = 0.3_r8
   this%cue_cwd  = 0.3_r8
+  this%cue_bm   = 0.5_r8
   this%Rm0_spmic= 1.e-7_r8
   this%Mrt_spmic= 1.e-7_r8
   this%f_mic2C = 0.3_r8
@@ -148,7 +150,7 @@ contains
   this%Minsurf  = 100._r8
   this%Kaff_o2  = 0.22_r8
   this%Kmort_MB = 0.01_r8
-  this%fpom_vmax= 1._r8/60._r8    !one minute
+  this%fpom_vmax= 1.e-7_r8              !s-1
   this%fpom_desorb=this%fpom_vmax*0.1_r8
   end subroutine set_defpar_default
 
@@ -158,7 +160,6 @@ contains
   use betr_ctrl, only : betr_spinup_state
   implicit none
   class(simic_para_type), intent(inout) :: this
-
 
   call this%set_spinup_factor()
 

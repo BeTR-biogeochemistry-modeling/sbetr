@@ -44,6 +44,7 @@ module simicBGCType
     real(r8) :: cue_cel  !assimilation efficiency of DOC from cellulose polymer
     real(r8) :: cue_lig  !assimilation efficiency of DOC from lignin polymer
     real(r8) :: cue_cwd  !assimilation efficiency of DOC from cwd polymer
+    real(r8) :: cue_bm   !assimilation efficiency of DOC from microbial biomass
     real(r8) :: Rm0_spmic  !specific microbial maintenance respiration, 1/s
     real(r8) :: Mrt_spmic  !specific microbial mortality, 1/s
     real(r8) :: f_mic2C    !fraction of dead microbial biomass into DOC upon death
@@ -149,6 +150,7 @@ contains
     this%cue_cel  = biogeo_con%cue_cel
     this%cue_lig  = biogeo_con%cue_lig
     this%cue_cwd  = biogeo_con%cue_cwd
+    this%cue_bm  = biogeo_con%cue_bm
     this%Rm0_spmic= biogeo_con%Rm0_spmic
     this%Mrt_spmic= biogeo_con%Mrt_spmic
     this%f_mic2C  = biogeo_con%f_mic2C
@@ -317,7 +319,7 @@ contains
   real(r8) :: depolymer_norm, depolymer_md
   real(r8) :: doc_uptake, Rh_pot, Rh_gpot, Rm_pot, Rmx
   real(r8) :: o2w, fo2, mort, vmax_EP_f
-  real(r8) :: Minsurf, denorm
+  real(r8) :: Minsurf, denorm, depolymer_pom
   real(r8) :: doc_sorb
   integer  :: jj
   associate(                                            &
@@ -368,14 +370,15 @@ contains
   Minsurf = max(Minsurf0 -ystates1(lid_pom),0._r8)
   denorm = ystates1(lid_micbl) * alpha_B2E /(1._r8 + ystates1(lit1)/Kaff_EP+ &
      ystates1(lit2)/Kaff_EP + ystates1(lit3)/Kaff_EP + ystates1(cwd)/Kaff_EP + &
-     ystates1(lid_micbd)/Kaff_ED + ystates1(lid_micbl)*alpha_B2E/Kaff_ED+ &
-     Minsurf/Kaff_EM)
+     ystates1(lid_pom)/Kaff_EP+ystates1(lid_micbd)/Kaff_ED + &
+     ystates1(lid_micbl)*alpha_B2E/Kaff_ED+ Minsurf/Kaff_EM)
   depolymer_norm = denorm/Kaff_EP
   vmax_EP_f = vmax_EP * tfng
   depolymer_l1 = depolymer_norm * ystates1(lit1) * vmax_EP_f
   depolymer_l2 = depolymer_norm * ystates1(lit2) * vmax_EP_f
   depolymer_l3 = depolymer_norm * ystates1(lit3) * vmax_EP_f
   depolymer_cwd= depolymer_norm * ystates1(cwd)  * vmax_EP_f
+  depolymer_pom= depolymer_norm * ystates1(lid_pom) * vmax_EP_f
   depolymer_md = denorm /Kaff_ED
   depolymer_md = depolymer_md * ystates1(lid_micbd) * vmax_EP_f
 
@@ -388,6 +391,7 @@ contains
       Minsurf/Kaff_CM + ystates1(lid_micbl) * alpha_B2E/Kaff_EM
 
   doc_sorb = fpom_vmax * Minsurf * ystates1(lid_doc) / (denorm * Kaff_CM)
+
   !maintenance respiration
   Rm_pot = Rm0_spmic * ystates1(lid_micbl) * tfnr
 
@@ -419,7 +423,7 @@ contains
   rrates(micbl_mort_reac)      = mort
   rrates(doc_uptake_reac)      = doc_uptake
   rrates(o2_resp_reac)         = Rh_pot
-  rrates(pom_desorb_reac)      = ystates1(lid_pom) * fpom_desorb
+  rrates(pom_desorb_reac)      = depolymer_pom
   rrates(doc_sorb_reac)        = doc_sorb
 
   end associate
@@ -634,6 +638,7 @@ contains
     cue_cel    => this%cue_cel            , &
     cue_lig    => this%cue_lig            , &
     cue_cwd    => this%cue_cwd            , &
+    cue_bm     => this%cue_bm             , &
     f_mic2d    => this%f_mic2d            , &
     f_mic2c    => this%f_mic2c              &
   )
@@ -661,13 +666,13 @@ contains
   reac = simic_bgc_index%micbd_depoly_reac
   cascade_matrix(lid_micbd, reac)  = -1._r8
   cascade_matrix(lid_doc,reac)     =  1._r8
-  cascade_matrix(lid_doc_e,reac)   = 0.5_r8
+  cascade_matrix(lid_doc_e,reac)   =  cue_bm
 
   reac = simic_bgc_index%micbl_mort_reac
   cascade_matrix(lid_micbl, reac)  = -1._r8
   cascade_matrix(lid_micbd,reac)   =  f_mic2D
   cascade_matrix(lid_doc,reac)     =  f_mic2C
-  cascade_matrix(lid_doc_e,reac)   =  f_mic2C
+  cascade_matrix(lid_doc_e,reac)   =  f_mic2C*cue_bm
 
   reac = simic_bgc_index%o2_resp_reac
   cascade_matrix(lid_o2, reac)     = -1._r8
@@ -807,7 +812,7 @@ contains
   !print*,'dcue',doc_cue,ystate(lid_doc_e), ystate(lid_doc)
   !print*,'pcue',pom_cue,ystate(lid_pom_e), ystate(lid_pom)
   if(pom_cue>1._r8)then
-    print*,'error in pom_cue',ystate(lid_pom_e), ystate(lid_pom)
+    print*,'error in pom_cue',pom_cue,ystate(lid_pom_e), ystate(lid_pom)
     stop
   endif
   call correct_cascade_matrix_doc(doc_cue, pom_cue)
@@ -833,21 +838,20 @@ contains
     endif
     it = it + 1
   enddo
-
-  if(abs(dydt(this%simic_bgc_index%lid_pom)) < abs(dydt(this%simic_bgc_index%lid_pom_e)) &
-    .and. abs(dydt(this%simic_bgc_index%lid_pom_e))>1.e-10_r8)then
-     do jj = 1, nreactions
-       print*,'rrj',jj,rrates(jj),this%cascade_matrix(this%simic_bgc_index%lid_pom,jj), &
-         this%cascade_matrix(this%simic_bgc_index%lid_pom_e,jj)
-     enddo
-     print*,'dydt1',dot_sum(this%cascade_matrix(this%simic_bgc_index%lid_pom,1:6),rrates(1:6)), &
-      dot_sum(this%cascade_matrix(this%simic_bgc_index%lid_pom_e,1:6),rrates(1:6))
-     print*,'dydt2',dot_sum(this%cascade_matrix(this%simic_bgc_index%lid_pom,7:10),rrates(7:10)), &
-      dot_sum(this%cascade_matrix(this%simic_bgc_index%lid_pom_e,7:10),rrates(7:10))
-     print*,'dydt',dydt(this%simic_bgc_index%lid_pom), dydt(this%simic_bgc_index%lid_pom_e)
-     print*,'pom',ystate(lid_pom_e), ystate(lid_pom)
-    stop
-  endif
+  !print*,'dydt',dydt(this%simic_bgc_index%lid_micbl)
+  !if(dydt(this%simic_bgc_index%lid_pom)*dydt(this%simic_bgc_index%lid_pom_e)<0._r8)then
+  !   do jj = 1, nreactions
+  !     print*,'rrj',jj,rrates(jj),this%cascade_matrix(this%simic_bgc_index%lid_pom,jj), &
+  !       this%cascade_matrix(this%simic_bgc_index%lid_pom_e,jj)
+  !   enddo
+  !   print*,'dydt1',dot_sum(this%cascade_matrix(this%simic_bgc_index%lid_pom,1:6),rrates(1:6)), &
+  !    dot_sum(this%cascade_matrix(this%simic_bgc_index%lid_pom_e,1:6),rrates(1:6))
+  !   print*,'dydt2',dot_sum(this%cascade_matrix(this%simic_bgc_index%lid_pom,7:10),rrates(7:10)), &
+  !    dot_sum(this%cascade_matrix(this%simic_bgc_index%lid_pom_e,7:10),rrates(7:10))
+  !    print*,'dydt',dydt(this%simic_bgc_index%lid_pom), dydt(this%simic_bgc_index%lid_pom_e)
+  !   print*,'pom',ystate(lid_pom_e), ystate(lid_pom)
+  !  stop
+  !endif
 
   end associate
   contains

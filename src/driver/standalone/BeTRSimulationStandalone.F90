@@ -545,19 +545,23 @@ contains
     c12state_vars%som1c_col(c) = this%biogeo_state(c)%c12state_vars%som1c_col(c_l)
     c12state_vars%som2c_col(c) = this%biogeo_state(c)%c12state_vars%som2c_col(c_l)
     c12state_vars%som3c_col(c) = this%biogeo_state(c)%c12state_vars%som3c_col(c_l)
+    c12state_vars%domc_col(c)  = this%biogeo_state(c)%c12state_vars%domc_col(c_l)
+
     !print*,'som1c',c12state_vars%som1c_col(c)
     if(use_c13_betr)then
       c13state_vars%som1c_col(c) = this%biogeo_state(c)%c13state_vars%som1c_col(c_l)
       c13state_vars%som2c_col(c) = this%biogeo_state(c)%c13state_vars%som2c_col(c_l)
       c13state_vars%som3c_col(c) = this%biogeo_state(c)%c13state_vars%som3c_col(c_l)
+      c13state_vars%domc_col(c)  = this%biogeo_state(c)%c13state_vars%domc_col(c_l)
     endif
     if(use_c14_betr)then
       c14state_vars%som1c_col(c) = this%biogeo_state(c)%c14state_vars%som1c_col(c_l)
       c14state_vars%som2c_col(c) = this%biogeo_state(c)%c14state_vars%som2c_col(c_l)
       c14state_vars%som3c_col(c) = this%biogeo_state(c)%c14state_vars%som3c_col(c_l)
+      c14state_vars%domc_col(c)  = this%biogeo_state(c)%c14state_vars%domc_col(c_l)
     endif
 
-    if(index(trim(reaction_method),'ecacnp')/=0)then
+    if(index(trim(reaction_method),'ecacnp')/=0 .or. index(trim(reaction_method),'cdom')/=0)then
       n14state_vars%som1n_col(c) = this%biogeo_state(c)%n14state_vars%som1n_col(c_l)
       n14state_vars%som2n_col(c) = this%biogeo_state(c)%n14state_vars%som2n_col(c_l)
       n14state_vars%som3n_col(c) = this%biogeo_state(c)%n14state_vars%som3n_col(c_l)

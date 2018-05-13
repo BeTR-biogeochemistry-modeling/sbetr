@@ -958,7 +958,7 @@ contains
          endif
        endif
      endif
-     qflx_adv(c,0) = qflx_gross_infl_soil(c) *1.e-3_r8  !surface infiltration
+     qflx_adv(c,0) = qflx_gross_infl_soil(c) *1.e-3_r8  !surface infiltration, m/s
    enddo
    end associate
    end subroutine diagnose_advect_water_flux

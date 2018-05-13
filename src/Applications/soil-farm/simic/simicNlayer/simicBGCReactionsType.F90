@@ -375,7 +375,7 @@ contains
       trc_grp_end=betrtracer_vars%id_trc_end_Bm, &
       is_trc_passive=.true.)
 
-    betrtracer_vars%nmem_max               = 1
+    betrtracer_vars%nmem_max               = nelm*3
 
     call betrtracer_vars%Init()
 
@@ -1114,7 +1114,7 @@ contains
           endif
         enddo
 
-        do kk = betrtracer_vars%id_trc_beg_dom, betrtracer_vars%id_trc_end_dom, nelm+1
+        do kk = betrtracer_vars%id_trc_beg_pom, betrtracer_vars%id_trc_end_pom, nelm+1
           biogeo_state%c12state_vars%som2c_vr_col(c,j) = &
             catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)
 
@@ -1125,6 +1125,21 @@ contains
 
           if(this%use_c14)then
             biogeo_state%c14state_vars%som2c_vr_col(c,j) =  &
+              c14atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc)
+          endif
+        enddo
+
+        do kk = betrtracer_vars%id_trc_beg_dom, betrtracer_vars%id_trc_end_dom, nelm+1
+          biogeo_state%c12state_vars%domc_vr_col(c,j) = &
+            catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)
+
+          if(this%use_c13)then
+            biogeo_state%c13state_vars%domc_vr_col(c,j) =  &
+              c13atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc)
+          endif
+
+          if(this%use_c14)then
+            biogeo_state%c14state_vars%domc_vr_col(c,j) =  &
               c14atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc)
           endif
         enddo

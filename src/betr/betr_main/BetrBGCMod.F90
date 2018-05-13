@@ -440,7 +440,6 @@ contains
                endif
             endif
          enddo
-
          if (ntrcs==0) cycle
 
          !adaptive time stepping for solid phase transport
