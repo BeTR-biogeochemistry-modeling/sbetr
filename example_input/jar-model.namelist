@@ -6,11 +6,11 @@
 /
 
 &betr_time
-  delta_time=3600.
-  stop_n = 20
+  delta_time=1800.
+  stop_n = 200
   stop_option='nyears'
 /
 
 &forcing_inparm
-  forcing_filename = '../regression-tests/input-data/jarmodel_example.forcing.nc'
+  forcing_filename = '../regression-tests/input-data/jarmodel_example.halfhour.forcing.nc'
 /

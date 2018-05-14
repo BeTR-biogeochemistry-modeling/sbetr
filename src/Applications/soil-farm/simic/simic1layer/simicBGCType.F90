@@ -371,7 +371,7 @@ contains
   denorm = ystates1(lid_micbl) * alpha_B2E /(1._r8 + ystates1(lit1)/Kaff_EP+ &
      ystates1(lit2)/Kaff_EP + ystates1(lit3)/Kaff_EP + ystates1(cwd)/Kaff_EP + &
      ystates1(lid_pom)/Kaff_EP+ystates1(lid_micbd)/Kaff_ED + &
-     ystates1(lid_micbl)*alpha_B2E/Kaff_ED+ Minsurf/Kaff_EM)
+     ystates1(lid_micbl)*alpha_B2E/Kaff_ED+ Minsurf/Kaff_EM + ystates1(lid_doc)/Kaff_BC)
   depolymer_norm = denorm/Kaff_EP
   vmax_EP_f = vmax_EP * tfng
   depolymer_l1 = depolymer_norm * ystates1(lit1) * vmax_EP_f

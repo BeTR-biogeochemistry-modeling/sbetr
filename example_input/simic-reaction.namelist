@@ -3,7 +3,7 @@
   run_type='sbgc'
   param_file='../tools/sbgc.ecacnp_pars.04232018.nc'
   case_id='exp1'
-  continue_run=.true.
+  continue_run=.false.
 /
 
 &betr_parameters
@@ -16,14 +16,14 @@
 /
 
 &betr_time
-  delta_time=3600.
-  stop_n = 3
-  hist_freq = 30
+  delta_time=1800.
+  stop_n = 30
+  hist_freq=30
   stop_option='nyears'
 /
 
 &forcing_inparm
-  forcing_filename = '../regression-tests/input-data/single_pt_example.bgc.forc.nc'
+  forcing_filename = '../regression-tests/input-data/single_pt_example.bgc.halfhour.forc.nc'
 /
 
 &betr_grid
