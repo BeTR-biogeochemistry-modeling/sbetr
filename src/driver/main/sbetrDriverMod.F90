@@ -62,6 +62,7 @@ contains
   use histMod               , only : histf_type
   use HistBGCMod            , only : hist_bgc_type
   use tracer_varcon         , only : reaction_method
+  use betr_ctrl             , only : continue_run
   implicit none
   !arguments
   character(len=betr_filename_length)      , intent(in) :: base_filename
@@ -77,10 +78,10 @@ contains
 
   type(bounds_type)                    :: bounds
   integer                              :: lbj, ubj
-  logical :: continue_run
   type(file_desc_t)                      :: ncid
   character(len=betr_string_length_long) :: simulator_name
   character(len=betr_string_length_long) :: restfname
+  character(len=betr_string_length_long) :: finit
   class(ForcingData_type), allocatable :: forcing_data
   class(betr_grid_type), allocatable :: grid_data
   class(betr_time_type), allocatable :: time_vars
@@ -96,7 +97,8 @@ contains
   character(len=64) :: case_id
 
   !initialize parameters
-  call read_name_list(namelist_buffer, base_filename, case_id, simulator_name, continue_run, histbgc, hist)
+  call read_name_list(namelist_buffer, base_filename, case_id, &
+    simulator_name, finit, histbgc, hist)
 
   simulation => create_betr_simulation(simulator_name)
 
@@ -144,9 +146,17 @@ contains
     ! print*,'continue from restart file'
     call read_restinfo(restfname, nstep)
     !set current step
-    call time_vars%set_nstep(nstep-1)
+    call time_vars%set_time_offset(nstep-1)
     ! print*,'back 1 step'
     call time_vars%print_cur_time()
+  else
+    if(trim(finit)/='')then
+      !pass finit to restfname
+      write(restfname,'(A)')trim(finit)
+      nstep=0
+    else
+      restfname=''
+    endif
   endif
 
   call grid_data%UpdateGridConst(bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, soilstate_vars)
@@ -180,7 +190,7 @@ contains
   end select
 
   !read initial condition from restart file is needed
-  if(continue_run)then
+  if(trim(restfname)/='')then
     call simulation%BeTRRestartOpen(restfname, flag='read', ncid=ncid)
     call simulation%BeTRRestartOffline(bounds, ncid, simulation%num_soilc, simulation%filter_soilc, flag='read')
     call simulation%BeTRRestartClose(ncid)
@@ -366,7 +376,8 @@ end subroutine sbetrBGC_driver
 
 ! ----------------------------------------------------------------------
 
-  subroutine read_name_list(namelist_buffer, base_filename, case_id_loc, simulator_name_arg, continue_run, histbgc, hist)
+  subroutine read_name_list(namelist_buffer, base_filename, case_id_loc, &
+    simulator_name_arg, finit, histbgc, hist)
     !
     ! !DESCRIPTION:
     ! read namelist for betr configuration
@@ -383,13 +394,14 @@ end subroutine sbetrBGC_driver
     use BetrStatusType           , only : betr_status_type
     use HistBGCMod               , only : hist_bgc_type
     use histMod                  , only : histf_type
+    use betr_ctrl                , only : continue_run
     implicit none
     ! !ARGUMENTS:
     character(len=betr_namelist_buffer_size) , intent(in)  :: namelist_buffer
     character(len=*)                         , intent(in)  :: base_filename
     character(len=*)                         , intent(out) :: case_id_loc
     character(len=betr_string_length_long)   , intent(out) :: simulator_name_arg
-    logical, intent(out) :: continue_run
+    character(len=betr_string_length_long)   , intent(out) :: finit
     class(hist_bgc_type), intent(inout) :: histbgc
     class(histf_type), intent(inout) :: hist
     !
@@ -407,7 +419,7 @@ end subroutine sbetrBGC_driver
     !-----------------------------------------------------------------------
 
     namelist / sbetr_driver / simulator_name, continue_run, run_type, param_file, &
-        is_nitrogen_active, is_phosphorus_active, case_id
+        is_nitrogen_active, is_phosphorus_active, case_id, finit
 
     namelist / betr_parameters /                  &
          reaction_method,                         &
@@ -421,6 +433,7 @@ end subroutine sbetrBGC_driver
     is_nitrogen_active=.true.; is_phosphorus_active =.false.
     case_id=''
     input_only=.false.
+    finit =''
     ! ----------------------------------------------------------------------
     ! Read namelist from standard input.
     ! ----------------------------------------------------------------------

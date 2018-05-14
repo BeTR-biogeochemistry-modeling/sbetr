@@ -389,7 +389,6 @@ contains
     real(r8) :: tommps
     character(len=9) :: units
 
-
     ncf_in_filename_forc=trim(this%forcing_filename)
     call ncd_pio_openfile(ncf_in_forc, ncf_in_filename_forc, mode=ncd_nowrite)
 

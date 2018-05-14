@@ -17,6 +17,8 @@ module BeTR_TimeMod
      real(r8) :: delta_time
      real(r8) :: stop_time
      real(r8) :: time
+     real(r8) :: time0
+     real(r8) :: timef
      real(r8) :: toy
      real(r8) :: restart_dtime
      integer  :: tstep
@@ -32,9 +34,11 @@ module BeTR_TimeMod
      procedure, public :: update_time_stamp
      procedure, public :: set_nstep
      procedure, public :: get_nstep
+     procedure, public :: set_time_offset
      procedure, public :: get_days_per_year
      procedure, public :: get_step_size
      procedure, public :: get_cur_time
+     procedure, public :: get_cur_timef
      procedure, private:: proc_nextstep
      procedure, public :: proc_initstep
      procedure, public :: print_cur_time
@@ -68,11 +72,20 @@ contains
   function get_cur_time(this)result(ans)
 
   implicit none
-  class(betr_time_type), intent(inout) :: this
+  class(betr_time_type), intent(in) :: this
   real(r8) :: ans
 
   ans = this%time
   end function get_cur_time
+  !-------------------------------------------------------------------------------
+  function get_cur_timef(this)result(ans)
+
+  implicit none
+  class(betr_time_type), intent(in) :: this
+  real(r8) :: ans
+
+  ans = this%time+this%time0
+  end function get_cur_timef
   !-------------------------------------------------------------------------------
   subroutine Init(this, namelist_buffer, masterproc)
 
@@ -84,6 +97,7 @@ contains
     character(len=*), optional, intent(in) :: namelist_buffer
     logical, optional, intent(in) :: masterproc
     this%tstep = 1
+    this%time0 = 0._r8
     this%time  = 0._r8
     this%tod   = 0._r8
     this%toy   = 0._r8
@@ -321,9 +335,28 @@ contains
       this%tstep = 1
     endif
 
-    this%time  = nstep*this%delta_time
-
   end subroutine set_nstep
+
+
+  !-------------------------------------------------------------------------------
+  subroutine set_time_offset(this, nstep)
+
+    ! Return the timestep number.
+    implicit none
+    class(betr_time_type), intent(inout) :: this
+
+    character(len=*), parameter :: sub = 'betr::get_nstep'
+    integer, intent(in) :: nstep
+
+    this%nelapstep = nstep
+
+    if(this%its_a_new_year())then
+      this%tstep = 1
+    endif
+
+    this%time0  = nstep*this%delta_time
+    this%nelapstep = 0
+  end subroutine set_time_offset
 
   !-------------------------------------------------------------------------------
   subroutine proc_nextstep(this)
@@ -442,7 +475,6 @@ contains
   implicit none
   class(betr_time_type), intent(in) :: this
   logical :: yesno
-
 
   yesno = (this%moy == 1 .and. this%dom == 0 .and. this%tod < 1.e-3_r8)
 

@@ -3,6 +3,7 @@
   run_type='sbgc'
   param_file='../tools/sbgc.ecacnp_pars.04232018.nc'
   case_id='exp1'
+  continue_run=.true.
 /
 
 &betr_parameters
@@ -16,7 +17,7 @@
 
 &betr_time
   delta_time=3600.
-  stop_n = 30
+  stop_n = 3
   hist_freq = 30
   stop_option='nyears'
 /

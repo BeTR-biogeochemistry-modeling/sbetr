@@ -690,15 +690,17 @@ contains
   !
   ! USES
     use netcdf          , only : nf90_float
-    use bncdio_pio       , only : file_desc_t
+    use bncdio_pio       , only : file_desc_t,ncd_nowrite
     use bncdio_pio       , only : ncd_pio_createfile
     use bncdio_pio       , only : ncd_pio_closefile
     use bncdio_pio       , only : ncd_enddef
     use bncdio_pio       , only : ncd_defvar
     use bncdio_pio       , only : ncd_putvar
+    use bncdio_pio       , only : get_dim_len
     use bhistFileMod    , only : hist_file_create, hist_def_fld1d, hist_def_fld2d
     use betr_varcon     , only : bspval
     use betr_columnType , only : betr_column_type
+    use betr_ctrl       , only : continue_run
     !
     !ARGUMENTS
     implicit none
@@ -709,7 +711,6 @@ contains
     integer           ,     intent(in)   :: num_hist_state2d
     integer           ,     intent(in)   :: num_hist_flux1d
     integer           ,     intent(in)   :: num_hist_flux2d
-
 
   !TEMPORARY VARIABLES
     integer                     :: jj, kk, c
@@ -733,6 +734,10 @@ contains
       this%hist_filename = trim(this%base_filename) //'.'//trim(this%case_id)// '.output.nc'
     else
       this%hist_filename = trim(this%base_filename) //'.output.nc'
+    endif
+    if(continue_run)then
+      this%hist_record = get_dim_len(this%hist_filename, 'time')
+      return
     endif
     call ncd_pio_createfile(ncid, this%hist_filename)
 
@@ -777,12 +782,13 @@ contains
     type(bounds_type)           , intent(in)    :: bounds
     integer                     , intent(in)    :: numf
     integer                     , intent(in)    :: filter(:)
-    type(betr_time_type)        , intent(in)    :: time_vars
+    class(betr_time_type)       , intent(in)    :: time_vars
     real(r8)                    , intent(in)    :: velocity(:, :)
     !TEMPORARY VARIABLES
     type(file_desc_t)           :: ncid
     integer                     :: jj
     integer                     :: c
+    real(r8) :: timef
     character(len=*), parameter :: subname='hist_write'
       c = 1
     associate(                                                   &
@@ -807,7 +813,7 @@ contains
 
         call ncd_pio_openfile_for_write(ncid, this%hist_filename)
 
-        call ncd_putvar(ncid, "time", this%hist_record, time_vars%time)
+        timef=time_vars%get_cur_timef();call ncd_putvar(ncid, "time", this%hist_record, timef)
 
         do c = bounds%begc, bounds%endc
           call ncd_putvar(ncid, 'QFLX_ADV', this%hist_record, velocity(c:c, 1:betr_nlevtrc_soil))
@@ -1795,7 +1801,6 @@ contains
   type(betr_bounds_type)     :: betr_bounds
   integer :: recordDimID
 
-
   allocate(rest_varname_1d(this%num_rest_state1d)); rest_varname_1d=''
   allocate(rest_varname_2d(this%num_rest_state2d)); rest_varname_2d=''
 
@@ -1817,10 +1822,6 @@ contains
 
     !number of columns
     call ncd_defdim(ncid, 'column', this%num_soilc, recordDimID)
-
-    !define the time dimension
-    call ncd_defvar(ncid, 'time',ncd_double, long_name='', &
-         units = '',  missing_value=spval, fill_value=spval)
 
     call ncd_defvar(ncid, 'hist_naccum',ncd_double, long_name='', &
          units = '',  missing_value=spval, fill_value=spval)
@@ -1848,7 +1849,6 @@ contains
     enddo
 
     call ncd_enddef(ncid)
-
 
   elseif(flag=='write')then
 

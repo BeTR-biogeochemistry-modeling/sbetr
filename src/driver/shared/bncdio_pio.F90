@@ -1041,7 +1041,6 @@ module bncdio_pio
    call check_ret(nf90_inquire_dimension (ncid%fh, dimid, name,  &
         dimlen), 'check_dim')
 
-
    end function get_dim_len_idn
 
 !-----------------------------------------------------------------------

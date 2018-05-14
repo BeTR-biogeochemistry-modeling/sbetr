@@ -109,6 +109,7 @@ contains
 !--------------------------------------------------------
   subroutine init(this, varlist, unitlist, vartypes, hrfreq, gfname, dtime)
   use ncdio_pio, only : ncd_enddef, ncd_pio_closefile
+  use betr_ctrl, only : continue_run
   implicit none
   class(histf_type), intent(inout):: this
   character(len=hist_var_str_len), intent(in) :: varlist(:)
@@ -211,25 +212,30 @@ contains
         this%nm_varid(nm) = n
       end select
       call this%hist_create(loc_gfname, yes_flag,trim(this%hrfreq(n)),ncid(clock_id))
-      call this%hist_add_var(ncid(clock_id),this%varnames(n),this%units(n), trim(this%hrfreq(n)))
+      if(.not. continue_run)then
+        call this%hist_add_var(ncid(clock_id),this%varnames(n),this%units(n), trim(this%hrfreq(n)))
+      endif
     enddo
 
   else
     !default output is by month
     do n = 1, this%nvars
       call this%hist_create(loc_gfname, yes_mon, 'month',ncid(clock_month))
-      call this%hist_add_var(ncid(clock_month),this%varnames(n), this%units(n), 'month')
+      if(.not. continue_run)then
+        call this%hist_add_var(ncid(clock_month),this%varnames(n), this%units(n), 'month')
+      endif
       nm=nm+1
       this%nm_varid(nm) = n
     enddo
   endif
-
+  if(continue_run)return
   do n = 1, nclocks
     if(ncid(n)%fh>0)then
       call ncd_enddef(ncid(n))
       call ncd_pio_closefile(ncid(n))
     endif
   enddo
+
   end subroutine init
 
 !--------------------------------------------------------
@@ -301,8 +307,9 @@ contains
   !
   !DESCRIPTION
   ! create history file for writting
-  use ncdio_pio, only : ncd_pio_createfile
+  use ncdio_pio, only : ncd_pio_createfile, get_dim_len
   use betr_varcon, only : spval  => bspval
+  use betr_ctrl  , only : continue_run
   use ncdio_pio, only : ncd_defvar
   use ncdio_pio, only : ncd_defdim, ncd_unlimited, ncd_float
   implicit none
@@ -330,11 +337,13 @@ contains
       id = clock_month
   end select
   write(this%ncfname(id),'(A)')trim(gname)//'.hist.'//trim(freq)//'.nc'
-  call ncd_pio_createfile(ncid, this%ncfname(id))
-
-  !the temporal dimension is infinite
-  call ncd_defdim(ncid,trim(freq),ncd_unlimited,recordDimID)
-
+  if(continue_run)then
+    this%record(id) = get_dim_len(this%ncfname(id),trim(freq))
+  else
+    call ncd_pio_createfile(ncid, this%ncfname(id))
+    !the temporal dimension is infinite
+    call ncd_defdim(ncid,trim(freq),ncd_unlimited,recordDimID)
+  endif
   end subroutine hist_create
 !--------------------------------------------------------
   subroutine hist_add_var(this, ncid, varname, units, freq)

@@ -15,4 +15,5 @@ implicit none
   logical, public :: enter_spinup=.false.
   integer, public :: betr_spinup_state = 0  ! 0: normal, 1: AD-1 spinup (accumulating the spinup scalar),
                                             ! 2: AD-2 spinup
+  logical, public :: continue_run =.false.
 end module betr_ctrl
