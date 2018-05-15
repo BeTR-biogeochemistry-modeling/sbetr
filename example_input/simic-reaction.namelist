@@ -8,7 +8,7 @@
 
 &betr_parameters
   reaction_method = 'simic'
-  advection_on = .false.
+  advection_on = .true.
   diffusion_on = .true.
   reaction_on  = .true.
   ebullition_on= .true.

@@ -385,10 +385,11 @@ contains
   !potential respiration
   Rh_pot = vmax_BC * ystates1(lid_micbl) * alpha_B2T * ystates1(lid_doc) / &
     (Kaff_BC+ystates1(lid_doc) + ystates1(lid_micbl) * alpha_B2T + &
-    Minsurf * Kaff_BC/Kaff_CM) * fo2 * tfng
+    Minsurf * Kaff_BC/Kaff_CM+ystates1(lid_micbd) * alpha_B2T) * fo2 * tfng
 
   denorm = 1._r8+ystates1(lid_doc)/Kaff_CM + ystates1(lid_micbl) * alpha_B2T / Kaff_BC + &
-      Minsurf/Kaff_CM + ystates1(lid_micbl) * alpha_B2E/Kaff_EM
+      ystates1(lid_micbd) * alpha_B2T / Kaff_BC + Minsurf/Kaff_CM + &
+      ystates1(lid_micbl) * alpha_B2E/Kaff_EM
 
   doc_sorb = fpom_vmax * Minsurf * ystates1(lid_doc) / (denorm * Kaff_CM)
 

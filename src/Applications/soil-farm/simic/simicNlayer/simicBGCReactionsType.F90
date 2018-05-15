@@ -1592,36 +1592,35 @@ contains
   type(tracerstate_type)               , intent(in) :: tracerstate_vars
   type(tracercoeff_type)            , intent(inout) :: tracercoeff_vars
 
-  real(r8) :: KM_CM, Msurf, KM_EM
-  real(r8) :: denorm
+  real(r8) :: KM_CM, Msurf, KM_EM, BMT
+  real(r8) :: denorm1, denorm0, denorm2
   integer :: c_l, j
   associate(                                                           &
     aqu2bulkcef_mobile   => tracercoeff_vars%aqu2bulkcef_mobile_col  , & !Output:[real(r8)(:,:)], phase conversion coeff
     id_trc_dom           => betrtracer_vars%id_trc_dom               , &
     trcid_Bm             => betrtracer_vars%id_trc_beg_Bm            , &
     trcid_dom            => betrtracer_vars%id_trc_beg_dom           , &
+    trcid_pom            => betrtracer_vars%id_trc_beg_pom           , &
     id_trc_end_dom       => betrtracer_vars%id_trc_end_dom           , &
     tracer_conc_mobile   => tracerstate_vars%tracer_conc_mobile_col  , &
     Kaff_CM              => simic_para%Kaff_CM                       , &
     Kaff_EM              => simic_para%Kaff_EM                       , &
+    Kaff_BC              => simic_para%Kaff_BC                       , &
     alpha_B2E            => simic_para%alpha_B2E                     , &
-    alpha_B2T            => simic_para%alpha_B2T                       &
+    alpha_B2T            => simic_para%alpha_B2T                     , &
+    nelms                =>  this%simic_bgc_index%nelms                &
   )
   c_l=1
   do j = 1, ubj
     KM_CM=aqu2bulkcef_mobile(c_l,j,id_trc_dom)*this%simic_forc(c_l,j)%KM_OM_ref*Kaff_CM
-    !KM_EM=KM_OM_ref*Kaff_EM
-    Msurf=this%simic_forc(c_l,j)%Msurf_OM
-    !In the following, it is assumed DOM sorption to microbial transporters, and enzyme
-    !adsorption to soil minerals does not significantly affect DOM sorption to mineral surface during transport
-    !This may be untrue in certain circumstances
-    !ET = aqu2bulkcef_mobile(c_l,j,trcid_Bm) * alpha_B2E
-    !BT = aqu2bulkcef_mobile(c_l,j,trcid_Bm) * alpha_B2T
-    !denorm=KM_CM+Msurf+tracer_conc_mobile(c_l,j,trcid_dom)+ET*KM_CM/KM_EM + BT*KM_CM/KM_CB
-    denorm=KM_CM+Msurf+tracer_conc_mobile(c_l,j,trcid_dom)
-    aqu2bulkcef_mobile(c_l,j,id_trc_dom) = aqu2bulkcef_mobile(c_l,j,id_trc_dom)* &
-      denorm/(denorm-Msurf)
+    BMT=(tracer_conc_mobile(c_l,j,trcid_Bm)+tracer_conc_mobile(c_l,j,trcid_Bm+nelms))*alpha_B2T
+    Msurf=this%simic_forc(c_l,j)%Msurf_OM-tracer_conc_mobile(c_l,j,trcid_pom)
 
+    denorm0=1._r8+Msurf/KM_CM+BMT/Kaff_BC
+    denorm1=denorm0+tracer_conc_mobile(c_l,j,trcid_dom)/KM_CM
+    denorm2=denorm0+tracer_conc_mobile(c_l,j,trcid_dom)/Kaff_BC
+    aqu2bulkcef_mobile(c_l,j,id_trc_dom) = aqu2bulkcef_mobile(c_l,j,id_trc_dom)* &
+      (1._r8-Msurf/KM_CM/denorm1-BMT/Kaff_BC/denorm2)    
   enddo
   end associate
   end subroutine update_sorpphase_coeff
