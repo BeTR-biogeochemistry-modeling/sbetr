@@ -509,35 +509,35 @@ contains
       !carbon input
       !metabolic carbon
       call apvb(this%biophys_forc(c)%c12flx%cflx_input_litr_met_vr_col(1,j), & !
-         (/carbonflux_vars%phenology_c_to_litr_met_c_col(c,j)       , & !phenology
-         carbonflux_vars%dwt_frootc_to_litr_met_c_col(c,j)          , & !dynamic land cover
-         carbonflux_vars%gap_mortality_c_to_litr_met_c_col(c,j)     , & !gap mortality
-         carbonflux_vars%harvest_c_to_litr_met_c_col(c,j)           , & !harvest
-         carbonflux_vars%m_c_to_litr_met_fire_col(c,j)/))              ! fire mortality
+         (/carbonflux_vars%phenology_to_litr_met_col(c,j)       , & !phenology
+         carbonflux_vars%dwt_froot_to_litr_met_col(c,j)          , & !dynamic land cover
+         carbonflux_vars%gap_mortality_to_litr_met_col(c,j)     , & !gap mortality
+         carbonflux_vars%harvest_to_litr_met_col(c,j)           , & !harvest
+         carbonflux_vars%m_to_litr_met_fire_col(c,j)/))              ! fire mortality
 
       !cellulose carbon
       call apvb(this%biophys_forc(c)%c12flx%cflx_input_litr_cel_vr_col(1,j)   , &
-         (/carbonflux_vars%phenology_c_to_litr_cel_c_col(c,j)          , &  !phenology
-         carbonflux_vars%dwt_frootc_to_litr_cel_c_col(c,j)             , &  !dynamic land cover
-         carbonflux_vars%gap_mortality_c_to_litr_cel_c_col(c,j)        , & !gap mortality
-         carbonflux_vars%harvest_c_to_litr_cel_c_col(c,j)              , & !harvest
-         carbonflux_vars%m_c_to_litr_cel_fire_col(c,j)/))              ! fire mortality
+         (/carbonflux_vars%phenology_to_litr_cel_col(c,j)          , &  !phenology
+         carbonflux_vars%dwt_froot_to_litr_cel_col(c,j)             , &  !dynamic land cover
+         carbonflux_vars%gap_mortality_to_litr_cel_col(c,j)        , & !gap mortality
+         carbonflux_vars%harvest_to_litr_cel_col(c,j)              , & !harvest
+         carbonflux_vars%m_to_litr_cel_fire_col(c,j)/))              ! fire mortality
 
       !lignin carbon
       call apvb(this%biophys_forc(c)%c12flx%cflx_input_litr_lig_vr_col(1,j) , &
-         (/carbonflux_vars%phenology_c_to_litr_lig_c_col(c,j)        , & !phenology
-         carbonflux_vars%dwt_frootc_to_litr_lig_c_col(c,j)           , & !dynamic land cover
-         carbonflux_vars%gap_mortality_c_to_litr_lig_c_col(c,j)      , & !gap mortality
-         carbonflux_vars%harvest_c_to_litr_lig_c_col(c,j)            , & !harvest
-         carbonflux_vars%m_c_to_litr_lig_fire_col(c,j)/))                ! fire mortality
+         (/carbonflux_vars%phenology_to_litr_lig_col(c,j)        , & !phenology
+         carbonflux_vars%dwt_froot_to_litr_lig_col(c,j)           , & !dynamic land cover
+         carbonflux_vars%gap_mortality_to_litr_lig_col(c,j)      , & !gap mortality
+         carbonflux_vars%harvest_to_litr_lig_col(c,j)            , & !harvest
+         carbonflux_vars%m_to_litr_lig_fire_col(c,j)/))                ! fire mortality
 
       !cwd carbon
       call apvb(this%biophys_forc(c)%c12flx%cflx_input_litr_cwd_vr_col(1,j) , &
-        (/carbonflux_vars%dwt_livecrootc_to_cwdc_col(c,j)            , &
-        carbonflux_vars%dwt_deadcrootc_to_cwdc_col(c,j)              , &
-        carbonflux_vars%gap_mortality_c_to_cwdc_col(c,j)             , &
-        carbonflux_vars%harvest_c_to_cwdc_col(c,j)                   , &
-        carbonflux_vars%fire_mortality_c_to_cwdc_col(c,j)/))
+        (/carbonflux_vars%dwt_livecroot_to_cwd_col(c,j)            , &
+        carbonflux_vars%dwt_deadcroot_to_cwd_col(c,j)              , &
+        carbonflux_vars%gap_mortality_to_cwd_col(c,j)             , &
+        carbonflux_vars%harvest_to_cwd_col(c,j)                   , &
+        carbonflux_vars%fire_mortality_to_cwd_col(c,j)/))
 
       !fire carbon loss
       call apvb(this%biophys_forc(c)%c12flx%cflx_output_litr_met_vr_col(1,j), &
@@ -555,35 +555,35 @@ contains
       if(use_c13_betr)then
         !metabolic carbon
         call apvb(this%biophys_forc(c)%c13flx%cflx_input_litr_met_vr_col(1,j), & !
-           (/carbonflux_vars%phenology_c_to_litr_met_c_col(c,j)       , & !phenology
-           carbonflux_vars%dwt_frootc_to_litr_met_c_col(c,j)          , & !dynamic land cover
-           carbonflux_vars%gap_mortality_c_to_litr_met_c_col(c,j)     , & !gap mortality
-           carbonflux_vars%harvest_c_to_litr_met_c_col(c,j)           , & !harvest
-           carbonflux_vars%m_c_to_litr_met_fire_col(c,j)/))              ! fire mortality
+           (/carbonflux_vars%phenology_to_litr_met_col(c,j)       , & !phenology
+           carbonflux_vars%dwt_froot_to_litr_met_col(c,j)          , & !dynamic land cover
+           carbonflux_vars%gap_mortality_to_litr_met_col(c,j)     , & !gap mortality
+           carbonflux_vars%harvest_to_litr_met_col(c,j)           , & !harvest
+           carbonflux_vars%m_to_litr_met_fire_col(c,j)/))              ! fire mortality
 
         !cellulose carbon
         call apvb(this%biophys_forc(c)%c13flx%cflx_input_litr_cel_vr_col(1,j)   , &
-           (/carbonflux_vars%phenology_c_to_litr_cel_c_col(c,j)          , &  !phenology
-           carbonflux_vars%dwt_frootc_to_litr_cel_c_col(c,j)             , &  !dynamic land cover
-           carbonflux_vars%gap_mortality_c_to_litr_cel_c_col(c,j)        , & !gap mortality
-           carbonflux_vars%harvest_c_to_litr_cel_c_col(c,j)              , & !harvest
-           carbonflux_vars%m_c_to_litr_cel_fire_col(c,j)/))              ! fire mortality
+           (/carbonflux_vars%phenology_to_litr_cel_col(c,j)          , &  !phenology
+           carbonflux_vars%dwt_froot_to_litr_cel_col(c,j)             , &  !dynamic land cover
+           carbonflux_vars%gap_mortality_to_litr_cel_col(c,j)        , & !gap mortality
+           carbonflux_vars%harvest_to_litr_cel_col(c,j)              , & !harvest
+           carbonflux_vars%m_to_litr_cel_fire_col(c,j)/))              ! fire mortality
 
         !lignin carbon
         call apvb(this%biophys_forc(c)%c13flx%cflx_input_litr_lig_vr_col(1,j) , &
-           (/carbonflux_vars%phenology_c_to_litr_lig_c_col(c,j)        , & !phenology
-           carbonflux_vars%dwt_frootc_to_litr_lig_c_col(c,j)           , & !dynamic land cover
-           carbonflux_vars%gap_mortality_c_to_litr_lig_c_col(c,j)      , & !gap mortality
-           carbonflux_vars%harvest_c_to_litr_lig_c_col(c,j)            , & !harvest
-           carbonflux_vars%m_c_to_litr_lig_fire_col(c,j)/))                ! fire mortality
+           (/carbonflux_vars%phenology_to_litr_lig_col(c,j)        , & !phenology
+           carbonflux_vars%dwt_froot_to_litr_lig_col(c,j)           , & !dynamic land cover
+           carbonflux_vars%gap_mortality_to_litr_lig_col(c,j)      , & !gap mortality
+           carbonflux_vars%harvest_to_litr_lig_col(c,j)            , & !harvest
+           carbonflux_vars%m_to_litr_lig_fire_col(c,j)/))                ! fire mortality
 
         !cwd carbon
         call apvb(this%biophys_forc(c)%c13flx%cflx_input_litr_cwd_vr_col(1,j) , &
-          (/carbonflux_vars%dwt_livecrootc_to_cwdc_col(c,j)            , &
-          carbonflux_vars%dwt_deadcrootc_to_cwdc_col(c,j)              , &
-          carbonflux_vars%gap_mortality_c_to_cwdc_col(c,j)             , &
-          carbonflux_vars%harvest_c_to_cwdc_col(c,j)                   , &
-          carbonflux_vars%fire_mortality_c_to_cwdc_col(c,j)/))
+          (/carbonflux_vars%dwt_livecroot_to_cwd_col(c,j)            , &
+          carbonflux_vars%dwt_deadcroot_to_cwd_col(c,j)              , &
+          carbonflux_vars%gap_mortality_to_cwd_col(c,j)             , &
+          carbonflux_vars%harvest_to_cwd_col(c,j)                   , &
+          carbonflux_vars%fire_mortality_to_cwd_col(c,j)/))
 
         !fire carbon loss
         call apvb(this%biophys_forc(c)%c13flx%cflx_output_litr_met_vr_col(1,j), &
@@ -601,35 +601,35 @@ contains
       if(use_c14_betr)then
         !metabolic carbon
         call apvb(this%biophys_forc(c)%c14flx%cflx_input_litr_met_vr_col(1,j), & !
-           (/carbonflux_vars%phenology_c_to_litr_met_c_col(c,j)       , & !phenology
-           carbonflux_vars%dwt_frootc_to_litr_met_c_col(c,j)          , & !dynamic land cover
-           carbonflux_vars%gap_mortality_c_to_litr_met_c_col(c,j)     , & !gap mortality
-           carbonflux_vars%harvest_c_to_litr_met_c_col(c,j)           , & !harvest
-           carbonflux_vars%m_c_to_litr_met_fire_col(c,j)/))              ! fire mortality
+           (/carbonflux_vars%phenology_to_litr_met_col(c,j)       , & !phenology
+           carbonflux_vars%dwt_froot_to_litr_met_col(c,j)          , & !dynamic land cover
+           carbonflux_vars%gap_mortality_to_litr_met_col(c,j)     , & !gap mortality
+           carbonflux_vars%harvest_to_litr_met_col(c,j)           , & !harvest
+           carbonflux_vars%m_to_litr_met_fire_col(c,j)/))              ! fire mortality
 
         !cellulose carbon
         call apvb(this%biophys_forc(c)%c14flx%cflx_input_litr_cel_vr_col(1,j)   , &
-           (/carbonflux_vars%phenology_c_to_litr_cel_c_col(c,j)          , &  !phenology
-           carbonflux_vars%dwt_frootc_to_litr_cel_c_col(c,j)             , &  !dynamic land cover
-           carbonflux_vars%gap_mortality_c_to_litr_cel_c_col(c,j)        , & !gap mortality
-           carbonflux_vars%harvest_c_to_litr_cel_c_col(c,j)              , & !harvest
-           carbonflux_vars%m_c_to_litr_cel_fire_col(c,j)/))              ! fire mortality
+           (/carbonflux_vars%phenology_to_litr_cel_col(c,j)          , &  !phenology
+           carbonflux_vars%dwt_froot_to_litr_cel_col(c,j)             , &  !dynamic land cover
+           carbonflux_vars%gap_mortality_to_litr_cel_col(c,j)        , & !gap mortality
+           carbonflux_vars%harvest_to_litr_cel_col(c,j)              , & !harvest
+           carbonflux_vars%m_to_litr_cel_fire_col(c,j)/))              ! fire mortality
 
         !lignin carbon
         call apvb(this%biophys_forc(c)%c14flx%cflx_input_litr_lig_vr_col(1,j) , &
-           (/carbonflux_vars%phenology_c_to_litr_lig_c_col(c,j)        , & !phenology
-           carbonflux_vars%dwt_frootc_to_litr_lig_c_col(c,j)           , & !dynamic land cover
-           carbonflux_vars%gap_mortality_c_to_litr_lig_c_col(c,j)      , & !gap mortality
-           carbonflux_vars%harvest_c_to_litr_lig_c_col(c,j)            , & !harvest
-           carbonflux_vars%m_c_to_litr_lig_fire_col(c,j)/))                ! fire mortality
+           (/carbonflux_vars%phenology_to_litr_lig_col(c,j)        , & !phenology
+           carbonflux_vars%dwt_froot_to_litr_lig_col(c,j)           , & !dynamic land cover
+           carbonflux_vars%gap_mortality_to_litr_lig_col(c,j)      , & !gap mortality
+           carbonflux_vars%harvest_to_litr_lig_col(c,j)            , & !harvest
+           carbonflux_vars%m_to_litr_lig_fire_col(c,j)/))                ! fire mortality
 
         !cwd carbon
         call apvb(this%biophys_forc(c)%c14flx%cflx_input_litr_cwd_vr_col(1,j) , &
-          (/carbonflux_vars%dwt_livecrootc_to_cwdc_col(c,j)            , &
-          carbonflux_vars%dwt_deadcrootc_to_cwdc_col(c,j)              , &
-          carbonflux_vars%gap_mortality_c_to_cwdc_col(c,j)             , &
-          carbonflux_vars%harvest_c_to_cwdc_col(c,j)                   , &
-          carbonflux_vars%fire_mortality_c_to_cwdc_col(c,j)/))
+          (/carbonflux_vars%dwt_livecroot_to_cwd_col(c,j)            , &
+          carbonflux_vars%dwt_deadcroot_to_cwd_col(c,j)              , &
+          carbonflux_vars%gap_mortality_to_cwd_col(c,j)             , &
+          carbonflux_vars%harvest_to_cwd_col(c,j)                   , &
+          carbonflux_vars%fire_mortality_to_cwd_col(c,j)/))
 
         !fire carbon loss
         call apvb(this%biophys_forc(c)%c14flx%cflx_output_litr_met_vr_col(1,j), &
@@ -676,7 +676,7 @@ contains
         nitrogenflux_vars%dwt_deadcrootn_to_cwdn_col(c,j)            , &
         nitrogenflux_vars%gap_mortality_n_to_cwdn_col(c,j)           , &
         nitrogenflux_vars%harvest_n_to_cwdn_col(c,j)                 , &
-        nitrogenflux_vars%fire_mortality_n_to_cwdn_col(c,j)/))
+        nitrogenflux_vars%fire_mortality_to_cwd_col(c,j)/))
 
       !fire nitrogen loss
       call apvb(this%biophys_forc(c)%n14flx%nflx_output_litr_met_vr_col(c_l,j) , &
@@ -698,7 +698,7 @@ contains
          phosphorusflux_vars%dwt_frootp_to_litr_met_p_col(c,j)       , & !dynamic land cover
          phosphorusflux_vars%gap_mortality_p_to_litr_met_p_col(c,j)  , & !gap mortality
          phosphorusflux_vars%harvest_p_to_litr_met_p_col(c,j)        , & !harvest
-         phosphorusflux_vars%m_p_to_litr_met_fire_col(c,j)/))            ! fire mortality
+         phosphorusflux_vars%m_to_litr_met_fire_col(c,j)/))            ! fire mortality
 
       !cellulose phosphorus
       call apvb(this%biophys_forc(c)%p31flx%pflx_input_litr_cel_vr_col(c_l,j) , &
@@ -706,7 +706,7 @@ contains
          phosphorusflux_vars%dwt_frootp_to_litr_cel_p_col(c,j)       , & !dynamic land cover
          phosphorusflux_vars%gap_mortality_p_to_litr_cel_p_col(c,j)  , & !gap mortality
          phosphorusflux_vars%harvest_p_to_litr_cel_p_col(c,j)        , & !harvest
-         phosphorusflux_vars%m_p_to_litr_cel_fire_col(c,j)/))            ! fire mortality
+         phosphorusflux_vars%m_to_litr_cel_fire_col(c,j)/))            ! fire mortality
 
       !lignin phosphorus
       call apvb(this%biophys_forc(c)%p31flx%pflx_input_litr_lig_vr_col(c_l,j) , &
@@ -714,7 +714,7 @@ contains
          phosphorusflux_vars%dwt_frootp_to_litr_lig_p_col(c,j)       , & !dynamic land cover
          phosphorusflux_vars%gap_mortality_p_to_litr_lig_p_col(c,j)  , & !gap mortality
          phosphorusflux_vars%harvest_p_to_litr_lig_p_col(c,j)        , & !harvest
-         phosphorusflux_vars%m_p_to_litr_lig_fire_col(c,j)/))            ! fire mortality
+         phosphorusflux_vars%m_to_litr_lig_fire_col(c,j)/))            ! fire mortality
 
       !cwd phosphorus
       call apvb(this%biophys_forc(c)%p31flx%pflx_input_litr_cwd_vr_col(c_l,j) , &
@@ -722,7 +722,7 @@ contains
         phosphorusflux_vars%dwt_deadcrootp_to_cwdp_col(c,j)   , &
         phosphorusflux_vars%gap_mortality_p_to_cwdp_col(c,j)  , &
         phosphorusflux_vars%harvest_p_to_cwdp_col(c,j)        , &
-        phosphorusflux_vars%fire_mortality_p_to_cwdp_col(c,j)/))
+        phosphorusflux_vars%fire_mortality_to_cwd_col(c,j)/))
 
       !fire phosphorus loss
       call apvb(this%biophys_forc(c)%p31flx%pflx_output_litr_met_vr_col(c_l,j) , &
@@ -837,14 +837,14 @@ contains
       !recollect soil respirations, fire and hydraulic loss
       c12flux_vars%hr_col(c) = this%biogeo_flux(c)%c12flux_vars%hr_col(c_l)
       c12flux_vars%fire_decomp_closs_col(c) = this%biogeo_flux(c)%c12flux_vars%fire_decomp_closs_col(c_l)
-      c12flux_vars%som_c_leached_col(c) = &
+      c12flux_vars%som_leached_col(c) = &
         this%biogeo_flux(c)%c12flux_vars%som_c_leached_col(c_l) + &
         this%biogeo_flux(c)%c12flux_vars%som_c_runoff_col(c_l) + &
         this%biogeo_flux(c)%c12flux_vars%som_c_qdrain_col(c_l)
       !the following is for consistency with the ALM definitation, which computes
 
       !som_c_leached_col as a numerical roundoff
-      c12flux_vars%som_c_leached_col(c)=-c12flux_vars%som_c_leached_col(c)
+      c12flux_vars%som_leached_col(c)=-c12flux_vars%som_leached_col(c)
       if(use_c13_betr)then
         c13flux_vars%hr_col(c) = this%biogeo_flux(c)%c13flux_vars%hr_col(c_l)
         c13flux_vars%fire_decomp_closs_col(c) = this%biogeo_flux(c)%c13flux_vars%fire_decomp_closs_col(c_l)
@@ -897,14 +897,14 @@ contains
       p31flux_vars%secondp_to_occlp_col(c) = this%biogeo_flux(c)%p31flux_vars%secondp_to_occlp_col(c_l)
       p31flux_vars%fire_decomp_ploss_col(c) = this%biogeo_flux(c)%p31flux_vars%fire_decomp_ploss_col(c_l)
 
-      p31flux_vars%som_p_leached_col(c) = &
+      p31flux_vars%som_leached_col(c) = &
           this%biogeo_flux(c)%p31flux_vars%som_p_leached_col(c_l) + &
           this%biogeo_flux(c)%p31flux_vars%som_p_runoff_col(c_l) + &
           this%biogeo_flux(c)%p31flux_vars%som_p_qdrain_col(c_l)
 
       !the following is for consistency with the ALM definitation, which computes
       !som_p_leached_col as a numerical roundoff
-      p31flux_vars%som_p_leached_col(c) = -p31flux_vars%som_p_leached_col(c)
+      p31flux_vars%som_leached_col(c) = -p31flux_vars%som_leached_col(c)
 
       !recollect soil organic carbon, soil organic nitrogen, and soil organic phosphorus
       c12state_vars%cwd_col(c) = this%biogeo_state(c)%c12state_vars%cwdc_col(c_l)
