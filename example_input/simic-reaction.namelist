@@ -2,7 +2,7 @@
   simulator_name = 'standalone'
   run_type='sbgc'
   param_file='../tools/sbgc.ecacnp_pars.04232018.nc'
-  case_id='exp1'
+  case_id='exp-adv'
   continue_run=.false.
 /
 

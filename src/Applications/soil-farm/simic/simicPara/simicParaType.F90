@@ -10,7 +10,7 @@ implicit none
  type, public, extends(BiogeoCon_type) :: simic_para_type
 
   !decomposition
-  real(r8) :: Kaff_EP  !enzyme affinity for litter POM depolymerization, mol C/m3
+  real(r8) :: Kaff_EP_L  !enzyme affinity for litter POM depolymerization, mol C/m3
   real(r8) :: Kaff_BC  !microbial affinity for DOC, mol C/m3
   real(r8) :: Kaff_CM  !DOC affinity for mineral surface, mol C /m3
   real(r8) :: Kaff_ED  !enzyme affinity for dead microbial cell material, mol C/m3
@@ -23,7 +23,7 @@ implicit none
   real(r8) :: Mrt_spmic  !specific microbial mortality, 1/s
   real(r8) :: f_mic2C    !fraction of dead microbial biomass into DOC upon death
   real(r8) :: f_mic2D    !fraction of dead microbial biomass as dead cell
-  real(r8) :: vmax_EP    !maximum depolymerization rate
+  real(r8) :: vmax_EP_L    !maximum depolymerization rate for litter
   real(r8) :: vmax_BC    !maximum DOC assimilation rate
   real(r8) :: alpha_B2E  !scaling parameter from microbial biomass to enzyme
   real(r8) :: alpha_B2T
@@ -129,19 +129,19 @@ contains
   half_life = half_life * year_sec
 
   !decomposition
-  this%Kaff_EP  = 1.e-3_r8
-  this%Kaff_BC  = 1.e-4_r8
-  this%Kaff_ED  = 1.e-3_r8
+  this%Kaff_EP_L  = 1.e-2_r8
+  this%Kaff_ED  = 1.e-2_r8
+  this%Kaff_BC  = 1.e-2_r8
   this%cue_met  = 0.5_r8
   this%cue_cel  = 0.4_r8
   this%cue_lig  = 0.3_r8
   this%cue_cwd  = 0.3_r8
   this%cue_bm   = 0.5_r8
-  this%Rm0_spmic= 1.e-7_r8
+  this%Rm0_spmic= 1.e-7_r8  !s-1 /
   this%Mrt_spmic= 1.e-7_r8
   this%f_mic2C = 0.3_r8
   this%f_mic2D = 0.7_r8
-  this%vmax_EP = 3.e-5_r8
+  this%vmax_EP_L = 3.e-3_r8
   this%vmax_BC = 3.e-5_r8
   this%alpha_B2E = 0.05_r8
   this%alpha_B2T = 0.05_r8
@@ -150,8 +150,8 @@ contains
   this%Minsurf  = 100._r8
   this%Kaff_o2  = 0.22_r8
   this%Kmort_MB = 0.01_r8
-  this%fpom_vmax= 1.e-7_r8              !s-1
-  this%fpom_desorb=this%fpom_vmax*0.1_r8
+  this%fpom_vmax= 1.e-6_r8              !s-1
+  this%fpom_desorb=this%fpom_vmax*1.e-3_r8
   end subroutine set_defpar_default
 
 

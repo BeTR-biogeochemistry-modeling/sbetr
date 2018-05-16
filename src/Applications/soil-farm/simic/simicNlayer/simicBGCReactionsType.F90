@@ -1620,7 +1620,8 @@ contains
     denorm1=denorm0+tracer_conc_mobile(c_l,j,trcid_dom)/KM_CM
     denorm2=denorm0+tracer_conc_mobile(c_l,j,trcid_dom)/Kaff_BC
     aqu2bulkcef_mobile(c_l,j,id_trc_dom) = aqu2bulkcef_mobile(c_l,j,id_trc_dom)* &
-      (1._r8-Msurf/KM_CM/denorm1-BMT/Kaff_BC/denorm2)    
+      1._r8/(1._r8-Msurf/KM_CM/denorm1-BMT/Kaff_BC/denorm2)
+    !print*,'c,j',1._r8/(1._r8-Msurf/KM_CM/denorm1-BMT/Kaff_BC/denorm2)  
   enddo
   end associate
   end subroutine update_sorpphase_coeff
