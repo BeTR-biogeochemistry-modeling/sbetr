@@ -878,6 +878,7 @@ contains
    !
    use betr_varcon  , only : denh2o => bdenh2o
    use BeTR_TimeMod , only : betr_time_type
+   use tracer_varcon, only : adv_scalar
    implicit none
    !ARGUMENTS
    class(betr_type)                 , intent(inout) :: this
@@ -929,7 +930,6 @@ contains
    ! (h2osoi_liq(c,1)-h2osoi_liq_copy(c,1))/dtime=qflx_infl-q_out-qflx_rootsoi
    do fc = 1, num_hydrologyc
      c = filter_hydrologyc(fc)
-
      !obtain the corrected infiltration
      qflx_infl(c) = (h2osoi_liq(c,1)-this%h2osoi_liq_copy(c,1))/dtime + (qflx_rootsoi(c,1)+qflx_adv(c,1))*1.e3_r8
      !the predicted net infiltration
@@ -960,6 +960,14 @@ contains
      endif
      qflx_adv(c,0) = qflx_gross_infl_soil(c) *1.e-3_r8  !surface infiltration, m/s
    enddo
+   if(abs(adv_scalar-1._r8)>1.e-10_r8)then
+     do j = nlevsoi, 0, -1
+       do fc = 1, num_hydrologyc
+         c = filter_hydrologyc(fc)
+         qflx_adv(c,j)=qflx_adv(c,j)*adv_scalar
+       enddo
+     enddo
+   endif
    end associate
    end subroutine diagnose_advect_water_flux
 

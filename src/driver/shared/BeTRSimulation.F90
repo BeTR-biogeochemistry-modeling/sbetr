@@ -813,7 +813,7 @@ contains
 
         call ncd_pio_openfile_for_write(ncid, this%hist_filename)
 
-        timef=time_vars%get_cur_timef();call ncd_putvar(ncid, "time", this%hist_record, timef)
+        timef=time_vars%get_cur_timef()/86400._r8;call ncd_putvar(ncid, "time", this%hist_record, timef)
 
         do c = bounds%begc, bounds%endc
           call ncd_putvar(ncid, 'QFLX_ADV', this%hist_record, velocity(c:c, 1:betr_nlevtrc_soil))

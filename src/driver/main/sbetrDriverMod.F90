@@ -395,6 +395,7 @@ end subroutine sbetrBGC_driver
     use HistBGCMod               , only : hist_bgc_type
     use histMod                  , only : histf_type
     use betr_ctrl                , only : continue_run
+    use tracer_varcon           , only : adv_scalar
     implicit none
     ! !ARGUMENTS:
     character(len=betr_namelist_buffer_size) , intent(in)  :: namelist_buffer
@@ -424,7 +425,7 @@ end subroutine sbetrBGC_driver
     namelist / betr_parameters /                  &
          reaction_method,                         &
          advection_on, diffusion_on, reaction_on, &
-         ebullition_on, input_only
+         ebullition_on, input_only, adv_scalar
 
     simulator_name = ''
     continue_run=.false.
@@ -434,6 +435,7 @@ end subroutine sbetrBGC_driver
     case_id=''
     input_only=.false.
     finit =''
+
     ! ----------------------------------------------------------------------
     ! Read namelist from standard input.
     ! ----------------------------------------------------------------------
@@ -464,7 +466,7 @@ end subroutine sbetrBGC_driver
     diffusion_on    = .true.
     reaction_on     = .true.
     ebullition_on   = .true.
-
+    adv_scalar=1._r8
     ! ----------------------------------------------------------------------
     ! Read namelist from standard input.
     ! ----------------------------------------------------------------------

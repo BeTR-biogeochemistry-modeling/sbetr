@@ -1593,7 +1593,7 @@ contains
   type(tracercoeff_type)            , intent(inout) :: tracercoeff_vars
 
   real(r8) :: KM_CM, Msurf, KM_EM, BMT
-  real(r8) :: denorm1, denorm0, denorm2
+  real(r8) :: denorm1, denorm0, denorm2,beta
   integer :: c_l, j
   associate(                                                           &
     aqu2bulkcef_mobile   => tracercoeff_vars%aqu2bulkcef_mobile_col  , & !Output:[real(r8)(:,:)], phase conversion coeff
@@ -1615,13 +1615,12 @@ contains
     KM_CM=aqu2bulkcef_mobile(c_l,j,id_trc_dom)*this%simic_forc(c_l,j)%KM_OM_ref*Kaff_CM
     BMT=(tracer_conc_mobile(c_l,j,trcid_Bm)+tracer_conc_mobile(c_l,j,trcid_Bm+nelms))*alpha_B2T
     Msurf=this%simic_forc(c_l,j)%Msurf_OM-tracer_conc_mobile(c_l,j,trcid_pom)
-
     denorm0=1._r8+Msurf/KM_CM+BMT/Kaff_BC
     denorm1=denorm0+tracer_conc_mobile(c_l,j,trcid_dom)/KM_CM
     denorm2=denorm0+tracer_conc_mobile(c_l,j,trcid_dom)/Kaff_BC
-    aqu2bulkcef_mobile(c_l,j,id_trc_dom) = aqu2bulkcef_mobile(c_l,j,id_trc_dom)* &
-      1._r8/(1._r8-Msurf/KM_CM/denorm1-BMT/Kaff_BC/denorm2)
-    !print*,'c,j',1._r8/(1._r8-Msurf/KM_CM/denorm1-BMT/Kaff_BC/denorm2)  
+    beta=1._r8/(1._r8-Msurf/KM_CM/denorm1-BMT/Kaff_BC/denorm2)
+    aqu2bulkcef_mobile(c_l,j,id_trc_dom) = aqu2bulkcef_mobile(c_l,j,id_trc_dom)*beta
+    !print*,'c,j',1._r8/(1._r8-Msurf/KM_CM/denorm1-BMT/Kaff_BC/denorm2)
   enddo
   end associate
   end subroutine update_sorpphase_coeff

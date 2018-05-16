@@ -137,12 +137,12 @@ contains
   this%cue_lig  = 0.3_r8
   this%cue_cwd  = 0.3_r8
   this%cue_bm   = 0.5_r8
-  this%Rm0_spmic= 1.e-7_r8  !s-1 /
-  this%Mrt_spmic= 1.e-7_r8
+  this%Rm0_spmic= 1.e-6_r8  !s-1 /
+  this%Mrt_spmic= 1.e-6_r8
   this%f_mic2C = 0.3_r8
   this%f_mic2D = 0.7_r8
-  this%vmax_EP_L = 3.e-3_r8
-  this%vmax_BC = 3.e-5_r8
+  this%vmax_EP_L = 1.e-3_r8
+  this%vmax_BC = 3.e-3_r8
   this%alpha_B2E = 0.05_r8
   this%alpha_B2T = 0.05_r8
   this%Kaff_CM  = 1._r8

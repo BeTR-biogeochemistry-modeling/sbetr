@@ -53,7 +53,7 @@ module ForcingDataType
      real(r8), allocatable               :: pflx_cel_vr(:,:)
      real(r8), allocatable               :: pflx_lig_vr(:,:)
      real(r8), allocatable               :: pflx_cwd_vr(:,:)
-
+     logical                             :: use_rootsoit
    contains
      procedure, public :: Init
      procedure, public :: ReadData
@@ -446,21 +446,28 @@ contains
        this%qbot(j1) = data_1d(this%num_columns, j1)  ! mm/s
     enddo
 
-    !X!write(*, *) 'Reading QFLX_ROOTSOI'
-    call ncd_getvar(ncf_in_forc, 'QFLX_ROOTSOI', data_2d)
-    call ncd_getatt(ncf_in_forc,'QFLX_ROOTSOI','units',units)
+    if(this%use_rootsoit)then
+      !X!write(*, *) 'Reading QFLX_ROOTSOI'
+      call ncd_getvar(ncf_in_forc, 'QFLX_ROOTSOI', data_2d)
+      call ncd_getatt(ncf_in_forc,'QFLX_ROOTSOI','units',units)
 
-    if(trim(units)=='m/s')then
-      tommps=1.e3_r8
-    else
-      tommps=1._r8
-    endif
-    do j2 = 1, this%num_levels
-       do j1 = 1, this%num_time
+      if(trim(units)=='m/s')then
+        tommps=1.e3_r8
+      else
+        tommps=1._r8
+      endif
+      do j2 = 1, this%num_levels
+        do j1 = 1, this%num_time
           this%qflx_rootsoi(j1, j2) = data_2d(this%num_columns, j2, j1)*1.e3_r8
-       enddo
-    enddo
-
+        enddo
+      enddo
+    else
+      do j2 = 1, this%num_levels
+        do j1 = 1, this%num_time
+          this%qflx_rootsoi(j1, j2)  = 0._r8
+        enddo
+      enddo
+    endif
     call ncd_pio_closefile(ncf_in_forc)
 
     deallocate(data_2d)
@@ -491,16 +498,16 @@ contains
     character(len=*), parameter            :: subname = 'ReadNameList'
     character(len=betr_filename_length)    :: forcing_format, forcing_type_name, forcing_filename
     character(len=betr_string_length_long) :: ioerror_msg
-
+    logical                                :: use_rootsoit
     !-----------------------------------------------------------------------
 
     namelist / forcing_inparm / &
-         forcing_type_name, forcing_filename, forcing_format
+         forcing_type_name, forcing_filename, forcing_format, use_rootsoit
 
     forcing_format    = ''
     forcing_type_name = transient_name
     forcing_filename  = ''
-
+    use_rootsoit =.true.
     ! ----------------------------------------------------------------------
     ! Read namelist from standard input.
     ! ----------------------------------------------------------------------
@@ -529,7 +536,7 @@ contains
     this%forcing_type_name = trim(forcing_type_name)
     this%forcing_format    = trim(forcing_format)
     this%forcing_filename  = trim(forcing_filename)
-
+    this%use_rootsoit       = use_rootsoit
   end subroutine ReadNameList
 
   ! ----------------------------------------------------------------------
