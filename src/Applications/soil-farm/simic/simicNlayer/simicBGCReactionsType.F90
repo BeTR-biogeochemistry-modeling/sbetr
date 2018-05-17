@@ -926,7 +926,7 @@ contains
       endif
       tracerstate_vars%tracer_soi_molarmass_col(c,:)          = 0._r8
       !initialize microbial biomass
-      tracerstate_vars%tracer_conc_mobile_col(c,:,trcid) = 1.e-4_r8
+      tracerstate_vars%tracer_conc_mobile_col(c,:,trcid) = 1.e-2_r8
     enddo
 
   end subroutine InitCold

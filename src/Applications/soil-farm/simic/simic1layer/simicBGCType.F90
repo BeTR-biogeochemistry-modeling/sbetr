@@ -36,7 +36,8 @@ module simicBGCType
     logical , private                    :: use_c14
 
     !decomposition
-    real(r8) :: Kaff_EP_L  !enzyme affinity for litter POM depolymerization, mol C/m3
+    real(r8) :: Kaff_EP_LIT  !enzyme affinity for litter POM depolymerization, mol C/m3
+    real(r8) :: Kaff_EP_POM  !enzyme affinity for litter POM depolymerization, mol C/m3
     real(r8) :: Kaff_BC  !microbial affinity for DOC, mol C/m3
     real(r8) :: Kaff_CM  !DOC affinity for mineral surface, mol C /m3
     real(r8) :: Kaff_ED  !enzyme affinity for dead microbial cell material, mol C/m3
@@ -142,7 +143,8 @@ contains
   select type(biogeo_con)
   type is(simic_para_type)
     !decomposition
-    this%Kaff_EP_L  = biogeo_con%Kaff_EP_L
+    this%Kaff_EP_LIT  = biogeo_con%Kaff_EP_LIT
+    this%Kaff_EP_POM  = biogeo_con%Kaff_EP_POM
     this%Kaff_BC  = biogeo_con%Kaff_BC
     this%Kaff_CM_ref  = biogeo_con%Kaff_CM
     this%Kaff_ED  = biogeo_con%Kaff_ED
@@ -319,7 +321,7 @@ contains
   real(r8) :: depolymer_norm, depolymer_md
   real(r8) :: doc_uptake, Rh_pot, Rh_gpot, Rm_pot, Rmx
   real(r8) :: o2w, fo2, mort, vmax_EP_L_f
-  real(r8) :: Minsurf, denorm, depolymer_pom
+  real(r8) :: Minsurf, denorm, depolymer_pom1, depolymer_pom2
   real(r8) :: doc_sorb
   integer  :: jj
   associate(                                            &
@@ -347,12 +349,12 @@ contains
     alpha_B2E        => this%alpha_B2E                , &
     alpha_B2T        => this%alpha_B2T                , &
     Kaff_o2          => this%Kaff_o2                  , &
-    Kaff_EP_L          => this%Kaff_EP_L                  , &
+    Kaff_EP_LIT        => this%Kaff_EP_LIT              , &
+    Kaff_EP_POM       => this%Kaff_EP_POM            , &
     Kaff_ED          => this%Kaff_ED                  , &
     Kaff_EM          => this%Kaff_EM                  , &
     Minsurf0         => this%Minsurf                  , &
-    vmax_EP_L          => this%vmax_EP_L                  , &
-
+    vmax_EP_L          => this%vmax_EP_L              , &
     Mrt_spmic        => this%Mrt_spmic                , &
     Kmort_MB         => this%Kmort_MB                 , &
     f_mic2C          => this%f_mic2C                  , &
@@ -369,11 +371,12 @@ contains
   o2w = ystates1(lid_o2) / this%o2_w2b
   fo2= o2w/(Kaff_o2+o2w+alpha_B2T*ystates1(lid_micbl))
   Minsurf = max(Minsurf0 -ystates1(lid_pom),0._r8)
-  denorm = ystates1(lid_micbl) * alpha_B2E /(1._r8 + ystates1(lit1)/Kaff_EP_L+ &
-     ystates1(lit2)/Kaff_EP_L + ystates1(lit3)/Kaff_EP_L + ystates1(cwd)/Kaff_EP_L + &
+  denorm = ystates1(lid_micbl) * alpha_B2E /(1._r8 + ystates1(lit1)/Kaff_EP_LIT+ &
+     ystates1(lit2)/Kaff_EP_LIT + ystates1(lit3)/Kaff_EP_LIT + ystates1(cwd)/Kaff_EP_LIT + &
      ystates1(lid_micbd)/Kaff_ED + ystates1(lid_micbl)*alpha_B2E/Kaff_ED+ &
-     Minsurf/Kaff_EM + ystates1(lid_doc)/Kaff_BC)
-  depolymer_norm = denorm/Kaff_EP_L
+     ystates1(lid_pom)/Kaff_EP_POM+Minsurf/Kaff_EM + ystates1(lid_doc)/Kaff_BC)
+
+  depolymer_norm = denorm/Kaff_EP_LIT
   vmax_EP_L_f = vmax_EP_L * tfng
   depolymer_l1 = depolymer_norm * ystates1(lit1) * vmax_EP_L_f
   depolymer_l2 = depolymer_norm * ystates1(lit2) * vmax_EP_L_f
@@ -381,6 +384,7 @@ contains
   depolymer_cwd= depolymer_norm * ystates1(cwd)  * vmax_EP_L_f
   depolymer_md = denorm /Kaff_ED
   depolymer_md = depolymer_md * ystates1(lid_micbd) * vmax_EP_L_f
+  depolymer_pom1 = denorm /Kaff_EP_POM * ystates1(lid_pom) * vmax_EP_L_f
 
   !potential respiration
   Rh_pot = vmax_BC * ystates1(lid_micbl) * alpha_B2T * ystates1(lid_doc) / &
@@ -413,7 +417,7 @@ contains
   endif
   mort = mort * ystates1(lid_micbl) / (ystates1(lid_micbl) + Kmort_MB)
 
-  depolymer_pom = ystates1(lid_pom) * fpom_desorb
+  depolymer_pom2 = ystates1(lid_pom) * fpom_desorb
   !assemble the derivatives
   rrates(:) = 0._r8
 
@@ -425,7 +429,7 @@ contains
   rrates(micbl_mort_reac)      = mort
   rrates(doc_uptake_reac)      = doc_uptake
   rrates(o2_resp_reac)         = Rh_pot
-  rrates(pom_desorb_reac)      = depolymer_pom
+  rrates(pom_desorb_reac)      = depolymer_pom1+depolymer_pom2
   rrates(doc_sorb_reac)        = doc_sorb
 
   end associate
@@ -897,7 +901,7 @@ contains
   associate(                                &
     lid_micbl => this%simic_bgc_index%lid_micbl &
   )
-  ystates(lid_micbl) = 0.001_r8
+  ystates(lid_micbl) = 0.01_r8
 
   end associate
   end subroutine init_cold_simic

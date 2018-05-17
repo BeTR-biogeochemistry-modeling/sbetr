@@ -2,7 +2,7 @@
   simulator_name = 'standalone'
   run_type='sbgc'
   param_file='../tools/sbgc.ecacnp_pars.04232018.nc'
-  case_id='exp-adv'
+  case_id='exp.advnot'
   continue_run=.false.
 /
 
@@ -24,6 +24,7 @@
 
 &forcing_inparm
   forcing_filename = '../regression-tests/input-data/single_pt_example.bgc.halfhour.forc.nc'
+  use_rootsoit=.false.
 /
 
 &betr_grid
