@@ -70,6 +70,7 @@ module ecacnpBGCType
     real(r8), private                    :: beg_p_mass
     real(r8), private                    :: c_inflx,n_inflx, p_inflx
     logical                              :: bgc_on
+    logical , private                    :: batch_mode
   contains
     procedure, public  :: init          => init_ecacnp
     procedure, public  :: runbgc        => runbgc_ecacnp
@@ -89,6 +90,7 @@ module ecacnpBGCType
     procedure, private :: checksum_cascade
     procedure, private :: begin_massbal_check
     procedure, private :: end_massbal_check
+    procedure, private :: sum_tot_store
   end type ecacnp_bgc_type
 
   public :: create_jarmodel_ecacnp
@@ -231,22 +233,24 @@ contains
   end select
   end subroutine UpdateParas_ecacnp
   !-------------------------------------------------------------------------------
-  subroutine init_ecacnp(this,  biogeo_con,  bstatus)
+  subroutine init_ecacnp(this,  biogeo_con,  batch_mode, bstatus)
   use betr_varcon         , only : betr_maxpatch_pft
   implicit none
   class(ecacnp_bgc_type) , intent(inout) :: this
   class(BiogeoCon_type)       , intent(in) :: biogeo_con
+  logical                   , intent(in) :: batch_mode
   type(betr_status_type)    , intent(out) :: bstatus
 
   character(len=256) :: msg
   write(this%jarname, '(A)')'ecacnp'
 
   this%bgc_on=.true.
+  this%batch_mode=batch_mode
   select type(biogeo_con)
   type is(ecacnp_para_type)
     call bstatus%reset()
     call this%ecacnp_bgc_index%Init(biogeo_con%use_c13, biogeo_con%use_c14, &
-     biogeo_con%non_limit, biogeo_con%nop_limit, betr_maxpatch_pft)
+     biogeo_con%non_limit, biogeo_con%nop_limit, betr_maxpatch_pft, this%batch_mode)
 
     this%nop_limit=biogeo_con%nop_limit
     this%non_limit=biogeo_con%non_limit
@@ -586,18 +590,13 @@ contains
   yf(:) = ystates1(:)
 
   call ode_adapt_ebbks1(this, yf, nprimvars, nstvars, time, dtime, ystates1)
-!  if(ystates1(lid_n2o_nit)<0._r8)then
-!    print*,'nh4',ystates1(lid_nh4),ystates1(lid_no3)
-!  endif
+
   !if(this%ecacnp_bgc_index%debug)call this%checksum_cascade(this%ecacnp_bgc_index)
   if(this%use_c14)then
     call this%c14decay(this%ecacnp_bgc_index, dtime, ystates1)
   endif
 
-!  call this%censom%stoichiometry_fix(this%ecacnp_bgc_index, ystates1)
-
-!  if(this%ecacnp_bgc_index%debug)call this%end_massbal_check('bf exit runbgc')
-!  endif
+  if(this%batch_mode)call this%sum_tot_store(nstvars, ystates1)
   ystatesf(:) = ystates1(:)
   end associate
   end subroutine runbgc_ecacnp
@@ -934,6 +933,7 @@ contains
     cwd =>   ecacnp_bgc_index%cwd, &
     fwd =>   ecacnp_bgc_index%fwd, &
     lwd =>   ecacnp_bgc_index%lwd, &
+    lid_totinput => ecacnp_bgc_index%lid_totinput, &
     litr_beg =>  ecacnp_bgc_index%litr_beg, &
     som_beg =>  ecacnp_bgc_index%som_beg, &
     Bm_beg  =>  ecacnp_bgc_index%Bm_beg, &
@@ -999,6 +999,12 @@ contains
    if(present(n_inf))n_inf=n_inf_loc
    if(present(p_inf))p_inf=p_inf_loc
 
+   if(this%batch_mode)then
+     this%ystates1(lid_totinput) = this%ystates1(lid_totinput) + dtime* &
+     ( bgc_forc%cflx_input_litr_met +  bgc_forc%cflx_input_litr_cel + &
+       bgc_forc%cflx_input_litr_lig +  bgc_forc%cflx_input_litr_cwd + &
+        bgc_forc%cflx_input_litr_fwd +  bgc_forc%cflx_input_litr_lwd)/catomw
+   endif
   !*********************************************
   !inorganic substrates
   !*********************************************
@@ -1074,6 +1080,7 @@ contains
      p_loc   =>  ecacnp_bgc_index%p_loc  ,&
      nelms   =>  ecacnp_bgc_index%nelms   &
     )
+    if(cflx_input<=0._r8)return
     kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
     this%ystates1(kc) =this%ystates0(kc) + cflx_input*dtime/catomw
     this%ystates1(kn) =this%ystates0(kn) + nflx_input*dtime/natomw
@@ -1184,6 +1191,8 @@ contains
     nom_pools => this%ecacnp_bgc_index%nom_pools                                                , &
     lid_nh4 => this%ecacnp_bgc_index%lid_nh4                                                    , &
     lid_no3 => this%ecacnp_bgc_index%lid_no3                                                    , &
+    lid_co2_hr => this%ecacnp_bgc_index%lid_co2_hr                                              , &
+    lid_cum_closs=> this%ecacnp_bgc_index%lid_cum_closs                                         , &
     som1    => this%ecacnp_bgc_index%som1                                                       , &
     som2    => this%ecacnp_bgc_index%som2                                                       , &
     som3    => this%ecacnp_bgc_index%som3                                                       , &
@@ -1359,6 +1368,8 @@ contains
 !    write(*,'(A,6(X,E25.15))')'dydt som3',dydt((jj-1)*nelms+c_loc),dydt((jj-1)*nelms+n_loc),dydt((jj-1)*nelms+p_loc),&
 !      dydt((jj-1)*nelms+c_loc)/dydt((jj-1)*nelms+n_loc),dydt((jj-1)*nelms+c_loc)/dydt((jj-1)*nelms+p_loc)
 !  endif
+
+   if(this%batch_mode)dydt(lid_cum_closs)=dydt(lid_co2_hr)
   end associate
   end subroutine bgc_integrate
   !--------------------------------------------------------------------
@@ -1714,4 +1725,33 @@ contains
 
   if(nstvars>=0)continue
   end subroutine init_cold_ecacnp
+
+  !-------------------------------------------------------------------------------
+  subroutine sum_tot_store(this, nstvars, ystates)
+  implicit none
+  class(ecacnp_bgc_type)     , intent(inout) :: this
+  integer                   , intent(in)    :: nstvars
+  real(r8)                  , intent(inout) :: ystates(nstvars)
+
+  associate(                  &
+    lid_totstore => this%ecacnp_bgc_index%lid_totstore , &
+    lit1       => this%ecacnp_bgc_index%lit1        , &
+    lit2       => this%ecacnp_bgc_index%lit2        , &
+    lit3       => this%ecacnp_bgc_index%lit3        , &
+    som1       => this%ecacnp_bgc_index%som1        , &
+    som2       => this%ecacnp_bgc_index%som2        , &
+    som3       => this%ecacnp_bgc_index%som3        , &
+    cwd        => this%ecacnp_bgc_index%cwd         , &
+    fwd        => this%ecacnp_bgc_index%fwd         , &
+    lwd        => this%ecacnp_bgc_index%lwd         , &
+    c_loc      => this%ecacnp_bgc_index%c_loc       , & !
+    nelms      => this%ecacnp_bgc_index%nelms         & !
+  )
+  ystates(lid_totstore) =ystates((lit1-1)*nelms+c_loc) + ystates((lit2-1)*nelms+c_loc) + &
+    ystates((lit3-1)*nelms+c_loc) + ystates((cwd-1)*nelms+c_loc) + &
+    ystates((fwd-1)*nelms+c_loc) + ystates((lwd-1)*nelms+c_loc) + &
+    ystates((som1-1)*nelms+c_loc) + ystates((som2-1)*nelms+c_loc) + &
+    ystates((som3-1)*nelms+c_loc)
+  end associate
+  end subroutine sum_tot_store
 end module ecacnpBGCType

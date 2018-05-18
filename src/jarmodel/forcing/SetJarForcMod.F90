@@ -105,7 +105,7 @@ contains
   jar_forc%soilorder=1
   jar_forc%msurf_nh4=0._r8
   jar_forc%msurf_minp=0._r8
-  jar_forc%msurf_OM= 1300._r8/catomw
+  jar_forc%msurf_OM= 500._r8/catomw
   jar_forc%KM_OM_ref=10._r8/catomw
   end subroutine SetJarForc_const
 

@@ -130,10 +130,10 @@ contains
   half_life = half_life * year_sec
 
   !decomposition
-  this%Kaff_EP_LIT  = 1.e-2_r8
+  this%Kaff_EP_LIT  = 1.e-3_r8
   this%Kaff_EP_POM  = 4.e-2_r8
-  this%Kaff_ED  = 1.e-2_r8
-  this%Kaff_BC  = 1.e-2_r8
+  this%Kaff_ED  = 1.e-3_r8
+  this%Kaff_BC  = 2.e-5_r8
   this%cue_met  = 0.5_r8
   this%cue_cel  = 0.4_r8
   this%cue_lig  = 0.3_r8
@@ -143,8 +143,8 @@ contains
   this%Mrt_spmic= 1.e-7_r8
   this%f_mic2C = 0.3_r8
   this%f_mic2D = 0.7_r8
-  this%vmax_EP_L = 2.e-4_r8
-  this%vmax_BC = 2.5e-4_r8
+  this%vmax_EP_L = 1.e-5_r8
+  this%vmax_BC = 2.e-5_r8
   this%alpha_B2E = 0.05_r8
   this%alpha_B2T = 0.05_r8
   this%Kaff_CM  = 1._r8

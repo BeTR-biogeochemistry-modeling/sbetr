@@ -91,7 +91,9 @@ implicit none
      integer           :: nprimvars                              !total number of primary variables
      integer           :: nstvars                                !number of equations for the state variabile vector
      integer           :: nreactions                             !seven decomposition pathways plus nitrification, denitrification and plant immobilization
-
+     integer           :: lid_totinput
+     integer           :: lid_totstore
+     integer           :: lid_cum_closs
      integer , pointer :: primvarid(:)   => null()
      logical , pointer :: is_aerobic_reac(:)=> null()
 
@@ -258,7 +260,7 @@ implicit none
   end subroutine add_ompool_name
 
   !-------------------------------------------------------------------------------
-  subroutine Init(this, use_c13, use_c14, non_limit, nop_limit, maxpft)
+  subroutine Init(this, use_c13, use_c14, non_limit, nop_limit, maxpft, batch_mode)
     !
     ! DESCRIPTION:
     ! Initialize ecacnp_bgc type
@@ -271,14 +273,15 @@ implicit none
   logical, intent(in) :: non_limit
   logical, intent(in) :: nop_limit
   integer, optional, intent(in) :: maxpft
-
+  logical, optional, intent(in) :: batch_mode
   ! !LOCAL VARIABLES:
   integer :: maxpft_loc
-
+  logical :: batch_mode_loc
   maxpft_loc = 0
   this%dom_beg=0; this%dom_end=-1
   if(present(maxpft))maxpft_loc=maxpft
-  call this%InitPars(maxpft_loc, use_c14, use_c13, non_limit, nop_limit)
+  if(present(batch_mode))batch_mode_loc=batch_mode
+  call this%InitPars(maxpft_loc, use_c14, use_c13, non_limit, nop_limit, batch_mode_loc)
 
   call this%InitAllocate()
 
@@ -288,7 +291,7 @@ implicit none
   end subroutine Init
   !-------------------------------------------------------------------------------
 
-  subroutine InitPars(this, maxpft, use_c14, use_c13, non_limit, nop_limit)
+  subroutine InitPars(this, maxpft, use_c14, use_c13, non_limit, nop_limit, batch_mode)
     !
     ! !DESCRIPTION:
     !  describe the layout of the stoichiometric matrix for the reactions
@@ -319,6 +322,7 @@ implicit none
     logical, intent(in) :: use_c14
     logical, intent(in) :: non_limit
     logical, intent(in) :: nop_limit
+    logical, intent(in) :: batch_mode
     ! !LOCAL VARIABLES:
     integer :: itemp
     integer :: ireac   !counter of reactions
@@ -543,7 +547,11 @@ implicit none
         call list_insert(list_unit,'mol P m-3 s-1',uid)
       enddo
     endif
-
+    if(batch_mode)then
+      this%lid_totinput  = addone(itemp);call list_insert(list_name, 'c_tot_input',vid, itype=var_state_type); call list_insert(list_unit,'mol m-3',uid)
+      this%lid_totstore  = addone(itemp);call list_insert(list_name, 'c_tot_store',vid, itype=var_state_type); call list_insert(list_unit,'mol m-3',uid)
+      this%lid_cum_closs  = addone(itemp);call list_insert(list_name, 'c_loss',vid, itype=var_state_type); call list_insert(list_unit,'mol m-3',uid)
+    endif
     this%nstvars          = itemp          !totally 14+32 state variables
     this%nreactions = ireac            !seven decomposition pathways plus root auto respiration, nitrification, denitrification and plant immobilization
 
@@ -688,6 +696,6 @@ implicit none
   reac = this%lid_o2_aren_reac; this%primvarid(reac) = lid_o2
   !print*,'17',reac,size(this%primvarid)
   end associate
-  
+
   end subroutine set_primvar_reac_ids
 end module ecacnpBGCIndexType

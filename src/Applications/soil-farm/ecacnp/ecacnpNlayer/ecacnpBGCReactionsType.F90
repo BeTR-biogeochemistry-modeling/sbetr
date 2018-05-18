@@ -441,11 +441,11 @@ contains
     integer   :: c_loc, n_loc, p_loc, trcid, c13_loc, c14_loc
     integer   :: c, j, litr_cnt, wood_cnt, Bm_cnt, pom_cnt, som_cnt, itemp_ads, itemp_ads_grp
     integer   :: ngroupmems
-    logical   :: carbon_only = .false.
+    logical   :: batch_mode
 
     call bstatus%reset()
+    batch_mode = .false.
 
-    if (this%dummy_compiler_warning) continue
     this%nactpft = 0
 
     call this%ecacnp_bgc_index%Init(ecacnp_para%use_c13, ecacnp_para%use_c14, &
@@ -462,7 +462,7 @@ contains
     !initialize
     do j = lbj, ubj
       do c = bounds%begc, bounds%endc
-        call this%ecacnp(c,j)%Init(ecacnp_para, bstatus)
+        call this%ecacnp(c,j)%Init(ecacnp_para, batch_mode, bstatus)
         if(bstatus%check_status())return
 
         call this%ecacnp_forc(c,j)%Init(this%ecacnp_bgc_index%nstvars)

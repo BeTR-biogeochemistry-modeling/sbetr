@@ -68,6 +68,7 @@ module simicBGCType
     real(r8) :: tfng
     real(r8) :: tfnr
     real(r8) :: o2_w2b
+    logical,private  :: batch_mode
   contains
     procedure, public  :: init          => init_simic
     procedure, public  :: runbgc        => runbgc_simic
@@ -83,6 +84,7 @@ module simicBGCType
     procedure, private :: calc_cascade_matrix
     procedure, private :: bgc_integrate
     procedure, private :: ode_adapt_ebbks1
+    procedure, private :: sum_tot_store
   end type simic_bgc_type
 
   public :: create_jarmodel_simicbgc
@@ -174,21 +176,23 @@ contains
   end select
   end subroutine UpdateParas_simic
   !-------------------------------------------------------------------------------
-  subroutine init_simic(this,  biogeo_con,  bstatus)
+  subroutine init_simic(this,  biogeo_con, batch_mode,  bstatus)
   use betr_varcon         , only : betr_maxpatch_pft
   implicit none
   class(simic_bgc_type) , intent(inout) :: this
   class(BiogeoCon_type)       , intent(in) :: biogeo_con
+  logical                , intent(in) :: batch_mode
   type(betr_status_type)    , intent(out) :: bstatus
 
   character(len=256) :: msg
   write(this%jarname, '(A)')'simic'
 
+  this%batch_mode=batch_mode
   select type(biogeo_con)
   type is(simic_para_type)
     call bstatus%reset()
     call this%simic_bgc_index%Init(biogeo_con%use_c13, biogeo_con%use_c14, &
-     biogeo_con%non_limit, biogeo_con%nop_limit, betr_maxpatch_pft)
+     biogeo_con%non_limit, biogeo_con%nop_limit, betr_maxpatch_pft, this%batch_mode)
     call this%UpdateParas(biogeo_con, bstatus)
     if(bstatus%check_status())return
 
@@ -298,6 +302,7 @@ contains
     yf(:) = ystates1(:)
     call this%ode_adapt_ebbks1(yf, nprimvars, nstvars, time, dtime, ystates1)
   endif
+  if(this%batch_mode)call this%sum_tot_store(nstvars, ystates1)
   ystatesf(:) = ystates1(:)
 
   end associate
@@ -374,7 +379,7 @@ contains
   denorm = ystates1(lid_micbl) * alpha_B2E /(1._r8 + ystates1(lit1)/Kaff_EP_LIT+ &
      ystates1(lit2)/Kaff_EP_LIT + ystates1(lit3)/Kaff_EP_LIT + ystates1(cwd)/Kaff_EP_LIT + &
      ystates1(lid_micbd)/Kaff_ED + ystates1(lid_micbl)*alpha_B2E/Kaff_ED+ &
-     ystates1(lid_pom)/Kaff_EP_POM+Minsurf/Kaff_EM + ystates1(lid_doc)/Kaff_BC)
+     ystates1(lid_pom)/Kaff_EP_POM+Minsurf/Kaff_EM) ! + ystates1(lid_doc)/Kaff_BC)
 
   depolymer_norm = denorm/Kaff_EP_LIT
   vmax_EP_L_f = vmax_EP_L * tfng
@@ -518,17 +523,23 @@ contains
     lit1 =>  simic_bgc_index%lit1, &
     lit2 =>  simic_bgc_index%lit2, &
     lit3 =>  simic_bgc_index%lit3, &
+    lid_totinput =>  simic_bgc_index%lid_totinput, &
     cwd =>   simic_bgc_index%cwd   &
   )
 
-  this%ystates1(lit1)=this%ystates0(lit1) +  dtime *  bgc_forc%cflx_input_litr_met
+  this%ystates1(lit1)=this%ystates0(lit1) +  dtime *  bgc_forc%cflx_input_litr_met/catomw
 
-  this%ystates1(lit2)=this%ystates0(lit2) +  dtime *  bgc_forc%cflx_input_litr_cel
+  this%ystates1(lit2)=this%ystates0(lit2) +  dtime *  bgc_forc%cflx_input_litr_cel/catomw
 
-  this%ystates1(lit3)=this%ystates0(lit3) +  dtime *  bgc_forc%cflx_input_litr_lig
+  this%ystates1(lit3)=this%ystates0(lit3) +  dtime *  bgc_forc%cflx_input_litr_lig/catomw
 
-  this%ystates1(cwd)=this%ystates0(cwd) +  dtime *  bgc_forc%cflx_input_litr_cwd
+  this%ystates1(cwd)=this%ystates0(cwd) +  dtime *  bgc_forc%cflx_input_litr_cwd/catomw
 
+  if(this%batch_mode)then
+    this%ystates1(lid_totinput) = this%ystates0(lid_totinput) + dtime* &
+      (bgc_forc%cflx_input_litr_met + bgc_forc%cflx_input_litr_cel + &
+      bgc_forc%cflx_input_litr_lig + bgc_forc%cflx_input_litr_cwd)/catomw
+  endif
 
   end associate
   end subroutine add_ext_input
@@ -811,6 +822,8 @@ contains
     lid_pom_e        => this%simic_bgc_index%lid_pom_e      , &
     lid_pom          => this%simic_bgc_index%lid_pom        , &
     doc_uptake_reac  => this%simic_bgc_index%doc_uptake_reac, &
+    lid_cum_closs        => this%simic_bgc_index%lid_cum_closs      , &
+    lid_co2_hr       => this%simic_bgc_index%lid_co2_hr     , &
     nreactions       => this%simic_bgc_index%nreactions       &
   )
   doc_cue = safe_div(ystate(lid_doc_e), ystate(lid_doc))
@@ -844,20 +857,8 @@ contains
     endif
     it = it + 1
   enddo
-  !print*,'dydt',dydt(this%simic_bgc_index%lid_micbl)
-  !if(dydt(this%simic_bgc_index%lid_pom)*dydt(this%simic_bgc_index%lid_pom_e)<0._r8)then
-  !   do jj = 1, nreactions
-  !     print*,'rrj',jj,rrates(jj),this%cascade_matrix(this%simic_bgc_index%lid_pom,jj), &
-  !       this%cascade_matrix(this%simic_bgc_index%lid_pom_e,jj)
-  !   enddo
-  !   print*,'dydt1',dot_sum(this%cascade_matrix(this%simic_bgc_index%lid_pom,1:6),rrates(1:6)), &
-  !    dot_sum(this%cascade_matrix(this%simic_bgc_index%lid_pom_e,1:6),rrates(1:6))
-  !   print*,'dydt2',dot_sum(this%cascade_matrix(this%simic_bgc_index%lid_pom,7:10),rrates(7:10)), &
-  !    dot_sum(this%cascade_matrix(this%simic_bgc_index%lid_pom_e,7:10),rrates(7:10))
-  !    print*,'dydt',dydt(this%simic_bgc_index%lid_pom), dydt(this%simic_bgc_index%lid_pom_e)
-  !   print*,'pom',ystate(lid_pom_e), ystate(lid_pom)
-  !  stop
-  !endif
+
+  if(this%batch_mode)dydt(lid_cum_closs)=dydt(lid_co2_hr)
 
   end associate
   contains
@@ -905,4 +906,27 @@ contains
 
   end associate
   end subroutine init_cold_simic
+
+  !-------------------------------------------------------------------------------
+  subroutine sum_tot_store(this, nstvars, ystates)
+  implicit none
+  class(simic_bgc_type)     , intent(inout) :: this
+  integer                   , intent(in)    :: nstvars
+  real(r8)                  , intent(inout) :: ystates(nstvars)
+  associate(                  &
+    lid_totstore => this%simic_bgc_index%lid_totstore       , &
+    lid_doc          => this%simic_bgc_index%lid_doc        , &
+    lid_pom          => this%simic_bgc_index%lid_pom        , &
+    lit1       => this%simic_bgc_index%lit1        , &
+    lit2       => this%simic_bgc_index%lit2        , &
+    lit3       => this%simic_bgc_index%lit3        , &
+    cwd        => this%simic_bgc_index%cwd         , &
+    lid_micbl  => this%simic_bgc_index%lid_micbl   , &
+    lid_micbd  => this%simic_bgc_index%lid_micbd     &
+
+  )
+  ystates(lid_totstore) =ystates(lit1) + ystates(lit2)  + ystates(lit3) + ystates(cwd) +&
+    ystates(lid_doc) + ystates(lid_pom) + ystates(lid_micbl) + ystates(lid_micbd)
+  end associate
+  end subroutine sum_tot_store
 end module simicBGCType

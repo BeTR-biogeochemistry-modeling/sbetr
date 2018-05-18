@@ -99,6 +99,7 @@ subroutine run_model(namelist_buffer)
   character(len=64) :: case_id
   character(len=256):: gname
   namelist / jar_driver / jarmodel_name, case_id, is_surflit, nitrogen_stress, phosphorus_stress
+  logical :: batch_mode
 
   case_id=''
   if ( .true. )then
@@ -120,9 +121,9 @@ subroutine run_model(namelist_buffer)
   if(bstatus%check_status())then
     call endrun(msg=bstatus%print_msg())
   endif
-
+  batch_mode=.true.
   !initialize model
-  call jarmodel%init(jarpars,  bstatus)
+  call jarmodel%init(jarpars, batch_mode, bstatus)
   if(bstatus%check_status())then
     call endrun(msg=bstatus%print_msg())
   endif

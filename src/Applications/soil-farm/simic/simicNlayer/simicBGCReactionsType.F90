@@ -198,6 +198,9 @@ contains
   integer                          , intent(in)    :: lbj, ubj
 
   integer :: j, c
+  logical :: batch_mode
+
+  batch_mode =.false.
   this%nactpft = 0
 
   call this%simic_bgc_index%Init(simic_para%use_c13, simic_para%use_c14, &
@@ -214,7 +217,7 @@ contains
   !initialize
   do j = lbj, ubj
     do c = bounds%begc, bounds%endc
-      call this%simic_bgc(c,j)%Init(simic_para, bstatus)
+      call this%simic_bgc(c,j)%Init(simic_para, batch_mode, bstatus)
       if(bstatus%check_status())return
         call this%simic_forc(c,j)%Init(this%simic_bgc_index%nstvars)
     enddo

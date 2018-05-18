@@ -22,11 +22,12 @@ implicit none
   contains
 
   !-------------------------------------------------------------------------------
-  subroutine JarModel_init(this,  biogeo_con,  bstatus)
+  subroutine JarModel_init(this,  biogeo_con,  batch_mode, bstatus)
 
   implicit none
   class(jar_model_type)      , intent(inout) :: this
   class(BiogeoCon_type)      , intent(in)    :: biogeo_con
+  logical                    , intent(in)    :: batch_mode
   type(betr_status_type)     , intent(out)   :: bstatus
 
   call bstatus%reset()

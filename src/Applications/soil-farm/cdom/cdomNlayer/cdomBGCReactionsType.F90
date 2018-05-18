@@ -447,7 +447,7 @@ contains
     integer   :: trcid
     integer   :: c, j, litr_cnt, wood_cnt, micbiom_cnt, pom_cnt, som_cnt, itemp_ads, itemp_ads_grp
     integer   :: ngroupmems
-    logical   :: carbon_only = .false.
+    logical   :: batch_mode
 
     associate(                                 &
      nelm    => this%cdom_bgc_index%nelms     , &
@@ -461,7 +461,7 @@ contains
      nwood   => this%cdom_bgc_index%nwood       &
     )
     call bstatus%reset()
-
+    batch_mode =.false.
     if (this%dummy_compiler_warning) continue
 
     call this%cdom_bgc_index%Init(cdom_para%use_c13, cdom_para%use_c14, &
@@ -478,7 +478,7 @@ contains
     !initialize
     do j = lbj, ubj
       do c = bounds%begc, bounds%endc
-        call this%cdom(c,j)%Init(cdom_para, bstatus)
+        call this%cdom(c,j)%Init(cdom_para, batch_mode, bstatus)
         if(bstatus%check_status())return
 
         call this%cdom_forc(c,j)%Init(this%cdom_bgc_index%nstvars)

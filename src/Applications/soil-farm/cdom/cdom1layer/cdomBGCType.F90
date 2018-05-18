@@ -70,6 +70,7 @@ module cdomBGCType
     real(r8), private                    :: beg_p_mass
     real(r8), private                    :: c_inflx,n_inflx, p_inflx
     logical                              :: bgc_on
+    logical , private                    :: batch_mode
   contains
     procedure, public  :: init          => init_cdom
     procedure, public  :: runbgc        => runbgc_cdom
@@ -231,16 +232,18 @@ contains
   end select
   end subroutine UpdateParas_cdom
   !-------------------------------------------------------------------------------
-  subroutine init_cdom(this,  biogeo_con,  bstatus)
+  subroutine init_cdom(this,  biogeo_con, batch_mode,  bstatus)
   use betr_varcon         , only : betr_maxpatch_pft
   implicit none
   class(cdom_bgc_type) , intent(inout) :: this
   class(BiogeoCon_type)       , intent(in) :: biogeo_con
+  logical                   , intent(in) :: batch_mode
   type(betr_status_type)    , intent(out) :: bstatus
 
   character(len=256) :: msg
-  write(this%jarname, '(A)')'cdomeca'
+  write(this%jarname, '(A)')'cdom'
 
+  this%batch_mode=batch_mode
   this%bgc_on=.true.
   select type(biogeo_con)
   type is(cdomPara_type)
@@ -1275,7 +1278,7 @@ contains
     rrates(lid_plant_minn_no3_up_reac) = sum(ECA_flx_no3_plants)     !calculate by ECA competition
     rrates(lid_plant_minn_nh4_up_reac) = sum(ECA_flx_nh4_plants)     !calculate by ECA competition
     rrates(lid_plant_minp_up_reac) =     sum(ECA_flx_phosphorus_plants) !calculate by ECA competition
-  endif  
+  endif
   rrates(lid_minp_secondary_to_sol_occ_reac)= ystate(lid_minp_secondary) * this%minp_secondary_decay(this%soilorder)
 
 !  if(this%cdom_bgc_index%debug)then
