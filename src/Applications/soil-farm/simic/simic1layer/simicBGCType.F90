@@ -36,7 +36,10 @@ module simicBGCType
     logical , private                    :: use_c14
 
     !decomposition
-    real(r8) :: Kaff_EP_LIT  !enzyme affinity for litter POM depolymerization, mol C/m3
+    real(r8) :: Kaff_EP_LIT1  !enzyme affinity for litter POM depolymerization, mol C/m3
+    real(r8) :: Kaff_EP_LIT2  !enzyme affinity for litter POM depolymerization, mol C/m3
+    real(r8) :: Kaff_EP_LIT3  !enzyme affinity for litter POM depolymerization, mol C/m3
+    real(r8) :: Kaff_EP_CWD  !enzyme affinity for litter POM depolymerization, mol C/m3
     real(r8) :: Kaff_EP_POM  !enzyme affinity for litter POM depolymerization, mol C/m3
     real(r8) :: Kaff_BC  !microbial affinity for DOC, mol C/m3
     real(r8) :: Kaff_CM  !DOC affinity for mineral surface, mol C /m3
@@ -50,7 +53,12 @@ module simicBGCType
     real(r8) :: Mrt_spmic  !specific microbial mortality, 1/s
     real(r8) :: f_mic2C    !fraction of dead microbial biomass into DOC upon death
     real(r8) :: f_mic2D    !fraction of dead microbial biomass as dead cell
-    real(r8) :: vmax_EP_L    !maximum depolymerization rate
+    real(r8) :: vmax_EP_LIT1    !maximum depolymerization rate
+    real(r8) :: vmax_EP_LIT2    !maximum depolymerization rate
+    real(r8) :: vmax_EP_LIT3    !maximum depolymerization rate
+    real(r8) :: vmax_EP_CWD    !maximum depolymerization rate
+    real(r8) :: vmax_EP_POM    !maximum depolymerization rate
+    real(r8) :: vmax_EP_MD
     real(r8) :: vmax_BC    !maximum DOC assimilation rate
     real(r8) :: alpha_B2E  !scaling parameter from microbial biomass to hydrolysis enzyme
     real(r8) :: alpha_B2T !scaling parameter from microbial biomass to transporter enzyme
@@ -145,7 +153,10 @@ contains
   select type(biogeo_con)
   type is(simic_para_type)
     !decomposition
-    this%Kaff_EP_LIT  = biogeo_con%Kaff_EP_LIT
+    this%Kaff_EP_LIT1  = biogeo_con%Kaff_EP_LIT
+    this%Kaff_EP_LIT2  = this%Kaff_EP_LIT1 * 0.25_r8
+    this%Kaff_EP_LIT3  = this%Kaff_EP_LIT1 * 0.25_r8
+    this%Kaff_EP_CWD  = this%Kaff_EP_LIT1 * 0.1_r8
     this%Kaff_EP_POM  = biogeo_con%Kaff_EP_POM
     this%Kaff_BC  = biogeo_con%Kaff_BC
     this%Kaff_CM_ref  = biogeo_con%Kaff_CM
@@ -159,7 +170,12 @@ contains
     this%Mrt_spmic= biogeo_con%Mrt_spmic
     this%f_mic2C  = biogeo_con%f_mic2C
     this%f_mic2D  = biogeo_con%f_mic2D
-    this%vmax_EP_L  = biogeo_con%vmax_EP_L
+    this%vmax_EP_LIT1  = biogeo_con%vmax_EP_L
+    this%vmax_EP_LIT2  = this%vmax_EP_LIT1 * 0.25_r8
+    this%vmax_EP_LIT3  = this%vmax_EP_LIT1 * 0.25_r8
+    this%vmax_EP_CWD  = this%vmax_EP_LIT1 * 0.1_r8
+    this%vmax_EP_POM  = this%vmax_EP_LIT1 * 0.1_r8
+    this%vmax_EP_MD  = this%vmax_EP_LIT1 * 0.1_r8
     this%vmax_BC  = biogeo_con%vmax_BC
     this%alpha_B2E= biogeo_con%alpha_B2E
     this%alpha_B2T= biogeo_con%alpha_B2T
@@ -325,7 +341,9 @@ contains
   real(r8) :: depolymer_l1,depolymer_l2,depolymer_l3,depolymer_cwd
   real(r8) :: depolymer_norm, depolymer_md
   real(r8) :: doc_uptake, Rh_pot, Rh_gpot, Rm_pot, Rmx
-  real(r8) :: o2w, fo2, mort, vmax_EP_L_f
+  real(r8) :: o2w, fo2, mort
+  real(r8) :: vmax_EP_POM_f, vmax_EP_L1_f,vmax_EP_L2_f,vmax_EP_L3_f, vmax_EP_CWD_f
+  real(r8) :: vmax_EP_MD_f
   real(r8) :: Minsurf, denorm, depolymer_pom1, depolymer_pom2
   real(r8) :: doc_sorb
   integer  :: jj
@@ -354,12 +372,20 @@ contains
     alpha_B2E        => this%alpha_B2E                , &
     alpha_B2T        => this%alpha_B2T                , &
     Kaff_o2          => this%Kaff_o2                  , &
-    Kaff_EP_LIT        => this%Kaff_EP_LIT              , &
+    Kaff_EP_LIT1     => this%Kaff_EP_LIT1              , &
+    Kaff_EP_LIT2     => this%Kaff_EP_LIT2              , &
+    Kaff_EP_LIT3     => this%Kaff_EP_LIT3              , &
+    Kaff_EP_CWD     => this%Kaff_EP_CWD              , &
     Kaff_EP_POM       => this%Kaff_EP_POM            , &
     Kaff_ED          => this%Kaff_ED                  , &
     Kaff_EM          => this%Kaff_EM                  , &
     Minsurf0         => this%Minsurf                  , &
-    vmax_EP_L          => this%vmax_EP_L              , &
+    vmax_EP_LIT1        => this%vmax_EP_LIT1          , &
+    vmax_EP_LIT2        => this%vmax_EP_LIT2          , &
+    vmax_EP_LIT3        => this%vmax_EP_LIT3          , &
+    vmax_EP_CWD        => this%vmax_EP_CWD             , &
+    vmax_EP_POM        => this%vmax_EP_POM             , &
+    vmax_EP_MD        => this%vmax_EP_MD             , &
     Mrt_spmic        => this%Mrt_spmic                , &
     Kmort_MB         => this%Kmort_MB                 , &
     f_mic2C          => this%f_mic2C                  , &
@@ -376,20 +402,24 @@ contains
   o2w = ystates1(lid_o2) / this%o2_w2b
   fo2= o2w/(Kaff_o2+o2w+alpha_B2T*ystates1(lid_micbl))
   Minsurf = max(Minsurf0 -ystates1(lid_pom),0._r8)
-  denorm = ystates1(lid_micbl) * alpha_B2E /(1._r8 + ystates1(lit1)/Kaff_EP_LIT+ &
-     ystates1(lit2)/Kaff_EP_LIT + ystates1(lit3)/Kaff_EP_LIT + ystates1(cwd)/Kaff_EP_LIT + &
+  denorm = ystates1(lid_micbl) * alpha_B2E /(1._r8 + ystates1(lit1)/Kaff_EP_LIT1+ &
+     ystates1(lit2)/Kaff_EP_LIT2 + ystates1(lit3)/Kaff_EP_LIT3 + ystates1(cwd)/Kaff_EP_CWD + &
      ystates1(lid_micbd)/Kaff_ED + ystates1(lid_micbl)*alpha_B2E/Kaff_ED+ &
      ystates1(lid_pom)/Kaff_EP_POM+Minsurf/Kaff_EM) ! + ystates1(lid_doc)/Kaff_BC)
 
-  depolymer_norm = denorm/Kaff_EP_LIT
-  vmax_EP_L_f = vmax_EP_L * tfng
-  depolymer_l1 = depolymer_norm * ystates1(lit1) * vmax_EP_L_f
-  depolymer_l2 = depolymer_norm * ystates1(lit2) * vmax_EP_L_f
-  depolymer_l3 = depolymer_norm * ystates1(lit3) * vmax_EP_L_f
-  depolymer_cwd= depolymer_norm * ystates1(cwd)  * vmax_EP_L_f
+  vmax_EP_L1_f = vmax_EP_LIT1 * tfng
+  vmax_EP_L2_f = vmax_EP_LIT2 * tfng
+  vmax_EP_L3_f = vmax_EP_LIT3 * tfng
+  vmax_EP_CWD_f= vmax_EP_CWD * tfng
+  vmax_EP_POM_f= vmax_EP_POM * tfng
+  vmax_EP_MD_f = vmax_EP_MD * tfng
+  depolymer_l1 = denorm/Kaff_EP_LIT1 * ystates1(lit1) * vmax_EP_L1_f
+  depolymer_l2 = denorm/Kaff_EP_LIT2 * ystates1(lit2) * vmax_EP_L2_f
+  depolymer_l3 = denorm/Kaff_EP_LIT3 * ystates1(lit3) * vmax_EP_L3_f
+  depolymer_cwd= denorm/Kaff_EP_CWD  * ystates1(cwd)  * vmax_EP_CWD_f
   depolymer_md = denorm /Kaff_ED
-  depolymer_md = depolymer_md * ystates1(lid_micbd) * vmax_EP_L_f
-  depolymer_pom1 = denorm /Kaff_EP_POM * ystates1(lid_pom) * vmax_EP_L_f
+  depolymer_md = depolymer_md * ystates1(lid_micbd) * vmax_EP_MD_f
+  depolymer_pom1 = denorm /Kaff_EP_POM * ystates1(lid_pom) * vmax_EP_POM_f
 
   !potential respiration
   Rh_pot = vmax_BC * ystates1(lid_micbl) * alpha_B2T * ystates1(lid_doc) / &
