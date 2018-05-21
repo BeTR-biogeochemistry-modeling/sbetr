@@ -154,9 +154,9 @@ contains
   type is(simic_para_type)
     !decomposition
     this%Kaff_EP_LIT1  = biogeo_con%Kaff_EP_LIT
-    this%Kaff_EP_LIT2  = this%Kaff_EP_LIT1 * 0.25_r8
-    this%Kaff_EP_LIT3  = this%Kaff_EP_LIT1 * 0.25_r8
-    this%Kaff_EP_CWD  = this%Kaff_EP_LIT1 * 0.1_r8
+    this%Kaff_EP_LIT2  = this%Kaff_EP_LIT1 * 4._r8
+    this%Kaff_EP_LIT3  = this%Kaff_EP_LIT1 * 4._r8
+    this%Kaff_EP_CWD  = this%Kaff_EP_LIT1 * 10._r8
     this%Kaff_EP_POM  = biogeo_con%Kaff_EP_POM
     this%Kaff_BC  = biogeo_con%Kaff_BC
     this%Kaff_CM_ref  = biogeo_con%Kaff_CM
@@ -328,7 +328,8 @@ contains
   !
   !DESCRIPTION
   !the core of simic model
-
+  use KineticsMod, only : ecacomplex
+  use BetrStatusType  , only : betr_status_type
   implicit none
   class(simic_bgc_type)  , intent(inout) :: this
   real(r8)               , intent(in)    :: dtime
@@ -346,7 +347,10 @@ contains
   real(r8) :: vmax_EP_MD_f
   real(r8) :: Minsurf, denorm, depolymer_pom1, depolymer_pom2
   real(r8) :: doc_sorb
+  real(r8) :: kd71(1:7),ss7(1:7),ee1,siej71(1:7)
+  real(r8) :: kd23(1:2,1:3),ss2(1:2),ee3(1:3),siej23(1:2,1:3)
   integer  :: jj
+  type(betr_status_type)  :: bstatus
   associate(                                            &
     lit1             => simic_bgc_index%lit1              , &
     lit2             => simic_bgc_index%lit2              , &
@@ -402,48 +406,41 @@ contains
   o2w = ystates1(lid_o2) / this%o2_w2b
   fo2= o2w/(Kaff_o2+o2w+alpha_B2T*ystates1(lid_micbl))
   Minsurf = max(Minsurf0 -ystates1(lid_pom),0._r8)
-  denorm = ystates1(lid_micbl) * alpha_B2E /(1._r8 + ystates1(lit1)/Kaff_EP_LIT1+ &
-     ystates1(lit2)/Kaff_EP_LIT2 + ystates1(lit3)/Kaff_EP_LIT3 + ystates1(cwd)/Kaff_EP_CWD + &
-     ystates1(lid_micbd)/Kaff_ED + ystates1(lid_micbl)*alpha_B2E/Kaff_ED+ &
-     ystates1(lid_pom)/Kaff_EP_POM+Minsurf/Kaff_EM) ! + ystates1(lid_doc)/Kaff_BC)
 
-  vmax_EP_L1_f = vmax_EP_LIT1 * tfng
-  vmax_EP_L2_f = vmax_EP_LIT2 * tfng
-  vmax_EP_L3_f = vmax_EP_LIT3 * tfng
-  vmax_EP_CWD_f= vmax_EP_CWD * tfng
-  vmax_EP_POM_f= vmax_EP_POM * tfng
-  vmax_EP_MD_f = vmax_EP_MD * tfng
-  depolymer_l1 = denorm/Kaff_EP_LIT1 * ystates1(lit1) * vmax_EP_L1_f
-  depolymer_l2 = denorm/Kaff_EP_LIT2 * ystates1(lit2) * vmax_EP_L2_f
-  depolymer_l3 = denorm/Kaff_EP_LIT3 * ystates1(lit3) * vmax_EP_L3_f
-  depolymer_cwd= denorm/Kaff_EP_CWD  * ystates1(cwd)  * vmax_EP_CWD_f
-  depolymer_md = denorm /Kaff_ED
-  depolymer_md = depolymer_md * ystates1(lid_micbd) * vmax_EP_MD_f
-  depolymer_pom1 = denorm /Kaff_EP_POM * ystates1(lid_pom) * vmax_EP_POM_f
+  kd71=(/Kaff_EP_LIT1,Kaff_EP_LIT2,Kaff_EP_LIT3,Kaff_EP_CWD,Kaff_ED,Kaff_EP_POM,Kaff_EM/)
+  ss7=(/ystates1(lit1),ystates1(lit2),ystates1(lit3),ystates1(cwd),ystates1(lid_micbd),&
+    ystates1(lid_pom),Minsurf/)
+  ee1=ystates1(lid_micbl) * alpha_B2E
+
+  call ecacomplex(kd71,ss7,ee1,siej71)
+
+  depolymer_l1   = siej71(1) * vmax_EP_LIT1 * tfng
+  depolymer_l2   = siej71(2) * vmax_EP_LIT2 * tfng
+  depolymer_l3   = siej71(3) * vmax_EP_LIT3 * tfng
+  depolymer_cwd  = siej71(4) * vmax_EP_CWD * tfng
+  depolymer_md   = siej71(5) * vmax_EP_MD * tfng
+  depolymer_pom1 = siej71(6) * vmax_EP_POM * tfng
 
   !potential respiration
-  Rh_pot = vmax_BC * ystates1(lid_micbl) * alpha_B2T * ystates1(lid_doc) / &
-    (Kaff_BC+ystates1(lid_doc) + ystates1(lid_micbl) * alpha_B2T + &
-    Minsurf * Kaff_BC/Kaff_CM+ystates1(lid_micbd) * alpha_B2T) * fo2 * tfng
+  kd23(1,1:3)=(/Kaff_BC, Kaff_BC, Kaff_CM/)
+  kd23(2,1:3)=(/0._r8,Kaff_EM,0._r8/)
+  ee3(1:3)=(/ystates1(lid_micbl) * alpha_B2T, ystates1(lid_micbd) * alpha_B2T, Minsurf/)
+  ss2(1:2)= (/ystates1(lid_doc),ystates1(lid_micbl) * alpha_B2E/)
+  call ecacomplex(kd23,ss2,ee3,siej23,bstatus)
 
-  denorm = 1._r8+ystates1(lid_doc)/Kaff_CM + ystates1(lid_micbl) * alpha_B2T / Kaff_BC + &
-      ystates1(lid_micbd) * alpha_B2T / Kaff_BC + Minsurf/Kaff_CM + &
-      ystates1(lid_micbl) * alpha_B2E/Kaff_EM
-
-  doc_sorb = fpom_vmax * Minsurf * ystates1(lid_doc) / (denorm * Kaff_CM)
+  doc_uptake = vmax_BC * siej23(1,1) * fo2 * tfng
+  doc_sorb = fpom_vmax * siej23(1,2)
 
   !maintenance respiration
   Rm_pot = Rm0_spmic * ystates1(lid_micbl) * tfnr
 
   !potential growth respiration
-  Rh_gpot = Rh_pot - Rm_pot
-  Rmx = Rm_pot - Rh_pot
-  doc_uptake = Rh_pot
-
-  if(Rh_gpot > 0._r8)then
-    !active growth
-    doc_uptake = doc_uptake + Rh_gpot * doc_cue/(1._r8-doc_cue)
+  if(doc_uptake > Rm_pot)then
+    Rh_pot = Rm_pot + (doc_uptake-Rm_pot)*(1._r8-doc_cue)
+  else
+    Rh_pot = doc_uptake
   endif
+  Rmx = Rm_pot - doc_uptake
 
   !compute mortality
   mort = Mrt_spmic * ystates1(lid_micbl)

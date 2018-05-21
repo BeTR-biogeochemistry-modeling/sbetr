@@ -279,45 +279,11 @@ contains
     c_l=1
     if(this%do_soibgc())then
       if(spinup_state==1)then
-        if(AA_spinup_on)then
-        !AD spinup
-          if(year<=kyr_spinup)then
-            !period does nothing to spinup scalar
-            betr_spinup_state=1
-          elseif(year<=kyr_spinup*2)then
-            !period accumulate spinup scalar
-            betr_spinup_state=2
-          else
-            !period apply spinup scalar
-            betr_spinup_state=3
-            this%spinup_count=this%spinup_count+1
-            this%spinup_count= min(this%spinup_count,3)
-          endif
-        else
-          betr_spinup_state=1
-        endif
         do c = bounds%begc, bounds%endc
           this%biophys_forc(c)%dom_scalar_col(c_l)=this%dom_scalar_col(c)
         enddo
       else
         betr_spinup_state=0
-      endif
-
-      if(betr_spinup_state>=2)then
-        if(year==kyr_spinup+1 .and. mon==1 .and. day==1 .and. is_beg_curr_day())then
-          this%scalaravg_col(:) = 0._r8
-        endif
-        do c = bounds%begc, bounds%endc
-          this%biophys_forc(c)%scalaravg_col(c_l) = this%scalaravg_col(c)
-        enddo
-      endif
-      if(betr_spinup_state==3 .and. this%spinup_count==1)then
-        enter_spinup =.true.
-        do c = bounds%begc, bounds%endc
-          if(.not. this%active_col(c))cycle
-          call this%betr(c)%set_bgc_spinup(betr_bounds, 1,  betr_nlevtrc_soil, this%biophys_forc(c), spinup_stage=2)
-        enddo
-        enter_spinup=.false.
       endif
     endif
     call this%bsimstatus%reset()
@@ -360,26 +326,13 @@ contains
       call endrun(msg=this%bsimstatus%print_msg())
     endif
     if(betr_spinup_state>0)then
+      !the following needs double check for whether to keep or remove it.
       do c = bounds%begc, bounds%endc
         if(.not. this%active_col(c))cycle
         this%dom_scalar_col(c) = this%biophys_forc(c)%dom_scalar_col(c_l)
       enddo
     endif
-    if(betr_spinup_state>=2)then
-      c_l=1
-      do c = bounds%begc, bounds%endc
-        if( this%active_col(c)) then
-          this%scalaravg_col(c)=this%biophys_forc(c)%scalaravg_col(c_l)
-        endif
-      enddo
-      if(year==kyr_spinup*2 .and. mon==12 .and. day==31 .and. is_end_curr_day())then
-        do c = bounds%begc, bounds%endc
-          if(.not. this%active_col(c))cycle
-          this%scalaravg_col(c)= max(this%scalaravg_col(c),1.e-2_r8)
-          this%dom_scalar_col(c) = this%dom_scalar_col(c) * this%scalaravg_col(c)
-        enddo
-      endif
-    endif
+
   end subroutine ALMStepWithoutDrainage
 
   !---------------------------------------------------------------------------------
@@ -1264,8 +1217,8 @@ contains
       waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
       chemstate_vars, soilstate_vars)
 
-
   if(present(phosphorusstate_vars))then
+    !the following is used for setting P upon exiting spinup
     c_l=1
     do c = bounds%begc, bounds%endc
       this%biophys_forc(c)%solutionp_vr_col(c_l,1:nlevsoi) = phosphorusstate_vars%solutionp_vr_col(c,1:nlevsoi)

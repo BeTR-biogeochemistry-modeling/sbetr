@@ -117,7 +117,7 @@ module BGCReactionsMod
   end subroutine UpdateParas_interface
   !-------------------------------------------------------------------------------
   subroutine set_bgc_spinup_interface(this, bounds, lbj, ubj,  biophysforc, &
-  tracers, tracerstate_vars, spinup_stage)
+  tracers, tracerstate_vars)
     use tracerstatetype        , only : tracerstate_type
     use BeTRTracerType        , only : betrtracer_type
     use BeTR_decompMod        , only : betr_bounds_type
@@ -132,7 +132,7 @@ module BGCReactionsMod
     type(betr_biogeophys_input_type)        , intent(inout) :: biophysforc
     type(BeTRtracer_type)                   , intent(inout) :: tracers
     type(tracerstate_type)                  , intent(inout) :: tracerstate_vars
-    integer                                 , intent(in) :: spinup_stage
+
   end subroutine set_bgc_spinup_interface
      !----------------------------------------------------------------------
      subroutine calc_bgc_reaction_interface(this, bounds, col, lbj, ubj, num_soilc, filter_soilc, &

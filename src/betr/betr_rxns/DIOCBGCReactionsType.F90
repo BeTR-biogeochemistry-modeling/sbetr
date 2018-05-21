@@ -114,7 +114,7 @@ contains
   end subroutine set_kinetics_par
   !-------------------------------------------------------------------------------
   subroutine set_bgc_spinup(this, bounds, lbj, ubj,  biophysforc, &
-  tracers, tracerstate_vars, spinup_stage)
+  tracers, tracerstate_vars)
     use tracerstatetype        , only : tracerstate_type
     use BeTRTracerType        , only : betrtracer_type
   implicit none
@@ -124,7 +124,7 @@ contains
     type(betr_biogeophys_input_type)        , intent(inout) :: biophysforc
     type(BeTRtracer_type)                   , intent(inout) :: tracers
     type(tracerstate_type)                  , intent(inout) :: tracerstate_vars
-    integer, intent(in) :: spinup_stage
+
 
     if (this%dummy_compiler_warning) continue
     if (bounds%begc > 0) continue

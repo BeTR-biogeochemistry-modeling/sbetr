@@ -140,11 +140,11 @@ contains
   this%cue_cwd  = 0.3_r8
   this%cue_bm   = 0.5_r8
   this%Rm0_spmic= 1.e-7_r8  !s-1 /
-  this%Mrt_spmic= 1.e-7_r8
+  this%Mrt_spmic= 4.e-8_r8
   this%f_mic2C = 0.3_r8
   this%f_mic2D = 0.7_r8
-  this%vmax_EP_L = 1.e-4_r8
-  this%vmax_BC = 8.e-5_r8
+  this%vmax_EP_L = 4.e-5_r8
+  this%vmax_BC = 3.e-5_r8
   this%alpha_B2E = 0.05_r8
   this%alpha_B2T = 0.05_r8
   this%Kaff_CM  = 1.e-1_r8
@@ -153,7 +153,7 @@ contains
   this%Kaff_o2  = 0.22_r8
   this%Kmort_MB = 0.01_r8
   this%fpom_vmax= 2.e-6_r8              !s-1
-  this%fpom_desorb=this%fpom_vmax*1.e-3_r8
+  this%fpom_desorb=this%fpom_vmax*3.e-3_r8
   end subroutine set_defpar_default
 
 

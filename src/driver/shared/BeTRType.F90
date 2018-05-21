@@ -553,7 +553,7 @@ contains
     end associate
   end subroutine step_with_drainage
   !--------------------------------------------------------------------------------
-  subroutine set_bgc_spinup(this, bounds, lbj, ubj,  biophysforc, spinup_stage)
+  subroutine set_bgc_spinup(this, bounds, lbj, ubj,  biophysforc)
 
   implicit none
   ! !ARGUMENTS:
@@ -561,14 +561,9 @@ contains
   type(bounds_type)           , intent(in)    :: bounds
   integer                     , intent(in)    :: ubj, lbj
   type(betr_biogeophys_input_type) , intent(inout)    :: biophysforc
-  integer, optional, intent(in) :: spinup_stage
 
-  integer :: spinup_stage_loc
-
-  spinup_stage_loc=0
-  if(present(spinup_stage))spinup_stage_loc=spinup_stage
   call this%bgc_reaction%set_bgc_spinup(bounds, lbj, ubj,  biophysforc, &
-    this%tracers, this%tracerstates, spinup_stage_loc)
+    this%tracers, this%tracerstates)
 
   end subroutine set_bgc_spinup
   !--------------------------------------------------------------------------------

@@ -158,7 +158,7 @@ contains
 
   !-------------------------------------------------------------------------------
   subroutine set_bgc_spinup(this, bounds, lbj, ubj, biophysforc, &
-    tracers, tracerstate_vars, spinup_stage)
+    tracers, tracerstate_vars)
 
   !
   !DESCRIPTION
@@ -177,14 +177,12 @@ contains
   type(betr_biogeophys_input_type)        , intent(inout) :: biophysforc
   type(BeTRtracer_type)                   , intent(inout) :: tracers
   type(tracerstate_type)                  , intent(inout) :: tracerstate_vars
-  integer                                 , intent(in) :: spinup_stage
   integer :: kk, c, j, c_l
 
   associate(                                                           &
    tracer_conc_mobile_col  => tracerstate_vars%tracer_conc_mobile_col, &
    tracer_conc_frozen_col  => tracerstate_vars%tracer_conc_frozen_col, &
    scalaravg_col           => biophysforc%scalaravg_col              , &
-   dom_scalar              => biophysforc%dom_scalar_col             , &
    nelm                    => this%ecacnp_bgc_index%nelms            , &
    c_loc                   => this%ecacnp_bgc_index%c_loc            , &
    n_loc                   => this%ecacnp_bgc_index%n_loc            , &
@@ -195,12 +193,6 @@ contains
   )
 
 
-  if(.not. exit_spinup .and. betr_spinup_state/=0 .and. spinup_stage/=2) then
-    do c = bounds%begc, bounds%endc
-      dom_scalar(c)=1._r8/ecacnp_para%spinup_factor(9)
-    enddo
-  endif
-
   if(betr_spinup_state/=0)then
     move_scalar(tracers%id_trc_Bm) = ecacnp_para%spinup_factor(7)
     move_scalar(tracers%id_trc_som) = ecacnp_para%spinup_factor(8)
@@ -210,90 +202,38 @@ contains
   if(enter_spinup)then
     !scale the state variables into the fast space, and provide the scalar to configure
     !tracers
-    if(betr_spinup_state==3)then
-      !the following assume scalaravg_col is same for all columns, which is valid when coupled to lsm.
-      c_l=1
-      move_scalar(tracers%id_trc_Bm)=move_scalar(tracers%id_trc_Bm)/scalaravg_col(c_l)
-      move_scalar(tracers%id_trc_pom)= move_scalar(tracers%id_trc_pom)/ scalaravg_col(c_l)
-      move_scalar(tracers%id_trc_som) = move_scalar(tracers%id_trc_som) / scalaravg_col(c_l)
-    endif
+
     do j = lbj, ubj
-       do c = bounds%begc, bounds%endc
-         !som1
-         if(spinup_stage/=2)then
-           call rescale_tracer_group(c, j, tracers%id_trc_beg_Bm, &
+      do c = bounds%begc, bounds%endc
+        !som1
+        call rescale_tracer_group(c, j, tracers%id_trc_beg_Bm, &
              tracers%id_trc_end_Bm, nelm, 1._r8/ecacnp_para%spinup_factor(7))
 
-           call rescale_tracer_group(c, j, tracers%id_trc_beg_som, &
+        call rescale_tracer_group(c, j, tracers%id_trc_beg_som, &
              tracers%id_trc_end_som, nelm, 1._r8/ecacnp_para%spinup_factor(8))
 
-! the treatment of dom will be revised
-!           call rescale_tracer_group(c, j, tracers%id_trc_beg_dom, &
-!             tracers%id_trc_end_dom, nelm, 1._r8/ecacnp_para%spinup_factor(9))
-
-           call rescale_tracer_group(c, j, tracers%id_trc_beg_pom, &
+        call rescale_tracer_group(c, j, tracers%id_trc_beg_pom, &
              tracers%id_trc_end_pom, nelm, 1._r8/ecacnp_para%spinup_factor(9))
-
-         endif
-
-         if(betr_spinup_state==3)then
-           !som1
-           call rescale_tracer_group(c, j, tracers%id_trc_beg_Bm, &
-             tracers%id_trc_end_Bm, nelm, scalaravg_col(c))
-
-           call rescale_tracer_group(c, j, tracers%id_trc_beg_som, &
-             tracers%id_trc_end_som, nelm, scalaravg_col(c))
-
-!           call rescale_tracer_group(c, j, tracers%id_trc_beg_dom, &
-!             tracers%id_trc_end_dom, nelm, scalaravg_col(c))
-
-           call rescale_tracer_group(c, j, tracers%id_trc_beg_pom, &
-             tracers%id_trc_end_pom, nelm, scalaravg_col(c))
-
-         endif
-       enddo
+      enddo
     enddo
   endif
   if(exit_spinup)then
     !scale the state variable back to the slow space
-     do c = bounds%begc, bounds%endc
-       dom_scalar(c) = 1._r8
-     enddo
-     call this%init_iP_prof(bounds, lbj, ubj, biophysforc, tracers, tracerstate_vars)
-     do j = lbj, ubj
-       do c = bounds%begc, bounds%endc
-         !som1
-         call rescale_tracer_group(c, j, tracers%id_trc_beg_Bm, &
+    call this%init_iP_prof(bounds, lbj, ubj, biophysforc, tracers, tracerstate_vars)
+    do j = lbj, ubj
+      do c = bounds%begc, bounds%endc
+        !som1
+        call rescale_tracer_group(c, j, tracers%id_trc_beg_Bm, &
              tracers%id_trc_end_Bm, nelm, ecacnp_para%spinup_factor(7))
 
-         call rescale_tracer_group(c, j, tracers%id_trc_beg_som, &
+        call rescale_tracer_group(c, j, tracers%id_trc_beg_som, &
              tracers%id_trc_end_som, nelm, ecacnp_para%spinup_factor(8))
 
-!         call rescale_tracer_group(c, j, tracers%id_trc_beg_dom, &
-!             tracers%id_trc_end_dom, nelm, ecacnp_para%spinup_factor(9))
-
-         call rescale_tracer_group(c, j, tracers%id_trc_beg_pom, &
+        call rescale_tracer_group(c, j, tracers%id_trc_beg_pom, &
              tracers%id_trc_end_pom, nelm, ecacnp_para%spinup_factor(9))
 
-         if(betr_spinup_state==3)then
-           !som1
-           call rescale_tracer_group(c, j, tracers%id_trc_beg_Bm, &
-              tracers%id_trc_end_Bm, nelm, 1._r8/ scalaravg_col(c))
-
-           call rescale_tracer_group(c, j, tracers%id_trc_beg_som, &
-              tracers%id_trc_end_som, nelm, 1._r8/ scalaravg_col(c))
-
-!           call rescale_tracer_group(c, j, tracers%id_trc_beg_dom, &
-!              tracers%id_trc_end_dom, nelm, 1._r8/ scalaravg_col(c))
-
-           call rescale_tracer_group(c, j, tracers%id_trc_beg_pom, &
-              tracers%id_trc_end_pom, nelm, 1._r8/ scalaravg_col(c))
-
-         endif !end betr_spinup_state
-
-       enddo
+      enddo
     enddo
-
   endif
 
   end associate
