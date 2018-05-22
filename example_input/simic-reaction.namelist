@@ -23,12 +23,12 @@
 /
 
 &forcing_inparm
-  forcing_filename = '../regression-tests/input-data/single_pt_example.bgc.halfhour.forc.nc'
+  forcing_filename = '../input_data/single_pt_example.bgc.halfhour.forc.nc'
   use_rootsoit=.false.
 /
 
 &betr_grid
-  grid_data_filename = '../regression-tests/input-data/single_pt_example.grid.cdl.nc'
+  grid_data_filename = '../input_data/single_pt_example.grid.cdl.nc'
 /
 
 &regression_test

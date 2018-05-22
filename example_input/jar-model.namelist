@@ -12,5 +12,5 @@
 /
 
 &forcing_inparm
-  forcing_filename = '../regression-tests/input-data/jarmodel_example.halfhour.forcing.nc'
+  forcing_filename = '../input_data/jarmodel_example.halfhour.forcing.nc'
 /

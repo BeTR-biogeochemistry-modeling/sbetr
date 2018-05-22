@@ -16,11 +16,20 @@ begin
   allpfts@long_nmae="allpft index"
   allpfts@units    ="none"
 
+  alllithos          = ispan(1,1,1)
+  alllithos!0        ="alllithos"
+  alllithos@long_nmae="alllitho index"
+  alllithos@units    ="none"
+
   pfts          = ispan(1,25,1)
   pfts!0        ="pfts"
   pfts@long_nmae="pft index"
   pfts@units    ="none"
 
+  lithos          = ispan(1,16,1)
+  lithos!0        ="lithos"
+  lithos@long_nmae="lithology index"
+  lithos@units    ="none"
 
   surfsoil          = ispan(1,2,1)
   surfsoil!0        ="surfsoil"
@@ -32,6 +41,19 @@ begin
   dim_unlimited=(/False/)
   filedimdef(fout,dim_names,dims,dim_unlimited)
   delete(dims)
+
+  dims=dimsizes(alllithos)
+  dim_names=(/alllithos!0/)
+  dim_unlimited=(/False/)
+  filedimdef(fout,dim_names,dims,dim_unlimited)
+  delete(dims)
+
+  dims=dimsizes(lithos)
+  dim_names=(/lithos!0/)
+  dim_unlimited=(/False/)
+  filedimdef(fout,dim_names,dims,dim_unlimited)
+  delete(dims)
+
   dims=dimsizes(surfsoil)
   dim_names=(/surfsoil!0/)
   dim_unlimited=(/False/)
@@ -92,6 +114,13 @@ begin
   filevardef(fout,"vmax_decomp_p","float",(/allpfts!0/))
   filevardef(fout,"vmax_nit","float",(/allpfts!0/))
   filevardef(fout,"vmax_den","float",(/allpfts!0/))
+;  filevardef(fout,"rock_name","float",(/lithos!0/))
+  filevardef(fout,"b_weath","float",(/lithos!0/))
+  filevardef(fout,"f_shield","float",(/lithos!0/))
+  filevardef(fout,"P_weip","float",(/lithos!0/))
+  filevardef(fout,"E_weath","float",(/lithos!0/))
+  filevardef(fout,"T_ref_weath","float",(/alllithos!0/))
+
 ;---define variable attributes
 
    fatt=True
@@ -215,11 +244,9 @@ begin
    fatt@units = "none"
    filevarattdef(fout,"rf_s1s2a_bgc", fatt)
 
-
    fatt@long_name="regression parameter b for computing respiration efficiency during s1->s2"
    fatt@units = "none"
    filevarattdef(fout,"rf_s1s2b_bgc", fatt)
-
 
    fatt@long_name="intrinsic decay rate of pool lit1"
    fatt@units = "1/year"
@@ -288,6 +315,30 @@ begin
    fatt@long_name="specific max denitrification rate"
    fatt@units = "1/day"
    filevarattdef(fout,"vmax_den", fatt)
+
+;   fatt@long_name="lithological name of the rocks"
+;   fatt@units = "none"
+;   filevarattdef(fout,"rock_name", fatt)
+
+   fatt@long_name="weathering b parameter"
+   fatt@units = "ton km-2 mm-1"
+   filevarattdef(fout,"b_weath", fatt)
+
+   fatt@long_name="weathering shileding factor"
+   fatt@units = "none"
+   filevarattdef(fout,"f_shield", fatt)
+
+   fatt@long_name="P-content in % of the wathering flux"
+   fatt@units = "none"
+   filevarattdef(fout,"P_weip", fatt)
+
+   fatt@long_name="activation energy of weathering"
+   fatt@units = "kJ/mol"
+   filevarattdef(fout,"E_weath", fatt)
+
+   fatt@long_name="Reference temperature for rock weathering"
+   fatt@units = "K"
+   filevarattdef(fout,"T_ref_weath", fatt)
 
 ;   if (False) then
    fout->cwd_fcel=(/0.76/)
@@ -362,6 +413,14 @@ begin
    fout->vmax_decomp_p = (/1.e-3/)
    fout->vmax_nit = (/0.67/)
    fout->vmax_den = (/1.8/)
+   fout->b_weath =(/0.021333,0.04054,0.027799,0.04054,0.057721,0.151243, \
+                    0.020762,0.032036,0.02691,0.04054,0.      ,0.076876, \
+                    0.02691,0.151243,0.,0./)
+   fout->f_shield=(/0.5,0.7,0.4,0.6,0.5,0.8,0.5,0.5,0.4,0.6,0.,0.8,0.8,1.0,0.,0./)
+   fout->E_weath =(/60.0,50.0,60.0,50.,60,60,60,60,60,50,0,46,60,60,0,0/)
+   fout->P_weip =(/0.052,0.135,0.052,0.227,0.052,0.048,0.031,0.079,0.07,0.135,0,0.227,0.227,0.026,0,0/)
+   fout->T_ref_weath=(/284.15/)
+
 ;   end if
    delete(fout)
    end_write_time = get_cpu_time()
