@@ -43,7 +43,7 @@ implicit none
     real(r8), pointer :: qflx_h2osfc2topsoi_col   (:)      => null() ! col liquid water coming from surface standing water top soil (mm H2O/s)
     real(r8), pointer :: qflx_snow2topsoi_col     (:)      => null() ! col liquid water coming from residual snow to topsoil (mm H2O/s)
     real(r8), pointer :: qflx_tran_veg_patch      (:)      => null()
-    real(r8), pointer :: qflx_runoff_tot_col      (:)      => null() !col total runoff
+    real(r8), pointer :: qflx_runoff_col          (:)      => null() !col total runoff
     !temperature
     real(r8), pointer :: t_soisno_col(:,:)                 => null()      !soil temperature (Kelvin)  (-nlevsno+1:nlevgrnd)
     real(r8), pointer :: t_soi_10cm(:)                     => null()  !soil temperature in top 10cm of soil (Kelvin)
@@ -211,15 +211,15 @@ contains
   allocate(this%qflx_tran_veg_patch      (begp:endp         ) )
   allocate(this%qflx_rootsoi_col         (begc:endc,lbj:ubj ) ) ! col root and soil water exchange [mm H2O/s] [+ into root]
   allocate(this%qflx_rootsoi_frac_patch  (begp:endp,lbj:ubj ) ) ! col root and soil water exchange [mm H2O/s] [+ into root]
-  allocate(this%qflx_runoff_tot_col      (begc:endc))
+  allocate(this%qflx_runoff_col          (begc:endc))
   !temperature
-  allocate(this%t_soi_10cm(                     begc:endc         )) !soil temperature in top 10cm of soil (Kelvin)
-  allocate(this%t_veg_patch              (      begp:endp         )) ! patch vegetation temperature (Kelvin)
-  allocate(this%t_soisno_col(                   begc:endc,lbj:ubj )) !soil temperature (Kelvin)  (-nlevsno+1:nlevgrnd)
+  allocate(this%t_soi_10cm               (begc:endc)) !soil temperature in top 10cm of soil (Kelvin)
+  allocate(this%t_veg_patch              (begp:endp)) ! patch vegetation temperature (Kelvin)
+  allocate(this%t_soisno_col             (begc:endc,lbj:ubj)) !soil temperature (Kelvin)  (-nlevsno+1:nlevgrnd)
 
   !soilhydrology
-  allocate(this%qflx_bot_col      (             begc:endc)  )        ! bottom of soil col flux, (mm/s)
-  allocate(this%fracice_col       (             begc:endc,lbj:ubj) ) ! col fractional impermeability (-)
+  allocate(this%qflx_bot_col      (begc:endc))        ! bottom of soil col flux, (mm/s)
+  allocate(this%fracice_col       (begc:endc,lbj:ubj)) ! col fractional impermeability (-)
 
   !atm2lnd
   allocate(this%forc_pbot_downscaled_col      ( begc:endc)  ) ! downscaled atm pressure (Pa)

@@ -32,13 +32,13 @@ contains
    f_shield => bgc_con%f_shield       , &
    P_weip   => bgc_con%P_weip         , &
    t_soi_10cm=> biophysforc%t_soi_10cm, &
-   qflx_runoff_tot_col=> biophysforc%qflx_runoff_tot_col, &
+   qflx_runoff_col=> biophysforc%qflx_runoff_col, &
    lithotype => biophysforc%lithotype_col &
   )
   do c = begc, endc
     ft = exp(-E_weath(lithotype(c))*(1._r8/t_soi_10cm(c)-1._r8/T_ref_weath))
 
-    P_weather_flx(c) = b_weath(lithotype(c)) * qflx_runoff_tot_col(c) * ft * &
+    P_weather_flx(c) = b_weath(lithotype(c)) * qflx_runoff_col(c) * ft * &
       f_shield(lithotype(c)) * P_weip(lithotype(c)) / patomw
   enddo
   end associate
