@@ -54,6 +54,12 @@ implicit none
   real(r8), pointer :: frac_p_sec_to_sol(:)    => null()   !fraction of released secondary phosphorus that goes into soluble form
   real(r8), pointer :: minp_secondary_decay(:) => null()   !decay rate of secondary phosphorus
 
+  real(r8), pointer :: E_weath(:)=> null()
+  real(r8) :: T_ref_weath
+  real(r8), pointer :: b_weath(:)=> null()
+  real(r8), pointer :: f_shield(:) => null()
+  real(r8), pointer :: P_weip(:) => null()
+
  contains
    procedure, public  :: Init => bgc_con_init
    procedure, public  :: readPars => readPars_bcon
@@ -130,6 +136,12 @@ contains
   allocate(this%minp_secondary_decay(0:betr_max_soilorder))
   allocate(this%vmax_minp_soluble_to_secondary(0:betr_max_soilorder))
   allocate(this%frac_p_sec_to_sol(0:betr_max_soilorder))
+
+  allocate(this%E_weath(1:16))
+  allocate(this%b_weath(1:16))
+  allocate(this%f_shield(1:16))
+  allocate(this%P_weip(1:16))
+
   !the following will be actually calculated from CNP bgc
   end subroutine InitAllocate_bcon
   !--------------------------------------------------------------------

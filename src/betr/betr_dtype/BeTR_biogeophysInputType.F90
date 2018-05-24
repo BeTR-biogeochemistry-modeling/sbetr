@@ -43,6 +43,7 @@ implicit none
     real(r8), pointer :: qflx_h2osfc2topsoi_col   (:)      => null() ! col liquid water coming from surface standing water top soil (mm H2O/s)
     real(r8), pointer :: qflx_snow2topsoi_col     (:)      => null() ! col liquid water coming from residual snow to topsoil (mm H2O/s)
     real(r8), pointer :: qflx_tran_veg_patch      (:)      => null()
+    real(r8), pointer :: qflx_runoff_tot_col      (:)      => null() !col total runoff
     !temperature
     real(r8), pointer :: t_soisno_col(:,:)                 => null()      !soil temperature (Kelvin)  (-nlevsno+1:nlevgrnd)
     real(r8), pointer :: t_soi_10cm(:)                     => null()  !soil temperature in top 10cm of soil (Kelvin)
@@ -94,6 +95,7 @@ implicit none
     real(r8), pointer :: labilep_vr_col(:,:) => null()
     real(r8), pointer :: secondp_vr_col(:,:) => null()
     real(r8), pointer :: occlp_vr_col(:,:) => null()
+    integer, pointer  :: lithotype_col(:) => null()
     !carbon fluxes
     type(betr_carbonflux_type) :: c12flx
     type(betr_carbonflux_type) :: c13flx
@@ -209,7 +211,7 @@ contains
   allocate(this%qflx_tran_veg_patch      (begp:endp         ) )
   allocate(this%qflx_rootsoi_col         (begc:endc,lbj:ubj ) ) ! col root and soil water exchange [mm H2O/s] [+ into root]
   allocate(this%qflx_rootsoi_frac_patch  (begp:endp,lbj:ubj ) ) ! col root and soil water exchange [mm H2O/s] [+ into root]
-
+  allocate(this%qflx_runoff_tot_col      (begc:endc))
   !temperature
   allocate(this%t_soi_10cm(                     begc:endc         )) !soil temperature in top 10cm of soil (Kelvin)
   allocate(this%t_veg_patch              (      begp:endp         )) ! patch vegetation temperature (Kelvin)
@@ -252,7 +254,7 @@ contains
   allocate(this%watfc_col            (begc:endc,lbj:ubj) ) ! col volumetric soil water at field capacity (nlevsoi)
   allocate(this%sucsat_col           (begc:endc,lbj:ubj) ) ! col minimum soil suction (mm) (nlevgrnd)
   allocate(this%rootfr_patch         (begp:endp,lbj:ubj) ) ! patch fraction of roots in each soil layer (nlevgrnd)
-
+  allocate(this%lithotype_col        (begc:endc))
   allocate(this%solutionp_vr_col(begc:endc,lbj:ubj))
   allocate(this%labilep_vr_col(begc:endc,lbj:ubj))
   allocate(this%secondp_vr_col(begc:endc,lbj:ubj))

@@ -195,7 +195,7 @@ contains
   subroutine AppSetSpinup()
 
   use ecacnpParaType  , only : ecacnp_para
-  use cdomParaType  , only : cdom_para
+  use cdomParaType    , only : cdom_para
   use tracer_varcon  , only : reaction_method
   implicit none
 
