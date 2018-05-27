@@ -569,6 +569,7 @@ implicit none
     call copy_name(this%nom_pools, list_pool, this%ompoolnames(1:this%nom_pools))
     call copy_name_type(this%nstvars, list_name, this%vartypes(1:this%nstvars))
 !    call list_disp(list_name);call list_disp(list_pool);call list_disp(list_unit)
+!    pause
     call list_free(list_name)
     call list_free(list_pool)
     call list_free(list_unit)

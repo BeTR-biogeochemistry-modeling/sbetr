@@ -25,6 +25,7 @@ contains
     !USES
     use ecacnpBGCType, only : create_jarmodel_ecacnp
     use simicBGCType,  only : create_jarmodel_simicbgc
+    use cdomBGCType, only : create_jarmodel_cdom
     use BeTRJarModel      , only : jar_model_type
     implicit none
     !ARGUMENTS
@@ -36,6 +37,8 @@ contains
           allocate(jarmodel, source=create_jarmodel_ecacnp())
        case ("simic")
           allocate(jarmodel, source=create_jarmodel_simicbgc())
+       case ("cdom")
+          allocate(jarmodel, source=create_jarmodel_cdom())
        case default
           write(iulog, *) "ERROR: unknown jarmodel type '", &
                trim(jarmodel_name), "'."
@@ -53,6 +56,7 @@ contains
     use BiogeoConType , only : BiogeoCon_type
     use ecacnpParaType  , only : create_jarpars_ecacnp
     use simicParaType   , only : create_jarpars_simic
+    use cdomParaType   , only : create_jarpars_cdom
     implicit none
     !ARGUMENTS
     character(len=*), intent(in)  :: jarmodel_name
@@ -63,6 +67,8 @@ contains
           allocate(jarpars, source=create_jarpars_ecacnp())
        case ("simic")
           allocate(jarpars, source=create_jarpars_simic())
+       case ("cdom")
+          allocate(jarpars, source=create_jarpars_cdom())
        case default
           write(iulog, *) "ERROR: unknown jarmodel type '", &
                trim(jarmodel_name), "'."

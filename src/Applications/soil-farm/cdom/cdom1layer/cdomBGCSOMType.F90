@@ -50,9 +50,13 @@ implicit none
     real(r8) :: k_decay_cwd  !coarse root
     real(r8) :: k_decay_lwd  !large wood
     real(r8) :: k_decay_fwd  !fine branch wood
+    real(r8) :: Kaff_enz
+    real(r8) :: alpha_E
+    real(r8) :: alpha_T
     real(r8) :: rf_doms1_bgc
     real(r8) :: k_decay_dom
-    real(r8) :: km_mic_som
+    real(r8) :: Kaff_mic_dom
+    real(r8) :: Kaff_CM       !dom affinity to soil minerals
     logical  :: use_c13
     logical  :: use_c14
   contains
@@ -151,7 +155,8 @@ contains
   type(cdomPara_type) , intent(in)    :: biogeo_con
 
   this%k_decay_dom    = biogeo_con%k_decay_dom
-  this%km_mic_som     = biogeo_con%km_mic_som
+  this%Kaff_mic_dom   = biogeo_con%Kaff_mic_dom
+  this%Kaff_CM        = biogeo_con%Kaff_CM
   this%rf_l1s1_bgc    = biogeo_con%rf_l1s1_bgc
   this%rf_l2s1_bgc    = biogeo_con%rf_l2s1_bgc
   this%rf_l3s2_bgc    = biogeo_con%rf_l3s2_bgc
@@ -169,13 +174,15 @@ contains
   this%k_decay_lmet   =  biogeo_con%k_decay_lmet
   this%k_decay_lcel   =  biogeo_con%k_decay_lcel
   this%k_decay_llig   =  biogeo_con%k_decay_llig
-  this%k_decay_mic   =  biogeo_con%k_decay_mic
-  this%k_decay_pom   =  biogeo_con%k_decay_pom
-  this%k_decay_humus   =  biogeo_con%k_decay_humus
+  this%k_decay_mic    =  biogeo_con%k_decay_mic
+  this%k_decay_pom    =  biogeo_con%k_decay_pom
+  this%k_decay_humus  =  biogeo_con%k_decay_humus
   this%k_decay_cwd    =  biogeo_con%k_decay_cwd
   this%k_decay_lwd    =  biogeo_con%k_decay_lwd
   this%k_decay_fwd    =  biogeo_con%k_decay_fwd
-
+  this%alpha_E        =  biogeo_con%alpha_E
+  this%alpha_T        =  biogeo_con%alpha_T
+  this%Kaff_enz       =  biogeo_con%Kaff_enz
   this%def_cn(cdom_bgc_index%lmet) = biogeo_con%init_cn_met * natomw/catomw
   this%def_cn(cdom_bgc_index%lcel) = biogeo_con%init_cn_cel * natomw/catomw
   this%def_cn(cdom_bgc_index%llig) = biogeo_con%init_cn_lig * natomw/catomw
@@ -258,16 +265,18 @@ contains
 
   !local variables
   real(r8) :: pot_om_decay_rates(1:ncentpools)
-  integer :: kc, jj, lay, mic_c
+  integer :: kc, jj, lay, mic_c, dom_c
 
   associate(                                   &
     nelms => cdom_bgc_index%nelms,              &
     nom_tot_elms=> cdom_bgc_index%nom_tot_elms, &
     micbiom_beg=> cdom_bgc_index%micbiom_beg  , &
+    dom_beg    => cdom_bgc_index%dom_beg      , &
     c_loc => cdom_bgc_index%c_loc               &
   )
   call bstatus%reset()
   mic_c = micbiom_beg - 1 + c_loc
+  dom_c = dom_beg - 1 + c_loc
   if(is_surflit)then
     lay=1
   else
@@ -277,7 +286,7 @@ contains
   if (bstatus%check_status())return
 
   !calculate potential decay coefficient (1/s)
-  call this%calc_som_decay_k(lay, cdom_bgc_index, decompkf_eca, ystates(mic_c), k_decay)
+  call this%calc_som_decay_k(lay, cdom_bgc_index, decompkf_eca, ystates(mic_c), ystates(dom_c), k_decay)
 
   !calculate potential decay rates (mol C / s)
   call this%calc_som_decay_r(cdom_bgc_index, dtime, k_decay(1:ncentpools), &
@@ -401,12 +410,13 @@ contains
     cascade_matrix((dom-1)*nelms+c_loc   ,reac)   =   1._r8-f1
     cascade_matrix((dom-1)*nelms+n_loc   ,reac)   =  (1._r8-f1)*this%icn_ratios(pom)
     cascade_matrix((dom-1)*nelms+p_loc   ,reac)   =  (1._r8-f1)*this%icp_ratios(pom)
-    cascade_matrix((dom-1)*nelms+e_loc   ,reac)   =  rf_s2s1_bgc/(1._r8-f1)
+    cascade_matrix((dom-1)*nelms+e_loc   ,reac)   =  rf_s2s1_bgc*(1._r8-f1)
     !---------------------------------------------------------------------------
     !reaction produces microbes
     !reaction 5: dom -> mic + co2
     reac = dom_dek_reac
     cascade_matrix((dom-1)*nelms+c_loc   ,reac)   = -1._r8
+    cascade_matrix((dom-1)*nelms+e_loc   ,reac)   = -this%rf_doms1_bgc
     cascade_matrix((dom-1)*nelms+n_loc   ,reac)   = -this%icn_ratios(dom)
     cascade_matrix((dom-1)*nelms+p_loc   ,reac)   = -this%icp_ratios(dom)
     cascade_matrix(lid_co2               ,reac)   =  this%rf_doms1_bgc
@@ -550,7 +560,6 @@ contains
       c13_loc   => cdom_bgc_index%c13_loc     , & !
       c14_loc   => cdom_bgc_index%c14_loc     , & !
       dom       => cdom_bgc_index%dom           &
-
     )
     cascade_matrix((lsom-1)*nelms+c_loc   ,reac)  = -1._r8
     cascade_matrix((lsom-1)*nelms+n_loc   ,reac)  = -this%icn_ratios(lsom)
@@ -824,8 +833,9 @@ contains
     ! !LOCAL VARIABLES:
     integer :: jj, fc, c, j
     integer :: kc, kn
-    associate(                                        &
+    associate(                                      &
          nelms => cdom_bgc_index%nelms            , &
+         mic   => cdom_bgc_index%mic              , &
          nom_pools => cdom_bgc_index%nom_pools    , &
          c_loc => cdom_bgc_index%c_loc              &
     )
@@ -875,7 +885,7 @@ contains
 
   end subroutine apply_spinupf
   !-------------------------------------------------------------------------------
-  subroutine calc_som_decay_k(this, lay, cdom_bgc_index, decompkf_eca, micb, k_decay)
+  subroutine calc_som_decay_k(this, lay, cdom_bgc_index, decompkf_eca, micb, domc, k_decay)
 
   use cdomBGCIndexType       , only : cdom_bgc_index_type
   use cdomBGCDecompType      , only : Decompcdom_type
@@ -885,34 +895,48 @@ contains
   type(Decompcdom_type)      , intent(in)  :: decompkf_eca
   type(cdom_bgc_index_type)   , intent(in)  :: cdom_bgc_index
   real(r8)                   , intent(in)  :: micb
+  real(r8)                   , intent(in)  :: domc
   real(r8)                   , intent(out) :: k_decay(ncentpools)
   integer :: jj
-
+  real(r8), parameter :: rc=1.e-6_r8
+  real(r8), parameter :: rm=3.e-6_r8
+  real(r8) :: wamp, fmic
   associate(   &
-   t_scalar       => decompkf_eca%t_scalar        , & ! Intput: [real(r8) (:,:)   ]  soil temperature scalar for decomp
-   w_scalar       => decompkf_eca%w_scalar        , & ! Intput: [real(r8) (:,:)   ]  soil water scalar for decomp
+   tfnr           => decompkf_eca%tfnr            , & ! Intput: [real(r8) (:,:)   ]  soil temperature scalar for decomp
+   tfng           => decompkf_eca%tfng            , & ! Intput: [real(r8) (:,:)   ]  soil water scalar for decomp
    o_scalar       => decompkf_eca%o_scalar        , & ! Intput: [real(r8) (:,:)   ]  fraction by which decomposition is limited by anoxia
-   depth_scalar   => decompkf_eca%depth_scalar    , & ! Intput: [real(r8) (:,:)   ]  rate constant for decomposition (1./sec)
-   km_mic_som     => this%km_mic_som              , & !
-   lmet           => cdom_bgc_index%lmet           , & !
-   lcel           => cdom_bgc_index%lcel           , & !
-   llig           => cdom_bgc_index%llig           , & !
-   mic           => cdom_bgc_index%mic             , & !
-   pom           => cdom_bgc_index%pom             , & !
-   humus         => cdom_bgc_index%humus           , & !
-   cwd           => cdom_bgc_index%cwd             , & !
-   lwd           => cdom_bgc_index%lwd             , & !
-   fwd           => cdom_bgc_index%fwd               & !
+   Minsurf        => decompkf_eca%Minsurf         , & !
+   KM_OM          => decompkf_eca%KM_OM           , & !
+   enz_modifier   => decompkf_eca%enz_modifier    , &
+   filmt          => decompkf_eca%filmt           , & !
+   lmet           => cdom_bgc_index%lmet          , & !
+   lcel           => cdom_bgc_index%lcel          , & !
+   llig           => cdom_bgc_index%llig          , & !
+   mic            => cdom_bgc_index%mic           , & !
+   pom            => cdom_bgc_index%pom           , & !
+   humus          => cdom_bgc_index%humus         , & !
+   cwd            => cdom_bgc_index%cwd           , & !
+   lwd            => cdom_bgc_index%lwd           , & !
+   fwd            => cdom_bgc_index%fwd           , & !
+   dom            => cdom_bgc_index%dom           , & !
+   alpha_E        => this%alpha_E                 , & !
+   alpha_T        => this%alpha_T                 , & !
+   Kaff_CM        => this%Kaff_CM                 , & !
+   Kaff_mic_dom   => this%Kaff_mic_dom            , & !
+   Kaff_enz       => this%Kaff_enz                  & !
   )
-  k_decay(lmet) = this%k_decay_lmet(lay) * t_scalar * w_scalar * o_scalar * depth_scalar * micb/(km_mic_som+micb)
-  k_decay(lcel) = this%k_decay_lcel(lay) * t_scalar * w_scalar * o_scalar * depth_scalar * micb/(km_mic_som+micb)
-  k_decay(llig) = this%k_decay_llig(lay) * t_scalar * w_scalar * o_scalar * depth_scalar * micb/(km_mic_som+micb)
-  k_decay(mic) = this%k_decay_mic(lay) * t_scalar * w_scalar * o_scalar * depth_scalar * micb/(km_mic_som+micb)
-  k_decay(pom) = this%k_decay_pom * t_scalar * w_scalar * o_scalar * depth_scalar * micb/(km_mic_som+micb)
-  k_decay(humus) = this%k_decay_humus * t_scalar * w_scalar * o_scalar * depth_scalar * micb/(km_mic_som+micb)
-  k_decay(cwd)  = this%k_decay_cwd  * t_scalar * w_scalar * o_scalar * depth_scalar * micb/(km_mic_som+micb)
-  k_decay(lwd)  = this%k_decay_lwd  * t_scalar * w_scalar * o_scalar * depth_scalar * micb/(km_mic_som+micb)
-  k_decay(fwd)  = this%k_decay_fwd  * t_scalar * w_scalar * o_scalar * depth_scalar * micb/(km_mic_som+micb)
+
+  fmic = alpha_E * micb / (Kaff_enz * enz_modifier+ alpha_E * micb)
+  k_decay(lmet) = this%k_decay_lmet(lay) * tfng * o_scalar * fmic
+  k_decay(lcel) = this%k_decay_lcel(lay) * tfng * o_scalar * fmic
+  k_decay(llig) = this%k_decay_llig(lay) * tfng * o_scalar * fmic
+  k_decay(mic)  = this%k_decay_mic(lay) * tfnr * o_scalar
+  k_decay(pom)  = this%k_decay_pom * tfng * o_scalar * fmic
+  k_decay(humus) = this%k_decay_humus * tfng * o_scalar * fmic
+  k_decay(cwd)  = this%k_decay_cwd  * tfng * o_scalar * fmic
+  k_decay(lwd)  = this%k_decay_lwd  * tfng * o_scalar * fmic
+  k_decay(fwd)  = this%k_decay_fwd  * tfng * o_scalar * fmic
+
   !impose the ligin effect
   k_decay(cwd)  = k_decay(cwd) * exp(-3._r8*this%cwd_flig)
   k_decay(lwd)  = k_decay(lwd) * exp(-3._r8*this%lwd_flig)
@@ -920,17 +944,22 @@ contains
   k_decay(lcel) = k_decay(lcel)* exp(-3._r8*this%lit_flig)
   k_decay(llig) = k_decay(llig)* exp(-3._r8*this%lit_flig)
 
-  !print*,t_scalar,  w_scalar,  o_scalar,  depth_scalar, micb
+  !compute the decay rate of dom
+  k_decay(dom) = this%k_decay_dom * alpha_T * micb / (Kaff_mic_dom * enz_modifier + &
+   domc + alpha_T * micb + Minsurf * Kaff_mic_dom/(Kaff_CM*KM_OM)) * tfng * o_scalar
+
   !print*,'lmet',this%k_decay_lmet(lay)
   !print*,'lcel',this%k_decay_lcel(lay)
   !print*,'llig',this%k_decay_llig(lay)
-  !print*,'mic',this%k_decay_mic(lay)
-  !print*,'pom',this%k_decay_pom
+  !print*,'mic',k_decay(mic)*micb
+  !print*,'dom',k_decay(dom)*domc*(1._r8-this%rf_doms1_bgc)
   !print*,'humus',this%k_decay_humus
   !print*,'cwd',this%k_decay_cwd
   !print*,'lwd',this%k_decay_lwd
   !print*,'fwd',this%k_decay_fwd
+  !print*,'micb',micb, fmic, o_scalar,tfng
   !print*,'k_decay',(k_decay(jj),jj=1,ncentpools)
+
   end associate
   end subroutine calc_som_decay_k
   !-------------------------------------------------------------------------------

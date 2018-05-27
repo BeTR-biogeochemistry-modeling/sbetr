@@ -11,6 +11,10 @@ implicit none
   character(len=*), private, parameter :: mod_filename = &
      __FILE__
   public :: calc_tm_factor
+  public :: Kb_smmodifier
+  interface Kb_smmodifier
+    module procedure Kb_smmodifier_single, Kb_smmodifier_dual
+  end interface Kb_smmodifier
 contains
   !-------------------------------------------------------------------------------
   function f_actv(stk, rtk)result(actv)
@@ -84,4 +88,49 @@ contains
   tfng = tfnx * wfng
   tfnr = tfny * wfng
   end subroutine calc_tm_factor
+
+  !-------------------------------------------------------------------------------
+  function Kb_smmodifier_single(tauw, h2osoi_liqvol, filmt)result(ans)
+  !
+  ! DESCRIPTION
+  ! compute the moisture modifier to half saturation constant to microbes
+  ! reference: Tang and Riley, 2017, GMD
+  implicit none
+  real(r8), intent(in) :: tauw  !tortuosity
+  real(r8), intent(in) :: filmt       !water film thickness, m
+  real(r8), intent(in) :: h2osoi_liqvol
+
+  real(r8), parameter :: c1=0.48_r8
+  real(r8), parameter :: rc=1.e-6_r8
+  real(r8), parameter :: rm=3.e-6_r8
+  real(r8) :: ans
+
+  ans = h2osoi_liqvol + c1 * rc/(rm+filmt) * (filmt/rm*h2osoi_liqvol+1._r8/max(tauw,1.e-10))
+
+  end function Kb_smmodifier_single
+
+  !-------------------------------------------------------------------------------
+  function Kb_smmodifier_dual(tauw, h2osoi_liqvol, filmt, air_vol, taug, bunsencef)result(ans)
+  !
+  ! DESCRIPTION
+  ! compute the moisture modifier to half saturation constant to microbes
+  ! dual phase tracer
+  implicit none
+  real(r8), intent(in) :: taug, tauw  !tortuosity
+  real(r8), intent(in) :: filmt       !water film thickness
+  real(r8), intent(in) :: h2osoi_liqvol
+  real(r8), intent(in) :: air_vol
+  real(r8), intent(in) :: bunsencef
+  real(r8), parameter :: c1=0.48_r8
+  real(r8), parameter :: rc=1.e-6_r8
+  real(r8), parameter :: rm=3.e-6_r8
+  real(r8), parameter :: dif_ratio_g2w = 1.e4_r8  ! this is a very crude approximation
+  real(r8) :: ans
+
+
+  ans = (h2osoi_liqvol+air_vol/bunsencef)*(1._r8+c1*rc/(rm+filmt) * &
+   (filmt/rm + 1._r8/(tauw*h2osoi_liqvol+taug*air_vol/bunsencef*dif_ratio_g2w)))
+
+  end function Kb_smmodifier_dual
+
 end module EcosysMicDynParamMod

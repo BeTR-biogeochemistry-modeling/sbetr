@@ -92,20 +92,20 @@ module cdomBGCType
     procedure, private :: end_massbal_check
   end type cdom_bgc_type
 
-  public :: create_jarmodel_cdomcnp
+  public :: create_jarmodel_cdom
 contains
 
-  function create_jarmodel_cdomcnp()
+  function create_jarmodel_cdom()
   ! DESCRIPTION
   ! constructor
     implicit none
-    class(cdom_bgc_type), pointer :: create_jarmodel_cdomcnp
+    class(cdom_bgc_type), pointer :: create_jarmodel_cdom
     class(cdom_bgc_type), pointer :: bgc
 
     allocate(bgc)
-    create_jarmodel_cdomcnp => bgc
+    create_jarmodel_cdom => bgc
 
-  end function create_jarmodel_cdomcnp
+  end function create_jarmodel_cdom
 
   !-------------------------------------------------------------------------------
   function getvarllen_cdom(this)result(ans)
@@ -874,9 +874,24 @@ contains
     lid_c14_co2 => cdom_bgc_index%lid_c14_co2, &
     lid_n2o => cdom_bgc_index%lid_n2o, &
     lid_ar => cdom_bgc_index%lid_ar, &
-    lid_ch4 => cdom_bgc_index%lid_ch4  &
+    lid_ch4 => cdom_bgc_index%lid_ch4,  &
+    lid_co2_hr => cdom_bgc_index%lid_co2_hr, &
+    lid_n2o_nit => this%cdom_bgc_index%lid_n2o_nit,&
+    lid_nh4_nit => this%cdom_bgc_index%lid_nh4_nit, &
+    lid_no3_den => this%cdom_bgc_index%lid_no3_den,  &
+    lid_minn_nh4_immob=> cdom_bgc_index%lid_minn_nh4_immob , &
+    lid_minn_no3_immob => cdom_bgc_index%lid_minn_no3_immob, &
+    lid_minp_immob => cdom_bgc_index%lid_minp_immob         &
   )
   this%ystates0(:) = bgc_forc%ystates(:)
+  this%ystates0(lid_co2_hr) = 0._r8
+  this%ystates0(lid_n2o_nit)= 0._r8
+  this%ystates0(lid_no3_den)= 0._r8
+  this%ystates0(lid_nh4_nit)= 0._r8
+  this%ystates0(lid_no3_den)= 0._r8
+  this%ystates0(lid_minn_nh4_immob) =0._r8
+  this%ystates0(lid_minn_no3_immob) =0._r8
+  this%ystates0(lid_minp_immob) =0._r8
   this%ystates1(:) = this%ystates0(:)
 
   !set conversion parameters for arenchyma transport
@@ -1315,28 +1330,6 @@ contains
       1._r8 - sum(this%cascade_matrix(lid_plant_minp_pft(1:jj-1),lid_plant_minp_up_reac))
   endif
 
-!  do jj = 1, this%plant_ntypes
-!     if(this%cdom_bgc_index%debug)print*,lid_plant_minn_nh4_pft(jj),lid_plant_minn_no3_pft(jj)
-!     this%cascade_matrix(lid_plant_minn_nh4_pft(jj),lid_plant_minn_nh4_up_reac) = this%cascade_matrixd(lid_plant_minn_nh4_pft(jj),lid_plant_minn_nh4_up_reac)
-!     this%cascade_matrix(lid_plant_minn_no3_pft(jj),lid_plant_minn_no3_up_reac) =this%cascade_matrixd(lid_plant_minn_no3_pft(jj),lid_plant_minn_no3_up_reac)
-!     this%cascade_matrix(lid_plant_minp_pft(jj),lid_plant_minp_up_reac) = this%cascade_matrixd(lid_plant_minp_pft(jj),lid_plant_minp_up_reac)
-!  enddo
-!  if(this%cdom_bgc_index%debug)then
-!     print*,'checksum nh4',sum(this%cascade_matrix(lid_plant_minn_nh4_pft(1:this%plant_ntypes),lid_plant_minn_nh4_up_reac))
-!     print*,'checksum no3',sum(this%cascade_matrix(lid_plant_minn_no3_pft(1:this%plant_ntypes),lid_plant_minn_no3_up_reac))
-!     print*,'ntype',this%plant_ntypes
-!    do jj = 1, this%plant_ntypes
-!      print*,'casp',lid_plant_minp_pft(jj),this%cascade_matrixd(lid_plant_minp_pft(jj),lid_plant_minp_up_reac),ECA_flx_phosphorus_plants(jj)
-!    enddo
-!    do jj = 1, nreactions
-!      if(jj>=1)rrates(jj)=0._r8
-!      print*,'rrates jj',jj,rrates(jj)
-!    enddo
-!     print*,this%cascade_matrix(lid_plant_minn_no3_pft(1:this%plant_ntypes),lid_plant_minn_no3_up_reac)
-!     print*,'eca',ECA_flx_no3_plants
-!     print*,'sumrac',sum(ECA_flx_no3_plants),rrates(lid_plant_minn_no3_up_reac)
-!     stop
-!  endif
   it=0
   rscal=0._r8
   do
@@ -1365,20 +1358,8 @@ contains
     endif
     it = it + 1
   enddo
-!  if(this%cdom_bgc_index%debug)then
-!    do jj = 1, nreactions
-!      print*,'casc jj',jj,rrates(jj),rscal(jj)
-!    enddo
-!    do jj = 1, nprimvars
-!      print*, 'nprim',jj,dydt(jj)
-!    enddo
-!  endif
-!  if(this%cdom_bgc_index%debug)then
-    !
-!    jj = humus
-!    write(*,'(A,6(X,E25.15))')'dydt humus',dydt((jj-1)*nelms+c_loc),dydt((jj-1)*nelms+n_loc),dydt((jj-1)*nelms+p_loc),&
-!      dydt((jj-1)*nelms+c_loc)/dydt((jj-1)*nelms+n_loc),dydt((jj-1)*nelms+c_loc)/dydt((jj-1)*nelms+p_loc)
-!  endif
+
+  !print*,'rrates(dom)=',rrates(this%cdom_bgc_index%dom_dek_reac),rrates(this%cdom_bgc_index%mic_dek_reac)
   end associate
   end subroutine bgc_integrate
   !--------------------------------------------------------------------
@@ -1728,12 +1709,28 @@ contains
 
   !-------------------------------------------------------------------------------
   subroutine init_cold_cdom(this, nstvars, ystates)
+  !
+  !DESCRIPTION
+  !cold initialization
+  use cdomParaType, only : cdom_para
+  use tracer_varcon, only : catomw, natomw, patomw
   implicit none
   class(cdom_bgc_type),  intent(inout)  :: this
   integer , intent(in) :: nstvars
   real(r8), intent(inout) :: ystates(nstvars)
+  integer :: kc, kn, kp
+  associate(                              &
+     mic => this%cdom_bgc_index%mic     , &
+     c_loc=> this%cdom_bgc_index%c_loc  , &
+     n_loc => this%cdom_bgc_index%n_loc , &
+     p_loc => this%cdom_bgc_index%p_loc , &
+     nelms =>  this%cdom_bgc_index%nelms  &
+  )
+  kc= (mic-1)*nelms+c_loc
+  ystates(kc) = 0.01_r8
+  ystates(kn) = 0.01_r8/cdom_para%init_cn_mic * catomw/natomw
+  ystates(kp) = 0.01_r8/cdom_para%init_cp_mic * catomw/patomw
 
-  !do nothing
-  if(nstvars>=0)continue
+  end associate
   end subroutine init_cold_cdom
 end module cdomBGCType

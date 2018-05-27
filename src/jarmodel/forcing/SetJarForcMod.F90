@@ -128,7 +128,7 @@ contains
   type(JarBGC_forc_type), intent(inout) :: jar_forc
 
   real(r8) :: henrycef
-  real(r8) :: bunsencef_o2, bunsencef_n2o, bunsencef_n2
+  real(r8) :: bunsencef_n2o, bunsencef_n2
   real(r8) :: Dw, Dg
   associate(             &
     temp   => soil_forc%temp   , &
@@ -143,12 +143,14 @@ contains
     o2_g2b => jar_forc%o2_g2b, &
     n2_g2b => jar_forc%n2_g2b, &
     n2o_g2b=> jar_forc%n2o_g2b, &
-
+    bunsencef_o2=> jar_forc%bunsen_o2, &
     aren_cond_n2o=>jar_forc%aren_cond_n2o, &
     aren_cond_o2 => jar_forc%aren_cond_o2, &
     aren_cond_n2 => jar_forc%aren_cond_n2  &
   )
 
+  jar_forc%h2osoi_liqvol=h2osoi_liqvol
+  jar_forc%air_vol = air_vol
   !compute henry's constant
   henrycef=1.3e-3_r8*exp(-1500._r8*(1._r8/temp-1._r8/298.15_r8))
 

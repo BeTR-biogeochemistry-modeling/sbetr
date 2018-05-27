@@ -2,7 +2,7 @@ program readparatest
 
 
   use ecacnpParaType, only : create_jarpars_ecacnp, ecacnp_para_type
-  use cdomParaType, only : cdomPara_type, create_jarpars_cdomeca
+  use cdomParaType, only : cdomPara_type, create_jarpars_cdom
   use ncdio_pio   , only : file_desc_t, ncd_io
   use BetrStatusType   , only : betr_status_type
   use ncdio_pio   , only : ncd_pio_closefile, ncd_pio_openfile, ncd_nowrite
@@ -16,7 +16,7 @@ implicit none
   character(len=*), parameter :: fname2='/Users/jinyuntang/work/github/ACME-Climate/sbetr/tools/jarmodel.cdomcnp_pars.03092018.nc'
 
   allocate(centpara, source=create_jarpars_ecacnp())
-  allocate(cdompara, source=create_jarpars_cdomeca())
+  allocate(cdompara, source=create_jarpars_cdom())
 
   call centpara%Init(namelist_buffer='junk_data', bstatus=bstatus)
   call cdompara%Init(namelist_buffer='junk_data', bstatus=bstatus)

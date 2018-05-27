@@ -10,6 +10,7 @@ set(CDOM1LAYER_SOURCES
 
   include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)
   include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_math)
+  include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_para)
   include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/bgcfarm_util)
   include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/cdom/cdomPara)
   include(add_betr_library)

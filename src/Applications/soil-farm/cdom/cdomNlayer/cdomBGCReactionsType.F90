@@ -1729,6 +1729,7 @@ contains
       this%cdom_forc(c,j)%pct_clay = biophysforc%cellclay_col(c,j)
       this%cdom_forc(c,j)%h2osoi_vol = biophysforc%h2osoi_vol_col(c,j)
       this%cdom_forc(c,j)%h2osoi_liq = biophysforc%h2osoi_liq_col(c,j)
+      this%cdom_forc(c,j)%h2osoi_liqvol = biophysforc%h2osoi_liqvol_col(c,j)
       this%cdom_forc(c,j)%air_vol = biophysforc%air_vol_col(c,j)
       this%cdom_forc(c,j)%finundated = biophysforc%finundated_col(c)
       this%cdom_forc(c,j)%watsat = biophysforc%watsat_col(c,j)
@@ -1780,6 +1781,8 @@ contains
           tracercoeff_vars%gas2bulkcef_mobile_col(c,j,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_n2o))
       this%cdom_forc(c,j)%o2_w2b = &
           tracercoeff_vars%aqu2bulkcef_mobile_col(c,j,betrtracer_vars%groupid(betrtracer_vars%id_trc_o2))
+      this%cdom_forc(c,j)%bunsen_o2 = &
+          tracercoeff_vars%bunsencef_col(c,j,betrtracer_vars%groupid(betrtracer_vars%id_trc_o2))
 
       !atmospheric pressure (mol/m3) for gas ventilation.
       this%cdom_forc(c,j)%conc_atm_n2 = &

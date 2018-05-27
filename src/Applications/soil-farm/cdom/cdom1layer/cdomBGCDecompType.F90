@@ -17,9 +17,14 @@ implicit none
   real(r8) :: o_scalar       ! fraction by which decomposition is limited by anoxia
   real(r8) :: w_scalar       ! fraction by which decomposition is limited by h2osoi_liqure availability
   real(r8) :: t_scalar       ! fraction by which decomposition is limited by temperature
-  real(r8) :: depth_scalar   ! depth dependent factor for heteorotrophic respiration
   real(r8) :: vmax_decomp_n
   real(r8) :: vmax_decomp_p
+  real(r8) :: tfng  !temperature x moisture factor for uptake, for decay of all non bm pools
+  real(r8) :: tfnr  !temperature x moisture factor for maintenance, this is for decay of bm
+  real(r8) :: enz_modifier
+  real(r8) :: filmt
+  real(r8) :: Minsurf
+  real(r8) :: KM_OM
   !parameters
   real(r8) :: Q10
   real(r8) :: froz_q10
@@ -77,7 +82,6 @@ implicit none
     this%o_scalar = 1._r8
     this%w_scalar  = 1._r8
     this%t_scalar    = 1._r8
-    this%depth_scalar  = 1._r8
 
   end subroutine initCold
 
@@ -103,6 +107,8 @@ implicit none
 
   use JarBgcForcType , only : JarBGC_forc_type
   use bshr_const_mod     , only : SHR_CONST_TKFRZ
+  use EcosysMicDynParamMod  , only : calc_tm_factor, Kb_smmodifier
+  use TracerParamSetMod   , only : get_tauliq, get_taugas, get_film_thickness
   implicit none
   ! !ARGUMENTS:
   class(Decompcdom_type)     , intent(inout) :: this
@@ -117,20 +123,38 @@ implicit none
   real(r8)            :: t1
   real(r8)            :: o2w
   real(r8)            :: psi
-
+  real(r8)            :: eff_por, tauliq, taugas
   associate(                                             &
     temp          => bgc_forc%temp              , &
     depz          => bgc_forc%depz              , &
     o2_w2b        => bgc_forc%o2_w2b            , &
     sucsat        => bgc_forc%sucsat            , & ! Input:  [real(r8) (:,:)] minimum soil suction [mm]
     soilpsi       => bgc_forc%soilpsi           , & ! Input:  [real(r8) (:,:)] soilwater pontential in each soil layer [MPa]
+    bsw           => bgc_forc%bsw               , &
+    h2osoi_liqvol => bgc_forc%h2osoi_liqvol     , &
+    air_vol       => bgc_forc%air_vol           , &
+    bunsen_o2     => bgc_forc%bunsen_o2         , &
     Q10           => this%Q10                          , &
     froz_q10      => this%froz_q10                     , &
     decomp_depth_efolding => this%decomp_depth_efolding, &
     k_m_o2        => this%k_m_o2                       , &
-    minpsi        => this%minpsi                         &
+    minpsi        => this%minpsi                       , &
+    filmt         => this%filmt                        , &
+    enz_modifier  => this%enz_modifier                   &
   )
 
+  this%Minsurf = bgc_forc%Msurf_OM; this%KM_OM = bgc_forc%KM_OM_ref
+  call calc_tm_factor(temp, soilpsi, this%tfng, this%tfnr)
+  !compute enzyme diffusivity
+  eff_por = h2osoi_liqvol + air_vol
+  tauliq=get_tauliq(eff_por, h2osoi_liqvol, bsw)
+  taugas=get_taugas(eff_por, air_vol, bsw)
+
+  enz_modifier=Kb_smmodifier(tauliq, h2osoi_liqvol, filmt)
+
+  !compute water film thickness
+  this%filmt = get_film_thickness(soilpsi)
+  !things below are for nitrification-denitrification calculation
   catanf_30 = catanf(30._r8)
 
   !temperature scalar
@@ -161,11 +185,8 @@ implicit none
 
   !oxygen scalar, this is different from what CLM4.5bgc does, I use a M-M formulation to indicate O2 stress
   !and the O2 budget is done on the fly
-  o2w = o2b / o2_w2b
-  this%o_scalar = o2w/(o2w+k_m_o2)   !the value 0.22 mol O3/m3 is from Arah and Kirk, 2000
-
-  !depth scalar, according to Koven et al. (2013), BG, the depth scalar is needed to resolve the radiocarbon profile
-  this%depth_scalar = exp(-depz/decomp_depth_efolding)
+  !o2w = o2b / o2_w2b
+  this%o_scalar = o2b/(o2b+k_m_o2*Kb_smmodifier(tauliq, h2osoi_liqvol, filmt, air_vol, taugas, bunsen_o2))   !the value 0.22 mol O3/m3 is from Arah and Kirk, 2000
 
   end associate
   end subroutine set_decompk_scalar

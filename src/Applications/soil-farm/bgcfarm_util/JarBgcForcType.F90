@@ -97,7 +97,8 @@ implicit none
     real(r8) :: pct_sand
     real(r8) :: pct_clay
     real(r8) :: h2osoi_vol
-    real(r8) :: h2osoi_liq
+    real(r8) :: h2osoi_liq      !kg H2O/m2
+    real(r8) :: h2osoi_liqvol   !
     real(r8) :: air_vol
     real(r8) :: finundated
     real(r8) :: watsat
@@ -122,7 +123,7 @@ implicit none
     real(r8) :: n2_g2b
     real(r8) :: ar_g2b
     real(r8) :: n2o_g2b
-
+    real(r8) :: bunsen_o2
     real(r8) :: conc_atm_n2   !n2 concentration in atmosphere, mol n2/m3
     real(r8) :: conc_atm_n2o
     real(r8) :: conc_atm_o2
@@ -282,6 +283,7 @@ contains
   this%pct_clay=0._r8
   this%h2osoi_vol=0._r8
   this%h2osoi_liq=0._r8
+  this%h2osoi_liqvol = 0._r8
   this%air_vol=0._r8
   this%finundated=0._r8
   this%watsat=0._r8

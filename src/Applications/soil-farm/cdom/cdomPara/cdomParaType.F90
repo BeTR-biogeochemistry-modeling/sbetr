@@ -34,8 +34,9 @@ implicit none
   real(r8) :: k_m_o2_bgc  !MM parameter for O2 consumption
   real(r8) :: c14decay_cons
   real(r8) :: k_decay_dom  !linear decay rate of dom
-  real(r8) :: km_mic_som   !MM parameter for microbial biomass
+  real(r8) :: Kaff_mic_dom   !MM parameter for microbial biomass
   real(r8) :: Kaff_CM
+  real(r8) :: Kaff_enz
   !nitrification-denitrification
   real(r8) :: nitrif_n2o_loss_frac
   real(r8) :: organic_max
@@ -53,7 +54,8 @@ implicit none
   real(r8) :: c14decay_pom_const
   real(r8) :: c14decay_micbiom_const
   real(r8) :: k_nitr_max
-
+  real(r8) :: alpha_E
+  real(r8) :: alpha_T
   real(r8), pointer :: spinup_factor(:)
 
   real(r8) :: init_cn_mic
@@ -95,20 +97,20 @@ implicit none
  end type cdomPara_type
 
  type(cdomPara_type), public :: cdom_para
- public :: create_jarpars_cdomeca
+ public :: create_jarpars_cdom
 contains
 
-  function create_jarpars_cdomeca()
+  function create_jarpars_cdom()
   ! DESCRIPTION
   ! constructor
     implicit none
-    class(cdomPara_type), pointer :: create_jarpars_cdomeca
+    class(cdomPara_type), pointer :: create_jarpars_cdom
     class(cdomPara_type), pointer :: bgc
 
     allocate(bgc)
-    create_jarpars_cdomeca => bgc
+    create_jarpars_cdom => bgc
 
-  end function create_jarpars_cdomeca
+  end function create_jarpars_cdom
 
   !--------------------------------------------------------------------
   subroutine cdompara_init(this, namelist_buffer, bstatus)
@@ -180,11 +182,11 @@ contains
   !0.55000           'P3CO2', humus->mic, co2 resp frac
 
 
-  this%k_decay_dom  = 8._r8/year_sec   ! a rough guess
-  this%km_mic_som   = 3._r8 !3 mol/m3  ! another rough guess
+  this%k_decay_dom  = 5.e-4_r8   ! a rough guess
+  this%Kaff_mic_dom   = 3.e-5_r8 ! mol C/m3  ! dom affinity
   this%k_nitr_max   = 1.1574074e-06_r8 ! 1/s
   this%minpsi_bgc   = -10._r8 ! M Pa
-  this%k_m_o2_bgc   = 0.22_r8
+  this%k_m_o2_bgc   = 3.e-3_r8  !mol/m3 0.22_r8
   half_life = 5568._r8 ! yr
   half_life = half_life * year_sec
   this%c14decay_const = - log(0.5_r8) / half_life
@@ -226,7 +228,8 @@ contains
   this%rij_kro_gamma         = 0.6_r8     ! Arah and Vinten, 1995
   this%rij_kro_delta         = 0.85_r8    ! Arah and Vinten, 1995
   this%surface_tension_water = 73.e-3_r8  ! (J/m^2), Arah and Vinten, 1995
-
+  this%alpha_E = 0.05_r8; this%alpha_T = 0.05_r8
+  this%Kaff_enz = 0.01_r8 ! mol C/m3
   this%init_cc14_mic= 0._r8
   this%init_cc14_pom= 0._r8
   this%init_cc14_humus= 0._r8
@@ -487,11 +490,11 @@ contains
   if(bstatus%check_status())return
   this%k_decay_dom=tempr(1)
 
-  tString='km_mic_som'
+  tString='Kaff_mic_dom'
   call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
   if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
   if(bstatus%check_status())return
-  this%km_mic_som=tempr(1)
+  this%Kaff_mic_dom=tempr(1)
 
   tString='km_den'
   call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
@@ -576,7 +579,7 @@ contains
   call this%prtPars_bgc()
 
   print*,'k_decay_dom=',this%k_decay_dom
-  print*,'km_mic_som =',this%km_mic_som
+  print*,'Kaff_mic_dom =',this%Kaff_mic_dom
 
   print*,'k_decay_lmet =',this%k_decay_lmet
   print*,'k_decay_lcel =',this%k_decay_lcel
