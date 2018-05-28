@@ -17,6 +17,11 @@ implicit none
     real(r8), pointer :: som1c_col               (:) => null()
     real(r8), pointer :: som2c_col               (:) => null()
     real(r8), pointer :: som3c_col               (:) => null()
+    real(r8), pointer :: polyc_col               (:) => null()
+    real(r8), pointer :: monoc_col               (:) => null()
+    real(r8), pointer :: micc_col                (:) => null()
+    real(r8), pointer :: enzc_col                (:) => null()
+    real(r8), pointer :: resc_col                (:) => null()
 
   contains
 

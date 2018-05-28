@@ -1,4 +1,4 @@
-module CentParaType
+module SummsParaType
   use bshr_kind_mod       , only : r8 => shr_kind_r8
   use BiogeoContype       , only : BiogeoCon_type
 implicit none
@@ -7,7 +7,35 @@ implicit none
   character(len=*), private, parameter :: filename = &
        __FILE__
 
- type, public, extends(BiogeoCon_type) :: CentPara_type
+ type, public, extends(BiogeoCon_type) :: SummsPara_type
+
+  ! Microbial parameters
+    real(r8) :: gmax_mic
+    real(r8) :: yld_mic
+    real(r8) :: yld_enz
+    real(r8) :: yld_res
+    real(r8) :: fenz2poly
+    real(r8) :: minsite
+    real(r8) :: mic_transp
+    real(r8) :: decay_mic0
+    real(r8) :: decay_enz
+    real(r8) :: pmax_enz
+    real(r8) :: ea_vmax_mic
+    real(r8) :: ea_vmax_enz
+    real(r8) :: ea_kaff_mono_mic
+    real(r8) :: ea_kaff_enz_poly
+    real(r8) :: ea_mr_mic
+    real(r8) :: ea_kappa_mic
+    real(r8) :: ea_kaff_mono_msurf
+    real(r8) :: ea_kaff_enz_msurf
+    real(r8) :: ref_vmax_enz
+    real(r8) :: ref_kaff_enz_poly
+    real(r8) :: ref_kaff_enz_msurf
+    real(r8) :: ref_kaff_mono_msurf
+    real(r8) :: ref_mr_mic
+    real(r8) :: ref_kappa_mic
+    real(r8) :: ref_kaff_mono_mic
+    real(r8) :: ref_vmax_mic
 
   !decomposition
   real(r8) :: Q10
@@ -19,8 +47,6 @@ implicit none
   real(r8) :: rf_l3s2_bgc
   real(r8) :: rf_s2s1_bgc
   real(r8) :: rf_s3s1_bgc
-  real(r8) :: rf_s1s2a_bgc(2)
-  real(r8) :: rf_s1s2b_bgc(2)
 
   real(r8) :: k_decay_lit1(2)
   real(r8) :: k_decay_lit2(2)
@@ -46,25 +72,44 @@ implicit none
 
   real(r8) :: c14decay_som_const
   real(r8) :: c14decay_dom_const
-  real(r8) :: c14decay_pom_const
   real(r8) :: c14decay_bm_const
   real(r8) :: k_nitr_max
 
   real(r8) :: init_cn_som1
   real(r8) :: init_cn_som2
   real(r8) :: init_cn_som3
+  real(r8) :: init_cn_poly
+  real(r8) :: init_cn_mono
+  real(r8) :: init_cn_mic
+  real(r8) :: init_cn_enz
+  real(r8) :: init_cn_res
 
   real(r8) :: init_cp_som1
   real(r8) :: init_cp_som2
   real(r8) :: init_cp_som3
+  real(r8) :: init_cp_poly
+  real(r8) :: init_cp_mono
+  real(r8) :: init_cp_mic
+  real(r8) :: init_cp_enz
+  real(r8) :: init_cp_res
 
   real(r8) :: init_cc14_som1
   real(r8) :: init_cc14_som2
   real(r8) :: init_cc14_som3
+  real(r8) :: init_cc14_poly
+  real(r8) :: init_cc14_mono
+  real(r8) :: init_cc14_mic
+  real(r8) :: init_cc14_enz
+  real(r8) :: init_cc14_res
 
   real(r8) :: init_cc13_som1
   real(r8) :: init_cc13_som2
   real(r8) :: init_cc13_som3
+  real(r8) :: init_cc13_poly
+  real(r8) :: init_cc13_mono
+  real(r8) :: init_cc13_mic
+  real(r8) :: init_cc13_enz
+  real(r8) :: init_cc13_res
   real(r8) :: c14decay_const
   real(r8) :: km_decomp_no3
   real(r8) :: km_decomp_nh4
@@ -75,40 +120,41 @@ implicit none
   real(r8) :: vmax_decomp_p
   real(r8) :: vmax_den
   real(r8) :: vmax_nit
+
   real(r8), pointer :: spinup_factor(:)
  contains
-   procedure, public  :: Init => centpara_init
-   procedure, public  :: readPars => centpara_readPars
-   procedure, public  :: printPars=> centpara_printPars
+   procedure, public  :: Init => summspara_init
+   procedure, public  :: readPars => summspara_readPars
+   procedure, public  :: printPars=> summspara_printPars
    procedure, private :: InitAllocate
    procedure, private :: set_defpar_default
    procedure, public  :: apply_spinup_factor
    procedure, public  :: set_spinup_factor
- end type CentPara_type
+ end type SummsPara_type
 
- type(CentPara_type), public :: cent_para
- public :: create_jarpars_centuryeca
+ type(SummsPara_type), public :: summs_para
+ public :: create_jarpars_summseca
 contains
 
-  function create_jarpars_centuryeca()
+  function create_jarpars_summseca()
   ! DESCRIPTION
   ! constructor
     implicit none
-    class(CentPara_type), pointer :: create_jarpars_centuryeca
-    class(CentPara_type), pointer :: bgc
+    class(SummsPara_type), pointer :: create_jarpars_summseca
+    class(SummsPara_type), pointer :: bgc
 
     allocate(bgc)
-    create_jarpars_centuryeca => bgc
+    create_jarpars_summseca => bgc
 
-  end function create_jarpars_centuryeca
+  end function create_jarpars_summseca
 
   !--------------------------------------------------------------------
-  subroutine centpara_init(this, namelist_buffer, bstatus)
+  subroutine summspara_init(this, namelist_buffer, bstatus)
   use betr_constants , only : betr_namelist_buffer_size_ext
   use BetrStatusType , only : betr_status_type
   use betr_ctrl      , only : betr_spinup_state
   implicit none
-  class(CentPara_type), intent(inout) :: this
+  class(SummsPara_type), intent(inout) :: this
   character(len=*)         , intent(in)  :: namelist_buffer
   type(betr_status_type)   , intent(out) :: bstatus
 
@@ -122,12 +168,12 @@ contains
     call this%apply_spinup_factor()
   endif
 
-  end subroutine centpara_init
+  end subroutine summspara_init
   !--------------------------------------------------------------------
   subroutine InitAllocate(this)
   use betr_varcon, only : betr_maxpatch_pft, betr_max_soilorder
   implicit none
-  class(CentPara_type), intent(inout) :: this
+  class(SummsPara_type), intent(inout) :: this
 
 
   allocate(this%minp_secondary_decay(0:betr_max_soilorder))
@@ -142,7 +188,7 @@ contains
   use tracer_varcon      , only : natomw,patomw
   use bshr_const_mod  , only : year_sec=>SHR_CONST_YEARSECS
   implicit none
-  class(CentPara_type), intent(inout) :: this
+  class(SummsPara_type), intent(inout) :: this
   real(r8) :: half_life
 
   !the following note is from daycent
@@ -177,8 +223,43 @@ contains
   this%c14decay_const = - log(0.5_r8) / half_life
   this%c14decay_som_const  =this%c14decay_const
   this%c14decay_dom_const  =this%c14decay_const
-  this%c14decay_pom_const  =this%c14decay_const
   this%c14decay_Bm_const  =this%c14decay_const
+
+  ! Parameters
+    this%gmax_mic  = 0.1025             ! Maximum microbial growth rate (1/day)
+    this%yld_mic = 0.8                  ! Growth efficiency of microbes (g mic/g res)
+    this%yld_enz = 0.8                  ! Growth efficiency of enzymes (g enz/g res)
+    this%yld_res = 0.5                  ! Assimilation efficiency from monomer uptake (g res/g mono)
+    this%fenz2poly = 0.2                ! Proportion of degraded exoenzyme into polymers (g poly/g enz)
+    this%minsite = 1000                 ! Abundance of mineral surface              (g C surface/m3)
+    this%mic_transp = 0.05              ! Scaling factor between transporter and microbial structural biomass
+    this%decay_mic0 = 0.01314           ! Reference microbial death rate (1/day)
+    this%decay_enz = 0.0061              ! Enzyme turnover tate (1/day)
+    this%pmax_enz = 0.0019              ! Maximum enzyme production rate (1/day)
+
+  ! Set up parameters for activation energy of different processes
+    this%ea_vmax_mic            = 45000     ! Ea for maximum rate of monomer uptake (K)
+    this%ea_vmax_enz            = 45000     ! Ea for maximum rate of polymer degradation (K)
+    this%ea_kaff_mono_mic       = 1804.086  ! Ea for monomer-microbe affinity (K)
+    this%ea_kaff_enz_poly       = 1804.086  ! Ea for polymer-enzyme affinity (K)
+    this%ea_mr_mic              = 60000     ! Ea for maintenance (K)
+    this%ea_kappa_mic           = 60000     ! Ea for reserve export (K)
+    this%ea_kaff_mono_msurf     = 10000     ! Ea for monomer-mineral affinity (K)
+    this%ea_kaff_enz_msurf      = 10000     ! Ea for enzyme-mineral affinity (K)
+
+  ! Enzymes
+    this%ref_vmax_enz           = 2.4133    ! Maximum rate of polymer degradation (1/day)
+    this%ref_kaff_enz_poly      = 200       ! Affinity parameter for enzymatic polymer degradation (g enzymes/m3)
+    this%ref_kaff_enz_msurf     = 50        ! Affinity parameter for surface adsorption of enzymes (g enzymes/m3)
+  
+  ! Monomer adsorption
+    this%ref_kaff_mono_msurf   = 25        ! Affinity parameter or mineral surface adsorption of monomers (g monomers/m3)
+
+  ! Microbes
+    this%ref_mr_mic             = 0.0231      ! Microbial maintenance rate (1/day)
+    this%ref_kappa_mic          = 0.0537      ! Reserve turnover rate (1/day)
+    this%ref_kaff_mono_mic      = 1         ! Affinity parameter for microbial monomer uptake (g monomers/m3)
+    this%ref_vmax_mic           = 10.9343    ! Maximum rate of monomer assimilation (1/day) 
 
   !decomposition
   this%Q10                   = 2._r8
@@ -191,8 +272,6 @@ contains
   this%rf_l3s2_bgc           = 0.3_r8
   this%rf_s2s1_bgc           = 0.55_r8
   this%rf_s3s1_bgc           = 0.55_r8
-  this%rf_s1s2a_bgc          = (/0.60_r8,0.17_r8/)
-  this%rf_s1s2b_bgc          = (/0._r8, 0.68_r8/)
 
   !following is based on century parameterization
   this%k_decay_lit1          = (/14.8_r8,18.5_r8/)/year_sec    !1/second
@@ -224,13 +303,35 @@ contains
   this%init_cn_som2 = 11._r8  !mass based
   this%init_cn_som3 = 11._r8  !mass based
 
+  this%init_cp_mic = 110._r8 !mass based
+  this%init_cp_enz = 110._r8 !mass based
+  this%init_cp_res = 110._r8 !mass based
+  this%init_cp_poly = 320._r8 !mass based
+  this%init_cp_mono = 114._r8 !mass based
+
+  this%init_cn_mic = 8._r8 !mass based
+  this%init_cn_enz = 3._r8 !mass based
+  this%init_cn_res = 8._r8 !mass based
+  this%init_cn_poly = 20._r8 !mass based
+  this%init_cn_mono = 30._r8 !mass based
+
   this%init_cc14_som1= 0._r8
   this%init_cc14_som2= 0._r8
   this%init_cc14_som3= 0._r8
+  this%init_cc14_mic = 0._r8
+  this%init_cc14_enz = 0._r8
+  this%init_cc14_res = 0._r8
+  this%init_cc14_poly = 0._r8
+  this%init_cc14_mono = 0._r8
 
   this%init_cc13_som1= 0._r8
   this%init_cc13_som2= 0._r8
   this%init_cc13_som3= 0._r8
+  this%init_cc13_mic = 0._r8
+  this%init_cc13_enz = 0._r8
+  this%init_cc13_res = 0._r8
+  this%init_cc13_poly = 0._r8
+  this%init_cc13_mono = 0._r8
 
   this%km_decomp_no3 = 0.41_r8/natomw
   this%km_decomp_nh4 = 0.18_r8/natomw
@@ -249,9 +350,9 @@ contains
   subroutine apply_spinup_factor(this)
   use betr_ctrl, only : betr_spinup_state
   implicit none
-  class(CentPara_type), intent(inout) :: this
+  class(SummsPara_type), intent(inout) :: this
 
-
+! need update for summs pools
   call this%set_spinup_factor()
 
   if(betr_spinup_state==1)then
@@ -274,7 +375,7 @@ contains
 
   !--------------------------------------------------------------------
 
-  subroutine centpara_readPars(this, ncid, bstatus)
+  subroutine summspara_readPars(this, ncid, bstatus)
   use bshr_log_mod    , only : errMsg => shr_log_errMsg
   use ncdio_pio       , only : file_desc_t, ncd_io
   use BetrStatusType  , only : betr_status_type
@@ -282,7 +383,7 @@ contains
   use bshr_const_mod  , only : year_sec=>SHR_CONST_YEARSECS
   use tracer_varcon   , only : natomw,patomw
   implicit none
-  class(CentPara_type), intent(inout) :: this
+  class(SummsPara_type), intent(inout) :: this
   type(file_desc_t)    , intent(inout)  :: ncid  ! pio netCDF file id
   type(betr_status_type) , intent(out) :: bstatus
 
@@ -360,18 +461,6 @@ contains
   if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
   if(bstatus%check_status())return
   this%rf_s3s1_bgc=tempr(1)
-
-  tString='rf_s1s2a_bgc'
-  call ncd_io(trim(tString),temparr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%rf_s1s2a_bgc(1:2)=temparr(1:2,1)
-
-  tString='rf_s1s2b_bgc'
-  call ncd_io(trim(tString),temparr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%rf_s1s2b_bgc(1:2)=temparr(1:2,1)
 
   tString='k_decay_cwd'
   call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
@@ -524,7 +613,7 @@ contains
   this%vmax_nit=tempr(1)
 
 
-!   the following are purposely commented out to use default parameters from century, Jinyun Tang, Feb 21, 2018
+! need update for summs pools
   this%k_decay_lit1(1:2)  = this%k_decay_lit1(1:2) /year_sec    !1/second
   this%k_decay_lit2(1:2)  = this%k_decay_lit2(1:2) /year_sec    !1/second
   this%k_decay_lit3(1:2)  = this%k_decay_lit3(1:2) /year_sec    !1/second
@@ -539,16 +628,17 @@ contains
     call this%apply_spinup_factor()
   endif
 
-  end subroutine centpara_readPars
+  end subroutine summspara_readPars
 
 !--------------------------------------------------------------------
   subroutine set_spinup_factor(this)
 
   implicit none
-  class(CentPara_type), intent(inout) :: this
+  class(SummsPara_type), intent(inout) :: this
   real(r8) :: k_decay_ref
 
   !the order is, lit1, lit2, lit3, cwd, lwd, fwd, som1, som3, som2
+  !need update for summs pools
   this%spinup_factor(1) = 1._r8
   this%spinup_factor(2) = 1._r8
   this%spinup_factor(3) = 1._r8
@@ -565,10 +655,10 @@ contains
   end subroutine set_spinup_factor
 
 !--------------------------------------------------------------------
-  subroutine centpara_printPars(this)
+  subroutine summspara_printPars(this)
 
   implicit none
-  class(CentPara_type), intent(inout) :: this
+  class(SummsPara_type), intent(inout) :: this
 
   call this%prtPars_bgc()
 
@@ -583,9 +673,6 @@ contains
   print*,'rf_l3s2_bgc =',this%rf_l3s2_bgc
   print*,'rf_s2s1_bgc =',this%rf_s2s1_bgc
   print*,'rf_s3s1_bgc =',this%rf_s3s1_bgc
-  print*,'rf_s1s2a_bgc=',this%rf_s1s2a_bgc
-  print*,'rf_s1s2b_bgc=',this%rf_s1s2b_bgc
-
 
   !following is based on century parameterization
   print*,'k_decay_lit1=',this%k_decay_lit1
@@ -611,9 +698,19 @@ contains
   print*,'init_cp_som1=',this%init_cp_som1
   print*,'init_cp_som2=',this%init_cp_som2
   print*,'init_cp_som3=',this%init_cp_som3
+  print*,'init_cp_poly=',this%init_cn_poly
+  print*,'init_cp_mono=',this%init_cn_mono
+  print*,'init_cp_mic=',this%init_cn_mic
+  print*,'init_cp_enz=',this%init_cn_enz
+  print*,'init_cp_res=',this%init_cn_res
   print*,'init_cn_som1=',this%init_cn_som1
   print*,'init_cn_som2=',this%init_cn_som2
   print*,'init_cn_som3=',this%init_cn_som3
+  print*,'init_cn_poly=',this%init_cn_poly
+  print*,'init_cn_mono=',this%init_cn_mono
+  print*,'init_cn_mic=',this%init_cn_mic
+  print*,'init_cn_enz=',this%init_cn_enz
+  print*,'init_cn_res=',this%init_cn_res
 
   print*,'km_den = ', this%km_den
   print*,'km_nit = ', this%km_nit
@@ -624,6 +721,6 @@ contains
   print*,'vmax_decomp_n=', this%vmax_decomp_n
   print*,'vmax_den=', this%vmax_den
   print*,'vmax_nit=', this%vmax_nit
-  end subroutine centpara_printPars
+  end subroutine summspara_printPars
 
-end module CentParaType
+end module SummsParaType

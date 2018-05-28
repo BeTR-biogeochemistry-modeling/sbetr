@@ -22,6 +22,12 @@ implicit none
     real(r8), pointer :: som1n_col                    (:) => null()
     real(r8), pointer :: som2n_col                    (:) => null()
     real(r8), pointer :: som3n_col                    (:) => null()
+    real(r8), pointer :: polyn_col                    (:) => null()
+    real(r8), pointer :: monon_col                    (:) => null()
+    real(r8), pointer :: micn_col                     (:) => null()
+    real(r8), pointer :: enzn_col                     (:) => null()
+    real(r8), pointer :: resn_col                     (:) => null()
+
 
   contains
 

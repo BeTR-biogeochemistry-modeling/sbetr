@@ -22,6 +22,13 @@ implicit none
      real(r8), pointer :: som2c_vr_col(:,:) => null()
      real(r8), pointer :: som3c_vr_col(:,:) => null()
      real(r8), pointer :: domc_vr_col(:,:) => null()
+     real(r8), pointer :: polyc_col(:) => null()
+     real(r8), pointer :: monoenzc_col(:) => null()
+     real(r8), pointer :: micresc_col(:) => null()
+     real(r8), pointer :: polyc_vr_col(:,:) => null()
+     real(r8), pointer :: monoenzc_vr_col(:,:) => null()
+     real(r8), pointer :: micresc_vr_col(:,:) => null()
+
  contains
     procedure, public  :: Init
     procedure, private :: InitAllocate
@@ -70,6 +77,14 @@ implicit none
     allocate(this%som2c_vr_col(begc:endc, lbj:ubj));  this%som2c_vr_col(:,:) = nan
     allocate(this%som3c_vr_col(begc:endc, lbj:ubj));  this%som3c_vr_col(:,:) = nan
   endif
+    if(trim(reaction_method)=='summs')then
+    allocate(this%polyc_col(begc:endc));  this%polyc_col(:) = nan
+    allocate(this%monoenzc_col(begc:endc));  this%monoenzc_col(:) = nan
+    allocate(this%micresc_col(begc:endc));   this%micresc_col(:) = nan
+    allocate(this%polyc_vr_col(begc:endc, lbj:ubj));  this%polyc_vr_col(:,:) = nan
+    allocate(this%monoenzc_vr_col(begc:endc, lbj:ubj));  this%monoenzc_vr_col(:,:) = nan
+    allocate(this%micresc_vr_col(begc:endc, lbj:ubj));   this%micresc_vr_col(:,:) = nan
+  endif
   allocate(this%cwdc_vr_col(begc:endc,lbj:ubj)); this%cwdc_vr_col(:,:)   = nan
   allocate(this%totlitc_vr_col(begc:endc,lbj:ubj)); this%totlitc_vr_col(:,:) = nan
   allocate(this%totsomc_vr_col(begc:endc,lbj:ubj)); this%totsomc_vr_col(:,:) = nan
@@ -92,6 +107,11 @@ implicit none
     this%som1c_vr_col(:,:) = value_column
     this%som2c_vr_col(:,:) = value_column
     this%som3c_vr_col(:,:) = value_column
+  endif
+  if(index(reaction_method,'summs')/=0)then
+    this%polyc_vr_col(:,:) = value_column
+    this%monoenzc_vr_col(:,:) = value_column
+    this%micresc_vr_col(:,:) = value_column
   endif
   this%domc_vr_col(:,:) = value_column
   end subroutine reset
@@ -124,6 +144,18 @@ implicit none
         this%som1c_col(c) = this%som1c_col(c) + dz(c,j)*this%som1c_vr_col(c,j)
         this%som2c_col(c) = this%som2c_col(c) + dz(c,j)*this%som2c_vr_col(c,j)
         this%som3c_col(c) = this%som3c_col(c) + dz(c,j)*this%som3c_vr_col(c,j)
+      enddo
+    enddo
+  endif
+  if(index(reaction_method,'summs')/=0)then
+    this%polyc_col(:) = 0.0_r8
+    this%monoenzc_col(:) = 0.0_r8
+    this%micresc_col(:) = 0.0_r8
+    do j = lbj, ubj
+      do c = bounds%begc, bounds%endc
+        this%polyc_col(c) = this%polyc_col(c) + dz(c,j)*this%polyc_vr_col(c,j)
+        this%monoenzc_col(c) = this%monoenzc_col(c) + dz(c,j)*this%monoenzc_vr_col(c,j)
+        this%micresc_col(c) = this%micresc_col(c) + dz(c,j)*this%micresc_vr_col(c,j)
       enddo
     enddo
   endif

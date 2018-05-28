@@ -33,6 +33,11 @@ implicit none
     real(r8), pointer :: som1p_col                    (:) => null()
     real(r8), pointer :: som2p_col                    (:) => null()
     real(r8), pointer :: som3p_col                    (:) => null()
+    real(r8), pointer :: polyp_col                    (:) => null()
+    real(r8), pointer :: monop_col                    (:) => null()
+    real(r8), pointer :: micp_col                     (:) => null()
+    real(r8), pointer :: enzp_col                     (:) => null()
+    real(r8), pointer :: resp_col                     (:) => null()
 
   contains
 

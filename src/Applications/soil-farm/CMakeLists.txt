@@ -1,6 +1,7 @@
 add_subdirectory(bgcfarm_util)
 add_subdirectory(CENT_ECACNP)
 add_subdirectory(cdom_ecacnp)
+add_subdirectory(SUMMS)
 if (UGM)
   add_subdirectory(UGM-M)
 endif()

@@ -1,4 +1,4 @@
-module BgcCentCnpIndexType
+module BgcSummsIndexType
 
   use bshr_kind_mod  , only : r8 => shr_kind_r8
   use betr_ctrl    , only : spinup_state => betr_spinup_state
@@ -16,16 +16,18 @@ implicit none
     type(list_t), pointer :: next => null()
   end type list_t
 
-  type, public :: centurybgc_index_type
+  type, public :: summsbgc_index_type
      integer           :: nom_pools                              !not include coarse wood debris
 
      integer           :: nom_tot_elms
      integer           :: lit1, lit1_dek_reac
      integer           :: lit2, lit2_dek_reac
      integer           :: lit3, lit3_dek_reac
-     integer           :: som1, som1_dek_reac
-     integer           :: som2, som2_dek_reac
-     integer           :: som3, som3_dek_reac
+     integer           :: poly, poly_dek_reac
+     integer           :: mono, mono_dek_reac
+     integer           :: mic, mic_dek_reac
+     integer           :: enz, enz_dek_reac
+     integer           :: res, res_dek_reac
      integer           :: cwd,  cwd_dek_reac
      integer           :: lwd,  lwd_dek_reac
      integer           :: fwd,  fwd_dek_reac
@@ -34,7 +36,7 @@ implicit none
      integer           :: som_beg,  som_end   !som group
      integer           :: dom_beg,  dom_end   !dom group
      integer           :: Bm_beg,  Bm_end   !dom group
-     integer           :: pom_beg, pom_end
+     integer           :: pom_beg, pom_end    
      integer           :: c_loc
      integer           :: n_loc
      integer           :: p_loc
@@ -95,7 +97,7 @@ implicit none
      integer, pointer :: lid_plant_minn_no3_pft(:)=> null()
      integer, pointer :: lid_plant_minn_nh4_pft(:)=> null()
      integer, pointer :: lid_plant_minp_pft(:)=> null()
-     logical, pointer :: is_cenpool_som(:) => null()
+     logical, pointer :: is_sumpool_som(:) => null()
      logical :: debug
      character(len=loc_name_len), allocatable :: varnames(:)
      character(len=loc_name_len), allocatable :: varunits(:)
@@ -105,7 +107,7 @@ implicit none
      procedure, private :: InitPars
      procedure, private :: InitAllocate
      procedure, private :: set_primvar_reac_ids
-  end type centurybgc_index_type
+  end type summsbgc_index_type
 
   contains
   !-----------------------------------------------------------------------
@@ -193,7 +195,7 @@ implicit none
 
   end subroutine list_disp
   !-------------------------------------------------------------------------------
-  subroutine add_ompool_name(list_name, list_unit, list_pool,prefix, use_c13, use_c14, do_init, vid,uid,pid)
+ subroutine add_ompool_name(list_name, list_unit, list_pool,prefix, use_c13, use_c14, do_init, vid,uid,pid)
   implicit none
   type(list_t), pointer :: list_name
   type(list_t), pointer :: list_unit
@@ -231,11 +233,11 @@ implicit none
   subroutine Init(this, use_c13, use_c14, non_limit, nop_limit, maxpft)
     !
     ! DESCRIPTION:
-    ! Initialize centurybgc type
+    ! Initialize summsbgc type
     ! !USES:
   implicit none
   ! !ARGUMENTS:
-  class(centurybgc_index_type), intent(inout) :: this
+  class(summsbgc_index_type), intent(inout) :: this
   logical, intent(in) :: use_c13
   logical, intent(in) :: use_c14
   logical, intent(in) :: non_limit
@@ -255,7 +257,7 @@ implicit none
   call this%set_primvar_reac_ids()
 
   this%debug = .false.
-  
+
   end subroutine Init
   !-------------------------------------------------------------------------------
 
@@ -277,14 +279,14 @@ implicit none
     ! s{m+1} diagnostic variables
     ! s{p}
     ! each reaction is associated with a primary species, the secondary species follows after primary species
-    ! for the century model, the primary species are seven om pools and nh4, no3 and plant nitrogen
+    ! for the century model, the primary species are 11 om pools and nh4, no3 and plant nitrogen
     !
     ! !USES:
     use MathfuncMod   , only : addone, countelm
     use betr_utils    , only : num2str
     use betr_constants, only : betr_string_length_long
     implicit none
-    class(centurybgc_index_type) :: this
+    class(summsbgc_index_type) :: this
     integer, intent(in) :: maxpft
     logical, intent(in) :: use_c13
     logical, intent(in) :: use_c14
@@ -301,7 +303,7 @@ implicit none
     type(list_t), pointer :: list_unit => null()
     type(list_t), pointer :: list_pool => null()
     character(len=loc_name_len) :: postfix
-    
+
     itemp = 0
     ireac = 0
     ielem= 0
@@ -322,9 +324,9 @@ implicit none
     this%lit1 = addone(itemp); this%lit1_dek_reac = addone(ireac)
     call add_ompool_name(list_name, list_unit, list_pool,'lit1', use_c13, use_c14, do_init=.true., vid=vid,uid=uid,pid=pid)
     this%lit2 = addone(itemp); this%lit2_dek_reac = addone(ireac)
-    call add_ompool_name(list_name, list_unit, list_pool,'lit2', use_c13, use_c14, do_init=.false.,vid=vid,uid=uid,pid=pid)
+    call add_ompool_name(list_name, list_unit, list_pool,'lit2', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
     this%lit3 = addone(itemp); this%lit3_dek_reac = addone(ireac)
-    call add_ompool_name(list_name, list_unit, list_pool,'lit3', use_c13, use_c14, do_init=.false.,vid=vid,uid=uid,pid=pid)
+    call add_ompool_name(list_name, list_unit, list_pool,'lit3', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
     this%litr_end=this%litr_beg-1+3*this%nelms
 
     !woody group
@@ -339,36 +341,37 @@ implicit none
 
     !microbial biomass group
     this%Bm_beg=this%wood_end+1
-    this%som1 = addone(itemp); this%som1_dek_reac = addone(ireac)
-    call add_ompool_name(list_name, list_unit, list_pool,'SOM1_MB', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
-    this%Bm_end=this%Bm_beg-1+this%nelms
-
-    this%pom_beg=this%Bm_end+1
-    this%som2 = addone(itemp); this%som2_dek_reac = addone(ireac)
-    call add_ompool_name(list_name, list_unit, list_pool,'SOM2_POM', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
-    this%pom_end=this%pom_beg-1+this%nelms
-
-    this%som_beg=this%pom_end+1
-    this%som3 = addone(itemp); this%som3_dek_reac = addone(ireac)
-    call add_ompool_name(list_name, list_unit, list_pool,'som3', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
+    this%mic = addone(itemp); this%mic_dek_reac = addone(ireac)
+    call add_ompool_name(list_name, list_unit, list_pool,'mic', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
+    this%res = addone(itemp); this%res_dek_reac = addone(ireac)
+    call add_ompool_name(list_name, list_unit, list_pool,'res', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
+    this%Bm_end=this%Bm_beg-1+2*this%nelms
+    
+    !som group
+    this%som_beg=this%Bm_end+1
+    this%poly = addone(itemp); this%poly_dek_reac = addone(ireac)
+    call add_ompool_name(list_name, list_unit, list_pool,'poly', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
     this%som_end=this%som_beg-1+this%nelms
 
     !dom group
-    !this%dom_beg=this%som_end+1
-    !this%som2 = addone(itemp); this%som2_dek_reac = addone(ireac)  !put som2 at the end because it is defined as dom
-    !call add_ompool_name(list_name, list_unit, list_pool,'som2', use_c13, use_c14, do_init=.false.)
-    !this%dom_end=this%dom_beg-1+this%nelms
+    this%dom_beg=this%som_end+1
+    this%mono = addone(itemp); this%mono_dek_reac = addone(ireac)  !put mono at the end because it is defined as dom
+    call add_ompool_name(list_name, list_unit, list_pool,'mono', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
+    this%enz = addone(itemp); this%enz_dek_reac = addone(ireac)
+    call add_ompool_name(list_name, list_unit, list_pool,'enz', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
+    this%dom_end=this%dom_beg-1+2*this%nelms
 
     this%nom_pools = (countelm(this%litr_beg, this%litr_end)+&
        countelm(this%wood_beg,this%wood_end) + &
-       countelm(this%som_beg,this%som_end) + &
        countelm(this%Bm_beg,this%Bm_end) + &
-       countelm(this%pom_beg,this%pom_end))/this%nelms   !include coarse wood debris
-
-    allocate(this%is_cenpool_som(this%nom_pools)); this%is_cenpool_som(:)=.false.
-    this%is_cenpool_som(this%som1)=.true.
-    this%is_cenpool_som(this%som2)=.true.
-    this%is_cenpool_som(this%som3)=.true.
+       countelm(this%som_beg,this%som_end) + &
+       countelm(this%dom_beg,this%dom_end))/this%nelms   !include coarse wood debris
+    allocate(this%is_sumpool_som(this%nom_pools)); this%is_sumpool_som(:)=.false.
+    this%is_sumpool_som(this%poly)=.true.
+    this%is_sumpool_som(this%mono)=.true.
+    this%is_sumpool_som(this%mic)=.true.
+    this%is_sumpool_som(this%enz)=.true.
+    this%is_sumpool_som(this%res)=.true.
 
     itemp               = this%nom_pools*this%nelms
 
@@ -405,7 +408,7 @@ implicit none
     this%lid_n2o        = addone(itemp);call list_insert(list_name, 'n2o',vid); call list_insert(list_unit,'mol N2O m-3',uid)
     this%lid_n2         = addone(itemp);call list_insert(list_name, 'n2',vid); call list_insert(list_unit, 'mol N2 m-3',uid)
 
-    this%nprimvars      = itemp
+    this%nprimvars      = itemp     !primary state variables 14 + 6
 
     this%lid_nh4        = addone(itemp)
     this%lid_no3        = addone(itemp)
@@ -510,8 +513,10 @@ implicit none
       enddo
     endif
 
-    this%nstvars          = itemp          !totally 14+32 state variables
-    this%nreactions = ireac            !seven decomposition pathways plus root auto respiration, nitrification, denitrification and plant immobilization
+    this%nstvars          = itemp          !64 state variables
+    this%nreactions = ireac            !decomposition pathways plus root auto respiration, nitrification, denitrification and plant immobilization
+
+!write(*,*)'this%nstvars or num vars',this%nstvars !RZA
 
     allocate(this%primvarid(ireac)); this%primvarid(:) = -1
     allocate(this%is_aerobic_reac(ireac)); this%is_aerobic_reac(:)=.false.
@@ -524,7 +529,9 @@ implicit none
     call copy_name(this%nstvars, list_unit, this%varunits(1:this%nstvars))
     call copy_name(this%nom_pools, list_pool, this%ompoolnames(1:this%nom_pools))
 
-!    call list_disp(list_name);call list_disp(list_pool);call list_disp(list_unit)
+!write(*,*)'varnames!',this%varnames(1:this%nstvars) !RZA
+!write(*,*)'nom_pool names!',this%ompoolnames(1:this%nom_pools)
+
     call list_free(list_name)
     call list_free(list_pool)
     call list_free(list_unit)
@@ -538,7 +545,7 @@ implicit none
     !
   implicit none
     ! !ARGUMENTS:
-  class(centurybgc_index_type), intent(inout) :: this
+  class(summsbgc_index_type), intent(inout) :: this
 
 
 
@@ -547,7 +554,7 @@ implicit none
   subroutine set_primvar_reac_ids(this)
 
   implicit none
-  class(centurybgc_index_type), intent(inout)  :: this
+  class(summsbgc_index_type), intent(inout)  :: this
 
   integer :: reac
 
@@ -558,9 +565,11 @@ implicit none
     cwd  => this%cwd                         ,    &
     lwd  => this%lwd                         ,    &
     fwd  => this%fwd                         ,    &
-    som1  => this%som1                       ,    &
-    som2  => this%som2                       ,    &
-    som3  => this%som3                       ,    &
+    mic  => this%mic                         ,    &
+    res  => this%res                         ,    &
+    enz  => this%enz                         ,    &
+    mono  => this%mono                       ,    &
+    poly  => this%poly                       ,    &
     nelms => this%nelms                      ,    &
     c_loc => this%c_loc                      ,    &
     n_loc => this%n_loc                      ,    &
@@ -571,66 +580,75 @@ implicit none
     lid_minp_soluble=> this%lid_minp_soluble ,    &
     lid_minp_secondary => this%lid_minp_secondary &
   )
-  !reaction1, lit1 -> s1
+  !reaction1, lit1 -> mono
   reac=this%lit1_dek_reac;     this%primvarid(reac) = (lit1-1)*nelms+c_loc
   !x is_aerobic_reac(reac) = .true.
 
-  !reaction 2, lit2 -> s1
+  !reaction 2, lit2 -> mono
   reac =this%lit2_dek_reac;   this%primvarid(reac) = (lit2-1)*nelms+c_loc
   !x is_aerobic_reac(reac) = .true.
 
-  !reaction 3, lit3->s2
+  !reaction 3, lit3->poly
   reac =this%lit3_dek_reac; this%primvarid(reac) = (lit3-1)*nelms+c_loc
   !x is_aerobic_reac(reac) = .true.
 
-  !reaction 4, SOM1 -> f1*SOM2 + f2*SOm3
-  reac =this%som1_dek_reac; this%primvarid(reac) = (som1-1)*nelms+c_loc
+  !reaction 4, poly->mono
+  reac =this%poly_dek_reac; this%primvarid(reac) = (poly-1)*nelms+c_loc
   !x is_aerobic_reac(reac) = .true.
 
-  !reaction 5, som2->som1, som3
-  reac =this%som2_dek_reac;  this%primvarid(reac) = (som2-1)*nelms+c_loc
+  !reaction 5, mono->res + co2
+  reac =this%mono_dek_reac;  this%primvarid(reac) = (mono-1)*nelms+c_loc
   !x is_aerobic_reac(reac) = .true.
 
-  !reaction 6, s3-> s1
-  reac = this%som3_dek_reac;  this%primvarid(reac) = (som3-1)*nelms+c_loc
+  !reaction 6, mic->poly
+  reac = this%mic_dek_reac;  this%primvarid(reac) = (mic-1)*nelms+c_loc
   !x is_aerobic_reac(reac) = .true.
 
-  !reaction 7, cwd -> lit1 + lit2
+  !reaction 7, enz->poly + mono
+  reac = this%enz_dek_reac;  this%primvarid(reac) = (enz-1)*nelms+c_loc
+  !x is_aerobic_reac(reac) = .true.
+
+  !reaction 8, res->mic + enz + mono + co2
+  reac = this%res_dek_reac;  this%primvarid(reac) = (res-1)*nelms+c_loc
+  !x is_aerobic_reac(reac) = .true.
+
+  !reaction 9, cwd -> lit1 + lit2
   reac = this%cwd_dek_reac; this%primvarid(reac) = (cwd-1)*nelms+c_loc
   !x is_aerobic_reac(reac) = .true.
 
   reac = this%fwd_dek_reac; this%primvarid(reac) = (fwd-1)*nelms+c_loc
 
   reac = this%lwd_dek_reac; this%primvarid(reac) = (lwd-1)*nelms+c_loc
-  !reaction 8, nitrification
+
+  !reaction 10, nitrification
   reac = this%lid_nh4_nit_reac; this%primvarid(reac) = this%lid_nh4
   !x is_aerobic_reac(reac) = .true.
 
-  !reaction 9, denitrification
+  !reaction 11, denitrification
   reac = this%lid_no3_den_reac; this%primvarid(reac) = lid_no3
 
-  !reaction 10, inorganic P non-equilibrium adsorption
+  !reaction 12, inorganic P non-equilibrium adsorption
   !P_solution -> p_secondary
   reac = this%lid_minp_soluble_to_secp_reac; this%primvarid(reac) = lid_minp_soluble
 
-  !reaction 11, inorganic P non-equilibrium desorption
+  !reaction 13, inorganic P non-equilibrium desorption
   ! p_secondary -> P_solution
   reac = this%lid_minp_secondary_to_sol_occ_reac; this%primvarid(reac) = lid_minp_secondary
 
-  !reaction 12, plant mineral nitrogen nh4 uptake
+  !reaction 14, plant mineral nitrogen nh4 uptake
   reac = this%lid_plant_minn_nh4_up_reac; this%primvarid(reac) = lid_nh4
 
-  !reaction 13, plant mineral nitrogen no3 uptake
+  !reaction 15, plant mineral nitrogen no3 uptake
   reac = this%lid_plant_minn_no3_up_reac; this%primvarid(reac) = lid_no3
 
-  !reaction 14, plant mineral phosphorus uptake
+  !reaction 16, plant mineral phosphorus uptake
   reac = this%lid_plant_minp_up_reac; this%primvarid(reac) = lid_minp_soluble
 
-  !reaction 15, autotrophic respiration, ar + o2 -> co2
+  !reaction 17, autotrophic respiration, ar + o2 -> co2
   !x reac = lid_ar_rt_reac; is_aerobic_reac(reac) = .true.
 
-  !reaction 15, o2 transport through arenchyma
+  !reaction 18, o2 transport through arenchyma
   reac = this%lid_o2_aren_reac; this%primvarid(reac) = lid_o2
   end associate
   end subroutine set_primvar_reac_ids
-end module BgcCentCnpIndexType
+end module BgcSummsIndexType
