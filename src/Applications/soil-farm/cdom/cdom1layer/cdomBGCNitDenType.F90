@@ -168,9 +168,10 @@ implicit none
          (this%d_con_g(2,1) + this%d_con_g(2,2)*temp ) * 1.e-4_r8 / &
          ((this%d_con_w(2,1) + this%d_con_w(2,2)*temp + this%d_con_w(2,3)*temp**2) * 1.e-9_r8)
 
-     anaerobic_frac = exp(-rij_kro_a * r_psi**(-rij_kro_alpha) * &
+      anaerobic_frac = exp(-rij_kro_a * r_psi**(-rij_kro_alpha) * &
         o2_decomp_depth**(-rij_kro_beta) * o2g**rij_kro_gamma * (h2osoi_vol + &
             ratio_diffusivity_water_gas *  air_vol)**rij_kro_delta)
+      
     end associate
   end subroutine calc_anaerobic_frac
 

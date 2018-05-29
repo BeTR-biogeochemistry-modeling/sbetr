@@ -583,7 +583,7 @@ contains
 
   !calculate potential o2 consumption
   o2_decomp_depth = pot_co2_hr + rt_ar + pot_f_nit_mol_per_sec * this%nitden%get_nit_o2_scef()
-
+  !print*,'o2_decomp_depth',pot_co2_hr, rt_ar, pot_f_nit_mol_per_sec, this%nitden%get_nit_o2_scef()
   !take a minimum > 0 to avoid singularity in calculating anaerobic fractions
   o2_decomp_depth = max(o2_decomp_depth,1.e-40_r8)
 
@@ -617,10 +617,10 @@ contains
 !  call this%censom%stoichiometry_fix(this%cdom_bgc_index, ystates1)
 
   if(this%cdom_bgc_index%debug)then
-    do jj = 1, nstvars
-      print*,jj,yf(jj),ystates1(jj)-yf(jj)
-    enddo
-    call this%end_massbal_check('bf exit runbgc')
+!    do jj = 1, nstvars
+!      print*,jj,yf(jj),ystates1(jj)-yf(jj)
+!    enddo
+!    call this%end_massbal_check('bf exit runbgc')
     pause
   endif
 !  endif

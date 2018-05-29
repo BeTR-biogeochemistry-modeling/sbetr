@@ -303,6 +303,7 @@ contains
   !calculate potential respiration rates by summarizing all om decomposition pathways
   call this%calc_potential_aerobic_hr(cdom_bgc_index, pot_om_decay_rates, &
     cascade_matrix, pot_co2_hr)
+
   end associate
   end subroutine run_decomp
 !------------------------------------------
@@ -661,6 +662,7 @@ contains
     pot_co2_hr = cascade_matrix(lid_co2_hr,dom_dek_reac) * pot_decay_rates(dom)  + &
           cascade_matrix(lid_co2_hr,llig_dek_reac) * pot_decay_rates(llig)       + &
           cascade_matrix(lid_co2_hr,mic_dek_reac) * pot_decay_rates(mic)         !mol CO2/m3/s
+    !print*,'pot_co2_hr',pot_co2_hr,pot_decay_rates(dom),pot_decay_rates(llig),pot_decay_rates(mic)
     end associate
   end subroutine calc_potential_aerobic_hr
 
