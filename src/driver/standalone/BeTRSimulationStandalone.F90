@@ -565,10 +565,12 @@ contains
       n14state_vars%som1n_col(c) = this%biogeo_state(c)%n14state_vars%som1n_col(c_l)
       n14state_vars%som2n_col(c) = this%biogeo_state(c)%n14state_vars%som2n_col(c_l)
       n14state_vars%som3n_col(c) = this%biogeo_state(c)%n14state_vars%som3n_col(c_l)
+      n14state_vars%domn_col(c) = this%biogeo_state(c)%n14state_vars%domn_col(c_l)
 
       p31state_vars%som1p_col(c) = this%biogeo_state(c)%p31state_vars%som1p_col(c_l)
       p31state_vars%som2p_col(c) = this%biogeo_state(c)%p31state_vars%som2p_col(c_l)
       p31state_vars%som3p_col(c) = this%biogeo_state(c)%p31state_vars%som3p_col(c_l)
+      p31state_vars%domp_col(c) = this%biogeo_state(c)%p31state_vars%domp_col(c_l)
     endif
   enddo
   end subroutine StandalonePlantSoilBGCRecv

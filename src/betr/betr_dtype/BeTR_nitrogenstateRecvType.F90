@@ -15,6 +15,7 @@ implicit none
     real(r8), pointer :: sminn_no3_col(:)=> null()
     real(r8), pointer :: totlitn_1m_col(:) => null()
     real(r8), pointer :: totsomn_1m_col(:) => null()
+    real(r8), pointer :: domn_col(:) => null()
     real(r8), pointer :: cwdn_vr_col(:,:) => null()
     real(r8), pointer :: totlitn_vr_col(:,:) => null()
     real(r8), pointer :: totsomn_vr_col(:,:) => null()
@@ -85,6 +86,7 @@ implicit none
   allocate(this%sminn_nh4_vr_col(begc:endc,lbj:ubj)); this%sminn_nh4_vr_col(:,:) =nan
   allocate(this%sminn_no3_vr_col(begc:endc,lbj:ubj)); this%sminn_no3_vr_col(:,:) =nan
   allocate(this%domn_vr_col(begc:endc, lbj:ubj)); this%domn_vr_col(:,:)=nan
+  allocate(this%domn_col(begc:endc)); this%domn_col(:) = nan
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------
@@ -128,7 +130,7 @@ implicit none
   this%sminn_no3_col(:) = 0._r8
   this%totlitn_1m_col(:) = 0._r8
   this%totsomn_1m_col(:) = 0._r8
-
+  this%domn_col(:) = 0._r8
 
   this%som1n_col(:) = 0._r8
   this%som2n_col(:) = 0._r8
@@ -147,6 +149,7 @@ implicit none
       this%totlitn_col(c) = this%totlitn_col(c) + dz(c,j)*this%totlitn_vr_col(c,j)
       this%totsomn_vr_col(c,j) = this%som1n_vr_col(c,j) + this%som2n_vr_col(c,j) +  &
           this%som3n_vr_col(c,j) + this%domn_vr_col(c,j)
+      this%domn_col(c) = this%domn_col(c) + this%domn_vr_col(c,j)*dz(c,j)
       this%totsomn_col(c) = this%totsomn_col(c) + dz(c,j)*this%totsomn_vr_col(c,j)
       this%sminn_col(c) = this%sminn_col(c) + dz(c,j)*this%sminn_vr_col(c,j)
       this%sminn_nh4_col(c) = this%sminn_nh4_col(c) + dz(c,j)*this%sminn_nh4_vr_col(c,j)
@@ -163,6 +166,6 @@ implicit none
       endif
     enddo
   enddo
-  
+
   end subroutine summary
 end module BeTR_nitrogenstateRecvType

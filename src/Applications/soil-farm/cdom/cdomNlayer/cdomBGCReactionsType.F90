@@ -1213,15 +1213,7 @@ contains
     enddo
     deallocate(ystates0)
     deallocate(ystatesf)
-!    if(betrtracer_vars%debug)then
-!      select type(plant_soilbgc)
-!      type is(cdom_plant_soilbgc_type)
-!        write(*,*)'sminn act plant uptake',plant_soilbgc%plant_minn_active_yield_flx_col(bounds%begc:bounds%endc)
-!        write(*,*)'sminp act plant uptake',plant_soilbgc%plant_minp_active_yield_flx_col(bounds%begc:bounds%endc)
-!      end select
-!      call this%debug_info(bounds, num_soilc, filter_soilc, col%dz(bounds%begc:bounds%endc,bounds%lbj:bounds%ubj),&
-!        betrtracer_vars, tracerstate_vars,  'after bgcreact',betr_status)
-!    endif
+
 !update phase change coefficients for tracers involved in sorptive reactions
     call this%update_sorpphase_coeff(bounds, col, lbj, ubj, jtops, num_soilc, filter_soilc, &
       betrtracer_vars, tracerstate_vars, tracercoeff_vars)

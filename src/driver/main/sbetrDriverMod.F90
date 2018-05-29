@@ -640,6 +640,9 @@ end subroutine sbetrBGC_driver
     id = id + 1; ystates(id) = phosphorusstate_vars%som1p_col(c_l)
     id = id + 1; ystates(id) = phosphorusstate_vars%som2p_col(c_l)
     id = id + 1; ystates(id) = phosphorusstate_vars%som3p_col(c_l)
+    id = id + 1; ystates(id) = carbonstate_vars%domc_col(c_l)
+    id = id + 1; ystates(id) = nitrogenstate_vars%domn_col(c_l)
+    id = id + 1; ystates(id) = phosphorusstate_vars%domp_col(c_l)
   elseif(index(trim(reaction_method),'simic')/=0)then
     ystates(:) = 0._r8
     id = 0

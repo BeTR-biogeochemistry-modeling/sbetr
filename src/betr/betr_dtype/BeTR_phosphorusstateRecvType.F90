@@ -13,6 +13,7 @@ implicit none
     real(r8), pointer :: totsomp_1m_col(:) => null()
     real(r8), pointer :: sminp_col(:) => null()
     real(r8), pointer :: occlp_col(:) => null()
+    real(r8), pointer :: domp_col(:) => null()
 
     real(r8), pointer :: cwdp_vr_col(:,:) => null()
     real(r8), pointer :: totlitp_vr_col(:,:) => null()
@@ -66,7 +67,7 @@ implicit none
   allocate(this%totsomp_1m_col(begc:endc))
   allocate(this%sminp_col(begc:endc));
   allocate(this%occlp_col(begc:endc));
-
+  allocate(this%domp_col(begc:endc));
   allocate(this%som1p_col(begc:endc)); this%som1p_col(:) = nan
   allocate(this%som2p_col(begc:endc)); this%som2p_col(:) = nan
   allocate(this%som3p_col(begc:endc)); this%som3p_col(:) = nan
@@ -121,7 +122,7 @@ implicit none
   this%totsomp_1m_col(:) = 0._r8
   this%sminp_col(:) = 0._r8
   this%occlp_col(:) = 0._r8
-
+  this%domp_col(:) = 0._r8
   this%som1p_col(:) = 0._r8
   this%som2p_col(:) = 0._r8
   this%som3p_col(:) = 0._r8
@@ -130,6 +131,7 @@ implicit none
       this%som1p_col(c) =   this%som1p_col(c) + dz(c,j)*this%som1p_vr_col(c,j)
       this%som2p_col(c) =   this%som2p_col(c) + dz(c,j)*this%som2p_vr_col(c,j)
       this%som3p_col(c) =   this%som3p_col(c) + dz(c,j)*this%som3p_vr_col(c,j)
+      this%domp_col(c)  =   this%domp_col(c) + dz(c,j)*this%domp_vr_col(c,j)
     enddo
   enddo
 
