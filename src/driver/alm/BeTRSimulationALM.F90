@@ -42,7 +42,6 @@ module BeTRSimulationALM
      procedure, public :: SetBiophysForcing         => ALMSetBiophysForcing
      !unique subroutines
      procedure, public :: CalcDewSubFlux            => ALMCalcDewSubFlux
-     procedure, public :: SoilFluxStateRecv         => ALMBetrSoilFluxStateRecv
      procedure, public :: CalcSmpL                  => ALMCalcSmpL
      procedure, public :: PlantSoilBGCSend          => ALMBetrPlantSoilBGCSend
      procedure, public :: RetriveBGCInput           => ALMBeTRRetriveBGCInput
@@ -447,7 +446,6 @@ contains
 
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
-      if(this%betr(c)%tracers%debug)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'bfdrain', this%bstatus(c))
 
       call this%betr(c)%step_with_drainage(betr_bounds,      &
          this%betr_col(c),this%num_soilc, this%filter_soilc, this%jtops, &
@@ -459,8 +457,6 @@ contains
         exit
       endif
 
-! debug
-      if(this%betr(c)%tracers%debug)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, 'afdrain', this%bstatus(c))
     enddo
     if(this%bsimstatus%check_status()) &
       call endrun(msg=this%bsimstatus%print_msg())
@@ -514,7 +510,6 @@ contains
            this%num_soilc, this%filter_soilc, this%biogeo_flux(c))
     enddo
 
-
     if(trim(reaction_method)=='doc_dic')then
 
       c_l = 1
@@ -525,7 +520,6 @@ contains
         qflx_rofliq_qsub_doc_col(c)=this%biogeo_flux(c)%qflx_rofliq_qsub_doc_col(c_l)
         qflx_rofliq_qsub_dic_col(c)=this%biogeo_flux(c)%qflx_rofliq_qsub_dic_col(c_l)
       enddo
-
 
       call c2g( bounds, &
            qflx_rofliq_qsur_doc_col(begc:endc), qflx_rofliq_qsur_doc_grc(begg:endg),     &
@@ -769,7 +763,6 @@ contains
         nitrogenflux_vars%harvest_n_to_cwdn_col(c,j)                 , &
         nitrogenflux_vars%fire_mortality_n_to_cwdn_col(c,j)/))
 
-
       !phosphorus input
       !metabolic phosphorus
       call apvb(this%biophys_forc(c)%p31flx%pflx_input_litr_met_vr_col(c_l,j) , &
@@ -908,7 +901,7 @@ contains
         pi = pi + 1
         n14flux_vars%smin_nh4_to_plant_patch(p) = this%biogeo_flux(c)%n14flux_vars%smin_nh4_to_plant_patch(pi)
         n14flux_vars%smin_no3_to_plant_patch(p) = this%biogeo_flux(c)%n14flux_vars%smin_no3_to_plant_patch(pi)
-!         if(c==20024)print*,p,n14flux_vars%smin_nh4_to_plant_patch(p),n14flux_vars%smin_no3_to_plant_patch(p)
+
         p31flux_vars%sminp_to_plant_patch(p)  = this%biogeo_flux(c)%p31flux_vars%sminp_to_plant_patch(pi)
         !compute relative n return, note the following computation is different from ALM-ECA-CNP, because
         !betr includes transpiration incuded nitrogen uptake, which has not direct temperature sensitivity.
@@ -1085,31 +1078,6 @@ contains
         this%biophys_forc(c), this%betr(c)%tracers, this%betr(c)%tracerfluxes, this%betr(c)%tracerstates)
     enddo
   end subroutine ALMCalcDewSubFlux
-
-  !------------------------------------------------------------------------
-  subroutine ALMBetrSoilFluxStateRecv(this, num_soilc, filter_soilc)
-  !this should be expanded and called after tracer update with drainage
-  implicit none
-  ! !ARGUMENTS:
-  class(betr_simulation_alm_type), intent(inout) :: this
-  integer           , intent(in)  :: num_soilc
-  integer           , intent(in)  :: filter_soilc(:)
-
-  integer :: fc, c
-  type(betr_bounds_type)     :: betr_bounds
-
-  call this%BeTRSetBounds(betr_bounds)
-
-
-!  do fc = 1, num_soilc
-!    c = filter_soilc(fc)
-!    if(.not. this%active_col(c))cycle
-!    call this%betr(c)%bgc_reaction%lsm_betr_flux_state_receive(betr_bounds, &
-!       this%num_soilc, this%filter_soilc,                                   &
-!       this%betr(c)%tracerstates, this%betr(c)%tracerfluxes,  this%betr(c)%tracers)
-!  enddo
-
-  end subroutine ALMBetrSoilFluxStateRecv
 
   !------------------------------------------------------------------------
   subroutine ALMCalcSmpL(this, bounds, lbj, ubj, numf, filter, t_soisno, &
