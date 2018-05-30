@@ -480,6 +480,8 @@ subroutine set_tracer(this, bstatus, trc_id, trc_name, is_trc_mobile, is_trc_adv
    call disp('minp'   ,this%id_trc_minp     , this%id_trc_beg_minp     , this%id_trc_end_minp)
    call disp('o18_o2' ,this%id_trc_o18_o2   , this%id_trc_beg_o18_o2   , this%id_trc_end_o18_o2)
    call disp('o17_o2' ,this%id_trc_o17_o2   , this%id_trc_beg_o17_o2   , this%id_trc_end_o17_o2)
+   print*,'ntracers=',this%ntracers
+   print*,'ntracer_groups=',this%ntracer_groups
    contains
      subroutine disp(tag,grpid, memid_beg, memid_end)
      implicit none
