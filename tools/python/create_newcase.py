@@ -15,9 +15,11 @@ parser.add_argument('--case_name', dest="case_name", metavar='name', type=str, n
 
 args = parser.parse_args()
 #obtain the root directory of betr
-mdir=os.getcwd()
-strs=mdir.split('sbetr')
-mdir=strs[0]+'sbetr'
+
+dir_path = os.path.dirname(os.path.realpath(__file__))
+print dir_path
+
+mdir,chdir=dir_path.split('sbetr')
 
 if args.case_root[0][0]=='/':
     directory=args.case_root[0]+args.case_name[0]

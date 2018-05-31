@@ -767,345 +767,322 @@ def MakeNlayer(sfarm_dir, app_name):
     print "  ! do bgc reaction"
     print "  !"
     print "  ! !USES:"
-    use TracerBoundaryCondType , only : tracerboundarycond_type
-    use tracerfluxType         , only : tracerflux_type
-    use tracerstatetype        , only : tracerstate_type
-    use tracercoeffType        , only : tracercoeff_type
-    use BetrTracerType         , only : betrtracer_type
-    use PlantSoilBGCMod        , only : plant_soilbgc_type
-    use BetrStatusType         , only : betr_status_type
-    use betr_columnType        , only : betr_column_type
-    use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
-    use BeTR_biogeoStateType     , only : betr_biogeo_state_type
-    implicit none
-    !ARGUMENTS
-    class("+app_name+"_bgc_reaction_type) , intent(inout) :: this                       !
-    type(bounds_type)                 , intent(in)    :: bounds                      ! bounds
-    type(betr_column_type)            , intent(in)    :: col
-    integer                           , intent(in)    :: num_soilc                   ! number of columns in column filter
-    integer                           , intent(in)    :: filter_soilc(:)             ! column filter
-    integer                           , intent(in)    :: num_soilp
-    integer                           , intent(in)    :: filter_soilp(:)
-    integer                           , intent(in)    :: jtops( : )                  ! top index of each column
-    integer                           , intent(in)    :: lbj, ubj                    ! lower and upper bounds, make sure they are > 0
-    real(r8)                          , intent(in)    :: dtime                       ! model time step
-    type(betrtracer_type)             , intent(in)    :: betrtracer_vars             ! betr configuration information
-    type(betr_biogeophys_input_type)  , intent(inout) :: biophysforc
-    type(tracercoeff_type)            , intent(inout) :: tracercoeff_vars
-    type(tracerstate_type)            , intent(inout) :: tracerstate_vars
-    type(tracerflux_type)             , intent(inout) :: tracerflux_vars
-    type(tracerboundarycond_type)     , intent(inout) :: tracerboundarycond_vars !
-    class(plant_soilbgc_type)         , intent(inout) :: plant_soilbgc
-    type(betr_biogeo_flux_type)       , intent(inout) :: biogeo_flux
-    type(betr_status_type)            , intent(out)   :: betr_status
-    character(len=*)                 , parameter     :: subname ='calc_bgc_reaction'
+    print "  use TracerBoundaryCondType , only : tracerboundarycond_type"
+    print "  use tracerfluxType         , only : tracerflux_type"
+    print "  use tracerstatetype        , only : tracerstate_type"
+    print "  use tracercoeffType        , only : tracercoeff_type"
+    print "  use BetrTracerType         , only : betrtracer_type"
+    print "  use PlantSoilBGCMod        , only : plant_soilbgc_type"
+    print "  use BetrStatusType         , only : betr_status_type"
+    print "  use betr_columnType        , only : betr_column_type"
+    print "  use BeTR_biogeoFluxType    , only : betr_biogeo_flux_type"
+    print "  use BeTR_biogeoStateType   , only : betr_biogeo_state_type"
+    print "  implicit none"
+    print "  !ARGUMENTS"
+    print "  class("+app_name+"_bgc_reaction_type) , intent(inout) :: this !"
+    print "  type(bounds_type)                 , intent(in)    :: bounds      ! bounds"
+    print "  type(betr_column_type)            , intent(in)    :: col"
+    print "  integer                           , intent(in)    :: num_soilc    ! number of columns in column filter"
+    print "  integer                           , intent(in)    :: filter_soilc(:)    ! column filter"
+    print "  integer                           , intent(in)    :: num_soilp"
+    print "  integer                           , intent(in)    :: filter_soilp(:)"
+    print "  integer                           , intent(in)    :: jtops( : )  ! top index of each column"
+    print "  integer                           , intent(in)    :: lbj, ubj    ! lower and upper bounds, make sure they are > 0"
+    print "  real(r8)                          , intent(in)    :: dtime                       ! model time step"
+    print "  type(betrtracer_type)             , intent(in)    :: betrtracer_vars             ! betr configuration information"
+    print "  type(betr_biogeophys_input_type)  , intent(inout) :: biophysforc"
+    print "  type(tracercoeff_type)            , intent(inout) :: tracercoeff_vars"
+    print "  type(tracerstate_type)            , intent(inout) :: tracerstate_vars"
+    print "  type(tracerflux_type)             , intent(inout) :: tracerflux_vars"
+    print "  type(tracerboundarycond_type)     , intent(inout) :: tracerboundarycond_vars !"
+    print "  class(plant_soilbgc_type)         , intent(inout) :: plant_soilbgc"
+    print "  type(betr_biogeo_flux_type)       , intent(inout) :: biogeo_flux"
+    print "  type(betr_status_type)            , intent(out)   :: betr_status"
+    print "  character(len=*)                 , parameter     :: subname ='calc_bgc_reaction'"
+    print ""
+    print "  integer :: c, fc, j"
+    print "  character(len=5) :: laystr"
+    print "  logical :: is_surflit  !surface litter layer?"
+    print "  integer :: nstates"
+    print "  real(r8), allocatable :: ystates0(:)"
+    print "  real(r8), allocatable :: ystatesf(:)"
+    print ""
+    print "  associate(                                                                      &"
+    print "    tracer_mobile_phase            => tracerstate_vars%tracer_conc_mobile_col  ,  &"
+    print "    tracer_flx_netpro_vr           => tracerflux_vars%tracer_flx_netpro_vr_col    &"
+    print "  )"
+    print ""
+    print "  call betr_status%reset()"
+    print ""
+    print "  nstates = this%"+app_name+"_bgc_index%nstvars"
+    print "  allocate(ystates0(nstates))"
+    print "  allocate(ystatesf(nstates))"
+    print ""
+    print "  call this%set_bgc_forc(bounds, col, lbj, ubj, jtops, num_soilc, filter_soilc, &"
+    print "    biophysforc, plant_soilbgc, betrtracer_vars, tracercoeff_vars, tracerstate_vars,betr_status)"
+    print ""
+    print "  do j = lbj, ubj"
+    print "    do fc = 1, num_soilc"
+    print "      c = filter_soilc(fc)"
+    print "      if(j<jtops(c))cycle"
+    print "      is_surflit=(j<=0)"
+    print "      !do bgc reaction"
+    print "      call this%"+app_name+"_bgc(c,j)%runbgc(is_surflit, dtime, this%"+app_name+"_forc(c,j), nstates, ystates0, ystatesf, betr_status)"
+    print "      if(betr_status%check_status())then"
+    print "        write(laystr,'(I2.2)')j"
+    print "        betr_status%msg=trim(betr_status%msg)//' lay '//trim(laystr)"
+    print "        return"
+    print "      endif"
+    print ""
+    print "      call this%retrieve_output(c, j, nstates, ystates0, ystatesf, dtime, betrtracer_vars, tracerflux_vars,&"
+    print "        tracerstate_vars, plant_soilbgc, biogeo_flux)"
+    print ""
+    print "    enddo"
+    print "  enddo"
+    print ""
+    print "  !update phase change coefficients for tracers involved in sorptive reactions"
+    print "  call this%update_sorpphase_coeff(bounds, col, lbj, ubj, jtops, num_soilc, filter_soilc, &"
+    print "    betrtracer_vars, tracerstate_vars, tracercoeff_vars)"
+    print "  deallocate(ystates0)"
+    print "  deallocate(ystatesf)"
+    print "  end associate"
+    print "  end subroutine calc_bgc_reaction"
+    print "  !-------------------------------------------------------------------------------"
+    print "  subroutine do_tracer_equilibration(this, bounds, lbj, ubj, jtops, num_soilc, filter_soilc, &"
+    print "    betrtracer_vars, tracercoeff_vars, tracerstate_vars, betr_status)"
+    print "  !"
+    print "  ! DESCRIPTION:"
+    print "  ! requilibrate tracers that has solid and mobile phases"
+    print "  ! using the theory of mass action."
+    print "  !"
+    print "  ! !USES:"
+    print "  !"
+    print "  use tracerstatetype , only : tracerstate_type"
+    print "  use tracercoeffType , only : tracercoeff_type"
+    print "  use BeTRTracerType  , only : betrtracer_type"
+    print "  use BetrStatusType  , only : betr_status_type"
+    print "  implicit none"
+    print "  ! !ARGUMENTS:"
+    print "  class("+app_name+"_bgc_reaction_type) , intent(inout)    :: this"
+    print "  type(bounds_type)                 , intent(in)    :: bounds"
+    print "  integer                           , intent(in)    :: lbj, ubj"
+    print "  integer                           , intent(in)    :: jtops(bounds%begc: )        ! top label of each column"
+    print "  integer                           , intent(in)    :: num_soilc"
+    print "  integer                           , intent(in)    :: filter_soilc(:)"
+    print "  type(betrtracer_type)             , intent(in)    :: betrtracer_vars"
+    print "  type(tracercoeff_type)            , intent(in)    :: tracercoeff_vars"
+    print "  type(tracerstate_type)            , intent(inout) :: tracerstate_vars"
+    print "  type(betr_status_type)            , intent(out)   :: betr_status"
+    print "  !local variables"
+    print "  character(len=255) :: subname = 'do_tracer_equilibration'"
+    print "  call betr_status%reset()"
+    print "  SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__), betr_status)"
+    print ""
+    print "  ! remove compiler warnings for unused dummy args"
+    print "  if (this%dummy_compiler_warning)                          continue"
+    print "  if (bounds%begc > 0)                                      continue"
+    print "  if (ubj > lbj)                                            continue"
+    print "  if (size(jtops) > 0)                                      continue"
+    print "  if (num_soilc > 0)                                        continue"
+    print "  if (size(filter_soilc) > 0)                               continue"
+    print "  if (len(betrtracer_vars%betr_simname) > 0)                continue"
+    print "  if (size(tracerstate_vars%tracer_conc_surfwater_col) > 0) continue"
+    print "  if (size(tracercoeff_vars%annsum_counter_col) > 0)        continue"
+    print "  !continue on the simulation type, an implementation of aqueous chemistry will be"
+    print "  !employed to separate out the adsorbed phase"
+    print "  !It should be noted that this formulation excludes the use of linear isotherm, which"
+    print "  !can be integrated through the retardation factor"
+    print "  end subroutine do_tracer_equilibration"
+    print "!-----------------------------------------------------------------------"
+    print "  subroutine InitCold(this, bounds, col, betrtracer_vars, biophysforc, tracerstate_vars)"
+    print "  !"
+    print "  ! !DESCRIPTION:"
+    print "  ! do cold initialization"
+    print "  !"
+    print "  ! !USES:"
+    print "  use BeTRTracerType      , only : BeTRTracer_Type"
+    print "  use tracerstatetype     , only : tracerstate_type"
+    print "  use betr_varcon         , only : spval => bspval, ispval => bispval"
+    print "  use BeTR_landvarconType , only : landvarcon  => betr_landvarcon"
+    print "  use betr_columnType     , only : betr_column_type"
+    print "  implicit none"
+    print "  ! !ARGUMENTS:"
+    print "  class("+app_name+"_bgc_reaction_type) , intent(inout)    :: this"
+    print "  type(bounds_type)                 , intent(in)    :: bounds"
+    print "  type(betr_column_type)            , intent(in)    :: col"
+    print "  type(BeTRTracer_Type)             , intent(in)    :: betrtracer_vars"
+    print "  type(betr_biogeophys_input_type)  , intent(in)    :: biophysforc"
+    print "  type(tracerstate_type)            , intent(inout) :: tracerstate_vars"
+    print "  !"
+    print "  ! !LOCAL VARIABLES:"
+    print "  integer :: p, c, l, k, j"
+    print "  integer :: fc       ! filter_soilc index"
+    print "  integer :: begc, endc"
+    print "  integer :: begg, endg"
+    print "  integer :: trcid"
+    print "  begc = bounds%begc; endc= bounds%endc"
+    print "  begg = bounds%begg; endg= bounds%endg"
+    print "  trcid = betrtracer_vars%id_trc_beg_Bm"
+    print ""
+    print "  do c = bounds%begc, bounds%endc"
+    print "    !dual phase tracers"
+    print "    tracerstate_vars%tracer_conc_mobile_col(c,:, :)          = 0._r8"
+    print "    tracerstate_vars%tracer_conc_surfwater_col(c,:)          = 0._r8"
+    print "    tracerstate_vars%tracer_conc_aquifer_col(c,:)            = 0._r8"
+    print "    tracerstate_vars%tracer_conc_grndwater_col(c,:)          = 0._r8"
+    print "    if(betrtracer_vars%nsolid_equil_tracers>0)then"
+    print "      tracerstate_vars%tracer_conc_solid_equil_col(c, :, :) = 0._r8"
+    print "    endif"
+    print "    tracerstate_vars%tracer_soi_molarmass_col(c,:)          = 0._r8"
+    print "    !initialize microbial biomass"
+    print "    tracerstate_vars%tracer_conc_mobile_col(c,:,trcid) = 1.e-2_r8"
+    print "  enddo"
+    print "  end subroutine InitCold"
+    print "!-----------------------------------------------------------------------"
+    print "  subroutine readParams(this, name_list_buffer, betrtracer_vars)"
+    print "  !"
+    print "  ! !DESCRIPTION:"
+    print "  ! read in module specific parameters"
+    print "  !"
+    print "  ! !USES:"
+    print "  use BeTRTracerType , only : BeTRTracer_Type"
+    print "  implicit none"
+    print "  ! !ARGUMENTS:"
+    print "  class("+app_name+"_bgc_reaction_type) , intent(inout)    :: this"
+    print "  type(BeTRTracer_Type)             , intent(inout) :: betrtracer_vars"
+    print "  character(len=*)                  , intent(in)  :: name_list_buffer"
+    print "  ! remove compiler warnings for unused dummy args"
+    print "  if (this%dummy_compiler_warning)           continue"
+    print "  if (len(betrtracer_vars%betr_simname) > 0) continue"
+    print ""
+    print "  !do nothing here"
+    print "  end subroutine readParams"
+    print "!-------------------------------------------------------------------------------"
+    print "  subroutine retrieve_biogeoflux(this, num_soilc, filter_soilc, tracerflux_vars, &"
+    print "    betrtracer_vars, biogeo_flux)"
+    print "  !"
+    print "  ! DESCRIPTION"
+    print "  ! retrieve fluxes after bgc update"
+    print "  ! USES"
+    print "  use tracerfluxType           , only : tracerflux_type"
+    print "  use BeTR_decompMod           , only : betr_bounds_type"
+    print "  use BeTRTracerType           , only : BeTRTracer_Type"
+    print "  use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type"
+    print "  implicit none"
+    print "  class("+app_name+"_bgc_reaction_type) , intent(inout) :: this    !"
+    print "  integer                          , intent(in)    :: num_soilc   ! number of columns in column filter"
+    print "  integer                          , intent(in)    :: filter_soilc(:)             ! column filter"
+    print "  type(betrtracer_type)            , intent(in)    :: betrtracer_vars             ! betr configuration information"
+    print "  type(tracerflux_type)            , intent(in)    :: tracerflux_vars"
+    print "  type(betr_biogeo_flux_type)      , intent(inout) :: biogeo_flux"
 
-    integer :: c, fc, j
-    character(len=5) :: laystr
-    logical :: is_surflit  !surface litter layer?
-    integer :: nstates
-    real(r8), allocatable :: ystates0(:)
-    real(r8), allocatable :: ystatesf(:)
-
-    associate(                                                                    &
-    tracer_mobile_phase            => tracerstate_vars%tracer_conc_mobile_col  ,  &
-    tracer_flx_netpro_vr           => tracerflux_vars%tracer_flx_netpro_vr_col    &
-    )
-
-    call betr_status%reset()
-
-    nstates = this%"+app_name+"_bgc_index%nstvars
-    allocate(ystates0(nstates))
-    allocate(ystatesf(nstates))
-
-    call this%set_bgc_forc(bounds, col, lbj, ubj, jtops, num_soilc, filter_soilc, &
-        biophysforc, plant_soilbgc, betrtracer_vars, tracercoeff_vars, tracerstate_vars,betr_status)
-
-    do j = lbj, ubj
-      do fc = 1, num_soilc
-        c = filter_soilc(fc)
-        if(j<jtops(c))cycle
-        is_surflit=(j<=0)
-        !do bgc reaction
-        call this%"+app_name+"_bgc(c,j)%runbgc(is_surflit, dtime, this%"+app_name+"_forc(c,j), nstates, ystates0, ystatesf, betr_status)
-
-        if(betr_status%check_status())then
-          write(laystr,'(I2.2)')j
-          betr_status%msg=trim(betr_status%msg)//' lay '//trim(laystr)
-          return
-        endif
-
-        call this%retrieve_output(c, j, nstates, ystates0, ystatesf, dtime, betrtracer_vars, tracerflux_vars,&
-           tracerstate_vars, plant_soilbgc, biogeo_flux)
-
-      enddo
-    enddo
-
-    !update phase change coefficients for tracers involved in sorptive reactions
-    call this%update_sorpphase_coeff(bounds, col, lbj, ubj, jtops, num_soilc, filter_soilc, &
-        betrtracer_vars, tracerstate_vars, tracercoeff_vars)
-
-    deallocate(ystates0)
-    deallocate(ystatesf)
-   end associate
-  end subroutine calc_bgc_reaction
-
-  !-------------------------------------------------------------------------------
-  subroutine do_tracer_equilibration(this, bounds, lbj, ubj, jtops, num_soilc, filter_soilc, &
-       betrtracer_vars, tracercoeff_vars, tracerstate_vars, betr_status)
-    !
-    ! DESCRIPTION:
-    ! requilibrate tracers that has solid and mobile phases
-    ! using the theory of mass action.
-    !
-    ! !USES:
-    !
-    use tracerstatetype , only : tracerstate_type
-    use tracercoeffType , only : tracercoeff_type
-    use BeTRTracerType  , only : betrtracer_type
-    use BetrStatusType  , only : betr_status_type
-    implicit none
-    ! !ARGUMENTS:
-    class("+app_name+"_bgc_reaction_type) , intent(inout)    :: this
-    type(bounds_type)                 , intent(in)    :: bounds
-    integer                           , intent(in)    :: lbj, ubj
-    integer                           , intent(in)    :: jtops(bounds%begc: )        ! top label of each column
-    integer                           , intent(in)    :: num_soilc
-    integer                           , intent(in)    :: filter_soilc(:)
-    type(betrtracer_type)             , intent(in)    :: betrtracer_vars
-    type(tracercoeff_type)            , intent(in)    :: tracercoeff_vars
-    type(tracerstate_type)            , intent(inout) :: tracerstate_vars
-    type(betr_status_type)            , intent(out)   :: betr_status
-    !local variables
-    character(len=255) :: subname = 'do_tracer_equilibration'
-
-    call betr_status%reset()
-    SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__), betr_status)
-
-    ! remove compiler warnings for unused dummy args
-    if (this%dummy_compiler_warning)                          continue
-    if (bounds%begc > 0)                                      continue
-    if (ubj > lbj)                                            continue
-    if (size(jtops) > 0)                                      continue
-    if (num_soilc > 0)                                        continue
-    if (size(filter_soilc) > 0)                               continue
-    if (len(betrtracer_vars%betr_simname) > 0)                continue
-    if (size(tracerstate_vars%tracer_conc_surfwater_col) > 0) continue
-    if (size(tracercoeff_vars%annsum_counter_col) > 0)        continue
-
-    !continue on the simulation type, an implementation of aqueous chemistry will be
-    !employed to separate out the adsorbed phase
-    !It should be noted that this formulation excludes the use of linear isotherm, which
-    !can be integrated through the retardation factor
-
-  end subroutine do_tracer_equilibration
-
-  !-----------------------------------------------------------------------
-  subroutine InitCold(this, bounds, col, betrtracer_vars, biophysforc, tracerstate_vars)
-    !
-    ! !DESCRIPTION:
-    ! do cold initialization
-    !
-    ! !USES:
-    use BeTRTracerType      , only : BeTRTracer_Type
-    use tracerstatetype     , only : tracerstate_type
-    use betr_varcon         , only : spval => bspval, ispval => bispval
-    use BeTR_landvarconType , only : landvarcon  => betr_landvarcon
-    use betr_columnType     , only : betr_column_type
-    implicit none
-    ! !ARGUMENTS:
-    class("+app_name+"_bgc_reaction_type) , intent(inout)    :: this
-    type(bounds_type)                 , intent(in)    :: bounds
-    type(betr_column_type)            , intent(in)    :: col
-    type(BeTRTracer_Type)             , intent(in)    :: betrtracer_vars
-    type(betr_biogeophys_input_type)  , intent(in)    :: biophysforc
-    type(tracerstate_type)            , intent(inout) :: tracerstate_vars
-
-    !
-    ! !LOCAL VARIABLES:
-    integer :: p, c, l, k, j
-    integer :: fc                                        ! filter_soilc index
-    integer :: begc, endc
-    integer :: begg, endg
-    integer :: trcid
-    !-----------------------------------------------------------------------
-
-    begc = bounds%begc; endc= bounds%endc
-    begg = bounds%begg; endg= bounds%endg
-    !-----------------------------------------------------------------------
-    trcid = betrtracer_vars%id_trc_beg_Bm
-
-    do c = bounds%begc, bounds%endc
-
-      !dual phase tracers
-
-      tracerstate_vars%tracer_conc_mobile_col(c,:, :)          = 0._r8
-      tracerstate_vars%tracer_conc_surfwater_col(c,:)          = 0._r8
-      tracerstate_vars%tracer_conc_aquifer_col(c,:)            = 0._r8
-      tracerstate_vars%tracer_conc_grndwater_col(c,:)          = 0._r8
-
-      if(betrtracer_vars%nsolid_equil_tracers>0)then
-        tracerstate_vars%tracer_conc_solid_equil_col(c, :, :) = 0._r8
-      endif
-      tracerstate_vars%tracer_soi_molarmass_col(c,:)          = 0._r8
-      !initialize microbial biomass
-      tracerstate_vars%tracer_conc_mobile_col(c,:,trcid) = 1.e-2_r8
-    enddo
-
-  end subroutine InitCold
-
-  !-----------------------------------------------------------------------
-  subroutine readParams(this, name_list_buffer, betrtracer_vars)
-    !
-    ! !DESCRIPTION:
-    ! read in module specific parameters
-    !
-    ! !USES:
-    use BeTRTracerType , only : BeTRTracer_Type
-    implicit none
-    ! !ARGUMENTS:
-    class("+app_name+"_bgc_reaction_type) , intent(inout)    :: this
-    type(BeTRTracer_Type)             , intent(inout) :: betrtracer_vars
-    character(len=*)                  , intent(in)  :: name_list_buffer
-
-    ! remove compiler warnings for unused dummy args
-    if (this%dummy_compiler_warning)           continue
-    if (len(betrtracer_vars%betr_simname) > 0) continue
-
-    !do nothing here
-  end subroutine readParams
-
-  !-------------------------------------------------------------------------------
-  subroutine retrieve_biogeoflux(this, num_soilc, filter_soilc, tracerflux_vars, &
-  betrtracer_vars, biogeo_flux)
-
-  use tracerfluxType           , only : tracerflux_type
-  use BeTR_decompMod           , only : betr_bounds_type
-  use BeTRTracerType           , only : BeTRTracer_Type
-  use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
-  implicit none
-  class("+app_name+"_bgc_reaction_type) , intent(inout) :: this               !
-  integer                          , intent(in)    :: num_soilc                   ! number of columns in column filter
-  integer                          , intent(in)    :: filter_soilc(:)             ! column filter
-  type(betrtracer_type)            , intent(in)    :: betrtracer_vars             ! betr configuration information
-  type(tracerflux_type)            , intent(in)    :: tracerflux_vars
-  type(betr_biogeo_flux_type)      , intent(inout) :: biogeo_flux
-
-    ! remove compiler warnings for unused dummy args
-    if (this%dummy_compiler_warning)                          continue
-    if (num_soilc > 0)                                        continue
-    if (size(filter_soilc) > 0)                               continue
-    if (len(betrtracer_vars%betr_simname) > 0)                continue
-    if (size(tracerflux_vars%tracer_flx_top_soil_col) > 0)    continue
-
-  end subroutine retrieve_biogeoflux
-
-
-   !----------------------------------------------------------------------
-   subroutine retrieve_lnd2atm(this, bounds, num_soilc, filter_soilc, tracerflux_vars, &
-   betrtracer_vars, biogeo_flux)
-
-   use tracerfluxType           , only : tracerflux_type
-   use BeTR_decompMod           , only : betr_bounds_type
-   use BeTRTracerType           , only : BeTRTracer_Type
-   use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
-   implicit none
-   class("+app_name+"_bgc_reaction_type) , intent(inout) :: this               !
-   type(betr_bounds_type)           , intent(in)    :: bounds                      ! bounds
-   integer                          , intent(in)    :: num_soilc                   ! number of columns in column filter
-   integer                          , intent(in)    :: filter_soilc(:)             ! column filter
-   type(betrtracer_type)            , intent(in)    :: betrtracer_vars             ! betr configuration information
-   type(tracerflux_type)            , intent(in)    :: tracerflux_vars
-   type(betr_biogeo_flux_type)      , intent(inout) :: biogeo_flux
-
-
-   if (this%dummy_compiler_warning) continue
-   if (bounds%begc > 0)             continue
-
-   end subroutine retrieve_lnd2atm
-
-   !-------------------------------------------------------------------------------
-   subroutine debug_info(this, bounds, num_soilc, filter_soilc, dzsoi, betrtracer_vars, tracerstate_vars, header, betr_status)
-
-   use BeTRTracerType           , only : BeTRTracer_Type
-   use tracerstatetype          , only : tracerstate_type
-   use BeTR_decompMod           , only : betr_bounds_type
-     ! !ARGUMENTS:
-    implicit none
-   class("+app_name+"_bgc_reaction_type) , intent(inout) :: this      !
-   type(betr_bounds_type)               , intent(in) :: bounds                      ! bounds
-   integer                              , intent(in) :: num_soilc                   ! number of columns in column filter
-   integer                              , intent(in) :: filter_soilc(:)             ! column filter
-   real(r8)                             , intent(in) :: dzsoi(bounds%begc: ,bounds%lbj: )
-   type(betrtracer_type)                , intent(in) :: betrtracer_vars             ! betr configuration information
-   type(tracerstate_type)               , intent(in) :: tracerstate_vars
-   character(len=*)                     , intent(in) :: header
-   type(betr_status_type)               , intent(out):: betr_status
-
-   call betr_status%reset()
-   SHR_ASSERT_ALL((ubound(dzsoi)  == (/bounds%endc, bounds%ubj/)),   errMsg(mod_filename,__LINE__), betr_status)
-
-   if (this%dummy_compiler_warning) continue
-     end subroutine debug_info
-   !----------------------------------------------------------------------
-   subroutine retrieve_biostates(this, bounds, lbj, ubj, jtops,num_soilc, filter_soilc, &
-      betrtracer_vars, tracerstate_vars, biogeo_state, betr_status)
-   !
-   !retrieve state variables for lsm mass balance check
-   use tracer_varcon, only : catomw, natomw, patomw, c13atomw, c14atomw
-   use BeTR_decompMod           , only : betr_bounds_type
-   use BeTRTracerType           , only : BeTRTracer_Type
-   use tracerstatetype          , only : tracerstate_type
-    use BeTR_biogeoStateType     , only : betr_biogeo_state_type
-   implicit none
-   class("+app_name+"_bgc_reaction_type) , intent(inout) :: this               !
-   type(betr_bounds_type)               , intent(in)  :: bounds                      ! bounds
-   integer                              , intent(in) :: lbj, ubj
-   integer                              , intent(in) :: jtops(bounds%begc: )
-   integer                              , intent(in)    :: num_soilc                   ! number of columns in column filter
-   integer                              , intent(in)    :: filter_soilc(:)             ! column filter
-   type(betrtracer_type)                , intent(in) :: betrtracer_vars               ! betr configuration information
-   type(tracerstate_type)               , intent(inout) :: tracerstate_vars
-   type(betr_biogeo_state_type)         , intent(inout) :: biogeo_state
-   type(betr_status_type)               , intent(out):: betr_status
-   !local variables
-
-   integer :: nelm
-   integer :: c_loc, c13_loc, c14_loc
-   integer :: c, fc, j, kk
-
-
-   call betr_status%reset()
-   SHR_ASSERT_ALL((ubound(jtops)  == (/bounds%endc/)),   errMsg(mod_filename,__LINE__), betr_status)
-
-   c_loc=this%"+app_name+"_bgc_index%c_loc
-   c13_loc=this%"+app_name+"_bgc_index%c13_loc
-   c14_loc=this%"+app_name+"_bgc_index%c14_loc
-   nelm =this%"+app_name+"_bgc_index%nelms
-
-   do j = lbj, ubj
-     do fc = 1, num_soilc
-        c = filter_soilc(fc)
-        if(j<jtops(c))cycle
-
-        !add litter
-        do kk = betrtracer_vars%id_trc_beg_litr, betrtracer_vars%id_trc_end_litr, nelm
-          biogeo_state%c12state_vars%totlitc_vr_col(c,j) = biogeo_state%c12state_vars%totlitc_vr_col(c,j) + &
-            catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)
-!          print*,'totlit',c,j,biogeo_state%c12state_vars%totlitc_vr_col(c,j)
-          if(this%use_c13)then
-            biogeo_state%c13state_vars%totlitc_vr_col(c,j) = biogeo_state%c13state_vars%totlitc_vr_col(c,j) + &
-              c13atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc)
-          endif
-
-          if(this%use_c14)then
-            biogeo_state%c14state_vars%totlitc_vr_col(c,j) = biogeo_state%c14state_vars%totlitc_vr_col(c,j) + &
-              c14atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc)
-          endif
-
-        enddo
-
-        !add cwd
+    print "  ! remove compiler warnings for unused dummy args"
+    print "  if (this%dummy_compiler_warning)                          continue"
+    print "  if (num_soilc > 0)                                        continue"
+    print "  if (size(filter_soilc) > 0)                               continue"
+    print "  if (len(betrtracer_vars%betr_simname) > 0)                continue"
+    print "  if (size(tracerflux_vars%tracer_flx_top_soil_col) > 0)    continue"
+    print "  end subroutine retrieve_biogeoflux"
+    print "!----------------------------------------------------------------------"
+    print "  subroutine retrieve_lnd2atm(this, bounds, num_soilc, filter_soilc, tracerflux_vars, &"
+    print "    betrtracer_vars, biogeo_flux)"
+    print "  !"
+    print "  ! DESCRIPTION"
+    print "  ! retrieve fluxes from land to atmosphere"
+    print "  ! USES"
+    print "  use tracerfluxType           , only : tracerflux_type"
+    print "  use BeTR_decompMod           , only : betr_bounds_type"
+    print "  use BeTRTracerType           , only : BeTRTracer_Type"
+    print "  use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type"
+    print "  implicit none"
+    print "  class("+app_name+"_bgc_reaction_type) , intent(inout) :: this     !"
+    print "  type(betr_bounds_type)           , intent(in)    :: bounds     ! bounds"
+    print "  integer                          , intent(in)    :: num_soilc   ! number of columns in column filter"
+    print "  integer                          , intent(in)    :: filter_soilc(:)             ! column filter"
+    print "  type(betrtracer_type)            , intent(in)    :: betrtracer_vars             ! betr configuration information"
+    print "  type(tracerflux_type)            , intent(in)    :: tracerflux_vars"
+    print "  type(betr_biogeo_flux_type)      , intent(inout) :: biogeo_flux"
+    print "  if (this%dummy_compiler_warning) continue"
+    print "  if (bounds%begc > 0)             continue"
+    print "  end subroutine retrieve_lnd2atm"
+    print "!-------------------------------------------------------------------------------"
+    print "  subroutine debug_info(this, bounds, num_soilc, filter_soilc, dzsoi, betrtracer_vars, tracerstate_vars, header, betr_status)"
+    print "  !"
+    print "  ! DESCRIPTION"
+    print "  ! write debug information"
+    print "  ! USES"
+    print "  use BeTRTracerType           , only : BeTRTracer_Type"
+    print "  use tracerstatetype          , only : tracerstate_type"
+    print "  use BeTR_decompMod           , only : betr_bounds_type"
+    print "  ! !ARGUMENTS:"
+    print "  implicit none"
+    print "  class("+app_name+"_bgc_reaction_type) , intent(inout) :: this      !"
+    print "  type(betr_bounds_type)               , intent(in) :: bounds    ! bounds"
+    print "  integer                              , intent(in) :: num_soilc  ! number of columns in column filter"
+    print "  integer                              , intent(in) :: filter_soilc(:)    ! column filter"
+    print "  real(r8)                             , intent(in) :: dzsoi(bounds%begc: ,bounds%lbj: )"
+    print "  type(betrtracer_type)                , intent(in) :: betrtracer_vars   ! betr configuration information"
+    print "  type(tracerstate_type)               , intent(in) :: tracerstate_vars"
+    print "  character(len=*)                     , intent(in) :: header"
+    print "  type(betr_status_type)               , intent(out):: betr_status"
+    print "  call betr_status%reset()"
+    print "  SHR_ASSERT_ALL((ubound(dzsoi)  == (/bounds%endc, bounds%ubj/)),   errMsg(mod_filename,__LINE__), betr_status)"
+    print ""
+    print "  if (this%dummy_compiler_warning) continue"
+    print "  end subroutine debug_info"
+    print "!----------------------------------------------------------------------"
+    print "  subroutine retrieve_biostates(this, bounds, lbj, ubj, jtops,num_soilc, filter_soilc, &"
+    print "    betrtracer_vars, tracerstate_vars, biogeo_state, betr_status)"
+    print "  !"
+    print "  ! DESCRIPTION"
+    print "  !retrieve state variables for lsm mass balance check"
+    print "  ! USES"
+    print "  use tracer_varcon, only : catomw, natomw, patomw, c13atomw, c14atomw"
+    print "  use BeTR_decompMod           , only : betr_bounds_type"
+    print "  use BeTRTracerType           , only : BeTRTracer_Type"
+    print "  use tracerstatetype          , only : tracerstate_type"
+    print "  use BeTR_biogeoStateType     , only : betr_biogeo_state_type"
+    print "  implicit none"
+    print "  class("+app_name+"_bgc_reaction_type) , intent(inout) :: this           !"
+    print "  type(betr_bounds_type)               , intent(in)  :: bounds            ! bounds"
+    print "  integer                              , intent(in) :: lbj, ubj"
+    print "  integer                              , intent(in) :: jtops(bounds%begc: )"
+    print "  integer                              , intent(in)    :: num_soilc   ! number of columns in column filter"
+    print "  integer                              , intent(in)    :: filter_soilc(:)    ! column filter"
+    print "  type(betrtracer_type)                , intent(in) :: betrtracer_vars       ! betr configuration information"
+    print "  type(tracerstate_type)               , intent(inout) :: tracerstate_vars"
+    print "  type(betr_biogeo_state_type)         , intent(inout) :: biogeo_state"
+    print "  type(betr_status_type)               , intent(out):: betr_status"
+    print "  !local variables"
+    print "  integer :: nelm"
+    print "  integer :: c_loc, c13_loc, c14_loc"
+    print "  integer :: c, fc, j, kk"
+    print ""
+    print "  call betr_status%reset()"
+    print "  SHR_ASSERT_ALL((ubound(jtops)  == (/bounds%endc/)),   errMsg(mod_filename,__LINE__), betr_status)"
+    print ""
+    print "  c_loc=this%"+app_name+"_bgc_index%c_loc"
+    print "  c13_loc=this%"+app_name+"_bgc_index%c13_loc"
+    print "  c14_loc=this%"+app_name+"_bgc_index%c14_loc"
+    print "  nelm =this%"+app_name+"_bgc_index%nelms"
+    print "  do j = lbj, ubj"
+    print "    do fc = 1, num_soilc"
+    print "      c = filter_soilc(fc)"
+    print "      if(j<jtops(c))cycle"
+    print "      !add litter"
+    print "      do kk = betrtracer_vars%id_trc_beg_litr, betrtracer_vars%id_trc_end_litr, nelm"
+    print "        biogeo_state%c12state_vars%totlitc_vr_col(c,j) = biogeo_state%c12state_vars%totlitc_vr_col(c,j) + &"
+    print "          catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)"
+    print "        if(this%use_c13)then"
+    print "          biogeo_state%c13state_vars%totlitc_vr_col(c,j) = biogeo_state%c13state_vars%totlitc_vr_col(c,j) + &"
+    print "            c13atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc)"
+    print "        endif"
+    print "        if(this%use_c14)then"
+    print "          biogeo_state%c14state_vars%totlitc_vr_col(c,j) = biogeo_state%c14state_vars%totlitc_vr_col(c,j) + &"
+    print "            c14atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc)"
+    print "        endif"
+    print "      enddo"
+    print "      !add cwd"
         do kk = betrtracer_vars%id_trc_beg_wood, betrtracer_vars%id_trc_end_wood, nelm
           biogeo_state%c12state_vars%cwdc_vr_col(c,j) = biogeo_state%c12state_vars%cwdc_vr_col(c,j) + &
             catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)
