@@ -6,6 +6,12 @@
 #identify where to put the case
 #this should be under soil-farm
 
+#obtain current directory
+
+import os
+dir_path = os.path.dirname(os.path.realpath(__file__))
+
+
 def generate_cmake(case_name):
     """
     The following generates CMakeLists.txt to different subfolders
