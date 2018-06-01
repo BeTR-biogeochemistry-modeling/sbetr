@@ -5,6 +5,7 @@ module GeoChemAlgorithmMod
 implicit none
 
   public :: calc_P_weathering_flux
+  public :: calc_om_sorption_para
 contains
   subroutine calc_P_weathering_flux(bounds, biophysforc, bgc_con, P_weather_flx)
   !
@@ -43,6 +44,27 @@ contains
   enddo
   end associate
   end subroutine calc_P_weathering_flux
+!------------------------------------------------------------------------------
+  subroutine calc_om_sorption_para(clay, toc, bd, pH, CEC, Qmax, Kaff)
+  !
+  ! DESCRIPTION
+  !
+  !Below is a simple model for computing the Qmax and Kaff parameters for
+  !the Langmuir isotherm
+  !
+  !USES
+  use tracer_varcon, only : catomw
+  implicit none
+  real(r8), intent(in) :: clay ! % clay
+  real(r8), intent(in) :: toc  ! gC/m3
+  real(r8), intent(in) :: bd   ! bulk density, kg/m3
+  real(r8), intent(in) :: pH   !
+  real(r8), intent(in) :: CEC  !cation exchange capacity
+  real(r8), intent(out):: Qmax !maximum sorption capacity, mol C/m3
+  real(r8), intent(out):: Kaff !sorption affinity parameter
 
+  Qmax=exp(0.483*log(clay)+2.328)*bd*1.e-3_r8/catomw
+  Kaff= 1._r8/exp(-0.186_r8*pH - 0.216_r8)/catomw
 
+  end subroutine calc_om_sorption_para
 end module GeoChemAlgorithmMod

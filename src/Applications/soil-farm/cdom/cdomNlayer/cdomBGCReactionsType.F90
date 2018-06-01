@@ -365,8 +365,8 @@ contains
 
     this%cdom_forc(c_l,j)%msurf_nh4 = plantNutkinetics%minsurf_nh4_compet_vr_col(c_l,j)   !this  number needs update
     this%cdom_forc(c_l,j)%msurf_minp= plantNutkinetics%minsurf_p_compet_vr_col(c_l,j)    !this  number needs update
-    this%cdom_forc(c_l,j)%Msurf_OM  = plantNutkinetics%minsurf_dom_compet_vr_col(c_l,j)
-    this%cdom_forc(c_l,j)%KM_OM_ref = plantNutkinetics%km_minsurf_dom_vr_col(c_l,j)
+    !this%cdom_forc(c_l,j)%Msurf_OM  = plantNutkinetics%minsurf_dom_compet_vr_col(c_l,j)
+    !this%cdom_forc(c_l,j)%KM_OM_ref = plantNutkinetics%km_minsurf_dom_vr_col(c_l,j)
   enddo
 
   end subroutine set_kinetics_par
@@ -1564,6 +1564,7 @@ contains
   use cdomPlantSoilBGCType      , only : cdom_plant_soilbgc_type
   use MathfuncMod              , only : fpmax
   use betr_varcon              , only : grav => bgrav
+  use GeoChemAlgorithmMod      , only : calc_om_sorption_para
   implicit none
   class(cdom_bgc_reaction_type) , intent(inout)    :: this
   type(bounds_type)                    , intent(in) :: bounds                         ! bounds
@@ -1728,6 +1729,10 @@ contains
       this%cdom_forc(c,j)%watfc = biophysforc%watfc_col(c,j)
       this%cdom_forc(c,j)%cellorg = biophysforc%cellorg_col(c,j)
       this%cdom_forc(c,j)%pH = biophysforc%soil_pH(c,j)
+
+      call calc_om_sorption_para(clay=this%cdom_forc(c,j)%pct_clay, toc=this%cdom_forc(c,j)%cellorg, &
+        bd=this%cdom_forc(c,j)%bd, pH=this%cdom_forc(c,j)%pH, CEC=0._r8, &
+        Qmax=this%cdom_forc(c,j)%Msurf_OM, Kaff=this%cdom_forc(c,j)%KM_OM_ref)
 
       !conductivity for plant-aided gas transport
       this%cdom_forc(c,j)%aren_cond_n2 = &

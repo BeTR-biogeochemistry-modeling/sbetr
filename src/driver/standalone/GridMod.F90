@@ -48,6 +48,7 @@ module BeTR_GridMod
      real(r8), pointer :: cellorg(:)=> null()
      real(r8), pointer :: msurf_OM(:) => null()
      real(r8), pointer :: KM_OM(:)  => null()
+     real(r8), pointer :: bd(:)     => null()
    contains
      procedure, public  :: Init
      procedure, public  :: ReadNamelist
@@ -125,6 +126,9 @@ contains
 
     allocate(this%watsat(1:this%nlevgrnd))
     this%watsat(:) = bspval
+
+    allocate(this%bd(1:this%nlevgrnd))
+    this%bd(:) = bspval
 
     allocate(this%sucsat(1:this%nlevgrnd))
     this%sucsat(:) = bspval
@@ -239,6 +243,7 @@ contains
     call ncd_getvar(ncf_in, 'WATSAT', data)
     do j = 1, this%nlevgrnd
        this%watsat(j) = data(num_columns, j)
+       this%bd(j)     = (1._r8 - this%watsat(j))*2.7e3_r8  !kg /m3
     enddo
 
     call ncd_getvar(ncf_in, 'BSW', data)
@@ -384,12 +389,13 @@ contains
   do j = 1, ubj
     do fc = 1, numf
       c = filter(fc)
-      soilstate_vars%watsat_col(c,j)         = this%watsat(j)
-      soilstate_vars%bsw_col(c,j)            = this%bsw(j)
-      soilstate_vars%sucsat_col(c,j)         = this%sucsat(j)
-      soilstate_vars%cellsand_col(c,lbj:ubj) = this%pctsand(j)
-      soilstate_vars%cellclay_col(c,lbj:ubj) = this%pctclay(j)
-      soilstate_vars%cellorg_col(c,lbj:ubj)  = this%cellorg(j)
+      soilstate_vars%watsat_col(c,j)   = this%watsat(j)
+      soilstate_vars%bsw_col(c,j)      = this%bsw(j)
+      soilstate_vars%sucsat_col(c,j)   = this%sucsat(j)
+      soilstate_vars%cellsand_col(c,j) = this%pctsand(j)
+      soilstate_vars%cellclay_col(c,j) = this%pctclay(j)
+      soilstate_vars%cellorg_col(c,j)  = this%cellorg(j)
+      soilstate_vars%bd_col(c,j)       = this%bd(j)
     enddo
   enddo
   end subroutine UpdateGridConst
