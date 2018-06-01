@@ -502,8 +502,6 @@ contains
          cascade_matrix(lid_nh4                ,reac)
       write(*,*)'lit3 phosp',cascade_matrix((lit3-1)*nelms+p_loc   ,reac) + cascade_matrix((poly-1)*nelms+p_loc   ,reac) + &
          cascade_matrix(lid_minp_soluble                ,reac)
-      !write(*,*)'lit3 carbon out',cascade_matrix((lit3-1)*nelms+c_loc   ,reac)
-      !write(*,*)'poly carbon  in',cascade_matrix((poly-1)*nelms+c_loc   ,reac)
     endif
     !---------------------------------------------------------------------------------
     !double check those stoichiometry parameters
@@ -1206,19 +1204,19 @@ subroutine calc_som_decay_r(this, summsbgc_index, dtime, om_k_decay, om_pools, o
    fwd            => summsbgc_index%fwd                  & !
   )
 
-  k_decay(lit1) = k_decay(lit1) * t_scalar * o_scalar * depth_scalar * w_scalar
-  k_decay(lit2) = k_decay(lit2) * t_scalar * o_scalar * depth_scalar * w_scalar
-  k_decay(lit3) = k_decay(lit3) * t_scalar * o_scalar * depth_scalar * w_scalar
+  k_decay(lit1) = k_decay(lit1) * t_scalar *  w_scalar * o_scalar * depth_scalar
+  k_decay(lit2) = k_decay(lit2) * t_scalar *  w_scalar * o_scalar * depth_scalar
+  k_decay(lit3) = k_decay(lit3) * t_scalar *  w_scalar * o_scalar * depth_scalar
 
-  k_decay(poly) = k_decay(poly)  * w_scalar !* depth_scalar should emerge
-  k_decay(mic)  = k_decay(mic)   * o_scalar * w_scalar
-  k_decay(res)  = k_decay(res)   * o_scalar * w_scalar
-  k_decay(enz)  = k_decay(enz)   * w_scalar
-  k_decay(mono) = k_decay(mono)  * o_scalar * w_scalar
+  k_decay(poly) = k_decay(poly)  !* w_scalar !* depth_scalar should emerge
+  k_decay(mic)  = k_decay(mic)   !* o_scalar * w_scalar
+  k_decay(res)  = k_decay(res)   !* o_scalar * w_scalar
+  k_decay(enz)  = k_decay(enz)   !* w_scalar
+  k_decay(mono) = k_decay(mono)  !* o_scalar * w_scalar
   
-  k_decay(cwd)  = k_decay(cwd)   * o_scalar * depth_scalar * w_scalar
-  k_decay(lwd)  = k_decay(lwd)   * o_scalar * depth_scalar * w_scalar
-  k_decay(fwd)  = k_decay(fwd)   * o_scalar * depth_scalar * w_scalar
+  k_decay(cwd)  = k_decay(cwd)   * t_scalar *  w_scalar * o_scalar * depth_scalar
+  k_decay(lwd)  = k_decay(lwd)   * t_scalar *  w_scalar * o_scalar * depth_scalar
+  k_decay(fwd)  = k_decay(fwd)   * t_scalar *  w_scalar * o_scalar * depth_scalar
   !impose the ligin effect
   k_decay(cwd)  = k_decay(cwd) * exp(-3._r8*this%cwd_flig)
   k_decay(lwd)  = k_decay(lwd) * exp(-3._r8*this%lwd_flig)
@@ -1320,23 +1318,33 @@ subroutine calc_som_decay_r(this, summsbgc_index, dtime, om_k_decay, om_pools, o
    decay_enz      => this%decay_enz                      & !
   )
 
-    y_poly = ystates((poly-1) * nelms + c_loc)
-    y_mono = ystates((mono-1) * nelms + c_loc)
+    
+    !if(y_poly<tiny_val)then
+    !  y_poly=1._r8
+    !else
+      y_poly = ystates((poly-1) * nelms + c_loc)
+    !endif
+    
+    !if(y_mono<tiny_val)then
+    !  y_mono=1._r8
+    !else
+      y_mono = ystates((mono-1) * nelms + c_loc)
+    !endif
 
     if(y_mic<tiny_val)then
-      y_mic=1._r8
+      y_mic=1.e-13_r8!1._r8
     else
       y_mic=ystates((mic-1) * nelms + c_loc)
     endif
 
     if(y_res<tiny_val)then
-      y_res=1._r8
+      y_res=1.e-13_r8!1._r8
     else
       y_res=ystates((res-1) * nelms + c_loc)
     endif
 
     if(y_enz<tiny_val)then
-      y_enz=1._r8
+      y_enz=1.e-13_r8!1._r8
     else
       y_enz=ystates((enz-1) * nelms + c_loc)
     endif
@@ -1374,7 +1382,7 @@ subroutine calc_som_decay_r(this, summsbgc_index, dtime, om_k_decay, om_pools, o
                 actpE=0._r8      
                 actmr=je    
 
-                !write(*,*)'no growth'         
+                write(*,*)'no growth'         
 
             case (0)    
                 ! Limited growth              
@@ -1398,7 +1406,7 @@ subroutine calc_som_decay_r(this, summsbgc_index, dtime, om_k_decay, om_pools, o
                 ! Maintenance
                 actmr=mr_mic   
 
-                !write(*,*)'limited growth'                          
+                write(*,*)'limited growth'                          
 
             case (1)    
                 ! Maximum growth       
@@ -1408,7 +1416,7 @@ subroutine calc_som_decay_r(this, summsbgc_index, dtime, om_k_decay, om_pools, o
                 ! Maintenance        
                 actmr=mr_mic
 
-                !write(*,*)'max growth' 
+                write(*,*)'max growth' 
 
         end select
 
@@ -1441,26 +1449,27 @@ subroutine calc_som_decay_r(this, summsbgc_index, dtime, om_k_decay, om_pools, o
       this%rate_co2 = safe_div(y_mic*(actmr+actpE*(safe_div(1._r8,yld_enz)-1._r8)+actgB*&
         (safe_div(1._r8,yld_res)-1._r8))+residual, y_res*(kappa_mic-actgB+decay_mic))
 
-  ! write(*,*)'actgB =',actgB  
-  ! write(*,*)'actpE =',actpE
-  ! write(*,*)'decay_mic=',decay_mic
-  ! write(*,*)'kappa_mic=',kappa_mic
-  ! write(*,*)'part_mic =',this%part_mic
-  ! write(*,*)'part_enz =',this%part_enz
-  ! write(*,*)'part_mono =',this%part_mono
-  ! write(*,*)'rate_co2 =',this%rate_co2
-  ! write(*,*)'ystates =',ystates
-  !   write(*,*)'k_decay(lit1) =',k_decay(lit1)
-  !   write(*,*)'k_decay(lit2) =',k_decay(lit2)
-  !   write(*,*)'k_decay(lit3) =',k_decay(lit3)
-  !   write(*,*)'k_decay(cwd) =',k_decay(cwd)
-  !   write(*,*)'k_decay(lwd) =',k_decay(lwd)
-  !   write(*,*)'k_decay(fwd) =',k_decay(fwd)
-  !   write(*,*)'k_decay(poly) =',k_decay(poly)
-  !   write(*,*)'k_decay(mono) =',k_decay(mono)
-  !   write(*,*)'k_decay(mic) =',k_decay(mic)
-  !   write(*,*)'k_decay(enz) =',k_decay(enz)
-  !   write(*,*)'k_decay(res) =',k_decay(res)
+   write(*,*)'ec=',ec
+   write(*,*)'actgB =',actgB  
+   write(*,*)'actpE =',actpE
+   write(*,*)'decay_mic=',decay_mic
+   write(*,*)'kappa_mic=',kappa_mic
+   write(*,*)'part_mic =',this%part_mic
+   write(*,*)'part_enz =',this%part_enz
+   write(*,*)'part_mono =',this%part_mono
+   write(*,*)'rate_co2 =',this%rate_co2
+   write(*,*)'ystates =',ystates
+     write(*,*)'k_decay(lit1) =',k_decay(lit1)
+     write(*,*)'k_decay(lit2) =',k_decay(lit2)
+     write(*,*)'k_decay(lit3) =',k_decay(lit3)
+     write(*,*)'k_decay(cwd) =',k_decay(cwd)
+     write(*,*)'k_decay(lwd) =',k_decay(lwd)
+     write(*,*)'k_decay(fwd) =',k_decay(fwd)
+     write(*,*)'k_decay(poly) =',k_decay(poly)
+     write(*,*)'k_decay(mono) =',k_decay(mono)
+     write(*,*)'k_decay(mic) =',k_decay(mic)
+     write(*,*)'k_decay(enz) =',k_decay(enz)
+     write(*,*)'k_decay(res) =',k_decay(res)
   !   write(*,*)'decompkf_eca%t_scalar =',decompkf_eca%t_scalar
   !   write(*,*)'decompkf_eca%w_scalar =',decompkf_eca%w_scalar
   !   write(*,*)'decompkf_eca%o_scalar =',decompkf_eca%o_scalar

@@ -306,7 +306,7 @@ implicit none
 
     itemp = 0
     ireac = 0
-    ielem= 0
+    ielem = 0
     vid = 0;uid=0;pid=0
     this%c_loc = addone(ielem)
     this%n_loc = addone(ielem)

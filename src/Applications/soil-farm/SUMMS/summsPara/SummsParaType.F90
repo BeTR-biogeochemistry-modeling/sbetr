@@ -226,40 +226,40 @@ contains
   this%c14decay_Bm_const  =this%c14decay_const
 
   ! Parameters
-    this%gmax_mic  = 0.1025             ! Maximum microbial growth rate (1/day)
-    this%yld_mic = 0.8                  ! Growth efficiency of microbes (g mic/g res)
-    this%yld_enz = 0.8                  ! Growth efficiency of enzymes (g enz/g res)
-    this%yld_res = 0.5                  ! Assimilation efficiency from monomer uptake (g res/g mono)
-    this%fenz2poly = 0.2                ! Proportion of degraded exoenzyme into polymers (g poly/g enz)
-    this%minsite = 1000                 ! Abundance of mineral surface              (g C surface/m3)
-    this%mic_transp = 0.05              ! Scaling factor between transporter and microbial structural biomass
-    this%decay_mic0 = 0.01314           ! Reference microbial death rate (1/day)
-    this%decay_enz = 0.0061              ! Enzyme turnover tate (1/day)
-    this%pmax_enz = 0.0019              ! Maximum enzyme production rate (1/day)
+    this%gmax_mic  = 0.1025_r8*365._r8/year_sec            ! Maximum microbial growth rate (1/second)
+    this%yld_mic = 0.8_r8                  ! Growth efficiency of microbes (g mic/g res)
+    this%yld_enz = 0.8_r8                  ! Growth efficiency of enzymes (g enz/g res)
+    this%yld_res = 0.5_r8                  ! Assimilation efficiency from monomer uptake (g res/g mono)
+    this%fenz2poly = 0.2_r8                ! Proportion of degraded exoenzyme into polymers (g poly/g enz)
+    this%minsite = 1000._r8                 ! Abundance of mineral surface              (g C surface/m3)
+    this%mic_transp = 0.05_r8              ! Scaling factor between transporter and microbial structural biomass
+    this%decay_mic0 = 0.01314_r8*365._r8/year_sec            ! Reference microbial death rate (1/second)
+    this%decay_enz = 0.0061_r8*365._r8/year_sec               ! Enzyme turnover tate (1/second)
+    this%pmax_enz = 0.0019_r8*365._r8/year_sec               ! Maximum enzyme production rate (1/second)
 
   ! Set up parameters for activation energy of different processes
-    this%ea_vmax_mic            = 45000     ! Ea for maximum rate of monomer uptake (K)
-    this%ea_vmax_enz            = 45000     ! Ea for maximum rate of polymer degradation (K)
-    this%ea_kaff_mono_mic       = 1804.086  ! Ea for monomer-microbe affinity (K)
-    this%ea_kaff_enz_poly       = 1804.086  ! Ea for polymer-enzyme affinity (K)
-    this%ea_mr_mic              = 60000     ! Ea for maintenance (K)
-    this%ea_kappa_mic           = 60000     ! Ea for reserve export (K)
-    this%ea_kaff_mono_msurf     = 10000     ! Ea for monomer-mineral affinity (K)
-    this%ea_kaff_enz_msurf      = 10000     ! Ea for enzyme-mineral affinity (K)
+    this%ea_vmax_mic            = 45000._r8     ! Ea for maximum rate of monomer uptake (K)
+    this%ea_vmax_enz            = 45000._r8     ! Ea for maximum rate of polymer degradation (K)
+    this%ea_kaff_mono_mic       = 1804.086_r8  ! Ea for monomer-microbe affinity (K)
+    this%ea_kaff_enz_poly       = 1804.086_r8  ! Ea for polymer-enzyme affinity (K)
+    this%ea_mr_mic              = 60000._r8     ! Ea for maintenance (K)
+    this%ea_kappa_mic           = 60000._r8     ! Ea for reserve export (K)
+    this%ea_kaff_mono_msurf     = 10000._r8     ! Ea for monomer-mineral affinity (K)
+    this%ea_kaff_enz_msurf      = 10000._r8     ! Ea for enzyme-mineral affinity (K)
 
   ! Enzymes
-    this%ref_vmax_enz           = 2.4133    ! Maximum rate of polymer degradation (1/day)
-    this%ref_kaff_enz_poly      = 200       ! Affinity parameter for enzymatic polymer degradation (g enzymes/m3)
-    this%ref_kaff_enz_msurf     = 50        ! Affinity parameter for surface adsorption of enzymes (g enzymes/m3)
+    this%ref_vmax_enz           = 2.4133_r8*365._r8/year_sec   ! Maximum rate of polymer degradation (1/second)
+    this%ref_kaff_enz_poly      = 200._r8       ! Affinity parameter for enzymatic polymer degradation (g enzymes/m3)
+    this%ref_kaff_enz_msurf     = 50._r8        ! Affinity parameter for surface adsorption of enzymes (g enzymes/m3)
   
   ! Monomer adsorption
-    this%ref_kaff_mono_msurf   = 25        ! Affinity parameter or mineral surface adsorption of monomers (g monomers/m3)
+    this%ref_kaff_mono_msurf   = 25._r8        ! Affinity parameter or mineral surface adsorption of monomers (g monomers/m3)
 
   ! Microbes
-    this%ref_mr_mic             = 0.0231      ! Microbial maintenance rate (1/day)
-    this%ref_kappa_mic          = 0.0537      ! Reserve turnover rate (1/day)
-    this%ref_kaff_mono_mic      = 1         ! Affinity parameter for microbial monomer uptake (g monomers/m3)
-    this%ref_vmax_mic           = 10.9343    ! Maximum rate of monomer assimilation (1/day) 
+    this%ref_mr_mic             = 0.0231_r8*365._r8/year_sec       ! Microbial maintenance rate (1/second)
+    this%ref_kappa_mic          = 0.0537_r8*365._r8/year_sec       ! Reserve turnover rate (1/second)
+    this%ref_kaff_mono_mic      = 1._r8         ! Affinity parameter for microbial monomer uptake (g monomers/m3)
+    this%ref_vmax_mic           = 10.9343_r8*365._r8/year_sec     ! Maximum rate of monomer assimilation (1/second) 
 
   !decomposition
   this%Q10                   = 2._r8
