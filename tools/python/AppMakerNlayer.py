@@ -1082,549 +1082,716 @@ def MakeNlayer(sfarm_dir, app_name):
     print "            c14atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc)"
     print "        endif"
     print "      enddo"
+    print ""
     print "      !add cwd"
-        do kk = betrtracer_vars%id_trc_beg_wood, betrtracer_vars%id_trc_end_wood, nelm
-          biogeo_state%c12state_vars%cwdc_vr_col(c,j) = biogeo_state%c12state_vars%cwdc_vr_col(c,j) + &
-            catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)
-
-          if(this%use_c13)then
-            biogeo_state%c13state_vars%cwdc_vr_col(c,j) = biogeo_state%c13state_vars%cwdc_vr_col(c,j) + &
-              c13atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc)
-          endif
-
-          if(this%use_c14)then
-            biogeo_state%c14state_vars%cwdc_vr_col(c,j) = biogeo_state%c14state_vars%cwdc_vr_col(c,j) + &
-              c14atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc)
-          endif
-        enddo
-
-        !Microbial biomass
-        do kk = betrtracer_vars%id_trc_beg_Bm, betrtracer_vars%id_trc_end_Bm-nelm, nelm
-          biogeo_state%c12state_vars%som1c_vr_col(c,j) =  &
-            catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)
-
-          if(this%use_c13)then
-            biogeo_state%c13state_vars%som1c_vr_col(c,j) = &
-              c13atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc)
-          endif
-
-          if(this%use_c14)then
-            biogeo_state%c14state_vars%som1c_vr_col(c,j) =  &
-              c14atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc)
-          endif
-        enddo
-
-        do kk = betrtracer_vars%id_trc_beg_pom, betrtracer_vars%id_trc_end_pom, nelm+1
-          biogeo_state%c12state_vars%som2c_vr_col(c,j) = &
-            catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)
-
-          if(this%use_c13)then
-            biogeo_state%c13state_vars%som2c_vr_col(c,j) =  &
-              c13atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc)
-          endif
-
-          if(this%use_c14)then
-            biogeo_state%c14state_vars%som2c_vr_col(c,j) =  &
-              c14atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc)
-          endif
-        enddo
-
-        do kk = betrtracer_vars%id_trc_beg_dom, betrtracer_vars%id_trc_end_dom, nelm+1
-          biogeo_state%c12state_vars%domc_vr_col(c,j) = &
-            catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)
-
-          if(this%use_c13)then
-            biogeo_state%c13state_vars%domc_vr_col(c,j) =  &
-              c13atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc)
-          endif
-
-          if(this%use_c14)then
-            biogeo_state%c14state_vars%domc_vr_col(c,j) =  &
-              c14atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc)
-          endif
-        enddo
-
-        do kk = betrtracer_vars%id_trc_beg_Bm+nelm, betrtracer_vars%id_trc_end_Bm, nelm
-          biogeo_state%c12state_vars%som3c_vr_col(c,j) =  &
-            catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)
-
-          if(this%use_c13)then
-            biogeo_state%c13state_vars%som3c_vr_col(c,j) = &
-              c13atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc)
-          endif
-
-          if(this%use_c14)then
-            biogeo_state%c14state_vars%som3c_vr_col(c,j) =  &
-              c14atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc)
-          endif
-        enddo
-     enddo
-   enddo
-
-   end subroutine retrieve_biostates
-
-
-  !------------------------------------------------------------------------------
-  subroutine retrieve_output(this, c, j, nstates, ystates0, ystatesf, dtime, betrtracer_vars, tracerflux_vars,&
-     tracerstate_vars, plant_soilbgc, biogeo_flux)
-  !DESCRIPTION
-  !retrieve flux and state variables after evolving the bgc calculation
-  !
-  !USES
-  use BetrTracerType           , only : betrtracer_type
-  use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
-  use tracerfluxType           , only : tracerflux_type
-  use tracerstatetype          , only : tracerstate_type
-  use betr_ctrl                , only : betr_spinup_state
-  use PlantSoilBGCMod          , only : plant_soilbgc_type
-  use "+app_name+"PlantSoilBGCType    , only : "+app_name+"_plant_soilbgc_type
-  use tracer_varcon            , only : catomw, natomw, patomw, fix_ip
-  implicit none
-  class("+app_name+"_bgc_reaction_type) , intent(inout)    :: this
-  integer                              , intent(in) :: c, j
-  integer                              , intent(in) :: nstates
-  real(r8)                             , intent(in) :: ystates0(nstates)
-  real(r8)                             , intent(inout) :: ystatesf(nstates)
-  real(r8)                             , intent(in) :: dtime
-  type(betrtracer_type)                , intent(in) :: betrtracer_vars               ! betr configuration information
-  type(tracerstate_type)               , intent(inout) :: tracerstate_vars
-  type(tracerflux_type)                , intent(inout) :: tracerflux_vars
-  class(plant_soilbgc_type)            , intent(inout) :: plant_soilbgc
-  type(betr_biogeo_flux_type)          , intent(inout) :: biogeo_flux
-
-  integer :: k, k1, k2, jj, p
-  integer :: trcid
-
-  associate( &
-     litr_beg =>  this%"+app_name+"_bgc_index%litr_beg  , &
-     litr_end =>  this%"+app_name+"_bgc_index%litr_end  , &
-     wood_beg =>  this%"+app_name+"_bgc_index%wood_beg  , &
-     wood_end =>  this%"+app_name+"_bgc_index%wood_end  , &
-     dom_beg =>  this%"+app_name+"_bgc_index%dom_beg    , &
-     dom_end =>  this%"+app_name+"_bgc_index%dom_end    , &
-     pom_beg =>  this%"+app_name+"_bgc_index%pom_beg    , &
-     pom_end =>  this%"+app_name+"_bgc_index%pom_end    , &
-     Bm_beg  =>  this%"+app_name+"_bgc_index%Bm_beg     , &
-     Bm_end  =>  this%"+app_name+"_bgc_index%Bm_end     , &
-     volatileid            => betrtracer_vars%volatileid                   , &
-     tracer_flx_netpro_vr  => tracerflux_vars%tracer_flx_netpro_vr_col     , & !
-     tracer_flx_parchm_vr  => tracerflux_vars%tracer_flx_parchm_vr_col     , & !
-     ngwmobile_tracers     => betrtracer_vars%ngwmobile_tracers              & !
-  )
-
-    !tracer states
-    tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_litr:betrtracer_vars%id_trc_end_litr) = &
-        ystatesf(litr_beg:litr_end)
-!    print*,'c,j',c,j,ystatesf(litr_beg:litr_end)
-    tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_wood:betrtracer_vars%id_trc_end_wood) = &
-        ystatesf(wood_beg:wood_end)
-
-    tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_Bm:betrtracer_vars%id_trc_end_Bm) = &
-        ystatesf(Bm_beg:Bm_end)
-
-    tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_dom:betrtracer_vars%id_trc_end_dom) = &
-        ystatesf(dom_beg:dom_end)
-
-    tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_pom:betrtracer_vars%id_trc_end_pom) = &
-        ystatesf(pom_beg:pom_end)
-
-    tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_n2) = &
-        ystatesf(this%"+app_name+"_bgc_index%lid_n2)
-
-    tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_o2) = &
-        ystatesf(this%"+app_name+"_bgc_index%lid_o2)
-
-    tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_ar) = &
-        ystatesf(this%"+app_name+"_bgc_index%lid_ar)
-
-    tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_co2x) = &
-        ystatesf(this%"+app_name+"_bgc_index%lid_co2)
-
-    if(this%use_c13)then
-      tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_c13_co2x) = &
-          ystatesf(this%"+app_name+"_bgc_index%lid_c13_co2)
-    endif
-
-    if(this%use_c14)then
-      tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_c14_co2x) = &
-          ystatesf(this%"+app_name+"_bgc_index%lid_c14_co2)
-    endif
-
-    tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_ch4) = &
-        ystatesf(this%"+app_name+"_bgc_index%lid_ch4)
-
-    !fluxes
-    tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_o2) ) = &
-         ystatesf(this%"+app_name+"_bgc_index%lid_o2_paere )  - &
-         ystates0(this%"+app_name+"_bgc_index%lid_o2_paere)
-
-    if ( betr_spinup_state == 0 ) then
-      tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_n2)  ) = &
-          ystatesf(this%"+app_name+"_bgc_index%lid_n2_paere)  - &
-          ystates0(this%"+app_name+"_bgc_index%lid_n2_paere)
-
-      tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_ar)  ) = &
-          ystatesf(this%"+app_name+"_bgc_index%lid_ar_paere)  - &
-          ystates0(this%"+app_name+"_bgc_index%lid_ar_paere)
-
-      tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_co2x)) = &
-          ystatesf(this%"+app_name+"_bgc_index%lid_co2_paere)  - &
-          ystates0(this%"+app_name+"_bgc_index%lid_co2_paere)
-
-      if(this%use_c13)then
-        tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_c13_co2x)) = &
-            ystatesf(this%"+app_name+"_bgc_index%lid_c13_co2_paere)  - &
-            ystates0(this%"+app_name+"_bgc_index%lid_c13_co2_paere)
-      endif
-
-      if(this%use_c14)then
-        tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_c14_co2x)) = &
-            ystatesf(this%"+app_name+"_bgc_index%lid_c14_co2_paere)  - &
-            ystates0(this%"+app_name+"_bgc_index%lid_c14_co2_paere)
-      endif
-
-      tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_ch4) ) = &
-          ystatesf(this%"+app_name+"_bgc_index%lid_ch4_paere)  - &
-          ystates0(this%"+app_name+"_bgc_index%lid_ch4_paere)
-
-    endif
-
-    !get net production for om pools
-    do k = 1, litr_end-litr_beg + 1
-      k1 = litr_beg+k-1; k2 = betrtracer_vars%id_trc_beg_litr + k-1
-      tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)
-    enddo
-    do k = 1, wood_end-wood_beg + 1
-      k1 = wood_beg+k-1; k2 = betrtracer_vars%id_trc_beg_wood + k-1
-      tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)
-    enddo
-    do k = 1, Bm_end-Bm_beg + 1
-      k1 = Bm_beg+k-1; k2 = betrtracer_vars%id_trc_beg_Bm+ k-1
-      tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)
-    enddo
-
-    do k = 1, dom_end-dom_beg + 1
-      k1 = dom_beg+k-1; k2 = betrtracer_vars%id_trc_beg_dom+ k-1
-      tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)
-    enddo
-
-    do k = 1, pom_end-pom_beg + 1
-      k1 = pom_beg+k-1; k2 = betrtracer_vars%id_trc_beg_pom+ k-1
-      tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)
-    enddo
-
-    tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_n2) = &
-        ystatesf(this%"+app_name+"_bgc_index%lid_n2) - &
-        ystates0(this%"+app_name+"_bgc_index%lid_n2)
-
-    tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_co2x ) = &
-        ystatesf(this%"+app_name+"_bgc_index%lid_co2) - &
-        ystates0(this%"+app_name+"_bgc_index%lid_co2)
-
-    if(this%use_c13)then
-      tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_c13_co2x ) = &
-          ystatesf(this%"+app_name+"_bgc_index%lid_c13_co2) - &
-          ystates0(this%"+app_name+"_bgc_index%lid_c13_co2)
-    endif
-
-    if(this%use_c14)then
-      tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_c14_co2x ) = &
-          ystatesf(this%"+app_name+"_bgc_index%lid_c14_co2) - &
-          ystates0(this%"+app_name+"_bgc_index%lid_c14_co2)
-    endif
-
-    tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_o2   ) = &
-        ystatesf(this%"+app_name+"_bgc_index%lid_o2) - &
-        ystates0(this%"+app_name+"_bgc_index%lid_o2)
-
-    tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_ch4  ) = &
-        ystatesf(this%"+app_name+"_bgc_index%lid_ch4) - &
-        ystates0(this%"+app_name+"_bgc_index%lid_ch4)
-
-    tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_ar) = &
-        ystatesf(this%"+app_name+"_bgc_index%lid_ar) - &
-        ystates0(this%"+app_name+"_bgc_index%lid_ar)
-
-    !get net production for om pools
-    do k = 1, litr_end-litr_beg + 1
-      k1 = litr_beg+k-1; k2 = betrtracer_vars%id_trc_beg_litr + k-1
-      tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)
-    enddo
-
-    do k = 1, wood_end-wood_beg + 1
-      k1 = wood_beg+k-1; k2 = betrtracer_vars%id_trc_beg_wood + k-1
-      tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)
-    enddo
-
-    do k = 1, Bm_end-Bm_beg + 1
-      k1 = Bm_beg+k-1; k2 = betrtracer_vars%id_trc_beg_Bm+ k-1
-      tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)
-    enddo
-
-    biogeo_flux%c12flux_vars%hr_vr_col(c,j) = &
-        (ystatesf(this%"+app_name+"_bgc_index%lid_co2_hr) - &
-        ystates0(this%"+app_name+"_bgc_index%lid_co2_hr))*catomw/dtime
-  end associate
-  end subroutine retrieve_output
-
-
-!------------------------------------------------------------------------------
-  subroutine set_bgc_forc(this, bounds, col, lbj, ubj, jtops, num_soilc, filter_soilc, &
-      biophysforc, plant_soilbgc, betrtracer_vars, tracercoeff_vars, tracerstate_vars, betr_status)
-
-  use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
-  use PlantSoilBGCMod          , only : plant_soilbgc_type
-  use tracerstatetype          , only : tracerstate_type
-  use betr_decompMod           , only : betr_bounds_type
-  use tracercoeffType          , only : tracercoeff_type
-  use betr_columnType          , only : betr_column_type
-  use BetrTracerType           , only : betrtracer_type
-  use "+app_name+"PlantSoilBGCType    , only : "+app_name+"_plant_soilbgc_type
-  use MathfuncMod              , only : fpmax
-  use betr_varcon              , only : grav => bgrav
-  implicit none
-  class("+app_name+"_bgc_reaction_type) , intent(inout) :: this                       !
-  type(bounds_type)                    , intent(in) :: bounds                         ! bounds
-  type(betr_column_type)               , intent(in) :: col
-  integer                              , intent(in) :: jtops(bounds%begc: ) ! top index of each column
-  integer                              , intent(in) :: lbj, ubj                       ! lower and upper bounds, make sure they are > 0
-  integer                              , intent(in) :: num_soilc       ! number of columns in column filter
-  integer                              , intent(in) :: filter_soilc(:) ! column filter
-  type(betr_biogeophys_input_type)     , intent(in) :: biophysforc
-  class(plant_soilbgc_type)            , intent(in) :: plant_soilbgc
-  type(betrtracer_type)                , intent(in) :: betrtracer_vars               ! betr configuration information
-  type(tracerstate_type)               , intent(in) :: tracerstate_vars
-  type(tracercoeff_type)               , intent(in) :: tracercoeff_vars
-  type(betr_status_type)               , intent(out)   :: betr_status
-
-  integer :: j, fc, c
-  integer :: k1, k2
-  real(r8), parameter :: tiny_cval =1.e-16_r8
-  associate( &
-     litr_beg =>  this%"+app_name+"_bgc_index%litr_beg  , &
-     litr_end =>  this%"+app_name+"_bgc_index%litr_end  , &
-     wood_beg =>  this%"+app_name+"_bgc_index%wood_beg  , &
-     wood_end =>  this%"+app_name+"_bgc_index%wood_end  , &
-     dom_beg =>  this%"+app_name+"_bgc_index%dom_beg    , &
-     dom_end =>  this%"+app_name+"_bgc_index%dom_end    , &
-     pom_beg =>  this%"+app_name+"_bgc_index%pom_beg    , &
-     pom_end =>  this%"+app_name+"_bgc_index%pom_end    , &
-     Bm_beg  =>  this%"+app_name+"_bgc_index%Bm_beg     , &
-     Bm_end  =>  this%"+app_name+"_bgc_index%Bm_end       &
-  )
-  call betr_status%reset()
-  SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__),betr_status)
-
-  do j = lbj, ubj
-    do fc = 1, num_soilc
-      c = filter_soilc(fc)
-      if(j<jtops(c))cycle
-      this%"+app_name+"_forc(c,j)%plant_ntypes = this%nactpft
-      this%"+app_name+"_forc(c,j)%ystates(:) = 0._r8
-
-      !litter
-      this%"+app_name+"_forc(c,j)%ystates(litr_beg:litr_end)= &
-          tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_litr:betrtracer_vars%id_trc_end_litr)
-
-      !wood
-      this%"+app_name+"_forc(c,j)%ystates(wood_beg:wood_end)= &
-          tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_wood:betrtracer_vars%id_trc_end_wood)
-
-      !dom
-      this%"+app_name+"_forc(c,j)%ystates(dom_beg:dom_end)= &
-          tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_dom:betrtracer_vars%id_trc_end_dom)
-      if(this%"+app_name+"_forc(c,j)%ystates(dom_beg)<=tiny_cval)this%"+app_name+"_forc(c,j)%ystates(dom_beg:dom_end)=0._r8
-
-      !pom
-      this%"+app_name+"_forc(c,j)%ystates(pom_beg:pom_end)= &
-          tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_pom:betrtracer_vars%id_trc_end_pom)
-      if(this%"+app_name+"_forc(c,j)%ystates(pom_beg)<=tiny_cval)this%"+app_name+"_forc(c,j)%ystates(pom_beg:pom_end)=0._r8
-
-
-      !microbial biomass
-      this%"+app_name+"_forc(c,j)%ystates(Bm_beg:Bm_end)= &
-          tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_Bm:betrtracer_vars%id_trc_end_Bm)
-      if(this%"+app_name+"_forc(c,j)%ystates(Bm_beg)<=tiny_cval)this%"+app_name+"_forc(c,j)%ystates(Bm_beg:Bm_end)=0._r8
-      !non-soluble phase of mineral p
-
-      this%"+app_name+"_forc(c,j)%ystates(this%"+app_name+"_bgc_index%lid_n2) = &
-           fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_n2))
-
-      this%"+app_name+"_forc(c,j)%ystates(this%"+app_name+"_bgc_index%lid_o2) = &
-           fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_o2))
-
-      this%"+app_name+"_forc(c,j)%ystates(this%"+app_name+"_bgc_index%lid_ar) = &
-           fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_ar))
-
-      this%"+app_name+"_forc(c,j)%ystates(this%"+app_name+"_bgc_index%lid_co2)= &
-           fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_co2x))
-
-      if(this%use_c13)then
-        this%"+app_name+"_forc(c,j)%ystates(this%"+app_name+"_bgc_index%lid_c13_co2)= &
-           fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_c13_co2x))
-      endif
-      if(this%use_c14)then
-        this%"+app_name+"_forc(c,j)%ystates(this%"+app_name+"_bgc_index%lid_c14_co2)= &
-          fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_c14_co2x))
-      endif
-
-      this%"+app_name+"_forc(c,j)%ystates(this%"+app_name+"_bgc_index%lid_ch4)= &
-           fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_ch4))
-
-
-      !input
-      this%"+app_name+"_forc(c,j)%cflx_input_litr_met = biophysforc%c12flx%cflx_input_litr_met_vr_col(c,j)
-      this%"+app_name+"_forc(c,j)%cflx_input_litr_cel = biophysforc%c12flx%cflx_input_litr_cel_vr_col(c,j)
-      this%"+app_name+"_forc(c,j)%cflx_input_litr_lig = biophysforc%c12flx%cflx_input_litr_lig_vr_col(c,j)
-      this%"+app_name+"_forc(c,j)%cflx_input_litr_cwd = biophysforc%c12flx%cflx_input_litr_cwd_vr_col(c,j)
-      this%"+app_name+"_forc(c,j)%cflx_input_litr_lwd = biophysforc%c12flx%cflx_input_litr_lwd_vr_col(c,j)
-      this%"+app_name+"_forc(c,j)%cflx_input_litr_fwd = biophysforc%c12flx%cflx_input_litr_fwd_vr_col(c,j)
-
-      !environmental variables
-      this%"+app_name+"_forc(c,j)%temp   = biophysforc%t_soisno_col(c,j)            !temperature
-      this%"+app_name+"_forc(c,j)%depz   = col%z(c,j)            !depth of the soil
-      this%"+app_name+"_forc(c,j)%dzsoi  = col%dz(c,j)            !soil thickness
-      this%"+app_name+"_forc(c,j)%sucsat  = biophysforc%sucsat_col(c,j)            ! Input:  [real(r8) (:,:)] minimum soil suction [mm]
-      this%"+app_name+"_forc(c,j)%soilpsi = max(biophysforc%smp_l_col(c,j)*grav*1.e-6_r8,-15._r8)    ! Input:  [real(r8) (:,:)] soilwater pontential in each soil layer [MPa]
-      this%"+app_name+"_forc(c,j)%bsw = biophysforc%bsw_col(c,j)
-      this%"+app_name+"_forc(c,j)%bd   = biophysforc%bd_col(c,j)              !bulk density
-      this%"+app_name+"_forc(c,j)%pct_sand = biophysforc%cellsand_col(c,j)
-      this%"+app_name+"_forc(c,j)%pct_clay = biophysforc%cellclay_col(c,j)
-      this%"+app_name+"_forc(c,j)%h2osoi_vol = biophysforc%h2osoi_vol_col(c,j)
-      this%"+app_name+"_forc(c,j)%h2osoi_liq = biophysforc%h2osoi_liq_col(c,j)
-      this%"+app_name+"_forc(c,j)%air_vol = biophysforc%air_vol_col(c,j)
-      this%"+app_name+"_forc(c,j)%finundated = biophysforc%finundated_col(c)
-      this%"+app_name+"_forc(c,j)%watsat = biophysforc%watsat_col(c,j)
-      this%"+app_name+"_forc(c,j)%watfc = biophysforc%watfc_col(c,j)
-      this%"+app_name+"_forc(c,j)%cellorg = biophysforc%cellorg_col(c,j)
-      this%"+app_name+"_forc(c,j)%pH = biophysforc%soil_pH(c,j)
-
-      !conductivity for plant-aided gas transport
-      this%"+app_name+"_forc(c,j)%aren_cond_n2 = &
-          tracercoeff_vars%aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_n2)) * &
-          tracercoeff_vars%scal_aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_n2))
-      this%"+app_name+"_forc(c,j)%aren_cond_o2 = &
-          tracercoeff_vars%aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_o2)) * &
-          tracercoeff_vars%scal_aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_o2))
-      this%"+app_name+"_forc(c,j)%aren_cond_co2 = &
-          tracercoeff_vars%aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_co2x)) * &
-          tracercoeff_vars%scal_aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_co2x))
-      if(this%use_c13)then
-        this%"+app_name+"_forc(c,j)%aren_cond_co2_c13 = &
-          tracercoeff_vars%aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_c13_co2x)) * &
-          tracercoeff_vars%scal_aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_c13_co2x))
-      endif
-      if(this%use_c14)then
-        this%"+app_name+"_forc(c,j)%aren_cond_co2_c14 = &
-          tracercoeff_vars%aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_c14_co2x)) * &
-          tracercoeff_vars%scal_aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_c14_co2x))
-      endif
-      this%"+app_name+"_forc(c,j)%aren_cond_ar = &
-          tracercoeff_vars%aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_ar)) * &
-          tracercoeff_vars%scal_aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_ar))
-      this%"+app_name+"_forc(c,j)%aren_cond_ch4 = &
-          tracercoeff_vars%aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_ch4)) * &
-          tracercoeff_vars%scal_aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_ch4))
-      !phase conversion parameter
-      this%"+app_name+"_forc(c,j)%ch4_g2b = &
-          tracercoeff_vars%gas2bulkcef_mobile_col(c,j,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_ch4))
-      this%"+app_name+"_forc(c,j)%co2_g2b = &
-          tracercoeff_vars%gas2bulkcef_mobile_col(c,j,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_co2x))
-      this%"+app_name+"_forc(c,j)%o2_g2b = &
-          tracercoeff_vars%gas2bulkcef_mobile_col(c,j,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_o2))
-      this%"+app_name+"_forc(c,j)%n2_g2b = &
-          tracercoeff_vars%gas2bulkcef_mobile_col(c,j,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_n2))
-      this%"+app_name+"_forc(c,j)%ar_g2b = &
-          tracercoeff_vars%gas2bulkcef_mobile_col(c,j,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_ar))
-      this%"+app_name+"_forc(c,j)%o2_w2b = &
-          tracercoeff_vars%aqu2bulkcef_mobile_col(c,j,betrtracer_vars%groupid(betrtracer_vars%id_trc_o2))
-
-      !atmospheric pressure (mol/m3) for gas ventilation.
-      this%"+app_name+"_forc(c,j)%conc_atm_n2 = &
-          tracerstate_vars%tracer_conc_atm_col(c,betrtracer_vars%volatileid(betrtracer_vars%id_trc_n2))
-      this%"+app_name+"_forc(c,j)%conc_atm_o2 = &
-          tracerstate_vars%tracer_conc_atm_col(c,betrtracer_vars%volatileid(betrtracer_vars%id_trc_o2))
-      this%"+app_name+"_forc(c,j)%conc_atm_ar = &
-          tracerstate_vars%tracer_conc_atm_col(c,betrtracer_vars%volatileid(betrtracer_vars%id_trc_ar))
-      this%"+app_name+"_forc(c,j)%conc_atm_co2 = &
-          tracerstate_vars%tracer_conc_atm_col(c,betrtracer_vars%volatileid(betrtracer_vars%id_trc_co2x))
-      if(this%use_c13)then
-        this%"+app_name+"_forc(c,j)%conc_atm_co2_c13 = &
-          tracerstate_vars%tracer_conc_atm_col(c,betrtracer_vars%volatileid(betrtracer_vars%id_trc_c13_co2x))
-      endif
-      if(this%use_c14)then
-        this%"+app_name+"_forc(c,j)%conc_atm_co2_c14 = &
-          tracerstate_vars%tracer_conc_atm_col(c,betrtracer_vars%volatileid(betrtracer_vars%id_trc_c14_co2x))
-      endif
-      this%"+app_name+"_forc(c,j)%conc_atm_ch4 = &
-          tracerstate_vars%tracer_conc_atm_col(c,betrtracer_vars%volatileid(betrtracer_vars%id_trc_ch4))
-
-      this%"+app_name+"_forc(c,j)%soilorder = biophysforc%isoilorder(c)
-
-    enddo
-  enddo
-  end associate
-  end subroutine set_bgc_forc
-
-!------------------------------------------------------------------------------
-  subroutine update_sorpphase_coeff(this, bounds, col, lbj, ubj, jtops, num_soilc, filter_soilc, &
-      betrtracer_vars, tracerstate_vars, tracercoeff_vars)
-  !
-  !DESCRIPTION
-  !update sorption related phase conversion parameter
-  !in this formulation, the amount sorption surface is assumed to scale linearly with moisture
-  !content. Microbes are always assumed in sufficiently moist status, though the activity could be
-  !smaller
-  use tracerstatetype          , only : tracerstate_type
-  use betr_decompMod           , only : betr_bounds_type
-  use tracercoeffType          , only : tracercoeff_type
-  use betr_columnType          , only : betr_column_type
-  use BetrTracerType           , only : betrtracer_type
-  implicit none
-  class("+app_name+"_bgc_reaction_type) , intent(inout) :: this                       !
-  type(bounds_type)                    , intent(in) :: bounds                         ! bounds
-  type(betr_column_type)               , intent(in) :: col
-  integer                              , intent(in) :: jtops(bounds%begc: ) ! top index of each column
-  integer                              , intent(in) :: lbj, ubj                       ! lower and upper bounds, make sure they are > 0
-  integer                              , intent(in) :: num_soilc       ! number of columns in column filter
-  integer                              , intent(in) :: filter_soilc(:) ! column filter
-  type(betrtracer_type)                , intent(in) :: betrtracer_vars               ! betr configuration information
-  type(tracerstate_type)               , intent(in) :: tracerstate_vars
-  type(tracercoeff_type)            , intent(inout) :: tracercoeff_vars
-
-  real(r8) :: KM_CM, Msurf, KM_EM, BMT
-  real(r8) :: denorm1, denorm0, denorm2,beta
-  integer :: c_l, j
-  associate(                                                           &
-    aqu2bulkcef_mobile   => tracercoeff_vars%aqu2bulkcef_mobile_col  , & !Output:[real(r8)(:,:)], phase conversion coeff
-    id_trc_dom           => betrtracer_vars%id_trc_dom               , &
-    trcid_Bm             => betrtracer_vars%id_trc_beg_Bm            , &
-    trcid_dom            => betrtracer_vars%id_trc_beg_dom           , &
-    trcid_pom            => betrtracer_vars%id_trc_beg_pom           , &
-    id_trc_end_dom       => betrtracer_vars%id_trc_end_dom           , &
-    tracer_conc_mobile   => tracerstate_vars%tracer_conc_mobile_col  , &
-    Kaff_CM              => "+app_name+"_para%Kaff_CM                       , &
-    Kaff_EM              => "+app_name+"_para%Kaff_EM                       , &
-    Kaff_BC              => "+app_name+"_para%Kaff_BC                       , &
-    alpha_B2E            => "+app_name+"_para%alpha_B2E                     , &
-    alpha_B2T            => "+app_name+"_para%alpha_B2T                     , &
-    nelms                =>  this%"+app_name+"_bgc_index%nelms                &
-  )
-  c_l=1
-  do j = 1, ubj
-    KM_CM=aqu2bulkcef_mobile(c_l,j,id_trc_dom)*this%"+app_name+"_forc(c_l,j)%KM_OM_ref*Kaff_CM
-    BMT=(tracer_conc_mobile(c_l,j,trcid_Bm)+tracer_conc_mobile(c_l,j,trcid_Bm+nelms))*alpha_B2T
-    Msurf=this%"+app_name+"_forc(c_l,j)%Msurf_OM-tracer_conc_mobile(c_l,j,trcid_pom)
-    denorm0=1._r8+Msurf/KM_CM+BMT/Kaff_BC
-    denorm1=denorm0+tracer_conc_mobile(c_l,j,trcid_dom)/KM_CM
-    denorm2=denorm0+tracer_conc_mobile(c_l,j,trcid_dom)/Kaff_BC
-    beta=1._r8/(1._r8-Msurf/KM_CM/denorm1-BMT/Kaff_BC/denorm2)
-    aqu2bulkcef_mobile(c_l,j,id_trc_dom) = aqu2bulkcef_mobile(c_l,j,id_trc_dom)*beta
-    !print*,'c,j',1._r8/(1._r8-Msurf/KM_CM/denorm1-BMT/Kaff_BC/denorm2)
-  enddo
-  end associate
-  end subroutine update_sorpphase_coeff
-
-end module "+app_name+"BGCReactionsType
+    print "      do kk = betrtracer_vars%id_trc_beg_wood, betrtracer_vars%id_trc_end_wood, nelm"
+    print "        biogeo_state%c12state_vars%cwdc_vr_col(c,j) = biogeo_state%c12state_vars%cwdc_vr_col(c,j) + &"
+    print "          catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)"
+    print "        if(this%use_c13)then"
+    print "          biogeo_state%c13state_vars%cwdc_vr_col(c,j) = biogeo_state%c13state_vars%cwdc_vr_col(c,j) + &"
+    print "            c13atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc)"
+    print "        endif"
+    print "        if(this%use_c14)then"
+    print "          biogeo_state%c14state_vars%cwdc_vr_col(c,j) = biogeo_state%c14state_vars%cwdc_vr_col(c,j) + &"
+    print "            c14atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc)"
+    print "        endif"
+    print "      enddo"
+    print ""
+    print "      !Microbial biomass"
+    print "      do kk = betrtracer_vars%id_trc_beg_Bm, betrtracer_vars%id_trc_end_Bm-nelm, nelm"
+    print "        biogeo_state%c12state_vars%som1c_vr_col(c,j) =  &"
+    print "          catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)"
+    print ""
+    print "        if(this%use_c13)then"
+    print "          biogeo_state%c13state_vars%som1c_vr_col(c,j) = &"
+    print "            c13atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc)"
+    print "        endif"
+    print "        if(this%use_c14)then"
+    print "          biogeo_state%c14state_vars%som1c_vr_col(c,j) =  &"
+    print "            c14atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc)"
+    print "        endif"
+    print "      enddo"
+    print ""
+    print "      do kk = betrtracer_vars%id_trc_beg_pom, betrtracer_vars%id_trc_end_pom, nelm+1"
+    print "        biogeo_state%c12state_vars%som2c_vr_col(c,j) = &"
+    print "          catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)"
+    print ""
+    print "        if(this%use_c13)then"
+    print "          biogeo_state%c13state_vars%som2c_vr_col(c,j) =  &"
+    print "            c13atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc)"
+    print "        endif"
+    print "        if(this%use_c14)then"
+    print "          biogeo_state%c14state_vars%som2c_vr_col(c,j) =  &"
+    print "            c14atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc)"
+    print "        endif"
+    print "      enddo"
+    print ""
+    print "      do kk = betrtracer_vars%id_trc_beg_dom, betrtracer_vars%id_trc_end_dom, nelm+1"
+    print "        biogeo_state%c12state_vars%domc_vr_col(c,j) = &"
+    print "          catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)"
+    print ""
+    print "        if(this%use_c13)then"
+    print "          biogeo_state%c13state_vars%domc_vr_col(c,j) =  &"
+    print "            c13atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc)"
+    print "        endif"
+    print "        if(this%use_c14)then"
+    print "          biogeo_state%c14state_vars%domc_vr_col(c,j) =  &"
+    print "            c14atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc)"
+    print "        endif"
+    print "      enddo"
+    print ""
+    print "      do kk = betrtracer_vars%id_trc_beg_Bm+nelm, betrtracer_vars%id_trc_end_Bm, nelm"
+    print "        biogeo_state%c12state_vars%som3c_vr_col(c,j) =  &"
+    print "          catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)"
+    print "        if(this%use_c13)then"
+    print "          biogeo_state%c13state_vars%som3c_vr_col(c,j) = &"
+    print "            c13atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc)"
+    print "        endif"
+    print ""
+    print "        if(this%use_c14)then"
+    print "          biogeo_state%c14state_vars%som3c_vr_col(c,j) =  &"
+    print "            c14atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc)"
+    print "        endif"
+    print "      enddo"
+    print "    enddo"
+    print "  enddo"
+    print "  end subroutine retrieve_biostates"
+    print "!------------------------------------------------------------------------------"
+    print "  subroutine retrieve_output(this, c, j, nstates, ystates0, ystatesf, dtime, betrtracer_vars, tracerflux_vars,&"
+    print "    tracerstate_vars, plant_soilbgc, biogeo_flux)"
+    print "  !DESCRIPTION"
+    print "  !retrieve flux and state variables after evolving the bgc calculation"
+    print "  !"
+    print "  !USES"
+    print "  use BetrTracerType           , only : betrtracer_type"
+    print "  use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type"
+    print "  use tracerfluxType           , only : tracerflux_type"
+    print "  use tracerstatetype          , only : tracerstate_type"
+    print "  use betr_ctrl                , only : betr_spinup_state"
+    print "  use PlantSoilBGCMod          , only : plant_soilbgc_type"
+    print "  use "+app_name+"PlantSoilBGCType    , only : "+app_name+"_plant_soilbgc_type"
+    print "  use tracer_varcon            , only : catomw, natomw, patomw, fix_ip"
+    print "  implicit none"
+    print "  class("+app_name+"_bgc_reaction_type) , intent(inout)    :: this"
+    print "  integer                              , intent(in) :: c, j"
+    print "  integer                              , intent(in) :: nstates"
+    print "  real(r8)                             , intent(in) :: ystates0(nstates)"
+    print "  real(r8)                             , intent(inout) :: ystatesf(nstates)"
+    print "  real(r8)                             , intent(in) :: dtime"
+    print "  type(betrtracer_type)                , intent(in) :: betrtracer_vars    ! betr configuration information"
+    print "  type(tracerstate_type)               , intent(inout) :: tracerstate_vars"
+    print "  type(tracerflux_type)                , intent(inout) :: tracerflux_vars"
+    print "  class(plant_soilbgc_type)            , intent(inout) :: plant_soilbgc"
+    print "  type(betr_biogeo_flux_type)          , intent(inout) :: biogeo_flux"
+    print ""
+    print "  !local variables"
+    print "  integer :: k, k1, k2, jj, p"
+    print "  integer :: trcid"
+    print ""
+    print "  associate( &"
+    print "    litr_beg =>  this%"+app_name+"_bgc_index%litr_beg  , &"
+    print "    litr_end =>  this%"+app_name+"_bgc_index%litr_end  , &"
+    print "    wood_beg =>  this%"+app_name+"_bgc_index%wood_beg  , &"
+    print "    wood_end =>  this%"+app_name+"_bgc_index%wood_end  , &"
+    print "    dom_beg =>  this%"+app_name+"_bgc_index%dom_beg    , &"
+    print "    dom_end =>  this%"+app_name+"_bgc_index%dom_end    , &"
+    print "    pom_beg =>  this%"+app_name+"_bgc_index%pom_beg    , &"
+    print "    pom_end =>  this%"+app_name+"_bgc_index%pom_end    , &"
+    print "    Bm_beg  =>  this%"+app_name+"_bgc_index%Bm_beg     , &"
+    print "    Bm_end  =>  this%"+app_name+"_bgc_index%Bm_end     , &"
+    print "    volatileid            => betrtracer_vars%volatileid      , &"
+    print "    tracer_flx_netpro_vr  => tracerflux_vars%tracer_flx_netpro_vr_col     , & !"
+    print "    tracer_flx_parchm_vr  => tracerflux_vars%tracer_flx_parchm_vr_col     , & !"
+    print "    ngwmobile_tracers     => betrtracer_vars%ngwmobile_tracers              & !"
+    print "  )"
+    print ""
+    print "  !tracer states"
+    print "  tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_litr:betrtracer_vars%id_trc_end_litr) = &"
+    print "     ystatesf(litr_beg:litr_end)"
+    print ""
+    print "  tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_wood:betrtracer_vars%id_trc_end_wood) = &"
+    print "    ystatesf(wood_beg:wood_end)"
+    print ""
+    print "  tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_Bm:betrtracer_vars%id_trc_end_Bm) = &"
+    print "    ystatesf(Bm_beg:Bm_end)"
+    print ""
+    print "  tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_dom:betrtracer_vars%id_trc_end_dom) = &"
+    print "    ystatesf(dom_beg:dom_end)"
+    print ""
+    print "  tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_pom:betrtracer_vars%id_trc_end_pom) = &"
+    print "    ystatesf(pom_beg:pom_end)"
+    print ""
+    print "  tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_n2) = &"
+    print "    ystatesf(this%"+app_name+"_bgc_index%lid_n2)"
+    print ""
+    print "  tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_o2) = &"
+    print "    ystatesf(this%"+app_name+"_bgc_index%lid_o2)"
+    print ""
+    print "  tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_ar) = &"
+    print "    ystatesf(this%"+app_name+"_bgc_index%lid_ar)"
+    print ""
+    print "  tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_co2x) = &"
+    print "    ystatesf(this%"+app_name+"_bgc_index%lid_co2)"
+    print ""
+    print "  if(this%use_c13)then"
+    print "    tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_c13_co2x) = &"
+    print "      ystatesf(this%"+app_name+"_bgc_index%lid_c13_co2)"
+    print "  endif"
+    print ""
+    print "  if(this%use_c14)then"
+    print "    tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_c14_co2x) = &"
+    print "      ystatesf(this%"+app_name+"_bgc_index%lid_c14_co2)"
+    print "  endif"
+    print ""
+    print "  tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_ch4) = &"
+    print "    ystatesf(this%"+app_name+"_bgc_index%lid_ch4)"
+    print ""
+    print "  !fluxes"
+    print "  tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_o2) ) = &"
+    print "     ystatesf(this%"+app_name+"_bgc_index%lid_o2_paere )  - &"
+    print "     ystates0(this%"+app_name+"_bgc_index%lid_o2_paere)"
+    print ""
+    print "  if ( betr_spinup_state == 0 ) then"
+    print "    tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_n2)  ) = &"
+    print "      ystatesf(this%"+app_name+"_bgc_index%lid_n2_paere)  - &"
+    print "      ystates0(this%"+app_name+"_bgc_index%lid_n2_paere)"
+    print ""
+    print "    tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_ar)  ) = &"
+    print "      ystatesf(this%"+app_name+"_bgc_index%lid_ar_paere)  - &"
+    print "      ystates0(this%"+app_name+"_bgc_index%lid_ar_paere)"
+    print ""
+    print "    tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_co2x)) = &"
+    print "      ystatesf(this%"+app_name+"_bgc_index%lid_co2_paere)  - &"
+    print "      ystates0(this%"+app_name+"_bgc_index%lid_co2_paere)"
+    print ""
+    print "    if(this%use_c13)then"
+    print "      tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_c13_co2x)) = &"
+    print "        ystatesf(this%"+app_name+"_bgc_index%lid_c13_co2_paere)  - &"
+    print "        ystates0(this%"+app_name+"_bgc_index%lid_c13_co2_paere)"
+    print "    endif"
+    print ""
+    print "    if(this%use_c14)then"
+    print "      tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_c14_co2x)) = &"
+    print "        ystatesf(this%"+app_name+"_bgc_index%lid_c14_co2_paere)  - &"
+    print "        ystates0(this%"+app_name+"_bgc_index%lid_c14_co2_paere)"
+    print "    endif"
+    print ""
+    print "    tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_ch4) ) = &"
+    print "      ystatesf(this%"+app_name+"_bgc_index%lid_ch4_paere)  - &"
+    print "      ystates0(this%"+app_name+"_bgc_index%lid_ch4_paere)"
+    print "  endif"
+    print ""
+    print "  !get net production for om pools"
+    print "  do k = 1, litr_end-litr_beg + 1"
+    print "    k1 = litr_beg+k-1; k2 = betrtracer_vars%id_trc_beg_litr + k-1"
+    print "    tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)"
+    print "  enddo"
+    print "  do k = 1, wood_end-wood_beg + 1"
+    print "    k1 = wood_beg+k-1; k2 = betrtracer_vars%id_trc_beg_wood + k-1"
+    print "    tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)"
+    print "  enddo"
+    print "  do k = 1, Bm_end-Bm_beg + 1"
+    print "    k1 = Bm_beg+k-1; k2 = betrtracer_vars%id_trc_beg_Bm+ k-1"
+    print "    tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)"
+    print "  enddo"
+    print "  do k = 1, dom_end-dom_beg + 1"
+    print "    k1 = dom_beg+k-1; k2 = betrtracer_vars%id_trc_beg_dom+ k-1"
+    print "    tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)"
+    print "  enddo"
+    print "  do k = 1, pom_end-pom_beg + 1"
+    print "    k1 = pom_beg+k-1; k2 = betrtracer_vars%id_trc_beg_pom+ k-1"
+    print "    tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)"
+    print "  enddo"
+    print "  tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_n2) = &"
+    print "    ystatesf(this%"+app_name+"_bgc_index%lid_n2) - &"
+    print "    ystates0(this%"+app_name+"_bgc_index%lid_n2)"
+    print ""
+    print "  tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_co2x ) = &"
+    print "    ystatesf(this%"+app_name+"_bgc_index%lid_co2) - &"
+    print "    ystates0(this%"+app_name+"_bgc_index%lid_co2)"
+    print ""
+    print "  if(this%use_c13)then"
+    print "    tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_c13_co2x ) = &"
+    print "      ystatesf(this%"+app_name+"_bgc_index%lid_c13_co2) - &"
+    print "      ystates0(this%"+app_name+"_bgc_index%lid_c13_co2)"
+    print "  endif"
+    print ""
+    print "  if(this%use_c14)then"
+    print "    tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_c14_co2x ) = &"
+    print "      ystatesf(this%"+app_name+"_bgc_index%lid_c14_co2) - &"
+    print "      ystates0(this%"+app_name+"_bgc_index%lid_c14_co2)"
+    print "  endif"
+    print ""
+    print "  tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_o2   ) = &"
+    print "    ystatesf(this%"+app_name+"_bgc_index%lid_o2) - &"
+    print "    ystates0(this%"+app_name+"_bgc_index%lid_o2)"
+    print ""
+    print "  tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_ch4  ) = &"
+    print "    ystatesf(this%"+app_name+"_bgc_index%lid_ch4) - &"
+    print "    ystates0(this%"+app_name+"_bgc_index%lid_ch4)"
+    print ""
+    print "  tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_ar) = &"
+    print "    ystatesf(this%"+app_name+"_bgc_index%lid_ar) - &"
+    print "    ystates0(this%"+app_name+"_bgc_index%lid_ar)"
+    print ""
+    print "  !get net production for om pools"
+    print "  do k = 1, litr_end-litr_beg + 1"
+    print "    k1 = litr_beg+k-1; k2 = betrtracer_vars%id_trc_beg_litr + k-1"
+    print "    tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)"
+    print "  enddo"
+    print ""
+    print "  do k = 1, wood_end-wood_beg + 1"
+    print "    k1 = wood_beg+k-1; k2 = betrtracer_vars%id_trc_beg_wood + k-1"
+    print "    tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)"
+    print "  enddo"
+    print ""
+    print "  do k = 1, Bm_end-Bm_beg + 1"
+    print "    k1 = Bm_beg+k-1; k2 = betrtracer_vars%id_trc_beg_Bm+ k-1"
+    print "    tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)"
+    print "  enddo"
+    print ""
+    print "  biogeo_flux%c12flux_vars%hr_vr_col(c,j) = &"
+    print "    (ystatesf(this%"+app_name+"_bgc_index%lid_co2_hr) - &"
+    print "    ystates0(this%"+app_name+"_bgc_index%lid_co2_hr))*catomw/dtime"
+    print "  end associate"
+    print "  end subroutine retrieve_output"
+    print "!------------------------------------------------------------------------------"
+    print "  subroutine set_bgc_forc(this, bounds, col, lbj, ubj, jtops, num_soilc, filter_soilc, &"
+    print "    biophysforc, plant_soilbgc, betrtracer_vars, tracercoeff_vars, tracerstate_vars, betr_status)"
+    print "  !"
+    print "  !DESCRIPTION"
+    print "  use BeTR_biogeophysInputType , only : betr_biogeophys_input_type"
+    print "  use PlantSoilBGCMod          , only : plant_soilbgc_type"
+    print "  use tracerstatetype          , only : tracerstate_type"
+    print "  use betr_decompMod           , only : betr_bounds_type"
+    print "  use tracercoeffType          , only : tracercoeff_type"
+    print "  use betr_columnType          , only : betr_column_type"
+    print "  use BetrTracerType           , only : betrtracer_type"
+    print "  use "+app_name+"PlantSoilBGCType    , only : "+app_name+"_plant_soilbgc_type"
+    print "  use MathfuncMod              , only : fpmax"
+    print "  use betr_varcon              , only : grav => bgrav"
+    print "  implicit none"
+    print "  class("+app_name+"_bgc_reaction_type) , intent(inout) :: this    !"
+    print "  type(bounds_type)                    , intent(in) :: bounds     ! bounds"
+    print "  type(betr_column_type)               , intent(in) :: col"
+    print "  integer                              , intent(in) :: jtops(bounds%begc: ) ! top index of each column"
+    print "  integer                              , intent(in) :: lbj, ubj       ! lower and upper bounds, make sure they are > 0"
+    print "  integer                              , intent(in) :: num_soilc       ! number of columns in column filter"
+    print "  integer                              , intent(in) :: filter_soilc(:) ! column filter"
+    print "  type(betr_biogeophys_input_type)     , intent(in) :: biophysforc"
+    print "  class(plant_soilbgc_type)            , intent(in) :: plant_soilbgc"
+    print "  type(betrtracer_type)                , intent(in) :: betrtracer_vars     ! betr configuration information"
+    print "  type(tracerstate_type)               , intent(in) :: tracerstate_vars"
+    print "  type(tracercoeff_type)               , intent(in) :: tracercoeff_vars"
+    print "  type(betr_status_type)               , intent(out)   :: betr_status"
+    print ""
+    print "  integer :: j, fc, c"
+    print "  integer :: k1, k2"
+    print "  real(r8), parameter :: tiny_cval =1.e-16_r8"
+    print ""
+    print "  associate( &"
+    print "    litr_beg =>  this%"+app_name+"_bgc_index%litr_beg  , &"
+    print "    litr_end =>  this%"+app_name+"_bgc_index%litr_end  , &"
+    print "    wood_beg =>  this%"+app_name+"_bgc_index%wood_beg  , &"
+    print "    wood_end =>  this%"+app_name+"_bgc_index%wood_end  , &"
+    print "    dom_beg =>  this%"+app_name+"_bgc_index%dom_beg    , &"
+    print "    dom_end =>  this%"+app_name+"_bgc_index%dom_end    , &"
+    print "    pom_beg =>  this%"+app_name+"_bgc_index%pom_beg    , &"
+    print "    pom_end =>  this%"+app_name+"_bgc_index%pom_end    , &"
+    print "    Bm_beg  =>  this%"+app_name+"_bgc_index%Bm_beg     , &"
+    print "    Bm_end  =>  this%"+app_name+"_bgc_index%Bm_end       &"
+    print "  )"
+    print ""
+    print "  call betr_status%reset()"
+    print "  SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__),betr_status)"
+    print ""
+    print "  do j = lbj, ubj"
+    print "    do fc = 1, num_soilc"
+    print "      c = filter_soilc(fc)"
+    print "      if(j<jtops(c))cycle"
+    print "      this%"+app_name+"_forc(c,j)%plant_ntypes = this%nactpft"
+    print "      this%"+app_name+"_forc(c,j)%ystates(:) = 0._r8"
+    print ""
+    print "      !litter"
+    print "      this%"+app_name+"_forc(c,j)%ystates(litr_beg:litr_end)= &"
+    print "        tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_litr:betrtracer_vars%id_trc_end_litr)"
+    print ""
+    print "      !wood"
+    print "      this%"+app_name+"_forc(c,j)%ystates(wood_beg:wood_end)= &"
+    print "        tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_wood:betrtracer_vars%id_trc_end_wood)"
+    print ""
+    print "      !dom"
+    print "      this%"+app_name+"_forc(c,j)%ystates(dom_beg:dom_end)= &"
+    print "      tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_dom:betrtracer_vars%id_trc_end_dom)"
+    print "      if(this%"+app_name+"_forc(c,j)%ystates(dom_beg)<=tiny_cval)this%"+app_name+"_forc(c,j)%ystates(dom_beg:dom_end)=0._r8"
+    print ""
+    print "      !pom"
+    print "      this%"+app_name+"_forc(c,j)%ystates(pom_beg:pom_end)= &"
+    print "        tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_pom:betrtracer_vars%id_trc_end_pom)"
+    print "      if(this%"+app_name+"_forc(c,j)%ystates(pom_beg)<=tiny_cval)this%"+app_name+"_forc(c,j)%ystates(pom_beg:pom_end)=0._r8"
+    print ""
+    print "      !microbial biomass"
+    print "      this%"+app_name+"_forc(c,j)%ystates(Bm_beg:Bm_end)= &"
+    print "        tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_Bm:betrtracer_vars%id_trc_end_Bm)"
+    print "      if(this%"+app_name+"_forc(c,j)%ystates(Bm_beg)<=tiny_cval)this%"+app_name+"_forc(c,j)%ystates(Bm_beg:Bm_end)=0._r8"
+    print ""
+    print "      !non-soluble phase of mineral p"
+    print "      this%"+app_name+"_forc(c,j)%ystates(this%"+app_name+"_bgc_index%lid_n2) = &"
+    print "         fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_n2))"
+    print ""
+    print "      this%"+app_name+"_forc(c,j)%ystates(this%"+app_name+"_bgc_index%lid_o2) = &"
+    print "        fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_o2))"
+    print ""
+    print "      this%"+app_name+"_forc(c,j)%ystates(this%"+app_name+"_bgc_index%lid_ar) = &"
+    print "        fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_ar))"
+    print ""
+    print "      this%"+app_name+"_forc(c,j)%ystates(this%"+app_name+"_bgc_index%lid_co2)= &"
+    print "        fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_co2x))"
+    print ""
+    print "      if(this%use_c13)then"
+    print "        this%"+app_name+"_forc(c,j)%ystates(this%"+app_name+"_bgc_index%lid_c13_co2)= &"
+    print "          fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_c13_co2x))"
+    print "      endif"
+    print "      if(this%use_c14)then"
+    print "        this%"+app_name+"_forc(c,j)%ystates(this%"+app_name+"_bgc_index%lid_c14_co2)= &"
+    print "          fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_c14_co2x))"
+    print "      endif"
+    print ""
+    print "      this%"+app_name+"_forc(c,j)%ystates(this%"+app_name+"_bgc_index%lid_ch4)= &"
+    print "        fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_ch4))"
+    print ""
+    print "      !input"
+    print "      this%"+app_name+"_forc(c,j)%cflx_input_litr_met = biophysforc%c12flx%cflx_input_litr_met_vr_col(c,j)"
+    print "      this%"+app_name+"_forc(c,j)%cflx_input_litr_cel = biophysforc%c12flx%cflx_input_litr_cel_vr_col(c,j)"
+    print "      this%"+app_name+"_forc(c,j)%cflx_input_litr_lig = biophysforc%c12flx%cflx_input_litr_lig_vr_col(c,j)"
+    print "      this%"+app_name+"_forc(c,j)%cflx_input_litr_cwd = biophysforc%c12flx%cflx_input_litr_cwd_vr_col(c,j)"
+    print "      this%"+app_name+"_forc(c,j)%cflx_input_litr_lwd = biophysforc%c12flx%cflx_input_litr_lwd_vr_col(c,j)"
+    print "      this%"+app_name+"_forc(c,j)%cflx_input_litr_fwd = biophysforc%c12flx%cflx_input_litr_fwd_vr_col(c,j)"
+    print ""
+    print "      !environmental variables"
+    print "      this%"+app_name+"_forc(c,j)%temp   = biophysforc%t_soisno_col(c,j)            !temperature"
+    print "      this%"+app_name+"_forc(c,j)%depz   = col%z(c,j)            !depth of the soil"
+    print "      this%"+app_name+"_forc(c,j)%dzsoi  = col%dz(c,j)            !soil thickness"
+    print "      this%"+app_name+"_forc(c,j)%sucsat  = biophysforc%sucsat_col(c,j)   ! Input:  [real(r8) (:,:)] minimum soil suction [mm]"
+    print "      this%"+app_name+"_forc(c,j)%soilpsi = max(biophysforc%smp_l_col(c,j)*grav*1.e-6_r8,-15._r8)    ! Input:  [real(r8) (:,:)] soilwater pontential in each soil layer [MPa]"
+    print "      this%"+app_name+"_forc(c,j)%bsw = biophysforc%bsw_col(c,j)"
+    print "      this%"+app_name+"_forc(c,j)%bd   = biophysforc%bd_col(c,j)              !bulk density"
+    print "      this%"+app_name+"_forc(c,j)%pct_sand = biophysforc%cellsand_col(c,j)"
+    print "      this%"+app_name+"_forc(c,j)%pct_clay = biophysforc%cellclay_col(c,j)"
+    print "      this%"+app_name+"_forc(c,j)%h2osoi_vol = biophysforc%h2osoi_vol_col(c,j)"
+    print "      this%"+app_name+"_forc(c,j)%h2osoi_liq = biophysforc%h2osoi_liq_col(c,j)"
+    print "      this%"+app_name+"_forc(c,j)%air_vol = biophysforc%air_vol_col(c,j)"
+    print "      this%"+app_name+"_forc(c,j)%finundated = biophysforc%finundated_col(c)"
+    print "      this%"+app_name+"_forc(c,j)%watsat = biophysforc%watsat_col(c,j)"
+    print "      this%"+app_name+"_forc(c,j)%watfc = biophysforc%watfc_col(c,j)"
+    print "      this%"+app_name+"_forc(c,j)%cellorg = biophysforc%cellorg_col(c,j)"
+    print "      this%"+app_name+"_forc(c,j)%pH = biophysforc%soil_pH(c,j)"
+    print ""
+    print "      !conductivity for plant-aided gas transport"
+    print "      this%"+app_name+"_forc(c,j)%aren_cond_n2 = &"
+    print "        tracercoeff_vars%aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_n2)) * &"
+    print "        tracercoeff_vars%scal_aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_n2))"
+    print "      this%"+app_name+"_forc(c,j)%aren_cond_o2 = &"
+    print "        tracercoeff_vars%aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_o2)) * &"
+    print "        tracercoeff_vars%scal_aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_o2))"
+    print "      this%"+app_name+"_forc(c,j)%aren_cond_co2 = &"
+    print "        tracercoeff_vars%aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_co2x)) * &"
+    print "        tracercoeff_vars%scal_aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_co2x))"
+    print "      if(this%use_c13)then"
+    print "        this%"+app_name+"_forc(c,j)%aren_cond_co2_c13 = &"
+    print "          tracercoeff_vars%aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_c13_co2x)) * &"
+    print "          tracercoeff_vars%scal_aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_c13_co2x))"
+    print "      endif"
+    print "      if(this%use_c14)then"
+    print "        this%"+app_name+"_forc(c,j)%aren_cond_co2_c14 = &"
+    print "          tracercoeff_vars%aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_c14_co2x)) * &"
+    print "          tracercoeff_vars%scal_aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_c14_co2x))"
+    print "      endif"
+    print "      this%"+app_name+"_forc(c,j)%aren_cond_ar = &"
+    print "        tracercoeff_vars%aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_ar)) * &"
+    print "        tracercoeff_vars%scal_aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_ar))"
+    print "      this%"+app_name+"_forc(c,j)%aren_cond_ch4 = &"
+    print "        tracercoeff_vars%aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_ch4)) * &"
+    print "        tracercoeff_vars%scal_aere_cond_col(c,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_ch4))"
+    print "      !phase conversion parameter"
+    print "      this%"+app_name+"_forc(c,j)%ch4_g2b = &"
+    print "        tracercoeff_vars%gas2bulkcef_mobile_col(c,j,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_ch4))"
+    print "      this%"+app_name+"_forc(c,j)%co2_g2b = &"
+    print "        tracercoeff_vars%gas2bulkcef_mobile_col(c,j,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_co2x))"
+    print "      this%"+app_name+"_forc(c,j)%o2_g2b = &"
+    print "        tracercoeff_vars%gas2bulkcef_mobile_col(c,j,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_o2))"
+    print "      this%"+app_name+"_forc(c,j)%n2_g2b = &"
+    print "        tracercoeff_vars%gas2bulkcef_mobile_col(c,j,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_n2))"
+    print "      this%"+app_name+"_forc(c,j)%ar_g2b = &"
+    print "        tracercoeff_vars%gas2bulkcef_mobile_col(c,j,betrtracer_vars%volatilegroupid(betrtracer_vars%id_trc_ar))"
+    print "      this%"+app_name+"_forc(c,j)%o2_w2b = &"
+    print "        tracercoeff_vars%aqu2bulkcef_mobile_col(c,j,betrtracer_vars%groupid(betrtracer_vars%id_trc_o2))"
+    print ""
+    print "      !atmospheric pressure (mol/m3) for gas ventilation."
+    print "      this%"+app_name+"_forc(c,j)%conc_atm_n2 = &"
+    print "        tracerstate_vars%tracer_conc_atm_col(c,betrtracer_vars%volatileid(betrtracer_vars%id_trc_n2))"
+    print "      this%"+app_name+"_forc(c,j)%conc_atm_o2 = &"
+    print "        tracerstate_vars%tracer_conc_atm_col(c,betrtracer_vars%volatileid(betrtracer_vars%id_trc_o2))"
+    print "      this%"+app_name+"_forc(c,j)%conc_atm_ar = &"
+    print "        tracerstate_vars%tracer_conc_atm_col(c,betrtracer_vars%volatileid(betrtracer_vars%id_trc_ar))"
+    print "      this%"+app_name+"_forc(c,j)%conc_atm_co2 = &"
+    print "        tracerstate_vars%tracer_conc_atm_col(c,betrtracer_vars%volatileid(betrtracer_vars%id_trc_co2x))"
+    print "      if(this%use_c13)then"
+    print "        this%"+app_name+"_forc(c,j)%conc_atm_co2_c13 = &"
+    print "          tracerstate_vars%tracer_conc_atm_col(c,betrtracer_vars%volatileid(betrtracer_vars%id_trc_c13_co2x))"
+    print "      endif"
+    print "      if(this%use_c14)then"
+    print "        this%"+app_name+"_forc(c,j)%conc_atm_co2_c14 = &"
+    print "          tracerstate_vars%tracer_conc_atm_col(c,betrtracer_vars%volatileid(betrtracer_vars%id_trc_c14_co2x))"
+    print "      endif"
+    print "      this%"+app_name+"_forc(c,j)%conc_atm_ch4 = &"
+    print "        tracerstate_vars%tracer_conc_atm_col(c,betrtracer_vars%volatileid(betrtracer_vars%id_trc_ch4))"
+    print ""
+    print "      this%"+app_name+"_forc(c,j)%soilorder = biophysforc%isoilorder(c)"
+    print "    enddo"
+    print "  enddo"
+    print "  end associate"
+    print "  end subroutine set_bgc_forc"
+    print "!------------------------------------------------------------------------------"
+    print "  subroutine update_sorpphase_coeff(this, bounds, col, lbj, ubj, jtops, num_soilc, filter_soilc, &"
+    print "    betrtracer_vars, tracerstate_vars, tracercoeff_vars)"
+    print "  !"
+    print "  !DESCRIPTION"
+    print "  !update sorption related phase conversion parameter"
+    print "  !in this formulation, the amount sorption surface is assumed to scale linearly with moisture"
+    print "  !content. Microbes are always assumed in sufficiently moist status, though the activity could be"
+    print "  !smaller"
+    print "  use tracerstatetype          , only : tracerstate_type"
+    print "  use betr_decompMod           , only : betr_bounds_type"
+    print "  use tracercoeffType          , only : tracercoeff_type"
+    print "  use betr_columnType          , only : betr_column_type"
+    print "  use BetrTracerType           , only : betrtracer_type"
+    print "  implicit none"
+    print "  class("+app_name+"_bgc_reaction_type) , intent(inout) :: this      !"
+    print "  type(bounds_type)                    , intent(in) :: bounds        ! bounds"
+    print "  type(betr_column_type)               , intent(in) :: col"
+    print "  integer                              , intent(in) :: jtops(bounds%begc: ) ! top index of each column"
+    print "  integer                              , intent(in) :: lbj, ubj     ! lower and upper bounds, make sure they are > 0"
+    print "  integer                              , intent(in) :: num_soilc       ! number of columns in column filter"
+    print "  integer                              , intent(in) :: filter_soilc(:) ! column filter"
+    print "  type(betrtracer_type)                , intent(in) :: betrtracer_vars    ! betr configuration information"
+    print "  type(tracerstate_type)               , intent(in) :: tracerstate_vars"
+    print "  type(tracercoeff_type)               , intent(inout) :: tracercoeff_vars"
+    print ""
+    print "  real(r8) :: KM_CM, Msurf, KM_EM, BMT"
+    print "  real(r8) :: denorm1, denorm0, denorm2,beta"
+    print "  integer :: c_l, j"
+    print ""
+    print "  associate(                                                           &"
+    print "    aqu2bulkcef_mobile   => tracercoeff_vars%aqu2bulkcef_mobile_col  , & !Output:[real(r8)(:,:)], phase conversion coeff"
+    print "    id_trc_dom           => betrtracer_vars%id_trc_dom               , &"
+    print "    trcid_Bm             => betrtracer_vars%id_trc_beg_Bm            , &"
+    print "    trcid_dom            => betrtracer_vars%id_trc_beg_dom           , &"
+    print "    trcid_pom            => betrtracer_vars%id_trc_beg_pom           , &"
+    print "    id_trc_end_dom       => betrtracer_vars%id_trc_end_dom           , &"
+    print "    tracer_conc_mobile   => tracerstate_vars%tracer_conc_mobile_col  , &"
+    print "    Kaff_CM              => "+app_name+"_para%Kaff_CM                , &"
+    print "    Kaff_EM              => "+app_name+"_para%Kaff_EM                , &"
+    print "    Kaff_BC              => "+app_name+"_para%Kaff_BC                , &"
+    print "    alpha_B2E            => "+app_name+"_para%alpha_B2E              , &"
+    print "    alpha_B2T            => "+app_name+"_para%alpha_B2T              , &"
+    print "    nelms                =>  this%"+app_name+"_bgc_index%nelms         &"
+    print "  )"
+    print ""
+    print "  c_l=1"
+    print "  do j = 1, ubj"
+    print "    KM_CM=aqu2bulkcef_mobile(c_l,j,id_trc_dom)*this%"+app_name+"_forc(c_l,j)%KM_OM_ref*Kaff_CM"
+    print "    BMT=(tracer_conc_mobile(c_l,j,trcid_Bm)+tracer_conc_mobile(c_l,j,trcid_Bm+nelms))*alpha_B2T"
+    print "    Msurf=this%"+app_name+"_forc(c_l,j)%Msurf_OM-tracer_conc_mobile(c_l,j,trcid_pom)"
+    print "    denorm0=1._r8+Msurf/KM_CM+BMT/Kaff_BC"
+    print "    denorm1=denorm0+tracer_conc_mobile(c_l,j,trcid_dom)/KM_CM"
+    print "    denorm2=denorm0+tracer_conc_mobile(c_l,j,trcid_dom)/Kaff_BC"
+    print "    beta=1._r8/(1._r8-Msurf/KM_CM/denorm1-BMT/Kaff_BC/denorm2)"
+    print "    aqu2bulkcef_mobile(c_l,j,id_trc_dom) = aqu2bulkcef_mobile(c_l,j,id_trc_dom)*beta"
+    print "  enddo"
+    print "  end associate"
+    print "  end subroutine update_sorpphase_coeff"
+    print "end module "+app_name+"BGCReactionsType"
 
     print "create file "+sfarm_dir+'/'+app_name+'Nlayer/'+app_name+"PlantSoilBGCType.F90"
+    print "module "+app_name+"PlantSoilBGCType"
+    print "  !"
+    print "  !DESCRIPTION"
+    print "  ! mock interface for plant soil bgc coupling"
+    print '  #include "bshr_assert.h"'
+    print "  !USES"
+    print "  use PlantSoilBGCMod , only : plant_soilbgc_type"
+    print "  use betr_decompMod  , only : bounds_type => betr_bounds_type"
+    print "  use bshr_log_mod    , only : errMsg => shr_log_errMsg"
+    print "  implicit none"
+    print ""
+    print "  private"
+    print "  character(len=*), private, parameter :: mod_filename = &"
+    print "    __FILE__"
+    print "  public :: "+app_name+"_plant_soilbgc_type"
+    print ""
+    print "  type, extends(plant_soilbgc_type) :: &"
+    print "    "+app_name+"_plant_soilbgc_type"
+    print "    private"
+    print "  contains"
+    print "    procedure :: Init_plant_soilbgc"
+    print "    procedure :: plant_soilbgc_summary"
+    print "    procedure :: integrate_vr_flux"
+    print "    procedure :: lsm_betr_plant_soilbgc_recv"
+    print "    procedure :: lsm_betr_plant_soilbgc_send"
+    print "  end type "+app_name+"_plant_soilbgc_type"
+    print ""
+    print "  interface "+app_name+"_plant_soilbgc_type"
+    print "    module procedure constructor"
+    print "  end interface "+app_name+"_plant_soilbgc_type"
+    print ""
+    print "  contains"
+    print "!-------------------------------------------------------------------------------"
+    print "  type("+app_name+"_plant_soilbgc_type) function constructor()"
+    print "  !"
+    print "  ! !DESCRIPTION:"
+    print "  ! create an object of type "+app_name+"_plant_soilbgc_type."
+    print "  ! Right now it is purposely empty"
+    print "  type("+app_name+"_plant_soilbgc_type), allocatable :: plants"
+    print "  allocate(plants)"
+    print "  constructor = plants"
+    print "  end function constructor"
+    print "!-------------------------------------------------------------------------------"
+    print "  subroutine Init_plant_soilbgc(this, bounds, lbj, ubj, namelist_buffer)"
+    print "  !"
+    print "  ! !DESCRIPTION:"
+    print "  ! template for init_betrbgc"
+    print "  !"
+    print "  ! !USES:"
+    print "  use gbetrType      , only : gbetr_type"
+    print "  implicit none"
+    print "  ! !ARGUMENTS:"
+    print "  class("+app_name+"_plant_soilbgc_type) , intent(inout) :: this"
+    print "  type(bounds_type)                  , intent(in) :: bounds"
+    print "  integer                            , intent(in) :: lbj, ubj"
+    print "  character(len=*)                   , intent(in) :: namelist_buffer"
+    print ""
+    print "  ! remove compiler warnings for unused dummy args"
+    print "  if (this%dummy_compiler_warning) continue"
+    print "  if (bounds%begc > 0)             continue"
+    print "  if (lbj > 0)                     continue"
+    print "  if (ubj > 0)                     continue"
+    print ""
+    print "  end subroutine Init_plant_soilbgc"
+    print "!----------------------------------------------------------------------"
+    print "  subroutine plant_soilbgc_summary(this,bounds, lbj, ubj, pft, numf, &"
+    print "    filter, dtime, dz, betrtracer_vars, tracerflux_vars, biogeo_flux, betr_status)"
+    print "  !DESCRIPTION"
+    print "  !summarize bgc coupling flux variables"
+    print "  ! !USES:"
+    print "  use BeTRTracerType , only : BeTRtracer_type"
+    print "  use tracerfluxType , only : tracerflux_type"
+    print "  use bshr_kind_mod  , only : r8 => shr_kind_r8"
+    print "  use BetrStatusType , only : betr_status_type"
+    print "  use BeTR_PatchType , only : betr_patch_type"
+    print "  use BeTR_biogeoFluxType  , only : betr_biogeo_flux_type"
+    print "  implicit none"
+    print "  ! !ARGUMENTS:"
+    print "  class("+app_name+"_plant_soilbgc_type) , intent(inout) :: this"
+    print "  type(bounds_type)                  , intent(in) :: bounds"
+    print "  integer                            , intent(in) :: lbj, ubj"
+    print "  type(betr_patch_type)              , intent(in) :: pft"
+    print "  integer                            , intent(in) :: numf"
+    print "  integer                            , intent(in) :: filter(:)"
+    print "  real(r8)                           , intent(in) :: dtime"
+    print "  real(r8)                           , intent(in) :: dz(bounds%begc: ,1: )"
+    print "  type(BeTRtracer_type )             , intent(in) :: betrtracer_vars"
+    print "  type(tracerflux_type)              , intent(in) :: tracerflux_vars"
+    print "  type(betr_biogeo_flux_type)        , intent(inout) :: biogeo_flux"
+    print "  type(betr_status_type)             , intent(out):: betr_status"
+    print ""
+    print "  call betr_status%reset()"
+    print "  SHR_ASSERT_ALL((ubound(dz)==(/bounds%endc,ubj/)), errMsg(mod_filename,__LINE__), betr_status)"
+    print ""
+    print "  ! remove compiler warnings for unused dummy args"
+    print "  if (this%dummy_compiler_warning)                       continue"
+    print "  if (bounds%begc > 0)                                   continue"
+    print "  if (numf > 0)                                          continue"
+    print "  if (size(filter) > 0)                                  continue"
+    print "  if (lbj > 0)                                           continue"
+    print "  if (ubj > 0)                                           continue"
+    print "  if (size(dz) > 0)                                      continue"
+    print "  if (len(betrtracer_vars%betr_simname) > 0)             continue"
+    print "  if (size(tracerflux_vars%tracer_flx_top_soil_col) > 0) continue"
+    print ""
+    print "  end subroutine plant_soilbgc_summary"
+    print "!----------------------------------------------------------------------"
+    print "  subroutine integrate_vr_flux(this, bounds, numf, filter)"
+
+    print "  implicit none"
+    print "  ! !ARGUMENTS:"
+    print "  class("+app_name+"_plant_soilbgc_type) , intent(inout) :: this"
+    print "  type(bounds_type)                  , intent(in) :: bounds"
+    print "  integer                            , intent(in) :: numf"
+    print "  integer                            , intent(in) :: filter(:)"
+    print ""
+    print "  ! remove compiler warnings for unused dummy args"
+    print "  if (this%dummy_compiler_warning) continue"
+    print "  if (bounds%begc > 0)             continue"
+    print "  if (numf > 0)                    continue"
+    print "  if (size(filter) > 0)            continue"
+    print ""
+    print "  end subroutine integrate_vr_flux"
+    print "!----------------------------------------------------------------------"
+    print "  subroutine lsm_betr_plant_soilbgc_recv(this, bounds, numf, filter, betr_pft, biogeo_fluxes)"
+    print ""
+    print "  !DESCRIPTION"
+    print "  !return plant nutrient yield"
+    print "  !"
+    print "  !USES"
+    print "  use BeTR_biogeoFluxType, only : betr_biogeo_flux_type"
+    print "  use BeTR_PatchType, only : betr_patch_type"
+    print "  implicit none"
+    print "  ! !ARGUMENTS:"
+    print "  class("+app_name+"_plant_soilbgc_type) , intent(inout)    :: this"
+    print "  type(bounds_type)                  , intent(in)    :: bounds"
+    print "  integer                            , intent(in)    :: numf"
+    print "  integer                            , intent(in)    :: filter(:)"
+    print "  type(betr_patch_type) , intent(in) :: betr_pft"
+    print "  type(betr_biogeo_flux_type)        , intent(inout) :: biogeo_fluxes"
+    print ""
+    print "  ! remove compiler warnings for unused dummy args"
+    print "  if (this%dummy_compiler_warning)        continue"
+    print "  if (bounds%begc > 0)                    continue"
+    print "  if (numf > 0)                           continue"
+    print "  if (size(filter) > 0)                   continue"
+    print "  if (size(biogeo_fluxes%qflx_adv_col)>0) continue"
+    print "  end subroutine lsm_betr_plant_soilbgc_recv"
+    print "!----------------------------------------------------------------------"
+    print "  subroutine lsm_betr_plant_soilbgc_send(this, bounds, numf, filter,  &"
+    print "    betr_pft, biogeo_forc, biogeo_states, biogeo_fluxes)"
+    print "  !"
+    print "  !DESCRIPTION"
+    print "  ! initialize feedback variables for plant soil bgc interactions"
+    print "  !"
+    print "  !USES"
+    print "  use BeTR_biogeoStateType , only : betr_biogeo_state_type"
+    print "  use BeTR_biogeoFluxType  , only : betr_biogeo_flux_type"
+    print "  use BeTR_decompMod       , only : betr_bounds_type"
+    print "  use BeTR_biogeophysInputType , only : betr_biogeophys_input_type"
+    print "  use BeTR_PatchType, only : betr_patch_type"
+    print "  ! !ARGUMENTS:"
+    print "  class("+app_name+"_plant_soilbgc_type) , intent(inout) :: this"
+    print "  type(betr_bounds_type)             , intent(in) :: bounds"
+    print "  integer                            , intent(in) :: numf"
+    print "  integer                            , intent(in) :: filter(:)"
+    print "  type(betr_patch_type)              , intent(in) :: betr_pft"
+    print "  type(betr_biogeophys_input_type), intent(in):: biogeo_forc"
+    print "  type(betr_biogeo_state_type)       , intent(in) :: biogeo_states"
+    print "  type(betr_biogeo_flux_type)        , intent(in) :: biogeo_fluxes"
+    print ""
+    print "  ! remove compiler warnings for unused dummy args"
+    print "  if (this%dummy_compiler_warning)       continue"
+    print "  if (bounds%begc > 0)                   continue"
+    print "  if (numf > 0)                          continue"
+    print "  if (size(filter) > 0)                  continue"
+    print "  if (size(biogeo_states%zwts_col)>0)    continue"
+    print "  if(size(biogeo_fluxes%qflx_adv_col)>0) continue"
+    print ""
+    print "  end subroutine lsm_betr_plant_soilbgc_send"
+    print "end module "+app_name+"PlantSoilBGCType"
