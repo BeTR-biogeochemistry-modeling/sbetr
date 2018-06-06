@@ -1208,11 +1208,11 @@ subroutine calc_som_decay_r(this, summsbgc_index, dtime, om_k_decay, om_pools, o
   k_decay(lit2) = k_decay(lit2) * t_scalar *  w_scalar * o_scalar * depth_scalar
   k_decay(lit3) = k_decay(lit3) * t_scalar *  w_scalar * o_scalar * depth_scalar
 
-  k_decay(poly) = k_decay(poly)  !* w_scalar !* depth_scalar should emerge
-  k_decay(mic)  = k_decay(mic)   !* o_scalar * w_scalar
-  k_decay(res)  = k_decay(res)   !* o_scalar * w_scalar
-  k_decay(enz)  = k_decay(enz)   !* w_scalar
-  k_decay(mono) = k_decay(mono)  !* o_scalar * w_scalar
+  k_decay(poly) = k_decay(poly)  * w_scalar
+  k_decay(mic)  = k_decay(mic)   * o_scalar * w_scalar
+  k_decay(res)  = k_decay(res)   * o_scalar * w_scalar
+  k_decay(enz)  = k_decay(enz)   * w_scalar
+  k_decay(mono) = k_decay(mono)  * o_scalar * w_scalar
   
   k_decay(cwd)  = k_decay(cwd)   * t_scalar *  w_scalar * o_scalar * depth_scalar
   k_decay(lwd)  = k_decay(lwd)   * t_scalar *  w_scalar * o_scalar * depth_scalar
@@ -1267,7 +1267,7 @@ subroutine calc_som_decay_r(this, summsbgc_index, dtime, om_k_decay, om_pools, o
     real(r8) :: gbtemp
     real(r8) :: macheps = 2.220446049250313e-16_r8
     real(r8) :: tol = 2.220446049250313e-16_r8
-    real(r8), parameter :: tiny_val=1.e-14_r8
+    real(r8), parameter :: tiny_val=1.e-35_r8
 
   type(debs) :: deb
   allocate(deb%gB)
@@ -1318,40 +1318,15 @@ subroutine calc_som_decay_r(this, summsbgc_index, dtime, om_k_decay, om_pools, o
    decay_enz      => this%decay_enz                      & !
   )
 
-    
-    !if(y_poly<tiny_val)then
-    !  y_poly=1._r8
-    !else
       y_poly = ystates((poly-1) * nelms + c_loc)
-    !endif
-    
-    !if(y_mono<tiny_val)then
-    !  y_mono=1._r8
-    !else
       y_mono = ystates((mono-1) * nelms + c_loc)
-    !endif
-
-    if(y_mic<tiny_val)then
-      y_mic=1.e-13_r8!1._r8
-    else
       y_mic=ystates((mic-1) * nelms + c_loc)
-    endif
-
-    if(y_res<tiny_val)then
-      y_res=1.e-13_r8!1._r8
-    else
       y_res=ystates((res-1) * nelms + c_loc)
-    endif
-
-    if(y_enz<tiny_val)then
-      y_enz=1.e-13_r8!1._r8
-    else
       y_enz=ystates((enz-1) * nelms + c_loc)
-    endif
 
   !define  gB, kappa, pE, mr, residual, decay_mic
   ec = safe_div(y_res,y_mic)
-  je = kappa_mic*ec !possibly need y_res*y_mic/y_mic^(2+1.d-20)
+  je = kappa_mic*ec
 
         ! Determine if there is enough C for growth after maintenance
         dc=je-mr_mic
@@ -1366,10 +1341,10 @@ subroutine calc_som_decay_r(this, summsbgc_index, dtime, om_k_decay, om_pools, o
                    scal_c=safe_div( dc-gmax_mic*ec , safe_div(gmax_mic,yld_mic) + safe_div(pmax_enz,yld_enz) )
                    if (scal_c>=1) then
                        ! Maximum growth
-                       isgrw=1;
+                       isgrw=1
                    else
                        ! Less than maximum growth
-                       isgrw=0;
+                       isgrw=0
                    end if
         end if
 
@@ -1380,9 +1355,7 @@ subroutine calc_som_decay_r(this, summsbgc_index, dtime, om_k_decay, om_pools, o
                 ! There is no flux for growth, but penalty for mortality        
                 actgB=0._r8      
                 actpE=0._r8      
-                actmr=je    
-
-                write(*,*)'no growth'         
+                actmr=je          
 
             case (0)    
                 ! Limited growth              
@@ -1395,18 +1368,14 @@ subroutine calc_som_decay_r(this, summsbgc_index, dtime, om_k_decay, om_pools, o
 
                     call deb_grow ( gb0, deb, fb1 )
                     call deb_grow ( gb1, deb, fb2 )
-
                     call brent(gbtemp, gb0, gb1, fb1, fb2, macheps, tol, deb, deb_grow)
-                    !call brent(gbtemp, gb0, gb1, fb1, fb2, deb, deb_grow)
 
                 ! Population growth        
                 actgB=deb%gB
                 ! Enzyme production        
                 actpE=deb%pE
                 ! Maintenance
-                actmr=mr_mic   
-
-                write(*,*)'limited growth'                          
+                actmr=mr_mic                      
 
             case (1)    
                 ! Maximum growth       
@@ -1415,8 +1384,6 @@ subroutine calc_som_decay_r(this, summsbgc_index, dtime, om_k_decay, om_pools, o
                 actpE=pmax_enz        
                 ! Maintenance        
                 actmr=mr_mic
-
-                write(*,*)'max growth' 
 
         end select
 
@@ -1448,32 +1415,6 @@ subroutine calc_som_decay_r(this, summsbgc_index, dtime, om_k_decay, om_pools, o
 
       this%rate_co2 = safe_div(y_mic*(actmr+actpE*(safe_div(1._r8,yld_enz)-1._r8)+actgB*&
         (safe_div(1._r8,yld_res)-1._r8))+residual, y_res*(kappa_mic-actgB+decay_mic))
-
-   write(*,*)'ec=',ec
-   write(*,*)'actgB =',actgB  
-   write(*,*)'actpE =',actpE
-   write(*,*)'decay_mic=',decay_mic
-   write(*,*)'kappa_mic=',kappa_mic
-   write(*,*)'part_mic =',this%part_mic
-   write(*,*)'part_enz =',this%part_enz
-   write(*,*)'part_mono =',this%part_mono
-   write(*,*)'rate_co2 =',this%rate_co2
-   write(*,*)'ystates =',ystates
-     write(*,*)'k_decay(lit1) =',k_decay(lit1)
-     write(*,*)'k_decay(lit2) =',k_decay(lit2)
-     write(*,*)'k_decay(lit3) =',k_decay(lit3)
-     write(*,*)'k_decay(cwd) =',k_decay(cwd)
-     write(*,*)'k_decay(lwd) =',k_decay(lwd)
-     write(*,*)'k_decay(fwd) =',k_decay(fwd)
-     write(*,*)'k_decay(poly) =',k_decay(poly)
-     write(*,*)'k_decay(mono) =',k_decay(mono)
-     write(*,*)'k_decay(mic) =',k_decay(mic)
-     write(*,*)'k_decay(enz) =',k_decay(enz)
-     write(*,*)'k_decay(res) =',k_decay(res)
-  !   write(*,*)'decompkf_eca%t_scalar =',decompkf_eca%t_scalar
-  !   write(*,*)'decompkf_eca%w_scalar =',decompkf_eca%w_scalar
-  !   write(*,*)'decompkf_eca%o_scalar =',decompkf_eca%o_scalar
-  !   write(*,*)'decompkf_eca%depth_scalar =',decompkf_eca%depth_scalar
 
   end associate
   end subroutine calc_som_decay_k
