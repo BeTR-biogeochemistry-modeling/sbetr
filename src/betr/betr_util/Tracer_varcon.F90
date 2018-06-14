@@ -57,6 +57,7 @@ module Tracer_varcon
   integer, public :: betr_nlevsno
   integer, public :: betr_nlevtrc_soil
   real(r8), public :: adv_scalar = 1._r8
+  logical, public :: do_bgc_calibration = .false.
   !
   ! NOTE(bja, 201604) Do NOT add a save statement to this module and
   ! create instances of these types. Instances should be created in a

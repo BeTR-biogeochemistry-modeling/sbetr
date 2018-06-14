@@ -26,6 +26,7 @@ module BeTRSimulationALM
   use ColumnType          , only : column_type => column_physical_properties_type
   use LandunitType        , only : landunit_type => landunit_physical_properties_type
 #endif
+  use calibrationType, only : calibration_type
   implicit none
 
   private
@@ -34,6 +35,7 @@ module BeTRSimulationALM
 
   type, public, extends(betr_simulation_type) :: betr_simulation_alm_type
    private
+     type(calibration_type) :: calibration_vpars
    contains
      procedure :: InitOnline                        => ALMInit
      procedure :: Init                              => ALMInitOffline
@@ -49,6 +51,7 @@ module BeTRSimulationALM
      procedure, public :: DiagnoseLnd2atm           => ALMDiagnoseLnd2atm
      procedure, public :: set_active                => ALMset_active
      procedure, private:: set_transient_kinetics_par
+     procedure, private:: set_vegpar_calibration
      procedure, public :: readParams                => ALMreadParams
      procedure, public :: set_iP_prof
      procedure, public :: skip_balcheck
@@ -170,7 +173,7 @@ contains
     use BeTR_pftvarconType  , only : betr_pftvarcon
     use BeTR_landvarconType , only : betr_landvarcon
     use BeTR_decompMod      , only : betr_bounds_type
-
+    use tracer_varcon       , only : do_bgc_calibration
     implicit none
     class(betr_simulation_alm_type)          , intent(inout) :: this
     type(bounds_type)                        , intent(in)    :: bounds
@@ -201,6 +204,8 @@ contains
     else
       call this%BeTRInit(bounds, lun, col, pft, waterstate, namelist_buffer)
     endif
+
+    if(do_bgc_calibration)call this%calibration_vpars%Init(bounds, betr_maxpatch_pft)
   end subroutine ALMInit
 !-------------------------------------------------------------------------------
 
@@ -558,7 +563,7 @@ contains
   use clm_varpar         , only : i_cwd, i_met_lit, i_cel_lit, i_lig_lit
   use PlantMicKineticsMod, only : PlantMicKinetics_type
   use mathfuncMod        , only : apvb,bisnan
-  use tracer_varcon      , only : use_c13_betr, use_c14_betr
+  use tracer_varcon      , only : use_c13_betr, use_c14_betr, do_bgc_calibration
   implicit none
   class(betr_simulation_alm_type), intent(inout)  :: this
   type(bounds_type) , intent(in)  :: bounds
@@ -599,6 +604,9 @@ contains
   !set kinetic parameters
   call this%set_transient_kinetics_par(betr_bounds, col, pft, num_soilc, filter_soilc, PlantMicKinetics_vars)
 
+  if(do_bgc_calibration)then
+    call this%set_vegpar_calibration(betr_bounds, col, pft, num_soilc, filter_soilc, this%calibration_vpars)
+  endif
   !set biophysical forcing
   c_l = 1
   do fc = 1, num_soilc
@@ -956,6 +964,8 @@ contains
     n14flux_vars%fire_decomp_nloss_col(c) = this%biogeo_flux(c)%n14flux_vars%fire_decomp_nloss_col(c_l)
     n14flux_vars%supplement_to_sminn_col(c) = this%biogeo_flux(c)%n14flux_vars%supplement_to_sminn_col(c_l)
     !no nh4 volatilization and runoff/leaching loss at this moment
+    !the following is to ensure mass balance, with an attempt to overcome some issue in cpl bypass
+    n14flux_vars%ndep_to_sminn_col(c) = n14flux_vars%ndep_to_smin_nh3_col(c)+n14flux_vars%ndep_to_smin_no3_col(c)
 
     !recollect mineral phosphorus loss
     !Remark: now hydraulic mineral p loss lumps all three fluxes, Jinyun Tang
@@ -1258,6 +1268,58 @@ contains
   endif
   end associate
   end subroutine ALMSetBiophysForcing
+
+  !------------------------------------------------------------------------
+
+  subroutine set_vegpar_calibration(this, betr_bounds, col, pft, num_soilc, filter_soilc, calibration_vpars)
+  !DESCRIPTION
+  !set kinetic parameters for column c
+  use PlantMicKineticsMod, only : PlantMicKinetics_type
+  use tracer_varcon      , only : reaction_method,natomw,patomw
+  use pftvarcon             , only : noveg
+  implicit none
+  class(betr_simulation_alm_type), intent(inout)  :: this
+  type(betr_bounds_type), intent(in) :: betr_bounds
+  type(column_type)     , intent(in)    :: col ! column type
+  type(patch_type)      , intent(in) :: pft
+  integer, intent(in) :: num_soilc
+  integer, intent(in) :: filter_soilc(:)
+  type(calibration_type), intent(in) :: calibration_vpars
+
+  integer :: j, fc, c, p, pi, pp, g
+
+  associate(                                                                  &
+    plant_nh4_vmax_scalar  => calibration_vpars%plant_nh4_vmax_scalar       , &
+    plant_no3_vmax_scalar  => calibration_vpars%plant_no3_vmax_scalar       , &
+    plant_p_vmax_scalar    => calibration_vpars%plant_p_vmax_scalar         , &
+    plant_nh4_km_scalar    => calibration_vpars%plant_nh4_km_scalar         , &
+    plant_no3_km_scalar    => calibration_vpars%plant_no3_km_scalar         , &
+    plant_p_km_scalar      => calibration_vpars%plant_p_km_scalar             &
+  )
+
+  do fc = 1, num_soilc
+    c = filter_soilc(fc)
+    pp = 0
+    do pi = 1, betr_maxpatch_pft
+      if (pi <= col%npfts(c)) then
+        p = col%pfti(c) + pi - 1
+        g=pft%gridcell(p)
+        if (pft%active(p) .and. (pft%itype(p) .ne. noveg)) then
+          pp = pp + 1
+          do j =1, betr_bounds%ubj
+            this%betr(c)%plantNutkinetics%plant_nh4_vmax_vr_patch(pp,j) = this%betr(c)%plantNutkinetics%plant_nh4_vmax_vr_patch(pp,j) * plant_nh4_vmax_scalar(g,pft%itype(p))
+            this%betr(c)%plantNutkinetics%plant_no3_vmax_vr_patch(pp,j) = this%betr(c)%plantNutkinetics%plant_no3_vmax_vr_patch(pp,j) * plant_no3_vmax_scalar(g,pft%itype(p))
+            this%betr(c)%plantNutkinetics%plant_p_vmax_vr_patch(pp,j) = this%betr(c)%plantNutkinetics%plant_p_vmax_vr_patch(pp,j) * plant_p_vmax_scalar(g,pft%itype(p))
+            this%betr(c)%plantNutkinetics%plant_nh4_km_vr_patch(pp,j) = this%betr(c)%plantNutkinetics%plant_nh4_km_vr_patch(pp,j) * plant_nh4_km_scalar(g,pft%itype(p))
+            this%betr(c)%plantNutkinetics%plant_no3_km_vr_patch(pp,j) = this%betr(c)%plantNutkinetics%plant_no3_km_vr_patch(pp,j) * plant_no3_km_scalar(g,pft%itype(p))
+            this%betr(c)%plantNutkinetics%plant_p_km_vr_patch(pp,j) = this%betr(c)%plantNutkinetics%plant_p_km_vr_patch(pp,j) * plant_p_km_scalar(g,pft%itype(p))
+          enddo
+        endif
+      endif
+    enddo
+  enddo
+  end associate
+  end subroutine set_vegpar_calibration
   !------------------------------------------------------------------------
   subroutine set_transient_kinetics_par(this, betr_bounds, col, pft, num_soilc, filter_soilc, PlantMicKinetics_vars)
   !DESCRIPTION
@@ -1293,11 +1355,9 @@ contains
   do fc = 1, num_soilc
     c = filter_soilc(fc)
     pp = 0
-
     do pi = 1, betr_maxpatch_pft
       if (pi <= col%npfts(c)) then
         p = col%pfti(c) + pi - 1
-
         if (pft%active(p) .and. (pft%itype(p) .ne. noveg)) then
           pp = pp + 1
           do j =1, betr_bounds%ubj
@@ -1329,10 +1389,10 @@ contains
         c = filter_soilc(fc)
         this%betr(c)%plantNutkinetics%km_minsurf_p_vr_col(c_l,j) = PlantMicKinetics_vars%km_minsurf_p_vr_col(c,j)/patomw
         this%betr(c)%plantNutkinetics%km_minsurf_nh4_vr_col(c_l,j)=PlantMicKinetics_vars%km_minsurf_nh4_vr_col(c,j)/patomw
-
       enddo
     enddo
   endif
+
   end associate
   end subroutine set_transient_kinetics_par
 end module BeTRSimulationALM
