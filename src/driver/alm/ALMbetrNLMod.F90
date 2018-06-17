@@ -28,7 +28,7 @@ contains
     use clm_varctl    , only : iulog, spinup_state
     use betr_ctrl     , only : betr_spinup_state
     use tracer_varcon , only : advection_on, diffusion_on, reaction_on, ebullition_on, reaction_method
-    use tracer_varcon , only : AA_spinup_on, fix_ip, do_bgc_calibration
+    use tracer_varcon , only : AA_spinup_on, fix_ip, do_bgc_calibration, bgc_param_file
     use ApplicationsFactory, only : AppInitParameters
     use tracer_varcon , only : use_c13_betr, use_c14_betr
     use BetrStatusType  , only : betr_status_type
@@ -50,7 +50,8 @@ contains
     character(len=1), parameter  :: quote = ''''
     namelist / betr_inparm / reaction_method, &
       advection_on, diffusion_on, reaction_on, ebullition_on, &
-      AppParNLFile, AA_spinup_on, fix_ip, do_bgc_calibration
+      AppParNLFile, AA_spinup_on, fix_ip, do_bgc_calibration, &
+      bgc_param_file
 
     character(len=betr_namelist_buffer_size_ext) :: bgc_namelist_buffer
     logical :: appfile_on
@@ -74,6 +75,7 @@ contains
     appfile_on      = .false.
     fix_ip          = .false.
     do_bgc_calibration=.false.
+    bgc_param_file  = ''
     if ( masterproc )then
        unitn = getavu()
        write(iulog,*) 'Read in betr_inparm  namelist'
@@ -107,6 +109,8 @@ contains
     call shr_mpi_bcast(AA_spinup_on, mpicom)
     call shr_mpi_bcast(fix_ip, mpicom)
     call shr_mpi_bcast(do_bgc_calibration, mpicom)
+    call shr_mpi_bcast(bgc_param_file, mpicom)
+
     if(masterproc)then
       write(iulog,*)'&betr_parameters'
       write(iulog,*)'reaction_method=',trim(reaction_method)

@@ -14,7 +14,7 @@ module Tracer_varcon
   ! class passed to routines that need th evalue.
   !
   ! !USES:
-  use bshr_kind_mod, only : r8 => shr_kind_r8
+  use bshr_kind_mod, only : r8 => shr_kind_r8, SHR_KIND_CL
   use betr_constants, only : betr_string_length
   implicit none
   character(len=*), private, parameter :: mod_filename = &
@@ -58,6 +58,8 @@ module Tracer_varcon
   integer, public :: betr_nlevtrc_soil
   real(r8), public :: adv_scalar = 1._r8
   logical, public :: do_bgc_calibration = .false.
+
+  character(len=SHR_KIND_CL), public :: bgc_param_file  = ' '
   !
   ! NOTE(bja, 201604) Do NOT add a save statement to this module and
   ! create instances of these types. Instances should be created in a

@@ -289,7 +289,7 @@ contains
   real(r8)           :: temparr(1:2,1:1)
   character(len=100) :: tString ! temp. var for reading
   call bstatus%reset()
-  return
+
   call this%readPars_bgc(ncid, bstatus)
   if(bstatus%check_status())return
   tString='surface_tension_water'
@@ -519,7 +519,6 @@ contains
   if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
   if(bstatus%check_status())return
   this%vmax_nit=tempr(1)
-
 
 !   the following are purposely commented out to use default parameters from century, Jinyun Tang, Feb 21, 2018
   this%k_decay_lit1(1:2)  = this%k_decay_lit1(1:2) /year_sec    !1/second

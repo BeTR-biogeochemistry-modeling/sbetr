@@ -111,23 +111,35 @@ contains
 
   end subroutine Set_iP_prof
 !-------------------------------------------------------------------------------
-  subroutine ALMreadParams(this, ncid, bounds)
+  subroutine ALMreadParams(this, bounds)
 
-  use ncdio_pio                , only :  file_desc_t
+  use ncdio_pio               , only :  file_desc_t
+  use ncdio_pio               , only : ncd_pio_closefile, ncd_pio_openfile, &
+                                         file_desc_t, ncd_inqdid, ncd_inqdlen
   use ApplicationsFactory      , only : AppLoadParameters
   use BetrStatusType           , only : betr_status_type
   use decompMod                , only : bounds_type
+  use tracer_varcon            , only : bgc_param_file
+  use fileutils                , only : getfil
   implicit none
   class(betr_simulation_alm_type)          , intent(inout) :: this
-  type(file_desc_t), intent(inout)  :: ncid  ! pio netCDF file id
+
   type(bounds_type), intent(in) :: bounds
   !temporary variables
   type(betr_status_type)   :: bstatus
   type(betr_bounds_type)   :: betr_bounds
   integer :: c
+  character(len=256) :: locfn ! local file name
+  type(file_desc_t)  :: ncid  ! pio netCDF file id
+
+  !open file for parameter reading
+  call getfil (bgc_param_file, locfn, 0)
+  call ncd_pio_openfile (ncid, trim(locfn), 0)
 
   !read in parameters
   call AppLoadParameters(ncid, bstatus)
+
+  call ncd_pio_closefile(ncid)
 
   if(bstatus%check_status())then
     call endrun(msg=bstatus%print_msg())

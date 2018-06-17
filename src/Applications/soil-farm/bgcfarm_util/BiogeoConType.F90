@@ -166,11 +166,11 @@ contains
   this%init_cp_fwd  = 4500._r8!mass based
 
   !ECA nutrient competition
-  this%vmax_minp_soluble_to_secondary(:) = 1.e-9_r8  !1/s on the order of 1.e-9 1/s
+  this%vmax_minp_soluble_to_secondary(:) = 1.e-7_r8  !1/s on the order of 1.e-7 1/s
   !inorganic phosphorus cycling
   !Note: (1._r8-frac_p_sec_to_sol)*minp_secondary_decay = occlusion rate
   this%frac_p_sec_to_sol(:)              = 0.95_r8    !fraction of released secondary phosphorus that goes into soluble form, occ rate is on the order of  1.e-13 1/s
-  this%minp_secondary_decay(:)           = 1.e-11_r8  !decay rate of secondary phosphorus, 1/s, this is on the order of 1.e-11 1/s
+  this%minp_secondary_decay(:)           = 2.e-8_r8   !decay rate of secondary phosphorus, 1/s, which gives occlusion rate about 1./(25 yrs)
 
   this%use_c13 = .false.
   this%use_c14 = .false.
@@ -206,7 +206,6 @@ contains
   real(r8)           :: tempr(1) ! temporary to read in constant
   real(r8)           :: temparr(1:25)
   character(len=100) :: tString ! temp. var for reading
-
 
   call bstatus%reset()
 
