@@ -205,6 +205,7 @@ contains
   logical            :: readv ! has variable been read in or not
   real(r8)           :: tempr(1) ! temporary to read in constant
   real(r8)           :: temparr(1:25)
+  real(r8)           :: temparrs(1:16)
   character(len=100) :: tString ! temp. var for reading
 
   call bstatus%reset()
@@ -259,6 +260,33 @@ contains
   if ( .not. readv ) call bstatus%set_msg(msg=' ERROR: error in reading in soil order frac_p_sec_to_sol '//errMsg(__FILE__, __LINE__), err=-1)
   if(bstatus%check_status())return
   this%frac_p_sec_to_sol(1:betr_max_soilorder)=temparr(1:betr_max_soilorder)
+
+  call ncd_io('E_weath',temparrs, 'read', ncid, readvar=readv)
+  if ( .not. readv ) call bstatus%set_msg(msg=' ERROR: error in reading in soil order E_weath '//errMsg(__FILE__, __LINE__), err=-1)
+  if(bstatus%check_status())return
+  this%E_weath(1:16) = temparrs(1:16)
+
+  tString='T_ref_weath'
+  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
+  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//' '//errMsg(__FILE__, __LINE__), err=-1)
+  if(bstatus%check_status())return
+  this%T_ref_weath=tempr(1)
+
+  call ncd_io('b_weath',temparrs, 'read', ncid, readvar=readv)
+  if ( .not. readv ) call bstatus%set_msg(msg=' ERROR: error in reading in soil order b_weath'//errMsg(__FILE__, __LINE__), err=-1)
+  if(bstatus%check_status())return
+  this%b_weath(1:16) = temparrs(1:16)
+
+  call ncd_io('f_shield',temparrs, 'read', ncid, readvar=readv)
+  if ( .not. readv ) call bstatus%set_msg(msg=' ERROR: error in reading in soil order f_shield'//errMsg(__FILE__, __LINE__), err=-1)
+  if(bstatus%check_status())return
+  this%f_shield(1:16) = temparrs(1:16)
+
+  call ncd_io('P_weip',temparrs, 'read', ncid, readvar=readv)
+  if ( .not. readv ) call bstatus%set_msg(msg=' ERROR: error in reading in soil order P_weip'//errMsg(__FILE__, __LINE__), err=-1)
+  if(bstatus%check_status())return
+  this%P_weip(1:16) = temparrs(1:16)
+
   end subroutine readPars_bgc
 
   !--------------------------------------------------------------------
