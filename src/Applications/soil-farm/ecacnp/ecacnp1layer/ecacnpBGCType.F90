@@ -1179,6 +1179,7 @@ contains
   real(r8) :: ECA_factor_nitrogen_mic
   real(r8) :: ECA_factor_den
   real(r8) :: ECA_factor_nit
+  real(r8) :: minp_soluble
   integer  :: jj, it
   integer, parameter  :: itmax = 10
   type(lom_type) :: lom
@@ -1215,7 +1216,8 @@ contains
     lid_plant_minn_nh4_up_reac => this%ecacnp_bgc_index%lid_plant_minn_nh4_up_reac              , &
     lid_plant_minn_no3_up_reac => this%ecacnp_bgc_index%lid_plant_minn_no3_up_reac              , &
     lid_plant_minp_up_reac => this%ecacnp_bgc_index%lid_plant_minp_up_reac                      , &
-    lid_minp_secondary_to_sol_occ_reac=> this%ecacnp_bgc_index%lid_minp_secondary_to_sol_occ_reac &
+    lid_minp_secondary_to_sol_occ_reac=> this%ecacnp_bgc_index%lid_minp_secondary_to_sol_occ_reac, &
+    lid_supp_minp => this%ecacnp_bgc_index%lid_supp_minp                                           &
   )
 
   dydt(:) = 0._r8
@@ -1259,8 +1261,7 @@ contains
       this%cascade_matrixd(lid_nh4,jj) = this%cascade_matrix(lid_nh4,jj)-this%cascade_matrixd(lid_no3,jj)
     endif
     if(this%alpha_p(jj)>0._r8)scal = min(scal, ECA_factor_phosphorus_mic)
-!    if(this%ecacnp_bgc_index%debug)&
-!    print*,'ptdcomp',jj,pot_decomp(jj),ECA_factor_nitrogen_mic,ECA_factor_phosphorus_mic
+
     if(scal /= 1._r8)pot_decomp(jj)=pot_decomp(jj)*scal
     rrates(jj) = pot_decomp(jj)
   enddo
@@ -1268,8 +1269,6 @@ contains
   rrates(lid_no3_den_reac) = this%pot_f_denit*ECA_factor_den
   rrates(lid_minp_soluble_to_secp_reac) =  ECA_factor_minp_msurf * this%msurf_minp &
        * this%mumax_minp_soluble_to_secondary(this%soilorder) !calculate from eca competition
-!  if(this%ecacnp_bgc_index%debug) &
-!  write(*,*)'ECA mic',ECA_factor_phosphorus_mic,ECA_factor_minp_msurf
 
   if(this%plant_ntypes>0)then
     rrates(lid_autr_rt_reac) = this%rt_ar                            !authotrophic respiration
@@ -1278,11 +1277,6 @@ contains
     rrates(lid_plant_minp_up_reac) =     sum(ECA_flx_phosphorus_plants) !calculate by ECA competition
   endif
   rrates(lid_minp_secondary_to_sol_occ_reac)= ystate(lid_minp_secondary) * this%minp_secondary_decay(this%soilorder)
-
-!  if(this%ecacnp_bgc_index%debug)then
-!    print*,'plant nn',rrates(lid_plant_minn_no3_up_reac),rrates(lid_plant_minn_nh4_up_reac)
-!    print*,'plant p',rrates(lid_plant_minp_up_reac)
-!  endif
 
   if(this%plant_ntypes==1)then
     do jj = 1, this%plant_ntypes
@@ -1308,27 +1302,6 @@ contains
       1._r8 - sum(this%cascade_matrix(lid_plant_minp_pft(1:jj-1),lid_plant_minp_up_reac))
   endif
 
-!  do jj = 1, this%plant_ntypes
-!     if(this%ecacnp_bgc_index%debug)print*,lid_plant_minn_nh4_pft(jj),lid_plant_minn_no3_pft(jj)
-!     this%cascade_matrix(lid_plant_minn_nh4_pft(jj),lid_plant_minn_nh4_up_reac) = this%cascade_matrixd(lid_plant_minn_nh4_pft(jj),lid_plant_minn_nh4_up_reac)
-!     this%cascade_matrix(lid_plant_minn_no3_pft(jj),lid_plant_minn_no3_up_reac) =this%cascade_matrixd(lid_plant_minn_no3_pft(jj),lid_plant_minn_no3_up_reac)
-!     this%cascade_matrix(lid_plant_minp_pft(jj),lid_plant_minp_up_reac) = this%cascade_matrixd(lid_plant_minp_pft(jj),lid_plant_minp_up_reac)
-!  enddo
-!  if(this%ecacnp_bgc_index%debug)then
-!     print*,'checksum nh4',sum(this%cascade_matrix(lid_plant_minn_nh4_pft(1:this%plant_ntypes),lid_plant_minn_nh4_up_reac))
-!     print*,'checksum no3',sum(this%cascade_matrix(lid_plant_minn_no3_pft(1:this%plant_ntypes),lid_plant_minn_no3_up_reac))
-!     print*,'ntype',this%plant_ntypes
-!    do jj = 1, this%plant_ntypes
-!      print*,'casp',lid_plant_minp_pft(jj),this%cascade_matrixd(lid_plant_minp_pft(jj),lid_plant_minp_up_reac),ECA_flx_phosphorus_plants(jj)
-!    enddo
-!    do jj = 1, nreactions
-!      print*,'cadfaascd jj',jj,rrates(jj)
-!    enddo
-!     print*,this%cascade_matrix(lid_plant_minn_no3_pft(1:this%plant_ntypes),lid_plant_minn_no3_up_reac)
-!     print*,'eca',ECA_flx_no3_plants
-!     print*,'sumrac',sum(ECA_flx_no3_plants),rrates(lid_plant_minn_no3_up_reac)
-!     stop
-!  endif
 
   it=0
   rscal=0._r8
@@ -1353,21 +1326,15 @@ contains
     endif
     it = it + 1
   enddo
-!  if(this%ecacnp_bgc_index%debug)then
 
-!    do jj = 1, nreactions
-!      print*,'casc jj',jj,rrates(jj),rscal(jj)
-!    enddo
-!    do jj = 1, nprimvars
-!      print*, 'nprim',jj,dydt(jj)
-!    enddo
-!  endif
-!  if(this%ecacnp_bgc_index%debug)then
-    !
-!    jj = som3
-!    write(*,'(A,6(X,E25.15))')'dydt som3',dydt((jj-1)*nelms+c_loc),dydt((jj-1)*nelms+n_loc),dydt((jj-1)*nelms+p_loc),&
-!      dydt((jj-1)*nelms+c_loc)/dydt((jj-1)*nelms+n_loc),dydt((jj-1)*nelms+c_loc)/dydt((jj-1)*nelms+p_loc)
-!  endif
+  if(spinup_state/=0)then
+    !check for mineral phosphorous
+    minp_soluble=dydt(lid_minp_soluble) * dtime+ ystate(lid_minp_soluble)
+    if(minp_soluble<0._r8)then
+      dydt(lid_supp_minp) = -minp_soluble/dtime*(1._r8+1.e-10_r8)
+      dydt(lid_minp_soluble) = dydt(lid_minp_soluble)  + dydt(lid_supp_minp)
+    endif
+  endif
 
    if(this%batch_mode)dydt(lid_cum_closs)=dydt(lid_co2_hr)
   end associate

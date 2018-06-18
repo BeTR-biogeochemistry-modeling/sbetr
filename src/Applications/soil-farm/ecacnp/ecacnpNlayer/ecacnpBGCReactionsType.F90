@@ -2062,6 +2062,10 @@ contains
             ystatesf(this%ecacnp_bgc_index%lid_minp_soluble) = 0._r8
           endif
         else
+          if(betr_spinup_state/=0)then
+            biogeo_flux%p31flux_vars%supplement_to_sminp_vr_col(c,j) = &
+              ystatesf(this%ecacnp_bgc_index%lid_supp_minp)*patomw/dtime
+          endif
           tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_p_sol) = &
             ystatesf(this%ecacnp_bgc_index%lid_minp_soluble)
         endif
@@ -2190,10 +2194,6 @@ contains
         tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)
       enddo
 
-!      do k = 1, dom_end-dom_beg + 1
-!        k1 = dom_beg+k-1; k2 = betrtracer_vars%id_trc_beg_dom+ k-1
-!        tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)
-!      enddo
 
       !plant soil bgc
 

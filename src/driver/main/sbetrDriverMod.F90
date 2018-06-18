@@ -431,7 +431,7 @@ end subroutine sbetrBGC_driver
     continue_run=.false.
     run_type ='tracer'
     param_file=''
-    is_nitrogen_active=.true.; is_phosphorus_active =.false.
+    is_nitrogen_active=.true.; is_phosphorus_active =.true.
     case_id=''
     input_only=.false.
     finit =''
@@ -599,6 +599,7 @@ end subroutine sbetrBGC_driver
     id = id + 1; ystates(id) = phosphorusstate_vars%totsomp_1m_col(c_l)
     id = id + 1; ystates(id) = nitrogenstate_vars%smin_nh4_col(c_l)
     id = id + 1; ystates(id) = nitrogenstate_vars%smin_no3_col(c_l)
+    id = id + 1; ystates(id) = phosphorusstate_vars%sminp_col(c_l)
     id = id + 1; ystates(id) = carbonstate_vars%som1c_col(c_l)
     id = id + 1; ystates(id) = carbonstate_vars%som2c_col(c_l)
     id = id + 1; ystates(id) = carbonstate_vars%som3c_col(c_l)

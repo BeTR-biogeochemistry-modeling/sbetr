@@ -43,6 +43,7 @@ implicit none
      integer           :: p_loc
      integer           :: c13_loc = 0
      integer           :: c14_loc = 0
+     integer           :: lid_supp_minp                          !supplementary mineral P for spinup purpose
      integer           :: nelms                                  !number of chemical elements in an om pool
                                                                  !reactive primary variables
      integer           :: lid_nh4, lid_nh4_nit_reac              !local position of nh4 in the state variable vector
@@ -451,11 +452,16 @@ implicit none
     this%lid_minp_soluble_to_secp_reac = addone(ireac); call list_insert(list_react, 'minp_soluble_to_secp_reac', itemp0)
     this%lid_minp_soluble=addone(itemp);
     call list_insert(list_name, 'minp_soluble',vid, itype=var_state_type); call list_insert(list_unit, 'mol P m-3',uid)
-    if(.not. nop_limit)then
-      !when P is unlimited, P is not a primary variable
-      this%nprimvars      = this%nprimvars + 1     !primary state variables 14 + 6
-    endif
 
+    if(spinup_state /= 0)then
+      this%lid_supp_minp=addone(itemp)
+      call list_insert(list_name, 'supp_minp_soluble',vid, itype=var_state_type); call list_insert(list_unit, 'mol P m-3',uid)
+    else
+      if(.not. nop_limit)then
+        !when P is limited, P is a primary variable
+        this%nprimvars      = this%nprimvars + 1     !primary state variables 14 + 6
+      endif
+    endif
     !diagnostic variables
     if(maxpft>0)then
       this%lid_plant_minn_nh4 = addone(itemp)  !this is used to indicate plant mineral nitrogen uptake

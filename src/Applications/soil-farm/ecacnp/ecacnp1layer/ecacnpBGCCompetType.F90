@@ -248,12 +248,7 @@ contains
   !do ECA calculation
   call ecacomplex_cell_norm(kaff,substrate,entity, se_complex, bstatus)
   ECA_factor_minp_msurf = se_complex(1,2)
-!  if(this%debug)then
-!    print*,'nop_lim=',nop_lim,plant_ntypes,kaff
-!    print*,'entity',entity
-!    print*,'substrate',sminp_soluble
-!    print*,'ECA_factor_minp_msurf',ECA_factor_minp_msurf
-!  endif
+
   if(nop_lim)then
     !no P limitation is imposed on biological reactions
     ECA_factor_phosphorus_mic = 1._r8

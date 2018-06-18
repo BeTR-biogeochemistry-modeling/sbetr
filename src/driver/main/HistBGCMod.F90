@@ -53,6 +53,7 @@ contains
     call list_insert(hist_list_var,'totsomp_1m',id1, itype=var_state_type); call list_insert(hist_list_unit,'gP m-2',id2)
     call list_insert(hist_list_var,'smin_nh4',id1, itype=var_state_type)  ; call list_insert(hist_list_unit,'gN m-2',id2)
     call list_insert(hist_list_var,'smin_no3',id1, itype=var_state_type)  ; call list_insert(hist_list_unit,'gN m-2',id2)
+    call list_insert(hist_list_var,'smin_psol',id1, itype=var_state_type)  ; call list_insert(hist_list_unit,'gP m-2',id2)
     call list_insert(hist_list_var,'som1c',id1, itype=var_state_type)     ; call list_insert(hist_list_unit,'gC m-2',id2)
     call list_insert(hist_list_var,'som2c',id1, itype=var_state_type)     ; call list_insert(hist_list_unit,'gC m-2',id2)
     call list_insert(hist_list_var,'som3c',id1, itype=var_state_type)     ; call list_insert(hist_list_unit,'gC m-2',id2)
