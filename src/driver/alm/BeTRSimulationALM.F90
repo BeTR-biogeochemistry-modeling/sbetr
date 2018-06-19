@@ -422,8 +422,8 @@ contains
 
       nitrogenflux_vars%nflx_minn_input_no3_vr_col(c,j)=this%biophys_forc(c)%n14flx%nflx_minn_input_no3_vr_col(c_l,j)
 
-      phosphorusflux_vars%pflx_minp_input_po4_vr_col(c,j)=this%biophys_forc(c)%p31flx%pflx_minp_input_po4_vr_col(c_l,j) + &
-        this%biophys_forc(c)%p31flx%pflx_minp_weathering_po4_vr_col(c_l,j)
+!      phosphorusflux_vars%pflx_minp_input_po4_vr_col(c,j)=this%biophys_forc(c)%p31flx%pflx_minp_input_po4_vr_col(c_l,j) + &
+!        this%biophys_forc(c)%p31flx%pflx_minp_weathering_po4_vr_col(c_l,j)
     enddo
   enddo
   end subroutine ALMBeTRRetriveBGCInput
@@ -625,6 +625,7 @@ contains
     c = filter_soilc(fc)
     call this%biophys_forc(c)%reset(value_column=0._r8)
     this%biophys_forc(c)%isoilorder(c_l) = 1                 !this needs update
+    this%biophys_forc(c)%lithoclass(c_l) = cnstate_vars%lithoclass_col(c)
     this%biophys_forc(c)%frac_loss_lit_to_fire_col(c_l) =frac_loss_lit_to_fire_col(c)
     this%biophys_forc(c)%frac_loss_cwd_to_fire_col(c_l) =frac_loss_cwd_to_fire_col(c)
     this%biophys_forc(c)%biochem_pmin_vr(c_l,1:betr_nlevsoi)= biochem_pmin_vr(c,1:betr_nlevsoi)
@@ -833,8 +834,8 @@ contains
       call apvb(this%biophys_forc(c)%p31flx%pflx_minp_input_po4_vr_col(c_l,j) , &
          (/phosphorusflux_vars%fert_p_to_sminp_col(c)/),   pdep_prof(c,j))
 
-      call apvb(this%biophys_forc(c)%p31flx%pflx_minp_weathering_po4_vr_col(c_l,j), &
-         phosphorusflux_vars%primp_to_labilep_vr_col(c,j))
+!      call apvb(this%biophys_forc(c)%p31flx%pflx_minp_weathering_po4_vr_col(c_l,j), &
+!         phosphorusflux_vars%primp_to_labilep_vr_col(c,j))
     enddo
   enddo
 
@@ -996,7 +997,8 @@ contains
     !the following is for consistency with the ALM definitation, which computes
     !som_p_leached_col as a numerical roundoff
     p31flux_vars%som_p_leached_col(c) = -p31flux_vars%som_p_leached_col(c)
-
+    p31flux_vars%primp_to_labilep_col(c) = this%biogeo_flux(c)%p31flux_vars%pflx_minp_weathering_po4_col(c_l)
+    print*,'weather',this%biogeo_flux(c)%p31flux_vars%pflx_minp_weathering_po4_col(c_l)
     !recollect soil organic carbon, soil organic nitrogen, and soil organic phosphorus
     c12state_vars%cwdc_col(c) = this%biogeo_state(c)%c12state_vars%cwdc_col(c_l)
     c12state_vars%totlitc_col(c) = this%biogeo_state(c)%c12state_vars%totlitc_col(c_l)

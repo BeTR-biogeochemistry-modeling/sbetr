@@ -15,7 +15,7 @@ implicit none
     integer, pointer :: isoilorder(:)           => null()  ! soil order
     real(r8), pointer:: frac_loss_lit_to_fire_col(:) => null() !fraction of litter cnp loss through fire
     real(r8), pointer:: frac_loss_cwd_to_fire_col(:) => null() !fraction of cwd cnp loss through fire
-
+    integer, pointer :: lithoclass(:)           => null()
     !carbon flux
     real(r8), pointer :: annsum_npp_patch(:)    => null()  !annual npp
     real(r8), pointer :: agnpp_patch(:)         => null()
@@ -176,6 +176,7 @@ contains
 
   ! cnstate_vars
   allocate(this%isoilorder(begc:endc))  ! soil order
+  allocate(this%lithoclass(begc:endc))  ! lithology class
   allocate(this%frootc_patch(begp:endp))
   allocate(this%cn_scalar_patch(begp:endp))
   allocate(this%cp_scalar_patch(begp:endp))
