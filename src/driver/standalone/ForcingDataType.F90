@@ -53,6 +53,7 @@ module ForcingDataType
      real(r8), allocatable               :: pflx_cel_vr(:,:)
      real(r8), allocatable               :: pflx_lig_vr(:,:)
      real(r8), allocatable               :: pflx_cwd_vr(:,:)
+     real(r8), allocatable               :: qflx_runoff_col(:)
      logical                             :: use_rootsoit
    contains
      procedure, public :: Init
@@ -155,6 +156,7 @@ contains
     allocate(this%qbot(this%num_time))
     allocate(this%tbot(this%num_time))
     allocate(this%finundated(this%num_time)); this%finundated(:)=0._r8
+    allocate(this%qflx_runoff_col(this%num_time)); this%qflx_runoff_col(:)=0._r8
   end subroutine InitAllocate
   !------------------------------------------------------------------------
   subroutine InitAllocate_CNP(this)
@@ -649,6 +651,7 @@ contains
        waterflux_vars%qflx_h2osfc2topsoi_col(c)   = 0._r8
        waterflux_vars%qflx_gross_infl_soil_col(c) = 0._r8
        waterflux_vars%qflx_gross_evap_soil_col(c) = 0._r8
+       waterflux_vars%qflx_runoff_col(c) = this%qflx_runoff_col(c)
     enddo
 
     do j = 1, ubj

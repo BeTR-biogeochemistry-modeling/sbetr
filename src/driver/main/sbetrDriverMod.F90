@@ -159,7 +159,7 @@ contains
     endif
   endif
 
-  call grid_data%UpdateGridConst(bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, soilstate_vars)
+  call grid_data%UpdateGridConst(bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, soilstate_vars, cnstate_vars)
   !x print*,'obtain waterstate_vars for initilizations that need it'
   call forcing_data%UpdateForcing(grid_data, bounds, lbj, ubj, simulation%num_soilc, &
        simulation%filter_soilc, time_vars, col, pft, atm2lnd_vars, soilhydrology_vars, &
@@ -760,7 +760,7 @@ end subroutine sbetrBGC_driver
   if(yesno)then
     val_c = 1.e-6_r8
     val_n = 1.e-10_r8
-    val_p = 1.e-12_r8
+    val_p = 1.e-20_r8
   else
     val_c = 0._r8
     val_n = 0._r8

@@ -56,6 +56,10 @@ variables:
 		CELLORG:units = "kg/m3" ;
 		CELLORG:_FillValue = 1.e+36f ;
 		CELLORG:missing_value = 1.e+36f ;
+	int lithological_class(lndgrid) ;
+		lithological_class: long_name="lithology class" ;
+		lithological_class: units ="unitless" ;
+		lithological_class: missing_value = -9999 ;
 // global attributes:
 		:title = "CLM History file information" ;
 		:comment = "NOTE: None of the variables are weighted by land fraction!" ;
@@ -228,4 +232,5 @@ data:
    0.0,
    0.0 ;
 
+	lithological_class = 6 ;
 }

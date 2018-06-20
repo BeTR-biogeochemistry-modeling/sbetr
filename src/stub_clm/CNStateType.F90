@@ -17,6 +17,7 @@ implicit none
      real(r8), pointer :: frac_loss_lit_to_fire_col    (:) => null()
      real(r8), pointer :: frac_loss_cwd_to_fire_col    (:) => null()
      real(r8), pointer :: scalaravg_col                (:) => null()   ! column average scalar for decompostion (for ad_spinup)
+     integer,  pointer :: lithoclass_col               (:) => null()
   contains
 
     procedure, public  :: Init
@@ -64,6 +65,7 @@ contains
     allocate(this%ndep_prof_col (begc:endc, 1:nlevdecomp_full)); this%ndep_prof_col(:,:) = spval
     allocate(this%pdep_prof_col (begc:endc, 1:nlevdecomp_full)); this%pdep_prof_col(:,:) = spval
     allocate(this%scalaravg_col       (begc:endc))                   ; this%scalaravg_col       (:)   = spval
+    allocate(this%lithoclass_col(begc:endc)) ; this%lithoclass_col(:) =-9999
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------
@@ -100,6 +102,8 @@ contains
     enddo
     this%ndep_prof_col(:,:) = 0._r8
     this%nfixation_prof_col(:,:) = 0._r8
+
+    this%pdep_prof_col(:,:) = 0._r8
   end subroutine initCold
 
 end module CNStateType

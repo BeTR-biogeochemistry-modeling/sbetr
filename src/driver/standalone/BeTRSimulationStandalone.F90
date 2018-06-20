@@ -369,7 +369,7 @@ contains
     call this%biophys_forc(c)%c12flx%reset(value_column=0._r8)
     call this%biophys_forc(c)%n14flx%reset(value_column=0._r8)
     call this%biophys_forc(c)%p31flx%reset(value_column=0._r8)
-
+    this%biophys_forc(c)%lithotype_col(c_l) = cnstate_vars%lithoclass_col(c)
     if(use_c13_betr)then
       call this%biophys_forc(c)%c13flx%reset(value_column=0._r8)
     endif
@@ -382,6 +382,7 @@ contains
   do j = betr_bounds%lbj, betr_bounds%ubj
     do fc = 1, num_soilc
       c = filter_soilc(fc)
+      this%biophys_forc(c)%pweath_prof_col(c_l,j) = cnstate_vars%pdep_prof_col(c,j)
       this%biophys_forc(c)%c12flx%cflx_input_litr_met_vr_col(c_l,j) = carbonflux_vars%cflx_input_litr_met_vr_col(c,j)
       this%biophys_forc(c)%c12flx%cflx_input_litr_cel_vr_col(c_l,j) = carbonflux_vars%cflx_input_litr_cel_vr_col(c,j)
       this%biophys_forc(c)%c12flx%cflx_input_litr_lig_vr_col(c_l,j) = carbonflux_vars%cflx_input_litr_lig_vr_col(c,j)

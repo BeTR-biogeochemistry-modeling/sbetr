@@ -19,7 +19,7 @@ contains
   implicit none
   type(bounds_type)                       , intent(in) :: bounds
   type(betr_biogeophys_input_type)        , intent(in) :: biophysforc
-  type(BiogeoCon_type)                    , intent(in) :: bgc_con
+  class(BiogeoCon_type)                   , intent(in) :: bgc_con
   real(r8)                                , intent(out):: P_weather_flx(bounds%begc:bounds%endc) ! mol/m2/s
 
   integer :: c
@@ -41,6 +41,7 @@ contains
 
     P_weather_flx(c) = b_weath(lithotype(c)) * qflx_runoff_col(c) * ft * &
       f_shield(lithotype(c)) * P_weip(lithotype(c)) / patomw
+    
   enddo
   end associate
   end subroutine calc_P_weathering_flux

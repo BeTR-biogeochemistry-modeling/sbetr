@@ -87,6 +87,7 @@ module ecacnpBGCReactionsType
     procedure, private :: retrieve_output
     procedure, private :: rm_ext_output
     procedure, private :: precision_filter
+    procedure, private :: calc_phosphorus_weathering
   end type ecacnp_bgc_reaction_type
 
   interface ecacnp_bgc_reaction_type
@@ -219,7 +220,7 @@ contains
   endif
   if(exit_spinup)then
     !scale the state variable back to the slow space
-    call this%init_iP_prof(bounds, lbj, ubj, biophysforc, tracers, tracerstate_vars)
+    !call this%init_iP_prof(bounds, lbj, ubj, biophysforc, tracers, tracerstate_vars)
     do j = lbj, ubj
       do c = bounds%begc, bounds%endc
         !som1
@@ -280,6 +281,31 @@ contains
     end associate
     end subroutine rescale_tracer_group
   end subroutine set_bgc_spinup
+
+
+  !------------------------------------------------------------------------
+  subroutine calc_phosphorus_weathering(this, bounds, lbj,ubj,biophysforc)
+  !
+  !compute P weathering from the Hartmann model
+  use BeTR_biogeophysInputType         , only : betr_biogeophys_input_type
+  use GeoChemAlgorithmMod              , only : calc_P_weathering_flux
+  implicit none
+  ! !ARGUMENTS:
+  class(ecacnp_bgc_reaction_type)  , intent(inout)    :: this
+  type(bounds_type)                        , intent(in) :: bounds
+  integer                                  , intent(in) :: lbj, ubj
+  type(betr_biogeophys_input_type)        , intent(inout) :: biophysforc
+  real(r8) :: P_weather_flx(bounds%begc:bounds%endc) ! mol/m2/s
+  integer :: j, c
+
+  call calc_P_weathering_flux(bounds, biophysforc, ecacnp_para, P_weather_flx)
+
+  do j = lbj, ubj
+    do c = bounds%begc, bounds%endc
+      biophysforc%p31flx%pflx_minp_weathering_po4_vr_col(c,j)=P_weather_flx(c)*biophysforc%pweath_prof_col(c,j)
+    enddo
+  enddo
+  end subroutine calc_phosphorus_weathering
   !----------------------------------------------------------------------
   subroutine init_iP_prof(this, bounds, lbj, ubj, biophysforc, tracers, tracerstate_vars)
   !
@@ -1208,6 +1234,7 @@ contains
     call betr_status%reset()
     SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__),betr_status)
 
+    call this%calc_phosphorus_weathering(bounds, 1,ubj,biophysforc)
     if(betrtracer_vars%debug)call this%debug_info(bounds, num_soilc, filter_soilc, col%dz(bounds%begc:bounds%endc,bounds%lbj:bounds%ubj),&
         betrtracer_vars, tracerstate_vars,  'before bgcreact', betr_status)
 

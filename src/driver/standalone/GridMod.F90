@@ -49,6 +49,8 @@ module BeTR_GridMod
      real(r8), pointer :: msurf_OM(:) => null()
      real(r8), pointer :: KM_OM(:)  => null()
      real(r8), pointer :: bd(:)     => null()
+     real(r8)          :: totzsoi
+     integer           :: lithological_class
    contains
      procedure, public  :: Init
      procedure, public  :: ReadNamelist
@@ -220,11 +222,11 @@ contains
   subroutine ReadNetCDFData(this)
     !DESCRIPTION
     !read netcdf data
-    use ncdio_pio, only : file_desc_t
-    use ncdio_pio, only : ncd_nowrite
-    use ncdio_pio, only : ncd_pio_openfile
-    use ncdio_pio, only : ncd_getvar
-    use ncdio_pio, only : ncd_pio_closefile
+    use bncdio_pio, only : file_desc_t
+    use bncdio_pio, only : ncd_nowrite
+    use bncdio_pio, only : ncd_pio_openfile
+    use bncdio_pio, only : ncd_getvar, Var_desc_t
+    use bncdio_pio, only : ncd_pio_closefile, check_var
     implicit none
     !argument
     class(betr_grid_type), intent(inout) :: this
@@ -233,7 +235,8 @@ contains
     type(file_desc_t)     :: ncf_in
     real(r8), allocatable :: data(:,:)
     integer               :: j
-
+    type(Var_desc_t)  :: vardesc
+    logical :: readvar
 
     ncf_in_filename = trim(this%grid_data_filename)
     call ncd_pio_openfile(ncf_in, ncf_in_filename, mode=ncd_nowrite)
@@ -273,8 +276,10 @@ contains
 
     if (this%grid_type == dataset_grid) then
        call ncd_getvar(ncf_in, 'DZSOI', data)
+       this%totzsoi=0._r8
        do j = 1, this%nlevgrnd
           this%dzsoi(j) = data(num_columns, j)
+          this%totzsoi = this%totzsoi + this%dzsoi(j)
        end do
 
        call ncd_getvar(ncf_in, 'ZSOI', data)
@@ -285,7 +290,12 @@ contains
        call this%set_interface_depths()
 
     end if
-
+    call check_var(ncf_in, 'lithological_class', vardesc, readvar)
+    if(readvar)then
+      call ncd_getvar(ncf_in,'lithological_class',this%lithological_class)
+    else
+      this%lithological_class=3   !this is a randomly assigned value
+    endif
     call ncd_pio_closefile(ncf_in)
 
     deallocate(data)
@@ -312,8 +322,10 @@ contains
     this%dzsoi(:) = this%delta_z
 
     ! node depths
+    this%totzsoi = 0._r8
     do j = 1, this%nlevgrnd
        this%zsoi(j) = (real(j, r8) - 0.5_r8) * this%dzsoi(j)
+       this%totzsoi = this%totzsoi + this%dzsoi(j)
     enddo
 
     call this%set_interface_depths()
@@ -341,11 +353,16 @@ contains
 
     ! thickness b/n two interfaces
     this%dzsoi(1) = 0.5_r8*(this%zsoi(1) + this%zsoi(2))
+
     do j = 2,this%nlevgrnd-1
        this%dzsoi(j) = 0.5_r8*(this%zsoi(j+1) - this%zsoi(j-1))
+
     enddo
     this%dzsoi(this%nlevgrnd) = this%zsoi(this%nlevgrnd) - this%zsoi(this%nlevgrnd-1)
-
+    this%totzsoi = 0._r8
+    do j = 1, this%nlevgrnd
+      this%totzsoi = this%totzsoi + this%dzsoi(j)
+    enddo
     call this%set_interface_depths()
 
   end subroutine clm_exponential_vertical_grid
@@ -367,16 +384,17 @@ contains
        this%zisoi(j) = 0.5_r8*(this%zsoi(j) + this%zsoi(j+1))
     enddo
     this%zisoi(this%nlevgrnd) = this%zsoi(this%nlevgrnd) + 0.5_r8*this%dzsoi(this%nlevgrnd)
-    print*,'zisoi',this%nlevgrnd,size(this%zisoi)
+    !print*,'zisoi',this%nlevgrnd,size(this%zisoi)
   end subroutine set_interface_depths
 
   ! ---------------------------------------------------------------------------
-  subroutine UpdateGridConst(this, bounds, lbj, ubj, numf, filter, soilstate_vars)
+  subroutine UpdateGridConst(this, bounds, lbj, ubj, numf, filter, soilstate_vars, cnstate_vars)
   !
   !DESCRIPTION
   !update grid constant variables
   use SoilStateType, only : soilstate_type
   use decompMod         , only : bounds_type
+  use CNStateType       , only : cnstate_type
   implicit none
   class(betr_grid_type), intent(inout) :: this
   type(bounds_type)        , intent(in)    :: bounds
@@ -384,6 +402,7 @@ contains
   integer                  , intent(in)    :: filter(:)
   integer                  , intent(in)    :: lbj, ubj
   type(soilstate_type)     , intent(inout) :: soilstate_vars
+  type(cnstate_type)       , intent(inout) :: cnstate_vars
   integer :: c,fc, j
 
   do j = 1, ubj
@@ -396,7 +415,12 @@ contains
       soilstate_vars%cellclay_col(c,j) = this%pctclay(j)
       soilstate_vars%cellorg_col(c,j)  = this%cellorg(j)
       soilstate_vars%bd_col(c,j)       = this%bd(j)
+      cnstate_vars%pdep_prof_col(c,j)  = this%dzsoi(j)/this%totzsoi
     enddo
+  enddo
+  do fc = 1, numf
+    c = filter(fc)
+    cnstate_vars%lithoclass_col(c) = this%lithological_class
   enddo
   end subroutine UpdateGridConst
   ! ---------------------------------------------------------------------------

@@ -46,6 +46,7 @@ implicit none
     real(r8), pointer :: pflx_minp_input_po4_vr_col                (:,:) => null()
     real(r8), pointer :: sminp_col(:)
     real(r8), pointer :: occlp_col(:)
+    real(r8), pointer :: primp_to_labilep_col(:) => null()
   contains
 
     procedure, public  :: Init
@@ -130,6 +131,7 @@ contains
     allocate(this%occlp_col(begc:endc)); this%occlp_col(:) = spval
     allocate(this%sminp_col(begc:endc)); this%sminp_col(:) = spval
     allocate(this%som_p_runoff_col(begc:endc)); this%som_p_runoff_col(:) = spval
+    allocate(this%primp_to_labilep_col(begc:endc)); this%primp_to_labilep_col(:) = spval
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------

@@ -625,7 +625,7 @@ contains
     c = filter_soilc(fc)
     call this%biophys_forc(c)%reset(value_column=0._r8)
     this%biophys_forc(c)%isoilorder(c_l) = 1                 !this needs update
-    this%biophys_forc(c)%lithoclass(c_l) = cnstate_vars%lithoclass_col(c)
+    this%biophys_forc(c)%lithotype_col(c_l) = cnstate_vars%lithoclass_col(c)
     this%biophys_forc(c)%frac_loss_lit_to_fire_col(c_l) =frac_loss_lit_to_fire_col(c)
     this%biophys_forc(c)%frac_loss_cwd_to_fire_col(c_l) =frac_loss_cwd_to_fire_col(c)
     this%biophys_forc(c)%biochem_pmin_vr(c_l,1:betr_nlevsoi)= biochem_pmin_vr(c,1:betr_nlevsoi)
@@ -646,6 +646,7 @@ contains
   do j = betr_bounds%lbj, betr_bounds%ubj
     do fc = 1, num_soilc
       c = filter_soilc(fc)
+      this%biophys_forc(c)%pweath_prof_col(c_l,j) = pdep_prof(c,j)
       !!------------------------------------------------------------------------
       !carbon input
       !metabolic carbon

@@ -15,7 +15,7 @@ implicit none
     integer, pointer :: isoilorder(:)           => null()  ! soil order
     real(r8), pointer:: frac_loss_lit_to_fire_col(:) => null() !fraction of litter cnp loss through fire
     real(r8), pointer:: frac_loss_cwd_to_fire_col(:) => null() !fraction of cwd cnp loss through fire
-    integer, pointer :: lithoclass(:)           => null()
+
     !carbon flux
     real(r8), pointer :: annsum_npp_patch(:)    => null()  !annual npp
     real(r8), pointer :: agnpp_patch(:)         => null()
@@ -95,7 +95,8 @@ implicit none
     real(r8), pointer :: labilep_vr_col(:,:) => null()
     real(r8), pointer :: secondp_vr_col(:,:) => null()
     real(r8), pointer :: occlp_vr_col(:,:) => null()
-    integer, pointer  :: lithotype_col(:) => null()
+    integer , pointer :: lithotype_col(:) => null()
+    real(r8), pointer :: pweath_prof_col(:,:) => null()
     !carbon fluxes
     type(betr_carbonflux_type) :: c12flx
     type(betr_carbonflux_type) :: c13flx
@@ -176,7 +177,6 @@ contains
 
   ! cnstate_vars
   allocate(this%isoilorder(begc:endc))  ! soil order
-  allocate(this%lithoclass(begc:endc))  ! lithology class
   allocate(this%frootc_patch(begp:endp))
   allocate(this%cn_scalar_patch(begp:endp))
   allocate(this%cp_scalar_patch(begp:endp))
@@ -260,7 +260,7 @@ contains
   allocate(this%labilep_vr_col(begc:endc,lbj:ubj))
   allocate(this%secondp_vr_col(begc:endc,lbj:ubj))
   allocate(this%occlp_vr_col(begc:endc,lbj:ubj))
-
+  allocate(this%pweath_prof_col(begc:endc,1:ubj))
   allocate(this%dic_prod_vr_col(begc:endc,lbj:ubj))
   allocate(this%doc_prod_vr_col(begc:endc,lbj:ubj))
   allocate(this%biochem_pmin_vr(begc:endc,lbj:ubj))
