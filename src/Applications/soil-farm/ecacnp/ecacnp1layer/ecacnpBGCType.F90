@@ -1335,8 +1335,7 @@ contains
       dydt(lid_minp_soluble) = dydt(lid_minp_soluble)  + dydt(lid_supp_minp)
     endif
   endif
-
-   if(this%batch_mode)dydt(lid_cum_closs)=dydt(lid_co2_hr)
+  if(this%batch_mode)dydt(lid_cum_closs)=dydt(lid_co2_hr)
   end associate
   end subroutine bgc_integrate
   !--------------------------------------------------------------------

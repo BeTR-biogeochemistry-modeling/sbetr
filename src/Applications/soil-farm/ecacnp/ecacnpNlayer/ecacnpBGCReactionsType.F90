@@ -289,13 +289,14 @@ contains
   !compute P weathering from the Hartmann model
   use BeTR_biogeophysInputType         , only : betr_biogeophys_input_type
   use GeoChemAlgorithmMod              , only : calc_P_weathering_flux
+  use tracer_varcon                    , only : patomw
   implicit none
   ! !ARGUMENTS:
   class(ecacnp_bgc_reaction_type)  , intent(inout)    :: this
   type(bounds_type)                        , intent(in) :: bounds
   integer                                  , intent(in) :: lbj, ubj
   type(betr_biogeophys_input_type)        , intent(inout) :: biophysforc
-  real(r8) :: P_weather_flx(bounds%begc:bounds%endc) ! mol/m2/s
+  real(r8) :: P_weather_flx(bounds%begc:bounds%endc) ! gP/m2/s
   integer :: j, c
 
   call calc_P_weathering_flux(bounds, biophysforc, ecacnp_para, P_weather_flx)
@@ -2244,6 +2245,8 @@ contains
       biogeo_flux%n14flux_vars%f_n2o_nit_vr_col(c,j) = &
         (ystatesf(this%ecacnp_bgc_index%lid_n2o_nit) - &
          ystates0(this%ecacnp_bgc_index%lid_n2o_nit))*natomw/dtime
+
+      biogeo_flux%p31flux_vars%pflx_minp_weathering_po4_vr_col(c,j) =this%ecacnp_forc(c,j)%sflx_minp_weathering_po4
 
   select type(plant_soilbgc)
   type is(ecacnp_plant_soilbgc_type)

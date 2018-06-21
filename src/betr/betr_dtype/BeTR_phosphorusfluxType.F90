@@ -24,8 +24,8 @@ implicit none
     real(r8), pointer :: pflx_output_litr_fwd_vr_col(:,:) => null() ! coarse woody debris input, gP/m3/s
     real(r8), pointer :: pflx_output_litr_lwd_vr_col(:,:) => null() ! coarse woody debris input, gP/m3/s
 
-    real(r8), pointer :: pflx_minp_input_po4_vr_col(:,:)  => null() !mineral phosphorus input through deposition & fertilization, gN/m3/s
-    real(r8), pointer :: pflx_minp_weathering_po4_vr_col(:,:)  => null() !mineral phosphorus input through weathering, gN/m3/s
+    real(r8), pointer :: pflx_minp_input_po4_vr_col(:,:)  => null() !mineral phosphorus input through deposition & fertilization, gP/m3/s
+    real(r8), pointer :: pflx_minp_weathering_po4_vr_col(:,:)  => null() !mineral phosphorus input through weathering, gP/m3/s
     real(r8), pointer :: pminp_input_col(:) => null()
   contains
     procedure, public  :: Init
@@ -78,7 +78,6 @@ implicit none
 
   allocate(this%pflx_minp_weathering_po4_vr_col(begc:endc,lbj:ubj)) !p from weathering
   allocate(this%pminp_input_col(begc:endc))
-
   end subroutine InitAllocate
 
 
@@ -103,7 +102,6 @@ implicit none
   this%pflx_output_litr_lwd_vr_col(:,:)= value_column
 
   this%pflx_minp_input_po4_vr_col(:,:)= value_column
-
   this%pflx_minp_weathering_po4_vr_col(:,:) = value_column
   end subroutine reset
 

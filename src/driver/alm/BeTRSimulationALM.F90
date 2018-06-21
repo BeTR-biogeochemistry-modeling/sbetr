@@ -999,7 +999,6 @@ contains
     !som_p_leached_col as a numerical roundoff
     p31flux_vars%som_p_leached_col(c) = -p31flux_vars%som_p_leached_col(c)
     p31flux_vars%primp_to_labilep_col(c) = this%biogeo_flux(c)%p31flux_vars%pflx_minp_weathering_po4_col(c_l)
-    print*,'weather',this%biogeo_flux(c)%p31flux_vars%pflx_minp_weathering_po4_col(c_l)
     !recollect soil organic carbon, soil organic nitrogen, and soil organic phosphorus
     c12state_vars%cwdc_col(c) = this%biogeo_state(c)%c12state_vars%cwdc_col(c_l)
     c12state_vars%totlitc_col(c) = this%biogeo_state(c)%c12state_vars%totlitc_col(c_l)

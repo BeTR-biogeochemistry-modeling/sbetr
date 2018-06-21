@@ -20,7 +20,7 @@ contains
   type(bounds_type)                       , intent(in) :: bounds
   type(betr_biogeophys_input_type)        , intent(in) :: biophysforc
   class(BiogeoCon_type)                   , intent(in) :: bgc_con
-  real(r8)                                , intent(out):: P_weather_flx(bounds%begc:bounds%endc) ! mol/m2/s
+  real(r8)                                , intent(out):: P_weather_flx(bounds%begc:bounds%endc) ! gP/m2/s
 
   integer :: c
   real(r8) :: ft
@@ -40,7 +40,7 @@ contains
     ft = exp(-E_weath(lithotype(c))*(1._r8/t_soi_10cm(c)-1._r8/T_ref_weath))
 
     P_weather_flx(c) = b_weath(lithotype(c)) * qflx_runoff_col(c) * ft * &
-      f_shield(lithotype(c)) * P_weip(lithotype(c)) / patomw
+      f_shield(lithotype(c)) * P_weip(lithotype(c)) 
     
   enddo
   end associate
