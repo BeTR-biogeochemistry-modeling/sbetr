@@ -387,7 +387,7 @@ implicit none
   cascade_matrix(lid_nh4 ,reac) = -1._r8
   cascade_matrix(lid_o2  ,reac) = -(2._r8 - this%nitrif_n2o_loss_frac)
   cascade_matrix(lid_n2o, reac) = 0.5_r8 * this%nitrif_n2o_loss_frac
-  cascade_matrix(lid_no3 ,reac) = 1._r8  - this%nitrif_n2o_loss_frac * 2._r8
+  cascade_matrix(lid_no3 ,reac) = 1._r8  - cascade_matrix(lid_n2o, reac) * 2._r8
 
   cascade_matrix(lid_nh4_nit,reac) = 1._r8
   cascade_matrix(lid_n2o_nit,reac) = this%nitrif_n2o_loss_frac
