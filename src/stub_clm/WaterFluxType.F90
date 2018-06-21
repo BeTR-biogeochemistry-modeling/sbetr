@@ -34,7 +34,7 @@ module WaterfluxType
     real(r8), pointer :: qflx_tran_veg_patch      (:)=> null()
     real(r8), pointer :: qflx_rootsoi_patch       (:,:) => null()! pft root and soil water exchange [mm H2O/s] [+ into atmosphere]
     real(r8), pointer :: qflx_rootsoi_frac_patch  (:,:) => null()
-    real(r8), pointer :: qflx_runoff_col          (:)   ! col total runoff (qflx_drain+qflx_surf+qflx_qrgwl) (mm H2O /s)s
+    real(r8), pointer :: qflx_runoff_betr_col          (:)   ! col total runoff (qflx_drain+qflx_surf+qflx_qrgwl) (mm H2O /s)s
   contains
     procedure          :: Init
     procedure, private :: InitAllocate
@@ -89,7 +89,7 @@ module WaterfluxType
     allocate(this%qflx_rootsoi_patch       (begp:endp,lbj:ubj))      ; this%qflx_rootsoi_patch       (:,:) = nan
     allocate( this%qflx_totdrain_col       (begc:endc))              ; this%qflx_totdrain_col        (:)   = nan
     allocate(this%qflx_rootsoi_frac_patch  (begp:endp,lbj:ubj))      ; this%qflx_rootsoi_frac_patch(:,:) = nan
-    allocate(this%qflx_runoff_col          (begc:endc))              ; this%qflx_runoff_col          (:) = nan
+    allocate(this%qflx_runoff_betr_col          (begc:endc))         ; this%qflx_runoff_betr_col          (:) = nan
   end subroutine InitAllocate
 
 
