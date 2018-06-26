@@ -1091,7 +1091,7 @@ contains
       p31state_vars%sminp_col(c) = this%biogeo_state(c)%p31state_vars%sminp_col(c_l)
       p31state_vars%occlp_col(c) = this%biogeo_state(c)%p31state_vars%occlp_col(c_l)
 
-      if(index(reaction_method,'ecacnp')/=0)then
+      if(index(reaction_method,'ecacnp')/=0 .or. index(reaction_method,'summs')/=0)then
         c12state_vars%som1c_col(c) = this%biogeo_state(c)%c12state_vars%som1c_col(c_l)
         c12state_vars%som2c_col(c) = this%biogeo_state(c)%c12state_vars%som2c_col(c_l)
         c12state_vars%som3c_col(c) = this%biogeo_state(c)%c12state_vars%som3c_col(c_l)
@@ -1114,29 +1114,6 @@ contains
         p31state_vars%som3p_col(c) = this%biogeo_state(c)%p31state_vars%som3p_col(c_l)
 
 
-      endif
-      if(trim(reaction_method)=='summs')then
-        c12state_vars%polyc_col(c) = this%biogeo_state(c)%c12state_vars%polyc_col(c_l)
-        c12state_vars%monoenzc_col(c) = this%biogeo_state(c)%c12state_vars%monoenzc_col(c_l)
-        c12state_vars%micresc_col(c) = this%biogeo_state(c)%c12state_vars%micresc_col(c_l)
-        if(use_c13_betr)then
-          c13state_vars%polyc_col(c) = this%biogeo_state(c)%c13state_vars%polyc_col(c_l)
-          c13state_vars%monoenzc_col(c) = this%biogeo_state(c)%c13state_vars%monoenzc_col(c_l)
-          c13state_vars%micresc_col(c) = this%biogeo_state(c)%c13state_vars%micresc_col(c_l)
-        endif
-        if(use_c14_betr)then
-          c14state_vars%polyc_col(c) = this%biogeo_state(c)%c14state_vars%polyc_col(c_l)
-          c14state_vars%monoenzc_col(c) = this%biogeo_state(c)%c14state_vars%monoenzc_col(c_l)
-          c14state_vars%micresc_col(c) = this%biogeo_state(c)%c14state_vars%micresc_col(c_l)
-        endif
-        n14state_vars%polyn_col(c) = this%biogeo_state(c)%n14state_vars%polyn_col(c_l)
-        n14state_vars%monoenzn_col(c) = this%biogeo_state(c)%n14state_vars%monoenzn_col(c_l)
-        n14state_vars%micresn_col(c) = this%biogeo_state(c)%n14state_vars%micresn_col(c_l)
-
-        p31state_vars%polyp_col(c) = this%biogeo_state(c)%p31state_vars%polyp_col(c_l)
-        p31state_vars%monoenzp_col(c) = this%biogeo_state(c)%p31state_vars%monoenzp_col(c_l)
-        p31state_vars%micresp_col(c) = this%biogeo_state(c)%p31state_vars%micresp_col(c_l)
-        
       endif
 
     enddo

@@ -26,12 +26,6 @@ implicit none
     real(r8), pointer :: som2p_vr_col(:,:) => null()
     real(r8), pointer :: som3p_vr_col(:,:) => null()
     real(r8), pointer :: domp_vr_col(:,:) => null()
-    real(r8), pointer :: polyp_col(:) => null()
-    real(r8), pointer :: monoenzp_col(:) => null()
-    real(r8), pointer :: micresp_col(:) => null()
-    real(r8), pointer :: polyp_vr_col(:,:) => null()
-    real(r8), pointer :: monoenzp_vr_col(:,:) => null()
-    real(r8), pointer :: micresp_vr_col(:,:) => null()
   contains
     procedure, public  :: Init
     procedure, private :: InitAllocate
@@ -72,21 +66,13 @@ implicit none
   allocate(this%totsomp_1m_col(begc:endc))
   allocate(this%sminp_col(begc:endc));
   allocate(this%occlp_col(begc:endc));
-  if(index(reaction_method,'ecacnp')/=0)then
+  if(index(reaction_method,'ecacnp')/=0 .or. index(reaction_method,'summs')/=0)then
     allocate(this%som1p_col(begc:endc)); this%som1p_col(:) = nan
     allocate(this%som2p_col(begc:endc)); this%som2p_col(:) = nan
     allocate(this%som3p_col(begc:endc)); this%som3p_col(:) = nan
     allocate(this%som1p_vr_col(begc:endc, lbj:ubj));  this%som1p_vr_col(:,:) = nan
     allocate(this%som2p_vr_col(begc:endc, lbj:ubj));  this%som2p_vr_col(:,:) = nan
     allocate(this%som3p_vr_col(begc:endc, lbj:ubj));  this%som3p_vr_col(:,:) = nan
-  endif
-  if(index(reaction_method,'summs')/=0)then
-    allocate(this%polyp_col(begc:endc));  this%polyp_col(:) = nan
-    allocate(this%monoenzp_col(begc:endc));  this%monoenzp_col(:) = nan
-    allocate(this%micresp_col(begc:endc));   this%micresp_col(:) = nan
-    allocate(this%polyp_vr_col(begc:endc, lbj:ubj));  this%polyp_vr_col(:,:) = nan
-    allocate(this%monoenzp_vr_col(begc:endc, lbj:ubj));  this%monoenzp_vr_col(:,:) = nan
-    allocate(this%micresp_vr_col(begc:endc, lbj:ubj));   this%micresp_vr_col(:,:) = nan
   endif
   allocate(this%cwdp_vr_col(begc:endc,lbj:ubj)); this%cwdp_vr_col(:,:) =nan
   allocate(this%totlitp_vr_col(begc:endc,lbj:ubj)); this%totlitp_vr_col(:,:)=nan
@@ -107,15 +93,10 @@ implicit none
   this%totsomp_vr_col(:,:) = value_column
   this%sminp_vr_col(:,:) = value_column
   this%occlp_vr_col(:,:) = value_column
-  if(index(reaction_method,'ecacnp')/=0)then
+  if(index(reaction_method,'ecacnp')/=0 .or. index(reaction_method,'summs')/=0)then
     this%som1p_vr_col(:,:) = value_column
     this%som2p_vr_col(:,:) = value_column
     this%som3p_vr_col(:,:) = value_column
-  endif
-  if(index(reaction_method,'summs')/=0)then
-    this%polyp_vr_col(:,:) = value_column
-    this%monoenzp_vr_col(:,:) = value_column
-    this%micresp_vr_col(:,:) = value_column
   endif
   this%domp_vr_col(:,:) = value_column
   end subroutine reset
@@ -140,7 +121,7 @@ implicit none
   this%totsomp_1m_col(:) = 0._r8
   this%sminp_col(:) = 0._r8
   this%occlp_col(:) = 0._r8
-  if(index(reaction_method,'ecacnp')/=0)then
+  if(index(reaction_method,'ecacnp')/=0 .or. index(reaction_method,'summs')/=0)then
     this%som1p_col(:) = 0._r8
     this%som2p_col(:) = 0._r8
     this%som3p_col(:) = 0._r8
@@ -152,18 +133,6 @@ implicit none
       enddo
     enddo
   endif
-  if(index(reaction_method,'summs')/=0)then
-    this%polyp_col(:) = 0.0_r8
-    this%monoenzp_col(:) = 0.0_r8
-    this%micresp_col(:) = 0.0_r8
-    do j = lbj, ubj
-      do c = bounds%begc, bounds%endc
-        this%polyp_col(c) = this%polyp_col(c) + dz(c,j)*this%polyp_vr_col(c,j)
-        this%monoenzp_col(c) = this%monoenzp_col(c) + dz(c,j)*this%monoenzp_vr_col(c,j)
-        this%micresp_col(c) = this%micresp_col(c) + dz(c,j)*this%micresp_vr_col(c,j)
-      enddo
-    enddo
-  endif
   do j = lbj, ubj
     do c = bounds%begc, bounds%endc
       this%cwdp_col(c) = this%cwdp_col(c) + dz(c,j) * this%cwdp_vr_col(c,j)
@@ -172,16 +141,10 @@ implicit none
       this%sminp_col(c) = this%sminp_col(c) + dz(c,j)*this%sminp_vr_col(c,j)
       this%occlp_col(c) = this%occlp_col(c) + dz(c,j)*this%occlp_vr_col(c,j)
 
-  if(index(reaction_method,'ecacnp')/=0)then
+  if(index(reaction_method,'ecacnp')/=0 .or. index(reaction_method,'summs')/=0)then
       this%som1p_col(c) =   this%som1p_col(c) + dz(c,j)*this%som1p_vr_col(c,j)
       this%som2p_col(c) =   this%som2p_col(c) + dz(c,j)*this%som2p_vr_col(c,j)
       this%som3p_col(c) =   this%som3p_col(c) + dz(c,j)*this%som3p_vr_col(c,j)
-  endif
-
-  if(index(reaction_method,'summs')/=0)then
-        this%polyp_col(c) = this%polyp_col(c) + dz(c,j)*this%polyp_vr_col(c,j)
-        this%monoenzp_col(c) = this%monoenzp_col(c) + dz(c,j)*this%monoenzp_vr_col(c,j)
-        this%micresp_col(c) = this%micresp_col(c) + dz(c,j)*this%micresp_vr_col(c,j)
   endif
 
       if(zs(c,j)<1._r8)then
