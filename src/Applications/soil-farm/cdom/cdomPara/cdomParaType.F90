@@ -413,7 +413,7 @@ contains
   this%k_decay_lmet(1:2) = temparr(1:2,1)
 
   tString='k_decay_lcel'
-  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
+  call ncd_io(trim(tString),temparr, 'read', ncid, readvar=readv)
   if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
   if(bstatus%check_status())return
   this%k_decay_lcel(1:2) = temparr(1:2,1)

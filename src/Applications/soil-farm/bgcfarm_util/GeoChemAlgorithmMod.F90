@@ -22,7 +22,7 @@ contains
   class(BiogeoCon_type)                   , intent(in) :: bgc_con
   real(r8)                                , intent(out):: P_weather_flx(bounds%begc:bounds%endc) ! gP/m2/s
 
-  integer :: c
+  integer :: c,ltotype
   real(r8) :: ft
   associate(                            &
    begc => bounds%begc                , &
@@ -37,10 +37,12 @@ contains
    lithotype => biophysforc%lithotype_col &
   )
   do c = begc, endc
-    ft = exp(-E_weath(lithotype(c))*(1._r8/t_soi_10cm(c)-1._r8/T_ref_weath))
+    ltotype=lithotype(c)
+    if(lithotype(c)<0)ltotype=8
+    ft = exp(-E_weath(ltotype)*(1._r8/t_soi_10cm(c)-1._r8/T_ref_weath))
 
-    P_weather_flx(c) = b_weath(lithotype(c)) * qflx_runoff_col(c) * ft * &
-      f_shield(lithotype(c)) * P_weip(lithotype(c)) 
+    P_weather_flx(c) = b_weath(ltotype) * qflx_runoff_col(c) * ft * &
+      f_shield(ltotype) * P_weip(ltotype) 
     
   enddo
   end associate

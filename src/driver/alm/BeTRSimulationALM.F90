@@ -121,6 +121,8 @@ contains
   use decompMod                , only : bounds_type
   use tracer_varcon            , only : bgc_param_file
   use fileutils                , only : getfil
+  use spmdMod                  , only : masterproc
+  use clm_varctl               , only : iulog
   implicit none
   class(betr_simulation_alm_type)          , intent(inout) :: this
 
@@ -134,6 +136,9 @@ contains
 
   !open file for parameter reading
   call getfil (bgc_param_file, locfn, 0)
+  if (masterproc) then
+    write(iulog,*) 'read betr bgc parameter file '//trim(locfn)
+  endif
   call ncd_pio_openfile (ncid, trim(locfn), 0)
 
   !read in parameters
