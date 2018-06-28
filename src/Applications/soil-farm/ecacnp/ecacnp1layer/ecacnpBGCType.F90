@@ -960,7 +960,6 @@ contains
     lid_minp_soluble =>  ecacnp_bgc_index%lid_minp_soluble,  &
     lid_minp_immob => ecacnp_bgc_index%lid_minp_immob &
   )
-
   c_inf_loc=0._r8; n_inf_loc=0._r8; p_inf_loc=0._r8
   !*********************************************
   ! organic substrates
@@ -1080,7 +1079,7 @@ contains
      p_loc   =>  ecacnp_bgc_index%p_loc  ,&
      nelms   =>  ecacnp_bgc_index%nelms   &
     )
-    if(cflx_input<=0._r8)return
+    !if(cflx_input<=0._r8)return
     kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
     this%ystates1(kc) =this%ystates0(kc) + cflx_input*dtime/catomw
     this%ystates1(kn) =this%ystates0(kn) + nflx_input*dtime/natomw
@@ -1094,7 +1093,6 @@ contains
     if(present(p_inf))then
       p_inf = p_inf+this%ystates1(kp) - this%ystates0(kp)
     endif
-
     if(this%use_c13)then
       kc13=(jj-1)*nelms+c13_loc
       this%ystates1(kc13) =this%ystates0(kc13) + c13_flx_input*dtime/c13atomw
