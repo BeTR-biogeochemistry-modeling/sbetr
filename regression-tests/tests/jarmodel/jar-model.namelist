@@ -1,0 +1,15 @@
+&jar_driver
+  jarmodel_name = 'ecacnp'
+  phosphorus_stress=.false.
+  nitrogen_stress=.true.
+/
+
+&betr_time
+  delta_time=3600.
+  stop_n = 20
+  stop_option='nyears'
+/
+
+&forcing_inparm
+  forcing_filename = '../../../input_data/jarmodel_example.forcing.nc'
+/

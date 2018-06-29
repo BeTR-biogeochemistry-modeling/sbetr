@@ -43,6 +43,7 @@ implicit none
     real(r8), pointer :: qflx_h2osfc2topsoi_col   (:)      => null() ! col liquid water coming from surface standing water top soil (mm H2O/s)
     real(r8), pointer :: qflx_snow2topsoi_col     (:)      => null() ! col liquid water coming from residual snow to topsoil (mm H2O/s)
     real(r8), pointer :: qflx_tran_veg_patch      (:)      => null()
+    real(r8), pointer :: qflx_runoff_col          (:)      => null() !col total runoff
     !temperature
     real(r8), pointer :: t_soisno_col(:,:)                 => null()      !soil temperature (Kelvin)  (-nlevsno+1:nlevgrnd)
     real(r8), pointer :: t_soi_10cm(:)                     => null()  !soil temperature in top 10cm of soil (Kelvin)
@@ -53,6 +54,14 @@ implicit none
     !atm2lnd
     real(r8), pointer :: forc_pbot_downscaled_col      (:) => null() ! downscaled atm pressure (Pa)
     real(r8), pointer :: forc_t_downscaled_col         (:) => null() ! downscaled atm temperature (Kelvin)
+    real(r8), pointer :: n2_ppmv_col                   (:) => null() ! n2 concentration in ppmv
+    real(r8), pointer :: o2_ppmv_col                   (:) => null() ! o2 concentration in ppmv
+    real(r8), pointer :: ar_ppmv_col                   (:) => null() ! ar concentration in ppmv
+    real(r8), pointer :: co2_ppmv_col                  (:) => null() ! co2 concentration in ppmv
+    real(r8), pointer :: ch4_ppmv_col                  (:) => null() ! ch4 concentration in ppmv
+    real(r8), pointer :: n2o_ppmv_col                  (:) => null() ! n2o concentration in ppmv
+    real(r8), pointer :: no_ppmv_col                   (:) => null() ! no concentration in ppmv
+    real(r8), pointer :: nh3_ppmv_col                  (:) => null() ! nh3 concentration in ppmv
     !canopystate
     real(r8) , pointer :: altmax_col               (:) => null() ! col maximum annual depth of thaw
     real(r8) , pointer :: altmax_lastyear_col      (:) => null() ! col prior year maximum annual depth of thaw
@@ -72,7 +81,6 @@ implicit none
     real(r8), pointer :: watfc_col            (:,:)    => null() ! col volumetric soil water at field capacity (nlevsoi)
     real(r8), pointer :: sucsat_col           (:,:)    => null() ! col minimum soil suction (mm) (nlevgrnd)
     real(r8), pointer :: rootfr_patch         (:,:)    => null() ! patch fraction of roots in each soil layer (nlevgrnd)
-
     real(r8), pointer :: rr_patch(:,:)  => null()
     real(r8), pointer :: froot_prof_patch(:,:) => null()
     real(r8), pointer :: frootc_patch(:) => null()
@@ -80,6 +88,15 @@ implicit none
     real(r8), pointer :: cp_scalar_patch(:) => null()
     real(r8), pointer :: dic_prod_vr_col(:,:) => null()
     real(r8), pointer :: doc_prod_vr_col(:,:) => null()
+    real(r8), pointer :: biochem_pmin_vr(:,:) => null()
+    real(r8), pointer :: scalaravg_col(:) => null()
+    real(r8), pointer :: dom_scalar_col(:) => null()
+    real(r8), pointer :: solutionp_vr_col(:,:) => null()
+    real(r8), pointer :: labilep_vr_col(:,:) => null()
+    real(r8), pointer :: secondp_vr_col(:,:) => null()
+    real(r8), pointer :: occlp_vr_col(:,:) => null()
+    integer , pointer :: lithotype_col(:) => null()
+    real(r8), pointer :: pweath_prof_col(:,:) => null()
     !carbon fluxes
     type(betr_carbonflux_type) :: c12flx
     type(betr_carbonflux_type) :: c13flx
@@ -89,7 +106,10 @@ implicit none
   contains
     procedure, public  :: Init
     procedure, private :: InitAllocate
+    procedure, private :: InitCold
+    procedure, public  :: summary
     procedure, public  :: reset
+    procedure, public  :: frac_normalize
   end type betr_biogeophys_input_type
 
   public :: create_betr_biogeophys_input
@@ -120,7 +140,27 @@ contains
   if(use_c13_betr)call this%c13flx%Init(bounds)
   if(use_c14_betr)call this%c14flx%Init(bounds)
 
+  call this%InitCold()
   end subroutine Init
+  !------------------------------------------------------------------------
+
+
+  subroutine InitCold(this)
+
+  implicit none
+  class(betr_biogeophys_input_type)  :: this
+
+  this%n2_ppmv_col(:) = 7.8e5_r8
+  this%o2_ppmv_col(:) = 2.1e5_r8
+  this%ar_ppmv_col(:) = 0.9e5_r8
+  this%co2_ppmv_col(:)= 400._r8
+  this%ch4_ppmv_col(:)= 1.8_r8
+  this%n2o_ppmv_col(:)= 250.e-3_r8
+  this%no_ppmv_col(:) = 0._r8
+  this%nh3_ppmv_col(:)= 0._r8
+  this%forc_pbot_downscaled_col(:) = 1.013e5_r8
+  this%forc_t_downscaled_col(:) = 288._r8
+  end subroutine InitCold
 
   !------------------------------------------------------------------------
   subroutine InitAllocate(this, bounds)
@@ -171,20 +211,28 @@ contains
   allocate(this%qflx_snow2topsoi_col     (begc:endc         ) ) ! col liquid water coming from residual snow to topsoil (mm H2O/s)
   allocate(this%qflx_tran_veg_patch      (begp:endp         ) )
   allocate(this%qflx_rootsoi_col         (begc:endc,lbj:ubj ) ) ! col root and soil water exchange [mm H2O/s] [+ into root]
-  allocate(this%qflx_rootsoi_frac_patch       (begp:endp,lbj:ubj ) ) ! col root and soil water exchange [mm H2O/s] [+ into root]
-
+  allocate(this%qflx_rootsoi_frac_patch  (begp:endp,lbj:ubj ) ) ! col root and soil water exchange [mm H2O/s] [+ into root]
+  allocate(this%qflx_runoff_col          (begc:endc))
   !temperature
-  allocate(this%t_soi_10cm(                     begc:endc         )) !soil temperature in top 10cm of soil (Kelvin)
-  allocate(this%t_veg_patch              (      begp:endp         )) ! patch vegetation temperature (Kelvin)
-  allocate(this%t_soisno_col(                   begc:endc,lbj:ubj )) !soil temperature (Kelvin)  (-nlevsno+1:nlevgrnd)
+  allocate(this%t_soi_10cm               (begc:endc)) !soil temperature in top 10cm of soil (Kelvin)
+  allocate(this%t_veg_patch              (begp:endp)) ! patch vegetation temperature (Kelvin)
+  allocate(this%t_soisno_col             (begc:endc,lbj:ubj)) !soil temperature (Kelvin)  (-nlevsno+1:nlevgrnd)
 
   !soilhydrology
-  allocate(this%qflx_bot_col      (             begc:endc)  )        ! bottom of soil col flux, (mm/s)
-  allocate(this%fracice_col       (             begc:endc,lbj:ubj) ) ! col fractional impermeability (-)
+  allocate(this%qflx_bot_col      (begc:endc))        ! bottom of soil col flux, (mm/s)
+  allocate(this%fracice_col       (begc:endc,lbj:ubj)) ! col fractional impermeability (-)
 
   !atm2lnd
   allocate(this%forc_pbot_downscaled_col      ( begc:endc)  ) ! downscaled atm pressure (Pa)
   allocate(this%forc_t_downscaled_col         ( begc:endc)  ) ! downscaled atm temperature (Kelvin)
+  allocate(this%n2_ppmv_col(begc:endc))
+  allocate(this%o2_ppmv_col(begc:endc))
+  allocate(this%ar_ppmv_col(begc:endc))
+  allocate(this%co2_ppmv_col(begc:endc))
+  allocate(this%ch4_ppmv_col(begc:endc))
+  allocate(this%n2o_ppmv_col(begc:endc))
+  allocate(this%no_ppmv_col(begc:endc))
+  allocate(this%nh3_ppmv_col(begc:endc))
 
   !canopystate
   allocate(this%altmax_col               (      begc:endc )  ) ! col maximum annual depth of thaw
@@ -207,9 +255,17 @@ contains
   allocate(this%watfc_col            (begc:endc,lbj:ubj) ) ! col volumetric soil water at field capacity (nlevsoi)
   allocate(this%sucsat_col           (begc:endc,lbj:ubj) ) ! col minimum soil suction (mm) (nlevgrnd)
   allocate(this%rootfr_patch         (begp:endp,lbj:ubj) ) ! patch fraction of roots in each soil layer (nlevgrnd)
-
+  allocate(this%lithotype_col        (begc:endc))
+  allocate(this%solutionp_vr_col(begc:endc,lbj:ubj))
+  allocate(this%labilep_vr_col(begc:endc,lbj:ubj))
+  allocate(this%secondp_vr_col(begc:endc,lbj:ubj))
+  allocate(this%occlp_vr_col(begc:endc,lbj:ubj))
+  allocate(this%pweath_prof_col(begc:endc,1:ubj))
   allocate(this%dic_prod_vr_col(begc:endc,lbj:ubj))
   allocate(this%doc_prod_vr_col(begc:endc,lbj:ubj))
+  allocate(this%biochem_pmin_vr(begc:endc,lbj:ubj))
+  allocate(this%scalaravg_col(begc:endc))
+  allocate(this%dom_scalar_col(begc:endc)); this%dom_scalar_col(:) = 1._r8
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------
@@ -226,6 +282,54 @@ contains
   if(use_c13_betr)call this%c13flx%reset(value_column)
   if(use_c14_betr)call this%c14flx%reset(value_column)
 
-
   end subroutine reset
+
+  !------------------------------------------------------------------------
+  subroutine summary(this, bounds, lbj, ubj, dz)
+  use tracer_varcon, only : use_c13_betr, use_c14_betr
+  implicit none
+  class(betr_biogeophys_input_type),intent(inout)  :: this
+  type(betr_bounds_type), intent(in) :: bounds
+  integer , intent(in) :: lbj, ubj
+  real(r8), intent(in) :: dz(bounds%begc:bounds%endc,lbj:ubj)
+
+  !integrate
+  call this%c12flx%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj))
+
+  if(use_c13_betr)then
+     call this%c13flx%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj))
+  endif
+
+  if(use_c14_betr)then
+     call this%c14flx%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj))
+  endif
+
+  call this%n14flx%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj))
+
+  call this%p31flx%summary(bounds, lbj, ubj, dz)
+  end subroutine summary
+
+  !------------------------------------------------------------------------
+  subroutine frac_normalize(this, npfts, lbj, ubj)
+  !
+  ! DESCRIPTION
+  ! normalize some fractional data
+  implicit none
+  class(betr_biogeophys_input_type),intent(inout)  :: this
+  integer , intent(in) :: npfts
+  integer , intent(in) :: lbj, ubj
+
+  integer :: j, p
+  real(r8) :: nrmscal
+
+  do j = lbj, ubj
+    nrmscal= sum(this%qflx_rootsoi_frac_patch(1:npfts,j))
+    if(nrmscal/=0._r8)then
+      do p = 1, npfts
+        this%qflx_rootsoi_frac_patch(p,j) = this%qflx_rootsoi_frac_patch(p,j) / nrmscal
+      end do
+    endif
+  enddo
+
+  end subroutine frac_normalize
 end module BeTR_biogeophysInputType

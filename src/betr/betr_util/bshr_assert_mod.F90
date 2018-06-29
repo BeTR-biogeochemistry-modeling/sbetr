@@ -32,7 +32,7 @@ save
 public :: shr_assert
 public :: shr_assert_all
 public :: shr_assert_any
-
+public :: shr_assert_all_ext
 
 interface shr_assert_all
    module procedure shr_assert
@@ -52,6 +52,23 @@ interface shr_assert_all
    module procedure shr_assert_all_7d
 end interface
 
+interface shr_assert_all_ext
+   module procedure shr_assert_ext
+   ! DIMS 1,2,3,4,5,6,7
+   module procedure shr_assert_all_ext_1d
+   ! DIMS 1,2,3,4,5,6,7
+   module procedure shr_assert_all_ext_2d
+   ! DIMS 1,2,3,4,5,6,7
+   module procedure shr_assert_all_ext_3d
+   ! DIMS 1,2,3,4,5,6,7
+   module procedure shr_assert_all_ext_4d
+   ! DIMS 1,2,3,4,5,6,7
+   module procedure shr_assert_all_ext_5d
+   ! DIMS 1,2,3,4,5,6,7
+   module procedure shr_assert_all_ext_6d
+   ! DIMS 1,2,3,4,5,6,7
+   module procedure shr_assert_all_ext_7d
+end interface
 
 interface shr_assert_any
    module procedure shr_assert
@@ -182,6 +199,105 @@ subroutine shr_assert_all_7d(var, msg, bstatus)
   call shr_assert(all(var), msg, bstatus)
 
 end subroutine shr_assert_all_7d
+
+
+subroutine shr_assert_ext(var, msg)
+
+  use bshr_sys_mod   , only: shr_sys_abort
+  ! Logical being asserted.
+  logical, intent(in) :: var
+  ! Optional error message if assert fails.
+  character(len=*), intent(in) :: msg
+
+  if (.not. var)call shr_sys_abort(msg)
+
+end subroutine shr_assert_ext
+
+! DIMS 1,2,3,4,5,6,7
+
+subroutine shr_assert_all_ext_1d(var, msg)
+
+  ! Logical being asserted.
+  logical, intent(in) :: var(:)
+  ! Optional error message if assert fails.
+  character(len=*), intent(in) :: msg
+
+  call shr_assert_ext(all(var), msg)
+
+end subroutine shr_assert_all_ext_1d
+! DIMS 1,2,3,4,5,6,7
+
+subroutine shr_assert_all_ext_2d(var, msg)
+
+  ! Logical being asserted.
+  logical, intent(in) :: var(:,:)
+  ! Optional error message if assert fails.
+  character(len=*), intent(in) :: msg
+
+  call shr_assert_ext(all(var), msg)
+
+end subroutine shr_assert_all_ext_2d
+! DIMS 1,2,3,4,5,6,7
+
+subroutine shr_assert_all_ext_3d(var, msg)
+
+  ! Logical being asserted.
+  logical, intent(in) :: var(:,:,:)
+  ! Optional error message if assert fails.
+  character(len=*), intent(in) :: msg
+
+  call shr_assert_ext(all(var), msg)
+
+end subroutine shr_assert_all_ext_3d
+! DIMS 1,2,3,4,5,6,7
+
+subroutine shr_assert_all_ext_4d(var, msg)
+
+  ! Logical being asserted.
+  logical, intent(in) :: var(:,:,:,:)
+  ! Optional error message if assert fails.
+  character(len=*), intent(in) :: msg
+
+  call shr_assert_ext(all(var), msg)
+
+end subroutine shr_assert_all_ext_4d
+! DIMS 1,2,3,4,5,6,7
+
+subroutine shr_assert_all_ext_5d(var, msg)
+
+  ! Logical being asserted.
+  logical, intent(in) :: var(:,:,:,:,:)
+  ! Optional error message if assert fails.
+  character(len=*), intent(in) :: msg
+
+  call shr_assert_ext(all(var), msg)
+
+end subroutine shr_assert_all_ext_5d
+! DIMS 1,2,3,4,5,6,7
+
+subroutine shr_assert_all_ext_6d(var, msg)
+
+  ! Logical being asserted.
+  logical, intent(in) :: var(:,:,:,:,:,:)
+  ! Optional error message if assert fails.
+  character(len=*), intent(in) :: msg
+
+
+  call shr_assert_ext(all(var), msg)
+
+end subroutine shr_assert_all_ext_6d
+! DIMS 1,2,3,4,5,6,7
+
+subroutine shr_assert_all_ext_7d(var, msg)
+
+  ! Logical being asserted.
+  logical, intent(in) :: var(:,:,:,:,:,:,:)
+  ! Optional error message if assert fails.
+  character(len=*), intent(in) :: msg
+
+  call shr_assert_ext(all(var), msg)
+
+end subroutine shr_assert_all_ext_7d
 
 ! DIMS 1,2,3,4,5,6,7
 

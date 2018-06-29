@@ -6,7 +6,6 @@ module ApplicationsFactory
   ! History:
   !  Created by Jinyun Tang, April 28, 2016
   !
-  !
   ! !USES:
   !
   use bshr_kind_mod          , only : r8 => shr_kind_r8
@@ -20,10 +19,11 @@ module ApplicationsFactory
   private
   public :: create_betr_usr_application
   public :: AppLoadParameters
-
+  public :: AppInitParameters
+  public :: AppSetSpinup
 contains
 
-  subroutine create_betr_usr_application(bgc_reaction, plant_soilbgc, method, bstatus)
+  subroutine create_betr_usr_application(bgc_reaction, plant_soilbgc, method, asoibgc, bstatus)
   !DESCRIPTION
   !create betr applications
   !
@@ -33,10 +33,11 @@ contains
   class(bgc_reaction_type),  allocatable, intent(out) :: bgc_reaction
   class(plant_soilbgc_type), allocatable, intent(out) :: plant_soilbgc
   character(len=*),                       intent(in)  :: method
+  logical,                                intent(out) :: asoibgc
   type(betr_status_type), intent(out) :: bstatus
 
 
-  call create_bgc_reaction_type(bgc_reaction, method,bstatus)
+  call create_bgc_reaction_type(bgc_reaction, method,asoibgc,bstatus)
 
   if(bstatus%check_status())return
 
@@ -46,7 +47,7 @@ contains
 
 !-------------------------------------------------------------------------------
 
-  subroutine create_bgc_reaction_type(bgc_reaction, method, bstatus)
+  subroutine create_bgc_reaction_type(bgc_reaction, method, asoibgc, bstatus)
     !
     ! !DESCRIPTION:
     ! create and return an object of bgc_reaction
@@ -56,20 +57,29 @@ contains
     use betr_ctrl       , only : iulog  => biulog
     use betr_constants  , only : betr_errmsg_len
     use BetrStatusType  , only : betr_status_type
-    use BGCReactionsCentECACnpType, only : bgc_reaction_CENTURY_ECACNP_type
+    use ecacnpBGCReactionsType, only : ecacnp_bgc_reaction_type
+    use cdomBGCReactionsType, only : cdom_bgc_reaction_type
+    use SimicBGCReactionsType, only : simic_bgc_reaction_type
     implicit none
     ! !ARGUMENTS:
     class(bgc_reaction_type),  allocatable, intent(inout) :: bgc_reaction
     character(len=*), intent(in)          :: method
     type(betr_status_type), intent(out)   :: bstatus
-
+    logical,                intent(out)   :: asoibgc
     character(len=*), parameter           :: subname = 'create_bgc_reaction_type'
     character(len=betr_errmsg_len) :: msg
 
     call bstatus%reset()
     select case(trim(method))
-    case ("eca_cnp")
-       allocate(bgc_reaction, source=bgc_reaction_CENTURY_ECACNP_type())
+    case ("ecacnp")
+       asoibgc=.true.
+       allocate(bgc_reaction, source=ecacnp_bgc_reaction_type())
+    case ("cdom")
+       asoibgc=.true.
+       allocate(bgc_reaction, source=cdom_bgc_reaction_type())
+    case ("simic")
+       asoibgc=.true.
+       allocate(bgc_reaction, source=simic_bgc_reaction_type())
     case default
        write(msg,*)subname //' ERROR: unknown method: ', method
        msg = trim(msg)//new_line('A')//errMsg(mod_filename, __LINE__)
@@ -88,14 +98,14 @@ contains
   use betr_ctrl       , only : iulog  => biulog
   use betr_constants  , only : betr_errmsg_len
   use BetrStatusType  , only : betr_status_type
-  use PlantSoilBgcCnpType, only : plant_soilbgc_cnp_type
-
+  use ecacnpPlantSoilBGCType, only : ecacnp_plant_soilbgc_type
+  use cdomPlantSoilBGCType, only : cdom_plant_soilbgc_type
+  use SimicPlantSoilBGCType , only : simic_plant_soilbgc_type
   implicit none
   ! !ARGUMENTS:
   class(plant_soilbgc_type), allocatable, intent(inout) :: plant_soilbgc
   character(len=*), intent(in)          :: method
   type(betr_status_type), intent(out)   :: bstatus
-
 
   character(len=*)          , parameter   :: subname = 'create_plant_soilbgc_type'
   character(len=betr_errmsg_len) :: msg
@@ -103,8 +113,12 @@ contains
   call bstatus%reset()
 
   select case(trim(method))
-  case ("eca_cnp")
-     allocate(plant_soilbgc, source=plant_soilbgc_cnp_type())
+  case ("ecacnp")
+     allocate(plant_soilbgc, source=ecacnp_plant_soilbgc_type())
+  case ("cdom")
+     allocate(plant_soilbgc, source=cdom_plant_soilbgc_type())
+  case ("simic")
+     allocate(plant_soilbgc, source=simic_plant_soilbgc_type())
   case default
      write(msg, *)subname //' ERROR: unknown method: ', method
      msg = trim(msg)//new_line('A')//errMsg(mod_filename, __LINE__)
@@ -113,26 +127,60 @@ contains
 
   end subroutine create_plant_soilbgc_type
 
-
   !-------------------------------------------------------------------------------
-  subroutine AppLoadParameters(bgc_namelist_buffer, reaction_method, bstatus)
+  subroutine AppLoadParameters(ncid, bstatus)
   !
   ! DESCRIPTION
   ! read in the parameters for specified bgc implementation
-  use BiogeoConType, only : bgc_con_eca
+  use ecacnpParaType   , only : ecacnp_para
+  use cdomParaType   , only : cdom_para
+  use simicParaType  , only : simic_para
+  use tracer_varcon  , only : reaction_method
+  use ncdio_pio      , only : file_desc_t
+  use BetrStatusType , only : betr_status_type
+  implicit none
+  type(file_desc_t), intent(inout)  :: ncid
+  type(betr_status_type) , intent(out) :: bstatus
+
+   select case (trim(reaction_method))
+   case ("ecacnp")
+     call ecacnp_para%readPars(ncid, bstatus)
+   case ("cdom")
+     call cdom_para%readPars(ncid, bstatus)
+   case ("simic")
+     call simic_para%readPars(ncid, bstatus)
+   case default
+     !do nothing
+   end select
+
+  end subroutine  AppLoadParameters
+
+  !-------------------------------------------------------------------------------
+  subroutine AppInitParameters(bgc_namelist_buffer, reaction_method, bstatus)
+  !
+  ! DESCRIPTION
+  ! read in the parameters for specified bgc implementation
+  use ecacnpParaType   , only : ecacnp_para
+  use cdomParaType   , only : cdom_para
+  use simicParaType  , only : simic_para
   use betr_constants , only : betr_namelist_buffer_size_ext
   use BetrStatusType , only : betr_status_type
   implicit none
-  character(len=betr_namelist_buffer_size_ext), intent(in) :: bgc_namelist_buffer
+  character(len=*), intent(in) :: bgc_namelist_buffer
   character(len=*), intent(in) :: reaction_method
   type(betr_status_type), intent(out)   :: bstatus
   character(len=255) :: msg
 
-  call bstatus%reset()
+   call bstatus%reset()
+
    select case (trim(reaction_method))
-   case ("eca_cnp")
-     call  bgc_con_eca%Init(bgc_namelist_buffer, bstatus)
+   case ("ecacnp")
+     call  ecacnp_para%Init(bgc_namelist_buffer, bstatus)
      !do nothing
+   case ("cdom")
+     call cdom_para%Init(bgc_namelist_buffer, bstatus)
+   case ("simic")
+     call simic_para%Init(bgc_namelist_buffer, bstatus)
    case default
      if(trim(bgc_namelist_buffer)=='none')then
        !do nothing
@@ -142,5 +190,21 @@ contains
      endif
    end select
 
-  end subroutine  AppLoadParameters
+  end subroutine  AppInitParameters
+  !-------------------------------------------------------------------------------
+  subroutine AppSetSpinup()
+
+  use ecacnpParaType  , only : ecacnp_para
+  use cdomParaType    , only : cdom_para
+  use tracer_varcon  , only : reaction_method
+  implicit none
+
+  select case (trim(reaction_method))
+  case ("ecacnp")
+     call  ecacnp_para%set_spinup_factor()
+  case ("cdom")
+     call cdom_para%set_spinup_factor()
+  end select
+
+  end subroutine AppSetSpinup
 end module ApplicationsFactory

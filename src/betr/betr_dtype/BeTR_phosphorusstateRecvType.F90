@@ -1,6 +1,7 @@
 module BeTR_phosphorusstateRecvType
   use bshr_kind_mod  , only : r8 => shr_kind_r8
   use betr_decompMod , only : betr_bounds_type
+  use tracer_varcon  , only : reaction_method
 implicit none
   character(len=*), private, parameter :: mod_filename = &
        __FILE__
@@ -12,13 +13,20 @@ implicit none
     real(r8), pointer :: totsomp_1m_col(:) => null()
     real(r8), pointer :: sminp_col(:) => null()
     real(r8), pointer :: occlp_col(:) => null()
+    real(r8), pointer :: domp_col(:) => null()
 
     real(r8), pointer :: cwdp_vr_col(:,:) => null()
     real(r8), pointer :: totlitp_vr_col(:,:) => null()
     real(r8), pointer :: totsomp_vr_col(:,:) => null()
     real(r8), pointer :: sminp_vr_col(:,:) => null()
     real(r8), pointer :: occlp_vr_col(:,:) => null()
-
+    real(r8), pointer :: som1p_col(:) => null()
+    real(r8), pointer :: som2p_col(:) => null()
+    real(r8), pointer :: som3p_col(:) => null()
+    real(r8), pointer :: som1p_vr_col(:,:) => null()
+    real(r8), pointer :: som2p_vr_col(:,:) => null()
+    real(r8), pointer :: som3p_vr_col(:,:) => null()
+    real(r8), pointer :: domp_vr_col(:,:) => null()
   contains
     procedure, public  :: Init
     procedure, private :: InitAllocate
@@ -57,15 +65,22 @@ implicit none
   allocate(this%totsomp_col(begc:endc))
   allocate(this%totlitp_1m_col(begc:endc))
   allocate(this%totsomp_1m_col(begc:endc))
-  allocate(this%sminp_col(begc:endc))
-  allocate(this%occlp_col(begc:endc))
-
+  allocate(this%sminp_col(begc:endc));
+  allocate(this%occlp_col(begc:endc));
+  allocate(this%domp_col(begc:endc));
+  allocate(this%som1p_col(begc:endc)); this%som1p_col(:) = nan
+  allocate(this%som2p_col(begc:endc)); this%som2p_col(:) = nan
+  allocate(this%som3p_col(begc:endc)); this%som3p_col(:) = nan
+  allocate(this%som1p_vr_col(begc:endc, lbj:ubj));  this%som1p_vr_col(:,:) = nan
+  allocate(this%som2p_vr_col(begc:endc, lbj:ubj));  this%som2p_vr_col(:,:) = nan
+  allocate(this%som3p_vr_col(begc:endc, lbj:ubj));  this%som3p_vr_col(:,:) = nan
 
   allocate(this%cwdp_vr_col(begc:endc,lbj:ubj)); this%cwdp_vr_col(:,:) =nan
-  allocate(this%totlitp_vr_col(begc:endc,lbj:ubj)); this%totlitp_vr_col(:,:)=nan 
-  allocate(this%totsomp_vr_col(begc:endc,lbj:ubj)); this%totsomp_vr_col(:,:)=nan 
+  allocate(this%totlitp_vr_col(begc:endc,lbj:ubj)); this%totlitp_vr_col(:,:)=nan
+  allocate(this%totsomp_vr_col(begc:endc,lbj:ubj)); this%totsomp_vr_col(:,:)=nan
   allocate(this%sminp_vr_col(begc:endc,lbj:ubj)); this%sminp_vr_col(:,:) =nan
-  allocate(this%occlp_vr_col(begc:endc,lbj:ubj)); this%occlp_vr_col(:,:)=nan 
+  allocate(this%occlp_vr_col(begc:endc,lbj:ubj)); this%occlp_vr_col(:,:)=nan
+  allocate(this%domp_vr_col(begc:endc,lbj:ubj)); this%domp_vr_col(:,:) = nan
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------
@@ -80,6 +95,11 @@ implicit none
   this%sminp_vr_col(:,:) = value_column
   this%occlp_vr_col(:,:) = value_column
 
+  this%som1p_vr_col(:,:) = value_column
+  this%som2p_vr_col(:,:) = value_column
+  this%som3p_vr_col(:,:) = value_column
+
+  this%domp_vr_col(:,:) = value_column
   end subroutine reset
 
   !------------------------------------------------------------------------
@@ -102,14 +122,32 @@ implicit none
   this%totsomp_1m_col(:) = 0._r8
   this%sminp_col(:) = 0._r8
   this%occlp_col(:) = 0._r8
+  this%domp_col(:) = 0._r8
+  this%som1p_col(:) = 0._r8
+  this%som2p_col(:) = 0._r8
+  this%som3p_col(:) = 0._r8
+  do j = lbj, ubj
+    do c = bounds%begc, bounds%endc
+      this%som1p_col(c) =   this%som1p_col(c) + dz(c,j)*this%som1p_vr_col(c,j)
+      this%som2p_col(c) =   this%som2p_col(c) + dz(c,j)*this%som2p_vr_col(c,j)
+      this%som3p_col(c) =   this%som3p_col(c) + dz(c,j)*this%som3p_vr_col(c,j)
+      this%domp_col(c)  =   this%domp_col(c) + dz(c,j)*this%domp_vr_col(c,j)
+    enddo
+  enddo
 
   do j = lbj, ubj
     do c = bounds%begc, bounds%endc
       this%cwdp_col(c) = this%cwdp_col(c) + dz(c,j) * this%cwdp_vr_col(c,j)
       this%totlitp_col(c) = this%totlitp_col(c) + dz(c,j)*this%totlitp_vr_col(c,j)
+      this%totsomp_vr_col(c,j) = this%som1p_vr_col(c,j) + this%som2p_vr_col(c,j) + &
+         this%som3p_vr_col(c,j) + this%domp_vr_col(c,j)
       this%totsomp_col(c) = this%totsomp_col(c) + dz(c,j)*this%totsomp_vr_col(c,j)
       this%sminp_col(c) = this%sminp_col(c) + dz(c,j)*this%sminp_vr_col(c,j)
       this%occlp_col(c) = this%occlp_col(c) + dz(c,j)*this%occlp_vr_col(c,j)
+
+      this%som1p_col(c) =   this%som1p_col(c) + dz(c,j)*this%som1p_vr_col(c,j)
+      this%som2p_col(c) =   this%som2p_col(c) + dz(c,j)*this%som2p_vr_col(c,j)
+      this%som3p_col(c) =   this%som3p_col(c) + dz(c,j)*this%som3p_vr_col(c,j)
       if(zs(c,j)<1._r8)then
         if(zs(c,j+1)>1._r8)then
           this%totlitp_1m_col(c) = this%totlitp_1m_col(c) + (dz(c,j)-(zs(c,j)-1._r8))*this%totlitp_vr_col(c,j)

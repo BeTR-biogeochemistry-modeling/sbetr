@@ -30,12 +30,6 @@ else
 	CONFIG_FLAGS += -DBGC=${BGC}
 endif
 
-ifeq ($(UGM), not-set)
-	CONFIG_FLAGS += -DUGM=0
-else
-	CONFIG_FLAGS += -DUGM=1
-endif
-
 ifeq ($(SBETR), not-set)
 	CONFIG_FLAGS += -DSBETR=1
 endif
@@ -82,11 +76,11 @@ endif
 
 # Precision.
 ifneq ($(precision), not-set)
-  BUILDDIR := ${BUILDDIR}-$(precision)
-  CONFIG_FLAGS += -DBETR_PRECISION=$(precision)
-else
   BUILDDIR := ${BUILDDIR}-double
   CONFIG_FLAGS += -DBETR_PRECISION=double
+else
+  BUILDDIR := ${BUILDDIR}-$(precision)
+  CONFIG_FLAGS += -DBETR_PRECISION=$(precision)
 endif
 
 BUILDDIR := ${BUILDDIR}-`basename ${CC}`
@@ -97,8 +91,8 @@ endif
 
 # Debugging symbols
 ifeq ($(debug), not-set)
-  BUILDDIR := ${BUILDDIR}-Debug
-  CONFIG_FLAGS += -DCMAKE_BUILD_TYPE=Debug
+  BUILDDIR := ${BUILDDIR}-Release
+  CONFIG_FLAGS += -DCMAKE_BUILD_TYPE=Release
 else
   ifeq ($(debug), 0)
     BUILDDIR := ${BUILDDIR}-Release

@@ -1072,7 +1072,7 @@ def main(options):
         test_root = os.path.join(cwd, 'tests')
         filenames = find_all_config_files(test_root)
 
-    input_dir = os.path.join(cwd, 'input-data')
+    input_dir = os.path.join(cwd, '../input_data')
     if not os.path.isdir(input_dir):
         msg = ('  DEV_ERROR: input data directory does not exist:'
                '\n    {0}'.format(input_dir))

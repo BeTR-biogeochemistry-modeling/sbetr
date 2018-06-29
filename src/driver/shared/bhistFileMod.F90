@@ -47,7 +47,7 @@ contains
 
   !define the time dimension
   call ncd_defvar(ncid, 'time',ncd_float ,dim1name='time',  &
-      long_name='time', units = 'none',   &
+      long_name='time', units = 'days',   &
       missing_value=spval, fill_value=spval)
   end subroutine hist_file_create
 

@@ -19,6 +19,8 @@ implicit none
     real(r8), pointer :: secondp_to_occlp_col(:) => null()
     real(r8), pointer :: supplement_to_sminp_vr_col(:,:) => null()
     real(r8), pointer :: secondp_to_occlp_vr_col(:,:) => null()
+    real(r8), pointer :: pflx_minp_weathering_po4_vr_col(:,:) => null()
+    real(r8), pointer :: pflx_minp_weathering_po4_col(:) => null()
   contains
     procedure, public  :: Init
     procedure, private :: InitAllocate
@@ -66,6 +68,8 @@ implicit none
   allocate(this%supplement_to_sminp_vr_col(begc:endc, lbj:ubj))
   allocate(this%secondp_to_occlp_vr_col(begc:endc, lbj:ubj))
   allocate(this%fire_decomp_ploss_vr_col(begc:endc,lbj:ubj))
+  allocate(this%pflx_minp_weathering_po4_vr_col(begc:endc,lbj:ubj))
+  allocate(this%pflx_minp_weathering_po4_col(begc:endc))
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------
@@ -80,7 +84,8 @@ implicit none
   this%som_p_leached_col(:) = value_column
   this%som_p_runoff_col(:) = value_column
   this%som_p_qdrain_col(:) = value_column
-
+  this%pflx_minp_weathering_po4_col(:) = value_column
+  this%pflx_minp_weathering_po4_vr_col(:,:) = value_column
   this%supplement_to_sminp_vr_col(:,:) = value_column
   this%secondp_to_occlp_vr_col(:,:) = value_column
   this%fire_decomp_ploss_vr_col(:,:) = value_column
@@ -98,11 +103,13 @@ implicit none
   this%supplement_to_sminp_col(:) = 0._r8
   this%secondp_to_occlp_col(:) = 0._r8
   this%fire_decomp_ploss_col(:) = 0._r8
+  this%pflx_minp_weathering_po4_col(:) = 0._r8
   do j = lbj, ubj
     do c = bounds%begc, bounds%endc
       this%supplement_to_sminp_col(c) = this%supplement_to_sminp_col(c) + dz(c,j) * this%supplement_to_sminp_vr_col(c,j)
       this%secondp_to_occlp_col(c) = this%secondp_to_occlp_col(c) + dz(c,j) * this%secondp_to_occlp_vr_col(c,j)
       this%fire_decomp_ploss_col(c) = this%fire_decomp_ploss_col(c) + dz(c,j) * this%fire_decomp_ploss_vr_col(c,j)
+      this%pflx_minp_weathering_po4_col(c) = this%pflx_minp_weathering_po4_col(c) + dz(c,j) * this%pflx_minp_weathering_po4_vr_col(c,j)
     enddo
   enddo
 

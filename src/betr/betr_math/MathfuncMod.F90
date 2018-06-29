@@ -20,7 +20,7 @@ module MathfuncMod
   public :: cumsum
   public :: swap
   public :: minmax
-  public :: cumdif
+  public :: cumpdiff
   public :: diff
   public :: safe_div
   public :: dot_sum
@@ -226,7 +226,7 @@ contains
 
     call bstatus%reset()
     SHR_ASSERT_ALL((size(x)   == size(y)), errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     n = size(x)
 
     y(1)=x(1)
@@ -253,12 +253,13 @@ contains
     integer :: idim_loc
 
     call bstatus%reset()
+    idim_loc=1
     if(present(idim))idim_loc=idim
 
     SHR_ASSERT_ALL((size(x,1)   == size(y,1)),        errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((size(x,2)   == size(y,2)),        errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     if(idim_loc == 1)then
        !summation along dimension 1
        n = size(x,2)
@@ -278,7 +279,7 @@ contains
   end subroutine cumsum_m
 
   !-------------------------------------------------------------------------------
-  subroutine cumdif(x, y, bstatus)
+  subroutine cumpdiff(x, y, bstatus)
     !
     ! !DESCRIPTION:
     ! do nearest neighbor finite difference
@@ -294,14 +295,14 @@ contains
     integer :: j
     call bstatus%reset()
     SHR_ASSERT_ALL((size(x)   == size(y)),  errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
 
     n = size(x)
-    call diff(x,y(2:n), bstatus)
-    if(bstatus%check_status())return
-    y(1)=x(1)
+    y(1)=max(x(1),0._r8)
+    do j = 2, n
+      y(j) = max(x(j)-x(j-1),0._r8)
+    enddo
+  end subroutine cumpdiff
 
-  end subroutine cumdif
   !-------------------------------------------------------------------------------
 
   subroutine diff(x,y, bstatus)
@@ -321,7 +322,6 @@ contains
 
     call bstatus%reset()
     SHR_ASSERT_ALL((size(x)   == size(y)+1),        errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
 
     n = size(x)
     do j = 2, n
@@ -471,7 +471,7 @@ contains
 
     call bstatus%reset()
     SHR_ASSERT_ALL((size(p)   == size(v)), errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     sz = size(p)
     ans = 1._r8
     do j = 1, sz
@@ -501,20 +501,22 @@ contains
 
     call bstatus%reset()
     SHR_ASSERT_ALL((ubound(A)           == (/m,n/)), errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(AP)          == (/m,n/)), errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(AD)          == (/m,n/)), errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
 
-    AP(:,:) = 0._r8
-    AD(:,:) = 0._r8
-
-    where(A>0._r8)
-       AP=A
-    elsewhere
-       AD=A
-    endwhere
+    do j=1, n
+      do i = 1, m
+        if(A(i,j)>0._r8)then
+          AP(i,j)=A(i,j)
+          AD(i,j)=0._r8
+        else
+          AP(i,j)=0._r8
+          AD(i,j)=A(i,j)
+        endif
+      enddo
+    enddo
   end subroutine pd_decomp
   !--------------------------------------------------------------------------------
 
@@ -560,14 +562,17 @@ contains
     real(r8) :: yt
     integer  :: j
     real(r8),parameter :: p_par=0.999_r8
+    real(r8), parameter :: tiny_val=-1.e-14_r8
+    real(r8) :: tmp
 
     call bstatus%reset()
     lneg =.false.
 
     do j = 1, nprimvars
        yt = ystate(j) + (p_dt(j)+d_dt(j))*dtime
-       if(yt<0._r8)then
-          pscal(j) = -(p_dt(j)*dtime+ystate(j))/(dtime*d_dt(j))*p_par
+       if(yt<tiny_val)then
+          tmp = dtime*d_dt(j)
+          pscal(j) = -(p_dt(j)*dtime+ystate(j))/tmp*p_par
           lneg=.true.
           if(pscal(j)<0._r8)then
              msg = 'ngeative p in calc_state_pscal'//errmsg(mod_filename, __LINE__)

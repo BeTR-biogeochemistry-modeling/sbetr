@@ -60,7 +60,7 @@ contains
     class(TracerCoeff_type), intent(inout) :: this
     type(bounds_type)    , intent(in) :: bounds
     integer              , intent(in) :: lbj, ubj
-    type(BeTRTracer_Type), intent(in) :: betrtracer_vars
+    type(BeTRTracer_Type), intent(inout) :: betrtracer_vars
 
     call this%InitAllocate(bounds, lbj, ubj, betrtracer_vars)
     call this%tracer_base_init()
@@ -85,7 +85,7 @@ contains
     class(TracerCoeff_type), intent(inout) :: this
     type(bounds_type)    , intent(in)    :: bounds
     character(len=*)     , intent(in)    :: flag                                         ! 'read' or 'write'
-    type(BeTRTracer_Type), intent(in)    :: betrtracer_vars
+    type(BeTRTracer_Type), intent(inout)   :: betrtracer_vars
     !
     ! !LOCAL VARIABLES:
     integer :: j,c ! indices
@@ -170,11 +170,11 @@ contains
     !use shr_infnan_mod, only : nan => shr_infnan_nan, assignment(=)
     use betr_varcon    , only : spval => bspval
     use BeTRTracerType , only : BeTRTracer_Type
-
+    use betr_constants  , only : betr_var_name_length
     !
     ! !ARGUMENTS:
     class(TracerCoeff_type), intent(inout) :: this
-    type(BeTRTracer_Type), intent(in) :: betrtracer_vars
+    type(BeTRTracer_Type), intent(inout) :: betrtracer_vars
     !
     ! !LOCAL VARIABLES:
     integer :: begc, endc
@@ -182,6 +182,7 @@ contains
     real(r8), pointer :: data2dptr(:,:) ! temp. pointers for slicing larger arrays
     real(r8), pointer :: data1dptr(:)   ! temp. pointers for slicing larger arrays
     integer :: num2d, num1d, it
+    character(len=betr_var_name_length) :: tracername
     !use the interface provided from CLM
     associate(                                                                     &
          ntracer_groups       => betrtracer_vars%ntracer_groups                  , &
@@ -189,44 +190,44 @@ contains
          ngwmobile_tracer_groups    => betrtracer_vars%ngwmobile_tracer_groups   , &
          nsolid_equil_tracers => betrtracer_vars%nsolid_equil_tracers            , &
          is_volatile          => betrtracer_vars%is_volatile                     , &
-         volatilegroupid      => betrtracer_vars%volatilegroupid                 , &
-         tracernames          => betrtracer_vars%tracernames                       &
+         volatilegroupid      => betrtracer_vars%volatilegroupid                   &
          )
 
      num2d = 0; num1d= 0
      do it = 1, 2
        do jj = 1, ntracer_groups
          trcid = tracer_group_memid(jj,1)
+         tracername =  betrtracer_vars%get_tracername(trcid)
          if(jj <= ngwmobile_tracer_groups)then
 
             if(is_volatile(trcid))then
                kk = volatilegroupid(jj)
 
-               call this%add_hist_var1d (it, num1d, fname='SCAL_ARENCHYMA_'//tracernames(trcid), units='none',                &
-                    avgflag='A', long_name='scaling factor for tracer transport through arenchyma for '//trim(tracernames(trcid)), &
+               call this%add_hist_var1d (it, num1d, fname='SCAL_ARENCHYMA_'//tracername, units='none',                &
+                    avgflag='A', long_name='scaling factor for tracer transport through arenchyma for '//trim(tracername), &
                     default='inactive')
 
-               call this%add_hist_var1d (it, num1d, fname='ARENCHYMA_'//tracernames(trcid), units='m/s',                         &
-                    avgflag='A', long_name='conductance for tracer transport through arenchyma for '//trim(tracernames(trcid)),    &
+               call this%add_hist_var1d (it, num1d, fname='ARENCHYMA_'//tracername, units='m/s',                         &
+                    avgflag='A', long_name='conductance for tracer transport through arenchyma for '//trim(tracername),    &
                     default='inactive')
 
-               call this%add_hist_var1d (it, num1d, fname='CDIFF_TOPSOI_'//tracernames(trcid), units='none',                     &
-                    avgflag='A', long_name='gas diffusivity in top soil layer for '//trim(tracernames(trcid)),                     &
+               call this%add_hist_var1d (it, num1d, fname='CDIFF_TOPSOI_'//tracername, units='none',                     &
+                    avgflag='A', long_name='gas diffusivity in top soil layer for '//trim(tracername),                     &
                     default='inactive')
 
-               call this%add_hist_var2d (it, num2d, fname='CGAS2BULK_'//tracernames(trcid), units='none', type2d='levtrc',          &
-                    avgflag='A', long_name='converting factor from gas to bulk phase for '//trim(tracernames(trcid)),              &
+               call this%add_hist_var2d (it, num2d, fname='CGAS2BULK_'//tracername, units='none', type2d='levtrc',          &
+                    avgflag='A', long_name='converting factor from gas to bulk phase for '//trim(tracername),              &
                     default='inactive')
             endif
 
-            call this%add_hist_var2d (it, num2d, fname='CAQU2BULK_vr_'//tracernames(trcid), units='none', type2d='levtrc',            &
-                 avgflag='A', long_name='converting factor from aqeous to bulk phase for '//trim(tracernames(trcid)),              &
+            call this%add_hist_var2d (it, num2d, fname='CAQU2BULK_vr_'//tracername, units='none', type2d='levtrc',            &
+                 avgflag='A', long_name='converting factor from aqeous to bulk phase for '//trim(tracername),              &
                  default='inactive')
 
          endif
 
-         call this%add_hist_var2d (it, num2d, fname='HMCONDC_vr_'//tracernames(trcid), units='none', type2d='levtrc',            &
-              avgflag='A', long_name='bulk conductance for '//trim(tracernames(trcid)),                           &
+         call this%add_hist_var2d (it, num2d, fname='HMCONDC_vr_'//tracername, units='none', type2d='levtrc',            &
+              avgflag='A', long_name='bulk conductance for '//trim(tracername),                           &
               default='inactive')
       enddo
       if(it==1)call this%alloc_hist_list(num1d, num2d)

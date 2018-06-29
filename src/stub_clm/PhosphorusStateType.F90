@@ -30,7 +30,10 @@ implicit none
     real(r8), pointer :: occlp_vr_col                 (:,:) => null()      ! col (gP/m3) vertically-resolved soil occluded mineral P
     real(r8), pointer :: primp_vr_col                 (:,:)  => null()     ! col (gP/m3) vertically-resolved soil parimary mineral P
     real(r8), pointer :: sminp_vr_col                 (:,:)  => null()     ! col (gP/m3) vertically-resolved soil total mineral P, diagnostic
-
+    real(r8), pointer :: som1p_col                    (:) => null()
+    real(r8), pointer :: som2p_col                    (:) => null()
+    real(r8), pointer :: som3p_col                    (:) => null()
+    real(r8), pointer :: domp_col                     (:) => null()
   contains
 
     procedure, public  :: Init
@@ -72,26 +75,33 @@ contains
     begc = bounds%begc; endc= bounds%endc
     begp = bounds%begp; endp= bounds%endp
 
-    allocate(this%decomp_ppools_col        (begc:endc,1:ndecomp_pools))   ; this%decomp_ppools_col        (:,:) = nan
-    allocate(this%solutionp_col            (begc:endc))                   ; this%solutionp_col            (:)   = nan
-    allocate(this%solutionp_col            (begc:endc))                   ; this%solutionp_col            (:)   = nan
-    allocate(this%labilep_col              (begc:endc))                   ; this%labilep_col              (:)   = nan
-    allocate(this%secondp_col              (begc:endc))                   ; this%secondp_col              (:)   = nan
-    allocate(this%occlp_col                (begc:endc))                   ; this%occlp_col                (:)   = nan
-    allocate(this%primp_col                (begc:endc))                   ; this%primp_col                (:)   = nan
-    allocate(this%cwdp_col                 (begc:endc))                   ; this%cwdp_col                 (:)   = nan
-    allocate(this%sminp_col                (begc:endc))                   ; this%sminp_col                (:)   = nan
-    allocate(this%totecosysp_col           (begc:endc))                   ; this%totecosysp_col           (:)   = nan
-    allocate(this%totcolp_col              (begc:endc))                   ; this%totcolp_col              (:)   = nan
+    allocate(this%decomp_ppools_col        (begc:endc,1:ndecomp_pools))   ; this%decomp_ppools_col        (:,:) = spval
+    allocate(this%solutionp_col            (begc:endc))                   ; this%solutionp_col            (:)   = spval
+    allocate(this%solutionp_col            (begc:endc))                   ; this%solutionp_col            (:)   = spval
+    allocate(this%labilep_col              (begc:endc))                   ; this%labilep_col              (:)   = spval
+    allocate(this%secondp_col              (begc:endc))                   ; this%secondp_col              (:)   = spval
+    allocate(this%occlp_col                (begc:endc))                   ; this%occlp_col                (:)   = spval
+    allocate(this%primp_col                (begc:endc))                   ; this%primp_col                (:)   = spval
+    allocate(this%cwdp_col                 (begc:endc))                   ; this%cwdp_col                 (:)   = spval
+    allocate(this%sminp_col                (begc:endc))                   ; this%sminp_col                (:)   = spval
+    allocate(this%totecosysp_col           (begc:endc))                   ; this%totecosysp_col           (:)   = spval
+    allocate(this%totcolp_col              (begc:endc))                   ; this%totcolp_col              (:)   = spval
 
-    allocate(this%decomp_ppools_vr_col(begc:endc,1:nlevdecomp_full,1:ndecomp_pools)); this%decomp_ppools_vr_col(:,:,:)= nan
-    allocate(this%solutionp_vr_col         (begc:endc,1:nlevdecomp_full)) ; this%solutionp_vr_col         (:,:) = nan
-    allocate(this%labilep_vr_col           (begc:endc,1:nlevdecomp_full)) ; this%labilep_vr_col           (:,:) = nan
-    allocate(this%secondp_vr_col           (begc:endc,1:nlevdecomp_full)) ; this%secondp_vr_col           (:,:) = nan
-    allocate(this%occlp_vr_col             (begc:endc,1:nlevdecomp_full)) ; this%occlp_vr_col             (:,:) = nan
-    allocate(this%primp_vr_col             (begc:endc,1:nlevdecomp_full)) ; this%primp_vr_col             (:,:) = nan
-    allocate(this%sminp_vr_col             (begc:endc,1:nlevdecomp_full)) ; this%sminp_vr_col             (:,:) = nan
-
+    allocate(this%decomp_ppools_vr_col(begc:endc,1:nlevdecomp_full,1:ndecomp_pools)); this%decomp_ppools_vr_col(:,:,:)= spval
+    allocate(this%solutionp_vr_col         (begc:endc,1:nlevdecomp_full)) ; this%solutionp_vr_col         (:,:) = spval
+    allocate(this%labilep_vr_col           (begc:endc,1:nlevdecomp_full)) ; this%labilep_vr_col           (:,:) = spval
+    allocate(this%secondp_vr_col           (begc:endc,1:nlevdecomp_full)) ; this%secondp_vr_col           (:,:) = spval
+    allocate(this%occlp_vr_col             (begc:endc,1:nlevdecomp_full)) ; this%occlp_vr_col             (:,:) = spval
+    allocate(this%primp_vr_col             (begc:endc,1:nlevdecomp_full)) ; this%primp_vr_col             (:,:) = spval
+    allocate(this%sminp_vr_col             (begc:endc,1:nlevdecomp_full)) ; this%sminp_vr_col             (:,:) = spval
+    allocate(this%totlitp_col (begc:endc)); this%totlitp_col(:) = spval
+    allocate(this%totsomp_col(begc:endc)); this%totsomp_col(:) = spval
+    allocate(this%totlitp_1m_col(begc:endc)); this%totlitp_1m_col(:) = spval
+    allocate(this%totsomp_1m_col(begc:endc)); this%totsomp_1m_col(:) = spval
+    allocate(this%som1p_col(begc:endc)); this%som1p_col(:) = spval
+    allocate(this%som2p_col(begc:endc)); this%som2p_col(:) = spval
+    allocate(this%som3p_col(begc:endc)); this%som3p_col(:) = spval
+    allocate(this%domp_col(begc:endc)); this%domp_col(:) = spval
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------

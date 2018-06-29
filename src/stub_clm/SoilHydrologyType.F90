@@ -11,7 +11,7 @@ implicit none
 
   real(r8), pointer :: fracice_col       (:,:)  => null() ! col fractional impermeability (-)
   real(r8), pointer :: zwts_col           (:)  => null()  ! the shallower between zwt_perch and zwt
-  real(r8), pointer :: qcharge_col      (:)  => null()   ! bottom of soil col flux, (mm/s)  
+  real(r8), pointer :: qcharge_col      (:)  => null()   ! bottom of soil col flux, (mm/s)
   contains
     procedure, public  :: Init
     procedure, private :: InitAllocate
@@ -37,6 +37,7 @@ implicit none
     ! Initialize module data structure
     !
     use shr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
+    use clm_varcon, only : spval
     ! !ARGUMENTS:
     class(soilhydrology_type) :: this
     type(bounds_type), intent(in) :: bounds
@@ -51,8 +52,8 @@ implicit none
     begc = bounds%begc; endc= bounds%endc
     lbj  = bounds%lbj; ubj = bounds%ubj
 
-    allocate(this%fracice_col       (begc:endc,lbj:ubj))        ; this%fracice_col       (:,:)   = nan
-    allocate(this%zwts_col           (begc:endc))                ; this%zwts_col         (:)     = nan
-    allocate(this%qcharge_col      (begc:endc))                 ; this%qcharge_col      (:)     = nan
+    allocate(this%fracice_col       (begc:endc,lbj:ubj))        ; this%fracice_col       (:,:)   = spval
+    allocate(this%zwts_col           (begc:endc))                ; this%zwts_col         (:)     = spval
+    allocate(this%qcharge_col      (begc:endc))                 ; this%qcharge_col      (:)     = spval
   end subroutine InitAllocate
 end Module SoilHydrologyType

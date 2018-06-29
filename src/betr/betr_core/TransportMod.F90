@@ -93,9 +93,9 @@ contains
     integer :: n
     external :: odefun
 
-    ti = t
     dt05 = dt * 0.5_r8
 
+    ti = t
     call trajectory(extra, y0, dt, ti, neq, k1)
 
     y(:) = y0(:)
@@ -106,6 +106,7 @@ contains
 
     y(:) = y0(:)
     call daxpy(neq, dt, k2, 1, y, 1)
+
   end subroutine ode_rk2
   !-------------------------------------------------------------------------------
   function create_Extra_type()
@@ -179,7 +180,7 @@ contains
     n2 = size(us_t)
 
     SHR_ASSERT_ALL((n1 == n2),        errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     select type(this)
     class is (Extra_type)
       this%zi(1:n1) = zi_t
@@ -250,13 +251,12 @@ contains
     integer :: n, c, fc
     call bstatus%reset()
     SHR_ASSERT_ALL((ubound(jtop)          == (/bounds%endc/)),      errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(dz)            == (/bounds%endc, ubj/)), errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(bulkdiffus)    == (/bounds%endc, ubj/)), errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(hmconductance) == (/bounds%endc, ubj-1/)), errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
 
     do n=lbj, ubj-1
        do fc = 1, numfl
@@ -318,69 +318,68 @@ contains
 
     call bstatus%reset()
     SHR_ASSERT_ALL((ubound(jtop)            == (/bounds%endc/)),        errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(Rfactor,1)     == bounds%endc),   errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(Rfactor,2)     == ubj),   errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(hmconductance,1)   == bounds%endc), errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(hmconductance,2)   == ubj-1), errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(dz,1)           == bounds%endc),   errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(dz,2)           == ubj),   errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(dtime)           == (/bounds%endc/)),        errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(condc_toplay)    == (/bounds%endc/)),        errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(update_col)      == (/bounds%endc/)),        errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(source,1)    == bounds%endc), errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(source,2)    == ubj), errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(source,3)    == ntrcs), errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(rt,1)       == bounds%endc), errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(rt,2)       ==  ubj), errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(rt,3)       == ntrcs), errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(trcin_mobile,1)  == bounds%endc), errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(trcin_mobile,2)  == ubj), errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(trcin_mobile,3)  == ntrcs), errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(bot_concflx,1)     == bounds%endc)  , errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(bot_concflx,2)     == 2)  , errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(bot_concflx,3)     == ntrcs)  , errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(trc_concflx_air,1) == bounds%endc)  , errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(trc_concflx_air,2) == 2)  , errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(trc_concflx_air,3) == ntrcs)  , errMsg(filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
 
     if(.not. source_only) then
        SHR_ASSERT_ALL((ubound(at,1)            == bounds%endc),   errMsg(filename,__LINE__), bstatus)
-       if(bstatus%check_status())return
+
        SHR_ASSERT_ALL((ubound(at,2)            == ubj),   errMsg(filename,__LINE__), bstatus)
-       if(bstatus%check_status())return
+
        SHR_ASSERT_ALL((ubound(bt,1)            == bounds%endc),   errMsg(filename,__LINE__), bstatus)
-       if(bstatus%check_status())return
+
        SHR_ASSERT_ALL((ubound(bt,2)            == ubj),   errMsg(filename,__LINE__), bstatus)
-       if(bstatus%check_status())return
+
        SHR_ASSERT_ALL((ubound(ct,1)            == bounds%endc),   errMsg(filename,__LINE__), bstatus)
-       if(bstatus%check_status())return
+
        SHR_ASSERT_ALL((ubound(ct,2)            == ubj),   errMsg(filename,__LINE__), bstatus)
-       if(bstatus%check_status())return
+
     endif
 
     ! FIXME(bja, 201604) this logic should be moved to initialization
@@ -392,7 +391,6 @@ contains
        botbc_ltype = botbc_type
        if(botbc_type==bndcond_as_conc)then
           SHR_ASSERT_ALL((ubound(condc_botlay)    == (/bounds%endc/)), errMsg(filename,__LINE__), bstatus)
-         if(bstatus%check_status())return
        endif
     else
        botbc_ltype = bndcond_as_flux
@@ -518,34 +516,34 @@ contains
    integer :: kk, fc, c
    call bstatus%reset()
    SHR_ASSERT_ALL((ubound(jtop)              == (/bounds%endc/))       , errMsg(filename,__LINE__), bstatus)
-   if(bstatus%check_status())return
+
    SHR_ASSERT_ALL((ubound(dtime)             == (/bounds%endc/))       , errMsg(filename,__LINE__), bstatus)
-   if(bstatus%check_status())return
+
    SHR_ASSERT_ALL((ubound(update_col)        == (/bounds%endc/))       , errMsg(filename,__LINE__), bstatus)
-   if(bstatus%check_status())return
+
    SHR_ASSERT_ALL((ubound(condc_toplay)      == (/bounds%endc/))       , errMsg(filename,__LINE__), bstatus)
-   if(bstatus%check_status())return
+
    SHR_ASSERT_ALL((ubound(dz)                == (/bounds%endc, ubj/))  , errMsg(filename,__LINE__), bstatus)
-   if(bstatus%check_status())return
+
    SHR_ASSERT_ALL((ubound(Rfactor   )        == (/bounds%endc, ubj/))  , errMsg(filename,__LINE__), bstatus)
-   if(bstatus%check_status())return
+
    SHR_ASSERT_ALL((ubound(hmconductance)     == (/bounds%endc, ubj-1/)), errMsg(filename,__LINE__), bstatus)
-   if(bstatus%check_status())return
+
    SHR_ASSERT_ALL((ubound(source)            == (/bounds%endc, ubj,  ntrcs/)), errMsg(filename,__LINE__), bstatus)
-   if(bstatus%check_status())return
+
    SHR_ASSERT_ALL((ubound(dtracer)           == (/bounds%endc, ubj, ntrcs/)) , errMsg(filename,__LINE__), bstatus)
-   if(bstatus%check_status())return
+
    SHR_ASSERT_ALL((ubound(trcin_mobile)      == (/bounds%endc, ubj, ntrcs/)) , errMsg(filename,__LINE__), bstatus)
-   if(bstatus%check_status())return
+
    SHR_ASSERT_ALL((ubound(bot_flux    )      == (/bounds%endc, 2, ntrcs/))   , errMsg(filename,__LINE__), bstatus)
-   if(bstatus%check_status())return
+
    SHR_ASSERT_ALL((ubound(trc_concflx_air)   == (/bounds%endc, 2, ntrcs/))   , errMsg(filename,__LINE__), bstatus)
-   if(bstatus%check_status())return
+
    !assemble the tridiagonal maxtrix
    if(present(botbc_type))then
 
      SHR_ASSERT_ALL((ubound(condc_botlay)    == (/bounds%endc/)),        errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      call DiffusTransp_gw_tridiag(bounds, bstatus,lbj, ubj, jtop, numfl, filter, ntrcs, trcin_mobile, &
         Rfactor, hmconductance, dtime, dz, source, trc_concflx_air,&
         condc_toplay, topbc_type, bot_flux, update_col, source_only=.false.,&
@@ -603,49 +601,48 @@ contains
 
      call bstatus%reset()
      SHR_ASSERT_ALL((ubound(lbn)           == (/bounds%endc/))       , errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(hmconductance,1) == bounds%endc), errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(hmconductance,2) == ubj-1), errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(dz,1)            == bounds%endc)  , errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(dz,2)            == ubj)  , errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(dtime_col)     == (/bounds%endc/))       , errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(update_col)    == (/bounds%endc/))       , errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(at,1)          == bounds%endc)  , errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(at,2)          == ubj)  , errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(bt,1)         == bounds%endc)  , errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(bt,2)         == ubj)  , errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(ct,1)       == bounds%endc)  , errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(ct,2)       == ubj)  , errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(rt,1)       == bounds%endc)  , errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(rt,2)       == ubj)  , errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(rt,3)       == ntrcs)  , errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(source,1)   == bounds%endc), errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(source,2)   == ubj), errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(source,3)   == ntrcs), errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(trcin,1) == bounds%endc), errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(trcin,2) == ubj), errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((size(trcin,3) == ntrcs), errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
 
      !zero flux is imposed both at the top and bottom boundaries
      !set zero outgoing flux
@@ -728,37 +725,36 @@ contains
      character(len=255) :: subname = 'DiffusTransp_solid'
      call bstatus%reset()
      SHR_ASSERT_ALL((ubound(lbn)           == (/bounds%endc/)),        errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(hmconductance,1) == bounds%endc), errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(hmconductance,2) == ubj-1), errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(dz,1)        == bounds%endc),   errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(dz,2)        == ubj),   errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(update_col)    == (/bounds%endc/)),        errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(dtime_col)     == (/bounds%endc/)),        errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(dtracer,1)    == bounds%endc),   errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(dtracer,2)    == ubj),   errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(dtracer,3)    == ntrcs),   errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(source,1)    == bounds%endc),   errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(source,2)    == ubj),   errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(source,3)   == ntrcs),   errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(trcin,1) == bounds%endc), errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(trcin,2) == ubj), errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((size(trcin,3) == ntrcs), errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
 
      !assemble the tridiagonal matrix
      call Diffustransp_solid_tridiag(bounds, bstatus, lbj, ubj, lbn, numfl, filter, ntrcs, trcin,&
@@ -790,9 +786,8 @@ contains
      character(len=32) :: subname ='calc_col_CFL'
      call bstatus%reset()
      SHR_ASSERT_ALL((ubound(us)         == (/ubj+1/)),        errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(dx)         == (/ubj/)),   errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
 
      cfl = 0._r8
      !the column cfl number is defined as the maximum over the whole domain
@@ -826,8 +821,8 @@ contains
      ! !USES:
      use bshr_kind_mod    , only : r8 => shr_kind_r8
      use BeTR_decompMod   , only : bounds_type  => betr_bounds_type
-     use MathfuncMod      , only : cumsum, cumdif, safe_div, dot_sum, asc_sort_vec
-     use InterpolationMod , only : Lagrange_interp
+     use MathfuncMod      , only : cumsum, cumpdiff, safe_div, dot_sum, asc_sort_vec
+     use InterpolationMod , only : bmass_interp, mass_interp, loc_x,loc_xj
      use BetrStatusType   , only : betr_status_type
      implicit none
      ! !ARGUMENTS:
@@ -853,86 +848,79 @@ contains
      real(r8), optional, intent(out) :: seep_mass(bounds%begc: , 1: )     !seepaging tracer mass
 
      ! !LOCAL VARIABLES:
+     integer, parameter :: nghost=2
+     integer, parameter :: nghost2p1=nghost*2+1
      integer, parameter :: pn = 1                !first order lagrangian interpolation to avoid overshooting
      integer  :: j, fc, c, k
-     integer  :: ntr                             !indices for tracer
+     integer  :: ntr, jl, jr                     !indices for tracer
      integer  :: length, lengthp2
-     real(r8) :: mass_curve(0:ubj-lbj+5 , ntrcs) !total number of nodes + two ghost cells at each boundary
-     real(r8) :: cmass_curve(0:ubj-lbj+5, ntrcs)
+     real(r8) :: mass_curve(0:ubj-lbj+nghost2p1 , ntrcs) !total number of nodes + two ghost cells at each boundary
+     real(r8) :: cmass_curve(0:ubj-lbj+nghost2p1, ntrcs)
+     real(r8) :: zh(0:ubj-lbj+nghost2p1)
+     real(r8) :: uh(0:ubj-lbj+nghost2p1)
      real(r8) :: mass_new(0:ubj-lbj+1   , ntrcs)
-     real(r8) :: cmass_new(0:ubj-lbj+1  , ntrcs)
      real(r8) :: zold(0:ubj-lbj+1)
-     real(r8) :: di(0:ubj-lbj+5)
-     real(r8) :: zghostl(1:2)                    !ghost grid left interface at the left boundary
-     real(r8) :: zghostr(1:2)                    !ghost grid left interface at the right boundary
-     real(r8) :: ughostl(1:2)                    !flow velocity at the ghost grid leff interface at the left boundary
-     real(r8) :: ughostr(1:2)                    !flow velocity at the ghost grid leff interface at the right boundary
+     real(r8) :: zghostl(1:nghost)                    !ghost grid left interface at the left boundary
+     real(r8) :: zghostr(1:nghost)                    !ghost grid left interface at the right boundary
+     real(r8) :: ughostl(1:nghost)                    !flow velocity at the ghost grid leff interface at the left boundary
+     real(r8) :: ughostr(1:nghost)                    !flow velocity at the ghost grid leff interface at the right boundary
      real(r8) :: z0
      real(r8) :: zf
      real(r8) :: utmp
      real(r8) :: dinfl_mass
      character(len=32) :: subname='semi_lagrange_adv_backward'
-
-
+     real(r8), parameter :: tiny_trc=1.e-16_r8
+     real(r8), parameter :: tiny_dist=1.e-13_r8
      call bstatus%reset()
      SHR_ASSERT_ALL((ubound(lbn)        == (/bounds%endc/)),         errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(dtime)      == (/bounds%endc/)),         errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(dz,1)       == bounds%endc),    errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(dz,2)       == ubj),    errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(update_col) == (/bounds%endc/)),  errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(us,1)       == bounds%endc),    errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(us,2)       == ubj),    errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(zi,1)      == bounds%endc),    errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(zi,2)      == ubj),    errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(inflx_top,1)  == bounds%endc),  errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(inflx_top,2)  == ntrcs),  errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(inflx_bot,1)  == bounds%endc),  errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(inflx_bot,2)  == ntrcs),  errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(trc_bot,1)    == bounds%endc),  errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(trc_bot,2)    == ntrcs),  errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(leaching_mass,1)  == bounds%endc), errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(leaching_mass,2)  == ntrcs), errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(seep_mass,1)  == bounds%endc), errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(seep_mass,2)  == ntrcs), errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(trcou,1)      == bounds%endc),    errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(trcou,2)      == ubj),    errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(trcou,3)      == ntrcs),    errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(trcin,1) == bounds%endc), errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((ubound(trcin,2) == ubj), errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((size(trcin,3) == ntrcs), errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
-
-!x     nullify(Extra_inst)
-
-!x     allocate(Extra_inst) ! => create_extra_type()
-
-!x     gtype=> extra_inst
-
-!x     call InitAllocate(gtype, 1,ubj-lbj+6)
 
      halfdt_col(:) = .false.
 
@@ -942,24 +930,30 @@ contains
         if(.not. update_col(c))cycle
         !do backward advection for all boundaries, including leftmost (lbn(c)-1) and rightmost (ubj)
         length = ubj - lbn(c) + 1   ! total number of grid interfaces
-        lengthp2 = length + 4       ! add 2 ghost cells both at the left and right boundaries
+        lengthp2 = length + 2 * nghost       ! add 2 ghost cells both at the left and right boundaries
 
         !define ghost boundary
         !NOTE: because of the setup, the left boundary and right boundary should have non-zero flow
         utmp = us(c,lbn(c)-1)
-        zghostl(1) = -abs(utmp)*dtime(c)*2._r8 + zi(c,lbn(c)-1)-2.e-20_r8
-        zghostl(2) = -abs(utmp)*dtime(c)       + zi(c,lbn(c)-1)-1.e-20_r8
-        ughostl(1) = us(c,lbn(c)-1)
-        ughostl(2) = us(c,lbn(c)-1)
+        do jl = 1, nghost
+          zghostl(jl) = zi(c,lbn(c)-1)- (abs(utmp)*dtime(c)+tiny_dist)*(nghost-jl+1)
+          ughostl(jl) = us(c,lbn(c)-1)
+          zghostr(jl) = zi(c,ubj) + (abs(us(c,ubj)) * dtime(c)+ tiny_dist) * jl
+          ughostr(jl) = us(c,ubj)
+        enddo
+!        zghostl(1) = zi(c,lbn(c)-1) - (abs(utmp)*dtime(c)+tiny_dist)*2._r8
+!        zghostl(2) = zi(c,lbn(c)-1) - (abs(utmp)*dtime(c)      +tiny_dist)
+!        ughostl(1) = us(c,lbn(c)-1)
+!        ughostl(2) = us(c,lbn(c)-1)
+!        zghostr(1) = zi(c,ubj) + (abs(us(c,ubj)) * dtime(c)    + tiny_dist)
+!        zghostr(2) = zi(c,ubj) + (abs(us(c,ubj)) * dtime(c)    + tiny_dist)*2._r8
 
-        zghostr(1) = zi(c,ubj) + abs(us(c,ubj)) * dtime(c)        + 1.e-14_r8
-        zghostr(2) = zi(c,ubj) + abs(us(c,ubj)) * dtime(c) * 2._r8+ 2.e-14_r8
+!        ughostr(1) = us(c,ubj)
+!        ughostr(2) = us(c,ubj)
 
-        ughostr(1) = us(c,ubj)
-        ughostr(2) = us(c,ubj)
-
-        call backward_advection((/zghostl, zi(c, lbn(c)-1:ubj),zghostr/), (/ughostl, us(c, lbn(c)-1:ubj), ughostr/), &
-             dtime(c), zold(0:length), bstatus)
+        zh(0:lengthp2)=(/zghostl,zi(c,lbn(c)-1:ubj),zghostr/)
+        uh(0:lengthp2)=(/ughostl, us(c, lbn(c)-1:ubj), ughostr/)
+        call backward_advection(zh(0:lengthp2), uh(0:lengthp2), dtime(c), zold(0:length), bstatus)
 
         if(bstatus%check_status())return
 
@@ -971,88 +965,108 @@ contains
         !create the cumulative mass curve
         do ntr = 1, ntrcs
            !left boundary ghost grids
+
            j = 0
            mass_curve(j, ntr) = 0._r8
-           j = 1
-           mass_curve(j, ntr) = inflx_top(c, ntr)*dtime(c)
-           j = 2
-           mass_curve(j, ntr) = inflx_top(c, ntr)*dtime(c)
+           do j = 1, nghost
+             mass_curve(j, ntr) = inflx_top(c, ntr)*dtime(c)
+           enddo
+!           j = 1
+!           mass_curve(j, ntr) = inflx_top(c, ntr)*dtime(c)
+!           j = 2
+!           mass_curve(j, ntr) = inflx_top(c, ntr)*dtime(c)
 
            !regular grids
            do k = lbn(c), ubj
-              j = k - lbn(c) + 3
+              j = k - lbn(c) + nghost + 1
               mass_curve(j, ntr) = trcin(c,k, ntr)*dz(c,k)
            enddo
 
            !right ghost grids
            if(inflx_bot(c,ntr)==0._r8)then
               !this would allow tracer to come in from the right hand side.
-              j = ubj - lbn(c) + 4
+
+              j = ubj - lbn(c) + 2 + nghost
               if(us(c,ubj)>0._r8)then
                 mass_curve(j, ntr) = 0._r8
               else
                 mass_curve(j, ntr) = trc_bot(c,ntr)*(zghostr(1)-zi(c,ubj))
               endif
 
-              j = ubj - lbn(c) + 5
-              if(us(c,ubj)>0._r8)then
-                mass_curve(j, ntr) = 0._r8
-              else
-                mass_curve(j, ntr) = trc_bot(c, ntr)*(zghostr(2)-zghostr(1))
-              endif
+              do j = ubj - lbn(c) + 3 + nghost, ubj-lbn(c) + nghost2p1
+                if(us(c,ubj)>0._r8)then
+                  mass_curve(j, ntr) = 0._r8
+                else
+                  k = j - (ubj-lbn(c) + 1 + nghost)
+                  mass_curve(j, ntr) = trc_bot(c, ntr)*(zghostr(k)-zghostr(k-1))
+                endif
+              enddo
            else
-              j = ubj - lbn(c) + 4
+              j = ubj - lbn(c) + 2 + nghost
               mass_curve(j, ntr) = inflx_bot(c, ntr) * dtime(c)
 
-              j = ubj - lbn(c) + 5
-              mass_curve(j, ntr) = inflx_bot(c, ntr) * dtime(c)
+              do j = ubj - lbn(c) + 3 + nghost, ubj-lbn(c) + nghost2p1
+                mass_curve(j, ntr) = inflx_bot(c, ntr) * dtime(c)
+              enddo
            endif
         enddo
 
-        !compute cumulative mass curve
-        call cumsum(bstatus, mass_curve(0:lengthp2,1:ntrcs), cmass_curve(0:lengthp2, 1:ntrcs),idim=1)
+        !locate the left corner
+        jl=loc_x(lengthp2+1,zh, zold(0), bstatus)
         if(bstatus%check_status())return
-        !do mass interpolation
+        !compute seepage if necessary using jl
+        if(present(seep_mass))then
+          if(zold(0)>zh(nghost))then
+            do ntr = 1, ntrcs
+              !do boundary mass interpolation
+              call bmass_interp(zh(0:jl),mass_curve(0:jl,ntr),zh(nghost),zold(0),seep_mass(c,ntr), bstatus)
+              if(bstatus%check_status())return
+            enddo
+          else
+            seep_mass(c,1:ntrcs) = 0._r8
+          endif
+        endif
+
+        do j = 1, length
+         !locate jr
+         jr=loc_xj(lengthp2+1,zh,zold(j),jl)
+         !do interpolation
+         do ntr = 1, ntrcs
+           call mass_interp(zh(jl-1:jr),mass_curve(jl-1:jr,ntr),zold(j-1),zold(j),mass_new(j,ntr), bstatus)
+           if(bstatus%check_status())return
+!           if(abs(mass_new(j,ntr))<tiny_trc)then
+!             mass_new(j,ntr)=0._r8
+!           endif
+         enddo
+         jl=jr
+        enddo
+
+        !compute leaching, using jr
+        if(present(leaching_mass))then
+          if(zold(length)<zh(ubj-lbn(c)+nghost+1))then
+            do ntr = 1, ntrcs
+              !do boundary mass interpolation
+              call bmass_interp(zh(jr-1:lengthp2),mass_curve(jr-1:lengthp2,ntr),zold(length),&
+                zh(ubj-lbn(c)+nghost+1),leaching_mass(c,ntr), bstatus)
+              if(bstatus%check_status())return
+            enddo
+          else
+            leaching_mass(c,1:ntrcs)=0._r8
+          endif
+        endif
+
         do ntr = 1, ntrcs
-
-           ! now use linear interpolation to maintain mass balance
-           call Lagrange_interp(pn, (/zghostl,zi(c,lbn(c)-1:ubj),zghostr/), cmass_curve(0:lengthp2, ntr), &
-             zold(0:length), cmass_new(0:length, ntr), bstatus)
-           if(bstatus%check_status())return
-           !ensure mass is increasing monotonically
-           call asc_sort_vec(cmass_new(0:length,ntr))
-
-           !ensure no negative leaching
-           call cmass_mono_smoother(cmass_new(0:length, ntr),cmass_curve(ubj-lbn(c)+3, ntr))
-
-           !diagnose the leaching flux
-           if(present(leaching_mass))then
-              leaching_mass(c, ntr) = cmass_curve(ubj-lbn(c)+3, ntr)-cmass_new(length, ntr) !add the numerical error to leaching
-           endif
-
-           !obtain the grid concentration
-           call cumdif(cmass_new(0:length, ntr), mass_new(0:length, ntr), bstatus)
-           if(bstatus%check_status())return
-           !this calculates tracer loss from seepage
-           if(present(seep_mass))then
-             seep_mass(c,ntr) = max(cmass_new(0,ntr)-cmass_curve(2,ntr),0._r8)
-           endif
            do k = lbn(c), ubj
               j = k - lbn(c) + 1
-              !correct for small negative values
-              if(mass_new(j, ntr)<0._r8)then
-                 write(iulog,*)j,mass_new(j, ntr),cmass_new(j, ntr),cmass_new(j-1, ntr)
-                 call bstatus%set_msg(msg='negative tracer '//errMsg(filename, __LINE__), err=-1)
-                 return
-                 if(present(leaching_mass))then
-                    leaching_mass(c, ntr) = leaching_mass(c, ntr)+mass_new(j, ntr) !add the numerical error to leaching
-                 endif
-                 mass_new(j, ntr) = mass_curve_correct_(mass_new(j, ntr))
-              endif
               trcou(c,k, ntr)=mass_new(j, ntr)/dz(c,k)
            enddo
         enddo
-
+        if(debug_loc)then
+          print*,'newtrc'
+          do  k = lbn(c), ubj
+            write(*,'(I2,3(X,E25.16))')k,(trcou(c,k,ntr),ntr=1,ntrcs)
+          enddo
+        endif
      enddo
 
    end subroutine semi_lagrange_adv_backward
@@ -1147,18 +1161,13 @@ contains
      real(r8):: time
      character(len=32) :: subname = 'backward_advection'
      class(gbetr_type), pointer :: gtype
-     type(extra_type), pointer :: extra_inst
+     type(extra_type), target :: extra_inst
      integer :: nl
 
      call bstatus%reset()
      SHR_ASSERT_ALL((size(zi)        == size(us)),     errMsg(filename,__LINE__),bstatus)
-     if(bstatus%check_status())return
+
      SHR_ASSERT_ALL((size(zi)        == size(zold)+4), errMsg(filename,__LINE__), bstatus)
-     if(bstatus%check_status())return
-
-     nullify(Extra_inst)
-
-     allocate(Extra_inst) ! => create_extra_type()
 
      gtype=> extra_inst
      nl = size(zi)
@@ -1177,7 +1186,7 @@ contains
      endif
 
      call DDeallocate(gtype)
-     nullify(Extra_inst)
+
 
    end subroutine backward_advection
 
@@ -1189,7 +1198,7 @@ contains
      ! update the trajectory
 
      ! !USES:
-     use InterpolationMod, only : Lagrange_interp
+     use InterpolationMod, only : mono_Linear_interp_trj
      use BetrStatusType  , only : betr_status_type
      implicit none
      ! !ARGUMENTS:
@@ -1219,9 +1228,8 @@ contains
      class is (Extra_type)
 
        call Extra_bstatus%reset()
-
-       call Lagrange_interp(pn, Extra%zi(1:Extra%nlen), &
-         Extra%us(1:Extra%nlen), y0, ui, Extra_bstatus)
+       call mono_Linear_interp_trj(Extra%nlen, Extra%zi(1:Extra%nlen), &
+         Extra%us(1:Extra%nlen), neq, y0, ui, Extra_bstatus)
 
        if(Extra_bstatus%check_status())return
 

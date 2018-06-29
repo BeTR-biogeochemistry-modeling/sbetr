@@ -35,7 +35,7 @@ module PatchType
   !
   use shr_kind_mod   , only : r8 => shr_kind_r8
   use shr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
-  use clm_varcon     , only : ispval
+  use clm_varcon     , only : ispval, spval
   use decompMod      , only : bounds_type
   !
   ! !PUBLIC TYPES:
@@ -81,11 +81,11 @@ contains
     begp=bounds%begp; endp=bounds%endp
     ! The following is set in InitGridCells
     allocate(this%gridcell (begp:endp)); this%gridcell (:) = ispval
-    allocate(this%wtgcell  (begp:endp)); this%wtgcell  (:) = nan
+    allocate(this%wtgcell  (begp:endp)); this%wtgcell  (:) = spval
     allocate(this%landunit (begp:endp)); this%landunit (:) = ispval
-    allocate(this%wtlunit  (begp:endp)); this%wtlunit  (:) = nan
+    allocate(this%wtlunit  (begp:endp)); this%wtlunit  (:) = spval
     allocate(this%column   (begp:endp)); this%column   (:) = ispval
-    allocate(this%wtcol    (begp:endp)); this%wtcol    (:) = nan
+    allocate(this%wtcol    (begp:endp)); this%wtcol    (:) = spval
     allocate(this%itype    (begp:endp)); this%itype    (:) = ispval
     allocate(this%mxy      (begp:endp)); this%mxy      (:) = ispval
     allocate(this%active   (begp:endp)); this%active   (:) = .false.

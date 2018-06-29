@@ -11,6 +11,7 @@ module TracerParamSetMod
  public :: get_aqueous_diffusivity, get_gas_diffusivity
  public :: get_diffusivity_ratio_gas2h2o
  public :: rhosat
+ public :: get_film_thickness
 contains
 
   subroutine get_lgsorb_KL_Xsat(tracerfamilyname, isoilorder, KL, Xsat)
@@ -21,13 +22,10 @@ contains
   real(r8), intent(out) :: KL
   real(r8), intent(out) :: Xsat
 
-  KL =1._r8
-  Xsat = 0._r8
-
+  KL =1._r8    !mol /m3
+  Xsat = 10._r8   ! mol/m3
 
   end subroutine get_lgsorb_KL_Xsat
-
-
 
 !-------------------------------------------------------------------------------
   function get_lnsorb_Kd(tracerfamily)result(Kd)
@@ -52,9 +50,6 @@ contains
     Kd = 0._r8
   end select
   end function get_lnsorb_Kd
-
-
-
 
 !-------------------------------------------------------------------------------
    function get_diffusivity_ratio_gas2h2o(trcid, temp, betrtracer_vars)result(ratio)
@@ -275,7 +270,6 @@ contains
       endif
    endif
    end function get_taugas
-
 
 !-------------------------------------------------------------------------------
    function get_tauliq(eff_por, liqvol, bsw)result(tauliq)
@@ -505,5 +499,18 @@ contains
 
   end subroutine rhoSat
 
+  !-----------------------------------------------------------------------
+  function get_film_thickness(smp_MPa)result(ans)
+  !
+  !DESCRIPTION
+  !compute the water film thickness
+  implicit none
+  real(r8), intent(in) :: smp_MPa
+  real(r8) :: ans
 
+  ans = exp(-13.65_r8-0.857_r8 *log(-smp_Mpa))
+  ans = max(1.e-6_r8, ans)
+  
+  end function get_film_thickness
+  !-----------------------------------------------------------------------
 end module TracerParamSetMod

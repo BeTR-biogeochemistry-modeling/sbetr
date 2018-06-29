@@ -18,7 +18,7 @@ implicit none
     real(r8), pointer :: qflx_infl_col            (:)   => null()  !infiltration (mm H2O /s)
     real(r8), pointer :: qflx_drain_vr_col        (:,:) => null() ! col liquid water losted as drainage (m /time step)
     real(r8), pointer :: qflx_totdrain_col        (:)   => null() ! col total liquid water drainage  (m/time step), updated in betr
-
+    real(r8), pointer :: pnup_pfrootc_patch       (:)   => null()
     !the following variables are for temporary use, and will be revised later
     real(r8), pointer  :: qflx_rofliq_qsur_doc_col(:) => null()
     real(r8), pointer  :: qflx_rofliq_qsur_dic_col(:) => null()
@@ -101,6 +101,7 @@ contains
   allocate(this%qflx_rofliq_qsur_dic_col(begc:endc))
   allocate(this%qflx_rofliq_qsub_doc_col(begc:endc))
   allocate(this%qflx_rofliq_qsub_dic_col(begc:endc))
+  allocate(this%pnup_pfrootc_patch(begp:endp))
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------
@@ -128,31 +129,34 @@ contains
   this%qflx_rofliq_qsur_dic_col(:) = value_column
   this%qflx_rofliq_qsub_doc_col(:) = value_column
   this%qflx_rofliq_qsub_dic_col(:) = value_column
+  this%pnup_pfrootc_patch(:) = value_column
   end subroutine reset
   !------------------------------------------------------------------------
-  subroutine summary(this, bounds, lbj, ubj, dz)
+  subroutine summary(this, bounds, lbj, ubj, dz, active_soibgc )
 
   implicit none
   class(betr_biogeo_flux_type),intent(inout)  :: this
   type(betr_bounds_type), intent(in) :: bounds
   integer , intent(in) :: lbj, ubj
   real(r8), intent(in) :: dz(bounds%begc:bounds%endc,lbj:ubj)
+  logical, intent(in) :: active_soibgc
 
+  if(active_soibgc)then
+    !integrate
+    call this%c12flux_vars%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj))
 
-  !integrate
-  call this%c12flux_vars%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj))
+    if(use_c13_betr)then
+      call this%c13flux_vars%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj))
+    endif
 
-  if(use_c13_betr)then
-     call this%c13flux_vars%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj))
+    if(use_c14_betr)then
+      call this%c14flux_vars%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj))
+    endif
+
+    call this%n14flux_vars%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj))
+
+    call this%p31flux_vars%summary(bounds, lbj, ubj, dz)
   endif
-
-  if(use_c14_betr)then
-     call this%c14flux_vars%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj))
-  endif
-
-  call this%n14flux_vars%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj))
-
-  call this%p31flux_vars%summary(bounds, lbj, ubj, dz)
   end subroutine summary
 
 end module BeTR_biogeoFluxType

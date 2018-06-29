@@ -16,7 +16,7 @@ MODULE bshr_const_mod
    ! physical constants (all data public)
    !----------------------------------------------------------------------------
    public
-
+   real(R8),parameter :: SHR_CONST_YEARSECS=86400._R8*365._R8
    real(R8),parameter :: SHR_CONST_PI      = 3.14159265358979323846_R8  ! pi
    real(R8),parameter :: SHR_CONST_CDAY    = 86400.0_R8      ! sec in calendar day ~ sec
    real(R8),parameter :: SHR_CONST_SDAY    = 86164.0_R8      ! sec in siderial day ~ sec

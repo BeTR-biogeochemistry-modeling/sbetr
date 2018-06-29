@@ -63,6 +63,7 @@ module BetrType
 
    contains
      procedure, public  :: Init
+     procedure, public  :: UpdateParas
      procedure, public  :: step_without_drainage
      procedure, public  :: step_with_drainage
      procedure, public  :: calc_dew_sub_flux
@@ -90,6 +91,8 @@ module BetrType
      procedure, public  :: retrieve_biostates
      procedure, public  :: retrieve_biofluxes
      procedure, public  :: debug_info
+     procedure, public  :: set_bgc_spinup
+     procedure, public  :: Set_iP_prof
   end type betr_type
 
   public :: create_betr_type
@@ -108,6 +111,21 @@ contains
 
   end function create_betr_type
 
+!-------------------------------------------------------------------------------
+  subroutine UpdateParas(this, bounds, bstatus)
+
+  use BeTR_decompMod  , only : betr_bounds_type
+  !update parameters after reading customized parameters from external file
+  implicit none
+  class(betr_type)            , intent(inout)        :: this
+  type(betr_bounds_type)      , intent(in)           :: bounds
+  integer             :: lbj, ubj
+  type(betr_status_type)           , intent(out)   :: bstatus
+  lbj = bounds%lbj;  ubj = bounds%ubj
+
+  call this%bgc_reaction%UpdateParas(bounds, lbj, ubj, bstatus)
+
+  end subroutine UpdateParas
 !-------------------------------------------------------------------------------
   subroutine Init(this, namelist_buffer, bounds, col, biophysforc, asoibgc, bstatus)
 
@@ -184,6 +202,19 @@ contains
 
   end subroutine Init
 
+!-------------------------------------------------------------------------------
+  subroutine Set_iP_prof(this, bounds, lbj, ubj, biophysforc)
+
+  implicit none
+  ! !ARGUMENTS:
+  class(betr_type)            , intent(inout) :: this
+  type(bounds_type)           , intent(in)    :: bounds
+  integer                     , intent(in) :: ubj, lbj
+  type(betr_biogeophys_input_type) , intent(inout)    :: biophysforc
+
+  call this%bgc_reaction%init_iP_prof(bounds, lbj, ubj, biophysforc, this%tracers, this%tracerstates)
+
+  end subroutine Set_iP_prof
 !-------------------------------------------------------------------------------
   subroutine ReadNamelist(this, namelist_buffer, bstatus)
     !
@@ -292,7 +323,7 @@ contains
     integer                          , intent(in)    :: filter_soilc(:)            ! column filter_soilc
     integer                          , intent(in)    :: num_soilp
     integer                          , intent(in)    :: filter_soilp(:)            ! pft filter
-    type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
+    type(betr_biogeophys_input_type) , intent(inout) :: biophysforc
     type(betr_biogeo_flux_type)      , intent(inout) :: biogeo_flux
     type(betr_biogeo_state_type)     , intent(inout) :: biogeo_state
     type(betr_status_type)           , intent(out)   :: betr_status
@@ -318,7 +349,8 @@ contains
     if(betr_status%check_status())return
 
     call surface_tracer_hydropath_update(betr_time, bounds, col, &
-       num_soilc, filter_soilc,  biophysforc, this%tracers, this%tracerstates,    &
+       num_soilc, filter_soilc,  biophysforc, this%advection_on, &
+       this%tracers, this%tracerstates,    &
        this%tracercoeffs,  this%tracerfluxes, betr_status)
     if(betr_status%check_status())return
 
@@ -344,11 +376,14 @@ contains
          this%plant_soilbgc, biogeo_flux,  betr_status)
     if(betr_status%check_status())return
 
+    if(this%tracers%debug)call this%debug_info(bounds, col, num_soilc, filter_soilc, 'afbgc react\n bef gwstransp',betr_status)
+
     call tracer_gws_transport(betr_time, bounds, col, pft, num_soilc, filter_soilc, &
       Rfactor, biophysforc, biogeo_flux, this%tracers, this%tracerboundaryconds  , &
       this%tracercoeffs,  this%tracerstates, this%tracerfluxes, this%bgc_reaction, &
       this%advection_on, this%diffusion_on, betr_status)
     if(betr_status%check_status())return
+    if(this%tracers%debug)call this%debug_info(bounds, col, num_soilc, filter_soilc, 'aff gwstransp',betr_status)
 
     call calc_ebullition(bounds, 1, ubj,                                                                  &
          this%tracerboundaryconds%jtops_col,                                                              &
@@ -426,7 +461,7 @@ contains
   class(betr_type)                     , intent(inout) :: this
   integer                              , intent(in)    :: num_soilc                   ! number of columns in column filter
   integer                              , intent(in)    :: filter_soilc(:)             ! column filter
-  type(betr_biogeo_flux_type)      , intent(inout) :: biogeo_flux
+  type(betr_biogeo_flux_type)          , intent(inout) :: biogeo_flux
 
   call this%bgc_reaction%retrieve_biogeoflux(num_soilc, &
      filter_soilc, this%tracerfluxes, this%tracers, biogeo_flux)
@@ -466,7 +501,7 @@ contains
 
     call betr_status%reset()
     SHR_ASSERT_ALL((ubound(jtops)  == (/bounds%endc/)), errMsg(filename,__LINE__), betr_status)
-    if(betr_status%check_status())return
+
     associate(                                                                         & !
          ngwmobile_tracers     => this%tracers%ngwmobile_tracers         ,             & !
          groupid               => this%tracers%groupid                    ,            & !
@@ -517,8 +552,20 @@ contains
 
     end associate
   end subroutine step_with_drainage
+  !--------------------------------------------------------------------------------
+  subroutine set_bgc_spinup(this, bounds, lbj, ubj,  biophysforc)
 
+  implicit none
+  ! !ARGUMENTS:
+  class(betr_type)            , intent(inout) :: this
+  type(bounds_type)           , intent(in)    :: bounds
+  integer                     , intent(in)    :: ubj, lbj
+  type(betr_biogeophys_input_type) , intent(inout)    :: biophysforc
 
+  call this%bgc_reaction%set_bgc_spinup(bounds, lbj, ubj,  biophysforc, &
+    this%tracers, this%tracerstates)
+
+  end subroutine set_bgc_spinup
   !--------------------------------------------------------------------------------
   subroutine diagnoselnd2atm(this, bounds, num_soilc, filter_soilc,  &
     biogeo_flux)
@@ -826,6 +873,7 @@ contains
    !
    use betr_varcon  , only : denh2o => bdenh2o
    use BeTR_TimeMod , only : betr_time_type
+   use tracer_varcon, only : adv_scalar
    implicit none
    !ARGUMENTS
    class(betr_type)                 , intent(inout) :: this
@@ -877,7 +925,6 @@ contains
    ! (h2osoi_liq(c,1)-h2osoi_liq_copy(c,1))/dtime=qflx_infl-q_out-qflx_rootsoi
    do fc = 1, num_hydrologyc
      c = filter_hydrologyc(fc)
-
      !obtain the corrected infiltration
      qflx_infl(c) = (h2osoi_liq(c,1)-this%h2osoi_liq_copy(c,1))/dtime + (qflx_rootsoi(c,1)+qflx_adv(c,1))*1.e3_r8
      !the predicted net infiltration
@@ -906,8 +953,16 @@ contains
          endif
        endif
      endif
-     qflx_adv(c,0) = qflx_gross_infl_soil(c) *1.e-3_r8  !surface infiltration
+     qflx_adv(c,0) = qflx_gross_infl_soil(c) *1.e-3_r8  !surface infiltration, m/s
    enddo
+   if(abs(adv_scalar-1._r8)>1.e-10_r8)then
+     do j = nlevsoi, 0, -1
+       do fc = 1, num_hydrologyc
+         c = filter_hydrologyc(fc)
+         qflx_adv(c,j)=qflx_adv(c,j)*adv_scalar
+       enddo
+     enddo
+   endif
    end associate
    end subroutine diagnose_advect_water_flux
 
@@ -1001,11 +1056,11 @@ contains
 
    call bstatus%reset()
    SHR_ASSERT_ALL((ubound(divide_matrix ,1)  == bounds%endc)  , errMsg(filename,__LINE__), bstatus)
-   if(bstatus%check_status())return
+
    SHR_ASSERT_ALL((ubound(divide_matrix ,2)  == nlevsno)      , errMsg(filename,__LINE__), bstatus)
-   if(bstatus%check_status())return
+
    SHR_ASSERT_ALL((ubound(divide_matrix ,3)  == nlevsno)      , errMsg(filename,__LINE__), bstatus)
-   if(bstatus%check_status())return
+
    associate(                                                                           &
       tracer_conc_frozen_col        => this%tracerstates%tracer_conc_frozen_col ,       &
       tracer_conc_mobile_col        => this%tracerstates%tracer_conc_mobile_col ,       &
@@ -1071,11 +1126,10 @@ contains
 
    call bstatus%reset()
    SHR_ASSERT_ALL((ubound(combine_matrix,1) == bounds%endc)  , errMsg(filename,__LINE__),bstatus)
-   if(bstatus%check_status())return
+
    SHR_ASSERT_ALL((ubound(combine_matrix,2) == 1)            , errMsg(filename,__LINE__),bstatus)
-   if(bstatus%check_status())return
+
    SHR_ASSERT_ALL((ubound(combine_matrix,3) == 1)            , errMsg(filename,__LINE__),bstatus)
-   if(bstatus%check_status())return
 
    associate(                                                                           &
       tracer_conc_frozen_col        => this%tracerstates%tracer_conc_frozen_col ,       &
@@ -1257,10 +1311,7 @@ contains
   call create_betr_def_application(bgc_reaction, plant_soilbgc, method, yesno)
 
   if(.not. yesno)then
-    call create_betr_usr_application(bgc_reaction, plant_soilbgc, method, bstatus)
-  endif
-  if(trim(method) =='eca_cnp')then
-    asoibgc = .true.
+    call create_betr_usr_application(bgc_reaction, plant_soilbgc, method, asoibgc, bstatus)
   endif
   end subroutine create_betr_application
 
@@ -1399,7 +1450,6 @@ contains
 
   end subroutine get_restartvar_info
 
-
   !------------------------------------------------------------------------
   subroutine set_restvar(this, bounds, lbj, ubj, nrest_1d, nrest_2d, states_1d, states_2d, flag)
   !
@@ -1416,4 +1466,6 @@ contains
 
   call this%tracerstates%restart(bounds, lbj, ubj, nrest_1d, nrest_2d, states_1d, states_2d, this%tracers, flag)
   end subroutine set_restvar
+
+
 end module BetrType

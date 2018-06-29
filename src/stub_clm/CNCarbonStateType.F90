@@ -14,6 +14,10 @@ implicit none
     real(r8), pointer :: cwdc_col                (:) => null()
     real(r8), pointer :: totsomc_1m_col          (:) => null()
     real(r8), pointer :: decomp_som2c_vr_col     (:,:)=> null()
+    real(r8), pointer :: som1c_col               (:) => null()
+    real(r8), pointer :: som2c_col               (:) => null()
+    real(r8), pointer :: som3c_col               (:) => null()
+    real(r8), pointer :: domc_col               (:) => null()
   contains
 
     procedure, public  :: Init
@@ -54,8 +58,17 @@ contains
 
     begp = bounds%begp; endp= bounds%endp
     begc = bounds%begc; endc= bounds%endc
-    allocate(this%decomp_cpools_vr_col(begc:endc,1:nlevdecomp_full,1:ndecomp_pools)); this%decomp_cpools_vr_col(:,:,:)= nan
-    allocate(this%frootc_patch             (begp :endp))                   ;     this%frootc_patch             (:)   = nan
+    allocate(this%decomp_cpools_vr_col(begc:endc,1:nlevdecomp_full,1:ndecomp_pools)); this%decomp_cpools_vr_col(:,:,:)= spval
+    allocate(this%frootc_patch             (begp :endp))                   ;     this%frootc_patch             (:)   = spval
+    allocate(this%cwdc_col(begc:endc)); this%cwdc_col(:) = spval
+    allocate(this%totlitc_col(begc:endc)); this%totlitc_col(:) = spval
+    allocate(this%totsomc_col(begc:endc)); this%totsomc_col(:) = spval
+    allocate(this%totlitc_1m_col(begc:endc)); this%totlitc_1m_col(:) = spval
+    allocate(this%totsomc_1m_col(begc:endc)); this%totsomc_1m_col(:) = spval
+    allocate(this%som1c_col(begc:endc)); this%som1c_col(:) = spval
+    allocate(this%som2c_col(begc:endc)); this%som2c_col(:) = spval
+    allocate(this%som3c_col(begc:endc)); this%som3c_col(:) = spval
+    allocate(this%domc_col(begc:endc)); this%domc_col(:) = spval
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------

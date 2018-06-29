@@ -7,7 +7,7 @@ module TemperatureType
   use shr_infnan_mod  , only : nan => shr_infnan_nan, assignment(=)
   use decompMod       , only : bounds_type
   use abortutils      , only : endrun
-
+  use clm_varcon      , only : spval
   implicit none
   save
   private
@@ -58,8 +58,8 @@ module TemperatureType
     begc = bounds%begc; endc= bounds%endc
     lbj  = bounds%lbj;  ubj = bounds%ubj
     begp = bounds%begp; endp = bounds%endp
-    allocate(this%t_soisno_col(begc:endc, lbj:ubj));  this%t_soisno_col(:,:) = nan
-    allocate(this%t_soi10cm_col(begc:endc))           ;  this%t_soi10cm_col(:) = nan
-    allocate(this%t_veg_patch  (begp:endp))        ; this%t_veg_patch              (:)   = nan
+    allocate(this%t_soisno_col(begc:endc, lbj:ubj));  this%t_soisno_col(:,:) = spval
+    allocate(this%t_soi10cm_col(begc:endc))           ;  this%t_soi10cm_col(:) = spval
+    allocate(this%t_veg_patch  (begp:endp))        ; this%t_veg_patch              (:)   = spval
   end subroutine InitAllocate
 end module TemperatureType
