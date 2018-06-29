@@ -341,7 +341,8 @@ module BGCReactionsMod
      end subroutine retrieve_biogeoflux_interface
 
      !-------------------------------------------------------------------------------
-     subroutine debug_info_interface(this, bounds, num_soilc, filter_soilc, dzsoi, betrtracer_vars, tracerstate_vars, header, betr_status)
+     subroutine debug_info_interface(this, bounds, num_soilc, filter_soilc, dzsoi, betrtracer_vars, tracerstate_vars, header, &
+          betr_status)
 
      use BeTRTracerType           , only : BeTRTracer_Type
      use tracerstatetype          , only : tracerstate_type

@@ -2,7 +2,7 @@
 
 import os,time,sys,argparse
 from shutil import copyfile
-
+import re
 #python code to create a user defined case
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -20,11 +20,13 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 print dir_path
 
 mdir,chdir=dir_path.split('sbetr')
-
+if not re.search('sbetr',mdir):
+    mdir=mdir+'sbetr'
+print chdir
 if args.case_root[0][0]=='/':
     directory=args.case_root[0]+args.case_name[0]
 else:
-    directory=cwd = mdir + '/'+args.case_root[0]+args.case_name[0]
+    directory= mdir + '/'+args.case_root[0]+args.case_name[0]
 
 #create case directory
 if not os.path.exists(directory):
