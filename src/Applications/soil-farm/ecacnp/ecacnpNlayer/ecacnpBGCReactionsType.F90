@@ -1236,8 +1236,8 @@ contains
     SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__),betr_status)
 
     call this%calc_phosphorus_weathering(bounds, 1,ubj,biophysforc)
-    if(betrtracer_vars%debug)call this%debug_info(bounds, num_soilc, filter_soilc, col%dz(bounds%begc:bounds%endc,bounds%lbj:bounds%ubj),&
-        betrtracer_vars, tracerstate_vars,  'before bgcreact', betr_status)
+    if(betrtracer_vars%debug)call this%debug_info(bounds, num_soilc, filter_soilc, col%dz(bounds%begc:bounds%endc,&
+        bounds%lbj:bounds%ubj), betrtracer_vars, tracerstate_vars,  'before bgcreact', betr_status)
 
     nstates = this%ecacnp_bgc_index%nstvars
     allocate(ystates0(nstates))

@@ -211,7 +211,6 @@ contains
     character(len=*)                         , intent(in)    :: namelist_buffer
     character(len=*)                         , intent(in)    :: base_filename
     character(len=*)                         , intent(in)    :: case_id
-
     character(len=*), parameter :: subname = 'BeTRSimulationInit'
 
     call endrun(msg="ERROR "//subname//" unimplemented. "//errmsg(mod_filename, __LINE__))
