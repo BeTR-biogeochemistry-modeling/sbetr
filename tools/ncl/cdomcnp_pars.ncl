@@ -376,7 +376,7 @@ begin
    fout->k_decay_llig=(/(/3.9/),(/4.9/)/)
    fout->k_decay_mic=(/(/6.7/),(/7.3/)/)
    fout->k_decay_pom=(/0.2/)
-   fout->k_decay_pom=(/0.0045/)
+   fout->k_decay_humus=(/0.0045/)
    fout->k_decay_cwd=(/0.6/)
    fout->k_decay_fwd=(/1.5/)
    fout->k_decay_lwd=(/0.5/)

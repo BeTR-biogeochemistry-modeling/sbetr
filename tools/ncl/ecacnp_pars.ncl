@@ -366,7 +366,7 @@ begin
    fout->k_decay_lit3=(/(/3.9/),(/4.9/)/)
    fout->k_decay_som1=(/(/6.7/),(/7.3/)/)
    fout->k_decay_som2=(/0.2/)
-   fout->k_decay_som2=(/0.0045/)
+   fout->k_decay_som3=(/0.0045/)
    fout->k_decay_cwd=(/0.6/)
    fout->k_decay_fwd=(/1.5/)
    fout->k_decay_lwd=(/0.5/)
