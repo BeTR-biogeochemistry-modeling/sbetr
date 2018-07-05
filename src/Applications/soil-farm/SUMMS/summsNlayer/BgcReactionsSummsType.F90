@@ -186,6 +186,7 @@ contains
   associate(                                                           &
    tracer_conc_mobile_col  => tracerstate_vars%tracer_conc_mobile_col, &
    tracer_conc_frozen_col  => tracerstate_vars%tracer_conc_frozen_col, &
+   tracer_conc_solid_equil_col => tracerstate_vars%tracer_conc_solid_equil_col, &
    scalaravg_col           => biophysforc%scalaravg_col              , &
    dom_scalar              => biophysforc%dom_scalar_col             , &
    nelm                    => this%summsbgc_index%nelms            , &
@@ -1551,6 +1552,7 @@ if(exit_spinup)then
     use tracer_varcon     , only : nlevtrc_soil  => betr_nlevtrc_soil
     use betr_columnType   , only : betr_column_type
     use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
+    use tracer_varcon     , only : patomw, catomw, natomw
     implicit none
     ! !ARGUMENTS:
     class(bgc_reaction_summs_type)   , intent(inout)    :: this
@@ -1566,13 +1568,22 @@ if(exit_spinup)then
     integer :: fc                                        ! filter index
     integer               :: begc, endc
     integer               :: begg, endg
+    integer :: lbj, ubj
+    integer :: kc, kn, kp, jj
     !-----------------------------------------------------------------------
 
     begc = bounds%begc; endc= bounds%endc
     begg = bounds%begg; endg= bounds%endg
+    lbj  = bounds%lbj ; ubj = bounds%ubj
     !-----------------------------------------------------------------------
 
     associate(                                    &
+        nelm    => this%summsbgc_index%nelms     , &
+        c_loc   => this%summsbgc_index%c_loc     , &
+        n_loc   => this%summsbgc_index%n_loc     , &
+        p_loc   => this%summsbgc_index%p_loc     , &
+        id_trc_beg_Bm=> betrtracer_vars%id_trc_beg_Bm, &
+        id_trc_end_Bm=> betrtracer_vars%id_trc_end_Bm, &
          volatileid => betrtracer_vars%volatileid &
          )
     do c = bounds%begc, bounds%endc
@@ -1595,6 +1606,15 @@ if(exit_spinup)then
         tracerstate_vars%tracer_conc_solid_equil_col(c, :, :) = 0._r8
       endif
       tracerstate_vars%tracer_soi_molarmass_col(c,:)          = 0._r8
+      
+      do jj = id_trc_beg_Bm, id_trc_end_Bm,nelm
+        kc=(jj-1)+c_loc; kn=(jj-1)+n_loc; kp=(jj-1)+p_loc
+        do l = lbj, ubj
+          tracerstate_vars%tracer_conc_mobile_col(c,l,kc) = 1.e-3_r8
+          tracerstate_vars%tracer_conc_mobile_col(c,l,kn) = 1.e-3_r8*catomw/(summs_para%init_cn_mic*natomw)
+          tracerstate_vars%tracer_conc_mobile_col(c,l,kp) = 1.e-3_r8*catomw/(summs_para%init_cp_mic*patomw)
+        enddo
+      enddo
 
     enddo
     end associate

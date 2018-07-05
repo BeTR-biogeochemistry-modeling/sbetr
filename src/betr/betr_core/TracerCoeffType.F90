@@ -36,6 +36,8 @@ module TracerCoeffType
      real(r8), pointer :: diffgas_topsoi_col        (:,:)   => null()     !gas diffusivity in top soil layer, this is not used currently
      real(r8), pointer :: hmconductance_col         (:,:,:)  => null()    !geometrically weighted conductances (nlevsno+nlevtrc_soil)
      real(r8), pointer :: annsum_counter_col        (:) => null()
+     real(r8), pointer :: k_decay_vr                (:,:,:) => null()
+     real(r8), pointer :: part_mic_vr               (:,:,:) => null()
    contains
      procedure, public  :: Init
      procedure, public  :: Restart
@@ -158,6 +160,12 @@ contains
 
     allocate(this%aqu2equilsolidcef_col(begc:endc, lbj:ubj, 1:betrtracer_vars%nsolid_equil_tracer_groups))
     this%aqu2equilsolidcef_col(:,:,:) = nan
+
+    allocate(this%k_decay_vr(begc:endc, lbj:ubj, 1))
+    this%k_decay_vr(:,:,:) = nan
+
+    allocate(this%part_mic_vr(begc:endc, lbj:ubj, 1))
+    this%part_mic_vr(:,:,:) = nan
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------
@@ -230,6 +238,15 @@ contains
               avgflag='A', long_name='bulk conductance for '//trim(tracername),                           &
               default='inactive')
       enddo
+
+               call this%add_hist_var2d (it, num2d, fname='K_DECAY_VR', units='none', type2d='levtrc',               &
+                    avgflag='A', long_name='decay constants for resom',              &
+                    default='inactive')
+
+               call this%add_hist_var2d (it, num2d, fname='PART_MIC_VR', units='none', type2d='levtrc',               &
+                    avgflag='A', long_name='partitioning to microbial biomass for resom',              &
+                    default='inactive')
+
       if(it==1)call this%alloc_hist_list(num1d, num2d)
       num2d = 0; num1d= 0
     enddo
@@ -268,6 +285,8 @@ contains
       this%diffgas_topsoi_col        (c,:)   = 0._r8
       this%hmconductance_col         (c,:,:) = 0._r8
       this%annsum_counter_col        (c)     = 0._r8
+      this%k_decay_vr                (c,:,:)   = 0._r8
+      this%part_mic_vr               (c,:,:)   = 0._r8
     enddo
 
   end subroutine InitCold
@@ -321,6 +340,8 @@ contains
          endif
          state_2d(:,:,addone(idtemp2d)) =  this%hmconductance_col(:,:,jj)
       enddo
+       state_2d(:,:,addone(idtemp2d)) = this%k_decay_vr(:,:,1)
+       state_2d(:,:,addone(idtemp2d)) = this%part_mic_vr(:,:,1)
   end associate
   end subroutine retrieve_hist
 end module TracerCoeffType
