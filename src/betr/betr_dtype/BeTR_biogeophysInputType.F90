@@ -97,6 +97,7 @@ implicit none
     real(r8), pointer :: occlp_vr_col(:,:) => null()
     integer , pointer :: lithotype_col(:) => null()
     real(r8), pointer :: pweath_prof_col(:,:) => null()
+    integer,  pointer :: stwl(:) => null()
     !carbon fluxes
     type(betr_carbonflux_type) :: c12flx
     type(betr_carbonflux_type) :: c13flx
@@ -233,7 +234,7 @@ contains
   allocate(this%n2o_ppmv_col(begc:endc))
   allocate(this%no_ppmv_col(begc:endc))
   allocate(this%nh3_ppmv_col(begc:endc))
-
+  allocate(this%stwl(begc:endc))
   !canopystate
   allocate(this%altmax_col               (      begc:endc )  ) ! col maximum annual depth of thaw
   allocate(this%altmax_lastyear_col      (      begc:endc )  ) ! col prior year maximum annual depth of thaw

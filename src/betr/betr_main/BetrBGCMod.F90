@@ -49,7 +49,6 @@ module BetrBGCMod
   public :: tracer_col_mapping_comb
 contains
 
-
   subroutine surface_tracer_hydropath_update(betr_time, bounds, col, &
      num_soilc, filter_soilc, biophysforc, advection_on, &
      betrtracer_vars, tracerstate_vars, &

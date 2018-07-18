@@ -1099,7 +1099,7 @@ contains
     use BeTR_biogeoFluxType   , only : betr_biogeo_flux_type
     use BetrStatusType        , only : betr_status_type
     use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
-    use UnitConverMod         , only : ppm2molv
+    use UnitConvertMod         , only : ppm2molv
     implicit none
     ! !ARGUMENTS:
     class(ecacnp_bgc_reaction_type) , intent(inout)    :: this
@@ -1492,7 +1492,7 @@ contains
     use tracer_varcon     , only : nlevtrc_soil  => betr_nlevtrc_soil
     use betr_columnType   , only : betr_column_type
     use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
-    use UnitConverMod, only : ppm2molv
+    use UnitConvertMod, only : ppm2molv
     implicit none
     ! !ARGUMENTS:
     class(ecacnp_bgc_reaction_type) , intent(inout)    :: this

@@ -42,20 +42,13 @@ elif args.action[0] == 'remove':
     print('you entered: ' + yourvar)
     if yourvar =='yes':
         try:
-            os.system('rm -rf '+sfarm_dir+'/'+app_name+"/"+app_name+'Para')
-        except:
-            pass
-        try:
-            os.system('rm -rf '+sfarm_dir+'/'+app_name+"/"+app_name+'1layer')
-        except:
-            pass
-        try:
-            os.system('rm -rf '+sfarm_dir+'/'+app_name+"/"+app_name+'Nlayer')
+            print 'app: '+app_name +' is  removed'
+            os.system('rm -rf '+sfarm_dir+'/'+app_name)
         except:
             pass
     else:
         print 'AppMaker did nothing'
-        quit()
+    quit()
 else:
     print 'AppMaker did nothing'
     quit()
