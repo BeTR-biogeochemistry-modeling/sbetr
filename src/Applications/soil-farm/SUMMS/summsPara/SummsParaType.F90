@@ -269,7 +269,7 @@ contains
   !following is based on century parameterization
   this%rf_l1s1_bgc           = (/0.55_r8, 0.55_r8/)
   this%rf_l2s1_bgc           = (/0.45_r8, 0.55_r8/)
-  this%rf_l3s2_bgc           = 0.3_r8
+  this%rf_l3s2_bgc           = 0.35_r8
   this%rf_s2s1_bgc           = 0.55_r8
   this%rf_s3s1_bgc           = 0.55_r8
 
@@ -487,7 +487,7 @@ contains
   this%k_decay_lit1(1:2) = temparr(1:2,1)
 
   tString='k_decay_lit2'
-  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
+  call ncd_io(trim(tString),temparr, 'read', ncid, readvar=readv)
   if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
   if(bstatus%check_status())return
   this%k_decay_lit2(1:2) = temparr(1:2,1)

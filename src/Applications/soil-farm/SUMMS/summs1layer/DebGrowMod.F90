@@ -59,9 +59,6 @@ subroutine deb_grow(gbt,deb,residual)
 
     end if
 
-deb%gB = gB
-deb%pE = pE
-
 end associate
 end subroutine deb_grow
   !-------------------------------------------------------------------------------

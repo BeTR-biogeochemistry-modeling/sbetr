@@ -430,69 +430,71 @@ implicit none
     endif
 
     !diagnostic variables
+    if(maxpft>0)then
     this%lid_plant_minn_nh4 = addone(itemp)  !this is used to indicate plant mineral nitrogen uptake
-    call list_insert(list_name, 'plant_minn_nh4',vid); call list_insert(list_unit, 'mol P m-3',uid)
+    call list_insert(list_name, 'plant_minn_nh4',vid); call list_insert(list_unit, 'mol P m-3 s-1',uid)
 
     this%lid_plant_minn_no3 = addone(itemp)  !this is used to indicate plant mineral nitrogen uptake
-    call list_insert(list_name, 'plant_minn_no3',vid); call list_insert(list_unit, 'mol N mol-3',uid)
+    call list_insert(list_name, 'plant_minn_no3',vid); call list_insert(list_unit, 'mol N mol-3 s-1',uid)
 
     this%lid_plant_minp = addone(itemp)
     call list_insert(list_name, 'plant_minp',vid); call list_insert(list_unit, 'mol P m-3',uid)
 
     this%lid_autr_rt      = addone(itemp)           !this is used to indicate plant autotrophic root respiration
-    call list_insert(list_name, 'autr_rt',vid); call list_insert(list_unit,'mol C m-3',uid)
+    call list_insert(list_name, 'autr_rt',vid); call list_insert(list_unit,'mol C m-3 s-1',uid)
+    endif
 
     this%lid_o2_aren_reac  = addone(ireac)
 
     this%lid_n2o_nit  = addone(itemp);
-    call list_insert(list_name, 'n2o_nit',vid); call list_insert(list_unit, 'mol N2O m-3',uid)
+    call list_insert(list_name, 'n2o_nit',vid); call list_insert(list_unit, 'mol N2O m-3 s-1',uid)
 
     this%lid_co2_hr   = addone(itemp);
-    call list_insert(list_name, 'co2_hr',vid); call list_insert(list_unit,'mol C m-3',uid)
+    call list_insert(list_name, 'co2_hr',vid); call list_insert(list_unit,'mol C m-3 s-1',uid)
 
     this%lid_no3_den  = addone(itemp);
-    call list_insert(list_name, 'no3_den',vid); call list_insert(list_unit, 'mol N m-3',uid)
+    call list_insert(list_name, 'no3_den',vid); call list_insert(list_unit, 'mol N m-3 s-1',uid)
 
     this%lid_minn_nh4_immob = addone(itemp);
-    call list_insert(list_name, 'minn_nh4_immob',vid); call list_insert(list_unit, 'mol N m-3',uid)
+    call list_insert(list_name, 'minn_nh4_immob',vid); call list_insert(list_unit, 'mol N m-3 s-1',uid)
 
     this%lid_minn_no3_immob = addone(itemp);
-    call list_insert(list_name, 'minn_no3_immob',vid); call list_insert(list_unit, 'mol N m-3',uid)
+    call list_insert(list_name, 'minn_no3_immob',vid); call list_insert(list_unit, 'mol N m-3 s-1',uid)
 
     this%lid_minp_immob = addone(itemp);
-    call list_insert(list_name, 'minp_immob',vid); call list_insert(list_unit, 'mol P m-3',uid)
+    call list_insert(list_name, 'minp_immob',vid); call list_insert(list_unit, 'mol P m-3 s-1',uid)
 
     this%lid_nh4_nit        = addone(itemp);
-    call list_insert(list_name, 'nh4_nit',vid); call list_insert(list_unit,'mol N m-3',uid)
+    call list_insert(list_name, 'nh4_nit',vid); call list_insert(list_unit,'mol N m-3 s-1',uid)
 
     !aerechyma transport
     this%lid_o2_paere   = addone(itemp);
-    call list_insert(list_name, 'o2_paere',vid); call list_insert(list_unit,'mol m-3',uid)
+    call list_insert(list_name, 'o2_paere',vid); call list_insert(list_unit,'mol m-3 s-1',uid)
     if ( spinup_state == 0 ) then
        this%lid_ar_paere   = addone(itemp);  this%lid_ar_aren_reac  = addone(ireac)   !
-       call list_insert(list_name, 'ar_paere',vid); call list_insert(list_unit,'mol m-3',uid)
+       call list_insert(list_name, 'ar_paere',vid); call list_insert(list_unit,'mol m-3 s-1',uid)
 
        this%lid_n2_paere   = addone(itemp);  this%lid_n2_aren_reac  = addone(ireac)   !
-       call list_insert(list_name, 'n2_paere',vid); call list_insert(list_unit,'mol N2 m-3',uid)
+       call list_insert(list_name, 'n2_paere',vid); call list_insert(list_unit,'mol N2 m-3 s-1',uid)
 
        this%lid_co2_paere  = addone(itemp);  this%lid_co2_aren_reac = addone(ireac)   !
-       call list_insert(list_name, 'co2_paere',vid); call list_insert(list_unit,'mol C m-3',uid)
+       call list_insert(list_name, 'co2_paere',vid); call list_insert(list_unit,'mol C m-3 s-1',uid)
 
        if(use_c13)then
          this%lid_c13_co2_paere  = addone(itemp);  this%lid_c13_co2_aren_reac = addone(ireac)   !
-         call list_insert(list_name, 'c13_co2_paere',vid); call list_insert(list_unit,'mol C13 m-3',uid)
+         call list_insert(list_name, 'c13_co2_paere',vid); call list_insert(list_unit,'mol C13 m-3 s-1',uid)
        endif
 
        if(use_c14)then
          this%lid_c14_co2_paere  = addone(itemp);  this%lid_c14_co2_aren_reac = addone(ireac)   !
-         call list_insert(list_name, 'c14_co2_paere',vid); call list_insert(list_unit,'mol C14 m-3',uid)
+         call list_insert(list_name, 'c14_co2_paere',vid); call list_insert(list_unit,'mol C14 m-3 s-1',uid)
        endif
 
        this%lid_ch4_paere  = addone(itemp);  this%lid_ch4_aren_reac = addone(ireac)   !
-       call list_insert(list_name, 'ch4_paere',vid); call list_insert(list_unit, 'mol C m-3',uid)
+       call list_insert(list_name, 'ch4_paere',vid); call list_insert(list_unit, 'mol C m-3 s-1',uid)
 
        this%lid_n2o_paere  = addone(itemp);  this%lid_n2o_aren_reac = addone(ireac)   !
-       call list_insert(list_name, 'n2o_paere',vid); call list_insert(list_unit,'mol  m-3',uid)
+       call list_insert(list_name, 'n2o_paere',vid); call list_insert(list_unit,'mol  m-3 s-1',uid)
     endif
 
     if(maxpft>0)then
@@ -503,13 +505,13 @@ implicit none
         this%lid_plant_minn_no3_pft(jj) = addone(itemp)
         postfix = num2str(jj,'(I2.2)')
         call list_insert(list_name, 'plant_minn_no3_pft_'//trim(postfix),vid)
-        call list_insert(list_unit, 'mol N m-3',uid)
+        call list_insert(list_unit, 'mol N m-3 s-1',uid)
         this%lid_plant_minn_nh4_pft(jj) = addone(itemp)
         call list_insert(list_name, 'plant_minn_nh4_pft_'//trim(postfix),vid)
-        call list_insert(list_unit,'mol N m-3',uid)
+        call list_insert(list_unit,'mol N m-3 s-1',uid)
         this%lid_plant_minp_pft(jj)     = addone(itemp)
         call list_insert(list_name, 'plant_minp_pft_'//trim(postfix),vid)
-        call list_insert(list_unit,'mol P m-3',uid)
+        call list_insert(list_unit,'mol P m-3 s-1',uid)
       enddo
     endif
 

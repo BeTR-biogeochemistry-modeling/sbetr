@@ -3,6 +3,7 @@ module BgcSummsMath
 !module defines math functions needed
 use bshr_kind_mod       , only : r8 => shr_kind_r8
 use BgcSummsDebType     , only : debs
+use betr_ctrl           , only : iulog  => biulog, do_betr_output
 
 implicit none
 
@@ -37,7 +38,7 @@ contains
 
   end subroutine interp1
 
-  subroutine brent(x, x1,x2,f1, f2, macheps, tol, func_data, func) ! func_data are any other arguments to the function
+  subroutine brent(x, x1,x2,f1, f2, macheps, tol, func_data, func, bstatus) ! func_data are any other arguments to the function
 
     !!DESCRIPTION:
     !Use Brent's method to find the root to a single variable function func, which is known to exist between x1 and x2.
@@ -48,6 +49,8 @@ contains
     !
     !!USES:
     use BgcSummsDebType    , only : debs
+    use betr_constants    , only : betr_errmsg_len
+    use BetrstatusType    , only : betr_status_type
     !
     !!ARGUMENTS:
     implicit none
@@ -57,6 +60,7 @@ contains
     !type(debs), intent(in) :: func_data ! data passed to subroutine func
     type(debs), intent(inout) :: func_data ! data passed to subroutine func
     real(r8), intent(out):: x
+    type(betr_status_type), intent(out) :: bstatus
 
     interface
        subroutine func(x, func_data, f)
@@ -72,17 +76,20 @@ contains
 
     ! !CALLED FROM:
     ! whenever it is needed
-    integer, parameter :: ITMAX = 40            !maximum number of iterations
+    integer, parameter :: ITMAX = 50!40            !maximum number of iterations
+    integer, parameter :: iulog = 6
     integer :: iter
     real(r8)  :: a,b,c,d,e,fa,fb,fc,p,q,r,s,xm,tol1
+    character(len=betr_errmsg_len) :: msg
 
+    call bstatus%reset()
     a=x1
     b=x2
     fa=f1
     fb=f2
-    if((fa > 0._r8 .and. fb > 0._r8).or.(fa < 0._r8 .and. fb < 0._r8))then
-       !write(msg,*) 'root must be bracketed for brent', new_line('A')//'a=',a,' b=',b,' fa=',fa,' fb=',fb
-       print *, 'root must be bracketed for brent'
+    if((fa > 0._r8 .and. fb > 0._r8).or.(fa < 0._r8 .and. fb < 0._r8) .and. do_betr_output)then
+       write(msg,*) 'root must be bracketed for brent', new_line('A')//'a=',a,' b=',b,' fa=',fa,' fb=',fb
+       call bstatus%set_msg(msg=msg, err=-1)
     endif
     c=b
     fc=fb
@@ -146,6 +153,7 @@ contains
     enddo
     if(iter==ITMAX)then
       print *, 'brent exceeding maximum iterations', b, fb
+      call bstatus%set_msg(msg=msg, err=1)
     endif
     x=b
 

@@ -256,7 +256,7 @@ contains
   call this%calc_cnp_ratios(summsbgc_index, ystates, bstatus)
   if (bstatus%check_status())return
   !calculate potential decay coefficients (1/s)
-  call this%calc_som_decay_k(lay, summsbgc_index, decompkf_eca, k_decay, ystates)
+  call this%calc_som_decay_k(lay, summsbgc_index, decompkf_eca, k_decay, ystates, bstatus)
 
   !scale potential decay coefficients by temp (1/s)
   call this%calc_som_scale_k(lay, summsbgc_index, decompkf_eca, k_decay(1:nsummspools))
@@ -973,6 +973,8 @@ contains
     is_sumpool_som => summsbgc_index%is_sumpool_som, &
     ompoolnames => summsbgc_index%ompoolnames & 
   )
+  
+call bstatus%reset()
 
   !for om pools
   do jj = 1, nsummspools
@@ -1227,7 +1229,7 @@ subroutine calc_som_decay_r(this, summsbgc_index, dtime, om_k_decay, om_pools, o
   end associate
   end subroutine calc_som_scale_k
   !-------------------------------------------------------------------------------
-   subroutine calc_som_decay_k(this, lay, summsbgc_index, decompkf_eca, k_decay, ystates)
+   subroutine calc_som_decay_k(this, lay, summsbgc_index, decompkf_eca, k_decay, ystates, bstatus)
 
   use BgcSummsIndexType       , only : summsbgc_index_type
   use BgcSummsDecompType      , only : DecompSumms_type
@@ -1237,6 +1239,7 @@ subroutine calc_som_decay_r(this, summsbgc_index, dtime, om_k_decay, om_pools, o
   use BgcSummsMath            , only : brent
   use BgcSummsDebType         , only : debs
   use DebGrowMod              , only : deb_grow
+  use BetrStatusType      , only : betr_status_type
 
   implicit none
   class(SummsSom_type)        , intent(inout)   :: this !this will update the relevant values for cascade_matrix
@@ -1245,6 +1248,8 @@ subroutine calc_som_decay_r(this, summsbgc_index, dtime, om_k_decay, om_pools, o
   type(summsbgc_index_type)   , intent(in)    :: summsbgc_index
   real(r8)                    , intent(in)    :: ystates(1:summsbgc_index%nom_tot_elms)
   real(r8)                    , intent(out)   :: k_decay(nsummspools)
+  type(betr_status_type)        , intent(out)   :: bstatus
+
   !type(func_data_type) :: deb
   integer    :: jj
     real(r8) :: actgB
@@ -1260,13 +1265,17 @@ subroutine calc_som_decay_r(this, summsbgc_index, dtime, om_k_decay, om_pools, o
     real(r8) :: dc
     integer  :: isgrw
     real(r8) :: scal_c
-    real(r8) :: fb1
-    real(r8) :: fb2
-    real(r8) :: gb0 = 0._r8
-    real(r8) :: gb1 = 1._r8
-    real(r8) :: gbtemp
-    real(r8) :: macheps = 2.220446049250313e-16_r8
-    real(r8) :: tol = 2.220446049250313e-16_r8
+    real(r8) :: m0
+    real(r8) :: g0
+    real(r8) :: jeg
+    real(r8) :: ev
+    real(r8) :: aa
+    real(r8) :: bb
+    real(r8) :: cc
+    real(r8) :: delta
+    real(r8) :: jxx    
+    real(r8), parameter :: macheps = 1.e-8_r8
+    real(r8), parameter :: tol = 1.e-8_r8
     real(r8), parameter :: tiny_val=1.e-35_r8
 
   type(debs) :: deb
@@ -1317,6 +1326,8 @@ subroutine calc_som_decay_r(this, summsbgc_index, dtime, om_k_decay, om_pools, o
    decay_mic0     => this%decay_mic0                   , & !
    decay_enz      => this%decay_enz                      & !
   )
+  call bstatus%reset()
+
 
       y_poly = ystates((poly-1) * nelms + c_loc)
       y_mono = ystates((mono-1) * nelms + c_loc)
@@ -1365,15 +1376,28 @@ subroutine calc_som_decay_r(this, summsbgc_index, dtime, om_k_decay, om_pools, o
                 ! Actual DEB calculation
                     gB=0._r8
                     pE=0._r8
+                    
+                    m0=safe_div(mr_mic,gmax_mic)
+                    jeg=safe_div(je,gmax_mic)
+                    g0=safe_div(pmax_enz,gmax_mic)
+                    ev=ec
 
-                    call deb_grow ( gb0, deb, fb1 )
-                    call deb_grow ( gb1, deb, fb2 )
-                    call brent(gbtemp, gb0, gb1, fb1, fb2, macheps, tol, deb, deb_grow)
+                    !call deb_grow ( gb0, deb, fb1 )
+                    !call deb_grow ( gb1, deb, fb2 )
+                    !call brent(gbtemp, gb0, gb1, fb1, fb2, macheps, tol, deb, deb_grow, bstatus)
+
+                    aa= yld_mic*yld_enz + safe_div(1._r8,ev)*(yld_enz + yld_mic*g0)
+                    bb= safe_div((yld_mic*g0 - (jeg - m0)),ev) * (yld_enz + yld_mic*g0) +2._r8*safe_div(g0,ev) 
+                    cc= -(jeg - m0) * safe_div(2._r8,ev) * g0
+                    delta= bb*bb - 4._r8*aa*cc
+                    jxx=safe_div((-bb + sqrt(delta)),(2._r8*aa))
+                    gB=safe_div((jeg - m0 - jxx),ev)
+                    pE=(jxx - safe_div(gB,yld_mic))*yld_enz
 
                 ! Population growth        
-                actgB=deb%gB
+                actgB=gB*gmax_mic   !deb%gB
                 ! Enzyme production        
-                actpE=deb%pE
+                actpE=pE*pmax_enz   !deb%pE
                 ! Maintenance
                 actmr=mr_mic                      
 

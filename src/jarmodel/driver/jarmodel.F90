@@ -139,7 +139,7 @@ subroutine run_model(namelist_buffer)
   call timer%Init(namelist_buffer=namelist_buffer)
 
   dtime=timer%get_step_size()
-  call hist%init(varl, unitl, freql, 'jarmodel')
+  call hist%init(varl, unitl, freql, 'jarmodel', dtime)
 
   call bgc_forc%Init(nvars)
   !read in forcing
@@ -168,4 +168,5 @@ subroutine run_model(namelist_buffer)
 
     if(timer%its_time_to_exit())exit
   enddo
+  call hist%histrst('jarmodel', 'write')
 end subroutine run_model
