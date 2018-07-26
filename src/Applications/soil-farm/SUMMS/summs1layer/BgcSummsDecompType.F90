@@ -159,7 +159,7 @@ implicit none
 
   ! !LOCAL VARIABLES:
   real(r8), parameter :: normalization_tref = 15._r8 ! reference temperature for normalizaion (degrees C)
-  real(r8)            :: tref = 288.15 ! reference temperature (K)
+  real(r8)            :: tref = 288.15_r8 ! reference temperature (K)
   real(r8)            :: maxpsi
   real(r8)            :: normalization_factor
   real(r8)            :: catanf_30
@@ -168,23 +168,23 @@ implicit none
   real(r8)            :: psi
 
         ! Set up parameters to estimate the fraction of active enzymes at the current temperature
-        real(r8) :: rgas = 8.31446 ! Universal gas constant (J/K/mol)
-        integer :: trangebot = 220
-        integer :: trangetop = 340
+        real(r8) :: rgas = 8.31446_r8 ! Universal gas constant (J/K/mol)
+        integer :: trangebot = 220._r8
+        integer :: trangetop = 340._r8
         integer, dimension(:), allocatable :: temp0    ! Range of temperatures for interpolation <- integers for now, but want reals
         real(r8), dimension(:), allocatable :: deltag0 ! Change in Gibbs free energy for enzymes over temperature range
         real(r8), dimension(:), allocatable :: t_fact0 ! Fraction of active enzymes over temperature range
         integer :: ii                                  ! Array constructor index
         integer :: dimtemp0                            ! Length of temperature range temp0
-        real(r8) :: xpar1 = 249.544170969785           ! Number of amino acid residues per enzyme
-        real(r8) :: xpar2 = 5341.422691388677          ! Enthalpy change at convergence temperature for enthalpy (J/mol)
-        real(r8) :: xpar3 = 5.617549086429             ! Average number of non-polar hydrogen atoms per amino acid residue in enzyme
+        real(r8) :: xpar1 = 249.544170969785_r8           ! Number of amino acid residues per enzyme
+        real(r8) :: xpar2 = 5341.422691388677_r8          ! Enthalpy change at convergence temperature for enthalpy (J/mol)
+        real(r8) :: xpar3 = 5.617549086429_r8             ! Average number of non-polar hydrogen atoms per amino acid residue in enzyme
         real(r8) :: cp                                 ! Heat capacity
         real(r8) :: deltag1                            ! Change in Gibbs free energy for enzymes at reference temperature
         real(r8) :: t_fact1                            ! Fraction of active enzymes at reference temperature
-        real(r8) :: deltas_star = 18.1                 ! Entropy change at the convergence temperature for entropy (J/K/mol)
-        real(r8) :: ts_star = 385.2                    ! Convergence temperature for entropy (K)
-        real(r8) :: th_star = 373.6                    ! Convergence temperature for enthalpy (K)
+        real(r8) :: deltas_star = 18.1_r8                 ! Entropy change at the convergence temperature for entropy (J/K/mol)
+        real(r8) :: ts_star = 385.2_r8                    ! Convergence temperature for entropy (K)
+        real(r8) :: th_star = 373.6_r8                    ! Convergence temperature for enthalpy (K)
         real(r8) :: t_fact                             ! Active enzyme fraction at given temperatur
         ! Set up parameters to estimate the change in activity at the current temperature
         real(r8) :: fref0                              ! Modifies non-enzyme and non-equilibrium reactions
@@ -249,15 +249,15 @@ implicit none
       temp0 = (/ (ii, ii=trangebot,trangetop) /) ! Generate sequence of temperatures
 
       ! Fraction of active enzymes using Murphy et al. 1990, see Tang & Riely 2015 Eq.46-48, also see Ratkowsky2005JTB
-      cp = -46.+30.*(1.-1.54*(xpar1**(-0.268)))*xpar3 
+      cp = -46._r8+30._r8*(1._r8-1.54_r8*(xpar1**(-0.268_r8)))*xpar3 
       deltag0 = xpar2-deltas_star*temp0+cp*(temp0-th_star-temp0*log(temp0/ts_star))
-      t_fact0 = 1./(1.+exp(-xpar1*deltag0/(rgas*temp0)))   
+      t_fact0 = 1._r8/(1._r8+exp(-xpar1*deltag0/(rgas*temp0)))   
       deltag1 = xpar2-deltas_star*Tref+cp*(Tref-th_star-Tref*log(Tref/ts_star))
-      t_fact1  = 1./(1.+exp(-xpar1*deltag1/(rgas*Tref)))
+      t_fact1  = 1._r8/(1._r8+exp(-xpar1*deltag1/(rgas*Tref)))
 
       t_fact0=t_fact0/t_fact1 ! Active enzyme fraction in total enzyme vs temperaure
     
-      tinv=1./temp-1./tref ! Modifies activation energy
+      tinv=1._r8/temp-1._r8/tref ! Modifies activation energy
       
       call interp1(temp0, t_fact0, temp, t_fact) ! Interpolate to find fraction of active enzymes at current temperature
       ! This subroutine should return t_fact

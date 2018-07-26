@@ -1192,7 +1192,7 @@ contains
   real(r8) :: ECA_factor_den
   real(r8) :: ECA_factor_nit
   integer  :: jj, it
-  integer, parameter  :: itmax = 100
+  integer, parameter  :: itmax = 10
   type(lom_type) :: lom
   type(betr_status_type) :: bstatus
   logical :: lneg
