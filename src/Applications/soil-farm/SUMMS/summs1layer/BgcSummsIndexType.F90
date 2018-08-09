@@ -230,7 +230,7 @@ implicit none
   end subroutine add_ompool_name
 
   !-------------------------------------------------------------------------------
-  subroutine Init(this, use_c13, use_c14, non_limit, nop_limit, maxpft)
+  subroutine Init(this, use_c13, use_c14, non_limit, nop_limit, maxpft, use_warm)
     !
     ! DESCRIPTION:
     ! Initialize summsbgc type
@@ -243,6 +243,7 @@ implicit none
   logical, intent(in) :: non_limit
   logical, intent(in) :: nop_limit
   integer, optional, intent(in) :: maxpft
+  logical, intent(in) :: use_warm
 
   ! !LOCAL VARIABLES:
   integer :: maxpft_loc
@@ -250,7 +251,7 @@ implicit none
   maxpft_loc = 0
   this%dom_beg=0; this%dom_end=-1
   if(present(maxpft))maxpft_loc=maxpft
-  call this%InitPars(maxpft_loc, use_c14, use_c13, non_limit, nop_limit)
+  call this%InitPars(maxpft_loc, use_c14, use_c13, non_limit, nop_limit, use_warm)
 
   call this%InitAllocate()
 
@@ -261,7 +262,7 @@ implicit none
   end subroutine Init
   !-------------------------------------------------------------------------------
 
-  subroutine InitPars(this, maxpft, use_c14, use_c13, non_limit, nop_limit)
+  subroutine InitPars(this, maxpft, use_c14, use_c13, non_limit, nop_limit, use_warm)
     !
     ! !DESCRIPTION:
     !  describe the layout of the stoichiometric matrix for the reactions
@@ -292,6 +293,7 @@ implicit none
     logical, intent(in) :: use_c14
     logical, intent(in) :: non_limit
     logical, intent(in) :: nop_limit
+    logical, intent(in) :: use_warm
     ! !LOCAL VARIABLES:
     integer :: itemp
     integer :: ireac   !counter of reactions
@@ -518,8 +520,6 @@ implicit none
     this%nstvars          = itemp          !64 state variables
     this%nreactions = ireac            !decomposition pathways plus root auto respiration, nitrification, denitrification and plant immobilization
 
-!write(*,*)'this%nstvars or num vars',this%nstvars !RZA
-
     allocate(this%primvarid(ireac)); this%primvarid(:) = -1
     allocate(this%is_aerobic_reac(ireac)); this%is_aerobic_reac(:)=.false.
 
@@ -530,9 +530,6 @@ implicit none
     call copy_name(this%nstvars, list_name, this%varnames(1:this%nstvars))
     call copy_name(this%nstvars, list_unit, this%varunits(1:this%nstvars))
     call copy_name(this%nom_pools, list_pool, this%ompoolnames(1:this%nom_pools))
-
-!write(*,*)'varnames!',this%varnames(1:this%nstvars) !RZA
-!write(*,*)'nom_pool names!',this%ompoolnames(1:this%nom_pools)
 
     call list_free(list_name)
     call list_free(list_pool)

@@ -45,6 +45,7 @@ implicit none
 
   logical :: use_c13
   logical :: use_c14
+  logical :: use_warm
   logical :: nop_limit                                              !switch for P limitation
   logical :: non_limit
   !ECA nutrient competition
@@ -72,7 +73,7 @@ contains
   use betr_constants , only : betr_namelist_buffer_size_ext
   use BetrStatusType , only : betr_status_type
   use betr_ctrl      , only : betr_spinup_state
-  use tracer_varcon  , only : use_c13_betr, use_c14_betr, is_nitrogen_active, is_phosphorus_active
+  use tracer_varcon  , only : use_c13_betr, use_c14_betr, is_nitrogen_active, is_phosphorus_active, use_warm_betr
   implicit none
   class(BiogeoCon_type), intent(inout) :: this
   character(len=*) , intent(in)    :: namelist_buffer
@@ -101,7 +102,7 @@ contains
   use betr_constants , only : betr_namelist_buffer_size_ext
   use BetrStatusType , only : betr_status_type
   use betr_ctrl      , only : betr_spinup_state
-  use tracer_varcon  , only : use_c13_betr, use_c14_betr, is_nitrogen_active, is_phosphorus_active
+  use tracer_varcon  , only : use_c13_betr, use_c14_betr, is_nitrogen_active, is_phosphorus_active, use_warm_betr
   implicit none
   class(BiogeoCon_type), intent(inout) :: this
   type(betr_status_type)                   , intent(out) :: bstatus
@@ -114,6 +115,7 @@ contains
   this%use_c14 = use_c14_betr
   this%nop_limit=.not. is_phosphorus_active
   this%non_limit=.not. is_nitrogen_active
+  this%use_warm = use_warm_betr
 
   this%cwd_fcel_bgc          = 0.76_r8
   this%cwd_flig_bgc          = 0.24_r8
@@ -164,6 +166,7 @@ contains
 
   this%use_c13 = .false.
   this%use_c14 = .false.
+  this%use_warm = .false.
   this%nop_limit=.false.
   this%non_limit=.false.
   this%init_cc13_met = 0._r8

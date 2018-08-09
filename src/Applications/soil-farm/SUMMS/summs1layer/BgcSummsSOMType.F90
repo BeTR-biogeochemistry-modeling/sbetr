@@ -60,6 +60,7 @@ implicit none
 
     logical  :: use_c13
     logical  :: use_c14
+    logical  :: use_warm
   contains
     procedure, public :: Init
     procedure, public :: run_decomp
@@ -178,6 +179,7 @@ contains
 
   this%use_c13=biogeo_con%use_c13
   this%use_c14=biogeo_con%use_c14
+  this%use_warm=biogeo_con%use_warm
 
   if(this%use_c13)then
     this%def_cc13(summsbgc_index%lit1) = biogeo_con%init_cc13_met
@@ -1437,7 +1439,7 @@ subroutine calc_som_decay_r(this, summsbgc_index, dtime, om_k_decay, om_pools, o
 
       this%part_enz = safe_div(y_mic*actpE  , y_res*(kappa_mic-actgB+decay_mic))
 
-      this%part_mono = safe_div(decay_mic , y_res*(kappa_mic-actgB+decay_mic))
+      this%part_mono = safe_div(decay_mic , (kappa_mic-actgB+decay_mic))
 
       this%rate_co2 = safe_div(y_mic*(actmr+actpE*(safe_div(1._r8,yld_enz)-1._r8)+actgB*&
         (safe_div(1._r8,yld_res)-1._r8))+residual, y_res*(kappa_mic-actgB+decay_mic))

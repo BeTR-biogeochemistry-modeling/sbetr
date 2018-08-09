@@ -14,7 +14,7 @@ contains
 
 
   !-------------------------------------------------------------------------------
-  subroutine betr_readNL(NLFilename, use_c13, use_c14, nsoilorder)
+  subroutine betr_readNL(NLFilename, use_c13, use_c14, nsoilorder, use_warm)
     !
     ! !DESCRIPTION:
     ! read namelist for betr configuration
@@ -30,13 +30,14 @@ contains
     use tracer_varcon , only : advection_on, diffusion_on, reaction_on, ebullition_on, reaction_method
     use tracer_varcon , only : AA_spinup_on, fix_ip
     use ApplicationsFactory, only : AppInitParameters
-    use tracer_varcon , only : use_c13_betr, use_c14_betr
+    use tracer_varcon , only : use_c13_betr, use_c14_betr, use_warm_betr
     use BetrStatusType  , only : betr_status_type
     implicit none
     ! !ARGUMENTS:
     character(len=*), intent(IN) :: NLFilename              ! Namelist filename
     logical,          intent(in) :: use_c13
     logical,          intent(in) :: use_c14
+    logical,          intent(in) :: use_warm
     integer,          intent(in) :: nsoilorder
                                                             !
                                                             ! !LOCAL VARIABLES:
@@ -70,6 +71,7 @@ contains
     AA_spinup_on    = .false.
     use_c13_betr    = use_c13
     use_c14_betr    = use_c14
+    use_warm_betr   = use_warm
     AppParNLFile    = ''
     appfile_on      = .false.
     fix_ip          = .false.

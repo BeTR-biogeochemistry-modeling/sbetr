@@ -67,6 +67,7 @@ module BgcReactionsSummsType
     type(summsbgc_index_type) :: summsbgc_index
     logical :: use_c13
     logical :: use_c14
+    logical :: use_warm
     logical :: nop_limit
     logical :: non_limit
     integer :: nactpft               ! number of active pfts
@@ -436,7 +437,7 @@ if(exit_spinup)then
     if (this%dummy_compiler_warning) continue
 
     call this%summsbgc_index%Init(summs_para%use_c13, summs_para%use_c14, &
-       summs_para%non_limit, summs_para%nop_limit, betr_maxpatch_pft)
+       summs_para%non_limit, summs_para%nop_limit, betr_maxpatch_pft, summs_para%use_warm)
 
     if(bstatus%check_status())return
 
@@ -459,6 +460,7 @@ if(exit_spinup)then
     this%use_c14 = summs_para%use_c14
     this%nop_limit=summs_para%nop_limit
     this%non_limit=summs_para%non_limit
+    this%use_warm =summs_para%use_warm
 
     !set up betr
     nelm =this%summsbgc_index%nelms
@@ -2280,6 +2282,9 @@ if(exit_spinup)then
       biogeo_flux%c12flux_vars%hr_vr_col(c,j) = &
         (ystatesf(this%summsbgc_index%lid_co2_hr) - &
         ystates0(this%summsbgc_index%lid_co2_hr))*catomw/dtime
+
+   !write(*,*)'ystatesf(this%summsbgc_index%lid_co2_hr)   =', ystatesf(this%summsbgc_index%lid_co2_hr) !RZA
+   !write(*,*)'hr_vr_col  =', (ystatesf(this%summsbgc_index%lid_co2_hr) - ystates0(this%summsbgc_index%lid_co2_hr))*catomw/dtime
 
       biogeo_flux%p31flux_vars%secondp_to_occlp_vr_col(c,j) = &
          (ystatesf(this%summsbgc_index%lid_minp_occlude) - &

@@ -53,6 +53,8 @@ implicit none
   real(r8) :: ref_kaff_mono_msurf
   real(r8) :: ref_kaff_enz_msurf
 
+  logical :: use_warm
+
   contains
     procedure, public  :: Init
     procedure, public  :: set_decompk_scalar
@@ -143,6 +145,8 @@ implicit none
     this%ref_kaff_mono_msurf    = biogeo_con%ref_kaff_mono_msurf
     this%ref_kaff_enz_msurf     = biogeo_con%ref_kaff_enz_msurf
 
+    this%use_warm = biogeo_con%use_warm
+
   end subroutine UpdateParas
   !-----------------------------------------------------------------------
   subroutine set_decompk_scalar(this, o2b, bgc_forc)
@@ -190,7 +194,7 @@ implicit none
         real(r8) :: fref0                              ! Modifies non-enzyme and non-equilibrium reactions
         real(r8) :: tinv                               ! Modifies activation energy
         real(r8) :: fref                               ! Modifies non-equilibrium enzymatic reactions
-        !real(r8) :: temp                               ! Current temperature
+        real(r8) :: tempbgc                               ! Current temperature for biogeochemistry
 
   associate(                                       &
     temp          => bgc_forc%temp    ,          &
@@ -226,18 +230,27 @@ implicit none
     ref_kaff_mono_msurf   => this%ref_kaff_mono_msurf   , &
     kaff_mono_msurf       => this%kaff_mono_msurf       , &
     ref_kaff_enz_msurf    => this%ref_kaff_enz_msurf    , &
-    kaff_enz_msurf        => this%kaff_enz_msurf          &     
+    kaff_enz_msurf        => this%kaff_enz_msurf        , &
+    use_warm              => this%use_warm                &     
   )
 
     catanf_30 = catanf(30._r8)
 
+  !warming effect
+  if(use_warm)then
+    tempbgc = temp+4
+  else
+    tempbgc = temp
+  endif
+
+
   !temperature scalar
   this%t_scalar     = 1._r8
   !use Charlie's Q10 based temperature scalar
-  if (temp >= SHR_CONST_TKFRZ) then
-    this%t_scalar= (Q10**((temp-(SHR_CONST_TKFRZ+25._r8))/10._r8))
+  if (tempbgc >= SHR_CONST_TKFRZ) then
+    this%t_scalar= (Q10**((tempbgc-(SHR_CONST_TKFRZ+25._r8))/10._r8))
   else
-    this%t_scalar= (Q10**(-25._r8/10._r8))*(froz_q10**((temp-SHR_CONST_TKFRZ)/10._r8))
+    this%t_scalar= (Q10**(-25._r8/10._r8))*(froz_q10**((tempbgc-SHR_CONST_TKFRZ)/10._r8))
   endif
 
   ! scale all decomposition rates by a constant to compensate for offset between original CENTURY temp func and Q10
@@ -257,12 +270,12 @@ implicit none
 
       t_fact0=t_fact0/t_fact1 ! Active enzyme fraction in total enzyme vs temperaure
     
-      tinv=1._r8/temp-1._r8/tref ! Modifies activation energy
+      tinv=1._r8/tempbgc-1._r8/tref ! Modifies activation energy
       
-      call interp1(temp0, t_fact0, temp, t_fact) ! Interpolate to find fraction of active enzymes at current temperature
+      call interp1(temp0, t_fact0, tempbgc, t_fact) ! Interpolate to find fraction of active enzymes at current temperature
       ! This subroutine should return t_fact
 
-      fref=t_fact*(temp/tref) ! Modifies non-equilibrium enzymatic reactions
+      fref=t_fact*(tempbgc/tref) ! Modifies non-equilibrium enzymatic reactions
 
   !Update parameters
     this%vmax_mic         = ref_vmax_mic *fref*exp(-ea_vmax_mic*tinv)

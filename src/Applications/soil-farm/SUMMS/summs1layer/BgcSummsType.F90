@@ -243,7 +243,7 @@ contains
   type is(SummsPara_type)
   call bstatus%reset()
   call this%summsbgc_index%Init(biogeo_con%use_c13, biogeo_con%use_c14, &
-     biogeo_con%non_limit, biogeo_con%nop_limit,  betr_maxpatch_pft)
+     biogeo_con%non_limit, biogeo_con%nop_limit,  betr_maxpatch_pft, biogeo_con%use_warm)
 
   this%nop_limit=biogeo_con%nop_limit
   this%non_limit=biogeo_con%non_limit

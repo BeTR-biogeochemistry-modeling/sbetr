@@ -271,7 +271,7 @@ contains
   use clm_varpar         , only : i_cwd, i_met_lit, i_cel_lit, i_lig_lit
   use PlantMicKineticsMod, only : PlantMicKinetics_type
   use mathfuncMod        , only : apvb,bisnan
-  use tracer_varcon      , only : use_c13_betr, use_c14_betr
+  use tracer_varcon      , only : use_c13_betr, use_c14_betr, use_warm_betr
   implicit none
   class(betr_simulation_standalone_type) , intent(inout)        :: this
   type(bounds_type) , intent(in)  :: bounds
