@@ -930,6 +930,7 @@ contains
         n14flux_vars%smin_no3_to_plant_patch(p) = this%biogeo_flux(c)%n14flux_vars%smin_no3_to_plant_patch(pi)
 
         p31flux_vars%sminp_to_plant_patch(p)  = this%biogeo_flux(c)%p31flux_vars%sminp_to_plant_patch(pi)
+        p31flux_vars%sminp_to_plant_trans_patch(p) = this%biogeo_flux(c)%p31flux_vars%sminp_to_plant_trans_patch(pi)
         !compute relative n return, note the following computation is different from ALM-ECA-CNP, because
         !betr includes transpiration incuded nitrogen uptake, which has not direct temperature sensitivity.
         n14state_vars%pnup_pfrootc_patch(p) = this%biogeo_flux(c)%pnup_pfrootc_patch(pi)
@@ -1345,7 +1346,8 @@ contains
   !set kinetic parameters for column c
   use PlantMicKineticsMod, only : PlantMicKinetics_type
   use tracer_varcon      , only : reaction_method,natomw,patomw
-  use pftvarcon             , only : noveg
+  use pftvarcon          , only : noveg
+  use clm_time_manager   , only : get_nstep
   implicit none
   class(betr_simulation_alm_type), intent(inout)  :: this
   type(betr_bounds_type), intent(in) :: betr_bounds
@@ -1355,7 +1357,7 @@ contains
   integer, intent(in) :: filter_soilc(:)
   type(PlantMicKinetics_type), intent(in) :: PlantMicKinetics_vars
 
-  integer :: j, fc, c, p, pi, pp, c_l
+  integer :: j, fc, c, p, pi, pp, c_l, val
 
   associate(      &
     plant_nh4_vmax_vr_patch => PlantMicKinetics_vars%plant_nh4_vmax_vr_patch, &
@@ -1374,6 +1376,8 @@ contains
   do fc = 1, num_soilc
     c = filter_soilc(fc)
     pp = 0
+    val=1._r8
+!    if(c==18619 .and. get_nstep()== 254044)val=0._r8
     do pi = 1, betr_maxpatch_pft
       if (pi <= col%npfts(c)) then
         p = col%pfti(c) + pi - 1
@@ -1382,8 +1386,8 @@ contains
           do j =1, betr_bounds%ubj
             this%betr(c)%plantNutkinetics%plant_nh4_vmax_vr_patch(pp,j) = plant_nh4_vmax_vr_patch(p,j)
             this%betr(c)%plantNutkinetics%plant_no3_vmax_vr_patch(pp,j) = plant_no3_vmax_vr_patch(p,j)
-            this%betr(c)%plantNutkinetics%plant_p_vmax_vr_patch(pp,j) = plant_p_vmax_vr_patch(p,j)
-            this%betr(c)%plantNutkinetics%plant_nh4_km_vr_patch(pp,j) = plant_nh4_km_vr_patch(p,j)/natomw
+            this%betr(c)%plantNutkinetics%plant_p_vmax_vr_patch(pp,j) = plant_p_vmax_vr_patch(p,j) * val
+            this%betr(c)%plantNutkinetics%plant_nh4_km_vr_patch(pp,j) = plant_nh4_km_vr_patch(p,j)/natomw 
             this%betr(c)%plantNutkinetics%plant_no3_km_vr_patch(pp,j) = plant_no3_km_vr_patch(p,j)/natomw
             this%betr(c)%plantNutkinetics%plant_p_km_vr_patch(pp,j) = plant_p_km_vr_patch(p,j)/natomw
             this%betr(c)%plantNutkinetics%plant_eff_ncompet_b_vr_patch(pp,j)=plant_eff_ncompet_b_vr_patch(p,j)/natomw
