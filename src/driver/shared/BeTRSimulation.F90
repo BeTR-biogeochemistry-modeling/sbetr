@@ -980,7 +980,7 @@ contains
   cc = 1
   do c = bounds%begc, bounds%endc
     if(.not. this%active_col(c))cycle
-    this%biophys_forc(c)%stwl(cc)=1  !by default this is set to 1 at soil surface
+    this%biophys_forc(c)%stwl(cc)=0  !by default this is set zero layers of standing water
     if(present(carbonflux_vars))then
       npft_loc = ubound(carbonflux_vars%annsum_npp_patch,1)-lbound(carbonflux_vars%annsum_npp_patch,1)+1
       if(col%pfti(c) /= lbound(carbonflux_vars%annsum_npp_patch,1) .and. npft_loc/=col%npfts(c))then
@@ -2139,7 +2139,7 @@ contains
   type(betr_bounds_type), intent(out)  :: betr_bounds
 
   betr_bounds%lbj  = 1; betr_bounds%ubj  = betr_nlevsoi
-  betr_bounds%begp = 1; betr_bounds%endp =  betr_maxpatch_pft
+  betr_bounds%begp = 1; betr_bounds%endp = betr_maxpatch_pft
   betr_bounds%begc = 1; betr_bounds%endc = 1
   betr_bounds%begl = 1; betr_bounds%endl = 1
   betr_bounds%begg = 1; betr_bounds%endg = 1

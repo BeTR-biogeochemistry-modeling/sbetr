@@ -97,7 +97,8 @@ implicit none
     real(r8), pointer :: occlp_vr_col(:,:) => null()
     integer , pointer :: lithotype_col(:) => null()
     real(r8), pointer :: pweath_prof_col(:,:) => null()
-    integer,  pointer :: stwl(:) => null()
+    integer,  pointer :: stwl(:) => null()    !standing water indices
+    integer  :: icluster_type     !type of ecosystem simulated, btvland, btvlake, bthaqua
     !carbon fluxes
     type(betr_carbonflux_type) :: c12flx
     type(betr_carbonflux_type) :: c13flx
@@ -147,7 +148,7 @@ contains
 
 
   subroutine InitCold(this)
-
+  use betr_varcon, only : btvland
   implicit none
   class(betr_biogeophys_input_type)  :: this
 
@@ -161,10 +162,12 @@ contains
   this%nh3_ppmv_col(:)= 0._r8
   this%forc_pbot_downscaled_col(:) = 1.013e5_r8
   this%forc_t_downscaled_col(:) = 288._r8
+  this%icluster_type = btvland
   end subroutine InitCold
 
   !------------------------------------------------------------------------
   subroutine InitAllocate(this, bounds)
+
   implicit none
   class(betr_biogeophys_input_type)  :: this
   type(betr_bounds_type), intent(in) :: bounds
