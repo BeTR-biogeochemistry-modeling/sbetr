@@ -269,8 +269,7 @@ contains
 
             call this%add_hist_var1d (it, num1d, fname=trim(tracername)//'_FLX_EBU', &
               units='mol/m2/s',  avgflag='A', &
-              long_name='loss through ebullition (+ into atmosphere) for '//trim(tracername), &
-              default='inactive')
+              long_name='loss through ebullition (+ into atmosphere) for '//trim(tracername))
 
             call this%add_hist_var1d (it, num1d, fname=trim(tracername)//'_FLX_DIF', &
               units='mol/m2/s',  avgflag='A', &
@@ -278,8 +277,7 @@ contains
               default='inactive')
 
             call this%add_hist_var1d (it, num1d, fname=trim(tracername)//'_FLX_ARCHM', units='mol/m2/s',    &
-             avgflag='A', long_name='loss from aerenchyma transport for '//trim(tracername),    &
-             default='inactive')
+             avgflag='A', long_name='loss from aerenchyma transport for '//trim(tracername))
 
             call this%add_hist_var1d (it, num1d, fname=trim(tracername)//'_FLX_SURFEMI', units='mol/m2/s',    &
              avgflag='A', long_name='loss from surface emission for '//trim(tracername))

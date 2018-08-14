@@ -2283,9 +2283,6 @@ if(exit_spinup)then
         (ystatesf(this%summsbgc_index%lid_co2_hr) - &
         ystates0(this%summsbgc_index%lid_co2_hr))*catomw/dtime
 
-   !write(*,*)'ystatesf(this%summsbgc_index%lid_co2_hr)   =', ystatesf(this%summsbgc_index%lid_co2_hr) !RZA
-   !write(*,*)'hr_vr_col  =', (ystatesf(this%summsbgc_index%lid_co2_hr) - ystates0(this%summsbgc_index%lid_co2_hr))*catomw/dtime
-
       biogeo_flux%p31flux_vars%secondp_to_occlp_vr_col(c,j) = &
          (ystatesf(this%summsbgc_index%lid_minp_occlude) - &
           ystates0(this%summsbgc_index%lid_minp_occlude))*patomw/dtime

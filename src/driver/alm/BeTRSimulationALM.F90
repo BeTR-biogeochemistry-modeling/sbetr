@@ -947,7 +947,8 @@ contains
   type(carbonflux_type)  , intent(inout):: c14flux_vars    !return carbon fluxes through DON?
   type(nitrogenflux_type), intent(inout):: n14flux_vars
   type(phosphorusflux_type), intent(inout):: p31flux_vars
-  integer :: c, fc, p, pi, c_l
+  integer :: c, fc, p, pi, c_l, j_l
+  integer             :: lbj, ubj
 
     !TEMPORARY VARIABLES
   type(betr_bounds_type)     :: betr_bounds
@@ -957,6 +958,7 @@ contains
   c_l = 1
   call this%BeTRSetBounds(betr_bounds)
   begc_l = betr_bounds%begc; endc_l=betr_bounds%endc;
+  lbj = betr_bounds%lbj;  ubj = betr_bounds%ubj
 
   if(this%do_soibgc())then
     do fc = 1, num_soilc
@@ -967,6 +969,7 @@ contains
 
 
     !retrieve plant nutrient uptake from biogeo_flux
+  do j_l = lbj, ubj
     do fc = 1, num_soilc
       c = filter_soilc(fc)
       pi = 0
@@ -990,6 +993,7 @@ contains
 
       !recollect soil respirations, fire and hydraulic loss
       c12flux_vars%hr_col(c) = this%biogeo_flux(c)%c12flux_vars%hr_col(c_l)
+      c12flux_vars%hr_vr_col(c,j_l) = this%biogeo_flux(c)%c12flux_vars%hr_vr_col(c_l,j_l)
 
       c12flux_vars%fire_decomp_closs_col(c) = this%biogeo_flux(c)%c12flux_vars%fire_decomp_closs_col(c_l)
       c12flux_vars%som_c_leached_col(c) = &
@@ -1117,6 +1121,7 @@ contains
       endif
 
     enddo
+  enddo
   endif
   end subroutine ALMBetrPlantSoilBGCRecv
   !------------------------------------------------------------------------
