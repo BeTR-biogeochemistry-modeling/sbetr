@@ -990,7 +990,8 @@ contains
    t_scalar       => decompkf_eca%t_scalar        , & ! Intput: [real(r8) (:,:)   ]  soil temperature scalar for decomp
    w_scalar       => decompkf_eca%w_scalar        , & ! Intput: [real(r8) (:,:)   ]  soil water scalar for decomp
    o_scalar       => decompkf_eca%o_scalar        , & ! Intput: [real(r8) (:,:)   ]  fraction by which decomposition is limited by anoxia
-   depth_scalar   => decompkf_eca%depth_scalar   , & ! Intput: [real(r8) (:,:)   ]  rate constant for decomposition (1./sec)
+   depth_scalar   => decompkf_eca%depth_scalar    , & ! Intput: [real(r8) (:,:)   ]  rate constant for decomposition (1./sec)
+   latacc         => decompkf_eca%latacc          , & !
    lit1           => ecacnp_bgc_index%lit1               , & !
    lit2           => ecacnp_bgc_index%lit2               , & !
    lit3           => ecacnp_bgc_index%lit3               , & !
@@ -1005,8 +1006,8 @@ contains
   k_decay(lit2) = this%k_decay_lit2(lay) * t_scalar * w_scalar * o_scalar * depth_scalar
   k_decay(lit3) = this%k_decay_lit3(lay) * t_scalar * w_scalar * o_scalar * depth_scalar
   k_decay(som1) = this%k_decay_som1(lay) * t_scalar * w_scalar * o_scalar * depth_scalar
-  k_decay(som2) = this%k_decay_som2 * t_scalar * w_scalar * o_scalar * depth_scalar
-  k_decay(som3) = this%k_decay_som3 * t_scalar * w_scalar * o_scalar * depth_scalar
+  k_decay(som2) = this%k_decay_som2 * t_scalar * w_scalar * o_scalar * depth_scalar * latacc
+  k_decay(som3) = this%k_decay_som3 * t_scalar * w_scalar * o_scalar * depth_scalar * latacc
   k_decay(cwd)  = this%k_decay_cwd  * t_scalar * w_scalar * o_scalar * depth_scalar
   k_decay(lwd)  = this%k_decay_lwd  * t_scalar * w_scalar * o_scalar * depth_scalar
   k_decay(fwd)  = this%k_decay_fwd  * t_scalar * w_scalar * o_scalar * depth_scalar

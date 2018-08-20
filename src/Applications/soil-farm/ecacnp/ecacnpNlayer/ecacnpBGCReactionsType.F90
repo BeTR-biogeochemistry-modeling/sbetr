@@ -96,7 +96,6 @@ module ecacnpBGCReactionsType
 
 contains
 
-
   !-------------------------------------------------------------------------------
   type(ecacnp_bgc_reaction_type) function constructor()
     !
@@ -179,11 +178,12 @@ contains
   type(BeTRtracer_type)                   , intent(inout) :: tracers
   type(tracerstate_type)                  , intent(inout) :: tracerstate_vars
   integer :: kk, c, j, c_l
-
+  real(r8):: latacc
   associate(                                                           &
    tracer_conc_mobile_col  => tracerstate_vars%tracer_conc_mobile_col, &
    tracer_conc_frozen_col  => tracerstate_vars%tracer_conc_frozen_col, &
    scalaravg_col           => biophysforc%scalaravg_col              , &
+   lat                     => biophysforc%lat                        , &
    nelm                    => this%ecacnp_bgc_index%nelms            , &
    c_loc                   => this%ecacnp_bgc_index%c_loc            , &
    n_loc                   => this%ecacnp_bgc_index%n_loc            , &
@@ -193,11 +193,12 @@ contains
    move_scalar             => tracers%move_scalar                      &
   )
 
-
+  c_l=1
+  latacc=calc_latacc(lat(c_l))
   if(betr_spinup_state/=0)then
-    move_scalar(tracers%id_trc_Bm) = ecacnp_para%spinup_factor(7)
-    move_scalar(tracers%id_trc_som) = ecacnp_para%spinup_factor(8)
-    move_scalar(tracers%id_trc_pom)=ecacnp_para%spinup_factor(9)
+    move_scalar(tracers%id_trc_Bm)  = ecacnp_para%spinup_factor(7)
+    move_scalar(tracers%id_trc_som) = ecacnp_para%spinup_factor(8)*latacc
+    move_scalar(tracers%id_trc_pom)=ecacnp_para%spinup_factor(9)  *latacc
   endif
 
   if(enter_spinup)then
@@ -206,15 +207,16 @@ contains
 
     do j = lbj, ubj
       do c = bounds%begc, bounds%endc
+
         !som1
         call rescale_tracer_group(c, j, tracers%id_trc_beg_Bm, &
-             tracers%id_trc_end_Bm, nelm, 1._r8/ecacnp_para%spinup_factor(7))
+             tracers%id_trc_end_Bm, nelm, 1._r8/(ecacnp_para%spinup_factor(7)))
 
         call rescale_tracer_group(c, j, tracers%id_trc_beg_som, &
-             tracers%id_trc_end_som, nelm, 1._r8/ecacnp_para%spinup_factor(8))
+             tracers%id_trc_end_som, nelm, 1._r8/(ecacnp_para%spinup_factor(8)*latacc))
 
         call rescale_tracer_group(c, j, tracers%id_trc_beg_pom, &
-             tracers%id_trc_end_pom, nelm, 1._r8/ecacnp_para%spinup_factor(9))
+             tracers%id_trc_end_pom, nelm, 1._r8/(ecacnp_para%spinup_factor(9)*latacc))
       enddo
     enddo
   endif
@@ -228,10 +230,10 @@ contains
              tracers%id_trc_end_Bm, nelm, ecacnp_para%spinup_factor(7))
 
         call rescale_tracer_group(c, j, tracers%id_trc_beg_som, &
-             tracers%id_trc_end_som, nelm, ecacnp_para%spinup_factor(8))
+             tracers%id_trc_end_som, nelm, ecacnp_para%spinup_factor(8)*latacc)
 
         call rescale_tracer_group(c, j, tracers%id_trc_beg_pom, &
-             tracers%id_trc_end_pom, nelm, ecacnp_para%spinup_factor(9))
+             tracers%id_trc_end_pom, nelm, ecacnp_para%spinup_factor(9)*latacc)
 
       enddo
     enddo
@@ -1627,7 +1629,8 @@ contains
   use tracercoeffType          , only : tracercoeff_type
   use betr_columnType          , only : betr_column_type
   use BetrTracerType           , only : betrtracer_type
-  use ecacnpPlantSoilBGCType      , only : ecacnp_plant_soilbgc_type
+  use ecacnpPlantSoilBGCType   , only : ecacnp_plant_soilbgc_type
+  use betr_ctrl                , only : betr_spinup_state
   use MathfuncMod              , only : fpmax
   use betr_varcon              , only : grav => bgrav
   implicit none
@@ -1647,6 +1650,7 @@ contains
 
   integer :: j, fc, c
   integer :: k1, k2
+  real(r8):: latacc(bounds%begc:bounds%endc)
   real(r8), parameter :: tiny_cval =1.e-16_r8
   associate( &
      litr_beg =>  this%ecacnp_bgc_index%litr_beg  , &
@@ -1665,10 +1669,22 @@ contains
   call betr_status%reset()
   SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__),betr_status)
 
+  if(betr_spinup_state/=0)then
+    do fc = 1, num_soilc
+      c = filter_soilc(fc)
+      latacc(c)= calc_latacc(biophysforc%lat(c))
+    enddo
+  else
+    do fc = 1, num_soilc
+      c = filter_soilc(fc)
+      latacc(c) = 1._r8
+    enddo
+  endif
   do j = lbj, ubj
     do fc = 1, num_soilc
       c = filter_soilc(fc)
       if(j<jtops(c))cycle
+      this%ecacnp_forc(c,j)%latacc = latacc(c)
       this%ecacnp_forc(c,j)%plant_ntypes = this%nactpft
       this%ecacnp_forc(c,j)%ystates(:) = 0._r8
 
@@ -2665,6 +2681,12 @@ contains
      enddo
      end subroutine sum_totsom
    end subroutine retrieve_biostates
+   !----------------------------------------------------------------------
+   function calc_latacc(lat)result(ans)
+   implicit none
+   real(r8), intent(in) :: lat
+   real(r8) :: ans
 
-
+   ans = 1._r8 + 50._r8/(1._r8+exp(-0.1_r8*(abs(lat)-60._r8)))
+   end function calc_latacc
 end module ecacnpBGCReactionsType

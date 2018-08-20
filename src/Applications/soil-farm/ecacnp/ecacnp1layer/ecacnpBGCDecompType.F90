@@ -27,6 +27,7 @@ implicit none
   real(r8) :: k_m_o2
   real(r8) :: vmax_decomp_n
   real(r8) :: vmax_decomp_p
+  real(r8) :: latacc
   contains
     procedure, public  :: Init
     procedure, public  :: set_decompk_scalar
@@ -132,6 +133,7 @@ implicit none
     minpsi        => this%minpsi                         &
   )
 
+  this%latacc = bgc_forc%latacc
   catanf_30 = catanf(30._r8)
 
   !temperature scalar

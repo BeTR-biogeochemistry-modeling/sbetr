@@ -98,6 +98,7 @@ implicit none
     integer , pointer :: lithotype_col(:) => null()
     real(r8), pointer :: pweath_prof_col(:,:) => null()
     integer,  pointer :: stwl(:) => null()    !standing water indices
+    real(r8), pointer :: lat(:) => null()   !latitude in degree of the column
     integer  :: icluster_type     !type of ecosystem simulated, btvland, btvlake, bthaqua
     !carbon fluxes
     type(betr_carbonflux_type) :: c12flx
@@ -270,6 +271,7 @@ contains
   allocate(this%biochem_pmin_vr(begc:endc,lbj:ubj))
   allocate(this%scalaravg_col(begc:endc))
   allocate(this%dom_scalar_col(begc:endc)); this%dom_scalar_col(:) = 1._r8
+  allocate(this%lat(begc:endc))
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------
