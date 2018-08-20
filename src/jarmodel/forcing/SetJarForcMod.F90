@@ -22,7 +22,7 @@ contains
 
   use OMForcType  , only : om_forc_type
   use NutForcType , only : nut_forc_type
-  use UnitConverMod, only : ppm2molv
+  use UnitConvertMod, only : ppm2molv
   implicit none
   type(JarBGC_forc_type), intent(inout) :: jar_forc
   type(nut_forc_type)   , intent(in) :: nut_forc

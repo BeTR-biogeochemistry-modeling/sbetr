@@ -1137,7 +1137,7 @@ contains
 
   !-----------------------------------------------------------------------
   subroutine get_zwt (bounds, numf, filter, zi, &
-       biophysforc, zwt,jwt, betr_status)
+       biophysforc, zwt, jwt, betr_status)
     !
     ! !DESCRIPTION:
     ! Finds the first unsaturated layer going up. Also allows a perched water table over ice.
@@ -1349,7 +1349,6 @@ contains
       endif
     end do ! p filter
   end do ! over levels
-
 
   end associate
 

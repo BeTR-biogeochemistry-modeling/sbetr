@@ -58,6 +58,7 @@ module BeTRSimulation
      logical                             , public, pointer :: active_col(:) => null()
      type(betr_column_type)              , public, pointer :: betr_col(:) => null()
      type(betr_patch_type)               , public, pointer :: betr_pft(:) => null()
+     type(betr_bounds_type)              , public, pointer :: betr_bounds(:) => null()
      character(len=betr_filename_length) , private :: base_filename
      character(len=betr_filename_length) , private :: hist_filename
      character(len=64)                   , private :: case_id
@@ -95,6 +96,7 @@ module BeTRSimulation
      logical,  private :: active_soibgc
      real(r8), private :: hist_naccum
      integer , private :: hist_record
+
      ! FIXME(bja, 201603) most of these types should be private!
 
      ! NOTE(bja, 201603) BeTR types only, no LSM specific types here!
@@ -342,6 +344,7 @@ contains
     allocate(this%betr_col(bounds%begc:bounds%endc))
     allocate(this%betr_pft(bounds%begc:bounds%endc))
     allocate(this%active_col(bounds%begc:bounds%endc))
+    allocate(this%betr_bounds(bounds%begc:bounds%endc))
     allocate(this%bsimstatus)
 
     call this%bsimstatus%reset()
@@ -977,6 +980,7 @@ contains
   cc = 1
   do c = bounds%begc, bounds%endc
     if(.not. this%active_col(c))cycle
+    this%biophys_forc(c)%stwl(cc)=0  !by default this is set zero layers of standing water
     if(present(carbonflux_vars))then
       npft_loc = ubound(carbonflux_vars%annsum_npp_patch,1)-lbound(carbonflux_vars%annsum_npp_patch,1)+1
       if(col%pfti(c) /= lbound(carbonflux_vars%annsum_npp_patch,1) .and. npft_loc/=col%npfts(c))then
@@ -2135,7 +2139,7 @@ contains
   type(betr_bounds_type), intent(out)  :: betr_bounds
 
   betr_bounds%lbj  = 1; betr_bounds%ubj  = betr_nlevsoi
-  betr_bounds%begp = 1; betr_bounds%endp =  betr_maxpatch_pft
+  betr_bounds%begp = 1; betr_bounds%endp = betr_maxpatch_pft
   betr_bounds%begc = 1; betr_bounds%endc = 1
   betr_bounds%begl = 1; betr_bounds%endl = 1
   betr_bounds%begg = 1; betr_bounds%endg = 1

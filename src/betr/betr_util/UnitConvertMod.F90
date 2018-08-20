@@ -1,4 +1,4 @@
-module UnitConverMod
+module UnitConvertMod
 
   use bshr_kind_mod  , only : r8 => shr_kind_r8
 implicit none
@@ -21,4 +21,4 @@ contains
   end function ppm2molv
 
 
-end module UnitConverMod
+end module UnitConvertMod

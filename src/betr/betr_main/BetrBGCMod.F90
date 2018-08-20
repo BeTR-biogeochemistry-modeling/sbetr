@@ -49,7 +49,6 @@ module BetrBGCMod
   public :: tracer_col_mapping_comb
 contains
 
-
   subroutine surface_tracer_hydropath_update(betr_time, bounds, col, &
      num_soilc, filter_soilc, biophysforc, advection_on, &
      betrtracer_vars, tracerstate_vars, &
@@ -275,6 +274,7 @@ contains
     use BetrStatusType         , only : betr_status_type
     use betr_columnType        , only : betr_column_type
     use BeTR_PatchType         , only : betr_patch_type
+    use betr_varcon            , only : btvlake, btvwetl
     implicit none
     !ARGUMENTS
     class(betr_time_type)            , intent(in)    :: betr_time
@@ -296,6 +296,7 @@ contains
     type(tracerflux_type)            , intent(inout) :: tracerflux_vars
     type(betr_status_type)           , intent(out)   :: betr_status
     integer :: lbj, ubj
+    integer :: transport_scheme(2)
     real(r8):: dtime
 
     call betr_status%reset()
@@ -307,7 +308,12 @@ contains
 
     lbj = bounds%lbj; ubj = bounds%ubj
     dtime = betr_time%get_step_size()
-
+    if(biophysforc%icluster_type == btvlake .or. &
+       biophysforc%icluster_type == btvwetl)then
+       transport_scheme=(/0, diffusion_scheme/)
+    else
+       transport_scheme=(/advection_scheme, diffusion_scheme/)
+    endif
     !do gas+aqueous diffusion and advection
     call tracer_gw_transport(betr_time, bounds, lbj, ubj, &
          col, pft,                                        &
@@ -317,7 +323,7 @@ contains
          Rfactor,                                         &
          col%dz(bounds%begc:bounds%endc, lbj:ubj),        &
          col%zi(bounds%begc:bounds%endc,lbj-1:ubj),       &
-         (/advection_scheme, diffusion_scheme/),          &
+         transport_scheme,                                &
          advection_on, diffusion_on,                      &
          betrtracer_vars,                                 &
          tracerboundarycond_vars,                         &

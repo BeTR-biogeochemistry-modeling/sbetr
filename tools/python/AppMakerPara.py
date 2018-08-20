@@ -3,149 +3,150 @@
 #CMakeLists.txt
 
 def MakePara(sfarm_dir, app_name):
-    print "create file "+sfarm_dir+'/'+app_name+'Para'+"/CMakeLists.txt"
+    print "create file "+sfarm_dir+'/'+app_name+'/'+app_name+'Para'+"/CMakeLists.txt"
+    fcmake=open(sfarm_dir+'/'+app_name+'/'+app_name+'Para'+"/CMakeLists.txt","w")
+    fcmake.write("set("+app_name.upper()+"PARA_SOURCES\n")
+    fcmake.write("  "+app_name+"ParaType.F90\n")
+    fcmake.write( ")\n")
+
+    fcmake.write("include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)\n")
+    fcmake.write("include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_math)\n")
+    fcmake.write("include_directories(${CMAKE_BINARY_DIR}/src/io_util)\n")
+    fcmake.write("include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/bgcfarm_util)\n")
+    fcmake.write("include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/"+app_name+"/"+app_name+"Para)\n")
+    fcmake.write("include(add_betr_library)\n")
+    fcmake.write("add_betr_library("+app_name+"Para ${"+app_name.upper()+"PARA_SOURCES})\n")
+
+    fcmake.write("set(BETR_LIBRARIES "+app_name+"Para;${BETR_LIBRARIES} PARENT_SCOPE)\n")
+    fcmake.write("set(BETR_LIBRARIES "+app_name+"Para;${BETR_LIBRARIES})\n")
+
+    fcmake.write("if (NOT CMAKE_INSTALL_PREFIX STREQUAL "+'"'+"INSTALL_DISABLED"+'"'+")\n")
+    fcmake.write("    install(TARGETS "+app_name+"Para DESTINATION lib)\n")
+    fcmake.write("    file(GLOB HEADERS *.h)\n")
+    fcmake.write("    install(FILES ${HEADERS} DESTINATION include/soil-farm/"+app_name+"/"+app_name+"Para)\n")
+    fcmake.write("endif()\n")
+    fcmake.close()
     print ""
-    print "set("+app_name.upper()+"1LAYER_SOURCES"
-    print "  "+app_name+"BGCIndexType.F90"
-    print "  "+app_name+"BGCType.F90"
-    print ")"
-
-    print "include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)"
-    print "include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_math)"
-    print "include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/bgcfarm_util)"
-    print "include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/"+app_name+"/+"+app_name+"Para)"
-    print "include(add_betr_library)"
-    print "add_betr_library("+app_name+"1layer ${"+app_name.upper()+"1LAYER_SOURCES})"
-
-    print "set(BETR_LIBRARIES "+app_name+"1layer;${BETR_LIBRARIES} PARENT_SCOPE)"
-    print "set(BETR_LIBRARIES "+app_name+"1layer;${BETR_LIBRARIES})"
-
-    print "if (NOT CMAKE_INSTALL_PREFIX STREQUAL "+'"'+"INSTALL_DISABLED"+'"'+")"
-    print "    install(TARGETS "+app_name+"1layer DESTINATION lib)"
-    print "    file(GLOB HEADERS *.h)"
-    print "    install(FILES ${HEADERS} DESTINATION include/soil-farm/"+app_name+"/"+app_name+"1layer)"
-    print "endif()"
-
-    print ""
-    print "create file "+sfarm_dir+'/'+app_name+'Para'+"/"+app_name+"ParaType.F90"
+    print "create file "+sfarm_dir+'/'+app_name+'/'+app_name+'Para'+"/"+app_name+"ParaType.F90"
 #app_nameParaType.F90
+    fpara=open(sfarm_dir+'/'+app_name+'/'+app_name+'Para'+"/"+app_name+"ParaType.F90","w")
+    fpara.write("module "+app_name+"ParaType\n")
+    fpara.write("use bshr_kind_mod   , only : r8 => shr_kind_r8\n")
+    fpara.write("use BiogeoContype   , only : BiogeoCon_type\n")
+    fpara.write("implicit none\n")
+    fpara.write("\n")
+    fpara.write("  private\n")
+    fpara.write("  character(len=*), private, parameter :: filename = &\n")
+    fpara.write("       __FILE__\n")
 
-    print "module "+app_name+"ParaType"
-    print "use bshr_kind_mod   , only : r8 => shr_kind_r8"
-    print "use BiogeoContype   , only : BiogeoCon_type"
-    print "implicit none"
-    print ""
-    print "  private"
-    print "  character(len=*), private, parameter :: filename = &"
-    print "       __FILE__"
+    fpara.write("  type, public, extends(BiogeoCon_type) :: "+app_name+"_para_type\n")
+    fpara.write("  !declare variables here\n")
+    fpara.write("\n")
+    fpara.write("  contains\n")
+    fpara.write("    procedure, public  :: Init     => "+app_name+"_para_Init\n")
+    fpara.write("    procedure, public  :: readPars => "+app_name+"_para_readPars\n")
+    fpara.write("    procedure, public  :: printPars=> "+app_name+"_para_printPars\n")
+    fpara.write("    procedure, private :: "+app_name+"_InitAllocate\n")
+    fpara.write("    procedure, private :: set_defpar_default\n")
+    fpara.write("  end type "+app_name+"_para_type\n")
+    fpara.write("\n")
+    fpara.write("  type("+app_name+"_para_type), public :: "+app_name+"_para\n")
+    fpara.write("  public :: create_jarpars_"+app_name+"\n")
+    fpara.write("contains\n")
+    fpara.write("\n")
+    fpara.write("  function create_jarpars_"+app_name+"()\n")
+    fpara.write("  ! DESCRIPTION\n")
+    fpara.write("  ! constructor\n")
+    fpara.write("  implicit none\n")
+    fpara.write("  class("+app_name+"_para_type), pointer :: create_jarpars_"+app_name+"\n")
+    fpara.write("  class("+app_name+"_para_type), pointer :: bgc\n")
+    fpara.write("\n")
+    fpara.write("  allocate(bgc)\n")
+    fpara.write("  create_jarpars_"+app_name+" => bgc\n")
+    fpara.write("\n")
+    fpara.write("  end function create_jarpars_"+app_name+"\n")
 
-    print "  type, public, extends(BiogeoCon_type) :: "+app_name+"_para_type"
-    print "  !declare variables here"
-    print ""
-    print "  contains"
-    print "    procedure, public  :: Init     => "+app_name+"_para_Init"
-    print "    procedure, public  :: readPars => "+app_name+"_para_readPars"
-    print "    procedure, public  :: printPars=> "+app_name+"_para_printPars"
-    print "    procedure, private :: "+app_name+"_InitAllocate"
-    print "    procedure, private :: set_defpar_default"
-    print "  end type "+app_name+"_para_type"
-    print ""
-    print "  type("+app_name+"_para_type), public :: "+app_name+"_para"
-    print "  public :: create_jarpars_"+app_name
-    print "contains"
-    print ""
-    print "  function create_jarpars_"+app_name+"()"
-    print "  ! DESCRIPTION"
-    print "  ! constructor"
-    print "  implicit none"
-    print "  class("+app_name+"_para_type), pointer :: create_jarpars_"+app_name
-    print "  class("+app_name+"_para_type), pointer :: bgc"
-    print ""
-    print "  allocate(bgc)"
-    print "  create_jarpars_"+app_name+" => bgc"
-    print ""
-    print "  end function create_jarpars_"+app_name
+    fpara.write(" !--------------------------------------------------------------------\n")
+    fpara.write("  subroutine "+app_name+"_para_Init(this, namelist_buffer, bstatus)\n")
+    fpara.write("  !\n")
+    fpara.write("  !DESCRIPTION\n")
+    fpara.write("  !initialize default parameters\n")
+    fpara.write("\n")
+    fpara.write("  use betr_constants , only : betr_namelist_buffer_size_ext\n")
+    fpara.write("  use BetrStatusType , only : betr_status_type\n")
+    fpara.write("  use betr_ctrl      , only : betr_spinup_state\n")
+    fpara.write("  implicit none\n")
+    fpara.write("  class("+app_name+"_para_type), intent(inout) :: this\n")
+    fpara.write("  character(len=*)             , intent(in)  :: namelist_buffer\n")
+    fpara.write("  type(betr_status_type)       , intent(out) :: bstatus\n")
+    fpara.write("\n")
+    fpara.write("  call this%bcon_Init(bstatus)\n")
+    fpara.write("  if(bstatus%check_status())return\n")
+    fpara.write("\n")
+    fpara.write("  call this%"+app_name+"_InitAllocate"+"()\n")
+    fpara.write("  call this%set_defpar_default()\n")
+    fpara.write("\n")
+    fpara.write("  end subroutine "+app_name+"_para_Init\n")
+    fpara.write(" !--------------------------------------------------------------------\n")
 
-    print " !--------------------------------------------------------------------"
-    print "  subroutine "+app_name+"_para_Init(this, namelist_buffer, bstatus)"
-    print "  !"
-    print "  !DESCRIPTION"
-    print "  !initialize default parameters"
-    print ""
-    print "  use betr_constants , only : betr_namelist_buffer_size_ext"
-    print "  use BetrStatusType , only : betr_status_type"
-    print "  use betr_ctrl      , only : betr_spinup_state"
-    print "  implicit none"
-    print "  class("+app_name+"_para_type), intent(inout) :: this"
-    print "  character(len=*)             , intent(in)  :: namelist_buffer"
-    print "  type(betr_status_type)       , intent(out) :: bstatus"
-    print ""
-    print "  call this%bcon_Init(bstatus)"
-    print "  if(bstatus%check_status())return"
-    print ""
-    print "  call this%"+app_name+"_InitAllocate"+"()"
-    print "  call this%set_defpar_default()"
-    print ""
-    print "  end subroutine "+app_name+"_para_Init"
-    print " !--------------------------------------------------------------------"
+    fpara.write("  subroutine "+app_name+"_InitAllocate"+"(this)\n")
+    fpara.write("  use betr_varcon, only : betr_maxpatch_pft, betr_max_soilorder\n")
+    fpara.write("  implicit none\n")
+    fpara.write("  class("+app_name+"_para_type), intent(inout) :: this\n")
+    fpara.write("  !allocate memory for necessary varaibles\n")
+    fpara.write("\n")
+    fpara.write("  end subroutine "+app_name+"_InitAllocate\n")
 
-    print "  subroutine "+app_name+"_InitAllocate"+"(this)"
-    print "  use betr_varcon, only : betr_maxpatch_pft, betr_max_soilorder"
-    print "  implicit none"
-    print "  class("+app_name+"_para_type), intent(inout) :: this"
-    print "  !allocate memory for necessary varaibles"
-    print ""
-    print "  end subroutine "+app_name+"_InitAllocate"
+    fpara.write("  !--------------------------------------------------------------------\n")
+    fpara.write("  subroutine set_defpar_default(this)\n")
+    fpara.write("  !\n")
+    fpara.write("  !DESCRIPTION\n")
+    fpara.write("  !set default value for relevant parameters\n")
+    fpara.write("  use tracer_varcon      , only : natomw,patomw\n")
+    fpara.write("  use bshr_const_mod  , only : year_sec=>SHR_CONST_YEARSECS\n")
+    fpara.write("  implicit none\n")
+    fpara.write("  class("+app_name+"_para_type), intent(inout) :: this\n")
+    fpara.write("\n")
+    fpara.write("\n")
+    fpara.write("  end subroutine set_defpar_default\n")
 
-    print "  !--------------------------------------------------------------------"
-    print "  subroutine set_defpar_default(this)"
-    print "  !"
-    print "  !DESCRIPTION"
-    print "  !set default value for relevant parameters"
-    print "  use tracer_varcon      , only : natomw,patomw"
-    print "  use bshr_const_mod  , only : year_sec=>SHR_CONST_YEARSECS"
-    print "  implicit none"
-    print "  class("+app_name+"_para_type), intent(inout) :: this"
-    print ""
-    print ""
-    print "  end subroutine set_defpar_default"
+    fpara.write(" !--------------------------------------------------------------------\n")
 
-    print " !--------------------------------------------------------------------"
+    fpara.write("  subroutine "+app_name+"_para_readPars(this, ncid, bstatus)\n")
+    fpara.write("  !\n")
+    fpara.write("  !DESCRIPTION\n")
+    fpara.write("  !read parameters from input file\n")
+    fpara.write("  use bshr_log_mod    , only : errMsg => shr_log_errMsg\n")
+    fpara.write("  use ncdio_pio       , only : file_desc_t, ncd_io\n")
+    fpara.write("  use BetrStatusType  , only : betr_status_type\n")
+    fpara.write("  use betr_ctrl       , only : betr_spinup_state\n")
+    fpara.write("  use bshr_const_mod  , only : year_sec=>SHR_CONST_YEARSECS\n")
+    fpara.write("  use tracer_varcon   , only : natomw,patomw\n")
+    fpara.write("  implicit none\n")
+    fpara.write("  class("+app_name+"_para_type), intent(inout) :: this\n")
+    fpara.write("  type(file_desc_t)            , intent(inout) :: ncid  ! pio netCDF file id\n")
+    fpara.write("  type(betr_status_type)       , intent(out)   :: bstatus\n")
+    fpara.write("\n")
+    fpara.write("  !local variables\n")
+    fpara.write("  character(len=100) :: errCode = '-Error reading in parameters file:'\n")
+    fpara.write("  logical            :: readv ! has variable been read in or not\n")
+    fpara.write("  real(r8)           :: tempr(1) ! temporary to read in constant\n")
+    fpara.write("  real(r8)           :: temparr(1:2,1:1)\n")
+    fpara.write("  character(len=100) :: tString ! temp. var for reading\n")
+    fpara.write("\n")
+    fpara.write("  call bstatus%reset()\n")
+    fpara.write("  return\n")
+    fpara.write("  !read shared parameters\n")
+    fpara.write("  call this%readPars_bgc(ncid, bstatus)\n")
+    fpara.write("\n")
+    fpara.write("  end subroutine "+app_name+"_para_readPars\n")
 
-    print "  subroutine "+app_name+"_para_readPars(this, ncid, bstatus)"
-    print "  !"
-    print "  !DESCRIPTION"
-    print "  read parameters from input file"
-    print "  use bshr_log_mod    , only : errMsg => shr_log_errMsg"
-    print "  use bncdio_pio       , only : file_desc_t, ncd_io"
-    print "  use BetrStatusType  , only : betr_status_type"
-    print "  use betr_ctrl       , only : betr_spinup_state"
-    print "  use bshr_const_mod  , only : year_sec=>SHR_CONST_YEARSECS"
-    print "  use tracer_varcon   , only : natomw,patomw"
-    print "  implicit none"
-    print "  class("+app_name+"_para_type), intent(inout) :: this"
-    print "  type(file_desc_t)            , intent(inout) :: ncid  ! pio netCDF file id"
-    print "  type(betr_status_type)       , intent(out)   :: bstatus"
-    print ""
-    print "  !local variables"
-    print "  character(len=100) :: errCode = '-Error reading in parameters file:'"
-    print "  logical            :: readv ! has variable been read in or not"
-    print "  real(r8)           :: tempr(1) ! temporary to read in constant"
-    print "  real(r8)           :: temparr(1:2,1:1)"
-    print "  character(len=100) :: tString ! temp. var for reading"
-    print ""
-    print "  call bstatus%reset()"
-    print "  return"
-    print "  !read shared parameters"
-    print "  call this%readPars_bgc(ncid, bstatus)"
-    print ""
-    print "  end subroutine "+app_name+"_para_readPars"
-
-    print "!--------------------------------------------------------------------"
-    print "  subroutine "+app_name+"_para_printPars(this)"
-    print ""
-    print "  implicit none"
-    print "  class("+app_name+"_para_type), intent(inout) :: this"
-    print "  call this%prtPars_bgc()"
-    print "  end subroutine "+app_name+"_para_printPars"
-    print "end module "+app_name+"ParaType"
+    fpara.write("!--------------------------------------------------------------------\n")
+    fpara.write("  subroutine "+app_name+"_para_printPars(this)\n")
+    fpara.write("\n")
+    fpara.write("  implicit none\n")
+    fpara.write("  class("+app_name+"_para_type), intent(inout) :: this\n")
+    fpara.write("  call this%prtPars_bgc()\n")
+    fpara.write("  end subroutine "+app_name+"_para_printPars\n")
+    fpara.write("end module "+app_name+"ParaType\n")
+    fpara.close()

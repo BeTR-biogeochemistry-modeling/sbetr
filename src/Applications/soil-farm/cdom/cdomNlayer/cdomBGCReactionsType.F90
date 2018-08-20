@@ -1407,7 +1407,7 @@ contains
     use betr_columnType   , only : betr_column_type
     use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
     use tracer_varcon     , only : patomw, catomw, natomw
-    use UnitConverMod     , only : ppm2molv
+    use UnitConvertMod     , only : ppm2molv
     implicit none
     ! !ARGUMENTS:
     class(cdom_bgc_reaction_type) , intent(inout)    :: this

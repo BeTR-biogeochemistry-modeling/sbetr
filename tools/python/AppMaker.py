@@ -1,23 +1,57 @@
 #!/usr/bin/env python2
 
-import os
+
+import os,time,sys,argparse
 import AppMakerPara
 import AppMaker1layer
 import AppMakerNlayer
+import shutil
+
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--appname', dest="appname", metavar='newapp', type=str, nargs=1, default=["newApp"],
+  help='the name of the new app')
+
+parser.add_argument('--action', dest="action", metavar='action', type=str, nargs=1, default=["add"],
+  help='action needs to take for the code generator, add or remove')
+
+
+args = parser.parse_args()
+
+app_name=args.appname[0]
+
+
 dir_path = os.path.dirname(os.path.realpath(__file__))
+
 print dir_path
 
 mdir,chdir=dir_path.split('sbetr')
-sfarm_dir=mdir+'src/Applications/soil-farm'
+sfarm_dir=mdir+'sbetr/src/Applications/soil-farm'
 
 #mkdir directories
 print ("Create directories")
-app_name='newApp'
-print 'mkdir -p '+sfarm_dir+'/'+app_name+"/"+app_name+'Para'
-print 'mkdir -p '+sfarm_dir+'/'+app_name+"/"+app_name+'1layer'
-print 'mkdir -p '+sfarm_dir+'/'+app_name+"/"+app_name+'Nlayer'
-print ""
 
+if args.action[0] == 'add':
+    print "add a new case"
+    os.system('mkdir -p '+sfarm_dir+'/'+app_name+"/"+app_name+'Para')
+    os.system('mkdir -p '+sfarm_dir+'/'+app_name+"/"+app_name+'1layer')
+    os.system('mkdir -p '+sfarm_dir+'/'+app_name+"/"+app_name+'Nlayer')
+    print ""
+elif args.action[0] == 'remove':
+    yourvar = input('really to remove the app '+app_name+': yes/no')
+    print('you entered: ' + yourvar)
+    if yourvar =='yes':
+        try:
+            print 'app: '+app_name +' is  removed'
+            os.system('rm -rf '+sfarm_dir+'/'+app_name)
+        except:
+            pass
+    else:
+        print 'AppMaker did nothing'
+    quit()
+else:
+    print 'AppMaker did nothing'
+    quit()
 print ("Create files")
 
 #in app_namePara create two files
@@ -36,3 +70,10 @@ AppMakerNlayer.MakeNlayer(sfarm_dir, app_name)
 #CMakeLists.txt
 #app_nameBGCReactionsType.F90
 #app_namePlantSoilBGCType.F90
+
+fcmake=open(sfarm_dir+'/'+app_name+"/CMakeLists.txt","w")
+fcmake.write("set(BETR_LIBRARIES "+app_name+'Para '+app_name+'1layer '+ app_name+'Nlayer;${BETR_LIBRARIES} PARENT_SCOPE)\n')
+fcmake.write('add_subdirectory('+app_name+'Para)\n')
+fcmake.write('add_subdirectory('+app_name+'1layer)\n')
+fcmake.write('add_subdirectory('+app_name+'Nlayer)\n')
+fcmake.close()
