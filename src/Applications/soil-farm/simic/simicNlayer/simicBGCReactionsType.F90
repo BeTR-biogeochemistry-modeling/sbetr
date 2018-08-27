@@ -674,7 +674,7 @@ contains
     use betr_varcon            , only : rgas => brgas
     use BeTR_biogeoFluxType    , only : betr_biogeo_flux_type
     use BetrStatusType         , only : betr_status_type
-    use UnitConverMod         , only : ppm2molv
+    use UnitConvertMod         , only : ppm2molv
     implicit none
     ! !ARGUMENTS:
     class(simic_bgc_reaction_type) , intent(inout)    :: this                       !

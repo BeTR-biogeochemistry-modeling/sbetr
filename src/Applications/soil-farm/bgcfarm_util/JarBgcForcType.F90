@@ -141,6 +141,7 @@ implicit none
     real(r8):: msurf_nh4
     real(r8):: msurf_minp
     real(r8):: air_temp
+    real(r8):: latacc   !latitude dependent acceleration factor for decomposition
   contains
     procedure, public :: init
     procedure, private:: initAllocate
@@ -327,5 +328,6 @@ contains
 
   this%ystates(:) = 0._r8
   this%air_temp = 298.15_r8
+  this%latacc = 1._r8
   end subroutine set_defpar
 end module JarBgcForcType

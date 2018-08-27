@@ -44,4 +44,9 @@ module betr_varcon
   integer, public :: betr_maxpatch_pft = 1
   integer, public :: betr_max_soilorder = 1
   real(r8), public :: kyr_spinup=20._r8
+
+  integer, parameter :: btvland = 1   !vertical soil, has diffusion and advection
+  integer, parameter :: btvlake = 2   !vertical lake, only has diffusion
+  integer, parameter :: bthaqua = 3   !horizontal aquatic systems, has advection
+  integer, parameter :: btvwetl = 4   !vertical wetland, only has diffusion
 end module betr_varcon

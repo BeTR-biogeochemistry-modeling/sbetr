@@ -698,7 +698,7 @@ def MakeNlayer(sfarm_dir, app_name):
     ff90.write("  use betr_varcon            , only : rgas => brgas\n")
     ff90.write("  use BeTR_biogeoFluxType    , only : betr_biogeo_flux_type\n")
     ff90.write("  use BetrStatusType         , only : betr_status_type\n")
-    ff90.write("  use UnitConverMod          , only : ppm2molv\n")
+    ff90.write("  use UnitConvertMod          , only : ppm2molv\n")
     ff90.write("  implicit none\n")
     ff90.write("  ! !ARGUMENTS:\n")
     ff90.write("  class("+app_name+"_bgc_reaction_type) , intent(inout)    :: this        !\n")
