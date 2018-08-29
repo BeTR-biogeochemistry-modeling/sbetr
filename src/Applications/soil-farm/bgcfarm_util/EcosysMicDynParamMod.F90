@@ -15,6 +15,11 @@ implicit none
   interface Kb_smmodifier
     module procedure Kb_smmodifier_single, Kb_smmodifier_dual
   end interface Kb_smmodifier
+
+
+  public :: get_bacteria_K0_minp,get_bacteria_K0_nh4, get_bacteria_K0_no3
+  public :: get_bacteria_gamma_minp,get_bacteria_gamma_nh4, get_bacteria_gamma_no3
+  public :: get_film_thickness
 contains
   !-------------------------------------------------------------------------------
   function f_actv(stk, rtk)result(actv)
@@ -133,4 +138,223 @@ contains
 
   end function Kb_smmodifier_dual
 
+
+  !-------------------------------------------------------------------------------
+  function soil_matrix_mic_resistance(rm, vm, filmthk, diffusb)result(ans)
+
+  use bshr_const_mod, only : pi => SHR_CONST_PI
+  implicit none
+  real(r8), intent(in) :: rm      !microsite radius, m
+  real(r8), intent(in) :: vm      !microsite volume, m
+  real(r8), intent(in) :: filmthk !water film thickness, m
+  real(r8), intent(in) :: diffusb !bulk diffusivity, m^2 s^-1
+  real(r8) :: ans
+
+  ans = 4._r8 * pi/(diffusb*(rm+filmthk))
+  return
+  end function soil_matrix_mic_resistance
+
+
+  !-------------------------------------------------------------------------------
+  function microsite_mic_resistance(rm, vm, filmthk, diffusw)result(ans)
+
+  use bshr_const_mod, only : pi => SHR_CONST_PI
+  implicit none
+  real(r8), intent(in) :: rm      !microsite radius, m
+  real(r8), intent(in) :: vm      !microsite volume, m
+  real(r8), intent(in) :: filmthk !water film thickness, m
+  real(r8), intent(in) :: diffusw !aqueous diffusivity, m^2 s^-1
+  real(r8) :: ans
+
+  ans = 4._r8 * pi * vm * filmthk/(diffusw*rm*(rm+filmthk))
+  return
+  end function microsite_mic_resistance
+
+  !-------------------------------------------------------------------------------
+
+  subroutine ref_Km_k1w_bacteria(k2p, Np, rp, rc, diffusw, K0, k1w)
+  use bshr_const_mod, only : Na=> SHR_CONST_AVOGAD
+  use bshr_const_mod, only : pi => SHR_CONST_PI
+  implicit none
+  real(r8), intent(in) :: k2p     !transporter specific substrate processing rate 1/s
+  real(r8), intent(in) :: Np      !number of transporters per bacteria
+  real(r8), intent(in) :: rp      !radius of transporter
+  real(r8), intent(in) :: rc      !radisu of bacteria
+  real(r8), intent(in) :: diffusw !aqueous diffusivity
+  real(r8), intent(out):: K0
+  real(r8), intent(out):: k1w
+
+
+  k1w = 4._r8*pi*diffusw*rc*Np*rp/(Np*rp+pi*rc)
+
+  K0 = k2p*(Np*rp+pi*rc)/(4._r8*pi*diffusw*rc*rp*Na)
+
+
+  end subroutine ref_km_k1w_bacteria
+  !-------------------------------------------------------------------------------
+  function get_bacteria_gamma(Ncell, k1w, rm,  filmthk, diffusb, diffusw)result(ans)
+  use bshr_const_mod, only : pi => SHR_CONST_PI
+  implicit none
+  real(r8), intent(in) :: Ncell   !number of cells per microsite
+  real(r8), intent(in) :: k1w     !substrate approaching rate at cell surface
+  real(r8), intent(in) :: rm      !microsite radius, m
+
+  real(r8), intent(in) :: filmthk !water film thickness, m
+  real(r8), intent(in) :: diffusw !aqueous diffusivity, m^2 s^-1
+  real(r8), intent(in) :: diffusb
+  real(r8) :: ans
+
+  real(r8) :: ikappa
+  real(r8) :: vm
+  real(r8) :: Rs_soil, Rs_mic
+  vm = pi*4._r8/3._r8* rm **3._r8
+  Rs_soil = soil_matrix_mic_resistance(rm, vm, filmthk, diffusb)
+  Rs_mic  = microsite_mic_resistance(rm, vm, filmthk, diffusw)
+  ikappa = Rs_soil + Rs_mic
+  ans = 1._r8 + k1w * Ncell * ikappa
+  return
+  end function get_bacteria_gamma
+  !-------------------------------------------------------------------------------
+
+  subroutine get_bacteria_K0_nh4(tsoi, ft, K0, k1w)
+
+  implicit none
+  real(r8), intent(in) :: tsoi
+  real(r8), intent(in) :: ft
+  real(r8), intent(out):: K0
+  real(r8), intent(out):: k1w
+  real(r8), parameter :: k2p = 1.e3_r8
+  real(r8), parameter :: Np = 3000._r8
+  real(r8), parameter :: rp = 1.e-9_r8
+  real(r8), parameter :: rc = 1.e-6_r8
+
+  real(r8) :: diffusw
+  !get aqueous diffusivity for nh4
+
+  call ref_Km_k1w_bacteria(k2p, Np, rp, rc, diffusw, K0, k1w)
+  end subroutine get_bacteria_K0_nh4
+
+  !-------------------------------------------------------------------------------
+  subroutine get_bacteria_K0_no3(tsoi, ft, K0, k1w)
+
+  implicit none
+  real(r8), intent(in) :: tsoi
+  real(r8), intent(in) :: ft
+  real(r8), intent(out):: K0
+  real(r8), intent(out):: k1w
+  real(r8), parameter :: k2p = 1.e3_r8
+  real(r8), parameter :: Np = 3000._r8
+  real(r8), parameter :: rp = 1.e-9_r8
+  real(r8), parameter :: rc = 1.e-6_r8
+
+  real(r8) :: diffusw
+  !get diffusivity for no3
+
+  call ref_Km_k1w_bacteria(k2p, Np, rp, rc, diffusw, K0, k1w)
+  end subroutine get_bacteria_K0_no3
+
+  !-------------------------------------------------------------------------------
+  subroutine get_bacteria_K0_minp(tsoi, ft, K0, k1w)
+
+  implicit none
+  real(r8), intent(in) :: tsoi
+  real(r8), intent(in) :: ft
+  real(r8), intent(out):: K0
+  real(r8), intent(out):: k1w
+
+  real(r8), parameter :: k2p = 1.e3_r8
+  real(r8), parameter :: Np = 3000._r8
+  real(r8), parameter :: rp = 1.e-9_r8
+  real(r8), parameter :: rc = 1.e-6_r8
+  real(r8) :: diffusw
+
+  !get diffusivity for minp
+
+  call ref_Km_k1w_bacteria(k2p, Np, rp, rc, diffusw, K0, k1w)
+  end subroutine get_bacteria_K0_minp
+  !-------------------------------------------------------------------------------
+
+  function get_bacteria_gamma_nh4(Bm, k1w, rm, taug, tauw, filmthk)result(ans)
+
+  implicit none
+  real(r8), intent(in) :: Bm
+  real(r8), intent(in) :: k1w
+  real(r8), intent(in) :: rm
+  real(r8), intent(in) :: filmthk
+  real(r8), intent(in) :: tauw
+  real(r8), intent(in) :: taug
+
+  real(r8) :: ans
+  real(r8) :: diffusb
+  real(r8) :: diffusw
+
+  !get nh4 diffusivity
+  diffusb = 0._r8
+  diffusw = 0._r8
+  ans = get_bacteria_gamma(Bm, k1w, rm,  filmthk, diffusb, diffusw)
+  return
+  end function get_bacteria_gamma_nh4
+
+  !-------------------------------------------------------------------------------
+
+  function get_bacteria_gamma_no3(Bm, k1w, rm, taug, tauw, filmthk)result(ans)
+
+  implicit none
+  real(r8), intent(in) :: Bm
+  real(r8), intent(in) :: k1w
+  real(r8), intent(in) :: rm
+  real(r8), intent(in) :: filmthk
+  real(r8), intent(in) :: tauw
+  real(r8), intent(in) :: taug
+
+  real(r8) :: ans
+  real(r8) :: diffusb
+  real(r8) :: diffusw
+
+  !get no3 diffusivity
+  diffusb = 0._r8
+  diffusw = 0._r8
+  ans = get_bacteria_gamma(Bm, k1w, rm,  filmthk, diffusb, diffusw)
+  return
+
+  end function get_bacteria_gamma_no3
+
+  !-------------------------------------------------------------------------------
+
+  function get_bacteria_gamma_minp(Bm, k1w, rm, taug, tauw, filmthk)result(ans)
+
+  implicit none
+  real(r8), intent(in) :: Bm
+  real(r8), intent(in) :: k1w
+  real(r8), intent(in) :: rm
+  real(r8), intent(in) :: filmthk
+  real(r8), intent(in) :: tauw
+  real(r8), intent(in) :: taug
+
+  real(r8) :: ans
+  real(r8) :: diffusb
+  real(r8) :: diffusw
+
+  !get minp diffusivity
+  diffusb = 0._r8
+  diffusw = 0._r8
+  ans = get_bacteria_gamma(Bm, k1w, rm,  filmthk, diffusb, diffusw)
+  return
+
+  end function get_bacteria_gamma_minp
+  !-------------------------------------------------------------------------------
+  function get_film_thickness(psiMPa)result(ans)
+  !
+  !DESCRIPTION
+  ! compute water film thickness based on soil matrix pressure
+  ! Tang and Riley, 2018, jgr-biogeosci.
+  implicit none
+  real(r8), intent(in) :: psiMPa
+  real(r8) :: ans
+
+
+  ans = exp(-13.65_r8 - 0.857_r8 * log(-psiMPa))
+
+  ans = max(1.e-8_r8, psiMPa)
+  end function get_film_thickness
 end module EcosysMicDynParamMod
