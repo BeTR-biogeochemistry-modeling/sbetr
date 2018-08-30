@@ -17,9 +17,10 @@ implicit none
   end interface Kb_smmodifier
 
 
-  public :: get_bacteria_K0_minp,get_bacteria_K0_nh4, get_bacteria_K0_no3
-  public :: get_bacteria_gamma_minp,get_bacteria_gamma_nh4, get_bacteria_gamma_no3
   public :: get_film_thickness
+  public :: get_soil_bacteria_Keff_gas
+  public :: get_soil_bacteria_Keff_solute
+  public :: get_microbe_ftn
 contains
   !-------------------------------------------------------------------------------
   function f_actv(stk, rtk)result(actv)
@@ -138,7 +139,6 @@ contains
 
   end function Kb_smmodifier_dual
 
-
   !-------------------------------------------------------------------------------
   function soil_matrix_mic_resistance(rm, vm, filmthk, diffusb)result(ans)
 
@@ -216,11 +216,11 @@ contains
   end function get_bacteria_gamma
   !-------------------------------------------------------------------------------
 
-  subroutine get_bacteria_K0_nh4(tsoi, ft, K0, k1w)
+  subroutine get_bacteria_K0(ftn, diffusw, K0, k1w)
 
   implicit none
-  real(r8), intent(in) :: tsoi
-  real(r8), intent(in) :: ft
+  real(r8), intent(in) :: ftn
+  real(r8), intent(in) :: diffusw
   real(r8), intent(out):: K0
   real(r8), intent(out):: k1w
   real(r8), parameter :: k2p = 1.e3_r8
@@ -228,120 +228,13 @@ contains
   real(r8), parameter :: rp = 1.e-9_r8
   real(r8), parameter :: rc = 1.e-6_r8
 
-  real(r8) :: diffusw
-  !get aqueous diffusivity for nh4
+  real(r8) :: Np_eff
 
-  call ref_Km_k1w_bacteria(k2p, Np, rp, rc, diffusw, K0, k1w)
-  end subroutine get_bacteria_K0_nh4
+  Np_eff = Np * ftn
+  call ref_Km_k1w_bacteria(k2p, Np_eff, rp, rc, diffusw, K0, k1w)
+  end subroutine get_bacteria_K0
 
-  !-------------------------------------------------------------------------------
-  subroutine get_bacteria_K0_no3(tsoi, ft, K0, k1w)
 
-  implicit none
-  real(r8), intent(in) :: tsoi
-  real(r8), intent(in) :: ft
-  real(r8), intent(out):: K0
-  real(r8), intent(out):: k1w
-  real(r8), parameter :: k2p = 1.e3_r8
-  real(r8), parameter :: Np = 3000._r8
-  real(r8), parameter :: rp = 1.e-9_r8
-  real(r8), parameter :: rc = 1.e-6_r8
-
-  real(r8) :: diffusw
-  !get diffusivity for no3
-
-  call ref_Km_k1w_bacteria(k2p, Np, rp, rc, diffusw, K0, k1w)
-  end subroutine get_bacteria_K0_no3
-
-  !-------------------------------------------------------------------------------
-  subroutine get_bacteria_K0_minp(tsoi, ft, K0, k1w)
-
-  implicit none
-  real(r8), intent(in) :: tsoi
-  real(r8), intent(in) :: ft
-  real(r8), intent(out):: K0
-  real(r8), intent(out):: k1w
-
-  real(r8), parameter :: k2p = 1.e3_r8
-  real(r8), parameter :: Np = 3000._r8
-  real(r8), parameter :: rp = 1.e-9_r8
-  real(r8), parameter :: rc = 1.e-6_r8
-  real(r8) :: diffusw
-
-  !get diffusivity for minp
-
-  call ref_Km_k1w_bacteria(k2p, Np, rp, rc, diffusw, K0, k1w)
-  end subroutine get_bacteria_K0_minp
-  !-------------------------------------------------------------------------------
-
-  function get_bacteria_gamma_nh4(Bm, k1w, rm, taug, tauw, filmthk)result(ans)
-
-  implicit none
-  real(r8), intent(in) :: Bm
-  real(r8), intent(in) :: k1w
-  real(r8), intent(in) :: rm
-  real(r8), intent(in) :: filmthk
-  real(r8), intent(in) :: tauw
-  real(r8), intent(in) :: taug
-
-  real(r8) :: ans
-  real(r8) :: diffusb
-  real(r8) :: diffusw
-
-  !get nh4 diffusivity
-  diffusb = 0._r8
-  diffusw = 0._r8
-  ans = get_bacteria_gamma(Bm, k1w, rm,  filmthk, diffusb, diffusw)
-  return
-  end function get_bacteria_gamma_nh4
-
-  !-------------------------------------------------------------------------------
-
-  function get_bacteria_gamma_no3(Bm, k1w, rm, taug, tauw, filmthk)result(ans)
-
-  implicit none
-  real(r8), intent(in) :: Bm
-  real(r8), intent(in) :: k1w
-  real(r8), intent(in) :: rm
-  real(r8), intent(in) :: filmthk
-  real(r8), intent(in) :: tauw
-  real(r8), intent(in) :: taug
-
-  real(r8) :: ans
-  real(r8) :: diffusb
-  real(r8) :: diffusw
-
-  !get no3 diffusivity
-  diffusb = 0._r8
-  diffusw = 0._r8
-  ans = get_bacteria_gamma(Bm, k1w, rm,  filmthk, diffusb, diffusw)
-  return
-
-  end function get_bacteria_gamma_no3
-
-  !-------------------------------------------------------------------------------
-
-  function get_bacteria_gamma_minp(Bm, k1w, rm, taug, tauw, filmthk)result(ans)
-
-  implicit none
-  real(r8), intent(in) :: Bm
-  real(r8), intent(in) :: k1w
-  real(r8), intent(in) :: rm
-  real(r8), intent(in) :: filmthk
-  real(r8), intent(in) :: tauw
-  real(r8), intent(in) :: taug
-
-  real(r8) :: ans
-  real(r8) :: diffusb
-  real(r8) :: diffusw
-
-  !get minp diffusivity
-  diffusb = 0._r8
-  diffusw = 0._r8
-  ans = get_bacteria_gamma(Bm, k1w, rm,  filmthk, diffusb, diffusw)
-  return
-
-  end function get_bacteria_gamma_minp
   !-------------------------------------------------------------------------------
   function get_film_thickness(psiMPa)result(ans)
   !
@@ -352,9 +245,88 @@ contains
   real(r8), intent(in) :: psiMPa
   real(r8) :: ans
 
-
   ans = exp(-13.65_r8 - 0.857_r8 * log(-psiMPa))
 
   ans = max(1.e-8_r8, psiMPa)
   end function get_film_thickness
+
+  !-------------------------------------------------------------------------------
+  function get_soil_bacteria_Keff_solute(ft, diffusw, diffusw0, filmthk)result(ans)
+  implicit none
+  real(r8), intent(in) :: ft
+  real(r8), intent(in) :: filmthk
+  real(r8), intent(in) :: diffusw
+  real(r8), intent(in) :: diffusw0
+  real(r8), parameter :: rc = 1.e-6_r8
+  real(r8), parameter :: Ncell=10._r8
+  real(r8), parameter :: rm = rc * (80._r8*Ncell)**(1._r8/3._r8)
+
+  real(r8), parameter :: agg_tor = 0.5_r8
+  real(r8) :: k0, k1w
+  real(r8) :: gamma
+  real(r8) :: ans
+  real(r8) :: diffus
+
+  diffus = diffusw0 * agg_tor
+
+  call get_bacteria_K0(ft, diffus, K0, k1w)
+
+  gamma=get_bacteria_gamma(Ncell, k1w, rm,  filmthk, diffusw, diffusw)
+
+  ans=gamma * K0
+
+  return
+  end function get_soil_bacteria_Keff_solute
+
+  !-------------------------------------------------------------------------------
+  function get_soil_bacteria_Keff_gas(ftn, diffusb, diffusw, diffusw0, filmthk)result(ans)
+  implicit none
+  real(r8), intent(in) :: ftn      !the stoichiometry and temperature factor on interception probability
+  real(r8), intent(in) :: diffusb
+  real(r8), intent(in) :: diffusw
+  real(r8), intent(in) :: diffusw0
+  real(r8), intent(in) :: filmthk
+
+  real(r8), parameter :: rc = 1.e-6_r8
+  real(r8), parameter :: Ncell=10._r8
+  real(r8), parameter :: rm = rc * (80._r8*Ncell)**(1._r8/3._r8)
+  real(r8), parameter :: agg_tor = 0.5_r8
+
+  real(r8) :: k0, k1w
+  real(r8) :: gamma
+  real(r8) :: diffus
+  real(r8) :: ans
+
+  diffus = diffusw0 * agg_tor
+
+  call get_bacteria_K0(ftn, diffus,  K0, k1w)
+
+  gamma = get_bacteria_gamma(Ncell, k1w, rm,  filmthk, diffusb, diffusw)
+  ans=gamma * K0
+
+  return
+  end function get_soil_bacteria_Keff_gas
+  !-------------------------------------------------------------------------------
+
+  function get_microbe_ftn(tks, offset)result(ans)
+  implicit none
+  real(r8), intent(in) :: tks
+  real(r8), intent(in) :: offset
+
+  real(r8) :: tcs
+  real(r8) :: tkso
+  real(r8) :: stk
+  real(r8) :: rtk
+  real(r8) :: actv
+  real(r8) :: ans
+
+  tcs = tks - 273.15_r8
+  tkso = tks + offset
+  stk = 710._r8 * tkso
+  rtk = 8.3143_r8 * tkso
+  actv = f_actv(stk, rtk)
+
+  ans = 1._r8/actv
+  return
+  end function get_microbe_ftn
 end module EcosysMicDynParamMod

@@ -1688,6 +1688,7 @@ contains
       this%ecacnp_forc(c,j)%plant_ntypes = this%nactpft
       this%ecacnp_forc(c,j)%ystates(:) = 0._r8
 
+
       !litter
       this%ecacnp_forc(c,j)%ystates(litr_beg:litr_end)= &
           tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_litr:betrtracer_vars%id_trc_end_litr)
@@ -1877,6 +1878,14 @@ contains
           tracerstate_vars%tracer_conc_atm_col(c,betrtracer_vars%volatileid(betrtracer_vars%id_trc_ch4))
 
       this%ecacnp_forc(c,j)%soilorder = biophysforc%isoilorder(c)
+
+      !solute diffusivity
+      this%ecacnp_forc(c,j)%diffusw_nh4 = 1.e-9_r8 * 0.5_r8
+      this%ecacnp_forc(c,j)%diffusw0_nh4 = 1.e-9_r8
+      this%ecacnp_forc(c,j)%diffusw_no3 = 1.e-9_r8 * 0.5_r8
+      this%ecacnp_forc(c,j)%diffusw0_no3 = 1.e-9_r8
+      this%ecacnp_forc(c,j)%diffusw_minp = 1.e-9_r8 * 0.5_r8
+      this%ecacnp_forc(c,j)%diffusw0_minp = 1.e-9_r8
 
     enddo
   enddo

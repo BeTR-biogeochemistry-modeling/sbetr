@@ -31,12 +31,14 @@ implicit none
     real(r8) :: kaff_minn_no3_den
     real(r8) :: kaff_minn_nh4_msurf
     real(r8) :: kaff_minp_msurf
+    real(r8) :: tmic_offset
     logical  :: debug
   contains
     procedure, public :: Init
     procedure, private:: InitAllocate
     procedure, public :: run_compet_phosphorus
     procedure, public :: run_compet_nitrogen
+    procedure, public :: compute_kinetic_paras
   end type Compet_ECA_type
 
 contains
@@ -54,13 +56,14 @@ contains
   call this%InitAllocate()
 
   call bstatus%reset()
+  this%tmic_offset = 0._r8     !this shall be part of betr state variables
   select type(biogeo_con)
   type is(ecacnp_para_type)
-    this%kaff_minn_nh4_mic = biogeo_con%km_decomp_nh4
-    this%kaff_minn_no3_mic = biogeo_con%km_decomp_no3
-    this%kaff_minp_mic     = biogeo_con%km_decomp_p
-    this%kaff_minn_nh4_nit = biogeo_con%km_nit
-    this%kaff_minn_no3_den = biogeo_con%km_den
+!    this%kaff_minn_nh4_mic = biogeo_con%km_decomp_nh4
+!    this%kaff_minn_no3_mic = biogeo_con%km_decomp_no3
+!    this%kaff_minp_mic     = biogeo_con%km_decomp_p
+!    this%kaff_minn_nh4_nit = biogeo_con%km_nit
+!    this%kaff_minn_no3_den = biogeo_con%km_den
   class default
     write(msg,'(A)')'Wrong parameter type passed in for Init in ' &
       // errMsg(mod_filename,__LINE__)
@@ -270,5 +273,61 @@ contains
   deallocate(entity)
   deallocate(se_complex)
   end subroutine run_compet_phosphorus
+
+  !-------------------------------------------------------------------------------
+  subroutine compute_kinetic_paras(this, dtime,  bgc_forc)
+  use JarBgcForcType , only : JarBGC_forc_type
+  use EcosysMicDynParamMod, only : get_film_thickness, get_soil_bacteria_Keff_solute
+  use EcosysMicDynParamMod, only : get_microbe_ftn
+  use bshr_const_mod, only : Rgas_kmol => SHR_CONST_RGAS
+  implicit none
+  class(Compet_ECA_type), intent(inout) :: this
+  real(r8), intent(in) :: dtime
+  type(JarBGC_forc_type) , intent(in) :: bgc_forc
+
+  real(r8) :: filmthk
+  real(r8) :: ftn_no3
+  real(r8) :: ftn_nh4
+  real(r8) :: ftn_minp
+  real(r8) :: ftn_ref
+  real(r8) :: rt
+  real(r8) :: xt
+  real(r8), parameter :: tau30=30._r8*86400._r8*365._r8  ! seconds, adaptation time
+  real(r8), parameter :: topt=295.5_r8     !base line at 22.35 C
+  real(r8), parameter :: gact_no3 = 72.e3_r8 ! J/mol, cordoba, 1986
+  real(r8), parameter :: gact_nh4 = 140.e3_r8 ! J/mol,
+  real(r8), parameter :: gact_minp= 55e3_r8  ! J/mol, Mierle, 1985
+  associate(                               &
+    diffusw_nh4  => bgc_forc%diffusw_nh4,  &
+    diffusw0_nh4 => bgc_forc%diffusw0_nh4, &
+    diffusw_no3  => bgc_forc%diffusw_no3,  &
+    diffusw0_no3 => bgc_forc%diffusw0_no3, &
+    diffusw_minp  => bgc_forc%diffusw_minp,  &
+    diffusw0_minp => bgc_forc%diffusw0_minp, &
+    soilpsi       => bgc_forc%soilpsi      , &
+    tsoi          => bgc_forc%temp           &
+
+  )
+
+  filmthk = get_film_thickness(soilpsi)
+
+  this%tmic_offset = this%tmic_offset + dtime/tau30*(tsoi-topt)
+  ftn_ref = get_microbe_ftn(tsoi, this%tmic_offset)
+  xt = tsoi/(topt + this%tmic_offset)
+
+  rt = Rgas_kmol * tsoi*1.e-3_r8
+  ftn_nh4 = xt * exp(-gact_nh4/rt*(1._r8-xt))
+  ftn_no3 = xt * exp(-gact_no3/rt*(1._r8-xt))
+  ftn_minp = xt * exp(-gact_no3/rt*(1._r8-xt))
+
+  this%kaff_minn_nh4_mic = get_soil_bacteria_Keff_solute(ftn_ref, diffusw_nh4, diffusw0_nh4, filmthk)* ftn_nh4
+  this%kaff_minn_no3_mic = get_soil_bacteria_Keff_solute(ftn_ref, diffusw_no3, diffusw0_no3, filmthk)* ftn_no3
+  this%kaff_minp_mic = get_soil_bacteria_Keff_solute(ftn_ref, diffusw_minp, diffusw0_minp, filmthk)* ftn_minp
+
+  !for simplicity, these are assumed same
+  this%kaff_minn_nh4_nit = this%kaff_minn_nh4_mic
+  this%kaff_minn_no3_den = this%kaff_minn_no3_mic
+  end associate
+  end subroutine compute_kinetic_paras
 
 end module ecacnpBGCCompetType

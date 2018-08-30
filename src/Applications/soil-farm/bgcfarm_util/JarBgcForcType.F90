@@ -132,7 +132,12 @@ implicit none
     real(r8) :: conc_atm_co2_c13
     real(r8) :: conc_atm_co2_c14
     real(r8) :: conc_atm_ch4
-
+    real(r8) :: diffusw_nh4
+    real(r8) :: diffusw0_nh4
+    real(r8) :: diffusw_no3
+    real(r8) :: diffusw0_no3
+    real(r8) :: diffusw_minp
+    real(r8) :: diffusw0_minp
     real(r8),pointer :: plant_froot_nn(:)
     real(r8),pointer :: plant_froot_np(:)
     integer, pointer :: plant_vtype(:)
