@@ -31,7 +31,7 @@ implicit none
     real(r8) :: kaff_minn_no3_den
     real(r8) :: kaff_minn_nh4_msurf
     real(r8) :: kaff_minp_msurf
-    real(r8) :: tmic_offset
+    real(r8) :: topt
     logical  :: debug
   contains
     procedure, public :: Init
@@ -56,7 +56,6 @@ contains
   call this%InitAllocate()
 
   call bstatus%reset()
-  this%tmic_offset = 0._r8     !this shall be part of betr state variables
   select type(biogeo_con)
   type is(ecacnp_para_type)
 !    this%kaff_minn_nh4_mic = biogeo_con%km_decomp_nh4
@@ -64,6 +63,7 @@ contains
 !    this%kaff_minp_mic     = biogeo_con%km_decomp_p
 !    this%kaff_minn_nh4_nit = biogeo_con%km_nit
 !    this%kaff_minn_no3_den = biogeo_con%km_den
+     this%topt = biogeo_con%topt
   class default
     write(msg,'(A)')'Wrong parameter type passed in for Init in ' &
       // errMsg(mod_filename,__LINE__)
@@ -292,8 +292,7 @@ contains
   real(r8) :: ftn_ref
   real(r8) :: rt
   real(r8) :: xt
-  real(r8), parameter :: tau30=30._r8*86400._r8*365._r8  ! seconds, adaptation time
-  real(r8), parameter :: topt=295.5_r8     !base line at 22.35 C
+  real(r8) :: toffset
   real(r8), parameter :: gact_no3 = 72.e3_r8 ! J/mol, cordoba, 1986
   real(r8), parameter :: gact_nh4 = 140.e3_r8 ! J/mol,
   real(r8), parameter :: gact_minp= 55e3_r8  ! J/mol, Mierle, 1985
@@ -305,15 +304,15 @@ contains
     diffusw_minp  => bgc_forc%diffusw_minp,  &
     diffusw0_minp => bgc_forc%diffusw0_minp, &
     soilpsi       => bgc_forc%soilpsi      , &
-    tsoi          => bgc_forc%temp           &
+    tsoi          => bgc_forc%temp         , &
+    tmic_opt   => bgc_forc%tmic_opt    &
 
   )
 
   filmthk = get_film_thickness(soilpsi)
-
-  this%tmic_offset = this%tmic_offset + dtime/tau30*(tsoi-topt)
-  ftn_ref = get_microbe_ftn(tsoi, this%tmic_offset)
-  xt = tsoi/(topt + this%tmic_offset)
+  toffset = this%topt-tmic_opt
+  ftn_ref = get_microbe_ftn(tsoi, toffset)
+  xt = tsoi/tmic_opt
 
   rt = Rgas_kmol * tsoi*1.e-3_r8
   ftn_nh4 = xt * exp(-gact_nh4/rt*(1._r8-xt))
@@ -323,7 +322,6 @@ contains
   this%kaff_minn_nh4_mic = get_soil_bacteria_Keff_solute(ftn_ref, diffusw_nh4, diffusw0_nh4, filmthk)* ftn_nh4
   this%kaff_minn_no3_mic = get_soil_bacteria_Keff_solute(ftn_ref, diffusw_no3, diffusw0_no3, filmthk)* ftn_no3
   this%kaff_minp_mic = get_soil_bacteria_Keff_solute(ftn_ref, diffusw_minp, diffusw0_minp, filmthk)* ftn_minp
-
   !for simplicity, these are assumed same
   this%kaff_minn_nh4_nit = this%kaff_minn_nh4_mic
   this%kaff_minn_no3_den = this%kaff_minn_no3_mic

@@ -313,14 +313,12 @@ contains
   real(r8), intent(in) :: tks
   real(r8), intent(in) :: offset
 
-  real(r8) :: tcs
   real(r8) :: tkso
   real(r8) :: stk
   real(r8) :: rtk
   real(r8) :: actv
   real(r8) :: ans
 
-  tcs = tks - 273.15_r8
   tkso = tks + offset
   stk = 710._r8 * tkso
   rtk = 8.3143_r8 * tkso

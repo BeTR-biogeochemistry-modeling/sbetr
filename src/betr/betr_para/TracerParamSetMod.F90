@@ -216,7 +216,9 @@ contains
    elseif(trcid==betrtracer_vars%id_trc_no2x)then
       diff=2.6e-9_r8*temp/298.15_r8  !considers revision
    elseif(trcid==betrtracer_vars%id_trc_nh3x)then
-      diff=1.64e-5_r8*temp/298.15_r8
+      diff=1.64e-9_r8*temp/298.15_r8
+   elseif(trcid==betrtracer_vars%id_trc_p_sol)then
+      diff=0.7e-9_r8*temp/293.15_r8
 !isotopes
    elseif(trcid==betrtracer_vars%id_trc_d_h2o)then
       diff=0.9833_r8*1e-9_r8*exp(-(535400._r8/temp-1393.3_r8)/temp+2.1876_r8)
@@ -510,7 +512,7 @@ contains
 
   ans = exp(-13.65_r8-0.857_r8 *log(-smp_Mpa))
   ans = max(1.e-6_r8, ans)
-  
+
   end function get_film_thickness
   !-----------------------------------------------------------------------
 end module TracerParamSetMod

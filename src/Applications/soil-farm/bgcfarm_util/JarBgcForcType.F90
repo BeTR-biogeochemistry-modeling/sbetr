@@ -147,6 +147,7 @@ implicit none
     real(r8):: msurf_minp
     real(r8):: air_temp
     real(r8):: latacc   !latitude dependent acceleration factor for decomposition
+    real(r8):: tmic_opt  !temperature offset for microbial adaptation
   contains
     procedure, public :: init
     procedure, private:: initAllocate

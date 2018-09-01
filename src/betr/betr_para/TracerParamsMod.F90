@@ -172,7 +172,7 @@ contains
   !--------------------------------------------------------------------------------------------------------------
 
   subroutine calc_bulk_diffusivity(bounds, col, lbj, ubj, jtops, numf, filter, bunsencef_col, &
-       biophysforc, tau_soi, betrtracer_vars,  bulkdiffus, betr_status)
+       biophysforc, tau_soi, betrtracer_vars,  tracercoeff_vars, betr_status)
     !
     ! !DESCRIPTION:
     ! compute the weighted bulk diffusivity in soil for dual-phase transport
@@ -182,6 +182,7 @@ contains
     !D_bulk=(airvol*D_g*tau_g+bunsencef_col*h2osoi_liqvol*D_w*tau_w)
 
     ! !USES:
+    use TracerCoeffType       , only : tracercoeff_type
     use BeTRTracerType        , only : betrtracer_type
     use BetrStatusType        , only : betr_status_type
     use betr_columnType       , only : betr_column_type
@@ -196,7 +197,7 @@ contains
     type(betrtracer_type)            , intent(in)  :: betrtracer_vars                         ! betr configuration information
     type(betr_biogeophys_input_type) , intent(in)  :: biophysforc
     type(soil_tortuosity_type)       , intent(in)  :: tau_soi                                 ! soil tortuosity
-    real(r8)                         , intent(out) :: bulkdiffus(bounds%begc: ,lbj: , 1: )    ! the returning variable
+    type(tracercoeff_type)           , intent(inout) :: tracercoeff_vars ! structure containing tracer transport parameters
     type(betr_status_type)           , intent(out) :: betr_status
     !local variables
     real(r8)           :: max_depth_cryoturb         = 3._r8  !m
@@ -212,6 +213,7 @@ contains
     integer :: nvolatile_tracer_groups
 
     call betr_status%reset()
+
     nvolatile_tracer_groups = betrtracer_vars%nvolatile_tracer_groups
 
     !array shape checking will be added later.
@@ -249,10 +251,13 @@ contains
          tau_liq                                => tau_soi%tau_liq                                        , & ! real(r8)[intent(in)], aqueous tortuosity
          zi                                     => col%zi                                                 , & ! real(r8)[intent(in)],
          t_soisno                               => biophysforc%t_soisno_col                               , & ! Input: [real(r8)(:,:)]
-         move_scalar                            => betrtracer_vars%move_scalar                              &
+         move_scalar                            => betrtracer_vars%move_scalar                            , &
+         bulk_diffus_col                        => tracercoeff_vars%bulk_diffus_col                       , &
+         aqu_diffus_col                         => tracercoeff_vars%aqu_diffus_col                        , &
+         aqu_diffus0_col                        => tracercoeff_vars%aqu_diffus0_col                         &
          )
 
-      bulkdiffus(:,:,:) = 1.e-40_r8                            !initialize to a very small number
+      bulk_diffus_col(:,:,:) = 1.e-40_r8                            !initialize to a very small number
       do j = 1, ngwmobile_tracer_groups
          trcid = tracer_group_memid(j,1)
          if(is_volatile(j))then
@@ -263,7 +268,7 @@ contains
                   c = filter(fc)
                   if(n>=jtops(c))then
                      !aqueous diffusivity
-                     diffaqu=get_aqueous_diffusivity(trcid, t_soisno(c,n), betrtracer_vars)
+                     aqu_diffus0_col(c,n,j)=get_aqueous_diffusivity(trcid, t_soisno(c,n), betrtracer_vars)
                      !gaseous diffusivity
                      diffgas=get_gas_diffusivity(trcid, t_soisno(c,n), betrtracer_vars)
 
@@ -272,15 +277,18 @@ contains
                      !accordingly the retardation factor is gas primary
                      if(is_h2o(trcid))then
                         !for water tracer, the aqueous phase is used as dominant species
-                        bulkdiffus(c,n,j)=air_vol(c,n)*tau_gas(c,n)*diffgas/bunsencef_col(c,n,k)+ &
-                             h2osoi_liqvol(c,n)*tau_liq(c,n)*diffaqu
+                        aqu_diffus_col(c,n,j) = h2osoi_liqvol(c,n)*tau_liq(c,n)*aqu_diffus0_col(c,n,j)
+                        bulk_diffus_col(c,n,j)=air_vol(c,n)*tau_gas(c,n)*diffgas/bunsencef_col(c,n,k)+ &
+                             aqu_diffus_col(c,n,j)
                      else
-                        bulkdiffus(c,n,j)=air_vol(c,n)*tau_gas(c,n)*diffgas+ &
-                             h2osoi_liqvol(c,n)*tau_liq(c,n)*diffaqu*bunsencef_col(c,n,k)
+                        aqu_diffus_col(c,n,j) = h2osoi_liqvol(c,n)*tau_liq(c,n)*aqu_diffus0_col(c,n,j)
+                        bulk_diffus_col(c,n,j)=air_vol(c,n)*tau_gas(c,n)*diffgas+ &
+                             aqu_diffus_col(c,n,j)*bunsencef_col(c,n,k)
                      endif
                      !to prevent division by zero
-                     bulkdiffus(c,n,j)=max(bulkdiffus(c,n,j),minval_diffus)
-                     bulkdiffus(c,n,j)=bulkdiffus(c,n,j)*move_scalar(j)
+                     bulk_diffus_col(c,n,j)=max(bulk_diffus_col(c,n,j),minval_diffus)
+                     bulk_diffus_col(c,n,j)=bulk_diffus_col(c,n,j)*move_scalar(j)
+                     aqu_diffus_col(c,n,j)=max(aqu_diffus_col(c,n,j), minval_diffus)
                   endif
                enddo
             enddo
@@ -291,11 +299,13 @@ contains
                   c = filter(fc)
                   if(n>=jtops(c))then
                      !the retardation factor is 1.
-                     diffaqu=get_aqueous_diffusivity(trcid, t_soisno(c,n), betrtracer_vars)
-                     bulkdiffus(c,n,j)=diffaqu*h2osoi_liqvol(c,n)*tau_liq(c,n)
+                     aqu_diffus0_col(c,n,j)=get_aqueous_diffusivity(trcid, t_soisno(c,n), betrtracer_vars)
+                     aqu_diffus_col(c,n,j) =h2osoi_liqvol(c,n)*tau_liq(c,n)*aqu_diffus0_col(c,n,j)
+                     bulk_diffus_col(c,n,j)=aqu_diffus_col(c,n,j)
                      !to prevent division by zero
-                     bulkdiffus(c,n,j)=max(bulkdiffus(c,n,j),minval_diffus) !avoid division by zero in following calculations
-                     bulkdiffus(c,n,j)=bulkdiffus(c,n,j)*move_scalar(j)
+                     bulk_diffus_col(c,n,j)=max(bulk_diffus_col(c,n,j),minval_diffus) !avoid division by zero in following calculations
+                     bulk_diffus_col(c,n,j)=bulk_diffus_col(c,n,j)*move_scalar(j)
+                     aqu_diffus_col(c,n,j)=max(aqu_diffus_col(c,n,j), minval_diffus)
                   endif
                enddo
             enddo
@@ -314,24 +324,24 @@ contains
                   ( max(altmax(c), altmax_lastyear(c)) > 0._r8) ) then
                   ! use mixing profile modified slightly from Koven et al. (2009): constant through active layer, linear decrease from base of active layer to zero at a fixed depth
                   if ( zi(c,n) < max(altmax(c), altmax_lastyear(c)) ) then
-                    bulkdiffus(c,n,j) = cryoturb_diffusion_k * tracer_solid_passive_diffus_scal_group(nsld)
-                    bulkdiffus(c,n,j) = max(bulkdiffus(c,n,j), tracer_solid_passive_diffus_thc_group(nsld))
+                    bulk_diffus_col(c,n,j) = cryoturb_diffusion_k * tracer_solid_passive_diffus_scal_group(nsld)
+                    bulk_diffus_col(c,n,j) = max(bulk_diffus_col(c,n,j), tracer_solid_passive_diffus_thc_group(nsld))
                   else
-                    bulkdiffus(c,n,j) = max(cryoturb_diffusion_k * &
+                    bulk_diffus_col(c,n,j) = max(cryoturb_diffusion_k * &
                           ( 1._r8 - ( zi(c,n) - max(altmax(c), altmax_lastyear(c)) ) / &
                           ( max_depth_cryoturb - max(altmax(c), altmax_lastyear(c)) ) ), 0._r8)  ! go linearly to zero between ALT and max_depth_cryoturb
-                    bulkdiffus(c,n,j) = bulkdiffus(c,n,j) * tracer_solid_passive_diffus_scal_group(nsld)
-                    bulkdiffus(c,n,j) = max(bulkdiffus(c,n,j), tracer_solid_passive_diffus_thc_group(nsld))
+                    bulk_diffus_col(c,n,j) = bulk_diffus_col(c,n,j) * tracer_solid_passive_diffus_scal_group(nsld)
+                    bulk_diffus_col(c,n,j) = max(bulk_diffus_col(c,n,j), tracer_solid_passive_diffus_thc_group(nsld))
                   endif
                elseif (  max(altmax(c), altmax_lastyear(c)) > 0._r8 ) then
                   ! constant advection, constant diffusion
-                  bulkdiffus(c,n,j) = som_diffus * tracer_solid_passive_diffus_scal_group(nsld)
-                  bulkdiffus(c,n,j) = max(bulkdiffus(c,n,j), tracer_solid_passive_diffus_thc_group(nsld))
+                  bulk_diffus_col(c,n,j) = som_diffus * tracer_solid_passive_diffus_scal_group(nsld)
+                  bulk_diffus_col(c,n,j) = max(bulk_diffus_col(c,n,j), tracer_solid_passive_diffus_thc_group(nsld))
                else
                   ! completely frozen soils--no mixing
-                  bulkdiffus(c,n,j) = 1e-4_r8 / (86400._r8 * 365._r8) * 1.e-36_r8  !set to very small number for numerical purpose
+                  bulk_diffus_col(c,n,j) = 1e-4_r8 / (86400._r8 * 365._r8) * 1.e-36_r8  !set to very small number for numerical purpose
                endif
-               bulkdiffus(c,n,j) = bulkdiffus(c,n,j) * move_scalar(j)
+               bulk_diffus_col(c,n,j) = bulk_diffus_col(c,n,j) * move_scalar(j)
             enddo
          enddo
       enddo
@@ -894,11 +904,11 @@ contains
    !compute bulk diffusivity
    call calc_bulk_diffusivity(bounds, col, lbj, ubj, jtops, numf, filter       , &
       tracercoeff_vars%bunsencef_col(bounds%begc:bounds%endc,lbj:ubj, : ) , &
-      biophysforc, tau_soil, betrtracer_vars, bulkdiffus, betr_status)
+      biophysforc, tau_soil, betrtracer_vars, tracercoeff_vars, betr_status)
    if(betr_status%check_status())return
 
    !compute weigthed conductances
-   call calc_bulk_conductances(bounds, lbj, ubj, jtops, numf, filter, bulkdiffus, &
+   call calc_bulk_conductances(bounds, lbj, ubj, jtops, numf, filter, tracercoeff_vars%bulk_diffus_col, &
       col%dz(bounds%begc:bounds%endc,lbj:ubj), betrtracer_vars,  &
       tracercoeff_vars%hmconductance_col(bounds%begc:bounds%endc, lbj:ubj-1, :), betr_status)
 

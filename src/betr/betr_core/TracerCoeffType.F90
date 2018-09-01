@@ -36,6 +36,9 @@ module TracerCoeffType
      real(r8), pointer :: diffgas_topsoi_col        (:,:)   => null()     !gas diffusivity in top soil layer, this is not used currently
      real(r8), pointer :: hmconductance_col         (:,:,:)  => null()    !geometrically weighted conductances (nlevsno+nlevtrc_soil)
      real(r8), pointer :: annsum_counter_col        (:) => null()
+     real(r8), pointer :: bulk_diffus_col           (:,:,:)  => null()
+     real(r8), pointer :: aqu_diffus_col            (:,:,:) => null()
+     real(r8), pointer :: aqu_diffus0_col            (:,:,:) => null()
    contains
      procedure, public  :: Init
      procedure, public  :: Restart
@@ -158,6 +161,10 @@ contains
 
     allocate(this%aqu2equilsolidcef_col(begc:endc, lbj:ubj, 1:betrtracer_vars%nsolid_equil_tracer_groups))
     this%aqu2equilsolidcef_col(:,:,:) = nan
+
+    allocate(this%bulk_diffus_col (begc:endc, lbj:ubj, 1:betrtracer_vars%ngwmobile_tracer_groups))
+    allocate(this%aqu_diffus_col (begc:endc, lbj:ubj, 1:betrtracer_vars%ngwmobile_tracer_groups))
+    allocate(this%aqu_diffus0_col (begc:endc, lbj:ubj, 1:betrtracer_vars%ngwmobile_tracer_groups))
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------
