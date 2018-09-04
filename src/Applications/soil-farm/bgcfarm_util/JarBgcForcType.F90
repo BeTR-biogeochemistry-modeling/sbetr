@@ -331,7 +331,7 @@ contains
   this%soilorder=1
   this%msurf_nh4=0._r8
   this%msurf_minp=0._r8
-
+  this%tmic_opt  = 295.5_r8
   this%ystates(:) = 0._r8
   this%air_temp = 298.15_r8
   this%latacc = 1._r8

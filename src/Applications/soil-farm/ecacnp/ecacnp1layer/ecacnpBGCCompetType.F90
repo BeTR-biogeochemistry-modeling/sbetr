@@ -325,6 +325,7 @@ contains
   !for simplicity, these are assumed same
   this%kaff_minn_nh4_nit = this%kaff_minn_nh4_mic
   this%kaff_minn_no3_den = this%kaff_minn_no3_mic
+
   end associate
   end subroutine compute_kinetic_paras
 

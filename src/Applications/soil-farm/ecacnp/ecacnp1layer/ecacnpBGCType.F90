@@ -1687,7 +1687,7 @@ contains
   class(ecacnp_bgc_type)     , intent(inout) :: this
   integer , intent(in) :: nstvars
   real(r8), intent(inout) :: ystates(nstvars)
-
+  ystates(:)=0._r8
   if(nstvars>=0)continue
   end subroutine init_cold_ecacnp
 

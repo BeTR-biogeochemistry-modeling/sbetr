@@ -143,6 +143,7 @@ subroutine run_model(namelist_buffer)
   allocate(ystatesf(nvars));ystatesf(:)=0._r8
 
   call jarmodel%init_cold(nvars, ystatesf)
+
   !initialize timer
   call timer%Init(namelist_buffer=namelist_buffer)
 
@@ -170,7 +171,7 @@ subroutine run_model(namelist_buffer)
     !update forcing'
     call load_forc(om_forc, nut_forc, atm_forc, soil_forc, timer%tstep)
 
-    call SetJarForc(bgc_forc, om_forc, nut_forc, atm_forc, soil_forc)
+    call SetJarForc(bgc_forc, om_forc, nut_forc, atm_forc, soil_forc, dtime, jarpars)
 
     call setJarStates(bgc_forc, ystatesf)
 
