@@ -194,6 +194,10 @@ contains
   allocate (this%annsum_npp_patch(  begp:endp))  !annual npp
   allocate (this%agnpp_patch(       begp:endp))
   allocate (this%bgnpp_patch(       begp:endp))
+  allocate (this%annavg_agnpp_patch (begp:endp))
+  allocate (this%tempavg_agnpp_patch(begp:endp))
+  allocate (this%tempavg_bgnpp_patch(begp:endp))
+  allocate (this%annavg_bgnpp_patch(begp:endp))
   allocate(this%rr_patch (begp:endp, lbj:ubj))
   allocate(this%froot_prof_patch(begp:endp, lbj:ubj))
   allocate(this%frac_loss_lit_to_fire_col(begc:endc)) !fraction of litter cnp loss through fire

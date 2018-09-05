@@ -1000,10 +1000,17 @@ contains
                 this%biophys_forc(c)%annsum_npp_patch(pp) = carbonflux_vars%annsum_npp_patch(p)
                 this%biophys_forc(c)%agnpp_patch(pp)      = carbonflux_vars%agnpp_patch(p)
                 this%biophys_forc(c)%bgnpp_patch(pp)      = carbonflux_vars%bgnpp_patch(p)
-                this%biophys_forc(c)%tempavg_agnpp_patch(pp)=carbonflux_vars%tempavg_agnpp_patch(p)
-                this%biophys_forc(c)%tempavg_bgnpp_patch(pp)=carbonflux_vars%tempavg_bgnpp_patch(p)
-                this%biophys_forc(c)%annavg_agnpp_patch(pp) = carbonflux_vars%annavg_agnpp_patch(p)
-                this%biophys_forc(c)%annavg_bgnpp_patch(pp) = carbonflux_vars%annavg_bgnpp_patch(p)
+!                if(carbonflux_vars%tempavg_agnpp_patch(p) == spval)then
+!                  this%biophys_forc(c)%tempavg_agnpp_patch(pp)= 0._r8
+ !                 this%biophys_forc(c)%tempavg_bgnpp_patch(pp)= 0._r8
+!                  this%biophys_forc(c)%annavg_agnpp_patch(pp) = 0._r8
+!                  this%biophys_forc(c)%annavg_bgnpp_patch(pp) = 0._r8
+!                else
+                  this%biophys_forc(c)%tempavg_agnpp_patch(pp)= carbonflux_vars%tempavg_agnpp_patch(p)
+                  this%biophys_forc(c)%tempavg_bgnpp_patch(pp)= carbonflux_vars%tempavg_bgnpp_patch(p)
+                  this%biophys_forc(c)%annavg_agnpp_patch(pp) = carbonflux_vars%annavg_agnpp_patch(p)
+                  this%biophys_forc(c)%annavg_bgnpp_patch(pp) = carbonflux_vars%annavg_bgnpp_patch(p)
+!                endif
               endif
             endif
           enddo
