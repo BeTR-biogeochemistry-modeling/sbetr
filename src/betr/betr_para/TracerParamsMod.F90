@@ -1398,7 +1398,7 @@ contains
     integer :: fp        ! soil pft filter indices
     real(r8):: dt        ! time step (seconds)
     real(r8):: secsperyear
-    logical :: newrun
+!    logical :: newrun
     !-----------------------------------------------------------------------
 
     ! remove unused dummy arg compiler warning
@@ -1408,40 +1408,47 @@ contains
     associate(                                                               &
          agnpp           =>    biophysforc%agnpp_patch                    ,  & ! Input:  [real(r8) (:) ]  (gC/m2/s) aboveground NPP
          bgnpp           =>    biophysforc%bgnpp_patch                    ,  & ! Input:  [real(r8) (:) ]  (gC/m2/s) belowground NPP
+         tempavg_agnpp_patch  =>    biophysforc%tempavg_agnpp_patch       , & !
+         tempavg_bgnpp_patch  => biophysforc%tempavg_bgnpp_patch          , &
+         annavg_agnpp_patch   => biophysforc%annavg_agnpp_patch           , &
+         annavg_bgnpp_patch   => biophysforc%annavg_bgnpp_patch           , &
          tempavg_agnpp   =>    betr_aerecond_vars%tempavg_agnpp_patch      , & ! Output: [real(r8) (:) ]  temporary average above-ground NPP (gC/m2/s)
          annavg_agnpp    =>    betr_aerecond_vars%annavg_agnpp_patch       , & ! Output: [real(r8) (:) ]  annual average above-ground NPP (gC/m2/s)
          tempavg_bgnpp   =>    betr_aerecond_vars%tempavg_bgnpp_patch      , & ! Output: [real(r8) (:) ]  temporary average below-ground NPP (gC/m2/s)
          annavg_bgnpp    =>    betr_aerecond_vars%annavg_bgnpp_patch       , & ! Output: [real(r8) (:) ]  annual average below-ground NPP (gC/m2/s)
-         annsum_counter  =>    tracercoeff_vars%annsum_counter_col           & ! Output: [real(r8) (:) ]  seconds since last annual accumulator turnover
+         annsum_counter  =>    biophysforc%annsum_counter_col           & ! Output: [real(r8) (:) ]  seconds since last annual accumulator turnover
          )
 
       ! set time steps
       dt = betr_time%get_step_size()
       secsperyear = real( betr_time%get_days_per_year() * secspday, r8)
 
-      newrun = .false.
+!      newrun = .false.
 
       ! column loop
-      do fc = 1,num_soilc
-         c = filter_soilc(fc)
+!      do fc = 1,num_soilc
+!         c = filter_soilc(fc)
 
-         if (annsum_counter(c) == spval) then
+!         if (annsum_counter(c) == spval) then
             ! These variables are now in restart files for completeness, but might not be in inicFile and are not.
             ! set for arbinit.
-            newrun = .true.
-            annsum_counter(c)    = 0._r8
+!            newrun = .true.
+!            annsum_counter(c)    = 0._r8
             !tempavg_somhr(c)     = 0._r8
             !tempavg_finrw(c)     = 0._r8
-         end if
+!         end if
 
-         annsum_counter(c) = annsum_counter(c) + dt
-      end do
+!         annsum_counter(c) = annsum_counter(c) + dt
+!      end do
 
       ! patch loop
       do fp = 1,num_soilp
          p = filter_soilp(fp)
-
-         if (newrun .or. tempavg_agnpp(p) == spval) then ! Extra check needed because for back-compatibility
+         tempavg_agnpp(p)= tempavg_agnpp_patch(p)
+         tempavg_bgnpp(p)= tempavg_bgnpp_patch(p)
+         annavg_agnpp(p) = annavg_agnpp_patch(p)
+         annavg_bgnpp(p) = annavg_bgnpp_patch(p)
+         if (tempavg_agnpp(p) == spval) then ! Extra check needed because for back-compatibility
             tempavg_agnpp(p) = 0._r8
             tempavg_bgnpp(p) = 0._r8
          end if
@@ -1465,10 +1472,10 @@ contains
       end do
 
       ! column loop
-      do fc = 1,num_soilc
-         c = filter_soilc(fc)
-         if (annsum_counter(c) >= secsperyear) annsum_counter(c) = 0._r8
-      end do
+!      do fc = 1,num_soilc
+!         c = filter_soilc(fc)
+!         if (annsum_counter(c) >= secsperyear) annsum_counter(c) = 0._r8
+!      end do
 
     end associate
 

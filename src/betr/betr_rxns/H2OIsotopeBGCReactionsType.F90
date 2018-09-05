@@ -482,8 +482,8 @@ module H2OIsotopeBGCReactionsType
     if (size(filter_soilp) > 0)                            continue
     if (dtime > 0.0)                                       continue
     if (size(biophysforc%isoilorder) > 0)                  continue
-    if (size(tracercoeff_vars%annsum_counter_col) > 0)     continue
-    if (size(tracerflux_vars%tracer_flx_top_soil_col) > 0) continue
+  !  if (size(tracercoeff_vars%annsum_counter_col) > 0)     continue
+  !  if (size(tracerflux_vars%tracer_flx_top_soil_col) > 0) continue
     if (plant_soilbgc%dummy_compiler_warning)              continue
 
     associate(                                                                                &
@@ -574,7 +574,7 @@ module H2OIsotopeBGCReactionsType
     if (num_soilc > 0)                                        continue
     if (size(filter_soilc) > 0)                               continue
     if (size(tracerstate_vars%tracer_conc_surfwater_col) > 0) continue
-    if (size(tracercoeff_vars%annsum_counter_col) > 0)        continue
+!    if (size(tracercoeff_vars%annsum_counter_col) > 0)        continue
 
   associate(                                                                         &
     aqu2equilscef                   => tracercoeff_vars%aqu2equilsolidcef_col      , &

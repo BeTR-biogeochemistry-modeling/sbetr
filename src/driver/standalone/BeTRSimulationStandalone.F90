@@ -467,7 +467,8 @@ contains
       call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
       exit
     endif
-    call this%betr(c)%retrieve_biofluxes(this%num_soilc, this%filter_soilc, this%biogeo_flux(c))
+    call this%betr(c)%retrieve_biofluxes(this%num_soilc, this%filter_soilc, &
+      this%num_soilp, this%filter_soilp, this%biogeo_flux(c))
 
     call this%biogeo_state(c)%summary(betr_bounds, 1, betr_nlevtrc_soil,&
          this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil), &

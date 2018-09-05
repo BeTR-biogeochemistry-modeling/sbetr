@@ -99,7 +99,12 @@ implicit none
     real(r8), pointer :: pweath_prof_col(:,:) => null()
     integer,  pointer :: stwl(:) => null()    !standing water indices
     real(r8), pointer :: lat(:) => null()   !latitude in degree of the column
+    real(r8), pointer :: tempavg_agnpp_patch(:) => null()
+    real(r8), pointer :: tempavg_bgnpp_patch(:) => null()
+    real(r8), pointer :: annavg_agnpp_patch(:) => null()
+    real(r8), pointer :: annavg_bgnpp_patch(:) => null()
     integer  :: icluster_type     !type of ecosystem simulated, btvland, btvlake, bthaqua
+    real(r8), pointer :: annsum_counter_col(:) => null()
     !carbon fluxes
     type(betr_carbonflux_type) :: c12flx
     type(betr_carbonflux_type) :: c13flx
@@ -272,6 +277,7 @@ contains
   allocate(this%scalaravg_col(begc:endc))
   allocate(this%dom_scalar_col(begc:endc)); this%dom_scalar_col(:) = 1._r8
   allocate(this%lat(begc:endc))
+  allocate(this%annsum_counter_col(begc:endc)); this%annsum_counter_col(:)=0._r8
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------

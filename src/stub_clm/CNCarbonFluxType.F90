@@ -42,7 +42,10 @@ implicit none
     real(r8), pointer :: cflx_input_litr_cel_vr_col              (:,:) => null()
     real(r8), pointer :: cflx_input_litr_lig_vr_col              (:,:) => null()
     real(r8), pointer :: cflx_input_litr_cwd_vr_col              (:,:) => null()
-
+    real(r8), pointer :: tempavg_agnpp_patch                     (:) => null()
+    real(r8), pointer :: tempavg_bgnpp_patch                     (:) => null()
+    real(r8), pointer :: annavg_agnpp_patch                      (:) => null()
+    real(r8), pointer :: annavg_bgnpp_patch                      (:) => null()
   contains
 
     procedure, public  :: Init
@@ -84,8 +87,12 @@ contains
     begp = bounds%begp; endp= bounds%endp
     begc = bounds%begc; endc= bounds%endc
 
-    allocate(this%rr_col                  (begc:endc))                  ; this%rr_col                    (:)  =nan
-    allocate(this%rr_patch                (begp:endp))                  ; this%rr_patch                    (:)  =nan
+    allocate(this%rr_col                  (begc:endc)) ; this%rr_col      (:)  = nan
+    allocate(this%rr_patch                (begp:endp)) ; this%rr_patch    (:)  = nan
+    allocate(this%tempavg_agnpp_patch(begp:endp)); this%tempavg_agnpp_patch(:) = spval
+    allocate(this%tempavg_bgnpp_patch(begp:endp)); this%tempavg_bgnpp_patch(:) = spval
+    allocate(this%annavg_agnpp_patch(begp:endp));  this%annavg_agnpp_patch(:) = spval
+    allocate(this%annavg_bgnpp_patch(begp:endp)); this%annavg_bgnpp_patch(:)  = spval
 
     allocate(this%annsum_npp_patch      (begp:endp)) ; this%annsum_npp_patch      (:) = spval
     allocate(this%agnpp_patch                       (begp:endp)) ; this%agnpp_patch                               (:) = spval
@@ -121,6 +128,7 @@ contains
     allocate(this%cflx_input_litr_cwd_vr_col(begc:endc,1:nlevdecomp_full)); this%cflx_input_litr_cwd_vr_col(:,:) = spval
     allocate(this%fire_decomp_closs_col(begc:endc)); this%fire_decomp_closs_col(:) = spval
     allocate(this%som_c_runoff_col(begc:endc)); this%som_c_runoff_col(:) = spval
+
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------

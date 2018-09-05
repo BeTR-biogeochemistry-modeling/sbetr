@@ -629,10 +629,11 @@ contains
   do fc = 1, num_soilc
     c = filter_soilc(fc)
     call this%biophys_forc(c)%reset(value_column=0._r8)
+    this%biophys_forc(c)%annsum_counter_col(c) = cnstate_vars%annsum_counter_col(c)
     this%biophys_forc(c)%isoilorder(c_l) = 1                 !this needs update
     this%biophys_forc(c)%lithotype_col(c_l) = cnstate_vars%lithoclass_col(c)
-    this%biophys_forc(c)%frac_loss_lit_to_fire_col(c_l) =frac_loss_lit_to_fire_col(c)
-    this%biophys_forc(c)%frac_loss_cwd_to_fire_col(c_l) =frac_loss_cwd_to_fire_col(c)
+    this%biophys_forc(c)%frac_loss_lit_to_fire_col(c_l) = frac_loss_lit_to_fire_col(c)
+    this%biophys_forc(c)%frac_loss_cwd_to_fire_col(c_l) = frac_loss_cwd_to_fire_col(c)
     this%biophys_forc(c)%biochem_pmin_vr(c_l,1:betr_nlevsoi)= biochem_pmin_vr(c,1:betr_nlevsoi)
     call this%biophys_forc(c)%c12flx%reset(value_column=0._r8)
     call this%biophys_forc(c)%n14flx%reset(value_column=0._r8)
@@ -900,14 +901,16 @@ contains
     if(.not. this%active_col(c))cycle
 
     call this%betr(c)%retrieve_biostates(betr_bounds,  1, betr_nlevsoi, &
-       this%num_soilc, this%filter_soilc, this%jtops, this%biogeo_state(c),this%bstatus(c))
+       this%num_soilc, this%filter_soilc,&
+       this%jtops, this%biogeo_state(c),this%bstatus(c))
 
     if(this%bstatus(c)%check_status())then
       call this%bsimstatus%setcol(c)
       call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
       exit
     endif
-    call this%betr(c)%retrieve_biofluxes(this%num_soilc, this%filter_soilc, this%biogeo_flux(c))
+    call this%betr(c)%retrieve_biofluxes(this%num_soilc, this%filter_soilc, &
+      this%num_soilp, this%filter_soilp,  this%biogeo_flux(c))
 
     call this%biogeo_state(c)%summary(betr_bounds, 1, betr_nlevtrc_soil,&
          this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil), &
@@ -934,7 +937,10 @@ contains
         !compute relative n return, note the following computation is different from ALM-ECA-CNP, because
         !betr includes transpiration incuded nitrogen uptake, which has not direct temperature sensitivity.
         n14state_vars%pnup_pfrootc_patch(p) = this%biogeo_flux(c)%pnup_pfrootc_patch(pi)
-
+        c12flux_vars%tempavg_agnpp_patch(p) = this%biogeo_flux(c)%c12flux_vars%tempavg_agnpp_patch(p)
+        c12flux_vars%annavg_agnpp_patch(p)  = this%biogeo_flux(c)%c12flux_vars%annavg_agnpp_patch(p)
+        c12flux_vars%tempavg_bgnpp_patch(p) = this%biogeo_flux(c)%c12flux_vars%tempavg_bgnpp_patch(p)
+        c12flux_vars%annavg_bgnpp_patch(p)  = this%biogeo_flux(c)%c12flux_vars%annavg_bgnpp_patch(p)  
       else
         n14flux_vars%smin_nh4_to_plant_patch(p) = 0._r8
         n14flux_vars%smin_no3_to_plant_patch(p) = 0._r8
@@ -1387,7 +1393,7 @@ contains
             this%betr(c)%plantNutkinetics%plant_nh4_vmax_vr_patch(pp,j) = plant_nh4_vmax_vr_patch(p,j)
             this%betr(c)%plantNutkinetics%plant_no3_vmax_vr_patch(pp,j) = plant_no3_vmax_vr_patch(p,j)
             this%betr(c)%plantNutkinetics%plant_p_vmax_vr_patch(pp,j) = plant_p_vmax_vr_patch(p,j) * val
-            this%betr(c)%plantNutkinetics%plant_nh4_km_vr_patch(pp,j) = plant_nh4_km_vr_patch(p,j)/natomw 
+            this%betr(c)%plantNutkinetics%plant_nh4_km_vr_patch(pp,j) = plant_nh4_km_vr_patch(p,j)/natomw
             this%betr(c)%plantNutkinetics%plant_no3_km_vr_patch(pp,j) = plant_no3_km_vr_patch(p,j)/natomw
             this%betr(c)%plantNutkinetics%plant_p_km_vr_patch(pp,j) = plant_p_km_vr_patch(p,j)/natomw
             this%betr(c)%plantNutkinetics%plant_eff_ncompet_b_vr_patch(pp,j)=plant_eff_ncompet_b_vr_patch(p,j)/natomw

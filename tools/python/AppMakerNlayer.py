@@ -888,7 +888,6 @@ def MakeNlayer(sfarm_dir, app_name):
     ff90.write("  if (size(filter_soilc) > 0)                               continue\n")
     ff90.write("  if (len(betrtracer_vars%betr_simname) > 0)                continue\n")
     ff90.write("  if (size(tracerstate_vars%tracer_conc_surfwater_col) > 0) continue\n")
-    ff90.write("  if (size(tracercoeff_vars%annsum_counter_col) > 0)        continue\n")
     ff90.write("  !continue on the simulation type, an implementation of aqueous chemistry will be\n")
     ff90.write("  !employed to separate out the adsorbed phase\n")
     ff90.write("  !It should be noted that this formulation excludes the use of linear isotherm, which\n")
