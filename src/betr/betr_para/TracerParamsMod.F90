@@ -228,11 +228,6 @@ contains
 
     SHR_ASSERT_ALL((ubound(bunsencef_col,3) == nvolatile_tracer_groups), errMsg(filename,__LINE__), betr_status)
 
-    SHR_ASSERT_ALL((ubound(bulkdiffus,1)    == bounds%endc), errMsg(filename,__LINE__),betr_status)
-
-    SHR_ASSERT_ALL((ubound(bulkdiffus,2)    == ubj), errMsg(filename,__LINE__),betr_status)
-
-    SHR_ASSERT_ALL((ubound(bulkdiffus,3)    == betrtracer_vars%ntracer_groups), errMsg(filename,__LINE__),betr_status)
 
     associate(                                                                                              &
          ngwmobile_tracer_groups                => betrtracer_vars%ngwmobile_tracer_groups                , & ! Integer[intent(in)], number of dual phase (gw) tracers

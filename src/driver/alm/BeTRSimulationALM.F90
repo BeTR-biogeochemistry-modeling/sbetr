@@ -629,7 +629,7 @@ contains
   do fc = 1, num_soilc
     c = filter_soilc(fc)
     call this%biophys_forc(c)%reset(value_column=0._r8)
-    this%biophys_forc(c)%annsum_counter_col(c) = cnstate_vars%annsum_counter_col(c)
+    this%biophys_forc(c)%annsum_counter_col(c_l) = cnstate_vars%annsum_counter_col(c)
     this%biophys_forc(c)%isoilorder(c_l) = 1                 !this needs update
     this%biophys_forc(c)%lithotype_col(c_l) = cnstate_vars%lithoclass_col(c)
     this%biophys_forc(c)%frac_loss_lit_to_fire_col(c_l) = frac_loss_lit_to_fire_col(c)
@@ -868,6 +868,7 @@ contains
   use pftvarcon           , only : noveg
   use MathfuncMod         , only : safe_div
   use tracer_varcon       , only : reaction_method
+
   implicit none
   class(betr_simulation_alm_type), intent(inout)  :: this
   type(bounds_type) , intent(in)  :: bounds
@@ -931,16 +932,15 @@ contains
         pi = pi + 1
         n14flux_vars%smin_nh4_to_plant_patch(p) = this%biogeo_flux(c)%n14flux_vars%smin_nh4_to_plant_patch(pi)
         n14flux_vars%smin_no3_to_plant_patch(p) = this%biogeo_flux(c)%n14flux_vars%smin_no3_to_plant_patch(pi)
-
         p31flux_vars%sminp_to_plant_patch(p)  = this%biogeo_flux(c)%p31flux_vars%sminp_to_plant_patch(pi)
         p31flux_vars%sminp_to_plant_trans_patch(p) = this%biogeo_flux(c)%p31flux_vars%sminp_to_plant_trans_patch(pi)
         !compute relative n return, note the following computation is different from ALM-ECA-CNP, because
         !betr includes transpiration incuded nitrogen uptake, which has not direct temperature sensitivity.
         n14state_vars%pnup_pfrootc_patch(p) = this%biogeo_flux(c)%pnup_pfrootc_patch(pi)
-        c12flux_vars%tempavg_agnpp_patch(p) = this%biogeo_flux(c)%c12flux_vars%tempavg_agnpp_patch(p)
-        c12flux_vars%annavg_agnpp_patch(p)  = this%biogeo_flux(c)%c12flux_vars%annavg_agnpp_patch(p)
-        c12flux_vars%tempavg_bgnpp_patch(p) = this%biogeo_flux(c)%c12flux_vars%tempavg_bgnpp_patch(p)
-        c12flux_vars%annavg_bgnpp_patch(p)  = this%biogeo_flux(c)%c12flux_vars%annavg_bgnpp_patch(p)  
+        c12flux_vars%tempavg_agnpp_patch(p) = this%biogeo_flux(c)%c12flux_vars%tempavg_agnpp_patch(pi)
+        c12flux_vars%annavg_agnpp_patch(p)  = this%biogeo_flux(c)%c12flux_vars%annavg_agnpp_patch(pi)
+        c12flux_vars%tempavg_bgnpp_patch(p) = this%biogeo_flux(c)%c12flux_vars%tempavg_bgnpp_patch(pi)
+        c12flux_vars%annavg_bgnpp_patch(p)  = this%biogeo_flux(c)%c12flux_vars%annavg_bgnpp_patch(pi)
       else
         n14flux_vars%smin_nh4_to_plant_patch(p) = 0._r8
         n14flux_vars%smin_no3_to_plant_patch(p) = 0._r8

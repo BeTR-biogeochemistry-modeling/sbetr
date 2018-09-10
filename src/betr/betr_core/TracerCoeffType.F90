@@ -162,7 +162,7 @@ contains
     allocate(this%aqu2equilsolidcef_col(begc:endc, lbj:ubj, 1:betrtracer_vars%nsolid_equil_tracer_groups))
     this%aqu2equilsolidcef_col(:,:,:) = nan
 
-    allocate(this%bulk_diffus_col (begc:endc, lbj:ubj, 1:betrtracer_vars%ngwmobile_tracer_groups))
+    allocate(this%bulk_diffus_col (begc:endc, lbj:ubj, 1:betrtracer_vars%ntracer_groups))
     allocate(this%aqu_diffus_col (begc:endc, lbj:ubj, 1:betrtracer_vars%ngwmobile_tracer_groups))
     allocate(this%aqu_diffus0_col (begc:endc, lbj:ubj, 1:betrtracer_vars%ngwmobile_tracer_groups))
   end subroutine InitAllocate
