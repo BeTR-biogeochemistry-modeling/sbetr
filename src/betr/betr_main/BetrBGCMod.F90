@@ -410,6 +410,7 @@ contains
     real(r8), parameter  :: err_min_solid=1.e-12_r8
     character(len=255)   :: subname = 'tracer_solid_transport'
     integer              :: ntracer_groups
+    real(r8) :: qadv_max
     character(len=betr_errmsg_len) :: msg
     character(len=betr_var_name_length) :: tracername
 
@@ -535,14 +536,21 @@ contains
                   do l = ubj-1, jtops(c),-1
                     qflx_adv_local(l) = dtracer(c,l+1,k)*dz(c,l+1)/dtime_loc(c)+qflx_adv_local(l+1)
                   enddo
+                  qadv_max=0._r8
                   do l = ubj-1, jtops(c),-1
                     if(qflx_adv_local(l)>0._r8)then
                       qflx_adv_local(l) = safe_div(qflx_adv_local(l),tracer_conc_mobile_col(c,l,k),eps=loc_eps)
                     else
                       qflx_adv_local(l) = safe_div(qflx_adv_local(l),tracer_conc_mobile_col(c,l+1,k),eps=loc_eps)
                     endif
+                    qadv_max=max(qadv_max,abs(qflx_adv_local(l)))
                   enddo
-
+                  if(qadv_max<1.e-18_r8)then
+                    time_remain(c) = time_remain(c)-dtime_loc(c)
+                    dtime_loc(c)   = max(dtime_loc(c),dtime_min)
+                    dtime_loc(c)   = min(dtime_loc(c), time_remain(c))
+                    exit
+                  endif
                   dtime_ll = dtime_loc(c)
                   time_remain_ll=dtime_ll
 
