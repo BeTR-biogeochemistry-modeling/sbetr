@@ -52,7 +52,6 @@ module BeTRSimulationALM
      procedure, public :: set_active                => ALMset_active
      procedure, private:: set_transient_kinetics_par
      procedure, private:: set_vegpar_calibration
-     procedure, public :: readParams                => ALMreadParams
      procedure, public :: set_iP_prof
      procedure, public :: skip_balcheck
      procedure, public :: checkpmassyes
@@ -110,56 +109,6 @@ contains
   enddo
 
   end subroutine Set_iP_prof
-!-------------------------------------------------------------------------------
-  subroutine ALMreadParams(this, bounds)
-
-  use ncdio_pio               , only :  file_desc_t
-  use ncdio_pio               , only : ncd_pio_closefile, ncd_pio_openfile, &
-                                         file_desc_t, ncd_inqdid, ncd_inqdlen
-  use ApplicationsFactory      , only : AppLoadParameters
-  use BetrStatusType           , only : betr_status_type
-  use decompMod                , only : bounds_type
-  use tracer_varcon            , only : bgc_param_file
-  use fileutils                , only : getfil
-  use spmdMod                  , only : masterproc
-  use clm_varctl               , only : iulog
-  implicit none
-  class(betr_simulation_alm_type)          , intent(inout) :: this
-
-  type(bounds_type), intent(in) :: bounds
-  !temporary variables
-  type(betr_status_type)   :: bstatus
-  type(betr_bounds_type)   :: betr_bounds
-  integer :: c
-  character(len=256) :: locfn ! local file name
-  type(file_desc_t)  :: ncid  ! pio netCDF file id
-
-  !open file for parameter reading
-  call getfil (bgc_param_file, locfn, 0)
-  if (masterproc) then
-    write(iulog,*) 'read betr bgc parameter file '//trim(locfn)
-  endif
-  call ncd_pio_openfile (ncid, trim(locfn), 0)
-
-  !read in parameters
-  call AppLoadParameters(ncid, bstatus)
-
-  call ncd_pio_closefile(ncid)
-
-  if(bstatus%check_status())then
-    call endrun(msg=bstatus%print_msg())
-  endif
-
-  call this%BeTRSetBounds(betr_bounds)
-  do c = bounds%begc, bounds%endc
-    if(.not. this%active_col(c))cycle
-    call this%betr(c)%UpdateParas(betr_bounds, bstatus)
-    if(bstatus%check_status())then
-      call endrun(msg=bstatus%print_msg())
-    endif
-  enddo
-
-  end subroutine ALMreadParams
 
 !-------------------------------------------------------------------------------
   function skip_balcheck(this)result(stats)
