@@ -40,8 +40,11 @@ module TransportMod
   public :: init_transportmod
   public :: get_cntheta
   public :: calc_col_CFL              !claculate CFL critieria
-  public :: semi_lagrange_adv_backward
-
+  public :: semi_lagrange_adv
+  interface semi_lagrange_adv
+     module procedure semi_lagrange_adv_backward_one_col
+     module procedure semi_lagrange_adv_backward
+  end interface semi_lagrange_adv
   public :: DiffusTransp ! tracer transport through diffusion, for both lake and soil
   interface DiffusTransp
      module procedure DiffusTransp_gw
@@ -871,7 +874,7 @@ contains
      character(len=32) :: subname='semi_lagrange_adv_backward'
      real(r8), parameter :: tiny_trc=1.e-16_r8
      real(r8), parameter :: tiny_dist=1.e-13_r8
-     call bstatus%reset()
+
      SHR_ASSERT_ALL((ubound(lbn)        == (/bounds%endc/)),         errMsg(filename,__LINE__),bstatus)
 
      SHR_ASSERT_ALL((ubound(dtime)      == (/bounds%endc/)),         errMsg(filename,__LINE__),bstatus)
@@ -926,150 +929,199 @@ contains
 
      do fc = 1, numfl
 
-        c = filter(fc)
-        if(.not. update_col(c))cycle
-        !do backward advection for all boundaries, including leftmost (lbn(c)-1) and rightmost (ubj)
-        length = ubj - lbn(c) + 1   ! total number of grid interfaces
-        lengthp2 = length + 2 * nghost       ! add 2 ghost cells both at the left and right boundaries
+       c = filter(fc)
+       if(.not. update_col(c))cycle
+       if(present(leaching_mass))then
+         call semi_lagrange_adv_backward_one_col(bstatus, lbj, ubj, lbn(c), ntrcs, dtime(c), dz(c,lbj:ubj), &
+           zi(c,lbj-1:ubj), us(c,lbj-1:ubj), inflx_top(c,1:ntrcs), inflx_bot(c,1:ntrcs), trc_bot(c,1:ntrcs), &
+           update_col(c), halfdt_col(c), trcin(c,lbj:ubj,1:ntrcs), trcou(c,lbj:ubj,1:ntrcs),&
+           leaching_mass(c,1:ntrcs), seep_mass(c,1:ntrcs))
+       else
+         call semi_lagrange_adv_backward_one_col(bstatus, lbj, ubj, lbn(c), ntrcs, dtime(c), dz(c,lbj:ubj), &
+           zi(c,lbj-1:ubj), us(c,lbj-1:ubj), inflx_top(c,1:ntrcs), inflx_bot(c,1:ntrcs), trc_bot(c,1:ntrcs), &
+           update_col(c), halfdt_col(c), trcin(c,lbj:ubj,1:ntrcs), trcou(c,lbj:ubj,1:ntrcs))
+       endif
+       if(bstatus%check_status())return
 
-        !define ghost boundary
-        !NOTE: because of the setup, the left boundary and right boundary should have non-zero flow
-        utmp = us(c,lbn(c)-1)
-        do jl = 1, nghost
-          zghostl(jl) = zi(c,lbn(c)-1)- (abs(utmp)*dtime(c)+tiny_dist)*(nghost-jl+1)
-          ughostl(jl) = us(c,lbn(c)-1)
-          zghostr(jl) = zi(c,ubj) + (abs(us(c,ubj)) * dtime(c)+ tiny_dist) * jl
-          ughostr(jl) = us(c,ubj)
-        enddo
-!        zghostl(1) = zi(c,lbn(c)-1) - (abs(utmp)*dtime(c)+tiny_dist)*2._r8
-!        zghostl(2) = zi(c,lbn(c)-1) - (abs(utmp)*dtime(c)      +tiny_dist)
-!        ughostl(1) = us(c,lbn(c)-1)
-!        ughostl(2) = us(c,lbn(c)-1)
-!        zghostr(1) = zi(c,ubj) + (abs(us(c,ubj)) * dtime(c)    + tiny_dist)
-!        zghostr(2) = zi(c,ubj) + (abs(us(c,ubj)) * dtime(c)    + tiny_dist)*2._r8
-
-!        ughostr(1) = us(c,ubj)
-!        ughostr(2) = us(c,ubj)
-
-        zh(0:lengthp2)=(/zghostl,zi(c,lbn(c)-1:ubj),zghostr/)
-        uh(0:lengthp2)=(/ughostl, us(c, lbn(c)-1:ubj), ughostr/)
-        call backward_advection(zh(0:lengthp2), uh(0:lengthp2), dtime(c), zold(0:length), bstatus)
-
-        if(bstatus%check_status())return
-
-        if(.not. is_ascending_vec(zold(0:length)))then
-           halfdt_col(c) = .true.
-           cycle
-        endif
-
-        !create the cumulative mass curve
-        do ntr = 1, ntrcs
-           !left boundary ghost grids
-
-           j = 0
-           mass_curve(j, ntr) = 0._r8
-           do j = 1, nghost
-             mass_curve(j, ntr) = inflx_top(c, ntr)*dtime(c)
-           enddo
-!           j = 1
-!           mass_curve(j, ntr) = inflx_top(c, ntr)*dtime(c)
-!           j = 2
-!           mass_curve(j, ntr) = inflx_top(c, ntr)*dtime(c)
-
-           !regular grids
-           do k = lbn(c), ubj
-              j = k - lbn(c) + nghost + 1
-              mass_curve(j, ntr) = trcin(c,k, ntr)*dz(c,k)
-           enddo
-
-           !right ghost grids
-           if(inflx_bot(c,ntr)==0._r8)then
-              !this would allow tracer to come in from the right hand side.
-
-              j = ubj - lbn(c) + 2 + nghost
-              if(us(c,ubj)>0._r8)then
-                mass_curve(j, ntr) = 0._r8
-              else
-                mass_curve(j, ntr) = trc_bot(c,ntr)*(zghostr(1)-zi(c,ubj))
-              endif
-
-              do j = ubj - lbn(c) + 3 + nghost, ubj-lbn(c) + nghost2p1
-                if(us(c,ubj)>0._r8)then
-                  mass_curve(j, ntr) = 0._r8
-                else
-                  k = j - (ubj-lbn(c) + 1 + nghost)
-                  mass_curve(j, ntr) = trc_bot(c, ntr)*(zghostr(k)-zghostr(k-1))
-                endif
-              enddo
-           else
-              j = ubj - lbn(c) + 2 + nghost
-              mass_curve(j, ntr) = inflx_bot(c, ntr) * dtime(c)
-
-              do j = ubj - lbn(c) + 3 + nghost, ubj-lbn(c) + nghost2p1
-                mass_curve(j, ntr) = inflx_bot(c, ntr) * dtime(c)
-              enddo
-           endif
-        enddo
-
-        !locate the left corner
-        jl=loc_x(lengthp2+1,zh, zold(0), bstatus)
-        if(bstatus%check_status())return
-        !compute seepage if necessary using jl
-        if(present(seep_mass))then
-          if(zold(0)>zh(nghost))then
-            do ntr = 1, ntrcs
-              !do boundary mass interpolation
-              call bmass_interp(zh(0:jl),mass_curve(0:jl,ntr),zh(nghost),zold(0),seep_mass(c,ntr), bstatus)
-              if(bstatus%check_status())return
-            enddo
-          else
-            seep_mass(c,1:ntrcs) = 0._r8
-          endif
-        endif
-
-        do j = 1, length
-         !locate jr
-         jr=loc_xj(lengthp2+1,zh,zold(j),jl)
-         !do interpolation
-         do ntr = 1, ntrcs
-           call mass_interp(zh(jl-1:jr),mass_curve(jl-1:jr,ntr),zold(j-1),zold(j),mass_new(j,ntr), bstatus)
-           if(bstatus%check_status())return
-!           if(abs(mass_new(j,ntr))<tiny_trc)then
-!             mass_new(j,ntr)=0._r8
-!           endif
-         enddo
-         jl=jr
-        enddo
-
-        !compute leaching, using jr
-        if(present(leaching_mass))then
-          if(zold(length)<zh(ubj-lbn(c)+nghost+1))then
-            do ntr = 1, ntrcs
-              !do boundary mass interpolation
-              call bmass_interp(zh(jr-1:lengthp2),mass_curve(jr-1:lengthp2,ntr),zold(length),&
-                zh(ubj-lbn(c)+nghost+1),leaching_mass(c,ntr), bstatus)
-              if(bstatus%check_status())return
-            enddo
-          else
-            leaching_mass(c,1:ntrcs)=0._r8
-          endif
-        endif
-
-        do ntr = 1, ntrcs
-           do k = lbn(c), ubj
-              j = k - lbn(c) + 1
-              trcou(c,k, ntr)=mass_new(j, ntr)/dz(c,k)
-           enddo
-        enddo
-        if(debug_loc)then
-          print*,'newtrc'
-          do  k = lbn(c), ubj
-            write(*,'(I2,3(X,E25.16))')k,(trcou(c,k,ntr),ntr=1,ntrcs)
-          enddo
-        endif
      enddo
 
    end subroutine semi_lagrange_adv_backward
+   !-------------------------------------------------------------------------------
+
+   subroutine semi_lagrange_adv_backward_one_col(bstatus, lbj, ubj, lbn, ntrcs, dtime, dz, &
+        zi, us, inflx_top, inflx_bot, trc_bot, update_col, halfdt_col, trcin, trcou,&
+        leaching_mass, seep_mass)
+     use MathfuncMod      , only : cumsum, cumpdiff, safe_div, dot_sum, asc_sort_vec
+     use InterpolationMod , only : bmass_interp, mass_interp, loc_x,loc_xj
+     use BetrStatusType   , only : betr_status_type
+   implicit none
+
+     type(betr_status_type), intent(out)   :: bstatus
+     integer           , intent(in)  :: lbj, ubj       ! lbinning and ubing level indices
+     integer           , intent(in)  :: lbn
+     integer           , intent(in)  :: ntrcs
+     real(r8)          , intent(in)  :: dtime
+     real(r8)          , intent(in)  :: zi(lbj-1: )
+     real(r8)          , intent(in)  :: dz(lbj: )
+     real(r8)          , intent(in)  :: inflx_top(1: )     ! incoming tracer flow at top boundary [mol/m2/s]
+     real(r8)          , intent(in)  :: inflx_bot(1: )     !incoming tracer flow at bottom boundary
+     real(r8)          , intent(in)  :: trc_bot(1: )       !bottom layer tracer concentration
+     logical           , intent(in)  :: update_col         !indicator of active clumns
+     real(r8)          , intent(in)  :: us(lbj-1: )        !convective flux defined at the boundary, positive downwards, [m/s]
+     logical           , intent(out) :: halfdt_col
+     real(r8)          , intent(in)  :: trcin(lbj: , 1: )  !input tracer concentration
+     real(r8)          , intent(out) :: trcou(lbj: , 1: )
+     real(r8), optional, intent(out) :: leaching_mass(1: ) !leaching tracer mass
+     real(r8), optional, intent(out) :: seep_mass(1: )     !seepaging tracer mass
+
+
+     ! !LOCAL VARIABLES:
+     integer, parameter :: nghost=2
+     integer, parameter :: nghost2p1=nghost*2+1
+     integer, parameter :: pn = 1                !first order lagrangian interpolation to avoid overshooting
+     integer  :: j,  k
+     integer  :: ntr, jl, jr                     !indices for tracer
+     integer  :: length, lengthp2
+     real(r8) :: mass_curve(0:ubj-lbj+nghost2p1 , ntrcs) !total number of nodes + two ghost cells at each boundary
+     real(r8) :: cmass_curve(0:ubj-lbj+nghost2p1, ntrcs)
+     real(r8) :: zh(0:ubj-lbj+nghost2p1)
+     real(r8) :: uh(0:ubj-lbj+nghost2p1)
+     real(r8) :: mass_new(0:ubj-lbj+1   , ntrcs)
+     real(r8) :: zold(0:ubj-lbj+1)
+     real(r8) :: zghostl(1:nghost)                    !ghost grid left interface at the left boundary
+     real(r8) :: zghostr(1:nghost)                    !ghost grid left interface at the right boundary
+     real(r8) :: ughostl(1:nghost)                    !flow velocity at the ghost grid leff interface at the left boundary
+     real(r8) :: ughostr(1:nghost)                    !flow velocity at the ghost grid leff interface at the right boundary
+     real(r8) :: z0
+     real(r8) :: zf
+     real(r8) :: utmp
+     real(r8) :: dinfl_mass
+     character(len=36) :: subname='semi_lagrange_adv_backward_one_col'
+     real(r8), parameter :: tiny_trc=1.e-16_r8
+     real(r8), parameter :: tiny_dist=1.e-13_r8
+
+
+    call bstatus%reset()
+    halfdt_col = .false.
+    !do backward advection for all boundaries, including leftmost (lbn(c)-1) and rightmost (ubj)
+    length = ubj - lbn + 1   ! total number of grid interfaces
+    lengthp2 = length + 2 * nghost       ! add 2 ghost cells both at the left and right boundaries
+
+    !define ghost boundary
+    !NOTE: because of the setup, the left boundary and right boundary should have non-zero flow
+    utmp = us(lbn-1)
+    do jl = 1, nghost
+      zghostl(jl) = zi(lbn-1)- (abs(utmp)*dtime+tiny_dist)*(nghost-jl+1)
+      ughostl(jl) = us(lbn-1)
+      zghostr(jl) = zi(ubj) + (abs(us(ubj)) * dtime+ tiny_dist) * jl
+      ughostr(jl) = us(ubj)
+    enddo
+
+    zh(0:lengthp2)=(/zghostl,zi(lbn-1:ubj),zghostr/)
+    uh(0:lengthp2)=(/ughostl, us(lbn-1:ubj), ughostr/)
+    call backward_advection(zh(0:lengthp2), uh(0:lengthp2), dtime, zold(0:length), bstatus)
+
+    if(bstatus%check_status())return
+
+    if(.not. is_ascending_vec(zold(0:length)))then
+      halfdt_col = .true.
+      return
+    endif
+
+    !create the cumulative mass curve
+    do ntr = 1, ntrcs
+      !left boundary ghost grids
+
+      j = 0
+      mass_curve(j, ntr) = 0._r8
+      do j = 1, nghost
+        mass_curve(j, ntr) = inflx_top(ntr)*dtime
+      enddo
+
+      !regular grids
+      do k = lbn, ubj
+        j = k - lbn + nghost + 1
+        mass_curve(j, ntr) = trcin(k, ntr)*dz(k)
+      enddo
+
+      !right ghost grids
+      if(inflx_bot(ntr)==0._r8)then
+        !this would allow tracer to come in from the right hand side.
+
+        j = ubj - lbn + 2 + nghost
+        if(us(ubj)>0._r8)then
+          mass_curve(j, ntr) = 0._r8
+        else
+          mass_curve(j, ntr) = trc_bot(ntr)*(zghostr(1)-zi(ubj))
+        endif
+
+        do j = ubj - lbn + 3 + nghost, ubj-lbn + nghost2p1
+          if(us(ubj)>0._r8)then
+            mass_curve(j, ntr) = 0._r8
+          else
+            k = j - (ubj-lbn + 1 + nghost)
+            mass_curve(j, ntr) = trc_bot(ntr)*(zghostr(k)-zghostr(k-1))
+          endif
+        enddo
+      else
+        j = ubj - lbn + 2 + nghost
+        mass_curve(j, ntr) = inflx_bot(ntr) * dtime
+
+        do j = ubj - lbn + 3 + nghost, ubj-lbn + nghost2p1
+          mass_curve(j, ntr) = inflx_bot(ntr) * dtime
+        enddo
+      endif
+    enddo
+
+    !locate the left corner
+    jl=loc_x(lengthp2+1,zh, zold(0), bstatus)
+    if(bstatus%check_status())return
+    !compute seepage if necessary using jl
+    if(present(seep_mass))then
+      if(zold(0)>zh(nghost))then
+        do ntr = 1, ntrcs
+          !do boundary mass interpolation
+          call bmass_interp(zh(0:jl),mass_curve(0:jl,ntr),zh(nghost),zold(0),seep_mass(ntr), bstatus)
+          if(bstatus%check_status())return
+        enddo
+      else
+        seep_mass(1:ntrcs) = 0._r8
+      endif
+    endif
+
+    do j = 1, length
+      !locate jr
+      jr=loc_xj(lengthp2+1,zh,zold(j),jl)
+      !do interpolation
+      do ntr = 1, ntrcs
+        call mass_interp(zh(jl-1:jr),mass_curve(jl-1:jr,ntr),zold(j-1),zold(j),mass_new(j,ntr), bstatus)
+        if(bstatus%check_status())return
+      enddo
+      jl=jr
+    enddo
+
+    !compute leaching, using jr
+    if(present(leaching_mass))then
+      if(zold(length)<zh(ubj-lbn+nghost+1))then
+        do ntr = 1, ntrcs
+          !do boundary mass interpolation
+          call bmass_interp(zh(jr-1:lengthp2),mass_curve(jr-1:lengthp2,ntr),zold(length),&
+            zh(ubj-lbn+nghost+1),leaching_mass(ntr), bstatus)
+          if(bstatus%check_status())return
+        enddo
+      else
+        leaching_mass(1:ntrcs)=0._r8
+      endif
+    endif
+
+    do ntr = 1, ntrcs
+      do k = lbn, ubj
+        j = k - lbn + 1
+        trcou(k, ntr)=mass_new(j, ntr)/dz(k)
+      enddo
+    enddo
+
+   end subroutine semi_lagrange_adv_backward_one_col
    !-------------------------------------------------------------------------------
    subroutine cmass_mono_smoother(cmass,mass_thc)
      !
