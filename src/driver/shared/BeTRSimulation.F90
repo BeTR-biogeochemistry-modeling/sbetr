@@ -305,14 +305,6 @@ contains
     call endrun(msg=bstatus%print_msg())
   endif
 
-  call this%BeTRSetBounds(betr_bounds)
-  do c = bounds%begc, bounds%endc
-    if(.not. this%active_col(c))cycle
-    call this%betr(c)%UpdateParas(betr_bounds, bstatus)
-    if(bstatus%check_status())then
-      call endrun(msg=bstatus%print_msg())
-    endif
-  enddo
 
   end subroutine BeTRSimulationReadParams
 !-------------------------------------------------------------------------------
@@ -431,7 +423,19 @@ contains
         exit
       endif
     enddo
+
     call this%set_activecol(col)
+
+    do c = bounds%begc, bounds%endc
+      if(.not. this%active_col(c))cycle
+      call this%betr(c)%UpdateParas(betr_bounds, this%bstatus(c))
+      if(this%bstatus(c)%check_status())then
+        call this%bsimstatus%setcol(c)
+        call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
+        exit
+      endif
+    enddo
+
     !allocate spinup factor
     if(this%do_soibgc())then
       allocate(this%scalaravg_col(bounds%begc:bounds%endc));this%scalaravg_col(:) = 0._r8
@@ -488,6 +492,7 @@ contains
       call this%regression%Init(base_filename, namelist_buffer, this%bsimstatus)
       if(this%bsimstatus%check_status())call endrun(msg=this%bsimstatus%print_msg())
     endif
+
   end subroutine BeTRInit
   !---------------------------------------------------------------------------------
   subroutine BeTRSimulationRestartAlloc(this, bounds)

@@ -116,7 +116,7 @@ subroutine run_model(namelist_buffer)
   jarpars  => create_jar_pars(jarmodel_name)
 
   !initialize model parameters
-  call jarpars%Init(namelist_buffer, bstatus)
+  call jarpars%Init(bstatus)
   jarpars%nop_limit = .not. phosphorus_stress; jarpars%non_limit=.not. nitrogen_stress
   if(bstatus%check_status())then
     call endrun(msg=bstatus%print_msg())

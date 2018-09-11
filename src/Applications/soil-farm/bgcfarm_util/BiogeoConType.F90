@@ -74,14 +74,13 @@ implicit none
 contains
 
   !--------------------------------------------------------------------
-  subroutine bgc_con_init(this,  namelist_buffer, bstatus)
+  subroutine bgc_con_init(this,  bstatus)
   use betr_constants , only : betr_namelist_buffer_size_ext
   use BetrStatusType , only : betr_status_type
   use betr_ctrl      , only : betr_spinup_state
   use tracer_varcon  , only : use_c13_betr, use_c14_betr, is_nitrogen_active, is_phosphorus_active
   implicit none
   class(BiogeoCon_type), intent(inout) :: this
-  character(len=*) , intent(in)    :: namelist_buffer
   type(betr_status_type)                   , intent(out) :: bstatus
 
   call bstatus%reset()
@@ -249,6 +248,7 @@ contains
   call ncd_io('vmax_minp_soluble_to_secondary',temparr, 'read', ncid, readvar=readv)
   if ( .not. readv ) call bstatus%set_msg(msg=' ERROR: error in reading in soil order vmax_minp_soluble_to_secondary '//errMsg(__FILE__, __LINE__), err=-1)
   if(bstatus%check_status())return
+
   this%vmax_minp_soluble_to_secondary(1:betr_max_soilorder)=temparr(1:betr_max_soilorder)
 
   call ncd_io('minp_secondary_decay',temparr, 'read', ncid, readvar=readv)

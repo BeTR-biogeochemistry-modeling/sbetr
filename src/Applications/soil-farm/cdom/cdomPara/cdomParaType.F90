@@ -113,13 +113,12 @@ contains
   end function create_jarpars_cdom
 
   !--------------------------------------------------------------------
-  subroutine cdompara_init(this, namelist_buffer, bstatus)
+  subroutine cdompara_init(this, bstatus)
   use betr_constants , only : betr_namelist_buffer_size_ext
   use BetrStatusType , only : betr_status_type
   use betr_ctrl      , only : betr_spinup_state
   implicit none
   class(cdomPara_type), intent(inout) :: this
-  character(len=*) , intent(in)    :: namelist_buffer
   type(betr_status_type)                   , intent(out) :: bstatus
 
   call this%bcon_Init(bstatus)

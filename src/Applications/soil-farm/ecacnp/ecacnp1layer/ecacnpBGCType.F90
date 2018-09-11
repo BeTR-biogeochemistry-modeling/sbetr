@@ -204,6 +204,7 @@ contains
   select type(biogeo_con)
   type is(ecacnp_para_type)
     do sr = 1, betr_max_soilorder
+
       this%frac_p_sec_to_sol(sr) = biogeo_con%frac_p_sec_to_sol(sr)
 
       this%minp_secondary_decay(sr) = biogeo_con%minp_secondary_decay(sr)

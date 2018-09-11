@@ -63,6 +63,9 @@ contains
   use HistBGCMod            , only : hist_bgc_type
   use tracer_varcon         , only : reaction_method
   use betr_ctrl             , only : continue_run
+  use babortutils           , only : endrun
+  use BetrStatusType        , only : betr_status_type
+  use ApplicationsFactory   , only : AppInitParameters
   implicit none
   !arguments
   character(len=betr_filename_length)      , intent(in) :: base_filename
@@ -73,7 +76,7 @@ contains
   real(r8)                             :: dtime    !model time step
   real(r8)                             :: dtime2   !half of the model time step
   integer                              :: record
-
+  type(betr_status_type)               :: bstatus
   character(len=80)                    :: subname = 'sbetrBGC_driver'
 
   type(bounds_type)                    :: bounds
@@ -114,8 +117,6 @@ contains
   bounds%endl = 1
   bounds%lbj  = 1
   bounds%ubj  = nlevtrc_soil
-
-  if(lread_param) call simulation%readParams(bounds)
 
   !set up grid
   allocate(grid_data)
@@ -177,7 +178,13 @@ contains
 
   !x print*,'bf sim init'
   !print*,'base_filename:',trim(base_filename)
-  call  simulation%Init(bounds, lun, col, pft, waterstate_vars,namelist_buffer, base_filename, case_id)
+  call AppInitParameters(reaction_method, bstatus)
+
+  if(bstatus%check_status())call endrun(msg=bstatus%print_msg())
+
+  if(lread_param) call simulation%readParams(bounds)
+
+  call  simulation%Init(bounds, lun, col, pft, waterstate_vars, namelist_buffer, base_filename, case_id)
   !x print*,'af sim init'
 
   select type(simulation)
@@ -394,7 +401,7 @@ end subroutine sbetrBGC_driver
     use tracer_varcon            , only : advection_on, diffusion_on, reaction_on, ebullition_on, reaction_method
     use tracer_varcon            , only : is_nitrogen_active, is_phosphorus_active, input_only, bgc_param_file
     use ncdio_pio                , only : file_desc_t, ncd_nowrite, ncd_pio_openfile, ncd_pio_closefile
-    use ApplicationsFactory      , only : AppLoadParameters,AppInitParameters
+
     use BetrStatusType           , only : betr_status_type
     use HistBGCMod               , only : hist_bgc_type
     use histMod                  , only : histf_type

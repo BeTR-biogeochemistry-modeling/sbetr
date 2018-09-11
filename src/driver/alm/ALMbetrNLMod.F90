@@ -53,7 +53,6 @@ contains
       AppParNLFile, AA_spinup_on, fix_ip, do_bgc_calibration, &
       bgc_param_file
 
-    character(len=betr_namelist_buffer_size_ext) :: bgc_namelist_buffer
     logical :: appfile_on
 
     !initialize spinup state
@@ -72,7 +71,7 @@ contains
     use_c13_betr    = use_c13
     use_c14_betr    = use_c14
     AppParNLFile    = ''
-    appfile_on      = .false.
+!    appfile_on      = .false.
     fix_ip          = .false.
     do_bgc_calibration=.false.
     bgc_param_file  = ''
@@ -88,17 +87,17 @@ contains
           end if
        end if
        call relavu( unitn )
-       if(trim(AppParNLFile)/='')then
-         appfile_on=.true.
-         call LoadFile2String(AppParNLFile, bgc_namelist_buffer)
-       else
-         bgc_namelist_buffer='none'
-       endif
+!       if(trim(AppParNLFile)/='')then
+!         appfile_on=.true.
+!         call LoadFile2String(AppParNLFile, bgc_namelist_buffer)
+!       else
+!         bgc_namelist_buffer='none'
+!       endif
     end if
 
-    call shr_mpi_bcast(appfile_on, mpicom)
+!    call shr_mpi_bcast(appfile_on, mpicom)
     !pass parameters to all files
-    call shr_mpi_bcast(bgc_namelist_buffer, mpicom)
+!    call shr_mpi_bcast(bgc_namelist_buffer, mpicom)
 
     ! Broadcast namelist variables read in
     call shr_mpi_bcast(reaction_method, mpicom)
@@ -122,14 +121,8 @@ contains
       write(iulog,*)'fix_ip         =',fix_ip
       write(iulog,*)'do_bgc_calibration=',do_bgc_calibration
     endif
-    write(betr_namelist_buffer,*) '&betr_parameters ', &
-      ' reaction_method='//quote//trim(reaction_method)//quote, &
-      ' advection_on=',trim(log2str(advection_on)), &
-      ' diffusion_on=',trim(log2str(diffusion_on)), &
-      ' reaction_on=',trim(log2str(reaction_on)), &
-      ' ebullition_on=',trim(log2str(ebullition_on)),'  /'
 
-    call AppInitParameters(bgc_namelist_buffer, reaction_method, bstatus)
+    call AppInitParameters(reaction_method, bstatus)
     if(bstatus%check_status())call endrun(msg=bstatus%print_msg())
 
   end subroutine betr_readNL
