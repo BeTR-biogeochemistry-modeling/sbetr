@@ -961,18 +961,18 @@ contains
      integer           , intent(in)  :: lbn
      integer           , intent(in)  :: ntrcs
      real(r8)          , intent(in)  :: dtime
-     real(r8)          , intent(in)  :: zi(lbj-1: )
-     real(r8)          , intent(in)  :: dz(lbj: )
-     real(r8)          , intent(in)  :: inflx_top(1: )     ! incoming tracer flow at top boundary [mol/m2/s]
-     real(r8)          , intent(in)  :: inflx_bot(1: )     !incoming tracer flow at bottom boundary
-     real(r8)          , intent(in)  :: trc_bot(1: )       !bottom layer tracer concentration
+     real(r8)          , intent(in)  :: zi(lbj-1:ubj)
+     real(r8)          , intent(in)  :: dz(lbj:ubj)
+     real(r8)          , intent(in)  :: inflx_top(1:ntrcs)     ! incoming tracer flow at top boundary [mol/m2/s]
+     real(r8)          , intent(in)  :: inflx_bot(1:ntrcs)     !incoming tracer flow at bottom boundary
+     real(r8)          , intent(in)  :: trc_bot(1:ntrcs)       !bottom layer tracer concentration
      logical           , intent(in)  :: update_col         !indicator of active clumns
-     real(r8)          , intent(in)  :: us(lbj-1: )        !convective flux defined at the boundary, positive downwards, [m/s]
+     real(r8)          , intent(in)  :: us(lbj-1:ubj)        !convective flux defined at the boundary, positive downwards, [m/s]
      logical           , intent(out) :: halfdt_col
-     real(r8)          , intent(in)  :: trcin(lbj: , 1: )  !input tracer concentration
-     real(r8)          , intent(out) :: trcou(lbj: , 1: )
-     real(r8), optional, intent(out) :: leaching_mass(1: ) !leaching tracer mass
-     real(r8), optional, intent(out) :: seep_mass(1: )     !seepaging tracer mass
+     real(r8)          , intent(in)  :: trcin(lbj:ubj, 1:ntrcs)  !input tracer concentration
+     real(r8)          , intent(out) :: trcou(lbj:ubj, 1:ntrcs)
+     real(r8), optional, intent(out) :: leaching_mass(1:ntrcs) !leaching tracer mass
+     real(r8), optional, intent(out) :: seep_mass(1:ntrcs)     !seepaging tracer mass
 
 
      ! !LOCAL VARIABLES:
