@@ -400,9 +400,9 @@ contains
     real(r8)             :: qflx_adv_local(lbj-1:ubj)
     real(r8), parameter  :: loc_eps = 1.e-12_r8
     integer :: difs_trc_group (1:betrtracer_vars%nmem_max            )
-    real(r8) :: dtracer       (bounds%begc:bounds%endc, lbj:ubj, 1:1 )
+    real(r8) :: dtracer       (bounds%begc:bounds%endc, lbj:ubj, 1:betrtracer_vars%nmem_max)
     real(r8) :: trc_conc_out  (bounds%begc:bounds%endc, lbj:ubj, 1:betrtracer_vars%nmem_max)
-    real(r8) :: err_tracer    (bounds%begc:bounds%endc, 1:1         )
+    real(r8) :: err_tracer    (bounds%begc:bounds%endc, 1:betrtracer_vars%nmem_max         )
     real(r8) :: local_source  (bounds%begc:bounds%endc,lbj:ubj,betrtracer_vars%nmem_max   )
     real(r8) :: inflx_top     (betrtracer_vars%nmem_max        )
     real(r8) :: inflx_bot     (betrtracer_vars%nmem_max        )
@@ -518,7 +518,7 @@ contains
                   enddo
                   !if negative tracer, go to next column
                   if(lnegative_tracer)cycle
-                  
+
                   !do error budget for good calculation
                   err_tracer(c, k) = dot_sum(dtracer(c,jtops(c):ubj, k), dz(c,jtops(c):ubj),betr_status)
                   if(betr_status%check_status())return
@@ -1010,11 +1010,7 @@ contains
                              ' transp=',transp_mass(c,k),' lech=',&
                              leaching_mass(c,k),' infl=',inflx_top(c,k),' dmass=',dmass(c,k), ' mass0=', &
                              mass0,'err_rel=',err_relative
-                        write(*,*)'surf adv',qflx_adv_local(c,jtops(c)-1)
-                        do l = jtops(c), ubj
-                          write(*,'(A,X,I2,4(X,E20.10))')'adv aqu',l,qflx_adv_local(c,l),qflx_adv(c,l), &
-                            aqu2bulkcef_mobile_col(c,l,j),tracer_conc_mobile_col(c,l,trcid)
-                        enddo
+
                         msg=trim(msg)//new_line('A')//'advection mass balance error for tracer '//tracername &
                           //new_line('A')//errMsg(mod_filename, __LINE__)
                         call bstatus%set_msg(msg, err=-1)
@@ -1110,12 +1106,13 @@ contains
     logical               :: lnegative_tracer                      !when true, negative tracer occurs
     logical               :: lexit_loop
     real(r8)              :: err_relative
-    integer , allocatable :: dif_trc_group(:)
-    real(r8), allocatable :: err_tracer(:, :)
-    real(r8), allocatable :: diff_surf(:, :)
-    real(r8), allocatable :: dtracer(:, :, :)
-    real(r8), allocatable :: dmass(:, : )
-    real(r8), allocatable :: local_source(:, :, :)
+    real(r8) :: err_tracer    (bounds%begc:bounds%endc, 1:betrtracer_vars%nmem_max )
+    real(r8) :: diff_surf     (bounds%begc:bounds%endc, 1:betrtracer_vars%nmem_max)
+    real(r8) :: dtracer       (bounds%begc:bounds%endc,lbj:ubj, 1:betrtracer_vars%nmem_max)
+    real(r8) :: dmass         (bounds%begc:bounds%endc, 1:betrtracer_vars%nmem_max   )
+    real(r8) :: local_source  (bounds%begc:bounds%endc,lbj:ubj, 1:betrtracer_vars%nmem_max)
+    integer  :: dif_trc_group (1:betrtracer_vars%nmem_max              )
+
     real(r8)              :: mass0,mass1
     real(r8), parameter   :: err_relative_threshold=1.e-2_r8 !relative error threshold
     real(r8), parameter   :: err_dif_min = 1.e-12_r8  !minimum absolute error
@@ -1162,12 +1159,6 @@ contains
          tracer_conc_mobile_col   => tracerstate_vars%tracer_conc_mobile_col                   &
          )
 
-      allocate (err_tracer    (bounds%begc:bounds%endc, nmem_max         ))
-      allocate (diff_surf     (bounds%begc:bounds%endc, nmem_max         ))
-      allocate (dtracer       (bounds%begc:bounds%endc,lbj:ubj, nmem_max ))
-      allocate (dmass         (bounds%begc:bounds%endc, nmem_max         ))
-      allocate (local_source  (bounds%begc:bounds%endc,lbj:ubj, nmem_max ))
-      allocate (dif_trc_group (nmem_max                                  ))
 
       update_col(:)       = .true.
       time_remain(:)      = 0._r8
@@ -1343,12 +1334,7 @@ contains
          enddo
       enddo
       !
-      deallocate(err_tracer)
-      deallocate(diff_surf)
-      deallocate(dtracer)
-      deallocate(dmass)
-      deallocate(local_source)
-      deallocate(dif_trc_group)
+
     end associate
   end subroutine do_tracer_gw_diffusion
 

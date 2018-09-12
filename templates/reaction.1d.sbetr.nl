@@ -1,13 +1,12 @@
 &sbetr_driver
   simulator_name = 'standalone'
   run_type='sbgc'
-  param_file='../tools/sbgc.ecacnp_pars.04232018.nc'
   case_id='exp.noadv'
   continue_run=.false.
 /
 
 &betr_parameters
-  reaction_method = 'simic'
+  reaction_method = 'ecacnp'
   advection_on = .true.
   diffusion_on = .true.
   reaction_on  = .true.
@@ -17,7 +16,7 @@
 
 &betr_time
   delta_time=1800.
-  stop_n = 60
+  stop_n = 20
   hist_freq=30
   stop_option='nyears'
 /
