@@ -408,6 +408,7 @@ contains
     real(r8) :: inflx_bot     (betrtracer_vars%nmem_max        )
     real(r8) :: trc_bot       (betrtracer_vars%nmem_max        )
     real(r8), parameter  :: err_min_solid=1.e-12_r8
+    real(r8), parameter  :: tiny_flow = 1.e-18_r8
     character(len=255)   :: subname = 'tracer_solid_transport'
     integer              :: ntracer_groups
     real(r8) :: qadv_max
@@ -514,21 +515,22 @@ contains
                       dtime_loc(c) = dtime_loc(c)*0.5_r8
                       exit
                     endif
-
-                    !do error budget for good calculation
-                    err_tracer(c, k) = dot_sum(dtracer(c,jtops(c):ubj, k), dz(c,jtops(c):ubj),betr_status)
-                    if(betr_status%check_status())return
-                    if(abs(err_tracer(c,k))>=err_min_solid)then
-                      tracername = betrtracer_vars%get_tracername(trcid)
-                      write(msg,'(A,1X,I8,5X,A,(5X,A,5X,E18.10))')'nstep=', betr_time%get_nstep(), trim(tracername),&
-                        'err=',err_tracer(c,k)
-                      call betr_status%set_msg('tracer mass balance error ' &
-                         //trim(msg)//errMsg(mod_filename, __LINE__), err=-1)
-                      return
-                    endif
                   enddo
-                  !if negative tracer concentration is found, go to the next column
+                  !if negative tracer, go to next column
                   if(lnegative_tracer)cycle
+                  
+                  !do error budget for good calculation
+                  err_tracer(c, k) = dot_sum(dtracer(c,jtops(c):ubj, k), dz(c,jtops(c):ubj),betr_status)
+                  if(betr_status%check_status())return
+                  if(abs(err_tracer(c,k))>=err_min_solid)then
+                    tracername = betrtracer_vars%get_tracername(trcid)
+                    write(msg,'(A,1X,I8,5X,A,(5X,A,5X,E18.10))')'nstep=', betr_time%get_nstep(), trim(tracername),&
+                      'err=',err_tracer(c,k)
+                    call betr_status%set_msg('tracer mass balance error ' &
+                       //trim(msg)//' '//errMsg(mod_filename, __LINE__), err=-1)
+                    return
+                  endif
+
                   !do solid advection for the current column
                   !derive the advection flux, starting from the bottom
                   qflx_adv_local(ubj)=0._r8
@@ -537,15 +539,16 @@ contains
                     qflx_adv_local(l) = dtracer(c,l+1,k)*dz(c,l+1)/dtime_loc(c)+qflx_adv_local(l+1)
                   enddo
                   qadv_max=0._r8
-                  do l = ubj-1, jtops(c),-1
+                  do l = jtops(c),ubj-1
                     if(qflx_adv_local(l)>0._r8)then
-                      qflx_adv_local(l) = safe_div(qflx_adv_local(l),tracer_conc_mobile_col(c,l,k),eps=loc_eps)
+                      qflx_adv_local(l) = safe_div(qflx_adv_local(l),tracer_conc_mobile_col(c,l,trcid),eps=loc_eps)
                     else
-                      qflx_adv_local(l) = safe_div(qflx_adv_local(l),tracer_conc_mobile_col(c,l+1,k),eps=loc_eps)
+                      qflx_adv_local(l) = safe_div(qflx_adv_local(l),tracer_conc_mobile_col(c,l+1,trcid),eps=loc_eps)
                     endif
                     qadv_max=max(qadv_max,abs(qflx_adv_local(l)))
                   enddo
-                  if(qadv_max<1.e-18_r8)then
+                  !if flow is infinitesimal, skip
+                  if(qadv_max<tiny_flow)then
                     time_remain(c) = time_remain(c)-dtime_loc(c)
                     dtime_loc(c)   = max(dtime_loc(c),dtime_min)
                     dtime_loc(c)   = min(dtime_loc(c), time_remain(c))
@@ -553,7 +556,6 @@ contains
                   endif
                   dtime_ll = dtime_loc(c)
                   time_remain_ll=dtime_ll
-
                   do
                     ! do semi-lagrangian tracer transport
                     call semi_lagrange_adv(betr_status,lbj, ubj,               &
@@ -571,7 +573,11 @@ contains
                       tracer_conc_mobile_col(c,lbj:ubj,difs_trc_group(1:ntrcs)), &
                       trc_conc_out(c,:,1:ntrcs))
                     if(betr_status%check_status())return
-                    if(.not. halfdt_ll)then
+
+                    if(halfdt_ll)then
+                      dtime_ll = max(dtime_ll*0.5_r8,dtime_min)
+                      dtime_ll = min(dtime_ll, time_remain(c))
+                    else
                       do l = jtops(c), ubj
                         do k = 1, ntrcs
                           trcid = difs_trc_group(k)
@@ -590,21 +596,17 @@ contains
                           return
                         endif
                       enddo
-                    endif
-                    if(halfdt_ll)then
-                      dtime_ll = max(dtime_ll*0.5_r8,dtime_min)
-                      dtime_ll = min(dtime_ll, time_remain(c))
-                    else
                       time_remain_ll = time_remain_ll - dtime_ll
+                      dtime_ll = min(max(dtime_ll,dtime_min), time_remain_ll)
                     endif
                     if(time_remain_ll < dtime_min)exit
                  enddo
-              endif
-              !when everything is OK, update the remaining time to be evolved.
-              time_remain(c) = time_remain(c)-dtime_loc(c)
-              dtime_loc(c)   = max(dtime_loc(c),dtime_min)
-              dtime_loc(c)   = min(dtime_loc(c), time_remain(c))
 
+                 !when everything is OK, update the remaining time to be evolved.
+                 time_remain(c) = time_remain(c)-dtime_loc(c)
+                 dtime_loc(c)   = max(dtime_loc(c),dtime_min)
+                 dtime_loc(c)   = min(dtime_loc(c), time_remain(c))
+              endif
            enddo
             !test for loop exit
            lexit_loop=exit_loop_by_threshold(bounds%begc, bounds%endc, time_remain, &
