@@ -502,6 +502,7 @@ contains
                              new_line('A')//'dtime=',dtime_loc(c), &
                              new_line('A')//'trc=',tracer_conc_mobile_col(c,l,trcid),&
                              'dtracer=',dtracer(c,l,k), &
+                             new_line('A')//'trc0=',tracer_conc_mobile_col(c,l,difs_trc_group(1)), &
                              new_line('A')//'stopped for negative tracer '//&
                              trim(tracername)//' '//trim(subname)//errMsg(mod_filename, __LINE__)
                          call betr_status%set_msg(msg=msg,err=-1)
