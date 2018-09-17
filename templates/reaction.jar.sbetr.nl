@@ -1,5 +1,5 @@
 &jar_driver
-  jarmodel_name = 'simic'
+  jarmodel_name = 'ecacnp'
   phosphorus_stress=.false.
   nitrogen_stress=.true.
   case_id='exp1'
@@ -12,5 +12,5 @@
 /
 
 &forcing_inparm
-  forcing_filename = '../regression-tests/input-data/jarmodel_example.halfhour.forcing.nc'
+  forcing_filename = '../input-data/jarmodel_example.halfhour.forcing.nc'
 /

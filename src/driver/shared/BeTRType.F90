@@ -432,8 +432,8 @@ contains
   end subroutine debug_info
 
   !--------------------------------------------------------------------------------
-  subroutine retrieve_biostates(this, bounds, lbj, ubj,  num_soilc, filter_soilc, jtops, &
-    biogeo_state, betr_status)
+  subroutine retrieve_biostates(this, bounds, lbj, ubj,  num_soilc, filter_soilc,&
+     jtops, biogeo_state, betr_status)
 
   implicit none
   ! !ARGUMENTS:
@@ -445,6 +445,7 @@ contains
   integer                              , intent(in)    :: filter_soilc(:)             ! column filter
   type(betr_biogeo_state_type)         , intent(inout) :: biogeo_state
   type(betr_status_type)               , intent(out)   :: betr_status
+  integer :: c, fc
 
   call this%bgc_reaction%retrieve_biostates(bounds, lbj, ubj, jtops, num_soilc, &
      filter_soilc, this%tracers, this%tracerstates, biogeo_state, betr_status)
@@ -453,7 +454,7 @@ contains
 
   !--------------------------------------------------------------------------------
   subroutine retrieve_biofluxes(this, num_soilc, filter_soilc, &
-    biogeo_flux)
+    num_soilp, filter_soilp, biogeo_flux)
 
   use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
   implicit none
@@ -461,11 +462,20 @@ contains
   class(betr_type)                     , intent(inout) :: this
   integer                              , intent(in)    :: num_soilc                   ! number of columns in column filter
   integer                              , intent(in)    :: filter_soilc(:)             ! column filter
+  integer                              , intent(in)    :: num_soilp
+  integer                              , intent(in)    :: filter_soilp(:)
   type(betr_biogeo_flux_type)          , intent(inout) :: biogeo_flux
-
+  integer ::  p, fp
   call this%bgc_reaction%retrieve_biogeoflux(num_soilc, &
      filter_soilc, this%tracerfluxes, this%tracers, biogeo_flux)
 
+  do fp = 1, num_soilp
+    p = filter_soilp(fp)
+    biogeo_flux%c12flux_vars%tempavg_agnpp_patch(p) = this%aereconds%tempavg_agnpp_patch(p)
+    biogeo_flux%c12flux_vars%annavg_agnpp_patch(p)  = this%aereconds%annavg_agnpp_patch(p)
+    biogeo_flux%c12flux_vars%tempavg_bgnpp_patch(p) = this%aereconds%tempavg_bgnpp_patch(p)
+    biogeo_flux%c12flux_vars%annavg_bgnpp_patch(p)  = this%aereconds%annavg_bgnpp_patch(p)
+  enddo
   end subroutine retrieve_biofluxes
 
   !--------------------------------------------------------------------------------

@@ -73,6 +73,7 @@ module BeTRTracerType
 
    integer :: id_trc_o18_o2, id_trc_beg_o18_o2, id_trc_end_o18_o2                                      ! tag for O(18)O and its related species
    integer :: id_trc_o17_o2, id_trc_beg_o17_o2, id_trc_end_o17_o2                                      ! tag for O(17)O and its related species
+   integer :: id_trc_mic_toffset
    integer, pointer :: id_trc_h2o_tags(:)                        !tagged h2o tracers
 
    logical, pointer :: is_volatile(:)     => null()                       !flag for volatile species,  true/false, (yes/no)
@@ -212,7 +213,7 @@ module BeTRTracerType
   this%id_trc_som = 0; this%id_trc_beg_som = 0; this%id_trc_end_som = 0
   this%id_trc_blk_h2o=0; this%id_trc_beg_blk_h2o=0; this%id_trc_end_blk_h2o=0
   this%id_trc_Bm = 0; this%id_trc_beg_Bm = 0; this%id_trc_end_Bm = 0
-
+  this%id_trc_mic_toffset = 0
   this%betr_simname                 = ''
   end subroutine init_scalars
 

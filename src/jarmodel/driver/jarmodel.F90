@@ -116,7 +116,7 @@ subroutine run_model(namelist_buffer)
   jarpars  => create_jar_pars(jarmodel_name)
 
   !initialize model parameters
-  call jarpars%Init(namelist_buffer, bstatus)
+  call jarpars%Init(bstatus)
   jarpars%nop_limit = .not. phosphorus_stress; jarpars%non_limit=.not. nitrogen_stress
   if(bstatus%check_status())then
     call endrun(msg=bstatus%print_msg())
@@ -143,6 +143,7 @@ subroutine run_model(namelist_buffer)
   allocate(ystatesf(nvars));ystatesf(:)=0._r8
 
   call jarmodel%init_cold(nvars, ystatesf)
+
   !initialize timer
   call timer%Init(namelist_buffer=namelist_buffer)
 
@@ -170,7 +171,7 @@ subroutine run_model(namelist_buffer)
     !update forcing'
     call load_forc(om_forc, nut_forc, atm_forc, soil_forc, timer%tstep)
 
-    call SetJarForc(bgc_forc, om_forc, nut_forc, atm_forc, soil_forc)
+    call SetJarForc(bgc_forc, om_forc, nut_forc, atm_forc, soil_forc, dtime, jarpars)
 
     call setJarStates(bgc_forc, ystatesf)
 

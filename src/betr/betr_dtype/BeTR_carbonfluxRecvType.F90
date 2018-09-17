@@ -13,6 +13,11 @@ implicit none
     real(r8), pointer :: hr_vr_col(:,:) => null()
     real(r8), pointer :: fire_decomp_closs_vr_col(:,:) => null()  !will be summarized from the specific bgc model
     real(r8), pointer :: fire_decomp_closs_col(:) => null()  !will be summarized from the specific bgc model
+    real(r8), pointer :: tempavg_agnpp_patch(:) => null()
+    real(r8), pointer :: tempavg_bgnpp_patch(:) => null()
+    real(r8), pointer :: annavg_agnpp_patch(:) => null()
+    real(r8), pointer :: annavg_bgnpp_patch(:) => null()
+
   contains
     procedure, public  :: Init
     procedure, private :: InitAllocate
@@ -35,7 +40,7 @@ implicit none
 
   !------------------------------------------------------------------------
   subroutine InitAllocate(this, bounds)
-
+  use betr_varcon     , only : spval => bspval
   implicit none
   class(betr_carbonflux_recv_type), intent(inout) :: this
   type(betr_bounds_type), intent(in) :: bounds
@@ -54,6 +59,12 @@ implicit none
   allocate(this%som_c_qdrain_col(begc:endc))
   allocate(this%hr_vr_col(begc:endc,lbj:ubj))
   allocate(this%fire_decomp_closs_vr_col(begc:endc,lbj:ubj))
+
+  allocate(this%tempavg_agnpp_patch(begp:endp)); this%tempavg_agnpp_patch(:) = spval
+  allocate(this%tempavg_bgnpp_patch(begp:endp)); this%tempavg_bgnpp_patch(:) = spval
+  allocate(this%annavg_agnpp_patch(begp:endp));  this%annavg_agnpp_patch(:) = spval
+  allocate(this%annavg_bgnpp_patch(begp:endp)); this%annavg_bgnpp_patch(:)  = spval
+
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------

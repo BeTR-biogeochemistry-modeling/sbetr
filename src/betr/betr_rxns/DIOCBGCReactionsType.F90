@@ -412,7 +412,7 @@ contains
     if (dtime > 0.0)                                          continue
     if (len(betrtracer_vars%betr_simname) > 0)                continue
     if (size(biophysforc%isoilorder) > 0)                     continue
-    if (size(tracercoeff_vars%annsum_counter_col) > 0)        continue
+  !  if (size(tracercoeff_vars%annsum_counter_col) > 0)        continue
     if (size(tracerstate_vars%tracer_conc_surfwater_col) > 0) continue
     if (size(tracerflux_vars%tracer_flx_top_soil_col) > 0)    continue
     if (size(tracerboundarycond_vars%jtops_col) > 0)          continue
@@ -476,7 +476,7 @@ contains
     if (size(filter_soilc) > 0)                               continue
     if (len(betrtracer_vars%betr_simname) > 0)                continue
     if (size(tracerstate_vars%tracer_conc_surfwater_col) > 0) continue
-    if (size(tracercoeff_vars%annsum_counter_col) > 0)        continue
+  !  if (size(tracercoeff_vars%annsum_counter_col) > 0)        continue
 
     !continue on the simulation type, an implementation of aqueous chemistry will be
     !employed to separate out the adsorbed phase

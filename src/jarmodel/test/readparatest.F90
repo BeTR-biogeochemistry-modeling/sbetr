@@ -18,8 +18,8 @@ implicit none
   allocate(centpara, source=create_jarpars_ecacnp())
   allocate(cdompara, source=create_jarpars_cdom())
 
-  call centpara%Init(namelist_buffer='junk_data', bstatus=bstatus)
-  call cdompara%Init(namelist_buffer='junk_data', bstatus=bstatus)
+  call centpara%Init(bstatus=bstatus)
+  call cdompara%Init(bstatus=bstatus)
 
   call ncd_pio_openfile(ncid, fname1, ncd_nowrite)
 

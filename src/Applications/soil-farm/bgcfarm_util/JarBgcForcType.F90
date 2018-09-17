@@ -132,7 +132,12 @@ implicit none
     real(r8) :: conc_atm_co2_c13
     real(r8) :: conc_atm_co2_c14
     real(r8) :: conc_atm_ch4
-
+    real(r8) :: diffusw_nh4
+    real(r8) :: diffusw0_nh4
+    real(r8) :: diffusw_no3
+    real(r8) :: diffusw0_no3
+    real(r8) :: diffusw_minp
+    real(r8) :: diffusw0_minp
     real(r8),pointer :: plant_froot_nn(:)
     real(r8),pointer :: plant_froot_np(:)
     integer, pointer :: plant_vtype(:)
@@ -142,6 +147,7 @@ implicit none
     real(r8):: msurf_minp
     real(r8):: air_temp
     real(r8):: latacc   !latitude dependent acceleration factor for decomposition
+    real(r8):: tmic_opt  !temperature offset for microbial adaptation
   contains
     procedure, public :: init
     procedure, private:: initAllocate
@@ -325,7 +331,7 @@ contains
   this%soilorder=1
   this%msurf_nh4=0._r8
   this%msurf_minp=0._r8
-
+  this%tmic_opt  = 295.5_r8
   this%ystates(:) = 0._r8
   this%air_temp = 298.15_r8
   this%latacc = 1._r8

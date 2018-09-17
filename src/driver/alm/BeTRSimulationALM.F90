@@ -52,7 +52,6 @@ module BeTRSimulationALM
      procedure, public :: set_active                => ALMset_active
      procedure, private:: set_transient_kinetics_par
      procedure, private:: set_vegpar_calibration
-     procedure, public :: readParams                => ALMreadParams
      procedure, public :: set_iP_prof
      procedure, public :: skip_balcheck
      procedure, public :: checkpmassyes
@@ -110,56 +109,6 @@ contains
   enddo
 
   end subroutine Set_iP_prof
-!-------------------------------------------------------------------------------
-  subroutine ALMreadParams(this, bounds)
-
-  use ncdio_pio               , only :  file_desc_t
-  use ncdio_pio               , only : ncd_pio_closefile, ncd_pio_openfile, &
-                                         file_desc_t, ncd_inqdid, ncd_inqdlen
-  use ApplicationsFactory      , only : AppLoadParameters
-  use BetrStatusType           , only : betr_status_type
-  use decompMod                , only : bounds_type
-  use tracer_varcon            , only : bgc_param_file
-  use fileutils                , only : getfil
-  use spmdMod                  , only : masterproc
-  use clm_varctl               , only : iulog
-  implicit none
-  class(betr_simulation_alm_type)          , intent(inout) :: this
-
-  type(bounds_type), intent(in) :: bounds
-  !temporary variables
-  type(betr_status_type)   :: bstatus
-  type(betr_bounds_type)   :: betr_bounds
-  integer :: c
-  character(len=256) :: locfn ! local file name
-  type(file_desc_t)  :: ncid  ! pio netCDF file id
-
-  !open file for parameter reading
-  call getfil (bgc_param_file, locfn, 0)
-  if (masterproc) then
-    write(iulog,*) 'read betr bgc parameter file '//trim(locfn)
-  endif
-  call ncd_pio_openfile (ncid, trim(locfn), 0)
-
-  !read in parameters
-  call AppLoadParameters(ncid, bstatus)
-
-  call ncd_pio_closefile(ncid)
-
-  if(bstatus%check_status())then
-    call endrun(msg=bstatus%print_msg())
-  endif
-
-  call this%BeTRSetBounds(betr_bounds)
-  do c = bounds%begc, bounds%endc
-    if(.not. this%active_col(c))cycle
-    call this%betr(c)%UpdateParas(betr_bounds, bstatus)
-    if(bstatus%check_status())then
-      call endrun(msg=bstatus%print_msg())
-    endif
-  enddo
-
-  end subroutine ALMreadParams
 
 !-------------------------------------------------------------------------------
   function skip_balcheck(this)result(stats)
@@ -629,10 +578,11 @@ contains
   do fc = 1, num_soilc
     c = filter_soilc(fc)
     call this%biophys_forc(c)%reset(value_column=0._r8)
+    this%biophys_forc(c)%annsum_counter_col(c_l) = cnstate_vars%annsum_counter_col(c)
     this%biophys_forc(c)%isoilorder(c_l) = 1                 !this needs update
     this%biophys_forc(c)%lithotype_col(c_l) = cnstate_vars%lithoclass_col(c)
-    this%biophys_forc(c)%frac_loss_lit_to_fire_col(c_l) =frac_loss_lit_to_fire_col(c)
-    this%biophys_forc(c)%frac_loss_cwd_to_fire_col(c_l) =frac_loss_cwd_to_fire_col(c)
+    this%biophys_forc(c)%frac_loss_lit_to_fire_col(c_l) = frac_loss_lit_to_fire_col(c)
+    this%biophys_forc(c)%frac_loss_cwd_to_fire_col(c_l) = frac_loss_cwd_to_fire_col(c)
     this%biophys_forc(c)%biochem_pmin_vr(c_l,1:betr_nlevsoi)= biochem_pmin_vr(c,1:betr_nlevsoi)
     call this%biophys_forc(c)%c12flx%reset(value_column=0._r8)
     call this%biophys_forc(c)%n14flx%reset(value_column=0._r8)
@@ -867,6 +817,7 @@ contains
   use pftvarcon           , only : noveg
   use MathfuncMod         , only : safe_div
   use tracer_varcon       , only : reaction_method
+
   implicit none
   class(betr_simulation_alm_type), intent(inout)  :: this
   type(bounds_type) , intent(in)  :: bounds
@@ -900,14 +851,16 @@ contains
     if(.not. this%active_col(c))cycle
 
     call this%betr(c)%retrieve_biostates(betr_bounds,  1, betr_nlevsoi, &
-       this%num_soilc, this%filter_soilc, this%jtops, this%biogeo_state(c),this%bstatus(c))
+       this%num_soilc, this%filter_soilc,&
+       this%jtops, this%biogeo_state(c),this%bstatus(c))
 
     if(this%bstatus(c)%check_status())then
       call this%bsimstatus%setcol(c)
       call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
       exit
     endif
-    call this%betr(c)%retrieve_biofluxes(this%num_soilc, this%filter_soilc, this%biogeo_flux(c))
+    call this%betr(c)%retrieve_biofluxes(this%num_soilc, this%filter_soilc, &
+      this%num_soilp, this%filter_soilp,  this%biogeo_flux(c))
 
     call this%biogeo_state(c)%summary(betr_bounds, 1, betr_nlevtrc_soil,&
          this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil), &
@@ -928,12 +881,15 @@ contains
         pi = pi + 1
         n14flux_vars%smin_nh4_to_plant_patch(p) = this%biogeo_flux(c)%n14flux_vars%smin_nh4_to_plant_patch(pi)
         n14flux_vars%smin_no3_to_plant_patch(p) = this%biogeo_flux(c)%n14flux_vars%smin_no3_to_plant_patch(pi)
-
         p31flux_vars%sminp_to_plant_patch(p)  = this%biogeo_flux(c)%p31flux_vars%sminp_to_plant_patch(pi)
+        p31flux_vars%sminp_to_plant_trans_patch(p) = this%biogeo_flux(c)%p31flux_vars%sminp_to_plant_trans_patch(pi)
         !compute relative n return, note the following computation is different from ALM-ECA-CNP, because
         !betr includes transpiration incuded nitrogen uptake, which has not direct temperature sensitivity.
         n14state_vars%pnup_pfrootc_patch(p) = this%biogeo_flux(c)%pnup_pfrootc_patch(pi)
-
+        c12flux_vars%tempavg_agnpp_patch(p) = this%biogeo_flux(c)%c12flux_vars%tempavg_agnpp_patch(pi)
+        c12flux_vars%annavg_agnpp_patch(p)  = this%biogeo_flux(c)%c12flux_vars%annavg_agnpp_patch(pi)
+        c12flux_vars%tempavg_bgnpp_patch(p) = this%biogeo_flux(c)%c12flux_vars%tempavg_bgnpp_patch(pi)
+        c12flux_vars%annavg_bgnpp_patch(p)  = this%biogeo_flux(c)%c12flux_vars%annavg_bgnpp_patch(pi)
       else
         n14flux_vars%smin_nh4_to_plant_patch(p) = 0._r8
         n14flux_vars%smin_no3_to_plant_patch(p) = 0._r8
@@ -1345,7 +1301,8 @@ contains
   !set kinetic parameters for column c
   use PlantMicKineticsMod, only : PlantMicKinetics_type
   use tracer_varcon      , only : reaction_method,natomw,patomw
-  use pftvarcon             , only : noveg
+  use pftvarcon          , only : noveg
+  use clm_time_manager   , only : get_nstep
   implicit none
   class(betr_simulation_alm_type), intent(inout)  :: this
   type(betr_bounds_type), intent(in) :: betr_bounds
@@ -1355,7 +1312,7 @@ contains
   integer, intent(in) :: filter_soilc(:)
   type(PlantMicKinetics_type), intent(in) :: PlantMicKinetics_vars
 
-  integer :: j, fc, c, p, pi, pp, c_l
+  integer :: j, fc, c, p, pi, pp, c_l, val
 
   associate(      &
     plant_nh4_vmax_vr_patch => PlantMicKinetics_vars%plant_nh4_vmax_vr_patch, &
@@ -1374,6 +1331,8 @@ contains
   do fc = 1, num_soilc
     c = filter_soilc(fc)
     pp = 0
+    val=1._r8
+!    if(c==18619 .and. get_nstep()== 254044)val=0._r8
     do pi = 1, betr_maxpatch_pft
       if (pi <= col%npfts(c)) then
         p = col%pfti(c) + pi - 1
@@ -1382,7 +1341,7 @@ contains
           do j =1, betr_bounds%ubj
             this%betr(c)%plantNutkinetics%plant_nh4_vmax_vr_patch(pp,j) = plant_nh4_vmax_vr_patch(p,j)
             this%betr(c)%plantNutkinetics%plant_no3_vmax_vr_patch(pp,j) = plant_no3_vmax_vr_patch(p,j)
-            this%betr(c)%plantNutkinetics%plant_p_vmax_vr_patch(pp,j) = plant_p_vmax_vr_patch(p,j)
+            this%betr(c)%plantNutkinetics%plant_p_vmax_vr_patch(pp,j) = plant_p_vmax_vr_patch(p,j) * val
             this%betr(c)%plantNutkinetics%plant_nh4_km_vr_patch(pp,j) = plant_nh4_km_vr_patch(p,j)/natomw
             this%betr(c)%plantNutkinetics%plant_no3_km_vr_patch(pp,j) = plant_no3_km_vr_patch(p,j)/natomw
             this%betr(c)%plantNutkinetics%plant_p_km_vr_patch(pp,j) = plant_p_km_vr_patch(p,j)/natomw

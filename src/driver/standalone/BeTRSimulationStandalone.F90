@@ -41,7 +41,6 @@ module BeTRSimulationStandalone
      procedure, public :: PlantSoilBGCSend    => StandalonePlantSoilBGCSend
      procedure, public :: PlantSoilBGCRecv    => StandalonePlantSoilBGCRecv
      procedure, public :: CalcSmpL            => StandaloneCalcSmpL
-     procedure, public :: readParams          => StandalonereadParams
      procedure, private :: set_transient_kinetics_par
   end type betr_simulation_standalone_type
 
@@ -64,51 +63,7 @@ contains
 
   end function create_betr_simulation_standalone
 
-!-------------------------------------------------------------------------------
-  subroutine StandalonereadParams(this, bounds)
 
-  use ncdio_pio               , only :  file_desc_t
-  use ncdio_pio               , only : ncd_pio_closefile, ncd_pio_openfile, &
-                                         file_desc_t, ncd_inqdid, ncd_inqdlen
-  use ApplicationsFactory      , only : AppLoadParameters
-  use BetrStatusType           , only : betr_status_type
-  use decompMod                , only : bounds_type
-  use tracer_varcon            , only : bgc_param_file
-  use fileutils                , only : getfil
-  implicit none
-  class(betr_simulation_standalone_type)          , intent(inout) :: this
-
-  type(bounds_type), intent(in) :: bounds
-  !temporary variables
-  type(betr_status_type)   :: bstatus
-  type(betr_bounds_type)   :: betr_bounds
-  integer :: c
-  character(len=256) :: locfn ! local file name
-  type(file_desc_t)  :: ncid  ! pio netCDF file id
-
-  !open file for parameter reading
-  call getfil (bgc_param_file, locfn, 0)
-  call ncd_pio_openfile (ncid, trim(locfn), 0)
-
-  !read in parameters
-  call AppLoadParameters(ncid, bstatus)
-
-  call ncd_pio_closefile(ncid)
-
-  if(bstatus%check_status())then
-    call endrun(msg=bstatus%print_msg())
-  endif
-
-  call this%BeTRSetBounds(betr_bounds)
-  do c = bounds%begc, bounds%endc
-    if(.not. this%active_col(c))cycle
-    call this%betr(c)%UpdateParas(betr_bounds, bstatus)
-    if(bstatus%check_status())then
-      call endrun(msg=bstatus%print_msg())
-    endif
-  enddo
-
-  end subroutine StandalonereadParams
 
   !-------------------------------------------------------------------------------
 
@@ -467,7 +422,8 @@ contains
       call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
       exit
     endif
-    call this%betr(c)%retrieve_biofluxes(this%num_soilc, this%filter_soilc, this%biogeo_flux(c))
+    call this%betr(c)%retrieve_biofluxes(this%num_soilc, this%filter_soilc, &
+      this%num_soilp, this%filter_soilp, this%biogeo_flux(c))
 
     call this%biogeo_state(c)%summary(betr_bounds, 1, betr_nlevtrc_soil,&
          this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil), &

@@ -204,6 +204,7 @@ contains
   select type(biogeo_con)
   type is(ecacnp_para_type)
     do sr = 1, betr_max_soilorder
+
       this%frac_p_sec_to_sol(sr) = biogeo_con%frac_p_sec_to_sol(sr)
 
       this%minp_secondary_decay(sr) = biogeo_con%minp_secondary_decay(sr)
@@ -545,7 +546,8 @@ contains
 !  if(this%bgc_on)then
   !initialize decomposition scaling factors
   call this%decompkf_eca%set_decompk_scalar(ystates1(lid_o2), bgc_forc)
-
+  !compute affinity parameters
+  call this%competECA%compute_kinetic_paras(dtime, bgc_forc)
   !initialize all entries to zero
   cascade_matrix(:,:) = 0._r8
   !calculate default stoichiometry entries
@@ -1178,6 +1180,9 @@ contains
   real(r8) :: ECA_factor_den
   real(r8) :: ECA_factor_nit
   real(r8) :: minp_soluble
+  real(r8) :: minn_nh4_sol
+  real(r8) :: minn_no3_sol
+  real(r8) :: dminn
   integer  :: jj, it
   integer, parameter  :: itmax = 10
   type(lom_type) :: lom
@@ -1215,7 +1220,8 @@ contains
     lid_plant_minn_no3_up_reac => this%ecacnp_bgc_index%lid_plant_minn_no3_up_reac              , &
     lid_plant_minp_up_reac => this%ecacnp_bgc_index%lid_plant_minp_up_reac                      , &
     lid_minp_secondary_to_sol_occ_reac=> this%ecacnp_bgc_index%lid_minp_secondary_to_sol_occ_reac, &
-    lid_supp_minp => this%ecacnp_bgc_index%lid_supp_minp                                           &
+    lid_supp_minp => this%ecacnp_bgc_index%lid_supp_minp                                         , &
+    lid_supp_minn => this%ecacnp_bgc_index%lid_supp_minn                                           &
   )
 
   dydt(:) = 0._r8
@@ -1325,12 +1331,26 @@ contains
     it = it + 1
   enddo
 
-  if(spinup_state/=0)then
+  if(lid_supp_minp>0)then
     !check for mineral phosphorous
     minp_soluble=dydt(lid_minp_soluble) * dtime+ ystate(lid_minp_soluble)
     if(minp_soluble<0._r8)then
       dydt(lid_supp_minp) = -minp_soluble/dtime*(1._r8+1.e-10_r8)
       dydt(lid_minp_soluble) = dydt(lid_minp_soluble)  + dydt(lid_supp_minp)
+    endif
+  endif
+  if(lid_supp_minn>0)then
+    minn_nh4_sol = dydt(lid_nh4) * dtime + ystate(lid_nh4)
+    minn_no3_sol = dydt(lid_no3) * dtime + ystate(lid_no3)
+    if(minn_nh4_sol<0._r8)then
+      dminn= -minn_nh4_sol/dtime*(1._r8+1.e-10_r8)
+      dydt(lid_nh4) = dydt(lid_nh4) + dminn
+      dydt(lid_supp_minn) = dminn
+    endif
+    if(minn_no3_sol<0._r8)then
+      dminn= -minn_no3_sol/dtime*(1._r8+1.e-10_r8)
+      dydt(lid_no3) = dydt(lid_no3) + dminn
+      dydt(lid_supp_minn) = dydt(lid_supp_minn)+ dminn
     endif
   endif
   if(this%batch_mode)dydt(lid_cum_closs)=dydt(lid_co2_hr)
@@ -1686,7 +1706,7 @@ contains
   class(ecacnp_bgc_type)     , intent(inout) :: this
   integer , intent(in) :: nstvars
   real(r8), intent(inout) :: ystates(nstvars)
-
+  ystates(:)=0._r8
   if(nstvars>=0)continue
   end subroutine init_cold_ecacnp
 

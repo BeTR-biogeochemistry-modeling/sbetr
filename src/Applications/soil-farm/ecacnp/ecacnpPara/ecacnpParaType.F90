@@ -76,6 +76,9 @@ implicit none
   real(r8) :: vmax_den
   real(r8) :: vmax_nit
   real(r8), pointer :: spinup_factor(:)
+  real(r8)  :: topt    !base line at 22.35 C
+  real(r8)  :: tau30    ! seconds, adaptation time
+
  contains
    procedure, public  :: Init => centpara_init
    procedure, public  :: readPars => centpara_readPars
@@ -103,13 +106,12 @@ contains
   end function create_jarpars_ecacnp
 
   !--------------------------------------------------------------------
-  subroutine centpara_init(this, namelist_buffer, bstatus)
+  subroutine centpara_init(this, bstatus)
   use betr_constants , only : betr_namelist_buffer_size_ext
   use BetrStatusType , only : betr_status_type
   use betr_ctrl      , only : betr_spinup_state
   implicit none
   class(ecacnp_para_type), intent(inout) :: this
-  character(len=*)         , intent(in)  :: namelist_buffer
   type(betr_status_type)   , intent(out) :: bstatus
 
   call this%bcon_Init(bstatus)
@@ -239,6 +241,10 @@ contains
   this%vmax_decomp_p  = 1.e-3_r8/3600._r8  ! 1/s
   this%vmax_den = 1.8_r8 /86400._r8     ! 1/s
   this%vmax_nit = 0.67_r8/86400._r8     ! 1/s
+
+  this%topt=295.5_r8     !base line at 22.35 C
+  this%tau30=30._r8*86400._r8*365._r8  ! seconds, adaptation time
+
   end subroutine set_defpar_default
 
 

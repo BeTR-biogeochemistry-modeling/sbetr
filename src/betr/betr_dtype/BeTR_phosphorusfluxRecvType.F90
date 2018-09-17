@@ -13,6 +13,7 @@ implicit none
     real(r8), pointer :: som_p_runoff_col(:) => null()
     real(r8), pointer :: som_p_qdrain_col(:) => null()
     real(r8), pointer :: sminp_to_plant_patch(:) => null()   !integrated phosphate goes to plant at patch (gN/m2/s), will be summarized within the bgc model
+    real(r8), pointer :: sminp_to_plant_trans_patch(:)=>null()
     real(r8), pointer :: fire_decomp_ploss_vr_col(:,:) => null()  !will be summarized within the bgc model
     real(r8), pointer :: fire_decomp_ploss_col(:) => null()  !will be summarized within the bgc model
     real(r8), pointer :: supplement_to_sminp_col(:) => null()
@@ -60,7 +61,7 @@ implicit none
   allocate(this%som_p_leached_col(begc:endc))
   allocate(this%som_p_qdrain_col(begc:endc))
   allocate(this%som_p_runoff_col(begc:endc))
-
+  allocate(this%sminp_to_plant_trans_patch(begp:endp))
   allocate(this%sminp_to_plant_patch(begp:endp))
   allocate(this%fire_decomp_ploss_col(begc:endc))
   allocate(this%supplement_to_sminp_col(begc:endc))
@@ -89,6 +90,8 @@ implicit none
   this%supplement_to_sminp_vr_col(:,:) = value_column
   this%secondp_to_occlp_vr_col(:,:) = value_column
   this%fire_decomp_ploss_vr_col(:,:) = value_column
+  this%sminp_to_plant_trans_patch(:)=0._r8
+  this%sminp_to_plant_patch(:) = 0._r8
   end subroutine reset
 
   !------------------------------------------------------------------------

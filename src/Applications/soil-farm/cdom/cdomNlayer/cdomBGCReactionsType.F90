@@ -1968,42 +1968,18 @@ contains
       tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_ch4) = &
         ystatesf(this%cdom_bgc_index%lid_ch4)
 
-      if(this%non_limit)then
-
-        if(ystatesf(this%cdom_bgc_index%lid_nh4)>0._r8)then
-          tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_nh3x) = &
-            ystatesf(this%cdom_bgc_index%lid_nh4)
-
-          biogeo_flux%n14flux_vars%supplement_to_sminn_vr_col(c,j) = 0._r8
-        else
-          tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_nh3x) = 0._r8
-
-          biogeo_flux%n14flux_vars%supplement_to_sminn_vr_col(c,j) = &
-              -ystatesf(this%cdom_bgc_index%lid_nh4)*natomw/dtime
-          ystatesf(this%cdom_bgc_index%lid_nh4)=0._r8
-        endif
-
-        if(ystatesf(this%cdom_bgc_index%lid_no3)>0._r8)then
-          tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_no3x) = &
-            ystatesf(this%cdom_bgc_index%lid_no3)
-
-        else
-          tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_no3x) = 0._r8
-
-          !The deficit of NO3 is made up by NH4, this suggest the definition of N-unlimitation
-          !is problematic
-          biogeo_flux%n14flux_vars%supplement_to_sminn_vr_col(c,j) =    &
-             biogeo_flux%n14flux_vars%supplement_to_sminn_vr_col(c,j) - &
-             ystatesf(this%cdom_bgc_index%lid_no3)*natomw/dtime
-          ystatesf(this%cdom_bgc_index%lid_no3) = 0._r8
-        endif
+      if(this%cdom_bgc_index%lid_supp_minn>0)then
+        biogeo_flux%n14flux_vars%supplement_to_sminn_vr_col(c,j) = &
+          ystatesf(this%cdom_bgc_index%lid_supp_minn)*natomw/dtime
       else
-        tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_nh3x) = &
+        biogeo_flux%n14flux_vars%supplement_to_sminn_vr_col(c,j) = 0._r8
+      endif
+
+      tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_nh3x) = &
           ystatesf(this%cdom_bgc_index%lid_nh4)
 
-        tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_no3x) = &
+      tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_no3x) = &
           ystatesf(this%cdom_bgc_index%lid_no3)
-      endif
 
       tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_n2o) = &
         ystatesf(this%cdom_bgc_index%lid_n2o)
@@ -2016,26 +1992,17 @@ contains
         k1 = betrtracer_vars%id_trc_end_minp;   k2 = this%cdom_bgc_index%lid_minp_occlude
         tracerstate_vars%tracer_conc_mobile_col(c,j,k1) = ystatesf(k2)
 
-        if(this%nop_limit)then
-
-          if(ystatesf(this%cdom_bgc_index%lid_minp_soluble)>0._r8)then
-            tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_p_sol) = &
-              ystatesf(this%cdom_bgc_index%lid_minp_soluble)
-
+        if(this%cdom_bgc_index%lid_supp_minp>0)then
             !no P-limitation in this time step
-            biogeo_flux%p31flux_vars%supplement_to_sminp_vr_col(c,j) = 0._r8
-          else
-            !active P-limitation
-            tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_p_sol) =  0._r8
-
             biogeo_flux%p31flux_vars%supplement_to_sminp_vr_col(c,j) = &
-              -ystatesf(this%cdom_bgc_index%lid_minp_soluble)*patomw/dtime
-            ystatesf(this%cdom_bgc_index%lid_minp_soluble) = 0._r8
-          endif
+              ystatesf(this%cdom_bgc_index%lid_supp_minp)*patomw/dtime
         else
-          tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_p_sol) = &
-            ystatesf(this%cdom_bgc_index%lid_minp_soluble)
+            biogeo_flux%p31flux_vars%supplement_to_sminp_vr_col(c,j) = 0._r8
         endif
+
+        tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_p_sol) = &
+        ystatesf(this%cdom_bgc_index%lid_minp_soluble)
+
         !fluxes
         tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_p_sol) =      &
           ystatesf(this%cdom_bgc_index%lid_minp_soluble) - &

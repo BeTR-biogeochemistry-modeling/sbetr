@@ -156,7 +156,7 @@ contains
   end subroutine  AppLoadParameters
 
   !-------------------------------------------------------------------------------
-  subroutine AppInitParameters(bgc_namelist_buffer, reaction_method, bstatus)
+  subroutine AppInitParameters(reaction_method, bstatus)
   !
   ! DESCRIPTION
   ! read in the parameters for specified bgc implementation
@@ -166,7 +166,6 @@ contains
   use betr_constants , only : betr_namelist_buffer_size_ext
   use BetrStatusType , only : betr_status_type
   implicit none
-  character(len=*), intent(in) :: bgc_namelist_buffer
   character(len=*), intent(in) :: reaction_method
   type(betr_status_type), intent(out)   :: bstatus
   character(len=255) :: msg
@@ -175,19 +174,14 @@ contains
 
    select case (trim(reaction_method))
    case ("ecacnp")
-     call  ecacnp_para%Init(bgc_namelist_buffer, bstatus)
+     call  ecacnp_para%Init(bstatus)
      !do nothing
    case ("cdom")
-     call cdom_para%Init(bgc_namelist_buffer, bstatus)
+     call cdom_para%Init(bstatus)
    case ("simic")
-     call simic_para%Init(bgc_namelist_buffer, bstatus)
+     call simic_para%Init(bstatus)
    case default
-     if(trim(bgc_namelist_buffer)=='none')then
-       !do nothing
-     else
-       msg = "no parameter file to read for the specified bgc method"//errmsg(__FILE__, __LINE__)
-       call bstatus%set_msg(msg=msg,err=-1)
-     endif
+     !do nothing
    end select
 
   end subroutine  AppInitParameters

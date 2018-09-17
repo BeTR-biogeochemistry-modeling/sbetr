@@ -47,6 +47,7 @@ implicit none
     real(r8), pointer :: sminp_col(:)
     real(r8), pointer :: occlp_col(:)
     real(r8), pointer :: primp_to_labilep_col(:) => null()
+    real(r8), pointer :: sminp_to_plant_trans_patch(:) => null()
   contains
 
     procedure, public  :: Init
@@ -92,7 +93,7 @@ contains
     allocate(this%sminp_leached_col     (begc:endc              ))     ;this%sminp_leached_col          (:)    = spval
     allocate(this%sminp_runoff_col      (begc:endc              ))      ;this%sminp_runoff_col         (:)    = spval
     allocate(this%biochem_pmin_vr_col   (begc:endc,1:nlevdecomp_full))   ;this%biochem_pmin_vr_col      (:,:) = spval
-
+    allocate(this%sminp_to_plant_trans_patch(begp:endp))
     allocate(this%phenology_p_to_litr_met_p_col(begc:endc, 1:nlevdecomp_full)); this%phenology_p_to_litr_met_p_col(:,:) = spval
     allocate(this%dwt_frootp_to_litr_met_p_col(begc:endc, 1:nlevdecomp_full)); this%dwt_frootp_to_litr_met_p_col(:,:) = spval
     allocate(this%phenology_p_to_litr_cel_p_col(begc:endc,1:nlevdecomp_full)); this%phenology_p_to_litr_cel_p_col(:,:) = spval

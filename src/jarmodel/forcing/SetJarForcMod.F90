@@ -18,17 +18,22 @@ contains
 
 
   !--------------------------------------------------------------------
-  subroutine SetJarForc_transient(jar_forc, om_forc, nut_forc, atm_forc, soil_forc)
+  subroutine SetJarForc_transient(jar_forc, om_forc, nut_forc, atm_forc, &
+     soil_forc, dtime, jarpars)
 
   use OMForcType  , only : om_forc_type
   use NutForcType , only : nut_forc_type
   use UnitConvertMod, only : ppm2molv
+  use ecacnpParaType, only : ecacnp_para_type
+  use BiogeoConType    , only : BiogeoCon_type
   implicit none
   type(JarBGC_forc_type), intent(inout) :: jar_forc
   type(nut_forc_type)   , intent(in) :: nut_forc
   type(om_forc_type)    , intent(in) :: om_forc
   type(atm_forc_type)   , intent(in) :: atm_forc
   type(soil_forc_type)  , intent(in) :: soil_forc
+  real(r8)              , intent(in) :: dtime
+  class(BiogeoCon_type),  intent(inout) :: jarpars
   !all mass fluxes are in the unit of g C/m2/s
 
   jar_forc%cflx_input_litr_met = om_forc%cflx_input_litr_met
@@ -73,6 +78,15 @@ contains
   jar_forc%conc_atm_ch4=ppm2molv(atm_forc%patm_pascal, atm_forc%ch4_ppmv, jar_forc%air_temp)
 
   call set_phase_convert_coeff(atm_forc, soil_forc, jar_forc)
+
+  select type(jarpars)
+  class is (ecacnp_para_type)
+    jar_forc%tmic_opt = jar_forc%tmic_opt + &
+      dtime/jarpars%tau30*(jar_forc%temp-jar_forc%tmic_opt)
+  class default
+
+
+  end select
 
   end subroutine SetJarForc_transient
 
@@ -203,6 +217,16 @@ contains
   Dg=0.159e-4_r8*(temp/293.15)**1.5_r8 * taugas
   Dw=2.6e-9_r8*temp/298.15_r8 * tauaqu
   aren_cond_o2=1._r8/(ra+dzsoi*0.5_r8/(Dg*air_vol+(Dw+Diff_Darcy)*h2osoi_liqvol*bunsencef_n2o))
+
+  !compute diffusivity
+  jar_forc%diffusw0_nh4 =1.64e-9_r8*temp/298.15_r8
+  jar_forc%diffusw_nh4   = jar_forc%diffusw0_nh4 * tauaqu
+
+  jar_forc%diffusw0_no3  = 2.6e-9_r8*temp/298.15_r8
+  jar_forc%diffusw_no3   = jar_forc%diffusw0_no3 * tauaqu
+
+  jar_forc%diffusw0_minp = 0.7e-9_r8*temp/293.15_r8
+  jar_forc%diffusw_minp  = jar_forc%diffusw0_minp * tauaqu
 
   end associate
   end subroutine set_phase_convert_coeff

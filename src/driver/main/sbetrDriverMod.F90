@@ -63,6 +63,9 @@ contains
   use HistBGCMod            , only : hist_bgc_type
   use tracer_varcon         , only : reaction_method
   use betr_ctrl             , only : continue_run
+  use babortutils           , only : endrun
+  use BetrStatusType        , only : betr_status_type
+  use ApplicationsFactory   , only : AppInitParameters
   implicit none
   !arguments
   character(len=betr_filename_length)      , intent(in) :: base_filename
@@ -73,7 +76,7 @@ contains
   real(r8)                             :: dtime    !model time step
   real(r8)                             :: dtime2   !half of the model time step
   integer                              :: record
-
+  type(betr_status_type)               :: bstatus
   character(len=80)                    :: subname = 'sbetrBGC_driver'
 
   type(bounds_type)                    :: bounds
@@ -95,12 +98,15 @@ contains
   type(hist_bgc_type) :: histbgc
   type(histf_type) :: hist
   character(len=64) :: case_id
+  logical :: lread_param
+  call spmd_init
 
   !initialize parameters
   call read_name_list(namelist_buffer, base_filename, case_id, &
-    simulator_name, finit, histbgc, hist)
+    simulator_name, finit, histbgc, hist, lread_param)
 
   simulation => create_betr_simulation(simulator_name)
+
 
   !set up mask
   bounds%begc = 1
@@ -138,7 +144,6 @@ contains
   pft%column(1)   = 1
   pft%itype(1)    = 2
 
-  call spmd_init
   !print*,'set filters to load initialization data from input'
   call simulation%BeTRSetFilter(maxpft_per_col=0, boffline=.true.)
 
@@ -173,7 +178,13 @@ contains
 
   !x print*,'bf sim init'
   !print*,'base_filename:',trim(base_filename)
-  call  simulation%Init(bounds, lun, col, pft, waterstate_vars,namelist_buffer, base_filename, case_id)
+  call AppInitParameters(reaction_method, bstatus)
+
+  if(bstatus%check_status())call endrun(msg=bstatus%print_msg())
+
+  if(lread_param) call simulation%readParams(bounds)
+
+  call  simulation%Init(bounds, lun, col, pft, waterstate_vars, namelist_buffer, base_filename, case_id)
   !x print*,'af sim init'
 
   select type(simulation)
@@ -377,7 +388,7 @@ end subroutine sbetrBGC_driver
 ! ----------------------------------------------------------------------
 
   subroutine read_name_list(namelist_buffer, base_filename, case_id_loc, &
-    simulator_name_arg, finit, histbgc, hist)
+    simulator_name_arg, finit, histbgc, hist, lread_param)
     !
     ! !DESCRIPTION:
     ! read namelist for betr configuration
@@ -390,7 +401,7 @@ end subroutine sbetrBGC_driver
     use tracer_varcon            , only : advection_on, diffusion_on, reaction_on, ebullition_on, reaction_method
     use tracer_varcon            , only : is_nitrogen_active, is_phosphorus_active, input_only, bgc_param_file
     use ncdio_pio                , only : file_desc_t, ncd_nowrite, ncd_pio_openfile, ncd_pio_closefile
-    use ApplicationsFactory      , only : AppLoadParameters,AppInitParameters
+
     use BetrStatusType           , only : betr_status_type
     use HistBGCMod               , only : hist_bgc_type
     use histMod                  , only : histf_type
@@ -405,6 +416,7 @@ end subroutine sbetrBGC_driver
     character(len=betr_string_length_long)   , intent(out) :: finit
     class(hist_bgc_type), intent(inout) :: histbgc
     class(histf_type), intent(inout) :: hist
+    logical, intent(out) :: lread_param
     !
     ! !LOCAL VARIABLES:
     integer                                :: nml_error
@@ -413,13 +425,12 @@ end subroutine sbetrBGC_driver
     character(len=betr_string_length_long) :: ioerror_msg
     character(len=betr_string_length_long) :: tempstr='daoiga'
     character(len=9) :: run_type
-    character(len=betr_string_length_long) :: param_file
     type(file_desc_t) :: ncid
     type(betr_status_type)   :: bstatus
     character(len=64) :: case_id
     !-----------------------------------------------------------------------
 
-    namelist / sbetr_driver / simulator_name, continue_run, run_type, param_file, &
+    namelist / sbetr_driver / simulator_name, continue_run, run_type, &
         is_nitrogen_active, is_phosphorus_active, case_id, finit
 
     namelist / betr_parameters /                  &
@@ -430,7 +441,6 @@ end subroutine sbetrBGC_driver
     simulator_name = ''
     continue_run=.false.
     run_type ='tracer'
-    param_file=''
     is_nitrogen_active=.true.; is_phosphorus_active =.true.
     case_id=''
     input_only=.false.
@@ -494,22 +504,24 @@ end subroutine sbetrBGC_driver
 
     simulator_name_arg = simulator_name
 
+    lread_param=trim(run_type)=='sbgc'
+    if(lread_param)then
 
-    if(trim(run_type)=='sbgc')then
-      if(index(trim(param_file),'.nc')==0)then
-        call endrun(msg='no input parameter file is give in '//errMsg(mod_filename, __LINE__))
-      else
-        call ncd_pio_openfile(ncid, trim(param_file), ncd_nowrite)
-        call AppInitParameters(namelist_buffer, reaction_method, bstatus)
-        if(bstatus%check_status())then
-          call endrun(msg=bstatus%print_msg())
-        endif
-        call AppLoadParameters(ncid, bstatus)
-        if(bstatus%check_status())then
-          call endrun(msg=bstatus%print_msg())
-        endif
-        call ncd_pio_closefile(ncid)
-      endif
+!      if(index(trim(param_file),'.nc')==0)then
+!        call endrun(msg='no input parameter file is give in '//errMsg(mod_filename, __LINE__))
+!      else
+!        call ncd_pio_openfile(ncid, trim(param_file), ncd_nowrite)
+!        call AppInitParameters(namelist_buffer, reaction_method, bstatus)
+!        if(bstatus%check_status())then
+!          call endrun(msg=bstatus%print_msg())
+!        endif
+!        call AppLoadParameters(ncid, bstatus)
+!        if(bstatus%check_status())then
+!          call endrun(msg=bstatus%print_msg())
+!        endif
+!        call ncd_pio_closefile(ncid)
+!      endif
+
       call init_hist_bgc(histbgc, base_filename, reaction_method, case_id, hist)
 
     endif

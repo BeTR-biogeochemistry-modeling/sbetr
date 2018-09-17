@@ -548,7 +548,7 @@ contains
       trc_grp_end=betrtracer_vars%id_trc_end_wood)
 
     !group of microbial biomass
-    ngroupmems = nelm
+    ngroupmems = nelm+1
     call betrtracer_vars%add_tracer_group(trc_grp_cnt=addone(itemp),mem = ngroupmems, &
       trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_Bm, &
       trc_grp_beg=betrtracer_vars%id_trc_beg_Bm, &
@@ -989,6 +989,13 @@ contains
       if(bstatus%check_status())return
     endif
 
+    trcid = trcid + 1
+    call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='topt', &
+         is_trc_mobile=.true., is_trc_advective = .false., &
+         trc_group_id = betrtracer_vars%id_trc_Bm, trc_group_mem = addone(itemp_mem), &
+         trc_family_name='SOM1_MB')
+    if(bstatus%check_status())return
+
     !------------------------------------------------------------------------------------
     !define som group
     pom_cnt=0;itemp_mem=0
@@ -1264,7 +1271,10 @@ contains
         this%ecacnp(c,j)%bgc_on=.not. betrtracer_vars%debug
 
         if(this%ecacnp_forc(c,j)%debug)print*,'runbgc',j
+        !temperature adaptation
 
+        this%ecacnp_forc(c,j)%tmic_opt = this%ecacnp_forc(c,j)%tmic_opt + &
+           dtime/ecacnp_para%tau30*(this%ecacnp_forc(c,j)%temp-this%ecacnp_forc(c,j)%tmic_opt)
         call this%ecacnp(c,j)%runbgc(is_surflit, dtime, this%ecacnp_forc(c,j),nstates, &
             ystates0, ystatesf, betr_status)
         if(betr_status%check_status())then
@@ -1547,7 +1557,7 @@ contains
         tracerstate_vars%tracer_conc_solid_equil_col(c, :, :) = 0._r8
       endif
       tracerstate_vars%tracer_soi_molarmass_col(c,:)          = 0._r8
-
+      tracerstate_vars%tracer_conc_mobile_col(c, :, betrtracer_vars%id_trc_end_Bm) = ecacnp_para%topt
     enddo
     end associate
   end subroutine InitCold
@@ -1664,7 +1674,8 @@ contains
      pom_beg =>  this%ecacnp_bgc_index%pom_beg    , &
      pom_end =>  this%ecacnp_bgc_index%pom_end    , &
      Bm_beg  =>  this%ecacnp_bgc_index%Bm_beg     , &
-     Bm_end  =>  this%ecacnp_bgc_index%Bm_end       &
+     Bm_end  =>  this%ecacnp_bgc_index%Bm_end     , &
+     groupid =>  betrtracer_vars%groupid            &
   )
   call betr_status%reset()
   SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__),betr_status)
@@ -1687,6 +1698,7 @@ contains
       this%ecacnp_forc(c,j)%latacc = latacc(c)
       this%ecacnp_forc(c,j)%plant_ntypes = this%nactpft
       this%ecacnp_forc(c,j)%ystates(:) = 0._r8
+
 
       !litter
       this%ecacnp_forc(c,j)%ystates(litr_beg:litr_end)= &
@@ -1712,7 +1724,10 @@ contains
 
       !microbial biomass
       this%ecacnp_forc(c,j)%ystates(Bm_beg:Bm_end)= &
-          tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_Bm:betrtracer_vars%id_trc_end_Bm)
+          tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_Bm:betrtracer_vars%id_trc_end_Bm-1)
+
+      this%ecacnp_forc(c,j)%tmic_opt = tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_end_Bm)
+
       if(this%ecacnp_forc(c,j)%ystates(Bm_beg)<=tiny_cval)this%ecacnp_forc(c,j)%ystates(Bm_beg:Bm_end)=0._r8
 
       !non-soluble phase of mineral p
@@ -1878,6 +1893,13 @@ contains
 
       this%ecacnp_forc(c,j)%soilorder = biophysforc%isoilorder(c)
 
+      !solute diffusivity
+      this%ecacnp_forc(c,j)%diffusw_nh4  = tracercoeff_vars%aqu_diffus_col(c,j  ,groupid(betrtracer_vars%id_trc_nh3x))
+      this%ecacnp_forc(c,j)%diffusw0_nh4 = tracercoeff_vars%aqu_diffus0_col(c,j ,groupid(betrtracer_vars%id_trc_nh3x))
+      this%ecacnp_forc(c,j)%diffusw_no3  = tracercoeff_vars%aqu_diffus_col(c,j  ,groupid(betrtracer_vars%id_trc_no3x))
+      this%ecacnp_forc(c,j)%diffusw0_no3 = tracercoeff_vars%aqu_diffus0_col(c,j ,groupid(betrtracer_vars%id_trc_no3x))
+      this%ecacnp_forc(c,j)%diffusw_minp = tracercoeff_vars%aqu_diffus_col(c,j  ,groupid(betrtracer_vars%id_trc_p_sol))
+      this%ecacnp_forc(c,j)%diffusw0_minp= tracercoeff_vars%aqu_diffus0_col(c,j ,groupid(betrtracer_vars%id_trc_p_sol))
     enddo
   enddo
 
@@ -2005,8 +2027,10 @@ contains
       tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_wood:betrtracer_vars%id_trc_end_wood) = &
         ystatesf(wood_beg:wood_end)
 
-      tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_Bm:betrtracer_vars%id_trc_end_Bm) = &
+      tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_Bm:betrtracer_vars%id_trc_end_Bm-1) = &
         ystatesf(Bm_beg:Bm_end)
+
+      tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_end_Bm) = this%ecacnp_forc(c,j)%tmic_opt
 
       tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_beg_som:betrtracer_vars%id_trc_end_som) = &
         ystatesf(som_beg:som_end)
@@ -2041,45 +2065,22 @@ contains
       tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_ch4) = &
         ystatesf(this%ecacnp_bgc_index%lid_ch4)
 
-      if(this%non_limit)then
-
-        if(ystatesf(this%ecacnp_bgc_index%lid_nh4)>0._r8)then
-          tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_nh3x) = &
-            ystatesf(this%ecacnp_bgc_index%lid_nh4)
-
-          biogeo_flux%n14flux_vars%supplement_to_sminn_vr_col(c,j) = 0._r8
-        else
-          tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_nh3x) = 0._r8
-
-          biogeo_flux%n14flux_vars%supplement_to_sminn_vr_col(c,j) = &
-              -ystatesf(this%ecacnp_bgc_index%lid_nh4)*natomw/dtime
-          ystatesf(this%ecacnp_bgc_index%lid_nh4)=0._r8
-        endif
-
-        if(ystatesf(this%ecacnp_bgc_index%lid_no3)>0._r8)then
-          tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_no3x) = &
-            ystatesf(this%ecacnp_bgc_index%lid_no3)
-
-        else
-          tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_no3x) = 0._r8
-
-          !The deficit of NO3 is made up by NH4, this suggest the definition of N-unlimitation
-          !is problematic
-          biogeo_flux%n14flux_vars%supplement_to_sminn_vr_col(c,j) =    &
-             biogeo_flux%n14flux_vars%supplement_to_sminn_vr_col(c,j) - &
-             ystatesf(this%ecacnp_bgc_index%lid_no3)*natomw/dtime
-          ystatesf(this%ecacnp_bgc_index%lid_no3) = 0._r8
-        endif
+      if(this%ecacnp_bgc_index%lid_supp_minn>0)then
+        biogeo_flux%n14flux_vars%supplement_to_sminn_vr_col(c,j) = &
+          ystatesf(this%ecacnp_bgc_index%lid_supp_minn)*natomw/dtime
       else
-        tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_nh3x) = &
+        biogeo_flux%n14flux_vars%supplement_to_sminn_vr_col(c,j) = 0._r8
+      endif
+
+      tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_nh3x) = &
           ystatesf(this%ecacnp_bgc_index%lid_nh4)
 
-        tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_no3x) = &
+      tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_no3x) = &
           ystatesf(this%ecacnp_bgc_index%lid_no3)
-      endif
 
       tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_n2o) = &
         ystatesf(this%ecacnp_bgc_index%lid_n2o)
+
 
       !not fixing inorganic Phosphorus
       if(.not. fix_ip)then
@@ -2089,30 +2090,17 @@ contains
         k1 = betrtracer_vars%id_trc_end_minp;   k2 = this%ecacnp_bgc_index%lid_minp_occlude
         tracerstate_vars%tracer_conc_mobile_col(c,j,k1) = ystatesf(k2)
 
-        if(this%nop_limit)then
-
-          if(ystatesf(this%ecacnp_bgc_index%lid_minp_soluble)>0._r8)then
-            tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_p_sol) = &
-              ystatesf(this%ecacnp_bgc_index%lid_minp_soluble)
-
+        if(this%ecacnp_bgc_index%lid_supp_minp>0)then
             !no P-limitation in this time step
-            biogeo_flux%p31flux_vars%supplement_to_sminp_vr_col(c,j) = 0._r8
-          else
-            !active P-limitation
-            tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_p_sol) =  0._r8
-
-            biogeo_flux%p31flux_vars%supplement_to_sminp_vr_col(c,j) = &
-              -ystatesf(this%ecacnp_bgc_index%lid_minp_soluble)*patomw/dtime
-            ystatesf(this%ecacnp_bgc_index%lid_minp_soluble) = 0._r8
-          endif
-        else
-          if(betr_spinup_state/=0)then
             biogeo_flux%p31flux_vars%supplement_to_sminp_vr_col(c,j) = &
               ystatesf(this%ecacnp_bgc_index%lid_supp_minp)*patomw/dtime
-          endif
-          tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_p_sol) = &
-            ystatesf(this%ecacnp_bgc_index%lid_minp_soluble)
+        else
+            biogeo_flux%p31flux_vars%supplement_to_sminp_vr_col(c,j) = 0._r8
         endif
+
+        tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_p_sol) = &
+        ystatesf(this%ecacnp_bgc_index%lid_minp_soluble)
+
         !fluxes
         tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_p_sol) =      &
           ystatesf(this%ecacnp_bgc_index%lid_minp_soluble) - &
@@ -2413,7 +2401,7 @@ contains
         enddo
 
         !Microbial biomass
-        do kk = betrtracer_vars%id_trc_beg_Bm, betrtracer_vars%id_trc_end_Bm, nelm
+        do kk = betrtracer_vars%id_trc_beg_Bm, betrtracer_vars%id_trc_end_Bm, nelm+1
           c_mass = c_mass + &
             catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc) * dzsoi(c,j)
 
@@ -2566,7 +2554,7 @@ contains
 
         !Microbial biomass
         !call sum_totsom(c, j, betrtracer_vars%id_trc_beg_Bm, betrtracer_vars%id_trc_end_Bm, nelm)
-        do kk = betrtracer_vars%id_trc_beg_Bm, betrtracer_vars%id_trc_end_Bm, nelm
+        do kk = betrtracer_vars%id_trc_beg_Bm, betrtracer_vars%id_trc_end_Bm, nelm+1
           biogeo_state%c12state_vars%som1c_vr_col(c,j) =  &
             catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)
 

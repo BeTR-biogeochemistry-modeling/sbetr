@@ -35,7 +35,10 @@ module TracerCoeffType
      real(r8), pointer :: diffgas_topsno_col        (:,:)   => null()     !gas diffusivity in top snow layer, this is not used currently
      real(r8), pointer :: diffgas_topsoi_col        (:,:)   => null()     !gas diffusivity in top soil layer, this is not used currently
      real(r8), pointer :: hmconductance_col         (:,:,:)  => null()    !geometrically weighted conductances (nlevsno+nlevtrc_soil)
-     real(r8), pointer :: annsum_counter_col        (:) => null()
+!     real(r8), pointer :: annsum_counter_col        (:) => null()
+     real(r8), pointer :: bulk_diffus_col           (:,:,:)  => null()
+     real(r8), pointer :: aqu_diffus_col            (:,:,:) => null()
+     real(r8), pointer :: aqu_diffus0_col            (:,:,:) => null()
    contains
      procedure, public  :: Init
      procedure, public  :: Restart
@@ -144,8 +147,8 @@ contains
     allocate(this%aere_cond_col(begc:endc,          1:betrtracer_vars%nvolatile_tracer_groups))
     this%aere_cond_col(:,:)       = nan
 
-    allocate(this%annsum_counter_col(begc:endc))
-    this%annsum_counter_col(:)         = nan
+!    allocate(this%annsum_counter_col(begc:endc))
+!    this%annsum_counter_col(:)         = nan
 
     allocate(this%diffgas_topsno_col(begc:endc,          1:betrtracer_vars%nvolatile_tracer_groups))
     this%diffgas_topsno_col(:,:)       = nan
@@ -158,6 +161,10 @@ contains
 
     allocate(this%aqu2equilsolidcef_col(begc:endc, lbj:ubj, 1:betrtracer_vars%nsolid_equil_tracer_groups))
     this%aqu2equilsolidcef_col(:,:,:) = nan
+
+    allocate(this%bulk_diffus_col (begc:endc, lbj:ubj, 1:betrtracer_vars%ntracer_groups))
+    allocate(this%aqu_diffus_col (begc:endc, lbj:ubj, 1:betrtracer_vars%ngwmobile_tracer_groups))
+    allocate(this%aqu_diffus0_col (begc:endc, lbj:ubj, 1:betrtracer_vars%ngwmobile_tracer_groups))
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------
@@ -267,7 +274,7 @@ contains
       this%diffgas_topsno_col        (c,:)   = 0._r8
       this%diffgas_topsoi_col        (c,:)   = 0._r8
       this%hmconductance_col         (c,:,:) = 0._r8
-      this%annsum_counter_col        (c)     = 0._r8
+!      this%annsum_counter_col        (c)     = 0._r8
     enddo
 
   end subroutine InitCold
