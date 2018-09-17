@@ -39,6 +39,8 @@ implicit none
      integer           :: dom_beg,  dom_end           !dom group
      integer           :: micbiom_beg,  micbiom_end   !dom group
      integer           :: humus_beg, humus_end
+     integer           :: lid_supp_minp
+     integer           :: lid_supp_minn
      integer           :: nlit, nwood
      integer           :: c_loc
      integer           :: n_loc
@@ -335,6 +337,8 @@ implicit none
     type(list_t), pointer :: list_pool => null()
     character(len=loc_name_len) :: postfix
 
+    this%lid_supp_minp = -1
+    this%lid_supp_minn = -1
     itemp = 0
     ireac = 0
     ielem= 0
@@ -451,7 +455,7 @@ implicit none
 
     if(non_limit)then
       !when N is unlimited, nh4 and no3 are not primary variables
-      if(nop_limit)then
+      if(nop_limit  .or. spinup_state /= 0)then
         this%lid_nh4        = addone(itemp)
         this%lid_no3        = addone(itemp)
         call list_insert(list_name, 'nh4',vid, itype=var_state_type); call list_insert(list_unit, 'mol N m-3',uid)
@@ -475,7 +479,7 @@ implicit none
       this%nprimvars = this%nprimvars + 2
       this%lid_minp_soluble=addone(itemp);
       call list_insert(list_name, 'minp_soluble',vid, itype=var_state_type); call list_insert(list_unit, 'mol P m-3',uid)
-      if(.not. nop_limit)then
+      if(.not. (nop_limit  .or. spinup_state /= 0))then
         this%nprimvars = this%nprimvars + 1
       endif
     endif
@@ -484,6 +488,14 @@ implicit none
 
     this%lid_minp_soluble_to_secp_reac = addone(ireac)
 
+    if(non_limit)then
+      this%lid_supp_minn=addone(itemp)
+      call list_insert(list_name, 'supp_minn',vid, itype=var_state_type); call list_insert(list_unit, 'mol N m-3',uid)
+    endif
+    if(spinup_state /= 0 .or. nop_limit)then
+      this%lid_supp_minp=addone(itemp)
+      call list_insert(list_name, 'supp_minp_soluble',vid, itype=var_state_type); call list_insert(list_unit, 'mol P m-3',uid)
+    endif
     !diagnostic variables
     if(maxpft>0)then
       this%lid_plant_minn_nh4 = addone(itemp)  !this is used to indicate plant mineral nitrogen uptake
