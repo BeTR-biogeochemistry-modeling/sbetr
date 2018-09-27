@@ -143,9 +143,9 @@ contains
   type(betr_status_type) , intent(out) :: bstatus
 
    select case (trim(reaction_method))
-   case ("ecacnp")
+   case ("ecacnp","ecacnp_mosart")
      call ecacnp_para%readPars(ncid, bstatus)
-   case ("cdom")
+   case ("cdom","cdom_mosart")
      call cdom_para%readPars(ncid, bstatus)
    case ("simic")
      call simic_para%readPars(ncid, bstatus)

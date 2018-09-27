@@ -525,11 +525,11 @@ contains
       trc_grp_end=betrtracer_vars%id_trc_end_p_sol, &
       is_trc_gw=.true., is_trc_volatile = .false.)
 
-!    call betrtracer_vars%add_tracer_group(trc_grp_cnt=addone(itemp), mem = nelm, &
-!      trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_dom, &
-!      trc_grp_beg=betrtracer_vars%id_trc_beg_dom, &
-!      trc_grp_end=betrtracer_vars%id_trc_end_dom, &
-!      is_trc_gw=.true., is_trc_volatile = .false.)
+    call betrtracer_vars%add_tracer_group(trc_grp_cnt=addone(itemp), mem = nelm, &
+      trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_dom, &
+      trc_grp_beg=betrtracer_vars%id_trc_beg_dom, &
+      trc_grp_end=betrtracer_vars%id_trc_end_dom, &
+      is_trc_gw=.true., is_trc_volatile = .false.)
 
     !three litter groups
     ngroupmems = 3*nelm
@@ -662,50 +662,55 @@ contains
     if(bstatus%check_status())return
 
     !add dissolvable organic matter, by default is inert.
-!    itemp_mem=0
-!    trcid =  betrtracer_vars%id_trc_beg_dom+c_loc-1
-!    call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, &
-!         trc_name='SOM2C', is_trc_mobile=.true., is_trc_advective = .true., &
-!         trc_group_id = betrtracer_vars%id_trc_dom, trc_group_mem = addone(itemp_mem),&
-!         is_trc_volatile=.false., is_trc_adsorb = .true., trc_adsorbid=addone(itemp_ads), &
-!         trc_adsorbgroupid=addone(itemp_ads_grp), trc_sorpisotherm='LANGMUIR', is_trc_dom=.true.,trc_family_name='DOM')
-!    if(bstatus%check_status())return
+    itemp_mem=0
+    trcid =  betrtracer_vars%id_trc_beg_dom+c_loc-1
+    call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, &
+         trc_name='DOMC', is_trc_mobile=.false., is_trc_advective = .false., &
+         trc_group_id = betrtracer_vars%id_trc_dom, trc_group_mem = addone(itemp_mem),&
+         is_trc_volatile=.false., is_trc_adsorb = .false., trc_adsorbid=addone(itemp_ads), &
+         trc_adsorbgroupid=addone(itemp_ads_grp), trc_sorpisotherm='LANGMUIR', &
+         is_trc_dom=.true.,trc_family_name='DOM')
+    if(bstatus%check_status())return
 
-!    trcid = betrtracer_vars%id_trc_beg_dom+n_loc-1
-!    call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, &
-!         trc_name='SOM2N', is_trc_mobile=.true., is_trc_advective = .true., &
-!         trc_group_id = betrtracer_vars%id_trc_dom, trc_group_mem = addone(itemp_mem), &
-!         is_trc_volatile=.false., is_trc_adsorb = .true., trc_adsorbid=addone(itemp_ads), &
-!         trc_adsorbgroupid=itemp_ads_grp, trc_sorpisotherm='LANGMUIR', is_trc_dom=.true.,trc_family_name='DOM')
-!    if(bstatus%check_status())return
+    trcid = betrtracer_vars%id_trc_beg_dom+n_loc-1
+    call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, &
+         trc_name='DOMN', is_trc_mobile=.false., is_trc_advective = .false., &
+         trc_group_id = betrtracer_vars%id_trc_dom, trc_group_mem = addone(itemp_mem), &
+         is_trc_volatile=.false., is_trc_adsorb = .false., trc_adsorbid=addone(itemp_ads), &
+         trc_adsorbgroupid=itemp_ads_grp, trc_sorpisotherm='LANGMUIR', &
+         is_trc_dom=.true.,trc_family_name='DOM')
+    if(bstatus%check_status())return
 
-!    trcid = betrtracer_vars%id_trc_beg_dom+p_loc-1
-!    call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, &
-!         trc_name='SOM2P', is_trc_mobile=.true., is_trc_advective = .true., &
-!         trc_group_id = betrtracer_vars%id_trc_dom, trc_group_mem = addone(itemp_mem), &
-!         is_trc_volatile=.false., is_trc_adsorb = .true., trc_adsorbid=addone(itemp_ads), &
-!         trc_adsorbgroupid=itemp_ads_grp, trc_sorpisotherm='LANGMUIR', is_trc_dom=.true., trc_family_name='DOM')
-!    if(bstatus%check_status())return
+    trcid = betrtracer_vars%id_trc_beg_dom+p_loc-1
+    call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, &
+         trc_name='DOMP', is_trc_mobile=.false., is_trc_advective = .false., &
+         trc_group_id = betrtracer_vars%id_trc_dom, trc_group_mem = addone(itemp_mem), &
+         is_trc_volatile=.false., is_trc_adsorb = .false., trc_adsorbid=addone(itemp_ads), &
+         trc_adsorbgroupid=itemp_ads_grp, trc_sorpisotherm='LANGMUIR', &
+         is_trc_dom=.true., trc_family_name='DOM')
+    if(bstatus%check_status())return
 
-!    if(this%use_c13)then
-!      trcid = betrtracer_vars%id_trc_beg_dom+c13_loc-1
-!      call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, &
-!         trc_name='SOM2C_C13', is_trc_mobile=.true., is_trc_advective = .true., &
-!         trc_group_id = betrtracer_vars%id_trc_dom, trc_group_mem = addone(itemp_mem), &
-!         is_trc_volatile=.false., is_trc_adsorb = .true., trc_adsorbid=addone(itemp_ads), &
-!         trc_adsorbgroupid=itemp_ads_grp,trc_sorpisotherm='LANGMUIR', is_trc_dom=.true., trc_family_name='DOM')
-!      if(bstatus%check_status())return
-!    endif
+    if(this%use_c13)then
+      trcid = betrtracer_vars%id_trc_beg_dom+c13_loc-1
+      call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, &
+         trc_name='DOMC_C13', is_trc_mobile=.false., is_trc_advective = .false., &
+         trc_group_id = betrtracer_vars%id_trc_dom, trc_group_mem = addone(itemp_mem), &
+         is_trc_volatile=.false., is_trc_adsorb = .false., trc_adsorbid=addone(itemp_ads), &
+         trc_adsorbgroupid=itemp_ads_grp,trc_sorpisotherm='LANGMUIR', &
+         is_trc_dom=.true., trc_family_name='DOM')
+      if(bstatus%check_status())return
+    endif
 
-!    if(this%use_c14)then
-!      trcid=betrtracer_vars%id_trc_beg_dom+c14_loc-1
-!      call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, &
-!         trc_name='SOM2C_C14', is_trc_mobile=.true., is_trc_advective = .true., &
-!         trc_group_id = betrtracer_vars%id_trc_dom, trc_group_mem = addone(itemp_mem), &
-!         is_trc_volatile=.false., is_trc_adsorb = .true., trc_adsorbid=addone(itemp_ads), &
-!         trc_adsorbgroupid=itemp_ads_grp, trc_sorpisotherm='LANGMUIR', is_trc_dom=.true., trc_family_name='DOM')
-!      if(bstatus%check_status())return
-!    endif
+    if(this%use_c14)then
+      trcid=betrtracer_vars%id_trc_beg_dom+c14_loc-1
+      call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, &
+         trc_name='DOMC_C14', is_trc_mobile=.false., is_trc_advective = .false., &
+         trc_group_id = betrtracer_vars%id_trc_dom, trc_group_mem = addone(itemp_mem), &
+         is_trc_volatile=.false., is_trc_adsorb = .false., trc_adsorbid=addone(itemp_ads), &
+         trc_adsorbgroupid=itemp_ads_grp, trc_sorpisotherm='LANGMUIR', &
+         is_trc_dom=.true., trc_family_name='DOM')
+      if(bstatus%check_status())return
+    endif
     !------------------------------------------------------------------------------------
     !only one group passive solid litter tracers
     !define litter group
@@ -1585,6 +1590,7 @@ contains
       tracer_flx_surfrun_col  => tracerflux_vars%tracer_flx_surfrun_col, &
       tracer_flx_drain_col    => tracerflux_vars%tracer_flx_drain_col, &
       id_trc_no3x             => betrtracer_vars%id_trc_no3x,  &
+      id_trc_co2x             => betrtracer_vars%id_trc_co2x,  &
       id_trc_p_sol            => betrtracer_vars%id_trc_p_sol  &
    )
 
@@ -1601,26 +1607,28 @@ contains
      biogeo_flux%n14flux_vars%smin_no3_qdrain_col(c) = tracer_flx_drain_col(c,id_trc_no3x) * natomw
 
      !return dom loss in terms c, n, and p.
-!     trcid =  betrtracer_vars%id_trc_beg_dom+c_loc-1
-!     biogeo_flux%c12flux_vars%som_c_leached_col(c)= tracer_flx_leaching_col(c,trcid) * catomw
-!     biogeo_flux%c12flux_vars%som_c_runoff_col(c) = tracer_flx_surfrun_col(c,trcid) * catomw
-!     biogeo_flux%c12flux_vars%som_c_qdrain_col(c) = tracer_flx_drain_col(c,trcid) * catomw
+     trcid =  betrtracer_vars%id_trc_beg_dom+c_loc-1
+     biogeo_flux%c12flux_vars%som_c_leached_col(c)= tracer_flx_leaching_col(c,trcid) * catomw
+     biogeo_flux%c12flux_vars%som_c_runoff_col(c) = tracer_flx_surfrun_col(c,trcid) * catomw
+     biogeo_flux%c12flux_vars%som_c_qdrain_col(c) = tracer_flx_drain_col(c,trcid) * catomw
 
-!     trcid =  betrtracer_vars%id_trc_beg_dom+n_loc-1
-!     biogeo_flux%n14flux_vars%som_n_leached_col(c)= tracer_flx_leaching_col(c,trcid) * natomw
-!     biogeo_flux%n14flux_vars%som_n_runoff_col(c) = tracer_flx_surfrun_col(c,trcid) * natomw
-!     biogeo_flux%n14flux_vars%som_n_qdrain_col(c) = tracer_flx_drain_col(c,trcid) * natomw
+     trcid =  betrtracer_vars%id_trc_beg_dom+n_loc-1
+     biogeo_flux%n14flux_vars%som_n_leached_col(c)= tracer_flx_leaching_col(c,trcid) * natomw
+     biogeo_flux%n14flux_vars%som_n_runoff_col(c) = tracer_flx_surfrun_col(c,trcid) * natomw
+     biogeo_flux%n14flux_vars%som_n_qdrain_col(c) = tracer_flx_drain_col(c,trcid) * natomw
 
-!     trcid =  betrtracer_vars%id_trc_beg_dom+p_loc-1
-!     biogeo_flux%p31flux_vars%som_p_leached_col(c)= tracer_flx_leaching_col(c,trcid) * patomw
-!     biogeo_flux%p31flux_vars%som_p_runoff_col(c) = tracer_flx_surfrun_col(c,trcid) * patomw
-!     biogeo_flux%p31flux_vars%som_p_qdrain_col(c) = tracer_flx_drain_col(c,trcid) * patomw
+     trcid =  betrtracer_vars%id_trc_beg_dom+p_loc-1
+     biogeo_flux%p31flux_vars%som_p_leached_col(c)= tracer_flx_leaching_col(c,trcid) * patomw
+     biogeo_flux%p31flux_vars%som_p_runoff_col(c) = tracer_flx_surfrun_col(c,trcid) * patomw
+     biogeo_flux%p31flux_vars%som_p_qdrain_col(c) = tracer_flx_drain_col(c,trcid) * patomw
 
      !return mineral p
      biogeo_flux%p31flux_vars%sminp_leached_col(c) = tracer_flx_leaching_col(c,id_trc_p_sol) * patomw
      biogeo_flux%p31flux_vars%sminp_runoff_col(c) = tracer_flx_surfrun_col(c,id_trc_p_sol) * patomw
      biogeo_flux%p31flux_vars%sminp_qdrain_col(c) = tracer_flx_drain_col(c,id_trc_p_sol) * patomw
 
+     biogeo_flux%qflx_rofliq_qsub_dic_col(c) = tracer_flx_surfrun_col(c,id_trc_co2x) * catomw
+     biogeo_flux%qflx_rofliq_qsur_dic_col(c) = tracer_flx_drain_col(c,id_trc_co2x) * catomw
    enddo
 
    end associate
