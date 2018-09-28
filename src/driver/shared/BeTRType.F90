@@ -529,6 +529,7 @@ contains
          tracer_flx_drain      => this%tracerfluxes%tracer_flx_drain_col          , & !
          tracer_flx_netpro_vr  => this%tracerfluxes%tracer_flx_netpro_vr_col      , & !
          id_trc_beg_litr       => this%tracers%id_trc_beg_litr                    , & !
+         id_trc_end_litr       => this%tracers%id_trc_end_litr                    , & !
          id_trc_beg_Bm         => this%tracers%id_trc_beg_Bm                      , & !
          id_trc_beg_dom        => this%tracers%id_trc_beg_dom                     , & !
          qflx_drain_vr         => biogeo_flux%qflx_drain_vr_col                   , & ! Output  : [real(r8) (:,:) ]  vegetation/soil water exchange (m H2O/step) (to river +)
@@ -537,7 +538,7 @@ contains
       lbj = bounds%lbj; ubj = bounds%ubj
       ldo_mosart=(trim(reaction_method)=='ecacnp_mosart')
       if(ldo_mosart)then
-        nelm=(this%tracers%id_trc_end_litr-this%tracers%id_trc_beg_litr+1)/3
+        nelm=(id_trc_end_litr-id_trc_beg_litr+1)/3
       endif
       do j = lbj, ubj
          do fc = 1, num_soilc

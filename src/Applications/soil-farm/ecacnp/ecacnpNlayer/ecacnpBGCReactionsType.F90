@@ -2111,25 +2111,30 @@ contains
 
         !fluxes
         tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_p_sol) =      &
+          tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_p_sol) + &
           ystatesf(this%ecacnp_bgc_index%lid_minp_soluble) - &
           ystates0(this%ecacnp_bgc_index%lid_minp_soluble)
 
         trcid = betrtracer_vars%id_trc_beg_minp
         tracer_flx_netpro_vr(c,j, trcid) = &
+          tracer_flx_netpro_vr(c,j, trcid) + &
           ystatesf(this%ecacnp_bgc_index%lid_minp_secondary) - &
           ystates0(this%ecacnp_bgc_index%lid_minp_secondary)
 
         trcid = betrtracer_vars%id_trc_end_minp
         tracer_flx_netpro_vr(c,j, trcid) =  &
+          tracer_flx_netpro_vr(c,j, trcid) + &
           ystatesf(this%ecacnp_bgc_index%lid_minp_occlude) - &
           ystates0(this%ecacnp_bgc_index%lid_minp_occlude)
       endif
       !tracer fluxes
       tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_nh3x) =  &
+        tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_nh3x) + &
         ystatesf(this%ecacnp_bgc_index%lid_nh4) - &
         ystates0(this%ecacnp_bgc_index%lid_nh4)
 
       tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_no3x)  =  &
+        tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_no3x) + &
         ystatesf(this%ecacnp_bgc_index%lid_no3) - &
         ystates0(this%ecacnp_bgc_index%lid_no3)
 
@@ -2172,38 +2177,46 @@ contains
       endif
 
       tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_n2) = &
+        tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_n2) + &
         ystatesf(this%ecacnp_bgc_index%lid_n2) - &
         ystates0(this%ecacnp_bgc_index%lid_n2)
 
       tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_co2x ) = &
+        tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_co2x ) + &
         ystatesf(this%ecacnp_bgc_index%lid_co2) - &
         ystates0(this%ecacnp_bgc_index%lid_co2)
 
       if(this%use_c13)then
         tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_c13_co2x ) = &
+          tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_c13_co2x ) + &
           ystatesf(this%ecacnp_bgc_index%lid_c13_co2) - &
           ystates0(this%ecacnp_bgc_index%lid_c13_co2)
       endif
 
       if(this%use_c14)then
         tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_c14_co2x ) = &
+          tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_c14_co2x ) + &
           ystatesf(this%ecacnp_bgc_index%lid_c14_co2) - &
           ystates0(this%ecacnp_bgc_index%lid_c14_co2)
       endif
 
       tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_n2o  ) = &
+        tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_n2o  ) + &
         ystatesf(this%ecacnp_bgc_index%lid_n2o) - &
         ystates0(this%ecacnp_bgc_index%lid_n2o)
 
       tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_o2   ) = &
+        tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_o2   ) + &
         ystatesf(this%ecacnp_bgc_index%lid_o2) - &
         ystates0(this%ecacnp_bgc_index%lid_o2)
 
       tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_ch4  ) = &
+        tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_ch4  ) + &
         ystatesf(this%ecacnp_bgc_index%lid_ch4) - &
         ystates0(this%ecacnp_bgc_index%lid_ch4)
 
       tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_ar) = &
+        tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_ar) + &
         ystatesf(this%ecacnp_bgc_index%lid_ar) - &
         ystates0(this%ecacnp_bgc_index%lid_ar)
 
@@ -2211,27 +2224,32 @@ contains
       !get net production for om pools
       do k = 1, litr_end-litr_beg + 1
         k1 = litr_beg+k-1; k2 = betrtracer_vars%id_trc_beg_litr + k-1
-        tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)
+        tracer_flx_netpro_vr(c,j,k2) = tracer_flx_netpro_vr(c,j,k2) + &
+           ystatesf(k1) - ystates0(k1)
       enddo
 
       do k = 1, wood_end-wood_beg + 1
         k1 = wood_beg+k-1; k2 = betrtracer_vars%id_trc_beg_wood + k-1
-        tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)
+        tracer_flx_netpro_vr(c,j,k2) =  tracer_flx_netpro_vr(c,j,k2) + &
+          ystatesf(k1) - ystates0(k1)
       enddo
 
       do k = 1, Bm_end-Bm_beg + 1
         k1 = Bm_beg+k-1; k2 = betrtracer_vars%id_trc_beg_Bm+ k-1
-        tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)
+        tracer_flx_netpro_vr(c,j,k2) = tracer_flx_netpro_vr(c,j,k2) + &
+          ystatesf(k1) - ystates0(k1)
       enddo
 
       do k = 1, som_end-som_beg + 1
         k1 = som_beg+k-1; k2 = betrtracer_vars%id_trc_beg_som+ k-1
-        tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)
+        tracer_flx_netpro_vr(c,j,k2) = tracer_flx_netpro_vr(c,j,k2) + &
+          ystatesf(k1) - ystates0(k1)
       enddo
 
       do k = 1, pom_end-pom_beg + 1
         k1 = pom_beg+k-1; k2 = betrtracer_vars%id_trc_beg_pom+ k-1
-        tracer_flx_netpro_vr(c,j,k2) =  ystatesf(k1) - ystates0(k1)
+        tracer_flx_netpro_vr(c,j,k2) = tracer_flx_netpro_vr(c,j,k2) + &
+          ystatesf(k1) - ystates0(k1)
       enddo
 
 

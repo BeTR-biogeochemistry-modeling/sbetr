@@ -1673,6 +1673,7 @@ contains
          h2osoi_liqvol         => biophysforc%h2osoi_liqvol_col               , & !
          qflx_surf             => biophysforc%qflx_surf_col                   , & !Input [real(r8) (:)]   surface runoff [mm H2O/s]
          id_trc_beg_litr       => betrtracer_vars%id_trc_beg_litr             , & !
+         id_trc_end_litr       => betrtracer_vars%id_trc_end_litr             , & !
          id_trc_beg_Bm         => betrtracer_vars%id_trc_beg_Bm               , & !
          id_trc_beg_dom        => betrtracer_vars%id_trc_beg_dom              , & !
          tracer_conc_surfwater => tracerstate_vars%tracer_conc_surfwater_col  , & !Inout [real(r8) (:,:)] tracer concentration in surface water
@@ -1683,7 +1684,7 @@ contains
          )
       ldo_mosart=(trim(reaction_method)=='ecacnp_mosart')
       if(ldo_mosart)then
-        nelm=(betrtracer_vars%id_trc_end_litr-betrtracer_vars%id_trc_beg_litr+1)/3
+        nelm=(id_trc_end_litr-id_trc_beg_litr+1)/3
       endif
       dtime = betr_time%get_step_size()
       do fc = 1, num_soilc
@@ -1762,7 +1763,7 @@ contains
                else
                  scal=1._r8-fracice_top(c)      !reduce the water flush due to ice forst in layer 1
                endif
-               fracc(k) = tracer_conc_mobile(c, k, id_trc_beg_Bm) * pct_sol * &
+               fracc(k) = tracer_conc_mobile(c, k, kk+id_trc_beg_Bm) * pct_sol * &
                   h2osoi_liqvol(c,k) * dz_top2(c,k) * scal
                total = total + fracc(k)        !total mass
              enddo
