@@ -386,7 +386,6 @@ contains
     allocate(this%betr_col(bounds%begc:bounds%endc))
     allocate(this%betr_pft(bounds%begc:bounds%endc))
     allocate(this%active_col(bounds%begc:bounds%endc))
-    allocate(this%betr_bounds(bounds%begc:bounds%endc))
     allocate(this%bsimstatus)
 
     call this%bsimstatus%reset()

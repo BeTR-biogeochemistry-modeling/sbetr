@@ -588,6 +588,7 @@ contains
                    tracer_flx_netpro_vr(c,j,k+id_trc_beg_dom) =tracer_flx_netpro_vr(c,j,k+id_trc_beg_dom) + dloss
                    !som1
                    dloss = tracer_conc_mobile(c,j,k+id_trc_beg_Bm)*frac_loss
+                   tracer_flx_drain(c,k+id_trc_beg_dom) = tracer_flx_drain(c,k+id_trc_beg_dom) + dloss * dz(c,j)
                    tracer_conc_mobile(c,j,k+id_trc_beg_Bm)  = tracer_conc_mobile(c,j,k+id_trc_beg_Bm) - dloss
                    tracer_flx_netpro_vr(c,j,k+id_trc_beg_Bm)=tracer_flx_netpro_vr(c,j,k+id_trc_beg_Bm)- dloss
                    tracer_flx_netpro_vr(c,j,k+id_trc_beg_dom) =tracer_flx_netpro_vr(c,j,k+id_trc_beg_dom) + dloss

@@ -1697,7 +1697,7 @@ contains
          total = h2o_srun+ h2osoi_liqvol(c,1) * dz_top2(c,1) + h2osoi_liqvol(c,2) * dz_top2(c,2) * (1._r8-fracice_top(c))
          !fraction lost through liquid water surface runoff
          frac1 = h2o_srun/total
-
+         if(abs(frac1)==1.e-20_r8)cycle
          do j = 1, ngwmobile_tracers
             if(.not. is_advective(j))cycle
             !Do not do this for water tracer, because surface runoff comes as the residual of infiltration.
