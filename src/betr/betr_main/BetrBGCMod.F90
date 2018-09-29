@@ -801,7 +801,7 @@ contains
       dtime_loc   (:) = 0._r8
       !loop over all tracers
       do j = 1, ngwmobile_tracer_groups
-         call set_debug_transp(j==betrtracer_vars%id_trc_dom .and. betrtracer_vars%debug)
+
          ntrcs = 0
          adv_trc_group(:) = 0
          do k = 1, nmem_max
@@ -1630,6 +1630,7 @@ contains
     use MathfuncMod           , only : safe_div
     use BeTR_TimeMod          , only : betr_time_type
     use BetrStatusType        , only : betr_status_type
+    use tracer_varcon         , only : reaction_method
     implicit none
     ! !ARGUMENTS:
     class(betr_time_type)            , intent(in)    :: betr_time
@@ -1651,12 +1652,14 @@ contains
     real(r8) :: fracc(2)
     real(r8) :: h2o_srun           ! total amount of water lost as surface runoff
     real(r8) :: trc_srun           !
-    real(r8) :: dloss
+    real(r8) :: dloss, dloss1
     real(r8) :: dtime
     real(r8) :: total
     real(r8) :: frac1
     real(r8) :: dtmp
-
+    integer  :: nelm, kk
+    logical  :: ldo_mosart
+    real(r8), parameter :: pct_sol=0.02_r8
     call betr_status%reset()
     ! remove compiler warnings about unused dummy args
     if (lbj > 0) continue
@@ -1667,14 +1670,22 @@ contains
          groupid               => betrtracer_vars%groupid                     , & !
          is_advective          => betrtracer_vars%is_advective                , & !
          is_h2o                => betrtracer_vars%is_h2o                      , & !Input [logical (:)] indicator whether it is a H2O tracer
-         h2osoi_liqvol         => biophysforc%h2osoi_liqvol_col           ,     & !
-         qflx_surf             => biophysforc%qflx_surf_col                ,    & !Input [real(r8) (:)]   surface runoff [mm H2O/s]
+         h2osoi_liqvol         => biophysforc%h2osoi_liqvol_col               , & !
+         qflx_surf             => biophysforc%qflx_surf_col                   , & !Input [real(r8) (:)]   surface runoff [mm H2O/s]
+         id_trc_beg_litr       => betrtracer_vars%id_trc_beg_litr             , & !
+         id_trc_end_litr       => betrtracer_vars%id_trc_end_litr             , & !
+         id_trc_beg_Bm         => betrtracer_vars%id_trc_beg_Bm               , & !
+         id_trc_beg_dom        => betrtracer_vars%id_trc_beg_dom              , & !
          tracer_conc_surfwater => tracerstate_vars%tracer_conc_surfwater_col  , & !Inout [real(r8) (:,:)] tracer concentration in surface water
+         tracer_flx_netpro_vr  => tracerflux_vars%tracer_flx_netpro_vr_col    , & !
          tracer_conc_mobile    => tracerstate_vars%tracer_conc_mobile_col     , & !
          aqu2bulkcef_mobile    => tracercoeff_vars%aqu2bulkcef_mobile_col     , & !
          tracer_flx_surfrun    => tracerflux_vars%tracer_flx_surfrun_col        & !Output[real(r8) (:,:)] tracer loss through surface runoff
          )
-
+      ldo_mosart=(trim(reaction_method)=='ecacnp_mosart')
+      if(ldo_mosart)then
+        nelm=(id_trc_end_litr-id_trc_beg_litr+1)/3
+      endif
       dtime = betr_time%get_step_size()
       do fc = 1, num_soilc
          c = filter_soilc(fc)
@@ -1687,9 +1698,8 @@ contains
          total = h2o_srun+ h2osoi_liqvol(c,1) * dz_top2(c,1) + h2osoi_liqvol(c,2) * dz_top2(c,2) * (1._r8-fracice_top(c))
          !fraction lost through liquid water surface runoff
          frac1 = h2o_srun/total
-
+         if(abs(frac1)==1.e-20_r8)cycle
          do j = 1, ngwmobile_tracers
-
             if(.not. is_advective(j))cycle
             !Do not do this for water tracer, because surface runoff comes as the residual of infiltration.
             if(is_h2o(j))cycle
@@ -1715,8 +1725,63 @@ contains
             dtmp = fracc(1)+fracc(2)
             tracer_conc_mobile(c,1,j) = tracer_conc_mobile(c,1,j) - dloss*safe_div(fracc(1),dtmp)/dz_top2(c,1)
             tracer_conc_mobile(c,2,j) = tracer_conc_mobile(c,2,j) - dloss*safe_div(fracc(2),dtmp)/dz_top2(c,2)
-            tracer_conc_surfwater(c,j) = tracer_flx_surfrun(c,j)/h2o_srun       !revise the tracer concentration in runoff
+            tracer_conc_surfwater(c,j)= tracer_flx_surfrun(c,j)/h2o_srun       !revise the tracer concentration in runoff
          enddo
+         !following is a dirty hack to support mosart
+         if(ldo_mosart)then
+           do kk = 0, nelm-1
+             !mix and loss for lit1
+             total=0._r8
+             do k = 1, 2
+               if(k==1)then
+                 scal = 1._r8
+               else
+                 scal=1._r8-fracice_top(c)      !reduce the water flush due to ice forst in layer 1
+               endif
+               fracc(k) = tracer_conc_mobile(c, k, kk+id_trc_beg_litr) * pct_sol * &
+                  h2osoi_liqvol(c,k) * dz_top2(c,k) * scal
+               total = total + fracc(k)        !total mass
+             enddo
+             !compute loss
+             dloss = total * frac1
+             tracer_flx_surfrun(c,kk+id_trc_beg_dom) = tracer_flx_surfrun(c,kk+id_trc_beg_dom) + dloss
+             dtmp = fracc(1)+fracc(2)
+             dloss1=dloss*safe_div(fracc(1),dtmp)/dz_top2(c,1)
+             tracer_conc_mobile(c,1,kk+id_trc_beg_litr) = tracer_conc_mobile(c,1,kk+id_trc_beg_litr) - dloss1
+             tracer_flx_netpro_vr(c,1,kk+id_trc_beg_litr) = tracer_flx_netpro_vr(c,1,kk+id_trc_beg_litr) - dloss1
+             tracer_flx_netpro_vr(c,1,kk+id_trc_beg_dom) = tracer_flx_netpro_vr(c,1,kk+id_trc_beg_dom) + dloss1
+             dloss1 = dloss*safe_div(fracc(2),dtmp)/dz_top2(c,2)
+             tracer_conc_mobile(c,2,kk+id_trc_beg_litr) = tracer_conc_mobile(c,2,kk+id_trc_beg_litr) - dloss1
+             tracer_flx_netpro_vr(c,2,kk+id_trc_beg_litr) = tracer_flx_netpro_vr(c,2,kk+id_trc_beg_litr) - dloss1
+             tracer_flx_netpro_vr(c,2,kk+id_trc_beg_dom) = tracer_flx_netpro_vr(c,2,kk+id_trc_beg_dom) + dloss1
+
+             !mix and loss for som1
+             total=0._r8
+             do k = 1, 2
+               if(k==1)then
+                 scal = 1._r8
+               else
+                 scal=1._r8-fracice_top(c)      !reduce the water flush due to ice forst in layer 1
+               endif
+               fracc(k) = tracer_conc_mobile(c, k, kk+id_trc_beg_Bm) * pct_sol * &
+                  h2osoi_liqvol(c,k) * dz_top2(c,k) * scal
+               total = total + fracc(k)        !total mass
+             enddo
+             !compute loss
+             dloss = total * frac1
+             !add all these to dom, as netpro, also as leaching to ensure mass balance
+             tracer_flx_surfrun(c,kk+id_trc_beg_dom) = tracer_flx_surfrun(c,kk+id_trc_beg_dom) + dloss
+             dtmp = fracc(1)+fracc(2)
+             dloss1=dloss*safe_div(fracc(1),dtmp)/dz_top2(c,1)
+             tracer_conc_mobile(c,1,kk+id_trc_beg_Bm) = tracer_conc_mobile(c,1,kk+id_trc_beg_Bm) - dloss1
+             tracer_flx_netpro_vr(c,1,kk+id_trc_beg_Bm) = tracer_flx_netpro_vr(c,1,kk+id_trc_beg_Bm) - dloss1
+             tracer_flx_netpro_vr(c,1,kk+id_trc_beg_dom) = tracer_flx_netpro_vr(c,1,kk+id_trc_beg_dom) + dloss1
+             dloss1 = dloss*safe_div(fracc(2),dtmp)/dz_top2(c,2)
+             tracer_conc_mobile(c,2,kk+id_trc_beg_Bm) = tracer_conc_mobile(c,2,kk+id_trc_beg_Bm) - dloss1
+             tracer_flx_netpro_vr(c,2,kk+id_trc_beg_Bm) = tracer_flx_netpro_vr(c,2,kk+id_trc_beg_Bm) - dloss1
+             tracer_flx_netpro_vr(c,2,kk+id_trc_beg_dom) = tracer_flx_netpro_vr(c,2,kk+id_trc_beg_dom) + dloss1
+           enddo
+         endif
       enddo
 
     end associate

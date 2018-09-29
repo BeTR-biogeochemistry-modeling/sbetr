@@ -493,6 +493,7 @@ contains
     use BetrBGCMod      , only : diagnose_gas_pressure
     use BetrStatusType  , only : betr_status_type
     use betr_columnType , only : betr_column_type
+    use tracer_varcon   , only : reaction_method
     implicit none
     ! !ARGUMENTS:
     class(betr_type)            , intent(inout) :: this
@@ -505,53 +506,95 @@ contains
     type(betr_status_type)      , intent(out)   :: betr_status
 
     ! !LOCAL VARIABLES:
+    real(r8) :: frac_loss, drain_sp, dloss
     real(r8) :: aqucon
     integer  :: fc, c, j, k
     integer  :: lbj, ubj
+    logical  :: ldo_mosart
+    integer  :: nelm
+    real(r8), parameter :: pct_sol=0.02_r8
 
     call betr_status%reset()
     SHR_ASSERT_ALL((ubound(jtops)  == (/bounds%endc/)), errMsg(filename,__LINE__), betr_status)
 
-    associate(                                                                         & !
-         ngwmobile_tracers     => this%tracers%ngwmobile_tracers         ,             & !
-         groupid               => this%tracers%groupid                    ,            & !
-         is_h2o                => this%tracers%is_h2o                       ,          & !
-         is_advective          => this%tracers%is_advective                  ,         & !
-         aqu2bulkcef_mobile    => this%tracercoeffs%aqu2bulkcef_mobile_col           , & !
-         tracer_conc_mobile    => this%tracerstates%tracer_conc_mobile_col         ,   & !
-         tracer_conc_grndwater => this%tracerstates%tracer_conc_grndwater_col   ,      & !
-         dz                    => col%dz                                       ,       & !
-         tracer_flx_drain      => this%tracerfluxes%tracer_flx_drain_col          ,    & !
-         qflx_drain_vr         => biogeo_flux%qflx_drain_vr_col               ,        & ! Output  : [real(r8) (:,:) ]  vegetation/soil water exchange (m H2O/step) (to river +)
-         qflx_totdrain         => biogeo_flux%qflx_totdrain_col                        & ! Output  : [real(r8) (: ,:) ]  (m H2o/step)
+    associate(                                                                      & !
+         ngwmobile_tracers     => this%tracers%ngwmobile_tracers                  , & !
+         groupid               => this%tracers%groupid                            , & !
+         is_h2o                => this%tracers%is_h2o                             , & !
+         is_advective          => this%tracers%is_advective                       , & !
+         aqu2bulkcef_mobile    => this%tracercoeffs%aqu2bulkcef_mobile_col        , & !
+         tracer_conc_mobile    => this%tracerstates%tracer_conc_mobile_col        , & !
+         tracer_conc_grndwater => this%tracerstates%tracer_conc_grndwater_col     , & !
+         dz                    => col%dz                                          , & !
+         tracer_flx_drain      => this%tracerfluxes%tracer_flx_drain_col          , & !
+         tracer_flx_netpro_vr  => this%tracerfluxes%tracer_flx_netpro_vr_col      , & !
+         id_trc_beg_litr       => this%tracers%id_trc_beg_litr                    , & !
+         id_trc_end_litr       => this%tracers%id_trc_end_litr                    , & !
+         id_trc_beg_Bm         => this%tracers%id_trc_beg_Bm                      , & !
+         id_trc_beg_dom        => this%tracers%id_trc_beg_dom                     , & !
+         qflx_drain_vr         => biogeo_flux%qflx_drain_vr_col                   , & ! Output  : [real(r8) (:,:) ]  vegetation/soil water exchange (m H2O/step) (to river +)
+         qflx_totdrain         => biogeo_flux%qflx_totdrain_col                     & ! Output  : [real(r8) (: ,:) ]  (m H2o/step)
          )
       lbj = bounds%lbj; ubj = bounds%ubj
-
+      ldo_mosart=(trim(reaction_method)=='ecacnp_mosart')
+      if(ldo_mosart)then
+        nelm=(id_trc_end_litr-id_trc_beg_litr+1)/3
+      endif
       do j = lbj, ubj
          do fc = 1, num_soilc
             c = filter_soilc(fc)
             if(j>=jtops(c))then
+               drain_sp = qflx_drain_vr(c,j)/dz(c,j)
                do k = 1, ngwmobile_tracers
                   !obtain aqueous concentration
                   if(.not. is_advective(k))cycle
                   if(qflx_drain_vr(c,j) > 0._r8)then
-                    aqucon = safe_div(tracer_conc_mobile(c,j,k),aqu2bulkcef_mobile(c,j,groupid(k)))
+                    frac_loss = 1._r8-exp(-safe_div(drain_sp,aqu2bulkcef_mobile(c,j,groupid(k))))
                   else
                     !when drainage is negative, tracer comes from groundwater
                     if(is_h2o(k))then
                       aqucon = tracer_conc_grndwater(c,k)
                     else
-                      aqucon = 0._r8
+                      frac_loss = 0._r8
                     endif
                   endif
+
                   !when drainage is negative, assume the flux is magically coming from other groundwater sources
-                  tracer_flx_drain(c,k)     = tracer_flx_drain(c,k)  + aqucon * qflx_drain_vr(c,j)
-                  tracer_conc_mobile(c,j,k) =  tracer_conc_mobile(c,j,k) - aqucon * qflx_drain_vr(c,j)/dz(c,j)
-                  if(tracer_conc_mobile(c,j,k)<0._r8)then
-                     tracer_flx_drain(c,k) = tracer_flx_drain(c,k)+tracer_conc_mobile(c,j,k)*dz(c,j)
-                     tracer_conc_mobile(c,j,k)=0._r8
+                  if(is_h2o(k))then
+                    tracer_flx_drain(c,k)     = tracer_flx_drain(c,k)  + aqucon * qflx_drain_vr(c,j)
+                    tracer_conc_mobile(c,j,k) =  tracer_conc_mobile(c,j,k) - aqucon * qflx_drain_vr(c,j)/dz(c,j)
+                    if(tracer_conc_mobile(c,j,k)<0._r8)then
+                       tracer_flx_drain(c,k) = tracer_flx_drain(c,k)+tracer_conc_mobile(c,j,k)*dz(c,j)
+                       tracer_conc_mobile(c,j,k)=0._r8
+                    endif
+                  else
+                    dloss = tracer_conc_mobile(c,j,k) * frac_loss
+                    tracer_flx_drain(c,k)     = tracer_flx_drain(c,k)  + dloss * dz(c,j)
+                    tracer_conc_mobile(c,j,k) = tracer_conc_mobile(c,j,k) - dloss
                   endif
                enddo
+
+               if(ldo_mosart)then
+                 if(qflx_drain_vr(c,j) > 0._r8)then
+                   frac_loss = 1._r8-exp(-drain_sp*pct_sol)
+                 else
+                   frac_loss = 0._r8
+                 endif
+                 do k = 0, nelm-1
+                   !lit1
+                   dloss = tracer_conc_mobile(c,j,k+id_trc_beg_litr)*frac_loss
+                   tracer_flx_drain(c,k+id_trc_beg_dom) = tracer_flx_drain(c,k+id_trc_beg_dom) + dloss * dz(c,j)
+                   tracer_conc_mobile(c,j,k+id_trc_beg_litr)  = tracer_conc_mobile(c,j,k+id_trc_beg_litr) - dloss
+                   tracer_flx_netpro_vr(c,j,k+id_trc_beg_litr)=tracer_flx_netpro_vr(c,j,k+id_trc_beg_litr)- dloss
+                   tracer_flx_netpro_vr(c,j,k+id_trc_beg_dom) =tracer_flx_netpro_vr(c,j,k+id_trc_beg_dom) + dloss
+                   !som1
+                   dloss = tracer_conc_mobile(c,j,k+id_trc_beg_Bm)*frac_loss
+                   tracer_flx_drain(c,k+id_trc_beg_dom) = tracer_flx_drain(c,k+id_trc_beg_dom) + dloss * dz(c,j)
+                   tracer_conc_mobile(c,j,k+id_trc_beg_Bm)  = tracer_conc_mobile(c,j,k+id_trc_beg_Bm) - dloss
+                   tracer_flx_netpro_vr(c,j,k+id_trc_beg_Bm)=tracer_flx_netpro_vr(c,j,k+id_trc_beg_Bm)- dloss
+                   tracer_flx_netpro_vr(c,j,k+id_trc_beg_dom) =tracer_flx_netpro_vr(c,j,k+id_trc_beg_dom) + dloss
+                 enddo
+               endif
             endif
          enddo
       enddo

@@ -481,14 +481,14 @@ contains
            this%num_soilc, this%filter_soilc, this%biogeo_flux(c))
     enddo
 
-    if(trim(reaction_method)=='doc_dic')then
+    if(index(reaction_method,'mosart')/=0)then
 
       c_l = 1
       do c = bounds%begc, bounds%endc
         if(.not. this%active_col(c))cycle
-        qflx_rofliq_qsur_doc_col(c)=this%biogeo_flux(c)%qflx_rofliq_qsur_doc_col(c_l)
+        qflx_rofliq_qsur_doc_col(c)=this%biogeo_flux(c)%c12flux_vars%som_c_runoff_col(c_l)
         qflx_rofliq_qsur_dic_col(c)=this%biogeo_flux(c)%qflx_rofliq_qsur_dic_col(c_l)
-        qflx_rofliq_qsub_doc_col(c)=this%biogeo_flux(c)%qflx_rofliq_qsub_doc_col(c_l)
+        qflx_rofliq_qsub_doc_col(c)=this%biogeo_flux(c)%c12flux_vars%som_c_qdrain_col(c_l)
         qflx_rofliq_qsub_dic_col(c)=this%biogeo_flux(c)%qflx_rofliq_qsub_dic_col(c_l)
       enddo
 

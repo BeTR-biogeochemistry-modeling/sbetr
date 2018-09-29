@@ -71,10 +71,10 @@ contains
 
     call bstatus%reset()
     select case(trim(method))
-    case ("ecacnp")
+    case ("ecacnp","ecacnp_mosart")
        asoibgc=.true.
        allocate(bgc_reaction, source=ecacnp_bgc_reaction_type())
-    case ("cdom")
+    case ("cdom","cdom_mosart")
        asoibgc=.true.
        allocate(bgc_reaction, source=cdom_bgc_reaction_type())
     case ("simic")
@@ -113,9 +113,9 @@ contains
   call bstatus%reset()
 
   select case(trim(method))
-  case ("ecacnp")
+  case ("ecacnp","ecacnp_mosart")
      allocate(plant_soilbgc, source=ecacnp_plant_soilbgc_type())
-  case ("cdom")
+  case ("cdom","cdom_mosart")
      allocate(plant_soilbgc, source=cdom_plant_soilbgc_type())
   case ("simic")
      allocate(plant_soilbgc, source=simic_plant_soilbgc_type())
@@ -143,9 +143,9 @@ contains
   type(betr_status_type) , intent(out) :: bstatus
 
    select case (trim(reaction_method))
-   case ("ecacnp")
+   case ("ecacnp","ecacnp_mosart")
      call ecacnp_para%readPars(ncid, bstatus)
-   case ("cdom")
+   case ("cdom","cdom_mosart")
      call cdom_para%readPars(ncid, bstatus)
    case ("simic")
      call simic_para%readPars(ncid, bstatus)
@@ -173,10 +173,10 @@ contains
    call bstatus%reset()
 
    select case (trim(reaction_method))
-   case ("ecacnp")
+   case ("ecacnp","ecacnp_mosart")
      call  ecacnp_para%Init(bstatus)
      !do nothing
-   case ("cdom")
+   case ("cdom","cdom_mosart")
      call cdom_para%Init(bstatus)
    case ("simic")
      call simic_para%Init(bstatus)
@@ -194,9 +194,9 @@ contains
   implicit none
 
   select case (trim(reaction_method))
-  case ("ecacnp")
+  case ("ecacnp","ecacnp_mosart")
      call  ecacnp_para%set_spinup_factor()
-  case ("cdom")
+  case ("cdom","cdom_mosart")
      call cdom_para%set_spinup_factor()
   end select
 
