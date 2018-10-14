@@ -24,10 +24,12 @@ include(add_betr_executable)
 add_betr_executable(iotest iotest.F90)
 add_betr_executable(timertest timertest.F90)
 add_betr_executable(readparatest readparatest.F90)
+
 if (NOT CMAKE_INSTALL_PREFIX STREQUAL "INSTALL_DISABLLED")
   install(TARGETS iotest DESTINATION bin)
   install(TARGETS timertest DESTINATION bin)
   install(TARGETS readparatest DESTINATION bin)
+
   file(GLOB HEADS *.h)
   install(FILES ${HEADS} DESTINATION include/jarmodel/test)
 endif()

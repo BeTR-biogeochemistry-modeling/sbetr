@@ -1,3 +1,60 @@
+subroutine spm_test
+
+
+    use bshr_kind_mod, only : r8 => shr_kind_r8
+    use SparseMatMod, only : spm_list_type, sparseMat_type, spm_axpy
+    use SparseMatMod, only : spm_list_init, spm_list_insert, spm_list_to_mat
+  implicit none
+  class(sparseMat_type), pointer :: spm
+  type(spm_list_type), pointer :: spm_list
+  integer :: nelms
+  real(r8) :: x(5),y(5)
+  integer :: errinfo
+  call spm_list_init(spm_list, 1._r8, 1, 1, nelms)
+
+  call spm_list_insert(spm_list, -1._r8, 2, 1, nelms)
+
+  call spm_list_insert(spm_list, -3._r8, 4, 1, nelms)
+
+  call spm_list_insert(spm_list, -2._r8, 1, 2, nelms)
+
+  call spm_list_insert(spm_list, 5._r8, 2, 2, nelms)
+
+  call spm_list_insert(spm_list, 4._r8, 3, 3, nelms)
+
+  call spm_list_insert(spm_list, 6._r8, 4, 3, nelms)
+
+  call spm_list_insert(spm_list, 4._r8, 5, 3, nelms)
+
+  call spm_list_insert(spm_list, -4._r8, 1, 4, nelms)
+
+  call spm_list_insert(spm_list, 2._r8, 3, 4, nelms)
+
+  call spm_list_insert(spm_list, 7._r8, 4, 4, nelms)
+
+  call spm_list_insert(spm_list, 8._r8, 2, 5, nelms)
+
+  call spm_list_insert(spm_list, -5._r8, 5, 5, nelms)
+
+  call spm_list_to_mat(spm_list, spm, nelms, 5)
+
+  print*,'val'
+  print*, spm%val
+  print*,'icol'
+  print*,spm%icol
+  print*,'pB'
+  print*,spm%pB
+  print*,'ncol'
+  print*,spm%ncol
+
+  x=(/1._r8,1._r8,1._r8,1._r8,1._r8/)
+  y=0._r8
+  call spm_axpy(5, 5, 1._r8, x, spm, y, errinfo)
+  print*,'errinfo',errinfo
+  print*,y
+end subroutine spm_test
+
+
 program main
 !DESCRIPTION
 !test the math subroutines
@@ -47,5 +104,5 @@ implicit none
   deallocate(y)
   deallocate(xi)
   deallocate(yi)
-
+  call spm_test()
 end program main
