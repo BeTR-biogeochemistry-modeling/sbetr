@@ -52,6 +52,7 @@ module MathfuncMod
     procedure, public :: calc_reaction_rscal
     procedure, public :: apply_reaction_rscal
   end type lom_type
+  public :: flux_correction_fullm
 contains
   !-------------------------------------------------------------------------------
   function countelm(ibeg, iend, igap)result(ans)
@@ -538,7 +539,7 @@ contains
   end function num2str
 
   !-------------------------------------------------------------------------------
-  subroutine calc_state_pscal(this, nprimvars, dtime, ystate, p_dt,  d_dt, pscal, lneg, bstatus)
+  subroutine calc_state_pscal(this, nvars, dtime, ystate, p_dt,  d_dt, pscal, lneg, bstatus)
     !
     ! !DESCRIPTION:
     ! calcualte limiting factor from each primary state variable
@@ -548,12 +549,12 @@ contains
     implicit none
     ! !ARGUMENTS:
     class(lom_type), intent(in) :: this
-    integer,  intent(in)  :: nprimvars
+    integer,  intent(in)  :: nvars
     real(r8), intent(in)  :: dtime
-    real(r8), intent(in)  :: ystate(1:nprimvars)
-    real(r8), intent(in)  :: p_dt(1:nprimvars)
-    real(r8), intent(in)  :: d_dt(1:nprimvars)
-    real(r8), intent(out) :: pscal(1:nprimvars)
+    real(r8), intent(in)  :: ystate(1:nvars)
+    real(r8), intent(in)  :: p_dt(1:nvars)
+    real(r8), intent(in)  :: d_dt(1:nvars)
+    real(r8), intent(out) :: pscal(1:nvars)
     logical,  intent(out) :: lneg
     type(betr_status_type), intent(out) :: bstatus
     character(len=betr_errmsg_len) :: msg
@@ -568,7 +569,7 @@ contains
     call bstatus%reset()
     lneg =.false.
 
-    do j = 1, nprimvars
+    do j = 1, nvars
        yt = ystate(j) + (p_dt(j)+d_dt(j))*dtime
        if(yt<tiny_val)then
           tmp = dtime*d_dt(j)
@@ -586,7 +587,7 @@ contains
   end subroutine calc_state_pscal
 
   !-------------------------------------------------------------------------------
-  subroutine calc_reaction_rscal(this, nprimvars, nr, pscal, cascade_matrixd, rscal, bstatus)
+  subroutine calc_reaction_rscal(this, nvars, nr, pscal, cascade_matrixd, rscal, bstatus)
     !
     ! !DESCRIPTION:
     ! calcualte limiting factor for each reaction
@@ -595,10 +596,10 @@ contains
     implicit none
     ! !ARGUMENTS:
     class(lom_type), intent(in) :: this
-    integer , intent(in) :: nprimvars
+    integer , intent(in) :: nvars
     integer , intent(in) :: nr
-    real(r8), intent(in) :: pscal(1:nprimvars)
-    real(r8), intent(in) :: cascade_matrixd(1:nprimvars, 1:nr)
+    real(r8), intent(in) :: pscal(1:nvars)
+    real(r8), intent(in) :: cascade_matrixd(1:nvars, 1:nr)
     real(r8), intent(out):: rscal(1:nr)
     type(betr_status_type), intent(out) :: bstatus
     ! !LOCAL VARIABLES:
@@ -606,7 +607,7 @@ contains
 
     call bstatus%reset()
     do j = 1, nr
-      rscal(j) = minp(pscal,cascade_matrixd(1:nprimvars, j), bstatus)
+      rscal(j) = minp(pscal,cascade_matrixd(1:nvars, j), bstatus)
       if(bstatus%check_status())return
     enddo
 
@@ -659,4 +660,60 @@ contains
 
   ans = (inval/=inval)
   end function bisnan
+  !-------------------------------------------------------------------------------
+
+  subroutine flux_correction_fullm(nvars, nreactions, matrixp, matrixd,&
+     dtime, ystate, rrates, bstatus)
+
+  !
+  !! DESCRIPTION
+  ! do flux correction to avoid negative state variables
+  use BetrStatusType, only : betr_status_type
+  use LinearAlgebraMod, only : sparse_gemv
+  implicit none
+  integer, intent(in) :: nvars
+  integer, intent(in) :: nreactions
+  real(r8), intent(in) :: matrixp(1:nvars, 1:nreactions)
+  real(r8), intent(in) :: matrixd(1:nvars, 1:nreactions)
+  real(r8), intent(in) :: dtime
+  real(r8), intent(in) :: ystate(nvars)
+  real(r8), intent(inout):: rrates(nreactions)
+  type(betr_status_type), intent(out) :: bstatus
+
+  real(r8) :: p_dt(nvars)
+  real(r8) :: d_dt(nvars)
+  real(r8) :: rscal(1:nreactions)
+  real(r8) :: pscal(1:nvars)
+  type(lom_type) :: lom
+  logical :: lneg
+  integer :: it
+  integer, parameter  :: itmax = 10
+
+  call bstatus%reset()
+  it=0
+  rscal=0._r8
+  do
+    call sparse_gemv('N',nvars, nreactions, matrixp(1:nvars, 1:nreactions), &
+        nreactions, rrates, nvars, p_dt)
+
+    call sparse_gemv('N',nvars, nreactions, matrixd(1:nvars, 1:nreactions), &
+        nreactions, rrates, nvars, d_dt)
+
+    !update the state variables
+    call lom%calc_state_pscal(nvars, dtime, ystate(1:nvars), p_dt(1:nvars),  d_dt(1:nvars), &
+        pscal(1:nvars), lneg, bstatus)
+    if(bstatus%check_status())return
+
+    if(lneg .and. it<=itmax)then
+      call lom%calc_reaction_rscal(nvars, nreactions,  pscal(1:nvars), &
+        matrixd(1:nvars, 1:nreactions),rscal, bstatus)
+      if(bstatus%check_status())return
+
+      call lom%apply_reaction_rscal(nreactions, rscal(1:nreactions), rrates(1:nreactions))
+    else
+      exit
+    endif
+    it = it + 1
+  enddo
+  end subroutine flux_correction_fullm
 end module MathfuncMod
