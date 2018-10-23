@@ -2,7 +2,6 @@ set(BETR_DRIVER_SOURCES
   BeTRSimulationFactory.F90
   HistBGCMod.F90
   sbetrDriverMod.F90
-  mathtest.F90
   )
 
 include_directories(${CMAKE_BINARY_DIR}/src/shr)
@@ -34,12 +33,10 @@ set(BETR_LIBRARIES betr_driver_main;${BETR_LIBRARIES})
 link_libraries(${BETR_LIBRARIES};${BETR_TPLS})
 include(add_betr_executable)
 add_betr_executable(sbetr sbetr.F90)
-add_betr_executable(mathtest mathtest.F90)
 #X#add_subdirectory(tests)
 
 if (NOT CMAKE_INSTALL_PREFIX STREQUAL "INSTALL_DISABLED")
   install(TARGETS sbetr DESTINATION bin)
-  install(TARGETS mathtest DESTINATION bin)
   file(GLOB HEADERS *.mod)
   install(FILES ${HEADERS} DESTINATION include/betr/driver/main)
 endif()
