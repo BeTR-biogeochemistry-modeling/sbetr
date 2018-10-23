@@ -535,24 +535,25 @@ contains
 
   !initialize state variables
   call this%init_states(this%ecacnp_bgc_index, bgc_forc)
-!  call this%begin_massbal_check()
+
   ystates0(:) = this%ystates0(:)
 
 
   !add all external input
    call this%add_ext_input(dtime, this%ecacnp_bgc_index, bgc_forc, &
       this%c_inflx, this%n_inflx, this%p_inflx)
-!   call this%end_massbal_check('af add_ext_input')
-!  if(this%bgc_on)then
+
   !initialize decomposition scaling factors
   call this%decompkf_eca%set_decompk_scalar(ystates1(lid_o2), bgc_forc)
+
   !compute affinity parameters
   call this%competECA%compute_kinetic_paras(dtime, bgc_forc)
   !initialize all entries to zero
   cascade_matrix(:,:) = 0._r8
+
   !calculate default stoichiometry entries
   call this%calc_cascade_matrix(this%ecacnp_bgc_index, cascade_matrix, frc_c13, frc_c14)
-  !if(this%ecacnp_bgc_index%debug)call this%checksum_cascade(this%ecacnp_bgc_index)'
+
   !run century decomposition, return decay rates, cascade matrix, potential hr
   call this%censom%run_decomp(is_surflit, this%ecacnp_bgc_index, dtime, ystates1(1:nom_tot_elms),&
       this%decompkf_eca, bgc_forc%pct_sand, bgc_forc%pct_clay,this%alpha_n, this%alpha_p, &
@@ -572,17 +573,14 @@ contains
   call this%nitden%run_nitden(this%ecacnp_bgc_index, bgc_forc, this%decompkf_eca, &
     ystates1(lid_nh4), ystates1(lid_no3), ystates1(lid_o2), o2_decomp_depth, &
     pot_f_nit_mol_per_sec, pot_co2_hr, this%pot_f_nit, this%pot_f_denit, cascade_matrix)
-  !---------------------
-  !turn off nitrification and denitrification
-  !this%pot_f_denit = 0._r8
-  !this%pot_f_nit = 0._r8
-  !---------------------
+
   !do integration, in each integration, the stoichiometric matrix is kept as constant
   !so the reaction rate is a function of state variables. Further, for simplicity,
   !the nitrification and denitrification rates have been assumed as linear function
   !nh4 and no3 in soil.
 
   call this%arenchyma_gas_transport(this%ecacnp_bgc_index, dtime)
+
   !do the stoichiometric matrix separation
   call pd_decomp(nprimvars, nreactions, cascade_matrix(1:nprimvars, 1:nreactions), &
      cascade_matrixp, cascade_matrixd, bstatus)
