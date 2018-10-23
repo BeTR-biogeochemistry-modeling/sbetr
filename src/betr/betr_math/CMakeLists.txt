@@ -7,6 +7,7 @@ set(BETR_MATH_SOURCES
   BTridiagonalMod.F90
   KineticsMod.F90
   LinearAlgebraMod.F90
+  SparseMatMod.F90
   )
 
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)
