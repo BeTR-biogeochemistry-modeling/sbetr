@@ -27,7 +27,7 @@ implicit none
   end type sparseMat_type
   real(r8), parameter :: tiny_val=1.e-14_r8
   public :: spm_list_init, spm_list_insert, spm_list_to_mat
-  public :: spm_axpy
+  public :: spm_axpy, spm_print, set_spm_elm
 contains
 
 !---------------------------------------------------------------
@@ -250,4 +250,35 @@ contains
   spm%pB(irow)=jj+1
   call spm_list_free(spm_list)
   end subroutine spm_list_to_mat
+
+!---------------------------------------------------------------
+  subroutine spm_print(spm)
+  implicit none
+  type(sparseMat_type), intent(in) :: spm
+
+  integer :: ii, jj, id
+
+  do ii =1 , spm%szrow
+    do jj = 1, spm%ncol(ii)
+      id=jj+spm%pB(ii)-1
+      print*,ii,spm%icol(id),spm%val(id)
+    enddo
+  enddo
+  end subroutine spm_print
+
+  !-------------------------------------------------------------------------------
+  subroutine set_spm_elm(spm, ii, jj, val)
+  implicit none
+  type(sparseMat_type), intent(inout) :: spm
+  integer, intent(in) :: ii, jj
+  real(r8), intent(in):: val
+  integer :: j1, id
+
+  do j1 = 1, spm%ncol(ii)
+    id = spm%pB(ii)+j1-1
+    if(spm%icol(id)==jj)then
+      spm%val(id) = val
+    endif
+  enddo
+  end subroutine set_spm_elm
 end module SparseMatMod

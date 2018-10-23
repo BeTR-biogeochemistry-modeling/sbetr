@@ -1,15 +1,17 @@
 subroutine spm_test
 
 
-    use bshr_kind_mod, only : r8 => shr_kind_r8
-    use SparseMatMod, only : spm_list_type, sparseMat_type, spm_axpy
-    use SparseMatMod, only : spm_list_init, spm_list_insert, spm_list_to_mat
+  use bshr_kind_mod, only : r8 => shr_kind_r8
+  use SparseMatMod, only : spm_list_type, sparseMat_type, spm_axpy
+  use SparseMatMod, only : spm_list_init, spm_list_insert, spm_list_to_mat
+  use SparseMatMod, only : spm_print, set_spm_elm
   implicit none
   class(sparseMat_type), pointer :: spm
   type(spm_list_type), pointer :: spm_list
   integer :: nelms
   real(r8) :: x(5),y(5)
   integer :: errinfo
+
   call spm_list_init(spm_list, 1._r8, 1, 1, nelms)
 
   call spm_list_insert(spm_list, -1._r8, 2, 1, nelms)
@@ -38,20 +40,17 @@ subroutine spm_test
 
   call spm_list_to_mat(spm_list, spm, nelms, 5)
 
-  print*,'val'
-  print*, spm%val
-  print*,'icol'
-  print*,spm%icol
-  print*,'pB'
-  print*,spm%pB
-  print*,'ncol'
-  print*,spm%ncol
+  print*,'spm_disp1'
+  call spm_print(spm)
 
   x=(/1._r8,1._r8,1._r8,1._r8,1._r8/)
   y=0._r8
   call spm_axpy(5, 5, 1._r8, x, spm, y, errinfo)
   print*,'errinfo',errinfo
   print*,y
+  call set_spm_elm(spm, 3, 4, 100._r8)
+  print*,'spm_disp2'
+  call spm_print(spm)
 end subroutine spm_test
 
 
