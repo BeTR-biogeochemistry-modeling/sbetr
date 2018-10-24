@@ -5,6 +5,11 @@ import os,time,sys,argparse
 import AppMakerPara
 import AppMaker1layer
 import AppMakerNlayer
+
+import AppMakerParadef
+import AppMaker1layerdef
+import AppMakerNlayerdef
+
 import shutil
 
 
@@ -14,6 +19,9 @@ parser.add_argument('--appname', dest="appname", metavar='newapp', type=str, nar
 
 parser.add_argument('--action', dest="action", metavar='action', type=str, nargs=1, default=["add"],
   help='action needs to take for the code generator, add or remove')
+
+parser.add_argument('--type', dest="type", metavar='type', type=str, nargs=1, default=["empty"],
+  help='type of template to be used, empty or soilbgc')
 
 
 args = parser.parse_args()
@@ -54,22 +62,35 @@ else:
     quit()
 print ("Create files")
 
-#in app_namePara create two files
-#CMakeLists.txt
-AppMakerPara.MakePara(sfarm_dir, app_name)
 
-#in app_name1layer write three files
-#CMakeLists.txt
-#app_nameBGCIndexType.F90
-#app_nameBGCType.F90
-AppMaker1layer.Make1layer(sfarm_dir, app_name)
+if args.type[0] == 'soilbgc':
+    #in app_namePara create two files
+    #CMakeLists.txt
+    AppMakerPara.MakePara(sfarm_dir, app_name)
+
+    #in app_name1layer write three files
+    #CMakeLists.txt
+    #app_nameBGCIndexType.F90
+    #app_nameBGCType.F90
+    AppMaker1layer.Make1layer(sfarm_dir, app_name)
 
 
-AppMakerNlayer.MakeNlayer(sfarm_dir, app_name)
-#in app_nameNlayer write three files
-#CMakeLists.txt
-#app_nameBGCReactionsType.F90
-#app_namePlantSoilBGCType.F90
+    AppMakerNlayer.MakeNlayer(sfarm_dir, app_name)
+    #in app_nameNlayer write three files
+    #CMakeLists.txt
+    #app_nameBGCReactionsType.F90
+    #app_namePlantSoilBGCType.F90
+
+else:
+    AppMakerParadef.MakePara(sfarm_dir, app_name)
+
+    #in app_name1layer write three files
+    #CMakeLists.txt
+    #app_nameBGCIndexType.F90
+    #app_nameBGCType.F90
+    AppMaker1layerdef.Make1layer(sfarm_dir, app_name)
+
+    AppMakerNlayerdef.MakeNlayer(sfarm_dir, app_name)
 
 fcmake=open(sfarm_dir+'/'+app_name+"/CMakeLists.txt","w")
 fcmake.write("set(BETR_LIBRARIES "+app_name+'Para '+app_name+'1layer '+ app_name+'Nlayer;${BETR_LIBRARIES} PARENT_SCOPE)\n')
