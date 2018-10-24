@@ -521,9 +521,8 @@ end subroutine sbetrBGC_driver
 !        endif
 !        call ncd_pio_closefile(ncid)
 !      endif
-    endif
     call init_hist_bgc(histbgc, base_filename, reaction_method, case_id, hist)
-
+  endif
   end subroutine read_name_list
 
   !-------------------------------------------------------------------------------

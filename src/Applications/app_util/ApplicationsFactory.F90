@@ -36,7 +36,6 @@ contains
   logical,                                intent(out) :: asoibgc
   type(betr_status_type), intent(out) :: bstatus
 
-
   call create_bgc_reaction_type(bgc_reaction, method,asoibgc,bstatus)
 
   if(bstatus%check_status())return
@@ -70,6 +69,7 @@ contains
     character(len=betr_errmsg_len) :: msg
 
     call bstatus%reset()
+    asoibgc = .false.
     select case(trim(method))
     case ("ecacnp","ecacnp_mosart")
        asoibgc=.true.
