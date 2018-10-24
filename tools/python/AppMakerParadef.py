@@ -67,7 +67,7 @@ def MakePara(sfarm_dir, app_name):
     fpara.write("  end function create_jarpars_"+app_name+"\n")
 
     fpara.write(" !--------------------------------------------------------------------\n")
-    fpara.write("  subroutine "+app_name+"_para_Init(this, namelist_buffer, bstatus)\n")
+    fpara.write("  subroutine "+app_name+"_para_Init(this, bstatus)\n")
     fpara.write("  !\n")
     fpara.write("  !DESCRIPTION\n")
     fpara.write("  !initialize default parameters\n")
@@ -77,7 +77,6 @@ def MakePara(sfarm_dir, app_name):
     fpara.write("  use betr_ctrl      , only : betr_spinup_state\n")
     fpara.write("  implicit none\n")
     fpara.write("  class("+app_name+"_para_type), intent(inout) :: this\n")
-    fpara.write("  character(len=*)             , intent(in)  :: namelist_buffer\n")
     fpara.write("  type(betr_status_type)       , intent(out) :: bstatus\n")
     fpara.write("\n")
     fpara.write("\n")
