@@ -191,7 +191,7 @@ contains
   integer :: ii, jj, id
   real(r8):: dy
   errinfo=0
-  if(nx /=spm%szcol .or. ny /= spm%szrow)then
+  if(ny /=spm%szcol .or. nx /= spm%szrow)then
     errinfo=-1
     return
   endif
