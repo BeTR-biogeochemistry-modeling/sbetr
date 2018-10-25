@@ -183,9 +183,9 @@ contains
   real(r8), intent(in) :: a
   integer , intent(in) :: nx
   integer , intent(in) :: ny
-  real(r8), intent(in) :: x(nx)
+  real(r8), intent(in) :: x(ny)
   type(sparseMat_type), intent(in) :: spm
-  real(r8), intent(inout) :: y(ny)
+  real(r8), intent(inout) :: y(nx)
   integer, intent(out) :: errinfo
 
   integer :: ii, jj, id
