@@ -16,9 +16,9 @@ module ecacnpBGCType
   use ecacnpBGCDecompType      , only : DecompCent_type
   use ecacnpBGCIndexType       , only : ecacnp_bgc_index_type
   use ecacnpBGCNitDenType      , only : century_nitden_type
-  use ecacnpBGCSOMType          , only : CentSom_type
-  use ecacnpBGCCompetType      , only : Compet_ECA_type
-  use ecacnpParaType            , only : ecacnp_para_type
+  use ecacnpBGCSOMType         , only : CentSom_type
+  use ecacnpBGCCompetType      , only : Compet_ECACNP_type
+  use ecacnpParaType           , only : ecacnp_para_type
   implicit none
   private
   character(len=*), private, parameter :: mod_filename = &
@@ -33,7 +33,7 @@ module ecacnpBGCType
     type(DecompCent_type),private        :: decompkf_eca
     type(century_nitden_type), private   :: nitden
     type(CentSom_type), private          :: censom
-    type(Compet_ECA_type), public        :: competECA
+    type(Compet_ECACNP_type), public        :: competECA
     type(ecacnp_bgc_index_type), private :: ecacnp_bgc_index
     real(r8), pointer                    :: ystates0(:)
     real(r8), pointer                    :: ystates1(:)

@@ -10,7 +10,7 @@ implicit none
   character(len=*), private, parameter :: mod_filename = &
        __FILE__
 
-  type, public :: Compet_ECA_type
+  type, public :: Compet_ECACNP_type
     real(r8), pointer :: mumax_minn_nh4_plant(:)     => null()   !number of maximum pft
     real(r8), pointer :: mumax_minn_no3_plant(:)     => null()   !number of maximum pft
     real(r8), pointer :: mumax_minp_plant(:)     => null()   !number of maximum pft
@@ -39,7 +39,7 @@ implicit none
     procedure, public :: run_compet_phosphorus
     procedure, public :: run_compet_nitrogen
     procedure, public :: compute_kinetic_paras
-  end type Compet_ECA_type
+  end type Compet_ECACNP_type
 
 contains
   !-------------------------------------------------------------------------------
@@ -47,7 +47,7 @@ contains
   use BiogeoConType             , only : BiogeoCon_type
   use ecacnpParaType            , only : ecacnp_para_type
   implicit none
-  class(Compet_ECA_type), intent(inout) :: this
+  class(Compet_ECACNP_type), intent(inout) :: this
   class(BiogeoCon_type)       , intent(in) :: biogeo_con
   type(betr_status_type)     , intent(out)   :: bstatus
 
@@ -76,7 +76,7 @@ contains
   subroutine InitAllocate(this)
   use betr_varcon, only : betr_maxpatch_pft, betr_max_soilorder
   implicit none
-  class(Compet_ECA_type), intent(inout) :: this
+  class(Compet_ECACNP_type), intent(inout) :: this
 
   allocate(this%mumax_minn_nh4_plant(betr_maxpatch_pft))
   allocate(this%mumax_minn_no3_plant(betr_maxpatch_pft))
@@ -98,7 +98,7 @@ contains
   use KineticsMod    , only : ecacomplex_cell_norm
   use BetrStatusType , only : betr_status_type
   implicit none
-  class(Compet_ECA_type), intent(inout) :: this
+  class(Compet_ECACNP_type), intent(inout) :: this
   logical , intent(in) :: non_limit
   real(r8), intent(in) :: smin_nh4
   real(r8), intent(in) :: smin_no3
@@ -202,7 +202,7 @@ contains
   use KineticsMod    , only : ecacomplex_cell_norm
   use BetrStatusType , only : betr_status_type
   implicit none
-  class(Compet_ECA_type), intent(inout) :: this
+  class(Compet_ECACNP_type), intent(inout) :: this
   real(r8), intent(in) :: sminp_soluble
   logical , intent(in) :: nop_lim               !logical indicator of P limitation
   integer , intent(in) :: plant_ntypes
@@ -281,7 +281,7 @@ contains
   use EcosysMicDynParamMod, only : get_microbe_ftn
   use bshr_const_mod, only : Rgas_kmol => SHR_CONST_RGAS
   implicit none
-  class(Compet_ECA_type), intent(inout) :: this
+  class(Compet_ECACNP_type), intent(inout) :: this
   real(r8), intent(in) :: dtime
   type(JarBGC_forc_type) , intent(in) :: bgc_forc
 
