@@ -56,9 +56,12 @@ contains
     use betr_ctrl       , only : iulog  => biulog
     use betr_constants  , only : betr_errmsg_len
     use BetrStatusType  , only : betr_status_type
+    !begin_appuse_add
     use ecacnpBGCReactionsType, only : ecacnp_bgc_reaction_type
-    use cdomBGCReactionsType, only : cdom_bgc_reaction_type
-    use SimicBGCReactionsType, only : simic_bgc_reaction_type
+    use cdomBGCReactionsType  , only : cdom_bgc_reaction_type
+    use simicBGCReactionsType , only : simic_bgc_reaction_type
+    use kecaBGCReactionsType  , only : keca_bgc_reaction_type
+    !end_appuse_add
     implicit none
     ! !ARGUMENTS:
     class(bgc_reaction_type),  allocatable, intent(inout) :: bgc_reaction
@@ -71,15 +74,16 @@ contains
     call bstatus%reset()
     asoibgc = .false.
     select case(trim(method))
+    !begin_appcase_add
     case ("ecacnp","ecacnp_mosart")
-       asoibgc=.true.
-       allocate(bgc_reaction, source=ecacnp_bgc_reaction_type())
+       asoibgc=.true.;allocate(bgc_reaction, source=ecacnp_bgc_reaction_type())
     case ("cdom","cdom_mosart")
-       asoibgc=.true.
-       allocate(bgc_reaction, source=cdom_bgc_reaction_type())
+       asoibgc=.true.;allocate(bgc_reaction, source=cdom_bgc_reaction_type())
     case ("simic")
-       asoibgc=.true.
-       allocate(bgc_reaction, source=simic_bgc_reaction_type())
+       asoibgc=.true.;allocate(bgc_reaction, source=simic_bgc_reaction_type())
+    case ("keca")
+       asoibgc=.true.;allocate(bgc_reaction, source=keca_bgc_reaction_type())
+    !end_appcase_add
     case default
        write(msg,*)subname //' ERROR: unknown method: ', method
        msg = trim(msg)//new_line('A')//errMsg(mod_filename, __LINE__)
@@ -98,9 +102,12 @@ contains
   use betr_ctrl       , only : iulog  => biulog
   use betr_constants  , only : betr_errmsg_len
   use BetrStatusType  , only : betr_status_type
+  !begin_appuse_add
   use ecacnpPlantSoilBGCType, only : ecacnp_plant_soilbgc_type
-  use cdomPlantSoilBGCType, only : cdom_plant_soilbgc_type
-  use SimicPlantSoilBGCType , only : simic_plant_soilbgc_type
+  use cdomPlantSoilBGCType  , only : cdom_plant_soilbgc_type
+  use simicPlantSoilBGCType , only : simic_plant_soilbgc_type
+  use kecaPlantSoilBGCType  , only : keca_plant_soilbgc_type
+  !end_appuse_add
   implicit none
   ! !ARGUMENTS:
   class(plant_soilbgc_type), allocatable, intent(inout) :: plant_soilbgc
@@ -113,12 +120,16 @@ contains
   call bstatus%reset()
 
   select case(trim(method))
+  !begin_appcase_add
   case ("ecacnp","ecacnp_mosart")
      allocate(plant_soilbgc, source=ecacnp_plant_soilbgc_type())
   case ("cdom","cdom_mosart")
      allocate(plant_soilbgc, source=cdom_plant_soilbgc_type())
   case ("simic")
      allocate(plant_soilbgc, source=simic_plant_soilbgc_type())
+  case ("keca")
+     allocate(plant_soilbgc, source=keca_plant_soilbgc_type())
+  !end_appcase_add
   case default
      write(msg, *)subname //' ERROR: unknown method: ', method
      msg = trim(msg)//new_line('A')//errMsg(mod_filename, __LINE__)
@@ -132,23 +143,30 @@ contains
   !
   ! DESCRIPTION
   ! read in the parameters for specified bgc implementation
+  !begin_appuse_add
   use ecacnpParaType   , only : ecacnp_para
-  use cdomParaType   , only : cdom_para
-  use simicParaType  , only : simic_para
-  use tracer_varcon  , only : reaction_method
-  use ncdio_pio      , only : file_desc_t
-  use BetrStatusType , only : betr_status_type
+  use cdomParaType     , only : cdom_para
+  use simicParaType    , only : simic_para
+  use kecaParaType     , only : keca_para
+  !end_appuse_add
+  use tracer_varcon    , only : reaction_method
+  use ncdio_pio        , only : file_desc_t
+  use BetrStatusType   , only : betr_status_type
   implicit none
   type(file_desc_t), intent(inout)  :: ncid
   type(betr_status_type) , intent(out) :: bstatus
 
    select case (trim(reaction_method))
+   !begin_appcase_add
    case ("ecacnp","ecacnp_mosart")
      call ecacnp_para%readPars(ncid, bstatus)
    case ("cdom","cdom_mosart")
      call cdom_para%readPars(ncid, bstatus)
    case ("simic")
      call simic_para%readPars(ncid, bstatus)
+   case ("keca")
+     call keca_para%readPars(ncid, bstatus)
+   !end_appcase_add
    case default
      !do nothing
    end select
@@ -160,11 +178,14 @@ contains
   !
   ! DESCRIPTION
   ! read in the parameters for specified bgc implementation
+  !begin_appuse_add
   use ecacnpParaType   , only : ecacnp_para
-  use cdomParaType   , only : cdom_para
-  use simicParaType  , only : simic_para
-  use betr_constants , only : betr_namelist_buffer_size_ext
-  use BetrStatusType , only : betr_status_type
+  use cdomParaType     , only : cdom_para
+  use simicParaType    , only : simic_para
+  use kecaParaType     , only : keca_para
+  !end_appuse_add
+  use betr_constants   , only : betr_namelist_buffer_size_ext
+  use BetrStatusType   , only : betr_status_type
   implicit none
   character(len=*), intent(in) :: reaction_method
   type(betr_status_type), intent(out)   :: bstatus
@@ -173,6 +194,7 @@ contains
    call bstatus%reset()
 
    select case (trim(reaction_method))
+   !begin_appcase_add
    case ("ecacnp","ecacnp_mosart")
      call  ecacnp_para%Init(bstatus)
      !do nothing
@@ -180,6 +202,9 @@ contains
      call cdom_para%Init(bstatus)
    case ("simic")
      call simic_para%Init(bstatus)
+   case ("keca")
+     call keca_para%Init(bstatus)
+   !end_appcase_add
    case default
      !do nothing
    end select
@@ -188,16 +213,23 @@ contains
   !-------------------------------------------------------------------------------
   subroutine AppSetSpinup()
 
+  !begin_appuse_add
   use ecacnpParaType  , only : ecacnp_para
   use cdomParaType    , only : cdom_para
-  use tracer_varcon  , only : reaction_method
+  use kecaParaType    , only : keca_para
+  !end_appuse_add
+  use tracer_varcon   , only : reaction_method
   implicit none
 
   select case (trim(reaction_method))
+  !begin_appcase_add
   case ("ecacnp","ecacnp_mosart")
      call  ecacnp_para%set_spinup_factor()
   case ("cdom","cdom_mosart")
      call cdom_para%set_spinup_factor()
+  case ("keca")
+     call keca_para%set_spinup_factor()
+  !end_appcase_add
   end select
 
   end subroutine AppSetSpinup
