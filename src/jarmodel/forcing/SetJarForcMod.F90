@@ -24,7 +24,10 @@ contains
   use OMForcType  , only : om_forc_type
   use NutForcType , only : nut_forc_type
   use UnitConvertMod, only : ppm2molv
+!begin_app_add
   use ecacnpParaType, only : ecacnp_para_type
+  use kecaParaType, only : keca_para_type
+!end_app_add
   use BiogeoConType    , only : BiogeoCon_type
   implicit none
   type(JarBGC_forc_type), intent(inout) :: jar_forc
@@ -80,7 +83,7 @@ contains
   call set_phase_convert_coeff(atm_forc, soil_forc, jar_forc)
 
   select type(jarpars)
-  class is (ecacnp_para_type)
+  class is (keca_para_type)
     jar_forc%tmic_opt = jar_forc%tmic_opt + &
       dtime/jarpars%tau30*(jar_forc%temp-jar_forc%tmic_opt)
   class default

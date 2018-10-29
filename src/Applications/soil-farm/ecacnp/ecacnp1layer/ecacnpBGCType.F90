@@ -546,8 +546,6 @@ contains
   !initialize decomposition scaling factors
   call this%decompkf_eca%set_decompk_scalar(ystates1(lid_o2), bgc_forc)
 
-  !compute affinity parameters
-  call this%competECA%compute_kinetic_paras(dtime, bgc_forc)
   !initialize all entries to zero
   cascade_matrix(:,:) = 0._r8
 
