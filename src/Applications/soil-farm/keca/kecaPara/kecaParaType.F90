@@ -1,4 +1,4 @@
-module ecacnpParaType
+module kecaParaType
   use bshr_kind_mod       , only : r8 => shr_kind_r8
   use BiogeoContype       , only : BiogeoCon_type
 implicit none
@@ -7,7 +7,7 @@ implicit none
   character(len=*), private, parameter :: filename = &
        __FILE__
 
- type, public, extends(BiogeoCon_type) :: ecacnp_para_type
+ type, public, extends(BiogeoCon_type) :: keca_para_type
 
   !decomposition
   real(r8) :: Q10
@@ -76,6 +76,8 @@ implicit none
   real(r8) :: vmax_den
   real(r8) :: vmax_nit
   real(r8), pointer :: spinup_factor(:)
+  real(r8)  :: topt    !base line at 22.35 C
+  real(r8)  :: tau30    ! seconds, adaptation time
 
  contains
    procedure, public  :: Init => centpara_init
@@ -85,23 +87,23 @@ implicit none
    procedure, private :: set_defpar_default
    procedure, public  :: apply_spinup_factor
    procedure, public  :: set_spinup_factor
- end type ecacnp_para_type
+ end type keca_para_type
 
- type(ecacnp_para_type), public :: ecacnp_para
- public :: create_jarpars_ecacnp
+ type(keca_para_type), public :: keca_para
+ public :: create_jarpars_keca
 contains
 
-  function create_jarpars_ecacnp()
+  function create_jarpars_keca()
   ! DESCRIPTION
   ! constructor
     implicit none
-    class(ecacnp_para_type), pointer :: create_jarpars_ecacnp
-    class(ecacnp_para_type), pointer :: bgc
+    class(keca_para_type), pointer :: create_jarpars_keca
+    class(keca_para_type), pointer :: bgc
 
     allocate(bgc)
-    create_jarpars_ecacnp => bgc
+    create_jarpars_keca => bgc
 
-  end function create_jarpars_ecacnp
+  end function create_jarpars_keca
 
   !--------------------------------------------------------------------
   subroutine centpara_init(this, bstatus)
@@ -109,7 +111,7 @@ contains
   use BetrStatusType , only : betr_status_type
   use betr_ctrl      , only : betr_spinup_state
   implicit none
-  class(ecacnp_para_type), intent(inout) :: this
+  class(keca_para_type), intent(inout) :: this
   type(betr_status_type)   , intent(out) :: bstatus
 
   call this%bcon_Init(bstatus)
@@ -127,7 +129,7 @@ contains
   subroutine InitAllocate_centpara(this)
   use betr_varcon, only : betr_maxpatch_pft, betr_max_soilorder
   implicit none
-  class(ecacnp_para_type), intent(inout) :: this
+  class(keca_para_type), intent(inout) :: this
 
 
   allocate(this%spinup_factor(9))
@@ -139,7 +141,7 @@ contains
   use tracer_varcon      , only : natomw,patomw
   use bshr_const_mod  , only : year_sec=>SHR_CONST_YEARSECS
   implicit none
-  class(ecacnp_para_type), intent(inout) :: this
+  class(keca_para_type), intent(inout) :: this
   real(r8) :: half_life
 
   !the following note is from daycent
@@ -240,6 +242,9 @@ contains
   this%vmax_den = 1.8_r8 /86400._r8     ! 1/s
   this%vmax_nit = 0.67_r8/86400._r8     ! 1/s
 
+  this%topt=295.5_r8     !base line at 22.35 C
+  this%tau30=30._r8*86400._r8*365._r8  ! seconds, adaptation time
+
   end subroutine set_defpar_default
 
 
@@ -247,7 +252,7 @@ contains
   subroutine apply_spinup_factor(this)
   use betr_ctrl, only : betr_spinup_state
   implicit none
-  class(ecacnp_para_type), intent(inout) :: this
+  class(keca_para_type), intent(inout) :: this
 
 
   call this%set_spinup_factor()
@@ -280,7 +285,7 @@ contains
   use bshr_const_mod  , only : year_sec=>SHR_CONST_YEARSECS
   use tracer_varcon   , only : natomw,patomw
   implicit none
-  class(ecacnp_para_type), intent(inout) :: this
+  class(keca_para_type), intent(inout) :: this
   type(file_desc_t)    , intent(inout)  :: ncid  ! pio netCDF file id
   type(betr_status_type) , intent(out) :: bstatus
 
@@ -542,7 +547,7 @@ contains
   subroutine set_spinup_factor(this)
 
   implicit none
-  class(ecacnp_para_type), intent(inout) :: this
+  class(keca_para_type), intent(inout) :: this
   real(r8) :: k_decay_ref
 
   !the order is, lit1, lit2, lit3, cwd, lwd, fwd, som1, som3, som2
@@ -565,7 +570,7 @@ contains
   subroutine centpara_printPars(this)
 
   implicit none
-  class(ecacnp_para_type), intent(inout) :: this
+  class(keca_para_type), intent(inout) :: this
 
   call this%prtPars_bgc()
 
@@ -623,4 +628,4 @@ contains
   print*,'vmax_nit=', this%vmax_nit
   end subroutine centpara_printPars
 
-end module ecacnpParaType
+end module kecaParaType

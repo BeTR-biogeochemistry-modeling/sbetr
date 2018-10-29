@@ -2,6 +2,7 @@ set(BETR_APP_UTIL_SOURCES
    ApplicationsFactory.F90
   )
 
+#begin_appinc_directories
 include_directories(${CMAKE_BINARY_DIR}/src/shr)
 include_directories(${CMAKE_BINARY_DIR}/src/io_util)
 include_directories(${CMAKE_BINARY_DIR}/src/stub_clm)
@@ -17,7 +18,10 @@ include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/cdom/cdomNlay
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/simic/simicPara)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/simic/simic1layer)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/simic/simicNlayer)
-
+include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/keca/kecaPara)
+include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/keca/keca1layer)
+include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/keca/kecaNlayer)
+#end_appinc_directories
 include(add_betr_library)
 add_betr_library(app_util ${BETR_APP_UTIL_SOURCES})
 

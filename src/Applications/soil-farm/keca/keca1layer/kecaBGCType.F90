@@ -1,4 +1,4 @@
-module ecacnpBGCType
+module kecaBGCType
 #include "bshr_assert.h"
   !
   ! !DESCRIPTION:
@@ -13,28 +13,28 @@ module ecacnpBGCType
   use BiogeoConType             , only : BiogeoCon_type
   use BetrStatusType            , only : betr_status_type
   use BeTRJarModel              , only : jar_model_type
-  use ecacnpBGCDecompType      , only : DecompCent_type
-  use ecacnpBGCIndexType       , only : ecacnp_bgc_index_type
-  use ecacnpBGCNitDenType      , only : century_nitden_type
-  use ecacnpBGCSOMType         , only : CentSom_type
-  use ecacnpBGCCompetType      , only : Compet_ECACNP_type
-  use ecacnpParaType           , only : ecacnp_para_type
+  use kecaBGCDecompType      , only : DecompCent_type
+  use kecaBGCIndexType       , only : keca_bgc_index_type
+  use kecaBGCNitDenType      , only : century_nitden_type
+  use kecaBGCSOMType         , only : CentSom_type
+  use kecaBGCCompetType      , only : Compet_KECA_type
+  use kecaParaType           , only : keca_para_type
   implicit none
   private
   character(len=*), private, parameter :: mod_filename = &
        __FILE__
 
   !Note:
-  !Keeping ecacnp_bgc_index as a private member is a workaround to call the ode solver
-  !it increase the memory for each instance of ecacnp_bgc_type, but enables
+  !Keeping keca_bgc_index as a private member is a workaround to call the ode solver
+  !it increase the memory for each instance of keca_bgc_type, but enables
   !the ode function to be called by the ode solver
 
-  type, extends(jar_model_type), public :: ecacnp_bgc_type
+  type, extends(jar_model_type), public :: keca_bgc_type
     type(DecompCent_type),private        :: decompkf_eca
     type(century_nitden_type), private   :: nitden
     type(CentSom_type), private          :: censom
-    type(Compet_ECACNP_type), public        :: competECA
-    type(ecacnp_bgc_index_type), private :: ecacnp_bgc_index
+    type(Compet_KECA_type), public        :: competECA
+    type(keca_bgc_index_type), private :: keca_bgc_index
     real(r8), pointer                    :: ystates0(:)
     real(r8), pointer                    :: ystates1(:)
     real(r8), pointer                    :: k_decay(:)
@@ -72,13 +72,13 @@ module ecacnpBGCType
     logical                              :: bgc_on
     logical , private                    :: batch_mode
   contains
-    procedure, public  :: init          => init_ecacnp
-    procedure, public  :: runbgc        => runbgc_ecacnp
-    procedure, public  :: UpdateParas   => UpdateParas_ecacnp
-    procedure, public  :: sumup_cnp_msflx => sumup_cnp_msflx_ecacnp
-    procedure, public  :: getvarllen    => getvarllen_ecacnp
-    procedure, public  :: getvarlist    => getvarlist_ecacnp
-    procedure, public  :: init_cold     => init_cold_ecacnp
+    procedure, public  :: init          => init_keca
+    procedure, public  :: runbgc        => runbgc_keca
+    procedure, public  :: UpdateParas   => UpdateParas_keca
+    procedure, public  :: sumup_cnp_msflx => sumup_cnp_msflx_keca
+    procedure, public  :: getvarllen    => getvarllen_keca
+    procedure, public  :: getvarlist    => getvarlist_keca
+    procedure, public  :: init_cold     => init_cold_keca
     procedure, private :: calc_cascade_matrix
     procedure, private :: init_states
     procedure, private :: add_ext_input
@@ -91,37 +91,37 @@ module ecacnpBGCType
     procedure, private :: begin_massbal_check
     procedure, private :: end_massbal_check
     procedure, private :: sum_tot_store
-  end type ecacnp_bgc_type
+  end type keca_bgc_type
 
-  public :: create_jarmodel_ecacnp
+  public :: create_jarmodel_keca
 contains
 
-  function create_jarmodel_ecacnp()
+  function create_jarmodel_keca()
   ! DESCRIPTION
   ! constructor
     implicit none
-    class(ecacnp_bgc_type), pointer :: create_jarmodel_ecacnp
-    class(ecacnp_bgc_type), pointer :: bgc
+    class(keca_bgc_type), pointer :: create_jarmodel_keca
+    class(keca_bgc_type), pointer :: bgc
 
     allocate(bgc)
-    create_jarmodel_ecacnp => bgc
+    create_jarmodel_keca => bgc
 
-  end function create_jarmodel_ecacnp
+  end function create_jarmodel_keca
 
   !-------------------------------------------------------------------------------
-  function getvarllen_ecacnp(this)result(ans)
+  function getvarllen_keca(this)result(ans)
 
   implicit none
-  class(ecacnp_bgc_type) , intent(inout) :: this
+  class(keca_bgc_type) , intent(inout) :: this
   integer :: ans
 
-  ans = this%ecacnp_bgc_index%nstvars
+  ans = this%keca_bgc_index%nstvars
 
-  end function getvarllen_ecacnp
+  end function getvarllen_keca
   !-------------------------------------------------------------------------------
-  subroutine getvarlist_ecacnp(this, nstvars, varnames, varunits, vartypes)
+  subroutine getvarlist_keca(this, nstvars, varnames, varunits, vartypes)
   implicit none
-  class(ecacnp_bgc_type) , intent(inout) :: this
+  class(keca_bgc_type) , intent(inout) :: this
   integer, intent(in) :: nstvars
   character(len=*), intent(out) :: varnames(1:nstvars)
   character(len=*), intent(out) :: varunits(1:nstvars)
@@ -129,17 +129,17 @@ contains
   integer :: n
 
   do n = 1, nstvars
-    vartypes(n) = this%ecacnp_bgc_index%vartypes(n)
-    write(varnames(n),'(A)')trim(this%ecacnp_bgc_index%varnames(n))
-    write(varunits(n),'(A)')trim(this%ecacnp_bgc_index%varunits(n))
+    vartypes(n) = this%keca_bgc_index%vartypes(n)
+    write(varnames(n),'(A)')trim(this%keca_bgc_index%varnames(n))
+    write(varunits(n),'(A)')trim(this%keca_bgc_index%varunits(n))
   enddo
-  end subroutine getvarlist_ecacnp
+  end subroutine getvarlist_keca
 
   !-------------------------------------------------------------------------------
   subroutine begin_massbal_check(this)
 
   implicit none
-  class(ecacnp_bgc_type) , intent(inout) :: this
+  class(keca_bgc_type) , intent(inout) :: this
   real(r8) :: c_mass0, n_mass0, p_mass0
   print*,'begin_massbal_check'
   call this%sumup_cnp_msflx(this%ystates1, this%beg_c_mass, &
@@ -156,7 +156,7 @@ contains
   subroutine end_massbal_check(this, header)
 
   implicit none
-  class(ecacnp_bgc_type) , intent(inout) :: this
+  class(keca_bgc_type) , intent(inout) :: this
   character(len=*), intent(in) :: header
   real(r8) :: c_mass, n_mass, p_mass
   real(r8) :: c_flx,n_flx,p_flx
@@ -190,10 +190,10 @@ contains
   end subroutine end_massbal_check
 
   !-------------------------------------------------------------------------------
-  subroutine UpdateParas_ecacnp(this,  biogeo_con, bstatus)
+  subroutine UpdateParas_keca(this,  biogeo_con, bstatus)
   use betr_varcon         , only : betr_maxpatch_pft, betr_max_soilorder
   implicit none
-  class(ecacnp_bgc_type) , intent(inout) :: this
+  class(keca_bgc_type) , intent(inout) :: this
   class(BiogeoCon_type)       , intent(in) :: biogeo_con
   type(betr_status_type)     , intent(out)   :: bstatus
   integer :: sr
@@ -202,7 +202,7 @@ contains
   call bstatus%reset()
 
   select type(biogeo_con)
-  type is(ecacnp_para_type)
+  type is(keca_para_type)
     do sr = 1, betr_max_soilorder
 
       this%frac_p_sec_to_sol(sr) = biogeo_con%frac_p_sec_to_sol(sr)
@@ -222,7 +222,7 @@ contains
       this%c14decay_Bm_const=biogeo_con%c14decay_Bm_const
     endif
 
-    call this%censom%UpdateParas(this%ecacnp_bgc_index, biogeo_con)
+    call this%censom%UpdateParas(this%keca_bgc_index, biogeo_con)
 
     call this%decompkf_eca%UpdateParas(biogeo_con)
 
@@ -232,33 +232,33 @@ contains
     call bstatus%set_msg(msg,err=-1)
     return
   end select
-  end subroutine UpdateParas_ecacnp
+  end subroutine UpdateParas_keca
   !-------------------------------------------------------------------------------
-  subroutine init_ecacnp(this,  biogeo_con,  batch_mode, bstatus)
+  subroutine init_keca(this,  biogeo_con,  batch_mode, bstatus)
   use betr_varcon         , only : betr_maxpatch_pft
   implicit none
-  class(ecacnp_bgc_type) , intent(inout) :: this
+  class(keca_bgc_type) , intent(inout) :: this
   class(BiogeoCon_type)       , intent(in) :: biogeo_con
   logical                   , intent(in) :: batch_mode
   type(betr_status_type)    , intent(out) :: bstatus
 
   character(len=256) :: msg
-  write(this%jarname, '(A)')'ecacnp'
+  write(this%jarname, '(A)')'keca'
 
   this%bgc_on=.true.
   this%batch_mode=batch_mode
   select type(biogeo_con)
-  type is(ecacnp_para_type)
+  type is(keca_para_type)
     call bstatus%reset()
-    call this%ecacnp_bgc_index%Init(biogeo_con%use_c13, biogeo_con%use_c14, &
+    call this%keca_bgc_index%Init(biogeo_con%use_c13, biogeo_con%use_c14, &
      biogeo_con%non_limit, biogeo_con%nop_limit, betr_maxpatch_pft, this%batch_mode)
 
     this%nop_limit=biogeo_con%nop_limit
     this%non_limit=biogeo_con%non_limit
 
-    call this%InitAllocate(this%ecacnp_bgc_index)
+    call this%InitAllocate(this%keca_bgc_index)
 
-    call this%censom%Init(this%ecacnp_bgc_index, biogeo_con, bstatus)
+    call this%censom%Init(this%keca_bgc_index, biogeo_con, bstatus)
 
     if(bstatus%check_status())return
 
@@ -276,27 +276,27 @@ contains
     if(bstatus%check_status())return
   class default
     call bstatus%reset()
-    write(msg,'(A)')'Wrong parameter type passed in for init_ecacnp in ' &
+    write(msg,'(A)')'Wrong parameter type passed in for init_keca in ' &
       // errMsg(mod_filename,__LINE__)
     call bstatus%set_msg(msg,err=-1)
     return
   end select
-  end subroutine init_ecacnp
+  end subroutine init_keca
 
   !-------------------------------------------------------------------------------
 
-  subroutine InitAllocate(this, ecacnp_bgc_index)
-  use ecacnpBGCIndexType , only : ecacnp_bgc_index_type
+  subroutine InitAllocate(this, keca_bgc_index)
+  use kecaBGCIndexType , only : keca_bgc_index_type
   use betr_varcon         , only : betr_maxpatch_pft, betr_max_soilorder
   implicit none
-  class(ecacnp_bgc_type)   , intent(inout) :: this
-  type(ecacnp_bgc_index_type) , intent(in):: ecacnp_bgc_index
+  class(keca_bgc_type)   , intent(inout) :: this
+  type(keca_bgc_index_type) , intent(in):: keca_bgc_index
 
   associate(                                   &
-    nom_pools=> ecacnp_bgc_index%nom_pools,    &
-    nstvars => ecacnp_bgc_index%nstvars  ,     &
-    nreactions => ecacnp_bgc_index%nreactions, &
-    nprimvars => ecacnp_bgc_index%nprimvars    &
+    nom_pools=> keca_bgc_index%nom_pools,    &
+    nstvars => keca_bgc_index%nstvars  ,     &
+    nreactions => keca_bgc_index%nreactions, &
+    nprimvars => keca_bgc_index%nprimvars    &
   )
 
   allocate(this%ystates0(nstvars)); this%ystates0(:) = 0._r8
@@ -322,58 +322,58 @@ contains
   !-------------------------------------------------------------------------------
 
 
-  subroutine checksum_cascade(this, ecacnp_bgc_index)
+  subroutine checksum_cascade(this, keca_bgc_index)
 
-  use ecacnpBGCIndexType       , only : ecacnp_bgc_index_type
+  use kecaBGCIndexType       , only : keca_bgc_index_type
 
   implicit none
   ! !ARGUMENTS:
-  class(ecacnp_bgc_type)     , intent(in) :: this
-  type(ecacnp_bgc_index_type)   , intent(in) :: ecacnp_bgc_index
+  class(keca_bgc_type)     , intent(in) :: this
+  type(keca_bgc_index_type)   , intent(in) :: keca_bgc_index
 
   real(r8) :: resc, resn, resp
   integer  :: reac,jj
 
   associate(                                                   &
     cascade_matrix => this%cascade_matrix                    , &
-    lit1      => ecacnp_bgc_index%lit1                       , & !
-    lit2      => ecacnp_bgc_index%lit2                       , & !
-    lit3      => ecacnp_bgc_index%lit3                       , & !
-    som1      => ecacnp_bgc_index%som1                       , & !
-    som2      => ecacnp_bgc_index%som2                       , & !
-    som3      => ecacnp_bgc_index%som3                       , & !
-    cwd       => ecacnp_bgc_index%cwd                        , & !
-    lwd       => ecacnp_bgc_index%lwd                        , & !
-    fwd       => ecacnp_bgc_index%fwd                        , & !
-    c_loc     => ecacnp_bgc_index%c_loc                      , & !
-    n_loc     => ecacnp_bgc_index%n_loc                      , & !
-    p_loc     => ecacnp_bgc_index%p_loc                      , & !
-    c13_loc   => ecacnp_bgc_index%c13_loc                    , & !
-    c14_loc   => ecacnp_bgc_index%c14_loc                    , & !
-    nelms     => ecacnp_bgc_index%nelms                      , & !
-    lid_o2    => ecacnp_bgc_index%lid_o2                     , & !
-    lid_co2   => ecacnp_bgc_index%lid_co2                    , & !
-    lid_nh4   => ecacnp_bgc_index%lid_nh4                    , & !
-    lid_c14_co2=> ecacnp_bgc_index%lid_c14_co2               , & !
-    lid_c13_co2=> ecacnp_bgc_index%lid_c13_co2               , & !
-    lid_co2_hr => ecacnp_bgc_index%lid_co2_hr                , &
-    lid_minn_nh4_immob=> ecacnp_bgc_index%lid_minn_nh4_immob , &
-    lid_minp_immob => ecacnp_bgc_index%lid_minp_immob        , &
-    lid_minp_soluble=> ecacnp_bgc_index%lid_minp_soluble     , &
-    lit1_dek_reac => ecacnp_bgc_index%lit1_dek_reac          , &
-    lit2_dek_reac => ecacnp_bgc_index%lit2_dek_reac          , &
-    lit3_dek_reac => ecacnp_bgc_index%lit3_dek_reac          , &
-    som1_dek_reac => ecacnp_bgc_index%som1_dek_reac          , &
-    som2_dek_reac => ecacnp_bgc_index%som2_dek_reac          , &
-    som3_dek_reac => ecacnp_bgc_index%som3_dek_reac          , &
-    cwd_dek_reac => ecacnp_bgc_index%cwd_dek_reac            , &
-    lwd_dek_reac => ecacnp_bgc_index%lwd_dek_reac            , &
-    fwd_dek_reac => ecacnp_bgc_index%fwd_dek_reac            , &
-    lid_n2   => ecacnp_bgc_index%lid_n2                      , & !
-    lid_n2o   => ecacnp_bgc_index%lid_n2o                    , & !
-    lid_no3   => ecacnp_bgc_index%lid_no3                    , & !
-    lid_nh4_nit_reac => ecacnp_bgc_index%lid_nh4_nit_reac    , & !
-    lid_no3_den_reac => ecacnp_bgc_index%lid_no3_den_reac      & !
+    lit1      => keca_bgc_index%lit1                       , & !
+    lit2      => keca_bgc_index%lit2                       , & !
+    lit3      => keca_bgc_index%lit3                       , & !
+    som1      => keca_bgc_index%som1                       , & !
+    som2      => keca_bgc_index%som2                       , & !
+    som3      => keca_bgc_index%som3                       , & !
+    cwd       => keca_bgc_index%cwd                        , & !
+    lwd       => keca_bgc_index%lwd                        , & !
+    fwd       => keca_bgc_index%fwd                        , & !
+    c_loc     => keca_bgc_index%c_loc                      , & !
+    n_loc     => keca_bgc_index%n_loc                      , & !
+    p_loc     => keca_bgc_index%p_loc                      , & !
+    c13_loc   => keca_bgc_index%c13_loc                    , & !
+    c14_loc   => keca_bgc_index%c14_loc                    , & !
+    nelms     => keca_bgc_index%nelms                      , & !
+    lid_o2    => keca_bgc_index%lid_o2                     , & !
+    lid_co2   => keca_bgc_index%lid_co2                    , & !
+    lid_nh4   => keca_bgc_index%lid_nh4                    , & !
+    lid_c14_co2=> keca_bgc_index%lid_c14_co2               , & !
+    lid_c13_co2=> keca_bgc_index%lid_c13_co2               , & !
+    lid_co2_hr => keca_bgc_index%lid_co2_hr                , &
+    lid_minn_nh4_immob=> keca_bgc_index%lid_minn_nh4_immob , &
+    lid_minp_immob => keca_bgc_index%lid_minp_immob        , &
+    lid_minp_soluble=> keca_bgc_index%lid_minp_soluble     , &
+    lit1_dek_reac => keca_bgc_index%lit1_dek_reac          , &
+    lit2_dek_reac => keca_bgc_index%lit2_dek_reac          , &
+    lit3_dek_reac => keca_bgc_index%lit3_dek_reac          , &
+    som1_dek_reac => keca_bgc_index%som1_dek_reac          , &
+    som2_dek_reac => keca_bgc_index%som2_dek_reac          , &
+    som3_dek_reac => keca_bgc_index%som3_dek_reac          , &
+    cwd_dek_reac => keca_bgc_index%cwd_dek_reac            , &
+    lwd_dek_reac => keca_bgc_index%lwd_dek_reac            , &
+    fwd_dek_reac => keca_bgc_index%fwd_dek_reac            , &
+    lid_n2   => keca_bgc_index%lid_n2                      , & !
+    lid_n2o   => keca_bgc_index%lid_n2o                    , & !
+    lid_no3   => keca_bgc_index%lid_no3                    , & !
+    lid_nh4_nit_reac => keca_bgc_index%lid_nh4_nit_reac    , & !
+    lid_no3_den_reac => keca_bgc_index%lid_no3_den_reac      & !
   )
   print*,'checksum'
   print*,'som1c ','som1n ','som1p'
@@ -471,7 +471,7 @@ contains
   end subroutine checksum_cascade
 
   !-------------------------------------------------------------------------------
-  subroutine runbgc_ecacnp(this,  is_surflit, dtime, bgc_forc, nstates, ystates0, ystatesf, bstatus)
+  subroutine runbgc_keca(this,  is_surflit, dtime, bgc_forc, nstates, ystates0, ystatesf, bstatus)
 
   !DESCRIPTION
   !do bgc model integration for one step
@@ -481,7 +481,7 @@ contains
   use MathfuncMod           , only : safe_div
   use tracer_varcon         , only : catomw, natomw, patomw
   implicit none
-  class(ecacnp_bgc_type)  , intent(inout) :: this
+  class(keca_bgc_type)  , intent(inout) :: this
   logical                    , intent(in)    :: is_surflit
   real(r8)                   , intent(in)    :: dtime
   type(JarBGC_forc_type)     , intent(in)    :: bgc_forc
@@ -491,11 +491,11 @@ contains
   type(betr_status_type)     , intent(out)   :: bstatus
 
   !local variables
-  real(r8) :: pot_om_decay_rates(this%ecacnp_bgc_index%nom_pools)
+  real(r8) :: pot_om_decay_rates(this%keca_bgc_index%nom_pools)
   real(r8) :: pot_co2_hr
   real(r8) :: pot_f_nit_mol_per_sec
   real(r8) :: n2_n2o_ratio_denit
-  real(r8) :: yf(this%ecacnp_bgc_index%nstvars)
+  real(r8) :: yf(this%keca_bgc_index%nstvars)
   real(r8) :: o2_decomp_depth
   real(r8) :: time
   real(r8) :: frc_c13, frc_c14
@@ -503,57 +503,59 @@ contains
   real(r8) :: c_mass2, n_mass2, p_mass2
   real(r8) :: c_flx, n_flx, p_flx
   integer :: jj
-  character(len=*),parameter :: subname = 'runbgc_ecacnp'
+  character(len=*),parameter :: subname = 'runbgc_keca'
   associate(                                            &
     pctsand   => bgc_forc%pct_sand             , &  !sand in %
     rt_ar     => bgc_forc%rt_ar                , &  !root autotrophic respiration
     rt_ar_c13 => bgc_forc%rt_ar_c13            , &  !root autotrophic respiration
     rt_ar_c14 => bgc_forc%rt_ar_c14            , &  !root autotrophic respiration
-    lid_nh4   => this%ecacnp_bgc_index%lid_nh4        , &  !position id of nh4
-    lid_no3   => this%ecacnp_bgc_index%lid_no3        , &  !
-    lid_o2    => this%ecacnp_bgc_index%lid_o2         , &  !
-    nom_pools => this%ecacnp_bgc_index%nom_pools      , &  !number om pools
-    nom_tot_elms=> this%ecacnp_bgc_index%nom_tot_elms , &
-    nstvars   => this%ecacnp_bgc_index%nstvars        , &
-    nprimvars => this%ecacnp_bgc_index%nprimvars      , &
-    nreactions=> this%ecacnp_bgc_index%nreactions     , &
-    lid_plant_minn_nh4  => this%ecacnp_bgc_index%lid_plant_minn_nh4       , &
-    lid_plant_minn_no3  => this%ecacnp_bgc_index%lid_plant_minn_no3       , &
-    lid_n2o_nit => this%ecacnp_bgc_index%lid_n2o_nit,&
-    lid_no3_den => this%ecacnp_bgc_index%lid_no3_den,&
-    lid_minp_soluble=> this%ecacnp_bgc_index%lid_minp_soluble, &
+    lid_nh4   => this%keca_bgc_index%lid_nh4        , &  !position id of nh4
+    lid_no3   => this%keca_bgc_index%lid_no3        , &  !
+    lid_o2    => this%keca_bgc_index%lid_o2         , &  !
+    nom_pools => this%keca_bgc_index%nom_pools      , &  !number om pools
+    nom_tot_elms=> this%keca_bgc_index%nom_tot_elms , &
+    nstvars   => this%keca_bgc_index%nstvars        , &
+    nprimvars => this%keca_bgc_index%nprimvars      , &
+    nreactions=> this%keca_bgc_index%nreactions     , &
+    lid_plant_minn_nh4  => this%keca_bgc_index%lid_plant_minn_nh4       , &
+    lid_plant_minn_no3  => this%keca_bgc_index%lid_plant_minn_no3       , &
+    lid_n2o_nit => this%keca_bgc_index%lid_n2o_nit,&
+    lid_no3_den => this%keca_bgc_index%lid_no3_den,&
+    lid_minp_soluble=> this%keca_bgc_index%lid_minp_soluble, &
     cascade_matrix => this%cascade_matrix             , &
     cascade_matrixp=> this%cascade_matrixp            , &
     cascade_matrixd=> this%cascade_matrixd            , &
     ystates1 => this%ystates1                           &
   )
-  this%ecacnp_bgc_index%debug = bgc_forc%debug
-  if(this%ecacnp_bgc_index%debug)print*,'enter runbgc_ecacnp'
+  this%keca_bgc_index%debug = bgc_forc%debug
+  if(this%keca_bgc_index%debug)print*,'enter runbgc_keca'
   this%rt_ar = rt_ar
   frc_c13 = safe_div(rt_ar_c13,rt_ar); frc_c14 = safe_div(rt_ar_c14,rt_ar)
   call bstatus%reset()
 
   !initialize state variables
-  call this%init_states(this%ecacnp_bgc_index, bgc_forc)
+  call this%init_states(this%keca_bgc_index, bgc_forc)
 
   ystates0(:) = this%ystates0(:)
 
 
   !add all external input
-   call this%add_ext_input(dtime, this%ecacnp_bgc_index, bgc_forc, &
+   call this%add_ext_input(dtime, this%keca_bgc_index, bgc_forc, &
       this%c_inflx, this%n_inflx, this%p_inflx)
 
   !initialize decomposition scaling factors
   call this%decompkf_eca%set_decompk_scalar(ystates1(lid_o2), bgc_forc)
 
+  !compute affinity parameters
+  call this%competECA%compute_kinetic_paras(dtime, bgc_forc)
   !initialize all entries to zero
   cascade_matrix(:,:) = 0._r8
 
   !calculate default stoichiometry entries
-  call this%calc_cascade_matrix(this%ecacnp_bgc_index, cascade_matrix, frc_c13, frc_c14)
+  call this%calc_cascade_matrix(this%keca_bgc_index, cascade_matrix, frc_c13, frc_c14)
 
   !run century decomposition, return decay rates, cascade matrix, potential hr
-  call this%censom%run_decomp(is_surflit, this%ecacnp_bgc_index, dtime, ystates1(1:nom_tot_elms),&
+  call this%censom%run_decomp(is_surflit, this%keca_bgc_index, dtime, ystates1(1:nom_tot_elms),&
       this%decompkf_eca, bgc_forc%pct_sand, bgc_forc%pct_clay,this%alpha_n, this%alpha_p, &
       cascade_matrix, this%k_decay(1:nom_pools), pot_co2_hr, bstatus)
 
@@ -568,7 +570,7 @@ contains
   o2_decomp_depth = max(o2_decomp_depth,1.e-40_r8)
 
   !run nitrification-denitrification, returns cascade_matrix, decay rates
-  call this%nitden%run_nitden(this%ecacnp_bgc_index, bgc_forc, this%decompkf_eca, &
+  call this%nitden%run_nitden(this%keca_bgc_index, bgc_forc, this%decompkf_eca, &
     ystates1(lid_nh4), ystates1(lid_no3), ystates1(lid_o2), o2_decomp_depth, &
     pot_f_nit_mol_per_sec, pot_co2_hr, this%pot_f_nit, this%pot_f_denit, cascade_matrix)
 
@@ -577,7 +579,7 @@ contains
   !the nitrification and denitrification rates have been assumed as linear function
   !nh4 and no3 in soil.
 
-  call this%arenchyma_gas_transport(this%ecacnp_bgc_index, dtime)
+  call this%arenchyma_gas_transport(this%keca_bgc_index, dtime)
 
   !do the stoichiometric matrix separation
   call pd_decomp(nprimvars, nreactions, cascade_matrix(1:nprimvars, 1:nreactions), &
@@ -589,25 +591,25 @@ contains
 
   call ode_adapt_ebbks1(this, yf, nprimvars, nstvars, time, dtime, ystates1)
 
-  !if(this%ecacnp_bgc_index%debug)call this%checksum_cascade(this%ecacnp_bgc_index)
+  !if(this%keca_bgc_index%debug)call this%checksum_cascade(this%keca_bgc_index)
   if(this%use_c14)then
-    call this%c14decay(this%ecacnp_bgc_index, dtime, ystates1)
+    call this%c14decay(this%keca_bgc_index, dtime, ystates1)
   endif
 
   if(this%batch_mode)call this%sum_tot_store(nstvars, ystates1)
   ystatesf(:) = ystates1(:)
   end associate
-  end subroutine runbgc_ecacnp
+  end subroutine runbgc_keca
   !-------------------------------------------------------------------------------
-  subroutine c14decay(this, ecacnp_bgc_index, dtime, ystates1)
+  subroutine c14decay(this, keca_bgc_index, dtime, ystates1)
 
   !apply c14 decay to om pools
-  use ecacnpBGCIndexType       , only : ecacnp_bgc_index_type
+  use kecaBGCIndexType       , only : keca_bgc_index_type
 
   implicit none
   ! !ARGUMENTS:
-  class(ecacnp_bgc_type)     , intent(in) :: this
-  type(ecacnp_bgc_index_type)   , intent(in) :: ecacnp_bgc_index
+  class(keca_bgc_type)     , intent(in) :: this
+  type(keca_bgc_index_type)   , intent(in) :: keca_bgc_index
   real(r8), intent(in) :: dtime
   real(r8), intent(inout) :: ystates1(:)
 
@@ -615,20 +617,20 @@ contains
   integer :: kc14
 
   associate(                                &
-    litr_beg =>  ecacnp_bgc_index%litr_beg, &
-    Bm_beg =>  ecacnp_bgc_index%Bm_beg    , &
-    som_beg =>  ecacnp_bgc_index%som_beg  , &
-    dom_beg =>  ecacnp_bgc_index%dom_beg  , &
-    pom_beg =>  ecacnp_bgc_index%pom_beg  , &
-    wood_beg =>  ecacnp_bgc_index%wood_beg, &
-    litr_end =>  ecacnp_bgc_index%litr_end, &
-    som_end =>  ecacnp_bgc_index%som_end  , &
-    Bm_end =>  ecacnp_bgc_index%Bm_end    , &
-    dom_end =>  ecacnp_bgc_index%dom_end  , &
-    pom_end => ecacnp_bgc_index%pom_end   , &
-    wood_end =>  ecacnp_bgc_index%wood_end, &
-    c14_loc=>  ecacnp_bgc_index%c14_loc   , &
-    nelms => ecacnp_bgc_index%nelms         &
+    litr_beg =>  keca_bgc_index%litr_beg, &
+    Bm_beg =>  keca_bgc_index%Bm_beg    , &
+    som_beg =>  keca_bgc_index%som_beg  , &
+    dom_beg =>  keca_bgc_index%dom_beg  , &
+    pom_beg =>  keca_bgc_index%pom_beg  , &
+    wood_beg =>  keca_bgc_index%wood_beg, &
+    litr_end =>  keca_bgc_index%litr_end, &
+    som_end =>  keca_bgc_index%som_end  , &
+    Bm_end =>  keca_bgc_index%Bm_end    , &
+    dom_end =>  keca_bgc_index%dom_end  , &
+    pom_end => keca_bgc_index%pom_end   , &
+    wood_end =>  keca_bgc_index%wood_end, &
+    c14_loc=>  keca_bgc_index%c14_loc   , &
+    nelms => keca_bgc_index%nelms         &
   )
 
   call somc14_decay(litr_beg, litr_end, nelms, c14_loc, this%c14decay_const)
@@ -659,72 +661,72 @@ contains
     end subroutine somc14_decay
   end subroutine c14decay
   !-------------------------------------------------------------------------------
-  subroutine calc_cascade_matrix(this,ecacnp_bgc_index, cascade_matrix, frc_c13, frc_c14)
+  subroutine calc_cascade_matrix(this,keca_bgc_index, cascade_matrix, frc_c13, frc_c14)
     !
     ! !DESCRIPTION:
     ! calculate cascade matrix for the decomposition model
     !
     ! !USES:
     use MathfuncMod               , only : safe_div
-    use ecacnpBGCIndexType       , only : ecacnp_bgc_index_type
+    use kecaBGCIndexType       , only : keca_bgc_index_type
     use betr_ctrl                 , only : spinup_state => betr_spinup_state
     implicit none
     ! !ARGUMENTS:
-    class(ecacnp_bgc_type)     , intent(in) :: this
-    type(ecacnp_bgc_index_type)   , intent(in) :: ecacnp_bgc_index
-    real(r8)                      , intent(inout)   :: cascade_matrix(ecacnp_bgc_index%nstvars, ecacnp_bgc_index%nreactions)
+    class(keca_bgc_type)     , intent(in) :: this
+    type(keca_bgc_index_type)   , intent(in) :: keca_bgc_index
+    real(r8)                      , intent(inout)   :: cascade_matrix(keca_bgc_index%nstvars, keca_bgc_index%nreactions)
     real(r8)                      , intent(in) :: frc_c13, frc_c14
     ! !LOCAL VARIABLES:
     real(r8) :: ftxt, f1, f2
     integer :: k, reac
 
     associate(                                                             & !
-         lid_autr_rt => ecacnp_bgc_index%lid_autr_rt                      , & !
-         lid_o2    => ecacnp_bgc_index%lid_o2                             , & !
-         lid_co2   => ecacnp_bgc_index%lid_co2                            , & !
-         lid_c13_co2=> ecacnp_bgc_index%lid_c13_co2                       , & !
-         lid_c14_co2=> ecacnp_bgc_index%lid_c14_co2                       , & !
-         lid_nh4   => ecacnp_bgc_index%lid_nh4                            , & !
-         lid_ch4   => ecacnp_bgc_index%lid_ch4                            , & !
-         lid_ar    => ecacnp_bgc_index%lid_ar                             , & !
-         lid_no3   => ecacnp_bgc_index%lid_no3                            , & !
-         lid_n2o   => ecacnp_bgc_index%lid_n2o                            , & !
-         lid_n2    => ecacnp_bgc_index%lid_n2                             , & !
-         lid_co2_hr=> ecacnp_bgc_index%lid_co2_hr                         , & !
-         lid_minn_nh4_immob => ecacnp_bgc_index%lid_minn_nh4_immob        , & !
-         lid_minn_no3_immob => ecacnp_bgc_index%lid_minn_no3_immob        , & !
-         lid_n2_paere => ecacnp_bgc_index%lid_n2_paere                    , & !
-         lid_ch4_paere => ecacnp_bgc_index%lid_ch4_paere                  , & !
-         lid_n2o_paere => ecacnp_bgc_index%lid_n2o_paere                  , & !
-         lid_o2_paere => ecacnp_bgc_index%lid_o2_paere                    , & !
-         lid_ar_paere => ecacnp_bgc_index%lid_ar_paere                    , & !
-         lid_co2_paere => ecacnp_bgc_index%lid_co2_paere                  , & !
-         lid_c13_co2_paere => ecacnp_bgc_index%lid_c13_co2_paere          , & !
-         lid_c14_co2_paere => ecacnp_bgc_index%lid_c14_co2_paere          , & !
-         lid_minp_soluble => ecacnp_bgc_index%lid_minp_soluble            , & !
-         lid_minp_secondary => ecacnp_bgc_index%lid_minp_secondary        , & !
-         lid_minp_occlude =>  ecacnp_bgc_index%lid_minp_occlude           , & !
-         lid_plant_minp => ecacnp_bgc_index%lid_plant_minp                , & !
-         lid_minp_immob => ecacnp_bgc_index%lid_minp_immob                , & !
+         lid_autr_rt => keca_bgc_index%lid_autr_rt                      , & !
+         lid_o2    => keca_bgc_index%lid_o2                             , & !
+         lid_co2   => keca_bgc_index%lid_co2                            , & !
+         lid_c13_co2=> keca_bgc_index%lid_c13_co2                       , & !
+         lid_c14_co2=> keca_bgc_index%lid_c14_co2                       , & !
+         lid_nh4   => keca_bgc_index%lid_nh4                            , & !
+         lid_ch4   => keca_bgc_index%lid_ch4                            , & !
+         lid_ar    => keca_bgc_index%lid_ar                             , & !
+         lid_no3   => keca_bgc_index%lid_no3                            , & !
+         lid_n2o   => keca_bgc_index%lid_n2o                            , & !
+         lid_n2    => keca_bgc_index%lid_n2                             , & !
+         lid_co2_hr=> keca_bgc_index%lid_co2_hr                         , & !
+         lid_minn_nh4_immob => keca_bgc_index%lid_minn_nh4_immob        , & !
+         lid_minn_no3_immob => keca_bgc_index%lid_minn_no3_immob        , & !
+         lid_n2_paere => keca_bgc_index%lid_n2_paere                    , & !
+         lid_ch4_paere => keca_bgc_index%lid_ch4_paere                  , & !
+         lid_n2o_paere => keca_bgc_index%lid_n2o_paere                  , & !
+         lid_o2_paere => keca_bgc_index%lid_o2_paere                    , & !
+         lid_ar_paere => keca_bgc_index%lid_ar_paere                    , & !
+         lid_co2_paere => keca_bgc_index%lid_co2_paere                  , & !
+         lid_c13_co2_paere => keca_bgc_index%lid_c13_co2_paere          , & !
+         lid_c14_co2_paere => keca_bgc_index%lid_c14_co2_paere          , & !
+         lid_minp_soluble => keca_bgc_index%lid_minp_soluble            , & !
+         lid_minp_secondary => keca_bgc_index%lid_minp_secondary        , & !
+         lid_minp_occlude =>  keca_bgc_index%lid_minp_occlude           , & !
+         lid_plant_minp => keca_bgc_index%lid_plant_minp                , & !
+         lid_minp_immob => keca_bgc_index%lid_minp_immob                , & !
 
-         lid_autr_rt_reac=> ecacnp_bgc_index%lid_autr_rt_reac                 , & !
-         lid_no3_den  => ecacnp_bgc_index%lid_no3_den                     , & !
-         lid_plant_minn_nh4_up_reac=> ecacnp_bgc_index%lid_plant_minn_nh4_up_reac , & !
-         lid_plant_minn_no3_up_reac=> ecacnp_bgc_index%lid_plant_minn_no3_up_reac , & !
-         lid_plant_minn_nh4  => ecacnp_bgc_index%lid_plant_minn_nh4       , &
-         lid_plant_minn_no3  => ecacnp_bgc_index%lid_plant_minn_no3       , &
-         lid_minp_secondary_to_sol_occ_reac => ecacnp_bgc_index%lid_minp_secondary_to_sol_occ_reac    , & !
-         lid_minp_soluble_to_secp_reac => ecacnp_bgc_index%lid_minp_soluble_to_secp_reac      , & !
-         lid_plant_minp_up_reac => ecacnp_bgc_index%lid_plant_minp_up_reac, & !
+         lid_autr_rt_reac=> keca_bgc_index%lid_autr_rt_reac                 , & !
+         lid_no3_den  => keca_bgc_index%lid_no3_den                     , & !
+         lid_plant_minn_nh4_up_reac=> keca_bgc_index%lid_plant_minn_nh4_up_reac , & !
+         lid_plant_minn_no3_up_reac=> keca_bgc_index%lid_plant_minn_no3_up_reac , & !
+         lid_plant_minn_nh4  => keca_bgc_index%lid_plant_minn_nh4       , &
+         lid_plant_minn_no3  => keca_bgc_index%lid_plant_minn_no3       , &
+         lid_minp_secondary_to_sol_occ_reac => keca_bgc_index%lid_minp_secondary_to_sol_occ_reac    , & !
+         lid_minp_soluble_to_secp_reac => keca_bgc_index%lid_minp_soluble_to_secp_reac      , & !
+         lid_plant_minp_up_reac => keca_bgc_index%lid_plant_minp_up_reac, & !
 
-         lid_n2_aren_reac => ecacnp_bgc_index%lid_n2_aren_reac            , & !
-         lid_ch4_aren_reac=> ecacnp_bgc_index%lid_ch4_aren_reac           , & !
-         lid_n2o_aren_reac=> ecacnp_bgc_index%lid_n2o_aren_reac           , & !
-         lid_o2_aren_reac => ecacnp_bgc_index%lid_o2_aren_reac            , & !
-         lid_ar_aren_reac => ecacnp_bgc_index%lid_ar_aren_reac            , & !
-         lid_co2_aren_reac=> ecacnp_bgc_index%lid_co2_aren_reac           , & !
-         lid_c13_co2_aren_reac=> ecacnp_bgc_index%lid_c13_co2_aren_reac   , & !
-         lid_c14_co2_aren_reac=> ecacnp_bgc_index%lid_c14_co2_aren_reac     & !
+         lid_n2_aren_reac => keca_bgc_index%lid_n2_aren_reac            , & !
+         lid_ch4_aren_reac=> keca_bgc_index%lid_ch4_aren_reac           , & !
+         lid_n2o_aren_reac=> keca_bgc_index%lid_n2o_aren_reac           , & !
+         lid_o2_aren_reac => keca_bgc_index%lid_o2_aren_reac            , & !
+         lid_ar_aren_reac => keca_bgc_index%lid_ar_aren_reac            , & !
+         lid_co2_aren_reac=> keca_bgc_index%lid_co2_aren_reac           , & !
+         lid_c13_co2_aren_reac=> keca_bgc_index%lid_c13_co2_aren_reac   , & !
+         lid_c14_co2_aren_reac=> keca_bgc_index%lid_c14_co2_aren_reac     & !
          )
 
     !higher [nh4] makes lower [no3] competitiveness
@@ -826,32 +828,32 @@ contains
   end associate
   end subroutine calc_cascade_matrix
   !--------------------------------------------------------------------
-  subroutine init_states(this, ecacnp_bgc_index, bgc_forc)
+  subroutine init_states(this, keca_bgc_index, bgc_forc)
 
-  use ecacnpBGCIndexType       , only : ecacnp_bgc_index_type
+  use kecaBGCIndexType       , only : keca_bgc_index_type
   use JarBgcForcType            , only : JarBGC_forc_type
   implicit none
-  class(ecacnp_bgc_type)     , intent(inout) :: this
-  type(ecacnp_bgc_index_type)  , intent(in) :: ecacnp_bgc_index
+  class(keca_bgc_type)     , intent(inout) :: this
+  type(keca_bgc_index_type)  , intent(in) :: keca_bgc_index
   type(JarBGC_forc_type)  , intent(in) :: bgc_forc
 
   integer :: j
   associate(                           &
-    lid_n2 => ecacnp_bgc_index%lid_n2, &
-    lid_o2 => ecacnp_bgc_index%lid_o2, &
-    lid_co2 => ecacnp_bgc_index%lid_co2, &
-    lid_c13_co2 => ecacnp_bgc_index%lid_c13_co2, &
-    lid_c14_co2 => ecacnp_bgc_index%lid_c14_co2, &
-    lid_n2o => ecacnp_bgc_index%lid_n2o, &
-    lid_ar => ecacnp_bgc_index%lid_ar, &
-    lid_ch4 => ecacnp_bgc_index%lid_ch4,  &
-    lid_co2_hr => ecacnp_bgc_index%lid_co2_hr, &
-    lid_n2o_nit => this%ecacnp_bgc_index%lid_n2o_nit,&
-    lid_nh4_nit => this%ecacnp_bgc_index%lid_nh4_nit, &
-    lid_no3_den => this%ecacnp_bgc_index%lid_no3_den,  &
-    lid_minn_nh4_immob=> ecacnp_bgc_index%lid_minn_nh4_immob , &
-    lid_minn_no3_immob => ecacnp_bgc_index%lid_minn_no3_immob, &
-    lid_minp_immob => ecacnp_bgc_index%lid_minp_immob         &
+    lid_n2 => keca_bgc_index%lid_n2, &
+    lid_o2 => keca_bgc_index%lid_o2, &
+    lid_co2 => keca_bgc_index%lid_co2, &
+    lid_c13_co2 => keca_bgc_index%lid_c13_co2, &
+    lid_c14_co2 => keca_bgc_index%lid_c14_co2, &
+    lid_n2o => keca_bgc_index%lid_n2o, &
+    lid_ar => keca_bgc_index%lid_ar, &
+    lid_ch4 => keca_bgc_index%lid_ch4,  &
+    lid_co2_hr => keca_bgc_index%lid_co2_hr, &
+    lid_n2o_nit => this%keca_bgc_index%lid_n2o_nit,&
+    lid_nh4_nit => this%keca_bgc_index%lid_nh4_nit, &
+    lid_no3_den => this%keca_bgc_index%lid_no3_den,  &
+    lid_minn_nh4_immob=> keca_bgc_index%lid_minn_nh4_immob , &
+    lid_minn_no3_immob => keca_bgc_index%lid_minn_no3_immob, &
+    lid_minp_immob => keca_bgc_index%lid_minp_immob         &
   )
   this%ystates0(:) = bgc_forc%ystates(:)
   this%ystates0(lid_co2_hr) = 0._r8
@@ -908,15 +910,15 @@ contains
   end associate
   end subroutine init_states
   !--------------------------------------------------------------------
-  subroutine add_ext_input(this, dtime, ecacnp_bgc_index, bgc_forc, c_inf, n_inf, p_inf)
-  use ecacnpBGCIndexType       , only : ecacnp_bgc_index_type
+  subroutine add_ext_input(this, dtime, keca_bgc_index, bgc_forc, c_inf, n_inf, p_inf)
+  use kecaBGCIndexType       , only : keca_bgc_index_type
   use JarBgcForcType        , only : JarBGC_forc_type
   use tracer_varcon             , only : catomw, natomw, patomw,c13atomw,c14atomw
   use MathfuncMod               , only : safe_div
   implicit none
-  class(ecacnp_bgc_type)     , intent(inout) :: this
+  class(keca_bgc_type)     , intent(inout) :: this
   real(r8), intent(in) :: dtime
-  type(ecacnp_bgc_index_type)  , intent(in) :: ecacnp_bgc_index
+  type(keca_bgc_index_type)  , intent(in) :: keca_bgc_index
   type(JarBGC_forc_type)  , intent(in) :: bgc_forc
   real(r8), optional, intent(out) :: c_inf, n_inf, p_inf
   integer :: kc, kn, kp,kc13,kc14
@@ -925,38 +927,38 @@ contains
   real(r8):: totc, totn
   real(r8):: c_inf_loc, n_inf_loc, p_inf_loc
   associate(                        &
-    lit1 =>  ecacnp_bgc_index%lit1, &
-    lit2 =>  ecacnp_bgc_index%lit2, &
-    lit3 =>  ecacnp_bgc_index%lit3, &
-    cwd =>   ecacnp_bgc_index%cwd, &
-    fwd =>   ecacnp_bgc_index%fwd, &
-    lwd =>   ecacnp_bgc_index%lwd, &
-    lid_totinput => ecacnp_bgc_index%lid_totinput, &
-    litr_beg =>  ecacnp_bgc_index%litr_beg, &
-    som_beg =>  ecacnp_bgc_index%som_beg, &
-    Bm_beg  =>  ecacnp_bgc_index%Bm_beg, &
-    dom_beg =>  ecacnp_bgc_index%dom_beg, &
-    pom_beg =>  ecacnp_bgc_index%pom_beg, &
-    wood_beg =>  ecacnp_bgc_index%wood_beg, &
-    litr_end =>  ecacnp_bgc_index%litr_end, &
-    som_end =>  ecacnp_bgc_index%som_end, &
-    dom_end =>  ecacnp_bgc_index%dom_end, &
-    pom_end =>  ecacnp_bgc_index%pom_end, &
-    Bm_end =>  ecacnp_bgc_index%Bm_end, &
-    wood_end =>  ecacnp_bgc_index%wood_end, &
-    c_loc=>  ecacnp_bgc_index%c_loc,&
-    c13_loc=>  ecacnp_bgc_index%c13_loc,&
-    c14_loc=>  ecacnp_bgc_index%c14_loc,&
-    n_loc=>  ecacnp_bgc_index%n_loc,&
-    p_loc=>  ecacnp_bgc_index%p_loc,&
-    som1 =>  ecacnp_bgc_index%som1, &
-    som2 =>  ecacnp_bgc_index%som2, &
-    som3 =>  ecacnp_bgc_index%som3, &
-    nelms => ecacnp_bgc_index%nelms, &
-    lid_nh4=> ecacnp_bgc_index%lid_nh4, &
-    lid_no3=> ecacnp_bgc_index%lid_no3, &
-    lid_minp_soluble =>  ecacnp_bgc_index%lid_minp_soluble,  &
-    lid_minp_immob => ecacnp_bgc_index%lid_minp_immob &
+    lit1 =>  keca_bgc_index%lit1, &
+    lit2 =>  keca_bgc_index%lit2, &
+    lit3 =>  keca_bgc_index%lit3, &
+    cwd =>   keca_bgc_index%cwd, &
+    fwd =>   keca_bgc_index%fwd, &
+    lwd =>   keca_bgc_index%lwd, &
+    lid_totinput => keca_bgc_index%lid_totinput, &
+    litr_beg =>  keca_bgc_index%litr_beg, &
+    som_beg =>  keca_bgc_index%som_beg, &
+    Bm_beg  =>  keca_bgc_index%Bm_beg, &
+    dom_beg =>  keca_bgc_index%dom_beg, &
+    pom_beg =>  keca_bgc_index%pom_beg, &
+    wood_beg =>  keca_bgc_index%wood_beg, &
+    litr_end =>  keca_bgc_index%litr_end, &
+    som_end =>  keca_bgc_index%som_end, &
+    dom_end =>  keca_bgc_index%dom_end, &
+    pom_end =>  keca_bgc_index%pom_end, &
+    Bm_end =>  keca_bgc_index%Bm_end, &
+    wood_end =>  keca_bgc_index%wood_end, &
+    c_loc=>  keca_bgc_index%c_loc,&
+    c13_loc=>  keca_bgc_index%c13_loc,&
+    c14_loc=>  keca_bgc_index%c14_loc,&
+    n_loc=>  keca_bgc_index%n_loc,&
+    p_loc=>  keca_bgc_index%p_loc,&
+    som1 =>  keca_bgc_index%som1, &
+    som2 =>  keca_bgc_index%som2, &
+    som3 =>  keca_bgc_index%som3, &
+    nelms => keca_bgc_index%nelms, &
+    lid_nh4=> keca_bgc_index%lid_nh4, &
+    lid_no3=> keca_bgc_index%lid_no3, &
+    lid_minp_soluble =>  keca_bgc_index%lid_minp_soluble,  &
+    lid_minp_immob => keca_bgc_index%lid_minp_immob &
   )
   c_inf_loc=0._r8; n_inf_loc=0._r8; p_inf_loc=0._r8
   !*********************************************
@@ -1070,12 +1072,12 @@ contains
 
     integer :: kc, kn, kp, kc13, kc14
     associate(                            &
-     c_loc   =>  ecacnp_bgc_index%c_loc  ,&
-     c13_loc =>  ecacnp_bgc_index%c13_loc,&
-     c14_loc =>  ecacnp_bgc_index%c14_loc,&
-     n_loc   =>  ecacnp_bgc_index%n_loc  ,&
-     p_loc   =>  ecacnp_bgc_index%p_loc  ,&
-     nelms   =>  ecacnp_bgc_index%nelms   &
+     c_loc   =>  keca_bgc_index%c_loc  ,&
+     c13_loc =>  keca_bgc_index%c13_loc,&
+     c14_loc =>  keca_bgc_index%c14_loc,&
+     n_loc   =>  keca_bgc_index%n_loc  ,&
+     p_loc   =>  keca_bgc_index%p_loc  ,&
+     nelms   =>  keca_bgc_index%nelms   &
     )
     !if(cflx_input<=0._r8)return
     kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
@@ -1146,7 +1148,7 @@ contains
   use SOMStateVarUpdateMod , only : calc_dtrend_som_bgc
   use MathfuncMod          , only : lom_type, safe_div
   implicit none
-  class(ecacnp_bgc_type) , intent(inout) :: this
+  class(keca_bgc_type) , intent(inout) :: this
   integer                   , intent(in) :: nstvars
   integer                   , intent(in) :: nprimvars
   real(r8)                  , intent(in) :: dtime
@@ -1157,13 +1159,13 @@ contains
   !local variables
   real(r8) :: mic_pot_nn_flx  !potential nitrogen uptake to support decomposition
   real(r8) :: mic_pot_np_flx  !potential phosphorus uptake to support decomposition
-  real(r8) :: pot_decomp(this%ecacnp_bgc_index%nom_pools)
-  real(r8) :: rrates(this%ecacnp_bgc_index%nreactions)
-  real(r8) :: p_dt(1:this%ecacnp_bgc_index%nprimvars)
-  real(r8) :: d_dt(1:this%ecacnp_bgc_index%nprimvars)
+  real(r8) :: pot_decomp(this%keca_bgc_index%nom_pools)
+  real(r8) :: rrates(this%keca_bgc_index%nreactions)
+  real(r8) :: p_dt(1:this%keca_bgc_index%nprimvars)
+  real(r8) :: d_dt(1:this%keca_bgc_index%nprimvars)
   real(r8) :: dydt1(nstvars)
   real(r8) :: pscal(1:nprimvars)
-  real(r8) :: rscal(1:this%ecacnp_bgc_index%nreactions)
+  real(r8) :: rscal(1:this%keca_bgc_index%nreactions)
   real(r8) :: ECA_flx_nh4_plants(this%plant_ntypes)
   real(r8) :: ECA_flx_no3_plants(this%plant_ntypes)
   real(r8) :: ECA_factor_msurf_nh4
@@ -1187,37 +1189,37 @@ contains
   real(r8) :: scal
 
   associate(                                                                                      &
-    nreactions => this%ecacnp_bgc_index%nreactions                                              , &
-    nom_pools => this%ecacnp_bgc_index%nom_pools                                                , &
-    lid_nh4 => this%ecacnp_bgc_index%lid_nh4                                                    , &
-    lid_no3 => this%ecacnp_bgc_index%lid_no3                                                    , &
-    lid_co2_hr => this%ecacnp_bgc_index%lid_co2_hr                                              , &
-    lid_cum_closs=> this%ecacnp_bgc_index%lid_cum_closs                                         , &
-    som1    => this%ecacnp_bgc_index%som1                                                       , &
-    som2    => this%ecacnp_bgc_index%som2                                                       , &
-    som3    => this%ecacnp_bgc_index%som3                                                       , &
-    c_loc   => this%ecacnp_bgc_index%c_loc                                                      , &
-    n_loc   => this%ecacnp_bgc_index%n_loc                                                      , &
-    p_loc   => this%ecacnp_bgc_index%p_loc                                                      , &
-    nelms   => this%ecacnp_bgc_index%nelms                                                      , &
-    lid_plant_minn_no3_pft=> this%ecacnp_bgc_index%lid_plant_minn_no3_pft                       , &
-    lid_plant_minn_nh4_pft=> this%ecacnp_bgc_index%lid_plant_minn_nh4_pft                       , &
-    lid_plant_minp_pft=> this%ecacnp_bgc_index%lid_plant_minp_pft                               , &
-    lid_plant_minp    => this%ecacnp_bgc_index%lid_plant_minp                                   , &
-    lid_plant_minn_nh4 => this%ecacnp_bgc_index%lid_plant_minn_nh4                              , &
-    lid_plant_minn_no3 => this%ecacnp_bgc_index%lid_plant_minn_no3                              , &
-    lid_minp_soluble => this%ecacnp_bgc_index%lid_minp_soluble                                  , &
-    lid_minp_secondary => this%ecacnp_bgc_index%lid_minp_secondary                              , &
-    lid_minp_soluble_to_secp_reac=> this%ecacnp_bgc_index%lid_minp_soluble_to_secp_reac         , &
-    lid_autr_rt_reac => this%ecacnp_bgc_index%lid_autr_rt_reac                                  , &
-    lid_nh4_nit_reac => this%ecacnp_bgc_index%lid_nh4_nit_reac                                  , &
-    lid_no3_den_reac => this%ecacnp_bgc_index%lid_no3_den_reac                                  , &
-    lid_plant_minn_nh4_up_reac => this%ecacnp_bgc_index%lid_plant_minn_nh4_up_reac              , &
-    lid_plant_minn_no3_up_reac => this%ecacnp_bgc_index%lid_plant_minn_no3_up_reac              , &
-    lid_plant_minp_up_reac => this%ecacnp_bgc_index%lid_plant_minp_up_reac                      , &
-    lid_minp_secondary_to_sol_occ_reac=> this%ecacnp_bgc_index%lid_minp_secondary_to_sol_occ_reac, &
-    lid_supp_minp => this%ecacnp_bgc_index%lid_supp_minp                                         , &
-    lid_supp_minn => this%ecacnp_bgc_index%lid_supp_minn                                           &
+    nreactions => this%keca_bgc_index%nreactions                                              , &
+    nom_pools => this%keca_bgc_index%nom_pools                                                , &
+    lid_nh4 => this%keca_bgc_index%lid_nh4                                                    , &
+    lid_no3 => this%keca_bgc_index%lid_no3                                                    , &
+    lid_co2_hr => this%keca_bgc_index%lid_co2_hr                                              , &
+    lid_cum_closs=> this%keca_bgc_index%lid_cum_closs                                         , &
+    som1    => this%keca_bgc_index%som1                                                       , &
+    som2    => this%keca_bgc_index%som2                                                       , &
+    som3    => this%keca_bgc_index%som3                                                       , &
+    c_loc   => this%keca_bgc_index%c_loc                                                      , &
+    n_loc   => this%keca_bgc_index%n_loc                                                      , &
+    p_loc   => this%keca_bgc_index%p_loc                                                      , &
+    nelms   => this%keca_bgc_index%nelms                                                      , &
+    lid_plant_minn_no3_pft=> this%keca_bgc_index%lid_plant_minn_no3_pft                       , &
+    lid_plant_minn_nh4_pft=> this%keca_bgc_index%lid_plant_minn_nh4_pft                       , &
+    lid_plant_minp_pft=> this%keca_bgc_index%lid_plant_minp_pft                               , &
+    lid_plant_minp    => this%keca_bgc_index%lid_plant_minp                                   , &
+    lid_plant_minn_nh4 => this%keca_bgc_index%lid_plant_minn_nh4                              , &
+    lid_plant_minn_no3 => this%keca_bgc_index%lid_plant_minn_no3                              , &
+    lid_minp_soluble => this%keca_bgc_index%lid_minp_soluble                                  , &
+    lid_minp_secondary => this%keca_bgc_index%lid_minp_secondary                              , &
+    lid_minp_soluble_to_secp_reac=> this%keca_bgc_index%lid_minp_soluble_to_secp_reac         , &
+    lid_autr_rt_reac => this%keca_bgc_index%lid_autr_rt_reac                                  , &
+    lid_nh4_nit_reac => this%keca_bgc_index%lid_nh4_nit_reac                                  , &
+    lid_no3_den_reac => this%keca_bgc_index%lid_no3_den_reac                                  , &
+    lid_plant_minn_nh4_up_reac => this%keca_bgc_index%lid_plant_minn_nh4_up_reac              , &
+    lid_plant_minn_no3_up_reac => this%keca_bgc_index%lid_plant_minn_no3_up_reac              , &
+    lid_plant_minp_up_reac => this%keca_bgc_index%lid_plant_minp_up_reac                      , &
+    lid_minp_secondary_to_sol_occ_reac=> this%keca_bgc_index%lid_minp_secondary_to_sol_occ_reac, &
+    lid_supp_minp => this%keca_bgc_index%lid_supp_minp                                         , &
+    lid_supp_minn => this%keca_bgc_index%lid_supp_minn                                           &
   )
 
   dydt(:) = 0._r8
@@ -1227,7 +1229,7 @@ contains
   !reacting. These include: OM pools, plant nutrient uptake
   !microbial nutrient uptake
 
-  call this%censom%calc_pot_min_np_flx(dtime, this%ecacnp_bgc_index,  ystate, this%k_decay,&
+  call this%censom%calc_pot_min_np_flx(dtime, this%keca_bgc_index,  ystate, this%k_decay,&
     this%cascade_matrix, this%alpha_n, this%alpha_p, pot_decomp, mic_pot_nn_flx, mic_pot_np_flx)
 
 
@@ -1237,7 +1239,7 @@ contains
   this%competECA%compet_bn_den = this%pot_f_denit/this%nitden%vmax_den
   this%competECA%compet_bn_mic = mic_pot_nn_flx/this%decompkf_eca%vmax_decomp_n
 
-  this%competECA%debug=this%ecacnp_bgc_index%debug
+  this%competECA%debug=this%keca_bgc_index%debug
   call this%competECA%run_compet_nitrogen(this%non_limit,ystate(lid_nh4),ystate(lid_no3),&
      this%plant_ntypes, this%msurf_nh4, ECA_factor_nit, &
      ECA_factor_den, ECA_factor_nh4_mic, ECA_factor_no3_mic, &
@@ -1353,63 +1355,63 @@ contains
   end associate
   end subroutine bgc_integrate
   !--------------------------------------------------------------------
-  subroutine arenchyma_gas_transport(this, ecacnp_bgc_index, dtime)
-  use ecacnpBGCIndexType       , only : ecacnp_bgc_index_type
+  subroutine arenchyma_gas_transport(this, keca_bgc_index, dtime)
+  use kecaBGCIndexType       , only : keca_bgc_index_type
   implicit none
-  class(ecacnp_bgc_type)     , intent(inout) :: this
-  type(ecacnp_bgc_index_type)  , intent(in) :: ecacnp_bgc_index
+  class(keca_bgc_type)     , intent(inout) :: this
+  type(keca_bgc_index_type)  , intent(in) :: keca_bgc_index
   real(r8), intent(in) :: dtime
 
   integer :: j
   real(r8) :: y0
   associate(                             &
-    lid_n2 => ecacnp_bgc_index%lid_n2,   &
-    lid_o2 => ecacnp_bgc_index%lid_o2,   &
-    lid_co2 => ecacnp_bgc_index%lid_co2, &
-    lid_c13_co2 => ecacnp_bgc_index%lid_c13_co2, &
-    lid_c14_co2 => ecacnp_bgc_index%lid_c14_co2, &
-    lid_n2o => ecacnp_bgc_index%lid_n2o, &
-    lid_ar => ecacnp_bgc_index%lid_ar,   &
-    lid_ch4 => ecacnp_bgc_index%lid_ch4  &
+    lid_n2 => keca_bgc_index%lid_n2,   &
+    lid_o2 => keca_bgc_index%lid_o2,   &
+    lid_co2 => keca_bgc_index%lid_co2, &
+    lid_c13_co2 => keca_bgc_index%lid_c13_co2, &
+    lid_c14_co2 => keca_bgc_index%lid_c14_co2, &
+    lid_n2o => keca_bgc_index%lid_n2o, &
+    lid_ar => keca_bgc_index%lid_ar,   &
+    lid_ch4 => keca_bgc_index%lid_ch4  &
   )
 
   j = lid_o2; y0=this%ystates1(j)
   call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
-  this%ystates1(ecacnp_bgc_index%lid_o2_paere) = this%ystates1(j)-y0
+  this%ystates1(keca_bgc_index%lid_o2_paere) = this%ystates1(j)-y0
 
   if( spinup_state == 0)then
     j = lid_n2; y0=this%ystates1(j)
     call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
-    this%ystates1(ecacnp_bgc_index%lid_n2_paere) = this%ystates1(j)-y0
+    this%ystates1(keca_bgc_index%lid_n2_paere) = this%ystates1(j)-y0
 
     j = lid_ar; y0=this%ystates1(j)
     call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
-    this%ystates1(ecacnp_bgc_index%lid_ar_paere) = this%ystates1(j)-y0
+    this%ystates1(keca_bgc_index%lid_ar_paere) = this%ystates1(j)-y0
 
     j = lid_ch4; y0=this%ystates1(j)
     call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
-    this%ystates1(ecacnp_bgc_index%lid_ch4_paere) = this%ystates1(j)-y0
+    this%ystates1(keca_bgc_index%lid_ch4_paere) = this%ystates1(j)-y0
 
     j = lid_co2; y0=this%ystates1(j)
     call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
-    this%ystates1(ecacnp_bgc_index%lid_co2_paere) = this%ystates1(j)-y0
+    this%ystates1(keca_bgc_index%lid_co2_paere) = this%ystates1(j)-y0
 
     if(this%use_c13)then
       j = lid_c13_co2; y0=this%ystates1(j)
       call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
-      this%ystates1(ecacnp_bgc_index%lid_c13_co2_paere) = this%ystates1(j)-y0
+      this%ystates1(keca_bgc_index%lid_c13_co2_paere) = this%ystates1(j)-y0
 
     endif
 
     if(this%use_c14)then
       j = lid_c14_co2; y0=this%ystates1(j)
       call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
-      this%ystates1(ecacnp_bgc_index%lid_c14_co2_paere) = this%ystates1(j)-y0
+      this%ystates1(keca_bgc_index%lid_c14_co2_paere) = this%ystates1(j)-y0
 
     endif
     j = lid_n2o; y0=this%ystates1(j)
     call exp_ode_int(dtime, this%scal_f(j), this%conv_f(j), this%conc_f(j), this%ystates1(j))
-    this%ystates1(ecacnp_bgc_index%lid_n2o_paere) = this%ystates1(j)-y0
+    this%ystates1(keca_bgc_index%lid_n2o_paere) = this%ystates1(j)-y0
   endif
   end associate
   contains
@@ -1432,11 +1434,11 @@ contains
   end subroutine arenchyma_gas_transport
 
   !--------------------------------------------------------------------
-  subroutine sumup_cnp_msflx_ecacnp(this, ystates1, c_mass, n_mass, p_mass,c_flx,n_flx,p_flx, bstatus)
+  subroutine sumup_cnp_msflx_keca(this, ystates1, c_mass, n_mass, p_mass,c_flx,n_flx,p_flx, bstatus)
 
   use tracer_varcon, only : catomw, natomw, patomw
   implicit none
-  class(ecacnp_bgc_type)     , intent(in) :: this
+  class(keca_bgc_type)     , intent(in) :: this
   real(r8), intent(in)  :: ystates1(:)
   real(r8), intent(out) :: c_mass, n_mass, p_mass
   real(r8), optional, intent(out) :: c_flx, n_flx, p_flx
@@ -1445,33 +1447,33 @@ contains
 
   integer :: kc, kn, kp, jj
   associate(                        &
-    c_loc=>  this%ecacnp_bgc_index%c_loc,&
-    n_loc=>  this%ecacnp_bgc_index%n_loc,&
-    p_loc=>  this%ecacnp_bgc_index%p_loc,&
-    lid_n2o_nit => this%ecacnp_bgc_index%lid_n2o_nit,&
-    lid_no3_den => this%ecacnp_bgc_index%lid_no3_den,&
-    lit1 =>  this%ecacnp_bgc_index%lit1, &
-    lit2 =>  this%ecacnp_bgc_index%lit2, &
-    lit3 =>  this%ecacnp_bgc_index%lit3, &
-    cwd =>   this%ecacnp_bgc_index%cwd, &
-    lwd =>   this%ecacnp_bgc_index%lwd, &
-    fwd =>   this%ecacnp_bgc_index%fwd, &
-    som1 =>  this%ecacnp_bgc_index%som1, &
-    som2 =>  this%ecacnp_bgc_index%som2, &
-    som3 =>  this%ecacnp_bgc_index%som3, &
-    nelms => this%ecacnp_bgc_index%nelms, &
-    lid_nh4=> this%ecacnp_bgc_index%lid_nh4, &
-    lid_no3=> this%ecacnp_bgc_index%lid_no3, &
-    lid_plant_minn_nh4 => this%ecacnp_bgc_index%lid_plant_minn_nh4, &
-    lid_plant_minn_no3 => this%ecacnp_bgc_index%lid_plant_minn_no3, &
-    lid_co2_hr => this%ecacnp_bgc_index%lid_co2_hr, &
-    lid_minp_soluble =>  this%ecacnp_bgc_index%lid_minp_soluble,  &
-    lid_minp_secondary => this%ecacnp_bgc_index%lid_minp_secondary, &
-    lid_minp_occlude => this%ecacnp_bgc_index%lid_minp_occlude, &
-    lid_plant_minp => this%ecacnp_bgc_index%lid_plant_minp  &
+    c_loc=>  this%keca_bgc_index%c_loc,&
+    n_loc=>  this%keca_bgc_index%n_loc,&
+    p_loc=>  this%keca_bgc_index%p_loc,&
+    lid_n2o_nit => this%keca_bgc_index%lid_n2o_nit,&
+    lid_no3_den => this%keca_bgc_index%lid_no3_den,&
+    lit1 =>  this%keca_bgc_index%lit1, &
+    lit2 =>  this%keca_bgc_index%lit2, &
+    lit3 =>  this%keca_bgc_index%lit3, &
+    cwd =>   this%keca_bgc_index%cwd, &
+    lwd =>   this%keca_bgc_index%lwd, &
+    fwd =>   this%keca_bgc_index%fwd, &
+    som1 =>  this%keca_bgc_index%som1, &
+    som2 =>  this%keca_bgc_index%som2, &
+    som3 =>  this%keca_bgc_index%som3, &
+    nelms => this%keca_bgc_index%nelms, &
+    lid_nh4=> this%keca_bgc_index%lid_nh4, &
+    lid_no3=> this%keca_bgc_index%lid_no3, &
+    lid_plant_minn_nh4 => this%keca_bgc_index%lid_plant_minn_nh4, &
+    lid_plant_minn_no3 => this%keca_bgc_index%lid_plant_minn_no3, &
+    lid_co2_hr => this%keca_bgc_index%lid_co2_hr, &
+    lid_minp_soluble =>  this%keca_bgc_index%lid_minp_soluble,  &
+    lid_minp_secondary => this%keca_bgc_index%lid_minp_secondary, &
+    lid_minp_occlude => this%keca_bgc_index%lid_minp_occlude, &
+    lid_plant_minp => this%keca_bgc_index%lid_plant_minp  &
   )
   if(present(bstatus)) &
-    SHR_ASSERT_ALL((size(ystates1) == this%ecacnp_bgc_index%nstvars), errMsg(mod_filename,__LINE__),bstatus)
+    SHR_ASSERT_ALL((size(ystates1) == this%keca_bgc_index%nstvars), errMsg(mod_filename,__LINE__),bstatus)
 
   c_mass = 0._r8; n_mass = 0._r8; p_mass = 0._r8;
   if(present(c_flx))c_flx=0._r8
@@ -1526,52 +1528,52 @@ contains
     integer :: kc, kn, kp
 
     associate(                             &
-      c_loc=>  this%ecacnp_bgc_index%c_loc,&
-      n_loc=>  this%ecacnp_bgc_index%n_loc,&
-      p_loc=>  this%ecacnp_bgc_index%p_loc,&
-      nelms => this%ecacnp_bgc_index%nelms &
+      c_loc=>  this%keca_bgc_index%c_loc,&
+      n_loc=>  this%keca_bgc_index%n_loc,&
+      p_loc=>  this%keca_bgc_index%p_loc,&
+      nelms => this%keca_bgc_index%nelms &
     )
     kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
     c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
     end associate
     end subroutine sum_omjj
-  end subroutine sumup_cnp_msflx_ecacnp
+  end subroutine sumup_cnp_msflx_keca
 
   !--------------------------------------------------------------------
   subroutine sumup_cnp_mass(this, header, c_mass, n_mass, p_mass)
   use tracer_varcon         , only : catomw, natomw, patomw
   implicit none
-  class(ecacnp_bgc_type)     , intent(in) :: this
+  class(keca_bgc_type)     , intent(in) :: this
   character(len=*), intent(in) :: header
   real(r8), intent(out) :: c_mass, n_mass, p_mass
   !local variables
 
   integer :: kc, kn, kp, jj
   associate(                        &
-    c_loc=>  this%ecacnp_bgc_index%c_loc,&
-    n_loc=>  this%ecacnp_bgc_index%n_loc,&
-    p_loc=>  this%ecacnp_bgc_index%p_loc,&
-    lid_n2o => this%ecacnp_bgc_index%lid_n2o,&
-    lid_n2 => this%ecacnp_bgc_index%lid_n2,&
-    lit1 =>  this%ecacnp_bgc_index%lit1, &
-    lit2 =>  this%ecacnp_bgc_index%lit2, &
-    lit3 =>  this%ecacnp_bgc_index%lit3, &
-    cwd =>   this%ecacnp_bgc_index%cwd, &
-    lwd =>   this%ecacnp_bgc_index%lwd, &
-    fwd =>   this%ecacnp_bgc_index%fwd, &
-    som1 =>  this%ecacnp_bgc_index%som1, &
-    som2 =>  this%ecacnp_bgc_index%som2, &
-    som3 =>  this%ecacnp_bgc_index%som3, &
-    nelms => this%ecacnp_bgc_index%nelms, &
-    lid_nh4=> this%ecacnp_bgc_index%lid_nh4, &
-    lid_no3=> this%ecacnp_bgc_index%lid_no3, &
-    lid_plant_minn_nh4 => this%ecacnp_bgc_index%lid_plant_minn_nh4, &
-    lid_plant_minn_no3 => this%ecacnp_bgc_index%lid_plant_minn_no3, &
-    lid_co2 => this%ecacnp_bgc_index%lid_co2, &
-    lid_minp_soluble =>  this%ecacnp_bgc_index%lid_minp_soluble,  &
-    lid_minp_secondary => this%ecacnp_bgc_index%lid_minp_secondary, &
-    lid_minp_occlude => this%ecacnp_bgc_index%lid_minp_occlude, &
-    lid_plant_minp => this%ecacnp_bgc_index%lid_plant_minp, &
+    c_loc=>  this%keca_bgc_index%c_loc,&
+    n_loc=>  this%keca_bgc_index%n_loc,&
+    p_loc=>  this%keca_bgc_index%p_loc,&
+    lid_n2o => this%keca_bgc_index%lid_n2o,&
+    lid_n2 => this%keca_bgc_index%lid_n2,&
+    lit1 =>  this%keca_bgc_index%lit1, &
+    lit2 =>  this%keca_bgc_index%lit2, &
+    lit3 =>  this%keca_bgc_index%lit3, &
+    cwd =>   this%keca_bgc_index%cwd, &
+    lwd =>   this%keca_bgc_index%lwd, &
+    fwd =>   this%keca_bgc_index%fwd, &
+    som1 =>  this%keca_bgc_index%som1, &
+    som2 =>  this%keca_bgc_index%som2, &
+    som3 =>  this%keca_bgc_index%som3, &
+    nelms => this%keca_bgc_index%nelms, &
+    lid_nh4=> this%keca_bgc_index%lid_nh4, &
+    lid_no3=> this%keca_bgc_index%lid_no3, &
+    lid_plant_minn_nh4 => this%keca_bgc_index%lid_plant_minn_nh4, &
+    lid_plant_minn_no3 => this%keca_bgc_index%lid_plant_minn_no3, &
+    lid_co2 => this%keca_bgc_index%lid_co2, &
+    lid_minp_soluble =>  this%keca_bgc_index%lid_minp_soluble,  &
+    lid_minp_secondary => this%keca_bgc_index%lid_minp_secondary, &
+    lid_minp_occlude => this%keca_bgc_index%lid_minp_occlude, &
+    lid_plant_minp => this%keca_bgc_index%lid_plant_minp, &
     ystates1 => this%ystates1  &
   )
   print*,header
@@ -1630,7 +1632,7 @@ contains
     use ODEMOD, only : ebbks, get_rerr, get_tscal
     implicit none
     ! !ARGUMENTS:
-    class(ecacnp_bgc_type),  intent(inout)  :: me
+    class(keca_bgc_type),  intent(inout)  :: me
     integer,  intent(in)  :: neq      ! number of equations
     real(r8), intent(in)  :: y0(neq)  ! state variable at previous time step
     real(r8), intent(in)  :: t        ! time stamp
@@ -1697,35 +1699,35 @@ contains
   end subroutine ode_adapt_ebbks1
 
   !-------------------------------------------------------------------------------
-  subroutine init_cold_ecacnp(this, nstvars, ystates)
+  subroutine init_cold_keca(this, nstvars, ystates)
   implicit none
-  class(ecacnp_bgc_type)     , intent(inout) :: this
+  class(keca_bgc_type)     , intent(inout) :: this
   integer , intent(in) :: nstvars
   real(r8), intent(inout) :: ystates(nstvars)
   ystates(:)=0._r8
   if(nstvars>=0)continue
-  end subroutine init_cold_ecacnp
+  end subroutine init_cold_keca
 
   !-------------------------------------------------------------------------------
   subroutine sum_tot_store(this, nstvars, ystates)
   implicit none
-  class(ecacnp_bgc_type)     , intent(inout) :: this
+  class(keca_bgc_type)     , intent(inout) :: this
   integer                   , intent(in)    :: nstvars
   real(r8)                  , intent(inout) :: ystates(nstvars)
 
   associate(                  &
-    lid_totstore => this%ecacnp_bgc_index%lid_totstore , &
-    lit1       => this%ecacnp_bgc_index%lit1        , &
-    lit2       => this%ecacnp_bgc_index%lit2        , &
-    lit3       => this%ecacnp_bgc_index%lit3        , &
-    som1       => this%ecacnp_bgc_index%som1        , &
-    som2       => this%ecacnp_bgc_index%som2        , &
-    som3       => this%ecacnp_bgc_index%som3        , &
-    cwd        => this%ecacnp_bgc_index%cwd         , &
-    fwd        => this%ecacnp_bgc_index%fwd         , &
-    lwd        => this%ecacnp_bgc_index%lwd         , &
-    c_loc      => this%ecacnp_bgc_index%c_loc       , & !
-    nelms      => this%ecacnp_bgc_index%nelms         & !
+    lid_totstore => this%keca_bgc_index%lid_totstore , &
+    lit1       => this%keca_bgc_index%lit1        , &
+    lit2       => this%keca_bgc_index%lit2        , &
+    lit3       => this%keca_bgc_index%lit3        , &
+    som1       => this%keca_bgc_index%som1        , &
+    som2       => this%keca_bgc_index%som2        , &
+    som3       => this%keca_bgc_index%som3        , &
+    cwd        => this%keca_bgc_index%cwd         , &
+    fwd        => this%keca_bgc_index%fwd         , &
+    lwd        => this%keca_bgc_index%lwd         , &
+    c_loc      => this%keca_bgc_index%c_loc       , & !
+    nelms      => this%keca_bgc_index%nelms         & !
   )
   ystates(lid_totstore) =ystates((lit1-1)*nelms+c_loc) + ystates((lit2-1)*nelms+c_loc) + &
     ystates((lit3-1)*nelms+c_loc) + ystates((cwd-1)*nelms+c_loc) + &
@@ -1734,4 +1736,4 @@ contains
     ystates((som3-1)*nelms+c_loc)
   end associate
   end subroutine sum_tot_store
-end module ecacnpBGCType
+end module kecaBGCType

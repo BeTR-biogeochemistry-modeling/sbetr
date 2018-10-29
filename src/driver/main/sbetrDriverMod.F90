@@ -585,7 +585,8 @@ end subroutine sbetrBGC_driver
   integer :: c_l, id
   c_l = 1
   allocate(ystates(hist%nvars))
-  if(index(trim(reaction_method),'ecacnp')/=0)then
+  if(index(trim(reaction_method),'ecacnp')/=0 .or. &
+     index(trim(reaction_method),'keca')/=0)then
     id = 0
     id = id + 1; ystates(id) = carbonflux_vars%hr_col(c_l)
     id = id + 1; ystates(id) = nitrogenflux_vars%f_n2o_nit_col(c_l)
