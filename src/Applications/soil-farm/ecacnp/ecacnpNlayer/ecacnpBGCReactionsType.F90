@@ -408,7 +408,7 @@ contains
     integer   :: nelm, itemp_mem
     integer   :: itemp, itemp_vgrp, itemp_v,itemp_trc
     integer   :: c_loc, n_loc, p_loc, trcid, c13_loc, c14_loc
-    integer   :: c, j, litr_cnt, wood_cnt, Bm_cnt, pom_cnt, som_cnt, itemp_ads, itemp_ads_grp
+    integer   :: c, j, litr_cnt, wood_cnt, Bm_cnt, pom_cnt, som_cnt, itemp_ads,itemp_ads_grp
     integer   :: ngroupmems
     logical   :: batch_mode
 
@@ -586,7 +586,7 @@ contains
     !set up the tracers
     itemp_vgrp = 0  !counter for volatile groups
     itemp_v    = 0  !counter for volatile tracers
-    itemp_ads_grp =0!counter for sorptive groups
+    itemp_ads_grp =0
     itemp_ads=0     !counter for sorptive tracers
 
     call betrtracer_vars%set_tracer(bstatus=bstatus, trc_id = betrtracer_vars%id_trc_n2, &
@@ -646,7 +646,10 @@ contains
 
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_nh3x, &
          trc_name='NH3x', is_trc_mobile=.false., is_trc_advective = .false., &
-         trc_group_id = betrtracer_vars%id_trc_nh3x, trc_group_mem = 1, is_trc_volatile=.false.)
+         trc_group_id = betrtracer_vars%id_trc_nh3x, trc_group_mem = 1, is_trc_volatile=.false., &
+         is_trc_adsorb = .false., trc_adsorbid=addone(itemp_ads), &
+         trc_adsorbgroupid=addone(itemp_ads_grp), trc_sorpisotherm='LANGMUIR', &
+         trc_vtrans_scal=1._r8)
     if(bstatus%check_status())return
 
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_no3x, &
@@ -658,6 +661,8 @@ contains
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_p_sol, &
          trc_name='P_SOL', is_trc_mobile=.true. .and. (.not. fix_ip), is_trc_advective = .true. .and. (.not. fix_ip), &
          trc_group_id = betrtracer_vars%id_trc_p_sol, trc_group_mem = 1, is_trc_volatile=.false., &
+         is_trc_adsorb = .false., trc_adsorbid=addone(itemp_ads), &
+         trc_adsorbgroupid=addone(itemp_ads_grp), trc_sorpisotherm='LANGMUIR', &
          trc_vtrans_scal=1._r8)
     if(bstatus%check_status())return
 
