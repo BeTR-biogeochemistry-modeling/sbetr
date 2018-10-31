@@ -341,6 +341,13 @@ contains
 
     dtime = betr_time%get_step_size()
 
+    if(this%active_soibgc)then
+      !set up kinetic parameters that are passed in from the mother lsm. Mostly they
+      !are plant-nutrient related parameters.
+      call this%bgc_reaction%set_kinetics_par(1, ubj, this%nactpft, &
+        this%plantNutkinetics, this%tracercoeffs)
+    endif
+
     call stage_tracer_transport(betr_time, bounds, col, pft, num_soilc,&
          filter_soilc, num_soilp, filter_soilp, biophysforc,      &
          biogeo_state, biogeo_flux, this%aereconds, this%tracers, this%tracercoeffs, &
@@ -354,11 +361,6 @@ contains
        this%tracercoeffs,  this%tracerfluxes, betr_status)
     if(betr_status%check_status())return
 
-    if(this%active_soibgc)then
-      !set up kinetic parameters that are passed in from the mother lsm. Mostly they
-      !are plant-nutrient related parameters.
-      call this%bgc_reaction%set_kinetics_par(1, ubj, this%nactpft, this%plantNutkinetics)
-    endif
     if(this%reaction_on)                                       &
     call this%bgc_reaction%calc_bgc_reaction(bounds, col, lbj, ubj, &
          num_soilc,                                            &

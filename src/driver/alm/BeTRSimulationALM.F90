@@ -268,13 +268,12 @@ contains
     call this%BeTRSetcps(bounds, col, pft)
 
     c_l = 1; begc_l = betr_bounds%begc; endc_l=betr_bounds%endc;
-!    print*,'enter without drainage'
+
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
       this%betr(c)%tracers%debug=col%debug_flag(c)
       call this%biophys_forc(c)%frac_normalize(this%betr_pft(c)%npfts, 1, betr_nlevtrc_soil)
 
-!      this%betr(c)%tracers%debug=(c==1596 .and. .false.)
       if(this%betr(c)%tracers%debug)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), &
          this%num_soilc, this%filter_soilc, 'bef w/o drain',this%bstatus(c))
 

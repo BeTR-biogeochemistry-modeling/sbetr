@@ -124,7 +124,9 @@ contains
     use tracercoeffType        , only : tracercoeff_type
     use TracerBoundaryCondType , only : TracerBoundaryCond_type
     use BetrTracerType         , only : betrtracer_type
-    use TracerParamsMod        , only : set_phase_convert_coeff, set_multi_phase_diffusion, calc_tracer_infiltration
+    use TracerParamsMod        , only : set_phase_convert_coeff, &
+                                        set_multi_phase_diffusion, &
+                                        calc_tracer_infiltration
     use TracerParamsMod        , only : get_zwt, calc_aerecond, betr_annualupdate
     use betr_columnType        , only : betr_column_type
     use BeTR_aerocondType      , only : betr_aerecond_type

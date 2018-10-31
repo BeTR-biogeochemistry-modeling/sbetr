@@ -203,13 +203,15 @@ module BGCReactionsMod
 
      end subroutine retrieve_lnd2atm_interface
      !----------------------------------------------------------------------
-     subroutine set_kinetics_par_interface(this, lbj, ubj, nactpft, plantNutkinetics)
+     subroutine set_kinetics_par_interface(this, lbj, ubj, nactpft, &
+       plantNutkinetics, tracercoeff_vars)
      use PlantNutKineticsMod, only : PlantNutKinetics_type
-
+     use tracercoeffType          , only : tracercoeff_type
      ! !ARGUMENTS:
      import :: bgc_reaction_type
      class(bgc_reaction_type)         , intent(inout)    :: this                       !
      class(PlantNutKinetics_type), intent(in) :: plantNutkinetics
+     type(tracercoeff_type)      , intent(inout) :: tracercoeff_vars
      integer, intent(in) :: lbj, ubj
      integer, intent(in) :: nactpft
 
