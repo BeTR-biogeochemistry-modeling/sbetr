@@ -1108,7 +1108,7 @@ contains
 
   !-------------------------------------------------------------------------------
   subroutine set_boundary_conditions(this, bounds, num_soilc, filter_soilc, dz_top, betrtracer_vars, &
-       biophysforc, biogeo_flux, tracerboundarycond_vars, betr_status)
+       biophysforc, biogeo_flux,tracercoeff_vars, tracerboundarycond_vars, betr_status)
     !
     ! !DESCRIPTION:
     ! set up boundary conditions for tracer movement
@@ -1120,6 +1120,7 @@ contains
     use BetrStatusType        , only : betr_status_type
     use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
     use UnitConvertMod         , only : ppm2molv
+    use TracerCoeffType        , only : tracercoeff_type
     implicit none
     ! !ARGUMENTS:
     class(keca_bgc_reaction_type) , intent(inout)    :: this
@@ -1130,6 +1131,7 @@ contains
     real(r8)                             , intent(in)    :: dz_top(bounds%begc: )
     type(betr_biogeophys_input_type)     , intent(in)    :: biophysforc
     type(betr_biogeo_flux_type)          , intent(in)    :: biogeo_flux
+    type(tracercoeff_type)               , intent(in)   :: tracercoeff_vars
     type(tracerboundarycond_type)        , intent(inout) :: tracerboundarycond_vars !
     type(betr_status_type)               , intent(out)   :: betr_status
 

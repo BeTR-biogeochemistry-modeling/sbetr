@@ -224,11 +224,13 @@ contains
          betr_status=betr_status)
     if(betr_status%check_status())return
 
-    call bgc_reaction%set_boundary_conditions(bounds, num_soilc, filter_soilc, &
-         col%dz(bounds%begc:bounds%endc,1),                                    &
-         betrtracer_vars,                                                      &
-         biophysforc                ,                                          &
-         biogeo_flux                ,                                          &
+    call bgc_reaction%set_boundary_conditions(bounds, &
+         num_soilc, filter_soilc              , &
+         col%dz(bounds%begc:bounds%endc,1)    , &
+         betrtracer_vars                      , &
+         biophysforc                          , &
+         biogeo_flux                          , &
+         tracercoeff_vars                     , &
          tracerboundarycond_vars, betr_status)
     if(betr_status%check_status())return
 

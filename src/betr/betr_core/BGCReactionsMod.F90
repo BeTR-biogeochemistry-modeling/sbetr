@@ -219,7 +219,7 @@ module BGCReactionsMod
      !----------------------------------------------------------------------
 
      subroutine set_boundary_conditions_interface(this, bounds, num_soilc, filter_soilc, dz_top, &
-          betrtracer_vars, biophysforc, biogeo_flux, tracerboundarycond_vars, betr_status)
+          betrtracer_vars, biophysforc, biogeo_flux,tracercoeff_vars, tracerboundarycond_vars, betr_status)
 
        ! !DESCRIPTION:
        ! template for set_boundary_conditions
@@ -232,6 +232,7 @@ module BGCReactionsMod
        use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
        use bshr_kind_mod            , only : r8 => shr_kind_r8
        use BetrStatusType           , only : betr_status_type
+       use TracerCoeffType        , only : tracercoeff_type
        ! !ARGUMENTS:
        import :: bgc_reaction_type
        class(bgc_reaction_type)         , intent(inout)    :: this                       !
@@ -242,6 +243,7 @@ module BGCReactionsMod
        real(r8)                         , intent(in)    :: dz_top( : )                !
        type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
        type(betr_biogeo_flux_type)      , intent(in)    :: biogeo_flux
+       type(tracercoeff_type)           , intent(in)    :: tracercoeff_vars
        type(tracerboundarycond_type)    , intent(inout) :: tracerboundarycond_vars !
        type(betr_status_type)           , intent(out)   :: betr_status
 
