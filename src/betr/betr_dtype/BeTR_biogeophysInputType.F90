@@ -62,6 +62,7 @@ implicit none
     real(r8), pointer :: n2o_ppmv_col                  (:) => null() ! n2o concentration in ppmv
     real(r8), pointer :: no_ppmv_col                   (:) => null() ! no concentration in ppmv
     real(r8), pointer :: nh3_ppmv_col                  (:) => null() ! nh3 concentration in ppmv
+    real(r8), pointer :: Dw_hk                         (:) => null() ! wicking diffusivity
     !canopystate
     real(r8) , pointer :: altmax_col               (:) => null() ! col maximum annual depth of thaw
     real(r8) , pointer :: altmax_lastyear_col      (:) => null() ! col prior year maximum annual depth of thaw
@@ -282,6 +283,7 @@ contains
   allocate(this%dom_scalar_col(begc:endc)); this%dom_scalar_col(:) = 1._r8
   allocate(this%lat(begc:endc))
   allocate(this%annsum_counter_col(begc:endc)); this%annsum_counter_col(:)=0._r8
+  allocate(this%Dw_hk(begc:endc)); this%Dw_hk(:) = 0._r8
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------

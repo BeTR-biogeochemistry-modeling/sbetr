@@ -249,7 +249,8 @@ contains
          move_scalar                            => betrtracer_vars%move_scalar                            , &
          bulk_diffus_col                        => tracercoeff_vars%bulk_diffus_col                       , &
          aqu_diffus_col                         => tracercoeff_vars%aqu_diffus_col                        , &
-         aqu_diffus0_col                        => tracercoeff_vars%aqu_diffus0_col                         &
+         aqu_diffus0_col                        => tracercoeff_vars%aqu_diffus0_col                       , &
+         diffblkm_topsoi_col                    => tracercoeff_vars%diffblkm_topsoi_col                     &
          )
 
       bulk_diffus_col(:,:,:) = 1.e-40_r8                            !initialize to a very small number
@@ -286,6 +287,10 @@ contains
                      aqu_diffus_col(c,n,j)=max(aqu_diffus_col(c,n,j), minval_diffus)
                   endif
                enddo
+            enddo
+            do fc = 1, numf
+              c = filter(fc)
+              diffblkm_topsoi_col(c,k) = bulk_diffus_col(c,n,1)*move_scalar(j)
             enddo
          else
             !it is not a volatile tracer

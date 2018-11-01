@@ -22,10 +22,11 @@ module SoilStateType
     real(r8), pointer :: cellorg_col          (:,:)=> null() ! col organic matter for gridcell containing column (1:nlevsoi)
     real(r8), pointer :: cellclay_col         (:,:) => null()! clay value for gridcell containing column (1:nlevsoi)
     real(r8), pointer :: cellsand_col         (:,:) => null()! sand value for gridcell containing column (1:nlevsoi)
-    real(r8), pointer :: bd_col               (:,:)=> null() ! col bulk density of dry soil material [kg/m^3] (CN)
-    real(r8), pointer :: watfc_col            (:,:)=> null() ! col volumetric soil water at field capacity (nlevsoi)
-    real(r8), pointer :: sucsat_col           (:,:)=> null() ! col minimum soil suction (mm) (nlevgrnd)
+    real(r8), pointer :: bd_col               (:,:) => null() ! col bulk density of dry soil material [kg/m^3] (CN)
+    real(r8), pointer :: watfc_col            (:,:) => null() ! col volumetric soil water at field capacity (nlevsoi)
+    real(r8), pointer :: sucsat_col           (:,:) => null() ! col minimum soil suction (mm) (nlevgrnd)
     real(r8), pointer :: rootfr_patch         (:,:) => null()! patch fraction of roots in each soil layer (nlevgrnd)
+    real(r8), pointer :: hksat_col            (:,:) => null()
   contains
     procedure, public  :: Init
     procedure, private :: InitAllocate
@@ -75,5 +76,6 @@ module SoilStateType
     allocate(this%watfc_col            (begc:endc,lbj:ubj)); this%watfc_col            (:,:) = spval
     allocate(this%sucsat_col           (begc:endc,lbj:ubj)); this%sucsat_col           (:,:) = spval
     allocate(this%rootfr_patch         (begp:endp,lbj:ubj)); this%rootfr_patch         (:,:) = spval
+    allocate(this%hksat_col            (begc:endc,lbj:ubj)); this%hksat_col            (:,:) = spval
   end subroutine InitAllocate
 end module SoilStateType

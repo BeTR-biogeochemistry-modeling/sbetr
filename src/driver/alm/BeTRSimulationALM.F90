@@ -1089,7 +1089,7 @@ contains
   !local variables
   real(r8) :: s_node
   integer  :: fc, c, j
-
+  real(r8) :: dsmpds_top
   SHR_ASSERT_ALL((ubound(t_soisno) == (/bounds%endc, ubj/)),errMsg(mod_filename,__LINE__))
 
   ! remove compiler warnings
@@ -1107,7 +1107,18 @@ contains
     do fc = 1, numf
       c = filter(fc)
       if(.not. this%active_col(c))cycle
-      if(j>=1)then
+      if(j==1)then
+        if(t_soisno(c,j)<tfrz)then
+          smp_l(c,j)= -hfus*(tfrz-t_soisno(c,j))/(grav*t_soisno(c,j)) * 1000._r8  !(mm)
+        else
+          s_node = max(h2osoi_vol(c,j)/watsat(c,j), 0.01_r8)
+          call soil_water_retention_curve%soil_suction(sucsat(c,j), s_node, bsw(c,j), smp_l(c,j), dsmpds_top)
+!  the following will be implemented later.
+!          call soil_water_retention_curve%soil_hk(hksat, 1._r8, s_node, bsw(c,j), hk)
+        endif
+
+!        this%biophys_forc(c)%Dw_hk(c_l) = hk *
+      else
         if(t_soisno(c,j)<tfrz)then
           smp_l(c,j)= -hfus*(tfrz-t_soisno(c,j))/(grav*t_soisno(c,j)) * 1000._r8  !(mm)
         else

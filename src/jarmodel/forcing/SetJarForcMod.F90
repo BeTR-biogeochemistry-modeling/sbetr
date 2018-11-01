@@ -79,6 +79,7 @@ contains
   jar_forc%conc_atm_ar=ppm2molv(atm_forc%patm_pascal, atm_forc%ar_ppmv, jar_forc%air_temp)
   jar_forc%conc_atm_co2=ppm2molv(atm_forc%patm_pascal, atm_forc%co2_ppmv, jar_forc%air_temp)
   jar_forc%conc_atm_ch4=ppm2molv(atm_forc%patm_pascal, atm_forc%ch4_ppmv, jar_forc%air_temp)
+  jar_forc%conc_atm_nh3=ppm2molv(atm_forc%patm_pascal, atm_forc%nh3_ppmv, jar_forc%air_temp)
 
   call set_phase_convert_coeff(atm_forc, soil_forc, jar_forc)
 

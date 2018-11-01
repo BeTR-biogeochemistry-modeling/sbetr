@@ -32,7 +32,8 @@ module TracerCoeffType
      real(r8), pointer :: tracer_diffusivity_air_col(:,:)   => null()     !diffusivity in the air
      real(r8), pointer :: aere_cond_col             (:,:)   => null()     !column level aerenchyma conductance (m/s)
      real(r8), pointer :: scal_aere_cond_col        (:,:)  => null()      !column level scaling factor for arenchyma or parenchyma transport
-     real(r8), pointer :: diffgas_topsno_col        (:,:)   => null()     !gas diffusivity in top snow layer, this is not used currently
+     real(r8), pointer :: rsoi_gas_topsno_col       (:,:)   => null()     !gas diffusivity in top snow layer, this is not used currently
+     real(r8), pointer :: diffblkm_topsoi_col       (:,:)   => null()     !bulk molecular diffusivity in top soil layer
      real(r8), pointer :: diffgas_topsoi_col        (:,:)   => null()     !gas diffusivity in top soil layer, this is not used currently
      real(r8), pointer :: hmconductance_col         (:,:,:)  => null()    !geometrically weighted conductances (nlevsno+nlevtrc_soil)
      real(r8), pointer :: bulk_diffus_col           (:,:,:)  => null()
@@ -148,8 +149,8 @@ contains
     allocate(this%aere_cond_col(begc:endc,          1:betrtracer_vars%nvolatile_tracer_groups))
     this%aere_cond_col(:,:)       = nan
 
-    allocate(this%diffgas_topsno_col(begc:endc,          1:betrtracer_vars%nvolatile_tracer_groups))
-    this%diffgas_topsno_col(:,:)       = nan
+    allocate(this%rsoi_gas_topsno_col(begc:endc,          1:betrtracer_vars%nvolatile_tracer_groups))
+    this%rsoi_gas_topsno_col(:,:)       = nan
 
     allocate(this%diffgas_topsoi_col(begc:endc,          1:betrtracer_vars%nvolatile_tracer_groups))
     this%diffgas_topsoi_col(:,:)       = nan
@@ -165,7 +166,11 @@ contains
     allocate(this%aqu_diffus0_col (begc:endc, lbj:ubj, 1:betrtracer_vars%ngwmobile_tracer_groups))
 
     allocate(this%k_sorbsurf_col(begc:endc, lbj:ubj, 1:betrtracer_vars%nsolid_equil_tracers))
+    this%k_sorbsurf_col(:,:,:) = nan
     allocate(this%Q_sorbsurf_col(begc:endc, lbj:ubj, 1:betrtracer_vars%nsolid_equil_tracers))
+    this%Q_sorbsurf_col(:,:,:) = nan
+    allocate(this%diffblkm_topsoi_col(begc:endc, 1:betrtracer_vars%nvolatile_tracer_groups))
+    this%diffblkm_topsoi_col(:,:) = nan
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------
@@ -266,17 +271,19 @@ contains
     do c = bounds%begc, bounds%endc
       this%aqu2neutralcef_col        (c,:,:) = 0._r8
       this%aqu2bulkcef_mobile_col    (c,:,:) = 0._r8
-      this%gas2bulkcef_mobile_col    (c,:,:) = 0._r8
       this%henrycef_col              (c,:,:) = 0._r8
       this%bunsencef_col             (c,:,:) = 0._r8
-      this%tracer_diffusivity_air_col(c,:)   = 0._r8
-      this%scal_aere_cond_col        (c,:)   = 0._r8
-      this%aere_cond_col             (c,:)   = 0._r8
-      this%diffgas_topsno_col        (c,:)   = 0._r8
-      this%diffgas_topsoi_col        (c,:)   = 0._r8
       this%hmconductance_col         (c,:,:) = 0._r8
-      this%k_sorbsurf_col            (c,:,:) = 1._r8
-      this%Q_sorbsurf_col            (c,:,:) = 1._r8
+      if(size(this%gas2bulkcef_mobile_col,3)>0)    this%gas2bulkcef_mobile_col    (c,:,:) = 0._r8
+      if(size(this%tracer_diffusivity_air_col,2)>0)this%tracer_diffusivity_air_col(c,:)   = 0._r8
+      if(size(this%scal_aere_cond_col,2)>0)        this%scal_aere_cond_col        (c,:)   = 0._r8
+      if(size(this%aere_cond_col,2)>0)             this%aere_cond_col             (c,:)   = 0._r8
+      if(size(this%rsoi_gas_topsno_col,2)>0)       this%rsoi_gas_topsno_col       (c,:)   = 0._r8
+      if(size(this%diffgas_topsoi_col,2)>0)        this%diffgas_topsoi_col   (c,:)   = 0._r8
+
+      if(size(this%k_sorbsurf_col,3)>0)            this%k_sorbsurf_col (c,:,:) = 1._r8
+      if(size(this%Q_sorbsurf_col,3)>0)            this%Q_sorbsurf_col (c,:,:) = 1._r8
+      if(size(this%diffblkm_topsoi_col,2)>0)       this%diffblkm_topsoi_col(c,:)   = 0._r8
     enddo
 
   end subroutine InitCold
