@@ -25,6 +25,7 @@ module BetrBGCMod
   use betr_biogeoStateType     , only : betr_biogeo_state_type
   use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
   use tracer_varcon            , only : nlevsno => betr_nlevsno
+  use betr_columnType          , only : betr_column_type
   implicit none
 
   private
@@ -63,7 +64,6 @@ contains
     use BetrTracerType  , only : betrtracer_type
     use BeTR_TimeMod    , only : betr_time_type
     use BetrStatusType  , only : betr_status_type
-    use betr_columnType          , only : betr_column_type
     !
     ! Arguments
     implicit none
@@ -128,7 +128,7 @@ contains
                                         set_multi_phase_diffusion, &
                                         calc_tracer_infiltration
     use TracerParamsMod        , only : get_zwt, calc_aerecond, betr_annualupdate
-    use betr_columnType        , only : betr_column_type
+
     use BeTR_aerocondType      , only : betr_aerecond_type
     use BGCReactionsMod        , only : bgc_reaction_type
     use BeTR_TimeMod           , only : betr_time_type
@@ -203,6 +203,7 @@ contains
     biophysforc%soil_pH(bounds%begc:bounds%endc,1:ubj)=7._r8
 
     call set_phase_convert_coeff(bounds, lbj, ubj, &
+         col                                     , &
          tracerboundarycond_vars%jtops_col       , &
          num_soilc                               , &
          filter_soilc                            , &
@@ -276,7 +277,6 @@ contains
     use BGCReactionsMod        , only : bgc_reaction_type
     use BeTR_TimeMod           , only : betr_time_type
     use BetrStatusType         , only : betr_status_type
-    use betr_columnType        , only : betr_column_type
     use BeTR_PatchType         , only : betr_patch_type
     use betr_varcon            , only : btvlake, btvwetl
     implicit none
@@ -580,7 +580,6 @@ contains
     use BGCReactionsMod        , only : bgc_reaction_type
     use BeTR_TimeMod           , only : betr_time_type
     use BetrStatusType         , only : betr_status_type
-    use betr_columnType        , only : betr_column_type
     use BeTR_PatchType         , only : betr_patch_type
     implicit none
     ! !ARGUMENTS:
@@ -703,7 +702,6 @@ contains
     use BeTR_TimeMod    , only : betr_time_type
     use BetrStatusType  , only : betr_status_type
     use betr_constants  , only : betr_errmsg_len
-    use betr_columnType , only : betr_column_type
     use BeTR_PatchType  , only : betr_patch_type
     use betr_constants  , only : betr_var_name_length
     implicit none
@@ -1804,7 +1802,6 @@ contains
     use tracerstatetype , only : tracerstate_type
     use BeTR_TimeMod    , only : betr_time_type
     use BetrStatusType  , only : betr_status_type
-    use betr_columnType , only : betr_column_type
     ! !ARGUMENTS:
     class(betr_time_type)            , intent(in)    :: betr_time
     type(bounds_type)                , intent(in)    :: bounds

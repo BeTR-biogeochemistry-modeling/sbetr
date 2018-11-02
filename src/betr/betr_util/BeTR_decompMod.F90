@@ -11,7 +11,7 @@ module BeTR_decompMod
     integer :: begp, endp       ! beginning and ending pft index
     integer :: lbj, ubj
     integer :: begCohort, endCohort ! beginning and ending cohort indices
-
+    integer :: nlevsno
     integer :: level            ! whether defined on the proc or clump level
     integer :: clump_index      ! if defined on the clump level, this gives the clump index
   end type betr_bounds_type

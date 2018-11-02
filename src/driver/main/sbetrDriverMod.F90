@@ -61,7 +61,7 @@ contains
   use clm_varpar            , only : nlevsno, nlevsoi
   use histMod               , only : histf_type
   use HistBGCMod            , only : hist_bgc_type
-  use tracer_varcon         , only : reaction_method
+  use tracer_varcon         , only : reaction_method, betr_nlevsno, betr_nlevsoi
   use betr_ctrl             , only : continue_run
   use babortutils           , only : endrun
   use BetrStatusType        , only : betr_status_type
@@ -117,7 +117,8 @@ contains
   bounds%endl = 1
   bounds%lbj  = 1
   bounds%ubj  = nlevtrc_soil
-
+  betr_nlevsno = nlevsno
+  betr_nlevsoi = nlevsoi
   !set up grid
   allocate(grid_data)
   call grid_data%Init(namelist_buffer)
@@ -140,6 +141,7 @@ contains
   col%gridcell(1) = 1
   col%npfts(1)    = 1
   col%pfti(1)     = 1
+  col%snl(1)      = 0
   pft%landunit(1) = 1
   pft%column(1)   = 1
   pft%itype(1)    = 2
