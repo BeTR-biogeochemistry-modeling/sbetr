@@ -1165,7 +1165,7 @@ contains
          id_trc_c13_co2x => betrtracer_vars%id_trc_c13_co2x, &
          id_trc_c14_co2x => betrtracer_vars%id_trc_c14_co2x,  &
          diffblkm_topsoi_col=> tracercoeff_vars%diffblkm_topsoi_col, &
-         rsoi_gas_topsno_col => tracercoeff_vars%rsoi_gas_topsno_col &
+         snowres_col => tracercoeff_vars%snowres_col &
          )
 
       do fc = 1, num_soilc
@@ -1191,12 +1191,12 @@ contains
            tracer_gwdif_concflux_top_col(c,1:2,id_trc_c14_co2x)  =0.0168_r8
          endif
 
-         bot_concflux_col(c,1,:)                                          = 0._r8                       !zero flux boundary condition
-         condc_toplay_col(c,:) = 0._r8                                                                  !those will be updated with snow resistance and hydraulic wicking resistance
+         bot_concflux_col(c,1,:)       = 0._r8      !zero flux boundary condition
+         condc_toplay_col(c,:) = 0._r8              !those will be updated with snow resistance and hydraulic wicking resistance
          do kk = 1, ngwmobile_tracers
            if(.not. is_volatile(kk))cycle
-           condc_toplay_col(c,groupid(kk))    = rsoi_gas_topsno_col(c,volatilegroupid(kk)) + &
-           2._r8 * diffblkm_topsoi_col(c,volatilegroupid(kk))/dz_top(c) !m/s surface conductance
+           condc_toplay_col(c,groupid(kk))    = 1._r8/(snowres_col(c,volatilegroupid(kk))+&
+             0.5_r8*dz_top(c)/diffblkm_topsoi_col(c,volatilegroupid(kk))) !m/s surface conductance
          enddo
       enddo
     end associate

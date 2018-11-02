@@ -289,9 +289,10 @@ contains
                   endif
                enddo
             enddo
+            !the following needs revision when betr is extended to wetland
             do fc = 1, numf
               c = filter(fc)
-              diffblkm_topsoi_col(c,k) = bulk_diffus_col(c,n,1)*move_scalar(j)
+              diffblkm_topsoi_col(c,k) = bulk_diffus_col(c,1,j)*move_scalar(j)
             enddo
          else
             !it is not a volatile tracer

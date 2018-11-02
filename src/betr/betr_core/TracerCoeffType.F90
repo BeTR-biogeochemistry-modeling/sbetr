@@ -131,56 +131,46 @@ contains
 
     begc = bounds%begc; endc= bounds%endc; nlevsno = bounds%nlevsno
 
-    allocate(this%aqu2neutralcef_col(begc:endc, lbj:ubj, 1:betrtracer_vars%ngwmobile_tracer_groups))
-    this%aqu2neutralcef_col(:,:,:) = nan
+    NAN_ALLOC(this%aqu2neutralcef_col(begc:endc, lbj:ubj, 1:betrtracer_vars%ngwmobile_tracer_groups))
 
-    allocate(this%aqu2bulkcef_mobile_col(begc:endc, lbj:ubj, 1:betrtracer_vars%ngwmobile_tracer_groups))
-    this%aqu2bulkcef_mobile_col(:,:,:) = nan
+    NAN_ALLOC(this%aqu2bulkcef_mobile_col(begc:endc, lbj:ubj, 1:betrtracer_vars%ngwmobile_tracer_groups))
 
-    allocate(this%gas2bulkcef_mobile_col(begc:endc, lbj:ubj, 1:betrtracer_vars%nvolatile_tracer_groups))
-    this%gas2bulkcef_mobile_col(:,:,:)     = nan
+    NAN_ALLOC(this%gas2bulkcef_mobile_col(begc:endc, lbj:ubj, 1:betrtracer_vars%nvolatile_tracer_groups))
 
-    allocate(this%henrycef_col(begc:endc, lbj:ubj, 1:betrtracer_vars%nvolatile_tracer_groups))
-    this%henrycef_col(:,:,:)     = nan
+    NAN_ALLOC(this%henrycef_col(begc:endc, lbj:ubj, 1:betrtracer_vars%nvolatile_tracer_groups))
 
-    allocate(this%bunsencef_col(begc:endc, lbj:ubj, 1:betrtracer_vars%nvolatile_tracer_groups))
-    this%bunsencef_col(:,:,:)     = nan
+    NAN_ALLOC(this%bunsencef_col(begc:endc, lbj:ubj, 1:betrtracer_vars%nvolatile_tracer_groups))
 
-    allocate(this%tracer_diffusivity_air_col(begc:endc, 1:betrtracer_vars%nvolatile_tracer_groups))
-    this%tracer_diffusivity_air_col(:,:)       = nan
+    NAN_ALLOC(this%tracer_diffusivity_air_col(begc:endc, 1:betrtracer_vars%nvolatile_tracer_groups))
 
-    allocate(this%scal_aere_cond_col(begc:endc, 1:betrtracer_vars%nvolatile_tracer_groups))
-    this%scal_aere_cond_col(:,:)       = nan
+    NAN_ALLOC(this%scal_aere_cond_col(begc:endc, 1:betrtracer_vars%nvolatile_tracer_groups))
 
-    allocate(this%aere_cond_col(begc:endc,          1:betrtracer_vars%nvolatile_tracer_groups))
-    this%aere_cond_col(:,:)       = nan
+    NAN_ALLOC(this%aere_cond_col(begc:endc,          1:betrtracer_vars%nvolatile_tracer_groups))
 
-    allocate(this%rsoi_gas_topsno_col(begc:endc,          1:betrtracer_vars%nvolatile_tracer_groups))
-    this%rsoi_gas_topsno_col(:,:)       = nan
+!    NAN_ALLOC(this%rsoi_gas_topsno_col(begc:endc, 1:betrtracer_vars%nvolatile_tracer_groups))
 
-    allocate(this%diffgas_topsoi_col(begc:endc,          1:betrtracer_vars%nvolatile_tracer_groups))
-    this%diffgas_topsoi_col(:,:)       = nan
+    NAN_ALLOC(this%diffgas_topsoi_col(begc:endc,          1:betrtracer_vars%nvolatile_tracer_groups))
 
-    allocate(this%hmconductance_col(begc:endc, lbj:ubj, 1:betrtracer_vars%ntracer_groups))
-    this%hmconductance_col(:,:,:)     = nan
+    NAN_ALLOC(this%hmconductance_col(begc:endc, lbj:ubj, 1:betrtracer_vars%ntracer_groups))
 
-    allocate(this%aqu2equilsolidcef_col(begc:endc, lbj:ubj, 1:betrtracer_vars%nsolid_equil_tracer_groups))
-    this%aqu2equilsolidcef_col(:,:,:) = nan
+    NAN_ALLOC(this%aqu2equilsolidcef_col(begc:endc, lbj:ubj, 1:betrtracer_vars%nsolid_equil_tracer_groups))
 
-    allocate(this%bulk_diffus_col (begc:endc, lbj:ubj, 1:betrtracer_vars%ntracer_groups))
-    allocate(this%aqu_diffus_col (begc:endc, lbj:ubj, 1:betrtracer_vars%ngwmobile_tracer_groups))
-    allocate(this%aqu_diffus0_col (begc:endc, lbj:ubj, 1:betrtracer_vars%ngwmobile_tracer_groups))
+    NAN_ALLOC(this%bulk_diffus_col (begc:endc, lbj:ubj, 1:betrtracer_vars%ntracer_groups))
 
-    allocate(this%k_sorbsurf_col(begc:endc, lbj:ubj, 1:betrtracer_vars%nsolid_equil_tracers))
-    this%k_sorbsurf_col(:,:,:) = nan
-    allocate(this%Q_sorbsurf_col(begc:endc, lbj:ubj, 1:betrtracer_vars%nsolid_equil_tracers))
-    this%Q_sorbsurf_col(:,:,:) = nan
-    allocate(this%diffblkm_topsoi_col(begc:endc, 1:betrtracer_vars%nvolatile_tracer_groups))
-    this%diffblkm_topsoi_col(:,:) = nan
-    allocate(this%snowres_col(begc:endc, 1:betrtracer_vars%nvolatile_tracer_groups)); this%snowres_col(:,:) = nan
+    NAN_ALLOC(this%aqu_diffus_col (begc:endc, lbj:ubj, 1:betrtracer_vars%ngwmobile_tracer_groups))
 
-    allocate(this%bunsencef_snow_col(begc:endc, -nlevsno+1:0,1:betrtracer_vars%nvolatile_tracer_groups))
-    this%bunsencef_snow_col(:,:,:) = nan
+    NAN_ALLOC(this%aqu_diffus0_col (begc:endc, lbj:ubj, 1:betrtracer_vars%ngwmobile_tracer_groups))
+
+    NAN_ALLOC(this%k_sorbsurf_col(begc:endc, lbj:ubj, 1:betrtracer_vars%nsolid_equil_tracers))
+
+    NAN_ALLOC(this%Q_sorbsurf_col(begc:endc, lbj:ubj, 1:betrtracer_vars%nsolid_equil_tracers))
+
+    NAN_ALLOC(this%diffblkm_topsoi_col(begc:endc, 1:betrtracer_vars%nvolatile_tracer_groups))
+
+    NAN_ALLOC(this%snowres_col(begc:endc, 1:betrtracer_vars%nvolatile_tracer_groups))
+
+    NAN_ALLOC(this%bunsencef_snow_col(begc:endc, -nlevsno+1:0,1:betrtracer_vars%nvolatile_tracer_groups))
+
     NAN_ALLOC(this%henrycef_snow_col(begc:endc, -nlevsno+1:0,1:betrtracer_vars%nvolatile_tracer_groups))
   end subroutine InitAllocate
 
@@ -289,7 +279,7 @@ contains
       if(size(this%tracer_diffusivity_air_col,2)>0)this%tracer_diffusivity_air_col(c,:)   = 0._r8
       if(size(this%scal_aere_cond_col,2)>0)        this%scal_aere_cond_col        (c,:)   = 0._r8
       if(size(this%aere_cond_col,2)>0)             this%aere_cond_col             (c,:)   = 0._r8
-      if(size(this%rsoi_gas_topsno_col,2)>0)       this%rsoi_gas_topsno_col       (c,:)   = 0._r8
+!      if(size(this%rsoi_gas_topsno_col,2)>0)       this%rsoi_gas_topsno_col       (c,:)   = 0._r8
       if(size(this%diffgas_topsoi_col,2)>0)        this%diffgas_topsoi_col   (c,:)   = 0._r8
 
       if(size(this%k_sorbsurf_col,3)>0)            this%k_sorbsurf_col (c,:,:) = 1._r8

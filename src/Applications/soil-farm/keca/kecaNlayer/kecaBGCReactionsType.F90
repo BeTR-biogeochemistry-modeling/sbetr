@@ -1161,19 +1161,19 @@ contains
          pbot_pa    => biophysforc%forc_pbot_downscaled_col, &
          tair       => biophysforc%forc_t_downscaled_col , &
          tracer_gwdif_concflux_top_col=> tracerboundarycond_vars%tracer_gwdif_concflux_top_col, &
-         condc_toplay_col => tracerboundarycond_vars%condc_toplay_col  ,&
-         bot_concflux_col => tracerboundarycond_vars%bot_concflux_col ,&
-         id_trc_n2 => betrtracer_vars%id_trc_n2, &
-         id_trc_o2 => betrtracer_vars%id_trc_o2, &
-         id_trc_ar=> betrtracer_vars%id_trc_ar, &
-         id_trc_co2x => betrtracer_vars%id_trc_co2x, &
-         id_trc_ch4 => betrtracer_vars%id_trc_ch4, &
-         id_trc_n2o => betrtracer_vars%id_trc_n2o, &
-         id_trc_nh3x => betrtracer_vars%id_trc_nh3x, &
-         id_trc_c13_co2x => betrtracer_vars%id_trc_c13_co2x, &
-         id_trc_c14_co2x => betrtracer_vars%id_trc_c14_co2x,  &
-         diffblkm_topsoi_col=> tracercoeff_vars%diffblkm_topsoi_col, &
-         rsoi_gas_topsno_col => tracercoeff_vars%rsoi_gas_topsno_col &
+         condc_toplay_col => tracerboundarycond_vars%condc_toplay_col , &
+         bot_concflux_col => tracerboundarycond_vars%bot_concflux_col , &
+         id_trc_n2 => betrtracer_vars%id_trc_n2                     , &
+         id_trc_o2 => betrtracer_vars%id_trc_o2                     , &
+         id_trc_ar=> betrtracer_vars%id_trc_ar                      , &
+         id_trc_co2x => betrtracer_vars%id_trc_co2x                 , &
+         id_trc_ch4 => betrtracer_vars%id_trc_ch4                   , &
+         id_trc_n2o => betrtracer_vars%id_trc_n2o                   , &
+         id_trc_nh3x => betrtracer_vars%id_trc_nh3x                 , &
+         id_trc_c13_co2x => betrtracer_vars%id_trc_c13_co2x         , &
+         id_trc_c14_co2x => betrtracer_vars%id_trc_c14_co2x         , &
+         diffblkm_topsoi_col=> tracercoeff_vars%diffblkm_topsoi_col , &
+         snowres_col         => tracercoeff_vars%snowres_col         &
          )
 
       do fc = 1, num_soilc
@@ -1202,8 +1202,8 @@ contains
          endif
          do kk = 1, ngwmobile_tracers
            if(.not. is_volatile(kk))cycle
-           condc_toplay_col(c,groupid(kk))    = rsoi_gas_topsno_col(c,volatilegroupid(kk)) + &
-           2._r8 * diffblkm_topsoi_col(c,volatilegroupid(kk))/dz_top(c) !m/s surface conductance
+           condc_toplay_col(c,groupid(kk))    = 1._r8/(snowres_col(c,volatilegroupid(kk))+&
+             0.5_r8*dz_top(c)/diffblkm_topsoi_col(c,volatilegroupid(kk))) !m/s surface conductance
          enddo
       enddo
     end associate
