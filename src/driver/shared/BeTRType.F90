@@ -345,7 +345,7 @@ contains
       !set up kinetic parameters that are passed in from the mother lsm. Mostly they
       !are plant-nutrient related parameters.
       call this%bgc_reaction%set_kinetics_par(1, ubj, this%nactpft, &
-        this%plantNutkinetics, this%tracercoeffs)
+        this%plantNutkinetics, this%tracers, this%tracercoeffs)
     endif
 
     call stage_tracer_transport(betr_time, bounds, col, pft, num_soilc,&

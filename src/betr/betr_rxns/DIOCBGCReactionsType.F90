@@ -99,13 +99,15 @@ contains
 
   end subroutine init_iP_prof
   !----------------------------------------------------------------------
-  subroutine set_kinetics_par(this, lbj, ubj, nactpft, plantNutkinetics,tracercoeff_vars)
+  subroutine set_kinetics_par(this, lbj, ubj, nactpft, plantNutkinetics, tracers, tracercoeff_vars)
   use PlantNutKineticsMod, only : PlantNutKinetics_type
   use tracercoeffType          , only : tracercoeff_type
+  use BeTRTracerType           , only : betrtracer_type
   implicit none
   ! !ARGUMENTS:
   class(bgc_reaction_dioc_run_type)         , intent(inout)    :: this
   class(PlantNutKinetics_type), intent(in) :: plantNutkinetics
+  type(BeTRtracer_type), intent(in) :: tracers
   type(tracercoeff_type), intent(inout) :: tracercoeff_vars
   integer, intent(in) :: lbj, ubj
   integer, intent(in) :: nactpft

@@ -641,8 +641,8 @@ contains
     enddo
     this%betr(c)%nactpft = pp
     do j = 1, betr_bounds%ubj
-      this%betr(c)%plantNutkinetics%minsurf_p_compet_vr_col(c_l,j) = 0._r8
-      this%betr(c)%plantNutkinetics%minsurf_nh4_compet_vr_col(c_l,j) = 0._r8
+      this%betr(c)%plantNutkinetics%minsurf_p_compet_vr_col(c_l,j) = 1._r8
+      this%betr(c)%plantNutkinetics%minsurf_nh4_compet_vr_col(c_l,j) = 1._r8
       this%betr(c)%plantNutkinetics%minsurf_dom_compet_vr_col(c_l,j) = PlantMicKinetics_vars%minsurf_dom_compet_vr_col(c,j)
     enddo
   enddo

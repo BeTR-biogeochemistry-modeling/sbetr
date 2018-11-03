@@ -343,17 +343,28 @@ contains
   enddo
   end subroutine init_iP_prof
   !----------------------------------------------------------------------
-  subroutine set_kinetics_par(this, lbj, ubj, nactpft, plantNutkinetics, tracercoeff_vars)
+  subroutine set_kinetics_par(this, lbj, ubj, nactpft, plantNutkinetics, tracers, tracercoeff_vars)
   use PlantNutKineticsMod, only : PlantNutKinetics_type
   use tracercoeffType          , only : tracercoeff_type
+  use BeTRTracerType           , only : betrtracer_type
   ! !ARGUMENTS:
   class(ecacnp_bgc_reaction_type)         , intent(inout)    :: this                       !
   class(PlantNutKinetics_type), intent(in) :: plantNutkinetics
+  type(betrtracer_type)       , intent(in) :: tracers
   type(tracercoeff_type), intent(inout) :: tracercoeff_vars
   integer, intent(in) :: lbj, ubj
   integer, intent(in) :: nactpft  !number of active pfts
 
-  integer :: c_l, p, j
+  integer :: c_l, p, j, trcid, gid
+
+  associate(                                                      &
+     k_sorbsurf    => tracercoeff_vars%k_sorbsurf_col           , &
+     Q_sorbsurf    => tracercoeff_vars%Q_sorbsurf_col           , &
+     tracer_group_memid => tracers%tracer_group_memid           , &
+     id_trc_nh3x   => tracers%id_trc_nh3x                       , &
+     id_trc_p_sol  => tracers%id_trc_p_sol                      , &
+     adsorbgroupid => tracers%adsorbgroupid                       &
+  )
   !in the following, only one column is assumed for the bgc
   c_l = 1
   this%nactpft = nactpft
@@ -377,9 +388,15 @@ contains
 
     this%ecacnp_forc(c_l,j)%msurf_nh4 = plantNutkinetics%minsurf_nh4_compet_vr_col(c_l,j)   !this  number needs update
     this%ecacnp_forc(c_l,j)%msurf_minp= plantNutkinetics%minsurf_p_compet_vr_col(c_l,j)    !this  number needs update
+    trcid=tracer_group_memid(id_trc_p_sol,1); gid = adsorbgroupid(trcid)
+    k_sorbsurf(c_l,j,gid) = plantNutkinetics%km_minsurf_p_vr_col(c_l,j)
+    Q_sorbsurf(c_l,j,gid) = plantNutkinetics%minsurf_p_compet_vr_col(c_l,j)
+    trcid=tracer_group_memid(id_trc_nh3x,1); gid = adsorbgroupid(trcid)
+    k_sorbsurf(c_l,j,gid) = plantNutkinetics%km_minsurf_nh4_vr_col(c_l,j)
+    Q_sorbsurf(c_l,j,gid) = plantNutkinetics%minsurf_nh4_compet_vr_col(c_l,j)
 
   enddo
-
+  end associate
   end subroutine set_kinetics_par
   !-------------------------------------------------------------------------------
 
@@ -646,10 +663,10 @@ contains
     if(bstatus%check_status())return
 
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_nh3x, &
-         trc_name='NH3x', is_trc_mobile=.false., is_trc_advective = .false., &
+         trc_name='NH3x', is_trc_mobile=.true., is_trc_advective = .true., &
          trc_group_id = betrtracer_vars%id_trc_nh3x, trc_group_mem = 1, is_trc_volatile=.true., &
          trc_volatile_id = addone(itemp_v), trc_volatile_group_id = addone(itemp_vgrp), &
-         is_trc_adsorb = .false., trc_adsorbid=addone(itemp_ads), &
+         is_trc_adsorb = .true., trc_adsorbid=addone(itemp_ads), &
          trc_adsorbgroupid=addone(itemp_ads_grp), trc_sorpisotherm='LANGMUIR', &
          trc_vtrans_scal=1._r8)
     if(bstatus%check_status())return
@@ -663,7 +680,7 @@ contains
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_p_sol, &
          trc_name='P_SOL', is_trc_mobile=.true. .and. (.not. fix_ip), is_trc_advective = .true. .and. (.not. fix_ip), &
          trc_group_id = betrtracer_vars%id_trc_p_sol, trc_group_mem = 1, is_trc_volatile=.false., &
-         is_trc_adsorb = .false., trc_adsorbid=addone(itemp_ads), &
+         is_trc_adsorb = .true., trc_adsorbid=addone(itemp_ads), &
          trc_adsorbgroupid=addone(itemp_ads_grp), trc_sorpisotherm='LANGMUIR', &
          trc_vtrans_scal=1._r8)
     if(bstatus%check_status())return

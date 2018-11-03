@@ -343,18 +343,28 @@ contains
   enddo
   end subroutine init_iP_prof
   !----------------------------------------------------------------------
-  subroutine set_kinetics_par(this, lbj, ubj, nactpft, plantNutkinetics, tracercoeff_vars)
+  subroutine set_kinetics_par(this, lbj, ubj, nactpft, plantNutkinetics, tracers, tracercoeff_vars)
   use PlantNutKineticsMod, only : PlantNutKinetics_type
   use tracercoeffType          , only : tracercoeff_type
+  use BeTRTracerType           , only : betrtracer_type
   ! !ARGUMENTS:
   class(keca_bgc_reaction_type)         , intent(inout)    :: this                       !
   class(PlantNutKinetics_type), intent(in) :: plantNutkinetics
+  type(betrtracer_type)       , intent(in) :: tracers
   type(tracercoeff_type), intent(inout) :: tracercoeff_vars
   integer, intent(in) :: lbj, ubj
   integer, intent(in) :: nactpft  !number of active pfts
 
   integer :: c_l, p, j
   !in the following, only one column is assumed for the bgc
+  associate(                                                      &
+     k_sorbsurf    => tracercoeff_vars%k_sorbsurf_col           , &
+     Q_sorbsurf    => tracercoeff_vars%Q_sorbsurf_col           , &
+     tracer_group_memid => tracers%tracer_group_memid           , &
+     id_trc_nh3x   => tracers%id_trc_nh3x                       , &
+     id_trc_p_sol  => tracers%id_trc_p_sol                      , &
+     adsorbgroupid => tracers%adsorbgroupid                       &
+  )
   c_l = 1
   this%nactpft = nactpft
   do j = lbj, ubj
@@ -379,7 +389,7 @@ contains
     this%keca_forc(c_l,j)%msurf_minp= plantNutkinetics%minsurf_p_compet_vr_col(c_l,j)    !this  number needs update
 
   enddo
-
+  end associate
   end subroutine set_kinetics_par
   !-------------------------------------------------------------------------------
 
