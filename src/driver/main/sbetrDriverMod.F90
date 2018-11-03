@@ -330,14 +330,15 @@ contains
     call simulation%StepWithDrainage(bounds, col)
 
 
+    !x print*,'do mass balance check'
+    call simulation%MassBalanceCheck(bounds)
+
     select type(simulation)
     class is (betr_simulation_standalone_type)
       call simulation%PlantSoilBGCRecv(bounds, col, pft,  simulation%num_soilc, simulation%filter_soilc,&
           carbonstate_vars, carbonflux_vars, c13state_vars, c13_cflx_vars, c14state_vars, c14_cflx_vars, &
           nitrogenstate_vars, nitrogenflux_vars, phosphorusstate_vars, phosphorusflux_vars)
     end select
-    !x print*,'do mass balance check'
-    call simulation%MassBalanceCheck(bounds)
 
     !specific for water tracer transport
     !call simulation%ConsistencyCheck(bounds, ubj, simulation%num_soilc,    &
@@ -594,6 +595,8 @@ end subroutine sbetrBGC_driver
     id = id + 1; ystates(id) = nitrogenflux_vars%f_n2o_nit_col(c_l)
     id = id + 1; ystates(id) = nitrogenflux_vars%f_denit_col(c_l)
     id = id + 1; ystates(id) = nitrogenflux_vars%f_nit_col(c_l)
+    id = id + 1; ystates(id) = carbonflux_vars%co2_soi_flx_col(c_l)
+    id = id + 1; ystates(id) = nitrogenflux_vars%nh3_soi_flx_col(c_l)
     id = id + 1; ystates(id) = carbonstate_vars%cwdc_col(c_l)
     id = id + 1; ystates(id) = carbonstate_vars%totlitc_col(c_l)
     id = id + 1; ystates(id) = carbonstate_vars%totsomc_col(c_l)
@@ -621,6 +624,7 @@ end subroutine sbetrBGC_driver
     id = id + 1; ystates(id) = phosphorusstate_vars%som1p_col(c_l)
     id = id + 1; ystates(id) = phosphorusstate_vars%som2p_col(c_l)
     id = id + 1; ystates(id) = phosphorusstate_vars%som3p_col(c_l)
+
   elseif(index(trim(reaction_method),'cdom')/=0)then
     id = 0
     id = id + 1; ystates(id) = carbonflux_vars%hr_col(c_l)

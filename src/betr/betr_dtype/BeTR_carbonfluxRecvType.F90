@@ -17,7 +17,7 @@ implicit none
     real(r8), pointer :: tempavg_bgnpp_patch(:) => null()
     real(r8), pointer :: annavg_agnpp_patch(:) => null()
     real(r8), pointer :: annavg_bgnpp_patch(:) => null()
-
+    real(r8), pointer :: co2_soi_flx_col(:) => null()
   contains
     procedure, public  :: Init
     procedure, private :: InitAllocate
@@ -64,7 +64,7 @@ implicit none
   allocate(this%tempavg_bgnpp_patch(begp:endp)); this%tempavg_bgnpp_patch(:) = spval
   allocate(this%annavg_agnpp_patch(begp:endp));  this%annavg_agnpp_patch(:) = spval
   allocate(this%annavg_bgnpp_patch(begp:endp)); this%annavg_bgnpp_patch(:)  = spval
-
+  allocate(this%co2_soi_flx_col(begc:endc)); this%co2_soi_flx_col(:) = spval
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------
@@ -78,7 +78,7 @@ implicit none
   this%som_c_leached_col(:) = value_column
   this%som_c_qdrain_col(:) = value_column
   this%som_c_runoff_col(:) = value_column
-
+  this%co2_soi_flx_col(:)=value_column
   end subroutine reset
 
 

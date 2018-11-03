@@ -37,6 +37,8 @@ contains
     call list_insert(hist_list_var,'f_n2o_nit',id1, itype=var_flux_type) ; call list_insert(hist_list_unit,'gN m-2 s-1',id2)
     call list_insert(hist_list_var,'f_denit',id1, itype=var_flux_type)   ; call list_insert(hist_list_unit,'gN m-2 s-1',id2)
     call list_insert(hist_list_var,'f_nit',id1, itype=var_flux_type)     ; call list_insert(hist_list_unit,'gN m-2 s-1',id2)
+    call list_insert(hist_list_var,'co2_soil_flx',id1,itype=var_flux_type); call list_insert(hist_list_unit,'gC m-2 s-1',id2)
+    call list_insert(hist_list_var,'nh3_soil_flx',id1,itype=var_flux_type); call list_insert(hist_list_unit,'gN m-2 s-1',id2)
     call list_insert(hist_list_var,'cwdc',id1, itype=var_state_type)      ; call list_insert(hist_list_unit,'gC m-2',id2)
     call list_insert(hist_list_var,'totlitc',id1, itype=var_state_type)   ; call list_insert(hist_list_unit,'gC m-2',id2)
     call list_insert(hist_list_var,'totsomc',id1, itype=var_state_type)   ; call list_insert(hist_list_unit,'gC m-2',id2)

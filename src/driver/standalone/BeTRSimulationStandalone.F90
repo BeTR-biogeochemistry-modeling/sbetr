@@ -449,7 +449,7 @@ contains
     !the following is for consistency with the ALM definitation, which computes
     !som_c_leached_col as a numerical roundoff
     c12flux_vars%som_c_leached_col(c)=-c12flux_vars%som_c_leached_col(c)
-
+    c12flux_vars%co2_soi_flx_col(c) = this%biogeo_flux(c)%c12flux_vars%co2_soi_flx_col(c_l)
     if(use_c13_betr)then
       c13flux_vars%hr_col(c) = this%biogeo_flux(c)%c13flux_vars%hr_col(c_l)
       c13flux_vars%fire_decomp_closs_col(c) = this%biogeo_flux(c)%c13flux_vars%fire_decomp_closs_col(c_l)
@@ -473,7 +473,7 @@ contains
     n14flux_vars%som_n_leached_col(c) = &
         this%biogeo_flux(c)%n14flux_vars%som_n_leached_col(c_l) + &
         this%biogeo_flux(c)%n14flux_vars%som_n_qdrain_col(c_l)
-
+    n14flux_vars%nh3_soi_flx_col(c) = this%biogeo_flux(c)%n14flux_vars%nh3_soi_flx_col(c_l)
     n14flux_vars%som_n_runoff_col(c) = this%biogeo_flux(c)%n14flux_vars%som_n_runoff_col(c_l)
     !the following is for consistency with the ALM definitation, which computes
     !som_n_leached_col as a numerical roundoff

@@ -1114,7 +1114,7 @@ contains
          is_trc_mobile=.false., is_trc_advective = .false., &
          trc_group_id = betrtracer_vars%id_trc_minp,  trc_group_mem= addone(itemp_mem), &
          trc_family_name='MINP')
-    call betrtracer_vars%disp_betr_tracer()
+    !call betrtracer_vars%disp_betr_tracer()
   end subroutine Init_betrbgc
 
   !-------------------------------------------------------------------------------
@@ -1618,6 +1618,9 @@ contains
       tracer_flx_leaching_col => tracerflux_vars%tracer_flx_leaching_col, &
       tracer_flx_surfrun_col  => tracerflux_vars%tracer_flx_surfrun_col, &
       tracer_flx_drain_col    => tracerflux_vars%tracer_flx_drain_col, &
+      tracer_flx_surfemi_col  => tracerflux_vars%tracer_flx_surfemi_col, &
+      volatileid              => betrtracer_vars%volatileid   , &
+      id_trc_nh3x             => betrtracer_vars%id_trc_nh3x  , &
       id_trc_no3x             => betrtracer_vars%id_trc_no3x,  &
       id_trc_co2x             => betrtracer_vars%id_trc_co2x,  &
       id_trc_p_sol            => betrtracer_vars%id_trc_p_sol  &
@@ -1641,11 +1644,13 @@ contains
      biogeo_flux%c12flux_vars%som_c_runoff_col(c) = tracer_flx_surfrun_col(c,trcid) * catomw
      biogeo_flux%c12flux_vars%som_c_qdrain_col(c) = tracer_flx_drain_col(c,trcid) * catomw
 
+     biogeo_flux%c12flux_vars%co2_soi_flx_col(c) = tracer_flx_surfemi_col(c,volatileid(id_trc_co2x))*catomw
+
      trcid =  betrtracer_vars%id_trc_beg_dom+n_loc-1
      biogeo_flux%n14flux_vars%som_n_leached_col(c)= tracer_flx_leaching_col(c,trcid) * natomw
      biogeo_flux%n14flux_vars%som_n_runoff_col(c) = tracer_flx_surfrun_col(c,trcid) * natomw
      biogeo_flux%n14flux_vars%som_n_qdrain_col(c) = tracer_flx_drain_col(c,trcid) * natomw
-
+     biogeo_flux%n14flux_vars%nh3_soi_flx_col(c) = tracer_flx_surfemi_col(c,volatileid(id_trc_nh3x))*natomw
      trcid =  betrtracer_vars%id_trc_beg_dom+p_loc-1
      biogeo_flux%p31flux_vars%som_p_leached_col(c)= tracer_flx_leaching_col(c,trcid) * patomw
      biogeo_flux%p31flux_vars%som_p_runoff_col(c) = tracer_flx_surfrun_col(c,trcid) * patomw
@@ -1658,6 +1663,7 @@ contains
 
      biogeo_flux%qflx_rofliq_qsub_dic_col(c) = tracer_flx_surfrun_col(c,id_trc_co2x) * catomw
      biogeo_flux%qflx_rofliq_qsur_dic_col(c) = tracer_flx_drain_col(c,id_trc_co2x) * catomw
+
    enddo
 
    end associate
