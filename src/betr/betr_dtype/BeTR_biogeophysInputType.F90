@@ -20,6 +20,8 @@ implicit none
     real(r8), pointer :: annsum_npp_patch(:)    => null()  !annual npp
     real(r8), pointer :: agnpp_patch(:)         => null()
     real(r8), pointer :: bgnpp_patch(:)         => null()
+    real(r8), pointer :: h2osno_liq_col(:,:)    => null()
+    real(r8), pointer :: h2osno_ice_col(:,:)    => null()
     !waterstate
     real(r8), pointer :: h2osoi_liq_col(:,:)    => null()    !liquid water (kg/m2) (new) (-nlevsno+1:nlevgrnd)
     real(r8), pointer :: h2osoi_ice_col(:,:)    => null()    !ice lens (kg/m2) (new) (-nlevsno+1:nlevgrnd)
@@ -62,6 +64,7 @@ implicit none
     real(r8), pointer :: n2o_ppmv_col                  (:) => null() ! n2o concentration in ppmv
     real(r8), pointer :: no_ppmv_col                   (:) => null() ! no concentration in ppmv
     real(r8), pointer :: nh3_ppmv_col                  (:) => null() ! nh3 concentration in ppmv
+    real(r8), pointer :: Dw_hk                         (:) => null() ! wicking diffusivity
     !canopystate
     real(r8) , pointer :: altmax_col               (:) => null() ! col maximum annual depth of thaw
     real(r8) , pointer :: altmax_lastyear_col      (:) => null() ! col prior year maximum annual depth of thaw
@@ -105,6 +108,7 @@ implicit none
     real(r8), pointer :: annavg_bgnpp_patch(:) => null()
     integer  :: icluster_type     !type of ecosystem simulated, btvland, btvlake, bthaqua
     real(r8), pointer :: annsum_counter_col(:) => null()
+    real(r8), pointer :: t_snow_col(:,:) => null()
     !carbon fluxes
     type(betr_carbonflux_type) :: c12flx
     type(betr_carbonflux_type) :: c13flx
@@ -181,10 +185,11 @@ contains
   integer :: begp, endp
   integer :: begc, endc
   integer :: lbj, ubj
+  integer :: nlevsno
   begp = bounds%begp ; endp=bounds%endp
   begc = bounds%begc ; endc=bounds%endc
   lbj = bounds%lbj   ; ubj=bounds%ubj
-
+  nlevsno = bounds%nlevsno
   ! cnstate_vars
   allocate(this%isoilorder(begc:endc))  ! soil order
   allocate(this%frootc_patch(begp:endp))
@@ -214,7 +219,8 @@ contains
   allocate (this%rho_vap(           begc:endc,lbj:ubj ) ) !concentration of bulk water vapor, assume in equilibrium with the liquid water
   allocate (this%rhvap_soi(         begc:endc,lbj:ubj ) ) !soil relative humidity
   allocate (this%smp_l_col     (    begc:endc,lbj:ubj ) ) ! col liquid phase soil matric potential, mm
-
+  allocate (this%h2osno_liq_col( begc:endc, -nlevsno+1:0))
+  allocate (this%h2osno_ice_col( begc:endc, -nlevsno+1:0))
   !waterflux
   allocate(this%qflx_surf_col            (begc:endc         ) )  !surface runoff (mm H2O /s)
   allocate(this%qflx_dew_grnd_col        (begc:endc         ) ) ! col ground surface dew formation (mm H2O /s) [+] (+ = to atm); usually eflx_bot >= 0)
@@ -282,6 +288,8 @@ contains
   allocate(this%dom_scalar_col(begc:endc)); this%dom_scalar_col(:) = 1._r8
   allocate(this%lat(begc:endc))
   allocate(this%annsum_counter_col(begc:endc)); this%annsum_counter_col(:)=0._r8
+  allocate(this%Dw_hk(begc:endc)); this%Dw_hk(:) = 0._r8
+  allocate(this%t_snow_col(begc:endc,-nlevsno+1:0)); this%t_snow_col = 0._r8
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------

@@ -71,8 +71,11 @@ macro(set_up_platform)
     set(CMAKE_Fortran_COMPILER $ENV{FC})
 
     # We are cared for mathematically.
-    set(NEED_LAPACK FALSE)
-
+    if ($ENV{CC} STREQUAL "gcc")
+      set(NEED_LAPACK TRUE)
+    else()
+      set(NEED_LAPACK FALSE)
+    endif()
   elseif(HOSTNAME MATCHES "yslogin") # NCAR yellowstone
     message("-- Running on yellowstone.")
     set(NUM_BUILD_THREADS "4")

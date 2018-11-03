@@ -333,8 +333,8 @@ contains
    real(r8), parameter :: co2reflogK2=-10.33_r8   !25 Celcisum
    real(r8), parameter :: co2dH1=-2.0e3_r8 ! J/mol
    real(r8), parameter :: co2dH2=-3.5e3_r8 ! J/mol
-   real(r8), parameter :: nh3logK=9.24_r8  ! from Maggi et al. (2008)
-   real(r8), parameter :: no3logK=1.30_r8  ! from Maggi et al. (2008)
+   real(r8), parameter :: plogKnh3=9.24_r8  ! from Maggi et al. (2008)
+   real(r8), parameter :: plogKno3=1.30_r8  ! from Maggi et al. (2008)
    real(r8), parameter :: R=8.3144
    real(r8)            :: co2logK1, co2logK2, rscal
    character(len=255)  :: subname ='get_equilibrium_scal'
@@ -345,15 +345,15 @@ contains
       !1.e3_r8 converts from mol/dm3 to mol/m3
       co2logK1 = co2reflogK1+co2dH1*(1._r8/(2.303_r8*R*Tref)-1._r8/(2.303_r8*R*temp))
       co2logK2 = co2reflogK2+co2dH2*(1._r8/(2.303_r8*R*Tref)-1._r8/(2.303_r8*R*temp))
-      rscal = 1._r8+10._r8**(co2logK1)*10._r8**(-pH)*(1._r8+10._r8**(co2logK2)*10._r8**(-pH))*1.e3_r8
+      rscal = 1._r8+10._r8**(pH+co2logK1)*(1._r8+10._r8**(pH+co2logK2))
 
    elseif(trim(tracer)=='NH3x')then
       !NH3H2O <--> NH4(+) + OH(-)
       !10._r8**(-pH) gives mol / dm3
-      rscal = 1._r8+10._r8**(nh3logK)*10._r8**(-pH)*1.e3_r8
+      rscal = 1._r8+10._r8**(-plogKnh3-pH)
    elseif(trim(tracer)=='NO3x')then
       !HNO3 <--> NO3(-) + H(+)
-      rscal = 1._r8+10._r8**(no3logK)*10._r8**(-pH)*1.e3_r8
+      rscal = 1._r8+10._r8**(pH-plogKno3)
    else
       rscal = 1._r8  ! no rescal for other tracers
    endif

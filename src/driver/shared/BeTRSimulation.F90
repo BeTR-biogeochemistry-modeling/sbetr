@@ -1054,17 +1054,10 @@ contains
                 this%biophys_forc(c)%annsum_npp_patch(pp) = carbonflux_vars%annsum_npp_patch(p)
                 this%biophys_forc(c)%agnpp_patch(pp)      = carbonflux_vars%agnpp_patch(p)
                 this%biophys_forc(c)%bgnpp_patch(pp)      = carbonflux_vars%bgnpp_patch(p)
-!                if(carbonflux_vars%tempavg_agnpp_patch(p) == spval)then
-!                  this%biophys_forc(c)%tempavg_agnpp_patch(pp)= 0._r8
- !                 this%biophys_forc(c)%tempavg_bgnpp_patch(pp)= 0._r8
-!                  this%biophys_forc(c)%annavg_agnpp_patch(pp) = 0._r8
-!                  this%biophys_forc(c)%annavg_bgnpp_patch(pp) = 0._r8
-!                else
-                  this%biophys_forc(c)%tempavg_agnpp_patch(pp)= carbonflux_vars%tempavg_agnpp_patch(p)
-                  this%biophys_forc(c)%tempavg_bgnpp_patch(pp)= carbonflux_vars%tempavg_bgnpp_patch(p)
-                  this%biophys_forc(c)%annavg_agnpp_patch(pp) = carbonflux_vars%annavg_agnpp_patch(p)
-                  this%biophys_forc(c)%annavg_bgnpp_patch(pp) = carbonflux_vars%annavg_bgnpp_patch(p)
-!                endif
+                this%biophys_forc(c)%tempavg_agnpp_patch(pp)= carbonflux_vars%tempavg_agnpp_patch(p)
+                this%biophys_forc(c)%tempavg_bgnpp_patch(pp)= carbonflux_vars%tempavg_bgnpp_patch(p)
+                this%biophys_forc(c)%annavg_agnpp_patch(pp) = carbonflux_vars%annavg_agnpp_patch(p)
+                this%biophys_forc(c)%annavg_bgnpp_patch(pp) = carbonflux_vars%annavg_bgnpp_patch(p)
               endif
             endif
           enddo
@@ -1082,6 +1075,10 @@ contains
     endif
     !assign waterstate
     if(present(waterstate_vars))then
+      if(col%snl(c)<0)then
+        this%biophys_forc(c)%h2osno_liq_col(cc,col%snl(c)+1:0) = waterstate_vars%h2osoi_liq_col(c,col%snl(c)+1:0)
+        this%biophys_forc(c)%h2osno_ice_col(cc,col%snl(c)+1:0) = waterstate_vars%h2osoi_ice_col(c,col%snl(c)+1:0)
+      endif
       this%biophys_forc(c)%finundated_col(cc)            = waterstate_vars%finundated_col(c)
       this%biophys_forc(c)%frac_h2osfc_col(cc)           = waterstate_vars%frac_h2osfc_col(c)
       this%biophys_forc(c)%h2osoi_liq_col(cc,lbj:ubj)    = waterstate_vars%h2osoi_liq_col(c,lbj:ubj)
@@ -2158,13 +2155,16 @@ contains
   type(column_type), intent(in) :: col
   type(patch_type), optional, intent(in) :: pft
   integer :: c, p, pi, pp
+  integer :: c_l
 
-
+  c_l=1
   do c = bounds%begc, bounds%endc
-    this%betr_col(c)%snl(1) = col%snl(c)
-    this%betr_col(c)%zi(1,0:betr_nlevsoi)= col%zi(c,0:betr_nlevsoi)
-    this%betr_col(c)%dz(1,1:betr_nlevsoi)= col%dz(c,1:betr_nlevsoi)
-    this%betr_col(c)%z(1,1:betr_nlevsoi)= col%z(c,1:betr_nlevsoi)
+    this%betr_col(c)%snl(c_l) = col%snl(c)
+    if(col%snl(c)<0)this%betr_col(c)%dz_snow(c_l, col%snl(c)+1:0) = col%dz(c,col%snl(c)+1:0)
+    this%betr_col(c)%zi(c_l,0:betr_nlevsoi)= col%zi(c,0:betr_nlevsoi)
+    this%betr_col(c)%dz(c_l,1:betr_nlevsoi)= col%dz(c,1:betr_nlevsoi)
+    this%betr_col(c)%z(c_l,1:betr_nlevsoi)= col%z(c,1:betr_nlevsoi)
+
     this%betr_col(c)%pfti(1)= col%pfti(c)
     this%betr_col(c)%pftf(1)= col%pftf(c)
     this%betr_col(c)%npfts(1)= col%npfts(c)
@@ -2198,16 +2198,18 @@ contains
   !set betr_bounds
   !
   use betr_varcon    , only : betr_maxpatch_pft
-  use tracer_varcon  , only : betr_nlevsoi
+  use tracer_varcon  , only : betr_nlevsoi,betr_nlevsno
   implicit none
   class(betr_simulation_type) , intent(inout) :: this
   type(betr_bounds_type), intent(out)  :: betr_bounds
-
+  !the following will be adpated to simulate lake and wetlands, by allowing
+  !lbj to be negative
   betr_bounds%lbj  = 1; betr_bounds%ubj  = betr_nlevsoi
   betr_bounds%begp = 1; betr_bounds%endp = betr_maxpatch_pft
   betr_bounds%begc = 1; betr_bounds%endc = 1
   betr_bounds%begl = 1; betr_bounds%endl = 1
   betr_bounds%begg = 1; betr_bounds%endg = 1
+  betr_bounds%nlevsno=betr_nlevsno
   end subroutine BeTRSimulationSetBounds
 
   !------------------------------------------------------------------------

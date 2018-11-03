@@ -343,16 +343,28 @@ contains
   enddo
   end subroutine init_iP_prof
   !----------------------------------------------------------------------
-  subroutine set_kinetics_par(this, lbj, ubj, nactpft, plantNutkinetics)
+  subroutine set_kinetics_par(this, lbj, ubj, nactpft, plantNutkinetics, tracers, tracercoeff_vars)
   use PlantNutKineticsMod, only : PlantNutKinetics_type
-
+  use tracercoeffType          , only : tracercoeff_type
+  use BeTRTracerType           , only : betrtracer_type
   ! !ARGUMENTS:
   class(ecacnp_bgc_reaction_type)         , intent(inout)    :: this                       !
   class(PlantNutKinetics_type), intent(in) :: plantNutkinetics
+  type(betrtracer_type)       , intent(in) :: tracers
+  type(tracercoeff_type), intent(inout) :: tracercoeff_vars
   integer, intent(in) :: lbj, ubj
   integer, intent(in) :: nactpft  !number of active pfts
 
-  integer :: c_l, p, j
+  integer :: c_l, p, j, trcid, gid
+
+  associate(                                                      &
+     k_sorbsurf    => tracercoeff_vars%k_sorbsurf_col           , &
+     Q_sorbsurf    => tracercoeff_vars%Q_sorbsurf_col           , &
+     tracer_group_memid => tracers%tracer_group_memid           , &
+     id_trc_nh3x   => tracers%id_trc_nh3x                       , &
+     id_trc_p_sol  => tracers%id_trc_p_sol                      , &
+     adsorbgroupid => tracers%adsorbgroupid                       &
+  )
   !in the following, only one column is assumed for the bgc
   c_l = 1
   this%nactpft = nactpft
@@ -376,9 +388,15 @@ contains
 
     this%ecacnp_forc(c_l,j)%msurf_nh4 = plantNutkinetics%minsurf_nh4_compet_vr_col(c_l,j)   !this  number needs update
     this%ecacnp_forc(c_l,j)%msurf_minp= plantNutkinetics%minsurf_p_compet_vr_col(c_l,j)    !this  number needs update
+    trcid=tracer_group_memid(id_trc_p_sol,1); gid = adsorbgroupid(trcid)
+    k_sorbsurf(c_l,j,gid) = plantNutkinetics%km_minsurf_p_vr_col(c_l,j)
+    Q_sorbsurf(c_l,j,gid) = plantNutkinetics%minsurf_p_compet_vr_col(c_l,j)
+    trcid=tracer_group_memid(id_trc_nh3x,1); gid = adsorbgroupid(trcid)
+    k_sorbsurf(c_l,j,gid) = plantNutkinetics%km_minsurf_nh4_vr_col(c_l,j)
+    Q_sorbsurf(c_l,j,gid) = plantNutkinetics%minsurf_nh4_compet_vr_col(c_l,j)
 
   enddo
-
+  end associate
   end subroutine set_kinetics_par
   !-------------------------------------------------------------------------------
 
@@ -408,7 +426,7 @@ contains
     integer   :: nelm, itemp_mem
     integer   :: itemp, itemp_vgrp, itemp_v,itemp_trc
     integer   :: c_loc, n_loc, p_loc, trcid, c13_loc, c14_loc
-    integer   :: c, j, litr_cnt, wood_cnt, Bm_cnt, pom_cnt, som_cnt, itemp_ads, itemp_ads_grp
+    integer   :: c, j, litr_cnt, wood_cnt, Bm_cnt, pom_cnt, som_cnt, itemp_ads,itemp_ads_grp
     integer   :: ngroupmems
     logical   :: batch_mode
 
@@ -503,19 +521,19 @@ contains
         is_trc_gw=.true., is_trc_volatile = .true.)
     endif
 
+    !dissolved nh3x, no volatilization is allowed at this moment.
+    call betrtracer_vars%add_tracer_group(trc_grp_cnt=addone(itemp), mem = 1, &
+      trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_nh3x, &
+      trc_grp_beg=betrtracer_vars%id_trc_beg_nh3x, &
+      trc_grp_end=betrtracer_vars%id_trc_end_nh3x, &
+      is_trc_gw=.true., is_trc_volatile = .true.)
+
     !non-volatile tracers
     !nitrate
     call betrtracer_vars%add_tracer_group(trc_grp_cnt=addone(itemp),  mem = 1, &
       trc_cnt = itemp_trc, trc_grp=betrtracer_vars%id_trc_no3x, &
       trc_grp_beg=betrtracer_vars%id_trc_beg_no3x, &
       trc_grp_end=betrtracer_vars%id_trc_end_no3x, &
-      is_trc_gw=.true., is_trc_volatile = .false.)
-
-    !dissolved nh3x, no volatilization is allowed at this moment.
-    call betrtracer_vars%add_tracer_group(trc_grp_cnt=addone(itemp), mem = 1, &
-      trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_nh3x, &
-      trc_grp_beg=betrtracer_vars%id_trc_beg_nh3x, &
-      trc_grp_end=betrtracer_vars%id_trc_end_nh3x, &
       is_trc_gw=.true., is_trc_volatile = .false.)
 
     !soluble phosphate
@@ -586,7 +604,7 @@ contains
     !set up the tracers
     itemp_vgrp = 0  !counter for volatile groups
     itemp_v    = 0  !counter for volatile tracers
-    itemp_ads_grp =0!counter for sorptive groups
+    itemp_ads_grp =0
     itemp_ads=0     !counter for sorptive tracers
 
     call betrtracer_vars%set_tracer(bstatus=bstatus, trc_id = betrtracer_vars%id_trc_n2, &
@@ -645,8 +663,12 @@ contains
     if(bstatus%check_status())return
 
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_nh3x, &
-         trc_name='NH3x', is_trc_mobile=.false., is_trc_advective = .false., &
-         trc_group_id = betrtracer_vars%id_trc_nh3x, trc_group_mem = 1, is_trc_volatile=.false.)
+         trc_name='NH3x', is_trc_mobile=.true., is_trc_advective = .true., &
+         trc_group_id = betrtracer_vars%id_trc_nh3x, trc_group_mem = 1, is_trc_volatile=.true., &
+         trc_volatile_id = addone(itemp_v), trc_volatile_group_id = addone(itemp_vgrp), &
+         is_trc_adsorb = .true., trc_adsorbid=addone(itemp_ads), &
+         trc_adsorbgroupid=addone(itemp_ads_grp), trc_sorpisotherm='LANGMUIR', &
+         trc_vtrans_scal=1._r8)
     if(bstatus%check_status())return
 
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_no3x, &
@@ -658,6 +680,8 @@ contains
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_p_sol, &
          trc_name='P_SOL', is_trc_mobile=.true. .and. (.not. fix_ip), is_trc_advective = .true. .and. (.not. fix_ip), &
          trc_group_id = betrtracer_vars%id_trc_p_sol, trc_group_mem = 1, is_trc_volatile=.false., &
+         is_trc_adsorb = .true., trc_adsorbid=addone(itemp_ads), &
+         trc_adsorbgroupid=addone(itemp_ads_grp), trc_sorpisotherm='LANGMUIR', &
          trc_vtrans_scal=1._r8)
     if(bstatus%check_status())return
 
@@ -1090,12 +1114,12 @@ contains
          is_trc_mobile=.false., is_trc_advective = .false., &
          trc_group_id = betrtracer_vars%id_trc_minp,  trc_group_mem= addone(itemp_mem), &
          trc_family_name='MINP')
-
+    !call betrtracer_vars%disp_betr_tracer()
   end subroutine Init_betrbgc
 
   !-------------------------------------------------------------------------------
   subroutine set_boundary_conditions(this, bounds, num_soilc, filter_soilc, dz_top, betrtracer_vars, &
-       biophysforc, biogeo_flux, tracerboundarycond_vars, betr_status)
+       biophysforc, biogeo_flux, tracercoeff_vars, tracerboundarycond_vars, betr_status)
     !
     ! !DESCRIPTION:
     ! set up boundary conditions for tracer movement
@@ -1107,6 +1131,7 @@ contains
     use BetrStatusType        , only : betr_status_type
     use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
     use UnitConvertMod         , only : ppm2molv
+    use TracerCoeffType        , only : tracercoeff_type
     implicit none
     ! !ARGUMENTS:
     class(ecacnp_bgc_reaction_type) , intent(inout)    :: this
@@ -1117,12 +1142,13 @@ contains
     real(r8)                             , intent(in)    :: dz_top(bounds%begc: )
     type(betr_biogeophys_input_type)     , intent(in)    :: biophysforc
     type(betr_biogeo_flux_type)          , intent(in)    :: biogeo_flux
+    type(tracercoeff_type)               , intent(in)   :: tracercoeff_vars
     type(tracerboundarycond_type)        , intent(inout) :: tracerboundarycond_vars !
     type(betr_status_type)               , intent(out)   :: betr_status
 
     ! !LOCAL VARIABLES:
     character(len=255) :: subname = 'set_boundary_conditions'
-    integer :: fc, c
+    integer :: fc, c, kk
 
     call betr_status%reset()
     SHR_ASSERT_ALL((ubound(dz_top)  == (/bounds%endc/)),   errMsg(mod_filename,__LINE__),betr_status)
@@ -1131,7 +1157,9 @@ contains
     associate(                                       &
          groupid  => betrtracer_vars%groupid    ,    &
          ngwmobile_tracers => betrtracer_vars%ngwmobile_tracers, &
-         ntracers => betrtracer_vars%ntracers  ,&
+         volatilegroupid =>  betrtracer_vars%volatilegroupid, &
+         ntracers => betrtracer_vars%ntracers        , &
+         is_volatile=> betrtracer_vars%is_volatile   , &
          n2_ppmv    => biophysforc%n2_ppmv_col       , &
          o2_ppmv    => biophysforc%o2_ppmv_col       , &
          ar_ppmv    => biophysforc%ar_ppmv_col       , &
@@ -1140,7 +1168,21 @@ contains
          n2o_ppmv   => biophysforc%n2o_ppmv_col      , &
          nh3_ppmv   => biophysforc%nh3_ppmv_col      , &
          pbot_pa    => biophysforc%forc_pbot_downscaled_col, &
-         tair       => biophysforc%forc_t_downscaled_col &
+         tair       => biophysforc%forc_t_downscaled_col , &
+         tracer_gwdif_concflux_top_col=> tracerboundarycond_vars%tracer_gwdif_concflux_top_col, &
+         condc_toplay_col => tracerboundarycond_vars%condc_toplay_col  ,&
+         bot_concflux_col => tracerboundarycond_vars%bot_concflux_col ,&
+         id_trc_n2 => betrtracer_vars%id_trc_n2, &
+         id_trc_o2 => betrtracer_vars%id_trc_o2, &
+         id_trc_ar=> betrtracer_vars%id_trc_ar, &
+         id_trc_co2x => betrtracer_vars%id_trc_co2x, &
+         id_trc_ch4 => betrtracer_vars%id_trc_ch4, &
+         id_trc_n2o => betrtracer_vars%id_trc_n2o, &
+         id_trc_nh3x => betrtracer_vars%id_trc_nh3x, &
+         id_trc_c13_co2x => betrtracer_vars%id_trc_c13_co2x, &
+         id_trc_c14_co2x => betrtracer_vars%id_trc_c14_co2x,  &
+         diffblkm_topsoi_col=> tracercoeff_vars%diffblkm_topsoi_col, &
+         snowres_col => tracercoeff_vars%snowres_col &
          )
 
       do fc = 1, num_soilc
@@ -1148,34 +1190,31 @@ contains
 
          !values below will be updated with datastream
          !eventually, the following code will be implemented using polymorphism
-         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,1:ntracers)                   =0._r8                        !zero incoming flux
-         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_n2)    =ppm2molv(pbot_pa(c), n2_ppmv(c), tair(c))    !mol m-3, contant boundary condition
-         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_o2)    =ppm2molv(pbot_pa(c), o2_ppmv(c), tair(c))!mol m-3, contant boundary condition
-         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_ar)    =ppm2molv(pbot_pa(c), ar_ppmv(c), tair(c))!mol m-3, contant boundary condition
-         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_co2x)  =ppm2molv(pbot_pa(c), co2_ppmv(c), tair(c))!mol m-3, contant boundary condition
-         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_ch4)   =ppm2molv(pbot_pa(c), ch4_ppmv(c), tair(c))!mol m-3, contant boundary condition
-         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_n2o)   =ppm2molv(pbot_pa(c), n2o_ppmv(c), tair(c))!mol m-3, contant boundary condition
-         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_no3x)  = 0._r8
-         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_p_sol) = 0._r8
-
-         tracerboundarycond_vars%bot_concflux_col(c,1,:)                                          = 0._r8                       !zero flux boundary condition
-         tracerboundarycond_vars%condc_toplay_col(c,:) = 0._r8                                                                  !those will be updated with snow resistance and hydraulic wicking resistance
-         tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_n2))    = 2._r8*1.267e-5_r8/dz_top(c) !m/s surface conductance
-         tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_o2))    = 2._r8*1.267e-5_r8/dz_top(c) !m/s surface conductance
-         tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_ar))    = 2._r8*1.267e-5_r8/dz_top(c) !m/s surface conductance
-         tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_co2x))  = 2._r8*1.267e-5_r8/dz_top(c) !m/s surface conductance
-         tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_ch4))   = 2._r8*1.267e-5_r8/dz_top(c) !m/s surface conductance
-         tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_n2o))   = 2._r8*1.267e-5_r8/dz_top(c) !m/s surface conductance
+         tracer_gwdif_concflux_top_col(c,1:2,1:ntracers)                   =0._r8                        !zero incoming flux
+         tracer_gwdif_concflux_top_col(c,1:2,id_trc_n2)    =ppm2molv(pbot_pa(c), n2_ppmv(c), tair(c))    !mol m-3, contant boundary condition
+         tracer_gwdif_concflux_top_col(c,1:2,id_trc_o2)    =ppm2molv(pbot_pa(c), o2_ppmv(c), tair(c))!mol m-3, contant boundary condition
+         tracer_gwdif_concflux_top_col(c,1:2,id_trc_ar)    =ppm2molv(pbot_pa(c), ar_ppmv(c), tair(c))!mol m-3, contant boundary condition
+         tracer_gwdif_concflux_top_col(c,1:2,id_trc_co2x)  =ppm2molv(pbot_pa(c), co2_ppmv(c), tair(c))!mol m-3, contant boundary condition
+         tracer_gwdif_concflux_top_col(c,1:2,id_trc_ch4)   =ppm2molv(pbot_pa(c), ch4_ppmv(c), tair(c))!mol m-3, contant boundary condition
+         tracer_gwdif_concflux_top_col(c,1:2,id_trc_n2o)   =ppm2molv(pbot_pa(c), n2o_ppmv(c), tair(c))!mol m-3, contant boundary condition
+         tracer_gwdif_concflux_top_col(c,1:2,id_trc_nh3x)  =ppm2molv(pbot_pa(c), nh3_ppmv(c), tair(c))!mol m-3, contant boundary condition
+         tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_no3x)  = 0._r8
+         tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_p_sol) = 0._r8
 
          if(this%use_c13)then
-           tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_c13_co2x)  =0.0168_r8
-           tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_c13_co2x))  = 2._r8*1.267e-5_r8/dz_top(c)
+           tracer_gwdif_concflux_top_col(c,1:2,id_trc_c13_co2x)  =0.0168_r8
          endif
          if(this%use_c14)then
-           tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_c14_co2x)  =0.0168_r8
-           tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_c14_co2x))  = 2._r8*1.267e-5_r8/dz_top(c)
+           tracer_gwdif_concflux_top_col(c,1:2,id_trc_c14_co2x)  =0.0168_r8
          endif
 
+         bot_concflux_col(c,1,:)       = 0._r8      !zero flux boundary condition
+         condc_toplay_col(c,:) = 0._r8              !those will be updated with snow resistance and hydraulic wicking resistance
+         do kk = 1, ngwmobile_tracers
+           if(.not. is_volatile(kk))cycle
+           condc_toplay_col(c,groupid(kk))    = 1._r8/(snowres_col(c,volatilegroupid(kk))+&
+             0.5_r8*dz_top(c)/diffblkm_topsoi_col(c,volatilegroupid(kk))) !m/s surface conductance
+         enddo
       enddo
     end associate
   end subroutine set_boundary_conditions
@@ -1579,6 +1618,9 @@ contains
       tracer_flx_leaching_col => tracerflux_vars%tracer_flx_leaching_col, &
       tracer_flx_surfrun_col  => tracerflux_vars%tracer_flx_surfrun_col, &
       tracer_flx_drain_col    => tracerflux_vars%tracer_flx_drain_col, &
+      tracer_flx_surfemi_col  => tracerflux_vars%tracer_flx_surfemi_col, &
+      volatileid              => betrtracer_vars%volatileid   , &
+      id_trc_nh3x             => betrtracer_vars%id_trc_nh3x  , &
       id_trc_no3x             => betrtracer_vars%id_trc_no3x,  &
       id_trc_co2x             => betrtracer_vars%id_trc_co2x,  &
       id_trc_p_sol            => betrtracer_vars%id_trc_p_sol  &
@@ -1602,11 +1644,13 @@ contains
      biogeo_flux%c12flux_vars%som_c_runoff_col(c) = tracer_flx_surfrun_col(c,trcid) * catomw
      biogeo_flux%c12flux_vars%som_c_qdrain_col(c) = tracer_flx_drain_col(c,trcid) * catomw
 
+     biogeo_flux%c12flux_vars%co2_soi_flx_col(c) = tracer_flx_surfemi_col(c,volatileid(id_trc_co2x))*catomw
+
      trcid =  betrtracer_vars%id_trc_beg_dom+n_loc-1
      biogeo_flux%n14flux_vars%som_n_leached_col(c)= tracer_flx_leaching_col(c,trcid) * natomw
      biogeo_flux%n14flux_vars%som_n_runoff_col(c) = tracer_flx_surfrun_col(c,trcid) * natomw
      biogeo_flux%n14flux_vars%som_n_qdrain_col(c) = tracer_flx_drain_col(c,trcid) * natomw
-
+     biogeo_flux%n14flux_vars%nh3_soi_flx_col(c) = tracer_flx_surfemi_col(c,volatileid(id_trc_nh3x))*natomw
      trcid =  betrtracer_vars%id_trc_beg_dom+p_loc-1
      biogeo_flux%p31flux_vars%som_p_leached_col(c)= tracer_flx_leaching_col(c,trcid) * patomw
      biogeo_flux%p31flux_vars%som_p_runoff_col(c) = tracer_flx_surfrun_col(c,trcid) * patomw
@@ -1619,6 +1663,7 @@ contains
 
      biogeo_flux%qflx_rofliq_qsub_dic_col(c) = tracer_flx_surfrun_col(c,id_trc_co2x) * catomw
      biogeo_flux%qflx_rofliq_qsur_dic_col(c) = tracer_flx_drain_col(c,id_trc_co2x) * catomw
+
    enddo
 
    end associate

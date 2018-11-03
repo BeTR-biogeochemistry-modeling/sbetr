@@ -449,7 +449,7 @@ contains
     !the following is for consistency with the ALM definitation, which computes
     !som_c_leached_col as a numerical roundoff
     c12flux_vars%som_c_leached_col(c)=-c12flux_vars%som_c_leached_col(c)
-
+    c12flux_vars%co2_soi_flx_col(c) = this%biogeo_flux(c)%c12flux_vars%co2_soi_flx_col(c_l)
     if(use_c13_betr)then
       c13flux_vars%hr_col(c) = this%biogeo_flux(c)%c13flux_vars%hr_col(c_l)
       c13flux_vars%fire_decomp_closs_col(c) = this%biogeo_flux(c)%c13flux_vars%fire_decomp_closs_col(c_l)
@@ -473,7 +473,7 @@ contains
     n14flux_vars%som_n_leached_col(c) = &
         this%biogeo_flux(c)%n14flux_vars%som_n_leached_col(c_l) + &
         this%biogeo_flux(c)%n14flux_vars%som_n_qdrain_col(c_l)
-
+    n14flux_vars%nh3_soi_flx_col(c) = this%biogeo_flux(c)%n14flux_vars%nh3_soi_flx_col(c_l)
     n14flux_vars%som_n_runoff_col(c) = this%biogeo_flux(c)%n14flux_vars%som_n_runoff_col(c_l)
     !the following is for consistency with the ALM definitation, which computes
     !som_n_leached_col as a numerical roundoff
@@ -641,8 +641,8 @@ contains
     enddo
     this%betr(c)%nactpft = pp
     do j = 1, betr_bounds%ubj
-      this%betr(c)%plantNutkinetics%minsurf_p_compet_vr_col(c_l,j) = 0._r8
-      this%betr(c)%plantNutkinetics%minsurf_nh4_compet_vr_col(c_l,j) = 0._r8
+      this%betr(c)%plantNutkinetics%minsurf_p_compet_vr_col(c_l,j) = 1._r8
+      this%betr(c)%plantNutkinetics%minsurf_nh4_compet_vr_col(c_l,j) = 1._r8
       this%betr(c)%plantNutkinetics%minsurf_dom_compet_vr_col(c_l,j) = PlantMicKinetics_vars%minsurf_dom_compet_vr_col(c,j)
     enddo
   enddo
@@ -686,8 +686,8 @@ contains
 
   !local variables
   real(r8) :: s_node
-  integer  :: fc, c, j
-
+  integer  :: fc, c, j, c_l
+  real(r8) :: dsmpds_top
   SHR_ASSERT_ALL((ubound(t_soisno) == (/bounds%endc, ubj/)),errMsg(mod_filename,__LINE__))
 
   ! remove compiler warnings
@@ -705,7 +705,18 @@ contains
     do fc = 1, numf
       c = filter(fc)
       if(.not. this%active_col(c))cycle
-      if(j>=1)then
+      if(j==1)then
+        if(t_soisno(c,j)<tfrz)then
+          smp_l(c,j)= -hfus*(tfrz-t_soisno(c,j))/(grav*t_soisno(c,j)) * 1000._r8  !(mm)
+        else
+          s_node = max(h2osoi_vol(c,j)/watsat(c,j), 0.01_r8)
+          call soil_water_retention_curve%soil_suction(sucsat(c,j), s_node, bsw(c,j), smp_l(c,j), dsmpds_top)
+!  the following will be implemented later.
+!          call soil_water_retention_curve%soil_hk(hksat, 1._r8, s_node, bsw(c,j), hk)
+        endif
+
+!        this%biophys_forc(c)%Dw_hk(c_l) = hk *
+      else
         if(t_soisno(c,j)<tfrz)then
           smp_l(c,j)= -hfus*(tfrz-t_soisno(c,j))/(grav*t_soisno(c,j)) * 1000._r8  !(mm)
         else

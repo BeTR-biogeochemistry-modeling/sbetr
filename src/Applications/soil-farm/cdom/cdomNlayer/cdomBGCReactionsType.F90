@@ -329,12 +329,15 @@ contains
   enddo
   end subroutine init_iP_prof
   !----------------------------------------------------------------------
-  subroutine set_kinetics_par(this, lbj, ubj, nactpft, plantNutkinetics)
+  subroutine set_kinetics_par(this, lbj, ubj, nactpft, plantNutkinetics, tracers, tracercoeff_vars)
   use PlantNutKineticsMod, only : PlantNutKinetics_type
-
+  use tracercoeffType          , only : tracercoeff_type
+  use BeTRTracerType           , only : betrtracer_type
   ! !ARGUMENTS:
   class(cdom_bgc_reaction_type)         , intent(inout)    :: this                       !
   class(PlantNutKinetics_type), intent(in) :: plantNutkinetics
+  type(betrtracer_type)       , intent(in) :: tracers
+  type(tracercoeff_type), intent(inout) :: tracercoeff_vars
   integer, intent(in) :: lbj, ubj
   integer, intent(in) :: nactpft  !number of active pfts
 
@@ -1020,7 +1023,7 @@ contains
 
   !-------------------------------------------------------------------------------
   subroutine set_boundary_conditions(this, bounds, num_soilc, filter_soilc, dz_top, betrtracer_vars, &
-       biophysforc, biogeo_flux, tracerboundarycond_vars, betr_status)
+       biophysforc, biogeo_flux,tracercoeff_vars, tracerboundarycond_vars, betr_status)
     !
     ! !DESCRIPTION:
     ! set up boundary conditions for tracer movement
@@ -1031,6 +1034,7 @@ contains
     use BeTR_biogeoFluxType   , only : betr_biogeo_flux_type
     use BetrStatusType        , only : betr_status_type
     use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
+    use TracerCoeffType        , only : tracercoeff_type
     implicit none
     ! !ARGUMENTS:
     class(cdom_bgc_reaction_type) , intent(inout)    :: this
@@ -1041,6 +1045,7 @@ contains
     real(r8)                             , intent(in)    :: dz_top(bounds%begc: )
     type(betr_biogeophys_input_type)     , intent(in)    :: biophysforc
     type(betr_biogeo_flux_type)          , intent(in)    :: biogeo_flux
+    type(tracercoeff_type)               , intent(in)   :: tracercoeff_vars
     type(tracerboundarycond_type)        , intent(inout) :: tracerboundarycond_vars !
     type(betr_status_type)               , intent(out)   :: betr_status
 

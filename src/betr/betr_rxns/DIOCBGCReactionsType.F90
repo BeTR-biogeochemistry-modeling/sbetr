@@ -99,12 +99,16 @@ contains
 
   end subroutine init_iP_prof
   !----------------------------------------------------------------------
-  subroutine set_kinetics_par(this, lbj, ubj, nactpft, plantNutkinetics)
+  subroutine set_kinetics_par(this, lbj, ubj, nactpft, plantNutkinetics, tracers, tracercoeff_vars)
   use PlantNutKineticsMod, only : PlantNutKinetics_type
+  use tracercoeffType          , only : tracercoeff_type
+  use BeTRTracerType           , only : betrtracer_type
   implicit none
   ! !ARGUMENTS:
   class(bgc_reaction_dioc_run_type)         , intent(inout)    :: this
   class(PlantNutKinetics_type), intent(in) :: plantNutkinetics
+  type(BeTRtracer_type), intent(in) :: tracers
+  type(tracercoeff_type), intent(inout) :: tracercoeff_vars
   integer, intent(in) :: lbj, ubj
   integer, intent(in) :: nactpft
 
@@ -279,7 +283,7 @@ contains
 
   !-------------------------------------------------------------------------------
   subroutine set_boundary_conditions(this, bounds, num_soilc, filter_soilc, dz_top, betrtracer_vars, &
-       biophysforc, biogeo_flux, tracerboundarycond_vars, betr_status)
+       biophysforc, biogeo_flux, tracercoeff_vars, tracerboundarycond_vars, betr_status)
     !
     ! !DESCRIPTION:
     ! set up boundary conditions for tracer movement
@@ -292,6 +296,8 @@ contains
     use betr_varcon            , only : rgas => brgas
     use BeTR_biogeoFluxType    , only : betr_biogeo_flux_type
     use BetrStatusType         , only : betr_status_type
+    use TracerCoeffType        , only : tracercoeff_type
+    use UnitConvertMod         , only : ppm2molv
     implicit none
     ! !ARGUMENTS:
     class(bgc_reaction_dioc_run_type) , intent(inout)    :: this                       !
@@ -302,11 +308,12 @@ contains
     real(r8)                          , intent(in)    :: dz_top(bounds%begc: )      !
     type(betr_biogeophys_input_type)  , intent(in)    :: biophysforc
     type(betr_biogeo_flux_type)       , intent(in)    :: biogeo_flux
+    type(tracercoeff_type)            , intent(in)    :: tracercoeff_vars
     type(tracerboundarycond_type)     , intent(inout) :: tracerboundarycond_vars !
     type(betr_status_type)            , intent(out)   :: betr_status
 
     ! !LOCAL VARIABLES:
-    integer            :: fc, c
+    integer            :: fc, c, kk
     character(len=255) :: subname = 'set_boundary_conditions'
     real(r8) :: irt   !the inverse of R*T
 
@@ -317,29 +324,40 @@ contains
     if (this%dummy_compiler_warning)      continue
     if (size(biogeo_flux%qflx_adv_col)>0) continue
     associate(                                                             &
-         forc_pbot            => biophysforc%forc_pbot_downscaled_col    , &
-         forc_tbot            => biophysforc%forc_t_downscaled_col       , &
-         groupid              => betrtracer_vars%groupid                   &
-         )
-
+         groupid              => betrtracer_vars%groupid                 , &
+         ngwmobile_tracers    => betrtracer_vars%ngwmobile_tracers       , &
+         is_volatile          => betrtracer_vars%is_volatile             , &
+         volatilegroupid      => betrtracer_vars%volatilegroupid         , &
+         snowres_col          => tracercoeff_vars%snowres_col            , &
+         condc_toplay_col     => tracerboundarycond_vars%condc_toplay_col, &
+         n2_ppmv              => biophysforc%n2_ppmv_col                 , &
+         o2_ppmv              => biophysforc%o2_ppmv_col                 , &
+         ar_ppmv              => biophysforc%ar_ppmv_col                 , &
+         co2_ppmv             => biophysforc%co2_ppmv_col                , &
+         ch4_ppmv             => biophysforc%ch4_ppmv_col                , &
+         n2o_ppmv             => biophysforc%n2o_ppmv_col                , &
+         nh3_ppmv             => biophysforc%nh3_ppmv_col                , &
+         pbot_pa              => biophysforc%forc_pbot_downscaled_col    , &
+         tair                 => biophysforc%forc_t_downscaled_col       , &
+         diffblkm_topsoi_col  => tracercoeff_vars%diffblkm_topsoi_col      &
+      )
       do fc = 1, num_soilc
          c = filter_soilc(fc)
-         irt = 1.e3_r8/(forc_tbot(c)*rgas)
          !eventually, the following code will be implemented using polymorphism
-         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_n2)   = forc_pbot(c)*0.78084_r8*irt  !mol m-3, contant boundary condition, as concentration
-         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_o2)   = forc_pbot(c)*0.20946_r8*irt  !mol m-3, contant boundary condition, as concentration
-         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_ar)   = forc_pbot(c)*0.009340_r8*irt !mol m-3, contant boundary condition, as concentration
-         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_co2x) = forc_pbot(c)*367e-6_r8*irt   !mol m-3, contant boundary condition, as concentration
-         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_ch4)  = forc_pbot(c)*1.79e-6_r8*irt  !mol m-3, contant boundary condition, as concentration
+         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_n2)   = ppm2molv(pbot_pa(c), n2_ppmv(c), tair(c))  !mol m-3, contant boundary condition, as concentration
+         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_o2)   = ppm2molv(pbot_pa(c), o2_ppmv(c), tair(c)) !mol m-3, contant boundary condition, as concentration
+         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_ar)   = ppm2molv(pbot_pa(c), ar_ppmv(c), tair(c)) !mol m-3, contant boundary condition, as concentration
+         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_co2x) = ppm2molv(pbot_pa(c), co2_ppmv(c), tair(c))  !mol m-3, contant boundary condition, as concentration
+         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_ch4)  = ppm2molv(pbot_pa(c), ch4_ppmv(c), tair(c))  !mol m-3, contant boundary condition, as concentration
          tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_doc)  = 0._r8                        !mol m-3, contant boundary condition, as concentration
 
          tracerboundarycond_vars%bot_concflux_col(c,1,:)                                          = 0._r8                        !zero flux boundary condition for diffusion
-         tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_n2))           = 2._r8*1.837e-5_r8/dz_top(c)  !m/s surface conductance
-         tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_o2))           = 2._r8*1.713e-5_r8/dz_top(c)  !m/s surface conductance
-         tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_ar))           = 2._r8*1.532e-5_r8/dz_top(c)  !m/s surface conductance
-         tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_co2x))         = 2._r8*1.399e-5_r8/dz_top(c)  !m/s surface conductance
-         tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_ch4))          = 2._r8*1.808e-5_r8/dz_top(c)  !m/s surface conductance
-         tracerboundarycond_vars%condc_toplay_col(c,groupid(betrtracer_vars%id_trc_doc))          = 0._r8                        !m/s surface conductance
+         condc_toplay_col(c,groupid(betrtracer_vars%id_trc_doc))          = 0._r8                        !m/s surface conductance
+         do kk = 1, ngwmobile_tracers
+           if(.not. is_volatile(kk))cycle
+           condc_toplay_col(c,groupid(kk))    = 1._r8/(snowres_col(c,volatilegroupid(kk))+&
+             0.5_r8*dz_top(c)/diffblkm_topsoi_col(c,volatilegroupid(kk))) !m/s surface conductance
+         enddo
       enddo
 
     end associate

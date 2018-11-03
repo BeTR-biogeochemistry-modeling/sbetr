@@ -53,7 +53,7 @@ implicit none
      real(r8), pointer :: nflx_input_litr_cwd_vr_col              (:,:) => null()
      real(r8), pointer :: nflx_minn_input_nh4_vr_col              (:,:) => null()
      real(r8), pointer :: nflx_minn_input_no3_vr_col              (:,:) => null()
-
+     real(r8), pointer :: nh3_soi_flx_col                           (:) => null()
   contains
 
     procedure, public  :: Init
@@ -141,6 +141,7 @@ contains
     allocate(this%nflx_minn_input_no3_vr_col(begc:endc,1:nlevdecomp_full)); this%nflx_minn_input_no3_vr_col(:,:) = spval
     allocate(this%fire_decomp_nloss_col(begc:endc)); this%fire_decomp_nloss_col(:) = spval
     allocate(this%som_n_runoff_col(begc:endc)); this%som_n_runoff_col(:) = spval
+    allocate(this%nh3_soi_flx_col(begc:endc)); this%nh3_soi_flx_col(:) = spval
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------

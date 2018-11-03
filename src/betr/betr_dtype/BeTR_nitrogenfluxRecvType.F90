@@ -26,6 +26,7 @@ implicit none
     real(r8), pointer :: smin_no3_leached_col(:) => null()
     real(r8), pointer :: smin_no3_runoff_col(:) => null()
     real(r8), pointer :: smin_no3_qdrain_col(:) => null()
+    real(r8), pointer :: nh3_soi_flx_col(:) => null()
   contains
     procedure, public  :: Init
     procedure, private :: InitAllocate
@@ -80,6 +81,7 @@ implicit none
   allocate(this%supplement_to_sminn_col(begc:endc))
   allocate(this%fire_decomp_nloss_vr_col(begc:endc,lbj:ubj))
   allocate(this%supplement_to_sminn_vr_col(begc:endc,lbj:ubj))
+  allocate(this%nh3_soi_flx_col(begc:endc))
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------
@@ -97,6 +99,7 @@ implicit none
   this%som_n_runoff_col(:) = value_column
   this%som_n_qdrain_col(:) = value_column
   this%supplement_to_sminn_vr_col(:,:)= value_column
+  this%nh3_soi_flx_col(:) = value_column
   end subroutine reset
 
   !------------------------------------------------------------------------

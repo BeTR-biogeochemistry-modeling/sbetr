@@ -46,6 +46,7 @@ implicit none
     real(r8), pointer :: tempavg_bgnpp_patch                     (:) => null()
     real(r8), pointer :: annavg_agnpp_patch                      (:) => null()
     real(r8), pointer :: annavg_bgnpp_patch                      (:) => null()
+    real(r8), pointer :: co2_soi_flx_col                         (:) => null()
   contains
 
     procedure, public  :: Init
@@ -128,7 +129,7 @@ contains
     allocate(this%cflx_input_litr_cwd_vr_col(begc:endc,1:nlevdecomp_full)); this%cflx_input_litr_cwd_vr_col(:,:) = spval
     allocate(this%fire_decomp_closs_col(begc:endc)); this%fire_decomp_closs_col(:) = spval
     allocate(this%som_c_runoff_col(begc:endc)); this%som_c_runoff_col(:) = spval
-
+    allocate(this%co2_soi_flx_col(begc:endc)); this%co2_soi_flx_col(:) = spval
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------
