@@ -1114,7 +1114,7 @@ contains
          is_trc_mobile=.false., is_trc_advective = .false., &
          trc_group_id = betrtracer_vars%id_trc_minp,  trc_group_mem= addone(itemp_mem), &
          trc_family_name='MINP')
-
+    call betrtracer_vars%disp_betr_tracer()
   end subroutine Init_betrbgc
 
   !-------------------------------------------------------------------------------

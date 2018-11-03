@@ -490,11 +490,13 @@ subroutine set_tracer(this, bstatus, trc_id, trc_name, is_trc_mobile, is_trc_adv
      integer, intent(in) :: grpid, memid_beg, memid_end
      integer :: jj
      if(grpid>0)then
-       print*, trim(tag),' group',grpid
+       write(*, '(I3,X,A16,X,A6,X,I3)')grpid, trim(tag),' group'
        do jj = memid_beg, memid_end
-         print*,jj,this%tracernames(jj), this%tracerfamilyname(jj)
+         write(*,'(I3,X,A16,X,A6)')jj,this%tracernames(jj), this%tracerfamilyname(jj)
        enddo
+       print*,'------------------------------------------------'
      endif
+
      end subroutine disp
   end subroutine disp_betr_tracer
 end module BeTRTracerType
