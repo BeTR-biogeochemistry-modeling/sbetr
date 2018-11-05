@@ -146,17 +146,16 @@ module TracerBalanceMod
               else
                  err_rel = errtracer(c,kk)/max(abs(beg_tracer_molarmass(c,kk)),abs(end_tracer_molarmass(c,kk)))
               endif
-              if((kk == betrtracer_vars%id_trc_no3x) .and. ldebug)then
-                  write(*,*)'err=',errtracer(c,kk), ' col=',c
-                  write(*,*)'nstep=', betr_time%get_nstep()
-                  write(*,*)'netpro=',tracer_flx_netpro(c,kk)*natomw
-                  write(*,*)'netphyloss=',tracer_flx_netphyloss(c,kk)*natomw
-                  write(*,*)'begm=',beg_tracer_molarmass(c,kk)*natomw
-                  write(*,*)'endm=',end_tracer_molarmass(c,kk)*natomw
-                  call tracerflux_vars%flux_display(c,kk,betrtracer_vars, msg1)
-                  write(*,*)trim(msg1)
-
-               endif
+!              if((kk == betrtracer_vars%id_trc_n2) .and. ldebug)then
+!                  write(*,*)'err=',errtracer(c,kk), ' col=',c
+!                  write(*,*)'nstep=', betr_time%get_nstep()
+!                  write(*,*)'netpro=',tracer_flx_netpro(c,kk)*natomw
+!                  write(*,*)'netphyloss=',tracer_flx_netphyloss(c,kk)*natomw
+!                  write(*,*)'begm=',beg_tracer_molarmass(c,kk)*natomw
+!                  write(*,*)'endm=',end_tracer_molarmass(c,kk)*natomw
+!                  call tracerflux_vars%flux_display(c,kk,betrtracer_vars, msg1)
+!                  write(*,*)trim(msg1)
+!               endif
               if(abs(err_rel)>err_min_rel .and. do_betr_output)then
                  tracername=betrtracer_vars%get_tracername(kk)
                  write(msg,*)'error exceeds the tolerance for tracer '//trim(tracername), &

@@ -1076,7 +1076,7 @@ contains
        ntrcs = 0
        sorb_trc_group(:) = 0
        do k = 1, nmem_max
-         trcid = tracer_group_memid(j, k)
+         trcid = tracer_group_memid(jj, k)
          if(trcid>0)then
            ntrcs=ntrcs+1
            sorb_trc_group(ntrcs) = trcid
