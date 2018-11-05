@@ -113,6 +113,7 @@ implicit none
      procedure, private :: InitPars
      procedure, private :: InitAllocate
      procedure, private :: set_primvar_reac_ids
+     procedure, public  :: display_index
   end type ecacnp_bgc_index_type
 
   contains
@@ -727,4 +728,65 @@ implicit none
   end associate
 
   end subroutine set_primvar_reac_ids
+
+!-------------------------------------------------------------------------------
+  subroutine display_index(this)
+
+  implicit none
+  class(ecacnp_bgc_index_type) :: this
+  print*,'lit1=', this%lit1
+  print*,'lit2=', this%lit2
+  print*,'lit3=', this%lit3
+  print*,'som1=', this%som1
+  print*,'som2=', this%som2
+  print*,'som3=', this%som3
+  print*,'cwd=',  this%cwd
+  print*,'lwd=',  this%lwd
+  print*,'fwd=',  this%fwd
+  print*,'litrgrp=', this%litr_beg, this%litr_end  !litr group
+  print*,'woodgrp=', this%wood_beg, this%wood_end  !wood group
+  print*,'somgrp =', this%som_beg,  this%som_end   !som group
+  print*,'domgrp =', this%dom_beg,  this%dom_end   !dom group
+  print*,'Bmgrp  =', this%Bm_beg,   this%Bm_end   !dom group
+  print*,'pomgrp =', this%pom_beg,  this%pom_end
+  print*,'supminp=', this%lid_supp_minp                          !supplementary mineral P for spinup purpose
+  print*,'supminn=', this%lid_supp_minn
+  print*,'lid_nh4=', this%lid_nh4,this%lid_nh4_nit_reac              !local position of nh4 in the state variable vector
+  print*,'lid_no3=', this%lid_no3,this%lid_no3_den_reac              !local position of no3 in the state variable vector
+  print*,'pltmnh4=', this%lid_plant_minn_nh4, this%lid_plant_minn_nh4_up_reac !local position of plant uptake of mineral nitrogen NH4 in the state variable vector
+  print*,'pltmno3=', this%lid_plant_minn_no3, this%lid_plant_minn_no3_up_reac !
+  print*,'pltmmnp=', this%lid_plant_minp, this%lid_plant_minp_up_reac !local position of plant uptake of mineral P in the state variable vector
+  print*,'mnpsol =', this%lid_minp_soluble, this%lid_minp_soluble_to_secp_reac    !conversation of adsorbed into secondary phase
+  print*,'mnp2nd =', this%lid_minp_secondary,this%lid_minp_secondary_to_sol_occ_reac   !local position of secondary P in the state variable vector
+  print*,'mnpocl =', this%lid_minp_occlude      !local position of occluded P in the state variable vector
+  print*,'atr_rt =', this%lid_autr_rt, this%lid_autr_rt_reac             !root autotrophic respiration
+  print*,'ar     =', this%lid_ar, this%lid_ar_aren_reac               !local position of ar in the state variable vector
+  print*,'ch4    =', this%lid_ch4, this%lid_ch4_aren_reac             !nonreactive primary variables
+  print*,' o2    =', this%lid_o2,  this%lid_o2_aren_reac              !local position of o2 in the state variable vector
+  print*,' co2   =', this%lid_co2, this%lid_co2_aren_reac             !local position of co2 in the state variable vector
+  print*,'  n2   =', this%lid_n2,  this%lid_n2_aren_reac
+  print*,'  n2o  =', this%lid_n2o, this%lid_n2o_aren_reac
+  print*,'n2o_nit=', this%lid_n2o_nit                            !n2o production from nitrification, used to for mass balance book keeping
+  print*,'co2_hr =', this%lid_co2_hr                             !co2 production from heterotrophic respiration
+  print*,'c13_co2=', this%lid_c13_co2, this%lid_c13_co2_aren_reac
+  print*,'c14_co2=', this%lid_c14_co2, this%lid_c14_co2_aren_reac
+  print*,'no3_den=', this%lid_no3_den                            !no3 consumption due to denitrification
+  print*,'nh4imob=', this%lid_minn_nh4_immob                     !net mineral NH4 immobilization for decomposition
+  print*,'no3imob=', this%lid_minn_no3_immob                     !net mineral NO3 immobilization for decomposition
+  print*,'nh4_nit=', this%lid_nh4_nit
+  print*,'mnp2nd =', this%lid_minp_secondary_trc
+  print*,'mnpocl =', this%lid_minp_occlude_trc
+  print*,'mnpimob=', this%lid_minp_immob                         !net P immobilization by aerobic decomposer
+  print*,'arpare =', this%lid_ar_paere
+  print*,'n2pare =', this%lid_n2_paere
+  print*,'o2pare =', this%lid_o2_paere
+  print*,'co2pare=', this%lid_co2_paere
+  print*,'c13o2pr=', this%lid_c13_co2_paere
+  print*,'c14o2pr=', this%lid_c14_co2_paere
+  print*,'ch4pare=', this%lid_ch4_paere
+  print*,'n2opare=', this%lid_n2o_paere
+  print*,'pno3pft=', this%lid_plant_minn_no3_pft(:)
+  print*,'pnh4pft=', this%lid_plant_minn_nh4_pft(:)
+  print*,'minppft=', this%lid_plant_minp_pft(:)
+  end subroutine display_index
 end module ecacnpBGCIndexType

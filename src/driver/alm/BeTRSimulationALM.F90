@@ -930,6 +930,8 @@ contains
         this%biogeo_flux(c)%n14flux_vars%som_n_leached_col(c_l) + &
         this%biogeo_flux(c)%n14flux_vars%som_n_qdrain_col(c_l)
     n14flux_vars%som_n_runoff_col(c) = this%biogeo_flux(c)%n14flux_vars%som_n_runoff_col(c_l)
+    n14flux_vars%nh3_soi_flx_col(c) = this%biogeo_flux(c)%n14flux_vars%nh3_soi_flx_col(c_l)
+
     !the following is for consistency with the ALM definitation, which computes
     !som_n_leached_col as a numerical roundoff
     n14flux_vars%som_n_leached_col(c) = - n14flux_vars%som_n_leached_col(c)

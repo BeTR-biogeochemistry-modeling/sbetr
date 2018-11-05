@@ -878,14 +878,12 @@ contains
     !compute Henry's law constant
    call calc_henrys_coeff(bounds, lbj, ubj, col, jtops, numf, filter, &
        biophysforc,  betrtracer_vars, tracercoeff_vars, betr_status)
-    if(betr_status%check_status())return
-
+   if(betr_status%check_status())return
    !compute Bunsen's coefficients
    call calc_bunsen_coeff(bounds, lbj, ubj, col, &
         jtops, numf, filter, biophysforc, &
         betrtracer_vars, tracercoeff_vars, betr_status)
-    if(betr_status%check_status())return
-
+   if(betr_status%check_status())return
    !compute equilibrium fraction to liquid phase conversion parameter
    if(betrtracer_vars%nsolid_equil_tracers>0)then
      call calc_equil_to_liquid_convert_coeff(bounds, lbj, ubj, jtops, numf, filter , &
@@ -893,7 +891,6 @@ contains
         betrtracer_vars, tracerstate_vars , tracercoeff_vars, betr_status)
      if(betr_status%check_status())return
    endif
-
    !compute phase conversion coefficients
    call calc_dual_phase_convert_coeff(bounds, lbj, ubj, jtops, numf, filter, &
       biophysforc, betrtracer_vars, tracerstate_vars, tracercoeff_vars, betr_status)
@@ -1059,7 +1056,6 @@ contains
      aqu2equilsolidcef_col     => tracercoeff_vars%aqu2equilsolidcef_col    , &
      bunsencef                 => tracercoeff_vars%bunsencef_col              &
    )
-
 !the following code is now not used
    do jj = 1, ntracer_groups
      trcid=tracer_group_memid(jj,1)
@@ -1082,26 +1078,28 @@ contains
            sorb_trc_group(ntrcs) = trcid
          endif
        enddo
-       do j = 1, ubj
-         do fc = 1, numf
-           c = filter(fc)
-           trc_tot = 0._r8
-           do k = 1,ntrcs
-             !sumup to obtain total concentration
-             trcid = sorb_trc_group(ntrcs)
-             trc_tot = trc_tot + tracer_conc_mobile(c,j,k) +tracer_conc_solid_equil(c,j,adsorbid(trcid))
+       if (ntrcs > 0) then
+         do j = 1, ubj
+           do fc = 1, numf
+             c = filter(fc)
+             trc_tot = 0._r8
+             do k = 1,ntrcs
+               !sumup to obtain total concentration
+               trcid = sorb_trc_group(k)
+               trc_tot = trc_tot + tracer_conc_mobile(c,j,trcid) +tracer_conc_solid_equil(c,j,adsorbid(trcid))
+             enddo
+             trcid = sorb_trc_group(1)
+             if(is_volatile(trcid))then
+               Ctw=get_ctw(air_vol(c,j),h2osoi_liqvol(c,j), bunsencef(c,j,volatilegroupid(trcid)), &
+                 k_sorbsurf(c,j,gid),Q_sorbsurf(c,j,gid), trc_tot, bstatus)
+               if(bstatus%check_status())return
+             else
+               Ctw=trc_tot/max(h2osoi_liqvol(c,j),0.01_r8)
+             endif
+             aqu2equilsolidcef_col(c,j,gid) = Q_sorbsurf(c,j,gid)/(k_sorbsurf(c,j,gid)+ctw)
            enddo
-           trcid = sorb_trc_group(ntrcs)
-           if(is_volatile(trcid))then
-             Ctw=get_ctw(air_vol(c,j),h2osoi_liqvol(c,j), bunsencef(c,j,volatilegroupid(trcid)), &
-                k_sorbsurf(c,j,gid),Q_sorbsurf(c,j,gid), ctot, bstatus)
-             if(bstatus%check_status())return
-           else
-             Ctw=trc_tot/max(h2osoi_liqvol(c,j),0.01_r8)
-           endif
-           aqu2equilsolidcef_col(c,j,gid) = Q_sorbsurf(c,j,gid)/(k_sorbsurf(c,j,gid)+ctw)
          enddo
-       enddo
+       endif
      endif
    enddo
    end associate

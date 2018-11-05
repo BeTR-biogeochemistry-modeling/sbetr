@@ -365,6 +365,7 @@ contains
      id_trc_p_sol  => tracers%id_trc_p_sol                      , &
      adsorbgroupid => tracers%adsorbgroupid                       &
   )
+
   !in the following, only one column is assumed for the bgc
   c_l = 1
   this%nactpft = nactpft
@@ -526,7 +527,7 @@ contains
       trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_nh3x, &
       trc_grp_beg=betrtracer_vars%id_trc_beg_nh3x, &
       trc_grp_end=betrtracer_vars%id_trc_end_nh3x, &
-      is_trc_gw=.true., is_trc_volatile = .true.)
+      is_trc_gw=.true., is_trc_volatile = .true., is_trc_adsorb=.true.)
 
     !non-volatile tracers
     !nitrate
@@ -541,8 +542,8 @@ contains
       trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_p_sol, &
       trc_grp_beg=betrtracer_vars%id_trc_beg_p_sol, &
       trc_grp_end=betrtracer_vars%id_trc_end_p_sol, &
-      is_trc_gw=.true., is_trc_volatile = .false.)
-
+      is_trc_gw=.true., is_trc_volatile = .false.,is_trc_adsorb=.true.)
+    !dom group
     call betrtracer_vars%add_tracer_group(trc_grp_cnt=addone(itemp), mem = nelm, &
       trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_dom, &
       trc_grp_beg=betrtracer_vars%id_trc_beg_dom, &
@@ -1115,6 +1116,7 @@ contains
          trc_group_id = betrtracer_vars%id_trc_minp,  trc_group_mem= addone(itemp_mem), &
          trc_family_name='MINP')
     !call betrtracer_vars%disp_betr_tracer()
+
   end subroutine Init_betrbgc
 
   !-------------------------------------------------------------------------------
@@ -1184,7 +1186,6 @@ contains
          diffblkm_topsoi_col=> tracercoeff_vars%diffblkm_topsoi_col, &
          snowres_col => tracercoeff_vars%snowres_col &
          )
-
       do fc = 1, num_soilc
          c = filter_soilc(fc)
 
@@ -1309,7 +1310,6 @@ contains
 
         if(this%ecacnp_forc(c,j)%debug)print*,'runbgc',j
         !temperature adaptation
-
         call this%ecacnp(c,j)%runbgc(is_surflit, dtime, this%ecacnp_forc(c,j),nstates, &
             ystates0, ystatesf, betr_status)
         if(betr_status%check_status())then
@@ -2379,7 +2379,7 @@ contains
    integer :: fc, c
    integer :: c_loc, n_loc, p_loc, nelm, j, kk
    real(r8):: c_mass, n_mass, p_mass, minp, min_nh4,min_no3,p_massocl
-
+  
    call betr_status%reset()
    SHR_ASSERT_ALL((ubound(dzsoi)  == (/bounds%endc, bounds%ubj/)),   errMsg(mod_filename,__LINE__),betr_status)
 

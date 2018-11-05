@@ -408,7 +408,7 @@ subroutine set_tracer(this, bstatus, trc_id, trc_name, is_trc_mobile, is_trc_adv
   !--------------------------------------------------------------------------------
   subroutine  add_tracer_group(this, trc_grp_cnt, mem, &
      trc_cnt, trc_grp, trc_grp_beg, trc_grp_end, is_trc_gw, is_trc_volatile,&
-     is_trc_passive)
+     is_trc_passive,is_trc_adsorb)
   implicit none
   class(BeTRtracer_type), intent(inout) :: this
   integer, intent(in)  :: trc_grp_cnt
@@ -420,6 +420,7 @@ subroutine set_tracer(this, bstatus, trc_id, trc_name, is_trc_mobile, is_trc_adv
   logical, optional, intent(in)  :: is_trc_gw
   logical, optional, intent(in)  :: is_trc_volatile
   logical, optional, intent(in)  :: is_trc_passive
+  logical, optional, intent(in)  :: is_trc_adsorb
 
   trc_grp = trc_grp_cnt
   this%ntracers = this%ntracers + mem
@@ -441,6 +442,13 @@ subroutine set_tracer(this, bstatus, trc_id, trc_name, is_trc_mobile, is_trc_adv
     if(is_trc_passive)then
       this%nsolid_passive_tracer_groups = this%nsolid_passive_tracer_groups + 1
       this%nsolid_passive_tracers = this%nsolid_passive_tracers + mem
+    endif
+  endif
+
+  if(present(is_trc_adsorb))then
+    if(is_trc_adsorb)then
+      this%nsolid_equil_tracer_groups = this%nsolid_equil_tracer_groups + 1
+      this%nsolid_equil_tracers       = this%nsolid_equil_tracers + mem
     endif
   endif
   trc_grp_beg = trc_cnt + 1

@@ -91,6 +91,7 @@ module ecacnpBGCType
     procedure, private :: begin_massbal_check
     procedure, private :: end_massbal_check
     procedure, private :: sum_tot_store
+    procedure, public  :: display_index
   end type ecacnp_bgc_type
 
   public :: create_jarmodel_ecacnp
@@ -1734,4 +1735,12 @@ contains
     ystates((som3-1)*nelms+c_loc)
   end associate
   end subroutine sum_tot_store
+  !-------------------------------------------------------------------------------
+  subroutine display_index(this)
+  implicit none
+  class(ecacnp_bgc_type)     , intent(inout) :: this
+  print*,'no3',this%ecacnp_bgc_index%lid_plant_minn_no3_pft
+  print*,'nh4', this%ecacnp_bgc_index%lid_plant_minn_nh4_pft 
+
+  end subroutine display_index
 end module ecacnpBGCType

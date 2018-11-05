@@ -215,6 +215,7 @@ contains
          betr_status = betr_status)
     if(betr_status%check_status())return
 
+    if(betr_status%check_status())return
     call set_multi_phase_diffusion(bounds, col, lbj, ubj, &
          tracerboundarycond_vars%jtops_col         , &
          num_soilc                                 , &
