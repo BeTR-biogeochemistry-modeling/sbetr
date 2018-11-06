@@ -519,7 +519,7 @@ contains
       trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_nh3x, &
       trc_grp_beg=betrtracer_vars%id_trc_beg_nh3x, &
       trc_grp_end=betrtracer_vars%id_trc_end_nh3x, &
-      is_trc_gw=.true., is_trc_volatile = .true.)
+      is_trc_gw=.true., is_trc_volatile = .true.,is_trc_adsorb=.true.)
 
     !non-volatile tracers
     !nitrate
@@ -535,7 +535,7 @@ contains
       trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_p_sol, &
       trc_grp_beg=betrtracer_vars%id_trc_beg_p_sol, &
       trc_grp_end=betrtracer_vars%id_trc_end_p_sol, &
-      is_trc_gw=.true., is_trc_volatile = .false.)
+      is_trc_gw=.true., is_trc_volatile = .false., is_trc_adsorb=.true.)
 
     call betrtracer_vars%add_tracer_group(trc_grp_cnt=addone(itemp), mem = nelm, &
       trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_dom, &
@@ -1637,6 +1637,10 @@ contains
      biogeo_flux%n14flux_vars%smin_no3_leached_col(c) = tracer_flx_leaching_col(c,id_trc_no3x) * natomw  ![gN/m2/s]
      biogeo_flux%n14flux_vars%smin_no3_runoff_col(c) = tracer_flx_surfrun_col(c,id_trc_no3x) * natomw
      biogeo_flux%n14flux_vars%smin_no3_qdrain_col(c) = tracer_flx_drain_col(c,id_trc_no3x) * natomw
+
+!     biogeo_flux%n14flux_vars%smin_nh4_leached_col(c) = tracer_flx_leaching_col(c,id_trc_nh3x) * natomw  ![gN/m2/s]
+!     biogeo_flux%n14flux_vars%smin_nh4_runoff_col(c) = tracer_flx_surfrun_col(c,id_trc_nh3x) * natomw
+!     biogeo_flux%n14flux_vars%smin_nh4_qdrain_col(c) = tracer_flx_drain_col(c,id_trc_nh3x) * natomw
 
      !return dom loss in terms c, n, and p.
      trcid =  betrtracer_vars%id_trc_beg_dom+c_loc-1

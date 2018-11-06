@@ -8,6 +8,8 @@ implicit none
   type, public :: nitrogenflux_type
      real(r8), pointer :: smin_no3_leached_col                      (:)    => null() ! col soil mineral NO3 pool loss to leaching (gN/m2/s)
      real(r8), pointer :: smin_no3_runoff_col                       (:)   => null()  ! col soil mineral NO3 pool loss to runoff (gN/m2/s)
+     real(r8), pointer :: smin_nh4_leached_col                      (:)    => null() ! col soil mineral NO3 pool loss to leaching (gN/m2/s)
+     real(r8), pointer :: smin_nh4_runoff_col                       (:)   => null()  ! col soil mineral NO3 pool loss to runoff (gN/m2/s)
      real(r8), pointer :: f_n2o_denit_col                           (:)  => null()   ! col flux of N2o from denitrification [gN/m^2/s]
      real(r8), pointer :: f_n2o_nit_col                             (:)  => null()   ! col flux of N2o from nitrification [gN/m^2/s]
      real(r8), pointer :: f_nit_col                                 (:)=> null()
@@ -97,6 +99,8 @@ contains
 
     allocate(this%smin_no3_runoff_col         (begc:endc)); this%smin_no3_runoff_col   (:)   = spval
     allocate(this%smin_no3_leached_col        (begc:endc)); this%smin_no3_leached_col  (:)   = spval
+    allocate(this%smin_nh4_runoff_col         (begc:endc)); this%smin_nh4_runoff_col   (:)   = spval
+    allocate(this%smin_nh4_leached_col        (begc:endc)); this%smin_nh4_leached_col  (:)   = spval
     allocate(this%f_n2o_denit_col             (begc:endc)); this%f_n2o_denit_col       (:)   = spval
     allocate(this%f_n2o_nit_col               (begc:endc)); this%f_n2o_nit_col         (:)   = spval
     allocate(this%f_nit_col                   (begc:endc)); this%f_nit_col             (:)   = spval

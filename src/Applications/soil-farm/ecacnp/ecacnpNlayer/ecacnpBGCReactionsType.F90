@@ -1638,6 +1638,10 @@ contains
      biogeo_flux%n14flux_vars%smin_no3_runoff_col(c) = tracer_flx_surfrun_col(c,id_trc_no3x) * natomw
      biogeo_flux%n14flux_vars%smin_no3_qdrain_col(c) = tracer_flx_drain_col(c,id_trc_no3x) * natomw
 
+     biogeo_flux%n14flux_vars%smin_nh4_leached_col(c) = tracer_flx_leaching_col(c,id_trc_nh3x) * natomw  ![gN/m2/s]
+     biogeo_flux%n14flux_vars%smin_nh4_runoff_col(c) = tracer_flx_surfrun_col(c,id_trc_nh3x) * natomw
+     biogeo_flux%n14flux_vars%smin_nh4_qdrain_col(c) = tracer_flx_drain_col(c,id_trc_nh3x) * natomw
+
      !return dom loss in terms c, n, and p.
      trcid =  betrtracer_vars%id_trc_beg_dom+c_loc-1
      biogeo_flux%c12flux_vars%som_c_leached_col(c)= tracer_flx_leaching_col(c,trcid) * catomw
@@ -2379,7 +2383,7 @@ contains
    integer :: fc, c
    integer :: c_loc, n_loc, p_loc, nelm, j, kk
    real(r8):: c_mass, n_mass, p_mass, minp, min_nh4,min_no3,p_massocl
-  
+
    call betr_status%reset()
    SHR_ASSERT_ALL((ubound(dzsoi)  == (/bounds%endc, bounds%ubj/)),   errMsg(mod_filename,__LINE__),betr_status)
 

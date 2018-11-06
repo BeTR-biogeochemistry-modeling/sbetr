@@ -926,6 +926,10 @@ contains
     n14flux_vars%smin_no3_leached_col(c)= &
         this%biogeo_flux(c)%n14flux_vars%smin_no3_leached_col(c_l) + &
         this%biogeo_flux(c)%n14flux_vars%smin_no3_qdrain_col(c_l)
+    n14flux_vars%smin_nh4_leached_col(c)= &
+        this%biogeo_flux(c)%n14flux_vars%smin_nh4_leached_col(c_l) + &
+        this%biogeo_flux(c)%n14flux_vars%smin_nh4_qdrain_col(c_l)
+
     n14flux_vars%som_n_leached_col(c) = &
         this%biogeo_flux(c)%n14flux_vars%som_n_leached_col(c_l) + &
         this%biogeo_flux(c)%n14flux_vars%som_n_qdrain_col(c_l)
@@ -935,8 +939,10 @@ contains
     !the following is for consistency with the ALM definitation, which computes
     !som_n_leached_col as a numerical roundoff
     n14flux_vars%som_n_leached_col(c) = - n14flux_vars%som_n_leached_col(c)
-    !fire loss
+
     n14flux_vars%smin_no3_runoff_col(c)=this%biogeo_flux(c)%n14flux_vars%smin_no3_runoff_col(c_l)
+    n14flux_vars%smin_nh4_runoff_col(c)=this%biogeo_flux(c)%n14flux_vars%smin_nh4_runoff_col(c_l)
+    !fire loss
     n14flux_vars%fire_decomp_nloss_col(c) = this%biogeo_flux(c)%n14flux_vars%fire_decomp_nloss_col(c_l)
     n14flux_vars%supplement_to_sminn_col(c) = this%biogeo_flux(c)%n14flux_vars%supplement_to_sminn_col(c_l)
     !no nh4 volatilization and runoff/leaching loss at this moment
