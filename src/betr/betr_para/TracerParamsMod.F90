@@ -897,20 +897,20 @@ contains
 
    end subroutine set_phase_convert_coeff
 
-
-
   !------------------------------------------------------------------------
    subroutine calc_tracer_infiltration(bounds, jtops, numf, filter, bunsencef_topsoi, &
      betrtracer_vars, tracerboundarycond_vars, biogeo_flux,  tracer_flx_infl, betr_status)
    !
    ! DESCRIPTION
    ! calculate advection velocity for BeTR code
-   ! this assumes the interfacial velocity qflx_adv (except infiltration) has been calcualted in doing vertical
-   ! watermovement
+   ! this assumes the interfacial velocity qflx_adv (except infiltration) has been calculated in doing vertical
+   ! water movement
    ! This assumes the advection solves the equation
    ! \frac{\parital m}{\partial t}+\frac{V*m}{\partial z} = 0
    !where m = C*vsm, therefore, V=ql/vsm
-   !
+   ! Note for improvement: Nov, 2018, Now wet deposition for certain aqueous tracers
+   !   are not handled in a way consistent with snow dynamics, and
+   !   rainfall partition into infiltration and runoff.
    !USES
    use TracerBoundaryCondType, only : tracerboundarycond_type
    use BeTRTracerType        , only : betrtracer_type
@@ -979,7 +979,6 @@ contains
            !improvement when tracers are allowed to transport inside snow, such that the tracer infiltration is derived from mass balance in snow
            tracer_flx_infl(c,j) = bunsencef_topsoi(c,betrtracer_vars%volatilegroupid(j)) * &
                 tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1,j) * qflx_adv(c,0)
-
          else
            tracer_flx_infl(c,j) = 0._r8
          endif
@@ -989,7 +988,6 @@ contains
    enddo
    end associate
    end subroutine calc_tracer_infiltration
-
 
    !------------------------------------------------------------------------
    subroutine calc_equil_to_liquid_convert_coeff(bounds, lbj, ubj, jtops, numf, filter,&

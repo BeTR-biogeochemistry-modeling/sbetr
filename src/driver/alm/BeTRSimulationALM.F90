@@ -529,6 +529,7 @@ contains
   use PlantMicKineticsMod, only : PlantMicKinetics_type
   use mathfuncMod        , only : apvb,bisnan
   use tracer_varcon      , only : use_c13_betr, use_c14_betr, do_bgc_calibration
+  use tracer_varcon      , only : betr_nlevsoi
   implicit none
   class(betr_simulation_alm_type), intent(inout)  :: this
   type(bounds_type) , intent(in)  :: bounds
@@ -548,6 +549,7 @@ contains
   type(betr_bounds_type) :: betr_bounds
   integer :: c, fc, j, c_l, begc_l, endc_l
   real(r8) :: fport
+  real(r8) :: ndep_prof_loc(1:betr_nlevsoi)
   associate(                                           &
     ndep_prof     => cnstate_vars%ndep_prof_col     ,  &
     pdep_prof     => cnstate_vars%pdep_prof_col     ,  &
@@ -565,6 +567,17 @@ contains
     call this%biogeo_state(c)%reset(value_column=0._r8, active_soibgc=this%do_soibgc())
   enddo
   if(.not. this%do_soibgc())return
+  !Note for improvement:
+  !The following is a work around of the nutrient deposition problem.
+  !Due to the lack of information on dry and wet deposition partitioning,
+  !all deposition is distributed in the top 2 soil layers. This treatment
+  !is overestimating incoming nutrient flux to soil in cold regions.
+  !Nov, 2018
+  ndep_prof_loc(:) = 0._r8
+  ndep_prof_loc(1) = col%dz(bounds%begc,1)/(col%dz(bounds%begc,1)+col%dz(bounds%begc,2))
+  ndep_prof_loc(2) = 1._r8-ndep_prof_loc(1)
+  ndep_prof_loc(1) = ndep_prof_loc(1)/col%dz(bounds%begc,1)
+  ndep_prof_loc(2) = ndep_prof_loc(2)/col%dz(bounds%begc,2)
 
   !set kinetic parameters
   call this%set_transient_kinetics_par(betr_bounds, col, pft, num_soilc, filter_soilc, PlantMicKinetics_vars)
@@ -597,7 +610,7 @@ contains
   enddo
 
   !sum up carbon input profiles
-  do j = betr_bounds%lbj, betr_bounds%ubj
+  do j = 1, betr_bounds%ubj
     do fc = 1, num_soilc
       c = filter_soilc(fc)
       this%biophys_forc(c)%pweath_prof_col(c_l,j) = pdep_prof(c,j)
@@ -775,10 +788,10 @@ contains
       !mineral nitrogen
       call apvb(this%biophys_forc(c)%n14flx%nflx_minn_input_nh4_vr_col(c_l,j) , &
          (/nitrogenflux_vars%ndep_to_smin_nh3_col(c)                    , &
-         nitrogenflux_vars%fert_to_sminn_col(c)/),  ndep_prof(c,j))
+         nitrogenflux_vars%fert_to_sminn_col(c)/),  ndep_prof_loc(j))
 
       call apvb(this%biophys_forc(c)%n14flx%nflx_minn_input_no3_vr_col(c_l,j) , &
-         (/nitrogenflux_vars%ndep_to_smin_no3_col(c)/),  ndep_prof(c,j))
+         (/nitrogenflux_vars%ndep_to_smin_no3_col(c)/),  ndep_prof_loc(j))
 
       !the following could be commented out if a fixation model is done in betr
       call apvb(this%biophys_forc(c)%n14flx%nflx_minn_nh4_fix_nomic_vr_col(c_l,j) , &
@@ -787,10 +800,8 @@ contains
 
       !mineral phosphorus, the deposition is assumed to be of primary form
       call apvb(this%biophys_forc(c)%p31flx%pflx_minp_input_po4_vr_col(c_l,j) , &
-         (/phosphorusflux_vars%fert_p_to_sminp_col(c)/),   pdep_prof(c,j))
+         (/phosphorusflux_vars%fert_p_to_sminp_col(c)/),   ndep_prof_loc(j))
 
-!      call apvb(this%biophys_forc(c)%p31flx%pflx_minp_weathering_po4_vr_col(c_l,j), &
-!         phosphorusflux_vars%primp_to_labilep_vr_col(c,j))
     enddo
   enddo
 
@@ -967,6 +978,7 @@ contains
     !som_p_leached_col as a numerical roundoff
     p31flux_vars%som_p_leached_col(c) = -p31flux_vars%som_p_leached_col(c)
     p31flux_vars%primp_to_labilep_col(c) = this%biogeo_flux(c)%p31flux_vars%pflx_minp_weathering_po4_col(c_l)
+
     !recollect soil organic carbon, soil organic nitrogen, and soil organic phosphorus
     c12state_vars%cwdc_col(c) = this%biogeo_state(c)%c12state_vars%cwdc_col(c_l)
     c12state_vars%totlitc_col(c) = this%biogeo_state(c)%c12state_vars%totlitc_col(c_l)

@@ -303,7 +303,7 @@ contains
 
   call calc_P_weathering_flux(bounds, biophysforc, ecacnp_para, P_weather_flx)
 
-  do j = lbj, ubj
+  do j = 1, ubj
     do c = bounds%begc, bounds%endc
       biophysforc%p31flx%pflx_minp_weathering_po4_vr_col(c,j)=P_weather_flx(c)*biophysforc%pweath_prof_col(c,j)
     enddo

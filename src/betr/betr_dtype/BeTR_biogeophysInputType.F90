@@ -169,7 +169,7 @@ contains
   this%ch4_ppmv_col(:)= 1.8_r8
   this%n2o_ppmv_col(:)= 250.e-3_r8
   this%no_ppmv_col(:) = 0._r8
-  this%nh3_ppmv_col(:)= 0._r8
+  this%nh3_ppmv_col(:)= 1.e-3_r8
   this%forc_pbot_downscaled_col(:) = 1.013e5_r8
   this%forc_t_downscaled_col(:) = 288._r8
   this%icluster_type = btvland
