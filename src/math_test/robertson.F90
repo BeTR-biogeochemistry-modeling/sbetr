@@ -5,7 +5,7 @@
   use robertsonMod, only : get_robertson_rates, get_robertson_matrix
   use MathfuncMod   , only : pd_decomp, flux_correction_fullm
   use BetrStatusType, only : betr_status_type
-  use LinearAlgebraMod, only : sparse_gemv
+  use LinearAlgebraMod, only : sparse_gemv, taxpy
   use SparseMatMod, only : sparseMat_type, flux_correction_spm, pd_decomp_spm
   use SparseMatMod, only : spm_axpy, spm_pack, spm_print
   implicit none
@@ -49,7 +49,7 @@
     call sparse_gemv('N',3, 3, robmat, &
         3, rrates, 3, dydt)
 
-    call daxpy(3, dtime, dydt, 1, ystates, 1)
+    call taxpy(3, dtime, dydt, 1, ystates, 1)
 
     nstep=nstep+1
     if(nstep>=nstepf)exit
@@ -75,7 +75,7 @@
     dydt=0._r8
     call spm_axpy(3, 3, 1._r8, rrates, spmf, dydt, errinfo)
 
-    call daxpy(3, dtime, dydt, 1, ystates, 1)
+    call taxpy(3, dtime, dydt, 1, ystates, 1)
 
     nstep=nstep+1
     print*, ystates

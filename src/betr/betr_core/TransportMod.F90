@@ -13,6 +13,7 @@ module TransportMod
   use bshr_kind_mod , only : r8 => shr_kind_r8
   use BetrStatusType , only : betr_status_type
   use gbetrType     , only : gbetr_type
+  use LinearAlgebraMod, only : taxpy
   implicit none
 
   private
@@ -102,13 +103,13 @@ contains
     call trajectory(extra, y0, dt, ti, neq, k1)
 
     y(:) = y0(:)
-    call daxpy(neq, dt05, k1, 1, y, 1)
+    call taxpy(neq, dt05, k1, 1, y, 1)
 
     ti = t + dt05
     call trajectory(extra, y, dt05, ti, neq, k2)
 
     y(:) = y0(:)
-    call daxpy(neq, dt, k2, 1, y, 1)
+    call taxpy(neq, dt, k2, 1, y, 1)
 
   end subroutine ode_rk2
   !-------------------------------------------------------------------------------
