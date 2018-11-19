@@ -39,7 +39,7 @@ macro(set_up_platform)
   if (APPLE)
     set(NEED_LAPACK FALSE)
   else()
-    set(NEED_LAPACK TRUE)
+    set(NEED_LAPACK FALSE)
   endif()
 
   # Certain tools (e.g. patch) require TMPDIR to be defined. If it is not,
