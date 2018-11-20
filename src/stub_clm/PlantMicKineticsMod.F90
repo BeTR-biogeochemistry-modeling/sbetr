@@ -27,6 +27,11 @@ implicit none
     real(r8), pointer :: km_minsurf_nh4_vr_col(:,:)
     real(r8), pointer :: minsurf_dom_compet_vr_col(:,:)
     real(r8), pointer :: km_minsurf_dom_vr_col(:,:)
+    real(r8), pointer :: km_decomp_p_vr_col(:,:)
+    real(r8), pointer :: km_decomp_nh4_vr_col(:,:)
+    real(r8), pointer :: km_decomp_no3_vr_col(:,:)
+    real(r8), pointer :: km_nit_nh4_vr_col(:,:)
+    real(r8), pointer :: km_den_no3_vr_col(:,:)
   contains
     procedure, public  :: Init
     procedure, public  :: InitAllocate

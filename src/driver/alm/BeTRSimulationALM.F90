@@ -1333,6 +1333,7 @@ contains
   use tracer_varcon      , only : reaction_method,natomw,patomw
   use pftvarcon          , only : noveg
   use clm_time_manager   , only : get_nstep
+  use tracer_varcon      , only : lbcalib
   implicit none
   class(betr_simulation_alm_type), intent(inout)  :: this
   type(betr_bounds_type), intent(in) :: betr_bounds
@@ -1362,7 +1363,7 @@ contains
     c = filter_soilc(fc)
     pp = 0
     val=1._r8
-!    if(c==18619 .and. get_nstep()== 254044)val=0._r8
+
     do pi = 1, betr_maxpatch_pft
       if (pi <= col%npfts(c)) then
         p = col%pfti(c) + pi - 1
@@ -1399,6 +1400,18 @@ contains
         this%betr(c)%plantNutkinetics%km_minsurf_nh4_vr_col(c_l,j)=PlantMicKinetics_vars%km_minsurf_nh4_vr_col(c,j)/patomw
       enddo
     enddo
+    if(lbcalib)then
+      do j =1, betr_bounds%ubj
+        do fc = 1, num_soilc
+          c = filter_soilc(fc)
+          this%betr(c)%plantNutkinetics%km_decomp_p_vr_col(c_l,j) = PlantMicKinetics_vars%km_decomp_p_vr_col(c,j)/patomw
+          this%betr(c)%plantNutkinetics%km_decomp_nh4_vr_col(c_l,j)=PlantMicKinetics_vars%km_decomp_nh4_vr_col(c,j)/natomw
+          this%betr(c)%plantNutkinetics%km_decomp_no3_vr_col(c_l,j)=PlantMicKinetics_vars%km_decomp_no3_vr_col(c,j)/natomw
+          this%betr(c)%plantNutkinetics%km_nit_nh4_vr_col(c_l,j) = PlantMicKinetics_vars%km_nit_nh4_vr_col(c,j)/natomw
+          this%betr(c)%plantNutkinetics%km_den_no3_vr_col(c_l,j) = PlantMicKinetics_vars%km_den_no3_vr_col(c,j)/natomw
+        enddo
+      enddo
+    endif
   endif
 
   end associate

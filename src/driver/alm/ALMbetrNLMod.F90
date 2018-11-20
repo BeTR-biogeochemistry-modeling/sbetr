@@ -14,7 +14,7 @@ contains
 
 
   !-------------------------------------------------------------------------------
-  subroutine betr_readNL(NLFilename, use_c13, use_c14, nsoilorder)
+  subroutine betr_readNL(NLFilename, use_c13, use_c14, nsoilorder, lbgcalib)
     !
     ! !DESCRIPTION:
     ! read namelist for betr configuration
@@ -32,12 +32,14 @@ contains
     use ApplicationsFactory, only : AppInitParameters
     use tracer_varcon , only : use_c13_betr, use_c14_betr
     use BetrStatusType  , only : betr_status_type
+    use tracer_varcon, only : lbcalib
     implicit none
     ! !ARGUMENTS:
     character(len=*), intent(IN) :: NLFilename              ! Namelist filename
     logical,          intent(in) :: use_c13
     logical,          intent(in) :: use_c14
     integer,          intent(in) :: nsoilorder
+    logical,          intent(in) :: lbgcalib
                                                             !
                                                             ! !LOCAL VARIABLES:
     integer                      :: ierr                    ! error code
@@ -55,6 +57,7 @@ contains
 
     logical :: appfile_on
 
+    lbcalib = lbgcalib
     !initialize spinup state
     betr_spinup_state =spinup_state
     betr_max_soilorder=nsoilorder

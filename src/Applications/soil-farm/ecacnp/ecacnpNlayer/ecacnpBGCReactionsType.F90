@@ -347,6 +347,7 @@ contains
   use PlantNutKineticsMod, only : PlantNutKinetics_type
   use tracercoeffType          , only : tracercoeff_type
   use BeTRTracerType           , only : betrtracer_type
+  use tracer_varcon            , only : lbcalib
   ! !ARGUMENTS:
   class(ecacnp_bgc_reaction_type)         , intent(inout)    :: this                       !
   class(PlantNutKinetics_type), intent(in) :: plantNutkinetics
@@ -380,7 +381,13 @@ contains
       this%ecacnp(c_l,j)%competECA%plant_froot_nn(p) = plantNutkinetics%plant_eff_ncompet_b_vr_patch(p,j)
       this%ecacnp(c_l,j)%competECA%plant_froot_np(p) = plantNutkinetics%plant_eff_pcompet_b_vr_patch(p,j)
     enddo
-
+    if(lbcalib)then
+      this%ecacnp(c_l,j)%competECA%kaff_minn_nh4_mic =plantNutkinetics%km_decomp_nh4_vr_col(c_l,j)
+      this%ecacnp(c_l,j)%competECA%kaff_minn_no3_mic =plantNutkinetics%km_decomp_no3_vr_col(c_l,j)
+      this%ecacnp(c_l,j)%competECA%kaff_minp_mic = plantNutkinetics%km_decomp_p_vr_col(c_l,j)
+      this%ecacnp(c_l,j)%competECA%kaff_minn_nh4_nit = plantNutkinetics%km_nit_nh4_vr_col(c_l,j)
+      this%ecacnp(c_l,j)%competECA%kaff_minn_no3_den = plantNutkinetics%km_den_no3_vr_col(c_l,j)
+    endif
     !mineral surfaces
     this%ecacnp(c_l,j)%competECA%kaff_minn_nh4_msurf= plantNutkinetics%km_minsurf_nh4_vr_col(c_l,j)   !this is ignored at this moment
     this%ecacnp(c_l,j)%competECA%kaff_minp_msurf= plantNutkinetics%km_minsurf_p_vr_col(c_l,j)
