@@ -40,7 +40,6 @@ module TransportMod
   public :: calc_interface_conductance
   public :: init_transportmod
   public :: get_cntheta
-  public :: calc_col_CFL              !claculate CFL critieria
   public :: semi_lagrange_adv
   interface semi_lagrange_adv
      module procedure semi_lagrange_adv_backward_one_col
@@ -768,49 +767,6 @@ contains
      call Tridiagonal (bounds, lbj, ubj, lbn, numfl, filter, ntrcs, at, bt, ct, rt, dtracer, update_col)
 
    end subroutine DiffusTransp_solid
-   !-------------------------------------------------------------------------------
-   function calc_col_CFL(lbj, ubj, us, dx, dtime, bstatus) result(cfl)
-     !
-     ! DESCRIPTION:
-     ! calculate the CFL number for the given grid and velocity field
-     ! this subroutine is now not actively used, but can be used
-     ! when a Eulerian advection scheme is adopted.
-     use BetrStatusType  , only : betr_status_type
-     implicit none
-     ! !ARGUMENTS:
-     integer,  intent(in) :: lbj, ubj    !left and right bounds
-     real(r8), intent(in) :: us(lbj: )   !velocity vector,    [m/s]
-     real(r8), intent(in) :: dx(lbj: )   !node length,        [m]
-     real(r8), intent(in) :: dtime       !imposed time step,  [s]
-     type(betr_status_type), intent(out) :: bstatus
-
-     ! !LOCAL VARIABLES:
-     real(r8) :: cfl
-     integer  :: len, j
-     character(len=32) :: subname ='calc_col_CFL'
-     call bstatus%reset()
-     SHR_ASSERT_ALL((ubound(us)         == (/ubj+1/)),        errMsg(filename,__LINE__), bstatus)
-
-     SHR_ASSERT_ALL((ubound(dx)         == (/ubj/)),   errMsg(filename,__LINE__), bstatus)
-
-     cfl = 0._r8
-     !the column cfl number is defined as the maximum over the whole domain
-     do j = lbj, ubj
-        if(us(j)>0._r8)then
-           if(us(j)<0._r8)then
-              cfl= max(dtime/dx(j)*max(abs(us(j)), abs(us(j+1))), cfl)
-           else
-              cfl=max(abs(dtime*us(j)/dx(j)), cfl)
-           endif
-        else
-           if(us(j+1)>0._r8)then
-              cfl=max(abs(dtime*us(j+1)/dx(j)),cfl)
-           else
-              cfl= max(dtime/dx(j)*max(abs(us(j)), abs(us(j+1))), cfl)
-           endif
-        endif
-     enddo
-   end function calc_col_CFL
 
    !-------------------------------------------------------------------------------
    subroutine semi_lagrange_adv_backward(bounds, bstatus, lbj, ubj, lbn, numfl, filter, ntrcs, dtime, dz, &
