@@ -757,6 +757,8 @@ contains
     real(r8), parameter  :: loc_eps = 1.e-12_r8                                 !smoothing factor to avoid advection velocity spikes, dimension less
     real(r8)             :: mass0
     real(r8)             :: alpha
+    integer              :: filter_loc(num_soilc)
+    integer              :: numfl
     character(len=255)   :: subname = 'do_tracer_advection'
     character(len=betr_errmsg_len) :: msg
     character(len=betr_var_name_length) :: tracername
@@ -795,9 +797,17 @@ contains
          tracer_flx_vtrans_vr      => tracerflux_vars%tracer_flx_vtrans_vr_col       , & !
          tracer_flx_infl           => tracerflux_vars%tracer_flx_infl_col              & !
          )
-      !allocate memories
 
-
+      !construct local filters
+      numfl = 0
+      do fc = 1, num_soilc
+        c = filter_soilc(fc)
+        if (.not. col%is_wetl(c))then
+          numfl = numfl + 1
+          filter_loc(numfl) = c
+        endif
+      enddo
+      if(numfl ==0)return
       !initialize local variables
       update_col  (:) = .true.
       time_remain (:) = 0._r8
@@ -819,8 +829,8 @@ contains
          !convert bulk mobile phase into aqueous phase'
          if(ntrcs==0)cycle
          do k = 1, ntrcs
-            do fc = 1, num_soilc
-               c = filter_soilc(fc)
+            do fc = 1, numfl
+               c = filter_loc(fc)
                inflx_top(c, k) = tracer_flx_infl(c,adv_trc_group(k))
                !set to 0 to ensure outgoing boundary condition is imposed, this may not be correct for water isotopes
                inflx_bot(c,k) = 0._r8
@@ -829,8 +839,8 @@ contains
          enddo
 
          !obtain advective velocity for the tracer group
-         do fc = 1, num_soilc
-            c = filter_soilc(fc)
+         do fc = 1, numfl
+            c = filter_loc(fc)
             qflx_adv_local(c,jtops(c)-1) = qflx_adv(c,jtops(c)-1)
             do l = jtops(c), ubj
               if(l<ubj)then
@@ -859,8 +869,8 @@ contains
          !dertmine the local advection time step based on the existence of convergence grid cell, i.e.
          ! grid cells with ul * ur < 0
          ! note qflx_adv(c,jtops(c)-1) is defined with infiltration
-         do fc = 1, num_soilc
-            c = filter_soilc(fc)
+         do fc = 1, numfl
+            c = filter_loc(fc)
             dtime_loc(c)=dtime              !local advective time step
 
             !initialize the time keeper and make sure all columns are updated initially
@@ -872,8 +882,8 @@ contains
             !zero leaching flux, leaching is outgoing only.
             leaching_mass=0._r8
 
-            do fc = 1, num_soilc
-               c = filter_soilc(fc)
+            do fc = 1, numfl
+               c = filter_loc(fc)
                if(update_col(c))then
                   do k = 1, ntrcs
                      trcid = adv_trc_group(k)
@@ -887,8 +897,8 @@ contains
             ! do semi-lagrangian tracer transport
             call semi_lagrange_adv(bounds, bstatus,lbj, ubj,                             &
                  jtops,                                                                           &
-                 num_soilc,                                                                       &
-                 filter_soilc,                                                                    &
+                 numfl,                                                                       &
+                 filter_loc,                                                                    &
                  ntrcs,                                                                           &
                  dtime_loc,                                                                       &
                  dz,                                                                              &
@@ -912,8 +922,8 @@ contains
                transp_mass(:, k) = 0._r8
 
                if(vtrans_scal(trcid)>0._r8)then
-                  call calc_root_uptake_as_perfect_sink(bounds, lbj, ubj, num_soilc,   &
-                       filter_soilc,                                                   &
+                  call calc_root_uptake_as_perfect_sink(bounds, lbj, ubj, numfl,       &
+                       filter_loc,                                                     &
                        dtime_loc,                                                      &
                        dz,                                                             &
                        qflx_rootsoi_local,                                             &
@@ -927,8 +937,8 @@ contains
                  if(bstatus%check_status())return
                endif
 
-               do fc = 1, num_soilc
-                  c = filter_soilc(fc)
+               do fc = 1, numfl
+                  c = filter_loc(fc)
 
                   if(update_col(c) .and. (.not. halfdt_col(c)))then
                      mass0   = dmass(c, k)
@@ -981,8 +991,8 @@ contains
                enddo
             enddo
 
-            do fc = 1, num_soilc
-               c = filter_soilc(fc)
+            do fc = 1, numfl
+               c = filter_loc(fc)
                if(update_col(c))then
                   if(halfdt_col(c))then
                      dtime_loc(c) = max(dtime_loc(c)*0.5_r8,dtime_min)

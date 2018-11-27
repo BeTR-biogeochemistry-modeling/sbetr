@@ -19,6 +19,7 @@ module BeTR_ColumnType
    integer , pointer :: pftf     (:)   => null() ! ending pft index for each column
    integer , pointer :: npfts    (:)   => null() ! number of patches for each column
    real(r8), pointer :: dz_snow  (:,:) => null()
+   logical , pointer :: is_wetl  (:)   => null() !logical switch indicate if it is lake or wetland
   contains
     procedure, public :: Init
   end type betr_column_type
@@ -57,6 +58,7 @@ contains
   allocate(this%npfts(begc:endc))
   allocate(this%pfti(begc:endc))
   allocate(this%pftf(begc:endc))
+  allocate(this%is_wetl(begc:endc)); this%is_wetl(:) = .false.
   allocate(this%dz_snow(begc:endc,-nlevsno+1:0))
   end subroutine Init
 end module BeTR_ColumnType
