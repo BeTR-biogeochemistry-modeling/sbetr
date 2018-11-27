@@ -27,6 +27,7 @@ if args.case_root[0][0]=='/':
     directory=args.case_root[0]+args.case_name[0]
 else:
     directory= mdir + '/'+args.case_root[0]+args.case_name[0]
+print 'The case is built in directory: '+directory
 
 #create case directory
 if not os.path.exists(directory):
