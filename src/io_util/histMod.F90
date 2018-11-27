@@ -264,6 +264,7 @@ contains
 !--------------------------------------------------------
   subroutine hist_wrap(this, yval, timer)
   use  BeTR_TimeMod, only : betr_time_type
+  use LinearAlgebraMod       , only : taxpy
   implicit none
   class(histf_type), intent(inout):: this
   real(r8), dimension(:), intent(in) :: yval
@@ -275,7 +276,7 @@ contains
 
   ! use daxpy - compute y := alpha * x + y
   ! SUBROUTINE DAXPY(N, ALPHA, X, INCX, Y, INCY)
-  call daxpy(this%nvars, 1._r8, yval, 1, this%yvals, 1)
+  call taxpy(this%nvars, 1._r8, yval, 1, this%yvals, 1)
 
   call this%proc_counter()
 

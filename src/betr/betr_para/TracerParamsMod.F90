@@ -352,7 +352,7 @@ contains
 !--------------------------------------------------------------------------------------------------------------
 
 
-   subroutine calc_bulk_conductances(bounds, lbj, ubj, jtops, numf, filter, &
+   subroutine calc_bulk_conductances(bounds, lbj, ubj, jtops, lbots, numf, filter, &
      bulkdiffus, dz, betrtracer_vars,  hmconductance_col, betr_status)
    !
    ! DESCRIPTIONS:
@@ -376,6 +376,7 @@ contains
    type(bounds_type),      intent(in) :: bounds                      ! bounds
    integer,                intent(in) :: lbj, ubj                    ! lower and upper bounds, make sure they are > 0
    integer,                intent(in) :: jtops(bounds%begc: )        ! top label of each column
+   integer,                intent(in) :: lbots(bounds%begc: )        ! top label of each column
    integer,                intent(in) :: numf                        ! number of columns in column filter
    integer,                intent(in) :: filter(:)                   ! column filter
    type(betrtracer_type),  intent(in) :: betrtracer_vars             ! betr configuration information
@@ -389,6 +390,8 @@ contains
    character(len=255) :: subname = 'calc_bulk_conductances'
    call betr_status%reset()
    SHR_ASSERT_ALL((ubound(jtops)             == (/bounds%endc/)),        errMsg(filename,__LINE__), betr_status)
+
+   SHR_ASSERT_ALL((ubound(lbots)             == (/bounds%endc/)),        errMsg(filename,__LINE__), betr_status)
 
    SHR_ASSERT_ALL((ubound(dz,1)       == bounds%endc),   errMsg(filename,__LINE__),betr_status)
 
@@ -418,7 +421,7 @@ contains
 !  compute the depth weighted diffusivities
    do j = 1, ntracer_groups
      if(.not. is_mobile(tracer_group_memid(j,1)))cycle
-     call calc_interface_conductance(bounds, lbj, ubj, jtops, numf, filter , &
+     call calc_interface_conductance(bounds, lbj, ubj, jtops, lbots, numf, filter , &
              bulkdiffus(bounds%begc:bounds%endc, lbj:ubj, j)               , &
              dz(bounds%begc:bounds%endc, lbj:ubj)                          , &
              hmconductance_col(bounds%begc:bounds%endc, lbj:ubj-1, j), betr_status)
@@ -839,7 +842,7 @@ contains
    if(betr_status%check_status())return
 
    !compute weigthed conductances
-   call calc_bulk_conductances(bounds, lbj, ubj, jtops, numf, filter, tracercoeff_vars%bulk_diffus_col, &
+   call calc_bulk_conductances(bounds, lbj, ubj, jtops, col%lbots, numf, filter, tracercoeff_vars%bulk_diffus_col, &
       col%dz(bounds%begc:bounds%endc,lbj:ubj), betrtracer_vars,  &
       tracercoeff_vars%hmconductance_col(bounds%begc:bounds%endc, lbj:ubj-1, :), betr_status)
 

@@ -252,6 +252,7 @@ contains
 
     call set_gwdif_Rfactor(bounds, lbj, ubj, &
          tracerboundarycond_vars%jtops_col,  &
+         col%lbots,                          &
          num_soilc,                          &
          filter_soilc,                       &
          tracercoeff_vars,                   &
@@ -341,11 +342,12 @@ contains
 
     if(betr_status%check_status())return
     !do solid phase turbation
-    call tracer_solid_transport(betr_time, bounds, 1, ubj,                         &
+    call tracer_solid_transport(betr_time, bounds, lbj, ubj, &
+         col%lbots(bounds%begc:bounds%endc),                                       &
          num_soilc,                                                                &
          filter_soilc,                                                             &
-         tracercoeff_vars%hmconductance_col(bounds%begc:bounds%endc, 1:ubj-1, : ), &
-         col%dz(bounds%begc:bounds%endc, 1:ubj),                                   &
+         tracercoeff_vars%hmconductance_col(bounds%begc:bounds%endc, lbj:ubj-1, : ), &
+         col%dz(bounds%begc:bounds%endc, lbj:ubj),                                   &
          col%zi(bounds%begc:bounds%endc,lbj-1:ubj),                                &
          betrtracer_vars,                                                          &
          tracerboundarycond_vars,                                                  &
@@ -355,7 +357,7 @@ contains
   end subroutine tracer_gws_transport
   !-------------------------------------------------------------------------------
   subroutine tracer_solid_transport(betr_time,                           &
-       bounds, lbj, ubj, num_soilc, filter_soilc, hmconductance_col, dz, &
+       bounds, lbj, ubj, lbots, num_soilc, filter_soilc, hmconductance_col, dz, &
        zi, betrtracer_vars, tracerboundarycond_vars, tracerflux_vars,    &
        tracerstate_vars, betr_status)
     !
@@ -375,12 +377,14 @@ contains
     use betr_constants         , only : betr_errmsg_len
     use betr_constants         , only : betr_var_name_length
     use MathfuncMod            , only : safe_div
+    use LinearAlgebraMod       , only : taxpy
     implicit none
 
     ! !ARGUMENTS:
     class(betr_time_type)         , intent(in)    :: betr_time
     type(bounds_type)             , intent(in)    :: bounds
     integer                       , intent(in)    :: lbj, ubj
+    integer                       , intent(in)    :: lbots(bounds%begc: )
     integer                       , intent(in)    :: num_soilc                                   ! number of columns in column filter_soilc
     integer                       , intent(in)    :: filter_soilc(:)                             ! column filter_soilc
     class(betrtracer_type)        , intent(inout) :: betrtracer_vars
@@ -441,6 +445,8 @@ contains
 
       SHR_ASSERT_ALL((ubound(hmconductance_col,3) == ntracer_groups), errMsg(mod_filename,__LINE__),betr_status)
 
+      SHR_ASSERT_ALL((ubound(lbots)               == (/bounds%endc/)),     errMsg(mod_filename,__LINE__),bstatus)
+
       SHR_ASSERT_ALL((ubound(dz,1)   == bounds%endc), errMsg(mod_filename,__LINE__),betr_status)
 
       SHR_ASSERT_ALL((ubound(dz,2)   == ubj), errMsg(mod_filename,__LINE__),betr_status)
@@ -479,7 +485,7 @@ contains
 
          do
             !do diffusive transport
-            call DiffusTransp(bounds, betr_status, lbj, ubj, jtops, num_soilc, &
+            call DiffusTransp(bounds, betr_status, lbj, ubj, jtops, lbots, num_soilc, &
                  filter_soilc, ntrcs, tracer_conc_mobile_col(:,:,difs_trc_group(1:ntrcs)),  &
                  hmconductance_col(:,:,j),                                             &
                  dtime_loc,                                                            &
@@ -497,7 +503,7 @@ contains
 
                 do k=1, ntrcs
                   trcid = difs_trc_group(k)
-                  do l = jtops(c), ubj
+                  do l = jtops(c), lbots(c)
                     if(tracer_conc_mobile_col(c,l,trcid)<-dtracer(c,l,k))then
                       !if the tracer update is very tinty, then set it to zero
                       if(abs(dtracer(c,l,k))<tiny_val)dtracer(c,l,k) = 0._r8
@@ -531,7 +537,7 @@ contains
                  do k=1, ntrcs
                    trcid = difs_trc_group(k)
 
-                   err_tracer(c, k) = dot_sum(dtracer(c,jtops(c):ubj, k), dz(c,jtops(c):ubj),betr_status)
+                   err_tracer(c, k) = dot_sum(dtracer(c,jtops(c):lbots(c), k), dz(c,jtops(c):lbots(c)),betr_status)
                    if(betr_status%check_status())return
                    if(abs(err_tracer(c,k))>=err_min_solid)then
                      tracername = betrtracer_vars%get_tracername(trcid)
@@ -542,8 +548,8 @@ contains
                       return
                     endif
                     !when passing the error threshold, update state variable
-                    call daxpy(ubj-jtops(c)+1, 1._r8, dtracer(c,jtops(c):ubj,k), 1, &
-                      tracer_conc_mobile_col(c,jtops(c):ubj,trcid),1)
+                    call taxpy(lbots(c)-jtops(c)+1, 1._r8, dtracer(c,jtops(c):lbots(c),k), 1, &
+                      tracer_conc_mobile_col(c,jtops(c):lbots(c),trcid),1)
                   enddo
 
                   !when everything is OK, update the remaining time to be evolved.
@@ -648,7 +654,7 @@ contains
     do kk = 1 , 2
        if (transp_pathway(kk) == diffusion_scheme .and. diffusion_on) then
           call do_tracer_gw_diffusion(bounds, lbj, ubj,                                    &
-               jtops,                                                                      &
+               jtops, col%lbots,                                                           &
                num_soilc,                                                                  &
                filter_soilc,                                                               &
                betrtracer_vars,                                                            &
@@ -795,7 +801,8 @@ contains
          tracer_flx_vtrans         => tracerflux_vars%tracer_flx_vtrans_col          , & !
          tracer_flx_vtrans_patch   => tracerflux_vars%tracer_flx_vtrans_patch        , & !
          tracer_flx_vtrans_vr      => tracerflux_vars%tracer_flx_vtrans_vr_col       , & !
-         tracer_flx_infl           => tracerflux_vars%tracer_flx_infl_col              & !
+         tracer_flx_infl           => tracerflux_vars%tracer_flx_infl_col            , & !
+         lbots                     => col%lbots                                        &
          )
 
       !construct local filters
@@ -812,9 +819,9 @@ contains
       update_col  (:) = .true.
       time_remain (:) = 0._r8
       dtime_loc   (:) = 0._r8
+
       !loop over all tracers
       do j = 1, ngwmobile_tracer_groups
-
          ntrcs = 0
          adv_trc_group(:) = 0
          do k = 1, nmem_max
@@ -842,8 +849,8 @@ contains
          do fc = 1, numfl
             c = filter_loc(fc)
             qflx_adv_local(c,jtops(c)-1) = qflx_adv(c,jtops(c)-1)
-            do l = jtops(c), ubj
-              if(l<ubj)then
+            do l = jtops(c), lbots(c)
+              if(l<lbots(c))then
                 if(qflx_adv(c,l) > 0._r8)then
                   qflx_adv_local(c,l) = safe_div(qflx_adv(c,l),aqu2bulkcef_mobile_col(c,l,j),eps=loc_eps)
                 else
@@ -887,18 +894,18 @@ contains
                if(update_col(c))then
                   do k = 1, ntrcs
                      trcid = adv_trc_group(k)
-                     dmass(c, k) = dot_sum(tracer_conc_mobile_col(c, jtops(c):ubj, trcid), &
-                      dz(c, jtops(c):ubj),bstatus)
+                     dmass(c, k) = dot_sum(tracer_conc_mobile_col(c, jtops(c):lbots(c), trcid), &
+                      dz(c, jtops(c):lbots(c)),bstatus)
                      if(bstatus%check_status())return
                   enddo
                endif
             enddo
 
             ! do semi-lagrangian tracer transport
-            call semi_lagrange_adv(bounds, bstatus,lbj, ubj,                             &
-                 jtops,                                                                           &
-                 numfl,                                                                       &
-                 filter_loc,                                                                    &
+            call semi_lagrange_adv(bounds, bstatus,lbj, ubj,                                      &
+                 jtops, lbots,                                                                    &
+                 numfl,                                                                           &
+                 filter_loc,                                                                      &
                  ntrcs,                                                                           &
                  dtime_loc,                                                                       &
                  dz,                                                                              &
@@ -922,7 +929,7 @@ contains
                transp_mass(:, k) = 0._r8
 
                if(vtrans_scal(trcid)>0._r8)then
-                  call calc_root_uptake_as_perfect_sink(bounds, lbj, ubj, numfl,       &
+                  call calc_root_uptake_as_perfect_sink(bounds, lbj, ubj, lbots, numfl,&
                        filter_loc,                                                     &
                        dtime_loc,                                                      &
                        dz,                                                             &
@@ -942,8 +949,8 @@ contains
 
                   if(update_col(c) .and. (.not. halfdt_col(c)))then
                      mass0   = dmass(c, k)
-                     dmass(c, k) =  dot_sum(trc_conc_out(c,jtops(c):ubj,k), &
-                        dz(c,jtops(c):ubj),bstatus)- dmass(c, k)
+                     dmass(c, k) =  dot_sum(trc_conc_out(c,jtops(c):lbots(c),k), &
+                        dz(c,jtops(c):lbots(c)),bstatus)- dmass(c, k)
                      if(bstatus%check_status())return
                      err_tracer(c, k) = dmass(c, k) - inflx_top(c,k) * dtime_loc(c) + leaching_mass(c,k) + &
                           transp_mass(c, k) + seep_mass(c,k)
@@ -972,18 +979,18 @@ contains
                      tracer_flx_vtrans(c, trcid)  = tracer_flx_vtrans(c,trcid) + transp_mass(c,k)
                      tracer_flx_leaching(c,trcid) = tracer_flx_leaching(c, trcid) + leaching_mass(c,k)
                      tracer_flx_surfrun(c,trcid)  = tracer_flx_surfrun(c, trcid) + seep_mass(c,k)
-                     tracer_flx_vtrans_vr(c, lbj:ubj, trcid) = transp_mass_vr(c,lbj:ubj,k)
+                     tracer_flx_vtrans_vr(c, jtops(c):lbots(c), trcid) = transp_mass_vr(c,jtops(c):lbots(c),k)
 
                      !the following implementation assumes there is only one column
 
                      do p = 1, pft%npfts
-                       do l=lbj, ubj
+                       do l=jtops(c), lbots(c)
                          tracer_flx_vtrans_patch(p,trcid) = tracer_flx_vtrans_patch(p,trcid) + &
                             tracer_flx_vtrans_vr(c, l, trcid) * qflx_rootsoi_frac_patch(p,l)
                        enddo
                      enddo
-                     do l = lbj, ubj
-                       if(update_col(c) .and. (.not. halfdt_col(c)) .and. l>=jtops(c))then
+                     do l = jtops(c), lbots(c)
+                       if(update_col(c) .and. (.not. halfdt_col(c)))then
                          tracer_conc_mobile_col(c,l,trcid)=trc_conc_out(c,l,k)
                        endif
                      enddo
@@ -1014,7 +1021,7 @@ contains
   end subroutine do_tracer_advection
 
   !-------------------------------------------------------------------------------
-  subroutine do_tracer_gw_diffusion(bounds, lbj, ubj, jtops, num_soilc, filter_soilc, &
+  subroutine do_tracer_gw_diffusion(bounds, lbj, ubj, jtops, lbots, num_soilc, filter_soilc, &
        betrtracer_vars, ttracerboundarycond_vars, Rfactor,                            &
        hmconductance_col, dz, dtime, tracerstate_vars, tracerflux_vars, bstatus)
     !
@@ -1032,12 +1039,14 @@ contains
     use betr_constants         , only : betr_errmsg_len
     use BetrStatusType         , only : betr_status_type
     use betr_constants         , only : betr_var_name_length
+    use LinearAlgebraMod       , only : taxpy
     implicit none
     !
     ! !ARGUMENTS:
     type(bounds_type)             , intent(in)    :: bounds
     integer                       , intent(in)    :: lbj, ubj
     integer                       , intent(in)    :: jtops(bounds%begc: )                        ! top label of each column
+    integer                       , intent(in)    :: lbots(bounds%begc: )                        ! top label of each column
     integer                       , intent(in)    :: num_soilc                                   ! number of columns in column filter_soilc
     integer                       , intent(in)    :: filter_soilc(:)                             ! column filter_soilc
     class(betrtracer_type)        , intent(inout) :: betrtracer_vars
@@ -1077,6 +1086,8 @@ contains
     ntracer_groups = betrtracer_vars%ntracer_groups
 
     SHR_ASSERT_ALL((ubound(jtops)               == (/bounds%endc/)),     errMsg(mod_filename,__LINE__),bstatus)
+
+    SHR_ASSERT_ALL((ubound(lbots)               == (/bounds%endc/)),     errMsg(mod_filename,__LINE__),bstatus)
 
     SHR_ASSERT_ALL((ubound(dz,1)                == bounds%endc),      errMsg(mod_filename,__LINE__),bstatus)
 
@@ -1143,7 +1154,7 @@ contains
 
          !Do adpative time stepping to avoid negative tracer
          do
-            call DiffusTransp(bounds, bstatus, lbj, ubj, jtops,                              &
+            call DiffusTransp(bounds, bstatus, lbj, ubj, jtops,lbots,                        &
                  num_soilc,                                                                  &
                  filter_soilc, ntrcs,                                                        &
                  tracer_conc_mobile_col( : , lbj:ubj ,dif_trc_group(1:ntrcs)),               &
@@ -1169,7 +1180,7 @@ contains
                   do k = 1, ntrcs
                      trcid = dif_trc_group(k)
                      !loop through all layers
-                     do l = jtops(c), ubj
+                     do l = jtops(c), lbots(c)
                         if(tracer_conc_mobile_col(c,l,trcid)<-dtracer(c,l,k))then
                            !if the tracer update is very tinty, then set it to zero
                            if(abs(dtracer(c,l,k))<tiny_val)dtracer(c,l,k) = 0._r8
@@ -1203,9 +1214,9 @@ contains
                         trcid = tracer_group_memid(j,k)
                         tracername = betrtracer_vars%get_tracername(trcid)
                         write(msg1,*)'tracer '//tracername,get_cntheta(), &
-                           (l,tracer_conc_mobile_col(c,l,trcid),l=jtops(c),ubj)
+                           (l,tracer_conc_mobile_col(c,l,trcid),l=jtops(c),lbots(c))
                         msg=trim(msg)//new_line('A')//trim(msg1)
-                        write(msg1,*)'dtracer', (l,dtracer(c,l,k),l=jtops(c),ubj)
+                        write(msg1,*)'dtracer', (l,dtracer(c,l,k),l=jtops(c),lbots(c))
                         msg=trim(msg)//new_line('A')//trim(msg1)
                      enddo
                      msg = trim(msg)//new_line('A')//'stopped '//trim(subname)//errMsg(mod_filename, __LINE__)
@@ -1232,16 +1243,16 @@ contains
 
                      !do error budget for good calculations
 
-                     mass0=dot_sum(x=tracer_conc_mobile_col(c,jtops(c):ubj,trcid),y=dz(c,jtops(c):ubj),bstatus=bstatus)
+                     mass0=dot_sum(x=tracer_conc_mobile_col(c,jtops(c):lbots(c),trcid),y=dz(c,jtops(c):lbots(c)),bstatus=bstatus)
                      if(bstatus%check_status())return
-                     call daxpy(ubj-jtops(c)+1, 1._r8, dtracer(c,jtops(c):ubj, k), 1, &
-                          tracer_conc_mobile_col(c,jtops(c):ubj,trcid), 1)
+                     call taxpy(lbots(c)-jtops(c)+1, 1._r8, dtracer(c,jtops(c):lbots(c), k), 1, &
+                          tracer_conc_mobile_col(c,jtops(c):lbots(c),trcid), 1)
 
-                     dmass(c, k) = dot_sum(x=dtracer(c,jtops(c):ubj, k),y=dz(c,jtops(c):ubj),bstatus=bstatus)
+                     dmass(c, k) = dot_sum(x=dtracer(c,jtops(c):lbots(c), k),y=dz(c,jtops(c):lbots(c)),bstatus=bstatus)
                      if(bstatus%check_status())return
                      err_tracer(c, k) = dmass(c, k)-diff_surf(c, k) *dtime_loc(c)
 
-                     mass1=dot_sum(x=tracer_conc_mobile_col(c,jtops(c):ubj,trcid),y=dz(c,jtops(c):ubj),bstatus=bstatus)
+                     mass1=dot_sum(x=tracer_conc_mobile_col(c,jtops(c):lbots(c),trcid),y=dz(c,jtops(c):lbots(c)),bstatus=bstatus)
                      if(bstatus%check_status())return
                      !calculate relative error, defined as the ratio between absolute error with respect to surface flux
                      if(abs(err_tracer(c, k))<err_dif_min .or.  abs(err_tracer(c, k))/(mass1+1.e-10_r8) < 1.e-10_r8)then
@@ -1264,7 +1275,7 @@ contains
                         write(msg,*) 'mass bal error dif '//trim(tracername)//new_line('A'), 'mass 0/1',mass0, &
                              mass1,'col=',c, &
                              new_line('A')//'err=', err_tracer(c,k), 'dmass=',dmass(c,k), ' dif=', diff_surf(c,k)*dtime_loc(c), &
-                             ' prod=',dot_sum(x=local_source(c,jtops(c):ubj,k),y=dz(c,jtops(c):ubj),bstatus=bstatus)*dtime_loc(c)
+                             ' prod=',dot_sum(x=local_source(c,jtops(c):lbots(c),k),y=dz(c,jtops(c):lbots(c)),bstatus=bstatus)*dtime_loc(c)
 
                         if(bstatus%check_status())return
                         msg=trim(msg)//new_line('A')//'mass balance error for tracer '//trim(tracername)//' in ' &
@@ -1324,7 +1335,7 @@ contains
   end function exit_loop_by_threshold
 
   !-------------------------------------------------------------------------------
-  subroutine set_gwdif_Rfactor(bounds, lbj, ubj, jtops, num_soilc, filter_soilc, &
+  subroutine set_gwdif_Rfactor(bounds, lbj, ubj, jtops, lbots, num_soilc, filter_soilc, &
       tracercoeff_vars, betrtracer_vars, Rfactor, betr_status)
     !
     ! !DESCRIPTION:
@@ -1337,6 +1348,7 @@ contains
     type(bounds_type)      , intent(in)    :: bounds
     integer                , intent(in)    :: lbj, ubj
     integer                , intent(in)    :: jtops(bounds%begc: )        ! top label of each column
+    integer                , intent(in)    :: lbots(bounds%begc: )        ! top label of each column
     integer                , intent(in)    :: num_soilc                 ! number of columns in column filter_soilc
     integer                , intent(in)    :: filter_soilc(:)            ! column filter_soilc
     class(betrtracer_type) , intent(in)    :: betrtracer_vars
@@ -1360,6 +1372,8 @@ contains
 
     SHR_ASSERT_ALL((ubound(jtops)   == (/bounds%endc/)) , errMsg(mod_filename,__LINE__),betr_status)
 
+    SHR_ASSERT_ALL((ubound(lbots)   == (/bounds%endc/)) , errMsg(mod_filename,__LINE__),betr_status)
+
     SHR_ASSERT_ALL((ubound(Rfactor,1) == bounds%endc)   , errMsg(mod_filename,__LINE__),betr_status)
 
     SHR_ASSERT_ALL((ubound(Rfactor,2) == ubj)           , errMsg(mod_filename,__LINE__),betr_status)
@@ -1369,7 +1383,7 @@ contains
       do j = lbj, ubj
          do fc = 1, num_soilc
             c = filter_soilc(fc)
-            if(j>=jtops(c))then
+            if(j>=jtops(c) .and. j <= lbots(c))then
                do k = 1, ngwmobile_tracer_groups
                   trcid = tracer_group_memid(k,1)
                   if(is_volatile(trcid))then
@@ -1386,7 +1400,7 @@ contains
   end subroutine set_gwdif_Rfactor
 
   !-------------------------------------------------------------------------------
-  subroutine calc_ebullition(bounds, lbj, ubj, jtops, num_soilc, filter_soilc, &
+  subroutine calc_ebullition(bounds, lbj, ubj, jtops, lbots, num_soilc, filter_soilc, &
        forc_psrf, zi, dz, dtime, fracice, zwt, betrtracer_vars,                &
        tracercoeff_vars, tracerstate_vars, tracer_flx_ebu_col,ebullition_on, betr_status)
     !
@@ -1402,6 +1416,7 @@ contains
     type(bounds_type)      , intent(in)    :: bounds
     integer                , intent(in)    :: lbj, ubj
     integer                , intent(in)    :: jtops(bounds%begc: )                                                             ! top label of each column
+    integer                , intent(in)    :: lbots(bounds%begc: )                                                             ! top label of each column
     integer                , intent(in)    :: num_soilc                                                                        ! number of columns in column filter_soilc
     integer                , intent(in)    :: filter_soilc(:)                                                                  ! column filter_soilc
     real(r8)               , intent(in)    :: dtime
@@ -1433,6 +1448,8 @@ contains
 
     call betr_status%reset()
     SHR_ASSERT_ALL((ubound(jtops)     == (/bounds%endc/))      , errMsg(mod_filename,__LINE__),betr_status)
+
+    SHR_ASSERT_ALL((ubound(lbots)     == (/bounds%endc/))      , errMsg(mod_filename,__LINE__),betr_status)
 
     SHR_ASSERT_ALL((ubound(forc_psrf) == (/bounds%endc/))      , errMsg(mod_filename,__LINE__),betr_status)
 
@@ -1478,7 +1495,7 @@ contains
          if(fracice(c,1)>=icefrac_sealed)cycle
          !initialize temporary bubble collecting vector
          bubble_flux(:) = 0._r8
-         do j = ubj, 1, -1
+         do j = lbots(c), 1, -1
             !calculate the imposed atmospheric pressure plus hydrostatic pressure from water
             press_hydro= max(zwt(c)-zi(c,j-1),0._r8)*denh2o*grav + forc_psrf(c)
             !convert Pa into atm
@@ -1558,7 +1575,7 @@ contains
   end function calc_gas_pressure
 
   !-------------------------------------------------------------------------------
-  subroutine calc_root_uptake_as_perfect_sink(bounds, lbj, ubj,  num_soilc, filter_soilc, &
+  subroutine calc_root_uptake_as_perfect_sink(bounds, lbj, ubj, lbots,  num_soilc, filter_soilc, &
        dtime_loc, dz, qflx_rootsoi, vtrans_scal, is_h2o, update_col, halfdt_col, tracer_conc, transp_mass_vr , &
        transp_mass,bstatus)
     !
@@ -1572,6 +1589,7 @@ contains
     integer           , intent(in)    :: num_soilc                           ! number of columns in column filter_soilc
     integer           , intent(in)    :: filter_soilc(:)                     ! column filter_soilc
     real(r8)          , intent(in)    :: dz(bounds%begc: , lbj: )            ! layer thickness
+    integer           , intent(in)    :: lbots(bounds%begc: )                ! lower boundary
     real(r8)          , intent(in)    :: dtime_loc(bounds%begc: )
     real(r8)          , intent(in)    :: qflx_rootsoi(bounds%begc: , lbj: )
     real(r8)          , intent(in)    :: vtrans_scal
@@ -1590,6 +1608,8 @@ contains
     SHR_ASSERT_ALL((ubound(dz)               == (/bounds%endc, ubj/)) , errMsg(mod_filename,__LINE__),bstatus)
 
     SHR_ASSERT_ALL((ubound(update_col)       == (/bounds%endc/))      , errMsg(mod_filename,__LINE__),bstatus)
+
+    SHR_ASSERT_ALL((ubound(lbots)       == (/bounds%endc/))      , errMsg(mod_filename,__LINE__),bstatus)
 
     SHR_ASSERT_ALL((ubound(dtime_loc)        == (/bounds%endc/))      , errMsg(mod_filename,__LINE__),bstatus)
 
@@ -1611,7 +1631,7 @@ contains
     do fc = 1, num_soilc
        c = filter_soilc(fc)
        if(update_col(c) .and. (.not. halfdt_col(c)))then
-          do j = 1, ubj
+          do j = 1, lbots(c)
              if(is_h2o)then
                transp_mass_vr(c,j)   = vtrans_scal*qflx_rootsoi(c,j)*denh2o*dtime_loc(c)
                tracer_conc_new = tracer_conc(c,j) - transp_mass_vr(c,j)/dz(c,j)
@@ -1860,7 +1880,7 @@ contains
   end subroutine calc_tracer_h2osfc_snow_residual_combine
 
   !--------------------------------------------------------------------------------
-  subroutine diagnose_gas_pressure(bounds, lbj, ubj, num_soilc, filter_soilc, &
+  subroutine diagnose_gas_pressure(bounds, lbj, ubj, lbots, num_soilc, filter_soilc, &
        betrtracer_vars, tracercoeff_vars, tracerstate_vars, betr_status)
     !
     ! !DESCRIPTION:
@@ -1878,6 +1898,7 @@ contains
     integer                , intent(in)    :: lbj, ubj
     integer                , intent(in)    :: num_soilc        ! number of columns in column filter_soilc
     integer                , intent(in)    :: filter_soilc(:)  ! column filter_soilc
+    integer                , intent(in)    :: lbots(bounds%begc: )
     class(betrtracer_type) , intent(in)    :: betrtracer_vars  ! tracer info data structure
     type(tracercoeff_type) , intent(in)    :: tracercoeff_vars ! tracer phase conversion coefficients
     type(tracerstate_type) , intent(inout) :: tracerstate_vars ! tracer state variables data structure
@@ -1891,6 +1912,8 @@ contains
     ! remove compiler warnings about unused dummy args
     if (bounds%begc > 0) continue
     if (lbj > 0) continue
+
+    SHR_ASSERT_ALL((ubound(lbots)       == (/bounds%endc/))      , errMsg(mod_filename,__LINE__),bstatus)
 
   associate(                                                                  &
          tracer_conc_mobile_col   => tracerstate_vars%tracer_conc_mobile_col, &
@@ -1909,7 +1932,7 @@ contains
 
       do fc = 1, num_soilc
          c = filter_soilc(fc)
-         do j = 1, ubj
+         do j = 1, lbots(c)
             !calculate the total gas pressure
             total_pres=0._r8
             do jj = 1, ngwmobile_tracers
@@ -1930,7 +1953,6 @@ contains
       enddo
     end associate
   end subroutine diagnose_gas_pressure
-
 
    !------------------------------------------------------------------------
 

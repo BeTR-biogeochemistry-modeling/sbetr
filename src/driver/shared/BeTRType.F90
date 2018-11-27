@@ -389,6 +389,7 @@ contains
 
     call calc_ebullition(bounds, 1, ubj,                                                                  &
          this%tracerboundaryconds%jtops_col,                                                              &
+         col%lbots,                                                                                       &
          num_soilc,                                                                                       &
          filter_soilc,                                                                                    &
          biophysforc%forc_pbot_downscaled_col,                                                            &
@@ -602,7 +603,7 @@ contains
       enddo
       if(betr_status%check_status())return
       !diagnose gas pressure
-      call diagnose_gas_pressure(bounds, lbj, ubj, num_soilc, filter_soilc, &
+      call diagnose_gas_pressure(bounds, lbj, ubj,col%lbots, num_soilc, filter_soilc, &
            this%tracers, this%tracercoeffs, this%tracerstates, betr_status)
 
     end associate
