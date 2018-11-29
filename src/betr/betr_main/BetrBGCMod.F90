@@ -445,7 +445,7 @@ contains
 
       SHR_ASSERT_ALL((ubound(hmconductance_col,3) == ntracer_groups), errMsg(mod_filename,__LINE__),betr_status)
 
-      SHR_ASSERT_ALL((ubound(lbots)               == (/bounds%endc/)),     errMsg(mod_filename,__LINE__),bstatus)
+      SHR_ASSERT_ALL((ubound(lbots)               == (/bounds%endc/)),     errMsg(mod_filename,__LINE__),betr_status)
 
       SHR_ASSERT_ALL((ubound(dz,1)   == bounds%endc), errMsg(mod_filename,__LINE__),betr_status)
 
@@ -1913,7 +1913,7 @@ contains
     if (bounds%begc > 0) continue
     if (lbj > 0) continue
 
-    SHR_ASSERT_ALL((ubound(lbots)       == (/bounds%endc/))      , errMsg(mod_filename,__LINE__),bstatus)
+    SHR_ASSERT_ALL((ubound(lbots)       == (/bounds%endc/))      , errMsg(mod_filename,__LINE__),betr_status)
 
   associate(                                                                  &
          tracer_conc_mobile_col   => tracerstate_vars%tracer_conc_mobile_col, &

@@ -978,9 +978,9 @@ contains
    real(r8) :: ctw, ctot
 
    call bstatus%reset()
-   SHR_ASSERT_ALL((ubound(jtops)   == (/bounds%endc/)),        errMsg(filename,__LINE__), betr_status)
+   SHR_ASSERT_ALL((ubound(jtops)   == (/bounds%endc/)),        errMsg(filename,__LINE__), bstatus)
 
-   SHR_ASSERT_ALL((ubound(lbots)   == (/bounds%endc/)),        errMsg(filename,__LINE__), betr_status)
+   SHR_ASSERT_ALL((ubound(lbots)   == (/bounds%endc/)),        errMsg(filename,__LINE__), bstatus)
 
    SHR_ASSERT_ALL((ubound(dz)         == (/bounds%endc, ubj/)), errMsg(filename,__LINE__),bstatus)
 
