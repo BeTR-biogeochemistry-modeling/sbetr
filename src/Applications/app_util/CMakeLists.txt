@@ -2,16 +2,20 @@ set(BETR_APP_UTIL_SOURCES
    ApplicationsFactory.F90
   )
 
-#begin_appinc_directories
+
 include_directories(${CMAKE_BINARY_DIR}/src/shr)
 include_directories(${CMAKE_BINARY_DIR}/src/io_util)
 include_directories(${CMAKE_BINARY_DIR}/src/stub_clm)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_core)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/bgcfarm_util)
+#begin_appinc_directories
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/ecacnp/ecacnpPara)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/ecacnp/ecacnp1layer)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/ecacnp/ecacnpNlayer)
+include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/ch4soil/ch4soilPara)
+include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/ch4soil/ch4soil1layer)
+include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/ch4soil/ch4soilNlayer)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/cdom/cdomPara)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/cdom/cdom1layer)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/cdom/cdomNlayer)
