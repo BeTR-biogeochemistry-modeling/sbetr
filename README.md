@@ -256,34 +256,35 @@ The example is set with mock run that transport five tracers: N2, O2,
 AR, CO2, CH4 and DOC
 
 ## create customized testing runs
+  ```INI
+  # Use the python script
 
-Use the python script
+  # first check how the script should be used
 
-## first check how the script should be used
+  python tools/python/create_newcase.py --help
 
-python tools/python/create_newcase.py --help
+  # then create your case
 
-## then create your case
-python tools/python/create_newcase.py --case_name  your_case
+  python tools/python/create_newcase.py --case_name  your_case
 
-#config and build your case
+  # config and build your case
 
-cd your_case
+  cd your_case
 
-python case_make.py --task config --CC $cc --CXX $cxx --FC $fc
+  python case_make.py --task config --CC $cc --CXX $cxx --FC $fc
 
-python case_make.py --task install --CC $cc --CXX $cxx --FC $fc
+  python case_make.py --task install --CC $cc --CXX $cxx --FC $fc
 
-#run the model
+  # run the model
 
-#column mode
+  # column mode
 
-./sbetr reaction.1d.sbetr.nl
+  ./sbetr reaction.1d.sbetr.nl
 
-#single layer mode
+  # single layer mode
 
-./sbetr reaction.jar.sbetr.nl
-
+  ./sbetr reaction.jar.sbetr.nl
+  ```
 ## Development
 
 Key direcotries:
