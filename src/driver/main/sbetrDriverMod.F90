@@ -105,6 +105,7 @@ contains
   call read_name_list(namelist_buffer, base_filename, case_id, &
     simulator_name, finit, histbgc, hist, lread_param)
 
+  !create simulations
   simulation => create_betr_simulation(simulator_name)
 
 
@@ -129,7 +130,7 @@ contains
   allocate(time_vars)
   call time_vars%Init(namelist_buffer)
 
-  !print*,'read forcing'
+  !read forcing
   allocate(forcing_data)
   call forcing_data%ReadData(namelist_buffer, grid_data)
 
@@ -368,7 +369,8 @@ contains
        call simulation%BeTRRestartOffline(bounds, ncid, simulation%num_soilc, simulation%filter_soilc, flag='write')
 
        call simulation%BeTRRestartClose(ncid)
-
+       call time_vars%get_ymdhs(yymmddhhss)
+       print*,yymmddhhss
        if(simulation%do_soibgc())then
          call time_vars%get_ymdhs(yymmddhhss)
          call hist%histrst(reaction_method, 'write',yymmddhhss)
@@ -509,21 +511,6 @@ end subroutine sbetrBGC_driver
 
     lread_param=trim(run_type)=='sbgc'
     if(lread_param)then
-
-!      if(index(trim(param_file),'.nc')==0)then
-!        call endrun(msg='no input parameter file is give in '//errMsg(mod_filename, __LINE__))
-!      else
-!        call ncd_pio_openfile(ncid, trim(param_file), ncd_nowrite)
-!        call AppInitParameters(namelist_buffer, reaction_method, bstatus)
-!        if(bstatus%check_status())then
-!          call endrun(msg=bstatus%print_msg())
-!        endif
-!        call AppLoadParameters(ncid, bstatus)
-!        if(bstatus%check_status())then
-!          call endrun(msg=bstatus%print_msg())
-!        endif
-!        call ncd_pio_closefile(ncid)
-!      endif
     call init_hist_bgc(histbgc, base_filename, reaction_method, case_id, hist)
   endif
   end subroutine read_name_list

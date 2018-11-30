@@ -304,7 +304,6 @@ contains
 
   call this%BeTRSetBounds(betr_bounds)
 
-
   !reset and prepare for retrieval
   do c = bounds%begc, bounds%endc
     if(.not. this%active_col(c))cycle

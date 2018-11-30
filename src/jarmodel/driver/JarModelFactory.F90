@@ -23,6 +23,7 @@ contains
     ! create a betr simulation object
     !
     !USES
+    use ch4soilBGCType, only : create_jarmodel_ch4soil
     use ecacnpBGCType, only : create_jarmodel_ecacnp
     use simicBGCType,  only : create_jarmodel_simicbgc
     use cdomBGCType, only : create_jarmodel_cdom
@@ -33,6 +34,8 @@ contains
     class(jar_model_type), pointer :: jarmodel
 
     select case(trim(jarmodel_name))
+       case ("ch4soil")
+          allocate(jarmodel, source=create_jarmodel_ch4soil())
        case ("ecacnp")
           allocate(jarmodel, source=create_jarmodel_ecacnp())
        case ("simic")
@@ -52,8 +55,10 @@ contains
     ! create a betr simulation object
     !
     !USES
-    use ecacnpBGCType, only : create_jarmodel_ecacnp
     use BiogeoConType , only : BiogeoCon_type
+    use ch4soilBGCType, only : create_jarmodel_ch4soil
+    use ch4soilParaType  , only : create_jarpars_ch4soil
+    use ecacnpBGCType, only : create_jarmodel_ecacnp
     use ecacnpParaType  , only : create_jarpars_ecacnp
     use simicParaType   , only : create_jarpars_simic
     use cdomParaType   , only : create_jarpars_cdom
@@ -63,6 +68,8 @@ contains
     class(BiogeoCon_type), pointer :: jarpars
 
     select case(trim(jarmodel_name))
+       case ("ch4soil")
+          allocate(jarpars, source=create_jarpars_ch4soil())
        case ("ecacnp")
           allocate(jarpars, source=create_jarpars_ecacnp())
        case ("simic")
