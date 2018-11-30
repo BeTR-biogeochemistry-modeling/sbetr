@@ -369,13 +369,13 @@ contains
        call simulation%BeTRRestartOffline(bounds, ncid, simulation%num_soilc, simulation%filter_soilc, flag='write')
 
        call simulation%BeTRRestartClose(ncid)
-       call time_vars%get_ymdhs(yymmddhhss)
-       print*,yymmddhhss
+
        if(simulation%do_soibgc())then
          call time_vars%get_ymdhs(yymmddhhss)
          call hist%histrst(reaction_method, 'write',yymmddhhss)
       endif
     endif
+
     !print*,'next step'
     if(time_vars%its_time_to_exit()) then
        print*,'exit'
@@ -576,7 +576,8 @@ end subroutine sbetrBGC_driver
   c_l = 1
   allocate(ystates(hist%nvars))
   if(index(trim(reaction_method),'ecacnp')/=0 .or. &
-     index(trim(reaction_method),'keca')/=0)then
+     index(trim(reaction_method),'keca')/=0   .or. &
+     index(trim(reaction_method),'ch4soil')/=0)then
     id = 0
     id = id + 1; ystates(id) = carbonflux_vars%hr_col(c_l)
     id = id + 1; ystates(id) = nitrogenflux_vars%f_n2o_nit_col(c_l)
