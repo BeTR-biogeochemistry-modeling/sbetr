@@ -9,7 +9,7 @@ include_directories(${CMAKE_BINARY_DIR}/src/stub_clm)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_core)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/bgcfarm_util)
-#begin_appinc_directories
+#begin_appadd
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/ecacnp/ecacnpPara)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/ecacnp/ecacnp1layer)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/ecacnp/ecacnpNlayer)
@@ -25,7 +25,7 @@ include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/simic/simicNl
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/keca/kecaPara)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/keca/keca1layer)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/keca/kecaNlayer)
-#end_appinc_directories
+#end_appadd
 include(add_betr_library)
 add_betr_library(app_util ${BETR_APP_UTIL_SOURCES})
 

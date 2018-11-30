@@ -56,15 +56,16 @@ contains
     use betr_ctrl       , only : iulog  => biulog
     use betr_constants  , only : betr_errmsg_len
     use BetrStatusType  , only : betr_status_type
-    !begin_appcase_add
+    !begin_appadd
     use ecacnpBGCReactionsType, only : ecacnp_bgc_reaction_type
 #if (defined SBETR)
     use ch4soilBGCReactionsType, only : ch4soil_bgc_reaction_type
     use cdomBGCReactionsType  , only : cdom_bgc_reaction_type
     use simicBGCReactionsType , only : simic_bgc_reaction_type
     use kecaBGCReactionsType  , only : keca_bgc_reaction_type
+    !end_appadd
 #endif
-    !end_appcase_add
+
     implicit none
     ! !ARGUMENTS:
     class(bgc_reaction_type),  allocatable, intent(inout) :: bgc_reaction
@@ -77,7 +78,7 @@ contains
     call bstatus%reset()
     asoibgc = .false.
     select case(trim(method))
-    !begin_appcase_add
+    !begin_appadd
     case ("ecacnp","ecacnp_mosart")
        asoibgc=.true.;allocate(bgc_reaction, source=ecacnp_bgc_reaction_type())
 #if (defined SBETR)
@@ -89,8 +90,8 @@ contains
        asoibgc=.true.;allocate(bgc_reaction, source=simic_bgc_reaction_type())
     case ("keca")
        asoibgc=.true.;allocate(bgc_reaction, source=keca_bgc_reaction_type())
+    !end_appadd
 #endif
-    !end_appcase_add
     case default
        write(msg,*)subname //' ERROR: unknown method: ', method
        msg = trim(msg)//new_line('A')//errMsg(mod_filename, __LINE__)
@@ -109,15 +110,15 @@ contains
   use betr_ctrl       , only : iulog  => biulog
   use betr_constants  , only : betr_errmsg_len
   use BetrStatusType  , only : betr_status_type
-  !begin_appcase_add
+  !begin_appadd
   use ecacnpPlantSoilBGCType, only : ecacnp_plant_soilbgc_type
 #if (defined SBETR)
   use ch4soilPlantSoilBGCType, only : ch4soil_plant_soilbgc_type
   use cdomPlantSoilBGCType  , only : cdom_plant_soilbgc_type
   use simicPlantSoilBGCType , only : simic_plant_soilbgc_type
   use kecaPlantSoilBGCType  , only : keca_plant_soilbgc_type
+  !end_appadd
 #endif
-  !end_appcase_add
   implicit none
   ! !ARGUMENTS:
   class(plant_soilbgc_type), allocatable, intent(inout) :: plant_soilbgc
@@ -130,7 +131,7 @@ contains
   call bstatus%reset()
 
   select case(trim(method))
-  !begin_appcase_add
+  !begin_appadd
   case ("ecacnp","ecacnp_mosart")
      allocate(plant_soilbgc, source=ecacnp_plant_soilbgc_type())
 #if (defined SBETR)
@@ -142,8 +143,8 @@ contains
      allocate(plant_soilbgc, source=simic_plant_soilbgc_type())
   case ("keca")
      allocate(plant_soilbgc, source=keca_plant_soilbgc_type())
+  !end_appadd
 #endif
-  !end_appcase_add
   case default
      write(msg, *)subname //' ERROR: unknown method: ', method
      msg = trim(msg)//new_line('A')//errMsg(mod_filename, __LINE__)
@@ -157,15 +158,15 @@ contains
   !
   ! DESCRIPTION
   ! read in the parameters for specified bgc implementation
-  !begin_appcase_add
+  !begin_appadd
   use ecacnpParaType   , only : ecacnp_para
 #if (defined SBETR)
   use ch4soilParaType   , only : ch4soil_para
   use cdomParaType     , only : cdom_para
   use simicParaType    , only : simic_para
   use kecaParaType     , only : keca_para
+  !end_appadd
 #endif
-  !end_appcase_add
   use tracer_varcon    , only : reaction_method
   use ncdio_pio        , only : file_desc_t
   use BetrStatusType   , only : betr_status_type
@@ -174,7 +175,7 @@ contains
   type(betr_status_type) , intent(out) :: bstatus
 
    select case (trim(reaction_method))
-   !begin_appcase_add
+  !begin_appadd
    case ("ecacnp","ecacnp_mosart")
      call ecacnp_para%readPars(ncid, bstatus)
 #if (defined SBETR)
@@ -186,8 +187,8 @@ contains
      call simic_para%readPars(ncid, bstatus)
    case ("keca")
      call keca_para%readPars(ncid, bstatus)
+   !end_appadd
 #endif
-   !end_appcase_add
    case default
      !do nothing
    end select
@@ -199,15 +200,15 @@ contains
   !
   ! DESCRIPTION
   ! read in the parameters for specified bgc implementation
-  !begin_appcase_add
+  !begin_appadd
   use ecacnpParaType   , only : ecacnp_para
 #if (defined SBETR)
   use ch4soilParaType   , only : ch4soil_para
   use cdomParaType     , only : cdom_para
   use simicParaType    , only : simic_para
   use kecaParaType     , only : keca_para
+  !end_appadd
 #endif
-  !end_appcase_add
   use betr_constants   , only : betr_namelist_buffer_size_ext
   use BetrStatusType   , only : betr_status_type
   implicit none
@@ -218,7 +219,7 @@ contains
    call bstatus%reset()
 
    select case (trim(reaction_method))
-   !begin_appcase_add
+   !begin_appadd
    case ("ecacnp","ecacnp_mosart")
      call ecacnp_para%Init(bstatus)
 #if (defined SBETR)
@@ -230,8 +231,8 @@ contains
      call simic_para%Init(bstatus)
    case ("keca")
      call keca_para%Init(bstatus)
+   !end_appadd
 #endif
-   !end_appcase_add
    case default
      !do nothing
    end select
@@ -240,19 +241,20 @@ contains
   !-------------------------------------------------------------------------------
   subroutine AppSetSpinup()
 
-  !begin_appcase_add
+  ! set spinup strategies
+  !begin_appadd
   use ecacnpParaType  , only : ecacnp_para
 #if (defined SBETR)
   use ch4soilParaType  , only : ch4soil_para
   use cdomParaType    , only : cdom_para
   use kecaParaType    , only : keca_para
+  !end_appadd
 #endif
-  !end_appcase_add
   use tracer_varcon   , only : reaction_method
   implicit none
 
   select case (trim(reaction_method))
-  !begin_appcase_add
+  !begin_appadd
   case ("ecacnp","ecacnp_mosart")
      call  ecacnp_para%set_spinup_factor()
 #if (defined SBETR)
@@ -262,8 +264,8 @@ contains
      call cdom_para%set_spinup_factor()
   case ("keca")
      call keca_para%set_spinup_factor()
+  !end_appadd
 #endif
-  !end_appcase_add
   end select
 
   end subroutine AppSetSpinup

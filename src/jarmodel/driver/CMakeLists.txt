@@ -8,7 +8,7 @@ include_directories(${CMAKE_BINARY_DIR}/src/io_util)
 include_directories(${CMAKE_BINARY_DIR}/src/jarmodel/forcing)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_math)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/bgcfarm_util)
-#begin_appinc_directories
+#begin_appadd
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/ch4soil/ch4soilPara)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/ch4soil/ch4soil1layer)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/ecacnp/ecacnpPara)
@@ -19,7 +19,7 @@ include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/simic/simicPa
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/simic/simic1layer)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/keca/kecaPara)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/keca/keca1layer)
-#end_appinc_directories
+#end_appadd
 include_directories(${CMAKE_BINARY_DIR}/src/jarmodel/forcing)
 
 include(add_betr_library)
