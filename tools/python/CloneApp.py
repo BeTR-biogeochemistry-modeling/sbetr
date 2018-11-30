@@ -45,8 +45,8 @@ toapp=args.toapp[0]
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
-mdir,chdir=dir_path.split('sbetr')
-sfarm_dir=mdir+'sbetr/src/Applications/soil-farm'
+mdir,chdir=dir_path.split('/sbetr')
+sfarm_dir=mdir+'/sbetr/src/Applications/soil-farm'
 
 #check existence of the app to cloned
 
