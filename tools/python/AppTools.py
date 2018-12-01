@@ -118,7 +118,7 @@ def add_case_cmake3(mdir, model):
                     line1='include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/ecacnp/ecacnpPara)\n'
                     line2='include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/ecacnp/ecacnp1layer)\n'
                     newline1=line1.replace('ecacnp',model)
-                    newline2=line1.replace('ecacnp',model)
+                    newline2=line2.replace('ecacnp',model)
                     f2w.write(newline1)
                     f2w.write(newline2)
                 sec_start=False
@@ -130,6 +130,37 @@ def add_case_cmake3(mdir, model):
     shutil.move(tof,fromf)
     if not model_found:
         print ('Added new model '+model)
+
+def add_case_cmake4(mdir, model):
+    """
+    add new model to camke files
+    """
+    fromf=mdir+'/sbetr/src/jarmodel/forcing/CMakeLists.txt'
+    tof=mdir+'/sbetr/src/jarmodel/forcing/CMakeLists.txt1'
+    f2w=open(tof,"w")
+    sec_start=False
+    model_found=False
+    with open(fromf) as f:
+        for line in f:
+            if model in line:
+                model_found=True
+            if "end_appadd" in line:
+                if model_found:
+                    print (model+' already exist')
+                else:
+                    line1='include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/ecacnp/ecacnpPara)\n'
+                    newline1=line1.replace('ecacnp',model)
+                    f2w.write(newline1)
+                sec_start=False
+
+            f2w.write(line)
+            if "begin_appadd" in line:
+                sec_start=True
+    f2w.close()
+    shutil.move(tof,fromf)
+    if not model_found:
+        print ('Added new model '+model)
+
 
 def add_case_fortranf(mdir, model,fromf):
     """
@@ -187,14 +218,18 @@ def further_instructions(mdir):
     print mdir+'/sbetr/src/dirver/main/sbetrDriverMod.F90'
     print mdir+'/sbetr/src/dirver/standalone/BeTRSimulationStandalone.F90'
     print mdir+'/sbetr/src/dirver/alm/BeTRSimulationALM.F90'
+    print mdir+'/sbetr/src/jarmodel/forcing/SetJarForcMod.F90'
 
 def add_case_file(mdir,model):
     add_case_cmake1(mdir,model)
     add_case_cmake2(mdir,model)
     add_case_cmake3(mdir,model)
+    add_case_cmake4(mdir,model)
     fromf=mdir+'/sbetr/src/jarmodel/driver/JarModelFactory.F90'
     add_case_fortranf(mdir,model,fromf)
     fromf=mdir+'/sbetr/src/Applications/app_util/ApplicationsFactory.F90'
+    add_case_fortranf(mdir,model,fromf)
+    fromf=mdir+'/sbetr/src/jarmodel/forcing/SetJarForcMod.F90'
     add_case_fortranf(mdir,model,fromf)
 
     further_instructions(mdir)
