@@ -3,6 +3,7 @@ module TracerCoeffType
   ! DESCRIPTION:
   ! datatype for tracer phase conversion parameters and other scaling parameters
   !
+#include "bshr_alloc.h"
   ! !USES:
   use bshr_kind_mod       , only : r8 => shr_kind_r8
   use bshr_infnan_mod     , only : nan => shr_infnan_nan, assignment(=)
@@ -14,7 +15,6 @@ module TracerCoeffType
   implicit none
 
   private
-#define NAN_ALLOC(a)  allocate(a); a = nan
 
 
   character(len=*), private, parameter :: mod_filename = &

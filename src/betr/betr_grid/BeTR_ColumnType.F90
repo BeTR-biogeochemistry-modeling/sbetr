@@ -21,6 +21,7 @@ module BeTR_ColumnType
    real(r8), pointer :: dz_snow  (:,:) => null()
    integer,  pointer :: lbots    (:)   => null()
    logical , pointer :: is_wetl  (:)   => null() !logical switch indicate if it is lake or wetland
+   integer , pointer :: lzsoi_beg(:)   => null()
   contains
     procedure, public :: Init
   end type betr_column_type
@@ -62,5 +63,6 @@ contains
   allocate(this%is_wetl(begc:endc)); this%is_wetl(:) = .false.
   allocate(this%dz_snow(begc:endc,-nlevsno+1:0))
   allocate(this%lbots(begc:endc)); this%lbots(:) = ubj
+  allocate(this%lzsoi_beg(begc:endc)); this%lzsoi_beg(:) = 1
   end subroutine Init
 end module BeTR_ColumnType
