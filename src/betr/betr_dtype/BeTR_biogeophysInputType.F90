@@ -6,11 +6,14 @@ module BeTR_biogeophysInputType
   use BeTR_carbonfluxType, only : betr_carbonflux_type
   use BeTR_nitrogenfluxType, only : betr_nitrogenflux_type
   use BeTR_phosphorusfluxType, only : betr_phosphorusflux_type
+  use betr_varcon     , only : spval => bspval, ispval => bispval
 
 implicit none
-  character(len=*), private, parameter :: mod_filename = &
+#include "bshr_alloc.h"
+  private
+  character(len=*), parameter :: mod_filename = &
        __FILE__
-  type betr_biogeophys_input_type
+  type, public :: betr_biogeophys_input_type
     ! cnstate_vars
     integer, pointer :: isoilorder(:)           => null()  ! soil order
     real(r8), pointer:: frac_loss_lit_to_fire_col(:) => null() !fraction of litter cnp loss through fire
@@ -191,105 +194,105 @@ contains
   lbj = bounds%lbj   ; ubj=bounds%ubj
   nlevsno = bounds%nlevsno
   ! cnstate_vars
-  allocate(this%isoilorder(begc:endc))  ! soil order
-  allocate(this%frootc_patch(begp:endp))
-  allocate(this%cn_scalar_patch(begp:endp))
-  allocate(this%cp_scalar_patch(begp:endp))
+  iSPVAL_ALLOC(this%isoilorder(begc:endc))  ! soil order
+  SPVAL_ALLOC(this%frootc_patch(begp:endp))
+  SPVAL_ALLOC(this%cn_scalar_patch(begp:endp))
+  SPVAL_ALLOC(this%cp_scalar_patch(begp:endp))
   !carbon flux
-  allocate (this%annsum_npp_patch(  begp:endp))  !annual npp
-  allocate (this%agnpp_patch(       begp:endp))
-  allocate (this%bgnpp_patch(       begp:endp))
-  allocate (this%annavg_agnpp_patch (begp:endp))
-  allocate (this%tempavg_agnpp_patch(begp:endp))
-  allocate (this%tempavg_bgnpp_patch(begp:endp))
-  allocate (this%annavg_bgnpp_patch(begp:endp))
-  allocate(this%rr_patch (begp:endp, lbj:ubj))
-  allocate(this%froot_prof_patch(begp:endp, lbj:ubj))
-  allocate(this%frac_loss_lit_to_fire_col(begc:endc)) !fraction of litter cnp loss through fire
-  allocate(this%frac_loss_cwd_to_fire_col(begc:endc)) !fraction of cwd cnp loss through fire
+  SPVAL_ALLOC (this%annsum_npp_patch(  begp:endp))  !annual npp
+  SPVAL_ALLOC (this%agnpp_patch(       begp:endp))
+  SPVAL_ALLOC (this%bgnpp_patch(       begp:endp))
+  SPVAL_ALLOC (this%annavg_agnpp_patch (begp:endp))
+  SPVAL_ALLOC (this%tempavg_agnpp_patch(begp:endp))
+  SPVAL_ALLOC (this%tempavg_bgnpp_patch(begp:endp))
+  SPVAL_ALLOC (this%annavg_bgnpp_patch(begp:endp))
+  SPVAL_ALLOC(this%rr_patch (begp:endp, lbj:ubj))
+  SPVAL_ALLOC(this%froot_prof_patch(begp:endp, lbj:ubj))
+  SPVAL_ALLOC(this%frac_loss_lit_to_fire_col(begc:endc)) !fraction of litter cnp loss through fire
+  SPVAL_ALLOC(this%frac_loss_cwd_to_fire_col(begc:endc)) !fraction of cwd cnp loss through fire
   !waterstate
-  allocate (this%frac_h2osfc_col (  begc:endc         ) ) ! col fractional area with surface water greater than zero
-  allocate (this%finundated_col(    begc:endc         ) ) ! fraction of column that is inundated, this is for bgc caclulation in betr
-  allocate (this%h2osoi_liq_col(    begc:endc,lbj:ubj ) ) !liquid water (kg/m2) (new) (-nlevsno+1:nlevgrnd)
-  allocate (this%h2osoi_ice_col(    begc:endc,lbj:ubj ) ) !ice lens (kg/m2) (new) (-nlevsno+1:nlevgrnd)
-  allocate (this%h2osoi_liqvol_col( begc:endc,lbj:ubj ) ) !volumetric liquid water content
-  allocate (this%h2osoi_icevol_col( begc:endc,lbj:ubj ) ) !volumetric ice water content
-  allocate (this%h2osoi_vol_col(    begc:endc,lbj:ubj ) ) !volumetric water content, total
-  allocate (this%air_vol_col(       begc:endc,lbj:ubj ) ) !volume possessed by air
-  allocate (this%rho_vap(           begc:endc,lbj:ubj ) ) !concentration of bulk water vapor, assume in equilibrium with the liquid water
-  allocate (this%rhvap_soi(         begc:endc,lbj:ubj ) ) !soil relative humidity
-  allocate (this%smp_l_col     (    begc:endc,lbj:ubj ) ) ! col liquid phase soil matric potential, mm
-  allocate (this%h2osno_liq_col( begc:endc, -nlevsno+1:0))
-  allocate (this%h2osno_ice_col( begc:endc, -nlevsno+1:0))
+  SPVAL_ALLOC (this%frac_h2osfc_col (  begc:endc         ) ) ! col fractional area with surface water greater than zero
+  SPVAL_ALLOC (this%finundated_col(    begc:endc         ) ) ! fraction of column that is inundated, this is for bgc caclulation in betr
+  SPVAL_ALLOC (this%h2osoi_liq_col(    begc:endc,lbj:ubj ) ) !liquid water (kg/m2) (new) (-nlevsno+1:nlevgrnd)
+  SPVAL_ALLOC (this%h2osoi_ice_col(    begc:endc,lbj:ubj ) ) !ice lens (kg/m2) (new) (-nlevsno+1:nlevgrnd)
+  SPVAL_ALLOC (this%h2osoi_liqvol_col( begc:endc,lbj:ubj ) ) !volumetric liquid water content
+  SPVAL_ALLOC (this%h2osoi_icevol_col( begc:endc,lbj:ubj ) ) !volumetric ice water content
+  SPVAL_ALLOC (this%h2osoi_vol_col(    begc:endc,lbj:ubj ) ) !volumetric water content, total
+  SPVAL_ALLOC (this%air_vol_col(       begc:endc,lbj:ubj ) ) !volume possessed by air
+  SPVAL_ALLOC (this%rho_vap(           begc:endc,lbj:ubj ) ) !concentration of bulk water vapor, assume in equilibrium with the liquid water
+  SPVAL_ALLOC (this%rhvap_soi(         begc:endc,lbj:ubj ) ) !soil relative humidity
+  SPVAL_ALLOC (this%smp_l_col     (    begc:endc,lbj:ubj ) ) ! col liquid phase soil matric potential, mm
+  SPVAL_ALLOC (this%h2osno_liq_col( begc:endc, -nlevsno+1:0))
+  SPVAL_ALLOC (this%h2osno_ice_col( begc:endc, -nlevsno+1:0))
   !waterflux
-  allocate(this%qflx_surf_col            (begc:endc         ) )  !surface runoff (mm H2O /s)
-  allocate(this%qflx_dew_grnd_col        (begc:endc         ) ) ! col ground surface dew formation (mm H2O /s) [+] (+ = to atm); usually eflx_bot >= 0)
-  allocate(this%qflx_dew_snow_col        (begc:endc         ) ) ! col surface dew added to snow pack (mm H2O /s) [+]
-  allocate(this%qflx_sub_snow_vol_col    (begc:endc         ) )
-  allocate(this%qflx_sub_snow_col        (begc:endc         ) ) ! col sublimation rate from snow pack (mm H2O /s) [+]
-  allocate(this%qflx_h2osfc2topsoi_col   (begc:endc         ) ) ! col liquid water coming from surface standing water top soil (mm H2O/s)
-  allocate(this%qflx_snow2topsoi_col     (begc:endc         ) ) ! col liquid water coming from residual snow to topsoil (mm H2O/s)
-  allocate(this%qflx_tran_veg_patch      (begp:endp         ) )
-  allocate(this%qflx_rootsoi_col         (begc:endc,lbj:ubj ) ) ! col root and soil water exchange [mm H2O/s] [+ into root]
-  allocate(this%qflx_rootsoi_frac_patch  (begp:endp,lbj:ubj ) ) ! col root and soil water exchange [mm H2O/s] [+ into root]
-  allocate(this%qflx_runoff_col          (begc:endc))
+  SPVAL_ALLOC(this%qflx_surf_col            (begc:endc         ) )  !surface runoff (mm H2O /s)
+  SPVAL_ALLOC(this%qflx_dew_grnd_col        (begc:endc         ) ) ! col ground surface dew formation (mm H2O /s) [+] (+ = to atm); usually eflx_bot >= 0)
+  SPVAL_ALLOC(this%qflx_dew_snow_col        (begc:endc         ) ) ! col surface dew added to snow pack (mm H2O /s) [+]
+  SPVAL_ALLOC(this%qflx_sub_snow_vol_col    (begc:endc         ) )
+  SPVAL_ALLOC(this%qflx_sub_snow_col        (begc:endc         ) ) ! col sublimation rate from snow pack (mm H2O /s) [+]
+  SPVAL_ALLOC(this%qflx_h2osfc2topsoi_col   (begc:endc         ) ) ! col liquid water coming from surface standing water top soil (mm H2O/s)
+  SPVAL_ALLOC(this%qflx_snow2topsoi_col     (begc:endc         ) ) ! col liquid water coming from residual snow to topsoil (mm H2O/s)
+  SPVAL_ALLOC(this%qflx_tran_veg_patch      (begp:endp         ) )
+  SPVAL_ALLOC(this%qflx_rootsoi_col         (begc:endc,lbj:ubj ) ) ! col root and soil water exchange [mm H2O/s] [+ into root]
+  SPVAL_ALLOC(this%qflx_rootsoi_frac_patch  (begp:endp,lbj:ubj ) ) ! col root and soil water exchange [mm H2O/s] [+ into root]
+  SPVAL_ALLOC(this%qflx_runoff_col          (begc:endc))
   !temperature
-  allocate(this%t_soi_10cm               (begc:endc)) !soil temperature in top 10cm of soil (Kelvin)
-  allocate(this%t_veg_patch              (begp:endp)) ! patch vegetation temperature (Kelvin)
-  allocate(this%t_soisno_col             (begc:endc,lbj:ubj)) !soil temperature (Kelvin)  (-nlevsno+1:nlevgrnd)
+  SPVAL_ALLOC(this%t_soi_10cm               (begc:endc)) !soil temperature in top 10cm of soil (Kelvin)
+  SPVAL_ALLOC(this%t_veg_patch              (begp:endp)) ! patch vegetation temperature (Kelvin)
+  SPVAL_ALLOC(this%t_soisno_col             (begc:endc,lbj:ubj)) !soil temperature (Kelvin)  (-nlevsno+1:nlevgrnd)
 
   !soilhydrology
-  allocate(this%qflx_bot_col      (begc:endc))        ! bottom of soil col flux, (mm/s)
-  allocate(this%fracice_col       (begc:endc,lbj:ubj)) ! col fractional impermeability (-)
+  SPVAL_ALLOC(this%qflx_bot_col      (begc:endc))        ! bottom of soil col flux, (mm/s)
+  SPVAL_ALLOC(this%fracice_col       (begc:endc,lbj:ubj)) ! col fractional impermeability (-)
 
   !atm2lnd
-  allocate(this%forc_pbot_downscaled_col      ( begc:endc)  ) ! downscaled atm pressure (Pa)
-  allocate(this%forc_t_downscaled_col         ( begc:endc)  ) ! downscaled atm temperature (Kelvin)
-  allocate(this%n2_ppmv_col(begc:endc))
-  allocate(this%o2_ppmv_col(begc:endc))
-  allocate(this%ar_ppmv_col(begc:endc))
-  allocate(this%co2_ppmv_col(begc:endc))
-  allocate(this%ch4_ppmv_col(begc:endc))
-  allocate(this%n2o_ppmv_col(begc:endc))
-  allocate(this%no_ppmv_col(begc:endc))
-  allocate(this%nh3_ppmv_col(begc:endc))
-  allocate(this%stwl(begc:endc))
+  SPVAL_ALLOC(this%forc_pbot_downscaled_col      ( begc:endc)  ) ! downscaled atm pressure (Pa)
+  SPVAL_ALLOC(this%forc_t_downscaled_col         ( begc:endc)  ) ! downscaled atm temperature (Kelvin)
+  SPVAL_ALLOC(this%n2_ppmv_col(begc:endc))
+  SPVAL_ALLOC(this%o2_ppmv_col(begc:endc))
+  SPVAL_ALLOC(this%ar_ppmv_col(begc:endc))
+  SPVAL_ALLOC(this%co2_ppmv_col(begc:endc))
+  SPVAL_ALLOC(this%ch4_ppmv_col(begc:endc))
+  SPVAL_ALLOC(this%n2o_ppmv_col(begc:endc))
+  SPVAL_ALLOC(this%no_ppmv_col(begc:endc))
+  SPVAL_ALLOC(this%nh3_ppmv_col(begc:endc))
+  iSPVAL_ALLOC(this%stwl(begc:endc))
   !canopystate
-  allocate(this%altmax_col               (      begc:endc )  ) ! col maximum annual depth of thaw
-  allocate(this%altmax_lastyear_col      (      begc:endc )  ) ! col prior year maximum annual depth of thaw
-  allocate(this%lbl_rsc_h2o_patch        (      begp:endp )  ) ! laminar boundary layer resistance for water over dry leaf (s/m)
-  allocate(this%elai_patch               (      begp:endp ) )  ! patch canopy one-sided leaf area index with burying by snow
+  SPVAL_ALLOC(this%altmax_col               (      begc:endc )  ) ! col maximum annual depth of thaw
+  SPVAL_ALLOC(this%altmax_lastyear_col      (      begc:endc )  ) ! col prior year maximum annual depth of thaw
+  SPVAL_ALLOC(this%lbl_rsc_h2o_patch        (      begp:endp )  ) ! laminar boundary layer resistance for water over dry leaf (s/m)
+  SPVAL_ALLOC(this%elai_patch               (      begp:endp ) )  ! patch canopy one-sided leaf area index with burying by snow
 
   !chemstate
-  allocate(this%soil_pH(begc:endc,lbj:ubj))    ! soil pH (-nlevsno+1:nlevgrnd)
+  SPVAL_ALLOC(this%soil_pH(begc:endc,lbj:ubj))    ! soil pH (-nlevsno+1:nlevgrnd)
 
   !soilstate
-  allocate(this%bsw_col(begc:endc,lbj:ubj)         )       !Clapp and Hornberger "b" (nlevgrnd)
-  allocate(this%watsat_col(begc:endc,lbj:ubj)       )      !volumetric soil water at saturation (porosity) (nlevgrnd)
-  allocate(this%eff_porosity_col(begc:endc,lbj:ubj)   )    !effective porosity = porosity - vol_ice (nlevgrnd)
-  allocate(this%soilpsi_col          (begc:endc,lbj:ubj) ) ! col soil water potential in each soil layer (MPa) (CN)
-  allocate(this%cellorg_col          (begc:endc,lbj:ubj) ) ! col organic matter for gridcell containing column (1:nlevsoi)
-  allocate(this%cellclay_col         (begc:endc,lbj:ubj) ) ! clay value for gridcell containing column (1:nlevsoi)
-  allocate(this%cellsand_col         (begc:endc,lbj:ubj) ) ! sand value for gridcell containing column (1:nlevsoi)
-  allocate(this%bd_col               (begc:endc,lbj:ubj) ) ! col bulk density of dry soil material [kg/m^3] (CN)
-  allocate(this%watfc_col            (begc:endc,lbj:ubj) ) ! col volumetric soil water at field capacity (nlevsoi)
-  allocate(this%sucsat_col           (begc:endc,lbj:ubj) ) ! col minimum soil suction (mm) (nlevgrnd)
-  allocate(this%rootfr_patch         (begp:endp,lbj:ubj) ) ! patch fraction of roots in each soil layer (nlevgrnd)
-  allocate(this%lithotype_col        (begc:endc))
-  allocate(this%solutionp_vr_col(begc:endc,lbj:ubj))
-  allocate(this%labilep_vr_col(begc:endc,lbj:ubj))
-  allocate(this%secondp_vr_col(begc:endc,lbj:ubj))
-  allocate(this%occlp_vr_col(begc:endc,lbj:ubj))
-  allocate(this%pweath_prof_col(begc:endc,1:ubj))
-  allocate(this%dic_prod_vr_col(begc:endc,lbj:ubj))
-  allocate(this%doc_prod_vr_col(begc:endc,lbj:ubj))
-  allocate(this%biochem_pmin_vr(begc:endc,lbj:ubj))
-  allocate(this%scalaravg_col(begc:endc))
-  allocate(this%dom_scalar_col(begc:endc)); this%dom_scalar_col(:) = 1._r8
-  allocate(this%lat(begc:endc))
-  allocate(this%annsum_counter_col(begc:endc)); this%annsum_counter_col(:)=0._r8
-  allocate(this%Dw_hk(begc:endc)); this%Dw_hk(:) = 0._r8
-  allocate(this%t_snow_col(begc:endc,-nlevsno+1:0)); this%t_snow_col = 0._r8
+  SPVAL_ALLOC(this%bsw_col(begc:endc,lbj:ubj)         )       !Clapp and Hornberger "b" (nlevgrnd)
+  SPVAL_ALLOC(this%watsat_col(begc:endc,lbj:ubj)       )      !volumetric soil water at saturation (porosity) (nlevgrnd)
+  SPVAL_ALLOC(this%eff_porosity_col(begc:endc,lbj:ubj)   )    !effective porosity = porosity - vol_ice (nlevgrnd)
+  SPVAL_ALLOC(this%soilpsi_col          (begc:endc,lbj:ubj) ) ! col soil water potential in each soil layer (MPa) (CN)
+  SPVAL_ALLOC(this%cellorg_col          (begc:endc,lbj:ubj) ) ! col organic matter for gridcell containing column (1:nlevsoi)
+  SPVAL_ALLOC(this%cellclay_col         (begc:endc,lbj:ubj) ) ! clay value for gridcell containing column (1:nlevsoi)
+  SPVAL_ALLOC(this%cellsand_col         (begc:endc,lbj:ubj) ) ! sand value for gridcell containing column (1:nlevsoi)
+  SPVAL_ALLOC(this%bd_col               (begc:endc,lbj:ubj) ) ! col bulk density of dry soil material [kg/m^3] (CN)
+  SPVAL_ALLOC(this%watfc_col            (begc:endc,lbj:ubj) ) ! col volumetric soil water at field capacity (nlevsoi)
+  SPVAL_ALLOC(this%sucsat_col           (begc:endc,lbj:ubj) ) ! col minimum soil suction (mm) (nlevgrnd)
+  SPVAL_ALLOC(this%rootfr_patch         (begp:endp,lbj:ubj) ) ! patch fraction of roots in each soil layer (nlevgrnd)
+  iSPVAL_ALLOC(this%lithotype_col        (begc:endc))
+  SPVAL_ALLOC(this%solutionp_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%labilep_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%secondp_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%occlp_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%pweath_prof_col(begc:endc,1:ubj))
+  SPVAL_ALLOC(this%dic_prod_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%doc_prod_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%biochem_pmin_vr(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%scalaravg_col(begc:endc))
+  SPVAL_ALLOC(this%dom_scalar_col(begc:endc)); this%dom_scalar_col(:) = 1._r8
+  SPVAL_ALLOC(this%lat(begc:endc))
+  SPVAL_ALLOC(this%annsum_counter_col(begc:endc)); this%annsum_counter_col(:)=0._r8
+  SPVAL_ALLOC(this%Dw_hk(begc:endc)); this%Dw_hk(:) = 0._r8
+  SPVAL_ALLOC(this%t_snow_col(begc:endc,-nlevsno+1:0)); this%t_snow_col = 0._r8
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------

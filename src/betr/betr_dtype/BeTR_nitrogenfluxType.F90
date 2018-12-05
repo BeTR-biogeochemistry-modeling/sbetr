@@ -1,8 +1,9 @@
 module BeTR_nitrogenfluxType
   use bshr_kind_mod  , only : r8 => shr_kind_r8
   use betr_decompMod , only : betr_bounds_type
+  use betr_varcon     , only : spval => bspval
 implicit none
-
+#include "bshr_alloc.h"
   character(len=*), private, parameter :: mod_filename = &
        __FILE__
   type, public :: betr_nitrogenflux_type
@@ -56,25 +57,25 @@ implicit none
   begc = bounds%begc ; endc=bounds%endc
   lbj = bounds%lbj   ; ubj=bounds%ubj
 
-  allocate(this%nflx_input_litr_met_vr_col(begc:endc,lbj:ubj))
-  allocate(this%nflx_input_litr_cel_vr_col(begc:endc,lbj:ubj)) ! cellulose litter input
-  allocate(this%nflx_input_litr_lig_vr_col(begc:endc,lbj:ubj)) ! lignin litter input
-  allocate(this%nflx_input_litr_cwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
-  allocate(this%nflx_input_litr_fwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
-  allocate(this%nflx_input_litr_lwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
-  allocate(this%nflx_input_col(begc:endc))
+  SPVAL_ALLOC(this%nflx_input_litr_met_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%nflx_input_litr_cel_vr_col(begc:endc,lbj:ubj)) ! cellulose litter input
+  SPVAL_ALLOC(this%nflx_input_litr_lig_vr_col(begc:endc,lbj:ubj)) ! lignin litter input
+  SPVAL_ALLOC(this%nflx_input_litr_cwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
+  SPVAL_ALLOC(this%nflx_input_litr_fwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
+  SPVAL_ALLOC(this%nflx_input_litr_lwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
+  SPVAL_ALLOC(this%nflx_input_col(begc:endc))
 
-  allocate(this%nflx_output_litr_met_vr_col(begc:endc,lbj:ubj))
-  allocate(this%nflx_output_litr_cel_vr_col(begc:endc,lbj:ubj)) ! cellulose litter input
-  allocate(this%nflx_output_litr_lig_vr_col(begc:endc,lbj:ubj)) ! lignin litter input
-  allocate(this%nflx_output_litr_cwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
-  allocate(this%nflx_output_litr_fwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
-  allocate(this%nflx_output_litr_lwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
+  SPVAL_ALLOC(this%nflx_output_litr_met_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%nflx_output_litr_cel_vr_col(begc:endc,lbj:ubj)) ! cellulose litter input
+  SPVAL_ALLOC(this%nflx_output_litr_lig_vr_col(begc:endc,lbj:ubj)) ! lignin litter input
+  SPVAL_ALLOC(this%nflx_output_litr_cwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
+  SPVAL_ALLOC(this%nflx_output_litr_fwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
+  SPVAL_ALLOC(this%nflx_output_litr_lwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
 
-  allocate(this%nflx_minn_input_nh4_vr_col(begc:endc,lbj:ubj)) !mineral nh4 input through deposition & fertilization
-  allocate(this%nflx_minn_input_no3_vr_col(begc:endc,lbj:ubj)) !mineral no3 input through deposition & fertilization
-  allocate(this%nflx_minn_nh4_fix_nomic_vr_col(begc:endc,lbj:ubj))   !nh4 from fixation
-  allocate(this%nflx_minninput_col(begc:endc))
+  SPVAL_ALLOC(this%nflx_minn_input_nh4_vr_col(begc:endc,lbj:ubj)) !mineral nh4 input through deposition & fertilization
+  SPVAL_ALLOC(this%nflx_minn_input_no3_vr_col(begc:endc,lbj:ubj)) !mineral no3 input through deposition & fertilization
+  SPVAL_ALLOC(this%nflx_minn_nh4_fix_nomic_vr_col(begc:endc,lbj:ubj))   !nh4 from fixation
+  SPVAL_ALLOC(this%nflx_minninput_col(begc:endc))
   end subroutine InitAllocate
 
 
@@ -125,7 +126,7 @@ implicit none
          this%nflx_input_litr_lig_vr_col(c,j) + &
          this%nflx_input_litr_cwd_vr_col(c,j) + &
          this%nflx_input_litr_fwd_vr_col(c,j) + &
-         this%nflx_input_litr_lwd_vr_col(c,j)) 
+         this%nflx_input_litr_lwd_vr_col(c,j))
        this%nflx_minninput_col(c) = this%nflx_minninput_col(c) + dz(c,j) * &
          (this%nflx_minn_nh4_fix_nomic_vr_col(c,j)+&
          this%nflx_minn_input_nh4_vr_col(c,j) + &

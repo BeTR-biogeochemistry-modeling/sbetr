@@ -1,9 +1,11 @@
 module BeTR_nitrogenfluxRecvType
   use bshr_kind_mod  , only : r8 => shr_kind_r8
   use betr_decompMod , only : betr_bounds_type
+  use betr_varcon     , only : spval => bspval
 implicit none
-
-  character(len=*), private, parameter :: mod_filename = &
+#include "bshr_alloc.h"
+  private
+  character(len=*), parameter :: mod_filename = &
        __FILE__
   type, public :: betr_nitrogenflux_recv_type
     real(r8), pointer :: f_denit_vr_col(:,:)  => null()
@@ -64,30 +66,30 @@ implicit none
   begc = bounds%begc ; endc=bounds%endc
   lbj = bounds%lbj   ; ubj=bounds%ubj
 
-  allocate(this%f_denit_vr_col(begc:endc,lbj:ubj))
-  allocate(this%f_nit_vr_col(begc:endc,lbj:ubj))
-  allocate(this%f_n2o_nit_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%f_denit_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%f_nit_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%f_n2o_nit_vr_col(begc:endc,lbj:ubj))
 
-  allocate(this%smin_no3_to_plant_patch(begp:endp))
-  allocate(this%smin_nh4_to_plant_patch(begp:endp))
+  SPVAL_ALLOC(this%smin_no3_to_plant_patch(begp:endp))
+  SPVAL_ALLOC(this%smin_nh4_to_plant_patch(begp:endp))
 
-  allocate(this%f_nit_col(begc:endc))
-  allocate(this%f_denit_col(begc:endc))
-  allocate(this%f_n2o_nit_col(begc:endc))
-  allocate(this%smin_no3_leached_col(begc:endc))
-  allocate(this%smin_no3_runoff_col(begc:endc))
-  allocate(this%smin_nh4_leached_col(begc:endc))
-  allocate(this%smin_nh4_runoff_col(begc:endc))
-  allocate(this%som_n_leached_col(begc:endc))
-  allocate(this%som_n_runoff_col(begc:endc))
-  allocate(this%som_n_qdrain_col(begc:endc))
-  allocate(this%smin_no3_qdrain_col(begc:endc))
-  allocate(this%smin_nh4_qdrain_col(begc:endc))
-  allocate(this%fire_decomp_nloss_col(begc:endc))
-  allocate(this%supplement_to_sminn_col(begc:endc))
-  allocate(this%fire_decomp_nloss_vr_col(begc:endc,lbj:ubj))
-  allocate(this%supplement_to_sminn_vr_col(begc:endc,lbj:ubj))
-  allocate(this%nh3_soi_flx_col(begc:endc))
+  SPVAL_ALLOC(this%f_nit_col(begc:endc))
+  SPVAL_ALLOC(this%f_denit_col(begc:endc))
+  SPVAL_ALLOC(this%f_n2o_nit_col(begc:endc))
+  SPVAL_ALLOC(this%smin_no3_leached_col(begc:endc))
+  SPVAL_ALLOC(this%smin_no3_runoff_col(begc:endc))
+  SPVAL_ALLOC(this%smin_nh4_leached_col(begc:endc))
+  SPVAL_ALLOC(this%smin_nh4_runoff_col(begc:endc))
+  SPVAL_ALLOC(this%som_n_leached_col(begc:endc))
+  SPVAL_ALLOC(this%som_n_runoff_col(begc:endc))
+  SPVAL_ALLOC(this%som_n_qdrain_col(begc:endc))
+  SPVAL_ALLOC(this%smin_no3_qdrain_col(begc:endc))
+  SPVAL_ALLOC(this%smin_nh4_qdrain_col(begc:endc))
+  SPVAL_ALLOC(this%fire_decomp_nloss_col(begc:endc))
+  SPVAL_ALLOC(this%supplement_to_sminn_col(begc:endc))
+  SPVAL_ALLOC(this%fire_decomp_nloss_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%supplement_to_sminn_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%nh3_soi_flx_col(begc:endc))
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------

@@ -1,9 +1,11 @@
 module BeTR_carbonfluxType
   use bshr_kind_mod  , only : r8 => shr_kind_r8
   use betr_decompMod , only : betr_bounds_type
+  use betr_varcon     , only : spval => bspval
 implicit none
-
-  character(len=*), private, parameter :: mod_filename = &
+#include "bshr_alloc.h"
+  private
+  character(len=*), parameter :: mod_filename = &
        __FILE__
   type, public :: betr_carbonflux_type
 
@@ -52,19 +54,19 @@ implicit none
   begc = bounds%begc ; endc=bounds%endc
   lbj = bounds%lbj   ; ubj=bounds%ubj
 
-  allocate(this%cflx_input_litr_met_vr_col(begc:endc,lbj:ubj))
-  allocate(this%cflx_input_litr_cel_vr_col(begc:endc,lbj:ubj)) ! cellulose litter input
-  allocate(this%cflx_input_litr_lig_vr_col(begc:endc,lbj:ubj)) ! lignin litter input
-  allocate(this%cflx_input_litr_cwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
-  allocate(this%cflx_input_litr_fwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
-  allocate(this%cflx_input_litr_lwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
-  allocate(this%cflx_input_col(begc:endc))
-  allocate(this%cflx_output_litr_met_vr_col(begc:endc,lbj:ubj))
-  allocate(this%cflx_output_litr_cel_vr_col(begc:endc,lbj:ubj)) ! cellulose litter input
-  allocate(this%cflx_output_litr_lig_vr_col(begc:endc,lbj:ubj)) ! lignin litter input
-  allocate(this%cflx_output_litr_cwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
-  allocate(this%cflx_output_litr_fwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
-  allocate(this%cflx_output_litr_lwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
+  SPVAL_ALLOC(this%cflx_input_litr_met_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%cflx_input_litr_cel_vr_col(begc:endc,lbj:ubj)) ! cellulose litter input
+  SPVAL_ALLOC(this%cflx_input_litr_lig_vr_col(begc:endc,lbj:ubj)) ! lignin litter input
+  SPVAL_ALLOC(this%cflx_input_litr_cwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
+  SPVAL_ALLOC(this%cflx_input_litr_fwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
+  SPVAL_ALLOC(this%cflx_input_litr_lwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
+  SPVAL_ALLOC(this%cflx_input_col(begc:endc))
+  SPVAL_ALLOC(this%cflx_output_litr_met_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%cflx_output_litr_cel_vr_col(begc:endc,lbj:ubj)) ! cellulose litter input
+  SPVAL_ALLOC(this%cflx_output_litr_lig_vr_col(begc:endc,lbj:ubj)) ! lignin litter input
+  SPVAL_ALLOC(this%cflx_output_litr_cwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
+  SPVAL_ALLOC(this%cflx_output_litr_fwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
+  SPVAL_ALLOC(this%cflx_output_litr_lwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
 
   end subroutine InitAllocate
 

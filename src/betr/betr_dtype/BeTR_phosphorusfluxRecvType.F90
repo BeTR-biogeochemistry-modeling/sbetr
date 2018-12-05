@@ -1,9 +1,11 @@
 module BeTR_phosphorusfluxRecvType
   use bshr_kind_mod  , only : r8 => shr_kind_r8
   use betr_decompMod , only : betr_bounds_type
+  use betr_varcon     , only : spval => bspval
 implicit none
-
-  character(len=*), private, parameter :: mod_filename = &
+#include "bshr_alloc.h"
+  private
+  character(len=*), parameter :: mod_filename = &
        __FILE__
   type, public :: betr_phosphorusflux_recv_type
     real(r8), pointer :: sminp_leached_col(:) => null()
@@ -55,22 +57,22 @@ implicit none
   begc = bounds%begc ; endc=bounds%endc
   lbj = bounds%lbj   ; ubj=bounds%ubj
 
-  allocate(this%sminp_leached_col(begc:endc))
-  allocate(this%sminp_qdrain_col(begc:endc))
-  allocate(this%sminp_runoff_col(begc:endc))
-  allocate(this%som_p_leached_col(begc:endc))
-  allocate(this%som_p_qdrain_col(begc:endc))
-  allocate(this%som_p_runoff_col(begc:endc))
-  allocate(this%sminp_to_plant_trans_patch(begp:endp))
-  allocate(this%sminp_to_plant_patch(begp:endp))
-  allocate(this%fire_decomp_ploss_col(begc:endc))
-  allocate(this%supplement_to_sminp_col(begc:endc))
-  allocate(this%secondp_to_occlp_col(begc:endc))
-  allocate(this%supplement_to_sminp_vr_col(begc:endc, lbj:ubj))
-  allocate(this%secondp_to_occlp_vr_col(begc:endc, lbj:ubj))
-  allocate(this%fire_decomp_ploss_vr_col(begc:endc,lbj:ubj))
-  allocate(this%pflx_minp_weathering_po4_vr_col(begc:endc,lbj:ubj))
-  allocate(this%pflx_minp_weathering_po4_col(begc:endc))
+  SPVAL_ALLOC(this%sminp_leached_col(begc:endc))
+  SPVAL_ALLOC(this%sminp_qdrain_col(begc:endc))
+  SPVAL_ALLOC(this%sminp_runoff_col(begc:endc))
+  SPVAL_ALLOC(this%som_p_leached_col(begc:endc))
+  SPVAL_ALLOC(this%som_p_qdrain_col(begc:endc))
+  SPVAL_ALLOC(this%som_p_runoff_col(begc:endc))
+  SPVAL_ALLOC(this%sminp_to_plant_trans_patch(begp:endp))
+  SPVAL_ALLOC(this%sminp_to_plant_patch(begp:endp))
+  SPVAL_ALLOC(this%fire_decomp_ploss_col(begc:endc))
+  SPVAL_ALLOC(this%supplement_to_sminp_col(begc:endc))
+  SPVAL_ALLOC(this%secondp_to_occlp_col(begc:endc))
+  SPVAL_ALLOC(this%supplement_to_sminp_vr_col(begc:endc, lbj:ubj))
+  SPVAL_ALLOC(this%secondp_to_occlp_vr_col(begc:endc, lbj:ubj))
+  SPVAL_ALLOC(this%fire_decomp_ploss_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%pflx_minp_weathering_po4_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%pflx_minp_weathering_po4_col(begc:endc))
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------
