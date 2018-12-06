@@ -1020,7 +1020,7 @@ contains
     p31state_vars%sminp_col(c) = this%biogeo_state(c)%p31state_vars%sminp_col(c_l)
     p31state_vars%occlp_col(c) = this%biogeo_state(c)%p31state_vars%occlp_col(c_l)
 
-    if(index(reaction_method,'ecacnp')/=0)then
+    if(index(reaction_method,'ecacnp')/=0 .or. index(reaction_method,'ch4soil')/=0)then
       c12state_vars%som1c_col(c) = this%biogeo_state(c)%c12state_vars%som1c_col(c_l)
       c12state_vars%som2c_col(c) = this%biogeo_state(c)%c12state_vars%som2c_col(c_l)
       c12state_vars%som3c_col(c) = this%biogeo_state(c)%c12state_vars%som3c_col(c_l)
@@ -1333,6 +1333,7 @@ contains
   use tracer_varcon      , only : reaction_method,natomw,patomw
   use pftvarcon          , only : noveg
   use clm_time_manager   , only : get_nstep
+  use tracer_varcon      , only : lbcalib
   implicit none
   class(betr_simulation_alm_type), intent(inout)  :: this
   type(betr_bounds_type), intent(in) :: betr_bounds
@@ -1362,7 +1363,7 @@ contains
     c = filter_soilc(fc)
     pp = 0
     val=1._r8
-!    if(c==18619 .and. get_nstep()== 254044)val=0._r8
+
     do pi = 1, betr_maxpatch_pft
       if (pi <= col%npfts(c)) then
         p = col%pfti(c) + pi - 1
@@ -1391,7 +1392,7 @@ contains
 
   !the following parameters are specific to ECACNP, and I assume they are
   !grid specific as they currently used in alm-cnp.
-  if(index(reaction_method,'ecacnp')/=0)then
+  if(index(reaction_method,'ecacnp')/=0 .or. index(reaction_method, 'ch4soil')/=0)then
     do j =1, betr_bounds%ubj
       do fc = 1, num_soilc
         c = filter_soilc(fc)
@@ -1399,6 +1400,18 @@ contains
         this%betr(c)%plantNutkinetics%km_minsurf_nh4_vr_col(c_l,j)=PlantMicKinetics_vars%km_minsurf_nh4_vr_col(c,j)/patomw
       enddo
     enddo
+    if(lbcalib)then
+      do j =1, betr_bounds%ubj
+        do fc = 1, num_soilc
+          c = filter_soilc(fc)
+          this%betr(c)%plantNutkinetics%km_decomp_p_vr_col(c_l,j) = PlantMicKinetics_vars%km_decomp_p_vr_col(c,j)/patomw
+          this%betr(c)%plantNutkinetics%km_decomp_nh4_vr_col(c_l,j)=PlantMicKinetics_vars%km_decomp_nh4_vr_col(c,j)/natomw
+          this%betr(c)%plantNutkinetics%km_decomp_no3_vr_col(c_l,j)=PlantMicKinetics_vars%km_decomp_no3_vr_col(c,j)/natomw
+          this%betr(c)%plantNutkinetics%km_nit_nh4_vr_col(c_l,j) = PlantMicKinetics_vars%km_nit_nh4_vr_col(c,j)/natomw
+          this%betr(c)%plantNutkinetics%km_den_no3_vr_col(c_l,j) = PlantMicKinetics_vars%km_den_no3_vr_col(c,j)/natomw
+        enddo
+      enddo
+    endif
   endif
 
   end associate

@@ -4,6 +4,7 @@ module TracerStateType
   !  data type for state variables used in betr
   !
   ! !USES:
+
   use bshr_kind_mod       , only : r8 => shr_kind_r8
   use bshr_infnan_mod     , only : nan => shr_infnan_nan, assignment(=)
   use BeTR_decompMod      , only : bounds_type  => betr_bounds_type
@@ -15,7 +16,7 @@ module TracerStateType
   !
   ! !PUBLIC TYPES:
   implicit none
-
+#include "bshr_alloc.h"
   private
   character(len=*), private, parameter :: mod_filename = &
        __FILE__
@@ -112,27 +113,20 @@ contains
     nsolid_passive_tracers = betrtracer_vars%nsolid_passive_tracers
     nvolatile_tracers      = betrtracer_vars%nvolatile_tracers
     nfrozen_tracers        = betrtracer_vars%nfrozen_tracers
-    allocate(this%tracer_P_gas_col              (begc:endc, lbj:ubj))             ; this%tracer_P_gas_col         (:,:) = nan
-    allocate(this%tracer_conc_surfwater_col     (begc:endc, 1:ngwmobile_tracers)) ; this%tracer_conc_surfwater_col(:,:) = nan
-    allocate(this%tracer_conc_aquifer_col       (begc:endc, 1:ngwmobile_tracers)) ; this%tracer_conc_aquifer_col  (:,:) = nan
-    allocate(this%tracer_conc_grndwater_col     (begc:endc, 1:ngwmobile_tracers)) ; this%tracer_conc_grndwater_col(:,:) = nan
-    allocate(this%tracer_soi_molarmass_col      (begc:endc, 1:ntracers))          ; this%tracer_soi_molarmass_col (:,:) = nan
-    allocate(this%errtracer_col                 (begc:endc, 1:ntracers))          ; this%errtracer_col            (:,:) = nan
-    allocate(this%tracer_conc_atm_col           (begc:endc, 1:nvolatile_tracers))
-    this%tracer_conc_atm_col      (:,:) = nan
-    allocate(this%tracer_conc_mobile_col        (begc:endc, lbj:ubj, 1:ntracers))
-    this%tracer_conc_mobile_col       (:,:,:) =  nan
-    allocate(this%tracer_conc_solid_equil_col   (begc:endc, lbj:ubj, 1:nsolid_equil_tracers))
-    this%tracer_conc_solid_equil_col  (:,:,:) = nan
+    NAN_ALLOC(this%tracer_P_gas_col              (begc:endc, lbj:ubj))
+    NAN_ALLOC(this%tracer_conc_surfwater_col     (begc:endc, 1:ngwmobile_tracers))
+    NAN_ALLOC(this%tracer_conc_aquifer_col       (begc:endc, 1:ngwmobile_tracers))
+    NAN_ALLOC(this%tracer_conc_grndwater_col     (begc:endc, 1:ngwmobile_tracers))
+    NAN_ALLOC(this%tracer_soi_molarmass_col      (begc:endc, 1:ntracers))
+    NAN_ALLOC(this%errtracer_col                 (begc:endc, 1:ntracers))
+    NAN_ALLOC(this%tracer_conc_atm_col           (begc:endc, 1:nvolatile_tracers))
+    NAN_ALLOC(this%tracer_conc_mobile_col        (begc:endc, lbj:ubj, 1:ntracers))
+    NAN_ALLOC(this%tracer_conc_solid_equil_col   (begc:endc, lbj:ubj, 1:nsolid_equil_tracers))
+    NAN_ALLOC(this%tracer_P_gas_frac_col         (begc:endc, lbj:ubj, 1:nvolatile_tracers))
+    NAN_ALLOC(this%tracer_conc_frozen_col        (begc:endc, lbj:ubj, 1:nfrozen_tracers))
+    NAN_ALLOC(this%beg_tracer_molarmass_col      (begc:endc, 1:ntracers))
+    NAN_ALLOC(this%end_tracer_molarmass_col      (begc:endc, 1:ntracers))
 
-    allocate(this%tracer_P_gas_frac_col         (begc:endc, lbj:ubj, 1:nvolatile_tracers))
-    this%tracer_P_gas_frac_col        (:,:,:) = nan
-    allocate(this%tracer_conc_frozen_col        (begc:endc, lbj:ubj, 1:nfrozen_tracers))
-    this%tracer_conc_frozen_col (:,:,:) = nan
-    allocate(this%beg_tracer_molarmass_col      (begc:endc, 1:ntracers))
-    this%beg_tracer_molarmass_col(:,:) = nan
-    allocate(this%end_tracer_molarmass_col      (begc:endc, 1:ntracers))
-    this%end_tracer_molarmass_col(:,:) = nan
 
   end subroutine InitAllocate
 

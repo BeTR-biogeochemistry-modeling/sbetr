@@ -40,7 +40,6 @@ module TransportMod
   public :: calc_interface_conductance
   public :: init_transportmod
   public :: get_cntheta
-  public :: calc_col_CFL              !claculate CFL critieria
   public :: semi_lagrange_adv
   interface semi_lagrange_adv
      module procedure semi_lagrange_adv_backward_one_col
@@ -226,7 +225,7 @@ contains
   end subroutine init_transportmod
   !-------------------------------------------------------------------------------
 
-  subroutine calc_interface_conductance(bounds, lbj, ubj, jtop, numfl, filter,&
+  subroutine calc_interface_conductance(bounds, lbj, ubj, jtop, lbots, numfl, filter,&
      bulkdiffus, dz, hmconductance, bstatus)
     !
     ! !DESCRIPTION:
@@ -244,6 +243,7 @@ contains
     type(bounds_type) , intent(in)    :: bounds                              !bounds
     integer           , intent(in)    :: lbj, ubj                            ! lbinning and ubing level indices
     integer           , intent(in)    :: jtop(bounds%begc: )                 ! index of upper boundary, which could be variable
+    integer           , intent(in)    :: lbots(bounds%begc: )
     integer           , intent(in)    :: numfl                               ! length of the filter
     integer           , intent(in)    :: filter(:)                           ! the actual filter
     real(r8)          , intent(in)    :: bulkdiffus(bounds%begc: ,lbj: )     !weighted bulk diffusivity for dual-phase diffusion
@@ -256,6 +256,8 @@ contains
     call bstatus%reset()
     SHR_ASSERT_ALL((ubound(jtop)          == (/bounds%endc/)),      errMsg(filename,__LINE__), bstatus)
 
+    SHR_ASSERT_ALL((ubound(lbots)          == (/bounds%endc/)),      errMsg(filename,__LINE__), bstatus)
+
     SHR_ASSERT_ALL((ubound(dz)            == (/bounds%endc, ubj/)), errMsg(filename,__LINE__), bstatus)
 
     SHR_ASSERT_ALL((ubound(bulkdiffus)    == (/bounds%endc, ubj/)), errMsg(filename,__LINE__), bstatus)
@@ -265,7 +267,7 @@ contains
     do n=lbj, ubj-1
        do fc = 1, numfl
           c = filter(fc)
-          if(n>=jtop(c))then
+          if(n>=jtop(c) .and. n<=lbots(c))then
              hmconductance(c,n) = 2._r8/(dz(c,n)/bulkdiffus(c,n)+dz(c,n+1)/bulkdiffus(c,n+1))
           endif
        enddo
@@ -274,7 +276,7 @@ contains
 
   end subroutine calc_interface_conductance
   !-------------------------------------------------------------------------------
-  subroutine DiffusTransp_gw_tridiag(bounds, bstatus, lbj, ubj, jtop, numfl, filter, &
+  subroutine DiffusTransp_gw_tridiag(bounds, bstatus, lbj, ubj, jtop, lbots, numfl, filter, &
        ntrcs, trcin_mobile, Rfactor, hmconductance, dtime, dz, source, trc_concflx_air,&
        condc_toplay, topbc_type, bot_concflx, update_col, source_only, rt, at,bt,ct, &
        botbc_type, condc_botlay)
@@ -292,6 +294,7 @@ contains
     type(bounds_type) ,            intent(in)    :: bounds                           ! bounds
     integer           ,            intent(in)    :: lbj, ubj                                   ! lbinning and ubing level indices
     integer           ,            intent(in)    :: jtop(bounds%begc: )                        ! index of upper boundary, which could be variable
+    integer           ,            intent(in)    :: lbots(bounds%begc: )
     integer           ,            intent(in)    :: numfl                                      ! length of the filter
     integer           ,            intent(in)    :: filter(:)                                  ! the actual filter
     integer           ,            intent(in)    :: ntrcs
@@ -322,6 +325,8 @@ contains
 
     call bstatus%reset()
     SHR_ASSERT_ALL((ubound(jtop)            == (/bounds%endc/)),        errMsg(filename,__LINE__), bstatus)
+
+    SHR_ASSERT_ALL((ubound(lbots)            == (/bounds%endc/)),        errMsg(filename,__LINE__), bstatus)
 
     SHR_ASSERT_ALL((ubound(Rfactor,1)     == bounds%endc),   errMsg(filename,__LINE__), bstatus)
 
@@ -404,7 +409,7 @@ contains
        !form the diffusion matrix
        c = filter(fc)
        if(update_col(c))then
-          do j = jtop(c), ubj
+          do j = jtop(c), lbots(c)
              do k = 1, ntrcs
                 if(j == jtop(c))then
                    !by default the top node is always assumed as snow surface,
@@ -417,7 +422,7 @@ contains
                       !top boundary condition given as flux, this only happens when the flux is given at soil surface
                       Fl = trc_concflx_air(c,1, k)
                    endif
-                elseif(j == ubj)then
+                elseif(j == lbots(c))then
                    Fl = -hmconductance(c,j-1)*(trcin_mobile(c,j,k)/rfactor(c,j)-trcin_mobile(c,j-1,k)/rfactor(c,j-1))
                    if(botbc_ltype==bndcond_as_conc)then
                       Fr = - condc_botlay(c)*(bot_concflx(c,1,k)-trcin_mobile(c,j,k)/rfactor(c,j))
@@ -432,7 +437,7 @@ contains
                 if(j==jtop(c) .and. topbc_type == bndcond_as_conc)then
                    rt(c,j,k) = rt(c,j,k)+cntheta*condc_toplay(c)*(trc_concflx_air(c, 2,k)-trc_concflx_air(c, 1,k))
                 endif
-                if(j == ubj .and. botbc_ltype==bndcond_as_conc)then
+                if(j == lbots(c) .and. botbc_ltype==bndcond_as_conc)then
                    rt(c,j,k) = rt(c,j,k) + cntheta*condc_botlay(c)*(bot_concflx(c,2,k) - bot_concflx(c,1,k))
                 endif
              enddo
@@ -445,7 +450,7 @@ contains
        !form the diffusion matrix
        c = filter(fc)
        if(update_col(c))then
-          do j = jtop(c), ubj
+          do j = jtop(c), lbots(c)
              if(j == jtop(c))then
                 if(topbc_type == bndcond_as_conc)then !top boundary condition given as concentration
                    bt(c,j)=dz(c,j)/dtime(c)+cntheta*(hmconductance(c,j) &
@@ -455,7 +460,7 @@ contains
                 endif
                 ct(c,j)=-cntheta*hmconductance(c,j)/Rfactor(c,j+1)
                 at(c,j)=0._r8  !avoid variable not defined
-             elseif(j==ubj)then
+             elseif(j==lbots(c))then
                 at(c,j)=-cntheta*hmconductance(c,j-1)/rfactor(c,j-1)
                 if(botbc_ltype == bndcond_as_conc)then
                    bt(c,j)=dz(c,j)/dtime(c)+cntheta*(hmconductance(c,j-1)+condc_botlay(c))/Rfactor(c,j)
@@ -474,7 +479,7 @@ contains
 
   end subroutine DiffusTransp_gw_tridiag
 !-------------------------------------------------------------------------------
-   subroutine DiffusTransp_gw(bounds, bstatus, lbj, ubj, jtop, numfl, filter, ntrcs, trcin_mobile,   &
+   subroutine DiffusTransp_gw(bounds, bstatus, lbj, ubj, jtop, lbots, numfl, filter, ntrcs, trcin_mobile,   &
        Rfactor, hmconductance, dtime, dz, source, trc_concflx_air,condc_toplay, topbc_type, &
        bot_flux, update_col, dtracer, botbc_type, condc_botlay)
    !
@@ -492,6 +497,7 @@ contains
    type(bounds_type) , intent(in)    :: bounds                                   !bounds
    integer           , intent(in)    :: lbj, ubj                                 ! lbinning and ubing level indices
    integer           , intent(in)    :: jtop(bounds%begc: )                      ! index of upper boundary, which could be variable
+   integer           , intent(in)    :: lbots(bounds%begc: )
    integer           , intent(in)    :: numfl                                    ! length of the filter
    integer           , intent(in)    :: filter(:)                                ! the actual filter
    integer           , intent(in)    :: ntrcs
@@ -521,6 +527,8 @@ contains
    call bstatus%reset()
    SHR_ASSERT_ALL((ubound(jtop)              == (/bounds%endc/))       , errMsg(filename,__LINE__), bstatus)
 
+   SHR_ASSERT_ALL((ubound(lbots)              == (/bounds%endc/))       , errMsg(filename,__LINE__), bstatus)
+
    SHR_ASSERT_ALL((ubound(dtime)             == (/bounds%endc/))       , errMsg(filename,__LINE__), bstatus)
 
    SHR_ASSERT_ALL((ubound(update_col)        == (/bounds%endc/))       , errMsg(filename,__LINE__), bstatus)
@@ -548,24 +556,24 @@ contains
 
      SHR_ASSERT_ALL((ubound(condc_botlay)    == (/bounds%endc/)),        errMsg(filename,__LINE__), bstatus)
 
-     call DiffusTransp_gw_tridiag(bounds, bstatus,lbj, ubj, jtop, numfl, filter, ntrcs, trcin_mobile, &
-        Rfactor, hmconductance, dtime, dz, source, trc_concflx_air,&
+     call DiffusTransp_gw_tridiag(bounds, bstatus,lbj, ubj, jtop, lbots, numfl, filter, &
+        ntrcs, trcin_mobile, Rfactor, hmconductance, dtime, dz, source, trc_concflx_air,&
         condc_toplay, topbc_type, bot_flux, update_col, source_only=.false.,&
         rt=rt, at=at,bt=bt,ct=ct, botbc_type=botbc_type, condc_botlay=condc_botlay)
    else
-     call DiffusTransp_gw_tridiag(bounds, bstatus,lbj, ubj, jtop, numfl, filter, ntrcs, trcin_mobile, &
-        Rfactor, hmconductance, dtime, dz, source, trc_concflx_air,&
+     call DiffusTransp_gw_tridiag(bounds, bstatus,lbj, ubj, jtop, lbots, numfl, filter, &
+        ntrcs, trcin_mobile, Rfactor, hmconductance, dtime, dz, source, trc_concflx_air,&
         condc_toplay, topbc_type, bot_flux, update_col, source_only=.false.,&
         rt=rt, at=at,bt=bt,ct=ct)
    endif
    if(bstatus%check_status())return
    !calculate the change to tracer
-   call Tridiagonal (bounds, lbj, ubj, jtop, numfl, filter, ntrcs, at, bt, ct, rt, dtracer, update_col)
+   call Tridiagonal (bounds, lbj, ubj, jtop, lbots, numfl, filter, ntrcs, at, bt, ct, rt, dtracer, update_col)
 
    end subroutine DiffusTransp_gw
 
    !-------------------------------------------------------------------------------
-   subroutine Diffustransp_solid_tridiag(bounds, bstatus, lbj, ubj, lbn, numfl, filter, ntrcs, trcin,&
+   subroutine Diffustransp_solid_tridiag(bounds, bstatus, lbj, ubj, lbn, ubn, numfl, filter, ntrcs, trcin,&
         hmconductance,  dtime_col, dz, source, update_col, at,bt,ct, rt)
      !
      ! !DESCRIPTION:
@@ -581,6 +589,7 @@ contains
      type(bounds_type),  intent(in) :: bounds                              !bounds
      integer  , intent(in)          :: lbj, ubj                            ! lbinning and ubing level indices
      integer  , intent(in)          :: lbn(bounds%begc: )                  !indices of top boundary
+     integer  , intent(in)          :: ubn(bounds%begc: )                  !indices of bot boundary
      integer  , intent(in)          :: numfl                               !filter dimension
      integer  , intent(in)          :: filter(:)                           !filter
      integer  , intent(in)          :: ntrcs
@@ -605,6 +614,8 @@ contains
 
      call bstatus%reset()
      SHR_ASSERT_ALL((ubound(lbn)           == (/bounds%endc/))       , errMsg(filename,__LINE__), bstatus)
+
+     SHR_ASSERT_ALL((ubound(ubn)           == (/bounds%endc/))       , errMsg(filename,__LINE__), bstatus)
 
      SHR_ASSERT_ALL((ubound(hmconductance,1) == bounds%endc), errMsg(filename,__LINE__), bstatus)
 
@@ -655,12 +666,12 @@ contains
         c = filter(fc)
         if(update_col(c))then
            dtime=dtime_col(c)
-           do j = lbn(c), ubj
+           do j = lbn(c), ubn(c)
               do k = 1, ntrcs
                  if(j==lbn(c))then
                     Fr=-hmconductance(c,j)*(trcin(c,j+1,k)-trcin(c,j,k))
                     Fl=0._r8    !zero flux at top boundary for solid phase
-                 elseif(j==ubj)then
+                 elseif(j==ubn(c))then
                     !assume zero flux for diffusion
                     Fl=-hmconductance(c,j-1)*(trcin(c,j,k)-trcin(c,j-1,k))
                     Fr=bot
@@ -672,13 +683,13 @@ contains
               enddo
            enddo
 
-           do j = lbn(c), ubj
+           do j = lbn(c), ubn(c)
               if(j==lbn(c))then
                  !top boundary condition given as flux
                  at(c,j)=0._r8
                  bt(c,j)=dz(c,j)/dtime+cntheta*hmconductance(c,j)
                  ct(c,j)=-cntheta*hmconductance(c,j)
-              elseif(j==ubj)then
+              elseif(j==ubn(c))then
                  at(c,j)=-cntheta*hmconductance(c,j-1)
                  bt(c,j)=dz(c,j)/dtime+cntheta*hmconductance(c,j-1)
               else
@@ -693,7 +704,7 @@ contains
    end subroutine DiffusTransp_solid_tridiag
    !-------------------------------------------------------------------------------
 
-   subroutine DiffusTransp_solid(bounds, bstatus, lbj, ubj, lbn, numfl, filter, ntrcs, trcin,&
+   subroutine DiffusTransp_solid(bounds, bstatus, lbj, ubj, lbn, ubn, numfl, filter, ntrcs, trcin,&
         hmconductance,  dtime_col, dz, source, update_col, dtracer)
      !
      ! !DESCRIPTION:
@@ -709,6 +720,7 @@ contains
      type(bounds_type) , intent(in)    :: bounds                       ! bounds
      integer           , intent(in)    :: lbj, ubj                            ! lbinning and ubing level indices
      integer           , intent(in)    :: lbn(bounds%begc: )                  ! indices of top boundary
+     integer           , intent(in)    :: ubn(bounds%begc: )                  ! indices of bot boundary
      integer           , intent(in)    :: numfl                               ! filter dimension
      integer           , intent(in)    :: filter(:)                           ! filter
      integer           , intent(in)    :: ntrcs
@@ -729,6 +741,8 @@ contains
      character(len=255) :: subname = 'DiffusTransp_solid'
      call bstatus%reset()
      SHR_ASSERT_ALL((ubound(lbn)           == (/bounds%endc/)),        errMsg(filename,__LINE__), bstatus)
+
+     SHR_ASSERT_ALL((ubound(ubn)           == (/bounds%endc/)),        errMsg(filename,__LINE__), bstatus)
 
      SHR_ASSERT_ALL((ubound(hmconductance,1) == bounds%endc), errMsg(filename,__LINE__), bstatus)
 
@@ -761,59 +775,16 @@ contains
      SHR_ASSERT_ALL((size(trcin,3) == ntrcs), errMsg(filename,__LINE__), bstatus)
 
      !assemble the tridiagonal matrix
-     call Diffustransp_solid_tridiag(bounds, bstatus, lbj, ubj, lbn, numfl, filter, ntrcs, trcin,&
+     call Diffustransp_solid_tridiag(bounds, bstatus, lbj, ubj, lbn, ubn, numfl, filter, ntrcs, trcin,&
           hmconductance,  dtime_col, dz, source, update_col, at,bt,ct, rt)
      if(bstatus%check_status())return
      !calculate the change to tracer
-     call Tridiagonal (bounds, lbj, ubj, lbn, numfl, filter, ntrcs, at, bt, ct, rt, dtracer, update_col)
+     call Tridiagonal (bounds, lbj, ubj, lbn, ubn, numfl, filter, ntrcs, at, bt, ct, rt, dtracer, update_col)
 
    end subroutine DiffusTransp_solid
-   !-------------------------------------------------------------------------------
-   function calc_col_CFL(lbj, ubj, us, dx, dtime, bstatus) result(cfl)
-     !
-     ! DESCRIPTION:
-     ! calculate the CFL number for the given grid and velocity field
-     ! this subroutine is now not actively used, but can be used
-     ! when a Eulerian advection scheme is adopted.
-     use BetrStatusType  , only : betr_status_type
-     implicit none
-     ! !ARGUMENTS:
-     integer,  intent(in) :: lbj, ubj    !left and right bounds
-     real(r8), intent(in) :: us(lbj: )   !velocity vector,    [m/s]
-     real(r8), intent(in) :: dx(lbj: )   !node length,        [m]
-     real(r8), intent(in) :: dtime       !imposed time step,  [s]
-     type(betr_status_type), intent(out) :: bstatus
-
-     ! !LOCAL VARIABLES:
-     real(r8) :: cfl
-     integer  :: len, j
-     character(len=32) :: subname ='calc_col_CFL'
-     call bstatus%reset()
-     SHR_ASSERT_ALL((ubound(us)         == (/ubj+1/)),        errMsg(filename,__LINE__), bstatus)
-
-     SHR_ASSERT_ALL((ubound(dx)         == (/ubj/)),   errMsg(filename,__LINE__), bstatus)
-
-     cfl = 0._r8
-     !the column cfl number is defined as the maximum over the whole domain
-     do j = lbj, ubj
-        if(us(j)>0._r8)then
-           if(us(j)<0._r8)then
-              cfl= max(dtime/dx(j)*max(abs(us(j)), abs(us(j+1))), cfl)
-           else
-              cfl=max(abs(dtime*us(j)/dx(j)), cfl)
-           endif
-        else
-           if(us(j+1)>0._r8)then
-              cfl=max(abs(dtime*us(j+1)/dx(j)),cfl)
-           else
-              cfl= max(dtime/dx(j)*max(abs(us(j)), abs(us(j+1))), cfl)
-           endif
-        endif
-     enddo
-   end function calc_col_CFL
 
    !-------------------------------------------------------------------------------
-   subroutine semi_lagrange_adv_backward(bounds, bstatus, lbj, ubj, lbn, numfl, filter, ntrcs, dtime, dz, &
+   subroutine semi_lagrange_adv_backward(bounds, bstatus, lbj, ubj, lbn, ubn, numfl, filter, ntrcs, dtime, dz, &
         zi, us, inflx_top, inflx_bot, trc_bot, update_col, halfdt_col, trcin, trcou, leaching_mass, seep_mass)
      !
      ! DESCRIPTION:
@@ -834,6 +805,7 @@ contains
      type(betr_status_type), intent(out)   :: bstatus
      integer           , intent(in)  :: lbj, ubj                          ! lbinning and ubing level indices
      integer           , intent(in)  :: lbn(bounds%begc: )                !label of the top/left boundary
+     integer           , intent(in)  :: ubn(bounds%begc: )                !label of the bot/right boundary
      integer           , intent(in)  :: numfl
      integer           , intent(in)  :: ntrcs
      integer           , intent(in)  :: filter(:)
@@ -877,6 +849,8 @@ contains
      real(r8), parameter :: tiny_dist=1.e-13_r8
 
      SHR_ASSERT_ALL((ubound(lbn)        == (/bounds%endc/)),         errMsg(filename,__LINE__),bstatus)
+
+     SHR_ASSERT_ALL((ubound(ubn)        == (/bounds%endc/)),         errMsg(filename,__LINE__),bstatus)
 
      SHR_ASSERT_ALL((ubound(dtime)      == (/bounds%endc/)),         errMsg(filename,__LINE__),bstatus)
 
@@ -933,12 +907,12 @@ contains
        c = filter(fc)
        if(.not. update_col(c))cycle
        if(present(leaching_mass))then
-         call semi_lagrange_adv_backward_one_col(bstatus, lbj, ubj, lbn(c), ntrcs, dtime(c), dz(c,lbj:ubj), &
+         call semi_lagrange_adv_backward_one_col(bstatus, lbj, ubj, lbn(c), ubn(c), ntrcs, dtime(c), dz(c,lbj:ubj), &
            zi(c,lbj-1:ubj), us(c,lbj-1:ubj), inflx_top(c,1:ntrcs), inflx_bot(c,1:ntrcs), trc_bot(c,1:ntrcs), &
            update_col(c), halfdt_col(c), trcin(c,lbj:ubj,1:ntrcs), trcou(c,lbj:ubj,1:ntrcs),&
            leaching_mass(c,1:ntrcs), seep_mass(c,1:ntrcs))
        else
-         call semi_lagrange_adv_backward_one_col(bstatus, lbj, ubj, lbn(c), ntrcs, dtime(c), dz(c,lbj:ubj), &
+         call semi_lagrange_adv_backward_one_col(bstatus, lbj, ubj, lbn(c), ubn(c), ntrcs, dtime(c), dz(c,lbj:ubj), &
            zi(c,lbj-1:ubj), us(c,lbj-1:ubj), inflx_top(c,1:ntrcs), inflx_bot(c,1:ntrcs), trc_bot(c,1:ntrcs), &
            update_col(c), halfdt_col(c), trcin(c,lbj:ubj,1:ntrcs), trcou(c,lbj:ubj,1:ntrcs))
        endif
@@ -949,7 +923,7 @@ contains
    end subroutine semi_lagrange_adv_backward
    !-------------------------------------------------------------------------------
 
-   subroutine semi_lagrange_adv_backward_one_col(bstatus, lbj, ubj, lbn, ntrcs, dtime, dz, &
+   subroutine semi_lagrange_adv_backward_one_col(bstatus, lbj, ubj, lbn, ubn, ntrcs, dtime, dz, &
         zi, us, inflx_top, inflx_bot, trc_bot, update_col, halfdt_col, trcin, trcou,&
         leaching_mass, seep_mass)
      use MathfuncMod      , only : cumsum, cumpdiff, safe_div, dot_sum, asc_sort_vec
@@ -960,6 +934,7 @@ contains
      type(betr_status_type), intent(out)   :: bstatus
      integer           , intent(in)  :: lbj, ubj       ! lbinning and ubing level indices
      integer           , intent(in)  :: lbn
+     integer           , intent(in)  :: ubn
      integer           , intent(in)  :: ntrcs
      real(r8)          , intent(in)  :: dtime
      real(r8)          , intent(in)  :: zi(lbj-1:ubj)
@@ -1005,7 +980,7 @@ contains
     call bstatus%reset()
     halfdt_col = .false.
     !do backward advection for all boundaries, including leftmost (lbn(c)-1) and rightmost (ubj)
-    length = ubj - lbn + 1   ! total number of grid interfaces
+    length = ubn - lbn + 1   ! total number of grid interfaces
     lengthp2 = length + 2 * nghost       ! add 2 ghost cells both at the left and right boundaries
 
     !define ghost boundary
@@ -1014,12 +989,12 @@ contains
     do jl = 1, nghost
       zghostl(jl) = zi(lbn-1)- (abs(utmp)*dtime+tiny_dist)*(nghost-jl+1)
       ughostl(jl) = us(lbn-1)
-      zghostr(jl) = zi(ubj) + (abs(us(ubj)) * dtime+ tiny_dist) * jl
-      ughostr(jl) = us(ubj)
+      zghostr(jl) = zi(ubn) + (abs(us(ubn)) * dtime+ tiny_dist) * jl
+      ughostr(jl) = us(ubn)
     enddo
 
-    zh(0:lengthp2)=(/zghostl,zi(lbn-1:ubj),zghostr/)
-    uh(0:lengthp2)=(/ughostl, us(lbn-1:ubj), ughostr/)
+    zh(0:lengthp2)=(/zghostl,zi(lbn-1:ubn),zghostr/)
+    uh(0:lengthp2)=(/ughostl, us(lbn-1:ubn), ughostr/)
     call backward_advection(zh(0:lengthp2), uh(0:lengthp2), dtime, zold(0:length), bstatus)
 
     if(bstatus%check_status())return
@@ -1040,7 +1015,7 @@ contains
       enddo
 
       !regular grids
-      do k = lbn, ubj
+      do k = lbn, ubn
         j = k - lbn + nghost + 1
         mass_curve(j, ntr) = trcin(k, ntr)*dz(k)
       enddo
@@ -1049,26 +1024,26 @@ contains
       if(inflx_bot(ntr)==0._r8)then
         !this would allow tracer to come in from the right hand side.
 
-        j = ubj - lbn + 2 + nghost
-        if(us(ubj)>0._r8)then
+        j = ubn - lbn + 2 + nghost
+        if(us(ubn)>0._r8)then
           mass_curve(j, ntr) = 0._r8
         else
-          mass_curve(j, ntr) = trc_bot(ntr)*(zghostr(1)-zi(ubj))
+          mass_curve(j, ntr) = trc_bot(ntr)*(zghostr(1)-zi(ubn))
         endif
 
-        do j = ubj - lbn + 3 + nghost, ubj-lbn + nghost2p1
-          if(us(ubj)>0._r8)then
+        do j = ubn - lbn + 3 + nghost, ubn-lbn + nghost2p1
+          if(us(ubn)>0._r8)then
             mass_curve(j, ntr) = 0._r8
           else
-            k = j - (ubj-lbn + 1 + nghost)
+            k = j - (ubn-lbn + 1 + nghost)
             mass_curve(j, ntr) = trc_bot(ntr)*(zghostr(k)-zghostr(k-1))
           endif
         enddo
       else
-        j = ubj - lbn + 2 + nghost
+        j = ubn - lbn + 2 + nghost
         mass_curve(j, ntr) = inflx_bot(ntr) * dtime
 
-        do j = ubj - lbn + 3 + nghost, ubj-lbn + nghost2p1
+        do j = ubn - lbn + 3 + nghost, ubn-lbn + nghost2p1
           mass_curve(j, ntr) = inflx_bot(ntr) * dtime
         enddo
       endif
@@ -1103,11 +1078,11 @@ contains
 
     !compute leaching, using jr
     if(present(leaching_mass))then
-      if(zold(length)<zh(ubj-lbn+nghost+1))then
+      if(zold(length)<zh(ubn-lbn+nghost+1))then
         do ntr = 1, ntrcs
           !do boundary mass interpolation
           call bmass_interp(zh(jr-1:lengthp2),mass_curve(jr-1:lengthp2,ntr),zold(length),&
-            zh(ubj-lbn+nghost+1),leaching_mass(ntr), bstatus)
+            zh(ubn-lbn+nghost+1),leaching_mass(ntr), bstatus)
           if(bstatus%check_status())return
         enddo
       else
@@ -1116,7 +1091,7 @@ contains
     endif
 
     do ntr = 1, ntrcs
-      do k = lbn, ubj
+      do k = lbn, ubn
         j = k - lbn + 1
         trcou(k, ntr)=mass_new(j, ntr)/dz(k)
       enddo

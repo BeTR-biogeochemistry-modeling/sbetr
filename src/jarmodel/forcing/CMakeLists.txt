@@ -13,9 +13,10 @@ include_directories(${CMAKE_BINARY_DIR}/src/io_util)
 include_directories(${CMAKE_BINARY_DIR}/src/stub_clm)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/bgcfarm_util)
+#begin_appadd
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/ecacnp/ecacnpPara)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/keca/kecaPara)
-
+#end_appadd
 include(add_betr_library)
 add_betr_library(betr_jar_forc ${BETR_JARFORC_SOURCES})
 

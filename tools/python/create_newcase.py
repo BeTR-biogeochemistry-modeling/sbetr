@@ -19,14 +19,14 @@ args = parser.parse_args()
 dir_path = os.path.dirname(os.path.realpath(__file__))
 print dir_path
 
-mdir,chdir=dir_path.split('sbetr')
-if not re.search('sbetr',mdir):
-    mdir=mdir+'sbetr'
-print chdir
+mdir,chdir=dir_path.split('/sbetr')
+if not re.search('/sbetr',mdir):
+    mdir=mdir+'/sbetr'
 if args.case_root[0][0]=='/':
     directory=args.case_root[0]+args.case_name[0]
 else:
     directory= mdir + '/'+args.case_root[0]+args.case_name[0]
+print 'The case is built in directory: '+directory
 
 #create case directory
 if not os.path.exists(directory):

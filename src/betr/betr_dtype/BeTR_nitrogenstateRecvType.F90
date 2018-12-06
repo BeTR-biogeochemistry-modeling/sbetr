@@ -2,9 +2,11 @@ module BeTR_nitrogenstateRecvType
   use bshr_kind_mod  , only : r8 => shr_kind_r8
   use betr_decompMod , only : betr_bounds_type
   use tracer_varcon  , only : reaction_method
+  use betr_varcon     , only : spval => bspval
 implicit none
-
-  character(len=*), private, parameter :: mod_filename = &
+#include "bshr_alloc.h"
+  private
+  character(len=*),  parameter :: mod_filename = &
        __FILE__
   type, public :: betr_nitrogenstate_recv_type
     real(r8), pointer :: cwdn_col(:) => null()
@@ -63,30 +65,30 @@ implicit none
   begc = bounds%begc ; endc=bounds%endc
   lbj = bounds%lbj   ; ubj=bounds%ubj
 
-  allocate(this%cwdn_col(begc:endc))
-  allocate(this%totlitn_col(begc:endc))
-  allocate(this%totsomn_col(begc:endc))
-  allocate(this%sminn_col(begc:endc))
-  allocate(this%sminn_nh4_col(begc:endc))
-  allocate(this%sminn_no3_col(begc:endc))
-  allocate(this%totlitn_1m_col(begc:endc))
-  allocate(this%totsomn_1m_col(begc:endc))
+  SPVAL_ALLOC(this%cwdn_col(begc:endc))
+  SPVAL_ALLOC(this%totlitn_col(begc:endc))
+  SPVAL_ALLOC(this%totsomn_col(begc:endc))
+  SPVAL_ALLOC(this%sminn_col(begc:endc))
+  SPVAL_ALLOC(this%sminn_nh4_col(begc:endc))
+  SPVAL_ALLOC(this%sminn_no3_col(begc:endc))
+  SPVAL_ALLOC(this%totlitn_1m_col(begc:endc))
+  SPVAL_ALLOC(this%totsomn_1m_col(begc:endc))
 
-  allocate(this%som1n_col(begc:endc));  this%som1n_col(:) = nan
-  allocate(this%som2n_col(begc:endc));  this%som2n_col(:) = nan
-  allocate(this%som3n_col(begc:endc));  this%som3n_col(:) = nan
-  allocate(this%som1n_vr_col(begc:endc, lbj:ubj));  this%som1n_vr_col(:,:) = nan
-  allocate(this%som2n_vr_col(begc:endc, lbj:ubj));  this%som2n_vr_col(:,:) = nan
-  allocate(this%som3n_vr_col(begc:endc, lbj:ubj));  this%som3n_vr_col(:,:) = nan
+  SPVAL_ALLOC(this%som1n_col(begc:endc))
+  SPVAL_ALLOC(this%som2n_col(begc:endc))
+  SPVAL_ALLOC(this%som3n_col(begc:endc))
+  SPVAL_ALLOC(this%som1n_vr_col(begc:endc, lbj:ubj))
+  SPVAL_ALLOC(this%som2n_vr_col(begc:endc, lbj:ubj))
+  SPVAL_ALLOC(this%som3n_vr_col(begc:endc, lbj:ubj))
 
-  allocate(this%cwdn_vr_col(begc:endc,lbj:ubj)); this%cwdn_vr_col(:,:) = nan
-  allocate(this%totlitn_vr_col(begc:endc,lbj:ubj)); this%totlitn_vr_col(:,:)=nan
-  allocate(this%totsomn_vr_col(begc:endc,lbj:ubj)); this%totsomn_vr_col(:,:) =nan
-  allocate(this%sminn_vr_col(begc:endc,lbj:ubj)); this%sminn_vr_col(:,:) =nan
-  allocate(this%sminn_nh4_vr_col(begc:endc,lbj:ubj)); this%sminn_nh4_vr_col(:,:) =nan
-  allocate(this%sminn_no3_vr_col(begc:endc,lbj:ubj)); this%sminn_no3_vr_col(:,:) =nan
-  allocate(this%domn_vr_col(begc:endc, lbj:ubj)); this%domn_vr_col(:,:)=nan
-  allocate(this%domn_col(begc:endc)); this%domn_col(:) = nan
+  SPVAL_ALLOC(this%cwdn_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%totlitn_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%totsomn_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%sminn_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%sminn_nh4_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%sminn_no3_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%domn_vr_col(begc:endc, lbj:ubj))
+  SPVAL_ALLOC(this%domn_col(begc:endc))
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------

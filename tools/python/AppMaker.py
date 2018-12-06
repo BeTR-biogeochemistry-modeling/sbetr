@@ -33,8 +33,8 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 
 print dir_path
 
-mdir,chdir=dir_path.split('sbetr')
-sfarm_dir=mdir+'sbetr/src/Applications/soil-farm'
+mdir,chdir=dir_path.split('/sbetr')
+sfarm_dir=mdir+'/sbetr/src/Applications/soil-farm'
 
 #mkdir directories
 print ("Create directories")

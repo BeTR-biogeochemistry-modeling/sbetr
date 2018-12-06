@@ -304,7 +304,6 @@ contains
 
   call this%BeTRSetBounds(betr_bounds)
 
-
   !reset and prepare for retrieval
   do c = bounds%begc, bounds%endc
     if(.not. this%active_col(c))cycle
@@ -572,7 +571,8 @@ contains
 
     if(index(trim(reaction_method),'ecacnp')/=0 .or. &
       index(trim(reaction_method),'cdom')/=0 .or. &
-      index(trim(reaction_method),'keca')/=0 )then
+      index(trim(reaction_method),'keca')/=0 .or. &
+      index(trim(reaction_method),'ch4soil')/=0)then
       n14state_vars%som1n_col(c) = this%biogeo_state(c)%n14state_vars%som1n_col(c_l)
       n14state_vars%som2n_col(c) = this%biogeo_state(c)%n14state_vars%som2n_col(c_l)
       n14state_vars%som3n_col(c) = this%biogeo_state(c)%n14state_vars%som3n_col(c_l)

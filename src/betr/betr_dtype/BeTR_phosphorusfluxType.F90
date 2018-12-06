@@ -2,9 +2,11 @@ module BeTR_phosphorusfluxType
 
   use bshr_kind_mod  , only : r8 => shr_kind_r8
   use betr_decompMod , only : betr_bounds_type
+  use betr_varcon     , only : spval => bspval
 implicit none
-
-  character(len=*), private, parameter :: mod_filename = &
+#include "bshr_alloc.h"
+  private
+  character(len=*), parameter :: mod_filename = &
        __FILE__
   type, public :: betr_phosphorusflux_type
 
@@ -58,26 +60,26 @@ implicit none
   begc = bounds%begc ; endc=bounds%endc
   lbj = bounds%lbj   ; ubj=bounds%ubj
 
-  allocate(this%pflx_input_litr_met_vr_col(begc:endc,lbj:ubj))
-  allocate(this%pflx_input_litr_cel_vr_col(begc:endc,lbj:ubj)) ! cellulose litter input
-  allocate(this%pflx_input_litr_lig_vr_col(begc:endc,lbj:ubj)) ! lignin litter input
-  allocate(this%pflx_input_litr_cwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
-  allocate(this%pflx_input_litr_fwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
-  allocate(this%pflx_input_litr_lwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
-  allocate(this%pflx_input_col(begc:endc))
+  SPVAL_ALLOC(this%pflx_input_litr_met_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%pflx_input_litr_cel_vr_col(begc:endc,lbj:ubj)) ! cellulose litter input
+  SPVAL_ALLOC(this%pflx_input_litr_lig_vr_col(begc:endc,lbj:ubj)) ! lignin litter input
+  SPVAL_ALLOC(this%pflx_input_litr_cwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
+  SPVAL_ALLOC(this%pflx_input_litr_fwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
+  SPVAL_ALLOC(this%pflx_input_litr_lwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
+  SPVAL_ALLOC(this%pflx_input_col(begc:endc))
 
-  allocate(this%pflx_output_litr_met_vr_col(begc:endc,lbj:ubj))
-  allocate(this%pflx_output_litr_cel_vr_col(begc:endc,lbj:ubj)) ! cellulose litter input
-  allocate(this%pflx_output_litr_lig_vr_col(begc:endc,lbj:ubj)) ! lignin litter input
-  allocate(this%pflx_output_litr_cwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
-  allocate(this%pflx_output_litr_fwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
-  allocate(this%pflx_output_litr_lwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
+  SPVAL_ALLOC(this%pflx_output_litr_met_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%pflx_output_litr_cel_vr_col(begc:endc,lbj:ubj)) ! cellulose litter input
+  SPVAL_ALLOC(this%pflx_output_litr_lig_vr_col(begc:endc,lbj:ubj)) ! lignin litter input
+  SPVAL_ALLOC(this%pflx_output_litr_cwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
+  SPVAL_ALLOC(this%pflx_output_litr_fwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
+  SPVAL_ALLOC(this%pflx_output_litr_lwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
 
 
-  allocate(this%pflx_minp_input_po4_vr_col(begc:endc,lbj:ubj)) !mineral phosphorus input through weathering, deposition & fertilization
+  SPVAL_ALLOC(this%pflx_minp_input_po4_vr_col(begc:endc,lbj:ubj)) !mineral phosphorus input through weathering, deposition & fertilization
 
-  allocate(this%pflx_minp_weathering_po4_vr_col(begc:endc,lbj:ubj)) !p from weathering
-  allocate(this%pminp_input_col(begc:endc))
+  SPVAL_ALLOC(this%pflx_minp_weathering_po4_vr_col(begc:endc,lbj:ubj)) !p from weathering
+  SPVAL_ALLOC(this%pminp_input_col(begc:endc))
   end subroutine InitAllocate
 
 
@@ -127,7 +129,7 @@ implicit none
          this%pflx_input_litr_lig_vr_col(c,j) + &
          this%pflx_input_litr_cwd_vr_col(c,j) + &
          this%pflx_input_litr_fwd_vr_col(c,j) + &
-         this%pflx_input_litr_lwd_vr_col(c,j)) 
+         this%pflx_input_litr_lwd_vr_col(c,j))
 
       this%pminp_input_col(c) = this%pminp_input_col(c) + dz(c,j) * &
         (this%pflx_minp_input_po4_vr_col(c,j) + &

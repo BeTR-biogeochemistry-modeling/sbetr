@@ -1,9 +1,11 @@
 module BeTR_carbonfluxRecvType
   use bshr_kind_mod  , only : r8 => shr_kind_r8
   use betr_decompMod , only : betr_bounds_type
+  use betr_varcon     , only : spval => bspval
 implicit none
-
-  character(len=*), private, parameter :: mod_filename = &
+#include "bshr_alloc.h"
+  private
+  character(len=*),  parameter :: mod_filename = &
        __FILE__
   type, public :: betr_carbonflux_recv_type
     real(r8), pointer :: hr_col(:) => null()
@@ -40,7 +42,7 @@ implicit none
 
   !------------------------------------------------------------------------
   subroutine InitAllocate(this, bounds)
-  use betr_varcon     , only : spval => bspval
+
   implicit none
   class(betr_carbonflux_recv_type), intent(inout) :: this
   type(betr_bounds_type), intent(in) :: bounds
@@ -52,19 +54,19 @@ implicit none
   begc = bounds%begc ; endc=bounds%endc
   lbj = bounds%lbj   ; ubj=bounds%ubj
 
-  allocate(this%hr_col(begc:endc))
-  allocate(this%fire_decomp_closs_col(begc:endc))
-  allocate(this%som_c_leached_col(begc:endc))
-  allocate(this%som_c_runoff_col(begc:endc))
-  allocate(this%som_c_qdrain_col(begc:endc))
-  allocate(this%hr_vr_col(begc:endc,lbj:ubj))
-  allocate(this%fire_decomp_closs_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%hr_col(begc:endc))
+  SPVAL_ALLOC(this%fire_decomp_closs_col(begc:endc))
+  SPVAL_ALLOC(this%som_c_leached_col(begc:endc))
+  SPVAL_ALLOC(this%som_c_runoff_col(begc:endc))
+  SPVAL_ALLOC(this%som_c_qdrain_col(begc:endc))
+  SPVAL_ALLOC(this%hr_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%fire_decomp_closs_vr_col(begc:endc,lbj:ubj))
 
-  allocate(this%tempavg_agnpp_patch(begp:endp)); this%tempavg_agnpp_patch(:) = spval
-  allocate(this%tempavg_bgnpp_patch(begp:endp)); this%tempavg_bgnpp_patch(:) = spval
-  allocate(this%annavg_agnpp_patch(begp:endp));  this%annavg_agnpp_patch(:) = spval
-  allocate(this%annavg_bgnpp_patch(begp:endp)); this%annavg_bgnpp_patch(:)  = spval
-  allocate(this%co2_soi_flx_col(begc:endc)); this%co2_soi_flx_col(:) = spval
+  SPVAL_ALLOC(this%tempavg_agnpp_patch(begp:endp))
+  SPVAL_ALLOC(this%tempavg_bgnpp_patch(begp:endp))
+  SPVAL_ALLOC(this%annavg_agnpp_patch(begp:endp))
+  SPVAL_ALLOC(this%annavg_bgnpp_patch(begp:endp))
+  SPVAL_ALLOC(this%co2_soi_flx_col(begc:endc)) 
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------

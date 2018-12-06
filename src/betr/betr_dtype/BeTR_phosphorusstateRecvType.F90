@@ -2,8 +2,11 @@ module BeTR_phosphorusstateRecvType
   use bshr_kind_mod  , only : r8 => shr_kind_r8
   use betr_decompMod , only : betr_bounds_type
   use tracer_varcon  , only : reaction_method
+  use betr_varcon     , only : spval => bspval
 implicit none
-  character(len=*), private, parameter :: mod_filename = &
+#include "bshr_alloc.h"
+  private
+  character(len=*), parameter :: mod_filename = &
        __FILE__
   type, public :: betr_phosphorusstate_recv_type
     real(r8), pointer :: cwdp_col(:) => null()
@@ -60,27 +63,27 @@ implicit none
   begc = bounds%begc ; endc=bounds%endc
   lbj = bounds%lbj   ; ubj=bounds%ubj
 
-  allocate(this%cwdp_col(begc:endc))
-  allocate(this%totlitp_col(begc:endc))
-  allocate(this%totsomp_col(begc:endc))
-  allocate(this%totlitp_1m_col(begc:endc))
-  allocate(this%totsomp_1m_col(begc:endc))
-  allocate(this%sminp_col(begc:endc));
-  allocate(this%occlp_col(begc:endc));
-  allocate(this%domp_col(begc:endc));
-  allocate(this%som1p_col(begc:endc)); this%som1p_col(:) = nan
-  allocate(this%som2p_col(begc:endc)); this%som2p_col(:) = nan
-  allocate(this%som3p_col(begc:endc)); this%som3p_col(:) = nan
-  allocate(this%som1p_vr_col(begc:endc, lbj:ubj));  this%som1p_vr_col(:,:) = nan
-  allocate(this%som2p_vr_col(begc:endc, lbj:ubj));  this%som2p_vr_col(:,:) = nan
-  allocate(this%som3p_vr_col(begc:endc, lbj:ubj));  this%som3p_vr_col(:,:) = nan
+  SPVAL_ALLOC(this%cwdp_col(begc:endc))
+  SPVAL_ALLOC(this%totlitp_col(begc:endc))
+  SPVAL_ALLOC(this%totsomp_col(begc:endc))
+  SPVAL_ALLOC(this%totlitp_1m_col(begc:endc))
+  SPVAL_ALLOC(this%totsomp_1m_col(begc:endc))
+  SPVAL_ALLOC(this%sminp_col(begc:endc))
+  SPVAL_ALLOC(this%occlp_col(begc:endc))
+  SPVAL_ALLOC(this%domp_col(begc:endc))
+  SPVAL_ALLOC(this%som1p_col(begc:endc))
+  SPVAL_ALLOC(this%som2p_col(begc:endc))
+  SPVAL_ALLOC(this%som3p_col(begc:endc))
+  SPVAL_ALLOC(this%som1p_vr_col(begc:endc, lbj:ubj))
+  SPVAL_ALLOC(this%som2p_vr_col(begc:endc, lbj:ubj))
+  SPVAL_ALLOC(this%som3p_vr_col(begc:endc, lbj:ubj))
 
-  allocate(this%cwdp_vr_col(begc:endc,lbj:ubj)); this%cwdp_vr_col(:,:) =nan
-  allocate(this%totlitp_vr_col(begc:endc,lbj:ubj)); this%totlitp_vr_col(:,:)=nan
-  allocate(this%totsomp_vr_col(begc:endc,lbj:ubj)); this%totsomp_vr_col(:,:)=nan
-  allocate(this%sminp_vr_col(begc:endc,lbj:ubj)); this%sminp_vr_col(:,:) =nan
-  allocate(this%occlp_vr_col(begc:endc,lbj:ubj)); this%occlp_vr_col(:,:)=nan
-  allocate(this%domp_vr_col(begc:endc,lbj:ubj)); this%domp_vr_col(:,:) = nan
+  SPVAL_ALLOC(this%cwdp_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%totlitp_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%totsomp_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%sminp_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%occlp_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%domp_vr_col(begc:endc,lbj:ubj))
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------

@@ -12,11 +12,12 @@
   reaction_on  = .true.
   ebullition_on= .true.
   input_only   = .false.
+  bgc_param_file='../tools/sbgc.ecacnp_pars.06292018.nc'
 /
 
 &betr_time
   delta_time=1800.
-  stop_n = 20
+  stop_n = 5
   hist_freq=30
   stop_option='nyears'
 /

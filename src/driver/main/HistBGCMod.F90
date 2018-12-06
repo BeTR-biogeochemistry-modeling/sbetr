@@ -32,7 +32,8 @@ contains
   integer :: id1,id2
   id1 = 0; id2 = 0
   if(index(trim(reaction_method),'ecacnp')/=0 .or. &
-     index(trim(reaction_method),'keca')/=0)then
+     index(trim(reaction_method),'keca')/=0 .or. &
+     index(trim(reaction_method),'ch4soil')/=0)then
     call list_init(hist_list_var,'hr',id1, itype=var_flux_type)          ; call list_init(hist_list_unit,'gC m-2 s-1',id2)
     call list_insert(hist_list_var,'f_n2o_nit',id1, itype=var_flux_type) ; call list_insert(hist_list_unit,'gN m-2 s-1',id2)
     call list_insert(hist_list_var,'f_denit',id1, itype=var_flux_type)   ; call list_insert(hist_list_unit,'gN m-2 s-1',id2)

@@ -105,6 +105,7 @@ contains
   call read_name_list(namelist_buffer, base_filename, case_id, &
     simulator_name, finit, histbgc, hist, lread_param)
 
+  !create simulations
   simulation => create_betr_simulation(simulator_name)
 
 
@@ -129,7 +130,7 @@ contains
   allocate(time_vars)
   call time_vars%Init(namelist_buffer)
 
-  !print*,'read forcing'
+  !read forcing
   allocate(forcing_data)
   call forcing_data%ReadData(namelist_buffer, grid_data)
 
@@ -374,6 +375,7 @@ contains
          call hist%histrst(reaction_method, 'write',yymmddhhss)
       endif
     endif
+
     !print*,'next step'
     if(time_vars%its_time_to_exit()) then
        print*,'exit'
@@ -509,21 +511,6 @@ end subroutine sbetrBGC_driver
 
     lread_param=trim(run_type)=='sbgc'
     if(lread_param)then
-
-!      if(index(trim(param_file),'.nc')==0)then
-!        call endrun(msg='no input parameter file is give in '//errMsg(mod_filename, __LINE__))
-!      else
-!        call ncd_pio_openfile(ncid, trim(param_file), ncd_nowrite)
-!        call AppInitParameters(namelist_buffer, reaction_method, bstatus)
-!        if(bstatus%check_status())then
-!          call endrun(msg=bstatus%print_msg())
-!        endif
-!        call AppLoadParameters(ncid, bstatus)
-!        if(bstatus%check_status())then
-!          call endrun(msg=bstatus%print_msg())
-!        endif
-!        call ncd_pio_closefile(ncid)
-!      endif
     call init_hist_bgc(histbgc, base_filename, reaction_method, case_id, hist)
   endif
   end subroutine read_name_list
@@ -589,7 +576,8 @@ end subroutine sbetrBGC_driver
   c_l = 1
   allocate(ystates(hist%nvars))
   if(index(trim(reaction_method),'ecacnp')/=0 .or. &
-     index(trim(reaction_method),'keca')/=0)then
+     index(trim(reaction_method),'keca')/=0   .or. &
+     index(trim(reaction_method),'ch4soil')/=0)then
     id = 0
     id = id + 1; ystates(id) = carbonflux_vars%hr_col(c_l)
     id = id + 1; ystates(id) = nitrogenflux_vars%f_n2o_nit_col(c_l)

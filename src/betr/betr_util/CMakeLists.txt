@@ -25,6 +25,7 @@ set(BETR_UTIL_SOURCES
   )
 
 configure_file(bshr_assert.h bshr_assert.h COPYONLY)
+configure_file(bshr_alloc.h bshr_alloc.h COPYONLY)
 configure_file(bmpif.h bmpif.h COPYONLY)
 configure_file(dtypes.h dtypes.h COPYONLY)
 

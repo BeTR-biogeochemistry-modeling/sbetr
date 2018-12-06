@@ -2,16 +2,18 @@ module BeTR_biogeoFluxType
   !DESCRIPTION
   !module for flux data exchange between lsm and betr
   use bshr_kind_mod  , only : r8 => shr_kind_r8
+  use bshr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
   use betr_decompMod , only : betr_bounds_type
   use tracer_varcon, only : use_c13_betr, use_c14_betr
   use BeTR_carbonfluxRecvType, only : betr_carbonflux_recv_type
   use BeTR_nitrogenfluxRecvType, only : betr_nitrogenflux_recv_type
   use BeTR_phosphorusfluxRecvType, only : betr_phosphorusflux_recv_type
 implicit none
-
-  character(len=*), private, parameter :: mod_filename = &
+#include "bshr_alloc.h"
+  private
+  character(len=*), parameter :: mod_filename = &
        __FILE__
-  type betr_biogeo_flux_type
+  type, public :: betr_biogeo_flux_type
     real(r8), pointer :: qflx_adv_col             (:,:) => null() !advection velocity from one layer to another, (0:nlevgrnd), positive downward
     real(r8), pointer :: qflx_gross_evap_soil_col (:)   => null() ! col gross infiltration from soil, this satisfies the relationship qflx_infl_col = qflx_gross_infl_soil_col-qflx_gross_evap_soil_col
     real(r8), pointer :: qflx_gross_infl_soil_col (:)   => null() ! col gross infiltration, before considering the evaporation, mm/s
@@ -90,18 +92,18 @@ contains
   begc = bounds%begc ; endc=bounds%endc
   lbj = bounds%lbj   ; ubj=bounds%ubj
 
-  Allocate(this%qflx_adv_col             (begc:endc,lbj-1:ubj)) !advection velocity from one layer to another, (0:nlevgrnd), positive downward
-  allocate(this%qflx_gross_evap_soil_col (begc:endc)) ! col gross infiltration from soil, this satisfies the relationship qflx_infl_col = qflx_gross_infl_soil_col-qflx_gross_evap_soil_col
-  allocate(this%qflx_gross_infl_soil_col (begc:endc)) ! col gross infiltration, before considering the evaporation, mm/s
-  allocate(this%qflx_infl_col            (begc:endc))  !infiltration (mm H2O /s)
-  allocate(this%qflx_drain_vr_col        (begc:endc,lbj:ubj) ) ! col liquid water losted as drainage (m /time step)
-  allocate(this%qflx_totdrain_col        (begc:endc)) ! col total liquid water drainage  (m/time step), updated in betr
+  NAN_ALLOC(this%qflx_adv_col             (begc:endc,lbj-1:ubj)) !advection velocity from one layer to another, (0:nlevgrnd), positive downward
+  NAN_ALLOC(this%qflx_gross_evap_soil_col (begc:endc)) ! col gross infiltration from soil, this satisfies the relationship qflx_infl_col = qflx_gross_infl_soil_col-qflx_gross_evap_soil_col
+  NAN_ALLOC(this%qflx_gross_infl_soil_col (begc:endc)) ! col gross infiltration, before considering the evaporation, mm/s
+  NAN_ALLOC(this%qflx_infl_col            (begc:endc))  !infiltration (mm H2O /s)
+  NAN_ALLOC(this%qflx_drain_vr_col        (begc:endc,lbj:ubj) ) ! col liquid water losted as drainage (m /time step)
+  NAN_ALLOC(this%qflx_totdrain_col        (begc:endc)) ! col total liquid water drainage  (m/time step), updated in betr
 
-  allocate(this%qflx_rofliq_qsur_doc_col(begc:endc))
-  allocate(this%qflx_rofliq_qsur_dic_col(begc:endc))
-  allocate(this%qflx_rofliq_qsub_doc_col(begc:endc))
-  allocate(this%qflx_rofliq_qsub_dic_col(begc:endc))
-  allocate(this%pnup_pfrootc_patch(begp:endp))
+  NAN_ALLOC(this%qflx_rofliq_qsur_doc_col(begc:endc))
+  NAN_ALLOC(this%qflx_rofliq_qsur_dic_col(begc:endc))
+  NAN_ALLOC(this%qflx_rofliq_qsub_doc_col(begc:endc))
+  NAN_ALLOC(this%qflx_rofliq_qsub_dic_col(begc:endc))
+  NAN_ALLOC(this%pnup_pfrootc_patch(begp:endp))
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------

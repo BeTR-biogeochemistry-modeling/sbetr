@@ -2,7 +2,7 @@
 
 
 import os,time,sys,argparse
-
+import AppTools
 
 def copy_file(fromf,tof, fromapp, toapp):
     """
@@ -45,8 +45,8 @@ toapp=args.toapp[0]
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
-mdir,chdir=dir_path.split('sbetr')
-sfarm_dir=mdir+'sbetr/src/Applications/soil-farm'
+mdir,chdir=dir_path.split('/sbetr')
+sfarm_dir=mdir+'/sbetr/src/Applications/soil-farm'
 
 #check existence of the app to cloned
 
@@ -72,8 +72,10 @@ if os.path.exists(sfarm_dir+'/'+fromapp):
         fromf=sfarm_dir+'/'+fromapp+'/CMakeLists.txt'
         tof=sfarm_dir+'/'+toapp+"/CMakeLists.txt"
         copy_file(fromf, tof, fromapp, toapp)
+        AppTools.add_case_file(mdir,toapp)
         print "Clone finished!"
         print "Check app in "+sfarm_dir+'/'+toapp
+
     else:
         print "please define new app name"
 else:

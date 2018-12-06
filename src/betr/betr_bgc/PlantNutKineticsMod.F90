@@ -27,6 +27,11 @@ implicit none
     real(r8), pointer :: km_minsurf_p_vr_col(:,:)
     real(r8), pointer :: km_minsurf_nh4_vr_col(:,:)
     real(r8), pointer :: km_minsurf_dom_vr_col(:,:)
+    real(r8), pointer :: km_nit_nh4_vr_col(:,:)
+    real(r8), pointer :: km_den_no3_vr_col(:,:)
+    real(r8), pointer :: km_decomp_nh4_vr_col(:,:)
+    real(r8), pointer :: km_decomp_no3_vr_col(:,:)
+    real(r8), pointer :: km_decomp_p_vr_col(:,:)
   contains
     procedure, public  :: Init
     procedure, public  :: InitAllocate
@@ -72,6 +77,11 @@ implicit none
      allocate(this%km_minsurf_p_vr_col(begc:endc,1:ubj)); this%km_minsurf_p_vr_col(:,:) = nan
      allocate(this%km_minsurf_nh4_vr_col(begc:endc,1:ubj)); this%km_minsurf_nh4_vr_col(:,:) = nan
      allocate(this%km_minsurf_dom_vr_col(begc:endc,1:ubj)); this%km_minsurf_dom_vr_col(:,:) = nan
+     allocate(this%km_nit_nh4_vr_col(begc:endc,1:ubj)); this%km_nit_nh4_vr_col(:,:) = nan
+     allocate(this%km_den_no3_vr_col(begc:endc,1:ubj)); this%km_den_no3_vr_col(:,:) = nan
+     allocate(this%km_decomp_nh4_vr_col(begc:endc,1:ubj)); this%km_decomp_nh4_vr_col(:,:) = nan
+     allocate(this%km_decomp_no3_vr_col(begc:endc,1:ubj)); this%km_decomp_no3_vr_col(:,:) = nan
+     allocate(this%km_decomp_p_vr_col(begc:endc,1:ubj)); this%km_decomp_p_vr_col(:,:) = nan
     end subroutine InitAllocate
     !------------------------------------------------------------------------
     subroutine InitCold(this, bounds)

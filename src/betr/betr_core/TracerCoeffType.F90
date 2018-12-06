@@ -12,9 +12,8 @@ module TracerCoeffType
   !
   ! !PUBLIC TYPES:
   implicit none
-
+#include "bshr_alloc.h"
   private
-#define NAN_ALLOC(a)  allocate(a); a = nan
 
 
   character(len=*), private, parameter :: mod_filename = &

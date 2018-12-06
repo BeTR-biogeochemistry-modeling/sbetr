@@ -2,9 +2,11 @@ module BeTR_carbonstateRecvType
   use bshr_kind_mod  , only : r8 => shr_kind_r8
   use betr_decompMod , only : betr_bounds_type
   use tracer_varcon  , only : reaction_method
+  use betr_varcon     , only : spval => bspval
 implicit none
-
-  character(len=*), private, parameter :: mod_filename = &
+#include "bshr_alloc.h"
+  private
+  character(len=*), parameter :: mod_filename = &
        __FILE__
   type, public :: betr_carbonstate_recv_type
      real(r8), pointer :: cwdc_col(:) => null()
@@ -57,25 +59,25 @@ implicit none
   begc = bounds%begc ; endc=bounds%endc
   lbj = bounds%lbj   ; ubj=bounds%ubj
 
-  allocate(this%cwdc_col(begc:endc))
-  allocate(this%totlitc_col(begc:endc))
-  allocate(this%totsomc_col(begc:endc))
-  allocate(this%totlitc_1m_col(begc:endc))
-  allocate(this%totsomc_1m_col(begc:endc))
+  SPVAL_ALLOC(this%cwdc_col(begc:endc))
+  SPVAL_ALLOC(this%totlitc_col(begc:endc))
+  SPVAL_ALLOC(this%totsomc_col(begc:endc))
+  SPVAL_ALLOC(this%totlitc_1m_col(begc:endc))
+  SPVAL_ALLOC(this%totsomc_1m_col(begc:endc))
 
-  allocate(this%som1c_col(begc:endc));  this%som1c_col(:) = nan
-  allocate(this%som2c_col(begc:endc));  this%som2c_col(:) = nan
-  allocate(this%som3c_col(begc:endc));  this%som3c_col(:) = nan
-  allocate(this%domc_col(begc:endc));   this%domc_col(:) = nan
+  SPVAL_ALLOC(this%som1c_col(begc:endc))
+  SPVAL_ALLOC(this%som2c_col(begc:endc))
+  SPVAL_ALLOC(this%som3c_col(begc:endc))
+  SPVAL_ALLOC(this%domc_col(begc:endc))
 
-  allocate(this%som1c_vr_col(begc:endc, lbj:ubj));  this%som1c_vr_col(:,:) = nan
-  allocate(this%som2c_vr_col(begc:endc, lbj:ubj));  this%som2c_vr_col(:,:) = nan
-  allocate(this%som3c_vr_col(begc:endc, lbj:ubj));  this%som3c_vr_col(:,:) = nan
+  SPVAL_ALLOC(this%som1c_vr_col(begc:endc, lbj:ubj))
+  SPVAL_ALLOC(this%som2c_vr_col(begc:endc, lbj:ubj))
+  SPVAL_ALLOC(this%som3c_vr_col(begc:endc, lbj:ubj))
 
-  allocate(this%cwdc_vr_col(begc:endc,lbj:ubj)); this%cwdc_vr_col(:,:)   = nan
-  allocate(this%totlitc_vr_col(begc:endc,lbj:ubj)); this%totlitc_vr_col(:,:) = nan
-  allocate(this%totsomc_vr_col(begc:endc,lbj:ubj)); this%totsomc_vr_col(:,:) = nan
-  allocate(this%domc_vr_col(begc:endc, lbj:ubj)); this%domc_vr_col(:,:)=nan
+  SPVAL_ALLOC(this%cwdc_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%totlitc_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%totsomc_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%domc_vr_col(begc:endc, lbj:ubj))
 
   end subroutine InitAllocate
 

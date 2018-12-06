@@ -36,7 +36,6 @@ module TracerParamsMod
   ! !PUBLIC MEMBER FUNCTIONS:
   public :: tracer_param_init
   public :: set_multi_phase_diffusion
-  public :: convert_mobile2gas
   public :: set_phase_convert_coeff
   public :: calc_tracer_infiltration
   public :: get_zwt
@@ -79,11 +78,10 @@ contains
     allocate(tau_soil%tau_liq(bounds%begc:bounds%endc, 1 : nlevtrc_soil))
     tau_soil%tau_liq(:,:) = 0._r8
 
-
   end subroutine tracer_param_init
 
   !--------------------------------------------------------------------------------------------------------------
-  subroutine Calc_gaseous_diffusion_soil_tortuosity(bounds, lbj, ubj, jtops, num_soilc, filter_soilc, &
+  subroutine Calc_gaseous_diffusion_soil_tortuosity(bounds, lbj, ubj, jtops, lbots, num_soilc, filter_soilc, &
        biophysforc, tau_gas, bstatus)
     !
     ! !DESCRIPTION:
@@ -99,6 +97,7 @@ contains
     integer                          , intent(in)    :: filter_soilc(:)                    ! column filter for soil points
     integer                          , intent(in)    :: lbj, ubj                           ! lower and upper bounds, make sure they are > 0
     integer                          , intent(in)    :: jtops(bounds%begc: )               ! top label of each column
+    integer                          , intent(in)    :: lbots(bounds%begc: )               ! top label of each column
     type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
     real(r8)                         , intent(inout) :: tau_gas(bounds%begc: , lbj: )      !output variable
     type(betr_status_type)           , intent(out)   :: bstatus
@@ -120,8 +119,12 @@ contains
       do n = lbj, ubj
          do fc = 1, num_soilc
             c = filter_soilc(fc)
-            if(n>=jtops(c))then
-               tau_gas(c,n) = get_taugas(eff_porosity(c,n), air_vol(c,n),bsw(c,n))
+            if(n>=jtops(c) .and. n<=lbots(c))then
+               if(air_vol(c,n)>0._r8)then
+                 tau_gas(c,n) = get_taugas(eff_porosity(c,n), air_vol(c,n),bsw(c,n))
+               else
+                 tau_gas(c,n) = 0._r8
+               endif
             endif
          enddo
       enddo
@@ -129,7 +132,7 @@ contains
 
   end subroutine Calc_gaseous_diffusion_soil_tortuosity
   !--------------------------------------------------------------------------------------------------------------
-  subroutine Calc_aqueous_diffusion_soil_tortuosity(bounds, lbj, ubj, jtops, numf, filter, &
+  subroutine Calc_aqueous_diffusion_soil_tortuosity(bounds, lbj, ubj, jtops, lbots, numf, filter, &
     biophysforc, tau_liq, betr_status)
     !
     ! DESCRIPTIONS
@@ -143,6 +146,7 @@ contains
     integer                          , intent(in)    :: filter(:)                             ! column filter
     integer                          , intent(in)    :: lbj, ubj                              ! lower and upper bounds, make sure they are > 0
     integer                          , intent(in)    :: jtops(bounds%begc: )                  ! top label of each column
+    integer                          , intent(in)    :: lbots(bounds%begc: )                  ! top label of each column
     type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
     real(r8)                         , intent(inout) :: tau_liq(bounds%begc: , lbj: )         !output variable
     type(betr_status_type)           , intent(out)   :: betr_status
@@ -153,6 +157,8 @@ contains
 
     call betr_status%reset()
     SHR_ASSERT_ALL((ubound(jtops)    == (/bounds%endc/)),        errMsg(filename,__LINE__), betr_status)
+
+    SHR_ASSERT_ALL((ubound(lbots)    == (/bounds%endc/)),        errMsg(filename,__LINE__), betr_status)
 
     SHR_ASSERT_ALL((ubound(tau_liq)  == (/bounds%endc, ubj/)),   errMsg(filename,__LINE__), betr_status)
 
@@ -165,8 +171,13 @@ contains
       do n = lbj, ubj
          do fc = 1, numf
             c = filter(fc)
-            if(n>=jtops(c))then
-               tau_liq(c,n)=get_tauliq(eff_porosity(c,n), h2osoi_liqvol(c,n),bsw(c,n))
+            if(n>=jtops(c) .and. n<=lbots(c))then
+              if(eff_porosity(c,n)>=0.999_r8)then
+                !for ponding water
+                tau_liq(c,n) = h2osoi_liqvol(c,n)
+              else
+                tau_liq(c,n)=get_tauliq(eff_porosity(c,n), h2osoi_liqvol(c,n),bsw(c,n))
+              endif
             endif
          enddo
       enddo
@@ -229,7 +240,6 @@ contains
 
     SHR_ASSERT_ALL((ubound(bunsencef_col,3) == nvolatile_tracer_groups), errMsg(filename,__LINE__), betr_status)
 
-
     associate(                                                                                              &
          ngwmobile_tracer_groups                => betrtracer_vars%ngwmobile_tracer_groups                , & ! Integer[intent(in)], number of dual phase (gw) tracers
          tracer_group_memid                     => betrtracer_vars%tracer_group_memid                     , & !
@@ -246,6 +256,7 @@ contains
          tau_gas                                => tau_soi%tau_gas                                        , & ! real(r8)[intent(in)], gaseous tortuosity
          tau_liq                                => tau_soi%tau_liq                                        , & ! real(r8)[intent(in)], aqueous tortuosity
          zi                                     => col%zi                                                 , & ! real(r8)[intent(in)],
+         lbots                                  => col%lbots                                              , & ! integer[intent(in)], lower boundary
          t_soisno                               => biophysforc%t_soisno_col                               , & ! Input: [real(r8)(:,:)]
          move_scalar                            => betrtracer_vars%move_scalar                            , &
          bulk_diffus_col                        => tracercoeff_vars%bulk_diffus_col                       , &
@@ -263,7 +274,7 @@ contains
             do n=lbj, ubj
                do fc = 1, numf
                   c = filter(fc)
-                  if(n>=jtops(c))then
+                  if(n>=jtops(c) .and. n<=lbots(c))then
                      !aqueous diffusivity
                      aqu_diffus0_col(c,n,j)=get_aqueous_diffusivity(trcid, t_soisno(c,n), betrtracer_vars)
                      !gaseous diffusivity
@@ -299,7 +310,7 @@ contains
             do n = lbj, ubj
                do fc = 1, numf
                   c = filter(fc)
-                  if(n>=jtops(c))then
+                  if(n>=jtops(c) .and. n<=lbots(c))then
                      !the retardation factor is 1.
                      aqu_diffus0_col(c,n,j)=get_aqueous_diffusivity(trcid, t_soisno(c,n), betrtracer_vars)
                      aqu_diffus_col(c,n,j) =h2osoi_liqvol(c,n)*tau_liq(c,n)*aqu_diffus0_col(c,n,j)
@@ -316,12 +327,14 @@ contains
 
       !do solid phase passive tracers
       !the following setup is adapted from CLM4.5
+      !a separate formulation is needed for wetland
       do j = ngwmobile_tracer_groups + 1, ntracer_groups
          nsld = j - ngwmobile_tracer_groups
          trcid = tracer_group_memid(j,1)
          do n = 1, ubj
             do fc = 1,numf
                c = filter(fc)
+                if(n>lbots(c))cycle
                if  ( ( max(altmax(c), altmax_lastyear(c)) <= max_altdepth_cryoturbation ) .and. &
                   ( max(altmax(c), altmax_lastyear(c)) > 0._r8) ) then
                   ! use mixing profile modified slightly from Koven et al. (2009): constant through active layer, linear decrease from base of active layer to zero at a fixed depth
@@ -351,8 +364,7 @@ contains
   end subroutine calc_bulk_diffusivity
 !--------------------------------------------------------------------------------------------------------------
 
-
-   subroutine calc_bulk_conductances(bounds, lbj, ubj, jtops, numf, filter, &
+   subroutine calc_bulk_conductances(bounds, lbj, ubj, jtops, lbots, numf, filter, &
      bulkdiffus, dz, betrtracer_vars,  hmconductance_col, betr_status)
    !
    ! DESCRIPTIONS:
@@ -376,6 +388,7 @@ contains
    type(bounds_type),      intent(in) :: bounds                      ! bounds
    integer,                intent(in) :: lbj, ubj                    ! lower and upper bounds, make sure they are > 0
    integer,                intent(in) :: jtops(bounds%begc: )        ! top label of each column
+   integer,                intent(in) :: lbots(bounds%begc: )        ! top label of each column
    integer,                intent(in) :: numf                        ! number of columns in column filter
    integer,                intent(in) :: filter(:)                   ! column filter
    type(betrtracer_type),  intent(in) :: betrtracer_vars             ! betr configuration information
@@ -389,6 +402,8 @@ contains
    character(len=255) :: subname = 'calc_bulk_conductances'
    call betr_status%reset()
    SHR_ASSERT_ALL((ubound(jtops)             == (/bounds%endc/)),        errMsg(filename,__LINE__), betr_status)
+
+   SHR_ASSERT_ALL((ubound(lbots)             == (/bounds%endc/)),        errMsg(filename,__LINE__), betr_status)
 
    SHR_ASSERT_ALL((ubound(dz,1)       == bounds%endc),   errMsg(filename,__LINE__),betr_status)
 
@@ -418,7 +433,7 @@ contains
 !  compute the depth weighted diffusivities
    do j = 1, ntracer_groups
      if(.not. is_mobile(tracer_group_memid(j,1)))cycle
-     call calc_interface_conductance(bounds, lbj, ubj, jtops, numf, filter , &
+     call calc_interface_conductance(bounds, lbj, ubj, jtops, lbots, numf, filter , &
              bulkdiffus(bounds%begc:bounds%endc, lbj:ubj, j)               , &
              dz(bounds%begc:bounds%endc, lbj:ubj)                          , &
              hmconductance_col(bounds%begc:bounds%endc, lbj:ubj-1, j), betr_status)
@@ -467,6 +482,7 @@ contains
     tracer_group_memid         => betrtracer_vars%tracer_group_memid      , & !integer[intent(in)], tracer id
     volatilegroupid            => betrtracer_vars%volatilegroupid         , & !integer[intent(in)], location in the volatile vector
     snl                        => col%snl                                 , &
+    lbots                      => col%lbots                               , &
     t_soisno                   => biophysforc%t_soisno_col                , &
     soil_pH                    => biophysforc%soil_pH                     , &
     t_snow                     => biophysforc%t_snow_col                  , &
@@ -485,7 +501,7 @@ contains
        do n = lbj, ubj
          do fc = 1, numf
            c = filter(fc)
-           if(n>=jtops(c))then
+           if(n>=jtops(c) .and. n<=lbots(c))then
              !Henry's law constants
              henrycef_col(c,n,k)=get_henrycef(t_soisno(c,n), trcid, betrtracer_vars)
              scal = get_equilibrium_scal(t_soisno(c,n), soil_pH(c,n), tracerfamilyname,betrtracer_vars)
@@ -544,6 +560,7 @@ contains
     is_h2o                     => betrtracer_vars%is_h2o                   , & !logical[intent(in)], is a h2o tracer
     volatilegroupid            => betrtracer_vars%volatilegroupid          , & !integer[intent(in)], location in the volatile vector
     snl                        => col%snl                                  , &
+    lbots                      => col%lbots                                , &
     t_soisno                   => biophysforc%t_soisno_col                 , &
     t_snow                     => biophysforc%t_snow_col                   , &
     smp_l                      => biophysforc%smp_l_col                    , &
@@ -565,7 +582,7 @@ contains
        do n = lbj, ubj
          do fc = 1, numf
            c = filter(fc)
-           if(n>=jtops(c))then
+           if(n>=jtops(c) .and. n<=lbots(c))then
              bunsencef_col(c,n, k)= henrycef_col(c,n,k)*t_soisno(c,n)/12.2_r8
              !add the pH effect for tracers that can exist in multiple aqueous phases
              if(is_h2o(trcid))then
@@ -587,7 +604,7 @@ contains
 
 !-------------------------------------------------------------------------------
 
-   subroutine calc_dual_phase_convert_coeff(bounds, lbj, ubj, jtops, numf, filter, &
+   subroutine calc_dual_phase_convert_coeff(bounds, lbj, ubj, jtops, lbots, numf, filter, &
      biophysforc, betrtracer_vars, tracerstate_vars, tracercoeff_vars, betr_status)
 
    !DESCRIPTIONS:
@@ -606,6 +623,7 @@ contains
    type(bounds_type)                , intent(in)    :: bounds                      ! bounds
    integer                          , intent(in)    :: lbj, ubj                    ! lower and upper bounds, make sure they are > 0
    integer                          , intent(in)    :: jtops(bounds%begc: )        ! top label of each column
+   integer                          , intent(in)    :: lbots(bounds%begc: )        ! top label of each column
    integer                          , intent(in)    :: numf                        ! number of columns in column filter
    integer                          , intent(in)    :: filter(:)                   ! column filter
    type(betrtracer_type)            , intent(inout) :: betrtracer_vars             ! betr configuration information
@@ -622,6 +640,7 @@ contains
 
    call betr_status%reset()
    SHR_ASSERT_ALL((ubound(jtops)   == (/bounds%endc/)),        errMsg(filename,__LINE__),betr_status)
+   SHR_ASSERT_ALL((ubound(lbots)   == (/bounds%endc/)),        errMsg(filename,__LINE__),betr_status)
    associate(                                                                    &
     ngwmobile_tracer_groups    => betrtracer_vars%ngwmobile_tracer_groups      , & !Input: [integer(:)], number of tracers
     tracer_group_memid         => betrtracer_vars%tracer_group_memid           , & !Input: [integer(:)], tracer id
@@ -656,7 +675,7 @@ contains
         do n = lbj, ubj
           do fc = 1, numf
             c = filter(fc)
-            if(n>=jtops(c))then
+            if(n>=jtops(c) .and. n<=lbots(c))then
                 aqu2bulkcef_mobile(c,n,j) = air_vol(c,n)/bunsencef_col(c,n,k) + (1._r8+aqu2equilsolidcef(c,j,gid))*h2osoi_liqvol(c,n)
                 gas2bulkcef_mobile(c,n,k) = air_vol(c,n)+(1._r8+aqu2equilsolidcef(c,j,gid))*h2osoi_liqvol(c,n)*bunsencef_col(c,n,k)
                 !correct for impermeable layer, to avoid division by zero in doing diffusive transport
@@ -668,7 +687,7 @@ contains
         do n = lbj, ubj
           do fc = 1, numf
             c = filter(fc)
-            if(n>=jtops(c))then
+            if(n>=jtops(c) .and. n<=lbots(c))then
               !aqueous to bulk mobile phase
               if(is_h2o(j))then
                 !this is a (bad) reverse hack because the hydrology code does not consider water vapor transport
@@ -692,7 +711,7 @@ contains
       do n = lbj, ubj
         do fc = 1, numf
           c = filter(fc)
-          if(n>=jtops(c))then
+          if(n>=jtops(c) .and. n <= lbots(c))then
             aqu2bulkcef_mobile(c, n, j) = max(h2osoi_liqvol(c,n),tiny_val)
           endif
         enddo
@@ -702,7 +721,7 @@ contains
         do n = lbj, ubj
           do fc = 1, numf
             c = filter(fc)
-            if(n>=jtops(c))then
+            if(n>=jtops(c) .and. n<=lbots(c))then
               aqu2bulkcef_mobile(c, n, j) = aqu2bulkcef_mobile(c, n, j) * (1._r8+aqu2equilsolidcef(c,j,gid))
             endif
           enddo
@@ -713,83 +732,6 @@ contains
   end associate
   end subroutine calc_dual_phase_convert_coeff
 
-!-------------------------------------------------------------------------------
-   subroutine convert_mobile2gas(bounds, lbj, ubj, jtops, numf, filter, &
-        do_forward, gas2bulkcef_mobile_col, betrtracer_vars, tracer_conc_mobile, &
-        betr_status)
-   !
-   ! DESCRIPTIONS
-   ! do conversion between bulk mobile phase and gaseous phase
-   !
-   ! USES
-   !
-   use BeTRTracerType     , only : betrtracer_type
-   use BetrStatusType     , only : betr_status_type
-   implicit none
-   !arguments
-   type(bounds_type)     , intent(in)    :: bounds                  ! bounds
-   integer               , intent(in)    :: lbj, ubj                ! lower and upper bounds
-   integer               , intent(in)    :: jtops(bounds%begc: )    ! top label of each column
-   integer               , intent(in)    :: numf                    ! number of filters
-   integer               , intent(in)    :: filter(:)               ! filter
-   logical               , intent(in)    :: do_forward              ! true, dual_bulk => gaseous
-   type(betrtracer_type) , intent(in)    :: betrtracer_vars         ! betr configuration information
-   real(r8)              , intent(in)    :: gas2bulkcef_mobile_col(bounds%begc: ,lbj: , 1: )  !conversion parameter
-   real(r8)              , intent(inout) :: tracer_conc_mobile(bounds%begc: ,lbj: , 1: )  !bulk mobile tracer
-   type(betr_status_type), intent(out)   :: betr_status
-   !local variables
-   integer :: jj, kk, fc, c, j
-   character(len=255) :: subname = 'convert_mobile2gas'
-   integer :: nvolatile_tracers
-
-   call betr_status%reset()
-   nvolatile_tracers = betrtracer_vars%nvolatile_tracers
-
-   SHR_ASSERT_ALL((ubound(jtops)                  == (/bounds%endc/)),   errMsg(filename,__LINE__), betr_status)
-
-   SHR_ASSERT_ALL((ubound(gas2bulkcef_mobile_col,1) == bounds%endc),   errMsg(filename,__LINE__),betr_status)
-
-   SHR_ASSERT_ALL((ubound(gas2bulkcef_mobile_col,2) == ubj),   errMsg(filename,__LINE__),betr_status)
-
-   SHR_ASSERT_ALL((ubound(gas2bulkcef_mobile_col,3) == nvolatile_tracers),   errMsg(filename,__LINE__),betr_status)
-
-   SHR_ASSERT_ALL((ubound(tracer_conc_mobile,1)     == bounds%endc),   errMsg(filename,__LINE__), betr_status)
-
-   SHR_ASSERT_ALL((ubound(tracer_conc_mobile,2)     == ubj),   errMsg(filename,__LINE__),betr_status)
-
-   SHR_ASSERT_ALL((ubound(tracer_conc_mobile,3)     == nvolatile_tracers),   errMsg(filename,__LINE__),betr_status)
-
-   associate(                                                  &
-    ngwmobile_tracers => betrtracer_vars%ngwmobile_tracers   , & !Integer[intent(in)], number of tracers
-    is_volatile       => betrtracer_vars%is_volatile         , & !logical[intent(in)], is a volatile tracer?
-    volatilegroupid   => betrtracer_vars%volatilegroupid       & !integer[intent(in)], location in the volatile vector
-   )
-   do jj = 1, ngwmobile_tracers
-     if(is_volatile(jj))then
-       kk = volatilegroupid(jj)
-       if(do_forward)then
-         do j = lbj, ubj
-           do fc = 1, numf
-             c = filter(fc)
-             if(j>=jtops(c))then
-               tracer_conc_mobile(c,j,jj) = tracer_conc_mobile(c,j,jj) / gas2bulkcef_mobile_col(c,j,kk)
-             endif
-           enddo
-         enddo
-       else
-         do j = lbj, ubj
-           do fc = 1, numf
-             c = filter(fc)
-             if(j>=jtops(c))then
-               tracer_conc_mobile(c,j,jj) = tracer_conc_mobile(c,j,jj) * gas2bulkcef_mobile_col(c,j,kk)
-             endif
-           enddo
-         enddo
-       endif
-     endif
-   enddo
-   end associate
-   end subroutine convert_mobile2gas
 !-------------------------------------------------------------------------------
 
    subroutine set_multi_phase_diffusion(bounds, col, lbj, ubj, jtops, numf, filter, &
@@ -823,12 +765,12 @@ contains
 
    !compute tortuosity
    !gaseous phase
-   call calc_gaseous_diffusion_soil_tortuosity(bounds, lbj, ubj, jtops, numf, filter, &
+   call calc_gaseous_diffusion_soil_tortuosity(bounds, lbj, ubj, jtops, col%lbots, numf, filter, &
         biophysforc, tau_soil%tau_gas, betr_status)
    if(betr_status%check_status())return
 
    !aqueous phase
-   call calc_aqueous_diffusion_soil_tortuosity(bounds, lbj, ubj, jtops, numf, filter, &
+   call calc_aqueous_diffusion_soil_tortuosity(bounds, lbj, ubj, jtops, col%lbots, numf, filter, &
         biophysforc, tau_soil%tau_liq, betr_status)
    if(betr_status%check_status())return
 
@@ -839,7 +781,7 @@ contains
    if(betr_status%check_status())return
 
    !compute weigthed conductances
-   call calc_bulk_conductances(bounds, lbj, ubj, jtops, numf, filter, tracercoeff_vars%bulk_diffus_col, &
+   call calc_bulk_conductances(bounds, lbj, ubj, jtops, col%lbots, numf, filter, tracercoeff_vars%bulk_diffus_col, &
       col%dz(bounds%begc:bounds%endc,lbj:ubj), betrtracer_vars,  &
       tracercoeff_vars%hmconductance_col(bounds%begc:bounds%endc, lbj:ubj-1, :), betr_status)
 
@@ -886,13 +828,13 @@ contains
    if(betr_status%check_status())return
    !compute equilibrium fraction to liquid phase conversion parameter
    if(betrtracer_vars%nsolid_equil_tracers>0)then
-     call calc_equil_to_liquid_convert_coeff(bounds, lbj, ubj, jtops, numf, filter , &
+     call calc_equil_to_liquid_convert_coeff(bounds, lbj, ubj, jtops, col%lbots, numf, filter , &
         biophysforc, dz(bounds%begc:bounds%endc, lbj:ubj)                          , &
         betrtracer_vars, tracerstate_vars , tracercoeff_vars, betr_status)
      if(betr_status%check_status())return
    endif
    !compute phase conversion coefficients
-   call calc_dual_phase_convert_coeff(bounds, lbj, ubj, jtops, numf, filter, &
+   call calc_dual_phase_convert_coeff(bounds, lbj, ubj, jtops, col%lbots, numf, filter, &
       biophysforc, betrtracer_vars, tracerstate_vars, tracercoeff_vars, betr_status)
 
    end subroutine set_phase_convert_coeff
@@ -994,7 +936,7 @@ contains
    end subroutine calc_tracer_infiltration
 
    !------------------------------------------------------------------------
-   subroutine calc_equil_to_liquid_convert_coeff(bounds, lbj, ubj, jtops, numf, filter,&
+   subroutine calc_equil_to_liquid_convert_coeff(bounds, lbj, ubj, jtops, lbots, numf, filter,&
        biophysforc, dz, betrtracer_vars, tracerstate_vars, tracercoeff_vars, bstatus)
    !
    ! DESCRIPTION
@@ -1015,6 +957,7 @@ contains
    type(bounds_type)     , intent(in)    :: bounds  ! bounds
    integer               , intent(in)    :: lbj, ubj                                          ! lower and upper bounds, make sure they are > 0
    integer               , intent(in)    :: jtops(bounds%begc: )                              ! top label of each column
+   integer               , intent(in)    :: lbots(bounds%begc: )                              ! top label of each column
    integer               , intent(in)    :: numf                                              ! number of columns in column filter
    integer               , intent(in)    :: filter(:)                                         ! column filter
    type(betrtracer_type) , intent(in)    :: betrtracer_vars
@@ -1033,6 +976,9 @@ contains
    real(r8) :: ctw, ctot
 
    call bstatus%reset()
+   SHR_ASSERT_ALL((ubound(jtops)   == (/bounds%endc/)),        errMsg(filename,__LINE__), bstatus)
+
+   SHR_ASSERT_ALL((ubound(lbots)   == (/bounds%endc/)),        errMsg(filename,__LINE__), bstatus)
 
    SHR_ASSERT_ALL((ubound(dz)         == (/bounds%endc, ubj/)), errMsg(filename,__LINE__),bstatus)
 
@@ -1067,6 +1013,7 @@ contains
        do j = 1, ubj
          do fc = 1, numf
            c = filter(fc)
+           if(j>lbots(c))cycle
            aqu2equilsolidcef_col(c,j,gid) = k_sorbsurf(c,j,gid)
          enddo
        enddo
@@ -1084,6 +1031,7 @@ contains
          do j = 1, ubj
            do fc = 1, numf
              c = filter(fc)
+             if(j>lbots(c))cycle
              trc_tot = 0._r8
              do k = 1,ntrcs
                !sumup to obtain total concentration
