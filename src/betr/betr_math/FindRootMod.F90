@@ -17,6 +17,22 @@ module FindRootMod
 
 contains
   !-------------------------------------------------------------------------------
+  function cubic_newtonraphson(q,r,s,xi)result(x1)
+  implicit none
+  real(r8), intent(in) :: q, r,s,xi
+  real(r8) :: x1
+  real(r8) :: f1, f2, x0, rerr
+  real(r8), parameter :: err_tol = 1.e-4_r8
+  x0 = xi
+  do
+    f1 = x0*x0*(2._r8*x0+q)-s
+    f2 = x0*(3_r8*x0 + 2._r8*q)+r
+    x1 = f1/f2
+    rerr = abs(1._r8-x0/x1)
+    if(rerr<=err_tol)exit
+  enddo
+  end function cubic_newtonraphson
+  !-------------------------------------------------------------------------------
   subroutine quadrootbnd(a,b,c, xl, xr, x, bstatus)
     !
     ! !DESCRIPTION:

@@ -88,4 +88,17 @@ contains
   @assertEqual((/-3._r8,3._r8,14._r8,5._r8,3._r8/),y)
 
   end subroutine test_spm
+
+  subroutine test_cubicroot()
+    use bshr_kind_mod, only : r8 => shr_kind_r8
+  use FindRootMod, only : cubic_newtonraphson
+  implicit none
+  real(r8) :: x1
+  integer :: errinfo
+
+  x1 = cubic_newtonraphson(-6._r8,11._r8,-6._r8,0.1_r8)
+  errinfo=1
+  if(abs(x1-1._r8)<1.e-4_r8)errinfo=0
+  @assertEqual(0,errinfo)
+  end subroutine test_cubicroot
 end module test_mathfunc_module

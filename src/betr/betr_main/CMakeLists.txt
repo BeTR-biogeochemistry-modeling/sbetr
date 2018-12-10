@@ -11,6 +11,7 @@ include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_core)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_transport)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_para)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_rxns)
+include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_echem)
 
 
 include(add_betr_library)
