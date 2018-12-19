@@ -15,7 +15,6 @@ contains
 
     implicit none
 
-
     @assertEqual(1.0_r8, heviside(0.2_r8))
     @assertEqual(0.0_r8, heviside(-2.0_r8))
 
@@ -101,4 +100,46 @@ contains
   if(abs(x1-1._r8)<1.e-4_r8)errinfo=0
   @assertEqual(0,errinfo)
   end subroutine test_cubicroot
+
+
+  subroutine test_layer_adjust()
+  use bshr_kind_mod, only : r8 => shr_kind_r8
+  use InterpolationMod, only : layer_adjust
+  implicit none
+  real(r8) :: z1(5)
+  real(r8) :: z2(10)
+  real(r8) :: rmat1(5,10)
+  real(r8) :: rmat2(10,5)
+  real(r8) :: rmat11(5,10)
+  real(r8) :: rmat21(10,5)
+  integer :: len1, len2
+
+  rmat21(1,:)=(/0.5_r8, 0._r8,  0._r8,  0._r8,  0._r8/)
+  rmat21(2,:)=(/0.5_r8, 0._r8,  0._r8,  0._r8,  0._r8/)
+  rmat21(3,:)=(/0._r8,  0.5_r8, 0._r8,  0._r8,  0._r8/)
+  rmat21(4,:)=(/0._r8,  0.5_r8, 0._r8,  0._r8,  0._r8/)
+  rmat21(5,:)=(/0._r8,  0._r8,  0.5_r8, 0._r8,  0._r8/)
+  rmat21(6,:)=(/0._r8,  0._r8,  0.5_r8, 0._r8,  0._r8/)
+  rmat21(7,:)=(/0._r8,  0._r8,  0._r8,  0.5_r8, 0._r8/)
+  rmat21(8,:)=(/0._r8,  0._r8,  0._r8,  0.5_r8, 0._r8/)
+  rmat21(9,:)=(/0._r8,  0._r8,  0._r8,  0._r8,  0.5_r8/)
+  rmat21(10,:)=(/0._r8,  0._r8,  0._r8,  0._r8,  0.5_r8/)
+
+  rmat11(1,:)=(/1._r8, 1._r8, 0._r8, 0._r8, 0._r8, 0._r8, 0._r8, 0._r8, 0._r8, 0._r8/)
+  rmat11(2,:)=(/0._r8, 0._r8, 1._r8, 1._r8, 0._r8, 0._r8, 0._r8, 0._r8, 0._r8, 0._r8/)
+  rmat11(3,:)=(/0._r8, 0._r8, 0._r8, 0._r8, 1._r8, 1._r8, 0._r8, 0._r8, 0._r8, 0._r8/)
+  rmat11(4,:)=(/0._r8, 0._r8, 0._r8, 0._r8, 0._r8, 0._r8, 1._r8, 1._r8, 0._r8, 0._r8/)
+  rmat11(5,:)=(/0._r8, 0._r8, 0._r8, 0._r8, 0._r8, 0._r8, 0._r8, 0._r8, 1._r8, 1._r8/)
+
+  len1=5
+  len2=10
+  z1=(/0.2_r8,0.4_r8,0.6_r8,0.8_r8,1.0_r8/)
+  z2=(/0.1_r8,0.2_r8,0.3_r8,0.4_r8,0.5_r8,0.6_r8,0.7_r8,0.8_r8,0.9_r8,1.0_r8/)
+  call layer_adjust(z1, z2, len1, len2, rmat2)
+  call layer_adjust(z2, z1, len2, len1, rmat1)
+
+  @assertEqual(rmat11,rmat1)
+  @assertEqual(rmat21,rmat2)
+
+  end subroutine test_layer_adjust
 end module test_mathfunc_module

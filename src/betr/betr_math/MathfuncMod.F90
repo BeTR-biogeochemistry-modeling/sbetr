@@ -26,6 +26,7 @@ module MathfuncMod
   public :: dot_sum
   public :: addone
   public :: asc_sort_vec
+  public :: asc_sorti_vec
   public :: is_bounded
   public :: minp
   public :: pd_decomp
@@ -435,6 +436,36 @@ contains
     enddo
 
   end subroutine asc_sort_vec
+  !--------------------------------------------------------------------------------
+  subroutine asc_sorti_vec(zvec, index)
+    !
+    ! !DESCRIPTION:
+    ! sort an array into ascending order
+    implicit none
+    ! !ARGUMENTS:
+    real(r8), dimension(:), intent(inout) :: zvec
+    integer , dimension(:), intent(inout) :: index
+    ! !LOCAL VARIABLES:
+    integer :: n, j, k
+    logical :: lswap
+
+    n = size(zvec)
+    do j = 1, n
+      index(j) = j
+    enddo
+    do j = 1, n
+       lswap=.false.
+       do k = 2, n-j+1
+          if(zvec(k)<zvec(k-1))then
+             lswap=.true.
+             call swap_r(zvec(k),zvec(k-1))
+             call swap_i(index(k),index(k-1))
+          endif
+       enddo
+       if(.not. lswap)exit
+    enddo
+
+  end subroutine asc_sorti_vec
 
   !--------------------------------------------------------------------------------
   function is_bounded(x, xl, xr)result(ans)

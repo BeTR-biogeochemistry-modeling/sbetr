@@ -512,6 +512,7 @@ contains
        enddo
        !the snow pH is set to surface soil pH, probably needs be updated in the future.
        do fc = 1, numf
+         c = filter(fc)
          do n =snl(c)+1,0
             henrycef_snow(c,n,k)=get_henrycef(t_snow(c,n), trcid, betrtracer_vars)
             scal = get_equilibrium_scal(t_snow(c,n), soil_pH(c,1), tracerfamilyname,betrtracer_vars)
@@ -593,6 +594,7 @@ contains
          enddo
        enddo
        do fc = 1, numf
+         c = filter(fc)
          do n = snl(c)+1, 0
            bunsencef_snow_col(c,n, k)= henrycef_snow(c,n,k)*t_snow(c,n)/12.2_r8
          enddo

@@ -23,6 +23,7 @@ module InterpolationMod
   public :: cmass_interp
   public :: loc_x, loc_xj
   public :: bmass_interp, mass_interp
+  public :: layer_adjust
 contains
 
   !-------------------------------------------------------------------------------
@@ -610,7 +611,6 @@ contains
 
   end subroutine mass_interp
 
-
   !------------------------------------------------------------
   subroutine bmass_interp(zh, mass_curve,zl, zr, mass_new, bstatus)
   !DESCRIPTION
@@ -651,4 +651,70 @@ contains
   mass_new=max(massr-massl,0._r8)
 
   end subroutine bmass_interp
+
+  !------------------------------------------------------------
+  function loc_layer(z1,zt,nlen,k0)result(k1)
+  implicit none
+  integer , intent(in) :: nlen
+  real(r8), intent(in) :: z1(nlen)
+  real(r8), intent(in) :: zt
+  integer , intent(in) :: k0
+
+  integer :: k1
+  integer :: j
+
+  k1 = 0
+  do j = 1, nlen
+    if (zt <= z1(j))then
+      k1 = j
+    endif
+  enddo
+  end function loc_layer
+  !------------------------------------------------------------
+
+  subroutine layer_adjust(z1, zt, len1, len2, rmat)
+
+  implicit none
+  integer , intent(in) :: len1, len2
+  real(r8), intent(in) :: z1(len1)
+  real(r8), intent(in) :: zt(len2)
+  real(r8), intent(out) :: rmat(len1,len2)
+
+  integer :: k0, k1, j, kk, k
+
+  k0 = 1
+  do j = 1, len2
+    k1 = loc_layer(z1,zt(j),len1,k0)
+    if (j == 1) then
+      if (k1 == k0) then
+        rmat(j,k1) = zt(j)/z1(k0)
+      else
+        !middle
+        do k=k0, k1-1
+          rmat(j,k) = 1._r8
+        enddo
+        rmat(j,k1)=(zt(j)-z1(k1-1))/(z1(k1)-z1(k1-1))
+      endif
+    else
+      if (k0 == k1)then
+        if (k0==1)then
+          rmat(j,k1) = (zt(j)-zt(j-1))/z1(k0)
+        else
+          rmat(j,k1) = (zt(j)-zt(j-1))/(z1(k0)-z1(k0-1))
+        endif
+      else
+        if (k0 == 1)then
+          rmat(j,k0) = (z1(k0)-zt(j-1))/z1(k0)
+        else
+          rmat(j,k0) = (z1(k0)-zt(j-1))/(z1(k0)-z1(k0-1))
+        endif
+        do kk = k0+1,k1-1
+          rmat(j,kk) = 0._r8
+        enddo
+        rmat(j,k1) = (zt(j)-z1(k1-1))/(z1(k1)-z1(k-1))
+      endif
+    endif
+  enddo
+
+  end subroutine layer_adjust
 end module InterpolationMod

@@ -12,7 +12,7 @@ module FindRootMod
 
   implicit none
 
-  character(len=*), parameter :: mod_filename = &
+  character(len=*), private, parameter :: mod_filename = &
        __FILE__
 
 contains

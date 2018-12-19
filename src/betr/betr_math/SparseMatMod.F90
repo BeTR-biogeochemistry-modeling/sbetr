@@ -169,7 +169,7 @@ contains
 
   do i = 1, nrs
     do j = 1, spm%ncol(i)
-      id=j+spm%pB(i)
+      id=spm%pB(i)+j-1
       bmat(i,spm%icol(id))=spm%val(id)
     enddo
   enddo

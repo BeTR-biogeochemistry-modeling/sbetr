@@ -1,4 +1,5 @@
 set(BETR_ECHEM_SOURCES
+  eChemConstMod.F90
   eChemMod.F90
   )
 
