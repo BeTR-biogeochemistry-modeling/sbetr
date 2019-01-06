@@ -50,6 +50,7 @@ module BeTRSimulationALM
      procedure, public :: PlantSoilBGCRecv          => ALMBetrPlantSoilBGCRecv
      procedure, public :: DiagnoseLnd2atm           => ALMDiagnoseLnd2atm
      procedure, public :: set_active                => ALMset_active
+     procedure, public :: OutLoopSoilBGC            => ALMOutLoopSoilBGC
      procedure, private:: set_transient_kinetics_par
      procedure, private:: set_vegpar_calibration
      procedure, public :: set_iP_prof
@@ -1416,4 +1417,45 @@ contains
 
   end associate
   end subroutine set_transient_kinetics_par
+
+
+!-------------------------------------------------------------------------------
+  subroutine ALMOutLoopSoilBGC(this, bounds,  col, pft)
+
+  implicit none
+    ! !ARGUMENTS :
+    class(betr_simulation_alm_type) , intent(inout) :: this
+    type(bounds_type)               , intent(in)    :: bounds ! bounds
+    type(column_type)               , intent(in)    :: col ! column type
+    type(patch_type)                , intent(in)    :: pft
+
+    !TEMPORARY VARIABLES
+    type(betr_bounds_type)     :: betr_bounds
+    integer :: c, c_l, begc_l, endc_l
+
+
+    call this%BeTRSetBounds(betr_bounds)
+
+    call this%BeTRSetcps(bounds, col, pft)
+
+    c_l = 1; begc_l = betr_bounds%begc; endc_l=betr_bounds%endc;
+
+    do c = bounds%begc, bounds%endc
+      if(.not. this%active_col(c))cycle
+      this%betr(c)%tracers%debug=col%debug_flag(c)
+
+      call this%betr(c)%OutLoopBGC(this%betr_time, betr_bounds, this%betr_col(c), &
+         this%betr_pft(c), this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp, &
+         this%biophys_forc(c), this%biogeo_flux(c), this%biogeo_state(c), this%bstatus(c))
+
+      if(this%bstatus(c)%check_status())then
+        call this%bsimstatus%setcol(c)
+        call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err(),c)
+        exit
+      endif
+    enddo
+  end subroutine ALMOutLoopSoilBGC
+
+!-------------------------------------------------------------------------------
+
 end module BeTRSimulationALM

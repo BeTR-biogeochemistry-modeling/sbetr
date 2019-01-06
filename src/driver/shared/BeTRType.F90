@@ -93,6 +93,7 @@ module BetrType
      procedure, public  :: debug_info
      procedure, public  :: set_bgc_spinup
      procedure, public  :: Set_iP_prof
+     procedure, public  :: OutLoopBGC
   end type betr_type
 
   public :: create_betr_type
@@ -311,6 +312,7 @@ contains
     use BetrStatusType         , only : betr_status_type
     use betr_columnType        , only : betr_column_type
     use BeTR_PatchType         , only : betr_patch_type
+    use betr_ctrl              , only : inloop_reaction
     implicit none
     !
     ! !ARGUMENTS :
@@ -361,7 +363,7 @@ contains
        this%tracercoeffs,  this%tracerfluxes, betr_status)
     if(betr_status%check_status())return
 
-    if(this%reaction_on)                                       &
+    if(this%reaction_on .and. inloop_reaction )                     &
     call this%bgc_reaction%calc_bgc_reaction(bounds, col, lbj, ubj, &
          num_soilc,                                            &
          filter_soilc,                                         &
@@ -1523,5 +1525,77 @@ contains
   call this%tracerstates%restart(bounds, lbj, ubj, nrest_1d, nrest_2d, states_1d, states_2d, this%tracers, flag)
   end subroutine set_restvar
 
+
+  !------------------------------------------------------------------------
+  subroutine OutLoopBGC(this, betr_time, bounds, col, pft, &
+       num_soilc, filter_soilc, num_soilp, filter_soilp, &
+       biophysforc, biogeo_flux, biogeo_state, betr_status)
+    !
+    ! !DESCRIPTION:
+    ! run betr code one time step forward, without drainage calculation
+
+    ! !USES:
+    use tracerfluxType         , only : tracerflux_type
+    use tracerstatetype        , only : tracerstate_type
+    use tracercoeffType        , only : tracercoeff_type
+    use TracerBoundaryCondType , only : TracerBoundaryCond_type
+    use BetrTracerType         , only : betrtracer_type
+    use BGCReactionsMod        , only : bgc_reaction_type
+    use PlantSoilBGCMod        , only : plant_soilbgc_type
+    use BeTR_aerocondType      , only : betr_aerecond_type
+    use BetrBGCMod             , only : calc_ebullition
+    use BetrBGCMod             , only : stage_tracer_transport
+    use BetrBGCMod             , only : surface_tracer_hydropath_update
+    use BetrBGCMod             , only : tracer_gws_transport
+    use BeTR_TimeMod           , only : betr_time_type
+    use BetrStatusType         , only : betr_status_type
+    use betr_columnType        , only : betr_column_type
+    use BeTR_PatchType         , only : betr_patch_type
+    use betr_ctrl              , only : inloop_reaction
+    implicit none
+    !
+    ! !ARGUMENTS :
+    class(betr_type)                 , intent(inout) :: this
+    class(betr_time_type)            , intent(in)    :: betr_time
+    type(bounds_type)                , intent(in)    :: bounds                     ! bounds
+    type(betr_column_type)           , intent(in)    :: col
+    type(betr_patch_type)            , intent(in)    :: pft
+    integer                          , intent(in)    :: num_soilc                  ! number of columns in column filter_soilc
+    integer                          , intent(in)    :: filter_soilc(:)            ! column filter_soilc
+    integer                          , intent(in)    :: num_soilp
+    integer                          , intent(in)    :: filter_soilp(:)            ! pft filter
+    type(betr_biogeophys_input_type) , intent(inout) :: biophysforc
+    type(betr_biogeo_flux_type)      , intent(inout) :: biogeo_flux
+    type(betr_biogeo_state_type)     , intent(inout) :: biogeo_state
+    type(betr_status_type)           , intent(out)   :: betr_status
+
+    ! !LOCAL VARIABLES:
+    character(len=255) :: subname = 'OutLoopBGC'
+    integer :: lbj, ubj
+    real(r8):: dtime
+
+    call betr_status%reset()
+    lbj = bounds%lbj; ubj = bounds%ubj
+
+    dtime = betr_time%get_step_size()
+
+    call this%bgc_reaction%calc_bgc_reaction(bounds, col, lbj, ubj, &
+     num_soilc,                                            &
+     filter_soilc,                                         &
+     num_soilp,                                            &
+     filter_soilp,                                         &
+     this%tracerboundaryconds%jtops_col,                   &
+     dtime,                                                &
+     this%tracers,                                         &
+     this%tracercoeffs,                                    &
+     biophysforc,                                          &
+     this%tracerstates,                                    &
+     this%tracerfluxes,                                    &
+     this%tracerboundaryconds,                             &
+     this%plant_soilbgc, biogeo_flux,  betr_status)
+  if(betr_status%check_status())return
+
+
+  end subroutine OutLoopBGC
 
 end module BetrType
