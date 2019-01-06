@@ -19,6 +19,8 @@ include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/simic/simicPa
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/simic/simic1layer)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/keca/kecaPara)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/keca/keca1layer)
+include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/v1eca/v1ecaPara)
+include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/v1eca/v1eca1layer)
 #end_appadd
 include_directories(${CMAKE_BINARY_DIR}/src/jarmodel/forcing)
 

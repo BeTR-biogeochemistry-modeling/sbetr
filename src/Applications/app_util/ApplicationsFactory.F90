@@ -63,6 +63,7 @@ contains
     use cdomBGCReactionsType  , only : cdom_bgc_reaction_type
     use simicBGCReactionsType , only : simic_bgc_reaction_type
     use kecaBGCReactionsType  , only : keca_bgc_reaction_type
+    use v1ecaBGCReactionsType, only : v1eca_bgc_reaction_type
     !end_appadd
 #endif
 
@@ -90,6 +91,8 @@ contains
        asoibgc=.true.;allocate(bgc_reaction, source=simic_bgc_reaction_type())
     case ("keca")
        asoibgc=.true.;allocate(bgc_reaction, source=keca_bgc_reaction_type())
+    case ("v1eca","v1eca_mosart")
+       asoibgc=.true.;allocate(bgc_reaction, source=v1eca_bgc_reaction_type())
     !end_appadd
 #endif
     case default
@@ -117,6 +120,7 @@ contains
   use cdomPlantSoilBGCType  , only : cdom_plant_soilbgc_type
   use simicPlantSoilBGCType , only : simic_plant_soilbgc_type
   use kecaPlantSoilBGCType  , only : keca_plant_soilbgc_type
+  use v1ecaPlantSoilBGCType, only : v1eca_plant_soilbgc_type
   !end_appadd
 #endif
   implicit none
@@ -143,6 +147,8 @@ contains
      allocate(plant_soilbgc, source=simic_plant_soilbgc_type())
   case ("keca")
      allocate(plant_soilbgc, source=keca_plant_soilbgc_type())
+  case ("v1eca","v1eca_mosart")
+     allocate(plant_soilbgc, source=v1eca_plant_soilbgc_type())
   !end_appadd
 #endif
   case default
@@ -165,6 +171,7 @@ contains
   use cdomParaType     , only : cdom_para
   use simicParaType    , only : simic_para
   use kecaParaType     , only : keca_para
+  use v1ecaParaType   , only : v1eca_para
   !end_appadd
 #endif
   use tracer_varcon    , only : reaction_method
@@ -187,6 +194,8 @@ contains
      call simic_para%readPars(ncid, bstatus)
    case ("keca")
      call keca_para%readPars(ncid, bstatus)
+   case ("v1eca","v1eca_mosart")
+     call v1eca_para%readPars(ncid, bstatus)
    !end_appadd
 #endif
    case default
@@ -207,6 +216,7 @@ contains
   use cdomParaType     , only : cdom_para
   use simicParaType    , only : simic_para
   use kecaParaType     , only : keca_para
+  use v1ecaParaType   , only : v1eca_para
   !end_appadd
 #endif
   use betr_constants   , only : betr_namelist_buffer_size_ext
@@ -231,6 +241,8 @@ contains
      call simic_para%Init(bstatus)
    case ("keca")
      call keca_para%Init(bstatus)
+   case ("v1eca","v1eca_mosart")
+     call v1eca_para%Init(bstatus)
    !end_appadd
 #endif
    case default
@@ -248,6 +260,7 @@ contains
   use ch4soilParaType  , only : ch4soil_para
   use cdomParaType    , only : cdom_para
   use kecaParaType    , only : keca_para
+  use v1ecaParaType  , only : v1eca_para
   !end_appadd
 #endif
   use tracer_varcon   , only : reaction_method
@@ -264,6 +277,8 @@ contains
      call cdom_para%set_spinup_factor()
   case ("keca")
      call keca_para%set_spinup_factor()
+  case ("v1eca","v1eca_mosart")
+     call  v1eca_para%set_spinup_factor()
   !end_appadd
 #endif
   end select

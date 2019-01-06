@@ -27,6 +27,7 @@ contains
   !begin_appadd
   use ecacnpParaType, only : ecacnp_para_type
   use kecaParaType, only : keca_para_type
+  use v1ecaParaType, only : v1eca_para_type
   !end_appadd
   use BiogeoConType    , only : BiogeoCon_type
   implicit none

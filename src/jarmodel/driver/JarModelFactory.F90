@@ -28,6 +28,7 @@ contains
     use ecacnpBGCType, only : create_jarmodel_ecacnp
     use simicBGCType,  only : create_jarmodel_simicbgc
     use cdomBGCType, only : create_jarmodel_cdom
+    use v1ecaBGCType, only : create_jarmodel_v1eca
     !end_appadd
     use BeTRJarModel      , only : jar_model_type
     implicit none
@@ -45,6 +46,8 @@ contains
           allocate(jarmodel, source=create_jarmodel_simicbgc())
        case ("cdom")
           allocate(jarmodel, source=create_jarmodel_cdom())
+       case ("v1eca")
+          allocate(jarmodel, source=create_jarmodel_v1eca())
     !end_appadd
        case default
           write(iulog, *) "ERROR: unknown jarmodel type '", &
@@ -66,6 +69,7 @@ contains
     use ecacnpParaType  , only : create_jarpars_ecacnp
     use simicParaType   , only : create_jarpars_simic
     use cdomParaType   , only : create_jarpars_cdom
+    use v1ecaParaType  , only : create_jarpars_v1eca
     !end_appadd
     implicit none
     !ARGUMENTS
@@ -82,6 +86,8 @@ contains
           allocate(jarpars, source=create_jarpars_simic())
        case ("cdom")
           allocate(jarpars, source=create_jarpars_cdom())
+       case ("v1eca")
+          allocate(jarpars, source=create_jarpars_v1eca())
     !end_appadd
        case default
           write(iulog, *) "ERROR: unknown jarmodel type '", &
