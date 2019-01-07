@@ -22,9 +22,9 @@ module BeTRSimulationALM
   use ColumnType     , only : column_type
   use LandunitType   , only : landunit_type
 #else
-  use VegetationType      , only : patch_type => vegetation_physical_properties
-  use ColumnType          , only : column_type => column_physical_properties
-  use LandunitType        , only : landunit_type => landunit_physical_properties
+  use VegetationType      , only : patch_type => vegetation_physical_properties_type
+  use ColumnType          , only : column_type => column_physical_properties_type
+  use LandunitType        , only : landunit_type => landunit_physical_properties_type
 #endif
   use calibrationType, only : calibration_type
   implicit none
