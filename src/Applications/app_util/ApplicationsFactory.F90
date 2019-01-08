@@ -53,7 +53,7 @@ contains
     !
     ! !USES:
     use BGCReactionsMod , only : bgc_reaction_type
-    use betr_ctrl       , only : iulog  => biulog, inloop_reaction
+    use betr_ctrl       , only : iulog  => biulog, inloop_reaction, bgc_type
     use betr_constants  , only : betr_errmsg_len
     use BetrStatusType  , only : betr_status_type
     !begin_appadd
@@ -91,9 +91,9 @@ contains
        asoibgc=.true.;allocate(bgc_reaction, source=simic_bgc_reaction_type())
     case ("keca")
        asoibgc=.true.;allocate(bgc_reaction, source=keca_bgc_reaction_type())
-    case ("v1eca","v1eca_mosart")
+    case ("v1eca")
        asoibgc=.true.;allocate(bgc_reaction, source=v1eca_bgc_reaction_type())
-       inloop_reaction=.false.
+       inloop_reaction=.false.; bgc_type='type1'
     !end_appadd
 #endif
     case default

@@ -56,6 +56,7 @@ module BeTRSimulationALM
      procedure, public :: set_iP_prof
      procedure, public :: skip_balcheck
      procedure, public :: checkpmassyes
+     procedure, public :: do_bgc_type
   end type betr_simulation_alm_type
 
   public :: create_betr_simulation_alm
@@ -1457,5 +1458,17 @@ contains
   end subroutine ALMOutLoopSoilBGC
 
 !-------------------------------------------------------------------------------
+  function do_bgc_type(this, type_char)result(ans)
+  use betr_ctrl, only : bgc_type
+  implicit none
+  class(betr_simulation_alm_type) , intent(inout) :: this
+  character(len=*), intent(in) :: type_char
+
+
+  logical :: ans
+
+  ans = index(type_char, bgc_type)/=0
+
+  end function do_bgc_type
 
 end module BeTRSimulationALM
