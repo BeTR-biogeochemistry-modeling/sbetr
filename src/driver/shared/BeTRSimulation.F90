@@ -7,6 +7,8 @@ module BeTRSimulation
   !  structures from a specific LSM, e.g. CLM, ALM, into BeTR data
   !  structures.
   !
+  use VegetationDataType, only : veg_es
+  use ColumnDataType    , only : col_es    
   use abortutils     , only : endrun
   use clm_varctl     , only : iulog, use_cn
   use shr_log_mod    , only : errMsg => shr_log_errMsg
@@ -964,15 +966,15 @@ contains
       enddo
     endif
     if(present(temperature_vars))then
-      this%biophys_forc(c)%t_soi_10cm(cc)           = temperature_vars%t_soi10cm_col(c)
-      this%biophys_forc(c)%t_soisno_col(cc,lbj:ubj) = temperature_vars%t_soisno_col(c,lbj:ubj)
+      this%biophys_forc(c)%t_soi_10cm(cc)           = col_es%t_soi10cm(c)
+      this%biophys_forc(c)%t_soisno_col(cc,lbj:ubj) = col_es%t_soisno(c,lbj:ubj)
       pp = 0
       do pi = 1, betr_maxpatch_pft
         if (pi <= col%npfts(c)) then
           p = col%pfti(c) + pi - 1
           if (pft%active(p)) then
             pp = pp + 1
-            this%biophys_forc(c)%t_veg_patch(pp)         = temperature_vars%t_veg_patch(p)
+            this%biophys_forc(c)%t_veg_patch(pp)         = veg_es%t_veg(p)
           endif
         endif
       enddo
