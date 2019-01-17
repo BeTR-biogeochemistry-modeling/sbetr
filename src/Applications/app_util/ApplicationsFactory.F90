@@ -82,6 +82,7 @@ contains
     !begin_appadd
     case ("ecacnp","ecacnp_mosart")
        asoibgc=.true.;allocate(bgc_reaction, source=ecacnp_bgc_reaction_type())
+       bgc_type='type2_bgc'
 #if (defined SBETR)
     case ("ch4soil")
        asoibgc=.true.;allocate(bgc_reaction, source=ch4soil_bgc_reaction_type())
@@ -93,7 +94,7 @@ contains
        asoibgc=.true.;allocate(bgc_reaction, source=keca_bgc_reaction_type())
     case ("v1eca")
        asoibgc=.true.;allocate(bgc_reaction, source=v1eca_bgc_reaction_type())
-       inloop_reaction=.false.; bgc_type='type1'
+       inloop_reaction=.false.; bgc_type='type1_bgc'
     !end_appadd
 #endif
     case default
