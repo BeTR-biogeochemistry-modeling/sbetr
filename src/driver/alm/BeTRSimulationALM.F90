@@ -273,7 +273,7 @@ contains
 
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
-      this%betr(c)%tracers%debug=col%debug_flag(c)
+      !this%betr(c)%tracers%debug=col%debug_flag(c)
       call this%biophys_forc(c)%frac_normalize(this%betr_pft(c)%npfts, 1, betr_nlevtrc_soil)
 
       if(this%betr(c)%tracers%debug)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), &
@@ -1443,7 +1443,7 @@ contains
 
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
-      this%betr(c)%tracers%debug=col%debug_flag(c)
+      !this%betr(c)%tracers%debug=col%debug_flag(c)
 
       call this%betr(c)%OutLoopBGC(this%betr_time, betr_bounds, this%betr_col(c), &
          this%betr_pft(c), this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp, &
