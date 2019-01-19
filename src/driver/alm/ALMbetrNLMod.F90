@@ -10,6 +10,7 @@ implicit none
 
   character(len=betr_namelist_buffer_size), public :: betr_namelist_buffer
   public :: betr_readNL
+  public :: set_betr_cnpbgc
 contains
 
 
@@ -173,4 +174,41 @@ contains
 
   end subroutine LoadFile2String
 
+
+
+
+!-------------------------------------------------------------------------------
+    subroutine set_betr_cnpbgc(suplnitro,suplphos, spinup_state)
+    !
+    !DESCRIPTION
+    !set n and p switches of the betr bgc model
+    use tracer_varcon, only : is_nitrogen_active, is_phosphorus_active
+    implicit none
+    character(len=*), intent(in) :: suplnitro
+    character(len=*), intent(in) :: suplphos
+    integer         , intent(in) :: spinup_state
+    integer :: cnpset
+
+    !set
+    cnpset=111
+    if(trim(suplnitro)=='ALL')cnpset=cnpset-10
+    if(trim(suplphos)=='ALL')cnpset=cnpset-1
+
+    select case (cnpset)
+    case (100)
+      is_nitrogen_active = .false.
+      is_phosphorus_active=.false.
+    case (110)
+      is_nitrogen_active = .true.
+      is_phosphorus_active=.false.
+    case (101)
+      is_nitrogen_active = .false.
+      is_phosphorus_active=.true.
+    case default
+      is_nitrogen_active = .true.
+      is_phosphorus_active=.true.
+    end select
+    !make sure P has full supply during spinup
+    !if(spinup_state==1)is_phosphorus_active=.false.
+    end subroutine set_betr_cnpbgc
 end module ALMBeTRNLMod
