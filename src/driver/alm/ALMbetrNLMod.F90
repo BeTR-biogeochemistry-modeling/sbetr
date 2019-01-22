@@ -27,7 +27,7 @@ contains
     use betr_utils    , only : log2str
     use betr_varcon   , only : betr_maxpatch_pft, betr_max_soilorder
     use clm_varctl    , only : iulog, spinup_state
-    use betr_ctrl     , only : betr_spinup_state
+    use betr_ctrl     , only : betr_spinup_state,bgc_type 
     use tracer_varcon , only : advection_on, diffusion_on, reaction_on, ebullition_on, reaction_method
     use tracer_varcon , only : AA_spinup_on, fix_ip, do_bgc_calibration, bgc_param_file
     use ApplicationsFactory, only : AppInitParameters
@@ -60,7 +60,9 @@ contains
 
     lbcalib = lbgcalib
     !initialize spinup state
-    betr_spinup_state =spinup_state
+    if(index(bgc_type,'type2_bgc')/=0)then
+      betr_spinup_state =spinup_state
+    endif
     betr_max_soilorder=nsoilorder
     ! ----------------------------------------------------------------------
     ! Read namelist from standard input.
