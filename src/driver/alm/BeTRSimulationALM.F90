@@ -51,6 +51,8 @@ module BeTRSimulationALM
      procedure, public :: DiagnoseLnd2atm           => ALMDiagnoseLnd2atm
      procedure, public :: set_active                => ALMset_active
      procedure, public :: OutLoopSoilBGC            => ALMOutLoopSoilBGC
+     procedure, public :: EnterOutLoopBGC           => ALMEnterOutLoopBGC
+     procedure, public :: ExitOutLoopBGC            => ALMExitOutLoopBGC
      procedure, private:: set_transient_kinetics_par
      procedure, private:: set_vegpar_calibration
      procedure, public :: set_iP_prof
@@ -1471,4 +1473,108 @@ contains
 
   end function do_bgc_type
 
+
+!-------------------------------------------------------------------------------
+  subroutine ALMEnterOutLoopBGC(this, bounds, col, pft, &
+   c12_cstate_vars, c12_cflx_vars, c13_cstate_vars, c14_cstate_vars,  &
+   nitrogenstate_vars,  phosphorusstate_vars)
+
+  use tracer_varcon   , only : nlevtrc_soil  => betr_nlevtrc_soil
+  use CNCarbonStateType         , only : carbonstate_type
+  use CNCarbonFluxType   , only : carbonflux_type
+  use CNNitrogenFluxType , only : nitrogenflux_type
+  use CNNitrogenStateType       , only : nitrogenstate_type
+  use PhosphorusFluxType , only : phosphorusflux_type
+  use PhosphorusStateType       , only : phosphorusstate_type
+  implicit none
+  class(betr_simulation_alm_type) , intent(inout) :: this
+  type(bounds_type)               , intent(in)    :: bounds ! bounds
+  type(column_type)               , intent(in)    :: col ! column type
+  type(patch_type)                , intent(in)    :: pft
+  type(carbonstate_type)          , intent(inout) :: c12_cstate_vars
+  type(carbonflux_type)           , intent(inout) :: c12_cflx_vars
+  type(carbonstate_type)          , intent(inout) :: c13_cstate_vars
+  type(carbonstate_type)          , intent(inout) :: c14_cstate_vars
+  type(nitrogenstate_type)        , intent(inout) :: nitrogenstate_vars
+  type(phosphorusstate_type)      , intent(inout) :: phosphorusstate_vars
+
+  integer :: kk, c, j
+
+  associate(                                                             &
+  decomp_k                 => c12_cflx_vars%decomp_k_col               , &
+  c12_decomp_cpools_vr_col =>   c12_cstate_vars%decomp_cpools_vr_col   , &
+  decomp_npools_vr_col =>   nitrogenstate_vars%decomp_npools_vr_col    , &
+  decomp_ppools_vr_col =>   phosphorusstate_vars%decomp_ppools_vr_col    &
+
+  )
+  do j = 1,nlevtrc_soil
+    do c = bounds%begc, bounds%endc
+      if(.not. this%active_col(c))cycle
+      do kk = 1, 7
+         this%biogeo_flux(c)%c12flux_vars%decomp_k(c,j,kk) = decomp_k(c,j,kk)
+         this%biogeo_state(c)%c12state_vars%decomp_cpools_vr(c,j,kk)=c12_decomp_cpools_vr_col(c,j,kk)
+         this%biogeo_state(c)%n14state_vars%decomp_npools_vr(c,j,kk)=decomp_npools_vr_col(c,j,kk)
+         this%biogeo_state(c)%p31state_vars%decomp_ppools_vr(c,j,kk)=decomp_ppools_vr_col(c,j,kk)
+      enddo
+    enddo
+  enddo
+  end associate
+  end subroutine ALMEnterOutLoopBGC
+
+!-------------------------------------------------------------------------------
+  subroutine ALMExitOutLoopBGC(this, bounds, col, pft, &
+    c12_cstate_vars, c12_cflx_vars, &
+    c13_cstate_vars, c13_cflx_vars, &
+    c14_cstate_vars, c14_cflx_vars, &
+    nitrogenstate_vars, nitrogenflux_vars, &
+    phosphorusstate_vars, phosphorusflux_vars)
+
+  use tracer_varcon   , only : nlevtrc_soil  => betr_nlevtrc_soil
+  use CNCarbonFluxType    , only : carbonflux_type
+  use CNCarbonStateType   , only : carbonstate_type
+  use CNNitrogenFluxType  , only : nitrogenflux_type
+  use CNNitrogenStateType , only : nitrogenstate_type
+  use clm_time_manager    , only : get_nstep
+  !!! add phosphorus
+  use PhosphorusFluxType  , only : phosphorusflux_type
+  use PhosphorusStateType , only : phosphorusstate_type
+  implicit none
+  class(betr_simulation_alm_type) , intent(inout) :: this
+  type(bounds_type)               , intent(in)    :: bounds ! bounds
+  type(column_type)               , intent(in)    :: col ! column type
+  type(patch_type)                , intent(in)    :: pft
+  type(carbonstate_type)          , intent(inout) :: c12_cstate_vars
+  type(carbonflux_type)           , intent(inout) :: c12_cflx_vars
+  type(carbonstate_type)          , intent(inout) :: c13_cstate_vars
+  type(carbonflux_type)           , intent(inout) :: c13_cflx_vars
+  type(carbonstate_type)          , intent(inout) :: c14_cstate_vars
+  type(carbonflux_type)           , intent(inout) :: c14_cflx_vars
+  type(nitrogenstate_type)        , intent(inout) :: nitrogenstate_vars
+  type(nitrogenflux_type)         , intent(inout) :: nitrogenflux_vars
+  type(phosphorusstate_type)      , intent(inout) :: phosphorusstate_vars
+  type(phosphorusflux_type)       , intent(inout) :: phosphorusflux_vars
+
+
+  integer :: kk, c, j, fc
+  associate(                                                             &
+  decomp_k                 => c12_cflx_vars%decomp_k_col               , &
+  c12_decomp_cpools_vr_col =>   c12_cstate_vars%decomp_cpools_vr_col   , &
+  decomp_npools_vr_col =>   nitrogenstate_vars%decomp_npools_vr_col    , &
+  decomp_ppools_vr_col =>   phosphorusstate_vars%decomp_ppools_vr_col    &
+
+  )
+  do j = 1,nlevtrc_soil
+    do c = bounds%begc, bounds%endc
+       if(.not. this%active_col(c))cycle
+       do kk = 1, 7
+         decomp_k(c,j,kk) = this%biogeo_flux(c)%c12flux_vars%decomp_k(c,j,kk)
+         c12_decomp_cpools_vr_col(c,j,kk)=this%biogeo_state(c)%c12state_vars%decomp_cpools_vr(c,j,kk)
+         decomp_npools_vr_col(c,j,kk) = this%biogeo_state(c)%n14state_vars%decomp_npools_vr(c,j,kk)
+         decomp_ppools_vr_col(c,j,kk) = this%biogeo_state(c)%p31state_vars%decomp_ppools_vr(c,j,kk)
+       enddo
+    enddo
+  enddo
+  end associate
+
+  end subroutine ALMExitOutLoopBGC
 end module BeTRSimulationALM

@@ -3,6 +3,7 @@ module BeTR_phosphorusstateRecvType
   use betr_decompMod , only : betr_bounds_type
   use tracer_varcon  , only : reaction_method
   use betr_varcon     , only : spval => bspval
+  use betr_ctrl, only : bgc_type
 implicit none
 #include "bshr_alloc.h"
   private
@@ -30,6 +31,7 @@ implicit none
     real(r8), pointer :: som2p_vr_col(:,:) => null()
     real(r8), pointer :: som3p_vr_col(:,:) => null()
     real(r8), pointer :: domp_vr_col(:,:) => null()
+    real(r8), pointer :: decomp_ppools_vr(:,:,:) => null()
   contains
     procedure, public  :: Init
     procedure, private :: InitAllocate
@@ -74,16 +76,22 @@ implicit none
   SPVAL_ALLOC(this%som1p_col(begc:endc))
   SPVAL_ALLOC(this%som2p_col(begc:endc))
   SPVAL_ALLOC(this%som3p_col(begc:endc))
-  SPVAL_ALLOC(this%som1p_vr_col(begc:endc, lbj:ubj))
-  SPVAL_ALLOC(this%som2p_vr_col(begc:endc, lbj:ubj))
-  SPVAL_ALLOC(this%som3p_vr_col(begc:endc, lbj:ubj))
 
-  SPVAL_ALLOC(this%cwdp_vr_col(begc:endc,lbj:ubj))
-  SPVAL_ALLOC(this%totlitp_vr_col(begc:endc,lbj:ubj))
-  SPVAL_ALLOC(this%totsomp_vr_col(begc:endc,lbj:ubj))
+  if(index(bgc_type,'type1_bgc')/=0)then
+    SPVAL_ALLOC(this%decomp_ppools_vr(begc:endc, lbj:ubj, 1:7))
+  else
+    SPVAL_ALLOC(this%som1p_vr_col(begc:endc, lbj:ubj))
+    SPVAL_ALLOC(this%som2p_vr_col(begc:endc, lbj:ubj))
+    SPVAL_ALLOC(this%som3p_vr_col(begc:endc, lbj:ubj))
+
+    SPVAL_ALLOC(this%cwdp_vr_col(begc:endc,lbj:ubj))
+    SPVAL_ALLOC(this%totlitp_vr_col(begc:endc,lbj:ubj))
+    SPVAL_ALLOC(this%totsomp_vr_col(begc:endc,lbj:ubj))
+    SPVAL_ALLOC(this%domp_vr_col(begc:endc,lbj:ubj))
+  endif
   SPVAL_ALLOC(this%sminp_vr_col(begc:endc,lbj:ubj))
   SPVAL_ALLOC(this%occlp_vr_col(begc:endc,lbj:ubj))
-  SPVAL_ALLOC(this%domp_vr_col(begc:endc,lbj:ubj))
+
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------
@@ -92,17 +100,23 @@ implicit none
   class(betr_phosphorusstate_recv_type)  :: this
   real(r8), intent(in) :: value_column
 
-  this%cwdp_vr_col(:,:) = value_column
-  this%totlitp_vr_col(:,:) = value_column
-  this%totsomp_vr_col(:,:) = value_column
+
+  if(index(bgc_type,'type1_bgc')/=0)then
+    this%decomp_ppools_vr(:,:,:) = value_column
+  else
+    this%cwdp_vr_col(:,:) = value_column
+    this%totlitp_vr_col(:,:) = value_column
+    this%totsomp_vr_col(:,:) = value_column
+
+    this%som1p_vr_col(:,:) = value_column
+    this%som2p_vr_col(:,:) = value_column
+    this%som3p_vr_col(:,:) = value_column
+
+    this%domp_vr_col(:,:) = value_column
+  endif
   this%sminp_vr_col(:,:) = value_column
   this%occlp_vr_col(:,:) = value_column
 
-  this%som1p_vr_col(:,:) = value_column
-  this%som2p_vr_col(:,:) = value_column
-  this%som3p_vr_col(:,:) = value_column
-
-  this%domp_vr_col(:,:) = value_column
   end subroutine reset
 
   !------------------------------------------------------------------------
@@ -118,6 +132,7 @@ implicit none
 
   integer :: c, j
 
+  if(index(bgc_type,'type1_bgc')/=0)return
   this%cwdp_col(:) = 0._r8
   this%totlitp_col(:) = 0._r8
   this%totsomp_col(:) = 0._r8
