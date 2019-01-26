@@ -1475,9 +1475,9 @@ contains
 
 
 !-------------------------------------------------------------------------------
-  subroutine ALMEnterOutLoopBGC(this, bounds, col, pft, &
+  subroutine ALMEnterOutLoopBGC(this, bounds, col, pft, num_soilc, filter_soilc, &
    c12_cstate_vars, c12_cflx_vars, c13_cstate_vars, c14_cstate_vars,  &
-   nitrogenstate_vars,  phosphorusstate_vars)
+   nitrogenstate_vars,  phosphorusstate_vars, PlantMicKinetics_vars)
 
   use tracer_varcon   , only : nlevtrc_soil  => betr_nlevtrc_soil
   use CNCarbonStateType         , only : carbonstate_type
@@ -1486,11 +1486,15 @@ contains
   use CNNitrogenStateType       , only : nitrogenstate_type
   use PhosphorusFluxType , only : phosphorusflux_type
   use PhosphorusStateType       , only : phosphorusstate_type
+  use PlantMicKineticsMod, only : PlantMicKinetics_type
   implicit none
   class(betr_simulation_alm_type) , intent(inout) :: this
   type(bounds_type)               , intent(in)    :: bounds ! bounds
   type(column_type)               , intent(in)    :: col ! column type
   type(patch_type)                , intent(in)    :: pft
+  integer                         , intent(in)    :: num_soilc        ! number of soil columns in filter
+  integer                         , intent(in)    :: filter_soilc(:)  ! filter for soil columns
+  type(PlantMicKinetics_type)     , intent(in)    :: PlantMicKinetics_vars
   type(carbonstate_type)          , intent(inout) :: c12_cstate_vars
   type(carbonflux_type)           , intent(inout) :: c12_cflx_vars
   type(carbonstate_type)          , intent(inout) :: c13_cstate_vars
@@ -1498,15 +1502,21 @@ contains
   type(nitrogenstate_type)        , intent(inout) :: nitrogenstate_vars
   type(phosphorusstate_type)      , intent(inout) :: phosphorusstate_vars
 
+  !temporary variables
+  type(betr_bounds_type) :: betr_bounds
   integer :: kk, c, j
 
-  associate(                                                             &
-  decomp_k                 => c12_cflx_vars%decomp_k_col               , &
-  c12_decomp_cpools_vr_col =>   c12_cstate_vars%decomp_cpools_vr_col   , &
-  decomp_npools_vr_col =>   nitrogenstate_vars%decomp_npools_vr_col    , &
-  decomp_ppools_vr_col =>   phosphorusstate_vars%decomp_ppools_vr_col    &
+  associate(                                                                 &
+  decomp_k                 => c12_cflx_vars%decomp_k_col                   , &
+  c12_decomp_cpools_vr_col =>   c12_cstate_vars%decomp_cpools_vr_col       , &
+  decomp_npools_vr_col     =>   nitrogenstate_vars%decomp_npools_vr_col    , &
+  decomp_ppools_vr_col     =>   phosphorusstate_vars%decomp_ppools_vr_col  , &
+  smin_nh4_vr              =>    nitrogenstate_vars%smin_nh4_vr_col        , & ! Input:  [real(r8) (:,:)  ]  (gN/m3) soil mineral NH4 pool
+  smin_no3_vr              =>    nitrogenstate_vars%smin_no3_vr_col        , & ! Input:  [real(r8) (:,:)  ]  (gN/m3) soil mineral NO3 pool
+  solutionp_vr             => phosphorusstate_vars%solutionp_vr_col          & !
 
   )
+  call this%BeTRSetBounds(betr_bounds)
   do j = 1,nlevtrc_soil
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
@@ -1518,6 +1528,10 @@ contains
       enddo
     enddo
   enddo
+
+  !set kinetic parameters
+  call this%set_transient_kinetics_par(betr_bounds, col, pft, num_soilc, filter_soilc, PlantMicKinetics_vars)
+
   end associate
   end subroutine ALMEnterOutLoopBGC
 
