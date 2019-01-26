@@ -85,9 +85,7 @@ module v1ecaBGCReactionsType
     procedure :: init_iP_prof
     procedure, private :: set_bgc_forc
     procedure, private :: retrieve_output
-    procedure, private :: rm_ext_output
     procedure, private :: precision_filter
-    procedure, private :: calc_phosphorus_weathering
   end type v1eca_bgc_reaction_type
 
   interface v1eca_bgc_reaction_type
@@ -179,136 +177,10 @@ contains
   type(tracerstate_type)                  , intent(inout) :: tracerstate_vars
   integer :: kk, c, j, c_l
   real(r8):: latacc
-  associate(                                                           &
-   tracer_conc_mobile_col  => tracerstate_vars%tracer_conc_mobile_col, &
-   tracer_conc_frozen_col  => tracerstate_vars%tracer_conc_frozen_col, &
-   scalaravg_col           => biophysforc%scalaravg_col              , &
-   lat                     => biophysforc%lat                        , &
-   nelm                    => this%v1eca_bgc_index%nelms            , &
-   c_loc                   => this%v1eca_bgc_index%c_loc            , &
-   n_loc                   => this%v1eca_bgc_index%n_loc            , &
-   p_loc                   => this%v1eca_bgc_index%p_loc            , &
-   c13_loc                 => this%v1eca_bgc_index%c13_loc          , &
-   c14_loc                 => this%v1eca_bgc_index%c14_loc          , &
-   move_scalar             => tracers%move_scalar                      &
-  )
 
-  c_l=1
-  latacc=calc_latacc(lat(c_l))
-  if(betr_spinup_state/=0)then
-    move_scalar(tracers%id_trc_Bm)  = v1eca_para%spinup_factor(7)
-    move_scalar(tracers%id_trc_som) = v1eca_para%spinup_factor(8)*latacc
-    move_scalar(tracers%id_trc_pom)=v1eca_para%spinup_factor(9)  *latacc
-  endif
-
-  if(enter_spinup)then
-    !scale the state variables into the fast space, and provide the scalar to configure
-    !tracers
-
-    do j = lbj, ubj
-      do c = bounds%begc, bounds%endc
-
-        !som1
-        call rescale_tracer_group(c, j, tracers%id_trc_beg_Bm, &
-             tracers%id_trc_end_Bm, nelm, 1._r8/(v1eca_para%spinup_factor(7)))
-
-        call rescale_tracer_group(c, j, tracers%id_trc_beg_som, &
-             tracers%id_trc_end_som, nelm, 1._r8/(v1eca_para%spinup_factor(8)*latacc))
-
-        call rescale_tracer_group(c, j, tracers%id_trc_beg_pom, &
-             tracers%id_trc_end_pom, nelm, 1._r8/(v1eca_para%spinup_factor(9)*latacc))
-      enddo
-    enddo
-  endif
-  if(exit_spinup)then
-    !scale the state variable back to the slow space
-    !call this%init_iP_prof(bounds, lbj, ubj, biophysforc, tracers, tracerstate_vars)
-    do j = lbj, ubj
-      do c = bounds%begc, bounds%endc
-        !som1
-        call rescale_tracer_group(c, j, tracers%id_trc_beg_Bm, &
-             tracers%id_trc_end_Bm, nelm, v1eca_para%spinup_factor(7))
-
-        call rescale_tracer_group(c, j, tracers%id_trc_beg_som, &
-             tracers%id_trc_end_som, nelm, v1eca_para%spinup_factor(8)*latacc)
-
-        call rescale_tracer_group(c, j, tracers%id_trc_beg_pom, &
-             tracers%id_trc_end_pom, nelm, v1eca_para%spinup_factor(9)*latacc)
-
-      enddo
-    enddo
-  endif
-
-  end associate
-  contains
-    subroutine rescale_tracer_group(c, j, ibeg, iend, nelm, scale)
-    implicit none
-    integer , intent(in) :: c,j, ibeg, iend, nelm
-    real(r8), intent(in) :: scale
-
-    integer :: kk
-    associate(                                                 &
-      c_loc        => this%v1eca_bgc_index%c_loc            , &
-      n_loc        => this%v1eca_bgc_index%n_loc            , &
-      p_loc        => this%v1eca_bgc_index%p_loc            , &
-      c13_loc      => this%v1eca_bgc_index%c13_loc          , &
-      c14_loc      => this%v1eca_bgc_index%c14_loc            &
-    )
-
-
-    do kk = ibeg, iend, nelm
-      tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc) = &
-         tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc) &
-         * scale
-
-      tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc) = &
-         tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc) &
-         * scale
-
-      tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc) = &
-         tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc) &
-         * scale
-
-      if(this%use_c13)then
-         tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc) = &
-           tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc) &
-           * scale
-      endif
-      if(this%use_c14)then
-         tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc) = &
-           tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc) &
-           * scale
-      endif
-    enddo
-    end associate
-    end subroutine rescale_tracer_group
+  return
   end subroutine set_bgc_spinup
 
-
-  !------------------------------------------------------------------------
-  subroutine calc_phosphorus_weathering(this, bounds, lbj,ubj,biophysforc)
-  !
-  !compute P weathering from the Hartmann model
-  use BeTR_biogeophysInputType         , only : betr_biogeophys_input_type
-  use GeoChemAlgorithmMod              , only : calc_P_weathering_flux
-  use tracer_varcon                    , only : patomw
-  implicit none
-  ! !ARGUMENTS:
-  class(v1eca_bgc_reaction_type)  , intent(inout)    :: this
-  type(bounds_type)                        , intent(in) :: bounds
-  integer                                  , intent(in) :: lbj, ubj
-  type(betr_biogeophys_input_type)        , intent(inout) :: biophysforc
-  real(r8) :: P_weather_flx(bounds%begc:bounds%endc) ! gP/m2/s
-  integer :: j, c
-
-  call calc_P_weathering_flux(bounds, biophysforc, v1eca_para, P_weather_flx)
-
-  do j = 1, ubj
-    do c = bounds%begc, bounds%endc
-      biophysforc%p31flx%pflx_minp_weathering_po4_vr_col(c,j)=P_weather_flx(c)*biophysforc%pweath_prof_col(c,j)
-    enddo
-  enddo
-  end subroutine calc_phosphorus_weathering
   !----------------------------------------------------------------------
   subroutine init_iP_prof(this, bounds, lbj, ubj, biophysforc, tracers, tracerstate_vars)
   !
@@ -328,19 +200,8 @@ contains
   type(tracerstate_type)                   , intent(inout) :: tracerstate_vars
 
   integer :: c, j
-  do j = lbj, ubj
-    do c = bounds%begc, bounds%endc
-      !set phosphorus
-      tracerstate_vars%tracer_conc_mobile_col(c,j,tracers%id_trc_p_sol) = &
-           (biophysforc%solutionp_vr_col(c,j) + biophysforc%labilep_vr_col(c,j))/patomw
-      !secondary p
-      tracerstate_vars%tracer_conc_mobile_col(c,j,tracers%id_trc_beg_minp) = &
-           biophysforc%secondp_vr_col(c,j)/patomw
-      !occlude p
-      tracerstate_vars%tracer_conc_mobile_col(c,j,tracers%id_trc_end_minp) = &
-           biophysforc%occlp_vr_col(c,j)/patomw
-    enddo
-  enddo
+
+  return
   end subroutine init_iP_prof
   !----------------------------------------------------------------------
   subroutine set_kinetics_par(this, lbj, ubj, nactpft, plantNutkinetics, tracers, tracercoeff_vars)
@@ -1289,9 +1150,6 @@ contains
     call betr_status%reset()
     SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__),betr_status)
 
-    call this%calc_phosphorus_weathering(bounds, 1,ubj,biophysforc)
-    if(betrtracer_vars%debug)call this%debug_info(bounds, num_soilc, filter_soilc, col%dz(bounds%begc:bounds%endc,bounds%lbj:bounds%ubj),&
-        betrtracer_vars, tracerstate_vars,  'before bgcreact', betr_status)
 
     nstates = this%v1eca_bgc_index%nstvars
     allocate(ystates0(nstates))
@@ -1312,25 +1170,20 @@ contains
         c = filter_soilc(fc)
         if(j<jtops(c))cycle
         is_surflit=(j<=0)
-        this%v1eca_forc(c,j)%debug=betrtracer_vars%debug
-        this%v1eca(c,j)%bgc_on=.not. betrtracer_vars%debug
 
         if(this%v1eca_forc(c,j)%debug)print*,'runbgc',j
         !temperature adaptation
         call this%v1eca(c,j)%runbgc(is_surflit, dtime, this%v1eca_forc(c,j),nstates, &
             ystates0, ystatesf, betr_status)
+
         if(betr_status%check_status())then
           write(laystr,'(I2.2)')j
           betr_status%msg=trim(betr_status%msg)//' lay '//trim(laystr)
           return
         endif
-!        if(.not. betrtracer_vars%debug)then
-          !apply loss through fire,
-          call this%rm_ext_output(c, j, dtime, nstates, ystatesf, this%v1eca_bgc_index,&
-             this%v1eca_forc(c,j), biogeo_flux)
-!        endif
+
         call this%precision_filter(nstates, ystatesf)
-        this%v1eca_bgc_index%debug=betrtracer_vars%debug
+
         call this%retrieve_output(c, j, nstates, ystates0, ystatesf, dtime, betrtracer_vars, tracerflux_vars,&
            tracerstate_vars, plant_soilbgc, biogeo_flux)
 
@@ -1349,135 +1202,7 @@ contains
     deallocate(ystates0)
     deallocate(ystatesf)
 
-    if(betrtracer_vars%debug)then
-      select type(plant_soilbgc)
-      type is(v1eca_plant_soilbgc_type)
-        write(*,*)'sminn act plant uptake',plant_soilbgc%plant_minn_active_yield_flx_col(bounds%begc:bounds%endc)
-        write(*,*)'sminp act plant uptake',plant_soilbgc%plant_minp_active_yield_flx_col(bounds%begc:bounds%endc)
-      end select
-!      call this%debug_info(bounds, num_soilc, filter_soilc, col%dz(bounds%begc:bounds%endc,bounds%lbj:bounds%ubj),&
-!        betrtracer_vars, tracerstate_vars,  'after bgcreact',betr_status)
-    endif
   end subroutine calc_bgc_reaction
-
-  !--------------------------------------------------------------------
-  subroutine rm_ext_output(this, c, j, dtime, nstates, ystatesf, v1eca_bgc_index, v1eca_forc, biogeo_flux)
-  !
-  ! DESCRIPTION
-  ! apply om loss through fire
-
-  use v1ecaBGCIndexType       , only : v1eca_bgc_index_type
-  use JarBgcForcType            , only : JarBGC_forc_type
-  use tracer_varcon             , only : catomw, natomw, patomw, c13atomw, c14atomw
-  use BeTR_biogeoFluxType       , only : betr_biogeo_flux_type
-  implicit none
-  class(v1eca_bgc_reaction_type) , intent(inout) :: this
-  integer                     , intent(in) :: c, j
-  real(r8)                    , intent(in) :: dtime
-  integer                     , intent(in) :: nstates
-  real(r8)                    , intent(inout):: ystatesf(1:nstates)
-  type(v1eca_bgc_index_type) , intent(in) :: v1eca_bgc_index
-  type(JarBGC_forc_type)      , intent(in) :: v1eca_forc
-  type(betr_biogeo_flux_type) , intent(inout) :: biogeo_flux
-  integer :: kc, kn, kp, jj, kc13, kc14
-  real(r8):: flit_loss, fcwd_loss
-  integer :: jx
-
-  integer :: loc_indx(3)
-  associate(                         &
-    lit1 =>  v1eca_bgc_index%lit1 , &
-    lit2 =>  v1eca_bgc_index%lit2 , &
-    lit3 =>  v1eca_bgc_index%lit3 , &
-    cwd =>  v1eca_bgc_index%cwd   , &
-    lwd =>  v1eca_bgc_index%lwd   , &
-    fwd =>  v1eca_bgc_index%fwd   , &
-    c13_loc=>  v1eca_bgc_index%c13_loc,&
-    c14_loc=>  v1eca_bgc_index%c14_loc,&
-    c_loc=>  v1eca_bgc_index%c_loc,&
-    n_loc=>  v1eca_bgc_index%n_loc,&
-    p_loc=>  v1eca_bgc_index%p_loc,&
-    som1 =>  v1eca_bgc_index%som1 , &
-    som2 =>  v1eca_bgc_index%som2 , &
-    som3 =>  v1eca_bgc_index%som3 , &
-    nelms => v1eca_bgc_index%nelms, &
-    frac_loss_lit_to_fire => v1eca_forc%frac_loss_lit_to_fire, &
-    frac_loss_cwd_to_fire => v1eca_forc%frac_loss_cwd_to_fire, &
-    fire_decomp_c12loss_vr_col => biogeo_flux%c12flux_vars%fire_decomp_closs_vr_col, &
-    fire_decomp_c13loss_vr_col => biogeo_flux%c13flux_vars%fire_decomp_closs_vr_col, &
-    fire_decomp_c14loss_vr_col => biogeo_flux%c14flux_vars%fire_decomp_closs_vr_col, &
-    fire_decomp_nloss_vr_col => biogeo_flux%n14flux_vars%fire_decomp_nloss_vr_col, &
-    fire_decomp_ploss_vr_col => biogeo_flux%p31flux_vars%fire_decomp_ploss_vr_col  &
-  )
-
-  flit_loss = 1._r8 - exp(-frac_loss_lit_to_fire*dtime)
-  fcwd_loss = 1._r8 - exp(-frac_loss_cwd_to_fire*dtime)
-
-  loc_indx=(/lit1,lit2,lit3/)
-
-  do jx = 1, 3
-    jj = loc_indx(jx)
-    kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
-    fire_decomp_c12loss_vr_col(c,j) = fire_decomp_c12loss_vr_col(c,j) + &
-       ystatesf(kc) * flit_loss * catomw/dtime
-    ystatesf(kc) = ystatesf(kc) * (1._r8-flit_loss)
-
-    fire_decomp_nloss_vr_col(c,j) = fire_decomp_nloss_vr_col(c,j) + &
-      ystatesf(kn) * flit_loss*natomw/dtime
-    ystatesf(kn) = ystatesf(kn) * (1._r8-flit_loss)
-
-    fire_decomp_ploss_vr_col(c,j) = fire_decomp_ploss_vr_col(c,j) + &
-      ystatesf(kp) * flit_loss*patomw/dtime
-    ystatesf(kp) =ystatesf(kp) * (1._r8-flit_loss)
-
-    if(this%use_c13)then
-      kc13=(jj-1)*nelms+c13_loc
-      fire_decomp_c13loss_vr_col(c,j) = fire_decomp_c13loss_vr_col(c,j) + &
-       ystatesf(kc13) * flit_loss * c13atomw/dtime
-      ystatesf(kc13) = ystatesf(kc13) * (1._r8-flit_loss)
-    endif
-
-    if(this%use_c14)then
-      kc14=(jj-1)*nelms+c14_loc
-      fire_decomp_c14loss_vr_col(c,j) = fire_decomp_c14loss_vr_col(c,j) + &
-        ystatesf(kc14) * flit_loss * c14atomw/dtime
-      ystatesf(kc14) = ystatesf(kc14) * (1._r8-flit_loss)
-    endif
-  enddo
-
-
-  loc_indx=(/cwd, lwd, fwd/)
-  do jx = 1, 3
-    jj = loc_indx(jx)
-    kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
-    fire_decomp_c12loss_vr_col(c,j) = fire_decomp_c12loss_vr_col(c,j) + &
-       ystatesf(kc) * fcwd_loss * catomw/dtime
-    ystatesf(kc) = ystatesf(kc) * (1._r8-fcwd_loss)
-
-    fire_decomp_nloss_vr_col(c,j) = fire_decomp_nloss_vr_col(c,j) + &
-      ystatesf(kn) * fcwd_loss*natomw/dtime
-    ystatesf(kn) = ystatesf(kn) * (1._r8-fcwd_loss)
-
-    fire_decomp_ploss_vr_col(c,j) = fire_decomp_ploss_vr_col(c,j) + &
-      ystatesf(kp) * fcwd_loss*patomw/dtime
-    ystatesf(kp) =ystatesf(kp) * (1._r8-fcwd_loss)
-
-    if(this%use_c13)then
-      kc13=(jj-1)*nelms+c13_loc
-      fire_decomp_c13loss_vr_col(c,j) = fire_decomp_c13loss_vr_col(c,j) + &
-       ystatesf(kc13) * fcwd_loss * c13atomw/dtime
-      ystatesf(kc13) = ystatesf(kc13) * (1._r8-fcwd_loss)
-    endif
-
-    if(this%use_c14)then
-      kc14=(jj-1)*nelms+c14_loc
-      fire_decomp_c14loss_vr_col(c,j) = fire_decomp_c14loss_vr_col(c,j) + &
-        ystatesf(kc14) * fcwd_loss * c14atomw/dtime
-      ystatesf(kc14) = ystatesf(kc14) * (1._r8-fcwd_loss)
-    endif
-  enddo
-
-  end associate
-  end subroutine rm_ext_output
 
   !-------------------------------------------------------------------------------
   subroutine do_tracer_equilibration(this, bounds, lbj, ubj, jtops, num_soilc, filter_soilc, &

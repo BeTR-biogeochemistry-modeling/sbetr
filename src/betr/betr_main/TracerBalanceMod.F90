@@ -81,7 +81,7 @@ module TracerBalanceMod
       !
       ! !USES:
 
-      use betr_ctrl       , only : iulog  => biulog, do_betr_output
+      use betr_ctrl       , only : iulog  => biulog, do_betr_output, bgc_type
       use betr_varcon     , only : namec  => bnamec
       use tracer_varcon   , only : catomw,natomw
       use BeTR_TimeMod    , only : betr_time_type
@@ -121,6 +121,7 @@ module TracerBalanceMod
            tracer_flx_netpro         => tracerflux_vars%tracer_flx_netpro_col             , &
            tracer_flx_netphyloss     => tracerflux_vars%tracer_flx_netphyloss_col         , &
            is_mobile                 => betrtracer_vars%is_mobile                         , &
+           is_volatile               => betrtracer_vars%is_volatile                       , &
            errtracer                 => tracerstate_vars%errtracer_col                    , &
            ngwmobile_tracers         => betrtracer_vars%ngwmobile_tracers                 , &
            ntracers                  => betrtracer_vars%ntracers                            &
@@ -133,29 +134,24 @@ module TracerBalanceMod
 
         dtime = betr_time%get_step_size()
 
+
         do fc = 1, numf
            c = filter(fc)
            !summarize the fluxes
            call tracerflux_vars%flux_summary(col, betr_time, c, betrtracer_vars,betr_status)
+           call tracerflux_vars%Temporal_average(c,dtime)
            if(betr_status%check_status())return
            do kk = 1, ntracers
+              !type1_bgc, only check for volatile tracers
+              if(index(bgc_type,'type1_bgc')/=0 .and. .not. is_volatile(kk))cycle
               errtracer(c,kk) = beg_tracer_molarmass(c,kk)-end_tracer_molarmass(c,kk)  &
-                   + tracer_flx_netpro(c,kk)-tracer_flx_netphyloss(c,kk)
+                   + (tracer_flx_netpro(c,kk)-tracer_flx_netphyloss(c,kk))*dtime
               if(abs(errtracer(c,kk))<err_min)then
                  err_rel=1.e-4_r8
               else
                  err_rel = errtracer(c,kk)/max(abs(beg_tracer_molarmass(c,kk)),abs(end_tracer_molarmass(c,kk)))
               endif
-!              if((kk == betrtracer_vars%id_trc_n2) .and. ldebug)then
-!                  write(*,*)'err=',errtracer(c,kk), ' col=',c
-!                  write(*,*)'nstep=', betr_time%get_nstep()
-!                  write(*,*)'netpro=',tracer_flx_netpro(c,kk)*natomw
-!                  write(*,*)'netphyloss=',tracer_flx_netphyloss(c,kk)*natomw
-!                  write(*,*)'begm=',beg_tracer_molarmass(c,kk)*natomw
-!                  write(*,*)'endm=',end_tracer_molarmass(c,kk)*natomw
-!                  call tracerflux_vars%flux_display(c,kk,betrtracer_vars, msg1)
-!                  write(*,*)trim(msg1)
-!               endif
+
               if(abs(err_rel)>err_min_rel .and. do_betr_output)then
                  tracername=betrtracer_vars%get_tracername(kk)
                  write(msg,*)'error exceeds the tolerance for tracer '//trim(tracername), &
@@ -172,8 +168,6 @@ module TracerBalanceMod
                  return
               endif
            enddo
-
-           call tracerflux_vars%Temporal_average(c,dtime)
         enddo
 
       end associate
@@ -192,7 +186,8 @@ module TracerBalanceMod
       use tracerstatetype , only : tracerstate_type
       use tracer_varcon   , only : nlevtrc_soil  => betr_nlevtrc_soil
       use BetrStatusType  , only : betr_status_type
-      use betr_columnType  , only : betr_column_type
+      use betr_columnType , only : betr_column_type
+      use betr_ctrl       , only : bgc_type
       implicit none
       ! !ARGUMENTS:
       type(bounds_type)       , intent(in)    :: bounds
@@ -221,10 +216,12 @@ module TracerBalanceMod
            ntracers                  => betrtracer_vars%ntracers                          , &
            is_adsorb                 => betrtracer_vars%is_adsorb                         , &
            adsorbid                  => betrtracer_vars%adsorbid                          , &
+           is_volatile               => betrtracer_vars%is_volatile                       , &
            is_frozen                 => betrtracer_vars%is_frozen                         , &
            frozenid                  => betrtracer_vars%frozenid                            &
            )
         do jj = 1,   ntracers
+           if(index(bgc_type,'type1_bgc')/=0 .and. .not. is_volatile(jj))cycle
            do fc = 1, numf
               c = filter(fc)
 
