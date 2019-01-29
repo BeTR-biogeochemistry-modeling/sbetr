@@ -36,10 +36,6 @@ implicit none
     real(r8) :: rf_s1s2b_bgc(2)
     real(r8) :: cwd_fcel
     real(r8) :: cwd_flig
-    real(r8) :: lwd_fcel
-    real(r8) :: lwd_flig
-    real(r8) :: fwd_fcel
-    real(r8) :: fwd_flig
     real(r8) :: lit_flig
     real(r8) :: k_decay_lit1(2)
     real(r8) :: k_decay_lit2(2)
@@ -48,8 +44,6 @@ implicit none
     real(r8) :: k_decay_som2
     real(r8) :: k_decay_som3
     real(r8) :: k_decay_cwd  !coarse root
-    real(r8) :: k_decay_lwd  !large wood
-    real(r8) :: k_decay_fwd  !fine branch wood
 
     logical  :: use_c13
     logical  :: use_c14
@@ -124,10 +118,6 @@ contains
   this%rf_s1s2b_bgc   = biogeo_con%rf_s1s2b_bgc
   this%cwd_fcel   = biogeo_con%cwd_fcel_bgc
   this%cwd_flig   = biogeo_con%cwd_flig_bgc
-  this%lwd_fcel   = biogeo_con%lwd_fcel_bgc
-  this%lwd_flig   = biogeo_con%lwd_flig_bgc
-  this%fwd_fcel   = biogeo_con%fwd_fcel_bgc
-  this%fwd_flig   = biogeo_con%fwd_flig_bgc
 
   this%k_decay_lit1   =  biogeo_con%k_decay_lit1
   this%k_decay_lit2   =  biogeo_con%k_decay_lit2
@@ -136,15 +126,11 @@ contains
   this%k_decay_som2   =  biogeo_con%k_decay_som2
   this%k_decay_som3   =  biogeo_con%k_decay_som3
   this%k_decay_cwd    =  biogeo_con%k_decay_cwd
-  this%k_decay_lwd    =  biogeo_con%k_decay_lwd
-  this%k_decay_fwd    =  biogeo_con%k_decay_fwd
 
   this%def_cn(v1eca_bgc_index%lit1) = biogeo_con%init_cn_met * natomw/catomw;
   this%def_cn(v1eca_bgc_index%lit2) = biogeo_con%init_cn_cel * natomw/catomw
   this%def_cn(v1eca_bgc_index%lit3) = biogeo_con%init_cn_lig * natomw/catomw
   this%def_cn(v1eca_bgc_index%cwd)  = biogeo_con%init_cn_cwd * natomw/catomw
-  this%def_cn(v1eca_bgc_index%lwd)  = biogeo_con%init_cn_lwd * natomw/catomw
-  this%def_cn(v1eca_bgc_index%fwd)  = biogeo_con%init_cn_fwd * natomw/catomw
 
   this%def_cn(v1eca_bgc_index%som1) = biogeo_con%init_cn_som1 * natomw/catomw
   this%def_cn(v1eca_bgc_index%som2) = biogeo_con%init_cn_som2 * natomw/catomw
@@ -154,8 +140,6 @@ contains
   this%def_cp(v1eca_bgc_index%lit2) = biogeo_con%init_cp_cel * patomw/catomw
   this%def_cp(v1eca_bgc_index%lit3) = biogeo_con%init_cp_lig * patomw/catomw
   this%def_cp(v1eca_bgc_index%cwd)  = biogeo_con%init_cp_cwd * patomw/catomw
-  this%def_cp(v1eca_bgc_index%lwd)  = biogeo_con%init_cp_lwd * patomw/catomw
-  this%def_cp(v1eca_bgc_index%fwd)  = biogeo_con%init_cp_fwd * patomw/catomw
 
   this%def_cp(v1eca_bgc_index%som1) = biogeo_con%init_cp_som1 * patomw/catomw
   this%def_cp(v1eca_bgc_index%som2) = biogeo_con%init_cp_som2 * patomw/catomw
@@ -169,8 +153,7 @@ contains
     this%def_cc13(v1eca_bgc_index%lit2) = biogeo_con%init_cc13_cel
     this%def_cc13(v1eca_bgc_index%lit3) = biogeo_con%init_cc13_lig
     this%def_cc13(v1eca_bgc_index%cwd)  = biogeo_con%init_cc13_cwd
-    this%def_cc13(v1eca_bgc_index%lwd)  = biogeo_con%init_cc13_lwd
-    this%def_cc13(v1eca_bgc_index%fwd)  = biogeo_con%init_cc13_fwd
+
     this%def_cc13(v1eca_bgc_index%som1) = biogeo_con%init_cc13_som1
     this%def_cc13(v1eca_bgc_index%som2) = biogeo_con%init_cc13_som2
     this%def_cc13(v1eca_bgc_index%som3) = biogeo_con%init_cc13_som3
@@ -181,8 +164,6 @@ contains
     this%def_cc14(v1eca_bgc_index%lit2) = biogeo_con%init_cc14_cel
     this%def_cc14(v1eca_bgc_index%lit3) = biogeo_con%init_cc14_lig
     this%def_cc14(v1eca_bgc_index%cwd)  = biogeo_con%init_cc14_cwd
-    this%def_cc14(v1eca_bgc_index%lwd)  = biogeo_con%init_cc14_lwd
-    this%def_cc14(v1eca_bgc_index%fwd)  = biogeo_con%init_cc14_fwd
     this%def_cc14(v1eca_bgc_index%som1) = biogeo_con%init_cc14_som1
     this%def_cc14(v1eca_bgc_index%som2) = biogeo_con%init_cc14_som2
     this%def_cc14(v1eca_bgc_index%som3) = biogeo_con%init_cc14_som3
@@ -285,8 +266,7 @@ contains
     som2      => v1eca_bgc_index%som2                       , & !
     som3      => v1eca_bgc_index%som3                       , & !
     cwd       => v1eca_bgc_index%cwd                        , & !
-    lwd       => v1eca_bgc_index%lwd                        , & !
-    fwd       => v1eca_bgc_index%fwd                        , & !
+
     c_loc     => v1eca_bgc_index%c_loc                      , & !
     n_loc     => v1eca_bgc_index%n_loc                      , & !
     p_loc     => v1eca_bgc_index%p_loc                      , & !
@@ -309,14 +289,9 @@ contains
     som2_dek_reac => v1eca_bgc_index%som2_dek_reac          , &
     som3_dek_reac => v1eca_bgc_index%som3_dek_reac          , &
     cwd_dek_reac => v1eca_bgc_index%cwd_dek_reac            , &
-    lwd_dek_reac => v1eca_bgc_index%lwd_dek_reac            , &
-    fwd_dek_reac => v1eca_bgc_index%fwd_dek_reac            , &
+
     cwd_fcel     => this%cwd_fcel                            , &
     cwd_flig     => this%cwd_flig                            , &
-    lwd_fcel     => this%lwd_fcel                            , &
-    lwd_flig     => this%lwd_flig                            , &
-    fwd_fcel     => this%fwd_fcel                            , &
-    fwd_flig     => this%fwd_flig                            , &
     rf_l2s1_bgc  => this%rf_l2s1_bgc                         , &
     rf_l3s2_bgc  => this%rf_l3s2_bgc                         , &
     rf_s2s1_bgc  => this%rf_s2s1_bgc                         , &
@@ -600,28 +575,6 @@ contains
 
     call wood_decomp_cascade(cwd, reac, f1, f2)
 
-    !---------------------------------------------------------------------------------
-    !reaction 8, the partition lwd into som1 and som2
-    reac = lwd_dek_reac
-    !lwd + o2 -> (1-flig)((1-rf_l2s1_bgc)*SOM1+rf_l2s1_bgc*CO2) + flig*((1-rf_l3s2_bgc)*SOM2+rf_l3s2_bgc*CO2)
-    !    + (1/cn_ratios(cwd)-f1/cn_ratios(som1)-f2/cn_ratios(som2))
-    !    + (1/cp_ratios(cwd)-f1/cp_ratios(som1)-f2/cp_ratios(som2))
-    f1 = lwd_fcel*(1-rf_l2s1_bgc(lay))
-    f2 = (1._r8-lwd_fcel)*(1-rf_l3s2_bgc)
-
-    call wood_decomp_cascade(lwd, reac, f1, f2)
-
-    !---------------------------------------------------------------------------------
-    !reaction 9, the partition fwd into som1 and som2
-    reac = fwd_dek_reac
-    !fwd + o2 -> (1-flig)((1-rf_l2s1_bgc)*SOM1+rf_l2s1_bgc*CO2) + flig*((1-rf_l3s2_bgc)*SOM2+rf_l3s2_bgc*CO2)
-    !    + (1/cn_ratios(cwd)-f1/cn_ratios(som1)-f2/cn_ratios(som2))
-    !    + (1/cp_ratios(cwd)-f1/cp_ratios(som1)-f2/cp_ratios(som2))
-    f1 = fwd_fcel*(1-rf_l2s1_bgc(lay))
-    f2 = (1._r8-fwd_fcel)*(1-rf_l3s2_bgc)
-
-    call wood_decomp_cascade(fwd, reac, f1, f2)
-
   end associate
   contains
 
@@ -727,17 +680,13 @@ contains
          som2      => v1eca_bgc_index%som2             , & !
          som3      => v1eca_bgc_index%som3             , & !
          cwd       => v1eca_bgc_index%cwd              , & !
-         lwd       => v1eca_bgc_index%lwd              , & !
-         fwd       => v1eca_bgc_index%fwd              , & !
          lit1_dek_reac=> v1eca_bgc_index%lit1_dek_reac , & !
          lit2_dek_reac=> v1eca_bgc_index%lit2_dek_reac , & !
          lit3_dek_reac=> v1eca_bgc_index%lit3_dek_reac , & !
          som1_dek_reac=> v1eca_bgc_index%som1_dek_reac , & !
          som2_dek_reac=> v1eca_bgc_index%som2_dek_reac , & !
          som3_dek_reac=> v1eca_bgc_index%som3_dek_reac , & !
-         cwd_dek_reac=> v1eca_bgc_index%cwd_dek_reac   , & !
-         lwd_dek_reac=> v1eca_bgc_index%lwd_dek_reac   , & !
-         fwd_dek_reac=> v1eca_bgc_index%fwd_dek_reac     & !
+         cwd_dek_reac=> v1eca_bgc_index%cwd_dek_reac     & !
          )
 
     cascade_matrix_hr = 0._r8
@@ -745,8 +694,6 @@ contains
     reac=lit2_dek_reac; cascade_matrix_hr(lit2)=cascade_matrix(lid_co2_hr,reac)
     reac=lit3_dek_reac; cascade_matrix_hr(lit3)=cascade_matrix(lid_co2_hr,reac)
     reac=cwd_dek_reac ; cascade_matrix_hr(cwd) =cascade_matrix(lid_co2_hr,reac)
-    reac=lwd_dek_reac ; cascade_matrix_hr(lwd) =cascade_matrix(lid_co2_hr,reac)
-    reac=fwd_dek_reac ; cascade_matrix_hr(fwd) =cascade_matrix(lid_co2_hr,reac)
     reac=som1_dek_reac; cascade_matrix_hr(som1)=cascade_matrix(lid_co2_hr,reac)
     reac=som2_dek_reac; cascade_matrix_hr(som2)=cascade_matrix(lid_co2_hr,reac)
     reac=som3_dek_reac; cascade_matrix_hr(som3)=cascade_matrix(lid_co2_hr,reac)
@@ -998,9 +945,7 @@ contains
    som1           => v1eca_bgc_index%som1               , & !
    som2           => v1eca_bgc_index%som2               , & !
    som3           => v1eca_bgc_index%som3               , & !
-   cwd            => v1eca_bgc_index%cwd                , & !
-   lwd            => v1eca_bgc_index%lwd                , & !
-   fwd            => v1eca_bgc_index%fwd                  & !
+   cwd            => v1eca_bgc_index%cwd                  & !
   )
   k_decay(lit1) = this%k_decay_lit1(lay) * t_scalar * w_scalar * o_scalar * depth_scalar
   k_decay(lit2) = this%k_decay_lit2(lay) * t_scalar * w_scalar * o_scalar * depth_scalar
@@ -1009,19 +954,12 @@ contains
   k_decay(som2) = this%k_decay_som2 * t_scalar * w_scalar * o_scalar * depth_scalar * latacc
   k_decay(som3) = this%k_decay_som3 * t_scalar * w_scalar * o_scalar * depth_scalar * latacc
   k_decay(cwd)  = this%k_decay_cwd  * t_scalar * w_scalar * o_scalar * depth_scalar
-  k_decay(lwd)  = this%k_decay_lwd  * t_scalar * w_scalar * o_scalar * depth_scalar
-  k_decay(fwd)  = this%k_decay_fwd  * t_scalar * w_scalar * o_scalar * depth_scalar
 
   !impose the ligin effect
-  k_decay(cwd)  = k_decay(cwd) * exp(-3._r8*this%cwd_flig)
-  k_decay(lwd)  = k_decay(lwd) * exp(-3._r8*this%lwd_flig)
-  k_decay(fwd)  = k_decay(fwd) * exp(-3._r8*this%fwd_flig)
-  k_decay(lit2) = k_decay(lit2)* exp(-3._r8*this%lit_flig)
-  k_decay(lit3) = k_decay(lit3)* exp(-3._r8*this%lit_flig)
-!  print*,'lay',lay
-!  print*,'decy',this%k_decay_lit1(lay),this%k_decay_lit2(lay),this%k_decay_lit3(lay),this%k_decay_som1,this%k_decay_som2,this%k_decay_som3
-!  print*,'k_decay',(k_decay(jj),jj=1,ncentpools)
-!  print*,'scalar',t_scalar, w_scalar, o_scalar, depth_scalar
+  !k_decay(cwd)  = k_decay(cwd) * exp(-3._r8*this%cwd_flig)
+  !k_decay(lit2) = k_decay(lit2)* exp(-3._r8*this%lit_flig)
+  !k_decay(lit3) = k_decay(lit3)* exp(-3._r8*this%lit_flig)
+
   end associate
   end subroutine calc_som_decay_k
   !-------------------------------------------------------------------------------
@@ -1062,9 +1000,7 @@ contains
        som1_dek_reac=> v1eca_bgc_index%som1_dek_reac         , & !
        som2_dek_reac=> v1eca_bgc_index%som2_dek_reac         , & !
        som3_dek_reac=> v1eca_bgc_index%som3_dek_reac         , & !
-       cwd_dek_reac=> v1eca_bgc_index%cwd_dek_reac           , & !
-       lwd_dek_reac=> v1eca_bgc_index%lwd_dek_reac           , & !
-       fwd_dek_reac=> v1eca_bgc_index%fwd_dek_reac             & !
+       cwd_dek_reac=> v1eca_bgc_index%cwd_dek_reac             & !
    )
 
   !calculate potential decay rates (mol C / s)
@@ -1074,7 +1010,7 @@ contains
   pot_nn_flx = 0._r8; pot_np_flx = 0._r8
 
   reacs=(/lit1_dek_reac, lit2_dek_reac, lit3_dek_reac, &
-    cwd_dek_reac, lwd_dek_reac, fwd_dek_reac, &
+    cwd_dek_reac,  &
     som1_dek_reac, som2_dek_reac, som3_dek_reac/)
 
   do reac = 1, nom_pools

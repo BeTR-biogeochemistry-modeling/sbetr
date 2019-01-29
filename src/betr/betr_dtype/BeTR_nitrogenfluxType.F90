@@ -2,6 +2,7 @@ module BeTR_nitrogenfluxType
   use bshr_kind_mod  , only : r8 => shr_kind_r8
   use betr_decompMod , only : betr_bounds_type
   use betr_varcon     , only : spval => bspval
+  use betr_ctrl, only : bgc_type
 implicit none
 #include "bshr_alloc.h"
   character(len=*), private, parameter :: mod_filename = &
@@ -27,6 +28,9 @@ implicit none
     real(r8), pointer :: nflx_minn_input_no3_vr_col(:,:)  => null() !mineral no3 input through deposition & fertilization, gN/m3/s
     real(r8), pointer :: nflx_minn_nh4_fix_nomic_vr_col(:,:) => null()    !nitrogen fixation from non-microbe explicit calculation, gN/m3/s
     real(r8), pointer :: nflx_minninput_col(:) => null()
+    real(r8), pointer :: in_decomp_npools_vr_col(:,:,:) => null()
+    real(r8), pointer :: in_sminn_no3_vr_col(:,:) => null()
+    real(r8), pointer :: in_sminn_nh4_vr_col(:,:) => null()
   contains
     procedure, public  :: Init
     procedure, public  :: reset
@@ -57,6 +61,12 @@ implicit none
   begc = bounds%begc ; endc=bounds%endc
   lbj = bounds%lbj   ; ubj=bounds%ubj
 
+  if(index(bgc_type,'type1_bgc')/=0)then
+    SPVAL_ALLOC(this%in_decomp_npools_vr_col(begc:endc,lbj:ubj,1:7))
+    SPVAL_ALLOC(this%in_sminn_no3_vr_col(begc:endc,lbj:ubj))
+    SPVAL_ALLOC(this%in_sminn_nh4_vr_col(begc:endc,lbj:ubj))
+    return
+  endif
   SPVAL_ALLOC(this%nflx_input_litr_met_vr_col(begc:endc,lbj:ubj))
   SPVAL_ALLOC(this%nflx_input_litr_cel_vr_col(begc:endc,lbj:ubj)) ! cellulose litter input
   SPVAL_ALLOC(this%nflx_input_litr_lig_vr_col(begc:endc,lbj:ubj)) ! lignin litter input
@@ -76,6 +86,8 @@ implicit none
   SPVAL_ALLOC(this%nflx_minn_input_no3_vr_col(begc:endc,lbj:ubj)) !mineral no3 input through deposition & fertilization
   SPVAL_ALLOC(this%nflx_minn_nh4_fix_nomic_vr_col(begc:endc,lbj:ubj))   !nh4 from fixation
   SPVAL_ALLOC(this%nflx_minninput_col(begc:endc))
+
+
   end subroutine InitAllocate
 
 
@@ -85,6 +97,9 @@ implicit none
   class(betr_nitrogenflux_type)  :: this
   real(r8), intent(in) :: value_column
 
+  if(index(bgc_type,'type1_bgc')/=0)then
+    return
+  endif
   this%nflx_input_litr_met_vr_col(:,:) = value_column
   this%nflx_input_litr_cel_vr_col(:,:) = value_column
   this%nflx_input_litr_lig_vr_col(:,:)= value_column
@@ -116,6 +131,9 @@ implicit none
   real(r8), intent(in) :: dz(bounds%begc:bounds%endc,lbj:ubj)
   integer :: j, c
 
+  if(index(bgc_type,'type1_bgc')/=0)then
+    return
+  endif
   this%nflx_input_col(:) = 0._r8
   this%nflx_minninput_col(:) =0._r8
   do j = lbj, ubj

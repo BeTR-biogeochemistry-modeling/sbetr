@@ -60,7 +60,6 @@ module v1ecaBGCType
     real(r8)                             :: msurf_minp
     real(r8), private                    :: c14decay_const
     real(r8), private                    :: c14decay_som_const
-    real(r8), private                    :: c14decay_dom_const
     real(r8), private                    :: c14decay_pom_const
     real(r8), private                    :: c14decay_Bm_const
     logical , private                    :: use_c13
@@ -218,7 +217,6 @@ contains
     if(this%use_c14)then
       this%c14decay_const=biogeo_con%c14decay_const
       this%c14decay_som_const=biogeo_con%c14decay_som_const
-      this%c14decay_dom_const=biogeo_con%c14decay_dom_const
       this%c14decay_pom_const=biogeo_con%c14decay_pom_const
       this%c14decay_Bm_const=biogeo_con%c14decay_Bm_const
     endif
@@ -344,8 +342,6 @@ contains
     som2      => v1eca_bgc_index%som2                       , & !
     som3      => v1eca_bgc_index%som3                       , & !
     cwd       => v1eca_bgc_index%cwd                        , & !
-    lwd       => v1eca_bgc_index%lwd                        , & !
-    fwd       => v1eca_bgc_index%fwd                        , & !
     c_loc     => v1eca_bgc_index%c_loc                      , & !
     n_loc     => v1eca_bgc_index%n_loc                      , & !
     p_loc     => v1eca_bgc_index%p_loc                      , & !
@@ -368,8 +364,6 @@ contains
     som2_dek_reac => v1eca_bgc_index%som2_dek_reac          , &
     som3_dek_reac => v1eca_bgc_index%som3_dek_reac          , &
     cwd_dek_reac => v1eca_bgc_index%cwd_dek_reac            , &
-    lwd_dek_reac => v1eca_bgc_index%lwd_dek_reac            , &
-    fwd_dek_reac => v1eca_bgc_index%fwd_dek_reac            , &
     lid_n2   => v1eca_bgc_index%lid_n2                      , & !
     lid_n2o   => v1eca_bgc_index%lid_n2o                    , & !
     lid_no3   => v1eca_bgc_index%lid_no3                    , & !
@@ -441,24 +435,6 @@ contains
   resp = cascade_matrix((cwd-1)*nelms + p_loc, reac) + cascade_matrix((som1-1)*nelms + p_loc, reac) + &
      cascade_matrix((som2-1)*nelms + p_loc, reac) + cascade_matrix(lid_minp_soluble, reac)
   write(*,'(A,3(X,E20.10))')'cwd resc, resn, resp =',resc,resn, resp
-
-  reac = lwd_dek_reac
-  resc = cascade_matrix((lwd-1)*nelms + c_loc, reac) + cascade_matrix((som1-1)*nelms + c_loc, reac) + &
-     cascade_matrix((som2-1)*nelms + c_loc, reac) + cascade_matrix(lid_co2, reac)
-  resn = cascade_matrix((lwd-1)*nelms + n_loc, reac) + cascade_matrix((som1-1)*nelms + n_loc, reac) + &
-     cascade_matrix((som2-1)*nelms + n_loc, reac) + cascade_matrix(lid_nh4, reac)
-  resp = cascade_matrix((lwd-1)*nelms + p_loc, reac) + cascade_matrix((som1-1)*nelms + p_loc, reac) + &
-     cascade_matrix((som2-1)*nelms + p_loc, reac) + cascade_matrix(lid_minp_soluble, reac)
-  write(*,'(A,3(X,E20.10))')'lwd resc, resn, resp =',resc,resn, resp
-
-  reac = fwd_dek_reac
-  resc = cascade_matrix((fwd-1)*nelms + c_loc, reac) + cascade_matrix((som1-1)*nelms + c_loc, reac) + &
-     cascade_matrix((som2-1)*nelms + c_loc, reac) + cascade_matrix(lid_co2, reac)
-  resn = cascade_matrix((fwd-1)*nelms + n_loc, reac) + cascade_matrix((som1-1)*nelms + n_loc, reac) + &
-     cascade_matrix((som2-1)*nelms + n_loc, reac) + cascade_matrix(lid_nh4, reac)
-  resp = cascade_matrix((fwd-1)*nelms + p_loc, reac) + cascade_matrix((som1-1)*nelms + p_loc, reac) + &
-     cascade_matrix((som2-1)*nelms + p_loc, reac) + cascade_matrix(lid_minp_soluble, reac)
-  write(*,'(A,3(X,E20.10))')'fwd resc, resn, resp =',resc,resn, resp
 
   reac = lid_nh4_nit_reac
   resn = cascade_matrix(lid_nh4, reac) + cascade_matrix(lid_no3, reac) + 2._r8 * cascade_matrix(lid_n2o, reac)
@@ -619,13 +595,11 @@ contains
     litr_beg =>  v1eca_bgc_index%litr_beg, &
     Bm_beg =>  v1eca_bgc_index%Bm_beg    , &
     som_beg =>  v1eca_bgc_index%som_beg  , &
-    dom_beg =>  v1eca_bgc_index%dom_beg  , &
     pom_beg =>  v1eca_bgc_index%pom_beg  , &
     wood_beg =>  v1eca_bgc_index%wood_beg, &
     litr_end =>  v1eca_bgc_index%litr_end, &
     som_end =>  v1eca_bgc_index%som_end  , &
     Bm_end =>  v1eca_bgc_index%Bm_end    , &
-    dom_end =>  v1eca_bgc_index%dom_end  , &
     pom_end => v1eca_bgc_index%pom_end   , &
     wood_end =>  v1eca_bgc_index%wood_end, &
     c14_loc=>  v1eca_bgc_index%c14_loc   , &
@@ -638,11 +612,9 @@ contains
 
   call somc14_decay(som_beg, som_end, nelms, c14_loc, this%c14decay_som_const)
 
-  call somc14_decay(dom_beg, dom_end, nelms, c14_loc, this%c14decay_dom_const)
-
   call somc14_decay(pom_beg, pom_end, nelms, c14_loc, this%c14decay_pom_const)
 
-  call somc14_decay( Bm_beg, Bm_end, nelms, c14_loc, this%c14decay_Bm_const)
+  call somc14_decay(Bm_beg, Bm_end, nelms, c14_loc, this%c14decay_Bm_const)
 
   end associate
   contains
@@ -704,7 +676,6 @@ contains
          lid_c14_co2_paere => v1eca_bgc_index%lid_c14_co2_paere          , & !
          lid_minp_soluble => v1eca_bgc_index%lid_minp_soluble            , & !
          lid_minp_secondary => v1eca_bgc_index%lid_minp_secondary        , & !
-         lid_minp_occlude =>  v1eca_bgc_index%lid_minp_occlude           , & !
          lid_plant_minp => v1eca_bgc_index%lid_plant_minp                , & !
          lid_minp_immob => v1eca_bgc_index%lid_minp_immob                , & !
 
@@ -714,7 +685,6 @@ contains
          lid_plant_minn_no3_up_reac=> v1eca_bgc_index%lid_plant_minn_no3_up_reac , & !
          lid_plant_minn_nh4  => v1eca_bgc_index%lid_plant_minn_nh4       , &
          lid_plant_minn_no3  => v1eca_bgc_index%lid_plant_minn_no3       , &
-         lid_minp_secondary_to_sol_occ_reac => v1eca_bgc_index%lid_minp_secondary_to_sol_occ_reac    , & !
          lid_minp_soluble_to_secp_reac => v1eca_bgc_index%lid_minp_soluble_to_secp_reac      , & !
          lid_plant_minp_up_reac => v1eca_bgc_index%lid_plant_minp_up_reac, & !
 
@@ -739,14 +709,6 @@ contains
     reac = lid_minp_soluble_to_secp_reac
     cascade_matrix(lid_minp_soluble,  reac) = -1._r8
     cascade_matrix(lid_minp_secondary, reac) = 1._r8
-
-    !----------------------------------------------------------------------
-    !reaction 11, inorganic P non-equilibrium desorption
-    ! p_secondary -> P_soluble + P_occlude
-    reac = lid_minp_secondary_to_sol_occ_reac
-    cascade_matrix(lid_minp_soluble,  reac) = this%frac_p_sec_to_sol(this%soilorder)
-    cascade_matrix(lid_minp_occlude  ,  reac) = 1._r8 - this%frac_p_sec_to_sol(this%soilorder)
-    cascade_matrix(lid_minp_secondary, reac) = -1._r8
 
     if(this%plant_ntypes>0)then
       !----------------------------------------------------------------------
@@ -930,18 +892,15 @@ contains
     lit2 =>  v1eca_bgc_index%lit2, &
     lit3 =>  v1eca_bgc_index%lit3, &
     cwd =>   v1eca_bgc_index%cwd, &
-    fwd =>   v1eca_bgc_index%fwd, &
-    lwd =>   v1eca_bgc_index%lwd, &
+
     lid_totinput => v1eca_bgc_index%lid_totinput, &
     litr_beg =>  v1eca_bgc_index%litr_beg, &
     som_beg =>  v1eca_bgc_index%som_beg, &
     Bm_beg  =>  v1eca_bgc_index%Bm_beg, &
-    dom_beg =>  v1eca_bgc_index%dom_beg, &
     pom_beg =>  v1eca_bgc_index%pom_beg, &
     wood_beg =>  v1eca_bgc_index%wood_beg, &
     litr_end =>  v1eca_bgc_index%litr_end, &
     som_end =>  v1eca_bgc_index%som_end, &
-    dom_end =>  v1eca_bgc_index%dom_end, &
     pom_end =>  v1eca_bgc_index%pom_end, &
     Bm_end =>  v1eca_bgc_index%Bm_end, &
     wood_end =>  v1eca_bgc_index%wood_end, &
@@ -983,16 +942,6 @@ contains
     bgc_forc%cflx_input_litr_cwd_c13, bgc_forc%cflx_input_litr_cwd_c14, &
     c_inf_loc, n_inf_loc, p_inf_loc)
 
-  call add_som_pool(fwd, bgc_forc%cflx_input_litr_fwd, &
-    bgc_forc%nflx_input_litr_fwd, bgc_forc%pflx_input_litr_fwd, &
-    bgc_forc%cflx_input_litr_fwd_c13, bgc_forc%cflx_input_litr_fwd_c14, &
-    c_inf_loc, n_inf_loc, p_inf_loc)
-
-  call add_som_pool(lwd, bgc_forc%cflx_input_litr_lwd, &
-    bgc_forc%nflx_input_litr_lwd, bgc_forc%pflx_input_litr_lwd, &
-    bgc_forc%cflx_input_litr_lwd_c13, bgc_forc%cflx_input_litr_lwd_c14, &
-    c_inf_loc, n_inf_loc, p_inf_loc)
-
    if(present(c_inf))c_inf=c_inf_loc
    if(present(n_inf))n_inf=n_inf_loc
    if(present(p_inf))p_inf=p_inf_loc
@@ -1000,8 +949,7 @@ contains
    if(this%batch_mode)then
      this%ystates1(lid_totinput) = this%ystates1(lid_totinput) + dtime* &
      ( bgc_forc%cflx_input_litr_met +  bgc_forc%cflx_input_litr_cel + &
-       bgc_forc%cflx_input_litr_lig +  bgc_forc%cflx_input_litr_cwd + &
-        bgc_forc%cflx_input_litr_fwd +  bgc_forc%cflx_input_litr_lwd)/catomw
+       bgc_forc%cflx_input_litr_lig +  bgc_forc%cflx_input_litr_cwd)/catomw
    endif
   !*********************************************
   !inorganic substrates
@@ -1039,7 +987,6 @@ contains
   totp = totp + sum_some(Bm_beg, Bm_end, nelms, p_loc)
   totp = totp + sum_some(som_beg, som_end, nelms, p_loc)
   totp = totp + sum_some(pom_beg, pom_end, nelms, p_loc)
-  totp = totp + sum_some(dom_beg, dom_end, nelms, p_loc)
 
   pmin_frac= exp(-bgc_forc%biochem_pmin*dtime)
   pmin_cleave=0._r8
@@ -1048,7 +995,6 @@ contains
   call somp_decay(Bm_beg, Bm_end, nelms, p_loc, pmin_frac, pmin_cleave)
   call somp_decay(som_beg, som_end, nelms, p_loc, pmin_frac, pmin_cleave)
   call somp_decay(pom_beg, pom_end, nelms, p_loc, pmin_frac, pmin_cleave)
-  call somp_decay(dom_beg, dom_end, nelms, p_loc, pmin_frac, pmin_cleave)
 
   this%ystates1(lid_minp_soluble) =this%ystates1(lid_minp_soluble) + pmin_cleave
 
@@ -1216,11 +1162,10 @@ contains
     lid_plant_minn_nh4_up_reac => this%v1eca_bgc_index%lid_plant_minn_nh4_up_reac              , &
     lid_plant_minn_no3_up_reac => this%v1eca_bgc_index%lid_plant_minn_no3_up_reac              , &
     lid_plant_minp_up_reac => this%v1eca_bgc_index%lid_plant_minp_up_reac                      , &
-    lid_minp_secondary_to_sol_occ_reac=> this%v1eca_bgc_index%lid_minp_secondary_to_sol_occ_reac, &
     lid_supp_minp => this%v1eca_bgc_index%lid_supp_minp                                         , &
     lid_supp_minn => this%v1eca_bgc_index%lid_supp_minn                                           &
   )
-  
+
   dydt(:) = 0._r8
   rrates(:) = 0._r8
   !calculate reaction rates, because arenchyma transport is
@@ -1277,7 +1222,6 @@ contains
     rrates(lid_plant_minn_nh4_up_reac) = sum(ECA_flx_nh4_plants)     !calculate by ECA competition
     rrates(lid_plant_minp_up_reac) =     sum(ECA_flx_phosphorus_plants) !calculate by ECA competition
   endif
-  rrates(lid_minp_secondary_to_sol_occ_reac)= ystate(lid_minp_secondary) * this%minp_secondary_decay(this%soilorder)
 
   if(this%plant_ntypes==1)then
     do jj = 1, this%plant_ntypes
@@ -1455,8 +1399,7 @@ contains
     lit2 =>  this%v1eca_bgc_index%lit2, &
     lit3 =>  this%v1eca_bgc_index%lit3, &
     cwd =>   this%v1eca_bgc_index%cwd, &
-    lwd =>   this%v1eca_bgc_index%lwd, &
-    fwd =>   this%v1eca_bgc_index%fwd, &
+
     som1 =>  this%v1eca_bgc_index%som1, &
     som2 =>  this%v1eca_bgc_index%som2, &
     som3 =>  this%v1eca_bgc_index%som3, &
@@ -1468,7 +1411,6 @@ contains
     lid_co2_hr => this%v1eca_bgc_index%lid_co2_hr, &
     lid_minp_soluble =>  this%v1eca_bgc_index%lid_minp_soluble,  &
     lid_minp_secondary => this%v1eca_bgc_index%lid_minp_secondary, &
-    lid_minp_occlude => this%v1eca_bgc_index%lid_minp_occlude, &
     lid_plant_minp => this%v1eca_bgc_index%lid_plant_minp  &
   )
   if(present(bstatus)) &
@@ -1483,15 +1425,13 @@ contains
   call sum_omjj(lit2, c_mass, n_mass, p_mass)
   call sum_omjj(lit3, c_mass, n_mass, p_mass)
   call sum_omjj(cwd, c_mass, n_mass, p_mass)
-  call sum_omjj(lwd, c_mass, n_mass, p_mass)
-  call sum_omjj(fwd, c_mass, n_mass, p_mass)
   call sum_omjj(som1, c_mass, n_mass, p_mass)
   call sum_omjj(som2, c_mass, n_mass, p_mass)
   call sum_omjj(som3, c_mass, n_mass, p_mass)
 
   n_mass = n_mass + ystates1(lid_nh4) + ystates1(lid_no3)
 
-  p_mass = p_mass + ystates1(lid_minp_soluble) + ystates1(lid_minp_secondary) + ystates1(lid_minp_occlude)
+  p_mass = p_mass + ystates1(lid_minp_soluble) + ystates1(lid_minp_secondary)
 
   c_mass = c_mass * catomw
   n_mass = n_mass * natomw
@@ -1558,8 +1498,6 @@ contains
     lit2 =>  this%v1eca_bgc_index%lit2, &
     lit3 =>  this%v1eca_bgc_index%lit3, &
     cwd =>   this%v1eca_bgc_index%cwd, &
-    lwd =>   this%v1eca_bgc_index%lwd, &
-    fwd =>   this%v1eca_bgc_index%fwd, &
     som1 =>  this%v1eca_bgc_index%som1, &
     som2 =>  this%v1eca_bgc_index%som2, &
     som3 =>  this%v1eca_bgc_index%som3, &
@@ -1571,7 +1509,6 @@ contains
     lid_co2 => this%v1eca_bgc_index%lid_co2, &
     lid_minp_soluble =>  this%v1eca_bgc_index%lid_minp_soluble,  &
     lid_minp_secondary => this%v1eca_bgc_index%lid_minp_secondary, &
-    lid_minp_occlude => this%v1eca_bgc_index%lid_minp_occlude, &
     lid_plant_minp => this%v1eca_bgc_index%lid_plant_minp, &
     ystates1 => this%ystates1  &
   )
@@ -1590,12 +1527,6 @@ contains
   jj=cwd;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
   c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
 
-  jj=lwd;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
-  c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
-
-  jj=fwd;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
-  c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
-
   jj=som1;kc = (jj-1)*nelms + c_loc;kn = (jj-1)*nelms + n_loc;kp = (jj-1)*nelms + p_loc
   c_mass = c_mass + ystates1(kc);n_mass=n_mass + ystates1(kn); p_mass = p_mass + ystates1(kp)
 
@@ -1608,7 +1539,7 @@ contains
 
   n_mass = n_mass + ystates1(lid_nh4) + ystates1(lid_no3)
 
-  p_mass = p_mass + ystates1(lid_minp_soluble) + ystates1(lid_minp_secondary) + ystates1(lid_minp_occlude)
+  p_mass = p_mass + ystates1(lid_minp_soluble) + ystates1(lid_minp_secondary)
 
   c_mass = c_mass * catomw
   n_mass = n_mass * natomw
@@ -1723,14 +1654,12 @@ contains
     som2       => this%v1eca_bgc_index%som2        , &
     som3       => this%v1eca_bgc_index%som3        , &
     cwd        => this%v1eca_bgc_index%cwd         , &
-    fwd        => this%v1eca_bgc_index%fwd         , &
-    lwd        => this%v1eca_bgc_index%lwd         , &
+
     c_loc      => this%v1eca_bgc_index%c_loc       , & !
     nelms      => this%v1eca_bgc_index%nelms         & !
   )
   ystates(lid_totstore) =ystates((lit1-1)*nelms+c_loc) + ystates((lit2-1)*nelms+c_loc) + &
     ystates((lit3-1)*nelms+c_loc) + ystates((cwd-1)*nelms+c_loc) + &
-    ystates((fwd-1)*nelms+c_loc) + ystates((lwd-1)*nelms+c_loc) + &
     ystates((som1-1)*nelms+c_loc) + ystates((som2-1)*nelms+c_loc) + &
     ystates((som3-1)*nelms+c_loc)
   end associate
@@ -1740,7 +1669,7 @@ contains
   implicit none
   class(v1eca_bgc_type)     , intent(inout) :: this
   print*,'no3',this%v1eca_bgc_index%lid_plant_minn_no3_pft
-  print*,'nh4', this%v1eca_bgc_index%lid_plant_minn_nh4_pft 
+  print*,'nh4', this%v1eca_bgc_index%lid_plant_minn_nh4_pft
 
   end subroutine display_index
 end module v1ecaBGCType

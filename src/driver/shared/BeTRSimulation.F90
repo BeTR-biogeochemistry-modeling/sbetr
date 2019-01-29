@@ -994,8 +994,9 @@ contains
   end subroutine WriteRegressionOutput
 
   !------------------------------------------------------------------------
-  subroutine BeTRSimulationSetBiophysForcing(this, bounds,  col, pft, lbj, ubj, carbonflux_vars, waterstate_vars, &
-    waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
+  subroutine BeTRSimulationSetBiophysForcing(this, bounds,  col, pft, lbj, ubj, &
+    carbonflux_vars, waterstate_vars,  waterflux_vars, temperature_vars, &
+    soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
     chemstate_vars, soilstate_vars)
   !DESCRIPTION
   !pass in biogeophysical variables for running betr

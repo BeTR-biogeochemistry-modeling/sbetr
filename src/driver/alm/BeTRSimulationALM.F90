@@ -561,7 +561,7 @@ contains
 
   !temporary variables
   type(betr_bounds_type) :: betr_bounds
-  integer :: c, fc, j, c_l, begc_l, endc_l
+  integer :: c, fc, j, c_l, begc_l, endc_l, kk
   real(r8) :: fport
   real(r8) :: ndep_prof_loc(1:betr_nlevsoi)
   associate(                                           &
@@ -585,7 +585,28 @@ contains
 
   if(this%do_bgc_type('type1_bgc'))then
     !transfer state variables from elm to betr
-
+    associate(                                                             &
+    c12_decomp_cpools_vr_col =>   carbonstate_vars%decomp_cpools_vr_col   , &
+    decomp_npools_vr_col =>   nitrogenstate_vars%decomp_npools_vr_col    , &
+    decomp_ppools_vr_col =>   phosphorusstate_vars%decomp_ppools_vr_col    , &
+    smin_no3_vr         => nitrogenstate_vars%smin_no3_vr_col         , &
+    smin_nh4_vr         => nitrogenstate_vars%smin_nh4_vr_col         , &
+    solutionp_vr        => phosphorusstate_vars%solutionp_vr_col          &
+    )
+    do j = 1,betr_nlevtrc_soil
+      do c = bounds%begc, bounds%endc
+        if(.not. this%active_col(c))cycle
+        do kk = 1, 7
+          this%biophys_forc(c)%c12flx%in_decomp_cpools_vr_col(c_l,j,kk)=c12_decomp_cpools_vr_col(c,j,kk)
+          this%biophys_forc(c)%n14flx%in_decomp_npools_vr_col(c_l,j,kk)=decomp_npools_vr_col(c,j,kk)
+          this%biophys_forc(c)%p31flx%in_decomp_ppools_vr_col(c_l,j,kk)=decomp_ppools_vr_col(c,j,kk)
+        enddo
+        this%biophys_forc(c)%n14flx%in_sminn_no3_vr_col(c_l,j) = smin_no3_vr(c,j)
+        this%biophys_forc(c)%n14flx%in_sminn_nh4_vr_col(c_l,j) = smin_nh4_vr(c,j)
+        this%biophys_forc(c)%p31flx%in_sminp_vr_col(c_l,j) = solutionp_vr(c,j)
+      enddo
+    enddo
+    end associate
     return
   endif
   !Note for improvement:
@@ -1071,7 +1092,10 @@ contains
     associate(                                                             &
     c12_decomp_cpools_vr_col =>   c12state_vars%decomp_cpools_vr_col   , &
     decomp_npools_vr_col =>   n14state_vars%decomp_npools_vr_col    , &
-    decomp_ppools_vr_col =>   p31state_vars%decomp_ppools_vr_col    &
+    decomp_ppools_vr_col =>   p31state_vars%decomp_ppools_vr_col  ,  &
+    smin_no3_vr         => n14state_vars%smin_no3_vr_col         , &
+    solutionp_vr        => p31state_vars%solutionp_vr_col          &
+
     )
     do j = 1,betr_nlevtrc_soil
       do c = bounds%begc, bounds%endc
@@ -1081,6 +1105,8 @@ contains
           decomp_npools_vr_col(c,j,kk) = this%biogeo_state(c)%n14state_vars%decomp_npools_vr(c_l,j,kk)
           decomp_ppools_vr_col(c,j,kk) = this%biogeo_state(c)%p31state_vars%decomp_ppools_vr(c_l,j,kk)
         enddo
+        smin_no3_vr(c,j) = this%biogeo_state(c)%n14state_vars%sminn_no3_vr_col(c_l,j)
+        solutionp_vr(c,j) = this%biogeo_state(c)%p31state_vars%sminp_vr_col(c_l,j)
       enddo
     enddo
     end associate
@@ -1551,7 +1577,6 @@ contains
   smin_nh4_vr              =>    nitrogenstate_vars%smin_nh4_vr_col        , & ! Input:  [real(r8) (:,:)  ]  (gN/m3) soil mineral NH4 pool
   smin_no3_vr              =>    nitrogenstate_vars%smin_no3_vr_col        , & ! Input:  [real(r8) (:,:)  ]  (gN/m3) soil mineral NO3 pool
   solutionp_vr             => phosphorusstate_vars%solutionp_vr_col          & !
-
   )
   c_l=1
   call this%BeTRSetBounds(betr_bounds)
@@ -1559,11 +1584,13 @@ contains
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
       do kk = 1, 7
-         this%biogeo_flux(c)%c12flux_vars%decomp_k(c,j,kk) = decomp_k(c,j,kk)
-         this%biogeo_state(c)%c12state_vars%decomp_cpools_vr(c_l,j,kk)=c12_decomp_cpools_vr_col(c,j,kk)
-         this%biogeo_state(c)%n14state_vars%decomp_npools_vr(c_l,j,kk)=decomp_npools_vr_col(c,j,kk)
-         this%biogeo_state(c)%p31state_vars%decomp_ppools_vr(c_l,j,kk)=decomp_ppools_vr_col(c,j,kk)
+        this%biophys_forc(c)%c12flx%in_decomp_cpools_vr_col(c_l,j,kk)=c12_decomp_cpools_vr_col(c,j,kk)
+        this%biophys_forc(c)%n14flx%in_decomp_npools_vr_col(c_l,j,kk)=decomp_npools_vr_col(c,j,kk)
+        this%biophys_forc(c)%p31flx%in_decomp_ppools_vr_col(c_l,j,kk)=decomp_ppools_vr_col(c,j,kk)
       enddo
+      this%biophys_forc(c)%n14flx%in_sminn_no3_vr_col(c_l,j) = smin_no3_vr(c,j)
+      this%biophys_forc(c)%n14flx%in_sminn_nh4_vr_col(c_l,j) = smin_nh4_vr(c,j)
+      this%biophys_forc(c)%p31flx%in_sminp_vr_col(c_l,j) = solutionp_vr(c,j)
     enddo
   enddo
 

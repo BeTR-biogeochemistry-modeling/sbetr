@@ -141,6 +141,7 @@ implicit none
     real(r8) :: diffusw0_minp
     real(r8),pointer :: plant_froot_nn(:)
     real(r8),pointer :: plant_froot_np(:)
+    real(r8),pointer :: decomp_k(:)
     integer, pointer :: plant_vtype(:)
     integer :: plant_ntypes
     integer :: soilorder
@@ -170,30 +171,38 @@ contains
 
   end function create_bgcforc_type
   !--------------------------------------------------------------------
-  subroutine Init(this, nstvars)
+  subroutine Init(this, nstvars, npools)
 
   implicit none
   class(JarBGC_forc_type) , intent(inout) :: this
   integer , intent(in) :: nstvars
+  integer, optional, intent(in) :: npools
 
-  call this%InitAllocate(nstvars)
-
+  if(present(npools))then
+    call this%InitAllocate(nstvars,npools)
+  else
+    call this%InitAllocate(nstvars)
+  endif
   call this%set_defpar()
   this%debug =.false.
   end subroutine Init
 
   !--------------------------------------------------------------------
 
-  subroutine InitAllocate(this,  nstvars)
+  subroutine InitAllocate(this,  nstvars, npools)
   use betr_varcon         , only : betr_maxpatch_pft
   implicit none
   class(JarBGC_forc_type) , intent(inout) :: this
   integer , intent(in) :: nstvars
-
+  integer, optional, intent(in) :: npools
   allocate(this%ystates(nstvars))
   allocate(this%plant_froot_nn(betr_maxpatch_pft))
   allocate(this%plant_froot_np(betr_maxpatch_pft))
   allocate(this%plant_vtype(betr_maxpatch_pft)); this%plant_vtype(:) = 0
+
+  if(present(npools))then
+    allocate(this%decomp_k(npools))
+  endif
   end subroutine InitAllocate
   !--------------------------------------------------------------------
   subroutine set_defpar(this)
