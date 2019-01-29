@@ -787,7 +787,7 @@ contains
     if (ubj > 0)                                    continue
     if (num_soilc > 0)                              continue
     if (size(filter_soilc) > 0)                     continue
-    if (associated(waterstate_vars%h2osoi_liq_col)) continue
+    if (associated(col_ws%h2osoi_liq)) continue
 
   end subroutine BeTRSimulationConsistencyCheck
 
@@ -925,17 +925,17 @@ contains
     endif
     !assign waterstate
     if(present(waterstate_vars))then
-      this%biophys_forc(c)%finundated_col(cc)            = waterstate_vars%finundated_col(c)
-      this%biophys_forc(c)%frac_h2osfc_col(cc)           = waterstate_vars%frac_h2osfc_col(c)
+      this%biophys_forc(c)%finundated_col(cc)            = col_ws%finundated(c)
+      this%biophys_forc(c)%frac_h2osfc_col(cc)           = col_ws%frac_h2osfc(c)
       this%biophys_forc(c)%h2osoi_liq_col(cc,lbj:ubj)    = col_ws%h2osoi_liq(c,lbj:ubj)
       this%biophys_forc(c)%h2osoi_ice_col(cc,lbj:ubj)    = col_ws%h2osoi_ice(c,lbj:ubj)
-      this%biophys_forc(c)%h2osoi_liqvol_col(cc,lbj:ubj) = waterstate_vars%h2osoi_liqvol_col(c,lbj:ubj)
-      this%biophys_forc(c)%h2osoi_icevol_col(cc,lbj:ubj) = waterstate_vars%h2osoi_icevol_col(c,lbj:ubj)
+      this%biophys_forc(c)%h2osoi_liqvol_col(cc,lbj:ubj) = col_ws%h2osoi_liqvol(c,lbj:ubj)
+      this%biophys_forc(c)%h2osoi_icevol_col(cc,lbj:ubj) = col_ws%h2osoi_icevol(c,lbj:ubj)
       this%biophys_forc(c)%h2osoi_vol_col(cc,lbj:ubj)    = col_ws%h2osoi_vol(c,lbj:ubj)
-      this%biophys_forc(c)%air_vol_col(cc,lbj:ubj)       = waterstate_vars%air_vol_col(c,lbj:ubj)
+      this%biophys_forc(c)%air_vol_col(cc,lbj:ubj)       = col_ws%air_vol(c,lbj:ubj)
       this%biophys_forc(c)%rho_vap(cc,lbj:ubj)           = waterstate_vars%rho_vap_col(c,lbj:ubj)
       this%biophys_forc(c)%rhvap_soi(cc,lbj:ubj)         = waterstate_vars%rhvap_soi_col(c,lbj:ubj)
-      this%biophys_forc(c)%smp_l_col(cc,lbj:ubj)         = waterstate_vars%smp_l_col(c,lbj:ubj)
+      this%biophys_forc(c)%smp_l_col(cc,lbj:ubj)         = col_ws%smp_l(c,lbj:ubj)
     endif
     if(present(waterflux_vars))then
       this%biogeo_flux(c)%qflx_infl_col(cc)             = waterflux_vars%qflx_infl_col(c)
