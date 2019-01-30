@@ -7,7 +7,7 @@ module BeTRSimulation
   !  structures from a specific LSM, e.g. CLM, ALM, into BeTR data
   !  structures.
   !
-  use VegetationDataType, only : veg_es
+  use VegetationDataType, only : veg_es, veg_wf
   use ColumnDataType    , only : col_es, col_ws, col_wf    
   use abortutils     , only : endrun
   use clm_varctl     , only : iulog, use_cn
@@ -959,8 +959,8 @@ contains
          p = col%pfti(c) + pi - 1
          if (pft%active(p)) then
            pp = pp + 1
-           this%biophys_forc(c)%qflx_tran_veg_patch(pp)     = waterflux_vars%qflx_tran_veg_patch(p)
-           this%biophys_forc(c)%qflx_rootsoi_frac_patch(pp,lbj:ubj) = waterflux_vars%qflx_rootsoi_frac_patch(p,lbj:ubj)
+           this%biophys_forc(c)%qflx_tran_veg_patch(pp)     = veg_wf%qflx_tran_veg(p)
+           this%biophys_forc(c)%qflx_rootsoi_frac_patch(pp,lbj:ubj) = veg_wf%qflx_rootsoi_frac(p,lbj:ubj)
          endif
        endif
       enddo
