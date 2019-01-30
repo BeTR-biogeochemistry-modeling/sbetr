@@ -1571,6 +1571,8 @@ contains
 
   associate(                                                                 &
   decomp_k                 => c12_cflx_vars%decomp_k_col                   , &
+  t_scalar                 => c12_cflx_vars%t_scalar_col                   , &
+  w_scalar                 => c12_cflx_vars%w_scalar_col                   , &
   c12_decomp_cpools_vr_col =>   c12_cstate_vars%decomp_cpools_vr_col       , &
   decomp_npools_vr_col     =>   nitrogenstate_vars%decomp_npools_vr_col    , &
   decomp_ppools_vr_col     =>   phosphorusstate_vars%decomp_ppools_vr_col  , &
@@ -1588,6 +1590,8 @@ contains
         this%biophys_forc(c)%n14flx%in_decomp_npools_vr_col(c_l,j,kk)=decomp_npools_vr_col(c,j,kk)
         this%biophys_forc(c)%p31flx%in_decomp_ppools_vr_col(c_l,j,kk)=decomp_ppools_vr_col(c,j,kk)
       enddo
+      this%biophys_forc(c)%c12flx%in_t_scalar(c_l,j) = t_scalar(c,j)
+      this%biophys_forc(c)%c12flx%in_w_scalar(c_l,j) = w_scalar(c,j) 
       this%biophys_forc(c)%n14flx%in_sminn_no3_vr_col(c_l,j) = smin_no3_vr(c,j)
       this%biophys_forc(c)%n14flx%in_sminn_nh4_vr_col(c_l,j) = smin_nh4_vr(c,j)
       this%biophys_forc(c)%p31flx%in_sminp_vr_col(c_l,j) = solutionp_vr(c,j)

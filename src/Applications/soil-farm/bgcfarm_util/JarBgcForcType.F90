@@ -143,6 +143,8 @@ implicit none
     real(r8),pointer :: plant_froot_np(:)
     real(r8),pointer :: decomp_k(:)
     integer, pointer :: plant_vtype(:)
+    real(r8) :: t_scalar
+    real(r8) :: w_scalar
     integer :: plant_ntypes
     integer :: soilorder
     real(r8):: msurf_nh4

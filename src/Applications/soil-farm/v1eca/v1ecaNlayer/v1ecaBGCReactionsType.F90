@@ -46,6 +46,10 @@ module v1ecaBGCReactionsType
   use v1ecaBGCIndexType    , only : v1eca_bgc_index_type
   use v1ecaParaType        , only : v1eca_para
   use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
+  use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
+  use BeTR_decompMod    , only : betr_bounds_type
+  use BeTRTracerType              , only : betrtracer_type
+  use tracerstatetype        , only : tracerstate_type
   implicit none
 
   save
@@ -87,6 +91,7 @@ module v1ecaBGCReactionsType
     procedure, private :: set_bgc_forc
     procedure, private :: retrieve_output
     procedure, private :: precision_filter
+    procedure, private :: update_atm_conc
   end type v1eca_bgc_reaction_type
 
   interface v1eca_bgc_reaction_type
@@ -131,7 +136,7 @@ contains
     ! initialize boundary condition types
     ! !USES:
     use TracerBoundaryCondType      , only : tracerboundarycond_type
-    use BeTRTracerType              , only : betrtracer_type
+
 
     ! !ARGUMENTS:
     class(v1eca_bgc_reaction_type), intent(inout) :: this
@@ -164,7 +169,7 @@ contains
   !set initial conditions for regular or spinup runs. It makes two assumptions
   !1. the initial conditions are defined
   !2. spinup scalar was defiend with sufficient temporal average.
-  use tracerstatetype        , only : tracerstate_type
+
   use BeTRTracerType         , only : betrtracer_type
   use betr_ctrl              , only : exit_spinup, enter_spinup, betr_spinup_state
   use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
@@ -1136,7 +1141,6 @@ contains
     !
     ! !USES:
     !
-    use tracerstatetype       , only : tracerstate_type
     use tracercoeffType       , only : tracercoeff_type
     use BeTRTracerType        , only : betrtracer_type
     use BetrStatusType        , only : betr_status_type
@@ -1185,9 +1189,8 @@ contains
     ! cold initialization
     ! !USES:
     !
-    use BeTR_decompMod    , only : betr_bounds_type
+
     use BeTRTracerType    , only : BeTRTracer_Type
-    use tracerstatetype   , only : tracerstate_type
     use betr_varcon       , only : spval => bspval, ispval => bispval
     use betr_varcon       , only : denh2o => bdenh2o
     use tracer_varcon     , only : nlevtrc_soil  => betr_nlevtrc_soil
@@ -1235,21 +1238,52 @@ contains
       tracerstate_vars%tracer_conc_surfwater_col (c,:                                      )  = 0._r8
       tracerstate_vars%tracer_conc_aquifer_col   (c,:                                      )  = 0._r8
       tracerstate_vars%tracer_conc_grndwater_col (c,:                                      )  = 0._r8
-      tracerstate_vars%tracer_conc_atm_col       (c,volatileid(betrtracer_vars%id_trc_n2   )) = ppm2molv(pbot_pa(c), n2_ppmv(c), tair(c))
-      tracerstate_vars%tracer_conc_atm_col       (c,volatileid(betrtracer_vars%id_trc_o2   )) = ppm2molv(pbot_pa(c), o2_ppmv(c), tair(c))
-      tracerstate_vars%tracer_conc_atm_col       (c,volatileid(betrtracer_vars%id_trc_ar   )) = ppm2molv(pbot_pa(c), ar_ppmv(c), tair(c))
-      tracerstate_vars%tracer_conc_atm_col       (c,volatileid(betrtracer_vars%id_trc_co2x )) = ppm2molv(pbot_pa(c), co2_ppmv(c), tair(c))
-      tracerstate_vars%tracer_conc_atm_col       (c,volatileid(betrtracer_vars%id_trc_ch4  )) = ppm2molv(pbot_pa(c), ch4_ppmv(c), tair(c))
-      tracerstate_vars%tracer_conc_atm_col       (c,volatileid(betrtracer_vars%id_trc_n2o  )) = ppm2molv(pbot_pa(c), n2o_ppmv(c), tair(c))
       tracerstate_vars%tracer_conc_mobile_col    (c,:, betrtracer_vars%id_trc_o2) = ppm2molv(pbot_pa(c), o2_ppmv(c), tair(c))
       if(betrtracer_vars%nsolid_equil_tracers>0)then
         tracerstate_vars%tracer_conc_solid_equil_col(c, :, :) = 0._r8
       endif
       tracerstate_vars%tracer_soi_molarmass_col(c,:)          = 0._r8
     enddo
+    call this%update_atm_conc(bounds, betrtracer_vars, biophysforc, tracerstate_vars)
     end associate
   end subroutine InitCold
 
+  !------------------------------------------------------------------------------
+  subroutine update_atm_conc(this, bounds, betrtracer_vars, biophysforc, tracerstate_vars)
+    use UnitConvertMod, only : ppm2molv
+  implicit none
+    ! !ARGUMENTS:
+    class(v1eca_bgc_reaction_type) , intent(inout)    :: this
+    type(betr_bounds_type)           , intent(in)    :: bounds
+    type(BeTRTracer_Type)            , intent(in)    :: betrtracer_vars
+    type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
+    type(tracerstate_type)           , intent(inout) :: tracerstate_vars
+
+  integer :: c
+    associate(                                         &
+         volatileid => betrtracer_vars%volatileid    , &
+         n2_ppmv    => biophysforc%n2_ppmv_col       , &
+         o2_ppmv    => biophysforc%o2_ppmv_col       , &
+         ar_ppmv    => biophysforc%ar_ppmv_col       , &
+         co2_ppmv   => biophysforc%co2_ppmv_col      , &
+         ch4_ppmv   => biophysforc%ch4_ppmv_col      , &
+         n2o_ppmv   => biophysforc%n2o_ppmv_col      , &
+         nh3_ppmv   => biophysforc%nh3_ppmv_col      , &
+         pbot_pa    => biophysforc%forc_pbot_downscaled_col, &
+         tair       => biophysforc%forc_t_downscaled_col &
+         )
+
+  do c = bounds%begc, bounds%endc
+      tracerstate_vars%tracer_conc_atm_col       (c,volatileid(betrtracer_vars%id_trc_n2   )) = ppm2molv(pbot_pa(c), n2_ppmv(c), tair(c))
+      tracerstate_vars%tracer_conc_atm_col       (c,volatileid(betrtracer_vars%id_trc_o2   )) = ppm2molv(pbot_pa(c), o2_ppmv(c), tair(c))
+      tracerstate_vars%tracer_conc_atm_col       (c,volatileid(betrtracer_vars%id_trc_ar   )) = ppm2molv(pbot_pa(c), ar_ppmv(c), tair(c))
+      tracerstate_vars%tracer_conc_atm_col       (c,volatileid(betrtracer_vars%id_trc_co2x )) = ppm2molv(pbot_pa(c), co2_ppmv(c), tair(c))
+      tracerstate_vars%tracer_conc_atm_col       (c,volatileid(betrtracer_vars%id_trc_ch4  )) = ppm2molv(pbot_pa(c), ch4_ppmv(c), tair(c))
+      tracerstate_vars%tracer_conc_atm_col       (c,volatileid(betrtracer_vars%id_trc_n2o  )) = ppm2molv(pbot_pa(c), n2o_ppmv(c), tair(c))
+  enddo
+
+  end associate
+  end subroutine update_atm_conc
   !------------------------------------------------------------------------------
   subroutine retrieve_biogeoflux(this, num_soilc, filter_soilc, tracerflux_vars, &
   betrtracer_vars, biogeo_flux)
@@ -1375,8 +1409,9 @@ contains
       this%v1eca_forc(c,j)%latacc = latacc(c)
       this%v1eca_forc(c,j)%plant_ntypes = this%nactpft
       this%v1eca_forc(c,j)%ystates(:) = 0._r8
-      FPMAX(this%v1eca_forc(c,j)%decomp_k(1:ncentpools),biogeo_flux%c12flux_vars%decomp_k(c,j,1:ncentpools))
-
+      this%v1eca_forc(c,j)%decomp_k(1:ncentpools)=biogeo_flux%c12flux_vars%decomp_k(c,j,1:ncentpools)
+      this%v1eca_forc(c,j)%t_scalar = biophysforc%c12flx%in_t_scalar(c,j)
+      this%v1eca_forc(c,j)%w_scalar = biophysforc%c12flx%in_w_scalar(c,j)
       !litter C
       FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+c_loc-1),biophysforc%c12flx%in_decomp_cpools_vr_col(c,j,1))
       FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+nelms+c_loc-1),biophysforc%c12flx%in_decomp_cpools_vr_col(c,j,2))

@@ -48,6 +48,8 @@ implicit none
     real(r8), pointer :: annavg_bgnpp_patch                      (:) => null()
     real(r8), pointer :: co2_soi_flx_col                         (:) => null()
     real(r8), pointer :: decomp_k_col                            (:,:,:) => null()
+    real(r8), pointer :: t_scalar_col(:,:) => null()
+    real(r8), pointer :: w_scalar_col(:,:) => null()
   contains
 
     procedure, public  :: Init

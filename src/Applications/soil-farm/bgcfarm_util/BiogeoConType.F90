@@ -193,8 +193,9 @@ contains
   use bshr_log_mod    , only : errMsg => shr_log_errMsg
   use ncdio_pio       , only : file_desc_t, ncd_io
   use BetrStatusType  , only : betr_status_type
-  use betr_ctrl       , only : betr_spinup_state
+  use betr_ctrl       , only : betr_spinup_state, bgc_type
   use betr_varcon     , only : betr_maxpatch_pft, betr_max_soilorder
+
   implicit none
   class(BiogeoCon_type), intent(inout) :: this
   type(file_desc_t)    , intent(inout)  :: ncid  ! pio netCDF file id
@@ -208,12 +209,20 @@ contains
   character(len=100) :: tString ! temp. var for reading
 
   call bstatus%reset()
-
+  if(index(bgc_type,'type1_bgc')/=0)return
   tString='cwd_fcel'
   call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
   if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//' '//errMsg(__FILE__, __LINE__), err=-1)
   if(bstatus%check_status())return
   this%cwd_fcel_bgc=tempr(1)
+
+  tString='cwd_flig'
+  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
+  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//' '//errMsg(__FILE__, __LINE__), err=-1)
+  if(bstatus%check_status())return
+  this%cwd_flig_bgc=tempr(1)
+
+  if(index(bgc_type,'type1_bgc')/=0)return
 
   tString='lwd_fcel'
   call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
@@ -226,12 +235,6 @@ contains
   if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//' '//errMsg(__FILE__, __LINE__), err=-1)
   if(bstatus%check_status())return
   this%fwd_fcel_bgc=tempr(1)
-
-  tString='cwd_flig'
-  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//' '//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%cwd_flig_bgc=tempr(1)
 
   tString='lwd_flig'
   call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)

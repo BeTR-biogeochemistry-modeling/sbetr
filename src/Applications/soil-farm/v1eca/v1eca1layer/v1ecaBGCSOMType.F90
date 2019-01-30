@@ -27,23 +27,14 @@ implicit none
     real(r8), pointer :: def_cc14(:)=> null()
 
     !private parameters
-    real(r8) :: rf_l1s1_bgc(2)  !respired co2 as a fraction of decomposing flux
-    real(r8) :: rf_l2s1_bgc(2)
+    real(r8) :: rf_l1s1_bgc  !respired co2 as a fraction of decomposing flux
+    real(r8) :: rf_l2s1_bgc
     real(r8) :: rf_l3s2_bgc
     real(r8) :: rf_s2s1_bgc
     real(r8) :: rf_s3s1_bgc
-    real(r8) :: rf_s1s2a_bgc(2)
-    real(r8) :: rf_s1s2b_bgc(2)
     real(r8) :: cwd_fcel
     real(r8) :: cwd_flig
     real(r8) :: lit_flig
-    real(r8) :: k_decay_lit1(2)
-    real(r8) :: k_decay_lit2(2)
-    real(r8) :: k_decay_lit3(2)
-    real(r8) :: k_decay_som1(2)
-    real(r8) :: k_decay_som2
-    real(r8) :: k_decay_som3
-    real(r8) :: k_decay_cwd  !coarse root
 
     logical  :: use_c13
     logical  :: use_c14
@@ -59,8 +50,6 @@ implicit none
     procedure, private :: InitAllocate
     procedure, public  :: UpdateParas
     procedure, private :: calc_potential_aerobic_hr
-    procedure, private :: apply_spinupf
-
   end type CentSom_type
 contains
 
@@ -114,18 +103,8 @@ contains
   this%rf_l3s2_bgc    = biogeo_con%rf_l3s2_bgc
   this%rf_s2s1_bgc    = biogeo_con%rf_s2s1_bgc
   this%rf_s3s1_bgc    = biogeo_con%rf_s3s1_bgc
-  this%rf_s1s2a_bgc   = biogeo_con%rf_s1s2a_bgc
-  this%rf_s1s2b_bgc   = biogeo_con%rf_s1s2b_bgc
   this%cwd_fcel   = biogeo_con%cwd_fcel_bgc
   this%cwd_flig   = biogeo_con%cwd_flig_bgc
-
-  this%k_decay_lit1   =  biogeo_con%k_decay_lit1
-  this%k_decay_lit2   =  biogeo_con%k_decay_lit2
-  this%k_decay_lit3   =  biogeo_con%k_decay_lit3
-  this%k_decay_som1   =  biogeo_con%k_decay_som1
-  this%k_decay_som2   =  biogeo_con%k_decay_som2
-  this%k_decay_som3   =  biogeo_con%k_decay_som3
-  this%k_decay_cwd    =  biogeo_con%k_decay_cwd
 
   this%def_cn(v1eca_bgc_index%lit1) = biogeo_con%init_cn_met * natomw/catomw;
   this%def_cn(v1eca_bgc_index%lit2) = biogeo_con%init_cn_cel * natomw/catomw
@@ -208,11 +187,7 @@ contains
     c_loc => v1eca_bgc_index%c_loc               &
   )
   call bstatus%reset()
-  if(is_surflit)then
-    lay=1
-  else
-    lay=2
-  endif
+
   call this%calc_cnp_ratios(v1eca_bgc_index, ystates, bstatus)
   if (bstatus%check_status())return
   call this%calc_som_decay_k(lay, v1eca_bgc_index, decompkf_eca, k_decay)
@@ -227,7 +202,7 @@ contains
     pot_om_decay_rates(jj) = min(pot_om_decay_rates(jj), ystates(kc)/dtime)
   enddo
 
-  call this%calc_cascade_matrix(lay, v1eca_bgc_index, pct_sand, pct_clay, alpha_n, alpha_p, cascade_matrix)
+  call this%calc_cascade_matrix(v1eca_bgc_index, pct_sand, pct_clay, alpha_n, alpha_p, cascade_matrix)
 
   !calculate potential respiration rates by summarizing all om decomposition pathways
   call this%calc_potential_aerobic_hr(v1eca_bgc_index, pot_om_decay_rates, &
@@ -236,7 +211,7 @@ contains
   end subroutine run_decomp
 !------------------------------------------
 
-  subroutine calc_cascade_matrix(this, lay, v1eca_bgc_index, pct_sand, pct_clay, alpha_n, alpha_p, cascade_matrix)
+  subroutine calc_cascade_matrix(this, v1eca_bgc_index, pct_sand, pct_clay, alpha_n, alpha_p, cascade_matrix)
   !
   ! DESCRIPTION
   ! calculate cascade matrix for decomposition
@@ -248,7 +223,6 @@ contains
   implicit none
   class(CentSom_type),           intent(inout) :: this
   type(v1eca_bgc_index_type)  , intent(in)    :: v1eca_bgc_index
-  integer                      , intent(in)    :: lay
   real(r8)                     , intent(in)    :: pct_sand
   real(r8)                     , intent(in)    :: pct_clay
   real(r8)                     , intent(out)   :: alpha_n(ncentpools) !indicating factor for nitrogen limitation
@@ -297,8 +271,6 @@ contains
     rf_s2s1_bgc  => this%rf_s2s1_bgc                         , &
     rf_s3s1_bgc  => this%rf_s3s1_bgc                         , &
     rf_l1s1_bgc  => this%rf_l1s1_bgc                         , &
-    rf_s1s2a_bgc => this%rf_s1s2a_bgc                        , &
-    rf_s1s2b_bgc => this%rf_s1s2b_bgc                        , &
     debug        => v1eca_bgc_index%debug                     &
   )
 
@@ -311,11 +283,11 @@ contains
     cascade_matrix((lit1-1)*nelms+n_loc   ,reac)  = -this%icn_ratios(lit1)
     cascade_matrix((lit1-1)*nelms+p_loc   ,reac)  = -this%icp_ratios(lit1)
 
-    cascade_matrix((som1-1)*nelms+c_loc   ,reac)  = 1._r8-rf_l1s1_bgc(lay)
+    cascade_matrix((som1-1)*nelms+c_loc   ,reac)  = 1._r8-rf_l1s1_bgc
     cascade_matrix((som1-1)*nelms+n_loc   ,reac)  = cascade_matrix((som1-1)*nelms+c_loc,reac)*this%icn_ratios(som1)
     cascade_matrix((som1-1)*nelms+p_loc   ,reac)  = cascade_matrix((som1-1)*nelms+c_loc,reac)*this%icp_ratios(som1)
 
-    cascade_matrix(lid_co2                ,reac)  = rf_l1s1_bgc(lay)
+    cascade_matrix(lid_co2                ,reac)  = rf_l1s1_bgc
 
     cascade_matrix(lid_o2                 ,reac)  = -cascade_matrix(lid_co2                ,reac)
     cascade_matrix(lid_nh4                ,reac)  = -cascade_matrix((lit1-1)*nelms+n_loc   ,reac) - &
@@ -329,13 +301,13 @@ contains
 
     if(this%use_c14)then
       cascade_matrix((lit1-1)*nelms+c14_loc   , reac) = -this%icc14_ratios(lit1)
-      cascade_matrix(lid_c14_co2              , reac) = rf_l1s1_bgc(lay)*this%icc14_ratios(lit1)
+      cascade_matrix(lid_c14_co2              , reac) = rf_l1s1_bgc*this%icc14_ratios(lit1)
       cascade_matrix((som1-1)*nelms+c14_loc   , reac) = cascade_matrix((som1-1)*nelms+c_loc,reac)*this%icc14_ratios(lit1)
     endif
 
     if(this%use_c13)then
       cascade_matrix((lit1-1)*nelms+c13_loc   , reac) = -this%icc13_ratios(lit1)
-      cascade_matrix(lid_c13_co2              , reac) = rf_l1s1_bgc(lay)*this%icc13_ratios(lit1)
+      cascade_matrix(lid_c13_co2              , reac) = rf_l1s1_bgc*this%icc13_ratios(lit1)
       cascade_matrix((som1-1)*nelms+c13_loc   , reac) = cascade_matrix((som1-1)*nelms+c_loc,reac)*this%icc13_ratios(lit1)
     endif
 
@@ -350,11 +322,11 @@ contains
     cascade_matrix((lit2-1)*nelms+n_loc   ,reac)   = -this%icn_ratios(lit2)
     cascade_matrix((lit2-1)*nelms+p_loc   ,reac)   = -this%icp_ratios(lit2)
 
-    cascade_matrix((som1-1)*nelms+c_loc   ,reac)   =  1._r8-rf_l2s1_bgc(lay)
+    cascade_matrix((som1-1)*nelms+c_loc   ,reac)   =  1._r8-rf_l2s1_bgc
     cascade_matrix((som1-1)*nelms+n_loc   ,reac)   =  cascade_matrix((som1-1)*nelms+c_loc,reac)*this%icn_ratios(som1)
     cascade_matrix((som1-1)*nelms+p_loc   ,reac)   =  cascade_matrix((som1-1)*nelms+c_loc,reac)*this%icp_ratios(som1)
 
-    cascade_matrix(lid_co2                ,reac)   =  rf_l2s1_bgc(lay)
+    cascade_matrix(lid_co2                ,reac)   =  rf_l2s1_bgc
     cascade_matrix(lid_o2                 ,reac)   = -cascade_matrix(lid_co2   ,reac)
     cascade_matrix(lid_nh4                ,reac)   = -cascade_matrix((lit2-1)*nelms+n_loc   ,reac) - &
                                                       cascade_matrix((som1-1)*nelms+n_loc   ,reac)
@@ -372,12 +344,12 @@ contains
 
     if(this%use_c14)then
       cascade_matrix((lit2-1)*nelms+c14_loc   , reac) = -this%icc14_ratios(lit2)
-      cascade_matrix(lid_c14_co2              , reac) = rf_l2s1_bgc(lay)*this%icc14_ratios(lit2)
+      cascade_matrix(lid_c14_co2              , reac) = rf_l2s1_bgc*this%icc14_ratios(lit2)
       cascade_matrix((som1-1)*nelms+c14_loc   , reac) = cascade_matrix((som1-1)*nelms+c_loc,reac)*this%icc14_ratios(lit2)
     endif
     if(this%use_c13)then
       cascade_matrix((lit2-1)*nelms+c13_loc   , reac) = -this%icc13_ratios(lit2)
-      cascade_matrix(lid_c13_co2              , reac) =  rf_l2s1_bgc(lay)*this%icc13_ratios(lit2)
+      cascade_matrix(lid_c13_co2              , reac) =  rf_l2s1_bgc*this%icc13_ratios(lit2)
       cascade_matrix((som1-1)*nelms+c13_loc   , reac) =  cascade_matrix((som1-1)*nelms+c_loc,reac)*this%icc13_ratios(lit2)
     endif
 
@@ -425,10 +397,10 @@ contains
     !SOM1 -> f1*SOM2 + f2*SOm3 + rf_s1*CO2 + (1/cn_ratios(SOM1)-f1/cn_ratios(SOM2)-f2/cn_ratios(SOM3))*min_n
     ! +(1/cp_ratios(SOM1)-f1/cp_ratios(SOM2)-f2/cp_ratios(SOM3))*min_p
     reac = som1_dek_reac
-    f2=0.003_r8 + 0.00032_r8*pct_clay
-    rf_s1 = rf_s1s2a_bgc(lay) + rf_s1s2b_bgc(lay) * pct_sand * 0.01_r8
 
-    f1 = 1._r8 - rf_s1 - f2
+    rf_s1 = 0.85_r8 - 0.68_r8 * 0.01_r8 * (100._r8 - pct_sand)
+    f1 = 1._r8 - 0.004_r8 / (1._r8 - rf_s1)
+    f2 = 0.004_r8 / (1._r8 - rf_s1)
 
     cascade_matrix((som1-1)*nelms+c_loc   ,reac)  = -1._r8
     cascade_matrix((som1-1)*nelms+n_loc   ,reac)  = -this%icn_ratios(som1)
@@ -570,7 +542,7 @@ contains
     !cwd + o2 -> (1-flig)((1-rf_l2s1_bgc)*SOM1+rf_l2s1_bgc*CO2) + flig*((1-rf_l3s2_bgc)*SOM2+rf_l3s2_bgc*CO2)
     !    + (1/cn_ratios(cwd)-f1/cn_ratios(som1)-f2/cn_ratios(som2))
     !    + (1/cp_ratios(cwd)-f1/cp_ratios(som1)-f2/cp_ratios(som2))
-    f1 = cwd_fcel*(1._r8-rf_l2s1_bgc(lay))
+    f1 = cwd_fcel*(1._r8-rf_l2s1_bgc)
     f2 = (1._r8-cwd_fcel)*(1._r8-rf_l3s2_bgc)
 
     call wood_decomp_cascade(cwd, reac, f1, f2)
@@ -883,43 +855,7 @@ contains
     enddo
     end associate
   end subroutine calc_som_decay_r
-  !-------------------------------------------------------------------------------
 
-  subroutine apply_spinupf(this, v1eca_bgc_index, decompkf_eca, k_decay, spinup_scalar, spinup_flg)
-  use v1ecaBGCIndexType       , only : v1eca_bgc_index_type
-  use v1ecaBGCDecompType      , only : DecompCent_type
-  use betr_varcon               , only : kyr_spinup
-  implicit none
-  class(CentSom_type)     , intent(inout) :: this
-  type(DecompCent_type), intent(in) :: decompkf_eca
-  type(v1eca_bgc_index_type)   , intent(in)    :: v1eca_bgc_index
-  real(r8)                      , intent(inout) :: k_decay(ncentpools)
-  real(r8)                      , intent(inout) :: spinup_scalar
-  integer                       , intent(in)    :: spinup_flg
-  integer :: jj
-
-  associate(   &
-   t_scalar       => decompkf_eca%t_scalar        , & ! Intput: [real(r8) (:,:)   ]  soil temperature scalar for decomp
-   w_scalar       => decompkf_eca%w_scalar        , & ! Intput: [real(r8) (:,:)   ]  soil water scalar for decomp
-   o_scalar       => decompkf_eca%o_scalar        , & ! Intput: [real(r8) (:,:)   ]  fraction by which decomposition is limited by anoxia
-   som1           => v1eca_bgc_index%som1        , & !
-   som2           => v1eca_bgc_index%som2        , & !
-   som3           => v1eca_bgc_index%som3          & !
-  )
-
-  if(spinup_flg==2)then
-    !cumulated more than 2 * kyr_spinup
-    do jj = 1, ncentpools
-      k_decay(jj) = k_decay(jj)/spinup_scalar
-    enddo
-  elseif(spinup_flg==1)then
-    !cumulated more than kyr_spinup but less than 2 * kyr_spinup
-    spinup_scalar = spinup_scalar + t_scalar * w_scalar * o_scalar / (365._r8 * 86400._r8 * kyr_spinup)
-  endif
-
-  end associate
-
-  end subroutine apply_spinupf
   !-------------------------------------------------------------------------------
   subroutine calc_som_decay_k(this, lay, v1eca_bgc_index, decompkf_eca, k_decay)
 
@@ -934,11 +870,8 @@ contains
   integer :: jj
 
   associate(   &
-   t_scalar       => decompkf_eca%t_scalar        , & ! Intput: [real(r8) (:,:)   ]  soil temperature scalar for decomp
-   w_scalar       => decompkf_eca%w_scalar        , & ! Intput: [real(r8) (:,:)   ]  soil water scalar for decomp
    o_scalar       => decompkf_eca%o_scalar        , & ! Intput: [real(r8) (:,:)   ]  fraction by which decomposition is limited by anoxia
-   depth_scalar   => decompkf_eca%depth_scalar    , & ! Intput: [real(r8) (:,:)   ]  rate constant for decomposition (1./sec)
-   latacc         => decompkf_eca%latacc          , & !
+   decomp_k       => decompkf_eca%decomp_k        , &
    lit1           => v1eca_bgc_index%lit1               , & !
    lit2           => v1eca_bgc_index%lit2               , & !
    lit3           => v1eca_bgc_index%lit3               , & !
@@ -947,18 +880,9 @@ contains
    som3           => v1eca_bgc_index%som3               , & !
    cwd            => v1eca_bgc_index%cwd                  & !
   )
-  k_decay(lit1) = this%k_decay_lit1(lay) * t_scalar * w_scalar * o_scalar * depth_scalar
-  k_decay(lit2) = this%k_decay_lit2(lay) * t_scalar * w_scalar * o_scalar * depth_scalar
-  k_decay(lit3) = this%k_decay_lit3(lay) * t_scalar * w_scalar * o_scalar * depth_scalar
-  k_decay(som1) = this%k_decay_som1(lay) * t_scalar * w_scalar * o_scalar * depth_scalar
-  k_decay(som2) = this%k_decay_som2 * t_scalar * w_scalar * o_scalar * depth_scalar * latacc
-  k_decay(som3) = this%k_decay_som3 * t_scalar * w_scalar * o_scalar * depth_scalar * latacc
-  k_decay(cwd)  = this%k_decay_cwd  * t_scalar * w_scalar * o_scalar * depth_scalar
-
-  !impose the ligin effect
-  !k_decay(cwd)  = k_decay(cwd) * exp(-3._r8*this%cwd_flig)
-  !k_decay(lit2) = k_decay(lit2)* exp(-3._r8*this%lit_flig)
-  !k_decay(lit3) = k_decay(lit3)* exp(-3._r8*this%lit_flig)
+  do jj =1, 7
+    k_decay(jj) = decomp_k(jj)* o_scalar
+  enddo
 
   end associate
   end subroutine calc_som_decay_k

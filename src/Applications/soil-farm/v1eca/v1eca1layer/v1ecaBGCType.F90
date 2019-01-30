@@ -515,11 +515,6 @@ contains
 
   ystates0(:) = this%ystates0(:)
 
-
-  !add all external input
-   call this%add_ext_input(dtime, this%v1eca_bgc_index, bgc_forc, &
-      this%c_inflx, this%n_inflx, this%p_inflx)
-
   !initialize decomposition scaling factors
   call this%decompkf_eca%set_decompk_scalar(ystates1(lid_o2), bgc_forc)
 

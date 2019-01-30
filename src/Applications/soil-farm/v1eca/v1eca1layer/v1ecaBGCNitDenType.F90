@@ -170,7 +170,7 @@ implicit none
       anaerobic_frac = exp(-rij_kro_a * r_psi**(-rij_kro_alpha) * &
         o2_decomp_depth**(-rij_kro_beta) * o2g**rij_kro_gamma * (h2osoi_vol + &
             ratio_diffusivity_water_gas *  air_vol)**rij_kro_delta)
-      
+
     end associate
   end subroutine calc_anaerobic_frac
 
@@ -235,8 +235,8 @@ implicit none
          h2osoi_vol =>    bgc_forc%h2osoi_vol , & !
          h2osoi_liq =>    bgc_forc%h2osoi_liq , & !
          finundated =>    bgc_forc%finundated , & ! Input: [real(r8) (:)]
-         t_scalar   =>    decompkf_eca%t_scalar      , & ! Input: [real(r8) (:,:)   ]  soil temperature scalar for decomp
-         w_scalar   =>    decompkf_eca%w_scalar        & ! Input: [real(r8) (:,:)   ]  soil water scalar for decomp
+         t_scalar   =>    bgc_forc%t_scalar      , & ! Input: [real(r8) (:,:)   ]  soil temperature scalar for decomp
+         w_scalar   =>    bgc_forc%w_scalar        & ! Input: [real(r8) (:,:)   ]  soil water scalar for decomp
          )
 
       pot_f_nit = pot_f_nit_mol_per_sec
@@ -328,8 +328,8 @@ implicit none
 
   associate(                                    &
      pH           =>    bgc_forc%pH    , &
-     t_scalar     =>    decompkf_eca%t_scalar , & ! Input: [real(r8) (:,:)   ]  soil temperature scalar for decomp
-     w_scalar     =>    decompkf_eca%w_scalar , & ! Input: [real(r8) (:,:)   ]  soil water scalar for decomp
+     t_scalar     =>    bgc_forc%t_scalar , & ! Input: [real(r8) (:,:)   ]  soil temperature scalar for decomp
+     w_scalar     =>    bgc_forc%w_scalar , & ! Input: [real(r8) (:,:)   ]  soil water scalar for decomp
      k_nitr_max   =>    this%k_nitr_max         &
   )
 

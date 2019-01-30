@@ -27,6 +27,8 @@ implicit none
     real(r8), pointer :: cflx_output_litr_lwd_vr_col(:,:) => null() ! coarse woody debris input, gC/m3/s
 
     real(r8), pointer :: in_decomp_cpools_vr_col(:,:,:) => null()
+    real(r8), pointer :: in_t_scalar(:,:) => null()
+    real(r8), pointer :: in_w_scalar(:,:) => null()
   contains
     procedure, public  :: Init
     procedure, public  :: reset
@@ -59,6 +61,8 @@ implicit none
 
   if(index(bgc_type,'type1_bgc')/=0)then
     SPVAL_ALLOC(this%in_decomp_cpools_vr_col(begc:endc,lbj:ubj,1:7))
+    SPVAL_ALLOC(this%in_w_scalar(begc:endc,lbj:ubj))
+    SPVAL_ALLOC(this%in_t_scalar(begc:endc,lbj:ubj))
     return
   endif
   SPVAL_ALLOC(this%cflx_input_litr_met_vr_col(begc:endc,lbj:ubj))
