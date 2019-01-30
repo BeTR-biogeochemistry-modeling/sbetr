@@ -8,7 +8,7 @@ module BeTRSimulation
   !  structures.
   !
   use VegetationDataType, only : veg_es
-  use ColumnDataType    , only : col_es, col_ws    
+  use ColumnDataType    , only : col_es, col_ws, col_wf    
   use abortutils     , only : endrun
   use clm_varctl     , only : iulog, use_cn
   use shr_log_mod    , only : errMsg => shr_log_errMsg
@@ -938,21 +938,21 @@ contains
       this%biophys_forc(c)%smp_l_col(cc,lbj:ubj)         = col_ws%smp_l(c,lbj:ubj)
     endif
     if(present(waterflux_vars))then
-      this%biogeo_flux(c)%qflx_infl_col(cc)             = waterflux_vars%qflx_infl_col(c)
-      this%biogeo_flux(c)%qflx_totdrain_col(cc)         = waterflux_vars%qflx_totdrain_col(c)
-      this%biogeo_flux(c)%qflx_gross_evap_soil_col(cc)  = waterflux_vars%qflx_gross_evap_soil_col(c)
-      this%biogeo_flux(c)%qflx_gross_infl_soil_col(cc)  = waterflux_vars%qflx_gross_infl_soil_col(c)
-      this%biophys_forc(c)%qflx_surf_col(cc)            = waterflux_vars%qflx_surf_col(c)
-      this%biophys_forc(c)%qflx_dew_grnd_col(cc)        = waterflux_vars%qflx_dew_grnd_col(c)
-      this%biophys_forc(c)%qflx_dew_snow_col(cc)        = waterflux_vars%qflx_dew_snow_col(c)
-      this%biophys_forc(c)%qflx_sub_snow_vol_col(cc)    = waterflux_vars%qflx_sub_snow_vol_col(c)
-      this%biophys_forc(c)%qflx_sub_snow_col(cc)        = waterflux_vars%qflx_sub_snow_col(c)
-      this%biophys_forc(c)%qflx_h2osfc2topsoi_col(cc)   = waterflux_vars%qflx_h2osfc2topsoi_col(c)
-      this%biophys_forc(c)%qflx_snow2topsoi_col(cc)     = waterflux_vars%qflx_snow2topsoi_col(c)
-      this%biophys_forc(c)%qflx_rootsoi_col(cc,lbj:ubj) = waterflux_vars%qflx_rootsoi_col(c,lbj:ubj)*1.e-3_r8
+      this%biogeo_flux(c)%qflx_infl_col(cc)             = col_wf%qflx_infl(c)
+      this%biogeo_flux(c)%qflx_totdrain_col(cc)         = col_wf%qflx_totdrain(c)
+      this%biogeo_flux(c)%qflx_gross_evap_soil_col(cc)  = col_wf%qflx_gross_evap_soil(c)
+      this%biogeo_flux(c)%qflx_gross_infl_soil_col(cc)  = col_wf%qflx_gross_infl_soil(c)
+      this%biophys_forc(c)%qflx_surf_col(cc)            = col_wf%qflx_surf(c)
+      this%biophys_forc(c)%qflx_dew_grnd_col(cc)        = col_wf%qflx_dew_grnd(c)
+      this%biophys_forc(c)%qflx_dew_snow_col(cc)        = col_wf%qflx_dew_snow(c)
+      this%biophys_forc(c)%qflx_sub_snow_vol_col(cc)    = col_wf%qflx_sub_snow_vol(c)
+      this%biophys_forc(c)%qflx_sub_snow_col(cc)        = col_wf%qflx_sub_snow(c)
+      this%biophys_forc(c)%qflx_h2osfc2topsoi_col(cc)   = col_wf%qflx_h2osfc2topsoi(c)
+      this%biophys_forc(c)%qflx_snow2topsoi_col(cc)     = col_wf%qflx_snow2topsoi(c)
+      this%biophys_forc(c)%qflx_rootsoi_col(cc,lbj:ubj) = col_wf%qflx_rootsoi(c,lbj:ubj)*1.e-3_r8
 
-      this%biogeo_flux(c)%qflx_adv_col(cc,lbj-1:ubj)    = waterflux_vars%qflx_adv_col(c,lbj-1:ubj)
-      this%biogeo_flux(c)%qflx_drain_vr_col(cc,lbj:ubj) = waterflux_vars%qflx_drain_vr_col(c,lbj:ubj)
+      this%biogeo_flux(c)%qflx_adv_col(cc,lbj-1:ubj)    = col_wf%qflx_adv(c,lbj-1:ubj)
+      this%biogeo_flux(c)%qflx_drain_vr_col(cc,lbj:ubj) = col_wf%qflx_drain_vr(c,lbj:ubj)
       pp = 0
       do pi = 1, betr_maxpatch_pft
        if (pi <= col%npfts(c)) then
@@ -1057,12 +1057,12 @@ contains
   if(present(waterflux_vars))then
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
-      waterflux_vars%qflx_infl_col(c)            = this%biogeo_flux(c)%qflx_infl_col(cc)
-      waterflux_vars%qflx_adv_col(c,lbj-1:ubj)   = this%biogeo_flux(c)%qflx_adv_col(cc,lbj-1:ubj)
-      waterflux_vars%qflx_totdrain_col(c)        = this%biogeo_flux(c)%qflx_totdrain_col(cc)
-      waterflux_vars%qflx_gross_evap_soil_col(c) = this%biogeo_flux(c)%qflx_gross_evap_soil_col(cc)
-      waterflux_vars%qflx_gross_infl_soil_col(c) = this%biogeo_flux(c)%qflx_gross_infl_soil_col(cc)
-      waterflux_vars%qflx_drain_vr_col(c,1:ubj)  = this%biogeo_flux(c)%qflx_drain_vr_col(cc,1:ubj)
+      col_wf%qflx_infl(c)            = this%biogeo_flux(c)%qflx_infl_col(cc)
+      col_wf%qflx_adv(c,lbj-1:ubj)   = this%biogeo_flux(c)%qflx_adv_col(cc,lbj-1:ubj)
+      col_wf%qflx_totdrain(c)        = this%biogeo_flux(c)%qflx_totdrain_col(cc)
+      col_wf%qflx_gross_evap_soil(c) = this%biogeo_flux(c)%qflx_gross_evap_soil_col(cc)
+      col_wf%qflx_gross_infl_soil(c) = this%biogeo_flux(c)%qflx_gross_infl_soil_col(cc)
+      col_wf%qflx_drain_vr(c,1:ubj)  = this%biogeo_flux(c)%qflx_drain_vr_col(cc,1:ubj)
     enddo
   endif
 
