@@ -28,6 +28,7 @@ contains
     use ecacnpBGCType, only : create_jarmodel_ecacnp
     use simicBGCType,  only : create_jarmodel_simicbgc
     use cdomBGCType, only : create_jarmodel_cdom
+    use BgcSummsType, only : create_jarmodel_summseca       ! added for using method 'summs' from Rose's model, -zlyu. 01/29/2019
     !end_appadd
     use BeTRJarModel      , only : jar_model_type
     implicit none
@@ -41,6 +42,8 @@ contains
           allocate(jarmodel, source=create_jarmodel_ch4soil())
        case ("ecacnp")
           allocate(jarmodel, source=create_jarmodel_ecacnp())
+       case ("summs")
+          allocate(jarmodel, source=create_jarmodel_summseca())     ! added for using method 'summs' from Rose's model
        case ("simic")
           allocate(jarmodel, source=create_jarmodel_simicbgc())
        case ("cdom")
@@ -66,6 +69,8 @@ contains
     use ecacnpParaType  , only : create_jarpars_ecacnp
     use simicParaType   , only : create_jarpars_simic
     use cdomParaType   , only : create_jarpars_cdom
+    use BgcSummsType, only : create_jarmodel_summseca            ! added for using method 'summs' from Rose's model
+    use SummsParaType, only : create_jarpars_summseca            ! added for using method 'summs' from Rose's model
     !end_appadd
     implicit none
     !ARGUMENTS
@@ -78,6 +83,8 @@ contains
           allocate(jarpars, source=create_jarpars_ch4soil())
        case ("ecacnp")
           allocate(jarpars, source=create_jarpars_ecacnp())
+       case ("summs")
+          allocate(jarpars, source=create_jarpars_summseca())     ! added for using method 'summs' from Rose's model
        case ("simic")
           allocate(jarpars, source=create_jarpars_simic())
        case ("cdom")

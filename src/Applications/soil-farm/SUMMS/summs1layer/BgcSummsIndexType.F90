@@ -90,6 +90,9 @@ implicit none
      integer           :: nprimvars                              !total number of primary variables
      integer           :: nstvars                                !number of equations for the state variabile vector
      integer           :: nreactions                             !seven decomposition pathways plus nitrification, denitrification and plant immobilization
+     integer           :: lid_totinput                           !copy from /soil-farm/ecacnp/ecacnp1layer/ecacnpBGCIndexType.F90
+     integer           :: lid_totstore                           !copy from /soil-farm/ecacnp/ecacnp1layer/ecacnpBGCIndexType.F90
+     integer           :: lid_cum_closs                          !copy from /soil-farm/ecacnp/ecacnp1layer/ecacnpBGCIndexType.F90
 
      integer , pointer :: primvarid(:)   => null()
      logical , pointer :: is_aerobic_reac(:)=> null()
@@ -102,6 +105,7 @@ implicit none
      character(len=loc_name_len), allocatable :: varnames(:)
      character(len=loc_name_len), allocatable :: varunits(:)
      character(len=loc_name_len), allocatable :: ompoolnames(:)
+     integer                    , allocatable :: vartypes(:)         !added from /ecacnp/ecacnp1layer/ecacnpBGCIndexType.F90
    contains
      procedure, public  :: Init
      procedure, private :: InitPars
@@ -111,7 +115,7 @@ implicit none
 
   contains
   !-----------------------------------------------------------------------
-  subroutine list_init(self, name, id)
+  subroutine list_init(self, name, id)   
   implicit none
   type(list_t), pointer :: self
   character(len=*), intent(in) :: name
@@ -230,7 +234,7 @@ implicit none
   end subroutine add_ompool_name
 
   !-------------------------------------------------------------------------------
-  subroutine Init(this, use_c13, use_c14, non_limit, nop_limit, maxpft, use_warm)
+  subroutine Init(this, use_c13, use_c14, non_limit, nop_limit, maxpft, use_warm, batch_mode)  !add batch_mode to be used in function of init_summs under dir /SUMMS/summs1layer/BgcSummsType.F90 
     !
     ! DESCRIPTION:
     ! Initialize summsbgc type
@@ -244,14 +248,17 @@ implicit none
   logical, intent(in) :: nop_limit
   integer, optional, intent(in) :: maxpft
   logical, intent(in) :: use_warm
+  logical, optional, intent(in) :: batch_mode      !added
 
   ! !LOCAL VARIABLES:
   integer :: maxpft_loc
+  logical :: batch_mode_loc       !added
 
   maxpft_loc = 0
   this%dom_beg=0; this%dom_end=-1
   if(present(maxpft))maxpft_loc=maxpft
-  call this%InitPars(maxpft_loc, use_c14, use_c13, non_limit, nop_limit, use_warm)
+  if(present(batch_mode))batch_mode_loc=batch_mode       !added
+  call this%InitPars(maxpft_loc, use_c14, use_c13, non_limit, nop_limit, use_warm, batch_mode_loc)    !add batch_mode_loc
 
   call this%InitAllocate()
 
@@ -262,7 +269,7 @@ implicit none
   end subroutine Init
   !-------------------------------------------------------------------------------
 
-  subroutine InitPars(this, maxpft, use_c14, use_c13, non_limit, nop_limit, use_warm)
+  subroutine InitPars(this, maxpft, use_c14, use_c13, non_limit, nop_limit, use_warm, batch_mode)    !added to stay same when used in Init()
     !
     ! !DESCRIPTION:
     !  describe the layout of the stoichiometric matrix for the reactions
@@ -294,6 +301,7 @@ implicit none
     logical, intent(in) :: non_limit
     logical, intent(in) :: nop_limit
     logical, intent(in) :: use_warm
+    logical, intent(in) :: batch_mode    !added
     ! !LOCAL VARIABLES:
     integer :: itemp
     integer :: ireac   !counter of reactions
@@ -517,6 +525,13 @@ implicit none
       enddo
     endif
 
+    ! added this part, copying from /soil-farm/ecacnp/ecacnp1layer/ecacnpBGCIndexType.F90
+    if(batch_mode)then
+      this%lid_totinput  = addone(itemp);call list_insert(list_name, 'c_tot_input',vid); call list_insert(list_unit,'mol m-3',uid)
+      this%lid_totstore  = addone(itemp);call list_insert(list_name, 'c_tot_store',vid); call list_insert(list_unit,'mol m-3',uid)
+      this%lid_cum_closs  = addone(itemp);call list_insert(list_name, 'c_loss',vid); call list_insert(list_unit,'mol m-3',uid)
+    endif
+    ! end of copying
     this%nstvars          = itemp          !64 state variables
     this%nreactions = ireac            !decomposition pathways plus root auto respiration, nitrification, denitrification and plant immobilization
 

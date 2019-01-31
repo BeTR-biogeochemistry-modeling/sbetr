@@ -171,7 +171,7 @@ contains
     !
     !USES
     use WaterstateType , only : waterstate_type
-    use betr_constants , only : betr_namelist_buffer_size, betr_filename_length
+    use betr_constants , only : betr_namelist_buffer_size, betr_filename_length, stdout    ! added for output testing remarks
     implicit none
 
     class(betr_simulation_type)              , intent(inout) :: this
@@ -183,6 +183,12 @@ contains
     type(waterstate_type)                    , intent(inout) :: waterstate
     logical,                        optional , intent(in)    :: masterproc
     character(len=*), parameter :: subname = 'BeTRSimulationInit'
+
+    ! testing only, where the run crushed        -zlyu   01/27/2019    
+    write(stdout, *) '***************************@@@@@@@@@@@'
+    write(stdout, *) 'are we in subroutine BeTRSimulationInit?'
+    write(stdout, *) '***************************@@@@@@@@@@@'
+    ! end of the testing 
 
     call endrun(msg="ERROR "//subname//" unimplemented. "//errmsg(mod_filename, __LINE__))
 
@@ -201,7 +207,7 @@ contains
     !
     !USES
     use WaterstateType , only : waterstate_type
-    use betr_constants , only : betr_namelist_buffer_size, betr_filename_length
+    use betr_constants , only : betr_namelist_buffer_size, betr_filename_length, stdout    ! added for output testing remarks
     implicit none
 
     class(betr_simulation_type)              , intent(inout) :: this
@@ -218,12 +224,30 @@ contains
 
     call endrun(msg="ERROR "//subname//" unimplemented. "//errmsg(mod_filename, __LINE__))
 
+    ! testing only, where the run crushed        -zlyu   01/27/2019    
+    write(stdout, *) '***************************@@@@@@@@@@@'
+    write(stdout, *) 'are we in subroutine BeTRSimulationInitOffline?'
+    write(stdout, *) '***************************@@@@@@@@@@@'
+    ! end of the testing 
+
     if (this%num_soilc > 0)                  continue
     if (bounds%begc > 0)                     continue
     if (size(waterstate%h2osoi_liq_col) > 0) continue
     if (len(base_filename) > 0)              continue
     if (len(namelist_buffer) > 0)            continue
+    ! testing only, where the run crushed        -zlyu   01/27/2019    
+    write(stdout, *) '***************************@@@@@@@@@@@'
+    write(stdout, *) 'callbetr_time%Init from BeTRSimulationInitOffline?'
+    write(stdout, *) '***************************@@@@@@@@@@@'
+    ! end of the testing 
+
     call this%betr_time%Init(namelist_buffer)
+
+    ! testing only, where the run crushed        -zlyu   01/27/2019    
+    write(stdout, *) '***************************@@@@@@@@@@@'
+    write(stdout, *) 'at the end of BeTRSimulationInitOffline?'
+    write(stdout, *) '***************************@@@@@@@@@@@'
+    ! end of the testing 
   end subroutine BeTRSimulationInitOffline
 !-------------------------------------------------------------------------------
   subroutine BeTRSetFilter(this, maxpft_per_col, nsoilorder, boffline)
@@ -231,7 +255,8 @@ contains
   !DESCRIPTION
   ! set betr filter, only used for standalone applicaitons
     use betr_ctrl                , only : betr_offline
-  use betr_varcon                , only : betr_max_soilorder
+    use betr_varcon              , only : betr_max_soilorder
+    use betr_constants           , only : stdout                   ! added for output testing remarks
   implicit none
   !ARGUMENTS
   class(betr_simulation_type), intent(inout) :: this
@@ -239,6 +264,13 @@ contains
   integer, optional, intent(in) :: nsoilorder
   logical, optional, intent(in) :: boffline
     integer :: p
+
+    ! testing only, where the run collapsed        -zlyu   01/27/2019    
+    write(stdout, *) '###########################'
+    write(stdout, *) 'inside driver/shared/BeTRSimulation.F90 BeTRSetFilter()'
+    write(stdout, *) '###########################'
+    ! end of the testing 
+
     !by default, surface litter layer is off
     this%num_jtops = 1
     allocate(this%jtops(this%num_jtops))
@@ -264,6 +296,13 @@ contains
     else
       betr_max_soilorder=1
     endif
+
+    ! testing only, where the run collapsed        -zlyu   01/27/2019    
+    write(stdout, *) '###########################'
+    write(stdout, *) 'at the end of driver/shared/BeTRSimulation.F90 BeTRSetFilter()'
+    write(stdout, *) '###########################'
+    ! end of the testing 
+
   end subroutine BeTRSetFilter
 
 !-------------------------------------------------------------------------------
@@ -289,6 +328,13 @@ contains
   character(len=256) :: locfn ! local file name
   type(file_desc_t)  :: ncid  ! pio netCDF file id
 
+    ! testing only, where the run collapsed        -zlyu   01/27/2019    
+    write(iulog, *) '#####################################'
+    write(iulog, *) 'inside driver/shared/BeTRSimulation.F90 BeTRSimulationReadParams()'
+    write(iulog, *) 'open file for parameter reading'
+    write(iulog, *) '#####################################'
+    ! end of the testing 
+
   !open file for parameter reading
   call getfil (bgc_param_file, locfn, 0)
   if (masterproc) then
@@ -305,6 +351,11 @@ contains
     call endrun(msg=bstatus%print_msg())
   endif
 
+    ! testing only, where the run collapsed        -zlyu   01/27/2019    
+    write(iulog, *) '#######################################################'
+    write(iulog, *) 'at the end of driver/shared/BeTRSimulation.F90 BeTRSimulationReadParams()'
+    write(iulog, *) '###########################3##########################'
+    ! end of the testing 
 
   end subroutine BeTRSimulationReadParams
 !-------------------------------------------------------------------------------

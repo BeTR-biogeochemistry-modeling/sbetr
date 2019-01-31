@@ -5,6 +5,9 @@ set(SUMMS1LAYER_SOURCES
   BgcSummsNitDenType.F90
   BgcSummsSOMType.F90
   BgcSummsType.F90
+  BgcSummsMath.F90
+  BgcSummsDebType.F90
+  DebGrowMod.F90
 )
 
 

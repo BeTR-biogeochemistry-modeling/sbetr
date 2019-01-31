@@ -6,7 +6,7 @@
 /
 
 &betr_parameters
-  reaction_method = 'ecacnp'
+  reaction_method = 'summs'
   advection_on = .true.
   diffusion_on = .true.
   reaction_on  = .true.

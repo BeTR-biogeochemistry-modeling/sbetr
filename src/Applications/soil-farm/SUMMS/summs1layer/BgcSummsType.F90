@@ -69,6 +69,7 @@ module BgcSummsType
     real(r8), private                    :: beg_p_mass
     real(r8), private                    :: c_inflx,n_inflx, p_inflx
     logical                              :: bgc_on
+    logical , private                    :: batch_mode                       !copy from /ecacnp/ecacnp1layer/ecacnpBGCType.F90
   contains
     procedure, public  :: init          => init_summs
     procedure, public  :: runbgc        => runbgc_summs
@@ -115,15 +116,18 @@ contains
 
   end function getvarllen_summs
   !-------------------------------------------------------------------------------
-  subroutine getvarlist_summs(this, nstvars, varnames, varunits)
+  subroutine getvarlist_summs(this, nstvars, varnames, varunits, vartypes)   !vartypes is added to be consistent with /soil-farm/bgcfarm_util/BeTRJarModel.F90
   implicit none
     class(summsbgceca_type) , intent(inout) :: this
   integer, intent(in) :: nstvars
   character(len=*), intent(out) :: varnames(1:nstvars)
   character(len=*), intent(out) :: varunits(1:nstvars)
+  integer         , intent(out) :: vartypes(1:nstvars)   ! added
+
   integer :: n
 
   do n = 1, nstvars
+    vartypes(n) = this%summsbgc_index%vartypes(n)            !added
     write(varnames(n),'(A)')trim(this%summsbgc_index%varnames(n))
     write(varunits(n),'(A)')trim(this%summsbgc_index%varunits(n))
   enddo
@@ -228,22 +232,24 @@ contains
   end select
   end subroutine UpdateParas_summs
   !-------------------------------------------------------------------------------
-  subroutine init_summs(this,  biogeo_con,  bstatus)
+  subroutine init_summs(this,  biogeo_con,  batch_mode,bstatus) !add dummy batch_mode to be consistent with subroutine JarModel_init(this,  biogeo_con,  batch_mode, bstatus) in /soil-farm/bgcfarm_util/BeTRJarModel.F90
   use betr_varcon         , only : betr_maxpatch_pft
   implicit none
   class(summsbgceca_type), intent(inout) :: this
-  class(BiogeoCon_type)       , intent(in) :: biogeo_con
+  class(BiogeoCon_type)       , intent(in) :: biogeo_con     
+  logical               , intent(in) :: batch_mode         ! added
   type(betr_status_type), intent(out) :: bstatus
 
   character(len=256) :: msg
   write(this%jarname, '(A)')'summs'
 
   this%bgc_on=.true.
+  this%batch_mode=batch_mode         !added
   select type(biogeo_con)
   type is(SummsPara_type)
   call bstatus%reset()
   call this%summsbgc_index%Init(biogeo_con%use_c13, biogeo_con%use_c14, &
-     biogeo_con%non_limit, biogeo_con%nop_limit,  betr_maxpatch_pft, biogeo_con%use_warm)
+     biogeo_con%non_limit, biogeo_con%nop_limit,  betr_maxpatch_pft, biogeo_con%use_warm, this%batch_mode)  ! add batch_mode
 
   this%nop_limit=biogeo_con%nop_limit
   this%non_limit=biogeo_con%non_limit

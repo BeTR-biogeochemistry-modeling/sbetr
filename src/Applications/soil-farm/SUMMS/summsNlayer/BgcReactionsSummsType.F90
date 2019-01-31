@@ -162,7 +162,7 @@ contains
 
 !-------------------------------------------------------------------------------
   subroutine set_bgc_spinup(this, bounds, lbj, ubj, biophysforc, &
-  tracers, tracerstate_vars, spinup_stage)
+  tracers, tracerstate_vars)                                          ! , spinup_stage removed
 
   !
   !DESCRIPTION
@@ -171,7 +171,7 @@ contains
   !2. spinup scalar was defiend with sufficient temporal average.
   use tracerstatetype        , only : tracerstate_type
   use BeTRTracerType         , only : betrtracer_type
-  use betr_ctrl              , only : exit_spinup, enter_spinup, betr_spinup_state
+  use betr_ctrl              , only : exit_spinup, enter_spinup, betr_spinup_state, spinup_stage   ! add spinup_stage from here 
   use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
   use tracer_varcon          , only : patomw
   implicit none
@@ -181,7 +181,7 @@ contains
   type(betr_biogeophys_input_type)        , intent(inout) :: biophysforc
   type(BeTRtracer_type)                   , intent(inout) :: tracers
   type(tracerstate_type)                  , intent(inout) :: tracerstate_vars
-  integer                                 , intent(in) :: spinup_stage
+  !integer                                 , intent(in) :: spinup_stage                ! removed 
   integer :: kk, c, j, c_l
 
   associate(                                                           &
@@ -364,12 +364,17 @@ if(exit_spinup)then
   enddo
   end subroutine init_iP_prof
   !----------------------------------------------------------------------
-  subroutine set_kinetics_par(this, lbj, ubj, nactpft, plantNutkinetics)
+  subroutine set_kinetics_par(this, lbj, ubj, nactpft, plantNutkinetics, tracers, tracercoeff_vars)
+  ! add from /ecacnp/ecacnpNlayer/ecacnpBGCReactionsType.F90 to follow sbetr/src/betr/betr_core/BGCReactionsMod.F90
   use PlantNutKineticsMod, only : PlantNutKinetics_type
+  use tracercoeffType          , only : tracercoeff_type            ! added
+  use BeTRTracerType           , only : betrtracer_type             ! added
 
   ! !ARGUMENTS:
   class(bgc_reaction_summs_type), intent(inout)    :: this                       !
   class(PlantNutKinetics_type), intent(in) :: plantNutkinetics
+  type(betrtracer_type)       , intent(in) :: tracers               ! added
+  type(tracercoeff_type), intent(inout) :: tracercoeff_vars         ! added
   integer, intent(in) :: lbj, ubj
   integer, intent(in) :: nactpft  !number of active pfts
 
@@ -431,8 +436,10 @@ if(exit_spinup)then
     integer   :: c, j, litr_cnt, wood_cnt, Bm_cnt, som_cnt, dom_cnt, itemp_ads, itemp_ads_grp
     integer   :: ngroupmems
     logical   :: carbon_only = .false.
+    logical   :: batch_mode                               !added for this%summseca(c,j)%Init(summs_para, batch_mode. bstatus) 
 
     call bstatus%reset()
+    batch_mode = .false.                                  !added for this%summseca(c,j)%Init(summs_para, batch_mode. bstatus) 
 
     if (this%dummy_compiler_warning) continue
 
@@ -450,7 +457,7 @@ if(exit_spinup)then
     !initialize
     do j = lbj, ubj
       do c = bounds%begc, bounds%endc
-        call this%summseca(c,j)%Init(summs_para, bstatus)
+        call this%summseca(c,j)%Init(summs_para, batch_mode, bstatus)         !batch_mode added, corresponds to summs1layer
         if(bstatus%check_status())return
 
         call this%summsforc(c,j)%Init(this%summsbgc_index%nstvars)
@@ -1159,8 +1166,9 @@ if(exit_spinup)then
 
   !-------------------------------------------------------------------------------
   subroutine set_boundary_conditions(this, bounds, num_soilc, filter_soilc, dz_top, betrtracer_vars, &
-       biophysforc, biogeo_flux, tracerboundarycond_vars, betr_status)
-    !
+       biophysforc, biogeo_flux, tracercoeff_vars, tracerboundarycond_vars, betr_status)       
+    ! add tracercoeff_vars from /ecacnp/ecacnpNlayer/ecacnpBGCReactionsType.F90
+    !     
     ! !DESCRIPTION:
     ! set up boundary conditions for tracer movement
     !
@@ -1170,6 +1178,7 @@ if(exit_spinup)then
     use BeTR_biogeoFluxType   , only : betr_biogeo_flux_type
     use BetrStatusType        , only : betr_status_type
     use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
+    use TracerCoeffType        , only : tracercoeff_type                 ! added from /ecacnpNlayer/ecacnpBGCReactionsType.F90
     implicit none
     ! !ARGUMENTS:
     class(bgc_reaction_summs_type)       , intent(inout)    :: this
@@ -1180,6 +1189,7 @@ if(exit_spinup)then
     real(r8)                             , intent(in)    :: dz_top(bounds%begc: )
     type(betr_biogeophys_input_type)     , intent(in)    :: biophysforc
     type(betr_biogeo_flux_type)          , intent(in)    :: biogeo_flux
+    type(tracercoeff_type)               , intent(in)   :: tracercoeff_vars         !add from /ecacnp/ecacnpNlayer/ecacnpBGCReactionsType.F90
     type(tracerboundarycond_type)        , intent(inout) :: tracerboundarycond_vars !
     type(betr_status_type)               , intent(out)   :: betr_status
 
@@ -1275,7 +1285,7 @@ if(exit_spinup)then
     integer                              , intent(in) :: lbj, ubj                      ! lower and upper bounds, make sure they are > 0
     real(r8)                             , intent(in) :: dtime                         ! model time step
     type(betrtracer_type)                , intent(in) :: betrtracer_vars               ! betr configuration information
-    type(tracercoeff_type)               , intent(in) :: tracercoeff_vars
+    type(tracercoeff_type)               , intent(inout) :: tracercoeff_vars           ! change in to inout
     type(betr_biogeophys_input_type)     , intent(inout) :: biophysforc
     type(tracerboundarycond_type)        , intent(inout) :: tracerboundarycond_vars !
     type(tracerstate_type)               , intent(inout) :: tracerstate_vars

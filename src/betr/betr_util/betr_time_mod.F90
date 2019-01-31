@@ -90,7 +90,7 @@ contains
   subroutine Init(this, namelist_buffer, masterproc)
 
     use betr_constants, only : betr_namelist_buffer_size
-
+    use betr_constants , only : stdout                        ! added for testing output remarks, -zlyu, 01/29/2019
     implicit none
 
     class(betr_time_type), intent(inout) :: this
@@ -110,8 +110,18 @@ contains
     this%hist_freq=-1
     if(present(namelist_buffer))then
       if(present(masterproc))then
+         ! testing only, where the run collapsed        -zlyu   01/27/2019    
+         write(stdout, *) '***************************'
+         write(stdout, *) 'if case with masterproc'
+         write(stdout, *) '***************************'
+         ! end of the testing 
         call this%ReadNamelist(namelist_buffer, masterproc)
       else
+        ! testing only, where the run collapsed        -zlyu   01/27/2019    
+        write(stdout, *) '***************************'
+        write(stdout, *) 'else case for masterproc'
+        write(stdout, *) '***************************'
+        ! end of the testing 
         call this%ReadNamelist(namelist_buffer)
       endif
     endif
@@ -174,6 +184,12 @@ contains
        end if
     end if
 
+    ! testing only, where the run collapsed        -zlyu   01/27/2019    
+    write(stdout, *) '***************************'
+    write(stdout, *) 'before printing out betr_time setting'
+    write(stdout, *) '***************************'
+    ! end of the testing 
+
     if (masterproc_loc) then
        write(stdout, *)
        write(stdout, *) '--------------------'
@@ -201,10 +217,28 @@ contains
     case default
       call endrun(msg="ERROR setting up stop_option "//errmsg(mod_filename, __LINE__))
     end select
+
+    ! testing only, where the run collapsed        -zlyu   01/27/2019    
+    write(stdout, *) '***************************'
+    write(stdout, *) 'after case select in betr_time_mod'
+    write(stdout, *) '***************************'
+    ! end of the testing 
+
+
     if(restart_dtime < 0._r8)then
       this%restart_dtime  = this%stop_time
+    ! testing only, where the run collapsed        -zlyu   01/27/2019    
+    write(stdout, *) '***************************'
+    write(stdout, *) 'if case restart_dtime < 0._r8'
+    write(stdout, *) '***************************'
+    ! end of the testing 
     else
       this%restart_dtime = restart_dtime
+    ! testing only, where the run collapsed        -zlyu   01/27/2019    
+    write(stdout, *) '***************************'
+    write(stdout, *) 'else case restart_dtime < 0._r8'
+    write(stdout, *) '***************************'
+    ! end of the testing 
     endif
   end subroutine ReadNamelist
 

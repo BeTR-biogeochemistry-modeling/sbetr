@@ -37,6 +37,8 @@ implicit none
     real(r8) :: ref_kaff_mono_mic
     real(r8) :: ref_vmax_mic
 
+    logical :: use_warm          !added for consistency with BgcSummsDecompType.F90
+
   !decomposition
   real(r8) :: Q10
   real(r8) :: froz_q10
@@ -149,15 +151,23 @@ contains
   end function create_jarpars_summseca
 
   !--------------------------------------------------------------------
-  subroutine summspara_init(this, namelist_buffer, bstatus)
+  subroutine summspara_init(this, bstatus)
+  !subroutine summspara_init(this, namelist_buffer, bstatus)
+  !remoce dummy variable namelist_buffer to work with template in BiogeoConType.F90 
   use betr_constants , only : betr_namelist_buffer_size_ext
   use BetrStatusType , only : betr_status_type
   use betr_ctrl      , only : betr_spinup_state
+  use betr_constants , only : stdout                         !added for output testing remarks, -zlyu, 01/28/2019             
   implicit none
   class(SummsPara_type), intent(inout) :: this
-  character(len=*)         , intent(in)  :: namelist_buffer
+  !character(len=*)         , intent(in)  :: namelist_buffer     !remoce dummy variable namelist_buffer to work with template in BiogeoConType.F90 
   type(betr_status_type)   , intent(out) :: bstatus
 
+    ! testing only, where the run crushed        -zlyu   01/27/2019     
+    write(stdout, *) '*******************************************'
+    write(stdout, *) 'inside summspara_init'
+    write(stdout, *) '*******************************************'
+    ! end of the testing
   call this%bcon_Init(bstatus)
 
   call this%InitAllocate()

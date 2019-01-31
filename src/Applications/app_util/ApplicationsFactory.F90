@@ -56,6 +56,7 @@ contains
     use betr_ctrl       , only : iulog  => biulog
     use betr_constants  , only : betr_errmsg_len
     use BetrStatusType  , only : betr_status_type
+
     !begin_appadd
     use ecacnpBGCReactionsType, only : ecacnp_bgc_reaction_type
 #if (defined SBETR)
@@ -63,6 +64,7 @@ contains
     use cdomBGCReactionsType  , only : cdom_bgc_reaction_type
     use simicBGCReactionsType , only : simic_bgc_reaction_type
     use kecaBGCReactionsType  , only : keca_bgc_reaction_type
+    use BgcReactionsSummsType , only : bgc_reaction_summs_type         ! added for introduing 'summs' method from Rose's model
     !end_appadd
 #endif
 
@@ -81,6 +83,9 @@ contains
     !begin_appadd
     case ("ecacnp","ecacnp_mosart")
        asoibgc=.true.;allocate(bgc_reaction, source=ecacnp_bgc_reaction_type())
+    case ("summs")
+       asoibgc=.true.;allocate(bgc_reaction, source=bgc_reaction_summs_type())     
+       ! added for introduing 'summs' method from Rose's model          -zlyu, 01/29/2019
 #if (defined SBETR)
     case ("ch4soil")
        asoibgc=.true.;allocate(bgc_reaction, source=ch4soil_bgc_reaction_type())
@@ -117,6 +122,8 @@ contains
   use cdomPlantSoilBGCType  , only : cdom_plant_soilbgc_type
   use simicPlantSoilBGCType , only : simic_plant_soilbgc_type
   use kecaPlantSoilBGCType  , only : keca_plant_soilbgc_type
+  use PlantSoilBgcSummsType , only : plant_soilbgc_summs_type        
+  !added for introduing 'summs' method from Rose's model          -zlyu, 01/29/2019
   !end_appadd
 #endif
   implicit none
@@ -134,6 +141,9 @@ contains
   !begin_appadd
   case ("ecacnp","ecacnp_mosart")
      allocate(plant_soilbgc, source=ecacnp_plant_soilbgc_type())
+  case ("summs")
+     allocate(plant_soilbgc, source=plant_soilbgc_summs_type())
+     !added for introduing 'summs' method from Rose's model          -zlyu, 01/29/2019
 #if (defined SBETR)
   case ("ch4soil")
      allocate(plant_soilbgc, source=ch4soil_plant_soilbgc_type())
@@ -165,6 +175,7 @@ contains
   use cdomParaType     , only : cdom_para
   use simicParaType    , only : simic_para
   use kecaParaType     , only : keca_para
+  use SummsParaType    , only : summs_para           ! added for introduing 'summs' method from Rose's model 
   !end_appadd
 #endif
   use tracer_varcon    , only : reaction_method
@@ -178,6 +189,9 @@ contains
   !begin_appadd
    case ("ecacnp","ecacnp_mosart")
      call ecacnp_para%readPars(ncid, bstatus)
+   case ("summs")
+     call summs_para%readPars(ncid, bstatus)
+    !added for introduing 'summs' method from Rose's model          -zlyu, 01/29/2019
 #if (defined SBETR)
    case ("ch4soil")
      call ch4soil_para%readPars(ncid, bstatus)
@@ -202,11 +216,13 @@ contains
   ! read in the parameters for specified bgc implementation
   !begin_appadd
   use ecacnpParaType   , only : ecacnp_para
+  use betr_constants           , only : stdout          ! added for output testing remarks  -zlyu 01/27/2019
 #if (defined SBETR)
   use ch4soilParaType   , only : ch4soil_para
   use cdomParaType     , only : cdom_para
   use simicParaType    , only : simic_para
   use kecaParaType     , only : keca_para
+  use SummsParaType    , only : summs_para             ! added for using method 'summs' from Rose's model, -zlyu. 01/29/2019
   !end_appadd
 #endif
   use betr_constants   , only : betr_namelist_buffer_size_ext
@@ -227,6 +243,13 @@ contains
      call ch4soil_para%Init(bstatus)
    case ("cdom","cdom_mosart")
      call cdom_para%Init(bstatus)
+   case ("summs")
+    ! testing only, where the run crushed        -zlyu   01/27/2019     
+    write(stdout, *) '*******************************************'
+    write(stdout, *) 'inside AppInitParameters and case for summs method'
+    write(stdout, *) '*******************************************'
+    ! end of the testing
+     call summs_para%Init(bstatus)          ! adding method 'summs' from Rose's model  -zlyu. 01/29/2019
    case ("simic")
      call simic_para%Init(bstatus)
    case ("keca")
@@ -248,6 +271,7 @@ contains
   use ch4soilParaType  , only : ch4soil_para
   use cdomParaType    , only : cdom_para
   use kecaParaType    , only : keca_para
+  use SummsParaType    , only : summs_para             ! added for using method 'summs' from Rose's model, -zlyu. 01/29/2019
   !end_appadd
 #endif
   use tracer_varcon   , only : reaction_method
@@ -257,6 +281,8 @@ contains
   !begin_appadd
   case ("ecacnp","ecacnp_mosart")
      call  ecacnp_para%set_spinup_factor()
+  case ("summs")
+     call  summs_para%set_spinup_factor()
 #if (defined SBETR)
   case ("ch4soil")
      call  ch4soil_para%set_spinup_factor()
