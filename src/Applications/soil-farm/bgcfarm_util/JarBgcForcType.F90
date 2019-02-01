@@ -287,7 +287,7 @@ contains
   this%sflx_minn_nh4_fix_nomic  =0._r8      !nh4 from fixation
   this%sflx_minp_input_po4      =0._r8      !inorganic P from deposition and fertilization
   this%sflx_minp_weathering_po4 =0._r8
-
+  this%biochem_pmin =0._r8
   this%rt_ar_c13  =0._r8             !root autotrophic respiration, mol CO2/m3/s
   this%rt_ar_c14  =0._r8             !root autotrophic respiration, mol CO2/m3/s
   this%rt_ar  =0._r8             !root autotrophic respiration, mol CO2/m3/s
