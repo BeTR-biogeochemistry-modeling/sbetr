@@ -63,8 +63,10 @@ set_target_properties(pfunit PROPERTIES IMPORTED_LOCATION ${PROJECT_BINARY_DIR}/
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/3rd-party/pfunit/include/" PARENT_SCOPE)
 set(ENV{PFUNIT} ${PROJECT_BINARY_DIR} CACHE)
 
-#remove netcdf dependence 
+#remove netcdf dependence
+if (MACHINE MATCHES "notsupported")
 return ()
+endif()
 
 # Build zlib for compression.
 if (NOT EXISTS ${Z_LIBRARY})

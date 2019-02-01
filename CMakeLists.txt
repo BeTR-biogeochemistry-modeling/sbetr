@@ -147,7 +147,7 @@ if (${NEED_LAPACK})
 endif()
 
 set(BETR_NEED_PETSC 0)
-if (XSDK_WITH_NETCDF)
+if (XSDK_WITH_NETCDF AND MACHINE MATCHES "notsupported")
   if (NOT TPL_NETCDF_LIBRARIES)
     message(FATAL_ERROR "TPL_NETCDF_LIBRARIES option be set for netcdf support to be enabled.")
   endif()

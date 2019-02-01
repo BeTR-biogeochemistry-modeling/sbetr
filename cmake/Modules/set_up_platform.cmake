@@ -53,6 +53,7 @@ macro(set_up_platform)
   # Get the hostname for this machine.
   site_name(HOSTNAME)
 
+  set(MACHINE "supported")
   if (HOSTNAME MATCHES "cori") # NERSC Cori phase1
     #ndk  make config debug=1 mpi=1 prefix=$SCRATCH/polymec
     # (Intel's compilers don't do C11.).
@@ -92,7 +93,8 @@ macro(set_up_platform)
     if (TRUE) # intel
       set(NEED_LAPACK FALSE)
     endif()
-
+  else()
+    set(MACHINE "notsupported")
   endif()
 
 endmacro()
