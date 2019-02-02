@@ -157,10 +157,10 @@ contains
   this%init_cn_lwd  = 90._r8  !mass based
 
 
-  this%init_cp_met  = 1600._r8
-  this%init_cp_cel  = 2000._r8
-  this%init_cp_lig  = 2500._r8
-  this%init_cp_cwd  = 4500._r8
+  this%init_cp_met  = 900._r8
+  this%init_cp_cel  = 900._r8
+  this%init_cp_lig  = 900._r8
+  this%init_cp_cwd  = 900._r8
   this%init_cp_lwd  = 4500._r8!mass based
   this%init_cp_fwd  = 4500._r8!mass based
 

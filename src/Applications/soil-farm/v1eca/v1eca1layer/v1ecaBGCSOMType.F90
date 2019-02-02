@@ -31,7 +31,10 @@ implicit none
     real(r8) :: rf_l2s1_bgc
     real(r8) :: rf_l3s2_bgc
     real(r8) :: rf_s2s1_bgc
+    real(r8) :: rf_s2s3_bgc
     real(r8) :: rf_s3s1_bgc
+    real(r8) :: rf_cwdl2_bgc
+    real(r8) :: rf_cwdl3_bgc
     real(r8) :: cwd_fcel
     real(r8) :: cwd_flig
     real(r8) :: lit_flig
@@ -102,11 +105,14 @@ contains
   this%rf_l2s1_bgc    = biogeo_con%rf_l2s1_bgc
   this%rf_l3s2_bgc    = biogeo_con%rf_l3s2_bgc
   this%rf_s2s1_bgc    = biogeo_con%rf_s2s1_bgc
+  this%rf_s2s3_bgc    = biogeo_con%rf_s2s3_bgc
   this%rf_s3s1_bgc    = biogeo_con%rf_s3s1_bgc
+  this%rf_cwdl2_bgc   = biogeo_con%rf_cwdl2_bgc
+  this%rf_cwdl3_bgc   = biogeo_con%rf_cwdl3_bgc
   this%cwd_fcel   = biogeo_con%cwd_fcel_bgc
   this%cwd_flig   = biogeo_con%cwd_flig_bgc
 
-  this%def_cn(v1eca_bgc_index%lit1) = biogeo_con%init_cn_met * natomw/catomw;
+  this%def_cn(v1eca_bgc_index%lit1) = biogeo_con%init_cn_met * natomw/catomw
   this%def_cn(v1eca_bgc_index%lit2) = biogeo_con%init_cn_cel * natomw/catomw
   this%def_cn(v1eca_bgc_index%lit3) = biogeo_con%init_cn_lig * natomw/catomw
   this%def_cn(v1eca_bgc_index%cwd)  = biogeo_con%init_cn_cwd * natomw/catomw
@@ -269,8 +275,11 @@ contains
     rf_l2s1_bgc  => this%rf_l2s1_bgc                         , &
     rf_l3s2_bgc  => this%rf_l3s2_bgc                         , &
     rf_s2s1_bgc  => this%rf_s2s1_bgc                         , &
+    rf_s2s3_bgc  => this%rf_s2s3_bgc                         , &
     rf_s3s1_bgc  => this%rf_s3s1_bgc                         , &
     rf_l1s1_bgc  => this%rf_l1s1_bgc                         , &
+    rf_cwdl2_bgc  => this%rf_cwdl2_bgc                         , &
+    rf_cwdl3_bgc  => this%rf_cwdl3_bgc                         , &
     debug        => v1eca_bgc_index%debug                     &
   )
 
@@ -451,21 +460,22 @@ contains
     !reaction 5, som2->som1, som3
     reac = som2_dek_reac
     !som2 + 0.55 o2 -> (0.45-f1) som1 + f1*som3 + 0.55co2 + (1/cn_ratios(som2)-0.42/cn_ratios(som1)-0.03/cn_ratios(som3)) + (1/cp_raitos(som2)-0.42/cp_ratios(som1)-0.03/cp_ratios(som3))
-    f1 = 0.003_r8+0.00009_r8*pct_clay
+    f1 = 0.003_r8 !+0.00009_r8*pct_clay
     cascade_matrix((som2-1)*nelms+c_loc   ,reac)   = -1._r8
     cascade_matrix((som2-1)*nelms+n_loc   ,reac)   = -this%icn_ratios(som2)
     cascade_matrix((som2-1)*nelms+p_loc   ,reac)   = -this%icp_ratios(som2)
 
 
-    cascade_matrix((som1-1)*nelms+c_loc   ,reac)   =  1._r8-rf_s2s1_bgc-f1
+    cascade_matrix((som1-1)*nelms+c_loc   ,reac)   =  0.42_r8/0.45_r8*(1._r8-rf_s2s1_bgc)
     cascade_matrix((som1-1)*nelms+n_loc   ,reac)   =  cascade_matrix((som1-1)*nelms+c_loc,reac)*this%icn_ratios(som1)
     cascade_matrix((som1-1)*nelms+p_loc   ,reac)   =  cascade_matrix((som1-1)*nelms+c_loc,reac)*this%icp_ratios(som1)
 
-    cascade_matrix((som3-1)*nelms+c_loc   ,reac)   =  f1
+    cascade_matrix((som3-1)*nelms+c_loc   ,reac)   =  0.03_r8/0.45_r8*(1._r8-rf_s2s3_bgc)
     cascade_matrix((som3-1)*nelms+n_loc   ,reac)   =  f1*this%icn_ratios(som3)
     cascade_matrix((som3-1)*nelms+p_loc   ,reac)   =  f1*this%icp_ratios(som3)
 
-    cascade_matrix(lid_co2                ,reac)   = rf_s2s1_bgc
+    cascade_matrix(lid_co2                ,reac)   = 1._r8-cascade_matrix((som1-1)*nelms+c_loc   ,reac) &
+                                                     -cascade_matrix((som3-1)*nelms+c_loc   ,reac)
     cascade_matrix(lid_o2                 ,reac)   = -cascade_matrix(lid_co2                ,reac)
     cascade_matrix(lid_nh4                ,reac)   = -cascade_matrix((som2-1)*nelms+n_loc   ,reac) &
                                                      -cascade_matrix((som1-1)*nelms+n_loc   ,reac) &
@@ -484,14 +494,14 @@ contains
 
     if(this%use_c14)then
       cascade_matrix((som2-1)*nelms+c14_loc   , reac) = -this%icc14_ratios(som2)
-      cascade_matrix(lid_c14_co2              , reac) = rf_s2s1_bgc*this%icc14_ratios(som2)
+      cascade_matrix(lid_c14_co2              , reac) = cascade_matrix(lid_co2 ,reac)*this%icc14_ratios(som2)
       cascade_matrix((som1-1)*nelms+c14_loc   , reac) = cascade_matrix((som1-1)*nelms+c_loc,reac)*this%icc14_ratios(som2)
       cascade_matrix((som3-1)*nelms+c14_loc   , reac) = f1*this%icc14_ratios(som2)
     endif
 
     if(this%use_c13)then
       cascade_matrix((som2-1)*nelms+c13_loc   , reac) = -this%icc13_ratios(som2)
-      cascade_matrix(lid_c13_co2              , reac) = rf_s2s1_bgc*this%icc13_ratios(som2)
+      cascade_matrix(lid_c13_co2              , reac) = cascade_matrix(lid_co2 ,reac)*this%icc13_ratios(som2)
       cascade_matrix((som1-1)*nelms+c13_loc   , reac) = cascade_matrix((som1-1)*nelms+c_loc,reac)*this%icc13_ratios(som2)
       cascade_matrix((som3-1)*nelms+c13_loc   , reac) = f1*this%icc13_ratios(som2)
     endif
@@ -542,8 +552,8 @@ contains
     !cwd + o2 -> (1-flig)((1-rf_l2s1_bgc)*SOM1+rf_l2s1_bgc*CO2) + flig*((1-rf_l3s2_bgc)*SOM2+rf_l3s2_bgc*CO2)
     !    + (1/cn_ratios(cwd)-f1/cn_ratios(som1)-f2/cn_ratios(som2))
     !    + (1/cp_ratios(cwd)-f1/cp_ratios(som1)-f2/cp_ratios(som2))
-    f1 = cwd_fcel*(1._r8-rf_l2s1_bgc)
-    f2 = (1._r8-cwd_fcel)*(1._r8-rf_l3s2_bgc)
+    f1 = cwd_fcel*(1._r8-rf_cwdl2_bgc)
+    f2 = (1._r8-cwd_fcel)*(1._r8-rf_cwdl3_bgc)
 
     call wood_decomp_cascade(cwd, reac, f1, f2)
 
@@ -737,11 +747,6 @@ contains
       if(difn<-tiny_ncon)then
         ystates(kn)=stoibal_ncon
       endif
- !     write(msg,*)'phosphorus weirdo',jj,trim(ompoolnames(jj)),ystates(kc),ystates(kn),ystates(kp), rat, this%def_cn(jj),this%def_cp(jj),&
- !        1._r8/this%icn_ratios(jj),1._r8/this%icp_ratios(jj)
- !     print*,msg
- !     call bstatus%set_msg(msg,err=-1)
- !     return
     endif
     if(this%use_c14)then
       kc14 = (jj-1) * nelms + c14_loc
