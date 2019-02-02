@@ -259,16 +259,25 @@ contains
     this%v1eca(c_l,j)%competECA%kaff_minn_nh4_msurf= plantNutkinetics%km_minsurf_nh4_vr_col(c_l,j)   !this is ignored at this moment
     this%v1eca(c_l,j)%competECA%kaff_minp_msurf= plantNutkinetics%km_minsurf_p_vr_col(c_l,j)
 
+    !effective n competing decomposers
+    this%v1eca(c_l,j)%competECA%compet_bn_mic=plantNutkinetics%decomp_eff_ncompet_b_vr_col(c_l,j)
     !effective p competing decomposers
+    this%v1eca(c_l,j)%competECA%compet_bp_mic=plantNutkinetics%decomp_eff_pcompet_b_vr_col(c_l,j)
 
+    this%v1eca(c_l,j)%competECA%compet_bn_nit=plantNutkinetics%nit_eff_ncompet_b_vr_col(c_l,j)
+    this%v1eca(c_l,j)%competECA%compet_bn_den=plantNutkinetics%den_eff_ncompet_b_vr_col(c_l,j)
     this%v1eca_forc(c_l,j)%msurf_nh4 = plantNutkinetics%minsurf_nh4_compet_vr_col(c_l,j)   !this  number needs update
     this%v1eca_forc(c_l,j)%msurf_minp= plantNutkinetics%minsurf_p_compet_vr_col(c_l,j)    !this  number needs update
+
+    !be carefule about the following lines
     trcid=tracer_group_memid(id_trc_p_sol,1); gid = adsorbgroupid(trcid)
     k_sorbsurf(c_l,j,gid) = plantNutkinetics%km_minsurf_p_vr_col(c_l,j)
     Q_sorbsurf(c_l,j,gid) = plantNutkinetics%minsurf_p_compet_vr_col(c_l,j)
+
     trcid=tracer_group_memid(id_trc_nh3x,1); gid = adsorbgroupid(trcid)
     k_sorbsurf(c_l,j,gid) = plantNutkinetics%km_minsurf_nh4_vr_col(c_l,j)
     Q_sorbsurf(c_l,j,gid) = plantNutkinetics%minsurf_nh4_compet_vr_col(c_l,j)
+
 
   enddo
   end associate

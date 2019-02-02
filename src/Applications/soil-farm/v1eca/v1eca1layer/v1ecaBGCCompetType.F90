@@ -89,7 +89,7 @@ contains
 
   !-------------------------------------------------------------------------------
 
-  subroutine run_compet_nitrogen(this, non_limit, smin_nh4, smin_no3,  &
+  subroutine run_compet_nitrogen(this, non_limit, sol_smin_nh4, sol_smin_no3,  &
    plant_ntypes, msurf_nh4, ECA_factor_nit, ECA_factor_den, ECA_factor_nh4_mic, &
     ECA_factor_no3_mic, ECA_flx_nh4_plants,ECA_flx_no3_plants, ECA_factor_msurf_nh4)
 
@@ -98,8 +98,8 @@ contains
   implicit none
   class(Compet_V1ECA_type), intent(inout) :: this
   logical , intent(in) :: non_limit
-  real(r8), intent(in) :: smin_nh4
-  real(r8), intent(in) :: smin_no3
+  real(r8), intent(in) :: sol_smin_nh4
+  real(r8), intent(in) :: sol_smin_no3
   integer , intent(in) :: plant_ntypes
   real(r8), intent(in) :: msurf_nh4
   real(r8), intent(out):: ECA_factor_nit
@@ -110,84 +110,52 @@ contains
   real(r8), intent(out):: ECA_flx_no3_plants(plant_ntypes)
   real(r8), intent(out):: ECA_factor_msurf_nh4
   !local variables
-  real(r8), pointer :: kaff(:,:)
-  real(r8), pointer :: substrate(:)
-  real(r8), pointer :: entity(:)
-  real(r8), pointer :: se_complex(:,:)
-  real(r8) :: b_nit, b_den, b_mic
+  real(r8) :: e_km_nh4, e_km_no3, e_km_p
   integer :: tot_entity
   integer :: jj
   type(betr_status_type) :: bstatus
 
   !nit + denit + decomp_mic + msurf + plant
-  tot_entity = 4 + plant_ntypes
-  allocate(kaff(2,tot_entity))
-  allocate(se_complex(2,tot_entity))
-  allocate(substrate(2))
-  allocate(entity(tot_entity))
-  !form the affinity matrix
-  !nh4
-  if(plant_ntypes>0)then
-    kaff(1,:) = (/this%kaff_minn_nh4_nit, 0._r8, &
-      this%kaff_minn_nh4_mic, this%kaff_minn_nh4_msurf, &
-      this%kaff_minn_nh4_plant(1:plant_ntypes)/)
-  !no3
-    kaff(2,:) = (/0._r8, this%kaff_minn_no3_den,&
-      this%kaff_minn_no3_mic, 0._r8, &
-      this%kaff_minn_no3_plant(1:plant_ntypes)/)
-  else
-    kaff(1,:) = (/this%kaff_minn_nh4_nit, 0._r8, &
-      this%kaff_minn_nh4_mic, this%kaff_minn_nh4_msurf/)
 
-    kaff(2,:) = (/0._r8, this%kaff_minn_no3_den,&
-      this%kaff_minn_no3_mic, 0._r8/)
-
-  endif
-  !form the substrate vector
-  substrate(:)=(/smin_nh4,smin_no3/)
-
-  !form the competitor vector
-  b_nit = this%compet_bn_nit
-  b_den = this%compet_bn_den
-  b_mic = this%compet_bn_mic
-  if(plant_ntypes>0)then
-    entity(:)=(/b_nit,b_den,b_mic,msurf_nh4,this%plant_froot_nn(1:plant_ntypes)/)
-  else
-    entity(:)=(/b_nit,b_den,b_mic,msurf_nh4/)
-  endif
-  !do ECA calculation
-  call ecacomplex_cell_norm(kaff,substrate,entity, se_complex, bstatus)
   if(non_limit)then
     ECA_factor_nit = 1._r8
     ECA_factor_den = 1._r8
     ECA_factor_nh4_mic = 1._r8
     ECA_factor_no3_mic = 1._r8
-    do jj = 1, plant_ntypes
-      ECA_flx_nh4_plants(jj) = this%mumax_minn_nh4_plant(jj) * &
-        this%plant_froot_nn(jj)
-
-      ECA_flx_no3_plants(jj) = this%mumax_minn_no3_plant(jj) * &
-        this%plant_froot_nn(jj)
-    enddo
+    ECA_flx_nh4_plants(1:plant_ntypes)=1._r8
+    ECA_flx_no3_plants(1:plant_ntypes)=1._r8
   else
-    ECA_factor_nit = se_complex(1,1)
-    ECA_factor_den = se_complex(2,2)
-    ECA_factor_nh4_mic = se_complex(1,3)
-    ECA_factor_no3_mic = se_complex(2,3)
+    e_km_nh4 = 0._r8;e_km_no3=0._r8
     do jj = 1, plant_ntypes
+      e_km_nh4=e_km_nh4+this%plant_froot_nn(jj)/this%kaff_minn_nh4_plant(jj)
+      e_km_no3=e_km_no3+this%plant_froot_nn(jj)/this%kaff_minn_no3_plant(jj)
+    enddo
+    e_km_nh4=e_km_nh4+this%compet_bn_mic/this%kaff_minn_nh4_mic+this%compet_bn_nit/this%kaff_minn_nh4_nit
+    e_km_no3=e_km_no3+this%compet_bn_mic/this%kaff_minn_no3_mic+this%compet_bn_den/this%kaff_minn_no3_den
+
+    do jj = 1, plant_ntypes
+      ECA_flx_nh4_plants(jj) = sol_smin_nh4/(this%kaff_minn_nh4_plant(jj)*(1._r8 + &
+          sol_smin_nh4/this%kaff_minn_nh4_plant(jj)+e_km_nh4))
+      ECA_flx_no3_plants(jj) = sol_smin_no3/(this%kaff_minn_no3_plant(jj)*(1._r8+ &
+          sol_smin_no3/this%kaff_minn_no3_plant(jj)+e_km_no3))
+    enddo
+    ECA_factor_nh4_mic=sol_smin_nh4/(this%kaff_minn_nh4_mic*(1._r8+&
+        sol_smin_nh4/this%kaff_minn_nh4_mic+e_km_nh4))
+    ECA_factor_no3_mic=sol_smin_no3/(this%kaff_minn_no3_mic*(1._r8+&
+        sol_smin_no3/this%kaff_minn_no3_mic+e_km_no3))
+    ECA_factor_nit=sol_smin_nh4/(this%kaff_minn_nh4_nit*(1._r8+&
+        sol_smin_nh4/this%kaff_minn_nh4_nit+e_km_nh4))
+    ECA_factor_den=sol_smin_no3/(this%kaff_minn_no3_den*(1._r8+&
+        sol_smin_no3/this%kaff_minn_no3_den+e_km_no3))
+  endif
+  do jj = 1, plant_ntypes
       ECA_flx_nh4_plants(jj) = this%mumax_minn_nh4_plant(jj) * &
-        this%plant_froot_nn(jj) * se_complex(1,4+jj)
+        ECA_flx_nh4_plants(jj)
 
       ECA_flx_no3_plants(jj) = this%mumax_minn_no3_plant(jj) * &
-        this%plant_froot_nn(jj) * se_complex(2,4+jj)
-    enddo
-  endif
-  ECA_factor_msurf_nh4 = se_complex(1,4)
+        ECA_flx_no3_plants(jj)
+  enddo
 
-  deallocate(kaff)
-  deallocate(substrate)
-  deallocate(entity)
-  deallocate(se_complex)
   end subroutine run_compet_nitrogen
   !-------------------------------------------------------------------------------
 

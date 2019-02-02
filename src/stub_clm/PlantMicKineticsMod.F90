@@ -20,6 +20,10 @@ implicit none
     real(r8), pointer :: plant_eff_frootc_vr_patch(:,:)
     real(r8), pointer :: plant_eff_ncompet_b_vr_patch(:,:)
     real(r8), pointer :: plant_eff_pcompet_b_vr_patch(:,:)
+    real(r8), pointer :: decomp_eff_ncompet_b_vr_col(:,:)
+    real(r8), pointer :: decomp_eff_pcompet_b_vr_col(:,:)
+    real(r8), pointer :: nit_eff_ncompet_b_vr_col(:,:)
+    real(r8), pointer :: den_eff_ncompet_b_vr_col(:,:)
     real(r8), pointer :: minsurf_p_compet_vr_col(:,:)
     real(r8), pointer :: minsurf_nh4_compet_vr_col(:,:)
     real(r8), pointer :: vmax_minsurf_p_vr_col(:,:)
@@ -76,7 +80,10 @@ implicit none
      allocate(this%km_minsurf_nh4_vr_col(begc:endc,1:nlevdecomp_full)); this%km_minsurf_nh4_vr_col(:,:)=1._r8
      allocate(this%km_minsurf_dom_vr_col(begc:endc, 1:nlevdecomp_full)); this%km_minsurf_dom_vr_col(:,:) = 1._r8
      allocate(this%minsurf_dom_compet_vr_col(begc:endc, 1:nlevdecomp_full)); this%minsurf_dom_compet_vr_col(:,:) = 0._r8
-
+     allocate(this%decomp_eff_ncompet_b_vr_col(begc:endc, 1:nlevdecomp_full));this%decomp_eff_ncompet_b_vr_col(:,:)=0._r8
+     allocate(this%decomp_eff_pcompet_b_vr_col(begc:endc, 1:nlevdecomp_full)); this%decomp_eff_pcompet_b_vr_col(:,:)=0._r8
+     allocate(this%nit_eff_ncompet_b_vr_col(begc:endc, 1:nlevdecomp_full)); this%nit_eff_ncompet_b_vr_col(:,:) = 0._r8
+     allocate(this%den_eff_ncompet_b_vr_col(begc:endc, 1:nlevdecomp_full)); this%den_eff_ncompet_b_vr_col(:,:) = 0._r8
     end subroutine InitAllocate
     !------------------------------------------------------------------------
     subroutine InitCold(this, bounds)

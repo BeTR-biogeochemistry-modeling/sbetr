@@ -1423,7 +1423,11 @@ contains
     plant_eff_pcompet_b_vr_patch => PlantMicKinetics_vars%plant_eff_pcompet_b_vr_patch , &
     minsurf_nh4_compet_vr_col => PlantMicKinetics_vars%minsurf_nh4_compet_vr_col, &
     minsurf_p_compet_vr_col => PlantMicKinetics_vars%minsurf_p_compet_vr_col , &
-    plant_eff_frootc_vr_patch => PlantMicKinetics_vars%plant_eff_frootc_vr_patch &
+    plant_eff_frootc_vr_patch => PlantMicKinetics_vars%plant_eff_frootc_vr_patch, &
+    decomp_eff_ncompet_b_vr_col => PlantMicKinetics_vars%decomp_eff_ncompet_b_vr_col, &
+    decomp_eff_pcompet_b_vr_col => PlantMicKinetics_vars%decomp_eff_pcompet_b_vr_col, &
+    nit_eff_ncompet_b_vr_col => PlantMicKinetics_vars%nit_eff_ncompet_b_vr_col, &
+    den_eff_ncompet_b_vr_col => PlantMicKinetics_vars%den_eff_ncompet_b_vr_col &
   )
   c_l = 1
   do fc = 1, num_soilc
@@ -1480,7 +1484,17 @@ contains
       enddo
     endif
   endif
-
+  if(index(reaction_method,'v1eca')/=0)then
+    do j =1, betr_bounds%ubj
+      do fc = 1, num_soilc
+        c = filter_soilc(fc)
+        this%betr(c)%plantNutkinetics%decomp_eff_ncompet_b_vr_col(c_l,j)=decomp_eff_ncompet_b_vr_col(c,j)
+        this%betr(c)%plantNutkinetics%decomp_eff_pcompet_b_vr_col(c_l,j)=decomp_eff_pcompet_b_vr_col(c,j)
+        this%betr(c)%plantNutkinetics%nit_eff_ncompet_b_vr_col(c_l,j)= nit_eff_ncompet_b_vr_col(c,j)
+        this%betr(c)%plantNutkinetics%den_eff_ncompet_b_vr_col(c_l,j) = den_eff_ncompet_b_vr_col(c,j)
+      enddo
+    enddo
+  endif
   end associate
   end subroutine set_transient_kinetics_par
 
@@ -1591,7 +1605,7 @@ contains
         this%biophys_forc(c)%p31flx%in_decomp_ppools_vr_col(c_l,j,kk)=decomp_ppools_vr_col(c,j,kk)
       enddo
       this%biophys_forc(c)%c12flx%in_t_scalar(c_l,j) = t_scalar(c,j)
-      this%biophys_forc(c)%c12flx%in_w_scalar(c_l,j) = w_scalar(c,j) 
+      this%biophys_forc(c)%c12flx%in_w_scalar(c_l,j) = w_scalar(c,j)
       this%biophys_forc(c)%n14flx%in_sminn_no3_vr_col(c_l,j) = smin_no3_vr(c,j)
       this%biophys_forc(c)%n14flx%in_sminn_nh4_vr_col(c_l,j) = smin_nh4_vr(c,j)
       this%biophys_forc(c)%p31flx%in_sminp_vr_col(c_l,j) = solutionp_vr(c,j)
