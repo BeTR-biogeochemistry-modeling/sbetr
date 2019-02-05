@@ -239,9 +239,9 @@ contains
   this%nactpft = nactpft
   do j = lbj, ubj
     do p = 1, nactpft
-      this%v1eca(c_l,j)%competECA%mumax_minn_nh4_plant(p) = plantNutkinetics%plant_nh4_vmax_vr_patch(p,j)
-      this%v1eca(c_l,j)%competECA%mumax_minn_no3_plant(p) = plantNutkinetics%plant_no3_vmax_vr_patch(p,j)
-      this%v1eca(c_l,j)%competECA%mumax_minp_plant(p) = plantNutkinetics%plant_p_vmax_vr_patch(p,j)
+      this%v1eca(c_l,j)%competECA%vmax_minn_nh4_plant(p) = plantNutkinetics%plant_nh4_vmax_vr_patch(p,j)
+      this%v1eca(c_l,j)%competECA%vmax_minn_no3_plant(p) = plantNutkinetics%plant_no3_vmax_vr_patch(p,j)
+      this%v1eca(c_l,j)%competECA%vmax_minp_plant(p) = plantNutkinetics%plant_p_vmax_vr_patch(p,j)
       this%v1eca(c_l,j)%competECA%kaff_minn_no3_plant(p)= plantNutkinetics%plant_no3_km_vr_patch(p,j)
       this%v1eca(c_l,j)%competECA%kaff_minn_nh4_plant(p)= plantNutkinetics%plant_nh4_km_vr_patch(p,j)
       this%v1eca(c_l,j)%competECA%kaff_minp_plant(p)   = plantNutkinetics%plant_p_km_vr_patch(p,j)
@@ -266,9 +266,11 @@ contains
 
     this%v1eca(c_l,j)%competECA%compet_bn_nit=plantNutkinetics%nit_eff_ncompet_b_vr_col(c_l,j)
     this%v1eca(c_l,j)%competECA%compet_bn_den=plantNutkinetics%den_eff_ncompet_b_vr_col(c_l,j)
+    this%v1eca(c_l,j)%competECA%vmax_minsurf_p = plantNutkinetics%vmax_minsurf_p_vr_col(c_l,j)
     this%v1eca_forc(c_l,j)%msurf_nh4 = plantNutkinetics%minsurf_nh4_compet_vr_col(c_l,j)   !this  number needs update
     this%v1eca_forc(c_l,j)%msurf_minp= plantNutkinetics%minsurf_p_compet_vr_col(c_l,j)    !this  number needs update
-
+    this%v1eca(c_l,j)%competECA%dsolutionp_dt = plantNutkinetics%dsolutionp_dt_vr_col(c_l,j)
+    this%v1eca(c_l,j)%competECA%dlabp_dt = plantNutkinetics%dlabp_dt_vr_col(c_l,j)
     !be carefule about the following lines
     trcid=tracer_group_memid(id_trc_p_sol,1); gid = adsorbgroupid(trcid)
     k_sorbsurf(c_l,j,gid) = plantNutkinetics%km_minsurf_p_vr_col(c_l,j)
@@ -1775,11 +1777,10 @@ contains
       tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_n2o) = &
         ystatesf(this%v1eca_bgc_index%lid_n2o)
 
-
       !not fixing inorganic Phosphorus
       if(.not. fix_ip)then
-        k1= betrtracer_vars%id_trc_beg_minp; k2 = this%v1eca_bgc_index%lid_minp_secondary
-        tracerstate_vars%tracer_conc_mobile_col(c,j,k1) = ystatesf(k2)
+        k2 = this%v1eca_bgc_index%lid_minp_sorb
+         biogeo_flux%p31flux_vars%adsorb_to_labilep_vr_col(c,j)= ystatesf(k2)*patomw/dtime
 
         if(this%v1eca_bgc_index%lid_supp_minp>0)then
             !no P-limitation in this time step
@@ -1797,13 +1798,6 @@ contains
           tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_p_sol) + &
           ystatesf(this%v1eca_bgc_index%lid_minp_soluble) - &
           ystates0(this%v1eca_bgc_index%lid_minp_soluble)
-
-        trcid = betrtracer_vars%id_trc_beg_minp
-        tracer_flx_netpro_vr(c,j, trcid) = &
-          tracer_flx_netpro_vr(c,j, trcid) + &
-          ystatesf(this%v1eca_bgc_index%lid_minp_secondary) - &
-          ystates0(this%v1eca_bgc_index%lid_minp_secondary)
-
 
       endif
       !tracer fluxes
@@ -1982,6 +1976,11 @@ contains
       plant_soilbgc%plant_minp_active_yield_flx_vr_col(c,j) = &
           (ystatesf(this%v1eca_bgc_index%lid_plant_minp) - &
            ystates0(this%v1eca_bgc_index%lid_plant_minp))*patomw/dtime
+
+      biogeo_flux%p31flux_vars%col_plant_pdemand_vr(c,j) = &
+        plant_soilbgc%plant_minp_active_yield_flx_vr_col(c,j)
+    else
+      biogeo_flux%p31flux_vars%col_plant_pdemand_vr(c,j) = 0._r8
     endif
 
   end select

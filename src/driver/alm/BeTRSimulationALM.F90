@@ -1427,7 +1427,12 @@ contains
     decomp_eff_ncompet_b_vr_col => PlantMicKinetics_vars%decomp_eff_ncompet_b_vr_col, &
     decomp_eff_pcompet_b_vr_col => PlantMicKinetics_vars%decomp_eff_pcompet_b_vr_col, &
     nit_eff_ncompet_b_vr_col => PlantMicKinetics_vars%nit_eff_ncompet_b_vr_col, &
-    den_eff_ncompet_b_vr_col => PlantMicKinetics_vars%den_eff_ncompet_b_vr_col &
+    den_eff_ncompet_b_vr_col => PlantMicKinetics_vars%den_eff_ncompet_b_vr_col, &
+    dsolutionp_dt_vr_col   => PlantMicKinetics_vars%dsolutionp_dt_vr_col, &
+    vmax_minsurf_p_vr_col => PlantMicKinetics_vars%vmax_minsurf_p_vr_col, &
+    km_minsurf_p_vr_col   => PlantMicKinetics_vars%km_minsurf_p_vr_col, &
+    km_minsurf_nh4_vr_col => PlantMicKinetics_vars%km_minsurf_nh4_vr_col, &
+    dlabp_dt_vr_col       => PlantMicKinetics_vars%dlabp_dt_vr_col &
   )
   c_l = 1
   do fc = 1, num_soilc
@@ -1443,7 +1448,7 @@ contains
           do j =1, betr_bounds%ubj
             this%betr(c)%plantNutkinetics%plant_nh4_vmax_vr_patch(pp,j) = plant_nh4_vmax_vr_patch(p,j)
             this%betr(c)%plantNutkinetics%plant_no3_vmax_vr_patch(pp,j) = plant_no3_vmax_vr_patch(p,j)
-            this%betr(c)%plantNutkinetics%plant_p_vmax_vr_patch(pp,j) = plant_p_vmax_vr_patch(p,j) * val
+            this%betr(c)%plantNutkinetics%plant_p_vmax_vr_patch(pp,j) = plant_p_vmax_vr_patch(p,j)
             this%betr(c)%plantNutkinetics%plant_nh4_km_vr_patch(pp,j) = plant_nh4_km_vr_patch(p,j)/natomw
             this%betr(c)%plantNutkinetics%plant_no3_km_vr_patch(pp,j) = plant_no3_km_vr_patch(p,j)/natomw
             this%betr(c)%plantNutkinetics%plant_p_km_vr_patch(pp,j) = plant_p_km_vr_patch(p,j)/natomw
@@ -1457,18 +1462,19 @@ contains
     this%betr(c)%nactpft = pp
     do j = 1, betr_bounds%ubj
       this%betr(c)%plantNutkinetics%minsurf_p_compet_vr_col(c_l,j) = minsurf_p_compet_vr_col(c,j)/patomw
-      this%betr(c)%plantNutkinetics%minsurf_nh4_compet_vr_col(c_l,j) = minsurf_nh4_compet_vr_col(c,j)/patomw
+      this%betr(c)%plantNutkinetics%minsurf_nh4_compet_vr_col(c_l,j) = minsurf_nh4_compet_vr_col(c,j)/natomw
     enddo
   enddo
 
   !the following parameters are specific to ECACNP, and I assume they are
   !grid specific as they currently used in alm-cnp.
-  if(index(reaction_method,'ecacnp')/=0 .or. index(reaction_method, 'ch4soil')/=0)then
+  if(index(reaction_method,'ecacnp')/=0 .or. index(reaction_method, 'ch4soil')/=0 &
+     .or. index(reaction_method, 'v1eca')/=0)then
     do j =1, betr_bounds%ubj
       do fc = 1, num_soilc
         c = filter_soilc(fc)
-        this%betr(c)%plantNutkinetics%km_minsurf_p_vr_col(c_l,j) = PlantMicKinetics_vars%km_minsurf_p_vr_col(c,j)/patomw
-        this%betr(c)%plantNutkinetics%km_minsurf_nh4_vr_col(c_l,j)=PlantMicKinetics_vars%km_minsurf_nh4_vr_col(c,j)/patomw
+        this%betr(c)%plantNutkinetics%km_minsurf_p_vr_col(c_l,j)  = km_minsurf_p_vr_col(c,j)/patomw
+        this%betr(c)%plantNutkinetics%km_minsurf_nh4_vr_col(c_l,j)= km_minsurf_nh4_vr_col(c,j)/natomw
       enddo
     enddo
     if(lbcalib)then
@@ -1488,10 +1494,13 @@ contains
     do j =1, betr_bounds%ubj
       do fc = 1, num_soilc
         c = filter_soilc(fc)
-        this%betr(c)%plantNutkinetics%decomp_eff_ncompet_b_vr_col(c_l,j)=decomp_eff_ncompet_b_vr_col(c,j)
-        this%betr(c)%plantNutkinetics%decomp_eff_pcompet_b_vr_col(c_l,j)=decomp_eff_pcompet_b_vr_col(c,j)
-        this%betr(c)%plantNutkinetics%nit_eff_ncompet_b_vr_col(c_l,j)= nit_eff_ncompet_b_vr_col(c,j)
-        this%betr(c)%plantNutkinetics%den_eff_ncompet_b_vr_col(c_l,j) = den_eff_ncompet_b_vr_col(c,j)
+        this%betr(c)%plantNutkinetics%decomp_eff_ncompet_b_vr_col(c_l,j)= decomp_eff_ncompet_b_vr_col(c,j)/natomw
+        this%betr(c)%plantNutkinetics%decomp_eff_pcompet_b_vr_col(c_l,j)= decomp_eff_pcompet_b_vr_col(c,j)/patomw
+        this%betr(c)%plantNutkinetics%nit_eff_ncompet_b_vr_col(c_l,j)   = nit_eff_ncompet_b_vr_col(c,j)/natomw
+        this%betr(c)%plantNutkinetics%den_eff_ncompet_b_vr_col(c_l,j)   = den_eff_ncompet_b_vr_col(c,j)/natomw
+        this%betr(c)%plantNutkinetics%dsolutionp_dt_vr_col(c_l,j)       = dsolutionp_dt_vr_col(c,j)/patomw   ! g/m2/s
+        this%betr(c)%plantNutkinetics%vmax_minsurf_p_vr_col(c_l,j)      = vmax_minsurf_p_vr_col(c,j)/patomw   ! g/m3
+        this%betr(c)%plantNutkinetics%dlabp_dt_vr_col(c_l,j)            = dlabp_dt_vr_col(c,j)/patomw
       enddo
     enddo
   endif

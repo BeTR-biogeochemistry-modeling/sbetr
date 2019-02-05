@@ -4,6 +4,12 @@ module v1ecaBGCType
   ! !DESCRIPTION:
   ! subroutines for stoichiometric configuration of the century bgc
   ! !History, created by Jinyun Tang, Dec, 2014.
+  ! the P adsorption and desorption are assumed to occur between labile and soluble
+  ! phase. The model assumes these processes follow the Langmuir isotherm, and
+  ! are not contributing to the mass change through the process of competition.
+  ! Rather, these effects are accounted separately in the module PhosphorusDynamicsMod
+  ! This single layer model should return total plant p uptake sminp_to_plant_vr
+  ! and total p uptake to microbes, where the latter could be either positive or negative
   ! !USES:
   use bshr_kind_mod             , only : r8 => shr_kind_r8
   use bshr_log_mod              , only : errMsg => shr_log_errMsg
@@ -512,7 +518,8 @@ contains
 
   !initialize state variables
   call this%init_states(this%v1eca_bgc_index, bgc_forc)
-
+  this%competECA%bd = bgc_forc%bd
+  this%competECA%h2osoi_vol = bgc_forc%h2osoi_vol
   ystates0(:) = this%ystates0(:)
 
   !initialize decomposition scaling factors
@@ -670,7 +677,7 @@ contains
          lid_c13_co2_paere => v1eca_bgc_index%lid_c13_co2_paere          , & !
          lid_c14_co2_paere => v1eca_bgc_index%lid_c14_co2_paere          , & !
          lid_minp_soluble => v1eca_bgc_index%lid_minp_soluble            , & !
-         lid_minp_secondary => v1eca_bgc_index%lid_minp_secondary        , & !
+         lid_minp_sorb => v1eca_bgc_index%lid_minp_sorb                  , & !
          lid_plant_minp => v1eca_bgc_index%lid_plant_minp                , & !
          lid_minp_immob => v1eca_bgc_index%lid_minp_immob                , & !
 
@@ -680,7 +687,7 @@ contains
          lid_plant_minn_no3_up_reac=> v1eca_bgc_index%lid_plant_minn_no3_up_reac , & !
          lid_plant_minn_nh4  => v1eca_bgc_index%lid_plant_minn_nh4       , &
          lid_plant_minn_no3  => v1eca_bgc_index%lid_plant_minn_no3       , &
-         lid_minp_soluble_to_secp_reac => v1eca_bgc_index%lid_minp_soluble_to_secp_reac      , & !
+         lid_minp_soluble_to_labile_reac => v1eca_bgc_index%lid_minp_soluble_to_labile_reac      , & !
          lid_plant_minp_up_reac => v1eca_bgc_index%lid_plant_minp_up_reac, & !
 
          lid_n2_aren_reac => v1eca_bgc_index%lid_n2_aren_reac            , & !
@@ -701,9 +708,9 @@ contains
     !---------------------------------------------------------------------------------
     !reaction 10, inorganic P non-equilibrium adsorption
     !P_soluble -> p_secondary
-    reac = lid_minp_soluble_to_secp_reac
+    reac = lid_minp_soluble_to_labile_reac
     cascade_matrix(lid_minp_soluble,  reac) = -1._r8
-    cascade_matrix(lid_minp_secondary, reac) = 1._r8
+    cascade_matrix(lid_minp_sorb, reac) = 1._r8
 
     if(this%plant_ntypes>0)then
       !----------------------------------------------------------------------
@@ -1087,6 +1094,7 @@ contains
   !The inorganic phosphorus does the transition from soluble->secondary->occlude
   use SOMStateVarUpdateMod , only : calc_dtrend_som_bgc
   use MathfuncMod          , only : lom_type, safe_div
+  use tracer_varcon        , only : patomw
   implicit none
   class(v1eca_bgc_type) , intent(inout) :: this
   integer                   , intent(in) :: nstvars
@@ -1098,7 +1106,8 @@ contains
 
   !local variables
   real(r8) :: mic_pot_nn_flx  !potential nitrogen uptake to support decomposition
-  real(r8) :: mic_pot_np_flx  !potential phosphorus uptake to support decomposition
+  real(r8) :: mic_pot_np_flx_up  !potential phosphorus uptake to support decomposition
+  real(r8) :: mic_pot_np_flx_mn
   real(r8) :: pot_decomp(this%v1eca_bgc_index%nom_pools)
   real(r8) :: rrates(this%v1eca_bgc_index%nreactions)
   real(r8) :: p_dt(1:this%v1eca_bgc_index%nprimvars)
@@ -1108,7 +1117,6 @@ contains
   real(r8) :: rscal(1:this%v1eca_bgc_index%nreactions)
   real(r8) :: ECA_flx_nh4_plants(this%plant_ntypes)
   real(r8) :: ECA_flx_no3_plants(this%plant_ntypes)
-  real(r8) :: ECA_factor_msurf_nh4
   real(r8) :: ECA_flx_phosphorus_plants(this%plant_ntypes)
   real(r8) :: ECA_factor_minp_msurf
   real(r8) :: ECA_factor_phosphorus_mic
@@ -1121,13 +1129,17 @@ contains
   real(r8) :: minn_nh4_sol
   real(r8) :: minn_no3_sol
   real(r8) :: dminn
+  real(r8) :: sol_smin_nh4, sol_smin_no3
+  real(r8) :: sol_sminp_soluble
   integer  :: jj, it
   integer, parameter  :: itmax = 10
   type(lom_type) :: lom
   type(betr_status_type) :: bstatus
   logical :: lneg
   real(r8) :: scal
-
+  real(r8) :: adsorb_to_labilep
+  real(r8) :: desorb_to_solutionp
+  real(r8) :: dsolutionp_dt
   associate(                                                                                      &
     nreactions => this%v1eca_bgc_index%nreactions                                              , &
     nom_pools => this%v1eca_bgc_index%nom_pools                                                , &
@@ -1149,8 +1161,8 @@ contains
     lid_plant_minn_nh4 => this%v1eca_bgc_index%lid_plant_minn_nh4                              , &
     lid_plant_minn_no3 => this%v1eca_bgc_index%lid_plant_minn_no3                              , &
     lid_minp_soluble => this%v1eca_bgc_index%lid_minp_soluble                                  , &
-    lid_minp_secondary => this%v1eca_bgc_index%lid_minp_secondary                              , &
-    lid_minp_soluble_to_secp_reac=> this%v1eca_bgc_index%lid_minp_soluble_to_secp_reac         , &
+    lid_minp_sorb => this%v1eca_bgc_index%lid_minp_sorb                              , &
+    lid_minp_soluble_to_labile_reac=> this%v1eca_bgc_index%lid_minp_soluble_to_labile_reac         , &
     lid_autr_rt_reac => this%v1eca_bgc_index%lid_autr_rt_reac                                  , &
     lid_nh4_nit_reac => this%v1eca_bgc_index%lid_nh4_nit_reac                                  , &
     lid_no3_den_reac => this%v1eca_bgc_index%lid_no3_den_reac                                  , &
@@ -1169,25 +1181,41 @@ contains
   !microbial nutrient uptake
 
   call this%censom%calc_pot_min_np_flx(dtime, this%v1eca_bgc_index,  ystate, this%k_decay,&
-    this%cascade_matrix, this%alpha_n, this%alpha_p, pot_decomp, mic_pot_nn_flx, mic_pot_np_flx)
+    this%cascade_matrix, this%alpha_n, this%alpha_p, pot_decomp, mic_pot_nn_flx, mic_pot_np_flx_up, &
+    mic_pot_np_flx_mn)
 
+  !update dsolutionp_dt, in g/m3/s
+  dsolutionp_dt = this%competECA%dsolutionp_dt+ (mic_pot_np_flx_mn -mic_pot_np_flx_up)   !
+
+  !---------------------
+  !update adsorb_to_labilep and desorb_to_solutionp, eq. (A12) in Zhu et al., 2016
+  adsorb_to_labilep = (this%competECA%vmax_minsurf_p * this%competECA%kaff_minp_msurf) / &
+                       (this%competECA%kaff_minp_msurf+ystate(lid_minp_soluble))**2._r8 * dsolutionp_dt
+  ! sign convention: if adsorb_to_labilep_vr(c,j) < 0, then it's desorption
+  if (adsorb_to_labilep >= 0._r8) then
+    adsorb_to_labilep = max(min(adsorb_to_labilep, &
+       this%competECA%vmax_minsurf_p-this%competECA%dlabp_dt),0.0_r8)
+    desorb_to_solutionp = 0.0_r8
+  else
+    desorb_to_solutionp = min(-1._r8*adsorb_to_labilep, this%competECA%dlabp_dt)
+    adsorb_to_labilep = 0.0_r8
+  end if
+  !---------------------
 
   !do ECA nutrient scaling
   !
-  this%competECA%compet_bn_nit = this%pot_f_nit/this%nitden%vmax_nit
-  this%competECA%compet_bn_den = this%pot_f_denit/this%nitden%vmax_den
-  this%competECA%compet_bn_mic = mic_pot_nn_flx/this%decompkf_eca%vmax_decomp_n
+  sol_smin_nh4 = ystate(lid_nh4)/(this%competECA%bd*2.76_r8 + this%competECA%h2osoi_vol)
+  sol_smin_no3 = ystate(lid_no3)/this%competECA%h2osoi_vol
 
-  this%competECA%debug=this%v1eca_bgc_index%debug
-  call this%competECA%run_compet_nitrogen(this%non_limit,ystate(lid_nh4),ystate(lid_no3),&
+  call this%competECA%run_compet_nitrogen(this%non_limit, sol_smin_nh4, sol_smin_no3,&
      this%plant_ntypes, this%msurf_nh4, ECA_factor_nit, &
      ECA_factor_den, ECA_factor_nh4_mic, ECA_factor_no3_mic, &
-     ECA_flx_nh4_plants,ECA_flx_no3_plants, ECA_factor_msurf_nh4)
+     ECA_flx_nh4_plants,ECA_flx_no3_plants)
 
   ECA_factor_nitrogen_mic = ECA_factor_nh4_mic + ECA_factor_no3_mic
 
-  this%competECA%compet_bp_mic = mic_pot_np_flx/this%decompkf_eca%vmax_decomp_p
-  call this%competECA%run_compet_phosphorus(this%nop_limit, ystate(lid_minp_soluble),  &
+  sol_sminp_soluble=ystate(lid_minp_soluble)/this%competECA%h2osoi_vol
+  call this%competECA%run_compet_phosphorus(this%nop_limit, sol_sminp_soluble,  &
       this%plant_ntypes, this%msurf_minp, ECA_factor_phosphorus_mic, ECA_factor_minp_msurf,&
       ECA_flx_phosphorus_plants)
 
@@ -1208,8 +1236,8 @@ contains
   enddo
   rrates(lid_nh4_nit_reac) = this%pot_f_nit*ECA_factor_nit
   rrates(lid_no3_den_reac) = this%pot_f_denit*ECA_factor_den
-  rrates(lid_minp_soluble_to_secp_reac) =  ECA_factor_minp_msurf * this%msurf_minp &
-       * this%mumax_minp_soluble_to_secondary(this%soilorder) !calculate from eca competition
+  rrates(lid_minp_soluble_to_labile_reac) =  ECA_factor_minp_msurf * &
+     adsorb_to_labilep !calculate from eca competition
 
   if(this%plant_ntypes>0)then
     rrates(lid_autr_rt_reac) = this%rt_ar                            !authotrophic respiration
@@ -1405,7 +1433,7 @@ contains
     lid_plant_minn_no3 => this%v1eca_bgc_index%lid_plant_minn_no3, &
     lid_co2_hr => this%v1eca_bgc_index%lid_co2_hr, &
     lid_minp_soluble =>  this%v1eca_bgc_index%lid_minp_soluble,  &
-    lid_minp_secondary => this%v1eca_bgc_index%lid_minp_secondary, &
+    lid_minp_sorb => this%v1eca_bgc_index%lid_minp_sorb, &
     lid_plant_minp => this%v1eca_bgc_index%lid_plant_minp  &
   )
   if(present(bstatus)) &
@@ -1426,7 +1454,7 @@ contains
 
   n_mass = n_mass + ystates1(lid_nh4) + ystates1(lid_no3)
 
-  p_mass = p_mass + ystates1(lid_minp_soluble) + ystates1(lid_minp_secondary)
+  p_mass = p_mass + ystates1(lid_minp_soluble) + ystates1(lid_minp_sorb)
 
   c_mass = c_mass * catomw
   n_mass = n_mass * natomw
@@ -1503,7 +1531,7 @@ contains
     lid_plant_minn_no3 => this%v1eca_bgc_index%lid_plant_minn_no3, &
     lid_co2 => this%v1eca_bgc_index%lid_co2, &
     lid_minp_soluble =>  this%v1eca_bgc_index%lid_minp_soluble,  &
-    lid_minp_secondary => this%v1eca_bgc_index%lid_minp_secondary, &
+    lid_minp_sorb => this%v1eca_bgc_index%lid_minp_sorb, &
     lid_plant_minp => this%v1eca_bgc_index%lid_plant_minp, &
     ystates1 => this%ystates1  &
   )
@@ -1534,7 +1562,7 @@ contains
 
   n_mass = n_mass + ystates1(lid_nh4) + ystates1(lid_no3)
 
-  p_mass = p_mass + ystates1(lid_minp_soluble) + ystates1(lid_minp_secondary)
+  p_mass = p_mass + ystates1(lid_minp_soluble) + ystates1(lid_minp_sorb)
 
   c_mass = c_mass * catomw
   n_mass = n_mass * natomw

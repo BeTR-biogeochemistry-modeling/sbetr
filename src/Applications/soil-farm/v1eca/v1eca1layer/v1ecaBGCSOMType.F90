@@ -893,20 +893,21 @@ contains
   end subroutine calc_som_decay_k
   !-------------------------------------------------------------------------------
   subroutine calc_pot_min_np_flx(this, dtime, v1eca_bgc_index, ystates, k_decay, cascade_matrix, &
-    alpha_n, alpha_p, pot_decomp, pot_nn_flx, pot_np_flx)
+    alpha_n, alpha_p, pot_decomp, pot_nn_flx, pot_np_flx_up,pot_np_flx_mn)
   use v1ecaBGCIndexType       , only : v1eca_bgc_index_type
   implicit none
   class(CentSom_type)         , intent(inout) :: this
   real(r8)                    , intent(in) :: dtime
-  type(v1eca_bgc_index_type) , intent(in) :: v1eca_bgc_index
+  type(v1eca_bgc_index_type)  , intent(in) :: v1eca_bgc_index
   real(r8)                    , intent(in) :: ystates(1:v1eca_bgc_index%nom_tot_elms)
   real(r8)                    , intent(in) :: k_decay(1:ncentpools)
   real(r8)                    , intent(in) :: cascade_matrix(v1eca_bgc_index%nstvars, v1eca_bgc_index%nreactions)
   real(r8)                    , intent(in) :: alpha_n(ncentpools)
   real(r8)                    , intent(in) :: alpha_p(ncentpools)
-  real(r8)                    , intent(out) :: pot_decomp(ncentpools)
+  real(r8)                    , intent(out):: pot_decomp(ncentpools)
   real(r8)                    , intent(out):: pot_nn_flx
-  real(r8)                    , intent(out):: pot_np_flx
+  real(r8)                    , intent(out):: pot_np_flx_up
+  real(r8)                    , intent(out):: pot_np_flx_mn
 
   integer :: reac
   integer :: reacs(ncentpools)
@@ -936,7 +937,7 @@ contains
   call this%calc_som_decay_r(v1eca_bgc_index, dtime, k_decay(1:nom_pools), &
       ystates(1:nom_tot_elms), pot_decomp)
 
-  pot_nn_flx = 0._r8; pot_np_flx = 0._r8
+  pot_nn_flx = 0._r8; pot_np_flx_up = 0._r8; pot_np_flx_mn=0._r8
 
   reacs=(/lit1_dek_reac, lit2_dek_reac, lit3_dek_reac, &
     cwd_dek_reac,  &
@@ -946,9 +947,12 @@ contains
     if(alpha_n(reac)>0._r8)then
       pot_nn_flx = pot_nn_flx - cascade_matrix(lid_nh4, reacs(reac)) * pot_decomp(reac)
     endif
-    if(alpha_p(reac)>0._r8)then
-      pot_np_flx = pot_np_flx - cascade_matrix(lid_minp_soluble, reacs(reac)) * pot_decomp(reac)
+    if(alpha_p(reac)>0._r8)then !immobilization
+      pot_np_flx_up = pot_np_flx_up - cascade_matrix(lid_minp_soluble, reacs(reac)) * pot_decomp(reac)
+    else
+      pot_np_flx_mn = pot_np_flx_mn + cascade_matrix(lid_minp_soluble, reacs(reac)) * pot_decomp(reac)
     endif
+
   enddo
   end associate
   end subroutine calc_pot_min_np_flx
