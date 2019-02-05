@@ -1933,7 +1933,6 @@ contains
         (ystatesf(this%v1eca_bgc_index%lid_co2_hr) - &
         ystates0(this%v1eca_bgc_index%lid_co2_hr))*catomw/dtime
 
-
       biogeo_flux%n14flux_vars%f_denit_vr_col(c,j)= &
         (ystatesf(this%v1eca_bgc_index%lid_no3_den) - &
          ystates0(this%v1eca_bgc_index%lid_no3_den))*natomw/dtime
@@ -2187,7 +2186,7 @@ contains
    integer :: nelm
    integer :: c_loc, c13_loc, c14_loc
    integer :: n_loc, p_loc
-   integer :: c, fc, j, kk
+   integer :: c, fc, j, kk, kk1
 
     call betr_status%reset()
     SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__),betr_status)
@@ -2205,129 +2204,121 @@ contains
         if(j<jtops(c))cycle
 
         !add litter
+        kk1=1
         do kk = betrtracer_vars%id_trc_beg_litr, betrtracer_vars%id_trc_end_litr, nelm
-          biogeo_state%c12state_vars%totlitc_vr_col(c,j) = biogeo_state%c12state_vars%totlitc_vr_col(c,j) + &
+          biogeo_state%c12state_vars%decomp_cpools_vr(c,j,kk1) = &
             catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)
 
-          biogeo_state%n14state_vars%totlitn_vr_col(c,j) = biogeo_state%n14state_vars%totlitn_vr_col(c,j) + &
+          biogeo_state%n14state_vars%decomp_npools_vr(c,j,kk1)= &
             natomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc)
 
-          biogeo_state%p31state_vars%totlitp_vr_col(c,j) = biogeo_state%p31state_vars%totlitp_vr_col(c,j) + &
+          biogeo_state%p31state_vars%decomp_ppools_vr(c,j,kk1) = &
             patomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc)
 
           if(this%use_c13)then
-            biogeo_state%c13state_vars%totlitc_vr_col(c,j) = biogeo_state%c13state_vars%totlitc_vr_col(c,j) + &
+            biogeo_state%c13state_vars%decomp_cpools_vr(c,j,kk1) =  &
               c13atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc)
           endif
 
           if(this%use_c14)then
-            biogeo_state%c14state_vars%totlitc_vr_col(c,j) = biogeo_state%c14state_vars%totlitc_vr_col(c,j) + &
+            biogeo_state%c14state_vars%decomp_cpools_vr(c,j,kk1) = &
               c14atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc)
           endif
-
+          kk1 = kk1 + 1
         enddo
 
         !add cwd
         do kk = betrtracer_vars%id_trc_beg_wood, betrtracer_vars%id_trc_end_wood, nelm
-          biogeo_state%c12state_vars%cwdc_vr_col(c,j) = biogeo_state%c12state_vars%cwdc_vr_col(c,j) + &
+          biogeo_state%c12state_vars%decomp_cpools_vr(c,j,kk1) =  &
             catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)
 
-          biogeo_state%n14state_vars%cwdn_vr_col(c,j) = biogeo_state%n14state_vars%cwdn_vr_col(c,j) + &
+          biogeo_state%n14state_vars%decomp_npools_vr(c,j,kk1) =  &
             natomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc)
 
-          biogeo_state%p31state_vars%cwdp_vr_col(c,j) = biogeo_state%p31state_vars%cwdp_vr_col(c,j) + &
+          biogeo_state%p31state_vars%decomp_ppools_vr(c,j,kk1) = &
             patomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc)
 
           if(this%use_c13)then
-            biogeo_state%c13state_vars%cwdc_vr_col(c,j) = biogeo_state%c13state_vars%cwdc_vr_col(c,j) + &
+            biogeo_state%c13state_vars%decomp_cpools_vr(c,j,kk1) =  &
               c13atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc)
           endif
 
           if(this%use_c14)then
-            biogeo_state%c14state_vars%cwdc_vr_col(c,j) = biogeo_state%c14state_vars%cwdc_vr_col(c,j) + &
+            biogeo_state%c14state_vars%decomp_cpools_vr(c,j,kk1) = &
               c14atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc)
           endif
         enddo
 
         !add som
 
-
         !Microbial biomass
-        !call sum_totsom(c, j, betrtracer_vars%id_trc_beg_Bm, betrtracer_vars%id_trc_end_Bm, nelm)
         do kk = betrtracer_vars%id_trc_beg_Bm, betrtracer_vars%id_trc_end_Bm, nelm
-          biogeo_state%c12state_vars%som1c_vr_col(c,j) =  &
+          biogeo_state%c12state_vars%decomp_cpools_vr(c,j,5) =  &
             catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)
 
-          biogeo_state%n14state_vars%som1n_vr_col(c,j) =  &
+          biogeo_state%n14state_vars%decomp_npools_vr(c,j,5) =  &
             natomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc)
 
-          biogeo_state%p31state_vars%som1p_vr_col(c,j) =  &
+          biogeo_state%p31state_vars%decomp_ppools_vr(c,j,5) =  &
             patomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc)
 
           if(this%use_c13)then
-            biogeo_state%c13state_vars%som1c_vr_col(c,j) = &
+            biogeo_state%c13state_vars%decomp_cpools_vr(c,j,5) = &
               c13atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc)
           endif
 
           if(this%use_c14)then
-            biogeo_state%c14state_vars%som1c_vr_col(c,j) =  &
+            biogeo_state%c14state_vars%decomp_cpools_vr(c,j,5) =  &
               c14atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc)
           endif
         enddo
 
-        !call sum_totsom(c, j, betrtracer_vars%id_trc_beg_som, betrtracer_vars%id_trc_end_som, nelm)
         do kk = betrtracer_vars%id_trc_beg_som, betrtracer_vars%id_trc_end_som, nelm
-          biogeo_state%c12state_vars%som3c_vr_col(c,j) =  &
+          biogeo_state%c12state_vars%decomp_cpools_vr(c,j,7) =  &
             catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)
 
-          biogeo_state%n14state_vars%som3n_vr_col(c,j) =  &
+          biogeo_state%n14state_vars%decomp_npools_vr(c,j,7) =  &
             natomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc)
 
-          biogeo_state%p31state_vars%som3p_vr_col(c,j) =  &
+          biogeo_state%p31state_vars%decomp_ppools_vr(c,j,7) =  &
             patomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc)
 
           if(this%use_c13)then
-            biogeo_state%c13state_vars%som3c_vr_col(c,j) =  &
+            biogeo_state%c13state_vars%decomp_cpools_vr(c,j,7) =  &
               c13atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc)
           endif
 
           if(this%use_c14)then
-            biogeo_state%c14state_vars%som3c_vr_col(c,j) =  &
+            biogeo_state%c14state_vars%decomp_cpools_vr(c,j,7) =  &
               c14atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc)
           endif
         enddo
 
         !POM
-        !call sum_totsom(c, j, betrtracer_vars%id_trc_beg_pom, betrtracer_vars%id_trc_end_pom, nelm)
         do kk = betrtracer_vars%id_trc_beg_pom, betrtracer_vars%id_trc_end_pom, nelm
-          biogeo_state%c12state_vars%som2c_vr_col(c,j) = &
+          biogeo_state%c12state_vars%decomp_cpools_vr(c,j,6) = &
             catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)
 
-          biogeo_state%n14state_vars%som2n_vr_col(c,j) =  &
+          biogeo_state%n14state_vars%decomp_npools_vr(c,j,6) =  &
             natomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc)
 
-          biogeo_state%p31state_vars%som2p_vr_col(c,j) =  &
+          biogeo_state%p31state_vars%decomp_ppools_vr(c,j,6) =  &
             patomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc)
 
           if(this%use_c13)then
-            biogeo_state%c13state_vars%som2c_vr_col(c,j) =  &
+            biogeo_state%c13state_vars%decomp_cpools_vr(c,j,6) =  &
               c13atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c13_loc)
           endif
 
           if(this%use_c14)then
-            biogeo_state%c14state_vars%som2c_vr_col(c,j) =  &
+            biogeo_state%c14state_vars%decomp_cpools_vr(c,j,6) =  &
               c14atomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c14_loc)
           endif
         enddo
 
-        !non occluded phosphorus, soluble and adsorbed
+        !soluble P
         biogeo_state%p31state_vars%sminp_vr_col(c,j) = biogeo_state%p31state_vars%sminp_vr_col(c,j) + patomw * &
-           (tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_beg_minp) + &
-            tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_p_sol))
-
-        !occluded
-        biogeo_state%p31state_vars%occlp_vr_col(c,j) = biogeo_state%p31state_vars%occlp_vr_col(c,j) + patomw * &
-           tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_end_minp)
+            tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_p_sol)
 
         !mineral nitrogen
         biogeo_state%n14state_vars%sminn_vr_col(c,j) = biogeo_state%n14state_vars%sminn_vr_col(c,j) + natomw * &

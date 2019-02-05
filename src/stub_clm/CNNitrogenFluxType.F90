@@ -56,6 +56,7 @@ implicit none
      real(r8), pointer :: nflx_minn_input_nh4_vr_col              (:,:) => null()
      real(r8), pointer :: nflx_minn_input_no3_vr_col              (:,:) => null()
      real(r8), pointer :: nh3_soi_flx_col                           (:) => null()
+     real(r8), pointer :: col_plant_pdemand_vr                    (:,:) => null()
   contains
 
     procedure, public  :: Init

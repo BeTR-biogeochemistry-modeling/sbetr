@@ -17,6 +17,7 @@ module BeTRSimulationALM
   use tracer_varcon       , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
   use betr_decompMod      , only : betr_bounds_type
   use betr_varcon         , only : betr_maxpatch_pft
+  use pftvarcon           , only : noveg, nc4_grass, nc3_arctic_grass, nc3_nonarctic_grass
 #if (defined SBETR)
   use PatchType      , only : patch_type
   use ColumnType     , only : column_type
@@ -133,7 +134,6 @@ contains
     !
     !USES
     !data types from alm
-    use pftvarcon       , only : noveg, nc4_grass, nc3_arctic_grass, nc3_nonarctic_grass
     use WaterStateType  , only : waterstate_type
     use landunit_varcon , only : istcrop, istice, istsoil
     use clm_varpar      , only : nlevsno, nlevsoi, nlevtrc_soil
@@ -185,7 +185,6 @@ contains
     !
     !USES
     !data types from alm
-    use pftvarcon       , only : noveg, nc4_grass, nc3_arctic_grass, nc3_nonarctic_grass
     use WaterStateType  , only : waterstate_type
     use landunit_varcon , only : istcrop, istice, istsoil
     use clm_varpar      , only : nlevsno, nlevsoi, nlevtrc_soil
@@ -867,7 +866,6 @@ contains
   use PhosphorusFluxType  , only : phosphorusflux_type
   use PhosphorusStateType , only : phosphorusstate_type
   use tracer_varcon       , only : use_c13_betr, use_c14_betr
-  use pftvarcon           , only : noveg
   use MathfuncMod         , only : safe_div
   use tracer_varcon       , only : reaction_method
 
@@ -1088,7 +1086,7 @@ contains
         this%biogeo_flux(c)%p31flux_vars%sminp_qdrain_col(c_l)
   enddo
 
-  if (this%do_bgc_type('type1_bgc')) then
+  if (index(reaction_method,'v1eca')/=0 ) then
     associate(                                                             &
     c12_decomp_cpools_vr_col =>   c12state_vars%decomp_cpools_vr_col   , &
     decomp_npools_vr_col =>   n14state_vars%decomp_npools_vr_col    , &
@@ -1097,14 +1095,19 @@ contains
     solutionp_vr        => p31state_vars%solutionp_vr_col          &
 
     )
-    do j = 1,betr_nlevtrc_soil
-      do c = bounds%begc, bounds%endc
-        if(.not. this%active_col(c))cycle
-        do kk = 1, 7
+    do kk = 1, 7
+      do j = 1,betr_nlevtrc_soil
+        do c = bounds%begc, bounds%endc
+          if(.not. this%active_col(c))cycle
           c12_decomp_cpools_vr_col(c,j,kk)=this%biogeo_state(c)%c12state_vars%decomp_cpools_vr(c_l,j,kk)
           decomp_npools_vr_col(c,j,kk) = this%biogeo_state(c)%n14state_vars%decomp_npools_vr(c_l,j,kk)
           decomp_ppools_vr_col(c,j,kk) = this%biogeo_state(c)%p31state_vars%decomp_ppools_vr(c_l,j,kk)
         enddo
+      enddo
+    enddo
+    do j = 1,betr_nlevtrc_soil
+      do c = bounds%begc, bounds%endc
+        if(.not. this%active_col(c))cycle
         smin_no3_vr(c,j) = this%biogeo_state(c)%n14state_vars%sminn_no3_vr_col(c_l,j)
         solutionp_vr(c,j) = this%biogeo_state(c)%p31state_vars%sminp_vr_col(c_l,j)
       enddo
@@ -1348,7 +1351,6 @@ contains
   !set kinetic parameters for column c
   use PlantMicKineticsMod, only : PlantMicKinetics_type
   use tracer_varcon      , only : reaction_method,natomw,patomw
-  use pftvarcon             , only : noveg
   implicit none
   class(betr_simulation_alm_type), intent(inout)  :: this
   type(betr_bounds_type), intent(in) :: betr_bounds
@@ -1398,7 +1400,6 @@ contains
   !set kinetic parameters for column c
   use PlantMicKineticsMod, only : PlantMicKinetics_type
   use tracer_varcon      , only : reaction_method,natomw,patomw
-  use pftvarcon          , only : noveg
   use clm_time_manager   , only : get_nstep
   use tracer_varcon      , only : lbcalib
   implicit none
@@ -1661,7 +1662,7 @@ contains
   type(phosphorusflux_type)       , intent(inout) :: phosphorusflux_vars
 
 
-  integer :: kk, c, j, fc
+  integer :: kk, c, j, fc, c_l, p, pi
   associate(                                                             &
   decomp_k                 => c12_cflx_vars%decomp_k_col               , &
   c12_decomp_cpools_vr_col =>   c12_cstate_vars%decomp_cpools_vr_col   , &
@@ -1669,20 +1670,45 @@ contains
   decomp_ppools_vr_col =>   phosphorusstate_vars%decomp_ppools_vr_col    &
 
   )
+  c_l=1
   do j = 1,nlevtrc_soil
     do c = bounds%begc, bounds%endc
        if(.not. this%active_col(c))cycle
        do kk = 1, 7
-         decomp_k(c,j,kk) = this%biogeo_flux(c)%c12flux_vars%decomp_k(c,j,kk)
-         c12_decomp_cpools_vr_col(c,j,kk)=this%biogeo_state(c)%c12state_vars%decomp_cpools_vr(c,j,kk)
-         decomp_npools_vr_col(c,j,kk) = this%biogeo_state(c)%n14state_vars%decomp_npools_vr(c,j,kk)
-         decomp_ppools_vr_col(c,j,kk) = this%biogeo_state(c)%p31state_vars%decomp_ppools_vr(c,j,kk)
+         decomp_k(c,j,kk) = this%biogeo_flux(c)%c12flux_vars%decomp_k(c_l,j,kk)
+         c12_decomp_cpools_vr_col(c,j,kk)=this%biogeo_state(c)%c12state_vars%decomp_cpools_vr(c_l,j,kk)
+         decomp_npools_vr_col(c,j,kk) = this%biogeo_state(c)%n14state_vars%decomp_npools_vr(c_l,j,kk)
+         decomp_ppools_vr_col(c,j,kk) = this%biogeo_state(c)%p31state_vars%decomp_ppools_vr(c_l,j,kk)
        enddo
     enddo
   enddo
   !extract plant nutrient uptake fluxes, soil respiration, denitrification, nitrification
   !
+  do c = bounds%begc, bounds%endc
+    if(.not. this%active_col(c))cycle
+    pi = 0
+    do p = col%pfti(c), col%pftf(c)
+      if (pft%active(p) .and. (pft%itype(p) .ne. noveg)) then
+        pi = pi + 1
+        nitrogenflux_vars%smin_nh4_to_plant_patch(p) = this%biogeo_flux(c)%n14flux_vars%smin_nh4_to_plant_patch(pi)
+        nitrogenflux_vars%smin_no3_to_plant_patch(p) = this%biogeo_flux(c)%n14flux_vars%smin_no3_to_plant_patch(pi)
+        phosphorusflux_vars%sminp_to_plant_patch(p)  = this%biogeo_flux(c)%p31flux_vars%sminp_to_plant_patch(pi)
+      else
+        nitrogenflux_vars%smin_nh4_to_plant_patch(p) = 0._r8
+        nitrogenflux_vars%smin_no3_to_plant_patch(p) = 0._r8
+        phosphorusflux_vars%sminp_to_plant_patch(p) = 0._r8
+      endif
+    enddo
+  enddo
 
+  do j = 1,nlevtrc_soil
+    do c = bounds%begc, bounds%endc
+      if(.not. this%active_col(c))cycle
+      nitrogenflux_vars%col_plant_pdemand_vr(c,j)  = this%biogeo_flux(c)%p31flux_vars%col_plant_pdemand_vr(c_l,j)
+      phosphorusflux_vars%adsorb_to_labilep_vr(c,j)= this%biogeo_flux(c)%p31flux_vars%adsorb_to_labilep_vr_col(c_l,j)
+      c12_cflx_vars%hr_vr_col(c,j)                 = this%biogeo_flux(c)%c12flux_vars%hr_vr_col(c_l,j)
+    enddo
+  enddo
   end associate
 
   end subroutine ALMExitOutLoopBGC
