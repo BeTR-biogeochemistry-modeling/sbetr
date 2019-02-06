@@ -1600,8 +1600,8 @@ contains
   c12_decomp_cpools_vr_col =>   c12_cstate_vars%decomp_cpools_vr_col       , &
   decomp_npools_vr_col     =>   nitrogenstate_vars%decomp_npools_vr_col    , &
   decomp_ppools_vr_col     =>   phosphorusstate_vars%decomp_ppools_vr_col  , &
-  smin_nh4_vr              =>    nitrogenstate_vars%smin_nh4_vr_col        , & ! Input:  [real(r8) (:,:)  ]  (gN/m3) soil mineral NH4 pool
-  smin_no3_vr              =>    nitrogenstate_vars%smin_no3_vr_col        , & ! Input:  [real(r8) (:,:)  ]  (gN/m3) soil mineral NO3 pool
+  smin_nh4_vr              =>   nitrogenstate_vars%smin_nh4_vr_col         , & ! Input:  [real(r8) (:,:)  ]  (gN/m3) soil mineral NH4 pool
+  smin_no3_vr              =>   nitrogenstate_vars%smin_no3_vr_col         , & ! Input:  [real(r8) (:,:)  ]  (gN/m3) soil mineral NO3 pool
   solutionp_vr             => phosphorusstate_vars%solutionp_vr_col          & !
   )
   c_l=1
@@ -1621,6 +1621,8 @@ contains
       this%biophys_forc(c)%p31flx%in_sminp_vr_col(c_l,j) = solutionp_vr(c,j)
     enddo
   enddo
+
+  !set autotrophic respiration
 
   !set kinetic parameters
   call this%set_transient_kinetics_par(betr_bounds, col, pft, num_soilc, filter_soilc, PlantMicKinetics_vars)
@@ -1671,15 +1673,16 @@ contains
 
   )
   c_l=1
-  do j = 1,nlevtrc_soil
-    do c = bounds%begc, bounds%endc
-       if(.not. this%active_col(c))cycle
-       do kk = 1, 7
-         decomp_k(c,j,kk) = this%biogeo_flux(c)%c12flux_vars%decomp_k(c_l,j,kk)
-         c12_decomp_cpools_vr_col(c,j,kk)=this%biogeo_state(c)%c12state_vars%decomp_cpools_vr(c_l,j,kk)
-         decomp_npools_vr_col(c,j,kk) = this%biogeo_state(c)%n14state_vars%decomp_npools_vr(c_l,j,kk)
-         decomp_ppools_vr_col(c,j,kk) = this%biogeo_state(c)%p31state_vars%decomp_ppools_vr(c_l,j,kk)
-       enddo
+  do kk = 1, 7
+    do j = 1,nlevtrc_soil
+      do c = bounds%begc, bounds%endc
+        if(.not. this%active_col(c))cycle
+
+        decomp_k(c,j,kk) = this%biogeo_flux(c)%c12flux_vars%decomp_k(c_l,j,kk)
+        c12_decomp_cpools_vr_col(c,j,kk)=this%biogeo_state(c)%c12state_vars%decomp_cpools_vr(c_l,j,kk)
+        decomp_npools_vr_col(c,j,kk) = this%biogeo_state(c)%n14state_vars%decomp_npools_vr(c_l,j,kk)
+        decomp_ppools_vr_col(c,j,kk) = this%biogeo_state(c)%p31state_vars%decomp_ppools_vr(c_l,j,kk)
+      enddo
     enddo
   enddo
   !extract plant nutrient uptake fluxes, soil respiration, denitrification, nitrification
@@ -1707,6 +1710,9 @@ contains
       nitrogenflux_vars%col_plant_pdemand_vr(c,j)  = this%biogeo_flux(c)%p31flux_vars%col_plant_pdemand_vr(c_l,j)
       phosphorusflux_vars%adsorb_to_labilep_vr(c,j)= this%biogeo_flux(c)%p31flux_vars%adsorb_to_labilep_vr_col(c_l,j)
       c12_cflx_vars%hr_vr_col(c,j)                 = this%biogeo_flux(c)%c12flux_vars%hr_vr_col(c_l,j)
+      nitrogenstate_vars%smin_nh4_vr_col(c,j)      = this%biogeo_state(c)%n14state_vars%smin_nh4_vr_col(c_l,j)
+      nitrogenstate_vars%smin_no3_vr_col(c,j)      = this%biogeo_state(c)%n14state_vars%sminn_no3_vr_col(c_l,j)
+      phosphorusstate_vars%solutionp_vr_col(c,j)   = this%biogeo_state(c)%p31state_vars%solutionp_vr_col(c_l,j)
     enddo
   enddo
   end associate

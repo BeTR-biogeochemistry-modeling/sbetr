@@ -377,7 +377,7 @@ contains
          this%tracerstates,                                    &
          this%tracerfluxes,                                    &
          this%tracerboundaryconds,                             &
-         this%plant_soilbgc, biogeo_flux,  betr_status)
+         this%plant_soilbgc, biogeo_flux, biogeo_state, betr_status)
     if(betr_status%check_status())return
 
     if(this%tracers%debug)call this%debug_info(bounds, col, num_soilc, filter_soilc, 'afbgc react\n bef gwstransp',betr_status)
@@ -1592,7 +1592,7 @@ contains
      this%tracerstates,                                    &
      this%tracerfluxes,                                    &
      this%tracerboundaryconds,                             &
-     this%plant_soilbgc, biogeo_flux,  betr_status)
+     this%plant_soilbgc, biogeo_flux, biogeo_state,  betr_status)
   if(betr_status%check_status())return
 
 

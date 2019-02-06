@@ -32,6 +32,7 @@ implicit none
     real(r8), pointer :: som3p_vr_col(:,:) => null()
     real(r8), pointer :: domp_vr_col(:,:) => null()
     real(r8), pointer :: decomp_ppools_vr(:,:,:) => null()
+    real(r8), pointer :: solutionp_vr_col(:,:) => null()
   contains
     procedure, public  :: Init
     procedure, private :: InitAllocate
@@ -79,6 +80,7 @@ implicit none
 
   if(index(bgc_type,'type1_bgc')/=0)then
     SPVAL_ALLOC(this%decomp_ppools_vr(begc:endc, lbj:ubj, 1:7))
+    SPVAL_ALLOC(this%solutionp_vr_col(begc:endc, lbj:ubj))
   else
     SPVAL_ALLOC(this%som1p_vr_col(begc:endc, lbj:ubj))
     SPVAL_ALLOC(this%som2p_vr_col(begc:endc, lbj:ubj))
@@ -103,6 +105,7 @@ implicit none
 
   if(index(bgc_type,'type1_bgc')/=0)then
     this%decomp_ppools_vr(:,:,:) = value_column
+    this%solutionp_vr_col(:,:) = value_column
   else
     this%cwdp_vr_col(:,:) = value_column
     this%totlitp_vr_col(:,:) = value_column
