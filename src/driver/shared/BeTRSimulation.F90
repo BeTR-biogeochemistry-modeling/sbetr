@@ -1122,12 +1122,6 @@ contains
          endif
        endif
       enddo
-      if(c==68 .and. .false.)then
-        print*,'checksum'
-        do l=1, ubj
-          print*,'l',l,sum(this%biophys_forc(c)%qflx_rootsoi_frac_patch(1:pp,l))
-        enddo
-      endif
     endif
     if(present(temperature_vars))then
       this%biophys_forc(c)%t_soi_10cm(cc)           = temperature_vars%t_soi10cm_col(c)

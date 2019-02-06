@@ -32,6 +32,9 @@ implicit none
     real(r8), pointer :: smin_nh4_runoff_col(:) => null()
     real(r8), pointer :: smin_nh4_qdrain_col(:) => null()
     real(r8), pointer :: nh3_soi_flx_col(:) => null()
+    real(r8), pointer :: smin_nh4_to_plant_vr_col(:,:) => null()
+    real(r8), pointer :: smin_no3_to_plant_vr_col(:,:) => null()
+
   contains
     procedure, public  :: Init
     procedure, private :: InitAllocate
@@ -90,6 +93,9 @@ implicit none
   SPVAL_ALLOC(this%fire_decomp_nloss_vr_col(begc:endc,lbj:ubj))
   SPVAL_ALLOC(this%supplement_to_sminn_vr_col(begc:endc,lbj:ubj))
   SPVAL_ALLOC(this%nh3_soi_flx_col(begc:endc))
+  SPVAL_ALLOC(this%smin_nh4_to_plant_vr_col(begc:endc, lbj:ubj))
+  SPVAL_ALLOC(this%smin_no3_to_plant_vr_col(begc:endc, lbj:ubj))
+
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------
@@ -114,6 +120,8 @@ implicit none
   this%smin_nh4_qdrain_col(:) = value_column
   this%smin_no3_runoff_col(:) = value_column
   this%smin_nh4_runoff_col(:) = value_column
+  this%smin_nh4_to_plant_vr_col(:,:) = value_column
+  this%smin_no3_to_plant_vr_col(:,:) = value_column
   end subroutine reset
 
   !------------------------------------------------------------------------

@@ -276,10 +276,9 @@ contains
     k_sorbsurf(c_l,j,gid) = plantNutkinetics%km_minsurf_p_vr_col(c_l,j)
     Q_sorbsurf(c_l,j,gid) = plantNutkinetics%minsurf_p_compet_vr_col(c_l,j)
 
-    trcid=tracer_group_memid(id_trc_nh3x,1); gid = adsorbgroupid(trcid)
-    k_sorbsurf(c_l,j,gid) = plantNutkinetics%km_minsurf_nh4_vr_col(c_l,j)
-    Q_sorbsurf(c_l,j,gid) = plantNutkinetics%minsurf_nh4_compet_vr_col(c_l,j)
-
+!    trcid=tracer_group_memid(id_trc_nh3x,1); gid = adsorbgroupid(trcid)
+!    k_sorbsurf(c_l,j,gid) = plantNutkinetics%km_minsurf_nh4_vr_col(c_l,j)
+!    Q_sorbsurf(c_l,j,gid) = plantNutkinetics%minsurf_nh4_compet_vr_col(c_l,j)
 
   enddo
   end associate
@@ -408,11 +407,11 @@ contains
     endif
 
     !dissolved nh3x, no volatilization is allowed at this moment.
-    call betrtracer_vars%add_tracer_group(trc_grp_cnt=addone(itemp), mem = 1, &
-      trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_nh3x, &
-      trc_grp_beg=betrtracer_vars%id_trc_beg_nh3x, &
-      trc_grp_end=betrtracer_vars%id_trc_end_nh3x, &
-      is_trc_gw=.true., is_trc_volatile = .true., is_trc_adsorb=.true.)
+!    call betrtracer_vars%add_tracer_group(trc_grp_cnt=addone(itemp), mem = 1, &
+!      trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_nh3x, &
+!      trc_grp_beg=betrtracer_vars%id_trc_beg_nh3x, &
+!      trc_grp_end=betrtracer_vars%id_trc_end_nh3x, &
+!      is_trc_gw=.true., is_trc_volatile = .true., is_trc_adsorb=.true.)
 
     !non-volatile tracers
     !nitrate
@@ -428,12 +427,6 @@ contains
       trc_grp_beg=betrtracer_vars%id_trc_beg_p_sol, &
       trc_grp_end=betrtracer_vars%id_trc_end_p_sol, &
       is_trc_gw=.true., is_trc_volatile = .false.,is_trc_adsorb=.true.)
-    !dom group
-    call betrtracer_vars%add_tracer_group(trc_grp_cnt=addone(itemp), mem = nelm, &
-      trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_dom, &
-      trc_grp_beg=betrtracer_vars%id_trc_beg_dom, &
-      trc_grp_end=betrtracer_vars%id_trc_end_dom, &
-      is_trc_gw=.true., is_trc_volatile = .false.)
 
     !three litter groups
     ngroupmems = 3*nelm
@@ -444,7 +437,7 @@ contains
       is_trc_passive=.true.)
 
     !three woody groups
-    ngroupmems = 3*nelm
+    ngroupmems = nelm
     call betrtracer_vars%add_tracer_group(trc_grp_cnt=addone(itemp), &
       is_trc_passive=.true., mem = ngroupmems, &
       trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_wood, &
@@ -475,12 +468,6 @@ contains
       trc_grp_end=betrtracer_vars%id_trc_end_som, &
       is_trc_passive=.true.)
 
-    !group of solid phase mineral phosphorus
-    call betrtracer_vars%add_tracer_group(trc_grp_cnt=addone(itemp), mem = 2, &
-      trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_minp, &
-      trc_grp_beg=betrtracer_vars%id_trc_beg_minp, &
-      trc_grp_end=betrtracer_vars%id_trc_end_minp, &
-      is_trc_passive=.true.)
     betrtracer_vars%nmem_max                     = nelm*3                       ! maximum number of group elements
 
     call betrtracer_vars%Init()
@@ -548,14 +535,14 @@ contains
          trc_volatile_id = addone(itemp_v), trc_volatile_group_id = addone(itemp_vgrp))
     if(bstatus%check_status())return
 
-    call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_nh3x, &
-         trc_name='NH3x', is_trc_mobile=.true., is_trc_advective = .true., &
-         trc_group_id = betrtracer_vars%id_trc_nh3x, trc_group_mem = 1, is_trc_volatile=.true., &
-         trc_volatile_id = addone(itemp_v), trc_volatile_group_id = addone(itemp_vgrp), &
-         is_trc_adsorb = .true., trc_adsorbid=addone(itemp_ads), &
-         trc_adsorbgroupid=addone(itemp_ads_grp), trc_sorpisotherm='LANGMUIR', &
-         trc_vtrans_scal=1._r8)
-    if(bstatus%check_status())return
+!    call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_nh3x, &
+!         trc_name='NH3x', is_trc_mobile=.true., is_trc_advective = .true., &
+!         trc_group_id = betrtracer_vars%id_trc_nh3x, trc_group_mem = 1, is_trc_volatile=.true., &
+!         trc_volatile_id = addone(itemp_v), trc_volatile_group_id = addone(itemp_vgrp), &
+!         is_trc_adsorb = .true., trc_adsorbid=addone(itemp_ads), &
+!         trc_adsorbgroupid=addone(itemp_ads_grp), trc_sorpisotherm='LANGMUIR', &
+!         trc_vtrans_scal=1._r8)
+!    if(bstatus%check_status())return
 
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_no3x, &
          trc_name='NO3x', is_trc_mobile=.true., is_trc_advective = .true., &
@@ -571,56 +558,6 @@ contains
          trc_vtrans_scal=1._r8)
     if(bstatus%check_status())return
 
-    !add dissolvable organic matter, by default is inert.
-    itemp_mem=0
-    trcid =  betrtracer_vars%id_trc_beg_dom+c_loc-1
-    call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, &
-         trc_name='DOMC', is_trc_mobile=.false., is_trc_advective = .false., &
-         trc_group_id = betrtracer_vars%id_trc_dom, trc_group_mem = addone(itemp_mem),&
-         is_trc_volatile=.false., is_trc_adsorb = .false., trc_adsorbid=addone(itemp_ads), &
-         trc_adsorbgroupid=addone(itemp_ads_grp), trc_sorpisotherm='LANGMUIR', &
-         is_trc_dom=.true.,trc_family_name='DOM')
-    if(bstatus%check_status())return
-
-    trcid = betrtracer_vars%id_trc_beg_dom+n_loc-1
-    call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, &
-         trc_name='DOMN', is_trc_mobile=.false., is_trc_advective = .false., &
-         trc_group_id = betrtracer_vars%id_trc_dom, trc_group_mem = addone(itemp_mem), &
-         is_trc_volatile=.false., is_trc_adsorb = .false., trc_adsorbid=addone(itemp_ads), &
-         trc_adsorbgroupid=itemp_ads_grp, trc_sorpisotherm='LANGMUIR', &
-         is_trc_dom=.true.,trc_family_name='DOM')
-    if(bstatus%check_status())return
-
-    trcid = betrtracer_vars%id_trc_beg_dom+p_loc-1
-    call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, &
-         trc_name='DOMP', is_trc_mobile=.false., is_trc_advective = .false., &
-         trc_group_id = betrtracer_vars%id_trc_dom, trc_group_mem = addone(itemp_mem), &
-         is_trc_volatile=.false., is_trc_adsorb = .false., trc_adsorbid=addone(itemp_ads), &
-         trc_adsorbgroupid=itemp_ads_grp, trc_sorpisotherm='LANGMUIR', &
-         is_trc_dom=.true., trc_family_name='DOM')
-    if(bstatus%check_status())return
-
-    if(this%use_c13)then
-      trcid = betrtracer_vars%id_trc_beg_dom+c13_loc-1
-      call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, &
-         trc_name='DOMC_C13', is_trc_mobile=.false., is_trc_advective = .false., &
-         trc_group_id = betrtracer_vars%id_trc_dom, trc_group_mem = addone(itemp_mem), &
-         is_trc_volatile=.false., is_trc_adsorb = .false., trc_adsorbid=addone(itemp_ads), &
-         trc_adsorbgroupid=itemp_ads_grp,trc_sorpisotherm='LANGMUIR', &
-         is_trc_dom=.true., trc_family_name='DOM')
-      if(bstatus%check_status())return
-    endif
-
-    if(this%use_c14)then
-      trcid=betrtracer_vars%id_trc_beg_dom+c14_loc-1
-      call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, &
-         trc_name='DOMC_C14', is_trc_mobile=.false., is_trc_advective = .false., &
-         trc_group_id = betrtracer_vars%id_trc_dom, trc_group_mem = addone(itemp_mem), &
-         is_trc_volatile=.false., is_trc_adsorb = .false., trc_adsorbid=addone(itemp_ads), &
-         trc_adsorbgroupid=itemp_ads_grp, trc_sorpisotherm='LANGMUIR', &
-         is_trc_dom=.true., trc_family_name='DOM')
-      if(bstatus%check_status())return
-    endif
     !------------------------------------------------------------------------------------
     !only one group passive solid litter tracers
     !define litter group
@@ -908,21 +845,6 @@ contains
     endif
 
     !------------------------------------------------------------------------------------
-    !new group
-    itemp_mem=0
-    trcid = betrtracer_vars%id_trc_beg_minp
-    call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='P_2ND' ,    &
-         is_trc_mobile=.false., is_trc_advective = .false., &
-         trc_group_id = betrtracer_vars%id_trc_minp,  trc_group_mem= addone(itemp_mem), &
-         trc_family_name='MINP')
-    if(bstatus%check_status())return
-
-    trcid = betrtracer_vars%id_trc_end_minp;
-    call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='P_OCL'  ,    &
-         is_trc_mobile=.false., is_trc_advective = .false., &
-         trc_group_id = betrtracer_vars%id_trc_minp,  trc_group_mem= addone(itemp_mem), &
-         trc_family_name='MINP')
-    !call betrtracer_vars%disp_betr_tracer()
 
   end subroutine Init_betrbgc
 
@@ -1004,7 +926,7 @@ contains
          tracer_gwdif_concflux_top_col(c,1:2,id_trc_co2x)  =ppm2molv(pbot_pa(c), co2_ppmv(c), tair(c))!mol m-3, contant boundary condition
          tracer_gwdif_concflux_top_col(c,1:2,id_trc_ch4)   =ppm2molv(pbot_pa(c), ch4_ppmv(c), tair(c))!mol m-3, contant boundary condition
          tracer_gwdif_concflux_top_col(c,1:2,id_trc_n2o)   =ppm2molv(pbot_pa(c), n2o_ppmv(c), tair(c))!mol m-3, contant boundary condition
-         tracer_gwdif_concflux_top_col(c,1:2,id_trc_nh3x)  =ppm2molv(pbot_pa(c), nh3_ppmv(c), tair(c))!mol m-3, contant boundary condition
+!         tracer_gwdif_concflux_top_col(c,1:2,id_trc_nh3x)  =ppm2molv(pbot_pa(c), nh3_ppmv(c), tair(c))!mol m-3, contant boundary condition
          tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_no3x)  = 0._r8
          tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_p_sol) = 0._r8
 
@@ -1612,7 +1534,7 @@ contains
   do j = lbj, ubj
     do fc = 1, num_soilc
       c = filter_soilc(fc)
-      this%v1eca_forc(c,j)%rt_ar  = plant_soilbgc%rt_vr_col(c,j)            !root autotrophic respiration, mol CO2/m3/s
+      this%v1eca_forc(c,j)%rt_ar  = biophysforc%c12flx%rt_vr_col(c,j)            !root autotrophic respiration, mol CO2/m3/s
     enddo
   enddo
   end select
@@ -1815,10 +1737,10 @@ contains
 
       endif
       !tracer fluxes
-      tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_nh3x) =  &
-        tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_nh3x) + &
-        ystatesf(this%v1eca_bgc_index%lid_nh4) - &
-        ystates0(this%v1eca_bgc_index%lid_nh4)
+!      tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_nh3x) =  &
+!        tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_nh3x) + &
+!        ystatesf(this%v1eca_bgc_index%lid_nh4) - &
+!        ystates0(this%v1eca_bgc_index%lid_nh4)
 
       tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_no3x)  =  &
         tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_no3x) + &
@@ -1961,6 +1883,18 @@ contains
 
       biogeo_flux%p31flux_vars%pflx_minp_weathering_po4_vr_col(c,j) =this%v1eca_forc(c,j)%sflx_minp_weathering_po4
 
+      biogeo_flux%n14flux_vars%smin_nh4_to_plant_vr_col(c,j) = &
+          (ystatesf(this%v1eca_bgc_index%lid_plant_minn_no3) - &
+          ystates0(this%v1eca_bgc_index%lid_plant_minn_no3))*natomw/dtime
+
+      biogeo_flux%n14flux_vars%smin_no3_to_plant_vr_col(c,j) = &
+          (ystatesf(this%v1eca_bgc_index%lid_plant_minn_no3) - &
+          ystates0(this%v1eca_bgc_index%lid_plant_minn_no3))*natomw/dtime
+
+      biogeo_flux%p31flux_vars%sminp_to_plant_vr_col(c,j)  = &
+          (ystatesf(this%v1eca_bgc_index%lid_plant_minp) - &
+           ystates0(this%v1eca_bgc_index%lid_plant_minp))*patomw/dtime
+
   select type(plant_soilbgc)
   type is(v1eca_plant_soilbgc_type)
     do p = 1, this%nactpft
@@ -2088,18 +2022,6 @@ contains
         enddo
 
         !add som
-        !DOM
-        do kk = betrtracer_vars%id_trc_beg_dom, betrtracer_vars%id_trc_end_dom, nelm
-          c_mass = c_mass + &
-            catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc) * dzsoi(c,j)
-
-          n_mass = n_mass + &
-            natomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+n_loc) * dzsoi(c,j)
-
-          p_mass = p_mass + &
-            patomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+p_loc) * dzsoi(c,j)
-
-        enddo
 
         do kk = betrtracer_vars%id_trc_beg_pom, betrtracer_vars%id_trc_end_pom, nelm
           c_mass = c_mass + &
@@ -2151,15 +2073,15 @@ contains
            tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_end_minp) * dzsoi(c,j)
 
         !mineral nitrogen
-        n_mass = n_mass + natomw * &
-           (tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_nh3x) + &
-            tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_no3x)) * dzsoi(c,j)
+!        n_mass = n_mass + natomw * &
+!           (tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_nh3x) + &
+!            tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_no3x)) * dzsoi(c,j)
 
         minp = minp + patomw * &
            (tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_beg_minp) + &
             tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_p_sol)) * dzsoi(c,j)
-        min_nh4=min_nh4+ natomw * &
-           tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_nh3x) * dzsoi(c,j)
+!        min_nh4=min_nh4+ natomw * &
+!           tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_nh3x) * dzsoi(c,j)
         min_no3=min_no3+ natomw * &
            tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_no3x) * dzsoi(c,j)
      enddo
@@ -2335,12 +2257,12 @@ contains
             tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_p_sol)
 
         !mineral nitrogen
-        biogeo_state%n14state_vars%sminn_vr_col(c,j) = biogeo_state%n14state_vars%sminn_vr_col(c,j) + natomw * &
-           (tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_nh3x) + &
-            tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_no3x))
+!        biogeo_state%n14state_vars%sminn_vr_col(c,j) = biogeo_state%n14state_vars%sminn_vr_col(c,j) + natomw * &
+!           (tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_nh3x) + &
+!            tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_no3x))
 
-        biogeo_state%n14state_vars%sminn_nh4_vr_col(c,j) = natomw * &
-           tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_nh3x)
+!        biogeo_state%n14state_vars%sminn_nh4_vr_col(c,j) = natomw * &
+!           tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_nh3x)
 
         biogeo_state%n14state_vars%sminn_no3_vr_col(c,j) = natomw * &
             tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_no3x)

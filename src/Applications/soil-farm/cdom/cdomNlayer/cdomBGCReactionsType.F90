@@ -1819,7 +1819,7 @@ contains
   do j = lbj, ubj
     do fc = 1, num_soilc
       c = filter_soilc(fc)
-      this%cdom_forc(c,j)%rt_ar  = plant_soilbgc%rt_vr_col(c,j)            !root autotrophic respiration, mol CO2/m3/s
+      this%cdom_forc(c,j)%rt_ar  = biophysforc%c12flx%rt_vr_col(c,j)            !root autotrophic respiration, mol CO2/m3/s
     enddo
   enddo
   end select

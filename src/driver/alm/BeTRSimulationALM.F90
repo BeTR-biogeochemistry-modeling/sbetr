@@ -924,9 +924,9 @@ contains
   if(.not. this%do_soibgc())return
 
   !retrieve plant nutrient uptake from biogeo_flux
-  do fc = 1, num_soilc
-    c = filter_soilc(fc)
-    if (this%do_bgc_type('type2_bgc')) then
+  if (this%do_bgc_type('type2_bgc')) then
+    do fc = 1, num_soilc
+      c = filter_soilc(fc)
       pi = 0
       do p = col%pfti(c), col%pftf(c)
         if (pft%active(p) .and. (pft%itype(p) .ne. noveg)) then
@@ -1077,7 +1077,11 @@ contains
         p31state_vars%som3p_col(c) = this%biogeo_state(c)%p31state_vars%som3p_col(c_l)
 
       endif
-    endif
+    enddo
+  endif
+  return
+  do fc = 1, num_soilc
+    c = filter_soilc(fc)
     n14flux_vars%smin_no3_runoff_col(c)=this%biogeo_flux(c)%n14flux_vars%smin_no3_runoff_col(c_l)
     n14flux_vars%smin_nh4_runoff_col(c)=this%biogeo_flux(c)%n14flux_vars%smin_nh4_runoff_col(c_l)
     p31flux_vars%sminp_runoff_col(c)=this%biogeo_flux(c)%p31flux_vars%sminp_runoff_col(c_l)
@@ -1273,11 +1277,13 @@ contains
   if(present(phosphorusstate_vars))then
     !the following is used for setting P upon exiting spinup
     c_l=1
-    do c = bounds%begc, bounds%endc
-      this%biophys_forc(c)%solutionp_vr_col(c_l,1:nlevsoi) = phosphorusstate_vars%solutionp_vr_col(c,1:nlevsoi)
-      this%biophys_forc(c)%labilep_vr_col(c_l,1:nlevsoi) = phosphorusstate_vars%labilep_vr_col(c,1:nlevsoi)
-      this%biophys_forc(c)%secondp_vr_col(c_l,1:nlevsoi) =phosphorusstate_vars%secondp_vr_col(c,1:nlevsoi)
-      this%biophys_forc(c)%occlp_vr_col(c_l,1:nlevsoi) =  phosphorusstate_vars%occlp_vr_col(c,1:nlevsoi)
+    do j = 1, nlevsoi
+      do c = bounds%begc, bounds%endc
+        this%biophys_forc(c)%solutionp_vr_col(c_l,j) = phosphorusstate_vars%solutionp_vr_col(c,j)
+        this%biophys_forc(c)%labilep_vr_col(c_l,j) = phosphorusstate_vars%labilep_vr_col(c,j)
+        this%biophys_forc(c)%secondp_vr_col(c_l,j) =phosphorusstate_vars%secondp_vr_col(c,j)
+        this%biophys_forc(c)%occlp_vr_col(c_l,j) =  phosphorusstate_vars%occlp_vr_col(c,j)
+      enddo
     enddo
   endif
 
@@ -1285,6 +1291,11 @@ contains
     call this%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi, carbonflux_vars, waterstate_vars, &
       waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
       chemstate_vars, soilstate_vars)
+    do j = 1, nlevsoi
+      do c = bounds%begc, bounds%endc
+        this%biophys_forc(c)%c12flx%rt_vr_col(c_l,j) = carbonflux_vars%rr_vr_col(c,j)
+      enddo
+    enddo
   else
     return
   endif
@@ -1708,11 +1719,18 @@ contains
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
       nitrogenflux_vars%col_plant_pdemand_vr(c,j)  = this%biogeo_flux(c)%p31flux_vars%col_plant_pdemand_vr(c_l,j)
+      nitrogenflux_vars%f_denit_vr_col(c,j)        = this%biogeo_flux(c)%n14flux_vars%f_denit_vr_col(c_l,j)
+      nitrogenflux_vars%f_nit_vr_col(c,j)          = this%biogeo_flux(c)%n14flux_vars%f_nit_vr_col(c_l,j)
+      nitrogenflux_vars%f_n2o_nit_vr_col(c,j)      = this%biogeo_flux(c)%n14flux_vars%f_n2o_nit_vr_col(c_l,j)
       phosphorusflux_vars%adsorb_to_labilep_vr(c,j)= this%biogeo_flux(c)%p31flux_vars%adsorb_to_labilep_vr_col(c_l,j)
       c12_cflx_vars%hr_vr_col(c,j)                 = this%biogeo_flux(c)%c12flux_vars%hr_vr_col(c_l,j)
       nitrogenstate_vars%smin_nh4_vr_col(c,j)      = this%biogeo_state(c)%n14state_vars%smin_nh4_vr_col(c_l,j)
       nitrogenstate_vars%smin_no3_vr_col(c,j)      = this%biogeo_state(c)%n14state_vars%sminn_no3_vr_col(c_l,j)
       phosphorusstate_vars%solutionp_vr_col(c,j)   = this%biogeo_state(c)%p31state_vars%solutionp_vr_col(c_l,j)
+
+      nitrogenflux_vars%smin_nh4_to_plant_vr_col(c,j) = this%biogeo_flux(c)%n14flux_vars%smin_nh4_to_plant_vr_col(c_l,j)
+      nitrogenflux_vars%smin_no3_to_plant_vr_col(c,j) = this%biogeo_flux(c)%n14flux_vars%smin_no3_to_plant_vr_col(c_l,j)
+      phosphorusflux_vars%sminp_to_plant_vr_col(c,j) = this%biogeo_flux(c)%p31flux_vars%sminp_to_plant_vr_col(c_l,j)
     enddo
   enddo
   end associate

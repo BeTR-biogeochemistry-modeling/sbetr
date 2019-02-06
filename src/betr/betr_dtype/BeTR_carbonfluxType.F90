@@ -29,6 +29,7 @@ implicit none
     real(r8), pointer :: in_decomp_cpools_vr_col(:,:,:) => null()
     real(r8), pointer :: in_t_scalar(:,:) => null()
     real(r8), pointer :: in_w_scalar(:,:) => null()
+    real(r8), pointer :: rt_vr_col(:,:) => null()
   contains
     procedure, public  :: Init
     procedure, public  :: reset
@@ -78,7 +79,7 @@ implicit none
   SPVAL_ALLOC(this%cflx_output_litr_cwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
   SPVAL_ALLOC(this%cflx_output_litr_fwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
   SPVAL_ALLOC(this%cflx_output_litr_lwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
-
+  SPVAL_ALLOC(this%rt_vr_col(begc:endc, lbj:ubj))
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------
@@ -103,6 +104,7 @@ implicit none
   this%cflx_output_litr_cwd_vr_col(:,:)= value_column
   this%cflx_output_litr_fwd_vr_col(:,:)= value_column
   this%cflx_output_litr_lwd_vr_col(:,:)= value_column
+  this%rt_vr_col(:,:) = value_column
   end subroutine reset
   !------------------------------------------------------------------------
   subroutine summary(this, bounds, lbj, ubj, dz)
