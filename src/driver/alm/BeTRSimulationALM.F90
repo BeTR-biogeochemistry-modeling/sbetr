@@ -1269,6 +1269,7 @@ contains
   integer :: p, pi, c, j, c_l, pp
   integer :: npft_loc
 
+  c_l=1
   if(present(carbonflux_vars)) &
   call this%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi, carbonflux_vars, waterstate_vars, &
       waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
@@ -1276,7 +1277,6 @@ contains
 
   if(present(phosphorusstate_vars))then
     !the following is used for setting P upon exiting spinup
-    c_l=1
     do j = 1, nlevsoi
       do c = bounds%begc, bounds%endc
         this%biophys_forc(c)%solutionp_vr_col(c_l,j) = phosphorusstate_vars%solutionp_vr_col(c,j)
