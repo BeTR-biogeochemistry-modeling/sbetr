@@ -28,6 +28,7 @@ implicit none
     real(r8), pointer :: adsorb_to_labilep_vr_col(:,:) => null()
     real(r8), pointer :: col_plant_pdemand_vr(:,:) => null()
     real(r8), pointer :: sminp_to_plant_vr_col(:,:) => null()
+    real(r8), pointer :: net_mineralization_p_vr_col(:,:) => null()
   contains
     procedure, public  :: Init
     procedure, private :: InitAllocate
@@ -82,6 +83,7 @@ implicit none
     SPVAL_ALLOC(this%adsorb_to_labilep_vr_col(begc:endc,lbj:ubj))
     SPVAL_ALLOC(this%col_plant_pdemand_vr(begc:endc, lbj:ubj))
   endif
+  SPVAL_ALLOC(this%net_mineralization_p_vr_col(begc:endc,lbj:ubj))
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------
@@ -107,6 +109,7 @@ implicit none
   if(index(bgc_type,'v1eca')/=0)then
     this%adsorb_to_labilep_vr_col(:,:)=value_column
   endif
+  this%net_mineralization_p_vr_col(:,:) = value_column
   end subroutine reset
 
   !------------------------------------------------------------------------

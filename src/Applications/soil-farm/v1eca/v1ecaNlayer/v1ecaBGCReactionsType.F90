@@ -1734,6 +1734,8 @@ contains
           tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_p_sol) + &
           ystatesf(this%v1eca_bgc_index%lid_minp_soluble) - &
           ystates0(this%v1eca_bgc_index%lid_minp_soluble)
+        biogeo_flux%p31flux_vars%net_mineralization_p_vr_col(c,j)  = &
+           -ystatesf(this%v1eca_bgc_index%lid_minp_immob)*patomw/dtime
 
       endif
       !tracer fluxes

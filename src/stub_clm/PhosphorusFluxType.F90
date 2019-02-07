@@ -49,7 +49,9 @@ implicit none
     real(r8), pointer :: primp_to_labilep_col(:) => null()
     real(r8), pointer :: sminp_to_plant_trans_patch(:) => null()
     real(r8), pointer :: adsorb_to_labilep_vr(:,:) => null()
-    real(r8), pointer :: sminp_to_plant_vr_col(:,:)
+    real(r8), pointer :: sminp_to_plant_vr_col(:,:) => null()
+    real(r8), pointer :: supplement_to_sminp_vr_col(:,:) => null()
+    real(r8), pointer :: net_mineralization_p_vr_col(:,:) => null()
   contains
 
     procedure, public  :: Init

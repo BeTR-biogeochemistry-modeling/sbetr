@@ -1726,11 +1726,12 @@ contains
       c12_cflx_vars%hr_vr_col(c,j)                 = this%biogeo_flux(c)%c12flux_vars%hr_vr_col(c_l,j)
       nitrogenstate_vars%smin_nh4_vr_col(c,j)      = this%biogeo_state(c)%n14state_vars%smin_nh4_vr_col(c_l,j)
       nitrogenstate_vars%smin_no3_vr_col(c,j)      = this%biogeo_state(c)%n14state_vars%sminn_no3_vr_col(c_l,j)
-      phosphorusstate_vars%solutionp_vr_col(c,j)   = this%biogeo_state(c)%p31state_vars%solutionp_vr_col(c_l,j)
-
+      nitrogenflux_vars%supplement_to_sminn_vr_col(c,j) = this%biogeo_flux(c)%n14flux_vars%supplement_to_sminn_vr_col(c_l,j)
       nitrogenflux_vars%smin_nh4_to_plant_vr_col(c,j) = this%biogeo_flux(c)%n14flux_vars%smin_nh4_to_plant_vr_col(c_l,j)
       nitrogenflux_vars%smin_no3_to_plant_vr_col(c,j) = this%biogeo_flux(c)%n14flux_vars%smin_no3_to_plant_vr_col(c_l,j)
       phosphorusflux_vars%sminp_to_plant_vr_col(c,j) = this%biogeo_flux(c)%p31flux_vars%sminp_to_plant_vr_col(c_l,j)
+      phosphorusflux_vars%supplement_to_sminp_vr_col(c,j) =this%biogeo_flux(c)%p31flux_vars%supplement_to_sminp_vr_col(c_l,j)
+      phosphorusflux_vars%net_mineralization_p_vr_col(c,j) = this%biogeo_flux(c)%p31flux_vars%net_mineralization_p_vr_col(c_l,j)
     enddo
   enddo
   end associate
