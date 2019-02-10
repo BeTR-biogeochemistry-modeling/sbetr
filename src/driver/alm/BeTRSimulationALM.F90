@@ -1567,7 +1567,7 @@ contains
 
   logical :: ans
 
-  ans = index(type_char, bgc_type)/=0
+  ans = index(bgc_type,type_char)/=0
 
   end function do_bgc_type
 

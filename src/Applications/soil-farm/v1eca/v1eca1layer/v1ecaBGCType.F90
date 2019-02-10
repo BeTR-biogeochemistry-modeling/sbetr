@@ -62,8 +62,6 @@ module v1ecaBGCType
     real(r8), pointer                    :: conv_f(:)
     real(r8), pointer                    :: conc_f(:)
     integer                              :: soilorder
-    real(r8)                             :: msurf_nh4
-    real(r8)                             :: msurf_minp
     real(r8), private                    :: c14decay_const
     real(r8), private                    :: c14decay_som_const
     real(r8), private                    :: c14decay_pom_const
@@ -868,8 +866,6 @@ contains
   this%plant_ntypes = bgc_forc%plant_ntypes
   this%soilorder = bgc_forc%soilorder
 
-  this%msurf_nh4 = bgc_forc%msurf_nh4
-  this%msurf_minp = bgc_forc%msurf_minp
   end associate
   end subroutine init_states
   !--------------------------------------------------------------------
@@ -1208,7 +1204,7 @@ contains
   sol_smin_no3 = ystate(lid_no3)/this%competECA%h2osoi_vol
 
   call this%competECA%run_compet_nitrogen(this%non_limit, sol_smin_nh4, sol_smin_no3,&
-     this%plant_ntypes, this%msurf_nh4, ECA_factor_nit, &
+     this%plant_ntypes, ECA_factor_nit, &
      ECA_factor_den, ECA_factor_nh4_mic, ECA_factor_no3_mic, &
      ECA_flx_nh4_plants,ECA_flx_no3_plants)
 
@@ -1216,7 +1212,7 @@ contains
 
   sol_sminp_soluble=ystate(lid_minp_soluble)/this%competECA%h2osoi_vol
   call this%competECA%run_compet_phosphorus(this%nop_limit, sol_sminp_soluble,  &
-      this%plant_ntypes, this%msurf_minp, ECA_factor_phosphorus_mic, ECA_factor_minp_msurf,&
+      this%plant_ntypes,  ECA_factor_phosphorus_mic, ECA_factor_minp_msurf,&
       ECA_flx_phosphorus_plants)
 
   !apply ECA factor to obtain actual reaction rate, decomposition

@@ -120,8 +120,10 @@ contains
   implicit none
   class(betr_type)            , intent(inout)        :: this
   type(betr_bounds_type)      , intent(in)           :: bounds
-  integer             :: lbj, ubj
   type(betr_status_type)           , intent(out)   :: bstatus
+
+  integer             :: lbj, ubj
+
   lbj = bounds%lbj;  ubj = bounds%ubj
 
   call this%bgc_reaction%UpdateParas(bounds, lbj, ubj, bstatus)
@@ -1571,6 +1573,7 @@ contains
 
     ! !LOCAL VARIABLES:
     character(len=255) :: subname = 'OutLoopBGC'
+    real(r8)           :: Rfactor(bounds%begc:bounds%endc, bounds%lbj:bounds%ubj,1:this%tracers%ngwmobile_tracer_groups)
     integer :: lbj, ubj
     real(r8):: dtime
 
@@ -1578,6 +1581,19 @@ contains
     lbj = bounds%lbj; ubj = bounds%ubj
 
     dtime = betr_time%get_step_size()
+
+
+      !set up kinetic parameters that are passed in from the mother lsm. Mostly they
+      !are plant-nutrient related parameters.
+    call this%bgc_reaction%set_kinetics_par(1, ubj, this%nactpft, &
+        this%plantNutkinetics, this%tracers, this%tracercoeffs)
+
+    call stage_tracer_transport(betr_time, bounds, col, pft, num_soilc,&
+         filter_soilc, num_soilp, filter_soilp, biophysforc,      &
+         biogeo_state, biogeo_flux, this%aereconds, this%tracers, this%tracercoeffs, &
+         this%tracerboundaryconds, this%tracerstates, this%tracerfluxes, this%bgc_reaction, &
+         Rfactor, this%advection_on, betr_status)
+    if(betr_status%check_status())return
 
     call this%bgc_reaction%calc_bgc_reaction(bounds, col, lbj, ubj, &
      num_soilc,                                            &

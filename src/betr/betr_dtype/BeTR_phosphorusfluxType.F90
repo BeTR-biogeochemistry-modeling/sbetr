@@ -62,11 +62,11 @@ implicit none
   begp = bounds%begp ; endp=bounds%endp
   begc = bounds%begc ; endc=bounds%endc
   lbj = bounds%lbj   ; ubj=bounds%ubj
-  if(index(bgc_type,'type1_bgc')/=0)then
+!  if(index(bgc_type,'type1_bgc')/=0)then
     SPVAL_ALLOC(this%in_decomp_ppools_vr_col(begc:endc,lbj:ubj,1:7))
     SPVAL_ALLOC(this%in_sminp_vr_col(begc:endc,lbj:ubj))
-    return
-  endif
+!    return
+!  endif
   SPVAL_ALLOC(this%pflx_input_litr_met_vr_col(begc:endc,lbj:ubj))
   SPVAL_ALLOC(this%pflx_input_litr_cel_vr_col(begc:endc,lbj:ubj)) ! cellulose litter input
   SPVAL_ALLOC(this%pflx_input_litr_lig_vr_col(begc:endc,lbj:ubj)) ! lignin litter input

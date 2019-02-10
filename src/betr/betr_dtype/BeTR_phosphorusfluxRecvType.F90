@@ -79,7 +79,7 @@ implicit none
   SPVAL_ALLOC(this%pflx_minp_weathering_po4_vr_col(begc:endc,lbj:ubj))
   SPVAL_ALLOC(this%pflx_minp_weathering_po4_col(begc:endc))
   SPVAL_ALLOC(this%sminp_to_plant_vr_col(begc:endc,lbj:ubj))
-  if(index(bgc_type,'v1eca')/=0)then
+  if(index(bgc_type,'type1_bgc')/=0)then
     SPVAL_ALLOC(this%adsorb_to_labilep_vr_col(begc:endc,lbj:ubj))
     SPVAL_ALLOC(this%col_plant_pdemand_vr(begc:endc, lbj:ubj))
   endif
@@ -106,7 +106,7 @@ implicit none
   this%sminp_to_plant_trans_patch(:)=0._r8
   this%sminp_to_plant_patch(:) = 0._r8
   this%sminp_to_plant_vr_col(:,:) = value_column
-  if(index(bgc_type,'v1eca')/=0)then
+  if(index(bgc_type,'type1_bgc')/=0)then
     this%adsorb_to_labilep_vr_col(:,:)=value_column
   endif
   this%net_mineralization_p_vr_col(:,:) = value_column

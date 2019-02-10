@@ -78,10 +78,10 @@ implicit none
   SPVAL_ALLOC(this%som2p_col(begc:endc))
   SPVAL_ALLOC(this%som3p_col(begc:endc))
 
-  if(index(bgc_type,'type1_bgc')/=0)then
+!  if(index(bgc_type,'type1_bgc')/=0)then
     SPVAL_ALLOC(this%decomp_ppools_vr(begc:endc, lbj:ubj, 1:7))
     SPVAL_ALLOC(this%solutionp_vr_col(begc:endc, lbj:ubj))
-  else
+!  else
     SPVAL_ALLOC(this%som1p_vr_col(begc:endc, lbj:ubj))
     SPVAL_ALLOC(this%som2p_vr_col(begc:endc, lbj:ubj))
     SPVAL_ALLOC(this%som3p_vr_col(begc:endc, lbj:ubj))
@@ -90,7 +90,7 @@ implicit none
     SPVAL_ALLOC(this%totlitp_vr_col(begc:endc,lbj:ubj))
     SPVAL_ALLOC(this%totsomp_vr_col(begc:endc,lbj:ubj))
     SPVAL_ALLOC(this%domp_vr_col(begc:endc,lbj:ubj))
-  endif
+!  endif
   SPVAL_ALLOC(this%sminp_vr_col(begc:endc,lbj:ubj))
   SPVAL_ALLOC(this%occlp_vr_col(begc:endc,lbj:ubj))
 

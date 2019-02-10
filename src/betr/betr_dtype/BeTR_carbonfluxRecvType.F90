@@ -69,9 +69,9 @@ implicit none
   SPVAL_ALLOC(this%annavg_agnpp_patch(begp:endp))
   SPVAL_ALLOC(this%annavg_bgnpp_patch(begp:endp))
   SPVAL_ALLOC(this%co2_soi_flx_col(begc:endc))
-  if(index(bgc_type,'type1_bgc')/=0)then
+!  if(index(bgc_type,'type1_bgc')/=0)then
     SPVAL_ALLOC(this%decomp_k(begc:endc, lbj:ubj,7)) !decomposition k parameter
-  endif
+!  endif
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------

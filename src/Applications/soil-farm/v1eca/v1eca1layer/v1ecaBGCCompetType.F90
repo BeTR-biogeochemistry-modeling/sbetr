@@ -94,7 +94,7 @@ contains
   !-------------------------------------------------------------------------------
 
   subroutine run_compet_nitrogen(this, non_limit, sol_smin_nh4, sol_smin_no3,  &
-   plant_ntypes, msurf_nh4, ECA_factor_nit, ECA_factor_den, ECA_factor_nh4_mic, &
+   plant_ntypes, ECA_factor_nit, ECA_factor_den, ECA_factor_nh4_mic, &
     ECA_factor_no3_mic, ECA_flx_nh4_plants,ECA_flx_no3_plants)
 
   use KineticsMod    , only : ecacomplex_cell_norm
@@ -105,7 +105,6 @@ contains
   real(r8), intent(in) :: sol_smin_nh4
   real(r8), intent(in) :: sol_smin_no3
   integer , intent(in) :: plant_ntypes
-  real(r8), intent(in) :: msurf_nh4
   real(r8), intent(out):: ECA_factor_nit
   real(r8), intent(out):: ECA_factor_den
   real(r8), intent(out):: ECA_factor_nh4_mic
@@ -163,7 +162,7 @@ contains
   !-------------------------------------------------------------------------------
 
   subroutine run_compet_phosphorus(this, nop_lim, sol_sminp_soluble, plant_ntypes,&
-     msurf_minp, ECA_factor_phosphorus_mic, ECA_factor_minp_msurf, ECA_flx_phosphorus_plants)
+     ECA_factor_phosphorus_mic, ECA_factor_minp_msurf, ECA_flx_phosphorus_plants)
 
   !
   !DESCRIPTION
@@ -175,7 +174,6 @@ contains
   real(r8), intent(in) :: sol_sminp_soluble
   logical , intent(in) :: nop_lim               !logical indicator of P limitation
   integer , intent(in) :: plant_ntypes
-  real(r8), intent(in) :: msurf_minp
   real(r8), intent(out):: ECA_factor_phosphorus_mic
   real(r8), intent(out):: ECA_flx_phosphorus_plants(plant_ntypes)
   real(r8), intent(out):: ECA_factor_minp_msurf

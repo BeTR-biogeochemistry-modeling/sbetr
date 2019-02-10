@@ -11,7 +11,23 @@ implicit none
   character(len=betr_namelist_buffer_size), public :: betr_namelist_buffer
   public :: betr_readNL
   public :: set_betr_cnpbgc
+  public :: do_betr_bgc_type
 contains
+
+
+!-------------------------------------------------------------------------------
+  function do_betr_bgc_type(type_char)result(ans)
+  use betr_ctrl, only : bgc_type
+  implicit none
+  character(len=*), intent(in) :: type_char
+
+
+  logical :: ans
+
+  ans = index(bgc_type, type_char)/=0
+
+  end function do_betr_bgc_type
+
 
 
   !-------------------------------------------------------------------------------

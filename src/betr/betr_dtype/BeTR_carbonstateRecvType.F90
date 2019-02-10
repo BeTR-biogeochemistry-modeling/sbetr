@@ -73,9 +73,9 @@ implicit none
   SPVAL_ALLOC(this%som3c_col(begc:endc))
   SPVAL_ALLOC(this%domc_col(begc:endc))
 
-  if(index(bgc_type,'type1_bgc')/=0)then
+!  if(index(bgc_type,'type1_bgc')/=0)then
     SPVAL_ALLOC(this%decomp_cpools_vr(begc:endc,lbj:ubj,7))
-  else
+!  else
     SPVAL_ALLOC(this%som1c_vr_col(begc:endc, lbj:ubj))
     SPVAL_ALLOC(this%som2c_vr_col(begc:endc, lbj:ubj))
     SPVAL_ALLOC(this%som3c_vr_col(begc:endc, lbj:ubj))
@@ -84,7 +84,7 @@ implicit none
     SPVAL_ALLOC(this%totlitc_vr_col(begc:endc,lbj:ubj))
     SPVAL_ALLOC(this%totsomc_vr_col(begc:endc,lbj:ubj))
     SPVAL_ALLOC(this%domc_vr_col(begc:endc, lbj:ubj))
-  endif
+!  endif
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------
