@@ -159,7 +159,6 @@ module v1ecaPlantSoilBGCType
   do p = 1, pft%npfts
     c = pft%column(p)
     biogeo_flux%n14flux_vars%smin_nh4_to_plant_patch(p) =  &
-      tracer_flx_vtrans_patch(p, id_trc_nh3x) * natomw / dtime + &
       dot_product(this%plant_minn_nh4_active_yield_flx_vr_patch(p,1:ubj), dz(c,1:ubj))
 
     biogeo_flux%n14flux_vars%smin_nh4_to_plant_patch(p) = biogeo_flux%n14flux_vars%smin_nh4_to_plant_patch(p)/pft%wtcol(p)

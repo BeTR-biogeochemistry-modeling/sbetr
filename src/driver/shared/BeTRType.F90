@@ -410,6 +410,7 @@ contains
     if(betr_status%check_status())return
 
     !update nutrient uptake fluxes
+    if(inloop_reaction) &
     call this%plant_soilbgc%plant_soilbgc_summary(bounds, lbj, ubj, pft, &
           num_soilc, filter_soilc,  dtime                              , &
           col%dz(bounds%begc:bounds%endc,1:ubj)                        , &
@@ -1611,6 +1612,11 @@ contains
      this%plant_soilbgc, biogeo_flux, biogeo_state,  betr_status)
   if(betr_status%check_status())return
 
+  !update nutrient uptake fluxes
+  call this%plant_soilbgc%plant_soilbgc_summary(bounds, lbj, ubj, pft, &
+        num_soilc, filter_soilc,  dtime                              , &
+        col%dz(bounds%begc:bounds%endc,1:ubj)                        , &
+        this%tracers, this%tracerfluxes, biogeo_flux, betr_status)
 
   end subroutine OutLoopBGC
 

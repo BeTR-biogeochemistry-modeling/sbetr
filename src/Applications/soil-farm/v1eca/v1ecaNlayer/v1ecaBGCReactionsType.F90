@@ -40,6 +40,7 @@ module v1ecaBGCReactionsType
   use BGCReactionsMod       , only : bgc_reaction_type
   use betr_varcon           , only : spval => bspval, ispval => bispval
   use tracer_varcon         , only : bndcond_as_conc, bndcond_as_flux
+  use tracer_varcon         , only : natomw, patomw, catomw,c13atomw,c14atomw
   use v1ecaBGCType         , only : v1eca_bgc_type
   use JarBgcForcType        , only : JarBGC_forc_type
   use BetrStatusType        , only : betr_status_type
@@ -1026,9 +1027,9 @@ contains
       plant_soilbgc%plant_minp_active_yield_flx_col(:) = 0._r8
     end select
     !run simulation layer by layer
-    do j = lbj, ubj
-      do fc = 1, num_soilc
-        c = filter_soilc(fc)
+    do fc = 1, num_soilc
+      c = filter_soilc(fc)
+      do j = lbj, ubj
         if(j<jtops(c))cycle
         is_surflit=(j<=0)
 
@@ -1037,8 +1038,8 @@ contains
         call this%v1eca(c,j)%runbgc(is_surflit, dtime, this%v1eca_forc(c,j),nstates, &
             ystates0, ystatesf, betr_status)
 
-        if(betr_status%check_status())then
-          write(laystr,'(I2.2)')j
+	if(betr_status%check_status())then
+	write(laystr,'(I2.2)')j
           betr_status%msg=trim(betr_status%msg)//' lay '//trim(laystr)
           return
         endif
@@ -1056,10 +1057,10 @@ contains
 
           plant_soilbgc%plant_minp_active_yield_flx_col(c)=  plant_soilbgc%plant_minp_active_yield_flx_col(c) + &
             plant_soilbgc%plant_minp_active_yield_flx_vr_col(c,j) * col%dz(c,j)
+
         end select
       enddo
     enddo
-
     deallocate(ystates0)
     deallocate(ystatesf)
 
@@ -1224,7 +1225,6 @@ contains
 
   use tracerfluxType           , only : tracerflux_type
   use BeTRTracerType           , only : BeTRTracer_Type
-  use tracer_varcon            , only : natomw, patomw, catomw
   implicit none
   class(v1eca_bgc_reaction_type) , intent(inout)    :: this !!
   integer                          , intent(in)    :: num_soilc                   ! number of columns in column filter
@@ -1347,73 +1347,73 @@ contains
       this%v1eca_forc(c,j)%t_scalar = biophysforc%c12flx%in_t_scalar(c,j)
       this%v1eca_forc(c,j)%w_scalar = biophysforc%c12flx%in_w_scalar(c,j)
       !litter C
-      FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+c_loc-1),biophysforc%c12flx%in_decomp_cpools_vr_col(c,j,1))
-      FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+nelms+c_loc-1),biophysforc%c12flx%in_decomp_cpools_vr_col(c,j,2))
-      FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+2*nelms+c_loc-1),biophysforc%c12flx%in_decomp_cpools_vr_col(c,j,3))
+      FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+c_loc-1),biophysforc%c12flx%in_decomp_cpools_vr_col(c,j,1)/catomw)
+      FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+nelms+c_loc-1),biophysforc%c12flx%in_decomp_cpools_vr_col(c,j,2)/catomw)
+      FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+2*nelms+c_loc-1),biophysforc%c12flx%in_decomp_cpools_vr_col(c,j,3)/catomw)
 
       !wood C
-      FPMAX(this%v1eca_forc(c,j)%ystates(wood_beg+c_loc-1),biophysforc%c12flx%in_decomp_cpools_vr_col(c,j,4))
+      FPMAX(this%v1eca_forc(c,j)%ystates(wood_beg+c_loc-1),biophysforc%c12flx%in_decomp_cpools_vr_col(c,j,4)/catomw)
 
       !som C
-      FPMAX(this%v1eca_forc(c,j)%ystates(Bm_beg+c_loc-1),biophysforc%c12flx%in_decomp_cpools_vr_col(c,j,5))
-      FPMAX(this%v1eca_forc(c,j)%ystates(pom_beg+c_loc-1),biophysforc%c12flx%in_decomp_cpools_vr_col(c,j,6))
-      FPMAX(this%v1eca_forc(c,j)%ystates(som_beg+c_loc-1),biophysforc%c12flx%in_decomp_cpools_vr_col(c,j,7))
+      FPMAX(this%v1eca_forc(c,j)%ystates(Bm_beg+c_loc-1),biophysforc%c12flx%in_decomp_cpools_vr_col(c,j,5)/catomw)
+      FPMAX(this%v1eca_forc(c,j)%ystates(pom_beg+c_loc-1),biophysforc%c12flx%in_decomp_cpools_vr_col(c,j,6)/catomw)
+      FPMAX(this%v1eca_forc(c,j)%ystates(som_beg+c_loc-1),biophysforc%c12flx%in_decomp_cpools_vr_col(c,j,7)/catomw)
 
       if(this%use_c13)then
         !litter C
-        FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+c13_loc-1),biophysforc%c13flx%in_decomp_cpools_vr_col(c,j,1))
-        FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+nelms+c13_loc-1),biophysforc%c13flx%in_decomp_cpools_vr_col(c,j,2))
-        FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+2*nelms+c13_loc-1),biophysforc%c13flx%in_decomp_cpools_vr_col(c,j,3))
+        FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+c13_loc-1),biophysforc%c13flx%in_decomp_cpools_vr_col(c,j,1))/c13atomw
+        FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+nelms+c13_loc-1),biophysforc%c13flx%in_decomp_cpools_vr_col(c,j,2)/c13atomw)
+        FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+2*nelms+c13_loc-1),biophysforc%c13flx%in_decomp_cpools_vr_col(c,j,3)/c13atomw)
 
         !wood C
-        FPMAX(this%v1eca_forc(c,j)%ystates(wood_beg+c13_loc-1),biophysforc%c13flx%in_decomp_cpools_vr_col(c,j,4))
+        FPMAX(this%v1eca_forc(c,j)%ystates(wood_beg+c13_loc-1),biophysforc%c13flx%in_decomp_cpools_vr_col(c,j,4)/c13atomw)
 
         !som C
-        FPMAX(this%v1eca_forc(c,j)%ystates(Bm_beg+c13_loc-1),biophysforc%c13flx%in_decomp_cpools_vr_col(c,j,5))
-        FPMAX(this%v1eca_forc(c,j)%ystates(pom_beg+c13_loc-1),biophysforc%c13flx%in_decomp_cpools_vr_col(c,j,6))
-        FPMAX(this%v1eca_forc(c,j)%ystates(som_beg+c13_loc-1),biophysforc%c13flx%in_decomp_cpools_vr_col(c,j,7))
+        FPMAX(this%v1eca_forc(c,j)%ystates(Bm_beg+c13_loc-1),biophysforc%c13flx%in_decomp_cpools_vr_col(c,j,5)/c13atomw)
+        FPMAX(this%v1eca_forc(c,j)%ystates(pom_beg+c13_loc-1),biophysforc%c13flx%in_decomp_cpools_vr_col(c,j,6)/c13atomw)
+        FPMAX(this%v1eca_forc(c,j)%ystates(som_beg+c13_loc-1),biophysforc%c13flx%in_decomp_cpools_vr_col(c,j,7)/c13atomw)
       endif
 
 
       if(this%use_c14)then
         !litter C
-        FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+c14_loc-1), biophysforc%c14flx%in_decomp_cpools_vr_col(c,j,1))
-        FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+nelms+c14_loc-1), biophysforc%c14flx%in_decomp_cpools_vr_col(c,j,2))
-        FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+2*nelms+c14_loc-1), biophysforc%c14flx%in_decomp_cpools_vr_col(c,j,3))
+        FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+c14_loc-1), biophysforc%c14flx%in_decomp_cpools_vr_col(c,j,1)/c14atomw)
+        FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+nelms+c14_loc-1), biophysforc%c14flx%in_decomp_cpools_vr_col(c,j,2)/c14atomw)
+        FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+2*nelms+c14_loc-1), biophysforc%c14flx%in_decomp_cpools_vr_col(c,j,3)/c14atomw)
 
         !wood C
-        FPMAX(this%v1eca_forc(c,j)%ystates(wood_beg+c_loc-1), biophysforc%c14flx%in_decomp_cpools_vr_col(c,j,4))
+        FPMAX(this%v1eca_forc(c,j)%ystates(wood_beg+c_loc-1), biophysforc%c14flx%in_decomp_cpools_vr_col(c,j,4)/c14atomw)
 
         !som C
-        FPMAX(this%v1eca_forc(c,j)%ystates(Bm_beg+c_loc-1), biophysforc%c14flx%in_decomp_cpools_vr_col(c,j,5))
-        FPMAX(this%v1eca_forc(c,j)%ystates(pom_beg+c_loc-1), biophysforc%c14flx%in_decomp_cpools_vr_col(c,j,6))
-        FPMAX(this%v1eca_forc(c,j)%ystates(som_beg+c_loc-1), biophysforc%c14flx%in_decomp_cpools_vr_col(c,j,7))
+        FPMAX(this%v1eca_forc(c,j)%ystates(Bm_beg+c_loc-1), biophysforc%c14flx%in_decomp_cpools_vr_col(c,j,5)/c14atomw)
+        FPMAX(this%v1eca_forc(c,j)%ystates(pom_beg+c_loc-1), biophysforc%c14flx%in_decomp_cpools_vr_col(c,j,6)/c14atomw)
+        FPMAX(this%v1eca_forc(c,j)%ystates(som_beg+c_loc-1), biophysforc%c14flx%in_decomp_cpools_vr_col(c,j,7)/c14atomw)
       endif
       !litter N
-      FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+n_loc-1), biophysforc%n14flx%in_decomp_npools_vr_col(c,j,1))
-      FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+nelms+n_loc-1), biophysforc%n14flx%in_decomp_npools_vr_col(c,j,2))
-      FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+2*nelms+n_loc-1), biophysforc%n14flx%in_decomp_npools_vr_col(c,j,3))
+      FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+n_loc-1), biophysforc%n14flx%in_decomp_npools_vr_col(c,j,1)/natomw)
+      FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+nelms+n_loc-1), biophysforc%n14flx%in_decomp_npools_vr_col(c,j,2)/natomw)
+      FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+2*nelms+n_loc-1), biophysforc%n14flx%in_decomp_npools_vr_col(c,j,3)/natomw)
 
       !wood N
-      FPMAX(this%v1eca_forc(c,j)%ystates(wood_beg+n_loc-1), biophysforc%n14flx%in_decomp_npools_vr_col(c,j,4))
+      FPMAX(this%v1eca_forc(c,j)%ystates(wood_beg+n_loc-1), biophysforc%n14flx%in_decomp_npools_vr_col(c,j,4)/natomw)
 
       !som N
-      FPMAX(this%v1eca_forc(c,j)%ystates(Bm_beg+n_loc-1), biophysforc%n14flx%in_decomp_npools_vr_col(c,j,5))
-      FPMAX(this%v1eca_forc(c,j)%ystates(pom_beg+n_loc-1), biophysforc%n14flx%in_decomp_npools_vr_col(c,j,6))
-      FPMAX(this%v1eca_forc(c,j)%ystates(som_beg+n_loc-1), biophysforc%n14flx%in_decomp_npools_vr_col(c,j,7))
+      FPMAX(this%v1eca_forc(c,j)%ystates(Bm_beg+n_loc-1), biophysforc%n14flx%in_decomp_npools_vr_col(c,j,5)/natomw)
+      FPMAX(this%v1eca_forc(c,j)%ystates(pom_beg+n_loc-1), biophysforc%n14flx%in_decomp_npools_vr_col(c,j,6)/natomw)
+      FPMAX(this%v1eca_forc(c,j)%ystates(som_beg+n_loc-1), biophysforc%n14flx%in_decomp_npools_vr_col(c,j,7)/natomw)
 
       !litter P
-      FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+p_loc-1), biophysforc%p31flx%in_decomp_ppools_vr_col(c,j,1))
-      FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+nelms+p_loc-1), biophysforc%p31flx%in_decomp_ppools_vr_col(c,j,2))
-      FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+2*nelms+p_loc-1), biophysforc%p31flx%in_decomp_ppools_vr_col(c,j,3))
+      FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+p_loc-1), biophysforc%p31flx%in_decomp_ppools_vr_col(c,j,1)/patomw)
+      FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+nelms+p_loc-1), biophysforc%p31flx%in_decomp_ppools_vr_col(c,j,2)/patomw)
+      FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+2*nelms+p_loc-1), biophysforc%p31flx%in_decomp_ppools_vr_col(c,j,3)/patomw)
 
       !wood P
-      FPMAX(this%v1eca_forc(c,j)%ystates(wood_beg+p_loc-1), biophysforc%p31flx%in_decomp_ppools_vr_col(c,j,4))
+      FPMAX(this%v1eca_forc(c,j)%ystates(wood_beg+p_loc-1), biophysforc%p31flx%in_decomp_ppools_vr_col(c,j,4)/patomw)
 
       !som P
-      FPMAX(this%v1eca_forc(c,j)%ystates(Bm_beg+p_loc-1), biophysforc%p31flx%in_decomp_ppools_vr_col(c,j,5))
-      FPMAX(this%v1eca_forc(c,j)%ystates(pom_beg+p_loc-1), biophysforc%p31flx%in_decomp_ppools_vr_col(c,j,6))
-      FPMAX(this%v1eca_forc(c,j)%ystates(som_beg+p_loc-1), biophysforc%p31flx%in_decomp_ppools_vr_col(c,j,7))
+      FPMAX(this%v1eca_forc(c,j)%ystates(Bm_beg+p_loc-1), biophysforc%p31flx%in_decomp_ppools_vr_col(c,j,5)/patomw)
+      FPMAX(this%v1eca_forc(c,j)%ystates(pom_beg+p_loc-1), biophysforc%p31flx%in_decomp_ppools_vr_col(c,j,6)/patomw)
+      FPMAX(this%v1eca_forc(c,j)%ystates(som_beg+p_loc-1), biophysforc%p31flx%in_decomp_ppools_vr_col(c,j,7)/patomw)
 
       FPMAX(this%v1eca_forc(c,j)%ystates(this%v1eca_bgc_index%lid_n2), tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_n2))
 
@@ -1432,13 +1432,13 @@ contains
 
       FPMAX(this%v1eca_forc(c,j)%ystates(this%v1eca_bgc_index%lid_ch4), tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_ch4))
 
-      FPMAX(this%v1eca_forc(c,j)%ystates(this%v1eca_bgc_index%lid_nh4), biophysforc%n14flx%in_sminn_nh4_vr_col(c,j))
+      FPMAX(this%v1eca_forc(c,j)%ystates(this%v1eca_bgc_index%lid_nh4), biophysforc%n14flx%in_sminn_nh4_vr_col(c,j)/natomw)
 
-      FPMAX(this%v1eca_forc(c,j)%ystates(this%v1eca_bgc_index%lid_no3), biophysforc%n14flx%in_sminn_no3_vr_col(c,j))
+      FPMAX(this%v1eca_forc(c,j)%ystates(this%v1eca_bgc_index%lid_no3), biophysforc%n14flx%in_sminn_no3_vr_col(c,j)/natomw)
 
       FPMAX(this%v1eca_forc(c,j)%ystates(this%v1eca_bgc_index%lid_n2o), tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_n2o))
 
-      FPMAX(this%v1eca_forc(c,j)%ystates(this%v1eca_bgc_index%lid_minp_soluble), biophysforc%p31flx%in_sminp_vr_col(c,j))
+      FPMAX(this%v1eca_forc(c,j)%ystates(this%v1eca_bgc_index%lid_minp_soluble), biophysforc%p31flx%in_sminp_vr_col(c,j)/patomw)
 
       !burning fraction
       !environmental variables
@@ -1651,29 +1651,29 @@ contains
   )
 
       !tracer states
-      biogeo_state%c12state_vars%decomp_cpools_vr(c,j,1) = ystatesf(litr_beg+c_loc-1)
-      biogeo_state%c12state_vars%decomp_cpools_vr(c,j,2) = ystatesf(litr_beg+nelms+c_loc-1)
-      biogeo_state%c12state_vars%decomp_cpools_vr(c,j,3) = ystatesf(litr_beg+2*nelms+c_loc-1)
-      biogeo_state%c12state_vars%decomp_cpools_vr(c,j,4) = ystatesf(wood_beg+c_loc-1)
-      biogeo_state%c12state_vars%decomp_cpools_vr(c,j,5) = ystatesf(Bm_beg+c_loc-1)
-      biogeo_state%c12state_vars%decomp_cpools_vr(c,j,6) = ystatesf(pom_beg+c_loc-1)
-      biogeo_state%c12state_vars%decomp_cpools_vr(c,j,7) = ystatesf(som_beg+c_loc-1)
+      biogeo_state%c12state_vars%decomp_cpools_vr(c,j,1) = ystatesf(litr_beg+c_loc-1)*catomw
+      biogeo_state%c12state_vars%decomp_cpools_vr(c,j,2) = ystatesf(litr_beg+nelms+c_loc-1)*catomw
+      biogeo_state%c12state_vars%decomp_cpools_vr(c,j,3) = ystatesf(litr_beg+2*nelms+c_loc-1)*catomw
+      biogeo_state%c12state_vars%decomp_cpools_vr(c,j,4) = ystatesf(wood_beg+c_loc-1)*catomw
+      biogeo_state%c12state_vars%decomp_cpools_vr(c,j,5) = ystatesf(Bm_beg+c_loc-1)*catomw
+      biogeo_state%c12state_vars%decomp_cpools_vr(c,j,6) = ystatesf(pom_beg+c_loc-1)*catomw
+      biogeo_state%c12state_vars%decomp_cpools_vr(c,j,7) = ystatesf(som_beg+c_loc-1)*catomw
 
-      biogeo_state%n14state_vars%decomp_npools_vr(c,j,1) = ystatesf(litr_beg+n_loc-1)
-      biogeo_state%n14state_vars%decomp_npools_vr(c,j,2) = ystatesf(litr_beg+nelms+n_loc-1)
-      biogeo_state%n14state_vars%decomp_npools_vr(c,j,3) = ystatesf(litr_beg+2*nelms+n_loc-1)
-      biogeo_state%n14state_vars%decomp_npools_vr(c,j,4) = ystatesf(wood_beg+n_loc-1)
-      biogeo_state%n14state_vars%decomp_npools_vr(c,j,5) = ystatesf(Bm_beg+n_loc-1)
-      biogeo_state%n14state_vars%decomp_npools_vr(c,j,6) = ystatesf(pom_beg+n_loc-1)
-      biogeo_state%n14state_vars%decomp_npools_vr(c,j,7) = ystatesf(som_beg+n_loc-1)
+      biogeo_state%n14state_vars%decomp_npools_vr(c,j,1) = ystatesf(litr_beg+n_loc-1)*natomw
+      biogeo_state%n14state_vars%decomp_npools_vr(c,j,2) = ystatesf(litr_beg+nelms+n_loc-1)*natomw
+      biogeo_state%n14state_vars%decomp_npools_vr(c,j,3) = ystatesf(litr_beg+2*nelms+n_loc-1)*natomw
+      biogeo_state%n14state_vars%decomp_npools_vr(c,j,4) = ystatesf(wood_beg+n_loc-1)*natomw
+      biogeo_state%n14state_vars%decomp_npools_vr(c,j,5) = ystatesf(Bm_beg+n_loc-1)*natomw
+      biogeo_state%n14state_vars%decomp_npools_vr(c,j,6) = ystatesf(pom_beg+n_loc-1)*natomw
+      biogeo_state%n14state_vars%decomp_npools_vr(c,j,7) = ystatesf(som_beg+n_loc-1)*natomw
 
-      biogeo_state%p31state_vars%decomp_ppools_vr(c,j,1) = ystatesf(litr_beg+p_loc-1)
-      biogeo_state%p31state_vars%decomp_ppools_vr(c,j,2) = ystatesf(litr_beg+nelms+p_loc-1)
-      biogeo_state%p31state_vars%decomp_ppools_vr(c,j,3) = ystatesf(litr_beg+2*nelms+p_loc-1)
-      biogeo_state%p31state_vars%decomp_ppools_vr(c,j,4) = ystatesf(wood_beg+p_loc-1)
-      biogeo_state%p31state_vars%decomp_ppools_vr(c,j,5) = ystatesf(Bm_beg  + p_loc-1)
-      biogeo_state%p31state_vars%decomp_ppools_vr(c,j,6) = ystatesf(pom_beg + p_loc-1)
-      biogeo_state%p31state_vars%decomp_ppools_vr(c,j,7) = ystatesf(som_beg + p_loc-1)
+      biogeo_state%p31state_vars%decomp_ppools_vr(c,j,1) = ystatesf(litr_beg+p_loc-1)*patomw
+      biogeo_state%p31state_vars%decomp_ppools_vr(c,j,2) = ystatesf(litr_beg+nelms+p_loc-1)*patomw
+      biogeo_state%p31state_vars%decomp_ppools_vr(c,j,3) = ystatesf(litr_beg+2*nelms+p_loc-1)*patomw
+      biogeo_state%p31state_vars%decomp_ppools_vr(c,j,4) = ystatesf(wood_beg+p_loc-1)*patomw
+      biogeo_state%p31state_vars%decomp_ppools_vr(c,j,5) = ystatesf(Bm_beg  + p_loc-1)*patomw
+      biogeo_state%p31state_vars%decomp_ppools_vr(c,j,6) = ystatesf(pom_beg + p_loc-1)*patomw
+      biogeo_state%p31state_vars%decomp_ppools_vr(c,j,7) = ystatesf(som_beg + p_loc-1)*patomw
 
       tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_n2) = &
         ystatesf(this%v1eca_bgc_index%lid_n2)
@@ -1707,9 +1707,9 @@ contains
         biogeo_flux%n14flux_vars%supplement_to_sminn_vr_col(c,j) = 0._r8
       endif
 
-      biogeo_state%n14state_vars%smin_nh4_vr_col(c, j) = ystatesf(this%v1eca_bgc_index%lid_nh4)
+      biogeo_state%n14state_vars%smin_nh4_vr_col(c, j) = ystatesf(this%v1eca_bgc_index%lid_nh4)*natomw
 
-      biogeo_state%n14state_vars%sminn_no3_vr_col(c, j)= ystatesf(this%v1eca_bgc_index%lid_no3)
+      biogeo_state%n14state_vars%sminn_no3_vr_col(c, j)= ystatesf(this%v1eca_bgc_index%lid_no3)*natomw
 
       tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_n2o) = &
         ystatesf(this%v1eca_bgc_index%lid_n2o)
@@ -1727,7 +1727,7 @@ contains
             biogeo_flux%p31flux_vars%supplement_to_sminp_vr_col(c,j) = 0._r8
         endif
 
-        biogeo_state%p31state_vars%solutionp_vr_col(c,j) = ystatesf(this%v1eca_bgc_index%lid_minp_soluble)
+        biogeo_state%p31state_vars%solutionp_vr_col(c,j) = ystatesf(this%v1eca_bgc_index%lid_minp_soluble)*patomw
 
         !fluxes
         tracer_flx_netpro_vr(c,j,betrtracer_vars%id_trc_p_sol) =      &
@@ -1886,8 +1886,8 @@ contains
       biogeo_flux%p31flux_vars%pflx_minp_weathering_po4_vr_col(c,j) =this%v1eca_forc(c,j)%sflx_minp_weathering_po4
 
       biogeo_flux%n14flux_vars%smin_nh4_to_plant_vr_col(c,j) = &
-          (ystatesf(this%v1eca_bgc_index%lid_plant_minn_no3) - &
-          ystates0(this%v1eca_bgc_index%lid_plant_minn_no3))*natomw/dtime
+          (ystatesf(this%v1eca_bgc_index%lid_plant_minn_nh4) - &
+          ystates0(this%v1eca_bgc_index%lid_plant_minn_nh4))*natomw/dtime
 
       biogeo_flux%n14flux_vars%smin_no3_to_plant_vr_col(c,j) = &
           (ystatesf(this%v1eca_bgc_index%lid_plant_minn_no3) - &
@@ -1897,42 +1897,41 @@ contains
           (ystatesf(this%v1eca_bgc_index%lid_plant_minp) - &
            ystates0(this%v1eca_bgc_index%lid_plant_minp))*patomw/dtime
 
-  select type(plant_soilbgc)
-  type is(v1eca_plant_soilbgc_type)
-    do p = 1, this%nactpft
-      plant_soilbgc%plant_minn_no3_active_yield_flx_vr_patch(p,j) = &
-          (ystatesf(this%v1eca_bgc_index%lid_plant_minn_no3_pft(p)) - &
-          ystates0(this%v1eca_bgc_index%lid_plant_minn_no3_pft(p)))*natomw/dtime
+      select type(plant_soilbgc)
+      type is(v1eca_plant_soilbgc_type)
+        do p = 1, this%nactpft
+          plant_soilbgc%plant_minn_no3_active_yield_flx_vr_patch(p,j) = &
+            (ystatesf(this%v1eca_bgc_index%lid_plant_minn_no3_pft(p)) - &
+            ystates0(this%v1eca_bgc_index%lid_plant_minn_no3_pft(p)))*natomw/dtime
 
-      plant_soilbgc%plant_minn_nh4_active_yield_flx_vr_patch(p,j) = &
-          (ystatesf(this%v1eca_bgc_index%lid_plant_minn_nh4_pft(p)) - &
-          ystates0(this%v1eca_bgc_index%lid_plant_minn_nh4_pft(p)))*natomw/dtime
+          plant_soilbgc%plant_minn_nh4_active_yield_flx_vr_patch(p,j) = &
+            (ystatesf(this%v1eca_bgc_index%lid_plant_minn_nh4_pft(p)) - &
+            ystates0(this%v1eca_bgc_index%lid_plant_minn_nh4_pft(p)))*natomw/dtime
 
-      plant_soilbgc%plant_minp_active_yield_flx_vr_patch(p,j) = &
-          (ystatesf(this%v1eca_bgc_index%lid_plant_minp_pft(p)) - &
-           ystates0(this%v1eca_bgc_index%lid_plant_minp_pft(p)))*patomw/dtime
+          plant_soilbgc%plant_minp_active_yield_flx_vr_patch(p,j) = &
+            (ystatesf(this%v1eca_bgc_index%lid_plant_minp_pft(p)) - &
+             ystates0(this%v1eca_bgc_index%lid_plant_minp_pft(p)))*patomw/dtime
+        enddo
+        if(this%nactpft>0)then
+          plant_soilbgc%plant_minn_no3_active_yield_flx_vr_col(c,j) = &
+            (ystatesf(this%v1eca_bgc_index%lid_plant_minn_no3) - &
+            ystates0(this%v1eca_bgc_index%lid_plant_minn_no3))*natomw/dtime
+  
+          plant_soilbgc%plant_minn_nh4_active_yield_flx_vr_col(c,j) = &
+            (ystatesf(this%v1eca_bgc_index%lid_plant_minn_nh4) - &
+            ystates0(this%v1eca_bgc_index%lid_plant_minn_nh4))*natomw/dtime
 
-    enddo
-    if(this%nactpft>0)then
-      plant_soilbgc%plant_minn_no3_active_yield_flx_vr_col(c,j) = &
-          (ystatesf(this%v1eca_bgc_index%lid_plant_minn_no3) - &
-          ystates0(this%v1eca_bgc_index%lid_plant_minn_no3))*natomw/dtime
+          plant_soilbgc%plant_minp_active_yield_flx_vr_col(c,j) = &
+            (ystatesf(this%v1eca_bgc_index%lid_plant_minp) - &
+             ystates0(this%v1eca_bgc_index%lid_plant_minp))*patomw/dtime
 
-      plant_soilbgc%plant_minn_nh4_active_yield_flx_vr_col(c,j) = &
-          (ystatesf(this%v1eca_bgc_index%lid_plant_minn_nh4) - &
-          ystates0(this%v1eca_bgc_index%lid_plant_minn_nh4))*natomw/dtime
+          biogeo_flux%p31flux_vars%col_plant_pdemand_vr(c,j) = &
+            plant_soilbgc%plant_minp_active_yield_flx_vr_col(c,j)
+        else
+          biogeo_flux%p31flux_vars%col_plant_pdemand_vr(c,j) = 0._r8
+        endif
 
-      plant_soilbgc%plant_minp_active_yield_flx_vr_col(c,j) = &
-          (ystatesf(this%v1eca_bgc_index%lid_plant_minp) - &
-           ystates0(this%v1eca_bgc_index%lid_plant_minp))*patomw/dtime
-
-      biogeo_flux%p31flux_vars%col_plant_pdemand_vr(c,j) = &
-        plant_soilbgc%plant_minp_active_yield_flx_vr_col(c,j)
-    else
-      biogeo_flux%p31flux_vars%col_plant_pdemand_vr(c,j) = 0._r8
-    endif
-
-  end select
+      end select
 
 
   end associate

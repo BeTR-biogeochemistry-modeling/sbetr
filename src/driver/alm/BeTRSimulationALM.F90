@@ -581,7 +581,7 @@ contains
   enddo
   if(.not. this%do_soibgc())return
 
-
+   print*,'do bgc type',this%do_bgc_type('type1_bgc'),betr_nlevtrc_soil
   if(this%do_bgc_type('type1_bgc'))then
     !transfer state variables from elm to betr
     associate(                                                             &
@@ -595,16 +595,23 @@ contains
     do j = 1,betr_nlevtrc_soil
       do c = bounds%begc, bounds%endc
         if(.not. this%active_col(c))cycle
-        do kk = 1, 7
-          this%biophys_forc(c)%c12flx%in_decomp_cpools_vr_col(c_l,j,kk)=c12_decomp_cpools_vr_col(c,j,kk)
-          this%biophys_forc(c)%n14flx%in_decomp_npools_vr_col(c_l,j,kk)=decomp_npools_vr_col(c,j,kk)
-          this%biophys_forc(c)%p31flx%in_decomp_ppools_vr_col(c_l,j,kk)=decomp_ppools_vr_col(c,j,kk)
-        enddo
         this%biophys_forc(c)%n14flx%in_sminn_no3_vr_col(c_l,j) = smin_no3_vr(c,j)
         this%biophys_forc(c)%n14flx%in_sminn_nh4_vr_col(c_l,j) = smin_nh4_vr(c,j)
         this%biophys_forc(c)%p31flx%in_sminp_vr_col(c_l,j) = solutionp_vr(c,j)
       enddo
     enddo
+
+    do kk = 1, 7
+      do j = 1,betr_nlevtrc_soil
+        do c = bounds%begc, bounds%endc
+          if(.not. this%active_col(c))cycle
+          this%biophys_forc(c)%c12flx%in_decomp_cpools_vr_col(c_l,j,kk)=c12_decomp_cpools_vr_col(c,j,kk)
+          this%biophys_forc(c)%n14flx%in_decomp_npools_vr_col(c_l,j,kk)=decomp_npools_vr_col(c,j,kk)
+          this%biophys_forc(c)%p31flx%in_decomp_ppools_vr_col(c_l,j,kk)=decomp_ppools_vr_col(c,j,kk)
+        enddo
+      enddo
+    enddo
+
     end associate
     return
   endif
@@ -1554,6 +1561,7 @@ contains
         call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err(),c)
         exit
       endif
+
     enddo
   end subroutine ALMOutLoopSoilBGC
 
@@ -1620,16 +1628,22 @@ contains
   do j = 1,nlevtrc_soil
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
-      do kk = 1, 7
-        this%biophys_forc(c)%c12flx%in_decomp_cpools_vr_col(c_l,j,kk)=c12_decomp_cpools_vr_col(c,j,kk)
-        this%biophys_forc(c)%n14flx%in_decomp_npools_vr_col(c_l,j,kk)=decomp_npools_vr_col(c,j,kk)
-        this%biophys_forc(c)%p31flx%in_decomp_ppools_vr_col(c_l,j,kk)=decomp_ppools_vr_col(c,j,kk)
-      enddo
       this%biophys_forc(c)%c12flx%in_t_scalar(c_l,j) = t_scalar(c,j)
       this%biophys_forc(c)%c12flx%in_w_scalar(c_l,j) = w_scalar(c,j)
       this%biophys_forc(c)%n14flx%in_sminn_no3_vr_col(c_l,j) = smin_no3_vr(c,j)
       this%biophys_forc(c)%n14flx%in_sminn_nh4_vr_col(c_l,j) = smin_nh4_vr(c,j)
       this%biophys_forc(c)%p31flx%in_sminp_vr_col(c_l,j) = solutionp_vr(c,j)
+    enddo
+  enddo
+
+  do kk = 1, 7
+    do j = 1,nlevtrc_soil
+      do c = bounds%begc, bounds%endc
+        if(.not. this%active_col(c))cycle
+        this%biophys_forc(c)%c12flx%in_decomp_cpools_vr_col(c_l,j,kk)=c12_decomp_cpools_vr_col(c,j,kk)
+        this%biophys_forc(c)%n14flx%in_decomp_npools_vr_col(c_l,j,kk)=decomp_npools_vr_col(c,j,kk)
+        this%biophys_forc(c)%p31flx%in_decomp_ppools_vr_col(c_l,j,kk)=decomp_ppools_vr_col(c,j,kk)
+      enddo
     enddo
   enddo
 
@@ -1706,11 +1720,13 @@ contains
         pi = pi + 1
         nitrogenflux_vars%smin_nh4_to_plant_patch(p) = this%biogeo_flux(c)%n14flux_vars%smin_nh4_to_plant_patch(pi)
         nitrogenflux_vars%smin_no3_to_plant_patch(p) = this%biogeo_flux(c)%n14flux_vars%smin_no3_to_plant_patch(pi)
+        nitrogenflux_vars%sminn_to_plant_patch(p) = nitrogenflux_vars%smin_nh4_to_plant_patch(p) + nitrogenflux_vars%smin_no3_to_plant_patch(p) 
         phosphorusflux_vars%sminp_to_plant_patch(p)  = this%biogeo_flux(c)%p31flux_vars%sminp_to_plant_patch(pi)
       else
         nitrogenflux_vars%smin_nh4_to_plant_patch(p) = 0._r8
         nitrogenflux_vars%smin_no3_to_plant_patch(p) = 0._r8
         phosphorusflux_vars%sminp_to_plant_patch(p) = 0._r8
+        nitrogenflux_vars%sminn_to_plant_patch(p) = 0._r8
       endif
     enddo
   enddo
@@ -1732,6 +1748,7 @@ contains
       phosphorusflux_vars%sminp_to_plant_vr_col(c,j) = this%biogeo_flux(c)%p31flux_vars%sminp_to_plant_vr_col(c_l,j)
       phosphorusflux_vars%supplement_to_sminp_vr_col(c,j) =this%biogeo_flux(c)%p31flux_vars%supplement_to_sminp_vr_col(c_l,j)
       phosphorusflux_vars%net_mineralization_p_vr_col(c,j) = this%biogeo_flux(c)%p31flux_vars%net_mineralization_p_vr_col(c_l,j)
+
     enddo
   enddo
   end associate
