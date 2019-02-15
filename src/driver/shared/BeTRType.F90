@@ -94,6 +94,7 @@ module BetrType
      procedure, public  :: set_bgc_spinup
      procedure, public  :: Set_iP_prof
      procedure, public  :: OutLoopBGC
+     procedure, public  :: reset_biostates
   end type betr_type
 
   public :: create_betr_type
@@ -1619,5 +1620,32 @@ contains
         this%tracers, this%tracerfluxes, biogeo_flux, betr_status)
 
   end subroutine OutLoopBGC
+
+  !------------------------------------------------------------------------
+  subroutine reset_biostates(this, bounds, num_soilc, filter_soilc, &
+     biophysforc, betr_status)
+
+    
+    implicit none
+    !
+    ! !ARGUMENTS :
+    class(betr_type)                 , intent(inout) :: this
+    type(bounds_type)                , intent(in)    :: bounds                     ! bounds
+    integer                          , intent(in)    :: num_soilc                  ! number of columns in column filter_soilc
+    integer                          , intent(in)    :: filter_soilc(:)            ! column filter_soilc
+    type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
+    type(betr_status_type)           , intent(out)   :: betr_status
+
+    integer :: lbj, ubj
+
+    call betr_status%reset()
+    lbj = bounds%lbj; ubj = bounds%ubj
+
+
+     call this%bgc_reaction%reset_biostates(bounds, lbj, ubj, &
+     this%tracerboundaryconds%jtops_col, num_soilc, filter_soilc, &
+     this%tracers, biophysforc,  this%tracerstates, betr_status)
+
+  end subroutine reset_biostates
 
 end module BetrType

@@ -55,6 +55,7 @@ module SimicBGCReactionsType
      procedure :: set_bgc_spinup
      procedure :: UpdateParas
      procedure :: init_iP_prof
+     procedure :: reset_biostates
      procedure, private :: set_tracer
      procedure, private :: InitAllocate
      procedure, private :: retrieve_output
@@ -1639,4 +1640,32 @@ contains
   end associate
   end subroutine update_sorpphase_coeff
 
+
+   !----------------------------------------------------------------------
+   subroutine reset_biostates(this, bounds, lbj, ubj, jtops, num_soilc, filter_soilc, &
+       betrtracer_vars, biophysforc,  tracerstate_vars, betr_status)
+
+       ! !USES:
+       use bshr_kind_mod            , only : r8 => shr_kind_r8
+       use tracerstatetype          , only : tracerstate_type
+       use BeTR_decompMod           , only : betr_bounds_type
+       use BeTRTracerType           , only : BeTRTracer_Type
+       use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
+       use BetrStatusType           , only : betr_status_type
+       use betr_columnType          , only : betr_column_type
+
+       ! !ARGUMENTS:
+     implicit none
+       class(simic_bgc_reaction_type) , intent(inout) :: this
+       type(betr_bounds_type)           , intent(in)    :: bounds                      ! bounds
+       integer                          , intent(in)    :: lbj, ubj                    ! lower and upper bounds, make sure they are > 0
+       integer                          , intent(in)    :: num_soilc                   ! number of columns in column filter
+       integer                          , intent(in)    :: filter_soilc(:)             ! column filter
+       integer                          , intent(in)    :: jtops( : )                  ! top index of each column
+       type(betrtracer_type)            , intent(in)    :: betrtracer_vars             ! betr configuration information
+       type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
+       type(tracerstate_type)           , intent(inout) :: tracerstate_vars
+       type(betr_status_type)           , intent(out)   :: betr_status
+
+    end subroutine reset_biostates
 end module SimicBGCReactionsType

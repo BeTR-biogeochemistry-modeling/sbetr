@@ -62,7 +62,7 @@ implicit none
      real(r8), pointer :: f_denit_vr_col                          (:,:) => null()
      real(r8), pointer :: smin_nh4_to_plant_vr_col                (:,:) => null()
      real(r8), pointer :: smin_no3_to_plant_vr_col                (:,:) => null()
-
+     real(r8), pointer :: sminn_to_plant_patch                    (:)   => null()
   contains
 
     procedure, public  :: Init

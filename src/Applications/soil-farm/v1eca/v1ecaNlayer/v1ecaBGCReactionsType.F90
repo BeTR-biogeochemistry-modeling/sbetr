@@ -89,6 +89,7 @@ module v1ecaBGCReactionsType
     procedure :: set_bgc_spinup
     procedure :: UpdateParas
     procedure :: init_iP_prof
+    procedure :: reset_biostates
     procedure, private :: set_bgc_forc
     procedure, private :: retrieve_output
     procedure, private :: precision_filter
@@ -1916,7 +1917,7 @@ contains
           plant_soilbgc%plant_minn_no3_active_yield_flx_vr_col(c,j) = &
             (ystatesf(this%v1eca_bgc_index%lid_plant_minn_no3) - &
             ystates0(this%v1eca_bgc_index%lid_plant_minn_no3))*natomw/dtime
-  
+
           plant_soilbgc%plant_minn_nh4_active_yield_flx_vr_col(c,j) = &
             (ystatesf(this%v1eca_bgc_index%lid_plant_minn_nh4) - &
             ystates0(this%v1eca_bgc_index%lid_plant_minn_nh4))*natomw/dtime
@@ -2165,6 +2166,7 @@ contains
         enddo
 
         !add cwd
+        kk1=4
         do kk = betrtracer_vars%id_trc_beg_wood, betrtracer_vars%id_trc_end_wood, nelm
           biogeo_state%c12state_vars%decomp_cpools_vr(c,j,kk1) =  &
             catomw * tracerstate_vars%tracer_conc_mobile_col(c, j, kk-1+c_loc)
@@ -2258,12 +2260,6 @@ contains
             tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_p_sol)
 
         !mineral nitrogen
-!        biogeo_state%n14state_vars%sminn_vr_col(c,j) = biogeo_state%n14state_vars%sminn_vr_col(c,j) + natomw * &
-!           (tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_nh3x) + &
-!            tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_no3x))
-
-!        biogeo_state%n14state_vars%sminn_nh4_vr_col(c,j) = natomw * &
-!           tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_nh3x)
 
         biogeo_state%n14state_vars%sminn_no3_vr_col(c,j) = natomw * &
             tracerstate_vars%tracer_conc_mobile_col(c,j,betrtracer_vars%id_trc_no3x)
@@ -2305,4 +2301,104 @@ contains
 
    ans = 1._r8 + 50._r8/(1._r8+exp(-0.1_r8*(abs(lat)-60._r8)))
    end function calc_latacc
+
+
+
+   !----------------------------------------------------------------------
+   subroutine reset_biostates(this, bounds, lbj, ubj, jtops, num_soilc, filter_soilc, &
+       betrtracer_vars, biophysforc,  tracerstate_vars, betr_status)
+
+       ! !USES:
+       use bshr_kind_mod            , only : r8 => shr_kind_r8
+       use tracerstatetype          , only : tracerstate_type
+       use BeTR_decompMod           , only : betr_bounds_type
+       use BeTRTracerType           , only : BeTRTracer_Type
+       use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
+       use BetrStatusType           , only : betr_status_type
+       use betr_columnType          , only : betr_column_type
+
+       ! !ARGUMENTS:
+     implicit none
+      class(v1eca_bgc_reaction_type) , intent(inout)    :: this
+       type(betr_bounds_type)           , intent(in)    :: bounds                      ! bounds
+       integer                          , intent(in)    :: lbj, ubj                    ! lower and upper bounds, make sure they are > 0
+       integer                          , intent(in)    :: num_soilc                   ! number of columns in column filter
+       integer                          , intent(in)    :: filter_soilc(:)             ! column filter
+       integer                          , intent(in)    :: jtops( : )                  ! top index of each column
+       type(betrtracer_type)            , intent(in)    :: betrtracer_vars             ! betr configuration information
+       type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
+       type(tracerstate_type)           , intent(inout) :: tracerstate_vars
+       type(betr_status_type)           , intent(out)   :: betr_status
+
+   integer :: fc, c, j, kk, kc, kn, kp
+
+   associate(                                &
+    c13_loc=>  this%v1eca_bgc_index%c13_loc, &
+    c14_loc=>  this%v1eca_bgc_index%c14_loc, &
+    c_loc=>  this%v1eca_bgc_index%c_loc    , &
+    n_loc=>  this%v1eca_bgc_index%n_loc    , &
+    p_loc=>  this%v1eca_bgc_index%p_loc    , &
+    nelm => this%v1eca_bgc_index%nelms , &
+    id_trc_no3x => betrtracer_vars%id_trc_no3x,  &
+    id_trc_p_sol => betrtracer_vars%id_trc_p_sol, &
+    id_trc_beg_litr => betrtracer_vars%id_trc_beg_litr, &
+    id_trc_beg_wood  => betrtracer_vars%id_trc_beg_wood, &
+    id_trc_beg_Bm => betrtracer_vars%id_trc_beg_Bm, &
+    id_trc_beg_pom => betrtracer_vars%id_trc_beg_pom, &
+    id_trc_beg_som => betrtracer_vars%id_trc_beg_som &
+   )
+
+    do j = lbj, ubj
+      do fc = 1, num_soilc
+        c = filter_soilc(fc)
+        if(j<jtops(c))cycle
+          tracerstate_vars%tracer_conc_mobile_col(c, j, id_trc_no3x) =biophysforc%n14flx%in_sminn_no3_vr_col(c,j)/natomw
+          tracerstate_vars%tracer_conc_mobile_col(c,j,id_trc_p_sol) =biophysforc%p31flx%in_sminp_vr_col(c,j)/patomw
+      enddo
+    enddo
+
+
+    do j = lbj, ubj
+      do fc = 1, num_soilc
+        c = filter_soilc(fc)
+        kc = id_trc_beg_litr+c_loc-1;kn = id_trc_beg_litr+n_loc-1; kp = id_trc_beg_litr+p_loc-1; kk=1
+        tracerstate_vars%tracer_conc_mobile_col(c, j, kc) = biophysforc%c12flx%in_decomp_cpools_vr_col(c,j,kk)/catomw
+        tracerstate_vars%tracer_conc_mobile_col(c, j, kn) = biophysforc%n14flx%in_decomp_npools_vr_col(c,j,kk)/natomw
+        tracerstate_vars%tracer_conc_mobile_col(c, j, kp) = biophysforc%p31flx%in_decomp_ppools_vr_col(c,j,kk)/patomw
+
+        kc = id_trc_beg_litr+nelm*kk+c_loc-1;kn = id_trc_beg_litr+nelm*kk+n_loc-1; kp = id_trc_beg_litr+nelm*kk+p_loc-1; kk=2
+        tracerstate_vars%tracer_conc_mobile_col(c, j, kc) = biophysforc%c12flx%in_decomp_cpools_vr_col(c,j,kk)/catomw
+        tracerstate_vars%tracer_conc_mobile_col(c, j, kn) = biophysforc%n14flx%in_decomp_npools_vr_col(c,j,kk)/natomw
+        tracerstate_vars%tracer_conc_mobile_col(c, j, kp) = biophysforc%p31flx%in_decomp_ppools_vr_col(c,j,kk)/patomw
+
+        kc = id_trc_beg_litr+nelm*kk+c_loc-1;kn = id_trc_beg_litr+nelm*kk+n_loc-1; kp = id_trc_beg_litr+nelm*kk+p_loc-1; kk=3
+        tracerstate_vars%tracer_conc_mobile_col(c, j, kc) = biophysforc%c12flx%in_decomp_cpools_vr_col(c,j,kk)/catomw
+        tracerstate_vars%tracer_conc_mobile_col(c, j, kn) = biophysforc%n14flx%in_decomp_npools_vr_col(c,j,kk)/natomw
+        tracerstate_vars%tracer_conc_mobile_col(c, j, kp) = biophysforc%p31flx%in_decomp_ppools_vr_col(c,j,kk)/patomw
+
+        kc = id_trc_beg_wood+c_loc-1;kn = id_trc_beg_wood+n_loc-1; kp = id_trc_beg_wood+p_loc-1; kk=4
+        tracerstate_vars%tracer_conc_mobile_col(c, j, kc) = biophysforc%c12flx%in_decomp_cpools_vr_col(c,j,kk)/catomw
+        tracerstate_vars%tracer_conc_mobile_col(c, j, kn) = biophysforc%n14flx%in_decomp_npools_vr_col(c,j,kk)/natomw
+        tracerstate_vars%tracer_conc_mobile_col(c, j, kp) = biophysforc%p31flx%in_decomp_ppools_vr_col(c,j,kk)/patomw
+
+        kc = id_trc_beg_Bm+c_loc-1;kn = id_trc_beg_Bm+n_loc-1; kp = id_trc_beg_Bm+p_loc-1; kk=5
+        tracerstate_vars%tracer_conc_mobile_col(c, j, kc) = biophysforc%c12flx%in_decomp_cpools_vr_col(c,j,kk)/catomw
+        tracerstate_vars%tracer_conc_mobile_col(c, j, kn) = biophysforc%n14flx%in_decomp_npools_vr_col(c,j,kk)/natomw
+        tracerstate_vars%tracer_conc_mobile_col(c, j, kp) = biophysforc%p31flx%in_decomp_ppools_vr_col(c,j,kk)/patomw
+
+        kc = id_trc_beg_pom+c_loc-1;kn = id_trc_beg_pom+n_loc-1; kp = id_trc_beg_pom+p_loc-1; kk=6
+        tracerstate_vars%tracer_conc_mobile_col(c, j, kc) = biophysforc%c12flx%in_decomp_cpools_vr_col(c,j,kk)/catomw
+        tracerstate_vars%tracer_conc_mobile_col(c, j, kn) = biophysforc%n14flx%in_decomp_npools_vr_col(c,j,kk)/natomw
+        tracerstate_vars%tracer_conc_mobile_col(c, j, kp) = biophysforc%p31flx%in_decomp_ppools_vr_col(c,j,kk)/patomw
+
+        kc = id_trc_beg_som+c_loc-1;kn = id_trc_beg_som+n_loc-1; kp = id_trc_beg_som+p_loc-1; kk=6
+        tracerstate_vars%tracer_conc_mobile_col(c, j, kc) = biophysforc%c12flx%in_decomp_cpools_vr_col(c,j,kk)/catomw
+        tracerstate_vars%tracer_conc_mobile_col(c, j, kn) = biophysforc%n14flx%in_decomp_npools_vr_col(c,j,kk)/natomw
+        tracerstate_vars%tracer_conc_mobile_col(c, j, kp) = biophysforc%p31flx%in_decomp_ppools_vr_col(c,j,kk)/patomw
+
+      enddo
+    enddo
+
+   end associate
+   end subroutine reset_biostates
 end module v1ecaBGCReactionsType

@@ -574,8 +574,8 @@ contains
   call this%BeTRSetBounds(betr_bounds)
 
   !reset and prepare for retrieval
-  do c = bounds%begc, bounds%endc
-    if(.not. this%active_col(c))cycle
+  do fc = 1, num_soilc
+    c = filter_soilc(fc)
     call this%biogeo_flux(c)%reset(value_column=0._r8, active_soibgc=this%do_soibgc())
     call this%biogeo_state(c)%reset(value_column=0._r8, active_soibgc=this%do_soibgc())
   enddo
@@ -593,8 +593,8 @@ contains
     solutionp_vr        => phosphorusstate_vars%solutionp_vr_col          &
     )
     do j = 1,betr_nlevtrc_soil
-      do c = bounds%begc, bounds%endc
-        if(.not. this%active_col(c))cycle
+      do fc = 1, num_soilc
+        c = filter_soilc(fc)
         this%biophys_forc(c)%n14flx%in_sminn_no3_vr_col(c_l,j) = smin_no3_vr(c,j)
         this%biophys_forc(c)%n14flx%in_sminn_nh4_vr_col(c_l,j) = smin_nh4_vr(c,j)
         this%biophys_forc(c)%p31flx%in_sminp_vr_col(c_l,j) = solutionp_vr(c,j)
@@ -603,8 +603,8 @@ contains
 
     do kk = 1, 7
       do j = 1,betr_nlevtrc_soil
-        do c = bounds%begc, bounds%endc
-          if(.not. this%active_col(c))cycle
+        do fc = 1, num_soilc
+          c = filter_soilc(fc)
           this%biophys_forc(c)%c12flx%in_decomp_cpools_vr_col(c_l,j,kk)=c12_decomp_cpools_vr_col(c,j,kk)
           this%biophys_forc(c)%n14flx%in_decomp_npools_vr_col(c_l,j,kk)=decomp_npools_vr_col(c,j,kk)
           this%biophys_forc(c)%p31flx%in_decomp_ppools_vr_col(c_l,j,kk)=decomp_ppools_vr_col(c,j,kk)
@@ -613,6 +613,17 @@ contains
     enddo
 
     end associate
+    do fc = 1, num_soilc
+      c = filter_soilc(fc)
+      call this%betr(c)%reset_biostates(betr_bounds, this%num_soilc, this%filter_soilc, &
+        this%biophys_forc(c), this%bstatus(c))
+
+      if(this%bstatus(c)%check_status())then
+        call this%bsimstatus%setcol(c)
+        call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err(),c)
+        exit
+      endif
+    enddo
     return
   endif
   !Note for improvement:
@@ -905,9 +916,8 @@ contains
   begc_l = betr_bounds%begc; endc_l=betr_bounds%endc;
 
   !retrieve and return
-  do c = bounds%begc, bounds%endc
-    if(.not. this%active_col(c))cycle
-
+  do fc =1, num_soilc
+    c = filter_soilc(fc)
     call this%betr(c)%retrieve_biostates(betr_bounds,  1, betr_nlevsoi, &
        this%num_soilc, this%filter_soilc,&
        this%jtops, this%biogeo_state(c),this%bstatus(c))
@@ -1108,8 +1118,8 @@ contains
     )
     do kk = 1, 7
       do j = 1,betr_nlevtrc_soil
-        do c = bounds%begc, bounds%endc
-          if(.not. this%active_col(c))cycle
+        do fc = 1, num_soilc
+          c =filter_soilc(fc)
           c12_decomp_cpools_vr_col(c,j,kk)=this%biogeo_state(c)%c12state_vars%decomp_cpools_vr(c_l,j,kk)
           decomp_npools_vr_col(c,j,kk) = this%biogeo_state(c)%n14state_vars%decomp_npools_vr(c_l,j,kk)
           decomp_ppools_vr_col(c,j,kk) = this%biogeo_state(c)%p31state_vars%decomp_ppools_vr(c_l,j,kk)
@@ -1117,8 +1127,8 @@ contains
       enddo
     enddo
     do j = 1,betr_nlevtrc_soil
-      do c = bounds%begc, bounds%endc
-        if(.not. this%active_col(c))cycle
+      do fc = 1, num_soilc
+        c =filter_soilc(fc)
         smin_no3_vr(c,j) = this%biogeo_state(c)%n14state_vars%sminn_no3_vr_col(c_l,j)
         solutionp_vr(c,j) = this%biogeo_state(c)%p31state_vars%sminp_vr_col(c_l,j)
       enddo
@@ -1720,7 +1730,7 @@ contains
         pi = pi + 1
         nitrogenflux_vars%smin_nh4_to_plant_patch(p) = this%biogeo_flux(c)%n14flux_vars%smin_nh4_to_plant_patch(pi)
         nitrogenflux_vars%smin_no3_to_plant_patch(p) = this%biogeo_flux(c)%n14flux_vars%smin_no3_to_plant_patch(pi)
-        nitrogenflux_vars%sminn_to_plant_patch(p) = nitrogenflux_vars%smin_nh4_to_plant_patch(p) + nitrogenflux_vars%smin_no3_to_plant_patch(p) 
+        nitrogenflux_vars%sminn_to_plant_patch(p) = nitrogenflux_vars%smin_nh4_to_plant_patch(p) + nitrogenflux_vars%smin_no3_to_plant_patch(p)
         phosphorusflux_vars%sminp_to_plant_patch(p)  = this%biogeo_flux(c)%p31flux_vars%sminp_to_plant_patch(pi)
       else
         nitrogenflux_vars%smin_nh4_to_plant_patch(p) = 0._r8
