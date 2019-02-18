@@ -18,6 +18,7 @@ implicit none
     real(r8) :: minsite
     real(r8) :: mic_transp
     real(r8) :: decay_mic0
+    real(r8) :: decay_mic1
     real(r8) :: decay_enz
     real(r8) :: pmax_enz
     real(r8) :: ea_vmax_mic
@@ -190,6 +191,7 @@ contains
   implicit none
   class(SummsPara_type), intent(inout) :: this
   real(r8) :: half_life
+  real(r8) :: rgas
 
   !the following note is from daycent
   !3.90000           'DEC1(1)'  surface litter, structural, 1/y
@@ -218,6 +220,7 @@ contains
   !0.55000           'P2CO2', som2->som1,som3, co2 resp frac
   !0.55000           'P3CO2', som3->som1, co2 resp frac
 
+  rgas = 8.31446_r8 ! universal gas constant (J/K/mol)
   half_life = 5568._r8 ! yr
   half_life = half_life * year_sec
   this%c14decay_const = - log(0.5_r8) / half_life
@@ -226,7 +229,7 @@ contains
   this%c14decay_Bm_const  =this%c14decay_const
 
   ! Parameters
-    this%gmax_mic  = 0.1025_r8*365._r8/year_sec            ! Maximum microbial growth rate (1/second)
+    this%gmax_mic  = 0.8760_r8*365._r8/year_sec            ! Maximum microbial growth rate (1/second)
     this%yld_mic = 0.8_r8                  ! Growth efficiency of microbes (g mic/g res)
     this%yld_enz = 0.8_r8                  ! Growth efficiency of enzymes (g enz/g res)
     this%yld_res = 0.5_r8                  ! Assimilation efficiency from monomer uptake (g res/g mono)
@@ -234,18 +237,19 @@ contains
     this%minsite = 1000._r8                 ! Abundance of mineral surface              (g C surface/m3)
     this%mic_transp = 0.05_r8              ! Scaling factor between transporter and microbial structural biomass
     this%decay_mic0 = 0.01314_r8*365._r8/year_sec            ! Reference microbial death rate (1/second)
+    this%decay_mic1 = 1.e-4_r8*365._r8/year_sec             ! Half saturation population for density dependent mortality
     this%decay_enz = 0.0061_r8*365._r8/year_sec               ! Enzyme turnover tate (1/second)
     this%pmax_enz = 0.0019_r8*365._r8/year_sec               ! Maximum enzyme production rate (1/second)
 
   ! Set up parameters for activation energy of different processes
-    this%ea_vmax_mic            = 45000._r8     ! Ea for maximum rate of monomer uptake (K)
-    this%ea_vmax_enz            = 45000._r8     ! Ea for maximum rate of polymer degradation (K)
-    this%ea_kaff_mono_mic       = 1804.086_r8  ! Ea for monomer-microbe affinity (K)
-    this%ea_kaff_enz_poly       = 1804.086_r8  ! Ea for polymer-enzyme affinity (K)
-    this%ea_mr_mic              = 60000._r8     ! Ea for maintenance (K)
-    this%ea_kappa_mic           = 60000._r8     ! Ea for reserve export (K)
-    this%ea_kaff_mono_msurf     = 10000._r8     ! Ea for monomer-mineral affinity (K)
-    this%ea_kaff_enz_msurf      = 10000._r8     ! Ea for enzyme-mineral affinity (K)
+    this%ea_vmax_mic            = 45000._r8/rgas     ! Ea for maximum rate of monomer uptake (K)
+    this%ea_vmax_enz            = 45000._r8/rgas      ! Ea for maximum rate of polymer degradation (K)
+    this%ea_kaff_mono_mic       = 15000._r8/rgas   ! Ea for monomer-microbe affinity (K)
+    this%ea_kaff_enz_poly       = 15000_r8/rgas   ! Ea for polymer-enzyme affinity (K)
+    this%ea_mr_mic              = 60000._r8/rgas      ! Ea for maintenance (K)
+    this%ea_kappa_mic           = 60000._r8/rgas      ! Ea for reserve export (J/mol)
+    this%ea_kaff_mono_msurf     = 10000._r8/rgas      ! Ea for monomer-mineral affinity (K)
+    this%ea_kaff_enz_msurf      = 10000._r8/rgas      ! Ea for enzyme-mineral affinity (K)
 
   ! Enzymes
     this%ref_vmax_enz           = 2.4133_r8*365._r8/year_sec   ! Maximum rate of polymer degradation (1/second)

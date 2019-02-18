@@ -268,14 +268,15 @@ implicit none
       deltag1 = xpar2-deltas_star*Tref+cp*(Tref-th_star-Tref*log(Tref/ts_star))
       t_fact1  = 1._r8/(1._r8+exp(-xpar1*deltag1/(rgas*Tref)))
 
-      t_fact0=t_fact0/t_fact1 ! Active enzyme fraction in total enzyme vs temperaure
-    
+      !t_fact0=t_fact0/t_fact1 ! Active enzyme fraction in total enzyme vs temperaure
+
       tinv=1._r8/tempbgc-1._r8/tref ! Modifies activation energy
       
       call interp1(temp0, t_fact0, tempbgc, t_fact) ! Interpolate to find fraction of active enzymes at current temperature
       ! This subroutine should return t_fact
 
-      fref=t_fact*(tempbgc/tref) ! Modifies non-equilibrium enzymatic reactions
+      !fref=t_fact*(tempbgc/tref) ! Modifies non-equilibrium enzymatic reactions
+      fref=t_fact/t_fact1*(tempbgc/tref)
 
   !Update parameters
     this%vmax_mic         = ref_vmax_mic *fref*exp(-ea_vmax_mic*tinv)
@@ -283,7 +284,7 @@ implicit none
     this%kaff_mono_mic    = ref_kaff_mono_mic *exp(-ea_kaff_mono_mic*tinv)
     this%kaff_enz_poly    = ref_kaff_enz_poly *exp(-ea_kaff_enz_poly*tinv)
     this%mr_mic           = ref_mr_mic        *exp(-ea_mr_mic*tinv)
-    this%kappa_mic        = ref_kappa_mic!*fref*exp(ea_kappa_mic*tinv)  
+    this%kappa_mic        = ref_kappa_mic*fref*exp(ea_kappa_mic*tinv)  
     this%kaff_mono_msurf  = ref_kaff_mono_msurf*exp(-ea_kaff_mono_msurf*tinv)   
     this%kaff_enz_msurf   = ref_kaff_enz_msurf*exp(-ea_kaff_enz_msurf*tinv)
 
