@@ -580,8 +580,7 @@ contains
     call this%biogeo_state(c)%reset(value_column=0._r8, active_soibgc=this%do_soibgc())
   enddo
   if(.not. this%do_soibgc())return
-
-   print*,'do bgc type',this%do_bgc_type('type1_bgc'),betr_nlevtrc_soil
+  c_l=1
   if(this%do_bgc_type('type1_bgc'))then
     !transfer state variables from elm to betr
     associate(                                                             &
@@ -1259,8 +1258,8 @@ contains
   use CNStateType       , only : cnstate_type
   use CNCarbonFluxType  , only : carbonflux_type
   use CanopyStateType   , only : canopystate_type
-  use clm_varpar        , only : nlevsno, nlevsoi
   use tracer_varcon     , only : reaction_method
+  use tracer_varcon  , only : betr_nlevsoi
   use CNCarbonStateType , only : carbonstate_type
   use tracer_varcon     , only : catomw
   use PhosphorusStateType , only : phosphorusstate_type
@@ -1287,15 +1286,11 @@ contains
   integer :: npft_loc
 
   c_l=1
-  if(present(carbonflux_vars)) &
-  call this%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi, carbonflux_vars, waterstate_vars, &
-      waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
-      chemstate_vars, soilstate_vars)
-
   if(present(phosphorusstate_vars))then
     !the following is used for setting P upon exiting spinup
-    do j = 1, nlevsoi
+    do j = 1, betr_nlevsoi
       do c = bounds%begc, bounds%endc
+        if(.not. this%active_col(c))cycle
         this%biophys_forc(c)%solutionp_vr_col(c_l,j) = phosphorusstate_vars%solutionp_vr_col(c,j)
         this%biophys_forc(c)%labilep_vr_col(c_l,j) = phosphorusstate_vars%labilep_vr_col(c,j)
         this%biophys_forc(c)%secondp_vr_col(c_l,j) =phosphorusstate_vars%secondp_vr_col(c,j)
@@ -1305,71 +1300,73 @@ contains
   endif
 
   if(present(carbonflux_vars)) then
-    call this%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi, carbonflux_vars, waterstate_vars, &
+    call this%BeTRSetBiophysForcing(bounds, col, pft, 1, betr_nlevsoi, carbonflux_vars, waterstate_vars, &
       waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
       chemstate_vars, soilstate_vars)
-    do j = 1, nlevsoi
+    do j = 1, betr_nlevsoi
       do c = bounds%begc, bounds%endc
+        if(.not. this%active_col(c))cycle
         this%biophys_forc(c)%c12flx%rt_vr_col(c_l,j) = carbonflux_vars%rr_vr_col(c,j)
       enddo
     enddo
   else
     return
   endif
-
-  associate(                                                &
-    cn_scalar            => cnstate_vars%cn_scalar        , &
-    cp_scalar            => cnstate_vars%cp_scalar        , &
-    rootfr               => soilstate_vars%rootfr_patch     &
-  )
-  !the following will be ALM specific
-  !big leaf model
-  !set profiles autotrohpic respiration
-  do c = bounds%begc, bounds%endc
-    npft_loc = ubound(carbonflux_vars%rr_patch,1)-lbound(carbonflux_vars%rr_patch,1)+1
-    if(npft_loc /= col%npfts(c) .and. col%pfti(c) /= lbound(carbonflux_vars%rr_patch,1)) then
-      do pi = 1, betr_maxpatch_pft
-        this%biophys_forc(c)%rr_patch(pi,1:nlevsoi) = 0._r8
-      enddo
-    else
-      if(use_cn)then
-        pp = 0
+  if(present(cnstate_vars)) then
+    associate(                                                &
+      cn_scalar            => cnstate_vars%cn_scalar        , &
+      cp_scalar            => cnstate_vars%cp_scalar        , &
+      rootfr               => soilstate_vars%rootfr_patch     &
+    )
+    !the following will be ALM specific
+    !big leaf model
+    !set profiles autotrohpic respiration
+    do c = bounds%begc, bounds%endc
+      if(.not. this%active_col(c))cycle
+      npft_loc = ubound(carbonflux_vars%rr_patch,1)-lbound(carbonflux_vars%rr_patch,1)+1
+      if(npft_loc /= col%npfts(c) .and. col%pfti(c) /= lbound(carbonflux_vars%rr_patch,1)) then
         do pi = 1, betr_maxpatch_pft
-          if (pi <= col%npfts(c)) then
-            p = col%pfti(c) + pi - 1
-            if (pft%active(p)) then
-              pp = pp + 1
-              this%biophys_forc(c)%cn_scalar_patch(pp) = cn_scalar(p)
-              this%biophys_forc(c)%cp_scalar_patch(pp) = cp_scalar(p)
-              do j = 1, nlevsoi
-                this%biophys_forc(c)%rr_patch(pp,j) = carbonflux_vars%rr_patch(p) * rootfr(p,j)
-              enddo
-            endif
-          endif
+          this%biophys_forc(c)%rr_patch(pi,1:betr_nlevsoi) = 0._r8
         enddo
       else
-        do pi = 1, betr_maxpatch_pft
-          this%biophys_forc(c)%rr_patch(pi,1:nlevsoi) = 0._r8
-        enddo
+        if(use_cn)then
+          pp = 0
+          do pi = 1, betr_maxpatch_pft
+            if (pi <= col%npfts(c)) then
+              p = col%pfti(c) + pi - 1
+              if (pft%active(p)) then
+                pp = pp + 1
+                this%biophys_forc(c)%cn_scalar_patch(pp) = cn_scalar(p)
+                this%biophys_forc(c)%cp_scalar_patch(pp) = cp_scalar(p)
+                do j = 1, betr_nlevsoi
+                  this%biophys_forc(c)%rr_patch(pp,j) = carbonflux_vars%rr_patch(p) * rootfr(p,j)
+                enddo
+              endif
+            endif
+          enddo
+        else
+          do pi = 1, betr_maxpatch_pft
+            this%biophys_forc(c)%rr_patch(pi,1:betr_nlevsoi) = 0._r8
+          enddo
+        endif
       endif
-    endif
-  enddo
+    enddo
+  end associate
+  endif
   !dvgm
   if(trim(reaction_method)=='doc_dic')then
      c_l=1
-     do j = 1, nlevsoi
+     do j = 1, betr_nlevsoi
         do c = bounds%begc, bounds%endc
-          if(col%active(c))then
+          if(.not. this%active_col(c))cycle
              !for simplicity, atomic weight of carbon is set to 12._r8 g/mol
-             this%biophys_forc(c)%dic_prod_vr_col(c_l,j) = (carbonflux_vars%hr_vr_col(c,j) + &
+           this%biophys_forc(c)%dic_prod_vr_col(c_l,j) = (carbonflux_vars%hr_vr_col(c,j) + &
                 cnstate_vars%nfixation_prof_col(c,j)*carbonflux_vars%rr_col(c))/catomw
-             this%biophys_forc(c)%doc_prod_vr_col(c_l,j) = (carbonstate_vars%decomp_cpools_vr_col(c,j,6) - &
+           this%biophys_forc(c)%doc_prod_vr_col(c_l,j) = (carbonstate_vars%decomp_cpools_vr_col(c,j,6) - &
                 carbonstate_vars%decomp_som2c_vr_col(c,j))/this%betr_time%delta_time/catomw
-          endif
         enddo
       enddo
   endif
-  end associate
   end subroutine ALMSetBiophysForcing
 
   !------------------------------------------------------------------------
@@ -1620,7 +1617,7 @@ contains
 
   !temporary variables
   type(betr_bounds_type) :: betr_bounds
-  integer :: kk, c, j, c_l
+  integer :: kk, c, j, c_l, fc
 
   associate(                                                                 &
   decomp_k                 => c12_cflx_vars%decomp_k_col                   , &
@@ -1636,8 +1633,8 @@ contains
   c_l=1
   call this%BeTRSetBounds(betr_bounds)
   do j = 1,nlevtrc_soil
-    do c = bounds%begc, bounds%endc
-      if(.not. this%active_col(c))cycle
+    do fc = 1, num_soilc
+      c = filter_soilc(fc)
       this%biophys_forc(c)%c12flx%in_t_scalar(c_l,j) = t_scalar(c,j)
       this%biophys_forc(c)%c12flx%in_w_scalar(c_l,j) = w_scalar(c,j)
       this%biophys_forc(c)%n14flx%in_sminn_no3_vr_col(c_l,j) = smin_no3_vr(c,j)
@@ -1648,11 +1645,12 @@ contains
 
   do kk = 1, 7
     do j = 1,nlevtrc_soil
-      do c = bounds%begc, bounds%endc
-        if(.not. this%active_col(c))cycle
+      do fc = 1, num_soilc
+        c = filter_soilc(fc)
         this%biophys_forc(c)%c12flx%in_decomp_cpools_vr_col(c_l,j,kk)=c12_decomp_cpools_vr_col(c,j,kk)
         this%biophys_forc(c)%n14flx%in_decomp_npools_vr_col(c_l,j,kk)=decomp_npools_vr_col(c,j,kk)
         this%biophys_forc(c)%p31flx%in_decomp_ppools_vr_col(c_l,j,kk)=decomp_ppools_vr_col(c,j,kk)
+        this%biogeo_flux(c)%c12flux_vars%decomp_k(c_l,j,kk)=decomp_k(c,j,kk)
       enddo
     enddo
   enddo
@@ -1750,7 +1748,7 @@ contains
       nitrogenflux_vars%f_n2o_nit_vr_col(c,j)      = this%biogeo_flux(c)%n14flux_vars%f_n2o_nit_vr_col(c_l,j)
       phosphorusflux_vars%adsorb_to_labilep_vr(c,j)= this%biogeo_flux(c)%p31flux_vars%adsorb_to_labilep_vr_col(c_l,j)
       c12_cflx_vars%hr_vr_col(c,j)                 = this%biogeo_flux(c)%c12flux_vars%hr_vr_col(c_l,j)
-      nitrogenstate_vars%smin_nh4_vr_col(c,j)      = this%biogeo_state(c)%n14state_vars%smin_nh4_vr_col(c_l,j)
+      nitrogenstate_vars%smin_nh4_vr_col(c,j)      = this%biogeo_state(c)%n14state_vars%sminn_nh4_vr_col(c_l,j)
       nitrogenstate_vars%smin_no3_vr_col(c,j)      = this%biogeo_state(c)%n14state_vars%sminn_no3_vr_col(c_l,j)
       nitrogenflux_vars%supplement_to_sminn_vr_col(c,j) = this%biogeo_flux(c)%n14flux_vars%supplement_to_sminn_vr_col(c_l,j)
       nitrogenflux_vars%smin_nh4_to_plant_vr_col(c,j) = this%biogeo_flux(c)%n14flux_vars%smin_nh4_to_plant_vr_col(c_l,j)
@@ -1758,7 +1756,6 @@ contains
       phosphorusflux_vars%sminp_to_plant_vr_col(c,j) = this%biogeo_flux(c)%p31flux_vars%sminp_to_plant_vr_col(c_l,j)
       phosphorusflux_vars%supplement_to_sminp_vr_col(c,j) =this%biogeo_flux(c)%p31flux_vars%supplement_to_sminp_vr_col(c_l,j)
       phosphorusflux_vars%net_mineralization_p_vr_col(c,j) = this%biogeo_flux(c)%p31flux_vars%net_mineralization_p_vr_col(c_l,j)
-
     enddo
   enddo
   end associate

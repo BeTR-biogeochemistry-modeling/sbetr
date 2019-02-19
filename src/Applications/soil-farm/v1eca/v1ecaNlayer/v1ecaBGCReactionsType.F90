@@ -316,6 +316,9 @@ contains
     integer   :: c, j, litr_cnt, wood_cnt, Bm_cnt, pom_cnt, som_cnt, itemp_ads,itemp_ads_grp
     integer   :: ngroupmems
     logical   :: batch_mode
+    logical   :: move_som
+
+    move_som=.false.
 
     call bstatus%reset()
     batch_mode = .false.
@@ -559,7 +562,7 @@ contains
          trc_adsorbgroupid=addone(itemp_ads_grp), trc_sorpisotherm='LANGMUIR', &
          trc_vtrans_scal=1._r8)
     if(bstatus%check_status())return
-
+    
     !------------------------------------------------------------------------------------
     !only one group passive solid litter tracers
     !define litter group
@@ -567,21 +570,21 @@ contains
     litr_cnt = 0
     trcid = betrtracer_vars%id_trc_beg_litr+litr_cnt*nelm+c_loc-1
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='LIT1C' ,    &
-         is_trc_mobile=.true., is_trc_advective = .false., &
+         is_trc_mobile=move_som, is_trc_advective = .false., &
          trc_group_id = betrtracer_vars%id_trc_litr, trc_group_mem= addone(itemp_mem), &
          trc_family_name='LIT1')
     if(bstatus%check_status())return
 
     trcid = betrtracer_vars%id_trc_beg_litr+litr_cnt*nelm+n_loc-1
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='LIT1N' ,    &
-         is_trc_mobile=.true., is_trc_advective = .false., &
+         is_trc_mobile=move_som, is_trc_advective = .false., &
          trc_group_id = betrtracer_vars%id_trc_litr, trc_group_mem= addone(itemp_mem), &
          trc_family_name='LIT1')
     if(bstatus%check_status())return
 
     trcid = betrtracer_vars%id_trc_beg_litr+litr_cnt*nelm+p_loc-1
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='LIT1P' ,    &
-         is_trc_mobile=.true., is_trc_advective = .false., &
+         is_trc_mobile=move_som, is_trc_advective = .false., &
          trc_group_id = betrtracer_vars%id_trc_litr, trc_group_mem= addone(itemp_mem), &
          trc_family_name='LIT1')
     if(bstatus%check_status())return
@@ -589,7 +592,7 @@ contains
     if(this%use_c13)then
       trcid = betrtracer_vars%id_trc_beg_litr+litr_cnt*nelm+c13_loc-1
       call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='LIT1C_C13' ,    &
-         is_trc_mobile=.true., is_trc_advective = .false., &
+         is_trc_mobile=move_som, is_trc_advective = .false., &
          trc_group_id = betrtracer_vars%id_trc_litr, trc_group_mem= addone(itemp_mem), &
          trc_family_name='LIT1')
       if(bstatus%check_status())return
@@ -597,7 +600,7 @@ contains
     if(this%use_c14)then
       trcid = betrtracer_vars%id_trc_beg_litr+litr_cnt*nelm+c14_loc-1
       call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='LIT1C_C14' ,    &
-         is_trc_mobile=.true., is_trc_advective = .false., &
+         is_trc_mobile=move_som, is_trc_advective = .false., &
          trc_group_id = betrtracer_vars%id_trc_litr, trc_group_mem= addone(itemp_mem), &
          trc_family_name='LIT1')
       if(bstatus%check_status())return
@@ -607,21 +610,21 @@ contains
 
     trcid = betrtracer_vars%id_trc_beg_litr+litr_cnt*nelm+c_loc-1
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='LIT2C'  ,    &
-         is_trc_mobile=.true., is_trc_advective = .false., &
+         is_trc_mobile=move_som, is_trc_advective = .false., &
          trc_group_id = betrtracer_vars%id_trc_litr, trc_group_mem= addone(itemp_mem), &
          trc_family_name='LIT2')
     if(bstatus%check_status())return
 
     trcid = betrtracer_vars%id_trc_beg_litr+litr_cnt*nelm+n_loc-1
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='LIT2N' ,    &
-         is_trc_mobile=.true., is_trc_advective = .false., &
+         is_trc_mobile=move_som, is_trc_advective = .false., &
          trc_group_id = betrtracer_vars%id_trc_litr, trc_group_mem= addone(itemp_mem), &
          trc_family_name='LIT2')
     if(bstatus%check_status())return
 
     trcid = betrtracer_vars%id_trc_beg_litr+litr_cnt*nelm+p_loc-1
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='LIT2P' ,    &
-         is_trc_mobile=.true., is_trc_advective = .false.,  &
+         is_trc_mobile=move_som, is_trc_advective = .false.,  &
          trc_group_id = betrtracer_vars%id_trc_litr, trc_group_mem= addone(itemp_mem), &
          trc_family_name='LIT2')
     if(bstatus%check_status())return
@@ -629,7 +632,7 @@ contains
     if(this%use_c13)then
       trcid = betrtracer_vars%id_trc_beg_litr+litr_cnt*nelm+c13_loc-1
       call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='LIT2C_C13' ,    &
-         is_trc_mobile=.true., is_trc_advective = .false., &
+         is_trc_mobile=move_som, is_trc_advective = .false., &
          trc_group_id = betrtracer_vars%id_trc_litr, trc_group_mem= addone(itemp_mem), &
          trc_family_name='LIT2')
       if(bstatus%check_status())return
@@ -637,7 +640,7 @@ contains
     if(this%use_c14)then
       trcid = betrtracer_vars%id_trc_beg_litr+litr_cnt*nelm+c14_loc-1
       call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='LIT2C_C14' ,    &
-         is_trc_mobile=.true., is_trc_advective = .false., &
+         is_trc_mobile=move_som, is_trc_advective = .false., &
          trc_group_id = betrtracer_vars%id_trc_litr, trc_group_mem= addone(itemp_mem), &
          trc_family_name='LIT2')
       if(bstatus%check_status())return
@@ -647,28 +650,28 @@ contains
 
     trcid = betrtracer_vars%id_trc_beg_litr+litr_cnt*nelm+c_loc-1
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='LIT3C' ,    &
-         is_trc_mobile=.true., is_trc_advective = .false., &
+         is_trc_mobile=move_som, is_trc_advective = .false., &
          trc_group_id = betrtracer_vars%id_trc_litr, trc_group_mem= addone(itemp_mem), &
          trc_family_name='LIT3')
     if(bstatus%check_status())return
 
     trcid = betrtracer_vars%id_trc_beg_litr+litr_cnt*nelm+n_loc-1
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='LIT3N' ,    &
-         is_trc_mobile=.true., is_trc_advective = .false., &
+         is_trc_mobile=move_som, is_trc_advective = .false., &
          trc_group_id = betrtracer_vars%id_trc_litr, trc_group_mem= addone(itemp_mem), &
          trc_family_name='LIT3')
     if(bstatus%check_status())return
 
     trcid = betrtracer_vars%id_trc_beg_litr+litr_cnt*nelm+p_loc-1
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='LIT3P' ,    &
-         is_trc_mobile=.true., is_trc_advective = .false., &
+         is_trc_mobile=move_som, is_trc_advective = .false., &
          trc_group_id = betrtracer_vars%id_trc_litr, trc_group_mem= addone(itemp_mem), &
          trc_family_name='LIT3')
     if(bstatus%check_status())return
     if(this%use_c13)then
       trcid = betrtracer_vars%id_trc_beg_litr+litr_cnt*nelm+c13_loc-1
       call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='LIT3C_C13' ,    &
-         is_trc_mobile=.true., is_trc_advective = .false., &
+         is_trc_mobile=move_som, is_trc_advective = .false., &
          trc_group_id = betrtracer_vars%id_trc_litr, trc_group_mem= addone(itemp_mem), &
          trc_family_name='LIT3')
       if(bstatus%check_status())return
@@ -676,7 +679,7 @@ contains
     if(this%use_c14)then
       trcid = betrtracer_vars%id_trc_beg_litr+litr_cnt*nelm+c14_loc-1
       call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='LIT3C_C14' ,    &
-         is_trc_mobile=.true., is_trc_advective = .false., &
+         is_trc_mobile=move_som, is_trc_advective = .false., &
          trc_group_id = betrtracer_vars%id_trc_litr, trc_group_mem= addone(itemp_mem), &
          trc_family_name='LIT3')
       if(bstatus%check_status())return
@@ -728,21 +731,21 @@ contains
     Bm_cnt=0;itemp_mem=0
     trcid = betrtracer_vars%id_trc_beg_Bm+Bm_cnt*nelm+c_loc-1
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='SOM1C', &
-         is_trc_mobile=.true., is_trc_advective = .false., &
+         is_trc_mobile=move_som, is_trc_advective = .false., &
          trc_group_id = betrtracer_vars%id_trc_Bm, trc_group_mem = addone(itemp_mem), &
          trc_family_name='SOM1_MB')
     if(bstatus%check_status())return
 
     trcid = betrtracer_vars%id_trc_beg_Bm+Bm_cnt*nelm+n_loc-1
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='SOM1N', &
-         is_trc_mobile=.true., is_trc_advective = .false., &
+         is_trc_mobile=move_som, is_trc_advective = .false., &
          trc_group_id = betrtracer_vars%id_trc_Bm, trc_group_mem = addone(itemp_mem), &
          trc_family_name='SOM1_MB')
     if(bstatus%check_status())return
 
     trcid = betrtracer_vars%id_trc_beg_Bm+Bm_cnt*nelm+p_loc-1
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='SOM1P', &
-         is_trc_mobile=.true., is_trc_advective = .false., &
+         is_trc_mobile=move_som, is_trc_advective = .false., &
          trc_group_id = betrtracer_vars%id_trc_Bm, trc_group_mem = addone(itemp_mem), &
          trc_family_name='SOM1_MB')
     if(bstatus%check_status())return
@@ -750,7 +753,7 @@ contains
     if(this%use_c13)then
       trcid = betrtracer_vars%id_trc_beg_Bm+Bm_cnt*nelm+c13_loc-1
       call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='SOM1C_C13',&
-         is_trc_mobile=.true., is_trc_advective = .false., &
+         is_trc_mobile=move_som, is_trc_advective = .false., &
          trc_group_id = betrtracer_vars%id_trc_Bm, trc_group_mem = addone(itemp_mem), &
          trc_family_name='SOM1_MB')
       if(bstatus%check_status())return
@@ -759,7 +762,7 @@ contains
     if(this%use_c14)then
       trcid = betrtracer_vars%id_trc_beg_Bm+Bm_cnt*nelm+c14_loc-1
       call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='SOM1C_C14', &
-         is_trc_mobile=.true., is_trc_advective = .false., &
+         is_trc_mobile=move_som, is_trc_advective = .false., &
          trc_group_id = betrtracer_vars%id_trc_Bm,  trc_group_mem = addone(itemp_mem), &
          trc_family_name='SOM1_MB')
       if(bstatus%check_status())return
@@ -770,21 +773,21 @@ contains
     pom_cnt=0;itemp_mem=0
     trcid = betrtracer_vars%id_trc_beg_pom+pom_cnt*nelm+c_loc-1
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='SOM2C', &
-         is_trc_mobile=.true., is_trc_advective = .false., &
+         is_trc_mobile=move_som, is_trc_advective = .false., &
          trc_group_id = betrtracer_vars%id_trc_pom, trc_group_mem = addone(itemp_mem), &
          trc_family_name='SOM2_POM')
     if(bstatus%check_status())return
 
     trcid = betrtracer_vars%id_trc_beg_pom+pom_cnt*nelm+n_loc-1
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='SOM2N', &
-         is_trc_mobile=.true., is_trc_advective = .false., &
+         is_trc_mobile=move_som, is_trc_advective = .false., &
          trc_group_id = betrtracer_vars%id_trc_pom, trc_group_mem = addone(itemp_mem), &
          trc_family_name='SOM2_POM')
     if(bstatus%check_status())return
 
     trcid = betrtracer_vars%id_trc_beg_pom+pom_cnt*nelm+p_loc-1
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='SOM2P', &
-         is_trc_mobile=.true., is_trc_advective = .false., &
+         is_trc_mobile=move_som, is_trc_advective = .false., &
          trc_group_id = betrtracer_vars%id_trc_pom, trc_group_mem = addone(itemp_mem), &
          trc_family_name='SOM2_POM')
     if(bstatus%check_status())return
@@ -792,7 +795,7 @@ contains
     if(this%use_c13)then
       trcid = betrtracer_vars%id_trc_beg_pom+pom_cnt*nelm+c13_loc-1
       call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='SOM2C_C13',&
-         is_trc_mobile=.true., is_trc_advective = .false., &
+         is_trc_mobile=move_som, is_trc_advective = .false., &
          trc_group_id = betrtracer_vars%id_trc_pom, trc_group_mem = addone(itemp_mem), &
          trc_family_name='SOM2_POM')
       if(bstatus%check_status())return
@@ -801,7 +804,7 @@ contains
     if(this%use_c14)then
       trcid = betrtracer_vars%id_trc_beg_pom+pom_cnt*nelm+c14_loc-1
       call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='SOM2C_C14', &
-         is_trc_mobile=.true., is_trc_advective = .false., &
+         is_trc_mobile=move_som, is_trc_advective = .false., &
          trc_group_id = betrtracer_vars%id_trc_pom,  trc_group_mem = addone(itemp_mem), &
          trc_family_name='SOM2_POM')
       if(bstatus%check_status())return
@@ -811,28 +814,28 @@ contains
     som_cnt = 0; itemp_mem=0
     trcid = betrtracer_vars%id_trc_beg_som+som_cnt*nelm+c_loc-1
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='SOM3C' ,     &
-         is_trc_mobile=.true., is_trc_advective = .false., &
+         is_trc_mobile=move_som, is_trc_advective = .false., &
          trc_group_id = betrtracer_vars%id_trc_som, trc_group_mem= addone(itemp_mem), &
          trc_family_name='SOM3')
     if(bstatus%check_status())return
 
     trcid = betrtracer_vars%id_trc_beg_som+som_cnt*nelm+n_loc-1
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='SOM3N'  ,    &
-         is_trc_mobile=.true., is_trc_advective = .false.,  &
+         is_trc_mobile=move_som, is_trc_advective = .false.,  &
          trc_group_id = betrtracer_vars%id_trc_som, trc_group_mem= addone(itemp_mem), &
          trc_family_name='SOM3')
     if(bstatus%check_status())return
 
     trcid = betrtracer_vars%id_trc_beg_som+som_cnt*nelm+p_loc-1
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='SOM3P' ,    &
-         is_trc_mobile=.true., is_trc_advective = .false.,  &
+         is_trc_mobile=move_som, is_trc_advective = .false.,  &
          trc_group_id = betrtracer_vars%id_trc_som, trc_group_mem= addone(itemp_mem), &
          trc_family_name='SOM3')
     if(bstatus%check_status())return
     if(this%use_c13)then
       trcid = betrtracer_vars%id_trc_beg_som+som_cnt*nelm+c13_loc-1
       call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='SOM3C_C13' ,    &
-         is_trc_mobile=.true., is_trc_advective = .false., &
+         is_trc_mobile=move_som, is_trc_advective = .false., &
          trc_group_id = betrtracer_vars%id_trc_som, trc_group_mem= addone(itemp_mem), &
          trc_family_name='SOM3')
       if(bstatus%check_status())return
@@ -840,7 +843,7 @@ contains
     if(this%use_c14)then
       trcid = betrtracer_vars%id_trc_beg_som+som_cnt*nelm+c14_loc-1
       call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = trcid, trc_name='SOM3C_C14' ,    &
-         is_trc_mobile=.true., is_trc_advective = .false., &
+         is_trc_mobile=move_som, is_trc_advective = .false., &
          trc_group_id = betrtracer_vars%id_trc_som, trc_group_mem= addone(itemp_mem), &
          trc_family_name='SOM3')
       if(bstatus%check_status())return
@@ -1347,6 +1350,7 @@ contains
       this%v1eca_forc(c,j)%decomp_k(1:ncentpools)=biogeo_flux%c12flux_vars%decomp_k(c,j,1:ncentpools)
       this%v1eca_forc(c,j)%t_scalar = biophysforc%c12flx%in_t_scalar(c,j)
       this%v1eca_forc(c,j)%w_scalar = biophysforc%c12flx%in_w_scalar(c,j)
+
       !litter C
       FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+c_loc-1),biophysforc%c12flx%in_decomp_cpools_vr_col(c,j,1)/catomw)
       FPMAX(this%v1eca_forc(c,j)%ystates(litr_beg+nelms+c_loc-1),biophysforc%c12flx%in_decomp_cpools_vr_col(c,j,2)/catomw)
@@ -1650,7 +1654,6 @@ contains
     tracer_flx_parchm_vr  => tracerflux_vars%tracer_flx_parchm_vr_col     , & !
     ngwmobile_tracers     => betrtracer_vars%ngwmobile_tracers              & !
   )
-
       !tracer states
       biogeo_state%c12state_vars%decomp_cpools_vr(c,j,1) = ystatesf(litr_beg+c_loc-1)*catomw
       biogeo_state%c12state_vars%decomp_cpools_vr(c,j,2) = ystatesf(litr_beg+nelms+c_loc-1)*catomw
@@ -1708,7 +1711,7 @@ contains
         biogeo_flux%n14flux_vars%supplement_to_sminn_vr_col(c,j) = 0._r8
       endif
 
-      biogeo_state%n14state_vars%smin_nh4_vr_col(c, j) = ystatesf(this%v1eca_bgc_index%lid_nh4)*natomw
+      biogeo_state%n14state_vars%sminn_nh4_vr_col(c, j) = ystatesf(this%v1eca_bgc_index%lid_nh4)*natomw
 
       biogeo_state%n14state_vars%sminn_no3_vr_col(c, j)= ystatesf(this%v1eca_bgc_index%lid_no3)*natomw
 
@@ -1883,8 +1886,6 @@ contains
       biogeo_flux%n14flux_vars%f_n2o_nit_vr_col(c,j) = &
         (ystatesf(this%v1eca_bgc_index%lid_n2o_nit) - &
          ystates0(this%v1eca_bgc_index%lid_n2o_nit))*natomw/dtime
-
-      biogeo_flux%p31flux_vars%pflx_minp_weathering_po4_vr_col(c,j) =this%v1eca_forc(c,j)%sflx_minp_weathering_po4
 
       biogeo_flux%n14flux_vars%smin_nh4_to_plant_vr_col(c,j) = &
           (ystatesf(this%v1eca_bgc_index%lid_plant_minn_nh4) - &

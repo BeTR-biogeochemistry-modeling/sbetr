@@ -149,6 +149,7 @@ module TracerBalanceMod
               if(abs(errtracer(c,kk))<err_min)then
                  err_rel=1.e-4_r8
               else
+                 print*,errtracer(c,kk),betrtracer_vars%get_tracername(kk),tracer_flx_netpro(c,kk),tracer_flx_netphyloss(c,kk)
                  err_rel = errtracer(c,kk)/max(abs(beg_tracer_molarmass(c,kk)),abs(end_tracer_molarmass(c,kk)))
               endif
 

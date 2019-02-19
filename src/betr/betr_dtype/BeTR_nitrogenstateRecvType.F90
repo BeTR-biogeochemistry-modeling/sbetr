@@ -84,8 +84,6 @@ implicit none
 
 !  if(index(bgc_type,'type1_bgc')/=0)then
     SPVAL_ALLOC(this%decomp_npools_vr(begc:endc, lbj:ubj, 7))
-    SPVAL_ALLOC(this%smin_nh4_vr_col(begc:endc,lbj:ubj))
-    SPVAL_ALLOC(this%sminn_no3_vr_col(begc:endc,lbj:ubj))
 !  else
     SPVAL_ALLOC(this%som1n_vr_col(begc:endc, lbj:ubj))
     SPVAL_ALLOC(this%som2n_vr_col(begc:endc, lbj:ubj))
@@ -112,8 +110,6 @@ implicit none
 
   if(index(bgc_type,'type1_bgc')/=0)then
     this%decomp_npools_vr(:,:,:)=value_column
-    this%smin_no3_vr_col(:,:) = value_column
-    this%smin_nh4_vr_col(:,:) = value_column
   else
     this%cwdn_vr_col(:,:) = value_column
     this%totlitn_vr_col(:,:) = value_column

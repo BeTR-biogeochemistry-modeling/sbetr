@@ -84,7 +84,6 @@ module v1ecaBGCType
     procedure, public  :: init_cold     => init_cold_v1eca
     procedure, private :: calc_cascade_matrix
     procedure, private :: init_states
-    procedure, private :: add_ext_input
     procedure, private :: InitAllocate
     procedure, private :: arenchyma_gas_transport
     procedure, private :: sumup_cnp_mass
@@ -145,15 +144,15 @@ contains
   implicit none
   class(v1eca_bgc_type) , intent(inout) :: this
   real(r8) :: c_mass0, n_mass0, p_mass0
+
   print*,'begin_massbal_check'
+  call this%sumup_cnp_msflx(this%ystates0, c_mass0,  n_mass0, p_mass0)
+  write(*, '(A,3(X,E20.10))')'cnp_mass beg0=',c_mass0,n_mass0,p_mass0
+  print*,'co20',this%ystates0(this%v1eca_bgc_index%lid_co2_hr)
   call this%sumup_cnp_msflx(this%ystates1, this%beg_c_mass, &
     this%beg_n_mass, this%beg_p_mass)
-
-  print*,this%beg_c_mass,this%beg_n_mass,this%beg_p_mass
-
-  call this%sumup_cnp_msflx(this%ystates0, c_mass0, &
-    n_mass0, p_mass0)
-  print*,c_mass0,n_mass0,p_mass0
+  write(*, '(A,3(X,E20.10))')'cnp_mass beg1=',this%beg_c_mass,this%beg_n_mass,this%beg_p_mass
+  print*,'co21',this%ystates1(this%v1eca_bgc_index%lid_co2_hr)
   end subroutine begin_massbal_check
   !-------------------------------------------------------------------------------
 
@@ -171,12 +170,12 @@ contains
 
   real(r8), parameter :: tiny_val=1.e-10_r8
   print*,trim(header)
-  call this%sumup_cnp_msflx(this%ystates1, c_mass, n_mass, p_mass,c_flx,n_flx,p_flx, bstatus)
+  call this%sumup_cnp_msflx(this%ystates1, c_mass, n_mass, p_mass,c_flx,n_flx,p_flx)
 
   dmass_c=c_mass - this%beg_c_mass
   dmass_n=n_mass - this%beg_n_mass
   dmass_p=p_mass - this%beg_p_mass
-
+  print*,'dmassc',dmass_c
   emass_c=dmass_c + c_flx - this%c_inflx
   emass_n=dmass_n + n_flx - this%n_inflx
   emass_p=dmass_p + p_flx - this%p_inflx
@@ -184,9 +183,9 @@ contains
   remass_c=emass_c/max(abs(dmass_c),tiny_val)
   remass_n=emass_n/max(abs(dmass_n),tiny_val)
   remass_p=emass_p/max(abs(dmass_p),tiny_val)
-
+  print*,'co2_hr',this%ystates1(this%v1eca_bgc_index%lid_co2_hr)
   write(*,'(A)')'------------------------------------------------------------------------------------------------------'
-  write(*,'(A)')'type             beg_mass             end_mass            dmass                inflx            outflx'
+  write(*,'(A)')'type             beg_mass             end_mass            emass                inflx            outflx'
   write(*, '(A,5(X,E20.10))')'c_mass bal=',this%beg_c_mass, c_mass, emass_c, this%c_inflx, c_flx
   write(*, '(A,5(X,E20.10))')'n_mass bal=',this%beg_n_mass, n_mass, emass_n, this%n_inflx, n_flx
   write(*, '(A,5(X,E20.10))')'p_mass bal=',this%beg_p_mass, p_mass, emass_p, this%p_inflx, p_flx
@@ -432,12 +431,12 @@ contains
   write(*,'(A,3(X,E20.10))')'som3 resc, resn, resp =',resc,resn, resp
 
   reac = cwd_dek_reac
-  resc = cascade_matrix((cwd-1)*nelms + c_loc, reac) + cascade_matrix((som1-1)*nelms + c_loc, reac) + &
-     cascade_matrix((som2-1)*nelms + c_loc, reac) + cascade_matrix(lid_co2, reac)
-  resn = cascade_matrix((cwd-1)*nelms + n_loc, reac) + cascade_matrix((som1-1)*nelms + n_loc, reac) + &
-     cascade_matrix((som2-1)*nelms + n_loc, reac) + cascade_matrix(lid_nh4, reac)
-  resp = cascade_matrix((cwd-1)*nelms + p_loc, reac) + cascade_matrix((som1-1)*nelms + p_loc, reac) + &
-     cascade_matrix((som2-1)*nelms + p_loc, reac) + cascade_matrix(lid_minp_soluble, reac)
+  resc = cascade_matrix((cwd-1)*nelms + c_loc, reac) + cascade_matrix((lit2-1)*nelms + c_loc, reac) + &
+     cascade_matrix((lit3-1)*nelms + c_loc, reac) + cascade_matrix(lid_co2, reac)
+  resn = cascade_matrix((cwd-1)*nelms + n_loc, reac) + cascade_matrix((lit2-1)*nelms + n_loc, reac) + &
+     cascade_matrix((lit3-1)*nelms + n_loc, reac) + cascade_matrix(lid_nh4, reac)
+  resp = cascade_matrix((cwd-1)*nelms + p_loc, reac) + cascade_matrix((lit2-1)*nelms + p_loc, reac) + &
+     cascade_matrix((lit3-1)*nelms + p_loc, reac) + cascade_matrix(lid_minp_soluble, reac)
   write(*,'(A,3(X,E20.10))')'cwd resc, resn, resp =',resc,resn, resp
 
   reac = lid_nh4_nit_reac
@@ -519,7 +518,8 @@ contains
   this%competECA%bd = bgc_forc%bd
   this%competECA%h2osoi_vol = bgc_forc%h2osoi_vol
   ystates0(:) = this%ystates0(:)
-
+ 
+!  call this%begin_massbal_check() 
   !initialize decomposition scaling factors
   call this%decompkf_eca%set_decompk_scalar(ystates1(lid_o2), bgc_forc)
 
@@ -553,7 +553,6 @@ contains
   !so the reaction rate is a function of state variables. Further, for simplicity,
   !the nitrification and denitrification rates have been assumed as linear function
   !nh4 and no3 in soil.
-
   call this%arenchyma_gas_transport(this%v1eca_bgc_index, dtime)
 
   !do the stoichiometric matrix separation
@@ -564,6 +563,9 @@ contains
   time = 0._r8
   yf(:) = ystates1(:)
 
+!  call this%end_massbal_check('midd runbgc')
+
+!  call this%checksum_cascade(this%v1eca_bgc_index)
   call ode_adapt_ebbks1(this, yf, nprimvars, nstvars, time, dtime, ystates1)
 
   !if(this%v1eca_bgc_index%debug)call this%checksum_cascade(this%v1eca_bgc_index)
@@ -573,6 +575,8 @@ contains
 
   if(this%batch_mode)call this%sum_tot_store(nstvars, ystates1)
   ystatesf(:) = ystates1(:)
+
+!  call this%end_massbal_check('end runbgc')
   end associate
   end subroutine runbgc_v1eca
   !-------------------------------------------------------------------------------
@@ -736,7 +740,7 @@ contains
       !reaction 15, ar + o2 -> co2
       reac = lid_autr_rt_reac
       cascade_matrix(lid_co2, reac) =  1._r8
-      cascade_matrix(lid_o2,  reac) = -1._r8
+      cascade_matrix(lid_o2,  reac) = -1._r8 * 0._r8
 
       if(this%use_c13)then
         cascade_matrix(lid_c13_co2, reac) =  1._r8 * frc_c13
@@ -869,219 +873,6 @@ contains
   end associate
   end subroutine init_states
   !--------------------------------------------------------------------
-  subroutine add_ext_input(this, dtime, v1eca_bgc_index, bgc_forc, c_inf, n_inf, p_inf)
-  use v1ecaBGCIndexType       , only : v1eca_bgc_index_type
-  use JarBgcForcType        , only : JarBGC_forc_type
-  use tracer_varcon             , only : catomw, natomw, patomw,c13atomw,c14atomw
-  use MathfuncMod               , only : safe_div
-  implicit none
-  class(v1eca_bgc_type)     , intent(inout) :: this
-  real(r8), intent(in) :: dtime
-  type(v1eca_bgc_index_type)  , intent(in) :: v1eca_bgc_index
-  type(JarBGC_forc_type)  , intent(in) :: bgc_forc
-  real(r8), optional, intent(out) :: c_inf, n_inf, p_inf
-  integer :: kc, kn, kp,kc13,kc14
-  integer :: jj
-  real(r8):: totp, pmin_frac, pmin_cleave
-  real(r8):: totc, totn
-  real(r8):: c_inf_loc, n_inf_loc, p_inf_loc
-  associate(                        &
-    lit1 =>  v1eca_bgc_index%lit1, &
-    lit2 =>  v1eca_bgc_index%lit2, &
-    lit3 =>  v1eca_bgc_index%lit3, &
-    cwd =>   v1eca_bgc_index%cwd, &
-
-    lid_totinput => v1eca_bgc_index%lid_totinput, &
-    litr_beg =>  v1eca_bgc_index%litr_beg, &
-    som_beg =>  v1eca_bgc_index%som_beg, &
-    Bm_beg  =>  v1eca_bgc_index%Bm_beg, &
-    pom_beg =>  v1eca_bgc_index%pom_beg, &
-    wood_beg =>  v1eca_bgc_index%wood_beg, &
-    litr_end =>  v1eca_bgc_index%litr_end, &
-    som_end =>  v1eca_bgc_index%som_end, &
-    pom_end =>  v1eca_bgc_index%pom_end, &
-    Bm_end =>  v1eca_bgc_index%Bm_end, &
-    wood_end =>  v1eca_bgc_index%wood_end, &
-    c_loc=>  v1eca_bgc_index%c_loc,&
-    c13_loc=>  v1eca_bgc_index%c13_loc,&
-    c14_loc=>  v1eca_bgc_index%c14_loc,&
-    n_loc=>  v1eca_bgc_index%n_loc,&
-    p_loc=>  v1eca_bgc_index%p_loc,&
-    som1 =>  v1eca_bgc_index%som1, &
-    som2 =>  v1eca_bgc_index%som2, &
-    som3 =>  v1eca_bgc_index%som3, &
-    nelms => v1eca_bgc_index%nelms, &
-    lid_nh4=> v1eca_bgc_index%lid_nh4, &
-    lid_no3=> v1eca_bgc_index%lid_no3, &
-    lid_minp_soluble =>  v1eca_bgc_index%lid_minp_soluble,  &
-    lid_minp_immob => v1eca_bgc_index%lid_minp_immob &
-  )
-  c_inf_loc=0._r8; n_inf_loc=0._r8; p_inf_loc=0._r8
-  !*********************************************
-  ! organic substrates
-  !*********************************************
-  call add_som_pool(lit1, bgc_forc%cflx_input_litr_met, &
-    bgc_forc%nflx_input_litr_met, bgc_forc%pflx_input_litr_met, &
-    bgc_forc%cflx_input_litr_met_c13, bgc_forc%cflx_input_litr_met_c14, &
-    c_inf_loc, n_inf_loc, p_inf_loc)
-
-  call add_som_pool(lit2, bgc_forc%cflx_input_litr_cel, &
-    bgc_forc%nflx_input_litr_cel, bgc_forc%pflx_input_litr_cel, &
-    bgc_forc%cflx_input_litr_cel_c13, bgc_forc%cflx_input_litr_cel_c14, &
-    c_inf_loc, n_inf_loc, p_inf_loc)
-
-  call add_som_pool(lit3, bgc_forc%cflx_input_litr_lig, &
-    bgc_forc%nflx_input_litr_lig, bgc_forc%pflx_input_litr_lig, &
-    bgc_forc%cflx_input_litr_lig_c13, bgc_forc%cflx_input_litr_lig_c14, &
-    c_inf_loc, n_inf_loc, p_inf_loc)
-
-  call add_som_pool(cwd, bgc_forc%cflx_input_litr_cwd, &
-    bgc_forc%nflx_input_litr_cwd, bgc_forc%pflx_input_litr_cwd, &
-    bgc_forc%cflx_input_litr_cwd_c13, bgc_forc%cflx_input_litr_cwd_c14, &
-    c_inf_loc, n_inf_loc, p_inf_loc)
-
-   if(present(c_inf))c_inf=c_inf_loc
-   if(present(n_inf))n_inf=n_inf_loc
-   if(present(p_inf))p_inf=p_inf_loc
-
-   if(this%batch_mode)then
-     this%ystates1(lid_totinput) = this%ystates1(lid_totinput) + dtime* &
-     ( bgc_forc%cflx_input_litr_met +  bgc_forc%cflx_input_litr_cel + &
-       bgc_forc%cflx_input_litr_lig +  bgc_forc%cflx_input_litr_cwd)/catomw
-   endif
-  !*********************************************
-  !inorganic substrates
-  !*********************************************
-  this%ystates1(lid_nh4) =this%ystates0(lid_nh4) + dtime * &
-      (bgc_forc%sflx_minn_input_nh4 + &
-        bgc_forc%sflx_minn_nh4_fix_nomic)/natomw
-
-  this%ystates1(lid_no3) = this%ystates0(lid_no3) + dtime * &
-      bgc_forc%sflx_minn_input_no3/natomw
-
-  if(present(n_inf))then
-    n_inf = n_inf + this%ystates1(lid_nh4) - this%ystates0(lid_nh4)
-    n_inf = n_inf + this%ystates1(lid_no3) - this%ystates0(lid_no3)
-  endif
-
-  this%ystates1(lid_minp_soluble) =this%ystates0(lid_minp_soluble) + dtime * &
-      (bgc_forc%sflx_minp_input_po4 + &
-        bgc_forc%sflx_minp_weathering_po4)/patomw
-  if(present(p_inf))then
-    p_inf = p_inf + this%ystates1(lid_minp_soluble) - this%ystates0(lid_minp_soluble)
-  endif
-  !*********************************************
-  !apply phosphatase
-  !kinetic studies indicate phosphatase can react with both
-  !dom and polymers, some dom will inhibit phosphatse in aquatic
-  !environment
-  !*********************************************
-  !phosphatase cleaves PO4 from organic pools and put them into soluble mineral pool
-  !compute total organic P
-  !litr, wood, Bm, som, pom, dom
-  totp = 0._r8
-  totp = totp + sum_some(litr_beg, litr_end, nelms, p_loc)
-  totp = totp + sum_some(wood_beg, wood_end, nelms, p_loc)
-  totp = totp + sum_some(Bm_beg, Bm_end, nelms, p_loc)
-  totp = totp + sum_some(som_beg, som_end, nelms, p_loc)
-  totp = totp + sum_some(pom_beg, pom_end, nelms, p_loc)
-
-  pmin_frac= exp(-bgc_forc%biochem_pmin*dtime)
-  pmin_cleave=0._r8
-  call somp_decay(litr_beg, litr_end, nelms, p_loc, pmin_frac, pmin_cleave)
-  call somp_decay(wood_beg, wood_end, nelms, p_loc, pmin_frac, pmin_cleave)
-  call somp_decay(Bm_beg, Bm_end, nelms, p_loc, pmin_frac, pmin_cleave)
-  call somp_decay(som_beg, som_end, nelms, p_loc, pmin_frac, pmin_cleave)
-  call somp_decay(pom_beg, pom_end, nelms, p_loc, pmin_frac, pmin_cleave)
-
-  this%ystates1(lid_minp_soluble) =this%ystates1(lid_minp_soluble) + pmin_cleave
-
-  if(present(c_inf))c_inf=c_inf*catomw
-  if(present(n_inf))n_inf=n_inf*natomw
-  if(present(p_inf))p_inf=p_inf*patomw
-  end associate
-  contains
-   !----------------------------------------------------------------
-    subroutine add_som_pool(jj, cflx_input, nflx_input, pflx_input, &
-      c13_flx_input, c14_flx_input, c_inf, n_inf, p_inf)
-    implicit none
-    integer , intent(in) :: jj
-    real(r8), intent(in) :: cflx_input, c13_flx_input, c14_flx_input
-    real(r8), intent(in) :: nflx_input
-    real(r8), intent(in) :: pflx_input
-    real(r8), optional, intent(inout) :: c_inf
-    real(r8), optional, intent(inout) :: n_inf
-    real(r8), optional, intent(inout) :: p_inf
-
-    integer :: kc, kn, kp, kc13, kc14
-    associate(                            &
-     c_loc   =>  v1eca_bgc_index%c_loc  ,&
-     c13_loc =>  v1eca_bgc_index%c13_loc,&
-     c14_loc =>  v1eca_bgc_index%c14_loc,&
-     n_loc   =>  v1eca_bgc_index%n_loc  ,&
-     p_loc   =>  v1eca_bgc_index%p_loc  ,&
-     nelms   =>  v1eca_bgc_index%nelms   &
-    )
-    !if(cflx_input<=0._r8)return
-    kc = (jj-1)*nelms+c_loc;kn=(jj-1)*nelms+n_loc;kp=(jj-1)*nelms+p_loc
-    this%ystates1(kc) =this%ystates0(kc) + cflx_input*dtime/catomw
-    this%ystates1(kn) =this%ystates0(kn) + nflx_input*dtime/natomw
-    this%ystates1(kp) =this%ystates0(kp) + pflx_input*dtime/patomw
-    if(present(c_inf))then
-      c_inf = c_inf + this%ystates1(kc) - this%ystates0(kc)
-    endif
-    if(present(n_inf))then
-      n_inf = n_inf+this%ystates1(kn) - this%ystates0(kn)
-    endif
-    if(present(p_inf))then
-      p_inf = p_inf+this%ystates1(kp) - this%ystates0(kp)
-    endif
-    if(this%use_c13)then
-      kc13=(jj-1)*nelms+c13_loc
-      this%ystates1(kc13) =this%ystates0(kc13) + c13_flx_input*dtime/c13atomw
-    endif
-    if(this%use_c14)then
-      kc14=(jj-1)*nelms+c14_loc
-      this%ystates1(kc14) =this%ystates0(kc14) + c14_flx_input*dtime/c14atomw
-    endif
-    end associate
-    end subroutine add_som_pool
-   !----------------------------------------------------------------
-    function sum_some(ebeg, eend, nelms, e_loc)result(ans)
-    implicit none
-    integer, intent(in) :: ebeg, eend, nelms, e_loc
-
-    real(r8) :: ans
-    integer :: jj, ke
-
-    ans = 0._r8
-    do jj = ebeg, eend, nelms
-      ke = jj-1 + e_loc
-      ans = ans + this%ystates1(ke)
-    enddo
-
-    end function sum_some
-   !----------------------------------------------------------------
-    subroutine somp_decay(ebeg, eend, nelms, p_loc, pmin_frac, pmin_cleave)
-    implicit none
-    integer , intent(in) :: ebeg, eend, nelms, p_loc
-    real(r8), intent(in):: pmin_frac
-    real(r8), intent(inout) :: pmin_cleave
-
-    integer :: jj, kp
-    real(r8):: ytemp
-
-    do jj = ebeg, eend, nelms
-      kp = jj-1 + p_loc
-      ytemp = this%ystates1(kp) * pmin_frac
-      pmin_cleave=pmin_cleave + max(this%ystates1(kp)-ytemp,0._r8)
-      this%ystates1(kp) = ytemp
-    enddo
-    end subroutine somp_decay
-  end subroutine add_ext_input
-
-
-  !--------------------------------------------------------------------
   subroutine bgc_integrate(this, ystate, dtime, time, nprimvars, nstvars, dydt)
   !
   !DESCRIPTION
@@ -1127,7 +918,7 @@ contains
   real(r8) :: dminn
   real(r8) :: sol_smin_nh4, sol_smin_no3
   real(r8) :: sol_sminp_soluble
-  integer  :: jj, it
+  integer  :: jj, it,reac
   integer, parameter  :: itmax = 10
   type(lom_type) :: lom
   type(betr_status_type) :: bstatus
@@ -1146,6 +937,10 @@ contains
     som1    => this%v1eca_bgc_index%som1                                                       , &
     som2    => this%v1eca_bgc_index%som2                                                       , &
     som3    => this%v1eca_bgc_index%som3                                                       , &
+    lit1    => this%v1eca_bgc_index%lit1                                                       , &
+    lit2    => this%v1eca_bgc_index%lit2                                                       , &
+    lit3    => this%v1eca_bgc_index%lit3                                                       , &
+    cwd     => this%v1eca_bgc_index%cwd                                                        , &
     c_loc   => this%v1eca_bgc_index%c_loc                                                      , &
     n_loc   => this%v1eca_bgc_index%n_loc                                                      , &
     p_loc   => this%v1eca_bgc_index%p_loc                                                      , &
@@ -1157,16 +952,17 @@ contains
     lid_plant_minn_nh4 => this%v1eca_bgc_index%lid_plant_minn_nh4                              , &
     lid_plant_minn_no3 => this%v1eca_bgc_index%lid_plant_minn_no3                              , &
     lid_minp_soluble => this%v1eca_bgc_index%lid_minp_soluble                                  , &
-    lid_minp_sorb => this%v1eca_bgc_index%lid_minp_sorb                              , &
-    lid_minp_soluble_to_labile_reac=> this%v1eca_bgc_index%lid_minp_soluble_to_labile_reac         , &
+    lid_minp_sorb => this%v1eca_bgc_index%lid_minp_sorb                                        , &
+    lid_minp_soluble_to_labile_reac=> this%v1eca_bgc_index%lid_minp_soluble_to_labile_reac     , &
     lid_autr_rt_reac => this%v1eca_bgc_index%lid_autr_rt_reac                                  , &
     lid_nh4_nit_reac => this%v1eca_bgc_index%lid_nh4_nit_reac                                  , &
     lid_no3_den_reac => this%v1eca_bgc_index%lid_no3_den_reac                                  , &
     lid_plant_minn_nh4_up_reac => this%v1eca_bgc_index%lid_plant_minn_nh4_up_reac              , &
     lid_plant_minn_no3_up_reac => this%v1eca_bgc_index%lid_plant_minn_no3_up_reac              , &
     lid_plant_minp_up_reac => this%v1eca_bgc_index%lid_plant_minp_up_reac                      , &
-    lid_supp_minp => this%v1eca_bgc_index%lid_supp_minp                                         , &
-    lid_supp_minn => this%v1eca_bgc_index%lid_supp_minn                                           &
+    lid_supp_minp => this%v1eca_bgc_index%lid_supp_minp                                        , &
+    lid_supp_minn => this%v1eca_bgc_index%lid_supp_minn                                        , &
+    cascade_matrix=>  this%cascade_matrix                                                        &
   )
 
   dydt(:) = 0._r8
@@ -1314,6 +1110,9 @@ contains
     endif
   endif
   if(this%batch_mode)dydt(lid_cum_closs)=dydt(lid_co2_hr)
+  !print*,'reac'
+  !print*,(jj,this%cascade_matrix(lid_co2_hr, jj),rrates(jj),new_line('A'),jj=1,nreactions)
+ 
   end associate
   end subroutine bgc_integrate
   !--------------------------------------------------------------------
@@ -1404,7 +1203,7 @@ contains
   real(r8), intent(in)  :: ystates1(:)
   real(r8), intent(out) :: c_mass, n_mass, p_mass
   real(r8), optional, intent(out) :: c_flx, n_flx, p_flx
-  type(betr_status_type), optional, intent(out)   :: bstatus
+  type(betr_status_type), optional, intent(out) :: bstatus
   !local variables
 
   integer :: kc, kn, kp, jj
@@ -1432,14 +1231,15 @@ contains
     lid_minp_sorb => this%v1eca_bgc_index%lid_minp_sorb, &
     lid_plant_minp => this%v1eca_bgc_index%lid_plant_minp  &
   )
-  if(present(bstatus)) &
+  if(present(bstatus))then
+    call bstatus%reset()
     SHR_ASSERT_ALL((size(ystates1) == this%v1eca_bgc_index%nstvars), errMsg(mod_filename,__LINE__),bstatus)
-
+  endif
   c_mass = 0._r8; n_mass = 0._r8; p_mass = 0._r8;
   if(present(c_flx))c_flx=0._r8
   if(present(n_flx))n_flx=0._r8
   if(present(p_flx))p_flx=0._r8
-
+  print*,'lit',lit1,lit2,lit3,cwd,som1,som2,som3
   call sum_omjj(lit1, c_mass, n_mass, p_mass)
   call sum_omjj(lit2, c_mass, n_mass, p_mass)
   call sum_omjj(lit3, c_mass, n_mass, p_mass)
@@ -1459,7 +1259,7 @@ contains
   if(present(c_flx))then
     c_flx = c_flx + ystates1(lid_co2_hr)
     c_flx = c_flx * catomw
-    print*,'co2_hr', ystates1(lid_co2_hr)
+    print*,'co2_hr', ystates1(lid_co2_hr)*catomw
   endif
 
   if(present(n_flx))then
