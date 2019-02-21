@@ -1389,17 +1389,17 @@ subroutine calc_som_decay_r(this, summsbgc_index, dtime, om_k_decay, om_pools, o
                     !call brent(gbtemp, gb0, gb1, fb1, fb2, macheps, tol, deb, deb_grow, bstatus)
 
                     aa= yld_mic*yld_enz + safe_div(1._r8,ev)*(yld_enz + yld_mic*g0)
-                    bb= safe_div((yld_mic*g0 - (jeg - m0)),ev) * (yld_enz + yld_mic*g0) +2._r8*safe_div(g0,ev) 
+                    bb= yld_mic*g0 - safe_div(jeg - m0 , ev) * (yld_enz + yld_mic*g0) +2._r8*safe_div(g0,ev) 
                     cc= -(jeg - m0) * safe_div(2._r8,ev) * g0
                     delta= bb*bb - 4._r8*aa*cc
-                    jxx=safe_div((-bb + sqrt(delta)),(2._r8*aa))
-                    gB=safe_div((jeg - m0 - jxx),ev)
+                    jxx=safe_div(-bb + sqrt(delta) , 2._r8*aa)
+                    gB=safe_div(jeg - m0 - jxx , ev)
                     pE=(jxx - safe_div(gB,yld_mic))*yld_enz
 
                 ! Population growth        
                 actgB=gB*gmax_mic   !deb%gB
                 ! Enzyme production        
-                actpE=pE*pmax_enz   !deb%pE
+                actpE=pE*gmax_mic   !deb%pE
                 ! Maintenance
                 actmr=mr_mic                      
 
@@ -1414,8 +1414,8 @@ subroutine calc_som_decay_r(this, summsbgc_index, dtime, om_k_decay, om_pools, o
         end select
 
         ! Compute density-dependent specific microbial mortality [mol c/ut]   
-              !decay_mic=decay_mic0*y_mic**0.5_r8
-              decay_mic=safe_div(decay_mic0*y_mic , decay_mic1+y_mic )
+              decay_mic=decay_mic0*y_mic!**0.5_r8
+              !decay_mic=safe_div(decay_mic0*y_mic , decay_mic1+y_mic )
 
         ! Compute residual
               !residual = (kappa_mic-actgB)*y_res-(actmr + safe_div(actpE,yld_enz) + safe_div(actgB,yld_mic) )*y_mic
