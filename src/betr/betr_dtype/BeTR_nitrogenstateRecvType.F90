@@ -23,8 +23,6 @@ implicit none
     real(r8), pointer :: totlitn_vr_col(:,:) => null()
     real(r8), pointer :: totsomn_vr_col(:,:) => null()
     real(r8), pointer :: sminn_vr_col(:,:) => null()
-    real(r8), pointer :: sminn_nh4_vr_col(:,:) => null()
-    real(r8), pointer :: sminn_no3_vr_col(:,:) => null()
     real(r8), pointer :: som1n_col(:) => null()
     real(r8), pointer :: som2n_col(:) => null()
     real(r8), pointer :: som3n_col(:) => null()
@@ -33,8 +31,8 @@ implicit none
     real(r8), pointer :: som3n_vr_col(:,:) => null()
     real(r8), pointer :: domn_vr_col(:,:) => null()
     real(r8), pointer :: decomp_npools_vr(:,:,:) => null()
-    real(r8), pointer :: smin_nh4_vr_col(:,:) => null()
-    real(r8), pointer :: smin_no3_vr_col(:,:) => null()
+    real(r8), pointer :: sminn_nh4_vr_col(:,:) => null()
+    real(r8), pointer :: sminn_no3_vr_col(:,:) => null()
   contains
     procedure, public  :: Init
     procedure, private :: InitAllocate

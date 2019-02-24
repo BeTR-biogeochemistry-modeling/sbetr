@@ -992,12 +992,11 @@ contains
       n14flux_vars%f_n2o_nit_col(c)=this%biogeo_flux(c)%n14flux_vars%f_n2o_nit_col(c_l)
 
       !hydraulic loss
-      n14flux_vars%smin_no3_leached_col(c)= &
-        this%biogeo_flux(c)%n14flux_vars%smin_no3_leached_col(c_l) + &
-        this%biogeo_flux(c)%n14flux_vars%smin_no3_qdrain_col(c_l)
       n14flux_vars%smin_nh4_leached_col(c)= &
         this%biogeo_flux(c)%n14flux_vars%smin_nh4_leached_col(c_l) + &
         this%biogeo_flux(c)%n14flux_vars%smin_nh4_qdrain_col(c_l)
+
+      n14flux_vars%smin_nh4_runoff_col(c)=this%biogeo_flux(c)%n14flux_vars%smin_nh4_runoff_col(c_l)
 
       n14flux_vars%som_n_leached_col(c) = &
         this%biogeo_flux(c)%n14flux_vars%som_n_leached_col(c_l) + &
@@ -1094,24 +1093,34 @@ contains
 
       endif
     enddo
-  endif
-  return
-  do fc = 1, num_soilc
-    c = filter_soilc(fc)
-    n14flux_vars%smin_no3_runoff_col(c)=this%biogeo_flux(c)%n14flux_vars%smin_no3_runoff_col(c_l)
-    n14flux_vars%smin_nh4_runoff_col(c)=this%biogeo_flux(c)%n14flux_vars%smin_nh4_runoff_col(c_l)
-    p31flux_vars%sminp_runoff_col(c)=this%biogeo_flux(c)%p31flux_vars%sminp_runoff_col(c_l)
-    p31flux_vars%sminp_leached_col(c) = &
+    do fc = 1, num_soilc
+      c = filter_soilc(fc)
+
+      p31flux_vars%sminp_runoff_col(c)=this%biogeo_flux(c)%p31flux_vars%sminp_runoff_col(c_l)
+      p31flux_vars%sminp_leached_col(c) = &
         this%biogeo_flux(c)%p31flux_vars%sminp_leached_col(c_l) + &
         this%biogeo_flux(c)%p31flux_vars%sminp_qdrain_col(c_l)
+    enddo
+  endif
+  do fc = 1, num_soilc
+    c = filter_soilc(fc)
+    n14flux_vars%smin_no3_leached_col(c)= &
+        this%biogeo_flux(c)%n14flux_vars%smin_no3_leached_col(c_l) + &
+        this%biogeo_flux(c)%n14flux_vars%smin_no3_qdrain_col(c_l)
+    n14flux_vars%smin_no3_runoff_col(c)=this%biogeo_flux(c)%n14flux_vars%smin_no3_runoff_col(c_l)
   enddo
-
+  do j = 1,betr_nlevtrc_soil
+    do fc = 1, num_soilc
+      c =filter_soilc(fc)
+      n14state_vars%smin_no3_vr_col(c,j) = this%biogeo_state(c)%n14state_vars%sminn_no3_vr_col(c_l,j)
+    enddo
+  enddo
+  return
   if (index(reaction_method,'v1eca')/=0 ) then
     associate(                                                             &
     c12_decomp_cpools_vr_col =>   c12state_vars%decomp_cpools_vr_col   , &
     decomp_npools_vr_col =>   n14state_vars%decomp_npools_vr_col    , &
     decomp_ppools_vr_col =>   p31state_vars%decomp_ppools_vr_col  ,  &
-    smin_no3_vr         => n14state_vars%smin_no3_vr_col         , &
     solutionp_vr        => p31state_vars%solutionp_vr_col          &
 
     )
@@ -1128,7 +1137,6 @@ contains
     do j = 1,betr_nlevtrc_soil
       do fc = 1, num_soilc
         c =filter_soilc(fc)
-        smin_no3_vr(c,j) = this%biogeo_state(c)%n14state_vars%sminn_no3_vr_col(c_l,j)
         solutionp_vr(c,j) = this%biogeo_state(c)%p31state_vars%sminp_vr_col(c_l,j)
       enddo
     enddo
