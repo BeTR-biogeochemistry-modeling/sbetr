@@ -1079,10 +1079,10 @@ def main(options):
         raise RuntimeError(msg)
 
     dry_run = options.dry_run
-    import commands
+    import subprocess
     #ncgen = find_executable('ncgen', exe_paths)
-    loc=commands.getstatusoutput('which ncgen')
-    ncgen=loc[1]
+    loc=subprocess.check_output(["which", "ncgen"])
+    ncgen=print(loc.strip().decode())
     convert_input_data(ncgen, input_dir, dry_run)
 
     print('Setting up tests.')
