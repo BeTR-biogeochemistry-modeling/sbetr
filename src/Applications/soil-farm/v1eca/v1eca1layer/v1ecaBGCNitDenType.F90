@@ -226,7 +226,8 @@ implicit none
     real(r8) :: co2diff_con(2) = (/0.1325_r8, 0.0009_r8/)
     real(r8) :: g_per_m3__to__ug_per_gsoil
     real(r8) :: g_per_m3_sec__to__ug_per_gsoil_day
-
+    real(r8), parameter :: nitscal=1.e0_r8
+    real(r8), parameter :: denscal=1.e0_r8
     associate(                                         &
          bd         =>    bgc_forc%bd         , & !
          temp       =>    bgc_forc%temp       , &
@@ -239,7 +240,7 @@ implicit none
          w_scalar   =>    bgc_forc%w_scalar        & ! Input: [real(r8) (:,:)   ]  soil water scalar for decomp
          )
 
-      pot_f_nit = pot_f_nit_mol_per_sec
+      pot_f_nit = pot_f_nit_mol_per_sec * nitscal
       ! limit to oxic fraction of soils
       pot_f_nit  = pot_f_nit * (1._r8 - anaerobic_frac)   ![1/s]
 
@@ -281,7 +282,7 @@ implicit none
    endif
 
    ! limit to anoxic fraction of soils
-   pot_f_denit = f_denit_base * anaerobic_frac
+   pot_f_denit = f_denit_base * anaerobic_frac * denscal
 
    ! now calculate the ratio of N2O to N2 from denitrifictaion, following Del Grosso et al., 2000
    ! diffusivity constant (figure 6b)
@@ -301,7 +302,6 @@ implicit none
 
    ! final ratio expression
    n2_n2o_ratio_denit = max(0.16*ratio_k1, ratio_k1*exp(-0.8 * ratio_no3_co2)) * fr_WFPS
-
    end associate
   end subroutine calc_nitrif_denitrif_rate
 

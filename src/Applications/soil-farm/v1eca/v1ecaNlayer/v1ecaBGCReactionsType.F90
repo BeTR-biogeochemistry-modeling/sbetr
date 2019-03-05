@@ -1034,7 +1034,7 @@ contains
         if(j<jtops(c))cycle
         is_surflit=(j<=0)
 
-        if(this%v1eca_forc(c,j)%debug)print*,'runbgc',j
+!        print*,'runbgc',j
         !temperature adaptation
         call this%v1eca(c,j)%runbgc(is_surflit, dtime, this%v1eca_forc(c,j),nstates, &
             ystates0, ystatesf, betr_status)

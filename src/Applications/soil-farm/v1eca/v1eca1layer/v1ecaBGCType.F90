@@ -25,6 +25,7 @@ module v1ecaBGCType
   use v1ecaBGCSOMType         , only : CentSom_type
   use v1ecaBGCCompetType      , only : Compet_V1ECA_type
   use v1ecaParaType           , only : v1eca_para_type
+  use tracer_varcon           , only : natomw
   implicit none
   private
   character(len=*), private, parameter :: mod_filename = &
@@ -740,7 +741,7 @@ contains
       !reaction 15, ar + o2 -> co2
       reac = lid_autr_rt_reac
       cascade_matrix(lid_co2, reac) =  1._r8
-      cascade_matrix(lid_o2,  reac) = -1._r8 * 0._r8
+      cascade_matrix(lid_o2,  reac) = -1._r8 
 
       if(this%use_c13)then
         cascade_matrix(lid_c13_co2, reac) =  1._r8 * frc_c13
@@ -998,14 +999,15 @@ contains
   !
   sol_smin_nh4 = ystate(lid_nh4)/(this%competECA%bd*2.76_r8 + this%competECA%h2osoi_vol)
   sol_smin_no3 = ystate(lid_no3)/this%competECA%h2osoi_vol
-
+!  print*,'connh4',ystate(lid_nh4),sol_smin_nh4,dtime
+!  print*,'conno3',ystate(lid_no3),sol_smin_no3
   call this%competECA%run_compet_nitrogen(this%non_limit, sol_smin_nh4, sol_smin_no3,&
      this%plant_ntypes, ECA_factor_nit, &
      ECA_factor_den, ECA_factor_nh4_mic, ECA_factor_no3_mic, &
      ECA_flx_nh4_plants,ECA_flx_no3_plants)
-
+!  print*,'ecafnh4', ECA_factor_nit,ECA_factor_nh4_mic
+!  print*,'ecafno3', ECA_factor_den,ECA_factor_no3_mic
   ECA_factor_nitrogen_mic = ECA_factor_nh4_mic + ECA_factor_no3_mic
-
   sol_sminp_soluble=ystate(lid_minp_soluble)/this%competECA%h2osoi_vol
   call this%competECA%run_compet_phosphorus(this%nop_limit, sol_sminp_soluble,  &
       this%plant_ntypes,  ECA_factor_phosphorus_mic, ECA_factor_minp_msurf,&
@@ -1016,20 +1018,20 @@ contains
   do jj = 1, nom_pools
     scal = 1._r8
     if(this%alpha_n(jj)>0._r8 .and. (.not. this%non_limit))then
-      scal = min(scal, ECA_factor_nitrogen_mic)
+!      scal = min(scal, ECA_factor_nitrogen_mic)
+      scal = 1._r8
       this%cascade_matrixd(lid_no3,jj) = this%cascade_matrix(lid_nh4,jj) * &
           safe_div(ECA_factor_no3_mic,ECA_factor_nitrogen_mic)
       this%cascade_matrixd(lid_nh4,jj) = this%cascade_matrix(lid_nh4,jj)-this%cascade_matrixd(lid_no3,jj)
     endif
-    if(this%alpha_p(jj)>0._r8)scal = min(scal, ECA_factor_phosphorus_mic)
+!    if(this%alpha_p(jj)>0._r8)scal = min(scal, ECA_factor_phosphorus_mic)
 
     if(scal /= 1._r8)pot_decomp(jj)=pot_decomp(jj)*scal
     rrates(jj) = pot_decomp(jj)
   enddo
-  rrates(lid_nh4_nit_reac) = this%pot_f_nit*ECA_factor_nit
-  rrates(lid_no3_den_reac) = this%pot_f_denit*ECA_factor_den
-  rrates(lid_minp_soluble_to_labile_reac) =  ECA_factor_minp_msurf * &
-     adsorb_to_labilep !calculate from eca competition
+  rrates(lid_nh4_nit_reac) = this%pot_f_nit  !*ECA_factor_nit
+  rrates(lid_no3_den_reac) = this%pot_f_denit !*ECA_factor_den
+  rrates(lid_minp_soluble_to_labile_reac) = adsorb_to_labilep !*  ECA_factor_minp_msurf  !calculate from eca competition
 
   if(this%plant_ntypes>0)then
     rrates(lid_autr_rt_reac) = this%rt_ar                            !authotrophic respiration
@@ -1074,6 +1076,7 @@ contains
     call lom%calc_state_pscal(nprimvars, dtime, ystate(1:nprimvars), p_dt(1:nprimvars),  d_dt(1:nprimvars), &
         pscal(1:nprimvars), lneg, bstatus)
 
+!    print*,'pscal',it,pscal(1:nprimvars)
     if(lneg .and. it<=itmax)then
       call lom%calc_reaction_rscal(nprimvars, nreactions,  pscal(1:nprimvars), &
         this%cascade_matrixd(1:nprimvars, 1:nreactions),rscal, bstatus)
@@ -1086,7 +1089,6 @@ contains
     endif
     it = it + 1
   enddo
-
   if(lid_supp_minp>0)then
     !check for mineral phosphorous
     minp_soluble=dydt(lid_minp_soluble) * dtime+ ystate(lid_minp_soluble)
