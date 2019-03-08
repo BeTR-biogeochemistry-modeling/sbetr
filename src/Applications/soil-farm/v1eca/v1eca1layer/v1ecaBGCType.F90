@@ -48,6 +48,7 @@ module v1ecaBGCType
     real(r8), pointer                    :: cascade_matrix(:,:)
     real(r8), pointer                    :: cascade_matrixd(:,:)
     real(r8), pointer                    :: cascade_matrixp(:,:)
+    real(r8), pointer                    :: cascade_matnh4(:)
     real(r8), pointer                    :: alpha_n(:)
     real(r8), pointer                    :: alpha_p(:)
     real(r8)                             :: pot_f_nit
@@ -312,7 +313,7 @@ contains
   allocate(this%cascade_matrix (1:nstvars  , 1:nreactions)); this%cascade_matrix(:,:) = 0._r8
   allocate(this%cascade_matrixd(1:nprimvars, 1:nreactions)); this%cascade_matrixd(:,:) = 0._r8
   allocate(this%cascade_matrixp(1:nprimvars, 1:nreactions)); this%cascade_matrixp(:,:) = 0._r8
-
+  allocate(this%cascade_matnh4(nom_pools)); this%cascade_matnh4(:)=0._r8
 
   allocate(this%alpha_n(nom_pools)); this%alpha_n(:) = 0._r8
   allocate(this%alpha_p(nom_pools)); this%alpha_p(:) = 0._r8
@@ -560,7 +561,8 @@ contains
   call pd_decomp(nprimvars, nreactions, cascade_matrix(1:nprimvars, 1:nreactions), &
      cascade_matrixp, cascade_matrixd, bstatus)
   if(bstatus%check_status())return
-
+  !save a copy of nh4 stoichiometry
+  this%cascade_matnh4(1:this%v1eca_bgc_index%nom_pools)=cascade_matrix(this%v1eca_bgc_index%lid_nh4,1:this%v1eca_bgc_index%nom_pools)
   time = 0._r8
   yf(:) = ystates1(:)
 
@@ -576,7 +578,8 @@ contains
 
   if(this%batch_mode)call this%sum_tot_store(nstvars, ystates1)
   ystatesf(:) = ystates1(:)
-
+  ystatesf(this%v1eca_bgc_index%lid_pot_co2_hr) = pot_co2_hr*dtime
+  ystatesf(this%v1eca_bgc_index%lid_o_scalar) = this%decompkf_eca%o_scalar
 !  call this%end_massbal_check('end runbgc')
   end associate
   end subroutine runbgc_v1eca
@@ -952,6 +955,8 @@ contains
     lid_plant_minp    => this%v1eca_bgc_index%lid_plant_minp                                   , &
     lid_plant_minn_nh4 => this%v1eca_bgc_index%lid_plant_minn_nh4                              , &
     lid_plant_minn_no3 => this%v1eca_bgc_index%lid_plant_minn_no3                              , &
+    lid_minn_nh4_immob => this%v1eca_bgc_index%lid_minn_nh4_immob                              , & !
+    lid_minn_no3_immob => this%v1eca_bgc_index%lid_minn_no3_immob                              , & !
     lid_minp_soluble => this%v1eca_bgc_index%lid_minp_soluble                                  , &
     lid_minp_sorb => this%v1eca_bgc_index%lid_minp_sorb                                        , &
     lid_minp_soluble_to_labile_reac=> this%v1eca_bgc_index%lid_minp_soluble_to_labile_reac     , &
@@ -1016,17 +1021,18 @@ contains
   !apply ECA factor to obtain actual reaction rate, decomposition
   !plant, nit, den nutrient uptake,
   do jj = 1, nom_pools
-    scal = 1._r8
     if(this%alpha_n(jj)>0._r8 .and. (.not. this%non_limit))then
-!      scal = min(scal, ECA_factor_nitrogen_mic)
-      scal = 1._r8
-      this%cascade_matrixd(lid_no3,jj) = this%cascade_matrix(lid_nh4,jj) * &
+      this%cascade_matrixd(lid_no3,jj) = this%cascade_matnh4(jj) * &
           safe_div(ECA_factor_no3_mic,ECA_factor_nitrogen_mic)
-      this%cascade_matrixd(lid_nh4,jj) = this%cascade_matrix(lid_nh4,jj)-this%cascade_matrixd(lid_no3,jj)
-    endif
-!    if(this%alpha_p(jj)>0._r8)scal = min(scal, ECA_factor_phosphorus_mic)
+      this%cascade_matrixd(lid_nh4,jj) =  this%cascade_matnh4(jj)-this%cascade_matrixd(lid_no3,jj)
 
-    if(scal /= 1._r8)pot_decomp(jj)=pot_decomp(jj)*scal
+      this%cascade_matrix(lid_nh4,jj) = this%cascade_matrixd(lid_nh4,jj)
+      this%cascade_matrix(lid_no3,jj) = this%cascade_matrixd(lid_no3,jj)
+      
+      this%cascade_matrix(lid_minn_no3_immob,jj) = - this%cascade_matrix(lid_no3,jj)
+      this%cascade_matrix(lid_minn_nh4_immob,jj) = - this%cascade_matrix(lid_minn_nh4_immob,jj)
+
+    endif
     rrates(jj) = pot_decomp(jj)
   enddo
   rrates(lid_nh4_nit_reac) = this%pot_f_nit  !*ECA_factor_nit

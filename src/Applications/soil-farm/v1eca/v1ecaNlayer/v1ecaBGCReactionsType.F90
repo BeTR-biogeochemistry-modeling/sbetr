@@ -1033,8 +1033,6 @@ contains
       do j = lbj, ubj
         if(j<jtops(c))cycle
         is_surflit=(j<=0)
-
-!        print*,'runbgc',j
         !temperature adaptation
         call this%v1eca(c,j)%runbgc(is_surflit, dtime, this%v1eca_forc(c,j),nstates, &
             ystates0, ystatesf, betr_status)
@@ -1870,6 +1868,12 @@ contains
         (ystatesf(this%v1eca_bgc_index%lid_co2_hr) - &
         ystates0(this%v1eca_bgc_index%lid_co2_hr))*catomw/dtime
 
+      biogeo_flux%c12flux_vars%phr_vr_col(c,j) = &
+        (ystatesf(this%v1eca_bgc_index%lid_pot_co2_hr) - &
+        ystates0(this%v1eca_bgc_index%lid_pot_co2_hr))*catomw/dtime
+
+      biogeo_flux%c12flux_vars%o_scalar_col(c,j) = ystatesf(this%v1eca_bgc_index%lid_o_scalar)
+
       biogeo_flux%n14flux_vars%f_denit_vr_col(c,j)= &
         (ystatesf(this%v1eca_bgc_index%lid_no3_den) - &
          ystates0(this%v1eca_bgc_index%lid_no3_den))*natomw/dtime
@@ -1891,6 +1895,14 @@ contains
       biogeo_flux%n14flux_vars%smin_no3_to_plant_vr_col(c,j) = &
           (ystatesf(this%v1eca_bgc_index%lid_plant_minn_no3) - &
           ystates0(this%v1eca_bgc_index%lid_plant_minn_no3))*natomw/dtime
+
+      biogeo_flux%n14flux_vars%smin_nh4_immob_vr_col(c,j) = &
+          (ystatesf(this%v1eca_bgc_index%lid_minn_nh4_immob) - &
+           ystates0(this%v1eca_bgc_index%lid_minn_nh4_immob))*natomw/dtime
+
+      biogeo_flux%n14flux_vars%smin_no3_immob_vr_col(c,j) = &
+          (ystatesf(this%v1eca_bgc_index%lid_minn_no3_immob) - &
+           ystates0(this%v1eca_bgc_index%lid_minn_no3_immob))*natomw/dtime
 
       biogeo_flux%p31flux_vars%sminp_to_plant_vr_col(c,j)  = &
           (ystatesf(this%v1eca_bgc_index%lid_plant_minp) - &

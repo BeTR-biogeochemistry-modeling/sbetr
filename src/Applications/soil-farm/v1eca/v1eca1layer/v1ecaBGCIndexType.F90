@@ -50,13 +50,13 @@ implicit none
      integer           :: lid_plant_minn_no3, lid_plant_minn_no3_up_reac !
      integer           :: lid_plant_minp, lid_plant_minp_up_reac !local position of plant uptake of mineral P in the state variable vector
      integer           :: lid_minp_soluble, lid_minp_soluble_to_labile_reac    !conversation of adsorbed into secondary phase
-
-     integer           :: lid_autr_rt, lid_autr_rt_reac             !root autotrophic respiration
+     integer           :: lid_o_scalar                           ! oxygen stress
+     integer           :: lid_autr_rt, lid_autr_rt_reac          !root autotrophic respiration
 
                                                                  !non reactive primary variables
      integer           :: lid_ar, lid_ar_aren_reac               !local position of ar in the state variable vector
      integer           :: lid_ch4, lid_ch4_aren_reac             !nonreactive primary variables
-
+     integer           :: lid_pot_co2_hr
                                                                  !secondary variables
      integer           :: lid_o2,  lid_o2_aren_reac              !local position of o2 in the state variable vector
      integer           :: lid_co2, lid_co2_aren_reac             !local position of co2 in the state variable vector
@@ -482,8 +482,14 @@ implicit none
     this%lid_n2o_nit  = addone(itemp);
     call list_insert(list_name, 'n2o_nit',vid, itype=var_flux_type); call list_insert(list_unit, 'mol N2O m-3 s-1',uid)
 
+    this%lid_o_scalar   = addone(itemp);
+    call list_insert(list_name, 'o_scalar',vid, itype=var_state_type); call list_insert(list_unit,'none',uid)
+
     this%lid_co2_hr   = addone(itemp);
     call list_insert(list_name, 'co2_hr',vid, itype=var_flux_type); call list_insert(list_unit,'mol C m-3 s-1',uid)
+
+    this%lid_pot_co2_hr   = addone(itemp);
+    call list_insert(list_name, 'pot_co2_hr',vid, itype=var_flux_type); call list_insert(list_unit,'mol C m-3 s-1',uid)
 
     this%lid_no3_den  = addone(itemp);
     call list_insert(list_name, 'no3_den',vid, itype=var_flux_type); call list_insert(list_unit, 'mol N m-3 s-1',uid)

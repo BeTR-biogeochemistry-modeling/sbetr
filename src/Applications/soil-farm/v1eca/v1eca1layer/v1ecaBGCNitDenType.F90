@@ -251,7 +251,6 @@ implicit none
 
      !---------------- denitrification
      ! first some input variables an unit conversions
-     soil_hr = pot_co2_hr * catomw
 
      ! CENTURY papers give denitrification in units of per gram soil; need to convert from volumetric to mass-based units here
     soil_bulkdensity = bd + h2osoi_liq/dz

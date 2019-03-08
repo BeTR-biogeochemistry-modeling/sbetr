@@ -21,6 +21,8 @@ implicit none
     real(r8), pointer :: som_n_runoff_col(:) => null()
     real(r8), pointer :: som_n_qdrain_col(:) => null()
     real(r8), pointer :: supplement_to_sminn_col(:) => null()
+    real(r8), pointer :: smin_nh4_immob_col(:) => null()
+    real(r8), pointer :: smin_no3_immob_col(:) => null()
 
     real(r8), pointer :: f_nit_col(:) => null()
     real(r8), pointer :: f_denit_col(:)  => null()
@@ -34,7 +36,8 @@ implicit none
     real(r8), pointer :: nh3_soi_flx_col(:) => null()
     real(r8), pointer :: smin_nh4_to_plant_vr_col(:,:) => null()
     real(r8), pointer :: smin_no3_to_plant_vr_col(:,:) => null()
-
+    real(r8), pointer :: smin_nh4_immob_vr_col(:,:) => null()
+    real(r8), pointer :: smin_no3_immob_vr_col(:,:) => null()
   contains
     procedure, public  :: Init
     procedure, private :: InitAllocate
@@ -90,12 +93,15 @@ implicit none
   SPVAL_ALLOC(this%smin_nh4_qdrain_col(begc:endc))
   SPVAL_ALLOC(this%fire_decomp_nloss_col(begc:endc))
   SPVAL_ALLOC(this%supplement_to_sminn_col(begc:endc))
+  SPVAL_ALLOC(this%smin_nh4_immob_col(begc:endc))
+  SPVAL_ALLOC(this%smin_no3_immob_col(begc:endc))
   SPVAL_ALLOC(this%fire_decomp_nloss_vr_col(begc:endc,lbj:ubj))
   SPVAL_ALLOC(this%supplement_to_sminn_vr_col(begc:endc,lbj:ubj))
   SPVAL_ALLOC(this%nh3_soi_flx_col(begc:endc))
   SPVAL_ALLOC(this%smin_nh4_to_plant_vr_col(begc:endc, lbj:ubj))
   SPVAL_ALLOC(this%smin_no3_to_plant_vr_col(begc:endc, lbj:ubj))
-
+  SPVAL_ALLOC(this%smin_nh4_immob_vr_col(begc:endc, lbj:ubj))
+  SPVAL_ALLOC(this%smin_no3_immob_vr_col(begc:endc, lbj:ubj))
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------
@@ -122,6 +128,8 @@ implicit none
   this%smin_nh4_runoff_col(:) = value_column
   this%smin_nh4_to_plant_vr_col(:,:) = value_column
   this%smin_no3_to_plant_vr_col(:,:) = value_column
+  this%smin_nh4_immob_vr_col(:,:) = value_column
+  this%smin_no3_immob_vr_col(:,:) = value_column
   end subroutine reset
 
   !------------------------------------------------------------------------
@@ -140,15 +148,27 @@ implicit none
   this%f_n2o_nit_col(:) = 0._r8
   this%fire_decomp_nloss_col(:) = 0._r8
   this%supplement_to_sminn_col(:) = 0._r8
+  this%smin_nh4_immob_col(:) = 0._r8
+  this%smin_no3_immob_col(:) = 0._r8
   do j = lbj, ubj
     do c = bounds%begc, bounds%endc
       this%f_nit_col(c) = this%f_nit_col(c) + dz(c,j) * this%f_nit_vr_col(c,j)
       this%f_denit_col(c) = this%f_denit_col(c) + dz(c,j)* this%f_denit_vr_col(c,j)
       this%f_n2o_nit_col(c) = this%f_n2o_nit_col(c) + dz(c,j)*this%f_n2o_nit_vr_col(c,j)
+
       this%fire_decomp_nloss_col(c) = this%fire_decomp_nloss_col(c) + dz(c,j) * &
          this%fire_decomp_nloss_vr_col(c,j)
+
       this%supplement_to_sminn_col(c) = this%supplement_to_sminn_col(c) + dz(c,j) * &
          this%supplement_to_sminn_vr_col(c,j)
+
+      this%smin_nh4_immob_col(c) = this%smin_nh4_immob_col(c) + dz(c,j) * &
+         this%smin_nh4_immob_vr_col(c,j)
+
+      this%smin_no3_immob_col(c) = this%smin_no3_immob_col(c) + dz(c,j) * &
+         this%smin_no3_immob_vr_col(c,j)
+    
+
     enddo
   enddo
   end subroutine summary

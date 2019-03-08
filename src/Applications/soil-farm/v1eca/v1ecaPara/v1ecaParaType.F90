@@ -191,7 +191,7 @@ contains
   this%rij_kro_delta         = 0.85_r8    ! Arah and Vinten, 1995
   this%surface_tension_water = 73.e-3_r8  ! (J/m^2), Arah and Vinten, 1995
   this%minpsi_bgc            = -10._r8    ! M Pa
-  this%k_m_o2_bgc            = 0.22_r8
+  this%k_m_o2_bgc            = 0.0022_r8
   this%k_nitr_max            = 1.1574074e-06_r8
   this%init_cp_som1 = 110._r8 !mass based
   this%init_cp_som2 = 320._r8 !mass based
