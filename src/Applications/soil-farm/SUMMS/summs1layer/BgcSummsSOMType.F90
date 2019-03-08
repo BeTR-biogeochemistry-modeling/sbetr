@@ -42,6 +42,7 @@ implicit none
     real(r8) :: part_mic2enz
     real(r8) :: part_res2mono
     real(r8) :: rate_co2
+    real(r8) :: cue
     real(r8) :: rf_l1s1_bgc(2)    !co2 production when metabolic carbon is decomposed
     real(r8) :: rf_l2s1_bgc(2)    !co2 production when cellulose is decomposed
     real(r8) :: rf_l3s2_bgc    !co2 production when lignin is decomposed
@@ -364,8 +365,9 @@ contains
     fenz2poly    => this%fenz2poly                           , &
     part_mic2poly => this%part_mic2poly                      , &
     part_mic2enz  => this%part_mic2enz                       , &
-    part_res2mono    => this%part_res2mono                           , &
+    part_res2mono => this%part_res2mono                      , &
     rate_co2     => this%rate_co2                            , &
+    cue          => this%cue                                 , &
     debug        => summsbgc_index%debug                       &
   )
 
@@ -1209,10 +1211,10 @@ subroutine calc_som_decay_r(this, summsbgc_index, dtime, om_k_decay, om_pools, o
   k_decay(lit2) = k_decay(lit2) * t_scalar *  w_scalar * o_scalar * depth_scalar
   k_decay(lit3) = k_decay(lit3) * t_scalar *  w_scalar * o_scalar * depth_scalar
 
-  k_decay(poly) = k_decay(poly)  * w_scalar
+  k_decay(poly) = k_decay(poly)  * w_scalar            
   k_decay(mic)  = k_decay(mic)   * o_scalar * w_scalar
-  k_decay(res)  = k_decay(res)   * o_scalar * w_scalar
-  k_decay(enz)  = k_decay(enz)   * w_scalar
+  k_decay(res)  = k_decay(res)   * o_scalar * w_scalar  
+  k_decay(enz)  = k_decay(enz)   * w_scalar            
   k_decay(mono) = k_decay(mono)  * o_scalar * w_scalar
   
   k_decay(cwd)  = k_decay(cwd)   * t_scalar *  w_scalar * o_scalar * depth_scalar
@@ -1421,7 +1423,7 @@ subroutine calc_som_decay_r(this, summsbgc_index, dtime, om_k_decay, om_pools, o
               !residual = (kappa_mic-actgB)*y_res-(actmr + safe_div(actpE,yld_enz) + safe_div(actgB,yld_mic) )*y_mic
 
   k_decay(poly) = safe_div( y_enz*vmax_enz , kaff_enz_poly+y_poly+y_enz+minsite*safe_div( kaff_enz_poly , kaff_enz_msurf ))
-  k_decay(mono) = safe_div( y_mic*vmax_mic*mic_transp , kaff_mono_mic+y_mono+y_mic+minsite*safe_div( kaff_mono_mic ,&
+  k_decay(mono) = safe_div( y_mic*vmax_mic*mic_transp , kaff_mono_mic+y_mono+ mic_transp*y_mic +minsite*safe_div( kaff_mono_mic ,&
   kaff_mono_msurf ))
   k_decay(mic) = decay_mic-actgB
   k_decay(res) = kappa_mic-actgB+decay_mic
@@ -1440,8 +1442,8 @@ subroutine calc_som_decay_r(this, summsbgc_index, dtime, om_k_decay, om_pools, o
 
       this%part_res2mono = safe_div(decay_mic , (kappa_mic-actgB+decay_mic))
 
-      !this%rate_co2 = safe_div(y_mic*(actmr+actpE*(safe_div(1._r8,yld_enz)-1._r8)+actgB*&
-      !  (safe_div(1._r8,yld_res)-1._r8))+residual, y_res*(kappa_mic-actgB+decay_mic))
+      this%rate_co2 = k_decay(mono)*(1-yld_res) + y_res*(kappa_mic-actgB) - y_mic*(actpE+actgB)
+      this%cue = 1 - safe_div(this%rate_co2,k_decay(mono))
 
   end associate
   end subroutine calc_som_decay_k
