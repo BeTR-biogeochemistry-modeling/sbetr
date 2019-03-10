@@ -23,6 +23,8 @@ implicit none
     real(r8), pointer :: co2_soi_flx_col(:) => null()
     real(r8), pointer :: decomp_k(:,:,:) => null()
     real(r8), pointer :: phr_vr_col(:,:) => null()
+    real(r8), pointer :: somhr_vr_col(:,:) => null()
+    real(r8), pointer :: lithr_vr_col(:,:) => null()
     real(r8), pointer :: o_scalar_col(:,:) => null()
   contains
     procedure, public  :: Init
@@ -73,6 +75,8 @@ implicit none
   SPVAL_ALLOC(this%co2_soi_flx_col(begc:endc))
   SPVAL_ALLOC(this%phr_vr_col(begc:endc,lbj:ubj))
   SPVAL_ALLOC(this%o_scalar_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%somhr_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%lithr_vr_col(begc:endc,lbj:ubj))
 !  if(index(bgc_type,'type1_bgc')/=0)then
     SPVAL_ALLOC(this%decomp_k(begc:endc, lbj:ubj,7)) !decomposition k parameter
 !  endif
@@ -92,6 +96,8 @@ implicit none
   this%co2_soi_flx_col(:)=value_column
   this%phr_vr_col(:,:)= value_column
   this%o_scalar_col(:,:)=value_column
+  this%somhr_vr_col(:,:)=value_column
+  this%lithr_vr_col(:,:)=value_column
   end subroutine reset
 
 

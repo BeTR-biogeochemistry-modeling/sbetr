@@ -1772,6 +1772,10 @@ contains
       phosphorusflux_vars%net_mineralization_p_vr_col(c,j) = this%biogeo_flux(c)%p31flux_vars%net_mineralization_p_vr_col(c_l,j)
       nitrogenflux_vars%actual_immob_col(c)= nitrogenflux_vars%actual_immob_col(c) + col%dz(c,j)*&
          (this%biogeo_flux(c)%n14flux_vars%smin_nh4_immob_vr_col(c_l,j) + this%biogeo_flux(c)%n14flux_vars%smin_no3_immob_vr_col(c_l,j)) 
+      c12_cflx_vars%somhr_col(c) = c12_cflx_vars%somhr_col(c)  + col%dz(c,j)*&
+         this%biogeo_flux(c)%c12flux_vars%somhr_vr_col(c_l,j)
+      c12_cflx_vars%lithr_col(c) = c12_cflx_vars%lithr_col(c)  + col%dz(c,j)*&
+         this%biogeo_flux(c)%c12flux_vars%lithr_vr_col(c_l,j)      
     enddo
   enddo
   end associate

@@ -1343,6 +1343,7 @@ contains
       this%v1eca_forc(c,j)%plant_ntypes = this%nactpft
       this%v1eca_forc(c,j)%ystates(:) = 0._r8
       this%v1eca_forc(c,j)%decomp_k(1:ncentpools)=biogeo_flux%c12flux_vars%decomp_k(c,j,1:ncentpools)
+!      print*,'sefok,j',j,this%v1eca_forc(c,j)%decomp_k(1:ncentpools)
       this%v1eca_forc(c,j)%t_scalar = biophysforc%c12flx%in_t_scalar(c,j)
       this%v1eca_forc(c,j)%w_scalar = biophysforc%c12flx%in_w_scalar(c,j)
       !litter C
@@ -1872,7 +1873,19 @@ contains
         (ystatesf(this%v1eca_bgc_index%lid_pot_co2_hr) - &
         ystates0(this%v1eca_bgc_index%lid_pot_co2_hr))*catomw/dtime
 
+      biogeo_flux%c12flux_vars%somhr_vr_col(c,j) = &
+        (ystatesf(this%v1eca_bgc_index%lid_co2_somhr) - &
+        ystates0(this%v1eca_bgc_index%lid_co2_somhr))*catomw/dtime
+
+      biogeo_flux%c12flux_vars%lithr_vr_col(c,j) = &
+        (ystatesf(this%v1eca_bgc_index%lid_co2_lithr) - &
+        ystates0(this%v1eca_bgc_index%lid_co2_lithr))*catomw/dtime
+
+
       biogeo_flux%c12flux_vars%o_scalar_col(c,j) = ystatesf(this%v1eca_bgc_index%lid_o_scalar)
+
+      biogeo_flux%c12flux_vars%decomp_k(c,j,1:this%v1eca_bgc_index%nom_pools) = biogeo_flux%c12flux_vars%decomp_k(c,j,1:this%v1eca_bgc_index%nom_pools) * &
+          biogeo_flux%c12flux_vars%o_scalar_col(c,j)
 
       biogeo_flux%n14flux_vars%f_denit_vr_col(c,j)= &
         (ystatesf(this%v1eca_bgc_index%lid_no3_den) - &

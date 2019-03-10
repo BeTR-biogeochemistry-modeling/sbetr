@@ -57,6 +57,8 @@ implicit none
      integer           :: lid_ar, lid_ar_aren_reac               !local position of ar in the state variable vector
      integer           :: lid_ch4, lid_ch4_aren_reac             !nonreactive primary variables
      integer           :: lid_pot_co2_hr
+     integer           :: lid_co2_somhr
+     integer           :: lid_co2_lithr
                                                                  !secondary variables
      integer           :: lid_o2,  lid_o2_aren_reac              !local position of o2 in the state variable vector
      integer           :: lid_co2, lid_co2_aren_reac             !local position of co2 in the state variable vector
@@ -490,6 +492,12 @@ implicit none
 
     this%lid_pot_co2_hr   = addone(itemp);
     call list_insert(list_name, 'pot_co2_hr',vid, itype=var_flux_type); call list_insert(list_unit,'mol C m-3 s-1',uid)
+
+    this%lid_co2_somhr   = addone(itemp);
+    call list_insert(list_name, 'co2_somhr',vid, itype=var_flux_type); call list_insert(list_unit,'mol C m-3 s-1',uid)
+
+    this%lid_co2_lithr   = addone(itemp);
+    call list_insert(list_name, 'co2_lithr',vid, itype=var_flux_type); call list_insert(list_unit,'mol C m-3 s-1',uid)
 
     this%lid_no3_den  = addone(itemp);
     call list_insert(list_name, 'no3_den',vid, itype=var_flux_type); call list_insert(list_unit, 'mol N m-3 s-1',uid)

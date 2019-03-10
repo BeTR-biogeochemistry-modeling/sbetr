@@ -31,6 +31,7 @@ module MathfuncMod
   public :: minp
   public :: pd_decomp
   public :: num2str
+  public :: num2strf
   public :: fpmax
   public :: bisnan
   public :: apvb
@@ -568,7 +569,33 @@ contains
     write(str,fmt)a
     ans =  trim(adjustl(str))
   end function num2str
+  !--------------------------------------------------------------------------------
 
+  function num2strf(a,fmt, sch)result(ans)
+    !
+    ! !DESCRIPTION:
+    !turn a number into a string using the specified format
+    implicit none
+    ! !ARGUMENTS:
+    real(r8),          intent(in) :: a
+    character(len=*), intent(in) :: fmt
+    character(len=1), optional, intent(in) :: sch
+    ! !LOCAL VARIABLES:
+    character(len=32) :: ans
+    character(len=32) :: str
+    character(len=1) :: sch_loc
+
+    sch_loc=''
+    if(present(sch))sch_loc=sch
+    write(str,fmt)a
+    if(sch_loc=='s')then
+      if(a>0.0)then
+        write(ans,'(A)')'+'//trim(adjustl(str))
+      endif
+    else
+      write(ans,'(A)')trim(str)
+    endif
+  end function num2strf
   !-------------------------------------------------------------------------------
   subroutine calc_state_pscal(this, nvars, dtime, ystate, p_dt,  d_dt, pscal, lneg, bstatus)
     !

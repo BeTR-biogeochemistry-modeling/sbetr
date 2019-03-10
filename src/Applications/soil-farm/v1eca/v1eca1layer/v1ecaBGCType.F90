@@ -566,6 +566,9 @@ contains
   time = 0._r8
   yf(:) = ystates1(:)
 
+!  do jj=1,this%v1eca_bgc_index%nom_pools
+!   call print_reaction(this%v1eca_bgc_index, cascade_matrix, jj)
+!  enddo
 !  call this%end_massbal_check('midd runbgc')
 
 !  call this%checksum_cascade(this%v1eca_bgc_index)
@@ -937,7 +940,10 @@ contains
     lid_nh4 => this%v1eca_bgc_index%lid_nh4                                                    , &
     lid_no3 => this%v1eca_bgc_index%lid_no3                                                    , &
     lid_co2_hr => this%v1eca_bgc_index%lid_co2_hr                                              , &
+    lid_co2_somhr => this%v1eca_bgc_index%lid_co2_somhr                                        , &
+    lid_co2_lithr => this%v1eca_bgc_index%lid_co2_lithr                                        , &
     lid_cum_closs=> this%v1eca_bgc_index%lid_cum_closs                                         , &
+    varnames=> this%v1eca_bgc_index%varnames                                                   , &
     som1    => this%v1eca_bgc_index%som1                                                       , &
     som2    => this%v1eca_bgc_index%som2                                                       , &
     som3    => this%v1eca_bgc_index%som3                                                       , &
@@ -971,6 +977,8 @@ contains
     cascade_matrix=>  this%cascade_matrix                                                        &
   )
 
+!  print*,'somc',ystate((som1-1)*nelms+c_loc)
+!  print*,'kdecay',this%k_decay(1:nom_pools)
   dydt(:) = 0._r8
   rrates(:) = 0._r8
   !calculate reaction rates, because arenchyma transport is
@@ -1033,12 +1041,13 @@ contains
       this%cascade_matrix(lid_minn_nh4_immob,jj) = - this%cascade_matrix(lid_minn_nh4_immob,jj)
 
     endif
+!    print*,'alpha',jj,this%alpha_n(jj)
     rrates(jj) = pot_decomp(jj)
   enddo
   rrates(lid_nh4_nit_reac) = this%pot_f_nit  !*ECA_factor_nit
   rrates(lid_no3_den_reac) = this%pot_f_denit !*ECA_factor_den
   rrates(lid_minp_soluble_to_labile_reac) = adsorb_to_labilep !*  ECA_factor_minp_msurf  !calculate from eca competition
-
+!  print*,'ixxrrates',rrates(5:7)
   if(this%plant_ntypes>0)then
     rrates(lid_autr_rt_reac) = this%rt_ar                            !authotrophic respiration
     rrates(lid_plant_minn_no3_up_reac) = sum(ECA_flx_no3_plants)     !calculate by ECA competition
@@ -1082,11 +1091,18 @@ contains
     call lom%calc_state_pscal(nprimvars, dtime, ystate(1:nprimvars), p_dt(1:nprimvars),  d_dt(1:nprimvars), &
         pscal(1:nprimvars), lneg, bstatus)
 
-!    print*,'pscal',it,pscal(1:nprimvars)
+!    print*,it,'pscal',pscal(1:nprimvars)
     if(lneg .and. it<=itmax)then
       call lom%calc_reaction_rscal(nprimvars, nreactions,  pscal(1:nprimvars), &
         this%cascade_matrixd(1:nprimvars, 1:nreactions),rscal, bstatus)
-
+!       if(any(rscal(5:7)<1._r8))then
+!        print*,'rxxscal',rscal(5:7)
+!        print*,'soilc1'
+!        do jj = 1, nprimvars
+!          if(this%cascade_matrixd(jj,5)/=0._r8)write(*,'(I2,X,A,2(X,E20.10))')jj,varnames(jj),this%cascade_matrixd(jj,5),pscal(jj)
+!        enddo
+!        stop
+!       endif
       call lom%apply_reaction_rscal(nreactions, rscal(1:nreactions), rrates(1:nreactions))
     else
       call calc_dtrend_som_bgc(nstvars, nreactions, this%cascade_matrix(1:nstvars, 1:nreactions), &
@@ -1095,6 +1111,9 @@ contains
     endif
     it = it + 1
   enddo
+!  print*,'ffrrates',rrates(5:7)
+!  print*,'soic1',dydt((som1-1)*nelms+c_loc)
+!  print*,'co2',dydt(lid_co2_hr),dydt(lid_co2_somhr),dydt(lid_co2_lithr)
   if(lid_supp_minp>0)then
     !check for mineral phosphorous
     minp_soluble=dydt(lid_minp_soluble) * dtime+ ystate(lid_minp_soluble)
@@ -1416,7 +1435,12 @@ contains
     dtr=dt
     tt=0._r8
     !make a copy of the solution at the current time step
-    y=y0
+    yc=y0
+   !get coarse grid solution
+    call me%bgc_integrate(yc, dt, tt, nprimeq, neq, f)
+    call ebbks(yc, f, nprimeq, neq, dt, y, pscal)
+!    print*,'pscal=',pscal
+    return
     do
        if(dt2<=dtmin)then
           call me%bgc_integrate(y, dt2, tt, nprimeq, neq, f)
@@ -1499,4 +1523,89 @@ contains
   print*,'nh4', this%v1eca_bgc_index%lid_plant_minn_nh4_pft
 
   end subroutine display_index
+
+  !-------------------------------------------------------------------------------
+  subroutine print_reaction(bgc_index, cascade_matrix, reaction_id)
+
+  use MathfuncMod, only : num2strf,num2str
+  use betr_ctrl  , only : biulog
+  implicit none
+
+  type(v1eca_bgc_index_type), intent(in) :: bgc_index
+  real(r8)                  , intent(in) :: cascade_matrix(bgc_index%nstvars, bgc_index%nreactions)
+  integer                   , intent(in) :: reaction_id
+  integer :: jj
+  character(len=256) :: reaction_str
+  character(len=32) :: str_loc
+  real(r8) :: cef
+  logical :: first
+  integer :: kk
+  integer :: kk1
+  integer :: pos  
+  if(reaction_id>bgc_index%nreactions)then
+     print*,'reaction does not exist'
+     return
+  endif
+
+  associate(                           &
+      varnames => bgc_index%varnames   &
+  )
+  reaction_str(:)=''
+  first=.true.
+  pos=0
+  do jj = 1, bgc_index%nprimvars 
+    cef=cascade_matrix(jj,reaction_id)
+    if(abs(cef)>1.e-9_r8)then
+      write(str_loc,'(F10.4)')cef
+      if(first)then
+        first=.false.
+      else
+        if(cef>0._r8)then
+          pos=pos+1
+          reaction_str(pos:pos)='+'
+        endif
+      endif
+      
+      do kk = 1, len(str_loc) 
+        if (str_loc(kk:kk)/=' ')then
+          kk1=kk
+          exit
+        endif
+      enddo
+      do kk = kk1, kk1+10
+        if(ischnum(str_loc(kk:kk)))then
+          pos=pos+1
+          reaction_str(pos:pos)=str_loc(kk:kk)
+        else
+          exit
+        endif
+      enddo
+      pos=pos+1
+      reaction_str(pos:pos)='*'
+      do kk=1,len(varnames(jj))
+        if(ischnum(varnames(jj)(kk:kk)))then
+          pos=pos+1
+          reaction_str(pos:pos)=varnames(jj)(kk:kk)
+        else
+          exit
+        endif          
+      enddo
+    endif
+  enddo 
+  reaction_str(pos+1:256)=''
+  write(*,'(A,I2,A,A)')'reaction',reaction_id,':',reaction_str
+  end associate
+  end subroutine print_reaction
+
+  logical function ischnum(a)
+  
+  implicit none
+  character(len=1), intent(in) :: a
+
+  integer :: jj
+  jj = ichar(a)
+
+  ischnum= (jj>=65 .and. jj<=90) .or. (jj>=97 .and. jj<=122) .or. (jj>=48 .and. jj<=57) .or. jj==95 .or. jj==45 .or. jj==46 .or. jj==43
+  return
+  end function ischnum
 end module v1ecaBGCType
