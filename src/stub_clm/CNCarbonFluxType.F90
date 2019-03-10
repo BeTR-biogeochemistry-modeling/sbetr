@@ -51,6 +51,10 @@ implicit none
     real(r8), pointer :: t_scalar_col(:,:) => null()
     real(r8), pointer :: w_scalar_col(:,:) => null()
     real(r8), pointer :: rr_vr_col(:,:) => null()
+    real(r8), pointer :: phr_vr_col(:,:)=> null()
+    real(r8), pointer :: somhr_col(:) => null()
+    real(r8), pointer :: lithr_col(:)=> null()
+    real(r8), pointer :: o_scalar_col(:,:)=> null()
   contains
 
     procedure, public  :: Init
@@ -134,7 +138,10 @@ contains
     allocate(this%fire_decomp_closs_col(begc:endc)); this%fire_decomp_closs_col(:) = spval
     allocate(this%som_c_runoff_col(begc:endc)); this%som_c_runoff_col(:) = spval
     allocate(this%co2_soi_flx_col(begc:endc)); this%co2_soi_flx_col(:) = spval
-
+    allocate(this%phr_vr_col(begc:endc,1:nlevdecomp_full)); this%phr_vr_col(:,:)=spval
+    allocate(this%o_scalar_col(begc:endc,1:nlevdecomp_full)); this%o_scalar_col(:,:)=spval
+    allocate(this%somhr_col(begc:endc)); this%somhr_col(:) = spval
+    allocate(this%lithr_col(begc:endc)); this%lithr_col(:) = spval
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------
