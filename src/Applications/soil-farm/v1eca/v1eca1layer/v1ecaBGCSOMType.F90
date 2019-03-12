@@ -246,7 +246,6 @@ contains
     som2      => v1eca_bgc_index%som2                       , & !
     som3      => v1eca_bgc_index%som3                       , & !
     cwd       => v1eca_bgc_index%cwd                        , & !
-
     c_loc     => v1eca_bgc_index%c_loc                      , & !
     n_loc     => v1eca_bgc_index%n_loc                      , & !
     p_loc     => v1eca_bgc_index%p_loc                      , & !
@@ -455,15 +454,15 @@ contains
     if(this%use_c14)then
       cascade_matrix((som1-1)*nelms+c14_loc   , reac) = -this%icc14_ratios(som1)
       cascade_matrix(lid_c14_co2              , reac) =  rf_s1*this%icc14_ratios(som1)
-      cascade_matrix((som2-1)*nelms+c14_loc   , reac) =  f1*(1._r8-rf_s1)*this%icc14_ratios(som1)
-      cascade_matrix((som3-1)*nelms+c14_loc   , reac) =  f2*(1._r8-rf_s1)*this%icc14_ratios(som1)
+      cascade_matrix((som2-1)*nelms+c14_loc   , reac) =  cascade_matrix((som2-1)*nelms+c_loc   ,reac)*this%icc14_ratios(som1)
+      cascade_matrix((som3-1)*nelms+c14_loc   , reac) =  cascade_matrix((som3-1)*nelms+c_loc   ,reac)*this%icc14_ratios(som1)
     endif
 
     if(this%use_c13)then
       cascade_matrix((som1-1)*nelms+c13_loc   , reac) = -this%icc13_ratios(som1)
       cascade_matrix(lid_c13_co2              , reac) = rf_s1*this%icc13_ratios(som1)
-      cascade_matrix((som2-1)*nelms+c13_loc   , reac) = f1*(1._r8-rf_s1)*this%icc13_ratios(som1)
-      cascade_matrix((som3-1)*nelms+c13_loc   , reac) = f2*(1._r8-rf_s1)*this%icc13_ratios(som1)
+      cascade_matrix((som2-1)*nelms+c13_loc   , reac) = cascade_matrix((som2-1)*nelms+c_loc   ,reac)*this%icc13_ratios(som1)
+      cascade_matrix((som3-1)*nelms+c13_loc   , reac) = cascade_matrix((som3-1)*nelms+c_loc   ,reac)*this%icc13_ratios(som1)
     endif
 
     !---------------------------------------------------------------------------------
@@ -507,14 +506,14 @@ contains
       cascade_matrix((som2-1)*nelms+c14_loc   , reac) = -this%icc14_ratios(som2)
       cascade_matrix(lid_c14_co2              , reac) = cascade_matrix(lid_co2 ,reac)*this%icc14_ratios(som2)
       cascade_matrix((som1-1)*nelms+c14_loc   , reac) = cascade_matrix((som1-1)*nelms+c_loc,reac)*this%icc14_ratios(som2)
-      cascade_matrix((som3-1)*nelms+c14_loc   , reac) = f1*this%icc14_ratios(som2)
+      cascade_matrix((som3-1)*nelms+c14_loc   , reac) = cascade_matrix((som3-1)*nelms+c_loc,reac)*this%icc14_ratios(som2)
     endif
 
     if(this%use_c13)then
       cascade_matrix((som2-1)*nelms+c13_loc   , reac) = -this%icc13_ratios(som2)
       cascade_matrix(lid_c13_co2              , reac) = cascade_matrix(lid_co2 ,reac)*this%icc13_ratios(som2)
       cascade_matrix((som1-1)*nelms+c13_loc   , reac) = cascade_matrix((som1-1)*nelms+c_loc,reac)*this%icc13_ratios(som2)
-      cascade_matrix((som3-1)*nelms+c13_loc   , reac) = f1*this%icc13_ratios(som2)
+      cascade_matrix((som3-1)*nelms+c13_loc   , reac) = cascade_matrix((som3-1)*nelms+c_loc,reac)*this%icc13_ratios(som2)
     endif
 
     !---------------------------------------------------------------------------------
@@ -601,12 +600,12 @@ contains
     cascade_matrix((iwd-1)*nelms+p_loc    ,reac) = -this%icp_ratios(iwd)
 
     cascade_matrix((lit2-1)*nelms+c_loc   ,reac) = f1
-    cascade_matrix((lit2-1)*nelms+n_loc   ,reac) = f1*this%icn_ratios(lit2)
-    cascade_matrix((lit2-1)*nelms+p_loc   ,reac) = f1*this%icp_ratios(lit2)
+    cascade_matrix((lit2-1)*nelms+n_loc   ,reac) = cascade_matrix((lit2-1)*nelms+c_loc   ,reac)*this%icn_ratios(lit2)
+    cascade_matrix((lit2-1)*nelms+p_loc   ,reac) = cascade_matrix((lit2-1)*nelms+c_loc   ,reac)*this%icp_ratios(lit2)
 
     cascade_matrix((lit3-1)*nelms+c_loc   ,reac) = f2
-    cascade_matrix((lit3-1)*nelms+n_loc   ,reac) = f2*this%icn_ratios(lit3)
-    cascade_matrix((lit3-1)*nelms+p_loc   ,reac) = f2*this%icp_ratios(lit3)
+    cascade_matrix((lit3-1)*nelms+n_loc   ,reac) = cascade_matrix((lit3-1)*nelms+c_loc   ,reac)*this%icn_ratios(lit3)
+    cascade_matrix((lit3-1)*nelms+p_loc   ,reac) = cascade_matrix((lit3-1)*nelms+c_loc   ,reac)*this%icp_ratios(lit3)
 
     cascade_matrix(lid_co2                ,reac) = 1._r8-f1-f2
     cascade_matrix(lid_co2_lithr          ,reac)  = cascade_matrix(lid_co2           ,reac)
@@ -628,14 +627,14 @@ contains
 
     if(this%use_c14)then
       cascade_matrix((iwd-1)*nelms+c14_loc   , reac) = -this%icc14_ratios(iwd)
-      cascade_matrix((lit2-1)*nelms+c14_loc  , reac) =  f1*this%icc14_ratios(iwd)
-      cascade_matrix((lit3-1)*nelms+c14_loc  , reac) =  f2*this%icc14_ratios(iwd)
+      cascade_matrix((lit2-1)*nelms+c14_loc  , reac) =  cascade_matrix((lit2-1)*nelms+c_loc   ,reac)*this%icc14_ratios(iwd)
+      cascade_matrix((lit3-1)*nelms+c14_loc  , reac) =  cascade_matrix((lit3-1)*nelms+c_loc   ,reac)*this%icc14_ratios(iwd)
     endif
 
     if(this%use_c13)then
       cascade_matrix((iwd-1)*nelms+c13_loc   , reac) = -this%icc13_ratios(iwd)
-      cascade_matrix((lit2-1)*nelms+c13_loc  , reac) =  f1*this%icc13_ratios(iwd)
-      cascade_matrix((lit3-1)*nelms+c13_loc  , reac) =  f2*this%icc13_ratios(iwd)
+      cascade_matrix((lit2-1)*nelms+c13_loc  , reac) =  cascade_matrix((lit2-1)*nelms+c_loc   ,reac)*this%icc13_ratios(iwd)
+      cascade_matrix((lit3-1)*nelms+c13_loc  , reac) =  cascade_matrix((lit3-1)*nelms+c_loc   ,reac)*this%icc13_ratios(iwd)
     endif
     end associate
     end subroutine wood_decomp_cascade
@@ -752,7 +751,7 @@ contains
     else
       this%icp_ratios(jj) = 1._r8/this%def_cp(jj)*(1._r8-rat)+ystates(kp)/ystates(kc)*rat
     endif
-    ystates(kp)= ystates(kc)*this%icp_ratios(jj)
+!    ystates(kp)= ystates(kc)*this%icp_ratios(jj)
 
 !    if(is_cenpool_som(jj) .and. ystates(kc)>tiny_val)then
 !      stoibal_ncon = ystates(kc)*this%icn_ratios(jj)
