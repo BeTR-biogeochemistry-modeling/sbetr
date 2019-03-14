@@ -55,6 +55,7 @@ module ecacnpBGCType
     real(r8), pointer                    :: scal_f(:)
     real(r8), pointer                    :: conv_f(:)
     real(r8), pointer                    :: conc_f(:)
+    real(r8), pointer                    :: cascade_matnh4(:)
     integer                              :: soilorder
     real(r8)                             :: msurf_nh4
     real(r8)                             :: msurf_minp
@@ -310,7 +311,7 @@ contains
   allocate(this%cascade_matrix (1:nstvars  , 1:nreactions)); this%cascade_matrix(:,:) = 0._r8
   allocate(this%cascade_matrixd(1:nprimvars, 1:nreactions)); this%cascade_matrixd(:,:) = 0._r8
   allocate(this%cascade_matrixp(1:nprimvars, 1:nreactions)); this%cascade_matrixp(:,:) = 0._r8
-
+  allocate(this%cascade_matnh4(nom_pools)); this%cascade_matnh4(:)=0._r8
 
   allocate(this%alpha_n(nom_pools)); this%alpha_n(:) = 0._r8
   allocate(this%alpha_p(nom_pools)); this%alpha_p(:) = 0._r8
@@ -584,7 +585,7 @@ contains
   call pd_decomp(nprimvars, nreactions, cascade_matrix(1:nprimvars, 1:nreactions), &
      cascade_matrixp, cascade_matrixd, bstatus)
   if(bstatus%check_status())return
-
+  this%cascade_matnh4(1:this%ecacnp_bgc_index%nom_pools)=cascade_matrix(this%ecacnp_bgc_index%lid_nh4,1:this%ecacnp_bgc_index%nom_pools)
   time = 0._r8
   yf(:) = ystates1(:)
 
@@ -1201,6 +1202,8 @@ contains
     n_loc   => this%ecacnp_bgc_index%n_loc                                                      , &
     p_loc   => this%ecacnp_bgc_index%p_loc                                                      , &
     nelms   => this%ecacnp_bgc_index%nelms                                                      , &
+    lid_minn_nh4_immob    => this%ecacnp_bgc_index%lid_minn_nh4_immob                           , &
+    lid_minn_no3_immob    => this%ecacnp_bgc_index%lid_minn_no3_immob                           , &
     lid_plant_minn_no3_pft=> this%ecacnp_bgc_index%lid_plant_minn_no3_pft                       , &
     lid_plant_minn_nh4_pft=> this%ecacnp_bgc_index%lid_plant_minn_nh4_pft                       , &
     lid_plant_minp_pft=> this%ecacnp_bgc_index%lid_plant_minp_pft                               , &
@@ -1220,7 +1223,7 @@ contains
     lid_supp_minp => this%ecacnp_bgc_index%lid_supp_minp                                         , &
     lid_supp_minn => this%ecacnp_bgc_index%lid_supp_minn                                           &
   )
-  
+
   dydt(:) = 0._r8
   rrates(:) = 0._r8
   !calculate reaction rates, because arenchyma transport is
@@ -1254,20 +1257,22 @@ contains
   !apply ECA factor to obtain actual reaction rate, decomposition
   !plant, nit, den nutrient uptake,
   do jj = 1, nom_pools
-    scal = 1._r8
     if(this%alpha_n(jj)>0._r8 .and. (.not. this%non_limit))then
-      scal = min(scal, ECA_factor_nitrogen_mic)
-      this%cascade_matrixd(lid_no3,jj) = this%cascade_matrix(lid_nh4,jj) * &
+      this%cascade_matrixd(lid_no3,jj) = this%cascade_matnh4(jj) * &
           safe_div(ECA_factor_no3_mic,ECA_factor_nitrogen_mic)
-      this%cascade_matrixd(lid_nh4,jj) = this%cascade_matrix(lid_nh4,jj)-this%cascade_matrixd(lid_no3,jj)
-    endif
-    if(this%alpha_p(jj)>0._r8)scal = min(scal, ECA_factor_phosphorus_mic)
+      this%cascade_matrixd(lid_nh4,jj) = this%cascade_matnh4(jj)-this%cascade_matrixd(lid_no3,jj)
 
-    if(scal /= 1._r8)pot_decomp(jj)=pot_decomp(jj)*scal
+      this%cascade_matrix(lid_nh4,jj) = this%cascade_matrixd(lid_nh4,jj)
+      this%cascade_matrix(lid_no3,jj) = this%cascade_matrixd(lid_no3,jj)
+
+      this%cascade_matrix(lid_minn_no3_immob,jj) = - this%cascade_matrix(lid_no3,jj)
+      this%cascade_matrix(lid_minn_nh4_immob,jj) = - this%cascade_matrix(lid_minn_nh4_immob,jj)
+    endif
+
     rrates(jj) = pot_decomp(jj)
   enddo
-  rrates(lid_nh4_nit_reac) = this%pot_f_nit*ECA_factor_nit
-  rrates(lid_no3_den_reac) = this%pot_f_denit*ECA_factor_den
+  rrates(lid_nh4_nit_reac) = this%pot_f_nit
+  rrates(lid_no3_den_reac) = this%pot_f_denit
   rrates(lid_minp_soluble_to_secp_reac) =  ECA_factor_minp_msurf * this%msurf_minp &
        * this%mumax_minp_soluble_to_secondary(this%soilorder) !calculate from eca competition
 
@@ -1658,7 +1663,10 @@ contains
     dtr=dt
     tt=0._r8
     !make a copy of the solution at the current time step
-    y=y0
+    yc=y0
+    call me%bgc_integrate(yc, dt, tt, nprimeq, neq, f)
+    call ebbks(yc, f, nprimeq, neq, dt, y, pscal)
+    return
     do
        if(dt2<=dtmin)then
           call me%bgc_integrate(y, dt2, tt, nprimeq, neq, f)
@@ -1740,7 +1748,7 @@ contains
   implicit none
   class(ecacnp_bgc_type)     , intent(inout) :: this
   print*,'no3',this%ecacnp_bgc_index%lid_plant_minn_no3_pft
-  print*,'nh4', this%ecacnp_bgc_index%lid_plant_minn_nh4_pft 
+  print*,'nh4', this%ecacnp_bgc_index%lid_plant_minn_nh4_pft
 
   end subroutine display_index
 end module ecacnpBGCType
