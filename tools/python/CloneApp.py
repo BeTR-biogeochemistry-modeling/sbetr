@@ -73,11 +73,11 @@ if os.path.exists(sfarm_dir+'/'+fromapp):
         tof=sfarm_dir+'/'+toapp+"/CMakeLists.txt"
         copy_file(fromf, tof, fromapp, toapp)
         AppTools.add_case_file(mdir,toapp)
-        print "Clone finished!"
-        print "Check app in "+sfarm_dir+'/'+toapp
+        print ("Clone finished!")
+        print ("Check app in "+sfarm_dir+'/'+toapp)
 
     else:
-        print "please define new app name"
+        print ("please define new app name")
 else:
-    print "app "+fromapp+" does not exist."
-    print "Clone failed."
+    print ("app "+fromapp+" does not exist.")
+    print ("Clone failed.")

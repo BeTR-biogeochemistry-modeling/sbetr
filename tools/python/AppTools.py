@@ -213,12 +213,12 @@ def add_case_fortranf(mdir, model,fromf):
 def further_instructions(mdir):
     """
     """
-    print "To turn on the new model, remember to accordingly modify the following files:"
-    print mdir+'/sbetr/src/dirver/main/HistBGCMod.F90'
-    print mdir+'/sbetr/src/dirver/main/sbetrDriverMod.F90'
-    print mdir+'/sbetr/src/dirver/standalone/BeTRSimulationStandalone.F90'
-    print mdir+'/sbetr/src/dirver/alm/BeTRSimulationALM.F90'
-    print mdir+'/sbetr/src/jarmodel/forcing/SetJarForcMod.F90'
+    print ("To turn on the new model, remember to accordingly modify the following files:")
+    print (mdir+'/sbetr/src/dirver/main/HistBGCMod.F90')
+    print (mdir+'/sbetr/src/dirver/main/sbetrDriverMod.F90')
+    print (mdir+'/sbetr/src/dirver/standalone/BeTRSimulationStandalone.F90')
+    print (mdir+'/sbetr/src/dirver/alm/BeTRSimulationALM.F90')
+    print (mdir+'/sbetr/src/jarmodel/forcing/SetJarForcMod.F90')
 
 def add_case_file(mdir,model):
     add_case_cmake1(mdir,model)
