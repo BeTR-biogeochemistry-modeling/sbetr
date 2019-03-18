@@ -1442,8 +1442,8 @@ subroutine calc_som_decay_r(this, summsbgc_index, dtime, om_k_decay, om_pools, o
 
       this%part_res2mono = safe_div(decay_mic , (kappa_mic-actgB+decay_mic))
 
-      this%rate_co2 = k_decay(mono)*(1-yld_res) + y_res*(kappa_mic-actgB) - y_mic*(actpE+actgB)
-      this%cue = 1 - safe_div(this%rate_co2,k_decay(mono))
+      this%rate_co2 = k_decay(mono)*y_mono*(1-yld_res) + y_res*(kappa_mic-actgB) - y_mic*(actpE+actgB)
+      this%cue = 1 - safe_div(this%rate_co2,k_decay(mono)*y_mono)
 
   end associate
   end subroutine calc_som_decay_k
