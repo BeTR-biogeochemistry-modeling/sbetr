@@ -535,7 +535,6 @@ contains
   call this%censom%run_decomp(is_surflit, this%v1eca_bgc_index, dtime, ystates1(1:nom_tot_elms),&
       this%decompkf_eca, bgc_forc%pct_sand, bgc_forc%pct_clay,this%alpha_n, this%alpha_p, &
       cascade_matrix, this%k_decay(1:nom_pools), pot_co2_hr, bstatus)
-
   if(bstatus%check_status())return
 
   call this%nitden%calc_pot_nitr(ystates1(lid_nh4), bgc_forc, this%decompkf_eca, pot_f_nit_mol_per_sec)
@@ -820,6 +819,7 @@ contains
     lid_ar => v1eca_bgc_index%lid_ar, &
     lid_ch4 => v1eca_bgc_index%lid_ch4,  &
     lid_co2_hr => v1eca_bgc_index%lid_co2_hr, &
+    lid_pot_co2_hr => v1eca_bgc_index%lid_pot_co2_hr, &
     lid_n2o_nit => this%v1eca_bgc_index%lid_n2o_nit,&
     lid_nh4_nit => this%v1eca_bgc_index%lid_nh4_nit, &
     lid_no3_den => this%v1eca_bgc_index%lid_no3_den,  &
@@ -834,6 +834,7 @@ contains
   this%ystates0(lid_no3_den)= 0._r8
   this%ystates0(lid_nh4_nit)= 0._r8
   this%ystates0(lid_n2o_den)= 0._r8
+  this%ystates0(lid_pot_co2_hr)=0._r8
   this%ystates0(lid_minn_nh4_immob) =0._r8
   this%ystates0(lid_minn_no3_immob) =0._r8
   this%ystates0(lid_minp_immob) =0._r8
