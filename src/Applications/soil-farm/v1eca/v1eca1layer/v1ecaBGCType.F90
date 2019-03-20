@@ -520,8 +520,8 @@ contains
   this%competECA%bd = bgc_forc%bd
   this%competECA%h2osoi_vol = bgc_forc%h2osoi_vol
   ystates0(:) = this%ystates0(:)
- 
-!  call this%begin_massbal_check() 
+
+!  call this%begin_massbal_check()
   !initialize decomposition scaling factors
   call this%decompkf_eca%set_decompk_scalar(ystates1(lid_o2), bgc_forc)
 
@@ -747,7 +747,7 @@ contains
       !reaction 15, ar + o2 -> co2
       reac = lid_autr_rt_reac
       cascade_matrix(lid_co2, reac) =  1._r8
-      cascade_matrix(lid_o2,  reac) = -1._r8 
+      cascade_matrix(lid_o2,  reac) = -1._r8
 
       if(this%use_c13)then
         cascade_matrix(lid_c13_co2, reac) =  1._r8 * frc_c13
@@ -823,6 +823,7 @@ contains
     lid_n2o_nit => this%v1eca_bgc_index%lid_n2o_nit,&
     lid_nh4_nit => this%v1eca_bgc_index%lid_nh4_nit, &
     lid_no3_den => this%v1eca_bgc_index%lid_no3_den,  &
+    lid_n2o_den => this%v1eca_bgc_index%lid_n2o_den,  &
     lid_minn_nh4_immob=> v1eca_bgc_index%lid_minn_nh4_immob , &
     lid_minn_no3_immob => v1eca_bgc_index%lid_minn_no3_immob, &
     lid_minp_immob => v1eca_bgc_index%lid_minp_immob         &
@@ -832,7 +833,7 @@ contains
   this%ystates0(lid_n2o_nit)= 0._r8
   this%ystates0(lid_no3_den)= 0._r8
   this%ystates0(lid_nh4_nit)= 0._r8
-  this%ystates0(lid_no3_den)= 0._r8
+  this%ystates0(lid_n2o_den)= 0._r8
   this%ystates0(lid_minn_nh4_immob) =0._r8
   this%ystates0(lid_minn_no3_immob) =0._r8
   this%ystates0(lid_minp_immob) =0._r8
@@ -1036,7 +1037,7 @@ contains
 
       this%cascade_matrix(lid_nh4,jj) = this%cascade_matrixd(lid_nh4,jj)
       this%cascade_matrix(lid_no3,jj) = this%cascade_matrixd(lid_no3,jj)
-      
+
       this%cascade_matrix(lid_minn_no3_immob,jj) = - this%cascade_matrix(lid_no3,jj)
       this%cascade_matrix(lid_minn_nh4_immob,jj) = - this%cascade_matrix(lid_minn_nh4_immob,jj)
 
@@ -1139,7 +1140,7 @@ contains
   if(this%batch_mode)dydt(lid_cum_closs)=dydt(lid_co2_hr)
   !print*,'reac'
   !print*,(jj,this%cascade_matrix(lid_co2_hr, jj),rrates(jj),new_line('A'),jj=1,nreactions)
- 
+
   end associate
   end subroutine bgc_integrate
   !--------------------------------------------------------------------
@@ -1541,7 +1542,7 @@ contains
   logical :: first
   integer :: kk
   integer :: kk1
-  integer :: pos  
+  integer :: pos
   if(reaction_id>bgc_index%nreactions)then
      print*,'reaction does not exist'
      return
@@ -1553,7 +1554,7 @@ contains
   reaction_str(:)=''
   first=.true.
   pos=0
-  do jj = 1, bgc_index%nprimvars 
+  do jj = 1, bgc_index%nprimvars
     cef=cascade_matrix(jj,reaction_id)
     if(abs(cef)>1.e-9_r8)then
       write(str_loc,'(F10.4)')cef
@@ -1565,8 +1566,8 @@ contains
           reaction_str(pos:pos)='+'
         endif
       endif
-      
-      do kk = 1, len(str_loc) 
+
+      do kk = 1, len(str_loc)
         if (str_loc(kk:kk)/=' ')then
           kk1=kk
           exit
@@ -1588,17 +1589,17 @@ contains
           reaction_str(pos:pos)=varnames(jj)(kk:kk)
         else
           exit
-        endif          
+        endif
       enddo
     endif
-  enddo 
+  enddo
   reaction_str(pos+1:256)=''
   write(*,'(A,I2,A,A)')'reaction',reaction_id,':',reaction_str
   end associate
   end subroutine print_reaction
 
   logical function ischnum(a)
-  
+
   implicit none
   character(len=1), intent(in) :: a
 

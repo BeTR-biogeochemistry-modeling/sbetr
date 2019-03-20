@@ -60,6 +60,7 @@ implicit none
      real(r8), pointer :: f_nit_vr_col                            (:,:) => null()
      real(r8), pointer :: f_n2o_nit_vr_col                        (:,:) => null()
      real(r8), pointer :: f_denit_vr_col                          (:,:) => null()
+     real(r8), pointer :: f_n2o_denit_vr_col                      (:,:) => null()
      real(r8), pointer :: smin_nh4_to_plant_vr_col                (:,:) => null()
      real(r8), pointer :: smin_no3_to_plant_vr_col                (:,:) => null()
      real(r8), pointer :: sminn_to_plant_patch                    (:)   => null()
@@ -144,6 +145,7 @@ contains
     allocate(this%denit_col(begc:endc)); this%denit_col(:) = spval
     allocate(this%som_n_leached_col(begc:endc)); this%som_n_leached_col(:) = spval
     allocate(this%supplement_to_sminn_col(begc:endc)); this%supplement_to_sminn_col(:) = spval
+    allocate(this%f_n2o_denit_vr_col          (begc:endc, 1:nlevdecomp_full)); this%f_n2o_denit_vr_col(:,:) = spval
 
     allocate(this%nflx_input_litr_met_vr_col(begc:endc,1:nlevdecomp_full)); this%nflx_input_litr_met_vr_col(:,:) = spval
     allocate(this%nflx_input_litr_cel_vr_col(begc:endc,1:nlevdecomp_full)); this%nflx_input_litr_cel_vr_col(:,:) = spval

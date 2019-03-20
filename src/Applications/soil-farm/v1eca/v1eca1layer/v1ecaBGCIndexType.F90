@@ -69,7 +69,7 @@ implicit none
      integer           :: lid_co2_hr                             !co2 production from heterotrophic respiration
      integer           :: lid_c13_co2, lid_c13_co2_aren_reac
      integer           :: lid_c14_co2, lid_c14_co2_aren_reac
-     integer           :: lid_no3_den                            !no3 consumption due to denitrification
+     integer           :: lid_no3_den, lid_n2o_den               !no3 consumption due to denitrification
      integer           :: lid_minn_nh4_immob                     !net mineral NH4 immobilization for decomposition
      integer           :: lid_minn_no3_immob                     !net mineral NO3 immobilization for decomposition
      integer           :: lid_nh4_nit
@@ -501,6 +501,9 @@ implicit none
 
     this%lid_no3_den  = addone(itemp);
     call list_insert(list_name, 'no3_den',vid, itype=var_flux_type); call list_insert(list_unit, 'mol N m-3 s-1',uid)
+
+    this%lid_n2o_den  = addone(itemp);
+    call list_insert(list_name, 'n2o_den',vid, itype=var_flux_type); call list_insert(list_unit, 'mol N m-3 s-1',uid)
 
     this%lid_minn_nh4_immob = addone(itemp);
     call list_insert(list_name, 'minn_nh4_immob',vid, itype=var_flux_type); call list_insert(list_unit, 'mol N m-3 s-1',uid)

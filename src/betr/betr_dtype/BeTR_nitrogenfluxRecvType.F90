@@ -9,6 +9,7 @@ implicit none
        __FILE__
   type, public :: betr_nitrogenflux_recv_type
     real(r8), pointer :: f_denit_vr_col(:,:)  => null()
+    real(r8), pointer :: f_n2o_denit_vr_col(:,:)=> null()
     real(r8), pointer :: f_nit_vr_col(:,:)  => null()
     real(r8), pointer :: f_n2o_nit_vr_col(:,:) => null()
     real(r8), pointer :: supplement_to_sminn_vr_col(:,:) => null()
@@ -73,6 +74,7 @@ implicit none
   lbj = bounds%lbj   ; ubj=bounds%ubj
 
   SPVAL_ALLOC(this%f_denit_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%f_n2o_denit_vr_col(begc:endc,lbj:ubj))
   SPVAL_ALLOC(this%f_nit_vr_col(begc:endc,lbj:ubj))
   SPVAL_ALLOC(this%f_n2o_nit_vr_col(begc:endc,lbj:ubj))
 
@@ -112,6 +114,7 @@ implicit none
 
 
   this%f_denit_vr_col(:,:) = value_column
+  this%f_n2o_denit_vr_col(:,:) = value_column
   this%f_nit_vr_col(:,:) = value_column
   this%f_n2o_nit_vr_col(:,:) = value_column
   this%fire_decomp_nloss_vr_col(:,:) = value_column
@@ -167,7 +170,7 @@ implicit none
 
       this%smin_no3_immob_col(c) = this%smin_no3_immob_col(c) + dz(c,j) * &
          this%smin_no3_immob_vr_col(c,j)
-    
+
 
     enddo
   enddo

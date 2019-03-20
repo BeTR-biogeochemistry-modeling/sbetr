@@ -1891,6 +1891,10 @@ contains
         (ystatesf(this%v1eca_bgc_index%lid_no3_den) - &
          ystates0(this%v1eca_bgc_index%lid_no3_den))*natomw/dtime
 
+      biogeo_flux%n14flux_vars%f_n2o_denit_vr_col(c,j)= &
+        (ystatesf(this%v1eca_bgc_index%lid_n2o_den) - &
+         ystates0(this%v1eca_bgc_index%lid_n2o_den))*natomw/dtime
+
       biogeo_flux%n14flux_vars%f_nit_vr_col(c,j) = &
         (ystatesf(this%v1eca_bgc_index%lid_nh4_nit) - &
          ystates0(this%v1eca_bgc_index%lid_nh4_nit))*natomw/dtime

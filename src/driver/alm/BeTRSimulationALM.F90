@@ -1756,6 +1756,7 @@ contains
       if(.not. this%active_col(c))cycle
       nitrogenflux_vars%col_plant_pdemand_vr(c,j)  = this%biogeo_flux(c)%p31flux_vars%col_plant_pdemand_vr(c_l,j)
       nitrogenflux_vars%f_denit_vr_col(c,j)        = this%biogeo_flux(c)%n14flux_vars%f_denit_vr_col(c_l,j)
+      nitrogenflux_vars%f_n2o_denit_vr_col(c,j)    = this%biogeo_flux(c)%n14flux_vars%f_n2o_denit_vr_col(c_l,j)
       nitrogenflux_vars%f_nit_vr_col(c,j)          = this%biogeo_flux(c)%n14flux_vars%f_nit_vr_col(c_l,j)
       nitrogenflux_vars%f_n2o_nit_vr_col(c,j)      = this%biogeo_flux(c)%n14flux_vars%f_n2o_nit_vr_col(c_l,j)
       phosphorusflux_vars%adsorb_to_labilep_vr(c,j)= this%biogeo_flux(c)%p31flux_vars%adsorb_to_labilep_vr_col(c_l,j)
@@ -1771,11 +1772,11 @@ contains
       phosphorusflux_vars%supplement_to_sminp_vr_col(c,j) =this%biogeo_flux(c)%p31flux_vars%supplement_to_sminp_vr_col(c_l,j)
       phosphorusflux_vars%net_mineralization_p_vr_col(c,j) = this%biogeo_flux(c)%p31flux_vars%net_mineralization_p_vr_col(c_l,j)
       nitrogenflux_vars%actual_immob_col(c)= nitrogenflux_vars%actual_immob_col(c) + col%dz(c,j)*&
-         (this%biogeo_flux(c)%n14flux_vars%smin_nh4_immob_vr_col(c_l,j) + this%biogeo_flux(c)%n14flux_vars%smin_no3_immob_vr_col(c_l,j)) 
+         (this%biogeo_flux(c)%n14flux_vars%smin_nh4_immob_vr_col(c_l,j) + this%biogeo_flux(c)%n14flux_vars%smin_no3_immob_vr_col(c_l,j))
       c12_cflx_vars%somhr_col(c) = c12_cflx_vars%somhr_col(c)  + col%dz(c,j)*&
          this%biogeo_flux(c)%c12flux_vars%somhr_vr_col(c_l,j)
       c12_cflx_vars%lithr_col(c) = c12_cflx_vars%lithr_col(c)  + col%dz(c,j)*&
-         this%biogeo_flux(c)%c12flux_vars%lithr_vr_col(c_l,j)      
+         this%biogeo_flux(c)%c12flux_vars%lithr_vr_col(c_l,j)
     enddo
   enddo
   end associate

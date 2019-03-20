@@ -298,6 +298,7 @@ implicit none
    ! total water limitation function (Del Grosso et al., 2000, figure 7a)
    wfps = max(min(h2osoi_vol/watsat, 1._r8), 0._r8) * 100._r8
    fr_WFPS = max(0.1_r8, 0.015_r8 * wfps - 0.32_r8)
+   fr_WFPS = fr_WFPS * (1._r8-finundated) + finundated * 1.18_r8
 
    ! final ratio expression
    n2_n2o_ratio_denit = max(0.16*ratio_k1, ratio_k1*exp(-0.8 * ratio_no3_co2)) * fr_WFPS
@@ -375,6 +376,7 @@ implicit none
     lid_n2o   => v1eca_bgc_index%lid_n2o                 , & !
     lid_no3   => v1eca_bgc_index%lid_no3                 , & !
     lid_no3_den => v1eca_bgc_index%lid_no3_den           , &
+    lid_n2o_den => v1eca_bgc_index%lid_n2o_den           , &
     lid_nh4_nit_reac => v1eca_bgc_index%lid_nh4_nit_reac , & !
     lid_no3_den_reac => v1eca_bgc_index%lid_no3_den_reac , & !
     lid_nh4_nit        => v1eca_bgc_index%lid_nh4_nit    , & !
@@ -401,7 +403,7 @@ implicit none
   cascade_matrix(lid_n2o ,reac)    = 0.5_r8 * 1._r8/(1._r8+n2_n2o_ratio_denit)
   cascade_matrix(lid_n2  ,reac)    = 0.5_r8 - cascade_matrix(lid_n2o ,reac)
   cascade_matrix(lid_no3_den,reac) = 1._r8
-
+  cascade_matrix(lid_n2o_den,reac) = 1._r8/(1._r8+n2_n2o_ratio_denit)
   end associate
   end subroutine calc_cascade_matrix
 
