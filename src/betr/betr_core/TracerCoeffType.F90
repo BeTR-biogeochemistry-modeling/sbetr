@@ -239,14 +239,6 @@ contains
               default='inactive')
       enddo
 
-               call this%add_hist_var2d (it, num2d, fname='K_DECAY_VR', units='none', type2d='levtrc',               &
-                    avgflag='A', long_name='decay constants for resom',              &
-                    default='inactive')
-
-               call this%add_hist_var2d (it, num2d, fname='PART_MIC_VR', units='none', type2d='levtrc',               &
-                    avgflag='A', long_name='partitioning to microbial biomass for resom',              &
-                    default='inactive')
-
       if(it==1)call this%alloc_hist_list(num1d, num2d)
       num2d = 0; num1d= 0
     enddo
@@ -340,8 +332,6 @@ contains
          endif
          state_2d(:,:,addone(idtemp2d)) =  this%hmconductance_col(:,:,jj)
       enddo
-       state_2d(:,:,addone(idtemp2d)) = this%k_decay_vr(:,:,1)
-       state_2d(:,:,addone(idtemp2d)) = this%part_mic_vr(:,:,1)
   end associate
   end subroutine retrieve_hist
 end module TracerCoeffType
