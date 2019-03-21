@@ -3,6 +3,8 @@
   run_type='sbgc'
   case_id='exp.noadv'
   continue_run=.false.
+  is_nitrogen_active=.false.
+  is_phosphorus_active =.false.
 /
 
 &betr_parameters

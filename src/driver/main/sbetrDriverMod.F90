@@ -448,7 +448,7 @@ end subroutine sbetrBGC_driver
     simulator_name = ''
     continue_run=.false.
     run_type ='tracer'
-    is_nitrogen_active=.true.; is_phosphorus_active =.true.
+    is_nitrogen_active=.false.; is_phosphorus_active =.false.
     case_id=''
     input_only=.false.
     finit =''
