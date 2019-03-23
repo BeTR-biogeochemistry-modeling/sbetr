@@ -2040,6 +2040,7 @@ if(exit_spinup)then
     volatileid            => betrtracer_vars%volatileid                   , &
     tracer_flx_netpro_vr  => tracerflux_vars%tracer_flx_netpro_vr_col     , & !
     tracer_flx_parchm_vr  => tracerflux_vars%tracer_flx_parchm_vr_col     , & !
+    tracer_flx_decomp_vr  => tracerflux_vars%tracer_flx_decomp_vr_col     , &
     ngwmobile_tracers     => betrtracer_vars%ngwmobile_tracers              & !
   )
 
@@ -2178,6 +2179,10 @@ if(exit_spinup)then
       tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_o2) ) = &
          ystatesf(this%summsbgc_index%lid_o2_paere )  - &
          ystates0(this%summsbgc_index%lid_o2_paere)
+
+      tracer_flx_decomp_vr(c,j,1) = &
+         ystatesf(this%summsbgc_index%lid_decomp )  - &
+         ystates0(this%summsbgc_index%lid_decomp)
 
       if ( betr_spinup_state == 0 ) then
         tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_n2)  ) = &

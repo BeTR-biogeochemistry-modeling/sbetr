@@ -82,6 +82,7 @@ implicit none
      integer           :: lid_ar_paere
      integer           :: lid_n2_paere
      integer           :: lid_o2_paere
+     integer           :: lid_decomp                             !decompostion flux
      integer           :: lid_co2_paere
      integer           :: lid_c13_co2_paere
      integer           :: lid_c14_co2_paere
@@ -472,6 +473,11 @@ implicit none
     !aerechyma transport
     this%lid_o2_paere   = addone(itemp);
     call list_insert(list_name, 'o2_paere',vid); call list_insert(list_unit,'mol m-3 s-1',uid)
+
+    !decomposition flux
+    this%lid_decomp     = addone(itemp);
+    call list_insert(list_name, 'decomp',vid); call list_insert(list_unit,'mol m-3 s-1',uid)
+
     if ( spinup_state == 0 ) then
        this%lid_ar_paere   = addone(itemp);  this%lid_ar_aren_reac  = addone(ireac)   !
        call list_insert(list_name, 'ar_paere',vid); call list_insert(list_unit,'mol m-3 s-1',uid)

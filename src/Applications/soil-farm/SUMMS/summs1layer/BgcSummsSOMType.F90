@@ -271,6 +271,9 @@ contains
   call this%calc_som_decay_r(summsbgc_index, dtime, k_decay(1:nsummspools), &
       ystates(1:nom_tot_elms), pot_om_decay_rates)
 
+  !calculate the decomposition flux (polymer pool*k_decay(poly))
+  ystates(summsbgc_index%lid_decomp) = pot_om_decay_rates(summsbgc_index%poly)
+
   do jj = 1, nsummspools
     kc = (jj-1) * nelms + c_loc
     !the following avoids over-estimation of potential hr which is used for nitri-denit estimation
