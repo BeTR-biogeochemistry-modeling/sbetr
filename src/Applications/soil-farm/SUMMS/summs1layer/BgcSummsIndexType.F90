@@ -83,7 +83,14 @@ implicit none
      integer           :: lid_n2_paere
      integer           :: lid_o2_paere
      integer           :: lid_decomp                             !decompostion flux
-     integer           :: lid_uptake
+     integer           :: lid_uptake                             !uptake flux
+     integer           :: lid_cue                                !cue
+     integer           :: lid_maint                              !maintenance flux
+     integer           :: lid_kaffmm                             !monomer mineral affinity
+     integer           :: lid_kaffem                             !enzyme mineral affinity
+     integer           :: lid_micgrow                            !microbial growth flux
+     integer           :: lid_enzprod                            !enzyme production flux
+     integer           :: lid_turnover                           !microbial turnover flux
      integer           :: lid_co2_paere
      integer           :: lid_c13_co2_paere
      integer           :: lid_c14_co2_paere
@@ -483,6 +490,33 @@ implicit none
     this%lid_uptake     = addone(itemp);
     call list_insert(list_name, 'uptake',vid); call list_insert(list_unit,'mol m-3 s-1',uid)
 
+    !cue
+    this%lid_cue     = addone(itemp);
+    call list_insert(list_name, 'cue',vid); call list_insert(list_unit,'unitless',uid)
+
+    !maintenance flux
+    this%lid_maint     = addone(itemp);
+    call list_insert(list_name, 'maint',vid); call list_insert(list_unit,'mol m-3 s-1',uid)
+
+    !monomer mineral affinity
+    this%lid_kaffmm     = addone(itemp);
+    call list_insert(list_name, 'kaffmm',vid); call list_insert(list_unit,'mol m-3',uid)
+
+    !enzyme mineral affinity
+    this%lid_kaffem     = addone(itemp);
+    call list_insert(list_name, 'kaffem',vid); call list_insert(list_unit,'mol m-3',uid)
+
+    !microbial growth flux
+    this%lid_micgrow     = addone(itemp);
+    call list_insert(list_name, 'micgrow',vid); call list_insert(list_unit,'mol m-3 s-1',uid)
+
+    !enzyme production flux
+    this%lid_enzprod     = addone(itemp);
+    call list_insert(list_name, 'enzprod',vid); call list_insert(list_unit,'mol m-3 s-1',uid)
+
+    !microbial turnover flux
+    this%lid_turnover     = addone(itemp);
+    call list_insert(list_name, 'turnover',vid); call list_insert(list_unit,'mol m-3 s-1',uid)
 
     if ( spinup_state == 0 ) then
        this%lid_ar_paere   = addone(itemp);  this%lid_ar_aren_reac  = addone(ireac)   !

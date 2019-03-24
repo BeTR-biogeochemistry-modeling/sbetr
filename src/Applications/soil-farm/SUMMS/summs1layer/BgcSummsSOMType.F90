@@ -59,6 +59,10 @@ implicit none
     real(r8) :: k_decay_cwd  !coarse root
     real(r8) :: k_decay_lwd  !large wood
     real(r8) :: k_decay_fwd  !fine branch wood
+    real(r8) :: actgB
+    real(r8) :: actpE
+    real(r8) :: actmr
+    real(r8) :: decay_mic
 
     logical  :: use_c13
     logical  :: use_c14
@@ -271,9 +275,16 @@ contains
   call this%calc_som_decay_r(summsbgc_index, dtime, k_decay(1:nsummspools), &
       ystates(1:nom_tot_elms), pot_om_decay_rates)
 
-  !calculate the decomposition & uptake flux (polymer pool*k_decay(poly))
+  !calculate custom fluxes
   ystates(summsbgc_index%lid_decomp) = pot_om_decay_rates(summsbgc_index%poly)
   ystates(summsbgc_index%lid_uptake) = pot_om_decay_rates(summsbgc_index%mono)*(1._r8-this%yld_res)
+  ystates(summsbgc_index%lid_cue)    = this%cue
+  ystates(summsbgc_index%lid_maint)  = ystates((summsbgc_index%mic-1) * nelms + c_loc)*this%actmr
+  ystates(summsbgc_index%lid_kaffmm) = decompkf_eca%kaff_mono_msurf
+  ystates(summsbgc_index%lid_kaffem) = decompkf_eca%kaff_enz_msurf
+  ystates(summsbgc_index%lid_micgrow)= ystates((summsbgc_index%mic-1) * nelms + c_loc)*this%actgB
+  ystates(summsbgc_index%lid_enzprod)= ystates((summsbgc_index%mic-1) * nelms + c_loc)*this%actpE
+  ystates(summsbgc_index%lid_turnover)= ystates((summsbgc_index%mic-1) * nelms + c_loc)*this%decay_mic
 
   do jj = 1, nsummspools
     kc = (jj-1) * nelms + c_loc
@@ -1258,11 +1269,7 @@ subroutine calc_som_decay_r(this, summsbgc_index, dtime, om_k_decay, om_pools, o
 
   !type(func_data_type) :: deb
   integer    :: jj
-    real(r8) :: actgB
-    real(r8) :: actpE
-    real(r8) :: actmr
     real(r8) :: residual
-    real(r8) :: decay_mic
     real(r8) :: y_mic
     real(r8) :: y_enz
     real(r8) :: y_res
@@ -1331,7 +1338,11 @@ subroutine calc_som_decay_r(this, summsbgc_index, dtime, om_k_decay, om_pools, o
    mic_transp     => this%mic_transp                   , & !
    decay_mic0     => this%decay_mic0                   , & !
    decay_mic1     => this%decay_mic1                   , & !
-   decay_enz      => this%decay_enz                      & !
+   decay_enz      => this%decay_enz                    , & !
+   actgB          => this%actgB                        , &
+   actpE          => this%actpE                        , &
+   actmr          => this%actmr                        , &
+   decay_mic      => this%decay_mic                      & 
   )
   call bstatus%reset()
 

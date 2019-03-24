@@ -2042,6 +2042,13 @@ if(exit_spinup)then
     tracer_flx_parchm_vr  => tracerflux_vars%tracer_flx_parchm_vr_col     , & !
     tracer_flx_decomp_vr  => tracerflux_vars%tracer_flx_decomp_vr_col     , &
     tracer_flx_uptake_vr  => tracerflux_vars%tracer_flx_uptake_vr_col     , &
+    tracer_flx_cue_vr     => tracerflux_vars%tracer_flx_cue_vr_col       , &
+    tracer_flx_maint_vr   => tracerflux_vars%tracer_flx_maint_vr_col     , &
+    tracer_flx_kaffmm_vr  => tracerflux_vars%tracer_flx_kaffmm_vr_col    , &
+    tracer_flx_kaffem_vr  => tracerflux_vars%tracer_flx_kaffem_vr_col    , &
+    tracer_flx_micgrow_vr => tracerflux_vars%tracer_flx_micgrow_vr_col   , &
+    tracer_flx_enzprod_vr => tracerflux_vars%tracer_flx_enzprod_vr_col   , &
+    tracer_flx_turnover_vr=> tracerflux_vars%tracer_flx_turnover_vr_col  , &
     ngwmobile_tracers     => betrtracer_vars%ngwmobile_tracers              & !
   )
 
@@ -2188,6 +2195,35 @@ if(exit_spinup)then
       tracer_flx_uptake_vr(c,j,1) = &
          ystatesf(this%summsbgc_index%lid_uptake )  - &
          ystates0(this%summsbgc_index%lid_uptake)
+
+      tracer_flx_cue_vr(c,j,1) = &
+         ystatesf(this%summsbgc_index%lid_cue )  - &
+         ystates0(this%summsbgc_index%lid_cue)
+
+      tracer_flx_maint_vr(c,j,1) = &
+         ystatesf(this%summsbgc_index%lid_maint )  - &
+         ystates0(this%summsbgc_index%lid_maint)
+
+      tracer_flx_kaffmm_vr(c,j,1) = &
+         ystatesf(this%summsbgc_index%lid_kaffmm )  - &
+         ystates0(this%summsbgc_index%lid_kaffmm)
+
+      tracer_flx_kaffem_vr(c,j,1) = &
+         ystatesf(this%summsbgc_index%lid_kaffem )  - &
+         ystates0(this%summsbgc_index%lid_kaffem)
+
+      tracer_flx_micgrow_vr(c,j,1) = &
+         ystatesf(this%summsbgc_index%lid_micgrow )  - &
+         ystates0(this%summsbgc_index%lid_micgrow)
+
+      tracer_flx_enzprod_vr(c,j,1) = &
+         ystatesf(this%summsbgc_index%lid_enzprod )  - &
+         ystates0(this%summsbgc_index%lid_enzprod)
+
+      tracer_flx_turnover_vr(c,j,1) = &
+         ystatesf(this%summsbgc_index%lid_turnover )  - &
+         ystates0(this%summsbgc_index%lid_turnover)
+
 
       if ( betr_spinup_state == 0 ) then
         tracer_flx_parchm_vr(c,j,volatileid(betrtracer_vars%id_trc_n2)  ) = &
