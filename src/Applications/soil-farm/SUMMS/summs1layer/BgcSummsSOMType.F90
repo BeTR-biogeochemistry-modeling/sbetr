@@ -271,8 +271,9 @@ contains
   call this%calc_som_decay_r(summsbgc_index, dtime, k_decay(1:nsummspools), &
       ystates(1:nom_tot_elms), pot_om_decay_rates)
 
-  !calculate the decomposition flux (polymer pool*k_decay(poly))
+  !calculate the decomposition & uptake flux (polymer pool*k_decay(poly))
   ystates(summsbgc_index%lid_decomp) = pot_om_decay_rates(summsbgc_index%poly)
+  ystates(summsbgc_index%lid_uptake) = pot_om_decay_rates(summsbgc_index%mono)*(1._r8-this%yld_res)
 
   do jj = 1, nsummspools
     kc = (jj-1) * nelms + c_loc

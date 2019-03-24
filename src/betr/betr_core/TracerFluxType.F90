@@ -49,6 +49,7 @@ module TracerFluxType
      real(r8), pointer :: tracer_flx_vtrans_vr_col(:,:,:) => null()!
      !real(r8), pointer :: tracer_flx_snowloss_col(:,:)  => null()  !tracer flux lost from snow dynamics, place holder
      real(r8), pointer :: tracer_flx_decomp_vr_col(:,:,:) => null() !custom output: decomposition flux
+     real(r8), pointer :: tracer_flx_uptake_vr_col(:,:,:) => null() !custom output: uptake flux
 
      !tracer fluxes defined at the pft level
      real(r8), pointer :: tracer_flx_vtrans_patch(:,:)      => null()       !tracer goes to the pathway of plant transpiration, currently not released, if it is nutrient, assumed it is taken by plants completely
@@ -170,6 +171,7 @@ contains
     allocate(this%tracer_flx_netpro_col     (begc:endc, 1:ntracers)); this%tracer_flx_netpro_col(:,:)                = spval
     allocate(this%tracer_flx_dstor_col      (begc:endc, 1:ntracers)); this%tracer_flx_dstor_col(:,:)                 = spval
     allocate(this%tracer_flx_decomp_vr_col  (begc:endc, lbj:ubj,1)); this%tracer_flx_decomp_vr_col (:,:,:)           = spval
+    allocate(this%tracer_flx_uptake_vr_col  (begc:endc, lbj:ubj,1)); this%tracer_flx_uptake_vr_col (:,:,:)           = spval
 
   end subroutine InitAllocate
 
@@ -310,6 +312,9 @@ contains
         call this%add_hist_var2d (it, num2d, fname='DECOMP_vr', units='mol/m3/s', type2d='levtrc',    &
           avgflag='A', long_name='vertically-resolved microbial decomposition flux', default='inactive')
 
+        call this%add_hist_var2d (it, num2d, fname='UPTAKE_vr', units='mol/m3/s', type2d='levtrc',    &
+          avgflag='A', long_name='vertically-resolved microbial uptake flux', default='inactive')
+
       if(it==1)call this%alloc_hist_list(num1d, num2d)
       num2d = 0; num1d= 0
     enddo
@@ -373,6 +378,7 @@ contains
       this%tracer_flx_h2osfc_snow_residual_col(c,:) = 0._r8
       this%tracer_flx_totleached_col (c,:) = 0._r8
       this%tracer_flx_decomp_vr_col(c,:,:) = 0._r8
+      this%tracer_flx_uptake_vr_col(c,:,:) = 0._r8
     enddo
   end subroutine InitCold
 
@@ -451,6 +457,7 @@ contains
       this%tracer_flx_netpro_vr_col  (column,:,:)   = 0._r8
       this%tracer_flx_totleached_col (column,:)   = 0._r8
       this%tracer_flx_decomp_vr_col  (column,:,:) = 0._r8
+      this%tracer_flx_uptake_vr_col  (column,:,:) = 0._r8
     enddo
     do fp = 1, numfp
       p = filterp(fp)
@@ -499,7 +506,7 @@ contains
 
     this%tracer_flx_totleached_col(column,:) = this%tracer_flx_drain_col(column,:) + this%tracer_flx_leaching_col(column,:)
     this%tracer_flx_decomp_vr_col  (column,:,:)   = this%tracer_flx_decomp_vr_col  (column,:,:)/dtime 
-
+    this%tracer_flx_uptake_vr_col  (column,:,:)   = this%tracer_flx_uptake_vr_col  (column,:,:)/dtime
   end subroutine temporal_average
 
   !----------------------------------------------------------------
@@ -707,7 +714,9 @@ contains
     enddo
 
       id=addone(idtemp2d); flux_2d(begc:endc,lbj:ubj,id) = this%tracer_flx_decomp_vr_col(begc:endc, lbj:ubj,1)
-      
+
+      id=addone(idtemp2d); flux_2d(begc:endc,lbj:ubj,id) = this%tracer_flx_uptake_vr_col(begc:endc, lbj:ubj,1)
+
   end associate
   end subroutine retrieve_hist
 end module TracerFluxType
