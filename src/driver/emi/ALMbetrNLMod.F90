@@ -93,7 +93,7 @@ contains
     use_c13_betr    = use_c13
     use_c14_betr    = use_c14
     AppParNLFile    = ''
-!    appfile_on      = .false.
+
     fix_ip          = .false.
     do_bgc_calibration=.false.
     bgc_param_file  = ''
@@ -109,17 +109,8 @@ contains
           end if
        end if
        call relavu( unitn )
-!       if(trim(AppParNLFile)/='')then
-!         appfile_on=.true.
-!         call LoadFile2String(AppParNLFile, bgc_namelist_buffer)
-!       else
-!         bgc_namelist_buffer='none'
-!       endif
     end if
 
-!    call shr_mpi_bcast(appfile_on, mpicom)
-    !pass parameters to all files
-!    call shr_mpi_bcast(bgc_namelist_buffer, mpicom)
 
     ! Broadcast namelist variables read in
     call shr_mpi_bcast(reaction_method, mpicom)

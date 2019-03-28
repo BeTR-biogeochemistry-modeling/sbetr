@@ -46,7 +46,7 @@ module SimicPlantSoilBGCType
   end function constructor
 
   !-------------------------------------------------------------------------------
-  subroutine Init_plant_soilbgc(this, bounds, lbj, ubj, namelist_buffer)
+  subroutine Init_plant_soilbgc(this, bounds, lbj, ubj)
   !
   ! !DESCRIPTION:
   ! template for init_betrbgc
@@ -58,7 +58,6 @@ module SimicPlantSoilBGCType
   class(simic_plant_soilbgc_type) , intent(inout) :: this
   type(bounds_type)                  , intent(in) :: bounds
   integer                            , intent(in) :: lbj, ubj
-  character(len=*)                   , intent(in) :: namelist_buffer
 
   ! remove compiler warnings for unused dummy args
   if (this%dummy_compiler_warning) continue

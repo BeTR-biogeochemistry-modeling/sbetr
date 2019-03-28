@@ -206,7 +206,7 @@ module H2OIsotopeBGCReactionsType
 
 !-------------------------------------------------------------------------------
 
-  subroutine Init_betrbgc(this, bounds, lbj, ubj, betrtracer_vars, namelist_buffer, bstatus)
+  subroutine Init_betrbgc(this, bounds, lbj, ubj, betrtracer_vars, bstatus)
   !
   ! DESCRIPTION
   ! initialize the betrbgc
@@ -221,7 +221,6 @@ module H2OIsotopeBGCReactionsType
   type(betr_bounds_type)          , intent(in)    :: bounds
   integer                         , intent(in)    :: lbj, ubj
   type(BeTRtracer_type )          , intent(inout) :: betrtracer_vars
-  character(len=*)                , intent(in)    :: namelist_buffer
   type(betr_status_type)          , intent(out)   :: bstatus
 
   !local variables

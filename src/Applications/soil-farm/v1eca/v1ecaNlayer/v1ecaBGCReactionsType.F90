@@ -290,7 +290,7 @@ contains
   end subroutine set_kinetics_par
   !-------------------------------------------------------------------------------
 
-  subroutine Init_betrbgc(this, bounds, lbj, ubj, betrtracer_vars, namelist_buffer, bstatus)
+  subroutine Init_betrbgc(this, bounds, lbj, ubj, betrtracer_vars, bstatus)
     !
     ! DESCRIPTION:
     ! initialize the betrbgc
@@ -299,7 +299,6 @@ contains
     use BeTRTracerType                   , only : betrtracer_type
     use MathfuncMod                      , only : addone
     use betr_varcon                      , only : betr_maxpatch_pft
-    use betr_constants                   , only : betr_namelist_buffer_size_ext
     use tracer_varcon                    , only : fix_ip
     implicit none
     ! !ARGUMENTS:
@@ -307,7 +306,6 @@ contains
     type(bounds_type)                    , intent(in)    :: bounds
     integer                              , intent(in)    :: lbj, ubj        ! lower and upper bounds, make sure they are > 0
     type(BeTRtracer_type )               , intent(inout) :: betrtracer_vars !
-    character(len=*)                     , intent(in) :: namelist_buffer
     type(betr_status_type)               , intent(out)   :: bstatus
 
     ! !LOCAL VARIABLES:

@@ -416,8 +416,8 @@ contains
       waterstate_vars = waterstate)
 
     do c = bounds%begc, bounds%endc
-      call this%betr(c)%Init(namelist_buffer, betr_bounds, this%betr_col(c), &
-          this%biophys_forc(c), asoibgc, this%bstatus(c))
+      call this%betr(c)%Init(betr_bounds, this%betr_col(c), this%biophys_forc(c), &
+         asoibgc, this%bstatus(c))
       if(c==bounds%begc)this%active_soibgc=asoibgc
       if(this%bstatus(c)%check_status())then
         call this%bsimstatus%setcol(c)

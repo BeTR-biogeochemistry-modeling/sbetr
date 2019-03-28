@@ -64,7 +64,7 @@ module ch4soilPlantSoilBGCType
   end function constructor
 
   !-------------------------------------------------------------------------------
-  subroutine Init_plant_soilbgc(this, bounds, lbj, ubj, namelist_buffer)
+  subroutine Init_plant_soilbgc(this, bounds, lbj, ubj)
 
   !
   ! !DESCRIPTION:
@@ -78,7 +78,7 @@ module ch4soilPlantSoilBGCType
   class(ch4soil_plant_soilbgc_type) , intent(inout) :: this
   type(betr_bounds_type)         , intent(in) :: bounds
   integer                   , intent(in) :: lbj, ubj
-  character(len=*)          , intent(in) :: namelist_buffer
+
 
   call this%InitAllocate(bounds, lbj, ubj)
   end subroutine Init_plant_soilbgc
