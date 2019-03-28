@@ -2,6 +2,7 @@ module TracerFluxType
   !!DESCRIPTION:
   ! tracer flux type
   ! !USES:
+
   use bshr_kind_mod       , only : r8 => shr_kind_r8
   use bshr_infnan_mod     , only : nan => shr_infnan_nan, assignment(=)
   use BeTR_decompMod      , only : bounds_type  => betr_bounds_type
@@ -12,9 +13,8 @@ module TracerFluxType
   use TracerBaseType      , only : tracerbase_type
   !
   ! !PUBLIC TYPES:
-
   implicit none
-
+#include "bshr_alloc.h"
   private
   character(len=*), private, parameter :: mod_filename = &
        __FILE__
@@ -88,7 +88,7 @@ contains
     class(TracerFlux_type), intent(inout)  :: this
     type(bounds_type)     , intent(in) :: bounds
     integer               , intent(in) :: lbj, ubj
-    type(BeTRTracer_Type) , intent(in) :: betrtracer_vars
+    type(BeTRTracer_Type) , intent(inout) :: betrtracer_vars
 
     call this%InitAllocate(bounds, lbj, ubj, betrtracer_vars)
     call this%tracer_base_init()
@@ -127,47 +127,44 @@ contains
     nvolatile_tracers      = betrtracer_vars%nvolatile_tracers
     nsolid_passive_tracers = betrtracer_vars%nsolid_passive_tracers
 
-    allocate(this%tracer_flx_prec_col             (begc:endc, 1:ntracers)); this%tracer_flx_prec_col           (:,:) = spval
-    allocate(this%tracer_flx_snowfall_grnd_patch  (begp:endp, 1:ntracers)); this%tracer_flx_snowfall_grnd_patch(:,:) = spval
-    allocate(this%tracer_flx_rainfall_grnd_patch  (begp:endp, 1:ntracers)); this%tracer_flx_rainfall_grnd_patch(:,:) = spval
-    allocate(this%tracer_flx_prec_intr_patch      (begp:endp, 1:ntracers)); this%tracer_flx_prec_intr_patch    (:,:) = spval
-    allocate(this%tracer_flx_prec_grnd_patch(begp:endp, 1:ntracers)); this%tracer_flx_prec_grnd_patch(:,:) = spval
-    allocate(this%tracer_flx_snwcp_liq_patch      (begp:endp, 1:ntracers)); this%tracer_flx_snwcp_liq_patch    (:,:) = spval
-    allocate(this%tracer_flx_snwcp_ice_patch      (begp:endp, 1:ntracers)); this%tracer_flx_snwcp_ice_patch    (:,:) = spval
+    SPVAL_ALLOC(this%tracer_flx_prec_col             (begc:endc, 1:ntracers))
+    SPVAL_ALLOC(this%tracer_flx_snowfall_grnd_patch  (begp:endp, 1:ntracers))
+    SPVAL_ALLOC(this%tracer_flx_rainfall_grnd_patch  (begp:endp, 1:ntracers))
+    SPVAL_ALLOC(this%tracer_flx_prec_intr_patch      (begp:endp, 1:ntracers))
+    SPVAL_ALLOC(this%tracer_flx_prec_grnd_patch(begp:endp, 1:ntracers))
+    SPVAL_ALLOC(this%tracer_flx_snwcp_liq_patch      (begp:endp, 1:ntracers))
+    SPVAL_ALLOC(this%tracer_flx_snwcp_ice_patch      (begp:endp, 1:ntracers))
 
     if(ngwmobile_tracers>0)then
-       allocate(this%tracer_flx_drain_col       (begc:endc, 1:ngwmobile_tracers)); this%tracer_flx_drain_col    (:,:) = spval
-       allocate(this%tracer_flx_top_soil_col    (begc:endc, 1:ngwmobile_tracers)); this%tracer_flx_top_soil_col (:,:) = spval
-       allocate(this%tracer_flx_can_loss_col    (begc:endc, 1:ngwmobile_tracers)); this%tracer_flx_can_loss_col (:,:) = spval
-       allocate(this%tracer_flx_snowmelt_col    (begc:endc, 1:ngwmobile_tracers)); this%tracer_flx_snowmelt_col (:,:) = spval
-       allocate(this%tracer_flx_infl_col        (begc:endc, 1:ngwmobile_tracers)); this%tracer_flx_infl_col     (:,:) = spval
-       allocate(this%tracer_flx_leaching_col    (begc:endc, 1:ngwmobile_tracers)); this%tracer_flx_leaching_col (:,:) = spval
-       allocate(this%tracer_flx_surfrun_col     (begc:endc, 1:ngwmobile_tracers)); this%tracer_flx_surfrun_col  (:,:) = spval
-       allocate(this%tracer_flx_vtrans_col      (begc:endc, 1:ngwmobile_tracers)); this%tracer_flx_vtrans_col   (:,:) = spval
-       allocate(this%tracer_flx_dew_grnd_col    (begc:endc, 1:ngwmobile_tracers)); this%tracer_flx_dew_grnd_col (:,:) = spval
-       allocate(this%tracer_flx_dew_snow_col    (begc:endc, 1:ngwmobile_tracers)); this%tracer_flx_dew_snow_col (:,:) = spval
-       allocate(this%tracer_flx_sub_snow_col    (begc:endc, 1:ngwmobile_tracers)); this%tracer_flx_sub_snow_col (:,:) = spval
-       allocate(this%tracer_flx_vtrans_patch    (begp:endp, 1:ngwmobile_tracers)); this%tracer_flx_vtrans_patch(:,:) = spval
+       SPVAL_ALLOC(this%tracer_flx_drain_col       (begc:endc, 1:ngwmobile_tracers))
+       SPVAL_ALLOC(this%tracer_flx_top_soil_col    (begc:endc, 1:ngwmobile_tracers))
+       SPVAL_ALLOC(this%tracer_flx_can_loss_col    (begc:endc, 1:ngwmobile_tracers))
+       SPVAL_ALLOC(this%tracer_flx_snowmelt_col    (begc:endc, 1:ngwmobile_tracers))
+       SPVAL_ALLOC(this%tracer_flx_infl_col        (begc:endc, 1:ngwmobile_tracers))
+       SPVAL_ALLOC(this%tracer_flx_leaching_col    (begc:endc, 1:ngwmobile_tracers))
+       SPVAL_ALLOC(this%tracer_flx_surfrun_col     (begc:endc, 1:ngwmobile_tracers))
+       SPVAL_ALLOC(this%tracer_flx_vtrans_col      (begc:endc, 1:ngwmobile_tracers))
+       SPVAL_ALLOC(this%tracer_flx_dew_grnd_col    (begc:endc, 1:ngwmobile_tracers))
+       SPVAL_ALLOC(this%tracer_flx_dew_snow_col    (begc:endc, 1:ngwmobile_tracers))
+       SPVAL_ALLOC(this%tracer_flx_sub_snow_col    (begc:endc, 1:ngwmobile_tracers))
+       SPVAL_ALLOC(this%tracer_flx_vtrans_patch    (begp:endp, 1:ngwmobile_tracers))
 
-       allocate(this%tracer_flx_h2osfc_snow_residual_col(begc:endc, 1:ngwmobile_tracers))
-       this%tracer_flx_h2osfc_snow_residual_col(:,:) = spval
-       allocate(this%tracer_flx_totleached_col(begc:endc, 1:ngwmobile_tracers)); this%tracer_flx_totleached_col(:,:) = spval
-       allocate(this%tracer_flx_vtrans_vr_col   (begc:endc, lbj:ubj, 1:ngwmobile_tracers))
-       this%tracer_flx_vtrans_vr_col   (:,:,:) = spval
+       SPVAL_ALLOC(this%tracer_flx_h2osfc_snow_residual_col(begc:endc, 1:ngwmobile_tracers))
+       SPVAL_ALLOC(this%tracer_flx_totleached_col(begc:endc, 1:ngwmobile_tracers))
+       SPVAL_ALLOC(this%tracer_flx_vtrans_vr_col   (begc:endc, lbj:ubj, 1:ngwmobile_tracers))
     endif
     if(nvolatile_tracers>0)then
-       allocate(this%tracer_flx_ebu_col         (begc:endc, 1:nvolatile_tracers)); this%tracer_flx_ebu_col      (:,:) = spval
-       allocate(this%tracer_flx_dif_col         (begc:endc, 1:nvolatile_tracers)); this%tracer_flx_dif_col      (:,:) = spval
-       allocate(this%tracer_flx_tparchm_col     (begc:endc, 1:nvolatile_tracers)); this%tracer_flx_tparchm_col  (:,:) = spval
-       allocate(this%tracer_flx_surfemi_col     (begc:endc, 1:nvolatile_tracers)); this%tracer_flx_surfemi_col  (:,:) = spval
-       allocate(this%tracer_flx_parchm_vr_col   (begc:endc, lbj:ubj, 1:nvolatile_tracers))
-       this%tracer_flx_parchm_vr_col(:,:,:) = spval
+       SPVAL_ALLOC(this%tracer_flx_ebu_col         (begc:endc, 1:nvolatile_tracers))
+       SPVAL_ALLOC(this%tracer_flx_dif_col         (begc:endc, 1:nvolatile_tracers))
+       SPVAL_ALLOC(this%tracer_flx_tparchm_col     (begc:endc, 1:nvolatile_tracers))
+       SPVAL_ALLOC(this%tracer_flx_surfemi_col     (begc:endc, 1:nvolatile_tracers))
+       SPVAL_ALLOC(this%tracer_flx_parchm_vr_col   (begc:endc, lbj:ubj, 1:nvolatile_tracers))
     endif
 
-    allocate(this%tracer_flx_netpro_vr_col  (begc:endc, lbj:ubj, 1:ntracers)); this%tracer_flx_netpro_vr_col (:,:,:) = spval
-    allocate(this%tracer_flx_netphyloss_col (begc:endc, 1:ntracers)); this%tracer_flx_netphyloss_col(:,:)            = spval
-    allocate(this%tracer_flx_netpro_col     (begc:endc, 1:ntracers)); this%tracer_flx_netpro_col(:,:)                = spval
-    allocate(this%tracer_flx_dstor_col      (begc:endc, 1:ntracers)); this%tracer_flx_dstor_col(:,:)                 = spval
+    SPVAL_ALLOC(this%tracer_flx_netpro_vr_col  (begc:endc, lbj:ubj, 1:ntracers))
+    SPVAL_ALLOC(this%tracer_flx_netphyloss_col (begc:endc, 1:ntracers))
+    SPVAL_ALLOC(this%tracer_flx_netpro_col     (begc:endc, 1:ntracers))
+    SPVAL_ALLOC(this%tracer_flx_dstor_col      (begc:endc, 1:ntracers))
 
   end subroutine InitAllocate
 
@@ -180,11 +177,12 @@ contains
     ! !USES:
     !use shr_infnan_mod, only: nan => shr_infnan_nan, assignment(=)
     use BeTRTracerType, only: BeTRTracer_Type
+    use betr_constants  , only : betr_var_name_length
     !
     ! !ARGUMENTS:
     class(TracerFlux_type), intent(inout)  :: this
     type(bounds_type)     , intent(in) :: bounds
-    type(BeTRTracer_Type) , intent(in) :: betrtracer_vars
+    type(BeTRTracer_Type) , intent(inout) :: betrtracer_vars
 
     !
     ! !LOCAL VARIABLES:
@@ -195,113 +193,114 @@ contains
     real(r8), pointer :: data2dptr(:,:) ! temp. pointers for slicing larger arrays
     real(r8), pointer :: data1dptr(:)   ! temp. pointers for slicing larger arrays
     integer :: num1d, num2d, it
+    character(len=betr_var_name_length) :: tracername
     associate(                                                   &
       ngwmobile_tracers => betrtracer_vars%ngwmobile_tracers   , &
       ntracers          => betrtracer_vars%ntracers            , &
       is_volatile       => betrtracer_vars%is_volatile         , &
-      volatileid        => betrtracer_vars%volatileid          , &
-      tracernames       => betrtracer_vars%tracernames           &
+      volatileid        => betrtracer_vars%volatileid            &
     )
 
     num2d = 0; num1d= 0
     do it = 1, 2
       do jj = 1, ntracers
+        tracername =  betrtracer_vars%get_tracername(jj)
         if(jj<= ngwmobile_tracers) then
 
-          call this%add_hist_var1d (it, num1d, fname=trim(tracernames(jj))//'_FLX_DEW_GRND', units='mol/m2/s', &
-           avgflag='A', long_name='incoming dew flux to ground for '//trim(tracernames(jj)), &
+          call this%add_hist_var1d (it, num1d, fname=trim(tracername)//'_FLX_DEW_GRND', &
+           units='mol/m2/s', avgflag='A', long_name='incoming dew flux to ground for '//&
+           trim(tracername), default='inactive')
+
+          call this%add_hist_var1d (it, num1d, fname=trim(tracername)//'_FLX_DEW_SNOW', units='mol/m2/s', &
+           avgflag='A', long_name='incoming dew flux to snow from '//trim(tracername), &
            default='inactive')
 
-          call this%add_hist_var1d (it, num1d, fname=trim(tracernames(jj))//'_FLX_DEW_SNOW', units='mol/m2/s', &
-           avgflag='A', long_name='incoming dew flux to snow from '//trim(tracernames(jj)), &
-           default='inactive')
-
-          call this%add_hist_var1d (it, num1d, fname=trim(tracernames(jj))//'_FLX_H2OSFC_SNOW_RES', &
+          call this%add_hist_var1d (it, num1d, fname=trim(tracername)//'_FLX_H2OSFC_SNOW_RES', &
            units='mol/m2/s', avgflag='A', &
-           long_name='incoming flux to topsoi from snow and h2osfc residual for '//trim(tracernames(jj)), &
+           long_name='incoming flux to topsoi from snow and h2osfc residual for '//trim(tracername), &
            default='inactive')
 
-          call this%add_hist_var1d (it, num1d, fname=trim(tracernames(jj))//'_FLX_SUB_SNOW', units='mol/m2/s',   &
-           avgflag='A', long_name='sublimation flux from snow for '//trim(tracernames(jj)),      &
+          call this%add_hist_var1d (it, num1d, fname=trim(tracername)//'_FLX_SUB_SNOW', units='mol/m2/s',   &
+           avgflag='A', long_name='sublimation flux from snow for '//trim(tracername),      &
            default='inactive')
 
-          call this%add_hist_var1d (it, num1d, fname=trim(tracernames(jj))//'_FLX_TOPSOIL', units='mol/m2/s',    &
-           avgflag='A', long_name='incoming flux at top of the soil for '//trim(tracernames(jj)),   &
+          call this%add_hist_var1d (it, num1d, fname=trim(tracername)//'_FLX_TOPSOIL', units='mol/m2/s',    &
+           avgflag='A', long_name='incoming flux at top of the soil for '//trim(tracername),   &
            default='inactive')
 
-          call this%add_hist_var1d (it, num1d, fname=trim(tracernames(jj))//'_FLX_CAN_LOSS', units='mol/m2/s',     &
-           avgflag='A', long_name='loss from canopy for '//trim(tracernames(jj)),       &
+          call this%add_hist_var1d (it, num1d, fname=trim(tracername)//'_FLX_CAN_LOSS', units='mol/m2/s',     &
+           avgflag='A', long_name='loss from canopy for '//trim(tracername),       &
            default='inactive')
 
-          call this%add_hist_var1d (it, num1d, fname=trim(tracernames(jj))//'_FLX_SNOWMELT', units='mol/m2/s',     &
-           avgflag='A', long_name='loss from snowmelt for '//trim(tracernames(jj)),      &
+          call this%add_hist_var1d (it, num1d, fname=trim(tracername)//'_FLX_SNOWMELT', units='mol/m2/s',     &
+           avgflag='A', long_name='loss from snowmelt for '//trim(tracername),      &
            default='inactive')
 
-          call this%add_hist_var1d (it, num1d, fname=trim(tracernames(jj))//'_FLX_INFIL', units='mol/m2/s',     &
-           avgflag='A', long_name='infiltration for '//trim(tracernames(jj)),            &
+          call this%add_hist_var1d (it, num1d, fname=trim(tracername)//'_FLX_INFIL', units='mol/m2/s',     &
+           avgflag='A', long_name='infiltration for '//trim(tracername),            &
            default='inactive')
 
-          call this%add_hist_var2d (it, num2d, fname=trim(tracernames(jj))//'_FLX_NETPRO_vr',&
+          call this%add_hist_var2d (it, num2d, fname=trim(tracername)//'_FLX_NETPRO_vr',&
            units='mol/m3/s', type2d='levtrc', avgflag='A', &
-           long_name='net production for '//trim(tracernames(jj)), &
+           long_name='net production for '//trim(tracername), &
            default='inactive')
 
-          call this%add_hist_var1d (it, num1d, fname=trim(tracernames(jj))//'_FLX_LEACHING', units='mol/m2/s', &
-           avgflag='A', long_name='bottom of soil leaching for '//trim(tracernames(jj)), &
+          call this%add_hist_var1d (it, num1d, fname=trim(tracername)//'_FLX_LEACHING', units='mol/m2/s', &
+           avgflag='A', long_name='bottom of soil leaching for '//trim(tracername), &
            default='inactive')
 
-          call this%add_hist_var1d (it, num1d, fname=trim(tracernames(jj))//'_FLX_SRUNOFF', units='mol/m2/s', &
-           avgflag='A', long_name='loss from surface runoff for '//trim(tracernames(jj)), &
+          call this%add_hist_var1d (it, num1d, fname=trim(tracername)//'_FLX_SRUNOFF', units='mol/m2/s', &
+           avgflag='A', long_name='loss from surface runoff for '//trim(tracername), &
            default='inactive')
 
-          call this%add_hist_var1d (it, num1d, fname=trim(tracernames(jj))//'_FLX_VTRANS', units='mol/m2/s', &
-           avgflag='A', long_name='transport through transpiration for '//trim(tracernames(jj)), &
+          call this%add_hist_var1d (it, num1d, fname=trim(tracername)//'_FLX_VTRANS', units='mol/m2/s', &
+           avgflag='A', long_name='transport through transpiration for '//trim(tracername), &
            default='inactive')
 
-          call this%add_hist_var1d (it, num1d, fname=trim(tracernames(jj))//'_FLX_TLEACH', units='mol/m2/s',   &
-           avgflag='A', long_name='transport through leaching for '//trim(tracernames(jj)),    &
+          call this%add_hist_var1d (it, num1d, fname=trim(tracername)//'_FLX_TLEACH', units='mol/m2/s',   &
+           avgflag='A', long_name='transport through leaching for '//trim(tracername),    &
            default='inactive')
 
           if(is_volatile(jj))then
             kk = volatileid(jj)
 
-            call this%add_hist_var1d (it, num1d, fname=trim(tracernames(jj))//'_FLX_EBU', &
+            call this%add_hist_var1d (it, num1d, fname=trim(tracername)//'_FLX_EBU', &
               units='mol/m2/s',  avgflag='A', &
-              long_name='loss through ebullition (+ into atmosphere) for '//trim(tracernames(jj)), &
+              long_name='loss through ebullition (+ into atmosphere) for '//trim(tracername), &
               default='inactive')
 
-            call this%add_hist_var1d (it, num1d, fname=trim(tracernames(jj))//'_FLX_DIF', &
+            call this%add_hist_var1d (it, num1d, fname=trim(tracername)//'_FLX_DIF', &
               units='mol/m2/s',  avgflag='A', &
-              long_name='loss through diffusion (+ into atmosphere) for '//trim(tracernames(jj)),  &
+              long_name='loss through diffusion (+ into atmosphere) for '//trim(tracername),  &
               default='inactive')
 
-            call this%add_hist_var1d (it, num1d, fname=trim(tracernames(jj))//'_FLX_ARCHM', units='mol/m2/s',    &
-             avgflag='A', long_name='loss from aerenchyma transport for '//trim(tracernames(jj)),    &
+            call this%add_hist_var1d (it, num1d, fname=trim(tracername)//'_FLX_ARCHM', units='mol/m2/s',    &
+             avgflag='A', long_name='loss from aerenchyma transport for '//trim(tracername),    &
              default='inactive')
 
-            call this%add_hist_var1d (it, num1d, fname=trim(tracernames(jj))//'_FLX_SURFEMI', units='mol/m2/s',    &
-             avgflag='A', long_name='loss from surface emission for '//trim(tracernames(jj)))
+            call this%add_hist_var1d (it, num1d, fname=trim(tracername)//'_FLX_SURFEMI', units='mol/m2/s',    &
+             avgflag='A', long_name='loss from surface emission for '//trim(tracername))
            endif
 
-           call this%add_hist_var1d (it, num1d, fname=trim(tracernames(jj))//'_FLX_DRAIN', units='mol/m2/s', &
-            avgflag='A', long_name='loss from drainage for '//trim(tracernames(jj)),        &
+           call this%add_hist_var1d (it, num1d, fname=trim(tracername)//'_FLX_DRAIN', units='mol/m2/s', &
+            avgflag='A', long_name='loss from drainage for '//trim(tracername),        &
             default='inactive')
         endif
 
-        call this%add_hist_var1d (it, num1d, fname=trim(tracernames(jj))//'_FLX_NETLOSS', units='mol/m2/s',  &
-          avgflag='A', long_name='net loss for '//trim(tracernames(jj)),                    &
+        call this%add_hist_var1d (it, num1d, fname=trim(tracername)//'_FLX_NETLOSS', units='mol/m2/s',  &
+          avgflag='A', long_name='net loss for '//trim(tracername),                    &
           default='inactive')
 
-        call this%add_hist_var1d (it, num1d, fname=trim(tracernames(jj))//'_FLX_NETPRO', units='mol/m2/s',   &
-          avgflag='A', long_name='net production for '//trim(tracernames(jj)),              &
+        call this%add_hist_var1d (it, num1d, fname=trim(tracername)//'_FLX_NETPRO', units='mol/m2/s',   &
+          avgflag='A', long_name='net production for '//trim(tracername),              &
           default='inactive')
 
-        call this%add_hist_var1d (it, num1d, fname=trim(tracernames(jj))//'_FLX_DSTOR', units='mol/m2/s',    &
-          avgflag='A', long_name='total concentration change for '//trim(tracernames(jj)),  &
+        call this%add_hist_var1d (it, num1d, fname=trim(tracername)//'_FLX_DSTOR', units='mol/m2/s',    &
+          avgflag='A', long_name='total concentration change for '//trim(tracername),  &
           default='inactive')
 
-        call this%add_hist_var1d (it, num1d, fname=trim(tracernames(jj))//'_FLX_PREC', units='mol/m2/s',     &
-          avgflag='A', long_name='incoming from precipitation for '//trim(tracernames(jj)), &
+        call this%add_hist_var1d (it, num1d, fname=trim(tracername)//'_FLX_PREC', units='mol/m2/s',     &
+          avgflag='A', long_name='incoming from precipitation for '//trim(tracername), &
           default='inactive')
 
       enddo
@@ -341,6 +340,7 @@ contains
       this%tracer_flx_prec_grnd_patch(p,:)      = 0._r8
       this%tracer_flx_snwcp_liq_patch(p,:)      = 0._r8
       this%tracer_flx_snwcp_ice_patch(p,:)      = 0._r8
+      this%tracer_flx_vtrans_patch(p,:)         = 0._r8
     enddo
 
     do c = begc, endc
@@ -367,7 +367,6 @@ contains
       this%tracer_flx_h2osfc_snow_residual_col(c,:) = 0._r8
       this%tracer_flx_totleached_col (c,:) = 0._r8
     enddo
-
 
   end subroutine InitCold
 
@@ -401,7 +400,7 @@ contains
    end subroutine Restart
 
   !-----------------------------------------------------------------------
-  subroutine Reset(this, bounds, numf, filter)
+  subroutine Reset(this, bounds, numf, filter, numfp, filterp)
     !
     ! !DESCRIPTION:
     ! Intitialize SNICAR variables for fresh snow column
@@ -411,9 +410,11 @@ contains
     type(bounds_type)    , intent(in)  :: bounds
     integer              , intent(in)  :: numf
     integer              , intent(in)  :: filter(:)
+    integer              , intent(in)  :: numfp
+    integer              , intent(in)  :: filterp(:)
     !-----------------------------------------------------------------------
 
-    integer :: fc, column
+    integer :: fc, column, fp, p
 
     ! remove compiler warnings for unused dummy args
     if (bounds%begc > 0) continue
@@ -444,7 +445,17 @@ contains
       this%tracer_flx_netpro_vr_col  (column,:,:)   = 0._r8
       this%tracer_flx_totleached_col (column,:)   = 0._r8
     enddo
-
+    do fp = 1, numfp
+      p = filterp(fp)
+      this%tracer_flx_vtrans_patch(p,:)         = 0._r8
+      this%tracer_flx_snowfall_grnd_patch(p,:)  = 0._r8
+      this%tracer_flx_rainfall_grnd_patch(p,:)  = 0._r8
+      this%tracer_flx_prec_intr_patch(p,:)      = 0._r8
+      this%tracer_flx_prec_grnd_patch(p,:)      = 0._r8
+      this%tracer_flx_snwcp_liq_patch(p,:)      = 0._r8
+      this%tracer_flx_snwcp_ice_patch(p,:)      = 0._r8
+      this%tracer_flx_vtrans_patch(p,:)         = 0._r8
+    enddo
   end subroutine Reset
 
 !----------------------------------------
@@ -510,7 +521,6 @@ contains
          nvolatile_tracers      => betrtracer_vars%nvolatile_tracers     , &
          ngwmobile_tracers      => betrtracer_vars%ngwmobile_tracers     , &
          is_volatile            => betrtracer_vars%is_volatile           , &
-         tracernames            => betrtracer_vars%tracernames           , &
          volatileid             => betrtracer_vars%volatileid              &
          )
       dtime = betr_time%get_step_size()
@@ -561,39 +571,50 @@ contains
 
     use BetrTracerType        , only : betrtracer_type
     use betr_constants        , only : betr_errmsg_len
-
+    use betr_constants        , only : betr_var_name_length
     class(TracerFlux_type), intent(inout)  :: this
-    type(BeTRTracer_Type)  , intent(in)  :: betrtracer_vars
+    type(BeTRTracer_Type)  , intent(inout) :: betrtracer_vars
     integer                , intent(in)  :: c     ! column index
     integer                , intent(in)  :: jj
     character(len=betr_errmsg_len), intent(out) :: msg
-    character(len=betr_errmsg_len) :: msg1
+    character(len=betr_errmsg_len) :: msg1, msg2
     !local variables
     integer :: kk
+    character(len=betr_var_name_length) :: tracername
 
     associate(                                                             &
          ntracers               => betrtracer_vars%ntracers              , &
          nvolatile_tracers      => betrtracer_vars%nvolatile_tracers     , &
          ngwmobile_tracers      => betrtracer_vars%ngwmobile_tracers     , &
          is_volatile            => betrtracer_vars%is_volatile           , &
-         tracernames            => betrtracer_vars%tracernames           , &
-         volatileid             => betrtracer_vars%volatileid              &
+         volatileid             => betrtracer_vars%volatileid            , &
+         is_advective           => betrtracer_vars%is_advective            &
          )
+
+      msg1='';msg2=''
+      tracername = betrtracer_vars%get_tracername(jj)
       !the total net physical loss currently includes infiltration, surface runoff, transpiration aided transport,
       !lateral drainage, vertical leaching
       !for volatile tracers, this includes surface emission surface three different pathways
-      write(msg,*)tracernames(jj), new_line('A')//'infl=',this%tracer_flx_infl_col(c,jj),&
-           ',drain=',  this%tracer_flx_drain_col(c,jj),    &
-           ',surfrun=',this%tracer_flx_surfrun_col(c,jj),',vtrans=', this%tracer_flx_vtrans_col(c,jj),&
-           ',leaching=', this%tracer_flx_leaching_col(c,jj),',dew_grnd=',this%tracer_flx_dew_grnd_col(c, jj),&
-           ',dew_snow=', this%tracer_flx_dew_snow_col(c, jj),',sub_snow=',this%tracer_flx_sub_snow_col(c,jj)
-
+      write(msg,*)tracername, new_line('A')
+      if(is_advective(jj))then
+        write(msg2,*) 'infl=',this%tracer_flx_infl_col(c,jj),new_line('A'),&
+           'drain=',  this%tracer_flx_drain_col(c,jj),  new_line('A'),  &
+           'surfrun=',this%tracer_flx_surfrun_col(c,jj),new_line('A'),  &
+           'vtrans=', this%tracer_flx_vtrans_col(c,jj), new_line('A'),   &
+           'vtransp=',sum(this%tracer_flx_vtrans_patch(:,jj)),new_line('A'),&
+           'leaching=', this%tracer_flx_leaching_col(c,jj),new_line('A'), &
+           'dew_grnd=',this%tracer_flx_dew_grnd_col(c, jj),new_line('A'), &
+           'dew_snow=', this%tracer_flx_dew_snow_col(c, jj),new_line('A'), &
+           'sub_snow=',this%tracer_flx_sub_snow_col(c,jj)
+      endif
       if(is_volatile(jj))then
          kk = volatileid(jj)
-         write(msg1,*) ',tpartm=', this%tracer_flx_tparchm_col(c,kk),',dif=', this%tracer_flx_dif_col(c,kk),  &
-              ',ebu=',this%tracer_flx_ebu_col(c,kk)
+         write(msg1,*) 'tpartm=', this%tracer_flx_tparchm_col(c,kk),new_line('A'),&
+              'dif=', this%tracer_flx_dif_col(c,kk),  new_line('A'),&
+              'ebu=',this%tracer_flx_ebu_col(c,kk)
       endif
-      msg = trim(msg)//new_line('A')//trim(msg1)
+      msg = trim(msg)//new_line('A')//trim(msg2)//new_line('A')//trim(msg1)
 
     end associate
   end subroutine Flux_display
@@ -619,8 +640,7 @@ contains
       ngwmobile_tracers => betrtracer_vars%ngwmobile_tracers   , &
       ntracers          => betrtracer_vars%ntracers            , &
       is_volatile       => betrtracer_vars%is_volatile         , &
-      volatileid        => betrtracer_vars%volatileid          , &
-      tracernames       => betrtracer_vars%tracernames           &
+      volatileid        => betrtracer_vars%volatileid            &
     )
 
     idtemp1d = 0; idtemp2d = 0

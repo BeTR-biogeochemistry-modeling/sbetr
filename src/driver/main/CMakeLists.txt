@@ -1,9 +1,11 @@
 set(BETR_DRIVER_SOURCES
   BeTRSimulationFactory.F90
+  HistBGCMod.F90
   sbetrDriverMod.F90
   )
 
 include_directories(${CMAKE_BINARY_DIR}/src/shr)
+include_directories(${CMAKE_BINARY_DIR}/src/io_util)
 include_directories(${CMAKE_BINARY_DIR}/src/stub_clm)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/app_util)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)
@@ -11,6 +13,7 @@ include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_math)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_dtype)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_bgc)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_core)
+include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_transport)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_para)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_main)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_grid)
@@ -31,7 +34,6 @@ set(BETR_LIBRARIES betr_driver_main;${BETR_LIBRARIES})
 link_libraries(${BETR_LIBRARIES};${BETR_TPLS})
 include(add_betr_executable)
 add_betr_executable(sbetr sbetr.F90)
-
 #X#add_subdirectory(tests)
 
 if (NOT CMAKE_INSTALL_PREFIX STREQUAL "INSTALL_DISABLED")

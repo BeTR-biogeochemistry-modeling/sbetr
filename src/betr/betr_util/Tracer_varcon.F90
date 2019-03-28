@@ -14,7 +14,7 @@ module Tracer_varcon
   ! class passed to routines that need th evalue.
   !
   ! !USES:
-  use bshr_kind_mod, only : r8 => shr_kind_r8
+  use bshr_kind_mod, only : r8 => shr_kind_r8, SHR_KIND_CL
   use betr_constants, only : betr_string_length
   implicit none
   character(len=*), private, parameter :: mod_filename = &
@@ -44,17 +44,23 @@ module Tracer_varcon
   logical :: use_c14_betr=.false.
   logical :: is_nitrogen_active = .true.
   logical :: is_phosphorus_active=.true.
+  logical :: fix_ip = .false.
+  logical :: lbcalib = .false.
   integer, parameter :: sorp_isotherm_linear=1
   integer, parameter :: sorp_isotherm_langmuir=2
 
-  logical  :: advection_on, diffusion_on, reaction_on, ebullition_on
+  logical  :: advection_on, diffusion_on, reaction_on, ebullition_on, AA_spinup_on
+  logical  :: input_only=.false.
   character(len=betr_string_length), public :: reaction_method
   save
 
   integer, public :: betr_nlevsoi
   integer, public :: betr_nlevsno
   integer, public :: betr_nlevtrc_soil
+  real(r8), public :: adv_scalar = 1._r8
+  logical, public :: do_bgc_calibration = .false.
 
+  character(len=SHR_KIND_CL), public :: bgc_param_file  = ' '
   !
   ! NOTE(bja, 201604) Do NOT add a save statement to this module and
   ! create instances of these types. Instances should be created in a
@@ -110,33 +116,40 @@ module Tracer_varcon
 !X!     real(r8), public :: atm_drh_h2o, atm_tratio_h2o, atm_o18ro16_h2o, atm_o17ro16_h2o
 !X!     real(r8), public :: atm_c13rc12_ch4, atm_c14rc12_ch4, atm_drh_ch4
 !X!  end type betr_atm_isotope_composition_type
-   public :: set_cnpbgc
+   public :: set_betr_cnpbgc
    contains
 
 !-------------------------------------------------------------------------------
-    subroutine set_cnpbgc(cnpset)
+    subroutine set_betr_cnpbgc(suplnitro,suplphos, spinup_state)
     !
     !DESCRIPTION
     !set n and p switches of the betr bgc model
     implicit none
-    character(len=*), intent(in) :: cnpset
+    character(len=*), intent(in) :: suplnitro
+    character(len=*), intent(in) :: suplphos
+    integer         , intent(in) :: spinup_state
+    integer :: cnpset
+
     !set
-    select case (trim(cnpset))
-    case ('C')
+    cnpset=111
+    if(trim(suplnitro)=='ALL')cnpset=cnpset-10
+    if(trim(suplphos)=='ALL')cnpset=cnpset-1
+
+    select case (cnpset)
+    case (100)
       is_nitrogen_active = .false.
       is_phosphorus_active=.false.
-    case ('CN')
+    case (110)
       is_nitrogen_active = .true.
       is_phosphorus_active=.false.
-    case ('CP')
+    case (101)
       is_nitrogen_active = .false.
-      is_phosphorus_active=.true.
-    case ('CNP')
-      is_nitrogen_active = .true.
       is_phosphorus_active=.true.
     case default
       is_nitrogen_active = .true.
       is_phosphorus_active=.true.
     end select
-    end subroutine set_cnpbgc
+    !make sure P has full supply during spinup
+    !if(spinup_state==1)is_phosphorus_active=.false.
+    end subroutine set_betr_cnpbgc
 end module Tracer_varcon

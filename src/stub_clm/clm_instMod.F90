@@ -75,7 +75,17 @@ module clm_instMod
 
   call soilhydrology_vars%Init(bounds)
 
+  call carbonstate_vars%Init(bounds)
+
+  call c13state_vars%Init(bounds)
+
+  call c14state_vars%Init(bounds)
+
   call carbonflux_vars%Init(bounds)
+
+  call c13_cflx_vars%Init(bounds)
+
+  call c14_cflx_vars%Init(bounds)
 
   call nitrogenstate_vars%Init(bounds)
 
@@ -85,15 +95,14 @@ module clm_instMod
 
   call canopystate_vars%Init(bounds)
 
-  call carbonstate_vars%Init(bounds)
-
   call phosphorusstate_vars%Init(bounds)
 
   call phosphorusflux_vars%Init(bounds)
 
+  call PlantMicKinetics_vars%Init(bounds)
+
   allocate(soil_water_retention_curve, &
        source=create_soil_water_retention_curve())
-
 
   end subroutine clm_inst
 end module clm_instMod

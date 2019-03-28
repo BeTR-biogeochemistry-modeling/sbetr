@@ -19,6 +19,10 @@ implicit none
     real(r8), pointer :: totlitn_1m_col               (:) => null()
     real(r8), pointer :: totlitn_col                  (:) => null()
     real(r8), pointer :: pnup_pfrootc_patch           (:) => null()
+    real(r8), pointer :: som1n_col                    (:) => null()
+    real(r8), pointer :: som2n_col                    (:) => null()
+    real(r8), pointer :: som3n_col                    (:) => null()
+    real(r8), pointer :: domn_col                     (:) => null()
   contains
 
     procedure, public  :: Init
@@ -59,14 +63,23 @@ contains
 
     begp = bounds%begp; endp= bounds%endp
     allocate(this%decomp_npools_vr_col(begc:endc,1:nlevdecomp_full,1:ndecomp_pools));
-    this%decomp_npools_vr_col(:,:,:)= nan
-    allocate(this%smin_no3_vr_col          (begc:endc,1:nlevdecomp_full)) ; this%smin_no3_vr_col          (:,:) = nan
-    allocate(this%smin_nh4_vr_col          (begc:endc,1:nlevdecomp_full)) ; this%smin_nh4_vr_col          (:,:) = nan
-    allocate(this%smin_no3_col             (begc:endc))                   ; this%smin_no3_col             (:)   = nan
-    allocate(this%smin_nh4_col             (begc:endc))                   ; this%smin_nh4_col             (:)   = nan
-    allocate(this%sminn_vr_col             (begc:endc,1:nlevdecomp_full)) ; this%sminn_vr_col             (:,:) = nan
-    allocate(this%pnup_pfrootc_patch (begp:endp)); this%pnup_pfrootc_patch (:) = nan
-
+    this%decomp_npools_vr_col(:,:,:)= spval
+    allocate(this%smin_no3_vr_col          (begc:endc,1:nlevdecomp_full)) ; this%smin_no3_vr_col          (:,:) = spval
+    allocate(this%smin_nh4_vr_col          (begc:endc,1:nlevdecomp_full)) ; this%smin_nh4_vr_col          (:,:) = spval
+    allocate(this%smin_no3_col             (begc:endc))                   ; this%smin_no3_col             (:)   = spval
+    allocate(this%smin_nh4_col             (begc:endc))                   ; this%smin_nh4_col             (:)   = spval
+    allocate(this%sminn_vr_col             (begc:endc,1:nlevdecomp_full)) ; this%sminn_vr_col             (:,:) = spval
+    allocate(this%pnup_pfrootc_patch (begp:endp)); this%pnup_pfrootc_patch (:) = spval
+    allocate(this%cwdn_col(begc:endc)); this%cwdn_col(:) = spval
+    allocate(this%totlitn_col(begc:endc)); this%totlitn_col(:) = spval
+    allocate(this%totsomn_col(begc:endc)); this%totsomn_col(:) = spval
+    allocate(this%totlitn_1m_col(begc:endc)); this%totlitn_1m_col(:) = spval
+    allocate(this%totsomn_1m_col(begc:endc)); this%totsomn_1m_col(:) = spval
+    allocate(this%som1n_col(begc:endc)); this%som1n_col(:) = spval
+    allocate(this%som2n_col(begc:endc)); this%som2n_col(:) = spval
+    allocate(this%som3n_col(begc:endc)); this%som3n_col(:) = spval
+    allocate(this%sminn_col(begc:endc)); this%sminn_col(:) = spval
+    allocate(this%domn_col(begc:endc)); this%domn_col(:) = spval
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------

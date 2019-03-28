@@ -1,9 +1,12 @@
 module BeTR_carbonstateRecvType
   use bshr_kind_mod  , only : r8 => shr_kind_r8
   use betr_decompMod , only : betr_bounds_type
+  use tracer_varcon  , only : reaction_method
+  use betr_varcon     , only : spval => bspval
 implicit none
-
-  character(len=*), private, parameter :: mod_filename = &
+#include "bshr_alloc.h"
+  private
+  character(len=*), parameter :: mod_filename = &
        __FILE__
   type, public :: betr_carbonstate_recv_type
      real(r8), pointer :: cwdc_col(:) => null()
@@ -14,6 +17,14 @@ implicit none
      real(r8), pointer :: cwdc_vr_col(:,:) => null()
      real(r8), pointer :: totlitc_vr_col(:,:) => null()
      real(r8), pointer :: totsomc_vr_col(:,:) => null()
+     real(r8), pointer :: som1c_col(:) => null()
+     real(r8), pointer :: som2c_col(:) => null()
+     real(r8), pointer :: som3c_col(:) => null()
+     real(r8), pointer :: domc_col(:) => null()
+     real(r8), pointer :: som1c_vr_col(:,:) => null()
+     real(r8), pointer :: som2c_vr_col(:,:) => null()
+     real(r8), pointer :: som3c_vr_col(:,:) => null()
+     real(r8), pointer :: domc_vr_col(:,:) => null()
  contains
     procedure, public  :: Init
     procedure, private :: InitAllocate
@@ -48,19 +59,27 @@ implicit none
   begc = bounds%begc ; endc=bounds%endc
   lbj = bounds%lbj   ; ubj=bounds%ubj
 
-  allocate(this%cwdc_col(begc:endc))
-  allocate(this%totlitc_col(begc:endc))
-  allocate(this%totsomc_col(begc:endc))
-  allocate(this%totlitc_1m_col(begc:endc))
-  allocate(this%totsomc_1m_col(begc:endc))
+  SPVAL_ALLOC(this%cwdc_col(begc:endc))
+  SPVAL_ALLOC(this%totlitc_col(begc:endc))
+  SPVAL_ALLOC(this%totsomc_col(begc:endc))
+  SPVAL_ALLOC(this%totlitc_1m_col(begc:endc))
+  SPVAL_ALLOC(this%totsomc_1m_col(begc:endc))
 
-  allocate(this%cwdc_vr_col(begc:endc,lbj:ubj)); this%cwdc_vr_col(:,:)   = nan
-  allocate(this%totlitc_vr_col(begc:endc,lbj:ubj)); this%totlitc_vr_col(:,:) = nan
-  allocate(this%totsomc_vr_col(begc:endc,lbj:ubj)); this%totsomc_vr_col(:,:) = nan
+  SPVAL_ALLOC(this%som1c_col(begc:endc))
+  SPVAL_ALLOC(this%som2c_col(begc:endc))
+  SPVAL_ALLOC(this%som3c_col(begc:endc))
+  SPVAL_ALLOC(this%domc_col(begc:endc))
+
+  SPVAL_ALLOC(this%som1c_vr_col(begc:endc, lbj:ubj))
+  SPVAL_ALLOC(this%som2c_vr_col(begc:endc, lbj:ubj))
+  SPVAL_ALLOC(this%som3c_vr_col(begc:endc, lbj:ubj))
+
+  SPVAL_ALLOC(this%cwdc_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%totlitc_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%totsomc_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%domc_vr_col(begc:endc, lbj:ubj))
 
   end subroutine InitAllocate
-
-
 
   !------------------------------------------------------------------------
   subroutine reset(this, value_column)
@@ -71,10 +90,12 @@ implicit none
   this%cwdc_vr_col(:,:) = value_column
   this%totlitc_vr_col(:,:) = value_column
   this%totsomc_vr_col(:,:) = value_column
-  
-  
-  end subroutine reset
 
+  this%som1c_vr_col(:,:) = value_column
+  this%som2c_vr_col(:,:) = value_column
+  this%som3c_vr_col(:,:) = value_column
+  this%domc_vr_col(:,:) = value_column
+  end subroutine reset
 
   !------------------------------------------------------------------------
   subroutine summary(this, bounds, lbj, ubj, dz, zs)
@@ -93,12 +114,28 @@ implicit none
   this%totsomc_col(:) = 0._r8
   this%totlitc_1m_col(:) = 0._r8
   this%totsomc_1m_col(:) = 0._r8
-  do j = lbj, ubj 
-    do c = bounds%begc, bounds%endc
-      this%cwdc_col(c) = this%cwdc_col(c) + dz(c,j) * this%cwdc_vr_col(c,j)
-      this%totlitc_col(c) = this%totlitc_col(c) + dz(c,j)*this%totlitc_vr_col(c,j)
-      this%totsomc_col(c) = this%totsomc_col(c) + dz(c,j)*this%totsomc_vr_col(c,j)
 
+  this%som1c_col(:) = 0.0_r8
+  this%som2c_col(:) = 0.0_r8
+  this%som3c_col(:) = 0.0_r8
+  this%domc_col(:)  = 0._r8
+  do j = lbj, ubj
+    do c = bounds%begc, bounds%endc
+      this%som1c_col(c) = this%som1c_col(c) + dz(c,j)*this%som1c_vr_col(c,j)
+      this%som2c_col(c) = this%som2c_col(c) + dz(c,j)*this%som2c_vr_col(c,j)
+      this%som3c_col(c) = this%som3c_col(c) + dz(c,j)*this%som3c_vr_col(c,j)
+      this%cwdc_col(c) = this%cwdc_col(c) + dz(c,j) * this%cwdc_vr_col(c,j)
+      this%domc_col(c) = this%domc_col(c) + dz(c,j) * this%domc_vr_col(c,j)
+
+      this%totlitc_col(c) = this%totlitc_col(c) + dz(c,j)*this%totlitc_vr_col(c,j)
+      this%totsomc_vr_col(c,j) = this%som1c_vr_col(c,j) + this%som2c_vr_col(c,j) + &
+         this%som3c_vr_col(c,j) + this%domc_vr_col(c,j)
+      this%totsomc_col(c) = this%totsomc_col(c) + dz(c,j)*this%totsomc_vr_col(c,j)
+    enddo
+  enddo
+
+  do j = lbj, ubj
+    do c = bounds%begc, bounds%endc
       if(zs(c,j)<1._r8)then
         if(zs(c,j+1)>1._r8)then
           this%totlitc_1m_col(c) = this%totlitc_1m_col(c) + (dz(c,j)-(zs(c,j)-1._r8))*this%totlitc_vr_col(c,j)
@@ -110,5 +147,6 @@ implicit none
       endif
     enddo
   enddo
+
   end subroutine summary
 end module BeTR_carbonstateRecvType

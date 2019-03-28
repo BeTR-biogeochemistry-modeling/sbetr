@@ -27,28 +27,47 @@ module ForcingDataType
      integer                             :: num_levels
      integer                             :: num_time
      integer                             :: num_columns
-     real(r8), pointer                   :: t_soi(:,:)  => null()
-     real(r8), pointer                   :: h2osoi_liqvol(:,:) => null()
-     real(r8), pointer                   :: h2osoi_icevol(:,:)=> null()
-     real(r8), pointer                   :: h2osoi_liq(:,:) => null()
-     real(r8), pointer                   :: h2osoi_ice(:,:) => null()
-     real(r8), pointer                   :: qflx_infl(:)     => null()  !surface infiltration, mm/s
-     real(r8), pointer                   :: qflx_rootsoi(:,:) => null()  !transpiration at depth, m/s
-!x     real(r8), pointer                 :: qflx_rootsoi_patch(:,:) => null()  !transpiration at depth, m/s
-     real(r8), pointer                   :: pbot(:)      => null()      !amtospheric pressure, Pa
-     real(r8), pointer                   :: tbot(:)       => null()     !atmoshperic temperature, kelvin
-     real(r8), pointer                   :: qbot(:)       => null()     !water flux at bottom boundary, mm/s
-!x     real(r8), pointer                 :: soilpsi(:)=> null()
+     real(r8), allocatable               :: t_soi(:,:)
+     real(r8), allocatable               :: h2osoi_liqvol(:,:)
+     real(r8), allocatable               :: h2osoi_icevol(:,:)
+     real(r8), allocatable               :: h2osoi_liq(:,:)
+     real(r8), allocatable               :: h2osoi_ice(:,:)
+     real(r8), allocatable               :: qflx_infl(:)       !surface infiltration, mm/s
+     real(r8), allocatable               :: qflx_rootsoi(:,:)   !transpiration at depth, m/s
+     real(r8), allocatable               :: pbot(:)            !amtospheric pressure, Pa
+     real(r8), allocatable               :: tbot(:)            !atmoshperic temperature, kelvin
+     real(r8), allocatable               :: qbot(:)            !water flux at bottom boundary, mm/s
+     real(r8), allocatable               :: finundated(:)
+     real(r8), allocatable               :: nflx_nh4_vr(:,:)
+     real(r8), allocatable               :: nflx_no3_vr(:,:)
+     real(r8), allocatable               :: pflx_po4_vr(:,:)
+     real(r8), allocatable               :: cflx_met_vr(:,:)
+     real(r8), allocatable               :: cflx_cel_vr(:,:)
+     real(r8), allocatable               :: cflx_lig_vr(:,:)
+     real(r8), allocatable               :: cflx_cwd_vr(:,:)
+     real(r8), allocatable               :: nflx_met_vr(:,:)
+     real(r8), allocatable               :: nflx_cel_vr(:,:)
+     real(r8), allocatable               :: nflx_lig_vr(:,:)
+     real(r8), allocatable               :: nflx_cwd_vr(:,:)
+     real(r8), allocatable               :: pflx_met_vr(:,:)
+     real(r8), allocatable               :: pflx_cel_vr(:,:)
+     real(r8), allocatable               :: pflx_lig_vr(:,:)
+     real(r8), allocatable               :: pflx_cwd_vr(:,:)
+     real(r8), allocatable               :: qflx_runoff_col(:)
+     logical                             :: use_rootsoit
    contains
      procedure, public :: Init
      procedure, public :: ReadData
      procedure, public :: ReadForcingData
+     procedure, public :: ReadCNPData
      procedure, public :: UpdateForcing
+     procedure, public :: UpdateCNPForcing
      procedure, public :: discharge
      procedure, public :: infiltration
      procedure, private :: InitAllocate
+     procedure, private :: InitAllocate_CNP
      procedure, private :: ReadNameList
-     procedure, public  :: destroy
+     procedure, public  :: Destroy
   end type ForcingData_type
 
 contains
@@ -77,56 +96,231 @@ contains
           write(*, *) 'WARNING: no forcing data type specified, using transient.'
        end select
 
-    call this%InitAllocate(this%num_time)
+    call this%InitAllocate()
 
   end subroutine Init
 
 
+  !------------------------------------------------------------------------
+  subroutine Destroy(this)
+  !DESCRIPTION
+  !allocate memory
+  implicit none
+  class(ForcingData_type), intent(inout) :: this
+  !at this moment the variable size is fixed
 
-
-    !------------------------------------------------------------------------
-    subroutine Destroy(this)
-      !DESCRIPTION
-      !allocate memory
-      implicit none
-      class(ForcingData_type), intent(inout) :: this
-      !at this moment the variable size is fixed
-
-      deallocate(this%t_soi)
-      deallocate(this%h2osoi_liqvol)
-      deallocate(this%h2osoi_icevol)
-      deallocate(this%h2osoi_liq)
-      deallocate(this%h2osoi_ice)
-      deallocate(this%qflx_infl)
-      deallocate(this%qflx_rootsoi)
-      deallocate(this%pbot)
-      deallocate(this%qbot)
-      deallocate(this%tbot)
-
-    end subroutine Destroy
+  if(allocated(this%t_soi))deallocate(this%t_soi)
+  if(allocated(this%h2osoi_liqvol))deallocate(this%h2osoi_liqvol)
+  if(allocated(this%h2osoi_icevol))deallocate(this%h2osoi_icevol)
+  if(allocated(this%h2osoi_liq))deallocate(this%h2osoi_liq)
+  if(allocated(this%h2osoi_ice))deallocate(this%h2osoi_ice)
+  if(allocated(this%qflx_infl))deallocate(this%qflx_infl)
+  if(allocated(this%qflx_rootsoi))deallocate(this%qflx_rootsoi)
+  if(allocated(this%pbot))deallocate(this%pbot)
+  if(allocated(this%qbot))deallocate(this%qbot)
+  if(allocated(this%tbot))deallocate(this%tbot)
+  if(allocated(this%finundated))deallocate(this%finundated)
+  if(allocated(this%nflx_nh4_vr))deallocate(this%nflx_nh4_vr)
+  if(allocated(this%nflx_no3_vr))deallocate(this%nflx_no3_vr)
+  if(allocated(this%pflx_po4_vr))deallocate(this%pflx_po4_vr)
+  if(allocated(this%cflx_met_vr))deallocate(this%cflx_met_vr)
+  if(allocated(this%cflx_cel_vr))deallocate(this%cflx_cel_vr)
+  if(allocated(this%cflx_lig_vr))deallocate(this%cflx_lig_vr)
+  if(allocated(this%cflx_cwd_vr))deallocate(this%cflx_cwd_vr)
+  if(allocated(this%nflx_met_vr))deallocate(this%nflx_met_vr)
+  if(allocated(this%nflx_cel_vr))deallocate(this%nflx_cel_vr)
+  if(allocated(this%nflx_lig_vr))deallocate(this%nflx_lig_vr)
+  if(allocated(this%nflx_cwd_vr))deallocate(this%nflx_cwd_vr)
+  if(allocated(this%pflx_met_vr))deallocate(this%pflx_met_vr)
+  if(allocated(this%pflx_cel_vr))deallocate(this%pflx_cel_vr)
+  if(allocated(this%pflx_lig_vr))deallocate(this%pflx_lig_vr)
+  if(allocated(this%pflx_cwd_vr))deallocate(this%pflx_cwd_vr)
+  end subroutine Destroy
 
   !------------------------------------------------------------------------
-  subroutine InitAllocate(this, num_time)
+  subroutine InitAllocate(this)
     !DESCRIPTION
     !allocate memory
     implicit none
     class(ForcingData_type), intent(inout) :: this
-    integer, intent(in) :: num_time
     !at this moment the variable size is fixed
 
-    allocate(this%t_soi(num_time, this%num_levels))
-    allocate(this%h2osoi_liqvol(num_time, this%num_levels))
-    allocate(this%h2osoi_icevol(num_time, this%num_levels))
-    allocate(this%h2osoi_liq(num_time, this%num_levels))
-    allocate(this%h2osoi_ice(num_time, this%num_levels))
-    allocate(this%qflx_infl(num_time))
-    allocate(this%qflx_rootsoi(num_time, this%num_levels))
-    allocate(this%pbot(num_time))
-    allocate(this%qbot(num_time))
-    allocate(this%tbot(num_time))
-
+    allocate(this%t_soi(this%num_time, this%num_levels))
+    allocate(this%h2osoi_liqvol(this%num_time, this%num_levels))
+    allocate(this%h2osoi_icevol(this%num_time, this%num_levels))
+    allocate(this%h2osoi_liq(this%num_time, this%num_levels))
+    allocate(this%h2osoi_ice(this%num_time, this%num_levels))
+    allocate(this%qflx_infl(this%num_time))
+    allocate(this%qflx_rootsoi(this%num_time, this%num_levels))
+    allocate(this%pbot(this%num_time))
+    allocate(this%qbot(this%num_time))
+    allocate(this%tbot(this%num_time))
+    allocate(this%finundated(this%num_time)); this%finundated(:)=0._r8
+    allocate(this%qflx_runoff_col(this%num_time)); this%qflx_runoff_col(:)=0._r8
   end subroutine InitAllocate
+  !------------------------------------------------------------------------
+  subroutine InitAllocate_CNP(this)
+    !DESCRIPTION
+    !allocate memory
+    implicit none
+    class(ForcingData_type), intent(inout) :: this
+    !at this moment the variable size is fixed
 
+    allocate(this%cflx_met_vr(this%num_time, this%num_levels))
+    allocate(this%cflx_cel_vr(this%num_time, this%num_levels))
+    allocate(this%cflx_lig_vr(this%num_time, this%num_levels))
+    allocate(this%cflx_cwd_vr(this%num_time, this%num_levels))
+    allocate(this%nflx_met_vr(this%num_time, this%num_levels))
+    allocate(this%nflx_cel_vr(this%num_time, this%num_levels))
+    allocate(this%nflx_lig_vr(this%num_time, this%num_levels))
+    allocate(this%nflx_cwd_vr(this%num_time, this%num_levels))
+    allocate(this%pflx_met_vr(this%num_time, this%num_levels))
+    allocate(this%pflx_cel_vr(this%num_time, this%num_levels))
+    allocate(this%pflx_lig_vr(this%num_time, this%num_levels))
+    allocate(this%pflx_cwd_vr(this%num_time, this%num_levels))
+    allocate(this%nflx_nh4_vr(this%num_time, this%num_levels))
+    allocate(this%nflx_no3_vr(this%num_time, this%num_levels))
+    allocate(this%pflx_po4_vr(this%num_time, this%num_levels))
+
+  end subroutine InitAllocate_CNP
+
+  !------------------------------------------------------------------------
+  subroutine ReadCNPData(this)
+    !read infomration about forcing data
+    !USES
+    use ncdio_pio    , only : file_desc_t
+    use ncdio_pio    , only : ncd_nowrite
+    use ncdio_pio    , only : ncd_pio_openfile
+    use ncdio_pio    , only : get_dim_len
+    use ncdio_pio    , only : ncd_getvar
+    use ncdio_pio    , only : ncd_pio_closefile
+    use babortutils  , only : endrun
+    use bshr_log_mod , only : errMsg => shr_log_errMsg
+    use BeTR_GridMod , only : betr_grid_type
+  implicit none
+    class(ForcingData_type), intent(inout)  :: this
+
+    character(len=250)    :: ncf_in_filename_forc
+    type(file_desc_t)     :: ncf_in_forc
+    real(r8), allocatable :: data_2d(:,:,:)
+    integer :: j1, j2
+
+    call this%InitAllocate_CNP()
+
+    ncf_in_filename_forc=trim(this%forcing_filename)
+    call ncd_pio_openfile(ncf_in_forc, ncf_in_filename_forc, mode=ncd_nowrite)
+
+    allocate(data_2d(this%num_columns, this%num_levels, 1:this%num_time))
+
+    call ncd_getvar(ncf_in_forc, 'CFLX_INPUT_LITR_MET_vr', data_2d)
+    do j2 = 1, this%num_levels
+       do j1 = 1, this%num_time
+          this%cflx_met_vr(j1, j2) = data_2d(this%num_columns, j2, j1)
+       enddo
+    enddo
+
+    call ncd_getvar(ncf_in_forc, 'CFLX_INPUT_LITR_CEL_vr', data_2d)
+    do j2 = 1, this%num_levels
+       do j1 = 1, this%num_time
+          this%cflx_cel_vr(j1, j2) = data_2d(this%num_columns, j2, j1)
+       enddo
+    enddo
+
+    call ncd_getvar(ncf_in_forc, 'CFLX_INPUT_LITR_LIG_vr', data_2d)
+    do j2 = 1, this%num_levels
+       do j1 = 1, this%num_time
+          this%cflx_lig_vr(j1, j2) = data_2d(this%num_columns, j2, j1)
+       enddo
+    enddo
+
+    call ncd_getvar(ncf_in_forc, 'CFLX_INPUT_LITR_CWD_vr', data_2d)
+    do j2 = 1, this%num_levels
+       do j1 = 1, this%num_time
+          this%cflx_cwd_vr(j1, j2) = data_2d(this%num_columns, j2, j1)
+       enddo
+    enddo
+
+    call ncd_getvar(ncf_in_forc, 'NFLX_INPUT_LITR_MET_vr', data_2d)
+    do j2 = 1, this%num_levels
+       do j1 = 1, this%num_time
+          this%nflx_met_vr(j1, j2) = data_2d(this%num_columns, j2, j1)
+       enddo
+    enddo
+
+    call ncd_getvar(ncf_in_forc, 'NFLX_INPUT_LITR_CEL_vr', data_2d)
+    do j2 = 1, this%num_levels
+       do j1 = 1, this%num_time
+          this%nflx_cel_vr(j1, j2) = data_2d(this%num_columns, j2, j1)
+       enddo
+    enddo
+
+    call ncd_getvar(ncf_in_forc, 'NFLX_INPUT_LITR_LIG_vr', data_2d)
+    do j2 = 1, this%num_levels
+       do j1 = 1, this%num_time
+          this%nflx_lig_vr(j1, j2) = data_2d(this%num_columns, j2, j1)
+       enddo
+    enddo
+
+    call ncd_getvar(ncf_in_forc, 'NFLX_INPUT_LITR_CWD_vr', data_2d)
+    do j2 = 1, this%num_levels
+       do j1 = 1, this%num_time
+          this%nflx_cwd_vr(j1, j2) = data_2d(this%num_columns, j2, j1)
+       enddo
+    enddo
+
+    call ncd_getvar(ncf_in_forc, 'PFLX_INPUT_LITR_MET_vr', data_2d)
+    do j2 = 1, this%num_levels
+       do j1 = 1, this%num_time
+          this%pflx_met_vr(j1, j2) = data_2d(this%num_columns, j2, j1)
+       enddo
+    enddo
+
+    call ncd_getvar(ncf_in_forc, 'PFLX_INPUT_LITR_CEL_vr', data_2d)
+    do j2 = 1, this%num_levels
+       do j1 = 1, this%num_time
+          this%pflx_cel_vr(j1, j2) = data_2d(this%num_columns, j2, j1)
+       enddo
+    enddo
+
+    call ncd_getvar(ncf_in_forc, 'PFLX_INPUT_LITR_LIG_vr', data_2d)
+    do j2 = 1, this%num_levels
+       do j1 = 1, this%num_time
+          this%pflx_lig_vr(j1, j2) = data_2d(this%num_columns, j2, j1)
+       enddo
+    enddo
+
+    call ncd_getvar(ncf_in_forc, 'PFLX_INPUT_LITR_CWD_vr', data_2d)
+    do j2 = 1, this%num_levels
+       do j1 = 1, this%num_time
+          this%pflx_cwd_vr(j1, j2) = data_2d(this%num_columns, j2, j1)
+       enddo
+    enddo
+
+    call ncd_getvar(ncf_in_forc, 'NFLX_MINN_INPUT_NH4_vr', data_2d)
+    do j2 = 1, this%num_levels
+       do j1 = 1, this%num_time
+          this%nflx_nh4_vr(j1, j2) = data_2d(this%num_columns, j2, j1)
+       enddo
+    enddo
+
+    call ncd_getvar(ncf_in_forc, 'NFLX_MINN_INPUT_NO3_vr', data_2d)
+    do j2 = 1, this%num_levels
+       do j1 = 1, this%num_time
+          this%nflx_no3_vr(j1, j2) = data_2d(this%num_columns, j2, j1)
+       enddo
+    enddo
+
+    call ncd_getvar(ncf_in_forc, 'PFLX_MINP_INPUT_PO4_vr', data_2d)
+    do j2 = 1, this%num_levels
+       do j1 = 1, this%num_time
+          this%pflx_po4_vr(j1, j2) = data_2d(this%num_columns, j2, j1)
+       enddo
+    enddo
+
+    call ncd_pio_closefile(ncf_in_forc)
+
+    deallocate(data_2d)
+  end subroutine ReadCNPData
   !------------------------------------------------------------------------
   subroutine ReadData(this, namelist_buffer, grid)
     !DESCRIPTION
@@ -181,7 +375,7 @@ contains
     use ncdio_pio    , only : file_desc_t
     use ncdio_pio    , only : ncd_nowrite
     use ncdio_pio    , only : ncd_pio_openfile
-    use ncdio_pio    , only : ncd_getvar
+    use ncdio_pio    , only : ncd_getvar, ncd_getatt
     use ncdio_pio    , only : ncd_pio_closefile
     use BeTR_GridMod , only : betr_grid_type
     implicit none
@@ -194,6 +388,8 @@ contains
     real(r8), allocatable :: data_2d(:,:,:)
     real(r8), allocatable :: data_1d(:,:)
     integer               :: j1, j2
+    real(r8) :: tommps
+    character(len=9) :: units
 
     ncf_in_filename_forc=trim(this%forcing_filename)
     call ncd_pio_openfile(ncf_in_forc, ncf_in_filename_forc, mode=ncd_nowrite)
@@ -221,7 +417,6 @@ contains
     call ncd_getvar(ncf_in_forc, 'SOILICE', data_2d)
     do j2 = 1, this%num_levels
        do j1 = 1, this%num_time
-
           this%h2osoi_icevol(j1, j2) = data_2d(this%num_columns, j2, j1)/rhoice/grid%dzsoi(j2)
           this%h2osoi_liqvol(j1, j2) = this%h2osoi_liqvol(j1, j2) - this%h2osoi_icevol(j1, j2)
           this%h2osoi_ice(j1, j2) = data_2d(this%num_columns, j2, j1)
@@ -253,14 +448,28 @@ contains
        this%qbot(j1) = data_1d(this%num_columns, j1)  ! mm/s
     enddo
 
-    !X!write(*, *) 'Reading QFLX_ROOTSOI'
-    call ncd_getvar(ncf_in_forc, 'QFLX_ROOTSOI', data_2d)
-    do j2 = 1, this%num_levels
-       do j1 = 1, this%num_time
-          this%qflx_rootsoi(j1, j2) = data_2d(this%num_columns, j2, j1)*1.e3_r8
-       enddo
-    enddo
+    if(this%use_rootsoit)then
+      !X!write(*, *) 'Reading QFLX_ROOTSOI'
+      call ncd_getvar(ncf_in_forc, 'QFLX_ROOTSOI', data_2d)
+      call ncd_getatt(ncf_in_forc,'QFLX_ROOTSOI','units',units)
 
+      if(trim(units)=='m/s')then
+        tommps=1.e3_r8
+      else
+        tommps=1._r8
+      endif
+      do j2 = 1, this%num_levels
+        do j1 = 1, this%num_time
+          this%qflx_rootsoi(j1, j2) = data_2d(this%num_columns, j2, j1)*1.e3_r8
+        enddo
+      enddo
+    else
+      do j2 = 1, this%num_levels
+        do j1 = 1, this%num_time
+          this%qflx_rootsoi(j1, j2)  = 0._r8
+        enddo
+      enddo
+    endif
     call ncd_pio_closefile(ncf_in_forc)
 
     deallocate(data_2d)
@@ -275,13 +484,11 @@ contains
     ! !DESCRIPTION:
     ! read namelist for betr configuration
     ! !USES:
-    use spmdMod        , only : masterproc, mpicom
-    use fileutils      , only : getavu, relavu, opnfil
-    use shr_nl_mod     , only : shr_nl_find_group_name
-    use shr_mpi_mod    , only : shr_mpi_bcast
-    use clm_varctl     , only : iulog
-    use abortutils     , only : endrun
-    use shr_log_mod    , only : errMsg => shr_log_errMsg
+
+    use bshr_nl_mod    , only : shr_nl_find_group_name
+    use betr_ctrl      , only : iulog => biulog
+    use babortutils    , only : endrun
+    use bshr_log_mod   , only : errMsg => shr_log_errMsg
     use betr_constants , only : stdout
     implicit none
     ! !ARGUMENTS:
@@ -293,16 +500,16 @@ contains
     character(len=*), parameter            :: subname = 'ReadNameList'
     character(len=betr_filename_length)    :: forcing_format, forcing_type_name, forcing_filename
     character(len=betr_string_length_long) :: ioerror_msg
-
+    logical                                :: use_rootsoit
     !-----------------------------------------------------------------------
 
     namelist / forcing_inparm / &
-         forcing_type_name, forcing_filename, forcing_format
+         forcing_type_name, forcing_filename, forcing_format, use_rootsoit
 
     forcing_format    = ''
     forcing_type_name = transient_name
     forcing_filename  = ''
-
+    use_rootsoit =.true.
     ! ----------------------------------------------------------------------
     ! Read namelist from standard input.
     ! ----------------------------------------------------------------------
@@ -331,14 +538,14 @@ contains
     this%forcing_type_name = trim(forcing_type_name)
     this%forcing_format    = trim(forcing_format)
     this%forcing_filename  = trim(forcing_filename)
-
+    this%use_rootsoit       = use_rootsoit
   end subroutine ReadNameList
 
   ! ----------------------------------------------------------------------
 
   subroutine UpdateForcing(this, grid, bounds, lbj, ubj, numf, filter, ttime, col, pft, &
        atm2lnd_vars, soilhydrology_vars, soilstate_vars,waterstate_vars,waterflux_vars, &
-       temperature_vars,chemstate_vars, jtops)
+       temperature_vars,chemstate_vars, plantMicKinetics_vars, jtops)
     !
     ! DESCRIPTIONS
     ! read environmental forcing to run betr
@@ -358,6 +565,7 @@ contains
     use BeTR_TimeMod      , only : betr_time_type
     use BeTR_GridMod      , only : betr_grid_type
     use betr_varcon       , only : betr_maxpatch_pft, denh2o=> bdenh2o, denice => bdenice
+    use PlantMicKineticsMod, only : PlantMicKinetics_type
     implicit none
     !arguments
     class(ForcingData_type)  , intent(in)    :: this
@@ -376,6 +584,7 @@ contains
     type(column_type)        , intent(inout) :: col
     type(patch_type)         , intent(in)    :: pft
     type(soilhydrology_type) , intent(inout) :: soilhydrology_vars
+    type(PlantMicKinetics_type), intent(inout) :: PlantMicKinetics_vars
     integer                  , intent(inout) :: jtops(bounds%begc:bounds%endc)
 
     integer            :: j, fc, c, tstep, p, pi
@@ -410,10 +619,6 @@ contains
              waterstate_vars%air_vol_col(c,j)       = grid%watsat(j)-waterstate_vars%h2osoi_liqvol_col(c,j)
              waterstate_vars%h2osoi_icevol_col(c,j) = this%h2osoi_icevol(tstep,j)
              soilstate_vars%eff_porosity_col(c,j)   = grid%watsat(j)-this%h2osoi_icevol(tstep,j)
-             soilstate_vars%watsat_col(c,j)         = grid%watsat(j)
-             soilstate_vars%bsw_col(c,j)            = grid%bsw(j)
-             soilstate_vars%sucsat_col(c,j)         = grid%sucsat(j)
-             soilstate_vars%cellsand_col(c,lbj:ubj) = grid%pctsand(j)
              temperature_vars%t_soisno_col(c,j)     = this%t_soi(tstep,j)
              waterflux_vars%qflx_rootsoi_col(c,j)   = this%qflx_rootsoi(tstep,j)  !water exchange between soil and root, m/H2O/s
              do pi = 1, betr_maxpatch_pft
@@ -446,6 +651,7 @@ contains
        waterflux_vars%qflx_h2osfc2topsoi_col(c)   = 0._r8
        waterflux_vars%qflx_gross_infl_soil_col(c) = 0._r8
        waterflux_vars%qflx_gross_evap_soil_col(c) = 0._r8
+       waterflux_vars%qflx_runoff_betr_col(c) = this%qflx_runoff_col(c)
     enddo
 
     do j = 1, ubj
@@ -459,7 +665,67 @@ contains
           waterstate_vars%h2osoi_vol_col(c,j) = min(waterstate_vars%h2osoi_vol_col(c,j), grid%watsat(j))
        enddo
     enddo
+
+    do j = 1, ubj
+      do fc = 1, numf
+        PlantMicKinetics_vars%minsurf_dom_compet_vr_col(c,j)=grid%msurf_OM(j)
+        PlantMicKinetics_vars%km_minsurf_dom_vr_col(c,j)=grid%KM_OM(j)
+      enddo
+    enddo
   end subroutine UpdateForcing
+
+! ----------------------------------------------------------------------
+  subroutine UpdateCNPForcing(this, lbj, ubj, numf, filter, ttime, &
+    carbonflux_vars, c13_cflx_vars, c14_cflx_vars, nitrogenflux_vars, &
+    phosphorusflux_vars, plantMicKinetics_vars)
+
+    use CNNitrogenFluxType, only : nitrogenflux_type
+    use CNCarbonFluxType  , only : carbonflux_type
+    use PhosphorusFluxType, only : phosphorusflux_type
+    use PlantMicKineticsMod, only : PlantMicKinetics_type
+    use BeTR_TimeMod      , only : betr_time_type
+  implicit none
+  !arguments
+    class(ForcingData_type) , intent(in) :: this
+    integer                  , intent(in)    :: lbj, ubj
+    integer                  , intent(in)    :: numf
+    integer                  , intent(in)    :: filter(:)
+    type(betr_time_type)     , intent(in)    :: ttime
+    type(carbonflux_type)    , intent(inout) :: carbonflux_vars
+    type(carbonflux_type)    , intent(inout) :: c13_cflx_vars
+    type(carbonflux_type)    , intent(inout) :: c14_cflx_vars
+    type(nitrogenflux_type)  , intent(inout) :: nitrogenflux_vars
+    type(phosphorusflux_type), intent(inout) :: phosphorusflux_vars
+    type(PlantMicKinetics_type), intent(inout):: plantMicKinetics_vars
+
+    integer :: c, fc, j, tstep
+
+    tstep = ttime%tstep
+
+    do j = lbj, ubj
+      do fc = 1, numf
+        c = filter(fc)
+        carbonflux_vars%cflx_input_litr_met_vr_col(c,j) = this%cflx_met_vr(tstep,j)
+        carbonflux_vars%cflx_input_litr_cel_vr_col(c,j) = this%cflx_cel_vr(tstep,j)
+        carbonflux_vars%cflx_input_litr_lig_vr_col(c,j) = this%cflx_lig_vr(tstep,j)
+        carbonflux_vars%cflx_input_litr_cwd_vr_col(c,j) = this%cflx_cwd_vr(tstep,j)
+
+        nitrogenflux_vars%nflx_input_litr_met_vr_col(c,j) = this%nflx_met_vr(tstep,j)
+        nitrogenflux_vars%nflx_input_litr_cel_vr_col(c,j) = this%nflx_cel_vr(tstep,j)
+        nitrogenflux_vars%nflx_input_litr_lig_vr_col(c,j) = this%nflx_lig_vr(tstep,j)
+        nitrogenflux_vars%nflx_input_litr_cwd_vr_col(c,j) = this%nflx_cwd_vr(tstep,j)
+
+        phosphorusflux_vars%pflx_input_litr_met_vr_col(c,j) = this%pflx_met_vr(tstep,j)
+        phosphorusflux_vars%pflx_input_litr_cel_vr_col(c,j) = this%pflx_cel_vr(tstep,j)
+        phosphorusflux_vars%pflx_input_litr_lig_vr_col(c,j) = this%pflx_lig_vr(tstep,j)
+        phosphorusflux_vars%pflx_input_litr_cwd_vr_col(c,j) = this%pflx_cwd_vr(tstep,j)
+
+        nitrogenflux_vars%nflx_minn_input_nh4_vr_col(c,j) = this%nflx_nh4_vr(tstep,j)
+        nitrogenflux_vars%nflx_minn_input_no3_vr_col(c,j) = this%nflx_no3_vr(tstep,j)
+        phosphorusflux_vars%pflx_minp_input_po4_vr_col(c,j) = this%pflx_po4_vr(tstep,j)
+      enddo
+    enddo
+  end subroutine UpdateCNPForcing
 
   ! ----------------------------------------------------------------------
 

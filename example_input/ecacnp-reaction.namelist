@@ -1,0 +1,28 @@
+&sbetr_driver
+  simulator_name = 'standalone'
+  run_type='sbgc'
+  param_file='../tools/sbgc.ecacnp_pars.04232018.nc'
+  case_id='exp2'
+/
+
+&betr_parameters
+  reaction_method = 'ecacnp'
+/
+
+&betr_time
+  delta_time=3600.
+  stop_n = 20
+  hist_freq = 30
+  stop_option='nyears'
+/
+
+&forcing_inparm
+  forcing_filename = '../input_data/single_pt_example.bgc.forc.nc'
+/
+
+&betr_grid
+  grid_data_filename = '../input_data/single_pt_example.grid.cdl.nc'
+/
+
+&regression_test
+/

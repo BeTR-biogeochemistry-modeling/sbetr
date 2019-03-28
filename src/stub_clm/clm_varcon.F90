@@ -179,17 +179,18 @@ module clm_varcon
   data (d_con_w(3,i),i=1,3) /0.939_r8, 0.02671_r8, 0.0004095_r8/ ! CO2
 
   real(r8), allocatable :: zisoi(:)        !soil zi (interfaces)
-
+  real(r8), allocatable :: dzsoi_decomp(:) !soil dz (thickness)
 contains
 
 
 !------------------------------------------------------------------------------
   subroutine clm_varcon_init()
-  use clm_varpar, only: nlevgrnd
+  use clm_varpar, only: nlevgrnd, nlevdecomp_full
 
   implicit none
 
 
-    allocate( zisoi(0:nlevgrnd               ))
+  allocate( zisoi(0:nlevgrnd               ))
+  allocate( dzsoi_decomp(1:nlevdecomp_full ))
   end subroutine clm_varcon_init
 end module clm_varcon

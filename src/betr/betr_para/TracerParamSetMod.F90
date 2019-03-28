@@ -11,6 +11,7 @@ module TracerParamSetMod
  public :: get_aqueous_diffusivity, get_gas_diffusivity
  public :: get_diffusivity_ratio_gas2h2o
  public :: rhosat
+ public :: get_film_thickness
 contains
 
   subroutine get_lgsorb_KL_Xsat(tracerfamilyname, isoilorder, KL, Xsat)
@@ -21,13 +22,10 @@ contains
   real(r8), intent(out) :: KL
   real(r8), intent(out) :: Xsat
 
-  KL =1._r8
-  Xsat = 0._r8
-
+  KL =1._r8    !mol /m3
+  Xsat = 10._r8   ! mol/m3
 
   end subroutine get_lgsorb_KL_Xsat
-
-
 
 !-------------------------------------------------------------------------------
   function get_lnsorb_Kd(tracerfamily)result(Kd)
@@ -52,9 +50,6 @@ contains
     Kd = 0._r8
   end select
   end function get_lnsorb_Kd
-
-
-
 
 !-------------------------------------------------------------------------------
    function get_diffusivity_ratio_gas2h2o(trcid, temp, betrtracer_vars)result(ratio)
@@ -221,7 +216,9 @@ contains
    elseif(trcid==betrtracer_vars%id_trc_no2x)then
       diff=2.6e-9_r8*temp/298.15_r8  !considers revision
    elseif(trcid==betrtracer_vars%id_trc_nh3x)then
-      diff=1.64e-5_r8*temp/298.15_r8
+      diff=1.64e-9_r8*temp/298.15_r8
+   elseif(trcid==betrtracer_vars%id_trc_p_sol)then
+      diff=0.7e-9_r8*temp/293.15_r8
 !isotopes
    elseif(trcid==betrtracer_vars%id_trc_d_h2o)then
       diff=0.9833_r8*1e-9_r8*exp(-(535400._r8/temp-1393.3_r8)/temp+2.1876_r8)
@@ -275,7 +272,6 @@ contains
       endif
    endif
    end function get_taugas
-
 
 !-------------------------------------------------------------------------------
    function get_tauliq(eff_por, liqvol, bsw)result(tauliq)
@@ -337,8 +333,8 @@ contains
    real(r8), parameter :: co2reflogK2=-10.33_r8   !25 Celcisum
    real(r8), parameter :: co2dH1=-2.0e3_r8 ! J/mol
    real(r8), parameter :: co2dH2=-3.5e3_r8 ! J/mol
-   real(r8), parameter :: nh3logK=9.24_r8  ! from Maggi et al. (2008)
-   real(r8), parameter :: no3logK=1.30_r8  ! from Maggi et al. (2008)
+   real(r8), parameter :: plogKnh3=9.24_r8  ! from Maggi et al. (2008)
+   real(r8), parameter :: plogKno3=1.30_r8  ! from Maggi et al. (2008)
    real(r8), parameter :: R=8.3144
    real(r8)            :: co2logK1, co2logK2, rscal
    character(len=255)  :: subname ='get_equilibrium_scal'
@@ -349,15 +345,15 @@ contains
       !1.e3_r8 converts from mol/dm3 to mol/m3
       co2logK1 = co2reflogK1+co2dH1*(1._r8/(2.303_r8*R*Tref)-1._r8/(2.303_r8*R*temp))
       co2logK2 = co2reflogK2+co2dH2*(1._r8/(2.303_r8*R*Tref)-1._r8/(2.303_r8*R*temp))
-      rscal = 1._r8+10._r8**(co2logK1)*10._r8**(-pH)*(1._r8+10._r8**(co2logK2)*10._r8**(-pH))*1.e3_r8
+      rscal = 1._r8+10._r8**(pH+co2logK1)*(1._r8+10._r8**(pH+co2logK2))
 
    elseif(trim(tracer)=='NH3x')then
       !NH3H2O <--> NH4(+) + OH(-)
       !10._r8**(-pH) gives mol / dm3
-      rscal = 1._r8+10._r8**(nh3logK)*10._r8**(-pH)*1.e3_r8
+      rscal = 1._r8+10._r8**(-plogKnh3-pH)
    elseif(trim(tracer)=='NO3x')then
       !HNO3 <--> NO3(-) + H(+)
-      rscal = 1._r8+10._r8**(no3logK)*10._r8**(-pH)*1.e3_r8
+      rscal = 1._r8+10._r8**(pH-plogKno3)
    else
       rscal = 1._r8  ! no rescal for other tracers
    endif
@@ -505,5 +501,18 @@ contains
 
   end subroutine rhoSat
 
+  !-----------------------------------------------------------------------
+  function get_film_thickness(smp_MPa)result(ans)
+  !
+  !DESCRIPTION
+  !compute the water film thickness
+  implicit none
+  real(r8), intent(in) :: smp_MPa
+  real(r8) :: ans
 
+  ans = exp(-13.65_r8-0.857_r8 *log(-smp_Mpa))
+  ans = max(1.e-6_r8, ans)
+
+  end function get_film_thickness
+  !-----------------------------------------------------------------------
 end module TracerParamSetMod

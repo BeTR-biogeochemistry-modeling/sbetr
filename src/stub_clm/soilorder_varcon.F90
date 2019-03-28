@@ -74,6 +74,7 @@ contains
                             ncd_inqdid, ncd_inqdlen
     use clm_varctl     , only : fsoilordercon
     use spmdMod        , only : masterproc
+    use clm_varcon     , only : spval
 
     ! !ARGUMENTS:
     implicit none
@@ -114,16 +115,16 @@ contains
     /)
 !-----------------------------------------------------------------------
 
-    allocate( smax        (0:nsoilorder) ); smax         (:) = nan
-    allocate( ks_sorption (0:nsoilorder) ); ks_sorption  (:) = nan
-    allocate( r_weather   (0:nsoilorder) ); r_weather    (:) = nan
-    allocate( r_adsorp    (0:nsoilorder) ); r_adsorp     (:) = nan
-    allocate( r_desorp    (0:nsoilorder) ); r_desorp     (:) = nan
-    allocate( r_occlude   (0:nsoilorder) ); r_occlude    (:) = nan
-    allocate(k_s1_biochem (0:nsoilorder) ); k_s1_biochem (:) = nan
-    allocate(k_s2_biochem (0:nsoilorder) ); k_s2_biochem (:) = nan
-    allocate(k_s3_biochem (0:nsoilorder) ); k_s3_biochem (:) = nan
-    allocate(k_s4_biochem (0:nsoilorder) ); k_s4_biochem (:) = nan
+    allocate( smax        (0:nsoilorder) ); smax         (:) = spval
+    allocate( ks_sorption (0:nsoilorder) ); ks_sorption  (:) = spval
+    allocate( r_weather   (0:nsoilorder) ); r_weather    (:) = spval
+    allocate( r_adsorp    (0:nsoilorder) ); r_adsorp     (:) = spval
+    allocate( r_desorp    (0:nsoilorder) ); r_desorp     (:) = spval
+    allocate( r_occlude   (0:nsoilorder) ); r_occlude    (:) = spval
+    allocate(k_s1_biochem (0:nsoilorder) ); k_s1_biochem (:) = spval
+    allocate(k_s2_biochem (0:nsoilorder) ); k_s2_biochem (:) = spval
+    allocate(k_s3_biochem (0:nsoilorder) ); k_s3_biochem (:) = spval
+    allocate(k_s4_biochem (0:nsoilorder) ); k_s4_biochem (:) = spval
 
    ! Set specific soil order values
 

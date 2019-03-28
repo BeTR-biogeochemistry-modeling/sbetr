@@ -101,6 +101,9 @@ else()
   set (BETR_BGC 0)
 endif()
 
+if (SBETR)
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -DSBETR")
+endif()
 # Figure out the system type.
 set(BETR_HAVE_BOOL 1) # All reasonable C99 compilers have this now.
 if (APPLE EQUAL 1)

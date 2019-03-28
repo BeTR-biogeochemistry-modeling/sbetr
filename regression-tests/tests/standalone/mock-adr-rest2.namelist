@@ -8,16 +8,16 @@
 /
 
 &betr_time
-  stop_time = 720000.0
-  restart_dtime = 720000.0
+  stop_n = 400
+  stop_option='nsteps'
 /
 
 &forcing_inparm
-  forcing_filename = '../../../example_input/sierra_halfhour_full_year_clmforc.nc'
+  forcing_filename = '../../../input_data/sierra_halfhour_full_year_clmforc.nc'
 /
 
 &betr_grid
-  grid_data_filename = '../../input-data/clm_exp_grid.cdl.nc'
+  grid_data_filename = '../../../input_data/clm_exp_grid.cdl.nc'
 /
 
 &regression_test

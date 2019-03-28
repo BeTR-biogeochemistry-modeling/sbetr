@@ -17,10 +17,60 @@ module InterpolationMod
        __FILE__
 
   public :: Lagrange_interp
+  public :: mono_Linear_interp_trj
   public :: pchip_polycc
   public :: pchip_interp
-
+  public :: cmass_interp
+  public :: loc_x, loc_xj
+  public :: bmass_interp, mass_interp
+  public :: layer_adjust
 contains
+
+  !-------------------------------------------------------------------------------
+  subroutine mono_Linear_interp_trj(nx, x, y, nxi, xi, yi, bstatus)
+    !
+    ! !DESCRIPTION:
+    ! do order pn lagrangian interpolation
+    use BetrStatusType, only : betr_status_type
+    implicit none
+    ! !ARGUMENTS:
+    integer,    intent(in)  :: nx    !order of interpolation
+    real(r8),   intent(in)  :: x(1:nx)   !location of data
+    real(r8),   intent(in)  :: y(1:nx)   !value of data
+    integer,    intent(in)  :: nxi
+    real(r8),   intent(in)  :: xi(1:nxi)  !target points to be evaluated
+    real(r8),   intent(out) :: yi(1:nxi) !target values
+    type(betr_status_type), intent(out) :: bstatus
+    ! !LOCAL VARIABLES:
+    integer :: k
+    integer :: pos, disp, disp1
+
+
+    call bstatus%reset()
+    do k = 1, nxi
+       ! find the position of z in array x
+       !pos = find_idx(x, xi(k), pos)
+       if(k==1)then
+         pos=loc_x(nx, x, xi(1), bstatus)
+       else
+         pos=loc_xj(nx, x, xi(k), pos)
+       endif
+
+       if(pos==0)then
+         yi(k)=y(1)
+       elseif(pos==nx)then
+         yi(k)=y(nx)
+       else
+         ! call linear interpolation
+         if(pos<0)then
+           yi(k) = x(1)
+         else
+           yi(k)=twopoint_linterp(x(pos),x(pos+1),Y(pos),Y(pos+1), xi(k))
+         endif
+       endif
+    enddo
+
+  end subroutine mono_Linear_interp_trj
 
   !-------------------------------------------------------------------------------
   subroutine Lagrange_interp(pn, x, y, xi, yi, bstatus)
@@ -42,11 +92,10 @@ contains
 
     call bstatus%reset()
     SHR_ASSERT_ALL((ubound(x) == ubound(y)),   errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(xi) == ubound(yi)), errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(x) >= pn+1),        errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
 
     ni  = size(xi)
     nx = size(x)
@@ -57,10 +106,10 @@ contains
     else
        disp1=disp-1
     endif
-
+    pos=0
     do k = 1, ni
        ! find the position of z in array x
-       pos = find_idx(x, xi(k))
+       pos = find_idx(x, xi(k), pos)
        if(pos == -100) then
           !left boundary
           yi(k) = y(1)
@@ -104,9 +153,9 @@ contains
 
     call bstatus%reset()
     SHR_ASSERT_ALL((size(xvect) == size(yvect)), errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((size(xvect) == pn+1),        errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     ! n = number of data points:length of each data vector
     n = size(xvect)
     ! Initializations of Pz and L
@@ -124,7 +173,7 @@ contains
     end do
   end function Lagrange_poly
   !------------------------------------------------------------
-  function find_idx(xvect, x)result(k)
+  function find_idx(xvect, x, k0)result(k)
     !
     ! !DESCRIPTION:
     ! locate the position of x in xvect
@@ -133,7 +182,7 @@ contains
     ! !ARGUMENTS:
     real(r8), dimension(:), intent(in) :: xvect       ! vector of x-values
     real(r8),               intent(in) :: x
-
+    integer ,               intent(in) :: k0
     integer :: i, k, n
 
     ! array dimension
@@ -148,8 +197,8 @@ contains
     elseif(x==xvect(n))then
        k=n-1
     else
-       ! find index k so that x[k] < x < x[k+1]
-       do i = 1, n-1
+       ! find index k so that x[k] <= x < x[k+1]
+       do i = max(k0,1), n-1
           if ((xvect(i) <= x) .and. (x < xvect(i+1))) then
              k = i
              exit
@@ -190,9 +239,9 @@ contains
 
     call bstatus%reset()
     SHR_ASSERT_ALL((size(x) == size(fx)), errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((size(x) == size(di)), errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     region_loc=2
     if(present(region))region_loc=region
 
@@ -337,17 +386,18 @@ contains
 
     call bstatus%reset()
     SHR_ASSERT_ALL((size(x) == size(fx)),  errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((size(x) == size(di)),  errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((size(xi) == size(yi)), errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     n=size(xi)  !total number of points to be interpolated
 
     yi(:)=0._r8
+    id=0
     do j = 1, n
 
-       id=find_idx(x,xi(j))
+       id=find_idx(x,xi(j),id)
        h=x(id+1)-x(id)
        t1=(x(id+1)-xi(j))/h
        t2=(xi(j)-x(id))/h
@@ -380,4 +430,291 @@ contains
     end function psi
   end subroutine pchip_interp
 
+  !------------------------------------------------------------
+  function loc_x(m, x, xi, bstatus)result(i_loc)
+
+  ! !DESCRIPTION:
+  ! locate xi within the input vector x
+  use BetrStatusType   , only : betr_status_type
+  use betr_constants   , only : betr_errmsg_len
+  implicit none
+  integer , intent(in) :: m
+  real(r8), intent(in) :: x(1:m)
+  real(r8), intent(in) :: xi
+  type(betr_status_type), intent(out) :: bstatus
+
+  !local variables
+  integer :: jj
+  integer :: i_loc
+  character(len=betr_errmsg_len) :: msg
+
+  call bstatus%reset()
+
+  i_loc = -1
+  if (xi < x(1) .or. xi > x(m)) then
+    msg='the target value is outside the range of given x '//errMsg(mod_filename, __LINE__)
+    call bstatus%set_msg(msg=msg, err=-1)
+    return
+  else
+    if(xi==x(1))then
+      i_loc=0
+      return
+    elseif(xi==x(m))then
+      i_loc=m
+      return
+    endif
+
+    do jj = 1, m-1
+      if ( xi >= x(jj) .and. xi<x(jj+1)) then
+        i_loc=jj
+        exit
+      endif
+    enddo
+
+  endif
+  return
+  end function loc_x
+
+  !------------------------------------------------------------
+  function loc_xj(m, x, xi, j0)result(i_loc)
+
+  ! !DESCRIPTION:
+  ! locate xi within the input vector x
+  use BetrStatusType   , only : betr_status_type
+  use betr_constants   , only : betr_errmsg_len
+  implicit none
+  integer , intent(in) :: m
+  real(r8), intent(in) :: x(1:m)
+  real(r8), intent(in) :: xi
+  integer , intent(in) :: j0
+
+  !local variables
+  integer :: jj
+  integer :: i_loc
+
+  i_loc=-1
+  do jj = max(j0-1,1), m-1
+    if ( xi >= x(jj) .and. xi<x(jj+1)) then
+      i_loc=jj
+      exit
+    endif
+  enddo
+  if(i_loc==-1)then
+    if(xi==x(m))i_loc=m
+  endif
+  return
+  end function loc_xj
+
+
+  !------------------------------------------------------------
+  function twopoint_linterp(x1,x2,f1,f2, xi)result(fy)
+
+  ! !DESCRIPTION:
+  ! two point linear interpolation
+  implicit none
+  real(r8), intent(in) :: x1, x2
+  real(r8), intent(in) :: f1, f2
+  real(r8), intent(in) :: xi
+
+  !temporary variables
+  real(r8) :: fy
+  real(r8) :: d
+  real(r8), parameter :: tiny_val=1.e-20_r8
+
+  d=x2-x1
+  if(abs(d)<tiny_val)then
+    fy=(f1+f2)*0.5_r8
+  else
+    fy=f2*(xi-x1)/d+f1*(x2-xi)/d
+  endif
+
+  end function twopoint_linterp
+
+  !------------------------------------------------------------
+
+  subroutine cmass_interp(nx, x, ny, Y, nxi, xi, YI, bstatus)
+
+  ! DESCRIPTION
+  ! linear monotonic interpolation based on cumulative mass
+  ! locate xi within the input vector x
+  use BetrStatusType   , only : betr_status_type
+  implicit none
+  integer , intent(in) :: nx
+  real(r8), intent(in) :: x(1:nx)
+  integer , intent(in) :: ny
+  real(r8), intent(in) :: Y(1:nx,1:ny)
+  integer , intent(in) :: nxi
+  real(r8), intent(in) :: xi(1:nxi)
+  real(r8), intent(out):: Yi(1:nxi,1:ny)
+  type(betr_status_type), intent(out) :: bstatus
+
+  !local variables
+  integer :: j0, j1, j2
+
+  !check for end point
+  j0=loc_x(nx, x, xi(nxi), bstatus)
+  if(bstatus%check_status())return
+
+  !check for start point
+  j0=loc_x(nx, x, xi(1), bstatus)
+  if(bstatus%check_status())return
+
+  do j1 = 1, nxi
+    if (j1/=1) then
+      j0=loc_xj(nx, x, xi(j1), j0)
+    endif
+    if(j0==nx)then
+      do j2 = 1, ny
+        yi(j1,j2)=y(nx,j2)
+      enddo
+    else
+      do j2 = 1, ny
+        yi(j1,j2)=twopoint_linterp(x(j0),x(j0+1),Y(j0,j2),Y(j0+1,j2), xi(j1))
+      enddo
+    endif
+  enddo
+  end subroutine cmass_interp
+
+  !------------------------------------------------------------
+  subroutine mass_interp(zh, mass_curve,zl, zr, mass_new, bstatus)
+
+  !DESCRIPTION
+  !compute the tracer mass encompassed by left and right boundaries
+  !this interpolation is for inner node
+  use BetrStatusType   , only : betr_status_type
+  use MathfuncMod      , only : cumsum
+  implicit none
+  real(r8), dimension(:), intent(in) :: zh
+  real(r8), dimension(:), intent(in) :: mass_curve
+  real(r8),               intent(in) :: zl
+  real(r8),               intent(in) :: zr
+  real(r8),               intent(out):: mass_new
+  type(betr_status_type), intent(out)   :: bstatus
+
+  real(r8) :: massl
+  real(r8) :: massr
+  real(r8) :: cmass_curve(size(zh))
+  integer  :: nn
+
+  call bstatus%reset()
+  SHR_ASSERT_ALL((size(zh)  == size(mass_curve)),   errMsg(mod_filename,__LINE__),bstatus)
+
+  nn = size(zh)
+
+  call cumsum(bstatus, mass_curve, cmass_curve)
+  if(bstatus%check_status())return
+
+  massl=twopoint_linterp(zh(1),zh(2),cmass_curve(1),cmass_curve(2), zl)
+  massr=twopoint_linterp(zh(nn),zh(nn-1),cmass_curve(nn),cmass_curve(nn-1), zr)
+
+  mass_new=max(massr-massl,0._r8)
+
+  end subroutine mass_interp
+
+  !------------------------------------------------------------
+  subroutine bmass_interp(zh, mass_curve,zl, zr, mass_new, bstatus)
+  !DESCRIPTION
+  !compute the tracer mass encompassed by left and right boundaries
+  !this interpolation is for boundary node
+  use BetrStatusType   , only : betr_status_type
+  use MathfuncMod      , only : cumsum
+  implicit none
+  real(r8), dimension(:), intent(in) :: zh
+  real(r8), dimension(:), intent(in) :: mass_curve
+  real(r8),               intent(in) :: zl
+  real(r8),               intent(in) :: zr
+  real(r8),               intent(out):: mass_new
+  type(betr_status_type), intent(out)   :: bstatus
+
+  real(r8) :: massl
+  real(r8) :: massr
+  real(r8) :: cmass_curve(size(zh))
+  integer  :: nn
+  integer  :: j0
+
+  call bstatus%reset()
+  SHR_ASSERT_ALL((size(zh)  == size(mass_curve)),   errMsg(mod_filename,__LINE__),bstatus)
+
+  nn = size(zh)
+
+  call cumsum(bstatus, mass_curve, cmass_curve)
+  if(bstatus%check_status())return
+
+  j0=loc_x(nn, zh, zl, bstatus)
+  if(bstatus%check_status())return
+
+  massl=twopoint_linterp(zh(j0),zh(j0+1),cmass_curve(j0),cmass_curve(j0+1), zl)
+
+  j0=loc_xj(nn, zh, zr, j0)
+  massr=twopoint_linterp(zh(j0),zh(j0+1),cmass_curve(j0),cmass_curve(j0+1), zr)
+
+  mass_new=max(massr-massl,0._r8)
+
+  end subroutine bmass_interp
+
+  !------------------------------------------------------------
+  function loc_layer(z1,zt,nlen,k0)result(k1)
+  implicit none
+  integer , intent(in) :: nlen
+  real(r8), intent(in) :: z1(nlen)
+  real(r8), intent(in) :: zt
+  integer , intent(in) :: k0
+
+  integer :: k1
+  integer :: j
+
+  k1 = 0
+  do j = 1, nlen
+    if (zt <= z1(j))then
+      k1 = j
+    endif
+  enddo
+  end function loc_layer
+  !------------------------------------------------------------
+
+  subroutine layer_adjust(z1, zt, len1, len2, rmat)
+
+  implicit none
+  integer , intent(in) :: len1, len2
+  real(r8), intent(in) :: z1(len1)
+  real(r8), intent(in) :: zt(len2)
+  real(r8), intent(out) :: rmat(len1,len2)
+
+  integer :: k0, k1, j, kk, k
+
+  k0 = 1
+  do j = 1, len2
+    k1 = loc_layer(z1,zt(j),len1,k0)
+    if (j == 1) then
+      if (k1 == k0) then
+        rmat(j,k1) = zt(j)/z1(k0)
+      else
+        !middle
+        do k=k0, k1-1
+          rmat(j,k) = 1._r8
+        enddo
+        rmat(j,k1)=(zt(j)-z1(k1-1))/(z1(k1)-z1(k1-1))
+      endif
+    else
+      if (k0 == k1)then
+        if (k0==1)then
+          rmat(j,k1) = (zt(j)-zt(j-1))/z1(k0)
+        else
+          rmat(j,k1) = (zt(j)-zt(j-1))/(z1(k0)-z1(k0-1))
+        endif
+      else
+        if (k0 == 1)then
+          rmat(j,k0) = (z1(k0)-zt(j-1))/z1(k0)
+        else
+          rmat(j,k0) = (z1(k0)-zt(j-1))/(z1(k0)-z1(k0-1))
+        endif
+        do kk = k0+1,k1-1
+          rmat(j,kk) = 0._r8
+        enddo
+        rmat(j,k1) = (zt(j)-z1(k1-1))/(z1(k1)-z1(k-1))
+      endif
+    endif
+  enddo
+
+  end subroutine layer_adjust
 end module InterpolationMod

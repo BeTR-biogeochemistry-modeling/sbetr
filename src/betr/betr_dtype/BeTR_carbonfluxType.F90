@@ -1,9 +1,11 @@
 module BeTR_carbonfluxType
   use bshr_kind_mod  , only : r8 => shr_kind_r8
   use betr_decompMod , only : betr_bounds_type
+  use betr_varcon     , only : spval => bspval
 implicit none
-
-  character(len=*), private, parameter :: mod_filename = &
+#include "bshr_alloc.h"
+  private
+  character(len=*), parameter :: mod_filename = &
        __FILE__
   type, public :: betr_carbonflux_type
 
@@ -13,6 +15,7 @@ implicit none
     real(r8), pointer :: cflx_input_litr_cwd_vr_col(:,:) => null() ! coarse woody debries input, gC/m3/s
     real(r8), pointer :: cflx_input_litr_fwd_vr_col(:,:) => null() ! coarse woody debries input, gC/m3/s
     real(r8), pointer :: cflx_input_litr_lwd_vr_col(:,:) => null() ! coarse woody debries input, gC/m3/s
+    real(r8), pointer :: cflx_input_col(:) => null() !total carbon input
 
     !The only loss is through fire and no som is lost through burning
     real(r8), pointer :: cflx_output_litr_met_vr_col(:,:) => null() ! metabolic litter input, gC/m3/s
@@ -24,6 +27,7 @@ implicit none
   contains
     procedure, public  :: Init
     procedure, public  :: reset
+    procedure, public  :: summary
     procedure, private :: InitAllocate
   end type betr_carbonflux_type
 
@@ -50,22 +54,21 @@ implicit none
   begc = bounds%begc ; endc=bounds%endc
   lbj = bounds%lbj   ; ubj=bounds%ubj
 
-  allocate(this%cflx_input_litr_met_vr_col(begc:endc,lbj:ubj))
-  allocate(this%cflx_input_litr_cel_vr_col(begc:endc,lbj:ubj)) ! cellulose litter input
-  allocate(this%cflx_input_litr_lig_vr_col(begc:endc,lbj:ubj)) ! lignin litter input
-  allocate(this%cflx_input_litr_cwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
-  allocate(this%cflx_input_litr_fwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
-  allocate(this%cflx_input_litr_lwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
-
-  allocate(this%cflx_output_litr_met_vr_col(begc:endc,lbj:ubj))
-  allocate(this%cflx_output_litr_cel_vr_col(begc:endc,lbj:ubj)) ! cellulose litter input
-  allocate(this%cflx_output_litr_lig_vr_col(begc:endc,lbj:ubj)) ! lignin litter input
-  allocate(this%cflx_output_litr_cwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
-  allocate(this%cflx_output_litr_fwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
-  allocate(this%cflx_output_litr_lwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
+  SPVAL_ALLOC(this%cflx_input_litr_met_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%cflx_input_litr_cel_vr_col(begc:endc,lbj:ubj)) ! cellulose litter input
+  SPVAL_ALLOC(this%cflx_input_litr_lig_vr_col(begc:endc,lbj:ubj)) ! lignin litter input
+  SPVAL_ALLOC(this%cflx_input_litr_cwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
+  SPVAL_ALLOC(this%cflx_input_litr_fwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
+  SPVAL_ALLOC(this%cflx_input_litr_lwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
+  SPVAL_ALLOC(this%cflx_input_col(begc:endc))
+  SPVAL_ALLOC(this%cflx_output_litr_met_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%cflx_output_litr_cel_vr_col(begc:endc,lbj:ubj)) ! cellulose litter input
+  SPVAL_ALLOC(this%cflx_output_litr_lig_vr_col(begc:endc,lbj:ubj)) ! lignin litter input
+  SPVAL_ALLOC(this%cflx_output_litr_cwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
+  SPVAL_ALLOC(this%cflx_output_litr_fwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
+  SPVAL_ALLOC(this%cflx_output_litr_lwd_vr_col(begc:endc,lbj:ubj)) ! coarse woody debries input
 
   end subroutine InitAllocate
-
 
   !------------------------------------------------------------------------
   subroutine reset(this, value_column)
@@ -87,5 +90,30 @@ implicit none
   this%cflx_output_litr_fwd_vr_col(:,:)= value_column
   this%cflx_output_litr_lwd_vr_col(:,:)= value_column
   end subroutine reset
+  !------------------------------------------------------------------------
+  subroutine summary(this, bounds, lbj, ubj, dz)
+  !
+  !DESCRIPTION
+  !summarize all carbon fluxes
+  implicit none
+  class(betr_carbonflux_type)  :: this
+  type(betr_bounds_type), intent(in) :: bounds
+  integer , intent(in) :: lbj, ubj
+  real(r8), intent(in) :: dz(bounds%begc:bounds%endc,lbj:ubj)
+  integer :: j, c
+
+  this%cflx_input_col(:) = 0._r8
+  do j = lbj, ubj
+    do c = bounds%begc, bounds%endc
+      this%cflx_input_col(c) = this%cflx_input_col(c) + dz(c,j) * &
+        (this%cflx_input_litr_met_vr_col(c,j) + &
+         this%cflx_input_litr_cel_vr_col(c,j) + &
+         this%cflx_input_litr_lig_vr_col(c,j) + &
+         this%cflx_input_litr_cwd_vr_col(c,j) + &
+         this%cflx_input_litr_fwd_vr_col(c,j) + &
+         this%cflx_input_litr_lwd_vr_col(c,j))
+    enddo
+  enddo
+  end subroutine summary
 
 end module BeTR_carbonfluxType

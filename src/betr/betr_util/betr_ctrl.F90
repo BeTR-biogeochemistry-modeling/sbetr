@@ -11,4 +11,10 @@ implicit none
   integer, parameter, public :: max_betr_hist_type=400
   integer, parameter, public :: max_betr_rest_type=400
   logical, public :: betr_offline = .true.
+  logical, public :: exit_spinup = .false.
+  logical, public :: enter_spinup=.false.
+  integer, public :: betr_spinup_state = 0  ! 0: normal, 1: AD-1 spinup (accumulating the spinup scalar),
+                                            ! 2: AD-2 spinup
+  logical, public :: continue_run =.false.
+  logical, public :: inloop_reaction=.true.
 end module betr_ctrl

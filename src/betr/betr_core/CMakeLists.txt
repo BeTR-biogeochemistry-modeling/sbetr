@@ -6,7 +6,6 @@ set(BETR_CORE_SOURCES
   TracerCoeffType.F90
   TracerFluxType.F90
   TracerStateType.F90
-  TransportMod.F90
   BGCReactionsMod.F90
   PlantSoilBGCMod.F90
   )
@@ -23,7 +22,7 @@ add_betr_library(betr_core ${BETR_CORE_SOURCES})
 set(BETR_LIBRARIES betr_core;${BETR_LIBRARIES} PARENT_SCOPE)
 set(BETR_LIBRARIES betr_core;${BETR_LIBRARIES})
 
-add_subdirectory(tests)
+##add_subdirectory(tests)
 
 if (NOT CMAKE_INSTALL_PREFIX STREQUAL "INSTALL_DISABLED")
   install(TARGETS betr_core DESTINATION lib)

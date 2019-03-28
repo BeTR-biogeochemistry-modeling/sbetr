@@ -20,12 +20,13 @@ module MathfuncMod
   public :: cumsum
   public :: swap
   public :: minmax
-  public :: cumdif
+  public :: cumpdiff
   public :: diff
   public :: safe_div
   public :: dot_sum
   public :: addone
   public :: asc_sort_vec
+  public :: asc_sorti_vec
   public :: is_bounded
   public :: minp
   public :: pd_decomp
@@ -52,6 +53,7 @@ module MathfuncMod
     procedure, public :: calc_reaction_rscal
     procedure, public :: apply_reaction_rscal
   end type lom_type
+  public :: flux_correction_fullm
 contains
   !-------------------------------------------------------------------------------
   function countelm(ibeg, iend, igap)result(ans)
@@ -226,7 +228,7 @@ contains
 
     call bstatus%reset()
     SHR_ASSERT_ALL((size(x)   == size(y)), errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     n = size(x)
 
     y(1)=x(1)
@@ -253,12 +255,13 @@ contains
     integer :: idim_loc
 
     call bstatus%reset()
+    idim_loc=1
     if(present(idim))idim_loc=idim
 
     SHR_ASSERT_ALL((size(x,1)   == size(y,1)),        errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((size(x,2)   == size(y,2)),        errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     if(idim_loc == 1)then
        !summation along dimension 1
        n = size(x,2)
@@ -278,7 +281,7 @@ contains
   end subroutine cumsum_m
 
   !-------------------------------------------------------------------------------
-  subroutine cumdif(x, y, bstatus)
+  subroutine cumpdiff(x, y, bstatus)
     !
     ! !DESCRIPTION:
     ! do nearest neighbor finite difference
@@ -294,14 +297,14 @@ contains
     integer :: j
     call bstatus%reset()
     SHR_ASSERT_ALL((size(x)   == size(y)),  errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
 
     n = size(x)
-    call diff(x,y(2:n), bstatus)
-    if(bstatus%check_status())return
-    y(1)=x(1)
+    y(1)=max(x(1),0._r8)
+    do j = 2, n
+      y(j) = max(x(j)-x(j-1),0._r8)
+    enddo
+  end subroutine cumpdiff
 
-  end subroutine cumdif
   !-------------------------------------------------------------------------------
 
   subroutine diff(x,y, bstatus)
@@ -321,7 +324,6 @@ contains
 
     call bstatus%reset()
     SHR_ASSERT_ALL((size(x)   == size(y)+1),        errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
 
     n = size(x)
     do j = 2, n
@@ -434,6 +436,36 @@ contains
     enddo
 
   end subroutine asc_sort_vec
+  !--------------------------------------------------------------------------------
+  subroutine asc_sorti_vec(zvec, index)
+    !
+    ! !DESCRIPTION:
+    ! sort an array into ascending order
+    implicit none
+    ! !ARGUMENTS:
+    real(r8), dimension(:), intent(inout) :: zvec
+    integer , dimension(:), intent(inout) :: index
+    ! !LOCAL VARIABLES:
+    integer :: n, j, k
+    logical :: lswap
+
+    n = size(zvec)
+    do j = 1, n
+      index(j) = j
+    enddo
+    do j = 1, n
+       lswap=.false.
+       do k = 2, n-j+1
+          if(zvec(k)<zvec(k-1))then
+             lswap=.true.
+             call swap_r(zvec(k),zvec(k-1))
+             call swap_i(index(k),index(k-1))
+          endif
+       enddo
+       if(.not. lswap)exit
+    enddo
+
+  end subroutine asc_sorti_vec
 
   !--------------------------------------------------------------------------------
   function is_bounded(x, xl, xr)result(ans)
@@ -471,7 +503,7 @@ contains
 
     call bstatus%reset()
     SHR_ASSERT_ALL((size(p)   == size(v)), errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     sz = size(p)
     ans = 1._r8
     do j = 1, sz
@@ -501,20 +533,22 @@ contains
 
     call bstatus%reset()
     SHR_ASSERT_ALL((ubound(A)           == (/m,n/)), errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(AP)          == (/m,n/)), errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
+
     SHR_ASSERT_ALL((ubound(AD)          == (/m,n/)), errMsg(mod_filename,__LINE__), bstatus)
-    if(bstatus%check_status())return
 
-    AP(:,:) = 0._r8
-    AD(:,:) = 0._r8
-
-    where(A>0._r8)
-       AP=A
-    elsewhere
-       AD=A
-    endwhere
+    do j=1, n
+      do i = 1, m
+        if(A(i,j)>0._r8)then
+          AP(i,j)=A(i,j)
+          AD(i,j)=0._r8
+        else
+          AP(i,j)=0._r8
+          AD(i,j)=A(i,j)
+        endif
+      enddo
+    enddo
   end subroutine pd_decomp
   !--------------------------------------------------------------------------------
 
@@ -536,7 +570,7 @@ contains
   end function num2str
 
   !-------------------------------------------------------------------------------
-  subroutine calc_state_pscal(this, nprimvars, dtime, ystate, p_dt,  d_dt, pscal, lneg, bstatus)
+  subroutine calc_state_pscal(this, nvars, dtime, ystate, p_dt,  d_dt, pscal, lneg, bstatus)
     !
     ! !DESCRIPTION:
     ! calcualte limiting factor from each primary state variable
@@ -546,12 +580,12 @@ contains
     implicit none
     ! !ARGUMENTS:
     class(lom_type), intent(in) :: this
-    integer,  intent(in)  :: nprimvars
+    integer,  intent(in)  :: nvars
     real(r8), intent(in)  :: dtime
-    real(r8), intent(in)  :: ystate(1:nprimvars)
-    real(r8), intent(in)  :: p_dt(1:nprimvars)
-    real(r8), intent(in)  :: d_dt(1:nprimvars)
-    real(r8), intent(out) :: pscal(1:nprimvars)
+    real(r8), intent(in)  :: ystate(1:nvars)
+    real(r8), intent(in)  :: p_dt(1:nvars)
+    real(r8), intent(in)  :: d_dt(1:nvars)
+    real(r8), intent(out) :: pscal(1:nvars)
     logical,  intent(out) :: lneg
     type(betr_status_type), intent(out) :: bstatus
     character(len=betr_errmsg_len) :: msg
@@ -560,14 +594,17 @@ contains
     real(r8) :: yt
     integer  :: j
     real(r8),parameter :: p_par=0.999_r8
+    real(r8), parameter :: tiny_val=-1.e-14_r8
+    real(r8) :: tmp
 
     call bstatus%reset()
     lneg =.false.
 
-    do j = 1, nprimvars
+    do j = 1, nvars
        yt = ystate(j) + (p_dt(j)+d_dt(j))*dtime
-       if(yt<0._r8)then
-          pscal(j) = -(p_dt(j)*dtime+ystate(j))/(dtime*d_dt(j))*p_par
+       if(yt<tiny_val)then
+          tmp = dtime*d_dt(j)
+          pscal(j) = -(p_dt(j)*dtime+ystate(j))/tmp*p_par
           lneg=.true.
           if(pscal(j)<0._r8)then
              msg = 'ngeative p in calc_state_pscal'//errmsg(mod_filename, __LINE__)
@@ -581,7 +618,7 @@ contains
   end subroutine calc_state_pscal
 
   !-------------------------------------------------------------------------------
-  subroutine calc_reaction_rscal(this, nprimvars, nr, pscal, cascade_matrixd, rscal, bstatus)
+  subroutine calc_reaction_rscal(this, nvars, nr, pscal, cascade_matrixd, rscal, bstatus)
     !
     ! !DESCRIPTION:
     ! calcualte limiting factor for each reaction
@@ -590,10 +627,10 @@ contains
     implicit none
     ! !ARGUMENTS:
     class(lom_type), intent(in) :: this
-    integer , intent(in) :: nprimvars
+    integer , intent(in) :: nvars
     integer , intent(in) :: nr
-    real(r8), intent(in) :: pscal(1:nprimvars)
-    real(r8), intent(in) :: cascade_matrixd(1:nprimvars, 1:nr)
+    real(r8), intent(in) :: pscal(1:nvars)
+    real(r8), intent(in) :: cascade_matrixd(1:nvars, 1:nr)
     real(r8), intent(out):: rscal(1:nr)
     type(betr_status_type), intent(out) :: bstatus
     ! !LOCAL VARIABLES:
@@ -601,7 +638,7 @@ contains
 
     call bstatus%reset()
     do j = 1, nr
-      rscal(j) = minp(pscal,cascade_matrixd(1:nprimvars, j), bstatus)
+      rscal(j) = minp(pscal,cascade_matrixd(1:nvars, j), bstatus)
       if(bstatus%check_status())return
     enddo
 
@@ -654,4 +691,60 @@ contains
 
   ans = (inval/=inval)
   end function bisnan
+  !-------------------------------------------------------------------------------
+
+  subroutine flux_correction_fullm(nvars, nreactions, matrixp, matrixd,&
+     dtime, ystate, rrates, bstatus)
+
+  !
+  !! DESCRIPTION
+  ! do flux correction to avoid negative state variables
+  use BetrStatusType, only : betr_status_type
+  use LinearAlgebraMod, only : sparse_gemv
+  implicit none
+  integer, intent(in) :: nvars
+  integer, intent(in) :: nreactions
+  real(r8), intent(in) :: matrixp(1:nvars, 1:nreactions)
+  real(r8), intent(in) :: matrixd(1:nvars, 1:nreactions)
+  real(r8), intent(in) :: dtime
+  real(r8), intent(in) :: ystate(nvars)
+  real(r8), intent(inout):: rrates(nreactions)
+  type(betr_status_type), intent(out) :: bstatus
+
+  real(r8) :: p_dt(nvars)
+  real(r8) :: d_dt(nvars)
+  real(r8) :: rscal(1:nreactions)
+  real(r8) :: pscal(1:nvars)
+  type(lom_type) :: lom
+  logical :: lneg
+  integer :: it
+  integer, parameter  :: itmax = 10
+
+  call bstatus%reset()
+  it=0
+  rscal=0._r8
+  do
+    call sparse_gemv('N',nvars, nreactions, matrixp(1:nvars, 1:nreactions), &
+        nreactions, rrates, nvars, p_dt)
+
+    call sparse_gemv('N',nvars, nreactions, matrixd(1:nvars, 1:nreactions), &
+        nreactions, rrates, nvars, d_dt)
+
+    !update the state variables
+    call lom%calc_state_pscal(nvars, dtime, ystate(1:nvars), p_dt(1:nvars),  d_dt(1:nvars), &
+        pscal(1:nvars), lneg, bstatus)
+    if(bstatus%check_status())return
+
+    if(lneg .and. it<=itmax)then
+      call lom%calc_reaction_rscal(nvars, nreactions,  pscal(1:nvars), &
+        matrixd(1:nvars, 1:nreactions),rscal, bstatus)
+      if(bstatus%check_status())return
+
+      call lom%apply_reaction_rscal(nreactions, rscal(1:nreactions), rrates(1:nreactions))
+    else
+      exit
+    endif
+    it = it + 1
+  enddo
+  end subroutine flux_correction_fullm
 end module MathfuncMod
