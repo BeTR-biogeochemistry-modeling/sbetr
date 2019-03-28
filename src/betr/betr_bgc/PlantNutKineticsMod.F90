@@ -22,6 +22,10 @@ implicit none
     real(r8), pointer :: minsurf_p_compet_vr_col(:,:)
     real(r8), pointer :: minsurf_nh4_compet_vr_col(:,:)
     real(r8), pointer :: minsurf_dom_compet_vr_col(:,:)
+    real(r8), pointer :: decomp_eff_ncompet_b_vr_col(:,:)
+    real(r8), pointer :: decomp_eff_pcompet_b_vr_col(:,:)
+    real(r8), pointer :: nit_eff_ncompet_b_vr_col(:,:)
+    real(r8), pointer :: den_eff_ncompet_b_vr_col(:,:)
     !the following is only for eca-cnp bgc, for other applications
     !some of the parameters will be read through the interface
     real(r8), pointer :: km_minsurf_p_vr_col(:,:)
@@ -32,6 +36,9 @@ implicit none
     real(r8), pointer :: km_decomp_nh4_vr_col(:,:)
     real(r8), pointer :: km_decomp_no3_vr_col(:,:)
     real(r8), pointer :: km_decomp_p_vr_col(:,:)
+    real(r8), pointer :: dsolutionp_dt_vr_col(:,:)
+    real(r8), pointer :: vmax_minsurf_p_vr_col(:,:)
+    real(r8), pointer :: dlabp_dt_vr_col(:,:)
   contains
     procedure, public  :: Init
     procedure, public  :: InitAllocate
@@ -52,7 +59,7 @@ implicit none
     end subroutine Init
     !------------------------------------------------------------------------
     subroutine InitAllocate(this, bounds)
-
+     use betr_ctrl, only : bgc_type
      class(PlantNutKinetics_type) :: this
      type(betr_bounds_type), intent(in) :: bounds
      integer :: begp, endp, begc, endc
@@ -82,6 +89,16 @@ implicit none
      allocate(this%km_decomp_nh4_vr_col(begc:endc,1:ubj)); this%km_decomp_nh4_vr_col(:,:) = nan
      allocate(this%km_decomp_no3_vr_col(begc:endc,1:ubj)); this%km_decomp_no3_vr_col(:,:) = nan
      allocate(this%km_decomp_p_vr_col(begc:endc,1:ubj)); this%km_decomp_p_vr_col(:,:) = nan
+     allocate(this%decomp_eff_ncompet_b_vr_col(begc:endc, 1:ubj));this%decomp_eff_ncompet_b_vr_col(:,:)=0._r8
+     allocate(this%decomp_eff_pcompet_b_vr_col(begc:endc, 1:ubj)); this%decomp_eff_pcompet_b_vr_col(:,:)=0._r8
+     allocate(this%nit_eff_ncompet_b_vr_col(begc:endc, 1:ubj)); this%nit_eff_ncompet_b_vr_col(:,:) = 0._r8
+     allocate(this%den_eff_ncompet_b_vr_col(begc:endc, 1:ubj)); this%den_eff_ncompet_b_vr_col(:,:) = 0._r8
+
+     if(index(bgc_type,'type1_bgc')/=0)then
+       allocate(this%dsolutionp_dt_vr_col(begc:endc, 1:ubj)); this%dsolutionp_dt_vr_col(:,:) = 0._r8
+       allocate(this%vmax_minsurf_p_vr_col(begc:endc, 1:ubj)); this%vmax_minsurf_p_vr_col(:,:) = 0._r8
+       allocate(this%dlabp_dt_vr_col(begc:endc, 1:ubj)); this%dlabp_dt_vr_col(:,:) = 0._r8
+     endif
     end subroutine InitAllocate
     !------------------------------------------------------------------------
     subroutine InitCold(this, bounds)

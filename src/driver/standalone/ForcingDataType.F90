@@ -715,10 +715,10 @@ contains
         nitrogenflux_vars%nflx_input_litr_lig_vr_col(c,j) = this%nflx_lig_vr(tstep,j)
         nitrogenflux_vars%nflx_input_litr_cwd_vr_col(c,j) = this%nflx_cwd_vr(tstep,j)
 
-        phosphorusflux_vars%pflx_input_litr_met_vr_col(c,j) = this%pflx_met_vr(tstep,j)
-        phosphorusflux_vars%pflx_input_litr_cel_vr_col(c,j) = this%pflx_cel_vr(tstep,j)
-        phosphorusflux_vars%pflx_input_litr_lig_vr_col(c,j) = this%pflx_lig_vr(tstep,j)
-        phosphorusflux_vars%pflx_input_litr_cwd_vr_col(c,j) = this%pflx_cwd_vr(tstep,j)
+        phosphorusflux_vars%pflx_input_litr_met_vr_col(c,j) = this%cflx_met_vr(tstep,j)/1600._r8
+        phosphorusflux_vars%pflx_input_litr_cel_vr_col(c,j) = this%cflx_cel_vr(tstep,j)/2000._r8
+        phosphorusflux_vars%pflx_input_litr_lig_vr_col(c,j) = this%cflx_lig_vr(tstep,j)/2500._r8
+        phosphorusflux_vars%pflx_input_litr_cwd_vr_col(c,j) = this%cflx_cwd_vr(tstep,j)/4500._r8
 
         nitrogenflux_vars%nflx_minn_input_nh4_vr_col(c,j) = this%nflx_nh4_vr(tstep,j)
         nitrogenflux_vars%nflx_minn_input_no3_vr_col(c,j) = this%nflx_no3_vr(tstep,j)

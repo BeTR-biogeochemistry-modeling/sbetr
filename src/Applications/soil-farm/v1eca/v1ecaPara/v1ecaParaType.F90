@@ -14,23 +14,14 @@ implicit none
   real(r8) :: froz_q10
   real(r8) :: decomp_depth_efolding
 
-  real(r8) :: rf_l1s1_bgc(2)
-  real(r8) :: rf_l2s1_bgc(2)
+  real(r8) :: rf_l1s1_bgc
+  real(r8) :: rf_l2s1_bgc
   real(r8) :: rf_l3s2_bgc
   real(r8) :: rf_s2s1_bgc
   real(r8) :: rf_s3s1_bgc
-  real(r8) :: rf_s1s2a_bgc(2)
-  real(r8) :: rf_s1s2b_bgc(2)
-
-  real(r8) :: k_decay_lit1(2)
-  real(r8) :: k_decay_lit2(2)
-  real(r8) :: k_decay_lit3(2)
-  real(r8) :: k_decay_som1(2)
-  real(r8) :: k_decay_som2
-  real(r8) :: k_decay_som3
-  real(r8) :: k_decay_cwd
-  real(r8) :: k_decay_lwd
-  real(r8) :: k_decay_fwd
+  real(r8) :: rf_s2s3_bgc
+  real(r8) :: rf_cwdl2_bgc
+  real(r8) :: rf_cwdl3_bgc
   real(r8) :: k_m_o2_bgc  !MM parameter for O2 consumption
 
   !nitrification-denitrification
@@ -78,10 +69,10 @@ implicit none
   real(r8), pointer :: spinup_factor(:)
 
  contains
-   procedure, public  :: Init => centpara_init
-   procedure, public  :: readPars => centpara_readPars
-   procedure, public  :: printPars=> centpara_printPars
-   procedure, private :: InitAllocate_centpara
+   procedure, public  :: Init => v1eca_init
+   procedure, public  :: readPars => v1eca_readPars
+   procedure, public  :: printPars=> v1eca_printPars
+   procedure, private :: InitAllocate_v1eca
    procedure, private :: set_defpar_default
    procedure, public  :: apply_spinup_factor
    procedure, public  :: set_spinup_factor
@@ -104,7 +95,7 @@ contains
   end function create_jarpars_v1eca
 
   !--------------------------------------------------------------------
-  subroutine centpara_init(this, bstatus)
+  subroutine v1eca_init(this, bstatus)
   use betr_constants , only : betr_namelist_buffer_size_ext
   use BetrStatusType , only : betr_status_type
   use betr_ctrl      , only : betr_spinup_state
@@ -115,16 +106,16 @@ contains
   call this%bcon_Init(bstatus)
   if(bstatus%check_status())return
 
-  call this%InitAllocate_centpara()
+  call this%InitAllocate_v1eca()
 
   call this%set_defpar_default()
 
   if(betr_spinup_state/=0)then
     call this%apply_spinup_factor()
   endif
-  end subroutine centpara_init
+  end subroutine v1eca_init
   !--------------------------------------------------------------------
-  subroutine InitAllocate_centpara(this)
+  subroutine InitAllocate_v1eca(this)
   use betr_varcon, only : betr_maxpatch_pft, betr_max_soilorder
   implicit none
   class(v1eca_para_type), intent(inout) :: this
@@ -132,7 +123,7 @@ contains
 
   allocate(this%spinup_factor(9))
   !the following will be actually calculated from CNP bgc
-  end subroutine InitAllocate_centpara
+  end subroutine InitAllocate_v1eca
   !--------------------------------------------------------------------
   subroutine set_defpar_default(this)
 
@@ -183,27 +174,15 @@ contains
   this%decomp_depth_efolding = 1._r8
 
   !following is based on century parameterization
-  this%rf_l1s1_bgc           = (/0.55_r8, 0.55_r8/)
-  this%rf_l2s1_bgc           = (/0.45_r8, 0.55_r8/)
+  this%rf_l1s1_bgc           = 0.55_r8
+  this%rf_l2s1_bgc           = 0.45_r8
   this%rf_l3s2_bgc           = 0.3_r8
   this%rf_s2s1_bgc           = 0.55_r8
   this%rf_s3s1_bgc           = 0.55_r8
-  this%rf_s1s2a_bgc          = (/0.60_r8,0.17_r8/)
-  this%rf_s1s2b_bgc          = (/0._r8, 0.68_r8/)
 
-  !following is based on century parameterization
-  this%k_decay_lit1          = (/14.8_r8,18.5_r8/)/year_sec    !1/second
-  this%k_decay_lit2          = (/3.9_r8 ,4.9_r8/) /year_sec    !1/second
-  this%k_decay_lit3          = (/3.9_r8 ,4.9_r8/) /year_sec    !1/second
-  this%k_decay_som1          = (/6.7_r8, 7.3_r8/) /year_sec    !1/second
-  this%k_decay_som2          = 0.2_r8/year_sec                 !1/second
-  this%k_decay_som3          = 0.0045_r8/year_sec              !1/second
-  this%k_decay_cwd           = 0.6_r8/year_sec                 !1/second
-  this%k_decay_fwd           = 1.5_r8/year_sec                 !1/second
-  this%k_decay_lwd           = 0.5_r8/year_sec                 !1/second
 
   !nitrification-denitrification
-  this%nitrif_n2o_loss_frac  = 1.e-4_r8   !Arah and Vinten, 1995
+  this%nitrif_n2o_loss_frac  = 6.e-4_r8   !Arah and Vinten, 1995
   this%organic_max           = 160._r8    !organic matter content (kg/m3) where soil is assumed to act like peat
   this%rij_kro_a             = 1.5e-10_r8 ! Arah and Vinten, 1995
   this%rij_kro_alpha         = 1.26_r8    ! Arah and Vinten, 1995
@@ -212,7 +191,7 @@ contains
   this%rij_kro_delta         = 0.85_r8    ! Arah and Vinten, 1995
   this%surface_tension_water = 73.e-3_r8  ! (J/m^2), Arah and Vinten, 1995
   this%minpsi_bgc            = -10._r8    ! M Pa
-  this%k_m_o2_bgc            = 0.22_r8
+  this%k_m_o2_bgc            = 0.0022_r8
   this%k_nitr_max            = 1.1574074e-06_r8
   this%init_cp_som1 = 110._r8 !mass based
   this%init_cp_som2 = 320._r8 !mass based
@@ -249,30 +228,15 @@ contains
   implicit none
   class(v1eca_para_type), intent(inout) :: this
 
-
+  return
   call this%set_spinup_factor()
 
-  if(betr_spinup_state==1)then
-    this%k_decay_lit1 = this%k_decay_lit1 * this%spinup_factor(1)
-    this%k_decay_lit2 = this%k_decay_lit2 * this%spinup_factor(2)
-    this%k_decay_lit3 = this%k_decay_lit3 * this%spinup_factor(3)
-    this%k_decay_cwd = this%k_decay_cwd * this%spinup_factor(4)
-    this%k_decay_lwd = this%k_decay_lwd * this%spinup_factor(5)
-    this%k_decay_fwd = this%k_decay_fwd * this%spinup_factor(6)
-    this%k_decay_som1 = this%k_decay_som1 * this%spinup_factor(7)
-    this%k_decay_som3 = this%k_decay_som3 * this%spinup_factor(8)
-    this%k_decay_som2 = this%k_decay_som2 * this%spinup_factor(9)
 
-    this%c14decay_Bm_const   =this%c14decay_Bm_const * this%spinup_factor(7)
-    this%c14decay_som_const  =this%c14decay_som_const * this%spinup_factor(8)
-    this%c14decay_dom_const  =this%c14decay_dom_const * this%spinup_factor(9)
-
-  endif
   end subroutine apply_spinup_factor
 
   !--------------------------------------------------------------------
 
-  subroutine centpara_readPars(this, ncid, bstatus)
+  subroutine v1eca_readPars(this, ncid, bstatus)
   use bshr_log_mod    , only : errMsg => shr_log_errMsg
   use ncdio_pio       , only : file_desc_t, ncd_io
   use BetrStatusType  , only : betr_status_type
@@ -286,257 +250,147 @@ contains
 
   character(len=100) :: errCode = '-Error reading in parameters file:'
   logical            :: readv ! has variable been read in or not
-  real(r8)           :: tempr(1) ! temporary to read in constant
+  real(r8)           :: tempr ! temporary to read in constant
   real(r8)           :: temparr(1:2,1:1)
   character(len=100) :: tString ! temp. var for reading
   call bstatus%reset()
 
   call this%readPars_bgc(ncid, bstatus)
   if(bstatus%check_status())return
-  tString='surface_tension_water'
-  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__),err=-1)
-  if(bstatus%check_status())return
-  this%surface_tension_water=tempr(1)
-
-  tString='rij_kro_a'
-  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__),err=-1)
-  if(bstatus%check_status())return
-  this%rij_kro_a=tempr(1)
-
-  tString='rij_kro_alpha'
-  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%rij_kro_alpha=tempr(1)
-
-  tString='rij_kro_beta'
-  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%rij_kro_beta=tempr(1)
-
-  tString='rij_kro_gamma'
-  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%rij_kro_gamma=tempr(1)
-
-  tString='rij_kro_delta'
-  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%rij_kro_delta=tempr(1)
-
-  tString='rf_l1s1_bgc'
-  call ncd_io(trim(tString),temparr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%rf_l1s1_bgc(1:2)=temparr(1:2,1)
-
-  tString='rf_l2s1_bgc'
-  call ncd_io(trim(tString),temparr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%rf_l2s1_bgc(1:2)=temparr(1:2,1)
-
-  tString='rf_l3s2_bgc'
-  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%rf_l3s2_bgc=tempr(1)
-
-  tString='rf_s2s1_bgc'
-  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%rf_s2s1_bgc=tempr(1)
-
-  tString='rf_s3s1_bgc'
-  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%rf_s3s1_bgc=tempr(1)
-
-  tString='rf_s1s2a_bgc'
-  call ncd_io(trim(tString),temparr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%rf_s1s2a_bgc(1:2)=temparr(1:2,1)
-
-  tString='rf_s1s2b_bgc'
-  call ncd_io(trim(tString),temparr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%rf_s1s2b_bgc(1:2)=temparr(1:2,1)
-
-  tString='k_decay_cwd'
-  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%k_decay_cwd=tempr(1)
-
-  tString='k_decay_lwd'
-  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%k_decay_lwd=tempr(1)
-
-  tString='k_decay_fwd'
-  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%k_decay_fwd=tempr(1)
-
-  tString='k_decay_lit1'
-  call ncd_io(trim(tString),temparr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%k_decay_lit1(1:2) = temparr(1:2,1)
-
-  tString='k_decay_lit2'
-  call ncd_io(trim(tString),temparr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%k_decay_lit2(1:2) = temparr(1:2,1)
-
-  tString='k_decay_lit3'
-  call ncd_io(trim(tString),temparr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%k_decay_lit3(1:2) = temparr(1:2,1)
-
-  tString='k_decay_som1'
-  call ncd_io(trim(tString),temparr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%k_decay_som1(1:2)=temparr(1:2,1)
-
-  tString='k_decay_som2'
-  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%k_decay_som2=tempr(1)
-
-  tString='k_decay_som3'
-  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%k_decay_som3=tempr(1)
-
-  tString='froz_q10'
-  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%froz_q10=tempr(1)
-
-  tString='decomp_depth_efolding'
-  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%decomp_depth_efolding=tempr(1)
-
-  tString='Q10'
-  call ncd_io(varname=trim(tString),data=tempr, flag='read', ncid=ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%Q10=tempr(1)
-
-  tString='minpsi_bgc'
-  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%minpsi_bgc=tempr(1)
-
-  tString='k_m_o2_bgc'
-  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%k_m_o2_bgc=tempr(1)
-
-  tString='organic_max'
-  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%organic_max=tempr(1)
 
   tString='k_nitr_max'
   call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
   if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
   if(bstatus%check_status())return
-  this%k_nitr_max=tempr(1)
+  this%k_nitr_max=tempr
 
-  tString='km_den'
+  tString='surface_tension_water'
   call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
   if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
   if(bstatus%check_status())return
-  this%km_den=tempr(1)/natomw
+  this%surface_tension_water=tempr
 
-  tString='km_nit'
+  tString='rij_kro_a'
   call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
   if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
   if(bstatus%check_status())return
-  this%km_nit=tempr(1)/natomw
+  this%rij_kro_a=tempr
 
-  tString='km_decomp_nh4'
+  tString='rij_kro_alpha'
   call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
   if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
   if(bstatus%check_status())return
-  this%km_decomp_nh4=tempr(1)/natomw
+  this%rij_kro_alpha=tempr
 
-  tString='km_decomp_no3'
+  tString='rij_kro_beta'
   call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
   if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
   if(bstatus%check_status())return
-  this%km_decomp_no3=tempr(1)/natomw
+  this%rij_kro_beta=tempr
 
-  tString='km_decomp_p'
+  tString='rij_kro_gamma'
   call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
   if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
   if(bstatus%check_status())return
-  this%km_decomp_p=tempr(1)/patomw
+  this%rij_kro_gamma=tempr
 
-  tString='vmax_decomp_n'
+  tString='rij_kro_delta'
   call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
   if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
   if(bstatus%check_status())return
-  this%vmax_decomp_n=tempr(1)/3600._r8
+  this%rij_kro_delta=tempr
 
-  tString='vmax_decomp_p'
+
+  tString='cn_s1_bgc'
   call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
   if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
   if(bstatus%check_status())return
-  this%vmax_decomp_p=tempr(1)/3600._r8
+  this%init_cn_som1=tempr
 
-  tString='vmax_den'
+  tString='cn_s2_bgc'
   call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
   if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
   if(bstatus%check_status())return
-  this%vmax_den=tempr(1)
+  this%init_cn_som2=tempr
 
-  tString='vmax_nit'
+  tString='cn_s3_bgc'
   call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
   if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
   if(bstatus%check_status())return
-  this%vmax_nit=tempr(1)
+  this%init_cn_som3=tempr
 
-!   the following are purposely commented out to use default parameters from century, Jinyun Tang, Feb 21, 2018
-  this%k_decay_lit1(1:2)  = this%k_decay_lit1(1:2) /year_sec    !1/second
-  this%k_decay_lit2(1:2)  = this%k_decay_lit2(1:2) /year_sec    !1/second
-  this%k_decay_lit3(1:2)  = this%k_decay_lit3(1:2) /year_sec    !1/second
-  this%k_decay_som1(1:2)  = this%k_decay_som1(1:2) /year_sec    !1/second
-  this%k_decay_som2       = this%k_decay_som2/year_sec          !1/second
-  this%k_decay_som3       = this%k_decay_som3/year_sec          !1/second
-  this%k_decay_cwd        = this%k_decay_cwd /year_sec          !1/second
-  this%k_decay_fwd        = this%k_decay_fwd /year_sec          !1/second
-  this%k_decay_lwd        = this%k_decay_lwd /year_sec          !1/second
+!!! read in phosphorus variables - note that these NP ratio parameters for BGC  will have
+!!! to be added in the parameter file
 
-  if(betr_spinup_state/=0)then
-    call this%apply_spinup_factor()
-  endif
+  tString='np_s1_new'
+  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
+  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
+  if(bstatus%check_status())return
+  this%init_cp_som1=this%init_cn_som1*tempr
 
-  end subroutine centpara_readPars
+  tString='np_s2_new'
+  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
+  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
+  if(bstatus%check_status())return
+  this%init_cp_som2=this%init_cn_som2*tempr
+
+  tString='np_s3_new'
+  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
+  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
+  if(bstatus%check_status())return
+  this%init_cp_som3=this%init_cn_som3*tempr
+
+  tString='rf_l1s1_bgc'
+  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
+  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
+  if(bstatus%check_status())return
+  this%rf_l1s1_bgc=tempr
+
+  tString='rf_l2s1_bgc'
+  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
+  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
+  if(bstatus%check_status())return
+  this%rf_l2s1_bgc=tempr
+
+  tString='rf_l3s2_bgc'
+  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
+  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
+  if(bstatus%check_status())return
+  this%rf_l3s2_bgc=tempr
+
+  tString='rf_s2s1_bgc'
+  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
+  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
+  if(bstatus%check_status())return
+  this%rf_s2s1_bgc=tempr
+
+  tString='rf_s2s3_bgc'
+  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
+  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
+  this%rf_s2s3_bgc=tempr
+
+  tString='rf_s3s1_bgc'
+  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
+  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
+  this%rf_s3s1_bgc=tempr
+
+  tString='rf_cwdl2_bgc'
+  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
+  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
+  this%rf_cwdl2_bgc=tempr
+
+  tString='rf_cwdl3_bgc'
+  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
+  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
+  this%rf_cwdl3_bgc=tempr
+
+  tString='organic_max'
+  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
+  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//errMsg(__FILE__, __LINE__), err=-1)
+  this%organic_max=tempr
+
+
+  end subroutine v1eca_readPars
 
 !--------------------------------------------------------------------
   subroutine set_spinup_factor(this)
@@ -545,24 +399,10 @@ contains
   class(v1eca_para_type), intent(inout) :: this
   real(r8) :: k_decay_ref
 
-  !the order is, lit1, lit2, lit3, cwd, lwd, fwd, som1, som3, som2
-  this%spinup_factor(1) = 1._r8
-  this%spinup_factor(2) = 1._r8
-  this%spinup_factor(3) = 1._r8
-
-  this%spinup_factor(4) = 1._r8
-  this%spinup_factor(5) = 1._r8
-  this%spinup_factor(6) = 1._r8
-
-  k_decay_ref=this%k_decay_som1(1)
-  this%spinup_factor(7) = k_decay_ref/this%k_decay_som1(1)
-  this%spinup_factor(8) = k_decay_ref/this%k_decay_som3
-  this%spinup_factor(9) = k_decay_ref/this%k_decay_som2
-
   end subroutine set_spinup_factor
 
 !--------------------------------------------------------------------
-  subroutine centpara_printPars(this)
+  subroutine v1eca_printPars(this)
 
   implicit none
   class(v1eca_para_type), intent(inout) :: this
@@ -580,20 +420,7 @@ contains
   print*,'rf_l3s2_bgc =',this%rf_l3s2_bgc
   print*,'rf_s2s1_bgc =',this%rf_s2s1_bgc
   print*,'rf_s3s1_bgc =',this%rf_s3s1_bgc
-  print*,'rf_s1s2a_bgc=',this%rf_s1s2a_bgc
-  print*,'rf_s1s2b_bgc=',this%rf_s1s2b_bgc
 
-
-  !following is based on century parameterization
-  print*,'k_decay_lit1=',this%k_decay_lit1
-  print*,'k_decay_lit2=',this%k_decay_lit2
-  print*,'k_decay_lit3=',this%k_decay_lit3
-  print*,'k_decay_som1=',this%k_decay_som1
-  print*,'k_decay_som2=',this%k_decay_som2
-  print*,'k_decay_som3=',this%k_decay_som3
-  print*,'k_decay_cwd=',this%k_decay_cwd
-  print*,'k_decay_fwd=',this%k_decay_fwd
-  print*,'k_decay_lwd=',this%k_decay_lwd
 
   !nitrification-denitrification
   print*,'nitrif_n2o_loss_frac=',this%nitrif_n2o_loss_frac
@@ -621,6 +448,6 @@ contains
   print*,'vmax_decomp_n=', this%vmax_decomp_n
   print*,'vmax_den=', this%vmax_den
   print*,'vmax_nit=', this%vmax_nit
-  end subroutine centpara_printPars
+  end subroutine v1eca_printPars
 
 end module v1ecaParaType

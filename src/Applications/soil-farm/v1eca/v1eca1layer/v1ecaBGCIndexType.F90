@@ -30,12 +30,9 @@ implicit none
      integer           :: som2, som2_dek_reac
      integer           :: som3, som3_dek_reac
      integer           :: cwd,  cwd_dek_reac
-     integer           :: lwd,  lwd_dek_reac
-     integer           :: fwd,  fwd_dek_reac
      integer           :: litr_beg, litr_end  !litr group
      integer           :: wood_beg, wood_end  !wood group
      integer           :: som_beg,  som_end   !som group
-     integer           :: dom_beg,  dom_end   !dom group
      integer           :: Bm_beg,  Bm_end   !dom group
      integer           :: pom_beg, pom_end
      integer           :: c_loc
@@ -52,17 +49,16 @@ implicit none
      integer           :: lid_plant_minn_nh4, lid_plant_minn_nh4_up_reac !local position of plant uptake of mineral nitrogen NH4 in the state variable vector
      integer           :: lid_plant_minn_no3, lid_plant_minn_no3_up_reac !
      integer           :: lid_plant_minp, lid_plant_minp_up_reac !local position of plant uptake of mineral P in the state variable vector
-     integer           :: lid_minp_soluble, lid_minp_soluble_to_secp_reac    !conversation of adsorbed into secondary phase
-     integer           :: lid_minp_secondary,lid_minp_secondary_to_sol_occ_reac   !local position of secondary P in the state variable vector
-
-     integer           :: lid_minp_occlude      !local position of occluded P in the state variable vector
-
-     integer           :: lid_autr_rt, lid_autr_rt_reac             !root autotrophic respiration
+     integer           :: lid_minp_soluble, lid_minp_soluble_to_labile_reac    !conversation of adsorbed into secondary phase
+     integer           :: lid_o_scalar                           ! oxygen stress
+     integer           :: lid_autr_rt, lid_autr_rt_reac          !root autotrophic respiration
 
                                                                  !non reactive primary variables
      integer           :: lid_ar, lid_ar_aren_reac               !local position of ar in the state variable vector
      integer           :: lid_ch4, lid_ch4_aren_reac             !nonreactive primary variables
-
+     integer           :: lid_pot_co2_hr
+     integer           :: lid_co2_somhr
+     integer           :: lid_co2_lithr
                                                                  !secondary variables
      integer           :: lid_o2,  lid_o2_aren_reac              !local position of o2 in the state variable vector
      integer           :: lid_co2, lid_co2_aren_reac             !local position of co2 in the state variable vector
@@ -73,15 +69,13 @@ implicit none
      integer           :: lid_co2_hr                             !co2 production from heterotrophic respiration
      integer           :: lid_c13_co2, lid_c13_co2_aren_reac
      integer           :: lid_c14_co2, lid_c14_co2_aren_reac
-     integer           :: lid_no3_den                            !no3 consumption due to denitrification
+     integer           :: lid_no3_den, lid_n2o_den               !no3 consumption due to denitrification
      integer           :: lid_minn_nh4_immob                     !net mineral NH4 immobilization for decomposition
      integer           :: lid_minn_no3_immob                     !net mineral NO3 immobilization for decomposition
      integer           :: lid_nh4_nit
-     integer           :: lid_minp_secondary_trc
-     integer           :: lid_minp_occlude_trc
                                                                  !aerechyma transport, diagnostic efflux
      integer           :: lid_minp_immob                         !net P immobilization by aerobic decomposer
-
+     integer           :: lid_minp_sorb                          !sorption flux for soluble mineral P
      integer           :: lid_ar_paere
      integer           :: lid_n2_paere
      integer           :: lid_o2_paere
@@ -281,7 +275,6 @@ implicit none
   integer :: maxpft_loc
   logical :: batch_mode_loc
   maxpft_loc = 0
-  this%dom_beg=0; this%dom_end=-1
   if(present(maxpft))maxpft_loc=maxpft
   if(present(batch_mode))batch_mode_loc=batch_mode
   call this%InitPars(maxpft_loc, use_c14, use_c13, non_limit, nop_limit, batch_mode_loc)
@@ -371,11 +364,7 @@ implicit none
     this%wood_beg=this%litr_end+1
     this%cwd  = addone(itemp); this%cwd_dek_reac  = addone(ireac); call list_insert(list_react, 'cwd_dek_reac', itemp0)
     call add_ompool_name(list_name, list_unit, list_pool,'cwd', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
-    this%lwd  = addone(itemp); this%lwd_dek_reac  = addone(ireac); call list_insert(list_react, 'lwd_dek_reac', itemp0)
-    call add_ompool_name(list_name, list_unit, list_pool,'lwd', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
-    this%fwd  = addone(itemp); this%fwd_dek_reac  = addone(ireac); call list_insert(list_react, 'fwd_dek_reac', itemp0)
-    call add_ompool_name(list_name, list_unit, list_pool,'fwd', use_c13, use_c14, do_init=.false., vid=vid,uid=uid,pid=pid)
-    this%wood_end=this%wood_beg-1+(this%fwd-this%cwd+1)*this%nelms
+    this%wood_end=this%wood_beg-1+this%nelms
 
     !microbial biomass group
     this%Bm_beg=this%wood_end+1
@@ -408,14 +397,6 @@ implicit none
 
     this%nom_tot_elms    = itemp
 
-    this%lid_minp_secondary = addone(itemp); this%lid_minp_secondary_to_sol_occ_reac=addone(ireac)
-    call list_insert(list_react, 'minp_secondary_to_sol_occ_reac', itemp0)
-    call list_insert(list_name, 'minp_secondary',vid, itype=var_state_type)
-    call list_insert(list_unit, 'mol P m-3',uid)
-
-    this%lid_minp_occlude = addone(itemp);
-    call list_insert(list_name, 'minp_occlude',vid, itype=var_state_type)
-    call list_insert(list_unit, 'mol P m-3',uid)
     if(maxpft>0)then
       this%lid_plant_minn_nh4_up_reac = addone(ireac); call list_insert(list_react, 'plant_minn_nh4_up_reac', itemp0)
       this%lid_plant_minn_no3_up_reac = addone(ireac); call list_insert(list_react, 'plant_minn_no3_up_reac', itemp0)
@@ -476,7 +457,7 @@ implicit none
     this%lid_nh4_nit_reac = addone(ireac); call list_insert(list_react, 'nh4_nit_reac', itemp0)       !this is also used to indicate the nitrification reaction
     this%lid_no3_den_reac = addone(ireac); call list_insert(list_react, 'no3_den_reac', itemp0)       !this is also used to indicate the denitrification reaction
 
-    this%lid_minp_soluble_to_secp_reac = addone(ireac); call list_insert(list_react, 'minp_soluble_to_secp_reac', itemp0)
+    this%lid_minp_soluble_to_labile_reac = addone(ireac); call list_insert(list_react, 'minp_soluble_to_labile_reac', itemp0)
 
     if(non_limit)then
       this%lid_supp_minn=addone(itemp)
@@ -503,11 +484,26 @@ implicit none
     this%lid_n2o_nit  = addone(itemp);
     call list_insert(list_name, 'n2o_nit',vid, itype=var_flux_type); call list_insert(list_unit, 'mol N2O m-3 s-1',uid)
 
+    this%lid_o_scalar   = addone(itemp);
+    call list_insert(list_name, 'o_scalar',vid, itype=var_state_type); call list_insert(list_unit,'none',uid)
+
     this%lid_co2_hr   = addone(itemp);
     call list_insert(list_name, 'co2_hr',vid, itype=var_flux_type); call list_insert(list_unit,'mol C m-3 s-1',uid)
 
+    this%lid_pot_co2_hr   = addone(itemp);
+    call list_insert(list_name, 'pot_co2_hr',vid, itype=var_flux_type); call list_insert(list_unit,'mol C m-3 s-1',uid)
+
+    this%lid_co2_somhr   = addone(itemp);
+    call list_insert(list_name, 'co2_somhr',vid, itype=var_flux_type); call list_insert(list_unit,'mol C m-3 s-1',uid)
+
+    this%lid_co2_lithr   = addone(itemp);
+    call list_insert(list_name, 'co2_lithr',vid, itype=var_flux_type); call list_insert(list_unit,'mol C m-3 s-1',uid)
+
     this%lid_no3_den  = addone(itemp);
     call list_insert(list_name, 'no3_den',vid, itype=var_flux_type); call list_insert(list_unit, 'mol N m-3 s-1',uid)
+
+    this%lid_n2o_den  = addone(itemp);
+    call list_insert(list_name, 'n2o_den',vid, itype=var_flux_type); call list_insert(list_unit, 'mol N m-3 s-1',uid)
 
     this%lid_minn_nh4_immob = addone(itemp);
     call list_insert(list_name, 'minn_nh4_immob',vid, itype=var_flux_type); call list_insert(list_unit, 'mol N m-3 s-1',uid)
@@ -517,6 +513,9 @@ implicit none
 
     this%lid_minp_immob = addone(itemp);
     call list_insert(list_name, 'minp_immob',vid, itype=var_flux_type); call list_insert(list_unit, 'mol P m-3 s-1',uid)
+
+    this%lid_minp_sorb = addone(itemp)
+    call list_insert(list_name, 'minp_sorb',vid, itype=var_flux_type); call list_insert(list_unit, 'mol P m-3 s-1',uid)
 
     this%lid_nh4_nit        = addone(itemp);
     call list_insert(list_name, 'nh4_nit',vid, itype=var_flux_type); call list_insert(list_unit,'mol N m-3 s-1',uid)
@@ -597,7 +596,7 @@ implicit none
     call copy_name(this%nstvars, list_unit, this%varunits(1:this%nstvars))
     call copy_name(this%nom_pools, list_pool, this%ompoolnames(1:this%nom_pools))
     call copy_name_type(this%nstvars, list_name, this%vartypes(1:this%nstvars))
-!    call list_disp(list_name);call list_disp(list_pool);call list_disp(list_unit)
+ !   call list_disp(list_name);call list_disp(list_pool);call list_disp(list_unit)
 !    call list_disp(list_react)
 
     call list_free(list_name)
@@ -626,25 +625,22 @@ implicit none
   integer, intent(in) :: maxpft_loc
   integer :: reac
 
-  associate(                                      &
-    lit1  => this%lit1                       ,    &
-    lit2  => this%lit2                       ,    &
-    lit3  => this%lit3                       ,    &
-    cwd  => this%cwd                         ,    &
-    lwd  => this%lwd                         ,    &
-    fwd  => this%fwd                         ,    &
-    som1  => this%som1                       ,    &
-    som2  => this%som2                       ,    &
-    som3  => this%som3                       ,    &
-    nelms => this%nelms                      ,    &
-    c_loc => this%c_loc                      ,    &
-    n_loc => this%n_loc                      ,    &
-    p_loc => this%p_loc                      ,    &
-    lid_nh4=> this%lid_nh4                   ,    &
-    lid_no3 => this%lid_no3                  ,    &
-    lid_o2 => this%lid_o2                    ,    &
-    lid_minp_soluble=> this%lid_minp_soluble ,    &
-    lid_minp_secondary => this%lid_minp_secondary &
+  associate(                                    &
+    lit1  => this%lit1                        , &
+    lit2  => this%lit2                        , &
+    lit3  => this%lit3                        , &
+    cwd  => this%cwd                          , &
+    som1  => this%som1                        , &
+    som2  => this%som2                        , &
+    som3  => this%som3                        , &
+    nelms => this%nelms                       , &
+    c_loc => this%c_loc                       , &
+    n_loc => this%n_loc                       , &
+    p_loc => this%p_loc                       , &
+    lid_nh4=> this%lid_nh4                    , &
+    lid_no3 => this%lid_no3                   , &
+    lid_o2 => this%lid_o2                     , &
+    lid_minp_soluble=> this%lid_minp_soluble    &
   )
   !reaction1, lit1 -> s1
   reac=this%lit1_dek_reac;     this%primvarid(reac) = (lit1-1)*nelms+c_loc
@@ -681,11 +677,6 @@ implicit none
   !x is_aerobic_reac(reac) = .true.
   !print*,'7',reac,size(this%primvarid)
 
-  reac = this%fwd_dek_reac; this%primvarid(reac) = (fwd-1)*nelms+c_loc
-  !print*,'8',reac,size(this%primvarid)
-
-  reac = this%lwd_dek_reac; this%primvarid(reac) = (lwd-1)*nelms+c_loc
-  !print*,'9',reac,size(this%primvarid)
 
   !reaction 8, nitrification
   reac = this%lid_nh4_nit_reac; this%primvarid(reac) = this%lid_nh4
@@ -698,13 +689,8 @@ implicit none
 
   !reaction 10, inorganic P non-equilibrium adsorption
   !P_solution -> p_secondary
-  reac = this%lid_minp_soluble_to_secp_reac; this%primvarid(reac) = lid_minp_soluble
+  reac = this%lid_minp_soluble_to_labile_reac; this%primvarid(reac) = lid_minp_soluble
   !print*,'12',reac,size(this%primvarid)
-
-  !reaction 11, inorganic P non-equilibrium desorption
-  ! p_secondary -> P_solution
-  reac = this%lid_minp_secondary_to_sol_occ_reac; this%primvarid(reac) = lid_minp_secondary
-  !print*,'13',reac,size(this%primvarid)
 
   if(maxpft_loc>0)then
     !reaction 12, plant mineral nitrogen nh4 uptake
@@ -741,12 +727,9 @@ implicit none
   print*,'som2=', this%som2
   print*,'som3=', this%som3
   print*,'cwd=',  this%cwd
-  print*,'lwd=',  this%lwd
-  print*,'fwd=',  this%fwd
   print*,'litrgrp=', this%litr_beg, this%litr_end  !litr group
   print*,'woodgrp=', this%wood_beg, this%wood_end  !wood group
   print*,'somgrp =', this%som_beg,  this%som_end   !som group
-  print*,'domgrp =', this%dom_beg,  this%dom_end   !dom group
   print*,'Bmgrp  =', this%Bm_beg,   this%Bm_end   !dom group
   print*,'pomgrp =', this%pom_beg,  this%pom_end
   print*,'supminp=', this%lid_supp_minp                          !supplementary mineral P for spinup purpose
@@ -756,9 +739,7 @@ implicit none
   print*,'pltmnh4=', this%lid_plant_minn_nh4, this%lid_plant_minn_nh4_up_reac !local position of plant uptake of mineral nitrogen NH4 in the state variable vector
   print*,'pltmno3=', this%lid_plant_minn_no3, this%lid_plant_minn_no3_up_reac !
   print*,'pltmmnp=', this%lid_plant_minp, this%lid_plant_minp_up_reac !local position of plant uptake of mineral P in the state variable vector
-  print*,'mnpsol =', this%lid_minp_soluble, this%lid_minp_soluble_to_secp_reac    !conversation of adsorbed into secondary phase
-  print*,'mnp2nd =', this%lid_minp_secondary,this%lid_minp_secondary_to_sol_occ_reac   !local position of secondary P in the state variable vector
-  print*,'mnpocl =', this%lid_minp_occlude      !local position of occluded P in the state variable vector
+  print*,'mnpsol =', this%lid_minp_soluble, this%lid_minp_soluble_to_labile_reac    !conversation of adsorbed into secondary phase
   print*,'atr_rt =', this%lid_autr_rt, this%lid_autr_rt_reac             !root autotrophic respiration
   print*,'ar     =', this%lid_ar, this%lid_ar_aren_reac               !local position of ar in the state variable vector
   print*,'ch4    =', this%lid_ch4, this%lid_ch4_aren_reac             !nonreactive primary variables
@@ -774,8 +755,6 @@ implicit none
   print*,'nh4imob=', this%lid_minn_nh4_immob                     !net mineral NH4 immobilization for decomposition
   print*,'no3imob=', this%lid_minn_no3_immob                     !net mineral NO3 immobilization for decomposition
   print*,'nh4_nit=', this%lid_nh4_nit
-  print*,'mnp2nd =', this%lid_minp_secondary_trc
-  print*,'mnpocl =', this%lid_minp_occlude_trc
   print*,'mnpimob=', this%lid_minp_immob                         !net P immobilization by aerobic decomposer
   print*,'arpare =', this%lid_ar_paere
   print*,'n2pare =', this%lid_n2_paere

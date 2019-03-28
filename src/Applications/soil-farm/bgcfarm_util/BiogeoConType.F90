@@ -157,10 +157,10 @@ contains
   this%init_cn_lwd  = 90._r8  !mass based
 
 
-  this%init_cp_met  = 1600._r8
-  this%init_cp_cel  = 2000._r8
-  this%init_cp_lig  = 2500._r8
-  this%init_cp_cwd  = 4500._r8
+  this%init_cp_met  = 900._r8
+  this%init_cp_cel  = 900._r8
+  this%init_cp_lig  = 900._r8
+  this%init_cp_cwd  = 900._r8
   this%init_cp_lwd  = 4500._r8!mass based
   this%init_cp_fwd  = 4500._r8!mass based
 
@@ -193,8 +193,9 @@ contains
   use bshr_log_mod    , only : errMsg => shr_log_errMsg
   use ncdio_pio       , only : file_desc_t, ncd_io
   use BetrStatusType  , only : betr_status_type
-  use betr_ctrl       , only : betr_spinup_state
+  use betr_ctrl       , only : betr_spinup_state, bgc_type
   use betr_varcon     , only : betr_maxpatch_pft, betr_max_soilorder
+
   implicit none
   class(BiogeoCon_type), intent(inout) :: this
   type(file_desc_t)    , intent(inout)  :: ncid  ! pio netCDF file id
@@ -208,24 +209,12 @@ contains
   character(len=100) :: tString ! temp. var for reading
 
   call bstatus%reset()
-
+  if(index(bgc_type,'type1_bgc')/=0)return
   tString='cwd_fcel'
   call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
   if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//' '//errMsg(__FILE__, __LINE__), err=-1)
   if(bstatus%check_status())return
   this%cwd_fcel_bgc=tempr(1)
-
-  tString='lwd_fcel'
-  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//' '//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%lwd_fcel_bgc=tempr(1)
-
-  tString='fwd_fcel'
-  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//' '//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%fwd_fcel_bgc=tempr(1)
 
   tString='cwd_flig'
   call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
@@ -233,60 +222,80 @@ contains
   if(bstatus%check_status())return
   this%cwd_flig_bgc=tempr(1)
 
+  if(index(bgc_type,'type1_bgc')/=0)return
+
+  tString='lwd_fcel'
+  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
+  if ( .not. readv ) then ! call bstatus%set_msg(msg=trim(errCode)//trim(tString)//' '//errMsg(__FILE__, __LINE__), err=-1)
+    this%lwd_fcel_bgc=this%cwd_fcel_bgc
+  else
+    this%lwd_fcel_bgc=tempr(1)
+  endif
+
+  tString='fwd_fcel'
+  call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
+  if ( .not. readv ) then !call bstatus%set_msg(msg=trim(errCode)//trim(tString)//' '//errMsg(__FILE__, __LINE__), err=-1)
+    this%fwd_fcel_bgc=this%cwd_fcel_bgc
+  else
+    this%fwd_fcel_bgc=tempr(1)
+  endif
+
   tString='lwd_flig'
   call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//' '//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%lwd_flig_bgc=tempr(1)
+  if ( .not. readv ) then !call bstatus%set_msg(msg=trim(errCode)//trim(tString)//' '//errMsg(__FILE__, __LINE__), err=-1)
+    this%lwd_flig_bgc=this%cwd_flig_bgc
+  else
+    this%lwd_flig_bgc=tempr(1)
+  endif
 
   tString='fwd_flig'
   call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//' '//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%fwd_flig_bgc=tempr(1)
+  if ( .not. readv ) then !call bstatus%set_msg(msg=trim(errCode)//trim(tString)//' '//errMsg(__FILE__, __LINE__), err=-1)
+    this%fwd_flig_bgc=this%cwd_flig_bgc
+  else
+    this%fwd_flig_bgc=tempr(1)
+  endif
 
   call ncd_io('vmax_minp_soluble_to_secondary',temparr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=' ERROR: error in reading in soil order vmax_minp_soluble_to_secondary '//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-
-  this%vmax_minp_soluble_to_secondary(1:betr_max_soilorder)=temparr(1:betr_max_soilorder)
+  if (readv ) then !call bstatus%set_msg(msg=' ERROR: error in reading in soil order vmax_minp_soluble_to_secondary '//errMsg(__FILE__, __LINE__), err=-1)
+    this%vmax_minp_soluble_to_secondary(1:betr_max_soilorder)=temparr(1:betr_max_soilorder)
+  endif
 
   call ncd_io('minp_secondary_decay',temparr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=' ERROR: error in reading in soil order minp_secondary_decay '//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%minp_secondary_decay(1:betr_max_soilorder)=temparr(1:betr_max_soilorder)
+  if ( readv ) then !call bstatus%set_msg(msg=' ERROR: error in reading in soil order minp_secondary_decay '//errMsg(__FILE__, __LINE__), err=-1)
+    this%minp_secondary_decay(1:betr_max_soilorder)=temparr(1:betr_max_soilorder)
+  endif
 
   call ncd_io('frac_p_sec_to_sol',temparr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=' ERROR: error in reading in soil order frac_p_sec_to_sol '//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%frac_p_sec_to_sol(1:betr_max_soilorder)=temparr(1:betr_max_soilorder)
+  if ( readv ) then !call bstatus%set_msg(msg=' ERROR: error in reading in soil order frac_p_sec_to_sol '//errMsg(__FILE__, __LINE__), err=-1)
+    this%frac_p_sec_to_sol(1:betr_max_soilorder)=temparr(1:betr_max_soilorder)
+  endif
 
   call ncd_io('E_weath',temparrs, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=' ERROR: error in reading in soil order E_weath '//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%E_weath(1:16) = temparrs(1:16)
+  if ( readv ) then !call bstatus%set_msg(msg=' ERROR: error in reading in soil order E_weath '//errMsg(__FILE__, __LINE__), err=-1)
+    this%E_weath(1:16) = temparrs(1:16)
+  endif
 
   tString='T_ref_weath'
   call ncd_io(trim(tString),tempr, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=trim(errCode)//trim(tString)//' '//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%T_ref_weath=tempr(1)
-
+  if ( readv ) then !call bstatus%set_msg(msg=trim(errCode)//trim(tString)//' '//errMsg(__FILE__, __LINE__), err=-1)
+    this%T_ref_weath=tempr(1)
+  endif
+ 
   call ncd_io('b_weath',temparrs, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=' ERROR: error in reading in soil order b_weath'//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%b_weath(1:16) = temparrs(1:16)
+  if ( readv ) then !call bstatus%set_msg(msg=' ERROR: error in reading in soil order b_weath'//errMsg(__FILE__, __LINE__), err=-1)
+    this%b_weath(1:16) = temparrs(1:16)
+  endif
 
   call ncd_io('f_shield',temparrs, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=' ERROR: error in reading in soil order f_shield'//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%f_shield(1:16) = temparrs(1:16)
+  if ( readv ) then !call bstatus%set_msg(msg=' ERROR: error in reading in soil order f_shield'//errMsg(__FILE__, __LINE__), err=-1)
+    this%f_shield(1:16) = temparrs(1:16)
+  endif
 
   call ncd_io('P_weip',temparrs, 'read', ncid, readvar=readv)
-  if ( .not. readv ) call bstatus%set_msg(msg=' ERROR: error in reading in soil order P_weip'//errMsg(__FILE__, __LINE__), err=-1)
-  if(bstatus%check_status())return
-  this%P_weip(1:16) = temparrs(1:16)
-
+  if ( readv ) then !call bstatus%set_msg(msg=' ERROR: error in reading in soil order P_weip'//errMsg(__FILE__, __LINE__), err=-1)
+    this%P_weip(1:16) = temparrs(1:16)
+  endif
   end subroutine readPars_bgc
 
   !--------------------------------------------------------------------

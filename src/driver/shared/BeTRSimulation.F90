@@ -21,9 +21,9 @@ module BeTRSimulation
   use ColumnType     , only : column_type
   use LandunitType   , only : landunit_type
 #else
-  use ColumnType     , only : column_type => column_physical_properties
-  use VegetationType , only : patch_type  => vegetation_physical_properties
-  use LandunitType   , only : landunit_type => landunit_physical_properties
+  use ColumnType     , only : column_type => column_physical_properties_type
+  use VegetationType , only : patch_type  => vegetation_physical_properties_type
+  use LandunitType   , only : landunit_type => landunit_physical_properties_type
 #endif
 
   ! !USES:
@@ -996,8 +996,9 @@ contains
   end subroutine WriteRegressionOutput
 
   !------------------------------------------------------------------------
-  subroutine BeTRSimulationSetBiophysForcing(this, bounds,  col, pft, lbj, ubj, carbonflux_vars, waterstate_vars, &
-    waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
+  subroutine BeTRSimulationSetBiophysForcing(this, bounds,  col, pft, lbj, ubj, &
+    carbonflux_vars, waterstate_vars,  waterflux_vars, temperature_vars, &
+    soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
     chemstate_vars, soilstate_vars)
   !DESCRIPTION
   !pass in biogeophysical variables for running betr
@@ -1152,12 +1153,6 @@ contains
          endif
        endif
       enddo
-      if(c==68 .and. .false.)then
-        print*,'checksum'
-        do l=1, ubj
-          print*,'l',l,sum(this%biophys_forc(c)%qflx_rootsoi_frac_patch(1:pp,l))
-        enddo
-      endif
     endif
     if(present(temperature_vars))then
       this%biophys_forc(c)%t_soi_10cm(cc)           = col_es%t_soi10cm(c)

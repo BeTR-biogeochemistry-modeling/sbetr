@@ -441,14 +441,12 @@ subroutine set_tracer(this, bstatus, trc_id, trc_name, is_trc_mobile, is_trc_adv
   if(present(is_trc_passive))then
     if(is_trc_passive)then
       this%nsolid_passive_tracer_groups = this%nsolid_passive_tracer_groups + 1
-      this%nsolid_passive_tracers = this%nsolid_passive_tracers + mem
     endif
   endif
 
   if(present(is_trc_adsorb))then
     if(is_trc_adsorb)then
       this%nsolid_equil_tracer_groups = this%nsolid_equil_tracer_groups + 1
-      this%nsolid_equil_tracers       = this%nsolid_equil_tracers + mem
     endif
   endif
   trc_grp_beg = trc_cnt + 1

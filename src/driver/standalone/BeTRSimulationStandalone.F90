@@ -331,11 +331,16 @@ contains
     if(use_c14_betr)then
       call this%biophys_forc(c)%c14flx%reset(value_column=0._r8)
     endif
+
+    this%biophys_forc(c)%frac_loss_lit_to_fire_col(c_l) = 0._r8
+    this%biophys_forc(c)%frac_loss_cwd_to_fire_col(c_l)=0._r8
   enddo
 
   do j = betr_bounds%lbj, betr_bounds%ubj
     do fc = 1, num_soilc
       c = filter_soilc(fc)
+      this%biophys_forc(c)%n14flx%nflx_minn_input_nh4_vr_col(c_l,j)=1.e-10_r8
+      this%biophys_forc(c)%p31flx%pflx_minp_input_po4_vr_col(c_l,j)=1.e-11_r8
       this%biophys_forc(c)%pweath_prof_col(c_l,j) = cnstate_vars%pdep_prof_col(c,j)
       this%biophys_forc(c)%c12flx%cflx_input_litr_met_vr_col(c_l,j) = carbonflux_vars%cflx_input_litr_met_vr_col(c,j)
       this%biophys_forc(c)%c12flx%cflx_input_litr_cel_vr_col(c_l,j) = carbonflux_vars%cflx_input_litr_cel_vr_col(c,j)
@@ -354,6 +359,8 @@ contains
       this%biophys_forc(c)%p31flx%pflx_input_litr_lig_vr_col(c_l,j) = phosphorusflux_vars%pflx_input_litr_lig_vr_col(c,j)
       this%biophys_forc(c)%p31flx%pflx_input_litr_cwd_vr_col(c_l,j) = phosphorusflux_vars%pflx_input_litr_cwd_vr_col(c,j)
       this%biophys_forc(c)%p31flx%pflx_minp_input_po4_vr_col(c_l,j) = phosphorusflux_vars%pflx_minp_input_po4_vr_col(c,j)
+
+      this%biophys_forc(c)%biochem_pmin_vr(c_l,j) =0._r8
     enddo
   enddo
 

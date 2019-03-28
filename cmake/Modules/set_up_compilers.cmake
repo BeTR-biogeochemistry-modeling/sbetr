@@ -3,6 +3,7 @@ macro(set_up_compilers)
   #
   # General C compiler flags.
   #
+  message("CMAKE_C_COMPILER_ID ${CMAKE_C_COMPILER_ID}")
   if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -Wall -pedantic-errors -Wextra")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror-implicit-function-declaration")

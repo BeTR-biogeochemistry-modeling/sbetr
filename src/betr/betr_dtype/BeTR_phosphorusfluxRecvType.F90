@@ -2,6 +2,7 @@ module BeTR_phosphorusfluxRecvType
   use bshr_kind_mod  , only : r8 => shr_kind_r8
   use betr_decompMod , only : betr_bounds_type
   use betr_varcon     , only : spval => bspval
+  use betr_ctrl, only : bgc_type
 implicit none
 #include "bshr_alloc.h"
   private
@@ -24,6 +25,10 @@ implicit none
     real(r8), pointer :: secondp_to_occlp_vr_col(:,:) => null()
     real(r8), pointer :: pflx_minp_weathering_po4_vr_col(:,:) => null()
     real(r8), pointer :: pflx_minp_weathering_po4_col(:) => null()
+    real(r8), pointer :: adsorb_to_labilep_vr_col(:,:) => null()
+    real(r8), pointer :: col_plant_pdemand_vr(:,:) => null()
+    real(r8), pointer :: sminp_to_plant_vr_col(:,:) => null()
+    real(r8), pointer :: net_mineralization_p_vr_col(:,:) => null()
   contains
     procedure, public  :: Init
     procedure, private :: InitAllocate
@@ -73,6 +78,12 @@ implicit none
   SPVAL_ALLOC(this%fire_decomp_ploss_vr_col(begc:endc,lbj:ubj))
   SPVAL_ALLOC(this%pflx_minp_weathering_po4_vr_col(begc:endc,lbj:ubj))
   SPVAL_ALLOC(this%pflx_minp_weathering_po4_col(begc:endc))
+  SPVAL_ALLOC(this%sminp_to_plant_vr_col(begc:endc,lbj:ubj))
+  if(index(bgc_type,'type1_bgc')/=0)then
+    SPVAL_ALLOC(this%adsorb_to_labilep_vr_col(begc:endc,lbj:ubj))
+    SPVAL_ALLOC(this%col_plant_pdemand_vr(begc:endc, lbj:ubj))
+  endif
+  SPVAL_ALLOC(this%net_mineralization_p_vr_col(begc:endc,lbj:ubj))
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------
@@ -94,6 +105,11 @@ implicit none
   this%fire_decomp_ploss_vr_col(:,:) = value_column
   this%sminp_to_plant_trans_patch(:)=0._r8
   this%sminp_to_plant_patch(:) = 0._r8
+  this%sminp_to_plant_vr_col(:,:) = value_column
+  if(index(bgc_type,'type1_bgc')/=0)then
+    this%adsorb_to_labilep_vr_col(:,:)=value_column
+  endif
+  this%net_mineralization_p_vr_col(:,:) = value_column
   end subroutine reset
 
   !------------------------------------------------------------------------

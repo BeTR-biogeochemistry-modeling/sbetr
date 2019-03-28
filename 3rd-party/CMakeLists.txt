@@ -63,6 +63,11 @@ set_target_properties(pfunit PROPERTIES IMPORTED_LOCATION ${PROJECT_BINARY_DIR}/
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/3rd-party/pfunit/include/" PARENT_SCOPE)
 set(ENV{PFUNIT} ${PROJECT_BINARY_DIR} CACHE)
 
+#remove netcdf dependence 
+if (MACHINE MATCHES "notsupported")
+return ()
+endif()
+
 # Build zlib for compression.
 if (NOT EXISTS ${Z_LIBRARY})
   set(ZLIB_CONFIG_OPTS --prefix=${PROJECT_BINARY_DIR} --static)
@@ -230,6 +235,8 @@ if (NOT EXISTS ${NETCDF_LIBRARY})
                   OUTPUT_VARIABLE netcdf_c_config_log ERROR_VARIABLE netcdf_c_config_err
                   RESULT_VARIABLE stat)
 
+  message("netcdf_c_config_err ${netcdf_c_config_err}")
+  message("stat ${stat}")
 #  message("PROJECT_BINARY_DIR = ${PROJECT_BINARY_DIR}")
 #  set(NETCDF_C_CONFIG_OPTS --prefix=${PROJECT_BINARY_DIR})
 #  set(NETCDF_C_CONFIG_OPTS ${NETCDF_C_CONFIG_OPTS} --with-hdf5=${PROJECT_BINARY_DIR})

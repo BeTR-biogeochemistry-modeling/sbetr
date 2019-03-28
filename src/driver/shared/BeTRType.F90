@@ -94,6 +94,7 @@ module BetrType
      procedure, public  :: set_bgc_spinup
      procedure, public  :: Set_iP_prof
      procedure, public  :: OutLoopBGC
+     procedure, public  :: reset_biostates
   end type betr_type
 
   public :: create_betr_type
@@ -120,8 +121,10 @@ contains
   implicit none
   class(betr_type)            , intent(inout)        :: this
   type(betr_bounds_type)      , intent(in)           :: bounds
-  integer             :: lbj, ubj
   type(betr_status_type)           , intent(out)   :: bstatus
+
+  integer             :: lbj, ubj
+
   lbj = bounds%lbj;  ubj = bounds%ubj
 
   call this%bgc_reaction%UpdateParas(bounds, lbj, ubj, bstatus)
@@ -377,7 +380,7 @@ contains
          this%tracerstates,                                    &
          this%tracerfluxes,                                    &
          this%tracerboundaryconds,                             &
-         this%plant_soilbgc, biogeo_flux,  betr_status)
+         this%plant_soilbgc, biogeo_flux, biogeo_state, betr_status)
     if(betr_status%check_status())return
 
     if(this%tracers%debug)call this%debug_info(bounds, col, num_soilc, filter_soilc, 'afbgc react\n bef gwstransp',betr_status)
@@ -408,6 +411,7 @@ contains
     if(betr_status%check_status())return
 
     !update nutrient uptake fluxes
+    if(inloop_reaction) &
     call this%plant_soilbgc%plant_soilbgc_summary(bounds, lbj, ubj, pft, &
           num_soilc, filter_soilc,  dtime                              , &
           col%dz(bounds%begc:bounds%endc,1:ubj)                        , &
@@ -1571,6 +1575,7 @@ contains
 
     ! !LOCAL VARIABLES:
     character(len=255) :: subname = 'OutLoopBGC'
+    real(r8)           :: Rfactor(bounds%begc:bounds%endc, bounds%lbj:bounds%ubj,1:this%tracers%ngwmobile_tracer_groups)
     integer :: lbj, ubj
     real(r8):: dtime
 
@@ -1578,6 +1583,19 @@ contains
     lbj = bounds%lbj; ubj = bounds%ubj
 
     dtime = betr_time%get_step_size()
+
+
+      !set up kinetic parameters that are passed in from the mother lsm. Mostly they
+      !are plant-nutrient related parameters.
+    call this%bgc_reaction%set_kinetics_par(1, ubj, this%nactpft, &
+        this%plantNutkinetics, this%tracers, this%tracercoeffs)
+
+    call stage_tracer_transport(betr_time, bounds, col, pft, num_soilc,&
+         filter_soilc, num_soilp, filter_soilp, biophysforc,      &
+         biogeo_state, biogeo_flux, this%aereconds, this%tracers, this%tracercoeffs, &
+         this%tracerboundaryconds, this%tracerstates, this%tracerfluxes, this%bgc_reaction, &
+         Rfactor, this%advection_on, betr_status)
+    if(betr_status%check_status())return
 
     call this%bgc_reaction%calc_bgc_reaction(bounds, col, lbj, ubj, &
      num_soilc,                                            &
@@ -1592,10 +1610,42 @@ contains
      this%tracerstates,                                    &
      this%tracerfluxes,                                    &
      this%tracerboundaryconds,                             &
-     this%plant_soilbgc, biogeo_flux,  betr_status)
+     this%plant_soilbgc, biogeo_flux, biogeo_state,  betr_status)
   if(betr_status%check_status())return
 
+  !update nutrient uptake fluxes
+  call this%plant_soilbgc%plant_soilbgc_summary(bounds, lbj, ubj, pft, &
+        num_soilc, filter_soilc,  dtime                              , &
+        col%dz(bounds%begc:bounds%endc,1:ubj)                        , &
+        this%tracers, this%tracerfluxes, biogeo_flux, betr_status)
 
   end subroutine OutLoopBGC
+
+  !------------------------------------------------------------------------
+  subroutine reset_biostates(this, bounds, num_soilc, filter_soilc, &
+     biophysforc, betr_status)
+
+    
+    implicit none
+    !
+    ! !ARGUMENTS :
+    class(betr_type)                 , intent(inout) :: this
+    type(bounds_type)                , intent(in)    :: bounds                     ! bounds
+    integer                          , intent(in)    :: num_soilc                  ! number of columns in column filter_soilc
+    integer                          , intent(in)    :: filter_soilc(:)            ! column filter_soilc
+    type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
+    type(betr_status_type)           , intent(out)   :: betr_status
+
+    integer :: lbj, ubj
+
+    call betr_status%reset()
+    lbj = bounds%lbj; ubj = bounds%ubj
+
+
+     call this%bgc_reaction%reset_biostates(bounds, lbj, ubj, &
+     this%tracerboundaryconds%jtops_col, num_soilc, filter_soilc, &
+     this%tracers, biophysforc,  this%tracerstates, betr_status)
+
+  end subroutine reset_biostates
 
 end module BetrType

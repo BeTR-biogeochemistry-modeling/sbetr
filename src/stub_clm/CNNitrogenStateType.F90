@@ -80,6 +80,7 @@ contains
     allocate(this%som3n_col(begc:endc)); this%som3n_col(:) = spval
     allocate(this%sminn_col(begc:endc)); this%sminn_col(:) = spval
     allocate(this%domn_col(begc:endc)); this%domn_col(:) = spval
+
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------

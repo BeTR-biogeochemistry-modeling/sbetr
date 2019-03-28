@@ -3,6 +3,7 @@ module BeTR_carbonstateRecvType
   use betr_decompMod , only : betr_bounds_type
   use tracer_varcon  , only : reaction_method
   use betr_varcon     , only : spval => bspval
+  use betr_ctrl, only : bgc_type
 implicit none
 #include "bshr_alloc.h"
   private
@@ -25,6 +26,7 @@ implicit none
      real(r8), pointer :: som2c_vr_col(:,:) => null()
      real(r8), pointer :: som3c_vr_col(:,:) => null()
      real(r8), pointer :: domc_vr_col(:,:) => null()
+     real(r8), pointer :: decomp_cpools_vr(:,:,:) => null()
  contains
     procedure, public  :: Init
     procedure, private :: InitAllocate
@@ -48,6 +50,7 @@ implicit none
   !------------------------------------------------------------------------
   subroutine InitAllocate(this, bounds)
   use bshr_infnan_mod     , only : nan => shr_infnan_nan, assignment(=)
+
   implicit none
   class(betr_carbonstate_recv_type), intent(inout) :: this
   type(betr_bounds_type), intent(in) :: bounds
@@ -70,15 +73,18 @@ implicit none
   SPVAL_ALLOC(this%som3c_col(begc:endc))
   SPVAL_ALLOC(this%domc_col(begc:endc))
 
-  SPVAL_ALLOC(this%som1c_vr_col(begc:endc, lbj:ubj))
-  SPVAL_ALLOC(this%som2c_vr_col(begc:endc, lbj:ubj))
-  SPVAL_ALLOC(this%som3c_vr_col(begc:endc, lbj:ubj))
+!  if(index(bgc_type,'type1_bgc')/=0)then
+    SPVAL_ALLOC(this%decomp_cpools_vr(begc:endc,lbj:ubj,7))
+!  else
+    SPVAL_ALLOC(this%som1c_vr_col(begc:endc, lbj:ubj))
+    SPVAL_ALLOC(this%som2c_vr_col(begc:endc, lbj:ubj))
+    SPVAL_ALLOC(this%som3c_vr_col(begc:endc, lbj:ubj))
 
-  SPVAL_ALLOC(this%cwdc_vr_col(begc:endc,lbj:ubj))
-  SPVAL_ALLOC(this%totlitc_vr_col(begc:endc,lbj:ubj))
-  SPVAL_ALLOC(this%totsomc_vr_col(begc:endc,lbj:ubj))
-  SPVAL_ALLOC(this%domc_vr_col(begc:endc, lbj:ubj))
-
+    SPVAL_ALLOC(this%cwdc_vr_col(begc:endc,lbj:ubj))
+    SPVAL_ALLOC(this%totlitc_vr_col(begc:endc,lbj:ubj))
+    SPVAL_ALLOC(this%totsomc_vr_col(begc:endc,lbj:ubj))
+    SPVAL_ALLOC(this%domc_vr_col(begc:endc, lbj:ubj))
+!  endif
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------
@@ -87,14 +93,18 @@ implicit none
   class(betr_carbonstate_recv_type)  :: this
   real(r8), intent(in) :: value_column
 
-  this%cwdc_vr_col(:,:) = value_column
-  this%totlitc_vr_col(:,:) = value_column
-  this%totsomc_vr_col(:,:) = value_column
+  if(index(bgc_type,'type1_bgc')/=0)then
+    this%decomp_cpools_vr(:,:,:)=value_column
+  else
+    this%cwdc_vr_col(:,:) = value_column
+    this%totlitc_vr_col(:,:) = value_column
+    this%totsomc_vr_col(:,:) = value_column
 
-  this%som1c_vr_col(:,:) = value_column
-  this%som2c_vr_col(:,:) = value_column
-  this%som3c_vr_col(:,:) = value_column
-  this%domc_vr_col(:,:) = value_column
+    this%som1c_vr_col(:,:) = value_column
+    this%som2c_vr_col(:,:) = value_column
+    this%som3c_vr_col(:,:) = value_column
+    this%domc_vr_col(:,:) = value_column
+  endif
   end subroutine reset
 
   !------------------------------------------------------------------------
@@ -109,6 +119,7 @@ implicit none
 
   integer :: c, j
 
+  if(index(bgc_type,'type1_bgc')/=0)return
   this%cwdc_col(:) = 0._r8
   this%totlitc_col(:) = 0._r8
   this%totsomc_col(:) = 0._r8

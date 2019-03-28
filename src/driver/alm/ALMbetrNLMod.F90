@@ -10,7 +10,24 @@ implicit none
 
   character(len=betr_namelist_buffer_size), public :: betr_namelist_buffer
   public :: betr_readNL
+  public :: set_betr_cnpbgc
+  public :: do_betr_bgc_type
 contains
+
+
+!-------------------------------------------------------------------------------
+  function do_betr_bgc_type(type_char)result(ans)
+  use betr_ctrl, only : bgc_type
+  implicit none
+  character(len=*), intent(in) :: type_char
+
+
+  logical :: ans
+
+  ans = index(bgc_type, type_char)/=0
+
+  end function do_betr_bgc_type
+
 
 
   !-------------------------------------------------------------------------------
@@ -26,7 +43,7 @@ contains
     use betr_utils    , only : log2str
     use betr_varcon   , only : betr_maxpatch_pft, betr_max_soilorder
     use clm_varctl    , only : iulog, spinup_state
-    use betr_ctrl     , only : betr_spinup_state
+    use betr_ctrl     , only : betr_spinup_state,bgc_type
     use tracer_varcon , only : advection_on, diffusion_on, reaction_on, ebullition_on, reaction_method
     use tracer_varcon , only : AA_spinup_on, fix_ip, do_bgc_calibration, bgc_param_file
     use ApplicationsFactory, only : AppInitParameters
@@ -59,7 +76,9 @@ contains
 
     lbcalib = lbgcalib
     !initialize spinup state
-    betr_spinup_state =spinup_state
+    if(index(bgc_type,'type2_bgc')/=0)then
+      betr_spinup_state =spinup_state
+    endif
     betr_max_soilorder=nsoilorder
     ! ----------------------------------------------------------------------
     ! Read namelist from standard input.
@@ -173,4 +192,38 @@ contains
 
   end subroutine LoadFile2String
 
+!-------------------------------------------------------------------------------
+    subroutine set_betr_cnpbgc(suplnitro,suplphos, spinup_state)
+    !
+    !DESCRIPTION
+    !set n and p switches of the betr bgc model
+    use tracer_varcon, only : is_nitrogen_active, is_phosphorus_active
+    implicit none
+    character(len=*), intent(in) :: suplnitro
+    character(len=*), intent(in) :: suplphos
+    integer         , intent(in) :: spinup_state
+    integer :: cnpset
+
+    !set
+    cnpset=111
+    if(trim(suplnitro)=='ALL')cnpset=cnpset-10
+    if(trim(suplphos)=='ALL')cnpset=cnpset-1
+
+    select case (cnpset)
+    case (100)
+      is_nitrogen_active = .false.
+      is_phosphorus_active=.false.
+    case (110)
+      is_nitrogen_active = .true.
+      is_phosphorus_active=.false.
+    case (101)
+      is_nitrogen_active = .false.
+      is_phosphorus_active=.true.
+    case default
+      is_nitrogen_active = .true.
+      is_phosphorus_active=.true.
+    end select
+    !make sure P has full supply during spinup
+    !if(spinup_state==1)is_phosphorus_active=.false.
+    end subroutine set_betr_cnpbgc
 end module ALMBeTRNLMod

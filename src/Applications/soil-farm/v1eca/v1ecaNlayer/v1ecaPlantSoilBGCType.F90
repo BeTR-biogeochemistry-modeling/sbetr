@@ -16,7 +16,6 @@ module v1ecaPlantSoilBGCType
   type, extends(plant_soilbgc_type) :: &
     v1eca_plant_soilbgc_type
 
-    real(r8),pointer :: rt_vr_col(:,:) => null()
     real(r8),pointer :: plant_root_exudates_c(:) => null()
     real(r8),pointer :: plant_root_exudates_n(:) => null()
     real(r8),pointer :: plant_root_exudates_p(:) => null()
@@ -100,9 +99,6 @@ module v1ecaPlantSoilBGCType
   begc = bounds%begc; endc=bounds%endc
   begp = bounds%begp; endp=bounds%endp
 
-  allocate(this%rt_vr_col(begc:endc,1:ubj)); this%rt_vr_col(:,:) = 0._r8
-
-
   allocate(this%plant_minn_nh4_active_yield_flx_vr_patch  (begp:endp,1:ubj)) !patch level mineral nitrogen yeild from soil bgc calculation
   allocate(this%plant_minn_no3_active_yield_flx_vr_patch  (begp:endp,1:ubj)) !patch level mineral nitrogen yeild from soil bgc calculation
   allocate(this%plant_minp_active_yield_flx_vr_patch  (begp:endp,1:ubj)) !column level mineral phosphorus yeild from soil bgc calculation
@@ -163,7 +159,6 @@ module v1ecaPlantSoilBGCType
   do p = 1, pft%npfts
     c = pft%column(p)
     biogeo_flux%n14flux_vars%smin_nh4_to_plant_patch(p) =  &
-      tracer_flx_vtrans_patch(p, id_trc_nh3x) * natomw / dtime + &
       dot_product(this%plant_minn_nh4_active_yield_flx_vr_patch(p,1:ubj), dz(c,1:ubj))
 
     biogeo_flux%n14flux_vars%smin_nh4_to_plant_patch(p) = biogeo_flux%n14flux_vars%smin_nh4_to_plant_patch(p)/pft%wtcol(p)
@@ -180,16 +175,8 @@ module v1ecaPlantSoilBGCType
     biogeo_flux%p31flux_vars%sminp_to_plant_trans_patch(p) = tracer_flx_vtrans_patch(p, id_trc_p_sol) * patomw / dtime/pft%wtcol(p)
     biogeo_flux%p31flux_vars%sminp_to_plant_patch(p) = biogeo_flux%p31flux_vars%sminp_to_plant_patch(p)/pft%wtcol(p)
 
-!    if(betrtracer_vars%debug)then
-!      write(*,'(A,X,I2,4(X,E20.12))')'vtraflx c pft',p, &
-!         tracerflux_vars%tracer_flx_vtrans_col(c, id_trc_nh3x)* natomw, &
-!         tracer_flx_vtrans_patch(p, id_trc_nh3x)* natomw, &
-!         tracerflux_vars%tracer_flx_vtrans_col(c, id_trc_no3x)* natomw, &
-!         tracer_flx_vtrans_patch(p, id_trc_no3x) * natomw
-!       print*,'plant minp ac',p,biogeo_flux%p31flux_vars%sminp_to_plant_patch(p)
-!    endif
   enddo
-!  if(betrtracer_vars%debug)print*,'pft wcoltot',pft%npfts,sum(pft%wtcol(1:pft%npfts))
+
   end associate
   end subroutine plant_soilbgc_summary
 
@@ -288,13 +275,7 @@ module v1ecaPlantSoilBGCType
 
   integer :: j, p, c
 
-  do j = 1, bounds%ubj
-    this%rt_vr_col(:,j) = 0._r8
-    do p = 1, betr_pft%npfts
-      c = betr_pft%column(p)
-      this%rt_vr_col(c,j)  = this%rt_vr_col(c,j) + biogeo_forc%rr_patch(p,j) * betr_pft%wtcol(p) !gC/m2/s
-    enddo
-  enddo
+
 
   end subroutine set_profiles_vars
   !----------------------------------------------------------------------

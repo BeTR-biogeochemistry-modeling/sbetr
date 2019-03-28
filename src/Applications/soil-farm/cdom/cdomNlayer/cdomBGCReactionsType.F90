@@ -85,6 +85,7 @@ module cdomBGCReactionsType
     procedure :: set_bgc_spinup
     procedure :: UpdateParas
     procedure :: init_iP_prof
+    procedure :: reset_biostates
     procedure, private :: set_bgc_forc
     procedure, private :: retrieve_output
     procedure, private :: rm_ext_output
@@ -1104,7 +1105,7 @@ contains
   subroutine calc_bgc_reaction(this, bounds, col, lbj, ubj, num_soilc, filter_soilc, &
        num_soilp,filter_soilp, jtops, dtime, betrtracer_vars, tracercoeff_vars, biophysforc,    &
        tracerstate_vars, tracerflux_vars, tracerboundarycond_vars, plant_soilbgc, &
-       biogeo_flux,  betr_status)
+       biogeo_flux,  biogeo_state, betr_status)
 
     !
     ! !DESCRIPTION:
@@ -1148,6 +1149,7 @@ contains
     type(tracerflux_type)                , intent(inout) :: tracerflux_vars
     class(plant_soilbgc_type)            , intent(inout) :: plant_soilbgc
     type(betr_biogeo_flux_type)          , intent(inout) :: biogeo_flux
+    type(betr_biogeo_state_type)         , intent(inout) :: biogeo_state
     type(betr_status_type)               , intent(out)   :: betr_status
 
     ! !LOCAL VARIABLES:
@@ -1818,7 +1820,7 @@ contains
   do j = lbj, ubj
     do fc = 1, num_soilc
       c = filter_soilc(fc)
-      this%cdom_forc(c,j)%rt_ar  = plant_soilbgc%rt_vr_col(c,j)            !root autotrophic respiration, mol CO2/m3/s
+      this%cdom_forc(c,j)%rt_ar  = biophysforc%c12flx%rt_vr_col(c,j)            !root autotrophic respiration, mol CO2/m3/s
     enddo
   enddo
   end select
@@ -2622,4 +2624,32 @@ contains
    end associate
    end subroutine update_sorpphase_coeff
 
+   !----------------------------------------------------------------------
+   subroutine reset_biostates(this, bounds, lbj, ubj, jtops, num_soilc, filter_soilc, &
+       betrtracer_vars, biophysforc,  tracerstate_vars, betr_status)
+
+       ! !USES:
+       use bshr_kind_mod            , only : r8 => shr_kind_r8
+       use tracerstatetype          , only : tracerstate_type
+       use BeTR_decompMod           , only : betr_bounds_type
+       use BeTRTracerType           , only : BeTRTracer_Type
+       use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
+       use BetrStatusType           , only : betr_status_type
+       use betr_columnType          , only : betr_column_type
+
+       ! !ARGUMENTS:
+     implicit none
+       class(cdom_bgc_reaction_type) , intent(inout)    :: this
+       type(betr_bounds_type)           , intent(in)    :: bounds                      ! bounds
+       integer                          , intent(in)    :: lbj, ubj                    ! lower and upper bounds, make sure they are > 0
+       integer                          , intent(in)    :: num_soilc                   ! number of columns in column filter
+       integer                          , intent(in)    :: filter_soilc(:)             ! column filter
+       integer                          , intent(in)    :: jtops( : )                  ! top index of each column
+       type(betrtracer_type)            , intent(in)    :: betrtracer_vars             ! betr configuration information
+       type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
+       type(tracerstate_type)           , intent(inout) :: tracerstate_vars
+       type(betr_status_type)           , intent(out)   :: betr_status
+
+
+   end subroutine reset_biostates
 end module cdomBGCReactionsType

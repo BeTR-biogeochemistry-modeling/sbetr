@@ -17,4 +17,5 @@ implicit none
                                             ! 2: AD-2 spinup
   logical, public :: continue_run =.false.
   logical, public :: inloop_reaction=.true.
+  character(len=10), public :: bgc_type='type0'
 end module betr_ctrl

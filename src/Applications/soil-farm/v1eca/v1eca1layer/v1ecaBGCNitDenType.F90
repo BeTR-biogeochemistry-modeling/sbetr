@@ -170,7 +170,7 @@ implicit none
       anaerobic_frac = exp(-rij_kro_a * r_psi**(-rij_kro_alpha) * &
         o2_decomp_depth**(-rij_kro_beta) * o2g**rij_kro_gamma * (h2osoi_vol + &
             ratio_diffusivity_water_gas *  air_vol)**rij_kro_delta)
-      
+
     end associate
   end subroutine calc_anaerobic_frac
 
@@ -226,7 +226,8 @@ implicit none
     real(r8) :: co2diff_con(2) = (/0.1325_r8, 0.0009_r8/)
     real(r8) :: g_per_m3__to__ug_per_gsoil
     real(r8) :: g_per_m3_sec__to__ug_per_gsoil_day
-
+    real(r8), parameter :: nitscal=1.e0_r8
+    real(r8), parameter :: denscal=1.e0_r8
     associate(                                         &
          bd         =>    bgc_forc%bd         , & !
          temp       =>    bgc_forc%temp       , &
@@ -235,11 +236,11 @@ implicit none
          h2osoi_vol =>    bgc_forc%h2osoi_vol , & !
          h2osoi_liq =>    bgc_forc%h2osoi_liq , & !
          finundated =>    bgc_forc%finundated , & ! Input: [real(r8) (:)]
-         t_scalar   =>    decompkf_eca%t_scalar      , & ! Input: [real(r8) (:,:)   ]  soil temperature scalar for decomp
-         w_scalar   =>    decompkf_eca%w_scalar        & ! Input: [real(r8) (:,:)   ]  soil water scalar for decomp
+         t_scalar   =>    bgc_forc%t_scalar      , & ! Input: [real(r8) (:,:)   ]  soil temperature scalar for decomp
+         w_scalar   =>    bgc_forc%w_scalar        & ! Input: [real(r8) (:,:)   ]  soil water scalar for decomp
          )
 
-      pot_f_nit = pot_f_nit_mol_per_sec
+      pot_f_nit = pot_f_nit_mol_per_sec * nitscal
       ! limit to oxic fraction of soils
       pot_f_nit  = pot_f_nit * (1._r8 - anaerobic_frac)   ![1/s]
 
@@ -250,7 +251,6 @@ implicit none
 
      !---------------- denitrification
      ! first some input variables an unit conversions
-     soil_hr = pot_co2_hr * catomw
 
      ! CENTURY papers give denitrification in units of per gram soil; need to convert from volumetric to mass-based units here
     soil_bulkdensity = bd + h2osoi_liq/dz
@@ -281,7 +281,7 @@ implicit none
    endif
 
    ! limit to anoxic fraction of soils
-   pot_f_denit = f_denit_base * anaerobic_frac
+   pot_f_denit = f_denit_base * anaerobic_frac * denscal
 
    ! now calculate the ratio of N2O to N2 from denitrifictaion, following Del Grosso et al., 2000
    ! diffusivity constant (figure 6b)
@@ -298,10 +298,10 @@ implicit none
    ! total water limitation function (Del Grosso et al., 2000, figure 7a)
    wfps = max(min(h2osoi_vol/watsat, 1._r8), 0._r8) * 100._r8
    fr_WFPS = max(0.1_r8, 0.015_r8 * wfps - 0.32_r8)
+   fr_WFPS = fr_WFPS * (1._r8-finundated) + finundated * 1.18_r8
 
    ! final ratio expression
    n2_n2o_ratio_denit = max(0.16*ratio_k1, ratio_k1*exp(-0.8 * ratio_no3_co2)) * fr_WFPS
-
    end associate
   end subroutine calc_nitrif_denitrif_rate
 
@@ -328,8 +328,8 @@ implicit none
 
   associate(                                    &
      pH           =>    bgc_forc%pH    , &
-     t_scalar     =>    decompkf_eca%t_scalar , & ! Input: [real(r8) (:,:)   ]  soil temperature scalar for decomp
-     w_scalar     =>    decompkf_eca%w_scalar , & ! Input: [real(r8) (:,:)   ]  soil water scalar for decomp
+     t_scalar     =>    bgc_forc%t_scalar , & ! Input: [real(r8) (:,:)   ]  soil temperature scalar for decomp
+     w_scalar     =>    bgc_forc%w_scalar , & ! Input: [real(r8) (:,:)   ]  soil water scalar for decomp
      k_nitr_max   =>    this%k_nitr_max         &
   )
 
@@ -376,6 +376,7 @@ implicit none
     lid_n2o   => v1eca_bgc_index%lid_n2o                 , & !
     lid_no3   => v1eca_bgc_index%lid_no3                 , & !
     lid_no3_den => v1eca_bgc_index%lid_no3_den           , &
+    lid_n2o_den => v1eca_bgc_index%lid_n2o_den           , &
     lid_nh4_nit_reac => v1eca_bgc_index%lid_nh4_nit_reac , & !
     lid_no3_den_reac => v1eca_bgc_index%lid_no3_den_reac , & !
     lid_nh4_nit        => v1eca_bgc_index%lid_nh4_nit    , & !
@@ -402,7 +403,7 @@ implicit none
   cascade_matrix(lid_n2o ,reac)    = 0.5_r8 * 1._r8/(1._r8+n2_n2o_ratio_denit)
   cascade_matrix(lid_n2  ,reac)    = 0.5_r8 - cascade_matrix(lid_n2o ,reac)
   cascade_matrix(lid_no3_den,reac) = 1._r8
-
+  cascade_matrix(lid_n2o_den,reac) = 1._r8/(1._r8+n2_n2o_ratio_denit)
   end associate
   end subroutine calc_cascade_matrix
 
