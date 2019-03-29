@@ -172,7 +172,7 @@ contains
     allocate(this%cflx_cel_vr(this%num_time, this%num_levels))
     allocate(this%cflx_lig_vr(this%num_time, this%num_levels))
     allocate(this%cflx_cwd_vr(this%num_time, this%num_levels))
-    allocate(this%rr_vr(this%num_time, this%num_levels))
+    allocate(this%rr_vr(this%num_time, this%num_levels)); this%rr_vr(:,:) = 0._r8
     allocate(this%nflx_met_vr(this%num_time, this%num_levels))
     allocate(this%nflx_cel_vr(this%num_time, this%num_levels))
     allocate(this%nflx_lig_vr(this%num_time, this%num_levels))
