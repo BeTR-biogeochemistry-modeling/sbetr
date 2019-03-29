@@ -96,6 +96,7 @@ contains
     begp = bounds%begp; endp= bounds%endp
     begc = bounds%begc; endc= bounds%endc
 
+
     allocate(this%rr_col                  (begc:endc)) ; this%rr_col      (:)  = nan
     allocate(this%rr_patch                (begp:endp)) ; this%rr_patch    (:)  = nan
     allocate(this%tempavg_agnpp_patch(begp:endp)); this%tempavg_agnpp_patch(:) = spval
@@ -130,7 +131,7 @@ contains
     allocate(this%fire_mortality_c_to_cwdc_col (begc:endc,1:nlevdecomp_full)); this%fire_mortality_c_to_cwdc_col (:,:) = spval
     allocate(this%phenology_c_to_litr_lig_c_col(begc:endc,1:nlevdecomp_full)); this%phenology_c_to_litr_lig_c_col(:,:) = spval
     allocate(this%som_c_leached_col(begc:endc)); this%som_c_leached_col(:) = spval
-
+    allocate(this%rr_vr_col(begc:endc,1:nlevdecomp_full)); this%rr_vr_col(:,:) = spval
     allocate(this%cflx_input_litr_met_vr_col(begc:endc,1:nlevdecomp_full)); this%cflx_input_litr_met_vr_col(:,:) = spval
     allocate(this%cflx_input_litr_cel_vr_col(begc:endc,1:nlevdecomp_full)); this%cflx_input_litr_cel_vr_col(:,:) = spval
     allocate(this%cflx_input_litr_lig_vr_col(begc:endc,1:nlevdecomp_full)); this%cflx_input_litr_lig_vr_col(:,:) = spval

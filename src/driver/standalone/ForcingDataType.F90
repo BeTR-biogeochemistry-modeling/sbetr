@@ -54,6 +54,7 @@ module ForcingDataType
      real(r8), allocatable               :: pflx_lig_vr(:,:)
      real(r8), allocatable               :: pflx_cwd_vr(:,:)
      real(r8), allocatable               :: qflx_runoff_col(:)
+     real(r8), allocatable               :: rr_vr(:,:)
      logical                             :: use_rootsoit
    contains
      procedure, public :: Init
@@ -127,6 +128,7 @@ contains
   if(allocated(this%cflx_cel_vr))deallocate(this%cflx_cel_vr)
   if(allocated(this%cflx_lig_vr))deallocate(this%cflx_lig_vr)
   if(allocated(this%cflx_cwd_vr))deallocate(this%cflx_cwd_vr)
+  if(allocated(this%rr_vr))deallocate(this%rr_vr)
   if(allocated(this%nflx_met_vr))deallocate(this%nflx_met_vr)
   if(allocated(this%nflx_cel_vr))deallocate(this%nflx_cel_vr)
   if(allocated(this%nflx_lig_vr))deallocate(this%nflx_lig_vr)
@@ -170,6 +172,7 @@ contains
     allocate(this%cflx_cel_vr(this%num_time, this%num_levels))
     allocate(this%cflx_lig_vr(this%num_time, this%num_levels))
     allocate(this%cflx_cwd_vr(this%num_time, this%num_levels))
+    allocate(this%rr_vr(this%num_time, this%num_levels))
     allocate(this%nflx_met_vr(this%num_time, this%num_levels))
     allocate(this%nflx_cel_vr(this%num_time, this%num_levels))
     allocate(this%nflx_lig_vr(this%num_time, this%num_levels))
@@ -192,8 +195,8 @@ contains
     use ncdio_pio    , only : ncd_nowrite
     use ncdio_pio    , only : ncd_pio_openfile
     use ncdio_pio    , only : get_dim_len
-    use ncdio_pio    , only : ncd_getvar
-    use ncdio_pio    , only : ncd_pio_closefile
+    use ncdio_pio    , only : ncd_getvar, Var_desc_t
+    use ncdio_pio    , only : ncd_pio_closefile, check_var
     use babortutils  , only : endrun
     use bshr_log_mod , only : errMsg => shr_log_errMsg
     use BeTR_GridMod , only : betr_grid_type
@@ -204,6 +207,8 @@ contains
     type(file_desc_t)     :: ncf_in_forc
     real(r8), allocatable :: data_2d(:,:,:)
     integer :: j1, j2
+    type(Var_desc_t)  :: vardesc
+    logical :: readvar
 
     call this%InitAllocate_CNP()
 
@@ -239,6 +244,16 @@ contains
           this%cflx_cwd_vr(j1, j2) = data_2d(this%num_columns, j2, j1)
        enddo
     enddo
+
+    call check_var(ncf_in_forc, 'RR_vr', vardesc, readvar)
+    if(readvar)then
+      call ncd_getvar(ncf_in_forc, 'RR_vr', data_2d)
+      do j2 = 1, this%num_levels
+         do j1 = 1, this%num_time
+           this%rr_vr(j1, j2) = data_2d(this%num_columns, j2, j1)
+         enddo
+      enddo
+    endif
 
     call ncd_getvar(ncf_in_forc, 'NFLX_INPUT_LITR_MET_vr', data_2d)
     do j2 = 1, this%num_levels
@@ -709,6 +724,7 @@ contains
         carbonflux_vars%cflx_input_litr_cel_vr_col(c,j) = this%cflx_cel_vr(tstep,j)
         carbonflux_vars%cflx_input_litr_lig_vr_col(c,j) = this%cflx_lig_vr(tstep,j)
         carbonflux_vars%cflx_input_litr_cwd_vr_col(c,j) = this%cflx_cwd_vr(tstep,j)
+        carbonflux_vars%rr_vr_col(c,j)                  = this%rr_vr(tstep,j)
 
         nitrogenflux_vars%nflx_input_litr_met_vr_col(c,j) = this%nflx_met_vr(tstep,j)
         nitrogenflux_vars%nflx_input_litr_cel_vr_col(c,j) = this%nflx_cel_vr(tstep,j)
@@ -723,6 +739,7 @@ contains
         nitrogenflux_vars%nflx_minn_input_nh4_vr_col(c,j) = this%nflx_nh4_vr(tstep,j)
         nitrogenflux_vars%nflx_minn_input_no3_vr_col(c,j) = this%nflx_no3_vr(tstep,j)
         phosphorusflux_vars%pflx_minp_input_po4_vr_col(c,j) = this%pflx_po4_vr(tstep,j)
+
       enddo
     enddo
   end subroutine UpdateCNPForcing
