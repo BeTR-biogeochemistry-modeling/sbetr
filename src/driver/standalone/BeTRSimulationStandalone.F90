@@ -255,7 +255,17 @@ contains
   type(canopystate_type)                 , optional, intent(in) :: canopystate_vars
   type(chemstate_type)                   , optional, intent(in) :: chemstate_vars
   type(soilstate_type)                   , optional, intent(in) :: soilstate_vars
+  integer :: j, c, c_l
 
+  if(present(carbonflux_vars))then
+    c_l=1
+    do j = 1, betr_nlevsoi
+      do c = bounds%begc, bounds%endc
+        if(.not. this%active_col(c))cycle
+        this%biophys_forc(c)%c12flx%rt_vr_col(c_l,j) = carbonflux_vars%rr_vr_col(c,j)
+      enddo
+    enddo
+  endif
   call this%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi, carbonflux_vars, waterstate_vars, &
       waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
       chemstate_vars, soilstate_vars)
