@@ -2,6 +2,7 @@ module BeTR_carbonfluxRecvType
   use bshr_kind_mod  , only : r8 => shr_kind_r8
   use betr_decompMod , only : betr_bounds_type
   use betr_varcon     , only : spval => bspval
+  use betr_ctrl, only : bgc_type
 implicit none
 #include "bshr_alloc.h"
   private
@@ -20,6 +21,11 @@ implicit none
     real(r8), pointer :: annavg_agnpp_patch(:) => null()
     real(r8), pointer :: annavg_bgnpp_patch(:) => null()
     real(r8), pointer :: co2_soi_flx_col(:) => null()
+    real(r8), pointer :: decomp_k(:,:,:) => null()
+    real(r8), pointer :: phr_vr_col(:,:) => null()
+    real(r8), pointer :: somhr_vr_col(:,:) => null()
+    real(r8), pointer :: lithr_vr_col(:,:) => null()
+    real(r8), pointer :: o_scalar_col(:,:) => null()
   contains
     procedure, public  :: Init
     procedure, private :: InitAllocate
@@ -66,7 +72,14 @@ implicit none
   SPVAL_ALLOC(this%tempavg_bgnpp_patch(begp:endp))
   SPVAL_ALLOC(this%annavg_agnpp_patch(begp:endp))
   SPVAL_ALLOC(this%annavg_bgnpp_patch(begp:endp))
-  SPVAL_ALLOC(this%co2_soi_flx_col(begc:endc)) 
+  SPVAL_ALLOC(this%co2_soi_flx_col(begc:endc))
+  SPVAL_ALLOC(this%phr_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%o_scalar_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%somhr_vr_col(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%lithr_vr_col(begc:endc,lbj:ubj))
+!  if(index(bgc_type,'type1_bgc')/=0)then
+    SPVAL_ALLOC(this%decomp_k(begc:endc, lbj:ubj,7)) !decomposition k parameter
+!  endif
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------
@@ -81,6 +94,10 @@ implicit none
   this%som_c_qdrain_col(:) = value_column
   this%som_c_runoff_col(:) = value_column
   this%co2_soi_flx_col(:)=value_column
+  this%phr_vr_col(:,:)= value_column
+  this%o_scalar_col(:,:)=value_column
+  this%somhr_vr_col(:,:)=value_column
+  this%lithr_vr_col(:,:)=value_column
   end subroutine reset
 
 

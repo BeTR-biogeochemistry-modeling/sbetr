@@ -141,7 +141,10 @@ implicit none
     real(r8) :: diffusw0_minp
     real(r8),pointer :: plant_froot_nn(:)
     real(r8),pointer :: plant_froot_np(:)
+    real(r8),pointer :: decomp_k(:)
     integer, pointer :: plant_vtype(:)
+    real(r8) :: t_scalar
+    real(r8) :: w_scalar
     integer :: plant_ntypes
     integer :: soilorder
     real(r8):: msurf_nh4
@@ -170,30 +173,38 @@ contains
 
   end function create_bgcforc_type
   !--------------------------------------------------------------------
-  subroutine Init(this, nstvars)
+  subroutine Init(this, nstvars, npools)
 
   implicit none
   class(JarBGC_forc_type) , intent(inout) :: this
   integer , intent(in) :: nstvars
+  integer, optional, intent(in) :: npools
 
-  call this%InitAllocate(nstvars)
-
+  if(present(npools))then
+    call this%InitAllocate(nstvars,npools)
+  else
+    call this%InitAllocate(nstvars)
+  endif
   call this%set_defpar()
   this%debug =.false.
   end subroutine Init
 
   !--------------------------------------------------------------------
 
-  subroutine InitAllocate(this,  nstvars)
+  subroutine InitAllocate(this,  nstvars, npools)
   use betr_varcon         , only : betr_maxpatch_pft
   implicit none
   class(JarBGC_forc_type) , intent(inout) :: this
   integer , intent(in) :: nstvars
-
+  integer, optional, intent(in) :: npools
   allocate(this%ystates(nstvars))
   allocate(this%plant_froot_nn(betr_maxpatch_pft))
   allocate(this%plant_froot_np(betr_maxpatch_pft))
   allocate(this%plant_vtype(betr_maxpatch_pft)); this%plant_vtype(:) = 0
+
+  if(present(npools))then
+    allocate(this%decomp_k(npools))
+  endif
   end subroutine InitAllocate
   !--------------------------------------------------------------------
   subroutine set_defpar(this)
@@ -276,7 +287,10 @@ contains
   this%sflx_minn_nh4_fix_nomic  =0._r8      !nh4 from fixation
   this%sflx_minp_input_po4      =0._r8      !inorganic P from deposition and fertilization
   this%sflx_minp_weathering_po4 =0._r8
+<<<<<<< HEAD
 
+=======
+>>>>>>> jinyun_rr
   this%biochem_pmin =0._r8
   this%rt_ar_c13  =0._r8             !root autotrophic respiration, mol CO2/m3/s
   this%rt_ar_c14  =0._r8             !root autotrophic respiration, mol CO2/m3/s

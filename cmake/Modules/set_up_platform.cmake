@@ -52,7 +52,10 @@ macro(set_up_platform)
 
   # Get the hostname for this machine.
   site_name(HOSTNAME)
+<<<<<<< HEAD
 
+=======
+>>>>>>> jinyun_rr
   set(MACHINE "supported")
   if (HOSTNAME MATCHES "cori") # NERSC Cori phase1
     #ndk  make config debug=1 mpi=1 prefix=$SCRATCH/polymec
@@ -94,6 +97,12 @@ macro(set_up_platform)
       set(NEED_LAPACK FALSE)
     endif()
   else()
+<<<<<<< HEAD
+=======
+    set(CMAKE_C_COMPILER $ENV{CC})
+    set(CMAKE_CXX_COMPILER $ENV{CXX})
+    set(CMAKE_Fortran_COMPILER $ENV{FC})
+>>>>>>> jinyun_rr
     set(MACHINE "notsupported")
   endif()
 

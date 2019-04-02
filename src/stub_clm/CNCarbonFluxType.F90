@@ -47,6 +47,14 @@ implicit none
     real(r8), pointer :: annavg_agnpp_patch                      (:) => null()
     real(r8), pointer :: annavg_bgnpp_patch                      (:) => null()
     real(r8), pointer :: co2_soi_flx_col                         (:) => null()
+    real(r8), pointer :: decomp_k_col                            (:,:,:) => null()
+    real(r8), pointer :: t_scalar_col(:,:) => null()
+    real(r8), pointer :: w_scalar_col(:,:) => null()
+    real(r8), pointer :: rr_vr_col(:,:) => null()
+    real(r8), pointer :: phr_vr_col(:,:)=> null()
+    real(r8), pointer :: somhr_col(:) => null()
+    real(r8), pointer :: lithr_col(:)=> null()
+    real(r8), pointer :: o_scalar_col(:,:)=> null()
   contains
 
     procedure, public  :: Init
@@ -88,6 +96,7 @@ contains
     begp = bounds%begp; endp= bounds%endp
     begc = bounds%begc; endc= bounds%endc
 
+
     allocate(this%rr_col                  (begc:endc)) ; this%rr_col      (:)  = nan
     allocate(this%rr_patch                (begp:endp)) ; this%rr_patch    (:)  = nan
     allocate(this%tempavg_agnpp_patch(begp:endp)); this%tempavg_agnpp_patch(:) = spval
@@ -122,7 +131,7 @@ contains
     allocate(this%fire_mortality_c_to_cwdc_col (begc:endc,1:nlevdecomp_full)); this%fire_mortality_c_to_cwdc_col (:,:) = spval
     allocate(this%phenology_c_to_litr_lig_c_col(begc:endc,1:nlevdecomp_full)); this%phenology_c_to_litr_lig_c_col(:,:) = spval
     allocate(this%som_c_leached_col(begc:endc)); this%som_c_leached_col(:) = spval
-
+    allocate(this%rr_vr_col(begc:endc,1:nlevdecomp_full)); this%rr_vr_col(:,:) = spval
     allocate(this%cflx_input_litr_met_vr_col(begc:endc,1:nlevdecomp_full)); this%cflx_input_litr_met_vr_col(:,:) = spval
     allocate(this%cflx_input_litr_cel_vr_col(begc:endc,1:nlevdecomp_full)); this%cflx_input_litr_cel_vr_col(:,:) = spval
     allocate(this%cflx_input_litr_lig_vr_col(begc:endc,1:nlevdecomp_full)); this%cflx_input_litr_lig_vr_col(:,:) = spval
@@ -130,6 +139,10 @@ contains
     allocate(this%fire_decomp_closs_col(begc:endc)); this%fire_decomp_closs_col(:) = spval
     allocate(this%som_c_runoff_col(begc:endc)); this%som_c_runoff_col(:) = spval
     allocate(this%co2_soi_flx_col(begc:endc)); this%co2_soi_flx_col(:) = spval
+    allocate(this%phr_vr_col(begc:endc,1:nlevdecomp_full)); this%phr_vr_col(:,:)=spval
+    allocate(this%o_scalar_col(begc:endc,1:nlevdecomp_full)); this%o_scalar_col(:,:)=spval
+    allocate(this%somhr_col(begc:endc)); this%somhr_col(:) = spval
+    allocate(this%lithr_col(begc:endc)); this%lithr_col(:) = spval
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------

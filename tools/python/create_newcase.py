@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
 import os,time,sys,argparse
 from shutil import copyfile
@@ -17,7 +17,7 @@ args = parser.parse_args()
 #obtain the root directory of betr
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
-print dir_path
+print (dir_path)
 
 mdir,chdir=dir_path.split('/sbetr')
 if not re.search('/sbetr',mdir):
@@ -26,7 +26,7 @@ if args.case_root[0][0]=='/':
     directory=args.case_root[0]+args.case_name[0]
 else:
     directory= mdir + '/'+args.case_root[0]+args.case_name[0]
-print 'The case is built in directory: '+directory
+print ('The case is built in directory: '+directory)
 
 #create case directory
 if not os.path.exists(directory):
@@ -39,12 +39,12 @@ copyfile(mdir+'/templates/reaction.1d.sbetr.nl',directory+'/reaction.1d.sbetr.nl
 build_file=directory+'/case_make.py'
 
 file = open(build_file,'w')
-file.write("#!/usr/bin/env python2\n")
+file.write("#!/usr/bin/env python\n")
 file.write("#build script\n")
 file.write("import os,sys,argparse\n")
 file.write("parser = argparse.ArgumentParser(description=__doc__)\n")
 file.write("parser.add_argument('--task', dest='task', metavar='task', type=str, nargs=1, default=['none'],"+
-    "help='task for case_make.py')\n")
+    "help='task for case_make.py: config, install or distclean')\n")
 
 file.write("parser.add_argument('--CC', dest='CC', metavar='CC', type=str, nargs=1, default=['gcc8'],"+
     "help='C compiler')\n")

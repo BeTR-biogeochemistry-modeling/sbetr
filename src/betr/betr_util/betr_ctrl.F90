@@ -18,4 +18,6 @@ implicit none
   integer, public :: spinup_stage = 2       ! In Rose's version, this one is needed, and when it's used, its value is 2
 
   logical, public :: continue_run =.false.
+  logical, public :: inloop_reaction=.true.
+  character(len=10), public :: bgc_type='type0'
 end module betr_ctrl

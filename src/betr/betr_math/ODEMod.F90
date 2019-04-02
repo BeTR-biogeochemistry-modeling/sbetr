@@ -136,7 +136,7 @@ contains
     logical,  intent(out):: acc         !true or false
 
     ! !LOCAL VARIABLES:
-    real(r8), parameter  :: rerr_thr=1.e-4_r8   !relative error threshold
+    real(r8), parameter  :: rerr_thr=1.e-2_r8   !relative error threshold
 
     if(rerr<0.5*rerr_thr)then
        dt_scal = 2._r8

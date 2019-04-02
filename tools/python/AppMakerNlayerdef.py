@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 #in app_nameNlayer write three files
 #CMakeLists.txt
 #app_nameBGCReactionsType.F90

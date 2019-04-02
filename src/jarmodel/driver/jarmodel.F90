@@ -92,7 +92,7 @@ subroutine run_model(namelist_buffer)
   integer :: nvars
   character(len=14) :: yymmddhhss
   logical :: is_surflit = .false.  !logical switch for litter decomposition
-  logical :: nitrogen_stress=.true.
+  logical :: nitrogen_stress=.false.
   logical :: phosphorus_stress=.false.
   integer                                :: nml_error
   character(len=betr_string_length_long) :: ioerror_msg
