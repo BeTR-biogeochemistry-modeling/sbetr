@@ -66,6 +66,7 @@ implicit none
   begc = bounds%begc ; endc=bounds%endc
   lbj = bounds%lbj   ; ubj=bounds%ubj
 
+<<<<<<< HEAD
   SPVAL_ALLOC(this%cwdp_col(begc:endc))
   SPVAL_ALLOC(this%totlitp_col(begc:endc))
   SPVAL_ALLOC(this%totsomp_col(begc:endc))
@@ -94,6 +95,51 @@ implicit none
   SPVAL_ALLOC(this%sminp_vr_col(begc:endc,lbj:ubj))
   SPVAL_ALLOC(this%occlp_vr_col(begc:endc,lbj:ubj))
 
+||||||| merged common ancestors
+  allocate(this%cwdp_col(begc:endc))
+  allocate(this%totlitp_col(begc:endc))
+  allocate(this%totsomp_col(begc:endc))
+  allocate(this%totlitp_1m_col(begc:endc))
+  allocate(this%totsomp_1m_col(begc:endc))
+  allocate(this%sminp_col(begc:endc));
+  allocate(this%occlp_col(begc:endc));
+  if(index(reaction_method,'ecacnp')/=0)then
+    allocate(this%som1p_col(begc:endc)); this%som1p_col(:) = nan
+    allocate(this%som2p_col(begc:endc)); this%som2p_col(:) = nan
+    allocate(this%som3p_col(begc:endc)); this%som3p_col(:) = nan
+    allocate(this%som1p_vr_col(begc:endc, lbj:ubj));  this%som1p_vr_col(:,:) = nan
+    allocate(this%som2p_vr_col(begc:endc, lbj:ubj));  this%som2p_vr_col(:,:) = nan
+    allocate(this%som3p_vr_col(begc:endc, lbj:ubj));  this%som3p_vr_col(:,:) = nan
+  endif
+  allocate(this%cwdp_vr_col(begc:endc,lbj:ubj)); this%cwdp_vr_col(:,:) =nan
+  allocate(this%totlitp_vr_col(begc:endc,lbj:ubj)); this%totlitp_vr_col(:,:)=nan
+  allocate(this%totsomp_vr_col(begc:endc,lbj:ubj)); this%totsomp_vr_col(:,:)=nan
+  allocate(this%sminp_vr_col(begc:endc,lbj:ubj)); this%sminp_vr_col(:,:) =nan
+  allocate(this%occlp_vr_col(begc:endc,lbj:ubj)); this%occlp_vr_col(:,:)=nan
+  allocate(this%domp_vr_col(begc:endc,lbj:ubj)); this%domp_vr_col(:,:) = nan
+=======
+  allocate(this%cwdp_col(begc:endc))
+  allocate(this%totlitp_col(begc:endc))
+  allocate(this%totsomp_col(begc:endc))
+  allocate(this%totlitp_1m_col(begc:endc))
+  allocate(this%totsomp_1m_col(begc:endc))
+  allocate(this%sminp_col(begc:endc));
+  allocate(this%occlp_col(begc:endc));
+  if(index(reaction_method,'ecacnp')/=0 .or. index(reaction_method,'summs')/=0)then
+    allocate(this%som1p_col(begc:endc)); this%som1p_col(:) = nan
+    allocate(this%som2p_col(begc:endc)); this%som2p_col(:) = nan
+    allocate(this%som3p_col(begc:endc)); this%som3p_col(:) = nan
+    allocate(this%som1p_vr_col(begc:endc, lbj:ubj));  this%som1p_vr_col(:,:) = nan
+    allocate(this%som2p_vr_col(begc:endc, lbj:ubj));  this%som2p_vr_col(:,:) = nan
+    allocate(this%som3p_vr_col(begc:endc, lbj:ubj));  this%som3p_vr_col(:,:) = nan
+  endif
+  allocate(this%cwdp_vr_col(begc:endc,lbj:ubj)); this%cwdp_vr_col(:,:) =nan
+  allocate(this%totlitp_vr_col(begc:endc,lbj:ubj)); this%totlitp_vr_col(:,:)=nan
+  allocate(this%totsomp_vr_col(begc:endc,lbj:ubj)); this%totsomp_vr_col(:,:)=nan
+  allocate(this%sminp_vr_col(begc:endc,lbj:ubj)); this%sminp_vr_col(:,:) =nan
+  allocate(this%occlp_vr_col(begc:endc,lbj:ubj)); this%occlp_vr_col(:,:)=nan
+  allocate(this%domp_vr_col(begc:endc,lbj:ubj)); this%domp_vr_col(:,:) = nan
+>>>>>>> rzacplsbetr_cmupdated
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------
@@ -102,6 +148,7 @@ implicit none
   class(betr_phosphorusstate_recv_type)  :: this
   real(r8), intent(in) :: value_column
 
+<<<<<<< HEAD
 
   if(index(bgc_type,'type1_bgc')/=0)then
     this%decomp_ppools_vr(:,:,:) = value_column
@@ -111,6 +158,21 @@ implicit none
     this%totlitp_vr_col(:,:) = value_column
     this%totsomp_vr_col(:,:) = value_column
 
+||||||| merged common ancestors
+  this%cwdp_vr_col(:,:) = value_column
+  this%totlitp_vr_col(:,:) = value_column
+  this%totsomp_vr_col(:,:) = value_column
+  this%sminp_vr_col(:,:) = value_column
+  this%occlp_vr_col(:,:) = value_column
+  if(index(reaction_method,'ecacnp')/=0)then
+=======
+  this%cwdp_vr_col(:,:) = value_column
+  this%totlitp_vr_col(:,:) = value_column
+  this%totsomp_vr_col(:,:) = value_column
+  this%sminp_vr_col(:,:) = value_column
+  this%occlp_vr_col(:,:) = value_column
+  if(index(reaction_method,'ecacnp')/=0 .or. index(reaction_method,'summs')/=0)then
+>>>>>>> rzacplsbetr_cmupdated
     this%som1p_vr_col(:,:) = value_column
     this%som2p_vr_col(:,:) = value_column
     this%som3p_vr_col(:,:) = value_column
@@ -143,6 +205,7 @@ implicit none
   this%totsomp_1m_col(:) = 0._r8
   this%sminp_col(:) = 0._r8
   this%occlp_col(:) = 0._r8
+<<<<<<< HEAD
   this%domp_col(:) = 0._r8
   this%som1p_col(:) = 0._r8
   this%som2p_col(:) = 0._r8
@@ -153,6 +216,29 @@ implicit none
       this%som2p_col(c) =   this%som2p_col(c) + dz(c,j)*this%som2p_vr_col(c,j)
       this%som3p_col(c) =   this%som3p_col(c) + dz(c,j)*this%som3p_vr_col(c,j)
       this%domp_col(c)  =   this%domp_col(c) + dz(c,j)*this%domp_vr_col(c,j)
+||||||| merged common ancestors
+  if(index(reaction_method,'ecacnp')/=0)then
+    this%som1p_col(:) = 0._r8
+    this%som2p_col(:) = 0._r8
+    this%som3p_col(:) = 0._r8
+    do j = lbj, ubj
+      do c = bounds%begc, bounds%endc
+        this%som1p_col(c) =   this%som1p_col(c) + dz(c,j)*this%som1p_vr_col(c,j)
+        this%som2p_col(c) =   this%som2p_col(c) + dz(c,j)*this%som2p_vr_col(c,j)
+        this%som3p_col(c) =   this%som3p_col(c) + dz(c,j)*this%som3p_vr_col(c,j)
+      enddo
+=======
+  if(index(reaction_method,'ecacnp')/=0 .or. index(reaction_method,'summs')/=0)then
+    this%som1p_col(:) = 0._r8
+    this%som2p_col(:) = 0._r8
+    this%som3p_col(:) = 0._r8
+    do j = lbj, ubj
+      do c = bounds%begc, bounds%endc
+        this%som1p_col(c) =   this%som1p_col(c) + dz(c,j)*this%som1p_vr_col(c,j)
+        this%som2p_col(c) =   this%som2p_col(c) + dz(c,j)*this%som2p_vr_col(c,j)
+        this%som3p_col(c) =   this%som3p_col(c) + dz(c,j)*this%som3p_vr_col(c,j)
+      enddo
+>>>>>>> rzacplsbetr_cmupdated
     enddo
   enddo
 
@@ -166,9 +252,12 @@ implicit none
       this%sminp_col(c) = this%sminp_col(c) + dz(c,j)*this%sminp_vr_col(c,j)
       this%occlp_col(c) = this%occlp_col(c) + dz(c,j)*this%occlp_vr_col(c,j)
 
+  if(index(reaction_method,'ecacnp')/=0 .or. index(reaction_method,'summs')/=0)then
       this%som1p_col(c) =   this%som1p_col(c) + dz(c,j)*this%som1p_vr_col(c,j)
       this%som2p_col(c) =   this%som2p_col(c) + dz(c,j)*this%som2p_vr_col(c,j)
       this%som3p_col(c) =   this%som3p_col(c) + dz(c,j)*this%som3p_vr_col(c,j)
+  endif
+
       if(zs(c,j)<1._r8)then
         if(zs(c,j+1)>1._r8)then
           this%totlitp_1m_col(c) = this%totlitp_1m_col(c) + (dz(c,j)-(zs(c,j)-1._r8))*this%totlitp_vr_col(c,j)

@@ -107,7 +107,13 @@ contains
   end subroutine histrst
 
 !--------------------------------------------------------
+<<<<<<< HEAD
   subroutine init(this, varlist, unitlist, vartypes, hrfreq, gfname, dtime)
+||||||| merged common ancestors
+  subroutine init(this, varlist, unitlist, hrfreq, gfname)
+=======
+  subroutine init(this, varlist, unitlist, hrfreq, gfname, dtime)
+>>>>>>> rzacplsbetr_cmupdated
   use ncdio_pio, only : ncd_enddef, ncd_pio_closefile
   use betr_ctrl, only : continue_run
   implicit none
@@ -130,11 +136,23 @@ contains
   if(present(hrfreq))then
     SHR_ASSERT_ALL((size(varlist)   == size(hrfreq)), errMsg(mod_filename,__LINE__))
   endif
+<<<<<<< HEAD
   if(present(dtime))then
     this%dtime = dtime
   else
     this%dtime = 1._r8
   endif
+||||||| merged common ancestors
+
+=======
+
+  if(present(dtime))then
+   this%dtime = dtime
+  else
+     this%dtime = 1._r8
+ endif
+
+>>>>>>> rzacplsbetr_cmupdated
   do n = 1, nclocks
     ncid(n)%fh=-1
   enddo
@@ -412,11 +430,17 @@ contains
   call ncd_pio_openfile_for_write(ncid, this%ncfname(clockid))
   do n =1, nvars
     id = varid(n)
+<<<<<<< HEAD
     if(this%var_type(n)==var_flux_type)then
       this%yvals(id) = this%yvals(id)/this%counter(clockid)/this%dtime
     else
       this%yvals(id) = this%yvals(id)/this%counter(clockid)
     endif
+||||||| merged common ancestors
+    this%yvals(id) = this%yvals(id)/this%counter(clockid)
+=======
+    this%yvals(id) = this%yvals(id)/this%counter(clockid)/this%dtime
+>>>>>>> rzacplsbetr_cmupdated
     call ncd_putvar(ncid,this%varnames(id),this%record(clockid),this%yvals(id))
     this%yvals(id) = 0._r8
   enddo

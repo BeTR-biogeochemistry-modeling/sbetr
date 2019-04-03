@@ -157,6 +157,8 @@ contains
          is_isotope        =>  betrtracer_vars%is_isotope          , &
          is_h2o            =>  betrtracer_vars%is_h2o              , &
          volatileid        =>  betrtracer_vars%volatileid          , &
+         is_adsorb         =>  betrtracer_vars%is_adsorb           , &
+         adsorbid          =>  betrtracer_vars%adsorbid            , &
          is_frozen         =>  betrtracer_vars%is_frozen           , &
          frozenid          =>  betrtracer_vars%frozenid              &
          )
@@ -190,6 +192,11 @@ contains
             if(is_volatile(jj) .and. (.not. is_h2o(jj)) .and. (.not. is_isotope(jj)))then
                call this%add_hist_var2d (it, num2d, fname=trim(tracername)//'_TRACER_P_GAS_FRAC', units='none', type2d='levtrc',  &
                     avgflag='A', long_name='fraction of gas phase contributed by '//trim(tracername))
+            endif
+
+            if(is_adsorb(jj))then
+               call this%add_hist_var2d (it, num2d, fname=trim(tracername)//'_TRACER_CONC_SOLID_EQUIL', units='mol m-3', type2d='levtrc',  &
+                    avgflag='A', long_name='solid equilibrium phase for tracer '//trim(tracername))
             endif
 
             if(is_frozen(jj))then
@@ -404,6 +411,8 @@ contains
          volatileid        =>  betrtracer_vars%volatileid          , &
          tracernames       =>  betrtracer_vars%tracernames         , &
          is_frozen         =>  betrtracer_vars%is_frozen           , &
+         is_adsorb         =>  betrtracer_vars%is_adsorb           , &
+         adsorbid          =>  betrtracer_vars%adsorbid            , &
          frozenid          =>  betrtracer_vars%frozenid              &
    )
   begc = bounds%begc; endc=bounds%endc
@@ -424,10 +433,15 @@ contains
       if(is_volatile(jj) .and. (.not. is_h2o(jj)) .and. (.not. is_isotope(jj)))then
         state_2d(begc:endc, lbj:ubj, addone(idtemp2d))= this%tracer_P_gas_frac_col(begc:endc,lbj:ubj, volatileid(jj))
       endif
+  
+      if(is_adsorb(jj))then
+        state_2d(begc:endc, lbj:ubj, addone(idtemp2d)) = this%tracer_conc_solid_equil_col(begc:endc,lbj:ubj, adsorbid(jj))
+      endif
 
       if(is_frozen(jj))then
         state_2d(begc:endc, lbj:ubj, addone(idtemp2d)) = this%tracer_conc_frozen_col(begc:endc,lbj:ubj, frozenid(jj))
       endif
+
     endif
 
     state_1d(begc:endc, addone(idtemp1d))=this%tracer_soi_molarmass_col(begc:endc, jj)

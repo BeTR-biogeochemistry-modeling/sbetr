@@ -48,6 +48,15 @@ module TracerFluxType
      real(r8), pointer :: tracer_flx_vtrans_col(:,:)     => null() !column level tracer flux through transpiration
      real(r8), pointer :: tracer_flx_vtrans_vr_col(:,:,:) => null()!
      !real(r8), pointer :: tracer_flx_snowloss_col(:,:)  => null()  !tracer flux lost from snow dynamics, place holder
+     real(r8), pointer :: tracer_flx_decomp_vr_col(:,:,:) => null() !custom output: decomposition flux
+     real(r8), pointer :: tracer_flx_uptake_vr_col(:,:,:) => null() !custom output: uptake flux
+     real(r8), pointer :: tracer_flx_cue_vr_col(:,:,:)    => null() !custom output: uptake flux
+     real(r8), pointer :: tracer_flx_maint_vr_col(:,:,:)  => null() !custom output: maintenance flux
+     real(r8), pointer :: tracer_flx_kaffmm_vr_col(:,:,:) => null() !custom output: monomer mineral affinity
+     real(r8), pointer :: tracer_flx_kaffem_vr_col(:,:,:) => null() !custom output: enzyme mineral affinity
+     real(r8), pointer :: tracer_flx_micgrow_vr_col(:,:,:) => null() !custom output: microbial growth flux
+     real(r8), pointer :: tracer_flx_enzprod_vr_col(:,:,:) => null() !custom output: enzyme production flux
+     real(r8), pointer :: tracer_flx_turnover_vr_col(:,:,:) => null() !custom output: microbial turnover flux
 
      !tracer fluxes defined at the pft level
      real(r8), pointer :: tracer_flx_vtrans_patch(:,:)      => null()       !tracer goes to the pathway of plant transpiration, currently not released, if it is nutrient, assumed it is taken by plants completely
@@ -161,10 +170,19 @@ contains
        SPVAL_ALLOC(this%tracer_flx_parchm_vr_col   (begc:endc, lbj:ubj, 1:nvolatile_tracers))
     endif
 
-    SPVAL_ALLOC(this%tracer_flx_netpro_vr_col  (begc:endc, lbj:ubj, 1:ntracers))
-    SPVAL_ALLOC(this%tracer_flx_netphyloss_col (begc:endc, 1:ntracers))
-    SPVAL_ALLOC(this%tracer_flx_netpro_col     (begc:endc, 1:ntracers))
-    SPVAL_ALLOC(this%tracer_flx_dstor_col      (begc:endc, 1:ntracers))
+    allocate(this%tracer_flx_netpro_vr_col  (begc:endc, lbj:ubj, 1:ntracers)); this%tracer_flx_netpro_vr_col (:,:,:) = spval
+    allocate(this%tracer_flx_netphyloss_col (begc:endc, 1:ntracers)); this%tracer_flx_netphyloss_col(:,:)            = spval
+    allocate(this%tracer_flx_netpro_col     (begc:endc, 1:ntracers)); this%tracer_flx_netpro_col(:,:)                = spval
+    allocate(this%tracer_flx_dstor_col      (begc:endc, 1:ntracers)); this%tracer_flx_dstor_col(:,:)                 = spval
+    allocate(this%tracer_flx_decomp_vr_col  (begc:endc, lbj:ubj,1)); this%tracer_flx_decomp_vr_col (:,:,:)           = spval
+    allocate(this%tracer_flx_uptake_vr_col  (begc:endc, lbj:ubj,1)); this%tracer_flx_uptake_vr_col (:,:,:)           = spval
+    allocate(this%tracer_flx_cue_vr_col     (begc:endc, lbj:ubj,1)); this%tracer_flx_cue_vr_col (:,:,:)              = spval
+    allocate(this%tracer_flx_maint_vr_col   (begc:endc, lbj:ubj,1)); this%tracer_flx_maint_vr_col (:,:,:)            = spval
+    allocate(this%tracer_flx_kaffmm_vr_col  (begc:endc, lbj:ubj,1)); this%tracer_flx_kaffmm_vr_col (:,:,:)           = spval
+    allocate(this%tracer_flx_kaffem_vr_col  (begc:endc, lbj:ubj,1)); this%tracer_flx_kaffem_vr_col (:,:,:)           = spval
+    allocate(this%tracer_flx_micgrow_vr_col (begc:endc, lbj:ubj,1)); this%tracer_flx_micgrow_vr_col (:,:,:)          = spval
+    allocate(this%tracer_flx_enzprod_vr_col (begc:endc, lbj:ubj,1)); this%tracer_flx_enzprod_vr_col (:,:,:)          = spval
+    allocate(this%tracer_flx_turnover_vr_col(begc:endc, lbj:ubj,1)); this%tracer_flx_turnover_vr_col (:,:,:)         = spval
 
   end subroutine InitAllocate
 
@@ -266,8 +284,7 @@ contains
 
             call this%add_hist_var1d (it, num1d, fname=trim(tracername)//'_FLX_EBU', &
               units='mol/m2/s',  avgflag='A', &
-              long_name='loss through ebullition (+ into atmosphere) for '//trim(tracername), &
-              default='inactive')
+              long_name='loss through ebullition (+ into atmosphere) for '//trim(tracername))
 
             call this%add_hist_var1d (it, num1d, fname=trim(tracername)//'_FLX_DIF', &
               units='mol/m2/s',  avgflag='A', &
@@ -275,8 +292,7 @@ contains
               default='inactive')
 
             call this%add_hist_var1d (it, num1d, fname=trim(tracername)//'_FLX_ARCHM', units='mol/m2/s',    &
-             avgflag='A', long_name='loss from aerenchyma transport for '//trim(tracername),    &
-             default='inactive')
+             avgflag='A', long_name='loss from aerenchyma transport for '//trim(tracername))
 
             call this%add_hist_var1d (it, num1d, fname=trim(tracername)//'_FLX_SURFEMI', units='mol/m2/s',    &
              avgflag='A', long_name='loss from surface emission for '//trim(tracername))
@@ -304,6 +320,33 @@ contains
           default='inactive')
 
       enddo
+        call this%add_hist_var2d (it, num2d, fname='DECOMP_vr', units='mol/m3/s', type2d='levtrc',    &
+          avgflag='A', long_name='vertically-resolved microbial decomposition flux', default='inactive')
+
+        call this%add_hist_var2d (it, num2d, fname='UPTAKE_vr', units='mol/m3/s', type2d='levtrc',    &
+          avgflag='A', long_name='vertically-resolved microbial uptake flux', default='inactive')
+
+        call this%add_hist_var2d (it, num2d, fname='CUE_vr', units='unitless', type2d='levtrc',    &
+          avgflag='A', long_name='vertically-resolved microbial cue', default='inactive')
+
+        call this%add_hist_var2d (it, num2d, fname='MAINT_vr', units='mol/m3/s', type2d='levtrc',    &
+          avgflag='A', long_name='vertically-resolved microbial maintenance flux', default='inactive')
+
+        call this%add_hist_var2d (it, num2d, fname='KAFFMM_vr', units='mol/m3', type2d='levtrc',    &
+          avgflag='A', long_name='vertically-resolved monomer mineral affinity', default='inactive')
+
+        call this%add_hist_var2d (it, num2d, fname='KAFFEM_vr', units='mol/m3', type2d='levtrc',    &
+          avgflag='A', long_name='vertically-resolved enzyme mineral affinity', default='inactive')
+
+        call this%add_hist_var2d (it, num2d, fname='MICGROW_vr', units='mol/m3/s', type2d='levtrc',    &
+          avgflag='A', long_name='vertically-resolved microbial growth flux', default='inactive')
+
+        call this%add_hist_var2d (it, num2d, fname='ENZPROD_vr', units='mol/m3/s', type2d='levtrc',    &
+          avgflag='A', long_name='vertically-resolved enzyme production flux', default='inactive')
+
+        call this%add_hist_var2d (it, num2d, fname='TURNOVER_vr', units='mol/m3/s', type2d='levtrc',    &
+          avgflag='A', long_name='vertically-resolved microbial turnover flux', default='inactive')
+
       if(it==1)call this%alloc_hist_list(num1d, num2d)
       num2d = 0; num1d= 0
     enddo
@@ -366,8 +409,16 @@ contains
       this%tracer_flx_sub_snow_col   (c,:) = 0._r8
       this%tracer_flx_h2osfc_snow_residual_col(c,:) = 0._r8
       this%tracer_flx_totleached_col (c,:) = 0._r8
+      this%tracer_flx_decomp_vr_col(c,:,:) = 0._r8
+      this%tracer_flx_uptake_vr_col(c,:,:) = 0._r8
+      this%tracer_flx_cue_vr_col(c,:,:)    = 0._r8
+      this%tracer_flx_maint_vr_col(c,:,:)  = 0._r8
+      this%tracer_flx_kaffmm_vr_col(c,:,:) = 0._r8
+      this%tracer_flx_kaffem_vr_col(c,:,:) = 0._r8
+      this%tracer_flx_micgrow_vr_col(c,:,:) = 0._r8
+      this%tracer_flx_enzprod_vr_col(c,:,:) = 0._r8
+      this%tracer_flx_turnover_vr_col(c,:,:)= 0._r8
     enddo
-
   end subroutine InitCold
 
   !------------------------------------------------------------------------
@@ -444,6 +495,15 @@ contains
       this%tracer_flx_h2osfc_snow_residual_col(column,:)   = 0._r8
       this%tracer_flx_netpro_vr_col  (column,:,:)   = 0._r8
       this%tracer_flx_totleached_col (column,:)   = 0._r8
+      this%tracer_flx_decomp_vr_col  (column,:,:) = 0._r8
+      this%tracer_flx_uptake_vr_col  (column,:,:) = 0._r8
+      this%tracer_flx_cue_vr_col     (column,:,:) = 0._r8
+      this%tracer_flx_maint_vr_col   (column,:,:) = 0._r8
+      this%tracer_flx_kaffmm_vr_col  (column,:,:) = 0._r8
+      this%tracer_flx_kaffem_vr_col  (column,:,:) = 0._r8
+      this%tracer_flx_micgrow_vr_col  (column,:,:) = 0._r8
+      this%tracer_flx_enzprod_vr_col  (column,:,:) = 0._r8
+      this%tracer_flx_turnover_vr_col (column,:,:) = 0._r8
     enddo
     do fp = 1, numfp
       p = filterp(fp)
@@ -491,6 +551,15 @@ contains
     this%tracer_flx_h2osfc_snow_residual_col(column,:) =  this%tracer_flx_h2osfc_snow_residual_col(column,:)/dtime
 
     this%tracer_flx_totleached_col(column,:) = this%tracer_flx_drain_col(column,:) + this%tracer_flx_leaching_col(column,:)
+    this%tracer_flx_decomp_vr_col  (column,:,:)   = this%tracer_flx_decomp_vr_col  (column,:,:)/dtime 
+    this%tracer_flx_uptake_vr_col  (column,:,:)   = this%tracer_flx_uptake_vr_col  (column,:,:)/dtime
+    this%tracer_flx_cue_vr_col     (column,:,:)   = this%tracer_flx_cue_vr_col     (column,:,:)/dtime
+    this%tracer_flx_maint_vr_col   (column,:,:)   = this%tracer_flx_maint_vr_col   (column,:,:)/dtime
+    this%tracer_flx_kaffmm_vr_col  (column,:,:)   = this%tracer_flx_kaffmm_vr_col  (column,:,:)/dtime
+    this%tracer_flx_kaffem_vr_col  (column,:,:)   = this%tracer_flx_kaffem_vr_col  (column,:,:)/dtime
+    this%tracer_flx_micgrow_vr_col (column,:,:)   = this%tracer_flx_micgrow_vr_col (column,:,:)/dtime
+    this%tracer_flx_enzprod_vr_col (column,:,:)   = this%tracer_flx_enzprod_vr_col (column,:,:)/dtime
+    this%tracer_flx_turnover_vr_col(column,:,:)   = this%tracer_flx_turnover_vr_col(column,:,:)/dtime
   end subroutine temporal_average
 
   !----------------------------------------------------------------
@@ -696,6 +765,25 @@ contains
 
       id=addone(idtemp1d); flux_1d(begc:endc,id) = this%tracer_flx_prec_col(begc:endc, jj)
     enddo
+
+      id=addone(idtemp2d); flux_2d(begc:endc,lbj:ubj,id) = this%tracer_flx_decomp_vr_col(begc:endc, lbj:ubj,1)
+
+      id=addone(idtemp2d); flux_2d(begc:endc,lbj:ubj,id) = this%tracer_flx_uptake_vr_col(begc:endc, lbj:ubj,1)
+      
+      id=addone(idtemp2d); flux_2d(begc:endc,lbj:ubj,id) = this%tracer_flx_cue_vr_col(begc:endc, lbj:ubj,1)
+      
+      id=addone(idtemp2d); flux_2d(begc:endc,lbj:ubj,id) = this%tracer_flx_maint_vr_col(begc:endc, lbj:ubj,1)
+      
+      id=addone(idtemp2d); flux_2d(begc:endc,lbj:ubj,id) = this%tracer_flx_kaffmm_vr_col(begc:endc, lbj:ubj,1)
+      
+      id=addone(idtemp2d); flux_2d(begc:endc,lbj:ubj,id) = this%tracer_flx_kaffem_vr_col(begc:endc, lbj:ubj,1)
+      
+      id=addone(idtemp2d); flux_2d(begc:endc,lbj:ubj,id) = this%tracer_flx_micgrow_vr_col(begc:endc, lbj:ubj,1)
+      
+      id=addone(idtemp2d); flux_2d(begc:endc,lbj:ubj,id) = this%tracer_flx_enzprod_vr_col(begc:endc, lbj:ubj,1)
+      
+      id=addone(idtemp2d); flux_2d(begc:endc,lbj:ubj,id) = this%tracer_flx_turnover_vr_col(begc:endc, lbj:ubj,1)
+
   end associate
   end subroutine retrieve_hist
 end module TracerFluxType

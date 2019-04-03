@@ -31,7 +31,13 @@ contains
 
 
   !-------------------------------------------------------------------------------
+<<<<<<< HEAD
   subroutine betr_readNL(NLFilename, use_c13, use_c14, nsoilorder, lbgcalib)
+||||||| merged common ancestors
+  subroutine betr_readNL(NLFilename, use_c13, use_c14, nsoilorder)
+=======
+  subroutine betr_readNL(NLFilename, use_c13, use_c14, nsoilorder, use_warm)
+>>>>>>> rzacplsbetr_cmupdated
     !
     ! !DESCRIPTION:
     ! read namelist for betr configuration
@@ -47,7 +53,7 @@ contains
     use tracer_varcon , only : advection_on, diffusion_on, reaction_on, ebullition_on, reaction_method
     use tracer_varcon , only : AA_spinup_on, fix_ip, do_bgc_calibration, bgc_param_file
     use ApplicationsFactory, only : AppInitParameters
-    use tracer_varcon , only : use_c13_betr, use_c14_betr
+    use tracer_varcon , only : use_c13_betr, use_c14_betr, use_warm_betr
     use BetrStatusType  , only : betr_status_type
     use tracer_varcon, only : lbcalib
     implicit none
@@ -55,6 +61,7 @@ contains
     character(len=*), intent(IN) :: NLFilename              ! Namelist filename
     logical,          intent(in) :: use_c13
     logical,          intent(in) :: use_c14
+    logical,          intent(in) :: use_warm
     integer,          intent(in) :: nsoilorder
     logical,          intent(in) :: lbgcalib
                                                             !
@@ -92,6 +99,7 @@ contains
     AA_spinup_on    = .false.
     use_c13_betr    = use_c13
     use_c14_betr    = use_c14
+    use_warm_betr   = use_warm
     AppParNLFile    = ''
 !    appfile_on      = .false.
     fix_ip          = .false.

@@ -100,6 +100,12 @@ implicit none
     this%totlitc_vr_col(:,:) = value_column
     this%totsomc_vr_col(:,:) = value_column
 
+<<<<<<< HEAD
+||||||| merged common ancestors
+  if(index(reaction_method,'ecacnp')/=0)then
+=======
+  if(index(reaction_method,'ecacnp')/=0 .or. index(reaction_method,'summs')/=0)then
+>>>>>>> rzacplsbetr_cmupdated
     this%som1c_vr_col(:,:) = value_column
     this%som2c_vr_col(:,:) = value_column
     this%som3c_vr_col(:,:) = value_column
@@ -126,10 +132,38 @@ implicit none
   this%totlitc_1m_col(:) = 0._r8
   this%totsomc_1m_col(:) = 0._r8
 
+<<<<<<< HEAD
   this%som1c_col(:) = 0.0_r8
   this%som2c_col(:) = 0.0_r8
   this%som3c_col(:) = 0.0_r8
   this%domc_col(:)  = 0._r8
+||||||| merged common ancestors
+  if(index(reaction_method,'ecacnp')/=0)then
+    this%som1c_col(:) = 0.0_r8
+    this%som2c_col(:) = 0.0_r8
+    this%som3c_col(:) = 0.0_r8
+    do j = lbj, ubj
+      do c = bounds%begc, bounds%endc
+        this%som1c_col(c) = this%som1c_col(c) + dz(c,j)*this%som1c_vr_col(c,j)
+        this%som2c_col(c) = this%som2c_col(c) + dz(c,j)*this%som2c_vr_col(c,j)
+        this%som3c_col(c) = this%som3c_col(c) + dz(c,j)*this%som3c_vr_col(c,j)
+      enddo
+    enddo
+  endif
+=======
+  if(index(reaction_method,'ecacnp')/=0 .or. index(reaction_method,'summs')/=0)then
+    this%som1c_col(:) = 0.0_r8
+    this%som2c_col(:) = 0.0_r8
+    this%som3c_col(:) = 0.0_r8
+    do j = lbj, ubj
+      do c = bounds%begc, bounds%endc
+        this%som1c_col(c) = this%som1c_col(c) + dz(c,j)*this%som1c_vr_col(c,j)
+        this%som2c_col(c) = this%som2c_col(c) + dz(c,j)*this%som2c_vr_col(c,j)
+        this%som3c_col(c) = this%som3c_col(c) + dz(c,j)*this%som3c_vr_col(c,j)
+      enddo
+    enddo
+  endif
+>>>>>>> rzacplsbetr_cmupdated
   do j = lbj, ubj
     do c = bounds%begc, bounds%endc
       this%som1c_col(c) = this%som1c_col(c) + dz(c,j)*this%som1c_vr_col(c,j)

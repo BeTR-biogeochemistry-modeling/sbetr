@@ -1237,11 +1237,21 @@ contains
 
   !do ECA nutrient scaling
   !
+<<<<<<< HEAD:src/Applications/soil-farm/ecacnp/ecacnp1layer/ecacnpBGCType.F90
   this%competECA%compet_bn_nit = this%pot_f_nit/this%nitden%vmax_nit
   this%competECA%compet_bn_den = this%pot_f_denit/this%nitden%vmax_den
   this%competECA%compet_bn_mic = mic_pot_nn_flx/this%decompkf_eca%vmax_decomp_n
 
   this%competECA%debug=this%ecacnp_bgc_index%debug
+||||||| merged common ancestors
+  this%competECA%compet_bn_nit = this%pot_f_nit/this%nitden%vmax_nit
+  this%competECA%compet_bn_den = this%pot_f_denit/this%nitden%vmax_den
+  this%competECA%compet_bn_mic = mic_pot_nn_flx/this%decompkf_eca%vmax_decomp_n
+
+  this%competECA%debug=this%centurybgc_index%debug
+=======
+  this%competECA%debug=this%centurybgc_index%debug
+>>>>>>> rzacplsbetr_cmupdated:src/Applications/soil-farm/CENT_ECACNP/cent1layer/BgcCentCnpType.F90
   call this%competECA%run_compet_nitrogen(this%non_limit,ystate(lid_nh4),ystate(lid_no3),&
      this%plant_ntypes, this%msurf_nh4, ECA_factor_nit, &
      ECA_factor_den, ECA_factor_nh4_mic, ECA_factor_no3_mic, &

@@ -265,7 +265,12 @@ implicit none
   call this%set_primvar_reac_ids()
 
   this%debug = .false.
+<<<<<<< HEAD:src/Applications/soil-farm/SUMMS/summs1layer/BgcSummsIndexType.F90
 
+||||||| merged common ancestors
+=======
+  
+>>>>>>> rzacplsbetr_cmupdated:src/Applications/soil-farm/CENT_ECACNP/cent1layer/BgcCentCnpIndexType.F90
   end subroutine Init
   !-------------------------------------------------------------------------------
 

@@ -623,4 +623,10 @@ contains
   print*,'vmax_nit=', this%vmax_nit
   end subroutine centpara_printPars
 
+<<<<<<< HEAD:src/Applications/soil-farm/ch4lake/ch4lakePara/ch4lakeParaType.F90
 end module ch4lakeParaType
+||||||| merged common ancestors
+end module CentParaType
+=======
+end module CentParaType
+>>>>>>> rzacplsbetr_cmupdated:src/Applications/soil-farm/CENT_ECACNP/centPara/CentParaType.F90

@@ -42,6 +42,7 @@ module Tracer_varcon
   logical :: is_active_betr_bgc=.false.
   logical :: use_c13_betr=.false.
   logical :: use_c14_betr=.false.
+  logical :: use_warm_betr=.false.
   logical :: is_nitrogen_active = .true.
   logical :: is_phosphorus_active=.true.
   logical :: fix_ip = .false.

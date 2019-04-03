@@ -39,9 +39,9 @@ contains
 
   select case(trim(tracerfamily))
   case ('DOM')
-    Kd = 1._r8
+    Kd = 50._r8 !1._r8
   case ('DOC')
-    Kd = 1._r8
+    Kd = 50._r8 !1._r8
   case ('P_SOL')
     Kd = 1._r8
   case ('NH3x')
