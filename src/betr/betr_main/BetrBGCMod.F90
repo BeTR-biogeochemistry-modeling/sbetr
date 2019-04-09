@@ -134,6 +134,7 @@ contains
     use BeTR_TimeMod           , only : betr_time_type
     use BetrStatusType         , only : betr_status_type
     use BeTR_PatchType         , only : betr_patch_type
+    use betr_constants         , only : stdout                                    ! added for checkup
     implicit none
     !arguments
     class(betr_time_type)            , intent(in)    :: betr_time
@@ -164,6 +165,12 @@ contains
 
     call betr_status%reset()
 
+     !testing only, where the run crushed        -zlyu   
+    write(stdout, *) '***************************'
+    write(stdout, *) 'in stage_tracer_transport after reset'
+    write(stdout, *) '***************************'
+    ! end of the testing
+    
     SHR_ASSERT_ALL((ubound(Rfactor,1) == bounds%endc), errMsg(mod_filename,__LINE__),betr_status)
 
     SHR_ASSERT_ALL((ubound(Rfactor,2) == bounds%ubj ), errMsg(mod_filename,__LINE__),betr_status)
@@ -174,7 +181,13 @@ contains
 
     !set up jtops
     tracerboundarycond_vars%jtops_col(:)=1
-
+    
+    ! testing only, where the run crushed        -zlyu 
+    write(stdout, *) '***************************'
+    write(stdout, *) 'in stage_tracer_transport before if case for ber_use_cn'
+    write(stdout, *) '***************************'
+    ! end of the testing
+    
     if(betr_use_cn)then
        !update npp for aerenchyma calculation
        call betr_annualupdate(betr_time, bounds, pft, num_soilc, filter_soilc, &
@@ -183,12 +196,25 @@ contains
        if(betr_status%check_status())return
     endif
 
+        ! testing only, where the run crushed        -zlyu  
+    write(stdout, *) '***************************'
+    write(stdout, *) 'in stage_tracer_transport before get_zwt'
+    write(stdout, *) '***************************'
+    ! end of the testing
+    
     !obtain water table depth
     call get_zwt (bounds, num_soilc, filter_soilc,       &
          col%zi(bounds%begc:bounds%endc, 0:nlevsoi),     &
          biophysforc,                                    &
          biogeo_state%zwts_col(bounds%begc:bounds%endc), &
          jwt(bounds%begc:bounds%endc), betr_status)
+
+        ! testing only, where the run crushed        -zlyu  
+    write(stdout, *) '***************************'
+    write(stdout, *) 'in stage_tracer_transport after get_zwt'
+    write(stdout, *) '***************************'
+    ! end of the testing
+    
     if(betr_status%check_status())return
 
     !calculate arenchyma conductance
@@ -198,6 +224,13 @@ contains
          betrtracer_vars,                               &
          aerecond_vars,                                 &
          tracercoeff_vars, betr_status)
+        
+    ! testing only, where the run crushed        -zlyu  
+    write(stdout, *) '***************************'
+    write(stdout, *) 'in stage_tracer_transport after calc_aerecond'
+    write(stdout, *) '***************************'
+    ! end of the testing
+    
     if(betr_status%check_status())return
 
     biophysforc%soil_pH(bounds%begc:bounds%endc,1:ubj)=7._r8
@@ -213,6 +246,14 @@ contains
          tracerstate_vars=tracerstate_vars       , &
          tracercoeff_vars=tracercoeff_vars       , &
          betr_status = betr_status)
+
+    
+        ! testing only, where the run crushed        -zlyu 
+    write(stdout, *) '***************************'
+    write(stdout, *) 'in stage_tracer_transport after convert_coeff'
+    write(stdout, *) '***************************'
+    ! end of the testing
+    
     if(betr_status%check_status())return
 
     if(betr_status%check_status())return
@@ -224,6 +265,13 @@ contains
          betrtracer_vars=betrtracer_vars           , &
          tracercoeff_vars=tracercoeff_vars         , &
          betr_status=betr_status)
+
+        ! testing only, where the run crushed        -zlyu   02/2019
+    write(stdout, *) '***************************'
+    write(stdout, *) 'in stage_tracer_transport after phase_diffusion'
+    write(stdout, *) '***************************'
+    ! end of the testing
+    
     if(betr_status%check_status())return
 
     call bgc_reaction%set_boundary_conditions(bounds, &
@@ -234,6 +282,13 @@ contains
          biogeo_flux                          , &
          tracercoeff_vars                     , &
          tracerboundarycond_vars, betr_status)
+
+    ! testing only, where the run crushed        -zlyu 
+    write(stdout, *) '***************************'
+    write(stdout, *) 'in stage_tracer_transport after bgc_reaction'
+    write(stdout, *) '***************************'
+    ! end of the testing
+    
     if(betr_status%check_status())return
 
     if(advection_on) &
@@ -248,6 +303,13 @@ contains
          tracerboundarycond_vars,                                &
          biogeo_flux  ,                                          &
          tracerflux_vars%tracer_flx_infl_col, betr_status)
+        
+    ! testing only, where the run crushed        -zlyu 
+    write(stdout, *) '***************************'
+    write(stdout, *) 'in stage_tracer_transport after infiltration'
+    write(stdout, *) '***************************'
+    ! end of the testing
+    
     if(betr_status%check_status())return
 
     call set_gwdif_Rfactor(bounds, lbj, ubj, &
@@ -258,7 +320,13 @@ contains
          tracercoeff_vars,                   &
          betrtracer_vars,                    &
          Rfactor, betr_status)
-
+    
+    ! testing only, where the run crushed        -zlyu  
+    write(stdout, *) '***************************'
+    write(stdout, *) 'in stage_tracer_transport after Rfactor'
+    write(stdout, *) '***************************'
+    ! end of the testing
+    
   end subroutine stage_tracer_transport
 
   !-------------------------------------------------------------------------------
