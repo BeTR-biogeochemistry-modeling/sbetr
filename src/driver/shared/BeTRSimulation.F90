@@ -658,6 +658,7 @@ contains
     use CanopyStateType   , only : canopystate_type
     use BeTR_TimeMod      , only : betr_time_type
     use pftvarcon         , only : crop
+    use betr_constants    , only : stdout     !-zlyu
     implicit none
   !ARGUMENTS
     class(betr_simulation_type) , intent(inout) :: this
@@ -665,12 +666,23 @@ contains
     type(column_type)           , intent(in)    :: col ! column type
     type(patch_type)            , intent(in)    :: pft
 
+    ! testing only, where the run collapsed        -zlyu   01/27/2019
+    write(stdout, *) '***************************'
+    write(stdout, *) 'inside BeTRSimulationStepWithoutDrainage in BeTRSimulation.F90'
+    write(stdout, *) '***************************'
+    ! end of the testing
+
     ! remove compiler warnings about unused dummy args
     if (this%num_soilc > 0)                           continue
     if (this%betr_time%tstep > 0)                          continue
     if (bounds%begc > 0)                              continue
     if (size(col%z) > 0)                              continue
-
+    ! testing only, where the run collapsed        -zlyu   01/27/2019
+    write(stdout, *) '***************************'
+    write(stdout, *) 'end of  BeTRSimulationStepWithoutDrainage in BeTRSimulation.F90'
+    write(stdout, *) '***************************'
+    ! end of the testing
+    
   end subroutine BeTRSimulationStepWithoutDrainage
   !---------------------------------------------------------------------------------
   subroutine BeTRSimulationDiagnoseLnd2atm(this, bounds,  col, lnd2atm_vars)

@@ -28,11 +28,9 @@ contains
     use ecacnpBGCType, only : create_jarmodel_ecacnp
     use simicBGCType,  only : create_jarmodel_simicbgc
     use cdomBGCType, only : create_jarmodel_cdom
-<<<<<<< HEAD
     use BgcSummsType, only : create_jarmodel_summseca       ! added for using method 'summs' from Rose's model, -zlyu. 01/29/2019
-=======
     use v1ecaBGCType, only : create_jarmodel_v1eca
->>>>>>> jinyun_rr
+    !>>>>>>> jinyun_rr
     !end_appadd
     use BeTRJarModel      , only : jar_model_type
     implicit none
@@ -75,12 +73,10 @@ contains
     use ecacnpParaType  , only : create_jarpars_ecacnp
     use simicParaType   , only : create_jarpars_simic
     use cdomParaType   , only : create_jarpars_cdom
-<<<<<<< HEAD
     use BgcSummsType, only : create_jarmodel_summseca            ! added for using method 'summs' from Rose's model
     use SummsParaType, only : create_jarpars_summseca            ! added for using method 'summs' from Rose's model
-=======
     use v1ecaParaType  , only : create_jarpars_v1eca
->>>>>>> jinyun_rr
+    !>>>>>>> jinyun_rr
     !end_appadd
     implicit none
     !ARGUMENTS

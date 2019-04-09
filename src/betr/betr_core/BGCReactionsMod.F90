@@ -140,7 +140,7 @@ module BGCReactionsMod
      subroutine calc_bgc_reaction_interface(this, bounds, col, lbj, ubj, num_soilc, filter_soilc, &
           num_soilp,filter_soilp, jtops, dtime, betrtracer_vars, tracercoeff_vars,  biophysforc,    &
           tracerstate_vars, tracerflux_vars,  tracerboundarycond_vars, plant_soilbgc, biogeo_flux,&
-          biogeo_state, betr_status)
+          betr_status)               !deleted var: biogeo_state, 
        !
        ! !DESCRIPTION:
        ! template for calc_bgc_reaction
@@ -181,7 +181,7 @@ module BGCReactionsMod
        type(tracerboundarycond_type)    , intent(inout) :: tracerboundarycond_vars !
        class(plant_soilbgc_type)        , intent(inout) :: plant_soilbgc
        type(betr_biogeo_flux_type)      , intent(inout) :: biogeo_flux
-       type(betr_biogeo_state_type)     , intent(inout) :: biogeo_state
+       !type(betr_biogeo_state_type)     , intent(inout) :: biogeo_state
        type(betr_status_type)           , intent(out)   :: betr_status
 
      end subroutine calc_bgc_reaction_interface

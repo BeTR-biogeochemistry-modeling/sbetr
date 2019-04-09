@@ -17,22 +17,13 @@ implicit none
     real(r8), pointer :: som1c_col               (:) => null()
     real(r8), pointer :: som2c_col               (:) => null()
     real(r8), pointer :: som3c_col               (:) => null()
-<<<<<<< HEAD
+    ! should we keep domc_col ? rzacplsbetr_cmupdated version doesn't have this one     -zlyu
     real(r8), pointer :: domc_col               (:) => null()
-||||||| merged common ancestors
-
-=======
-
-
-
-
-    real(r8), pointer :: polyc_col               (:) => null()
+    real(r8), pointer :: polyc_col               (:) => null()        ! start adding from rzacplsbetr_cmupdated version   -zlyu
     real(r8), pointer :: monoc_col               (:) => null()
     real(r8), pointer :: micc_col                (:) => null()
     real(r8), pointer :: enzc_col                (:) => null()
     real(r8), pointer :: resc_col                (:) => null()
-
->>>>>>> rzacplsbetr_cmupdated
   contains
 
     procedure, public  :: Init
@@ -75,7 +66,7 @@ contains
     begc = bounds%begc; endc= bounds%endc
     allocate(this%decomp_cpools_vr_col(begc:endc,1:nlevdecomp_full,1:ndecomp_pools)); this%decomp_cpools_vr_col(:,:,:)= spval
     allocate(this%frootc_patch             (begp :endp))                   ;     this%frootc_patch             (:)   = spval
-    allocate(this%cwdc_col(begc:endc)); this%cwdc_col(:) = spval
+    allocate(this%cwdc_col(begc:endc)); this%cwdc_col(:) = spval        !rzacplsbetr_cmupdated version doesn't have these from here      -zlyu
     allocate(this%totlitc_col(begc:endc)); this%totlitc_col(:) = spval
     allocate(this%totsomc_col(begc:endc)); this%totsomc_col(:) = spval
     allocate(this%totlitc_1m_col(begc:endc)); this%totlitc_1m_col(:) = spval

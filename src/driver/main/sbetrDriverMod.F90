@@ -321,6 +321,12 @@ contains
     call forcing_data%ReadCNPData()
   endif
 
+      ! testing only, where the run crushed        -zlyu   01/27/2019
+    write(stdout, *) '**************************************'
+    write(stdout, *) 'after ReadCNP in the sbetrDriverMod.F90'
+    write(stdout, *) '**************************************'
+    ! end of the testing
+
   do
     record = record + 1
     call simulation%SetClock(dtime=time_vars%get_step_size(), nelapstep=time_vars%get_nstep())
@@ -328,6 +334,12 @@ contains
     call simulation%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi, waterstate_vars=waterstate_vars)
 
     call simulation%PreDiagSoilColWaterFlux(simulation%num_soilc,  simulation%filter_soilc)
+
+        ! testing only, where the run crushed        -zlyu   01/27/2019
+    write(stdout, *) '**************************************'
+    write(stdout, *) 'after WaterFlux in the sbetrDriverMod.F90'
+    write(stdout, *) '**************************************'
+    ! end of the testing
 
     !x print*,'update forcing for betr'
     !set envrionmental forcing by reading foring data: temperature, moisture, atmospheric resistance
@@ -349,6 +361,12 @@ contains
     call simulation%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi, waterstate_vars=waterstate_vars, &
       waterflux_vars=waterflux_vars, soilhydrology_vars = soilhydrology_vars)
 
+        ! testing only, where the run crushed        -zlyu   01/27/2019
+    write(stdout, *) '**************************************'
+    write(stdout, *) 'after simulation%BeTRSetBiophysForcing in the sbetrDriverMod.F90'
+    write(stdout, *) '**************************************'
+    ! end of the testing
+
     !x print*,'diagnose water flux'
     call simulation%DiagAdvWaterFlux(simulation%num_soilc, &
       simulation%filter_soilc)
@@ -359,6 +377,12 @@ contains
     !no calculation in the first step
     if(record==0)cycle
     call simulation%BeginMassBalanceCheck(bounds)
+
+        ! testing only, where the run crushed        -zlyu   01/27/2019
+    write(stdout, *) '**************************************'
+    write(stdout, *) 'after BeginMassBalanceCheck in the sbetrDriverMod.F90'
+    write(stdout, *) '**************************************'
+    ! end of the testing
 
     !x print*,'without drainage'
     !the following call could be lsm specific, so that
@@ -388,6 +412,12 @@ contains
           phosphorusstate_vars, phosphorusflux_vars, &
           plantMicKinetics_vars)
 
+          ! testing only, where the run crushed        -zlyu   01/27/2019
+    write(stdout, *) '**************************************'
+    write(stdout, *) 'after %PlantSoilBGCSend in the sbetrDriverMod.F90'
+    write(stdout, *) '**************************************'
+    ! end of the testing
+
     class is (betr_simulation_standalone_type)
       call simulation%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi,               &
         carbonflux_vars=carbonflux_vars,                                                &
@@ -415,8 +445,19 @@ contains
         chemstate_vars=chemstate_vars,           soilstate_vars=soilstate_vars)
     end select
 
-    call simulation%StepWithoutDrainage(bounds, col, pft)
+        ! testing only, where the run crushed        -zlyu   01/27/2019
+    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    write(stdout, *) 'after select class (betr_simulation_standalone_type) in the sbetrDriverMod.F90'
+    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    ! end of the testing
 
+    call simulation%StepWithoutDrainage(bounds, col, pft)
+        ! testing only, where the run crushed        -zlyu   01/27/2019
+    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    write(stdout, *) 'after select class (betr_simulation_standalone_type) in the sbetrDriverMod.F90'
+    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    ! end of the testing
+    
     select type(simulation)
     class is (betr_simulation_alm_type)
       call simulation%PlantSoilBGCRecv(bounds, col, pft, simulation%num_soilc, simulation%filter_soilc,&
@@ -424,6 +465,12 @@ contains
        nitrogenstate_vars, nitrogenflux_vars, phosphorusstate_vars, phosphorusflux_vars)
     class default
     end select
+
+        ! testing only, where the run crushed        -zlyu   01/27/2019
+    write(stdout, *) '**************************************'
+    write(stdout, *) 'after betr_simulation_alm_type for PlantSoilBGCRecv in the sbetrDriverMod.F90'
+    write(stdout, *) '**************************************'
+    ! end of the testing
 
     !x print*,'with drainge'
     !set forcing variable for drainage
@@ -434,6 +481,12 @@ contains
 
     !x print*,'do mass balance check'
     call simulation%MassBalanceCheck(bounds)
+
+        ! testing only, where the run crushed        -zlyu   01/27/2019
+    write(stdout, *) '**************************************'
+    write(stdout, *) 'after second MassBalanceCheck in the sbetrDriverMod.F90'
+    write(stdout, *) '**************************************'
+    ! end of the testing
 
     select type(simulation)
     class is (betr_simulation_standalone_type)
@@ -446,6 +499,12 @@ contains
     !call simulation%ConsistencyCheck(bounds, ubj, simulation%num_soilc,    &
     !  simulation%filter_soilc, waterstate_vars)
 
+        ! testing only, where the run crushed        -zlyu   01/27/2019
+    write(stdout, *) '**************************************'
+    write(stdout, *) 'after betr_simulation_standalone_type for PlantSoilBGCRecv in the sbetrDriverMod.F90'
+    write(stdout, *) '**************************************'
+    ! end of the testing
+
     !update time stamp
     call time_vars%update_time_stamp()
 
@@ -455,6 +514,12 @@ contains
 
     if(simulation%do_soibgc()) call WriteHistBGC(hist, time_vars, carbonstate_vars, carbonflux_vars, &
          nitrogenstate_vars, nitrogenflux_vars, phosphorusstate_vars, phosphorusflux_vars, reaction_method)
+
+        ! testing only, where the run crushed        -zlyu   01/27/2019
+    write(stdout, *) '**************************************'
+    write(stdout, *) 'after  WriteHistBGC in the sbetrDriverMod.F90'
+    write(stdout, *) '**************************************'
+    ! end of the testing
 
     if(time_vars%its_time_to_write_restart()) then
        !set restfname
@@ -477,6 +542,12 @@ contains
       endif
     endif
 
+        ! testing only, where the run crushed        -zlyu   01/27/2019
+    write(stdout, *) '**************************************'
+    write(stdout, *) 'after hist%histrst in the sbetrDriverMod.F90'
+    write(stdout, *) '**************************************'
+    ! end of the testing
+
     !print*,'next step'
     if(time_vars%its_time_to_exit()) then
        print*,'exit'
@@ -486,7 +557,13 @@ contains
 
   if(simulation%do_regress_test())then
     call simulation%WriteRegressionOutput(waterflux_vars%qflx_adv_col)
-  endif
+ endif
+     ! testing only, where the run crushed        -zlyu   01/27/2019
+    write(stdout, *) '**************************************'
+    write(stdout, *) 'after WriteRegressionOutput in the sbetrDriverMod.F90'
+    write(stdout, *) '**************************************'
+    ! end of the testing
+
   call forcing_data%Destroy()
   deallocate(forcing_data)
 end subroutine sbetrBGC_driver

@@ -315,7 +315,8 @@ contains
     use BetrStatusType         , only : betr_status_type
     use betr_columnType        , only : betr_column_type
     use BeTR_PatchType         , only : betr_patch_type
-    use betr_ctrl              , only : inloop_reaction
+    use betr_constants         , only : stdout      !-zlyu
+    !use betr_ctrl              , only : inloop_reaction
     implicit none
     !
     ! !ARGUMENTS :
@@ -339,34 +340,76 @@ contains
     real(r8)           :: Rfactor(bounds%begc:bounds%endc, bounds%lbj:bounds%ubj,1:this%tracers%ngwmobile_tracer_groups) !retardation factor
     integer            :: j
     integer            :: lbj, ubj
-
-
+    ! testing only, where the run crushed        -zlyu   01/27/2019
+    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    write(stdout, *) 'inside step_without_drainage in BeTRType.F90'
+    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    ! end of the testing
+    
     call betr_status%reset()
     lbj = bounds%lbj; ubj = bounds%ubj
-
+    ! testing only, where the run crushed        -zlyu   01/27/2019
+    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    write(stdout, *) 'inside step_without_drainage in BeTRType.F90 after reset'
+    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    ! end of the testing
+    
     dtime = betr_time%get_step_size()
 
     if(this%active_soibgc)then
       !set up kinetic parameters that are passed in from the mother lsm. Mostly they
       !are plant-nutrient related parameters.
       call this%bgc_reaction%set_kinetics_par(1, ubj, this%nactpft, &
-        this%plantNutkinetics, this%tracers, this%tracercoeffs)
+           this%plantNutkinetics, this%tracers, this%tracercoeffs)
+          ! testing only, where the run crushed        -zlyu   01/27/2019
+    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    write(stdout, *) 'inside step_without_drainage in BeTRType.F90 after set_kinetics_par'
+    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    ! end of the testing
+    
     endif
-
+    ! testing only, where the run crushed        -zlyu   01/27/2019
+    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    write(stdout, *) 'inside step_without_drainage in BeTRType.F90 after if for active_soibgc'
+    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    ! end of the testing
+    
     call stage_tracer_transport(betr_time, bounds, col, pft, num_soilc,&
          filter_soilc, num_soilp, filter_soilp, biophysforc,      &
          biogeo_state, biogeo_flux, this%aereconds, this%tracers, this%tracercoeffs, &
          this%tracerboundaryconds, this%tracerstates, this%tracerfluxes, this%bgc_reaction, &
          Rfactor, this%advection_on, betr_status)
+        ! testing only, where the run crushed        -zlyu   01/27/2019
+    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    write(stdout, *) 'inside step_without_drainage in BeTRType.F90 after stage_tracer_transport'
+    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    ! end of the testing
+    
     if(betr_status%check_status())return
-
+    ! testing only, where the run crushed        -zlyu   01/27/2019
+    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    write(stdout, *) 'inside step_without_drainage in BeTRType.F90 after check_status'
+    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    ! end of the testing
+    
     call surface_tracer_hydropath_update(betr_time, bounds, col, &
        num_soilc, filter_soilc,  biophysforc, this%advection_on, &
        this%tracers, this%tracerstates,    &
        this%tracercoeffs,  this%tracerfluxes, betr_status)
+        ! testing only, where the run crushed        -zlyu   01/27/2019
+    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    write(stdout, *) 'inside step_without_drainage in BeTRType.F90 after surface_tracer_hydropath'
+    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    ! end of the testing
+    
     if(betr_status%check_status())return
-
-    if(this%reaction_on .and. inloop_reaction )                     &
+    ! testing only, where the run crushed        -zlyu   01/27/2019
+    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    write(stdout, *) 'inside step_without_drainage in BeTRType.F90 before reaction_on'
+    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    ! end of the testing
+    
+    if(this%reaction_on)                     &      ! deleted if condition  -->  .and. inloop_reaction   -zlyu
     call this%bgc_reaction%calc_bgc_reaction(bounds, col, lbj, ubj, &
          num_soilc,                                            &
          filter_soilc,                                         &
@@ -380,7 +423,13 @@ contains
          this%tracerstates,                                    &
          this%tracerfluxes,                                    &
          this%tracerboundaryconds,                             &
-         this%plant_soilbgc, biogeo_flux, biogeo_state, betr_status)
+         this%plant_soilbgc, biogeo_flux, betr_status)
+        ! testing only, where the run crushed        -zlyu   01/27/2019
+    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    write(stdout, *) 'inside step_without_drainage in BeTRType.F90 after reaction on'
+    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    ! end of the testing
+    
     if(betr_status%check_status())return
 
     if(this%tracers%debug)call this%debug_info(bounds, col, num_soilc, filter_soilc, 'afbgc react\n bef gwstransp',betr_status)
@@ -410,13 +459,24 @@ contains
          this%ebullition_on, betr_status)
     if(betr_status%check_status())return
 
+        ! testing only, where the run crushed        -zlyu   01/27/2019
+    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    write(stdout, *) 'inside step_without_drainage in BeTRType.F90 before update fluxes'
+    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    ! end of the testing
+    
     !update nutrient uptake fluxes
-    if(inloop_reaction) &
+    !if(inloop_reaction) &
     call this%plant_soilbgc%plant_soilbgc_summary(bounds, lbj, ubj, pft, &
           num_soilc, filter_soilc,  dtime                              , &
           col%dz(bounds%begc:bounds%endc,1:ubj)                        , &
           this%tracers, this%tracerfluxes, biogeo_flux, betr_status)
-
+    ! testing only, where the run crushed        -zlyu   01/27/2019
+    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    write(stdout, *) 'end of step_without_drainage in BeTRType.F90'
+    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    ! end of the testing
+    
   end subroutine step_without_drainage
 
   !--------------------------------------------------------------------------------
@@ -1610,7 +1670,7 @@ contains
      this%tracerstates,                                    &
      this%tracerfluxes,                                    &
      this%tracerboundaryconds,                             &
-     this%plant_soilbgc, biogeo_flux, biogeo_state,  betr_status)
+     this%plant_soilbgc, biogeo_flux,  betr_status)
   if(betr_status%check_status())return
 
   !update nutrient uptake fluxes

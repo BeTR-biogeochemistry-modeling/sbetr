@@ -33,42 +33,14 @@ implicit none
     real(r8), pointer :: som1p_col                    (:) => null()
     real(r8), pointer :: som2p_col                    (:) => null()
     real(r8), pointer :: som3p_col                    (:) => null()
-<<<<<<< HEAD
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-r(r8), pointer :: domp_col                     (:) => null()
-||||||| merged common ancestors
-
-
-
-=======
+    real(r8), pointer :: domp_col                     (:) => null()     ! rzacplsbetr_cmupdated version doesn't have this one        -zlyu
+    !start adding from rzacplsbetr_cmupdated              -zlyu
     real(r8), pointer :: polyp_col                    (:) => null()
     real(r8), pointer :: monop_col                    (:) => null()
     real(r8), pointer :: micp_col                     (:) => null()
     real(r8), pointer :: enzp_col                     (:) => null()
     real(r8), pointer :: resp_col                     (:) => null()
-
->>>>>>> rzacplsbetr_cmupdated
+    
   contains
 
     procedure, public  :: Init
@@ -129,7 +101,7 @@ contains
     allocate(this%occlp_vr_col             (begc:endc,1:nlevdecomp_full)) ; this%occlp_vr_col             (:,:) = spval
     allocate(this%primp_vr_col             (begc:endc,1:nlevdecomp_full)) ; this%primp_vr_col             (:,:) = spval
     allocate(this%sminp_vr_col             (begc:endc,1:nlevdecomp_full)) ; this%sminp_vr_col             (:,:) = spval
-    allocate(this%totlitp_col (begc:endc)); this%totlitp_col(:) = spval
+    allocate(this%totlitp_col (begc:endc)); this%totlitp_col(:) = spval           ! start here not in  rzacplsbetr_cmupdated    -zlyu
     allocate(this%totsomp_col(begc:endc)); this%totsomp_col(:) = spval
     allocate(this%totlitp_1m_col(begc:endc)); this%totlitp_1m_col(:) = spval
     allocate(this%totsomp_1m_col(begc:endc)); this%totsomp_1m_col(:) = spval

@@ -56,13 +56,7 @@ module BeTRSimulationALM
      procedure, public :: ExitOutLoopBGC            => ALMExitOutLoopBGC
      procedure, private:: set_transient_kinetics_par
 
-
-
-
-
-
-
-     procedure, private::readParams,set_vegpar_calibration
+     procedure, private:: set_vegpar_calibration
      procedure, public :: set_iP_prof
      procedure, public :: skip_balcheck
      procedure, public :: checkpmassyes
@@ -244,6 +238,7 @@ contains
     use MathfuncMod       , only : num2str
     use betr_varcon       , only : kyr_spinup
     use clm_time_manager  , only : get_curr_date,is_end_curr_day,is_beg_curr_day,get_nstep
+    use betr_constants    , only : stdout         !-zlyu
     implicit none
     ! !ARGUMENTS :
     class(betr_simulation_alm_type) , intent(inout) :: this
@@ -254,7 +249,12 @@ contains
     type(betr_bounds_type)     :: betr_bounds
     integer :: c, c_l, begc_l, endc_l
     integer :: year, mon, day, sec
-
+        ! testing only, where the run crushed        -zlyu   01/27/2019
+    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    write(stdout, *) 'inside ALMStepWithoutDrainage'
+    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    ! end of the testing
+    
     call get_curr_date(year, mon, day, sec)
     c_l=1
     if(this%do_soibgc())then
@@ -311,7 +311,12 @@ contains
         this%dom_scalar_col(c) = this%biophys_forc(c)%dom_scalar_col(c_l)
       enddo
     endif
-
+        ! testing only, where the run crushed        -zlyu   01/27/2019
+    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    write(stdout, *) 'end of  ALMStepWithoutDrainage'
+    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    ! end of the testing
+    
   end subroutine ALMStepWithoutDrainage
 
   !---------------------------------------------------------------------------------
@@ -543,14 +548,9 @@ contains
   use clm_varpar         , only : i_cwd, i_met_lit, i_cel_lit, i_lig_lit
   use PlantMicKineticsMod, only : PlantMicKinetics_type
   use mathfuncMod        , only : apvb,bisnan
-<<<<<<< HEAD
-  use tracer_varcon      , only : use_c13_betr, use_c14_betr, do_bgc_calibration
+  use tracer_varcon      , only : use_c13_betr, use_c14_betr, do_bgc_calibration   !, use_warm_betr          !<-- from rzacplsbetr_cmupdated
   use tracer_varcon      , only : betr_nlevsoi
-||||||| merged common ancestors
-  use tracer_varcon      , only : use_c13_betr, use_c14_betr
-=======
-  use tracer_varcon      , only : use_c13_betr, use_c14_betr, use_warm_betr
->>>>>>> rzacplsbetr_cmupdated
+ 
   implicit none
   class(betr_simulation_alm_type), intent(inout)  :: this
   type(bounds_type) , intent(in)  :: bounds
@@ -895,17 +895,11 @@ contains
   !!! add phosphorus
   use PhosphorusFluxType  , only : phosphorusflux_type
   use PhosphorusStateType , only : phosphorusstate_type
-<<<<<<< HEAD
-  use tracer_varcon       , only : use_c13_betr, use_c14_betr
-||||||| merged common ancestors
-  use tracer_varcon       , only : use_c13_betr, use_c14_betr
+  use tracer_varcon       , only : use_c13_betr, use_c14_betr         !, use_warm_betr       !- rzacplsbetr_cmupdated
   use pftvarcon           , only : noveg
-=======
-  use tracer_varcon       , only : use_c13_betr, use_c14_betr, use_warm_betr
-  use pftvarcon           , only : noveg
->>>>>>> rzacplsbetr_cmupdated
   use MathfuncMod         , only : safe_div
   use tracer_varcon       , only : reaction_method
+  use betr_constants      , only : stdout      !-zlyu
 
   implicit none
   class(betr_simulation_alm_type), intent(inout)  :: this
@@ -924,26 +918,27 @@ contains
   type(carbonflux_type)  , intent(inout):: c14flux_vars    !return carbon fluxes through DON?
   type(nitrogenflux_type), intent(inout):: n14flux_vars
   type(phosphorusflux_type), intent(inout):: p31flux_vars
-<<<<<<< HEAD
-  integer :: c, fc, p, pi, c_l, j, kk
-||||||| merged common ancestors
-  integer :: c, fc, p, pi, c_l
-=======
-  integer :: c, fc, p, pi, c_l, j_l
-  integer             :: lbj, ubj
->>>>>>> rzacplsbetr_cmupdated
+
+  integer :: c, fc, p, pi, c_l, j, kk, j_l
+  integer             :: lbj, ubj        !rzacplsbetr_cmupdated
 
     !TEMPORARY VARIABLES
   type(betr_bounds_type)     :: betr_bounds
   integer :: begc_l, endc_l
 
+    ! testing only, where the run collapsed        -zlyu   01/27/2019
+    write(stdout, *) '***************************'
+    write(stdout, *) 'inside  ALMBetrPlantSoilBGCRecv'
+    write(stdout, *) '***************************'
+    ! end of the testing
+  
   !summarize the fluxes and state variables
   c_l = 1
   call this%BeTRSetBounds(betr_bounds)
   begc_l = betr_bounds%begc; endc_l=betr_bounds%endc;
   lbj = betr_bounds%lbj;  ubj = betr_bounds%ubj
 
-  !retrieve and return
+  !retrieve and return   ! for this retrieve part all 3 versions, zlyu, jinyun_rr and rose are very different, here is jinyun's   -zlyu
   do fc =1, num_soilc
     c = filter_soilc(fc)
     call this%betr(c)%retrieve_biostates(betr_bounds,  1, betr_nlevsoi, &
@@ -968,15 +963,9 @@ contains
 
   if(.not. this%do_soibgc())return
 
-<<<<<<< HEAD
   !retrieve plant nutrient uptake from biogeo_flux
-  if (this%do_bgc_type('type2_bgc')) then
-||||||| merged common ancestors
-    !retrieve plant nutrient uptake from biogeo_flux
-=======
-    !retrieve plant nutrient uptake from biogeo_flux
-  do j_l = lbj, ubj
->>>>>>> rzacplsbetr_cmupdated
+  !if (this%do_bgc_type('type2_bgc')) then            !jinyun_rr
+  !do j_l = lbj, ubj                                ! rzacplsbetr_cmupdated
     do fc = 1, num_soilc
       c = filter_soilc(fc)
       pi = 0
@@ -1071,8 +1060,7 @@ contains
       c12state_vars%totsomc_col(c) = this%biogeo_state(c)%c12state_vars%totsomc_col(c_l)
       c12state_vars%totlitc_1m_col(c) = this%biogeo_state(c)%c12state_vars%totlitc_1m_col(c_l)
       c12state_vars%totsomc_1m_col(c) = this%biogeo_state(c)%c12state_vars%totsomc_1m_col(c_l)
-
-<<<<<<< HEAD
+    ! where used to have merge conflicts -zlyu
     if(use_c13_betr)then
       c13state_vars%cwdc_col(c) = this%biogeo_state(c)%c13state_vars%cwdc_col(c_l)
       c13state_vars%totlitc_col(c) = this%biogeo_state(c)%c13state_vars%totlitc_col(c_l)
@@ -1112,52 +1100,6 @@ contains
       c12state_vars%som1c_col(c) = this%biogeo_state(c)%c12state_vars%som1c_col(c_l)
       c12state_vars%som2c_col(c) = this%biogeo_state(c)%c12state_vars%som2c_col(c_l)
       c12state_vars%som3c_col(c) = this%biogeo_state(c)%c12state_vars%som3c_col(c_l)
-=======
->>>>>>> jinyun_rr
-      if(use_c13_betr)then
-        c13state_vars%cwdc_col(c) = this%biogeo_state(c)%c13state_vars%cwdc_col(c_l)
-        c13state_vars%totlitc_col(c) = this%biogeo_state(c)%c13state_vars%totlitc_col(c_l)
-        c13state_vars%totsomc_col(c) = this%biogeo_state(c)%c13state_vars%totsomc_col(c_l)
-        c13state_vars%totlitc_1m_col(c) = this%biogeo_state(c)%c13state_vars%totlitc_1m_col(c_l)
-        c13state_vars%totsomc_1m_col(c) = this%biogeo_state(c)%c13state_vars%totsomc_1m_col(c_l)
-      endif
-      if(use_c14_betr)then
-        c14state_vars%cwdc_col(c) = this%biogeo_state(c)%c14state_vars%cwdc_col(c_l)
-        c14state_vars%totlitc_col(c) = this%biogeo_state(c)%c14state_vars%totlitc_col(c_l)
-        c14state_vars%totsomc_col(c) = this%biogeo_state(c)%c14state_vars%totsomc_col(c_l)
-        c14state_vars%totlitc_1m_col(c) = this%biogeo_state(c)%c14state_vars%totlitc_1m_col(c_l)
-        c14state_vars%totsomc_1m_col(c) = this%biogeo_state(c)%c14state_vars%totsomc_1m_col(c_l)
-      endif
-      n14state_vars%cwdn_col(c) = this%biogeo_state(c)%n14state_vars%cwdn_col(c_l)
-      n14state_vars%totlitn_col(c) = this%biogeo_state(c)%n14state_vars%totlitn_col(c_l)
-      n14state_vars%totsomn_col(c) = this%biogeo_state(c)%n14state_vars%totsomn_col(c_l)
-      n14state_vars%totlitn_1m_col(c) = this%biogeo_state(c)%n14state_vars%totlitn_1m_col(c_l)
-      n14state_vars%totsomn_1m_col(c) = this%biogeo_state(c)%n14state_vars%totsomn_1m_col(c_l)
-
-      p31state_vars%cwdp_col(c) = this%biogeo_state(c)%p31state_vars%cwdp_col(c_l)
-      p31state_vars%totlitp_col(c) = this%biogeo_state(c)%p31state_vars%totlitp_col(c_l)
-      p31state_vars%totsomp_col(c) = this%biogeo_state(c)%p31state_vars%totsomp_col(c_l)
-      p31state_vars%totlitp_1m_col(c) = this%biogeo_state(c)%p31state_vars%totlitp_1m_col(c_l)
-      p31state_vars%totsomp_1m_col(c) = this%biogeo_state(c)%p31state_vars%totsomp_1m_col(c_l)
-
-      !recollect inorganic nitrogen (smin_nh4, smin_no3), and inorganic phosphorus (disolvable and protected)
-      n14state_vars%sminn_col(c) = this%biogeo_state(c)%n14state_vars%sminn_col(c_l)
-      n14state_vars%smin_nh4_col(c)=this%biogeo_state(c)%n14state_vars%sminn_nh4_col(c_l)
-      n14state_vars%smin_no3_col(c)=this%biogeo_state(c)%n14state_vars%sminn_no3_col(c_l)
-
-      p31state_vars%sminp_col(c) = this%biogeo_state(c)%p31state_vars%sminp_col(c_l)
-      p31state_vars%occlp_col(c) = this%biogeo_state(c)%p31state_vars%occlp_col(c_l)
-
-<<<<<<< HEAD
-      if(index(reaction_method,'ecacnp')/=0 .or. index(reaction_method,'ch4soil')/=0)then
-||||||| merged common ancestors
-      if(index(reaction_method,'ecacnp')/=0)then
-=======
-      if(index(reaction_method,'ecacnp')/=0 .or. index(reaction_method,'summs')/=0)then
->>>>>>> rzacplsbetr_cmupdated
-        c12state_vars%som1c_col(c) = this%biogeo_state(c)%c12state_vars%som1c_col(c_l)
-        c12state_vars%som2c_col(c) = this%biogeo_state(c)%c12state_vars%som2c_col(c_l)
-        c12state_vars%som3c_col(c) = this%biogeo_state(c)%c12state_vars%som3c_col(c_l)
         if(use_c13_betr)then
           c13state_vars%som1c_col(c) = this%biogeo_state(c)%c13state_vars%som1c_col(c_l)
           c13state_vars%som2c_col(c) = this%biogeo_state(c)%c13state_vars%som2c_col(c_l)
@@ -1175,11 +1117,11 @@ contains
         p31state_vars%som1p_col(c) = this%biogeo_state(c)%p31state_vars%som1p_col(c_l)
         p31state_vars%som2p_col(c) = this%biogeo_state(c)%p31state_vars%som2p_col(c_l)
         p31state_vars%som3p_col(c) = this%biogeo_state(c)%p31state_vars%som3p_col(c_l)
-
       endif
 
     enddo
-<<<<<<< HEAD
+
+    ! jinyun_rr added the following
     do fc = 1, num_soilc
       c = filter_soilc(fc)
 
@@ -1188,7 +1130,7 @@ contains
         this%biogeo_flux(c)%p31flux_vars%sminp_leached_col(c_l) + &
         this%biogeo_flux(c)%p31flux_vars%sminp_qdrain_col(c_l)
     enddo
-  endif
+  !endif             ! endif corresponding to line "if (this%do_bgc_type('type2_bgc')) then   " -zlyu, since I currently not plan to use type2_bgc, comment out for now 
   do fc = 1, num_soilc
     c = filter_soilc(fc)
     n14flux_vars%smin_no3_leached_col(c)= &
@@ -1227,13 +1169,17 @@ contains
         solutionp_vr(c,j) = this%biogeo_state(c)%p31state_vars%sminp_vr_col(c_l,j)
       enddo
     enddo
-    end associate
-||||||| merged common ancestors
-=======
-  enddo
->>>>>>> rzacplsbetr_cmupdated
+  end associate
+  
+  !enddo
+!>>>>>>> rzacplsbetr_cmupdated
   endif
-
+    ! testing only, where the run collapsed        -zlyu   01/27/2019
+    write(stdout, *) '***************************'
+    write(stdout, *) 'end of  ALMBetrPlantSoilBGCRecv'
+    write(stdout, *) '***************************'
+    ! end of the testing
+  
   end subroutine ALMBetrPlantSoilBGCRecv
   !------------------------------------------------------------------------
 
@@ -1593,18 +1539,16 @@ contains
 
   !the following parameters are specific to ECACNP, and I assume they are
   !grid specific as they currently used in alm-cnp.
-<<<<<<< HEAD
-  if(index(reaction_method,'ecacnp')/=0 .or. index(reaction_method, 'ch4soil')/=0 .or. index(reaction_method, 'summs')/=0)then
+  if(index(reaction_method,'ecacnp')/=0 .or. index(reaction_method, 'ch4soil')/=0 .or. index(reaction_method, 'summs')/=0 .or. index(reaction_method, 'v1eca')/=0)then
   ! added for introducing method 'summs' from Rose's model   -zlyu, 01/29/2019
-=======
-  if(index(reaction_method,'ecacnp')/=0 .or. index(reaction_method, 'ch4soil')/=0 &
-     .or. index(reaction_method, 'v1eca')/=0)then
->>>>>>> jinyun_rr
+  ! vleca from  jinyun_rr
     do j =1, betr_bounds%ubj
       do fc = 1, num_soilc
-        c = filter_soilc(fc)
-        this%betr(c)%plantNutkinetics%km_minsurf_p_vr_col(c_l,j)  = km_minsurf_p_vr_col(c,j)/patomw
-        this%betr(c)%plantNutkinetics%km_minsurf_nh4_vr_col(c_l,j)= km_minsurf_nh4_vr_col(c,j)/natomw
+         c = filter_soilc(fc)
+         this%betr(c)%plantNutkinetics%km_minsurf_p_vr_col(c_l,j) = PlantMicKinetics_vars%km_minsurf_p_vr_col(c,j)/patomw
+        this%betr(c)%plantNutkinetics%km_minsurf_nh4_vr_col(c_l,j)=PlantMicKinetics_vars%km_minsurf_nh4_vr_col(c,j)/patomw
+        !this%betr(c)%plantNutkinetics%km_minsurf_p_vr_col(c_l,j)  = km_minsurf_p_vr_col(c,j)/patomw                           ! from jinyun_rr, comment out for now  -zlyu
+        !this%betr(c)%plantNutkinetics%km_minsurf_nh4_vr_col(c_l,j)= km_minsurf_nh4_vr_col(c,j)/natomw
       enddo
     enddo
     if(lbcalib)then

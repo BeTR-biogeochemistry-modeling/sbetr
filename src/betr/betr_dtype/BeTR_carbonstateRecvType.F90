@@ -68,6 +68,7 @@ implicit none
   SPVAL_ALLOC(this%totlitc_1m_col(begc:endc))
   SPVAL_ALLOC(this%totsomc_1m_col(begc:endc))
 
+  if(index(reaction_method,'ecacnp')/=0 .or. index(reaction_method,'summs')/=0)then
   SPVAL_ALLOC(this%som1c_col(begc:endc))
   SPVAL_ALLOC(this%som2c_col(begc:endc))
   SPVAL_ALLOC(this%som3c_col(begc:endc))
@@ -79,6 +80,7 @@ implicit none
     SPVAL_ALLOC(this%som1c_vr_col(begc:endc, lbj:ubj))
     SPVAL_ALLOC(this%som2c_vr_col(begc:endc, lbj:ubj))
     SPVAL_ALLOC(this%som3c_vr_col(begc:endc, lbj:ubj))
+    endif 
 
     SPVAL_ALLOC(this%cwdc_vr_col(begc:endc,lbj:ubj))
     SPVAL_ALLOC(this%totlitc_vr_col(begc:endc,lbj:ubj))
@@ -93,19 +95,13 @@ implicit none
   class(betr_carbonstate_recv_type)  :: this
   real(r8), intent(in) :: value_column
 
-  if(index(bgc_type,'type1_bgc')/=0)then
+  if(index(bgc_type,'type1_bgc')/=0)then            ! jinyun_rr edit            -zlyu
     this%decomp_cpools_vr(:,:,:)=value_column
   else
     this%cwdc_vr_col(:,:) = value_column
     this%totlitc_vr_col(:,:) = value_column
     this%totsomc_vr_col(:,:) = value_column
-
-<<<<<<< HEAD
-||||||| merged common ancestors
-  if(index(reaction_method,'ecacnp')/=0)then
-=======
-  if(index(reaction_method,'ecacnp')/=0 .or. index(reaction_method,'summs')/=0)then
->>>>>>> rzacplsbetr_cmupdated
+    
     this%som1c_vr_col(:,:) = value_column
     this%som2c_vr_col(:,:) = value_column
     this%som3c_vr_col(:,:) = value_column
@@ -125,45 +121,26 @@ implicit none
 
   integer :: c, j
 
-  if(index(bgc_type,'type1_bgc')/=0)return
+  if(index(bgc_type,'type1_bgc')/=0)return              ! jinyun_rr edit            -zlyu
   this%cwdc_col(:) = 0._r8
   this%totlitc_col(:) = 0._r8
   this%totsomc_col(:) = 0._r8
   this%totlitc_1m_col(:) = 0._r8
   this%totsomc_1m_col(:) = 0._r8
 
-<<<<<<< HEAD
   this%som1c_col(:) = 0.0_r8
   this%som2c_col(:) = 0.0_r8
   this%som3c_col(:) = 0.0_r8
-  this%domc_col(:)  = 0._r8
-||||||| merged common ancestors
-  if(index(reaction_method,'ecacnp')/=0)then
-    this%som1c_col(:) = 0.0_r8
-    this%som2c_col(:) = 0.0_r8
-    this%som3c_col(:) = 0.0_r8
-    do j = lbj, ubj
-      do c = bounds%begc, bounds%endc
-        this%som1c_col(c) = this%som1c_col(c) + dz(c,j)*this%som1c_vr_col(c,j)
-        this%som2c_col(c) = this%som2c_col(c) + dz(c,j)*this%som2c_vr_col(c,j)
-        this%som3c_col(c) = this%som3c_col(c) + dz(c,j)*this%som3c_vr_col(c,j)
-      enddo
-    enddo
-  endif
-=======
-  if(index(reaction_method,'ecacnp')/=0 .or. index(reaction_method,'summs')/=0)then
-    this%som1c_col(:) = 0.0_r8
-    this%som2c_col(:) = 0.0_r8
-    this%som3c_col(:) = 0.0_r8
-    do j = lbj, ubj
-      do c = bounds%begc, bounds%endc
-        this%som1c_col(c) = this%som1c_col(c) + dz(c,j)*this%som1c_vr_col(c,j)
-        this%som2c_col(c) = this%som2c_col(c) + dz(c,j)*this%som2c_vr_col(c,j)
-        this%som3c_col(c) = this%som3c_col(c) + dz(c,j)*this%som3c_vr_col(c,j)
-      enddo
-    enddo
-  endif
->>>>>>> rzacplsbetr_cmupdated
+  this%domc_col(:)  = 0._r8                         !rzacplsbetr_cmupdated doesn't have domc_col, think about it       -zlyu
+
+    !do j = lbj, ubj                             !rzacplsbetr_cmupdated loops, no domc    -zlyu
+     ! do c = bounds%begc, bounds%endc
+      !  this%som1c_col(c) = this%som1c_col(c) + dz(c,j)*this%som1c_vr_col(c,j)
+       ! this%som2c_col(c) = this%som2c_col(c) + dz(c,j)*this%som2c_vr_col(c,j)
+        !this%som3c_col(c) = this%som3c_col(c) + dz(c,j)*this%som3c_vr_col(c,j)
+      !enddo
+    !enddo
+
   do j = lbj, ubj
     do c = bounds%begc, bounds%endc
       this%som1c_col(c) = this%som1c_col(c) + dz(c,j)*this%som1c_vr_col(c,j)
@@ -174,7 +151,7 @@ implicit none
 
       this%totlitc_col(c) = this%totlitc_col(c) + dz(c,j)*this%totlitc_vr_col(c,j)
       this%totsomc_vr_col(c,j) = this%som1c_vr_col(c,j) + this%som2c_vr_col(c,j) + &
-         this%som3c_vr_col(c,j) + this%domc_vr_col(c,j)
+      this%som3c_vr_col(c,j) + this%domc_vr_col(c,j)
       this%totsomc_col(c) = this%totsomc_col(c) + dz(c,j)*this%totsomc_vr_col(c,j)
     enddo
   enddo

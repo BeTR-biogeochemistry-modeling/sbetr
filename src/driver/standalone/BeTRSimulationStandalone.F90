@@ -135,6 +135,7 @@ contains
     use BeTR_TimeMod      , only : betr_time_type
     use LandunitType      , only : lun
     use pftvarcon         , only : crop
+    use betr_constants    , only : stdout      !-zlyu
     implicit none
     !ARGUMENTS
     class(betr_simulation_standalone_type) , intent(inout) :: this
@@ -148,7 +149,12 @@ contains
     integer  :: c
     !pass necessary data for correct subroutine call
     !set lbj and ubj
-
+        ! testing only, where the run crushed        -zlyu   01/27/2019
+    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    write(stdout, *) 'inside StandaloneStepWithoutDrainage '
+    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    ! end of the testing
+    
     call this%BeTRSetBounds(betr_bounds)
 
     call this%bsimstatus%reset()
@@ -171,7 +177,13 @@ contains
       endif
     enddo
     if(this%bsimstatus%check_status()) &
-      call endrun(msg=trim(this%bsimstatus%print_msg()))
+         call endrun(msg=trim(this%bsimstatus%print_msg()))
+
+            ! testing only, where the run crushed        -zlyu   01/27/2019
+    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    write(stdout, *) 'end of StandaloneStepWithoutDrainage '
+    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    ! end of the testing
   end subroutine StandaloneStepWithoutDrainage
 
   !---------------------------------------------------------------------------------
@@ -340,11 +352,8 @@ contains
 
     if(use_c14_betr)then
       call this%biophys_forc(c)%c14flx%reset(value_column=0._r8)
-    endif
-<<<<<<< HEAD
-=======
-
->>>>>>> jinyun_rr
+   endif
+   
     this%biophys_forc(c)%frac_loss_lit_to_fire_col(c_l) = 0._r8
     this%biophys_forc(c)%frac_loss_cwd_to_fire_col(c_l)=0._r8
   enddo
@@ -372,10 +381,7 @@ contains
       this%biophys_forc(c)%p31flx%pflx_input_litr_lig_vr_col(c_l,j) = phosphorusflux_vars%pflx_input_litr_lig_vr_col(c,j)
       this%biophys_forc(c)%p31flx%pflx_input_litr_cwd_vr_col(c_l,j) = phosphorusflux_vars%pflx_input_litr_cwd_vr_col(c,j)
       this%biophys_forc(c)%p31flx%pflx_minp_input_po4_vr_col(c_l,j) = phosphorusflux_vars%pflx_minp_input_po4_vr_col(c,j)
-<<<<<<< HEAD
-=======
 
->>>>>>> jinyun_rr
       this%biophys_forc(c)%biochem_pmin_vr(c_l,j) =0._r8
     enddo
   enddo
@@ -403,6 +409,7 @@ contains
   use pftvarcon           , only : noveg
   use MathfuncMod         , only : safe_div
   use tracer_varcon       , only : reaction_method
+  use betr_constants      , only : stdout   !-zlyu
   implicit none
   class(betr_simulation_standalone_type) , intent(inout) :: this
   type(bounds_type) , intent(in)  :: bounds
@@ -426,6 +433,12 @@ contains
   !TEMPORARY VARIABLES
   type(betr_bounds_type)     :: betr_bounds
   integer :: begc_l, endc_l
+  
+    ! testing only, where the run collapsed        -zlyu   01/27/2019
+    write(stdout, *) '***************************'
+    write(stdout, *) 'inside StandalonePlantSoilBGCRec'
+    write(stdout, *) '***************************'
+    ! end of the testing
 
   !summarize the fluxes and state variables
   c_l = 1
@@ -607,7 +620,14 @@ contains
       p31state_vars%som3p_col(c) = this%biogeo_state(c)%p31state_vars%som3p_col(c_l)
       p31state_vars%domp_col(c) = this%biogeo_state(c)%p31state_vars%domp_col(c_l)
     endif
-  enddo
+ enddo
+   
+    ! testing only, where the run collapsed        -zlyu   01/27/2019
+    write(stdout, *) '***************************'
+    write(stdout, *) 'end of StandalonePlantSoilBGCRec'
+    write(stdout, *) '***************************'
+    ! end of the testing
+
   end subroutine StandalonePlantSoilBGCRecv
 
   !------------------------------------------------------------------------

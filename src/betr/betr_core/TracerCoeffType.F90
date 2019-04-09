@@ -40,20 +40,16 @@ module TracerCoeffType
      real(r8), pointer :: diffblkm_topsoi_col       (:,:)   => null()     !bulk molecular diffusivity in top soil layer
      real(r8), pointer :: diffgas_topsoi_col        (:,:)   => null()     !gas diffusivity in top soil layer, this is not used currently
      real(r8), pointer :: hmconductance_col         (:,:,:)  => null()    !geometrically weighted conductances (nlevsno+nlevtrc_soil)
-<<<<<<< HEAD
      real(r8), pointer :: bulk_diffus_col           (:,:,:)  => null()
      real(r8), pointer :: aqu_diffus_col            (:,:,:) => null()
      real(r8), pointer :: aqu_diffus0_col           (:,:,:) => null()
      real(r8), pointer :: k_sorbsurf_col            (:,:,:) => null()     !affinity parameter for sorption surface
      real(r8), pointer :: Q_sorbsurf_col            (:,:,:) => null()     !maximum sorption capacity
      real(r8), pointer :: snowres_col               (:,:) => null()
-||||||| merged common ancestors
-     real(r8), pointer :: annsum_counter_col        (:) => null()
-=======
+     ! start adding from rzacplsbetr_cmupdated              -zlyu
      real(r8), pointer :: annsum_counter_col        (:) => null()
      real(r8), pointer :: k_decay_vr                (:,:,:) => null()
-     real(r8), pointer :: part_mic_vr               (:,:,:) => null()
->>>>>>> rzacplsbetr_cmupdated
+     real(r8), pointer :: part_mic_vr               (:,:,:) => null() 
    contains
      procedure, public  :: Init
      procedure, public  :: Restart
@@ -178,21 +174,16 @@ contains
 
     NAN_ALLOC(this%bunsencef_snow_col(begc:endc, -nlevsno+1:0,1:betrtracer_vars%nvolatile_tracer_groups))
 
-<<<<<<< HEAD
-    NAN_ALLOC(this%henrycef_snow_col(begc:endc, -nlevsno+1:0,1:betrtracer_vars%nvolatile_tracer_groups))
-||||||| merged common ancestors
-    allocate(this%aqu2equilsolidcef_col(begc:endc, lbj:ubj, 1:betrtracer_vars%nsolid_equil_tracer_groups))
-    this%aqu2equilsolidcef_col(:,:,:) = nan
-=======
-    allocate(this%aqu2equilsolidcef_col(begc:endc, lbj:ubj, 1:betrtracer_vars%nsolid_equil_tracer_groups))
-    this%aqu2equilsolidcef_col(:,:,:) = nan
+    ! >>>>>>> rzacplsbetr_cmupdated                       -zlyu
+    allocate(this%annsum_counter_col(begc:endc))
+    this%annsum_counter_col(:)         = nan
 
     allocate(this%k_decay_vr(begc:endc, lbj:ubj, 1))
     this%k_decay_vr(:,:,:) = nan
 
     allocate(this%part_mic_vr(begc:endc, lbj:ubj, 1))
     this%part_mic_vr(:,:,:) = nan
->>>>>>> rzacplsbetr_cmupdated
+
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------
@@ -297,7 +288,6 @@ contains
       this%henrycef_col              (c,:,:) = 0._r8
       this%bunsencef_col             (c,:,:) = 0._r8
       this%hmconductance_col         (c,:,:) = 0._r8
-<<<<<<< HEAD
       if(size(this%gas2bulkcef_mobile_col,3)>0)    this%gas2bulkcef_mobile_col    (c,:,:) = 0._r8
       if(size(this%tracer_diffusivity_air_col,2)>0)this%tracer_diffusivity_air_col(c,:)   = 0._r8
       if(size(this%scal_aere_cond_col,2)>0)        this%scal_aere_cond_col        (c,:)   = 0._r8
@@ -309,13 +299,11 @@ contains
       if(size(this%Q_sorbsurf_col,3)>0)            this%Q_sorbsurf_col (c,:,:) = 1._r8
       if(size(this%diffblkm_topsoi_col,2)>0)       this%diffblkm_topsoi_col(c,:)   = 0._r8
       if(size(this%snowres_col,2)>0) this%snowres_col(c,:) = 0._r8
-||||||| merged common ancestors
-      this%annsum_counter_col        (c)     = 0._r8
-=======
+      ! >>>>>>> rzacplsbetr_cmupdated              -zlyu
       this%annsum_counter_col        (c)     = 0._r8
       this%k_decay_vr                (c,:,:)   = 0._r8
       this%part_mic_vr               (c,:,:)   = 0._r8
->>>>>>> rzacplsbetr_cmupdated
+
     enddo
 
   end subroutine InitCold

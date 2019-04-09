@@ -25,16 +25,13 @@ include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/simic/simicNl
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/keca/kecaPara)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/keca/keca1layer)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/keca/kecaNlayer)
-<<<<<<< HEAD
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/SUMMS/summsPara)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/SUMMS/summs1layer)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/SUMMS/summsNlayer)
 
-=======
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/v1eca/v1ecaPara)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/v1eca/v1eca1layer)
-include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/v1eca/v1ecaNlayer)
->>>>>>> jinyun_rr
+include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/v1eca/v1ecaNlayer) #>>>>>>> jinyun_rr
 #end_appadd
 include(add_betr_library)
 add_betr_library(app_util ${BETR_APP_UTIL_SOURCES})

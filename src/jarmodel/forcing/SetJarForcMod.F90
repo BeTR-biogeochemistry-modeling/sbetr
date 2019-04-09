@@ -27,11 +27,9 @@ contains
   !begin_appadd
   use ecacnpParaType, only : ecacnp_para_type
   use kecaParaType, only : keca_para_type
-<<<<<<< HEAD
   use SummsParaType    , only : SummsPara_type       ! added for using method 'summs' from Rose's model, -zlyu. 01/29/2019
-=======
   use v1ecaParaType, only : v1eca_para_type
->>>>>>> jinyun_rr
+  !>>>>>>> jinyun_rr
   !end_appadd
   use BiogeoConType    , only : BiogeoCon_type
   implicit none

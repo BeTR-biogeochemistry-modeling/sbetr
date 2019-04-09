@@ -22,19 +22,14 @@ implicit none
     real(r8), pointer :: som1n_col                    (:) => null()
     real(r8), pointer :: som2n_col                    (:) => null()
     real(r8), pointer :: som3n_col                    (:) => null()
-<<<<<<< HEAD
+    ! this following one is deleted from  rzacplsbetr_cmupdated version          -zlyu
     real(r8), pointer :: domn_col                     (:) => null()
-||||||| merged common ancestors
-
-=======
+    ! start adding from rzacplsbetr_cmupdated                   -zlyu
     real(r8), pointer :: polyn_col                    (:) => null()
     real(r8), pointer :: monon_col                    (:) => null()
     real(r8), pointer :: micn_col                     (:) => null()
     real(r8), pointer :: enzn_col                     (:) => null()
     real(r8), pointer :: resn_col                     (:) => null()
-
-
->>>>>>> rzacplsbetr_cmupdated
   contains
 
     procedure, public  :: Init
@@ -82,7 +77,7 @@ contains
     allocate(this%smin_nh4_col             (begc:endc))                   ; this%smin_nh4_col             (:)   = spval
     allocate(this%sminn_vr_col             (begc:endc,1:nlevdecomp_full)) ; this%sminn_vr_col             (:,:) = spval
     allocate(this%pnup_pfrootc_patch (begp:endp)); this%pnup_pfrootc_patch (:) = spval
-    allocate(this%cwdn_col(begc:endc)); this%cwdn_col(:) = spval
+    allocate(this%cwdn_col(begc:endc)); this%cwdn_col(:) = spval                 ! start from here,  rzacplsbetr_cmupdated version has none       -zlyu
     allocate(this%totlitn_col(begc:endc)); this%totlitn_col(:) = spval
     allocate(this%totsomn_col(begc:endc)); this%totsomn_col(:) = spval
     allocate(this%totlitn_1m_col(begc:endc)); this%totlitn_1m_col(:) = spval

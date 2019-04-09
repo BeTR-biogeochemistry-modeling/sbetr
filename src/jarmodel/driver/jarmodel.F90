@@ -148,7 +148,6 @@ subroutine run_model(namelist_buffer)
   call timer%Init(namelist_buffer=namelist_buffer)
 
   dtime=timer%get_step_size()
-<<<<<<< HEAD
 
   if(len(trim(case_id))==0)then
     write(gname,'(A)')'jarmodel'//'.'//trim(jarmodel_name)
@@ -156,12 +155,7 @@ subroutine run_model(namelist_buffer)
     write(gname,'(A)')'jarmodel'//'.'//trim(case_id)//'.'//trim(jarmodel_name)
   endif
   call hist%init(varl, unitl, vartypes, freql, gname, dtime)
-||||||| merged common ancestors
-  call hist%init(varl, unitl, freql, 'jarmodel')
-=======
-  call hist%init(varl, unitl, freql, 'jarmodel', dtime)
->>>>>>> rzacplsbetr_cmupdated
-
+  
   call bgc_forc%Init(nvars)
   !read in forcing
   call init_forc(namelist_buffer=namelist_buffer)
@@ -193,11 +187,7 @@ subroutine run_model(namelist_buffer)
     endif
     if(timer%its_time_to_exit())exit
   enddo
-<<<<<<< HEAD
   call timer%get_ymdhs(yymmddhhss)
   call hist%histrst('jarmodel', 'write', yymmddhhss)
-||||||| merged common ancestors
-=======
-  call hist%histrst('jarmodel', 'write')
->>>>>>> rzacplsbetr_cmupdated
+
 end subroutine run_model

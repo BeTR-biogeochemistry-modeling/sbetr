@@ -954,7 +954,7 @@ contains
   subroutine calc_bgc_reaction(this, bounds, col, lbj, ubj, num_soilc, filter_soilc, &
        num_soilp,filter_soilp, jtops, dtime, betrtracer_vars, tracercoeff_vars, biophysforc,    &
        tracerstate_vars, tracerflux_vars, tracerboundarycond_vars, plant_soilbgc, &
-       biogeo_flux, biogeo_state, betr_status)
+       biogeo_flux, betr_status)        !biogeo_state, 
 
     !
     ! !DESCRIPTION:
@@ -997,7 +997,7 @@ contains
     type(tracerflux_type)                , intent(inout) :: tracerflux_vars
     class(plant_soilbgc_type)            , intent(inout) :: plant_soilbgc
     type(betr_biogeo_flux_type)          , intent(inout) :: biogeo_flux
-    type(betr_biogeo_state_type)         , intent(inout) :: biogeo_state
+    !type(betr_biogeo_state_type)         , intent(inout) :: biogeo_state
     type(betr_status_type)               , intent(out)   :: betr_status
 
     ! !LOCAL VARIABLES:
@@ -1046,7 +1046,7 @@ contains
         call this%precision_filter(nstates, ystatesf)
 
         call this%retrieve_output(c, j, nstates, ystates0, ystatesf, dtime, betrtracer_vars, tracerflux_vars,&
-           tracerstate_vars, plant_soilbgc, biogeo_flux, biogeo_state)
+           tracerstate_vars, plant_soilbgc, biogeo_flux)  !, biogeo_state
 
         select type(plant_soilbgc)
         type is(v1eca_plant_soilbgc_type)
@@ -1596,7 +1596,7 @@ contains
   end subroutine precision_filter
   !------------------------------------------------------------------------------
   subroutine retrieve_output(this, c, j, nstates, ystates0, ystatesf, dtime, betrtracer_vars, tracerflux_vars,&
-     tracerstate_vars, plant_soilbgc, biogeo_flux, biogeo_state)
+     tracerstate_vars, plant_soilbgc, biogeo_flux)             !, biogeo_state
   !DESCRIPTION
   !retrieve flux and state variables after evolving the bgc calculation
   !
@@ -1621,8 +1621,10 @@ contains
   type(tracerflux_type)                , intent(inout) :: tracerflux_vars
   class(plant_soilbgc_type)            , intent(inout) :: plant_soilbgc
   type(betr_biogeo_flux_type)          , intent(inout) :: biogeo_flux
-  type(betr_biogeo_state_type)         , intent(inout) :: biogeo_state
+  !type(betr_biogeo_state_type)         , intent(inout) :: biogeo_state
 
+  type(betr_biogeo_state_type) :: biogeo_state                  !for now
+  
   integer :: k, k1, k2, jj, p
   integer :: trcid
 

@@ -181,6 +181,7 @@ contains
     use PatchType         , only : patch_type
     use LandunitType      , only : landunit_type
     use clm_varpar        , only : nlevsno, nlevsoi, nlevtrc_soil
+    use betr_constants    , only : stdout       !-zlyu
     implicit none
     ! !ARGUMENTS :
     class(betr_simulation_clm_type) , intent(inout) :: this
@@ -197,6 +198,11 @@ contains
     betr_nlevsno       = nlevsno
     betr_nlevtrc_soil  = nlevtrc_soil
 
+    ! testing only, where the run collapsed        -zlyu   01/27/2019
+    write(stdout, *) '***************************'
+    write(stdout, *) 'inside CLMStepWithoutDrainage'
+    write(stdout, *) '***************************'
+    ! end of the testing
     call this%BeTRSetBounds(betr_bounds)
 
     call this%bsimstatus%reset()
@@ -215,7 +221,13 @@ contains
       endif
     enddo
     if(this%bsimstatus%check_status()) &
-      call endrun(msg=this%bsimstatus%print_msg())
+         call endrun(msg=this%bsimstatus%print_msg())
+
+        ! testing only, where the run collapsed        -zlyu   01/27/2019
+    write(stdout, *) '***************************'
+    write(stdout, *) 'end of CLMStepWithoutDrainage'
+    write(stdout, *) '***************************'
+    ! end of the testing
   end subroutine CLMStepWithoutDrainage
 
   !---------------------------------------------------------------------------------

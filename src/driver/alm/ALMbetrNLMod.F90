@@ -16,7 +16,7 @@ contains
 
 
 !-------------------------------------------------------------------------------
-  function do_betr_bgc_type(type_char)result(ans)
+  function do_betr_bgc_type(type_char)result(ans)             ! new from jinyun_rr       -zlyu
   use betr_ctrl, only : bgc_type
   implicit none
   character(len=*), intent(in) :: type_char
@@ -31,13 +31,7 @@ contains
 
 
   !-------------------------------------------------------------------------------
-<<<<<<< HEAD
-  subroutine betr_readNL(NLFilename, use_c13, use_c14, nsoilorder, lbgcalib)
-||||||| merged common ancestors
-  subroutine betr_readNL(NLFilename, use_c13, use_c14, nsoilorder)
-=======
-  subroutine betr_readNL(NLFilename, use_c13, use_c14, nsoilorder, use_warm)
->>>>>>> rzacplsbetr_cmupdated
+  subroutine betr_readNL(NLFilename, use_c13, use_c14, nsoilorder, lbgcalib)  ! use_warm is added for this subroutine in rzacplsbetr_cmupdated, not for now here       -zlyu
     !
     ! !DESCRIPTION:
     ! read namelist for betr configuration
@@ -61,7 +55,7 @@ contains
     character(len=*), intent(IN) :: NLFilename              ! Namelist filename
     logical,          intent(in) :: use_c13
     logical,          intent(in) :: use_c14
-    logical,          intent(in) :: use_warm
+    !logical,          intent(in) :: use_warm
     integer,          intent(in) :: nsoilorder
     logical,          intent(in) :: lbgcalib
                                                             !
@@ -79,9 +73,11 @@ contains
       AppParNLFile, AA_spinup_on, fix_ip, do_bgc_calibration, &
       bgc_param_file
 
+    !character(len=betr_namelist_buffer_size_ext) :: bgc_namelist_buffer                    ! from rzacplsbetr_cmupdated   -zlyu
     logical :: appfile_on
 
     lbcalib = lbgcalib
+    betr_spinup_state =spinup_state
     !initialize spinup state
     if(index(bgc_type,'type2_bgc')/=0)then
       betr_spinup_state =spinup_state
@@ -99,7 +95,7 @@ contains
     AA_spinup_on    = .false.
     use_c13_betr    = use_c13
     use_c14_betr    = use_c14
-    use_warm_betr   = use_warm
+    !use_warm_betr   = use_warm
     AppParNLFile    = ''
 !    appfile_on      = .false.
     fix_ip          = .false.

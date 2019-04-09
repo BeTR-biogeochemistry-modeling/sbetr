@@ -48,7 +48,7 @@ module TracerFluxType
      real(r8), pointer :: tracer_flx_vtrans_col(:,:)     => null() !column level tracer flux through transpiration
      real(r8), pointer :: tracer_flx_vtrans_vr_col(:,:,:) => null()!
      !real(r8), pointer :: tracer_flx_snowloss_col(:,:)  => null()  !tracer flux lost from snow dynamics, place holder
-     real(r8), pointer :: tracer_flx_decomp_vr_col(:,:,:) => null() !custom output: decomposition flux
+     real(r8), pointer :: tracer_flx_decomp_vr_col(:,:,:) => null() !custom output: decomposition flux                      ! added from rzacplsbetr_cmupdated          -zlyu
      real(r8), pointer :: tracer_flx_uptake_vr_col(:,:,:) => null() !custom output: uptake flux
      real(r8), pointer :: tracer_flx_cue_vr_col(:,:,:)    => null() !custom output: uptake flux
      real(r8), pointer :: tracer_flx_maint_vr_col(:,:,:)  => null() !custom output: maintenance flux
@@ -170,6 +170,12 @@ contains
        SPVAL_ALLOC(this%tracer_flx_parchm_vr_col   (begc:endc, lbj:ubj, 1:nvolatile_tracers))
     endif
 
+    !older version
+    !SPVAL_ALLOC(this%tracer_flx_netpro_vr_col  (begc:endc, lbj:ubj, 1:ntracers))
+    !SPVAL_ALLOC(this%tracer_flx_netphyloss_col (begc:endc, 1:ntracers))
+    !SPVAL_ALLOC(this%tracer_flx_netpro_col     (begc:endc, 1:ntracers))
+    !SPVAL_ALLOC(this%tracer_flx_dstor_col      (begc:endc, 1:ntracers))
+    
     allocate(this%tracer_flx_netpro_vr_col  (begc:endc, lbj:ubj, 1:ntracers)); this%tracer_flx_netpro_vr_col (:,:,:) = spval
     allocate(this%tracer_flx_netphyloss_col (begc:endc, 1:ntracers)); this%tracer_flx_netphyloss_col(:,:)            = spval
     allocate(this%tracer_flx_netpro_col     (begc:endc, 1:ntracers)); this%tracer_flx_netpro_col(:,:)                = spval
@@ -320,7 +326,7 @@ contains
           default='inactive')
 
       enddo
-        call this%add_hist_var2d (it, num2d, fname='DECOMP_vr', units='mol/m3/s', type2d='levtrc',    &
+        call this%add_hist_var2d (it, num2d, fname='DECOMP_vr', units='mol/m3/s', type2d='levtrc',    &                ! added from rzacplsbetr_cmupdated           -zlyu
           avgflag='A', long_name='vertically-resolved microbial decomposition flux', default='inactive')
 
         call this%add_hist_var2d (it, num2d, fname='UPTAKE_vr', units='mol/m3/s', type2d='levtrc',    &
@@ -409,7 +415,7 @@ contains
       this%tracer_flx_sub_snow_col   (c,:) = 0._r8
       this%tracer_flx_h2osfc_snow_residual_col(c,:) = 0._r8
       this%tracer_flx_totleached_col (c,:) = 0._r8
-      this%tracer_flx_decomp_vr_col(c,:,:) = 0._r8
+      this%tracer_flx_decomp_vr_col(c,:,:) = 0._r8                       !added from rzacplsbetr_cmupdated                -zlyu
       this%tracer_flx_uptake_vr_col(c,:,:) = 0._r8
       this%tracer_flx_cue_vr_col(c,:,:)    = 0._r8
       this%tracer_flx_maint_vr_col(c,:,:)  = 0._r8
@@ -495,7 +501,7 @@ contains
       this%tracer_flx_h2osfc_snow_residual_col(column,:)   = 0._r8
       this%tracer_flx_netpro_vr_col  (column,:,:)   = 0._r8
       this%tracer_flx_totleached_col (column,:)   = 0._r8
-      this%tracer_flx_decomp_vr_col  (column,:,:) = 0._r8
+      this%tracer_flx_decomp_vr_col  (column,:,:) = 0._r8           !added from rzacplsbetr_cmupdated                -zlyu
       this%tracer_flx_uptake_vr_col  (column,:,:) = 0._r8
       this%tracer_flx_cue_vr_col     (column,:,:) = 0._r8
       this%tracer_flx_maint_vr_col   (column,:,:) = 0._r8
@@ -551,7 +557,7 @@ contains
     this%tracer_flx_h2osfc_snow_residual_col(column,:) =  this%tracer_flx_h2osfc_snow_residual_col(column,:)/dtime
 
     this%tracer_flx_totleached_col(column,:) = this%tracer_flx_drain_col(column,:) + this%tracer_flx_leaching_col(column,:)
-    this%tracer_flx_decomp_vr_col  (column,:,:)   = this%tracer_flx_decomp_vr_col  (column,:,:)/dtime 
+    this%tracer_flx_decomp_vr_col  (column,:,:)   = this%tracer_flx_decomp_vr_col  (column,:,:)/dtime          !added from rzacplsbetr_cmupdated                -zlyu
     this%tracer_flx_uptake_vr_col  (column,:,:)   = this%tracer_flx_uptake_vr_col  (column,:,:)/dtime
     this%tracer_flx_cue_vr_col     (column,:,:)   = this%tracer_flx_cue_vr_col     (column,:,:)/dtime
     this%tracer_flx_maint_vr_col   (column,:,:)   = this%tracer_flx_maint_vr_col   (column,:,:)/dtime
@@ -765,7 +771,7 @@ contains
 
       id=addone(idtemp1d); flux_1d(begc:endc,id) = this%tracer_flx_prec_col(begc:endc, jj)
     enddo
-
+      !added from rzacplsbetr_cmupdated                -zlyu
       id=addone(idtemp2d); flux_2d(begc:endc,lbj:ubj,id) = this%tracer_flx_decomp_vr_col(begc:endc, lbj:ubj,1)
 
       id=addone(idtemp2d); flux_2d(begc:endc,lbj:ubj,id) = this%tracer_flx_uptake_vr_col(begc:endc, lbj:ubj,1)

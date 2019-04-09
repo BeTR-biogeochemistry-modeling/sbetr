@@ -56,31 +56,22 @@ contains
     use betr_ctrl       , only : iulog  => biulog, inloop_reaction, bgc_type
     use betr_constants  , only : betr_errmsg_len
     use BetrStatusType  , only : betr_status_type
-<<<<<<< HEAD
-
-    !begin_appadd
+  !begin_appadd
     use ecacnpBGCReactionsType, only : ecacnp_bgc_reaction_type
 #if (defined SBETR)
     use ch4soilBGCReactionsType, only : ch4soil_bgc_reaction_type
     use cdomBGCReactionsType  , only : cdom_bgc_reaction_type
     use simicBGCReactionsType , only : simic_bgc_reaction_type
     use kecaBGCReactionsType  , only : keca_bgc_reaction_type
-<<<<<<< HEAD
-    use BgcReactionsSummsType , only : bgc_reaction_summs_type         ! added for introduing 'summs' method from Rose's model
     !end_appadd
-=======
->>>>>>> jinyun_rr
 #endif
-    use v1ecaBGCReactionsType, only : v1eca_bgc_reaction_type
+    use BgcReactionsSummsType , only : bgc_reaction_summs_type         ! added for introduing 'summs' method from Rose's model
+    use v1ecaBGCReactionsType, only : v1eca_bgc_reaction_type    !jinyun_rr
     !end_appadd
-||||||| merged common ancestors
-    use BGCReactionsCentECACnpType, only : bgc_reaction_CENTURY_ECACNP_type
-    use BGCReactionscdomECACnpType, only : bgc_reaction_cdom_ecacnp_type
-=======
-    use BGCReactionsCentECACnpType, only : bgc_reaction_CENTURY_ECACNP_type
-    use BGCReactionscdomECACnpType, only : bgc_reaction_cdom_ecacnp_type
+    ! following added from rzacplsbetr_cmupdated 
+    !use BGCReactionsCentECACnpType, only : bgc_reaction_CENTURY_ECACNP_type
+    !Cuse BGCReactionscdomECACnpType, only : bgc_reaction_cdom_ecacnp_type
     use BGCReactionsSummsType, only : bgc_reaction_summs_type
->>>>>>> rzacplsbetr_cmupdated
 
     implicit none
     ! !ARGUMENTS:
@@ -94,17 +85,14 @@ contains
     call bstatus%reset()
     asoibgc = .false.
     select case(trim(method))
-<<<<<<< HEAD
     !begin_appadd
     case ("ecacnp","ecacnp_mosart")
        asoibgc=.true.;allocate(bgc_reaction, source=ecacnp_bgc_reaction_type())
-<<<<<<< HEAD
     case ("summs")
        asoibgc=.true.;allocate(bgc_reaction, source=bgc_reaction_summs_type())     
        ! added for introduing 'summs' method from Rose's model          -zlyu, 01/29/2019
-=======
-       bgc_type='type2_bgc'
->>>>>>> jinyun_rr
+       
+       !bgc_type='type2_bgc'     !-jinyun_rr
 #if (defined SBETR)
     case ("ch4soil")
        asoibgc=.true.;allocate(bgc_reaction, source=ch4soil_bgc_reaction_type())
@@ -119,24 +107,10 @@ contains
        asoibgc=.true.;allocate(bgc_reaction, source=v1eca_bgc_reaction_type())
        inloop_reaction=.false.; bgc_type='type1_bgc'
     !end_appadd
-||||||| merged common ancestors
-    case ("ecacnp")
-       asoibgc=.true.
-       allocate(bgc_reaction, source=bgc_reaction_CENTURY_ECACNP_type())
-    case ("cdom_ecacnp")
-       asoibgc=.true.
-       allocate(bgc_reaction, source=bgc_reaction_cdom_ecacnp_type())
-=======
-    case ("ecacnp")
-       asoibgc=.true.
-       allocate(bgc_reaction, source=bgc_reaction_CENTURY_ECACNP_type())
-    case ("cdom_ecacnp")
-       asoibgc=.true.
-       allocate(bgc_reaction, source=bgc_reaction_cdom_ecacnp_type())
-    case ("summs")
-       asoibgc=.true.
-       allocate(bgc_reaction, source=bgc_reaction_summs_type())
->>>>>>> rzacplsbetr_cmupdated
+    !case ("cdom_ecacnp")
+      ! asoibgc=.true.
+       !allocate(bgc_reaction, source=bgc_reaction_cdom_ecacnp_type())
+
     case default
        write(msg,*)subname //' ERROR: unknown method: ', method
        msg = trim(msg)//new_line('A')//errMsg(mod_filename, __LINE__)
@@ -155,7 +129,7 @@ contains
   use betr_ctrl       , only : iulog  => biulog
   use betr_constants  , only : betr_errmsg_len
   use BetrStatusType  , only : betr_status_type
-<<<<<<< HEAD
+
   !begin_appadd
   use ecacnpPlantSoilBGCType, only : ecacnp_plant_soilbgc_type
 #if (defined SBETR)
@@ -163,23 +137,14 @@ contains
   use cdomPlantSoilBGCType  , only : cdom_plant_soilbgc_type
   use simicPlantSoilBGCType , only : simic_plant_soilbgc_type
   use kecaPlantSoilBGCType  , only : keca_plant_soilbgc_type
-<<<<<<< HEAD
+  !end_appadd
+#endif
   use PlantSoilBgcSummsType , only : plant_soilbgc_summs_type        
   !added for introduing 'summs' method from Rose's model          -zlyu, 01/29/2019
+  use v1ecaPlantSoilBGCType, only : v1eca_plant_soilbgc_type        !-jinyun_rr
   !end_appadd
-=======
->>>>>>> jinyun_rr
-#endif
-  use v1ecaPlantSoilBGCType, only : v1eca_plant_soilbgc_type
-  !end_appadd
-||||||| merged common ancestors
-  use PlantSoilBgcCnpType, only : plant_soilbgc_cnp_type
-  use PlantSoilBgccdomCnpType, only : plant_soilbgc_cdomcnp_type
-=======
-  use PlantSoilBgcCnpType, only : plant_soilbgc_cnp_type
-  use PlantSoilBgccdomCnpType, only : plant_soilbgc_cdomcnp_type
-  use PlantSoilBgcSummsType, only : plant_soilbgc_summs_type
->>>>>>> rzacplsbetr_cmupdated
+  !use PlantSoilBgcCnpType, only : plant_soilbgc_cnp_type
+  !use PlantSoilBgccdomCnpType, only : plant_soilbgc_cdomcnp_type     !rzacplsbetr_cmupdated
   implicit none
   ! !ARGUMENTS:
   class(plant_soilbgc_type), allocatable, intent(inout) :: plant_soilbgc
@@ -192,7 +157,6 @@ contains
   call bstatus%reset()
 
   select case(trim(method))
-<<<<<<< HEAD
   !begin_appadd
   case ("ecacnp","ecacnp_mosart")
      allocate(plant_soilbgc, source=ecacnp_plant_soilbgc_type())
@@ -212,19 +176,11 @@ contains
   case ("v1eca","v1eca_mosart")
      allocate(plant_soilbgc, source=v1eca_plant_soilbgc_type())
   !end_appadd
-||||||| merged common ancestors
-  case ("ecacnp")
-     allocate(plant_soilbgc, source=plant_soilbgc_cnp_type())
-  case ("cdom_ecacnp")
-     allocate(plant_soilbgc, source=plant_soilbgc_cdomcnp_type())
-=======
-  case ("ecacnp")
-     allocate(plant_soilbgc, source=plant_soilbgc_cnp_type())
-  case ("cdom_ecacnp")
-     allocate(plant_soilbgc, source=plant_soilbgc_cdomcnp_type())
-  case ("summs")
-     allocate(plant_soilbgc, source=plant_soilbgc_summs_type())
->>>>>>> rzacplsbetr_cmupdated
+  !case ("ecacnp")
+   !  allocate(plant_soilbgc, source=plant_soilbgc_cnp_type())
+  !case ("cdom_ecacnp")
+   !  allocate(plant_soilbgc, source=plant_soilbgc_cdomcnp_type())
+   ! rzacplsbetr_cmupdated
   case default
      write(msg, *)subname //' ERROR: unknown method: ', method
      msg = trim(msg)//new_line('A')//errMsg(mod_filename, __LINE__)
@@ -238,7 +194,6 @@ contains
   !
   ! DESCRIPTION
   ! read in the parameters for specified bgc implementation
-<<<<<<< HEAD
   !begin_appadd
   use ecacnpParaType   , only : ecacnp_para
 #if (defined SBETR)
@@ -246,31 +201,17 @@ contains
   use cdomParaType     , only : cdom_para
   use simicParaType    , only : simic_para
   use kecaParaType     , only : keca_para
-<<<<<<< HEAD
-  use SummsParaType    , only : summs_para           ! added for introduing 'summs' method from Rose's model 
   !end_appadd
-=======
->>>>>>> jinyun_rr
 #endif
+  use SummsParaType    , only : summs_para           ! added for introduing 'summs' method from Rose's model 
   use v1ecaParaType   , only : v1eca_para
   !end_appadd
   use tracer_varcon    , only : reaction_method
   use ncdio_pio        , only : file_desc_t
   use BetrStatusType   , only : betr_status_type
-||||||| merged common ancestors
-  use CentParaType   , only : cent_para
-  use cdomParaType   , only : cdom_para
-  use tracer_varcon  , only : reaction_method
-  use ncdio_pio      , only : file_desc_t
-  use BetrStatusType , only : betr_status_type
-=======
-  use CentParaType   , only : cent_para
-  use cdomParaType   , only : cdom_para
-  use SummsParaType  , only : summs_para
-  use tracer_varcon  , only : reaction_method
-  use ncdio_pio      , only : file_desc_t
-  use BetrStatusType , only : betr_status_type
->>>>>>> rzacplsbetr_cmupdated
+  !use CentParaType   , only : cent_para            !rzacplsbetr_cmupdated
+  !use cdomParaType   , only : cdom_para
+
   implicit none
   type(file_desc_t), intent(inout)  :: ncid
   type(betr_status_type) , intent(out) :: bstatus
@@ -287,7 +228,6 @@ contains
      call ch4soil_para%readPars(ncid, bstatus)
    case ("cdom","cdom_mosart")
      call cdom_para%readPars(ncid, bstatus)
-<<<<<<< HEAD
    case ("simic")
      call simic_para%readPars(ncid, bstatus)
    case ("keca")
@@ -296,11 +236,7 @@ contains
    case ("v1eca","v1eca_mosart")
      call v1eca_para%readPars(ncid, bstatus)
    !end_appadd
-||||||| merged common ancestors
-=======
-   case ("summs")
-     call summs_para%readPars(ncid, bstatus)
->>>>>>> rzacplsbetr_cmupdated
+
    case default
      !do nothing
    end select
@@ -311,9 +247,7 @@ contains
   subroutine AppInitParameters(reaction_method, bstatus)
   !
   ! DESCRIPTION
-  ! read in the parameters for specified bgc implementation
-<<<<<<< HEAD
-  !begin_appadd
+  ! read in the parameters for specified bgc implementation  !begin_appadd
   use ecacnpParaType   , only : ecacnp_para
   use betr_constants           , only : stdout          ! added for output testing remarks  -zlyu 01/27/2019
 #if (defined SBETR)
@@ -321,28 +255,17 @@ contains
   use cdomParaType     , only : cdom_para
   use simicParaType    , only : simic_para
   use kecaParaType     , only : keca_para
-<<<<<<< HEAD
-  use SummsParaType    , only : summs_para             ! added for using method 'summs' from Rose's model, -zlyu. 01/29/2019
   !end_appadd
-=======
->>>>>>> jinyun_rr
 #endif
+  use SummsParaType    , only : summs_para             ! added for using method 'summs' from Rose's model, -zlyu. 01/29/2019
   use v1ecaParaType   , only : v1eca_para
   !end_appadd
   use betr_constants   , only : betr_namelist_buffer_size_ext
   use BetrStatusType   , only : betr_status_type
-||||||| merged common ancestors
-  use CentParaType   , only : cent_para
-  use cdomParaType   , only : cdom_para
-  use betr_constants , only : betr_namelist_buffer_size_ext
-  use BetrStatusType , only : betr_status_type
-=======
-  use CentParaType   , only : cent_para
-  use cdomParaType   , only : cdom_para
-  use SummsParaType  , only : summs_para
-  use betr_constants , only : betr_namelist_buffer_size_ext
-  use BetrStatusType , only : betr_status_type
->>>>>>> rzacplsbetr_cmupdated
+
+  !use CentParaType   , only : cent_para    !rzacplsbetr_cmupdated
+  !use cdomParaType   , only : cdom_para
+ 
   implicit none
   character(len=*), intent(in) :: reaction_method
   type(betr_status_type), intent(out)   :: bstatus
@@ -351,7 +274,6 @@ contains
    call bstatus%reset()
 
    select case (trim(reaction_method))
-<<<<<<< HEAD
    !begin_appadd
    case ("ecacnp","ecacnp_mosart")
      call ecacnp_para%Init(bstatus)
@@ -375,21 +297,12 @@ contains
    case ("v1eca")
      call v1eca_para%Init(bstatus)
    !end_appadd
-||||||| merged common ancestors
-   case ("ecacnp")
-     call  cent_para%Init(bgc_namelist_buffer, bstatus)
+   !case ("ecacnp")
+    ! call  cent_para%Init(bgc_namelist_buffer, bstatus)
      !do nothing
-   case ("cdom_ecacnp")
-     call cdom_para%Init(bgc_namelist_buffer, bstatus)
-=======
-   case ("ecacnp")
-     call  cent_para%Init(bgc_namelist_buffer, bstatus)
-     !do nothing
-   case ("cdom_ecacnp")
-     call cdom_para%Init(bgc_namelist_buffer, bstatus)
-   case ("summs")
-     call summs_para%Init(bgc_namelist_buffer, bstatus)
->>>>>>> rzacplsbetr_cmupdated
+   !case ("cdom_ecacnp")
+    ! call cdom_para%Init(bgc_namelist_buffer, bstatus)
+     !rzacplsbetr_cmupdated
    case default
      !do nothing
    end select
@@ -398,7 +311,6 @@ contains
   !-------------------------------------------------------------------------------
   subroutine AppSetSpinup()
 
-<<<<<<< HEAD
   ! set spinup strategies
   !begin_appadd
   use ecacnpParaType  , only : ecacnp_para
@@ -406,25 +318,14 @@ contains
   use ch4soilParaType  , only : ch4soil_para
   use cdomParaType    , only : cdom_para
   use kecaParaType    , only : keca_para
-<<<<<<< HEAD
-  use SummsParaType    , only : summs_para             ! added for using method 'summs' from Rose's model, -zlyu. 01/29/2019
-  !end_appadd
-=======
->>>>>>> jinyun_rr
 #endif
+  use SummsParaType    , only : summs_para             ! added for using method 'summs' from Rose's model, -zlyu. 01/29/2019
   use v1ecaParaType  , only : v1eca_para
   !end_appadd
   use tracer_varcon   , only : reaction_method
-||||||| merged common ancestors
-  use CentParaType  , only : cent_para
-  use cdomParaType  , only : cdom_para
-  use tracer_varcon  , only : reaction_method
-=======
-  use CentParaType  , only : cent_para
-  use cdomParaType  , only : cdom_para
-  use SummsParaType  , only : summs_para
-  use tracer_varcon  , only : reaction_method
->>>>>>> rzacplsbetr_cmupdated
+  !use CentParaType  , only : cent_para
+  !use cdomParaType  , only : cdom_para
+  !rzacplsbetr_cmupdated
   implicit none
 
   select case (trim(reaction_method))
@@ -438,18 +339,13 @@ contains
      call  ch4soil_para%set_spinup_factor()
   case ("cdom","cdom_mosart")
      call cdom_para%set_spinup_factor()
-<<<<<<< HEAD
   case ("keca")
      call keca_para%set_spinup_factor()
 #endif
   case ("v1eca","v1eca_mosart")
      call  v1eca_para%set_spinup_factor()
   !end_appadd
-||||||| merged common ancestors
-=======
-  case ("summs")
-     call summs_para%set_spinup_factor()
->>>>>>> rzacplsbetr_cmupdated
+
   end select
 
   end subroutine AppSetSpinup
