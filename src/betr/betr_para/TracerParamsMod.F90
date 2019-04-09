@@ -620,6 +620,7 @@ contains
    use tracer_varcon      , only : sorp_isotherm_linear, sorp_isotherm_langmuir
    use tracerstatetype    , only : tracerstate_type
    use betr_constants     , only : betr_var_name_length
+   use betr_constants     , only : stdout                                     !added for checkup
    implicit none
    !arguments
    type(bounds_type)                , intent(in)    :: bounds                      ! bounds
@@ -643,6 +644,13 @@ contains
    call betr_status%reset()
    SHR_ASSERT_ALL((ubound(jtops)   == (/bounds%endc/)),        errMsg(filename,__LINE__),betr_status)
    SHR_ASSERT_ALL((ubound(lbots)   == (/bounds%endc/)),        errMsg(filename,__LINE__),betr_status)
+
+      ! testing only, where the run crushed        -zlyu 
+    write(stdout, *) '***************************'
+    write(stdout, *) 'in dual_phase_covnert after reset'
+    write(stdout, *) '***************************'
+    ! end of the testing
+    
    associate(                                                                    &
     ngwmobile_tracer_groups    => betrtracer_vars%ngwmobile_tracer_groups      , & !Input: [integer(:)], number of tracers
     tracer_group_memid         => betrtracer_vars%tracer_group_memid           , & !Input: [integer(:)], tracer id
@@ -666,7 +674,14 @@ contains
     aqu2bulkcef_mobile         => tracercoeff_vars%aqu2bulkcef_mobile_col      , & !Output:[real(r8)(:,:)], phase conversion coeff
     aqu2equilsolidcef          => tracercoeff_vars%aqu2equilsolidcef_col       , & !Input: [real(r8)(:,:)], phase conversion coeff
     gas2bulkcef_mobile         => tracercoeff_vars%gas2bulkcef_mobile_col        & !Output:[real(r8)(:,:)], phase conversion coeff
-   )
+    )
+
+         ! testing only, where the run crushed        -zlyu  
+    write(stdout, *) '***************************'
+    write(stdout, *) 'in dual_phase_covnert before do'
+    write(stdout, *) '***************************'
+     ! end of the testing
+     
   do j = 1, ngwmobile_tracer_groups
     trcid = tracer_group_memid(j,1)
     tracerfamilyname=betrtracer_vars%get_tracerfamilyname(trcid)
@@ -682,6 +697,12 @@ contains
                 gas2bulkcef_mobile(c,n,k) = air_vol(c,n)+(1._r8+aqu2equilsolidcef(c,j,gid))*h2osoi_liqvol(c,n)*bunsencef_col(c,n,k)
                 !correct for impermeable layer, to avoid division by zero in doing diffusive transport
                 gas2bulkcef_mobile(c,n,k) = max(gas2bulkcef_mobile(c,n,k),air_vol(c,n),minval_airvol)
+
+    ! testing only, where the run crushed        -zlyu   
+    write(stdout, *) '***************************'
+    write(stdout, *) 'in dual_phase_covnert checkpoint1'
+    write(stdout, *) '***************************'
+    ! end of the testing
             endif
           enddo
         enddo
@@ -694,7 +715,14 @@ contains
               if(is_h2o(j))then
                 !this is a (bad) reverse hack because the hydrology code does not consider water vapor transport
                 !jyt, Feb, 18, 2016, 1.e-12_r8 is a value for avoiding NaN
-                aqu2bulkcef_mobile(c,n,j) = max(h2osoi_liqvol(c,n),tiny_val)
+                 aqu2bulkcef_mobile(c,n,j) = max(h2osoi_liqvol(c,n),tiny_val)
+                                     
+    ! testing only, where the run crushed        -zlyu  
+    write(stdout, *) '***************************'
+    write(stdout, *) 'in dual_phase_covnert checkpoint 2'
+    write(stdout, *) '***************************'
+   ! end of the testing
+                 
               else
                 aqu2bulkcef_mobile(c,n,j) = air_vol(c,n)/bunsencef_col(c,n,k)+h2osoi_liqvol(c,n)
               endif
@@ -702,6 +730,13 @@ contains
               gas2bulkcef_mobile(c,n,k) = air_vol(c,n)+h2osoi_liqvol(c,n)*bunsencef_col(c,n,k)
               !correct for impermeable layer, to avoid division by zero in doing diffusive transport
               gas2bulkcef_mobile(c,n,k) = max(gas2bulkcef_mobile(c,n,k),air_vol(c,n),minval_airvol)
+                               
+    ! testing only, where the run crushed        -zlyu   
+    write(stdout, *) '***************************'
+    write(stdout, *) 'in dual_phase_covnert checkpoint3'
+    write(stdout, *) '***************************'
+    ! end of the testing
+              
             endif
           enddo
         enddo
@@ -714,7 +749,14 @@ contains
         do fc = 1, numf
           c = filter(fc)
           if(n>=jtops(c) .and. n <= lbots(c))then
-            aqu2bulkcef_mobile(c, n, j) = max(h2osoi_liqvol(c,n),tiny_val)
+             aqu2bulkcef_mobile(c, n, j) = max(h2osoi_liqvol(c,n),tiny_val)
+                             
+    ! testing only, where the run crushed        -zlyu  
+    write(stdout, *) '***************************'
+    write(stdout, *) 'in dual_phase_covnert checkpoint4'
+    write(stdout, *) '***************************'
+    ! end of the testing
+   
           endif
         enddo
       enddo
@@ -724,13 +766,27 @@ contains
           do fc = 1, numf
             c = filter(fc)
             if(n>=jtops(c) .and. n<=lbots(c))then
-              aqu2bulkcef_mobile(c, n, j) = aqu2bulkcef_mobile(c, n, j) * (1._r8+aqu2equilsolidcef(c,j,gid))
+               aqu2bulkcef_mobile(c, n, j) = aqu2bulkcef_mobile(c, n, j) * (1._r8+aqu2equilsolidcef(c,j,gid))
+                                 
+    ! testing only, where the run crushed        -zlyu  
+    write(stdout, *) '***************************'
+    write(stdout, *) 'in dual_phase_covnert checkpoint 5'
+    write(stdout, *) '***************************'
+    ! end of the testing
+               
             endif
           enddo
         enddo
       endif
     endif
-  enddo
+ enddo
+     
+    ! testing only, where the run crushed        -zlyu  
+    write(stdout, *) '***************************'
+    write(stdout, *) 'in dual_phase_covnert after do'
+    write(stdout, *) '***************************'
+    ! end of the testing
+   
   end associate
   end subroutine calc_dual_phase_convert_coeff
 
@@ -798,6 +854,7 @@ contains
    ! set parameters for phase conversion
    use BetrStatusType     , only : betr_status_type
    use tracerstatetype    , only : tracerstate_type
+   use betr_constants     , only : stdout                      !added for checkup
    implicit none
    type(bounds_type)                , intent(in)    :: bounds  ! bounds
    integer                          , intent(in)    :: lbj, ubj             ! lower and upper bounds, make sure they are > 0
@@ -819,26 +876,66 @@ contains
 
    SHR_ASSERT_ALL((ubound(dz)      == (/bounds%endc, ubj/)),   errMsg(filename,__LINE__), betr_status)
 
+    ! testing only, where the run crushed        -zlyu   
+    write(stdout, *) '***************************'
+    write(stdout, *) 'in set_phase_convert_coeff after reset'
+    write(stdout, *) '***************************'
+    ! end of the testing
+    
     !compute Henry's law constant
    call calc_henrys_coeff(bounds, lbj, ubj, col, jtops, numf, filter, &
-       biophysforc,  betrtracer_vars, tracercoeff_vars, betr_status)
+        biophysforc,  betrtracer_vars, tracercoeff_vars, betr_status)
+
+    ! testing only, where the run crushed        -zlyu   
+    write(stdout, *) '***************************'
+    write(stdout, *) 'in set_phase_convert_coeff after calc_henrry_coeff'
+    write(stdout, *) '***************************'
+   ! end of the testing
+   
    if(betr_status%check_status())return
    !compute Bunsen's coefficients
    call calc_bunsen_coeff(bounds, lbj, ubj, col, &
         jtops, numf, filter, biophysforc, &
         betrtracer_vars, tracercoeff_vars, betr_status)
+      
+    ! testing only, where the run crushed        -zlyu 
+    write(stdout, *) '***************************'
+    write(stdout, *) 'in set_phase_convert_coeff after bunsen'
+    write(stdout, *) '***************************'
+    ! end of the testing
+    
    if(betr_status%check_status())return
    !compute equilibrium fraction to liquid phase conversion parameter
    if(betrtracer_vars%nsolid_equil_tracers>0)then
      call calc_equil_to_liquid_convert_coeff(bounds, lbj, ubj, jtops, col%lbots, numf, filter , &
         biophysforc, dz(bounds%begc:bounds%endc, lbj:ubj)                          , &
         betrtracer_vars, tracerstate_vars , tracercoeff_vars, betr_status)
+          
+    ! testing only, where the run crushed        -zlyu  
+    write(stdout, *) '***************************'
+    write(stdout, *) 'in set_phase_convert_coeff after liquid_convert_coeff'
+    write(stdout, *) '***************************'
+    ! end of the testing
+     
      if(betr_status%check_status())return
-   endif
+  endif
+
+      ! testing only, where the run crushed        -zlyu 
+    write(stdout, *) '***************************'
+    write(stdout, *) 'in set_phase_convert_coeff after endif'
+    write(stdout, *) '***************************'
+    !end of the testing
+  
    !compute phase conversion coefficients
    call calc_dual_phase_convert_coeff(bounds, lbj, ubj, jtops, col%lbots, numf, filter, &
       biophysforc, betrtracer_vars, tracerstate_vars, tracercoeff_vars, betr_status)
 
+    ! testing only, where the run crushed        -zlyu 
+    write(stdout, *) '***************************'
+    write(stdout, *) 'at the end of set_phase_convert_coeff'
+    write(stdout, *) '***************************'
+   ! end of the testing
+   
    end subroutine set_phase_convert_coeff
 
   !------------------------------------------------------------------------
@@ -955,6 +1052,7 @@ contains
    use tracer_varcon         , only : sorp_isotherm_linear,  sorp_isotherm_langmuir
    use TracerStateType       , only : TracerState_type
    use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
+   use betr_constants        , only : stdout                                     !added for checkup
    implicit none
    type(bounds_type)     , intent(in)    :: bounds  ! bounds
    integer               , intent(in)    :: lbj, ubj                                          ! lower and upper bounds, make sure they are > 0
@@ -984,6 +1082,12 @@ contains
 
    SHR_ASSERT_ALL((ubound(dz)         == (/bounds%endc, ubj/)), errMsg(filename,__LINE__),bstatus)
 
+    ! testing only, where the run crushed        -zlyu 
+    write(stdout, *) '***************************'
+    write(stdout, *) 'in liquid_convert_coeff after reset'
+    write(stdout, *) '***************************'
+    ! end of the testing
+ 
     associate(                                                                &
      t_soisno_col              => biophysforc%t_soisno_col                  , &
      h2osoi_ice_col            => biophysforc%h2osoi_ice_col                , &
@@ -1006,12 +1110,26 @@ contains
      aqu2equilsolidcef_col     => tracercoeff_vars%aqu2equilsolidcef_col    , &
      bunsencef                 => tracercoeff_vars%bunsencef_col              &
    )
-!the following code is now not used
+      !the following code is now not used
+
+    ! testing only, where the run crushed        -zlyu  
+    write(stdout, *) '***************************'
+    write(stdout, *) 'in liquid_convert_coeff before do'
+    write(stdout, *) '***************************'
+      ! end of the testing
+      
    do jj = 1, ntracer_groups
      trcid=tracer_group_memid(jj,1)
      if(.not. is_adsorb(trcid))cycle
      gid = adsorbgroupid(trcid)
      if(adsorb_isotherm(trcid)==sorp_isotherm_linear)then
+        
+    ! testing only, where the run crushed        -zlyu 
+    write(stdout, *) '***************************'
+    write(stdout, *) 'in liquid_convert_coeff if case for stop_isotherm_linear'
+    write(stdout, *) '***************************'
+        ! end of the testing
+        
        do j = 1, ubj
          do fc = 1, numf
            c = filter(fc)
@@ -1022,6 +1140,13 @@ contains
      else
        ntrcs = 0
        sorb_trc_group(:) = 0
+       
+    ! testing only, where the run crushed        -zlyu  
+    write(stdout, *) '***************************'
+    write(stdout, *) 'in liquid_convert_coeff else checkpoint'
+    write(stdout, *) '***************************'
+    ! end of the testing
+       
        do k = 1, nmem_max
          trcid = tracer_group_memid(jj, k)
          if(trcid>0)then
@@ -1039,7 +1164,14 @@ contains
                !sumup to obtain total concentration
                trcid = sorb_trc_group(k)
                trc_tot = trc_tot + tracer_conc_mobile(c,j,trcid) +tracer_conc_solid_equil(c,j,adsorbid(trcid))
-             enddo
+            enddo
+                        
+    ! testing only, where the run crushed        -zlyu  
+    write(stdout, *) '***************************'
+    write(stdout, *) 'in liquid_convert_coeff enddo checkpoint'
+    write(stdout, *) '***************************'
+    ! end of the testing
+            
              trcid = sorb_trc_group(1)
              if(is_volatile(trcid))then
                Ctw=get_ctw(air_vol(c,j),h2osoi_liqvol(c,j), bunsencef(c,j,volatilegroupid(trcid)), &
@@ -1047,7 +1179,12 @@ contains
                if(bstatus%check_status())return
              else
                Ctw=trc_tot/max(h2osoi_liqvol(c,j),0.01_r8)
-             endif
+            endif
+             ! testing only, where the run crushed        -zlyu 
+                write(stdout, *) '***************************'
+                write(stdout, *) 'size of aqu2equilsolidcef_col = ', size(aqu2equilsolidcef_col)
+                write(stdout, *) '***************************'
+                 ! end of the testing
              aqu2equilsolidcef_col(c,j,gid) = Q_sorbsurf(c,j,gid)/(k_sorbsurf(c,j,gid)+ctw)
            enddo
          enddo
