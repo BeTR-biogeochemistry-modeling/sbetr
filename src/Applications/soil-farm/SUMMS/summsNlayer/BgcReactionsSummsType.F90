@@ -379,7 +379,18 @@ if(exit_spinup)then
   integer, intent(in) :: lbj, ubj
   integer, intent(in) :: nactpft  !number of active pfts
 
-  integer :: c_l, p, j
+  integer :: c_l, p, jj, trcid, gid                       ! add the last two integer  -zlyu
+  
+   associate(                                                      &
+     k_sorbsurf    => tracercoeff_vars%k_sorbsurf_col           , &
+     Q_sorbsurf    => tracercoeff_vars%Q_sorbsurf_col           , &
+     tracer_group_memid => tracers%tracer_group_memid           , &
+     id_trc_nh3x   => tracers%id_trc_nh3x                       , &
+     id_trc_p_sol  => tracers%id_trc_p_sol                      , &
+     adsorbgroupid => tracers%adsorbgroupid                       &
+     )
+     ! added the associate block -zlyu
+! end of copying from zlyu/test1
   !in the following, only one column is assumed for the bgc
   c_l = 1
   this%nactpft = nactpft
