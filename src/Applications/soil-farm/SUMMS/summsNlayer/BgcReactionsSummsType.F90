@@ -379,7 +379,7 @@ if(exit_spinup)then
   integer, intent(in) :: lbj, ubj
   integer, intent(in) :: nactpft  !number of active pfts
 
-  integer :: c_l, p, jj, trcid, gid                       ! add the last two integer  -zlyu
+  integer :: c_l, p, j, trcid, gid                       ! add the last two integer  -zlyu
   
    associate(                                                      &
      k_sorbsurf    => tracercoeff_vars%k_sorbsurf_col           , &
@@ -411,11 +411,18 @@ if(exit_spinup)then
     this%summseca(c_l,j)%competECA%kaff_minp_msurf= plantNutkinetics%km_minsurf_p_vr_col(c_l,j)
 
     !effective p competing decomposers
-
+    
+    trcid=tracer_group_memid(id_trc_p_sol,1); gid = adsorbgroupid(trcid)                   !add from here 
+    k_sorbsurf(c_l,j,gid) = plantNutkinetics%km_minsurf_p_vr_col(c_l,j)                   
+    Q_sorbsurf(c_l,j,gid) = plantNutkinetics%minsurf_p_compet_vr_col(c_l,j) 
+    trcid=tracer_group_memid(id_trc_nh3x,1); gid = adsorbgroupid(trcid)
+    k_sorbsurf(c_l,j,gid) = plantNutkinetics%km_minsurf_nh4_vr_col(c_l,j)
+    Q_sorbsurf(c_l,j,gid) = plantNutkinetics%minsurf_nh4_compet_vr_col(c_l,j)              !add ends here    -zlyu
+    
     this%summsforc(c_l,j)%msurf_nh4 = plantNutkinetics%minsurf_nh4_compet_vr_col(c_l,j)   !this  number needs update
     this%summsforc(c_l,j)%msurf_minp= plantNutkinetics%minsurf_p_compet_vr_col(c_l,j)    !this  number needs update
   enddo
-
+  end associate
   end subroutine set_kinetics_par
   !-------------------------------------------------------------------------------
 
@@ -435,7 +442,8 @@ if(exit_spinup)then
     class(bgc_reaction_summs_type)       , intent(inout) :: this
     type(bounds_type)                    , intent(in)    :: bounds
     integer                              , intent(in)    :: lbj, ubj        ! lower and upper bounds, make sure they are > 0
-    type(BeTRtracer_type )               , intent(inout) :: betrtracer_vars !
+    !type(BeTRtracer_type )               , intent(inout) :: betrtracer_vars !
+    type(betrtracer_type)               , intent(inout) :: betrtracer_vars   !zly
     character(len=*)                     , intent(in) :: namelist_buffer
     type(betr_status_type)               , intent(out)   :: bstatus
 
@@ -570,7 +578,7 @@ if(exit_spinup)then
       trc_cnt=itemp_trc, trc_grp=betrtracer_vars%id_trc_dom, &
       trc_grp_beg=betrtracer_vars%id_trc_beg_dom, &
       trc_grp_end=betrtracer_vars%id_trc_end_dom, &
-      is_trc_gw=.true., is_trc_volatile = .false.)
+      is_trc_gw=.true., is_trc_volatile = .false., is_trc_adsorb=.true.)                      ! add is_adsorb for dom, so mono CNP and enz CNP under dom tracer group all have is_trc_adsorb=true!  -zlyu
 
     !three litter groups
     ngroupmems = 3*nelm
@@ -688,9 +696,9 @@ if(exit_spinup)then
     if(bstatus%check_status())return
 
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_p_sol, &
-         trc_name='P_SOL', is_trc_mobile=.true. .and. (.not. fix_ip), is_trc_advective = .true. .and. (.not. fix_ip), &
+         trc_name='P_SOL', is_trc_mobile=.false. .and. (.not. fix_ip), is_trc_advective = .false. .and. (.not. fix_ip), &                  !turn both from true to false   -zlyu
          trc_group_id = betrtracer_vars%id_trc_p_sol, trc_group_mem = 1, is_trc_volatile=.false., &
-         trc_vtrans_scal=1._r8)
+         trc_vtrans_scal=0._r8)                         !change from 1._r8 to 0._r8   -zlyu
     if(bstatus%check_status())return
     !------------------------------------------------------------------------------------
     !add monomers
