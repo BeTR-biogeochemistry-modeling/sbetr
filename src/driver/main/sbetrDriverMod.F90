@@ -478,6 +478,11 @@ contains
        waterflux_vars=waterflux_vars )
     call simulation%StepWithDrainage(bounds, col)
 
+    ! testing only, where the run crushed        -zlyu  
+    write(stdout, *) '***************************#######################'
+    write(stdout, *) 'after simulation%MassBalanceCheck(bounds)'
+    write(stdout, *) '***************************#######################'
+    ! end of the testing
 
     !x print*,'do mass balance check'
     call simulation%MassBalanceCheck(bounds)
@@ -508,6 +513,11 @@ contains
     !update time stamp
     call time_vars%update_time_stamp()
 
+        ! testing only, where the run crushed        -zlyu   01/27/2019
+    write(stdout, *) '**************************************'
+    write(stdout, *) 'after update_time_stamp in the sbetrDriverMod.F90'
+    write(stdout, *) '**************************************'
+    ! end of the testing
     !x print*,'write output'
     call simulation%WriteOfflineHistory(bounds, simulation%num_soilc,  &
        simulation%filter_soilc, time_vars, waterflux_vars%qflx_adv_col)

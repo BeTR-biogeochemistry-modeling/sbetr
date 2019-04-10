@@ -157,25 +157,76 @@ contains
     
     call this%BeTRSetBounds(betr_bounds)
 
+        ! testing only, where the run crushed        -zlyu   02/2019
+    write(stdout, *) '***********************************************************8*'
+    write(stdout, *) 'inside standalonestepwithoutdrainage before reset '
+    write(stdout, *) '*************************************************************'
+    ! end of the testing
+    
     call this%bsimstatus%reset()
+
+        ! testing only, where the run crushed        -zlyu   02/2019
+    write(stdout, *) '***********************************************************8*'
+    write(stdout, *) 'inside standalonestepwithoutdrainage before BeTRSetcps'
+    write(stdout, *) '*************************************************************'
+    ! end of the testing
 
     call this%BeTRSetcps(bounds, col, pft)
 
+        ! testing only, where the run crushed        -zlyu   02/2019
+    write(stdout, *) '***********************************************************8*'
+    write(stdout, *) 'inside standalonestepwithoutdrainage before do loop'
+    write(stdout, *) '*************************************************************'
+    ! end of the testing
+    
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
 
       call this%biophys_forc(c)%frac_normalize(this%betr_pft(c)%npfts, 1, betr_nlevtrc_soil)
 
+       ! testing only, where the run crushed        -zlyu   02/2019
+    write(stdout, *) '***********************************************************8*'
+    write(stdout, *) 'inside standalonestepwithoutdrainage in do after biophys_forc'
+    write(stdout, *) '*************************************************************'
+    ! end of the testing
       call this%betr(c)%step_without_drainage(this%betr_time, betr_bounds, this%betr_col(c), &
          this%betr_pft(c), this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp, &
          this%biophys_forc(c), this%biogeo_flux(c), this%biogeo_state(c), this%bstatus(c))
 
+      
+    ! testing only, where the run crushed        -zlyu   02.2019
+    write(stdout, *) '***********************************************************8*'
+    write(stdout, *) 'inside standalonestepwithoutdrainage in do before if case'
+    write(stdout, *) '*************************************************************'
+      ! end of the testing
+      
       if(this%bstatus(c)%check_status())then
-        call this%bsimstatus%setcol(c)
-        call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
+         call this%bsimstatus%setcol(c)
+         
+    ! testing only, where the run crushed        -zlyu   02/2019
+    write(stdout, *) '***********************************************************8*'
+    write(stdout, *) 'inside standalonestepwithoutdrainage in if after setcol'
+    write(stdout, *) '*************************************************************'
+         ! end of the testing
+         
+         call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
+         
+    ! testing only, where the run crushed        -zlyu   02/2019
+    write(stdout, *) '***********************************************************8*'
+    write(stdout, *) 'inside standalonestepwithoutdrainage in if after set_msg'
+    write(stdout, *) '*************************************************************'
+    ! end of the testing
+    
         exit
       endif
-    enddo
+   enddo
+
+       ! testing only, where the run crushed        -zlyu   02/2019
+    write(stdout, *) '***********************************************************8*'
+    write(stdout, *) 'inside standalonestepwithoutdrainage after do loop'
+    write(stdout, *) '*************************************************************'
+   ! end of the testing
+   
     if(this%bsimstatus%check_status()) &
          call endrun(msg=trim(this%bsimstatus%print_msg()))
 

@@ -26,6 +26,14 @@ contains
     !   monotonically increasing xData
     !   size(xData) == size(yData)
     !   size(xVal) == size(yVal)
+        ! testing only, where the run crushed        -zlyu   02/2019
+    write(stdout, *) '***************************'
+    write(stdout, *) 'inside interp1 start'
+    write(stdout, *) 'xData = ', xData, '                 yData = ', yData
+    write(stdout, *) 'xVal = ',xVal, '                 yVal = ', yVal
+    write(stdout, *) '***************************'
+    ! end of the testing
+    
 
     minXdata = xData(1)
     maxXdata = xData(size(xData))
@@ -35,7 +43,14 @@ contains
 
         weight = (xVal - xData(dataIndex))/(xData(dataIndex+1)-xData(dataIndex))
         yVal = (1.0-weight)*yData(dataIndex) + weight*yData(dataIndex+1)
-
+    ! testing only, where the run crushed        -zlyu   02/2019
+    write(stdout, *) '***************************'
+    write(stdout, *) 'inside decompk_scalar end'
+    write(stdout, *) 'xRange = ', xRange, '                 dataIndex = ', dataIndex
+    write(stdout, *) 'weight = ',weight, '                 yVal = ', yVal
+    write(stdout, *) '***************************'
+    ! end of the testing
+    
   end subroutine interp1
 
   subroutine brent(x, x1,x2,f1, f2, macheps, tol, func_data, func, bstatus) ! func_data are any other arguments to the function
