@@ -250,9 +250,9 @@ contains
     integer :: c, c_l, begc_l, endc_l
     integer :: year, mon, day, sec
         ! testing only, where the run crushed        -zlyu   01/27/2019
-    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
-    write(stdout, *) 'inside ALMStepWithoutDrainage'
-    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    !write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    !write(stdout, *) 'inside ALMStepWithoutDrainage'
+    !write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
     ! end of the testing
     
     call get_curr_date(year, mon, day, sec)
@@ -312,9 +312,9 @@ contains
       enddo
     endif
         ! testing only, where the run crushed        -zlyu   01/27/2019
-    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
-    write(stdout, *) 'end of  ALMStepWithoutDrainage'
-    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    !write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    !write(stdout, *) 'end of  ALMStepWithoutDrainage'
+    !write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
     ! end of the testing
     
   end subroutine ALMStepWithoutDrainage
@@ -927,9 +927,9 @@ contains
   integer :: begc_l, endc_l
 
     ! testing only, where the run collapsed        -zlyu   01/27/2019
-    write(stdout, *) '***************************'
-    write(stdout, *) 'inside  ALMBetrPlantSoilBGCRecv'
-    write(stdout, *) '***************************'
+    !write(stdout, *) '***************************'
+    !write(stdout, *) 'inside  ALMBetrPlantSoilBGCRecv'
+    !write(stdout, *) '***************************'
     ! end of the testing
   
   !summarize the fluxes and state variables
@@ -1175,9 +1175,9 @@ contains
 !>>>>>>> rzacplsbetr_cmupdated
   endif
     ! testing only, where the run collapsed        -zlyu   01/27/2019
-    write(stdout, *) '***************************'
-    write(stdout, *) 'end of  ALMBetrPlantSoilBGCRecv'
-    write(stdout, *) '***************************'
+    !write(stdout, *) '***************************'
+    !write(stdout, *) 'end of  ALMBetrPlantSoilBGCRecv'
+    !write(stdout, *) '***************************'
     ! end of the testing
   
   end subroutine ALMBetrPlantSoilBGCRecv

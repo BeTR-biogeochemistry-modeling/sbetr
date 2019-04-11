@@ -576,6 +576,12 @@ contains
 
   call forcing_data%Destroy()
   deallocate(forcing_data)
+      ! testing only, where the run crushed        -zlyu   02/2019
+    write(stdout, *) '********************************************'
+    write(stdout, *) 'at the end of sbetrBGC_driver subroutine'
+    write(stdout, *) '********************************************'
+    ! end of the testing  
+  
 end subroutine sbetrBGC_driver
 
 ! ----------------------------------------------------------------------

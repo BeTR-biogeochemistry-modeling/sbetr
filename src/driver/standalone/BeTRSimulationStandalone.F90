@@ -495,35 +495,81 @@ contains
   c_l = 1
   call this%BeTRSetBounds(betr_bounds)
   begc_l = betr_bounds%begc; endc_l=betr_bounds%endc;
-
+  
+    ! testing only, where the run collapsed        -zlyu   01/27/2019
+    write(stdout, *) '***************************^^^^^^^^^^^^^^^^^^^^^^^^^'
+    write(stdout, *) 'inside StandalonePlantSoilBGCRec after TRSetBounds'
+    write(stdout, *) '***************************^^^^^^^^^^^^^^^^^^^^^^^^^'
+    ! end of the testing
+    
   !retrieve and return
   do c = bounds%begc, bounds%endc
     if(.not. this%active_col(c))cycle
-
+  
+    ! testing only, where the run collapsed        -zlyu   01/27/2019
+    write(stdout, *) '***************************'
+    write(stdout, *) 'inside StandalonePlantSoilBGCRec before retrieve_biostate'
+    write(stdout, *) '***************************'
+    ! end of the testing
     call this%betr(c)%retrieve_biostates(betr_bounds,  1, betr_nlevsoi, &
        this%num_soilc, this%filter_soilc, this%jtops, this%biogeo_state(c),this%bstatus(c))
-
+  
+    ! testing only, where the run collapsed        -zlyu   01/27/2019
+    write(stdout, *) '***************************'
+    write(stdout, *) 'inside StandalonePlantSoilBGCRec after retrieve_biostate'
+    write(stdout, *) '***************************'
+    ! end of the testing
+    
     if(this%bstatus(c)%check_status())then
       call this%bsimstatus%setcol(c)
-      call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
+      call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())        
+    ! testing only, where the run collapsed        -zlyu   01/27/2019
+    write(stdout, *) '***************************'
+    write(stdout, *) 'inside StandalonePlantSoilBGCRec in side check_status'
+    write(stdout, *) '***************************'
+    ! end of the testing
       exit
     endif
     call this%betr(c)%retrieve_biofluxes(this%num_soilc, this%filter_soilc, &
       this%num_soilp, this%filter_soilp, this%biogeo_flux(c))
-
+  
+    ! testing only, where the run collapsed        -zlyu   01/27/2019
+    write(stdout, *) '***************************'
+    write(stdout, *) 'inside StandalonePlantSoilBGCRec after retrieve_biofluxes'
+    write(stdout, *) '***************************'
+    ! end of the testing
+    
     call this%biogeo_state(c)%summary(betr_bounds, 1, betr_nlevtrc_soil,&
          this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil), &
          this%betr_col(c)%zi(begc_l:endc_l,1:betr_nlevtrc_soil),this%do_soibgc())
-
+  
+    ! testing only, where the run collapsed        -zlyu   01/27/2019
+    write(stdout, *) '***************************'
+    write(stdout, *) 'inside StandalonePlantSoilBGCRec after summary'
+    write(stdout, *) '***************************'
+    ! end of the testing
+    
     call this%biogeo_flux(c)%summary(betr_bounds, 1, betr_nlevtrc_soil, &
          this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil),this%do_soibgc())
+      
+    ! testing only, where the run collapsed        -zlyu   01/27/2019
+    write(stdout, *) '***************************'
+    write(stdout, *) 'inside StandalonePlantSoilBGCRec after second summary'
+    write(stdout, *) '***************************'
+    ! end of the testing
   enddo
 
   if(.not. this%do_soibgc())return
 
   do fc = 1, num_soilc
     c = filter_soilc(fc)
-
+  
+    ! testing only, where the run collapsed        -zlyu   01/27/2019
+    write(stdout, *) '***************************'
+    write(stdout, *) 'inside StandalonePlantSoilBGCRec before recollect soil respiration'
+    write(stdout, *) '***************************'
+    ! end of the testing
+    
     !recollect soil respirations, fire and hydraulic loss
     c12flux_vars%hr_col(c) = this%biogeo_flux(c)%c12flux_vars%hr_col(c_l)
     c12flux_vars%fire_decomp_closs_col(c) = this%biogeo_flux(c)%c12flux_vars%fire_decomp_closs_col(c_l)
@@ -552,6 +598,11 @@ contains
     n14flux_vars%denit_col(c)= n14flux_vars%f_denit_col(c)
     n14flux_vars%f_n2o_nit_col(c)=this%biogeo_flux(c)%n14flux_vars%f_n2o_nit_col(c_l)
 
+    ! testing only, where the run collapsed        -zlyu   01/27/2019
+    write(stdout, *) '***************************^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'
+    write(stdout, *) 'inside StandalonePlantSoilBGCRec before hydraulic loss'
+    write(stdout, *) '***************************^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'
+    ! end of the testing
     !hydraulic loss
     n14flux_vars%smin_no3_leached_col(c)= &
         this%biogeo_flux(c)%n14flux_vars%smin_no3_leached_col(c_l) + &
@@ -593,7 +644,12 @@ contains
     !the following is for consistency with the ALM definitation, which computes
     !som_p_leached_col as a numerical roundoff
     p31flux_vars%som_p_leached_col(c) = -p31flux_vars%som_p_leached_col(c)
-
+  
+    ! testing only, where the run collapsed        -zlyu   01/27/2019
+    write(stdout, *) '***************************'
+    write(stdout, *) 'inside StandalonePlantSoilBGCRec before recollect soil organic carbon'
+    write(stdout, *) '***************************'
+    ! end of the testing
     !recollect soil organic carbon, soil organic nitrogen, and soil organic phosphorus
     c12state_vars%cwdc_col(c) = this%biogeo_state(c)%c12state_vars%cwdc_col(c_l)
     c12state_vars%totlitc_col(c) = this%biogeo_state(c)%c12state_vars%totlitc_col(c_l)
@@ -627,7 +683,12 @@ contains
     p31state_vars%totsomp_col(c) = this%biogeo_state(c)%p31state_vars%totsomp_col(c_l)
     p31state_vars%totlitp_1m_col(c) = this%biogeo_state(c)%p31state_vars%totlitp_1m_col(c_l)
     p31state_vars%totsomp_1m_col(c) = this%biogeo_state(c)%p31state_vars%totsomp_1m_col(c_l)
-
+  
+    ! testing only, where the run collapsed        -zlyu   01/27/2019
+    write(stdout, *) '***************************'
+    write(stdout, *) 'inside StandalonePlantSoilBGCRec before recollect inorganic nitrogen'
+    write(stdout, *) '***************************'
+    ! end of the testing
     !recollect inorganic nitrogen (smin_nh4, smin_no3), and inorganic phosphorus (disolvable and protected)
     n14state_vars%sminn_col(c) = this%biogeo_state(c)%n14state_vars%sminn_col(c_l)
     n14state_vars%smin_nh4_col(c)=this%biogeo_state(c)%n14state_vars%sminn_nh4_col(c_l)
@@ -655,7 +716,12 @@ contains
       c14state_vars%som3c_col(c) = this%biogeo_state(c)%c14state_vars%som3c_col(c_l)
       c14state_vars%domc_col(c)  = this%biogeo_state(c)%c14state_vars%domc_col(c_l)
     endif
-
+  
+    ! testing only, where the run collapsed        -zlyu   01/27/2019
+    write(stdout, *) '***************************'
+    write(stdout, *) 'inside StandalonePlantSoilBGCRec before method'
+    write(stdout, *) '***************************'
+    ! end of the testing
     if(index(trim(reaction_method),'ecacnp')/=0 .or. &
       index(trim(reaction_method),'cdom')/=0 .or. &
       index(trim(reaction_method),'keca')/=0 .or. &

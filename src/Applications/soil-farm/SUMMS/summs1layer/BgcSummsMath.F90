@@ -4,7 +4,7 @@ module BgcSummsMath
 use bshr_kind_mod       , only : r8 => shr_kind_r8
 use BgcSummsDebType     , only : debs
 use betr_ctrl           , only : iulog  => biulog, do_betr_output
-
+use betr_constants      , only : stdout                                ! added
 implicit none
 
 contains
