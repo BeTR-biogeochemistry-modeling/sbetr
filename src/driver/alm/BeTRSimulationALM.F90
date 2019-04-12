@@ -927,9 +927,9 @@ contains
   integer :: begc_l, endc_l
 
     ! testing only, where the run collapsed        -zlyu   01/27/2019
-    !write(stdout, *) '***************************'
-    !write(stdout, *) 'inside  ALMBetrPlantSoilBGCRecv'
-    !write(stdout, *) '***************************'
+    write(stdout, *) '***************************'
+    write(stdout, *) 'inside  ALMBetrPlantSoilBGCRecv in file BeTRSimulationALM.F90'
+    write(stdout, *) '***************************'
     ! end of the testing
   
   !summarize the fluxes and state variables
@@ -1074,7 +1074,13 @@ contains
       c14state_vars%totsomc_col(c) = this%biogeo_state(c)%c14state_vars%totsomc_col(c_l)
       c14state_vars%totlitc_1m_col(c) = this%biogeo_state(c)%c14state_vars%totlitc_1m_col(c_l)
       c14state_vars%totsomc_1m_col(c) = this%biogeo_state(c)%c14state_vars%totsomc_1m_col(c_l)
-    endif
+   endif
+       ! testing only, where the run collapsed        -zlyu   01/27/2019
+    write(stdout, *) '***************************'
+    write(stdout, *) 'inside  ALMBetrPlantSoilBGCRecv in file BeTRSimulationALM.F90, before organic nitrogen'
+    write(stdout, *) '***************************'
+    ! end of the testing
+  
     n14state_vars%cwdn_col(c) = this%biogeo_state(c)%n14state_vars%cwdn_col(c_l)
     n14state_vars%totlitn_col(c) = this%biogeo_state(c)%n14state_vars%totlitn_col(c_l)
     n14state_vars%totsomn_col(c) = this%biogeo_state(c)%n14state_vars%totsomn_col(c_l)
@@ -1086,7 +1092,12 @@ contains
     p31state_vars%totsomp_col(c) = this%biogeo_state(c)%p31state_vars%totsomp_col(c_l)
     p31state_vars%totlitp_1m_col(c) = this%biogeo_state(c)%p31state_vars%totlitp_1m_col(c_l)
     p31state_vars%totsomp_1m_col(c) = this%biogeo_state(c)%p31state_vars%totsomp_1m_col(c_l)
-
+    ! testing only, where the run collapsed        -zlyu   01/27/2019
+    write(stdout, *) '***************************'
+    write(stdout, *) 'inside  ALMBetrPlantSoilBGCRecv in file BeTRSimulationALM.F90 after organic p'
+    write(stdout, *) '***************************'
+    ! end of the testing
+  
     !recollect inorganic nitrogen (smin_nh4, smin_no3), and inorganic phosphorus (disolvable and protected)
     n14state_vars%sminn_col(c) = this%biogeo_state(c)%n14state_vars%sminn_col(c_l)
     n14state_vars%smin_nh4_col(c)=this%biogeo_state(c)%n14state_vars%sminn_nh4_col(c_l)

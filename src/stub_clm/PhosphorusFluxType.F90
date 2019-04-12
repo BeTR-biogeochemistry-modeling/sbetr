@@ -121,7 +121,6 @@ contains
     allocate(this%fire_mortality_p_to_cwdp_col(begc:endc,1:nlevdecomp_full)); this%fire_mortality_p_to_cwdp_col(:,:) = spval
     allocate(this%primp_to_labilep_vr_col(begc:endc,1:nlevdecomp_full)); this%primp_to_labilep_vr_col(:,:) = spval
     allocate(this%pdep_to_sminp_col(begc:endc)); this%pdep_to_sminp_col(begc:endc) = spval
-    allocate(this%pdep_to_sminp_col(begc:endc)); this%pdep_to_sminp_col(begc:endc) = spval
     allocate(this%fert_p_to_sminp_col(begc:endc)); this%fert_p_to_sminp_col(begc:endc) = spval
     allocate(this%som_p_leached_col(begc:endc)); this%som_p_leached_col(:) = spval
 
@@ -137,6 +136,13 @@ contains
     allocate(this%sminp_col(begc:endc)); this%sminp_col(:) = spval
     allocate(this%som_p_runoff_col(begc:endc)); this%som_p_runoff_col(:) = spval
     allocate(this%primp_to_labilep_col(begc:endc)); this%primp_to_labilep_col(:) = spval
+
+    allocate(this%primp_to_labilep_col(begc:endc)); this%primp_to_labilep_col(:) = spval                                          !start adding    -zlyu
+    allocate(this%adsorb_to_labilep_vr(begc:endc,1:nlevdecomp_full)); this%adsorb_to_labilep_vr(:,:) = spval
+    allocate(this%sminp_to_plant_vr_col(begc:endc,1:nlevdecomp_full)); this%sminp_to_plant_vr_col(:,:) = spval
+    allocate(this%supplement_to_sminp_vr_col(begc:endc,1:nlevdecomp_full)); this%supplement_to_sminp_vr_col(:,:) = spval
+    allocate(this%net_mineralization_p_vr_col(begc:endc,1:nlevdecomp_full)); this%net_mineralization_p_vr_col(:,:) = spval        ! end adding   -zlyu
+    
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------

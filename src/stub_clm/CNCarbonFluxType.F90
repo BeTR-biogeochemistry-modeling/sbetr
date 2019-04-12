@@ -108,6 +108,7 @@ contains
     allocate(this%agnpp_patch                       (begp:endp)) ; this%agnpp_patch                               (:) = spval
     allocate(this%bgnpp_patch                       (begp:endp)) ; this%bgnpp_patch                               (:) = spval
     allocate(this%hr_col (begc:endc)); this%hr_col(:) = spval
+    allocate(this%hr_vr_col (begc:endc,1:nlevdecomp_full)); this%hr_vr_col(:,:) = spval              ! added  -zlyu
 
     allocate(this%phenology_c_to_litr_met_c_col(begc:endc,1:nlevdecomp_full)); this%phenology_c_to_litr_met_c_col(:,:) = spval
     allocate(this%phenology_c_to_litr_cel_c_col(begc:endc,1:nlevdecomp_full)); this%phenology_c_to_litr_cel_c_col(:,:) = spval
@@ -143,6 +144,11 @@ contains
     allocate(this%o_scalar_col(begc:endc,1:nlevdecomp_full)); this%o_scalar_col(:,:)=spval
     allocate(this%somhr_col(begc:endc)); this%somhr_col(:) = spval
     allocate(this%lithr_col(begc:endc)); this%lithr_col(:) = spval
+
+    allocate(this%decomp_k_col(begc:endc,1:nlevdecomp_full,1:7)); this%decomp_k_col(:,:,:)=spval                 ! start adding   -zlyu
+    allocate(this%t_scalar_col(begc:endc,1:nlevdecomp_full)); this%t_scalar_col(:,:)=spval
+    allocate(this%w_scalar_col(begc:endc,1:nlevdecomp_full)); this%w_scalar_col(:,:)=spval                        ! end of adding  -zlyu
+    
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------

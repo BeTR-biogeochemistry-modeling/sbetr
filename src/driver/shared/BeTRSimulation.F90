@@ -393,6 +393,7 @@ contains
     use betr_constants , only : betr_filename_length
     use betr_varcon    , only : betr_maxpatch_pft
     use landunit_varcon, only : istsoil, istcrop
+    use betr_constants , only : stdout             !-zlyu
     implicit none
     !ARGUMENTS
     class(betr_simulation_type)              , intent(inout) :: this
@@ -430,7 +431,12 @@ contains
       call this%betr_time%Init(namelist_buffer, masterproc)
     else
       call this%betr_time%Init(namelist_buffer)
-    endif
+   endif
+    ! testing only, where the run crushed        -zlyu   01/27/2019
+    write(stdout, *) '*************************************'
+    write(stdout, *) 'inside BeTRSimulation.F90 before BeTRInit' 
+    write(stdout, *) '*************************************@'
+    ! end of the testing
     !allocate memory
     allocate(this%betr(bounds%begc:bounds%endc))
     allocate(this%biophys_forc(bounds%begc:bounds%endc))
@@ -441,7 +447,11 @@ contains
     allocate(this%betr_pft(bounds%begc:bounds%endc))
     allocate(this%active_col(bounds%begc:bounds%endc))
     allocate(this%bsimstatus)
-
+    ! testing only, where the run crushed        -zlyu   01/27/2019
+    write(stdout, *) '*************************************'
+    write(stdout, *) 'inside BeTRSimulation.F90 after BeTRInit' 
+    write(stdout, *) '*************************************@'
+    ! end of the testing
     call this%bsimstatus%reset()
 
     !grid horizontal bounds

@@ -50,7 +50,7 @@ implicit none
   !------------------------------------------------------------------------
   subroutine InitAllocate(this, bounds)
   use bshr_infnan_mod     , only : nan => shr_infnan_nan, assignment(=)
-
+  use betr_constants      , only : stdout                !-zlyu
   implicit none
   class(betr_carbonstate_recv_type), intent(inout) :: this
   type(betr_bounds_type), intent(in) :: bounds
@@ -61,7 +61,12 @@ implicit none
   begp = bounds%begp ; endp=bounds%endp
   begc = bounds%begc ; endc=bounds%endc
   lbj = bounds%lbj   ; ubj=bounds%ubj
-
+    ! testing only, where the run crushed        -zlyu   01/27/2019
+    write(stdout, *) '*************************************'
+    write(stdout, *) 'inside BeTR_carbonstateRevType.F90'
+    write(stdout, *) '*************************************@'
+    ! end of the testing
+  
   SPVAL_ALLOC(this%cwdc_col(begc:endc))
   SPVAL_ALLOC(this%totlitc_col(begc:endc))
   SPVAL_ALLOC(this%totsomc_col(begc:endc))
@@ -91,10 +96,15 @@ implicit none
 
   !------------------------------------------------------------------------
   subroutine reset(this, value_column)
+    use betr_constants      , only : stdout                !-zlyu
   implicit none
   class(betr_carbonstate_recv_type)  :: this
   real(r8), intent(in) :: value_column
-
+    ! testing only, where the run crushed        -zlyu   01/27/2019
+    write(stdout, *) '*************************************'
+    write(stdout, *) 'inside BeTR_carbonstateRevType.F90 in reset' 
+    write(stdout, *) '*************************************@'
+    ! end of the testing
   if(index(bgc_type,'type1_bgc')/=0)then            ! jinyun_rr edit            -zlyu
     this%decomp_cpools_vr(:,:,:)=value_column
   else
@@ -111,7 +121,7 @@ implicit none
 
   !------------------------------------------------------------------------
   subroutine summary(this, bounds, lbj, ubj, dz, zs)
-
+   use betr_constants      , only : stdout                !-zlyu
   implicit none
   class(betr_carbonstate_recv_type),intent(inout)  :: this
   type(betr_bounds_type), intent(in) :: bounds
@@ -120,7 +130,11 @@ implicit none
   real(r8), intent(in) :: zs(bounds%begc:bounds%endc,lbj:ubj)
 
   integer :: c, j
-
+    ! testing only, where the run crushed        -zlyu   01/27/2019
+    write(stdout, *) '*************************************'
+    write(stdout, *) 'inside BeTR_carbonstateRevType.F90 in summary'
+    write(stdout, *) '*************************************@'
+    ! end of the testing
   if(index(bgc_type,'type1_bgc')/=0)return              ! jinyun_rr edit            -zlyu
   this%cwdc_col(:) = 0._r8
   this%totlitc_col(:) = 0._r8

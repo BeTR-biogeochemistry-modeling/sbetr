@@ -157,6 +157,18 @@ contains
     allocate(this%som_n_runoff_col(begc:endc)); this%som_n_runoff_col(:) = spval
     allocate(this%nh3_soi_flx_col(begc:endc)); this%nh3_soi_flx_col(:) = spval
     allocate(this%actual_immob_col(begc:endc)); this%actual_immob_col(:)=spval
+
+    allocate(this%smin_nh4_to_plant_patch(begc:endc)); this%smin_nh4_to_plant_patch(:) = spval                                         ! start adding     -zlyu
+    allocate(this%smin_no3_to_plant_patch(begc:endc)); this%smin_no3_to_plant_patch(:) = spval
+    allocate(this%sminn_to_plant_patch(begc:endc)); this%sminn_to_plant_patch(:)=spval
+    allocate(this%supplement_to_sminn_vr_col(begc:endc,1:nlevdecomp_full)); this%supplement_to_sminn_vr_col(:,:) = spval
+    allocate(this%col_plant_pdemand_vr(begc:endc,1:nlevdecomp_full)); this%nflx_input_litr_cel_vr_col(:,:) = spval
+    allocate(this%f_nit_vr_col(begc:endc,1:nlevdecomp_full)); this%f_nit_vr_col(:,:) = spval
+    allocate(this%f_n2o_nit_vr_col(begc:endc,1:nlevdecomp_full)); this%f_n2o_nit_vr_col(:,:) = spval
+    allocate(this%f_denit_vr_col(begc:endc,1:nlevdecomp_full)); this%f_denit_vr_col(:,:) = spval
+    allocate(this%smin_nh4_to_plant_vr_col(begc:endc,1:nlevdecomp_full)); this%smin_nh4_to_plant_vr_col(:,:) = spval
+    allocate(this%smin_no3_to_plant_vr_col(begc:endc,1:nlevdecomp_full)); this%smin_no3_to_plant_vr_col(:,:) = spval                     ! end of adding    -zlyu
+
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------

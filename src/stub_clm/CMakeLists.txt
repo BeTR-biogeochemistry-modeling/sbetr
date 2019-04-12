@@ -52,6 +52,7 @@ set(BETR_STUB_CLM_SOURCES
   subgridAveMod.F90
   )
 
+include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)
 include_directories(${CMAKE_BINARY_DIR}/src/shr)
 include_directories(${CMAKE_BINARY_DIR}/src/esmf_wrf_timemgr)
 include_directories(${CMAKE_BINARY_DIR}/src/io_util)

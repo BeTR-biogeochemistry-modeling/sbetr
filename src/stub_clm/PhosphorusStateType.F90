@@ -84,7 +84,6 @@ contains
 
     allocate(this%decomp_ppools_col        (begc:endc,1:ndecomp_pools))   ; this%decomp_ppools_col        (:,:) = spval
     allocate(this%solutionp_col            (begc:endc))                   ; this%solutionp_col            (:)   = spval
-    allocate(this%solutionp_col            (begc:endc))                   ; this%solutionp_col            (:)   = spval
     allocate(this%labilep_col              (begc:endc))                   ; this%labilep_col              (:)   = spval
     allocate(this%secondp_col              (begc:endc))                   ; this%secondp_col              (:)   = spval
     allocate(this%occlp_col                (begc:endc))                   ; this%occlp_col                (:)   = spval
@@ -93,6 +92,7 @@ contains
     allocate(this%sminp_col                (begc:endc))                   ; this%sminp_col                (:)   = spval
     allocate(this%totecosysp_col           (begc:endc))                   ; this%totecosysp_col           (:)   = spval
     allocate(this%totcolp_col              (begc:endc))                   ; this%totcolp_col              (:)   = spval
+    allocate(this%totvegp_col              (begc:endc))                   ; this%totvegp_col              (:)   = spval
 
     allocate(this%decomp_ppools_vr_col(begc:endc,1:nlevdecomp_full,1:ndecomp_pools)); this%decomp_ppools_vr_col(:,:,:)= spval
     allocate(this%solutionp_vr_col         (begc:endc,1:nlevdecomp_full)) ; this%solutionp_vr_col         (:,:) = spval
@@ -109,6 +109,13 @@ contains
     allocate(this%som2p_col(begc:endc)); this%som2p_col(:) = spval
     allocate(this%som3p_col(begc:endc)); this%som3p_col(:) = spval
     allocate(this%domp_col(begc:endc)); this%domp_col(:) = spval
+
+    allocate(this%polyp_col(begc:endc)); this%polyp_col(:) = spval              ! start addding allocation  -zlyu
+    allocate(this%monop_col(begc:endc)); this%monop_col(:) = spval
+    allocate(this%micp_col(begc:endc)); this%micp_col(:) = spval
+    allocate(this%enzp_col(begc:endc)); this%enzp_col(:) = spval
+    allocate(this%resp_col(begc:endc)); this%resp_col(:) = spval                ! end of adding allocation  -zlyu
+
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------

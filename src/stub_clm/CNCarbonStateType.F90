@@ -52,6 +52,7 @@ contains
     !
     ! !USES:
     use shr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
+    use betr_constants , only : stdout      !-zlyu
     !
     ! !ARGUMENTS:
     class(carbonstate_type) :: this
@@ -61,7 +62,11 @@ contains
     integer :: begp, endp
     integer :: begc, endc
     !------------------------------------------------------------------------
-
+    ! testing only, where the run crushed        -zlyu   01/27/2019
+    write(stdout, *) '*************************************'
+    write(stdout, *) 'inside CNCarbonSate.F90 in Initallocate' 
+    write(stdout, *) '*************************************@'
+    ! end of the testing
     begp = bounds%begp; endp= bounds%endp
     begc = bounds%begc; endc= bounds%endc
     allocate(this%decomp_cpools_vr_col(begc:endc,1:nlevdecomp_full,1:ndecomp_pools)); this%decomp_cpools_vr_col(:,:,:)= spval
@@ -75,6 +80,14 @@ contains
     allocate(this%som2c_col(begc:endc)); this%som2c_col(:) = spval
     allocate(this%som3c_col(begc:endc)); this%som3c_col(:) = spval
     allocate(this%domc_col(begc:endc)); this%domc_col(:) = spval
+
+    allocate(this%decomp_som2c_vr_col(begc:endc, 1:nlevdecomp_full)); this%decomp_som2c_vr_col(:,:) = spval       !allocation added by zlyu
+    allocate(this%polyc_col(begc:endc)); this%polyc_col(:) = spval
+    allocate(this%monoc_col(begc:endc)); this%monoc_col(:) = spval
+    allocate(this%micc_col(begc:endc)); this%micc_col(:) = spval
+    allocate(this%enzc_col(begc:endc)); this%enzc_col(:) = spval
+    allocate(this%resc_col(begc:endc)); this%resc_col(:) = spval                                                  !end of adding allocation  -zlyu
+
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------

@@ -644,7 +644,17 @@ contains
     !the following is for consistency with the ALM definitation, which computes
     !som_p_leached_col as a numerical roundoff
     p31flux_vars%som_p_leached_col(c) = -p31flux_vars%som_p_leached_col(c)
-  
+    ! testing only, where the run collapsed        -zlyu   01/27/2019
+    write(stdout, *) '***************************#######################################################'
+    write(stdout, *) 'inside StandalonePlantSoilBGCRec c12state, n14state, and p31state printout'
+    write(stdout, *) 'iteration c:  ',c, 'c_l:   ',c_l
+    write(stdout, *) ' c12flux_vars%hr_col:  ', c12flux_vars%hr_col(c),  'n14flux_vars%smin_no3_runoff_col:   ',n14flux_vars%smin_no3_runoff_col(c)
+    write(stdout, *) 'this%biogeo_flux(c)%c12flux_vars%hr_col(c_l):  ',this%biogeo_flux(c)%c12flux_vars%hr_col(c_l),  'this%biogeo_flux(c)%n14flux_vars%smin_no3_runoff_col(c_l):   ',this%biogeo_flux(c)%n14flux_vars%smin_no3_runoff_col(c_l)
+    write(stdout, *) '***************************#######################################################'
+    ! end of the testing
+    ! ---------------------------------------------------------------------------------------------------------------------------------
+    ! ---------------------------------------------------------------------------------------------------------------------------------
+    
     ! testing only, where the run collapsed        -zlyu   01/27/2019
     write(stdout, *) '***************************'
     write(stdout, *) 'inside StandalonePlantSoilBGCRec before recollect soil organic carbon'
@@ -670,8 +680,17 @@ contains
       c14state_vars%totsomc_col(c) = this%biogeo_state(c)%c14state_vars%totsomc_col(c_l)
       c14state_vars%totlitc_1m_col(c) = this%biogeo_state(c)%c14state_vars%totlitc_1m_col(c_l)
       c14state_vars%totsomc_1m_col(c) = this%biogeo_state(c)%c14state_vars%totsomc_1m_col(c_l)
-    endif
+   endif
 
+    ! testing only, where the run collapsed        -zlyu   01/27/2019
+    write(stdout, *) '***************************#######################################################'
+    write(stdout, *) 'inside StandalonePlantSoilBGCRec c12state, n14state, and p31state printout'
+    write(stdout, *) 'iteration c:  ',c, 'c_l:   ',c_l
+    write(stdout, *) 'c12state_vars%cwdc_col:  ',c12state_vars%cwdc_col(c),'c12state_vars%totlitc_col:   ',c12state_vars%totlitc_col(c), 'c12state_vars%totsomc_col:    ',c12state_vars%totsomc_col(c)
+    write(stdout, *) 'this%biogeo_state(c)%c12state_vars%cwdc_col(c_l):    ',this%biogeo_state(c)%c12state_vars%cwdc_col(c_l), 'this%biogeo_state(c)%c12state_vars%totsomc_1m_col(c_l):     ',this%biogeo_state(c)%c12state_vars%totsomc_1m_col(c_l)
+    write(stdout, *) 'this%biogeo_state(c)%n14state_vars%cwdn_col(c_l):    ',this%biogeo_state(c)%n14state_vars%cwdn_col(c_l), 'this%biogeo_state(c)%n14state_vars%totsomn_col(c_l):     ',this%biogeo_state(c)%n14state_vars%totsomn_col(c_l)
+    write(stdout, *) 'n14state_vars%cwdn_col(c):    ',n14state_vars%cwdn_col(c), 'n14state_vars%totsomn_col(c):     ',n14state_vars%totsomn_col(c)
+    write(stdout, *) '***************************#######################################################'
     n14state_vars%cwdn_col(c) = this%biogeo_state(c)%n14state_vars%cwdn_col(c_l)
     n14state_vars%totlitn_col(c) = this%biogeo_state(c)%n14state_vars%totlitn_col(c_l)
     n14state_vars%totsomn_col(c) = this%biogeo_state(c)%n14state_vars%totsomn_col(c_l)
@@ -683,7 +702,20 @@ contains
     p31state_vars%totsomp_col(c) = this%biogeo_state(c)%p31state_vars%totsomp_col(c_l)
     p31state_vars%totlitp_1m_col(c) = this%biogeo_state(c)%p31state_vars%totlitp_1m_col(c_l)
     p31state_vars%totsomp_1m_col(c) = this%biogeo_state(c)%p31state_vars%totsomp_1m_col(c_l)
-  
+
+    ! testing only, where the run collapsed        -zlyu   01/27/2019
+    write(stdout, *) '***************************#######################################################'
+    write(stdout, *) 'inside StandalonePlantSoilBGCRec c12state, n14state, and p31state printout'
+    write(stdout, *) 'iteration c:  ',c, 'c_l:   ',c_l
+    write(stdout, *) 'c12state_vars%cwdc_col:  ',c12state_vars%cwdc_col(c),'c12state_vars%totlitc_col:   ',c12state_vars%totlitc_col(c), 'c12state_vars%totsomc_col:    ',c12state_vars%totsomc_col(c)
+    write(stdout, *) 'n14state_vars%cwdn_col:  ',n14state_vars%cwdn_col(c),'n14state_vars%totlitn_col:   ',n14state_vars%totlitn_col(c), 'n14state_vars%totsomn_col:    ',n14state_vars%totsomn_col(c)
+    write(stdout, *) 'p31state_vars%cwdp_col:  ',p31state_vars%cwdp_col(c),'p31state_vars%totlitp_col:   ',p31state_vars%totlitp_col(c), 'p31state_vars%totsomp_col:    ',p31state_vars%totsomp_col(c)
+    write(stdout, *) 'this%biogeo_state(c)%c12state_vars%cwdc_col(c_l):   ',this%biogeo_state(c)%c12state_vars%cwdc_col(c_l),'this%biogeo_state(c)%n14state_vars%totlitn_col(c_l):   ',this%biogeo_state(c)%n14state_vars%totlitn_col(c_l), 'this%biogeo_state(c)%p31state_vars%totsomp_col(c_l):    ',this%biogeo_state(c)%p31state_vars%totsomp_col(c_l)
+    write(stdout, *) '***************************#######################################################'
+    ! end of the testing
+    ! ---------------------------------------------------------------------------------------------------------------------------------
+    ! ---------------------------------------------------------------------------------------------------------------------------------
+    
     ! testing only, where the run collapsed        -zlyu   01/27/2019
     write(stdout, *) '***************************'
     write(stdout, *) 'inside StandalonePlantSoilBGCRec before recollect inorganic nitrogen'
@@ -696,7 +728,7 @@ contains
 
     p31state_vars%sminp_col(c) = this%biogeo_state(c)%p31state_vars%sminp_col(c_l)
     p31state_vars%occlp_col(c) = this%biogeo_state(c)%p31state_vars%occlp_col(c_l)
-    !print*,'smin_nh4',n14state_vars%smin_nh4_col(c)
+    print*,'smin_nh4',n14state_vars%smin_nh4_col(c)
 
     c12state_vars%som1c_col(c) = this%biogeo_state(c)%c12state_vars%som1c_col(c_l)
     c12state_vars%som2c_col(c) = this%biogeo_state(c)%c12state_vars%som2c_col(c_l)

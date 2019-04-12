@@ -58,6 +58,7 @@ contains
     !
     ! !USES:
     use shr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
+    use betr_constants , only : stdout      !-zlyu
     !
     ! !ARGUMENTS:
     class(nitrogenstate_type) :: this
@@ -67,7 +68,11 @@ contains
     integer :: begp, endp
     integer :: begc, endc
     !------------------------------------------------------------------------
-
+    ! testing only, where the run crushed        -zlyu   01/27/2019
+    write(stdout, *) '*************************************'
+    write(stdout, *) 'inside CNNitrogenSate.F90 in Initallocate' 
+    write(stdout, *) '*************************************@'
+    ! end of the testing
     begp = bounds%begp; endp= bounds%endp
     allocate(this%decomp_npools_vr_col(begc:endc,1:nlevdecomp_full,1:ndecomp_pools));
     this%decomp_npools_vr_col(:,:,:)= spval
@@ -87,6 +92,12 @@ contains
     allocate(this%som3n_col(begc:endc)); this%som3n_col(:) = spval
     allocate(this%sminn_col(begc:endc)); this%sminn_col(:) = spval
     allocate(this%domn_col(begc:endc)); this%domn_col(:) = spval
+
+    allocate(this%polyn_col(begc:endc)); this%polyn_col(:) = spval              ! start adding    -zlyu
+    allocate(this%monon_col(begc:endc)); this%monon_col(:) = spval
+    allocate(this%micn_col(begc:endc)); this%micn_col(:) = spval
+    allocate(this%enzn_col(begc:endc)); this%enzn_col(:) = spval
+    allocate(this%resn_col(begc:endc)); this%resn_col(:) = spval                ! end of adding   -zlyu
 
   end subroutine InitAllocate
 
