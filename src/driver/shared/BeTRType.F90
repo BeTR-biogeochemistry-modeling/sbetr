@@ -10,6 +10,9 @@ module BetrType
   !  subroutines for betr application
   !
   !  !USES:
+  use bshr_assert_mod          , only : shr_assert
+  use bshr_assert_mod          , only : shr_assert_all
+  use bshr_assert_mod          , only : shr_assert_any
   use bshr_kind_mod            , only : r8 => shr_kind_r8
   use bshr_log_mod             , only : errMsg => shr_log_errMsg
   use BeTR_decompMod           , only : bounds_type  => betr_bounds_type
