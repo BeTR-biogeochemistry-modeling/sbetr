@@ -1,6 +1,9 @@
 module TracerParamSetMod
 #include "bshr_assert.h"
 
+  use bshr_assert_mod, only : shr_assert
+  use bshr_assert_mod, only : shr_assert_all
+  use bshr_assert_mod, only : shr_assert_any
   use bshr_kind_mod            , only : r8 => shr_kind_r8
   use BeTR_decompMod           , only : bounds_type  => betr_bounds_type
  implicit none

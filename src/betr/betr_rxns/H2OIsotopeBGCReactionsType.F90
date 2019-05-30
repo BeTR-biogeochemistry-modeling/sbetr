@@ -19,6 +19,9 @@ module H2OIsotopeBGCReactionsType
 ! HISTORY:
 ! Created by Jinyun Tang, Jan 15nd, 2015
 ! !USES
+  use bshr_assert_mod, only : shr_assert
+  use bshr_assert_mod, only : shr_assert_all
+  use bshr_assert_mod, only : shr_assert_any
   use bshr_log_mod             , only : errMsg => shr_log_errMsg
   use bshr_kind_mod            , only : r8 => shr_kind_r8
   use BGCReactionsMod          , only : bgc_reaction_type

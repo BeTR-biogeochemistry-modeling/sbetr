@@ -5,6 +5,9 @@ module BgcCentCnpType
   ! subroutines for stoichiometric configuration of the century bgc
   ! !History, created by Jinyun Tang, Dec, 2014.
   ! !USES:
+  use bshr_assert_mod, only : shr_assert
+  use bshr_assert_mod, only : shr_assert_all
+  use bshr_assert_mod, only : shr_assert_any
   use bshr_kind_mod       , only : r8 => shr_kind_r8
   use bshr_log_mod        , only : errMsg => shr_log_errMsg
   use betr_varcon         , only : spval => bspval, spinup_state => bspinup_state
