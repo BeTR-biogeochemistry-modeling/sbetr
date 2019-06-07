@@ -5,6 +5,9 @@ module ch4lakeBGCType
   ! subroutines for stoichiometric configuration of the century bgc
   ! !History, created by Jinyun Tang, Dec, 2014.
   ! !USES:
+  use bshr_assert_mod, only : shr_assert
+  use bshr_assert_mod, only : shr_assert_all, shr_assert_all_ext
+  use bshr_assert_mod, only : shr_assert_any
   use bshr_kind_mod             , only : r8 => shr_kind_r8
   use bshr_log_mod              , only : errMsg => shr_log_errMsg
   use betr_varcon               , only : spval => bspval
@@ -1220,7 +1223,7 @@ contains
     lid_supp_minp => this%ch4lake_bgc_index%lid_supp_minp                                         , &
     lid_supp_minn => this%ch4lake_bgc_index%lid_supp_minn                                           &
   )
-  
+
   dydt(:) = 0._r8
   rrates(:) = 0._r8
   !calculate reaction rates, because arenchyma transport is
@@ -1740,7 +1743,7 @@ contains
   implicit none
   class(ch4lake_bgc_type)     , intent(inout) :: this
   print*,'no3',this%ch4lake_bgc_index%lid_plant_minn_no3_pft
-  print*,'nh4', this%ch4lake_bgc_index%lid_plant_minn_nh4_pft 
+  print*,'nh4', this%ch4lake_bgc_index%lid_plant_minn_nh4_pft
 
   end subroutine display_index
 end module ch4lakeBGCType

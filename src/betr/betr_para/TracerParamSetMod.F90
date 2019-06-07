@@ -3,6 +3,10 @@ module TracerParamSetMod
 
   use bshr_kind_mod            , only : r8 => shr_kind_r8
   use BeTR_decompMod           , only : bounds_type  => betr_bounds_type
+  use bshr_assert_mod, only : shr_assert
+  use bshr_assert_mod, only : shr_assert_all, shr_assert_all_ext
+  use bshr_assert_mod, only : shr_assert_any
+
  implicit none
  private
  public :: get_lgsorb_KL_Xsat, get_lnsorb_Kd

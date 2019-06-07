@@ -11,6 +11,9 @@ module v1ecaBGCType
   ! This single layer model should return total plant p uptake sminp_to_plant_vr
   ! and total p uptake to microbes, where the latter could be either positive or negative
   ! !USES:
+  use bshr_assert_mod, only : shr_assert
+  use bshr_assert_mod, only : shr_assert_all, shr_assert_all_ext
+  use bshr_assert_mod, only : shr_assert_any
   use bshr_kind_mod             , only : r8 => shr_kind_r8
   use bshr_log_mod              , only : errMsg => shr_log_errMsg
   use betr_varcon               , only : spval => bspval

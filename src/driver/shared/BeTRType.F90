@@ -2,6 +2,9 @@
 module BetrType
 
 #include "bshr_assert.h"
+  use bshr_assert_mod, only : shr_assert
+  use bshr_assert_mod, only : shr_assert_all, shr_assert_all_ext
+  use bshr_assert_mod, only : shr_assert_any
   !
   ! !DESCRIPTION:
   !  subroutines for betr application
@@ -1625,7 +1628,7 @@ contains
   subroutine reset_biostates(this, bounds, num_soilc, filter_soilc, &
      biophysforc, betr_status)
 
-    
+
     implicit none
     !
     ! !ARGUMENTS :
