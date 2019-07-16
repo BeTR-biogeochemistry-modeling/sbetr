@@ -1011,7 +1011,11 @@ contains
   use WaterfluxType     , only : waterflux_type
   use atm2lndType       , only : atm2lnd_type
   use SoilHydrologyType , only : soilhydrology_type
+#ifdef SBETR
   use CNCarbonFluxType  , only : carbonflux_type
+#else
+  use VegetationDataType, only : carbonflux_type => vegetation_carbon_flux
+#endif
   use CanopyStateType   , only : canopystate_type
   use MathfuncMod       , only : isnan => bisnan
   use pftvarcon         , only : noveg
