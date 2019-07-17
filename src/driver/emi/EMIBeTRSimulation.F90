@@ -1,8 +1,8 @@
 module EMIBeTRSimulation
   !
   ! !DESCRIPTION:
-  !  BeTR simulation base class.
-  !
+  !  BeTR simulation class for emi.
+  !  This class is independent from the shared types
   !  BeTR simulation class are API definitions, mapping data
   !  structures from a specific LSM, e.g. CLM, ALM, into BeTR data
   !  structures.
@@ -14,9 +14,12 @@ module EMIBeTRSimulation
   use shr_kind_mod   , only : r8 => shr_kind_r8
   use tracer_varcon  , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
   use BeTR_decompMod , only : betr_bounds_type
-
-
-  ! !USES:
+  use decompMod      , only : bounds_type
+  use ColumnType     , only : column_type => column_physical_properties
+  use VegetationType , only : patch_type  => vegetation_physical_properties
+  use LandunitType   , only : landunit_type => landunit_physical_properties
+  use VegetationDataType, only : veg_es, veg_wf
+  use ColumnDataType    , only : col_es, col_ws, col_wf
   use BetrType                 , only : betr_type, create_betr_type
   use betr_ctrl                , only : max_betr_hist_type,max_betr_rest_type, biulog
   use betr_constants           , only : betr_string_length
@@ -33,6 +36,7 @@ module EMIBeTRSimulation
   use betr_patchType           , only : betr_patch_type, create_betr_patch_type
   use betr_varcon              , only : spval => bspval
   use BeTRHistVarType          , only : betr_hist_var_type
+  use pftvarcon                , only : noveg, nc4_grass, nc3_arctic_grass, nc3_nonarctic_grass
   implicit none
 
   private
@@ -200,7 +204,7 @@ contains
   class(emi_betr_simulation_type), intent(inout) :: this
   integer, intent(in) :: maxpft_per_col
   integer, optional, intent(in) :: nsoilorder
-  logical, optional, intent(in) :: boffline
+
     integer :: p
     !by default, surface litter layer is off
     this%num_jtops = 1
@@ -285,7 +289,7 @@ contains
 
   end subroutine set_activecol
 !-------------------------------------------------------------------------------
-  subroutine BeTRInit(this, bounds, lun, col, pft, base_filename, case_id, masterproc)
+  subroutine BeTRInit(this, bounds, lun, col, pft)
     !
     ! DESCRIPTION
     ! initialize BeTR
@@ -312,11 +316,6 @@ contains
     this%hist_record=0
     this%active_soibgc=.false.
     biulog = iulog
-    if(present(base_filename))then
-      this%base_filename = base_filename
-    else
-      this%base_filename = 'sbetr'
-    endif
 
     call this%betr_time%Init()
 
@@ -485,6 +484,9 @@ contains
     use CanopyStateType   , only : canopystate_type
     use BeTR_TimeMod      , only : betr_time_type
     use pftvarcon         , only : crop
+    use clm_varctl     , only : spinup_state
+    use betr_ctrl      , only : exit_spinup, enter_spinup,betr_spinup_state
+    use clm_varpar      , only : nlevsno, nlevsoi, nlevtrc_soil
     implicit none
   !ARGUMENTS
     class(emi_betr_simulation_type) , intent(inout) :: this
@@ -585,6 +587,7 @@ contains
    !
    !USES
     use MathfuncMod   , only : safe_div
+    use clm_varpar      , only : nlevsno, nlevsoi, nlevtrc_soil
     implicit none
     !ARGUMENTS
     class(emi_betr_simulation_type) , intent(inout) :: this
@@ -641,7 +644,7 @@ contains
     use betr_decompMod  , only : betr_bounds_type
     implicit none
     !ARGUMENTS
-    class(betr_simulation_alm_type) , intent(inout) :: this
+    class(emi_betr_simulation_type) , intent(inout) :: this
     type(bounds_type)               , intent(in)    :: bounds
     type(column_type)               , intent(in)    :: col ! column type
     integer                         , intent(in)    :: num_hydrologyc ! number of column soil points in column filter_soilc

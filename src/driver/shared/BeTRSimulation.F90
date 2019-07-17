@@ -1043,6 +1043,7 @@ contains
   do c = bounds%begc, bounds%endc
     if(.not. this%active_col(c))cycle
     this%biophys_forc(c)%stwl(cc)=0  !by default this is set zero layers of standing water
+#ifdef SBETR
     if(present(carbonflux_vars))then
       npft_loc = ubound(carbonflux_vars%annsum_npp_patch,1)-lbound(carbonflux_vars%annsum_npp_patch,1)+1
       if(col%pfti(c) /= lbound(carbonflux_vars%annsum_npp_patch,1) .and. npft_loc/=col%npfts(c))then
@@ -1081,6 +1082,7 @@ contains
         endif
       endif
     endif
+#endif
     !assign waterstate
     if(present(waterstate_vars))then
 !<<<<<<< thorntonpe/lnd/archv2

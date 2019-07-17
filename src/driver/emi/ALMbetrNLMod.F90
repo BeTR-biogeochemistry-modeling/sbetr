@@ -31,7 +31,7 @@ contains
 
 
   !-------------------------------------------------------------------------------
-  subroutine betr_readNL(NLFilename, use_c13, use_c14, nsoilorder, lbgcalib)
+  subroutine betr_readNL(NLFilename, use_c13, use_c14, nsoilorder)
     !
     ! !DESCRIPTION:
     ! read namelist for betr configuration
@@ -55,8 +55,7 @@ contains
     character(len=*), intent(IN) :: NLFilename              ! Namelist filename
     logical,          intent(in) :: use_c13
     logical,          intent(in) :: use_c14
-    integer,          intent(in) :: nsoilorder
-    logical,          intent(in) :: lbgcalib
+    integer,optional, intent(in) :: nsoilorder
                                                             !
                                                             ! !LOCAL VARIABLES:
     integer                      :: ierr                    ! error code
@@ -74,12 +73,15 @@ contains
 
     logical :: appfile_on
 
-    lbcalib = lbgcalib
     !initialize spinup state
     if(index(bgc_type,'type2_bgc')/=0)then
       betr_spinup_state =spinup_state
     endif
-    betr_max_soilorder=nsoilorder
+    if(present(nsoilorder))then
+      betr_max_soilorder=nsoilorder
+    else
+      betr_max_soilorder = 1
+    endif
     ! ----------------------------------------------------------------------
     ! Read namelist from standard input.
     ! ----------------------------------------------------------------------
