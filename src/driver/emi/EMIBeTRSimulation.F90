@@ -138,7 +138,20 @@ module EMIBeTRSimulation
   end type emi_betr_simulation_type
 
 contains
+!-------------------------------------------------------------------------------
 
+  function create_betr_simulation_emi()
+  ! DESCRIPTION
+  ! constructor
+    implicit none
+    class(emi_betr_simulation_type), pointer :: create_betr_simulation_emi
+    class(emi_betr_simulation_type), pointer :: simulation
+
+    allocate(simulation)
+    create_betr_simulation_emi => simulation
+
+  end function create_betr_simulation_emi
+!-------------------------------------------------------------------------------
   subroutine SetClock(this, dtime, nelapstep)
   implicit none
   class(emi_betr_simulation_type)              , intent(inout) :: this
