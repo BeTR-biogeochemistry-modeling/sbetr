@@ -37,6 +37,7 @@ module EMIBeTRSimulation
   use betr_varcon              , only : spval => bspval
   use BeTRHistVarType          , only : betr_hist_var_type
   use pftvarcon                , only : noveg, nc4_grass, nc3_arctic_grass, nc3_nonarctic_grass
+  use clm_time_manager         , only : get_curr_date
   implicit none
 
   private
@@ -136,7 +137,7 @@ module EMIBeTRSimulation
      procedure, private:: HistAlloc               => EMIBeTRSimulationHistoryAlloc
      procedure, private:: set_activecol
   end type emi_betr_simulation_type
-
+  public :: create_betr_simulation_emi
 contains
 !-------------------------------------------------------------------------------
 
