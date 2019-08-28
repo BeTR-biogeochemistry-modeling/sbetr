@@ -241,7 +241,7 @@ contains
   ! start of new paras from rzacplsbetr_cmupdated         -zlyu 
   ! Microbes
     this%decay_mic0 = 4.12e-3_r8*365._r8/year_sec            ! Reference microbial death rate (1/second)
-    this%gmax_mic  = 0.088031564_r8*365._r8/year_sec !0.8760_r8*365._r8/year_sec            ! Maximum microbial growth rate (1/second)
+    this%gmax_mic  = 0.8760_r8*365._r8/year_sec    ! 0.088031564_r8*365._r8/year_sec         ! Maximum microbial growth rate (1/second)              ! back to oginial para      -zlyu
     this%pmax_enz = 0.003599271_r8*365._r8/year_sec               ! Maximum enzyme production rate (1/second)
     this%yld_mic = 0.252307388_r8                  ! Growth efficiency of microbes (g mic/g res)
     this%yld_enz = 0.999705849_r8                  ! Growth efficiency of enzymes (g enz/g res)
