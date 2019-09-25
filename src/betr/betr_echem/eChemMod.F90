@@ -10,6 +10,7 @@ module eChemMod
   use eChemConstMod   , only : r_echem_DsK_generic,r_echem_K_generic
   use bshr_kind_mod , only : r8 => shr_kind_r8
   use bshr_log_mod  , only : errMsg => shr_log_errMsg
+  use FindRootMod     , only : quadrootbnd
 implicit none
 
   character(len=*), private, parameter :: mod_filename = &
@@ -136,7 +137,7 @@ contains
   integer :: rlen
   real(r8):: ys(1:rlenmax)  !state variable of the reaction imax
   real(r8):: vs(1:rlenmax)  !stoichiometry coefficient of the reaction imax
-  real(r8):: ias(1:rlenmax)  !location of the state variable of the reaction imax
+  integer :: ias(1:rlenmax)  !location of the state variable of the reaction imax
   type(betr_status_type) :: bstatus
   real(r8), parameter :: err_tol = 1.e-3_r8
   !compute all equilibrium deviations

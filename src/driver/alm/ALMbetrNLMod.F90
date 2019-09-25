@@ -56,7 +56,7 @@ contains
     logical,          intent(in) :: use_c13
     logical,          intent(in) :: use_c14
     integer,          intent(in) :: nsoilorder
-    logical,          intent(in) :: lbgcalib
+    logical, optional,intent(in) :: lbgcalib
                                                             !
                                                             ! !LOCAL VARIABLES:
     integer                      :: ierr                    ! error code
@@ -74,7 +74,11 @@ contains
 
     logical :: appfile_on
 
-    lbcalib = lbgcalib
+    if(present(lbgcalib))then
+      lbcalib = lbgcalib
+    else
+      lbcalib = .false.
+    endif
     !initialize spinup state
     if(index(bgc_type,'type2_bgc')/=0)then
       betr_spinup_state =spinup_state
