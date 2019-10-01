@@ -1734,6 +1734,9 @@ contains
         pi = pi + 1
         pf_nitrogenflux_vars%smin_nh4_to_plant(p) = this%biogeo_flux(c)%n14flux_vars%smin_nh4_to_plant_patch(pi)
         pf_nitrogenflux_vars%smin_no3_to_plant(p) = this%biogeo_flux(c)%n14flux_vars%smin_no3_to_plant_patch(pi)
+        pf_nitrogenflux_vars%smin_nh4_to_plant_vr(p,1:nlevtrc_soil) = this%biogeo_flux(c)%n14flux_vars%smin_nh4_to_plant_vr_patch(pi,1:nlevtrc_soil)
+        pf_nitrogenflux_vars%smin_no3_to_plant_vr(p,1:nlevtrc_soil) = this%biogeo_flux(c)%n14flux_vars%smin_no3_to_plant_vr_patch(pi,1:nlevtrc_soil)
+
         pf_nitrogenflux_vars%sminn_to_plant(p) = pf_nitrogenflux_vars%smin_nh4_to_plant(p) + pf_nitrogenflux_vars%smin_no3_to_plant(p)
         pf_phosphorusflux_vars%sminp_to_plant(p)  = this%biogeo_flux(c)%p31flux_vars%sminp_to_plant_patch(pi)
       else
@@ -1741,6 +1744,8 @@ contains
         pf_nitrogenflux_vars%smin_no3_to_plant(p) = 0._r8
         pf_phosphorusflux_vars%sminp_to_plant(p) = 0._r8
         pf_nitrogenflux_vars%sminn_to_plant(p) = 0._r8
+        pf_nitrogenflux_vars%smin_nh4_to_plant_vr(p,1:nlevtrc_soil) = 0._r8
+        pf_nitrogenflux_vars%smin_no3_to_plant_vr(p,1:nlevtrc_soil) = 0._r8
       endif
     enddo
     nitrogenflux_vars%actual_immob(c)=0._r8
