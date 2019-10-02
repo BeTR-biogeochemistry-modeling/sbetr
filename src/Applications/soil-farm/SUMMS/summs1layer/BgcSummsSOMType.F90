@@ -872,7 +872,8 @@ contains
     f1 = cwd_fcel*(1._r8-rf_l2s1_bgc(lay))
     f2 = (1._r8-cwd_fcel)*(1._r8-rf_l3s2_bgc)
 
-    call wood_decomp_cascade(fwd, reac, f1, f2)
+    !call wood_decomp_cascade(fwd, reac, f1, f2)
+    call wood_decomp_cascade(cwd, reac, f1, f2)           ! correction  -zlyu
 
     !---------------------------------------------------------------------------------
     !reaction 8, the partition lwd into som1 and som2
