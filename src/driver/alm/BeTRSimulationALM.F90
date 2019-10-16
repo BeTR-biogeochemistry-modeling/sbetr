@@ -1328,7 +1328,7 @@ contains
   else
     return
   endif
-  if(present(cnstate_vars)) then
+  if(present(cnstate_vars)  .and. present(pf_carbonflux_vars)) then
     associate(                                                &
       cn_scalar            => cnstate_vars%cn_scalar        , &
       cp_scalar            => cnstate_vars%cp_scalar        , &

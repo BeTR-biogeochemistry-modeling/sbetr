@@ -1040,7 +1040,7 @@ contains
   do c = bounds%begc, bounds%endc
     if(.not. this%active_col(c))cycle
     this%biophys_forc(c)%stwl(cc)=0  !by default this is set zero layers of standing water
-    if(present(carbonflux_vars))then
+    if(present(pf_carbonflux_vars))then
       npft_loc = ubound(pf_carbonflux_vars%annsum_npp,1)-lbound(pf_carbonflux_vars%annsum_npp,1)+1
       if(col%pfti(c) /= lbound(pf_carbonflux_vars%annsum_npp,1) .and. npft_loc/=col%npfts(c))then
         do pi = 1, betr_maxpatch_pft
@@ -1081,31 +1081,31 @@ contains
     !assign waterstate
     if(present(waterstate_vars))then
 !<<<<<<< thorntonpe/lnd/archv2
-!      this%biophys_forc(c)%finundated_col(cc)            = col_ws%finundated(c)
-!      this%biophys_forc(c)%frac_h2osfc_col(cc)           = col_ws%frac_h2osfc(c)
-!      this%biophys_forc(c)%h2osoi_liq_col(cc,lbj:ubj)    = col_ws%h2osoi_liq(c,lbj:ubj)
-!      this%biophys_forc(c)%h2osoi_ice_col(cc,lbj:ubj)    = col_ws%h2osoi_ice(c,lbj:ubj)
-!      this%biophys_forc(c)%h2osoi_liqvol_col(cc,lbj:ubj) = col_ws%h2osoi_liqvol(c,lbj:ubj)
-!      this%biophys_forc(c)%h2osoi_icevol_col(cc,lbj:ubj) = col_ws%h2osoi_icevol(c,lbj:ubj)
+      this%biophys_forc(c)%finundated_col(cc)            = col_ws%finundated(c)
+      this%biophys_forc(c)%frac_h2osfc_col(cc)           = col_ws%frac_h2osfc(c)
+      this%biophys_forc(c)%h2osoi_liq_col(cc,lbj:ubj)    = col_ws%h2osoi_liq(c,lbj:ubj)
+      this%biophys_forc(c)%h2osoi_ice_col(cc,lbj:ubj)    = col_ws%h2osoi_ice(c,lbj:ubj)
+      this%biophys_forc(c)%h2osoi_liqvol_col(cc,lbj:ubj) = col_ws%h2osoi_liqvol(c,lbj:ubj)
+      this%biophys_forc(c)%h2osoi_icevol_col(cc,lbj:ubj) = col_ws%h2osoi_icevol(c,lbj:ubj)
 !      this%biophys_forc(c)%h2osoi_vol_col(cc,lbj:ubj)    = col_ws%h2osoi_vol(c,lbj:ubj)
-!      this%biophys_forc(c)%air_vol_col(cc,lbj:ubj)       = col_ws%air_vol(c,lbj:ubj)
-!      this%biophys_forc(c)%smp_l_col(cc,lbj:ubj)         = col_ws%smp_l(c,lbj:ubj)
+      this%biophys_forc(c)%air_vol_col(cc,lbj:ubj)       = col_ws%air_vol(c,lbj:ubj)
+      this%biophys_forc(c)%smp_l_col(cc,lbj:ubj)         = col_ws%smp_l(c,lbj:ubj)
 !=======
       if(col%snl(c)<0)then
-        this%biophys_forc(c)%h2osno_liq_col(cc,col%snl(c)+1:0) = waterstate_vars%h2osoi_liq_col(c,col%snl(c)+1:0)
-        this%biophys_forc(c)%h2osno_ice_col(cc,col%snl(c)+1:0) = waterstate_vars%h2osoi_ice_col(c,col%snl(c)+1:0)
+        this%biophys_forc(c)%h2osno_liq_col(cc,col%snl(c)+1:0) = col_ws%h2osoi_liq(c,col%snl(c)+1:0)
+        this%biophys_forc(c)%h2osno_ice_col(cc,col%snl(c)+1:0) = col_ws%h2osoi_ice(c,col%snl(c)+1:0)
       endif
-      this%biophys_forc(c)%finundated_col(cc)            = waterstate_vars%finundated_col(c)
-      this%biophys_forc(c)%frac_h2osfc_col(cc)           = waterstate_vars%frac_h2osfc_col(c)
-      this%biophys_forc(c)%h2osoi_liq_col(cc,lbj:ubj)    = waterstate_vars%h2osoi_liq_col(c,lbj:ubj)
-      this%biophys_forc(c)%h2osoi_ice_col(cc,lbj:ubj)    = waterstate_vars%h2osoi_ice_col(c,lbj:ubj)
-      this%biophys_forc(c)%h2osoi_icevol_col(cc,lbj:ubj) = waterstate_vars%h2osoi_icevol_col(c,lbj:ubj)
+!      this%biophys_forc(c)%finundated_col(cc)            = waterstate_vars%finundated_col(c)
+!      this%biophys_forc(c)%frac_h2osfc_col(cc)           = waterstate_vars%frac_h2osfc_col(c)
+!      this%biophys_forc(c)%h2osoi_liq_col(cc,lbj:ubj)    = waterstate_vars%h2osoi_liq_col(c,lbj:ubj)
+!      this%biophys_forc(c)%h2osoi_ice_col(cc,lbj:ubj)    = waterstate_vars%h2osoi_ice_col(c,lbj:ubj)
+!      this%biophys_forc(c)%h2osoi_icevol_col(cc,lbj:ubj) = waterstate_vars%h2osoi_icevol_col(c,lbj:ubj)
       do l = lbj, ubj
-        this%biophys_forc(c)%h2osoi_liqvol_col(cc,l)     = max(0.01_r8,waterstate_vars%h2osoi_liqvol_col(c,l))
+!        this%biophys_forc(c)%h2osoi_liqvol_col(cc,l)     = max(0.01_r8,waterstate_vars%h2osoi_liqvol_col(c,l))
         this%biophys_forc(c)%h2osoi_vol_col(cc,l)        = this%biophys_forc(c)%h2osoi_liqvol_col(cc,l) + &
                                                            this%biophys_forc(c)%h2osoi_icevol_col(cc,l)
       enddo
-      this%biophys_forc(c)%air_vol_col(cc,lbj:ubj)       = waterstate_vars%air_vol_col(c,lbj:ubj)
+!      this%biophys_forc(c)%air_vol_col(cc,lbj:ubj)       = waterstate_vars%air_vol_col(c,lbj:ubj)
 !>>>>>>> master
       this%biophys_forc(c)%rho_vap(cc,lbj:ubj)           = waterstate_vars%rho_vap_col(c,lbj:ubj)
       this%biophys_forc(c)%rhvap_soi(cc,lbj:ubj)         = waterstate_vars%rhvap_soi_col(c,lbj:ubj)
@@ -1126,8 +1126,9 @@ contains
       this%biophys_forc(c)%qflx_snow2topsoi_col(cc)     = col_wf%qflx_snow2topsoi(c)
       this%biophys_forc(c)%qflx_rootsoi_col(cc,lbj:ubj) = col_wf%qflx_rootsoi(c,lbj:ubj)*1.e-3_r8
       this%biophys_forc(c)%qflx_runoff_col(cc)          = col_wf%qflx_runoff_betr(c) !mm
-      this%biogeo_flux(c)%qflx_adv_col(cc,lbj-1:ubj)    = col_wf%qflx_adv(c,lbj-1:ubj)
-      this%biogeo_flux(c)%qflx_drain_vr_col(cc,lbj:ubj) = col_wf%qflx_drain_vr(c,lbj:ubj)
+!      this%biogeo_flux(c)%qflx_adv_col(cc,lbj-1:ubj)    = col_wf%qflx_adv(c,lbj-1:ubj)
+!      this%biogeo_flux(c)%qflx_drain_vr_col(cc,lbj:ubj) = col_wf%qflx_drain_vr(c,lbj:ubj)
+!      print*,'qflxadvvv',this%biogeo_flux(c)%qflx_adv_col(cc,0:1)
 !=======
 !      this%biogeo_flux(c)%qflx_infl_col(cc)             = waterflux_vars%qflx_infl_col(c)
 !      this%biogeo_flux(c)%qflx_totdrain_col(cc)         = waterflux_vars%qflx_totdrain_col(c)
@@ -1160,18 +1161,18 @@ contains
       enddo
     endif
     if(present(temperature_vars))then
-!      this%biophys_forc(c)%t_soi_10cm(cc)           = col_es%t_soi10cm(c)
-!      this%biophys_forc(c)%t_soisno_col(cc,lbj:ubj) = col_es%t_soisno(c,lbj:ubj)
-      this%biophys_forc(c)%t_soi_10cm(cc)           = temperature_vars%t_soi10cm_col(c)
-      this%biophys_forc(c)%t_soisno_col(cc,lbj:ubj) = temperature_vars%t_soisno_col(c,lbj:ubj)
+      this%biophys_forc(c)%t_soi_10cm(cc)           = col_es%t_soi10cm(c)
+      this%biophys_forc(c)%t_soisno_col(cc,lbj:ubj) = col_es%t_soisno(c,lbj:ubj)
+!      this%biophys_forc(c)%t_soi_10cm(cc)           = temperature_vars%t_soi10cm_col(c)
+!      this%biophys_forc(c)%t_soisno_col(cc,lbj:ubj) = temperature_vars%t_soisno_col(c,lbj:ubj)
       pp = 0
       do pi = 1, betr_maxpatch_pft
         if (pi <= col%npfts(c)) then
           p = col%pfti(c) + pi - 1
           if (pft%active(p) .and. pft%itype(p)/=noveg) then
             pp = pp + 1
-!            this%biophys_forc(c)%t_veg_patch(pp)         = veg_es%t_veg(p)
-            this%biophys_forc(c)%t_veg_patch(pp)         = temperature_vars%t_veg_patch(p)
+            this%biophys_forc(c)%t_veg_patch(pp)         = veg_es%t_veg(p)
+!            this%biophys_forc(c)%t_veg_patch(pp)         = temperature_vars%t_veg_patch(p)
           endif
         endif
       enddo
