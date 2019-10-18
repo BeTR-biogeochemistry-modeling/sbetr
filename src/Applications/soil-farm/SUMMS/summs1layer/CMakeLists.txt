@@ -2,6 +2,9 @@ set(SUMMS1LAYER_SOURCES
   BgcSummsIndexType.F90
   BgcSummsCompetType.F90
   BgcSummsDecompType.F90
+  DebGrowMod.F90
+  BgcSummsDebType.F90
+  BgcSummsMath.F90
   BgcSummsNitDenType.F90
   BgcSummsSOMType.F90
   BgcSummsType.F90

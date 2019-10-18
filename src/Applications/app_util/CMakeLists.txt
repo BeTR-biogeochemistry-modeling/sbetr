@@ -14,6 +14,10 @@ include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/CENT_ECACNP/c
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/cdom_ecacnp/cdomPara)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/cdom_ecacnp/cdom1layer)
 include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/cdom_ecacnp/cdomNlayer)
+include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/SUMMS/summs1layer)
+include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/SUMMS/summsNlayer)
+include_directories(${CMAKE_BINARY_DIR}/src/Applications/soil-farm/SUMMS/summsPara)
+
 
 include(add_betr_library)
 add_betr_library(app_util ${BETR_APP_UTIL_SOURCES})
