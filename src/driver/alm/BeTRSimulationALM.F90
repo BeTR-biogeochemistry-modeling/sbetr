@@ -927,9 +927,9 @@ contains
   integer :: begc_l, endc_l
 
     ! testing only, where the run collapsed        -zlyu   01/27/2019
-    write(stdout, *) '***************************'
-    write(stdout, *) 'inside  ALMBetrPlantSoilBGCRecv in file BeTRSimulationALM.F90'
-    write(stdout, *) '***************************'
+    !write(stdout, *) '***************************'
+    !write(stdout, *) 'inside  ALMBetrPlantSoilBGCRecv in file BeTRSimulationALM.F90'
+    !write(stdout, *) '***************************'
     ! end of the testing
   
   !summarize the fluxes and state variables
@@ -1075,12 +1075,6 @@ contains
       c14state_vars%totlitc_1m_col(c) = this%biogeo_state(c)%c14state_vars%totlitc_1m_col(c_l)
       c14state_vars%totsomc_1m_col(c) = this%biogeo_state(c)%c14state_vars%totsomc_1m_col(c_l)
    endif
-       ! testing only, where the run collapsed        -zlyu   01/27/2019
-    write(stdout, *) '***************************'
-    write(stdout, *) 'inside  ALMBetrPlantSoilBGCRecv in file BeTRSimulationALM.F90, before organic nitrogen'
-    write(stdout, *) '***************************'
-    ! end of the testing
-  
     n14state_vars%cwdn_col(c) = this%biogeo_state(c)%n14state_vars%cwdn_col(c_l)
     n14state_vars%totlitn_col(c) = this%biogeo_state(c)%n14state_vars%totlitn_col(c_l)
     n14state_vars%totsomn_col(c) = this%biogeo_state(c)%n14state_vars%totsomn_col(c_l)
@@ -1092,11 +1086,6 @@ contains
     p31state_vars%totsomp_col(c) = this%biogeo_state(c)%p31state_vars%totsomp_col(c_l)
     p31state_vars%totlitp_1m_col(c) = this%biogeo_state(c)%p31state_vars%totlitp_1m_col(c_l)
     p31state_vars%totsomp_1m_col(c) = this%biogeo_state(c)%p31state_vars%totsomp_1m_col(c_l)
-    ! testing only, where the run collapsed        -zlyu   01/27/2019
-    write(stdout, *) '***************************'
-    write(stdout, *) 'inside  ALMBetrPlantSoilBGCRecv in file BeTRSimulationALM.F90 after organic p'
-    write(stdout, *) '***************************'
-    ! end of the testing
   
     !recollect inorganic nitrogen (smin_nh4, smin_no3), and inorganic phosphorus (disolvable and protected)
     n14state_vars%sminn_col(c) = this%biogeo_state(c)%n14state_vars%sminn_col(c_l)
@@ -1240,6 +1229,7 @@ contains
   use WaterStateType             , only : waterstate_type
   use SoilWaterRetentionCurveMod , only : soil_water_retention_curve_type
   use clm_varcon                 , only : grav,hfus,tfrz
+  use betr_constants             , only : stdout                      !-zlyu
   implicit none
   !ARGUMENTS
   class(betr_simulation_alm_type), intent(inout)  :: this
@@ -1276,6 +1266,7 @@ contains
       if(j==1)then
         if(t_soisno(c,j)<tfrz)then
           smp_l(c,j)= -hfus*(tfrz-t_soisno(c,j))/(grav*t_soisno(c,j)) * 1000._r8  !(mm)
+
         else
           s_node = max(h2osoi_vol(c,j)/watsat(c,j), 0.01_r8)
           call soil_water_retention_curve%soil_suction(sucsat(c,j), s_node, bsw(c,j), smp_l(c,j), dsmpds_top)

@@ -149,35 +149,12 @@ contains
     integer  :: c
     !pass necessary data for correct subroutine call
     !set lbj and ubj
-        ! testing only, where the run crushed        -zlyu   01/27/2019
-    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
-    write(stdout, *) 'inside StandaloneStepWithoutDrainage '
-    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
-    ! end of the testing
-    
+
     call this%BeTRSetBounds(betr_bounds)
 
-        ! testing only, where the run crushed        -zlyu   02/2019
-    write(stdout, *) '***********************************************************8*'
-    write(stdout, *) 'inside standalonestepwithoutdrainage before reset '
-    write(stdout, *) '*************************************************************'
-    ! end of the testing
-    
     call this%bsimstatus%reset()
 
-        ! testing only, where the run crushed        -zlyu   02/2019
-    write(stdout, *) '***********************************************************8*'
-    write(stdout, *) 'inside standalonestepwithoutdrainage before BeTRSetcps'
-    write(stdout, *) '*************************************************************'
-    ! end of the testing
-
     call this%BeTRSetcps(bounds, col, pft)
-
-        ! testing only, where the run crushed        -zlyu   02/2019
-    write(stdout, *) '***********************************************************8*'
-    write(stdout, *) 'inside standalonestepwithoutdrainage before do loop'
-    write(stdout, *) '*************************************************************'
-    ! end of the testing
     
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
@@ -185,56 +162,26 @@ contains
       call this%biophys_forc(c)%frac_normalize(this%betr_pft(c)%npfts, 1, betr_nlevtrc_soil)
 
        ! testing only, where the run crushed        -zlyu   02/2019
-    write(stdout, *) '***********************************************************8*'
-    write(stdout, *) 'inside standalonestepwithoutdrainage in do after biophys_forc'
-    write(stdout, *) '*************************************************************'
+    !write(stdout, *) '***********************************************************8*'
+    !write(stdout, *) 'inside standalonestepwithoutdrainage in do after biophys_forc'
+    !write(stdout, *) '*************************************************************'
     ! end of the testing
       call this%betr(c)%step_without_drainage(this%betr_time, betr_bounds, this%betr_col(c), &
          this%betr_pft(c), this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp, &
          this%biophys_forc(c), this%biogeo_flux(c), this%biogeo_state(c), this%bstatus(c))
-
-      
-    ! testing only, where the run crushed        -zlyu   02.2019
-    write(stdout, *) '***********************************************************8*'
-    write(stdout, *) 'inside standalonestepwithoutdrainage in do before if case'
-    write(stdout, *) '*************************************************************'
-      ! end of the testing
       
       if(this%bstatus(c)%check_status())then
          call this%bsimstatus%setcol(c)
          
-    ! testing only, where the run crushed        -zlyu   02/2019
-    write(stdout, *) '***********************************************************8*'
-    write(stdout, *) 'inside standalonestepwithoutdrainage in if after setcol'
-    write(stdout, *) '*************************************************************'
-         ! end of the testing
-         
          call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
-         
-    ! testing only, where the run crushed        -zlyu   02/2019
-    write(stdout, *) '***********************************************************8*'
-    write(stdout, *) 'inside standalonestepwithoutdrainage in if after set_msg'
-    write(stdout, *) '*************************************************************'
-    ! end of the testing
     
         exit
       endif
    enddo
-
-       ! testing only, where the run crushed        -zlyu   02/2019
-    write(stdout, *) '***********************************************************8*'
-    write(stdout, *) 'inside standalonestepwithoutdrainage after do loop'
-    write(stdout, *) '*************************************************************'
-   ! end of the testing
    
     if(this%bsimstatus%check_status()) &
          call endrun(msg=trim(this%bsimstatus%print_msg()))
 
-            ! testing only, where the run crushed        -zlyu   01/27/2019
-    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
-    write(stdout, *) 'end of StandaloneStepWithoutDrainage '
-    write(stdout, *) '**************************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
-    ! end of the testing
   end subroutine StandaloneStepWithoutDrainage
 
   !---------------------------------------------------------------------------------
@@ -484,91 +431,47 @@ contains
   !TEMPORARY VARIABLES
   type(betr_bounds_type)     :: betr_bounds
   integer :: begc_l, endc_l
-  
-    ! testing only, where the run collapsed        -zlyu   01/27/2019
-    write(stdout, *) '***************************'
-    write(stdout, *) 'inside StandalonePlantSoilBGCRec'
-    write(stdout, *) '***************************'
-    ! end of the testing
-
+ 
   !summarize the fluxes and state variables
   c_l = 1
   call this%BeTRSetBounds(betr_bounds)
   begc_l = betr_bounds%begc; endc_l=betr_bounds%endc;
   
-    ! testing only, where the run collapsed        -zlyu   01/27/2019
-    write(stdout, *) '***************************^^^^^^^^^^^^^^^^^^^^^^^^^'
-    write(stdout, *) 'inside StandalonePlantSoilBGCRec after TRSetBounds'
-    write(stdout, *) '***************************^^^^^^^^^^^^^^^^^^^^^^^^^'
-    ! end of the testing
-    
   !retrieve and return
   do c = bounds%begc, bounds%endc
     if(.not. this%active_col(c))cycle
   
-    ! testing only, where the run collapsed        -zlyu   01/27/2019
-    write(stdout, *) '***************************'
-    write(stdout, *) 'inside StandalonePlantSoilBGCRec before retrieve_biostate'
-    write(stdout, *) '***************************'
-    ! end of the testing
     call this%betr(c)%retrieve_biostates(betr_bounds,  1, betr_nlevsoi, &
        this%num_soilc, this%filter_soilc, this%jtops, this%biogeo_state(c),this%bstatus(c))
   
     ! testing only, where the run collapsed        -zlyu   01/27/2019
-    write(stdout, *) '***************************'
-    write(stdout, *) 'inside StandalonePlantSoilBGCRec after retrieve_biostate'
-    write(stdout, *) '***************************'
+    !write(stdout, *) '***************************'
+    !write(stdout, *) 'inside StandalonePlantSoilBGCRec after retrieve_biostate'
+    !write(stdout, *) '***************************'
     ! end of the testing
     
     if(this%bstatus(c)%check_status())then
       call this%bsimstatus%setcol(c)
       call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())        
-    ! testing only, where the run collapsed        -zlyu   01/27/2019
-    write(stdout, *) '***************************'
-    write(stdout, *) 'inside StandalonePlantSoilBGCRec in side check_status'
-    write(stdout, *) '***************************'
-    ! end of the testing
+
       exit
     endif
     call this%betr(c)%retrieve_biofluxes(this%num_soilc, this%filter_soilc, &
       this%num_soilp, this%filter_soilp, this%biogeo_flux(c))
-  
-    ! testing only, where the run collapsed        -zlyu   01/27/2019
-    write(stdout, *) '***************************'
-    write(stdout, *) 'inside StandalonePlantSoilBGCRec after retrieve_biofluxes'
-    write(stdout, *) '***************************'
-    ! end of the testing
     
     call this%biogeo_state(c)%summary(betr_bounds, 1, betr_nlevtrc_soil,&
          this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil), &
          this%betr_col(c)%zi(begc_l:endc_l,1:betr_nlevtrc_soil),this%do_soibgc())
-  
-    ! testing only, where the run collapsed        -zlyu   01/27/2019
-    write(stdout, *) '***************************'
-    write(stdout, *) 'inside StandalonePlantSoilBGCRec after summary'
-    write(stdout, *) '***************************'
-    ! end of the testing
     
     call this%biogeo_flux(c)%summary(betr_bounds, 1, betr_nlevtrc_soil, &
          this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil),this%do_soibgc())
-      
-    ! testing only, where the run collapsed        -zlyu   01/27/2019
-    write(stdout, *) '***************************'
-    write(stdout, *) 'inside StandalonePlantSoilBGCRec after second summary'
-    write(stdout, *) '***************************'
-    ! end of the testing
+ 
   enddo
 
   if(.not. this%do_soibgc())return
 
   do fc = 1, num_soilc
     c = filter_soilc(fc)
-  
-    ! testing only, where the run collapsed        -zlyu   01/27/2019
-    write(stdout, *) '***************************'
-    write(stdout, *) 'inside StandalonePlantSoilBGCRec before recollect soil respiration'
-    write(stdout, *) '***************************'
-    ! end of the testing
     
     !recollect soil respirations, fire and hydraulic loss
     c12flux_vars%hr_col(c) = this%biogeo_flux(c)%c12flux_vars%hr_col(c_l)
@@ -598,11 +501,6 @@ contains
     n14flux_vars%denit_col(c)= n14flux_vars%f_denit_col(c)
     n14flux_vars%f_n2o_nit_col(c)=this%biogeo_flux(c)%n14flux_vars%f_n2o_nit_col(c_l)
 
-    ! testing only, where the run collapsed        -zlyu   01/27/2019
-    write(stdout, *) '***************************^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'
-    write(stdout, *) 'inside StandalonePlantSoilBGCRec before hydraulic loss'
-    write(stdout, *) '***************************^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'
-    ! end of the testing
     !hydraulic loss
     n14flux_vars%smin_no3_leached_col(c)= &
         this%biogeo_flux(c)%n14flux_vars%smin_no3_leached_col(c_l) + &
@@ -645,21 +543,16 @@ contains
     !som_p_leached_col as a numerical roundoff
     p31flux_vars%som_p_leached_col(c) = -p31flux_vars%som_p_leached_col(c)
     ! testing only, where the run collapsed        -zlyu   01/27/2019
-    write(stdout, *) '***************************#######################################################'
-    write(stdout, *) 'inside StandalonePlantSoilBGCRec c12state, n14state, and p31state printout'
-    write(stdout, *) 'iteration c:  ',c, 'c_l:   ',c_l
-    write(stdout, *) ' c12flux_vars%hr_col:  ', c12flux_vars%hr_col(c),  'n14flux_vars%smin_no3_runoff_col:   ',n14flux_vars%smin_no3_runoff_col(c)
-    write(stdout, *) 'this%biogeo_flux(c)%c12flux_vars%hr_col(c_l):  ',this%biogeo_flux(c)%c12flux_vars%hr_col(c_l),  'this%biogeo_flux(c)%n14flux_vars%smin_no3_runoff_col(c_l):   ',this%biogeo_flux(c)%n14flux_vars%smin_no3_runoff_col(c_l)
-    write(stdout, *) '***************************#######################################################'
+    !write(stdout, *) '***************************#######################################################'
+    !write(stdout, *) 'inside StandalonePlantSoilBGCRec c12state, n14state, and p31state printout'
+    !write(stdout, *) 'iteration c:  ',c, 'c_l:   ',c_l
+    !write(stdout, *) ' c12flux_vars%hr_col:  ', c12flux_vars%hr_col(c),  'n14flux_vars%smin_no3_runoff_col:   ',n14flux_vars%smin_no3_runoff_col(c)
+    !write(stdout, *) 'this%biogeo_flux(c)%c12flux_vars%hr_col(c_l):  ',this%biogeo_flux(c)%c12flux_vars%hr_col(c_l),  'this%biogeo_flux(c)%n14flux_vars%smin_no3_runoff_col(c_l):   ',this%biogeo_flux(c)%n14flux_vars%smin_no3_runoff_col(c_l)
+    !write(stdout, *) '***************************#######################################################'
     ! end of the testing
     ! ---------------------------------------------------------------------------------------------------------------------------------
     ! ---------------------------------------------------------------------------------------------------------------------------------
-    
-    ! testing only, where the run collapsed        -zlyu   01/27/2019
-    write(stdout, *) '***************************'
-    write(stdout, *) 'inside StandalonePlantSoilBGCRec before recollect soil organic carbon'
-    write(stdout, *) '***************************'
-    ! end of the testing
+ 
     !recollect soil organic carbon, soil organic nitrogen, and soil organic phosphorus
     c12state_vars%cwdc_col(c) = this%biogeo_state(c)%c12state_vars%cwdc_col(c_l)
     c12state_vars%totlitc_col(c) = this%biogeo_state(c)%c12state_vars%totlitc_col(c_l)
@@ -683,14 +576,14 @@ contains
    endif
 
     ! testing only, where the run collapsed        -zlyu   01/27/2019
-    write(stdout, *) '***************************#######################################################'
-    write(stdout, *) 'inside StandalonePlantSoilBGCRec c12state, n14state, and p31state printout'
-    write(stdout, *) 'iteration c:  ',c, 'c_l:   ',c_l
-    write(stdout, *) 'c12state_vars%cwdc_col:  ',c12state_vars%cwdc_col(c),'c12state_vars%totlitc_col:   ',c12state_vars%totlitc_col(c), 'c12state_vars%totsomc_col:    ',c12state_vars%totsomc_col(c)
-    write(stdout, *) 'this%biogeo_state(c)%c12state_vars%cwdc_col(c_l):    ',this%biogeo_state(c)%c12state_vars%cwdc_col(c_l), 'this%biogeo_state(c)%c12state_vars%totsomc_1m_col(c_l):     ',this%biogeo_state(c)%c12state_vars%totsomc_1m_col(c_l)
-    write(stdout, *) 'this%biogeo_state(c)%n14state_vars%cwdn_col(c_l):    ',this%biogeo_state(c)%n14state_vars%cwdn_col(c_l), 'this%biogeo_state(c)%n14state_vars%totsomn_col(c_l):     ',this%biogeo_state(c)%n14state_vars%totsomn_col(c_l)
-    write(stdout, *) 'n14state_vars%cwdn_col(c):    ',n14state_vars%cwdn_col(c), 'n14state_vars%totsomn_col(c):     ',n14state_vars%totsomn_col(c)
-    write(stdout, *) '***************************#######################################################'
+    !write(stdout, *) '***************************#######################################################'
+    !write(stdout, *) 'inside StandalonePlantSoilBGCRec c12state, n14state, and p31state printout'
+    !write(stdout, *) 'iteration c:  ',c, 'c_l:   ',c_l
+    !write(stdout, *) 'c12state_vars%cwdc_col:  ',c12state_vars%cwdc_col(c),'c12state_vars%totlitc_col:   ',c12state_vars%totlitc_col(c), 'c12state_vars%totsomc_col:    ',c12state_vars%totsomc_col(c)
+    !write(stdout, *) 'this%biogeo_state(c)%c12state_vars%cwdc_col(c_l):    ',this%biogeo_state(c)%c12state_vars%cwdc_col(c_l), 'this%biogeo_state(c)%c12state_vars%totsomc_1m_col(c_l):     ',this%biogeo_state(c)%c12state_vars%totsomc_1m_col(c_l)
+    !write(stdout, *) 'this%biogeo_state(c)%n14state_vars%cwdn_col(c_l):    ',this%biogeo_state(c)%n14state_vars%cwdn_col(c_l), 'this%biogeo_state(c)%n14state_vars%totsomn_col(c_l):     ',this%biogeo_state(c)%n14state_vars%totsomn_col(c_l)
+    !write(stdout, *) 'n14state_vars%cwdn_col(c):    ',n14state_vars%cwdn_col(c), 'n14state_vars%totsomn_col(c):     ',n14state_vars%totsomn_col(c)
+    !write(stdout, *) '***************************#######################################################'
     n14state_vars%cwdn_col(c) = this%biogeo_state(c)%n14state_vars%cwdn_col(c_l)
     n14state_vars%totlitn_col(c) = this%biogeo_state(c)%n14state_vars%totlitn_col(c_l)
     n14state_vars%totsomn_col(c) = this%biogeo_state(c)%n14state_vars%totsomn_col(c_l)
@@ -704,23 +597,18 @@ contains
     p31state_vars%totsomp_1m_col(c) = this%biogeo_state(c)%p31state_vars%totsomp_1m_col(c_l)
 
     ! testing only, where the run collapsed        -zlyu   01/27/2019
-    write(stdout, *) '***************************#######################################################'
-    write(stdout, *) 'inside StandalonePlantSoilBGCRec c12state, n14state, and p31state printout'
-    write(stdout, *) 'iteration c:  ',c, 'c_l:   ',c_l
-    write(stdout, *) 'c12state_vars%cwdc_col:  ',c12state_vars%cwdc_col(c),'c12state_vars%totlitc_col:   ',c12state_vars%totlitc_col(c), 'c12state_vars%totsomc_col:    ',c12state_vars%totsomc_col(c)
-    write(stdout, *) 'n14state_vars%cwdn_col:  ',n14state_vars%cwdn_col(c),'n14state_vars%totlitn_col:   ',n14state_vars%totlitn_col(c), 'n14state_vars%totsomn_col:    ',n14state_vars%totsomn_col(c)
-    write(stdout, *) 'p31state_vars%cwdp_col:  ',p31state_vars%cwdp_col(c),'p31state_vars%totlitp_col:   ',p31state_vars%totlitp_col(c), 'p31state_vars%totsomp_col:    ',p31state_vars%totsomp_col(c)
-    write(stdout, *) 'this%biogeo_state(c)%c12state_vars%cwdc_col(c_l):   ',this%biogeo_state(c)%c12state_vars%cwdc_col(c_l),'this%biogeo_state(c)%n14state_vars%totlitn_col(c_l):   ',this%biogeo_state(c)%n14state_vars%totlitn_col(c_l), 'this%biogeo_state(c)%p31state_vars%totsomp_col(c_l):    ',this%biogeo_state(c)%p31state_vars%totsomp_col(c_l)
-    write(stdout, *) '***************************#######################################################'
+    !write(stdout, *) '***************************#######################################################'
+    !write(stdout, *) 'inside StandalonePlantSoilBGCRec c12state, n14state, and p31state printout'
+    !write(stdout, *) 'iteration c:  ',c, 'c_l:   ',c_l
+    !write(stdout, *) 'c12state_vars%cwdc_col:  ',c12state_vars%cwdc_col(c),'c12state_vars%totlitc_col:   ',c12state_vars%totlitc_col(c), 'c12state_vars%totsomc_col:    ',c12state_vars%totsomc_col(c)
+    !write(stdout, *) 'n14state_vars%cwdn_col:  ',n14state_vars%cwdn_col(c),'n14state_vars%totlitn_col:   ',n14state_vars%totlitn_col(c), 'n14state_vars%totsomn_col:    ',n14state_vars%totsomn_col(c)
+    !write(stdout, *) 'p31state_vars%cwdp_col:  ',p31state_vars%cwdp_col(c),'p31state_vars%totlitp_col:   ',p31state_vars%totlitp_col(c), 'p31state_vars%totsomp_col:    ',p31state_vars%totsomp_col(c)
+    !write(stdout, *) 'this%biogeo_state(c)%c12state_vars%cwdc_col(c_l):   ',this%biogeo_state(c)%c12state_vars%cwdc_col(c_l),'this%biogeo_state(c)%n14state_vars%totlitn_col(c_l):   ',this%biogeo_state(c)%n14state_vars%totlitn_col(c_l), 'this%biogeo_state(c)%p31state_vars%totsomp_col(c_l):    ',this%biogeo_state(c)%p31state_vars%totsomp_col(c_l)
+    !write(stdout, *) '***************************#######################################################'
     ! end of the testing
     ! ---------------------------------------------------------------------------------------------------------------------------------
     ! ---------------------------------------------------------------------------------------------------------------------------------
-    
-    ! testing only, where the run collapsed        -zlyu   01/27/2019
-    write(stdout, *) '***************************'
-    write(stdout, *) 'inside StandalonePlantSoilBGCRec before recollect inorganic nitrogen'
-    write(stdout, *) '***************************'
-    ! end of the testing
+
     !recollect inorganic nitrogen (smin_nh4, smin_no3), and inorganic phosphorus (disolvable and protected)
     n14state_vars%sminn_col(c) = this%biogeo_state(c)%n14state_vars%sminn_col(c_l)
     n14state_vars%smin_nh4_col(c)=this%biogeo_state(c)%n14state_vars%sminn_nh4_col(c_l)
@@ -748,12 +636,6 @@ contains
       c14state_vars%som3c_col(c) = this%biogeo_state(c)%c14state_vars%som3c_col(c_l)
       c14state_vars%domc_col(c)  = this%biogeo_state(c)%c14state_vars%domc_col(c_l)
     endif
-  
-    ! testing only, where the run collapsed        -zlyu   01/27/2019
-    write(stdout, *) '***************************'
-    write(stdout, *) 'inside StandalonePlantSoilBGCRec before method'
-    write(stdout, *) '***************************'
-    ! end of the testing
     if(index(trim(reaction_method),'ecacnp')/=0 .or. &
       index(trim(reaction_method),'cdom')/=0 .or. &
       index(trim(reaction_method),'keca')/=0 .or. &
@@ -770,12 +652,6 @@ contains
       p31state_vars%domp_col(c) = this%biogeo_state(c)%p31state_vars%domp_col(c_l)
     endif
  enddo
-   
-    ! testing only, where the run collapsed        -zlyu   01/27/2019
-    write(stdout, *) '***************************'
-    write(stdout, *) 'end of StandalonePlantSoilBGCRec'
-    write(stdout, *) '***************************'
-    ! end of the testing
 
   end subroutine StandalonePlantSoilBGCRecv
 
@@ -870,6 +746,7 @@ contains
   use WaterStateType             , only : waterstate_type
   use SoilWaterRetentionCurveMod , only : soil_water_retention_curve_type
   use clm_varcon                 , only : grav,hfus,tfrz
+  use betr_constants             , only : stdout                  !-zlyu
   implicit none
   !ARGUMENTS
   class(betr_simulation_standalone_type) , intent(inout) :: this
@@ -898,14 +775,24 @@ contains
     watsat            =>    soilstate_vars%watsat_col          , & ! Input:  [real(r8) (:,:) ]  minimum soil suction (mm)
     sucsat            =>    soilstate_vars%sucsat_col            & ! Input:  [real(r8) (:,:) ]  minimum soil suction (mm)
   )
+    ! testing only, checking variables                    -zlyu    
+    !write(stdout, *) '--------------------------------------------------------------------'
+    !write(stdout, *) 'In Standalone ubj= ', ubj, ',    numf= ',numf, ',   size of t_soisno',size(t_soisno,2)
 
   do j = lbj, ubj
     do fc = 1, numf
       c = filter(fc)
       if(.not. this%active_col(c))cycle
+      !write(stdout, *) 'In Standalone t_soisno= ', t_soisno(c,j), ',    j= ',j
+      !write(stdout, *) '-------------------------------------------------------------------'
       if(j==1)then
         if(t_soisno(c,j)<tfrz)then
           smp_l(c,j)= -hfus*(tfrz-t_soisno(c,j))/(grav*t_soisno(c,j)) * 1000._r8  !(mm)
+    ! testing only, checking variables                    -zlyu    
+    !write(stdout, *) '********************************************************************8*'
+    !write(stdout, *) 'inside case 1 in BeTRSimulationStandalone smp_l(c,j) = ', smp_l(c,j), ',     c = ',c, ',    j = ',j
+    !write(stdout, *) 'hfus = ', hfus, ',     tfrz = ',tfrz, ',    t_soisno(c,j) = ',t_soisno(c,j)
+    ! end of the testing
         else
           s_node = max(h2osoi_vol(c,j)/watsat(c,j), 0.01_r8)
           call soil_water_retention_curve%soil_suction(sucsat(c,j), s_node, bsw(c,j), smp_l(c,j), dsmpds_top)
@@ -917,8 +804,17 @@ contains
       else
         if(t_soisno(c,j)<tfrz)then
           smp_l(c,j)= -hfus*(tfrz-t_soisno(c,j))/(grav*t_soisno(c,j)) * 1000._r8  !(mm)
+    ! testing only, checking variables                    -zlyu    
+    !write(stdout, *) 'inside case 2 in BeTRSimulationStandalone smp_l(c,j) = ', smp_l(c,j), ',     c = ',c, ',    j = ',j
+    !write(stdout, *) 'hfus = ', hfus, ',     tfrz = ',tfrz, ',    t_soisno(c,j) = ',t_soisno(c,j)
+    !write(stdout, *) '**********************************************************************8*'
+    ! end of the testing
         else
           s_node = max(h2osoi_vol(c,j)/watsat(c,j), 0.01_r8)
+     !      write(stdout, *) 'inside case 2 else in Standalone t_soisno = ', t_soisno(c,j), ',     c = ',c, ',    j = ',j
+     !      write(stdout, *) 's_node = ',s_node, ',      h2osoi_vol = ',h2osoi_vol(c,j), ',      watsat = ',watsat(c,j)
+     !      write(stdout, *) 'check smp_l = ',smp_l(c,j), ',   bsw= ',bsw(c,j), ',    sucsat= ',sucsat(c,j)
+     !      write(stdout, *) '***************************************************************'   !-zlyu
           call soil_water_retention_curve%soil_suction(sucsat(c,j), s_node, bsw(c,j), smp_l(c,j))
         endif
       endif

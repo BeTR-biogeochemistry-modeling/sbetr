@@ -241,10 +241,10 @@ contains
   ! start of new paras from rzacplsbetr_cmupdated         -zlyu 
   ! Microbes
     this%decay_mic0 = 4.12e-3_r8*365._r8/year_sec            ! Reference microbial death rate (1/second)
-    this%gmax_mic  = 0.8760_r8*365._r8/year_sec    ! 0.088031564_r8*365._r8/year_sec         ! Maximum microbial growth rate (1/second)              ! back to oginial para      -zlyu
-    this%pmax_enz = 0.003599271_r8*365._r8/year_sec               ! Maximum enzyme production rate (1/second)
-    this%yld_mic = 0.252307388_r8                  ! Growth efficiency of microbes (g mic/g res)
-    this%yld_enz = 0.999705849_r8                  ! Growth efficiency of enzymes (g enz/g res)
+    this%gmax_mic  = 0.8760_r8*365._r8/year_sec    ! 0.088031564_r8*365._r8/year_sec    !-zlyu     ! Maximum microbial growth rate (1/second)              ! back to oginial para      -zlyu
+    this%pmax_enz = 0.003599271_r8*365._r8/year_sec     !*10._r8     -zlyu       ! Maximum enzyme production rate (1/second)
+    this%yld_mic = 0.252307388_r8       !0.8_r8       !-zlyu     *4._r8        ! Growth efficiency of microbes (g mic/g res)
+    this%yld_enz = 0.999705849_r8           !*0.5_r8                 !-zlyu        ! Growth efficiency of enzymes (g enz/g res)
     this%ref_mr_mic             = 0.00230282_r8*365._r8/year_sec       ! Microbial maintenance rate (1/second)
     this%ref_kappa_mic          = 0.083996608_r8*365._r8/year_sec       ! Reserve turnover rate (1/second)
     this%mic_transp = 0.046561048_r8              ! Scaling factor between transporter and microbial structural biomass
@@ -255,9 +255,9 @@ contains
     
     ! Enzymes
     this%decay_enz = 0.005289921_r8*365._r8/year_sec               ! Enzyme turnover tate (1/second)
-    this%ref_vmax_enz           = 3.833835166_r8*365._r8/year_sec   ! Maximum rate of polymer degradation (1/second)
-    this%ref_kaff_enz_poly      = 202.6648678_r8       ! Affinity parameter for enzymatic polymer degradation (g enzymes/m3)
-    this%ref_kaff_enz_msurf     = 45.5122168_r8        ! Affinity parameter for surface adsorption of enzymes (g enzymes/m3)
+    this%ref_vmax_enz           = 3.833835166_r8   !*4_r8*365._r8/year_sec  !-zlyu    ! Maximum rate of polymer degradation (1/second)
+    this%ref_kaff_enz_poly      = 202.6648678_r8            !*2._r8       !-zlyu   ! Affinity parameter for enzymatic polymer degradation (g enzymes/m3)
+    this%ref_kaff_enz_msurf     = 45.5122168_r8          !*0.5_r8           !-zlyu     ! Affinity parameter for surface adsorption of enzymes (g enzymes/m3)
     this%fenz2poly = 0.000513795_r8                ! Proportion of degraded exoenzyme into polymers (g poly/g enz)
     
     ! Surfaces
@@ -319,7 +319,7 @@ contains
   !following is based on century parameterization
   this%rf_l1s1_bgc           = (/0.55_r8, 0.55_r8/)
   this%rf_l2s1_bgc           = (/0.45_r8, 0.55_r8/)
-  this%rf_l3s2_bgc           = 0.35_r8
+  this%rf_l3s2_bgc           = 0.35_r8                  !0.5_r8     -zlyu, testing
   this%rf_s2s1_bgc           = 0.55_r8
   this%rf_s3s1_bgc           = 0.55_r8
 

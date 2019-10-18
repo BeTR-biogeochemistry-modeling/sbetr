@@ -239,9 +239,9 @@ implicit none
 
     catanf_30 = catanf(30._r8)
     ! testing only, where the run crushed        -zlyu   02/2019
-    write(stdout, *) '***************************'
-    write(stdout, *) 'inside decompk_scalar start'
-    write(stdout, *) '***************************'
+    !write(stdout, *) '***************************'
+    !write(stdout, *) 'inside decompk_scalar start'
+    !write(stdout, *) '***************************'
     ! end of the testing
     
   !warming effect
@@ -274,9 +274,9 @@ implicit none
       temp0 = (/ (ii, ii=trangebot,trangetop) /) ! Generate sequence of temperatures
 
     ! testing only, where the run crushed        -zlyu   02/2019
-    write(stdout, *) '***************************'
-    write(stdout, *) 'temp0 = ',temp0
-    write(stdout, *) '***************************'
+    !write(stdout, *) '***************************'
+    !write(stdout, *) 'temp0 = ',temp0
+    !write(stdout, *) '***************************'
     ! end of the testing
     
       ! Fraction of active enzymes using Murphy et al. 1990, see Tang & Riely 2015 Eq.46-48, also see Ratkowsky2005JTB
@@ -290,23 +290,23 @@ implicit none
      
       tinv=1._r8/tempbgc-1._r8/tref ! Modifies activation energy
     ! testing only, where the run crushed        -zlyu   02/2019
-    write(stdout, *) '***************************'
-    write(stdout, *) 't_fact0 = ',t_fact0
-    write(stdout, *) '***************************'
+    !write(stdout, *) '***************************'
+    !write(stdout, *) 't_fact0 = ',t_fact0
+    !write(stdout, *) '***************************'
     ! end of the testing
         
     ! testing only, where the run crushed        -zlyu   02/2019
-    write(stdout, *) '***************************'
-    write(stdout, *) 'deltag0 = ',deltag0
-    write(stdout, *) '***************************'
+    !write(stdout, *) '***************************'
+    !write(stdout, *) 'deltag0 = ',deltag0
+    !write(stdout, *) '***************************'
     ! end of the testing 
       call interp1(temp0, t_fact0, tempbgc, t_fact) ! Interpolate to find fraction of active enzymes at current temperature
       ! This subroutine should return t_fact
       ! This subroutine should return t_fact
     ! testing only, where the run crushed        -zlyu   02/2019
-    write(stdout, *) '***************************'
-    write(stdout, *) 'inside decompk_scalar after interp1'
-    write(stdout, *) '***************************'
+    !write(stdout, *) '***************************'
+    !write(stdout, *) 'inside decompk_scalar after interp1'
+    !write(stdout, *) '***************************'
       ! end of the testing
       
       !fref=t_fact*(tempbgc/tref) ! Modifies non-equilibrium enzymatic reactions
@@ -315,6 +315,7 @@ implicit none
   !Update parameters
     this%vmax_mic         = ref_vmax_mic *fref*exp(-ea_vmax_mic*tinv)
     this%vmax_enz         = ref_vmax_enz *fref*exp(-ea_vmax_enz*tinv)
+    !this%vmax_enz         = ref_vmax_enz *1._r8*exp(-ea_vmax_enz*tinv)          !-zlyu, testing without active proportion for enz
     this%kaff_mono_mic    = ref_kaff_mono_mic *exp(-ea_kaff_mono_mic*tinv)
     this%kaff_enz_poly    = ref_kaff_enz_poly *exp(-ea_kaff_enz_poly*tinv)
     this%mr_mic           = ref_mr_mic        *exp(-ea_mr_mic*tinv)
@@ -328,12 +329,31 @@ implicit none
   maxpsi = sucsat * (-9.8e-6_r8)   !kg -> MPa
   psi = min(soilpsi,maxpsi)
 
+    ! testing only, checking variables              -zlyu   
+    write(stdout, *) '***************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    write(stdout, *) 'w_scalar = ',this%w_scalar,'      sucsat = ',sucsat,'      maxpsi = ',maxpsi
+    write(stdout, *) 'soilpsi = ',soilpsi,'      psi = ',psi, '     minpsi = ', minpsi
+    write(stdout, *) '***************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    ! end of the testing
+
   ! decomp only if soilpsi is higher than minpsi, some modification is needed for the following
   ! double check the paper by Wilson and Griffin, 1975
   if (psi > minpsi) then
     this%w_scalar = (log(minpsi/psi)/log(minpsi/maxpsi))
+    ! testing only, checking variables              -zlyu   
+    write(stdout, *) '***************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    write(stdout, *) 'inside case psi > minpsi'
+    write(stdout, *) 'w_scalar = ',this%w_scalar, '    psi = ', psi
+    write(stdout, *) '***************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    ! end of the testing
   else
     this%w_scalar = 0._r8
+    ! testing only, checking variables              -zlyu   
+    write(stdout, *) '***************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    write(stdout, *) 'inside else case where psi < minpsi'
+    write(stdout, *) 'w_scalar = ',this%w_scalar, '       psi = ',psi
+    write(stdout, *) '***************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    ! end of the testing
   end if
 
   !oxygen scalar, this is different from what CLM4.5bgc does, I use a M-M formulation to indicate O2 stress
@@ -342,9 +362,20 @@ implicit none
   this%o_scalar = max(o2w/(o2w+k_m_o2),1.e-20_r8)  !the value 0.22 mol O3/m3 is from Arah and Kirk, 2000
   !set o_scalar to 1._r8, because century model already imposes a moisture effect
   !this%o_scalar = 1._r8
-  
+      ! testing only, checking variables              -zlyu   
+    !write(stdout, *) '****************************################################################'
+    !write(stdout, *) 'just to check o_scalar'
+    write(stdout, *) 'o_scalar = ',this%o_scalar, '   o2b = ',o2b, '     o2_w2b = ', o2_w2b
+    !write(stdout, *) '****************************################################################'
+    ! end of the testing
   !depth scalar, according to Koven et al. (2013), BG, the depth scalar is needed to resolve the radiocarbon profile
   this%depth_scalar = exp(-depz/decomp_depth_efolding)
+    ! testing only, checking variables              -zlyu   
+    !write(stdout, *) '***************************@***********************************************'
+    !write(stdout, *) 'just to check depth_scalar'
+    write(stdout, *) 'depth_scalar = ',this%depth_scalar, '    depz = ',depz, '     decomp_depth_efolding = ',decomp_depth_efolding
+    !write(stdout, *) '***************************************************************************'
+    ! end of the testing
 
   end associate
   end subroutine set_decompk_scalar

@@ -199,9 +199,9 @@ contains
     betr_nlevtrc_soil  = nlevtrc_soil
 
     ! testing only, where the run collapsed        -zlyu   01/27/2019
-    write(stdout, *) '***************************'
-    write(stdout, *) 'inside CLMStepWithoutDrainage'
-    write(stdout, *) '***************************'
+    !write(stdout, *) '***************************'
+    !write(stdout, *) 'inside CLMStepWithoutDrainage'
+    !write(stdout, *) '***************************'
     ! end of the testing
     call this%BeTRSetBounds(betr_bounds)
 
@@ -224,9 +224,9 @@ contains
          call endrun(msg=this%bsimstatus%print_msg())
 
         ! testing only, where the run collapsed        -zlyu   01/27/2019
-    write(stdout, *) '***************************'
-    write(stdout, *) 'end of CLMStepWithoutDrainage'
-    write(stdout, *) '***************************'
+    !write(stdout, *) '***************************'
+    !write(stdout, *) 'end of CLMStepWithoutDrainage'
+    !write(stdout, *) '***************************'
     ! end of the testing
   end subroutine CLMStepWithoutDrainage
 
@@ -390,6 +390,7 @@ contains
     use SoilWaterRetentionCurveMod , only : soil_water_retention_curve_type
     use betr_decompMod             , only : betr_bounds_type
     use clm_varcon                 , only : grav,hfus,tfrz
+    use betr_constants             , only : stdout                !-zlyu
     implicit none
     !ARGUMENTS
     class(betr_simulation_clm_type)        , intent(inout)        :: this
@@ -427,6 +428,7 @@ contains
             if(j>=1)then
                if(t_soisno(c,j)<tfrz)then
                   smp_l(c,j)= hfus*(tfrz-t_soisno(c,j))/(grav*t_soisno(c,j)) * 1000._r8  !(mm)
+
                else
                   s_node = max(h2osoi_vol(c,j)/watsat(c,j), 0.01_r8)
                   ! FIXME(bja, 201603) this depends on the SWRC

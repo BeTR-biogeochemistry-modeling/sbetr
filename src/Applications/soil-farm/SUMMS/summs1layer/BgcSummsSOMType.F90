@@ -1316,9 +1316,9 @@ subroutine calc_som_decay_r(this, summsbgc_index, dtime, om_k_decay, om_pools, o
   k_decay(lit3) = k_decay(lit3) * t_scalar *  w_scalar * o_scalar * depth_scalar
 
   k_decay(poly) = k_decay(poly)  * w_scalar
-  k_decay(mic)  = k_decay(mic)   * o_scalar * w_scalar
-  k_decay(res)  = k_decay(res)   * o_scalar * w_scalar
-  k_decay(enz)  = k_decay(enz)   * w_scalar
+  k_decay(mic)  = k_decay(mic)   * o_scalar * (1._r8-w_scalar)                 !zlyu for w_scalar
+  k_decay(res)  = k_decay(res)   * o_scalar * (1._r8-w_scalar)                 ! zlyu for w_scalar
+  k_decay(enz)  = k_decay(enz)   * (1._r8-w_scalar)                 ! zlyu for w_scalar
   k_decay(mono) = k_decay(mono)  * o_scalar * w_scalar
   
   k_decay(cwd)  = k_decay(cwd)   * t_scalar *  w_scalar * o_scalar * depth_scalar
