@@ -8,6 +8,7 @@ module ODEMod
   use bshr_kind_mod , only : r8 => shr_kind_r8
   use betr_ctrl     , only : iulog => biulog
   use gbetrType     , only : gbetr_type
+  use LinearAlgebraMod, only : taxpy
   implicit none
 
   private
@@ -272,8 +273,8 @@ contains
 
     y(:)=y0(:)
     a=pscal*dt
-    !daxpy(N,DA,DX,INCX,DY,INCY)
-    call daxpy(neq, a, f, 1, y, 1)
+    !taxpy(N,DA,DX,INCX,DY,INCY)
+    call taxpy(neq, a, f, 1, y, 1)
     deallocate(mbkks_data%aj)
 
   end subroutine mbbks
@@ -509,7 +510,7 @@ contains
     y(:) = y0(:)
     if(present(ps))ps=p
     p = p * dt
-    call daxpy(neq, p, f, 1, y, 1)
+    call taxpy(neq, p, f, 1, y, 1)
   end subroutine ebbks
 
 
@@ -553,19 +554,19 @@ contains
     call odefun(extra, y0, dt05, ti, neq, k1)
 
     y(:) = y0(:)
-    call daxpy(neq, dt05, k1, 1, y, 1)
+    call taxpy(neq, dt05, k1, 1, y, 1)
 
     ti = t + dt05
     call odefun(extra, y, dt05, ti, neq, k2)
 
     y(:) = y0(:)
-    call daxpy(neq, dt05, k2, 1, y, 1)
+    call taxpy(neq, dt05, k2, 1, y, 1)
 
     ti = t + dt05
     call odefun(extra, y, dt05, ti, neq, k3)
 
     y(:) = y0(:)
-    call daxpy(neq, dt, k3, 1, y, 1)
+    call taxpy(neq, dt, k3, 1, y, 1)
 
     ti = t + dt
     call odefun(extra, y, dt, ti, neq, k4)
@@ -576,7 +577,7 @@ contains
     a = dt / 6._r8
 
     y(:) = y0(:)
-    call daxpy(neq, a, kt, 1, y, 1)
+    call taxpy(neq, a, kt, 1, y, 1)
 
   end subroutine ode_rk4
 
@@ -618,13 +619,13 @@ contains
     call odefun(extra, y0, dt, ti, neq, k1)
 
     y(:) = y0(:)
-    call daxpy(neq, dt05, k1, 1, y, 1)
+    call taxpy(neq, dt05, k1, 1, y, 1)
 
     ti = t + dt05
     call odefun(extra, y, dt05, ti, neq, k2)
 
     y(:) = y0(:)
-    call daxpy(neq, dt, k2, 1, y, 1)
+    call taxpy(neq, dt, k2, 1, y, 1)
   end subroutine ode_rk2
 
   !-------------------------------------------------------------------------------

@@ -12,6 +12,7 @@ module LinearAlgebraMod
        __FILE__
 
   public :: sparse_gemv
+  public :: taxpy
 contains
 
   subroutine sparse_gemv(transp, nx, ny, a, nb, b, nz, dxdt)
@@ -54,4 +55,47 @@ contains
   endif
 
   end subroutine sparse_gemv
+
+!-------------------------------------------------------------------------------
+ subroutine taxpy(N,DA,DX,INCX,DY,INCY)
+ implicit none
+ integer, intent(in) :: N
+ real(r8), intent(in) :: da
+ real(r8), intent(in) :: dx(:)
+ integer, intent(in) :: incx
+ integer, intent(in) :: incy
+ real(r8), intent(inout):: dy(:)
+
+ integer :: i, m, mp1, ix, iy
+  if (n <= 0) return
+  if (da == 0._r8) return
+  if (incx == 1 .AND. incy == 1) then
+    m = mod(n,5)
+    if (m /= 0 )then
+      do i = 1,m
+        dy(i) = dy(i) + da*dx(i)
+      enddo
+    endif
+    if (n < 5) return
+    mp1 = m + 1
+    do i = mp1,n,5
+      dy(i) = dy(i) + da*dx(i)
+      dy(i+1) = dy(i+1) + da*dx(i+1)
+      dy(i+2) = dy(i+2) + da*dx(i+2)
+      dy(i+3) = dy(i+3) + da*dx(i+3)
+      dy(i+4) = dy(i+4) + da*dx(i+4)
+    enddo
+  else
+    ix = 1
+    iy = 1
+    if (incx < 0) ix = (-n+1)*incx + 1
+    if (incy < 0) iy = (-n+1)*incy + 1
+    do i = 1,n
+      dy(iy) = dy(iy) + da*dx(ix)
+      ix = ix + incx
+      iy = iy + incy
+    enddo
+  end if
+
+ end subroutine taxpy
 end module LinearAlgebraMod

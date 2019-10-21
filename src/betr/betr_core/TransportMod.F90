@@ -78,6 +78,7 @@ contains
     !   This is a non-adaptive solver. The step sequence is determined by TSPAN
     !   but the derivative function ODEFUN is evaluated multiple times per step.
     !
+    use LinearAlgebraMod, only : taxpy
     implicit none
     ! !ARGUMENTS:
     class(gbetr_type),  pointer  :: extra
@@ -99,13 +100,13 @@ contains
     call trajectory(extra, y0, dt, ti, neq, k1)
 
     y(:) = y0(:)
-    call daxpy(neq, dt05, k1, 1, y, 1)
+    call taxpy(neq, dt05, k1, 1, y, 1)
 
     ti = t + dt05
     call trajectory(extra, y, dt05, ti, neq, k2)
 
     y(:) = y0(:)
-    call daxpy(neq, dt, k2, 1, y, 1)
+    call taxpy(neq, dt, k2, 1, y, 1)
 
   end subroutine ode_rk2
   !-------------------------------------------------------------------------------

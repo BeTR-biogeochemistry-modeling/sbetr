@@ -25,6 +25,7 @@ module BetrBGCMod
   use betr_biogeoStateType     , only : betr_biogeo_state_type
   use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
   use tracer_varcon            , only : nlevsno => betr_nlevsno
+  use LinearAlgebraMod, only : taxpy
   implicit none
 
   private
@@ -501,7 +502,7 @@ contains
                      if(lnegative_tracer)exit
 
                      !do error budget for good calculation
-                     call daxpy(ubj-jtops(c)+1, 1._r8, dtracer(c,jtops(c):ubj,k), 1, &
+                     call taxpy(ubj-jtops(c)+1, 1._r8, dtracer(c,jtops(c):ubj,k), 1, &
                           tracer_conc_mobile_col(c,jtops(c):ubj,trcid),1)
 
                      err_tracer(c, k) = dot_sum(dtracer(c,jtops(c):ubj, k), dz(c,jtops(c):ubj),betr_status)
@@ -1229,7 +1230,7 @@ contains
 
                      mass0=dot_sum(x=tracer_conc_mobile_col(c,jtops(c):ubj,trcid),y=dz(c,jtops(c):ubj),bstatus=bstatus)
                      if(bstatus%check_status())return
-                     call daxpy(ubj-jtops(c)+1, 1._r8, dtracer(c,jtops(c):ubj, k), 1, &
+                     call taxpy(ubj-jtops(c)+1, 1._r8, dtracer(c,jtops(c):ubj, k), 1, &
                           tracer_conc_mobile_col(c,jtops(c):ubj,trcid), 1)
 
                      dmass(c, k) = dot_sum(x=dtracer(c,jtops(c):ubj, k),y=dz(c,jtops(c):ubj),bstatus=bstatus)

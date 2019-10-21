@@ -4,6 +4,7 @@ module histMod
   use shr_kind_mod, only : r8 => shr_kind_r8, i4 => shr_kind_i4
   use shr_log_mod , only : errMsg => shr_log_errMsg
   use ncdio_pio   , only : file_desc_t
+  use LinearAlgebraMod, only : taxpy
 implicit none
  private
 
@@ -266,9 +267,9 @@ contains
   SHR_ASSERT_ALL((size(yval)   == this%nvars), errMsg(mod_filename,__LINE__))
 
 
-  ! use daxpy - compute y := alpha * x + y
+  ! use taxpy - compute y := alpha * x + y
   ! SUBROUTINE DAXPY(N, ALPHA, X, INCX, Y, INCY)
-  call daxpy(this%nvars, 1._r8, yval, 1, this%yvals, 1)
+  call taxpy(this%nvars, 1._r8, yval, 1, this%yvals, 1)
 
   call this%proc_counter()
 

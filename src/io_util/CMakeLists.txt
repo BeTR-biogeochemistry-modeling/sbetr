@@ -6,7 +6,7 @@ set(BETR_IO_UTIL_SOURCES
 include_directories(${CMAKE_BINARY_DIR}/src/shr)
 include_directories(${CMAKE_BINARY_DIR}/src/esmf_wrf_timemgr)
 include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_util)
-
+include_directories(${CMAKE_BINARY_DIR}/src/betr/betr_math)
 include(add_betr_library)
 add_betr_library(betr_io_util ${BETR_IO_UTIL_SOURCES})
 
