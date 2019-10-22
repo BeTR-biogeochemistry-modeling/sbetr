@@ -28,20 +28,27 @@ module BeTRSimulationALM
   use CNCarbonFluxType   , only : carbonflux_type
   use CNNitrogenFluxType , only : nitrogenflux_type
   use PhosphorusFluxType , only : phosphorusflux_type
-
+  use WaterStateType  , only : waterstate_type
+  use WaterfluxType     , only : waterflux_type
+  use TemperatureType   , only : temperature_type
 #else
   use VegetationType      , only : patch_type => vegetation_physical_properties
-	use ColumnType          , only : column_type => column_physical_properties
-	use LandunitType        , only : landunit_type => landunit_physical_properties
+  use ColumnType          , only : column_type => column_physical_properties
+  use LandunitType        , only : landunit_type => landunit_physical_properties
   use ColumnDataType      , only : carbonflux_type => column_carbon_flux
   use ColumnDataType      , only : nitrogenflux_type => column_nitrogen_flux
   use ColumnDataType      , only : phosphorusflux_type => column_phosphorus_flux
   use ColumnDataType      , only : carbonstate_type=> column_carbon_state
   use ColumnDataType      , only : nitrogenstate_type => column_nitrogen_state
   use ColumnDataType      , only : phosphorusstate_type => column_phosphorus_state
+  use ColumnDataType      , only : waterstate_type => column_water_state
+  use ColumnDataType      , only : waterflux_type => column_water_flux
+  use ColumnDataType      , only : temperature_type=> column_energy_state
   use VegetationDataType  , only : vegetation_carbon_state, vegetation_carbon_flux
   use VegetationDataType  , only : vegetation_nitrogen_state, vegetation_nitrogen_flux
   use VegetationDataType  , only : vegetation_phosphorus_state, vegetation_phosphorus_flux
+  use VegetationDataType, only : pf_temperature_type => vegetation_energy_state
+  use VegetationDataType, only : pf_waterflux_type => vegetation_water_flux
 #endif
   use calibrationType, only : calibration_type
   implicit none
@@ -148,7 +155,6 @@ contains
     !
     !USES
     !data types from alm
-    use WaterStateType  , only : waterstate_type
     use landunit_varcon , only : istcrop, istice, istsoil
     use clm_varpar      , only : nlevsno, nlevsoi, nlevtrc_soil
     !betr types
@@ -199,7 +205,6 @@ contains
     !
     !USES
     !data types from alm
-    use WaterStateType  , only : waterstate_type
     use landunit_varcon , only : istcrop, istice, istsoil
     use clm_varpar      , only : nlevsno, nlevsoi, nlevtrc_soil
     !betr types
@@ -588,6 +593,7 @@ contains
     call this%biogeo_state(c)%reset(value_column=0._r8, active_soibgc=this%do_soibgc())
   enddo
   if(.not. this%do_soibgc())return
+  if(this%do_bgc_type('type0_bgc'))return
   c_l=1
   if(this%do_bgc_type('type1_bgc'))then
     !transfer state variables from elm to betr
@@ -1163,7 +1169,6 @@ contains
     !External interface called by ALM
 
     use WaterfluxType   , only : waterflux_type
-    use WaterstateType  , only : waterstate_type
     use clm_varcon      , only : denh2o,spval
     use landunit_varcon , only : istsoil, istcrop
     use betr_decompMod  , only : betr_bounds_type
@@ -1199,7 +1204,6 @@ contains
   !
   !USES
   use SoilStateType              , only : soilstate_type
-  use WaterStateType             , only : waterstate_type
   use SoilWaterRetentionCurveMod , only : soil_water_retention_curve_type
   use clm_varcon                 , only : grav,hfus,tfrz
   implicit none
@@ -1224,8 +1228,8 @@ contains
   if (this%num_surfc > 0) continue
 
   associate(                                                     & !
-    h2osoi_vol        =>    waterstate_vars%h2osoi_vol_col     , & ! Input:  [real(r8) (:,:) ]  volumetric soil moisture
-    smp_l             =>    waterstate_vars%smp_l_col          , & ! Output: [real(r8) (:,:) ]  soil suction (mm)
+    h2osoi_vol        =>    waterstate_vars%h2osoi_vol     , & ! Input:  [real(r8) (:,:) ]  volumetric soil moisture
+    smp_l             =>    waterstate_vars%smp_l          , & ! Output: [real(r8) (:,:) ]  soil suction (mm)
     bsw               =>    soilstate_vars%bsw_col             , & ! Input:  [real(r8) (:,:) ]  Clapp and Hornberger "b"
     watsat            =>    soilstate_vars%watsat_col          , & ! Input:  [real(r8) (:,:) ]  minimum soil suction (mm)
     sucsat            =>    soilstate_vars%sucsat_col            & ! Input:  [real(r8) (:,:) ]  minimum soil suction (mm)
@@ -1261,16 +1265,14 @@ contains
 
   !------------------------------------------------------------------------
   subroutine ALMSetBiophysForcing(this, bounds, col, pft, carbonflux_vars, pf_carbonflux_vars, &
-    waterstate_vars, waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
+    waterstate_vars, waterflux_vars, pf_waterflux_vars, temperature_vars, pf_temperature_vars, &
+    soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
     chemstate_vars, soilstate_vars, cnstate_vars, carbonstate_vars, phosphorusstate_vars)
   !DESCRIPTION
   !pass in biogeophysical variables for running betr
   !USES
   use SoilStateType     , only : soilstate_type
-  use WaterStateType    , only : Waterstate_Type
-  use TemperatureType   , only : temperature_type
   use ChemStateType     , only : chemstate_type
-  use WaterfluxType     , only : waterflux_type
   use atm2lndType       , only : atm2lnd_type
   use SoilHydrologyType , only : soilhydrology_type
   use CNStateType       , only : cnstate_type
@@ -1289,7 +1291,9 @@ contains
   type(vegetation_carbon_flux), optional, intent(in) :: pf_carbonflux_vars
   type(Waterstate_Type)       , optional, intent(in) :: Waterstate_vars
   type(waterflux_type)        , optional, intent(in) :: waterflux_vars
+  type(pf_waterflux_type)        , optional, intent(in) :: pf_waterflux_vars
   type(temperature_type)      , optional, intent(in) :: temperature_vars
+  type(pf_temperature_type)      , optional, intent(in) :: pf_temperature_vars
   type(soilhydrology_type)    , optional, intent(in) :: soilhydrology_vars
   type(atm2lnd_type)          , optional, intent(in) :: atm2lnd_vars
   type(canopystate_type)      , optional, intent(in) :: canopystate_vars
@@ -1316,9 +1320,10 @@ contains
   endif
 
   if(present(carbonflux_vars)) then
-    call this%BeTRSetBiophysForcing(bounds, col, pft, 1, betr_nlevsoi, carbonflux_vars,pf_carbonflux_vars,&
-      waterstate_vars, waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
-      chemstate_vars, soilstate_vars)
+    call this%BeTRSetBiophysForcing(bounds, col, pft, 1, betr_nlevsoi, &
+    carbonflux_vars, pf_carbonflux_vars, waterstate_vars,  waterflux_vars, pf_waterflux_vars, &
+    temperature_vars, pf_temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
+    chemstate_vars, soilstate_vars)
     do j = 1, betr_nlevsoi
       do c = bounds%begc, bounds%endc
         if(.not. this%active_col(c))cycle
