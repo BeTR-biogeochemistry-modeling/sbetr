@@ -1,36 +1,26 @@
-module CNCarbonStateType
+module PfNitrogenStateType
   use clm_varcon     , only : spval, ispval, c14ratio
   use shr_kind_mod       , only : r8 => shr_kind_r8
   use decompMod      , only : bounds_type
-  use clm_varpar             , only : nlevdecomp_full, ndecomp_pools
+  use clm_varpar     , only : ndecomp_pools, nlevdecomp_full
 implicit none
 
-  type, public :: carbonstate_type
-    real(r8), pointer :: decomp_cpools_vr    (:,:,:) => null() ! col (gC/m3) vertically-resolved decomposing (litter, cwd, soil) c pools
-    real(r8), pointer :: frootc_patch             (:)    => null() ! (gC/m2) fine root C
-    real(r8), pointer :: totlitc_1m          (:) => null()
-    real(r8), pointer :: totlitc             (:) => null()
-    real(r8), pointer :: totsomc             (:) => null()
-    real(r8), pointer :: cwdc                (:) => null()
-    real(r8), pointer :: totsomc_1m          (:) => null()
-    real(r8), pointer :: decomp_som2c_vr     (:,:)=> null()
-    real(r8), pointer :: som1c               (:) => null()
-    real(r8), pointer :: som2c               (:) => null()
-    real(r8), pointer :: som3c               (:) => null()
-    real(r8), pointer :: domc               (:) => null()
+  type, public :: pf_nitrogenstate_type
+
+    real(r8), pointer :: pnup_pfrootc           (:) => null()
   contains
 
     procedure, public  :: Init
     procedure, private :: InitCold
     procedure, private :: InitAllocate
-  end type carbonstate_type
+  end type pf_nitrogenstate_type
+
 
 contains
-
   !------------------------------------------------------------------------
   subroutine Init(this, bounds)
 
-    class(carbonstate_type) :: this
+    class(pf_nitrogenstate_type) :: this
     type(bounds_type), intent(in) :: bounds
 
     call this%InitAllocate ( bounds )
@@ -48,7 +38,7 @@ contains
     use shr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
     !
     ! !ARGUMENTS:
-    class(carbonstate_type) :: this
+    class(pf_nitrogenstate_type) :: this
     type(bounds_type), intent(in) :: bounds
     !
     ! !LOCAL VARIABLES:
@@ -57,18 +47,8 @@ contains
     !------------------------------------------------------------------------
 
     begp = bounds%begp; endp= bounds%endp
-    begc = bounds%begc; endc= bounds%endc
-    allocate(this%decomp_cpools_vr(begc:endc,1:nlevdecomp_full,1:ndecomp_pools)); this%decomp_cpools_vr(:,:,:)= spval
-    allocate(this%frootc_patch             (begp :endp))                   ;     this%frootc_patch             (:)   = spval
-    allocate(this%cwdc(begc:endc)); this%cwdc(:) = spval
-    allocate(this%totlitc(begc:endc)); this%totlitc(:) = spval
-    allocate(this%totsomc(begc:endc)); this%totsomc(:) = spval
-    allocate(this%totlitc_1m(begc:endc)); this%totlitc_1m(:) = spval
-    allocate(this%totsomc_1m(begc:endc)); this%totsomc_1m(:) = spval
-    allocate(this%som1c(begc:endc)); this%som1c(:) = spval
-    allocate(this%som2c(begc:endc)); this%som2c(:) = spval
-    allocate(this%som3c(begc:endc)); this%som3c(:) = spval
-    allocate(this%domc(begc:endc)); this%domc(:) = spval
+    allocate(this%pnup_pfrootc (begp:endp)); this%pnup_pfrootc (:) = spval
+
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------
@@ -81,7 +61,7 @@ contains
     use ncdio_pio
     !
     ! !ARGUMENTS:
-    class(carbonstate_type) :: this
+    class(pf_nitrogenstate_type) :: this
     type(bounds_type), intent(in) :: bounds
     !
     ! !LOCAL VARIABLES:
@@ -100,8 +80,6 @@ contains
     integer               :: begg, endg
 
 
-
-
   end subroutine initCold
 
-end module CNCarbonStateType
+end module PfNitrogenStateType

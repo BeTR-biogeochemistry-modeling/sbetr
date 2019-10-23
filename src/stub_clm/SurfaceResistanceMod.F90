@@ -64,9 +64,9 @@ contains
   integer :: kk, j, fc, c   !indices
 
   associate(&
-   h2osoi_vol    =>   waterstate_vars%h2osoi_vol_col              , & !Input [real(r8)(:,:)] volumetric soil water content
-   h2osoi_liq    =>   waterstate_vars%h2osoi_liq_col              , & !Input [real(r8)(:,:)] volumetric liquid water content
-   h2osoi_ice    =>   waterstate_vars%h2osoi_ice_col              , & !Input [real(r8)(:,:)] volumetric ice content
+   h2osoi_vol    =>   waterstate_vars%h2osoi_vol              , & !Input [real(r8)(:,:)] volumetric soil water content
+   h2osoi_liq    =>   waterstate_vars%h2osoi_liq              , & !Input [real(r8)(:,:)] volumetric liquid water content
+   h2osoi_ice    =>   waterstate_vars%h2osoi_ice              , & !Input [real(r8)(:,:)] volumetric ice content
    watsat        =>   soilstate_vars%watsat_col                   , & !Input [real(r8)(:,:)] saturated water content
    dz            =>   col%dz                                        & !Input [real(r8)(:,:)] layer thickness
   )

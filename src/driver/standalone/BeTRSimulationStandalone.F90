@@ -20,6 +20,21 @@ module BeTRSimulationStandalone
   use tracer_varcon       , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
   use EcophysConType      , only : ecophyscon_type
   use betr_varcon         , only : betr_maxpatch_pft
+  use CNCarbonStateType  , only : carbonstate_type
+  use CNNitrogenStateType, only : nitrogenstate_type
+  use pfNitrogenStateType, only : pf_nitrogenstate_type
+  use PhosphorusStateType, only : phosphorusstate_type
+  use CNCarbonFluxType   , only : carbonflux_type
+  use PfCarbonFluxType  , only : pf_carbonflux_type
+  use CNNitrogenFluxType , only : nitrogenflux_type
+  use PfNitrogenFluxType , only : pf_nitrogenflux_type
+  use PhosphorusFluxType , only : phosphorusflux_type
+  use PfPhosphorusFluxType , only : pf_phosphorusflux_type
+  use WaterStateType  , only : waterstate_type
+  use WaterfluxType     , only : waterflux_type
+  use TemperatureType   , only : temperature_type
+  use PfTemperatureType   , only : pf_temperature_type
+  use PfWaterfluxType     , only : pf_waterflux_type
   implicit none
 
   private
@@ -220,9 +235,9 @@ contains
   end subroutine StandaloneStepWithDrainage
 
   !------------------------------------------------------------------------
-  subroutine StandaloneSetBiophysForcing(this, bounds, col, pft,  carbonflux_vars, waterstate_vars, &
-    waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
-    chemstate_vars, soilstate_vars, cnstate_vars)
+  subroutine StandaloneSetBiophysForcing(this, bounds, col, pft,  carbonflux_vars,pf_carbonflux_vars,&
+    waterstate_vars, waterflux_vars, pf_waterflux_vars, temperature_vars, pf_temperature_vars, &
+    soilhydrology_vars, atm2lnd_vars, canopystate_vars, chemstate_vars, soilstate_vars, cnstate_vars)
   !DESCRIPTION
   !pass in biogeophysical variables for running betr
   !USES
@@ -246,15 +261,18 @@ contains
   type(column_type)                      , intent(in)    :: col ! column type
   type(patch_type)                       , intent(in) :: pft
   type(cnstate_type)                     , optional, intent(in) :: cnstate_vars
-  type(carbonflux_type)                  , optional, intent(in) :: carbonflux_vars
-  type(Waterstate_Type)                  , optional, intent(in) :: Waterstate_vars
-  type(waterflux_type)                   , optional, intent(in) :: waterflux_vars
-  type(temperature_type)                 , optional, intent(in) :: temperature_vars
-  type(soilhydrology_type)               , optional, intent(in) :: soilhydrology_vars
-  type(atm2lnd_type)                     , optional, intent(in) :: atm2lnd_vars
-  type(canopystate_type)                 , optional, intent(in) :: canopystate_vars
-  type(chemstate_type)                   , optional, intent(in) :: chemstate_vars
-  type(soilstate_type)                   , optional, intent(in) :: soilstate_vars
+  type(carbonflux_type)       , optional, intent(in) :: carbonflux_vars
+  type(pf_carbonflux_type)    , optional, intent(in) :: pf_carbonflux_vars
+  type(Waterstate_Type)       , optional, intent(in) :: Waterstate_vars
+  type(waterflux_type)        , optional, intent(in) :: waterflux_vars
+  type(pf_waterflux_type)     , optional, intent(in) :: pf_waterflux_vars
+  type(temperature_type)      , optional, intent(in) :: temperature_vars
+  type(pf_temperature_type)   , optional, intent(in) :: pf_temperature_vars
+  type(soilhydrology_type)    , optional, intent(in) :: soilhydrology_vars
+  type(atm2lnd_type)          , optional, intent(in) :: atm2lnd_vars
+  type(canopystate_type)      , optional, intent(in) :: canopystate_vars
+  type(chemstate_type)        , optional, intent(in) :: chemstate_vars
+  type(soilstate_type)        , optional, intent(in) :: soilstate_vars
   integer :: j, c, c_l
 
   if(present(carbonflux_vars))then
@@ -262,13 +280,14 @@ contains
     do j = 1, betr_nlevsoi
       do c = bounds%begc, bounds%endc
         if(.not. this%active_col(c))cycle
-        this%biophys_forc(c)%c12flx%rt_vr_col(c_l,j) = carbonflux_vars%rr_vr_col(c,j)
+        this%biophys_forc(c)%c12flx%rt_vr_col(c_l,j) = carbonflux_vars%rr_vr(c,j)
       enddo
     enddo
   endif
-  call this%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi, carbonflux_vars, waterstate_vars, &
-      waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
-      chemstate_vars, soilstate_vars)
+  call this%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi, &
+    carbonflux_vars, pf_carbonflux_vars, waterstate_vars,  waterflux_vars, pf_waterflux_vars, &
+    temperature_vars, pf_temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
+    chemstate_vars, soilstate_vars)
 
   !the following will be standalone bgc specific
   end subroutine StandaloneSetBiophysForcing
@@ -352,23 +371,23 @@ contains
       this%biophys_forc(c)%n14flx%nflx_minn_input_nh4_vr_col(c_l,j)=1.e-10_r8
       this%biophys_forc(c)%p31flx%pflx_minp_input_po4_vr_col(c_l,j)=1.e-11_r8
       this%biophys_forc(c)%pweath_prof_col(c_l,j) = cnstate_vars%pdep_prof_col(c,j)
-      this%biophys_forc(c)%c12flx%cflx_input_litr_met_vr_col(c_l,j) = carbonflux_vars%cflx_input_litr_met_vr_col(c,j)
-      this%biophys_forc(c)%c12flx%cflx_input_litr_cel_vr_col(c_l,j) = carbonflux_vars%cflx_input_litr_cel_vr_col(c,j)
-      this%biophys_forc(c)%c12flx%cflx_input_litr_lig_vr_col(c_l,j) = carbonflux_vars%cflx_input_litr_lig_vr_col(c,j)
-      this%biophys_forc(c)%c12flx%cflx_input_litr_cwd_vr_col(c_l,j) = carbonflux_vars%cflx_input_litr_cwd_vr_col(c,j)
+      this%biophys_forc(c)%c12flx%cflx_input_litr_met_vr_col(c_l,j) = carbonflux_vars%cflx_input_litr_met_vr(c,j)
+      this%biophys_forc(c)%c12flx%cflx_input_litr_cel_vr_col(c_l,j) = carbonflux_vars%cflx_input_litr_cel_vr(c,j)
+      this%biophys_forc(c)%c12flx%cflx_input_litr_lig_vr_col(c_l,j) = carbonflux_vars%cflx_input_litr_lig_vr(c,j)
+      this%biophys_forc(c)%c12flx%cflx_input_litr_cwd_vr_col(c_l,j) = carbonflux_vars%cflx_input_litr_cwd_vr(c,j)
 
-      this%biophys_forc(c)%n14flx%nflx_input_litr_met_vr_col(c_l,j) = nitrogenflux_vars%nflx_input_litr_met_vr_col(c,j)
-      this%biophys_forc(c)%n14flx%nflx_input_litr_cel_vr_col(c_l,j) = nitrogenflux_vars%nflx_input_litr_cel_vr_col(c,j)
-      this%biophys_forc(c)%n14flx%nflx_input_litr_lig_vr_col(c_l,j) = nitrogenflux_vars%nflx_input_litr_lig_vr_col(c,j)
-      this%biophys_forc(c)%n14flx%nflx_input_litr_cwd_vr_col(c_l,j) = nitrogenflux_vars%nflx_input_litr_cwd_vr_col(c,j)
-      this%biophys_forc(c)%n14flx%nflx_minn_input_nh4_vr_col(c_l,j) = nitrogenflux_vars%nflx_minn_input_nh4_vr_col(c,j)
-      this%biophys_forc(c)%n14flx%nflx_minn_input_no3_vr_col(c_l,j) = nitrogenflux_vars%nflx_minn_input_no3_vr_col(c,j)
+      this%biophys_forc(c)%n14flx%nflx_input_litr_met_vr_col(c_l,j) = nitrogenflux_vars%nflx_input_litr_met_vr(c,j)
+      this%biophys_forc(c)%n14flx%nflx_input_litr_cel_vr_col(c_l,j) = nitrogenflux_vars%nflx_input_litr_cel_vr(c,j)
+      this%biophys_forc(c)%n14flx%nflx_input_litr_lig_vr_col(c_l,j) = nitrogenflux_vars%nflx_input_litr_lig_vr(c,j)
+      this%biophys_forc(c)%n14flx%nflx_input_litr_cwd_vr_col(c_l,j) = nitrogenflux_vars%nflx_input_litr_cwd_vr(c,j)
+      this%biophys_forc(c)%n14flx%nflx_minn_input_nh4_vr_col(c_l,j) = nitrogenflux_vars%nflx_minn_input_nh4_vr(c,j)
+      this%biophys_forc(c)%n14flx%nflx_minn_input_no3_vr_col(c_l,j) = nitrogenflux_vars%nflx_minn_input_no3_vr(c,j)
 
-      this%biophys_forc(c)%p31flx%pflx_input_litr_met_vr_col(c_l,j) = phosphorusflux_vars%pflx_input_litr_met_vr_col(c,j)
-      this%biophys_forc(c)%p31flx%pflx_input_litr_cel_vr_col(c_l,j) = phosphorusflux_vars%pflx_input_litr_cel_vr_col(c,j)
-      this%biophys_forc(c)%p31flx%pflx_input_litr_lig_vr_col(c_l,j) = phosphorusflux_vars%pflx_input_litr_lig_vr_col(c,j)
-      this%biophys_forc(c)%p31flx%pflx_input_litr_cwd_vr_col(c_l,j) = phosphorusflux_vars%pflx_input_litr_cwd_vr_col(c,j)
-      this%biophys_forc(c)%p31flx%pflx_minp_input_po4_vr_col(c_l,j) = phosphorusflux_vars%pflx_minp_input_po4_vr_col(c,j)
+      this%biophys_forc(c)%p31flx%pflx_input_litr_met_vr_col(c_l,j) = phosphorusflux_vars%pflx_input_litr_met_vr(c,j)
+      this%biophys_forc(c)%p31flx%pflx_input_litr_cel_vr_col(c_l,j) = phosphorusflux_vars%pflx_input_litr_cel_vr(c,j)
+      this%biophys_forc(c)%p31flx%pflx_input_litr_lig_vr_col(c_l,j) = phosphorusflux_vars%pflx_input_litr_lig_vr(c,j)
+      this%biophys_forc(c)%p31flx%pflx_input_litr_cwd_vr_col(c_l,j) = phosphorusflux_vars%pflx_input_litr_cwd_vr(c,j)
+      this%biophys_forc(c)%p31flx%pflx_minp_input_po4_vr_col(c_l,j) = phosphorusflux_vars%pflx_minp_input_po4_vr(c,j)
 
       this%biophys_forc(c)%biochem_pmin_vr(c_l,j) =0._r8
     enddo
@@ -455,150 +474,150 @@ contains
     c = filter_soilc(fc)
 
     !recollect soil respirations, fire and hydraulic loss
-    c12flux_vars%hr_col(c) = this%biogeo_flux(c)%c12flux_vars%hr_col(c_l)
-    c12flux_vars%fire_decomp_closs_col(c) = this%biogeo_flux(c)%c12flux_vars%fire_decomp_closs_col(c_l)
-    c12flux_vars%som_c_leached_col(c) = &
+    c12flux_vars%hr(c) = this%biogeo_flux(c)%c12flux_vars%hr_col(c_l)
+    c12flux_vars%fire_decomp_closs(c) = this%biogeo_flux(c)%c12flux_vars%fire_decomp_closs_col(c_l)
+    c12flux_vars%som_c_leached(c) = &
         this%biogeo_flux(c)%c12flux_vars%som_c_leached_col(c_l) + &
         this%biogeo_flux(c)%c12flux_vars%som_c_qdrain_col(c_l)
-    c12flux_vars%som_c_runoff_col(c) = this%biogeo_flux(c)%c12flux_vars%som_c_runoff_col(c_l)
+    c12flux_vars%som_c_runoff(c) = this%biogeo_flux(c)%c12flux_vars%som_c_runoff_col(c_l)
 
     !the following is for consistency with the ALM definitation, which computes
     !som_c_leached_col as a numerical roundoff
-    c12flux_vars%som_c_leached_col(c)=-c12flux_vars%som_c_leached_col(c)
-    c12flux_vars%co2_soi_flx_col(c) = this%biogeo_flux(c)%c12flux_vars%co2_soi_flx_col(c_l)
+    c12flux_vars%som_c_leached(c)=-c12flux_vars%som_c_leached(c)
+    c12flux_vars%co2_soi_flx(c) = this%biogeo_flux(c)%c12flux_vars%co2_soi_flx_col(c_l)
     if(use_c13_betr)then
-      c13flux_vars%hr_col(c) = this%biogeo_flux(c)%c13flux_vars%hr_col(c_l)
-      c13flux_vars%fire_decomp_closs_col(c) = this%biogeo_flux(c)%c13flux_vars%fire_decomp_closs_col(c_l)
+      c13flux_vars%hr(c) = this%biogeo_flux(c)%c13flux_vars%hr_col(c_l)
+      c13flux_vars%fire_decomp_closs(c) = this%biogeo_flux(c)%c13flux_vars%fire_decomp_closs_col(c_l)
     endif
 
     if(use_c14_betr)then
-      c14flux_vars%hr_col(c) = this%biogeo_flux(c)%c14flux_vars%hr_col(c_l)
-      c14flux_vars%fire_decomp_closs_col(c) = this%biogeo_flux(c)%c14flux_vars%fire_decomp_closs_col(c_l)
+      c14flux_vars%hr(c) = this%biogeo_flux(c)%c14flux_vars%hr_col(c_l)
+      c14flux_vars%fire_decomp_closs(c) = this%biogeo_flux(c)%c14flux_vars%fire_decomp_closs_col(c_l)
     endif
 
     !recollect  nitrifications, nitrifier-N2O loss, denitrifications
-    n14flux_vars%f_nit_col(c) = this%biogeo_flux(c)%n14flux_vars%f_nit_col(c_l)
-    n14flux_vars%f_denit_col(c)= this%biogeo_flux(c)%n14flux_vars%f_denit_col(c_l)
-    n14flux_vars%denit_col(c)= n14flux_vars%f_denit_col(c)
-    n14flux_vars%f_n2o_nit_col(c)=this%biogeo_flux(c)%n14flux_vars%f_n2o_nit_col(c_l)
+    n14flux_vars%f_nit(c) = this%biogeo_flux(c)%n14flux_vars%f_nit_col(c_l)
+    n14flux_vars%f_denit(c)= this%biogeo_flux(c)%n14flux_vars%f_denit_col(c_l)
+    n14flux_vars%denit(c)= n14flux_vars%f_denit(c)
+    n14flux_vars%f_n2o_nit(c)=this%biogeo_flux(c)%n14flux_vars%f_n2o_nit_col(c_l)
 
     !hydraulic loss
-    n14flux_vars%smin_no3_leached_col(c)= &
+    n14flux_vars%smin_no3_leached(c)= &
         this%biogeo_flux(c)%n14flux_vars%smin_no3_leached_col(c_l) + &
         this%biogeo_flux(c)%n14flux_vars%smin_no3_qdrain_col(c_l)
-    n14flux_vars%smin_nh4_leached_col(c)= &
+    n14flux_vars%smin_nh4_leached(c)= &
         this%biogeo_flux(c)%n14flux_vars%smin_nh4_leached_col(c_l) + &
         this%biogeo_flux(c)%n14flux_vars%smin_nh4_qdrain_col(c_l)
 
-    n14flux_vars%som_n_leached_col(c) = &
+    n14flux_vars%som_n_leached(c) = &
         this%biogeo_flux(c)%n14flux_vars%som_n_leached_col(c_l) + &
         this%biogeo_flux(c)%n14flux_vars%som_n_qdrain_col(c_l)
-    n14flux_vars%nh3_soi_flx_col(c) = this%biogeo_flux(c)%n14flux_vars%nh3_soi_flx_col(c_l)
-    n14flux_vars%som_n_runoff_col(c) = this%biogeo_flux(c)%n14flux_vars%som_n_runoff_col(c_l)
+    n14flux_vars%nh3_soi_flx(c) = this%biogeo_flux(c)%n14flux_vars%nh3_soi_flx_col(c_l)
+    n14flux_vars%som_n_runoff(c) = this%biogeo_flux(c)%n14flux_vars%som_n_runoff_col(c_l)
     !the following is for consistency with the ALM definitation, which computes
     !som_n_leached_col as a numerical roundoff
-    n14flux_vars%som_n_leached_col(c) = - n14flux_vars%som_n_leached_col(c)
+    n14flux_vars%som_n_leached(c) = - n14flux_vars%som_n_leached(c)
 
-    n14flux_vars%smin_no3_runoff_col(c)=this%biogeo_flux(c)%n14flux_vars%smin_no3_runoff_col(c_l)
-    n14flux_vars%smin_nh4_runoff_col(c)=this%biogeo_flux(c)%n14flux_vars%smin_nh4_runoff_col(c_l)
+    n14flux_vars%smin_no3_runoff(c)=this%biogeo_flux(c)%n14flux_vars%smin_no3_runoff_col(c_l)
+    n14flux_vars%smin_nh4_runoff(c)=this%biogeo_flux(c)%n14flux_vars%smin_nh4_runoff_col(c_l)
     !fire loss
-    n14flux_vars%fire_decomp_nloss_col(c) = this%biogeo_flux(c)%n14flux_vars%fire_decomp_nloss_col(c_l)
-    n14flux_vars%supplement_to_sminn_col(c) = this%biogeo_flux(c)%n14flux_vars%supplement_to_sminn_col(c_l)
+    n14flux_vars%fire_decomp_nloss(c) = this%biogeo_flux(c)%n14flux_vars%fire_decomp_nloss_col(c_l)
+    n14flux_vars%supplement_to_sminn(c) = this%biogeo_flux(c)%n14flux_vars%supplement_to_sminn_col(c_l)
     !no nh4 volatilization and runoff/leaching loss at this moment
 
     !recollect mineral phosphorus loss
     !Remark: now hydraulic mineral p loss lumps all three fluxes, Jinyun Tang
-    p31flux_vars%sminp_runoff_col(c)=this%biogeo_flux(c)%p31flux_vars%sminp_runoff_col(c_l)
-    p31flux_vars%sminp_leached_col(c) = &
+    p31flux_vars%sminp_runoff(c)=this%biogeo_flux(c)%p31flux_vars%sminp_runoff_col(c_l)
+    p31flux_vars%sminp_leached(c) = &
        this%biogeo_flux(c)%p31flux_vars%sminp_leached_col(c_l) + &
        this%biogeo_flux(c)%p31flux_vars%sminp_qdrain_col(c_l)
 
-    p31flux_vars%supplement_to_sminp_col(c) = this%biogeo_flux(c)%p31flux_vars%supplement_to_sminp_col(c_l)
-    p31flux_vars%secondp_to_occlp_col(c) = this%biogeo_flux(c)%p31flux_vars%secondp_to_occlp_col(c_l)
-    p31flux_vars%fire_decomp_ploss_col(c) = this%biogeo_flux(c)%p31flux_vars%fire_decomp_ploss_col(c_l)
-    p31flux_vars%som_p_leached_col(c) = &
+    p31flux_vars%supplement_to_sminp(c) = this%biogeo_flux(c)%p31flux_vars%supplement_to_sminp_col(c_l)
+    p31flux_vars%secondp_to_occlp(c) = this%biogeo_flux(c)%p31flux_vars%secondp_to_occlp_col(c_l)
+    p31flux_vars%fire_decomp_ploss(c) = this%biogeo_flux(c)%p31flux_vars%fire_decomp_ploss_col(c_l)
+    p31flux_vars%som_p_leached(c) = &
         this%biogeo_flux(c)%p31flux_vars%som_p_leached_col(c_l) + &
         this%biogeo_flux(c)%p31flux_vars%som_p_qdrain_col(c_l)
-    p31flux_vars%som_p_runoff_col(c) = this%biogeo_flux(c)%p31flux_vars%som_p_runoff_col(c_l)
+    p31flux_vars%som_p_runoff(c) = this%biogeo_flux(c)%p31flux_vars%som_p_runoff_col(c_l)
     !the following is for consistency with the ALM definitation, which computes
     !som_p_leached_col as a numerical roundoff
-    p31flux_vars%som_p_leached_col(c) = -p31flux_vars%som_p_leached_col(c)
+    p31flux_vars%som_p_leached(c) = -p31flux_vars%som_p_leached(c)
 
     !recollect soil organic carbon, soil organic nitrogen, and soil organic phosphorus
-    c12state_vars%cwdc_col(c) = this%biogeo_state(c)%c12state_vars%cwdc_col(c_l)
-    c12state_vars%totlitc_col(c) = this%biogeo_state(c)%c12state_vars%totlitc_col(c_l)
-    c12state_vars%totsomc_col(c) = this%biogeo_state(c)%c12state_vars%totsomc_col(c_l)
-    c12state_vars%totlitc_1m_col(c) = this%biogeo_state(c)%c12state_vars%totlitc_1m_col(c_l)
-    c12state_vars%totsomc_1m_col(c) = this%biogeo_state(c)%c12state_vars%totsomc_1m_col(c_l)
+    c12state_vars%cwdc(c) = this%biogeo_state(c)%c12state_vars%cwdc_col(c_l)
+    c12state_vars%totlitc(c) = this%biogeo_state(c)%c12state_vars%totlitc_col(c_l)
+    c12state_vars%totsomc(c) = this%biogeo_state(c)%c12state_vars%totsomc_col(c_l)
+    c12state_vars%totlitc_1m(c) = this%biogeo_state(c)%c12state_vars%totlitc_1m_col(c_l)
+    c12state_vars%totsomc_1m(c) = this%biogeo_state(c)%c12state_vars%totsomc_1m_col(c_l)
     !print*,'cwdc',c12state_vars%cwdc_col(c)
     if(use_c13_betr)then
-      c13state_vars%cwdc_col(c) = this%biogeo_state(c)%c13state_vars%cwdc_col(c_l)
-      c13state_vars%totlitc_col(c) = this%biogeo_state(c)%c13state_vars%totlitc_col(c_l)
-      c13state_vars%totsomc_col(c) = this%biogeo_state(c)%c13state_vars%totsomc_col(c_l)
-      c13state_vars%totlitc_1m_col(c) = this%biogeo_state(c)%c13state_vars%totlitc_1m_col(c_l)
-      c13state_vars%totsomc_1m_col(c) = this%biogeo_state(c)%c13state_vars%totsomc_1m_col(c_l)
+      c13state_vars%cwdc(c) = this%biogeo_state(c)%c13state_vars%cwdc_col(c_l)
+      c13state_vars%totlitc(c) = this%biogeo_state(c)%c13state_vars%totlitc_col(c_l)
+      c13state_vars%totsomc(c) = this%biogeo_state(c)%c13state_vars%totsomc_col(c_l)
+      c13state_vars%totlitc_1m(c) = this%biogeo_state(c)%c13state_vars%totlitc_1m_col(c_l)
+      c13state_vars%totsomc_1m(c) = this%biogeo_state(c)%c13state_vars%totsomc_1m_col(c_l)
     endif
     if(use_c14_betr)then
-      c14state_vars%cwdc_col(c) = this%biogeo_state(c)%c14state_vars%cwdc_col(c_l)
-      c14state_vars%totlitc_col(c) = this%biogeo_state(c)%c14state_vars%totlitc_col(c_l)
-      c14state_vars%totsomc_col(c) = this%biogeo_state(c)%c14state_vars%totsomc_col(c_l)
-      c14state_vars%totlitc_1m_col(c) = this%biogeo_state(c)%c14state_vars%totlitc_1m_col(c_l)
-      c14state_vars%totsomc_1m_col(c) = this%biogeo_state(c)%c14state_vars%totsomc_1m_col(c_l)
+      c14state_vars%cwdc(c) = this%biogeo_state(c)%c14state_vars%cwdc_col(c_l)
+      c14state_vars%totlitc(c) = this%biogeo_state(c)%c14state_vars%totlitc_col(c_l)
+      c14state_vars%totsomc(c) = this%biogeo_state(c)%c14state_vars%totsomc_col(c_l)
+      c14state_vars%totlitc_1m(c) = this%biogeo_state(c)%c14state_vars%totlitc_1m_col(c_l)
+      c14state_vars%totsomc_1m(c) = this%biogeo_state(c)%c14state_vars%totsomc_1m_col(c_l)
     endif
 
-    n14state_vars%cwdn_col(c) = this%biogeo_state(c)%n14state_vars%cwdn_col(c_l)
-    n14state_vars%totlitn_col(c) = this%biogeo_state(c)%n14state_vars%totlitn_col(c_l)
-    n14state_vars%totsomn_col(c) = this%biogeo_state(c)%n14state_vars%totsomn_col(c_l)
-    n14state_vars%totlitn_1m_col(c) = this%biogeo_state(c)%n14state_vars%totlitn_1m_col(c_l)
-    n14state_vars%totsomn_1m_col(c) = this%biogeo_state(c)%n14state_vars%totsomn_1m_col(c_l)
+    n14state_vars%cwdn(c) = this%biogeo_state(c)%n14state_vars%cwdn_col(c_l)
+    n14state_vars%totlitn(c) = this%biogeo_state(c)%n14state_vars%totlitn_col(c_l)
+    n14state_vars%totsomn(c) = this%biogeo_state(c)%n14state_vars%totsomn_col(c_l)
+    n14state_vars%totlitn_1m(c) = this%biogeo_state(c)%n14state_vars%totlitn_1m_col(c_l)
+    n14state_vars%totsomn_1m(c) = this%biogeo_state(c)%n14state_vars%totsomn_1m_col(c_l)
 
-    p31state_vars%cwdp_col(c) = this%biogeo_state(c)%p31state_vars%cwdp_col(c_l)
-    p31state_vars%totlitp_col(c) = this%biogeo_state(c)%p31state_vars%totlitp_col(c_l)
-    p31state_vars%totsomp_col(c) = this%biogeo_state(c)%p31state_vars%totsomp_col(c_l)
-    p31state_vars%totlitp_1m_col(c) = this%biogeo_state(c)%p31state_vars%totlitp_1m_col(c_l)
-    p31state_vars%totsomp_1m_col(c) = this%biogeo_state(c)%p31state_vars%totsomp_1m_col(c_l)
+    p31state_vars%cwdp(c) = this%biogeo_state(c)%p31state_vars%cwdp_col(c_l)
+    p31state_vars%totlitp(c) = this%biogeo_state(c)%p31state_vars%totlitp_col(c_l)
+    p31state_vars%totsomp(c) = this%biogeo_state(c)%p31state_vars%totsomp_col(c_l)
+    p31state_vars%totlitp_1m(c) = this%biogeo_state(c)%p31state_vars%totlitp_1m_col(c_l)
+    p31state_vars%totsomp_1m(c) = this%biogeo_state(c)%p31state_vars%totsomp_1m_col(c_l)
 
     !recollect inorganic nitrogen (smin_nh4, smin_no3), and inorganic phosphorus (disolvable and protected)
-    n14state_vars%sminn_col(c) = this%biogeo_state(c)%n14state_vars%sminn_col(c_l)
-    n14state_vars%smin_nh4_col(c)=this%biogeo_state(c)%n14state_vars%sminn_nh4_col(c_l)
-    n14state_vars%smin_no3_col(c)=this%biogeo_state(c)%n14state_vars%sminn_no3_col(c_l)
+    n14state_vars%sminn(c) = this%biogeo_state(c)%n14state_vars%sminn_col(c_l)
+    n14state_vars%smin_nh4(c)=this%biogeo_state(c)%n14state_vars%sminn_nh4_col(c_l)
+    n14state_vars%smin_no3(c)=this%biogeo_state(c)%n14state_vars%sminn_no3_col(c_l)
 
-    p31state_vars%sminp_col(c) = this%biogeo_state(c)%p31state_vars%sminp_col(c_l)
-    p31state_vars%occlp_col(c) = this%biogeo_state(c)%p31state_vars%occlp_col(c_l)
+    p31state_vars%sminp(c) = this%biogeo_state(c)%p31state_vars%sminp_col(c_l)
+    p31state_vars%occlp(c) = this%biogeo_state(c)%p31state_vars%occlp_col(c_l)
     !print*,'smin_nh4',n14state_vars%smin_nh4_col(c)
 
-    c12state_vars%som1c_col(c) = this%biogeo_state(c)%c12state_vars%som1c_col(c_l)
-    c12state_vars%som2c_col(c) = this%biogeo_state(c)%c12state_vars%som2c_col(c_l)
-    c12state_vars%som3c_col(c) = this%biogeo_state(c)%c12state_vars%som3c_col(c_l)
-    c12state_vars%domc_col(c)  = this%biogeo_state(c)%c12state_vars%domc_col(c_l)
+    c12state_vars%som1c(c) = this%biogeo_state(c)%c12state_vars%som1c_col(c_l)
+    c12state_vars%som2c(c) = this%biogeo_state(c)%c12state_vars%som2c_col(c_l)
+    c12state_vars%som3c(c) = this%biogeo_state(c)%c12state_vars%som3c_col(c_l)
+    c12state_vars%domc(c)  = this%biogeo_state(c)%c12state_vars%domc_col(c_l)
 
     !print*,'som1c',c12state_vars%som1c_col(c)
     if(use_c13_betr)then
-      c13state_vars%som1c_col(c) = this%biogeo_state(c)%c13state_vars%som1c_col(c_l)
-      c13state_vars%som2c_col(c) = this%biogeo_state(c)%c13state_vars%som2c_col(c_l)
-      c13state_vars%som3c_col(c) = this%biogeo_state(c)%c13state_vars%som3c_col(c_l)
-      c13state_vars%domc_col(c)  = this%biogeo_state(c)%c13state_vars%domc_col(c_l)
+      c13state_vars%som1c(c) = this%biogeo_state(c)%c13state_vars%som1c_col(c_l)
+      c13state_vars%som2c(c) = this%biogeo_state(c)%c13state_vars%som2c_col(c_l)
+      c13state_vars%som3c(c) = this%biogeo_state(c)%c13state_vars%som3c_col(c_l)
+      c13state_vars%domc(c)  = this%biogeo_state(c)%c13state_vars%domc_col(c_l)
     endif
     if(use_c14_betr)then
-      c14state_vars%som1c_col(c) = this%biogeo_state(c)%c14state_vars%som1c_col(c_l)
-      c14state_vars%som2c_col(c) = this%biogeo_state(c)%c14state_vars%som2c_col(c_l)
-      c14state_vars%som3c_col(c) = this%biogeo_state(c)%c14state_vars%som3c_col(c_l)
-      c14state_vars%domc_col(c)  = this%biogeo_state(c)%c14state_vars%domc_col(c_l)
+      c14state_vars%som1c(c) = this%biogeo_state(c)%c14state_vars%som1c_col(c_l)
+      c14state_vars%som2c(c) = this%biogeo_state(c)%c14state_vars%som2c_col(c_l)
+      c14state_vars%som3c(c) = this%biogeo_state(c)%c14state_vars%som3c_col(c_l)
+      c14state_vars%domc(c)  = this%biogeo_state(c)%c14state_vars%domc_col(c_l)
     endif
 
     if(index(trim(reaction_method),'ecacnp')/=0 .or. &
       index(trim(reaction_method),'cdom')/=0 .or. &
       index(trim(reaction_method),'keca')/=0 .or. &
       index(trim(reaction_method),'ch4soil')/=0)then
-      n14state_vars%som1n_col(c) = this%biogeo_state(c)%n14state_vars%som1n_col(c_l)
-      n14state_vars%som2n_col(c) = this%biogeo_state(c)%n14state_vars%som2n_col(c_l)
-      n14state_vars%som3n_col(c) = this%biogeo_state(c)%n14state_vars%som3n_col(c_l)
-      n14state_vars%domn_col(c) = this%biogeo_state(c)%n14state_vars%domn_col(c_l)
+      n14state_vars%som1n(c) = this%biogeo_state(c)%n14state_vars%som1n_col(c_l)
+      n14state_vars%som2n(c) = this%biogeo_state(c)%n14state_vars%som2n_col(c_l)
+      n14state_vars%som3n(c) = this%biogeo_state(c)%n14state_vars%som3n_col(c_l)
+      n14state_vars%domn(c) = this%biogeo_state(c)%n14state_vars%domn_col(c_l)
 
-      p31state_vars%som1p_col(c) = this%biogeo_state(c)%p31state_vars%som1p_col(c_l)
-      p31state_vars%som2p_col(c) = this%biogeo_state(c)%p31state_vars%som2p_col(c_l)
-      p31state_vars%som3p_col(c) = this%biogeo_state(c)%p31state_vars%som3p_col(c_l)
-      p31state_vars%domp_col(c) = this%biogeo_state(c)%p31state_vars%domp_col(c_l)
+      p31state_vars%som1p(c) = this%biogeo_state(c)%p31state_vars%som1p_col(c_l)
+      p31state_vars%som2p(c) = this%biogeo_state(c)%p31state_vars%som2p_col(c_l)
+      p31state_vars%som3p(c) = this%biogeo_state(c)%p31state_vars%som3p_col(c_l)
+      p31state_vars%domp(c) = this%biogeo_state(c)%p31state_vars%domp_col(c_l)
     endif
   enddo
   end subroutine StandalonePlantSoilBGCRecv
@@ -716,8 +735,8 @@ contains
   if (this%num_surfc > 0) continue
 
   associate(                                                     & !
-    h2osoi_vol        =>    waterstate_vars%h2osoi_vol_col     , & ! Input:  [real(r8) (:,:) ]  volumetric soil moisture
-    smp_l             =>    waterstate_vars%smp_l_col          , & ! Output: [real(r8) (:,:) ]  soil suction (mm)
+    h2osoi_vol        =>    waterstate_vars%h2osoi_vol         , & ! Input:  [real(r8) (:,:) ]  volumetric soil moisture
+    smp_l             =>    waterstate_vars%smp_l              , & ! Output: [real(r8) (:,:) ]  soil suction (mm)
     bsw               =>    soilstate_vars%bsw_col             , & ! Input:  [real(r8) (:,:) ]  Clapp and Hornberger "b"
     watsat            =>    soilstate_vars%watsat_col          , & ! Input:  [real(r8) (:,:) ]  minimum soil suction (mm)
     sucsat            =>    soilstate_vars%sucsat_col            & ! Input:  [real(r8) (:,:) ]  minimum soil suction (mm)

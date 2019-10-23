@@ -18,6 +18,20 @@ module BeTRSimulationCLM
   use BeTR_TimeMod        , only : betr_time_type
   use tracer_varcon       , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
   use betr_varcon         , only : betr_maxpatch_pft
+  use CNNitrogenStateType, only : nitrogenstate_type
+  use pfNitrogenStateType, only : pf_nitrogenstate_type
+  use PhosphorusStateType, only : phosphorusstate_type
+  use CNCarbonFluxType   , only : carbonflux_type
+  use PfCarbonFluxType  , only : pf_carbonflux_type
+  use CNNitrogenFluxType , only : nitrogenflux_type
+  use PfNitrogenFluxType , only : pf_nitrogenflux_type
+  use PhosphorusFluxType , only : phosphorusflux_type
+  use PfPhosphorusFluxType , only : pf_phosphorusflux_type
+  use WaterStateType  , only : waterstate_type
+  use WaterfluxType     , only : waterflux_type
+  use TemperatureType   , only : temperature_type
+  use PfTemperatureType   , only : pf_temperature_type
+  use PfWaterfluxType     , only : pf_waterflux_type
   implicit none
 
   private
@@ -401,8 +415,8 @@ contains
     if (present(soil_water_retention_curve)) continue
 
     associate(                                            & !
-         h2osoi_vol =>    waterstate_vars%h2osoi_vol_col, & ! Input:  [real(r8) (:,:) ]  volumetric soil moisture
-         smp_l      =>    waterstate_vars%smp_l_col,      & ! Output: [real(r8) (:,:) ]  soil suction (mm)
+         h2osoi_vol =>    waterstate_vars%h2osoi_vol, & ! Input:  [real(r8) (:,:) ]  volumetric soil moisture
+         smp_l      =>    waterstate_vars%smp_l,      & ! Output: [real(r8) (:,:) ]  soil suction (mm)
          bsw        =>    soilstate_vars%bsw_col,         & ! Input:  [real(r8) (:,:) ]  Clapp and Hornberger "b"
          watsat     =>    soilstate_vars%watsat_col,      & ! Input:  [real(r8) (:,:) ]  minimum soil suction (mm)
          sucsat     =>    soilstate_vars%sucsat_col       & ! Input:  [real(r8) (:,:) ]  minimum soil suction (mm)
@@ -472,8 +486,8 @@ contains
 
     c = 1
     associate(                                                                    &
-         h2osoi_ice           => waterstate_vars%h2osoi_ice_col,                  & ! Input:  [real(r8) (:,:) ]  ice lens (kg/m2)
-         h2osoi_liq           => waterstate_vars%h2osoi_liq_col,                  & ! Output: [real(r8) (:,:) ]  liquid water (kg/m2)
+         h2osoi_ice           => waterstate_vars%h2osoi_ice,                  & ! Input:  [real(r8) (:,:) ]  ice lens (kg/m2)
+         h2osoi_liq           => waterstate_vars%h2osoi_liq,                  & ! Output: [real(r8) (:,:) ]  liquid water (kg/m2)
          end_tracer_molarmass => this%betr(c)%tracerstates%end_tracer_molarmass_col, &
          id_trc_o18_h2o       => this%betr(c)%tracers%id_trc_o18_h2o                 &
          )
@@ -501,9 +515,9 @@ contains
   end subroutine clm_h2oiso_consistency_check
 
   !------------------------------------------------------------------------
-  subroutine CLMSetBiophysForcing(this, bounds, col, pft, carbonflux_vars, waterstate_vars, &
-    waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
-    chemstate_vars, soilstate_vars)
+  subroutine CLMSetBiophysForcing(this, bounds, col, pft, carbonflux_vars,pf_carbonflux_vars,&
+    waterstate_vars, waterflux_vars, pf_waterflux_vars, temperature_vars, pf_temperature_vars, &
+    soilhydrology_vars, atm2lnd_vars, canopystate_vars, chemstate_vars, soilstate_vars)
   !DESCRIPTION
   !pass in biogeophysical variables for running betr
   !USES
@@ -514,7 +528,6 @@ contains
   use WaterfluxType     , only : waterflux_type
   use atm2lndType       , only : atm2lnd_type
   use SoilHydrologyType , only : soilhydrology_type
-  use CNCarbonFluxType  , only : carbonflux_type
   use CanopyStateType   , only : canopystate_type
   use clm_varpar        , only : nlevsno, nlevsoi
   use ColumnType        , only : column_type
@@ -525,19 +538,23 @@ contains
   type(bounds_type)               , intent(in)           :: bounds
   type(patch_type)                , intent(in) :: pft
   type(column_type)               , intent(in)    :: col ! column type
-  type(carbonflux_type)           , optional, intent(in) :: carbonflux_vars
-  type(Waterstate_Type)           , optional, intent(in) :: Waterstate_vars
-  type(waterflux_type)            , optional, intent(in) :: waterflux_vars
-  type(temperature_type)          , optional, intent(in) :: temperature_vars
-  type(soilhydrology_type)        , optional, intent(in) :: soilhydrology_vars
-  type(atm2lnd_type)              , optional, intent(in) :: atm2lnd_vars
-  type(canopystate_type)          , optional, intent(in) :: canopystate_vars
-  type(chemstate_type)            , optional, intent(in) :: chemstate_vars
-  type(soilstate_type)            , optional, intent(in) :: soilstate_vars
+  type(carbonflux_type)       , optional, intent(in) :: carbonflux_vars
+  type(pf_carbonflux_type)    , optional, intent(in) :: pf_carbonflux_vars
+  type(Waterstate_Type)       , optional, intent(in) :: Waterstate_vars
+  type(waterflux_type)        , optional, intent(in) :: waterflux_vars
+  type(pf_waterflux_type)     , optional, intent(in) :: pf_waterflux_vars
+  type(temperature_type)      , optional, intent(in) :: temperature_vars
+  type(pf_temperature_type)   , optional, intent(in) :: pf_temperature_vars
+  type(soilhydrology_type)    , optional, intent(in) :: soilhydrology_vars
+  type(atm2lnd_type)          , optional, intent(in) :: atm2lnd_vars
+  type(canopystate_type)      , optional, intent(in) :: canopystate_vars
+  type(chemstate_type)        , optional, intent(in) :: chemstate_vars
+  type(soilstate_type)        , optional, intent(in) :: soilstate_vars
 
-  call this%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi, carbonflux_vars, waterstate_vars, &
-      waterflux_vars, temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
-      chemstate_vars, soilstate_vars)
+  call this%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi, &
+    carbonflux_vars, pf_carbonflux_vars, waterstate_vars,  waterflux_vars, pf_waterflux_vars, &
+    temperature_vars, pf_temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
+    chemstate_vars, soilstate_vars)
 
   !the following will be CLM specific
   end subroutine CLMSetBiophysForcing

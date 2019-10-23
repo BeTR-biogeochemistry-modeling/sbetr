@@ -24,13 +24,19 @@ module BeTRSimulationALM
   use LandunitType   , only : landunit_type
   use CNCarbonStateType  , only : carbonstate_type
   use CNNitrogenStateType, only : nitrogenstate_type
+  use pfNitrogenStateType, only : pf_nitrogenstate_type
   use PhosphorusStateType, only : phosphorusstate_type
   use CNCarbonFluxType   , only : carbonflux_type
+  use PfCarbonFluxType  , only : pf_carbonflux_type
   use CNNitrogenFluxType , only : nitrogenflux_type
+  use PfNitrogenFluxType , only : pf_nitrogenflux_type
   use PhosphorusFluxType , only : phosphorusflux_type
+  use PfPhosphorusFluxType , only : pf_phosphorusflux_type
   use WaterStateType  , only : waterstate_type
   use WaterfluxType     , only : waterflux_type
   use TemperatureType   , only : temperature_type
+  use PfTemperatureType   , only : pf_temperature_type
+  use PfWaterfluxType     , only : pf_waterflux_type
 #else
   use VegetationType      , only : patch_type => vegetation_physical_properties
   use ColumnType          , only : column_type => column_physical_properties
@@ -44,9 +50,9 @@ module BeTRSimulationALM
   use ColumnDataType      , only : waterstate_type => column_water_state
   use ColumnDataType      , only : waterflux_type => column_water_flux
   use ColumnDataType      , only : temperature_type=> column_energy_state
-  use VegetationDataType  , only : vegetation_carbon_state, vegetation_carbon_flux
-  use VegetationDataType  , only : vegetation_nitrogen_state, vegetation_nitrogen_flux
-  use VegetationDataType  , only : vegetation_phosphorus_state, vegetation_phosphorus_flux
+  use VegetationDataType  , only : vegetation_carbon_state, pf_carbonflux_type => vegetation_carbon_flux
+  use VegetationDataType  , only : pf_nitrogenstate_type=>vegetation_nitrogen_state, pf_nitrogenflux_type=>vegetation_nitrogen_flux
+  use VegetationDataType  , only : vegetation_phosphorus_state, pf_phosphorusflux_type=> vegetation_phosphorus_flux
   use VegetationDataType, only : pf_temperature_type => vegetation_energy_state
   use VegetationDataType, only : pf_waterflux_type => vegetation_water_flux
 #endif
@@ -914,10 +920,10 @@ contains
   type(carbonflux_type)  , intent(inout):: c14flux_vars    !return carbon fluxes through DON?
   type(nitrogenflux_type), intent(inout):: n14flux_vars
   type(phosphorusflux_type), intent(inout):: p31flux_vars
-  type(vegetation_carbon_flux), intent(inout) :: pf_c12flux_vars
-  type(vegetation_nitrogen_state), intent(inout) :: pf_n14state_vars
-  type(vegetation_nitrogen_flux), intent(inout) :: pf_n14flux_vars
-  type(vegetation_phosphorus_flux), intent(inout) :: pf_p31flux_vars
+  type(pf_carbonflux_type), intent(inout) :: pf_c12flux_vars
+  type(pf_nitrogenstate_type), intent(inout) :: pf_n14state_vars
+  type(pf_nitrogenflux_type), intent(inout) :: pf_n14flux_vars
+  type(pf_phosphorusflux_type), intent(inout) :: pf_p31flux_vars
 
   integer :: c, fc, p, pi, c_l, j, kk
 
@@ -1288,7 +1294,7 @@ contains
   type(column_type)           , intent(in)    :: col ! column type
   type(cnstate_type)          , optional, intent(in) :: cnstate_vars
   type(carbonflux_type)       , optional, intent(in) :: carbonflux_vars
-  type(vegetation_carbon_flux), optional, intent(in) :: pf_carbonflux_vars
+  type(pf_carbonflux_type), optional, intent(in) :: pf_carbonflux_vars
   type(Waterstate_Type)       , optional, intent(in) :: Waterstate_vars
   type(waterflux_type)        , optional, intent(in) :: waterflux_vars
   type(pf_waterflux_type)        , optional, intent(in) :: pf_waterflux_vars
@@ -1705,8 +1711,8 @@ contains
   type(nitrogenflux_type)         , intent(inout) :: nitrogenflux_vars
   type(phosphorusstate_type)      , intent(inout) :: phosphorusstate_vars
   type(phosphorusflux_type)       , intent(inout) :: phosphorusflux_vars
-  type(vegetation_nitrogen_flux)  , intent(inout) :: pf_nitrogenflux_vars
-  type(vegetation_phosphorus_flux), intent(inout) :: pf_phosphorusflux_vars
+  type(pf_nitrogenflux_type)  , intent(inout) :: pf_nitrogenflux_vars
+  type(pf_phosphorusflux_type), intent(inout) :: pf_phosphorusflux_vars
 
   integer :: kk, c, j, fc, c_l, p, pi
   associate(                                                         &
