@@ -1783,7 +1783,7 @@ if(exit_spinup)then
      dom_beg =>  this%summsbgc_index%dom_beg    , &
      dom_end =>  this%summsbgc_index%dom_end    , &
      Bm_beg  =>  this%summsbgc_index%Bm_beg     , &
-     Bm_end  =>  this%summsbgc_index%Bm_end       & 
+     Bm_end  =>  this%summsbgc_index%Bm_end       &
   )
   call betr_status%reset()
   SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__),betr_status)
@@ -1897,13 +1897,14 @@ if(exit_spinup)then
       this%summsforc(c,j)%dzsoi  = col%dz(c,j)            !soil thickness
       this%summsforc(c,j)%sucsat  = biophysforc%sucsat_col(c,j)            ! Input:  [real(r8) (:,:)] minimum soil suction [mm]
       this%summsforc(c,j)%soilpsi = max(biophysforc%smp_l_col(c,j)*grav*1.e-6_r8,-15._r8)    ! Input:  [real(r8) (:,:)] soilwater pontential in each soil layer [MPa]
-
+      !this%summsforc(c,j)%soilpsi = max(smp_l_col(c,j)*grav*1.e-6_r8,-15._r8)         !-zlyu
+      
     ! testing only, checking variables               -zlyu  
-    write(stdout, *) '*******************************************************@@@@@@@@@@@@@@@@@@@@@@'
-    write(stdout, *) 'After assign in BgcReactionSummsType'
-    write(stdout, *) 'soilpsi = ',this%summsforc(c,j)%soilpsi, ',    c = ',c, ',      j = ',j
-    write(stdout, *) 'grav = ',grav, ',     smp_l_col = ',biophysforc%smp_l_col(c,j)
-    write(stdout, *) '*******************************************************@@@@@@@@@@@@@@@@@@@@@@'
+    !write(stdout, *) '*******************************************************@@@@@@@@@@@@@@@@@@@@@@'
+    !write(stdout, *) 'After assign in BgcReactionSummsType'
+    !write(stdout, *) 'soilpsi = ',this%summsforc(c,j)%soilpsi, ',    c = ',c, ',      j = ',j
+    !write(stdout, *) 'grav = ',grav, ',     smp_l_col = ',biophysforc%smp_l_col(c,j)
+    !write(stdout, *) '*******************************************************@@@@@@@@@@@@@@@@@@@@@@'
     ! end of the testing
 
       this%summsforc(c,j)%bsw = biophysforc%bsw_col(c,j)

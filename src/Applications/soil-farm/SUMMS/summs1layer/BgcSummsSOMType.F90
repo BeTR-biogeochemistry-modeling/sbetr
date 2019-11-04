@@ -1284,6 +1284,7 @@ subroutine calc_som_decay_r(this, summsbgc_index, dtime, om_k_decay, om_pools, o
 
   use BgcSummsIndexType       , only : summsbgc_index_type
   use BgcSummsDecompType      , only : DecompSumms_type
+  use betr_constants          , only : stdout                            !-zlyu
 
   implicit none
   class(SummsSom_type)        , intent(inout) :: this
@@ -1309,16 +1310,26 @@ subroutine calc_som_decay_r(this, summsbgc_index, dtime, om_k_decay, om_pools, o
    cwd            => summsbgc_index%cwd                , & !
    lwd            => summsbgc_index%lwd                , & !
    fwd            => summsbgc_index%fwd                  & !
-  )
+   )
 
+   !write(stdout, *) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'      !-zlyu
+   !write(stdout, *) 'k_decay(lit1)= ', k_decay(lit1),',    k_decay(poly)= ',k_decay(poly), ',    k_decay(mic)= ',k_decay(mic)
+   !write(stdout, *) 'k_decay(res)= ', k_decay(res),',    k_decay(enz)= ',k_decay(enz), ',    k_decay(mono)= ',k_decay(mono)
+   !write(stdout, *) '##########################################################################'
   k_decay(lit1) = k_decay(lit1) * t_scalar *  w_scalar * o_scalar * depth_scalar
   k_decay(lit2) = k_decay(lit2) * t_scalar *  w_scalar * o_scalar * depth_scalar
   k_decay(lit3) = k_decay(lit3) * t_scalar *  w_scalar * o_scalar * depth_scalar
 
   k_decay(poly) = k_decay(poly)  * w_scalar
-  k_decay(mic)  = k_decay(mic)   * o_scalar * (1._r8-w_scalar)                 !zlyu for w_scalar
-  k_decay(res)  = k_decay(res)   * o_scalar * (1._r8-w_scalar)                 ! zlyu for w_scalar
-  k_decay(enz)  = k_decay(enz)   * (1._r8-w_scalar)                 ! zlyu for w_scalar
+  if (w_scalar==1._r8) then
+       k_decay(mic)  = k_decay(mic)   * o_scalar * 0.000000001                !zlyu for w_scalar
+       k_decay(res)  = k_decay(res)   * o_scalar * 0.000000001                 ! zlyu for w_scalar
+       k_decay(enz)  = k_decay(enz)   * 0.000000001                ! zlyu for w_scalar
+    else
+       k_decay(mic)  = k_decay(mic)   * o_scalar * (1._r8-w_scalar)                 !zlyu for w_scalar
+       k_decay(res)  = k_decay(res)   * o_scalar * (1._r8-w_scalar)                 ! zlyu for w_scalar
+       k_decay(enz)  = k_decay(enz)   * (1._r8-w_scalar)                 ! zlyu for w_scalar
+  end if
   k_decay(mono) = k_decay(mono)  * o_scalar * w_scalar
   
   k_decay(cwd)  = k_decay(cwd)   * t_scalar *  w_scalar * o_scalar * depth_scalar
@@ -1330,7 +1341,14 @@ subroutine calc_som_decay_r(this, summsbgc_index, dtime, om_k_decay, om_pools, o
   k_decay(fwd)  = k_decay(fwd) * exp(-3._r8*this%fwd_flig)
   k_decay(lit2) = k_decay(lit2)* exp(-3._r8*this%lit_flig)
   k_decay(lit3) = k_decay(lit3)* exp(-3._r8*this%lit_flig)
-
+    ! testing only, check variable                        !-zlyu
+    !write(stdout, *) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+    !write(stdout, *) 'calc_som_scale_k -->  w_scalar= ', w_scalar,',    new k_decay(mic)= ',k_decay(mic),',    new k_decay(poly)= ', k_decay(poly)
+    !write(stdout, *) 'new k_decay(res)= ', k_decay(res),',    new k_decay(enz)= ',k_decay(enz), ',    new k_decay(mono)= ',k_decay(mono)
+    !write(stdout, *) 'o_scalar= ', o_scalar,',    t_sclar= ',t_scalar, ',    depth_scalar= ',depth_scalar
+    !write(stdout, *) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+    ! end of the testing
+  
   end associate
   end subroutine calc_som_scale_k
   !-------------------------------------------------------------------------------

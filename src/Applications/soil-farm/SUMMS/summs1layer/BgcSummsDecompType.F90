@@ -289,25 +289,9 @@ implicit none
       !t_fact0=t_fact0/t_fact1 ! Active enzyme fraction in total enzyme vs temperaure           !comment out in rzacplsbetr_cmupdated,   -zlyu
      
       tinv=1._r8/tempbgc-1._r8/tref ! Modifies activation energy
-    ! testing only, where the run crushed        -zlyu   02/2019
-    !write(stdout, *) '***************************'
-    !write(stdout, *) 't_fact0 = ',t_fact0
-    !write(stdout, *) '***************************'
-    ! end of the testing
-        
-    ! testing only, where the run crushed        -zlyu   02/2019
-    !write(stdout, *) '***************************'
-    !write(stdout, *) 'deltag0 = ',deltag0
-    !write(stdout, *) '***************************'
-    ! end of the testing 
+
       call interp1(temp0, t_fact0, tempbgc, t_fact) ! Interpolate to find fraction of active enzymes at current temperature
       ! This subroutine should return t_fact
-      ! This subroutine should return t_fact
-    ! testing only, where the run crushed        -zlyu   02/2019
-    !write(stdout, *) '***************************'
-    !write(stdout, *) 'inside decompk_scalar after interp1'
-    !write(stdout, *) '***************************'
-      ! end of the testing
       
       !fref=t_fact*(tempbgc/tref) ! Modifies non-equilibrium enzymatic reactions
       fref=t_fact/t_fact1*(tempbgc/tref)                        !change from zacplsbetr_cmupdated,   -zlyu        
@@ -324,16 +308,24 @@ implicit none
     this%kaff_mono_msurf  = ref_kaff_mono_msurf*exp(-ea_kaff_mono_msurf*tinv)   
     this%kaff_enz_msurf   = ref_kaff_enz_msurf*exp(-ea_kaff_enz_msurf*tinv)
 
+    ! testing only, checking variables              -zlyu   
+    !write(stdout, *) '***************************==============================================='
+    !write(stdout, *) 'For active fractio vmax_mic= ',this%vmax_mic,',      this%vmax_enz = ',this%vmax_mic,',      fref= ',fref
+    !write(stdout, *) 'ea_vmax_mic= ',ea_vmax_mic,',     ea_vmax_enz= ',ea_vmax_enz, ',     tinv= ', tinv
+    !write(stdout, *) 'ref_vmax_mic= ',ref_vmax_mic,',      ref_vmax_enz= ',ref_vmax_enz
+    !write(stdout, *) '***************************==============================================='
+    ! end of the testing
+    
   !h2osoi_liqure scalar, also follows what Charlie has done
   this%w_scalar     = 1._r8
   maxpsi = sucsat * (-9.8e-6_r8)   !kg -> MPa
   psi = min(soilpsi,maxpsi)
 
     ! testing only, checking variables              -zlyu   
-    write(stdout, *) '***************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
-    write(stdout, *) 'w_scalar = ',this%w_scalar,'      sucsat = ',sucsat,'      maxpsi = ',maxpsi
-    write(stdout, *) 'soilpsi = ',soilpsi,'      psi = ',psi, '     minpsi = ', minpsi
-    write(stdout, *) '***************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    !write(stdout, *) '***************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    !write(stdout, *) 'w_scalar = ',this%w_scalar,'      sucsat = ',sucsat,'      maxpsi = ',maxpsi
+    !write(stdout, *) 'soilpsi = ',soilpsi,'      psi = ',psi, '     minpsi = ', minpsi
+    !write(stdout, *) '***************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
     ! end of the testing
 
   ! decomp only if soilpsi is higher than minpsi, some modification is needed for the following
@@ -341,18 +333,18 @@ implicit none
   if (psi > minpsi) then
     this%w_scalar = (log(minpsi/psi)/log(minpsi/maxpsi))
     ! testing only, checking variables              -zlyu   
-    write(stdout, *) '***************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
-    write(stdout, *) 'inside case psi > minpsi'
-    write(stdout, *) 'w_scalar = ',this%w_scalar, '    psi = ', psi
-    write(stdout, *) '***************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    !write(stdout, *) '***************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    !write(stdout, *) 'inside case psi > minpsi'
+    !write(stdout, *) 'w_scalar = ',this%w_scalar, '    psi = ', psi
+    !write(stdout, *) '***************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
     ! end of the testing
   else
     this%w_scalar = 0._r8
     ! testing only, checking variables              -zlyu   
-    write(stdout, *) '***************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
-    write(stdout, *) 'inside else case where psi < minpsi'
-    write(stdout, *) 'w_scalar = ',this%w_scalar, '       psi = ',psi
-    write(stdout, *) '***************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    !write(stdout, *) '***************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    !write(stdout, *) 'inside else case where psi < minpsi'
+    !write(stdout, *) 'w_scalar = ',this%w_scalar, '       psi = ',psi
+    !write(stdout, *) '***************************@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
     ! end of the testing
   end if
 
@@ -365,7 +357,7 @@ implicit none
       ! testing only, checking variables              -zlyu   
     !write(stdout, *) '****************************################################################'
     !write(stdout, *) 'just to check o_scalar'
-    write(stdout, *) 'o_scalar = ',this%o_scalar, '   o2b = ',o2b, '     o2_w2b = ', o2_w2b
+    !write(stdout, *) 'o_scalar = ',this%o_scalar, '   o2b = ',o2b, '     o2_w2b = ', o2_w2b
     !write(stdout, *) '****************************################################################'
     ! end of the testing
   !depth scalar, according to Koven et al. (2013), BG, the depth scalar is needed to resolve the radiocarbon profile
@@ -373,7 +365,7 @@ implicit none
     ! testing only, checking variables              -zlyu   
     !write(stdout, *) '***************************@***********************************************'
     !write(stdout, *) 'just to check depth_scalar'
-    write(stdout, *) 'depth_scalar = ',this%depth_scalar, '    depz = ',depz, '     decomp_depth_efolding = ',decomp_depth_efolding
+    !write(stdout, *) 'depth_scalar = ',this%depth_scalar, '    depz = ',depz, '     decomp_depth_efolding = ',decomp_depth_efolding
     !write(stdout, *) '***************************************************************************'
     ! end of the testing
 

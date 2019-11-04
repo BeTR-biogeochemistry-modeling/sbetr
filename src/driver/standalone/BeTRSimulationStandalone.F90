@@ -736,8 +736,10 @@ contains
   end subroutine set_transient_kinetics_par
 
   !------------------------------------------------------------------------
+
+  !------------------------------------------------------------------------
   subroutine StandaloneCalcSmpL(this, bounds, lbj, ubj, numf, filter, t_soisno, &
-     soilstate_vars, waterstate_vars, soil_water_retention_curve)
+     soilstate_vars, waterstate_vars, soil_water_retention_curve)            !, biophysforc)        !-zlyu, add biophysforc
   !DESCRIPTION
   ! calculate soil suction potential
   !
@@ -746,6 +748,7 @@ contains
   use WaterStateType             , only : waterstate_type
   use SoilWaterRetentionCurveMod , only : soil_water_retention_curve_type
   use clm_varcon                 , only : grav,hfus,tfrz
+  !use BeTR_biogeophysInputType   , only : betr_biogeophys_input_type      !-zlyu
   use betr_constants             , only : stdout                  !-zlyu
   implicit none
   !ARGUMENTS
@@ -757,6 +760,7 @@ contains
   real(r8)                               , intent(in)    :: t_soisno(bounds%begc: , lbj: )                    ! soil temperature
   type(soilstate_type)                   , intent(in)    :: soilstate_vars
   type(waterstate_type)                  , intent(inout) :: waterstate_vars
+  !type(betr_biogeophys_input_type)        , intent(inout) :: biophysforc                !-zlyu
   class(soil_water_retention_curve_type) , intent(in)    :: soil_water_retention_curve
 
   !local variables
@@ -787,15 +791,18 @@ contains
       !write(stdout, *) '-------------------------------------------------------------------'
       if(j==1)then
         if(t_soisno(c,j)<tfrz)then
-          smp_l(c,j)= -hfus*(tfrz-t_soisno(c,j))/(grav*t_soisno(c,j)) * 1000._r8  !(mm)
+           smp_l(c,j)= -hfus*(tfrz-t_soisno(c,j))/(grav*t_soisno(c,j)) * 1000._r8  !(mm)
+           !write(stdout, *) 'inside case 1 in BeTRSimulationStandalone checkpoint '
+           !biophysforc%smp_l_col(c,j) = smp_l(c,j);                          !-zlyu
     ! testing only, checking variables                    -zlyu    
     !write(stdout, *) '********************************************************************8*'
     !write(stdout, *) 'inside case 1 in BeTRSimulationStandalone smp_l(c,j) = ', smp_l(c,j), ',     c = ',c, ',    j = ',j
-    !write(stdout, *) 'hfus = ', hfus, ',     tfrz = ',tfrz, ',    t_soisno(c,j) = ',t_soisno(c,j)
+    !write(stdout, *) 'hfus = ', hfus, ',     tfrz = ',tfrz, ',    t_soisno(c,j) = ',t_soisno(c,j)     !,',    biophysforc%smp_l_col(c,j) =',biophysforc%smp_l_col(c,j)
     ! end of the testing
         else
           s_node = max(h2osoi_vol(c,j)/watsat(c,j), 0.01_r8)
           call soil_water_retention_curve%soil_suction(sucsat(c,j), s_node, bsw(c,j), smp_l(c,j), dsmpds_top)
+          !biophysforc%smp_l_col(c,j) = smp_l(c,j);                          !-zlyu
 !  the following will be implemented later.
 !          call soil_water_retention_curve%soil_hk(hksat, 1._r8, s_node, bsw(c,j), hk)
         endif
@@ -803,7 +810,8 @@ contains
 !        this%biophys_forc(c)%Dw_hk(c_l) = hk *
       else
         if(t_soisno(c,j)<tfrz)then
-          smp_l(c,j)= -hfus*(tfrz-t_soisno(c,j))/(grav*t_soisno(c,j)) * 1000._r8  !(mm)
+           smp_l(c,j)= -hfus*(tfrz-t_soisno(c,j))/(grav*t_soisno(c,j)) * 1000._r8  !(mm)
+           !biophysforc%smp_l_col(c,j) = smp_l(c,j);                          !-zlyu
     ! testing only, checking variables                    -zlyu    
     !write(stdout, *) 'inside case 2 in BeTRSimulationStandalone smp_l(c,j) = ', smp_l(c,j), ',     c = ',c, ',    j = ',j
     !write(stdout, *) 'hfus = ', hfus, ',     tfrz = ',tfrz, ',    t_soisno(c,j) = ',t_soisno(c,j)
@@ -811,11 +819,13 @@ contains
     ! end of the testing
         else
           s_node = max(h2osoi_vol(c,j)/watsat(c,j), 0.01_r8)
-     !      write(stdout, *) 'inside case 2 else in Standalone t_soisno = ', t_soisno(c,j), ',     c = ',c, ',    j = ',j
-     !      write(stdout, *) 's_node = ',s_node, ',      h2osoi_vol = ',h2osoi_vol(c,j), ',      watsat = ',watsat(c,j)
-     !      write(stdout, *) 'check smp_l = ',smp_l(c,j), ',   bsw= ',bsw(c,j), ',    sucsat= ',sucsat(c,j)
-     !      write(stdout, *) '***************************************************************'   !-zlyu
           call soil_water_retention_curve%soil_suction(sucsat(c,j), s_node, bsw(c,j), smp_l(c,j))
+          !biophysforc%smp_l_col(c,j) = smp_l(c,j);                          !-zlyu
+          
+           !write(stdout, *) 'inside case 2 else in Standalone t_soisno = ', t_soisno(c,j), ',     c = ',c, ',    j = ',j
+           !write(stdout, *) 's_node = ',s_node, ',      h2osoi_vol = ',h2osoi_vol(c,j), ',      watsat = ',watsat(c,j)
+           !write(stdout, *) 'check smp_l = ',smp_l(c,j),',   bsw= ',bsw(c,j), ',    sucsat= ',sucsat(c,j)
+           !write(stdout, *) '***************************************************************'   !-zlyu
         endif
       endif
     enddo

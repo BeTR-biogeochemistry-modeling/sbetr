@@ -66,6 +66,7 @@ contains
   use babortutils           , only : endrun
   use BetrStatusType        , only : betr_status_type
   use ApplicationsFactory   , only : AppInitParameters
+  !use BeTR_biogeophysInputType   , only : betr_biogeophys_input_type             !-zlyu
   implicit none
   !arguments
   character(len=betr_filename_length)      , intent(in) :: base_filename
@@ -77,6 +78,7 @@ contains
   real(r8)                             :: dtime2   !half of the model time step
   integer                              :: record
   type(betr_status_type)               :: bstatus
+  !type(betr_biogeophys_input_type)     :: biophysforc                             !-zlyu
   character(len=80)                    :: subname = 'sbetrBGC_driver'
 
   type(bounds_type)                    :: bounds
@@ -155,13 +157,6 @@ contains
 
   !print*,'set filters to load initialization data from input'
   call simulation%BeTRSetFilter(maxpft_per_col=0, boffline=.true.)
-
-    ! testing only, where the run crushed        -zlyu   01/27/2019
-    !write(stdout, *) '***************************'
-    !write(stdout, *) 'after simulation%BeTRSetFilter'
-    !write(stdout, *) '***************************'
-    ! end of the testing
-
 
   if(continue_run)then
 
@@ -259,11 +254,16 @@ contains
 
       call simulation%CalcSmpL(bounds, 1, nlevsoi, simulation%num_soilc, simulation%filter_soilc, &
               temperature_vars%t_soisno_col(bounds%begc:bounds%endc,1:nlevsoi), &
-              soilstate_vars, waterstate_vars, soil_water_retention_curve)
+              soilstate_vars, waterstate_vars, soil_water_retention_curve)            !, biophysforc)          !-zlyu, add biophysforc
     end select
     call simulation%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi, waterstate_vars=waterstate_vars, &
       waterflux_vars=waterflux_vars, soilhydrology_vars = soilhydrology_vars)
-
+    ! testing only, check variables                       !-zlyu
+    !write(stdout, *) '================================================================'
+    !write(stdout, *) 'In sbetrDriverMod checking after setbiophysforcing --> smp(1,1)= ',simulation%biophys_forc%smp_l_col(1,1)
+    !write(stdout, *) '================================================================'
+    ! end of the testing
+    
     !x print*,'diagnose water flux'
     call simulation%DiagAdvWaterFlux(simulation%num_soilc, &
       simulation%filter_soilc)
@@ -284,7 +284,7 @@ contains
 
       call simulation%CalcSmpL(bounds, 1, nlevsoi, simulation%num_soilc, &
         simulation%filter_soilc, temperature_vars%t_soisno_col, &
-        soilstate_vars, waterstate_vars, soil_water_retention_curve)
+        soilstate_vars, waterstate_vars, soil_water_retention_curve)    
 
       call simulation%SetBiophysForcing(bounds, col, pft,                               &
         carbonflux_vars=carbonflux_vars,                                                &

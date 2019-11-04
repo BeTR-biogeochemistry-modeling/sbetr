@@ -164,11 +164,6 @@ contains
   !character(len=*)         , intent(in)  :: namelist_buffer     !remoce dummy variable namelist_buffer to work with template in BiogeoConType.F90 
   type(betr_status_type)   , intent(out) :: bstatus
 
-    ! testing only, where the run crushed        -zlyu   01/27/2019     
-    write(stdout, *) '*******************************************'
-    write(stdout, *) 'inside summspara_init'
-    write(stdout, *) '*******************************************'
-    ! end of the testing
   call this%bcon_Init(bstatus)
 
   call this%InitAllocate()
@@ -240,10 +235,10 @@ contains
 
   ! start of new paras from rzacplsbetr_cmupdated         -zlyu 
   ! Microbes
-    this%decay_mic0 = 4.12e-3_r8*365._r8/year_sec            ! Reference microbial death rate (1/second)
-    this%gmax_mic  = 0.8760_r8*365._r8/year_sec    ! 0.088031564_r8*365._r8/year_sec    !-zlyu     ! Maximum microbial growth rate (1/second)              ! back to oginial para      -zlyu
-    this%pmax_enz = 0.003599271_r8*365._r8/year_sec     !*10._r8     -zlyu       ! Maximum enzyme production rate (1/second)
-    this%yld_mic = 0.252307388_r8       !0.8_r8       !-zlyu     *4._r8        ! Growth efficiency of microbes (g mic/g res)
+    this%decay_mic0 = 4.12e-3_r8*365._r8*0.6_r8/year_sec          !-zlyu        ! Reference microbial death rate (1/second)
+    this%gmax_mic  = 0.8760_r8*365._r8/year_sec      !0.6_r8*     ! 0.088031564_r8*365._r8/year_sec    !-zlyu     ! Maximum microbial growth rate (1/second)              ! back to oginial para      -zlyu
+    this%pmax_enz = 0.003599271_r8*365._r8*4._r8/year_sec      !   !*10._r8     !-zlyu       ! Maximum enzyme production rate (1/second)
+    this%yld_mic = 0.252307388_r8          !0.8_r8       !-zlyu     *4._r8        ! Growth efficiency of microbes (g mic/g res)
     this%yld_enz = 0.999705849_r8           !*0.5_r8                 !-zlyu        ! Growth efficiency of enzymes (g enz/g res)
     this%ref_mr_mic             = 0.00230282_r8*365._r8/year_sec       ! Microbial maintenance rate (1/second)
     this%ref_kappa_mic          = 0.083996608_r8*365._r8/year_sec       ! Reserve turnover rate (1/second)
@@ -251,11 +246,11 @@ contains
     this%ref_vmax_mic           = 20.75191411_r8*365._r8/year_sec     ! Maximum rate of monomer assimilation (1/second) 
     this%decay_mic1 = 1.04e-4_r8*365._r8/year_sec             ! Half saturation population for density dependent mortality
     this%ref_kaff_mono_mic      = 0.100035349_r8         ! Affinity parameter for microbial monomer uptake (g monomers/m3)
-    this%yld_res = 0.850251061_r8                  ! Assimilation efficiency from monomer uptake (g res/g mono)
+    this%yld_res = 0.850251061_r8               ! 0.5_r8        ! Assimilation efficiency from monomer uptake (g res/g mono)
     
     ! Enzymes
-    this%decay_enz = 0.005289921_r8*365._r8/year_sec               ! Enzyme turnover tate (1/second)
-    this%ref_vmax_enz           = 3.833835166_r8   !*4_r8*365._r8/year_sec  !-zlyu    ! Maximum rate of polymer degradation (1/second)
+    this%decay_enz = 0.005289921_r8*365._r8/year_sec             ! Enzyme turnover tate (1/second)
+    this%ref_vmax_enz           = 3.833835166_r8*365._r8/year_sec     ! *4.5_r8    !*4_r8     !-zlyu    ! Maximum rate of polymer degradation (1/second)
     this%ref_kaff_enz_poly      = 202.6648678_r8            !*2._r8       !-zlyu   ! Affinity parameter for enzymatic polymer degradation (g enzymes/m3)
     this%ref_kaff_enz_msurf     = 45.5122168_r8          !*0.5_r8           !-zlyu     ! Affinity parameter for surface adsorption of enzymes (g enzymes/m3)
     this%fenz2poly = 0.000513795_r8                ! Proportion of degraded exoenzyme into polymers (g poly/g enz)
@@ -319,18 +314,18 @@ contains
   !following is based on century parameterization
   this%rf_l1s1_bgc           = (/0.55_r8, 0.55_r8/)
   this%rf_l2s1_bgc           = (/0.45_r8, 0.55_r8/)
-  this%rf_l3s2_bgc           = 0.35_r8                  !0.5_r8     -zlyu, testing
+  this%rf_l3s2_bgc           = 0.5_r8             !0.35_r8                  !   -zlyu, testing
   this%rf_s2s1_bgc           = 0.55_r8
   this%rf_s3s1_bgc           = 0.55_r8
 
   !following is based on century parameterization
-  this%k_decay_lit1          = (/14.8_r8,18.5_r8/)/year_sec    !1/second
-  this%k_decay_lit2          = (/3.9_r8 ,4.9_r8/) /year_sec    !1/second
-  this%k_decay_lit3          = (/3.9_r8 ,4.9_r8/) /year_sec    !1/second
+  this%k_decay_lit1          = (/14.8_r8*3._r8,18.5_r8*3._r8/)/year_sec     !*2._r8      !(/14.8_r8,18.5_r8/)/year_sec    !1/second    !-zlyu
+  this%k_decay_lit2          = (/3.9_r8*3._r8 ,4.9_r8*3._r8/) /year_sec     !*2._r8      !(/3.9_r8 ,4.9_r8/) /year_sec    !1/second    !-zlyu
+  this%k_decay_lit3          = (/3.9_r8*3._r8 ,4.9_r8*3._r8/) /year_sec     !*2._r8      !(/3.9_r8 ,4.9_r8/) /year_sec    !1/second    !-zlyu
   this%k_decay_som1          = (/6.7_r8, 7.3_r8/) /year_sec    !1/second
   this%k_decay_som2          = 0.2_r8/year_sec                 !1/second
   this%k_decay_som3          = 0.0045_r8/year_sec              !1/second
-  this%k_decay_cwd           = 0.6_r8/year_sec                 !1/second
+  this%k_decay_cwd           = 6.5_r8/year_sec                 ! 12.8_r8     !0.6_r8/year_sec                 !1/second             !-zlyu, get cwd turnover faster
   this%k_decay_fwd           = 1.5_r8/year_sec                 !1/second
   this%k_decay_lwd           = 0.5_r8/year_sec                 !1/second
 

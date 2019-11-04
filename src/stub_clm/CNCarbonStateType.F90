@@ -62,11 +62,6 @@ contains
     integer :: begp, endp
     integer :: begc, endc
     !------------------------------------------------------------------------
-    ! testing only, where the run crushed        -zlyu   01/27/2019
-    write(stdout, *) '*************************************'
-    write(stdout, *) 'inside CNCarbonSate.F90 in Initallocate' 
-    write(stdout, *) '*************************************@'
-    ! end of the testing
     begp = bounds%begp; endp= bounds%endp
     begc = bounds%begc; endc= bounds%endc
     allocate(this%decomp_cpools_vr_col(begc:endc,1:nlevdecomp_full,1:ndecomp_pools)); this%decomp_cpools_vr_col(:,:,:)= spval

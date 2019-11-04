@@ -111,11 +111,7 @@ implicit none
   implicit none
   class(betr_nitrogenstate_recv_type)  :: this
   real(r8), intent(in) :: value_column
-    ! testing only, where the run crushed        -zlyu   01/27/2019
-    write(stdout, *) '*************************************'
-    write(stdout, *) 'inside BeTR_nitrogenstateRevType.F90 in reset' 
-    write(stdout, *) '*************************************@'
-    ! end of the testing
+
   if(index(bgc_type,'type1_bgc')/=0)then                      ! from jinyun_rr        -zlyu
     this%decomp_npools_vr(:,:,:)=value_column
   else
@@ -146,11 +142,7 @@ implicit none
 
 
   integer :: c, j
-    ! testing only, where the run crushed        -zlyu   01/27/2019
-    write(stdout, *) '*************************************'
-    write(stdout, *) 'inside BeTR_nitrogenstateRevType.F90 in summary' 
-    write(stdout, *) '*************************************@'
-    ! end of the testing
+
   if(index(bgc_type,'type1_bgc')/=0)return
   this%cwdn_col(:) = 0._r8
   this%totlitn_col(:) = 0._r8

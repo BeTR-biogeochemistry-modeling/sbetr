@@ -283,11 +283,7 @@ contains
    case ("cdom","cdom_mosart")
      call cdom_para%Init(bstatus)
    case ("summs")
-    ! testing only, where the run crushed        -zlyu   01/27/2019     
-    write(stdout, *) '*******************************************'
-    write(stdout, *) 'inside AppInitParameters and case for summs method'
-    write(stdout, *) '*******************************************'
-    ! end of the testing
+
      call summs_para%Init(bstatus)          ! adding method 'summs' from Rose's model  -zlyu. 01/29/2019
    case ("simic")
      call simic_para%Init(bstatus)
