@@ -1016,6 +1016,7 @@ contains
   use CanopyStateType   , only : canopystate_type
   use MathfuncMod       , only : isnan => bisnan
   use pftvarcon         , only : noveg
+  use betr_varcon       , only : denh2o => bdenh2o, denice => bdenice
   implicit none
   !ARGUMENTS
   class(betr_simulation_type) , intent(inout)        :: this
@@ -1093,7 +1094,9 @@ contains
       this%biophys_forc(c)%h2osoi_ice_col(cc,lbj:ubj)    = waterstate_vars%h2osoi_ice(c,lbj:ubj)
       this%biophys_forc(c)%h2osoi_icevol_col(cc,lbj:ubj) = waterstate_vars%h2osoi_icevol(c,lbj:ubj)
       do l = lbj, ubj
-        this%biophys_forc(c)%h2osoi_liqvol_col(cc,l)     = max(0.01_r8,waterstate_vars%h2osoi_liqvol(c,l))
+        this%biophys_forc(c)%h2osoi_icevol_col(cc,l)     = waterstate_vars%h2osoi_ice(c,l)/(col%dz(c,l)*denice)
+        this%biophys_forc(c)%h2osoi_liqvol_col(cc,l)     = waterstate_vars%h2osoi_liq(c,l)/(col%dz(c,l)*denh2o)
+        this%biophys_forc(c)%h2osoi_liqvol_col(cc,l)     = max(0.01_r8,this%biophys_forc(c)%h2osoi_liqvol_col(cc,l))
         this%biophys_forc(c)%h2osoi_vol_col(cc,l)        = this%biophys_forc(c)%h2osoi_liqvol_col(cc,l) + &
                                                            this%biophys_forc(c)%h2osoi_icevol_col(cc,l)
       enddo
