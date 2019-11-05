@@ -77,6 +77,9 @@ contains
     case ("tracer2beck_run")
        allocate(bgc_reaction, source=bgc_reaction_tracer2beck_run_type())
        bgc_type='type0_bgc'
+    case ("mock_run1")
+       allocate(bgc_reaction, source=bgc_reaction_mock_run_type())
+       bgc_type='type0_bgc'
     case ("h2oiso")
        allocate(bgc_reaction, source=bgc_reaction_h2oiso_type())
     case ("doc_dic")
@@ -108,7 +111,7 @@ contains
   character(len=*)          , parameter   :: subname = 'create_standalone_plant_soilbgc_type'
 
   select case(trim(method))
-  case ("mock_run")
+  case ("mock_run","mock_run1")
      allocate(plant_soilbgc, source=plant_soilbgc_mock_run_type())
   case ("tracer1beck_run")
      allocate(plant_soilbgc, source=plant_soilbgc_tracer1beck_run_type())
@@ -140,7 +143,7 @@ contains
 
   is_analytic_benchmark=.false.
   select case(trim(method))
-  case ("mock_run")
+  case ("mock_run","mock_run1")
      yesno = .true.
   case ("tracer1beck_run")
      yesno = .true.
