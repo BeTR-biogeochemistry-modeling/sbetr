@@ -1138,6 +1138,9 @@ contains
     if(present(temperature_vars))then
       this%biophys_forc(c)%t_soi_10cm(cc)           = temperature_vars%t_soi10cm(c)
       this%biophys_forc(c)%t_soisno_col(cc,lbj:ubj) = temperature_vars%t_soisno(c,lbj:ubj)
+      if(col%snl(c)<0)then
+        this%biophys_forc(c)%t_snow_col(cc,col%snl(c)+1:0) = temperature_vars%t_soisno(c,col%snl(c)+1:0)
+      endif
     endif
     if(present(pf_temperature_vars))then
       pp = 0
