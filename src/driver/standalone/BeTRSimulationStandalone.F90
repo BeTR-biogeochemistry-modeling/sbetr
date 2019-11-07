@@ -155,7 +155,7 @@ contains
     call this%bsimstatus%reset()
 
     call this%BeTRSetcps(bounds, col, pft)
-    
+
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
 
@@ -169,16 +169,16 @@ contains
       call this%betr(c)%step_without_drainage(this%betr_time, betr_bounds, this%betr_col(c), &
          this%betr_pft(c), this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp, &
          this%biophys_forc(c), this%biogeo_flux(c), this%biogeo_state(c), this%bstatus(c))
-      
+
       if(this%bstatus(c)%check_status())then
          call this%bsimstatus%setcol(c)
-         
+
          call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
-    
+
         exit
       endif
    enddo
-   
+
     if(this%bsimstatus%check_status()) &
          call endrun(msg=trim(this%bsimstatus%print_msg()))
 
@@ -351,7 +351,7 @@ contains
     if(use_c14_betr)then
       call this%biophys_forc(c)%c14flx%reset(value_column=0._r8)
    endif
-   
+
     this%biophys_forc(c)%frac_loss_lit_to_fire_col(c_l) = 0._r8
     this%biophys_forc(c)%frac_loss_cwd_to_fire_col(c_l)=0._r8
   enddo
@@ -431,48 +431,48 @@ contains
   !TEMPORARY VARIABLES
   type(betr_bounds_type)     :: betr_bounds
   integer :: begc_l, endc_l
- 
+
   !summarize the fluxes and state variables
   c_l = 1
   call this%BeTRSetBounds(betr_bounds)
   begc_l = betr_bounds%begc; endc_l=betr_bounds%endc;
-  
+
   !retrieve and return
   do c = bounds%begc, bounds%endc
     if(.not. this%active_col(c))cycle
-  
+
     call this%betr(c)%retrieve_biostates(betr_bounds,  1, betr_nlevsoi, &
        this%num_soilc, this%filter_soilc, this%jtops, this%biogeo_state(c),this%bstatus(c))
-  
+
     ! testing only, where the run collapsed        -zlyu   01/27/2019
     !write(stdout, *) '***************************'
     !write(stdout, *) 'inside StandalonePlantSoilBGCRec after retrieve_biostate'
     !write(stdout, *) '***************************'
     ! end of the testing
-    
+
     if(this%bstatus(c)%check_status())then
       call this%bsimstatus%setcol(c)
-      call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())        
+      call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
 
       exit
     endif
     call this%betr(c)%retrieve_biofluxes(this%num_soilc, this%filter_soilc, &
       this%num_soilp, this%filter_soilp, this%biogeo_flux(c))
-    
+
     call this%biogeo_state(c)%summary(betr_bounds, 1, betr_nlevtrc_soil,&
          this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil), &
          this%betr_col(c)%zi(begc_l:endc_l,1:betr_nlevtrc_soil),this%do_soibgc())
-    
+
     call this%biogeo_flux(c)%summary(betr_bounds, 1, betr_nlevtrc_soil, &
          this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil),this%do_soibgc())
- 
+
   enddo
 
   if(.not. this%do_soibgc())return
 
   do fc = 1, num_soilc
     c = filter_soilc(fc)
-    
+
     !recollect soil respirations, fire and hydraulic loss
     c12flux_vars%hr_col(c) = this%biogeo_flux(c)%c12flux_vars%hr_col(c_l)
     c12flux_vars%fire_decomp_closs_col(c) = this%biogeo_flux(c)%c12flux_vars%fire_decomp_closs_col(c_l)
@@ -552,7 +552,7 @@ contains
     ! end of the testing
     ! ---------------------------------------------------------------------------------------------------------------------------------
     ! ---------------------------------------------------------------------------------------------------------------------------------
- 
+
     !recollect soil organic carbon, soil organic nitrogen, and soil organic phosphorus
     c12state_vars%cwdc_col(c) = this%biogeo_state(c)%c12state_vars%cwdc_col(c_l)
     c12state_vars%totlitc_col(c) = this%biogeo_state(c)%c12state_vars%totlitc_col(c_l)
@@ -616,7 +616,7 @@ contains
 
     p31state_vars%sminp_col(c) = this%biogeo_state(c)%p31state_vars%sminp_col(c_l)
     p31state_vars%occlp_col(c) = this%biogeo_state(c)%p31state_vars%occlp_col(c_l)
-    print*,'smin_nh4',n14state_vars%smin_nh4_col(c)
+    !print*,'smin_nh4',n14state_vars%smin_nh4_col(c)
 
     c12state_vars%som1c_col(c) = this%biogeo_state(c)%c12state_vars%som1c_col(c_l)
     c12state_vars%som2c_col(c) = this%biogeo_state(c)%c12state_vars%som2c_col(c_l)
@@ -779,7 +779,7 @@ contains
     watsat            =>    soilstate_vars%watsat_col          , & ! Input:  [real(r8) (:,:) ]  minimum soil suction (mm)
     sucsat            =>    soilstate_vars%sucsat_col            & ! Input:  [real(r8) (:,:) ]  minimum soil suction (mm)
   )
-    ! testing only, checking variables                    -zlyu    
+    ! testing only, checking variables                    -zlyu
     !write(stdout, *) '--------------------------------------------------------------------'
     !write(stdout, *) 'In Standalone ubj= ', ubj, ',    numf= ',numf, ',   size of t_soisno',size(t_soisno,2)
 
@@ -794,7 +794,7 @@ contains
            smp_l(c,j)= -hfus*(tfrz-t_soisno(c,j))/(grav*t_soisno(c,j)) * 1000._r8  !(mm)
            !write(stdout, *) 'inside case 1 in BeTRSimulationStandalone checkpoint '
            !biophysforc%smp_l_col(c,j) = smp_l(c,j);                          !-zlyu
-    ! testing only, checking variables                    -zlyu    
+    ! testing only, checking variables                    -zlyu
     !write(stdout, *) '********************************************************************8*'
     !write(stdout, *) 'inside case 1 in BeTRSimulationStandalone smp_l(c,j) = ', smp_l(c,j), ',     c = ',c, ',    j = ',j
     !write(stdout, *) 'hfus = ', hfus, ',     tfrz = ',tfrz, ',    t_soisno(c,j) = ',t_soisno(c,j)     !,',    biophysforc%smp_l_col(c,j) =',biophysforc%smp_l_col(c,j)
@@ -812,7 +812,7 @@ contains
         if(t_soisno(c,j)<tfrz)then
            smp_l(c,j)= -hfus*(tfrz-t_soisno(c,j))/(grav*t_soisno(c,j)) * 1000._r8  !(mm)
            !biophysforc%smp_l_col(c,j) = smp_l(c,j);                          !-zlyu
-    ! testing only, checking variables                    -zlyu    
+    ! testing only, checking variables                    -zlyu
     !write(stdout, *) 'inside case 2 in BeTRSimulationStandalone smp_l(c,j) = ', smp_l(c,j), ',     c = ',c, ',    j = ',j
     !write(stdout, *) 'hfus = ', hfus, ',     tfrz = ',tfrz, ',    t_soisno(c,j) = ',t_soisno(c,j)
     !write(stdout, *) '**********************************************************************8*'
@@ -821,7 +821,7 @@ contains
           s_node = max(h2osoi_vol(c,j)/watsat(c,j), 0.01_r8)
           call soil_water_retention_curve%soil_suction(sucsat(c,j), s_node, bsw(c,j), smp_l(c,j))
           !biophysforc%smp_l_col(c,j) = smp_l(c,j);                          !-zlyu
-          
+
            !write(stdout, *) 'inside case 2 else in Standalone t_soisno = ', t_soisno(c,j), ',     c = ',c, ',    j = ',j
            !write(stdout, *) 's_node = ',s_node, ',      h2osoi_vol = ',h2osoi_vol(c,j), ',      watsat = ',watsat(c,j)
            !write(stdout, *) 'check smp_l = ',smp_l(c,j),',   bsw= ',bsw(c,j), ',    sucsat= ',sucsat(c,j)

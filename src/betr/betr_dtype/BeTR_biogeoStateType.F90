@@ -38,9 +38,9 @@ contains
     class(betr_biogeo_state_type), pointer :: create_betr_biogeo_state
     class(betr_biogeo_state_type), pointer :: biogeo_state
     ! testing only, where the run crushed        -zlyu   01/27/2019
-    write(stdout, *) '*************************************###########################'
-    write(stdout, *) 'inside BeTR_biogeoStateType.F90 in create_betr_biogeo_state' 
-    write(stdout, *) '*************************************@##########################'
+    !write(stdout, *) '*************************************###########################'
+    !write(stdout, *) 'inside BeTR_biogeoStateType.F90 in create_betr_biogeo_state'
+    !write(stdout, *) '*************************************@##########################'
     ! end of the testing
     allocate(biogeo_state)
     create_betr_biogeo_state => biogeo_state

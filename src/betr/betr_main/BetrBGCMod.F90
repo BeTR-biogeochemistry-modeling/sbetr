@@ -164,7 +164,7 @@ contains
     integer :: lbj, ubj
 
     call betr_status%reset()
-    
+
     SHR_ASSERT_ALL((ubound(Rfactor,1) == bounds%endc), errMsg(mod_filename,__LINE__),betr_status)
 
     SHR_ASSERT_ALL((ubound(Rfactor,2) == bounds%ubj ), errMsg(mod_filename,__LINE__),betr_status)
@@ -184,12 +184,12 @@ contains
        if(betr_status%check_status())return
     endif
 
-        ! testing only, where the run crushed        -zlyu  
+        ! testing only, where the run crushed        -zlyu
     !write(stdout, *) '***************************'
     !write(stdout, *) 'in stage_tracer_transport before get_zwt'
     !write(stdout, *) '***************************'
     ! end of the testing
-    
+
     !obtain water table depth
     call get_zwt (bounds, num_soilc, filter_soilc,       &
          col%zi(bounds%begc:bounds%endc, 0:nlevsoi),     &
@@ -206,13 +206,13 @@ contains
          betrtracer_vars,                               &
          aerecond_vars,                                 &
          tracercoeff_vars, betr_status)
-        
-    ! testing only, where the run crushed        -zlyu  
-    write(stdout, *) '***************************'
-    write(stdout, *) 'in stage_tracer_transport after calc_aerecond'
-    write(stdout, *) '***************************'
+
+    ! testing only, where the run crushed        -zlyu
+    !write(stdout, *) '***************************'
+    !write(stdout, *) 'in stage_tracer_transport after calc_aerecond'
+    !write(stdout, *) '***************************'
     ! end of the testing
-    
+
     if(betr_status%check_status())return
 
     biophysforc%soil_pH(bounds%begc:bounds%endc,1:ubj)=7._r8
@@ -228,7 +228,7 @@ contains
          tracerstate_vars=tracerstate_vars       , &
          tracercoeff_vars=tracercoeff_vars       , &
          betr_status = betr_status)
-    
+
     if(betr_status%check_status())return
 
     if(betr_status%check_status())return
@@ -251,7 +251,7 @@ contains
          biogeo_flux                          , &
          tracercoeff_vars                     , &
          tracerboundarycond_vars, betr_status)
-    
+
     if(betr_status%check_status())return
 
     if(advection_on) &
@@ -266,7 +266,7 @@ contains
          tracerboundarycond_vars,                                &
          biogeo_flux  ,                                          &
          tracerflux_vars%tracer_flx_infl_col, betr_status)
-    
+
     if(betr_status%check_status())return
 
     call set_gwdif_Rfactor(bounds, lbj, ubj, &
@@ -277,13 +277,13 @@ contains
          tracercoeff_vars,                   &
          betrtracer_vars,                    &
          Rfactor, betr_status)
-    
-    ! testing only, where the run crushed        -zlyu  
+
+    ! testing only, where the run crushed        -zlyu
     !write(stdout, *) '***************************'
     !write(stdout, *) 'in stage_tracer_transport after Rfactor'
     !write(stdout, *) '***************************'
     ! end of the testing
-    
+
   end subroutine stage_tracer_transport
 
   !-------------------------------------------------------------------------------
