@@ -263,7 +263,7 @@ contains
     !write(stdout, *) 'In sbetrDriverMod checking after setbiophysforcing --> smp(1,1)= ',simulation%biophys_forc%smp_l_col(1,1)
     !write(stdout, *) '================================================================'
     ! end of the testing
-    
+
     !x print*,'diagnose water flux'
     call simulation%DiagAdvWaterFlux(simulation%num_soilc, &
       simulation%filter_soilc)
@@ -284,7 +284,7 @@ contains
 
       call simulation%CalcSmpL(bounds, 1, nlevsoi, simulation%num_soilc, &
         simulation%filter_soilc, temperature_vars%t_soisno_col, &
-        soilstate_vars, waterstate_vars, soil_water_retention_curve)    
+        soilstate_vars, waterstate_vars, soil_water_retention_curve)
 
       call simulation%SetBiophysForcing(bounds, col, pft,                               &
         carbonflux_vars=carbonflux_vars,                                                &
@@ -331,7 +331,7 @@ contains
     end select
 
     call simulation%StepWithoutDrainage(bounds, col, pft)
-    
+
     select type(simulation)
     class is (betr_simulation_alm_type)
       call simulation%PlantSoilBGCRecv(bounds, col, pft, simulation%num_soilc, simulation%filter_soilc,&
@@ -404,7 +404,7 @@ contains
 
   call forcing_data%Destroy()
   deallocate(forcing_data)
-  
+
 end subroutine sbetrBGC_driver
 
 ! ----------------------------------------------------------------------
@@ -422,6 +422,7 @@ end subroutine sbetrBGC_driver
     use betr_constants           , only : stdout, betr_string_length_long, betr_namelist_buffer_size
     use tracer_varcon            , only : advection_on, diffusion_on, reaction_on, ebullition_on, reaction_method
     use tracer_varcon            , only : is_nitrogen_active, is_phosphorus_active, input_only, bgc_param_file
+    use tracer_varcon            , only : use_c13_betr, use_c14_betr
     use ncdio_pio                , only : file_desc_t, ncd_nowrite, ncd_pio_openfile, ncd_pio_closefile
 
     use BetrStatusType           , only : betr_status_type
@@ -458,7 +459,8 @@ end subroutine sbetrBGC_driver
     namelist / betr_parameters /                  &
          reaction_method,                         &
          advection_on, diffusion_on, reaction_on, &
-         ebullition_on, input_only, adv_scalar, bgc_param_file
+         ebullition_on, input_only, adv_scalar, bgc_param_file, &
+         use_c13_betr, use_c14_betr
 
     simulator_name = ''
     continue_run=.false.
@@ -468,6 +470,8 @@ end subroutine sbetrBGC_driver
     input_only=.false.
     finit =''
     bgc_param_file=''
+    use_c13_betr=.false.
+    use_c14_betr=.false.
     ! ----------------------------------------------------------------------
     ! Read namelist from standard input.
     ! ----------------------------------------------------------------------
