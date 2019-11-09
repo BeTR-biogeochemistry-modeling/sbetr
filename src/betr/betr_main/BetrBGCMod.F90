@@ -676,8 +676,10 @@ contains
          tracercoeff_vars, tracerstate_vars,bstatus)
     if(bstatus%check_status())return
     !do diffusive and advective transport, assuming aqueous and gaseous phase are in equilbrium
+    print*,'ok'
     do kk = 1 , 2
        if (transp_pathway(kk) == diffusion_scheme .and. diffusion_on) then
+          print*,'diffusion'
           call do_tracer_gw_diffusion(bounds, lbj, ubj,                                    &
                jtops, col%lbots,                                                           &
                num_soilc,                                                                  &
@@ -692,6 +694,7 @@ contains
                tracerflux_vars, bstatus)
           if(bstatus%check_status())return
        elseif (transp_pathway(kk) == advection_scheme .and. advection_on)then
+          print*,'advection'
           jtops0(:) = 1
           call do_tracer_advection(betr_time, bounds, lbj, ubj, &
                col, pft, &
@@ -909,7 +912,16 @@ contains
             update_col(c)=.true.
             time_remain(c) = dtime
          enddo
-
+         do fc = 1, num_soilc
+            c = filter_soilc(fc)
+            do k = 1, ntrcs
+              trcid = adv_trc_group(k)
+              !loop through all layers
+              do l = jtops(c), lbots(c)
+                if(index(betrtracer_vars%get_tracername(trcid),'14CO2x')/=0)print*,'adv',l,tracer_conc_mobile_col(c,l,trcid)
+              enddo
+            enddo
+         enddo
          do
             !zero leaching flux, leaching is outgoing only.
             leaching_mass=0._r8
@@ -995,7 +1007,10 @@ contains
                              ' transp=',transp_mass(c,k),' lech=',&
                              leaching_mass(c,k),' infl=',inflx_top(c,k),' dmass=',dmass(c,k), ' mass0=', &
                              mass0,'err_rel=',err_relative
-
+                        print*,'error'
+                        do l=jtops(c),lbots(c)
+                          print*,l,trc_conc_out(c,l,k),tracer_conc_mobile_col(c,l, trcid)
+                        enddo
                         msg=trim(msg)//new_line('A')//'advection mass balance error for tracer '//tracername &
                           //new_line('A')//errMsg(mod_filename, __LINE__)
                         call bstatus%set_msg(msg, err=-1)
@@ -1320,6 +1335,17 @@ contains
             lexit_loop=exit_loop_by_threshold(bounds%begc, bounds%endc, time_remain, &
                  dtime_min, num_soilc, filter_soilc, update_col)
             if(lexit_loop)exit
+         enddo
+
+         do fc = 1, num_soilc
+            c = filter_soilc(fc)
+            do k = 1, ntrcs
+              trcid = dif_trc_group(k)
+              !loop through all layers
+              do l = jtops(c), lbots(c)
+                if(index(betrtracer_vars%get_tracername(trcid),'14CO2x')/=0)print*,'dif',l,tracer_conc_mobile_col(c,l,trcid),Rfactor(c,l,j)
+              enddo
+            enddo
          enddo
       enddo
       !

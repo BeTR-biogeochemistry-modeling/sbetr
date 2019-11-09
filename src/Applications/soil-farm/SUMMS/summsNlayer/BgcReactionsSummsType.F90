@@ -1841,6 +1841,7 @@ if(exit_spinup)then
       if(this%use_c14)then
         this%summsforc(c,j)%ystates(this%summsbgc_index%lid_c14_co2)= &
           fpmax(tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_c14_co2x))
+        print*,'14co2=',j,this%summsforc(c,j)%ystates(this%summsbgc_index%lid_c14_co2)
       endif
 
       this%summsforc(c,j)%ystates(this%summsbgc_index%lid_ch4)= &
@@ -2140,6 +2141,7 @@ if(exit_spinup)then
       endif
 
       if(this%use_c14)then
+        print*,'fc14co2',j,ystatesf(this%summsbgc_index%lid_c14_co2)
         tracerstate_vars%tracer_conc_mobile_col(c, j, betrtracer_vars%id_trc_c14_co2x) = &
           ystatesf(this%summsbgc_index%lid_c14_co2)
       endif

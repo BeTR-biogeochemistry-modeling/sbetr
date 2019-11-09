@@ -392,7 +392,7 @@ contains
     if(betr_status%check_status())return
 
     if(this%tracers%debug)call this%debug_info(bounds, col, num_soilc, filter_soilc, 'afbgc react\n bef gwstransp',betr_status)
-
+    print*,'aft reaction'
     call tracer_gws_transport(betr_time, bounds, col, pft, num_soilc, filter_soilc, &
       Rfactor, biophysforc, biogeo_flux, this%tracers, this%tracerboundaryconds  , &
       this%tracercoeffs,  this%tracerstates, this%tracerfluxes, this%bgc_reaction, &
