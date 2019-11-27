@@ -515,7 +515,16 @@ contains
   this%v1eca_bgc_index%debug = bgc_forc%debug
   if(this%v1eca_bgc_index%debug)print*,'enter runbgc_v1eca'
   this%rt_ar = rt_ar
-  frc_c13 = safe_div(rt_ar_c13,rt_ar); frc_c14 = safe_div(rt_ar_c14,rt_ar)
+  if(this%use_c13)then
+    frc_c13 = safe_div(rt_ar_c13,rt_ar); 
+  else
+    frc_c13 = 1._r8
+  endif
+  if(this%use_c14)then
+    frc_c14 = safe_div(rt_ar_c14,rt_ar)
+  else
+    frc_c14 = 1._r8
+  endif
   call bstatus%reset()
 
   !initialize state variables
@@ -543,6 +552,9 @@ contains
   call this%nitden%calc_pot_nitr(ystates1(lid_nh4), bgc_forc, this%decompkf_eca, pot_f_nit_mol_per_sec)
 
   !calculate potential o2 consumption
+!  print*,'pot_co2_hr',pot_co2_hr 
+!  print*,'rt_ar', rt_ar 
+!  print*,'pot_f_nit', pot_f_nit_mol_per_sec * this%nitden%get_nit_o2_scef()
   o2_decomp_depth = pot_co2_hr + rt_ar + pot_f_nit_mol_per_sec * this%nitden%get_nit_o2_scef()
 
   !take a minimum > 0 to avoid singularity in calculating anaerobic fractions
