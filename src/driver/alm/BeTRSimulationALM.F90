@@ -56,15 +56,13 @@ contains
 
 !-------------------------------------------------------------------------------
 
-  function create_betr_simulation_alm()
+  function create_betr_simulation_alm() result(simulation)
   ! DESCRIPTION
   ! constructor
     implicit none
-    class(betr_simulation_alm_type), pointer :: create_betr_simulation_alm
     class(betr_simulation_alm_type), pointer :: simulation
 
     allocate(simulation)
-    create_betr_simulation_alm => simulation
 
   end function create_betr_simulation_alm
 
