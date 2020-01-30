@@ -1217,7 +1217,9 @@ contains
      endif
 
      call DDeallocate(gtype)
-
+     nullify(gtype)
+     deallocate(Extra_inst)
+     nullify(Extra_inst)
 
    end subroutine backward_advection
 
