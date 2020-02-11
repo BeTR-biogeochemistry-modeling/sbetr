@@ -53,7 +53,6 @@ contains
   use betr_constants        , only : betr_namelist_buffer_size, betr_string_length_long, betr_filename_length
   use ForcingDataType       , only : ForcingData_type
   use BeTR_GridMod          , only : betr_grid_type
-  use TracerParamsMod       , only : tracer_param_init
   use spmdMod               , only : spmd_init
   use LandunitType          , only : lun
   use PatchType             , only : pft

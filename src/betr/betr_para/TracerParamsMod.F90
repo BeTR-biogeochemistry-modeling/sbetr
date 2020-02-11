@@ -62,30 +62,6 @@ module TracerParamsMod
 contains
 
 
-<<<<<<< HEAD
-  subroutine tracer_param_init(bounds)
-
-    !
-    ! !DESCRIPTION:
-    !
-    ! initialize the tracerParamsMod
-    !
-    ! !USES:
-    use tracer_varcon         , only : nlevtrc_soil => betr_nlevtrc_soil
-
-    implicit none
-    type(bounds_type), intent(in) :: bounds   !bounds
-    character(len=32)             :: subname ='tracer_param_init'
-
-    allocate(tau_soil%tau_gas(bounds%begc:bounds%endc, 1 : nlevtrc_soil))
-    tau_soil%tau_gas(:,:) = 0._r8
-    allocate(tau_soil%tau_liq(bounds%begc:bounds%endc, 1 : nlevtrc_soil))
-    tau_soil%tau_liq(:,:) = 0._r8
-
-  end subroutine tracer_param_init
-
-=======
->>>>>>> Fix memory leaks
   !--------------------------------------------------------------------------------------------------------------
   subroutine Calc_gaseous_diffusion_soil_tortuosity(bounds, lbj, ubj, jtops, lbots, num_soilc, filter_soilc, &
        biophysforc, tau_gas, bstatus)
@@ -750,11 +726,9 @@ contains
    !
    !USES
    use BetrStatusType     , only : betr_status_type
-<<<<<<< HEAD
-=======
    use betr_columnType    , only : betr_column_type
    use tracer_varcon      , only : nlevtrc_soil => betr_nlevtrc_soil
->>>>>>> Fix memory leaks
+
    implicit none
    !ARGUMENTS
    type(bounds_type)                , intent(in)    :: bounds  ! bounds
