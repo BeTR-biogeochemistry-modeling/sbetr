@@ -1,6 +1,9 @@
 module H2OIsotopePlantSoilBGCType
 
 #include "bshr_assert.h"
+  use bshr_assert_mod, only : shr_assert
+  use bshr_assert_mod, only : shr_assert_all
+  use bshr_assert_mod, only : shr_assert_any
   use PlantSoilBGCMod , only : plant_soilbgc_type
   use bshr_log_mod    , only : errMsg => shr_log_errMsg
   use bshr_assert_mod, only : shr_assert

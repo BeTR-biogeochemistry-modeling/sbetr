@@ -37,7 +37,6 @@ module TracerParamsMod
        __FILE__
   !
   ! !PUBLIC MEMBER FUNCTIONS:
-  public :: tracer_param_init
   public :: set_multi_phase_diffusion
   public :: set_phase_convert_coeff
   public :: calc_tracer_infiltration
@@ -57,11 +56,13 @@ module TracerParamsMod
      real(r8), pointer :: tau_liq(:,:)      !soil tortuosity for aqueous phase diffusion
   end type soil_tortuosity_type
   type(soil_tortuosity_type), target :: tau_soil
+!$omp threadprivate(tau_soil)
 
   !!
 contains
 
 
+<<<<<<< HEAD
   subroutine tracer_param_init(bounds)
 
     !
@@ -83,6 +84,8 @@ contains
 
   end subroutine tracer_param_init
 
+=======
+>>>>>>> Fix memory leaks
   !--------------------------------------------------------------------------------------------------------------
   subroutine Calc_gaseous_diffusion_soil_tortuosity(bounds, lbj, ubj, jtops, lbots, num_soilc, filter_soilc, &
        biophysforc, tau_gas, bstatus)
@@ -747,6 +750,11 @@ contains
    !
    !USES
    use BetrStatusType     , only : betr_status_type
+<<<<<<< HEAD
+=======
+   use betr_columnType    , only : betr_column_type
+   use tracer_varcon      , only : nlevtrc_soil => betr_nlevtrc_soil
+>>>>>>> Fix memory leaks
    implicit none
    !ARGUMENTS
    type(bounds_type)                , intent(in)    :: bounds  ! bounds
@@ -762,8 +770,12 @@ contains
    !
    real(r8) :: bulkdiffus(bounds%begc:bounds%endc,lbj:ubj,1:betrtracer_vars%ntracer_groups )  !weighted bulk diffusivity for dual-phase diffusion
 
-   !maybe I should use tau_soil as a local variable, I will check this later
    character(len=255) :: subname='set_multi_phase_diffusion'
+
+   allocate(tau_soil%tau_gas(bounds%begc:bounds%endc, 1 : nlevtrc_soil))
+   tau_soil%tau_gas(:,:) = 0._r8
+   allocate(tau_soil%tau_liq(bounds%begc:bounds%endc, 1 : nlevtrc_soil))
+   tau_soil%tau_liq(:,:) = 0._r8
 
    call betr_status%reset()
    SHR_ASSERT_ALL((ubound(jtops)   == (/bounds%endc/)), errMsg(filename,__LINE__), betr_status)
@@ -789,6 +801,8 @@ contains
    call calc_bulk_conductances(bounds, lbj, ubj, jtops, col%lbots, numf, filter, tracercoeff_vars%bulk_diffus_col, &
       col%dz(bounds%begc:bounds%endc,lbj:ubj), betrtracer_vars,  &
       tracercoeff_vars%hmconductance_col(bounds%begc:bounds%endc, lbj:ubj-1, :), betr_status)
+
+   deallocate(tau_soil%tau_gas,tau_soil%tau_liq)
 
    end subroutine set_multi_phase_diffusion
 

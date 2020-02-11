@@ -7,7 +7,6 @@ module DIOCPlantSoilBGCType
   use bshr_assert_mod, only : shr_assert
   use bshr_assert_mod, only : shr_assert_all, shr_assert_all_ext
   use bshr_assert_mod, only : shr_assert_any
-
   use PlantSoilBGCMod , only : plant_soilbgc_type
   use betr_decompMod  , only : bounds_type => betr_bounds_type
   use bshr_log_mod    , only : errMsg => shr_log_errMsg

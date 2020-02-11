@@ -10,6 +10,9 @@ module BetrType
   !  subroutines for betr application
   !
   !  !USES:
+  use bshr_assert_mod          , only : shr_assert
+  use bshr_assert_mod          , only : shr_assert_all
+  use bshr_assert_mod          , only : shr_assert_any
   use bshr_kind_mod            , only : r8 => shr_kind_r8
   use bshr_log_mod             , only : errMsg => shr_log_errMsg
   use BeTR_decompMod           , only : bounds_type  => betr_bounds_type
@@ -143,7 +146,6 @@ contains
     use BeTR_decompMod  , only : betr_bounds_type
     use betr_constants  , only : betr_namelist_buffer_size
     use TransportMod    , only : init_transportmod
-    use TracerParamsMod , only : tracer_param_init
     use BetrStatusType  , only : betr_status_type
     use betr_columnType , only : betr_column_type
     implicit none
@@ -200,9 +202,6 @@ contains
 
     !initialize boundary condition type
     call this%bgc_reaction%init_boundary_condition_type(bounds, this%tracers, this%tracerboundaryconds)
-
-    !initialize the betr parameterization module
-    call tracer_param_init(bounds)
 
    allocate(this%h2osoi_liq_copy(bounds%begc:bounds%endc, 1:nlevsoi));  this%h2osoi_liq_copy(:, :) = spval
    allocate(this%h2osoi_ice_copy(bounds%begc:bounds%endc, 1:nlevsoi));  this%h2osoi_ice_copy(:, :) = spval
