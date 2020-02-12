@@ -7,11 +7,16 @@
 /
 
 &forcing_inparm
-  grid_filename = '../../example_input/sierra_grid.nc'
-  forcing_filename = '../../example_input/sierra_clmdef_hhour.clm2.h0.0021-01-01-00000.nc'
+  forcing_filename = '../../input_data/sierra_halfhour_full_year_clmforc.nc'
+/
+
+&betr_grid
+  grid_data_filename = '../../../input_data/clm_exp_grid.cdl.nc'
 /
 
 &regression_test
   write_regression_output = .true.
   cells = 5
 /
+
+xx

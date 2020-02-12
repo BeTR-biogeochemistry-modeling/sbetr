@@ -1218,6 +1218,7 @@ contains
 
      call DDeallocate(gtype)
      nullify(gtype)
+
 !     deallocate(Extra_inst)
 !     nullify(Extra_inst)
 
