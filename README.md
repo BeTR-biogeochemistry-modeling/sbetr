@@ -160,9 +160,6 @@ command with unit tests. For now they have to be run separately.
     cd regression-tests
     make rtest
 
-
-
-
 ### Creating new tests
 
 #### Regression tests
@@ -258,7 +255,36 @@ directory where sbetr is executed!
 The example is set with mock run that transport five tracers: N2, O2,
 AR, CO2, CH4 and DOC
 
+## create customized testing runs
+  ```INI
+  # Use the python script
 
+  # first check how the script should be used
+
+  python tools/python/create_newcase.py --help
+
+  # then create your case
+
+  python tools/python/create_newcase.py --case_name  your_case
+
+  # config and build your case
+
+  cd your_case
+
+  python case_make.py --task config --CC $cc --CXX $cxx --FC $fc
+
+  python case_make.py --task install --CC $cc --CXX $cxx --FC $fc
+
+  # run the model
+
+  # column mode
+
+  ./sbetr reaction.1d.sbetr.nl
+
+  # single layer mode
+
+  ./sbetr reaction.jar.sbetr.nl
+  ```
 ## Development
 
 Key direcotries:

@@ -51,8 +51,8 @@ contains
     begc = bounds%begc; endc= bounds%endc
     allocate(this%altmax_col               (begc:endc))           ; this%altmax_col               (:)   = spval
     allocate(this%altmax_lastyear_col      (begc:endc))           ; this%altmax_lastyear_col      (:)   = spval
-    allocate(this%lbl_rsc_h2o_patch        (begp:endp))           ; this%lbl_rsc_h2o_patch        (:)   = nan
-    allocate(this%elai_patch               (begp:endp))           ; this%elai_patch               (:)   = nan
+    allocate(this%lbl_rsc_h2o_patch        (begp:endp))           ; this%lbl_rsc_h2o_patch        (:)   = spval
+    allocate(this%elai_patch               (begp:endp))           ; this%elai_patch               (:)   = spval
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------

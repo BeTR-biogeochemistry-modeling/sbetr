@@ -16,6 +16,8 @@ BGC        = not-set
 SBETR      = not-set
 UGM        = not-set
 # This proxies everything to the builddir cmake.
+netcdf_fflags = not-set
+netcdf_flibs = not-set
 
 cputype = $(shell uname -m | sed "s/\\ /_/g")
 systype = $(shell uname -s)
@@ -28,12 +30,6 @@ ifeq ($(BGC), not-set)
 	CONFIG_FLAGS += -DBGC=1
 else
 	CONFIG_FLAGS += -DBGC=${BGC}
-endif
-
-ifeq ($(UGM), not-set)
-	CONFIG_FLAGS += -DUGM=0
-else
-	CONFIG_FLAGS += -DUGM=1
 endif
 
 ifeq ($(SBETR), not-set)
@@ -82,11 +78,11 @@ endif
 
 # Precision.
 ifneq ($(precision), not-set)
-  BUILDDIR := ${BUILDDIR}-$(precision)
-  CONFIG_FLAGS += -DBETR_PRECISION=$(precision)
-else
   BUILDDIR := ${BUILDDIR}-double
   CONFIG_FLAGS += -DBETR_PRECISION=double
+else
+  BUILDDIR := ${BUILDDIR}-$(precision)
+  CONFIG_FLAGS += -DBETR_PRECISION=$(precision)
 endif
 
 BUILDDIR := ${BUILDDIR}-`basename ${CC}`
@@ -97,8 +93,8 @@ endif
 
 # Debugging symbols
 ifeq ($(debug), not-set)
-  BUILDDIR := ${BUILDDIR}-Debug
-  CONFIG_FLAGS += -DCMAKE_BUILD_TYPE=Debug
+  BUILDDIR := ${BUILDDIR}-Release
+  CONFIG_FLAGS += -DCMAKE_BUILD_TYPE=Release
 else
   ifeq ($(debug), 0)
     BUILDDIR := ${BUILDDIR}-Release
@@ -129,6 +125,20 @@ ifeq ($(sanitize), 1)
   BUILDDIR := ${BUILDDIR}-AddressSanitizer
   CONFIG_FLAGS += -DADDRESS_SANITIZER=1
 endif
+
+# netcdf
+ifneq ($(netcdf_fflags), not-set)
+  NETCDF_FFLAGS = $(netcdf_fflags)
+else
+  NETCDF_FFLAGS = $(shell nc-config --prefix)/include
+endif
+ifneq ($(netcdf_flibs), not-set)
+  NETCDF_FLIBS = $(netcdf_flibs)
+else
+  NETCDF_FLIBS = $(shell nc-config --flibs)
+endif
+CONFIG_FLAGS += -DTPL_NETCDF_INCLUDE_DIRS=" $(NETCDF_FFLAGS)"
+CONFIG_FLAGS += -DTPL_NETCDF_LIBRARIES="$(NETCDF_FLIBS)"
 
 define run-config
 @mkdir -p $(BUILDDIR)

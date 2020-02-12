@@ -18,6 +18,7 @@ implicit none
     type(betr_carbonstate_recv_type) :: c14state_vars
     type(betr_nitrogenstate_recv_type):: n14state_vars
     type(betr_phosphorusstate_recv_type) :: p31state_vars
+    real(r8), pointer :: annsum_counter_col(:) => null()
  contains
       procedure, public  :: Init
       procedure, private :: InitAllocate
@@ -95,7 +96,7 @@ contains
 
   !soilhydrology
   allocate(this%zwts_col           (begc:endc) ) ! the shallower between zwt_perch and zwt
-
+  allocate(this%annsum_counter_col (begc:endc))  !
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------

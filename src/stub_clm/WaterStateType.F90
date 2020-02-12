@@ -6,7 +6,7 @@ module WaterstateType
   use shr_infnan_mod  , only : nan => shr_infnan_nan, assignment(=)
   use decompMod       , only : bounds_type
   use abortutils      , only : endrun
-
+  use clm_varcon      , only : spval
   implicit none
   save
   private
@@ -65,19 +65,19 @@ module WaterstateType
     begc = bounds%begc; endc= bounds%endc
     lbj  = bounds%lbj;  ubj = bounds%ubj
 
-    allocate(this%h2osoi_liq_col(begc:endc, lbj:ubj))     ; this%h2osoi_liq_col(:,:) = nan
-    allocate(this%h2osoi_ice_col(begc:endc, lbj:ubj))     ; this%h2osoi_ice_col(:,:) = nan
-    allocate(this%h2osoi_liq_old_col(begc:endc, lbj:ubj))     ; this%h2osoi_liq_old_col(:,:) = nan
-    allocate(this%h2osoi_ice_old_col(begc:endc, lbj:ubj))     ; this%h2osoi_ice_old_col(:,:) = nan
-    allocate(this%h2osoi_liqvol_col(begc:endc, lbj:ubj))  ; this%h2osoi_liqvol_col(:,:) = nan
-    allocate(this%h2osoi_icevol_col(begc:endc, lbj:ubj))  ; this%h2osoi_icevol_col(:,:) = nan
-    allocate(this%h2osoi_vol_col(begc:endc, lbj:ubj))     ; this%h2osoi_vol_col(:,:) = nan
-    allocate(this%air_vol_col(begc:endc, lbj:ubj))        ; this%air_vol_col(:,:) = nan
-    allocate(this%rho_vap_col(begc:endc, lbj:ubj))            ; this%air_vol_col(:,:) = nan
-    allocate(this%rhvap_soi_col(begc:endc, lbj:ubj))          ; this%rhvap_soi_col(:,:) = nan
-    allocate(this%smp_l_col  (begc:endc,lbj:ubj))         ; this%smp_l_col              (:,:) = nan
-    allocate(this%finundated_col         (begc:endc))                     ; this%finundated_col         (:)   = nan
-    allocate(this%frac_h2osfc_col        (begc:endc))                     ; this%frac_h2osfc_col        (:)   = nan
+    allocate(this%h2osoi_liq_col(begc:endc, lbj:ubj))     ; this%h2osoi_liq_col(:,:) = spval
+    allocate(this%h2osoi_ice_col(begc:endc, lbj:ubj))     ; this%h2osoi_ice_col(:,:) = spval
+    allocate(this%h2osoi_liq_old_col(begc:endc, lbj:ubj))     ; this%h2osoi_liq_old_col(:,:) = spval
+    allocate(this%h2osoi_ice_old_col(begc:endc, lbj:ubj))     ; this%h2osoi_ice_old_col(:,:) = spval
+    allocate(this%h2osoi_liqvol_col(begc:endc, lbj:ubj))  ; this%h2osoi_liqvol_col(:,:) = spval
+    allocate(this%h2osoi_icevol_col(begc:endc, lbj:ubj))  ; this%h2osoi_icevol_col(:,:) = spval
+    allocate(this%h2osoi_vol_col(begc:endc, lbj:ubj))     ; this%h2osoi_vol_col(:,:) = spval
+    allocate(this%air_vol_col(begc:endc, lbj:ubj))        ; this%air_vol_col(:,:) = spval
+    allocate(this%rho_vap_col(begc:endc, lbj:ubj))            ; this%air_vol_col(:,:) = spval
+    allocate(this%rhvap_soi_col(begc:endc, lbj:ubj))          ; this%rhvap_soi_col(:,:) = spval
+    allocate(this%smp_l_col  (begc:endc,lbj:ubj))         ; this%smp_l_col              (:,:) = spval
+    allocate(this%finundated_col         (begc:endc))                     ; this%finundated_col         (:)   = spval
+    allocate(this%frac_h2osfc_col        (begc:endc))                     ; this%frac_h2osfc_col        (:)   = spval
   end subroutine InitAllocate
 
 end module WaterstateType

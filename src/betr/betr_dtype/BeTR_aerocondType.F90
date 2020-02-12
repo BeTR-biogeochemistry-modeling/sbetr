@@ -7,7 +7,7 @@ module BeTR_aerocondType
   use betr_varcon     , only : spval => bspval, ispval => bispval
 
   implicit none
-
+#include "bshr_alloc.h"
   private
 
   character(len=*), private, parameter :: mod_filename = &
@@ -48,11 +48,11 @@ module BeTR_aerocondType
 
   begp = bounds%begp; endp=bounds%endp
 
-  allocate(this%plant_frootsc_patch (begp:endp)); this%plant_frootsc_patch (:)   = nan
-  allocate(this%annavg_agnpp_patch  (begp:endp)); this%annavg_agnpp_patch  (:) = spval ! To detect first year
-  allocate(this%annavg_bgnpp_patch  (begp:endp)); this%annavg_bgnpp_patch  (:) = spval ! To detect first year
-  allocate(this%tempavg_agnpp_patch (begp:endp)); this%tempavg_agnpp_patch (:) = spval
-  allocate(this%tempavg_bgnpp_patch (begp:endp)); this%tempavg_bgnpp_patch (:) = spval
+  NAN_ALLOC(this%plant_frootsc_patch (begp:endp))
+  SPVAL_ALLOC(this%annavg_agnpp_patch  (begp:endp))
+  SPVAL_ALLOC(this%annavg_bgnpp_patch  (begp:endp))
+  SPVAL_ALLOC(this%tempavg_agnpp_patch (begp:endp))
+  SPVAL_ALLOC(this%tempavg_bgnpp_patch (begp:endp))
 
   end subroutine InitAllocate
 end module BeTR_aerocondType

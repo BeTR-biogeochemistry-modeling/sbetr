@@ -14,7 +14,8 @@ module betr_varcon
   character(len=16), parameter :: bnamep  = 'pft'          ! name of patches
   real(r8), public,  parameter :: bspval = 1.e36_r8  ! special value for real data
   integer , public,  parameter :: bispval = -9999     ! special value for int data (keep this negative to avoid conflicts with possible valid values)
-
+  integer , public,  parameter :: var_flux_type =1
+  integer , public,  parameter :: var_state_type=2
   real(r8) :: bc14ratio = 1.e-12_r8
 
   real(r8) :: boneatm = 1.01325e5_r8 !one standard atmospheric pressure
@@ -42,5 +43,10 @@ module betr_varcon
 
   integer, public :: betr_maxpatch_pft = 1
   integer, public :: betr_max_soilorder = 1
-  integer, public :: bspinup_state = 0
+  real(r8), public :: kyr_spinup=20._r8
+
+  integer, parameter :: btvland = 1   !vertical soil, has diffusion and advection
+  integer, parameter :: btvlake = 2   !vertical lake, only has diffusion
+  integer, parameter :: bthaqua = 3   !horizontal aquatic systems, has advection
+  integer, parameter :: btvwetl = 4   !vertical wetland, only has diffusion
 end module betr_varcon

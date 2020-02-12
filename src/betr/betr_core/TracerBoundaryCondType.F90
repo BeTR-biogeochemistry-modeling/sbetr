@@ -6,9 +6,10 @@ module TracerBoundaryCondType
 ! !USES:
    use bshr_kind_mod  , only : r8 => shr_kind_r8
    use BeTR_decompMod , only : bounds_type  => betr_bounds_type
-
+   use betr_varcon         , only : ispval => bispval
+   use bshr_infnan_mod     , only : nan => shr_infnan_nan, assignment(=)
   implicit none
-
+#include "bshr_alloc.h"
   private
   character(len=*), private, parameter :: mod_filename = &
        __FILE__
@@ -73,13 +74,13 @@ contains
 
     begc = bounds%begc; endc= bounds%endc
 
-    allocate(this%tracer_gwdif_concflux_top_col  (begc:endc, 1:2, 1:betrtracer_vars%ntracers))    ! 1: values at previous time step, 2: values at current time step
-    allocate(this%bot_concflux_col               (begc:endc, 1:2, 1:betrtracer_vars%ntracers))    ! 1: values at previous time step, 2: values at current time step
+    NAN_ALLOC(this%tracer_gwdif_concflux_top_col  (begc:endc, 1:2, 1:betrtracer_vars%ntracers))    ! 1: values at previous time step, 2: values at current time step
+    NAN_ALLOC(this%bot_concflux_col               (begc:endc, 1:2, 1:betrtracer_vars%ntracers))    ! 1: values at previous time step, 2: values at current time step
 
-    allocate(this%condc_toplay_col         (begc:endc, 1:betrtracer_vars%ntracer_groups))
-    allocate(this%topbc_type               (1:betrtracer_vars%ntracer_groups))
-    allocate(this%botbc_type               (1:betrtracer_vars%ntracer_groups))
-    allocate(this%jtops_col                (begc:endc))
+    NAN_ALLOC(this%condc_toplay_col         (begc:endc, 1:betrtracer_vars%ntracer_groups))
+    iSPVAL_ALLOC(this%topbc_type               (1:betrtracer_vars%ntracer_groups))
+    iSPVAL_ALLOC(this%botbc_type               (1:betrtracer_vars%ntracer_groups))
+    iSPVAL_ALLOC(this%jtops_col                (begc:endc))
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------

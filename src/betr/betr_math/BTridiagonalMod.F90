@@ -26,7 +26,7 @@ module BTridiagonalMod
 contains
 
   !-----------------------------------------------------------------------
-  subroutine Tridiagonal_sr (bounds, lbj, ubj, jtop, numf, filter, a, b, c, r, u, is_col_active)
+  subroutine Tridiagonal_sr (bounds, lbj, ubj, jtop,lbots,numf, filter, a, b, c, r, u, is_col_active)
     !
     ! !DESCRIPTION:
     ! Tridiagonal matrix solution
@@ -40,6 +40,7 @@ contains
     type(bounds_type) , intent(in)    :: bounds                                   ! bounds
     integer           , intent(in)    :: lbj, ubj                                 ! lbinning and ubing level indices
     integer           , intent(in)    :: jtop( bounds%begc: bounds%endc)          ! top level for each column [col]
+    integer           , intent(in)    :: lbots( bounds%begc: bounds%endc)          ! top level for each column [col]
     integer           , intent(in)    :: numf                                     ! filter dimension
     integer           , intent(in)    :: filter(:)                                ! filter
     real(r8)          , intent(in)    :: a( bounds%begc:bounds%endc , lbj:ubj)    ! "a" left off diagonal of tridiagonal matrix [col , j]
@@ -76,7 +77,7 @@ contains
        do fc = 1,numf
            ci = filter(fc)
            if(l_is_col_active(ci))then
-             if (j >= jtop(ci)) then
+             if (j >= jtop(ci) .and. j<=lbots(ci)) then
                if (j == jtop(ci)) then
                  u(ci,j) = r(ci,j) / bet(ci)
                else
@@ -93,7 +94,7 @@ contains
         do fc = 1,numf
            ci = filter(fc)
            if(l_is_col_active(ci))then
-             if (j >= jtop(ci)) then
+             if (j >= jtop(ci) .and. j<=lbots(ci)) then
                u(ci,j) = u(ci,j) - gam(ci,j+1) * u(ci,j+1)
              end if
            endif
@@ -103,7 +104,7 @@ contains
 
   end subroutine Tridiagonal_sr
   !-----------------------------------------------------------------------
-  subroutine Tridiagonal_mr (bounds, lbj, ubj, jtop, numf, filter, ntrcs, a, b, c, r, u, is_col_active)
+  subroutine Tridiagonal_mr (bounds, lbj, ubj, jtop, lbots, numf, filter, ntrcs, a, b, c, r, u, is_col_active)
     !
     ! !DESCRIPTION:
     ! Tridiagonal matrix solution
@@ -117,6 +118,7 @@ contains
     type(bounds_type) , intent(in)    :: bounds                                         ! bounds
     integer           , intent(in)    :: lbj, ubj                                       ! lbinning and ubing level indices
     integer           , intent(in)    :: jtop( bounds%begc: bounds%endc)                ! top level for each column [col]
+    integer           , intent(in)    :: lbots( bounds%begc: bounds%endc)                ! top level for each column [col]
     integer           , intent(in)    :: numf                                           ! filter dimension
     integer           , intent(in)    :: ntrcs                                          !
     integer           , intent(in)    :: filter(:)                                      ! filter
@@ -153,7 +155,7 @@ contains
        do fc = 1,numf
           ci = filter(fc)
           if (l_is_col_active(ci))then
-             if (j >= jtop(ci)) then
+             if (j >= jtop(ci) .and. j<=lbots(ci)) then
                 if (j == jtop(ci))then
                    do k = 1, ntrcs
                      u(ci,j,k) = r(ci,j,k)/bet(ci)
@@ -175,7 +177,7 @@ contains
        do fc = 1,numf
           ci = filter(fc)
           if (l_is_col_active(ci)) then
-             if (j >= jtop(ci)) then
+             if (j >= jtop(ci) .and. j <= lbots(ci)) then
                 do k = 1, ntrcs
                   u(ci,j, k) = u(ci,j, k) - gam(ci,j+1) * u(ci,j+1, k)
                 end do

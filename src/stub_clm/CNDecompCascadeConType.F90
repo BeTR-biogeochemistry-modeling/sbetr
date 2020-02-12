@@ -9,6 +9,7 @@ module CNDecompCascadeConType
   use decompMod      , only : bounds_type
   use shr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
   use clm_varpar     , only : ndecomp_cascade_transitions, ndecomp_pools
+  use clm_varcon     , only : spval
   !
   implicit none
   save
@@ -83,13 +84,13 @@ contains
     decomp_cascade_con%is_litter(0:ndecomp_pools)                      = .false.
     decomp_cascade_con%is_soil(0:ndecomp_pools)                        = .false.
     decomp_cascade_con%is_cwd(0:ndecomp_pools)                         = .false.
-    decomp_cascade_con%initial_cn_ratio(0:ndecomp_pools)               = nan
-    decomp_cascade_con%initial_cp_ratio(0:ndecomp_pools)               = nan
-    decomp_cascade_con%initial_stock(0:ndecomp_pools)                  = nan
+    decomp_cascade_con%initial_cn_ratio(0:ndecomp_pools)               = spval
+    decomp_cascade_con%initial_cp_ratio(0:ndecomp_pools)               = spval
+    decomp_cascade_con%initial_stock(0:ndecomp_pools)                  = spval
     decomp_cascade_con%is_metabolic(0:ndecomp_pools)                   = .false.
     decomp_cascade_con%is_cellulose(0:ndecomp_pools)                   = .false.
     decomp_cascade_con%is_lignin(0:ndecomp_pools)                      = .false.
-    decomp_cascade_con%spinup_factor(0:ndecomp_pools)                  = nan
+    decomp_cascade_con%spinup_factor(0:ndecomp_pools)                  = spval
 
   end subroutine init_decomp_cascade_constants
 

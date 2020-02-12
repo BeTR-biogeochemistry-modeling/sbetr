@@ -573,7 +573,7 @@ class Comparison(object):
             self, category, section, key, a_data, b_data):
         """
         """
-        if category is "discrete":
+        if category == "discrete":
             self._compare_integer_values_with_tolerance(
                 category, section, key, a_data, b_data)
         else:
@@ -993,7 +993,6 @@ def convert_input_data(ncgen, input_dir, dry_run):
                 logging.info(
                     '  {0}: cdl file is newer than nc file: {1}.'.format(
                         cdl, mod_time))
-
         if convert:
             msg = '  converting {0} to binary nc format'.format(cdl)
             logging.info(msg)
@@ -1072,14 +1071,17 @@ def main(options):
         test_root = os.path.join(cwd, 'tests')
         filenames = find_all_config_files(test_root)
 
-    input_dir = os.path.join(cwd, 'input-data')
+    input_dir = os.path.join(cwd, '../input_data')
     if not os.path.isdir(input_dir):
         msg = ('  DEV_ERROR: input data directory does not exist:'
                '\n    {0}'.format(input_dir))
         raise RuntimeError(msg)
 
     dry_run = options.dry_run
-    ncgen = find_executable('ncgen', exe_paths)
+    import subprocess
+    #ncgen = find_executable('ncgen', exe_paths)
+    loc=subprocess.check_output(["which", "ncgen"])
+    ncgen=str(loc.strip().decode())
     convert_input_data(ncgen, input_dir, dry_run)
 
     print('Setting up tests.')

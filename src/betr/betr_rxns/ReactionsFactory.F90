@@ -53,7 +53,7 @@ contains
     use BGCReactionsMod            , only : bgc_reaction_type
     use MockBGCReactionsType       , only : bgc_reaction_mock_run_type
     use H2OIsotopeBGCReactionsType , only : bgc_reaction_h2oiso_type
-    use betr_ctrl                  , only : iulog  => biulog
+    use betr_ctrl                  , only : iulog  => biulog, bgc_type
     use BetrStatusType             , only : betr_status_type
     use betr_constants             , only : betr_errmsg_len
     use DIOCBGCReactionsType       , only : bgc_reaction_dioc_run_type
@@ -67,6 +67,7 @@ contains
     select case(trim(method))
     case ("mock_run")
        allocate(bgc_reaction, source=bgc_reaction_mock_run_type())
+       bgc_type='type0_bgc'
     case ("h2oiso")
        allocate(bgc_reaction, source=bgc_reaction_h2oiso_type())
     case ("doc_dic")

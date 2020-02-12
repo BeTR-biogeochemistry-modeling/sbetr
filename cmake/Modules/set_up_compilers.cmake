@@ -3,6 +3,7 @@ macro(set_up_compilers)
   #
   # General C compiler flags.
   #
+  message("CMAKE_C_COMPILER_ID ${CMAKE_C_COMPILER_ID}")
   if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -Wall -pedantic-errors -Wextra")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror-implicit-function-declaration")
@@ -42,6 +43,7 @@ macro(set_up_compilers)
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -DCPRGNU")
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wno-unused-variable")
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wno-unused-parameter")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wuninitialized")
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Werror=use-without-only -ffree-line-length-none")
 
   elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
