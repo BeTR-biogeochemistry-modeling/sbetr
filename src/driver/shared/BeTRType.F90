@@ -375,7 +375,7 @@ contains
          num_soilp,                                            &
          filter_soilp,                                         &
          this%tracerboundaryconds%jtops_col,                   &
-         dtime,                                                &
+         betr_time,                                            &
          this%tracers,                                         &
          this%tracercoeffs,                                    &
          biophysforc,                                          &
@@ -1605,7 +1605,7 @@ contains
      num_soilp,                                            &
      filter_soilp,                                         &
      this%tracerboundaryconds%jtops_col,                   &
-     dtime,                                                &
+     betr_time,                                                &
      this%tracers,                                         &
      this%tracercoeffs,                                    &
      biophysforc,                                          &

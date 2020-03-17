@@ -51,6 +51,8 @@ contains
     !
     ! !USES:
     use BGCReactionsMod            , only : bgc_reaction_type
+    use tracer1beckBGCReactionsType, only : bgc_reaction_tracer1beck_run_type
+    use tracer2beckBGCReactionsType, only : bgc_reaction_tracer2beck_run_type
     use MockBGCReactionsType       , only : bgc_reaction_mock_run_type
     use H2OIsotopeBGCReactionsType , only : bgc_reaction_h2oiso_type
     use betr_ctrl                  , only : iulog  => biulog, bgc_type
@@ -67,6 +69,9 @@ contains
     select case(trim(method))
     case ("mock_run")
        allocate(bgc_reaction, source=bgc_reaction_mock_run_type())
+       bgc_type='type0_bgc'
+    case ("tracer1beck_run")
+       allocate(bgc_reaction, source=bgc_reaction_tracer1beck_run_type())
        bgc_type='type0_bgc'
     case ("h2oiso")
        allocate(bgc_reaction, source=bgc_reaction_h2oiso_type())
@@ -87,6 +92,8 @@ contains
   !USES
   use PlantSoilBGCMod            , only : plant_soilbgc_type
   use MockPlantSoilBGCType       , only : plant_soilbgc_mock_run_type
+  use tracer1beckPlantSoilBGCType, only : plant_soilbgc_tracer1beck_run_type
+  use tracer2beckPlantSoilBGCType, only : plant_soilbgc_tracer2beck_run_type
   use H2OIsotopePlantSoilBGCType , only : plant_soilbgc_h2oiso_run_type
   use betr_ctrl                  , only : iulog  => biulog
   use DIOCPlantSoilBGCType       , only : plant_soilbgc_dioc_run_type
@@ -99,6 +106,10 @@ contains
   select case(trim(method))
   case ("mock_run")
      allocate(plant_soilbgc, source=plant_soilbgc_mock_run_type())
+  case ("tracer1beck_run")
+     allocate(plant_soilbgc, source=plant_soilbgc_tracer1beck_run_type())
+  case ("tracer2beck_run")
+     allocate(plant_soilbgc, source=plant_soilbgc_tracer2beck_run_type())
   case ("h2oiso")
      allocate(plant_soilbgc, source=plant_soilbgc_h2oiso_run_type())
   case ("doc_dic")
@@ -123,6 +134,10 @@ contains
   logical :: yesno
   select case(trim(method))
   case ("mock_run")
+     yesno = .true.
+  case ("tracer1beck_run")
+     yesno = .true.
+  case ("tracer2beck_run")
      yesno = .true.
   case ("h2oiso")
      yesno = .true.

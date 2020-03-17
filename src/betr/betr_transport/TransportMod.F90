@@ -932,6 +932,9 @@ contains
      use MathfuncMod      , only : cumsum, cumpdiff, safe_div, dot_sum, asc_sort_vec
      use InterpolationMod , only : bmass_interp, mass_interp, loc_x,loc_xj
      use BetrStatusType   , only : betr_status_type
+   !
+   ! DESCRIPTION
+   ! semi-lagrangian advection for a column
    implicit none
 
      type(betr_status_type), intent(out)   :: bstatus

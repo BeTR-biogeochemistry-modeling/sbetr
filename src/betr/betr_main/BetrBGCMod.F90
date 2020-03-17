@@ -231,7 +231,9 @@ contains
 
     call bgc_reaction%set_boundary_conditions(bounds, &
          num_soilc, filter_soilc              , &
+         tracerboundarycond_vars%jtops_col    , &
          col%dz(bounds%begc:bounds%endc,1)    , &
+         betr_time                            , &
          betrtracer_vars                      , &
          biophysforc                          , &
          biogeo_flux                          , &

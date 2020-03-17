@@ -618,7 +618,7 @@ contains
     if (this%num_soilc > 0)                           continue
     if (this%betr_time%tstep > 0)                          continue
     if (bounds%begc > 0)                              continue
-    if (size(col%z) > 0)                              continue
+  !  if (size(col%z) > 0)                              continue
 
   end subroutine BeTRSimulationStepWithoutDrainage
   !---------------------------------------------------------------------------------
@@ -640,7 +640,7 @@ contains
     ! remove compiler warnings about unused dummy args
     if (this%num_soilc > 0) continue
     if (bounds%begc > 0)    continue
-    if (size(col%z) > 0)    continue
+!    if (size(col%z) > 0)    continue
 
   end subroutine BeTRSimulationDiagnoseLnd2atm
   !---------------------------------------------------------------------------------
@@ -660,7 +660,7 @@ contains
     ! remove compiler warnings about unused dummy args
     if (this%num_soilc > 0) continue
     if (bounds%begc > 0)    continue
-    if (size(col%z) > 0)    continue
+!    if (size(col%z) > 0)    continue
 
   end subroutine BeTRSimulationStepWithDrainage
 
@@ -2203,6 +2203,10 @@ contains
     this%betr_col(c)%zi(c_l,0:betr_nlevsoi)= col%zi(c,0:betr_nlevsoi)
     this%betr_col(c)%dz(c_l,1:betr_nlevsoi)= col%dz(c,1:betr_nlevsoi)
     this%betr_col(c)%z(c_l,1:betr_nlevsoi)= col%z(c,1:betr_nlevsoi)
+
+    this%biophys_forc(c)%zi(c_l,0:betr_nlevsoi)= col%zi(c,0:betr_nlevsoi)
+    this%biophys_forc(c)%dz(c_l,1:betr_nlevsoi)= col%dz(c,1:betr_nlevsoi)
+    this%biophys_forc(c)%z(c_l,1:betr_nlevsoi)= col%z(c,1:betr_nlevsoi)
 
     this%betr_col(c)%pfti(1)= col%pfti(c)
     this%betr_col(c)%pftf(1)= col%pftf(c)

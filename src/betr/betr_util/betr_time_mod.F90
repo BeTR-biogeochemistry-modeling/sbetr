@@ -53,6 +53,7 @@ module BeTR_TimeMod
      procedure, public :: get_ymdhs
      procedure, public :: get_cur_year
      procedure, public :: get_cur_day
+     procedure, public :: is_first_step
   end type betr_time_type
 
   integer, parameter, private :: daz(12)=(/31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31/)
@@ -520,5 +521,13 @@ contains
   integer :: ans
   ans = this%cdays
   end function get_cur_day
+  !-------------------------------------------------------------------------------
+  function is_first_step(this)result(ans)
+  implicit none
+  class(betr_time_type), intent(in) :: this
+  logical :: ans
+
+  ans = (this%nelapstep==1)
+  end function is_first_step
 
 end module BeTR_TimeMod

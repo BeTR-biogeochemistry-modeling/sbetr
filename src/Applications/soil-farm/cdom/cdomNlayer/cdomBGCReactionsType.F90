@@ -1026,8 +1026,8 @@ contains
   end subroutine Init_betrbgc
 
   !-------------------------------------------------------------------------------
-  subroutine set_boundary_conditions(this, bounds, num_soilc, filter_soilc, dz_top, betrtracer_vars, &
-       biophysforc, biogeo_flux,tracercoeff_vars, tracerboundarycond_vars, betr_status)
+  subroutine set_boundary_conditions(this, bounds, num_soilc, filter_soilc, jtops, dz_top, betr_time, &
+       betrtracer_vars, biophysforc, biogeo_flux,tracercoeff_vars, tracerboundarycond_vars, betr_status)
     !
     ! !DESCRIPTION:
     ! set up boundary conditions for tracer movement
@@ -1039,6 +1039,7 @@ contains
     use BetrStatusType        , only : betr_status_type
     use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
     use TracerCoeffType        , only : tracercoeff_type
+    use BeTR_TimeMod           , only : betr_time_type
     implicit none
     ! !ARGUMENTS:
     class(cdom_bgc_reaction_type) , intent(inout)    :: this
@@ -1047,6 +1048,8 @@ contains
     integer                              , intent(in)    :: filter_soilc(:)         ! column filter
     type(betrtracer_type)                , intent(in)    :: betrtracer_vars
     real(r8)                             , intent(in)    :: dz_top(bounds%begc: )
+    integer                              , intent(in)    :: jtops(bounds%begc: )
+    type(betr_time_type)                 , intent(in)    :: betr_time
     type(betr_biogeophys_input_type)     , intent(in)    :: biophysforc
     type(betr_biogeo_flux_type)          , intent(in)    :: biogeo_flux
     type(tracercoeff_type)               , intent(in)   :: tracercoeff_vars
@@ -1106,7 +1109,7 @@ contains
   !-------------------------------------------------------------------------------
 
   subroutine calc_bgc_reaction(this, bounds, col, lbj, ubj, num_soilc, filter_soilc, &
-       num_soilp,filter_soilp, jtops, dtime, betrtracer_vars, tracercoeff_vars, biophysforc,    &
+       num_soilp,filter_soilp, jtops, betr_time, betrtracer_vars, tracercoeff_vars, biophysforc,    &
        tracerstate_vars, tracerflux_vars, tracerboundarycond_vars, plant_soilbgc, &
        biogeo_flux,  biogeo_state, betr_status)
 
@@ -1132,6 +1135,7 @@ contains
     use BeTR_biogeoStateType     , only : betr_biogeo_state_type
     use cdomPlantSoilBGCType      , only : cdom_plant_soilbgc_type
     use betr_ctrl                , only : betr_spinup_state
+    use BeTR_TimeMod           , only : betr_time_type
     implicit none
     ! !ARGUMENTS
     class(cdom_bgc_reaction_type) , intent(inout) :: this
@@ -1143,7 +1147,7 @@ contains
     integer                              , intent(in) :: filter_soilp(:)               ! pft filter
     integer                              , intent(in) :: jtops(bounds%begc: )          ! top index of each column
     integer                              , intent(in) :: lbj, ubj                      ! lower and upper bounds, make sure they are > 0
-    real(r8)                             , intent(in) :: dtime                         ! model time step
+    type(betr_time_type)                 , intent(in) :: betr_time                         ! model time step
     type(betrtracer_type)                , intent(in) :: betrtracer_vars               ! betr configuration information
     type(tracercoeff_type)               , intent(inout) :: tracercoeff_vars
     type(betr_biogeophys_input_type)     , intent(inout) :: biophysforc
@@ -1167,7 +1171,7 @@ contains
     call betr_status%reset()
     SHR_ASSERT_ALL((ubound(jtops) == (/bounds%endc/)), errMsg(mod_filename,__LINE__),betr_status)
 
-    if(betrtracer_vars%debug)call this%debug_info(bounds, num_soilc, filter_soilc, col%dz(bounds%begc:bounds%endc,bounds%lbj:bounds%ubj),&
+    if(betrtracer_vars%debug)call this%debug_info(bounds, num_soilc, filter_soilc, biophysforc%dz(bounds%begc:bounds%endc,bounds%lbj:bounds%ubj),&
         betrtracer_vars, tracerstate_vars,  'before bgcreact', betr_status)
 
     nstates = this%cdom_bgc_index%nstvars
@@ -1193,7 +1197,7 @@ contains
         this%cdom(c,j)%bgc_on=.not. betrtracer_vars%debug
 
         if(this%cdom_forc(c,j)%debug)print*,'runbgc',j
-        call this%cdom(c,j)%runbgc(is_surflit, dtime, this%cdom_forc(c,j),nstates, &
+        call this%cdom(c,j)%runbgc(is_surflit, betr_time%delta_time, this%cdom_forc(c,j),nstates, &
             ystates0, ystatesf, betr_status)
         if(betr_status%check_status())then
           write(laystr,'(I2.2)')j
@@ -1202,22 +1206,22 @@ contains
         endif
 !        if(.not. betrtracer_vars%debug)then
           !apply loss through fire,
-          call this%rm_ext_output(c, j, dtime, nstates, ystatesf, this%cdom_bgc_index,&
+          call this%rm_ext_output(c, j, betr_time%delta_time, nstates, ystatesf, this%cdom_bgc_index,&
              this%cdom_forc(c,j), biogeo_flux)
 !        endif
         call this%precision_filter(nstates, ystatesf)
         this%cdom_bgc_index%debug=betrtracer_vars%debug
-        call this%retrieve_output(c, j, nstates, ystates0, ystatesf, dtime, betrtracer_vars, tracerflux_vars,&
-           tracerstate_vars, plant_soilbgc, biogeo_flux)
+        call this%retrieve_output(c, j, nstates, ystates0, ystatesf, betr_time%delta_time, &
+           betrtracer_vars, tracerflux_vars, tracerstate_vars, plant_soilbgc, biogeo_flux)
 
         select type(plant_soilbgc)
         type is(cdom_plant_soilbgc_type)
           plant_soilbgc%plant_minn_active_yield_flx_col(c)=plant_soilbgc%plant_minn_active_yield_flx_col(c) + &
              (plant_soilbgc%plant_minn_no3_active_yield_flx_vr_col(c,j) + &
-              plant_soilbgc%plant_minn_nh4_active_yield_flx_vr_col(c,j))*col%dz(c,j)
+              plant_soilbgc%plant_minn_nh4_active_yield_flx_vr_col(c,j))*biophysforc%dz(c,j)
 
           plant_soilbgc%plant_minp_active_yield_flx_col(c)=  plant_soilbgc%plant_minp_active_yield_flx_col(c) + &
-            plant_soilbgc%plant_minp_active_yield_flx_vr_col(c,j) * col%dz(c,j)
+            plant_soilbgc%plant_minp_active_yield_flx_vr_col(c,j) * biophysforc%dz(c,j)
         end select
       enddo
     enddo
@@ -1722,8 +1726,8 @@ contains
       this%cdom_forc(c,j)%frac_loss_cwd_to_fire = biophysforc%frac_loss_cwd_to_fire_col(c)
       !environmental variables
       this%cdom_forc(c,j)%temp   = biophysforc%t_soisno_col(c,j)            !temperature
-      this%cdom_forc(c,j)%depz   = col%z(c,j)            !depth of the soil
-      this%cdom_forc(c,j)%dzsoi  = col%dz(c,j)            !soil thickness
+      this%cdom_forc(c,j)%depz   = biophysforc%z(c,j)            !depth of the soil
+      this%cdom_forc(c,j)%dzsoi  = biophysforc%dz(c,j)            !soil thickness
       this%cdom_forc(c,j)%sucsat  = biophysforc%sucsat_col(c,j)            ! Input:  [real(r8) (:,:)] minimum soil suction [mm]
       this%cdom_forc(c,j)%soilpsi = max(biophysforc%smp_l_col(c,j)*grav*1.e-6_r8,-15._r8)    ! Input:  [real(r8) (:,:)] soilwater pontential in each soil layer [MPa]
       this%cdom_forc(c,j)%bsw = biophysforc%bsw_col(c,j)

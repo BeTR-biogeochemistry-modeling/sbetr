@@ -353,8 +353,8 @@ module H2OIsotopeBGCReactionsType
 
 
 !-------------------------------------------------------------------------------
-  subroutine set_boundary_conditions(this, bounds, num_soilc, filter_soilc, dz_top, betrtracer_vars, &
-       biophysforc, biogeo_flux, tracercoeff_vars, tracerboundarycond_vars, betr_status)
+  subroutine set_boundary_conditions(this, bounds, num_soilc, filter_soilc, jtops, dz_top, betr_time, &
+       betrtracer_vars, biophysforc, biogeo_flux, tracercoeff_vars, tracerboundarycond_vars, betr_status)
   !
   ! DESCRIPTION
   ! set up boundary conditions for tracer movement
@@ -371,6 +371,7 @@ module H2OIsotopeBGCReactionsType
   use BetrStatusType         , only : betr_status_type
   use TracerCoeffType        , only : tracercoeff_type
   use UnitConvertMod         , only : ppm2molv
+  use BeTR_TimeMod           , only : betr_time_type
   implicit none
   !ARGUMENTS
   class(bgc_reaction_h2oiso_type)  , intent(inout)    :: this
@@ -378,7 +379,9 @@ module H2OIsotopeBGCReactionsType
   integer                          , intent(in)    :: num_soilc                  ! number of columns in column filter_soilc
   integer                          , intent(in)    :: filter_soilc(:)            ! column filter_soilc
   type(betrtracer_type)            , intent(in)    :: betrtracer_vars            !
+  integer                          , intent(in)    :: jtops(bounds%begc: )
   real(r8)                         , intent(in)    :: dz_top(bounds%begc: )      !
+  type(betr_time_type)             , intent(in)    :: betr_time
   type(betr_biogeophys_input_type) , intent(in)    :: biophysforc
   type(betr_biogeo_flux_type)      , intent(in)    :: biogeo_flux
   type(tracercoeff_type)           , intent(in)    :: tracercoeff_vars
@@ -444,7 +447,7 @@ module H2OIsotopeBGCReactionsType
 !-------------------------------------------------------------------------------
 
   subroutine calc_bgc_reaction(this, bounds, col, lbj, ubj, num_soilc, filter_soilc,              &
-       num_soilp,filter_soilp, jtops, dtime, betrtracer_vars, tracercoeff_vars, biophysforc, &
+       num_soilp,filter_soilp, jtops, betr_time, betrtracer_vars, tracercoeff_vars, biophysforc, &
        tracerstate_vars, tracerflux_vars, tracerboundarycond_vars, plant_soilbgc, &
        biogeo_flux, biogeo_state, betr_status)
 
@@ -466,6 +469,7 @@ module H2OIsotopeBGCReactionsType
   use betr_columnType        , only : betr_column_type
   use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
   use BeTR_biogeoStateType     , only : betr_biogeo_state_type
+  use BeTR_TimeMod             , only : betr_time_type
   !ARGUMENTS
   class(bgc_reaction_h2oiso_type)  , intent(inout) :: this                       !
   type(betr_bounds_type)           , intent(in)    :: bounds ! bounds
@@ -476,7 +480,7 @@ module H2OIsotopeBGCReactionsType
   integer                          , intent(in)    :: filter_soilp(:)            ! pft filter
   integer                          , intent(in)    :: jtops(bounds%begc: )       ! top index of each column
   integer                          , intent(in)    :: lbj, ubj                   ! lower and upper bounds, make sure they are > 0
-  real(r8)                         , intent(in)    :: dtime                      ! model time step
+  type(betr_time_type)             , intent(in)    :: betr_time
   type(betrtracer_type)            , intent(in)    :: betrtracer_vars            ! betr configuration information
   type(betr_biogeophys_input_type) , intent(inout) :: biophysforc
   type(tracercoeff_type)           , intent(inout) :: tracercoeff_vars           !
@@ -507,7 +511,7 @@ module H2OIsotopeBGCReactionsType
     if (size(filter_soilc) > 0)                            continue
     if (num_soilp > 0)                                     continue
     if (size(filter_soilp) > 0)                            continue
-    if (dtime > 0.0)                                       continue
+    if (betr_time%delta_time > 0.0)                        continue
     if (size(biophysforc%isoilorder) > 0)                  continue
   !  if (size(tracercoeff_vars%annsum_counter_col) > 0)     continue
   !  if (size(tracerflux_vars%tracer_flx_top_soil_col) > 0) continue
@@ -532,14 +536,15 @@ module H2OIsotopeBGCReactionsType
     jj = jjs(kk)
     do fc = 1, num_soilc
       c = filter_soilc(fc)
-      tracer_mobile_phase(c,1,jj) = tracer_mobile_phase(c,1,jj) + tracer_gwdif_concflux_top_col(c,1,jj)*dtime/col%dz(c,1)
+      tracer_mobile_phase(c,1,jj) = tracer_mobile_phase(c,1,jj) + &
+        tracer_gwdif_concflux_top_col(c,1,jj)*betr_time%delta_time/biophysforc%dz(c,1)
       if(tracer_mobile_phase(c,1,jj) < 0._r8)then
         do ll = 1, 2
-          tot0 = tracer_mobile_phase(c,ll,jj)*col%dz(c,ll)
-          tot1 = tracer_mobile_phase(c,ll+1,jj)*col%dz(c,ll+1)
+          tot0 = tracer_mobile_phase(c,ll,jj)*biophysforc%dz(c,ll)
+          tot1 = tracer_mobile_phase(c,ll+1,jj)*biophysforc%dz(c,ll+1)
           tot1 = tot1 + tot0
           tracer_mobile_phase(c,ll,jj) = 0._r8
-          tracer_mobile_phase(c,ll+1,jj) = tot1/col%dz(c,ll+1)
+          tracer_mobile_phase(c,ll+1,jj) = tot1/biophysforc%dz(c,ll+1)
           if(tot1>0._r8)exit
         enddo
         !the following should rarely occur, so when it occur, end with a warning
@@ -549,7 +554,8 @@ module H2OIsotopeBGCReactionsType
           call betr_status%set_msg(msg=msg, err=-1)
         endif
       endif
-      tracer_flx_dif(c,volatileid(jj)) = tracer_flx_dif(c,volatileid(jj))- tracer_gwdif_concflux_top_col(c,1,jj) * dtime
+      tracer_flx_dif(c,volatileid(jj)) = tracer_flx_dif(c,volatileid(jj))- &
+        tracer_gwdif_concflux_top_col(c,1,jj) * betr_time%delta_time
     enddo
   enddo
 
@@ -746,23 +752,23 @@ module H2OIsotopeBGCReactionsType
       trcid = betrtracer_vars%id_trc_blk_h2o
       tracerstate_vars%tracer_conc_grndwater_col(c,trcid) = denh2o
       do j = 1, nlevtrc_soil
-        tracerstate_vars%tracer_conc_mobile_col(c,j,trcid) = 1._r8 * biophysforc%h2osoi_liq_col(c,j)/col%dz(c,j)
+        tracerstate_vars%tracer_conc_mobile_col(c,j,trcid) = 1._r8 * biophysforc%h2osoi_liq_col(c,j)/biophysforc%dz(c,j)
         tracerstate_vars%tracer_conc_frozen_col(c,j,betrtracer_vars%frozenid(trcid)) = &
-                1._r8 * biophysforc%h2osoi_ice_col(c,j)/col%dz(c,j)
+                1._r8 * biophysforc%h2osoi_ice_col(c,j)/biophysforc%dz(c,j)
       enddo
       trcid = betrtracer_vars%id_trc_o18_h2o
       tracerstate_vars%tracer_conc_grndwater_col(c,trcid) = denh2o
       do j = 1, nlevtrc_soil
-        tracerstate_vars%tracer_conc_mobile_col(c,j,trcid) = 1._r8 * biophysforc%h2osoi_liq_col(c,j)/col%dz(c,j)
+        tracerstate_vars%tracer_conc_mobile_col(c,j,trcid) = 1._r8 * biophysforc%h2osoi_liq_col(c,j)/biophysforc%dz(c,j)
         tracerstate_vars%tracer_conc_frozen_col(c,j,betrtracer_vars%frozenid(trcid)) = &
-                1._r8 * biophysforc%h2osoi_ice_col(c,j)/col%dz(c,j)
+                1._r8 * biophysforc%h2osoi_ice_col(c,j)/biophysforc%dz(c,j)
       enddo
       trcid = betrtracer_vars%id_trc_d_h2o
       tracerstate_vars%tracer_conc_grndwater_col(c,trcid) = denh2o
       do j = 1, nlevtrc_soil
-        tracerstate_vars%tracer_conc_mobile_col(c,j,trcid) = 1._r8 * biophysforc%h2osoi_liq_col(c,j)/col%dz(c,j)
+        tracerstate_vars%tracer_conc_mobile_col(c,j,trcid) = 1._r8 * biophysforc%h2osoi_liq_col(c,j)/biophysforc%dz(c,j)
         tracerstate_vars%tracer_conc_frozen_col(c,j,betrtracer_vars%frozenid(trcid)) = &
-                1._r8 * biophysforc%h2osoi_ice_col(c,j)/col%dz(c,j)
+                1._r8 * biophysforc%h2osoi_ice_col(c,j)/biophysforc%dz(c,j)
       enddo
    enddo
 

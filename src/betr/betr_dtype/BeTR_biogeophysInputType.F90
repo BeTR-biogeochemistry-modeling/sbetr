@@ -112,6 +112,9 @@ implicit none
     integer  :: icluster_type     !type of ecosystem simulated, btvland, btvlake, bthaqua
     real(r8), pointer :: annsum_counter_col(:) => null()
     real(r8), pointer :: t_snow_col(:,:) => null()
+    real(r8), pointer :: dz(:,:) => null()
+    real(r8), pointer :: z(:,:) => null()
+    real(r8), pointer :: zi(:,:) => null()
     !carbon fluxes
     type(betr_carbonflux_type) :: c12flx
     type(betr_carbonflux_type) :: c13flx
@@ -236,6 +239,9 @@ contains
   SPVAL_ALLOC(this%qflx_rootsoi_col         (begc:endc,lbj:ubj ) ) ! col root and soil water exchange [mm H2O/s] [+ into root]
   SPVAL_ALLOC(this%qflx_rootsoi_frac_patch  (begp:endp,lbj:ubj ) ) ! col root and soil water exchange [mm H2O/s] [+ into root]
   SPVAL_ALLOC(this%qflx_runoff_col          (begc:endc))
+  SPVAL_ALLOC(this%z(begc:endc ,lbj:ubj))
+  SPVAL_ALLOC(this%dz(begc:endc,lbj:ubj))
+  SPVAL_ALLOC(this%zi(begc:endc,lbj-1:ubj))
   !temperature
   SPVAL_ALLOC(this%t_soi_10cm               (begc:endc)) !soil temperature in top 10cm of soil (Kelvin)
   SPVAL_ALLOC(this%t_veg_patch              (begp:endp)) ! patch vegetation temperature (Kelvin)
