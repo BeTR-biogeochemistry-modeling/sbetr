@@ -99,7 +99,7 @@ macro(set_up_platform)
     set(CMAKE_C_COMPILER $ENV{CC})
     set(CMAKE_CXX_COMPILER $ENV{CXX})
     set(CMAKE_Fortran_COMPILER $ENV{FC})
-    set(MACHINE "notsupported")
+    set(MACHINE "supported")
   endif()
 
 endmacro()
