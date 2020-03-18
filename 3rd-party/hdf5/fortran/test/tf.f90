@@ -14,12 +14,10 @@
 !                                                                             *
 !   This file is part of HDF5.  The full HDF5 copyright notice, including     *
 !   terms governing use, modification, and redistribution, is contained in    *
-!   the files COPYING and Copyright.html.  COPYING can be found at the root   *
-!   of the source code distribution tree; Copyright.html can be found at the  *
-!   root level of an installed copy of the electronic HDF5 document set and   *
-!   is linked from the top-level documents page.  It can also be found at     *
-!   http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
-!   access to either file, you may request a copy from help@hdfgroup.org.     *
+!   the COPYING file, which can be found at the root of the source code       *
+!   distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+!   If you do not have access to either file, you may request a copy from     *
+!   help@hdfgroup.org.                                                        *
 ! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 !
 ! CONTAINS SUBROUTINES
@@ -27,43 +25,36 @@
 !  h5_cleanup_f, h5_exit_f, h5_env_nocleanup_f,dreal_eqv
 !
 !*****
+
+#include "H5config_f.inc"
+
 MODULE TH5_MISC
 
-  USE TH5_MISC_PROVISIONAL
+  USE, INTRINSIC :: ISO_C_BINDING
 
   IMPLICIT NONE
 
+  INTEGER, PARAMETER :: sp = SELECTED_REAL_KIND(5)  ! This should map to REAL*4 on most modern processors
+  INTEGER, PARAMETER :: dp = SELECTED_REAL_KIND(10) ! This should map to REAL*8 on most modern processors
+
+  ! generic compound datatype
+  TYPE :: comp_datatype
+    SEQUENCE
+    REAL :: a
+    INTEGER :: x
+    DOUBLE PRECISION :: y
+    CHARACTER(KIND=C_CHAR) :: z
+  END TYPE comp_datatype
+
+  PUBLIC :: H5_SIZEOF
+  INTERFACE H5_SIZEOF
+     MODULE PROCEDURE H5_SIZEOF_CMPD
+     MODULE PROCEDURE H5_SIZEOF_CHR
+     MODULE PROCEDURE H5_SIZEOF_I
+     MODULE PROCEDURE H5_SIZEOF_SP,H5_SIZEOF_DP
+  END INTERFACE
+
 CONTAINS
-
-!This definition is needed for Windows DLLs
-!DEC$if defined(BUILD_HDF5_TEST_DLL)
-!DEC$attributes dllexport :: dreal_eq
-!DEC$endif
-  LOGICAL FUNCTION dreal_eq(a,b)
-
-    ! Check if two double precision reals are equivalent
-    REAL(dp), INTENT (in):: a,b
-    REAL(dp), PARAMETER :: eps = 1.e-8
-    dreal_eq = ABS(a-b) .LT. eps
-
-  END FUNCTION dreal_eq
-
-!This definition is needed for Windows DLLs
-!DEC$if defined(BUILD_HDF5_TEST_DLL)
-!DEC$attributes dllexport :: verify_real_kind_7
-!DEC$endif
-  SUBROUTINE verify_real_kind_7(string,value,correct_value,total_error)
-    USE HDF5
-    INTEGER, PARAMETER :: real_kind_7 = SELECTED_REAL_KIND(Fortran_REAL_4) !should map to REAL*4 on most modern processors
-    CHARACTER(LEN=*) :: string
-    REAL(real_kind_7) :: value, correct_value
-    INTEGER :: total_error
-    IF (.NOT.dreal_eq( REAL(value,dp), REAL(correct_value, dp)) ) THEN
-       total_error=total_error+1
-       WRITE(*,*) "ERROR: INCORRECT REAL VALIDATION ", string
-    ENDIF
-    RETURN
-  END SUBROUTINE verify_real_kind_7
 
 !This definition is needed for Windows DLLs
 !DEC$if defined(BUILD_HDF5_TEST_DLL)
@@ -97,7 +88,7 @@ CONTAINS
        error_string = skip
     ENDIF
 
-    WRITE(*, fmt = '(A, T72, A)') test_title, error_string
+    WRITE(*, fmt = '(A, T80, A)') test_title, error_string
 
     IF(test_result.GT.0) total_error = total_error + test_result
 
@@ -117,84 +108,6 @@ CONTAINS
     ENDIF
     RETURN
   END SUBROUTINE check
-
-!This definition is needed for Windows DLLs
-!DEC$if defined(BUILD_HDF5_TEST_DLL)
-!DEC$attributes dllexport :: verify
-!DEC$endif
-  SUBROUTINE VERIFY(string,value,correct_value,total_error)
-    CHARACTER(LEN=*) :: string
-    INTEGER :: value, correct_value, total_error
-    IF (value .NE. correct_value) THEN
-       total_error=total_error+1
-       WRITE(*,*) "ERROR: INCORRECT VALIDATION ", string
-    ENDIF
-    RETURN
-  END SUBROUTINE verify
-
-!This definition is needed for Windows DLLs
-!DEC$if defined(BUILD_HDF5_TEST_DLL)
-!DEC$attributes dllexport :: verify_INTEGER_HID_T
-!DEC$endif
-  SUBROUTINE verify_INTEGER_HID_T(string,value,correct_value,total_error)
-    USE HDF5	
-    CHARACTER(LEN=*) :: string
-    INTEGER(HID_T) :: value, correct_value
-    INTEGER :: total_error
-    IF (value .NE. correct_value) THEN
-       total_error=total_error+1
-       WRITE(*,*) "ERROR: INCORRECT VALIDATION ", string
-    ENDIF
-    RETURN
-  END SUBROUTINE verify_INTEGER_HID_T
-
-!This definition is needed for Windows DLLs
-!DEC$if defined(BUILD_HDF5_TEST_DLL)
-!DEC$attributes dllexport :: verify_Fortran_INTEGER_4
-!DEC$endif
-  SUBROUTINE verify_Fortran_INTEGER_4(string,value,correct_value,total_error)
-    USE HDF5
-    INTEGER, PARAMETER :: int_kind_8 = SELECTED_INT_KIND(Fortran_INTEGER_4)  ! should map to INTEGER*4 on most modern processors	
-    CHARACTER(LEN=*) :: string
-    INTEGER(int_kind_8) :: value, correct_value
-    INTEGER :: total_error
-    IF (value .NE. correct_value) THEN
-       total_error=total_error+1
-       WRITE(*,*) "ERROR: INCORRECT VALIDATION ", string
-    ENDIF
-    RETURN
-  END SUBROUTINE verify_Fortran_INTEGER_4
-
-!This definition is needed for Windows DLLs
-!DEC$if defined(BUILD_HDF5_TEST_DLL)
-!DEC$attributes dllexport :: verifyLogical
-!DEC$endif
-  SUBROUTINE verifyLogical(string,value,correct_value,total_error)
-    CHARACTER(LEN=*) :: string
-    LOGICAL :: value, correct_value
-    INTEGER :: total_error
-    IF (value .NEQV. correct_value) THEN
-       total_error = total_error + 1
-       WRITE(*,*) "ERROR: INCORRECT VALIDATION ", string
-    ENDIF
-    RETURN
-  END SUBROUTINE verifyLogical
-  
-!This definition is needed for Windows DLLs
-!DEC$if defined(BUILD_HDF5_TEST_DLL)
-!DEC$attributes dllexport :: verifyString
-!DEC$endif
-  SUBROUTINE verifyString(string, value,correct_value,total_error)
-    CHARACTER*(*) :: string
-    CHARACTER*(*) :: value, correct_value
-    INTEGER :: total_error
-    IF (TRIM(value) .NE. TRIM(correct_value)) THEN
-       total_error = total_error + 1
-       WRITE(*,*) "ERROR: INCORRECT VALIDATION ", string
-    ENDIF
-    RETURN
-  END SUBROUTINE verifyString
-
 
 !----------------------------------------------------------------------
 ! Name:		h5_fixname_f
@@ -390,4 +303,109 @@ CONTAINS
     IF(status.EQ.1) HDF5_NOCLEANUP = .TRUE.
     
   END SUBROUTINE h5_env_nocleanup_f
+
+! ---------------------------------------------------------------------------------------------------
+! H5_SIZEOF routines
+!
+! NOTES
+!   (1) The Sun/Oracle compiler has the following restrictions on the SIZEOF intrinsic function:
+!
+!     "The SIZEOF intrinsic cannot be applied to arrays of an assumed size, characters of a 
+!      length that is passed, or subroutine calls or names. SIZEOF returns default INTEGER*4 data. 
+!      If compiling for a 64-bit environment, the compiler will issue a warning if the result overflows 
+!      the INTEGER*4 data range. To use SIZEOF in a 64-bit environment with arrays larger 
+!      than the INTEGER*4 limit (2 Gbytes), the SIZEOF function and 
+!      the variables receiving the result must be declared INTEGER*8."
+!
+!    Thus, we can not overload the H5_SIZEOF function to handle arrays (as used in tH5P_F03.f90), or
+!    characters that do not have a set length (as used in tH5P_F03.f90), sigh...
+!
+!   (2) F08+TS29113 requires C interoperable variable as argument for C_SIZEOF.
+!
+!   (3) Unfortunately we need to wrap the C_SIZEOF/STORAGE_SIZE functions to handle different
+!       data types from the various tests.
+!
+! ---------------------------------------------------------------------------------------------------
+
+!This definition is needed for Windows DLLs
+!DEC$if defined(BUILD_HDF5_TEST_DLL)
+!DEC$attributes dllexport :: h5_sizeof_cmpd
+!DEC$endif
+  INTEGER(C_SIZE_T) FUNCTION H5_SIZEOF_CMPD(a)
+    IMPLICIT NONE
+    TYPE(comp_datatype), INTENT(in) :: a
+
+#ifdef H5_FORTRAN_HAVE_STORAGE_SIZE
+    H5_SIZEOF_CMPD = storage_size(a, c_size_t)/storage_size(c_char_'a',c_size_t)
+#else
+    H5_SIZEOF_CMPD = SIZEOF(a)
+#endif
+
+  END FUNCTION H5_SIZEOF_CMPD
+
+!This definition is needed for Windows DLLs
+!DEC$if defined(BUILD_HDF5_TEST_DLL)
+!DEC$attributes dllexport :: h5_sizeof_chr
+!DEC$endif
+  INTEGER(C_SIZE_T) FUNCTION H5_SIZEOF_CHR(a)
+    IMPLICIT NONE
+    CHARACTER(LEN=1), INTENT(in) :: a
+
+#ifdef H5_FORTRAN_HAVE_STORAGE_SIZE
+    H5_SIZEOF_CHR = storage_size(a, c_size_t)/storage_size(c_char_'a',c_size_t)
+#else
+    H5_SIZEOF_CHR = SIZEOF(a)
+#endif
+
+  END FUNCTION H5_SIZEOF_CHR
+
+!This definition is needed for Windows DLLs
+!DEC$if defined(BUILD_HDF5_TEST_DLL)
+!DEC$attributes dllexport :: h5_sizeof_i
+!DEC$endif
+  INTEGER(C_SIZE_T) FUNCTION H5_SIZEOF_I(a)
+    IMPLICIT NONE
+    INTEGER, INTENT(in):: a
+
+#ifdef H5_FORTRAN_HAVE_STORAGE_SIZE
+    H5_SIZEOF_I = storage_size(a, c_size_t)/storage_size(c_char_'a',c_size_t)
+#else
+    H5_SIZEOF_I = SIZEOF(a)
+#endif
+
+  END FUNCTION H5_SIZEOF_I
+
+
+!This definition is needed for Windows DLLs
+!DEC$if defined(BUILD_HDF5_TEST_DLL)
+!DEC$attributes dllexport :: h5_sizeof_sp
+!DEC$endif
+  INTEGER(C_SIZE_T) FUNCTION H5_SIZEOF_SP(a)
+    IMPLICIT NONE
+    REAL(sp), INTENT(in):: a
+
+#ifdef H5_FORTRAN_HAVE_STORAGE_SIZE
+    H5_SIZEOF_SP = storage_size(a, c_size_t)/storage_size(c_char_'a',c_size_t)
+#else
+    H5_SIZEOF_SP = SIZEOF(a)
+#endif
+
+  END FUNCTION H5_SIZEOF_SP
+
+!This definition is needed for Windows DLLs
+!DEC$if defined(BUILD_HDF5_TEST_DLL)
+!DEC$attributes dllexport :: h5_sizeof_dp
+!DEC$endif
+  INTEGER(C_SIZE_T) FUNCTION H5_SIZEOF_DP(a)
+    IMPLICIT NONE
+    REAL(dp), INTENT(in):: a
+
+#ifdef H5_FORTRAN_HAVE_STORAGE_SIZE
+    H5_SIZEOF_DP = storage_size(a, c_size_t)/storage_size(c_char_'a',c_size_t)
+#else
+    H5_SIZEOF_DP = SIZEOF(a)
+#endif
+
+  END FUNCTION H5_SIZEOF_DP
+
 END MODULE TH5_MISC

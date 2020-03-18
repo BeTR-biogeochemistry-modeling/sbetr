@@ -14,12 +14,10 @@
 !                                                                             *
 !   This file is part of HDF5.  The full HDF5 copyright notice, including     *
 !   terms governing use, modification, and redistribution, is contained in    *
-!   the files COPYING and Copyright.html.  COPYING can be found at the root   *
-!   of the source code distribution tree; Copyright.html can be found at the  *
-!   root level of an installed copy of the electronic HDF5 document set and   *
-!   is linked from the top-level documents page.  It can also be found at     *
-!   http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
-!   access to either file, you may request a copy from help@hdfgroup.org.     *
+!   the COPYING file, which can be found at the root of the source code       *
+!   distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+!   If you do not have access to either file, you may request a copy from     *
+!   help@hdfgroup.org.                                                        *
 ! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 !
 ! CONTAINS SUBROUTINES
@@ -31,8 +29,6 @@
 !  and another file with a dataset. Mounting is used to
 !  access the dataset from the second file as a member of a group 
 !  in the first file. 
-
-
 
 MODULE TH5F
 
@@ -105,6 +101,14 @@ CONTAINS
           !
           INTEGER     ::   i, j
 
+          !number of objects
+          INTEGER(SIZE_T) :: obj_count
+          INTEGER(HID_T) :: t1, t2, t3, t4
+
+          ! File numbers
+          INTEGER  :: file_num1
+          INTEGER  :: file_num2
+
           !
           !data buffers
           !
@@ -135,11 +139,51 @@ CONTAINS
           CALL h5_fixname_f(filename2, fix_filename2, H5P_DEFAULT_F, error)
           if(error .ne. 0) stop
 
+          ! Test object counts
+          CALL h5tcopy_f(H5T_NATIVE_CHARACTER, t1, error)
+          CALL check(" h5tcopy_f",error,total_error)
+          CALL h5tcopy_f(H5T_NATIVE_CHARACTER, t2, error)
+          CALL check(" h5tcopy_f",error,total_error)
+          CALL h5tcopy_f(H5T_NATIVE_CHARACTER, t3, error)
+          CALL check(" h5tcopy_f",error,total_error)
+          CALL h5tcopy_f(H5T_NATIVE_CHARACTER, t4, error)
+          CALL check(" h5tcopy_f",error,total_error)
+          
+          CALL h5fget_obj_count_f(INT(H5F_OBJ_ALL_F,HID_T), H5F_OBJ_ALL_F, obj_count,  error)
+          CALL check(" h5fget_obj_count_f",error,total_error)
+
+          IF(obj_count.NE.4)THEN
+             total_error = total_error + 1
+          ENDIF
+
           !
           !Create first file "mount1.h5" using default properties.
           !
           CALL h5fcreate_f(fix_filename1, H5F_ACC_TRUNC_F, file1_id, error)
-               CALL check("h5fcreate_f",error,total_error)
+          CALL check("h5fcreate_f",error,total_error)
+
+          CALL h5fget_obj_count_f(INT(H5F_OBJ_ALL_F,HID_T), H5F_OBJ_ALL_F, obj_count,  error)
+          CALL check(" h5fget_obj_count_f",error,total_error)
+
+          IF(obj_count.NE.5)THEN
+             total_error = total_error + 1
+          ENDIF
+
+          CALL h5tclose_f(t1, error)
+          CALL check("h5tclose_f",error,total_error)
+          CALL h5tclose_f(t2, error)
+          CALL check("h5tclose_f",error,total_error)
+          CALL h5tclose_f(t3, error)
+          CALL check("h5tclose_f",error,total_error)
+          CALL h5tclose_f(t4, error)
+          CALL check("h5tclose_f",error,total_error)
+
+          CALL h5fget_obj_count_f(INT(H5F_OBJ_ALL_F,HID_T), H5F_OBJ_ALL_F, obj_count,  error)
+          CALL check(" h5fget_obj_count_f",error,total_error)
+
+          IF(obj_count.NE.1)THEN
+             total_error = total_error + 1
+          ENDIF
 
           !
           !Create group "/G" inside file "mount1.h5".
@@ -192,7 +236,24 @@ CONTAINS
               CALL check("h5fclose_f",error,total_error)
 
           !
-          !test whether files are in hdf5 format
+          !test whether files are accessible as HDF5 (new, VOL-safe, way)
+          !
+          CALL h5fis_accessible_f(fix_filename1, status, error)
+               CALL check("h5fis_accessible_f",error,total_error)
+          IF ( .NOT. status ) THEN
+              write(*,*) "File ", fix_filename1, " is not accessible as hdf5"
+              stop
+          END IF
+
+          CALL h5fis_accessible_f(fix_filename2, status, error)
+               CALL check("h5fis_accessible_f",error,total_error)
+          IF ( .NOT. status ) THEN
+              write(*,*) "File ", fix_filename2, " is not accessible as hdf5"
+              stop
+          END IF
+
+          !
+          !test whether files are in hdf5 format (old way)
           !
           CALL h5fis_hdf5_f(fix_filename1, status, error)
                CALL check("h5fis_hdf5_f",error,total_error)
@@ -213,8 +274,34 @@ CONTAINS
           !
           CALL h5fopen_f (fix_filename1, H5F_ACC_RDWR_F, file1_id, error)
               CALL check("hfopen_f",error,total_error)
+
+          CALL h5fget_obj_count_f(INT(H5F_OBJ_ALL_F,HID_T), H5F_OBJ_ALL_F, obj_count,  error)
+          CALL check(" h5fget_obj_count_f",error,total_error)
+
+          IF(obj_count.NE.1)THEN
+             total_error = total_error + 1
+          ENDIF  
+
           CALL h5fopen_f (fix_filename2, H5F_ACC_RDWR_F, file2_id, error)
               CALL check("h5fopen_f",error,total_error)
+
+          CALL h5fget_obj_count_f(INT(H5F_OBJ_ALL_F,HID_T), H5F_OBJ_ALL_F, obj_count,  error)
+          CALL check(" h5fget_obj_count_f",error,total_error)
+
+          IF(obj_count.NE.2)THEN
+             total_error = total_error + 1
+          ENDIF  
+
+          !
+          !Check file numbers
+          !
+          CALL h5fget_fileno_f(file1_id, file_num1, error)
+               CALL check("h5fget_fileno_f",error,total_error)
+          CALL h5fget_fileno_f(file2_id, file_num2, error)
+               CALL check("h5fget_fileno_f",error,total_error)
+          IF(file_num1 .EQ. file_num2) THEN
+               write(*,*) "file numbers aren't supposed to match"
+          END IF
 
           !
           !mount the second file under the first file's "/G" group.
@@ -247,6 +334,7 @@ CONTAINS
           do i = 1, NX
               do j = 1, NY
                   IF (data_out(i,j) .NE. data_in(i, j)) THEN
+                     total_error = total_error + 1
                   END IF
               end do
           end do
@@ -269,10 +357,25 @@ CONTAINS
           !
           !Close both files.
           !
+
+          CALL h5fget_obj_count_f(INT(H5F_OBJ_ALL_F,HID_T), H5F_OBJ_ALL_F, obj_count,  error)
+          CALL check(" h5fget_obj_count_f",error,total_error)
+
+          IF(obj_count.NE.2)THEN
+             total_error = total_error + 1
+          ENDIF
+
           CALL h5fclose_f(file1_id, error)
               CALL check("h5fclose_f",error,total_error)
           CALL h5fclose_f(file2_id, error)
               CALL check("h5fclose_f",error,total_error)
+
+          CALL h5fget_obj_count_f(INT(H5F_OBJ_ALL_F,HID_T), H5F_OBJ_ALL_F, obj_count,  error)
+          CALL check(" h5fget_obj_count_f",error,total_error)
+
+          IF(obj_count.NE.0)THEN
+             total_error = total_error + 1
+          ENDIF
 
           if(cleanup) CALL h5_cleanup_f(filename1, H5P_DEFAULT_F, error)
               CALL check("h5_cleanup_f", error, total_error)
@@ -344,6 +447,8 @@ CONTAINS
           INTEGER, DIMENSION(4,6) :: dset_data, data_out
           INTEGER(HSIZE_T), DIMENSION(2) :: data_dims
           INTEGER(HSIZE_T)  :: file_size
+          INTEGER  :: file_num1
+          INTEGER  :: file_num2
           CHARACTER(LEN=80) :: file_name
           INTEGER(SIZE_T) :: name_size
 
@@ -355,13 +460,6 @@ CONTAINS
                     dset_data(i,j) = (i-1)*6 + j;
                end do
           end do
-
-          !
-          !Initialize FORTRAN predifined datatypes
-          !
-!          CALL h5init_types_f(error)
-!               CALL check("h5init_types_f",error,total_error)
-
 
           !
           !Create file "reopen.h5" using default properties.
@@ -417,6 +515,17 @@ CONTAINS
          !
          CALL h5fget_filesize_f(file_id, file_size, error)
               CALL check("h5fget_filesize_f",error,total_error)
+
+         !
+         !Check file numbers
+         !
+         CALL h5fget_fileno_f(file_id, file_num1, error)
+              CALL check("h5fget_fileno_f",error,total_error)
+         CALL h5fget_fileno_f(reopen_id, file_num2, error)
+              CALL check("h5fget_fileno_f",error,total_error)
+         IF(file_num1 .NE. file_num2) THEN
+              write(*,*) "file numbers don't match"
+         END IF
 
          !
          !Open the dataset based on the reopen_id.
@@ -597,7 +706,7 @@ CONTAINS
           LOGICAL        :: flag
           INTEGER(SIZE_T) :: obj_count, obj_countf
           INTEGER(HID_T), ALLOCATABLE, DIMENSION(:) :: obj_ids
-          INTEGER        :: i
+          INTEGER(SIZE_T) :: i
 
           CALL h5eset_auto_f(0, error)
 
@@ -736,7 +845,7 @@ CONTAINS
 
           CALL h5fget_freespace_f(fid, free_space, error)
                CALL check("h5fget_freespace_f",error,total_error)
-               if(error .eq.0 .and. free_space .ne. 0) then
+               if(error .eq.0 .and. free_space .ne. 1248) then
                  total_error = total_error + 1
                  write(*,*) "1: Wrong amount of free space reported, ", free_space
                endif
@@ -752,7 +861,7 @@ CONTAINS
           ! Check the free space now
           CALL h5fget_freespace_f(fid, free_space, error)
                CALL check("h5fget_freespace_f",error,total_error)
-               if(error .eq.0 .and. free_space .ne. 0) then
+               if(error .eq.0 .and. free_space .ne. 216) then
                  total_error = total_error + 1
                  write(*,*) "2: Wrong amount of free space reported, ", free_space
                endif
@@ -764,7 +873,7 @@ CONTAINS
           ! Check the free space now
           CALL h5fget_freespace_f(fid, free_space, error)
                CALL check("h5fget_freespace_f",error,total_error)
-               if(error .eq.0 .and. free_space .ne. 0) then
+               if(error .eq.0 .and. free_space .ne. 1248) then
                  total_error = total_error + 1
                  write(*,*) "3: Wrong amount of free space reported, ", free_space
                endif
@@ -777,6 +886,5 @@ CONTAINS
           RETURN
 
         END SUBROUTINE file_space
-
 
 END MODULE TH5F

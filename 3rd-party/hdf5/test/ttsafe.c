@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /*
@@ -29,13 +27,7 @@
  * Each test module should include ttsafe.h and define a unique set of
  * names for test files they create.
  *
- * BUGS/LIMITATIONS
- *
- * EXPORTED ROUTINES/VARIABLES:
- *
  */
-
-#include "h5test.h"
 
 /* ANY new test needs to have a prototype in ttsafe.h */
 #include "ttsafe.h"
@@ -45,7 +37,7 @@
 #define NAME_OFFSET 6         /* offset for "name<num>" */
 
 /* pre-condition: num must be a non-negative number */
-static unsigned
+H5_ATTR_PURE static unsigned
 num_digits(int num)
 {
     unsigned u;
@@ -122,7 +114,7 @@ int main(int argc, char *argv[])
 
 #else /* H5_HAVE_THREADSAFE */
 
-    printf("Most thread-safety tests skipped because THREADSAFE not enabled\n");
+    HDprintf("Most thread-safety tests skipped because THREADSAFE not enabled\n");
 
 #endif /* H5_HAVE_THREADSAFE */
 
@@ -142,6 +134,9 @@ int main(int argc, char *argv[])
     /* Clean up test files, if allowed */
     if (GetTestCleanup() && !getenv("HDF5_NOCLEANUP"))
         TestCleanup();
+
+    /* Release test infrastructure */
+    TestShutdown();
 
     return GetTestNumErrs();
 

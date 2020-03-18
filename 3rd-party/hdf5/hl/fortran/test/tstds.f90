@@ -5,32 +5,64 @@
 ! *                                                                           *
 ! * This file is part of HDF5.  The full HDF5 copyright notice, including     *
 ! * terms governing use, modification, and redistribution, is contained in    *
-! * the files COPYING and Copyright.html.  COPYING can be found at the root   *
-! * of the source code distribution tree; Copyright.html can be found at the  *
-! * root level of an installed copy of the electronic HDF5 document set and   *
-! * is linked from the top-level documents page.  It can also be found at     *
-! * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
-! * access to either file, you may request a copy from help@hdfgroup.org.     *
+!   the COPYING file, which can be found at the root of the source code       *
+!   distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+!   If you do not have access to either file, you may request a copy from     *
+!   help@hdfgroup.org.                                                        *
 ! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-PROGRAM test_ds
+
+MODULE TSTDS
+
+CONTAINS
+
+!-------------------------------------------------------------------------
+! test_begin
+!-------------------------------------------------------------------------
+
+SUBROUTINE test_begin(string)
+  CHARACTER(LEN=*), INTENT(IN) :: string
+  WRITE(*, fmt = '(A)', advance = 'no') ADJUSTL(string)
+END SUBROUTINE test_begin
+
+!-------------------------------------------------------------------------
+! passed/failed
+!-------------------------------------------------------------------------
+SUBROUTINE write_test_status( test_result)
+
+! Writes the results of the tests
 
   IMPLICIT NONE
 
-  INTEGER :: err
+  INTEGER, INTENT(IN) :: test_result  ! negative,   failed
+                                      ! 0       ,   passed
 
-  CALL test_testds(err)
+! Controls the output style for reporting test results
 
-  IF(err.LT.0)THEN
-     WRITE(*,'(5X,A)') "DIMENSION SCALES TEST *FAILED*"
+  CHARACTER(LEN=8) :: error_string
+  CHARACTER(LEN=8), PARAMETER :: success = ' PASSED '
+  CHARACTER(LEN=8), PARAMETER :: failure = '*FAILED*'
+
+  error_string = failure
+  IF (test_result .EQ.  0) THEN
+     error_string = success
   ENDIF
+  
+  WRITE(*, fmt = '(T34, A)') error_string
 
-END PROGRAM test_ds
+END SUBROUTINE write_test_status
+
+END MODULE TSTDS
+
+MODULE TSTDS_TESTS
+
+CONTAINS
 
 SUBROUTINE test_testds(err)
 
   USE HDF5
   USE H5LT
   USE H5DS
+  USE TSTDS ! module for testing dataset support routines
 
   IMPLICIT NONE
 
@@ -44,7 +76,6 @@ SUBROUTINE test_testds(err)
 
   CHARACTER(LEN=6), PARAMETER :: DSET_NAME = "Mydata"
   CHARACTER(LEN=5), PARAMETER :: DS_1_NAME = "Yaxis"
-  CHARACTER(LEN=5), PARAMETER :: DS_1_NAME_A = "Yaxiz"
   CHARACTER(LEN=5), PARAMETER :: DS_2_NAME = "Xaxis"
 
 
@@ -316,38 +347,21 @@ SUBROUTINE test_testds(err)
 
 END SUBROUTINE test_testds
 
-!-------------------------------------------------------------------------
-! test_begin
-!-------------------------------------------------------------------------
+END MODULE TSTDS_TESTS
 
-SUBROUTINE test_begin(string)
-  CHARACTER(LEN=*), INTENT(IN) :: string
-  WRITE(*, fmt = '(A)', advance = 'no') ADJUSTL(string)
-END SUBROUTINE test_begin
+PROGRAM test_ds
 
-!-------------------------------------------------------------------------
-! passed/failed
-!-------------------------------------------------------------------------
-SUBROUTINE write_test_status( test_result)
-
-! Writes the results of the tests
-
+  USE TSTDS_TESTS ! module for testing dataset routines
+  
   IMPLICIT NONE
 
-  INTEGER, INTENT(IN) :: test_result  ! negative,   failed
-                                      ! 0       ,   passed
+  INTEGER :: err
 
-! Controls the output style for reporting test results
+  CALL test_testds(err)
 
-  CHARACTER(LEN=8) :: error_string
-  CHARACTER(LEN=8), PARAMETER :: success = ' PASSED '
-  CHARACTER(LEN=8), PARAMETER :: failure = '*FAILED*'
-
-  error_string = failure
-  IF (test_result .EQ.  0) THEN
-     error_string = success
+  IF(err.LT.0)THEN
+     WRITE(*,'(5X,A)') "DIMENSION SCALES TEST *FAILED*"
   ENDIF
-  
-  WRITE(*, fmt = '(T34, A)') error_string
 
-END SUBROUTINE write_test_status
+END PROGRAM test_ds
+

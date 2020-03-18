@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /*
@@ -31,9 +29,6 @@
        2/18/03 - Started coding
  */
 
-#include <time.h>
-#include <stdlib.h>
-
 #include "testhdf5.h"
 #include "H5HPprivate.h"
 
@@ -47,13 +42,13 @@ typedef struct test_obj {
 } test_obj;
 
 /* Array of random element values */
-static test_obj rand_num[NUM_ELEMS];
+static test_obj *rand_num;
 
 /* Array of random elements values, sorted in increasing order */
-static test_obj inc_sort_num[NUM_ELEMS];
+static test_obj *inc_sort_num;
 
 /* Array of random elements values, sorted in decreasing order */
-static test_obj dec_sort_num[NUM_ELEMS];
+static test_obj *dec_sort_num;
 
 static int tst_dec_sort(const void *_i1, const void *_i2)
 {
@@ -91,21 +86,29 @@ test_heap_init(void)
     time_t curr_time;   /* Current time, for seeding random number generator */
     size_t u;           /* Local index variables */
 
+    /* Allocate arrays */
+    rand_num = (test_obj *)HDmalloc(sizeof(test_obj) * NUM_ELEMS);
+    CHECK_PTR(rand_num, "HDmalloc");
+    inc_sort_num = (test_obj *)HDmalloc(sizeof(test_obj) * NUM_ELEMS);
+    CHECK_PTR(inc_sort_num, "HDmalloc");
+    dec_sort_num = (test_obj *)HDmalloc(sizeof(test_obj) * NUM_ELEMS);
+    CHECK_PTR(dec_sort_num, "HDmalloc");
+
     /* Create randomized set of numbers */
-    curr_time=time(NULL);
+    curr_time = HDtime(NULL);
     HDsrandom((unsigned)curr_time);
-    for(u=0; u<NUM_ELEMS; u++)
+    for(u = 0; u < NUM_ELEMS; u++)
         /* Generate random numbers from -1000 to 1000 */
-        rand_num[u].val=(int)(HDrandom()%2001)-1001;
+        rand_num[u].val = (int)(HDrandom() % 2001) - 1001;
 
     /* Sort random numbers into increasing order */
-    HDmemcpy(inc_sort_num,rand_num,sizeof(test_obj)*NUM_ELEMS);
+    HDmemcpy(inc_sort_num, rand_num, sizeof(test_obj) * NUM_ELEMS);
     HDqsort(inc_sort_num, (size_t)NUM_ELEMS, sizeof(test_obj), tst_inc_sort);
 
     /* Sort random numbers into decreasing order */
-    HDmemcpy(dec_sort_num,rand_num,sizeof(test_obj)*NUM_ELEMS);
+    HDmemcpy(dec_sort_num, rand_num, sizeof(test_obj) * NUM_ELEMS);
     HDqsort(dec_sort_num, (size_t)NUM_ELEMS, sizeof(test_obj), tst_dec_sort);
-} /* end test_tst_init() */
+} /* end test_heap_init() */
 
 /****************************************************************
 **
@@ -124,7 +127,7 @@ test_heap_create(void)
 
     /* Try creating a maximum Heap */
     heap=H5HP_create(H5HP_MAX_HEAP);
-    CHECK(heap, NULL, "H5HP_create");
+    CHECK_PTR(heap, "H5HP_create");
 
     /* Try closing the heap */
     ret=H5HP_close(heap);
@@ -132,7 +135,7 @@ test_heap_create(void)
 
     /* Try creating a minimum Heap */
     heap=H5HP_create(H5HP_MIN_HEAP);
-    CHECK(heap, NULL, "H5HP_create");
+    CHECK_PTR(heap, "H5HP_create");
 
     /* Try closing the heap */
     ret=H5HP_close(heap);
@@ -160,7 +163,7 @@ test_heap_insert_min(void)
 
     /* Create a Heap */
     heap=H5HP_create(H5HP_MIN_HEAP);
-    CHECK(heap, NULL, "H5HP_create");
+    CHECK_PTR(heap, "H5HP_create");
 
     /* Check that the heap has no elements */
     num=H5HP_count(heap);
@@ -234,7 +237,7 @@ test_heap_insert_max(void)
 
     /* Create a Heap */
     heap=H5HP_create(H5HP_MAX_HEAP);
-    CHECK(heap, NULL, "H5HP_create");
+    CHECK_PTR(heap, "H5HP_create");
 
     /* Check that the heap has no elements */
     num=H5HP_count(heap);
@@ -322,7 +325,7 @@ test_heap_insert_many_core(H5HP_type_t heap_type, test_obj *arr, size_t nelem, i
 
     /* Create a Heap */
     heap=H5HP_create(heap_type);
-    CHECK(heap, NULL, "H5HP_create");
+    CHECK_PTR(heap, "H5HP_create");
 
     /* Check that the heap has no elements */
     num=H5HP_count(heap);
@@ -402,7 +405,7 @@ test_heap_remove_min(void)
 
     /* Create a Heap */
     heap=H5HP_create(H5HP_MIN_HEAP);
-    CHECK(heap, NULL, "H5HP_create");
+    CHECK_PTR(heap, "H5HP_create");
 
     /* Check that the heap has no elements */
     num=H5HP_count(heap);
@@ -431,19 +434,19 @@ test_heap_remove_min(void)
     ret=H5HP_remove(heap,&val,&ptr);
     CHECK(ret, FAIL, "H5HP_remove");
     VERIFY(val, 5, "H5HP_remove");
-    VERIFY(ptr, &obj2, "H5HP_remove");
+    CHECK_PTR_EQ(ptr, &obj2, "H5HP_remove");
 
     /* Remove second maximum value from heap */
     ret=H5HP_remove(heap,&val,&ptr);
     CHECK(ret, FAIL, "H5HP_remove");
     VERIFY(val, 10, "H5HP_remove");
-    VERIFY(ptr, &obj1, "H5HP_remove");
+    CHECK_PTR_EQ(ptr, &obj1, "H5HP_remove");
 
     /* Remove third maximum value from heap */
     ret=H5HP_remove(heap,&val,&ptr);
     CHECK(ret, FAIL, "H5HP_remove");
     VERIFY(val, 20, "H5HP_remove");
-    VERIFY(ptr, &obj3, "H5HP_remove");
+    CHECK_PTR_EQ(ptr, &obj3, "H5HP_remove");
 
     /* Try removing an object from an empty heap */
     ret=H5HP_remove(heap,&val,&ptr);
@@ -476,7 +479,7 @@ test_heap_remove_max(void)
 
     /* Create a Heap */
     heap=H5HP_create(H5HP_MAX_HEAP);
-    CHECK(heap, NULL, "H5HP_create");
+    CHECK_PTR(heap, "H5HP_create");
 
     /* Check that the heap has no elements */
     num=H5HP_count(heap);
@@ -505,19 +508,19 @@ test_heap_remove_max(void)
     ret=H5HP_remove(heap,&val,&ptr);
     CHECK(ret, FAIL, "H5HP_remove");
     VERIFY(val, 20, "H5HP_remove");
-    VERIFY(ptr, &obj3, "H5HP_remove");
+    CHECK_PTR_EQ(ptr, &obj3, "H5HP_remove");
 
     /* Remove second maximum value from heap */
     ret=H5HP_remove(heap,&val,&ptr);
     CHECK(ret, FAIL, "H5HP_remove");
     VERIFY(val, 10, "H5HP_remove");
-    VERIFY(ptr, &obj1, "H5HP_remove");
+    CHECK_PTR_EQ(ptr, &obj1, "H5HP_remove");
 
     /* Remove third maximum value from heap */
     ret=H5HP_remove(heap,&val,&ptr);
     CHECK(ret, FAIL, "H5HP_remove");
     VERIFY(val, 5, "H5HP_remove");
-    VERIFY(ptr, &obj2, "H5HP_remove");
+    CHECK_PTR_EQ(ptr, &obj2, "H5HP_remove");
 
     /* Try removing an object from an empty heap */
     ret=H5HP_remove(heap,&val,&ptr);
@@ -564,7 +567,7 @@ static void test_heap_remove_many_core(H5HP_type_t heap_type, test_obj *arr, siz
 
     /* Create a Heap */
     heap=H5HP_create(heap_type);
-    CHECK(heap, NULL, "H5HP_create");
+    CHECK_PTR(heap, "H5HP_create");
 
     /* Check that the heap has no elements */
     num=H5HP_count(heap);
@@ -711,7 +714,7 @@ test_heap_change_min(void)
 
     /* Create a Heap */
     heap=H5HP_create(H5HP_MIN_HEAP);
-    CHECK(heap, NULL, "H5HP_create");
+    CHECK_PTR(heap, "H5HP_create");
 
     /* Check that the heap has no elements */
     num=H5HP_count(heap);
@@ -785,7 +788,7 @@ test_heap_change_max(void)
 
     /* Create a Heap */
     heap=H5HP_create(H5HP_MAX_HEAP);
-    CHECK(heap, NULL, "H5HP_create");
+    CHECK_PTR(heap, "H5HP_create");
 
     /* Check that the heap has no elements */
     num=H5HP_count(heap);
@@ -877,7 +880,7 @@ test_heap_incdec_min(void)
 
     /* Create a Heap */
     heap=H5HP_create(H5HP_MIN_HEAP);
-    CHECK(heap, NULL, "H5HP_create");
+    CHECK_PTR(heap, "H5HP_create");
 
     /* Check that the heap has no elements */
     num=H5HP_count(heap);
@@ -952,7 +955,7 @@ test_heap_incdec_max(void)
 
     /* Create a Heap */
     heap=H5HP_create(H5HP_MAX_HEAP);
-    CHECK(heap, NULL, "H5HP_create");
+    CHECK_PTR(heap, "H5HP_create");
 
     /* Check that the heap has no elements */
     num=H5HP_count(heap);
@@ -1026,6 +1029,24 @@ test_heap_incdec(void)
 
 /****************************************************************
 **
+**  test_heap_term(): Test H5HP (heap) code.
+**      Release data for Heap testing
+**
+****************************************************************/
+static void
+test_heap_term(void)
+{
+    /* Release arrays */
+    if(rand_num)
+        HDfree(rand_num);
+    if(inc_sort_num)
+        HDfree(inc_sort_num);
+    if(dec_sort_num)
+        HDfree(dec_sort_num);
+} /* end test_tst_term() */
+
+/****************************************************************
+**
 **  test_heap(): Main H5HP testing routine.
 **
 ****************************************************************/
@@ -1046,6 +1067,9 @@ test_heap(void)
     test_heap_remove_many();     /* Test Heap removal of many items */
     test_heap_change();          /* Test changing priority of objects on Heap */
     test_heap_incdec();          /* Test incrementing & decrementing priority of objects on Heap */
+
+    /* Release Heap testing data */
+    test_heap_term();
 
 }   /* end test_heap() */
 

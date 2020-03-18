@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #include "h5test.h"
@@ -24,17 +22,17 @@ const char *FILENAME[] = {
 };
 
 /*-------------------------------------------------------------------------
- * Function:	rsrv_heap
+ * Function:    rsrv_heap
  *
- * Purpose:	Ensure that heaps reserve file address space.
- *			This function does this by creating datasets up to and past
- *			the limit of the file, then ensuring that an error (not an
- *			assert) was generated and that the file is readable.
+ * Purpose:    Ensure that heaps reserve file address space.
+ *            This function does this by creating datasets up to and past
+ *            the limit of the file, then ensuring that an error (not an
+ *            assert) was generated and that the file is readable.
  *
- * Return:	Success:	0
- *		Failure:	1
+ * Return:    Success:    0
+ *        Failure:    1
  *
- * Programmer:	James Laird
+ * Programmer:    James Laird
  *              Nat Furrer
  *              Friday, May 28, 2004
  *
@@ -73,7 +71,7 @@ rsrv_heap(void)
             dataspace_id = H5Screate_simple(1, dims, dims);
         } H5E_END_TRY
 
-        sprintf(dset_name, "Dset %d", i);
+        HDsprintf(dset_name, "Dset %d", i);
 
         H5E_BEGIN_TRY {
             dataset_id = H5Dcreate2(file_id, dset_name, H5T_NATIVE_INT, dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
@@ -105,7 +103,7 @@ rsrv_heap(void)
     /* Re-open the library and try to read a dataset from the file we created */
     if(H5open() < 0) TEST_ERROR;
 
-    sprintf(dset_name, "Dset %d", i - 2);
+    HDsprintf(dset_name, "Dset %d", i - 2);
 
     file_id = H5Fopen(filename, H5F_ACC_RDONLY, H5P_DEFAULT);
     if(file_id < 0) TEST_ERROR;
@@ -137,17 +135,17 @@ error:
 }
 
 /*-------------------------------------------------------------------------
- * Function:	rsrv_ohdr
+ * Function:    rsrv_ohdr
  *
- * Purpose:	Ensure that object headers reserve file address space.
- *			This function does this by creating attributes of a dataset
- *			past the limit of the file, then ensuring that an error (not
- *			an assert) was generated and that the file is readable.
+ * Purpose:    Ensure that object headers reserve file address space.
+ *            This function does this by creating attributes of a dataset
+ *            past the limit of the file, then ensuring that an error (not
+ *            an assert) was generated and that the file is readable.
  *
- * Return:	Success:	0
- *		Failure:	1
+ * Return:    Success:    0
+ *        Failure:    1
  *
- * Programmer:	James Laird
+ * Programmer:    James Laird
  *              Nat Furrer
  *              Friday, May 28, 2004
  *
@@ -197,7 +195,7 @@ rsrv_ohdr(void)
     } /* end for */
 
     for(i = 0; i < 2000; i++) {
-        sprintf(attrname, "attr %d", i);
+        HDsprintf(attrname, "attr %d", i);
         H5E_BEGIN_TRY{
             aid =  H5Screate_simple(2, dims, NULL);
             attr_id = H5Acreate2(dataset_id, attrname, H5T_STD_I32BE, aid, H5P_DEFAULT, H5P_DEFAULT);
@@ -259,20 +257,20 @@ error:
 }
 
 /*-------------------------------------------------------------------------
- * Function:	rsrv_vlen
+ * Function:    rsrv_vlen
  *
- * Purpose:	Ensure that variable length datatypes properly ensure that
+ * Purpose:    Ensure that variable length datatypes properly ensure that
  *              enough file address space exists before writing.
- *		This function does this by creating a dataset containing
+ *        This function does this by creating a dataset containing
  *              variable length data past the limit of the file, then
  *              ensuring that an error (not an assert) was generated and
  *              that the file is readable.
  *
- * Return:	Success:	0
- *		Failure:	1
+ * Return:    Success:    0
+ *        Failure:    1
  *
- * Programmer:	James Laird
- *		Nat Furrer
+ * Programmer:    James Laird
+ *        Nat Furrer
  *              Thursday, July 1, 2004
  *
  * Modifications:
@@ -403,15 +401,15 @@ error:
 #endif /* BROKEN */
 
 /*-------------------------------------------------------------------------
- * Function:	main
+ * Function:    main
  *
  * Purpose:
  *
- * Return:	Success:
+ * Return:    Success:
  *
- *		Failure:
+ *        Failure:
  *
- * Programmer:	Nat Furrer and James Laird
+ * Programmer:    Nat Furrer and James Laird
  *              Thursday, July 1, 2004
  *
  * Modifications:
@@ -436,22 +434,22 @@ main(void)
         envval = "nomatch";
 /* QAK: should be able to use the core driver? */
     if (HDstrcmp(envval, "core") && HDstrcmp(envval, "split") && HDstrcmp(envval, "multi") && HDstrcmp(envval, "family")) {
-	num_errs+=rsrv_ohdr();
-	num_errs+=rsrv_heap();
-	num_errs+=rsrv_vlen();
+    num_errs+=rsrv_ohdr();
+    num_errs+=rsrv_heap();
+    num_errs+=rsrv_vlen();
 
-	if(num_errs > 0)
-	    printf("**** %d FAILURE%s! ****\n", num_errs, num_errs==1?"":"S");
-	else
-	    puts("All address space reservation tests passed.");
+    if(num_errs > 0)
+        HDprintf("**** %d FAILURE%s! ****\n", num_errs, num_errs==1?"":"S");
+    else
+        HDputs("All address space reservation tests passed.");
 
-	fapl = h5_fileaccess();
-	h5_cleanup(FILENAME, fapl);
-	return num_errs;
+    fapl = h5_fileaccess();
+    h5_cleanup(FILENAME, fapl);
+    return num_errs;
     }
     else
     {
-        puts("All address space reservation tests skippped - Incompatible with current Virtual File Driver");
+        HDputs("All address space reservation tests skippped - Incompatible with current Virtual File Driver");
     }
 #endif /* BROKEN */
 

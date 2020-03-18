@@ -5,44 +5,43 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /* Programmer:  John Mainzer
  *              11/10/05
  *
- *		This file contains tests for the API calls associated
- *		with the cache implemented in H5C.c
+ *        This file contains tests for the API calls associated
+ *        with the cache implemented in H5C.c
  */
 
-#include "h5test.h"
-#include "H5Iprivate.h"
-#include "H5ACprivate.h"
 #include "cache_common.h"
 
+/* extern declarations */
 
 /* global variable declarations: */
+
+const char *FILENAME[] = {
+    "cache_api_test",
+    NULL
+};
 
 /* macro definitions */
 
 /* private function declarations: */
 
-static void check_fapl_mdc_api_calls(void);
+static hbool_t check_fapl_mdc_api_calls(unsigned paged, hid_t fcpl_id);
+static hbool_t check_file_mdc_api_calls(unsigned paged, hid_t fcpl_id);
+static hbool_t mdc_api_call_smoke_check(int express_test, unsigned paged, hid_t fcpl_id);
+static H5AC_cache_config_t * init_invalid_configs(void);
+static hbool_t check_fapl_mdc_api_errs(void);
+static hbool_t check_file_mdc_api_errs(unsigned paged, hid_t fcpl_id);
 
-static void check_file_mdc_api_calls(void);
 
-static void mdc_api_call_smoke_check(int express_test);
 
-static void check_fapl_mdc_api_errs(void);
-
-static void check_file_mdc_api_errs(void);
-
-
 /**************************************************************************/
 /**************************************************************************/
 /********************************* tests: *********************************/
@@ -50,27 +49,26 @@ static void check_file_mdc_api_errs(void);
 /**************************************************************************/
 
 /*-------------------------------------------------------------------------
- * Function:	check_fapl_mdc_api_calls()
+ * Function:    check_fapl_mdc_api_calls()
  *
- * Purpose:	Verify that the file access property list related
- *		metadata cache related API calls are functioning
- *		correctly.
+ * Purpose:     Verify that the file access property list related
+ *              metadata cache related API calls are functioning
+ *              correctly.
  *
- *		Since we have tested the H5C code elsewhere, it should
- *		be sufficient to verify that the desired configuration
- *		data is getting to the cache.
+ *              Since we have tested the H5C code elsewhere, it should
+ *              be sufficient to verify that the desired configuration
+ *              data is getting to the cache.
  *
- * Return:	void
+ * Return:      Test pass status (TRUE/FALSE)
  *
- * Programmer:	John Mainzer
+ * Programmer:  John Mainzer
  *              4/12/04
  *
  *-------------------------------------------------------------------------
  */
-static void
-check_fapl_mdc_api_calls(void)
+static hbool_t
+check_fapl_mdc_api_calls(unsigned paged, hid_t fcpl_id)
 {
-    const char * fcn_name = "check_fapl_mdc_api_calls()";
     char filename[512];
     herr_t result;
     hid_t fapl_id = -1;
@@ -111,14 +109,17 @@ check_fapl_mdc_api_calls(void)
       /* hbool_t     apply_empty_reserve    = */ TRUE,
       /* double      empty_reserve          = */ 0.05f,
       /* int         dirty_bytes_threshold  = */ (256 * 1024),
-      /* int	    metadata_write_strategy = */
-					H5AC__DEFAULT_METADATA_WRITE_STRATEGY
+      /* int        metadata_write_strategy = */
+                    H5AC__DEFAULT_METADATA_WRITE_STRATEGY
     };
     H5AC_cache_config_t scratch;
     H5C_auto_size_ctl_t default_auto_size_ctl;
     H5C_auto_size_ctl_t mod_auto_size_ctl;
 
-    TESTING("MDC/FAPL related API calls");
+    if(paged)
+        TESTING("MDC/FAPL related API calls for paged aggregation strategy")
+    else
+        TESTING("MDC/FAPL related API calls")
 
     pass = TRUE;
 
@@ -131,13 +132,13 @@ check_fapl_mdc_api_calls(void)
 
     if ( pass ) {
 
-	fapl_id = H5Pcreate(H5P_FILE_ACCESS);
+        fapl_id = H5Pcreate(H5P_FILE_ACCESS);
 
-	if ( fapl_id < 0 ) {
+        if ( fapl_id < 0 ) {
 
-	    pass = FALSE;
+            pass = FALSE;
             failure_mssg = "H5Pcreate(H5P_FILE_ACCESS) failed.\n";
-	}
+        }
     }
 
     if ( pass ) {
@@ -149,7 +150,7 @@ check_fapl_mdc_api_calls(void)
         if ( result < 0 ) {
 
             pass = FALSE;
-	    failure_mssg = "H5Pget_mdc_config() failed.\n";
+            failure_mssg = "H5Pget_mdc_config() failed.\n";
 
         } else if (!CACHE_CONFIGS_EQUAL(default_config, scratch, TRUE, TRUE)) {
 
@@ -170,7 +171,7 @@ check_fapl_mdc_api_calls(void)
         if ( result < 0 ) {
 
             pass = FALSE;
-	    failure_mssg = "H5Pset_mdc_config() failed.\n";
+            failure_mssg = "H5Pset_mdc_config() failed.\n";
         }
     }
 
@@ -183,7 +184,7 @@ check_fapl_mdc_api_calls(void)
         if ( result < 0 ) {
 
             pass = FALSE;
-	    failure_mssg = "H5Pget_mdc_config() failed.\n";
+            failure_mssg = "H5Pget_mdc_config() failed.\n";
 
         } else if ( ! CACHE_CONFIGS_EQUAL(mod_config, scratch, TRUE, TRUE) ) {
 
@@ -197,7 +198,7 @@ check_fapl_mdc_api_calls(void)
         if ( H5Pclose(fapl_id) < 0 ) {
 
             pass = FALSE;
-	    failure_mssg = "H5Pclose() failed.\n";
+            failure_mssg = "H5Pclose() failed.\n";
         }
     }
 
@@ -211,7 +212,7 @@ check_fapl_mdc_api_calls(void)
     /* setup the file name */
     if ( pass ) {
 
-        if ( h5_fixname(FILENAME[1], H5P_DEFAULT, filename, sizeof(filename))
+        if ( h5_fixname(FILENAME[0], H5P_DEFAULT, filename, sizeof(filename))
             == NULL ) {
 
             pass = FALSE;
@@ -222,7 +223,7 @@ check_fapl_mdc_api_calls(void)
     /* create the file using the default FAPL */
     if ( pass ) {
 
-        file_id = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+        file_id = H5Fcreate(filename, H5F_ACC_TRUNC, fcpl_id, H5P_DEFAULT);
 
         if ( file_id < 0 ) {
 
@@ -234,16 +235,16 @@ check_fapl_mdc_api_calls(void)
     /* get a pointer to the files internal data structure */
     if ( pass ) {
 
-        file_ptr = (H5F_t *)H5I_object_verify(file_id, H5I_FILE);
+        file_ptr = (H5F_t *)H5VL_object_verify(file_id, H5I_FILE);
 
         if ( file_ptr == NULL ) {
 
             pass = FALSE;
-	    failure_mssg = "Can't get file_ptr.\n";
+            failure_mssg = "Can't get file_ptr.\n";
 
-	} else {
+        } else {
 
-	    cache_ptr = file_ptr->shared->cache;
+            cache_ptr = file_ptr->shared->cache;
         }
     }
 
@@ -262,9 +263,8 @@ check_fapl_mdc_api_calls(void)
     /* conpare the cache's internal configuration with the expected value */
     if ( pass ) {
 
-	if ( ! resize_configs_are_equal(&default_auto_size_ctl, \
+        if ( ! resize_configs_are_equal(&default_auto_size_ctl, \
                                         &cache_ptr->resize_ctl, TRUE) ) {
-
 
             pass = FALSE;
             failure_mssg = "Unexpected value(s) in cache resize_ctl 1.\n";
@@ -295,7 +295,7 @@ check_fapl_mdc_api_calls(void)
         if ( result < 0 ) {
 
             pass = FALSE;
-	    failure_mssg = "H5Pget_mdc_config() failed.\n";
+            failure_mssg = "H5Pget_mdc_config() failed.\n";
 
         } else if (!CACHE_CONFIGS_EQUAL(default_config, scratch, TRUE, TRUE)) {
 
@@ -305,22 +305,22 @@ check_fapl_mdc_api_calls(void)
         } else if ( H5Pclose(fapl_id) < 0 ) {
 
             pass = FALSE;
-	    failure_mssg = "H5Pclose() failed.\n";
+            failure_mssg = "H5Pclose() failed.\n";
         }
     }
 
     /* close the file and delete it */
     if ( pass ) {
 
-	if ( H5Fclose(file_id) < 0  ) {
+        if ( H5Fclose(file_id) < 0  ) {
 
             pass = FALSE;
-	    failure_mssg = "H5Fclose() failed.\n";
+            failure_mssg = "H5Fclose() failed.\n";
 
         } else if ( HDremove(filename) < 0 ) {
 
             pass = FALSE;
-	    failure_mssg = "HDremove() failed.\n";
+            failure_mssg = "HDremove() failed.\n";
         }
     }
 
@@ -335,13 +335,13 @@ check_fapl_mdc_api_calls(void)
     /* Create a FAPL */
     if ( pass ) {
 
-	fapl_id = H5Pcreate(H5P_FILE_ACCESS);
+        fapl_id = H5Pcreate(H5P_FILE_ACCESS);
 
-	if ( fapl_id < 0 ) {
+        if ( fapl_id < 0 ) {
 
-	    pass = FALSE;
+            pass = FALSE;
             failure_mssg = "H5Pcreate(H5P_FILE_ACCESS) failed.\n";
-	}
+        }
     }
 
     /* Modify the initial mdc configuration in the FAPL. */
@@ -353,14 +353,14 @@ check_fapl_mdc_api_calls(void)
         if ( result < 0 ) {
 
             pass = FALSE;
-	    failure_mssg = "H5Pset_mdc_config() failed.\n";
+            failure_mssg = "H5Pset_mdc_config() failed.\n";
         }
     }
 
     /* setup the file name */
     if ( pass ) {
 
-        if ( h5_fixname(FILENAME[1], H5P_DEFAULT, filename, sizeof(filename))
+        if ( h5_fixname(FILENAME[0], H5P_DEFAULT, filename, sizeof(filename))
             == NULL ) {
 
             pass = FALSE;
@@ -371,7 +371,7 @@ check_fapl_mdc_api_calls(void)
     /* create the file using the modified FAPL */
     if ( pass ) {
 
-        file_id = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl_id);
+        file_id = H5Fcreate(filename, H5F_ACC_TRUNC, fcpl_id, fapl_id);
 
         if ( file_id < 0 ) {
 
@@ -383,12 +383,12 @@ check_fapl_mdc_api_calls(void)
     /* get a pointer to the files internal data structure */
     if ( pass ) {
 
-        file_ptr = (H5F_t *)H5I_object_verify(file_id, H5I_FILE);
+        file_ptr = (H5F_t *)H5VL_object_verify(file_id, H5I_FILE);
 
         if ( file_ptr == NULL ) {
 
             pass = FALSE;
-	    failure_mssg = "Can't get file_ptr.\n";
+            failure_mssg = "Can't get file_ptr.\n";
 
         } else {
 
@@ -411,9 +411,8 @@ check_fapl_mdc_api_calls(void)
     /* conpare the cache's internal configuration with the expected value */
     if ( pass ) {
 
-	if ( ! resize_configs_are_equal(&mod_auto_size_ctl, \
+        if ( ! resize_configs_are_equal(&mod_auto_size_ctl, \
                                         &cache_ptr->resize_ctl, TRUE) ) {
-
 
             pass = FALSE;
             failure_mssg = "Unexpected value(s) in cache resize_ctl 2.\n";
@@ -444,7 +443,7 @@ check_fapl_mdc_api_calls(void)
         if ( result < 0 ) {
 
             pass = FALSE;
-	    failure_mssg = "H5Pget_mdc_config() failed.\n";
+            failure_mssg = "H5Pget_mdc_config() failed.\n";
 
         } else if ( ! CACHE_CONFIGS_EQUAL(mod_config, scratch, TRUE, TRUE) ) {
 
@@ -454,7 +453,7 @@ check_fapl_mdc_api_calls(void)
         } else if ( H5Pclose(test_fapl_id) < 0 ) {
 
             pass = FALSE;
-	    failure_mssg = "H5Pclose() failed.\n";
+            failure_mssg = "H5Pclose() failed.\n";
         }
     }
 
@@ -464,62 +463,68 @@ check_fapl_mdc_api_calls(void)
         if ( H5Pclose(fapl_id) < 0 ) {
 
             pass = FALSE;
-	    failure_mssg = "H5Pclose() failed.\n";
+            failure_mssg = "H5Pclose() failed.\n";
         }
     }
 
     /* close the file and delete it */
     if ( pass ) {
 
-	if ( H5Fclose(file_id) < 0  ) {
+        if ( H5Fclose(file_id) < 0  ) {
 
             pass = FALSE;
-	    failure_mssg = "H5Fclose() failed.\n";
+            failure_mssg = "H5Fclose() failed.\n";
 
         } else if ( HDremove(filename) < 0 ) {
 
             pass = FALSE;
-	    failure_mssg = "HDremove() failed.\n";
+            failure_mssg = "HDremove() failed.\n";
         }
     }
 
-    if ( pass ) { PASSED(); } else { H5_FAILED(); }
+    if ( pass ) {
 
-    if ( ! pass )
-        HDfprintf(stdout, "%s: failure_mssg = \"%s\".\n",
-                  fcn_name, failure_mssg);
+        PASSED();
+
+    } else {
+
+        H5_FAILED();
+    }
+
+    if ( ! pass ) {
+
+        HDfprintf(stdout, "%s: failure_mssg = \"%s\".\n", FUNC, failure_mssg);
+    }
+
+    return pass;
 
 } /* check_fapl_mdc_api_calls() */
 
-
+
 /*-------------------------------------------------------------------------
- * Function:	check_file_mdc_api_calls()
+ * Function:    check_file_mdc_api_calls()
  *
- * Purpose:	Verify that the file related metadata cache API calls are
- *		functioning correctly.
+ * Purpose:     Verify that the file related metadata cache API calls are
+ *              functioning correctly.
  *
- *		Since we have tested the H5C code elsewhere, it should
- *		be sufficient to verify that the desired configuration
- *		data is getting in and out of the cache.  Similarly,
- *		we need only verify that the cache monitoring calls
- *		return the data that the cache thinks they should return.
- *		We shouldn't need to verify data correctness beyond that
- *		point.
+ *              Since we have tested the H5C code elsewhere, it should
+ *              be sufficient to verify that the desired configuration
+ *              data is getting in and out of the cache.  Similarly,
+ *              we need only verify that the cache monitoring calls
+ *              return the data that the cache thinks they should return.
+ *              We shouldn't need to verify data correctness beyond that
+ *              point.
  *
- * Return:	void
+ * Return:      Test pass status (TRUE/FALSE)
  *
- * Programmer:	John Mainzer
+ * Programmer:  John Mainzer
  *              4/14/04
- *
- * Modifications:
  *
  *-------------------------------------------------------------------------
  */
-
-static void
-check_file_mdc_api_calls(void)
+static hbool_t
+check_file_mdc_api_calls(unsigned paged, hid_t fcpl_id)
 {
-    const char * fcn_name = "check_file_mdc_api_calls()";
     char filename[512];
     hid_t file_id = -1;
     size_t max_size;
@@ -560,8 +565,8 @@ check_file_mdc_api_calls(void)
       /* hbool_t     apply_empty_reserve    = */ TRUE,
       /* double      empty_reserve          = */ 0.05f,
       /* int         dirty_bytes_threshold  = */ (256 * 1024),
-      /* int	    metadata_write_strategy = */
-					H5AC__DEFAULT_METADATA_WRITE_STRATEGY
+      /* int        metadata_write_strategy = */
+                    H5AC__DEFAULT_METADATA_WRITE_STRATEGY
     };
     H5AC_cache_config_t mod_config_2 =
     {
@@ -595,8 +600,8 @@ check_file_mdc_api_calls(void)
       /* hbool_t     apply_empty_reserve    = */ TRUE,
       /* double      empty_reserve          = */ 0.05f,
       /* int         dirty_bytes_threshold  = */ (256 * 1024),
-      /* int	    metadata_write_strategy = */
-					H5AC__DEFAULT_METADATA_WRITE_STRATEGY
+      /* int        metadata_write_strategy = */
+                    H5AC__DEFAULT_METADATA_WRITE_STRATEGY
     };
     H5AC_cache_config_t mod_config_3 =
     {
@@ -630,8 +635,8 @@ check_file_mdc_api_calls(void)
       /* hbool_t     apply_empty_reserve    = */ FALSE,
       /* double      empty_reserve          = */ 0.05f,
       /* int         dirty_bytes_threshold  = */ (256 * 1024),
-      /* int	    metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
+      /* int        metadata_write_strategy = */
+                    H5AC__DEFAULT_METADATA_WRITE_STRATEGY
     };
     H5AC_cache_config_t mod_config_4 =
     {
@@ -666,11 +671,14 @@ check_file_mdc_api_calls(void)
       /* hbool_t     apply_empty_reserve    = */ TRUE,
       /* double      empty_reserve          = */ 0.1f,
       /* int         dirty_bytes_threshold  = */ (256 * 1024),
-      /* int	    metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
+      /* int        metadata_write_strategy = */
+                    H5AC__DEFAULT_METADATA_WRITE_STRATEGY
     };
 
-    TESTING("MDC/FILE related API calls");
+    if(paged)
+        TESTING("MDC/FILE related API calls for paged aggregation strategy")
+    else
+        TESTING("MDC/FILE related API calls")
 
     pass = TRUE;
 
@@ -685,7 +693,7 @@ check_file_mdc_api_calls(void)
     /* setup the file name */
     if ( pass ) {
 
-        if ( h5_fixname(FILENAME[1], H5P_DEFAULT, filename, sizeof(filename))
+        if ( h5_fixname(FILENAME[0], H5P_DEFAULT, filename, sizeof(filename))
             == NULL ) {
 
             pass = FALSE;
@@ -696,7 +704,7 @@ check_file_mdc_api_calls(void)
     /* create the file using the default FAPL */
     if ( pass ) {
 
-        file_id = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+        file_id = H5Fcreate(filename, H5F_ACC_TRUNC, fcpl_id, H5P_DEFAULT);
 
         if ( file_id < 0 ) {
 
@@ -773,7 +781,7 @@ check_file_mdc_api_calls(void)
             pass = FALSE;
             failure_mssg = "H5Fget_mdc_hit_rate() failed 1.\n";
 
-        } else if ( hit_rate != 0.0f ) {
+        } else if ( !H5_DBL_ABS_EQUAL(hit_rate, (double)0.0f) ) {
 
             pass = FALSE;
             failure_mssg =
@@ -810,9 +818,9 @@ check_file_mdc_api_calls(void)
         else {
 
             HDfprintf(stdout, "H5Fget_mdc_size() reports:\n");
-            HDfprintf(stdout, "	max_size: %ld, min_clean_size: %ld\n",
+            HDfprintf(stdout, "    max_size: %ld, min_clean_size: %ld\n",
                       (long)max_size, (long)min_clean_size);
-	    HDfprintf(stdout, "	cur_size: %ld, cur_num_entries: %d\n",
+        HDfprintf(stdout, "    cur_size: %ld, cur_num_entries: %d\n",
                       (long)cur_size, cur_num_entries);
         }
 #endif
@@ -821,41 +829,50 @@ check_file_mdc_api_calls(void)
     /* close the file and delete it */
     if ( pass ) {
 
-	if ( H5Fclose(file_id) < 0  ) {
+        if ( H5Fclose(file_id) < 0  ) {
 
             pass = FALSE;
-	    failure_mssg = "H5Fclose() failed.\n";
+            failure_mssg = "H5Fclose() failed.\n";
 
         } else if ( HDremove(filename) < 0 ) {
 
             pass = FALSE;
-	    failure_mssg = "HDremove() failed.\n";
+            failure_mssg = "HDremove() failed.\n";
         }
     }
 
-    if ( pass ) { PASSED(); } else { H5_FAILED(); }
+    if ( pass ) {
 
-    if ( ! pass )
-        HDfprintf(stdout, "%s: failure_mssg = \"%s\".\n",
-                  fcn_name, failure_mssg);
+        PASSED();
+
+    } else {
+
+        H5_FAILED();
+    }
+
+    if ( ! pass ) {
+
+        HDfprintf(stdout, "%s: failure_mssg = \"%s\".\n", FUNC, failure_mssg);
+    }
+
+    return pass;
 
 } /* check_file_mdc_api_calls() */
 
-
+
 /*-------------------------------------------------------------------------
- * Function:	mdc_api_call_smoke_check()
+ * Function:    mdc_api_call_smoke_check()
  *
- * Purpose:
+ * Purpose:     Initial basic functional test to see if there are problems
+ *              with the cache API calls.
  *
- * Return:	void
+ *              NOTE: This test takes some time to run and checks the
+ *                    HDF5TestExpress environment variable.
  *
- * Programmer:	John Mainzer
+ * Return:      Test pass status (TRUE/FALSE)
+ *
+ * Programmer:  John Mainzer
  *              4/14/04
- *
- * Modifications:
- *
- * 		JRM -- 7/12/06
- * 		Added progress reporting code.
  *
  *-------------------------------------------------------------------------
  */
@@ -865,10 +882,9 @@ check_file_mdc_api_calls(void)
 #define NUM_DSETS               6
 #define NUM_RANDOM_ACCESSES     200000
 
-static void
-mdc_api_call_smoke_check(int express_test)
+static hbool_t
+mdc_api_call_smoke_check(int express_test, unsigned paged, hid_t fcpl_id)
 {
-    const char * fcn_name = "mdc_api_call_smoke_check()";
     char filename[512];
     hbool_t valid_chunk;
     hbool_t dump_hit_rate = FALSE;
@@ -880,7 +896,7 @@ mdc_api_call_smoke_check(int express_test)
     hid_t filespace_ids[NUM_DSETS];
     hid_t memspace_id = -1;
     hid_t dataset_ids[NUM_DSETS];
-    hid_t properties;
+    hid_t properties = -1;
     char dset_name[64];
     int i, j, k, l, m, n;
     herr_t status;
@@ -922,8 +938,8 @@ mdc_api_call_smoke_check(int express_test)
       /* hbool_t     apply_empty_reserve    = */ TRUE,
       /* double      empty_reserve          = */ 0.05f,
       /* int         dirty_bytes_threshold  = */ (256 * 1024),
-      /* int	    metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
+      /* int        metadata_write_strategy = */
+                    H5AC__DEFAULT_METADATA_WRITE_STRATEGY
     };
     H5AC_cache_config_t mod_config_2 =
     {
@@ -957,8 +973,8 @@ mdc_api_call_smoke_check(int express_test)
       /* hbool_t     apply_empty_reserve    = */ TRUE,
       /* double      empty_reserve          = */ 0.05f,
       /* int         dirty_bytes_threshold  = */ (256 * 1024),
-      /* int	    metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
+      /* int        metadata_write_strategy = */
+                    H5AC__DEFAULT_METADATA_WRITE_STRATEGY
     };
     H5AC_cache_config_t mod_config_3 =
     {
@@ -992,11 +1008,16 @@ mdc_api_call_smoke_check(int express_test)
       /* hbool_t     apply_empty_reserve    = */ TRUE,
       /* double      empty_reserve          = */ 0.05f,
       /* int         dirty_bytes_threshold  = */ (256 * 1024),
-      /* int	    metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
+      /* int        metadata_write_strategy = */
+                    H5AC__DEFAULT_METADATA_WRITE_STRATEGY
     };
 
-    TESTING("MDC API smoke check");
+    if(paged)
+        TESTING("MDC API smoke check for paged aggregation strategy")
+    else
+        TESTING("MDC API smoke check")
+
+    pass = TRUE;
 
     if ( express_test > 0 ) {
 
@@ -1004,10 +1025,8 @@ mdc_api_call_smoke_check(int express_test)
 
         HDfprintf(stdout, "     Long tests disabled.\n");
 
-        return;
+        return pass;
     }
-
-    pass = TRUE;
 
     /* Open a file with the default FAPL.  Verify that the cache is
      * configured as per the default both by looking at its internal
@@ -1020,7 +1039,7 @@ mdc_api_call_smoke_check(int express_test)
     /* setup the file name */
     if ( pass ) {
 
-        if ( h5_fixname(FILENAME[1], H5P_DEFAULT, filename, sizeof(filename))
+        if ( h5_fixname(FILENAME[0], H5P_DEFAULT, filename, sizeof(filename))
             == NULL ) {
 
             pass = FALSE;
@@ -1031,7 +1050,7 @@ mdc_api_call_smoke_check(int express_test)
     /* create the file using the default FAPL */
     if ( pass ) {
 
-        file_id = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+        file_id = H5Fcreate(filename, H5F_ACC_TRUNC, fcpl_id, H5P_DEFAULT);
 
         if ( file_id < 0 ) {
 
@@ -1103,9 +1122,9 @@ mdc_api_call_smoke_check(int express_test)
             /* create the dataset */
             if ( pass ) {
 
-                sprintf(dset_name, "/dset%03d", i);
+                HDsprintf(dset_name, "/dset%03d", i);
                 dataset_ids[i] = H5Dcreate2(file_id, dset_name, H5T_STD_I32BE,
-                                           dataspace_id, H5P_DEFAULT, properties, H5P_DEFAULT);
+                            dataspace_id, H5P_DEFAULT, properties, H5P_DEFAULT);
 
                 if ( dataset_ids[i] < 0 ) {
 
@@ -1183,8 +1202,8 @@ mdc_api_call_smoke_check(int express_test)
                 }
 
                 /* select on disk hyperslab */
-                offset[0] = i; /*offset of hyperslab in file*/
-                offset[1] = j;
+                offset[0] = (hsize_t)i; /*offset of hyperslab in file*/
+                offset[1] = (hsize_t)j;
                 a_size[0] = CHUNK_SIZE;   /*size of hyperslab*/
                 a_size[1] = CHUNK_SIZE;
                 status = H5Sselect_hyperslab(filespace_ids[m], H5S_SELECT_SET,
@@ -1254,8 +1273,8 @@ mdc_api_call_smoke_check(int express_test)
         j = (rand() % (DSET_SIZE / CHUNK_SIZE)) * CHUNK_SIZE;
 
         /* select on disk hyperslab */
-        offset[0] = i; /*offset of hyperslab in file*/
-        offset[1] = j;
+        offset[0] = (hsize_t)i; /*offset of hyperslab in file*/
+        offset[1] = (hsize_t)j;
         a_size[0] = CHUNK_SIZE;   /*size of hyperslab*/
         a_size[1] = CHUNK_SIZE;
         status = H5Sselect_hyperslab(filespace_ids[m], H5S_SELECT_SET,
@@ -1313,7 +1332,7 @@ mdc_api_call_smoke_check(int express_test)
                 pass = FALSE;
                 failure_mssg = "slab validation failed.";
 #else /* as above */
-                fprintf(stdout, "Chunk (%0d, %0d) in /dset%03d is invalid.\n",
+                HDfprintf(stdout, "Chunk (%0d, %0d) in /dset%03d is invalid.\n",
                         i, j, m);
 #endif
             }
@@ -1329,8 +1348,8 @@ mdc_api_call_smoke_check(int express_test)
         }
 
         n++;
-
     }
+
 
     /* close the file spaces we are done with */
     i = 1;
@@ -1379,8 +1398,8 @@ mdc_api_call_smoke_check(int express_test)
         j = (rand() % (DSET_SIZE / CHUNK_SIZE)) * CHUNK_SIZE;
 
         /* select on disk hyperslab */
-        offset[0] = i; /*offset of hyperslab in file*/
-        offset[1] = j;
+        offset[0] = (hsize_t)i; /*offset of hyperslab in file*/
+        offset[1] = (hsize_t)j;
         a_size[0] = CHUNK_SIZE;   /*size of hyperslab*/
         a_size[1] = CHUNK_SIZE;
         status = H5Sselect_hyperslab(filespace_ids[m], H5S_SELECT_SET,
@@ -1434,7 +1453,7 @@ mdc_api_call_smoke_check(int express_test)
                 pass = FALSE;
                 failure_mssg = "slab validation failed.";
 #if 0 /* as above */
-                fprintf(stdout, "Chunk (%0d, %0d) in /dset%03d is invalid.\n",
+                HDfprintf(stdout, "Chunk (%0d, %0d) in /dset%03d is invalid.\n",
                         i, j, m);
 #endif
             }
@@ -1450,7 +1469,6 @@ mdc_api_call_smoke_check(int express_test)
         }
 
         n++;
-
     }
 
     /* close file space 0 */
@@ -1496,1529 +1514,251 @@ mdc_api_call_smoke_check(int express_test)
     /* close the file and delete it */
     if ( pass ) {
 
-	if ( H5Fclose(file_id) < 0  ) {
+        if ( H5Fclose(file_id) < 0  ) {
 
             pass = FALSE;
-	    failure_mssg = "H5Fclose() failed.\n";
+            failure_mssg = "H5Fclose() failed.\n";
 
         }
         else if ( HDremove(filename) < 0 ) {
 
             pass = FALSE;
-	    failure_mssg = "HDremove() failed.\n";
+            failure_mssg = "HDremove() failed.\n";
         }
     }
 
-    if ( pass ) { PASSED(); } else { H5_FAILED(); }
+    if ( pass ) {
 
-    if ( ! pass )
-        HDfprintf(stdout, "%s: failure_mssg = \"%s\".\n",
-                  fcn_name, failure_mssg);
+        PASSED();
+
+    } else {
+
+        H5_FAILED();
+    }
+
+    if ( ! pass ) {
+
+        HDfprintf(stdout, "%s: failure_mssg = \"%s\".\n", FUNC, failure_mssg);
+    }
+
+    return pass;
 
 } /* mdc_api_call_smoke_check() */
 
 
 
-/* The following array of invalid external MDC cache configurations is
- * used to test error rejection in the MDC related API calls.
- */
-
-#define NUM_INVALID_CONFIGS	42
-
-H5AC_cache_config_t invalid_configs[NUM_INVALID_CONFIGS] =
-{
-  {
-    /* 0 -- bad version */
-    /* int         version                = */ -1,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__off,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__age_out_with_threshold,
-    /* double      upper_hr_threshold     = */ 0.999f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 1 -- bad rpt_fcn_enabled */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ (hbool_t)-1,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__off,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__age_out_with_threshold,
-    /* double      upper_hr_threshold     = */ 0.999f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 2 -- bad open_trace_file */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ (hbool_t)-1,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__off,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__age_out_with_threshold,
-    /* double      upper_hr_threshold     = */ 0.999f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 3 -- bad close_trace_file */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ (hbool_t)-1,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__off,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__age_out_with_threshold,
-    /* double      upper_hr_threshold     = */ 0.999f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 4 -- open_trace_file == TRUE and empty trace_file_name */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ TRUE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__off,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__age_out_with_threshold,
-    /* double      upper_hr_threshold     = */ 0.999f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 5 -- bad set_initial_size */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ 2,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__off,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__age_out_with_threshold,
-    /* double      upper_hr_threshold     = */ 0.999f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 6 -- max_size too big */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ H5C__MAX_MAX_CACHE_SIZE + 1,
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__off,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__age_out_with_threshold,
-    /* double      upper_hr_threshold     = */ 0.999f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 7 -- min_size too small */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ H5C__MIN_MAX_CACHE_SIZE - 1,
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__off,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__age_out_with_threshold,
-    /* double      upper_hr_threshold     = */ 0.999f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 8 -- min_size > max_size */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ FALSE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ (16 * 1024 * 1024 + 1),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__off,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__age_out_with_threshold,
-    /* double      upper_hr_threshold     = */ 0.999f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 9 -- initial size out of range (too big) */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (16 * 1024 * 1024 + 1),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__off,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__age_out_with_threshold,
-    /* double      upper_hr_threshold     = */ 0.999f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 10 -- initial_size out of range (too small) */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024 - 1),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__off,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__age_out_with_threshold,
-    /* double      upper_hr_threshold     = */ 0.999f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 11 -- min_clean_fraction too big */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 1.000001f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__off,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__age_out_with_threshold,
-    /* double      upper_hr_threshold     = */ 0.999f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 12 -- min_clean_fraction too small */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ -0.00000001f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__off,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__age_out_with_threshold,
-    /* double      upper_hr_threshold     = */ 0.999f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 13 -- epoch_length too small */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ H5C__MIN_AR_EPOCH_LENGTH - 1,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__off,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__age_out_with_threshold,
-    /* double      upper_hr_threshold     = */ 0.999f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 14 -- epoch_length too big */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ H5C__MAX_AR_EPOCH_LENGTH + 1,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__off,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__age_out_with_threshold,
-    /* double      upper_hr_threshold     = */ 0.999f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 15 -- invalid incr_mode */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ (enum H5C_cache_incr_mode)-1,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__off,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__age_out_with_threshold,
-    /* double      upper_hr_threshold     = */ 0.999f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 16 -- lower_hr_threshold too small */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ -0.000001f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__off,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__age_out_with_threshold,
-    /* double      upper_hr_threshold     = */ 0.999f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 17 -- lower_hr_threshold too big */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 1.00000001f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__off,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__age_out_with_threshold,
-    /* double      upper_hr_threshold     = */ 0.999f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 18 -- increment too small */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ H5_DOUBLE(0.999999999999),
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__off,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__age_out_with_threshold,
-    /* double      upper_hr_threshold     = */ 0.999f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 19 -- bad apply_max_increment */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ (hbool_t)-1,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__off,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__age_out_with_threshold,
-    /* double      upper_hr_threshold     = */ 0.999f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 20 -- invalid flash_incr_mode */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ (enum H5C_cache_flash_incr_mode)-1,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__age_out_with_threshold,
-    /* double      upper_hr_threshold     = */ 0.999f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 21 -- flash_multiple too small */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__add_space,
-    /* double      flash_multiple         = */ 0.09f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__age_out_with_threshold,
-    /* double      upper_hr_threshold     = */ 0.999f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 22 -- flash_multiple too big */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__add_space,
-    /* double      flash_multiple         = */ 10.001f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__age_out_with_threshold,
-    /* double      upper_hr_threshold     = */ 0.999f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 23 -- flash_threshold too small */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__add_space,
-    /* double      flash_multiple         = */ 1.0f,
-    /* double      flash_threshold        = */ 0.099f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__age_out_with_threshold,
-    /* double      upper_hr_threshold     = */ 0.999f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 24 -- flash_threshold too big */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__add_space,
-    /* double      flash_multiple         = */ 1.0f,
-    /* double      flash_threshold        = */ 1.001f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__age_out_with_threshold,
-    /* double      upper_hr_threshold     = */ 0.999f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 25 -- bad decr_mode */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__off,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ (enum H5C_cache_decr_mode)-1,
-    /* double      upper_hr_threshold     = */ 0.999f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 26 -- upper_hr_threshold too big */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__off,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__threshold,
-    /* double      upper_hr_threshold     = */ 1.00001f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 27 -- decrement too small */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__off,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__threshold,
-    /* double      upper_hr_threshold     = */ 0.999f,
-    /* double      decrement              = */ -0.0000000001f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 28 -- decrement too big */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__off,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__threshold,
-    /* double      upper_hr_threshold     = */ 0.999f,
-    /* double      decrement              = */ H5_DOUBLE(1.0000000001),
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 29 -- epochs_before_eviction too small */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__off,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__age_out,
-    /* double      upper_hr_threshold     = */ 0.999f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 0,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 30 -- epochs_before_eviction too big */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__off,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__age_out,
-    /* double      upper_hr_threshold     = */ 0.999f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ H5C__MAX_EPOCH_MARKERS + 1,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 31 -- invalid apply_empty_reserve */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__off,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__age_out_with_threshold,
-    /* double      upper_hr_threshold     = */ 0.999f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ 2,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 32 -- empty_reserve too small */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__off,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__age_out_with_threshold,
-    /* double      upper_hr_threshold     = */ 0.999f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ -0.0000000001f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 33 -- empty_reserve too big */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__off,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__age_out_with_threshold,
-    /* double      upper_hr_threshold     = */ 0.999f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ H5_DOUBLE(1.00000000001),
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 34 -- upper_hr_threshold too small */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__off,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__age_out_with_threshold,
-    /* double      upper_hr_threshold     = */ -0.000000001f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 35 -- upper_hr_threshold too big */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__off,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__age_out_with_threshold,
-    /* double      upper_hr_threshold     = */ H5_DOUBLE(1.00000001),
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 36 -- upper_hr_threshold <= lower_hr_threshold */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__off,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__age_out_with_threshold,
-    /* double      upper_hr_threshold     = */ 0.9f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 37 -- dirty_bytes_threshold too small */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__off,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__age_out_with_threshold,
-    /* double      upper_hr_threshold     = */ 0.999f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (H5C__MIN_MAX_CACHE_SIZE / 2) - 1,
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 38 -- dirty_bytes_threshold too big */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__off,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__age_out_with_threshold,
-    /* double      upper_hr_threshold     = */ 0.9f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (H5C__MAX_MAX_CACHE_SIZE / 4) + 1,
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 39 -- attempt to disable evictions when auto incr enabled */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ FALSE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__off,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__off,
-    /* double      upper_hr_threshold     = */ 0.9f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 40 -- attempt to disable evictions when auto decr enabled */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ FALSE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__off,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__age_out,
-    /* double      upper_hr_threshold     = */ 0.9f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */
-				      H5AC__DEFAULT_METADATA_WRITE_STRATEGY
-  },
-  {
-    /* 41 -- unknown metadata write strategy */
-    /* int         version                = */ H5C__CURR_AUTO_SIZE_CTL_VER,
-    /* hbool_t     rpt_fcn_enabled        = */ FALSE,
-    /* hbool_t     open_trace_file        = */ FALSE,
-    /* hbool_t     close_trace_file       = */ FALSE,
-    /* char        trace_file_name[]      = */ "",
-    /* hbool_t     evictions_enabled      = */ TRUE,
-    /* hbool_t     set_initial_size       = */ TRUE,
-    /* size_t      initial_size           = */ (1 * 1024 * 1024),
-    /* double      min_clean_fraction     = */ 0.25f,
-    /* size_t      max_size               = */ (16 * 1024 * 1024),
-    /* size_t      min_size               = */ ( 1 * 1024 * 1024),
-    /* long int    epoch_length           = */ 50000,
-    /* enum H5C_cache_incr_mode incr_mode = */ H5C_incr__threshold,
-    /* double      lower_hr_threshold     = */ 0.9f,
-    /* double      increment              = */ 2.0f,
-    /* hbool_t     apply_max_increment    = */ TRUE,
-    /* size_t      max_increment          = */ (4 * 1024 * 1024),
-    /* enum H5C_cache_flash_incr_mode       */
-    /*                    flash_incr_mode = */ H5C_flash_incr__off,
-    /* double      flash_multiple         = */ 2.0f,
-    /* double      flash_threshold        = */ 0.5f,
-    /* enum H5C_cache_decr_mode decr_mode = */ H5C_decr__age_out_with_threshold,
-    /* double      upper_hr_threshold     = */ 0.999f,
-    /* double      decrement              = */ 0.9f,
-    /* hbool_t     apply_max_decrement    = */ TRUE,
-    /* size_t      max_decrement          = */ (1 * 1024 * 1024),
-    /* int         epochs_before_eviction = */ 3,
-    /* hbool_t     apply_empty_reserve    = */ TRUE,
-    /* double      empty_reserve          = */ 0.1f,
-    /* int         dirty_bytes_threshold  = */ (256 * 1024),
-    /* int	  metadata_write_strategy = */ -1
-  }
-};
-
-
 /*-------------------------------------------------------------------------
- * Function:	check_fapl_mdc_api_errs()
+ * Function:    init_invalid_configs()
  *
- * Purpose:	Verify that the FAPL related MDC API calls reject input
- *		errors gracefully.
+ * Purpose:     Initialize an array of invalid external MDC configurations
+ *              that will be used to test error rejection in the MDC-
+ *              related API calls.
  *
- * Return:	void
+ *              Note: It is assumed that boolean parameters are only set
+ *                    to TRUE/FALSE.
  *
- * Programmer:	John Mainzer
- *              4/19/04
+ * Return:      Success:    Pointer to an array of cache configurations.
+ *              Failure:    NULL
  *
- * Modifications:
+ * Programmer:  Dana Robinson
+ *              Spring 2016
  *
  *-------------------------------------------------------------------------
  */
 
-static void
+#define NUM_INVALID_CONFIGS    36
+static H5AC_cache_config_t * invalid_configs = NULL;
+
+static H5AC_cache_config_t *
+init_invalid_configs(void) {
+
+    int i;
+    H5AC_cache_config_t * configs = NULL;
+
+    /* Allocate memory */
+    if ( NULL == (configs = (H5AC_cache_config_t *)HDcalloc(
+            NUM_INVALID_CONFIGS, sizeof(H5AC_cache_config_t) ) ) ) {
+
+        return NULL;
+    }
+
+    /* Set defaults for all configs */
+    for ( i = 0; i < NUM_INVALID_CONFIGS; i++ ) {
+
+        configs[i].version                  = H5C__CURR_AUTO_SIZE_CTL_VER;
+        configs[i].rpt_fcn_enabled          = FALSE;
+        configs[i].open_trace_file          = FALSE;
+        configs[i].close_trace_file         = FALSE;
+        /* trace file name set to all ASCII NUL by calloc() */
+        configs[i].evictions_enabled        = TRUE;
+        configs[i].set_initial_size         = TRUE;
+        configs[i].initial_size             = (1 * 1024 * 1024);
+        configs[i].min_clean_fraction       = 0.25F;
+        configs[i].max_size                 = (16 * 1024 * 1024);
+        configs[i].min_size                 = (1 * 1024 * 1024);
+        configs[i].epoch_length             = 50000;
+        configs[i].incr_mode                = H5C_incr__threshold;
+        configs[i].lower_hr_threshold       = 0.9F;
+        configs[i].increment                = 2.0F;
+        configs[i].apply_max_increment      = TRUE;
+        configs[i].max_increment            = (4 * 1024 * 1024);
+        configs[i].flash_incr_mode          = H5C_flash_incr__off;
+        configs[i].flash_multiple           = 2.0F;
+        configs[i].flash_threshold          = 0.5F;
+        configs[i].decr_mode                = H5C_decr__age_out_with_threshold;
+        configs[i].upper_hr_threshold       = 0.999F;
+        configs[i].decrement                = 0.9F;
+        configs[i].apply_max_decrement      = TRUE;
+        configs[i].max_decrement            = (1 * 1024 * 1024);
+        configs[i].epochs_before_eviction   = 3;
+        configs[i].apply_empty_reserve      = TRUE;
+        configs[i].empty_reserve            = 0.1F;
+        configs[i].dirty_bytes_threshold    = (256 * 1024);
+        configs[i].metadata_write_strategy  = H5AC__DEFAULT_METADATA_WRITE_STRATEGY;
+    }
+
+    /* Set badness for each config */
+
+    /* 0 -- bad version */
+    configs[0].version                      = -1;
+
+    /* 1 -- open_trace_file == TRUE and empty trace_file_name */
+    configs[1].open_trace_file              = TRUE;
+    /* trace file name set to all ASCII NUL by calloc() */
+
+    /* 2 -- max_size too big */
+    configs[2].max_size                     = H5C__MAX_MAX_CACHE_SIZE + 1;
+
+    /* 3 -- min_size too small */
+    configs[3].min_size                     = H5C__MIN_MAX_CACHE_SIZE - 1;
+
+    /* 4 -- min_size > max_size */
+    configs[4].max_size                     = (16 * 1024 * 1024);
+    configs[4].min_size                     = (16 * 1024 * 1024 + 1);
+
+    /* 5 -- initial size out of range (too big) */
+    configs[5].initial_size                 = (16 * 1024 * 1024 + 1);
+
+    /* 6 -- initial_size out of range (too small) */
+    configs[6].initial_size                 = (1 * 1024 * 1024 - 1);
+
+    /* 7 -- min_clean_fraction too big */
+    configs[7].min_clean_fraction           = 1.000001f;
+
+    /* 8 -- min_clean_fraction too small */
+    configs[8].min_clean_fraction           = -0.00000001f;
+
+    /* 9 -- epoch_length too small */
+    configs[9].epoch_length                 = H5C__MIN_AR_EPOCH_LENGTH - 1;
+
+    /* 10 -- epoch_length too big */
+    configs[10].epoch_length                = H5C__MAX_AR_EPOCH_LENGTH + 1;
+
+    /* 11 -- invalid incr_mode */
+    configs[11].incr_mode                   = (enum H5C_cache_incr_mode)-1;
+
+    /* 12 -- lower_hr_threshold too small */
+    configs[12].lower_hr_threshold          = -0.000001f;
+
+    /* 13 -- lower_hr_threshold too big */
+    configs[13].lower_hr_threshold          = 1.00000001f;
+
+    /* 14 -- increment too small */
+    configs[14].increment                   = H5_DOUBLE(0.999999999999);
+
+    /* 15 -- invalid flash_incr_mode */
+    configs[15].flash_incr_mode             = (enum H5C_cache_flash_incr_mode)-1;
+
+    /* 16 -- flash_multiple too small */
+    configs[16].flash_incr_mode             = H5C_flash_incr__add_space;
+    configs[16].flash_multiple              = 0.09f;
+
+    /* 17 -- flash_multiple too big */
+    configs[17].flash_incr_mode             = H5C_flash_incr__add_space;
+    configs[17].flash_multiple              = 10.001f;
+
+    /* 18 -- flash_threshold too small */
+    configs[18].flash_incr_mode             = H5C_flash_incr__add_space;
+    configs[18].flash_threshold             = 0.099f;
+
+    /* 19 -- flash_threshold too big */
+    configs[19].flash_incr_mode             = H5C_flash_incr__add_space;
+    configs[19].flash_threshold             = 1.001f;
+
+    /* 20 -- bad decr_mode */
+    configs[20].decr_mode                   = (enum H5C_cache_decr_mode)-1;
+
+    /* 21 -- upper_hr_threshold too big */
+    configs[21].upper_hr_threshold          = 1.00001f;
+
+    /* 22 -- decrement too small */
+    configs[22].decr_mode                   = H5C_decr__threshold;
+    configs[22].decrement                   = -0.0000000001f;
+
+    /* 23 -- decrement too big */
+    configs[23].decr_mode                   = H5C_decr__threshold;
+    configs[23].decrement                   = H5_DOUBLE(1.0000000001);
+
+    /* 24 -- epochs_before_eviction too small */
+    configs[24].epochs_before_eviction      = 0;
+
+    /* 25 -- epochs_before_eviction too big */
+    configs[25].epochs_before_eviction      = H5C__MAX_EPOCH_MARKERS + 1;
+
+    /* 26 -- empty_reserve too small */
+    configs[26].empty_reserve               = -0.0000000001f;
+
+    /* 27 -- empty_reserve too big */
+    configs[27].empty_reserve               = H5_DOUBLE(1.00000000001);
+
+    /* 28 -- upper_hr_threshold too small */
+    configs[28].upper_hr_threshold          = -0.000000001f;
+
+    /* 29 -- upper_hr_threshold too big */
+    configs[29].upper_hr_threshold          = H5_DOUBLE(1.00000001);
+
+    /* 30 -- upper_hr_threshold <= lower_hr_threshold */
+    configs[30].lower_hr_threshold          = 0.9f;
+    configs[30].upper_hr_threshold          = 0.9f;
+
+    /* 31 -- dirty_bytes_threshold too small */
+    configs[31].dirty_bytes_threshold       = (H5C__MIN_MAX_CACHE_SIZE / 2) - 1;
+
+    /* 32 -- dirty_bytes_threshold too big */
+    configs[32].dirty_bytes_threshold       = (H5C__MAX_MAX_CACHE_SIZE / 4) + 1;
+
+    /* 33 -- attempt to disable evictions when auto incr enabled */
+    configs[33].evictions_enabled           = FALSE;
+    configs[33].decr_mode                   = H5C_decr__off;
+
+    /* 34 -- attempt to disable evictions when auto decr enabled */
+    configs[34].evictions_enabled           = FALSE;
+    configs[34].decr_mode                   = H5C_decr__age_out;
+
+    /* 35 -- unknown metadata write strategy */
+    configs[35].metadata_write_strategy     = -1;
+
+    return configs;
+
+} /* initialize_invalid_configs() */
+
+
+/*-------------------------------------------------------------------------
+ * Function:    check_fapl_mdc_api_errs()
+ *
+ * Purpose:     Verify that the FAPL related MDC API calls reject input
+ *              errors gracefully.
+ *
+ * Return:      Test pass status (TRUE/FALSE)
+ *
+ * Programmer:  John Mainzer
+ *              4/19/04
+ *
+ *-------------------------------------------------------------------------
+ */
+static hbool_t
 check_fapl_mdc_api_errs(void)
 {
-    const char * fcn_name = "check_fapl_mdc_api_errs()";
     static char msg[128];
     int i;
     herr_t result;
@@ -3030,7 +1770,6 @@ check_fapl_mdc_api_errs(void)
 
     pass = TRUE;
 
-
     /* first test H5Pget_mdc_config().
      */
 
@@ -3038,8 +1777,8 @@ check_fapl_mdc_api_errs(void)
     if  ( pass ) {
 
         H5E_BEGIN_TRY {
-	    result = H5Pget_mdc_config((hid_t)-1, &scratch);
-	} H5E_END_TRY;
+            result = H5Pget_mdc_config((hid_t)-1, &scratch);
+        } H5E_END_TRY;
 
         if ( result >= 0 ) {
 
@@ -3065,7 +1804,7 @@ check_fapl_mdc_api_errs(void)
 
     scratch.version = H5C__CURR_AUTO_SIZE_CTL_VER;
     if ( ( pass ) &&
-         ( ( H5Pget_mdc_config(fapl_id, &scratch) < 0 ) ||
+         ( ( H5Pget_mdc_config(fapl_id, &scratch) < 0) ||
            ( !CACHE_CONFIGS_EQUAL(default_config, scratch, TRUE, TRUE) ) ) ) {
 
         pass = FALSE;
@@ -3161,35 +1900,41 @@ check_fapl_mdc_api_errs(void)
         failure_mssg = "FAPL metadata cache config changed???.\n";
     }
 
-    if ( pass ) { PASSED(); } else { H5_FAILED(); }
+    if ( pass ) {
 
-    if ( ! pass )
-        HDfprintf(stdout, "%s: failure_mssg = \"%s\".\n",
-                  fcn_name, failure_mssg);
+        PASSED();
+
+    } else {
+
+        H5_FAILED();
+    }
+
+    if ( ! pass ) {
+
+        HDfprintf(stdout, "%s: failure_mssg = \"%s\".\n", FUNC, failure_mssg);
+    }
+
+    return pass;
 
 } /* check_fapl_mdc_api_errs() */
 
-
+
 /*-------------------------------------------------------------------------
- * Function:	check_file_mdc_api_errs()
+ * Function:    check_file_mdc_api_errs()
  *
- * Purpose:	Verify that the file related MDC API calls reject input
- *		errors gracefully.
+ * Purpose:     Verify that the file related MDC API calls reject input
+ *              errors gracefully.
  *
- * Return:	void
+ * Return:      Test pass status (TRUE/FALSE)
  *
- * Programmer:	John Mainzer
+ * Programmer:  John Mainzer
  *              4/19/04
- *
- * Modifications:
  *
  *-------------------------------------------------------------------------
  */
-
-static void
-check_file_mdc_api_errs(void)
+static hbool_t
+check_file_mdc_api_errs(unsigned paged, hid_t fcpl_id)
 {
-    const char * fcn_name = "check_file_mdc_api_errs()";
     char filename[512];
     static char msg[128];
     hbool_t show_progress = FALSE;
@@ -3204,7 +1949,10 @@ check_file_mdc_api_errs(void)
     H5AC_cache_config_t default_config = H5AC__DEFAULT_CACHE_CONFIG;
     H5AC_cache_config_t scratch;
 
-    TESTING("MDC/FILE related API input errors");
+    if(paged)
+        TESTING("MDC/FILE related API input errors for paged aggregation strategy")
+    else
+        TESTING("MDC/FILE related API input errors")
 
     pass = TRUE;
 
@@ -3215,12 +1963,12 @@ check_file_mdc_api_errs(void)
     /* setup the file name */
     if ( pass ) {
 
-	if ( show_progress ) {
+        if ( show_progress ) {
 
-	    HDfprintf(stdout, "%s: calling h5_fixname().\n", fcn_name);
-	}
+            HDfprintf(stdout, "%s: calling h5_fixname().\n", FUNC);
+        }
 
-        if ( h5_fixname(FILENAME[1], H5P_DEFAULT, filename, sizeof(filename))
+        if ( h5_fixname(FILENAME[0], H5P_DEFAULT, filename, sizeof(filename))
             == NULL ) {
 
             pass = FALSE;
@@ -3230,12 +1978,12 @@ check_file_mdc_api_errs(void)
 
     if ( pass ) {
 
-	if ( show_progress ) {
+        if ( show_progress ) {
 
-	    HDfprintf(stdout, "%s: calling H5Fcreate().\n", fcn_name);
-	}
+            HDfprintf(stdout, "%s: calling H5Fcreate().\n", FUNC);
+        }
 
-        file_id = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+        file_id = H5Fcreate(filename, H5F_ACC_TRUNC, fcpl_id, H5P_DEFAULT);
 
         if ( file_id < 0 ) {
 
@@ -3252,10 +2000,10 @@ check_file_mdc_api_errs(void)
     scratch.version = H5C__CURR_AUTO_SIZE_CTL_VER;
     if  ( pass ) {
 
-	if ( show_progress ) {
+        if ( show_progress ) {
 
-	    HDfprintf(stdout, "%s: testing H5Fget_mdc_config() 1.\n", fcn_name);
-	}
+            HDfprintf(stdout, "%s: testing H5Fget_mdc_config() 1.\n", FUNC);
+        }
 
         H5E_BEGIN_TRY {
             result = H5Fget_mdc_config((hid_t)-1, &scratch);
@@ -3270,10 +2018,10 @@ check_file_mdc_api_errs(void)
 
     if  ( pass ) {
 
-	if ( show_progress ) {
+        if ( show_progress ) {
 
-	    HDfprintf(stdout, "%s: testing H5Fget_mdc_config() 2.\n", fcn_name);
-	}
+            HDfprintf(stdout, "%s: testing H5Fget_mdc_config() 2.\n", FUNC);
+        }
 
         H5E_BEGIN_TRY {
             result = H5Fget_mdc_config(file_id, NULL);
@@ -3289,10 +2037,10 @@ check_file_mdc_api_errs(void)
     scratch.version = -1; /* a convenient, invalid value */
     if  ( pass ) {
 
-	if ( show_progress ) {
+        if ( show_progress ) {
 
-	    HDfprintf(stdout, "%s: testing H5Fget_mdc_config() 3.\n", fcn_name);
-	}
+            HDfprintf(stdout, "%s: testing H5Fget_mdc_config() 3.\n", FUNC);
+        }
 
         H5E_BEGIN_TRY {
             result = H5Fget_mdc_config(file_id, &scratch);
@@ -3311,10 +2059,10 @@ check_file_mdc_api_errs(void)
     scratch.version = H5C__CURR_AUTO_SIZE_CTL_VER;
     if ( pass ) {
 
-	if ( show_progress ) {
+        if ( show_progress ) {
 
-	    HDfprintf(stdout, "%s: testing H5Fset_mdc_config() 1.\n", fcn_name);
-	}
+            HDfprintf(stdout, "%s: testing H5Fset_mdc_config() 1.\n", FUNC);
+        }
 
         H5E_BEGIN_TRY {
             result = H5Fset_mdc_config((hid_t)-1, &default_config);
@@ -3329,10 +2077,10 @@ check_file_mdc_api_errs(void)
 
     if ( pass ) {
 
-	if ( show_progress ) {
+        if ( show_progress ) {
 
-	    HDfprintf(stdout, "%s: testing H5Fset_mdc_config() 2.\n", fcn_name);
-	}
+            HDfprintf(stdout, "%s: testing H5Fset_mdc_config() 2.\n", FUNC);
+        }
 
         H5E_BEGIN_TRY {
             result = H5Fset_mdc_config(file_id, NULL);
@@ -3348,12 +2096,12 @@ check_file_mdc_api_errs(void)
     i = 0;
     while ( ( pass ) && ( i < NUM_INVALID_CONFIGS ) )
     {
-	if ( show_progress ) {
+        if ( show_progress ) {
 
-	    HDfprintf(stdout,
-		    "%s: testing H5Fset_mdc_config() with invalid config %d.\n",
-		    fcn_name, i);
-	}
+            HDfprintf(stdout,
+                "%s: testing H5Fset_mdc_config() with invalid config %d.\n",
+                FUNC, i);
+        }
 
         H5E_BEGIN_TRY {
             result = H5Fset_mdc_config(file_id, &(invalid_configs[i]));
@@ -3378,11 +2126,11 @@ check_file_mdc_api_errs(void)
     /* test H5Fget_mdc_hit_rate() */
     if ( pass ) {
 
-	if ( show_progress ) {
+        if ( show_progress ) {
 
-	    HDfprintf(stdout, "%s: testing H5Fget_mdc_hit_rate() 1.\n",
-		      fcn_name);
-	}
+            HDfprintf(stdout, "%s: testing H5Fget_mdc_hit_rate() 1.\n",
+                FUNC);
+        }
 
         H5E_BEGIN_TRY {
             result = H5Fget_mdc_hit_rate((hid_t)-1, &hit_rate);
@@ -3397,11 +2145,11 @@ check_file_mdc_api_errs(void)
 
     if ( pass ) {
 
-	if ( show_progress ) {
+        if ( show_progress ) {
 
-	    HDfprintf(stdout, "%s: testing H5Fget_mdc_hit_rate() 2.\n",
-		      fcn_name);
-	}
+            HDfprintf(stdout, "%s: testing H5Fget_mdc_hit_rate() 2.\n",
+                FUNC);
+        }
 
         H5E_BEGIN_TRY {
             result = H5Fget_mdc_hit_rate(file_id, NULL);
@@ -3418,11 +2166,11 @@ check_file_mdc_api_errs(void)
     /* test H5Freset_mdc_hit_rate_stats() */
     if ( pass ) {
 
-	if ( show_progress ) {
+        if ( show_progress ) {
 
-	    HDfprintf(stdout, "%s: testing H5Freset_mdc_hit_rate_stats().\n",
-		      fcn_name);
-	}
+            HDfprintf(stdout, "%s: testing H5Freset_mdc_hit_rate_stats().\n",
+                FUNC);
+        }
 
         H5E_BEGIN_TRY {
             result = H5Freset_mdc_hit_rate_stats((hid_t)-1);
@@ -3440,10 +2188,10 @@ check_file_mdc_api_errs(void)
     /* test H5Fget_mdc_size() */
     if ( pass ) {
 
-	if ( show_progress ) {
+        if ( show_progress ) {
 
-	    HDfprintf(stdout, "%s: testing H5Fget_mdc_size() 1.\n", fcn_name);
-	}
+            HDfprintf(stdout, "%s: testing H5Fget_mdc_size() 1.\n", FUNC);
+        }
 
         H5E_BEGIN_TRY {
             result = H5Fget_mdc_size((hid_t)-1, &max_size, &min_clean_size,
@@ -3459,10 +2207,10 @@ check_file_mdc_api_errs(void)
 
     if ( pass ) {
 
-	if ( show_progress ) {
+        if ( show_progress ) {
 
-	    HDfprintf(stdout, "%s: testing H5Fget_mdc_size() 2.\n", fcn_name);
-	}
+            HDfprintf(stdout, "%s: testing H5Fget_mdc_size() 2.\n", FUNC);
+        }
 
         if ( ( H5Fget_mdc_size(file_id, &max_size, NULL, NULL, NULL) < 0 ) ||
              ( H5Fget_mdc_size(file_id, NULL, &min_clean_size,
@@ -3481,10 +2229,10 @@ check_file_mdc_api_errs(void)
     /* close the file and delete it */
     if ( pass ) {
 
-	if ( show_progress ) {
+        if ( show_progress ) {
 
-	    HDfprintf(stdout, "%s: cleaning up from tests.\n", fcn_name);
-	}
+            HDfprintf(stdout, "%s: cleaning up from tests.\n", FUNC);
+        }
 
         if ( H5Fclose(file_id) < 0  ) {
 
@@ -3498,57 +2246,120 @@ check_file_mdc_api_errs(void)
         }
     }
 
-    if ( pass ) { PASSED(); } else { H5_FAILED(); }
+    if ( pass ) {
 
-    if ( ! pass )
-        HDfprintf(stdout, "%s: failure_mssg = \"%s\".\n",
-                  fcn_name, failure_mssg);
+        PASSED();
+
+    } else {
+
+        H5_FAILED();
+    }
+
+    if ( ! pass ) {
+
+        HDfprintf(stdout, "%s: failure_mssg = \"%s\".\n", FUNC, failure_mssg);
+    }
+
+    return pass;
 
 } /* check_file_mdc_api_errs() */
 
-
+
 /*-------------------------------------------------------------------------
- * Function:	main
+ * Function:    main
  *
- * Purpose:	Run tests on the cache code contained in H5C.c
+ * Purpose:     Run tests on the cache code contained in H5C.c
  *
- * Return:	Success:
+ * Return:      EXIT_SUCCESS/EXIT_FAILURE
  *
- *		Failure:
- *
- * Programmer:	John Mainzer
+ * Programmer:  John Mainzer
  *              6/24/04
- *
- * Modifications:
  *
  *-------------------------------------------------------------------------
  */
-
 int
 main(void)
 {
+    unsigned nerrs = 0;
     int express_test;
+    hid_t fcpl_id = -1;
+    hid_t fcpl2_id = -1;
+    unsigned paged;
 
     H5open();
 
     express_test = GetTestExpress();
 
-#if 1
-    check_fapl_mdc_api_calls();
-#endif
-#if 1
-    check_file_mdc_api_calls();
-#endif
-#if 1
-    mdc_api_call_smoke_check(express_test);
-#endif
-#if 1
-    check_fapl_mdc_api_errs();
-#endif
-#if 1
-    check_file_mdc_api_errs();
-#endif
+    HDprintf("===================================\n");
+    HDprintf("Cache API tests\n");
+    HDprintf("        express_test = %d\n", express_test);
+    HDprintf("===================================\n");
 
-    return(0);
 
+    /* Initialize invalid configurations.
+     */
+    invalid_configs = init_invalid_configs();
+    if ( NULL == invalid_configs ) {
+        failure_mssg = "Unable to allocate memory for invalid configs.";
+        HDfprintf(stdout, "%s: failure_mssg = \"%s\".\n", FUNC, failure_mssg);
+        return EXIT_FAILURE;
+    } /* end if */
+
+    if((fcpl_id = H5Pcreate(H5P_FILE_CREATE)) < 0) {
+        failure_mssg = "H5Pcreate(H5P_FILE_CREATE) failed.\n";
+        HDfprintf(stdout, "%s: failure_mssg = \"%s\".\n", FUNC, failure_mssg);
+        return EXIT_FAILURE;
+    } /* end if */
+
+    /* Set file space strategy to default or paged aggregation strategy */
+    if((fcpl2_id = H5Pcopy(fcpl_id)) < 0) {
+        failure_mssg = "H5Pcreate(H5P_FILE_CREATE) failed.\n";
+        HDfprintf(stdout, "%s: failure_mssg = \"%s\".\n", FUNC, failure_mssg);
+        return EXIT_FAILURE;
+    } /* end if */
+
+    if(H5Pset_file_space_strategy(fcpl2_id, H5F_FSPACE_STRATEGY_PAGE, 1, (hsize_t)1) < 0) {
+        failure_mssg = "H5Pset_file_space_strategy() failed.\n";
+        HDfprintf(stdout, "%s: failure_mssg = \"%s\".\n", FUNC, failure_mssg);
+        return EXIT_FAILURE;
+    } /* end if */
+
+    /* Test with paged aggregation enabled or not */
+    /* The "my_fcpl" passed to each test has the paged or non-paged strategy set up accordinly */
+    for(paged = FALSE; paged <= TRUE; paged++) {
+        hid_t my_fcpl = fcpl_id;
+
+        if(paged)
+            my_fcpl = fcpl2_id;
+
+        if(!check_fapl_mdc_api_calls(paged, my_fcpl))
+            nerrs += 1;
+
+        if(!check_file_mdc_api_calls(paged, my_fcpl))
+            nerrs += 1;
+
+        if(!mdc_api_call_smoke_check(express_test, paged, my_fcpl))
+            nerrs += 1;
+
+        if(!check_file_mdc_api_errs(paged, my_fcpl))
+            nerrs += 1;
+    } /* end for paged */
+
+    if(!check_fapl_mdc_api_errs())
+        nerrs += 1;
+
+    if(invalid_configs)
+        HDfree(invalid_configs);
+
+    if(H5Pclose(fcpl_id) < 0 ) {
+        failure_mssg = "H5Pclose() failed.\n";
+        HDfprintf(stdout, "%s: failure_mssg = \"%s\".\n", FUNC, failure_mssg);
+        return EXIT_FAILURE;
+    } /* end if */
+
+    if(nerrs > 0)
+        return EXIT_FAILURE;
+    else
+        return EXIT_SUCCESS;
 } /* main() */
+

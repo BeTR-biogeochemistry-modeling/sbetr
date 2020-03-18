@@ -14,15 +14,15 @@
 !                                                                             *
 !   This file is part of HDF5.  The full HDF5 copyright notice, including     *
 !   terms governing use, modification, and redistribution, is contained in    *
-!   the files COPYING and Copyright.html.  COPYING can be found at the root   *
-!   of the source code distribution tree; Copyright.html can be found at the  *
-!   root level of an installed copy of the electronic HDF5 document set and   *
-!   is linked from the top-level documents page.  It can also be found at     *
-!   http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
-!   access to either file, you may request a copy from help@hdfgroup.org.     *
+!   the COPYING file, which can be found at the root of the source code       *
+!   distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+!   If you do not have access to either file, you may request a copy from     *
+!   help@hdfgroup.org.                                                        *
 ! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 !
 !*****
+
+!#include <H5config_f.inc>
 
 PROGRAM fortranlibtest
 
@@ -50,20 +50,20 @@ PROGRAM fortranlibtest
   IF(total_error .EQ. 0) THEN
 
      WRITE(*, '(" FORTRANLIB_TEST is linked with HDF5 Library version ")', advance="NO")
-     WRITE(*, '(I1)', advance="NO") majnum
+     WRITE(*, '(I0)', advance="NO") majnum
      WRITE(*, '(".")', advance="NO")
-     WRITE(*, '(I1)', advance="NO") minnum
+     WRITE(*, '(I0)', advance="NO") minnum
      WRITE(*, '(" release ")', advance="NO")
-     WRITE(*, '(I3)') relnum
+     WRITE(*, '(I0)') relnum
   ELSE
      total_error = total_error + 1
   ENDIF
   WRITE(*,*)
 
-!     CALL h5check_version_f(1,4,4,total_error)
-!     write(*,*) '========================================='
-!     write(*,*) 'Testing FILE Interface                   '
-!     write(*,*) '========================================='
+!      CALL h5check_version_f(1,4,4,total_error)
+!      '========================================='
+!      'Testing FILE Interface                   '
+!      '========================================='
 
   ret_total_error = 0
   CALL mountingtest(cleanup, ret_total_error)
@@ -81,10 +81,10 @@ PROGRAM fortranlibtest
   CALL file_space("file_space",cleanup, ret_total_error)
   CALL write_test_status(ret_total_error, ' File free space test', total_error)
 
-!     write(*,*)
-!     write(*,*) '========================================='
-!     write(*,*) 'Testing DATASET Interface                '
-!     write(*,*) '========================================='
+!     
+!      '========================================='
+!      'Testing DATASET Interface                '
+!      '========================================='
 
   ret_total_error = 0
   CALL datasettest(cleanup, ret_total_error)
@@ -94,19 +94,22 @@ PROGRAM fortranlibtest
   CALL extenddsettest(cleanup, ret_total_error)
   CALL write_test_status(ret_total_error, ' Extendible dataset test', total_error)
 
-!     write(*,*)
-!     write(*,*) '========================================='
-!     write(*,*) 'Testing DATASPACE Interface             '
-!     write(*,*) '========================================='
+  CALL test_userblock_offset(cleanup, ret_total_error)
+  CALL write_test_status(ret_total_error, ' Dataset offset with user block', total_error)
+
+!     
+!      '========================================='
+!      'Testing DATASPACE Interface             '
+!      '========================================='
 
   ret_total_error = 0
   CALL dataspace_basic_test(cleanup, ret_total_error)
   CALL write_test_status(ret_total_error, ' Basic dataspace test', total_error)
 
-!     write(*,*)
-!     write(*,*) '========================================='
-!     write(*,*) 'Testing REFERENCE Interface              '
-!     write(*,*) '========================================='
+!     
+!      '========================================='
+!      'Testing REFERENCE Interface              '
+!      '========================================='
 
   ret_total_error = 0
   CALL refobjtest(cleanup, ret_total_error)
@@ -116,10 +119,10 @@ PROGRAM fortranlibtest
   CALL refregtest(cleanup, ret_total_error)
   CALL write_test_status(ret_total_error, ' Reference to dataset region test', total_error)
 
-!     write(*,*)
-!     write(*,*) '========================================='
-!     write(*,*) 'Testing selection functionalities        '
-!     write(*,*) '========================================='
+!     
+!      '========================================='
+!      'Testing selection functionalities        '
+!      '========================================='
 
   ret_total_error = 0
   CALL test_basic_select(cleanup, ret_total_error)
@@ -146,10 +149,10 @@ PROGRAM fortranlibtest
   CALL test_select_bounds(ret_total_error)
   CALL write_test_status(ret_total_error, ' Selection bounds test ', total_error)
   
-!     write(*,*)
-!     write(*,*) '========================================='
-!     write(*,*) 'Testing DATATYPE interface               '
-!     write(*,*) '========================================='
+!     
+!      '========================================='
+!      'Testing DATATYPE interface               '
+!      '========================================='
   ret_total_error = 0
   CALL basic_data_type_test(ret_total_error)
   CALL write_test_status(ret_total_error, ' Basic datatype test', total_error)
@@ -166,10 +169,10 @@ PROGRAM fortranlibtest
   CALL test_derived_flt(cleanup, ret_total_error)
   CALL write_test_status(ret_total_error, ' Derived float datatype test', total_error)
 
-!     write(*,*)
-!     write(*,*) '========================================='
-!     write(*,*) 'Testing PROPERTY interface               '
-!     write(*,*) '========================================='
+!     
+!      '========================================='
+!      'Testing PROPERTY interface               '
+!      '========================================='
 
   ret_total_error = 0
   CALL external_test(cleanup, ret_total_error)
@@ -183,19 +186,19 @@ PROGRAM fortranlibtest
   CALL test_chunk_cache (cleanup, ret_total_error)
   CALL write_test_status(ret_total_error, ' Dataset chunk cache configuration', total_error)
 
-!     write(*,*)
-!     write(*,*) '========================================='
-!     write(*,*) 'Testing ATTRIBUTE interface              '
-!     write(*,*) '========================================='
+!     
+!      '========================================='
+!      'Testing ATTRIBUTE interface              '
+!      '========================================='
 
   ret_total_error = 0
   CALL attribute_test(cleanup, ret_total_error)
   CALL write_test_status(ret_total_error, ' Attribute test', total_error)
 
-!     write(*,*)
-!     write(*,*) '========================================='
-!     write(*,*) 'Testing IDENTIFIER interface             '
-!     write(*,*) '========================================='
+!     
+!      '========================================='
+!      'Testing IDENTIFIER interface             '
+!      '========================================='
 
   ret_total_error = 0
   CALL identifier_test(cleanup, ret_total_error)
@@ -214,10 +217,10 @@ PROGRAM fortranlibtest
      CALL write_test_status(ret_total_error, ' SZIP filter test', total_error)
   ENDIF
 
-!     write(*,*)
-!     write(*,*) '========================================='
-!     write(*,*) 'Testing GROUP interface             '
-!     write(*,*) '========================================='
+!     
+!      '========================================='
+!      'Testing GROUP interface                  '
+!      '========================================='
 
   ret_total_error = 0
   CALL group_test(cleanup, ret_total_error)

@@ -5,12 +5,10 @@
 #
 # This file is part of HDF5.  The full HDF5 copyright notice, including
 # terms governing use, modification, and redistribution, is contained in
-# the files COPYING and Copyright.html.  COPYING can be found at the root
-# of the source code distribution tree; Copyright.html can be found at the
-# root level of an installed copy of the electronic HDF5 document set and
-# is linked from the top-level documents page.  It can also be found at
-# http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have
-# access to either file, you may request a copy from help@hdfgroup.org.
+# the COPYING file, which can be found at the root of the source code
+# distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.
+# If you do not have access to either file, you may request a copy from
+# help@hdfgroup.org.
 #
 ##
 ## Makefile.am
@@ -42,15 +40,30 @@ endif
 
 # Source files for the library
 #if BUILD_PARALLEL_CONDITIONAL
-#    PARALLEL_COND_SRC=HDFDmpiof.c HDF5mpio.f90
+#    PARALLEL_COND_SRC=HDFDmpiof.c HDF5mpio.F90
 #endif
 
 # List sources to include in the HDF5 HL Fortran library.
-libhdf5hl_fortran_la_SOURCES=H5DSfc.c H5LTfc.c  H5IMfc.c H5IMcc.c H5TBfc.c \
-	H5DSff.f90 H5LTff.f90 H5IMff.f90 H5TBff.f90
+libhdf5hl_fortran_la_SOURCES=H5DSfc.c H5LTfc.c H5IMfc.c H5IMcc.c H5TBfc.c \
+	H5DSff.F90 H5LTff.F90 H5TBff.F90 H5IMff.F90 H5LTff_gen.F90 H5TBff_gen.F90
 
-# HDF5 HL Fortran library depends on HDF5 Library. 
+# HDF5 HL Fortran library depends on HDF5 Library.
 libhdf5hl_fortran_la_LIBADD=$(LIBH5_HL) $(LIBH5F)
+
+# The name of the lib file doesn't follow the same pattern as the other hl lib
+# files, namely libhdf5_hl_*.  Add a symlink with the compliant name to the
+# actual lib file.
+install-exec-hook:
+	cd $(DESTDIR)$(libdir) && \
+	    if test -f libhdf5hl_fortran.a -a \
+	    ! -f libhdf5_hl_fortran.a; then \
+	        $(LN_S) libhdf5hl_fortran.a libhdf5_hl_fortran.a; \
+	    fi; \
+	    if test -f libhdf5hl_fortran.so -a \
+	    ! -f libhdf5_hl_fortran.so; then \
+	        $(LN_S) libhdf5hl_fortran.so libhdf5_hl_fortran.so; \
+	    fi;
+
 
 # Fortran module files can have different extensions and different names
 # (e.g., different capitalizations) on different platforms.  Write rules
@@ -60,7 +73,7 @@ maintainer-clean-local: clean-local
 distclean-local: clean-local
 clean-local:
 	@if test -n "$(F9XMODEXT)" && test "X$(F9XMODEXT)" != "Xo"; then \
-	  $(RM) *.$(F9XMODEXT);                                         \
+	  $(RM) *.$(F9XMODEXT) H5LTff_gen.F90 H5TBff_gen.F90; \
 	fi
 
 install-data-local:
@@ -74,14 +87,31 @@ uninstall-local:
 	    set -x; $(RM) $(includedir)/*.$(F9XMODEXT);                 \
 	  fi;                                                           \
 	fi
+	$(RM) $(DESTDIR)$(libdir)/libhdf5_hl_fortran*
 
+# These are the helper programs we need to build.
+noinst_PROGRAMS = H5HL_buildiface
+
+# H5HL_buildiface.F90 generates all the APIs that have a KIND type associated
+# with them.
+
+H5LTff_gen.F90: H5HL_buildiface$(EXEEXT)
+	$(RUNSERIAL) ./H5HL_buildiface$(EXEEXT)
+
+H5TBff_gen.F90: H5HL_buildiface$(EXEEXT)
+
+# H5HL_buildiface.F90 is included in the distribution, and Automake knows
+# how to compile a fortran program given its sources.
+
+H5HL_buildiface_SOURCES = H5HL_buildiface.F90
 # Hardcode the dependencies of these files. There isn't a known way of
 # determining this automagically (like we do with the C files). So, when
 # doing a parallel make, some modules could be made way before the
 # modules they depend upon are actually made. *sigh*
-H5DSff.lo:          $(srcdir)/H5DSff.f90
-H5LTff.lo:          $(srcdir)/H5LTff.f90
-H5IMff.lo:          $(srcdir)/H5IMff.f90
-H5TBff.lo:          $(srcdir)/H5TBff.f90
-
-include $(top_srcdir)/config/conclude.am
+H5DSff.lo:          $(srcdir)/H5DSff.F90
+H5LTff.lo:          $(srcdir)/H5LTff.F90
+H5IMff.lo:          $(srcdir)/H5IMff.F90
+H5TBff.lo:          $(srcdir)/H5TBff.F90
+H5LTff_gen.lo:      H5LTff.lo H5LTff_gen.F90
+H5TBff_gen.lo:      H5TBff.lo H5LTff_gen.F90 H5TBff_gen.F90
+include $(top_srcdir)/config/conclude_fc.am

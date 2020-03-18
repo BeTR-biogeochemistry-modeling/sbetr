@@ -5,12 +5,10 @@
 #
 # This file is part of HDF5.  The full HDF5 copyright notice, including
 # terms governing use, modification, and redistribution, is contained in
-# the files COPYING and Copyright.html.  COPYING can be found at the root
-# of the source code distribution tree; Copyright.html can be found at the
-# root level of an installed copy of the electronic HDF5 document set and
-# is linked from the top-level documents page.  It can also be found at
-# http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have
-# access to either file, you may request a copy from help@hdfgroup.org.
+# the COPYING file, which can be found at the root of the source code
+# distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.
+# If you do not have access to either file, you may request a copy from
+# help@hdfgroup.org.
 #
 # 
 # This makefile mostly just reinvokes make in the various subdirectories
@@ -33,11 +31,27 @@ endif
 if BUILD_CXX_CONDITIONAL
   CXX_DIR = c++
 endif
+if BUILD_TESTS_CONDITIONAL
+  TEST_DIR = test
+else
+  TEST_DIR =
+endif
+if BUILD_TOOLS_CONDITIONAL
+  TOOLS_DIR = tools
+else
+  TOOLS_DIR =
+endif
 
 ## Don't recurse into any subdirectories if HDF5 is not configured to
 ## use the HL library
 if BUILD_HDF5_HL_CONDITIONAL
-   SUBDIRS=src test tools $(CXX_DIR) $(FORTRAN_DIR)
+   SUBDIRS=src $(TEST_DIR) $(TOOLS_DIR) $(CXX_DIR) $(FORTRAN_DIR)
+
+# Test with just the native connector, with a single pass-through connector
+# and with a doubly-stacked pass-through.
+VOL_LIST = native "pass_through under_vol=0;under_info={}" \
+           "pass_through under_vol=505;under_info={under_vol=0;under_info={}}"
+
 endif
 DIST_SUBDIRS=src test tools c++ fortran examples
 

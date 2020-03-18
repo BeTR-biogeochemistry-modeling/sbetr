@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /* common definitions used by all parallel test programs. */
@@ -34,7 +32,7 @@
  */
 #define MESG(mesg)                                                     \
     if (VERBOSE_MED && *mesg != '\0')                                  \
-	printf("%s\n", mesg)
+        HDprintf("%s\n", mesg)
 
 /* 
  * VRFY: Verify if the condition val is true.
@@ -46,22 +44,26 @@
  * This will allow program to continue and can be used for debugging.
  * (The "do {...} while(0)" is to group all the statements as one unit.)
  */
-#define VRFY(val, mesg) do {                                            \
+#define VRFY_IMPL(val, mesg, rankvar) do {                              \
     if (val) {                                                          \
-	MESG(mesg);                                                     \
-    } else {                                                            \
-        printf("Proc %d: ", mpi_rank);                                  \
-        printf("*** Parallel ERROR ***\n");                             \
-        printf("    VRFY (%s) failed at line %4d in %s\n",              \
+        MESG(mesg);                                                     \
+    }                                                                   \
+    else {                                                              \
+        HDprintf("Proc %d: ", rankvar);                                 \
+        HDprintf("*** Parallel ERROR ***\n");                           \
+        HDprintf("    VRFY (%s) failed at line %4d in %s\n",            \
                mesg, (int)__LINE__, __FILE__);                          \
         ++nerrors;                                                      \
         fflush(stdout);                                                 \
         if (!VERBOSE_MED) {                                             \
-            printf("aborting MPI processes\n");                         \
+            HDprintf("aborting MPI processes\n");                       \
             MPI_Abort(MPI_COMM_WORLD, 1);                               \
         }                                                               \
     }                                                                   \
 } while(0)
+
+#define VRFY_G(val, mesg) VRFY_IMPL(val, mesg, mpi_rank_g)
+#define VRFY(val, mesg) VRFY_IMPL(val, mesg, mpi_rank)
 
 /*
  * Checking for information purpose.
@@ -72,9 +74,9 @@
     if (val) {                                                          \
 	MESG(mesg);                                                 \
     } else {                                                            \
-        printf("Proc %d: ", mpi_rank);                                  \
-        printf("*** PHDF5 REMARK (not an error) ***\n");                \
-        printf("        Condition (%s) failed at line %4d in %s\n",     \
+        HDprintf("Proc %d: ", mpi_rank);                                  \
+        HDprintf("*** PHDF5 REMARK (not an error) ***\n");                \
+        HDprintf("        Condition (%s) failed at line %4d in %s\n",     \
                mesg, (int)__LINE__, __FILE__);                          \
         fflush(stdout);                                                 \
     }                                                                   \
@@ -82,10 +84,10 @@
 
 #define MPI_BANNER(mesg) do {                                           \
     if (VERBOSE_MED || MAINPROCESS){                                    \
-	printf("--------------------------------\n");                   \
-	printf("Proc %d: ", mpi_rank);                                  \
-	printf("*** %s\n", mesg);                                       \
-	printf("--------------------------------\n");                   \
+	HDprintf("--------------------------------\n");                   \
+	HDprintf("Proc %d: ", mpi_rank);                                  \
+	HDprintf("*** %s\n", mesg);                                       \
+	HDprintf("--------------------------------\n");                   \
     }                                                                   \
 } while(0)
 

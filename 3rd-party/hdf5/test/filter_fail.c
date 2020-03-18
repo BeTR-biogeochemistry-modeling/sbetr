@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /*
@@ -22,7 +20,6 @@
  */
 
 #include "h5test.h"
-#include "H5srcdir.h"
 
 #define DSET_NAME 		"dset_fail"
 #define H5Z_FILTER_FAIL_TEST    312
@@ -273,15 +270,15 @@ test_filter_read(char *file_name, hid_t my_fapl)
     for(i = 0; i < DIM; i++) {
         if(i < DIM-2 && rbuf[i] != i) {
             H5_FAILED();
-            printf("    Read different values than written.\n");
-            printf("    At index %d\n", i);
-            printf("    rbuf[%d]=%d\n", i, rbuf[i]);
+            HDprintf("    Read different values than written.\n");
+            HDprintf("    At index %d\n", i);
+            HDprintf("    rbuf[%d]=%d\n", i, rbuf[i]);
             TEST_ERROR
         } else if(i >= DIM-2 && rbuf[i] != 0) {
             H5_FAILED();
-            printf("    No value should be read.\n");
-            printf("    At index %d\n", i);
-            printf("    rbuf[%d]=%d\n", i, rbuf[i]);
+            HDprintf("    No value should be read.\n");
+            HDprintf("    At index %d\n", i);
+            HDprintf("    rbuf[%d]=%d\n", i, rbuf[i]);
             TEST_ERROR
         }
     }
@@ -313,15 +310,15 @@ test_filter_read(char *file_name, hid_t my_fapl)
     for(i = 0; i < DIM; i+=2) {
         if(i < DIM-2 && rbuf[i] != i) {
             H5_FAILED();
-            printf("    Read different values than written.\n");
-            printf("    At index %d\n", i);
-            printf("    rbuf[%d]=%d\n", i, rbuf[i]);
+            HDprintf("    Read different values than written.\n");
+            HDprintf("    At index %d\n", i);
+            HDprintf("    rbuf[%d]=%d\n", i, rbuf[i]);
             TEST_ERROR
         } else if(i >= DIM-2 && rbuf[i] != 0) {
             H5_FAILED();
-            printf("    No value should be read.\n");
-            printf("    At index %d\n", i);
-            printf("    rbuf[%d]=%d\n", i, rbuf[i]);
+            HDprintf("    No value should be read.\n");
+            HDprintf("    At index %d\n", i);
+            HDprintf("    rbuf[%d]=%d\n", i, rbuf[i]);
             TEST_ERROR
         }
     }
@@ -350,17 +347,15 @@ error:
  * Purpose:     Tests the library's behavior when a mandate filter returns 
  *              failure.
  *
- * Return:      Success:        exit(0)
- *              Failure:        exit(1)
+ * Return:      EXIT_SUCCESS/EXIT_FAILURE
  * 
  * Programmer:  Raymond Lu
  *              25 August 2010
  *
- * Modifications:
- *
  *-------------------------------------------------------------------------
  */
-int main(void)
+int
+main(void)
 {
     hid_t       fapl;
     int         mdc_nelmts  = 0;
@@ -401,12 +396,12 @@ int main(void)
 
     if (nerrors) TEST_ERROR
 
-    return 0;
+    HDexit(EXIT_SUCCESS);
 
 error:
     if (nerrors) {
-        printf("***** %u FAILURE%s! *****\n",
+        HDprintf("***** %u FAILURE%s! *****\n",
                nerrors, 1==nerrors?"":"S");
-        HDexit(1);
+        HDexit(EXIT_FAILURE);
     }
-}
+} /* end main() */

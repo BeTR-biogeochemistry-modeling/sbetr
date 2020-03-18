@@ -1,5 +1,6 @@
-cmake_minimum_required (VERSION 3.1.0)
-PROJECT (HDF5_CPP_TEST)
+cmake_minimum_required (VERSION 3.12)
+project (HDF5_CPP_TEST CXX)
+
 # --------------------------------------------------------------------
 # Notes: When creating unit test executables they should be prefixed
 # with "cpp_". This allows for easier filtering of the test suite when
@@ -11,14 +12,16 @@ PROJECT (HDF5_CPP_TEST)
 #-----------------------------------------------------------------------------
 # Define Sources
 #-----------------------------------------------------------------------------
-set (CPP_TEST_SRCS
+set (CPP_TEST_SOURCES
     ${HDF5_CPP_TEST_SOURCE_DIR}/testhdf5.cpp
+    ${HDF5_CPP_TEST_SOURCE_DIR}/tarray.cpp
     ${HDF5_CPP_TEST_SOURCE_DIR}/tattr.cpp
     ${HDF5_CPP_TEST_SOURCE_DIR}/tcompound.cpp
     ${HDF5_CPP_TEST_SOURCE_DIR}/tdspl.cpp
     ${HDF5_CPP_TEST_SOURCE_DIR}/tfile.cpp
     ${HDF5_CPP_TEST_SOURCE_DIR}/tfilter.cpp
     ${HDF5_CPP_TEST_SOURCE_DIR}/th5s.cpp
+    ${HDF5_CPP_TEST_SOURCE_DIR}/titerate.cpp
     ${HDF5_CPP_TEST_SOURCE_DIR}/tlinks.cpp
     ${HDF5_CPP_TEST_SOURCE_DIR}/tobject.cpp
     ${HDF5_CPP_TEST_SOURCE_DIR}/trefer.cpp
@@ -34,24 +37,25 @@ set (CPP_TEST_SRCS
 set (srcdir ${CMAKE_CURRENT_SOURCE_DIR})
 configure_file (${HDF5_CPP_TEST_SOURCE_DIR}/H5srcdir_str.h.in H5srcdir_str.h  @ONLY)
 
-add_executable (cpp_testhdf5 ${CPP_TEST_SRCS} )
-TARGET_NAMING (cpp_testhdf5 STATIC)
-TARGET_C_PROPERTIES (cpp_testhdf5 STATIC " " " ")
-target_link_libraries (cpp_testhdf5
-    ${HDF5_CPP_LIB_TARGET}
-    ${HDF5_LIB_TARGET}
-    ${HDF5_TEST_LIB_TARGET}
+add_executable (cpp_testhdf5 ${CPP_TEST_SOURCES} )
+target_include_directories (cpp_testhdf5 PRIVATE "${HDF5_SRC_DIR};${HDF5_BINARY_DIR};${HDF5_TEST_BINARY_DIR};$<$<BOOL:${HDF5_ENABLE_PARALLEL}>:${MPI_C_INCLUDE_DIRS}>")
+target_compile_definitions(cpp_testhdf5
+    PRIVATE $<$<BOOL:${HDF5_ENABLE_PARALLEL}>:MPICH_SKIP_MPICXX;MPICH_IGNORE_CXX_SEEK># Parallel/MPI, prevent spurious cpp/cxx warnings
 )
-set_target_properties (cpp_testhdf5 PROPERTIES
-    FOLDER test/cpp
-    INTERFACE_INCLUDE_DIRECTORIES "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/include>"
-)
+if (NOT BUILD_SHARED_LIBS)
+  TARGET_C_PROPERTIES (cpp_testhdf5 STATIC)
+  target_link_libraries (cpp_testhdf5 PRIVATE ${HDF5_CPP_LIB_TARGET} ${HDF5_LIB_TARGET} ${HDF5_TEST_LIB_TARGET})
+else ()
+  TARGET_C_PROPERTIES (cpp_testhdf5 SHARED)
+  target_link_libraries (cpp_testhdf5 PRIVATE ${HDF5_CPP_LIBSH_TARGET} ${HDF5_LIBSH_TARGET} ${HDF5_TEST_LIBSH_TARGET})
+  if (MINGW)
+    target_link_options (${HDF5_CPP_LIBSH_TARGET}
+        PRIVATE -static-libgcc -static-libstdc++
+    )
+  endif ()
+endif ()
+set_target_properties (cpp_testhdf5 PROPERTIES FOLDER test/cpp)
 
-add_custom_command (
-    TARGET     cpp_testhdf5
-    POST_BUILD
-    COMMAND    ${CMAKE_COMMAND}
-    ARGS       -E copy_if_different ${HDF5_CPP_TEST_SOURCE_DIR}/th5s.h5 ${PROJECT_BINARY_DIR}/th5s.h5
-)
-
-include (CMakeTests.cmake)
+if (HDF5_TEST_CPP AND HDF5_TEST_SERIAL)
+  include (CMakeTests.cmake)
+endif ()

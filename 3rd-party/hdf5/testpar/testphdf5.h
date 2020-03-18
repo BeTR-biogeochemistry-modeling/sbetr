@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /* common definitions used by all parallel hdf5 test programs. */
@@ -21,7 +19,7 @@
 #include "testpar.h"
 
 enum H5TEST_COLL_CHUNK_API {API_NONE=0,API_LINK_HARD,
-	                    API_MULTI_HARD,API_LINK_TRUE,API_LINK_FALSE,
+                        API_MULTI_HARD,API_LINK_TRUE,API_LINK_FALSE,
                             API_MULTI_COLL,API_MULTI_IND};
 
 #ifndef FALSE
@@ -34,20 +32,20 @@ enum H5TEST_COLL_CHUNK_API {API_NONE=0,API_LINK_HARD,
 
 
 /* Constants definitions */
-#define DIM0		600 	/* Default dataset sizes. */
-#define DIM1		1200	/* Values are from a monitor pixel sizes */
-#define ROW_FACTOR	8 	/* Nominal row factor for dataset size */
-#define COL_FACTOR	16	/* Nominal column factor for dataset size */
-#define RANK		2
-#define DATASETNAME1	"Data1"
-#define DATASETNAME2	"Data2"
-#define DATASETNAME3	"Data3"
-#define DATASETNAME4	"Data4"
-#define DATASETNAME5	"Data5"
-#define DATASETNAME6	"Data6"
-#define DATASETNAME7	"Data7"
-#define DATASETNAME8	"Data8"
-#define DATASETNAME9	"Data9"
+#define DIM0        600     /* Default dataset sizes. */
+#define DIM1        1200    /* Values are from a monitor pixel sizes */
+#define ROW_FACTOR    8     /* Nominal row factor for dataset size */
+#define COL_FACTOR    16    /* Nominal column factor for dataset size */
+#define RANK        2
+#define DATASETNAME1    "Data1"
+#define DATASETNAME2    "Data2"
+#define DATASETNAME3    "Data3"
+#define DATASETNAME4    "Data4"
+#define DATASETNAME5    "Data5"
+#define DATASETNAME6    "Data6"
+#define DATASETNAME7    "Data7"
+#define DATASETNAME8    "Data8"
+#define DATASETNAME9    "Data9"
 
 /* point selection order */
 #define IN_ORDER 1
@@ -181,14 +179,14 @@ enum H5TEST_COLL_CHUNK_API {API_NONE=0,API_LINK_HARD,
 
 /* Definitions of the selection mode for the no_collective_cause_tests function. */
 #define TEST_COLLECTIVE                                 0x001
-#define TEST_SET_INDEPENDENT                            0x002 
+#define TEST_SET_INDEPENDENT                            0x002
 #define TEST_DATATYPE_CONVERSION                        0x004
 #define TEST_DATA_TRANSFORMS                            0x008
 #define TEST_NOT_SIMPLE_OR_SCALAR_DATASPACES            0x010
 #define TEST_NOT_CONTIGUOUS_OR_CHUNKED_DATASET_COMPACT  0x020
 #define TEST_NOT_CONTIGUOUS_OR_CHUNKED_DATASET_EXTERNAL 0x040
 #define TEST_FILTERS                                    0x080
-/* TEST_FILTERS will take place of this after supporting mpio + filter for 
+/* TEST_FILTERS will take place of this after supporting mpio + filter for
  * H5Dcreate and H5Dwrite */
 #define TEST_FILTERS_READ                               0x100
 
@@ -211,8 +209,8 @@ enum H5TEST_COLL_CHUNK_API {API_NONE=0,API_LINK_HARD,
 /* type definitions */
 typedef struct H5Ptest_param_t  /* holds extra test parameters */
 {
-    char	*name;
-    int		count;
+    char    *name;
+    int        count;
 } H5Ptest_param_t;
 
 /* Dataset data type.  Int's can be easily octo dumped. */
@@ -220,30 +218,34 @@ typedef int DATATYPE;
 
 /* Shape Same Tests Definitions */
 typedef enum {
-    IND_CONTIG,		/* Independent IO on contigous datasets */
-    COL_CONTIG,		/* Collective IO on contigous datasets */
-    IND_CHUNKED,	/* Independent IO on chunked datasets */
-    COL_CHUNKED		/* Collective IO on chunked datasets */
+    IND_CONTIG,        /* Independent IO on contigous datasets */
+    COL_CONTIG,        /* Collective IO on contigous datasets */
+    IND_CHUNKED,    /* Independent IO on chunked datasets */
+    COL_CHUNKED        /* Collective IO on chunked datasets */
 } ShapeSameTestMethods;
 
 /* Shared global variables */
-extern int dim0, dim1;				/*Dataset dimensions */
-extern int chunkdim0, chunkdim1;		/*Chunk dimensions */
-extern int nerrors;				/*errors count */
-extern H5E_auto2_t old_func;			/* previous error handler */
-extern void *old_client_data;			/*previous error handler arg.*/
-extern int facc_type;				/*Test file access type */
+extern int dim0, dim1;                /*Dataset dimensions */
+extern int chunkdim0, chunkdim1;        /*Chunk dimensions */
+extern int nerrors;                /*errors count */
+extern H5E_auto2_t old_func;            /* previous error handler */
+extern void *old_client_data;            /*previous error handler arg.*/
+extern int facc_type;                /*Test file access type */
 extern int dxfer_coll_type;
 
 /* Test program prototypes */
+void test_plist_ed(void);
 void zero_dim_dset(void);
+void test_file_properties(void);
 void multiple_dset_write(void);
 void multiple_group_write(void);
 void multiple_group_read(void);
+void collective_group_write_independent_group_read(void);
 void collective_group_write(void);
 void independent_group_read(void);
 void test_fapl_mpio_dup(void);
 void test_split_comm_access(void);
+void test_page_buffer_access(void);
 void dataset_atomicity(void);
 void dataset_writeInd(void);
 void dataset_writeAll(void);
@@ -283,6 +285,7 @@ void io_mode_confusion(void);
 void rr_obj_hdr_flush_confusion(void);
 void rr_obj_hdr_flush_confusion_reader(MPI_Comm comm);
 void rr_obj_hdr_flush_confusion_writer(MPI_Comm comm);
+void chunk_align_bug_1(void);
 void lower_dim_size_comp_test(void);
 void link_chunk_collective_io_test(void);
 void contig_hyperslab_dr_pio_test(ShapeSameTestMethods sstest_type);
@@ -292,6 +295,9 @@ void file_image_daisy_chain_test(void);
 void compress_readAll(void);
 #endif /* H5_HAVE_FILTER_DEFLATE */
 void test_dense_attr(void);
+void test_partial_no_selection_coll_md_read(void);
+void test_multi_chunk_io_addrmap_issue(void);
+void test_link_chunk_io_sort_chunk_issue(void);
 
 /* commonly used prototypes */
 hid_t create_faccess_plist(MPI_Comm comm, MPI_Info info, int l_facc_type);

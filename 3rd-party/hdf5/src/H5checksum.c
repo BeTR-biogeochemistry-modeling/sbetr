@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /*-------------------------------------------------------------------------
@@ -409,16 +407,27 @@ H5_checksum_lookup3(const void *key, size_t length, uint32_t initval)
     switch(length)                   /* all the case statements fall through */
     {
         case 12: c+=((uint32_t)k[11])<<24;
+                H5_ATTR_FALLTHROUGH
         case 11: c+=((uint32_t)k[10])<<16;
+                H5_ATTR_FALLTHROUGH
         case 10: c+=((uint32_t)k[9])<<8;
+                H5_ATTR_FALLTHROUGH
         case 9 : c+=k[8];
+                H5_ATTR_FALLTHROUGH
         case 8 : b+=((uint32_t)k[7])<<24;
+                H5_ATTR_FALLTHROUGH
         case 7 : b+=((uint32_t)k[6])<<16;
+                H5_ATTR_FALLTHROUGH
         case 6 : b+=((uint32_t)k[5])<<8;
+                H5_ATTR_FALLTHROUGH
         case 5 : b+=k[4];
+                H5_ATTR_FALLTHROUGH
         case 4 : a+=((uint32_t)k[3])<<24;
+                H5_ATTR_FALLTHROUGH
         case 3 : a+=((uint32_t)k[2])<<16;
+                H5_ATTR_FALLTHROUGH
         case 2 : a+=((uint32_t)k[1])<<8;
+                H5_ATTR_FALLTHROUGH
         case 1 : a+=k[0];
                  break;
         case 0 : goto done;

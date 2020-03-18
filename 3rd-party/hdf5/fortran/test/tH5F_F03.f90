@@ -1,7 +1,7 @@
-!****h* root/fortran/test/tH5F_F03.f90
+!****h* root/fortran/test/tH5F_F03
 !
 ! NAME
-!  tH5F_F03.f90
+!  tH5F_F03.F90
 !
 ! FUNCTION
 !  Test FORTRAN HDF5 H5F APIs which are dependent on FORTRAN 2003
@@ -15,12 +15,10 @@
 !                                                                             *
 !   This file is part of HDF5.  The full HDF5 copyright notice, including     *
 !   terms governing use, modification, and redistribution, is contained in    *
-!   the files COPYING and Copyright.html.  COPYING can be found at the root   *
-!   of the source code distribution tree; Copyright.html can be found at the  *
-!   root level of an installed copy of the electronic HDF5 document set and   *
-!   is linked from the top-level documents page.  It can also be found at     *
-!   http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
-!   access to either file, you may request a copy from help@hdfgroup.org.     *
+!   the COPYING file, which can be found at the root of the source code       *
+!   distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+!   If you do not have access to either file, you may request a copy from     *
+!   help@hdfgroup.org.                                                        *
 ! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 !
 ! NOTES
@@ -38,16 +36,17 @@
 
 MODULE TH5F_F03
 
+  USE HDF5
+  USE TH5_MISC 
+  USE TH5_MISC_GEN 
+  USE ISO_C_BINDING
+
 CONTAINS
 
 SUBROUTINE test_get_file_image(total_error)
   !
   !  Tests the wrapper for h5fget_file_image
   !
-  USE HDF5
-  USE TH5_MISC 
-  USE ISO_C_BINDING
-
   IMPLICIT NONE
 
   INTEGER, INTENT(INOUT) :: total_error ! returns error
@@ -56,12 +55,13 @@ SUBROUTINE test_get_file_image(total_error)
   CHARACTER(kind=c_char), ALLOCATABLE, DIMENSION(:), TARGET :: image_ptr ! Image from h5fget_file_image_f
 
   INTEGER, DIMENSION(1:100), TARGET :: data ! Write data
-  INTEGER :: i, file_sz
+  INTEGER :: file_sz
+  INTEGER(size_t) :: i
   INTEGER(hid_t) :: file_id = -1  ! File identifier
   INTEGER(hid_t) :: dset_id = -1  ! Dataset identifier
   INTEGER(hid_t) :: space_id = -1 ! Dataspace identifier
   INTEGER(hsize_t), DIMENSION(1:2) :: dims  ! Dataset dimensions
-  INTEGER(size_t) :: itmp_a, itmp_b ! General purpose integers
+  INTEGER(size_t) :: itmp_a ! General purpose integer
   INTEGER(size_t) :: image_size     ! Size of image
   TYPE(C_PTR) :: f_ptr            ! Pointer
   INTEGER(hid_t) :: fapl          ! File access property
@@ -91,7 +91,7 @@ SUBROUTINE test_get_file_image(total_error)
 
   ! Write some data to the data set 
   DO i = 1, 100
-     data(i) = i
+     data(i) = INT(i)
   ENDDO
   
   f_ptr = C_LOC(data(1))
@@ -128,8 +128,8 @@ SUBROUTINE test_get_file_image(total_error)
   itmp_a = 1
   CALL h5fget_file_image_f(file_id, f_ptr, itmp_a, error, image_size)
   CALL check("h5fget_file_image_f",error, total_error)
-  CALL VERIFY("h5fget_file_image_f", INT(itmp_a), 1, total_error) ! Routine should not change the value
-  CALL VERIFY("h5fget_file_image_f", file_sz, INT(image_size), total_error)
+  CALL verify("h5fget_file_image_f", INT(itmp_a), 1, total_error) ! Routine should not change the value
+  CALL verify("h5fget_file_image_f", file_sz, INT(image_size), total_error)
 
   ! Allocate a buffer of the appropriate size 
   ALLOCATE(image_ptr(1:image_size))

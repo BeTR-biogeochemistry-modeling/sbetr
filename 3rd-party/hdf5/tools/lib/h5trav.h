@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #ifndef H5TRAV_H__
@@ -19,9 +17,9 @@
 #include "hdf5.h"
 
 /* Typedefs for visiting objects */
-typedef herr_t (*h5trav_obj_func_t)(const char *path_name, const H5O_info_t *oinfo,
+typedef herr_t (*h5trav_obj_func_t)(const char *path_name, const H5O_info2_t *oinfo,
         const char *first_seen, void *udata);
-typedef herr_t (*h5trav_lnk_func_t)(const char *path_name, const H5L_info_t *linfo,
+typedef herr_t (*h5trav_lnk_func_t)(const char *path_name, const H5L_info2_t *linfo,
         void *udata);
 
 /*-------------------------------------------------------------------------
@@ -67,7 +65,7 @@ typedef struct symlink_trav_t {
 typedef struct trav_path_t {
     char      *path;
     h5trav_type_t type;
-    haddr_t     objno;     /* object address */
+    H5O_token_t   obj_token; /* object token */
     unsigned long 	fileno; /* File number that object is located in */
 } trav_path_t;
 
@@ -97,7 +95,7 @@ typedef struct trav_link_t {
  */
 
 typedef struct trav_obj_t {
-    haddr_t     objno;     /* object address */
+    H5O_token_t   obj_token; /* object token */
     unsigned    flags[2];  /* h5diff.object is present or not in both files*/
     hbool_t     is_same_trgobj; /* same target object? no need to compare */
     char        *name;     /* name */
@@ -114,6 +112,7 @@ typedef struct trav_obj_t {
  */
 
 typedef struct trav_table_t {
+    hid_t       fid;
     size_t      size;
     size_t      nobjs;
     trav_obj_t *objs;
@@ -136,7 +135,7 @@ extern "C" {
 H5TOOLS_DLL void h5trav_set_index(H5_index_t print_index_by, H5_iter_order_t print_index_order);
 H5TOOLS_DLL int h5trav_visit(hid_t file_id, const char *grp_name, 
     hbool_t visit_start, hbool_t recurse, h5trav_obj_func_t visit_obj, 
-    h5trav_lnk_func_t visit_lnk, void *udata);
+    h5trav_lnk_func_t visit_lnk, void *udata, unsigned fields);
 H5TOOLS_DLL herr_t symlink_visit_add(symlink_trav_t *visited, H5L_type_t type, const char *file, const char *path);
 H5TOOLS_DLL hbool_t symlink_is_visited(symlink_trav_t *visited, H5L_type_t type, const char *file, const char *path);
 
@@ -146,8 +145,8 @@ H5TOOLS_DLL hbool_t symlink_is_visited(symlink_trav_t *visited, H5L_type_t type,
  */
 H5TOOLS_DLL int h5trav_getinfo(hid_t file_id, trav_info_t *info);
 H5TOOLS_DLL ssize_t h5trav_getindex(const trav_info_t *info, const char *obj);
-H5TOOLS_DLL int trav_info_visit_obj (const char *path, const H5O_info_t *oinfo, const char *already_visited, void *udata);
-H5TOOLS_DLL int trav_info_visit_lnk (const char *path, const H5L_info_t *linfo, void *udata);
+H5TOOLS_DLL int trav_info_visit_obj(const char *path, const H5O_info2_t *oinfo, const char *already_visited, void *udata);
+H5TOOLS_DLL int trav_info_visit_lnk(const char *path, const H5L_info2_t *linfo, void *udata);
 
 /*-------------------------------------------------------------------------
  * "h5trav table" public functions
@@ -186,7 +185,7 @@ H5TOOLS_DLL void trav_fileinfo_add(trav_info_t *info, hid_t loc_id);
  *-------------------------------------------------------------------------
  */
 
-H5TOOLS_DLL void trav_table_init(trav_table_t **table);
+H5TOOLS_DLL void trav_table_init(hid_t fid, trav_table_t **table);
 
 H5TOOLS_DLL void trav_table_free(trav_table_t *table);
 

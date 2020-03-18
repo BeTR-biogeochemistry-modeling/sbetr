@@ -6,12 +6,10 @@
 #
 # This file is part of HDF5.  The full HDF5 copyright notice, including
 # terms governing use, modification, and redistribution, is contained in
-# the files COPYING and Copyright.html.  COPYING can be found at the root
-# of the source code distribution tree; Copyright.html can be found at the
-# root level of an installed copy of the electronic HDF5 document set and
-# is linked from the top-level documents page.  It can also be found at
-# http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have
-# access to either file, you may request a copy from help@hdfgroup.org.
+# the COPYING file, which can be found at the root of the source code
+# distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.
+# If you do not have access to either file, you may request a copy from
+# help@hdfgroup.org.
 #
 # Tests for the h5c++ compiler tool
 # Created: Albert Cheng, 2007/3/14
@@ -27,8 +25,7 @@ EXIT_SUCCESS=0
 EXIT_FAILURE=1
 
 # Where the tool is installed.
-# Note: no '/' after DESTDIR.  Explanation in commence.am
-prefix="${prefix:-${DESTDIR}@prefix@}"
+prefix="${prefix:-@prefix@}"
 AR="@AR@"
 RANLIB="@RANLIB@"
 H5TOOL="h5c++"           	# The tool name
@@ -59,7 +56,7 @@ applib=libapp${H5TOOL}.a
 # short hands
 # Caution: if some *.h5 files must be cleaned here, list them by names.
 # Don't use the wildcard form of *.h5 as it will wipe out even *.h5 generated
-# by otehr test programs. This will cause a racing condition error when
+# by other test programs. This will cause a racing condition error when
 # parallel make (e.g., gmake -j 4) is used.
 temp_SRC="$hdf5main $appmain $prog1 $prog2"
 temp_OBJ=`echo $temp_SRC | sed -e "s/\.${suffix}/.o/g"`

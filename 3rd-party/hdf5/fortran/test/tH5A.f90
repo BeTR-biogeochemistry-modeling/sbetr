@@ -14,12 +14,10 @@
 !                                                                             *
 !   This file is part of HDF5.  The full HDF5 copyright notice, including     *
 !   terms governing use, modification, and redistribution, is contained in    *
-!   the files COPYING and Copyright.html.  COPYING can be found at the root   *
-!   of the source code distribution tree; Copyright.html can be found at the  *
-!   root level of an installed copy of the electronic HDF5 document set and   *
-!   is linked from the top-level documents page.  It can also be found at     *
-!   http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
-!   access to either file, you may request a copy from help@hdfgroup.org.     *
+!   the COPYING file, which can be found at the root of the source code       *
+!   distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+!   If you do not have access to either file, you may request a copy from     *
+!   help@hdfgroup.org.                                                        *
 ! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 !
 ! CONTAINS SUBROUTINES
@@ -29,6 +27,10 @@
 !*****
 MODULE TH5A
 
+     USE HDF5 ! This module contains all necessary modules
+     USE TH5_MISC
+     USE TH5_MISC_GEN
+
 CONTAINS
     SUBROUTINE attribute_test(cleanup, total_error)
 
@@ -36,9 +38,6 @@ CONTAINS
 !   h5acreate_f,  h5awrite_f, h5aclose_f,h5aread_f, h5aopen_name_f,
 !   h5aget_name_f,h5aget_space_f, h5aget_type_f,
 !
-
-     USE HDF5 ! This module contains all necessary modules
-     USE TH5_MISC
      IMPLICIT NONE
      LOGICAL, INTENT(IN)  :: cleanup
      INTEGER, INTENT(INOUT) :: total_error
@@ -309,7 +308,7 @@ CONTAINS
      !
      CALL h5aget_storage_size_f(attr_id, attr_storage, error)
      CALL check("h5aget_storage_size_f",error,total_error)
-!     CALL VERIFY("h5aget_storage_size_f",attr_storage,*SizeOf(attr_storage),total_error)
+!     CALL verify("h5aget_storage_size_f",attr_storage,*SizeOf(attr_storage),total_error)
      CALL h5aget_storage_size_f(attr2_id, attr_storage, error)
      CALL check("h5aget_storage_size_f",error,total_error)
 !     CALL verify("h5aget_storage_size_f",attr_storage,1,total_error)
@@ -517,21 +516,15 @@ CONTAINS
      data_dims(1) = 1
      CALL h5aread_f(attr3_id, H5T_NATIVE_DOUBLE, aread_double_data, data_dims, error)
      CALL check("h5aread_f",error,total_error)
+     CALL VERIFY("Read back double attrbute is wrong", aread_double_data(1),3.459_Fortran_DOUBLE,total_error)
 
-     IF( .NOT.dreal_eq( REAL(aread_double_data(1),dp), 3.459_dp) )THEN
-        WRITE(*,*) "Read back double attrbute is wrong", aread_double_data(1)
-        total_error = total_error + 1
-     ENDIF
      !
      !read the real attribute data back to memory
      !
      data_dims(1) = 1
      CALL h5aread_f(attr4_id, H5T_NATIVE_REAL, aread_real_data, data_dims, error)
      CALL check("h5aread_f",error,total_error)
-     IF( .NOT.dreal_eq( REAL(aread_real_data(1),dp), 4.0_dp) )THEN
-        WRITE(*,*) "Read back real attrbute is wrong", aread_real_data(1)
-        total_error = total_error + 1
-     ENDIF
+     CALL VERIFY("Read back real attrbute is wrong", aread_real_data(1),4.0,total_error)
      !
      !read the Integer attribute data back to memory
      !

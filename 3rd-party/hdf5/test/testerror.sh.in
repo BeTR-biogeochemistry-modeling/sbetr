@@ -6,12 +6,10 @@
 #
 # This file is part of HDF5.  The full HDF5 copyright notice, including
 # terms governing use, modification, and redistribution, is contained in
-# the files COPYING and Copyright.html.  COPYING can be found at the root
-# of the source code distribution tree; Copyright.html can be found at the
-# root level of an installed copy of the electronic HDF5 document set and
-# is linked from the top-level documents page.  It can also be found at
-# http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have
-# access to either file, you may request a copy from help@hdfgroup.org.
+# the COPYING file, which can be found at the root of the source code
+# distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.
+# If you do not have access to either file, you may request a copy from
+# help@hdfgroup.org.
 #
 # Tests for test_error and err_compat 
 
@@ -24,7 +22,9 @@ CMP='cmp -s'
 DIFF='diff -c'
 
 # Skip plugin module to test missing filter
-ENVCMD="env HDF5_PLUGIN_PRELOAD=::"
+# Also reset the VOL connector to only use the native connector, because of the
+#       error stack checking.   QAK - 2019/03/09
+ENVCMD="env HDF5_PLUGIN_PRELOAD=:: HDF5_VOL_CONNECTOR=native"
 
 nerrors=0
 verbose=yes

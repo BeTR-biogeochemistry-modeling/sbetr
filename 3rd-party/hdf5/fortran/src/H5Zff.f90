@@ -4,29 +4,30 @@
 !  MODULE H5Z
 !
 ! PURPOSE
-!  This file contains Fortran interfaces for H5Z functions. It includes
-!  all the functions that are independent on whether the Fortran 2003 functions
-!  are enabled or disabled.
-!
+!  This file contains Fortran interfaces for H5Z functions.
 !
 ! COPYRIGHT
 !  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-!  Copyright by The HDF Group.                                               *
-!  Copyright by the Board of Trustees of the University of Illinois.         *
-!  All rights reserved.                                                      *
-!  *
-!  This file is part of HDF5.  The full HDF5 copyright notice, including     *
-!  terms governing use, modification, and redistribution, is contained in    *
-!  the files COPYING and Copyright.html.  COPYING can be found at the root   *
-!  of the source code distribution tree; Copyright.html can be found at the  *
-!  root level of an installed copy of the electronic HDF5 document set and   *
-!  is linked from the top-level documents page.  It can also be found at     *
-!  http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
-!  access to either file, you may request a copy from help@hdfgroup.org.     *
+!  Copyright by The HDF Group.                                                 *
+!  Copyright by the Board of Trustees of the University of Illinois.           *
+!  All rights reserved.                                                        *
+!                                                                              *
+!  This file is part of HDF5.  The full HDF5 copyright notice, including       *
+!  terms governing use, modification, and redistribution, is contained in      *
+!   the COPYING file, which can be found at the root of the source code       *
+!   distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+!   If you do not have access to either file, you may request a copy from     *
+!   help@hdfgroup.org.                                                        *
 !  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 !
-! NOTES
-!                         *** IMPORTANT ***
+! NOTES!
+!       _____ __  __ _____   ____  _____ _______       _   _ _______
+!      |_   _|  \/  |  __ \ / __ \|  __ \__   __|/\   | \ | |__   __|
+! ****   | | | \  / | |__) | |  | | |__) | | |  /  \  |  \| |  | |    ****
+! ****   | | | |\/| |  ___/| |  | |  _  /  | | / /\ \ | . ` |  | |    ****
+! ****  _| |_| |  | | |    | |__| | | \ \  | |/ ____ \| |\  |  | |    ****
+!      |_____|_|  |_|_|     \____/|_|  \_\ |_/_/    \_\_| \_|  |_|
+!
 !  If you add a new H5Z function you must add the function name to the
 !  Windows dll file 'hdf5_fortrandll.def.in' in the fortran/src directory.
 !  This is needed for Windows based operating systems.
@@ -48,7 +49,7 @@ CONTAINS
 !  Unregisters specified filetr
 !
 ! INPUTS
-!  filter - filter; may have one of the following values:
+!  filter - Filter; may have one of the following values:
 !            H5Z_FILTER_DEFLATE_F
 !            H5Z_FILTER_SZIP_F
 !            H5Z_FILTER_NBIT_F
@@ -57,7 +58,7 @@ CONTAINS
 !            H5Z_FILTER_FLETCHER32_F
 !            
 ! OUTPUTS
-!  hdferr - error code
+!  hdferr - Error code
 !            Success:  0
 !            Failure: -1
 !
@@ -69,18 +70,14 @@ CONTAINS
   SUBROUTINE h5zunregister_f(filter, hdferr)
     IMPLICIT NONE
     INTEGER, INTENT(IN)  :: filter
-    INTEGER, INTENT(OUT) :: hdferr  ! Error code
+    INTEGER, INTENT(OUT) :: hdferr
 !*****
     INTERFACE
-       INTEGER FUNCTION h5zunregister_c (filter)
-         USE H5GLOBAL
-         !DEC$IF DEFINED(HDF5F90_WINDOWS)
-         !DEC$ATTRIBUTES C,reference,decorate,alias:'H5ZUNREGISTER_C':: h5zunregister_c
-         !DEC$ENDIF
+       INTEGER FUNCTION h5zunregister_c(filter) BIND(C,NAME='h5zunregister_c')
          INTEGER, INTENT(IN) :: filter
        END FUNCTION h5zunregister_c
     END INTERFACE
-    hdferr = h5zunregister_c (filter)
+    hdferr = h5zunregister_c(filter)
   END SUBROUTINE h5zunregister_f
 
 !****s* H5Z/h5zfilter_avail_f
@@ -91,11 +88,17 @@ CONTAINS
 !  Queries if filter is available
 !
 ! INPUTS
-!  filter 	 - filter
+!  filter 	 - Filter; may be one of the following:
+!                   H5Z_FILTER_DEFLATE_F
+!                   H5Z_FILTER_SZIP_F
+!                   H5Z_FILTER_NBIT_F
+!                   H5Z_FILTER_SCALEOFFSET_F
+!                   H5Z_FILTER_SHUFFLE_F
+!                   H5Z_FILTER_FLETCHER32_F
 ! OUTPUTS
-!  status 	 - status; .TRUE. if filter is available,
+!  status 	 - Flag; .TRUE. if filter is available,
 !                  .FALSE. otherwise
-!  hdferr:	 - error code
+!  hdferr:	 - Error code
 !                   Success:  0
 !                   Failure: -1
 !
@@ -106,26 +109,15 @@ CONTAINS
 ! SOURCE
   SUBROUTINE h5zfilter_avail_f(filter, status, hdferr)
     IMPLICIT NONE
-    INTEGER, INTENT(IN)  :: filter      ! Filter; may be one of the following:
-                                        !   H5Z_FILTER_DEFLATE_F
-                                        !   H5Z_FILTER_SZIP_F
-                                        !   H5Z_FILTER_NBIT_F
-                                        !   H5Z_FILTER_SCALEOFFSET_F
-                                        !   H5Z_FILTER_SHUFFLE_F
-                                        !   H5Z_FILTER_FLETCHER32_F
-    LOGICAL, INTENT(OUT) :: status      ! Flag, idicates if filter
-                                        ! is availble  not ( TRUE or
-                                        ! FALSE)
-    INTEGER, INTENT(OUT) :: hdferr      ! Error code
+    INTEGER, INTENT(IN)  :: filter
+    LOGICAL, INTENT(OUT) :: status
+    INTEGER, INTENT(OUT) :: hdferr
 !*****
     INTEGER :: flag                     ! "TRUE/FALSE/ERROR from C"
 
     INTERFACE
-       INTEGER FUNCTION h5zfilter_avail_c(filter, flag)
-         USE H5GLOBAL
-         !DEC$IF DEFINED(HDF5F90_WINDOWS)
-         !DEC$ATTRIBUTES C,reference,decorate,alias:'H5ZFILTER_AVAIL_C'::h5zfilter_avail_c
-         !DEC$ENDIF
+       INTEGER FUNCTION h5zfilter_avail_c(filter, flag) BIND(C,NAME='h5zfilter_avail_c')
+         IMPLICIT NONE
          INTEGER, INTENT(IN) :: filter
          INTEGER :: flag
        END FUNCTION h5zfilter_avail_c
@@ -136,6 +128,7 @@ CONTAINS
     IF (flag .EQ. 0) status = .FALSE.
 
   END SUBROUTINE h5zfilter_avail_f
+
 !****s* H5Z/h5zget_filter_info_f
 !
 ! NAME
@@ -146,13 +139,20 @@ CONTAINS
 !  available
 !
 ! INPUTS
-!  filter 	 - filter
+!  filter 	 - Filter; may be one of the following:
+!                   H5Z_FILTER_DEFLATE_F
+!                   H5Z_FILTER_SZIP_F
+!                   H5Z_FILTER_NBIT_F
+!                   H5Z_FILTER_SCALEOFFSET_F
+!                   H5Z_FILTER_SHUFFLE_F
+!                   H5Z_FILTER_FLETCHER32_Ffilter
 ! OUTPUTS
-!  config_flags  - Bit vector possibly containing the
+!  config_flags  - Flag, indicates if filter has its encoder 
+!                  and/or decoder available, possibly containing the
 !                  following values:
 !                     H5Z_FILTER_ENCODE_ENABLED_F
 !                     H5Z_FILTER_DECODE_ENABLED_F
-!  hdferr:	 - error code
+!  hdferr:	 - Error code
 !                   Success:  0
 !                   Failure: -1
 !
@@ -162,25 +162,14 @@ CONTAINS
 ! SOURCE
   SUBROUTINE h5zget_filter_info_f(filter, config_flags, hdferr)
     IMPLICIT NONE
-    INTEGER, INTENT(IN)  :: filter      ! Filter; may be one of the following:
-                                        !   H5Z_FILTER_DEFLATE_F
-                                        !   H5Z_FILTER_SZIP_F
-                                        !   H5Z_FILTER_NBIT_F
-                                        !   H5Z_FILTER_SCALEOFFSET_F
-                                        !   H5Z_FILTER_SHUFFLE_F
-                                        !   H5Z_FILTER_FLETCHER32_F
-    INTEGER, INTENT(OUT) :: config_flags! Flag, indicates if filter
-                                        ! has its encoder and/or decoder
-                                        ! available
-    INTEGER, INTENT(OUT) :: hdferr      ! Error code
+    INTEGER, INTENT(IN)  :: filter
+    INTEGER, INTENT(OUT) :: config_flags
+    INTEGER, INTENT(OUT) :: hdferr
 !*****
 
     INTERFACE
-       INTEGER FUNCTION h5zget_filter_info_c(filter, config_flags)
-         USE H5GLOBAL
-         !DEC$IF DEFINED(HDF5F90_WINDOWS)
-         !DEC$ATTRIBUTES C,reference,decorate,alias:'H5ZGET_FILTER_INFO_C'::h5zget_filter_info_c
-         !DEC$ENDIF
+       INTEGER FUNCTION h5zget_filter_info_c(filter, config_flags) BIND(C,NAME='h5zget_filter_info_c')
+         IMPLICIT NONE
          INTEGER, INTENT(IN) :: filter
          INTEGER, INTENT(OUT) :: config_flags
        END FUNCTION h5zget_filter_info_c

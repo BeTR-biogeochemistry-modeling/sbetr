@@ -4,7 +4,7 @@
 !  MODULE H5G
 !
 ! FILE
-!  fortran/src/H5Gff.f90
+!  fortran/src/H5Gff.F90
 !
 ! PURPOSE
 !  This file contains Fortran interfaces for H5G functions.
@@ -17,16 +17,20 @@
 !                                                                             *
 !   This file is part of HDF5.  The full HDF5 copyright notice, including     *
 !   terms governing use, modification, and redistribution, is contained in    *
-!   the files COPYING and Copyright.html.  COPYING can be found at the root   *
-!   of the source code distribution tree; Copyright.html can be found at the  *
-!   root level of an installed copy of the electronic HDF5 document set and   *
-!   is linked from the top-level documents page.  It can also be found at     *
-!   http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
-!   access to either file, you may request a copy from help@hdfgroup.org.     *
+!   the COPYING file, which can be found at the root of the source code       *
+!   distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+!   If you do not have access to either file, you may request a copy from     *
+!   help@hdfgroup.org.                                                        *
 ! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 !
 ! NOTES
-!                         *** IMPORTANT ***
+!       _____ __  __ _____   ____  _____ _______       _   _ _______
+!      |_   _|  \/  |  __ \ / __ \|  __ \__   __|/\   | \ | |__   __|
+! ****   | | | \  / | |__) | |  | | |__) | | |  /  \  |  \| |  | |    ****
+! ****   | | | |\/| |  ___/| |  | |  _  /  | | / /\ \ | . ` |  | |    ****
+! ****  _| |_| |  | | |    | |__| | | \ \  | |/ ____ \| |\  |  | |    ****
+!      |_____|_|  |_|_|     \____/|_|  \_\ |_/_/    \_\_| \_|  |_|
+!
 !  If you add a new H5G function you must add the function name to the
 !  Windows dll file 'hdf5_fortrandll.def.in' in the fortran/src directory.
 !  This is needed for Windows based operating systems.
@@ -34,15 +38,8 @@
 !*****
 
 MODULE H5G
+  USE, INTRINSIC :: ISO_C_BINDING, ONLY : C_CHAR
   USE H5GLOBAL
-
-!  PRIVATE :: h5gcreate1_f
-!  PRIVATE :: h5gcreate2_f
-
-!  INTERFACE h5gcreate_f
-!  MODULE PROCEDURE h5gcreate1_f
-!  MODULE PROCEDURE h5gcreate2_f
-!  END INTERFACE
 
 CONTAINS
 
@@ -108,14 +105,12 @@ CONTAINS
 
     INTERFACE
        INTEGER FUNCTION h5gcreate_c(loc_id, name, namelen, &
-            size_hint_default, grp_id, lcpl_id_default, gcpl_id_default, gapl_id_default)
-         USE H5GLOBAL
-         !DEC$IF DEFINED(HDF5F90_WINDOWS)
-         !DEC$ATTRIBUTES C,reference,decorate,alias:'H5GCREATE_C'::h5gcreate_c
-         !DEC$ENDIF
-         !DEC$ATTRIBUTES reference :: name
+            size_hint_default, grp_id, lcpl_id_default, gcpl_id_default, gapl_id_default) &
+            BIND(C,NAME='h5gcreate_c')
+         IMPORT :: C_CHAR
+         IMPORT :: HID_T, SIZE_T
          INTEGER(HID_T), INTENT(IN) :: loc_id
-         CHARACTER(LEN=*), INTENT(IN) :: name
+         CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: name
          INTEGER :: namelen
          INTEGER(SIZE_T) :: size_hint_default
          INTEGER(HID_T), INTENT(OUT) :: grp_id
@@ -176,7 +171,7 @@ CONTAINS
 !!$  SUBROUTINE h5gcreate2_f(name, loc_id, grp_id, hdferr, &
 !!$        lcpl_id, gcpl_id, gapl_id)
 !!$    IMPLICIT NONE
-!!$    CHARACTER(LEN=*), INTENT(IN) :: name   ! Name of the group
+!!$    CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: name   ! Name of the group
 !!$    INTEGER(HID_T), INTENT(IN) :: loc_id   ! File or group identifier
 !!$    INTEGER, INTENT(OUT) :: hdferr         ! Error code
 !!$    INTEGER(HID_T), INTENT(OUT) :: grp_id  ! Group identifier
@@ -205,7 +200,7 @@ CONTAINS
 !!$         !DEC$ENDIF
 !!$         !DEC$ATTRIBUTES reference :: name
 !!$         INTEGER(HID_T), INTENT(IN) :: loc_id
-!!$         CHARACTER(LEN=*), INTENT(IN) :: name
+!!$         CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: name
 !!$         INTEGER :: namelen
 !!$         INTEGER(SIZE_T) :: OBJECT_NAME
 !  LEN_DEFAULT
@@ -278,14 +273,12 @@ CONTAINS
     INTEGER :: namelen ! Length of the name character string
 
     INTERFACE
-       INTEGER FUNCTION h5gopen_c(loc_id, name, namelen, gapl_id_default, grp_id)
-         USE H5GLOBAL
-         !DEC$IF DEFINED(HDF5F90_WINDOWS)
-         !DEC$ATTRIBUTES C,reference,decorate,alias:'H5GOPEN_C'::h5gopen_c
-         !DEC$ENDIF
-         !DEC$ATTRIBUTES reference :: name
+       INTEGER FUNCTION h5gopen_c(loc_id, name, namelen, gapl_id_default, grp_id) &
+            BIND(C,NAME='h5gopen_c')
+         IMPORT :: C_CHAR
+         IMPORT :: HID_T
          INTEGER(HID_T), INTENT(IN) :: loc_id
-         CHARACTER(LEN=*), INTENT(IN) :: name
+         CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: name
          INTEGER :: namelen
          INTEGER(HID_T), INTENT(IN) :: gapl_id_default
          INTEGER(HID_T), INTENT(OUT) :: grp_id
@@ -328,11 +321,8 @@ CONTAINS
     INTEGER, INTENT(OUT) :: hdferr        ! Error code
 !*****
     INTERFACE
-       INTEGER FUNCTION h5gclose_c(grp_id)
-         USE H5GLOBAL
-         !DEC$IF DEFINED(HDF5F90_WINDOWS)
-         !DEC$ATTRIBUTES C,reference,decorate,alias:'H5GCLOSE_C'::h5gclose_c
-         !DEC$ENDIF
+       INTEGER FUNCTION h5gclose_c(grp_id) BIND(C,NAME='h5gclose_c')
+         IMPORT :: HID_T
          INTEGER(HID_T), INTENT(IN) :: grp_id
        END FUNCTION h5gclose_c
     END INTERFACE
@@ -384,18 +374,14 @@ CONTAINS
     INTERFACE
        INTEGER FUNCTION h5gget_obj_info_idx_c(loc_id, name, &
             namelen, idx, &
-            obj_name, obj_namelen, obj_type)
-         USE H5GLOBAL
-         !DEC$IF DEFINED(HDF5F90_WINDOWS)
-         !DEC$ATTRIBUTES C,reference,decorate,alias:'H5GGET_OBJ_INFO_IDX_C'::h5gget_obj_info_idx_c
-         !DEC$ENDIF
-         !DEC$ATTRIBUTES reference :: name
-         !DEC$ATTRIBUTES reference :: obj_name
+            obj_name, obj_namelen, obj_type) BIND(C,NAME='h5gget_obj_info_idx_c')
+         IMPORT :: C_CHAR
+         IMPORT :: HID_T
          INTEGER(HID_T), INTENT(IN) :: loc_id
-         CHARACTER(LEN=*), INTENT(IN) :: name
+         CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: name
          INTEGER :: namelen
          INTEGER, INTENT(IN) :: idx
-         CHARACTER(LEN=*), INTENT(OUT) :: obj_name
+         CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(OUT) :: obj_name
          INTEGER :: obj_namelen
          INTEGER, INTENT(OUT) :: obj_type
        END FUNCTION h5gget_obj_info_idx_c
@@ -444,17 +430,15 @@ CONTAINS
             INTEGER :: namelen ! Length of the name character string
 
             INTERFACE
-              INTEGER FUNCTION h5gn_members_c(loc_id, name, namelen, nmembers)
-              USE H5GLOBAL
-              !DEC$IF DEFINED(HDF5F90_WINDOWS)
-              !DEC$ATTRIBUTES C,reference,decorate,alias:'H5GN_MEMBERS_C'::h5gn_members_c
-              !DEC$ENDIF
-              !DEC$ATTRIBUTES reference :: name
-              INTEGER(HID_T), INTENT(IN) :: loc_id
-              CHARACTER(LEN=*), INTENT(IN) :: name
-              INTEGER :: namelen
-              INTEGER, INTENT(OUT) :: nmembers
-              END FUNCTION h5gn_members_c
+               INTEGER FUNCTION h5gn_members_c(loc_id, name, namelen, nmembers) &
+                    BIND(C,NAME='h5gn_members_c')
+                 IMPORT :: C_CHAR
+                 IMPORT :: HID_T
+                 INTEGER(HID_T), INTENT(IN) :: loc_id
+                 CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: name
+                 INTEGER :: namelen
+                 INTEGER, INTENT(OUT) :: nmembers
+               END FUNCTION h5gn_members_c
             END INTERFACE
 
             namelen = LEN(name)
@@ -512,19 +496,15 @@ CONTAINS
 
     INTERFACE
        INTEGER FUNCTION h5glink_c(loc_id, link_type, current_name, &
-            current_namelen, new_name, new_namelen)
-
-         USE H5GLOBAL
-         !DEC$IF DEFINED(HDF5F90_WINDOWS)
-         !DEC$ATTRIBUTES C,reference,decorate,alias:'H5GLINK_C'::h5glink_c
-         !DEC$ENDIF
-         !DEC$ATTRIBUTES reference :: current_name
-         !DEC$ATTRIBUTES reference :: new_name
+            current_namelen, new_name, new_namelen) &
+                   BIND(C,NAME='h5glink_c')
+         IMPORT :: C_CHAR
+         IMPORT :: HID_T
          INTEGER(HID_T), INTENT(IN) :: loc_id
          INTEGER, INTENT(IN) :: link_type
-         CHARACTER(LEN=*), INTENT(IN) :: current_name
+         CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: current_name
          INTEGER :: current_namelen
-         CHARACTER(LEN=*), INTENT(IN) :: new_name
+         CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: new_name
          INTEGER :: new_namelen
        END FUNCTION h5glink_c
     END INTERFACE
@@ -585,19 +565,14 @@ CONTAINS
     INTERFACE
        INTEGER FUNCTION h5glink2_c(cur_loc_id, cur_name, cur_namelen, &
             link_type, new_loc_id, &
-            new_name, new_namelen)
-
-         USE H5GLOBAL
-         !DEC$IF DEFINED(HDF5F90_WINDOWS)
-         !DEC$ATTRIBUTES C,reference,decorate,alias:'H5GLINK2_C'::h5glink2_c
-         !DEC$ENDIF
-         !DEC$ATTRIBUTES reference :: cur_name
-         !DEC$ATTRIBUTES reference :: new_name
+            new_name, new_namelen) BIND(C,NAME='h5glink2_c')
+         IMPORT :: C_CHAR
+         IMPORT :: HID_T
          INTEGER(HID_T), INTENT(IN) :: cur_loc_id
          INTEGER(HID_T), INTENT(IN) :: new_loc_id
          INTEGER, INTENT(IN) :: link_type
-         CHARACTER(LEN=*), INTENT(IN) :: cur_name
-         CHARACTER(LEN=*), INTENT(IN) :: new_name
+         CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: cur_name
+         CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: new_name
          INTEGER :: cur_namelen
          INTEGER :: new_namelen
        END FUNCTION h5glink2_c
@@ -621,10 +596,10 @@ CONTAINS
 !  points
 !
 ! INPUTS
-!  loc_id 	 - location identifier
-!  name 	 - name of the object to unlink
+!  loc_id - location identifier
+!  name   - name of the object to unlink
 ! OUTPUTS
-!  hdferr 	 - Returns 0 if successful and -1 if fails
+!  hdferr - Returns 0 if successful and -1 if fails
 !
 ! AUTHOR
 !  Elena Pourmal
@@ -645,14 +620,11 @@ CONTAINS
     INTEGER :: namelen ! Lenghth of the name character string
 
     INTERFACE
-       INTEGER FUNCTION h5gunlink_c(loc_id, name, namelen)
-         USE H5GLOBAL
-         !DEC$IF DEFINED(HDF5F90_WINDOWS)
-         !DEC$ATTRIBUTES C,reference,decorate,alias:'H5GUNLINK_C'::h5gunlink_c
-         !DEC$ENDIF
-         !DEC$ATTRIBUTES reference :: name
+       INTEGER FUNCTION h5gunlink_c(loc_id, name, namelen) BIND(C,NAME='h5gunlink_c')
+         IMPORT :: C_CHAR
+         IMPORT :: HID_T
          INTEGER(HID_T), INTENT(IN) :: loc_id
-         CHARACTER(LEN=*), INTENT(IN) :: name
+         CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: name
          INTEGER :: namelen
        END FUNCTION h5gunlink_c
     END INTERFACE
@@ -698,17 +670,13 @@ CONTAINS
     INTEGER :: new_namelen     ! Lenghth of the new_name string
     
     INTERFACE
-       INTEGER FUNCTION h5gmove_c(loc_id, name, namelen, new_name, new_namelen)
-         USE H5GLOBAL
-         !DEC$IF DEFINED(HDF5F90_WINDOWS)
-         !DEC$ATTRIBUTES C,reference,decorate,alias:'H5GMOVE_C'::h5gmove_c
-         !DEC$ENDIF
-         !DEC$ATTRIBUTES reference :: name
-         !DEC$ATTRIBUTES reference :: new_name
+       INTEGER FUNCTION h5gmove_c(loc_id, name, namelen, new_name, new_namelen) BIND(C,NAME='h5gmove_c')
+         IMPORT :: C_CHAR
+         IMPORT :: HID_T
          INTEGER(HID_T), INTENT(IN) :: loc_id
-         CHARACTER(LEN=*), INTENT(IN) :: name
+         CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: name
          INTEGER :: namelen
-         CHARACTER(LEN=*), INTENT(IN) :: new_name
+         CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: new_name
          INTEGER :: new_namelen
        END FUNCTION h5gmove_c
     END INTERFACE
@@ -751,17 +719,13 @@ CONTAINS
     
     INTERFACE
        INTEGER FUNCTION h5gmove2_c(src_loc_id, src_name, src_namelen, &
-            dst_loc_id, dst_name, dst_namelen)
-         USE H5GLOBAL
-         !DEC$IF DEFINED(HDF5F90_WINDOWS)
-         !DEC$ATTRIBUTES C,reference,decorate,alias:'H5GMOVE2_C'::h5gmove2_c
-         !DEC$ENDIF
-         !DEC$ATTRIBUTES reference :: src_name
-         !DEC$ATTRIBUTES reference :: dst_name
+            dst_loc_id, dst_name, dst_namelen) BIND(C,NAME='h5gmove2_c')
+         IMPORT :: C_CHAR
+         IMPORT :: HID_T
          INTEGER(HID_T), INTENT(IN) :: src_loc_id
          INTEGER(HID_T), INTENT(IN) :: dst_loc_id
-         CHARACTER(LEN=*), INTENT(IN) :: src_name
-         CHARACTER(LEN=*), INTENT(IN) :: dst_name
+         CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: src_name
+         CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: dst_name
          INTEGER :: src_namelen
          INTEGER :: dst_namelen
        END FUNCTION h5gmove2_c
@@ -815,18 +779,14 @@ CONTAINS
     INTEGER :: namelen ! Lenghth of the current_name string
     
     INTERFACE
-       INTEGER FUNCTION h5gget_linkval_c(loc_id, name, namelen, size, buffer)
-         USE H5GLOBAL
-         !DEC$IF DEFINED(HDF5F90_WINDOWS)
-         !DEC$ATTRIBUTES C,reference,decorate,alias:'H5GGET_LINKVAL_C'::h5gget_linkval_c
-         !DEC$ENDIF
-         !DEC$ATTRIBUTES reference :: name
-         !DEC$ATTRIBUTES reference :: buffer
+       INTEGER FUNCTION h5gget_linkval_c(loc_id, name, namelen, size, buffer) BIND(C,NAME='h5gget_linkval_c')
+         IMPORT :: C_CHAR, SIZE_T
+         IMPORT :: HID_T
          INTEGER(HID_T), INTENT(IN) :: loc_id
-         CHARACTER(LEN=*), INTENT(IN) :: name
+         CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: name
          INTEGER :: namelen
          INTEGER(SIZE_T), INTENT(IN) :: size
-         CHARACTER(LEN=*), INTENT(OUT) :: buffer
+         CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(OUT) :: buffer
        END FUNCTION h5gget_linkval_c
     END INTERFACE
     
@@ -872,17 +832,13 @@ CONTAINS
     
     INTERFACE
        INTEGER FUNCTION h5gset_comment_c(loc_id, name, namelen, &
-            comment, commentlen)
-         USE H5GLOBAL
-         !DEC$IF DEFINED(HDF5F90_WINDOWS)
-         !DEC$ATTRIBUTES C,reference,decorate,alias:'H5GSET_COMMENT_C'::h5gset_comment_c
-         !DEC$ENDIF
-         !DEC$ATTRIBUTES reference :: name
-         !DEC$ATTRIBUTES reference :: comment
+            comment, commentlen) BIND(C,NAME='h5gset_comment_c')
+         IMPORT :: C_CHAR
+         IMPORT :: HID_T
          INTEGER(HID_T), INTENT(IN) :: loc_id
-         CHARACTER(LEN=*), INTENT(IN) :: name
+         CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: name
          INTEGER :: namelen
-         CHARACTER(LEN=*), INTENT(IN) :: comment
+         CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: comment
          INTEGER :: commentlen
        END FUNCTION h5gset_comment_c
     END INTERFACE
@@ -930,17 +886,14 @@ CONTAINS
     INTEGER :: namelen ! Length of the current_name string
 
     INTERFACE
-       INTEGER FUNCTION h5gget_comment_c(loc_id, name, namelen, size, buffer)
-         USE H5GLOBAL
-         !DEC$IF DEFINED(HDF5F90_WINDOWS)
-         !DEC$ATTRIBUTES C,reference,decorate,alias:'H5GGET_COMMENT_C'::h5gget_comment_c
-         !DEC$ENDIF
-         !DEC$ATTRIBUTES reference :: name, buffer
+       INTEGER FUNCTION h5gget_comment_c(loc_id, name, namelen, size, buffer) BIND(C,NAME='h5gget_comment_c')
+         IMPORT :: C_CHAR
+         IMPORT :: HID_T, SIZE_T
          INTEGER(HID_T), INTENT(IN) :: loc_id
-         CHARACTER(LEN=*), INTENT(IN) :: name
+         CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: name
          INTEGER :: namelen
          INTEGER(SIZE_T), INTENT(IN) :: size
-         CHARACTER(LEN=*), INTENT(OUT) :: buffer
+         CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(OUT) :: buffer
        END FUNCTION h5gget_comment_c
     END INTERFACE
 
@@ -983,11 +936,9 @@ CONTAINS
     INTEGER(HID_T) :: gapl_id_default
 
     INTERFACE
-       INTEGER FUNCTION h5gcreate_anon_c(loc_id, gcpl_id_default, gapl_id_default, grp_id)
-         USE H5GLOBAL
-         !DEC$IF DEFINED(HDF5F90_WINDOWS)
-         !DEC$ATTRIBUTES C,reference,decorate,alias:'H5GCREATE_ANON_C'::h5gcreate_anon_c
-         !DEC$ENDIF
+       INTEGER FUNCTION h5gcreate_anon_c(loc_id, gcpl_id_default, gapl_id_default, grp_id) &
+            BIND(C,NAME='h5gcreate_anon_c')
+         IMPORT :: HID_T
          INTEGER(HID_T), INTENT(IN) :: loc_id   ! File or group identifier
          INTEGER(HID_T), INTENT(IN) :: gcpl_id_default  ! Property list for group creation
          INTEGER(HID_T), INTENT(IN) :: gapl_id_default  ! Property list for group access
@@ -1030,11 +981,8 @@ CONTAINS
     INTEGER, INTENT(OUT) :: hdferr         ! Error code
 !*****
     INTERFACE
-       INTEGER FUNCTION h5gget_create_plist_c(grp_id, gcpl_id )
-         USE H5GLOBAL
-         !DEC$IF DEFINED(HDF5F90_WINDOWS)
-         !DEC$ATTRIBUTES C,reference,decorate,alias:'H5GGET_CREATE_PLIST_C'::h5gget_create_plist_c
-         !DEC$ENDIF
+       INTEGER FUNCTION h5gget_create_plist_c(grp_id, gcpl_id ) BIND(C,NAME='h5gget_create_plist_c')
+         IMPORT :: HID_T
          INTEGER(HID_T), INTENT(IN)  :: grp_id
          INTEGER(HID_T), INTENT(OUT) :: gcpl_id
        END FUNCTION h5gget_create_plist_c
@@ -1098,11 +1046,9 @@ CONTAINS
     INTEGER :: mounted_c
 
     INTERFACE
-       INTEGER FUNCTION h5gget_info_c(group_id, storage_type, nlinks, max_corder, mounted_c)
-         USE H5GLOBAL
-         !DEC$IF DEFINED(HDF5F90_WINDOWS)
-         !DEC$ATTRIBUTES C,reference,decorate,alias:'H5GGET_INFO_C'::h5gget_info_c
-         !DEC$ENDIF
+       INTEGER FUNCTION h5gget_info_c(group_id, storage_type, nlinks, max_corder, mounted_c) &
+            BIND(C,NAME='h5gget_info_c')
+         IMPORT :: HID_T
          INTEGER(HID_T), INTENT(IN) :: group_id
          INTEGER, INTENT(OUT) :: storage_type
          INTEGER, INTENT(OUT) :: nlinks
@@ -1189,15 +1135,11 @@ CONTAINS
 
     INTERFACE
        INTEGER FUNCTION h5gget_info_by_idx_c(loc_id, group_name, group_name_len, index_type, order, n, lapl_id_default, &
-            storage_type, nlinks, max_corder, mounted_c)
-         USE H5GLOBAL
-         !DEC$IF DEFINED(HDF5F90_WINDOWS)
-         !DEC$ATTRIBUTES C,reference,decorate,alias:'H5GGET_INFO_BY_IDX_C'::h5gget_info_by_idx_c
-         !DEC$ENDIF
-         
-         !DEC$ATTRIBUTES reference :: group_name
+            storage_type, nlinks, max_corder, mounted_c) BIND(C,NAME='h5gget_info_by_idx_c')
+         IMPORT :: C_CHAR
+         IMPORT :: HID_T, SIZE_T, HSIZE_T
          INTEGER(HID_T), INTENT(IN) :: loc_id
-         CHARACTER(LEN=*), INTENT(IN) :: group_name
+         CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: group_name
          INTEGER, INTENT(IN) :: index_type
          INTEGER, INTENT(IN) :: order
          INTEGER(HSIZE_T), INTENT(IN) :: n
@@ -1291,14 +1233,11 @@ CONTAINS
 
     INTERFACE
        INTEGER FUNCTION h5gget_info_by_name_c(loc_id, group_name, group_name_len, lapl_id_default, &
-            storage_type, nlinks, max_corder, mounted_c)
-         USE H5GLOBAL
-         !DEC$IF DEFINED(HDF5F90_WINDOWS)
-         !DEC$ATTRIBUTES C,reference,decorate,alias:'H5GGET_INFO_BY_NAME_C'::h5gget_info_by_name_c
-         !DEC$ENDIF
-         !DEC$ATTRIBUTES reference :: group_name
+            storage_type, nlinks, max_corder, mounted_c) BIND(C,NAME='h5gget_info_by_name_c')
+         IMPORT :: C_CHAR
+         IMPORT :: HID_T, SIZE_T
          INTEGER(HID_T), INTENT(IN) :: loc_id
-         CHARACTER(LEN=*), INTENT(IN) :: group_name
+         CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: group_name
          INTEGER(HID_T), INTENT(IN) :: lapl_id_default
          INTEGER, INTENT(OUT) :: storage_type
          INTEGER, INTENT(OUT) :: nlinks

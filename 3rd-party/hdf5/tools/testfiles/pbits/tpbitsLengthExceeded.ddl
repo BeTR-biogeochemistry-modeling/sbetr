@@ -11,7 +11,17 @@ usage: h5dump [OPTIONS] files
      -o F, --output=F     Output raw data into file F
      -b B, --binary=B     Binary file output, of form B
      -O F, --ddl=F        Output ddl text into file F
-                          Do not use filename F to suppress ddl display
+                          Use blank(empty) filename F to suppress ddl display
+     --s3-cred=<cred>     Supply S3 authentication information to "ros3" vfd.
+                          <cred> :: "(<aws-region>,<access-id>,<access-key>)"
+                          If absent or <cred> -> "(,,)", no authentication.
+                          Has no effect is filedriver is not `ros3'.
+     --hdfs-attrs=<attrs> Supply configuration information for HDFS file access.
+                          For use with "--filedriver=hdfs"
+                          <attrs> :: (<namenode name>,<namenode port>,
+                                      <kerberos cache path>,<username>,
+                                      <buffer size>)
+                          Any absent attribute will use a default value.
 --------------- Object Options ---------------
      -a P, --attribute=P  Print the specified attribute
                           If an attribute name contains a slash (/), escape the
@@ -25,6 +35,8 @@ usage: h5dump [OPTIONS] files
                           P can be the absolute path or just a relative path.
      -A,   --onlyattr     Print the header and value of attributes
                           Optional value 0 suppresses printing attributes.
+     --vds-view-first-missing Set the VDS bounds to first missing mapped elements.
+     --vds-gap-size=N     Set the missing file gap size, N=non-negative integers
 --------------- Object Property Options ---------------
      -i,   --object-ids   Print the object ids
      -p,   --properties   Print dataset filters, storage layout and fill value
@@ -42,8 +54,8 @@ usage: h5dump [OPTIONS] files
      -m T, --format=T     Set the floating point output format
      -q Q, --sort_by=Q    Sort groups and attributes by index Q
      -z Z, --sort_order=Z Sort groups and attributes by order Z
-     --enable-error-stack Prints messages from the HDF5 error stack as they
-                          occur.
+     --enable-error-stack Prints messages from the HDF5 error stack as they occur.
+                          Optional value 2 also prints file open errors.
      --no-compact-subset  Disable compact form of subsetting and allow the use
                           of "[" in dataset names.
      -w N, --width=N      Set the number of columns of output. A value of 0 (zero)
@@ -133,4 +145,3 @@ usage: h5dump [OPTIONS] files
 
       h5dump -d /foo -f family fam%05d.h5
 
-h5dump error: Packed Bit offset+length value(65) too large. Max is 64

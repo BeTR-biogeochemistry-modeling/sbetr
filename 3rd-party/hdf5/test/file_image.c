@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /***********************************************************
@@ -22,7 +20,6 @@
 *************************************************************/
 
 #include "h5test.h"
-#include "H5srcdir.h"
 #include "H5Fprivate.h" /* required to test property removals */
 #define VERIFY(condition, string) do { if (!(condition)) FAIL_PUTS_ERROR(string) } while(0)
 
@@ -40,6 +37,8 @@
 #define DSET_NAME "test_dset"
 
 #define FAMILY_SIZE (2 * 1024)
+
+#define USERBLOCK_SIZE 512
 
 const char *FILENAME[] = {
     "file_image_core_test",
@@ -154,8 +153,8 @@ error:
     if(H5Pclose(fapl_1) < 0) retval = 1;
     if(H5Pclose(fapl_2) < 0) retval = 1;
     HDfree(buffer);
-    HDfree(temp);
-    HDfree(temp2);
+    H5free_memory(temp);
+    H5free_memory(temp2);
 
     if(retval == 0)
         PASSED();
@@ -549,7 +548,7 @@ test_core(void)
     VERIFY(fapl >= 0, "fapl creation failed");
 
     /* Set up the core VFD */
-    ret = H5Pset_fapl_core(fapl, 0, 0);
+    ret = H5Pset_fapl_core(fapl, (size_t)0, 0);
     VERIFY(ret >= 0, "setting core driver in fapl failed");
 
     tmp = h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
@@ -580,7 +579,8 @@ test_core(void)
     reset_udata(udata);
     file = H5Fopen(copied_filename, H5F_ACC_RDONLY, fapl);
     VERIFY(file >= 0, "H5Fopen failed");
-    VERIFY(udata->used_callbacks == MALLOC, "opening a core file used the wrong callbacks");
+    VERIFY((udata->used_callbacks == MALLOC) || 
+            (udata->used_callbacks == (MALLOC | UDATA_COPY | UDATA_FREE)), "opening a core file used the wrong callbacks");
     VERIFY(udata->malloc_src == H5FD_FILE_IMAGE_OP_FILE_OPEN, "Malloc callback came from wrong sourc in core open");
 
     /* Close file */
@@ -625,13 +625,14 @@ test_core(void)
     VERIFY(udata->free_src == H5FD_FILE_IMAGE_OP_FILE_CLOSE, "Free callback came from wrong sourc in core close");
 
     /* Create file image buffer */
-    fd = HDopen(copied_filename, O_RDONLY, 0666);
+    fd = HDopen(copied_filename, O_RDONLY);
     VERIFY(fd > 0, "open failed");
     ret = HDfstat(fd, &sb);
     VERIFY(ret == 0, "fstat failed");
     size = (size_t)sb.st_size;
     file_image = (unsigned char *)HDmalloc(size);
-    HDread(fd, file_image, size);
+    if(HDread(fd, file_image, size) < 0)
+        FAIL_PUTS_ERROR("unable to read from file descriptor");
     ret = HDclose(fd);
     VERIFY(ret == 0, "close failed");
 
@@ -643,7 +644,7 @@ test_core(void)
     if(H5Fclose(file) < 0) FAIL_STACK_ERROR
 
     /* Release resources */
-    h5_cleanup(FILENAME, fapl); 
+    h5_clean_files(FILENAME, fapl); 
     HDfree(udata);
     HDfree(file_image);
     HDremove(copied_filename);
@@ -665,12 +666,24 @@ error:
  * Programmer:  John Mainzer
  *              Tuesday, November 15, 2011
  *
+ * Modifications:
+ *      Vailin Choi; July 2013
+ *      Add the creation of user block to the file as indicated by the parameter "user".
+ *
  ******************************************************************************
  */
+/* Disable warning for "format not a string literal" here -QAK */
+/*
+ *      This pragma only needs to surround the snprintf() calls with
+ *      'member_file_name' in the code below, but early (4.4.7, at least) gcc only
+ *      allows diagnostic pragmas to be toggled outside of functions.
+ */
+H5_GCC_DIAG_OFF(format-nonliteral)
 static int
 test_get_file_image(const char * test_banner,
                     const int file_name_num,
-                    hid_t fapl)
+		    hid_t fapl,
+                    hbool_t user)
 {
     char file_name[1024] = "\0";
     void * insertion_ptr = NULL;
@@ -694,6 +707,8 @@ test_get_file_image(const char * test_banner,
     ssize_t image_size;
     ssize_t file_size;
     h5_stat_t stat_buf;
+    hid_t fcpl = -1;
+    herr_t ret;
 
     TESTING(test_banner);
 
@@ -708,8 +723,15 @@ test_get_file_image(const char * test_banner,
     h5_fixname(FILENAME2[file_name_num], fapl, file_name, sizeof(file_name));
     VERIFY(HDstrlen(file_name)>0, "h5_fixname failed");
 
+    fcpl = H5Pcreate(H5P_FILE_CREATE);
+    VERIFY(fcpl >= 0, "H5Pcreate");
+    if(user) {
+        ret = H5Pset_userblock(fcpl, (hsize_t)USERBLOCK_SIZE);
+        VERIFY(ret >=0, "H5Pset_userblock");
+    }
+
     /* create the file */
-    file_id = H5Fcreate(file_name, 0, H5P_DEFAULT, fapl);
+    file_id = H5Fcreate(file_name, 0, fcpl, fapl);
     VERIFY(file_id >= 0, "H5Fcreate() failed.");
 
     /* Set up data space for new new data set */
@@ -761,11 +783,15 @@ test_get_file_image(const char * test_banner,
         ssize_t member_size;
         ssize_t size_remaining;
 
+	/*
+         * Modifications need to be made to accommodate userblock when
+         * H5Fget_file_image() works for family driver
+         */
         i = 0;
         file_size = 0;
 
         do {
-            HDsnprintf(member_file_name, 1024, file_name, i);
+            HDsnprintf(member_file_name, (size_t)1024, file_name, i);
 
             /* get the size of the member file */
             result = HDstat(member_file_name, &stat_buf);
@@ -796,7 +822,7 @@ test_get_file_image(const char * test_banner,
             HDsnprintf(member_file_name, 1024, file_name, i);
 
             /* open the test file using standard I/O calls */
-            fd = HDopen(member_file_name, O_RDONLY, 0666);
+            fd = HDopen(member_file_name, O_RDONLY);
             VERIFY(fd >= 0, "HDopen() failed.");
 
             if(size_remaining >= FAMILY_SIZE ){
@@ -829,6 +855,10 @@ test_get_file_image(const char * test_banner,
          * the remainder of the file is all '\0's.
          */
         file_size = (ssize_t)stat_buf.st_size;
+	if(user) {
+            VERIFY(file_size > USERBLOCK_SIZE, "file size !> userblock size.");
+            file_size -= USERBLOCK_SIZE;
+        }
 
     /* with latest mods to truncate call in core file drive, 
          * file size should match image size 
@@ -840,8 +870,16 @@ test_get_file_image(const char * test_banner,
         VERIFY(file_image_ptr != NULL, "HDmalloc(2) failed.");
 
         /* open the test file using standard I/O calls */
-        fd = HDopen(file_name, O_RDONLY, 0666);
+        fd = HDopen(file_name, O_RDONLY);
         VERIFY(fd >= 0, "HDopen() failed.");
+
+	if(user) {
+            HDoff_t off;
+
+            /* Position at userblock */
+            off = HDlseek(fd, (off_t)USERBLOCK_SIZE, SEEK_SET);
+            VERIFY(off >= 0, "HDlseek() failed.");
+        }
 
         /* read the test file from disk into the buffer */
         bytes_read = HDread(fd, file_image_ptr, (size_t)file_size);
@@ -890,8 +928,7 @@ test_get_file_image(const char * test_banner,
     VERIFY(err == SUCCEED, "H5Pclose(core_fapl_id) failed.");
 
     /* tidy up */
-    result = h5_cleanup(FILENAME2, fapl);
-    VERIFY(result != 0, "h5_cleanup() failed.");
+    h5_clean_files(FILENAME2, fapl);
 
     /* discard the image buffer if it exists */
     if(image_ptr != NULL) 
@@ -908,6 +945,7 @@ test_get_file_image(const char * test_banner,
 error:
     return 1;
 } /* end test_get_file_image() */
+H5_GCC_DIAG_ON(format-nonliteral)
 
 
 /******************************************************************************
@@ -931,7 +969,6 @@ test_get_file_image_error_rejection(void)
     void * image_ptr = NULL;
     int data[100];
     int i;
-    int result;
     hid_t fapl_id = -1;
     hid_t file_id = -1;
     hid_t dset_id = -1;
@@ -1039,8 +1076,7 @@ test_get_file_image_error_rejection(void)
     VERIFY(err == SUCCEED, "H5Fclose(file_id) failed.");
 
     /* tidy up */
-    result = h5_cleanup(FILENAME2, fapl_id);
-    VERIFY(result != 0, "h5_cleanup(1) failed.");
+    h5_clean_files(FILENAME2, fapl_id);
 
     /* discard the image buffer if it exists */
     if(image_ptr != NULL) 
@@ -1145,8 +1181,7 @@ test_get_file_image_error_rejection(void)
     VERIFY(err == SUCCEED, "H5Fclose(2) failed.");
 
     /* tidy up */
-    result = h5_cleanup(FILENAME2, fapl_id);
-    VERIFY(result != 0, "h5_cleanup(2 failed.");
+    h5_clean_files(FILENAME2, fapl_id);
 
     /************************** Test #3 **********************************/
     /* set up a split file driver test file, and try to get its image 
@@ -1208,8 +1243,7 @@ test_get_file_image_error_rejection(void)
     VERIFY(err == SUCCEED, "H5Fclose(2) failed.");
 
     /* tidy up */
-    result = h5_cleanup(FILENAME2, fapl_id);
-    VERIFY(result != 0, "h5_cleanup(2 failed.");
+    h5_clean_files(FILENAME2, fapl_id);
 
     /************************** Test #4 **********************************/
     /* set up a family file driver test file, and try to get its image 
@@ -1269,8 +1303,7 @@ test_get_file_image_error_rejection(void)
     VERIFY(err == SUCCEED, "H5Fclose(2) failed.");
 
     /* tidy up */
-    result = h5_cleanup(FILENAME2, fapl_id);
-    VERIFY(result != 0, "h5_cleanup(2 failed.");
+    h5_clean_files(FILENAME2, fapl_id);
     
     PASSED();
 
@@ -1278,45 +1311,55 @@ test_get_file_image_error_rejection(void)
 
 error:
     return 1;
-}
+} /* test_get_file_image_error_rejection() */
 
+/*
+ * Modifications:
+ *     Add testing for file image with or without user block in the file.
+ */
 int
 main(void)
 {
     int errors = 0;
     hid_t fapl;
+    unsigned user;
 
     h5_reset();
 
-    printf("Testing File Image Functionality.\n");
+    HDprintf("Testing File Image Functionality.\n");
 
     errors += test_properties();
     errors += test_callbacks();
     errors += test_core();
 
-    /* test H5Fget_file_image() with sec2 driver */
-    fapl = H5Pcreate(H5P_FILE_ACCESS);
-    if(H5Pset_fapl_sec2(fapl) < 0)
-        errors++;
-    else
-        errors += test_get_file_image("H5Fget_file_image() with sec2 driver",
-                                      0, fapl);
+    /* Perform tests with/without user block */
+    for(user = FALSE; user <= TRUE; user++) {
 
-    /* test H5Fget_file_image() with stdio driver */
-    fapl = H5Pcreate(H5P_FILE_ACCESS);
-    if(H5Pset_fapl_stdio(fapl) < 0)
-        errors++;
-    else
-        errors += test_get_file_image("H5Fget_file_image() with stdio driver",
-                                      1, fapl);
+	/* test H5Fget_file_image() with sec2 driver */
+	fapl = H5Pcreate(H5P_FILE_ACCESS);
+	if(H5Pset_fapl_sec2(fapl) < 0)
+	    errors++;
+	else
+	    errors += test_get_file_image("H5Fget_file_image() with sec2 driver",
+                                      0, fapl, user);
 
-    /* test H5Fget_file_image() with core driver */
-    fapl = H5Pcreate(H5P_FILE_ACCESS);
-    if(H5Pset_fapl_core(fapl, (size_t)(64 *1024), TRUE) < 0)
-        errors++;
-    else
-        errors += test_get_file_image("H5Fget_file_image() with core driver",
-                                      2, fapl);
+	/* test H5Fget_file_image() with stdio driver */
+	fapl = H5Pcreate(H5P_FILE_ACCESS);
+	if(H5Pset_fapl_stdio(fapl) < 0)
+	    errors++;
+	else
+	    errors += test_get_file_image("H5Fget_file_image() with stdio driver",
+                                      1, fapl, user);
+
+	/* test H5Fget_file_image() with core driver */
+	fapl = H5Pcreate(H5P_FILE_ACCESS);
+	if(H5Pset_fapl_core(fapl, (size_t)(64 *1024), TRUE) < 0)
+	    errors++;
+	else
+	    errors += test_get_file_image("H5Fget_file_image() with core driver",
+                                      2, fapl, user);
+
+     } /* end for */
 
 #if 0
     /* at present, H5Fget_file_image() rejects files opened with the 
@@ -1340,14 +1383,16 @@ main(void)
 
     errors += test_get_file_image_error_rejection();
 
+    /* Restore the default error handler (set in h5_reset()) */
+    h5_restore_err();
 
     if(errors) { 
-        printf("***** %d File Image TEST%s FAILED! *****\n", 
+        HDprintf("***** %d File Image TEST%s FAILED! *****\n", 
             errors, errors > 1 ? "S" : ""); 
         return 1; 
     }
 
-    printf("All File Image tests passed.\n");
+    HDprintf("All File Image tests passed.\n");
     return 0;
 }
 

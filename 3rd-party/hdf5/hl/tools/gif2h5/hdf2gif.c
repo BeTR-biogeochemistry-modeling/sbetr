@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #include <stdio.h>
@@ -47,31 +45,37 @@ usage(void)
 FILE *fpGif = NULL;
 int main(int argc , char **argv)
 {
-    BYTE *Image;
+    GIFBYTE *Image;
+    void *edata;
+    H5E_auto2_t func;
 
     /* compression structs */
-    CHAR *HDFName = NULL;
-    CHAR *GIFName = NULL;
+    GIFCHAR *HDFName = NULL;
+    GIFCHAR *GIFName = NULL;
 
-    BYTE* b;
+    GIFBYTE* b;
 
-    BYTE  GlobalPalette[256][3];
-    BYTE  Red[256];
-    BYTE  Green[256];
-    BYTE  Blue[256];
+    GIFBYTE  GlobalPalette[256][3];
+    GIFBYTE  Red[256];
+    GIFBYTE  Green[256];
+    GIFBYTE  Blue[256];
 
     int   RWidth, RHeight;
     int   ColorMapSize, InitCodeSize, Background, BitsPerPixel;
     int   j,nc;
     int   i;
-    int   numcols;
+    int   numcols = 0;
 
-    BYTE pc2nc[256] , r1[256] , g1[256] , b1[256];
+    GIFBYTE pc2nc[256] , r1[256] , g1[256] , b1[256];
 
     int arg_index = 2;
     int bool_is_image = 0; /* 0 = false , 1 = true */
     char *image_name = NULL;
     int idx;
+
+    /* Disable error reporting */
+    H5Eget_auto2(H5E_DEFAULT, &func, &edata);
+    H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
 
     /* Initialize h5tools lib */
     h5tools_init();
@@ -106,7 +110,7 @@ int main(int argc , char **argv)
         {
             /* allocate space to store the image name */
             size_t len = strlen(argv[arg_index]);
-            image_name = (CHAR*) malloc( len + 1);
+            image_name = (GIFCHAR*) malloc( len + 1);
             strcpy(image_name , argv[arg_index]);
 
             bool_is_image = 0;
@@ -121,7 +125,7 @@ int main(int argc , char **argv)
 
    /* Do Endian Order testing and set Endian Order */
     idx = 0x0001;
-    b = (BYTE *) &idx;
+    b = (GIFBYTE *) &idx;
     EndianOrder = (b[0] ? 1:0);
 
     if (!(fpGif = fopen(GIFName , "wb")))
@@ -160,7 +164,7 @@ int main(int argc , char **argv)
 	    goto out;
 	}
 
-        Image = (BYTE*) malloc( (size_t) width * (size_t) height );
+        Image = (GIFBYTE*) malloc( (size_t) width * (size_t) height );
 
         if ( H5IMread_image( fid, image_name, Image ) < 0 )
             goto out;
@@ -170,7 +174,7 @@ int main(int argc , char **argv)
             if ( H5IMget_palette_info( fid, image_name, 0, pal_dims ) < 0 )
                 goto out;
 
-            pal = (BYTE*) malloc( (size_t) pal_dims[0] * (size_t) pal_dims[1] );
+            pal = (GIFBYTE*) malloc( (size_t) pal_dims[0] * (size_t) pal_dims[1] );
 
             if ( H5IMget_palette( fid, image_name, 0, pal ) < 0 )
                 goto out;
@@ -207,9 +211,9 @@ int main(int argc , char **argv)
             numcols = 256;
             for (i = 0 ; i < numcols ; i++)
             {
-	      Red[i] = (BYTE)(255 - i);
-	      Green[i] = (BYTE)(255 - i);
-	      Blue[i] = (BYTE)(255 - i);
+	      Red[i] = (GIFBYTE)(255 - i);
+	      Green[i] = (GIFBYTE)(255 - i);
+	      Blue[i] = (GIFBYTE)(255 - i);
             }
         }
         else
@@ -242,7 +246,7 @@ int main(int argc , char **argv)
             if (j==i)
             {
                 /* wasn't found */
-	      pc2nc[i] = (BYTE)nc;
+	      pc2nc[i] = (GIFBYTE)nc;
                 r1[nc] = Red[i];
                 g1[nc] = Green[i];
                 b1[nc] = Blue[i];
@@ -330,6 +334,8 @@ int main(int argc , char **argv)
     if (image_name != NULL)
         free(image_name);
 
+    H5Eset_auto2(H5E_DEFAULT, func, edata);
+
     return EXIT_SUCCESS;
 
 
@@ -339,6 +345,8 @@ out:
         fclose(fpGif);
     if (image_name != NULL)
         free(image_name);
+
+    H5Eset_auto2(H5E_DEFAULT, func, edata);
 
     return EXIT_FAILURE;
 }

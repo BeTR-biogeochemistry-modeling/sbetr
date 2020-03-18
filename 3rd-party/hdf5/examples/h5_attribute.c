@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /*
@@ -62,7 +60,7 @@ main (void)
    float matrix[ADIM1][ADIM2]; /* Attribute data */
 
    herr_t  ret;                /* Return value */
-   H5O_info_t oinfo;           /* Object info */
+   H5O_info2_t oinfo;          /* Object info */
    unsigned i, j;              /* Counters */
    char    string_out[80];     /* Buffer to read string attribute back */
    int     point_out;          /* Buffer to read scalar attribute back */
@@ -191,7 +189,7 @@ main (void)
    /*
     * Find string attribute by iterating through all attributes
     */
-   ret = H5Oget_info(dataset, &oinfo);
+   ret = H5Oget_info3(dataset, &oinfo, H5O_INFO_NUM_ATTRS);
    for(i = 0; i < (unsigned)oinfo.num_attrs; i++) {
       attr = H5Aopen_by_idx(dataset, ".", H5_INDEX_CRT_ORDER, H5_ITER_INC, (hsize_t)i, H5P_DEFAULT, H5P_DEFAULT);
       atype = H5Aget_type(attr);

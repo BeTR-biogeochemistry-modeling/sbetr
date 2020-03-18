@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #ifndef H5TOOLS_REF_H__
@@ -23,11 +21,11 @@ extern "C" {
 #endif
 
 H5TOOLS_DLL herr_t      fill_ref_path_table(hid_t fid);
-H5TOOLS_DLL const char *lookup_ref_path(haddr_t ref);
+H5TOOLS_DLL const char *lookup_ref_path(H5R_ref_t refbuf);
 H5TOOLS_DLL int         get_next_xid(void);
-H5TOOLS_DLL haddr_t     get_fake_xid(void);
-H5TOOLS_DLL haddr_t     ref_path_table_lookup(const char *);
-H5TOOLS_DLL haddr_t     ref_path_table_gen_fake(const char *);
+H5TOOLS_DLL void        get_fake_token(H5O_token_t *token);
+H5TOOLS_DLL int         ref_path_table_lookup(const char *thepath, H5O_token_t *token);
+H5TOOLS_DLL void        ref_path_table_gen_fake(const char *path, H5O_token_t *token);
 H5TOOLS_DLL int         term_ref_path_table(void);
 
 #ifdef __cplusplus

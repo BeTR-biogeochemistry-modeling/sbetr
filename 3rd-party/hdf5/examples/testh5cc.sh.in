@@ -6,12 +6,10 @@
 #
 # This file is part of HDF5.  The full HDF5 copyright notice, including
 # terms governing use, modification, and redistribution, is contained in
-# the files COPYING and Copyright.html.  COPYING can be found at the root
-# of the source code distribution tree; Copyright.html can be found at the
-# root level of an installed copy of the electronic HDF5 document set and
-# is linked from the top-level documents page.  It can also be found at
-# http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have
-# access to either file, you may request a copy from help@hdfgroup.org.
+# the COPYING file, which can be found at the root of the source code
+# distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.
+# If you do not have access to either file, you may request a copy from
+# help@hdfgroup.org.
 #
 # Tests for the h5cc compiler tool
 # Created: Albert Cheng, 2007/4/11
@@ -31,8 +29,7 @@ EXIT_SUCCESS=0
 EXIT_FAILURE=1
 
 # Where the tool is installed.
-# Note: no '/' after DESTDIR.  Explanation in commence.am
-prefix="${prefix:-${DESTDIR}@prefix@}"
+prefix="${prefix:-@prefix@}"
 PARALLEL=@PARALLEL@		# Am I in parallel mode?
 AR="@AR@"
 RANLIB="@RANLIB@"
@@ -311,8 +308,8 @@ echo "***"Version compatibility tests.
 # If H5_NO_DEPRECATED_SYMBOLS;
 # then only v18main works.
 # else if H5_USE_16_API_DEFAULT;
-#      then v16main works and -DH5_NO_DEPRECATED_SYMBOLS v18main also works.
-#      else v18main works and -DH5_USE_16_API_DEFAULT v16main also works.
+#      then v16main works.
+# else v18main works and -DH5_USE_16_API_DEFAULT v16main also works.
 #
 if [ -n "$H5_USE_16_API_DEFAULT" ]; then
     echo "H5_USE_16_API_DEFAULT is defined."
@@ -329,7 +326,6 @@ if [ -n "$H5_NO_DEPRECATED_SYMBOLS" ]; then
     TOOLTEST $v18main
 elif [ -n "$H5_USE_16_API_DEFAULT" ]; then
     TOOLTEST $v16main
-    TOOLTEST -DH5_NO_DEPRECATED_SYMBOLS $v18main
 else
     TOOLTEST -DH5_USE_16_API_DEFAULT $v16main
     TOOLTEST $v18main

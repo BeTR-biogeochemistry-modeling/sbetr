@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /*
@@ -168,7 +166,7 @@ test_conv(hid_t file)
     for(i = 0; i < (size_t)ds_size[0]; i++)
 	if(data1[i] != data2[i]) {
 	    H5_FAILED();
-	    printf("    1. data1[%lu]=%d, data2[%lu]=%d (should be same)\n",
+	    HDprintf("    1. data1[%lu]=%d, data2[%lu]=%d (should be same)\n",
 		   (unsigned long)i, (int)(data1[i]),
 		   (unsigned long)i, (int)(data2[i]));
 	    goto error;
@@ -180,7 +178,7 @@ test_conv(hid_t file)
     for(i = 0; i < (size_t)ds_size[0]; i++)
 	if((short)data1[i] != data_short[i]) {
 	    H5_FAILED();
-	    printf("    2. data1[%lu]=%d, data_short[%lu]=%d (should be same)\n",
+	    HDprintf("    2. data1[%lu]=%d, data_short[%lu]=%d (should be same)\n",
 		   (unsigned long)i, (int)(data1[i]),
 		   (unsigned long)i, (int)(data_short[i]));
 	    goto error;
@@ -192,7 +190,7 @@ test_conv(hid_t file)
     for(i = 0; i < (size_t)ds_size[0]; i++)
 	if((int)data1[i] != (int)data_double[i]) {
 	    H5_FAILED();
-	    printf("    3. data1[%lu]=%d, data_double[%lu]=%d (should be same)\n",
+	    HDprintf("    3. data1[%lu]=%d, data_double[%lu]=%d (should be same)\n",
 		   (unsigned long)i, (int)(data1[i]),
 		   (unsigned long)i, (int)(data_double[i]));
 	    goto error;
@@ -214,7 +212,7 @@ test_conv(hid_t file)
     for(i = 0; i < (size_t)ds_size[0]; i++)
 	if((int)data1[i] != data_int[i]) {
 	    H5_FAILED();
-	    printf("    4. data1[%lu]=%d, data_int[%lu]=%d (should be same)\n",
+	    HDprintf("    4. data1[%lu]=%d, data_int[%lu]=%d (should be same)\n",
 		   (unsigned long)i, (int)(data1[i]),
 		   (unsigned long)i, (int)(data_int[i]));
 	    goto error;
@@ -236,7 +234,7 @@ test_conv(hid_t file)
     for(i = 0; i < (size_t)ds_size[0]; i++)
 	if((int)data1[i] != (int)data_double[i]) {
 	    H5_FAILED();
-	    printf("    5. data1[%lu]=%d, data_double[%lu]=%d (should be same)\n",
+	    HDprintf("    5. data1[%lu]=%d, data_double[%lu]=%d (should be same)\n",
 		   (unsigned long)i, (int)(data1[i]),
 		   (unsigned long)i, (int)(data_double[i]));
 	    goto error;
@@ -320,7 +318,7 @@ test_tr1(hid_t file)
     for(i = 0; i < (size_t)ds_size[0]; i++)
         if(data1[i] != data2[i]) {
             H5_FAILED();
-            printf("    data1[%lu]=%d, data2[%lu]=%d (should be same)\n",
+            HDprintf("    data1[%lu]=%d, data2[%lu]=%d (should be same)\n",
                     (unsigned long)i, (int)(data1[i]),
                     (unsigned long)i, (int)(data2[i]));
             goto error;
@@ -376,7 +374,7 @@ test_tr2(hid_t file)
 			   E1_WHITE, E1_BLACK, E1_GREEN, E1_BLUE,  E1_RED};
     c_e1	data2[10];
 
-    TESTING("O(log N) converions");
+    TESTING("O(log N) conversions");
 
     if((cwg = H5Gcreate2(file, "test_tr2", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT)) < 0) FAIL_STACK_ERROR
 
@@ -402,7 +400,7 @@ test_tr2(hid_t file)
     for(i = 0; i < (size_t)ds_size[0]; i++)
         if(data1[i] != data2[i]) {
             H5_FAILED();
-            printf("    data1[%lu]=%d, data2[%lu]=%d (should be same)\n",
+            HDprintf("    data1[%lu]=%d, data2[%lu]=%d (should be same)\n",
                     (unsigned long)i, (int)(data1[i]),
                     (unsigned long)i, (int)(data2[i]));
             goto error;
@@ -561,7 +559,7 @@ test_funcs(void)
     } H5E_END_TRY;
     if (ret>=0) {
         H5_FAILED();
-        printf("Operation not allowed for this type.\n");
+        HDprintf("Operation not allowed for this type.\n");
         goto error;
     } /* end if */
 
@@ -570,7 +568,7 @@ test_funcs(void)
     } H5E_END_TRY;
     if (size>0) {
         H5_FAILED();
-        printf("Operation not allowed for this type.\n");
+        HDprintf("Operation not allowed for this type.\n");
         goto error;
     } /* end if */
 
@@ -579,7 +577,7 @@ test_funcs(void)
     } H5E_END_TRY;
     if (inpad>-1) {
         H5_FAILED();
-        printf("Operation not allowed for this type.\n");
+        HDprintf("Operation not allowed for this type.\n");
         goto error;
     } /* end if */
 
@@ -588,7 +586,7 @@ test_funcs(void)
     } H5E_END_TRY;
     if (cset>-1) {
         H5_FAILED();
-        printf("Operation not allowed for this type.\n");
+        HDprintf("Operation not allowed for this type.\n");
         goto error;
     } /* end if */
 
@@ -598,7 +596,7 @@ test_funcs(void)
     } H5E_END_TRY;
     if (ret>=0) {
         H5_FAILED();
-        printf("Operation not allowed for this type.\n");
+        HDprintf("Operation not allowed for this type.\n");
         goto error;
     } /* end if */
 
@@ -607,7 +605,7 @@ test_funcs(void)
     } H5E_END_TRY;
     if (ret>=0) {
         H5_FAILED();
-        printf("Operation not allowed for this type.\n");
+        HDprintf("Operation not allowed for this type.\n");
         goto error;
     } /* end if */
 

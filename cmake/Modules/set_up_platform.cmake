@@ -62,7 +62,10 @@ macro(set_up_platform)
 
     # We are cared for mathematically.
     set(NEED_LAPACK FALSE)
-
+  elseif (HOSTNAME MATCHES "scs") # NERSC Cori phase1
+    set(CMAKE_C_COMPILER $ENV{CC})
+    set(CMAKE_CXX_COMPILER $ENV{CXX})
+    set(CMAKE_Fortran_COMPILER $ENV{FC})
   elseif (HOSTNAME MATCHES "edison") # NERSC Edison
     # Edison likes Intel's compilers
     # (but Intel's compilers don't do C11.).

@@ -14,12 +14,10 @@
 !                                                                             *
 !   This file is part of HDF5.  The full HDF5 copyright notice, including     *
 !   terms governing use, modification, and redistribution, is contained in    *
-!   the files COPYING and Copyright.html.  COPYING can be found at the root   *
-!   of the source code distribution tree; Copyright.html can be found at the  *
-!   root level of an installed copy of the electronic HDF5 document set and   *
-!   is linked from the top-level documents page.  It can also be found at     *
-!   http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
-!   access to either file, you may request a copy from help@hdfgroup.org.     *
+!   the COPYING file, which can be found at the root of the source code       *
+!   distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+!   If you do not have access to either file, you may request a copy from     *
+!   help@hdfgroup.org.                                                        *
 ! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 !
 ! CONTAINS SUBROUTINES
@@ -27,6 +25,10 @@
 !
 !*****
 MODULE TH5I
+ 
+  USE HDF5 ! This module contains all necessary modules 
+  USE TH5_MISC
+  USE TH5_MISC_GEN
 
 CONTAINS
 
@@ -34,8 +36,6 @@ CONTAINS
 
 !   This subroutine tests following functionalities: h5iget_type_f
 
-   USE HDF5 ! This module contains all necessary modules
-   USE TH5_MISC
 
      IMPLICIT NONE
      LOGICAL, INTENT(IN)  :: cleanup
@@ -88,7 +88,7 @@ CONTAINS
      dtype = -1
      CALL H5Iis_valid_f(dtype, tri_ret, error)
      CALL check("H5Iis_valid_f", error, total_error) 
-     CALL VerifyLogical("H5Iis_valid_f", tri_ret, .FALSE., total_error)
+     CALL verify("H5Iis_valid_f", tri_ret, .FALSE., total_error)
      
      ! Create a datatype id
      CALL H5Tcopy_f(H5T_NATIVE_INTEGER,dtype,error)
@@ -97,7 +97,7 @@ CONTAINS
      ! Check that the ID is valid
      CALL H5Iis_valid_f(dtype, tri_ret, error)
      CALL check("H5Iis_valid_f", error, total_error) 
-     CALL VerifyLogical("H5Tequal_f", tri_ret, .TRUE., total_error)
+     CALL verify("H5Tequal_f", tri_ret, .TRUE., total_error)
      
      CALL H5Tclose_f(dtype, error)
      CALL check("H5Tclose_f", error, total_error) 

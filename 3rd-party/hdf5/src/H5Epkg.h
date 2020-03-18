@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /*
@@ -21,7 +19,7 @@
  *		the H5E package.  Source files outside the H5E package should
  *		include H5Eprivate.h instead.
  */
-#ifndef H5E_PACKAGE
+#if !(defined H5E_FRIEND || defined H5E_MODULE)
 #error "Do not include this file outside the H5E package!"
 #endif
 
@@ -51,15 +49,15 @@
  * each thread individually. The association of stacks to threads will
  * be handled by the pthread library.
  *
- * In order for this macro to work, H5E_get_my_stack() must be preceeded
+ * In order for this macro to work, H5E__get_my_stack() must be preceeded
  * by "H5E_t *estack =".
  */
-#define H5E_get_my_stack()  H5E_get_stack()
+#define H5E__get_my_stack()  H5E__get_stack()
 #else /* H5_HAVE_THREADSAFE */
 /*
  * The current error stack.
  */
-#define H5E_get_my_stack() (H5E_stack_g + 0)
+#define H5E__get_my_stack() (H5E_stack_g + 0)
 #endif /* H5_HAVE_THREADSAFE */
 
 
@@ -79,7 +77,7 @@ typedef struct {
 } H5E_auto_op_t;
 #else /* H5_NO_DEPRECATED_SYMBOLS */
 typedef struct {
-    H5E_auto_t  func2;      /* Only the new style callback function is available. */
+    H5E_auto2_t func2;      /* Only the new style callback function is available. */
 } H5E_auto_op_t;
 #endif /* H5_NO_DEPRECATED_SYMBOLS */ 
 
@@ -134,18 +132,20 @@ H5_DLLVAR H5E_t	H5E_stack_g[1];
 /******************************/
 H5_DLL herr_t H5E__term_deprec_interface(void);
 #ifdef H5_HAVE_THREADSAFE
-H5_DLL H5E_t *H5E_get_stack(void);
+H5_DLL H5E_t *H5E__get_stack(void);
 #endif /* H5_HAVE_THREADSAFE */
-H5_DLL ssize_t H5E_get_msg(const H5E_msg_t *msg_ptr, H5E_type_t *type,
+H5_DLL herr_t H5E__push_stack(H5E_t *estack, const char *file, const char *func,
+    unsigned line, hid_t cls_id, hid_t maj_id, hid_t min_id, const char *desc);
+H5_DLL ssize_t H5E__get_msg(const H5E_msg_t *msg_ptr, H5E_type_t *type,
     char *msg, size_t size);
-H5_DLL herr_t H5E_print(const H5E_t *estack, FILE *stream, hbool_t bk_compat);
-H5_DLL herr_t H5E_walk(const H5E_t *estack, H5E_direction_t direction,
+H5_DLL herr_t H5E__print(const H5E_t *estack, FILE *stream, hbool_t bk_compat);
+H5_DLL herr_t H5E__walk(const H5E_t *estack, H5E_direction_t direction,
     const H5E_walk_op_t *op, void *client_data);
-H5_DLL herr_t H5E_get_auto(const H5E_t *estack, H5E_auto_op_t *op,
+H5_DLL herr_t H5E__get_auto(const H5E_t *estack, H5E_auto_op_t *op,
     void **client_data);
-H5_DLL herr_t H5E_set_auto(H5E_t *estack, const H5E_auto_op_t *op,
+H5_DLL herr_t H5E__set_auto(H5E_t *estack, const H5E_auto_op_t *op,
     void *client_data);
-H5_DLL herr_t H5E_pop(H5E_t *err_stack, size_t count);
+H5_DLL herr_t H5E__pop(H5E_t *err_stack, size_t count);
 
 #endif /* _H5Epkg_H */
 

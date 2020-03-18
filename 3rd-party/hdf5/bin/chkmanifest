@@ -6,20 +6,21 @@
 #
 # This file is part of HDF5.  The full HDF5 copyright notice, including
 # terms governing use, modification, and redistribution, is contained in
-# the files COPYING and Copyright.html.  COPYING can be found at the root
-# of the source code distribution tree; Copyright.html can be found at the
-# root level of an installed copy of the electronic HDF5 document set and
-# is linked from the top-level documents page.  It can also be found at
-# http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have
-# access to either file, you may request a copy from help@hdfgroup.org.
+# the COPYING file, which can be found at the root of the source code
+# distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.
+# If you do not have access to either file, you may request a copy from
+# help@hdfgroup.org.
 #
 
-# Check that all the files in MANIFEST exist and that (if this is a
-# SVN checkout) that all the SVN-managed files appear in the
+# Check that all the files in MANIFEST exist and (if this is a
+# GIT checkout) that all the GIT-managed files appear in the
 # MANIFEST.
+# 
 
 verbose=yes
 MANIFEST=/tmp/HD_MANIFEST.$$
+AUTOGEN=./autogen.sh
+AUTOGEN_LOG=/tmp/autogen.log.$$
 
 # Main
 test "$verbose" && echo "   Checking MANIFEST..." 1>&2
@@ -47,6 +48,19 @@ else
 	echo MANIFEST file not found. Abort.
 	exit 1
     fi
+fi
+
+# Do an autogen if generated files (e.g., configure) is not present
+if [ ! -f configure ]; then
+    echo "   running $AUTOGEN"
+    $AUTOGEN > $AUTOGEN_LOG 2>&1
+    if [ $? -ne 0 ]; then
+	echo $AUTOGEN encountered error. Abort.
+	echo output from $AUTOGEN:
+	cat $AUTOGEN_LOG
+	exit 1
+    fi
+    rm $AUTOGEN_LOG
 fi
 
 # Check for duplicate entries.  This can be done at any time, but it may as 
@@ -77,23 +91,23 @@ done
 # Get the list of files under version control and check that they are
 # present.
 #
-# First get a list of all the pending files with svn stat and
+# First get a list of all the pending files with git status and
 # check those.
-svn_stat=`svn stat -q`
-for file in $svn_stat; do
+git_stat=`git status -s`
+for file in $git_stat; do
 
-    # Newly added files are not listed by svn ls, which
+    # Newly added files are not listed by git ls-files, which
     # we check later.
 
     # The line listing new files starts with 'A'.
     letter=`echo $file | head -c 1`
     if [ "$letter" = "A" ]; then
-        # Convert the seven Subversion status columns to './' so it matches
+        # Convert the git status columns to './' so it matches
         # the manifest file name.
         #
         # There is a space between the status columns and file name, hence
-        # the '8' instead of '7'.
-        path=`echo $file | sed 's/^.\{8\}/\.\//g'`
+        # the '3'.
+        path=`echo $file | sed 's/^.\{3\}/\.\//g'`
         # Ignore directories
         if [ ! -d $path ]; then
             if (grep ^$path$ $MANIFEST >/dev/null); then
@@ -106,10 +120,10 @@ for file in $svn_stat; do
     fi
 done
 
-# Next check svn ls, which gets a list of all files that are
+# Next check git ls-files, which gets a list of all files that are
 # checked in.
-svn_ls=`svn ls -R`
-for file in $svn_ls; do
+git_ls=`git ls-files`
+for file in $git_ls; do
     path="./${file}"
     # Ignore directories
     if [ ! -d $path ]; then
@@ -126,7 +140,7 @@ done
 if [ "X$fail" = "Xyes" ]; then
     cat 1>&2 <<EOF
 The MANIFEST is out of date. Files marked with a minus sign (-) no
-longer exist; files marked with a plus sign (+) are SVN-managed but do
+longer exist; files marked with a plus sign (+) are GIT-managed but do
 not appear in the MANIFEST.  Please remedy the situation and try again.
 EOF
     exit 1

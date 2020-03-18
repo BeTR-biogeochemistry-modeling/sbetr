@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /*
@@ -73,10 +71,10 @@
 
 /* Define Small, Large, Extra Large, Huge File which 
  * corrspond to less than 2GB, 2GB, 4GB, and tens of GB file size.
- * NOFILE stands for "no file" to be tested.
+ * NO_FILE stands for "no file" to be tested.
  */
-typedef enum fsizes_t { SFILE, LFILE, XLFILE, HUGEFILE, NOFILE} fsizes_t;
-fsizes_t file_size= NOFILE;
+typedef enum fsizes_t { SFILE, LFILE, XLFILE, HUGEFILE, NO_FILE} fsizes_t;
+fsizes_t file_size= NO_FILE;
 
 const char *FILENAME[] = {
         "big",
@@ -120,7 +118,7 @@ static hsize_t values_used[WRT_N];
 static hsize_t
 randll(hsize_t limit, int current_index)
 {
-    hsize_t	acc;
+    hsize_t	acc = 0;
     int 	overlap = 1;
     int 	i;
     int 	tries = 0;
@@ -129,8 +127,8 @@ randll(hsize_t limit, int current_index)
     /* does not overlap with any previous writes */
     while(overlap != 0 && tries < MAX_TRIES)
     {
-        acc = HDrandom();
-        acc *= HDrandom();
+        acc = (hsize_t)HDrandom();
+        acc *= (hsize_t)HDrandom();
         acc = acc % limit;
         overlap = 0;
 
@@ -174,7 +172,7 @@ is_sparse(void)
     int		fd;
     h5_stat_t	sb;
 
-    if ((fd=HDopen("x.h5", O_RDWR|O_TRUNC|O_CREAT, 0666)) < 0) return 0;
+    if ((fd = HDopen("x.h5", O_RDWR|O_TRUNC|O_CREAT, H5_POSIX_CREATE_MODE_RW)) < 0) return 0;
     if (HDlseek(fd, (off_t)(1024*1024), SEEK_SET)!=1024*1024) return 0;
     if (5!=HDwrite(fd, "hello", (size_t)5)) return 0;
     if (HDclose(fd) < 0) return 0;
@@ -210,9 +208,9 @@ static fsizes_t
 supports_big(void)
 {
     int		fd = -1;
-    fsizes_t    fsize = NOFILE;
+    fsizes_t    fsize = NO_FILE;
 
-    if((fd=HDopen("y.h5", O_RDWR|O_TRUNC|O_CREAT, 0666)) < 0)
+    if((fd=HDopen("y.h5", O_RDWR|O_TRUNC|O_CREAT, H5_POSIX_CREATE_MODE_RW)) < 0)
         goto error;
 
     /* Write a few byte at the beginning */
@@ -277,6 +275,13 @@ error:
  *
  *-------------------------------------------------------------------------
  */
+/* Disable warning for "format not a string literal" here -QAK */
+/*
+ *      This pragma only needs to surround the snprintf() calls with
+ *      'name' in the code below, but early (4.4.7, at least) gcc only
+ *      allows diagnostic pragmas to be toggled outside of functions.
+ */
+H5_GCC_DIAG_OFF(format-nonliteral)
 static int
 enough_room(hid_t fapl)
 {
@@ -295,7 +300,7 @@ enough_room(hid_t fapl)
     /* Create files */
     for (i=0; i<NELMTS(fd); i++) {
         HDsnprintf(name, sizeof(name), filename, i);
-        if ((fd[i]=HDopen(name, O_RDWR|O_CREAT|O_TRUNC, 0666)) < 0) {
+        if ((fd[i]=HDopen(name, O_RDWR|O_CREAT|O_TRUNC, H5_POSIX_CREATE_MODE_RW)) < 0) {
             goto done;
         }
         if ((off_t)size != HDlseek(fd[i], (off_t)size, SEEK_SET)) {
@@ -317,6 +322,7 @@ done:
 
     return ret_value;
 }
+H5_GCC_DIAG_ON(format-nonliteral)
 
 
 /*-------------------------------------------------------------------------
@@ -377,9 +383,9 @@ writer (char* filename, hid_t fapl, fsizes_t testsize, int wrt_n)
         size2[0] /= 32;
         break;
 
-    case NOFILE:
+    case NO_FILE:
         /* what to do?? */
-        HDfprintf(stdout, "Unexpected file size of NOFILE\n");
+        HDfprintf(stdout, "Unexpected file size of NO_FILE\n");
         goto error;
         break;
 
@@ -508,7 +514,7 @@ reader(char *filename, hid_t fapl)
         if('#' != ln[0])
             break;
         i = (int)HDstrtol(ln + 1, &s, 10);
-        hs_offset[0] = HDstrtoll(s, NULL, 0);
+        hs_offset[0] = HDstrtoull(s, NULL, 0);
         HDfprintf(stdout, "#%03d 0x%016Hx%47s", i, hs_offset[0], "");
         HDfflush(stdout);
 
@@ -526,7 +532,7 @@ reader(char *filename, hid_t fapl)
                     }
         if(zero) {
             H5_FAILED();
-            printf("    %d zero%s\n", zero, 1 == zero ? "" : "s");
+            HDprintf("    %d zero%s\n", zero, 1 == zero ? "" : "s");
         } else if(wrong) {
             SKIPPED();
             HDputs("    Possible overlap with another region.");
@@ -599,7 +605,7 @@ test_sec2(hid_t fapl)
     fsizes_t	testsize;
 
     testsize = supports_big();
-    if(testsize == NOFILE) {
+    if(testsize == NO_FILE) {
         HDfprintf(stdout, "Test for sec2 is skipped because file system does not support big files.\n");
         goto quit;
     }
@@ -618,8 +624,8 @@ test_sec2(hid_t fapl)
 quit:
     /* End with normal return code */
     /* Clean up the test file */
-    if(h5_cleanup(FILENAME, fapl))
-        HDremove(DNAME);
+    h5_clean_files(FILENAME, fapl);
+    HDremove(DNAME);
     return 0;
 
 error:
@@ -634,7 +640,7 @@ test_stdio(hid_t fapl)
     fsizes_t	testsize;
 
     testsize = supports_big();
-    if(testsize == NOFILE) {
+    if(testsize == NO_FILE) {
         HDfprintf(stdout, "Test for stdio is skipped because file system does not support big files.\n");
         goto quit;
     }
@@ -655,8 +661,8 @@ test_stdio(hid_t fapl)
 quit:
     /* End with normal return code */
     /* Clean up the test file */
-    if(h5_cleanup(FILENAME, fapl))
-        HDremove(DNAME);
+    h5_clean_files(FILENAME, fapl);
+    HDremove(DNAME);
     HDfflush(stdout);
     return 0;
 
@@ -716,8 +722,8 @@ test_family(hid_t fapl)
 quit:
     /* End with normal return code */
     /* Clean up the test file */
-    if(h5_cleanup(FILENAME, fapl))
-        HDremove(DNAME);
+    h5_clean_files(FILENAME, fapl);
+    HDremove(DNAME);
     return 0;
 
 error:
@@ -767,7 +773,7 @@ main (int ac, char **av)
                 family_size_def = (hsize_t)HDstrtoull(*av, NULL, 0);
             }
             else{
-                printf("***Missing fsize value***\n");
+                HDprintf("***Missing fsize value***\n");
                 usage();
                 return 1;
             }
@@ -801,7 +807,7 @@ main (int ac, char **av)
     /* seed = (unsigned long)1155438845; */
     HDfprintf(stderr, "Random # seed was: %lu\n", seed);
 #endif /* QAK */
-    HDsrandom(seed);
+    HDsrandom((unsigned)seed);
 
     /* run VFD-specific test */
     if(H5FD_SEC2 == driver) {
