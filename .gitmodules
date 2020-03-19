@@ -1,3 +1,9 @@
 [submodule "3rd-party/pfunit"]
 	path = 3rd-party/pfunit
 	url = git://git.code.sf.net/p/pfunit/code
+[submodule "3rd-party/netcdf-fortran"]
+	path = 3rd-party/netcdf-fortran
+	url = https://github.com/jinyun1tang/netcdf-fortran
+[submodule "3rd-party/netcdf-c"]
+	path = 3rd-party/netcdf-c
+	url = https://github.com/jinyun1tang/netcdf-c
