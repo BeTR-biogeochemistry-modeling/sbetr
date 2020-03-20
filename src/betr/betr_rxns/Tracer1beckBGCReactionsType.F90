@@ -297,17 +297,21 @@ contains
          pbot_pa              => biophysforc%forc_pbot_downscaled_col    , &
          tair                 => biophysforc%forc_t_downscaled_col       , &
          diffblkm_topsoi_col  => tracercoeff_vars%diffblkm_topsoi_col    , &
+         id_trc_doc           => betrtracer_vars%id_trc_doc              , &
+         id_trc_dom           => betrtracer_vars%id_trc_dom              , &
          qflx_adv             => biogeo_flux%qflx_adv_col                  & !real(r8) (:,:)[intent(in)], advective velocity defined at layer interfatemperature_vars
          )
       L=1._r8
       do fc = 1, num_soilc
          c = filter_soilc(fc)
          u = qflx_adv(c,jtops(c)-1)
-         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_doc) &
-           = conc1(betr_time%time, diffblkm_topsoi_col(c,groupid(betrtracer_vars%id_trc_doc)), u, L, 1.e-8_r8)               !mol m-3, contant boundary condition, as concentration
+         print*,groupid(id_trc_doc),groupid(id_trc_dom)
+         print*,diffblkm_topsoi_col(c,:)
+         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,id_trc_doc) &
+           = conc1(betr_time%time, diffblkm_topsoi_col(c,groupid(id_trc_doc)), u, L, 1.e-8_r8)               !mol m-3, contant boundary condition, as concentration
 
-         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_dom) &
-           = conc1(betr_time%time, diffblkm_topsoi_col(c,groupid(betrtracer_vars%id_trc_dom)), u, L, 1.e-8_r8)               !mol m-3, contant boundary condition, as concentration
+         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,id_trc_dom) &
+           = conc1(betr_time%time, diffblkm_topsoi_col(c,groupid(id_trc_dom)), u, L, 1.e-8_r8)               !mol m-3, contant boundary condition, as concentration
 
          tracerboundarycond_vars%bot_concflux_col(c,1,:)        = 0._r8                        !zero flux boundary condition for diffusion
          condc_toplay_col(c,groupid(betrtracer_vars%id_trc_doc))= diffblkm_topsoi_col(c,groupid(betrtracer_vars%id_trc_doc))                        !m/s surface conductance
