@@ -64,7 +64,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/3rd-party/pfunit
 set(ENV{PFUNIT} ${PROJECT_BINARY_DIR} CACHE)
 
 #remove netcdf dependence
-if (MACHINE MATCHES "notsupported"  AND BETR_HAVE_NETCDF EQUAL 1)
+if (BETR_HAVE_NETCDF EQUAL 1)
 return ()
 endif()
 

@@ -127,9 +127,9 @@ endif
 
 # netcdf
 
-ifneq ($(netcdfsys), not-set)
-  NETCDF_FFLAGS = ""
-  NETCDF_FLIBS = ""
+ifeq ($(netcdfsys), not-set)
+  NETCDF_FFLAGS =""
+  NETCDF_FLIBS =""
 else
   NETCDF_FFLAGS = $(shell nc-config --prefix)/include
   NETCDF_FLIBS = $(shell nc-config --flibs)
