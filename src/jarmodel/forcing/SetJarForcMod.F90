@@ -1,6 +1,7 @@
 
 module SetJarForcMod
 #include "bshr_assert.h"
+  use bshr_assert_mod, only : shr_assert_all, shr_assert_all_ext
   use JarBgcForcType, only : JarBGC_forc_type
   use shr_kind_mod  , only : r8 => shr_kind_r8
   use SoilForcType, only : soil_forc_type
