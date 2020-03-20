@@ -3,9 +3,9 @@ set(BETR_RXNS_SOURCES
   MockBGCReactionsType.F90
   MockPlantSoilBGCType.F90
   Tracer1beckBGCReactionsType.F90
-  Tracer1beckPlantSoilBGCType.F90
+  Tracer1BeckPlantSoilBGCType.F90
   Tracer2beckBGCReactionsType.F90
-  Tracer2beckPlantSoilBGCType.F90
+  Tracer2BeckPlantSoilBGCType.F90
   DIOCPlantSoilBGCType.F90
   DIOCBGCReactionsType.F90
   H2OIsotopeBGCReactionsType.F90

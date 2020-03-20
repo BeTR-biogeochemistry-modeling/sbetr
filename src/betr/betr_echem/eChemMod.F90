@@ -2,6 +2,7 @@ module eChemMod
 
 #include "bshr_assert.h"
   use FindRootMod     , only : imaxloc, cubic_newtonraphson
+  use FindRootMod, only : quadrootbnd
   use BetrStatusType  , only : betr_status_type
   use eChemConstMod   , only : r_echem_AKD, r_echem_ABKDE
   use eChemConstMod   , only : r_echem_ABKD,r_echem_DsKAB
@@ -32,6 +33,7 @@ contains
   function echem_ABKDE(ca,cb,cd,ce, Kr)result(dA)
   ! A + B <-> D + E
   ! (cd+dA)*(ce+dA)/((ca-dA)*(cb-dA))=Kr
+  use FindRootMod, only : quadrootbnd
   implicit none
   real(r8), intent(in) :: ca, cb, cd, ce, Kr
   real(r8) :: dA
