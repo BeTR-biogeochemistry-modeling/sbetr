@@ -1079,9 +1079,20 @@ def main(options):
 
     dry_run = options.dry_run
     import subprocess
+
     #ncgen = find_executable('ncgen', exe_paths)
-    loc=subprocess.check_output(["which", "ncgen"])
-    ncgen=str(loc.strip().decode())
+    loc1=subprocess.run(["which","ncgen"])
+    if loc1.returncode==1:
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        mdir,chdir=dir_path.split('/sbetr')
+        if os.path.isfile(mdir+"/sbetr/local/bin/ncgen"):
+            ncgen=mdir+"/sbetr/local/bin/ncgen"
+        else:
+            raise RuntimeError(' DEV_ERROR: ncgen does not exist')
+    else:
+        loc=subprocess.check_output(["which", "ncgen"])
+        ncgen=str(loc.strip().decode())
+    
     convert_input_data(ncgen, input_dir, dry_run)
 
     print('Setting up tests.')
