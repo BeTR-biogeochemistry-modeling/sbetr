@@ -55,7 +55,7 @@ macro(set_up_compilers)
     elseif (HOSTNAME MATCHES "cori")
       set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -mkl")
     elseif (HOSTNAME MATCHES "scs")
-      set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -mkl")
+#      set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -mkl")
     endif()
   endif()
 
