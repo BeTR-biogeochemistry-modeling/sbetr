@@ -526,7 +526,7 @@ contains
   implicit none
   class(betr_time_type), intent(in) :: this
   logical :: ans
-
+  print*,'step',this%nelapstep
   ans = (this%nelapstep==1)
   end function is_first_step
 

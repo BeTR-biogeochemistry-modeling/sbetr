@@ -375,7 +375,7 @@ contains
     tracer_flx_netpro_vr           => tracerflux_vars%tracer_flx_netpro_vr_col ,  &
     id_trc_doc                     => betrtracer_vars%id_trc_doc                  &
     )
-
+    print*,'calc_bgc_reaction',betr_time%is_first_step()
     if(betr_time%is_first_step())then
       print*,'first step'
 !      do j = bounds%lbj, bounds%ubj
