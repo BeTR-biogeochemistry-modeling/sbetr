@@ -61,7 +61,7 @@ module TracerFluxType
      real(r8), pointer :: tracer_flx_dew_snow_col(:,:)     => null()        !tracer flux to snow coming from dew formation
      real(r8), pointer :: tracer_flx_sub_snow_col(:,:)      => null()       !tracer flux loss from snow sublimation
      real(r8), pointer :: tracer_flx_h2osfc_snow_residual_col(:,:) => null() !tracer flux coming from residual standing water and residual snow
-
+     integer :: nvolatile_tracers
    contains
      procedure, public  :: Init
      procedure, public  :: Restart
@@ -90,10 +90,11 @@ contains
     integer               , intent(in) :: lbj, ubj
     type(BeTRTracer_Type) , intent(inout) :: betrtracer_vars
 
+    this%nvolatile_tracers= betrtracer_vars%nvolatile_tracers
     call this%InitAllocate(bounds, lbj, ubj, betrtracer_vars)
     call this%tracer_base_init()
     call this%InitHistory (bounds, betrtracer_vars)
-    call this%InitCold    (bounds)
+    call this%InitCold    (bounds, betrtracer_vars)
   end subroutine Init
 
   !-----------------------------------------------------------------------
@@ -312,16 +313,18 @@ contains
   end subroutine InitHistory
 
   !-----------------------------------------------------------------------
-  subroutine InitCold(this, bounds)
+  subroutine InitCold(this, bounds, betrtracer_vars)
     !
     ! !DESCRIPTION:
     ! cold initialization
     !
     ! !USES:
     !
+    use BeTRTracerType, only : BeTRTracer_Type
     ! !ARGUMENTS:
     class(TracerFlux_type), intent(inout) :: this
     type(bounds_type) , intent(in) :: bounds
+    type(BeTRTracer_Type) , intent(inout) :: betrtracer_vars
     !
     ! !LOCAL VARIABLES:
     integer :: c, j, p, l       ! index
@@ -351,15 +354,17 @@ contains
       this%tracer_flx_netphyloss_col(c,:)  = 0._r8
       this%tracer_flx_netpro_col(c,:)      = 0._r8
       this%tracer_flx_dstor_col(c,:)       = 0._r8
-      this%tracer_flx_ebu_col(c,:)         = 0._r8
       this%tracer_flx_prec_col(c,:)        = 0._r8
-      this%tracer_flx_dif_col(c,:)         = 0._r8
       this%tracer_flx_drain_col(c,:)       = 0._r8
-      this%tracer_flx_surfemi_col(c,:)     = 0._r8
       this%tracer_flx_leaching_col(c,:)    = 0._r8
       this%tracer_flx_surfrun_col(c,:)     = 0._r8
-      this%tracer_flx_tparchm_col(c,:)     = 0._r8
-      this%tracer_flx_parchm_vr_col(c,:,:) = 0._r8
+      if(betrtracer_vars%nvolatile_tracers>0)then
+        this%tracer_flx_ebu_col(c,:)         = 0._r8
+        this%tracer_flx_dif_col(c,:)         = 0._r8
+        this%tracer_flx_surfemi_col(c,:)     = 0._r8
+        this%tracer_flx_tparchm_col(c,:)     = 0._r8
+        this%tracer_flx_parchm_vr_col(c,:,:) = 0._r8
+      endif
       this%tracer_flx_vtrans_col(c,:)      = 0._r8
       this%tracer_flx_dew_grnd_col   (c,:) = 0._r8
       this%tracer_flx_dew_snow_col   (c,:) = 0._r8
@@ -428,15 +433,10 @@ contains
       this%tracer_flx_netphyloss_col (column,:)   = 0._r8
       this%tracer_flx_netpro_col     (column,:)   = 0._r8
       this%tracer_flx_dstor_col      (column,:)   = 0._r8
-      this%tracer_flx_ebu_col        (column,:)   = 0._r8
       this%tracer_flx_prec_col       (column,:)   = 0._r8
-      this%tracer_flx_dif_col        (column,:)   = 0._r8
       this%tracer_flx_drain_col      (column,:)   = 0._r8
-      this%tracer_flx_surfemi_col    (column,:)   = 0._r8
       this%tracer_flx_leaching_col   (column,:)   = 0._r8
       this%tracer_flx_surfrun_col    (column,:)   = 0._r8
-      this%tracer_flx_tparchm_col    (column,:)   = 0._r8
-      this%tracer_flx_parchm_vr_col  (column,:,:) = 0._r8
       this%tracer_flx_vtrans_col     (column,:)   = 0._r8
       this%tracer_flx_dew_grnd_col   (column,:)   = 0._r8
       this%tracer_flx_dew_snow_col   (column,:)   = 0._r8
@@ -445,6 +445,16 @@ contains
       this%tracer_flx_netpro_vr_col  (column,:,:)   = 0._r8
       this%tracer_flx_totleached_col (column,:)   = 0._r8
     enddo
+    if(this%nvolatile_tracers>0)then
+      do fc = 1, numf
+        column = filter(fc)
+        this%tracer_flx_ebu_col        (column,:)   = 0._r8
+        this%tracer_flx_dif_col        (column,:)   = 0._r8
+        this%tracer_flx_surfemi_col    (column,:)   = 0._r8
+        this%tracer_flx_tparchm_col    (column,:)   = 0._r8
+        this%tracer_flx_parchm_vr_col  (column,:,:) = 0._r8
+      enddo
+    endif
     do fp = 1, numfp
       p = filterp(fp)
       this%tracer_flx_vtrans_patch(p,:)         = 0._r8
@@ -476,20 +486,21 @@ contains
     this%tracer_flx_infl_col       (column,:)   = this%tracer_flx_infl_col       (column,:)/dtime
     this%tracer_flx_netphyloss_col(column,:)    = this%tracer_flx_netphyloss_col (column,:)/dtime
     this%tracer_flx_netpro_col     (column,:)   = this%tracer_flx_netpro_col     (column,:)/dtime
-    this%tracer_flx_ebu_col        (column,:)   = this%tracer_flx_ebu_col        (column,:)/dtime
     this%tracer_flx_prec_col       (column,:)   = this%tracer_flx_prec_col       (column,:)/dtime
-    this%tracer_flx_dif_col        (column,:)   = this%tracer_flx_dif_col        (column,:)/dtime
     this%tracer_flx_drain_col      (column,:)   = this%tracer_flx_drain_col      (column,:)/dtime
-    this%tracer_flx_surfemi_col    (column,:)   = this%tracer_flx_surfemi_col    (column,:)/dtime
     this%tracer_flx_leaching_col   (column,:)   = this%tracer_flx_leaching_col   (column,:)/dtime
     this%tracer_flx_surfrun_col    (column,:)   = this%tracer_flx_surfrun_col    (column,:)/dtime
-    this%tracer_flx_tparchm_col    (column,:)   = this%tracer_flx_tparchm_col    (column,:)/dtime
     this%tracer_flx_vtrans_col     (column,:)   = this%tracer_flx_vtrans_col     (column,:)/dtime
     this%tracer_flx_dew_grnd_col   (column,:)   = this%tracer_flx_dew_grnd_col   (column,:)/dtime
     this%tracer_flx_dew_snow_col   (column,:)   = this%tracer_flx_dew_snow_col   (column,:)/dtime
     this%tracer_flx_sub_snow_col   (column,:)   = this%tracer_flx_sub_snow_col   (column,:)/dtime
     this%tracer_flx_h2osfc_snow_residual_col(column,:) =  this%tracer_flx_h2osfc_snow_residual_col(column,:)/dtime
-
+    if(this%nvolatile_tracers>0)then
+      this%tracer_flx_ebu_col        (column,:)   = this%tracer_flx_ebu_col        (column,:)/dtime
+      this%tracer_flx_dif_col        (column,:)   = this%tracer_flx_dif_col        (column,:)/dtime
+      this%tracer_flx_surfemi_col    (column,:)   = this%tracer_flx_surfemi_col    (column,:)/dtime
+      this%tracer_flx_tparchm_col    (column,:)   = this%tracer_flx_tparchm_col    (column,:)/dtime
+    endif
     this%tracer_flx_totleached_col(column,:) = this%tracer_flx_drain_col(column,:) + this%tracer_flx_leaching_col(column,:)
   end subroutine temporal_average
 

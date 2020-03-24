@@ -137,8 +137,11 @@ if (NOT EXISTS ${HDF5_LIBRARY})
   else()
     execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/hdf5)
   endif()
-  set(HDF5_CONFIG_OPTS --prefix=${PROJECT_BINARY_DIR} --with-zlib=${PROJECT_BINARY_DIR} --disable-shared)
-
+  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(HDF5_CONFIG_OPTS --prefix=${PROJECT_BINARY_DIR} --with-zlib=${PROJECT_BINARY_DIR} --disable-shared --enable-build-mode=debug)
+  else()
+    set(HDF5_CONFIG_OPTS --prefix=${PROJECT_BINARY_DIR} --with-zlib=${PROJECT_BINARY_DIR} --disable-shared)
+  endif()
   execute_process(COMMAND env CC=${CMAKE_C_COMPILER} CFLAGS=${CMAKE_C_FLAGS} ./configure ${HDF5_CONFIG_OPTS}
                   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/hdf5
                   OUTPUT_VARIABLE hdf5_config_log ERROR_VARIABLE hdf5_config_err
