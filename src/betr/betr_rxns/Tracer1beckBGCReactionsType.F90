@@ -236,7 +236,7 @@ contains
          trc_group_mem = 1)
 
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_dom, trc_name='DOM',      &
-         is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = addone(itemp_grp),   &
+         is_trc_mobile=.false., is_trc_advective = .true., trc_group_id = addone(itemp_grp),   &
          trc_group_mem = 1)
 
   end subroutine Init_betrbgc
@@ -367,24 +367,37 @@ contains
     type(betr_status_type)            , intent(out)   :: betr_status
     character(len=*)                 , parameter     :: subname ='calc_bgc_reaction'
 
-    integer :: c, fc, ll
-
+    integer :: c, fc, ll, j
+    real(r8):: u, Lz
     call betr_status%reset()
-    associate(                                                                    &
-    tracer_mobile_phase            => tracerstate_vars%tracer_conc_mobile_col  ,  &
-    tracer_flx_netpro_vr           => tracerflux_vars%tracer_flx_netpro_vr_col ,  &
-    id_trc_doc                     => betrtracer_vars%id_trc_doc                  &
+    associate(                                                              &
+    tracer_mobile_phase       => tracerstate_vars%tracer_conc_mobile_col  , &
+    tracer_flx_netpro_vr      => tracerflux_vars%tracer_flx_netpro_vr_col , &
+    id_trc_doc                => betrtracer_vars%id_trc_doc               , &
+    id_trc_dom                => betrtracer_vars%id_trc_dom               , &
+    bulk_diffus_vr            => tracercoeff_vars%bulk_diffus_col         , &
+    aqu2bulkcef_mobile_vr     => tracercoeff_vars%aqu2bulkcef_mobile_col  , &
+    z                         => biophysforc%z                            , &
+    zi                        => biophysforc%zi                           , &
+    tracer_conc_mobile_vr     => tracerstate_vars%tracer_conc_mobile_col  , &
+    qflx_adv                  => biogeo_flux%qflx_adv_col                   &
     )
-    print*,'calc_bgc_reaction',betr_time%is_first_step()
     if(betr_time%is_first_step())then
-      print*,'first step'
-!      do j = bounds%lbj, bounds%ubj
-!        do c = bounds%begc, bounds%endc
-!          tracerstate_vars%tracer_conc_mobile_col(c,j, betrtracer_vars%id_trc_doc) = conc1(0._r8, D, u, z)
-!          tracerstate_vars%tracer_conc_mobile_col(c,j, betrtracer_vars%id_trc_dom) = conc1(0._r8, D, u, z)
-!        enddo
-!      enddo
+      do j = bounds%lbj, bounds%ubj
+        do c = bounds%begc, bounds%endc
+          Lz = zi(c,bounds%ubj)
+          u = qflx_adv(c,j)/aqu2bulkcef_mobile_vr(c,j,id_trc_doc)
+          tracer_conc_mobile_vr(c,j, id_trc_doc) = conc1(1.e-8_r8, bulk_diffus_vr(c,j,id_trc_doc), u, Lz, z(c,j))
+        enddo
+      enddo
     endif
+    do j = bounds%lbj, bounds%ubj
+      do c = bounds%begc, bounds%endc
+        Lz = zi(c,bounds%ubj)
+        u = qflx_adv(c,j)/aqu2bulkcef_mobile_vr(c,j,id_trc_dom)
+        tracer_conc_mobile_vr(c,j, id_trc_dom) = conc1(1.e-8_r8, bulk_diffus_vr(c,j,id_trc_dom), u, Lz, z(c,j))
+      enddo
+    enddo
    end associate
   end subroutine calc_bgc_reaction
 
@@ -479,7 +492,6 @@ contains
     do c = bounds%begc, bounds%endc
 
       !dual phase tracers
-
       tracerstate_vars%tracer_conc_mobile_col(c,:, :)          = 0._r8
       tracerstate_vars%tracer_conc_surfwater_col(c,:)          = 0._r8
       tracerstate_vars%tracer_conc_aquifer_col(c,:)            = 0._r8
@@ -663,12 +675,44 @@ contains
    real(r8), intent(in) :: L
    real(r8), intent(in) :: u
    real(r8) :: ans
-   real(r8) :: xm,xp
+   real(r8) :: xm,xp, Dtime
    xm=z-u*time
    xp=z+u*time
-   ans=0.5_r8*erfc(xm/(2._r8*sqrt(D*time)))+0.5_r8*exp(u*z/D)*erfc(xp/(2._r8*sqrt(D*time)))  &
-     +(1._r8+u/(2._r8*D)*(2._r8*L-xm))*exp(u*L/D)*erfc((2._r8*L-xm)/(2._r8*sqrt(D*time)))  &
-     -sqrt(u*u*time/(D*pi))*exp(u*L/D-(2._r8*L-xm)**2._r8/(4._r8*D*time))
+   dtime=D*time
+   print*,erfc(xm/2._r8*sqrt(Dtime)),eerfc(xm/2._r8*sqrt(Dtime),0._r8)
+   ans=0.5_r8*erfc(xm/(2._r8*sqrt(Dtime)))
+   ans=ans+0.5_r8*eerfc(xp/(2._r8*sqrt(Dtime)),u*z/D)
+   ans=ans+(1._r8+u/(2._r8*D)*(2._r8*L-xm))*eerfc((2._r8*L-xm)/(2._r8*sqrt(Dtime)),u*L/D)
+   ans=ans-sqrt(u*u*time/(D*pi))*exp(u*L/D-(2._r8*L-xm)**2._r8/(4._r8*Dtime))
    end function conc1
 
+   !----------------------------------------------------------------------
+   function eerfc(x,escal)result(ans)
+
+   !DESCRIPTION
+   !scaled complementary error function
+   !exp(escal)*erfc(x)
+   !defined only for x>=0._r8
+   implicit none
+   real(r8), intent(in) :: x
+   real(r8), intent(in) :: escal
+
+   real(r8) :: ans
+   real(r8) :: t
+   real(r8) :: argx
+   integer  :: jj
+   real(r8), parameter :: a(10)=(/-1.26551223_r8, 1.00002368_r8, &
+                                   0.37409196_r8, 0.09678418_r8, &
+                                  -0.18628806_r8, 0.27886807_r8, &
+                                  -1.13520398_r8, 1.48851587_r8, &
+                                  -0.82215223_r8, 0.17087277_r8/)
+   t= 1._r8/(1._r8+x)
+   argx=escal-x*x
+   argx=a(10)
+   do jj = 10, 2, -1
+     argx=argx*t+a(jj-1)
+   enddo
+   argx=argx+escal-x*x
+   ans=exp(argx)*t
+   end function eerfc
 end module Tracer1beckBGCReactionsType

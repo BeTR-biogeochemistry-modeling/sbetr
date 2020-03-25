@@ -315,6 +315,7 @@ contains
         chemstate_vars=chemstate_vars,           soilstate_vars=soilstate_vars)
     end select
 
+    !proceed reactive transport without considering drainage
     call simulation%StepWithoutDrainage(bounds, col, pft)
 
     select type(simulation)
@@ -330,7 +331,6 @@ contains
     call simulation%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi,&
        waterflux_vars=waterflux_vars )
     call simulation%StepWithDrainage(bounds, col)
-
 
     !x print*,'do mass balance check'
     call simulation%MassBalanceCheck(bounds)

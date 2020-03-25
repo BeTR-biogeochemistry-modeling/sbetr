@@ -720,24 +720,25 @@ contains
     !set lbj and ubj
     call this%BeTRSetBounds(betr_bounds)
 
-   do c = bounds%begc, bounds%endc
+    do c = bounds%begc, bounds%endc
+      if(this%betr(c)%skip_mass_bal_check() .and. this%betr_time%is_first_step())cycle
+      print*,'first step',this%betr_time%is_first_step()
       if(.not. this%active_col(c))cycle
-      ldebug=(c==68) .and. .false.
       call betr_tracer_massbalance_check(this%betr_time, betr_bounds,           &
          this%betr_col(c), this%num_soilc, this%filter_soilc,           &
          this%betr(c)%tracers, this%betr(c)%tracerstates,                &
-         this%betr(c)%tracerfluxes, this%bstatus(c), ldebug)
+         this%betr(c)%tracerfluxes, this%bstatus(c))!, ldebug)
       if(this%bstatus(c)%check_status())then
         call this%bsimstatus%setcol(c)
         call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
         exit
       endif
-   enddo
-   if(this%bsimstatus%check_status()) then
+    enddo
+    if(this%bsimstatus%check_status()) then
       print*,this%bsimstatus%cindex
       print*,trim(this%bsimstatus%print_msg())
       call endrun(msg=trim(this%bsimstatus%print_msg()))
-   endif
+    endif
   end subroutine BeTRSimulationMassBalanceCheck
 
 !-------------------------------------------------------------------------------

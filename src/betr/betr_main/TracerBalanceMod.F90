@@ -68,7 +68,7 @@ module TracerBalanceMod
 
     !--------------------------------------------------------------------------------
     subroutine betr_tracer_massbalance_check(betr_time, bounds, col,  numf, filter, &
-         betrtracer_vars, tracerstate_vars, tracerflux_vars, betr_status, ldebug)
+         betrtracer_vars, tracerstate_vars, tracerflux_vars, betr_status)!, ldebug)
       !
       ! !DESCRIPTION:
       ! do mass balance check for betr tracers
@@ -101,7 +101,7 @@ module TracerBalanceMod
       type(TracerFlux_type)  , intent(inout) :: tracerflux_vars
       type(TracerState_type) , intent(inout) :: tracerState_vars
       type(betr_status_type) , intent(out)   :: betr_status
-      logical                , intent(in)    :: ldebug
+!      logical                , intent(in)    :: ldebug
       ! !LOCAL VARIABLES:
       integer  :: jj, fc, c, kk
       real(r8) :: dtime

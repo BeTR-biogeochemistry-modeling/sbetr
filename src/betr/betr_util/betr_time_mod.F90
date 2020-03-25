@@ -109,6 +109,7 @@ contains
     this%doy    = 0
     this%moy    = 1
     this%hist_freq=-1
+    this%nelapstep=0
     if(present(namelist_buffer))then
       if(present(masterproc))then
         call this%ReadNamelist(namelist_buffer, masterproc)
@@ -526,8 +527,7 @@ contains
   implicit none
   class(betr_time_type), intent(in) :: this
   logical :: ans
-  print*,'step',this%nelapstep
-  ans = (this%nelapstep==1)
+  ans = (this%nelapstep==0)
   end function is_first_step
 
 end module BeTR_TimeMod

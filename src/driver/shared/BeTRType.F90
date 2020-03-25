@@ -64,7 +64,7 @@ module BetrType
 
      real(r8)                      , private, pointer    :: h2osoi_liq_copy(:,:) => null()
      real(r8)                      , private, pointer    :: h2osoi_ice_copy(:,:) => null()
-
+     logical                       , private :: is_analytic_benchmark
      ! FIXME(bja, 201603) replace LSM specific types!
 
    contains
@@ -101,6 +101,7 @@ module BetrType
      procedure, public  :: Set_iP_prof
      procedure, public  :: OutLoopBGC
      procedure, public  :: reset_biostates
+     procedure, public  :: skip_mass_bal_check
   end type betr_type
 
   public :: create_betr_type
@@ -1372,7 +1373,7 @@ contains
 
   asoibgc = .false.
   !if it is a default case, create it
-  call create_betr_def_application(bgc_reaction, plant_soilbgc, method, yesno)
+  call create_betr_def_application(bgc_reaction, plant_soilbgc, method, yesno, this%is_analytic_benchmark)
 
   if(.not. yesno)then
     call create_betr_usr_application(bgc_reaction, plant_soilbgc, method, asoibgc, bstatus)
@@ -1627,7 +1628,6 @@ contains
   subroutine reset_biostates(this, bounds, num_soilc, filter_soilc, &
      biophysforc, betr_status)
 
-
     implicit none
     !
     ! !ARGUMENTS :
@@ -1650,4 +1650,15 @@ contains
 
   end subroutine reset_biostates
 
+  !------------------------------------------------------------------------
+  function skip_mass_bal_check(this)result(ans)
+  implicit none
+  !
+  ! !ARGUMENTS :
+  class(betr_type)                 , intent(inout) :: this
+  logical :: ans
+
+  ans = this%is_analytic_benchmark
+
+  end function skip_mass_bal_check
 end module BetrType
