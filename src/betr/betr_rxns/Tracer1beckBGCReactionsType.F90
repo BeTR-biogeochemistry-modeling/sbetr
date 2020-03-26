@@ -305,8 +305,7 @@ contains
       do fc = 1, num_soilc
          c = filter_soilc(fc)
          u = qflx_adv(c,jtops(c)-1)
-         print*,groupid(id_trc_doc),groupid(id_trc_dom)
-         print*,diffblkm_topsoi_col(c,:)
+
          tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,id_trc_doc) &
            = conc1(betr_time%time, diffblkm_topsoi_col(c,groupid(id_trc_doc)), u, L, 1.e-8_r8)               !mol m-3, contant boundary condition, as concentration
 
@@ -679,7 +678,6 @@ contains
    xm=z-u*time
    xp=z+u*time
    dtime=D*time
-   print*,erfc(xm/2._r8*sqrt(Dtime)),eerfc(xm/2._r8*sqrt(Dtime),0._r8)
    ans=0.5_r8*erfc(xm/(2._r8*sqrt(Dtime)))
    ans=ans+0.5_r8*eerfc(xp/(2._r8*sqrt(Dtime)),u*z/D)
    ans=ans+(1._r8+u/(2._r8*D)*(2._r8*L-xm))*eerfc((2._r8*L-xm)/(2._r8*sqrt(Dtime)),u*L/D)

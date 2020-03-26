@@ -9,7 +9,7 @@
 &betr_time
   stop_n = 3
   delta_time=1800.
-  stop_option='nsteps'
+  stop_option='ndays'
 /
 
 &forcing_inparm

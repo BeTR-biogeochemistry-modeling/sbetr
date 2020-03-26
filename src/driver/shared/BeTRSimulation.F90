@@ -722,7 +722,6 @@ contains
 
     do c = bounds%begc, bounds%endc
       if(this%betr(c)%skip_mass_bal_check() .and. this%betr_time%is_first_step())cycle
-      print*,'first step',this%betr_time%is_first_step()
       if(.not. this%active_col(c))cycle
       call betr_tracer_massbalance_check(this%betr_time, betr_bounds,           &
          this%betr_col(c), this%num_soilc, this%filter_soilc,           &
