@@ -7,12 +7,13 @@
 /
 
 &betr_time
-  stop_n = 3
+  stop_n = 10
   delta_time=1800.
-  stop_option='ndays'
+  stop_option='nyears'
 /
 
 &forcing_inparm
+  forcing_type_name ='steady state'
   forcing_filename = '../input_data/uniform_steadystate_sat_forcing.cdl.nc'
 /
 
