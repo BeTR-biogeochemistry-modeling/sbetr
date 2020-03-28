@@ -236,7 +236,7 @@ contains
          trc_group_mem = 1)
 
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_dom, trc_name='DOM',      &
-         is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = addone(itemp_grp),   &
+         is_trc_mobile=.false., is_trc_advective = .false., trc_group_id = addone(itemp_grp),   &
          trc_group_mem = 1)
 
   end subroutine Init_betrbgc
@@ -297,6 +297,8 @@ contains
          pbot_pa              => biophysforc%forc_pbot_downscaled_col    , &
          tair                 => biophysforc%forc_t_downscaled_col       , &
          diffblkm_topsoi_col  => tracercoeff_vars%diffblkm_topsoi_col    , &
+         id_trc_doc           => betrtracer_vars%id_trc_doc              , &
+         id_trc_dom           => betrtracer_vars%id_trc_dom              , &
          qflx_adv             => biogeo_flux%qflx_adv_col                  & !real(r8) (:,:)[intent(in)], advective velocity defined at layer interfatemperature_vars
          )
 
@@ -305,15 +307,15 @@ contains
          u = qflx_adv(c,jtops(c)-1)
          !eventually, the following code will be implemented using polymorphism
          !tracer concentration at the beginning and end of the time step
-         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_doc) &
-            = conc2(betr_time%time, diffblkm_topsoi_col(c,groupid(betrtracer_vars%id_trc_doc)), u, 0._r8)               !mol m-3, contant boundary condition, as concentration
+         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,id_trc_doc) &
+            = conc2(betr_time%time, diffblkm_topsoi_col(c,groupid(id_trc_doc)), u, 0._r8)               !mol m-3, contant boundary condition, as concentration
 
-         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,betrtracer_vars%id_trc_dom) &
-            = conc2(betr_time%time, diffblkm_topsoi_col(c,groupid(betrtracer_vars%id_trc_dom)), u, 0._r8)               !mol m-3, contant boundary condition, as concentration
+         tracerboundarycond_vars%tracer_gwdif_concflux_top_col(c,1:2,id_trc_dom) &
+            = conc2(betr_time%time, diffblkm_topsoi_col(c,groupid(id_trc_dom)), u, 0._r8)               !mol m-3, contant boundary condition, as concentration
 
          tracerboundarycond_vars%bot_concflux_col(c,1,:)        = 0._r8                        !zero flux boundary condition for diffusion
-         condc_toplay_col(c,groupid(betrtracer_vars%id_trc_doc))= diffblkm_topsoi_col(c,groupid(betrtracer_vars%id_trc_doc))                        !m/s surface conductance
-         condc_toplay_col(c,groupid(betrtracer_vars%id_trc_dom))= diffblkm_topsoi_col(c,groupid(betrtracer_vars%id_trc_dom))                        !m/s surface conductance
+         condc_toplay_col(c,groupid(betrtracer_vars%id_trc_doc))= diffblkm_topsoi_col(c,groupid(id_trc_doc))                        !m/s surface conductance
+         condc_toplay_col(c,groupid(betrtracer_vars%id_trc_dom))= diffblkm_topsoi_col(c,groupid(id_trc_dom))                        !m/s surface conductance
 
       enddo
 
@@ -365,24 +367,37 @@ contains
     type(betr_status_type)            , intent(out)   :: betr_status
     character(len=*)                 , parameter     :: subname ='calc_bgc_reaction'
 
-    integer :: c, fc, ll
+    integer :: c, fc, ll, j
+    real(r8):: u, D
 
     call betr_status%reset()
-    associate(                                                                    &
-    tracer_mobile_phase            => tracerstate_vars%tracer_conc_mobile_col  ,  &
-    tracer_flx_netpro_vr           => tracerflux_vars%tracer_flx_netpro_vr_col ,  &
-    id_trc_doc                     => betrtracer_vars%id_trc_doc                  &
+    associate(                                                              &
+    tracer_mobile_phase       => tracerstate_vars%tracer_conc_mobile_col  , &
+    tracer_flx_netpro_vr      => tracerflux_vars%tracer_flx_netpro_vr_col , &
+    id_trc_doc                => betrtracer_vars%id_trc_doc               , &
+    id_trc_dom                => betrtracer_vars%id_trc_dom               , &
+    bulk_diffus_vr            => tracercoeff_vars%bulk_diffus_col         , &
+    aqu2bulkcef_mobile_vr     => tracercoeff_vars%aqu2bulkcef_mobile_col  , &
+    z                         => biophysforc%z                            , &
+    zi                        => biophysforc%zi                           , &
+    tracer_conc_mobile_vr     => tracerstate_vars%tracer_conc_mobile_col  , &
+    qflx_adv                  => biogeo_flux%qflx_adv_col                   &
     )
 
     if(betr_time%is_first_step())then
-      print*,"print_first step",betr_time%get_nstep()
-    !do j = bounds%lbj, bounds%ubj
-    !  do c = bounds%begc, bounds%endc
-    !    tracerstate_vars%tracer_conc_mobile_col(c,j, betrtracer_vars%id_trc_doc) = conc2(time, D, u, z)
-    !    tracerstate_vars%tracer_conc_mobile_col(c,j, betrtracer_vars%id_trc_dom) = conc2(time, D, u, z)
-    !  enddo
-    !enddo
+      do j = bounds%lbj, bounds%ubj
+        do c = bounds%begc, bounds%endc
+          u = qflx_adv(c,j)/aqu2bulkcef_mobile_vr(c,j,id_trc_doc)
+          tracerstate_vars%tracer_conc_mobile_col(c,j, id_trc_doc) = conc2(betr_time%time, bulk_diffus_vr(c,j,id_trc_doc), u, z(c,j))
+        enddo
+      enddo
     endif
+    do j = bounds%lbj, bounds%ubj
+      do c = bounds%begc, bounds%endc
+        u = qflx_adv(c,j)/aqu2bulkcef_mobile_vr(c,j,id_trc_dom)
+        tracerstate_vars%tracer_conc_mobile_col(c,j, id_trc_dom) = conc2(betr_time%time, bulk_diffus_vr(c,j,id_trc_dom), u, z(c,j))
+      enddo
+    enddo
    end associate
   end subroutine calc_bgc_reaction
 
