@@ -74,6 +74,9 @@ contains
     case ("tracer1beck_run")
        allocate(bgc_reaction, source=bgc_reaction_tracer1beck_run_type())
        bgc_type='type0_bgc'
+    case ("tracer2beck_run")
+       allocate(bgc_reaction, source=bgc_reaction_tracer2beck_run_type())
+       bgc_type='type0_bgc'
     case ("h2oiso")
        allocate(bgc_reaction, source=bgc_reaction_h2oiso_type())
     case ("doc_dic")
