@@ -27,6 +27,7 @@ module BeTR_TimeMod
      integer  :: moy, cyears, cdays
      real(r8) :: tod
      integer  :: hist_freq   !negative number, steps, positive number, 1: day, 30:mon, 365:year
+     integer  :: stop_opt
    contains
      procedure, public :: Init
      procedure, public :: its_time_to_write_restart
@@ -54,6 +55,7 @@ module BeTR_TimeMod
      procedure, public :: get_cur_year
      procedure, public :: get_cur_day
      procedure, public :: is_first_step
+     procedure, public :: print_model_time_stamp
   end type betr_time_type
 
   integer, parameter, private :: daz(12)=(/31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31/)
@@ -161,6 +163,7 @@ contains
     delta_time = 1800._r8                !half hourly time step
     stop_n=2       !by default 2 cycle
     stop_option='nyears'  !by default years
+    this%stop_opt=1
     hist_freq=-1   !write every time step
     restart_dtime = -1._r8
 
@@ -195,11 +198,14 @@ contains
     case ('ndays')
       !day
       this%stop_time= stop_n * 86400._r8
+      this%stop_opt=2
     case ('nyears')
       !year
       this%stop_time= stop_n * 86400._r8 * 365._r8
+      this%stop_opt=3
     case ('nsteps')
       this%stop_time = stop_n * this%delta_time
+      this%stop_opt=1
     case default
       call endrun(msg="ERROR setting up stop_option "//errmsg(mod_filename, __LINE__))
     end select
@@ -530,4 +536,26 @@ contains
   ans = (this%nelapstep==0)
   end function is_first_step
 
+  !-------------------------------------------------------------------------------
+  subroutine print_model_time_stamp(this, iulog)
+
+  implicit none
+  class(betr_time_type), intent(in) :: this
+  integer, intent(in) :: iulog
+
+  select case(this%stop_opt)
+  case (1)
+      write(iulog,*)'step', this%get_nstep()
+  case (2)
+    if (this%its_a_new_day()) then
+      write(iulog,*)'day', this%get_cur_day()
+    end if
+  case (3)
+    if (this%its_a_new_year()) then
+      write(iulog,*)'year', this%get_cur_year()
+    end if
+  end select
+
+  end subroutine print_model_time_stamp
+  !-------------------------------------------------------------------------------
 end module BeTR_TimeMod

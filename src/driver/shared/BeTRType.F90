@@ -198,7 +198,7 @@ contains
     !inside Init_plant_soilbgc, specific plant soil bgc coupler data type will be created
     call this%plant_soilbgc%Init_plant_soilbgc(bounds, lbj, ubj, namelist_buffer)
 
-    !initialize state variable
+    print*,'initialize state variable'
     call this%bgc_reaction%initCold(bounds, col, this%tracers, biophysforc, this%tracerstates)
 
     !initialize boundary condition type
@@ -964,7 +964,7 @@ contains
      h2osoi_ice          =>    biophysforc%h2osoi_ice_col            , &
      qflx_rootsoi        =>    biophysforc%qflx_rootsoi_col          , & ! Input  : [real(r8) (:,:) ]  vegetation/soil water exchange (m H2O/s) (+ = to atm)
      qflx_bot            =>    biophysforc%qflx_bot_col              , & ! Input : [real(r8)]
-     qflx_adv            =>    biogeo_flux%qflx_adv_col              , & ! Output: [real(r8) (:,:) ]  water flux at interfaces       (m H2O/s) (- = to atm)
+     qflx_adv            =>    biogeo_flux%qflx_adv_col              , & ! Output: [real(r8) (:,:) ]  water flux at interfaces  (m H2O/s) (- = to atm)
      qflx_gross_infl_soil=>    biogeo_flux%qflx_gross_infl_soil_col  , & ! Output: [real(r8) (:)] gross infiltration (mm H2O/s)
      qflx_infl           =>    biogeo_flux%qflx_infl_col             , & ! Output: [real(r8) (:)] infiltration, mm H2O/s
      qflx_gross_evap_soil=>    biogeo_flux%qflx_gross_evap_soil_col    & ! Output: [real(r8) (:)] gross evaporation (mm H2O/s)
@@ -992,7 +992,7 @@ contains
      c = filter_hydrologyc(fc)
      !obtain the corrected infiltration
      qflx_infl(c) = (h2osoi_liq(c,1)-this%h2osoi_liq_copy(c,1))/dtime + (qflx_rootsoi(c,1)+qflx_adv(c,1))*1.e3_r8
-     !the predicted net infiltration
+     !obtain the predicted net infiltration
      infl_tmp=qflx_gross_infl_soil(c)-qflx_gross_evap_soil(c)
      diff=qflx_infl(c)-infl_tmp
      if(abs(diff)>0._r8)then
@@ -1020,14 +1020,17 @@ contains
      endif
      qflx_adv(c,0) = qflx_gross_infl_soil(c) *1.e-3_r8  !surface infiltration, m/s
    enddo
-   if(abs(adv_scalar-1._r8)>1.e-10_r8)then
-     do j = nlevsoi, 0, -1
-       do fc = 1, num_hydrologyc
-         c = filter_hydrologyc(fc)
-         qflx_adv(c,j)=qflx_adv(c,j)*adv_scalar
-       enddo
-     enddo
-   endif
+
+!rescale the advective flux if necessary, designed for water isotope, and is off at the moment.
+!It may also not be necessary. Note: jyt, 2020 Mar 29.
+   !if(abs(adv_scalar-1._r8)>1.e-10_r8)then
+   !do j = nlevsoi, 0, -1
+   ! do fc = 1, num_hydrologyc
+!         c = filter_hydrologyc(fc)
+!         qflx_adv(c,j)=qflx_adv(c,j)*adv_scalar
+!       enddo
+!     enddo
+!   endif
    end associate
    end subroutine diagnose_advect_water_flux
 

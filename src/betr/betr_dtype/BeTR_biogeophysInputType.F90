@@ -26,8 +26,8 @@ implicit none
     real(r8), pointer :: h2osno_liq_col(:,:)    => null()
     real(r8), pointer :: h2osno_ice_col(:,:)    => null()
     !waterstate
-    real(r8), pointer :: h2osoi_liq_col(:,:)    => null()    !liquid water (kg/m2) (new) (-nlevsno+1:nlevgrnd)
-    real(r8), pointer :: h2osoi_ice_col(:,:)    => null()    !ice lens (kg/m2) (new) (-nlevsno+1:nlevgrnd)
+    real(r8), pointer :: h2osoi_liq_col(:,:)    => null()   !liquid water (kg/m2) (new) (-nlevsno+1:nlevgrnd)
+    real(r8), pointer :: h2osoi_ice_col(:,:)    => null()   !ice lens (kg/m2) (new) (-nlevsno+1:nlevgrnd)
     real(r8), pointer :: h2osoi_liqvol_col(:,:) => null()   !volumetric liquid water content
     real(r8), pointer :: h2osoi_icevol_col(:,:) => null()   !volumetric ice water content
     real(r8), pointer :: h2osoi_vol_col(:,:)    => null()    !volumetric water content, total

@@ -1269,11 +1269,10 @@ contains
 
                      if(abs(err_relative)<err_relative_threshold)then
                         !the calculation is good, use the error to correct the diffusive flux for volatile tracer
-                        if(is_volatile(trcid))then
+                        if(topbc_type(j)==bndcond_as_conc)then
                            diff_surf(c,k) = diff_surf(c,k)+err_tracer(c,k)/dtime_loc(c)
                            !accumulate the diffusive flux at the given time step, + into the atmosphere
-                           tracer_flx_dif(c,volatileid(trcid)) = tracer_flx_dif(c,volatileid(trcid)) - &
-                                diff_surf(c,k) * dtime_loc(c)
+                           tracer_flx_dif(c,trcid) = tracer_flx_dif(c,trcid) - diff_surf(c,k) * dtime_loc(c)
                         endif
                      else
                         tracername = betrtracer_vars%get_tracername(trcid)

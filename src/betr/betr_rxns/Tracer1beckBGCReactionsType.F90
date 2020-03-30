@@ -368,6 +368,7 @@ contains
 
     integer :: c, fc, ll, j
     real(r8):: u, Lz
+    real(r8):: time
     call betr_status%reset()
     associate(                                                              &
     tracer_mobile_phase       => tracerstate_vars%tracer_conc_mobile_col  , &
@@ -381,6 +382,7 @@ contains
     tracer_conc_mobile_vr     => tracerstate_vars%tracer_conc_mobile_col  , &
     qflx_adv                  => biogeo_flux%qflx_adv_col                   &
     )
+    time=betr_time%time+1.e-8_r8
     if(betr_time%is_first_step())then
       do j = bounds%lbj, bounds%ubj
         do c = bounds%begc, bounds%endc
@@ -390,11 +392,12 @@ contains
         enddo
       enddo
     endif
+    print*,'time',time
     do j = bounds%lbj, bounds%ubj
       do c = bounds%begc, bounds%endc
         Lz = zi(c,bounds%ubj)
         u = qflx_adv(c,j)/aqu2bulkcef_mobile_vr(c,j,id_trc_dom)
-        tracer_conc_mobile_vr(c,j, id_trc_dom) = conc1(1.e-8_r8, bulk_diffus_vr(c,j,id_trc_dom), u, Lz, z(c,j))
+        tracer_conc_mobile_vr(c,j, id_trc_dom) = conc1(time, bulk_diffus_vr(c,j,id_trc_dom), u, Lz, z(c,j))
       enddo
     enddo
    end associate
@@ -680,8 +683,10 @@ contains
    dtime=D*time
    ans=0.5_r8*erfc(xm/(2._r8*sqrt(Dtime)))
    ans=ans+0.5_r8*eerfc(xp/(2._r8*sqrt(Dtime)),u*z/D)
+
    ans=ans+(1._r8+u/(2._r8*D)*(2._r8*L-xm))*eerfc((2._r8*L-xm)/(2._r8*sqrt(Dtime)),u*L/D)
    ans=ans-sqrt(u*u*time/(D*pi))*exp(u*L/D-(2._r8*L-xm)**2._r8/(4._r8*Dtime))
+
    end function conc1
 
    !----------------------------------------------------------------------
@@ -712,5 +717,6 @@ contains
    enddo
    argx=argx+escal-x*x
    ans=exp(argx)*t
+
    end function eerfc
 end module Tracer1beckBGCReactionsType

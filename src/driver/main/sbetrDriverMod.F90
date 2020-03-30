@@ -86,7 +86,7 @@ contains
   character(len=betr_string_length_long) :: finit
   class(ForcingData_type), allocatable :: forcing_data
   class(betr_grid_type), allocatable :: grid_data
-  class(betr_time_type), allocatable :: time_vars
+!  class(betr_time_type), allocatable :: time_vars
 
   character(len=14) :: yymmddhhss
   character(len=256) :: restfile
@@ -126,8 +126,8 @@ contains
 
   call initialize(bounds)
 
-  allocate(time_vars)
-  call time_vars%Init(namelist_buffer)
+!  allocate(time_vars)
+!  call time_vars%Init(namelist_buffer)
 
   !read forcing
   allocate(forcing_data)
@@ -153,9 +153,9 @@ contains
     ! print*,'continue from restart file'
     call read_restinfo(restfname, nstep)
     !set current step
-    call time_vars%set_time_offset(nstep-1)
+    call simulation%betr_time%set_time_offset(nstep-1)
     ! print*,'back 1 step'
-    call time_vars%print_cur_time()
+    call simulation%betr_time%print_cur_time()
   else
     if(trim(finit)/='')then
       !pass finit to restfname
@@ -169,12 +169,12 @@ contains
   call grid_data%UpdateGridConst(bounds, lbj, ubj, simulation%num_soilc, simulation%filter_soilc, soilstate_vars, cnstate_vars)
   !x print*,'obtain waterstate_vars for initilizations that need it'
   call forcing_data%UpdateForcing(grid_data, bounds, lbj, ubj, simulation%num_soilc, &
-       simulation%filter_soilc, time_vars, col, pft, atm2lnd_vars, soilhydrology_vars, &
+       simulation%filter_soilc, simulation%betr_time, col, pft, atm2lnd_vars, soilhydrology_vars, &
        soilstate_vars,waterstate_vars, waterflux_vars, temperature_vars, chemstate_vars, &
        plantMicKinetics_vars, simulation%jtops)
 
   !x print*,'af init update',forcing_data%t_soi(1,:)
-  !print*,'initial water state variable output',time_vars%tstep
+  !print*,'initial water state variable output',simulation%betr_time%tstep
   call calc_qadv(ubj, simulation%num_soilc, &
        simulation%filter_soilc, waterstate_vars)
 
@@ -186,6 +186,7 @@ contains
 
   if(lread_param) call simulation%readParams(bounds)
 
+  print*,'initialize simulator'
   call  simulation%Init(bounds, lun, col, pft, waterstate_vars, namelist_buffer, base_filename, case_id)
   !x print*,'af sim init'
 
@@ -208,12 +209,12 @@ contains
     call simulation%BeTRRestartOffline(bounds, ncid, simulation%num_soilc, simulation%filter_soilc, flag='read')
     call simulation%BeTRRestartClose(ncid)
     !the following aligns forcing data with correct time stamp
-    call time_vars%set_nstep(nstep)
-    call time_vars%print_cur_time()
+    call simulation%betr_time%set_nstep(nstep)
+    call simulation%betr_time%print_cur_time()
     record = 0
   else
     record = -1
-    call time_vars%proc_initstep()
+    call simulation%betr_time%proc_initstep()
   endif
 
   !x print*,'bf loop'
@@ -223,7 +224,7 @@ contains
 
   do
     record = record + 1
-    call simulation%SetClock(dtime=time_vars%get_step_size(), nelapstep=time_vars%get_nstep())
+    call simulation%SetClock(dtime=simulation%betr_time%get_step_size(), nelapstep=simulation%betr_time%get_nstep())
     !x print*,'prepare for diagnosing water flux'
     call simulation%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi, waterstate_vars=waterstate_vars)
 
@@ -234,7 +235,7 @@ contains
     !from either user specified file or clm history file
 
     call forcing_data%UpdateForcing(grid_data,  bounds, lbj, ubj, simulation%num_soilc, &
-      simulation%filter_soilc, time_vars, col, pft, atm2lnd_vars, soilhydrology_vars, &
+      simulation%filter_soilc, simulation%betr_time, col, pft, atm2lnd_vars, soilhydrology_vars, &
       soilstate_vars,waterstate_vars, waterflux_vars, temperature_vars, chemstate_vars, &
       plantMicKinetics_vars, simulation%jtops)
 
@@ -298,7 +299,7 @@ contains
 
       if(simulation%do_soibgc())then
         call forcing_data%UpdateCNPForcing(1, nlevsoi, &
-          simulation%num_soilc, simulation%filter_soilc, time_vars,  &
+          simulation%num_soilc, simulation%filter_soilc, simulation%betr_time,  &
           carbonflux_vars, c13_cflx_vars, c14_cflx_vars, nitrogenflux_vars, &
           phosphorusflux_vars, plantMicKinetics_vars)
       endif
@@ -347,18 +348,18 @@ contains
     !  simulation%filter_soilc, waterstate_vars)
 
     !update time stamp
-    call time_vars%update_time_stamp()
+    call simulation%betr_time%update_time_stamp()
 
     !x print*,'write output'
     call simulation%WriteOfflineHistory(bounds, simulation%num_soilc,  &
-       simulation%filter_soilc, time_vars, waterflux_vars%qflx_adv_col)
+       simulation%filter_soilc, waterflux_vars%qflx_adv_col)
 
-    if(simulation%do_soibgc()) call WriteHistBGC(hist, time_vars, carbonstate_vars, carbonflux_vars, &
+    if(simulation%do_soibgc()) call WriteHistBGC(hist, simulation%betr_time, carbonstate_vars, carbonflux_vars, &
          nitrogenstate_vars, nitrogenflux_vars, phosphorusstate_vars, phosphorusflux_vars, reaction_method)
 
-    if(time_vars%its_time_to_write_restart()) then
+    if(simulation%betr_time%its_time_to_write_restart()) then
        !set restfname
-       nstep = time_vars%get_nstep()
+       nstep = simulation%betr_time%get_nstep()
        write(restfname,'(A,I8.8,A)')trim(base_filename)//'.',nstep,'.rst.nc'
 
        call write_restinfo(restfname, nstep)
@@ -372,13 +373,13 @@ contains
        call simulation%BeTRRestartClose(ncid)
 
        if(simulation%do_soibgc())then
-         call time_vars%get_ymdhs(yymmddhhss)
+         call simulation%betr_time%get_ymdhs(yymmddhhss)
          call hist%histrst(reaction_method, 'write',yymmddhhss)
       endif
     endif
 
     !print*,'next step'
-    if(time_vars%its_time_to_exit()) then
+    if(simulation%betr_time%its_time_to_exit()) then
        print*,'exit'
        exit
     end if

@@ -153,10 +153,11 @@ contains
        SPVAL_ALLOC(this%tracer_flx_h2osfc_snow_residual_col(begc:endc, 1:ngwmobile_tracers))
        SPVAL_ALLOC(this%tracer_flx_totleached_col(begc:endc, 1:ngwmobile_tracers))
        SPVAL_ALLOC(this%tracer_flx_vtrans_vr_col   (begc:endc, lbj:ubj, 1:ngwmobile_tracers))
+       SPVAL_ALLOC(this%tracer_flx_dif_col         (begc:endc, 1:ngwmobile_tracers))
     endif
+
     if(nvolatile_tracers>0)then
        SPVAL_ALLOC(this%tracer_flx_ebu_col         (begc:endc, 1:nvolatile_tracers))
-       SPVAL_ALLOC(this%tracer_flx_dif_col         (begc:endc, 1:nvolatile_tracers))
        SPVAL_ALLOC(this%tracer_flx_tparchm_col     (begc:endc, 1:nvolatile_tracers))
        SPVAL_ALLOC(this%tracer_flx_surfemi_col     (begc:endc, 1:nvolatile_tracers))
        SPVAL_ALLOC(this%tracer_flx_parchm_vr_col   (begc:endc, lbj:ubj, 1:nvolatile_tracers))
@@ -358,9 +359,9 @@ contains
       this%tracer_flx_drain_col(c,:)       = 0._r8
       this%tracer_flx_leaching_col(c,:)    = 0._r8
       this%tracer_flx_surfrun_col(c,:)     = 0._r8
+      this%tracer_flx_dif_col(c,:)         = 0._r8
       if(betrtracer_vars%nvolatile_tracers>0)then
         this%tracer_flx_ebu_col(c,:)         = 0._r8
-        this%tracer_flx_dif_col(c,:)         = 0._r8
         this%tracer_flx_surfemi_col(c,:)     = 0._r8
         this%tracer_flx_tparchm_col(c,:)     = 0._r8
         this%tracer_flx_parchm_vr_col(c,:,:) = 0._r8
@@ -444,12 +445,12 @@ contains
       this%tracer_flx_h2osfc_snow_residual_col(column,:)   = 0._r8
       this%tracer_flx_netpro_vr_col  (column,:,:)   = 0._r8
       this%tracer_flx_totleached_col (column,:)   = 0._r8
+      this%tracer_flx_dif_col        (column,:)   = 0._r8
     enddo
     if(this%nvolatile_tracers>0)then
       do fc = 1, numf
         column = filter(fc)
         this%tracer_flx_ebu_col        (column,:)   = 0._r8
-        this%tracer_flx_dif_col        (column,:)   = 0._r8
         this%tracer_flx_surfemi_col    (column,:)   = 0._r8
         this%tracer_flx_tparchm_col    (column,:)   = 0._r8
         this%tracer_flx_parchm_vr_col  (column,:,:) = 0._r8
@@ -495,9 +496,10 @@ contains
     this%tracer_flx_dew_snow_col   (column,:)   = this%tracer_flx_dew_snow_col   (column,:)/dtime
     this%tracer_flx_sub_snow_col   (column,:)   = this%tracer_flx_sub_snow_col   (column,:)/dtime
     this%tracer_flx_h2osfc_snow_residual_col(column,:) =  this%tracer_flx_h2osfc_snow_residual_col(column,:)/dtime
+    this%tracer_flx_dif_col        (column,:)   = this%tracer_flx_dif_col        (column,:)/dtime
+
     if(this%nvolatile_tracers>0)then
       this%tracer_flx_ebu_col        (column,:)   = this%tracer_flx_ebu_col        (column,:)/dtime
-      this%tracer_flx_dif_col        (column,:)   = this%tracer_flx_dif_col        (column,:)/dtime
       this%tracer_flx_surfemi_col    (column,:)   = this%tracer_flx_surfemi_col    (column,:)/dtime
       this%tracer_flx_tparchm_col    (column,:)   = this%tracer_flx_tparchm_col    (column,:)/dtime
     endif
@@ -552,11 +554,12 @@ contains
             this%tracer_flx_tparchm_col(c,kk) = dot_sum(x=this%tracer_flx_parchm_vr_col(c,1:nlevtrc_soil,kk), &
                  y=col%dz(c,1:nlevtrc_soil), bstatus=bstatus)
             if(bstatus%check_status())return
-            this%tracer_flx_surfemi_col(c,kk) = this%tracer_flx_tparchm_col(c,kk) + this%tracer_flx_dif_col(c,kk) + &
+            this%tracer_flx_surfemi_col(c,kk) = this%tracer_flx_tparchm_col(c,kk) + this%tracer_flx_dif_col(c,jj) + &
                  this%tracer_flx_ebu_col(c,kk)
 
             this%tracer_flx_netphyloss_col(c,jj) = this%tracer_flx_netphyloss_col(c,jj)  +  this%tracer_flx_surfemi_col(c,kk)
-
+         else
+            this%tracer_flx_netphyloss_col(c,jj) = this%tracer_flx_netphyloss_col(c,jj)  +  this%tracer_flx_dif_col(c,jj)
          endif
       enddo
 
@@ -608,6 +611,12 @@ contains
       !lateral drainage, vertical leaching
       !for volatile tracers, this includes surface emission surface three different pathways
       write(msg,*)tracername, new_line('A')
+      if(jj<=ngwmobile_tracers)then
+        write(msg2,*)'dif=',this%tracer_flx_dif_col(c,jj),  new_line('A')
+        msg = trim(msg)//new_line('A')//trim(msg2)
+        msg2=''
+      endif
+
       if(is_advective(jj))then
         write(msg2,*) 'infl=',this%tracer_flx_infl_col(c,jj),new_line('A'),&
            'drain=',  this%tracer_flx_drain_col(c,jj),  new_line('A'),  &
@@ -622,7 +631,6 @@ contains
       if(is_volatile(jj))then
          kk = volatileid(jj)
          write(msg1,*) 'tpartm=', this%tracer_flx_tparchm_col(c,kk),new_line('A'),&
-              'dif=', this%tracer_flx_dif_col(c,kk),  new_line('A'),&
               'ebu=',this%tracer_flx_ebu_col(c,kk)
       endif
       msg = trim(msg)//new_line('A')//trim(msg2)//new_line('A')//trim(msg1)

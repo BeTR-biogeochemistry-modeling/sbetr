@@ -306,7 +306,7 @@ contains
             enddo
             do fc = 1, numf
               c = filter(fc)
-              diffblkm_topsoi_col(c,j) = bulk_diffus_col(c,1,j) 
+              diffblkm_topsoi_col(c,j) = bulk_diffus_col(c,1,j)
             enddo
          endif
       enddo
@@ -853,7 +853,7 @@ contains
    !USES
    use TracerBoundaryCondType, only : tracerboundarycond_type
    use BeTRTracerType        , only : betrtracer_type
-   use betr_varcon           , only : denh2o  => bdenh2o
+   use betr_varcon           , only : denh2o  => bdenh2o  ! kg/m3
    use BetrStatusType        , only : betr_status_type
    implicit none
    !ARGUMENTS
@@ -898,7 +898,8 @@ contains
      if(j==betrtracer_vars%id_trc_blk_h2o)then
        do fc = 1, numf
          c = filter(fc)
-         tracer_flx_infl(c,j) = 1._r8 * qflx_adv(c,0) * denh2o
+         tracer_flx_infl(c,j) = 1._r8 * qflx_adv(c,0) * denh2o  !kg/m3
+         print*,'infl',tracer_flx_infl(c,j)
        enddo
      elseif(j==betrtracer_vars%id_trc_o18_h2o)then
          do fc = 1, numf

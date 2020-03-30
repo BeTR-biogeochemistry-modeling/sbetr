@@ -825,7 +825,7 @@ contains
   end subroutine hist_htapes_create
 
   !-------------------------------------------------------------------------------
-  subroutine hist_write(this, bounds, numf, filter, time_vars, velocity)
+  subroutine hist_write(this, bounds, numf, filter, velocity)
     !
     ! DESCRIPTION
     ! output hist file, only for standalone applications
@@ -842,7 +842,6 @@ contains
     type(bounds_type)           , intent(in)    :: bounds
     integer                     , intent(in)    :: numf
     integer                     , intent(in)    :: filter(:)
-    class(betr_time_type)       , intent(in)    :: time_vars
     real(r8)                    , intent(in)    :: velocity(:, :)
     !TEMPORARY VARIABLES
     type(file_desc_t)           :: ncid
@@ -851,7 +850,7 @@ contains
     real(r8) :: timef
     character(len=*), parameter :: subname='hist_write'
       c = 1
-    associate(                                                   &
+    associate(                                                        &
          ntracers          => this%betr(c)%tracers%ntracers,          &
          ngwmobile_tracers => this%betr(c)%tracers%ngwmobile_tracers, &
          is_volatile       => this%betr(c)%tracers%is_volatile,       &
@@ -860,20 +859,17 @@ contains
          volatileid        => this%betr(c)%tracers%volatileid,        &
          tracernames       => this%betr(c)%tracers%tracernames        &
          )
-
-      if (time_vars%its_a_new_year()) then
-         write(iulog,*)'year', time_vars%get_cur_year()
-      end if
+      call this%betr_time%print_model_time_stamp(iulog)
 
       call this%HistRetrieval(bounds, numf, filter)
 
-      if(time_vars%its_time_to_histflush())then
+      if(this%betr_time%its_time_to_histflush())then
 
         this%hist_record=this%hist_record+1
 
         call ncd_pio_openfile_for_write(ncid, this%hist_filename)
 
-        timef=time_vars%get_cur_timef()/86400._r8;call ncd_putvar(ncid, "time", this%hist_record, timef)
+        timef=this%betr_time%get_cur_timef()/86400._r8;call ncd_putvar(ncid, "time", this%hist_record, timef)
 
         do c = bounds%begc, bounds%endc
           call ncd_putvar(ncid, 'QFLX_ADV', this%hist_record, velocity(c:c, 1:betr_nlevtrc_soil))

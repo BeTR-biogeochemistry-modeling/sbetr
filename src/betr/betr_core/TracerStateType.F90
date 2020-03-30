@@ -153,6 +153,7 @@ contains
     associate(                                                       &
          ntracers          =>  betrtracer_vars%ntracers            , &
          ngwmobile_tracers =>  betrtracer_vars%ngwmobile_tracers   , &
+         nvolatile_tracers =>  betrtracer_vars%nvolatile_tracers   , &
          is_volatile       =>  betrtracer_vars%is_volatile         , &
          is_isotope        =>  betrtracer_vars%is_isotope          , &
          is_h2o            =>  betrtracer_vars%is_h2o              , &
@@ -165,6 +166,7 @@ contains
 
       do it = 1, 2
 
+        if(nvolatile_tracers>0) &
         call this%add_hist_var2d(it, num2d, fname='TRACER_P_GAS', units='Pa', type2d='levtrc',  &
            avgflag='A', long_name='total gas pressure')
 

@@ -437,8 +437,12 @@ contains
           this%h2osoi_ice(j1, j2) = data_2d(this%num_columns, j2, j1)
           this%h2osoi_liq(j1, j2) = this%h2osoi_liqvol(j1, j2)*grid%dzsoi(j2)*rhoh2o
        enddo
+       print*,'t1 h2osoi1',j2,this%h2osoi_liq(1, j2),this%h2osoi_ice(1, j2)
     enddo
 
+    do j2 = 1, this%num_levels
+      print*,'t2 h2osoi1',j2,this%h2osoi_liq(2, j2),this%h2osoi_ice(2, j2)
+    enddo
     !X!write(*, *) 'Reading QINFL'
     call ncd_getvar(ncf_in_forc, 'QINFL', data_1d)
     do j1 =1, this%num_time
