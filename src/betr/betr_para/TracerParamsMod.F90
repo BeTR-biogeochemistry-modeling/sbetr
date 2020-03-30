@@ -899,7 +899,6 @@ contains
        do fc = 1, numf
          c = filter(fc)
          tracer_flx_infl(c,j) = 1._r8 * qflx_adv(c,0) * denh2o  !kg/m3
-         print*,'infl',tracer_flx_infl(c,j)
        enddo
      elseif(j==betrtracer_vars%id_trc_o18_h2o)then
          do fc = 1, numf

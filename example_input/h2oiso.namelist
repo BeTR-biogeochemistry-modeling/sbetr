@@ -1,0 +1,25 @@
+&sbetr_driver
+  simulator_name = 'standalone'
+/
+
+&betr_parameters
+  reaction_method = 'h2oiso'
+/
+
+&betr_time
+  stop_option = 'nyears'
+  stop_n= 3
+/
+
+&forcing_inparm
+  forcing_filename = './input_data/sierra_halfhour_full_year_clmforc.nc'
+/
+
+&betr_grid
+  grid_data_filename = './input_data/clm_exp_grid.cdl.nc'
+/
+
+&regression_test
+  write_regression_output = .true.
+  cells = 5
+/

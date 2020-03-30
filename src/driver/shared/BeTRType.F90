@@ -198,7 +198,7 @@ contains
     !inside Init_plant_soilbgc, specific plant soil bgc coupler data type will be created
     call this%plant_soilbgc%Init_plant_soilbgc(bounds, lbj, ubj, namelist_buffer)
 
-    print*,'initialize state variable'
+    !print*,'initialize state variable'
     call this%bgc_reaction%initCold(bounds, col, this%tracers, biophysforc, this%tracerstates)
 
     !initialize boundary condition type

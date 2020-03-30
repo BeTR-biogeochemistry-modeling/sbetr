@@ -7,18 +7,18 @@
 /
 
 &betr_time
-  stop_n = 10
+  stop_n = 5
   delta_time=1800.
-  stop_option='nyears'
+  stop_option='nsteps'
 /
 
 &forcing_inparm
   forcing_type_name ='steady state'
-  forcing_filename = '../input_data/uniform_steadystate_sat_forcing.cdl.nc'
+  forcing_filename = './input_data/uniform_steadystate_sat_forcing.cdl.nc'
 /
 
 &betr_grid
-  grid_data_filename = '../input_data/clm_exp_grid.cdl.nc'
+  grid_data_filename = './input_data/clm_exp_grid.cdl.nc'
 /
 
 &regression_test

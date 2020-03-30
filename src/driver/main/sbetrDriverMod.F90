@@ -186,7 +186,6 @@ contains
 
   if(lread_param) call simulation%readParams(bounds)
 
-  print*,'initialize simulator'
   call  simulation%Init(bounds, lun, col, pft, waterstate_vars, namelist_buffer, base_filename, case_id)
   !x print*,'af sim init'
 

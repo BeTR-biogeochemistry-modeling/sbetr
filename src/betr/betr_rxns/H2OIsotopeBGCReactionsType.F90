@@ -539,8 +539,6 @@ module H2OIsotopeBGCReactionsType
       c = filter_soilc(fc)
       tracer_mobile_phase(c,1,jj) = tracer_mobile_phase(c,1,jj) + &
         tracer_gwdif_concflux_top_col(c,1,jj)*betr_time%delta_time/biophysforc%dz(c,1)
-      print*,'tracer_mobile_phase(c,1,jj)',kk,tracer_mobile_phase(c,1,jj),tracer_gwdif_concflux_top_col(c,1,jj)
-      print*,'h2o, mass vs vol',biophysforc%h2osoi_liq_col(c,1),biophysforc%h2osoi_liq_col(c,1)/denh2o
       if(tracer_mobile_phase(c,1,jj) < 0._r8)then
         do ll = 1, 2
           tot0 = tracer_mobile_phase(c,ll,jj)*biophysforc%dz(c,ll)
@@ -767,8 +765,6 @@ module H2OIsotopeBGCReactionsType
       do j = 1, nlevtrc_soil
         tracer_conc_mobile_vr(c,j,trcid) = 1._r8 * h2osoi_liq_col(c,j)/dz(c,j)
         tracer_conc_frozen_vr(c,j,frozenid(trcid)) = 1._r8 * h2osoi_ice_col(c,j)/dz(c,j)
-
-        print*,'init',j,tracer_conc_mobile_vr(c,j,trcid),h2osoi_liq_col(c,j)
       enddo
       trcid = betrtracer_vars%id_trc_o18_h2o
       tracer_conc_grndwater_col(c,trcid) = denh2o
@@ -783,7 +779,6 @@ module H2OIsotopeBGCReactionsType
         tracer_conc_frozen_vr(c,j,frozenid(trcid)) = 1._r8 * h2osoi_ice_col(c,j)/dz(c,j)
       enddo
    enddo
-   stop
    end associate
   end subroutine InitCold
 
