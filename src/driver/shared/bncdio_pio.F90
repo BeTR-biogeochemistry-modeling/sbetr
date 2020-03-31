@@ -59,6 +59,7 @@ module bncdio_pio
   interface ncd_putvar
     module procedure ncd_putvar_int
     module procedure ncd_putvar_real_sp
+    module procedure ncd_putvar_int_scalar
     module procedure ncd_putvar_real_sp_scalar
     module procedure ncd_putvar_int_1d
     module procedure ncd_putvar_real_sp_1d
@@ -67,6 +68,7 @@ module bncdio_pio
     module procedure ncd_putvar_real_sp_2d
     module procedure ncd_putvar_int_3d
     module procedure ncd_putvar_real_sp_3d
+
   end interface ncd_putvar
 
   interface ncd_getvar
@@ -425,7 +427,7 @@ module bncdio_pio
   write(subname,'(A)')'ncd_def_var '//trim(varname)
 
   if (.not. masterproc) return
-  !print*,'define:',trim(varname)
+  print*,'define:',trim(varname)
     ! Determine dimension ids for variable
   ncid_local = ncid%fh
   dimid(:) = 0
@@ -564,6 +566,28 @@ module bncdio_pio
   call check_ret( nf90_put_var(ncid%fh, vardesc%varid, data),'ncd_putvar_real_sp_scalar')
 
   end subroutine ncd_putvar_real_sp_scalar
+
+!----------------------------------------------------------------------
+  subroutine ncd_putvar_int_scalar(ncid, varname, data)
+  !
+  !DESCRIPTION
+  !put a real scalar to file
+  use netcdf
+  use shr_kind_mod, only : r8 => shr_kind_r8
+!**********************************************************************
+  implicit none
+  type(file_desc_t), intent(in) :: ncid
+  integer, intent(in) :: data
+  character(len=*),intent(in) :: varname
+  integer :: ans
+  integer :: xtype, ndims, varid
+  logical :: readvar
+  type(Var_desc_t)  :: vardesc
+
+  call check_var(ncid, trim(varname), vardesc, readvar)
+  call check_ret( nf90_put_var(ncid%fh, vardesc%varid, data),'ncd_putvar_int_scalar')
+
+  end subroutine ncd_putvar_int_scalar
 !----------------------------------------------------------------------
   subroutine ncd_putvar_int_1d(ncid, varname, rec, data)
   !

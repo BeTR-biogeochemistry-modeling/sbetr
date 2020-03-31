@@ -153,9 +153,9 @@ contains
     ! print*,'continue from restart file'
     call read_restinfo(restfname, nstep)
     !set current step
-    call simulation%betr_time%set_time_offset(nstep-1)
+    call simulation%betr_time%set_time_offset(nstep-1,continue_run)
     ! print*,'back 1 step'
-    call simulation%betr_time%print_cur_time()
+    !call simulation%betr_time%print_cur_time()
   else
     if(trim(finit)/='')then
       !pass finit to restfname
@@ -175,8 +175,7 @@ contains
 
   !x print*,'af init update',forcing_data%t_soi(1,:)
   !print*,'initial water state variable output',simulation%betr_time%tstep
-  call calc_qadv(ubj, simulation%num_soilc, &
-       simulation%filter_soilc, waterstate_vars)
+  call calc_qadv(ubj, simulation%num_soilc, simulation%filter_soilc, waterstate_vars)
 
   !x print*,'bf sim init'
   !print*,'base_filename:',trim(base_filename)
@@ -202,6 +201,7 @@ contains
   class default
   end select
 
+  record = -1
   !read initial condition from restart file is needed
   if(trim(restfname)/='')then
     call simulation%BeTRRestartOpen(restfname, flag='read', ncid=ncid)
@@ -210,9 +210,7 @@ contains
     !the following aligns forcing data with correct time stamp
     call simulation%betr_time%set_nstep(nstep)
     call simulation%betr_time%print_cur_time()
-    record = 0
   else
-    record = -1
     call simulation%betr_time%proc_initstep()
   endif
 
@@ -419,7 +417,7 @@ end subroutine sbetrBGC_driver
     character(len=*)                         , intent(in)  :: base_filename
     character(len=*)                         , intent(out) :: case_id_loc
     character(len=betr_string_length_long)   , intent(out) :: simulator_name_arg
-    character(len=betr_string_length_long)   , intent(out) :: finit
+    character(len=betr_string_length_long)   , intent(out) :: finit  !file of initial  conditions
     class(hist_bgc_type), intent(inout) :: histbgc
     class(histf_type), intent(inout) :: hist
     logical, intent(out) :: lread_param
@@ -727,7 +725,7 @@ end subroutine sbetrBGC_driver
   rpt_unit=20
   open(unit=rpt_unit,file=trim(rpt_filename), status='replace',&
      action='write', form='formatted', iostat=rpt_error)
-  write(rpt_unit,*)trim(fname), nstep
+  write(rpt_unit,*)"'"//trim(fname)//"'", nstep
   close(rpt_unit)
   end subroutine write_restinfo
 

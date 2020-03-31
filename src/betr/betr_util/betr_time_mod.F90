@@ -347,7 +347,7 @@ contains
 
 
   !-------------------------------------------------------------------------------
-  subroutine set_time_offset(this, nstep)
+  subroutine set_time_offset(this, nstep, continue_run)
 
     ! Return the timestep number.
     implicit none
@@ -355,15 +355,17 @@ contains
 
     character(len=*), parameter :: sub = 'betr::get_nstep'
     integer, intent(in) :: nstep
+    logical, intent(in) :: continue_run
 
-    this%nelapstep = nstep
-
+    this%time0  = nstep*this%delta_time
+    if(continue_run)then
+      this%nelapstep = nstep
+    else
+      this%nelapstep = 0
+    endif
     if(this%its_a_new_year())then
       this%tstep = 1
     endif
-
-    this%time0  = nstep*this%delta_time
-    this%nelapstep = 0
   end subroutine set_time_offset
 
   !-------------------------------------------------------------------------------

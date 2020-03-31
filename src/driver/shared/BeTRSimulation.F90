@@ -42,7 +42,7 @@ module BeTRSimulation
   use BetrStatusSimType        , only : betr_status_sim_type, create_betr_status_sim_type
   use betr_columnType          , only : betr_column_type, create_betr_column_type
   use betr_patchType           , only : betr_patch_type, create_betr_patch_type
-  use betr_varcon              , only : spval => bspval
+  use betr_varcon              , only : spval => bspval, ispval=>bispval
   use BeTRHistVarType          , only : betr_hist_var_type
   implicit none
 
@@ -1881,7 +1881,7 @@ contains
   use bncdio_pio      , only : file_desc_t,ncd_double
   use bncdio_pio      , only : ncd_defvar, ncd_defdim
   use bncdio_pio      , only : ncd_enddef, ncd_putvar
-  use bncdio_pio      , only : ncd_getvar
+  use bncdio_pio      , only : ncd_getvar, ncd_int
   implicit none
   ! !ARGUMENTS:
   class(betr_simulation_type) , intent(inout) :: this
@@ -1948,6 +1948,16 @@ contains
       call ncd_defvar(ncid, trim(this%flux_hist2d_var(jj)%varname)//'_accum',ncd_double,dim1name='column',  &
         dim2name='levtrc', long_name='', units = '',  missing_value=spval, fill_value=spval)
     enddo
+    !define time information
+    call ncd_defvar(ncid, 'tod',ncd_double,long_name='time of day',units='',missing_value=spval, fill_value=spval)
+    call ncd_defvar(ncid, 'toy',ncd_double,long_name='time of year',units='',missing_value=spval, fill_value=spval)
+    call ncd_defvar(ncid, 'dow',ncd_int, long_name='day of week', imissing_value=ispval, ifill_value=ispval)
+    call ncd_defvar(ncid, 'dom',ncd_int, long_name='day of month', imissing_value=ispval, ifill_value=ispval)
+    call ncd_defvar(ncid, 'doy',ncd_int, long_name='day of year', imissing_value=ispval, ifill_value=ispval)
+    call ncd_defvar(ncid, 'moy',ncd_int, long_name='month of year', imissing_value=ispval, ifill_value=ispval)
+    call ncd_defvar(ncid, 'cyears',ncd_int, long_name='cumulative years', imissing_value=ispval, ifill_value=ispval)
+    call ncd_defvar(ncid, 'cdays',ncd_int, long_name='cumulative days', imissing_value=ispval, ifill_value=ispval)
+    call ncd_defvar(ncid, 'tstep',ncd_int, long_name='steps of the year', imissing_value=ispval, ifill_value=ispval)
 
     call ncd_enddef(ncid)
 
@@ -1983,6 +1993,16 @@ contains
 
     call ncd_putvar(ncid,'hist_naccum',this%hist_naccum)
 
+    call ncd_putvar(ncid,'tod',this%betr_time%tod)
+    call ncd_putvar(ncid,'toy',this%betr_time%toy)
+    call ncd_putvar(ncid,'dow',this%betr_time%dow)
+    call ncd_putvar(ncid,'dom',this%betr_time%dom)
+    call ncd_putvar(ncid,'doy',this%betr_time%doy)
+    call ncd_putvar(ncid,'moy',this%betr_time%moy)
+    call ncd_putvar(ncid,'cyears',this%betr_time%cyears)
+    call ncd_putvar(ncid,'cdays',this%betr_time%cdays)
+    call ncd_putvar(ncid,'tstep',this%betr_time%tstep)
+
   elseif(flag=='read')then
       ! print*,'read restart file'
     do jj = 1, this%num_rest_state1d
@@ -2014,6 +2034,16 @@ contains
       this%num_rest_state1d,this%num_rest_state2d, &
       this%rest_states_1d(c:c,:), this%rest_states_2d(c:c,:,:), flag)
     enddo
+
+    call ncd_getvar(ncid,'tod',this%betr_time%tod)
+    call ncd_getvar(ncid,'toy',this%betr_time%toy)
+    call ncd_getvar(ncid,'dow',this%betr_time%dow)
+    call ncd_getvar(ncid,'dom',this%betr_time%dom)
+    call ncd_getvar(ncid,'doy',this%betr_time%doy)
+    call ncd_getvar(ncid,'moy',this%betr_time%moy)
+    call ncd_getvar(ncid,'cyears',this%betr_time%cyears)
+    call ncd_getvar(ncid,'cdays',this%betr_time%cdays)
+    call ncd_getvar(ncid,'tstep',this%betr_time%tstep)
   endif
 
   deallocate(rest_varname_1d)
