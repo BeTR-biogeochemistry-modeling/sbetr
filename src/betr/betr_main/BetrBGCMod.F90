@@ -853,26 +853,25 @@ contains
          !obtain advective velocity for the tracer group
          do fc = 1, numfl
             c = filter_loc(fc)
-            qflx_adv_local(c,jtops(c)-1) = qflx_adv(c,jtops(c)-1)
+            qflx_adv_local(c,jtops(c)-1) = qflx_adv(c,jtops(c)-1)  !top boundary
             do l = jtops(c), lbots(c)
               if(l<lbots(c))then
+                !normalize the advection velocity with upstream tracer concentration
                 if(qflx_adv(c,l) > 0._r8)then
                   qflx_adv_local(c,l) = safe_div(qflx_adv(c,l),aqu2bulkcef_mobile_col(c,l,j),eps=loc_eps)
                 else
                   qflx_adv_local(c,l) = safe_div(qflx_adv(c,l),aqu2bulkcef_mobile_col(c,l+1,j),eps=loc_eps)
                 endif
               else
-                if(qflx_adv(c,l) > 0._r8)then
+                !bottom boundary
+                if(qflx_adv(c,l) > 0._r8)then  !going out
                   qflx_adv_local(c,l) = safe_div(qflx_adv(c,l),aqu2bulkcef_mobile_col(c,l,j),eps=loc_eps)
                 else
                   qflx_adv_local(c,l) = qflx_adv(c,l)
                 endif
                endif
-               if(is_h2o(j))then
-                 qflx_rootsoi_local(c,l) = qflx_rootsoi(c,l)
-               else
-                 qflx_rootsoi_local(c,l) = safe_div(qflx_rootsoi(c,l),aqu2bulkcef_mobile_col(c,l,j),eps=loc_eps)
-               endif
+               !rescale transpiration guided flux
+               qflx_rootsoi_local(c,l) = safe_div(qflx_rootsoi(c,l),aqu2bulkcef_mobile_col(c,l,j),eps=loc_eps)
                qflx_adv_local(c,l)=qflx_adv_local(c,l)*move_scalar(j)
                qflx_rootsoi_local(c,l) = qflx_rootsoi_local(c,l)*move_scalar(j)
             enddo
@@ -929,12 +928,12 @@ contains
             !do soil-root tracer exchange
             do k = 1, ntrcs
                trcid = adv_trc_group(k)
-
                transp_mass_vr(:,:, k) = 0._r8
                transp_mass(:, k) = 0._r8
 
                if(vtrans_scal(trcid)>0._r8)then
-                  call calc_root_uptake_as_perfect_sink(bounds, lbj, ubj, lbots, numfl,&
+                 !not water tracer
+                 call calc_root_uptake_as_perfect_sink(bounds, lbj, ubj, lbots, numfl,&
                        filter_loc,                                                     &
                        dtime_loc,                                                      &
                        dz,                                                             &
@@ -957,21 +956,24 @@ contains
                      dmass(c, k) =  dot_sum(trc_conc_out(c,jtops(c):lbots(c),k), &
                         dz(c,jtops(c):lbots(c)),bstatus)- dmass(c, k)
                      if(bstatus%check_status())return
+
                      err_tracer(c, k) = dmass(c, k) - inflx_top(c,k) * dtime_loc(c) + leaching_mass(c,k) + &
                           transp_mass(c, k) + seep_mass(c,k)
-                     if(abs(err_tracer(c,k))<err_adv_min .or. abs(err_tracer(c,k))/(mass0+1.e-10_r8) < 1.e-10_r8)then
+
+                     if(abs(err_tracer(c,k))<err_adv_min .or. abs(err_tracer(c,k))/(mass0+1.e-10_r8) < 1.e-7_r8)then
                         !when the absolute value is too small, set relative error to
                         err_relative = err_relative_threshold*0.999_r8
                      else
                         err_relative = err_tracer(c,k)/maxval((/abs(inflx_top(c,k)*dtime_loc(c)), abs(leaching_mass(c,k)),&
                           abs(dmass(c,k)),tiny_val/))
                      endif
+
                      if(abs(err_relative)<err_relative_threshold)then
                         leaching_mass(c,k) = leaching_mass(c,k) - err_tracer(c,k)
                      else
                         tracername = betrtracer_vars%get_tracername(trcid)
-                        write(msg,'(2(A,1X,I8),5X,A,7(5X,A,5X,E18.10))')'nstep=', betr_time%get_nstep(), ', col=',c, &
-                             tracername,' err=',err_tracer(c,k),&
+                        write(msg,'(2(A,1X,I8),5X,A,8(5X,A,5X,E18.10))')'nstep=', betr_time%get_nstep(), ', col=',c, &
+                             tracername,' err=',err_tracer(c,k),' rerr1=',abs(err_tracer(c,k))/(mass0+1.e-10_r8),&
                              ' transp=',transp_mass(c,k),' lech=',&
                              leaching_mass(c,k),' infl=',inflx_top(c,k),' dmass=',dmass(c,k), ' mass0=', &
                              mass0,'err_rel=',err_relative
@@ -1637,7 +1639,7 @@ contains
        if(update_col(c) .and. (.not. halfdt_col(c)))then
           do j = 1, lbots(c)
              if(is_h2o)then
-               transp_mass_vr(c,j)   = vtrans_scal*qflx_rootsoi(c,j)*denh2o*dtime_loc(c)
+               transp_mass_vr(c,j)   = vtrans_scal*qflx_rootsoi(c,j)*tracer_conc(c,j)*dtime_loc(c)
                tracer_conc_new = tracer_conc(c,j) - transp_mass_vr(c,j)/dz(c,j)
              else
                tracer_conc_new  = tracer_conc(c,j) * exp(-max(qflx_rootsoi(c,j)*vtrans_scal/dz(c,j),0._r8)*dtime_loc(c))

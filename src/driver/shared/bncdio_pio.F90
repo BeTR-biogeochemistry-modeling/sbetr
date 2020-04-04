@@ -424,10 +424,10 @@ module bncdio_pio
   character(len=256) :: str ! temporary
   character(len=128) :: subname
 !-----------------------------------------------------------------------
-  write(subname,'(A)')'ncd_def_var '//trim(varname)
+  !write(subname,'(A)')'ncd_def_var '//trim(varname)
 
   if (.not. masterproc) return
-  print*,'define:',trim(varname)
+  !print*,'define:',trim(varname)
     ! Determine dimension ids for variable
   ncid_local = ncid%fh
   dimid(:) = 0

@@ -1058,6 +1058,7 @@ contains
     !locate the left corner
     jl=loc_x(lengthp2+1,zh, zold(0), bstatus)
     if(bstatus%check_status())return
+
     !compute seepage if necessary using jl
     if(present(seep_mass))then
       if(zold(0)>zh(nghost))then
@@ -1078,6 +1079,11 @@ contains
       do ntr = 1, ntrcs
         call mass_interp(zh(jl-1:jr),mass_curve(jl-1:jr,ntr),zold(j-1),zold(j),mass_new(j,ntr), bstatus)
         if(bstatus%check_status())return
+        if(jr-jl==1 .and. debug_loc)then
+          write(*,'(A,2(X,I3),9(X,E18.10)))')'j',ntr,j,mass_new(j,ntr),zold(j-1),zold(j),zh(jl-1:jr),mass_curve(jl-1:jr,ntr)
+        elseif(jr-jl==2 .and. debug_loc)then
+          write(*,'(A,2(X,I3),11(X,E18.10)))')'j',ntr,j,mass_new(j,ntr),zold(j-1),zold(j),zh(jl-1:jr),mass_curve(jl-1:jr,ntr)
+        endif
       enddo
       jl=jr
     enddo
@@ -1093,6 +1099,16 @@ contains
         enddo
       else
         leaching_mass(1:ntrcs)=0._r8
+        do ntr = 1, ntrcs
+          if(trc_bot(ntr)>0._r8)then
+            !do boundary mass interpolation
+            call bmass_interp(zh(jr-1:lengthp2),mass_curve(jr-1:lengthp2,ntr),&
+              zh(ubn-lbn+nghost+1),zold(length),leaching_mass(ntr), bstatus)
+            if(bstatus%check_status())return
+            leaching_mass(ntr)=-leaching_mass(ntr)
+          endif
+        enddo
+
       endif
     endif
 

@@ -967,7 +967,8 @@ contains
      qflx_adv            =>    biogeo_flux%qflx_adv_col              , & ! Output: [real(r8) (:,:) ]  water flux at interfaces  (m H2O/s) (- = to atm)
      qflx_gross_infl_soil=>    biogeo_flux%qflx_gross_infl_soil_col  , & ! Output: [real(r8) (:)] gross infiltration (mm H2O/s)
      qflx_infl           =>    biogeo_flux%qflx_infl_col             , & ! Output: [real(r8) (:)] infiltration, mm H2O/s
-     qflx_gross_evap_soil=>    biogeo_flux%qflx_gross_evap_soil_col    & ! Output: [real(r8) (:)] gross evaporation (mm H2O/s)
+     qflx_gross_evap_soil=>    biogeo_flux%qflx_gross_evap_soil_col  , & ! Output: [real(r8) (:)] gross evaporation (mm H2O/s)
+     dz                  =>    biophysforc%dz                          & !
    )
 
    ! get time step
@@ -978,14 +979,19 @@ contains
      do fc = 1, num_hydrologyc
        c = filter_hydrologyc(fc)
        if(j==nlevsoi)then
-         qflx_adv(c,j) = qflx_bot(c) * 1.e-3_r8                                 ! m/s
+         qflx_adv(c,j) = qflx_bot(c) * 1.e-3_r8                                 ! m/s, > 0 means going out
        else
          qflx_adv(c,j) = 1.e-3_r8 * (h2osoi_liq(c,j+1)-this%h2osoi_liq_copy(c,j+1))/dtime &
            + qflx_adv(c,j+1) + qflx_rootsoi(c,j+1)
        endif
      enddo
    enddo
-
+!   do j = 1, nlevsoi
+!     do fc = 1, num_hydrologyc
+!       c = filter_hydrologyc(fc)
+!       print*,'old new j',j,this%h2osoi_liq_copy(c,j)/dz(c,j),h2osoi_liq(c,j)/dz(c,j),qflx_rootsoi(c,j)/dz(c,j)
+!     enddo
+!   enddo
    ! correct gross infiltration and gross evaporation
    ! (h2osoi_liq(c,1)-h2osoi_liq_copy(c,1))/dtime=qflx_infl-q_out-qflx_rootsoi
    do fc = 1, num_hydrologyc

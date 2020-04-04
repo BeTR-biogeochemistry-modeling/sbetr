@@ -16,6 +16,7 @@ module TracerParamsMod
   use bshr_log_mod             , only : errMsg => shr_log_errMsg
   use BeTR_decompMod           , only : bounds_type  => betr_bounds_type
   use tracer_varcon            , only : nlevsoi  => betr_nlevsoi
+  use betr_varcon              , only : denh2o => bdenh2o
   use betr_varcon              , only : spval => bspval
   use BetrTracerType           , only : betrtracer_type
   use TracerCoeffType          , only : tracercoeff_type
@@ -648,6 +649,11 @@ contains
     t_soisno                   => biophysforc%t_soisno_col                     , & !Input:
     dom_scalar                 => biophysforc%dom_scalar_col                   , & !Input:
     tracer_conc_mobile         => tracerstate_vars%tracer_conc_mobile_col      , & !Input
+    is_tagged_h2o              => betrtracer_vars%is_tagged_h2o                , & !
+    id_trc_beg_blk_h2o         => betrtracer_vars%id_trc_beg_blk_h2o           , & !
+    id_trc_o18_h2o             => betrtracer_vars%id_trc_o18_h2o               , & !
+    id_trc_d_h2o               => betrtracer_vars%id_trc_d_h2o                 , & !
+    id_trc_blk_h2o             => betrtracer_vars%id_trc_blk_h2o               , & !
     bunsencef_col              => tracercoeff_vars%bunsencef_col               , & !Input: [real(r8)(:,:)], bunsen coeff
     aqu2bulkcef_mobile         => tracercoeff_vars%aqu2bulkcef_mobile_col      , & !Output:[real(r8)(:,:)], phase conversion coeff
     aqu2equilsolidcef          => tracercoeff_vars%aqu2equilsolidcef_col       , & !Input: [real(r8)(:,:)], phase conversion coeff
@@ -677,10 +683,9 @@ contains
             c = filter(fc)
             if(n>=jtops(c) .and. n<=lbots(c))then
               !aqueous to bulk mobile phase
-              if(is_h2o(j))then
-                !this is a (bad) reverse hack because the hydrology code does not consider water vapor transport
-                !jyt, Feb, 18, 2016, 1.e-12_r8 is a value for avoiding NaN
-                aqu2bulkcef_mobile(c,n,j) = max(h2osoi_liqvol(c,n),tiny_val)
+              if(is_h2o(trcid))then
+                aqu2bulkcef_mobile(c,n,j) = tracer_conc_mobile(c,n,id_trc_beg_blk_h2o)/denh2o
+!                print*,'con',j,n,aqu2bulkcef_mobile(c,n,j),h2osoi_liqvol(c,n)
               else
                 aqu2bulkcef_mobile(c,n,j) = air_vol(c,n)/bunsencef_col(c,n,k)+h2osoi_liqvol(c,n)
               endif
@@ -704,6 +709,7 @@ contains
           endif
         enddo
       enddo
+
       if(is_adsorb(trcid))then
         gid = adsorbgroupid(trcid)
         do n = lbj, ubj
@@ -719,6 +725,7 @@ contains
   enddo
   end associate
   end subroutine calc_dual_phase_convert_coeff
+
 
 !-------------------------------------------------------------------------------
 
@@ -818,11 +825,13 @@ contains
    call calc_henrys_coeff(bounds, lbj, ubj, col, jtops, numf, filter, &
        biophysforc,  betrtracer_vars, tracercoeff_vars, betr_status)
    if(betr_status%check_status())return
+
    !compute Bunsen's coefficients
    call calc_bunsen_coeff(bounds, lbj, ubj, col, &
         jtops, numf, filter, biophysforc, &
         betrtracer_vars, tracercoeff_vars, betr_status)
    if(betr_status%check_status())return
+
    !compute equilibrium fraction to liquid phase conversion parameter
    if(betrtracer_vars%nsolid_equil_tracers>0)then
      call calc_equil_to_liquid_convert_coeff(bounds, lbj, ubj, jtops, col%lbots, numf, filter , &
@@ -830,6 +839,7 @@ contains
         betrtracer_vars, tracerstate_vars , tracercoeff_vars, betr_status)
      if(betr_status%check_status())return
    endif
+
    !compute phase conversion coefficients
    call calc_dual_phase_convert_coeff(bounds, lbj, ubj, jtops, col%lbots, numf, filter, &
       biophysforc, betrtracer_vars, tracerstate_vars, tracercoeff_vars, betr_status)
@@ -899,13 +909,16 @@ contains
        do fc = 1, numf
          c = filter(fc)
          tracer_flx_infl(c,j) = 1._r8 * qflx_adv(c,0) * denh2o  !kg/m3
+!         print*,'infl',tracer_flx_infl(c,j)*1800._r8
        enddo
      elseif(j==betrtracer_vars%id_trc_o18_h2o)then
+         !revision needed
          do fc = 1, numf
            c = filter(fc)
            tracer_flx_infl(c,j) = 1._r8 * qflx_adv(c,0) * denh2o
          enddo
      elseif(j==betrtracer_vars%id_trc_d_h2o)then
+         !revision  needed
          do fc = 1, numf
            c = filter(fc)
            tracer_flx_infl(c,j) = 1._r8 * qflx_adv(c,0) * denh2o
