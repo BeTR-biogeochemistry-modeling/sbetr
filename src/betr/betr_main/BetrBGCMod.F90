@@ -888,7 +888,6 @@ contains
             update_col(c)=.true.
             time_remain(c) = dtime
          enddo
-
          do
             !zero leaching flux, leaching is outgoing only.
             leaching_mass=0._r8
@@ -904,7 +903,6 @@ contains
                   enddo
                endif
             enddo
-
             ! do semi-lagrangian tracer transport
             call semi_lagrange_adv(bounds, bstatus,lbj, ubj,                                      &
                  jtops, lbots,                                                                    &
@@ -950,7 +948,6 @@ contains
 
                do fc = 1, numfl
                   c = filter_loc(fc)
-
                   if(update_col(c) .and. (.not. halfdt_col(c)))then
                      mass0   = dmass(c, k)
                      dmass(c, k) =  dot_sum(trc_conc_out(c,jtops(c):lbots(c),k), &
@@ -968,6 +965,7 @@ contains
                           abs(dmass(c,k)),tiny_val/))
                      endif
 
+                     
                      if(abs(err_relative)<err_relative_threshold)then
                         leaching_mass(c,k) = leaching_mass(c,k) - err_tracer(c,k)
                      else
@@ -1597,7 +1595,7 @@ contains
     real(r8)          , intent(in)    :: dz(bounds%begc: , lbj: )            ! layer thickness
     integer           , intent(in)    :: lbots(bounds%begc: )                ! lower boundary
     real(r8)          , intent(in)    :: dtime_loc(bounds%begc: )
-    real(r8)          , intent(in)    :: qflx_rootsoi(bounds%begc: , lbj: )
+    real(r8)          , intent(in)    :: qflx_rootsoi(bounds%begc: , lbj: )  !
     real(r8)          , intent(in)    :: vtrans_scal
     logical           , intent(in)    :: is_h2o
     logical           , intent(in)    :: update_col(bounds%begc:bounds%endc) ! logical switch for active col update
@@ -1636,15 +1634,11 @@ contains
     transp_mass(:) = 0._r8
     do fc = 1, num_soilc
        c = filter_soilc(fc)
+       transp_mass(c) = 0._r8
        if(update_col(c) .and. (.not. halfdt_col(c)))then
           do j = 1, lbots(c)
-             if(is_h2o)then
-               transp_mass_vr(c,j)   = vtrans_scal*qflx_rootsoi(c,j)*tracer_conc(c,j)*dtime_loc(c)
-               tracer_conc_new = tracer_conc(c,j) - transp_mass_vr(c,j)/dz(c,j)
-             else
-               tracer_conc_new  = tracer_conc(c,j) * exp(-max(qflx_rootsoi(c,j)*vtrans_scal/dz(c,j),0._r8)*dtime_loc(c))
-               transp_mass_vr(c,j)   = (tracer_conc(c,j)-tracer_conc_new)*dz(c,j)
-             endif
+             tracer_conc_new  = tracer_conc(c,j) * exp(-max(qflx_rootsoi(c,j)*vtrans_scal/dz(c,j),0._r8)*dtime_loc(c))
+             transp_mass_vr(c,j)   = (tracer_conc(c,j)-tracer_conc_new)*dz(c,j)
              transp_mass(c) = transp_mass(c) + transp_mass_vr(c,j)
              tracer_conc(c,j) = tracer_conc_new
           enddo
