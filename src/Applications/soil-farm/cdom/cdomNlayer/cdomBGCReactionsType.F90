@@ -197,15 +197,20 @@ contains
    p_loc                   => this%cdom_bgc_index%p_loc            , &
    c13_loc                 => this%cdom_bgc_index%c13_loc          , &
    c14_loc                 => this%cdom_bgc_index%c14_loc          , &
-   move_scalar             => tracers%move_scalar                      &
+   adv_scalar              => tracers%adv_scalar                   , &
+   difu_scalar             => tracers%difu_scalar                    &
+
   )
 
 
 
   if(betr_spinup_state/=0)then
-    move_scalar(tracers%id_trc_Bm) = cdom_para%spinup_factor(7)
-    move_scalar(tracers%id_trc_som) = cdom_para%spinup_factor(8)
-    move_scalar(tracers%id_trc_pom)=cdom_para%spinup_factor(9)
+    adv_scalar(tracers%id_trc_Bm) = cdom_para%spinup_factor(7)
+    adv_scalar(tracers%id_trc_som) = cdom_para%spinup_factor(8)
+    adv_scalar(tracers%id_trc_pom)=cdom_para%spinup_factor(9)
+    difu_scalar(tracers%id_trc_Bm) = cdom_para%spinup_factor(7)
+    difu_scalar(tracers%id_trc_som) = cdom_para%spinup_factor(8)
+    difu_scalar(tracers%id_trc_pom)=cdom_para%spinup_factor(9)
   endif
 
   if(enter_spinup)then

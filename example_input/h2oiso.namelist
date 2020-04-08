@@ -1,6 +1,6 @@
 &sbetr_driver
   simulator_name = 'standalone'
-  continue_run=.false.
+  continue_run=.true.
 /
 
 &betr_parameters
@@ -8,8 +8,8 @@
 /
 
 &betr_time
-  stop_option = 'nyears'
-  stop_n=30
+  stop_option = 'ndays'
+  stop_n=20
 /
 
 &forcing_inparm

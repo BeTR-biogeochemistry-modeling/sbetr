@@ -196,7 +196,6 @@ module H2OIsotopeBGCReactionsType
    type(betr_biogeo_flux_type)      , intent(inout) :: biogeo_flux
 
 
-
    if (this%dummy_compiler_warning) continue
    if (bounds%begc > 0)             continue
 
@@ -544,7 +543,7 @@ module H2OIsotopeBGCReactionsType
         enddo
         !the following should rarely occur, so when it occur, end with a warning
         if(tot1<0._r8)then
-          write(msg,*)tracer_mobile_phase(c,1:3,jj),tot1
+          write(msg,*)tracer_mobile_phase(c,1:2,jj),tot1
           msg=trim(msg)//new_line('A')//'negative H2O tracer '//errMsg(mod_filename, __LINE__)
           call betr_status%set_msg(msg=msg, err=-1)
         endif

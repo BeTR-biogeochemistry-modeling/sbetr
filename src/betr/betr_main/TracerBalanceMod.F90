@@ -124,6 +124,7 @@ module TracerBalanceMod
            is_volatile               => betrtracer_vars%is_volatile                       , &
            errtracer                 => tracerstate_vars%errtracer_col                    , &
            ngwmobile_tracers         => betrtracer_vars%ngwmobile_tracers                 , &
+           do_mass_balchk            => betrtracer_vars%do_mass_balchk                    , &
            ntracers                  => betrtracer_vars%ntracers                            &
            )
       lbj = bounds%lbj
@@ -143,7 +144,7 @@ module TracerBalanceMod
            if(betr_status%check_status())return
            do kk = 1, ntracers
               !type1_bgc, only check for volatile tracers
-              if(index(bgc_type,'type1_bgc')/=0 .and. .not. is_volatile(kk))cycle
+              if(index(bgc_type,'type1_bgc')/=0 .and. .not. is_volatile(kk) .or. (.not. do_mass_balchk(kk)))cycle
               errtracer(c,kk) = beg_tracer_molarmass(c,kk)-end_tracer_molarmass(c,kk)  &
                    + (tracer_flx_netpro(c,kk)-tracer_flx_netphyloss(c,kk))*dtime
               if(abs(errtracer(c,kk))<err_min)then

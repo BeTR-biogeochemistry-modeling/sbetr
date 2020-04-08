@@ -196,11 +196,6 @@ contains
     integer :: itemp_grp, itemp_v, itemp_vgrp, itemp_trc
 
     call bstatus%reset()
-    ! remove compiler warnings for unused dummy args
-    if (this%dummy_compiler_warning)           continue
-    if (bounds%begc > 0)                       continue
-    if (ubj > lbj)                             continue
-    if (len(betrtracer_vars%betr_simname) > 0) continue
 
     itemp_gwm     = 0;
     itemp_g       = 0 ;
@@ -234,10 +229,15 @@ contains
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_doc, trc_name='DOC',      &
          is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = addone(itemp_grp),   &
          trc_group_mem = 1)
+    betrtracer_vars%adv_scalar(betrtracer_vars%id_trc_doc) = 1._r8
+    betrtracer_vars%difu_scalar(betrtracer_vars%id_trc_doc) = 0.5e3_r8
 
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_dom, trc_name='DOM',      &
-         is_trc_mobile=.false., is_trc_advective = .false., trc_group_id = addone(itemp_grp),   &
-         trc_group_mem = 1)
+         is_trc_mobile=.false., is_trc_advective = .true., trc_group_id = addone(itemp_grp),   &
+         trc_group_mem = 1, do_mass_balchk=.false.)
+
+    betrtracer_vars%adv_scalar(betrtracer_vars%id_trc_dom) = 1._r8
+    betrtracer_vars%difu_scalar(betrtracer_vars%id_trc_dom) = 0.5e3_r8
 
   end subroutine Init_betrbgc
 
@@ -314,8 +314,8 @@ contains
             = conc2(betr_time%time, diffblkm_topsoi_col(c,groupid(id_trc_dom)), u, 0._r8)               !mol m-3, contant boundary condition, as concentration
 
          tracerboundarycond_vars%bot_concflux_col(c,1,:)        = 0._r8                        !zero flux boundary condition for diffusion
-         condc_toplay_col(c,groupid(betrtracer_vars%id_trc_doc))= diffblkm_topsoi_col(c,groupid(id_trc_doc))                        !m/s surface conductance
-         condc_toplay_col(c,groupid(betrtracer_vars%id_trc_dom))= diffblkm_topsoi_col(c,groupid(id_trc_dom))                        !m/s surface conductance
+         condc_toplay_col(c,groupid(betrtracer_vars%id_trc_doc))= diffblkm_topsoi_col(c,groupid(id_trc_doc))/dz_top(c)                         !m/s surface conductance
+         condc_toplay_col(c,groupid(betrtracer_vars%id_trc_dom))= diffblkm_topsoi_col(c,groupid(id_trc_dom))/dz_top(c)                         !m/s surface conductance
 
       enddo
 
@@ -392,6 +392,7 @@ contains
         enddo
       enddo
     endif
+
     do j = bounds%lbj, bounds%ubj
       do c = bounds%begc, bounds%endc
         u = qflx_adv(c,j)/aqu2bulkcef_mobile_vr(c,j,id_trc_dom)
@@ -680,17 +681,18 @@ contains
    real(r8), parameter :: w2=2.*pi/(86400.)
    real(r8), parameter :: tiny_val=1.e-10_r8
 
-   if(abs(z)<tiny_val)then
-     ans=c0+exp(-u/(2._r8*D))*(A1*exp(-sqrt(2._r8)/(4._r8*D) &
-       *sqrt(u*u+sqrt(u**4._r8+16._r8*D*D*w1*w1)))*sin(w1*time) &
-       +A2*exp(-sqrt(2._r8)/(4._r8*D)*sqrt(u*u+sqrt(u**4._r8+16._r8*D*D*w2*w2)))*sin(w2*time))
-   else
-     ans=c0+exp(-u/(2._r8*D))*(A1*exp(-sqrt(2._r8)/(4._r8*D) &
-       *sqrt(u*u+sqrt(u**4._r8+16._r8*D*D*w1*w1)))* &
-       sin(w1*time-sqrt(2._r8)*w1*z/(sqrt(u*u+sqrt(u**4._r8+16._r8*D*D*w1*w1))))+&
-       A2*exp(-sqrt(2._r8)/(4._r8*D)*sqrt(u*u+sqrt(u**4._r8+16._r8*D*D*w2*w2))) * &
-       sin(w2*time-sqrt(2._r8)*w2*z/(sqrt(u*u+sqrt(u**4._r8+16._r8*D*D*w2*w2)))))
-   endif
+   real(r8) :: ds1, ds2
 
+   ds1=sqrt(u*u+sqrt(u**4._r8+16._r8*D*D*w1*w1))
+   ds2=sqrt(u*u+sqrt(u**4._r8+16._r8*D*D*w2*w2))
+   if(abs(z)<tiny_val)then
+     ans=c0+A1*exp(-u/(2._r8*D)-sqrt(2._r8)/(4._r8*D)*ds1)*sin(w1*time) &
+       +A2*exp(-u/(2._r8*D)-sqrt(2._r8)/(4._r8*D)*ds2)*sin(w2*time)
+   else
+     ans=c0+A1*exp(-u/(2._r8*D)-sqrt(2._r8)/(4._r8*D)*ds1)* &
+       sin(w1*time-sqrt(2._r8)*w1*z/ds1) &
+       +A2*exp(-u/(2._r8*D)-sqrt(2._r8)/(4._r8*D)*ds2)* &
+       sin(w2*time-sqrt(2._r8)*w2*z/ds2)
+   endif
    end function conc2
 end module Tracer2beckBGCReactionsType

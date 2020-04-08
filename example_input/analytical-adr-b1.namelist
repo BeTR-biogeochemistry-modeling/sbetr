@@ -7,9 +7,9 @@
 /
 
 &betr_time
-  stop_n = 5
+  stop_n = 365
   delta_time=1800.
-  stop_option='nsteps'
+  stop_option='ndays'
 /
 
 &forcing_inparm
@@ -18,7 +18,7 @@
 /
 
 &betr_grid
-  grid_data_filename = './input_data/clm_exp_grid.cdl.nc'
+  grid_data_filename = './input_data/clm_exp_grid_const.cdl.nc'
 /
 
 &regression_test

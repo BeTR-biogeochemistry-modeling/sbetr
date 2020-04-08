@@ -110,14 +110,14 @@ cell    9 =   0.1576050066983E-05
 
 [BLK_H2O_total_aqueous_conc]
 category = concentration
-min =   0.2176881847500E+03
-max =   0.3727199959317E+03
-mean =   0.3055268940009E+03
-cell    1 =   0.3727199959317E+03
-cell    3 =   0.3011979854825E+03
-cell    5 =   0.3000382246017E+03
-cell    7 =   0.3221534673615E+03
-cell    9 =   0.2969756525793E+03
+min =   0.2176899455194E+03
+max =   0.3727214492381E+03
+mean =   0.3055273578828E+03
+cell    1 =   0.3727214492381E+03
+cell    3 =   0.3011988282796E+03
+cell    5 =   0.3000383654924E+03
+cell    7 =   0.3221534742880E+03
+cell    9 =   0.2969756526429E+03
 
 [BLK_H2O_gas_partial_fraction]
 category = pfraction
@@ -132,14 +132,14 @@ cell    9 =                   NaN
 
 [O18_H2O_total_aqueous_conc]
 category = concentration
-min =   0.2176881847500E+03
-max =   0.3727199959317E+03
-mean =   0.3055268940009E+03
-cell    1 =   0.3727199959317E+03
-cell    3 =   0.3011979854825E+03
-cell    5 =   0.3000382246017E+03
-cell    7 =   0.3221534673615E+03
-cell    9 =   0.2969756525793E+03
+min =   0.2176899455194E+03
+max =   0.3727214492381E+03
+mean =   0.3055273578828E+03
+cell    1 =   0.3727214492381E+03
+cell    3 =   0.3011988282796E+03
+cell    5 =   0.3000383654924E+03
+cell    7 =   0.3221534742880E+03
+cell    9 =   0.2969756526429E+03
 
 [O18_H2O_gas_partial_fraction]
 category = pfraction
@@ -154,14 +154,14 @@ cell    9 =                   NaN
 
 [D_H2O_total_aqueous_conc]
 category = concentration
-min =   0.2176881847500E+03
-max =   0.3727199959317E+03
-mean =   0.3055268940009E+03
-cell    1 =   0.3727199959317E+03
-cell    3 =   0.3011979854825E+03
-cell    5 =   0.3000382246017E+03
-cell    7 =   0.3221534673615E+03
-cell    9 =   0.2969756525793E+03
+min =   0.2176899455194E+03
+max =   0.3727214492381E+03
+mean =   0.3055273578828E+03
+cell    1 =   0.3727214492381E+03
+cell    3 =   0.3011988282796E+03
+cell    5 =   0.3000383654924E+03
+cell    7 =   0.3221534742880E+03
+cell    9 =   0.2969756526429E+03
 
 [D_H2O_gas_partial_fraction]
 category = pfraction

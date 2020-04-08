@@ -400,6 +400,7 @@ contains
   associate(                                                       &
          ntracers          =>  betrtracer_vars%ntracers            , &
          ngwmobile_tracers =>  betrtracer_vars%ngwmobile_tracers   , &
+         nvolatile_tracers =>  betrtracer_vars%nvolatile_tracers   , &
          is_volatile       =>  betrtracer_vars%is_volatile         , &
          is_isotope        =>  betrtracer_vars%is_isotope          , &
          is_h2o            =>  betrtracer_vars%is_h2o              , &
@@ -410,6 +411,8 @@ contains
    )
   begc = bounds%begc; endc=bounds%endc
   idtemp1d = 0; idtemp2d = 0
+
+  if(nvolatile_tracers>0) &
   state_2d(begc:endc, lbj:ubj, addone(idtemp2d))= this%tracer_P_gas_col(begc:endc, lbj:ubj)
 
   do jj = 1, ntracers

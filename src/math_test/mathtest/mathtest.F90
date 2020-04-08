@@ -5,6 +5,7 @@ subroutine spm_test
   use SparseMatMod, only : spm_list_type, sparseMat_type, spm_axpy
   use SparseMatMod, only : spm_list_init, spm_list_insert, spm_list_to_mat
   use SparseMatMod, only : spm_print, set_spm_elm
+
   implicit none
   class(sparseMat_type), pointer :: spm
   type(spm_list_type), pointer :: spm_list
@@ -60,6 +61,7 @@ program main
   use bshr_kind_mod  , only : r8 => shr_kind_r8
   use InterpolationMod, only: cmass_interp
   use BetrStatusType   , only : betr_status_type
+  use MathfuncMod, only : polyval
 implicit none
 
   integer :: nx, ny, nxi
@@ -70,6 +72,11 @@ implicit none
 
   type(betr_status_type) :: bstatus
   integer :: j1, j2
+  real(r8) :: a(3)
+
+  a=(/3._r8,2._r8,1._r8/)
+
+  print*,polyval(a,5._r8),polyval(a,7._r8),polyval(a,9._r8)
 
   nx = 10; ny = 3; nxi=5
 

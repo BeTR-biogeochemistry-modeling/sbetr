@@ -241,7 +241,7 @@ contains
          zi                                     => col%zi                                                 , & ! real(r8)[intent(in)],
          lbots                                  => col%lbots                                              , & ! integer[intent(in)], lower boundary
          t_soisno                               => biophysforc%t_soisno_col                               , & ! Input: [real(r8)(:,:)]
-         move_scalar                            => betrtracer_vars%move_scalar                            , &
+         difu_scalar                            => betrtracer_vars%difu_scalar                            , &
          bulk_diffus_col                        => tracercoeff_vars%bulk_diffus_col                       , &
          aqu_diffus_col                         => tracercoeff_vars%aqu_diffus_col                        , &
          aqu_diffus0_col                        => tracercoeff_vars%aqu_diffus0_col                       , &
@@ -278,7 +278,7 @@ contains
                      endif
                      !to prevent division by zero
                      bulk_diffus_col(c,n,j)=max(bulk_diffus_col(c,n,j),minval_diffus)
-                     bulk_diffus_col(c,n,j)=bulk_diffus_col(c,n,j)*move_scalar(j)
+                     bulk_diffus_col(c,n,j)=bulk_diffus_col(c,n,j)*difu_scalar(j)
                      aqu_diffus_col(c,n,j)=max(aqu_diffus_col(c,n,j), minval_diffus)
                   endif
                enddo
@@ -286,7 +286,7 @@ contains
             !the following needs revision when betr is extended to wetland
             do fc = 1, numf
               c = filter(fc)
-              diffblkm_topsoi_col(c,j) = bulk_diffus_col(c,1,j)*move_scalar(j)
+              diffblkm_topsoi_col(c,j) = bulk_diffus_col(c,1,j)*difu_scalar(j)
             enddo
          else
             !it is not a volatile tracer
@@ -300,7 +300,7 @@ contains
                      bulk_diffus_col(c,n,j)=aqu_diffus_col(c,n,j)
                      !to prevent division by zero
                      bulk_diffus_col(c,n,j)=max(bulk_diffus_col(c,n,j),minval_diffus) !avoid division by zero in following calculations
-                     bulk_diffus_col(c,n,j)=bulk_diffus_col(c,n,j)*move_scalar(j)
+                     bulk_diffus_col(c,n,j)=bulk_diffus_col(c,n,j)*difu_scalar(j)
                      aqu_diffus_col(c,n,j)=max(aqu_diffus_col(c,n,j), minval_diffus)
                   endif
                enddo
@@ -343,7 +343,7 @@ contains
                   ! completely frozen soils--no mixing
                   bulk_diffus_col(c,n,j) = 1e-4_r8 / (86400._r8 * 365._r8) * 1.e-36_r8  !set to very small number for numerical purpose
                endif
-               bulk_diffus_col(c,n,j) = bulk_diffus_col(c,n,j) * move_scalar(j)
+               bulk_diffus_col(c,n,j) = bulk_diffus_col(c,n,j) * difu_scalar(j)
             enddo
          enddo
       enddo
@@ -685,7 +685,6 @@ contains
               !aqueous to bulk mobile phase
               if(is_h2o(trcid))then
                 aqu2bulkcef_mobile(c,n,j) = tracer_conc_mobile(c,n,id_trc_beg_blk_h2o)/denh2o
-!                print*,'con',j,n,aqu2bulkcef_mobile(c,n,j),h2osoi_liqvol(c,n)
               else
                 aqu2bulkcef_mobile(c,n,j) = air_vol(c,n)/bunsencef_col(c,n,k)+h2osoi_liqvol(c,n)
               endif
@@ -909,7 +908,6 @@ contains
        do fc = 1, numf
          c = filter(fc)
          tracer_flx_infl(c,j) = 1._r8 * qflx_adv(c,0) * denh2o  !kg/m3
-!         print*,'infl',tracer_flx_infl(c,j)*1800._r8
        enddo
      elseif(j==betrtracer_vars%id_trc_o18_h2o)then
          !revision needed

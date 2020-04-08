@@ -797,7 +797,7 @@ contains
          ngwmobile_tracer_groups   => betrtracer_vars%ngwmobile_tracer_groups        , & !integer [intent(in)], number of mobile tracers undergoing dual phase transport
          nmem_max                  => betrtracer_vars%nmem_max                       , & !
          tracer_group_memid        => betrtracer_vars%tracer_group_memid             , & !
-         move_scalar               => betrtracer_vars%move_scalar                    , & !
+         adv_scalar                => betrtracer_vars%adv_scalar                    , & !
          tracer_conc_mobile_col    => tracerstate_vars%tracer_conc_mobile_col        , & !
          tracer_conc_grndwater_col => tracerstate_vars%tracer_conc_grndwater_col     , & !
          aqu2bulkcef_mobile_col    => tracercoeff_vars%aqu2bulkcef_mobile_col        , & !
@@ -872,8 +872,8 @@ contains
                endif
                !rescale transpiration guided flux
                qflx_rootsoi_local(c,l) = safe_div(qflx_rootsoi(c,l),aqu2bulkcef_mobile_col(c,l,j),eps=loc_eps)
-               qflx_adv_local(c,l)=qflx_adv_local(c,l)*move_scalar(j)
-               qflx_rootsoi_local(c,l) = qflx_rootsoi_local(c,l)*move_scalar(j)
+               qflx_adv_local(c,l)=qflx_adv_local(c,l)*adv_scalar(j)
+               qflx_rootsoi_local(c,l) = qflx_rootsoi_local(c,l)*adv_scalar(j)
             enddo
          enddo
 
@@ -965,7 +965,7 @@ contains
                           abs(dmass(c,k)),tiny_val/))
                      endif
 
-                     
+
                      if(abs(err_relative)<err_relative_threshold)then
                         leaching_mass(c,k) = leaching_mass(c,k) - err_tracer(c,k)
                      else

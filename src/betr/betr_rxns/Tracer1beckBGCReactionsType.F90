@@ -234,10 +234,15 @@ contains
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_doc, trc_name='DOC',      &
          is_trc_mobile=.true., is_trc_advective = .true., trc_group_id = addone(itemp_grp),   &
          trc_group_mem = 1)
+    betrtracer_vars%adv_scalar(betrtracer_vars%id_trc_doc) = 1._r8
+    betrtracer_vars%difu_scalar(betrtracer_vars%id_trc_doc) = 0.5e3_r8
 
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_dom, trc_name='DOM',      &
          is_trc_mobile=.false., is_trc_advective = .true., trc_group_id = addone(itemp_grp),   &
-         trc_group_mem = 1)
+         trc_group_mem = 1, do_mass_balchk=.false.)
+
+    betrtracer_vars%adv_scalar(betrtracer_vars%id_trc_dom) = 1._r8
+    betrtracer_vars%difu_scalar(betrtracer_vars%id_trc_dom) = 0.5e3_r8
 
   end subroutine Init_betrbgc
 
@@ -313,8 +318,8 @@ contains
            = conc1(betr_time%time, diffblkm_topsoi_col(c,groupid(id_trc_dom)), u, L, 1.e-8_r8)               !mol m-3, contant boundary condition, as concentration
 
          tracerboundarycond_vars%bot_concflux_col(c,1,:)        = 0._r8                        !zero flux boundary condition for diffusion
-         condc_toplay_col(c,groupid(betrtracer_vars%id_trc_doc))= diffblkm_topsoi_col(c,groupid(betrtracer_vars%id_trc_doc))                        !m/s surface conductance
-         condc_toplay_col(c,groupid(betrtracer_vars%id_trc_dom))= diffblkm_topsoi_col(c,groupid(betrtracer_vars%id_trc_dom))                        !m/s surface conductance
+         condc_toplay_col(c,groupid(id_trc_doc))= 2._r8*diffblkm_topsoi_col(c,groupid(id_trc_doc))/dz_top(c)                        !m/s surface conductance
+         condc_toplay_col(c,groupid(id_trc_dom))= 2._r8*diffblkm_topsoi_col(c,groupid(id_trc_dom))/dz_top(c)                        !m/s surface conductance
 
       enddo
 
@@ -392,7 +397,7 @@ contains
         enddo
       enddo
     endif
-    print*,'time',time
+
     do j = bounds%lbj, bounds%ubj
       do c = bounds%begc, bounds%endc
         Lz = zi(c,bounds%ubj)
@@ -681,7 +686,8 @@ contains
    xm=z-u*time
    xp=z+u*time
    dtime=D*time
-   ans=0.5_r8*erfc(xm/(2._r8*sqrt(Dtime)))
+
+   ans=0.5_r8*eerfc(xm/(2._r8*sqrt(Dtime)),0._r8)
    ans=ans+0.5_r8*eerfc(xp/(2._r8*sqrt(Dtime)),u*z/D)
 
    ans=ans+(1._r8+u/(2._r8*D)*(2._r8*L-xm))*eerfc((2._r8*L-xm)/(2._r8*sqrt(Dtime)),u*L/D)
@@ -696,6 +702,7 @@ contains
    !scaled complementary error function
    !exp(escal)*erfc(x)
    !defined only for x>=0._r8
+   use MathfuncMod, only : polyval
    implicit none
    real(r8), intent(in) :: x
    real(r8), intent(in) :: escal
@@ -704,19 +711,20 @@ contains
    real(r8) :: t
    real(r8) :: argx
    integer  :: jj
-   real(r8), parameter :: a(10)=(/-1.26551223_r8, 1.00002368_r8, &
-                                   0.37409196_r8, 0.09678418_r8, &
-                                  -0.18628806_r8, 0.27886807_r8, &
-                                  -1.13520398_r8, 1.48851587_r8, &
-                                  -0.82215223_r8, 0.17087277_r8/)
-   t= 1._r8/(1._r8+x)
-   argx=escal-x*x
-   argx=a(10)
-   do jj = 10, 2, -1
-     argx=argx*t+a(jj-1)
-   enddo
-   argx=argx+escal-x*x
-   ans=exp(argx)*t
+   real(r8), parameter :: a(10)=(/0.17087277_r8,-0.82215223_r8, &
+                                  1.48851587_r8,-1.13520398_r8, &
+                                  0.27886807_r8,-0.18628806_r8, &
+                                  0.09678418_r8,0.37409196_r8,  &
+                                  1.00002368_r8,-1.2655123_r8/)
+   t= 1._r8/(1._r8+abs(x))
+
+   argx=polyval(a,t)-x*x
+
+   if(x>=0._r8)then
+     ans=t*exp(argx+escal)
+   else
+     ans=exp(escal)*2._r8-exp(argx+escal)*t
+   endif
 
    end function eerfc
 end module Tracer1beckBGCReactionsType

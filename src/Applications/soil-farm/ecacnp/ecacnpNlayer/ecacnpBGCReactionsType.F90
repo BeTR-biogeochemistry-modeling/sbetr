@@ -194,15 +194,19 @@ contains
    p_loc                   => this%ecacnp_bgc_index%p_loc            , &
    c13_loc                 => this%ecacnp_bgc_index%c13_loc          , &
    c14_loc                 => this%ecacnp_bgc_index%c14_loc          , &
-   move_scalar             => tracers%move_scalar                      &
+   adv_scalar              => tracers%adv_scalar                     , &
+   difu_scalar             => tracers%difu_scalar                      &
   )
 
   c_l=1
   latacc=calc_latacc(lat(c_l))
   if(betr_spinup_state/=0)then
-    move_scalar(tracers%id_trc_Bm)  = ecacnp_para%spinup_factor(7)
-    move_scalar(tracers%id_trc_som) = ecacnp_para%spinup_factor(8)*latacc
-    move_scalar(tracers%id_trc_pom)=ecacnp_para%spinup_factor(9)  *latacc
+    adv_scalar(tracers%id_trc_Bm)  = ecacnp_para%spinup_factor(7)
+    adv_scalar(tracers%id_trc_som) = ecacnp_para%spinup_factor(8)*latacc
+    adv_scalar(tracers%id_trc_pom) = ecacnp_para%spinup_factor(9)  *latacc
+    difu_scalar(tracers%id_trc_Bm)  = ecacnp_para%spinup_factor(7)
+    difu_scalar(tracers%id_trc_som) = ecacnp_para%spinup_factor(8)*latacc
+    difu_scalar(tracers%id_trc_pom) = ecacnp_para%spinup_factor(9)  *latacc
   endif
 
   if(enter_spinup)then
