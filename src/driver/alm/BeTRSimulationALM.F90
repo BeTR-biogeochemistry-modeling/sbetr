@@ -890,7 +890,7 @@ contains
 
   !------------------------------------------------------------------------
 
-  subroutine ALMBetrPlantSoilBGCRecv(this, bounds, col, pft, num_soilc,  filter_soilc,&
+  subroutine ALMBetrPlantSoilBGCRecv(this, bounds, col, pft, num_surfc,  filter_soilc,&
    c12state_vars, c12flux_vars, pf_c12flux_vars, c13state_vars, c13flux_vars, &
    c14state_vars, c14flux_vars, n14state_vars, pf_n14state_vars, n14flux_vars, &
    pf_n14flux_vars, p31state_vars, p31flux_vars, pf_p31flux_vars)
