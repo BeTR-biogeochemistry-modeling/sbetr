@@ -439,6 +439,7 @@ contains
        enddo
     enddo
 
+
     !X!write(*, *) 'Reading QINFL'
     call ncd_getvar(ncf_in_forc, 'QINFL', data_1d)
     do j1 =1, this%num_time
@@ -612,6 +613,8 @@ contains
     else
        tstep = ttime%tstep
     end if
+    tstep=mod(tstep,this%num_time)
+    if(tstep==0)tstep=this%num_time
 
     !setup top boundary
     do fc = 1, numf

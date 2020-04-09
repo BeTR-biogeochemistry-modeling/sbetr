@@ -24,7 +24,7 @@ module ReactionsFactory
 
 contains
 
-  subroutine create_betr_def_application(bgc_reaction, plant_soilbgc, method, yesno)
+  subroutine create_betr_def_application(bgc_reaction, plant_soilbgc, method, yesno, is_analytic_benchmark)
   !DESCRIPTION
   !create betr applications
   !
@@ -35,7 +35,8 @@ contains
   character(len=*),                       intent(in)  :: method
 
   logical, intent(out) :: yesno
-  yesno = is_reaction_exist(method)
+  logical, intent(out) :: is_analytic_benchmark
+  yesno = is_reaction_exist(method,is_analytic_benchmark)
   if(yesno)then
     call create_bgc_reaction_type(bgc_reaction, method)
     call create_plant_soilbgc_type(plant_soilbgc, method)
@@ -51,6 +52,8 @@ contains
     !
     ! !USES:
     use BGCReactionsMod            , only : bgc_reaction_type
+    use tracer1beckBGCReactionsType, only : bgc_reaction_tracer1beck_run_type
+    use tracer2beckBGCReactionsType, only : bgc_reaction_tracer2beck_run_type
     use MockBGCReactionsType       , only : bgc_reaction_mock_run_type
     use H2OIsotopeBGCReactionsType , only : bgc_reaction_h2oiso_type
     use betr_ctrl                  , only : iulog  => biulog, bgc_type
@@ -67,6 +70,12 @@ contains
     select case(trim(method))
     case ("mock_run")
        allocate(bgc_reaction, source=bgc_reaction_mock_run_type())
+       bgc_type='type0_bgc'
+    case ("tracer1beck_run")
+       allocate(bgc_reaction, source=bgc_reaction_tracer1beck_run_type())
+       bgc_type='type0_bgc'
+    case ("tracer2beck_run")
+       allocate(bgc_reaction, source=bgc_reaction_tracer2beck_run_type())
        bgc_type='type0_bgc'
     case ("h2oiso")
        allocate(bgc_reaction, source=bgc_reaction_h2oiso_type())
@@ -87,6 +96,8 @@ contains
   !USES
   use PlantSoilBGCMod            , only : plant_soilbgc_type
   use MockPlantSoilBGCType       , only : plant_soilbgc_mock_run_type
+  use tracer1beckPlantSoilBGCType, only : plant_soilbgc_tracer1beck_run_type
+  use tracer2beckPlantSoilBGCType, only : plant_soilbgc_tracer2beck_run_type
   use H2OIsotopePlantSoilBGCType , only : plant_soilbgc_h2oiso_run_type
   use betr_ctrl                  , only : iulog  => biulog
   use DIOCPlantSoilBGCType       , only : plant_soilbgc_dioc_run_type
@@ -99,6 +110,10 @@ contains
   select case(trim(method))
   case ("mock_run")
      allocate(plant_soilbgc, source=plant_soilbgc_mock_run_type())
+  case ("tracer1beck_run")
+     allocate(plant_soilbgc, source=plant_soilbgc_tracer1beck_run_type())
+  case ("tracer2beck_run")
+     allocate(plant_soilbgc, source=plant_soilbgc_tracer2beck_run_type())
   case ("h2oiso")
      allocate(plant_soilbgc, source=plant_soilbgc_h2oiso_run_type())
   case ("doc_dic")
@@ -112,18 +127,27 @@ contains
 
   end subroutine create_plant_soilbgc_type
   !-------------------------------------------------------------------------------
-  function is_reaction_exist(method)result(yesno)
+  function is_reaction_exist(method,is_analytic_benchmark)result(yesno)
   !DESCRIPTION
   !determine if it is a default betr application
   use betr_ctrl                  , only : iulog  => biulog
   implicit none
   character(len=*), intent(in) :: method
+  logical, intent(out) :: is_analytic_benchmark
   character(len=*), parameter  :: subname = 'is_reaction_exist'
   !local variable
   logical :: yesno
+
+  is_analytic_benchmark=.false.
   select case(trim(method))
   case ("mock_run")
      yesno = .true.
+  case ("tracer1beck_run")
+     yesno = .true.
+     is_analytic_benchmark=.true.
+  case ("tracer2beck_run")
+     yesno = .true.
+     is_analytic_benchmark=.true.
   case ("h2oiso")
      yesno = .true.
   case ("doc_dic")

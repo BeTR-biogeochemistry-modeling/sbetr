@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /*-------------------------------------------------------------------------
@@ -28,7 +26,7 @@
 /* Module Setup */
 /****************/
 
-#define H5G_PACKAGE		/*suppress error about including H5Gpkg	  */
+#include "H5Gmodule.h"          /* This source code file is part of the H5G module */
 
 
 /***********/
@@ -42,6 +40,8 @@
 #include "H5Lprivate.h"		/* Links                                */
 #include "H5MMprivate.h"	/* Memory management			*/
 #include "H5Ppublic.h"		/* Property Lists                       */
+
+#include "H5VLnative_private.h" /* Native VOL connector                     */
 
 
 /****************/
@@ -159,7 +159,7 @@ H5G_link_cmp_name_dec(const void *lnk1, const void *lnk2)
 static int
 H5G_link_cmp_corder_inc(const void *lnk1, const void *lnk2)
 {
-    int ret_value;              /* Return value */
+    int ret_value = -1;         /* Return value */
 
     FUNC_ENTER_NOAPI_NOINIT_NOERR
 
@@ -194,7 +194,7 @@ H5G_link_cmp_corder_inc(const void *lnk1, const void *lnk2)
 static int
 H5G_link_cmp_corder_dec(const void *lnk1, const void *lnk2)
 {
-    int ret_value;              /* Return value */
+    int ret_value = -1;         /* Return value */
 
     FUNC_ENTER_NOAPI_NOINIT_NOERR
 
@@ -226,7 +226,10 @@ herr_t
 H5G__ent_to_link(H5O_link_t *lnk, const H5HL_t *heap,
     const H5G_entry_t *ent, const char *name)
 {
-    FUNC_ENTER_PACKAGE_NOERR
+    hbool_t dup_soft = FALSE;           /* xstrdup the symbolic link name or not */
+    herr_t ret_value = SUCCEED;         /* Return value */
+
+    FUNC_ENTER_PACKAGE
 
     /* check arguments */
     HDassert(lnk);
@@ -238,18 +241,21 @@ H5G__ent_to_link(H5O_link_t *lnk, const H5HL_t *heap,
     lnk->cset = H5F_DEFAULT_CSET;
     lnk->corder = 0;
     lnk->corder_valid = FALSE;       /* Creation order not valid for this link */
-    lnk->name = H5MM_xstrdup(name);
-    HDassert(lnk->name);
+    if((lnk->name = H5MM_xstrdup(name)) == NULL)
+        HGOTO_ERROR(H5E_LINK, H5E_CANTGET, FAIL, "unable to duplicate link name")
 
     /* Object is a symbolic or hard link */
     if(ent->type == H5G_CACHED_SLINK) {
         const char *s;          /* Pointer to link value */
 
-        s = (const char *)H5HL_offset_into(heap, ent->cache.slink.lval_offset);
-        HDassert(s);
+        if((s = (const char *)H5HL_offset_into(heap, ent->cache.slink.lval_offset)) == NULL)
+            HGOTO_ERROR(H5E_LINK, H5E_CANTGET, FAIL, "unable to get symbolic link name")
 
         /* Copy the link value */
-        lnk->u.soft.name = H5MM_xstrdup(s);
+        if((lnk->u.soft.name = H5MM_xstrdup(s)) == NULL)
+            HGOTO_ERROR(H5E_LINK, H5E_CANTGET, FAIL, "unable to duplicate symbolic link name")
+
+        dup_soft = TRUE;
 
         /* Set link type */
         lnk->type = H5L_TYPE_SOFT;
@@ -262,7 +268,14 @@ H5G__ent_to_link(H5O_link_t *lnk, const H5HL_t *heap,
         lnk->type = H5L_TYPE_HARD;
     } /* end else */
 
-    FUNC_LEAVE_NOAPI(SUCCEED)
+done:
+    if(ret_value < 0) {
+        if(lnk->name)
+            H5MM_xfree(lnk->name);
+        if(ent->type == H5G_CACHED_SLINK && dup_soft)
+            H5MM_xfree(lnk->u.soft.name);
+    }
+    FUNC_LEAVE_NOAPI(ret_value)
 } /* end H5G__ent_to_link() */
 
 
@@ -279,13 +292,14 @@ H5G__ent_to_link(H5O_link_t *lnk, const H5HL_t *heap,
  *-------------------------------------------------------------------------
  */
 herr_t
-H5G_link_to_info(const H5O_link_t *lnk, H5L_info_t *info)
+H5G_link_to_info(const H5O_loc_t *link_loc, const H5O_link_t *lnk, H5L_info2_t *info)
 {
     herr_t ret_value = SUCCEED;         /* Return value */
 
     FUNC_ENTER_NOAPI(FAIL)
 
     /* Sanity check */
+    HDassert(link_loc);
     HDassert(lnk);
 
     /* Get information from the link */
@@ -297,7 +311,9 @@ H5G_link_to_info(const H5O_link_t *lnk, H5L_info_t *info)
 
         switch(lnk->type) {
             case H5L_TYPE_HARD:
-                info->u.address = lnk->u.hard.addr;
+                /* Serialize the address into a VOL token */
+                if(H5VL_native_addr_to_token(link_loc->file, H5I_FILE, lnk->u.hard.addr, &info->u.token) < 0)
+                    HGOTO_ERROR(H5E_LINK, H5E_CANTSERIALIZE, FAIL, "can't serialize address into object token")
                 break;
 
             case H5L_TYPE_SOFT:
@@ -391,15 +407,14 @@ done:
 
 
 /*-------------------------------------------------------------------------
- * Function:	H5G__link_sort_table
+ * Function:    H5G__link_sort_table
  *
  * Purpose:     Sort table containing a list of links for a group
  *
- * Return:	Success:        Non-negative
- *		Failure:	Negative
+ * Return:      SUCCEED/FAIL
  *
- * Programmer:	Quincey Koziol
- *	        Nov 20, 2006
+ * Programmer:  Quincey Koziol
+ *              Nov 20, 2006
  *
  *-------------------------------------------------------------------------
  */
@@ -407,10 +422,19 @@ herr_t
 H5G__link_sort_table(H5G_link_table_t *ltable, H5_index_t idx_type,
     H5_iter_order_t order)
 {
+    herr_t  ret_value = SUCCEED;
+
     FUNC_ENTER_PACKAGE_NOERR
 
     /* Sanity check */
     HDassert(ltable);
+
+    /* Can't sort when empty since the links table will be NULL */
+    if(0 == ltable->nlinks)
+        HGOTO_DONE(ret_value);
+
+    /* This should never be NULL if the number of links is non-zero */
+    HDassert(ltable->lnks);
 
     /* Pick appropriate sorting routine */
     if(idx_type == H5_INDEX_NAME) {
@@ -431,6 +455,7 @@ H5G__link_sort_table(H5G_link_table_t *ltable, H5_index_t idx_type,
             HDassert(order == H5_ITER_NATIVE);
     } /* end else */
 
+done:
     FUNC_LEAVE_NOAPI(SUCCEED)
 } /* end H5G__link_sort_table() */
 
@@ -542,8 +567,7 @@ done:
  *-------------------------------------------------------------------------
  */
 herr_t
-H5G__link_name_replace(H5F_t *file, hid_t dxpl_id, H5RS_str_t *grp_full_path_r,
-    const H5O_link_t *lnk)
+H5G__link_name_replace(H5F_t *file, H5RS_str_t *grp_full_path_r, const H5O_link_t *lnk)
 {
     H5RS_str_t *obj_path_r = NULL;      /* Full path for link being removed */
     herr_t ret_value = SUCCEED;         /* Return value */
@@ -556,9 +580,9 @@ H5G__link_name_replace(H5F_t *file, hid_t dxpl_id, H5RS_str_t *grp_full_path_r,
     /* Search the open IDs and replace names for unlinked object */
     if(grp_full_path_r) {
         obj_path_r = H5G_build_fullpath_refstr_str(grp_full_path_r, lnk->name);
-        if(H5G_name_replace(lnk, H5G_NAME_DELETE, file, obj_path_r, NULL, NULL, dxpl_id) < 0)
+        if(H5G_name_replace(lnk, H5G_NAME_DELETE, file, obj_path_r, NULL, NULL) < 0)
             HGOTO_ERROR(H5E_SYM, H5E_CANTDELETE, FAIL, "unable to replace name")
-    } /* end if */
+    }
 
 done:
     if(obj_path_r)

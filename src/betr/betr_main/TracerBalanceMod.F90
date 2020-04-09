@@ -35,7 +35,6 @@ module TracerBalanceMod
       ! Preparing for tracer mass balance check
       !
       ! !USES:
-      use tracer_varcon   , only : nlevtrc_soil  => betr_nlevtrc_soil
       use BetrStatusType  , only : betr_status_type
       use betr_columnType , only : betr_column_type
       implicit none
@@ -68,7 +67,7 @@ module TracerBalanceMod
 
     !--------------------------------------------------------------------------------
     subroutine betr_tracer_massbalance_check(betr_time, bounds, col,  numf, filter, &
-         betrtracer_vars, tracerstate_vars, tracerflux_vars, betr_status, ldebug)
+         betrtracer_vars, tracerstate_vars, tracerflux_vars, betr_status)!, ldebug)
       !
       ! !DESCRIPTION:
       ! do mass balance check for betr tracers
@@ -101,7 +100,7 @@ module TracerBalanceMod
       type(TracerFlux_type)  , intent(inout) :: tracerflux_vars
       type(TracerState_type) , intent(inout) :: tracerState_vars
       type(betr_status_type) , intent(out)   :: betr_status
-      logical                , intent(in)    :: ldebug
+!      logical                , intent(in)    :: ldebug
       ! !LOCAL VARIABLES:
       integer  :: jj, fc, c, kk
       real(r8) :: dtime
@@ -124,6 +123,7 @@ module TracerBalanceMod
            is_volatile               => betrtracer_vars%is_volatile                       , &
            errtracer                 => tracerstate_vars%errtracer_col                    , &
            ngwmobile_tracers         => betrtracer_vars%ngwmobile_tracers                 , &
+           do_mass_balchk            => betrtracer_vars%do_mass_balchk                    , &
            ntracers                  => betrtracer_vars%ntracers                            &
            )
       lbj = bounds%lbj
@@ -138,17 +138,19 @@ module TracerBalanceMod
         do fc = 1, numf
            c = filter(fc)
            !summarize the fluxes
-           call tracerflux_vars%flux_summary(col, betr_time, c, betrtracer_vars,betr_status)
+           call tracerflux_vars%flux_summary(lbj, ubj, col, betr_time, c, betrtracer_vars,betr_status)
            call tracerflux_vars%Temporal_average(c,dtime)
            if(betr_status%check_status())return
            do kk = 1, ntracers
               !type1_bgc, only check for volatile tracers
-              if(index(bgc_type,'type1_bgc')/=0 .and. .not. is_volatile(kk))cycle
+              if(index(bgc_type,'type1_bgc')/=0 .and. .not. is_volatile(kk) .or. (.not. do_mass_balchk(kk)))cycle
               errtracer(c,kk) = beg_tracer_molarmass(c,kk)-end_tracer_molarmass(c,kk)  &
                    + (tracer_flx_netpro(c,kk)-tracer_flx_netphyloss(c,kk))*dtime
               if(abs(errtracer(c,kk))<err_min)then
                  err_rel=1.e-4_r8
               else
+                 print*,'nstep=', betr_time%get_nstep()
+                 print*,'err,  tracername,  netpro,  netphysloss'
                  print*,errtracer(c,kk),betrtracer_vars%get_tracername(kk),tracer_flx_netpro(c,kk),tracer_flx_netphyloss(c,kk)
                  err_rel = errtracer(c,kk)/max(abs(beg_tracer_molarmass(c,kk)),abs(end_tracer_molarmass(c,kk)))
               endif
@@ -185,7 +187,6 @@ module TracerBalanceMod
       !
       ! !USES:
       use tracerstatetype , only : tracerstate_type
-      use tracer_varcon   , only : nlevtrc_soil  => betr_nlevtrc_soil
       use BetrStatusType  , only : betr_status_type
       use betr_columnType , only : betr_column_type
       use betr_ctrl       , only : bgc_type
@@ -227,13 +228,13 @@ module TracerBalanceMod
               c = filter(fc)
 
               tracer_molarmass_col(c,jj) = &
-                 tracerstate_vars%int_mass_mobile_col(1,nlevtrc_soil,c,jj,dz(c,1:nlevtrc_soil),betr_status)
+                 tracerstate_vars%int_mass_mobile_col(1,ubj,c,jj,dz(c,1:ubj),betr_status)
               if(betr_status%check_status())return
 
               if(is_frozen(jj))then
                  tracer_molarmass_col(c,jj) = tracer_molarmass_col(c,jj) + &
-                      tracerstate_vars%int_mass_frozen_col(1,nlevtrc_soil,c,&
-                      frozenid(jj),dz(c,1:nlevtrc_soil),betr_status)
+                      tracerstate_vars%int_mass_frozen_col(1,ubj,c,&
+                      frozenid(jj),dz(c,1:ubj),betr_status)
                  if(betr_status%check_status())return
               endif
 

@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /*
@@ -70,8 +68,8 @@ main (int argc, char **argv)
     grp_id = H5Gcreate2(file_id, "Group", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     VRFY((grp_id >= 0), "H5Gcreate succeeded");
 
-    dims[0] = ROW_FACTOR*mpi_size;
-    dims[1] = COL_FACTOR*mpi_size;
+    dims[0] = (hsize_t)ROW_FACTOR*(hsize_t)mpi_size;
+    dims[1] = (hsize_t)COL_FACTOR*(hsize_t)mpi_size;
     sid = H5Screate_simple (RANK, dims, NULL);
     VRFY((sid >= 0), "H5Screate_simple succeeded");
 
@@ -83,13 +81,13 @@ main (int argc, char **argv)
     VRFY((data_array != NULL), "data_array HDmalloc succeeded");
 
     /* Each process takes a slabs of rows. */
-    block[0] = dims[0]/mpi_size;
+    block[0] = dims[0]/(hsize_t)mpi_size;
     block[1] = dims[1];
     stride[0] = block[0];
     stride[1] = block[1];
     count[0] = 1;
     count[1] = 1;
-    start[0] = mpi_rank*block[0];
+    start[0] = (hsize_t)mpi_rank*block[0];
     start[1] = 0;
 
     /* put some trivial data in the data_array */

@@ -5,12 +5,10 @@
 #
 # This file is part of HDF5.  The full HDF5 copyright notice, including
 # terms governing use, modification, and redistribution, is contained in
-# the files COPYING and Copyright.html.  COPYING can be found at the root
-# of the source code distribution tree; Copyright.html can be found at the
-# root level of an installed copy of the electronic HDF5 document set and
-# is linked from the top-level documents page.  It can also be found at
-# http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have
-# access to either file, you may request a copy from help@hdfgroup.org.
+# the COPYING file, which can be found at the root of the source code
+# distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.
+# If you do not have access to either file, you may request a copy from
+# help@hdfgroup.org.
 ##
 ## Makefile.am
 ## Run automake to generate a Makefile.in from this file.
@@ -45,16 +43,16 @@ FORTRAN_API=yes
 # Tell automake how to build examples using h5fc
 if BUILD_PARALLEL_CONDITIONAL
 $(EXTRA_PROG): $(H5FC_PP)
-	$(H5FC_PP) $(H5CCFLAGS) $(FCFLAGS) -o $@ $(srcdir)/$@.f90;
+	$(H5FC_PP) $(H5CCFLAGS) -o $@ $(srcdir)/$@.f90;
 else
 $(EXTRA_PROG): $(H5FC)
-	$(H5FC) $(H5CCFLAGS) $(FCFLAGS) -o $@ $(srcdir)/$@.f90;
+	$(H5FC) $(H5CCFLAGS) -o $@ $(srcdir)/$@.f90;
 endif
 
 # Tell automake how to install examples
 # Note: no '/' after DESTDIR.  Explanation in commence.am
-EXAMPLEDIR=${DESTDIR}$(datarootdir)/hdf5_examples/hl/fortran
-EXAMPLETOPDIR=${DESTDIR}$(datarootdir)/hdf5_examples/hl
+EXAMPLEDIR=$(examplesdir)/hl/fortran
+EXAMPLETOPDIR=$(examplesdir)/hl
 
 # List dependencies for each example.  Normally, automake would take
 # care of this for us, but if we tell automake about the programs it
@@ -64,4 +62,4 @@ EXAMPLETOPDIR=${DESTDIR}$(datarootdir)/hdf5_examples/hl
 # and fortran libraries above.
 
 include $(top_srcdir)/config/examples.am
-include $(top_srcdir)/config/conclude.am
+include $(top_srcdir)/config/conclude_fc.am

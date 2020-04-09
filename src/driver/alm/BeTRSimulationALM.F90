@@ -276,10 +276,10 @@ contains
       call this%biophys_forc(c)%frac_normalize(this%betr_pft(c)%npfts, 1, betr_nlevtrc_soil)
 
       if(this%betr(c)%tracers%debug)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c), &
-         this%num_soilc, this%filter_soilc, 'bef w/o drain',this%bstatus(c))
+         this%num_surfc, this%filter_soilc, 'bef w/o drain',this%bstatus(c))
 
       call this%betr(c)%step_without_drainage(this%betr_time, betr_bounds, this%betr_col(c), &
-         this%betr_pft(c), this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp, &
+         this%betr_pft(c), this%num_surfc, this%filter_soilc, this%num_soilp, this%filter_soilp, &
          this%biophys_forc(c), this%biogeo_flux(c), this%biogeo_state(c), this%bstatus(c))
 
       if(this%bstatus(c)%check_status())then
@@ -289,7 +289,7 @@ contains
       endif
 
       if(this%betr(c)%tracers%debug)call this%betr(c)%debug_info(betr_bounds, this%betr_col(c),&
-          this%num_soilc, this%filter_soilc, 'aft w/o drain',this%bstatus(c))
+          this%num_surfc, this%filter_soilc, 'aft w/o drain',this%bstatus(c))
     enddo
 !    print*,'out without drainage'
     if(this%bsimstatus%check_status())then
@@ -323,7 +323,7 @@ contains
   enddo
   end subroutine ALMset_active
   !---------------------------------------------------------------------------------
-  subroutine ALMBeTRRetriveBGCInput(this, num_soilc, filter_soilc, carbonflux_vars, nitrogenflux_vars, phosphorusflux_vars)
+  subroutine ALMBeTRRetriveBGCInput(this, num_surfc, filter_soilc, carbonflux_vars, nitrogenflux_vars, phosphorusflux_vars)
 
   use CNCarbonFluxType   , only : carbonflux_type
   use CNNitrogenFluxType , only : nitrogenflux_type
@@ -331,7 +331,7 @@ contains
 
   implicit none
   class(betr_simulation_alm_type) , intent(inout) :: this
-  integer           , intent(in)  :: num_soilc
+  integer           , intent(in)  :: num_surfc
   integer           , intent(in)  :: filter_soilc(:)
   type(carbonflux_type), intent(inout):: carbonflux_vars
   type(nitrogenflux_type), intent(inout):: nitrogenflux_vars
@@ -344,7 +344,7 @@ contains
 
   c_l=1
   do j = betr_bounds%lbj, betr_bounds%ubj
-    do fc = 1, num_soilc
+    do fc = 1, num_surfc
       c = filter_soilc(fc)
 
       carbonflux_vars%cflx_input_litr_met_vr_col(c,j)=this%biophys_forc(c)%c12flx%cflx_input_litr_met_vr_col(c_l,j)
@@ -419,7 +419,7 @@ contains
       if(.not. this%active_col(c))cycle
 
       call this%betr(c)%step_with_drainage(betr_bounds,      &
-         this%betr_col(c),this%num_soilc, this%filter_soilc, this%jtops, &
+         this%betr_col(c),this%num_surfc, this%filter_soilc, this%jtops, &
          this%biogeo_flux(c), this%bstatus(c))
 
       if(this%bstatus(c)%check_status())then
@@ -478,7 +478,7 @@ contains
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
          call this%betr(c)%diagnoselnd2atm(betr_bounds,      &
-           this%num_soilc, this%filter_soilc, this%biogeo_flux(c))
+           this%num_surfc, this%filter_soilc, this%biogeo_flux(c))
     enddo
 
     if(index(reaction_method,'mosart')/=0)then
@@ -512,7 +512,7 @@ contains
   end subroutine ALMDiagnoseLnd2atm
 
   !------------------------------------------------------------------------
-  subroutine ALMBetrPlantSoilBGCSend(this, bounds, col, pft, num_soilc,  filter_soilc, cnstate_vars, &
+  subroutine ALMBetrPlantSoilBGCSend(this, bounds, col, pft, num_surfc,  filter_soilc, cnstate_vars, &
     carbonstate_vars, carbonflux_vars,  c13state_vars, c13_cflx_vars, &
     c14state_vars, c14_cflx_vars, nitrogenstate_vars, nitrogenflux_vars, &
     phosphorusstate_vars, phosphorusflux_vars, &
@@ -541,7 +541,7 @@ contains
   type(bounds_type) , intent(in)  :: bounds
   type(column_type) , intent(in)  :: col ! column type
   type(patch_type)  , intent(in)  :: pft ! pft type
-  integer           , intent(in)  :: num_soilc
+  integer           , intent(in)  :: num_surfc
   integer           , intent(in)  :: filter_soilc(:)
   type(cnstate_type), intent(in)  :: cnstate_vars
   type(carbonstate_type), intent(in) :: carbonstate_vars
@@ -572,7 +572,7 @@ contains
   call this%BeTRSetBounds(betr_bounds)
 
   !reset and prepare for retrieval
-  do fc = 1, num_soilc
+  do fc = 1, num_surfc
     c = filter_soilc(fc)
     call this%biogeo_flux(c)%reset(value_column=0._r8, active_soibgc=this%do_soibgc())
     call this%biogeo_state(c)%reset(value_column=0._r8, active_soibgc=this%do_soibgc())
@@ -590,7 +590,7 @@ contains
     solutionp_vr        => phosphorusstate_vars%solutionp_vr_col          &
     )
     do j = 1,betr_nlevtrc_soil
-      do fc = 1, num_soilc
+      do fc = 1, num_surfc
         c = filter_soilc(fc)
         this%biophys_forc(c)%n14flx%in_sminn_no3_vr_col(c_l,j) = smin_no3_vr(c,j)
         this%biophys_forc(c)%n14flx%in_sminn_nh4_vr_col(c_l,j) = smin_nh4_vr(c,j)
@@ -600,7 +600,7 @@ contains
 
     do kk = 1, 7
       do j = 1,betr_nlevtrc_soil
-        do fc = 1, num_soilc
+        do fc = 1, num_surfc
           c = filter_soilc(fc)
           this%biophys_forc(c)%c12flx%in_decomp_cpools_vr_col(c_l,j,kk)=c12_decomp_cpools_vr_col(c,j,kk)
           this%biophys_forc(c)%n14flx%in_decomp_npools_vr_col(c_l,j,kk)=decomp_npools_vr_col(c,j,kk)
@@ -610,9 +610,9 @@ contains
     enddo
 
     end associate
-    do fc = 1, num_soilc
+    do fc = 1, num_surfc
       c = filter_soilc(fc)
-      call this%betr(c)%reset_biostates(betr_bounds, this%num_soilc, this%filter_soilc, &
+      call this%betr(c)%reset_biostates(betr_bounds, this%num_surfc, this%filter_soilc, &
         this%biophys_forc(c), this%bstatus(c))
 
       if(this%bstatus(c)%check_status())then
@@ -636,15 +636,15 @@ contains
   ndep_prof_loc(2) = ndep_prof_loc(2)/col%dz(bounds%begc,2)
 
   !set kinetic parameters
-  call this%set_transient_kinetics_par(betr_bounds, col, pft, num_soilc, filter_soilc, PlantMicKinetics_vars)
+  call this%set_transient_kinetics_par(betr_bounds, col, pft, num_surfc, filter_soilc, PlantMicKinetics_vars)
 
   if(do_bgc_calibration)then
-    call this%set_vegpar_calibration(betr_bounds, col, pft, num_soilc, filter_soilc, this%calibration_vpars)
+    call this%set_vegpar_calibration(betr_bounds, col, pft, num_surfc, filter_soilc, this%calibration_vpars)
   endif
 
   !set biophysical forcing
   c_l = 1
-  do fc = 1, num_soilc
+  do fc = 1, num_surfc
     c = filter_soilc(fc)
     call this%biophys_forc(c)%reset(value_column=0._r8)
     this%biophys_forc(c)%annsum_counter_col(c_l) = cnstate_vars%annsum_counter_col(c)
@@ -668,7 +668,7 @@ contains
 
   !sum up carbon input profiles
   do j = 1, betr_bounds%ubj
-    do fc = 1, num_soilc
+    do fc = 1, num_surfc
       c = filter_soilc(fc)
       this%biophys_forc(c)%pweath_prof_col(c_l,j) = pdep_prof(c,j)
       !!------------------------------------------------------------------------
@@ -867,7 +867,7 @@ contains
   end subroutine ALMBetrPlantSoilBGCSend
 
   !------------------------------------------------------------------------
-  subroutine ALMBetrPlantSoilBGCRecv(this, bounds, col, pft, num_soilc,  filter_soilc,&
+  subroutine ALMBetrPlantSoilBGCRecv(this, bounds, col, pft, num_surfc,  filter_soilc,&
    c12state_vars, c12flux_vars, c13state_vars, c13flux_vars, c14state_vars, c14flux_vars, &
    n14state_vars, n14flux_vars, p31state_vars, p31flux_vars)
   !this returns the flux back to ALM after doing soil BGC
@@ -889,7 +889,7 @@ contains
   type(bounds_type) , intent(in)  :: bounds
   type(patch_type)            , intent(in) :: pft
   type(column_type)           , intent(in)    :: col ! column type
-  integer           , intent(in)  :: num_soilc
+  integer           , intent(in)  :: num_surfc
   integer           , intent(in)  :: filter_soilc(:)
   type(carbonstate_type), intent(inout) :: c12state_vars
   type(carbonstate_type), intent(inout) :: c13state_vars
@@ -913,10 +913,10 @@ contains
   begc_l = betr_bounds%begc; endc_l=betr_bounds%endc;
 
   !retrieve and return
-  do fc =1, num_soilc
+  do fc =1, num_surfc
     c = filter_soilc(fc)
     call this%betr(c)%retrieve_biostates(betr_bounds,  1, betr_nlevsoi, &
-       this%num_soilc, this%filter_soilc,&
+       this%num_surfc, this%filter_soilc,&
        this%jtops, this%biogeo_state(c),this%bstatus(c))
 
     if(this%bstatus(c)%check_status())then
@@ -924,7 +924,7 @@ contains
       call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
       exit
     endif
-    call this%betr(c)%retrieve_biofluxes(this%num_soilc, this%filter_soilc, &
+    call this%betr(c)%retrieve_biofluxes(this%num_surfc, this%filter_soilc, &
       this%num_soilp, this%filter_soilp,  this%biogeo_flux(c))
 
     call this%biogeo_state(c)%summary(betr_bounds, 1, betr_nlevtrc_soil,&
@@ -939,7 +939,7 @@ contains
 
   !retrieve plant nutrient uptake from biogeo_flux
   if (this%do_bgc_type('type2_bgc')) then
-    do fc = 1, num_soilc
+    do fc = 1, num_surfc
       c = filter_soilc(fc)
       pi = 0
       do p = col%pfti(c), col%pftf(c)
@@ -1091,7 +1091,7 @@ contains
 
       endif
     enddo
-    do fc = 1, num_soilc
+    do fc = 1, num_surfc
       c = filter_soilc(fc)
 
       p31flux_vars%sminp_runoff_col(c)=this%biogeo_flux(c)%p31flux_vars%sminp_runoff_col(c_l)
@@ -1100,7 +1100,7 @@ contains
         this%biogeo_flux(c)%p31flux_vars%sminp_qdrain_col(c_l)
     enddo
   endif
-  do fc = 1, num_soilc
+  do fc = 1, num_surfc
     c = filter_soilc(fc)
     n14flux_vars%smin_no3_leached_col(c)= &
         this%biogeo_flux(c)%n14flux_vars%smin_no3_leached_col(c_l) + &
@@ -1108,7 +1108,7 @@ contains
     n14flux_vars%smin_no3_runoff_col(c)=this%biogeo_flux(c)%n14flux_vars%smin_no3_runoff_col(c_l)
   enddo
   do j = 1,betr_nlevtrc_soil
-    do fc = 1, num_soilc
+    do fc = 1, num_surfc
       c =filter_soilc(fc)
       n14state_vars%smin_no3_vr_col(c,j) = this%biogeo_state(c)%n14state_vars%sminn_no3_vr_col(c_l,j)
     enddo
@@ -1124,7 +1124,7 @@ contains
     )
     do kk = 1, 7
       do j = 1,betr_nlevtrc_soil
-        do fc = 1, num_soilc
+        do fc = 1, num_surfc
           c =filter_soilc(fc)
           c12_decomp_cpools_vr_col(c,j,kk)=this%biogeo_state(c)%c12state_vars%decomp_cpools_vr(c_l,j,kk)
           decomp_npools_vr_col(c,j,kk) = this%biogeo_state(c)%n14state_vars%decomp_npools_vr(c_l,j,kk)
@@ -1133,7 +1133,7 @@ contains
       enddo
     enddo
     do j = 1,betr_nlevtrc_soil
-      do fc = 1, num_soilc
+      do fc = 1, num_surfc
         c =filter_soilc(fc)
         solutionp_vr(c,j) = this%biogeo_state(c)%p31state_vars%sminp_vr_col(c_l,j)
       enddo
@@ -1174,7 +1174,7 @@ contains
       c = filter_soilc_hydrologyc(fc)
       if(.not. this%active_col(c))cycle
       call this%betr(c)%calc_dew_sub_flux(this%betr_time,           &
-         betr_bounds, this%betr_col(c), this%num_soilc, this%filter_soilc, &
+         betr_bounds, this%betr_col(c), this%num_surfc, this%filter_soilc, &
         this%biophys_forc(c), this%betr(c)%tracers, this%betr(c)%tracerfluxes, this%betr(c)%tracerstates)
     enddo
   end subroutine ALMCalcDewSubFlux
@@ -1209,7 +1209,7 @@ contains
   SHR_ASSERT_ALL((ubound(t_soisno) == (/bounds%endc, ubj/)),errMsg(mod_filename,__LINE__))
 
   ! remove compiler warnings
-  if (this%num_soilc > 0) continue
+  if (this%num_surfc > 0) continue
 
   associate(                                                     & !
     h2osoi_vol        =>    waterstate_vars%h2osoi_vol_col     , & ! Input:  [real(r8) (:,:) ]  volumetric soil moisture
@@ -1377,7 +1377,7 @@ contains
 
   !------------------------------------------------------------------------
 
-  subroutine set_vegpar_calibration(this, betr_bounds, col, pft, num_soilc, filter_soilc, calibration_vpars)
+  subroutine set_vegpar_calibration(this, betr_bounds, col, pft, num_surfc, filter_soilc, calibration_vpars)
   !DESCRIPTION
   !set kinetic parameters for column c
   use PlantMicKineticsMod, only : PlantMicKinetics_type
@@ -1387,7 +1387,7 @@ contains
   type(betr_bounds_type), intent(in) :: betr_bounds
   type(column_type)     , intent(in)    :: col ! column type
   type(patch_type)      , intent(in) :: pft
-  integer, intent(in) :: num_soilc
+  integer, intent(in) :: num_surfc
   integer, intent(in) :: filter_soilc(:)
   type(calibration_type), intent(in) :: calibration_vpars
 
@@ -1402,7 +1402,7 @@ contains
     plant_p_km_scalar      => calibration_vpars%plant_p_km_scalar             &
   )
 
-  do fc = 1, num_soilc
+  do fc = 1, num_surfc
     c = filter_soilc(fc)
     pp = 0
     do pi = 1, betr_maxpatch_pft
@@ -1426,7 +1426,7 @@ contains
   end associate
   end subroutine set_vegpar_calibration
   !------------------------------------------------------------------------
-  subroutine set_transient_kinetics_par(this, betr_bounds, col, pft, num_soilc, filter_soilc, PlantMicKinetics_vars)
+  subroutine set_transient_kinetics_par(this, betr_bounds, col, pft, num_surfc, filter_soilc, PlantMicKinetics_vars)
   !DESCRIPTION
   !set kinetic parameters for column c
   use PlantMicKineticsMod, only : PlantMicKinetics_type
@@ -1438,7 +1438,7 @@ contains
   type(betr_bounds_type), intent(in) :: betr_bounds
   type(column_type)     , intent(in)    :: col ! column type
   type(patch_type)      , intent(in) :: pft
-  integer, intent(in) :: num_soilc
+  integer, intent(in) :: num_surfc
   integer, intent(in) :: filter_soilc(:)
   type(PlantMicKinetics_type), intent(in) :: PlantMicKinetics_vars
 
@@ -1467,7 +1467,7 @@ contains
     dlabp_dt_vr_col       => PlantMicKinetics_vars%dlabp_dt_vr_col &
   )
   c_l = 1
-  do fc = 1, num_soilc
+  do fc = 1, num_surfc
     c = filter_soilc(fc)
     pp = 0
     val=1._r8
@@ -1503,7 +1503,7 @@ contains
   if(index(reaction_method,'ecacnp')/=0 .or. index(reaction_method, 'ch4soil')/=0 &
      .or. index(reaction_method, 'v1eca')/=0)then
     do j =1, betr_bounds%ubj
-      do fc = 1, num_soilc
+      do fc = 1, num_surfc
         c = filter_soilc(fc)
         this%betr(c)%plantNutkinetics%km_minsurf_p_vr_col(c_l,j)  = km_minsurf_p_vr_col(c,j)/patomw
         this%betr(c)%plantNutkinetics%km_minsurf_nh4_vr_col(c_l,j)= km_minsurf_nh4_vr_col(c,j)/natomw
@@ -1511,7 +1511,7 @@ contains
     enddo
     if(lbcalib)then
       do j =1, betr_bounds%ubj
-        do fc = 1, num_soilc
+        do fc = 1, num_surfc
           c = filter_soilc(fc)
           this%betr(c)%plantNutkinetics%km_decomp_p_vr_col(c_l,j) = PlantMicKinetics_vars%km_decomp_p_vr_col(c,j)/patomw
           this%betr(c)%plantNutkinetics%km_decomp_nh4_vr_col(c_l,j)=PlantMicKinetics_vars%km_decomp_nh4_vr_col(c,j)/natomw
@@ -1524,7 +1524,7 @@ contains
   endif
   if(index(reaction_method,'v1eca')/=0)then
     do j =1, betr_bounds%ubj
-      do fc = 1, num_soilc
+      do fc = 1, num_surfc
         c = filter_soilc(fc)
         this%betr(c)%plantNutkinetics%decomp_eff_ncompet_b_vr_col(c_l,j)= decomp_eff_ncompet_b_vr_col(c,j)/natomw
         this%betr(c)%plantNutkinetics%decomp_eff_pcompet_b_vr_col(c_l,j)= decomp_eff_pcompet_b_vr_col(c,j)/patomw
@@ -1568,7 +1568,7 @@ contains
       !this%betr(c)%tracers%debug=col%debug_flag(c)
 
       call this%betr(c)%OutLoopBGC(this%betr_time, betr_bounds, this%betr_col(c), &
-         this%betr_pft(c), this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp, &
+         this%betr_pft(c), this%num_surfc, this%filter_soilc, this%num_soilp, this%filter_soilp, &
          this%biophys_forc(c), this%biogeo_flux(c), this%biogeo_state(c), this%bstatus(c))
 
       if(this%bstatus(c)%check_status())then
@@ -1596,7 +1596,7 @@ contains
 
 
 !-------------------------------------------------------------------------------
-  subroutine ALMEnterOutLoopBGC(this, bounds, col, pft, num_soilc, filter_soilc, &
+  subroutine ALMEnterOutLoopBGC(this, bounds, col, pft, num_surfc, filter_soilc, &
    c12_cstate_vars, c12_cflx_vars, c13_cstate_vars, c14_cstate_vars,  &
    nitrogenstate_vars,  phosphorusstate_vars, PlantMicKinetics_vars)
 
@@ -1613,7 +1613,7 @@ contains
   type(bounds_type)               , intent(in)    :: bounds ! bounds
   type(column_type)               , intent(in)    :: col ! column type
   type(patch_type)                , intent(in)    :: pft
-  integer                         , intent(in)    :: num_soilc        ! number of soil columns in filter
+  integer                         , intent(in)    :: num_surfc        ! number of soil columns in filter
   integer                         , intent(in)    :: filter_soilc(:)  ! filter for soil columns
   type(PlantMicKinetics_type)     , intent(in)    :: PlantMicKinetics_vars
   type(carbonstate_type)          , intent(inout) :: c12_cstate_vars
@@ -1641,7 +1641,7 @@ contains
   c_l=1
   call this%BeTRSetBounds(betr_bounds)
   do j = 1,nlevtrc_soil
-    do fc = 1, num_soilc
+    do fc = 1, num_surfc
       c = filter_soilc(fc)
       this%biophys_forc(c)%c12flx%in_t_scalar(c_l,j) = t_scalar(c,j)
       this%biophys_forc(c)%c12flx%in_w_scalar(c_l,j) = w_scalar(c,j)
@@ -1653,7 +1653,7 @@ contains
 
   do kk = 1, 7
     do j = 1,nlevtrc_soil
-      do fc = 1, num_soilc
+      do fc = 1, num_surfc
         c = filter_soilc(fc)
         this%biophys_forc(c)%c12flx%in_decomp_cpools_vr_col(c_l,j,kk)=c12_decomp_cpools_vr_col(c,j,kk)
         this%biophys_forc(c)%n14flx%in_decomp_npools_vr_col(c_l,j,kk)=decomp_npools_vr_col(c,j,kk)
@@ -1666,7 +1666,7 @@ contains
   !set autotrophic respiration
 
   !set kinetic parameters
-  call this%set_transient_kinetics_par(betr_bounds, col, pft, num_soilc, filter_soilc, PlantMicKinetics_vars)
+  call this%set_transient_kinetics_par(betr_bounds, col, pft, num_surfc, filter_soilc, PlantMicKinetics_vars)
 
   end associate
   end subroutine ALMEnterOutLoopBGC

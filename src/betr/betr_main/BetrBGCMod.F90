@@ -231,7 +231,9 @@ contains
 
     call bgc_reaction%set_boundary_conditions(bounds, &
          num_soilc, filter_soilc              , &
+         tracerboundarycond_vars%jtops_col    , &
          col%dz(bounds%begc:bounds%endc,1)    , &
+         betr_time                            , &
          betrtracer_vars                      , &
          biophysforc                          , &
          biogeo_flux                          , &
@@ -795,7 +797,7 @@ contains
          ngwmobile_tracer_groups   => betrtracer_vars%ngwmobile_tracer_groups        , & !integer [intent(in)], number of mobile tracers undergoing dual phase transport
          nmem_max                  => betrtracer_vars%nmem_max                       , & !
          tracer_group_memid        => betrtracer_vars%tracer_group_memid             , & !
-         move_scalar               => betrtracer_vars%move_scalar                    , & !
+         adv_scalar                => betrtracer_vars%adv_scalar                    , & !
          tracer_conc_mobile_col    => tracerstate_vars%tracer_conc_mobile_col        , & !
          tracer_conc_grndwater_col => tracerstate_vars%tracer_conc_grndwater_col     , & !
          aqu2bulkcef_mobile_col    => tracercoeff_vars%aqu2bulkcef_mobile_col        , & !
@@ -851,28 +853,27 @@ contains
          !obtain advective velocity for the tracer group
          do fc = 1, numfl
             c = filter_loc(fc)
-            qflx_adv_local(c,jtops(c)-1) = qflx_adv(c,jtops(c)-1)
+            qflx_adv_local(c,jtops(c)-1) = qflx_adv(c,jtops(c)-1)  !top boundary
             do l = jtops(c), lbots(c)
               if(l<lbots(c))then
+                !normalize the advection velocity with upstream tracer concentration
                 if(qflx_adv(c,l) > 0._r8)then
                   qflx_adv_local(c,l) = safe_div(qflx_adv(c,l),aqu2bulkcef_mobile_col(c,l,j),eps=loc_eps)
                 else
                   qflx_adv_local(c,l) = safe_div(qflx_adv(c,l),aqu2bulkcef_mobile_col(c,l+1,j),eps=loc_eps)
                 endif
               else
-                if(qflx_adv(c,l) > 0._r8)then
+                !bottom boundary
+                if(qflx_adv(c,l) > 0._r8)then  !going out
                   qflx_adv_local(c,l) = safe_div(qflx_adv(c,l),aqu2bulkcef_mobile_col(c,l,j),eps=loc_eps)
                 else
                   qflx_adv_local(c,l) = qflx_adv(c,l)
                 endif
                endif
-               if(is_h2o(j))then
-                 qflx_rootsoi_local(c,l) = qflx_rootsoi(c,l)
-               else
-                 qflx_rootsoi_local(c,l) = safe_div(qflx_rootsoi(c,l),aqu2bulkcef_mobile_col(c,l,j),eps=loc_eps)
-               endif
-               qflx_adv_local(c,l)=qflx_adv_local(c,l)*move_scalar(j)
-               qflx_rootsoi_local(c,l) = qflx_rootsoi_local(c,l)*move_scalar(j)
+               !rescale transpiration guided flux
+               qflx_rootsoi_local(c,l) = safe_div(qflx_rootsoi(c,l),aqu2bulkcef_mobile_col(c,l,j),eps=loc_eps)
+               qflx_adv_local(c,l)=qflx_adv_local(c,l)*adv_scalar(j)
+               qflx_rootsoi_local(c,l) = qflx_rootsoi_local(c,l)*adv_scalar(j)
             enddo
          enddo
 
@@ -887,7 +888,6 @@ contains
             update_col(c)=.true.
             time_remain(c) = dtime
          enddo
-
          do
             !zero leaching flux, leaching is outgoing only.
             leaching_mass=0._r8
@@ -903,7 +903,6 @@ contains
                   enddo
                endif
             enddo
-
             ! do semi-lagrangian tracer transport
             call semi_lagrange_adv(bounds, bstatus,lbj, ubj,                                      &
                  jtops, lbots,                                                                    &
@@ -927,12 +926,12 @@ contains
             !do soil-root tracer exchange
             do k = 1, ntrcs
                trcid = adv_trc_group(k)
-
                transp_mass_vr(:,:, k) = 0._r8
                transp_mass(:, k) = 0._r8
 
                if(vtrans_scal(trcid)>0._r8)then
-                  call calc_root_uptake_as_perfect_sink(bounds, lbj, ubj, lbots, numfl,&
+                 !not water tracer
+                 call calc_root_uptake_as_perfect_sink(bounds, lbj, ubj, lbots, numfl,&
                        filter_loc,                                                     &
                        dtime_loc,                                                      &
                        dz,                                                             &
@@ -949,27 +948,30 @@ contains
 
                do fc = 1, numfl
                   c = filter_loc(fc)
-
                   if(update_col(c) .and. (.not. halfdt_col(c)))then
                      mass0   = dmass(c, k)
                      dmass(c, k) =  dot_sum(trc_conc_out(c,jtops(c):lbots(c),k), &
                         dz(c,jtops(c):lbots(c)),bstatus)- dmass(c, k)
                      if(bstatus%check_status())return
+
                      err_tracer(c, k) = dmass(c, k) - inflx_top(c,k) * dtime_loc(c) + leaching_mass(c,k) + &
                           transp_mass(c, k) + seep_mass(c,k)
-                     if(abs(err_tracer(c,k))<err_adv_min .or. abs(err_tracer(c,k))/(mass0+1.e-10_r8) < 1.e-10_r8)then
+
+                     if(abs(err_tracer(c,k))<err_adv_min .or. abs(err_tracer(c,k))/(mass0+1.e-10_r8) < 1.e-7_r8)then
                         !when the absolute value is too small, set relative error to
                         err_relative = err_relative_threshold*0.999_r8
                      else
                         err_relative = err_tracer(c,k)/maxval((/abs(inflx_top(c,k)*dtime_loc(c)), abs(leaching_mass(c,k)),&
                           abs(dmass(c,k)),tiny_val/))
                      endif
+
+
                      if(abs(err_relative)<err_relative_threshold)then
                         leaching_mass(c,k) = leaching_mass(c,k) - err_tracer(c,k)
                      else
                         tracername = betrtracer_vars%get_tracername(trcid)
-                        write(msg,'(2(A,1X,I8),5X,A,7(5X,A,5X,E18.10))')'nstep=', betr_time%get_nstep(), ', col=',c, &
-                             tracername,' err=',err_tracer(c,k),&
+                        write(msg,'(2(A,1X,I8),5X,A,8(5X,A,5X,E18.10))')'nstep=', betr_time%get_nstep(), ', col=',c, &
+                             tracername,' err=',err_tracer(c,k),' rerr1=',abs(err_tracer(c,k))/(mass0+1.e-10_r8),&
                              ' transp=',transp_mass(c,k),' lech=',&
                              leaching_mass(c,k),' infl=',inflx_top(c,k),' dmass=',dmass(c,k), ' mass0=', &
                              mass0,'err_rel=',err_relative
@@ -1267,11 +1269,10 @@ contains
 
                      if(abs(err_relative)<err_relative_threshold)then
                         !the calculation is good, use the error to correct the diffusive flux for volatile tracer
-                        if(is_volatile(trcid))then
+                        if(topbc_type(j)==bndcond_as_conc)then
                            diff_surf(c,k) = diff_surf(c,k)+err_tracer(c,k)/dtime_loc(c)
                            !accumulate the diffusive flux at the given time step, + into the atmosphere
-                           tracer_flx_dif(c,volatileid(trcid)) = tracer_flx_dif(c,volatileid(trcid)) - &
-                                diff_surf(c,k) * dtime_loc(c)
+                           tracer_flx_dif(c,trcid) = tracer_flx_dif(c,trcid) - diff_surf(c,k) * dtime_loc(c)
                         endif
                      else
                         tracername = betrtracer_vars%get_tracername(trcid)
@@ -1594,7 +1595,7 @@ contains
     real(r8)          , intent(in)    :: dz(bounds%begc: , lbj: )            ! layer thickness
     integer           , intent(in)    :: lbots(bounds%begc: )                ! lower boundary
     real(r8)          , intent(in)    :: dtime_loc(bounds%begc: )
-    real(r8)          , intent(in)    :: qflx_rootsoi(bounds%begc: , lbj: )
+    real(r8)          , intent(in)    :: qflx_rootsoi(bounds%begc: , lbj: )  !
     real(r8)          , intent(in)    :: vtrans_scal
     logical           , intent(in)    :: is_h2o
     logical           , intent(in)    :: update_col(bounds%begc:bounds%endc) ! logical switch for active col update
@@ -1633,15 +1634,11 @@ contains
     transp_mass(:) = 0._r8
     do fc = 1, num_soilc
        c = filter_soilc(fc)
+       transp_mass(c) = 0._r8
        if(update_col(c) .and. (.not. halfdt_col(c)))then
           do j = 1, lbots(c)
-             if(is_h2o)then
-               transp_mass_vr(c,j)   = vtrans_scal*qflx_rootsoi(c,j)*denh2o*dtime_loc(c)
-               tracer_conc_new = tracer_conc(c,j) - transp_mass_vr(c,j)/dz(c,j)
-             else
-               tracer_conc_new  = tracer_conc(c,j) * exp(-max(qflx_rootsoi(c,j)*vtrans_scal/dz(c,j),0._r8)*dtime_loc(c))
-               transp_mass_vr(c,j)   = (tracer_conc(c,j)-tracer_conc_new)*dz(c,j)
-             endif
+             tracer_conc_new  = tracer_conc(c,j) * exp(-max(qflx_rootsoi(c,j)*vtrans_scal/dz(c,j),0._r8)*dtime_loc(c))
+             transp_mass_vr(c,j)   = (tracer_conc(c,j)-tracer_conc_new)*dz(c,j)
              transp_mass(c) = transp_mass(c) + transp_mass_vr(c,j)
              tracer_conc(c,j) = tracer_conc_new
           enddo

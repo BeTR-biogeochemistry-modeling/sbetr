@@ -667,8 +667,8 @@ contains
   end associate
   end subroutine set_tracer
   !-------------------------------------------------------------------------------
-  subroutine set_boundary_conditions(this, bounds, num_soilc, filter_soilc, dz_top, betrtracer_vars, &
-       biophysforc, biogeo_flux, tracercoeff_vars, tracerboundarycond_vars, betr_status)
+  subroutine set_boundary_conditions(this, bounds, num_soilc, filter_soilc, jtops, dz_top, betr_time, &
+       betrtracer_vars, biophysforc, biogeo_flux, tracercoeff_vars, tracerboundarycond_vars, betr_status)
     !
     ! !DESCRIPTION:
     ! set up boundary conditions for tracer movement
@@ -683,6 +683,7 @@ contains
     use BetrStatusType         , only : betr_status_type
     use UnitConvertMod         , only : ppm2molv
     use TracerCoeffType        , only : tracercoeff_type
+    use BeTR_TimeMod             , only : betr_time_type
     implicit none
     ! !ARGUMENTS:
     class(simic_bgc_reaction_type) , intent(inout)    :: this                       !
@@ -691,6 +692,8 @@ contains
     integer                           , intent(in)    :: filter_soilc(:)            ! column filter_soilc
     type(betrtracer_type)             , intent(in)    :: betrtracer_vars            !
     real(r8)                          , intent(in)    :: dz_top(bounds%begc: )      !
+    integer                           , intent(in)    :: jtops(bounds%begc: )
+    type(betr_time_type)              , intent(in)    :: betr_time
     type(betr_biogeophys_input_type)  , intent(in)    :: biophysforc
     type(betr_biogeo_flux_type)       , intent(in)    :: biogeo_flux
     type(tracercoeff_type)             , intent(in)   :: tracercoeff_vars
@@ -753,7 +756,7 @@ contains
 
   !-------------------------------------------------------------------------------
   subroutine calc_bgc_reaction(this, bounds, col, lbj, ubj, num_soilc, filter_soilc,               &
-       num_soilp,filter_soilp, jtops, dtime, betrtracer_vars, tracercoeff_vars,  biophysforc, &
+       num_soilp,filter_soilp, jtops, betr_time, betrtracer_vars, tracercoeff_vars,  biophysforc, &
        tracerstate_vars, tracerflux_vars, tracerboundarycond_vars, plant_soilbgc, &
        biogeo_flux, biogeo_state,  betr_status)
     !
@@ -771,6 +774,7 @@ contains
     use betr_columnType        , only : betr_column_type
     use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
     use BeTR_biogeoStateType     , only : betr_biogeo_state_type
+    use BeTR_TimeMod             , only : betr_time_type
     implicit none
     !ARGUMENTS
     class(simic_bgc_reaction_type) , intent(inout) :: this                       !
@@ -782,7 +786,7 @@ contains
     integer                           , intent(in)    :: filter_soilp(:)
     integer                           , intent(in)    :: jtops( : )                  ! top index of each column
     integer                           , intent(in)    :: lbj, ubj                    ! lower and upper bounds, make sure they are > 0
-    real(r8)                          , intent(in)    :: dtime                       ! model time step
+    type(betr_time_type)              , intent(in)    :: betr_time                       ! model time step
     type(betrtracer_type)             , intent(in)    :: betrtracer_vars             ! betr configuration information
     type(betr_biogeophys_input_type)  , intent(inout) :: biophysforc
     type(tracercoeff_type)            , intent(inout) :: tracercoeff_vars
@@ -822,7 +826,8 @@ contains
         if(j<jtops(c))cycle
         is_surflit=(j<=0)
         !do bgc reaction
-        call this%simic_bgc(c,j)%runbgc(is_surflit, dtime, this%simic_forc(c,j), nstates, ystates0, ystatesf, betr_status)
+        call this%simic_bgc(c,j)%runbgc(is_surflit, betr_time%delta_time, this%simic_forc(c,j), &
+           nstates, ystates0, ystatesf, betr_status)
 
         if(betr_status%check_status())then
           write(laystr,'(I2.2)')j
@@ -830,8 +835,8 @@ contains
           return
         endif
 
-        call this%retrieve_output(c, j, nstates, ystates0, ystatesf, dtime, betrtracer_vars, tracerflux_vars,&
-           tracerstate_vars, plant_soilbgc, biogeo_flux)
+        call this%retrieve_output(c, j, nstates, ystates0, ystatesf, betr_time%delta_time, &
+           betrtracer_vars, tracerflux_vars, tracerstate_vars, plant_soilbgc, biogeo_flux)
 
       enddo
     enddo
@@ -1500,8 +1505,8 @@ contains
 
       !environmental variables
       this%simic_forc(c,j)%temp   = biophysforc%t_soisno_col(c,j)            !temperature
-      this%simic_forc(c,j)%depz   = col%z(c,j)            !depth of the soil
-      this%simic_forc(c,j)%dzsoi  = col%dz(c,j)            !soil thickness
+      this%simic_forc(c,j)%depz   = biophysforc%z(c,j)            !depth of the soil
+      this%simic_forc(c,j)%dzsoi  = biophysforc%dz(c,j)            !soil thickness
       this%simic_forc(c,j)%sucsat  = biophysforc%sucsat_col(c,j)            ! Input:  [real(r8) (:,:)] minimum soil suction [mm]
       this%simic_forc(c,j)%soilpsi = max(biophysforc%smp_l_col(c,j)*grav*1.e-6_r8,-15._r8)    ! Input:  [real(r8) (:,:)] soilwater pontential in each soil layer [MPa]
       this%simic_forc(c,j)%bsw = biophysforc%bsw_col(c,j)

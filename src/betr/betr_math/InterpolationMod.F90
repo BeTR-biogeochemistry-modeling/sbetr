@@ -455,6 +455,7 @@ contains
 
   i_loc = -1
   if (xi < x(1) .or. xi > x(m)) then
+    print*,'xi,xl,xr',xi,x(1),x(m)
     msg='the target value is outside the range of given x '//errMsg(mod_filename, __LINE__)
     call bstatus%set_msg(msg=msg, err=-1)
     return

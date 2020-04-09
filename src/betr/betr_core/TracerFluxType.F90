@@ -7,7 +7,6 @@ module TracerFluxType
   use bshr_infnan_mod     , only : nan => shr_infnan_nan, assignment(=)
   use BeTR_decompMod      , only : bounds_type  => betr_bounds_type
   use betr_varcon         , only : spval => bspval, ispval => bispval
-  use tracer_varcon       , only : nlevtrc_soil => betr_nlevtrc_soil
   use BeTR_landvarconType , only : landvarcon => betr_landvarcon
   use betr_ctrl           , only : iulog => biulog
   use TracerBaseType      , only : tracerbase_type
@@ -61,7 +60,7 @@ module TracerFluxType
      real(r8), pointer :: tracer_flx_dew_snow_col(:,:)     => null()        !tracer flux to snow coming from dew formation
      real(r8), pointer :: tracer_flx_sub_snow_col(:,:)      => null()       !tracer flux loss from snow sublimation
      real(r8), pointer :: tracer_flx_h2osfc_snow_residual_col(:,:) => null() !tracer flux coming from residual standing water and residual snow
-
+     integer :: nvolatile_tracers
    contains
      procedure, public  :: Init
      procedure, public  :: Restart
@@ -90,10 +89,11 @@ contains
     integer               , intent(in) :: lbj, ubj
     type(BeTRTracer_Type) , intent(inout) :: betrtracer_vars
 
+    this%nvolatile_tracers= betrtracer_vars%nvolatile_tracers
     call this%InitAllocate(bounds, lbj, ubj, betrtracer_vars)
     call this%tracer_base_init()
     call this%InitHistory (bounds, betrtracer_vars)
-    call this%InitCold    (bounds)
+    call this%InitCold    (bounds, betrtracer_vars)
   end subroutine Init
 
   !-----------------------------------------------------------------------
@@ -152,10 +152,11 @@ contains
        SPVAL_ALLOC(this%tracer_flx_h2osfc_snow_residual_col(begc:endc, 1:ngwmobile_tracers))
        SPVAL_ALLOC(this%tracer_flx_totleached_col(begc:endc, 1:ngwmobile_tracers))
        SPVAL_ALLOC(this%tracer_flx_vtrans_vr_col   (begc:endc, lbj:ubj, 1:ngwmobile_tracers))
+       SPVAL_ALLOC(this%tracer_flx_dif_col         (begc:endc, 1:ngwmobile_tracers))
     endif
+
     if(nvolatile_tracers>0)then
        SPVAL_ALLOC(this%tracer_flx_ebu_col         (begc:endc, 1:nvolatile_tracers))
-       SPVAL_ALLOC(this%tracer_flx_dif_col         (begc:endc, 1:nvolatile_tracers))
        SPVAL_ALLOC(this%tracer_flx_tparchm_col     (begc:endc, 1:nvolatile_tracers))
        SPVAL_ALLOC(this%tracer_flx_surfemi_col     (begc:endc, 1:nvolatile_tracers))
        SPVAL_ALLOC(this%tracer_flx_parchm_vr_col   (begc:endc, lbj:ubj, 1:nvolatile_tracers))
@@ -312,16 +313,18 @@ contains
   end subroutine InitHistory
 
   !-----------------------------------------------------------------------
-  subroutine InitCold(this, bounds)
+  subroutine InitCold(this, bounds, betrtracer_vars)
     !
     ! !DESCRIPTION:
     ! cold initialization
     !
     ! !USES:
     !
+    use BeTRTracerType, only : BeTRTracer_Type
     ! !ARGUMENTS:
     class(TracerFlux_type), intent(inout) :: this
     type(bounds_type) , intent(in) :: bounds
+    type(BeTRTracer_Type) , intent(inout) :: betrtracer_vars
     !
     ! !LOCAL VARIABLES:
     integer :: c, j, p, l       ! index
@@ -351,15 +354,17 @@ contains
       this%tracer_flx_netphyloss_col(c,:)  = 0._r8
       this%tracer_flx_netpro_col(c,:)      = 0._r8
       this%tracer_flx_dstor_col(c,:)       = 0._r8
-      this%tracer_flx_ebu_col(c,:)         = 0._r8
       this%tracer_flx_prec_col(c,:)        = 0._r8
-      this%tracer_flx_dif_col(c,:)         = 0._r8
       this%tracer_flx_drain_col(c,:)       = 0._r8
-      this%tracer_flx_surfemi_col(c,:)     = 0._r8
       this%tracer_flx_leaching_col(c,:)    = 0._r8
       this%tracer_flx_surfrun_col(c,:)     = 0._r8
-      this%tracer_flx_tparchm_col(c,:)     = 0._r8
-      this%tracer_flx_parchm_vr_col(c,:,:) = 0._r8
+      this%tracer_flx_dif_col(c,:)         = 0._r8
+      if(betrtracer_vars%nvolatile_tracers>0)then
+        this%tracer_flx_ebu_col(c,:)         = 0._r8
+        this%tracer_flx_surfemi_col(c,:)     = 0._r8
+        this%tracer_flx_tparchm_col(c,:)     = 0._r8
+        this%tracer_flx_parchm_vr_col(c,:,:) = 0._r8
+      endif
       this%tracer_flx_vtrans_col(c,:)      = 0._r8
       this%tracer_flx_dew_grnd_col   (c,:) = 0._r8
       this%tracer_flx_dew_snow_col   (c,:) = 0._r8
@@ -428,15 +433,10 @@ contains
       this%tracer_flx_netphyloss_col (column,:)   = 0._r8
       this%tracer_flx_netpro_col     (column,:)   = 0._r8
       this%tracer_flx_dstor_col      (column,:)   = 0._r8
-      this%tracer_flx_ebu_col        (column,:)   = 0._r8
       this%tracer_flx_prec_col       (column,:)   = 0._r8
-      this%tracer_flx_dif_col        (column,:)   = 0._r8
       this%tracer_flx_drain_col      (column,:)   = 0._r8
-      this%tracer_flx_surfemi_col    (column,:)   = 0._r8
       this%tracer_flx_leaching_col   (column,:)   = 0._r8
       this%tracer_flx_surfrun_col    (column,:)   = 0._r8
-      this%tracer_flx_tparchm_col    (column,:)   = 0._r8
-      this%tracer_flx_parchm_vr_col  (column,:,:) = 0._r8
       this%tracer_flx_vtrans_col     (column,:)   = 0._r8
       this%tracer_flx_dew_grnd_col   (column,:)   = 0._r8
       this%tracer_flx_dew_snow_col   (column,:)   = 0._r8
@@ -444,7 +444,17 @@ contains
       this%tracer_flx_h2osfc_snow_residual_col(column,:)   = 0._r8
       this%tracer_flx_netpro_vr_col  (column,:,:)   = 0._r8
       this%tracer_flx_totleached_col (column,:)   = 0._r8
+      this%tracer_flx_dif_col        (column,:)   = 0._r8
     enddo
+    if(this%nvolatile_tracers>0)then
+      do fc = 1, numf
+        column = filter(fc)
+        this%tracer_flx_ebu_col        (column,:)   = 0._r8
+        this%tracer_flx_surfemi_col    (column,:)   = 0._r8
+        this%tracer_flx_tparchm_col    (column,:)   = 0._r8
+        this%tracer_flx_parchm_vr_col  (column,:,:) = 0._r8
+      enddo
+    endif
     do fp = 1, numfp
       p = filterp(fp)
       this%tracer_flx_vtrans_patch(p,:)         = 0._r8
@@ -476,36 +486,38 @@ contains
     this%tracer_flx_infl_col       (column,:)   = this%tracer_flx_infl_col       (column,:)/dtime
     this%tracer_flx_netphyloss_col(column,:)    = this%tracer_flx_netphyloss_col (column,:)/dtime
     this%tracer_flx_netpro_col     (column,:)   = this%tracer_flx_netpro_col     (column,:)/dtime
-    this%tracer_flx_ebu_col        (column,:)   = this%tracer_flx_ebu_col        (column,:)/dtime
     this%tracer_flx_prec_col       (column,:)   = this%tracer_flx_prec_col       (column,:)/dtime
-    this%tracer_flx_dif_col        (column,:)   = this%tracer_flx_dif_col        (column,:)/dtime
     this%tracer_flx_drain_col      (column,:)   = this%tracer_flx_drain_col      (column,:)/dtime
-    this%tracer_flx_surfemi_col    (column,:)   = this%tracer_flx_surfemi_col    (column,:)/dtime
     this%tracer_flx_leaching_col   (column,:)   = this%tracer_flx_leaching_col   (column,:)/dtime
     this%tracer_flx_surfrun_col    (column,:)   = this%tracer_flx_surfrun_col    (column,:)/dtime
-    this%tracer_flx_tparchm_col    (column,:)   = this%tracer_flx_tparchm_col    (column,:)/dtime
     this%tracer_flx_vtrans_col     (column,:)   = this%tracer_flx_vtrans_col     (column,:)/dtime
     this%tracer_flx_dew_grnd_col   (column,:)   = this%tracer_flx_dew_grnd_col   (column,:)/dtime
     this%tracer_flx_dew_snow_col   (column,:)   = this%tracer_flx_dew_snow_col   (column,:)/dtime
     this%tracer_flx_sub_snow_col   (column,:)   = this%tracer_flx_sub_snow_col   (column,:)/dtime
     this%tracer_flx_h2osfc_snow_residual_col(column,:) =  this%tracer_flx_h2osfc_snow_residual_col(column,:)/dtime
+    this%tracer_flx_dif_col        (column,:)   = this%tracer_flx_dif_col        (column,:)/dtime
 
+    if(this%nvolatile_tracers>0)then
+      this%tracer_flx_ebu_col        (column,:)   = this%tracer_flx_ebu_col        (column,:)/dtime
+      this%tracer_flx_surfemi_col    (column,:)   = this%tracer_flx_surfemi_col    (column,:)/dtime
+      this%tracer_flx_tparchm_col    (column,:)   = this%tracer_flx_tparchm_col    (column,:)/dtime
+    endif
     this%tracer_flx_totleached_col(column,:) = this%tracer_flx_drain_col(column,:) + this%tracer_flx_leaching_col(column,:)
   end subroutine temporal_average
 
   !----------------------------------------------------------------
-  subroutine Flux_summary(this, col, betr_time, c, betrtracer_vars, bstatus)
+  subroutine Flux_summary(this,lbj, ubj,  col, betr_time, c, betrtracer_vars, bstatus)
     !
     ! aggregate fluxes for mass balance check
     ! USES
     use BetrTracerType , only : betrtracer_type
-    use tracer_varcon  , only : nlevtrc_soil => betr_nlevtrc_soil
     use MathfuncMod    , only : dot_sum
     use BeTR_TimeMod   , only : betr_time_type
     use BetrStatusType, only : betr_status_type
     use betr_columnType  , only : betr_column_type
     implicit none
     class(TracerFlux_type) , intent(inout) :: this
+    integer                , intent(in) :: lbj, ubj
     type(betr_column_type) , intent(in) :: col
     class(betr_time_type)  , intent(in) :: betr_time
     type(BeTRTracer_Type)  , intent(in) :: betrtracer_vars
@@ -538,20 +550,21 @@ contains
 
          if(is_volatile(jj))then
             kk = volatileid(jj)
-            this%tracer_flx_tparchm_col(c,kk) = dot_sum(x=this%tracer_flx_parchm_vr_col(c,1:nlevtrc_soil,kk), &
-                 y=col%dz(c,1:nlevtrc_soil), bstatus=bstatus)
+            this%tracer_flx_tparchm_col(c,kk) = dot_sum(x=this%tracer_flx_parchm_vr_col(c,1:ubj,kk), &
+                 y=col%dz(c,1:ubj), bstatus=bstatus)
             if(bstatus%check_status())return
-            this%tracer_flx_surfemi_col(c,kk) = this%tracer_flx_tparchm_col(c,kk) + this%tracer_flx_dif_col(c,kk) + &
+            this%tracer_flx_surfemi_col(c,kk) = this%tracer_flx_tparchm_col(c,kk) + this%tracer_flx_dif_col(c,jj) + &
                  this%tracer_flx_ebu_col(c,kk)
 
             this%tracer_flx_netphyloss_col(c,jj) = this%tracer_flx_netphyloss_col(c,jj)  +  this%tracer_flx_surfemi_col(c,kk)
-
+         else
+            this%tracer_flx_netphyloss_col(c,jj) = this%tracer_flx_netphyloss_col(c,jj)  +  this%tracer_flx_dif_col(c,jj)
          endif
       enddo
 
       do jj = 1, ntracers
-         this%tracer_flx_netpro_col(c,jj) = dot_sum(x=this%tracer_flx_netpro_vr_col(c,1:nlevtrc_soil,jj),&
-             y=col%dz(c,1:nlevtrc_soil), bstatus=bstatus)
+         this%tracer_flx_netpro_col(c,jj) = dot_sum(x=this%tracer_flx_netpro_vr_col(c,1:ubj,jj),&
+             y=col%dz(c,1:ubj), bstatus=bstatus)
          if(bstatus%check_status())return
          if(jj<=ngwmobile_tracers)then
             if(is_volatile(jj))then
@@ -597,6 +610,12 @@ contains
       !lateral drainage, vertical leaching
       !for volatile tracers, this includes surface emission surface three different pathways
       write(msg,*)tracername, new_line('A')
+      if(jj<=ngwmobile_tracers)then
+        write(msg2,*)'dif=',this%tracer_flx_dif_col(c,jj),  new_line('A')
+        msg = trim(msg)//new_line('A')//trim(msg2)
+        msg2=''
+      endif
+
       if(is_advective(jj))then
         write(msg2,*) 'infl=',this%tracer_flx_infl_col(c,jj),new_line('A'),&
            'drain=',  this%tracer_flx_drain_col(c,jj),  new_line('A'),  &
@@ -611,7 +630,6 @@ contains
       if(is_volatile(jj))then
          kk = volatileid(jj)
          write(msg1,*) 'tpartm=', this%tracer_flx_tparchm_col(c,kk),new_line('A'),&
-              'dif=', this%tracer_flx_dif_col(c,kk),  new_line('A'),&
               'ebu=',this%tracer_flx_ebu_col(c,kk)
       endif
       msg = trim(msg)//new_line('A')//trim(msg2)//new_line('A')//trim(msg1)

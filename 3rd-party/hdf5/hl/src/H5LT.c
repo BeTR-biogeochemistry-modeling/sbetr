@@ -5,21 +5,18 @@
 *                                                                           *
 * This file is part of HDF5.  The full HDF5 copyright notice, including     *
 * terms governing use, modification, and redistribution, is contained in    *
-* the files COPYING and Copyright.html.  COPYING can be found at the root   *
-* of the source code distribution tree; Copyright.html can be found at the  *
-* root level of an installed copy of the electronic HDF5 document set and   *
-* is linked from the top-level documents page.  It can also be found at     *
-* http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
-* access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#include <string.h>
-#include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "H5LTprivate.h"
-#include "H5private.h"
 
 /* For Lex and Yacc */
 #define         COL             3
@@ -867,13 +864,13 @@ out:
 */
 hid_t H5LTopen_file_image(void *buf_ptr, size_t buf_size, unsigned flags)
 {
-    hid_t		fapl, file_id;	/* HDF5 identifiers */
-    unsigned            file_open_flags;/* Flags for image open */
-    char                file_name[64];	/* Filename buffer */
-    size_t              alloc_incr;     /* Buffer allocation increment */
-    size_t              min_incr = 65536; /* Minimum buffer increment */
-    double              buf_prcnt = 0.1f;  /* Percentage of buffer size to set
-                                             as increment */
+    hid_t		        fapl=-1, file_id=-1;    /* HDF5 identifiers */
+    unsigned            file_open_flags;        /* Flags for image open */
+    char                file_name[64];	        /* Filename buffer */
+    size_t              alloc_incr;             /* Buffer allocation increment */
+    size_t              min_incr = 65536;       /* Minimum buffer increment */
+    double              buf_prcnt = 0.1f;       /* Percentage of buffer size to set
+                                                    as increment */
     static long         file_name_counter; 
     H5FD_file_image_callbacks_t callbacks = {&image_malloc, &image_memcpy, 
                                            &image_realloc, &image_free, 
@@ -895,8 +892,8 @@ hid_t H5LTopen_file_image(void *buf_ptr, size_t buf_size, unsigned flags)
     /* set allocation increment to a percentage of the supplied buffer size, or
      * a pre-defined minimum increment value, whichever is larger
      */
-    if ((buf_prcnt * buf_size) > min_incr)
-        alloc_incr = (size_t)(buf_prcnt * buf_size);
+    if ((size_t)(buf_prcnt * (double)buf_size) > min_incr)
+        alloc_incr = (size_t)(buf_prcnt * (double)buf_size);
     else
         alloc_incr = min_incr;
 
@@ -1363,7 +1360,7 @@ out:
 */
 
 static herr_t
-find_dataset(hid_t loc_id, const char *name, const H5L_info_t *linfo, void *op_data)
+find_dataset(hid_t loc_id, const char *name, const H5L_info2_t *linfo, void *op_data)
 {
     /* Define a default zero value for return. This will cause the iterator to continue if
     * the dataset is not found yet.
@@ -1414,7 +1411,7 @@ find_dataset(hid_t loc_id, const char *name, const H5L_info_t *linfo, void *op_d
 herr_t
 H5LTfind_dataset( hid_t loc_id, const char *dset_name )
 {
-    return H5Literate(loc_id, H5_INDEX_NAME, H5_ITER_INC, 0, find_dataset, (void *)dset_name);
+    return H5Literate2(loc_id, H5_INDEX_NAME, H5_ITER_INC, 0, find_dataset, (void *)dset_name);
 }
 
 
@@ -2267,7 +2264,7 @@ out:
 *-------------------------------------------------------------------------
 */
 static char* 
-realloc_and_append(hbool_t _no_user_buf, size_t *len, char *buf, char *str_to_add)
+realloc_and_append(hbool_t _no_user_buf, size_t *len, char *buf, const char *str_to_add)
 {
     size_t size_str_to_add, size_str;
 
@@ -2363,7 +2360,6 @@ print_enum(hid_t type, char* str, size_t *str_len, hbool_t no_ubuf, size_t indt)
 {
     char           **name = NULL;   /*member names                   */
     unsigned char   *value = NULL;  /*value array                    */
-    unsigned char   *copy = NULL;   /*a pointer to value array       */
     int              nmembs;        /*number of members              */
     char             tmp_str[TMP_LEN];
     int              nchars;        /*number of output characters    */
@@ -2421,17 +2417,15 @@ print_enum(hid_t type, char* str, size_t *str_len, hbool_t no_ubuf, size_t indt)
         nchars = HDsnprintf(tmp_str, TMP_LEN, "\"%s\"", name[i]);
         if(!(str = realloc_and_append(no_ubuf, str_len, str, tmp_str)))
             goto out;
-        HDsnprintf(tmp_str, TMP_LEN, "%*s   ", MAX(0, 16 - nchars), "");
+        HDmemset(tmp_str, ' ', (size_t)MAX(3, 19 - nchars) + 1);
+        tmp_str[MAX(3, 19 - nchars)] = '\0';
         if(!(str = realloc_and_append(no_ubuf, str_len, str, tmp_str)))
             goto out;
 
-        /*On SGI Altix(cobalt), wrong values were printed out with "value+i*dst_size"
-         *strangely, unless use another pointer "copy".*/
-        copy = value + (size_t)i * dst_size;
         if (H5T_SGN_NONE == H5Tget_sign(native))
-            HDsnprintf(tmp_str, TMP_LEN, "%u", *((unsigned int*)((void *)copy)));
+            HDsnprintf(tmp_str, TMP_LEN, "%u", *((unsigned int *)((void *)(value + (size_t)i * dst_size))));
         else
-            HDsnprintf(tmp_str, TMP_LEN, "%d", *((int*)((void *)copy)));
+            HDsnprintf(tmp_str, TMP_LEN, "%d", *((int *)((void *)(value + (size_t)i * dst_size))));
         if(!(str = realloc_and_append(no_ubuf, str_len, str, tmp_str)))
             goto out;
 
@@ -2453,8 +2447,12 @@ print_enum(hid_t type, char* str, size_t *str_len, hbool_t no_ubuf, size_t indt)
 out:
 
     if(0 == nmembs) {
-        HDsnprintf(tmp_str, TMP_LEN, "\n%*s <empty>", (int)(indt + 4), "");
+        str = realloc_and_append(no_ubuf, str_len, str, "\n");
+        HDassert((indt + 4) < TMP_LEN);
+        HDmemset(tmp_str, ' ', (indt + 4) + 1);
+        tmp_str[(indt + 4)] = '\0';
         str = realloc_and_append(no_ubuf, str_len, str, tmp_str);
+        str = realloc_and_append(no_ubuf, str_len, str, " <empty>");
     } /* end if */
 
     /* Release resources */
@@ -3358,7 +3356,7 @@ herr_t H5LTget_attribute_long( hid_t loc_id,
 *
 * Date: June 17, 2005
 *
-* Comments: This funstion was added to suuport INTEGER*8 Fortran types
+* Comments: This function was added to support INTEGER*8 Fortran types
 *
 * Modifications:
 *

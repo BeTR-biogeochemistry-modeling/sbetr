@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /* Programmer:  Quincey Koziol <koziol@ncsa.uiuc.edu>
@@ -22,7 +20,7 @@
  * This file needs to access private datatypes from the H5MP package.
  * This file also needs to access the memory pool testing code.
  */
-#define H5MP_PACKAGE
+#define H5MP_FRIEND		/*suppress error about including H5MPpkg	  */
 #define H5MP_TESTING
 #include "H5MPpkg.h"		/* Memory Pools				*/
 
@@ -671,7 +669,7 @@ HDfprintf(stderr,"curr_time=%lu\n",(unsigned long)curr_time);
 
     /* Shuffle pointers to free */
     for(u = 0; u < MPOOL_NUM_RANDOM; u++) {
-        swap_idx = (size_t)(HDrandom() % (MPOOL_NUM_RANDOM - u)) + u;
+        swap_idx = (size_t)(HDrandom() % (int)(MPOOL_NUM_RANDOM - u)) + u;
         swap_ptr = spc[u];
         spc[u] = spc[swap_idx];
         spc[swap_idx] = swap_ptr;

@@ -16,6 +16,7 @@ module TracerParamsMod
   use bshr_log_mod             , only : errMsg => shr_log_errMsg
   use BeTR_decompMod           , only : bounds_type  => betr_bounds_type
   use tracer_varcon            , only : nlevsoi  => betr_nlevsoi
+  use betr_varcon              , only : denh2o => bdenh2o
   use betr_varcon              , only : spval => bspval
   use BetrTracerType           , only : betrtracer_type
   use TracerCoeffType          , only : tracercoeff_type
@@ -240,7 +241,7 @@ contains
          zi                                     => col%zi                                                 , & ! real(r8)[intent(in)],
          lbots                                  => col%lbots                                              , & ! integer[intent(in)], lower boundary
          t_soisno                               => biophysforc%t_soisno_col                               , & ! Input: [real(r8)(:,:)]
-         move_scalar                            => betrtracer_vars%move_scalar                            , &
+         difu_scalar                            => betrtracer_vars%difu_scalar                            , &
          bulk_diffus_col                        => tracercoeff_vars%bulk_diffus_col                       , &
          aqu_diffus_col                         => tracercoeff_vars%aqu_diffus_col                        , &
          aqu_diffus0_col                        => tracercoeff_vars%aqu_diffus0_col                       , &
@@ -277,7 +278,7 @@ contains
                      endif
                      !to prevent division by zero
                      bulk_diffus_col(c,n,j)=max(bulk_diffus_col(c,n,j),minval_diffus)
-                     bulk_diffus_col(c,n,j)=bulk_diffus_col(c,n,j)*move_scalar(j)
+                     bulk_diffus_col(c,n,j)=bulk_diffus_col(c,n,j)*difu_scalar(j)
                      aqu_diffus_col(c,n,j)=max(aqu_diffus_col(c,n,j), minval_diffus)
                   endif
                enddo
@@ -285,7 +286,7 @@ contains
             !the following needs revision when betr is extended to wetland
             do fc = 1, numf
               c = filter(fc)
-              diffblkm_topsoi_col(c,k) = bulk_diffus_col(c,1,j)*move_scalar(j)
+              diffblkm_topsoi_col(c,j) = bulk_diffus_col(c,1,j)*difu_scalar(j)
             enddo
          else
             !it is not a volatile tracer
@@ -299,10 +300,14 @@ contains
                      bulk_diffus_col(c,n,j)=aqu_diffus_col(c,n,j)
                      !to prevent division by zero
                      bulk_diffus_col(c,n,j)=max(bulk_diffus_col(c,n,j),minval_diffus) !avoid division by zero in following calculations
-                     bulk_diffus_col(c,n,j)=bulk_diffus_col(c,n,j)*move_scalar(j)
+                     bulk_diffus_col(c,n,j)=bulk_diffus_col(c,n,j)*difu_scalar(j)
                      aqu_diffus_col(c,n,j)=max(aqu_diffus_col(c,n,j), minval_diffus)
                   endif
                enddo
+            enddo
+            do fc = 1, numf
+              c = filter(fc)
+              diffblkm_topsoi_col(c,j) = bulk_diffus_col(c,1,j)
             enddo
          endif
       enddo
@@ -338,7 +343,7 @@ contains
                   ! completely frozen soils--no mixing
                   bulk_diffus_col(c,n,j) = 1e-4_r8 / (86400._r8 * 365._r8) * 1.e-36_r8  !set to very small number for numerical purpose
                endif
-               bulk_diffus_col(c,n,j) = bulk_diffus_col(c,n,j) * move_scalar(j)
+               bulk_diffus_col(c,n,j) = bulk_diffus_col(c,n,j) * difu_scalar(j)
             enddo
          enddo
       enddo
@@ -644,6 +649,11 @@ contains
     t_soisno                   => biophysforc%t_soisno_col                     , & !Input:
     dom_scalar                 => biophysforc%dom_scalar_col                   , & !Input:
     tracer_conc_mobile         => tracerstate_vars%tracer_conc_mobile_col      , & !Input
+    is_tagged_h2o              => betrtracer_vars%is_tagged_h2o                , & !
+    id_trc_beg_blk_h2o         => betrtracer_vars%id_trc_beg_blk_h2o           , & !
+    id_trc_o18_h2o             => betrtracer_vars%id_trc_o18_h2o               , & !
+    id_trc_d_h2o               => betrtracer_vars%id_trc_d_h2o                 , & !
+    id_trc_blk_h2o             => betrtracer_vars%id_trc_blk_h2o               , & !
     bunsencef_col              => tracercoeff_vars%bunsencef_col               , & !Input: [real(r8)(:,:)], bunsen coeff
     aqu2bulkcef_mobile         => tracercoeff_vars%aqu2bulkcef_mobile_col      , & !Output:[real(r8)(:,:)], phase conversion coeff
     aqu2equilsolidcef          => tracercoeff_vars%aqu2equilsolidcef_col       , & !Input: [real(r8)(:,:)], phase conversion coeff
@@ -673,10 +683,8 @@ contains
             c = filter(fc)
             if(n>=jtops(c) .and. n<=lbots(c))then
               !aqueous to bulk mobile phase
-              if(is_h2o(j))then
-                !this is a (bad) reverse hack because the hydrology code does not consider water vapor transport
-                !jyt, Feb, 18, 2016, 1.e-12_r8 is a value for avoiding NaN
-                aqu2bulkcef_mobile(c,n,j) = max(h2osoi_liqvol(c,n),tiny_val)
+              if(is_h2o(trcid))then
+                aqu2bulkcef_mobile(c,n,j) = tracer_conc_mobile(c,n,id_trc_beg_blk_h2o)/denh2o
               else
                 aqu2bulkcef_mobile(c,n,j) = air_vol(c,n)/bunsencef_col(c,n,k)+h2osoi_liqvol(c,n)
               endif
@@ -700,6 +708,7 @@ contains
           endif
         enddo
       enddo
+
       if(is_adsorb(trcid))then
         gid = adsorbgroupid(trcid)
         do n = lbj, ubj
@@ -716,6 +725,7 @@ contains
   end associate
   end subroutine calc_dual_phase_convert_coeff
 
+
 !-------------------------------------------------------------------------------
 
    subroutine set_multi_phase_diffusion(bounds, col, lbj, ubj, jtops, numf, filter, &
@@ -727,7 +737,6 @@ contains
    !USES
    use BetrStatusType     , only : betr_status_type
    use betr_columnType    , only : betr_column_type
-   use tracer_varcon      , only : nlevtrc_soil => betr_nlevtrc_soil
 
    implicit none
    !ARGUMENTS
@@ -746,9 +755,9 @@ contains
 
    character(len=255) :: subname='set_multi_phase_diffusion'
 
-   allocate(tau_soil%tau_gas(bounds%begc:bounds%endc, 1 : nlevtrc_soil))
+   allocate(tau_soil%tau_gas(bounds%begc:bounds%endc, 1 : ubj))
    tau_soil%tau_gas(:,:) = 0._r8
-   allocate(tau_soil%tau_liq(bounds%begc:bounds%endc, 1 : nlevtrc_soil))
+   allocate(tau_soil%tau_liq(bounds%begc:bounds%endc, 1 : ubj))
    tau_soil%tau_liq(:,:) = 0._r8
 
    call betr_status%reset()
@@ -814,11 +823,13 @@ contains
    call calc_henrys_coeff(bounds, lbj, ubj, col, jtops, numf, filter, &
        biophysforc,  betrtracer_vars, tracercoeff_vars, betr_status)
    if(betr_status%check_status())return
+
    !compute Bunsen's coefficients
    call calc_bunsen_coeff(bounds, lbj, ubj, col, &
         jtops, numf, filter, biophysforc, &
         betrtracer_vars, tracercoeff_vars, betr_status)
    if(betr_status%check_status())return
+
    !compute equilibrium fraction to liquid phase conversion parameter
    if(betrtracer_vars%nsolid_equil_tracers>0)then
      call calc_equil_to_liquid_convert_coeff(bounds, lbj, ubj, jtops, col%lbots, numf, filter , &
@@ -826,6 +837,7 @@ contains
         betrtracer_vars, tracerstate_vars , tracercoeff_vars, betr_status)
      if(betr_status%check_status())return
    endif
+
    !compute phase conversion coefficients
    call calc_dual_phase_convert_coeff(bounds, lbj, ubj, jtops, col%lbots, numf, filter, &
       biophysforc, betrtracer_vars, tracerstate_vars, tracercoeff_vars, betr_status)
@@ -849,7 +861,7 @@ contains
    !USES
    use TracerBoundaryCondType, only : tracerboundarycond_type
    use BeTRTracerType        , only : betrtracer_type
-   use betr_varcon           , only : denh2o  => bdenh2o
+   use betr_varcon           , only : denh2o  => bdenh2o  ! kg/m3
    use BetrStatusType        , only : betr_status_type
    implicit none
    !ARGUMENTS
@@ -894,14 +906,16 @@ contains
      if(j==betrtracer_vars%id_trc_blk_h2o)then
        do fc = 1, numf
          c = filter(fc)
-         tracer_flx_infl(c,j) = 1._r8 * qflx_adv(c,0) * denh2o
+         tracer_flx_infl(c,j) = 1._r8 * qflx_adv(c,0) * denh2o  !kg/m3
        enddo
      elseif(j==betrtracer_vars%id_trc_o18_h2o)then
+         !revision needed
          do fc = 1, numf
            c = filter(fc)
            tracer_flx_infl(c,j) = 1._r8 * qflx_adv(c,0) * denh2o
          enddo
      elseif(j==betrtracer_vars%id_trc_d_h2o)then
+         !revision  needed
          do fc = 1, numf
            c = filter(fc)
            tracer_flx_infl(c,j) = 1._r8 * qflx_adv(c,0) * denh2o

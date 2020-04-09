@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /*-------------------------------------------------------------------------
@@ -39,10 +37,6 @@
 /* Public Macros */
 /*****************/
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /*******************/
 /* Public Typedefs */
 /*******************/
@@ -64,6 +58,7 @@ typedef struct H5G_info_t {
     hbool_t     mounted;                /* Whether group has a file mounted on it */
 } H5G_info_t;
 
+
 /********************/
 /* Public Variables */
 /********************/
@@ -72,6 +67,10 @@ typedef struct H5G_info_t {
 /*********************/
 /* Public Prototypes */
 /*********************/
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 H5_DLL hid_t H5Gcreate2(hid_t loc_id, const char *name, hid_t lcpl_id,
     hid_t gcpl_id, hid_t gapl_id);
 H5_DLL hid_t H5Gcreate_anon(hid_t loc_id, hid_t gcpl_id, hid_t gapl_id);
@@ -84,6 +83,8 @@ H5_DLL herr_t H5Gget_info_by_idx(hid_t loc_id, const char *group_name,
     H5_index_t idx_type, H5_iter_order_t order, hsize_t n, H5G_info_t *ginfo,
     hid_t lapl_id);
 H5_DLL herr_t H5Gclose(hid_t group_id);
+H5_DLL herr_t H5Gflush(hid_t group_id);
+H5_DLL herr_t H5Grefresh(hid_t group_id);
 
 /* Symbols defined for compatibility with previous versions of the HDF5 API.
  *

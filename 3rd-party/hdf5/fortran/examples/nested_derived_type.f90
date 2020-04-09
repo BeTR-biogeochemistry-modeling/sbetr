@@ -5,12 +5,10 @@
 !                                                                           *
 ! This file is part of HDF5.  The full HDF5 copyright notice, including     *
 ! terms governing use, modification, and redistribution, is contained in    *
-! the files COPYING and Copyright.html.  COPYING can be found at the root   *
-! of the source code distribution tree; Copyright.html can be found at the  *
-! root level of an installed copy of the electronic HDF5 document set and   *
-! is linked from the top-level documents page.  It can also be found at     *
-! http://hdf.ncsa.uiuc.edu/HDF5/doc/Copyright.html.  If you do not have     *
-! access to either file, you may request a copy from hdfhelp@ncsa.uiuc.edu. *
+!   the COPYING file, which can be found at the root of the source code       *
+!   distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+!   If you do not have access to either file, you may request a copy from     *
+!   help@hdfgroup.org.                                                        *
 ! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 !
 ! This example shows how to create a nested compound data type,
@@ -23,13 +21,13 @@ PROGRAM main
   IMPLICIT NONE
 
 ! KIND parameters
-  INTEGER, PARAMETER :: int_k1 = SELECTED_INT_KIND(Fortran_INTEGER_1)  ! This should map to INTEGER*1 on most modern processors
-  INTEGER, PARAMETER :: int_k4 = SELECTED_INT_KIND(Fortran_INTEGER_2)  ! This should map to INTEGER*2 on most modern processors
-  INTEGER, PARAMETER :: int_k8 = SELECTED_INT_KIND(Fortran_INTEGER_4)  ! This should map to INTEGER*4 on most modern processors
-  INTEGER, PARAMETER :: int_k16 = SELECTED_INT_KIND(Fortran_INTEGER_8) ! This should map to INTEGER*8 on most modern processors
+  INTEGER, PARAMETER :: int_k1 = SELECTED_INT_KIND(2)  ! This should map to INTEGER*1 on most modern processors
+  INTEGER, PARAMETER :: int_k4 = SELECTED_INT_KIND(4)  ! This should map to INTEGER*2 on most modern processors
+  INTEGER, PARAMETER :: int_k8 = SELECTED_INT_KIND(9)  ! This should map to INTEGER*4 on most modern processors
+  INTEGER, PARAMETER :: int_k16 = SELECTED_INT_KIND(18) ! This should map to INTEGER*8 on most modern processors
 
-  INTEGER, PARAMETER :: r_k4 = SELECTED_REAL_KIND(Fortran_REAL_4) ! This should map to REAL*4 on most modern processors
-  INTEGER, PARAMETER :: r_k8 = SELECTED_REAL_KIND(Fortran_REAL_8) ! This should map to REAL*8 on most modern processors
+  INTEGER, PARAMETER :: r_k4 = SELECTED_REAL_KIND(6,37) ! This should map to REAL*4 on most modern processors
+  INTEGER, PARAMETER :: r_k8 = SELECTED_REAL_KIND(15,307) ! This should map to REAL*8 on most modern processors
 
 ! FILES
 

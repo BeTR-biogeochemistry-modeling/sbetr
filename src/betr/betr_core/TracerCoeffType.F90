@@ -164,7 +164,7 @@ contains
 
     NAN_ALLOC(this%Q_sorbsurf_col(begc:endc, lbj:ubj, 1:betrtracer_vars%nsolid_equil_tracers))
 
-    NAN_ALLOC(this%diffblkm_topsoi_col(begc:endc, 1:betrtracer_vars%nvolatile_tracer_groups))
+    NAN_ALLOC(this%diffblkm_topsoi_col(begc:endc, 1:betrtracer_vars%ngwmobile_tracer_groups))
 
     NAN_ALLOC(this%snowres_col(begc:endc, 1:betrtracer_vars%nvolatile_tracer_groups))
 

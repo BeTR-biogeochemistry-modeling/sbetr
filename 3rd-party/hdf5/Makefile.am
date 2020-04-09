@@ -5,12 +5,10 @@
 #
 # This file is part of HDF5.  The full HDF5 copyright notice, including
 # terms governing use, modification, and redistribution, is contained in
-# the files COPYING and Copyright.html.  COPYING can be found at the root
-# of the source code distribution tree; Copyright.html can be found at the
-# root level of an installed copy of the electronic HDF5 document set and
-# is linked from the top-level documents page.  It can also be found at
-# http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have
-# access to either file, you may request a copy from help@hdfgroup.org.
+# the COPYING file, which can be found at the root of the source code
+# distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.
+# If you do not have access to either file, you may request a copy from
+# help@hdfgroup.org.
 ##
 ## Makefile.am
 ## Run automake to generate a Makefile.in from this file.
@@ -51,11 +49,6 @@ include $(top_srcdir)/config/commence.am
 
 # Conditionals.  These conditionals are defined during configure
 # Define each variable to empty if it is not used to placate pmake
-if BUILD_PARALLEL_CONDITIONAL
-   TESTPARALLEL_DIR =testpar
-else
-   TESTPARALLEL_DIR=
-endif
 if BUILD_CXX_CONDITIONAL
    CXX_DIR =c++
 else
@@ -66,15 +59,35 @@ if BUILD_FORTRAN_CONDITIONAL
 else
    FORTRAN_DIR=
 endif
+if BUILD_JAVA_CONDITIONAL
+   JAVA_DIR=java
+else
+   JAVA_DIR=
+endif
 if BUILD_HDF5_HL_CONDITIONAL
    HDF5_HL_DIR =hl
 else
    HDF5_HL_DIR=
 endif
+if BUILD_TESTS_CONDITIONAL
+   TESTSERIAL_DIR =test
+else
+   TESTSERIAL_DIR=
+endif
+if BUILD_TESTS_PARALLEL_CONDITIONAL
+   TESTPARALLEL_DIR =testpar
+else
+   TESTPARALLEL_DIR=
+endif
+if BUILD_TOOLS_CONDITIONAL
+   TOOLS_DIR =tools
+else
+   TOOLS_DIR=
+endif
 
-SUBDIRS = src test $(TESTPARALLEL_DIR) tools . $(CXX_DIR) $(FORTRAN_DIR) \
-          $(HDF5_HL_DIR)
-DIST_SUBDIRS = src test testpar tools . c++ fortran hl examples
+SUBDIRS = src $(TESTSERIAL_DIR) $(TESTPARALLEL_DIR) bin $(TOOLS_DIR) . \
+          $(CXX_DIR) $(FORTRAN_DIR) $(JAVA_DIR) $(HDF5_HL_DIR)
+DIST_SUBDIRS = src test testpar tools . c++ fortran hl examples java
 
 # Some files generated during configure that should be cleaned
 DISTCLEANFILES=config/stamp1 config/stamp2
@@ -99,7 +112,7 @@ tests:
 	  if test $$d != .; then                                        \
 	   (cd $$d && $(MAKE) $(AM_MAKEFLAGS) $@) || exit 1;            \
 	  fi;                                                           \
-	done
+	  done
 
 # Check-clean also recurses into examples directory
 check-clean:
@@ -178,6 +191,16 @@ trace:
 # Currently, only invoke check-vfd in the test directory.
 check-vfd:
 	for d in src test; do                                 \
+	  if test $$d != .; then                                       \
+	    (cd $$d && $(MAKE) $(AM_MAKEFLAGS) $@) || exit 1;          \
+	  fi;                                                          \
+	done
+
+# Run tests with different passthrough Virtual Object Layer Connectors.
+# NOTE: Will only succeed with passthrough VOL connectors that use
+#       the native VOL connector as the terminal connector.
+check-passthrough-vol:
+	for d in $(SUBDIRS); do                                \
 	  if test $$d != .; then                                       \
 	    (cd $$d && $(MAKE) $(AM_MAKEFLAGS) $@) || exit 1;          \
 	  fi;                                                          \

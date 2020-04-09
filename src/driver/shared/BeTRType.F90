@@ -64,7 +64,7 @@ module BetrType
 
      real(r8)                      , private, pointer    :: h2osoi_liq_copy(:,:) => null()
      real(r8)                      , private, pointer    :: h2osoi_ice_copy(:,:) => null()
-
+     logical                       , private :: is_analytic_benchmark
      ! FIXME(bja, 201603) replace LSM specific types!
 
    contains
@@ -101,6 +101,7 @@ module BetrType
      procedure, public  :: Set_iP_prof
      procedure, public  :: OutLoopBGC
      procedure, public  :: reset_biostates
+     procedure, public  :: skip_mass_bal_check
   end type betr_type
 
   public :: create_betr_type
@@ -197,7 +198,7 @@ contains
     !inside Init_plant_soilbgc, specific plant soil bgc coupler data type will be created
     call this%plant_soilbgc%Init_plant_soilbgc(bounds, lbj, ubj, namelist_buffer)
 
-    !initialize state variable
+    !print*,'initialize state variable'
     call this%bgc_reaction%initCold(bounds, col, this%tracers, biophysforc, this%tracerstates)
 
     !initialize boundary condition type
@@ -375,7 +376,7 @@ contains
          num_soilp,                                            &
          filter_soilp,                                         &
          this%tracerboundaryconds%jtops_col,                   &
-         dtime,                                                &
+         betr_time,                                            &
          this%tracers,                                         &
          this%tracercoeffs,                                    &
          biophysforc,                                          &
@@ -802,7 +803,7 @@ contains
           tracerstate_vars%int_mass_frozen_col(1,ubj,c,frozenid(trcid),dz(1:ubj),bstatus)
      if(bstatus%check_status())return
   endif
-  call tracerflux_vars%flux_summary(col, betr_time, c, betrtracer_vars,bstatus)
+  call tracerflux_vars%flux_summary(1, ubj,col, betr_time, c, betrtracer_vars,bstatus)
   if(bstatus%check_status())return
   err=beg_tracer_molarmass(c,trcid)-totmass  &
        + tracer_flx_netpro(c,trcid)-tracer_flx_netphyloss(c,trcid)
@@ -963,10 +964,11 @@ contains
      h2osoi_ice          =>    biophysforc%h2osoi_ice_col            , &
      qflx_rootsoi        =>    biophysforc%qflx_rootsoi_col          , & ! Input  : [real(r8) (:,:) ]  vegetation/soil water exchange (m H2O/s) (+ = to atm)
      qflx_bot            =>    biophysforc%qflx_bot_col              , & ! Input : [real(r8)]
-     qflx_adv            =>    biogeo_flux%qflx_adv_col              , & ! Output: [real(r8) (:,:) ]  water flux at interfaces       (m H2O/s) (- = to atm)
+     qflx_adv            =>    biogeo_flux%qflx_adv_col              , & ! Output: [real(r8) (:,:) ]  water flux at interfaces  (m H2O/s) (- = to atm)
      qflx_gross_infl_soil=>    biogeo_flux%qflx_gross_infl_soil_col  , & ! Output: [real(r8) (:)] gross infiltration (mm H2O/s)
      qflx_infl           =>    biogeo_flux%qflx_infl_col             , & ! Output: [real(r8) (:)] infiltration, mm H2O/s
-     qflx_gross_evap_soil=>    biogeo_flux%qflx_gross_evap_soil_col    & ! Output: [real(r8) (:)] gross evaporation (mm H2O/s)
+     qflx_gross_evap_soil=>    biogeo_flux%qflx_gross_evap_soil_col  , & ! Output: [real(r8) (:)] gross evaporation (mm H2O/s)
+     dz                  =>    biophysforc%dz                          & !
    )
 
    ! get time step
@@ -977,21 +979,26 @@ contains
      do fc = 1, num_hydrologyc
        c = filter_hydrologyc(fc)
        if(j==nlevsoi)then
-         qflx_adv(c,j) = qflx_bot(c) * 1.e-3_r8                                 ! m/s
+         qflx_adv(c,j) = qflx_bot(c) * 1.e-3_r8                                 ! m/s, > 0 means going out
        else
          qflx_adv(c,j) = 1.e-3_r8 * (h2osoi_liq(c,j+1)-this%h2osoi_liq_copy(c,j+1))/dtime &
            + qflx_adv(c,j+1) + qflx_rootsoi(c,j+1)
        endif
      enddo
    enddo
-
+!   do j = 1, nlevsoi
+!     do fc = 1, num_hydrologyc
+!       c = filter_hydrologyc(fc)
+!       print*,'old new j',j,this%h2osoi_liq_copy(c,j)/dz(c,j),h2osoi_liq(c,j)/dz(c,j),qflx_rootsoi(c,j)/dz(c,j)
+!     enddo
+!   enddo
    ! correct gross infiltration and gross evaporation
    ! (h2osoi_liq(c,1)-h2osoi_liq_copy(c,1))/dtime=qflx_infl-q_out-qflx_rootsoi
    do fc = 1, num_hydrologyc
      c = filter_hydrologyc(fc)
      !obtain the corrected infiltration
      qflx_infl(c) = (h2osoi_liq(c,1)-this%h2osoi_liq_copy(c,1))/dtime + (qflx_rootsoi(c,1)+qflx_adv(c,1))*1.e3_r8
-     !the predicted net infiltration
+     !obtain the predicted net infiltration
      infl_tmp=qflx_gross_infl_soil(c)-qflx_gross_evap_soil(c)
      diff=qflx_infl(c)-infl_tmp
      if(abs(diff)>0._r8)then
@@ -1019,14 +1026,17 @@ contains
      endif
      qflx_adv(c,0) = qflx_gross_infl_soil(c) *1.e-3_r8  !surface infiltration, m/s
    enddo
-   if(abs(adv_scalar-1._r8)>1.e-10_r8)then
-     do j = nlevsoi, 0, -1
-       do fc = 1, num_hydrologyc
-         c = filter_hydrologyc(fc)
-         qflx_adv(c,j)=qflx_adv(c,j)*adv_scalar
-       enddo
-     enddo
-   endif
+
+!rescale the advective flux if necessary, designed for water isotope, and is off at the moment.
+!It may also not be necessary. Note: jyt, 2020 Mar 29.
+   !if(abs(adv_scalar-1._r8)>1.e-10_r8)then
+   !do j = nlevsoi, 0, -1
+   ! do fc = 1, num_hydrologyc
+!         c = filter_hydrologyc(fc)
+!         qflx_adv(c,j)=qflx_adv(c,j)*adv_scalar
+!       enddo
+!     enddo
+!   endif
    end associate
    end subroutine diagnose_advect_water_flux
 
@@ -1372,7 +1382,7 @@ contains
 
   asoibgc = .false.
   !if it is a default case, create it
-  call create_betr_def_application(bgc_reaction, plant_soilbgc, method, yesno)
+  call create_betr_def_application(bgc_reaction, plant_soilbgc, method, yesno, this%is_analytic_benchmark)
 
   if(.not. yesno)then
     call create_betr_usr_application(bgc_reaction, plant_soilbgc, method, asoibgc, bstatus)
@@ -1605,7 +1615,7 @@ contains
      num_soilp,                                            &
      filter_soilp,                                         &
      this%tracerboundaryconds%jtops_col,                   &
-     dtime,                                                &
+     betr_time,                                                &
      this%tracers,                                         &
      this%tracercoeffs,                                    &
      biophysforc,                                          &
@@ -1626,7 +1636,6 @@ contains
   !------------------------------------------------------------------------
   subroutine reset_biostates(this, bounds, num_soilc, filter_soilc, &
      biophysforc, betr_status)
-
 
     implicit none
     !
@@ -1650,4 +1659,15 @@ contains
 
   end subroutine reset_biostates
 
+  !------------------------------------------------------------------------
+  function skip_mass_bal_check(this)result(ans)
+  implicit none
+  !
+  ! !ARGUMENTS :
+  class(betr_type)                 , intent(inout) :: this
+  logical :: ans
+
+  ans = this%is_analytic_benchmark
+
+  end function skip_mass_bal_check
 end module BetrType

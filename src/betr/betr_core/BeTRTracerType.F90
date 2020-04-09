@@ -89,6 +89,7 @@ module BeTRTracerType
    logical, pointer :: is_dom(:)          => null()                         !true if it is a dom tracer, place holder for rtm bgc
    logical, pointer :: is_isotope(:)      => null()
    logical, pointer :: is_frozen(:)       => null()                          !true if the tracer could be frozen
+   logical, pointer :: do_mass_balchk(:)  => null()
    integer, pointer :: refisoid(:)        => null()                          !reference tracer for isotope calculation, this is setup only for non-h2o isotope now
    integer, pointer :: adsorbid(:)        => null()                          !which tracer is adsorbed
    integer, pointer :: volatileid(:)      => null()
@@ -98,7 +99,8 @@ module BeTRTracerType
    integer, pointer :: volatilegroupid(:) => null()                      !
    integer, pointer :: groupid(:)         => null()
    integer, pointer :: frozenid(:)        => null()
-   real(r8), pointer :: move_scalar(:)    => null()
+   real(r8), pointer :: adv_scalar(:)    => null()
+   real(r8), pointer :: difu_scalar(:)    => null()
    logical :: is_tagged_h2o =.false.                             !no tagged h2o run by default
    real(r8),pointer :: tracer_solid_passive_diffus_scal_group(:) => null() !reference diffusivity for solid phase tracer, for modeling turbation
    real(r8),pointer :: tracer_solid_passive_diffus_thc_group(:) => null() !threshold diffusivity for solid phase tracer, for modeling turbation
@@ -252,8 +254,10 @@ module BeTRTracerType
   allocate(this%tracerfamilyname   (this%ntracers));      this%tracerfamilyname(:)= ''
   allocate(this%units              (this%ntracers));      this%units(:)           = 'mol m-3'
   allocate(this%vtrans_scal        (this%ngwmobile_tracers));    this%vtrans_scal(:)     = 0._r8   !no transport through xylem transpiration
-  allocate(this%move_scalar        (this%ntracer_groups));      this%move_scalar(:)     = 1._r8
+  allocate(this%adv_scalar        (this%ntracer_groups));      this%adv_scalar(:)     = 1._r8
+  allocate(this%difu_scalar        (this%ntracer_groups));      this%difu_scalar(:)     = 1._r8
 
+  allocate(this%do_mass_balchk     (this%ntracers));      this%do_mass_balchk(:) = .true.
   allocate(this%tracer_solid_passive_diffus_scal_group(this%nsolid_passive_tracer_groups));
   this%tracer_solid_passive_diffus_scal_group(:) = 1._r8
 
@@ -275,8 +279,8 @@ module BeTRTracerType
 
 subroutine set_tracer(this, bstatus, trc_id, trc_name, is_trc_mobile, is_trc_advective, trc_group_id, &
    trc_group_mem, is_trc_diffusive, is_trc_volatile, trc_volatile_id, trc_volatile_group_id, &
-   is_trc_h2o, trc_vtrans_scal, is_trc_adsorb, trc_adsorbid, trc_adsorbgroupid, trc_sorpisotherm, &
-   is_trc_dom, is_trc_frozen, trc_frozenid, trc_family_name)
+   is_trc_h2o, trc_vtrans_scal, is_trc_adsorb, trc_adsorbid, trc_adsorbgroupid, do_mass_balchk, &
+   trc_sorpisotherm, is_trc_dom, is_trc_frozen, trc_frozenid, trc_family_name)
 
 ! !DESCRIPTION:
 ! set up tracer property based on input configurations
@@ -299,6 +303,7 @@ subroutine set_tracer(this, bstatus, trc_id, trc_name, is_trc_mobile, is_trc_adv
   logical ,optional  , intent(in) :: is_trc_adsorb
   integer ,optional  , intent(in) :: trc_adsorbid
   integer ,optional  , intent(in) :: trc_adsorbgroupid
+  logical, optional  , intent(in) :: do_mass_balchk
   character(len=*), optional, intent(in) :: trc_sorpisotherm
   logical, optional  , intent(in) :: is_trc_dom
   logical ,optional  , intent(in) :: is_trc_frozen
@@ -319,6 +324,9 @@ subroutine set_tracer(this, bstatus, trc_id, trc_name, is_trc_mobile, is_trc_adv
   this%tracer_group_memid(trc_group_id,trc_group_mem) = trc_id
   this%is_advective     (trc_id)    = is_trc_advective
 
+  if(present(do_mass_balchk))then
+    this%do_mass_balchk(trc_id)=do_mass_balchk
+  endif
   if(present(is_trc_diffusive)) then
     this%is_diffusive (trc_id) = is_trc_diffusive
   endif
@@ -501,7 +509,7 @@ subroutine set_tracer(this, bstatus, trc_id, trc_name, is_trc_mobile, is_trc_adv
      if(grpid>0)then
        write(*, '(I3,X,A16,X,A6,X,I3)')grpid, trim(tag),' group'
        do jj = memid_beg, memid_end
-         write(*,'(I3,X,A16,X,A6)')jj,this%tracernames(jj), this%tracerfamilyname(jj)
+         write(*,'(I3,X,A16,X,A8)')jj,this%tracernames(jj), this%tracerfamilyname(jj)
        enddo
        print*,'------------------------------------------------'
      endif

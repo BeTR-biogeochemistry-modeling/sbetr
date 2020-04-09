@@ -285,8 +285,8 @@ contains
   end subroutine Init_betrbgc
 
   !-------------------------------------------------------------------------------
-  subroutine set_boundary_conditions(this, bounds, num_soilc, filter_soilc, dz_top, betrtracer_vars, &
-       biophysforc, biogeo_flux, tracercoeff_vars, tracerboundarycond_vars, betr_status)
+  subroutine set_boundary_conditions(this, bounds, num_soilc, filter_soilc, jtops, dz_top, betr_time, &
+       betrtracer_vars, biophysforc, biogeo_flux, tracercoeff_vars, tracerboundarycond_vars, betr_status)
     !
     ! !DESCRIPTION:
     ! set up boundary conditions for tracer movement
@@ -301,6 +301,7 @@ contains
     use BetrStatusType         , only : betr_status_type
     use TracerCoeffType        , only : tracercoeff_type
     use UnitConvertMod         , only : ppm2molv
+    use BeTR_TimeMod           , only : betr_time_type
     implicit none
     ! !ARGUMENTS:
     class(bgc_reaction_mock_run_type) , intent(inout)    :: this                       !
@@ -308,7 +309,9 @@ contains
     integer                           , intent(in)    :: num_soilc                  ! number of columns in column filter_soilc
     integer                           , intent(in)    :: filter_soilc(:)            ! column filter_soilc
     type(betrtracer_type)             , intent(in)    :: betrtracer_vars            !
+    integer                           , intent(in)    :: jtops(bounds%begc: )
     real(r8)                          , intent(in)    :: dz_top(bounds%begc: )      !
+    type(betr_time_type)              , intent(in)    :: betr_time
     type(betr_biogeophys_input_type)  , intent(in)    :: biophysforc
     type(betr_biogeo_flux_type)       , intent(in)    :: biogeo_flux
     type(tracercoeff_type)             , intent(in)   :: tracercoeff_vars
@@ -370,7 +373,7 @@ contains
 
   !-------------------------------------------------------------------------------
   subroutine calc_bgc_reaction(this, bounds, col, lbj, ubj, num_soilc, filter_soilc,               &
-       num_soilp,filter_soilp, jtops, dtime, betrtracer_vars, tracercoeff_vars,  biophysforc, &
+       num_soilp,filter_soilp, jtops, betr_time, betrtracer_vars, tracercoeff_vars,  biophysforc, &
        tracerstate_vars, tracerflux_vars, tracerboundarycond_vars, plant_soilbgc, &
        biogeo_flux, biogeo_state, betr_status)
     !
@@ -388,6 +391,7 @@ contains
     use betr_columnType        , only : betr_column_type
     use BeTR_biogeoFluxType      , only : betr_biogeo_flux_type
     use BeTR_biogeoStateType     , only : betr_biogeo_state_type
+    use BeTR_TimeMod           , only : betr_time_type
     implicit none
     !ARGUMENTS
     class(bgc_reaction_mock_run_type) , intent(inout) :: this                       !
@@ -399,7 +403,7 @@ contains
     integer                           , intent(in)    :: filter_soilp(:)
     integer                           , intent(in)    :: jtops( : )                  ! top index of each column
     integer                           , intent(in)    :: lbj, ubj                    ! lower and upper bounds, make sure they are > 0
-    real(r8)                          , intent(in)    :: dtime                       ! model time step
+    type(betr_time_type)              , intent(in)    :: betr_time                   ! model time step
     type(betrtracer_type)             , intent(in)    :: betrtracer_vars             ! betr configuration information
     type(betr_biogeophys_input_type)  , intent(inout) :: biophysforc
     type(tracercoeff_type)            , intent(inout) :: tracercoeff_vars
@@ -429,7 +433,7 @@ contains
     if (size(filter_soilc) > 0)                               continue
     if (num_soilp > 0)                                        continue
     if (size(filter_soilp) > 0)                               continue
-    if (dtime > 0.0)                                          continue
+    if (betr_time%delta_time > 0.0)                           continue
     if (len(betrtracer_vars%betr_simname) > 0)                continue
     if (size(biophysforc%isoilorder) > 0)                     continue
   !  if (size(tracercoeff_vars%annsum_counter_col) > 0)        continue
@@ -442,7 +446,8 @@ contains
     do ll = 1, ubj
       do fc = 1, num_soilc
         c = filter_soilc(fc)
-        tracer_flx_netpro_vr(c,ll,id_trc_doc)=tracer_mobile_phase(c,ll,id_trc_doc)*(exp(-1.e-6_r8*dtime)-1._r8)
+        tracer_flx_netpro_vr(c,ll,id_trc_doc)=tracer_mobile_phase(c,ll,id_trc_doc)* &
+          (exp(-1.e-6_r8*betr_time%delta_time)-1._r8)
         tracer_mobile_phase(c,ll,id_trc_doc) = tracer_mobile_phase(c,ll,id_trc_doc)+tracer_flx_netpro_vr(c,ll,id_trc_doc)
       enddo
     enddo

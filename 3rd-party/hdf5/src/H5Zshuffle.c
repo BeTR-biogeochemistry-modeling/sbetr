@@ -5,15 +5,13 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#define H5Z_PACKAGE		/*suppress error about including H5Zpkg	  */
+#include "H5Zmodule.h"          /* This source code file is part of the H5Z module */
 
 
 #include "H5private.h"		/* Generic Functions			*/
@@ -61,7 +59,6 @@ const H5Z_class2_t H5Z_SHUFFLE[1] = {{
  *
  *-------------------------------------------------------------------------
  */
-/* ARGSUSED */
 static herr_t
 H5Z_set_local_shuffle(hid_t dcpl_id, hid_t type_id, hid_t H5_ATTR_UNUSED space_id)
 {
@@ -135,7 +132,7 @@ H5Z_filter_shuffle(unsigned flags, size_t cd_nelmts, const unsigned cd_values[],
     size_t j;                   /* Local index variable */
 #endif /* NO_DUFFS_DEVICE */
     size_t leftover;            /* Extra bytes at end of buffer */
-    size_t ret_value;           /* Return value */
+    size_t ret_value = 0;       /* Return value */
 
     FUNC_ENTER_NOAPI(0)
 
@@ -188,18 +185,25 @@ H5Z_filter_shuffle(unsigned flags, size_t cd_nelmts, const unsigned cd_values[],
                         do
                           {
                             DUFF_GUTS
+                            H5_ATTR_FALLTHROUGH
                     case 7:
                             DUFF_GUTS
+                            H5_ATTR_FALLTHROUGH
                     case 6:
                             DUFF_GUTS
+                            H5_ATTR_FALLTHROUGH
                     case 5:
                             DUFF_GUTS
+                            H5_ATTR_FALLTHROUGH
                     case 4:
                             DUFF_GUTS
+                            H5_ATTR_FALLTHROUGH
                     case 3:
                             DUFF_GUTS
+                            H5_ATTR_FALLTHROUGH
                     case 2:
                             DUFF_GUTS
+                            H5_ATTR_FALLTHROUGH
                     case 1:
                             DUFF_GUTS
                       } while (--duffs_index > 0);
@@ -213,7 +217,7 @@ H5Z_filter_shuffle(unsigned flags, size_t cd_nelmts, const unsigned cd_values[],
             if(leftover>0) {
                 /* Adjust back to end of shuffled bytes */
                 _dest -= (bytesoftype - 1);     /*lint !e794 _dest is initialized */
-                HDmemcpy((void*)_dest, (void*)_src, leftover);
+                H5MM_memcpy((void*)_dest, (void*)_src, leftover);
             }
         } /* end if */
         else {
@@ -246,18 +250,25 @@ H5Z_filter_shuffle(unsigned flags, size_t cd_nelmts, const unsigned cd_values[],
                         do
                           {
                             DUFF_GUTS
+                            H5_ATTR_FALLTHROUGH
                     case 7:
                             DUFF_GUTS
+                            H5_ATTR_FALLTHROUGH
                     case 6:
                             DUFF_GUTS
+                            H5_ATTR_FALLTHROUGH
                     case 5:
                             DUFF_GUTS
+                            H5_ATTR_FALLTHROUGH
                     case 4:
                             DUFF_GUTS
+                            H5_ATTR_FALLTHROUGH
                     case 3:
                             DUFF_GUTS
+                            H5_ATTR_FALLTHROUGH
                     case 2:
                             DUFF_GUTS
+                            H5_ATTR_FALLTHROUGH
                     case 1:
                             DUFF_GUTS
                       } while (--duffs_index > 0);
@@ -271,7 +282,7 @@ H5Z_filter_shuffle(unsigned flags, size_t cd_nelmts, const unsigned cd_values[],
             if(leftover>0) {
                 /* Adjust back to end of shuffled bytes */
                 _src -= (bytesoftype - 1);      /*lint !e794 _src is initialized */
-                HDmemcpy((void*)_dest, (void*)_src, leftover);
+                H5MM_memcpy((void*)_dest, (void*)_src, leftover);
             }
         } /* end else */
 

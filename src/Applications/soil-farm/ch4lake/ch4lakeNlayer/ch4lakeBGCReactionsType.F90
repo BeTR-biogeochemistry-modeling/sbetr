@@ -194,15 +194,20 @@ contains
    p_loc                   => this%ch4lake_bgc_index%p_loc            , &
    c13_loc                 => this%ch4lake_bgc_index%c13_loc          , &
    c14_loc                 => this%ch4lake_bgc_index%c14_loc          , &
-   move_scalar             => tracers%move_scalar                      &
+   adv_scalar              => tracers%adv_scalar                      , &
+   difu_scalar             => tracers%difu_scalar                       &
+
   )
 
   c_l=1
   latacc=calc_latacc(lat(c_l))
   if(betr_spinup_state/=0)then
-    move_scalar(tracers%id_trc_Bm)  = ch4lake_para%spinup_factor(7)
-    move_scalar(tracers%id_trc_som) = ch4lake_para%spinup_factor(8)*latacc
-    move_scalar(tracers%id_trc_pom)=ch4lake_para%spinup_factor(9)  *latacc
+    adv_scalar(tracers%id_trc_Bm)  = ch4lake_para%spinup_factor(7)
+    adv_scalar(tracers%id_trc_som) = ch4lake_para%spinup_factor(8)*latacc
+    adv_scalar(tracers%id_trc_pom)=ch4lake_para%spinup_factor(9)  *latacc
+    difu_scalar(tracers%id_trc_Bm)  = ch4lake_para%spinup_factor(7)
+    difu_scalar(tracers%id_trc_som) = ch4lake_para%spinup_factor(8)*latacc
+    difu_scalar(tracers%id_trc_pom)=ch4lake_para%spinup_factor(9)  *latacc
   endif
 
   if(enter_spinup)then
@@ -1131,8 +1136,8 @@ contains
   end subroutine Init_betrbgc
 
   !-------------------------------------------------------------------------------
-  subroutine set_boundary_conditions(this, bounds, num_soilc, filter_soilc, dz_top, betrtracer_vars, &
-       biophysforc, biogeo_flux, tracercoeff_vars, tracerboundarycond_vars, betr_status)
+  subroutine set_boundary_conditions(this, bounds, num_soilc, filter_soilc, jtops, dz_top, &
+       betr_time, betrtracer_vars, biophysforc, biogeo_flux, tracercoeff_vars, tracerboundarycond_vars, betr_status)
     !
     ! !DESCRIPTION:
     ! set up boundary conditions for tracer movement
@@ -1145,6 +1150,7 @@ contains
     use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
     use UnitConvertMod         , only : ppm2molv
     use TracerCoeffType        , only : tracercoeff_type
+    use BeTR_TimeMod           , only : betr_time_type
     implicit none
     ! !ARGUMENTS:
     class(ch4lake_bgc_reaction_type) , intent(inout)    :: this
@@ -1153,6 +1159,8 @@ contains
     integer                              , intent(in)    :: filter_soilc(:)         ! column filter
     type(betrtracer_type)                , intent(in)    :: betrtracer_vars
     real(r8)                             , intent(in)    :: dz_top(bounds%begc: )
+    integer                              , intent(in)    :: jtops(bounds%begc: )
+    type(betr_time_type)                 , intent(in)    :: betr_time
     type(betr_biogeophys_input_type)     , intent(in)    :: biophysforc
     type(betr_biogeo_flux_type)          , intent(in)    :: biogeo_flux
     type(tracercoeff_type)               , intent(in)   :: tracercoeff_vars
@@ -1233,7 +1241,7 @@ contains
   !-------------------------------------------------------------------------------
 
   subroutine calc_bgc_reaction(this, bounds, col, lbj, ubj, num_soilc, filter_soilc, &
-       num_soilp,filter_soilp, jtops, dtime, betrtracer_vars, tracercoeff_vars, biophysforc,    &
+       num_soilp,filter_soilp, jtops, betr_time, betrtracer_vars, tracercoeff_vars, biophysforc,    &
        tracerstate_vars, tracerflux_vars, tracerboundarycond_vars, plant_soilbgc, &
        biogeo_flux,  biogeo_state, betr_status)
 
@@ -1259,6 +1267,7 @@ contains
     use BeTR_biogeoStateType     , only : betr_biogeo_state_type
     use ch4lakePlantSoilBGCType   , only : ch4lake_plant_soilbgc_type
     use betr_ctrl                , only : betr_spinup_state
+    use BeTR_TimeMod             , only : betr_time_type
     implicit none
     ! !ARGUMENTS
     class(ch4lake_bgc_reaction_type) , intent(inout) :: this
@@ -1270,7 +1279,7 @@ contains
     integer                              , intent(in) :: filter_soilp(:)               ! pft filter
     integer                              , intent(in) :: jtops(bounds%begc: )          ! top index of each column
     integer                              , intent(in) :: lbj, ubj                      ! lower and upper bounds, make sure they are > 0
-    real(r8)                             , intent(in) :: dtime                         ! model time step
+    type(betr_time_type)                 , intent(in) :: betr_time                         ! model time step
     type(betrtracer_type)                , intent(in) :: betrtracer_vars               ! betr configuration information
     type(tracercoeff_type)               , intent(inout) :: tracercoeff_vars
     type(betr_biogeophys_input_type)     , intent(inout) :: biophysforc
@@ -1322,7 +1331,7 @@ contains
 
         if(this%ch4lake_forc(c,j)%debug)print*,'runbgc',j
         !temperature adaptation
-        call this%ch4lake(c,j)%runbgc(is_surflit, dtime, this%ch4lake_forc(c,j),nstates, &
+        call this%ch4lake(c,j)%runbgc(is_surflit, betr_time%delta_time, this%ch4lake_forc(c,j),nstates, &
             ystates0, ystatesf, betr_status)
         if(betr_status%check_status())then
           write(laystr,'(I2.2)')j
@@ -1548,7 +1557,6 @@ contains
     use tracerstatetype   , only : tracerstate_type
     use betr_varcon       , only : spval => bspval, ispval => bispval
     use betr_varcon       , only : denh2o => bdenh2o
-    use tracer_varcon     , only : nlevtrc_soil  => betr_nlevtrc_soil
     use betr_columnType   , only : betr_column_type
     use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
     use UnitConvertMod, only : ppm2molv

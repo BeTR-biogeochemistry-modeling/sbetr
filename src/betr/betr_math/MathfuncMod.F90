@@ -39,6 +39,7 @@ module MathfuncMod
   public :: bisnan
   public :: apvb
   public :: countelm
+  public :: polyval
   interface apvb
     module procedure apvb_v, apvb_s
   end interface apvb
@@ -777,4 +778,23 @@ contains
     it = it + 1
   enddo
   end subroutine flux_correction_fullm
+  !-------------------------------------------------------------------------------
+  function polyval(p,x)result(ans)
+
+  implicit none
+  real(r8), dimension(:), intent(in) :: p
+  real(r8), intent(in) :: x
+
+  integer :: nl, jj
+  real(r8) :: ans
+
+  nl = size(p)
+
+  ans = p(1)
+  do jj = 2, nl
+     ans=ans*x+p(jj)
+  enddo
+  return
+  end function polyval
+
 end module MathfuncMod

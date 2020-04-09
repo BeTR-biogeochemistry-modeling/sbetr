@@ -16,8 +16,7 @@ BGC        = not-set
 SBETR      = not-set
 UGM        = not-set
 # This proxies everything to the builddir cmake.
-netcdf_fflags = not-set
-netcdf_flibs = not-set
+netcdfsys = not-set
 
 cputype = $(shell uname -m | sed "s/\\ /_/g")
 systype = $(shell uname -s)
@@ -127,16 +126,15 @@ ifeq ($(sanitize), 1)
 endif
 
 # netcdf
-ifneq ($(netcdf_fflags), not-set)
-  NETCDF_FFLAGS = $(netcdf_fflags)
+
+ifeq ($(netcdfsys), not-set)
+  NETCDF_FFLAGS =""
+  NETCDF_FLIBS =""
 else
   NETCDF_FFLAGS = $(shell nc-config --prefix)/include
-endif
-ifneq ($(netcdf_flibs), not-set)
-  NETCDF_FLIBS = $(netcdf_flibs)
-else
   NETCDF_FLIBS = $(shell nc-config --flibs)
 endif
+
 CONFIG_FLAGS += -DTPL_NETCDF_INCLUDE_DIRS=" $(NETCDF_FFLAGS)"
 CONFIG_FLAGS += -DTPL_NETCDF_LIBRARIES="$(NETCDF_FLIBS)"
 

@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /* Programmer:  Quincey Koziol <koziol@ncsa.uiuc.edu>
@@ -22,14 +20,19 @@
  * This file needs to access private datatypes from the H5HF package.
  * This file also needs to access the fractal heap testing code.
  */
-#define H5HF_PACKAGE
+#define H5HF_FRIEND		/*suppress error about including H5HFpkg	  */
 #define H5HF_TESTING
 #include "H5HFpkg.h"		/* Fractal heaps			*/
 
+#define H5F_FRIEND      /*suppress error about including H5Fpkg   */
+#define H5F_TESTING
+#include "H5Fpkg.h"
+
 /* Other private headers that this test requires */
-#include "H5Iprivate.h"
-#include "H5MMprivate.h"	/* Memory management			*/
-#include "H5VMprivate.h"		/* Vectors and arrays 			*/
+#include "H5CXprivate.h"        /* API Contexts                         */
+#include "H5MMprivate.h"        /* Memory management			*/
+#include "H5VLprivate.h"        /* Virtual Object Layer                     */
+#include "H5VMprivate.h"        /* Vectors and arrays 			*/
 
 /* Max. testfile name length */
 #define FHEAP_FILENAME_LEN      1024
@@ -76,6 +79,10 @@
 #define IBLOCK_MAX_DROWS(fh, pos) H5HF_get_iblock_max_drows_test(fh, pos) /* Max. # of direct block rows in a indirect block */
 #define DBLOCK_SIZE(fh, r) H5HF_get_dblock_size_test(fh, r)     /* Size of a direct block in a given row */
 #define DBLOCK_FREE(fh, r) H5HF_get_dblock_free_test(fh, r)     /* Free space in a direct block of a given row */
+
+/* The number of settings for testing: page buffering, file space strategy and persisting free-space */
+#define NUM_PB_FS                   6
+#define PAGE_BUFFER_PAGE_SIZE       4096 
 
 const char *FILENAME[] = {
     "fheap",
@@ -125,7 +132,8 @@ typedef struct fheap_test_param_t {
     fheap_test_del_drain_t drain_half;  /* Whether to drain half of the objects & refill, when deleting objects */
     fheap_test_fill_t fill;             /* How to "bulk" fill heap blocks */
     size_t actual_id_len;               /* The actual length of heap IDs for a test */
-    fheap_test_comp_t comp;             /* Whether to compressed the blocks or not */
+    fheap_test_comp_t comp;             /* Whether to compress the blocks or not */
+    hid_t my_fcpl;                      /* File creation property list with file space strategy setting */
 } fheap_test_param_t;
 
 /* Heap state information */
@@ -162,7 +170,7 @@ size_t shared_alloc_ids_g = 0;  /* # of shared heap IDs allocated in array */
 static int init_small_cparam(H5HF_create_t *cparam);
 static int init_large_cparam(H5HF_create_t *cparam);
 static int check_stats(const H5HF_t *fh, const fheap_heap_state_t *state);
-static int del_objs(H5F_t *f, hid_t dxpl, H5HF_t **fh, fheap_test_param_t *tparam,
+static int del_objs(H5F_t *f, H5HF_t **fh, fheap_test_param_t *tparam,
     fheap_heap_state_t *state, fheap_heap_ids_t *keep_ids);
 
 
@@ -352,7 +360,7 @@ op_memcpy(const void *obj, size_t obj_len, void *op_data)
  *-------------------------------------------------------------------------
  */
 static int
-add_obj(H5HF_t *fh, hid_t dxpl, size_t obj_off,
+add_obj(H5HF_t *fh, size_t obj_off,
     size_t obj_size, fheap_heap_state_t *state, fheap_heap_ids_t *keep_ids)
 {
     unsigned char heap_id[MAX_HEAP_ID_LEN]; /* Heap ID for object inserted */
@@ -374,7 +382,7 @@ add_obj(H5HF_t *fh, hid_t dxpl, size_t obj_off,
 
     /* Insert object */
     HDmemset(heap_id, 0, id_len);
-    if(H5HF_insert(fh, dxpl, obj_size, obj, heap_id) < 0)
+    if(H5HF_insert(fh, obj_size, obj, heap_id) < 0)
         FAIL_STACK_ERROR
 
     /* Check for tracking the heap's state */
@@ -402,11 +410,11 @@ add_obj(H5HF_t *fh, hid_t dxpl, size_t obj_off,
     } /* end if */
 
     /* Read in object */
-    if(H5HF_get_obj_len(fh, dxpl, heap_id, &robj_size) < 0)
+    if(H5HF_get_obj_len(fh, heap_id, &robj_size) < 0)
         FAIL_STACK_ERROR
     if(obj_size != robj_size)
         TEST_ERROR
-    if(H5HF_read(fh, dxpl, heap_id, shared_robj_g) < 0)
+    if(H5HF_read(fh, heap_id, shared_robj_g) < 0)
         FAIL_STACK_ERROR
     if(HDmemcmp(obj, shared_robj_g, obj_size))
         TEST_ERROR
@@ -470,16 +478,16 @@ get_del_string(const fheap_test_param_t *tparam)
     /* Remove half of total objects from heap */
     if(tparam->del_dir == FHEAP_DEL_FORWARD)
         if(tparam->drain_half == FHEAP_DEL_DRAIN_ALL)
-            str = HDstrdup("(all - forward)");
+            str = H5MM_strdup("(all - forward)");
         else
-            str = HDstrdup("(half, refill, all - forward)");
+            str = H5MM_strdup("(half, refill, all - forward)");
     else if(tparam->del_dir == FHEAP_DEL_REVERSE)
         if(tparam->drain_half == FHEAP_DEL_DRAIN_ALL)
-            str = HDstrdup("(all - reverse)");
+            str = H5MM_strdup("(all - reverse)");
         else
-            str = HDstrdup("(half, refill, all - reverse)");
+            str = H5MM_strdup("(half, refill, all - reverse)");
     else
-        str = HDstrdup("(all - deleting heap)");
+        str = H5MM_strdup("(all - deleting heap)");
 
     return(str);
 } /* get_del_string() */
@@ -498,7 +506,7 @@ get_del_string(const fheap_test_param_t *tparam)
  *
  *-------------------------------------------------------------------------
  */
-static size_t
+H5_ATTR_PURE static size_t
 get_fill_size(const fheap_test_param_t *tparam)
 {
     switch(tparam->fill) {
@@ -531,6 +539,13 @@ get_fill_size(const fheap_test_param_t *tparam)
  *
  *-------------------------------------------------------------------------
  */
+/* Disable warning for "format not a string literal" here -QAK */
+/*
+ *      This pragma only needs to surround the snprintf() calls with
+ *      test_desc in the code below, but early (4.4.7, at least) gcc only
+ *      allows diagnostic pragmas to be toggled outside of functions.
+ */
+H5_GCC_DIAG_OFF(format-nonliteral)
 static int
 begin_test(fheap_test_param_t *tparam, const char *base_desc,
     fheap_heap_ids_t *keep_ids, size_t *fill_size)
@@ -543,8 +558,8 @@ begin_test(fheap_test_param_t *tparam, const char *base_desc,
      */
     del_str = get_del_string(tparam);
     HDassert(del_str);
-    test_desc = H5MM_malloc(HDstrlen(del_str) + HDstrlen(base_desc));
-    sprintf(test_desc, base_desc, del_str);
+    test_desc = (char *)H5MM_malloc(HDstrlen(del_str) + HDstrlen(base_desc));
+    HDsprintf(test_desc, base_desc, del_str);
     TESTING(test_desc);
     H5MM_xfree(del_str);
     H5MM_xfree(test_desc);
@@ -559,6 +574,7 @@ begin_test(fheap_test_param_t *tparam, const char *base_desc,
     /* Success */
     return(0);
 } /* end begin_test() */
+H5_GCC_DIAG_ON(format-nonliteral)
 
 
 /*-------------------------------------------------------------------------
@@ -575,30 +591,37 @@ begin_test(fheap_test_param_t *tparam, const char *base_desc,
  *-------------------------------------------------------------------------
  */
 static int
-reopen_file(hid_t *file, H5F_t **f, const char *filename, hid_t fapl, hid_t dxpl,
+reopen_file(hid_t *file, H5F_t **f, const char *filename, hid_t fapl,
     H5HF_t **fh, haddr_t fh_addr, const fheap_test_param_t *tparam)
 {
     /* Check for closing & re-opening the heap */
     /* (actually will close & re-open the file as well) */
     if(tparam->reopen_heap) {
         /* Close heap */
-        if(H5HF_close(*fh, dxpl) < 0)
+        if(H5HF_close(*fh) < 0)
             FAIL_STACK_ERROR
+        *fh = NULL;
 
         /* Close file */
         if(H5Fclose(*file) < 0)
             FAIL_STACK_ERROR
+        *file = (-1);
+        *f = NULL;
 
         /* Re-open the file */
         if((*file = H5Fopen(filename, H5F_ACC_RDWR, fapl)) < 0)
             FAIL_STACK_ERROR
 
         /* Get a pointer to the internal file object */
-        if(NULL == (*f = H5I_object(*file)))
+        if(NULL == (*f = (H5F_t *)H5VL_object(*file)))
+            FAIL_STACK_ERROR
+
+        /* Ignore metadata tags in the file's cache */
+        if (H5AC_ignore_tags(*f) < 0)
             FAIL_STACK_ERROR
 
         /* Re-open heap */
-        if(NULL == (*fh = H5HF_open(*f, dxpl, fh_addr)))
+        if(NULL == (*fh = H5HF_open(*f, fh_addr)))
             FAIL_STACK_ERROR
     } /* end if */
 
@@ -625,7 +648,7 @@ error:
  *-------------------------------------------------------------------------
  */
 static int
-open_heap(char *filename, hid_t fapl, hid_t dxpl, const H5HF_create_t *cparam,
+open_heap(char *filename, hid_t fapl, const H5HF_create_t *cparam,
     const fheap_test_param_t *tparam, hid_t *file, H5F_t **f, H5HF_t **fh,
     haddr_t *fh_addr, fheap_heap_state_t *state, h5_stat_size_t *empty_size)
 {
@@ -635,17 +658,21 @@ open_heap(char *filename, hid_t fapl, hid_t dxpl, const H5HF_create_t *cparam,
     h5_fixname(FILENAME[0], fapl, filename, (size_t)FHEAP_FILENAME_LEN);
 
     /* Create the file to work on */
-    if((*file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((*file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         FAIL_STACK_ERROR
 
     /* Check for deleting the entire heap */
     if(tparam->del_dir != FHEAP_DEL_HEAP) {
         /* Get a pointer to the internal file object */
-        if(NULL == (*f = H5I_object(*file)))
+        if(NULL == (*f = (H5F_t *)H5VL_object(*file)))
+            FAIL_STACK_ERROR
+
+        /* Ignore metadata tags in the file's cache */
+        if (H5AC_ignore_tags(*f) < 0)
             FAIL_STACK_ERROR
 
         /* Create absolute heap */
-        if(NULL == (*fh = H5HF_create(*f, dxpl, cparam)))
+        if(NULL == (*fh = H5HF_create(*f, cparam)))
             FAIL_STACK_ERROR
         if(H5HF_get_id_len(*fh, &id_len) < 0)
             FAIL_STACK_ERROR
@@ -662,8 +689,9 @@ open_heap(char *filename, hid_t fapl, hid_t dxpl, const H5HF_create_t *cparam,
         /* Prepare for querying the size of a file with an empty heap */
 
         /* Close (empty) heap */
-        if(H5HF_close(*fh, dxpl) < 0)
+        if(H5HF_close(*fh) < 0)
             FAIL_STACK_ERROR
+        *fh = NULL;
     } /* end if */
 
     /* Close file */
@@ -679,13 +707,17 @@ open_heap(char *filename, hid_t fapl, hid_t dxpl, const H5HF_create_t *cparam,
         FAIL_STACK_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (*f = H5I_object(*file)))
+    if(NULL == (*f = (H5F_t *)H5VL_object(*file)))
+        FAIL_STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(*f) < 0)
         FAIL_STACK_ERROR
 
     /* Check for deleting the entire heap */
     if(tparam->del_dir == FHEAP_DEL_HEAP) {
         /* Create absolute heap */
-        if(NULL == (*fh = H5HF_create(*f, dxpl, cparam)))
+        if(NULL == (*fh = H5HF_create(*f, cparam)))
             FAIL_STACK_ERROR
         if(H5HF_get_id_len(*fh, &id_len) < 0)
             FAIL_STACK_ERROR
@@ -701,7 +733,7 @@ open_heap(char *filename, hid_t fapl, hid_t dxpl, const H5HF_create_t *cparam,
     } /* end if */
     else {
         /* Re-open heap */
-        if(NULL == (*fh = H5HF_open(*f, dxpl, *fh_addr)))
+        if(NULL == (*fh = H5HF_open(*f, *fh_addr)))
             FAIL_STACK_ERROR
     } /* end else */
 
@@ -728,25 +760,26 @@ error:
  *-------------------------------------------------------------------------
  */
 static int
-reopen_heap(H5F_t *f, hid_t dxpl, H5HF_t **fh, haddr_t fh_addr,
+reopen_heap(H5F_t *f, H5HF_t **fh, haddr_t fh_addr,
     const fheap_test_param_t *tparam)
 {
     /* Check for closing & re-opening the heap */
     if(tparam->reopen_heap) {
         /* Close (empty) heap */
-        if(H5HF_close(*fh, dxpl) < 0)
+        if(H5HF_close(*fh) < 0)
             FAIL_STACK_ERROR
+        *fh = NULL;
 
         /* Re-open heap */
-        if(NULL == (*fh = H5HF_open(f, dxpl, fh_addr)))
+        if(NULL == (*fh = H5HF_open(f, fh_addr)))
             FAIL_STACK_ERROR
     } /* end if */
 
     /* Success */
-    return(0);
+    return 0;
 
 error:
-    return(-1);
+    return -1;
 } /* end reopen_heap() */
 
 
@@ -764,7 +797,7 @@ error:
  *-------------------------------------------------------------------------
  */
 static int
-close_heap(char *filename, hid_t fapl, hid_t dxpl, fheap_test_param_t *tparam,
+close_heap(char *filename, hid_t fapl, fheap_test_param_t *tparam,
     hid_t file, H5F_t *f, H5HF_t **fh, haddr_t fh_addr,
     fheap_heap_state_t *state, fheap_heap_ids_t *keep_ids,
     h5_stat_size_t empty_size)
@@ -772,7 +805,7 @@ close_heap(char *filename, hid_t fapl, hid_t dxpl, fheap_test_param_t *tparam,
     h5_stat_size_t       file_size;              /* Size of file currently */
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -782,19 +815,19 @@ close_heap(char *filename, hid_t fapl, hid_t dxpl, fheap_test_param_t *tparam,
     /* Check for deleting the objects in the heap */
     if(tparam->del_dir != FHEAP_DEL_HEAP) {
         /* Delete objects inserted (either forward or reverse order) */
-        if(del_objs(f, dxpl, fh, tparam, state, keep_ids))
+        if(del_objs(f, fh, tparam, state, keep_ids))
             FAIL_STACK_ERROR
     } /* end if */
 
     /* Close the fractal heap */
-    if(H5HF_close(*fh, dxpl) < 0)
+    if(H5HF_close(*fh) < 0)
         FAIL_STACK_ERROR
     *fh = NULL;
 
     /* Check for deleting the entire heap */
     if(tparam->del_dir == FHEAP_DEL_HEAP) {
         /* Delete heap */
-        if(H5HF_delete(f, dxpl, fh_addr) < 0)
+        if(H5HF_delete(f, fh_addr) < 0)
             FAIL_STACK_ERROR
     } /* end if */
 
@@ -833,7 +866,7 @@ error:
  *-------------------------------------------------------------------------
  */
 static int
-del_objs_half_refill(H5F_t *f, hid_t dxpl, H5HF_t **fh, fheap_test_param_t *tparam,
+del_objs_half_refill(H5F_t *f, H5HF_t **fh, fheap_test_param_t *tparam,
     fheap_heap_ids_t *keep_ids)
 {
     unsigned char *wobj;        /* Buffer for object to insert */
@@ -868,11 +901,11 @@ del_objs_half_refill(H5F_t *f, hid_t dxpl, H5HF_t **fh, fheap_test_param_t *tpar
     half_nobjs = keep_ids->num_ids / 2;
     for(u = 0; u < half_nobjs; u++) {
         /* Remove object from heap */
-        if(H5HF_remove(*fh, dxpl, &keep_ids->ids[id_len * obj_idx]) < 0)
+        if(H5HF_remove(*fh, &keep_ids->ids[id_len * obj_idx]) < 0)
             FAIL_STACK_ERROR
 
         /* Check for closing & re-opening the heap */
-        if(reopen_heap(f, dxpl, fh, fh_addr, tparam) < 0)
+        if(reopen_heap(f, fh, fh_addr, tparam) < 0)
             TEST_ERROR
 
         /* Adjust index of object to delete next */
@@ -890,11 +923,11 @@ del_objs_half_refill(H5F_t *f, hid_t dxpl, H5HF_t **fh, fheap_test_param_t *tpar
     for(u = 0; u < half_nobjs; u++) {
         /* Re-insert object */
         wobj = &shared_wobj_g[keep_ids->offs[obj_idx]];
-        if(H5HF_insert(*fh, dxpl, keep_ids->lens[obj_idx], wobj, &keep_ids->ids[id_len * obj_idx]) < 0)
+        if(H5HF_insert(*fh, keep_ids->lens[obj_idx], wobj, &keep_ids->ids[id_len * obj_idx]) < 0)
             FAIL_STACK_ERROR
 
         /* Check for closing & re-opening the heap */
-        if(reopen_heap(f, dxpl, fh, fh_addr, tparam) < 0)
+        if(reopen_heap(f, fh, fh_addr, tparam) < 0)
             TEST_ERROR
 
         /* Adjust index of object to delete next */
@@ -927,7 +960,7 @@ error:
  *-------------------------------------------------------------------------
  */
 static int
-del_objs(H5F_t *f, hid_t dxpl, H5HF_t **fh, fheap_test_param_t *tparam,
+del_objs(H5F_t *f, H5HF_t **fh, fheap_test_param_t *tparam,
     fheap_heap_state_t *state, fheap_heap_ids_t *keep_ids)
 {
     haddr_t fh_addr = HADDR_UNDEF;      /* Address of fractal heap */
@@ -943,7 +976,7 @@ del_objs(H5F_t *f, hid_t dxpl, H5HF_t **fh, fheap_test_param_t *tparam,
 
     /* Check for first deleting half of objects & then re-inserting them */
     if(tparam->drain_half == FHEAP_DEL_DRAIN_HALF)
-        if(del_objs_half_refill(f, dxpl, fh, tparam, keep_ids))
+        if(del_objs_half_refill(f, fh, tparam, keep_ids))
             TEST_ERROR
 
     /* Check for closing & re-opening the heap */
@@ -965,11 +998,11 @@ del_objs(H5F_t *f, hid_t dxpl, H5HF_t **fh, fheap_test_param_t *tparam,
         obj_idx = keep_ids->num_ids - 1;
     for(u = 0; u < keep_ids->num_ids; u++) {
         /* Remove object from heap */
-        if(H5HF_remove(*fh, dxpl, &keep_ids->ids[id_len * obj_idx]) < 0)
+        if(H5HF_remove(*fh, &keep_ids->ids[id_len * obj_idx]) < 0)
             FAIL_STACK_ERROR
 
         /* Check for closing & re-opening the heap */
-        if(reopen_heap(f, dxpl, fh, fh_addr, tparam) < 0)
+        if(reopen_heap(f, fh, fh_addr, tparam) < 0)
             TEST_ERROR
 
         /* Adjust index of object to delete next */
@@ -1019,7 +1052,7 @@ error:
  *-------------------------------------------------------------------------
  */
 static int
-fill_heap(H5HF_t *fh, hid_t dxpl, unsigned block_row, size_t obj_size,
+fill_heap(H5HF_t *fh, unsigned block_row, size_t obj_size,
     fheap_heap_state_t *state, fheap_heap_ids_t *keep_ids)
 {
     unsigned char *wobj;                /* Buffer for object to insert */
@@ -1064,11 +1097,11 @@ fill_heap(H5HF_t *fh, hid_t dxpl, unsigned block_row, size_t obj_size,
         /* Check for needing to increase size of heap ID array */
         if(num_ids > shared_alloc_ids_g) {
             shared_alloc_ids_g = MAX(1024, (shared_alloc_ids_g * 2));
-            if(NULL == (shared_ids_g = H5MM_realloc(shared_ids_g, id_len * shared_alloc_ids_g)))
+            if(NULL == (shared_ids_g = (unsigned char *)H5MM_realloc(shared_ids_g, id_len * shared_alloc_ids_g)))
                 TEST_ERROR
-            if(NULL == (shared_lens_g = H5MM_realloc(shared_lens_g, sizeof(size_t) * shared_alloc_ids_g)))
+            if(NULL == (shared_lens_g = (size_t *)H5MM_realloc(shared_lens_g, sizeof(size_t) * shared_alloc_ids_g)))
                 TEST_ERROR
-            if(NULL == (shared_offs_g = H5MM_realloc(shared_offs_g, sizeof(size_t) * shared_alloc_ids_g)))
+            if(NULL == (shared_offs_g = (size_t *)H5MM_realloc(shared_offs_g, sizeof(size_t) * shared_alloc_ids_g)))
                 TEST_ERROR
             curr_id_ptr = &shared_ids_g[(num_ids - 1) * id_len];
             curr_len_ptr = &shared_lens_g[(num_ids - 1)];
@@ -1076,7 +1109,7 @@ fill_heap(H5HF_t *fh, hid_t dxpl, unsigned block_row, size_t obj_size,
         } /* end if */
 
         /* Insert object */
-        if(H5HF_insert(fh, dxpl, obj_size, wobj, curr_id_ptr) < 0)
+        if(H5HF_insert(fh, obj_size, wobj, curr_id_ptr) < 0)
             FAIL_STACK_ERROR
         *curr_len_ptr = obj_size;
         *curr_off_ptr = obj_off;
@@ -1115,11 +1148,11 @@ fill_heap(H5HF_t *fh, hid_t dxpl, unsigned block_row, size_t obj_size,
         /* Check for needing to increase size of heap ID array */
         if(num_ids > shared_alloc_ids_g) {
             shared_alloc_ids_g = MAX(1024, (shared_alloc_ids_g * 2));
-            if(NULL == (shared_ids_g = H5MM_realloc(shared_ids_g, id_len * shared_alloc_ids_g)))
+            if(NULL == (shared_ids_g = (unsigned char *)H5MM_realloc(shared_ids_g, id_len * shared_alloc_ids_g)))
                 TEST_ERROR
-            if(NULL == (shared_lens_g = H5MM_realloc(shared_lens_g, sizeof(size_t) * shared_alloc_ids_g)))
+            if(NULL == (shared_lens_g = (size_t *)H5MM_realloc(shared_lens_g, sizeof(size_t) * shared_alloc_ids_g)))
                 TEST_ERROR
-            if(NULL == (shared_offs_g = H5MM_realloc(shared_offs_g, sizeof(size_t) * shared_alloc_ids_g)))
+            if(NULL == (shared_offs_g = (size_t *)H5MM_realloc(shared_offs_g, sizeof(size_t) * shared_alloc_ids_g)))
                 TEST_ERROR
             curr_id_ptr = &shared_ids_g[(num_ids - 1) * id_len];
             curr_len_ptr = &shared_lens_g[(num_ids - 1)];
@@ -1127,7 +1160,7 @@ fill_heap(H5HF_t *fh, hid_t dxpl, unsigned block_row, size_t obj_size,
         } /* end if */
 
         /* Insert last object into the heap, using the remaining free space */
-        if(H5HF_insert(fh, dxpl, last_obj_len, wobj, curr_id_ptr) < 0)
+        if(H5HF_insert(fh, last_obj_len, wobj, curr_id_ptr) < 0)
             FAIL_STACK_ERROR
         *curr_len_ptr = last_obj_len;
         *curr_off_ptr = obj_off;
@@ -1152,7 +1185,7 @@ fill_heap(H5HF_t *fh, hid_t dxpl, unsigned block_row, size_t obj_size,
     curr_off_ptr = shared_offs_g;
     for(u = 0; u < num_ids; u++) {
         /* Read in object */
-        if(H5HF_read(fh, dxpl, curr_id_ptr, shared_robj_g) < 0)
+        if(H5HF_read(fh, curr_id_ptr, shared_robj_g) < 0)
             FAIL_STACK_ERROR
 
         /* Check that object is correct */
@@ -1171,11 +1204,11 @@ fill_heap(H5HF_t *fh, hid_t dxpl, unsigned block_row, size_t obj_size,
         /* Check for needing to increase size of heap ID array */
         if(keep_ids->num_ids + num_ids > keep_ids->alloc_ids) {
             keep_ids->alloc_ids = MAX(1024, (keep_ids->alloc_ids * 2));
-            if(NULL == (keep_ids->ids = H5MM_realloc(keep_ids->ids, id_len * keep_ids->alloc_ids)))
+            if(NULL == (keep_ids->ids = (unsigned char *)H5MM_realloc(keep_ids->ids, id_len * keep_ids->alloc_ids)))
                 TEST_ERROR
-            if(NULL == (keep_ids->lens = H5MM_realloc(keep_ids->lens, sizeof(size_t) * keep_ids->alloc_ids)))
+            if(NULL == (keep_ids->lens = (size_t *)H5MM_realloc(keep_ids->lens, sizeof(size_t) * keep_ids->alloc_ids)))
                 TEST_ERROR
-            if(NULL == (keep_ids->offs = H5MM_realloc(keep_ids->offs, sizeof(size_t) * keep_ids->alloc_ids)))
+            if(NULL == (keep_ids->offs = (size_t *)H5MM_realloc(keep_ids->offs, sizeof(size_t) * keep_ids->alloc_ids)))
                 TEST_ERROR
         } /* end if */
 
@@ -1211,7 +1244,7 @@ error:
  *-------------------------------------------------------------------------
  */
 static int
-fill_root_row(H5HF_t *fh, hid_t dxpl, unsigned row, size_t obj_size,
+fill_root_row(H5HF_t *fh, unsigned row, size_t obj_size,
     fheap_heap_state_t *state, fheap_heap_ids_t *keep_ids)
 {
     hsize_t     first_free_space;       /* Size of free space in heap after the first block */
@@ -1281,7 +1314,7 @@ fill_root_row(H5HF_t *fh, hid_t dxpl, unsigned row, size_t obj_size,
         state->man_alloc_size += block_size;
 
         /* Fill a direct heap block up */
-        if(fill_heap(fh, dxpl, row, obj_size, state, keep_ids))
+        if(fill_heap(fh, row, obj_size, state, keep_ids))
             TEST_ERROR
     } /* end for */
 
@@ -1308,7 +1341,7 @@ error:
  *-------------------------------------------------------------------------
  */
 static int
-fill_partial_row(H5HF_t *fh, hid_t dxpl, unsigned row, unsigned width,
+fill_partial_row(H5HF_t *fh, unsigned row, unsigned width,
     size_t obj_size, fheap_heap_state_t *state, fheap_heap_ids_t *keep_ids)
 {
     size_t      block_size;             /* Size of direct block in this row */
@@ -1327,7 +1360,7 @@ fill_partial_row(H5HF_t *fh, hid_t dxpl, unsigned row, unsigned width,
         state->man_alloc_size += block_size;
 
         /* Fill a direct heap block up */
-        if(fill_heap(fh, dxpl, row, obj_size, state, keep_ids))
+        if(fill_heap(fh, row, obj_size, state, keep_ids))
             TEST_ERROR
     } /* end for */
 
@@ -1354,7 +1387,7 @@ error:
  *-------------------------------------------------------------------------
  */
 static int
-fill_row(H5HF_t *fh, hid_t dxpl, unsigned row, size_t obj_size,
+fill_row(H5HF_t *fh, unsigned row, size_t obj_size,
     fheap_heap_state_t *state, fheap_heap_ids_t *keep_ids)
 {
     /* Sanity check */
@@ -1362,7 +1395,7 @@ fill_row(H5HF_t *fh, hid_t dxpl, unsigned row, size_t obj_size,
     HDassert(state);
 
     /* Fill the entire row (with the partial row fill routine) */
-    if(fill_partial_row(fh, dxpl, row, DTABLE_WIDTH(fh), obj_size, state, keep_ids))
+    if(fill_partial_row(fh, row, DTABLE_WIDTH(fh), obj_size, state, keep_ids))
         TEST_ERROR
 
     /* Operations succeeded */
@@ -1391,7 +1424,7 @@ error:
  *-------------------------------------------------------------------------
  */
 static int
-fill_root_direct(H5HF_t *fh, hid_t dxpl, size_t obj_size,
+fill_root_direct(H5HF_t *fh, size_t obj_size,
     fheap_heap_state_t *state, fheap_heap_ids_t *keep_ids)
 {
     unsigned    max_dblock_rows;        /* Max. # of direct block rows in indirect block */
@@ -1403,7 +1436,7 @@ fill_root_direct(H5HF_t *fh, hid_t dxpl, size_t obj_size,
 
     /* Loop over rows */
     for(row = 0; row < max_dblock_rows; row++)
-        if(fill_root_row(fh, dxpl, row, obj_size, state, keep_ids))
+        if(fill_root_row(fh, row, obj_size, state, keep_ids))
             TEST_ERROR
 
     /* Operations succeeded */
@@ -1431,7 +1464,7 @@ error:
  *-------------------------------------------------------------------------
  */
 static int
-fill_2nd_indirect(H5HF_t *fh, hid_t dxpl, unsigned pos, size_t obj_size,
+fill_2nd_indirect(H5HF_t *fh, unsigned pos, size_t obj_size,
     fheap_heap_state_t *state, fheap_heap_ids_t *keep_ids)
 {
     unsigned    max_dblock_rows;        /* Max. # of direct block rows in indirect block */
@@ -1443,7 +1476,7 @@ fill_2nd_indirect(H5HF_t *fh, hid_t dxpl, unsigned pos, size_t obj_size,
 
     /* Loop over rows */
     for(row = 0; row < max_dblock_rows; row++)
-        if(fill_row(fh, dxpl, row, obj_size, state, keep_ids))
+        if(fill_row(fh, row, obj_size, state, keep_ids))
             TEST_ERROR
 
     /* Operations succeeded */
@@ -1470,7 +1503,7 @@ error:
  *-------------------------------------------------------------------------
  */
 static int
-fill_all_direct(H5HF_t *fh, hid_t dxpl, size_t obj_size,
+fill_all_direct(H5HF_t *fh, size_t obj_size,
     fheap_heap_state_t *state, fheap_heap_ids_t *keep_ids)
 {
     unsigned    max_dblock_rows;        /* Max. # of direct block rows in indirect block */
@@ -1482,7 +1515,7 @@ fill_all_direct(H5HF_t *fh, hid_t dxpl, size_t obj_size,
 
     /* Loop over rows */
     for(row = 0; row < max_dblock_rows; row++)
-        if(fill_row(fh, dxpl, row, obj_size, state, keep_ids))
+        if(fill_row(fh, row, obj_size, state, keep_ids))
             TEST_ERROR
 
     /* Operations succeeded */
@@ -1510,7 +1543,7 @@ error:
  *-------------------------------------------------------------------------
  */
 static int
-fill_2nd_indirect_row(H5HF_t *fh, hid_t dxpl, unsigned pos, size_t obj_size,
+fill_2nd_indirect_row(H5HF_t *fh, unsigned pos, size_t obj_size,
     fheap_heap_state_t *state, fheap_heap_ids_t *keep_ids)
 {
     unsigned    width;                  /* Width of heap's doubling table */
@@ -1521,7 +1554,7 @@ fill_2nd_indirect_row(H5HF_t *fh, hid_t dxpl, unsigned pos, size_t obj_size,
 
     /* Loop over row of indirect blocks */
     for(u = 0; u < width; u++)
-        if(fill_2nd_indirect(fh, dxpl, pos, obj_size, state, keep_ids))
+        if(fill_2nd_indirect(fh, pos, obj_size, state, keep_ids))
             TEST_ERROR
 
     /* Operations succeeded */
@@ -1549,7 +1582,7 @@ error:
  *-------------------------------------------------------------------------
  */
 static int
-fill_all_2nd_indirect_rows(H5HF_t *fh, hid_t dxpl, size_t obj_size,
+fill_all_2nd_indirect_rows(H5HF_t *fh, size_t obj_size,
     fheap_heap_state_t *state, fheap_heap_ids_t *keep_ids)
 {
     unsigned    width;                  /* Width of heap's doubling table */
@@ -1560,7 +1593,7 @@ fill_all_2nd_indirect_rows(H5HF_t *fh, hid_t dxpl, size_t obj_size,
 
     /* Loop over rows of 2nd level deep indirect blocks */
     for(u = 0; u < (H5VM_log2_of2(width) + 1); u++)
-        if(fill_2nd_indirect_row(fh, dxpl, (u + 1), obj_size, state, keep_ids))
+        if(fill_2nd_indirect_row(fh, (u + 1), obj_size, state, keep_ids))
             TEST_ERROR
 
     /* Operations succeeded */
@@ -1588,18 +1621,18 @@ error:
  *-------------------------------------------------------------------------
  */
 static int
-fill_3rd_indirect(H5HF_t *fh, hid_t dxpl, unsigned pos, size_t obj_size,
+fill_3rd_indirect(H5HF_t *fh, unsigned pos, size_t obj_size,
     fheap_heap_state_t *state, fheap_heap_ids_t *keep_ids)
 {
     unsigned    u;                      /* Local index variable */
 
     /* Fill all direct block rows in third level indirect block */
-    if(fill_all_direct(fh, dxpl, obj_size, state, keep_ids))
+    if(fill_all_direct(fh, obj_size, state, keep_ids))
         TEST_ERROR
 
     /* Fill rows of recursive indirect blocks in third level indirect block */
     for(u = 0; u < pos; u++)
-        if(fill_2nd_indirect_row(fh, dxpl, (u + 1), obj_size, state, keep_ids))
+        if(fill_2nd_indirect_row(fh, (u + 1), obj_size, state, keep_ids))
             TEST_ERROR
 
     /* Operations succeeded */
@@ -1627,7 +1660,7 @@ error:
  *-------------------------------------------------------------------------
  */
 static int
-fill_3rd_indirect_row(H5HF_t *fh, hid_t dxpl, unsigned pos, size_t obj_size,
+fill_3rd_indirect_row(H5HF_t *fh, unsigned pos, size_t obj_size,
     fheap_heap_state_t *state, fheap_heap_ids_t *keep_ids)
 {
     unsigned    width;                  /* Width of heap's doubling table */
@@ -1639,7 +1672,7 @@ fill_3rd_indirect_row(H5HF_t *fh, hid_t dxpl, unsigned pos, size_t obj_size,
     /* Loop over row of 3rd level indirect blocks */
     for(u = 0; u < width; u++)
         /* Fill third level indirect block */
-        if(fill_3rd_indirect(fh, dxpl, pos, obj_size, state, keep_ids))
+        if(fill_3rd_indirect(fh, pos, obj_size, state, keep_ids))
             TEST_ERROR
 
     /* Operations succeeded */
@@ -1667,7 +1700,7 @@ error:
  *-------------------------------------------------------------------------
  */
 static int
-fill_all_3rd_indirect_rows(H5HF_t *fh, hid_t dxpl, size_t obj_size,
+fill_all_3rd_indirect_rows(H5HF_t *fh, size_t obj_size,
     fheap_heap_state_t *state, fheap_heap_ids_t *keep_ids)
 {
     unsigned    width;                  /* Width of heap's doubling table */
@@ -1679,7 +1712,7 @@ fill_all_3rd_indirect_rows(H5HF_t *fh, hid_t dxpl, size_t obj_size,
     /* Loop over rows of 3rd level deep indirect blocks */
     for(u = 0; u < (H5VM_log2_of2(width) + 1); u++)
         /* Fill row of 3rd level indirect blocks */
-        if(fill_3rd_indirect_row(fh, dxpl, (u + 1), obj_size, state, keep_ids))
+        if(fill_3rd_indirect_row(fh, (u + 1), obj_size, state, keep_ids))
             TEST_ERROR
 
     /* Operations succeeded */
@@ -1707,7 +1740,7 @@ error:
  *-------------------------------------------------------------------------
  */
 static int
-fill_4th_indirect_row(H5HF_t *fh, hid_t dxpl, unsigned pos, size_t obj_size,
+fill_4th_indirect_row(H5HF_t *fh, unsigned pos, size_t obj_size,
     fheap_heap_state_t *state, fheap_heap_ids_t *keep_ids)
 {
     unsigned    width;                  /* Width of heap's doubling table */
@@ -1719,16 +1752,16 @@ fill_4th_indirect_row(H5HF_t *fh, hid_t dxpl, unsigned pos, size_t obj_size,
     /* Loop over row of 4th level indirect blocks */
     for(u = 0; u < width; u++) {
         /* Fill all direct block rows in fourth level indirect block */
-        if(fill_all_direct(fh, dxpl, obj_size, state, keep_ids))
+        if(fill_all_direct(fh, obj_size, state, keep_ids))
             TEST_ERROR
 
         /* Fill all rows of 2nd level deep indirect blocks in fourth level indirect block */
-        if(fill_all_2nd_indirect_rows(fh, dxpl, obj_size, state, keep_ids))
+        if(fill_all_2nd_indirect_rows(fh, obj_size, state, keep_ids))
             TEST_ERROR
 
         /* Fill rows of third level indirect blocks in fourth level indirect block */
         for(v = 0; v < pos; v++)
-            if(fill_3rd_indirect_row(fh, dxpl, (v + 1), obj_size, state, keep_ids))
+            if(fill_3rd_indirect_row(fh, (v + 1), obj_size, state, keep_ids))
                 TEST_ERROR
     } /* end for */
 
@@ -1757,7 +1790,7 @@ error:
  *-------------------------------------------------------------------------
  */
 static int
-fill_all_4th_indirect_rows(H5HF_t *fh, hid_t dxpl, size_t obj_size,
+fill_all_4th_indirect_rows(H5HF_t *fh, size_t obj_size,
     fheap_heap_state_t *state, fheap_heap_ids_t *keep_ids)
 {
     unsigned    width;                  /* Width of heap's doubling table */
@@ -1769,7 +1802,7 @@ fill_all_4th_indirect_rows(H5HF_t *fh, hid_t dxpl, size_t obj_size,
     /* Loop over rows of 4th level deep indirect blocks */
     for(u = 0; u < (H5VM_log2_of2(width) + 1); u++) {
         /* Fill row of 4th level indirect blocks */
-        if(fill_4th_indirect_row(fh, dxpl, (u + 1), obj_size, state, keep_ids))
+        if(fill_4th_indirect_row(fh, (u + 1), obj_size, state, keep_ids))
             TEST_ERROR
 
         /* Account for root indirect block doubling # of rows again */
@@ -1804,7 +1837,6 @@ error:
  * Purpose:	Create fractal heap
  *
  * Return:	Success:	0
- *
  *		Failure:	1
  *
  * Programmer:	Quincey Koziol
@@ -1812,8 +1844,8 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
-test_create(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t H5_ATTR_UNUSED *tparam)
+static unsigned
+test_create(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
@@ -1830,7 +1862,7 @@ test_create(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t H5_ATTR_UNUSED
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC,  tparam->my_fcpl, fapl)) < 0)
         FAIL_STACK_ERROR
 
     /* Close file */
@@ -1846,7 +1878,11 @@ test_create(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t H5_ATTR_UNUSED
         FAIL_STACK_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        FAIL_STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         FAIL_STACK_ERROR
 
     /*
@@ -1854,7 +1890,7 @@ test_create(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t H5_ATTR_UNUSED
      */
     TESTING("fractal heap creation");
 
-    if(NULL == (fh = H5HF_create(f, H5P_DATASET_XFER_DEFAULT, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -1878,11 +1914,12 @@ test_create(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t H5_ATTR_UNUSED
         TEST_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, H5P_DATASET_XFER_DEFAULT) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
+    fh = NULL;
 
     /* Delete heap */
-    if(H5HF_delete(f, H5P_DATASET_XFER_DEFAULT, fh_addr) < 0)
+    if(H5HF_delete(f, fh_addr) < 0)
         FAIL_STACK_ERROR
 
     /* Close the file */
@@ -1900,15 +1937,15 @@ test_create(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t H5_ATTR_UNUSED
     /* All tests passed */
     PASSED()
 
-    return(0);
+    return 0;
 
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, H5P_DATASET_XFER_DEFAULT);
-	H5Fclose(file);
+            H5HF_close(fh);
+        H5Fclose(file);
     } H5E_END_TRY;
-    return(1);
+    return 1;
 } /* test_create() */
 
 
@@ -1918,7 +1955,6 @@ error:
  * Purpose:	Create & reopen a fractal heap
  *
  * Return:	Success:	0
- *
  *		Failure:	1
  *
  * Programmer:	Quincey Koziol
@@ -1926,8 +1962,8 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
-test_reopen(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t H5_ATTR_UNUSED *tparam)
+static unsigned
+test_reopen(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
@@ -1935,28 +1971,50 @@ test_reopen(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t H5_ATTR_UNUSED
     H5HF_create_t test_cparam;          /* Creation parameters for heap */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
     haddr_t     fh_addr;                /* Address of fractal heap */
+    h5_stat_size_t       empty_size;             /* File size, w/o heap */
+    h5_stat_size_t       file_size;              /* File size, after deleting heap */
     size_t      id_len;                 /* Size of fractal heap IDs */
     fheap_heap_state_t state;           /* State of fractal heap */
+    hbool_t page = FALSE;               /* Paged aggregation strategy or not */
 
     /* Set the filename to use for this test (dependent on fapl) */
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         TEST_ERROR
 
+    /* Close file */
+    if(H5Fclose(file) < 0)
+        FAIL_STACK_ERROR
+
+    /* Get the size of a file w/empty heap*/
+    if((empty_size = h5_get_file_size(filename, fapl)) < 0)
+        TEST_ERROR
+
+    /* Re-open the file */
+    if((file = H5Fopen(filename, H5F_ACC_RDWR, fapl)) < 0)
+        FAIL_STACK_ERROR
+
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
         STACK_ERROR
 
+    if(f->shared->fs_strategy == H5F_FSPACE_STRATEGY_PAGE)
+        page = TRUE;
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
+        FAIL_STACK_ERROR
+
     /*
-     * Test fractal heap creation
+     * Display testing message
      */
 
     TESTING("create, close & reopen fractal heap");
 
     /* Create heap */
-    if(NULL == (fh = H5HF_create(f, H5P_DATASET_XFER_DEFAULT, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -1971,14 +2029,35 @@ test_reopen(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t H5_ATTR_UNUSED
         TEST_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, H5P_DATASET_XFER_DEFAULT) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
+    fh = NULL;
+
+    /* Check for closing & re-opening the file */
+    if(tparam->reopen_heap) {
+        /* Close file */
+        if(H5Fclose(file) < 0)
+            FAIL_STACK_ERROR
+
+        /* Re-open the file */
+        if((file = H5Fopen(filename, H5F_ACC_RDWR, fapl)) < 0)
+            FAIL_STACK_ERROR
+
+        /* Get a pointer to the internal file object */
+        if(NULL == (f = (H5F_t *)H5VL_object(file)))
+            FAIL_STACK_ERROR
+
+        /* Ignore metadata tags in the file's cache */
+        if (H5AC_ignore_tags(f) < 0)
+            FAIL_STACK_ERROR
+
+    } /* end if */
 
     /* Re-open the heap */
-    if(NULL == (fh = H5HF_open(f, H5P_DATASET_XFER_DEFAULT, fh_addr)))
+    if(NULL == (fh = H5HF_open(f, fh_addr)))
         FAIL_STACK_ERROR
 
-    /* Query the type of address mapping */
+    /* Query the creation parameters */
     HDmemset(&test_cparam, 0, sizeof(H5HF_create_t));
     if(H5HF_get_cparam_test(fh, &test_cparam) < 0)
         FAIL_STACK_ERROR
@@ -1986,13 +2065,26 @@ test_reopen(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t H5_ATTR_UNUSED
         TEST_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, H5P_DATASET_XFER_DEFAULT) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
     fh = NULL;
+
+    /* Delete heap */
+    if(H5HF_delete(f, fh_addr) < 0)
+        FAIL_STACK_ERROR
 
     /* Close the file */
     if(H5Fclose(file) < 0)
         FAIL_STACK_ERROR
+
+    /* Get the size of the file */
+    if((file_size = h5_get_file_size(filename, fapl)) < 0)
+        TEST_ERROR
+
+    /* Verify the file is correct size */
+    if(!page || (page && !tparam->reopen_heap))
+        if(file_size != empty_size)
+            TEST_ERROR
 
     /* All tests passed */
     PASSED()
@@ -2002,8 +2094,8 @@ test_reopen(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t H5_ATTR_UNUSED
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, H5P_DATASET_XFER_DEFAULT);
-	H5Fclose(file);
+            H5HF_close(fh);
+        H5Fclose(file);
     } H5E_END_TRY;
     return(1);
 } /* test_reopen() */
@@ -2022,8 +2114,8 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
-test_open_twice(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t H5_ATTR_UNUSED *tparam)
+static unsigned
+test_open_twice(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
     hid_t	file2 = -1;             /* File ID */
@@ -2034,36 +2126,49 @@ test_open_twice(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t H5_ATTR_UN
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
     H5HF_t      *fh2 = NULL;            /* 2nd fractal heap wrapper */
     haddr_t     fh_addr;                /* Address of fractal heap */
+    h5_stat_size_t       empty_size;             /* File size, w/o heap */
+    h5_stat_size_t       file_size;              /* File size, after deleting heap */
     size_t      id_len;                 /* Size of fractal heap IDs */
     fheap_heap_state_t state;           /* State of fractal heap */
+    hbool_t page = FALSE;               /* Paged aggregation strategy or not */
 
     /* Set the filename to use for this test (dependent on fapl) */
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         TEST_ERROR
 
-    /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
-        STACK_ERROR
+    /* Close file */
+    if(H5Fclose(file) < 0)
+        FAIL_STACK_ERROR
+
+    /* Get the size of a file w/empty heap*/
+    if((empty_size = h5_get_file_size(filename, fapl)) < 0)
+        TEST_ERROR
 
     /* Re-open the file */
-    if((file2 = H5Freopen(file)) < 0)
+    if((file = H5Fopen(filename, H5F_ACC_RDWR, fapl)) < 0)
         FAIL_STACK_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f2 = H5I_object(file2)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        STACK_ERROR
+
+    if(f->shared->fs_strategy == H5F_FSPACE_STRATEGY_PAGE)
+        page = TRUE;
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         FAIL_STACK_ERROR
 
     /*
-     * Test fractal heap creation
+     * Display testing message
      */
-
     TESTING("open fractal heap twice");
 
     /* Create heap */
-    if(NULL == (fh = H5HF_create(f, H5P_DATASET_XFER_DEFAULT, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -2077,11 +2182,11 @@ test_open_twice(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t H5_ATTR_UN
     if(check_stats(fh, &state))
         TEST_ERROR
 
-    /* Open the heap again */
-    if(NULL == (fh2 = H5HF_open(f, H5P_DATASET_XFER_DEFAULT, fh_addr)))
+    /* Open the heap again, through the first file handle */
+    if(NULL == (fh2 = H5HF_open(f, fh_addr)))
         FAIL_STACK_ERROR
 
-    /* Query the type of address mapping */
+    /* Verify the creation parameters */
     HDmemset(&test_cparam, 0, sizeof(H5HF_create_t));
     if(H5HF_get_cparam_test(fh2, &test_cparam) < 0)
         FAIL_STACK_ERROR
@@ -2089,15 +2194,31 @@ test_open_twice(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t H5_ATTR_UN
         TEST_ERROR
 
     /* Close the second fractal heap wrapper */
-    if(H5HF_close(fh2, H5P_DATASET_XFER_DEFAULT) < 0)
+    if(H5HF_close(fh2) < 0)
         FAIL_STACK_ERROR
     fh2 = NULL;
 
-    /* Open the fractal heap through the second file handle */
-    if(NULL == (fh2 = H5HF_open(f2, H5P_DATASET_XFER_DEFAULT, fh_addr)))
+    /* Check for closing & re-opening the heap & file */
+    if(reopen_file(&file, &f, filename, fapl, &fh, fh_addr, tparam) < 0)
+        TEST_ERROR
+
+    /* Re-open the file */
+    if((file2 = H5Freopen(file)) < 0)
         FAIL_STACK_ERROR
 
-    /* Query the type of address mapping */
+    /* Get a pointer to the internal file object */
+    if(NULL == (f2 = (H5F_t *)H5VL_object(file2)))
+        FAIL_STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f2) < 0)
+        FAIL_STACK_ERROR
+
+    /* Open the fractal heap through the second file handle */
+    if(NULL == (fh2 = H5HF_open(f2, fh_addr)))
+        FAIL_STACK_ERROR
+
+    /* Verify the creation parameters */
     HDmemset(&test_cparam, 0, sizeof(H5HF_create_t));
     if(H5HF_get_cparam_test(fh2, &test_cparam) < 0)
         FAIL_STACK_ERROR
@@ -2105,7 +2226,7 @@ test_open_twice(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t H5_ATTR_UN
         TEST_ERROR
 
     /* Close the first fractal heap wrapper */
-    if(H5HF_close(fh, H5P_DATASET_XFER_DEFAULT) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
     fh = NULL;
 
@@ -2117,29 +2238,43 @@ test_open_twice(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t H5_ATTR_UN
         FAIL_STACK_ERROR
 
     /* Close the second fractal heap wrapper */
-    if(H5HF_close(fh2, H5P_DATASET_XFER_DEFAULT) < 0)
+    if(H5HF_close(fh2) < 0)
         FAIL_STACK_ERROR
     fh2 = NULL;
+
+    /* Delete heap */
+    if(H5HF_delete(f2, fh_addr) < 0)
+        FAIL_STACK_ERROR
 
     /* Close the second file */
     if(H5Fclose(file2) < 0)
         FAIL_STACK_ERROR
 
+    /* Get the size of the file */
+    if((file_size = h5_get_file_size(filename, fapl)) < 0)
+        TEST_ERROR
+
+    /* Verify the file is correct size */
+    if(!page || (page && !tparam->reopen_heap))
+        if(file_size != empty_size)
+            TEST_ERROR
+
     /* All tests passed */
     PASSED()
 
-    return(0);
+    return 0;
 
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, H5P_DATASET_XFER_DEFAULT);
+            H5HF_close(fh);
         if(fh2)
-            H5HF_close(fh2, H5P_DATASET_XFER_DEFAULT);
-	H5Fclose(file);
-	H5Fclose(file2);
+            H5HF_close(fh2);
+        H5Fclose(file);
+        H5Fclose(file2);
     } H5E_END_TRY;
-    return(1);
+
+    return 1;
 } /* test_open_twice() */
 
 
@@ -2156,8 +2291,8 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
-test_delete_open(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t H5_ATTR_UNUSED *tparam)
+static unsigned
+test_delete_open(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
@@ -2175,7 +2310,7 @@ test_delete_open(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t H5_ATTR_U
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         TEST_ERROR
 
     /* Close file */
@@ -2191,14 +2326,18 @@ test_delete_open(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t H5_ATTR_U
         FAIL_STACK_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
         STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
+        FAIL_STACK_ERROR
 
     /* Display test banner */
     TESTING("deleting open fractal heap");
 
     /* Create heap */
-    if(NULL == (fh = H5HF_create(f, H5P_DATASET_XFER_DEFAULT, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -2213,14 +2352,14 @@ test_delete_open(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t H5_ATTR_U
         TEST_ERROR
 
     /* Open the heap again */
-    if(NULL == (fh2 = H5HF_open(f, H5P_DATASET_XFER_DEFAULT, fh_addr)))
+    if(NULL == (fh2 = H5HF_open(f, fh_addr)))
         FAIL_STACK_ERROR
 
     /* Request that the heap be deleted */
-    if(H5HF_delete(f, H5P_DATASET_XFER_DEFAULT, fh_addr) < 0)
+    if(H5HF_delete(f, fh_addr) < 0)
         FAIL_STACK_ERROR
 
-    /* Query the type of address mapping */
+    /* Verify the creation parameters */
     HDmemset(&test_cparam, 0, sizeof(H5HF_create_t));
     if(H5HF_get_cparam_test(fh2, &test_cparam) < 0)
         FAIL_STACK_ERROR
@@ -2228,40 +2367,60 @@ test_delete_open(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t H5_ATTR_U
         TEST_ERROR
 
     /* Close the second fractal heap wrapper */
-    if(H5HF_close(fh2, H5P_DATASET_XFER_DEFAULT) < 0)
+    if(H5HF_close(fh2) < 0)
         FAIL_STACK_ERROR
     fh2 = NULL;
 
     /* Try re-opening the heap again (should fail, as heap will be deleted) */
     H5E_BEGIN_TRY {
-        fh2 = H5HF_open(f, H5P_DATASET_XFER_DEFAULT, fh_addr);
+        fh2 = H5HF_open(f, fh_addr);
     } H5E_END_TRY;
     if(fh2) {
         /* Close opened heap */
-        H5HF_close(fh2, H5P_DATASET_XFER_DEFAULT);
+        H5HF_close(fh2);
+        fh2 = NULL;
 
         /* Indicate error */
         TEST_ERROR
     } /* end if */
 
     /* Close the first fractal heap wrapper */
-    if(H5HF_close(fh, H5P_DATASET_XFER_DEFAULT) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
     fh = NULL;
 
-#ifdef QAK
+    /* Check for closing & re-opening the file */
+    if(tparam->reopen_heap) {
+        /* Close file */
+        if(H5Fclose(file) < 0)
+            FAIL_STACK_ERROR
+
+        /* Re-open the file */
+        if((file = H5Fopen(filename, H5F_ACC_RDWR, fapl)) < 0)
+            FAIL_STACK_ERROR
+
+        /* Get a pointer to the internal file object */
+        if(NULL == (f = (H5F_t *)H5VL_object(file)))
+            FAIL_STACK_ERROR
+
+        /* Ignore metadata tags in the file's cache */
+        if (H5AC_ignore_tags(f) < 0)
+            FAIL_STACK_ERROR
+
+    } /* end if */
+
     /* Try re-opening the heap again (should fail, as heap is now deleted) */
     H5E_BEGIN_TRY {
-        fh = H5HF_open(f, H5P_DATASET_XFER_DEFAULT, fh_addr);
+        fh = H5HF_open(f, fh_addr);
     } H5E_END_TRY;
     if(fh) {
         /* Close opened heap */
-        H5HF_close(fh, H5P_DATASET_XFER_DEFAULT);
+        H5HF_close(fh);
+        fh = NULL;
 
         /* Indicate error */
         TEST_ERROR
     } /* end if */
-#endif /* QAK */
 
     /* Close the file */
     if(H5Fclose(file) < 0)
@@ -2278,17 +2437,17 @@ test_delete_open(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t H5_ATTR_U
     /* All tests passed */
     PASSED()
 
-    return(0);
+    return 0;
 
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, H5P_DATASET_XFER_DEFAULT);
+            H5HF_close(fh);
         if(fh2)
-            H5HF_close(fh2, H5P_DATASET_XFER_DEFAULT);
-	H5Fclose(file);
+            H5HF_close(fh2);
+        H5Fclose(file);
     } H5E_END_TRY;
-    return(1);
+    return 1;
 } /* test_delete_open() */
 
 
@@ -2305,11 +2464,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
-test_id_limits(hid_t fapl, H5HF_create_t *cparam)
+static unsigned
+test_id_limits(hid_t fapl, H5HF_create_t *cparam, hid_t fcpl)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -2324,11 +2482,15 @@ test_id_limits(hid_t fapl, H5HF_create_t *cparam)
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, fcpl, fapl)) < 0)
         FAIL_STACK_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        FAIL_STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         FAIL_STACK_ERROR
 
     /* Display testing message */
@@ -2342,7 +2504,7 @@ test_id_limits(hid_t fapl, H5HF_create_t *cparam)
     tmp_cparam.id_len = 0;
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, dxpl, &tmp_cparam)))
+    if(NULL == (fh = H5HF_create(f, &tmp_cparam)))
         FAIL_STACK_ERROR
 
     /* Test ID length information for heap */
@@ -2362,7 +2524,7 @@ test_id_limits(hid_t fapl, H5HF_create_t *cparam)
         TEST_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
     fh = NULL;
 
@@ -2372,7 +2534,7 @@ test_id_limits(hid_t fapl, H5HF_create_t *cparam)
     tmp_cparam.id_len = 1;
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, dxpl, &tmp_cparam)))
+    if(NULL == (fh = H5HF_create(f, &tmp_cparam)))
         FAIL_STACK_ERROR
 
     /* Test ID length information for heap */
@@ -2392,7 +2554,7 @@ test_id_limits(hid_t fapl, H5HF_create_t *cparam)
         TEST_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
     fh = NULL;
 
@@ -2407,7 +2569,7 @@ test_id_limits(hid_t fapl, H5HF_create_t *cparam)
         FAIL_STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, dxpl, &tmp_cparam)))
+    if(NULL == (fh = H5HF_create(f, &tmp_cparam)))
         FAIL_STACK_ERROR
 
     /* Test ID length information for heap */
@@ -2427,7 +2589,7 @@ test_id_limits(hid_t fapl, H5HF_create_t *cparam)
         TEST_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
     fh = NULL;
 
@@ -2440,7 +2602,7 @@ test_id_limits(hid_t fapl, H5HF_create_t *cparam)
 
     /* Create absolute heap */
     H5E_BEGIN_TRY {
-        fh = H5HF_create(f, dxpl, &tmp_cparam);
+        fh = H5HF_create(f, &tmp_cparam);
     } H5E_END_TRY;
     if(NULL != fh)
         FAIL_STACK_ERROR
@@ -2452,7 +2614,7 @@ test_id_limits(hid_t fapl, H5HF_create_t *cparam)
     tmp_cparam.id_len = 8;
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, dxpl, &tmp_cparam)))
+    if(NULL == (fh = H5HF_create(f, &tmp_cparam)))
         FAIL_STACK_ERROR
 
     /* Test ID length information for heap */
@@ -2472,7 +2634,7 @@ test_id_limits(hid_t fapl, H5HF_create_t *cparam)
         TEST_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
     fh = NULL;
 
@@ -2483,7 +2645,7 @@ test_id_limits(hid_t fapl, H5HF_create_t *cparam)
     tmp_cparam.id_len = 17;
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, dxpl, &tmp_cparam)))
+    if(NULL == (fh = H5HF_create(f, &tmp_cparam)))
         FAIL_STACK_ERROR
 
     /* Test ID length information for heap */
@@ -2503,7 +2665,7 @@ test_id_limits(hid_t fapl, H5HF_create_t *cparam)
         TEST_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
     fh = NULL;
 
@@ -2514,7 +2676,7 @@ test_id_limits(hid_t fapl, H5HF_create_t *cparam)
     tmp_cparam.id_len = 18;
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, dxpl, &tmp_cparam)))
+    if(NULL == (fh = H5HF_create(f, &tmp_cparam)))
         FAIL_STACK_ERROR
 
     /* Test ID length information for heap */
@@ -2534,7 +2696,7 @@ test_id_limits(hid_t fapl, H5HF_create_t *cparam)
         TEST_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
     fh = NULL;
 
@@ -2545,7 +2707,7 @@ test_id_limits(hid_t fapl, H5HF_create_t *cparam)
     tmp_cparam.id_len = 19;
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, dxpl, &tmp_cparam)))
+    if(NULL == (fh = H5HF_create(f, &tmp_cparam)))
         FAIL_STACK_ERROR
 
     /* Test ID length information for heap */
@@ -2565,7 +2727,7 @@ test_id_limits(hid_t fapl, H5HF_create_t *cparam)
         TEST_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
     fh = NULL;
 
@@ -2576,7 +2738,7 @@ test_id_limits(hid_t fapl, H5HF_create_t *cparam)
     tmp_cparam.id_len = 45;
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, dxpl, &tmp_cparam)))
+    if(NULL == (fh = H5HF_create(f, &tmp_cparam)))
         FAIL_STACK_ERROR
 
     /* Test ID length information for heap */
@@ -2596,7 +2758,7 @@ test_id_limits(hid_t fapl, H5HF_create_t *cparam)
         TEST_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
     fh = NULL;
 
@@ -2608,7 +2770,7 @@ test_id_limits(hid_t fapl, H5HF_create_t *cparam)
 
     /* Create absolute heap */
     H5E_BEGIN_TRY {
-        fh = H5HF_create(f, dxpl, &tmp_cparam);
+        fh = H5HF_create(f, &tmp_cparam);
     } H5E_END_TRY;
     if(NULL != fh)
         FAIL_STACK_ERROR
@@ -2621,15 +2783,15 @@ test_id_limits(hid_t fapl, H5HF_create_t *cparam)
     /* All tests passed */
     PASSED()
 
-    return(0);
+    return 0;
 
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
-	H5Fclose(file);
+            H5HF_close(fh);
+        H5Fclose(file);
     } H5E_END_TRY;
-    return(1);
+    return 1;
 } /* test_id_limits() */
 
 
@@ -2646,11 +2808,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
-test_filtered_create(hid_t fapl, H5HF_create_t *cparam)
+static unsigned
+test_filtered_create(hid_t fapl, H5HF_create_t *cparam, hid_t fcpl)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -2663,11 +2824,15 @@ test_filtered_create(hid_t fapl, H5HF_create_t *cparam)
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, fcpl, fapl)) < 0)
         FAIL_STACK_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        FAIL_STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         FAIL_STACK_ERROR
 
     /* Display testing message */
@@ -2683,7 +2848,7 @@ test_filtered_create(hid_t fapl, H5HF_create_t *cparam)
         FAIL_STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, dxpl, &tmp_cparam)))
+    if(NULL == (fh = H5HF_create(f, &tmp_cparam)))
         FAIL_STACK_ERROR
 
     /* Get heap's address */
@@ -2693,7 +2858,7 @@ test_filtered_create(hid_t fapl, H5HF_create_t *cparam)
         TEST_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
     fh = NULL;
 
@@ -2706,11 +2871,15 @@ test_filtered_create(hid_t fapl, H5HF_create_t *cparam)
         FAIL_STACK_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        FAIL_STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         FAIL_STACK_ERROR
 
     /* Re-open the heap */
-    if(NULL == (fh = H5HF_open(f, H5P_DATASET_XFER_DEFAULT, fh_addr)))
+    if(NULL == (fh = H5HF_open(f, fh_addr)))
         FAIL_STACK_ERROR
 
     /* Query the heap creation parameters */
@@ -2721,8 +2890,9 @@ test_filtered_create(hid_t fapl, H5HF_create_t *cparam)
         FAIL_STACK_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, H5P_DATASET_XFER_DEFAULT) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
+    fh = NULL;
 
 
     /* Close the file */
@@ -2736,15 +2906,15 @@ test_filtered_create(hid_t fapl, H5HF_create_t *cparam)
     /* All tests passed */
     PASSED()
 
-    return(0);
+    return 0;
 
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
-	H5Fclose(file);
+            H5HF_close(fh);
+        H5Fclose(file);
     } H5E_END_TRY;
-    return(1);
+    return 1;
 } /* test_filtered_create() */
 
 
@@ -2761,11 +2931,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
-test_size(hid_t fapl, H5HF_create_t *cparam)
+static unsigned
+test_size(hid_t fapl, H5HF_create_t *cparam, hid_t fcpl)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -2778,11 +2947,15 @@ test_size(hid_t fapl, H5HF_create_t *cparam)
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, fcpl, fapl)) < 0)
         FAIL_STACK_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        FAIL_STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         FAIL_STACK_ERROR
 
     /* Display testing message */
@@ -2790,7 +2963,7 @@ test_size(hid_t fapl, H5HF_create_t *cparam)
 
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, dxpl, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
 
     /* Get heap's address */
@@ -2801,24 +2974,24 @@ test_size(hid_t fapl, H5HF_create_t *cparam)
 
     /* Get an empty heap's size */
     empty_heap_size = 0;
-    if(H5HF_size(fh, dxpl, &empty_heap_size) < 0)
+    if(H5HF_size(fh, &empty_heap_size) < 0)
         FAIL_STACK_ERROR
     if(empty_heap_size == 0)
         TEST_ERROR
 
     /* Insert an object */
-    if(add_obj(fh, dxpl, (size_t)0, (size_t)10, NULL, NULL) < 0)
+    if(add_obj(fh, (size_t)0, (size_t)10, NULL, NULL) < 0)
         TEST_ERROR
 
     /* Get the heap's size after inserting one object */
     one_heap_size = 0;
-    if(H5HF_size(fh, dxpl, &one_heap_size) < 0)
+    if(H5HF_size(fh, &one_heap_size) < 0)
         FAIL_STACK_ERROR
     if(one_heap_size <= empty_heap_size)
         TEST_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
     fh = NULL;
 
@@ -2832,35 +3005,39 @@ test_size(hid_t fapl, H5HF_create_t *cparam)
         FAIL_STACK_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        FAIL_STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         FAIL_STACK_ERROR
 
     /* Re-open the heap */
-    if(NULL == (fh = H5HF_open(f, dxpl, fh_addr)))
+    if(NULL == (fh = H5HF_open(f, fh_addr)))
         FAIL_STACK_ERROR
 
     /* Check the heap's size */
     heap_size = 0;
-    if(H5HF_size(fh, dxpl, &heap_size) < 0)
+    if(H5HF_size(fh, &heap_size) < 0)
         FAIL_STACK_ERROR
     if(heap_size != one_heap_size)
         TEST_ERROR
 
     /* Insert another object */
-    if(add_obj(fh, dxpl, (size_t)1, (size_t)10, NULL, NULL) < 0)
+    if(add_obj(fh, (size_t)1, (size_t)10, NULL, NULL) < 0)
         TEST_ERROR
 
     /* Check the heap's size */
     heap_size = 0;
-    if(H5HF_size(fh, dxpl, &heap_size) < 0)
+    if(H5HF_size(fh, &heap_size) < 0)
         FAIL_STACK_ERROR
     if(heap_size != one_heap_size)
         TEST_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, H5P_DATASET_XFER_DEFAULT) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
-
+    fh = NULL;
 
     /* Close the file */
     if(H5Fclose(file) < 0)
@@ -2869,15 +3046,15 @@ test_size(hid_t fapl, H5HF_create_t *cparam)
     /* All tests passed */
     PASSED()
 
-    return(0);
+    return 0;
 
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
-	H5Fclose(file);
+            H5HF_close(fh);
+        H5Fclose(file);
     } H5E_END_TRY;
-    return(1);
+    return 1;
 } /* test_size() */
 
 
@@ -2898,11 +3075,10 @@ error:
  *-------------------------------------------------------------------------
  */
 static unsigned
-test_reopen_hdr(hid_t fapl, H5HF_create_t *cparam)
+test_reopen_hdr(hid_t fapl, H5HF_create_t *cparam, hid_t fcpl)
 {
     hid_t       file1 = -1;             /* File ID */
     hid_t       file2 = -2;             /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char        filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t       *f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -2913,11 +3089,15 @@ test_reopen_hdr(hid_t fapl, H5HF_create_t *cparam)
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file1 = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file1 = H5Fcreate(filename, H5F_ACC_TRUNC, fcpl, fapl)) < 0)
         FAIL_STACK_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = (H5F_t *)H5I_object(file1)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file1)))
+        FAIL_STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         FAIL_STACK_ERROR
 
     /* Display testing message */
@@ -2925,7 +3105,7 @@ test_reopen_hdr(hid_t fapl, H5HF_create_t *cparam)
 
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, dxpl, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
 
     /* Get heap's address */
@@ -2935,11 +3115,11 @@ test_reopen_hdr(hid_t fapl, H5HF_create_t *cparam)
         TEST_ERROR
 
     /* Insert an object */
-    if(add_obj(fh, dxpl, (size_t)0, (size_t)10, NULL, NULL) < 0)
+    if(add_obj(fh, (size_t)0, (size_t)10, NULL, NULL) < 0)
         TEST_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
     fh = NULL;
 
@@ -2957,15 +3137,19 @@ test_reopen_hdr(hid_t fapl, H5HF_create_t *cparam)
         FAIL_STACK_ERROR
 
     /* Get a pointer to the internal file object (file1) */
-    if(NULL == (f = (H5F_t *)H5I_object(file1)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file1)))
+        FAIL_STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         FAIL_STACK_ERROR
 
     /* Open the heap */
-    if(NULL == (fh = H5HF_open(f, dxpl, fh_addr)))
+    if(NULL == (fh = H5HF_open(f, fh_addr)))
         FAIL_STACK_ERROR
 
     /* Close the heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
     fh = NULL;
 
@@ -2975,20 +3159,20 @@ test_reopen_hdr(hid_t fapl, H5HF_create_t *cparam)
 
 
     /* Get a pointer to the internal file object (file2) */
-    if(NULL == (f = (H5F_t *)H5I_object(file2)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file2)))
         FAIL_STACK_ERROR
 
     /* Reopen the heap */
-    if(NULL == (fh = H5HF_open(f, dxpl, fh_addr)))
+    if(NULL == (fh = H5HF_open(f, fh_addr)))
         FAIL_STACK_ERROR
 
     /* Check the heap's size */
     heap_size = 0;
-    if(H5HF_size(fh, dxpl, &heap_size) < 0)
+    if(H5HF_size(fh, &heap_size) < 0)
         FAIL_STACK_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, H5P_DATASET_XFER_DEFAULT) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
 
 
@@ -3004,7 +3188,7 @@ test_reopen_hdr(hid_t fapl, H5HF_create_t *cparam)
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
         H5Fclose(file1);
         H5Fclose(file2);
     } H5E_END_TRY;
@@ -3026,11 +3210,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_insert_weird(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -3044,15 +3227,19 @@ test_man_insert_weird(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpa
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         FAIL_STACK_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        FAIL_STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         FAIL_STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, dxpl, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -3067,7 +3254,7 @@ test_man_insert_weird(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpa
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /*
@@ -3077,18 +3264,18 @@ test_man_insert_weird(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpa
 
     /* Attempt to insert 0-sized object into heap */
     H5E_BEGIN_TRY {
-        ret = H5HF_insert(fh, dxpl, (size_t)0, shared_wobj_g, heap_id);
+        ret = H5HF_insert(fh, (size_t)0, shared_wobj_g, heap_id);
     } H5E_END_TRY;
     if(ret >= 0)
         TEST_ERROR
     H5Eclear2(H5E_DEFAULT);
 
     /* Insert a 1-sized object into heap (should be a 'tiny' object) */
-    if(add_obj(fh, dxpl, (size_t)10, (size_t)1, &state, NULL))
+    if(add_obj(fh, (size_t)10, (size_t)1, &state, NULL))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check for correctly sized heap */
@@ -3096,7 +3283,7 @@ test_man_insert_weird(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpa
         TEST_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
     fh = NULL;
 
@@ -3112,7 +3299,7 @@ test_man_insert_weird(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpa
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -3134,11 +3321,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_insert_first(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -3150,15 +3336,19 @@ test_man_insert_first(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpa
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         FAIL_STACK_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        FAIL_STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         FAIL_STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, dxpl, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -3173,7 +3363,7 @@ test_man_insert_first(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpa
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /*
@@ -3183,11 +3373,11 @@ test_man_insert_first(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpa
     state.man_size = DBLOCK_SIZE(fh, 0);
     state.man_alloc_size = DBLOCK_SIZE(fh, 0);
     state.man_free_space = DBLOCK_FREE(fh, 0);
-    if(add_obj(fh, dxpl, (size_t)10, SMALL_OBJ_SIZE1, &state, NULL))
+    if(add_obj(fh, (size_t)10, SMALL_OBJ_SIZE1, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check for correctly sized heap */
@@ -3195,7 +3385,7 @@ test_man_insert_first(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpa
         FAIL_STACK_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         TEST_ERROR
 
     /* Close the file */
@@ -3210,7 +3400,7 @@ test_man_insert_first(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpa
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -3231,11 +3421,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_insert_second(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -3247,15 +3436,19 @@ test_man_insert_second(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tp
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         TEST_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, dxpl, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -3274,19 +3467,19 @@ test_man_insert_second(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tp
     state.man_size = DBLOCK_SIZE(fh, 0);
     state.man_alloc_size = DBLOCK_SIZE(fh, 0);
     state.man_free_space = DBLOCK_FREE(fh, 0);
-    if(add_obj(fh, dxpl, (size_t)10, SMALL_OBJ_SIZE1, &state, NULL))
+    if(add_obj(fh, (size_t)10, SMALL_OBJ_SIZE1, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert second object */
-    if(add_obj(fh, dxpl, (size_t)20, SMALL_OBJ_SIZE2, &state, NULL))
+    if(add_obj(fh, (size_t)20, SMALL_OBJ_SIZE2, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         TEST_ERROR
 
     /* Close the file */
@@ -3301,7 +3494,7 @@ test_man_insert_second(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tp
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -3323,11 +3516,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_insert_root_mult(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -3340,15 +3532,19 @@ test_man_insert_root_mult(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t 
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         TEST_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, dxpl, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -3372,15 +3568,15 @@ test_man_insert_root_mult(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t 
     state.man_size = DBLOCK_SIZE(fh, 0);
     state.man_alloc_size = DBLOCK_SIZE(fh, 0);
     state.man_free_space = DBLOCK_FREE(fh, 0);
-    if(fill_heap(fh, dxpl, 0, fill_size, &state, NULL))
+    if(fill_heap(fh, 0, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         TEST_ERROR
 
     /* Close the file */
@@ -3395,7 +3591,7 @@ test_man_insert_root_mult(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t 
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -3418,11 +3614,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_insert_force_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -3435,15 +3630,19 @@ test_man_insert_force_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_par
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         TEST_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, H5P_DATASET_XFER_DEFAULT, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -3467,22 +3666,22 @@ test_man_insert_force_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_par
     state.man_size = DBLOCK_SIZE(fh, 0);
     state.man_alloc_size = DBLOCK_SIZE(fh, 0);
     state.man_free_space = DBLOCK_FREE(fh, 0);
-    if(fill_heap(fh, dxpl, 0, fill_size, &state, NULL))
+    if(fill_heap(fh, 0, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert one more object, to force root indirect block creation */
     state.man_size = cparam->managed.width * DBLOCK_SIZE(fh, 0);
     state.man_alloc_size += DBLOCK_SIZE(fh, 0);
     state.man_free_space = (cparam->managed.width - 1) * DBLOCK_FREE(fh, 0);
-    if(add_obj(fh, dxpl, (size_t)10, SMALL_OBJ_SIZE1, &state, NULL))
+    if(add_obj(fh, (size_t)10, SMALL_OBJ_SIZE1, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         TEST_ERROR
 
     /* Close the file */
@@ -3497,7 +3696,7 @@ test_man_insert_force_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_par
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -3520,11 +3719,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_insert_fill_second(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -3537,15 +3735,19 @@ test_man_insert_fill_second(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         TEST_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, H5P_DATASET_XFER_DEFAULT, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -3569,22 +3771,22 @@ test_man_insert_fill_second(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_
     state.man_size = DBLOCK_SIZE(fh, 0);
     state.man_alloc_size = DBLOCK_SIZE(fh, 0);
     state.man_free_space = DBLOCK_FREE(fh, 0);
-    if(fill_heap(fh, dxpl, 0, fill_size, &state, NULL))
+    if(fill_heap(fh, 0, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill the second direct block heap up (also creates initial root indirect block) */
     state.man_size = cparam->managed.width * DBLOCK_SIZE(fh, 0);
     state.man_alloc_size += DBLOCK_SIZE(fh, 0);
     state.man_free_space = (cparam->managed.width - 1) * DBLOCK_FREE(fh, 0);
-    if(fill_heap(fh, dxpl, 0, fill_size, &state, NULL))
+    if(fill_heap(fh, 0, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         TEST_ERROR
 
     /* Close the file */
@@ -3599,7 +3801,7 @@ test_man_insert_fill_second(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -3623,11 +3825,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_insert_third_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -3640,15 +3841,19 @@ test_man_insert_third_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_param
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         TEST_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, H5P_DATASET_XFER_DEFAULT, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -3672,27 +3877,27 @@ test_man_insert_third_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_param
     state.man_size = DBLOCK_SIZE(fh, 0);
     state.man_alloc_size = DBLOCK_SIZE(fh, 0);
     state.man_free_space = DBLOCK_FREE(fh, 0);
-    if(fill_heap(fh, dxpl, 0, fill_size, &state, NULL))
+    if(fill_heap(fh, 0, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Fill the second direct block heap up (also creates initial root indirect block) */
     state.man_size = cparam->managed.width * DBLOCK_SIZE(fh, 0);
     state.man_alloc_size += DBLOCK_SIZE(fh, 0);
     state.man_free_space = (cparam->managed.width - 1) * DBLOCK_FREE(fh, 0);
-    if(fill_heap(fh, dxpl, 0, fill_size, &state, NULL))
+    if(fill_heap(fh, 0, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert one more object, to force creation of third direct block */
     state.man_alloc_size += DBLOCK_SIZE(fh, 0);
-    if(add_obj(fh, dxpl, (size_t)10, SMALL_OBJ_SIZE1, &state, NULL))
+    if(add_obj(fh, (size_t)10, SMALL_OBJ_SIZE1, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         TEST_ERROR
 
     /* Close the file */
@@ -3707,7 +3912,7 @@ test_man_insert_third_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_param
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -3730,11 +3935,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_fill_first_row(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -3747,15 +3951,19 @@ test_man_fill_first_row(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *t
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         TEST_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, H5P_DATASET_XFER_DEFAULT, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -3776,15 +3984,15 @@ test_man_fill_first_row(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *t
     fill_size = get_fill_size(tparam);
 
     /* Fill first row of [root] indirect block */
-    if(fill_root_row(fh, dxpl, 0, fill_size, &state, NULL))
+    if(fill_root_row(fh, 0, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         TEST_ERROR
 
     /* Close the file */
@@ -3799,7 +4007,7 @@ test_man_fill_first_row(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *t
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -3822,11 +4030,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_start_second_row(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -3839,15 +4046,19 @@ test_man_start_second_row(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t 
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         TEST_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, H5P_DATASET_XFER_DEFAULT, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -3868,22 +4079,22 @@ test_man_start_second_row(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t 
     fill_size = get_fill_size(tparam);
 
     /* Fill first root indirect row */
-    if(fill_root_row(fh, dxpl, 0, fill_size, &state, NULL))
+    if(fill_root_row(fh, 0, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert one more object, to force expanding root indirect block to two rows */
     state.man_size += cparam->managed.width * DBLOCK_SIZE(fh, 1);
     state.man_alloc_size += DBLOCK_SIZE(fh, 1);
     state.man_free_space = cparam->managed.width * DBLOCK_FREE(fh, 1);
-    if(add_obj(fh, dxpl, (size_t)10, SMALL_OBJ_SIZE1, &state, NULL))
+    if(add_obj(fh, (size_t)10, SMALL_OBJ_SIZE1, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         TEST_ERROR
 
     /* Close the file */
@@ -3898,7 +4109,7 @@ test_man_start_second_row(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t 
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -3921,11 +4132,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_fill_second_row(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -3938,15 +4148,19 @@ test_man_fill_second_row(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         TEST_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, H5P_DATASET_XFER_DEFAULT, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -3967,19 +4181,19 @@ test_man_fill_second_row(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *
     fill_size = get_fill_size(tparam);
 
     /* Fill first root indirect row */
-    if(fill_root_row(fh, dxpl, 0, fill_size, &state, NULL))
+    if(fill_root_row(fh, 0, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill second root indirect row */
-    if(fill_root_row(fh, dxpl, 1, fill_size, &state, NULL))
+    if(fill_root_row(fh, 1, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         TEST_ERROR
 
     /* Close the file */
@@ -3994,7 +4208,7 @@ test_man_fill_second_row(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -4018,11 +4232,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_start_third_row(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -4035,15 +4248,19 @@ test_man_start_third_row(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         TEST_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, H5P_DATASET_XFER_DEFAULT, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -4064,15 +4281,15 @@ test_man_start_third_row(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *
     fill_size = get_fill_size(tparam);
 
     /* Fill first root indirect row */
-    if(fill_root_row(fh, dxpl, 0, fill_size, &state, NULL))
+    if(fill_root_row(fh, 0, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Fill second root indirect row */
-    if(fill_root_row(fh, dxpl, 1, fill_size, &state, NULL))
+    if(fill_root_row(fh, 1, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert one more object, to force expanding root indirect block to four rows */
@@ -4082,11 +4299,11 @@ test_man_start_third_row(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *
     state.man_alloc_size += DBLOCK_SIZE(fh, 2);
     state.man_free_space += cparam->managed.width * DBLOCK_FREE(fh, 2);
     state.man_free_space += cparam->managed.width * DBLOCK_FREE(fh, 3);
-    if(add_obj(fh, dxpl, (size_t)10, SMALL_OBJ_SIZE1, &state, NULL))
+    if(add_obj(fh, (size_t)10, SMALL_OBJ_SIZE1, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         TEST_ERROR
 
     /* Close the file */
@@ -4101,7 +4318,7 @@ test_man_start_third_row(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -4124,11 +4341,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_fill_fourth_row(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -4142,15 +4358,19 @@ test_man_fill_fourth_row(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         TEST_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, H5P_DATASET_XFER_DEFAULT, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -4172,15 +4392,15 @@ test_man_fill_fourth_row(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *
 
     /* Loop over rows */
     for(u = 0; u < 4; u++)
-        if(fill_root_row(fh, dxpl, u, fill_size, &state, NULL))
+        if(fill_root_row(fh, u, fill_size, &state, NULL))
             FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         TEST_ERROR
 
     /* Close the file */
@@ -4195,7 +4415,7 @@ test_man_fill_fourth_row(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -4218,11 +4438,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_fill_all_root_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -4235,15 +4454,19 @@ test_man_fill_all_root_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_para
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         TEST_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, H5P_DATASET_XFER_DEFAULT, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -4264,15 +4487,15 @@ test_man_fill_all_root_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_para
     fill_size = get_fill_size(tparam);
 
     /* Fill all direct blocks in root indirect block */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, NULL))
+    if(fill_root_direct(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         TEST_ERROR
 
     /* Close the file */
@@ -4287,7 +4510,7 @@ test_man_fill_all_root_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_para
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -4310,11 +4533,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_first_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -4327,15 +4549,19 @@ test_man_first_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         TEST_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, H5P_DATASET_XFER_DEFAULT, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -4356,20 +4582,20 @@ test_man_first_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_
     fill_size = get_fill_size(tparam);
 
     /* Fill direct blocks up */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, NULL))
+    if(fill_root_direct(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert one more object, to force creation of first recursive indirect block */
     state.man_alloc_size += DBLOCK_SIZE(fh, 0);
-    if(add_obj(fh, dxpl, (size_t)10, SMALL_OBJ_SIZE1, &state, NULL))
+    if(add_obj(fh, (size_t)10, SMALL_OBJ_SIZE1, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         TEST_ERROR
 
     /* Close the file */
@@ -4384,7 +4610,7 @@ test_man_first_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -4408,11 +4634,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_second_direct_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -4425,15 +4650,19 @@ test_man_second_direct_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fhe
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         TEST_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, H5P_DATASET_XFER_DEFAULT, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -4455,27 +4684,27 @@ test_man_second_direct_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fhe
     fill_size = get_fill_size(tparam);
 
     /* Fill direct blocks up */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, NULL))
+    if(fill_root_direct(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Fill the first direct block in the recursive indirect block up */
     state.man_alloc_size += DBLOCK_SIZE(fh, 0);
-    if(fill_heap(fh, dxpl, 0, fill_size, &state, NULL))
+    if(fill_heap(fh, 0, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert one more object, to force creation of second direct block in
      * first recursive indirect block
      */
     state.man_alloc_size += DBLOCK_SIZE(fh, 0);
-    if(add_obj(fh, dxpl, (size_t)10, SMALL_OBJ_SIZE1, &state, NULL))
+    if(add_obj(fh, (size_t)10, SMALL_OBJ_SIZE1, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         TEST_ERROR
 
     /* Close the file */
@@ -4490,7 +4719,7 @@ test_man_second_direct_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fhe
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -4514,11 +4743,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_fill_first_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -4531,15 +4759,19 @@ test_man_fill_first_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         TEST_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, H5P_DATASET_XFER_DEFAULT, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -4561,19 +4793,19 @@ test_man_fill_first_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_
     fill_size = get_fill_size(tparam);
 
     /* Fill direct blocks up in root indirect block */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, NULL))
+    if(fill_root_direct(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill first recursive indirect block */
-    if(fill_2nd_indirect(fh, dxpl, 1, fill_size, &state, NULL))
+    if(fill_2nd_indirect(fh, 1, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         TEST_ERROR
 
     /* Close the file */
@@ -4588,7 +4820,7 @@ test_man_fill_first_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -4613,11 +4845,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_second_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -4630,15 +4861,19 @@ test_man_second_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         TEST_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, H5P_DATASET_XFER_DEFAULT, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -4660,26 +4895,26 @@ test_man_second_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test
     fill_size = get_fill_size(tparam);
 
     /* Fill direct blocks up in root indirect block */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, NULL))
+    if(fill_root_direct(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Fill first recursive indirect block */
-    if(fill_2nd_indirect(fh, dxpl, 1, fill_size, &state, NULL))
+    if(fill_2nd_indirect(fh, 1, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert one more object, to force creation of second
      * recursive indirect block
      */
     state.man_alloc_size += DBLOCK_SIZE(fh, 0);
-    if(add_obj(fh, dxpl, (size_t)10, SMALL_OBJ_SIZE1, &state, NULL))
+    if(add_obj(fh, (size_t)10, SMALL_OBJ_SIZE1, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         TEST_ERROR
 
     /* Close the file */
@@ -4694,7 +4929,7 @@ test_man_second_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -4720,11 +4955,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_fill_second_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -4737,15 +4971,19 @@ test_man_fill_second_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fheap
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         TEST_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, H5P_DATASET_XFER_DEFAULT, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -4767,23 +5005,23 @@ test_man_fill_second_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fheap
     fill_size = get_fill_size(tparam);
 
     /* Fill direct blocks up in root indirect block */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, NULL))
+    if(fill_root_direct(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Fill first recursive indirect block */
-    if(fill_2nd_indirect(fh, dxpl, 1, fill_size, &state, NULL))
+    if(fill_2nd_indirect(fh, 1, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill 2nd recursive indirect block */
-    if(fill_2nd_indirect(fh, dxpl, 1, fill_size, &state, NULL))
+    if(fill_2nd_indirect(fh, 1, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         TEST_ERROR
 
     /* Close the file */
@@ -4798,7 +5036,7 @@ test_man_fill_second_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fheap
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -4824,11 +5062,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_fill_recursive_indirect_row(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -4841,15 +5078,15 @@ test_man_fill_recursive_indirect_row(hid_t fapl, H5HF_create_t *cparam, fheap_te
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         TEST_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
         STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, H5P_DATASET_XFER_DEFAULT, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -4871,19 +5108,19 @@ test_man_fill_recursive_indirect_row(hid_t fapl, H5HF_create_t *cparam, fheap_te
     fill_size = get_fill_size(tparam);
 
     /* Fill direct blocks in root indirect block up */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, NULL))
+    if(fill_root_direct(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill row of recursive indirect blocks */
-    if(fill_2nd_indirect_row(fh, dxpl, 1, fill_size, &state, NULL))
+    if(fill_2nd_indirect_row(fh, 1, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         TEST_ERROR
 
     /* Close the file */
@@ -4898,7 +5135,7 @@ test_man_fill_recursive_indirect_row(hid_t fapl, H5HF_create_t *cparam, fheap_te
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -4922,11 +5159,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_start_2nd_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -4939,15 +5175,19 @@ test_man_start_2nd_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_t
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         TEST_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, H5P_DATASET_XFER_DEFAULT, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -4969,26 +5209,26 @@ test_man_start_2nd_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_t
     fill_size = get_fill_size(tparam);
 
     /* Fill direct blocks in root indirect block up */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, NULL))
+    if(fill_root_direct(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Fill row of recursive indirect blocks */
-    if(fill_2nd_indirect_row(fh, dxpl, 1, fill_size, &state, NULL))
+    if(fill_2nd_indirect_row(fh, 1, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert one more object, to force creation of second
      * recursive indirect block
      */
     state.man_alloc_size += DBLOCK_SIZE(fh, 0);
-    if(add_obj(fh, dxpl, (size_t)10, SMALL_OBJ_SIZE1, &state, NULL))
+    if(add_obj(fh, (size_t)10, SMALL_OBJ_SIZE1, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         TEST_ERROR
 
     /* Close the file */
@@ -5003,7 +5243,7 @@ test_man_start_2nd_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_t
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -5027,11 +5267,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_recursive_indirect_two_deep(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -5044,15 +5283,19 @@ test_man_recursive_indirect_two_deep(hid_t fapl, H5HF_create_t *cparam, fheap_te
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         TEST_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, H5P_DATASET_XFER_DEFAULT, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -5074,19 +5317,19 @@ test_man_recursive_indirect_two_deep(hid_t fapl, H5HF_create_t *cparam, fheap_te
     fill_size = get_fill_size(tparam);
 
     /* Fill direct blocks up in root indirect block */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, NULL))
+    if(fill_root_direct(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all rows of 2nd level indirect blocks */
-    if(fill_all_2nd_indirect_rows(fh, dxpl, fill_size, &state, NULL))
+    if(fill_all_2nd_indirect_rows(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         TEST_ERROR
 
     /* Close the file */
@@ -5101,7 +5344,7 @@ test_man_recursive_indirect_two_deep(hid_t fapl, H5HF_create_t *cparam, fheap_te
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -5126,11 +5369,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_start_3rd_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -5143,15 +5385,19 @@ test_man_start_3rd_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_t
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         TEST_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, H5P_DATASET_XFER_DEFAULT, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -5173,26 +5419,26 @@ test_man_start_3rd_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_t
     fill_size = get_fill_size(tparam);
 
     /* Fill direct blocks up in root indirect block */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, NULL))
+    if(fill_root_direct(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Fill all rows of 2nd level indirect blocks */
-    if(fill_all_2nd_indirect_rows(fh, dxpl, fill_size, &state, NULL))
+    if(fill_all_2nd_indirect_rows(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert one more object, to force creation of third level deep
      * recursive indirect block
      */
     state.man_alloc_size += DBLOCK_SIZE(fh, 0);
-    if(add_obj(fh, dxpl, (size_t)10, SMALL_OBJ_SIZE1, &state, NULL))
+    if(add_obj(fh, (size_t)10, SMALL_OBJ_SIZE1, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         TEST_ERROR
 
     /* Close the file */
@@ -5207,7 +5453,7 @@ test_man_start_3rd_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_t
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -5232,11 +5478,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_fill_first_3rd_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -5249,15 +5494,19 @@ test_man_fill_first_3rd_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fh
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         TEST_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, H5P_DATASET_XFER_DEFAULT, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -5279,27 +5528,27 @@ test_man_fill_first_3rd_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fh
     fill_size = get_fill_size(tparam);
 
     /* Fill direct blocks up in root indirect block */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, NULL))
+    if(fill_root_direct(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Fill all rows of 2nd level indirect blocks */
-    if(fill_all_2nd_indirect_rows(fh, dxpl, fill_size, &state, NULL))
+    if(fill_all_2nd_indirect_rows(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Fill all direct block rows in third level indirect block */
-    if(fill_all_direct(fh, dxpl, fill_size, &state, NULL))
+    if(fill_all_direct(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill row of recursive indirect blocks in third level indirect block */
-    if(fill_2nd_indirect_row(fh, dxpl, 1, fill_size, &state, NULL))
+    if(fill_2nd_indirect_row(fh, 1, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         TEST_ERROR
 
     /* Close the file */
@@ -5314,7 +5563,7 @@ test_man_fill_first_3rd_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fh
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -5339,11 +5588,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_fill_3rd_recursive_indirect_row(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -5356,15 +5604,19 @@ test_man_fill_3rd_recursive_indirect_row(hid_t fapl, H5HF_create_t *cparam, fhea
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         TEST_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, H5P_DATASET_XFER_DEFAULT, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -5386,23 +5638,23 @@ test_man_fill_3rd_recursive_indirect_row(hid_t fapl, H5HF_create_t *cparam, fhea
     fill_size = get_fill_size(tparam);
 
     /* Fill direct blocks up in root indirect block */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, NULL))
+    if(fill_root_direct(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Fill all rows of 2nd level indirect blocks */
-    if(fill_all_2nd_indirect_rows(fh, dxpl, fill_size, &state, NULL))
+    if(fill_all_2nd_indirect_rows(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill 1st row of 3rd level indirect blocks */
-    if(fill_3rd_indirect_row(fh, dxpl, 1, fill_size, &state, NULL))
+    if(fill_3rd_indirect_row(fh, 1, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         TEST_ERROR
 
     /* Close the file */
@@ -5417,7 +5669,7 @@ test_man_fill_3rd_recursive_indirect_row(hid_t fapl, H5HF_create_t *cparam, fhea
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -5442,11 +5694,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_fill_all_3rd_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -5459,15 +5710,19 @@ test_man_fill_all_3rd_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fhea
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         TEST_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, H5P_DATASET_XFER_DEFAULT, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -5489,23 +5744,23 @@ test_man_fill_all_3rd_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fhea
     fill_size = get_fill_size(tparam);
 
     /* Fill direct blocks up in root indirect block */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, NULL))
+    if(fill_root_direct(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Fill all rows of 2nd level indirect blocks */
-    if(fill_all_2nd_indirect_rows(fh, dxpl, fill_size, &state, NULL))
+    if(fill_all_2nd_indirect_rows(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all rows of 3rd level indirect blocks */
-    if(fill_all_3rd_indirect_rows(fh, dxpl, fill_size, &state, NULL))
+    if(fill_all_3rd_indirect_rows(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         TEST_ERROR
 
     /* Close the file */
@@ -5520,7 +5775,7 @@ test_man_fill_all_3rd_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fhea
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -5546,11 +5801,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_start_4th_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -5563,15 +5817,19 @@ test_man_start_4th_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_t
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         TEST_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, H5P_DATASET_XFER_DEFAULT, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -5593,30 +5851,30 @@ test_man_start_4th_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_t
     fill_size = get_fill_size(tparam);
 
     /* Fill direct blocks up in root indirect block */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, NULL))
+    if(fill_root_direct(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Fill all rows of 2nd level indirect blocks */
-    if(fill_all_2nd_indirect_rows(fh, dxpl, fill_size, &state, NULL))
+    if(fill_all_2nd_indirect_rows(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Fill all rows of 3rd level indirect blocks */
-    if(fill_all_3rd_indirect_rows(fh, dxpl, fill_size, &state, NULL))
+    if(fill_all_3rd_indirect_rows(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert one more object, to force creation of four level deep
      * recursive indirect block
      */
     state.man_alloc_size += DBLOCK_SIZE(fh, 0);
-    if(add_obj(fh, dxpl, (size_t)10, SMALL_OBJ_SIZE1, &state, NULL))
+    if(add_obj(fh, (size_t)10, SMALL_OBJ_SIZE1, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         TEST_ERROR
 
     /* Close the file */
@@ -5631,7 +5889,7 @@ test_man_start_4th_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_t
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -5657,11 +5915,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_fill_first_4th_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -5674,15 +5931,19 @@ test_man_fill_first_4th_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fh
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         TEST_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, H5P_DATASET_XFER_DEFAULT, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -5704,35 +5965,35 @@ test_man_fill_first_4th_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fh
     fill_size = get_fill_size(tparam);
 
     /* Fill direct blocks up in root indirect block */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, NULL))
+    if(fill_root_direct(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Fill all rows of 2nd level indirect blocks */
-    if(fill_all_2nd_indirect_rows(fh, dxpl, fill_size, &state, NULL))
+    if(fill_all_2nd_indirect_rows(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Fill all rows of 3rd level indirect blocks */
-    if(fill_all_3rd_indirect_rows(fh, dxpl, fill_size, &state, NULL))
+    if(fill_all_3rd_indirect_rows(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Fill direct block rows in fourth level indirect block */
-    if(fill_all_direct(fh, dxpl, fill_size, &state, NULL))
+    if(fill_all_direct(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Fill all rows of 2nd level deep indirect blocks in fourth level indirect block */
-    if(fill_all_2nd_indirect_rows(fh, dxpl, fill_size, &state, NULL))
+    if(fill_all_2nd_indirect_rows(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill first row of 3rd level deep indirect blocks in fourth level indirect block */
-    if(fill_3rd_indirect_row(fh, dxpl, 1, fill_size, &state, NULL))
+    if(fill_3rd_indirect_row(fh, 1, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         TEST_ERROR
 
     /* Close the file */
@@ -5747,7 +6008,7 @@ test_man_fill_first_4th_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fh
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -5773,11 +6034,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_fill_4th_recursive_indirect_row(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -5790,15 +6050,19 @@ test_man_fill_4th_recursive_indirect_row(hid_t fapl, H5HF_create_t *cparam, fhea
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         TEST_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, H5P_DATASET_XFER_DEFAULT, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -5820,27 +6084,27 @@ test_man_fill_4th_recursive_indirect_row(hid_t fapl, H5HF_create_t *cparam, fhea
     fill_size = get_fill_size(tparam);
 
     /* Fill direct blocks up in root indirect block */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, NULL))
+    if(fill_root_direct(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Fill all rows of 2nd level indirect blocks */
-    if(fill_all_2nd_indirect_rows(fh, dxpl, fill_size, &state, NULL))
+    if(fill_all_2nd_indirect_rows(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Fill all rows of 3rd level indirect blocks */
-    if(fill_all_3rd_indirect_rows(fh, dxpl, fill_size, &state, NULL))
+    if(fill_all_3rd_indirect_rows(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill 1st row of 4th level indirect blocks */
-    if(fill_4th_indirect_row(fh, dxpl, 1, fill_size, &state, NULL))
+    if(fill_4th_indirect_row(fh, 1, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         TEST_ERROR
 
     /* Close the file */
@@ -5855,7 +6119,7 @@ test_man_fill_4th_recursive_indirect_row(hid_t fapl, H5HF_create_t *cparam, fhea
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -5881,11 +6145,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_fill_all_4th_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -5898,15 +6161,19 @@ test_man_fill_all_4th_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fhea
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         TEST_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, H5P_DATASET_XFER_DEFAULT, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -5928,27 +6195,27 @@ test_man_fill_all_4th_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fhea
     fill_size = get_fill_size(tparam);
 
     /* Fill direct blocks up in root indirect block */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, NULL))
+    if(fill_root_direct(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Fill all rows of 2nd level indirect blocks */
-    if(fill_all_2nd_indirect_rows(fh, dxpl, fill_size, &state, NULL))
+    if(fill_all_2nd_indirect_rows(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Fill all rows of 3rd level indirect blocks */
-    if(fill_all_3rd_indirect_rows(fh, dxpl, fill_size, &state, NULL))
+    if(fill_all_3rd_indirect_rows(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all rows of 4th level indirect blocks */
-    if(fill_all_4th_indirect_rows(fh, dxpl, fill_size, &state, NULL))
+    if(fill_all_4th_indirect_rows(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         TEST_ERROR
 
     /* Close the file */
@@ -5963,7 +6230,7 @@ test_man_fill_all_4th_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fhea
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -5992,11 +6259,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_start_5th_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -6009,15 +6275,19 @@ test_man_start_5th_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_t
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         TEST_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, H5P_DATASET_XFER_DEFAULT, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -6040,46 +6310,46 @@ test_man_start_5th_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_t
     fill_size = get_fill_size(tparam);
 
     /* Fill direct blocks up in root indirect block */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, NULL))
+    if(fill_root_direct(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap & file */
-    if(reopen_file(&file, &f, filename, fapl, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_file(&file, &f, filename, fapl, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all rows of 2nd level indirect blocks */
-    if(fill_all_2nd_indirect_rows(fh, dxpl, fill_size, &state, NULL))
+    if(fill_all_2nd_indirect_rows(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap & file */
-    if(reopen_file(&file, &f, filename, fapl, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_file(&file, &f, filename, fapl, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all rows of 3rd level indirect blocks */
-    if(fill_all_3rd_indirect_rows(fh, dxpl, fill_size, &state, NULL))
+    if(fill_all_3rd_indirect_rows(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap & file */
-    if(reopen_file(&file, &f, filename, fapl, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_file(&file, &f, filename, fapl, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all rows of 4th level indirect blocks */
-    if(fill_all_4th_indirect_rows(fh, dxpl, fill_size, &state, NULL))
+    if(fill_all_4th_indirect_rows(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap & file */
-    if(reopen_file(&file, &f, filename, fapl, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_file(&file, &f, filename, fapl, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert one more object, to force creation of five level deep
      * recursive indirect block
      */
     state.man_alloc_size += DBLOCK_SIZE(fh, 0);
-    if(add_obj(fh, dxpl, (size_t)10, (size_t)SMALL_OBJ_SIZE1, &state, NULL))
+    if(add_obj(fh, (size_t)10, (size_t)SMALL_OBJ_SIZE1, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         TEST_ERROR
 
     /* Close the file */
@@ -6094,7 +6364,7 @@ test_man_start_5th_recursive_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_t
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -6117,11 +6387,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_remove_bogus(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -6139,15 +6408,19 @@ test_man_remove_bogus(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpa
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         TEST_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, dxpl, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -6162,7 +6435,7 @@ test_man_remove_bogus(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpa
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /*
@@ -6184,17 +6457,17 @@ HDfprintf(stderr, "Random # seed was: %lu\n", seed);
     /* Set heap ID to random (non-null) value */
     heap_id[0] = H5HF_ID_VERS_CURR | H5HF_ID_TYPE_MAN;
     for(u = 1; u < HEAP_ID_LEN; u++)
-        heap_id[u] = HDrandom() + 1;
+        heap_id[u] = (unsigned char)(HDrandom() + 1);
 
     /* Try removing bogus heap ID from empty heap */
     H5E_BEGIN_TRY {
-        ret = H5HF_remove(fh, dxpl, heap_id);
+        ret = H5HF_remove(fh, heap_id);
     } H5E_END_TRY;
     if(ret >= 0)
         FAIL_STACK_ERROR
 
     /* Fill root direct blocks */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, NULL))
+    if(fill_root_direct(fh, fill_size, &state, NULL))
         FAIL_STACK_ERROR
 
     /* Get offset of random heap ID */
@@ -6206,7 +6479,7 @@ HDfprintf(stderr, "Random # seed was: %lu\n", seed);
         /* Set heap ID to random (non-null) value */
         heap_id[0] = H5HF_ID_VERS_CURR | H5HF_ID_TYPE_MAN;
         for(u = 1; u < HEAP_ID_LEN; u++)
-            heap_id[u] = HDrandom() + 1;
+            heap_id[u] = (unsigned char)(HDrandom() + 1);
 
         /* Get offset of random heap ID */
         if(H5HF_get_id_off_test(fh, heap_id, &obj_off) < 0)
@@ -6215,7 +6488,7 @@ HDfprintf(stderr, "Random # seed was: %lu\n", seed);
 
     /* Try removing bogus heap ID from heap w/objects */
     H5E_BEGIN_TRY {
-        ret = H5HF_remove(fh, dxpl, heap_id);
+        ret = H5HF_remove(fh, heap_id);
     } H5E_END_TRY;
     if(ret >= 0)
         TEST_ERROR
@@ -6223,14 +6496,14 @@ HDfprintf(stderr, "Random # seed was: %lu\n", seed);
 
     /* Try reading bogus heap ID from heap w/objects */
     H5E_BEGIN_TRY {
-        ret = H5HF_read(fh, dxpl, heap_id, shared_robj_g);
+        ret = H5HF_read(fh, heap_id, shared_robj_g);
     } H5E_END_TRY;
     if(ret >= 0)
         TEST_ERROR
     H5Eclear2(H5E_DEFAULT);
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         TEST_ERROR
 
     /* Close the file */
@@ -6246,7 +6519,7 @@ error:
     HDfprintf(stderr, "Random # seed was: %lu\n", seed);
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -6267,11 +6540,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_remove_one(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -6288,15 +6560,19 @@ test_man_remove_one(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpara
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         TEST_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, dxpl, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -6313,7 +6589,7 @@ test_man_remove_one(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpara
     /* Prepare for querying the size of a file with an empty heap */
 
     /* Close (empty) heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
 
     /* Close file */
@@ -6329,11 +6605,15 @@ test_man_remove_one(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpara
         FAIL_STACK_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
         FAIL_STACK_ERROR
 
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
+        STACK_ERROR
+
     /* Re-open heap */
-    if(NULL == (fh = H5HF_open(f, dxpl, fh_addr)))
+    if(NULL == (fh = H5HF_open(f, fh_addr)))
         FAIL_STACK_ERROR
 
     /*
@@ -6343,14 +6623,14 @@ test_man_remove_one(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpara
 
     /* Initialize the buffer for objects to insert */
     for(u = 0; u < sizeof(obj); u++)
-        obj[u] = u;
+        obj[u] = (unsigned char)u;
 
     /* Insert object into heap */
-    if(H5HF_insert(fh, dxpl, sizeof(obj), obj, &heap_id) < 0)
+    if(H5HF_insert(fh, sizeof(obj), obj, &heap_id) < 0)
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -6362,11 +6642,11 @@ test_man_remove_one(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpara
         FAIL_STACK_ERROR
 
     /* Remove object from heap */
-    if(H5HF_remove(fh, dxpl, heap_id) < 0)
+    if(H5HF_remove(fh, heap_id) < 0)
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -6378,8 +6658,9 @@ test_man_remove_one(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpara
         FAIL_STACK_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         TEST_ERROR
+    fh = NULL;
 
     /* Close the file */
     if(H5Fclose(file) < 0)
@@ -6401,7 +6682,7 @@ test_man_remove_one(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpara
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -6422,11 +6703,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_remove_two(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -6444,15 +6724,19 @@ test_man_remove_two(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpara
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         TEST_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, dxpl, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -6469,7 +6753,7 @@ test_man_remove_two(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpara
     /* Prepare for querying the size of a file with an empty heap */
 
     /* Close (empty) heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
 
     /* Close file */
@@ -6485,11 +6769,15 @@ test_man_remove_two(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpara
         FAIL_STACK_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
         FAIL_STACK_ERROR
 
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
+        STACK_ERROR
+
     /* Re-open heap */
-    if(NULL == (fh = H5HF_open(f, dxpl, fh_addr)))
+    if(NULL == (fh = H5HF_open(f, fh_addr)))
         FAIL_STACK_ERROR
 
     /*
@@ -6499,14 +6787,14 @@ test_man_remove_two(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpara
 
     /* Initialize the buffer for objects to insert */
     for(u = 0; u < sizeof(obj); u++)
-        obj[u] = u;
+        obj[u] = (unsigned char)u;
 
     /* Insert first object into heap */
-    if(H5HF_insert(fh, dxpl, sizeof(obj), obj, &heap_id1) < 0)
+    if(H5HF_insert(fh, sizeof(obj), obj, &heap_id1) < 0)
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -6518,11 +6806,11 @@ test_man_remove_two(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpara
         FAIL_STACK_ERROR
 
     /* Insert second object into heap */
-    if(H5HF_insert(fh, dxpl, sizeof(obj), obj, &heap_id2) < 0)
+    if(H5HF_insert(fh, sizeof(obj), obj, &heap_id2) < 0)
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -6532,11 +6820,11 @@ test_man_remove_two(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpara
         FAIL_STACK_ERROR
 
     /* Remove first object from heap */
-    if(H5HF_remove(fh, dxpl, heap_id1) < 0)
+    if(H5HF_remove(fh, heap_id1) < 0)
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -6546,11 +6834,11 @@ test_man_remove_two(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpara
         FAIL_STACK_ERROR
 
     /* Remove second object from heap */
-    if(H5HF_remove(fh, dxpl, heap_id2) < 0)
+    if(H5HF_remove(fh, heap_id2) < 0)
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -6562,8 +6850,9 @@ test_man_remove_two(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpara
         FAIL_STACK_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         TEST_ERROR
+    fh = NULL;
 
     /* Close the file */
     if(H5Fclose(file) < 0)
@@ -6585,7 +6874,7 @@ test_man_remove_two(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpara
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -6607,11 +6896,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_remove_one_larger(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -6629,15 +6917,19 @@ test_man_remove_one_larger(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         TEST_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, dxpl, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -6654,7 +6946,7 @@ test_man_remove_one_larger(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t
     /* Prepare for querying the size of a file with an empty heap */
 
     /* Close (empty) heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
 
     /* Close file */
@@ -6670,11 +6962,15 @@ test_man_remove_one_larger(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t
         FAIL_STACK_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
         FAIL_STACK_ERROR
 
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
+        STACK_ERROR
+
     /* Re-open heap */
-    if(NULL == (fh = H5HF_open(f, dxpl, fh_addr)))
+    if(NULL == (fh = H5HF_open(f, fh_addr)))
         FAIL_STACK_ERROR
 
     /*
@@ -6687,11 +6983,11 @@ test_man_remove_one_larger(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t
     obj = shared_wobj_g;
 
     /* Insert object into heap */
-    if(H5HF_insert(fh, dxpl, obj_len, obj, &heap_id) < 0)
+    if(H5HF_insert(fh, obj_len, obj, &heap_id) < 0)
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -6706,11 +7002,11 @@ test_man_remove_one_larger(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t
         FAIL_STACK_ERROR
 
     /* Remove object from heap */
-    if(H5HF_remove(fh, dxpl, heap_id) < 0)
+    if(H5HF_remove(fh, heap_id) < 0)
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -6722,8 +7018,9 @@ test_man_remove_one_larger(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t
         FAIL_STACK_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
+    fh = NULL;
 
     /* Close the file */
     if(H5Fclose(file) < 0)
@@ -6745,7 +7042,7 @@ test_man_remove_one_larger(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -6767,11 +7064,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_remove_two_larger(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -6790,15 +7086,19 @@ test_man_remove_two_larger(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         TEST_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, dxpl, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -6815,7 +7115,7 @@ test_man_remove_two_larger(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t
     /* Prepare for querying the size of a file with an empty heap */
 
     /* Close (empty) heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
 
     /* Close file */
@@ -6831,11 +7131,15 @@ test_man_remove_two_larger(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t
         FAIL_STACK_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
         FAIL_STACK_ERROR
 
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
+        STACK_ERROR
+
     /* Re-open heap */
-    if(NULL == (fh = H5HF_open(f, dxpl, fh_addr)))
+    if(NULL == (fh = H5HF_open(f, fh_addr)))
         FAIL_STACK_ERROR
 
     /*
@@ -6851,11 +7155,11 @@ test_man_remove_two_larger(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t
     obj = shared_wobj_g;
 
     /* Insert object into heap */
-    if(H5HF_insert(fh, dxpl, obj_len, obj, &heap_id1) < 0)
+    if(H5HF_insert(fh, obj_len, obj, &heap_id1) < 0)
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -6874,11 +7178,11 @@ test_man_remove_two_larger(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t
     obj = shared_wobj_g;
 
     /* Insert object into heap */
-    if(H5HF_insert(fh, dxpl, obj_len, obj, &heap_id2) < 0)
+    if(H5HF_insert(fh, obj_len, obj, &heap_id2) < 0)
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -6896,11 +7200,11 @@ test_man_remove_two_larger(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t
     /* Remove objects in different orders */
     if(tparam->del_dir == FHEAP_DEL_FORWARD) {
         /* Remove first object from heap */
-        if(H5HF_remove(fh, dxpl, heap_id1) < 0)
+        if(H5HF_remove(fh, heap_id1) < 0)
             FAIL_STACK_ERROR
 
         /* Check for closing & re-opening the heap */
-        if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+        if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
             TEST_ERROR
 
         /* Check up on heap... */
@@ -6911,16 +7215,16 @@ test_man_remove_two_larger(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t
             FAIL_STACK_ERROR
 
         /* Remove second object from heap */
-        if(H5HF_remove(fh, dxpl, heap_id2) < 0)
+        if(H5HF_remove(fh, heap_id2) < 0)
             FAIL_STACK_ERROR
     } /* end if */
     else {
         /* Remove second object from heap */
-        if(H5HF_remove(fh, dxpl, heap_id2) < 0)
+        if(H5HF_remove(fh, heap_id2) < 0)
             FAIL_STACK_ERROR
 
         /* Check for closing & re-opening the heap */
-        if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+        if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
             TEST_ERROR
 
         /* Check up on heap... */
@@ -6936,12 +7240,12 @@ test_man_remove_two_larger(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t
             FAIL_STACK_ERROR
 
         /* Remove first object from heap */
-        if(H5HF_remove(fh, dxpl, heap_id1) < 0)
+        if(H5HF_remove(fh, heap_id1) < 0)
             FAIL_STACK_ERROR
     } /* end else */
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -6953,8 +7257,9 @@ test_man_remove_two_larger(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t
         FAIL_STACK_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         TEST_ERROR
+    fh = NULL;
 
     /* Close the file */
     if(H5Fclose(file) < 0)
@@ -6980,7 +7285,7 @@ HDfprintf(stderr, "file_size = %lu\n", (unsigned long)file_size);
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -7002,11 +7307,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_remove_three_larger(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -7026,15 +7330,19 @@ test_man_remove_three_larger(hid_t fapl, H5HF_create_t *cparam, fheap_test_param
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         TEST_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, dxpl, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -7051,7 +7359,7 @@ test_man_remove_three_larger(hid_t fapl, H5HF_create_t *cparam, fheap_test_param
     /* Prepare for querying the size of a file with an empty heap */
 
     /* Close (empty) heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
 
     /* Close file */
@@ -7067,11 +7375,15 @@ test_man_remove_three_larger(hid_t fapl, H5HF_create_t *cparam, fheap_test_param
         FAIL_STACK_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
         FAIL_STACK_ERROR
 
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
+        STACK_ERROR
+
     /* Re-open heap */
-    if(NULL == (fh = H5HF_open(f, dxpl, fh_addr)))
+    if(NULL == (fh = H5HF_open(f, fh_addr)))
         FAIL_STACK_ERROR
 
     /*
@@ -7087,11 +7399,11 @@ test_man_remove_three_larger(hid_t fapl, H5HF_create_t *cparam, fheap_test_param
     obj = shared_wobj_g;
 
     /* Insert object into heap */
-    if(H5HF_insert(fh, dxpl, obj_len, obj, &heap_id1) < 0)
+    if(H5HF_insert(fh, obj_len, obj, &heap_id1) < 0)
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -7110,11 +7422,11 @@ test_man_remove_three_larger(hid_t fapl, H5HF_create_t *cparam, fheap_test_param
     obj = shared_wobj_g;
 
     /* Insert object into heap */
-    if(H5HF_insert(fh, dxpl, obj_len, obj, &heap_id2) < 0)
+    if(H5HF_insert(fh, obj_len, obj, &heap_id2) < 0)
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -7134,11 +7446,11 @@ test_man_remove_three_larger(hid_t fapl, H5HF_create_t *cparam, fheap_test_param
     obj = shared_wobj_g;
 
     /* Insert object into heap */
-    if(H5HF_insert(fh, dxpl, obj_len, obj, &heap_id3) < 0)
+    if(H5HF_insert(fh, obj_len, obj, &heap_id3) < 0)
         FAIL_STACK_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -7156,11 +7468,11 @@ test_man_remove_three_larger(hid_t fapl, H5HF_create_t *cparam, fheap_test_param
     /* Remove objects in different orders */
     if(tparam->del_dir == FHEAP_DEL_FORWARD) {
         /* Remove first object from heap */
-        if(H5HF_remove(fh, dxpl, heap_id1) < 0)
+        if(H5HF_remove(fh, heap_id1) < 0)
             FAIL_STACK_ERROR
 
         /* Check for closing & re-opening the heap */
-        if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+        if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
             TEST_ERROR
 
         /* Check up on heap... */
@@ -7171,11 +7483,11 @@ test_man_remove_three_larger(hid_t fapl, H5HF_create_t *cparam, fheap_test_param
             FAIL_STACK_ERROR
 
         /* Remove second object from heap */
-        if(H5HF_remove(fh, dxpl, heap_id2) < 0)
+        if(H5HF_remove(fh, heap_id2) < 0)
             FAIL_STACK_ERROR
 
         /* Check for closing & re-opening the heap */
-        if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+        if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
             TEST_ERROR
 
         /* Check up on heap... */
@@ -7186,16 +7498,16 @@ test_man_remove_three_larger(hid_t fapl, H5HF_create_t *cparam, fheap_test_param
             FAIL_STACK_ERROR
 
         /* Remove third object from heap */
-        if(H5HF_remove(fh, dxpl, heap_id3) < 0)
+        if(H5HF_remove(fh, heap_id3) < 0)
             FAIL_STACK_ERROR
     } /* end if */
     else {
         /* Remove third object from heap */
-        if(H5HF_remove(fh, dxpl, heap_id3) < 0)
+        if(H5HF_remove(fh, heap_id3) < 0)
             FAIL_STACK_ERROR
 
         /* Check for closing & re-opening the heap */
-        if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+        if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
             TEST_ERROR
 
         /* Check up on heap... */
@@ -7211,11 +7523,11 @@ test_man_remove_three_larger(hid_t fapl, H5HF_create_t *cparam, fheap_test_param
             FAIL_STACK_ERROR
 
         /* Remove second object from heap */
-        if(H5HF_remove(fh, dxpl, heap_id2) < 0)
+        if(H5HF_remove(fh, heap_id2) < 0)
             FAIL_STACK_ERROR
 
         /* Check for closing & re-opening the heap */
-        if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+        if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
             TEST_ERROR
 
         /* Check up on heap... */
@@ -7231,12 +7543,12 @@ test_man_remove_three_larger(hid_t fapl, H5HF_create_t *cparam, fheap_test_param
             FAIL_STACK_ERROR
 
         /* Remove first object from heap */
-        if(H5HF_remove(fh, dxpl, heap_id1) < 0)
+        if(H5HF_remove(fh, heap_id1) < 0)
             FAIL_STACK_ERROR
     } /* end else */
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -7248,8 +7560,9 @@ test_man_remove_three_larger(hid_t fapl, H5HF_create_t *cparam, fheap_test_param
         FAIL_STACK_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         TEST_ERROR
+    fh = NULL;
 
     /* Close the file */
     if(H5Fclose(file) < 0)
@@ -7275,7 +7588,7 @@ HDfprintf(stderr, "file_size = %lu\n", (unsigned long)file_size);
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -7299,7 +7612,6 @@ static unsigned
 test_man_incr_insert_remove(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -7307,7 +7619,7 @@ test_man_incr_insert_remove(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_
     unsigned char heap_id[100][MAX_HEAP_ID_LEN]; /* Heap ID for object inserted */
     struct a_type_t1 {
         char a[10];
-        char b[29];
+        char b[40];
     } obj1, obj2;                       /* Objects to insert/remove */
     size_t      id_len;                 /* Size of fractal heap IDs */
     fheap_heap_state_t state;           /* State of fractal heap */
@@ -7317,15 +7629,19 @@ test_man_incr_insert_remove(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_
     h5_fixname(FILENAME[0], fapl, filename, sizeof(filename));
 
     /* Create the file to work on */
-    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((file = H5Fcreate(filename, H5F_ACC_TRUNC, tparam->my_fcpl, fapl)) < 0)
         FAIL_STACK_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = (H5F_t *)H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if(H5AC_ignore_tags(f) < 0)
         STACK_ERROR
 
     /* Create absolute heap */
-    if(NULL == (fh = H5HF_create(f, dxpl, cparam)))
+    if(NULL == (fh = H5HF_create(f, cparam)))
         FAIL_STACK_ERROR
     if(H5HF_get_id_len(fh, &id_len) < 0)
         FAIL_STACK_ERROR
@@ -7344,30 +7660,31 @@ test_man_incr_insert_remove(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_
      */
     TESTING("incremental object insertion and removal")
 
+    HDmemset(&obj1, 0, sizeof(obj1));
+    HDmemset(&obj2, 0, sizeof(obj2));
     for(i = 0; i < 100; i++) {
-        sprintf(obj1.b, "%s%d", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", i);
-
         for(j = 0; j < i; j++) {
-            sprintf(obj2.b, "%s%d", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", j);
-
-            if(H5HF_remove(fh, dxpl, heap_id[j]) < 0)
+            if(H5HF_remove(fh, heap_id[j]) < 0)
                 FAIL_STACK_ERROR
-            if(H5HF_insert(fh, dxpl, (sizeof(obj2)), &obj2, heap_id[j]) < 0)
+
+            HDsprintf(obj2.b, "%s%2d", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", j);
+            if(H5HF_insert(fh, (sizeof(obj2)), &obj2, heap_id[j]) < 0)
                 FAIL_STACK_ERROR
         } /* end for */
 
         /* Check for closing & re-opening the heap */
-        if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+        if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
             TEST_ERROR
 
         /* Insert object */
         HDmemset(heap_id[i], 0, id_len);
-        if(H5HF_insert(fh, dxpl, (sizeof(obj1)), &obj1, heap_id[i]) < 0)
+        HDsprintf(obj1.b, "%s%2d", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", i);
+        if(H5HF_insert(fh, (sizeof(obj1)), &obj1, heap_id[i]) < 0)
             FAIL_STACK_ERROR
     } /* end for */
      
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         TEST_ERROR
 
     /* Close the file */
@@ -7382,7 +7699,7 @@ test_man_incr_insert_remove(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -7406,11 +7723,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_remove_root_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -7426,7 +7742,7 @@ test_man_remove_root_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
 
@@ -7434,12 +7750,12 @@ test_man_remove_root_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_
     state.man_size = DBLOCK_SIZE(fh, 0);
     state.man_alloc_size = DBLOCK_SIZE(fh, 0);
     state.man_free_space = DBLOCK_FREE(fh, 0);
-    if(fill_heap(fh, dxpl, 0, fill_size, &state, &keep_ids))
+    if(fill_heap(fh, 0, fill_size, &state, &keep_ids))
         TEST_ERROR
 
 
     /* Perform common file & heap close operations */
-    if(close_heap(filename, fapl, dxpl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
+    if(close_heap(filename, fapl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
         TEST_ERROR
 
     /* Free resources */
@@ -7458,7 +7774,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -7480,11 +7796,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_remove_two_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -7500,7 +7815,7 @@ test_man_remove_two_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
 
@@ -7508,11 +7823,11 @@ test_man_remove_two_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t
     state.man_size = DBLOCK_SIZE(fh, 0);
     state.man_alloc_size = DBLOCK_SIZE(fh, 0);
     state.man_free_space = DBLOCK_FREE(fh, 0);
-    if(fill_heap(fh, dxpl, 0, fill_size, &state, &keep_ids))
+    if(fill_heap(fh, 0, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -7523,12 +7838,12 @@ test_man_remove_two_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t
     state.man_size = cparam->managed.width * DBLOCK_SIZE(fh, 0);
     state.man_alloc_size += DBLOCK_SIZE(fh, 0);
     state.man_free_space = (cparam->managed.width - 1) * DBLOCK_FREE(fh, 0);
-    if(fill_heap(fh, dxpl, 0, fill_size, &state, &keep_ids))
+    if(fill_heap(fh, 0, fill_size, &state, &keep_ids))
         TEST_ERROR
 
 
     /* Perform common file & heap close operations */
-    if(close_heap(filename, fapl, dxpl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
+    if(close_heap(filename, fapl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
         TEST_ERROR
 
     /* Free resources */
@@ -7547,7 +7862,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -7569,11 +7884,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_remove_first_row(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -7589,17 +7903,17 @@ test_man_remove_first_row(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t 
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
 
     /* Fill first row of direct blocks */
-    if(fill_root_row(fh, dxpl, 0, fill_size, &state, &keep_ids))
+    if(fill_root_row(fh, 0, fill_size, &state, &keep_ids))
         TEST_ERROR
 
 
     /* Perform common file & heap close operations */
-    if(close_heap(filename, fapl, dxpl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
+    if(close_heap(filename, fapl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
         TEST_ERROR
 
     /* Free resources */
@@ -7618,7 +7932,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -7640,11 +7954,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_remove_first_two_rows(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -7660,19 +7973,19 @@ test_man_remove_first_two_rows(hid_t fapl, H5HF_create_t *cparam, fheap_test_par
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
 
     /* Fill first two rows of direct blocks */
-    if(fill_root_row(fh, dxpl, 0, fill_size, &state, &keep_ids))
+    if(fill_root_row(fh, 0, fill_size, &state, &keep_ids))
         TEST_ERROR
-    if(fill_root_row(fh, dxpl, 1, fill_size, &state, &keep_ids))
+    if(fill_root_row(fh, 1, fill_size, &state, &keep_ids))
         TEST_ERROR
 
 
     /* Perform common file & heap close operations */
-    if(close_heap(filename, fapl, dxpl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
+    if(close_heap(filename, fapl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
         TEST_ERROR
 
     /* Free resources */
@@ -7691,7 +8004,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -7713,11 +8026,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_remove_first_four_rows(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -7733,23 +8045,23 @@ test_man_remove_first_four_rows(hid_t fapl, H5HF_create_t *cparam, fheap_test_pa
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
 
     /* Fill first two rows of direct blocks */
-    if(fill_root_row(fh, dxpl, 0, fill_size, &state, &keep_ids))
+    if(fill_root_row(fh, 0, fill_size, &state, &keep_ids))
         TEST_ERROR
-    if(fill_root_row(fh, dxpl, 1, fill_size, &state, &keep_ids))
+    if(fill_root_row(fh, 1, fill_size, &state, &keep_ids))
         TEST_ERROR
-    if(fill_root_row(fh, dxpl, 2, fill_size, &state, &keep_ids))
+    if(fill_root_row(fh, 2, fill_size, &state, &keep_ids))
         TEST_ERROR
-    if(fill_root_row(fh, dxpl, 3, fill_size, &state, &keep_ids))
+    if(fill_root_row(fh, 3, fill_size, &state, &keep_ids))
         TEST_ERROR
 
 
     /* Perform common file & heap close operations */
-    if(close_heap(filename, fapl, dxpl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
+    if(close_heap(filename, fapl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
         TEST_ERROR
 
     /* Free resources */
@@ -7768,7 +8080,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -7790,11 +8102,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_remove_all_root_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -7810,17 +8121,17 @@ test_man_remove_all_root_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_pa
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
 
     /* Fill direct blocks in root indirect block */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_root_direct(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
 
     /* Perform common file & heap close operations */
-    if(close_heap(filename, fapl, dxpl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
+    if(close_heap(filename, fapl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
         TEST_ERROR
 
     /* Free resources */
@@ -7839,7 +8150,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -7861,11 +8172,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_remove_2nd_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -7881,21 +8191,21 @@ test_man_remove_2nd_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_param
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
 
     /* Fill direct blocks in root indirect block */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_root_direct(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Fill all rows of 2nd level indirect blocks */
-    if(fill_all_2nd_indirect_rows(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_2nd_indirect_rows(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
 
     /* Perform common file & heap close operations */
-    if(close_heap(filename, fapl, dxpl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
+    if(close_heap(filename, fapl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
         TEST_ERROR
 
     /* Free resources */
@@ -7914,7 +8224,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -7936,11 +8246,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_remove_3rd_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -7956,25 +8265,25 @@ test_man_remove_3rd_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_param
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
 
     /* Fill direct blocks in root indirect block */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_root_direct(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Fill all rows of 2nd level indirect blocks */
-    if(fill_all_2nd_indirect_rows(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_2nd_indirect_rows(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Fill all rows of 3rd level indirect blocks */
-    if(fill_all_3rd_indirect_rows(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_3rd_indirect_rows(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
 
     /* Perform common file & heap close operations */
-    if(close_heap(filename, fapl, dxpl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
+    if(close_heap(filename, fapl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
         TEST_ERROR
 
     /* Free resources */
@@ -7993,7 +8302,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -8020,11 +8329,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_skip_start_block(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -8040,7 +8348,7 @@ test_man_skip_start_block(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t 
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
     obj_size = (size_t)DBLOCK_SIZE(fh, 0) + 1;
@@ -8051,12 +8359,12 @@ test_man_skip_start_block(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t 
     state.man_free_space = cparam->managed.width * DBLOCK_FREE(fh, 0);
     state.man_free_space += cparam->managed.width * DBLOCK_FREE(fh, 1);
     state.man_free_space += cparam->managed.width * DBLOCK_FREE(fh, 2);
-    if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
         TEST_ERROR
 
 
     /* Perform common file & heap close operations */
-    if(close_heap(filename, fapl, dxpl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
+    if(close_heap(filename, fapl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
         TEST_ERROR
 
     /* Free resources */
@@ -8075,7 +8383,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -8098,11 +8406,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_skip_start_block_add_back(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -8118,7 +8425,7 @@ test_man_skip_start_block_add_back(hid_t fapl, H5HF_create_t *cparam, fheap_test
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
 
@@ -8131,30 +8438,30 @@ test_man_skip_start_block_add_back(hid_t fapl, H5HF_create_t *cparam, fheap_test
     state.man_free_space = cparam->managed.width * DBLOCK_FREE(fh, 0);
     state.man_free_space += cparam->managed.width * DBLOCK_FREE(fh, 1);
     state.man_free_space += cparam->managed.width * DBLOCK_FREE(fh, 2);
-    if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert an object to fill up the heap block just created */
     obj_size = (size_t)DBLOCK_FREE(fh, 2) - obj_size;
-    if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert second "real" object, which should go in earlier direct block */
     state.man_alloc_size += DBLOCK_SIZE(fh, 0);
-    if(add_obj(fh, dxpl, (size_t)20, (size_t)SMALL_OBJ_SIZE2, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, (size_t)SMALL_OBJ_SIZE2, &state, &keep_ids))
         TEST_ERROR
 
 
     /* Perform common file & heap close operations */
-    if(close_heap(filename, fapl, dxpl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
+    if(close_heap(filename, fapl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
         TEST_ERROR
 
     /* Free resources */
@@ -8173,7 +8480,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -8197,11 +8504,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_skip_start_block_add_skipped(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -8218,7 +8524,7 @@ test_man_skip_start_block_add_skipped(hid_t fapl, H5HF_create_t *cparam, fheap_t
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
 
@@ -8231,40 +8537,40 @@ test_man_skip_start_block_add_skipped(hid_t fapl, H5HF_create_t *cparam, fheap_t
     state.man_free_space = cparam->managed.width * DBLOCK_FREE(fh, 0);
     state.man_free_space += cparam->managed.width * DBLOCK_FREE(fh, 1);
     state.man_free_space += cparam->managed.width * DBLOCK_FREE(fh, 2);
-    if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert an object to fill up the heap block just created */
     obj_size = (size_t)DBLOCK_FREE(fh, 2) - obj_size;
-    if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Add rows of blocks to "backfill" direct blocks that were skipped */
-    if(fill_row(fh, dxpl, 0, fill_size, &state, &keep_ids))
+    if(fill_row(fh, 0, fill_size, &state, &keep_ids))
         TEST_ERROR
-    if(fill_row(fh, dxpl, 1, fill_size, &state, &keep_ids))
+    if(fill_row(fh, 1, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert another object, which should extend direct blocks, instead of backfill */
     state.man_alloc_size += DBLOCK_SIZE(fh, 2);
-    if(add_obj(fh, dxpl, (size_t)20, (size_t)SMALL_OBJ_SIZE2, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, (size_t)SMALL_OBJ_SIZE2, &state, &keep_ids))
         TEST_ERROR
 
 
     /* Perform common file & heap close operations */
-    if(close_heap(filename, fapl, dxpl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
+    if(close_heap(filename, fapl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
         TEST_ERROR
 
     /* Free resources */
@@ -8283,7 +8589,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -8307,11 +8613,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_skip_2nd_block(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -8327,7 +8632,7 @@ test_man_skip_2nd_block(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *t
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
 
@@ -8335,11 +8640,11 @@ test_man_skip_2nd_block(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *t
     state.man_size = DBLOCK_SIZE(fh, 0);
     state.man_alloc_size = DBLOCK_SIZE(fh, 0);
     state.man_free_space = DBLOCK_FREE(fh, 0);
-    if(add_obj(fh, dxpl, (size_t)10, (size_t)SMALL_OBJ_SIZE1, &state, &keep_ids))
+    if(add_obj(fh, (size_t)10, (size_t)SMALL_OBJ_SIZE1, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert large object, to force creation of indirect block and
@@ -8353,12 +8658,12 @@ test_man_skip_2nd_block(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *t
     state.man_free_space += (cparam->managed.width - 1 )* DBLOCK_FREE(fh, 0);
     state.man_free_space += cparam->managed.width * DBLOCK_FREE(fh, 1);
     state.man_free_space += cparam->managed.width * DBLOCK_FREE(fh, 2);
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
 
     /* Perform common file & heap close operations */
-    if(close_heap(filename, fapl, dxpl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
+    if(close_heap(filename, fapl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
         TEST_ERROR
 
     /* Free resources */
@@ -8377,7 +8682,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -8404,11 +8709,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_skip_2nd_block_add_skipped(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -8426,7 +8730,7 @@ test_man_skip_2nd_block_add_skipped(hid_t fapl, H5HF_create_t *cparam, fheap_tes
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
 
@@ -8434,11 +8738,11 @@ test_man_skip_2nd_block_add_skipped(hid_t fapl, H5HF_create_t *cparam, fheap_tes
     state.man_size = DBLOCK_SIZE(fh, 0);
     state.man_alloc_size = DBLOCK_SIZE(fh, 0);
     state.man_free_space = DBLOCK_FREE(fh, 0);
-    if(add_obj(fh, dxpl, (size_t)10, (size_t)SMALL_OBJ_SIZE1, &state, &keep_ids))
+    if(add_obj(fh, (size_t)10, (size_t)SMALL_OBJ_SIZE1, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert large object, to force creation of indirect block and
@@ -8452,29 +8756,29 @@ test_man_skip_2nd_block_add_skipped(hid_t fapl, H5HF_create_t *cparam, fheap_tes
     state.man_free_space += (cparam->managed.width - 1 )* DBLOCK_FREE(fh, 0);
     state.man_free_space += cparam->managed.width * DBLOCK_FREE(fh, 1);
     state.man_free_space += cparam->managed.width * DBLOCK_FREE(fh, 2);
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert an object to fill up the (smaller) heap block just created */
     obj_size = (size_t)DBLOCK_FREE(fh, 0) - SMALL_OBJ_SIZE1;
-    if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill remainder of 2 * start size block */
     obj_size = (size_t)DBLOCK_FREE(fh, 2) - ((size_t)DBLOCK_SIZE(fh, 0) + 1);
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert objects to fill remaining rows of the starting block size */
@@ -8482,26 +8786,26 @@ test_man_skip_2nd_block_add_skipped(hid_t fapl, H5HF_create_t *cparam, fheap_tes
     /* Fill remainder of first row of direct heap blocks up */
     for(v = 0; v < (cparam->managed.width - 1); v++) {
         state.man_alloc_size += DBLOCK_SIZE(fh, 0);
-        if(fill_heap(fh, dxpl, 0, fill_size, &state, &keep_ids))
+        if(fill_heap(fh, 0, fill_size, &state, &keep_ids))
             TEST_ERROR
     } /* end for */
 
     /* Fill second row of direct blocks */
-    if(fill_row(fh, dxpl, 1, fill_size, &state, &keep_ids))
+    if(fill_row(fh, 1, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert one more object, to create new 2 * start size direct block */
     state.man_alloc_size += DBLOCK_SIZE(fh, 2);
-    if(add_obj(fh, dxpl, (size_t)10, (size_t)SMALL_OBJ_SIZE1, &state, &keep_ids))
+    if(add_obj(fh, (size_t)10, (size_t)SMALL_OBJ_SIZE1, &state, &keep_ids))
         TEST_ERROR
 
 
     /* Perform common file & heap close operations */
-    if(close_heap(filename, fapl, dxpl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
+    if(close_heap(filename, fapl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
         TEST_ERROR
 
     /* Free resources */
@@ -8520,7 +8824,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -8549,11 +8853,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_fill_one_partial_skip_2nd_block_add_skipped(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -8571,7 +8874,7 @@ test_man_fill_one_partial_skip_2nd_block_add_skipped(hid_t fapl, H5HF_create_t *
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
 
@@ -8579,22 +8882,22 @@ test_man_fill_one_partial_skip_2nd_block_add_skipped(hid_t fapl, H5HF_create_t *
     state.man_size = DBLOCK_SIZE(fh, 0);
     state.man_alloc_size = DBLOCK_SIZE(fh, 0);
     state.man_free_space = DBLOCK_FREE(fh, 0);
-    if(fill_heap(fh, dxpl, 0, fill_size, &state, &keep_ids))
+    if(fill_heap(fh, 0, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert small object, to create root indirect block */
     state.man_size += (cparam->managed.width - 1) * DBLOCK_SIZE(fh, 0);
     state.man_alloc_size += DBLOCK_SIZE(fh, 0);
     state.man_free_space += (cparam->managed.width - 1) * DBLOCK_FREE(fh, 0);
-    if(add_obj(fh, dxpl, (size_t)10, (size_t)SMALL_OBJ_SIZE1, &state, &keep_ids))
+    if(add_obj(fh, (size_t)10, (size_t)SMALL_OBJ_SIZE1, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert large object, to force creation of indirect block and
@@ -8608,67 +8911,67 @@ test_man_fill_one_partial_skip_2nd_block_add_skipped(hid_t fapl, H5HF_create_t *
     state.man_free_space += cparam->managed.width * DBLOCK_FREE(fh, 1);
     state.man_free_space += cparam->managed.width * DBLOCK_FREE(fh, 2);
     state.man_free_space += cparam->managed.width * DBLOCK_FREE(fh, 3);
-    if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert an object to fill up the (smaller) heap block just created */
     obj_size = (size_t)DBLOCK_FREE(fh, 0) - SMALL_OBJ_SIZE1;
-    if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert object to fill remainder of 4 * start size block */
     obj_size = (size_t)DBLOCK_FREE(fh, 3) - ((size_t)DBLOCK_SIZE(fh, 2) + 1);
-    if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert objects to fill remaining heaps in first row */
     for(u = 0; u < (cparam->managed.width - 2); u++) {
         /* Fill a direct heap block up */
         state.man_alloc_size += DBLOCK_SIZE(fh, 0);
-        if(fill_heap(fh, dxpl, 0, fill_size, &state, &keep_ids))
+        if(fill_heap(fh, 0, fill_size, &state, &keep_ids))
             TEST_ERROR
     } /* end for */
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert objects to fill remaining heaps in second row */
-    if(fill_row(fh, dxpl, 1, fill_size, &state, &keep_ids))
+    if(fill_row(fh, 1, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert objects to fill remaining heaps in third row */
-    if(fill_row(fh, dxpl, 2, fill_size, &state, &keep_ids))
+    if(fill_row(fh, 2, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert one more object, to create new 4 * start size direct block */
     state.man_alloc_size += DBLOCK_SIZE(fh, 3);
-    if(add_obj(fh, dxpl, (size_t)10, (size_t)SMALL_OBJ_SIZE1, &state, &keep_ids))
+    if(add_obj(fh, (size_t)10, (size_t)SMALL_OBJ_SIZE1, &state, &keep_ids))
         TEST_ERROR
 
 
     /* Perform common file & heap close operations */
-    if(close_heap(filename, fapl, dxpl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
+    if(close_heap(filename, fapl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
         TEST_ERROR
 
     /* Free resources */
@@ -8687,7 +8990,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -8715,11 +9018,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_fill_row_skip_add_skipped(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -8736,16 +9038,16 @@ test_man_fill_row_skip_add_skipped(hid_t fapl, H5HF_create_t *cparam, fheap_test
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
 
     /* Fill first row of direct blocks */
-    if(fill_root_row(fh, dxpl, 0, fill_size, &state, &keep_ids))
+    if(fill_root_row(fh, 0, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert large object, to force creation of indirect block and
@@ -8759,46 +9061,46 @@ test_man_fill_row_skip_add_skipped(hid_t fapl, H5HF_create_t *cparam, fheap_test
     state.man_free_space += cparam->managed.width * DBLOCK_FREE(fh, 1);
     state.man_free_space += cparam->managed.width * DBLOCK_FREE(fh, 2);
     state.man_free_space += cparam->managed.width * DBLOCK_FREE(fh, 3);
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert object to fill remainder of 4 * start size block */
     obj_size = (size_t)DBLOCK_FREE(fh, 3) - obj_size;
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert objects to fill remaining heaps in second row */
-    if(fill_row(fh, dxpl, 1, fill_size, &state, &keep_ids))
+    if(fill_row(fh, 1, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert objects to fill remaining heaps in third row */
-    if(fill_row(fh, dxpl, 2, fill_size, &state, &keep_ids))
+    if(fill_row(fh, 2, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert one more object, to create new 4 * start size direct block */
     state.man_alloc_size += DBLOCK_SIZE(fh, 3);
-    if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
         TEST_ERROR
 
 
     /* Perform common file & heap close operations */
-    if(close_heap(filename, fapl, dxpl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
+    if(close_heap(filename, fapl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
         TEST_ERROR
 
     /* Free resources */
@@ -8817,7 +9119,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -8842,11 +9144,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_skip_direct_skip_indirect_two_rows_add_skipped(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -8865,7 +9166,7 @@ test_man_skip_direct_skip_indirect_two_rows_add_skipped(hid_t fapl, H5HF_create_
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
 
@@ -8884,7 +9185,7 @@ test_man_skip_direct_skip_indirect_two_rows_add_skipped(hid_t fapl, H5HF_create_
      */
     obj_size = (size_t)DBLOCK_SIZE(fh, row - 2) + 1;
     state.man_alloc_size += DBLOCK_SIZE(fh, row - 1);
-    if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Compute heap size & free space when all direct blocks allocated */
@@ -8901,12 +9202,12 @@ test_man_skip_direct_skip_indirect_two_rows_add_skipped(hid_t fapl, H5HF_create_
     obj_size = (size_t)DBLOCK_SIZE(fh, num_direct_rows - 2) + 1;
     for(v = 0; v < cparam->managed.width; v++) {
         state.man_alloc_size += DBLOCK_SIZE(fh, num_direct_rows - 1);
-        if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+        if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
             TEST_ERROR
     } /* end for */
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Compute heap size & free space when root indirect block doubles again */
@@ -8921,12 +9222,12 @@ test_man_skip_direct_skip_indirect_two_rows_add_skipped(hid_t fapl, H5HF_create_
      */
     obj_size = (size_t)DBLOCK_SIZE(fh, num_direct_rows - 2) + 1;
     state.man_alloc_size += DBLOCK_SIZE(fh, num_direct_rows - 1);
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
 
     /* Perform common file & heap close operations */
-    if(close_heap(filename, fapl, dxpl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
+    if(close_heap(filename, fapl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
         TEST_ERROR
 
     /* Free resources */
@@ -8945,7 +9246,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -8969,11 +9270,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_fill_direct_skip_indirect_start_block_add_skipped(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -8990,16 +9290,16 @@ test_man_fill_direct_skip_indirect_start_block_add_skipped(hid_t fapl, H5HF_crea
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
 
     /* Fill direct blocks in root indirect block */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_root_direct(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert large object, to force creation of indirect block and
@@ -9007,49 +9307,49 @@ test_man_fill_direct_skip_indirect_start_block_add_skipped(hid_t fapl, H5HF_crea
      */
     obj_size = (size_t)DBLOCK_SIZE(fh, 2) + 1;
     state.man_alloc_size += DBLOCK_SIZE(fh, 3);
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Add rows of blocks to "backfill" direct blocks that were skipped */
-    if(fill_row(fh, dxpl, 0, fill_size, &state, &keep_ids))
+    if(fill_row(fh, 0, fill_size, &state, &keep_ids))
         TEST_ERROR
-    if(fill_row(fh, dxpl, 1, fill_size, &state, &keep_ids))
+    if(fill_row(fh, 1, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert an object to fill up the (biggest) heap block created */
     obj_size = (size_t)DBLOCK_FREE(fh, 3) - obj_size;
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill direct block heaps with 2 * initial block size in nested indirect block */
-    if(fill_row(fh, dxpl, 2, fill_size, &state, &keep_ids))
+    if(fill_row(fh, 2, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert one more object, to create new 4 * start size direct block */
     obj_size = SMALL_OBJ_SIZE1;
     state.man_alloc_size += DBLOCK_SIZE(fh, 3);
-    if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
         TEST_ERROR
 
 
     /* Perform common file & heap close operations */
-    if(close_heap(filename, fapl, dxpl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
+    if(close_heap(filename, fapl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
         TEST_ERROR
 
     /* Free resources */
@@ -9068,7 +9368,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -9093,11 +9393,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_fill_direct_skip_2nd_indirect_start_block_add_skipped(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -9117,7 +9416,7 @@ test_man_fill_direct_skip_2nd_indirect_start_block_add_skipped(hid_t fapl, H5HF_
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
 
@@ -9125,11 +9424,11 @@ test_man_fill_direct_skip_2nd_indirect_start_block_add_skipped(hid_t fapl, H5HF_
     num_first_indirect_rows = IBLOCK_MAX_DROWS(fh, 1);
 
     /* Fill direct blocks in root indirect block */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_root_direct(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert large object, to force creation of indirect block and
@@ -9138,46 +9437,46 @@ test_man_fill_direct_skip_2nd_indirect_start_block_add_skipped(hid_t fapl, H5HF_
      */
     obj_size = (size_t)DBLOCK_SIZE(fh, num_first_indirect_rows - 1) + 1;
     state.man_alloc_size += DBLOCK_SIZE(fh, num_first_indirect_rows);
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert object to fill space in (large) block created */
     obj_size = (size_t)DBLOCK_FREE(fh, num_first_indirect_rows) - obj_size;
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all rows of direct blocks that are smaller than large object's block size */
     for(row = 0; row < num_first_indirect_rows; row++) {
         /* Fill rows of direct blocks in skipped indirect blocks */
         for(u = 0; u < cparam->managed.width; u++)
-            if(fill_row(fh, dxpl, row, fill_size, &state, &keep_ids))
+            if(fill_row(fh, row, fill_size, &state, &keep_ids))
                 TEST_ERROR
 
         /* Fill row of direct blocks in largest (i.e. non-skipped) indirect block */
-        if(fill_row(fh, dxpl, row, fill_size, &state, &keep_ids))
+        if(fill_row(fh, row, fill_size, &state, &keep_ids))
             TEST_ERROR
     } /* end for */
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Add one more object, to create another "large" block */
     obj_size = SMALL_OBJ_SIZE1;
     state.man_alloc_size += DBLOCK_SIZE(fh, num_first_indirect_rows);
-    if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Perform common file & heap close operations */
-    if(close_heap(filename, fapl, dxpl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
+    if(close_heap(filename, fapl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
         TEST_ERROR
 
     /* Free resources */
@@ -9196,7 +9495,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -9222,11 +9521,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_fill_2nd_direct_less_one_wrap_start_block_add_skipped(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -9245,7 +9543,7 @@ test_man_fill_2nd_direct_less_one_wrap_start_block_add_skipped(hid_t fapl, H5HF_
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
 
@@ -9253,21 +9551,21 @@ test_man_fill_2nd_direct_less_one_wrap_start_block_add_skipped(hid_t fapl, H5HF_
     num_first_indirect_rows = IBLOCK_MAX_DROWS(fh, 1);
 
     /* Fill direct blocks in root indirect block */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_root_direct(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill first row (except one) of 2nd level indirect blocks */
     for(u = 0; u < cparam->managed.width - 1; u++)
         /* Fill all rows of 2nd level indirect blocks in root block */
-        if(fill_2nd_indirect(fh, dxpl, 1, fill_size, &state, &keep_ids))
+        if(fill_2nd_indirect(fh, 1, fill_size, &state, &keep_ids))
             TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert large object, to force creation of indirect block and
@@ -9279,20 +9577,20 @@ test_man_fill_2nd_direct_less_one_wrap_start_block_add_skipped(hid_t fapl, H5HF_
 HDfprintf(stderr, "obj_size = %Zu\n", obj_size);
 #endif /* QAK */
     state.man_alloc_size += DBLOCK_SIZE(fh, num_first_indirect_rows);
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert object to fill space in (large) block created */
     obj_size = (size_t)DBLOCK_FREE(fh, num_first_indirect_rows) - obj_size;
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill rows skipped over in 2nd level indirect block's direct blocks
@@ -9300,27 +9598,27 @@ HDfprintf(stderr, "obj_size = %Zu\n", obj_size);
      */
     for(u = 0; u < num_first_indirect_rows; u++) {
         /* Direct block rows in skipped 2nd level indirect block */
-        if(fill_row(fh, dxpl, u, fill_size, &state, &keep_ids))
+        if(fill_row(fh, u, fill_size, &state, &keep_ids))
             TEST_ERROR
 
         /* Direct block row in current 2nd level indirect block */
-        if(fill_row(fh, dxpl, u, fill_size, &state, &keep_ids))
+        if(fill_row(fh, u, fill_size, &state, &keep_ids))
             TEST_ERROR
     } /* end for */
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Add one more object, to create another "large" block */
     obj_size = SMALL_OBJ_SIZE1;
     state.man_alloc_size += DBLOCK_SIZE(fh, num_first_indirect_rows);
-    if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
         TEST_ERROR
 
 
     /* Perform common file & heap close operations */
-    if(close_heap(filename, fapl, dxpl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
+    if(close_heap(filename, fapl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
         TEST_ERROR
 
     /* Free resources */
@@ -9339,7 +9637,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -9368,11 +9666,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_fill_direct_skip_2nd_indirect_skip_2nd_block_add_skipped(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -9392,7 +9689,7 @@ test_man_fill_direct_skip_2nd_indirect_skip_2nd_block_add_skipped(hid_t fapl, H5
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
 
@@ -9400,11 +9697,11 @@ test_man_fill_direct_skip_2nd_indirect_skip_2nd_block_add_skipped(hid_t fapl, H5
     num_first_indirect_rows = IBLOCK_MAX_DROWS(fh, 1);
 
     /* Fill direct blocks in root indirect block */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_root_direct(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert large object, to force creation of indirect block and
@@ -9416,20 +9713,20 @@ test_man_fill_direct_skip_2nd_indirect_skip_2nd_block_add_skipped(hid_t fapl, H5
 HDfprintf(stderr, "obj_size = %Zu\n", obj_size);
 #endif /* QAK */
     state.man_alloc_size += DBLOCK_SIZE(fh, num_first_indirect_rows);
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert object to fill space in (large) block created */
     obj_size = (size_t)DBLOCK_FREE(fh, num_first_indirect_rows) - obj_size;
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert object too large for initial block size in skipped indirect blocks */
@@ -9438,11 +9735,11 @@ HDfprintf(stderr, "obj_size = %Zu\n", obj_size);
 HDfprintf(stderr, "obj_size = %Zu\n", obj_size);
 #endif /* QAK */
     state.man_alloc_size += DBLOCK_SIZE(fh, 4);
-    if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert object to fill space in (medium) block just created */
@@ -9450,52 +9747,52 @@ HDfprintf(stderr, "obj_size = %Zu\n", obj_size);
 #ifdef QAK
 HDfprintf(stderr, "obj_size = %Zu\n", obj_size);
 #endif /* QAK */
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Finish off blocks in row of medium block size (just to make row filling easier below) */
     obj_size = (size_t)DBLOCK_FREE(fh, 4);
     for(u = 1; u < cparam->managed.width; u++) {
         state.man_alloc_size += DBLOCK_SIZE(fh, 4);
-        if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+        if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
             TEST_ERROR
     } /* end for */
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all rows of direct blocks that are smaller than large object's block size */
     for(row = 0; row < num_first_indirect_rows; row++) {
         /* Fill rows of direct blocks in skipped indirect blocks */
         for(u = 0; u < cparam->managed.width; u++)
-            if(fill_row(fh, dxpl, row, fill_size, &state, &keep_ids))
+            if(fill_row(fh, row, fill_size, &state, &keep_ids))
                 TEST_ERROR
 
         /* Fill row of direct blocks in largest (i.e. non-skipped) indirect block */
         /* (Skip the row of blocks filled above) */
         if(row != 4)
-            if(fill_row(fh, dxpl, row, fill_size, &state, &keep_ids))
+            if(fill_row(fh, row, fill_size, &state, &keep_ids))
                 TEST_ERROR
     } /* end while */
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Add one more object, to create another "large" block */
     obj_size = SMALL_OBJ_SIZE1;
     state.man_alloc_size += DBLOCK_SIZE(fh, num_first_indirect_rows);
-    if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
         TEST_ERROR
 
 
     /* Perform common file & heap close operations */
-    if(close_heap(filename, fapl, dxpl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
+    if(close_heap(filename, fapl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
         TEST_ERROR
 
     /* Free resources */
@@ -9514,7 +9811,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -9538,11 +9835,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_fill_direct_skip_indirect_two_rows_add_skipped(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -9562,7 +9858,7 @@ test_man_fill_direct_skip_indirect_two_rows_add_skipped(hid_t fapl, H5HF_create_
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
 
@@ -9571,11 +9867,11 @@ test_man_fill_direct_skip_indirect_two_rows_add_skipped(hid_t fapl, H5HF_create_
     max_dblock_rows = DTABLE_MAX_DROWS(fh);
 
     /* Fill direct blocks in root indirect block */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_root_direct(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert large object, to force creation of indirect block and
@@ -9583,71 +9879,71 @@ test_man_fill_direct_skip_indirect_two_rows_add_skipped(hid_t fapl, H5HF_create_
      */
     obj_size = (size_t)DBLOCK_SIZE(fh, max_dblock_rows - 2) + 1;
     state.man_alloc_size += DBLOCK_SIZE(fh, max_dblock_rows - 1);
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert an object to fill up the (biggest) heap block created */
     obj_size = (size_t)DBLOCK_FREE(fh, max_dblock_rows - 1) - obj_size;
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill rows skipped over in indirect block's direct blocks */
     for(u = 0; u < num_first_indirect_rows; u++) {
         /* Direct block rows in first row of skipped 2nd level indirect blocks */
         for(v = 0; v < cparam->managed.width; v++)
-            if(fill_row(fh, dxpl, u, fill_size, &state, &keep_ids))
+            if(fill_row(fh, u, fill_size, &state, &keep_ids))
                 TEST_ERROR
 
         /* Direct block rows in second row of skipped 2nd level indirect blocks */
         for(v = 0; v < cparam->managed.width; v++)
-            if(fill_row(fh, dxpl, u, fill_size, &state, &keep_ids))
+            if(fill_row(fh, u, fill_size, &state, &keep_ids))
                 TEST_ERROR
 
         /* Direct block row in used 2nd level indirect block */
-        if(fill_row(fh, dxpl, u, fill_size, &state, &keep_ids))
+        if(fill_row(fh, u, fill_size, &state, &keep_ids))
             TEST_ERROR
     } /* end for */
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill rows in second row of skipped 2nd level indirect blocks (and used 2nd level block) */
 
     /* Direct block rows in skipped 2nd level indirect blocks */
     for(v = 0; v < cparam->managed.width; v++)
-        if(fill_row(fh, dxpl, num_first_indirect_rows, fill_size, &state, &keep_ids))
+        if(fill_row(fh, num_first_indirect_rows, fill_size, &state, &keep_ids))
             TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Direct block row in used 2nd level indirect block */
-    if(fill_row(fh, dxpl, num_first_indirect_rows, fill_size, &state, &keep_ids))
+    if(fill_row(fh, num_first_indirect_rows, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Add one more object, to create another "large" block */
     obj_size = SMALL_OBJ_SIZE1;
     state.man_alloc_size += DBLOCK_SIZE(fh, max_dblock_rows - 1);
-    if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
         TEST_ERROR
 
 
     /* Perform common file & heap close operations */
-    if(close_heap(filename, fapl, dxpl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
+    if(close_heap(filename, fapl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
         TEST_ERROR
 
     /* Free resources */
@@ -9666,7 +9962,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -9692,11 +9988,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_fill_direct_skip_indirect_two_rows_skip_indirect_row_add_skipped(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -9716,7 +10011,7 @@ test_man_fill_direct_skip_indirect_two_rows_skip_indirect_row_add_skipped(hid_t 
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
 
@@ -9725,11 +10020,11 @@ test_man_fill_direct_skip_indirect_two_rows_skip_indirect_row_add_skipped(hid_t 
     max_dblock_rows = DTABLE_MAX_DROWS(fh);
 
     /* Fill direct blocks in root indirect block */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_root_direct(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert large object, to force creation of two rows of indirect blocks and
@@ -9737,20 +10032,20 @@ test_man_fill_direct_skip_indirect_two_rows_skip_indirect_row_add_skipped(hid_t 
      */
     obj_size = (size_t)DBLOCK_SIZE(fh, max_dblock_rows - 2) + 1;
     state.man_alloc_size += DBLOCK_SIZE(fh, max_dblock_rows - 1);
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert an object to fill up the (biggest) heap block created */
     obj_size = (size_t)DBLOCK_FREE(fh, max_dblock_rows - 1) - obj_size;
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert large object that can't fit in first row of indirect blocks
@@ -9759,76 +10054,76 @@ test_man_fill_direct_skip_indirect_two_rows_skip_indirect_row_add_skipped(hid_t 
      */
     obj_size = (size_t)DBLOCK_SIZE(fh, max_dblock_rows - 3) + 1;
     state.man_alloc_size += DBLOCK_SIZE(fh, max_dblock_rows - 2);
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert an object to fill up the (2nd biggest) heap block created */
     obj_size = (size_t)DBLOCK_FREE(fh, max_dblock_rows - 2) - obj_size;
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill rows skipped over in indirect block's direct blocks */
     for(u = 0; u < num_first_indirect_rows; u++) {
         /* Direct block rows in first row of skipped 2nd level indirect blocks */
         for(v = 0; v < cparam->managed.width; v++)
-            if(fill_row(fh, dxpl, u, fill_size, &state, &keep_ids))
+            if(fill_row(fh, u, fill_size, &state, &keep_ids))
                 TEST_ERROR
 
         /* Direct block rows in second row of skipped 2nd level indirect blocks */
         for(v = 0; v < cparam->managed.width; v++)
-            if(fill_row(fh, dxpl, u, fill_size, &state, &keep_ids))
+            if(fill_row(fh, u, fill_size, &state, &keep_ids))
                 TEST_ERROR
 
         /* Direct block row in used 2nd level indirect block */
-        if(fill_row(fh, dxpl, u, fill_size, &state, &keep_ids))
+        if(fill_row(fh, u, fill_size, &state, &keep_ids))
             TEST_ERROR
     } /* end for */
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill rows in second row of skipped 2nd level indirect blocks (and used 2nd level block) */
 
     /* Finish blocks in partially used 2nd level indirect block */
-    if(fill_partial_row(fh, dxpl, num_first_indirect_rows, cparam->managed.width - 1, fill_size, &state, &keep_ids))
+    if(fill_partial_row(fh, num_first_indirect_rows, cparam->managed.width - 1, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Direct block rows in skipped 2nd level indirect blocks */
     /* (less the one indirect block already used) */
     for(v = 0; v < cparam->managed.width - 1; v++)
-        if(fill_row(fh, dxpl, num_first_indirect_rows, fill_size, &state, &keep_ids))
+        if(fill_row(fh, num_first_indirect_rows, fill_size, &state, &keep_ids))
             TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Direct block row in used 3rd row 2nd level indirect block */
-    if(fill_row(fh, dxpl, num_first_indirect_rows, fill_size, &state, &keep_ids))
+    if(fill_row(fh, num_first_indirect_rows, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Add one more object, to create another "large" block */
     obj_size = SMALL_OBJ_SIZE1;
     state.man_alloc_size += DBLOCK_SIZE(fh, max_dblock_rows - 1);
-    if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
         TEST_ERROR
 
 
     /* Perform common file & heap close operations */
-    if(close_heap(filename, fapl, dxpl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
+    if(close_heap(filename, fapl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
         TEST_ERROR
 
     /* Free resources */
@@ -9847,7 +10142,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -9872,11 +10167,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_fill_2nd_direct_skip_start_block_add_skipped(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -9893,24 +10187,24 @@ test_man_fill_2nd_direct_skip_start_block_add_skipped(hid_t fapl, H5HF_create_t 
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
 
     /* Fill direct blocks in root indirect block */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_root_direct(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all rows of 2nd level indirect blocks */
-    if(fill_all_2nd_indirect_rows(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_2nd_indirect_rows(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert large object, to force creation of indirect block and
@@ -9919,43 +10213,43 @@ test_man_fill_2nd_direct_skip_start_block_add_skipped(hid_t fapl, H5HF_create_t 
      */
     obj_size = (size_t)DBLOCK_SIZE(fh, 2) + 1;
     state.man_alloc_size += DBLOCK_SIZE(fh, 3);
-    if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert object to fill space in (large) block created */
     obj_size = (size_t)DBLOCK_FREE(fh, 3) - obj_size;
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill rows skipped over in 3rd level indirect block's direct blocks */
-    if(fill_row(fh, dxpl, 0, fill_size, &state, &keep_ids))
+    if(fill_row(fh, 0, fill_size, &state, &keep_ids))
         TEST_ERROR
-    if(fill_row(fh, dxpl, 1, fill_size, &state, &keep_ids))
+    if(fill_row(fh, 1, fill_size, &state, &keep_ids))
         TEST_ERROR
-    if(fill_row(fh, dxpl, 2, fill_size, &state, &keep_ids))
+    if(fill_row(fh, 2, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Add one more object, to create another "large" block */
     obj_size = SMALL_OBJ_SIZE1;
     state.man_alloc_size += DBLOCK_SIZE(fh, 3);
-    if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
         TEST_ERROR
 
 
     /* Perform common file & heap close operations */
-    if(close_heap(filename, fapl, dxpl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
+    if(close_heap(filename, fapl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
         TEST_ERROR
 
     /* Free resources */
@@ -9974,7 +10268,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -10001,11 +10295,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_fill_2nd_direct_skip_2nd_indirect_start_block_add_skipped(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -10022,32 +10315,32 @@ test_man_fill_2nd_direct_skip_2nd_indirect_start_block_add_skipped(hid_t fapl, H
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
 
     /* Fill direct blocks in root indirect block */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_root_direct(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all rows of 2nd level indirect blocks */
-    if(fill_all_2nd_indirect_rows(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_2nd_indirect_rows(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all direct block rows in third level indirect block */
-    if(fill_all_direct(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_direct(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert large object, to force creation of indirect block and
@@ -10056,45 +10349,45 @@ test_man_fill_2nd_direct_skip_2nd_indirect_start_block_add_skipped(hid_t fapl, H
      */
     obj_size = (size_t)DBLOCK_SIZE(fh, 2) + 1;
     state.man_alloc_size += DBLOCK_SIZE(fh, 3);
-    if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert object to fill space in (large) block created */
     obj_size = (size_t)DBLOCK_FREE(fh, 3) - obj_size;
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill rows skipped over in (3rd level indirect block's) 2nd level
      *  indirect block's direct blocks
      */
-    if(fill_row(fh, dxpl, 0, fill_size, &state, &keep_ids))
+    if(fill_row(fh, 0, fill_size, &state, &keep_ids))
         TEST_ERROR
-    if(fill_row(fh, dxpl, 1, fill_size, &state, &keep_ids))
+    if(fill_row(fh, 1, fill_size, &state, &keep_ids))
         TEST_ERROR
-    if(fill_row(fh, dxpl, 2, fill_size, &state, &keep_ids))
+    if(fill_row(fh, 2, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Add one more object, to create another "large" block */
     obj_size = SMALL_OBJ_SIZE1;
     state.man_alloc_size += DBLOCK_SIZE(fh, 3);
-    if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
         TEST_ERROR
 
 
     /* Perform common file & heap close operations */
-    if(close_heap(filename, fapl, dxpl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
+    if(close_heap(filename, fapl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
         TEST_ERROR
 
     /* Free resources */
@@ -10113,7 +10406,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -10139,11 +10432,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_fill_2nd_direct_fill_direct_skip_3rd_indirect_start_block_add_skipped(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -10162,7 +10454,7 @@ test_man_fill_2nd_direct_fill_direct_skip_3rd_indirect_start_block_add_skipped(h
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
 
@@ -10170,27 +10462,27 @@ test_man_fill_2nd_direct_fill_direct_skip_3rd_indirect_start_block_add_skipped(h
     num_first_indirect_rows = IBLOCK_MAX_DROWS(fh, 1);
 
     /* Fill direct blocks in root indirect block */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_root_direct(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all rows of 2nd level indirect blocks */
-    if(fill_all_2nd_indirect_rows(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_2nd_indirect_rows(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all direct block rows in third level indirect block */
-    if(fill_all_direct(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_direct(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert large object, to force creation of indirect block and
@@ -10202,20 +10494,20 @@ test_man_fill_2nd_direct_fill_direct_skip_3rd_indirect_start_block_add_skipped(h
 HDfprintf(stderr, "obj_size = %Zu\n", obj_size);
 #endif /* QAK */
     state.man_alloc_size += DBLOCK_SIZE(fh, num_first_indirect_rows);
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert object to fill space in (large) block created */
     obj_size = (size_t)DBLOCK_FREE(fh, num_first_indirect_rows) - obj_size;
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill rows skipped over in (first 3rd level indirect block's) 2nd level
@@ -10225,27 +10517,27 @@ HDfprintf(stderr, "obj_size = %Zu\n", obj_size);
     for(u = 0; u < num_first_indirect_rows; u++) {
         /* Direct block rows in 2nd level indirect blocks */
         for(v = 0; v < cparam->managed.width; v++)
-            if(fill_row(fh, dxpl, u, fill_size, &state, &keep_ids))
+            if(fill_row(fh, u, fill_size, &state, &keep_ids))
                 TEST_ERROR
 
         /* Direct block row in 3rd level indirect block */
-        if(fill_row(fh, dxpl, u, fill_size, &state, &keep_ids))
+        if(fill_row(fh, u, fill_size, &state, &keep_ids))
             TEST_ERROR
     } /* end for */
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Add one more object, to create another "large" block */
     obj_size = SMALL_OBJ_SIZE1;
     state.man_alloc_size += DBLOCK_SIZE(fh, num_first_indirect_rows);
-    if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
         TEST_ERROR
 
 
     /* Perform common file & heap close operations */
-    if(close_heap(filename, fapl, dxpl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
+    if(close_heap(filename, fapl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
         TEST_ERROR
 
     /* Free resources */
@@ -10264,7 +10556,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -10291,11 +10583,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_fill_2nd_direct_fill_direct_skip2_3rd_indirect_start_block_add_skipped(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -10314,7 +10605,7 @@ test_man_fill_2nd_direct_fill_direct_skip2_3rd_indirect_start_block_add_skipped(
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
 
@@ -10325,27 +10616,27 @@ HDfprintf(stderr, "num_first_indirect_rows = %u\n", num_first_indirect_rows);
 #endif /* QAK */
 
     /* Fill direct blocks in root indirect block */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_root_direct(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all rows of 2nd level indirect blocks */
-    if(fill_all_2nd_indirect_rows(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_2nd_indirect_rows(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all direct block rows in third level indirect block */
-    if(fill_all_direct(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_direct(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert large object, to force creation of indirect block and
@@ -10357,11 +10648,11 @@ HDfprintf(stderr, "num_first_indirect_rows = %u\n", num_first_indirect_rows);
 HDfprintf(stderr, "obj_size = %Zu\n", obj_size);
 #endif /* QAK */
     state.man_alloc_size += DBLOCK_SIZE(fh, num_first_indirect_rows + 1);
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert object to fill space in (large) block created */
@@ -10369,11 +10660,11 @@ HDfprintf(stderr, "obj_size = %Zu\n", obj_size);
 #ifdef QAK
 HDfprintf(stderr, "obj_size = %Zu\n", obj_size);
 #endif /* QAK */
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill rows skipped over in (first 3rd level indirect block's) 2nd level
@@ -10383,31 +10674,31 @@ HDfprintf(stderr, "obj_size = %Zu\n", obj_size);
     for(u = 0; u < num_first_indirect_rows; u++) {
         /* Direct block rows in 2nd level indirect blocks */
         for(v = 0; v < cparam->managed.width; v++)
-            if(fill_row(fh, dxpl, u, fill_size, &state, &keep_ids))
+            if(fill_row(fh, u, fill_size, &state, &keep_ids))
                 TEST_ERROR
 
         /* Direct block row in 3rd level indirect block */
-        if(fill_row(fh, dxpl, u, fill_size, &state, &keep_ids))
+        if(fill_row(fh, u, fill_size, &state, &keep_ids))
             TEST_ERROR
     } /* end for */
 
     /* Fill row of direct blocks in second 3rd level indirect block */
-    if(fill_row(fh, dxpl, num_first_indirect_rows, fill_size, &state, &keep_ids))
+    if(fill_row(fh, num_first_indirect_rows, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Add one more object, to create another "large" block */
     obj_size = SMALL_OBJ_SIZE1;
     state.man_alloc_size += DBLOCK_SIZE(fh, num_first_indirect_rows + 1);
-    if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
         TEST_ERROR
 
 
     /* Perform common file & heap close operations */
-    if(close_heap(filename, fapl, dxpl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
+    if(close_heap(filename, fapl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
         TEST_ERROR
 
     /* Free resources */
@@ -10426,7 +10717,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -10454,11 +10745,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_fill_3rd_direct_less_one_fill_direct_wrap_start_block_add_skipped(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -10477,7 +10767,7 @@ test_man_fill_3rd_direct_less_one_fill_direct_wrap_start_block_add_skipped(hid_t
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
 
@@ -10485,37 +10775,37 @@ test_man_fill_3rd_direct_less_one_fill_direct_wrap_start_block_add_skipped(hid_t
     num_first_indirect_rows = IBLOCK_MAX_DROWS(fh, 1);
 
     /* Fill direct blocks in root indirect block */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_root_direct(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all rows of 2nd level indirect blocks in root indirect block */
-    if(fill_all_2nd_indirect_rows(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_2nd_indirect_rows(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill first row (except one) of 3rd level indirect blocks */
     for(u = 0; u < cparam->managed.width - 1; u++)
         /* Fill 3rd level indirect block */
-        if(fill_3rd_indirect(fh, dxpl, 1, fill_size, &state, &keep_ids))
+        if(fill_3rd_indirect(fh, 1, fill_size, &state, &keep_ids))
             TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all direct block rows in last third level indirect block */
-    if(fill_all_direct(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_direct(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert large object, to force creation of indirect block and
@@ -10527,20 +10817,20 @@ test_man_fill_3rd_direct_less_one_fill_direct_wrap_start_block_add_skipped(hid_t
 HDfprintf(stderr, "obj_size = %Zu\n", obj_size);
 #endif /* QAK */
     state.man_alloc_size += DBLOCK_SIZE(fh, num_first_indirect_rows);
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert object to fill space in (large) block created */
     obj_size = (size_t)DBLOCK_FREE(fh, num_first_indirect_rows) - obj_size;
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill rows skipped over in 2nd level indirect block's direct blocks
@@ -10549,27 +10839,27 @@ HDfprintf(stderr, "obj_size = %Zu\n", obj_size);
     for(u = 0; u < num_first_indirect_rows; u++) {
         /* Direct block rows in 2nd level indirect blocks */
         for(v = 0; v < cparam->managed.width; v++)
-            if(fill_row(fh, dxpl, u, fill_size, &state, &keep_ids))
+            if(fill_row(fh, u, fill_size, &state, &keep_ids))
                 TEST_ERROR
 
         /* Direct block row in current 3rd level indirect block */
-        if(fill_row(fh, dxpl, u, fill_size, &state, &keep_ids))
+        if(fill_row(fh, u, fill_size, &state, &keep_ids))
             TEST_ERROR
     } /* end for */
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Add one more object, to create another "large" block */
     obj_size = SMALL_OBJ_SIZE1;
     state.man_alloc_size += DBLOCK_SIZE(fh, num_first_indirect_rows);
-    if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
         TEST_ERROR
 
 
     /* Perform common file & heap close operations */
-    if(close_heap(filename, fapl, dxpl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
+    if(close_heap(filename, fapl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
         TEST_ERROR
 
     /* Free resources */
@@ -10588,7 +10878,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -10617,11 +10907,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_fill_1st_row_3rd_direct_fill_2nd_direct_less_one_wrap_start_block_add_skipped(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -10640,7 +10929,7 @@ test_man_fill_1st_row_3rd_direct_fill_2nd_direct_less_one_wrap_start_block_add_s
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
 
@@ -10648,44 +10937,44 @@ test_man_fill_1st_row_3rd_direct_fill_2nd_direct_less_one_wrap_start_block_add_s
     num_first_indirect_rows = IBLOCK_MAX_DROWS(fh, 1);
 
     /* Fill direct blocks in root indirect block */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_root_direct(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all rows of 2nd level indirect blocks in 4th level indirect block */
-    if(fill_all_2nd_indirect_rows(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_2nd_indirect_rows(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill first row of 3rd level indirect blocks */
-    if(fill_3rd_indirect_row(fh, dxpl, 1, fill_size, &state, &keep_ids))
+    if(fill_3rd_indirect_row(fh, 1, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all direct block rows in 2nd row third level indirect block */
-    if(fill_all_direct(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_direct(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill first row (except one) of 2nd level indirect blocks */
     for(u = 0; u < cparam->managed.width - 1; u++)
-        if(fill_2nd_indirect(fh, dxpl, 1, fill_size, &state, &keep_ids))
+        if(fill_2nd_indirect(fh, 1, fill_size, &state, &keep_ids))
             TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert large object, to force creation of indirect block and
@@ -10697,20 +10986,20 @@ test_man_fill_1st_row_3rd_direct_fill_2nd_direct_less_one_wrap_start_block_add_s
 HDfprintf(stderr, "obj_size = %Zu\n", obj_size);
 #endif /* QAK */
     state.man_alloc_size += DBLOCK_SIZE(fh, num_first_indirect_rows);
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert object to fill space in (large) block created */
     obj_size = (size_t)DBLOCK_FREE(fh, num_first_indirect_rows) - obj_size;
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill rows skipped over in 2nd level indirect block's direct blocks
@@ -10718,27 +11007,27 @@ HDfprintf(stderr, "obj_size = %Zu\n", obj_size);
      */
     for(u = 0; u < num_first_indirect_rows; u++) {
         /* Direct block rows in skipped 2nd level indirect block */
-        if(fill_row(fh, dxpl, u, fill_size, &state, &keep_ids))
+        if(fill_row(fh, u, fill_size, &state, &keep_ids))
             TEST_ERROR
 
         /* Direct block row in current 2nd level indirect block */
-        if(fill_row(fh, dxpl, u, fill_size, &state, &keep_ids))
+        if(fill_row(fh, u, fill_size, &state, &keep_ids))
             TEST_ERROR
     } /* end for */
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Add one more object, to create another "large" block */
     obj_size = SMALL_OBJ_SIZE1;
     state.man_alloc_size += DBLOCK_SIZE(fh, num_first_indirect_rows);
-    if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
         TEST_ERROR
 
 
     /* Perform common file & heap close operations */
-    if(close_heap(filename, fapl, dxpl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
+    if(close_heap(filename, fapl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
         TEST_ERROR
 
     /* Free resources */
@@ -10757,7 +11046,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -10784,11 +11073,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_fill_3rd_direct_fill_direct_skip_start_block_add_skipped(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -10807,7 +11095,7 @@ test_man_fill_3rd_direct_fill_direct_skip_start_block_add_skipped(hid_t fapl, H5
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
 
@@ -10815,35 +11103,35 @@ test_man_fill_3rd_direct_fill_direct_skip_start_block_add_skipped(hid_t fapl, H5
     num_first_indirect_rows = IBLOCK_MAX_DROWS(fh, 1);
 
     /* Fill direct blocks in root indirect block */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_root_direct(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all rows of 2nd level indirect blocks */
-    if(fill_all_2nd_indirect_rows(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_2nd_indirect_rows(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all rows of 3rd level indirect blocks */
-    if(fill_all_3rd_indirect_rows(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_3rd_indirect_rows(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all direct block rows in fourth level indirect block */
-    if(fill_all_direct(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_direct(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert large object, to force creation of indirect block and
@@ -10855,20 +11143,20 @@ test_man_fill_3rd_direct_fill_direct_skip_start_block_add_skipped(hid_t fapl, H5
 HDfprintf(stderr, "obj_size = %Zu\n", obj_size);
 #endif /* QAK */
     state.man_alloc_size += DBLOCK_SIZE(fh, num_first_indirect_rows);
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert object to fill space in (large) block created */
     obj_size = (size_t)DBLOCK_FREE(fh, num_first_indirect_rows) - obj_size;
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill rows skipped over in (first 4th level indirect block's) 2nd level
@@ -10878,27 +11166,27 @@ HDfprintf(stderr, "obj_size = %Zu\n", obj_size);
     for(u = 0; u < num_first_indirect_rows; u++) {
         /* Direct block rows in 2nd level indirect blocks */
         for(v = 0; v < cparam->managed.width; v++)
-            if(fill_row(fh, dxpl, u, fill_size, &state, &keep_ids))
+            if(fill_row(fh, u, fill_size, &state, &keep_ids))
                 TEST_ERROR
 
         /* Direct block row in 2nd level indirect block */
-        if(fill_row(fh, dxpl, u, fill_size, &state, &keep_ids))
+        if(fill_row(fh, u, fill_size, &state, &keep_ids))
             TEST_ERROR
     } /* end for */
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Add one more object, to create another "large" block */
     obj_size = SMALL_OBJ_SIZE1;
     state.man_alloc_size += DBLOCK_SIZE(fh, num_first_indirect_rows);
-    if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
         TEST_ERROR
 
 
     /* Perform common file & heap close operations */
-    if(close_heap(filename, fapl, dxpl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
+    if(close_heap(filename, fapl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
         TEST_ERROR
 
     /* Free resources */
@@ -10917,7 +11205,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -10946,11 +11234,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_fill_3rd_direct_fill_2nd_direct_fill_direct_skip_3rd_indirect_start_block_add_skipped(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -10969,7 +11256,7 @@ test_man_fill_3rd_direct_fill_2nd_direct_fill_direct_skip_3rd_indirect_start_blo
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
 
@@ -10977,51 +11264,51 @@ test_man_fill_3rd_direct_fill_2nd_direct_fill_direct_skip_3rd_indirect_start_blo
     num_first_indirect_rows = IBLOCK_MAX_DROWS(fh, 1);
 
     /* Fill direct blocks in root indirect block */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_root_direct(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all rows of 2nd level indirect blocks */
-    if(fill_all_2nd_indirect_rows(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_2nd_indirect_rows(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all rows of 3rd level indirect blocks */
-    if(fill_all_3rd_indirect_rows(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_3rd_indirect_rows(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all direct block rows in fourth level indirect block */
-    if(fill_all_direct(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_direct(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all rows of 2nd level indirect blocks in fourth level indirect block */
-    if(fill_all_2nd_indirect_rows(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_2nd_indirect_rows(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all direct block rows in fourth level indirect block's 3rd level indirect block */
-    if(fill_all_direct(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_direct(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert large object, to force creation of indirect block and
@@ -11033,20 +11320,20 @@ test_man_fill_3rd_direct_fill_2nd_direct_fill_direct_skip_3rd_indirect_start_blo
 HDfprintf(stderr, "obj_size = %Zu\n", obj_size);
 #endif /* QAK */
     state.man_alloc_size += DBLOCK_SIZE(fh, num_first_indirect_rows);
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert object to fill space in (large) block created */
     obj_size = (size_t)DBLOCK_FREE(fh, num_first_indirect_rows) - obj_size;
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill rows skipped over in (first 4th level indirect block's first 3rd
@@ -11056,27 +11343,27 @@ HDfprintf(stderr, "obj_size = %Zu\n", obj_size);
     for(u = 0; u < num_first_indirect_rows; u++) {
         /* Direct block rows in 2nd level indirect blocks */
         for(v = 0; v < cparam->managed.width; v++)
-            if(fill_row(fh, dxpl, u, fill_size, &state, &keep_ids))
+            if(fill_row(fh, u, fill_size, &state, &keep_ids))
                 TEST_ERROR
 
         /* Direct block row in 3rd level indirect block */
-        if(fill_row(fh, dxpl, u, fill_size, &state, &keep_ids))
+        if(fill_row(fh, u, fill_size, &state, &keep_ids))
             TEST_ERROR
     } /* end for */
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Add one more object, to create another "large" block */
     obj_size = SMALL_OBJ_SIZE1;
     state.man_alloc_size += DBLOCK_SIZE(fh, num_first_indirect_rows);
-    if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
         TEST_ERROR
 
 
     /* Perform common file & heap close operations */
-    if(close_heap(filename, fapl, dxpl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
+    if(close_heap(filename, fapl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
         TEST_ERROR
 
     /* Free resources */
@@ -11095,7 +11382,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -11126,11 +11413,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_fill_3rd_direct_fill_2nd_direct_fill_direct_skip_3rd_indirect_two_rows_start_block_add_skipped(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -11149,7 +11435,7 @@ test_man_fill_3rd_direct_fill_2nd_direct_fill_direct_skip_3rd_indirect_two_rows_
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
 
@@ -11157,31 +11443,31 @@ test_man_fill_3rd_direct_fill_2nd_direct_fill_direct_skip_3rd_indirect_two_rows_
     num_first_indirect_rows = IBLOCK_MAX_DROWS(fh, 1);
 
     /* Fill direct blocks in root indirect block */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_root_direct(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all rows of 2nd level indirect blocks */
-    if(fill_all_2nd_indirect_rows(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_2nd_indirect_rows(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all rows of 3rd level indirect blocks */
-    if(fill_all_3rd_indirect_rows(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_3rd_indirect_rows(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill first row of 4th level indirect blocks */
-    if(fill_4th_indirect_row(fh, dxpl, 1, fill_size, &state, &keep_ids))
+    if(fill_4th_indirect_row(fh, 1, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Account for root indirect block doubling # of rows again */
@@ -11202,39 +11488,39 @@ test_man_fill_3rd_direct_fill_2nd_direct_fill_direct_skip_3rd_indirect_two_rows_
     } /* end if */
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all direct block rows in 2nd row 4th level indirect block */
-    if(fill_all_direct(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_direct(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all rows of 2nd level indirect blocks in 2nd row 4th level indirect block */
-    if(fill_all_2nd_indirect_rows(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_2nd_indirect_rows(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill first row of 3rd level indirect blocks in 2nd row 4th level indirect block */
-    if(fill_3rd_indirect_row(fh, dxpl, 1, fill_size, &state, &keep_ids))
+    if(fill_3rd_indirect_row(fh, 1, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all direct block rows in 4th level indirect block's 2nd row of 3rd level indirect block */
-    if(fill_all_direct(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_direct(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert large object, to force creation of indirect block and
@@ -11246,20 +11532,20 @@ test_man_fill_3rd_direct_fill_2nd_direct_fill_direct_skip_3rd_indirect_two_rows_
 HDfprintf(stderr, "obj_size = %Zu\n", obj_size);
 #endif /* QAK */
     state.man_alloc_size += DBLOCK_SIZE(fh, num_first_indirect_rows);
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert object to fill space in (large) block created */
     obj_size = (size_t)DBLOCK_FREE(fh, num_first_indirect_rows) - obj_size;
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill rows skipped over in (first block in 2nd row  4th level indirect
@@ -11269,27 +11555,27 @@ HDfprintf(stderr, "obj_size = %Zu\n", obj_size);
     for(u = 0; u < num_first_indirect_rows; u++) {
         /* Direct block rows in 2nd level indirect blocks */
         for(v = 0; v < cparam->managed.width; v++)
-            if(fill_row(fh, dxpl, u, fill_size, &state, &keep_ids))
+            if(fill_row(fh, u, fill_size, &state, &keep_ids))
                 TEST_ERROR
 
         /* Direct block row in 3rd level indirect block */
-        if(fill_row(fh, dxpl, u, fill_size, &state, &keep_ids))
+        if(fill_row(fh, u, fill_size, &state, &keep_ids))
             TEST_ERROR
     } /* end for */
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Add one more object, to create another "large" block */
     obj_size = SMALL_OBJ_SIZE1;
     state.man_alloc_size += DBLOCK_SIZE(fh, num_first_indirect_rows);
-    if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
         TEST_ERROR
 
 
     /* Perform common file & heap close operations */
-    if(close_heap(filename, fapl, dxpl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
+    if(close_heap(filename, fapl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
         TEST_ERROR
 
     /* Free resources */
@@ -11308,7 +11594,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -11341,11 +11627,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_fill_3rd_direct_fill_2nd_direct_fill_direct_skip_3rd_indirect_wrap_start_block_add_skipped(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -11364,7 +11649,7 @@ test_man_fill_3rd_direct_fill_2nd_direct_fill_direct_skip_3rd_indirect_wrap_star
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
 
@@ -11372,66 +11657,66 @@ test_man_fill_3rd_direct_fill_2nd_direct_fill_direct_skip_3rd_indirect_wrap_star
     num_first_indirect_rows = IBLOCK_MAX_DROWS(fh, 1);
 
     /* Fill direct blocks in root indirect block */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_root_direct(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all rows of 2nd level indirect blocks */
-    if(fill_all_2nd_indirect_rows(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_2nd_indirect_rows(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all rows of 3rd level indirect blocks */
-    if(fill_all_3rd_indirect_rows(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_3rd_indirect_rows(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all direct block rows in 4th level indirect block */
-    if(fill_all_direct(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_direct(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all rows of 2nd level indirect blocks in 4th level indirect block */
-    if(fill_all_2nd_indirect_rows(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_2nd_indirect_rows(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill first row (except one) of 3rd level indirect blocks in 4th level indirect block */
     for(u = 0; u < cparam->managed.width - 1; u++) {
         /* Fill all direct block rows in 3rd level indirect block */
-        if(fill_all_direct(fh, dxpl, fill_size, &state, &keep_ids))
+        if(fill_all_direct(fh, fill_size, &state, &keep_ids))
             TEST_ERROR
 
         /* Fill row of 2nd level indirect blocks in 3rd level indirect block */
-        if(fill_2nd_indirect_row(fh, dxpl, 1, fill_size, &state, &keep_ids))
+        if(fill_2nd_indirect_row(fh, 1, fill_size, &state, &keep_ids))
             TEST_ERROR
     } /* end for */
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all direct block rows in 4th level indirect block's last 3rd level indirect block */
-    if(fill_all_direct(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_direct(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert large object, to force creation of indirect block and
@@ -11443,20 +11728,20 @@ test_man_fill_3rd_direct_fill_2nd_direct_fill_direct_skip_3rd_indirect_wrap_star
 HDfprintf(stderr, "obj_size = %Zu\n", obj_size);
 #endif /* QAK */
     state.man_alloc_size += DBLOCK_SIZE(fh, num_first_indirect_rows);
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert object to fill space in (large) block created */
     obj_size = (size_t)DBLOCK_FREE(fh, num_first_indirect_rows) - obj_size;
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill rows skipped over in (4th level indirect block's first 3rd level
@@ -11466,27 +11751,27 @@ HDfprintf(stderr, "obj_size = %Zu\n", obj_size);
     for(u = 0; u < num_first_indirect_rows; u++) {
         /* Direct block rows in 2nd level indirect blocks */
         for(v = 0; v < cparam->managed.width; v++)
-            if(fill_row(fh, dxpl, u, fill_size, &state, &keep_ids))
+            if(fill_row(fh, u, fill_size, &state, &keep_ids))
                 TEST_ERROR
 
         /* Direct block row in 4th level indirect block */
-        if(fill_row(fh, dxpl, u, fill_size, &state, &keep_ids))
+        if(fill_row(fh, u, fill_size, &state, &keep_ids))
             TEST_ERROR
     } /* end for */
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Add one more object, to create another "large" block */
     obj_size = SMALL_OBJ_SIZE1;
     state.man_alloc_size += DBLOCK_SIZE(fh, num_first_indirect_rows);
-    if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
         TEST_ERROR
 
 
     /* Perform common file & heap close operations */
-    if(close_heap(filename, fapl, dxpl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
+    if(close_heap(filename, fapl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
         TEST_ERROR
 
     /* Free resources */
@@ -11505,7 +11790,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -11538,11 +11823,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_fill_4th_direct_less_one_fill_2nd_direct_fill_direct_skip_3rd_indirect_wrap_start_block_add_skipped(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -11561,7 +11845,7 @@ test_man_fill_4th_direct_less_one_fill_2nd_direct_fill_direct_skip_3rd_indirect_
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
 
@@ -11569,81 +11853,81 @@ test_man_fill_4th_direct_less_one_fill_2nd_direct_fill_direct_skip_3rd_indirect_
     num_first_indirect_rows = IBLOCK_MAX_DROWS(fh, 1);
 
     /* Fill direct blocks in root indirect block */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_root_direct(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all rows of 2nd level indirect blocks */
-    if(fill_all_2nd_indirect_rows(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_2nd_indirect_rows(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all rows of 3rd level indirect blocks */
-    if(fill_all_3rd_indirect_rows(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_3rd_indirect_rows(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill first row (except one) of 4th level indirect blocks */
     for(u = 0; u < cparam->managed.width - 1; u++) {
         /* Fill all direct block rows in 4th level indirect block */
-        if(fill_all_direct(fh, dxpl, fill_size, &state, &keep_ids))
+        if(fill_all_direct(fh, fill_size, &state, &keep_ids))
             TEST_ERROR
 
         /* Fill all rows of 2nd level indirect blocks in 4th level indirect block */
-        if(fill_all_2nd_indirect_rows(fh, dxpl, fill_size, &state, &keep_ids))
+        if(fill_all_2nd_indirect_rows(fh, fill_size, &state, &keep_ids))
             TEST_ERROR
 
         /* Fill row of 3rd level indirect blocks in 4th level indirect block */
-        if(fill_3rd_indirect_row(fh, dxpl, 1, fill_size, &state, &keep_ids))
+        if(fill_3rd_indirect_row(fh, 1, fill_size, &state, &keep_ids))
             TEST_ERROR
     } /* end for */
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all direct block rows in 4th level indirect block */
-    if(fill_all_direct(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_direct(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all rows of 2nd level indirect blocks in 4th level indirect block */
-    if(fill_all_2nd_indirect_rows(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_2nd_indirect_rows(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill row (except one) of 3rd level indirect blocks in 4th level indirect block */
     for(u = 0; u < cparam->managed.width - 1; u++) {
         /* Fill all direct block rows in 3rd level indirect block */
-        if(fill_all_direct(fh, dxpl, fill_size, &state, &keep_ids))
+        if(fill_all_direct(fh, fill_size, &state, &keep_ids))
             TEST_ERROR
 
         /* Fill row of 2nd level indirect blocks in 3rd level indirect block */
-        if(fill_2nd_indirect_row(fh, dxpl, 1, fill_size, &state, &keep_ids))
+        if(fill_2nd_indirect_row(fh, 1, fill_size, &state, &keep_ids))
             TEST_ERROR
     } /* end for */
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all direct block rows in 4th level indirect block's last 3rd level indirect block */
-    if(fill_all_direct(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_direct(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Account for root indirect block doubling # of rows again */
@@ -11664,7 +11948,7 @@ test_man_fill_4th_direct_less_one_fill_2nd_direct_fill_direct_skip_3rd_indirect_
     } /* end if */
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert large object, to force creation of indirect block and
@@ -11676,20 +11960,20 @@ test_man_fill_4th_direct_less_one_fill_2nd_direct_fill_direct_skip_3rd_indirect_
 HDfprintf(stderr, "obj_size = %Zu\n", obj_size);
 #endif /* QAK */
     state.man_alloc_size += DBLOCK_SIZE(fh, num_first_indirect_rows);
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert object to fill space in (large) block created */
     obj_size = (size_t)DBLOCK_FREE(fh, num_first_indirect_rows) - obj_size;
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill rows skipped over in (4th level indirect block's first 3rd level
@@ -11699,27 +11983,27 @@ HDfprintf(stderr, "obj_size = %Zu\n", obj_size);
     for(u = 0; u < num_first_indirect_rows; u++) {
         /* Direct block rows in 2nd level indirect blocks */
         for(v = 0; v < cparam->managed.width; v++)
-            if(fill_row(fh, dxpl, u, fill_size, &state, &keep_ids))
+            if(fill_row(fh, u, fill_size, &state, &keep_ids))
                 TEST_ERROR
 
         /* Direct block row in 4th level indirect block */
-        if(fill_row(fh, dxpl, u, fill_size, &state, &keep_ids))
+        if(fill_row(fh, u, fill_size, &state, &keep_ids))
             TEST_ERROR
     } /* end for */
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Add one more object, to create another "large" block */
     obj_size = SMALL_OBJ_SIZE1;
     state.man_alloc_size += DBLOCK_SIZE(fh, num_first_indirect_rows);
-    if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
         TEST_ERROR
 
 
     /* Perform common file & heap close operations */
-    if(close_heap(filename, fapl, dxpl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
+    if(close_heap(filename, fapl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
         TEST_ERROR
 
     /* Free resources */
@@ -11738,7 +12022,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -11766,11 +12050,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_frag_simple(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -11787,7 +12070,7 @@ test_man_frag_simple(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
 
@@ -11800,7 +12083,7 @@ test_man_frag_simple(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
     state.man_free_space = DBLOCK_FREE(fh, 0);
     for(u = 0; u < cparam->managed.width; u++) {
         state.man_alloc_size += DBLOCK_SIZE(fh, 0);
-        if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+        if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
             TEST_ERROR
         if(u == 0) {
             state.man_size = cparam->managed.width * DBLOCK_SIZE(fh, 0);
@@ -11811,12 +12094,12 @@ test_man_frag_simple(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
     state.man_free_space += DBLOCK_FREE(fh, 1) * cparam->managed.width;
     for(u = 0; u < cparam->managed.width; u++) {
         state.man_alloc_size += DBLOCK_SIZE(fh, 1);
-        if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+        if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
             TEST_ERROR
     } /* end for */
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* (Account for doubling root indirect block for rows 3-4 */
@@ -11827,34 +12110,34 @@ test_man_frag_simple(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
 
     /* Add one more object, to create a 2 * start_block_size block */
     state.man_alloc_size += DBLOCK_SIZE(fh, 2);
-    if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Go back and fill in direct blocks of initial block size (which have large free space in them) */
     obj_size = (size_t)DBLOCK_FREE(fh, 0) - obj_size;
     for(u = 0; u < cparam->managed.width; u++)
-        if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+        if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
             TEST_ERROR
     for(u = 0; u < cparam->managed.width; u++)
-        if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+        if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
             TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill in 2 * start_block_size block */
     obj_size = (size_t)DBLOCK_FREE(fh, 2) - ((size_t)DBLOCK_SIZE(fh, 0) / 2);
-    if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+    if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
         TEST_ERROR
 
 
     /* Perform common file & heap close operations */
-    if(close_heap(filename, fapl, dxpl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
+    if(close_heap(filename, fapl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
         TEST_ERROR
 
     /* Free resources */
@@ -11873,7 +12156,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -11898,11 +12181,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_frag_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -11920,7 +12202,7 @@ test_man_frag_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
 
@@ -11936,7 +12218,7 @@ test_man_frag_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
     /* First row */
     for(u = 0; u < cparam->managed.width; u++) {
         state.man_alloc_size += DBLOCK_SIZE(fh, 0);
-        if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+        if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
             TEST_ERROR
         if(u == 0) {
             state.man_size = cparam->managed.width * DBLOCK_SIZE(fh, 0);
@@ -11948,12 +12230,12 @@ test_man_frag_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
     /* Second row */
     for(u = 0; u < cparam->managed.width; u++) {
         state.man_alloc_size += DBLOCK_SIZE(fh, 1);
-        if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+        if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
             TEST_ERROR
     } /* end for */
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* (Account for doubling root indirect block for rows 3-4 */
@@ -11967,13 +12249,13 @@ test_man_frag_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         obj_size = (size_t)DBLOCK_SIZE(fh, u + 2) / 2;
         for(v = 0; v < cparam->managed.width; v++) {
             state.man_alloc_size += DBLOCK_SIZE(fh, u + 2);
-            if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+            if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
                 TEST_ERROR
         } /* end for */
     } /* end for */
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* (Account for doubling root indirect block for rows 5-8 */
@@ -11987,13 +12269,13 @@ test_man_frag_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         obj_size = (size_t)DBLOCK_SIZE(fh, u + 4) / 2;
         for(v = 0; v < cparam->managed.width; v++) {
             state.man_alloc_size += DBLOCK_SIZE(fh, u + 4);
-            if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+            if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
                 TEST_ERROR
         } /* end for */
     } /* end for */
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* (Account for doubling root indirect block for rows 9-16 */
@@ -12006,25 +12288,25 @@ test_man_frag_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
     obj_size = (size_t)DBLOCK_SIZE(fh, 8) / 2;
     for(v = 0; v < cparam->managed.width; v++) {
         state.man_alloc_size += DBLOCK_SIZE(fh, 8);
-        if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+        if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
             TEST_ERROR
     } /* end for */
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Go back and backfill all root block's direct blocks */
     for(u = 0; u < root_direct_rows; u++) {
         obj_size = (size_t)DBLOCK_FREE(fh, u) - ((size_t)DBLOCK_SIZE(fh, u) / 2);
         for(v = 0; v < cparam->managed.width; v++)
-            if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+            if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
                 TEST_ERROR
     } /* end for */
 
 
     /* Perform common file & heap close operations */
-    if(close_heap(filename, fapl, dxpl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
+    if(close_heap(filename, fapl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
         TEST_ERROR
 
     /* Free resources */
@@ -12043,7 +12325,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -12070,11 +12352,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_frag_2nd_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -12093,7 +12374,7 @@ test_man_frag_2nd_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
 
@@ -12104,11 +12385,11 @@ HDfprintf(stderr, "num_first_indirect_rows = %u\n", num_first_indirect_rows);
 #endif /* QAK */
 
     /* Fill direct blocks in root indirect block */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_root_direct(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert objects small enough to fit into each direct block, but not to
@@ -12118,26 +12399,26 @@ HDfprintf(stderr, "num_first_indirect_rows = %u\n", num_first_indirect_rows);
         obj_size = (size_t)DBLOCK_SIZE(fh, u) / 2;
         for(v = 0; v < cparam->managed.width; v++) {
             state.man_alloc_size += DBLOCK_SIZE(fh, u);
-            if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+            if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
                 TEST_ERROR
         } /* end for */
     } /* end for */
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Go back and backfill all 2nd level indirect block's direct blocks */
     for(u = 0; u < num_first_indirect_rows; u++) {
         obj_size = (size_t)DBLOCK_FREE(fh, u) - ((size_t)DBLOCK_SIZE(fh, u) / 2);
         for(v = 0; v < cparam->managed.width; v++)
-            if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+            if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
                 TEST_ERROR
     } /* end for */
 
 
     /* Perform common file & heap close operations */
-    if(close_heap(filename, fapl, dxpl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
+    if(close_heap(filename, fapl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
         TEST_ERROR
 
     /* Free resources */
@@ -12156,7 +12437,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -12184,11 +12465,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_man_frag_3rd_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -12207,7 +12487,7 @@ test_man_frag_3rd_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
 
@@ -12215,19 +12495,19 @@ test_man_frag_3rd_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *
     root_direct_rows = DTABLE_MAX_DROWS(fh);
 
     /* Fill direct blocks in root indirect block */
-    if(fill_root_direct(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_root_direct(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Fill all rows of 2nd level indirect blocks in root indirect block */
-    if(fill_all_2nd_indirect_rows(fh, dxpl, fill_size, &state, &keep_ids))
+    if(fill_all_2nd_indirect_rows(fh, fill_size, &state, &keep_ids))
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert objects small enough to fit into each direct block, but not to
@@ -12237,26 +12517,26 @@ test_man_frag_3rd_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *
         obj_size = (size_t)DBLOCK_SIZE(fh, u) / 2;
         for(v = 0; v < cparam->managed.width; v++) {
             state.man_alloc_size += DBLOCK_SIZE(fh, u);
-            if(add_obj(fh, dxpl, (size_t)10, obj_size, &state, &keep_ids))
+            if(add_obj(fh, (size_t)10, obj_size, &state, &keep_ids))
                 TEST_ERROR
         } /* end for */
     } /* end for */
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Go back and backfill all 3rd level indirect block's direct blocks */
     for(u = 0; u < root_direct_rows; u++) {
         obj_size = (size_t)DBLOCK_FREE(fh, u) - ((size_t)DBLOCK_SIZE(fh, u) / 2);
         for(v = 0; v < cparam->managed.width; v++)
-            if(add_obj(fh, dxpl, (size_t)20, obj_size, &state, &keep_ids))
+            if(add_obj(fh, (size_t)20, obj_size, &state, &keep_ids))
                 TEST_ERROR
     } /* end for */
 
 
     /* Perform common file & heap close operations */
-    if(close_heap(filename, fapl, dxpl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
+    if(close_heap(filename, fapl, tparam, file, f, &fh, fh_addr, &state, &keep_ids, empty_size) < 0)
         TEST_ERROR
 
     /* Free resources */
@@ -12275,7 +12555,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -12299,11 +12579,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_huge_insert_one(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -12324,11 +12603,11 @@ test_huge_insert_one(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
     /* Allocate heap ID(s) */
-    if(NULL == (heap_id = H5MM_malloc(tparam->actual_id_len)))
+    if(NULL == (heap_id = (unsigned char *)H5MM_malloc(tparam->actual_id_len)))
         TEST_ERROR
 
     /* Make certain that 'huge' object's heap IDs are correct size */
@@ -12339,7 +12618,7 @@ test_huge_insert_one(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
 
     /* Insert object too large for managed heap blocks */
     obj_size = SMALL_STAND_SIZE + 1;
-    if(H5HF_insert(fh, dxpl, obj_size, shared_wobj_g, heap_id) < 0)
+    if(H5HF_insert(fh, obj_size, shared_wobj_g, heap_id) < 0)
         FAIL_STACK_ERROR
     if(H5HF_get_id_type_test(heap_id, &obj_type) < 0)
         FAIL_STACK_ERROR
@@ -12347,7 +12626,7 @@ test_huge_insert_one(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -12357,12 +12636,12 @@ test_huge_insert_one(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Read in huge object */
-    if(H5HF_get_obj_len(fh, dxpl, heap_id, &robj_size) < 0)
+    if(H5HF_get_obj_len(fh, heap_id, &robj_size) < 0)
         FAIL_STACK_ERROR
     if(obj_size != robj_size)
         TEST_ERROR
     HDmemset(shared_robj_g, 0, obj_size);
-    if(H5HF_read(fh, dxpl, heap_id, shared_robj_g) < 0)
+    if(H5HF_read(fh, heap_id, shared_robj_g) < 0)
         FAIL_STACK_ERROR
     if(HDmemcmp(shared_wobj_g, shared_robj_g, obj_size))
         TEST_ERROR
@@ -12370,11 +12649,11 @@ test_huge_insert_one(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
     /* Delete individual objects, if we won't be deleting the entire heap later */
     if(tparam->del_dir != FHEAP_DEL_HEAP) {
         /* Remove object from heap */
-        if(H5HF_remove(fh, dxpl, heap_id) < 0)
+        if(H5HF_remove(fh, heap_id) < 0)
             FAIL_STACK_ERROR
 
         /* Check for closing & re-opening the heap */
-        if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+        if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
             TEST_ERROR
 
         /* Check up on heap... */
@@ -12386,14 +12665,14 @@ test_huge_insert_one(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
 
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
     fh = NULL;
 
     /* Check for deleting the entire heap */
     if(tparam->del_dir == FHEAP_DEL_HEAP) {
         /* Delete heap */
-        if(H5HF_delete(f, dxpl, fh_addr) < 0)
+        if(H5HF_delete(f, fh_addr) < 0)
             FAIL_STACK_ERROR
     } /* end if */
 
@@ -12430,7 +12709,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -12452,11 +12731,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_huge_insert_two(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -12478,13 +12756,13 @@ test_huge_insert_two(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
     /* Allocate heap ID(s) */
-    if(NULL == (heap_id = H5MM_malloc(tparam->actual_id_len)))
+    if(NULL == (heap_id = (unsigned char *)H5MM_malloc(tparam->actual_id_len)))
         TEST_ERROR
-    if(NULL == (heap_id2 = H5MM_malloc(tparam->actual_id_len)))
+    if(NULL == (heap_id2 = (unsigned char *)H5MM_malloc(tparam->actual_id_len)))
         TEST_ERROR
 
     /* Make certain that 'huge' object's heap IDs are correct size */
@@ -12495,7 +12773,7 @@ test_huge_insert_two(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
 
     /* Insert object too large for managed heap blocks */
     obj_size = SMALL_STAND_SIZE + 1;
-    if(H5HF_insert(fh, dxpl, obj_size, shared_wobj_g, heap_id) < 0)
+    if(H5HF_insert(fh, obj_size, shared_wobj_g, heap_id) < 0)
         FAIL_STACK_ERROR
     if(H5HF_get_id_type_test(heap_id, &obj_type) < 0)
         FAIL_STACK_ERROR
@@ -12503,7 +12781,7 @@ test_huge_insert_two(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -12513,19 +12791,19 @@ test_huge_insert_two(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Read in huge object */
-    if(H5HF_get_obj_len(fh, dxpl, heap_id, &robj_size) < 0)
+    if(H5HF_get_obj_len(fh, heap_id, &robj_size) < 0)
         FAIL_STACK_ERROR
     if(obj_size != robj_size)
         TEST_ERROR
     HDmemset(shared_robj_g, 0, obj_size);
-    if(H5HF_read(fh, dxpl, heap_id, shared_robj_g) < 0)
+    if(H5HF_read(fh, heap_id, shared_robj_g) < 0)
         FAIL_STACK_ERROR
     if(HDmemcmp(shared_wobj_g, shared_robj_g, obj_size))
         TEST_ERROR
 
     /* Insert second object too large for managed heap blocks */
     obj_size = SMALL_STAND_SIZE + 1;
-    if(H5HF_insert(fh, dxpl, obj_size, shared_wobj_g, heap_id2) < 0)
+    if(H5HF_insert(fh, obj_size, shared_wobj_g, heap_id2) < 0)
         FAIL_STACK_ERROR
     if(H5HF_get_id_type_test(heap_id2, &obj_type) < 0)
         FAIL_STACK_ERROR
@@ -12533,7 +12811,7 @@ test_huge_insert_two(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -12543,12 +12821,12 @@ test_huge_insert_two(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Read in second huge object */
-    if(H5HF_get_obj_len(fh, dxpl, heap_id2, &robj_size) < 0)
+    if(H5HF_get_obj_len(fh, heap_id2, &robj_size) < 0)
         FAIL_STACK_ERROR
     if(obj_size != robj_size)
         TEST_ERROR
     HDmemset(shared_robj_g, 0, obj_size);
-    if(H5HF_read(fh, dxpl, heap_id2, shared_robj_g) < 0)
+    if(H5HF_read(fh, heap_id2, shared_robj_g) < 0)
         FAIL_STACK_ERROR
     if(HDmemcmp(shared_wobj_g, shared_robj_g, obj_size))
         TEST_ERROR
@@ -12557,11 +12835,11 @@ test_huge_insert_two(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
     if(tparam->del_dir != FHEAP_DEL_HEAP) {
         if(tparam->del_dir == FHEAP_DEL_FORWARD) {
             /* Remove first object from heap */
-            if(H5HF_remove(fh, dxpl, heap_id) < 0)
+            if(H5HF_remove(fh, heap_id) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
 
             /* Check up on heap... */
@@ -12571,11 +12849,11 @@ test_huge_insert_two(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
                 TEST_ERROR
 
             /* Remove second object from heap */
-            if(H5HF_remove(fh, dxpl, heap_id2) < 0)
+            if(H5HF_remove(fh, heap_id2) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
 
             /* Check up on heap... */
@@ -12586,11 +12864,11 @@ test_huge_insert_two(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         } /* end if */
         else {
             /* Remove second object from heap */
-            if(H5HF_remove(fh, dxpl, heap_id2) < 0)
+            if(H5HF_remove(fh, heap_id2) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
 
             /* Check up on heap... */
@@ -12600,11 +12878,11 @@ test_huge_insert_two(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
                 TEST_ERROR
 
             /* Remove first object from heap */
-            if(H5HF_remove(fh, dxpl, heap_id) < 0)
+            if(H5HF_remove(fh, heap_id) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
 
             /* Check up on heap... */
@@ -12617,14 +12895,14 @@ test_huge_insert_two(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
 
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
     fh = NULL;
 
     /* Check for deleting the entire heap */
     if(tparam->del_dir == FHEAP_DEL_HEAP) {
         /* Delete heap */
-        if(H5HF_delete(f, dxpl, fh_addr) < 0)
+        if(H5HF_delete(f, fh_addr) < 0)
             FAIL_STACK_ERROR
     } /* end if */
 
@@ -12663,7 +12941,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -12685,11 +12963,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_huge_insert_three(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -12712,15 +12989,15 @@ test_huge_insert_three(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tp
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
     /* Allocate heap ID(s) */
-    if(NULL == (heap_id = H5MM_malloc(tparam->actual_id_len)))
+    if(NULL == (heap_id = (unsigned char *)H5MM_malloc(tparam->actual_id_len)))
         TEST_ERROR
-    if(NULL == (heap_id2 = H5MM_malloc(tparam->actual_id_len)))
+    if(NULL == (heap_id2 = (unsigned char *)H5MM_malloc(tparam->actual_id_len)))
         TEST_ERROR
-    if(NULL == (heap_id3 = H5MM_malloc(tparam->actual_id_len)))
+    if(NULL == (heap_id3 = (unsigned char *)H5MM_malloc(tparam->actual_id_len)))
         TEST_ERROR
 
     /* Make certain that 'huge' object's heap IDs are correct size */
@@ -12731,7 +13008,7 @@ test_huge_insert_three(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tp
 
     /* Insert first object too large for managed heap blocks */
     obj_size = SMALL_STAND_SIZE + 1;
-    if(H5HF_insert(fh, dxpl, obj_size, shared_wobj_g, heap_id) < 0)
+    if(H5HF_insert(fh, obj_size, shared_wobj_g, heap_id) < 0)
         FAIL_STACK_ERROR
     if(H5HF_get_id_type_test(heap_id, &obj_type) < 0)
         FAIL_STACK_ERROR
@@ -12739,7 +13016,7 @@ test_huge_insert_three(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tp
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -12749,19 +13026,19 @@ test_huge_insert_three(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tp
         TEST_ERROR
 
     /* Read in first huge object */
-    if(H5HF_get_obj_len(fh, dxpl, heap_id, &robj_size) < 0)
+    if(H5HF_get_obj_len(fh, heap_id, &robj_size) < 0)
         FAIL_STACK_ERROR
     if(obj_size != robj_size)
         TEST_ERROR
     HDmemset(shared_robj_g, 0, obj_size);
-    if(H5HF_read(fh, dxpl, heap_id, shared_robj_g) < 0)
+    if(H5HF_read(fh, heap_id, shared_robj_g) < 0)
         FAIL_STACK_ERROR
     if(HDmemcmp(shared_wobj_g, shared_robj_g, obj_size))
         TEST_ERROR
 
     /* Insert second object too large for managed heap blocks */
     obj_size = SMALL_STAND_SIZE + 2;
-    if(H5HF_insert(fh, dxpl, obj_size, shared_wobj_g, heap_id2) < 0)
+    if(H5HF_insert(fh, obj_size, shared_wobj_g, heap_id2) < 0)
         FAIL_STACK_ERROR
     if(H5HF_get_id_type_test(heap_id2, &obj_type) < 0)
         FAIL_STACK_ERROR
@@ -12769,7 +13046,7 @@ test_huge_insert_three(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tp
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -12779,19 +13056,19 @@ test_huge_insert_three(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tp
         TEST_ERROR
 
     /* Read in second huge object */
-    if(H5HF_get_obj_len(fh, dxpl, heap_id2, &robj_size) < 0)
+    if(H5HF_get_obj_len(fh, heap_id2, &robj_size) < 0)
         FAIL_STACK_ERROR
     if(obj_size != robj_size)
         TEST_ERROR
     HDmemset(shared_robj_g, 0, obj_size);
-    if(H5HF_read(fh, dxpl, heap_id2, shared_robj_g) < 0)
+    if(H5HF_read(fh, heap_id2, shared_robj_g) < 0)
         FAIL_STACK_ERROR
     if(HDmemcmp(shared_wobj_g, shared_robj_g, obj_size))
         TEST_ERROR
 
     /* Insert third object too large for managed heap blocks */
     obj_size = SMALL_STAND_SIZE + 3;
-    if(H5HF_insert(fh, dxpl, obj_size, shared_wobj_g, heap_id3) < 0)
+    if(H5HF_insert(fh, obj_size, shared_wobj_g, heap_id3) < 0)
         FAIL_STACK_ERROR
     if(H5HF_get_id_type_test(heap_id3, &obj_type) < 0)
         FAIL_STACK_ERROR
@@ -12799,7 +13076,7 @@ test_huge_insert_three(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tp
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -12809,12 +13086,12 @@ test_huge_insert_three(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tp
         TEST_ERROR
 
     /* Read in third huge object */
-    if(H5HF_get_obj_len(fh, dxpl, heap_id3, &robj_size) < 0)
+    if(H5HF_get_obj_len(fh, heap_id3, &robj_size) < 0)
         FAIL_STACK_ERROR
     if(obj_size != robj_size)
         TEST_ERROR
     HDmemset(shared_robj_g, 0, obj_size);
-    if(H5HF_read(fh, dxpl, heap_id3, shared_robj_g) < 0)
+    if(H5HF_read(fh, heap_id3, shared_robj_g) < 0)
         FAIL_STACK_ERROR
     if(HDmemcmp(shared_wobj_g, shared_robj_g, obj_size))
         TEST_ERROR
@@ -12823,13 +13100,13 @@ test_huge_insert_three(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tp
     if(tparam->del_dir != FHEAP_DEL_HEAP) {
         if(tparam->del_dir == FHEAP_DEL_FORWARD) {
             /* Remove first object from heap */
-            if(H5HF_get_obj_len(fh, dxpl, heap_id, &robj_size) < 0)
+            if(H5HF_get_obj_len(fh, heap_id, &robj_size) < 0)
                 FAIL_STACK_ERROR
-            if(H5HF_remove(fh, dxpl, heap_id) < 0)
+            if(H5HF_remove(fh, heap_id) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
 
             /* Check up on heap... */
@@ -12839,13 +13116,13 @@ test_huge_insert_three(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tp
                 TEST_ERROR
 
             /* Remove second object from heap */
-            if(H5HF_get_obj_len(fh, dxpl, heap_id2, &robj_size) < 0)
+            if(H5HF_get_obj_len(fh, heap_id2, &robj_size) < 0)
                 FAIL_STACK_ERROR
-            if(H5HF_remove(fh, dxpl, heap_id2) < 0)
+            if(H5HF_remove(fh, heap_id2) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
 
             /* Check up on heap... */
@@ -12855,13 +13132,13 @@ test_huge_insert_three(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tp
                 TEST_ERROR
 
             /* Remove third object from heap */
-            if(H5HF_get_obj_len(fh, dxpl, heap_id3, &robj_size) < 0)
+            if(H5HF_get_obj_len(fh, heap_id3, &robj_size) < 0)
                 FAIL_STACK_ERROR
-            if(H5HF_remove(fh, dxpl, heap_id3) < 0)
+            if(H5HF_remove(fh, heap_id3) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
 
             /* Check up on heap... */
@@ -12872,13 +13149,13 @@ test_huge_insert_three(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tp
         } /* end if */
         else {
             /* Remove third object from heap */
-            if(H5HF_get_obj_len(fh, dxpl, heap_id3, &robj_size) < 0)
+            if(H5HF_get_obj_len(fh, heap_id3, &robj_size) < 0)
                 FAIL_STACK_ERROR
-            if(H5HF_remove(fh, dxpl, heap_id3) < 0)
+            if(H5HF_remove(fh, heap_id3) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
 
             /* Check up on heap... */
@@ -12888,13 +13165,13 @@ test_huge_insert_three(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tp
                 TEST_ERROR
 
             /* Remove second object from heap */
-            if(H5HF_get_obj_len(fh, dxpl, heap_id2, &robj_size) < 0)
+            if(H5HF_get_obj_len(fh, heap_id2, &robj_size) < 0)
                 FAIL_STACK_ERROR
-            if(H5HF_remove(fh, dxpl, heap_id2) < 0)
+            if(H5HF_remove(fh, heap_id2) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
 
             /* Check up on heap... */
@@ -12904,13 +13181,13 @@ test_huge_insert_three(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tp
                 TEST_ERROR
 
             /* Remove first object from heap */
-            if(H5HF_get_obj_len(fh, dxpl, heap_id, &robj_size) < 0)
+            if(H5HF_get_obj_len(fh, heap_id, &robj_size) < 0)
                 FAIL_STACK_ERROR
-            if(H5HF_remove(fh, dxpl, heap_id) < 0)
+            if(H5HF_remove(fh, heap_id) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
 
             /* Check up on heap... */
@@ -12923,14 +13200,14 @@ test_huge_insert_three(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tp
 
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
     fh = NULL;
 
     /* Check for deleting the entire heap */
     if(tparam->del_dir == FHEAP_DEL_HEAP) {
         /* Delete heap */
-        if(H5HF_delete(f, dxpl, fh_addr) < 0)
+        if(H5HF_delete(f, fh_addr) < 0)
             FAIL_STACK_ERROR
     } /* end if */
 
@@ -12971,7 +13248,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -12993,11 +13270,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_huge_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -13022,19 +13298,19 @@ test_huge_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
     /* Allocate heap ID(s) */
-    if(NULL == (heap_id = H5MM_malloc(tparam->actual_id_len)))
+    if(NULL == (heap_id = (unsigned char *)H5MM_malloc(tparam->actual_id_len)))
         TEST_ERROR
-    if(NULL == (heap_id2 = H5MM_malloc(tparam->actual_id_len)))
+    if(NULL == (heap_id2 = (unsigned char *)H5MM_malloc(tparam->actual_id_len)))
         TEST_ERROR
-    if(NULL == (heap_id3 = H5MM_malloc(tparam->actual_id_len)))
+    if(NULL == (heap_id3 = (unsigned char *)H5MM_malloc(tparam->actual_id_len)))
         TEST_ERROR
-    if(NULL == (heap_id4 = H5MM_malloc(tparam->actual_id_len)))
+    if(NULL == (heap_id4 = (unsigned char *)H5MM_malloc(tparam->actual_id_len)))
         TEST_ERROR
-    if(NULL == (heap_id5 = H5MM_malloc(tparam->actual_id_len)))
+    if(NULL == (heap_id5 = (unsigned char *)H5MM_malloc(tparam->actual_id_len)))
         TEST_ERROR
 
     /* Make certain that 'huge' object's heap IDs are correct size */
@@ -13045,7 +13321,7 @@ test_huge_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
 
     /* Insert first object too large for managed heap blocks */
     obj_size = SMALL_STAND_SIZE + 1;
-    if(H5HF_insert(fh, dxpl, obj_size, shared_wobj_g, heap_id) < 0)
+    if(H5HF_insert(fh, obj_size, shared_wobj_g, heap_id) < 0)
         FAIL_STACK_ERROR
     if(H5HF_get_id_type_test(heap_id, &obj_type) < 0)
         FAIL_STACK_ERROR
@@ -13053,7 +13329,7 @@ test_huge_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -13063,19 +13339,19 @@ test_huge_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Read in first huge object */
-    if(H5HF_get_obj_len(fh, dxpl, heap_id, &robj_size) < 0)
+    if(H5HF_get_obj_len(fh, heap_id, &robj_size) < 0)
         FAIL_STACK_ERROR
     if(obj_size != robj_size)
         TEST_ERROR
     HDmemset(shared_robj_g, 0, obj_size);
-    if(H5HF_read(fh, dxpl, heap_id, shared_robj_g) < 0)
+    if(H5HF_read(fh, heap_id, shared_robj_g) < 0)
         FAIL_STACK_ERROR
     if(HDmemcmp(shared_wobj_g, shared_robj_g, obj_size))
         TEST_ERROR
 
     /* Insert second object too large for managed heap blocks */
     obj_size = SMALL_STAND_SIZE + 2;
-    if(H5HF_insert(fh, dxpl, obj_size, shared_wobj_g, heap_id2) < 0)
+    if(H5HF_insert(fh, obj_size, shared_wobj_g, heap_id2) < 0)
         FAIL_STACK_ERROR
     if(H5HF_get_id_type_test(heap_id2, &obj_type) < 0)
         FAIL_STACK_ERROR
@@ -13083,7 +13359,7 @@ test_huge_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -13093,19 +13369,19 @@ test_huge_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Read in second huge object */
-    if(H5HF_get_obj_len(fh, dxpl, heap_id2, &robj_size) < 0)
+    if(H5HF_get_obj_len(fh, heap_id2, &robj_size) < 0)
         FAIL_STACK_ERROR
     if(obj_size != robj_size)
         TEST_ERROR
     HDmemset(shared_robj_g, 0, obj_size);
-    if(H5HF_read(fh, dxpl, heap_id2, shared_robj_g) < 0)
+    if(H5HF_read(fh, heap_id2, shared_robj_g) < 0)
         FAIL_STACK_ERROR
     if(HDmemcmp(shared_wobj_g, shared_robj_g, obj_size))
         TEST_ERROR
 
     /* Insert third object too large for managed heap blocks */
     obj_size = SMALL_STAND_SIZE + 3;
-    if(H5HF_insert(fh, dxpl, obj_size, shared_wobj_g, heap_id3) < 0)
+    if(H5HF_insert(fh, obj_size, shared_wobj_g, heap_id3) < 0)
         FAIL_STACK_ERROR
     if(H5HF_get_id_type_test(heap_id3, &obj_type) < 0)
         FAIL_STACK_ERROR
@@ -13113,7 +13389,7 @@ test_huge_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -13123,19 +13399,19 @@ test_huge_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Read in third huge object */
-    if(H5HF_get_obj_len(fh, dxpl, heap_id3, &robj_size) < 0)
+    if(H5HF_get_obj_len(fh, heap_id3, &robj_size) < 0)
         FAIL_STACK_ERROR
     if(obj_size != robj_size)
         TEST_ERROR
     HDmemset(shared_robj_g, 0, obj_size);
-    if(H5HF_read(fh, dxpl, heap_id3, shared_robj_g) < 0)
+    if(H5HF_read(fh, heap_id3, shared_robj_g) < 0)
         FAIL_STACK_ERROR
     if(HDmemcmp(shared_wobj_g, shared_robj_g, obj_size))
         TEST_ERROR
 
     /* Insert fourth object small enough to fit into 'normal' heap blocks */
     obj_size = (size_t)DBLOCK_SIZE(fh, 0) + 1;
-    if(H5HF_insert(fh, dxpl, obj_size, shared_wobj_g, heap_id4) < 0)
+    if(H5HF_insert(fh, obj_size, shared_wobj_g, heap_id4) < 0)
         FAIL_STACK_ERROR
     if(H5HF_get_id_type_test(heap_id4, &obj_type) < 0)
         FAIL_STACK_ERROR
@@ -13143,7 +13419,7 @@ test_huge_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -13160,19 +13436,19 @@ test_huge_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Read in fourth ('normal') object */
-    if(H5HF_get_obj_len(fh, dxpl, heap_id4, &robj_size) < 0)
+    if(H5HF_get_obj_len(fh, heap_id4, &robj_size) < 0)
         FAIL_STACK_ERROR
     if(obj_size != robj_size)
         TEST_ERROR
     HDmemset(shared_robj_g, 0, obj_size);
-    if(H5HF_read(fh, dxpl, heap_id4, shared_robj_g) < 0)
+    if(H5HF_read(fh, heap_id4, shared_robj_g) < 0)
         FAIL_STACK_ERROR
     if(HDmemcmp(shared_wobj_g, shared_robj_g, obj_size))
         TEST_ERROR
 
     /* Insert fifth object small enough to fit into 'normal' heap blocks */
     obj_size = (size_t)DBLOCK_SIZE(fh, 3) + 1;
-    if(H5HF_insert(fh, dxpl, obj_size, shared_wobj_g, heap_id5) < 0)
+    if(H5HF_insert(fh, obj_size, shared_wobj_g, heap_id5) < 0)
         FAIL_STACK_ERROR
     if(H5HF_get_id_type_test(heap_id5, &obj_type) < 0)
         FAIL_STACK_ERROR
@@ -13180,7 +13456,7 @@ test_huge_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -13198,12 +13474,12 @@ test_huge_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Read in fifth ('normal') object */
-    if(H5HF_get_obj_len(fh, dxpl, heap_id5, &robj_size) < 0)
+    if(H5HF_get_obj_len(fh, heap_id5, &robj_size) < 0)
         FAIL_STACK_ERROR
     if(obj_size != robj_size)
         TEST_ERROR
     HDmemset(shared_robj_g, 0, obj_size);
-    if(H5HF_read(fh, dxpl, heap_id5, shared_robj_g) < 0)
+    if(H5HF_read(fh, heap_id5, shared_robj_g) < 0)
         FAIL_STACK_ERROR
     if(HDmemcmp(shared_wobj_g, shared_robj_g, obj_size))
         TEST_ERROR
@@ -13212,13 +13488,13 @@ test_huge_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
     if(tparam->del_dir != FHEAP_DEL_HEAP) {
         if(tparam->del_dir == FHEAP_DEL_FORWARD) {
             /* Remove first object from heap */
-            if(H5HF_get_obj_len(fh, dxpl, heap_id, &robj_size) < 0)
+            if(H5HF_get_obj_len(fh, heap_id, &robj_size) < 0)
                 FAIL_STACK_ERROR
-            if(H5HF_remove(fh, dxpl, heap_id) < 0)
+            if(H5HF_remove(fh, heap_id) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
 
             /* Check up on heap... */
@@ -13228,13 +13504,13 @@ test_huge_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
                 TEST_ERROR
 
             /* Remove second object from heap */
-            if(H5HF_get_obj_len(fh, dxpl, heap_id2, &robj_size) < 0)
+            if(H5HF_get_obj_len(fh, heap_id2, &robj_size) < 0)
                 FAIL_STACK_ERROR
-            if(H5HF_remove(fh, dxpl, heap_id2) < 0)
+            if(H5HF_remove(fh, heap_id2) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
 
             /* Check up on heap... */
@@ -13244,13 +13520,13 @@ test_huge_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
                 TEST_ERROR
 
             /* Remove third object from heap */
-            if(H5HF_get_obj_len(fh, dxpl, heap_id3, &robj_size) < 0)
+            if(H5HF_get_obj_len(fh, heap_id3, &robj_size) < 0)
                 FAIL_STACK_ERROR
-            if(H5HF_remove(fh, dxpl, heap_id3) < 0)
+            if(H5HF_remove(fh, heap_id3) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
 
             /* Check up on heap... */
@@ -13260,36 +13536,36 @@ test_huge_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
                 TEST_ERROR
 
             /* Remove fourth ('normal') object from heap */
-            if(H5HF_remove(fh, dxpl, heap_id4) < 0)
+            if(H5HF_remove(fh, heap_id4) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
 
             /* Remove fifth ('normal') object from heap */
-            if(H5HF_remove(fh, dxpl, heap_id5) < 0)
+            if(H5HF_remove(fh, heap_id5) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
         } /* end if */
         else {
             /* Remove fifth ('normal') object from heap */
-            if(H5HF_remove(fh, dxpl, heap_id5) < 0)
+            if(H5HF_remove(fh, heap_id5) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
 
             /* Remove fourth ('normal') object from heap */
-            if(H5HF_remove(fh, dxpl, heap_id4) < 0)
+            if(H5HF_remove(fh, heap_id4) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
 
             /* Reset 'managed' object statistics after they are all removed  */
@@ -13299,13 +13575,13 @@ test_huge_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
             state.man_free_space = 0;
 
             /* Remove third object from heap */
-            if(H5HF_get_obj_len(fh, dxpl, heap_id3, &robj_size) < 0)
+            if(H5HF_get_obj_len(fh, heap_id3, &robj_size) < 0)
                 FAIL_STACK_ERROR
-            if(H5HF_remove(fh, dxpl, heap_id3) < 0)
+            if(H5HF_remove(fh, heap_id3) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
 
             /* Check up on heap... */
@@ -13315,13 +13591,13 @@ test_huge_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
                 TEST_ERROR
 
             /* Remove second object from heap */
-            if(H5HF_get_obj_len(fh, dxpl, heap_id2, &robj_size) < 0)
+            if(H5HF_get_obj_len(fh, heap_id2, &robj_size) < 0)
                 FAIL_STACK_ERROR
-            if(H5HF_remove(fh, dxpl, heap_id2) < 0)
+            if(H5HF_remove(fh, heap_id2) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
 
             /* Check up on heap... */
@@ -13331,11 +13607,11 @@ test_huge_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
                 TEST_ERROR
 
             /* Remove first object from heap */
-            if(H5HF_remove(fh, dxpl, heap_id) < 0)
+            if(H5HF_remove(fh, heap_id) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
         } /* end else */
 
@@ -13347,14 +13623,14 @@ test_huge_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
 
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
     fh = NULL;
 
     /* Check for deleting the entire heap */
     if(tparam->del_dir == FHEAP_DEL_HEAP) {
         /* Delete heap */
-        if(H5HF_delete(f, dxpl, fh_addr) < 0)
+        if(H5HF_delete(f, fh_addr) < 0)
             FAIL_STACK_ERROR
     } /* end if */
 
@@ -13399,7 +13675,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -13419,11 +13695,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_filtered_huge(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -13431,16 +13706,17 @@ test_filtered_huge(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam
     H5HF_create_t tmp_cparam;           /* Local heap creation parameters */
     fheap_heap_ids_t keep_ids;          /* Structure to retain heap IDs */
     size_t      id_len;                 /* Size of fractal heap IDs */
-    h5_stat_size_t       empty_size;             /* Size of a file with an empty heap */
-    h5_stat_size_t       file_size;              /* Size of file currently */
+    h5_stat_size_t empty_size;          /* Size of a file with an empty heap */
+    h5_stat_size_t file_size;           /* Size of file currently */
     unsigned char *heap_id = NULL;      /* Heap ID for object */
     size_t      obj_size;               /* Size of object */
     size_t      robj_size;              /* Size of object read */
     unsigned char obj_type;             /* Type of storage for object */
     fheap_heap_state_t state;           /* State of fractal heap */
     unsigned    deflate_level;          /* Deflation level */
-    unsigned    old_actual_id_len = 0;  /* Old actual ID length */
+    size_t      old_actual_id_len = 0;  /* Old actual ID length */
     hbool_t     huge_ids_direct;        /* Are 'huge' objects directly acccessed? */
+    hbool_t     pline_init = FALSE;     /* Whether the I/O pipeline has been initialized */
     const char *base_desc = "insert 'huge' object into heap with I/O filters, then remove %s";       /* Test description */
 
     /* Copy heap creation properties */
@@ -13450,6 +13726,7 @@ test_filtered_huge(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam
     deflate_level = 6;
     if(H5Z_append(&tmp_cparam.pline, H5Z_FILTER_DEFLATE, H5Z_FLAG_OPTIONAL, (size_t)1, &deflate_level) < 0)
         FAIL_STACK_ERROR
+    pline_init = TRUE;
 
     /* Adjust actual ID length, if asking for IDs that can directly access 'huge' objects */
     if(cparam->id_len == 1) {
@@ -13458,7 +13735,7 @@ test_filtered_huge(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam
     } /* end if */
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, &tmp_cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, &tmp_cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
     /* Perform common test initialization operations */
@@ -13467,7 +13744,7 @@ test_filtered_huge(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam
 
 
     /* Allocate heap ID(s) */
-    if(NULL == (heap_id = H5MM_malloc(tparam->actual_id_len)))
+    if(NULL == (heap_id = (unsigned char *)H5MM_malloc(tparam->actual_id_len)))
         TEST_ERROR
 
     /* Make certain that 'huge' object's heap IDs are correct form */
@@ -13493,7 +13770,7 @@ test_filtered_huge(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam
 
     /* Insert object too large for managed heap blocks */
     obj_size = SMALL_STAND_SIZE + 1;
-    if(H5HF_insert(fh, dxpl, obj_size, shared_wobj_g, heap_id) < 0)
+    if(H5HF_insert(fh, obj_size, shared_wobj_g, heap_id) < 0)
         FAIL_STACK_ERROR
     if(H5HF_get_id_type_test(heap_id, &obj_type) < 0)
         FAIL_STACK_ERROR
@@ -13501,13 +13778,13 @@ test_filtered_huge(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
 /* QAK */
 #ifdef QAK
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
     fh = NULL;
 
@@ -13520,11 +13797,15 @@ test_filtered_huge(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam
         FAIL_STACK_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
         FAIL_STACK_ERROR
 
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
+        STACK_ERROR
+
     /* Re-open the heap */
-    if(NULL == (fh = H5HF_open(f, H5P_DATASET_XFER_DEFAULT, fh_addr)))
+    if(NULL == (fh = H5HF_open(f, fh_addr)))
         FAIL_STACK_ERROR
 #endif /* QAK */
 /* QAK */
@@ -13536,12 +13817,12 @@ test_filtered_huge(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam
         TEST_ERROR
 
     /* Read in huge object */
-    if(H5HF_get_obj_len(fh, dxpl, heap_id, &robj_size) < 0)
+    if(H5HF_get_obj_len(fh, heap_id, &robj_size) < 0)
         FAIL_STACK_ERROR
     if(obj_size != robj_size)
         TEST_ERROR
     HDmemset(shared_robj_g, 0, obj_size);
-    if(H5HF_read(fh, dxpl, heap_id, shared_robj_g) < 0)
+    if(H5HF_read(fh, heap_id, shared_robj_g) < 0)
         FAIL_STACK_ERROR
     if(HDmemcmp(shared_wobj_g, shared_robj_g, obj_size))
         TEST_ERROR
@@ -13549,11 +13830,11 @@ test_filtered_huge(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam
     /* Delete individual objects, if we won't be deleting the entire heap later */
     if(tparam->del_dir != FHEAP_DEL_HEAP) {
         /* Remove object from heap */
-        if(H5HF_remove(fh, dxpl, heap_id) < 0)
+        if(H5HF_remove(fh, heap_id) < 0)
             FAIL_STACK_ERROR
 
         /* Check for closing & re-opening the heap */
-        if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+        if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
             TEST_ERROR
 
         /* Check up on heap... */
@@ -13564,14 +13845,14 @@ test_filtered_huge(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam
     } /* end if */
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
     fh = NULL;
 
     /* Check for deleting the entire heap */
     if(tparam->del_dir == FHEAP_DEL_HEAP) {
         /* Delete heap */
-        if(H5HF_delete(f, dxpl, fh_addr) < 0)
+        if(H5HF_delete(f, fh_addr) < 0)
             FAIL_STACK_ERROR
     } /* end if */
 
@@ -13607,8 +13888,10 @@ error:
     H5E_BEGIN_TRY {
         H5MM_xfree(heap_id);
         if(fh)
-            H5HF_close(fh, dxpl);
-	H5Fclose(file);
+            H5HF_close(fh);
+        if(pline_init)
+            H5O_msg_reset(H5O_PLINE_ID, &tmp_cparam.pline); /* Release the I/O pipeline filter information */
+        H5Fclose(file);
     } H5E_END_TRY;
     return(1);
 } /* test_filtered_huge() */
@@ -13631,11 +13914,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_tiny_insert_one(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -13656,11 +13938,11 @@ test_tiny_insert_one(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
     /* Allocate heap ID(s) */
-    if(NULL == (heap_id = H5MM_malloc(tparam->actual_id_len)))
+    if(NULL == (heap_id = (unsigned char *)H5MM_malloc(tparam->actual_id_len)))
         TEST_ERROR
 
     /* Make certain that 'tiny' object's heap IDs are correct size */
@@ -13671,7 +13953,7 @@ test_tiny_insert_one(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
 
     /* Insert object small enough to encode in heap ID */
     obj_size = tparam->actual_id_len - 2;
-    if(H5HF_insert(fh, dxpl, obj_size, shared_wobj_g, heap_id) < 0)
+    if(H5HF_insert(fh, obj_size, shared_wobj_g, heap_id) < 0)
         FAIL_STACK_ERROR
     if(H5HF_get_id_type_test(heap_id, &obj_type) < 0)
         FAIL_STACK_ERROR
@@ -13679,7 +13961,7 @@ test_tiny_insert_one(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -13689,12 +13971,12 @@ test_tiny_insert_one(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Read in tiny object */
-    if(H5HF_get_obj_len(fh, dxpl, heap_id, &robj_size) < 0)
+    if(H5HF_get_obj_len(fh, heap_id, &robj_size) < 0)
         FAIL_STACK_ERROR
     if(obj_size != robj_size)
         TEST_ERROR
     HDmemset(shared_robj_g, 0, obj_size);
-    if(H5HF_read(fh, dxpl, heap_id, shared_robj_g) < 0)
+    if(H5HF_read(fh, heap_id, shared_robj_g) < 0)
         FAIL_STACK_ERROR
     if(HDmemcmp(shared_wobj_g, shared_robj_g, obj_size))
         TEST_ERROR
@@ -13702,11 +13984,11 @@ test_tiny_insert_one(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
     /* Delete individual objects, if we won't be deleting the entire heap later */
     if(tparam->del_dir != FHEAP_DEL_HEAP) {
         /* Remove object from heap */
-        if(H5HF_remove(fh, dxpl, heap_id) < 0)
+        if(H5HF_remove(fh, heap_id) < 0)
             FAIL_STACK_ERROR
 
         /* Check for closing & re-opening the heap */
-        if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+        if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
             TEST_ERROR
 
         /* Check up on heap... */
@@ -13718,14 +14000,14 @@ test_tiny_insert_one(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
 
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
     fh = NULL;
 
     /* Check for deleting the entire heap */
     if(tparam->del_dir == FHEAP_DEL_HEAP) {
         /* Delete heap */
-        if(H5HF_delete(f, dxpl, fh_addr) < 0)
+        if(H5HF_delete(f, fh_addr) < 0)
             FAIL_STACK_ERROR
     } /* end if */
 
@@ -13762,7 +14044,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -13784,11 +14066,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_tiny_insert_two(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -13810,13 +14091,13 @@ test_tiny_insert_two(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
     /* Allocate heap ID(s) */
-    if(NULL == (heap_id = H5MM_malloc(tparam->actual_id_len)))
+    if(NULL == (heap_id = (unsigned char *)H5MM_malloc(tparam->actual_id_len)))
         TEST_ERROR
-    if(NULL == (heap_id2 = H5MM_malloc(tparam->actual_id_len)))
+    if(NULL == (heap_id2 = (unsigned char *)H5MM_malloc(tparam->actual_id_len)))
         TEST_ERROR
 
     /* Make certain that 'tiny' object's heap IDs are correct size */
@@ -13827,7 +14108,7 @@ test_tiny_insert_two(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
 
     /* Insert object small enough to encode in heap ID */
     obj_size = tparam->actual_id_len - 2;
-    if(H5HF_insert(fh, dxpl, obj_size, shared_wobj_g, heap_id) < 0)
+    if(H5HF_insert(fh, obj_size, shared_wobj_g, heap_id) < 0)
         FAIL_STACK_ERROR
     if(H5HF_get_id_type_test(heap_id, &obj_type) < 0)
         FAIL_STACK_ERROR
@@ -13835,7 +14116,7 @@ test_tiny_insert_two(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -13845,19 +14126,19 @@ test_tiny_insert_two(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Read in tiny object */
-    if(H5HF_get_obj_len(fh, dxpl, heap_id, &robj_size) < 0)
+    if(H5HF_get_obj_len(fh, heap_id, &robj_size) < 0)
         FAIL_STACK_ERROR
     if(obj_size != robj_size)
         TEST_ERROR
     HDmemset(shared_robj_g, 0, obj_size);
-    if(H5HF_read(fh, dxpl, heap_id, shared_robj_g) < 0)
+    if(H5HF_read(fh, heap_id, shared_robj_g) < 0)
         FAIL_STACK_ERROR
     if(HDmemcmp(shared_wobj_g, shared_robj_g, obj_size))
         TEST_ERROR
 
     /* Insert second object small enough to encode in heap ID */
     obj_size = tparam->actual_id_len - 2;
-    if(H5HF_insert(fh, dxpl, obj_size, shared_wobj_g, heap_id2) < 0)
+    if(H5HF_insert(fh, obj_size, shared_wobj_g, heap_id2) < 0)
         FAIL_STACK_ERROR
     if(H5HF_get_id_type_test(heap_id2, &obj_type) < 0)
         FAIL_STACK_ERROR
@@ -13865,7 +14146,7 @@ test_tiny_insert_two(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -13875,12 +14156,12 @@ test_tiny_insert_two(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Read in second tiny object */
-    if(H5HF_get_obj_len(fh, dxpl, heap_id2, &robj_size) < 0)
+    if(H5HF_get_obj_len(fh, heap_id2, &robj_size) < 0)
         FAIL_STACK_ERROR
     if(obj_size != robj_size)
         TEST_ERROR
     HDmemset(shared_robj_g, 0, obj_size);
-    if(H5HF_read(fh, dxpl, heap_id2, shared_robj_g) < 0)
+    if(H5HF_read(fh, heap_id2, shared_robj_g) < 0)
         FAIL_STACK_ERROR
     if(HDmemcmp(shared_wobj_g, shared_robj_g, obj_size))
         TEST_ERROR
@@ -13889,11 +14170,11 @@ test_tiny_insert_two(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
     if(tparam->del_dir != FHEAP_DEL_HEAP) {
         if(tparam->del_dir == FHEAP_DEL_FORWARD) {
             /* Remove first object from heap */
-            if(H5HF_remove(fh, dxpl, heap_id) < 0)
+            if(H5HF_remove(fh, heap_id) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
 
             /* Check up on heap... */
@@ -13903,11 +14184,11 @@ test_tiny_insert_two(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
                 TEST_ERROR
 
             /* Remove second object from heap */
-            if(H5HF_remove(fh, dxpl, heap_id2) < 0)
+            if(H5HF_remove(fh, heap_id2) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
 
             /* Check up on heap... */
@@ -13918,11 +14199,11 @@ test_tiny_insert_two(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         } /* end if */
         else {
             /* Remove second object from heap */
-            if(H5HF_remove(fh, dxpl, heap_id2) < 0)
+            if(H5HF_remove(fh, heap_id2) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
 
             /* Check up on heap... */
@@ -13932,11 +14213,11 @@ test_tiny_insert_two(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
                 TEST_ERROR
 
             /* Remove first object from heap */
-            if(H5HF_remove(fh, dxpl, heap_id) < 0)
+            if(H5HF_remove(fh, heap_id) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
 
             /* Check up on heap... */
@@ -13949,14 +14230,14 @@ test_tiny_insert_two(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
 
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
     fh = NULL;
 
     /* Check for deleting the entire heap */
     if(tparam->del_dir == FHEAP_DEL_HEAP) {
         /* Delete heap */
-        if(H5HF_delete(f, dxpl, fh_addr) < 0)
+        if(H5HF_delete(f, fh_addr) < 0)
             FAIL_STACK_ERROR
     } /* end if */
 
@@ -13995,7 +14276,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -14018,11 +14299,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_tiny_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -14049,23 +14329,23 @@ test_tiny_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
     /* Allocate heap ID(s) */
-    if(NULL == (heap_id = H5MM_malloc(tparam->actual_id_len)))
+    if(NULL == (heap_id = (unsigned char *)H5MM_malloc(tparam->actual_id_len)))
         TEST_ERROR
-    if(NULL == (heap_id2 = H5MM_malloc(tparam->actual_id_len)))
+    if(NULL == (heap_id2 = (unsigned char *)H5MM_malloc(tparam->actual_id_len)))
         TEST_ERROR
-    if(NULL == (heap_id3 = H5MM_malloc(tparam->actual_id_len)))
+    if(NULL == (heap_id3 = (unsigned char *)H5MM_malloc(tparam->actual_id_len)))
         TEST_ERROR
-    if(NULL == (heap_id4 = H5MM_malloc(tparam->actual_id_len)))
+    if(NULL == (heap_id4 = (unsigned char *)H5MM_malloc(tparam->actual_id_len)))
         TEST_ERROR
-    if(NULL == (heap_id5 = H5MM_malloc(tparam->actual_id_len)))
+    if(NULL == (heap_id5 = (unsigned char *)H5MM_malloc(tparam->actual_id_len)))
         TEST_ERROR
-    if(NULL == (heap_id6 = H5MM_malloc(tparam->actual_id_len)))
+    if(NULL == (heap_id6 = (unsigned char *)H5MM_malloc(tparam->actual_id_len)))
         TEST_ERROR
-    if(NULL == (heap_id7 = H5MM_malloc(tparam->actual_id_len)))
+    if(NULL == (heap_id7 = (unsigned char *)H5MM_malloc(tparam->actual_id_len)))
         TEST_ERROR
 
     /* Make certain that 'tiny' object's heap IDs are correct size */
@@ -14076,7 +14356,7 @@ test_tiny_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
 
     /* Insert first object too large for managed heap blocks */
     obj_size = SMALL_STAND_SIZE + 1;
-    if(H5HF_insert(fh, dxpl, obj_size, shared_wobj_g, heap_id) < 0)
+    if(H5HF_insert(fh, obj_size, shared_wobj_g, heap_id) < 0)
         FAIL_STACK_ERROR
     if(H5HF_get_id_type_test(heap_id, &obj_type) < 0)
         FAIL_STACK_ERROR
@@ -14084,7 +14364,7 @@ test_tiny_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -14094,26 +14374,26 @@ test_tiny_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Read in first huge object */
-    if(H5HF_get_obj_len(fh, dxpl, heap_id, &robj_size) < 0)
+    if(H5HF_get_obj_len(fh, heap_id, &robj_size) < 0)
         FAIL_STACK_ERROR
     if(obj_size != robj_size)
         TEST_ERROR
     HDmemset(shared_robj_g, 0, obj_size);
-    if(H5HF_read(fh, dxpl, heap_id, shared_robj_g) < 0)
+    if(H5HF_read(fh, heap_id, shared_robj_g) < 0)
         FAIL_STACK_ERROR
     if(HDmemcmp(shared_wobj_g, shared_robj_g, obj_size))
         TEST_ERROR
 
     /* Check 'op' functionality on first huge object */
     HDmemset(shared_robj_g, 0, obj_size);
-    if(H5HF_op(fh, dxpl, heap_id, op_memcpy, shared_robj_g) < 0)
+    if(H5HF_op(fh, heap_id, op_memcpy, shared_robj_g) < 0)
         FAIL_STACK_ERROR
     if(HDmemcmp(shared_wobj_g, shared_robj_g, obj_size))
         TEST_ERROR
 
     /* Insert second object too large for managed heap blocks */
     obj_size = SMALL_STAND_SIZE + 2;
-    if(H5HF_insert(fh, dxpl, obj_size, shared_wobj_g, heap_id2) < 0)
+    if(H5HF_insert(fh, obj_size, shared_wobj_g, heap_id2) < 0)
         FAIL_STACK_ERROR
     if(H5HF_get_id_type_test(heap_id2, &obj_type) < 0)
         FAIL_STACK_ERROR
@@ -14121,7 +14401,7 @@ test_tiny_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -14131,26 +14411,26 @@ test_tiny_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Read in second huge object */
-    if(H5HF_get_obj_len(fh, dxpl, heap_id2, &robj_size) < 0)
+    if(H5HF_get_obj_len(fh, heap_id2, &robj_size) < 0)
         FAIL_STACK_ERROR
     if(obj_size != robj_size)
         TEST_ERROR
     HDmemset(shared_robj_g, 0, obj_size);
-    if(H5HF_read(fh, dxpl, heap_id2, shared_robj_g) < 0)
+    if(H5HF_read(fh, heap_id2, shared_robj_g) < 0)
         FAIL_STACK_ERROR
     if(HDmemcmp(shared_wobj_g, shared_robj_g, obj_size))
         TEST_ERROR
 
     /* Check 'op' functionality on second huge object */
     HDmemset(shared_robj_g, 0, obj_size);
-    if(H5HF_op(fh, dxpl, heap_id2, op_memcpy, shared_robj_g) < 0)
+    if(H5HF_op(fh, heap_id2, op_memcpy, shared_robj_g) < 0)
         FAIL_STACK_ERROR
     if(HDmemcmp(shared_wobj_g, shared_robj_g, obj_size))
         TEST_ERROR
 
     /* Insert third object too large for managed heap blocks */
     obj_size = SMALL_STAND_SIZE + 3;
-    if(H5HF_insert(fh, dxpl, obj_size, shared_wobj_g, heap_id3) < 0)
+    if(H5HF_insert(fh, obj_size, shared_wobj_g, heap_id3) < 0)
         FAIL_STACK_ERROR
     if(H5HF_get_id_type_test(heap_id3, &obj_type) < 0)
         FAIL_STACK_ERROR
@@ -14158,7 +14438,7 @@ test_tiny_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -14168,26 +14448,26 @@ test_tiny_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Read in third huge object */
-    if(H5HF_get_obj_len(fh, dxpl, heap_id3, &robj_size) < 0)
+    if(H5HF_get_obj_len(fh, heap_id3, &robj_size) < 0)
         FAIL_STACK_ERROR
     if(obj_size != robj_size)
         TEST_ERROR
     HDmemset(shared_robj_g, 0, obj_size);
-    if(H5HF_read(fh, dxpl, heap_id3, shared_robj_g) < 0)
+    if(H5HF_read(fh, heap_id3, shared_robj_g) < 0)
         FAIL_STACK_ERROR
     if(HDmemcmp(shared_wobj_g, shared_robj_g, obj_size))
         TEST_ERROR
 
     /* Check 'op' functionality on third huge object */
     HDmemset(shared_robj_g, 0, obj_size);
-    if(H5HF_op(fh, dxpl, heap_id3, op_memcpy, shared_robj_g) < 0)
+    if(H5HF_op(fh, heap_id3, op_memcpy, shared_robj_g) < 0)
         FAIL_STACK_ERROR
     if(HDmemcmp(shared_wobj_g, shared_robj_g, obj_size))
         TEST_ERROR
 
     /* Insert fourth object small enough to fit into 'normal' heap blocks */
     obj_size = (size_t)DBLOCK_SIZE(fh, 0) + 1;
-    if(H5HF_insert(fh, dxpl, obj_size, shared_wobj_g, heap_id4) < 0)
+    if(H5HF_insert(fh, obj_size, shared_wobj_g, heap_id4) < 0)
         FAIL_STACK_ERROR
     if(H5HF_get_id_type_test(heap_id4, &obj_type) < 0)
         FAIL_STACK_ERROR
@@ -14195,7 +14475,7 @@ test_tiny_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -14212,26 +14492,26 @@ test_tiny_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Read in fourth ('normal') object */
-    if(H5HF_get_obj_len(fh, dxpl, heap_id4, &robj_size) < 0)
+    if(H5HF_get_obj_len(fh, heap_id4, &robj_size) < 0)
         FAIL_STACK_ERROR
     if(obj_size != robj_size)
         TEST_ERROR
     HDmemset(shared_robj_g, 0, obj_size);
-    if(H5HF_read(fh, dxpl, heap_id4, shared_robj_g) < 0)
+    if(H5HF_read(fh, heap_id4, shared_robj_g) < 0)
         FAIL_STACK_ERROR
     if(HDmemcmp(shared_wobj_g, shared_robj_g, obj_size))
         TEST_ERROR
 
     /* Check 'op' functionality on fourth ('normal') object */
     HDmemset(shared_robj_g, 0, obj_size);
-    if(H5HF_op(fh, dxpl, heap_id4, op_memcpy, shared_robj_g) < 0)
+    if(H5HF_op(fh, heap_id4, op_memcpy, shared_robj_g) < 0)
         FAIL_STACK_ERROR
     if(HDmemcmp(shared_wobj_g, shared_robj_g, obj_size))
         TEST_ERROR
 
     /* Insert fifth object small enough to fit into 'normal' heap blocks */
     obj_size = (size_t)DBLOCK_SIZE(fh, 3) + 1;
-    if(H5HF_insert(fh, dxpl, obj_size, shared_wobj_g, heap_id5) < 0)
+    if(H5HF_insert(fh, obj_size, shared_wobj_g, heap_id5) < 0)
         FAIL_STACK_ERROR
     if(H5HF_get_id_type_test(heap_id5, &obj_type) < 0)
         FAIL_STACK_ERROR
@@ -14239,7 +14519,7 @@ test_tiny_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -14257,19 +14537,19 @@ test_tiny_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Read in fifth ('normal') object */
-    if(H5HF_get_obj_len(fh, dxpl, heap_id5, &robj_size) < 0)
+    if(H5HF_get_obj_len(fh, heap_id5, &robj_size) < 0)
         FAIL_STACK_ERROR
     if(obj_size != robj_size)
         TEST_ERROR
     HDmemset(shared_robj_g, 0, obj_size);
-    if(H5HF_read(fh, dxpl, heap_id5, shared_robj_g) < 0)
+    if(H5HF_read(fh, heap_id5, shared_robj_g) < 0)
         FAIL_STACK_ERROR
     if(HDmemcmp(shared_wobj_g, shared_robj_g, obj_size))
         TEST_ERROR
 
     /* Check 'op' functionality on fifth ('normal') object */
     HDmemset(shared_robj_g, 0, obj_size);
-    if(H5HF_op(fh, dxpl, heap_id5, op_memcpy, shared_robj_g) < 0)
+    if(H5HF_op(fh, heap_id5, op_memcpy, shared_robj_g) < 0)
         FAIL_STACK_ERROR
     if(HDmemcmp(shared_wobj_g, shared_robj_g, obj_size))
         TEST_ERROR
@@ -14277,7 +14557,7 @@ test_tiny_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
 
     /* Insert sixth object small enough to encode in heap ID */
     obj_size = tparam->actual_id_len - 2;
-    if(H5HF_insert(fh, dxpl, obj_size, shared_wobj_g, heap_id6) < 0)
+    if(H5HF_insert(fh, obj_size, shared_wobj_g, heap_id6) < 0)
         FAIL_STACK_ERROR
     if(H5HF_get_id_type_test(heap_id6, &obj_type) < 0)
         FAIL_STACK_ERROR
@@ -14285,7 +14565,7 @@ test_tiny_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -14295,26 +14575,26 @@ test_tiny_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Read in tiny object */
-    if(H5HF_get_obj_len(fh, dxpl, heap_id6, &robj_size) < 0)
+    if(H5HF_get_obj_len(fh, heap_id6, &robj_size) < 0)
         FAIL_STACK_ERROR
     if(obj_size != robj_size)
         TEST_ERROR
     HDmemset(shared_robj_g, 0, obj_size);
-    if(H5HF_read(fh, dxpl, heap_id6, shared_robj_g) < 0)
+    if(H5HF_read(fh, heap_id6, shared_robj_g) < 0)
         FAIL_STACK_ERROR
     if(HDmemcmp(shared_wobj_g, shared_robj_g, obj_size))
         TEST_ERROR
 
     /* Check 'op' functionality on sixth ('tiny') object */
     HDmemset(shared_robj_g, 0, obj_size);
-    if(H5HF_op(fh, dxpl, heap_id6, op_memcpy, shared_robj_g) < 0)
+    if(H5HF_op(fh, heap_id6, op_memcpy, shared_robj_g) < 0)
         FAIL_STACK_ERROR
     if(HDmemcmp(shared_wobj_g, shared_robj_g, obj_size))
         TEST_ERROR
 
     /* Insert seventh object small enough to encode in heap ID */
     obj_size = tparam->actual_id_len - 2;
-    if(H5HF_insert(fh, dxpl, obj_size, shared_wobj_g, heap_id7) < 0)
+    if(H5HF_insert(fh, obj_size, shared_wobj_g, heap_id7) < 0)
         FAIL_STACK_ERROR
     if(H5HF_get_id_type_test(heap_id7, &obj_type) < 0)
         FAIL_STACK_ERROR
@@ -14322,7 +14602,7 @@ test_tiny_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Check up on heap... */
@@ -14332,19 +14612,19 @@ test_tiny_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
         TEST_ERROR
 
     /* Read in tiny object */
-    if(H5HF_get_obj_len(fh, dxpl, heap_id7, &robj_size) < 0)
+    if(H5HF_get_obj_len(fh, heap_id7, &robj_size) < 0)
         FAIL_STACK_ERROR
     if(obj_size != robj_size)
         TEST_ERROR
     HDmemset(shared_robj_g, 0, obj_size);
-    if(H5HF_read(fh, dxpl, heap_id7, shared_robj_g) < 0)
+    if(H5HF_read(fh, heap_id7, shared_robj_g) < 0)
         FAIL_STACK_ERROR
     if(HDmemcmp(shared_wobj_g, shared_robj_g, obj_size))
         TEST_ERROR
 
     /* Check 'op' functionality on seventh ('tiny') object */
     HDmemset(shared_robj_g, 0, obj_size);
-    if(H5HF_op(fh, dxpl, heap_id7, op_memcpy, shared_robj_g) < 0)
+    if(H5HF_op(fh, heap_id7, op_memcpy, shared_robj_g) < 0)
         FAIL_STACK_ERROR
     if(HDmemcmp(shared_wobj_g, shared_robj_g, obj_size))
         TEST_ERROR
@@ -14353,13 +14633,13 @@ test_tiny_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
     if(tparam->del_dir != FHEAP_DEL_HEAP) {
         if(tparam->del_dir == FHEAP_DEL_FORWARD) {
             /* Remove first object from heap */
-            if(H5HF_get_obj_len(fh, dxpl, heap_id, &robj_size) < 0)
+            if(H5HF_get_obj_len(fh, heap_id, &robj_size) < 0)
                 FAIL_STACK_ERROR
-            if(H5HF_remove(fh, dxpl, heap_id) < 0)
+            if(H5HF_remove(fh, heap_id) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
 
             /* Check up on heap... */
@@ -14369,13 +14649,13 @@ test_tiny_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
                 TEST_ERROR
 
             /* Remove second object from heap */
-            if(H5HF_get_obj_len(fh, dxpl, heap_id2, &robj_size) < 0)
+            if(H5HF_get_obj_len(fh, heap_id2, &robj_size) < 0)
                 FAIL_STACK_ERROR
-            if(H5HF_remove(fh, dxpl, heap_id2) < 0)
+            if(H5HF_remove(fh, heap_id2) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
 
             /* Check up on heap... */
@@ -14385,13 +14665,13 @@ test_tiny_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
                 TEST_ERROR
 
             /* Remove third object from heap */
-            if(H5HF_get_obj_len(fh, dxpl, heap_id3, &robj_size) < 0)
+            if(H5HF_get_obj_len(fh, heap_id3, &robj_size) < 0)
                 FAIL_STACK_ERROR
-            if(H5HF_remove(fh, dxpl, heap_id3) < 0)
+            if(H5HF_remove(fh, heap_id3) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
 
             /* Check up on heap... */
@@ -14401,19 +14681,19 @@ test_tiny_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
                 TEST_ERROR
 
             /* Remove fourth ('normal') object from heap */
-            if(H5HF_remove(fh, dxpl, heap_id4) < 0)
+            if(H5HF_remove(fh, heap_id4) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
 
             /* Remove fifth ('normal') object from heap */
-            if(H5HF_remove(fh, dxpl, heap_id5) < 0)
+            if(H5HF_remove(fh, heap_id5) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
 
             /* Reset 'managed' object statistics after they are all removed  */
@@ -14423,13 +14703,13 @@ test_tiny_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
             state.man_free_space = 0;
 
             /* Remove sixth object from heap */
-            if(H5HF_get_obj_len(fh, dxpl, heap_id6, &robj_size) < 0)
+            if(H5HF_get_obj_len(fh, heap_id6, &robj_size) < 0)
                 FAIL_STACK_ERROR
-            if(H5HF_remove(fh, dxpl, heap_id6) < 0)
+            if(H5HF_remove(fh, heap_id6) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
 
             /* Check up on heap... */
@@ -14439,22 +14719,22 @@ test_tiny_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
                 TEST_ERROR
 
             /* Remove seventh object from heap */
-            if(H5HF_remove(fh, dxpl, heap_id7) < 0)
+            if(H5HF_remove(fh, heap_id7) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
         } /* end if */
         else {
             /* Remove seventh object from heap */
-            if(H5HF_get_obj_len(fh, dxpl, heap_id7, &robj_size) < 0)
+            if(H5HF_get_obj_len(fh, heap_id7, &robj_size) < 0)
                 FAIL_STACK_ERROR
-            if(H5HF_remove(fh, dxpl, heap_id7) < 0)
+            if(H5HF_remove(fh, heap_id7) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
 
             /* Check up on heap... */
@@ -14464,13 +14744,13 @@ test_tiny_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
                 TEST_ERROR
 
             /* Remove sixth object from heap */
-            if(H5HF_get_obj_len(fh, dxpl, heap_id6, &robj_size) < 0)
+            if(H5HF_get_obj_len(fh, heap_id6, &robj_size) < 0)
                 FAIL_STACK_ERROR
-            if(H5HF_remove(fh, dxpl, heap_id6) < 0)
+            if(H5HF_remove(fh, heap_id6) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
 
             /* Check up on heap... */
@@ -14480,19 +14760,19 @@ test_tiny_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
                 TEST_ERROR
 
             /* Remove fifth ('normal') object from heap */
-            if(H5HF_remove(fh, dxpl, heap_id5) < 0)
+            if(H5HF_remove(fh, heap_id5) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
 
             /* Remove fourth ('normal') object from heap */
-            if(H5HF_remove(fh, dxpl, heap_id4) < 0)
+            if(H5HF_remove(fh, heap_id4) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
 
             /* Reset 'managed' object statistics after they are all removed  */
@@ -14502,13 +14782,13 @@ test_tiny_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
             state.man_free_space = 0;
 
             /* Remove third object from heap */
-            if(H5HF_get_obj_len(fh, dxpl, heap_id3, &robj_size) < 0)
+            if(H5HF_get_obj_len(fh, heap_id3, &robj_size) < 0)
                 FAIL_STACK_ERROR
-            if(H5HF_remove(fh, dxpl, heap_id3) < 0)
+            if(H5HF_remove(fh, heap_id3) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
 
             /* Check up on heap... */
@@ -14518,13 +14798,13 @@ test_tiny_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
                 TEST_ERROR
 
             /* Remove second object from heap */
-            if(H5HF_get_obj_len(fh, dxpl, heap_id2, &robj_size) < 0)
+            if(H5HF_get_obj_len(fh, heap_id2, &robj_size) < 0)
                 FAIL_STACK_ERROR
-            if(H5HF_remove(fh, dxpl, heap_id2) < 0)
+            if(H5HF_remove(fh, heap_id2) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
 
             /* Check up on heap... */
@@ -14534,11 +14814,11 @@ test_tiny_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
                 TEST_ERROR
 
             /* Remove first object from heap */
-            if(H5HF_remove(fh, dxpl, heap_id) < 0)
+            if(H5HF_remove(fh, heap_id) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
         } /* end else */
 
@@ -14550,14 +14830,14 @@ test_tiny_insert_mix(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tpar
 
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
     fh = NULL;
 
     /* Check for deleting the entire heap */
     if(tparam->del_dir == FHEAP_DEL_HEAP) {
         /* Delete heap */
-        if(H5HF_delete(f, dxpl, fh_addr) < 0)
+        if(H5HF_delete(f, fh_addr) < 0)
             FAIL_STACK_ERROR
     } /* end if */
 
@@ -14606,7 +14886,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -14629,11 +14909,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_filtered_man_root_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -14661,7 +14940,7 @@ test_filtered_man_root_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_para
         FAIL_STACK_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, &tmp_cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, &tmp_cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
     /* Perform common test initialization operations */
@@ -14671,7 +14950,7 @@ test_filtered_man_root_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_para
 
     /* Insert object small enough to fit into direct heap block */
     obj_size = (size_t)DBLOCK_SIZE(fh, 0) / 2;
-    if(H5HF_insert(fh, dxpl, obj_size, shared_wobj_g, heap_id) < 0)
+    if(H5HF_insert(fh, obj_size, shared_wobj_g, heap_id) < 0)
         FAIL_STACK_ERROR
     if(H5HF_get_id_type_test(heap_id, &obj_type) < 0)
         FAIL_STACK_ERROR
@@ -14679,11 +14958,11 @@ test_filtered_man_root_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_para
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
     fh = NULL;
 
@@ -14696,11 +14975,15 @@ test_filtered_man_root_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_para
         FAIL_STACK_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        FAIL_STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         FAIL_STACK_ERROR
 
     /* Re-open the heap */
-    if(NULL == (fh = H5HF_open(f, H5P_DATASET_XFER_DEFAULT, fh_addr)))
+    if(NULL == (fh = H5HF_open(f, fh_addr)))
         FAIL_STACK_ERROR
 
     /* Check up on heap... */
@@ -14712,12 +14995,12 @@ test_filtered_man_root_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_para
         TEST_ERROR
 
     /* Read in ('normal') object */
-    if(H5HF_get_obj_len(fh, dxpl, heap_id, &robj_size) < 0)
+    if(H5HF_get_obj_len(fh, heap_id, &robj_size) < 0)
         FAIL_STACK_ERROR
     if(obj_size != robj_size)
         TEST_ERROR
     HDmemset(shared_robj_g, 0, obj_size);
-    if(H5HF_read(fh, dxpl, heap_id, shared_robj_g) < 0)
+    if(H5HF_read(fh, heap_id, shared_robj_g) < 0)
         FAIL_STACK_ERROR
     if(HDmemcmp(shared_wobj_g, shared_robj_g, obj_size))
         TEST_ERROR
@@ -14725,13 +15008,13 @@ test_filtered_man_root_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_para
     /* Delete individual objects, if we won't be deleting the entire heap later */
     if(tparam->del_dir != FHEAP_DEL_HEAP) {
         /* Remove object from heap */
-        if(H5HF_get_obj_len(fh, dxpl, heap_id, &robj_size) < 0)
+        if(H5HF_get_obj_len(fh, heap_id, &robj_size) < 0)
             FAIL_STACK_ERROR
-        if(H5HF_remove(fh, dxpl, heap_id) < 0)
+        if(H5HF_remove(fh, heap_id) < 0)
             FAIL_STACK_ERROR
 
         /* Check for closing & re-opening the heap */
-        if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+        if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
             TEST_ERROR
 
         /* Check up on heap... */
@@ -14741,14 +15024,14 @@ test_filtered_man_root_direct(hid_t fapl, H5HF_create_t *cparam, fheap_test_para
     } /* end if */
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, H5P_DATASET_XFER_DEFAULT) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
     fh = NULL;
 
     /* Check for deleting the entire heap */
     if(tparam->del_dir == FHEAP_DEL_HEAP) {
         /* Delete heap */
-        if(H5HF_delete(f, dxpl, fh_addr) < 0)
+        if(H5HF_delete(f, fh_addr) < 0)
             FAIL_STACK_ERROR
     } /* end if */
 
@@ -14781,7 +15064,7 @@ HDfprintf(stderr, "empty_size = %lu, file_size = %lu\n", (unsigned long)empty_si
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -14801,11 +15084,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_filtered_man_root_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -14834,7 +15116,7 @@ test_filtered_man_root_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_pa
         FAIL_STACK_ERROR
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, &tmp_cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, &tmp_cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
     /* Perform common test initialization operations */
@@ -14844,7 +15126,7 @@ test_filtered_man_root_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_pa
 
     /* Insert object #1, small enough to fit into direct heap block */
     obj_size = (size_t)DBLOCK_SIZE(fh, 0) / 2;
-    if(H5HF_insert(fh, dxpl, obj_size, shared_wobj_g, heap_id1) < 0)
+    if(H5HF_insert(fh, obj_size, shared_wobj_g, heap_id1) < 0)
         FAIL_STACK_ERROR
     if(H5HF_get_id_type_test(heap_id1, &obj_type) < 0)
         FAIL_STACK_ERROR
@@ -14852,12 +15134,12 @@ test_filtered_man_root_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_pa
         TEST_ERROR
 
     /* Check for closing & re-opening the heap */
-    if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+    if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
         TEST_ERROR
 
     /* Insert object #2, small enough to fit into direct heap block */
     obj_size = (size_t)DBLOCK_SIZE(fh, 0) / 2;
-    if(H5HF_insert(fh, dxpl, obj_size, shared_wobj_g, heap_id2) < 0)
+    if(H5HF_insert(fh, obj_size, shared_wobj_g, heap_id2) < 0)
         FAIL_STACK_ERROR
     if(H5HF_get_id_type_test(heap_id2, &obj_type) < 0)
         FAIL_STACK_ERROR
@@ -14865,7 +15147,7 @@ test_filtered_man_root_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_pa
         TEST_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
     fh = NULL;
 
@@ -14878,11 +15160,15 @@ test_filtered_man_root_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_pa
         FAIL_STACK_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        FAIL_STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         FAIL_STACK_ERROR
 
     /* Re-open the heap */
-    if(NULL == (fh = H5HF_open(f, H5P_DATASET_XFER_DEFAULT, fh_addr)))
+    if(NULL == (fh = H5HF_open(f, fh_addr)))
         FAIL_STACK_ERROR
 
     /* Check up on heap... */
@@ -14894,23 +15180,23 @@ test_filtered_man_root_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_pa
         TEST_ERROR
 
     /* Read in ('normal') object #1 */
-    if(H5HF_get_obj_len(fh, dxpl, heap_id1, &robj_size) < 0)
+    if(H5HF_get_obj_len(fh, heap_id1, &robj_size) < 0)
         FAIL_STACK_ERROR
     if(obj_size != robj_size)
         TEST_ERROR
     HDmemset(shared_robj_g, 0, obj_size);
-    if(H5HF_read(fh, dxpl, heap_id1, shared_robj_g) < 0)
+    if(H5HF_read(fh, heap_id1, shared_robj_g) < 0)
         FAIL_STACK_ERROR
     if(HDmemcmp(shared_wobj_g, shared_robj_g, obj_size))
         TEST_ERROR
 
     /* Read in ('normal') object #2 */
-    if(H5HF_get_obj_len(fh, dxpl, heap_id2, &robj_size) < 0)
+    if(H5HF_get_obj_len(fh, heap_id2, &robj_size) < 0)
         FAIL_STACK_ERROR
     if(obj_size != robj_size)
         TEST_ERROR
     HDmemset(shared_robj_g, 0, obj_size);
-    if(H5HF_read(fh, dxpl, heap_id2, shared_robj_g) < 0)
+    if(H5HF_read(fh, heap_id2, shared_robj_g) < 0)
         FAIL_STACK_ERROR
     if(HDmemcmp(shared_wobj_g, shared_robj_g, obj_size))
         TEST_ERROR
@@ -14919,13 +15205,13 @@ test_filtered_man_root_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_pa
     if(tparam->del_dir != FHEAP_DEL_HEAP) {
         if(tparam->del_dir == FHEAP_DEL_FORWARD) {
             /* Remove object #1 from heap */
-            if(H5HF_get_obj_len(fh, dxpl, heap_id1, &robj_size) < 0)
+            if(H5HF_get_obj_len(fh, heap_id1, &robj_size) < 0)
                 FAIL_STACK_ERROR
-            if(H5HF_remove(fh, dxpl, heap_id1) < 0)
+            if(H5HF_remove(fh, heap_id1) < 0)
                 FAIL_STACK_ERROR
 
             /* Close the fractal heap */
-            if(H5HF_close(fh, dxpl) < 0)
+            if(H5HF_close(fh) < 0)
                 FAIL_STACK_ERROR
             fh = NULL;
 
@@ -14938,17 +15224,21 @@ test_filtered_man_root_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_pa
                 FAIL_STACK_ERROR
 
             /* Get a pointer to the internal file object */
-            if(NULL == (f = H5I_object(file)))
+            if(NULL == (f = (H5F_t *)H5VL_object(file)))
+                FAIL_STACK_ERROR
+
+            /* Ignore metadata tags in the file's cache */
+            if (H5AC_ignore_tags(f) < 0)
                 FAIL_STACK_ERROR
 
             /* Re-open the heap */
-            if(NULL == (fh = H5HF_open(f, H5P_DATASET_XFER_DEFAULT, fh_addr)))
+            if(NULL == (fh = H5HF_open(f, fh_addr)))
                 FAIL_STACK_ERROR
 
             /* Remove object #2 from heap */
-            if(H5HF_get_obj_len(fh, dxpl, heap_id2, &robj_size) < 0)
+            if(H5HF_get_obj_len(fh, heap_id2, &robj_size) < 0)
                 FAIL_STACK_ERROR
-            if(H5HF_remove(fh, dxpl, heap_id2) < 0)
+            if(H5HF_remove(fh, heap_id2) < 0)
                 FAIL_STACK_ERROR
 
             /* Check up on heap... */
@@ -14957,7 +15247,7 @@ test_filtered_man_root_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_pa
                 TEST_ERROR
 
             /* Close the fractal heap */
-            if(H5HF_close(fh, dxpl) < 0)
+            if(H5HF_close(fh) < 0)
                 FAIL_STACK_ERROR
             fh = NULL;
 
@@ -14970,11 +15260,15 @@ test_filtered_man_root_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_pa
                 FAIL_STACK_ERROR
 
             /* Get a pointer to the internal file object */
-            if(NULL == (f = H5I_object(file)))
+            if(NULL == (f = (H5F_t *)H5VL_object(file)))
+                FAIL_STACK_ERROR
+
+            /* Ignore metadata tags in the file's cache */
+            if (H5AC_ignore_tags(f) < 0)
                 FAIL_STACK_ERROR
 
             /* Re-open the heap */
-            if(NULL == (fh = H5HF_open(f, H5P_DATASET_XFER_DEFAULT, fh_addr)))
+            if(NULL == (fh = H5HF_open(f, fh_addr)))
                 FAIL_STACK_ERROR
 
             /* Check up on heap... */
@@ -14984,13 +15278,13 @@ test_filtered_man_root_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_pa
         } /* end if */
         else {
             /* Remove object #2 from heap */
-            if(H5HF_get_obj_len(fh, dxpl, heap_id2, &robj_size) < 0)
+            if(H5HF_get_obj_len(fh, heap_id2, &robj_size) < 0)
                 FAIL_STACK_ERROR
-            if(H5HF_remove(fh, dxpl, heap_id2) < 0)
+            if(H5HF_remove(fh, heap_id2) < 0)
                 FAIL_STACK_ERROR
 
             /* Close the fractal heap */
-            if(H5HF_close(fh, dxpl) < 0)
+            if(H5HF_close(fh) < 0)
                 FAIL_STACK_ERROR
             fh = NULL;
 
@@ -15003,17 +15297,21 @@ test_filtered_man_root_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_pa
                 FAIL_STACK_ERROR
 
             /* Get a pointer to the internal file object */
-            if(NULL == (f = H5I_object(file)))
+            if(NULL == (f = (H5F_t *)H5VL_object(file)))
+                FAIL_STACK_ERROR
+
+            /* Ignore metadata tags in the file's cache */
+            if (H5AC_ignore_tags(f) < 0)
                 FAIL_STACK_ERROR
 
             /* Re-open the heap */
-            if(NULL == (fh = H5HF_open(f, H5P_DATASET_XFER_DEFAULT, fh_addr)))
+            if(NULL == (fh = H5HF_open(f, fh_addr)))
                 FAIL_STACK_ERROR
 
             /* Remove object #1 from heap */
-            if(H5HF_get_obj_len(fh, dxpl, heap_id1, &robj_size) < 0)
+            if(H5HF_get_obj_len(fh, heap_id1, &robj_size) < 0)
                 FAIL_STACK_ERROR
-            if(H5HF_remove(fh, dxpl, heap_id1) < 0)
+            if(H5HF_remove(fh, heap_id1) < 0)
                 FAIL_STACK_ERROR
 
             /* Check up on heap... */
@@ -15022,7 +15320,7 @@ test_filtered_man_root_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_pa
                 TEST_ERROR
 
             /* Close the fractal heap */
-            if(H5HF_close(fh, dxpl) < 0)
+            if(H5HF_close(fh) < 0)
                 FAIL_STACK_ERROR
             fh = NULL;
 
@@ -15035,11 +15333,15 @@ test_filtered_man_root_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_pa
                 FAIL_STACK_ERROR
 
             /* Get a pointer to the internal file object */
-            if(NULL == (f = H5I_object(file)))
+            if(NULL == (f = (H5F_t *)H5VL_object(file)))
+                FAIL_STACK_ERROR
+
+            /* Ignore metadata tags in the file's cache */
+            if (H5AC_ignore_tags(f) < 0)
                 FAIL_STACK_ERROR
 
             /* Re-open the heap */
-            if(NULL == (fh = H5HF_open(f, H5P_DATASET_XFER_DEFAULT, fh_addr)))
+            if(NULL == (fh = H5HF_open(f, fh_addr)))
                 FAIL_STACK_ERROR
 
             /* Check up on heap... */
@@ -15050,14 +15352,14 @@ test_filtered_man_root_indirect(hid_t fapl, H5HF_create_t *cparam, fheap_test_pa
     } /* end if */
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, H5P_DATASET_XFER_DEFAULT) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
     fh = NULL;
 
     /* Check for deleting the entire heap */
     if(tparam->del_dir == FHEAP_DEL_HEAP) {
         /* Delete heap */
-        if(H5HF_delete(f, dxpl, fh_addr) < 0)
+        if(H5HF_delete(f, fh_addr) < 0)
             FAIL_STACK_ERROR
     } /* end if */
 
@@ -15090,7 +15392,7 @@ HDfprintf(stderr, "empty_size = %lu, file_size = %lu\n", (unsigned long)empty_si
 error:
     H5E_BEGIN_TRY {
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -15116,11 +15418,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_random(hsize_t size_limit, hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -15154,7 +15455,7 @@ test_random(hsize_t size_limit, hid_t fapl, H5HF_create_t *cparam, fheap_test_pa
     } /* end if */
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, &tmp_cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, &tmp_cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
     /* Get information about heap ID lengths */
@@ -15195,11 +15496,11 @@ HDfprintf(stderr, "Random # seed was: %lu\n", seed);
         obj_loc = (tmp_cparam.max_man_size + 255) - obj_size;
 
         /* Insert object */
-        if(add_obj(fh, dxpl, obj_loc, obj_size, NULL, &keep_ids))
+        if(add_obj(fh, obj_loc, obj_size, NULL, &keep_ids))
             TEST_ERROR
 
         /* Check for closing & re-opening the heap */
-        if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+        if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
             TEST_ERROR
 
         /* Increment the amount of objects added */
@@ -15234,11 +15535,11 @@ HDfprintf(stderr, "keep_ids.num_ids = %Zu, total_obj_added = %Hu, size_limit = %
         /* Delete objects inserted */
         for(u = 0; u < keep_ids.num_ids; u++) {
             /* Remove object from heap */
-            if(H5HF_remove(fh, dxpl, &keep_ids.ids[id_len * u]) < 0)
+            if(H5HF_remove(fh, &keep_ids.ids[id_len * u]) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
         } /* end for */
 
@@ -15248,14 +15549,14 @@ HDfprintf(stderr, "keep_ids.num_ids = %Zu, total_obj_added = %Hu, size_limit = %
     } /* end if */
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
     fh = NULL;
 
     /* Check for deleting the entire heap */
     if(tparam->del_dir == FHEAP_DEL_HEAP) {
         /* Delete heap */
-        if(H5HF_delete(f, dxpl, fh_addr) < 0)
+        if(H5HF_delete(f, fh_addr) < 0)
             FAIL_STACK_ERROR
     } /* end if */
 
@@ -15294,9 +15595,12 @@ error:
         H5MM_xfree(keep_ids.ids);
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
+
+        if(tparam->comp == FHEAP_TEST_COMPRESS)
+            H5O_msg_reset(H5O_PLINE_ID, &tmp_cparam.pline); /* Release the I/O pipeline filter information */
         if(fh)
-            H5HF_close(fh, dxpl);
-	H5Fclose(file);
+            H5HF_close(fh);
+        H5Fclose(file);
     } H5E_END_TRY;
     return(1);
 } /* test_random() */
@@ -15320,11 +15624,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_random_pow2(hsize_t size_limit, hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -15358,7 +15661,7 @@ test_random_pow2(hsize_t size_limit, hid_t fapl, H5HF_create_t *cparam, fheap_te
     } /* end if */
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, &tmp_cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, &tmp_cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
     /* Get information about heap ID lengths */
@@ -15394,7 +15697,7 @@ HDfprintf(stderr, "Random # seed was: %lu\n", seed);
     /* Loop over adding objects to the heap, until the size limit is reached */
     total_obj_added = 0;
     while(total_obj_added < size_limit) {
-        unsigned size_range = (tmp_cparam.managed.start_block_size / 8);       /* Object size range */
+        size_t size_range = (tmp_cparam.managed.start_block_size / 8);       /* Object size range */
 
         /* Determine the size of the range for this object */
         /* (50% of the objects inserted will use the initial size range,
@@ -15411,11 +15714,11 @@ HDfprintf(stderr, "Random # seed was: %lu\n", seed);
         obj_loc = (tmp_cparam.max_man_size + 255) - obj_size;
 
         /* Insert object */
-        if(add_obj(fh, dxpl, obj_loc, obj_size, NULL, &keep_ids))
+        if(add_obj(fh, obj_loc, obj_size, NULL, &keep_ids))
             TEST_ERROR
 
         /* Check for closing & re-opening the heap */
-        if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+        if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
             TEST_ERROR
 
         /* Increment the amount of objects added */
@@ -15450,11 +15753,11 @@ HDfprintf(stderr, "keep_ids.num_ids = %Zu, total_obj_added = %Hu, size_limit = %
         /* Delete objects inserted */
         for(u = 0; u < keep_ids.num_ids; u++) {
             /* Remove object from heap */
-            if(H5HF_remove(fh, dxpl, &keep_ids.ids[id_len * u]) < 0)
+            if(H5HF_remove(fh, &keep_ids.ids[id_len * u]) < 0)
                 FAIL_STACK_ERROR
 
             /* Check for closing & re-opening the heap */
-            if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+            if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
                 TEST_ERROR
         } /* end for */
 
@@ -15464,14 +15767,14 @@ HDfprintf(stderr, "keep_ids.num_ids = %Zu, total_obj_added = %Hu, size_limit = %
     } /* end if */
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
     fh = NULL;
 
     /* Check for deleting the entire heap */
     if(tparam->del_dir == FHEAP_DEL_HEAP) {
         /* Delete heap */
-        if(H5HF_delete(f, dxpl, fh_addr) < 0)
+        if(H5HF_delete(f, fh_addr) < 0)
             FAIL_STACK_ERROR
     } /* end if */
 
@@ -15512,8 +15815,10 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
-	H5Fclose(file);
+            H5HF_close(fh);
+        if(tparam->comp == FHEAP_TEST_COMPRESS)
+            H5O_msg_reset(H5O_PLINE_ID, &tmp_cparam.pline); /* Release the I/O pipeline filter information */
+        H5Fclose(file);
     } H5E_END_TRY;
     return(1);
 } /* test_random_pow2() */
@@ -15546,11 +15851,10 @@ static size_t test_write_filter(unsigned int H5_ATTR_UNUSED flags, size_t H5_ATT
     return nbytes;
 } /* end link_filter_filter */
 
-static int
+static unsigned
 test_write(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -15609,7 +15913,7 @@ test_write(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
     } /* end if */
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, &tmp_cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, &tmp_cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
     /* Get information about heap ID lengths */
@@ -15621,16 +15925,16 @@ test_write(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 
     /* Create 'tiny' and 'huge' objects */
     obj_size = id_len / 2;
-    if(H5HF_insert(fh, dxpl, obj_size, shared_wobj_g, tiny_heap_id) < 0)
+    if(H5HF_insert(fh, obj_size, shared_wobj_g, tiny_heap_id) < 0)
         FAIL_STACK_ERROR
 
     obj_size = tmp_cparam.max_man_size + 1;
-    if(H5HF_insert(fh, dxpl, obj_size, shared_wobj_g, huge_heap_id) < 0)
+    if(H5HF_insert(fh, obj_size, shared_wobj_g, huge_heap_id) < 0)
         FAIL_STACK_ERROR
 
     /* Verify that writing to 'huge' objects works for un-filtered heaps */
     H5E_BEGIN_TRY {
-        ret = H5HF_write(fh, dxpl, huge_heap_id, &id_changed, shared_wobj_g);
+        ret = H5HF_write(fh, huge_heap_id, &id_changed, shared_wobj_g);
     } H5E_END_TRY;
     HDassert(!id_changed);
     if(tparam->comp == FHEAP_TEST_COMPRESS) {
@@ -15644,14 +15948,14 @@ test_write(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 
     /* Verify that writing to 'tiny' objects return failure (for now) */
     H5E_BEGIN_TRY {
-        ret = H5HF_write(fh, dxpl, tiny_heap_id, &id_changed, shared_wobj_g);
+        ret = H5HF_write(fh, tiny_heap_id, &id_changed, shared_wobj_g);
     } H5E_END_TRY;
     HDassert(!id_changed);
     if(ret >= 0)
         TEST_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
     fh = NULL;
 
@@ -15672,36 +15976,40 @@ test_write(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
         FAIL_STACK_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = (H5F_t *)H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        FAIL_STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         FAIL_STACK_ERROR
 
     /* Re-open the heap */
-    if(NULL == (fh = H5HF_open(f, H5P_DATASET_XFER_DEFAULT, fh_addr)))
+    if(NULL == (fh = H5HF_open(f, fh_addr)))
         FAIL_STACK_ERROR
 
     /* Initialize data to overwrite with */
-    rewrite_obj = H5MM_malloc(shared_obj_size_g);
+    rewrite_obj = (unsigned char *)H5MM_malloc(shared_obj_size_g);
     for(u = 0; u < shared_obj_size_g; u++)
-        rewrite_obj[u] = shared_wobj_g[u] * 2;
+        rewrite_obj[u] = (unsigned char)(shared_wobj_g[u] * 2);
 
     /* Insert different sized objects, but stay out of "tiny" and "huge" zones */
     obj_size = 20;
     for(u = 0; u < 40; u++) {
         obj_loc = u;
-        if(add_obj(fh, dxpl, obj_loc, obj_size, NULL, &keep_ids))
+        if(add_obj(fh, obj_loc, obj_size, NULL, &keep_ids))
             TEST_ERROR
 
         /* Check for closing & re-opening the heap */
-        if(reopen_heap(f, dxpl, &fh, fh_addr, tparam) < 0)
+        if(reopen_heap(f, &fh, fh_addr, tparam) < 0)
             TEST_ERROR
 
         /* Overwrite data just written */
-        if(H5HF_write(fh, dxpl, &keep_ids.ids[id_len * u], &id_changed, rewrite_obj) < 0)
+        if(H5HF_write(fh, &keep_ids.ids[id_len * u], &id_changed, rewrite_obj) < 0)
             FAIL_STACK_ERROR
         HDassert(!id_changed);
 
         /* Read data back in */
-        if(H5HF_read(fh, dxpl, &keep_ids.ids[id_len * u], shared_robj_g) < 0)
+        if(H5HF_read(fh, &keep_ids.ids[id_len * u], shared_robj_g) < 0)
             FAIL_STACK_ERROR
 
         /* Compare data read in */
@@ -15710,13 +16018,13 @@ test_write(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 
         /* Change size of data to write */
         if(u < 20)
-            obj_size = (size_t)(obj_size * 1.3F);
+            obj_size = (size_t)((float)obj_size * 1.3F);
         else
-            obj_size = (size_t)(obj_size / 1.3F);
+            obj_size = (size_t)((float)obj_size / 1.3F);
     } /* end for */
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
     fh = NULL;
 
@@ -15735,18 +16043,22 @@ test_write(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
         FAIL_STACK_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        FAIL_STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         FAIL_STACK_ERROR
 
     /* Re-open the heap */
-    if(NULL == (fh = H5HF_open(f, H5P_DATASET_XFER_DEFAULT, fh_addr)))
+    if(NULL == (fh = H5HF_open(f, fh_addr)))
         FAIL_STACK_ERROR
 
     /* Verify changed objects */
     obj_size = 20;
     for(u = 0; u < 40; u++) {
         /* Read data back in */
-        if(H5HF_read(fh, dxpl, &keep_ids.ids[id_len * u], shared_robj_g) < 0)
+        if(H5HF_read(fh, &keep_ids.ids[id_len * u], shared_robj_g) < 0)
             FAIL_STACK_ERROR
 
         /* Compare data read in */
@@ -15755,13 +16067,13 @@ test_write(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 
         /* Change size of data to write */
         if(u < 20)
-            obj_size = (size_t)(obj_size * 1.3F);
+            obj_size = (size_t)((float)obj_size * 1.3F);
         else
-            obj_size = (size_t)(obj_size / 1.3F);
+            obj_size = (size_t)((float)obj_size / 1.3F);
     } /* end for */
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
     fh = NULL;
 
@@ -15791,7 +16103,7 @@ error:
         H5MM_xfree(keep_ids.offs);
         H5MM_xfree(rewrite_obj);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -15815,11 +16127,10 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-static int
+static unsigned
 test_bug1(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
 {
     hid_t	file = -1;              /* File ID */
-    hid_t       dxpl = H5P_DATASET_XFER_DEFAULT;     /* DXPL to use */
     char	filename[FHEAP_FILENAME_LEN];         /* Filename to use */
     H5F_t	*f = NULL;              /* Internal file object pointer */
     H5HF_t      *fh = NULL;             /* Fractal heap wrapper */
@@ -15840,7 +16151,7 @@ test_bug1(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
     HDmemset(&keep_ids, 0, sizeof(fheap_heap_ids_t));
 
     /* Perform common file & heap open operations */
-    if(open_heap(filename, fapl, dxpl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
+    if(open_heap(filename, fapl, cparam, tparam, &file, &f, &fh, &fh_addr, &state, &empty_size) < 0)
         TEST_ERROR
 
     /* Get information about heap ID lengths */
@@ -15852,36 +16163,36 @@ test_bug1(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
     /* Insert objects */
     obj_size = 44;
     obj_loc = 1;
-    if(add_obj(fh, dxpl, obj_loc, obj_size, NULL, &keep_ids))
+    if(add_obj(fh, obj_loc, obj_size, NULL, &keep_ids))
         TEST_ERROR
 
     obj_size = 484;
     obj_loc = 2;
-    if(add_obj(fh, dxpl, obj_loc, obj_size, NULL, &keep_ids))
+    if(add_obj(fh, obj_loc, obj_size, NULL, &keep_ids))
         TEST_ERROR
 
     obj_size = 168;
     obj_loc = 3;
-    if(add_obj(fh, dxpl, obj_loc, obj_size, NULL, &keep_ids))
+    if(add_obj(fh, obj_loc, obj_size, NULL, &keep_ids))
         TEST_ERROR
 
     obj_size = 96;
     obj_loc = 4;
-    if(add_obj(fh, dxpl, obj_loc, obj_size, NULL, &keep_ids))
+    if(add_obj(fh, obj_loc, obj_size, NULL, &keep_ids))
         TEST_ERROR
 
     obj_size = 568;
     obj_loc = 5;
-    if(add_obj(fh, dxpl, obj_loc, obj_size, NULL, &keep_ids))
+    if(add_obj(fh, obj_loc, obj_size, NULL, &keep_ids))
         TEST_ERROR
 
     obj_size = 568;
     obj_loc = 6;
-    if(add_obj(fh, dxpl, obj_loc, obj_size, NULL, &keep_ids))
+    if(add_obj(fh, obj_loc, obj_size, NULL, &keep_ids))
         TEST_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
     fh = NULL;
 
@@ -15896,19 +16207,23 @@ test_bug1(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
         FAIL_STACK_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        FAIL_STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         FAIL_STACK_ERROR
 
     /* Re-open the heap */
-    if(NULL == (fh = H5HF_open(f, H5P_DATASET_XFER_DEFAULT, fh_addr)))
+    if(NULL == (fh = H5HF_open(f, fh_addr)))
         FAIL_STACK_ERROR
 
     /* Remove one of the objects */
-    if(H5HF_remove(fh, dxpl, &keep_ids.ids[id_len * 4]) < 0)
+    if(H5HF_remove(fh, &keep_ids.ids[id_len * 4]) < 0)
         FAIL_STACK_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
     fh = NULL;
 
@@ -15922,21 +16237,25 @@ test_bug1(hid_t fapl, H5HF_create_t *cparam, fheap_test_param_t *tparam)
         FAIL_STACK_ERROR
 
     /* Get a pointer to the internal file object */
-    if(NULL == (f = H5I_object(file)))
+    if(NULL == (f = (H5F_t *)H5VL_object(file)))
+        FAIL_STACK_ERROR
+
+    /* Ignore metadata tags in the file's cache */
+    if (H5AC_ignore_tags(f) < 0)
         FAIL_STACK_ERROR
 
     /* Re-open the heap */
-    if(NULL == (fh = H5HF_open(f, H5P_DATASET_XFER_DEFAULT, fh_addr)))
+    if(NULL == (fh = H5HF_open(f, fh_addr)))
         FAIL_STACK_ERROR
 
     /* Insert another object */
     obj_size = 208;
     obj_loc = 6;
-    if(add_obj(fh, dxpl, obj_loc, obj_size, NULL, &keep_ids))
+    if(add_obj(fh, obj_loc, obj_size, NULL, &keep_ids))
         TEST_ERROR
 
     /* Close the fractal heap */
-    if(H5HF_close(fh, dxpl) < 0)
+    if(H5HF_close(fh) < 0)
         FAIL_STACK_ERROR
     fh = NULL;
 
@@ -15961,7 +16280,7 @@ error:
         H5MM_xfree(keep_ids.lens);
         H5MM_xfree(keep_ids.offs);
         if(fh)
-            H5HF_close(fh, dxpl);
+            H5HF_close(fh);
 	H5Fclose(file);
     } H5E_END_TRY;
     return(1);
@@ -15989,480 +16308,511 @@ main(void)
     fheap_test_param_t tparam;          /* Testing parameters */
     H5HF_create_t small_cparam;         /* Creation parameters for "small" heap */
     H5HF_create_t large_cparam;         /* Creation parameters for "large" heap */
-    hid_t	fapl = -1;              /* File access property list for data files */
+    hid_t	fapl = -1, def_fapl = -1;   /* File access property list for data files */
+    hid_t	pb_fapl = -1;               /* File access property list for data files */
+    hid_t	fcpl = -1, def_fcpl = -1;   /* File creation property list for data files */
     fheap_test_type_t curr_test;        /* Current test being worked on */
-    unsigned    u;                      /* Local index variable */
+    unsigned    u, v;                   /* Local index variable */
     unsigned	nerrors = 0;            /* Cumulative error count */
-    int		ExpressMode;            /* Express testing level */
+    unsigned num_pb_fs = 1;             /* The number of settings to test for page buffering and file space handling */
+    int	ExpressMode;                    /* Express testing level */
+    const char *envval;                 /* Environment variable */
+    hbool_t contig_addr_vfd;            /* Whether VFD used has a contigous address space */
+    hbool_t     api_ctx_pushed = FALSE;             /* Whether API context pushed */
+
+    /* Don't run this test using certain file drivers */
+    envval = HDgetenv("HDF5_DRIVER");
+    if(envval == NULL)
+        envval = "nomatch";
+
+    /* Current VFD that does not support contigous address space */
+    contig_addr_vfd = (hbool_t)(HDstrcmp(envval, "split") && HDstrcmp(envval, "multi"));
 
     /* Reset library */
     h5_reset();
-    fapl = h5_fileaccess();
+
+    def_fapl = h5_fileaccess();
     ExpressMode = GetTestExpress();
+
+    /* 
+     * Caution when turning on ExpressMode 0:
+     *  It will activate testing with different combinations of
+     *       page buffering and file space strategy and the
+     *       running time will be long.
+     *  For parallel build, the last two tests for page buffering
+     *      are skipped because this feature is disabled in parallel.
+     *      Activate full testing when this feature is re-enabled
+     *      in the future for parallel build.
+     */
     if(ExpressMode > 1)
-	printf("***Express test mode on.  Some tests may be skipped\n");
+        HDprintf("***Express test mode on.  Some tests may be skipped\n");
+    else if(ExpressMode == 0) {
+#ifdef H5_HAVE_PARALLEL
+        num_pb_fs = NUM_PB_FS - 2;
+#else
+        num_pb_fs = NUM_PB_FS;
+#endif
+    }
 
     /* Initialize heap creation parameters */
     init_small_cparam(&small_cparam);
     init_large_cparam(&large_cparam);
 
+    /* Push API context */
+    if(H5CX_push() < 0) FAIL_STACK_ERROR
+    api_ctx_pushed = TRUE;
+
     /* Allocate space for the shared objects */
     shared_obj_size_g = large_cparam.max_man_size + 256;
-    shared_wobj_g = H5MM_malloc(shared_obj_size_g);
-    shared_robj_g = H5MM_malloc(shared_obj_size_g);
+    shared_wobj_g = (unsigned char *)H5MM_malloc(shared_obj_size_g);
+    shared_robj_g = (unsigned char *)H5MM_malloc(shared_obj_size_g);
+
+    /* Create a copy def_fapl and enable page buffering */
+    if((pb_fapl = H5Pcopy(def_fapl)) < 0)
+        TEST_ERROR
+    if(H5Pset_page_buffer_size(pb_fapl, PAGE_BUFFER_PAGE_SIZE, 0, 0) < 0)
+        TEST_ERROR
+
+    /* Create a file creation property list */
+    if((def_fcpl = H5Pcreate(H5P_FILE_CREATE)) < 0)
+        TEST_ERROR
 
     /* Initialize the shared write buffer for objects */
     for(u = 0; u < shared_obj_size_g; u++)
         shared_wobj_g[u] = (unsigned char)u;
 
-    /* Iterate over the testing parameters */
-#ifndef QAK
-    for(curr_test = FHEAP_TEST_NORMAL; curr_test < FHEAP_TEST_NTESTS; curr_test++) {
-#else /* QAK */
-HDfprintf(stderr, "Uncomment test loop!\n");
-curr_test = FHEAP_TEST_NORMAL;
-/* curr_test = FHEAP_TEST_REOPEN; */
-#endif /* QAK */
-        /* Clear the testing parameters */
-        HDmemset(&tparam, 0, sizeof(fheap_test_param_t));
-        tparam.actual_id_len = HEAP_ID_LEN;
+    for(v = 0; v < num_pb_fs; v++) {
+        /* Skip test when:
+           a) multi/split drivers and
+           b) persisting free-space or using paged aggregation strategy 
+           because the library will fail file creation (temporary) for the above conditions */
+        if(!contig_addr_vfd && v)
+            break;
 
-        /* Set appropriate testing parameters for each test */
-        switch(curr_test) {
-            /* "Normal" testing parameters */
-            case FHEAP_TEST_NORMAL:
-                puts("Testing with normal parameters");
+        if((fcpl = H5Pcopy(def_fcpl)) < 0) 
+            TEST_ERROR
+
+        switch(v) {
+            case 0:
+                if(H5Pset_file_space_strategy(fcpl, H5F_FSPACE_STRATEGY_FSM_AGGR, FALSE, (hsize_t)1) < 0)
+                    TEST_ERROR
+                fapl = def_fapl;
+                break;
+            case 1:
+                if(H5Pset_file_space_strategy(fcpl, H5F_FSPACE_STRATEGY_FSM_AGGR, TRUE, (hsize_t)1) < 0)
+                    TEST_ERROR
+                fapl = def_fapl;
+                /* This is a fix for the daily test failure from the checkin for libver bounds. */
+                /* 
+                 * Many tests failed the file size check when comparing (a) and (b) as below:
+                 * --Create a file and close the file.  Got the initial file size (a).
+                 * --Reopen the file, perform fractal heap operations, and close the file.
+                 *   Got the file size (b).
+                 * The cause for the file size differences:
+                 *   When the file is initially created with persisting free-space and with 
+                 *   (earliest, latest) libver bounds, the file will have version 2 superblock 
+                 *   due to non-default free-space handling.  As the low bound is earliest,
+                 *   the library uses version 1 object header when creating the superblock
+                 *   extension message.
+                 *   When the file is reopened with the same libver bounds, the file's low
+                 *   bound is upgraded to v18 because the file has version 2 superblock.
+                 *   When the library creates the superblock extension message on file close,
+                 *   the library uses version 2 object header for the superblock extension
+                 *   message since the low bound is v18.
+                 *   This leads to the discrepancy in file sizes as the file is persisting
+                 *   free-space and there is object header version differences.
+                 *  The fix:
+                 *    Set libver bounds in fapl to (v18, latest) so that the file created in the
+                 *    test routines will have low bound set to v18.  This will cause the
+                 *    library to use version 2 object header for the superblock extension 
+                 *    message.
+                 */
+                if(H5Pset_libver_bounds(fapl, H5F_LIBVER_V18, H5F_LIBVER_LATEST) < 0)
+                    TEST_ERROR
+                break;
+            case 2:
+                if(H5Pset_file_space_strategy(fcpl, H5F_FSPACE_STRATEGY_PAGE, FALSE, (hsize_t)1) < 0)
+                    TEST_ERROR
+                fapl = def_fapl;
+                break;
+            case 3:
+                if(H5Pset_file_space_strategy(fcpl, H5F_FSPACE_STRATEGY_PAGE, TRUE, (hsize_t)1) < 0)
+                    TEST_ERROR
+                fapl = def_fapl;
+                break;
+            case 4:
+                if(H5Pset_file_space_strategy(fcpl, H5F_FSPACE_STRATEGY_PAGE, FALSE, (hsize_t)1) < 0)
+                    TEST_ERROR
+                fapl = pb_fapl;
+                break;
+            case 5:
+                if(H5Pset_file_space_strategy(fcpl, H5F_FSPACE_STRATEGY_PAGE, TRUE, (hsize_t)1) < 0)
+                    TEST_ERROR
+                fapl = pb_fapl;
                 break;
 
-            /* "Re-open heap" testing parameters */
-            case FHEAP_TEST_REOPEN:
-                puts("Testing with reopen heap flag set");
-                tparam.reopen_heap = FHEAP_TEST_REOPEN;
-                break;
-
-            /* An unknown test? */
-            case FHEAP_TEST_NTESTS:
+            case NUM_PB_FS:
             default:
                 goto error;
-        } /* end switch */
+        }
 
-        /* Test fractal heap creation */
-#ifndef QAK
-        nerrors += test_create(fapl, &small_cparam, &tparam);
-        nerrors += test_reopen(fapl, &small_cparam, &tparam);
-        nerrors += test_open_twice(fapl, &small_cparam, &tparam);
-        nerrors += test_delete_open(fapl, &small_cparam, &tparam);
-        nerrors += test_id_limits(fapl, &small_cparam);
-        nerrors += test_filtered_create(fapl, &small_cparam);
-        nerrors += test_size(fapl, &small_cparam);
-        nerrors += test_reopen_hdr(fapl, &small_cparam);
-#else /* QAK */
-HDfprintf(stderr, "Uncomment tests!\n");
-#endif /* QAK */
+        /* Iterate over the testing parameters */
+        for(curr_test = FHEAP_TEST_NORMAL; curr_test < FHEAP_TEST_NTESTS; curr_test++) {
+            /* Clear the testing parameters */
+            HDmemset(&tparam, 0, sizeof(fheap_test_param_t));
+            tparam.actual_id_len = HEAP_ID_LEN;
 
-#ifndef QAK2
-#ifndef QAK
-        {
-        fheap_test_fill_t fill;        /* Size of objects to fill heap blocks with */
-
-#ifndef QAK2
-        /* Filling with different sized objects */
-        for(fill = FHEAP_TEST_FILL_LARGE; fill < FHEAP_TEST_FILL_N; fill++) {
-#else /* QAK2 */
-HDfprintf(stderr, "Uncomment test loop!\n");
-fill = FHEAP_TEST_FILL_LARGE;
-/* fill = FHEAP_TEST_FILL_SINGLE; */
-#endif /* QAK2 */
-            tparam.fill = fill;
+            /* Set to run with different file space setting */
+            tparam.my_fcpl = fcpl;
 
             /* Set appropriate testing parameters for each test */
-            switch(fill) {
-                /* "Bulk fill" heap blocks with 'large' objects */
-                case FHEAP_TEST_FILL_LARGE:
-                    puts("Bulk-filling blocks w/large objects");
+            switch(curr_test) {
+                /* "Normal" testing parameters */
+                case FHEAP_TEST_NORMAL:
+                    HDputs("Testing with normal parameters");
                     break;
 
-                /* "Bulk fill" heap blocks with 'single' objects */
-                case FHEAP_TEST_FILL_SINGLE:
-                    puts("Bulk-filling blocks w/single object");
+                /* "Re-open heap" testing parameters */
+                case FHEAP_TEST_REOPEN:
+                    HDputs("Testing with reopen heap flag set");
+                    tparam.reopen_heap = FHEAP_TEST_REOPEN;
                     break;
 
                 /* An unknown test? */
-                case FHEAP_TEST_FILL_N:
+                case FHEAP_TEST_NTESTS:
                 default:
                     goto error;
             } /* end switch */
 
-            /*
-             * Test fractal heap managed object insertion
-             */
+            /* Test fractal heap creation */
+            nerrors += test_create(fapl, &small_cparam, &tparam);
+            nerrors += test_reopen(fapl, &small_cparam, &tparam);
+            nerrors += test_open_twice(fapl, &small_cparam, &tparam);
+            nerrors += test_delete_open(fapl, &small_cparam, &tparam);
 
-#ifndef QAK
-            /* "Weird" sized objects */
-            nerrors += test_man_insert_weird(fapl, &small_cparam, &tparam);
-#else /* QAK */
-HDfprintf(stderr, "Uncomment tests!\n");
-#endif /* QAK */
+            nerrors += test_id_limits(fapl, &small_cparam, tparam.my_fcpl);
+            nerrors += test_filtered_create(fapl, &small_cparam, tparam.my_fcpl);
+            nerrors += test_size(fapl, &small_cparam, tparam.my_fcpl);
+            nerrors += test_reopen_hdr(fapl, &small_cparam, tparam.my_fcpl);
 
-#ifdef ALL_INSERT_TESTS
-            /* "Standard" sized objects, building from simple to complex heaps */
-            nerrors += test_man_insert_first(fapl, &small_cparam, &tparam);
-            nerrors += test_man_insert_second(fapl, &small_cparam, &tparam);
-            nerrors += test_man_insert_root_mult(fapl, &small_cparam, &tparam);
-            nerrors += test_man_insert_force_indirect(fapl, &small_cparam, &tparam);
-            nerrors += test_man_insert_fill_second(fapl, &small_cparam, &tparam);
-            nerrors += test_man_insert_third_direct(fapl, &small_cparam, &tparam);
-            nerrors += test_man_fill_first_row(fapl, &small_cparam, &tparam);
-            nerrors += test_man_start_second_row(fapl, &small_cparam, &tparam);
-            nerrors += test_man_fill_second_row(fapl, &small_cparam, &tparam);
-            nerrors += test_man_start_third_row(fapl, &small_cparam, &tparam);
-            nerrors += test_man_fill_fourth_row(fapl, &small_cparam, &tparam);
-            nerrors += test_man_fill_all_root_direct(fapl, &small_cparam, &tparam);
-            nerrors += test_man_first_recursive_indirect(fapl, &small_cparam, &tparam);
-            nerrors += test_man_second_direct_recursive_indirect(fapl, &small_cparam, &tparam);
-            nerrors += test_man_fill_first_recursive_indirect(fapl, &small_cparam, &tparam);
-            nerrors += test_man_second_recursive_indirect(fapl, &small_cparam, &tparam);
-            nerrors += test_man_fill_second_recursive_indirect(fapl, &small_cparam, &tparam);
-            nerrors += test_man_fill_recursive_indirect_row(fapl, &small_cparam, &tparam);
-            nerrors += test_man_start_2nd_recursive_indirect(fapl, &small_cparam, &tparam);
-            nerrors += test_man_recursive_indirect_two_deep(fapl, &small_cparam, &tparam);
-            nerrors += test_man_start_3rd_recursive_indirect(fapl, &small_cparam, &tparam);
-            nerrors += test_man_fill_first_3rd_recursive_indirect(fapl, &small_cparam, &tparam);
-            nerrors += test_man_fill_3rd_recursive_indirect_row(fapl, &small_cparam, &tparam);
-            nerrors += test_man_fill_all_3rd_recursive_indirect(fapl, &small_cparam, &tparam);
-            nerrors += test_man_start_4th_recursive_indirect(fapl, &small_cparam, &tparam);
-            nerrors += test_man_fill_first_4th_recursive_indirect(fapl, &small_cparam, &tparam);
-            nerrors += test_man_fill_4th_recursive_indirect_row(fapl, &small_cparam, &tparam);
-            nerrors += test_man_fill_all_4th_recursive_indirect(fapl, &small_cparam, &tparam);
-#endif /* ALL_INSERT_TESTS */
-            /* If this test fails, uncomment the tests above, which build up to this
-             * level of complexity gradually. -QAK
-             */
-#ifndef QAK
-            if(ExpressMode > 1)
-                printf("***Express test mode on.  test_man_start_5th_recursive_indirect is skipped\n");
-            else
-                nerrors += test_man_start_5th_recursive_indirect(fapl, &small_cparam, &tparam);
-#else /* QAK */
-HDfprintf(stderr, "Uncomment tests!\n");
-#endif /* QAK */
-
-            /*
-             * Test fractal heap object deletion
-             */
-            /* Simple removal */
-#ifndef QAK
-            nerrors += test_man_remove_bogus(fapl, &small_cparam, &tparam);
-            nerrors += test_man_remove_one(fapl, &small_cparam, &tparam);
-            nerrors += test_man_remove_two(fapl, &small_cparam, &tparam);
-            nerrors += test_man_remove_one_larger(fapl, &small_cparam, &tparam);
-            tparam.del_dir = FHEAP_DEL_FORWARD;
-            nerrors += test_man_remove_two_larger(fapl, &small_cparam, &tparam);
-            tparam.del_dir = FHEAP_DEL_REVERSE;
-            nerrors += test_man_remove_two_larger(fapl, &small_cparam, &tparam);
-            tparam.del_dir = FHEAP_DEL_FORWARD;
-            nerrors += test_man_remove_three_larger(fapl, &small_cparam, &tparam);
-            tparam.del_dir = FHEAP_DEL_REVERSE;
-            nerrors += test_man_remove_three_larger(fapl, &small_cparam, &tparam);
-
-            /* Incremental insert & removal */
-            tparam.del_dir = FHEAP_DEL_FORWARD;
-            nerrors += test_man_incr_insert_remove(fapl, &small_cparam, &tparam);
-#else /* QAK */
-HDfprintf(stderr, "Uncomment tests!\n");
-#endif /* QAK */
-
-#ifndef QAK
-#ifndef QAK2
             {
-            fheap_test_del_dir_t del_dir;        /* Deletion direction */
-            fheap_test_del_drain_t drain_half;   /* Deletion draining */
+            fheap_test_fill_t fill;        /* Size of objects to fill heap blocks with */
 
-            /* More complex removal patterns */
-            for(del_dir = FHEAP_DEL_FORWARD; del_dir < FHEAP_DEL_NDIRS; del_dir++) {
-                tparam.del_dir = del_dir;
-                for(drain_half = FHEAP_DEL_DRAIN_ALL; drain_half < FHEAP_DEL_DRAIN_N; drain_half++) {
-                    tparam.drain_half = drain_half;
-#else /* QAK2 */
-HDfprintf(stderr, "Uncomment test loops!\n");
-/* tparam.del_dir = FHEAP_DEL_FORWARD; */
-/* tparam.del_dir = FHEAP_DEL_REVERSE; */
-tparam.del_dir = FHEAP_DEL_HEAP;
-tparam.drain_half = FHEAP_DEL_DRAIN_ALL;
-/* tparam.drain_half = FHEAP_DEL_DRAIN_HALF; */
-#endif /* QAK2 */
-                    /* Don't need to test deletion directions when deleting entire heap */
-                    if(tparam.del_dir == FHEAP_DEL_HEAP && tparam.drain_half > FHEAP_DEL_DRAIN_ALL)
+            /* Filling with different sized objects */
+            for(fill = FHEAP_TEST_FILL_LARGE; fill < FHEAP_TEST_FILL_N; fill++) {
+                tparam.fill = fill;
+
+                /* Set appropriate testing parameters for each test */
+                switch(fill) {
+                    /* "Bulk fill" heap blocks with 'large' objects */
+                    case FHEAP_TEST_FILL_LARGE:
+                        HDputs("Bulk-filling blocks w/large objects");
                         break;
 
-#ifndef QAK
-                    /* Simple insertion patterns */
-                    nerrors += test_man_remove_root_direct(fapl, &small_cparam, &tparam);
-                    nerrors += test_man_remove_two_direct(fapl, &small_cparam, &tparam);
-                    nerrors += test_man_remove_first_row(fapl, &small_cparam, &tparam);
-                    nerrors += test_man_remove_first_two_rows(fapl, &small_cparam, &tparam);
-                    nerrors += test_man_remove_first_four_rows(fapl, &small_cparam, &tparam);
-                    if(ExpressMode > 1)
-                        printf("***Express test mode on.  Some tests skipped\n");
-                    else {
-                        nerrors += test_man_remove_all_root_direct(fapl, &small_cparam, &tparam);
-                        nerrors += test_man_remove_2nd_indirect(fapl, &small_cparam, &tparam);
-                        nerrors += test_man_remove_3rd_indirect(fapl, &small_cparam, &tparam);
-                    } /* end else */
-#else /* QAK */
-HDfprintf(stderr, "Uncomment tests!\n");
-#endif /* QAK */
+                    /* "Bulk fill" heap blocks with 'single' objects */
+                    case FHEAP_TEST_FILL_SINGLE:
+                        HDputs("Bulk-filling blocks w/single object");
+                        break;
 
-#ifndef QAK
-                    /* Skip blocks insertion */
-                    /* (covers insertion & deletion of skipped blocks) */
-                    nerrors += test_man_skip_start_block(fapl, &small_cparam, &tparam);
-                    nerrors += test_man_skip_start_block_add_back(fapl, &small_cparam, &tparam);
-                    nerrors += test_man_skip_start_block_add_skipped(fapl, &small_cparam, &tparam);
-                    nerrors += test_man_skip_2nd_block(fapl, &small_cparam, &tparam);
-                    nerrors += test_man_skip_2nd_block_add_skipped(fapl, &small_cparam, &tparam);
-                    nerrors += test_man_fill_one_partial_skip_2nd_block_add_skipped(fapl, &small_cparam, &tparam);
-                    nerrors += test_man_fill_row_skip_add_skipped(fapl, &small_cparam, &tparam);
-                    nerrors += test_man_skip_direct_skip_indirect_two_rows_add_skipped(fapl, &small_cparam, &tparam);
-                    nerrors += test_man_fill_direct_skip_indirect_start_block_add_skipped(fapl, &small_cparam, &tparam);
-                    nerrors += test_man_fill_direct_skip_2nd_indirect_start_block_add_skipped(fapl, &small_cparam, &tparam);
-                    nerrors += test_man_fill_2nd_direct_less_one_wrap_start_block_add_skipped(fapl, &small_cparam, &tparam);
-                    nerrors += test_man_fill_direct_skip_2nd_indirect_skip_2nd_block_add_skipped(fapl, &small_cparam, &tparam);
-                    nerrors += test_man_fill_direct_skip_indirect_two_rows_add_skipped(fapl, &small_cparam, &tparam);
-                    nerrors += test_man_fill_direct_skip_indirect_two_rows_skip_indirect_row_add_skipped(fapl, &small_cparam, &tparam);
-                    nerrors += test_man_fill_2nd_direct_skip_start_block_add_skipped(fapl, &small_cparam, &tparam);
-                    nerrors += test_man_fill_2nd_direct_skip_2nd_indirect_start_block_add_skipped(fapl, &small_cparam, &tparam);
-                    nerrors += test_man_fill_2nd_direct_fill_direct_skip_3rd_indirect_start_block_add_skipped(fapl, &small_cparam, &tparam);
-                    nerrors += test_man_fill_2nd_direct_fill_direct_skip2_3rd_indirect_start_block_add_skipped(fapl, &small_cparam, &tparam);
-                    nerrors += test_man_fill_3rd_direct_less_one_fill_direct_wrap_start_block_add_skipped(fapl, &small_cparam, &tparam);
-                    nerrors += test_man_fill_1st_row_3rd_direct_fill_2nd_direct_less_one_wrap_start_block_add_skipped(fapl, &small_cparam, &tparam);
-                    if(ExpressMode > 1)
-                        printf("***Express test mode on.  Some tests skipped\n");
-                    else {
-                        nerrors += test_man_fill_3rd_direct_fill_direct_skip_start_block_add_skipped(fapl, &small_cparam, &tparam);
-                        nerrors += test_man_fill_3rd_direct_fill_2nd_direct_fill_direct_skip_3rd_indirect_start_block_add_skipped(fapl, &small_cparam, &tparam);
-                        nerrors += test_man_fill_3rd_direct_fill_2nd_direct_fill_direct_skip_3rd_indirect_two_rows_start_block_add_skipped(fapl, &small_cparam, &tparam);
-                        nerrors += test_man_fill_3rd_direct_fill_2nd_direct_fill_direct_skip_3rd_indirect_wrap_start_block_add_skipped(fapl, &small_cparam, &tparam);
-                        nerrors += test_man_fill_4th_direct_less_one_fill_2nd_direct_fill_direct_skip_3rd_indirect_wrap_start_block_add_skipped(fapl, &small_cparam, &tparam);
-                    } /* end else */
-#else /* QAK */
-HDfprintf(stderr, "Uncomment tests!\n");
-#endif /* QAK */
+                    /* An unknown test? */
+                    case FHEAP_TEST_FILL_N:
+                    default:
+                        goto error;
+                } /* end switch */
 
-#ifndef QAK
-                    /* Fragmented insertion patterns */
-                    /* (covers insertion & deletion of fragmented blocks) */
-                    nerrors += test_man_frag_simple(fapl, &small_cparam, &tparam);
-                    nerrors += test_man_frag_direct(fapl, &small_cparam, &tparam);
-                    nerrors += test_man_frag_2nd_direct(fapl, &small_cparam, &tparam);
-                    nerrors += test_man_frag_3rd_direct(fapl, &small_cparam, &tparam);
-#else /* QAK */
-    HDfprintf(stderr, "Uncomment tests!\n");
-#endif /* QAK */
-#ifndef QAK2
+                /*
+                 * Test fractal heap managed object insertion
+                 */
+
+                 /* "Weird" sized objects */
+                 nerrors += test_man_insert_weird(fapl, &small_cparam, &tparam);
+
+#ifdef ALL_INSERT_TESTS
+                 /* "Standard" sized objects, building from simple to complex heaps */
+                 nerrors += test_man_insert_first(fapl, &small_cparam, &tparam);
+                 nerrors += test_man_insert_second(fapl, &small_cparam, &tparam);
+                 nerrors += test_man_insert_root_mult(fapl, &small_cparam, &tparam);
+                 nerrors += test_man_insert_force_indirect(fapl, &small_cparam, &tparam);
+                 nerrors += test_man_insert_fill_second(fapl, &small_cparam, &tparam);
+                 nerrors += test_man_insert_third_direct(fapl, &small_cparam, &tparam);
+                 nerrors += test_man_fill_first_row(fapl, &small_cparam, &tparam);
+                 nerrors += test_man_start_second_row(fapl, &small_cparam, &tparam);
+                 nerrors += test_man_fill_second_row(fapl, &small_cparam, &tparam);
+                 nerrors += test_man_start_third_row(fapl, &small_cparam, &tparam);
+                 nerrors += test_man_fill_fourth_row(fapl, &small_cparam, &tparam);
+                 nerrors += test_man_fill_all_root_direct(fapl, &small_cparam, &tparam);
+                 nerrors += test_man_first_recursive_indirect(fapl, &small_cparam, &tparam);
+                 nerrors += test_man_second_direct_recursive_indirect(fapl, &small_cparam, &tparam);
+                 nerrors += test_man_fill_first_recursive_indirect(fapl, &small_cparam, &tparam);
+                 nerrors += test_man_second_recursive_indirect(fapl, &small_cparam, &tparam);
+                 nerrors += test_man_fill_second_recursive_indirect(fapl, &small_cparam, &tparam);
+                 nerrors += test_man_fill_recursive_indirect_row(fapl, &small_cparam, &tparam);
+                 nerrors += test_man_start_2nd_recursive_indirect(fapl, &small_cparam, &tparam);
+                 nerrors += test_man_recursive_indirect_two_deep(fapl, &small_cparam, &tparam);
+                 nerrors += test_man_start_3rd_recursive_indirect(fapl, &small_cparam, &tparam);
+                 nerrors += test_man_fill_first_3rd_recursive_indirect(fapl, &small_cparam, &tparam);
+                 nerrors += test_man_fill_3rd_recursive_indirect_row(fapl, &small_cparam, &tparam);
+                 nerrors += test_man_fill_all_3rd_recursive_indirect(fapl, &small_cparam, &tparam);
+                 nerrors += test_man_start_4th_recursive_indirect(fapl, &small_cparam, &tparam);
+                 nerrors += test_man_fill_first_4th_recursive_indirect(fapl, &small_cparam, &tparam);
+                 nerrors += test_man_fill_4th_recursive_indirect_row(fapl, &small_cparam, &tparam);
+                 nerrors += test_man_fill_all_4th_recursive_indirect(fapl, &small_cparam, &tparam);
+#endif /* ALL_INSERT_TESTS */
+                /* If this test fails, uncomment the tests above, which build up to this
+                 * level of complexity gradually. -QAK
+                 */
+                if(ExpressMode > 1)
+                    HDprintf("***Express test mode on.  test_man_start_5th_recursive_indirect is skipped\n");
+                else
+                    nerrors += test_man_start_5th_recursive_indirect(fapl, &small_cparam, &tparam);
+
+                /*
+                 * Test fractal heap object deletion
+                 */
+                /* Simple removal */
+                nerrors += test_man_remove_bogus(fapl, &small_cparam, &tparam);
+                nerrors += test_man_remove_one(fapl, &small_cparam, &tparam);
+                nerrors += test_man_remove_two(fapl, &small_cparam, &tparam);
+                nerrors += test_man_remove_one_larger(fapl, &small_cparam, &tparam);
+                tparam.del_dir = FHEAP_DEL_FORWARD;
+                nerrors += test_man_remove_two_larger(fapl, &small_cparam, &tparam);
+                tparam.del_dir = FHEAP_DEL_REVERSE;
+                nerrors += test_man_remove_two_larger(fapl, &small_cparam, &tparam);
+                tparam.del_dir = FHEAP_DEL_FORWARD;
+                nerrors += test_man_remove_three_larger(fapl, &small_cparam, &tparam);
+                tparam.del_dir = FHEAP_DEL_REVERSE;
+                nerrors += test_man_remove_three_larger(fapl, &small_cparam, &tparam);
+
+                /* Incremental insert & removal */
+                tparam.del_dir = FHEAP_DEL_FORWARD;
+                nerrors += test_man_incr_insert_remove(fapl, &small_cparam, &tparam);
+
+                {
+                fheap_test_del_dir_t del_dir;        /* Deletion direction */
+                fheap_test_del_drain_t drain_half;   /* Deletion draining */
+
+                /* More complex removal patterns */
+                for(del_dir = FHEAP_DEL_FORWARD; del_dir < FHEAP_DEL_NDIRS; del_dir++) {
+                    tparam.del_dir = del_dir;
+                    for(drain_half = FHEAP_DEL_DRAIN_ALL; drain_half < FHEAP_DEL_DRAIN_N; drain_half++) {
+                        tparam.drain_half = drain_half;
+                        /* Don't need to test deletion directions when deleting entire heap */
+                        if(tparam.del_dir == FHEAP_DEL_HEAP && tparam.drain_half > FHEAP_DEL_DRAIN_ALL)
+                            break;
+
+                        /* Simple insertion patterns */
+                        nerrors += test_man_remove_root_direct(fapl, &small_cparam, &tparam);
+                        nerrors += test_man_remove_two_direct(fapl, &small_cparam, &tparam);
+                        nerrors += test_man_remove_first_row(fapl, &small_cparam, &tparam);
+                        nerrors += test_man_remove_first_two_rows(fapl, &small_cparam, &tparam);
+                        nerrors += test_man_remove_first_four_rows(fapl, &small_cparam, &tparam);
+                        if(ExpressMode > 1)
+                            HDprintf("***Express test mode on.  Some tests skipped\n");
+                        else {
+                            nerrors += test_man_remove_all_root_direct(fapl, &small_cparam, &tparam);
+                            nerrors += test_man_remove_2nd_indirect(fapl, &small_cparam, &tparam);
+                            nerrors += test_man_remove_3rd_indirect(fapl, &small_cparam, &tparam);
+                        } /* end else */
+
+                        /* Skip blocks insertion */
+                        /* (covers insertion & deletion of skipped blocks) */
+                        nerrors += test_man_skip_start_block(fapl, &small_cparam, &tparam);
+                        nerrors += test_man_skip_start_block_add_back(fapl, &small_cparam, &tparam);
+                        nerrors += test_man_skip_start_block_add_skipped(fapl, &small_cparam, &tparam);
+                        nerrors += test_man_skip_2nd_block(fapl, &small_cparam, &tparam);
+                        nerrors += test_man_skip_2nd_block_add_skipped(fapl, &small_cparam, &tparam);
+                        nerrors += test_man_fill_one_partial_skip_2nd_block_add_skipped(fapl, &small_cparam, &tparam);
+                        nerrors += test_man_fill_row_skip_add_skipped(fapl, &small_cparam, &tparam);
+                        nerrors += test_man_skip_direct_skip_indirect_two_rows_add_skipped(fapl, &small_cparam, &tparam);
+                        nerrors += test_man_fill_direct_skip_indirect_start_block_add_skipped(fapl, &small_cparam, &tparam);
+                        nerrors += test_man_fill_direct_skip_2nd_indirect_start_block_add_skipped(fapl, &small_cparam, &tparam);
+                        nerrors += test_man_fill_2nd_direct_less_one_wrap_start_block_add_skipped(fapl, &small_cparam, &tparam);
+                        nerrors += test_man_fill_direct_skip_2nd_indirect_skip_2nd_block_add_skipped(fapl, &small_cparam, &tparam);
+                        nerrors += test_man_fill_direct_skip_indirect_two_rows_add_skipped(fapl, &small_cparam, &tparam);
+                        nerrors += test_man_fill_direct_skip_indirect_two_rows_skip_indirect_row_add_skipped(fapl, &small_cparam, &tparam);
+                        nerrors += test_man_fill_2nd_direct_skip_start_block_add_skipped(fapl, &small_cparam, &tparam);
+                        nerrors += test_man_fill_2nd_direct_skip_2nd_indirect_start_block_add_skipped(fapl, &small_cparam, &tparam);
+                        nerrors += test_man_fill_2nd_direct_fill_direct_skip_3rd_indirect_start_block_add_skipped(fapl, &small_cparam, &tparam);
+                        nerrors += test_man_fill_2nd_direct_fill_direct_skip2_3rd_indirect_start_block_add_skipped(fapl, &small_cparam, &tparam);
+                        nerrors += test_man_fill_3rd_direct_less_one_fill_direct_wrap_start_block_add_skipped(fapl, &small_cparam, &tparam);
+                        nerrors += test_man_fill_1st_row_3rd_direct_fill_2nd_direct_less_one_wrap_start_block_add_skipped(fapl, &small_cparam, &tparam);
+                        if(ExpressMode > 1)
+                            HDprintf("***Express test mode on.  Some tests skipped\n");
+                        else {
+                            nerrors += test_man_fill_3rd_direct_fill_direct_skip_start_block_add_skipped(fapl, &small_cparam, &tparam);
+                            nerrors += test_man_fill_3rd_direct_fill_2nd_direct_fill_direct_skip_3rd_indirect_start_block_add_skipped(fapl, &small_cparam, &tparam);
+                            nerrors += test_man_fill_3rd_direct_fill_2nd_direct_fill_direct_skip_3rd_indirect_two_rows_start_block_add_skipped(fapl, &small_cparam, &tparam);
+                            nerrors += test_man_fill_3rd_direct_fill_2nd_direct_fill_direct_skip_3rd_indirect_wrap_start_block_add_skipped(fapl, &small_cparam, &tparam);
+                            nerrors += test_man_fill_4th_direct_less_one_fill_2nd_direct_fill_direct_skip_3rd_indirect_wrap_start_block_add_skipped(fapl, &small_cparam, &tparam);
+                        } /* end else */
+
+                        /* Fragmented insertion patterns */
+                        /* (covers insertion & deletion of fragmented blocks) */
+                        nerrors += test_man_frag_simple(fapl, &small_cparam, &tparam);
+                        nerrors += test_man_frag_direct(fapl, &small_cparam, &tparam);
+                        nerrors += test_man_frag_2nd_direct(fapl, &small_cparam, &tparam);
+                        nerrors += test_man_frag_3rd_direct(fapl, &small_cparam, &tparam);
+                    } /* end for */
+                } /* end for */
+
+                /* Reset deletion drain parameter */
+                tparam.drain_half = FHEAP_DEL_DRAIN_ALL;
+
+                } /* end block */
+            } /* end for */
+            } /* end block */
+
+            /*
+             * Test fractal heap 'huge' & 'tiny' object insertion & deletion
+             */
+            {
+            fheap_test_del_dir_t del_dir;   /* Deletion direction */
+            unsigned id_len;                /* Length of heap IDs */
+
+            /* Test "normal" & "direct" storage of 'huge' & 'tiny' heap IDs */
+            for(id_len = 0; id_len < 3; id_len++) {
+                /* Set the ID length for this test */
+                small_cparam.id_len = (uint16_t)id_len;
+
+                /* Print information about each test */
+                switch(id_len) {
+                    /* Use "normal" form for 'huge' object's heap IDs */
+                    case 0:
+                        HDputs("Using 'normal' heap ID format for 'huge' objects");
+                        break;
+
+                    /* Use "direct" form for 'huge' object's heap IDs */
+                    case 1:
+                        HDputs("Using 'direct' heap ID format for 'huge' objects");
+
+                        /* Adjust actual length of heap IDs for directly storing 'huge' object's file offset & length in heap ID */
+                        tparam.actual_id_len = 17;   /* 1 + 8 (file address size) + 8 (file length size) */
+                        break;
+
+                    /* Use "direct" storage for 'huge' objects and larger IDs for 'tiny' objects */
+                    case 2:
+                        small_cparam.id_len = 37;
+                        HDputs("Using 'direct' heap ID format for 'huge' objects and larger IDs for 'tiny' objects");
+                        tparam.actual_id_len = 37;
+                        break;
+
+                    /* An unknown test? */
+                    default:
+                        goto error;
+                } /* end switch */
+
+                /* Try several different methods of deleting objects */
+                for(del_dir = FHEAP_DEL_FORWARD; del_dir < FHEAP_DEL_NDIRS; del_dir++) {
+                    tparam.del_dir = del_dir;
+
+                    /* Test 'huge' object insert & delete */
+                    nerrors += test_huge_insert_one(fapl, &small_cparam, &tparam);
+                    nerrors += test_huge_insert_two(fapl, &small_cparam, &tparam);
+                    nerrors += test_huge_insert_three(fapl, &small_cparam, &tparam);
+                    nerrors += test_huge_insert_mix(fapl, &small_cparam, &tparam);
+                    nerrors += test_filtered_huge(fapl, &small_cparam, &tparam);
+
+                    /* Test 'tiny' object insert & delete */
+                    nerrors += test_tiny_insert_one(fapl, &small_cparam, &tparam);
+                    nerrors += test_tiny_insert_two(fapl, &small_cparam, &tparam);
+                    nerrors += test_tiny_insert_mix(fapl, &small_cparam, &tparam);
                 } /* end for */
             } /* end for */
 
-            /* Reset deletion drain parameter */
-            tparam.drain_half = FHEAP_DEL_DRAIN_ALL;
-
+            /* Reset the "normal" heap ID lengths */
+            small_cparam.id_len = 0;
+            tparam.actual_id_len = HEAP_ID_LEN;
             } /* end block */
-#endif /* QAK2 */
-#else /* QAK */
-HDfprintf(stderr, "Uncomment tests!\n");
-#endif /* QAK */
-#ifndef QAK2
-            } /* end for */
-#endif /* QAK2 */
-        } /* end block */
-#else /* QAK */
-HDfprintf(stderr, "Uncomment tests!\n");
-#endif /* QAK */
 
-        /*
-         * Test fractal heap 'huge' & 'tiny' object insertion & deletion
-         */
-#ifndef QAK
-        {
-        fheap_test_del_dir_t del_dir;   /* Deletion direction */
-        unsigned id_len;                /* Length of heap IDs */
-
-        /* Test "normal" & "direct" storage of 'huge' & 'tiny' heap IDs */
-        for(id_len = 0; id_len < 3; id_len++) {
-            /* Set the ID length for this test */
-            small_cparam.id_len = id_len;
-
-            /* Print information about each test */
-            switch(id_len) {
-                /* Use "normal" form for 'huge' object's heap IDs */
-                case 0:
-                    puts("Using 'normal' heap ID format for 'huge' objects");
-                    break;
-
-                /* Use "direct" form for 'huge' object's heap IDs */
-                case 1:
-                    puts("Using 'direct' heap ID format for 'huge' objects");
-
-                    /* Adjust actual length of heap IDs for directly storing 'huge' object's file offset & length in heap ID */
-                    tparam.actual_id_len = 17;   /* 1 + 8 (file address size) + 8 (file length size) */
-                    break;
-
-                /* Use "direct" storage for 'huge' objects and larger IDs for 'tiny' objects */
-                case 2:
-                    small_cparam.id_len = 37;
-                    puts("Using 'direct' heap ID format for 'huge' objects and larger IDs for 'tiny' objects");
-                    tparam.actual_id_len = 37;
-                    break;
-
-                /* An unknown test? */
-                default:
-                    goto error;
-            } /* end switch */
+            /* Test I/O filter support */
 
             /* Try several different methods of deleting objects */
+            {
+            fheap_test_del_dir_t del_dir;   /* Deletion direction */
+
             for(del_dir = FHEAP_DEL_FORWARD; del_dir < FHEAP_DEL_NDIRS; del_dir++) {
                 tparam.del_dir = del_dir;
 
-                /* Test 'huge' object insert & delete */
-#ifndef QAK
-                nerrors += test_huge_insert_one(fapl, &small_cparam, &tparam);
-                nerrors += test_huge_insert_two(fapl, &small_cparam, &tparam);
-                nerrors += test_huge_insert_three(fapl, &small_cparam, &tparam);
-                nerrors += test_huge_insert_mix(fapl, &small_cparam, &tparam);
-                nerrors += test_filtered_huge(fapl, &small_cparam, &tparam);
-#else /* QAK */
-HDfprintf(stderr, "Uncomment tests!\n");
-#endif /* QAK */
+                /* Controlled tests */
+                /* XXX: Re-enable file size checks in these tests, after the file has persistent free space tracking working */
+                nerrors += test_filtered_man_root_direct(fapl, &small_cparam, &tparam);
+                nerrors += test_filtered_man_root_indirect(fapl, &small_cparam, &tparam);
 
-#ifndef QAK
-                /* Test 'tiny' object insert & delete */
-                nerrors += test_tiny_insert_one(fapl, &small_cparam, &tparam);
-                nerrors += test_tiny_insert_two(fapl, &small_cparam, &tparam);
-                nerrors += test_tiny_insert_mix(fapl, &small_cparam, &tparam);
-#else /* QAK */
-HDfprintf(stderr, "Uncomment tests!\n");
-#endif /* QAK */
+                /* Random tests, with compressed blocks */
+                tparam.comp = FHEAP_TEST_COMPRESS;
+                nerrors += test_random((curr_test == FHEAP_TEST_NORMAL ? (hsize_t)(50*1000*1000) : (hsize_t)(25*1000*1000)), fapl, &small_cparam, &tparam);
+                nerrors += test_random_pow2((curr_test == FHEAP_TEST_NORMAL ? (hsize_t)(50*1000*1000) : (hsize_t)(2*1000*1000)), fapl, &small_cparam, &tparam);
+
+                /* Reset block compression */
+                tparam.comp = FHEAP_TEST_NO_COMPRESS;
             } /* end for */
-        } /* end for */
+            } /* end block */
 
-        /* Reset the "normal" heap ID lengths */
-        small_cparam.id_len = 0;
-        tparam.actual_id_len = HEAP_ID_LEN;
-        } /* end block */
-#else /* QAK */
-HDfprintf(stderr, "Uncomment tests!\n");
-#endif /* QAK */
-#else /* QAK2 */
-HDfprintf(stderr, "Uncomment tests!\n");
-#endif /* QAK2 */
+            /* Random object insertion & deletion */
+            if(ExpressMode > 1)
+                HDprintf("***Express test mode on.  Some tests skipped\n");
+            else {
+                /* Random tests using "small" heap creation parameters */
+                HDputs("Using 'small' heap creation parameters");
 
-        /* Test I/O filter support */
+                /* (reduce size of tests when re-opening each time) */
+                /* XXX: Try to speed things up enough that these tests don't have to be reduced when re-opening */
+                tparam.del_dir = FHEAP_DEL_FORWARD;
+                nerrors += test_random((curr_test == FHEAP_TEST_NORMAL ? (hsize_t)(100*1000*1000) : (hsize_t)(50*1000*1000)), fapl, &small_cparam, &tparam);
+                nerrors += test_random_pow2((curr_test == FHEAP_TEST_NORMAL ? (hsize_t)(100*1000*1000) : (hsize_t)(4*1000*1000)), fapl, &small_cparam, &tparam);
 
-#ifndef QAK
-        /* Try several different methods of deleting objects */
-        {
-        fheap_test_del_dir_t del_dir;   /* Deletion direction */
+                tparam.del_dir = FHEAP_DEL_HEAP;
+                nerrors += test_random((curr_test == FHEAP_TEST_NORMAL ? (hsize_t)(100*1000*1000) : (hsize_t)(50*1000*1000)), fapl, &small_cparam, &tparam);
+                nerrors += test_random_pow2((curr_test == FHEAP_TEST_NORMAL ? (hsize_t)(100*1000*1000) : (hsize_t)(4*1000*1000)), fapl, &small_cparam, &tparam);
 
-        for(del_dir = FHEAP_DEL_FORWARD; del_dir < FHEAP_DEL_NDIRS; del_dir++) {
-            tparam.del_dir = del_dir;
+                /* Random tests using "large" heap creation parameters */
+                HDputs("Using 'large' heap creation parameters");
+                tparam.actual_id_len = LARGE_HEAP_ID_LEN;
 
-            /* Controlled tests */
-/* XXX: Re-enable file size checks in these tests, after the file has persistent free space tracking working */
-            nerrors += test_filtered_man_root_direct(fapl, &small_cparam, &tparam);
-            nerrors += test_filtered_man_root_indirect(fapl, &small_cparam, &tparam);
+                /* (reduce size of tests when re-opening each time) */
+                /* XXX: Try to speed things up enough that these tests don't have to be reduced when re-opening */
+                tparam.del_dir = FHEAP_DEL_FORWARD;
+                nerrors += test_random((curr_test == FHEAP_TEST_NORMAL ? (hsize_t)(100*1000*1000) : (hsize_t)(50*1000*1000)), fapl, &large_cparam, &tparam);
+                nerrors += test_random_pow2((curr_test == FHEAP_TEST_NORMAL ? (hsize_t)(100*1000*1000) : (hsize_t)(4*1000*1000)), fapl, &large_cparam, &tparam);
 
-            /* Random tests, with compressed blocks */
+                tparam.del_dir = FHEAP_DEL_HEAP;
+                nerrors += test_random((curr_test == FHEAP_TEST_NORMAL ? (hsize_t)(100*1000*1000) : (hsize_t)(50*1000*1000)), fapl, &large_cparam, &tparam);
+                nerrors += test_random_pow2((curr_test == FHEAP_TEST_NORMAL ? (hsize_t)(100*1000*1000) : (hsize_t)(4*1000*1000)), fapl, &large_cparam, &tparam);
+
+                /* Reset the "normal" heap ID length */
+                tparam.actual_id_len = SMALL_HEAP_ID_LEN;
+            } /* end else */
+
+            /* Test object writing support */
+
+            /* Basic object writing */
+            nerrors += test_write(fapl, &small_cparam, &tparam);
+
+            /* Writing objects in heap with filters */
             tparam.comp = FHEAP_TEST_COMPRESS;
-            nerrors += test_random((curr_test == FHEAP_TEST_NORMAL ? (hsize_t)(50*1000*1000) : (hsize_t)(25*1000*1000)), fapl, &small_cparam, &tparam);
-            nerrors += test_random_pow2((curr_test == FHEAP_TEST_NORMAL ? (hsize_t)(50*1000*1000) : (hsize_t)(2*1000*1000)), fapl, &small_cparam, &tparam);
+            nerrors += test_write(fapl, &small_cparam, &tparam);
 
             /* Reset block compression */
             tparam.comp = FHEAP_TEST_NO_COMPRESS;
         } /* end for */
-        } /* end block */
-#else /* QAK */
-HDfprintf(stderr, "Uncomment tests!\n");
-#endif /* QAK */
 
-#ifndef QAK
-        /* Random object insertion & deletion */
-        if(ExpressMode > 1)
-            printf("***Express test mode on.  Some tests skipped\n");
-        else {
-#ifndef QAK
-            /* Random tests using "small" heap creation parameters */
-            puts("Using 'small' heap creation parameters");
-
-            /* (reduce size of tests when re-opening each time) */
-/* XXX: Try to speed things up enough that these tests don't have to be reduced when re-opening */
-            tparam.del_dir = FHEAP_DEL_FORWARD;
-            nerrors += test_random((curr_test == FHEAP_TEST_NORMAL ? (hsize_t)(100*1000*1000) : (hsize_t)(50*1000*1000)), fapl, &small_cparam, &tparam);
-            nerrors += test_random_pow2((curr_test == FHEAP_TEST_NORMAL ? (hsize_t)(100*1000*1000) : (hsize_t)(4*1000*1000)), fapl, &small_cparam, &tparam);
-
-            tparam.del_dir = FHEAP_DEL_HEAP;
-            nerrors += test_random((curr_test == FHEAP_TEST_NORMAL ? (hsize_t)(100*1000*1000) : (hsize_t)(50*1000*1000)), fapl, &small_cparam, &tparam);
-            nerrors += test_random_pow2((curr_test == FHEAP_TEST_NORMAL ? (hsize_t)(100*1000*1000) : (hsize_t)(4*1000*1000)), fapl, &small_cparam, &tparam);
-#else /* QAK */
-HDfprintf(stderr, "Uncomment tests!\n");
-#endif /* QAK */
-
-#ifndef QAK
-            /* Random tests using "large" heap creation parameters */
-            puts("Using 'large' heap creation parameters");
-            tparam.actual_id_len = LARGE_HEAP_ID_LEN;
-
-            /* (reduce size of tests when re-opening each time) */
-/* XXX: Try to speed things up enough that these tests don't have to be reduced when re-opening */
-            tparam.del_dir = FHEAP_DEL_FORWARD;
-            nerrors += test_random((curr_test == FHEAP_TEST_NORMAL ? (hsize_t)(100*1000*1000) : (hsize_t)(50*1000*1000)), fapl, &large_cparam, &tparam);
-            nerrors += test_random_pow2((curr_test == FHEAP_TEST_NORMAL ? (hsize_t)(100*1000*1000) : (hsize_t)(4*1000*1000)), fapl, &large_cparam, &tparam);
-
-            tparam.del_dir = FHEAP_DEL_HEAP;
-            nerrors += test_random((curr_test == FHEAP_TEST_NORMAL ? (hsize_t)(100*1000*1000) : (hsize_t)(50*1000*1000)), fapl, &large_cparam, &tparam);
-            nerrors += test_random_pow2((curr_test == FHEAP_TEST_NORMAL ? (hsize_t)(100*1000*1000) : (hsize_t)(4*1000*1000)), fapl, &large_cparam, &tparam);
-#else /* QAK */
-HDfprintf(stderr, "Uncomment tests!\n");
-#endif /* QAK */
-
-            /* Reset the "normal" heap ID length */
-            tparam.actual_id_len = SMALL_HEAP_ID_LEN;
-        } /* end else */
-#else /* QAK */
-HDfprintf(stderr, "Uncomment tests!\n");
-#endif /* QAK */
-
-#ifndef QAK
-        /* Test object writing support */
-
-        /* Basic object writing */
-        nerrors += test_write(fapl, &small_cparam, &tparam);
-
-        /* Writing objects in heap with filters */
-        tparam.comp = FHEAP_TEST_COMPRESS;
-        nerrors += test_write(fapl, &small_cparam, &tparam);
-
-        /* Reset block compression */
-        tparam.comp = FHEAP_TEST_NO_COMPRESS;
-#else /* QAK */
-HDfprintf(stderr, "Uncomment tests!\n");
-#endif /* QAK */
-#ifndef QAK
-    } /* end for */
-#endif /* QAK */
+        if(H5Pclose(fcpl) < 0)
+            TEST_ERROR
+    } /* end num_pb_fs */
 
     /* Tests that address specific bugs */
-#ifndef QAK
+    tparam.my_fcpl = def_fcpl;
+    fapl = def_fapl;
+
+    /* Tests that address specific bugs */
     nerrors += test_bug1(fapl, &small_cparam, &tparam);
-#else /* QAK */
-HDfprintf(stderr, "Uncomment tests!\n");
-#endif /* QAK */
 
     /* Verify symbol table messages are cached */
     nerrors += (h5_verify_cached_stabs(FILENAME, fapl) < 0 ? 1 : 0);
 
     if(nerrors)
         goto error;
-    puts("All fractal heap tests passed.");
+    HDputs("All fractal heap tests passed.");
 
     /* Release space for the shared objects */
     H5MM_xfree(shared_wobj_g);
@@ -16471,25 +16821,34 @@ HDfprintf(stderr, "Uncomment tests!\n");
     H5MM_xfree(shared_lens_g);
     H5MM_xfree(shared_offs_g);
 
+    if(H5Pclose(def_fcpl) < 0) TEST_ERROR
+    if(H5Pclose(pb_fapl) < 0) TEST_ERROR
+
+    /* Pop API context */
+    if(api_ctx_pushed && H5CX_pop() < 0) FAIL_STACK_ERROR
+    api_ctx_pushed = FALSE;
+
     /* Clean up file used */
-#ifndef QAK
-    h5_cleanup(FILENAME, fapl);
-#else /* QAK */
-HDfprintf(stderr, "Uncomment cleanup!\n");
-#endif /* QAK */
+    h5_cleanup(FILENAME, def_fapl);
 
     return 0;
 
 error:
-    puts("*** TESTS FAILED ***");
+    HDputs("*** TESTS FAILED ***");
     H5E_BEGIN_TRY {
         H5MM_xfree(shared_wobj_g);
         H5MM_xfree(shared_robj_g);
         H5MM_xfree(shared_ids_g);
         H5MM_xfree(shared_lens_g);
         H5MM_xfree(shared_offs_g);
-	H5Pclose(fapl);
+        H5Pclose(def_fapl);
+        H5Pclose(pb_fapl);
+        H5Pclose(def_fcpl);
+        H5Pclose(fcpl);
     } H5E_END_TRY;
+
+    if(api_ctx_pushed) H5CX_pop();
+
     return 1;
 } /* end main() */
 

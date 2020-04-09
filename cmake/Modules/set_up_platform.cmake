@@ -26,10 +26,10 @@ macro(set_up_platform)
   get_filename_component(Z_LIBRARY_DIR ${Z_LIBRARY} DIRECTORY)
   set(HDF5_LIB_NAME hdf5)
   set(HDF5_HL_LIB_NAME hdf5_hl)
-  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(HDF5_LIB_NAME ${HDF5_LIB_NAME}_debug)
-    set(HDF5_HL_LIB_NAME ${HDF5_HL_LIB_NAME}_debug)
-  endif()
+#  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+#    set(HDF5_LIB_NAME ${HDF5_LIB_NAME}_debug)
+#    set(HDF5_HL_LIB_NAME ${HDF5_HL_LIB_NAME}_debug)
+#  endif()
   set(HDF5_LIBRARY "${CMAKE_CURRENT_BINARY_DIR}/lib/lib${HDF5_LIB_NAME}${LIB_SUFFIX}")
   set(HDF5_HL_LIBRARY "${CMAKE_CURRENT_BINARY_DIR}/lib/lib${HDF5_HL_LIB_NAME}${LIB_SUFFIX}")
   set(HDF5_LIBRARIES ${HDF5_HL_LIB_NAME};${HDF5_LIB_NAME})
@@ -62,7 +62,10 @@ macro(set_up_platform)
 
     # We are cared for mathematically.
     set(NEED_LAPACK FALSE)
-
+  elseif (HOSTNAME MATCHES "scs") # NERSC Cori phase1
+    set(CMAKE_C_COMPILER $ENV{CC})
+    set(CMAKE_CXX_COMPILER $ENV{CXX})
+    set(CMAKE_Fortran_COMPILER $ENV{FC})
   elseif (HOSTNAME MATCHES "edison") # NERSC Edison
     # Edison likes Intel's compilers
     # (but Intel's compilers don't do C11.).
