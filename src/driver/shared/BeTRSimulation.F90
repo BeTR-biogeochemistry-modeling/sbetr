@@ -19,12 +19,26 @@ module BeTRSimulation
   use PatchType      , only : patch_type
   use ColumnType     , only : column_type
   use LandunitType   , only : landunit_type
+  use CNCarbonFluxType  , only : carbonflux_type
+  use PfCarbonFluxType  , only : pf_carbonflux_type
+  use WaterStateType , only : waterstate_type
+  use WaterfluxType     , only : waterflux_type
+  use TemperatureType   , only : temperature_type
+  use PfTemperatureType   , only : pf_temperature_type
+  use PfWaterfluxType     , only : pf_waterflux_type
 #else
-  use ColumnType     , only : column_type => column_physical_properties_type
-  use VegetationType , only : patch_type  => vegetation_physical_properties_type
-  use LandunitType   , only : landunit_type => landunit_physical_properties_type
+  use ColumnType     , only : column_type => column_physical_properties
+  use VegetationType , only : patch_type  => vegetation_physical_properties
+  use LandunitType   , only : landunit_type => landunit_physical_properties
+  use ColumnDataType      , only : carbonflux_type => column_carbon_flux
+  use ColumnDataType , only : waterstate_type => column_water_state
+  use ColumnDataType , only : waterflux_type => column_water_flux
   use VegetationDataType, only : veg_es, veg_wf
   use ColumnDataType    , only : col_es, col_ws, col_wf
+  use ColumnDataType, only : temperature_type=> column_energy_state
+  use VegetationDataType  , only : pf_carbonflux_type => vegetation_carbon_flux
+  use VegetationDataType, only : pf_temperature_type => vegetation_energy_state
+  use VegetationDataType, only : pf_waterflux_type => vegetation_water_flux
 #endif
 
   ! !USES:
@@ -173,7 +187,6 @@ contains
     ! Dummy routine for inheritance purposes. don't use.
     !
     !USES
-    use WaterstateType , only : waterstate_type
     use betr_constants , only : betr_namelist_buffer_size, betr_filename_length
     implicit none
 
@@ -191,7 +204,7 @@ contains
 
     if (this%num_surfc > 0)                  continue
     if (bounds%begc > 0)                     continue
-    if (size(waterstate%h2osoi_liq_col) > 0) continue
+    if (size(waterstate%h2osoi_liq) > 0) continue
     if (len(namelist_buffer) > 0)            continue
   end subroutine BeTRSimulationInit
 
@@ -203,7 +216,6 @@ contains
     ! Dummy routine for inheritance purposes. don't use.
     !
     !USES
-    use WaterstateType , only : waterstate_type
     use betr_constants , only : betr_namelist_buffer_size, betr_filename_length
     implicit none
 
@@ -223,7 +235,7 @@ contains
 
     if (this%num_surfc > 0)                  continue
     if (bounds%begc > 0)                     continue
-    if (size(waterstate%h2osoi_liq_col) > 0) continue
+    if (size(waterstate%h2osoi_liq) > 0) continue
     if (len(base_filename) > 0)              continue
     if (len(namelist_buffer) > 0)            continue
     call this%betr_time%Init(namelist_buffer)
@@ -337,7 +349,6 @@ contains
     ! initialize BeTR
     !
     !!USES
-    use WaterStateType , only : waterstate_type
     use betr_constants , only : betr_namelist_buffer_size
     use betr_constants , only : betr_filename_length
     use betr_varcon    , only : betr_maxpatch_pft
@@ -596,13 +607,9 @@ contains
   !
   ! USES
     use SoilStateType     , only : soilstate_type
-    use WaterStateType    , only : Waterstate_Type
-    use TemperatureType   , only : temperature_type
     use ChemStateType     , only : chemstate_type
-    use WaterfluxType     , only : waterflux_type
     use atm2lndType       , only : atm2lnd_type
     use SoilHydrologyType , only : soilhydrology_type
-    use CNCarbonFluxType  , only : carbonflux_type
     use CanopyStateType   , only : canopystate_type
     use BeTR_TimeMod      , only : betr_time_type
     use pftvarcon         , only : crop
@@ -918,7 +925,6 @@ contains
   ! Do consistency check, can be overwritten for varies purpose
   !
   ! USES
-    use WaterStateType, only : Waterstate_Type
   implicit none
    !ARGUMENTS
     class(betr_simulation_type) , intent(inout) :: this
@@ -934,7 +940,7 @@ contains
     if (ubj > 0)                                    continue
     if (num_surfc > 0)                              continue
     if (size(filter_soilc) > 0)                     continue
-    if (associated(waterstate_vars%h2osoi_liq_col)) continue
+    if (associated(waterstate_vars%h2osoi_liq)) continue
   end subroutine BeTRSimulationConsistencyCheck
 
   !---------------------------------------------------------------------------------
@@ -997,23 +1003,20 @@ contains
 
   !------------------------------------------------------------------------
   subroutine BeTRSimulationSetBiophysForcing(this, bounds,  col, pft, lbj, ubj, &
-    carbonflux_vars, waterstate_vars,  waterflux_vars, temperature_vars, &
-    soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
+    carbonflux_vars, pf_carbonflux_vars, waterstate_vars,  waterflux_vars, pf_waterflux_vars, &
+    temperature_vars, pf_temperature_vars, soilhydrology_vars, atm2lnd_vars, canopystate_vars, &
     chemstate_vars, soilstate_vars)
   !DESCRIPTION
   !pass in biogeophysical variables for running betr
   !USES
   use SoilStateType     , only : soilstate_type
-  use WaterStateType    , only : Waterstate_Type
-  use TemperatureType   , only : temperature_type
   use ChemStateType     , only : chemstate_type
-  use WaterfluxType     , only : waterflux_type
   use atm2lndType       , only : atm2lnd_type
   use SoilHydrologyType , only : soilhydrology_type
-  use CNCarbonFluxType  , only : carbonflux_type
   use CanopyStateType   , only : canopystate_type
   use MathfuncMod       , only : isnan => bisnan
   use pftvarcon         , only : noveg
+  use betr_varcon       , only : denh2o => bdenh2o, denice => bdenice
   implicit none
   !ARGUMENTS
   class(betr_simulation_type) , intent(inout)        :: this
@@ -1022,9 +1025,12 @@ contains
   type(column_type)           , intent(in)           :: col ! column type
   integer                     , intent(in)           :: lbj, ubj
   type(carbonflux_type)       , optional, intent(in) :: carbonflux_vars
+  type(pf_carbonflux_type), optional, intent(in) :: pf_carbonflux_vars
   type(Waterstate_Type)       , optional, intent(in) :: Waterstate_vars
   type(waterflux_type)        , optional, intent(in) :: waterflux_vars
+  type(pf_waterflux_type)        , optional, intent(in) :: pf_waterflux_vars
   type(temperature_type)      , optional, intent(in) :: temperature_vars
+  type(pf_temperature_type)      , optional, intent(in) :: pf_temperature_vars
   type(soilhydrology_type)    , optional, intent(in) :: soilhydrology_vars
   type(atm2lnd_type)          , optional, intent(in) :: atm2lnd_vars
   type(canopystate_type)      , optional, intent(in) :: canopystate_vars
@@ -1038,9 +1044,9 @@ contains
   do c = bounds%begc, bounds%endc
     if(.not. this%active_col(c))cycle
     this%biophys_forc(c)%stwl(cc)=0  !by default this is set zero layers of standing water
-    if(present(carbonflux_vars))then
-      npft_loc = ubound(carbonflux_vars%annsum_npp_patch,1)-lbound(carbonflux_vars%annsum_npp_patch,1)+1
-      if(col%pfti(c) /= lbound(carbonflux_vars%annsum_npp_patch,1) .and. npft_loc/=col%npfts(c))then
+    if(present(pf_carbonflux_vars))then
+      npft_loc = ubound(pf_carbonflux_vars%annsum_npp,1)-lbound(pf_carbonflux_vars%annsum_npp,1)+1
+      if(col%pfti(c) /= lbound(pf_carbonflux_vars%annsum_npp,1) .and. npft_loc/=col%npfts(c))then
         do pi = 1, betr_maxpatch_pft
           this%biophys_forc(c)%annsum_npp_patch(pi) = 0._r8
           this%biophys_forc(c)%agnpp_patch(pi) = 0._r8
@@ -1054,19 +1060,19 @@ contains
               p = col%pfti(c) + pi - 1
               if (pft%active(p) .and. pft%itype(p)/=noveg) then
                 pp = pp + 1
-                this%biophys_forc(c)%annsum_npp_patch(pp) = carbonflux_vars%annsum_npp_patch(p)
-                this%biophys_forc(c)%agnpp_patch(pp)      = carbonflux_vars%agnpp_patch(p)
-                this%biophys_forc(c)%bgnpp_patch(pp)      = carbonflux_vars%bgnpp_patch(p)
-                this%biophys_forc(c)%tempavg_agnpp_patch(pp)= carbonflux_vars%tempavg_agnpp_patch(p)
-                this%biophys_forc(c)%tempavg_bgnpp_patch(pp)= carbonflux_vars%tempavg_bgnpp_patch(p)
-                this%biophys_forc(c)%annavg_agnpp_patch(pp) = carbonflux_vars%annavg_agnpp_patch(p)
-                this%biophys_forc(c)%annavg_bgnpp_patch(pp) = carbonflux_vars%annavg_bgnpp_patch(p)
+                this%biophys_forc(c)%annsum_npp_patch(pp) = pf_carbonflux_vars%annsum_npp(p)
+                this%biophys_forc(c)%agnpp_patch(pp)      = pf_carbonflux_vars%agnpp(p)
+                this%biophys_forc(c)%bgnpp_patch(pp)      = pf_carbonflux_vars%bgnpp(p)
+                this%biophys_forc(c)%tempavg_agnpp_patch(pp)= pf_carbonflux_vars%tempavg_agnpp(p)
+                this%biophys_forc(c)%tempavg_bgnpp_patch(pp)= pf_carbonflux_vars%tempavg_bgnpp(p)
+                this%biophys_forc(c)%annavg_agnpp_patch(pp) = pf_carbonflux_vars%annavg_agnpp(p)
+                this%biophys_forc(c)%annavg_bgnpp_patch(pp) = pf_carbonflux_vars%annavg_bgnpp(p)
               endif
             endif
           enddo
         else
-          npft_loc = ubound(carbonflux_vars%annsum_npp_patch,1)-lbound(carbonflux_vars%annsum_npp_patch,1)+1
-          if(col%pfti(c) /= lbound(carbonflux_vars%annsum_npp_patch,1) .and. npft_loc/=col%npfts(c))then
+          npft_loc = ubound(pf_carbonflux_vars%annsum_npp,1)-lbound(pf_carbonflux_vars%annsum_npp,1)+1
+          if(col%pfti(c) /= lbound(pf_carbonflux_vars%annsum_npp,1) .and. npft_loc/=col%npfts(c))then
             do pi = 1, betr_maxpatch_pft
               this%biophys_forc(c)%annsum_npp_patch(pi) = 0._r8
               this%biophys_forc(c)%agnpp_patch(pi) = 0._r8
@@ -1078,98 +1084,72 @@ contains
     endif
     !assign waterstate
     if(present(waterstate_vars))then
-!<<<<<<< thorntonpe/lnd/archv2
-!      this%biophys_forc(c)%finundated_col(cc)            = col_ws%finundated(c)
-!      this%biophys_forc(c)%frac_h2osfc_col(cc)           = col_ws%frac_h2osfc(c)
-!      this%biophys_forc(c)%h2osoi_liq_col(cc,lbj:ubj)    = col_ws%h2osoi_liq(c,lbj:ubj)
-!      this%biophys_forc(c)%h2osoi_ice_col(cc,lbj:ubj)    = col_ws%h2osoi_ice(c,lbj:ubj)
-!      this%biophys_forc(c)%h2osoi_liqvol_col(cc,lbj:ubj) = col_ws%h2osoi_liqvol(c,lbj:ubj)
-!      this%biophys_forc(c)%h2osoi_icevol_col(cc,lbj:ubj) = col_ws%h2osoi_icevol(c,lbj:ubj)
-!      this%biophys_forc(c)%h2osoi_vol_col(cc,lbj:ubj)    = col_ws%h2osoi_vol(c,lbj:ubj)
-!      this%biophys_forc(c)%air_vol_col(cc,lbj:ubj)       = col_ws%air_vol(c,lbj:ubj)
-!      this%biophys_forc(c)%smp_l_col(cc,lbj:ubj)         = col_ws%smp_l(c,lbj:ubj)
-!=======
       if(col%snl(c)<0)then
-        this%biophys_forc(c)%h2osno_liq_col(cc,col%snl(c)+1:0) = waterstate_vars%h2osoi_liq_col(c,col%snl(c)+1:0)
-        this%biophys_forc(c)%h2osno_ice_col(cc,col%snl(c)+1:0) = waterstate_vars%h2osoi_ice_col(c,col%snl(c)+1:0)
+        this%biophys_forc(c)%h2osno_liq_col(cc,col%snl(c)+1:0) = waterstate_vars%h2osoi_liq(c,col%snl(c)+1:0)
+        this%biophys_forc(c)%h2osno_ice_col(cc,col%snl(c)+1:0) = waterstate_vars%h2osoi_ice(c,col%snl(c)+1:0)
       endif
-      this%biophys_forc(c)%finundated_col(cc)            = waterstate_vars%finundated_col(c)
-      this%biophys_forc(c)%frac_h2osfc_col(cc)           = waterstate_vars%frac_h2osfc_col(c)
-      this%biophys_forc(c)%h2osoi_liq_col(cc,lbj:ubj)    = waterstate_vars%h2osoi_liq_col(c,lbj:ubj)
-      this%biophys_forc(c)%h2osoi_ice_col(cc,lbj:ubj)    = waterstate_vars%h2osoi_ice_col(c,lbj:ubj)
-      this%biophys_forc(c)%h2osoi_icevol_col(cc,lbj:ubj) = waterstate_vars%h2osoi_icevol_col(c,lbj:ubj)
+      this%biophys_forc(c)%finundated_col(cc)            = waterstate_vars%finundated(c)
+      this%biophys_forc(c)%frac_h2osfc_col(cc)           = waterstate_vars%frac_h2osfc(c)
+      this%biophys_forc(c)%h2osoi_liq_col(cc,lbj:ubj)    = waterstate_vars%h2osoi_liq(c,lbj:ubj)
+      this%biophys_forc(c)%h2osoi_ice_col(cc,lbj:ubj)    = waterstate_vars%h2osoi_ice(c,lbj:ubj)
+      this%biophys_forc(c)%h2osoi_icevol_col(cc,lbj:ubj) = waterstate_vars%h2osoi_icevol(c,lbj:ubj)
       do l = lbj, ubj
-        this%biophys_forc(c)%h2osoi_liqvol_col(cc,l)     = max(0.01_r8,waterstate_vars%h2osoi_liqvol_col(c,l))
+        this%biophys_forc(c)%h2osoi_icevol_col(cc,l)     = waterstate_vars%h2osoi_ice(c,l)/(col%dz(c,l)*denice)
+        this%biophys_forc(c)%h2osoi_liqvol_col(cc,l)     = waterstate_vars%h2osoi_liq(c,l)/(col%dz(c,l)*denh2o)
+        this%biophys_forc(c)%h2osoi_liqvol_col(cc,l)     = max(0.01_r8,this%biophys_forc(c)%h2osoi_liqvol_col(cc,l))
         this%biophys_forc(c)%h2osoi_vol_col(cc,l)        = this%biophys_forc(c)%h2osoi_liqvol_col(cc,l) + &
                                                            this%biophys_forc(c)%h2osoi_icevol_col(cc,l)
       enddo
-      this%biophys_forc(c)%air_vol_col(cc,lbj:ubj)       = waterstate_vars%air_vol_col(c,lbj:ubj)
-!>>>>>>> master
-      this%biophys_forc(c)%rho_vap(cc,lbj:ubj)           = waterstate_vars%rho_vap_col(c,lbj:ubj)
-      this%biophys_forc(c)%rhvap_soi(cc,lbj:ubj)         = waterstate_vars%rhvap_soi_col(c,lbj:ubj)
+      this%biophys_forc(c)%air_vol_col(cc,lbj:ubj)       = waterstate_vars%air_vol(c,lbj:ubj)
+      this%biophys_forc(c)%smp_l_col(cc,lbj:ubj)         = waterstate_vars%smp_l(c,lbj:ubj)
+
+!      this%biophys_forc(c)%rho_vap(cc,lbj:ubj)           = waterstate_vars%rho_vap_col(c,lbj:ubj)
+!      this%biophys_forc(c)%rhvap_soi(cc,lbj:ubj)         = waterstate_vars%rhvap_soi_col(c,lbj:ubj)
 
     endif
     if(present(waterflux_vars))then
-!<<<<<<< thorntonpe/lnd/archv2
-!      this%biogeo_flux(c)%qflx_infl_col(cc)             = col_wf%qflx_infl(c)
-!      this%biogeo_flux(c)%qflx_totdrain_col(cc)         = col_wf%qflx_totdrain(c)
-!      this%biogeo_flux(c)%qflx_gross_evap_soil_col(cc)  = col_wf%qflx_gross_evap_soil(c)
-!      this%biogeo_flux(c)%qflx_gross_infl_soil_col(cc)  = col_wf%qflx_gross_infl_soil(c)
-!      this%biophys_forc(c)%qflx_surf_col(cc)            = col_wf%qflx_surf(c)
-!      this%biophys_forc(c)%qflx_dew_grnd_col(cc)        = col_wf%qflx_dew_grnd(c)
-!      this%biophys_forc(c)%qflx_dew_snow_col(cc)        = col_wf%qflx_dew_snow(c)
-!      this%biophys_forc(c)%qflx_sub_snow_vol_col(cc)    = col_wf%qflx_sub_snow_vol(c)
-!      this%biophys_forc(c)%qflx_sub_snow_col(cc)        = col_wf%qflx_sub_snow(c)
-!      this%biophys_forc(c)%qflx_h2osfc2topsoi_col(cc)   = col_wf%qflx_h2osfc2topsoi(c)
-!      this%biophys_forc(c)%qflx_snow2topsoi_col(cc)     = col_wf%qflx_snow2topsoi(c)
-!      this%biophys_forc(c)%qflx_rootsoi_col(cc,lbj:ubj) = col_wf%qflx_rootsoi(c,lbj:ubj)*1.e-3_r8
-
-!      this%biogeo_flux(c)%qflx_adv_col(cc,lbj-1:ubj)    = col_wf%qflx_adv(c,lbj-1:ubj)
-!      this%biogeo_flux(c)%qflx_drain_vr_col(cc,lbj:ubj) = col_wf%qflx_drain_vr(c,lbj:ubj)
-!=======
-      this%biogeo_flux(c)%qflx_infl_col(cc)             = waterflux_vars%qflx_infl_col(c)
-      this%biogeo_flux(c)%qflx_totdrain_col(cc)         = waterflux_vars%qflx_totdrain_col(c)
-      this%biogeo_flux(c)%qflx_gross_evap_soil_col(cc)  = waterflux_vars%qflx_gross_evap_soil_col(c)
-      this%biogeo_flux(c)%qflx_gross_infl_soil_col(cc)  = waterflux_vars%qflx_gross_infl_soil_col(c)
-      this%biophys_forc(c)%qflx_surf_col(cc)            = waterflux_vars%qflx_surf_col(c)
-      this%biophys_forc(c)%qflx_dew_grnd_col(cc)        = waterflux_vars%qflx_dew_grnd_col(c)
-      this%biophys_forc(c)%qflx_dew_snow_col(cc)        = waterflux_vars%qflx_dew_snow_col(c)
-      this%biophys_forc(c)%qflx_sub_snow_vol_col(cc)    = waterflux_vars%qflx_sub_snow_vol_col(c)
-      this%biophys_forc(c)%qflx_sub_snow_col(cc)        = waterflux_vars%qflx_sub_snow_col(c)
-      this%biophys_forc(c)%qflx_h2osfc2topsoi_col(cc)   = waterflux_vars%qflx_h2osfc2topsoi_col(c)
-      this%biophys_forc(c)%qflx_snow2topsoi_col(cc)     = waterflux_vars%qflx_snow2topsoi_col(c)
-      this%biophys_forc(c)%qflx_rootsoi_col(cc,lbj:ubj) = waterflux_vars%qflx_rootsoi_col(c,lbj:ubj)*1.e-3_r8
-      this%biophys_forc(c)%qflx_runoff_col(cc)          = waterflux_vars%qflx_runoff_betr_col(c)  !mm/s
-      this%biogeo_flux(c)%qflx_adv_col(cc,lbj-1:ubj)    = waterflux_vars%qflx_adv_col(c,lbj-1:ubj)
-      this%biogeo_flux(c)%qflx_drain_vr_col(cc,lbj:ubj) = waterflux_vars%qflx_drain_vr_col(c,lbj:ubj)
-!>>>>>>> master
+      this%biogeo_flux(c)%qflx_infl_col(cc)             = waterflux_vars%qflx_infl(c)
+      this%biogeo_flux(c)%qflx_totdrain_col(cc)         = waterflux_vars%qflx_totdrain(c)
+      this%biogeo_flux(c)%qflx_gross_evap_soil_col(cc)  = waterflux_vars%qflx_gross_evap_soil(c)
+      this%biogeo_flux(c)%qflx_gross_infl_soil_col(cc)  = waterflux_vars%qflx_gross_infl_soil(c)
+      this%biophys_forc(c)%qflx_surf_col(cc)            = waterflux_vars%qflx_surf(c)
+      this%biophys_forc(c)%qflx_dew_grnd_col(cc)        = waterflux_vars%qflx_dew_grnd(c)
+      this%biophys_forc(c)%qflx_dew_snow_col(cc)        = waterflux_vars%qflx_dew_snow(c)
+      this%biophys_forc(c)%qflx_sub_snow_vol_col(cc)    = waterflux_vars%qflx_sub_snow_vol(c)
+      this%biophys_forc(c)%qflx_sub_snow_col(cc)        = waterflux_vars%qflx_sub_snow(c)
+      this%biophys_forc(c)%qflx_h2osfc2topsoi_col(cc)   = waterflux_vars%qflx_h2osfc2topsoi(c)
+      this%biophys_forc(c)%qflx_snow2topsoi_col(cc)     = waterflux_vars%qflx_snow2topsoi(c)
+      this%biophys_forc(c)%qflx_rootsoi_col(cc,lbj:ubj) = waterflux_vars%qflx_rootsoi(c,lbj:ubj)*1.e-3_r8
+      this%biophys_forc(c)%qflx_runoff_col(cc)          = waterflux_vars%qflx_runoff_betr(c)  !mm/s
+    endif
+    if(present(pf_waterflux_vars))then
       pp = 0
       do pi = 1, betr_maxpatch_pft
        if (pi <= col%npfts(c)) then
          p = col%pfti(c) + pi - 1
          if (pft%active(p) .and. pft%itype(p)/=noveg) then
            pp = pp + 1
-!           this%biophys_forc(c)%qflx_tran_veg_patch(pp)     = veg_wf%qflx_tran_veg(p)
-!           this%biophys_forc(c)%qflx_rootsoi_frac_patch(pp,lbj:ubj) = veg_wf%qflx_rootsoi_frac(p,lbj:ubj)
-           this%biophys_forc(c)%qflx_tran_veg_patch(pp)     = waterflux_vars%qflx_tran_veg_patch(p)
-           this%biophys_forc(c)%qflx_rootsoi_frac_patch(pp,lbj:ubj) = waterflux_vars%qflx_rootsoi_frac_patch(p,lbj:ubj)
+           this%biophys_forc(c)%qflx_tran_veg_patch(pp)     = pf_waterflux_vars%qflx_tran_veg(p)
+           this%biophys_forc(c)%qflx_rootsoi_frac_patch(pp,lbj:ubj) = pf_waterflux_vars%qflx_rootsoi_frac(p,lbj:ubj)
          endif
        endif
       enddo
     endif
     if(present(temperature_vars))then
-!      this%biophys_forc(c)%t_soi_10cm(cc)           = col_es%t_soi10cm(c)
-!      this%biophys_forc(c)%t_soisno_col(cc,lbj:ubj) = col_es%t_soisno(c,lbj:ubj)
-      this%biophys_forc(c)%t_soi_10cm(cc)           = temperature_vars%t_soi10cm_col(c)
-      this%biophys_forc(c)%t_soisno_col(cc,lbj:ubj) = temperature_vars%t_soisno_col(c,lbj:ubj)
+      this%biophys_forc(c)%t_soi_10cm(cc)           = temperature_vars%t_soi10cm(c)
+      this%biophys_forc(c)%t_soisno_col(cc,lbj:ubj) = temperature_vars%t_soisno(c,lbj:ubj)
+      if(col%snl(c)<0)then
+        this%biophys_forc(c)%t_snow_col(cc,col%snl(c)+1:0) = temperature_vars%t_soisno(c,col%snl(c)+1:0)
+      endif
+    endif
+    if(present(pf_temperature_vars))then
       pp = 0
       do pi = 1, betr_maxpatch_pft
         if (pi <= col%npfts(c)) then
           p = col%pfti(c) + pi - 1
           if (pft%active(p) .and. pft%itype(p)/=noveg) then
             pp = pp + 1
-!            this%biophys_forc(c)%t_veg_patch(pp)         = veg_es%t_veg(p)
-            this%biophys_forc(c)%t_veg_patch(pp)         = temperature_vars%t_veg_patch(p)
+            this%biophys_forc(c)%t_veg_patch(pp)         = pf_temperature_vars%t_veg(p)
           endif
         endif
       enddo
@@ -1233,8 +1213,6 @@ contains
   ! update and return fluxes, this eventually will be expanded to
   ! include other fluxes
   ! USES
-    use WaterfluxType    , only : waterflux_type
-    use CNCarbonFluxType , only : carbonflux_type
   implicit none
   !ARGUMENTS
   class(betr_simulation_type) , intent(inout)           :: this
@@ -1252,18 +1230,12 @@ contains
   if(present(waterflux_vars))then
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
-!      col_wf%qflx_infl(c)            = this%biogeo_flux(c)%qflx_infl_col(cc)
-!      col_wf%qflx_adv(c,lbj-1:ubj)   = this%biogeo_flux(c)%qflx_adv_col(cc,lbj-1:ubj)
-!      col_wf%qflx_totdrain(c)        = this%biogeo_flux(c)%qflx_totdrain_col(cc)
-!      col_wf%qflx_gross_evap_soil(c) = this%biogeo_flux(c)%qflx_gross_evap_soil_col(cc)
-!      col_wf%qflx_gross_infl_soil(c) = this%biogeo_flux(c)%qflx_gross_infl_soil_col(cc)
-!      col_wf%qflx_drain_vr(c,1:ubj)  = this%biogeo_flux(c)%qflx_drain_vr_col(cc,1:ubj)
-      waterflux_vars%qflx_infl_col(c)            = this%biogeo_flux(c)%qflx_infl_col(cc)
-      waterflux_vars%qflx_adv_col(c,lbj-1:ubj)   = this%biogeo_flux(c)%qflx_adv_col(cc,lbj-1:ubj)
-      waterflux_vars%qflx_totdrain_col(c)        = this%biogeo_flux(c)%qflx_totdrain_col(cc)
-      waterflux_vars%qflx_gross_evap_soil_col(c) = this%biogeo_flux(c)%qflx_gross_evap_soil_col(cc)
-      waterflux_vars%qflx_gross_infl_soil_col(c) = this%biogeo_flux(c)%qflx_gross_infl_soil_col(cc)
-      waterflux_vars%qflx_drain_vr_col(c,1:ubj)  = this%biogeo_flux(c)%qflx_drain_vr_col(cc,1:ubj)
+      waterflux_vars%qflx_infl(c)            = this%biogeo_flux(c)%qflx_infl_col(cc)
+      waterflux_vars%qflx_adv(c,lbj-1:ubj)   = this%biogeo_flux(c)%qflx_adv_col(cc,lbj-1:ubj)
+      waterflux_vars%qflx_totdrain(c)        = this%biogeo_flux(c)%qflx_totdrain_col(cc)
+      waterflux_vars%qflx_gross_evap_soil(c) = this%biogeo_flux(c)%qflx_gross_evap_soil_col(cc)
+      waterflux_vars%qflx_gross_infl_soil(c) = this%biogeo_flux(c)%qflx_gross_infl_soil_col(cc)
+      waterflux_vars%qflx_drain_vr(c,1:ubj)  = this%biogeo_flux(c)%qflx_drain_vr_col(cc,1:ubj)
     enddo
   endif
 
@@ -1305,7 +1277,6 @@ contains
   ! aqueous tracer partition based on freeze-thaw
   !
   ! USES
-  use WaterStateType        , only : waterstate_type
   implicit none
   !
   ! Arguments
@@ -1369,8 +1340,6 @@ contains
   !
   ! USES
   !
-    use WaterfluxType     , only : waterflux_type
-    use WaterStateType    , only : Waterstate_Type
     use SoilHydrologyType , only : soilhydrology_type
   implicit none
   !ARGUMENTS

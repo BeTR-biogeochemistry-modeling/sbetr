@@ -34,7 +34,7 @@ contains
   use clm_instMod           , only : atm2lnd_vars
   use clm_instMod           , only : canopystate_vars
   use clm_instMod           , only : carbonstate_vars, c13state_vars, c14state_vars
-  use clm_instMod           , only : carbonflux_vars, c13_cflx_vars, c14_cflx_vars
+  use clm_instMod           , only : carbonflux_vars, c13_cflx_vars, c14_cflx_vars, pf_carbonflux_vars
   use clm_instMod           , only : chemstate_vars, plantMicKinetics_vars
   use clm_instMod           , only : soilhydrology_vars
   use clm_instMod           , only : soilstate_vars
@@ -42,8 +42,8 @@ contains
   use clm_instMod           , only : waterflux_vars
   use clm_instMod           , only : waterstate_vars
   use clm_instMod           , only : cnstate_vars
-  use clm_instMod           , only : nitrogenflux_vars, nitrogenstate_vars
-  use clm_instMod           , only : phosphorusflux_vars, phosphorusstate_vars
+  use clm_instMod           , only : nitrogenflux_vars, nitrogenstate_vars, pf_nitrogenstate_vars, pf_nitrogenflux_vars
+  use clm_instMod           , only : phosphorusflux_vars, phosphorusstate_vars, pf_phosphorusflux_vars
   use clm_instMod           , only : soil_water_retention_curve
   use ColumnType            , only : col
   use clmgridMod            , only : init_clm_vertgrid
@@ -237,7 +237,7 @@ contains
     class is (betr_simulation_standalone_type)
 
       call simulation%CalcSmpL(bounds, 1, nlevsoi, simulation%num_surfc, simulation%filter_soilc, &
-              temperature_vars%t_soisno_col(bounds%begc:bounds%endc,1:nlevsoi), &
+              temperature_vars%t_soisno(bounds%begc:bounds%endc,1:nlevsoi), &
               soilstate_vars, waterstate_vars, soil_water_retention_curve)
     end select
     call simulation%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi, waterstate_vars=waterstate_vars, &
@@ -262,7 +262,7 @@ contains
     class is (betr_simulation_alm_type)
 
       call simulation%CalcSmpL(bounds, 1, nlevsoi, simulation%num_surfc, &
-        simulation%filter_soilc, temperature_vars%t_soisno_col, &
+        simulation%filter_soilc, temperature_vars%t_soisno, &
         soilstate_vars, waterstate_vars, soil_water_retention_curve)
 
       call simulation%SetBiophysForcing(bounds, col, pft,                               &
@@ -314,16 +314,23 @@ contains
 
     select type(simulation)
     class is (betr_simulation_alm_type)
+
       call simulation%PlantSoilBGCRecv(bounds, col, pft, simulation%num_surfc, simulation%filter_soilc,&
-       carbonstate_vars, carbonflux_vars, c13state_vars, c13_cflx_vars, c14state_vars, c14_cflx_vars, &
-       nitrogenstate_vars, nitrogenflux_vars, phosphorusstate_vars, phosphorusflux_vars)
+       carbonstate_vars, carbonflux_vars, pf_carbonflux_vars, c13state_vars, &
+       c13_cflx_vars, c14state_vars, c14_cflx_vars, nitrogenstate_vars, pf_nitrogenstate_vars, &
+       nitrogenflux_vars, pf_nitrogenflux_vars, phosphorusstate_vars, phosphorusflux_vars,pf_phosphorusflux_vars)
     class default
     end select
+    call simulation%PreDiagSoilColWaterFlux(simulation%num_surfc,  simulation%filter_soilc)
 
     !x print*,'with drainge'
     !set forcing variable for drainage
     call simulation%BeTRSetBiophysForcing(bounds, col, pft, 1, nlevsoi,&
        waterflux_vars=waterflux_vars )
+
+    call simulation%DiagDrainWaterFlux(simulation%num_surfc, &
+      simulation%filter_soilc)
+
     call simulation%StepWithDrainage(bounds, col)
 
     !x print*,'do mass balance check'
@@ -345,7 +352,7 @@ contains
 
     !x print*,'write output'
     call simulation%WriteOfflineHistory(bounds, bounds%ubj, simulation%num_surfc,  &
-       simulation%filter_soilc, waterflux_vars%qflx_adv_col)
+       simulation%filter_soilc, waterflux_vars%qflx_adv)
 
     if(simulation%do_soibgc()) call WriteHistBGC(hist, simulation%betr_time, carbonstate_vars, carbonflux_vars, &
          nitrogenstate_vars, nitrogenflux_vars, phosphorusstate_vars, phosphorusflux_vars, reaction_method)
@@ -379,7 +386,7 @@ contains
   enddo
 
   if(simulation%do_regress_test())then
-    call simulation%WriteRegressionOutput(waterflux_vars%qflx_adv_col)
+    call simulation%WriteRegressionOutput(waterflux_vars%qflx_adv)
   endif
   call forcing_data%Destroy()
   deallocate(forcing_data)
@@ -574,86 +581,86 @@ end subroutine sbetrBGC_driver
      index(trim(reaction_method),'keca')/=0   .or. &
      index(trim(reaction_method),'ch4soil')/=0)then
     id = 0
-    id = id + 1; ystates(id) = carbonflux_vars%hr_col(c_l)
-    id = id + 1; ystates(id) = nitrogenflux_vars%f_n2o_nit_col(c_l)
-    id = id + 1; ystates(id) = nitrogenflux_vars%f_denit_col(c_l)
-    id = id + 1; ystates(id) = nitrogenflux_vars%f_nit_col(c_l)
-    id = id + 1; ystates(id) = carbonflux_vars%co2_soi_flx_col(c_l)
-    id = id + 1; ystates(id) = nitrogenflux_vars%nh3_soi_flx_col(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%cwdc_col(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%totlitc_col(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%totsomc_col(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%totlitc_1m_col(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%totsomc_1m_col(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%cwdn_col(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%totlitn_col(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%totsomn_col(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%totlitn_1m_col(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%totsomn_1m_col(c_l)
-    id = id + 1; ystates(id) = phosphorusstate_vars%cwdp_col(c_l)
-    id = id + 1; ystates(id) = phosphorusstate_vars%totlitp_col(c_l)
-    id = id + 1; ystates(id) = phosphorusstate_vars%totsomp_col(c_l)
-    id = id + 1; ystates(id) = phosphorusstate_vars%totlitp_1m_col(c_l)
-    id = id + 1; ystates(id) = phosphorusstate_vars%totsomp_1m_col(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%smin_nh4_col(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%smin_no3_col(c_l)
-    id = id + 1; ystates(id) = phosphorusstate_vars%sminp_col(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%som1c_col(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%som2c_col(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%som3c_col(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%som1n_col(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%som2n_col(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%som3n_col(c_l)
-    id = id + 1; ystates(id) = phosphorusstate_vars%som1p_col(c_l)
-    id = id + 1; ystates(id) = phosphorusstate_vars%som2p_col(c_l)
-    id = id + 1; ystates(id) = phosphorusstate_vars%som3p_col(c_l)
+    id = id + 1; ystates(id) = carbonflux_vars%hr(c_l)
+    id = id + 1; ystates(id) = nitrogenflux_vars%f_n2o_nit(c_l)
+    id = id + 1; ystates(id) = nitrogenflux_vars%f_denit(c_l)
+    id = id + 1; ystates(id) = nitrogenflux_vars%f_nit(c_l)
+    id = id + 1; ystates(id) = carbonflux_vars%co2_soi_flx(c_l)
+    id = id + 1; ystates(id) = nitrogenflux_vars%nh3_soi_flx(c_l)
+    id = id + 1; ystates(id) = carbonstate_vars%cwdc(c_l)
+    id = id + 1; ystates(id) = carbonstate_vars%totlitc(c_l)
+    id = id + 1; ystates(id) = carbonstate_vars%totsomc(c_l)
+    id = id + 1; ystates(id) = carbonstate_vars%totlitc_1m(c_l)
+    id = id + 1; ystates(id) = carbonstate_vars%totsomc_1m(c_l)
+    id = id + 1; ystates(id) = nitrogenstate_vars%cwdn(c_l)
+    id = id + 1; ystates(id) = nitrogenstate_vars%totlitn(c_l)
+    id = id + 1; ystates(id) = nitrogenstate_vars%totsomn(c_l)
+    id = id + 1; ystates(id) = nitrogenstate_vars%totlitn_1m(c_l)
+    id = id + 1; ystates(id) = nitrogenstate_vars%totsomn_1m(c_l)
+    id = id + 1; ystates(id) = phosphorusstate_vars%cwdp(c_l)
+    id = id + 1; ystates(id) = phosphorusstate_vars%totlitp(c_l)
+    id = id + 1; ystates(id) = phosphorusstate_vars%totsomp(c_l)
+    id = id + 1; ystates(id) = phosphorusstate_vars%totlitp_1m(c_l)
+    id = id + 1; ystates(id) = phosphorusstate_vars%totsomp_1m(c_l)
+    id = id + 1; ystates(id) = nitrogenstate_vars%smin_nh4(c_l)
+    id = id + 1; ystates(id) = nitrogenstate_vars%smin_no3(c_l)
+    id = id + 1; ystates(id) = phosphorusstate_vars%sminp(c_l)
+    id = id + 1; ystates(id) = carbonstate_vars%som1c(c_l)
+    id = id + 1; ystates(id) = carbonstate_vars%som2c(c_l)
+    id = id + 1; ystates(id) = carbonstate_vars%som3c(c_l)
+    id = id + 1; ystates(id) = nitrogenstate_vars%som1n(c_l)
+    id = id + 1; ystates(id) = nitrogenstate_vars%som2n(c_l)
+    id = id + 1; ystates(id) = nitrogenstate_vars%som3n(c_l)
+    id = id + 1; ystates(id) = phosphorusstate_vars%som1p(c_l)
+    id = id + 1; ystates(id) = phosphorusstate_vars%som2p(c_l)
+    id = id + 1; ystates(id) = phosphorusstate_vars%som3p(c_l)
 
   elseif(index(trim(reaction_method),'cdom')/=0)then
     id = 0
-    id = id + 1; ystates(id) = carbonflux_vars%hr_col(c_l)
-    id = id + 1; ystates(id) = nitrogenflux_vars%f_n2o_nit_col(c_l)
-    id = id + 1; ystates(id) = nitrogenflux_vars%f_denit_col(c_l)
-    id = id + 1; ystates(id) = nitrogenflux_vars%f_nit_col(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%cwdc_col(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%totlitc_col(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%totsomc_col(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%totlitc_1m_col(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%totsomc_1m_col(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%cwdn_col(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%totlitn_col(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%totsomn_col(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%totlitn_1m_col(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%totsomn_1m_col(c_l)
-    id = id + 1; ystates(id) = phosphorusstate_vars%cwdp_col(c_l)
-    id = id + 1; ystates(id) = phosphorusstate_vars%totlitp_col(c_l)
-    id = id + 1; ystates(id) = phosphorusstate_vars%totsomp_col(c_l)
-    id = id + 1; ystates(id) = phosphorusstate_vars%totlitp_1m_col(c_l)
-    id = id + 1; ystates(id) = phosphorusstate_vars%totsomp_1m_col(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%smin_nh4_col(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%smin_no3_col(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%som1c_col(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%som2c_col(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%som3c_col(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%som1n_col(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%som2n_col(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%som3n_col(c_l)
-    id = id + 1; ystates(id) = phosphorusstate_vars%som1p_col(c_l)
-    id = id + 1; ystates(id) = phosphorusstate_vars%som2p_col(c_l)
-    id = id + 1; ystates(id) = phosphorusstate_vars%som3p_col(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%domc_col(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%domn_col(c_l)
-    id = id + 1; ystates(id) = phosphorusstate_vars%domp_col(c_l)
+    id = id + 1; ystates(id) = carbonflux_vars%hr(c_l)
+    id = id + 1; ystates(id) = nitrogenflux_vars%f_n2o_nit(c_l)
+    id = id + 1; ystates(id) = nitrogenflux_vars%f_denit(c_l)
+    id = id + 1; ystates(id) = nitrogenflux_vars%f_nit(c_l)
+    id = id + 1; ystates(id) = carbonstate_vars%cwdc(c_l)
+    id = id + 1; ystates(id) = carbonstate_vars%totlitc(c_l)
+    id = id + 1; ystates(id) = carbonstate_vars%totsomc(c_l)
+    id = id + 1; ystates(id) = carbonstate_vars%totlitc_1m(c_l)
+    id = id + 1; ystates(id) = carbonstate_vars%totsomc_1m(c_l)
+    id = id + 1; ystates(id) = nitrogenstate_vars%cwdn(c_l)
+    id = id + 1; ystates(id) = nitrogenstate_vars%totlitn(c_l)
+    id = id + 1; ystates(id) = nitrogenstate_vars%totsomn(c_l)
+    id = id + 1; ystates(id) = nitrogenstate_vars%totlitn_1m(c_l)
+    id = id + 1; ystates(id) = nitrogenstate_vars%totsomn_1m(c_l)
+    id = id + 1; ystates(id) = phosphorusstate_vars%cwdp(c_l)
+    id = id + 1; ystates(id) = phosphorusstate_vars%totlitp(c_l)
+    id = id + 1; ystates(id) = phosphorusstate_vars%totsomp(c_l)
+    id = id + 1; ystates(id) = phosphorusstate_vars%totlitp_1m(c_l)
+    id = id + 1; ystates(id) = phosphorusstate_vars%totsomp_1m(c_l)
+    id = id + 1; ystates(id) = nitrogenstate_vars%smin_nh4(c_l)
+    id = id + 1; ystates(id) = nitrogenstate_vars%smin_no3(c_l)
+    id = id + 1; ystates(id) = carbonstate_vars%som1c(c_l)
+    id = id + 1; ystates(id) = carbonstate_vars%som2c(c_l)
+    id = id + 1; ystates(id) = carbonstate_vars%som3c(c_l)
+    id = id + 1; ystates(id) = nitrogenstate_vars%som1n(c_l)
+    id = id + 1; ystates(id) = nitrogenstate_vars%som2n(c_l)
+    id = id + 1; ystates(id) = nitrogenstate_vars%som3n(c_l)
+    id = id + 1; ystates(id) = phosphorusstate_vars%som1p(c_l)
+    id = id + 1; ystates(id) = phosphorusstate_vars%som2p(c_l)
+    id = id + 1; ystates(id) = phosphorusstate_vars%som3p(c_l)
+    id = id + 1; ystates(id) = carbonstate_vars%domc(c_l)
+    id = id + 1; ystates(id) = nitrogenstate_vars%domn(c_l)
+    id = id + 1; ystates(id) = phosphorusstate_vars%domp(c_l)
   elseif(index(trim(reaction_method),'simic')/=0)then
     ystates(:) = 0._r8
     id = 0
-    id = id + 1; ystates(id) = carbonflux_vars%hr_col(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%cwdc_col(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%totlitc_col(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%domc_col(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%som1c_col(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%som3c_col(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%som2c_col(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%totsomc_col(c_l)
+    id = id + 1; ystates(id) = carbonflux_vars%hr(c_l)
+    id = id + 1; ystates(id) = carbonstate_vars%cwdc(c_l)
+    id = id + 1; ystates(id) = carbonstate_vars%totlitc(c_l)
+    id = id + 1; ystates(id) = carbonstate_vars%domc(c_l)
+    id = id + 1; ystates(id) = carbonstate_vars%som1c(c_l)
+    id = id + 1; ystates(id) = carbonstate_vars%som3c(c_l)
+    id = id + 1; ystates(id) = carbonstate_vars%som2c(c_l)
+    id = id + 1; ystates(id) = carbonstate_vars%totsomc(c_l)
   else
     if(hist%nvars>0)ystates(:) = 0._r8
   endif
@@ -684,8 +691,8 @@ end subroutine sbetrBGC_driver
     do j = 1, ubj
        do fc = 1, numf
           c = filter(fc)
-          waterstate_vars%h2osoi_liq_old_col(c, j) = waterstate_vars%h2osoi_liq_col(c, j)
-          waterstate_vars%h2osoi_ice_old_col(c, j) = waterstate_vars%h2osoi_ice_col(c, j)
+          waterstate_vars%h2osoi_liq_old(c, j) = waterstate_vars%h2osoi_liq(c, j)
+          waterstate_vars%h2osoi_ice_old(c, j) = waterstate_vars%h2osoi_ice(c, j)
        end do
     end do
 
@@ -767,8 +774,8 @@ end subroutine sbetrBGC_driver
   endif
   do fc = 1, num_soilc
     c = filter_soilc(fc)
-    nitrogenflux_vars%ndep_to_sminn_col(c) = val_n
-    phosphorusflux_vars%pdep_to_sminp_col(c) = val_p
+    nitrogenflux_vars%ndep_to_sminn(c) = val_n
+    phosphorusflux_vars%pdep_to_sminp(c) = val_p
   enddo
   do j = 1, nlevsoi
     do fc = 1, num_soilc
@@ -780,17 +787,17 @@ end subroutine sbetrBGC_driver
   do j = 1, nlevsoi
     do fc = 1, num_soilc
       c = filter_soilc(fc)
-      carbonflux_vars%phenology_c_to_litr_met_c_col(c,j) = val_c !gC/m3/s
-      carbonflux_vars%phenology_c_to_litr_cel_c_col(c,j) = val_c !gC/m3/s
-      carbonflux_vars%phenology_c_to_litr_lig_c_col(c,j) = val_c !gC/m3/s
+      carbonflux_vars%phenology_c_to_litr_met_c(c,j) = val_c !gC/m3/s
+      carbonflux_vars%phenology_c_to_litr_cel_c(c,j) = val_c !gC/m3/s
+      carbonflux_vars%phenology_c_to_litr_lig_c(c,j) = val_c !gC/m3/s
 
-      nitrogenflux_vars%phenology_n_to_litr_met_n_col(c,j) = val_c/90._r8 !gN/m3/s
-      nitrogenflux_vars%phenology_n_to_litr_cel_n_col(c,j) = val_c/90._r8 !gN/m3/s
-      nitrogenflux_vars%phenology_n_to_litr_lig_n_col(c,j) = val_c/90._r8 !gN/m3/s
+      nitrogenflux_vars%phenology_n_to_litr_met_n(c,j) = val_c/90._r8 !gN/m3/s
+      nitrogenflux_vars%phenology_n_to_litr_cel_n(c,j) = val_c/90._r8 !gN/m3/s
+      nitrogenflux_vars%phenology_n_to_litr_lig_n(c,j) = val_c/90._r8 !gN/m3/s
 
-      phosphorusflux_vars%phenology_p_to_litr_met_p_col(c,j) = val_c/1600._r8 !gP/m3/s
-      phosphorusflux_vars%phenology_p_to_litr_cel_p_col(c,j) = val_c/1600._r8 !gP/m3/s
-      phosphorusflux_vars%phenology_p_to_litr_lig_p_col(c,j) = val_c/1600._r8 !gP/m3/s
+      phosphorusflux_vars%phenology_p_to_litr_met_p(c,j) = val_c/1600._r8 !gP/m3/s
+      phosphorusflux_vars%phenology_p_to_litr_cel_p(c,j) = val_c/1600._r8 !gP/m3/s
+      phosphorusflux_vars%phenology_p_to_litr_lig_p(c,j) = val_c/1600._r8 !gP/m3/s
 
       cnstate_vars%ndep_prof_col(c,j) = col%dz(c,j)/tdz(c)
       cnstate_vars%pdep_prof_col(c,j) = col%dz(c,j)/tdz(c)

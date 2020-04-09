@@ -633,17 +633,17 @@ contains
           if(j>=jtops(c))then
              !take the minimum to avoid incompatible combination between uniform steady state forcing with
              !expoential grid.
-             waterstate_vars%h2osoi_liqvol_col(c,j) = min(this%h2osoi_liqvol(tstep,j),grid%watsat(j))
-             waterstate_vars%air_vol_col(c,j)       = grid%watsat(j)-waterstate_vars%h2osoi_liqvol_col(c,j)
-             waterstate_vars%h2osoi_icevol_col(c,j) = this%h2osoi_icevol(tstep,j)
+             waterstate_vars%h2osoi_liqvol(c,j) = min(this%h2osoi_liqvol(tstep,j),grid%watsat(j))
+             waterstate_vars%air_vol(c,j)       = grid%watsat(j)-waterstate_vars%h2osoi_liqvol(c,j)
+             waterstate_vars%h2osoi_icevol(c,j) = this%h2osoi_icevol(tstep,j)
              soilstate_vars%eff_porosity_col(c,j)   = grid%watsat(j)-this%h2osoi_icevol(tstep,j)
-             temperature_vars%t_soisno_col(c,j)     = this%t_soi(tstep,j)
-             waterflux_vars%qflx_rootsoi_col(c,j)   = this%qflx_rootsoi(tstep,j)  !water exchange between soil and root, m/H2O/s
+             temperature_vars%t_soisno(c,j)     = this%t_soi(tstep,j)
+             waterflux_vars%qflx_rootsoi(c,j)   = this%qflx_rootsoi(tstep,j)  !water exchange between soil and root, m/H2O/s
              do pi = 1, betr_maxpatch_pft
                if (pi <= col%npfts(c)) then
                  p = col%pfti(c) + pi - 1
                  if (pft%active(p)) then
-                   waterflux_vars%qflx_rootsoi_patch(p,j) = waterflux_vars%qflx_rootsoi_col(c,j)
+                   waterflux_vars%qflx_rootsoi(p,j) = waterflux_vars%qflx_rootsoi(c,j)
                  endif
                endif
              enddo
@@ -654,33 +654,33 @@ contains
 
              !set drainage to zero
              !set surface runoff to zero
-             waterflux_vars%qflx_surf_col(c)        = 0._r8
-             waterflux_vars%qflx_drain_vr_col(c,j)  = 0._r8
+             waterflux_vars%qflx_surf(c)        = 0._r8
+             waterflux_vars%qflx_drain_vr(c,j)  = 0._r8
           endif
        enddo
     enddo
 
     do fc = 1, numf
        c = filter(fc)
-       waterflux_vars%qflx_totdrain_col(c)        = 0._r8
+       waterflux_vars%qflx_totdrain(c)        = 0._r8
        col%zi(c,0)                                = grid%zisoi(0)
 
-       waterflux_vars%qflx_snow2topsoi_col(c)     = 0._r8
-       waterflux_vars%qflx_h2osfc2topsoi_col(c)   = 0._r8
-       waterflux_vars%qflx_gross_infl_soil_col(c) = 0._r8
-       waterflux_vars%qflx_gross_evap_soil_col(c) = 0._r8
-       waterflux_vars%qflx_runoff_betr_col(c) = this%qflx_runoff_col(c)
+       waterflux_vars%qflx_snow2topsoi(c)     = 0._r8
+       waterflux_vars%qflx_h2osfc2topsoi(c)   = 0._r8
+       waterflux_vars%qflx_gross_infl_soil(c) = 0._r8
+       waterflux_vars%qflx_gross_evap_soil(c) = 0._r8
+       waterflux_vars%qflx_runoff_betr(c) = this%qflx_runoff_col(c)
     enddo
 
     do j = 1, ubj
        do fc = 1, numf
           c = filter(fc)
-          waterstate_vars%h2osoi_liq_col(c,j) = this%h2osoi_liq(tstep,j)
-          waterstate_vars%h2osoi_ice_col(c,j) = this%h2osoi_ice(tstep,j)
+          waterstate_vars%h2osoi_liq(c,j) = this%h2osoi_liq(tstep,j)
+          waterstate_vars%h2osoi_ice(c,j) = this%h2osoi_ice(tstep,j)
 
-          waterstate_vars%h2osoi_vol_col(c,j) = waterstate_vars%h2osoi_liqvol_col(c,j) + &
-            waterstate_vars%h2osoi_icevol_col(c,j)
-          waterstate_vars%h2osoi_vol_col(c,j) = min(waterstate_vars%h2osoi_vol_col(c,j), grid%watsat(j))
+          waterstate_vars%h2osoi_vol(c,j) = waterstate_vars%h2osoi_liqvol(c,j) + &
+            waterstate_vars%h2osoi_icevol(c,j)
+          waterstate_vars%h2osoi_vol(c,j) = min(waterstate_vars%h2osoi_vol(c,j), grid%watsat(j))
        enddo
     enddo
 
@@ -723,25 +723,25 @@ contains
     do j = lbj, ubj
       do fc = 1, numf
         c = filter(fc)
-        carbonflux_vars%cflx_input_litr_met_vr_col(c,j) = this%cflx_met_vr(tstep,j)
-        carbonflux_vars%cflx_input_litr_cel_vr_col(c,j) = this%cflx_cel_vr(tstep,j)
-        carbonflux_vars%cflx_input_litr_lig_vr_col(c,j) = this%cflx_lig_vr(tstep,j)
-        carbonflux_vars%cflx_input_litr_cwd_vr_col(c,j) = this%cflx_cwd_vr(tstep,j)
-        carbonflux_vars%rr_vr_col(c,j)                  = this%rr_vr(tstep,j)
+        carbonflux_vars%cflx_input_litr_met_vr(c,j) = this%cflx_met_vr(tstep,j)
+        carbonflux_vars%cflx_input_litr_cel_vr(c,j) = this%cflx_cel_vr(tstep,j)
+        carbonflux_vars%cflx_input_litr_lig_vr(c,j) = this%cflx_lig_vr(tstep,j)
+        carbonflux_vars%cflx_input_litr_cwd_vr(c,j) = this%cflx_cwd_vr(tstep,j)
+        carbonflux_vars%rr_vr(c,j)                  = this%rr_vr(tstep,j)
 
-        nitrogenflux_vars%nflx_input_litr_met_vr_col(c,j) = this%nflx_met_vr(tstep,j)
-        nitrogenflux_vars%nflx_input_litr_cel_vr_col(c,j) = this%nflx_cel_vr(tstep,j)
-        nitrogenflux_vars%nflx_input_litr_lig_vr_col(c,j) = this%nflx_lig_vr(tstep,j)
-        nitrogenflux_vars%nflx_input_litr_cwd_vr_col(c,j) = this%nflx_cwd_vr(tstep,j)
+        nitrogenflux_vars%nflx_input_litr_met_vr(c,j) = this%nflx_met_vr(tstep,j)
+        nitrogenflux_vars%nflx_input_litr_cel_vr(c,j) = this%nflx_cel_vr(tstep,j)
+        nitrogenflux_vars%nflx_input_litr_lig_vr(c,j) = this%nflx_lig_vr(tstep,j)
+        nitrogenflux_vars%nflx_input_litr_cwd_vr(c,j) = this%nflx_cwd_vr(tstep,j)
 
-        phosphorusflux_vars%pflx_input_litr_met_vr_col(c,j) = this%cflx_met_vr(tstep,j)/1600._r8
-        phosphorusflux_vars%pflx_input_litr_cel_vr_col(c,j) = this%cflx_cel_vr(tstep,j)/2000._r8
-        phosphorusflux_vars%pflx_input_litr_lig_vr_col(c,j) = this%cflx_lig_vr(tstep,j)/2500._r8
-        phosphorusflux_vars%pflx_input_litr_cwd_vr_col(c,j) = this%cflx_cwd_vr(tstep,j)/4500._r8
+        phosphorusflux_vars%pflx_input_litr_met_vr(c,j) = this%cflx_met_vr(tstep,j)/1600._r8
+        phosphorusflux_vars%pflx_input_litr_cel_vr(c,j) = this%cflx_cel_vr(tstep,j)/2000._r8
+        phosphorusflux_vars%pflx_input_litr_lig_vr(c,j) = this%cflx_lig_vr(tstep,j)/2500._r8
+        phosphorusflux_vars%pflx_input_litr_cwd_vr(c,j) = this%cflx_cwd_vr(tstep,j)/4500._r8
 
-        nitrogenflux_vars%nflx_minn_input_nh4_vr_col(c,j) = this%nflx_nh4_vr(tstep,j)
-        nitrogenflux_vars%nflx_minn_input_no3_vr_col(c,j) = this%nflx_no3_vr(tstep,j)
-        phosphorusflux_vars%pflx_minp_input_po4_vr_col(c,j) = this%pflx_po4_vr(tstep,j)
+        nitrogenflux_vars%nflx_minn_input_nh4_vr(c,j) = this%nflx_nh4_vr(tstep,j)
+        nitrogenflux_vars%nflx_minn_input_no3_vr(c,j) = this%nflx_no3_vr(tstep,j)
+        phosphorusflux_vars%pflx_minp_input_po4_vr(c,j) = this%pflx_po4_vr(tstep,j)
 
       enddo
     enddo

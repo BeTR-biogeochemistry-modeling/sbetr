@@ -1,4 +1,4 @@
-module TemperatureType
+module PfTemperatureType
 
   !------------------------------------------------------------------------------
   ! !USES:
@@ -15,14 +15,13 @@ module TemperatureType
 !----------------------------------------------------
 ! column energy state variables structure
 !----------------------------------------------------
-  type, public :: temperature_type
-    real(r8), pointer :: t_soisno(:,:)   => null()      !soil temperature (Kelvin)  (-nlevsno+1:nlevgrnd)
-    real(r8), pointer :: t_soi10cm(:)     => null()    !soil temperature in top 10cm of soil (Kelvin)
+  type, public :: pf_temperature_type
+    real(r8), pointer :: t_veg              (:) => null()  ! patch vegetation temperature (Kelvin)
   contains
      procedure, public  :: Init
      procedure, private :: InitAllocate
 
-  end type temperature_type
+  end type pf_temperature_type
 
   contains
 
@@ -30,7 +29,7 @@ module TemperatureType
   !------------------------------------------------------------------------
   subroutine Init(this, bounds)
 
-    class(temperature_type) :: this
+    class(pf_temperature_type) :: this
     type(bounds_type), intent(in) :: bounds
 
     call this%InitAllocate(bounds)
@@ -44,18 +43,14 @@ module TemperatureType
     ! Initialize module data structure
     !
     ! !ARGUMENTS:
-    class(temperature_type) :: this
+    class(pf_temperature_type) :: this
     type(bounds_type), intent(in) :: bounds
     !
     ! !LOCAL VARIABLES:
-    integer :: begc, endc
-    integer :: begg, endg
-    integer :: lbj,  ubj
+    integer :: begp, endp
     !------------------------------------------------------------------------
 
-    begc = bounds%begc; endc= bounds%endc
-    lbj  = bounds%lbj;  ubj = bounds%ubj
-    allocate(this%t_soisno(begc:endc, lbj:ubj));  this%t_soisno(:,:) = spval
-    allocate(this%t_soi10cm(begc:endc))           ;  this%t_soi10cm(:) = spval
+    begp = bounds%begp; endp = bounds%endp
+    allocate(this%t_veg  (begp:endp))        ; this%t_veg              (:)   = spval
   end subroutine InitAllocate
-end module TemperatureType
+end module PfTemperatureType

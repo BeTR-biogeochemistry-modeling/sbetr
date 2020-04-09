@@ -14,8 +14,11 @@ implicit none
     real(r8), pointer :: f_n2o_nit_vr_col(:,:) => null()
     real(r8), pointer :: supplement_to_sminn_vr_col(:,:) => null()
 
-    real(r8), pointer :: smin_no3_to_plant_patch(:)  => null() !will be summarized within the bgc model
-    real(r8), pointer :: smin_nh4_to_plant_patch(:)  => null() !will be summarized within the bgc model
+    real(r8), pointer :: smin_no3_to_plant_patch(:)  => null() !will be summarized within the bgc model, gN/m2/s
+    real(r8), pointer :: smin_nh4_to_plant_patch(:)  => null() !will be summarized within the bgc model, gN/m2/s
+    real(r8), pointer :: smin_no3_to_plant_vr_patch(:,:)  => null() !will be summarized within the bgc model, gN/m3/s
+    real(r8), pointer :: smin_nh4_to_plant_vr_patch(:,:)  => null() !will be summarized within the bgc model, gN/m3/s
+
     real(r8), pointer :: fire_decomp_nloss_vr_col(:,:) => null()  !will be summarized within the bgc model
     real(r8), pointer :: fire_decomp_nloss_col(:) => null()  !will be summarized within the bgc model
     real(r8), pointer :: som_n_leached_col(:) => null()
@@ -80,6 +83,8 @@ implicit none
 
   SPVAL_ALLOC(this%smin_no3_to_plant_patch(begp:endp))
   SPVAL_ALLOC(this%smin_nh4_to_plant_patch(begp:endp))
+  SPVAL_ALLOC(this%smin_no3_to_plant_vr_patch(begp:endp, lbj:ubj))
+  SPVAL_ALLOC(this%smin_nh4_to_plant_vr_patch(begp:endp, lbj:ubj))
 
   SPVAL_ALLOC(this%f_nit_col(begc:endc))
   SPVAL_ALLOC(this%f_denit_col(begc:endc))

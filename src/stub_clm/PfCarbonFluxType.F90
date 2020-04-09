@@ -1,36 +1,33 @@
-module CNCarbonStateType
-  use clm_varcon     , only : spval, ispval, c14ratio
-  use shr_kind_mod       , only : r8 => shr_kind_r8
-  use decompMod      , only : bounds_type
+module PfCarbonFluxType
+  use clm_varcon             , only : spval, ispval, c14ratio
+  use shr_kind_mod           , only : r8 => shr_kind_r8
+  use decompMod              , only : bounds_type
+  use clm_varcon             , only : spval
   use clm_varpar             , only : nlevdecomp_full, ndecomp_pools
 implicit none
 
-  type, public :: carbonstate_type
-    real(r8), pointer :: decomp_cpools_vr    (:,:,:) => null() ! col (gC/m3) vertically-resolved decomposing (litter, cwd, soil) c pools
-    real(r8), pointer :: frootc_patch             (:)    => null() ! (gC/m2) fine root C
-    real(r8), pointer :: totlitc_1m          (:) => null()
-    real(r8), pointer :: totlitc             (:) => null()
-    real(r8), pointer :: totsomc             (:) => null()
-    real(r8), pointer :: cwdc                (:) => null()
-    real(r8), pointer :: totsomc_1m          (:) => null()
-    real(r8), pointer :: decomp_som2c_vr     (:,:)=> null()
-    real(r8), pointer :: som1c               (:) => null()
-    real(r8), pointer :: som2c               (:) => null()
-    real(r8), pointer :: som3c               (:) => null()
-    real(r8), pointer :: domc               (:) => null()
+  type, public :: pf_carbonflux_type
+    real(r8), pointer :: rr                                  (:)  => null()   ! column (gC/m2/s) root respiration (fine root MR + total root GR) (p2c)
+    real(r8), pointer :: annsum_npp                          (:) => null() ! patch annual sum of NPP (gC/m2/yr)
+    real(r8), pointer :: agnpp                               (:)  => null()   ! (gC/m2/s) aboveground NPP
+    real(r8), pointer :: bgnpp                               (:)  => null()   ! (gC/m2/s) belowground NPP
+    real(r8), pointer :: tempavg_agnpp                     (:) => null()
+    real(r8), pointer :: tempavg_bgnpp                     (:) => null()
+    real(r8), pointer :: annavg_agnpp                      (:) => null()
+    real(r8), pointer :: annavg_bgnpp                      (:) => null()
   contains
 
     procedure, public  :: Init
     procedure, private :: InitCold
     procedure, private :: InitAllocate
-  end type carbonstate_type
+  end type pf_carbonflux_type
+
 
 contains
-
   !------------------------------------------------------------------------
   subroutine Init(this, bounds)
 
-    class(carbonstate_type) :: this
+    class(pf_carbonflux_type) :: this
     type(bounds_type), intent(in) :: bounds
 
     call this%InitAllocate ( bounds )
@@ -48,7 +45,7 @@ contains
     use shr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
     !
     ! !ARGUMENTS:
-    class(carbonstate_type) :: this
+    class(pf_carbonflux_type) :: this
     type(bounds_type), intent(in) :: bounds
     !
     ! !LOCAL VARIABLES:
@@ -57,18 +54,16 @@ contains
     !------------------------------------------------------------------------
 
     begp = bounds%begp; endp= bounds%endp
-    begc = bounds%begc; endc= bounds%endc
-    allocate(this%decomp_cpools_vr(begc:endc,1:nlevdecomp_full,1:ndecomp_pools)); this%decomp_cpools_vr(:,:,:)= spval
-    allocate(this%frootc_patch             (begp :endp))                   ;     this%frootc_patch             (:)   = spval
-    allocate(this%cwdc(begc:endc)); this%cwdc(:) = spval
-    allocate(this%totlitc(begc:endc)); this%totlitc(:) = spval
-    allocate(this%totsomc(begc:endc)); this%totsomc(:) = spval
-    allocate(this%totlitc_1m(begc:endc)); this%totlitc_1m(:) = spval
-    allocate(this%totsomc_1m(begc:endc)); this%totsomc_1m(:) = spval
-    allocate(this%som1c(begc:endc)); this%som1c(:) = spval
-    allocate(this%som2c(begc:endc)); this%som2c(:) = spval
-    allocate(this%som3c(begc:endc)); this%som3c(:) = spval
-    allocate(this%domc(begc:endc)); this%domc(:) = spval
+
+    allocate(this%rr                (begp:endp)) ; this%rr    (:)  = nan
+    allocate(this%tempavg_agnpp(begp:endp)); this%tempavg_agnpp(:) = spval
+    allocate(this%tempavg_bgnpp(begp:endp)); this%tempavg_bgnpp(:) = spval
+    allocate(this%annavg_agnpp(begp:endp));  this%annavg_agnpp(:) = spval
+    allocate(this%annavg_bgnpp(begp:endp)); this%annavg_bgnpp(:)  = spval
+
+    allocate(this%annsum_npp      (begp:endp)) ; this%annsum_npp      (:) = spval
+    allocate(this%agnpp                       (begp:endp)) ; this%agnpp                               (:) = spval
+    allocate(this%bgnpp                       (begp:endp)) ; this%bgnpp                               (:) = spval
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------
@@ -81,7 +76,7 @@ contains
     use ncdio_pio
     !
     ! !ARGUMENTS:
-    class(carbonstate_type) :: this
+    class(pf_carbonflux_type) :: this
     type(bounds_type), intent(in) :: bounds
     !
     ! !LOCAL VARIABLES:
@@ -100,8 +95,6 @@ contains
     integer               :: begg, endg
 
 
-
-
   end subroutine initCold
 
-end module CNCarbonStateType
+end module PfCarbonFluxType

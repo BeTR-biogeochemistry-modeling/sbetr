@@ -164,11 +164,15 @@ module v1ecaPlantSoilBGCType
     biogeo_flux%n14flux_vars%smin_nh4_to_plant_patch(p) =  &
       dot_product(this%plant_minn_nh4_active_yield_flx_vr_patch(p,1:ubj), dz(c,1:ubj))
 
+    biogeo_flux%n14flux_vars%smin_nh4_to_plant_vr_patch(p,1:ubj)=this%plant_minn_nh4_active_yield_flx_vr_patch(p,1:ubj)/pft%wtcol(p)
+
     biogeo_flux%n14flux_vars%smin_nh4_to_plant_patch(p) = biogeo_flux%n14flux_vars%smin_nh4_to_plant_patch(p)/pft%wtcol(p)
 
     biogeo_flux%n14flux_vars%smin_no3_to_plant_patch(p) = &
       tracer_flx_vtrans_patch(p, id_trc_no3x) * natomw / dtime + &
       dot_product(this%plant_minn_no3_active_yield_flx_vr_patch(p,1:ubj), dz(c,1:ubj))
+
+    biogeo_flux%n14flux_vars%smin_no3_to_plant_vr_patch(p,1:ubj) = this%plant_minn_no3_active_yield_flx_vr_patch(p,1:ubj)/pft%wtcol(p)
 
     biogeo_flux%n14flux_vars%smin_no3_to_plant_patch(p) = biogeo_flux%n14flux_vars%smin_no3_to_plant_patch(p)/pft%wtcol(p)
 
