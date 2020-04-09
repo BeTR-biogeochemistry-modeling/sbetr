@@ -737,7 +737,6 @@ contains
    !USES
    use BetrStatusType     , only : betr_status_type
    use betr_columnType    , only : betr_column_type
-   use tracer_varcon      , only : nlevtrc_soil => betr_nlevtrc_soil
 
    implicit none
    !ARGUMENTS
@@ -756,9 +755,9 @@ contains
 
    character(len=255) :: subname='set_multi_phase_diffusion'
 
-   allocate(tau_soil%tau_gas(bounds%begc:bounds%endc, 1 : nlevtrc_soil))
+   allocate(tau_soil%tau_gas(bounds%begc:bounds%endc, 1 : ubj))
    tau_soil%tau_gas(:,:) = 0._r8
-   allocate(tau_soil%tau_liq(bounds%begc:bounds%endc, 1 : nlevtrc_soil))
+   allocate(tau_soil%tau_liq(bounds%begc:bounds%endc, 1 : ubj))
    tau_soil%tau_liq(:,:) = 0._r8
 
    call betr_status%reset()

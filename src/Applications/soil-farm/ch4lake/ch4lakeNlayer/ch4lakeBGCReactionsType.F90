@@ -1557,7 +1557,6 @@ contains
     use tracerstatetype   , only : tracerstate_type
     use betr_varcon       , only : spval => bspval, ispval => bispval
     use betr_varcon       , only : denh2o => bdenh2o
-    use tracer_varcon     , only : nlevtrc_soil  => betr_nlevtrc_soil
     use betr_columnType   , only : betr_column_type
     use BeTR_biogeophysInputType , only : betr_biogeophys_input_type
     use UnitConvertMod, only : ppm2molv

@@ -161,7 +161,7 @@ contains
       call this%biophys_forc(c)%frac_normalize(this%betr_pft(c)%npfts, 1, betr_nlevtrc_soil)
 
       call this%betr(c)%step_without_drainage(this%betr_time, betr_bounds, this%betr_col(c), &
-         this%betr_pft(c), this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp, &
+         this%betr_pft(c), this%num_surfc, this%filter_soilc, this%num_soilp, this%filter_soilp, &
          this%biophys_forc(c), this%biogeo_flux(c), this%biogeo_state(c), this%bstatus(c))
 
       if(this%bstatus(c)%check_status())then
@@ -207,7 +207,7 @@ contains
       if(.not. this%active_col(c))cycle
 
       call this%betr(c)%step_with_drainage(betr_bounds, this%betr_col(c), &
-         this%num_soilc, this%filter_soilc,        &
+         this%num_surfc, this%filter_soilc,        &
          this%jtops, this%biogeo_flux(c), this%bstatus(c))
 
       if(this%bstatus(c)%check_status())then
@@ -274,7 +274,7 @@ contains
   end subroutine StandaloneSetBiophysForcing
 
   !------------------------------------------------------------------------
-  subroutine StandalonePlantSoilBGCSend(this, bounds, col, pft, num_soilc,  filter_soilc, cnstate_vars, &
+  subroutine StandalonePlantSoilBGCSend(this, bounds, col, pft, num_surfc,  filter_soilc, cnstate_vars, &
     carbonflux_vars,  c13_cflx_vars, c14_cflx_vars, nitrogenflux_vars, phosphorusflux_vars, &
     PlantMicKinetics_vars)
 
@@ -299,7 +299,7 @@ contains
   type(bounds_type) , intent(in)  :: bounds
   type(column_type) , intent(in)  :: col ! column type
   type(patch_type)  , intent(in)  :: pft ! pft type
-  integer           , intent(in)  :: num_soilc
+  integer           , intent(in)  :: num_surfc
   integer           , intent(in)  :: filter_soilc(:)
   type(cnstate_type), intent(in)  :: cnstate_vars
   type(carbonflux_type), intent(in):: carbonflux_vars
@@ -324,9 +324,9 @@ contains
 
   c_l = 1
   !set kinetic parameters
-  call this%set_transient_kinetics_par(betr_bounds, col, pft, num_soilc, filter_soilc, PlantMicKinetics_vars)
+  call this%set_transient_kinetics_par(betr_bounds, col, pft, num_surfc, filter_soilc, PlantMicKinetics_vars)
 
-  do fc = 1, num_soilc
+  do fc = 1, num_surfc
     c = filter_soilc(fc)
     call this%biophys_forc(c)%reset(value_column=0._r8)
     this%biophys_forc(c)%isoilorder(c_l) = 1
@@ -347,7 +347,7 @@ contains
   enddo
 
   do j = betr_bounds%lbj, betr_bounds%ubj
-    do fc = 1, num_soilc
+    do fc = 1, num_surfc
       c = filter_soilc(fc)
       this%biophys_forc(c)%n14flx%nflx_minn_input_nh4_vr_col(c_l,j)=1.e-10_r8
       this%biophys_forc(c)%p31flx%pflx_minp_input_po4_vr_col(c_l,j)=1.e-11_r8
@@ -377,7 +377,7 @@ contains
   end subroutine StandalonePlantSoilBGCSend
 
   !------------------------------------------------------------------------
-  subroutine StandalonePlantSoilBGCRecv(this, bounds, col, pft, num_soilc,  filter_soilc,&
+  subroutine StandalonePlantSoilBGCRecv(this, bounds, col, pft, num_surfc,  filter_soilc,&
    c12state_vars, c12flux_vars, c13state_vars, c13flux_vars, c14state_vars, c14flux_vars, &
    n14state_vars, n14flux_vars, p31state_vars, p31flux_vars)
 
@@ -402,7 +402,7 @@ contains
   type(bounds_type) , intent(in)  :: bounds
   type(patch_type)            , intent(in) :: pft
   type(column_type)           , intent(in)    :: col ! column type
-  integer           , intent(in)  :: num_soilc
+  integer           , intent(in)  :: num_surfc
   integer           , intent(in)  :: filter_soilc(:)
   type(carbonstate_type), intent(inout) :: c12state_vars
   type(carbonstate_type), intent(inout) :: c13state_vars
@@ -431,14 +431,14 @@ contains
     if(.not. this%active_col(c))cycle
 
     call this%betr(c)%retrieve_biostates(betr_bounds,  1, betr_nlevsoi, &
-       this%num_soilc, this%filter_soilc, this%jtops, this%biogeo_state(c),this%bstatus(c))
+       this%num_surfc, this%filter_soilc, this%jtops, this%biogeo_state(c),this%bstatus(c))
 
     if(this%bstatus(c)%check_status())then
       call this%bsimstatus%setcol(c)
       call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
       exit
     endif
-    call this%betr(c)%retrieve_biofluxes(this%num_soilc, this%filter_soilc, &
+    call this%betr(c)%retrieve_biofluxes(this%num_surfc, this%filter_soilc, &
       this%num_soilp, this%filter_soilp, this%biogeo_flux(c))
 
     call this%biogeo_state(c)%summary(betr_bounds, 1, betr_nlevtrc_soil,&
@@ -451,7 +451,7 @@ contains
 
   if(.not. this%do_soibgc())return
 
-  do fc = 1, num_soilc
+  do fc = 1, num_surfc
     c = filter_soilc(fc)
 
     !recollect soil respirations, fire and hydraulic loss
@@ -604,7 +604,7 @@ contains
   end subroutine StandalonePlantSoilBGCRecv
 
   !------------------------------------------------------------------------
-  subroutine set_transient_kinetics_par(this, betr_bounds, col, pft, num_soilc, filter_soilc, PlantMicKinetics_vars)
+  subroutine set_transient_kinetics_par(this, betr_bounds, col, pft, num_surfc, filter_soilc, PlantMicKinetics_vars)
   !DESCRIPTION
   !set kinetic parameters for column c
   use PlantMicKineticsMod, only : PlantMicKinetics_type
@@ -617,7 +617,7 @@ contains
   type(betr_bounds_type), intent(in) :: betr_bounds
   type(column_type)     , intent(in)    :: col ! column type
   type(patch_type)      , intent(in) :: pft
-  integer, intent(in) :: num_soilc
+  integer, intent(in) :: num_surfc
   integer, intent(in) :: filter_soilc(:)
   type(PlantMicKinetics_type), intent(in) :: PlantMicKinetics_vars
 
@@ -637,7 +637,7 @@ contains
     plant_eff_frootc_vr_patch => PlantMicKinetics_vars%plant_eff_frootc_vr_patch &
   )
   c_l = 1
-  do fc = 1, num_soilc
+  do fc = 1, num_surfc
     c = filter_soilc(fc)
     pp = 0
 
@@ -672,7 +672,7 @@ contains
   !the following parameters are specific to ECACNP, and I assume they are
   !grid specific as they currently used in alm-cnp.
   do j =1, betr_bounds%ubj
-    do fc = 1, num_soilc
+    do fc = 1, num_surfc
       c = filter_soilc(fc)
       this%betr(c)%plantNutkinetics%km_minsurf_p_vr_col(c_l,j) = 1._r8
       this%betr(c)%plantNutkinetics%km_minsurf_nh4_vr_col(c_l,j)=1._r8
@@ -713,7 +713,7 @@ contains
   SHR_ASSERT_ALL((ubound(t_soisno) == (/bounds%endc, ubj/)),errMsg(mod_filename,__LINE__))
 
   ! remove compiler warnings
-  if (this%num_soilc > 0) continue
+  if (this%num_surfc > 0) continue
 
   associate(                                                     & !
     h2osoi_vol        =>    waterstate_vars%h2osoi_vol_col     , & ! Input:  [real(r8) (:,:) ]  volumetric soil moisture

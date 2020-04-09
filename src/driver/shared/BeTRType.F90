@@ -803,7 +803,7 @@ contains
           tracerstate_vars%int_mass_frozen_col(1,ubj,c,frozenid(trcid),dz(1:ubj),bstatus)
      if(bstatus%check_status())return
   endif
-  call tracerflux_vars%flux_summary(col, betr_time, c, betrtracer_vars,bstatus)
+  call tracerflux_vars%flux_summary(1, ubj,col, betr_time, c, betrtracer_vars,bstatus)
   if(bstatus%check_status())return
   err=beg_tracer_molarmass(c,trcid)-totmass  &
        + tracer_flx_netpro(c,trcid)-tracer_flx_netphyloss(c,trcid)

@@ -205,7 +205,7 @@ contains
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
       call this%betr(c)%step_without_drainage(this%betr_time, betr_bounds,  this%betr_col(c), &
-         this%betr_pft(c), this%num_soilc, this%filter_soilc, this%num_soilp, this%filter_soilp, &
+         this%betr_pft(c), this%num_surfc, this%filter_soilc, this%num_soilp, this%filter_soilp, &
          this%biophys_forc(c), this%biogeo_flux(c), this%biogeo_state(c), this%bstatus(c))
 
       if(this%bstatus(c)%check_status())then
@@ -253,7 +253,7 @@ contains
     do c = bounds%begc, bounds%endc
        if(.not. this%active_col(c))cycle
        call this%betr(c)%step_with_drainage(betr_bounds, this%betr_col(c),   &
-         this%num_soilc, this%filter_soilc, this%jtops, &
+         this%num_surfc, this%filter_soilc, this%jtops, &
          this%biogeo_flux(c), this%bstatus(c))
        if(this%bstatus(c)%check_status())then
          call this%bsimstatus%setcol(c)
@@ -298,7 +298,7 @@ contains
      c = filter_nolakec(fc)
      if(.not. this%active_col(c))cycle
      call this%betr(c)%diagnose_dtracer_freeze_thaw(betr_bounds,  &
-      this%num_soilc, this%filter_soilc,  this%biophys_forc(c))
+      this%num_surfc, this%filter_soilc,  this%biophys_forc(c))
   enddo
   end subroutine CLMDiagnoseDtracerFreezeThaw
 
@@ -333,14 +333,14 @@ contains
       c = filter_soilc_hydrologyc(fc)
       if(.not. this%active_col(c))cycle
       call this%betr(c)%calc_dew_sub_flux(this%betr_time, betr_bounds, this%betr_col(c), &
-       this%num_soilc, this%filter_soilc, this%biophys_forc(c), this%betr(c)%tracers, &
+       this%num_surfc, this%filter_soilc, this%biophys_forc(c), this%betr(c)%tracers, &
        this%betr(c)%tracerfluxes, this%betr(c)%tracerstates)
     enddo
 
   end subroutine CLMCalcDewSubFlux
 
   !------------------------------------------------------------------------
-  subroutine CLMBetrSoilFluxStateRecv(this,  num_soilc, filter_soilc)
+  subroutine CLMBetrSoilFluxStateRecv(this,  num_surfc, filter_soilc)
    !DESCRIPTION
    !this is to expaneded
    !
@@ -349,7 +349,7 @@ contains
     implicit none
     !ARGUMENTS
     class(betr_simulation_clm_type) , intent(inout) :: this
-    integer                         , intent(in)    :: num_soilc
+    integer                         , intent(in)    :: num_surfc
     integer                         , intent(in)    :: filter_soilc(:)
 
     integer :: fc, c
@@ -357,11 +357,11 @@ contains
 
     call this%BeTRSetBounds(betr_bounds)
 
-!    do fc = 1, num_soilc
+!    do fc = 1, num_surfc
 !      c = filter_soilc(fc)
 !      if(.not. this%active_col(c))cycle
 !      call this%betr(c)%bgc_reaction%lsm_betr_flux_state_receive(betr_bounds, &
-!         this%num_soilc, this%filter_soilc,                                   &
+!         this%num_surfc, this%filter_soilc,                                   &
 !         this%betr(c)%tracerstates, this%betr(c)%tracerfluxes,  this%betr(c)%tracers)
 !    enddo
   end subroutine CLMBetrSoilFluxStateRecv
@@ -397,7 +397,7 @@ contains
     SHR_ASSERT_ALL((ubound(t_soisno) == (/bounds%endc, ubj/)),errMsg(mod_filename,__LINE__))
 
     ! humor the compiler about unused variables
-    if (this%num_soilc > 0)                  continue
+    if (this%num_surfc > 0)                  continue
     if (present(soil_water_retention_curve)) continue
 
     associate(                                            & !
@@ -444,7 +444,7 @@ contains
 
   !------------------------------------------------------------------------
   subroutine clm_h2oiso_consistency_check(this, &
-       bounds, ubj, num_soilc, filter_soilc, waterstate_vars)
+       bounds, ubj, num_surfc, filter_soilc, waterstate_vars)
     !DESCRIPTION
     ! check the overall water mass consistency between betr and clm
     !
@@ -458,7 +458,7 @@ contains
     class(betr_simulation_clm_type) , intent(inout) :: this
     type(bounds_type)               , intent(in)    :: bounds  ! bounds
     integer                         , intent(in)    :: ubj
-    integer                         , intent(in)    :: num_soilc
+    integer                         , intent(in)    :: num_surfc
     integer                         , intent(in)    :: filter_soilc(:)
     type(waterstate_type)           , intent(in)    :: waterstate_vars
     !TEMPORARY VARIABLES
@@ -482,7 +482,7 @@ contains
       allocate(eyev(1:ubj))
       eyev=1._r8
 
-      do fc = 1, num_soilc
+      do fc = 1, num_surfc
          c = filter_soilc(fc)
          if(.not. this%active_col(c))cycle
          totwater=dot_sum(h2osoi_ice(c,1:ubj),eyev,this%bstatus(c)) + dot_sum(h2osoi_liq(c,1:ubj),eyev,this%bstatus(c))

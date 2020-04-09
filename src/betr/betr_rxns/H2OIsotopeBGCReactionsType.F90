@@ -704,7 +704,6 @@ module H2OIsotopeBGCReactionsType
     use tracerstatetype   , only : tracerstate_type
     use betr_varcon       , only : spval => bspval, ispval => bispval
     use betr_varcon       , only : denh2o => bdenh2o
-    use tracer_varcon     , only : nlevtrc_soil  => betr_nlevtrc_soil
     use betr_columnType   , only : betr_column_type
     implicit none
     ! !ARGUMENTS:
@@ -756,20 +755,20 @@ module H2OIsotopeBGCReactionsType
       trcid = betrtracer_vars%id_trc_blk_h2o
       tracer_conc_grndwater_col(c,trcid) = denh2o
 
-      do j = 1, nlevtrc_soil
+      do j = 1, bounds%ubj
         tracer_conc_mobile_vr(c,j,trcid) = 1._r8 * h2osoi_liq_col(c,j)/dz(c,j)
         tracer_conc_frozen_vr(c,j,frozenid(trcid)) = 1._r8 * h2osoi_ice_col(c,j)/dz(c,j)
       enddo
 
       trcid = betrtracer_vars%id_trc_o18_h2o
       tracer_conc_grndwater_col(c,trcid) = denh2o
-      do j = 1, nlevtrc_soil
+      do j = 1, bounds%ubj
         tracer_conc_mobile_vr(c,j,trcid) = 1._r8 * h2osoi_liq_col(c,j)/dz(c,j)
         tracer_conc_frozen_vr(c,j,frozenid(trcid)) = 1._r8 * h2osoi_ice_col(c,j)/dz(c,j)
       enddo
       trcid = betrtracer_vars%id_trc_d_h2o
       tracer_conc_grndwater_col(c,trcid) = denh2o
-      do j = 1, nlevtrc_soil
+      do j = 1, bounds%ubj
         tracer_conc_mobile_vr(c,j,trcid) = 1._r8 * h2osoi_liq_col(c,j)/dz(c,j)
         tracer_conc_frozen_vr(c,j,frozenid(trcid)) = 1._r8 * h2osoi_ice_col(c,j)/dz(c,j)
       enddo

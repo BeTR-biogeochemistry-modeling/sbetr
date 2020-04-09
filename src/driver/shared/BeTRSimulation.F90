@@ -72,7 +72,7 @@ module BeTRSimulation
      integer, public, allocatable                 :: filter_soilp(:)
      integer, public                              :: num_jtops
      integer, public, allocatable                 :: jtops(:)
-     integer, public                              :: num_soilc
+     integer, public                              :: num_surfc
      integer, public, allocatable                 :: filter_soilc(:)
      integer, public :: spinup_count
      type(betr_hist_var_type), allocatable :: state_hist1d_var(:)
@@ -189,7 +189,7 @@ contains
 
     call endrun(msg="ERROR "//subname//" unimplemented. "//errmsg(mod_filename, __LINE__))
 
-    if (this%num_soilc > 0)                  continue
+    if (this%num_surfc > 0)                  continue
     if (bounds%begc > 0)                     continue
     if (size(waterstate%h2osoi_liq_col) > 0) continue
     if (len(namelist_buffer) > 0)            continue
@@ -221,7 +221,7 @@ contains
 
     call endrun(msg="ERROR "//subname//" unimplemented. "//errmsg(mod_filename, __LINE__))
 
-    if (this%num_soilc > 0)                  continue
+    if (this%num_surfc > 0)                  continue
     if (bounds%begc > 0)                     continue
     if (size(waterstate%h2osoi_liq_col) > 0) continue
     if (len(base_filename) > 0)              continue
@@ -247,8 +247,8 @@ contains
     allocate(this%jtops(this%num_jtops))
     this%jtops(:) = 1
 
-    this%num_soilc = 1
-    allocate(this%filter_soilc(this%num_soilc))
+    this%num_surfc = 1
+    allocate(this%filter_soilc(this%num_surfc))
     this%filter_soilc(:) = 1
 
     this%num_soilp = maxpft_per_col
@@ -445,7 +445,7 @@ contains
       c_l=1
       do c = bounds%begc, bounds%endc
         if(.not. this%active_col(c))cycle
-        call this%betr(c)%set_bgc_spinup(betr_bounds, 1,  betr_nlevtrc_soil, this%biophys_forc(c))
+        call this%betr(c)%set_bgc_spinup(betr_bounds, 1,  betr_bounds%ubj, this%biophys_forc(c))
         this%dom_scalar_col(c)=this%biophys_forc(c)%dom_scalar_col(c_l)
       enddo
     endif
@@ -463,7 +463,7 @@ contains
     call this%betr(c)%get_hist_size(this%num_hist_state1d, this%num_hist_state2d, &
       this%num_hist_flux1d, this%num_hist_flux2d)
 
-    call this%HistAlloc(bounds)
+    call this%HistAlloc(betr_bounds)
 
     call this%betr(c)%get_hist_info(this%num_hist_state1d, this%num_hist_state2d, &
       this%num_hist_flux1d, this%num_hist_flux2d, &
@@ -477,18 +477,18 @@ contains
     endif
 
     if(betr_offline)then
-      call this%CreateOfflineHistory(bounds, betr_nlevtrc_soil, &
+      call this%CreateOfflineHistory(bounds, betr_bounds%ubj, &
          this%num_hist_state1d, this%num_hist_state2d, &
             this%num_hist_flux1d, this%num_hist_flux2d)
     else
-      call this%BeTRCreateHistory(bounds, betr_nlevtrc_soil, &
+      call this%BeTRCreateHistory(bounds, betr_bounds%ubj, &
          this%num_hist_state1d, this%num_hist_state2d, &
             this%num_hist_flux1d, this%num_hist_flux2d)
     endif
     !identify restart variables
     call this%betr(c)%get_restartvar_size(this%num_rest_state1d, this%num_rest_state2d)
 
-    call this%RestAlloc(bounds)
+    call this%RestAlloc(betr_bounds)
 
     if(present(base_filename)) then
       call this%regression%Init(base_filename, namelist_buffer, this%bsimstatus)
@@ -501,16 +501,15 @@ contains
   implicit none
   !ARGUMENTS
   class(betr_simulation_type)              , intent(inout) :: this
-  type(bounds_type)                        , intent(in)    :: bounds
+  type(betr_bounds_type)                   , intent(in)    :: bounds
 
   integer :: begc, endc
 
   begc = bounds%begc; endc=bounds%endc
 
-
   allocate(this%rest_states_1d(begc:endc, 1:this%num_rest_state1d))
   this%rest_states_1d(:,:)=spval
-  allocate(this%rest_states_2d(begc:endc, 1:betr_nlevtrc_soil, 1:this%num_rest_state2d))
+  allocate(this%rest_states_2d(begc:endc, 1:bounds%ubj, 1:this%num_rest_state2d))
   this%rest_states_2d(:,:,:)=spval
 
   end subroutine BeTRSimulationRestartAlloc
@@ -520,7 +519,7 @@ contains
   implicit none
   !ARGUMENTS
   class(betr_simulation_type)              , intent(inout) :: this
-  type(bounds_type)                        , intent(in)    :: bounds
+  type(betr_bounds_type)                   , intent(in)    :: bounds
 
   integer :: begc, endc
 
@@ -529,18 +528,18 @@ contains
   allocate(this%state_hist1d_var(this%num_hist_state1d))
   allocate(this%state_hist2d_var(this%num_hist_state2d))
 
-  allocate(this%hist_states_2d(begc:endc, 1:betr_nlevtrc_soil, 1:this%num_hist_state2d))
+  allocate(this%hist_states_2d(begc:endc, 1:bounds%ubj, 1:this%num_hist_state2d))
   allocate(this%hist_states_1d(begc:endc, 1:this%num_hist_state1d))
 
   !flux variables
   allocate(this%flux_hist1d_var(this%num_hist_flux1d))
   allocate(this%flux_hist2d_var(this%num_hist_flux2d))
 
-  allocate(this%hist_fluxes_2d(begc:endc, 1:betr_nlevtrc_soil, 1:this%num_hist_flux2d))
+  allocate(this%hist_fluxes_2d(begc:endc, 1:bounds%ubj, 1:this%num_hist_flux2d))
   allocate(this%hist_fluxes_1d(begc:endc, 1:this%num_hist_flux1d))
 
   if(betr_offline)then
-    allocate(this%hist_fluxes_2d_accum(begc:endc, 1:betr_nlevtrc_soil, 1:this%num_hist_flux2d))
+    allocate(this%hist_fluxes_2d_accum(begc:endc, 1:bounds%ubj, 1:this%num_hist_flux2d))
     allocate(this%hist_fluxes_1d_accum(begc:endc, 1:this%num_hist_flux1d))
     this%hist_fluxes_1d_accum(:,:) = 0._r8
     this%hist_fluxes_2d_accum(:,:,:) = 0._r8
@@ -615,7 +614,7 @@ contains
     type(patch_type)            , intent(in)    :: pft
 
     ! remove compiler warnings about unused dummy args
-    if (this%num_soilc > 0)                           continue
+    if (this%num_surfc > 0)                           continue
     if (this%betr_time%tstep > 0)                          continue
     if (bounds%begc > 0)                              continue
   !  if (size(col%z) > 0)                              continue
@@ -638,7 +637,7 @@ contains
     type(lnd2atm_type)          , intent(inout) :: lnd2atm_vars
 
     ! remove compiler warnings about unused dummy args
-    if (this%num_soilc > 0) continue
+    if (this%num_surfc > 0) continue
     if (bounds%begc > 0)    continue
 !    if (size(col%z) > 0)    continue
 
@@ -658,7 +657,7 @@ contains
     type(column_type)           , intent(in)    :: col ! column type
 
     ! remove compiler warnings about unused dummy args
-    if (this%num_soilc > 0) continue
+    if (this%num_surfc > 0) continue
     if (bounds%begc > 0)    continue
 !    if (size(col%z) > 0)    continue
 
@@ -687,7 +686,7 @@ contains
     do c = bounds%begc, bounds%endc
       if(.not. this%active_col(c))cycle
       call begin_betr_tracer_massbalance(betr_bounds,             &
-         this%betr_col(c), this%num_soilc, this%filter_soilc,     &
+         this%betr_col(c), this%num_surfc, this%filter_soilc,     &
          this%num_soilp, this%filter_soilp, &
          this%betr(c)%tracers, this%betr(c)%tracerstates,         &
          this%betr(c)%tracerfluxes, this%bstatus(c))
@@ -724,7 +723,7 @@ contains
       if(this%betr(c)%skip_mass_bal_check() .and. this%betr_time%is_first_step())cycle
       if(.not. this%active_col(c))cycle
       call betr_tracer_massbalance_check(this%betr_time, betr_bounds,           &
-         this%betr_col(c), this%num_soilc, this%filter_soilc,           &
+         this%betr_col(c), this%num_surfc, this%filter_soilc,           &
          this%betr(c)%tracers, this%betr(c)%tracerstates,                &
          this%betr(c)%tracerfluxes, this%bstatus(c))!, ldebug)
       if(this%bstatus(c)%check_status())then
@@ -825,7 +824,7 @@ contains
   end subroutine hist_htapes_create
 
   !-------------------------------------------------------------------------------
-  subroutine hist_write(this, bounds, numf, filter, velocity)
+  subroutine hist_write(this, bounds, ubj, numf, filter, velocity)
     !
     ! DESCRIPTION
     ! output hist file, only for standalone applications
@@ -840,6 +839,7 @@ contains
     !ARGUMENTS
     class(betr_simulation_type) , intent(inout) :: this
     type(bounds_type)           , intent(in)    :: bounds
+    integer                     , intent(in)    :: ubj
     integer                     , intent(in)    :: numf
     integer                     , intent(in)    :: filter(:)
     real(r8)                    , intent(in)    :: velocity(:, :)
@@ -847,6 +847,7 @@ contains
     type(file_desc_t)           :: ncid
     integer                     :: jj
     integer                     :: c
+    type(betr_bounds_type)     :: betr_bounds
     real(r8) :: timef
     character(len=*), parameter :: subname='hist_write'
       c = 1
@@ -861,7 +862,9 @@ contains
          )
       call this%betr_time%print_model_time_stamp(iulog)
 
-      call this%HistRetrieval(bounds, numf, filter)
+      call this%HistRetrieval(numf, filter)
+
+      call this%BeTRSetBounds(betr_bounds)
 
       if(this%betr_time%its_time_to_histflush())then
 
@@ -872,18 +875,18 @@ contains
         timef=this%betr_time%get_cur_timef()/86400._r8;call ncd_putvar(ncid, "time", this%hist_record, timef)
 
         do c = bounds%begc, bounds%endc
-          call ncd_putvar(ncid, 'QFLX_ADV', this%hist_record, velocity(c:c, 1:betr_nlevtrc_soil))
+          call ncd_putvar(ncid, 'QFLX_ADV', this%hist_record, velocity(c:c, 1:ubj))
         enddo
 
-        call this%hist_output_states(ncid, this%hist_record, bounds, numf, filter, betr_nlevtrc_soil, &
+        call this%hist_output_states(ncid, this%hist_record, betr_bounds, numf, filter, ubj, &
             this%num_hist_state1d, this%num_hist_state2d)
 
-        call this%hist_output_fluxes(ncid, this%hist_record, bounds, numf, filter, betr_nlevtrc_soil, &
+        call this%hist_output_fluxes(ncid, this%hist_record, betr_bounds, numf, filter, ubj, &
            this%num_hist_flux1d, this%num_hist_flux2d)
 
         call ncd_pio_closefile(ncid)
       else
-        call this%hist_flux_accum(bounds, numf, filter, betr_nlevtrc_soil, &
+        call this%hist_flux_accum(betr_bounds, numf, filter, ubj, &
            this%num_hist_flux1d, this%num_hist_flux2d)
       endif
 
@@ -892,24 +895,25 @@ contains
 
   !---------------------------------------------------------------------------------
 
-  subroutine BeTRSimulationHistRetrieval(this, bounds, numf, filter)
-  use tracer_varcon  , only : betr_nlevtrc_soil
+  subroutine BeTRSimulationHistRetrieval(this,numf, filter)
+  !
+  !DESCRIPTION
+  !Retrieve records for history files
   implicit none
   !ARGUMENTS
    class(betr_simulation_type) , intent(inout) :: this
-   type(bounds_type)           , intent(in)    :: bounds
    integer, intent(in) :: numf
    integer, intent(in) :: filter(:)
 
-  call this%BeTRRetrieveHistoryState(bounds, numf, filter)
+  call this%BeTRRetrieveHistoryState(numf, filter)
 
-  call this%BeTRRetrieveHistoryFlux(bounds, numf, filter)
+  call this%BeTRRetrieveHistoryFlux(numf, filter)
 
   end subroutine BeTRSimulationHistRetrieval
 
   !---------------------------------------------------------------------------------
   subroutine BeTRSimulationConsistencyCheck(this, &
-     bounds, ubj, num_soilc, filter_soilc, waterstate_vars)
+     bounds, ubj, num_surfc, filter_soilc, waterstate_vars)
   ! DESCRIPTION
   ! Do consistency check, can be overwritten for varies purpose
   !
@@ -919,18 +923,17 @@ contains
    !ARGUMENTS
     class(betr_simulation_type) , intent(inout) :: this
     type(bounds_type)           , intent(in)    :: bounds
-    integer                     , intent(in)    :: num_soilc ! number of columns in column filter_soilc
+    integer                     , intent(in)    :: num_surfc ! number of columns in column filter_soilc
     integer                     , intent(in)    :: filter_soilc(:) ! column filter_soilc
     integer                     , intent(in)    :: ubj
     type(Waterstate_Type)       , intent(in)    :: waterstate_vars ! water state variables
 
     ! remove compiler warnings
-    if (this%num_soilc > 0)                         continue
+    if (this%num_surfc > 0)                         continue
     if (bounds%begc > 0)                            continue
     if (ubj > 0)                                    continue
-    if (num_soilc > 0)                              continue
+    if (num_surfc > 0)                              continue
     if (size(filter_soilc) > 0)                     continue
-!    if (associated(col_ws%h2osoi_liq)) continue
     if (associated(waterstate_vars%h2osoi_liq_col)) continue
   end subroutine BeTRSimulationConsistencyCheck
 
@@ -1290,7 +1293,7 @@ contains
    do fc= 1, num_nolakec
      c = filter_nolakec(fc)
      if(.not. this%active_col(c))cycle
-     call this%betr(c)%pre_diagnose_soilcol_water_flux(betr_bounds, this%num_soilc, &
+     call this%betr(c)%pre_diagnose_soilcol_water_flux(betr_bounds, this%num_surfc, &
        this%filter_soilc, this%biophys_forc(c))
    enddo
   end subroutine BeTRSimulationPreDiagSoilColWaterFlux
@@ -1325,7 +1328,7 @@ contains
   do fc = 1, num_nolakec
     c = filter_nolakec(fc)
     if(.not. this%active_col(c))cycle
-    call this%betr(c)%diagnose_dtracer_freeze_thaw(betr_bounds, this%num_soilc, this%filter_soilc,  &
+    call this%betr(c)%diagnose_dtracer_freeze_thaw(betr_bounds, this%num_surfc, this%filter_soilc,  &
       this%biophys_forc(c))
   enddo
   end subroutine BeTRSimulationDiagnoseDtracerFreezeThaw
@@ -1354,7 +1357,7 @@ contains
      c = filter_hydrologyc(fc)
      if(.not. this%active_col(c))cycle
      call this%betr(c)%diagnose_advect_water_flux(this%betr_time,              &
-       betr_bounds, this%num_soilc, this%filter_soilc,                         &
+       betr_bounds, this%num_surfc, this%filter_soilc,                         &
        this%biophys_forc(c), this%biogeo_flux(c))
    enddo
 
@@ -1385,7 +1388,7 @@ contains
      c = filter_hydrologyc(fc)
      if(.not. this%active_col(c))cycle
      call this%betr(c)%diagnose_drainage_water_flux(this%betr_time, &
-       betr_bounds, this%num_soilc, this%filter_soilc,      &
+       betr_bounds, this%num_surfc, this%filter_soilc,      &
        this%biophys_forc(c), this%biogeo_flux(c))
   enddo
   end subroutine BeTRSimulationDiagDrainWaterFlux
@@ -1410,7 +1413,7 @@ contains
      c = filter_snowc(fc)
      if(.not. this%active_col(c))cycle
      call this%betr(c)%Enter_tracer_LayerAdjustment(betr_bounds, this%betr_col(c), &
-       this%num_soilc, this%filter_soilc)
+       this%num_surfc, this%filter_soilc)
    enddo
   end subroutine BeTRSimulationBeginTracerSnowLayerAdjst
   !------------------------------------------------------------------------
@@ -1434,7 +1437,7 @@ contains
      c = filter_snowc(fc)
      if(.not. this%active_col(c))cycle
      call this%betr(c)%Exit_tracer_LayerAdjustment(betr_bounds, this%betr_col(c), &
-       this%num_soilc, this%filter_soilc)
+       this%num_surfc, this%filter_soilc)
    enddo
 
   end subroutine BeTRSimulationEndTracerSnowLayerAdjst
@@ -1463,7 +1466,7 @@ contains
    do fc = 1, num_snowc
      c = filter_snowc(fc)
      if(.not. this%active_col(c))cycle
-     call this%betr(c)%tracer_DivideSnowLayers(betr_bounds, this%betr_col(c),this%num_soilc, &
+     call this%betr(c)%tracer_DivideSnowLayers(betr_bounds, this%betr_col(c),this%num_surfc, &
        this%filter_soilc, divide_matrix(c:c,:,:), this%bstatus(c))
      if(this%bstatus(c)%check_status())then
        call this%bsimstatus%setcol(c)
@@ -1500,7 +1503,7 @@ contains
    do fc = 1, num_snowc
      c = filter_snowc(fc)
      if(.not. this%active_col(c))cycle
-     call this%betr(c)%tracer_CombineSnowLayers(betr_bounds, this%betr_col(c),this%num_soilc,&
+     call this%betr(c)%tracer_CombineSnowLayers(betr_bounds, this%betr_col(c),this%num_surfc,&
        this%filter_soilc, combine_matrix(c:c,:,:),this%bstatus(c))
      if(this%bstatus(c)%check_status())then
        call this%bsimstatus%setcol(c)
@@ -1668,7 +1671,7 @@ contains
   integer, intent(in) :: record
   integer, intent(in) :: numf
   integer, intent(in) :: filter(:)
-  type(bounds_type)           , intent(in)    :: bounds               ! bounds
+  type(betr_bounds_type)           , intent(in)    :: bounds               ! bounds
   integer           ,     intent(in)   :: num_flux1d
   integer           ,     intent(in)   :: num_flux2d
   type(file_desc_t) ,     intent(inout)   :: ncid
@@ -1727,7 +1730,7 @@ contains
      betr_nlevtrc_soil, num_flux1d, num_flux2d)
   implicit none
   class(betr_simulation_type) , intent(inout) :: this
-  type(bounds_type)           , intent(in)    :: bounds               ! bounds
+  type(betr_bounds_type)      , intent(in)    :: bounds               ! bounds
   integer                     , intent(in)    :: betr_nlevtrc_soil
   integer                     , intent(in)    :: numf
   integer                     , intent(in)    :: filter(:)
@@ -1768,7 +1771,7 @@ contains
   !ARGUMENTS
   class(betr_simulation_type) , intent(inout) :: this
   integer, intent(in) :: record
-  type(bounds_type)           , intent(in)    :: bounds               ! bounds
+  type(betr_bounds_type)           , intent(in)    :: bounds               ! bounds
   integer, intent(in) :: numf
   integer, intent(in) :: filter(:)
   integer, intent(in) :: betr_nlevtrc_soil
@@ -1787,7 +1790,6 @@ contains
   begc = bounds%begc; endc = bounds%endc
 
   do jj = 1, num_state2d
-
     if(trim(this%state_hist2d_var(jj)%use_default)/='inactive') then
       data2dptr => this%hist_states_2d(begc:endc,1:betr_nlevtrc_soil, jj)
       call ncd_putvar(ncid,this%state_hist2d_var(jj)%varname, record, data2dptr)
@@ -1823,12 +1825,13 @@ contains
 
   end subroutine BeTRSimulationCreateHistory
   !------------------------------------------------------------------------
-  subroutine BeTRSimulationRetrieveHistoryState(this, bounds, numf, filter)
-  use tracer_varcon  , only : betr_nlevtrc_soil
+  subroutine BeTRSimulationRetrieveHistoryState(this, numf, filter)
+  !
+  !DESCRIPTION
+  !retrieve state variables for history writing
   implicit none
   !ARGUMENTS
   class(betr_simulation_type) , intent(inout) :: this
-  type(bounds_type)           , intent(in)    :: bounds
   integer, intent(in) :: numf
   integer, intent(in) :: filter(:)
 
@@ -1841,19 +1844,18 @@ contains
   do fc = 1, numf
     c = filter(fc)
     if(.not. this%active_col(c))cycle
-    call this%betr(c)%HistRetrieveState(betr_bounds, 1, betr_nlevtrc_soil, &
+    call this%betr(c)%HistRetrieveState(betr_bounds, 1, betr_bounds%ubj, &
        this%num_hist_state1d, this%num_hist_state2d,&
-       this%hist_states_1d(c:c,:), this%hist_states_2d(c:c,1:betr_nlevtrc_soil,:))
+       this%hist_states_1d(c:c,:), this%hist_states_2d(c:c,1:betr_bounds%ubj,:))
   enddo
 
   end subroutine BeTRSimulationRetrieveHistoryState
   !------------------------------------------------------------------------
-  subroutine BeTRSimulationRetrieveHistoryFlux(this, bounds, numf, filter)
+  subroutine BeTRSimulationRetrieveHistoryFlux(this, numf, filter)
   use tracer_varcon  , only :  betr_nlevtrc_soil
   implicit none
   !ARGUMENTS
   class(betr_simulation_type) , intent(inout) :: this
-  type(bounds_type)           , intent(in)    :: bounds
   integer, intent(in) :: numf
   integer, intent(in) :: filter(:)
 
@@ -1867,9 +1869,9 @@ contains
   do fc = 1, numf
     c = filter(fc)
     if(.not. this%active_col(c))cycle
-    call this%betr(c)%HistRetrieveFlux(betr_bounds, 1, betr_nlevtrc_soil, &
+    call this%betr(c)%HistRetrieveFlux(betr_bounds, 1, betr_bounds%ubj, &
        this%num_hist_flux1d,this%num_hist_flux2d, &
-       this%hist_fluxes_1d(c:c,:),this%hist_fluxes_2d(c:c,1:betr_nlevtrc_soil,:))
+       this%hist_fluxes_1d(c:c,:),this%hist_fluxes_2d(c:c,1:betr_bounds%ubj,:))
   enddo
 
   end subroutine BeTRSimulationRetrieveHistoryFlux
@@ -1922,7 +1924,7 @@ contains
     call ncd_defdim(ncid, 'levtrc', betr_nlevsoi, recordDimID)
 
     !number of columns
-    call ncd_defdim(ncid, 'column', this%num_soilc, recordDimID)
+    call ncd_defdim(ncid, 'column', this%num_surfc, recordDimID)
 
     call ncd_defvar(ncid, 'hist_naccum',ncd_double, long_name='', &
          units = '',  missing_value=spval, fill_value=spval)
