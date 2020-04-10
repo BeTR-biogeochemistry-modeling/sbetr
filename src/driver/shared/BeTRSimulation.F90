@@ -474,7 +474,8 @@ contains
     call this%betr(c)%get_hist_size(this%num_hist_state1d, this%num_hist_state2d, &
       this%num_hist_flux1d, this%num_hist_flux2d)
 
-    call this%HistAlloc(betr_bounds)
+    !allocate memory for history variables
+    call this%HistAlloc(bounds)
 
     call this%betr(c)%get_hist_info(this%num_hist_state1d, this%num_hist_state2d, &
       this%num_hist_flux1d, this%num_hist_flux2d, &
@@ -499,7 +500,8 @@ contains
     !identify restart variables
     call this%betr(c)%get_restartvar_size(this%num_rest_state1d, this%num_rest_state2d)
 
-    call this%RestAlloc(betr_bounds)
+    !allocate memory of passing restart variables
+    call this%RestAlloc(bounds)
 
     if(present(base_filename)) then
       call this%regression%Init(base_filename, namelist_buffer, this%bsimstatus)
@@ -512,7 +514,7 @@ contains
   implicit none
   !ARGUMENTS
   class(betr_simulation_type)              , intent(inout) :: this
-  type(betr_bounds_type)                   , intent(in)    :: bounds
+  type(bounds_type)                   , intent(in)    :: bounds
 
   integer :: begc, endc
 
@@ -530,7 +532,7 @@ contains
   implicit none
   !ARGUMENTS
   class(betr_simulation_type)              , intent(inout) :: this
-  type(betr_bounds_type)                   , intent(in)    :: bounds
+  type(bounds_type)                   , intent(in)    :: bounds
 
   integer :: begc, endc
 

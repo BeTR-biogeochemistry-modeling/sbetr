@@ -202,8 +202,8 @@ contains
       volatileid        => betrtracer_vars%volatileid            &
     )
 
-    num2d = 0; num1d= 0
     do it = 1, 2
+      num2d = 0; num1d= 0
       do jj = 1, ntracers
         tracername =  betrtracer_vars%get_tracername(jj)
         if(jj<= ngwmobile_tracers) then
@@ -306,7 +306,6 @@ contains
 
       enddo
       if(it==1)call this%alloc_hist_list(num1d, num2d)
-      num2d = 0; num1d= 0
     enddo
     end associate
 
