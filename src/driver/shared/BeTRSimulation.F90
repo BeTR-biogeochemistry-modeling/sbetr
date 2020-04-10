@@ -475,7 +475,7 @@ contains
       this%num_hist_flux1d, this%num_hist_flux2d)
 
     !allocate memory for history variables
-    call this%HistAlloc(bounds)
+    call this%HistAlloc(betr_bounds%lbj, betr_bounds%ubj, bounds)
 
     call this%betr(c)%get_hist_info(this%num_hist_state1d, this%num_hist_state2d, &
       this%num_hist_flux1d, this%num_hist_flux2d, &
@@ -501,7 +501,7 @@ contains
     call this%betr(c)%get_restartvar_size(this%num_rest_state1d, this%num_rest_state2d)
 
     !allocate memory of passing restart variables
-    call this%RestAlloc(bounds)
+    call this%RestAlloc(betr_bounds%lbj, betr_bounds%ubj, bounds)
 
     if(present(base_filename)) then
       call this%regression%Init(base_filename, namelist_buffer, this%bsimstatus)
@@ -510,10 +510,11 @@ contains
 
   end subroutine BeTRInit
   !---------------------------------------------------------------------------------
-  subroutine BeTRSimulationRestartAlloc(this, bounds)
+  subroutine BeTRSimulationRestartAlloc(this, lbj, ubj, bounds)
   implicit none
   !ARGUMENTS
-  class(betr_simulation_type)              , intent(inout) :: this
+  class(betr_simulation_type)         , intent(inout) :: this
+  integer                             , intent(in)    :: lbj, ubj
   type(bounds_type)                   , intent(in)    :: bounds
 
   integer :: begc, endc
@@ -522,16 +523,17 @@ contains
 
   allocate(this%rest_states_1d(begc:endc, 1:this%num_rest_state1d))
   this%rest_states_1d(:,:)=spval
-  allocate(this%rest_states_2d(begc:endc, 1:bounds%ubj, 1:this%num_rest_state2d))
+  allocate(this%rest_states_2d(begc:endc, 1:ubj, 1:this%num_rest_state2d))
   this%rest_states_2d(:,:,:)=spval
 
   end subroutine BeTRSimulationRestartAlloc
   !---------------------------------------------------------------------------------
 
-  subroutine BeTRSimulationHistoryAlloc(this, bounds)
+  subroutine BeTRSimulationHistoryAlloc(this,lbj, ubj, bounds)
   implicit none
   !ARGUMENTS
-  class(betr_simulation_type)              , intent(inout) :: this
+  class(betr_simulation_type)         , intent(inout) :: this
+  integer                             , intent(in)    :: lbj, ubj
   type(bounds_type)                   , intent(in)    :: bounds
 
   integer :: begc, endc
@@ -541,18 +543,18 @@ contains
   allocate(this%state_hist1d_var(this%num_hist_state1d))
   allocate(this%state_hist2d_var(this%num_hist_state2d))
 
-  allocate(this%hist_states_2d(begc:endc, 1:bounds%ubj, 1:this%num_hist_state2d))
+  allocate(this%hist_states_2d(begc:endc, 1:ubj, 1:this%num_hist_state2d))
   allocate(this%hist_states_1d(begc:endc, 1:this%num_hist_state1d))
 
   !flux variables
   allocate(this%flux_hist1d_var(this%num_hist_flux1d))
   allocate(this%flux_hist2d_var(this%num_hist_flux2d))
 
-  allocate(this%hist_fluxes_2d(begc:endc, 1:bounds%ubj, 1:this%num_hist_flux2d))
+  allocate(this%hist_fluxes_2d(begc:endc, 1:ubj, 1:this%num_hist_flux2d))
   allocate(this%hist_fluxes_1d(begc:endc, 1:this%num_hist_flux1d))
 
   if(betr_offline)then
-    allocate(this%hist_fluxes_2d_accum(begc:endc, 1:bounds%ubj, 1:this%num_hist_flux2d))
+    allocate(this%hist_fluxes_2d_accum(begc:endc, 1:ubj, 1:this%num_hist_flux2d))
     allocate(this%hist_fluxes_1d_accum(begc:endc, 1:this%num_hist_flux1d))
     this%hist_fluxes_1d_accum(:,:) = 0._r8
     this%hist_fluxes_2d_accum(:,:,:) = 0._r8
