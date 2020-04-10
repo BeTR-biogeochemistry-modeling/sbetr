@@ -162,10 +162,8 @@ contains
          frozenid          =>  betrtracer_vars%frozenid              &
          )
 
-      num2d = 0; num1d= 0
-
       do it = 1, 2
-
+        num2d = 0; num1d= 0
         if(nvolatile_tracers>0) &
         call this%add_hist_var2d(it, num2d, fname='TRACER_P_GAS', units='Pa', type2d='levtrc',  &
            avgflag='A', long_name='total gas pressure')
@@ -208,7 +206,6 @@ contains
               default='inactive')
         enddo
         if(it==1)call this%alloc_hist_list(num1d, num2d)
-        num2d = 0; num1d= 0
       enddo
     end associate
   end subroutine InitHistory
