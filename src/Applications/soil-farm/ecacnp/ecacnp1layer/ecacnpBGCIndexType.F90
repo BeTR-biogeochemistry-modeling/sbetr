@@ -913,8 +913,11 @@ implicit none
   enddo
 
   allocate(this%ompoolnames(this%nom_pools))
+  allocate(this%is_cenpool_som(this%nom_pools))
   do jj = 1, this%nom_pools
     this%ompoolnames(jj) = that%ompoolnames(jj)
+    this%is_cenpool_som(jj)=that%is_cenpool_som(jj)
   enddo
-    end subroutine hcopy
+
+  end subroutine hcopy
 end module ecacnpBGCIndexType
