@@ -96,13 +96,13 @@ implicit none
      integer           :: lid_totinput
      integer           :: lid_totstore
      integer           :: lid_cum_closs
-     integer , pointer :: primvarid(:)   => null()
-     logical , pointer :: is_aerobic_reac(:)=> null()
+     integer , allocatable :: primvarid(:)
+     logical , allocatable :: is_aerobic_reac(:)
 
-     integer, pointer :: lid_plant_minn_no3_pft(:)=> null()
-     integer, pointer :: lid_plant_minn_nh4_pft(:)=> null()
-     integer, pointer :: lid_plant_minp_pft(:)=> null()
-     logical, pointer :: is_cenpool_som(:) => null()
+     integer, allocatable :: lid_plant_minn_no3_pft(:)
+     integer, allocatable :: lid_plant_minn_nh4_pft(:)
+     integer, allocatable :: lid_plant_minp_pft(:)
+     logical, allocatable :: is_cenpool_som(:)
      logical :: debug
      character(len=loc_name_len), allocatable :: varnames(:)
      character(len=loc_name_len), allocatable :: varunits(:)
@@ -884,7 +884,11 @@ implicit none
   this%lid_cum_closs = that%lid_cum_closs
 
   this%debug = that%debug
-  maxpft=size(that%lid_plant_minn_no3_pft)
+  if(allocated(that%lid_plant_minn_no3_pft))then
+    maxpft=size(that%lid_plant_minn_no3_pft)
+  else
+    maxpft=0
+  endif
   if(maxpft>0)then
      allocate(this%lid_plant_minn_no3_pft(maxpft));
      allocate(this%lid_plant_minn_nh4_pft(maxpft));
