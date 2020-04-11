@@ -77,6 +77,7 @@ module ecacnpBGCType
     logical , private                    :: batch_mode
   contains
     procedure, public  :: init          => init_ecacnp
+    procedure, public  :: initVL        => initVL_ecacnp
     procedure, public  :: runbgc        => runbgc_ecacnp
     procedure, public  :: UpdateParas   => UpdateParas_ecacnp
     procedure, public  :: sumup_cnp_msflx => sumup_cnp_msflx_ecacnp
@@ -287,7 +288,55 @@ contains
     return
   end select
   end subroutine init_ecacnp
+  !-------------------------------------------------------------------------------
+  subroutine initVL_ecacnp(this,  biogeo_con,  batch_mode, ecacnp_bgc_index, bstatus)
+  use betr_varcon         , only : betr_maxpatch_pft
+  implicit none
+  class(ecacnp_bgc_type) , intent(inout) :: this
+  class(BiogeoCon_type)       , intent(in) :: biogeo_con
+  logical                   , intent(in) :: batch_mode
+  class(ecacnp_bgc_index_type), intent(in) :: ecacnp_bgc_index
+  type(betr_status_type)    , intent(out) :: bstatus
 
+  character(len=256) :: msg
+  write(this%jarname, '(A)')'ecacnp'
+
+  this%bgc_on=.true.
+  this%batch_mode=batch_mode
+  select type(biogeo_con)
+  type is(ecacnp_para_type)
+    call bstatus%reset()
+    call this%ecacnp_bgc_index%hcopy(ecacnp_bgc_index)
+
+    this%nop_limit=biogeo_con%nop_limit
+    this%non_limit=biogeo_con%non_limit
+
+    call this%InitAllocate(this%ecacnp_bgc_index)
+
+    call this%censom%Init(this%ecacnp_bgc_index, biogeo_con, bstatus)
+
+    if(bstatus%check_status())return
+
+    call this%decompkf_eca%Init(biogeo_con)
+
+    call this%nitden%Init(biogeo_con)
+
+    call this%competECA%Init(biogeo_con, bstatus)
+    if(bstatus%check_status())return
+    this%use_c13 = biogeo_con%use_c13
+
+    this%use_c14 = biogeo_con%use_c14
+
+    call this%UpdateParas(biogeo_con, bstatus)
+    if(bstatus%check_status())return
+  class default
+    call bstatus%reset()
+    write(msg,'(A)')'Wrong parameter type passed in for init_ecacnp in ' &
+      // errMsg(mod_filename,__LINE__)
+    call bstatus%set_msg(msg,err=-1)
+    return
+  end select
+  end subroutine initVL_ecacnp
   !-------------------------------------------------------------------------------
 
   subroutine InitAllocate(this, ecacnp_bgc_index)

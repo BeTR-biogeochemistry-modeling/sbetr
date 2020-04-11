@@ -465,7 +465,7 @@ contains
     !initialize
     do j = lbj, ubj
       do c = bounds%begc, bounds%endc
-        call this%ecacnp(c,j)%Init(ecacnp_para, batch_mode, bstatus)
+        call this%ecacnp(c,j)%InitVL(ecacnp_para, batch_mode,this%ecacnp_bgc_index, bstatus)
         if(bstatus%check_status())return
 
         call this%ecacnp_forc(c,j)%Init(this%ecacnp_bgc_index%nstvars)

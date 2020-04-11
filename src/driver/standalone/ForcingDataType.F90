@@ -245,7 +245,7 @@ contains
        enddo
     enddo
 
-    call check_var(ncf_in_forc, 'RR_vr', vardesc, readvar)
+    call check_var(ncf_in_forc, 'RR_vr', vardesc, readvar,print_err=.false.)
     if(readvar)then
       call ncd_getvar(ncf_in_forc, 'RR_vr', data_2d)
       do j2 = 1, this%num_levels

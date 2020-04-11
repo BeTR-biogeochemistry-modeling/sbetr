@@ -110,6 +110,7 @@ implicit none
      integer                    , allocatable :: vartypes(:)
    contains
      procedure, public  :: Init
+     procedure, public  :: hcopy
      procedure, private :: InitPars
      procedure, private :: InitAllocate
      procedure, private :: set_primvar_reac_ids
@@ -789,4 +790,131 @@ implicit none
   print*,'pnh4pft=', this%lid_plant_minn_nh4_pft(:)
   print*,'minppft=', this%lid_plant_minp_pft(:)
   end subroutine display_index
+!-------------------------------------------------------------------------------
+  subroutine hcopy(this, that)
+  implicit none
+  class(ecacnp_bgc_index_type) :: this
+  class(ecacnp_bgc_index_type), intent(in) :: that
+
+  integer :: jj
+  integer :: maxpft
+
+  this%nom_pools = that%nom_pools                              !not include coarse wood debris
+
+  this%nom_tot_elms = that%nom_tot_elms
+  this%lit1 = that%lit1; this%lit1_dek_reac = that%lit1_dek_reac
+  this%lit2 = that%lit2; this%lit2_dek_reac = that%lit2_dek_reac
+  this%lit3 = that%lit3; this%lit3_dek_reac = that%lit3_dek_reac
+  this%som1 = that%som1; this%som1_dek_reac = that%som1_dek_reac
+  this%som2 = that%som2; this%som2_dek_reac = that%som2_dek_reac
+  this%som3 = that%som3; this%som3_dek_reac = that%som3_dek_reac
+  this%cwd  = that%cwd;  this%cwd_dek_reac  = that%cwd_dek_reac
+  this%lwd  = that%lwd;  this%lwd_dek_reac = that%lwd_dek_reac
+  this%fwd  = that%fwd;  this%fwd_dek_reac = that%fwd_dek_reac
+  this%litr_beg = that%litr_beg; this%litr_end = that%litr_end  !litr group
+  this%wood_beg = that%wood_beg; this%wood_end = that%wood_end  !wood group
+  this%som_beg  = that%som_beg;  this%som_end = that%som_end   !som group
+  this%dom_beg  = that%dom_beg;  this%dom_end = that%dom_end   !dom group
+  this%Bm_beg   = that%Bm_beg;  this%Bm_end = that%Bm_end   !dom group
+  this%pom_beg  = that%pom_beg; this%pom_end= that%pom_end
+  this%c_loc = that%c_loc
+  this%n_loc = that%n_loc
+  this%p_loc = that%p_loc
+  this%c13_loc = that%c13_loc
+  this%c14_loc = that%c14_loc
+  this%lid_supp_minp = that%lid_supp_minp                          !supplementary mineral P for spinup purpose
+  this%lid_supp_minn = that%lid_supp_minn
+  this%nelms = that%nelms                                  !number of chemical elements in an om pool
+                                                                 !reactive primary variables
+  this%lid_nh4 = that%lid_nh4; this%lid_nh4_nit_reac = that%lid_nh4_nit_reac             !local position of nh4 in the state variable vector
+  this%lid_no3 = that%lid_no3; this%lid_no3_den_reac = that%lid_no3_den_reac              !local position of no3 in the state variable vector
+  this%lid_plant_minn_nh4 = that%lid_plant_minn_nh4
+  this%lid_plant_minn_nh4_up_reac = that%lid_plant_minn_nh4_up_reac !local position of plant uptake of mineral nitrogen NH4 in the state variable vector
+  this%lid_plant_minn_no3 = that%lid_plant_minn_no3
+  this%lid_plant_minn_no3_up_reac = that%lid_plant_minn_no3_up_reac !
+  this%lid_plant_minp = that%lid_plant_minp
+  this%lid_plant_minp_up_reac = that%lid_plant_minp_up_reac !local position of plant uptake of mineral P in the state variable vector
+  this%lid_minp_soluble = that%lid_minp_soluble
+  this%lid_minp_soluble_to_secp_reac = that%lid_minp_soluble_to_secp_reac    !conversation of adsorbed into secondary phase
+  this%lid_minp_secondary = that%lid_minp_secondary
+  this%lid_minp_secondary_to_sol_occ_reac = that%lid_minp_secondary_to_sol_occ_reac   !local position of secondary P in the state variable vector
+
+  this%lid_minp_occlude = that%lid_minp_occlude      !local position of occluded P in the state variable vector
+
+  this%lid_autr_rt = that%lid_autr_rt; this%lid_autr_rt_reac = that%lid_autr_rt_reac             !root autotrophic respiration
+
+                                                                 !non reactive primary variables
+  this%lid_ar = that%lid_ar; this%lid_ar_aren_reac = that%lid_ar_aren_reac               !local position of ar in the state variable vector
+  this%lid_ch4= that%lid_ch4; this%lid_ch4_aren_reac = that%lid_ch4_aren_reac             !nonreactive primary variables
+
+                                                                 !secondary variables
+  this%lid_o2 = that%lid_o2;  this%lid_o2_aren_reac = that%lid_o2_aren_reac              !local position of o2 in the state variable vector
+  this%lid_co2 = that%lid_co2; this%lid_co2_aren_reac = that%lid_co2_aren_reac             !local position of co2 in the state variable vector
+  this%lid_n2 = that%lid_n2;  this%lid_n2_aren_reac = that%lid_n2_aren_reac
+  this%lid_n2o= that%lid_n2o; this%lid_n2o_aren_reac = that%lid_n2o_aren_reac
+                                                                 !diagnostic variables
+  this%lid_n2o_nit = that%lid_n2o_nit                            !n2o production from nitrification, used to for mass balance book keeping
+  this%lid_co2_hr = that%lid_co2_hr                             !co2 production from heterotrophic respiration
+  this%lid_c13_co2 = that%lid_c13_co2;
+  this%lid_c13_co2_aren_reac = that%lid_c13_co2_aren_reac
+  this%lid_c14_co2 = that%lid_c14_co2;
+  this%lid_c14_co2_aren_reac = that%lid_c14_co2_aren_reac
+  this%lid_no3_den = that%lid_no3_den                            !no3 consumption due to denitrification
+  this%lid_minn_nh4_immob = that%lid_minn_nh4_immob                     !net mineral NH4 immobilization for decomposition
+  this%lid_minn_no3_immob = that%lid_minn_no3_immob                     !net mineral NO3 immobilization for decomposition
+  this%lid_nh4_nit = that%lid_nh4_nit
+  this%lid_minp_secondary_trc = that%lid_minp_secondary_trc
+  this%lid_minp_occlude_trc = that%lid_minp_occlude_trc
+                                                                 !aerechyma transport, diagnostic efflux
+  this%lid_minp_immob = that%lid_minp_immob                         !net P immobilization by aerobic decomposer
+
+  this%lid_ar_paere = that%lid_ar_paere
+  this%lid_n2_paere = that%lid_n2_paere
+  this%lid_o2_paere = that%lid_o2_paere
+  this%lid_co2_paere = that%lid_co2_paere
+  this%lid_c13_co2_paere = that%lid_c13_co2_paere
+  this%lid_c14_co2_paere = that%lid_c14_co2_paere
+  this%lid_ch4_paere = that%lid_ch4_paere
+  this%lid_n2o_paere = that%lid_n2o_paere
+  this%nprimvars = that%nprimvars                              !total number of primary variables
+  this%nstvars = that%nstvars                                !number of equations for the state variabile vector
+  this%nreactions = that%nreactions                             !seven decomposition pathways plus nitrification, denitrification and plant immobilization
+  this%lid_totinput = that%lid_totinput
+  this%lid_totstore = that%lid_totstore
+  this%lid_cum_closs = that%lid_cum_closs
+
+  this%debug = that%debug
+  maxpft=size(that%lid_plant_minn_no3_pft)
+  if(maxpft>0)then
+     allocate(this%lid_plant_minn_no3_pft(maxpft));
+     allocate(this%lid_plant_minn_nh4_pft(maxpft));
+     allocate(this%lid_plant_minp_pft(maxpft));
+     do jj = 1, maxpft
+       this%lid_plant_minn_no3_pft(jj) = that%lid_plant_minn_no3_pft(jj);
+       this%lid_plant_minn_nh4_pft(jj) = that%lid_plant_minn_nh4_pft(jj);
+       this%lid_plant_minp_pft(jj)     = that%lid_plant_minp_pft(jj);
+     enddo
+  endif
+
+  allocate(this%primvarid(this%nreactions))
+  allocate(this%is_aerobic_reac(this%nreactions));
+  do jj = 1, this%nreactions
+    this%primvarid(jj) = that%primvarid(jj)
+    this%is_aerobic_reac(jj) = that%is_aerobic_reac(jj)
+  enddo
+
+  allocate(this%vartypes(this%nstvars))
+  allocate(this%varnames(this%nstvars))
+  allocate(this%varunits(this%nstvars))
+  do jj = 1, this%nstvars
+     this%vartypes(jj) = that%vartypes(jj)
+     this%varnames(jj) = that%varnames(jj)
+     this%varunits(jj) = that%varunits(jj)
+  enddo
+
+  allocate(this%ompoolnames(this%nom_pools))
+  do jj = 1, this%nom_pools
+    this%ompoolnames(jj) = that%ompoolnames(jj)
+  enddo
+    end subroutine hcopy
 end module ecacnpBGCIndexType

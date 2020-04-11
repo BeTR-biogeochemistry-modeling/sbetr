@@ -81,6 +81,7 @@ module v1ecaBGCType
     logical , private                    :: batch_mode
   contains
     procedure, public  :: init          => init_v1eca
+    procedure, public  :: initVL         => initVL_v1eca
     procedure, public  :: runbgc        => runbgc_v1eca
     procedure, public  :: UpdateParas   => UpdateParas_v1eca
     procedure, public  :: sumup_cnp_msflx => sumup_cnp_msflx_v1eca
@@ -289,7 +290,55 @@ contains
     return
   end select
   end subroutine init_v1eca
+  !-------------------------------------------------------------------------------
+  subroutine initVL_v1eca(this,  biogeo_con,  batch_mode, v1eca_bgc_index, bstatus)
+  use betr_varcon         , only : betr_maxpatch_pft
+  implicit none
+  class(v1eca_bgc_type) , intent(inout) :: this
+  class(BiogeoCon_type)       , intent(in) :: biogeo_con
+  logical                   , intent(in) :: batch_mode
+  type(v1eca_bgc_index_type), intent(in) :: v1eca_bgc_index
+  type(betr_status_type)    , intent(out) :: bstatus
 
+  character(len=256) :: msg
+  write(this%jarname, '(A)')'v1eca'
+
+  this%bgc_on=.true.
+  this%batch_mode=batch_mode
+  select type(biogeo_con)
+  type is(v1eca_para_type)
+    call bstatus%reset()
+    call this%v1eca_bgc_index%hcopy(v1eca_bgc_index)
+
+    this%nop_limit=biogeo_con%nop_limit
+    this%non_limit=biogeo_con%non_limit
+
+    call this%InitAllocate(this%v1eca_bgc_index)
+
+    call this%censom%Init(this%v1eca_bgc_index, biogeo_con, bstatus)
+
+    if(bstatus%check_status())return
+
+    call this%decompkf_eca%Init(biogeo_con)
+
+    call this%nitden%Init(biogeo_con)
+
+    call this%competECA%Init(biogeo_con, bstatus)
+    if(bstatus%check_status())return
+    this%use_c13 = biogeo_con%use_c13
+
+    this%use_c14 = biogeo_con%use_c14
+
+    call this%UpdateParas(biogeo_con, bstatus)
+    if(bstatus%check_status())return
+  class default
+    call bstatus%reset()
+    write(msg,'(A)')'Wrong parameter type passed in for init_v1eca in ' &
+      // errMsg(mod_filename,__LINE__)
+    call bstatus%set_msg(msg,err=-1)
+    return
+  end select
+  end subroutine initVL_v1eca
   !-------------------------------------------------------------------------------
 
   subroutine InitAllocate(this, v1eca_bgc_index)
@@ -516,7 +565,7 @@ contains
   if(this%v1eca_bgc_index%debug)print*,'enter runbgc_v1eca'
   this%rt_ar = rt_ar
   if(this%use_c13)then
-    frc_c13 = safe_div(rt_ar_c13,rt_ar); 
+    frc_c13 = safe_div(rt_ar_c13,rt_ar);
   else
     frc_c13 = 1._r8
   endif
@@ -552,8 +601,8 @@ contains
   call this%nitden%calc_pot_nitr(ystates1(lid_nh4), bgc_forc, this%decompkf_eca, pot_f_nit_mol_per_sec)
 
   !calculate potential o2 consumption
-!  print*,'pot_co2_hr',pot_co2_hr 
-!  print*,'rt_ar', rt_ar 
+!  print*,'pot_co2_hr',pot_co2_hr
+!  print*,'rt_ar', rt_ar
 !  print*,'pot_f_nit', pot_f_nit_mol_per_sec * this%nitden%get_nit_o2_scef()
   o2_decomp_depth = pot_co2_hr + rt_ar + pot_f_nit_mol_per_sec * this%nitden%get_nit_o2_scef()
 

@@ -339,7 +339,7 @@ contains
     !initialize
     do j = lbj, ubj
       do c = bounds%begc, bounds%endc
-        call this%v1eca(c,j)%Init(v1eca_para, batch_mode, bstatus)
+        call this%v1eca(c,j)%InitVL(v1eca_para, batch_mode, this%v1eca_bgc_index, bstatus)
         if(bstatus%check_status())return
 
         call this%v1eca_forc(c,j)%Init(this%v1eca_bgc_index%nstvars, this%v1eca_bgc_index%nom_pools)

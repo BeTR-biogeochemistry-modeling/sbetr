@@ -104,6 +104,7 @@ implicit none
      integer                    , allocatable :: vartypes(:)
    contains
      procedure, public  :: Init
+     procedure, public  :: hcopy
      procedure, private :: InitPars
      procedure, private :: InitAllocate
      procedure, private :: set_primvar_reac_ids
@@ -423,7 +424,7 @@ implicit none
     this%lid_n2         = addone(itemp);call list_insert(list_name, 'n2',vid, itype=var_state_type); call list_insert(list_unit, 'mol N2 m-3',uid)
 
     this%nprimvars      = itemp
-
+    print*,'nprimvars=',this%nprimvars
     if(non_limit)then
       !when N is unlimited, nh4 and no3 are not primary variables
       if(nop_limit .or. spinup_state /= 0)then
@@ -454,6 +455,7 @@ implicit none
         this%nprimvars = this%nprimvars + 1
       endif
     endif
+    print*,'nprimnstvars',itemp,this%nprimvars
     this%lid_nh4_nit_reac = addone(ireac); call list_insert(list_react, 'nh4_nit_reac', itemp0)       !this is also used to indicate the nitrification reaction
     this%lid_no3_den_reac = addone(ireac); call list_insert(list_react, 'no3_den_reac', itemp0)       !this is also used to indicate the denitrification reaction
 
@@ -467,6 +469,7 @@ implicit none
       this%lid_supp_minp=addone(itemp)
       call list_insert(list_name, 'supp_minp_soluble',vid, itype=var_state_type); call list_insert(list_unit, 'mol P m-3',uid)
     endif
+    print*,'bfndiag nstvars',itemp
     !diagnostic variables
     if(maxpft>0)then
       this%lid_plant_minn_nh4 = addone(itemp)  !this is used to indicate plant mineral nitrogen uptake
@@ -481,6 +484,8 @@ implicit none
       this%lid_autr_rt      = addone(itemp)           !this is used to indicate plant autotrophic root respiration
       call list_insert(list_name, 'autr_rt',vid, itype=var_flux_type); call list_insert(list_unit,'mol C m-3 s-1',uid)
     endif
+    print*,'bfn2o nstvars',itemp
+
     this%lid_n2o_nit  = addone(itemp);
     call list_insert(list_name, 'n2o_nit',vid, itype=var_flux_type); call list_insert(list_unit, 'mol N2O m-3 s-1',uid)
 
@@ -523,8 +528,9 @@ implicit none
     !aerechyma transport
     this%lid_o2_paere   = addone(itemp);
     this%lid_o2_aren_reac  = addone(ireac); call list_insert(list_react, 'o2_aren_reac', itemp0)
-
     call list_insert(list_name, 'o2_paere',vid, itype=var_flux_type); call list_insert(list_unit,'mol m-3 s-1',uid)
+
+    print*,'afo2 nstvars',itemp
     if ( spinup_state == 0 ) then
        this%lid_ar_paere   = addone(itemp);
        this%lid_ar_aren_reac  = addone(ireac);  call list_insert(list_react, 'ar_aren_reac', itemp0)   !
@@ -558,7 +564,7 @@ implicit none
        this%lid_n2o_aren_reac = addone(ireac); call list_insert(list_react, 'n2o_aren_reac', itemp0)   !
        call list_insert(list_name, 'n2o_paere',vid, itype=var_flux_type); call list_insert(list_unit,'mol  m-3 s-1',uid)
     endif
-
+    print*,'bpft nstvars',itemp
     if(maxpft>0)then
       allocate(this%lid_plant_minn_no3_pft(maxpft));
       allocate(this%lid_plant_minn_nh4_pft(maxpft));
@@ -576,11 +582,13 @@ implicit none
         call list_insert(list_unit,'mol P m-3 s-1',uid)
       enddo
     endif
+    print*,'pft nstvars',itemp
     if(batch_mode)then
       this%lid_totinput  = addone(itemp);call list_insert(list_name, 'c_tot_input',vid, itype=var_state_type); call list_insert(list_unit,'mol m-3',uid)
       this%lid_totstore  = addone(itemp);call list_insert(list_name, 'c_tot_store',vid, itype=var_state_type); call list_insert(list_unit,'mol m-3',uid)
       this%lid_cum_closs  = addone(itemp);call list_insert(list_name, 'c_loss',vid, itype=var_state_type); call list_insert(list_unit,'mol m-3',uid)
     endif
+    print*,'f nstvars',itemp
     this%nstvars          = itemp          !totally 14+32 state variables
     this%nreactions = ireac            !seven decomposition pathways plus root auto respiration, nitrification, denitrification and plant immobilization
 
@@ -768,4 +776,124 @@ implicit none
   print*,'pnh4pft=', this%lid_plant_minn_nh4_pft(:)
   print*,'minppft=', this%lid_plant_minp_pft(:)
   end subroutine display_index
+!-------------------------------------------------------------------------------
+  subroutine hcopy(this, that)
+  implicit none
+  class(v1eca_bgc_index_type) :: this
+  class(v1eca_bgc_index_type), intent(in) :: that
+
+  integer :: jj
+  integer :: maxpft
+  this%nom_pools =that%nom_pools                               !not include coarse wood debris
+
+  this%nom_tot_elms=that%nom_tot_elms
+  this%lit1 = that%lit1; this%lit1_dek_reac = that%lit1_dek_reac
+  this%lit2 = that%lit2; this%lit2_dek_reac = that%lit2_dek_reac
+  this%lit3 = that%lit3; this%lit3_dek_reac = that%lit3_dek_reac
+  this%som1 = that%som1; this%som1_dek_reac = that%som1_dek_reac
+  this%som2 = that%som2; this%som2_dek_reac = that%som2_dek_reac
+  this%som3 = that%som3; this%som3_dek_reac = that%som3_dek_reac
+  this%cwd  = that%cwd;  this%cwd_dek_reac  = that%cwd_dek_reac
+  this%litr_beg = that%litr_beg; this%litr_end = that%litr_end  !litr group
+  this%wood_beg = that%wood_beg; this%wood_end = that%wood_end  !wood group
+  this%som_beg  = that%som_beg;  this%som_end  = that%som_end   !som group
+  this%Bm_beg   = that%Bm_beg;   this%Bm_end   = that%Bm_end   !dom group
+  this%pom_beg = that%pom_beg;   this%pom_end  = that%pom_end
+  this%c_loc   = that%c_loc
+  this%n_loc   = that%n_loc
+  this%p_loc   = that%p_loc
+  this%c13_loc = that%c13_loc
+  this%c14_loc = that%c14_loc
+  this%lid_supp_minp = that%lid_supp_minp                          !supplementary mineral P for spinup purpose
+  this%lid_supp_minn = that%lid_supp_minn
+  this%nelms = that%nelms                                 !number of chemical elements in an om pool
+                                                                 !reactive primary variables
+  this%lid_nh4 = that%lid_nh4; this%lid_nh4_nit_reac = that%lid_nh4_nit_reac             !local position of nh4 in the state variable vector
+  this%lid_no3 = that%lid_no3; this%lid_no3_den_reac = that%lid_no3_den_reac              !local position of no3 in the state variable vector
+  this%lid_plant_minn_nh4 = that%lid_plant_minn_nh4
+  this%lid_plant_minn_nh4_up_reac = that%lid_plant_minn_nh4_up_reac !local position of plant uptake of mineral nitrogen NH4 in the state variable vector
+  this%lid_plant_minn_no3 = that%lid_plant_minn_no3;
+  this%lid_plant_minn_no3_up_reac = that%lid_plant_minn_no3_up_reac !
+  this%lid_plant_minp = that%lid_plant_minp;
+  this%lid_plant_minp_up_reac = that%lid_plant_minp_up_reac !local position of plant uptake of mineral P in the state variable vector
+  this%lid_minp_soluble = that%lid_minp_soluble;
+  this%lid_minp_soluble_to_labile_reac = that%lid_minp_soluble_to_labile_reac   !conversation of adsorbed into secondary phase
+  this%lid_o_scalar = that%lid_o_scalar                           ! oxygen stress
+  this%lid_autr_rt = that%lid_autr_rt;
+  this%lid_autr_rt_reac = that%lid_autr_rt_reac          !root autotrophic respiration
+
+                                                                 !non reactive primary variables
+  this%lid_ar = that%lid_ar; this%lid_ar_aren_reac = that%lid_ar_aren_reac               !local position of ar in the state variable vector
+  this%lid_ch4= that%lid_ch4; this%lid_ch4_aren_reac = that%lid_ch4_aren_reac            !nonreactive primary variables
+  this%lid_pot_co2_hr = that%lid_pot_co2_hr
+  this%lid_co2_somhr = that%lid_co2_somhr
+  this%lid_co2_lithr = that%lid_co2_lithr
+                                                                 !secondary variables
+  this%lid_o2 = that%lid_o2;  this%lid_o2_aren_reac = that%lid_o2_aren_reac               !local position of o2 in the state variable vector
+  this%lid_co2= that%lid_co2; this%lid_co2_aren_reac= that%lid_co2_aren_reac             !local position of co2 in the state variable vector
+  this%lid_n2 = that%lid_n2;  this%lid_n2_aren_reac = that%lid_n2_aren_reac
+  this%lid_n2o= that%lid_n2o; this%lid_n2o_aren_reac= that%lid_n2o_aren_reac
+                                                                 !diagnostic variables
+  this%lid_n2o_nit = that%lid_n2o_nit                            !n2o production from nitrification, used to for mass balance book keeping
+  this%lid_co2_hr  = that%lid_co2_hr                             !co2 production from heterotrophic respiration
+  this%lid_c13_co2 = that%lid_c13_co2
+  this%lid_c13_co2_aren_reac = that%lid_c13_co2_aren_reac
+  this%lid_c14_co2 = that%lid_c14_co2;
+  this%lid_c14_co2_aren_reac = that%lid_c14_co2_aren_reac
+  this%lid_no3_den = that%lid_no3_den; this%lid_n2o_den = that%lid_n2o_den               !no3 consumption due to denitrification
+  this%lid_minn_nh4_immob = that%lid_minn_nh4_immob                     !net mineral NH4 immobilization for decomposition
+  this%lid_minn_no3_immob = that%lid_minn_no3_immob                     !net mineral NO3 immobilization for decomposition
+  this%lid_nh4_nit = that%lid_nh4_nit
+                                                                 !aerechyma transport, diagnostic efflux
+  this%lid_minp_immob = that%lid_minp_immob                         !net P immobilization by aerobic decomposer
+  this%lid_minp_sorb = that%lid_minp_sorb                          !sorption flux for soluble mineral P
+  this%lid_ar_paere = that%lid_ar_paere
+  this%lid_n2_paere = that%lid_n2_paere
+  this%lid_o2_paere = that%lid_o2_paere
+  this%lid_co2_paere = that%lid_co2_paere
+  this%lid_c13_co2_paere = that%lid_c13_co2_paere
+  this%lid_c14_co2_paere = that%lid_c14_co2_paere
+  this%lid_ch4_paere = that%lid_ch4_paere
+  this%lid_n2o_paere = that%lid_n2o_paere
+  this%nprimvars = that%nprimvars                              !total number of primary variables
+  this%nstvars = that%nstvars                                !number of equations for the state variabile vector
+  this%nreactions = that%nreactions                             !seven decomposition pathways plus nitrification, denitrification and plant immobilization
+  this%lid_totinput = that%lid_totinput
+  this%lid_totstore = that%lid_totstore
+  this%lid_cum_closs = that%lid_cum_closs
+
+  this%debug = that%debug
+  maxpft=size(that%lid_plant_minn_no3_pft)
+  if(maxpft>0)then
+     allocate(this%lid_plant_minn_no3_pft(maxpft));
+     allocate(this%lid_plant_minn_nh4_pft(maxpft));
+     allocate(this%lid_plant_minp_pft(maxpft));
+     do jj = 1, maxpft
+       this%lid_plant_minn_no3_pft(jj) = that%lid_plant_minn_no3_pft(jj);
+       this%lid_plant_minn_nh4_pft(jj) = that%lid_plant_minn_nh4_pft(jj);
+       this%lid_plant_minp_pft(jj)     = that%lid_plant_minp_pft(jj);
+     enddo
+  endif
+
+  allocate(this%primvarid(this%nreactions))
+  allocate(this%is_aerobic_reac(this%nreactions));
+  do jj = 1, this%nreactions
+    this%primvarid(jj) = that%primvarid(jj)
+    this%is_aerobic_reac(jj) = that%is_aerobic_reac(jj)
+  enddo
+
+  allocate(this%vartypes(this%nstvars))
+  allocate(this%varnames(this%nstvars))
+  allocate(this%varunits(this%nstvars))
+  do jj = 1, this%nstvars
+     this%vartypes(jj) = that%vartypes(jj)
+     this%varnames(jj) = that%varnames(jj)
+     this%varunits(jj) = that%varunits(jj)
+  enddo
+
+  allocate(this%ompoolnames(this%nom_pools))
+  do jj = 1, this%nom_pools
+    this%ompoolnames(jj) = that%ompoolnames(jj)
+  enddo
+  end subroutine hcopy
 end module v1ecaBGCIndexType
