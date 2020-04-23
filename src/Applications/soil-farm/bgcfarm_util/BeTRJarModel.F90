@@ -41,6 +41,9 @@ implicit none
   character(len=*), intent(out) :: varunits(1:nstvars)
   integer         , intent(out) :: vartypes(1:nstvars)
 
+  varnames(:)=''
+  varunits(:)=''
+  vartypes(:)=0
   if(nstvars>=0)return
   end subroutine JarModel_getvarlist
 
@@ -68,7 +71,8 @@ implicit none
   real(r8)                   , intent(out)   :: ystatesf(nstates)
   type(betr_status_type)     , intent(out)   :: bstatus
 
-
+  ystates0(:)=0._r8
+  ystatesf(:)=0._r8
   call bstatus%reset()
   end subroutine JarModel_runbgc
 
@@ -92,6 +96,11 @@ implicit none
   real(r8), optional, intent(out) :: c_flx, n_flx, p_flx
   type(betr_status_type), optional, intent(out)   :: bstatus
   !local variables
+  c_mass=0._r8;n_mass=0._r8;p_mass=0._r8
+  if(present(c_flx))c_flx=0._r8
+  if(present(n_flx))n_flx=0._r8
+  if(present(p_flx))p_flx=0._r8
+
   call bstatus%reset()
   end subroutine JarModel_sumup_cnp_msflx
 
@@ -103,7 +112,7 @@ implicit none
   class(jar_model_type)      , intent(inout) :: this
   integer , intent(in) :: nstvars
   real(r8), intent(inout) :: ystates(nstvars)
-
+  ystates(:)=0._r8
   if(nstvars>=0)continue
   end subroutine JarModel_init_cold
 end module BeTRJarModel

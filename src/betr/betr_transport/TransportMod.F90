@@ -1080,9 +1080,9 @@ contains
         call mass_interp(zh(jl-1:jr),mass_curve(jl-1:jr,ntr),zold(j-1),zold(j),mass_new(j,ntr), bstatus)
         if(bstatus%check_status())return
         if(jr-jl==1 .and. debug_loc)then
-          write(*,'(A,2(X,I3),9(X,E18.10)))')'j',ntr,j,mass_new(j,ntr),zold(j-1),zold(j),zh(jl-1:jr),mass_curve(jl-1:jr,ntr)
+          write(*,'(A,2(X,I3),9(X,E18.10))')'j',ntr,j,mass_new(j,ntr),zold(j-1),zold(j),zh(jl-1:jr),mass_curve(jl-1:jr,ntr)
         elseif(jr-jl==2 .and. debug_loc)then
-          write(*,'(A,2(X,I3),11(X,E18.10)))')'j',ntr,j,mass_new(j,ntr),zold(j-1),zold(j),zh(jl-1:jr),mass_curve(jl-1:jr,ntr)
+          write(*,'(A,2(X,I3),11(X,E18.10))')'j',ntr,j,mass_new(j,ntr),zold(j-1),zold(j),zh(jl-1:jr),mass_curve(jl-1:jr,ntr)
         endif
       enddo
       jl=jr
