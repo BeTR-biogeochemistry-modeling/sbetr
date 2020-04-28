@@ -424,7 +424,6 @@ implicit none
     this%lid_n2         = addone(itemp);call list_insert(list_name, 'n2',vid, itype=var_state_type); call list_insert(list_unit, 'mol N2 m-3',uid)
 
     this%nprimvars      = itemp
-    print*,'nprimvars=',this%nprimvars
     if(non_limit)then
       !when N is unlimited, nh4 and no3 are not primary variables
       if(nop_limit .or. spinup_state /= 0)then
@@ -455,7 +454,6 @@ implicit none
         this%nprimvars = this%nprimvars + 1
       endif
     endif
-    print*,'nprimnstvars',itemp,this%nprimvars
     this%lid_nh4_nit_reac = addone(ireac); call list_insert(list_react, 'nh4_nit_reac', itemp0)       !this is also used to indicate the nitrification reaction
     this%lid_no3_den_reac = addone(ireac); call list_insert(list_react, 'no3_den_reac', itemp0)       !this is also used to indicate the denitrification reaction
 
@@ -469,7 +467,6 @@ implicit none
       this%lid_supp_minp=addone(itemp)
       call list_insert(list_name, 'supp_minp_soluble',vid, itype=var_state_type); call list_insert(list_unit, 'mol P m-3',uid)
     endif
-    print*,'bfndiag nstvars',itemp
     !diagnostic variables
     if(maxpft>0)then
       this%lid_plant_minn_nh4 = addone(itemp)  !this is used to indicate plant mineral nitrogen uptake
@@ -484,7 +481,6 @@ implicit none
       this%lid_autr_rt      = addone(itemp)           !this is used to indicate plant autotrophic root respiration
       call list_insert(list_name, 'autr_rt',vid, itype=var_flux_type); call list_insert(list_unit,'mol C m-3 s-1',uid)
     endif
-    print*,'bfn2o nstvars',itemp
 
     this%lid_n2o_nit  = addone(itemp);
     call list_insert(list_name, 'n2o_nit',vid, itype=var_flux_type); call list_insert(list_unit, 'mol N2O m-3 s-1',uid)
@@ -530,7 +526,6 @@ implicit none
     this%lid_o2_aren_reac  = addone(ireac); call list_insert(list_react, 'o2_aren_reac', itemp0)
     call list_insert(list_name, 'o2_paere',vid, itype=var_flux_type); call list_insert(list_unit,'mol m-3 s-1',uid)
 
-    print*,'afo2 nstvars',itemp
     if ( spinup_state == 0 ) then
        this%lid_ar_paere   = addone(itemp);
        this%lid_ar_aren_reac  = addone(ireac);  call list_insert(list_react, 'ar_aren_reac', itemp0)   !
@@ -564,7 +559,6 @@ implicit none
        this%lid_n2o_aren_reac = addone(ireac); call list_insert(list_react, 'n2o_aren_reac', itemp0)   !
        call list_insert(list_name, 'n2o_paere',vid, itype=var_flux_type); call list_insert(list_unit,'mol  m-3 s-1',uid)
     endif
-    print*,'bpft nstvars',itemp
     if(maxpft>0)then
       allocate(this%lid_plant_minn_no3_pft(maxpft));
       allocate(this%lid_plant_minn_nh4_pft(maxpft));
@@ -582,13 +576,11 @@ implicit none
         call list_insert(list_unit,'mol P m-3 s-1',uid)
       enddo
     endif
-    print*,'pft nstvars',itemp
     if(batch_mode)then
       this%lid_totinput  = addone(itemp);call list_insert(list_name, 'c_tot_input',vid, itype=var_state_type); call list_insert(list_unit,'mol m-3',uid)
       this%lid_totstore  = addone(itemp);call list_insert(list_name, 'c_tot_store',vid, itype=var_state_type); call list_insert(list_unit,'mol m-3',uid)
       this%lid_cum_closs  = addone(itemp);call list_insert(list_name, 'c_loss',vid, itype=var_state_type); call list_insert(list_unit,'mol m-3',uid)
     endif
-    print*,'f nstvars',itemp
     this%nstvars          = itemp          !totally 14+32 state variables
     this%nreactions = ireac            !seven decomposition pathways plus root auto respiration, nitrification, denitrification and plant immobilization
 
