@@ -1789,6 +1789,8 @@ contains
          this%biogeo_flux(c)%c12flux_vars%somhr_vr_col(c_l,j)
       c12_cflx_vars%lithr(c) = c12_cflx_vars%lithr(c)  + col%dz(c,j)*&
          this%biogeo_flux(c)%c12flux_vars%lithr_vr_col(c_l,j)
+      c12_cflx_vars%cwdhr(c) = c12_cflx_vars%cwdhr(c)  + col%dz(c,j)*&
+         this%biogeo_flux(c)%c12flux_vars%cwdhr_vr_col(c_l,j)
     enddo
   enddo
   end associate

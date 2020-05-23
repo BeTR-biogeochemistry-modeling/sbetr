@@ -1008,6 +1008,7 @@ contains
     lid_co2_hr => this%v1eca_bgc_index%lid_co2_hr                                              , &
     lid_co2_somhr => this%v1eca_bgc_index%lid_co2_somhr                                        , &
     lid_co2_lithr => this%v1eca_bgc_index%lid_co2_lithr                                        , &
+    lid_co2_cwdhr => this%v1eca_bgc_index%lid_co2_cwdhr                                        , &
     lid_cum_closs=> this%v1eca_bgc_index%lid_cum_closs                                         , &
     varnames=> this%v1eca_bgc_index%varnames                                                   , &
     som1    => this%v1eca_bgc_index%som1                                                       , &

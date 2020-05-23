@@ -1887,6 +1887,9 @@ contains
         (ystatesf(this%v1eca_bgc_index%lid_co2_lithr) - &
         ystates0(this%v1eca_bgc_index%lid_co2_lithr))*catomw/dtime
 
+      biogeo_flux%c12flux_vars%cwdhr_vr_col(c,j) = &
+        (ystatesf(this%v1eca_bgc_index%lid_co2_cwdhr) - &
+        ystates0(this%v1eca_bgc_index%lid_co2_cwdhr))*catomw/dtime
 
       biogeo_flux%c12flux_vars%o_scalar_col(c,j) = ystatesf(this%v1eca_bgc_index%lid_o_scalar)
 
