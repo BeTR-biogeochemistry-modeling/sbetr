@@ -46,7 +46,7 @@ implicit none
     real(r8), pointer :: phr_vr(:,:)=> null()
     real(r8), pointer :: somhr(:) => null()
     real(r8), pointer :: lithr(:)=> null()
-    real(r8), pointer :: cwdhr(:)=> null()
+    real(r8), pointer :: cwdc_hr(:)=> null()
     real(r8), pointer :: o_scalar(:,:)=> null()
   contains
 
@@ -127,7 +127,7 @@ contains
     allocate(this%o_scalar(begc:endc,1:nlevdecomp_full)); this%o_scalar(:,:)=spval
     allocate(this%somhr(begc:endc)); this%somhr(:) = spval
     allocate(this%lithr(begc:endc)); this%lithr(:) = spval
-    allocate(this%cwdhr(begc:endc)); this%cwdhr(:) = spval
+    allocate(this%cwdc_hr(begc:endc)); this%cwdc_hr(:) = spval
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------
