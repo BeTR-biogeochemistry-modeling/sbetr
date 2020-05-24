@@ -586,6 +586,7 @@ contains
       lid_o2    => v1eca_bgc_index%lid_o2                     , & !
       lid_co2   => v1eca_bgc_index%lid_co2                    , & !
       lid_co2_cwdhr => v1eca_bgc_index%lid_co2_cwdhr          , &
+      lid_co2_lithr => v1eca_bgc_index%lid_co2_lithr          , &
       lid_nh4   => v1eca_bgc_index%lid_nh4                    , & !
       lid_c14_co2=> v1eca_bgc_index%lid_c14_co2               , & !
       lid_c13_co2=> v1eca_bgc_index%lid_c13_co2               , & !
@@ -610,6 +611,7 @@ contains
 
     cascade_matrix(lid_co2                ,reac) = 1._r8-f1-f2
     cascade_matrix(lid_co2_cwdhr          ,reac) = cascade_matrix(lid_co2                 ,reac)
+    cascade_matrix(lid_co2_lithr          ,reac) = cascade_matrix(lid_co2                 ,reac)
     cascade_matrix(lid_o2                 ,reac) = -cascade_matrix(lid_co2                ,reac)
     cascade_matrix(lid_nh4                ,reac) = -cascade_matrix((iwd-1)*nelms+n_loc    ,reac)  &
                                                    -cascade_matrix((lit2-1)*nelms+n_loc   ,reac)  &
