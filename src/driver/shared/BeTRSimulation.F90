@@ -320,6 +320,19 @@ contains
     call endrun(msg=bstatus%print_msg())
   endif
 
+  !grid horizontal bounds
+  call this%BeTRSetBounds(betr_bounds)
+
+  do c = bounds%begc, bounds%endc
+    if(.not. this%active_col(c))cycle
+    call this%betr(c)%UpdateParas(betr_bounds, this%bstatus(c))
+    if(this%bstatus(c)%check_status())then
+      call this%bsimstatus%setcol(c)
+      call this%bsimstatus%set_msg(this%bstatus(c)%print_msg(),this%bstatus(c)%print_err())
+      exit
+    endif
+  enddo
+  if(this%bsimstatus%check_status())call endrun(msg=this%bsimstatus%print_msg())
 
   end subroutine BeTRSimulationReadParams
 !-------------------------------------------------------------------------------
