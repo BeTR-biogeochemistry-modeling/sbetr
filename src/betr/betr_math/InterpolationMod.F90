@@ -504,7 +504,7 @@ contains
     endif
   enddo
   if(i_loc==-1)then
-    if(xi==x(m))i_loc=m
+    if(xi==x(m))i_loc=m-1
   endif
   return
   end function loc_xj
