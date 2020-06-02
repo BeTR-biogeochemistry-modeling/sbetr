@@ -461,7 +461,7 @@ contains
     return
   else
     if(xi==x(1))then
-      i_loc=0
+      i_loc=1
       return
     elseif(xi==x(m))then
       i_loc=m
