@@ -693,6 +693,8 @@ contains
     do fc = 1, num_surfc
       c = filter_soilc(fc)
       this%biophys_forc(c)%pweath_prof_col(c_l,j) = pdep_prof(c,j)
+      this%biophys_forc(c)%c12flx%rt_vr_col(c_l,j) = carbonflux_vars%rr_vr(c,j)
+
       !!------------------------------------------------------------------------
       !carbon input
       !metabolic carbon

@@ -179,10 +179,9 @@ contains
 
   if(bstatus%check_status())call endrun(msg=bstatus%print_msg())
 
-  if(lread_param) call simulation%readParams(bounds)
-
   call  simulation%Init(bounds, lun, col, pft, waterstate_vars, namelist_buffer, base_filename, case_id)
   !x print*,'af sim init'
+  if(lread_param) call simulation%readParams(bounds)
 
   select type(simulation)
   class is (betr_simulation_standalone_type)
