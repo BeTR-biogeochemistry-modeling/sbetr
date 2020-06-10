@@ -5,6 +5,7 @@ module sbetrDriverMod
 ! created by Jinyun Tang
   use shr_kind_mod , only : r8 => shr_kind_r8
   use BeTR_TimeMod , only : betr_time_type
+  use histMod      , only : hist_freq_str_len
 
   implicit none
 
@@ -434,10 +435,11 @@ end subroutine sbetrBGC_driver
     type(file_desc_t) :: ncid
     type(betr_status_type)   :: bstatus
     character(len=64) :: case_id
+    character(len=hist_freq_str_len) :: freqall
     !-----------------------------------------------------------------------
 
     namelist / sbetr_driver / simulator_name, continue_run, run_type, &
-        is_nitrogen_active, is_phosphorus_active, case_id, finit
+        is_nitrogen_active, is_phosphorus_active, case_id, finit, freqall
 
     namelist / betr_parameters /                  &
          reaction_method,                         &
@@ -447,6 +449,7 @@ end subroutine sbetrBGC_driver
     simulator_name = ''
     continue_run=.false.
     run_type ='tracer'
+    freqall = 'hour'
     is_nitrogen_active=.false.; is_phosphorus_active =.false.
     case_id=''
     input_only=.false.
@@ -512,13 +515,12 @@ end subroutine sbetrBGC_driver
 
     lread_param=trim(run_type)=='sbgc'
     if(lread_param)then
-    call init_hist_bgc(histbgc, base_filename, reaction_method, case_id, hist)
+    call init_hist_bgc(histbgc, base_filename, reaction_method, case_id, hist, freqall)
   endif
   end subroutine read_name_list
 
   !-------------------------------------------------------------------------------
-  subroutine init_hist_bgc(histbgc, base_filename, reaction_method, case_id, hist)
-  use histMod          , only : hist_freq_str_len
+  subroutine init_hist_bgc(histbgc, base_filename, reaction_method, case_id, hist, freqall)
   use histMod          , only : histf_type
   use HistBGCMod       , only : hist_bgc_type
   implicit none
@@ -527,6 +529,7 @@ end subroutine sbetrBGC_driver
   character(len=*), intent(in) :: reaction_method
   character(len=*), intent(in) :: case_id
   class(histf_type), intent(inout) :: hist
+  character(len=hist_freq_str_len), intent(in) :: freqall
   character(len=hist_freq_str_len), allocatable :: freql(:)
 
   integer :: nhistvars
@@ -539,7 +542,7 @@ end subroutine sbetrBGC_driver
 
   allocate(freql(nhistvars))
 
-  freql(:) = 'day'
+  freql(:) = freqall
   if(len(trim(case_id))==0)then
     write(gname,'(A)')trim(base_filename)//'.'//trim(reaction_method)
   else
