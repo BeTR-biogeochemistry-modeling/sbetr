@@ -113,9 +113,29 @@ contains
 
   this%num_hist1d = num1d
   this%num_hist2d = num2d
-  allocate(this%hist1d_var(this%num_hist1d))
-  allocate(this%hist2d_var(this%num_hist2d))
+  if(this%num_hist1d>0)allocate(this%hist1d_var(this%num_hist1d))
+  if(this%num_hist2d>0)allocate(this%hist2d_var(this%num_hist2d))
 
+  do jj = 1, this%num_hist1d
+    call hist_var_init(this%hist1d_var(jj))
+  enddo
+
+  do jj = 1, this%num_hist2d
+    call hist_var_init(this%hist2d_var(jj))
+  enddo 
   end subroutine alloc_hist_list
+  !-----------------------------------------------------------------------
 
+  subroutine hist_var_init(this)
+
+  implicit none
+  type(betr_hist_var_type), intent(inout) :: this
+
+  this%varname= ''
+  this%units= ''
+  this%long_name= ''
+  this%avg_flag = ''
+  this%use_default=''
+
+  end subroutine hist_var_init
 end module TracerBaseType

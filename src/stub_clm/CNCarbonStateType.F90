@@ -1,8 +1,8 @@
 module CNCarbonStateType
   use clm_varcon     , only : spval, ispval, c14ratio
-  use shr_kind_mod       , only : r8 => shr_kind_r8
+  use shr_kind_mod   , only : r8 => shr_kind_r8
   use decompMod      , only : bounds_type
-  use clm_varpar             , only : nlevdecomp_full, ndecomp_pools
+  use clm_varpar     , only : nlevdecomp_full, ndecomp_pools
 implicit none
 
   type, public :: carbonstate_type
@@ -58,7 +58,9 @@ contains
 
     begp = bounds%begp; endp= bounds%endp
     begc = bounds%begc; endc= bounds%endc
-    allocate(this%decomp_cpools_vr(begc:endc,1:nlevdecomp_full,1:ndecomp_pools)); this%decomp_cpools_vr(:,:,:)= spval
+    if(nlevdecomp_full>0 .and. ndecomp_pools>0)then
+      allocate(this%decomp_cpools_vr(begc:endc,1:nlevdecomp_full,1:ndecomp_pools)); this%decomp_cpools_vr(:,:,:)= spval
+    endif
     allocate(this%frootc_patch             (begp :endp))                   ;     this%frootc_patch             (:)   = spval
     allocate(this%cwdc(begc:endc)); this%cwdc(:) = spval
     allocate(this%totlitc(begc:endc)); this%totlitc(:) = spval

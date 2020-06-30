@@ -61,13 +61,18 @@ contains
     !------------------------------------------------------------------------
 
     begp = bounds%begp; endp= bounds%endp
-    allocate(this%decomp_npools_vr(begc:endc,1:nlevdecomp_full,1:ndecomp_pools));
-    this%decomp_npools_vr(:,:,:)= spval
-    allocate(this%smin_no3_vr          (begc:endc,1:nlevdecomp_full)) ; this%smin_no3_vr          (:,:) = spval
-    allocate(this%smin_nh4_vr          (begc:endc,1:nlevdecomp_full)) ; this%smin_nh4_vr          (:,:) = spval
+    begc = bounds%begc; endc= bounds%endc
+    if(nlevdecomp_full>0)then
+      if(ndecomp_pools>0)then
+        allocate(this%decomp_npools_vr(begc:endc,1:nlevdecomp_full,1:ndecomp_pools));
+        this%decomp_npools_vr(:,:,:)= spval
+      endif
+      allocate(this%smin_no3_vr          (begc:endc,1:nlevdecomp_full)) ; this%smin_no3_vr          (:,:) = spval
+      allocate(this%smin_nh4_vr          (begc:endc,1:nlevdecomp_full)) ; this%smin_nh4_vr          (:,:) = spval
+      allocate(this%sminn_vr             (begc:endc,1:nlevdecomp_full)) ; this%sminn_vr             (:,:) = spval
+    endif
     allocate(this%smin_no3             (begc:endc))                   ; this%smin_no3             (:)   = spval
     allocate(this%smin_nh4             (begc:endc))                   ; this%smin_nh4             (:)   = spval
-    allocate(this%sminn_vr             (begc:endc,1:nlevdecomp_full)) ; this%sminn_vr             (:,:) = spval
     allocate(this%cwdn(begc:endc)); this%cwdn(:) = spval
     allocate(this%totlitn(begc:endc)); this%totlitn(:) = spval
     allocate(this%totsomn(begc:endc)); this%totsomn(:) = spval

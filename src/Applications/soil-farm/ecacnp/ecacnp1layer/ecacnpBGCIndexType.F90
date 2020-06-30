@@ -281,7 +281,7 @@ implicit none
   ! !LOCAL VARIABLES:
   integer :: maxpft_loc
   logical :: batch_mode_loc
-  maxpft_loc = 0
+  maxpft_loc = 0; batch_mode_loc=.false.
   this%dom_beg=0; this%dom_end=-1
   if(present(maxpft))maxpft_loc=maxpft
   if(present(batch_mode))batch_mode_loc=batch_mode
@@ -900,28 +900,31 @@ implicit none
      enddo
   endif
 
-  allocate(this%primvarid(this%nreactions))
-  allocate(this%is_aerobic_reac(this%nreactions));
-  do jj = 1, this%nreactions
-    this%primvarid(jj) = that%primvarid(jj)
-    this%is_aerobic_reac(jj) = that%is_aerobic_reac(jj)
-  enddo
-
-  allocate(this%vartypes(this%nstvars))
-  allocate(this%varnames(this%nstvars))
-  allocate(this%varunits(this%nstvars))
-  do jj = 1, this%nstvars
-     this%vartypes(jj) = that%vartypes(jj)
-     this%varnames(jj) = that%varnames(jj)
-     this%varunits(jj) = that%varunits(jj)
-  enddo
-
-  allocate(this%ompoolnames(this%nom_pools))
-  allocate(this%is_cenpool_som(this%nom_pools))
-  do jj = 1, this%nom_pools
-    this%ompoolnames(jj) = that%ompoolnames(jj)
-    this%is_cenpool_som(jj)=that%is_cenpool_som(jj)
-  enddo
-
+  if(this%nreactions>0)then
+    allocate(this%primvarid(this%nreactions))
+    allocate(this%is_aerobic_reac(this%nreactions));
+    do jj = 1, this%nreactions
+      this%primvarid(jj) = that%primvarid(jj)
+      this%is_aerobic_reac(jj) = that%is_aerobic_reac(jj)
+    enddo
+  endif
+  if(this%nstvars>0)then
+    allocate(this%vartypes(this%nstvars))
+    allocate(this%varnames(this%nstvars))
+    allocate(this%varunits(this%nstvars))
+    do jj = 1, this%nstvars
+      this%vartypes(jj) = that%vartypes(jj)
+      this%varnames(jj) = that%varnames(jj)
+      this%varunits(jj) = that%varunits(jj)
+    enddo
+  endif
+  if(this%nom_pools>0)then
+    allocate(this%ompoolnames(this%nom_pools))
+    allocate(this%is_cenpool_som(this%nom_pools))
+    do jj = 1, this%nom_pools
+      this%ompoolnames(jj) = that%ompoolnames(jj)
+      this%is_cenpool_som(jj)=that%is_cenpool_som(jj)
+    enddo
+  endif
   end subroutine hcopy
 end module ecacnpBGCIndexType

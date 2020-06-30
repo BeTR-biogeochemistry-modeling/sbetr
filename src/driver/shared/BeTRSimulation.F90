@@ -264,7 +264,7 @@ contains
     this%filter_soilc(:) = 1
 
     this%num_soilp = maxpft_per_col
-    allocate(this%filter_soilp(this%num_soilp))
+    if(this%num_soilp>0)allocate(this%filter_soilp(this%num_soilp))
     do p = 1, maxpft_per_col
       this%filter_soilp(p) = p
     enddo
@@ -553,22 +553,22 @@ contains
 
   begc = bounds%begc; endc=bounds%endc
   !state variables
-  allocate(this%state_hist1d_var(this%num_hist_state1d))
-  allocate(this%state_hist2d_var(this%num_hist_state2d))
+  if(this%num_hist_state1d>0)allocate(this%state_hist1d_var(this%num_hist_state1d))
+  if(this%num_hist_state2d>0)allocate(this%state_hist2d_var(this%num_hist_state2d))
 
-  allocate(this%hist_states_2d(begc:endc, 1:ubj, 1:this%num_hist_state2d))
-  allocate(this%hist_states_1d(begc:endc, 1:this%num_hist_state1d))
+  if(this%num_hist_state2d>0)allocate(this%hist_states_2d(begc:endc, 1:ubj, 1:this%num_hist_state2d))
+  if(this%num_hist_state1d>0)allocate(this%hist_states_1d(begc:endc, 1:this%num_hist_state1d))
 
   !flux variables
-  allocate(this%flux_hist1d_var(this%num_hist_flux1d))
-  allocate(this%flux_hist2d_var(this%num_hist_flux2d))
+  if(this%num_hist_flux1d>0)allocate(this%flux_hist1d_var(this%num_hist_flux1d))
+  if(this%num_hist_flux2d>0)allocate(this%flux_hist2d_var(this%num_hist_flux2d))
 
-  allocate(this%hist_fluxes_2d(begc:endc, 1:ubj, 1:this%num_hist_flux2d))
-  allocate(this%hist_fluxes_1d(begc:endc, 1:this%num_hist_flux1d))
+  if(this%num_hist_flux2d>0)allocate(this%hist_fluxes_2d(begc:endc, 1:ubj, 1:this%num_hist_flux2d))
+  if(this%num_hist_flux1d>0)allocate(this%hist_fluxes_1d(begc:endc, 1:this%num_hist_flux1d))
 
   if(betr_offline)then
-    allocate(this%hist_fluxes_2d_accum(begc:endc, 1:ubj, 1:this%num_hist_flux2d))
-    allocate(this%hist_fluxes_1d_accum(begc:endc, 1:this%num_hist_flux1d))
+    if(this%num_hist_flux2d>0)allocate(this%hist_fluxes_2d_accum(begc:endc, 1:ubj, 1:this%num_hist_flux2d))
+    if(this%num_hist_flux1d>0)allocate(this%hist_fluxes_1d_accum(begc:endc, 1:this%num_hist_flux1d))
     this%hist_fluxes_1d_accum(:,:) = 0._r8
     this%hist_fluxes_2d_accum(:,:,:) = 0._r8
     this%hist_naccum = 0._r8
@@ -1676,6 +1676,7 @@ contains
   do jj = 1, num_flux2d
     do jl = 1, betr_nlevtrc_soil
       do fc = 1, numf
+        c =filter(fc)
         this%hist_fluxes_2d_accum(c,jl,jj)=this%hist_fluxes_2d_accum(c,jl,jj)/this%hist_naccum
       enddo
     enddo
@@ -1687,6 +1688,7 @@ contains
 
   do jj = 1, num_flux1d
     do fc = 1, numf
+      c =filter(fc)
       this%hist_fluxes_1d_accum(c,jj) = this%hist_fluxes_1d_accum(c,jj)/this%hist_naccum
     enddo
     if(trim(this%flux_hist1d_var(jj)%use_default)/='inactive')then
@@ -1699,6 +1701,7 @@ contains
   do jj = 1, num_flux2d
     do jl = 1, betr_nlevtrc_soil
       do fc = 1, numf
+        c =filter(fc)
         this%hist_fluxes_2d_accum(c,jl,jj) = 0._r8
       enddo
     enddo
@@ -1706,6 +1709,7 @@ contains
 
   do jj = 1, num_flux1d
     do fc = 1, numf
+      c =filter(fc)
       this%hist_fluxes_1d_accum(c,jj) = 0._r8
     enddo
   enddo

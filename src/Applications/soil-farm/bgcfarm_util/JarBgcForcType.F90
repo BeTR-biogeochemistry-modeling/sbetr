@@ -197,13 +197,13 @@ contains
   class(JarBGC_forc_type) , intent(inout) :: this
   integer , intent(in) :: nstvars
   integer, optional, intent(in) :: npools
-  allocate(this%ystates(nstvars))
-  allocate(this%plant_froot_nn(betr_maxpatch_pft))
-  allocate(this%plant_froot_np(betr_maxpatch_pft))
+  allocate(this%ystates(nstvars)); this%ystates(:)=0._r8
+  allocate(this%plant_froot_nn(betr_maxpatch_pft)); this%plant_froot_nn(:)=0._r8
+  allocate(this%plant_froot_np(betr_maxpatch_pft)); this%plant_froot_np(:)=0._r8
   allocate(this%plant_vtype(betr_maxpatch_pft)); this%plant_vtype(:) = 0
 
   if(present(npools))then
-    allocate(this%decomp_k(npools))
+    allocate(this%decomp_k(npools)); this%decomp_k(:)=0._r8
   endif
   end subroutine InitAllocate
   !--------------------------------------------------------------------

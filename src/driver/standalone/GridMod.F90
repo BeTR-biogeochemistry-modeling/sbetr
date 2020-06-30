@@ -74,6 +74,7 @@ contains
     class(betr_grid_type),                    intent(inout) :: this
     character(len=betr_namelist_buffer_size), intent(in)    :: namelist_buffer
 
+    this%nlevgrnd=15
     call this%ReadNameList(namelist_buffer)
     call this%InitAllocate()
     select case (trim(this%grid_type_str))
@@ -90,7 +91,7 @@ contains
           this%grid_type = clm_grid
           call this%clm_exponential_vertical_grid()
           write(*, *) 'WARNING: no grid data type specified, using clm.'
-       end select
+    end select
 
     ! select read routine based on data format.
     call this%ReadNetCDFData()

@@ -74,8 +74,10 @@ contains
 
     begc = bounds%begc; endc= bounds%endc
     begp = bounds%begp; endp= bounds%endp
-
-    allocate(this%decomp_ppools        (begc:endc,1:ndecomp_pools))   ; this%decomp_ppools        (:,:) = spval
+    if(ndecomp_pools>0)then
+      allocate(this%decomp_ppools        (begc:endc,1:ndecomp_pools))   ; this%decomp_ppools        (:,:) = spval
+      allocate(this%decomp_ppools_vr(begc:endc,1:nlevdecomp_full,1:ndecomp_pools)); this%decomp_ppools_vr(:,:,:)= spval
+    endif
     allocate(this%solutionp            (begc:endc))                   ; this%solutionp            (:)   = spval
     allocate(this%solutionp            (begc:endc))                   ; this%solutionp            (:)   = spval
     allocate(this%labilep              (begc:endc))                   ; this%labilep              (:)   = spval
@@ -87,13 +89,14 @@ contains
     allocate(this%totecosysp           (begc:endc))                   ; this%totecosysp           (:)   = spval
     allocate(this%totcolp              (begc:endc))                   ; this%totcolp              (:)   = spval
 
-    allocate(this%decomp_ppools_vr(begc:endc,1:nlevdecomp_full,1:ndecomp_pools)); this%decomp_ppools_vr(:,:,:)= spval
-    allocate(this%solutionp_vr         (begc:endc,1:nlevdecomp_full)) ; this%solutionp_vr         (:,:) = spval
-    allocate(this%labilep_vr           (begc:endc,1:nlevdecomp_full)) ; this%labilep_vr           (:,:) = spval
-    allocate(this%secondp_vr           (begc:endc,1:nlevdecomp_full)) ; this%secondp_vr           (:,:) = spval
-    allocate(this%occlp_vr             (begc:endc,1:nlevdecomp_full)) ; this%occlp_vr             (:,:) = spval
-    allocate(this%primp_vr             (begc:endc,1:nlevdecomp_full)) ; this%primp_vr             (:,:) = spval
-    allocate(this%sminp_vr             (begc:endc,1:nlevdecomp_full)) ; this%sminp_vr             (:,:) = spval
+    if(nlevdecomp_full>0)then
+      allocate(this%solutionp_vr         (begc:endc,1:nlevdecomp_full)) ; this%solutionp_vr         (:,:) = spval
+      allocate(this%labilep_vr           (begc:endc,1:nlevdecomp_full)) ; this%labilep_vr           (:,:) = spval
+      allocate(this%secondp_vr           (begc:endc,1:nlevdecomp_full)) ; this%secondp_vr           (:,:) = spval
+      allocate(this%occlp_vr             (begc:endc,1:nlevdecomp_full)) ; this%occlp_vr             (:,:) = spval
+      allocate(this%primp_vr             (begc:endc,1:nlevdecomp_full)) ; this%primp_vr             (:,:) = spval
+      allocate(this%sminp_vr             (begc:endc,1:nlevdecomp_full)) ; this%sminp_vr             (:,:) = spval
+    endif
     allocate(this%totlitp (begc:endc)); this%totlitp(:) = spval
     allocate(this%totsomp(begc:endc)); this%totsomp(:) = spval
     allocate(this%totlitp_1m(begc:endc)); this%totlitp_1m(:) = spval

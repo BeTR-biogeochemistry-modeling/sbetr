@@ -248,7 +248,7 @@ module BeTRTracerType
   allocate(this%adsorbid           (this%ntracers));      this%adsorbid(:)        = nanid
   allocate(this%volatileid         (this%ntracers));      this%volatileid(:)      = nanid
   allocate(this%volatilegroupid    (this%ntracers));      this%volatilegroupid(:) = nanid
-  allocate(this%h2oid              (this%nh2o_tracers));  this%h2oid(:)           = nanid
+  if(this%nh2o_tracers>0)allocate(this%h2oid              (this%nh2o_tracers));  this%h2oid(:)           = nanid
   allocate(this%frozenid           (this%ntracers));      this%frozenid(:)        = nanid
   allocate(this%tracernames        (this%ntracers));      this%tracernames(:)     = ''
   allocate(this%tracerfamilyname   (this%ntracers));      this%tracerfamilyname(:)= ''
