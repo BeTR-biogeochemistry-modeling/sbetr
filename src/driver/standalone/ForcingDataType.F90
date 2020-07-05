@@ -621,7 +621,7 @@ contains
        c = filter(fc)
        jtops(c) = 1
        soilhydrology_vars%zwts_col(c) = 10._r8
-       soilhydrology_vars%qcharge_col = this%discharge(tstep)
+       soilhydrology_vars%qcharge_col(c) = this%discharge(tstep)
        atm2lnd_vars%forc_pbot_downscaled_col(c) = this%pbot(tstep)  ! 1 atmos
        atm2lnd_vars%forc_t_downscaled_col(c)    = this%tbot(tstep)  ! 2 atmos temperature
     enddo
@@ -663,8 +663,7 @@ contains
     do fc = 1, numf
        c = filter(fc)
        waterflux_vars%qflx_totdrain(c)        = 0._r8
-       col%zi(c,0)                                = grid%zisoi(0)
-
+       col%zi(c,0)                            = grid%zisoi(0)
        waterflux_vars%qflx_snow2topsoi(c)     = 0._r8
        waterflux_vars%qflx_h2osfc2topsoi(c)   = 0._r8
        waterflux_vars%qflx_gross_infl_soil(c) = 0._r8

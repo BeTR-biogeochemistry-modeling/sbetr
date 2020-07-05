@@ -98,11 +98,13 @@ contains
   type(histf_type) :: hist
   character(len=64) :: case_id
   logical :: lread_param
+  integer :: ncols,jj
+
   call spmd_init
 
   !initialize parameters
   call read_name_list(namelist_buffer, base_filename, case_id, &
-    simulator_name, finit, histbgc, hist, lread_param)
+    simulator_name, finit, histbgc, hist, lread_param, ncols)
 
   !create simulations
   simulation => create_betr_simulation(simulator_name)
@@ -110,9 +112,9 @@ contains
 
   !set up mask
   bounds%begc = 1
-  bounds%endc = 1
+  bounds%endc = ncols
   bounds%begp = 1
-  bounds%endp = 1
+  bounds%endp = ncols
   bounds%begl = 1
   bounds%endl = 1
   bounds%lbj  = 1
@@ -133,15 +135,15 @@ contains
   lbj = 1
   ubj = nlevtrc_soil
 
-  lun%itype(1) = istsoil
-  col%landunit(1) = 1
-  col%gridcell(1) = 1
-  col%npfts(1)    = 1
-  col%pfti(1)     = 1
-  col%snl(1)      = 0
-  pft%landunit(1) = 1
-  pft%column(1)   = 1
-  pft%itype(1)    = 2
+  lun%itype(bounds%begl:bounds%endl) = istsoil
+  col%landunit(bounds%begc:bounds%endc) = 1
+  col%gridcell(bounds%begc:bounds%endc) = 1
+  col%npfts(bounds%begc:bounds%endc)    = 1
+  col%pfti(bounds%begc:bounds%endc)     = 1
+  col%snl(bounds%begc:bounds%endc)      = 0
+  pft%landunit(bounds%begp:bounds%endp) = 1
+  pft%column(bounds%begp:bounds%endp)   = (/(jj,jj=1,ncols)/)
+  pft%itype(bounds%begp:bounds%endp)    = 2
 
   !print*,'set filters to load initialization data from input'
   call simulation%BeTRSetFilter(maxpft_per_col=0, boffline=.true.)
@@ -395,7 +397,7 @@ end subroutine sbetrBGC_driver
 ! ----------------------------------------------------------------------
 
   subroutine read_name_list(namelist_buffer, base_filename, case_id_loc, &
-    simulator_name_arg, finit, histbgc, hist, lread_param)
+    simulator_name_arg, finit, histbgc, hist, lread_param, ncols)
     !
     ! !DESCRIPTION:
     ! read namelist for betr configuration
@@ -424,6 +426,7 @@ end subroutine sbetrBGC_driver
     class(hist_bgc_type), intent(inout) :: histbgc
     class(histf_type), intent(inout) :: hist
     logical, intent(out) :: lread_param
+    integer, intent(out) :: ncols
     !
     ! !LOCAL VARIABLES:
     integer                                :: nml_error
@@ -446,6 +449,7 @@ end subroutine sbetrBGC_driver
          advection_on, diffusion_on, reaction_on, &
          ebullition_on, input_only, adv_scalar, bgc_param_file
 
+    ncols=1
     simulator_name = ''
     continue_run=.false.
     run_type ='tracer'
