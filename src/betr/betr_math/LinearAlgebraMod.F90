@@ -14,6 +14,10 @@ module LinearAlgebraMod
 
   public :: sparse_gemv
   public :: taxpy
+  interface taxpy
+    module procedure taxpy_v,taxpy_m
+  end interface taxpy
+
 contains
 
   subroutine sparse_gemv(transp, nx, ny, a, nb, b, nz, dxdt)
@@ -58,7 +62,7 @@ contains
   end subroutine sparse_gemv
 
 !-------------------------------------------------------------------------------
- subroutine taxpy(N,DA,DX,INCX,DY,INCY)
+ subroutine taxpy_v(N,DA,DX,INCX,DY,INCY)
  implicit none
  integer, intent(in) :: N
  real(r8), intent(in) :: da
@@ -98,7 +102,25 @@ contains
     enddo
   end if
 
- end subroutine taxpy
+ end subroutine taxpy_v
+
+!-------------------------------------------------------------------------------
+ subroutine taxpy_m(N,DA,DX,INCX,DY,INCY)
+ implicit none
+ integer, intent(in) :: N
+ real(r8), intent(in) :: da
+ real(r8), intent(in) :: dx(:,:)
+ integer, intent(in) :: incx
+ integer, intent(in) :: incy
+ real(r8), intent(inout):: dy(:,:)
+
+ integer :: szy, jj
+
+ szy = size(dx,2)
+ do jj = 1, szy
+   call taxpy_v(n,da,dx(:,jj),incx,dy(:,jj),incy)
+ enddo
+ end subroutine taxpy_m
 
 
 end module LinearAlgebraMod

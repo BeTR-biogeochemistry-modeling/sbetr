@@ -357,7 +357,7 @@ contains
     call simulation%WriteOfflineHistory(bounds, bounds%ubj, numfls,  &
        filters, waterflux_vars%qflx_adv)
 
-    if(simulation%do_soibgc()) call WriteHistBGC(hist, simulation%betr_time, carbonstate_vars, carbonflux_vars, &
+    if(simulation%do_soibgc()) call WriteHistBGC(bounds, hist, simulation%betr_time, carbonstate_vars, carbonflux_vars, &
          nitrogenstate_vars, nitrogenflux_vars, phosphorusstate_vars, phosphorusflux_vars, reaction_method)
 
     if(simulation%betr_time%its_time_to_write_restart()) then
@@ -520,15 +520,16 @@ end subroutine sbetrBGC_driver
 
     lread_param=trim(run_type)=='sbgc'
     if(lread_param)then
-    call init_hist_bgc(histbgc, base_filename, reaction_method, case_id, hist, freqall)
+    call init_hist_bgc(ncols, histbgc, base_filename, reaction_method, case_id, hist, freqall)
   endif
   end subroutine read_name_list
 
   !-------------------------------------------------------------------------------
-  subroutine init_hist_bgc(histbgc, base_filename, reaction_method, case_id, hist, freqall)
+  subroutine init_hist_bgc(ncols, histbgc, base_filename, reaction_method, case_id, hist, freqall)
   use histMod          , only : histf_type
   use HistBGCMod       , only : hist_bgc_type
   implicit none
+  integer            , intent(in) :: ncols
   type(hist_bgc_type), intent(inout) :: histbgc
   character(len=*), intent(in) :: base_filename
   character(len=*), intent(in) :: reaction_method
@@ -553,23 +554,25 @@ end subroutine sbetrBGC_driver
   else
     write(gname,'(A)')trim(base_filename)//'.'//trim(case_id)//'.'//trim(reaction_method)
   endif
-  call hist%init(histbgc%varl, histbgc%unitl, histbgc%vartypes, freql, gname)
+  call hist%init(ncols, histbgc%varl, histbgc%unitl, histbgc%vartypes, freql, gname)
 
   end subroutine init_hist_bgc
 
   !-------------------------------------------------------------------------------
-  subroutine WriteHistBGC(hist, timer,  carbonstate_vars, carbonflux_vars, &
+  subroutine WriteHistBGC(bounds, hist, timer,  carbonstate_vars, carbonflux_vars, &
      nitrogenstate_vars, nitrogenflux_vars, phosphorusstate_vars, phosphorusflux_vars, reaction_method)
 
-  use histMod          , only : histf_type
+  use histMod             , only : histf_type
   use CNCarbonFluxType    , only : carbonflux_type
   use CNCarbonStateType   , only : carbonstate_type
   use CNNitrogenFluxType  , only : nitrogenflux_type
   use CNNitrogenStateType , only : nitrogenstate_type
   use PhosphorusFluxType  , only : phosphorusflux_type
   use PhosphorusStateType , only : phosphorusstate_type
-  use BeTR_TimeMod     , only : betr_time_type
+  use BeTR_TimeMod        , only : betr_time_type
+  use decompMod           , only : bounds_type
   implicit none
+  type(bounds_type), intent(in)  :: bounds
   class(histf_type), intent(inout) :: hist
   class(betr_time_type), intent(in) :: timer
   type(carbonstate_type), intent(in) :: carbonstate_vars
@@ -580,96 +583,97 @@ end subroutine sbetrBGC_driver
   type(phosphorusflux_type), intent(in) :: phosphorusflux_vars
   character(len=*), intent(in) :: reaction_method
 
-  real(r8), allocatable :: ystates(:)
-  integer :: c_l, id
+  real(r8), allocatable :: ystates(:,:)
+  integer :: c_l, id, begc, endc
   c_l = 1
-  allocate(ystates(hist%nvars))
+  begc=bounds%begc; endc=bounds%endc
+  allocate(ystates(begc:endc,hist%nvars))
   if(index(trim(reaction_method),'ecacnp')/=0 .or. &
      index(trim(reaction_method),'keca')/=0   .or. &
      index(trim(reaction_method),'ch4soil')/=0)then
     id = 0
-    id = id + 1; ystates(id) = carbonflux_vars%hr(c_l)
-    id = id + 1; ystates(id) = nitrogenflux_vars%f_n2o_nit(c_l)
-    id = id + 1; ystates(id) = nitrogenflux_vars%f_denit(c_l)
-    id = id + 1; ystates(id) = nitrogenflux_vars%f_nit(c_l)
-    id = id + 1; ystates(id) = carbonflux_vars%co2_soi_flx(c_l)
-    id = id + 1; ystates(id) = nitrogenflux_vars%nh3_soi_flx(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%cwdc(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%totlitc(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%totsomc(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%totlitc_1m(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%totsomc_1m(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%cwdn(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%totlitn(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%totsomn(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%totlitn_1m(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%totsomn_1m(c_l)
-    id = id + 1; ystates(id) = phosphorusstate_vars%cwdp(c_l)
-    id = id + 1; ystates(id) = phosphorusstate_vars%totlitp(c_l)
-    id = id + 1; ystates(id) = phosphorusstate_vars%totsomp(c_l)
-    id = id + 1; ystates(id) = phosphorusstate_vars%totlitp_1m(c_l)
-    id = id + 1; ystates(id) = phosphorusstate_vars%totsomp_1m(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%smin_nh4(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%smin_no3(c_l)
-    id = id + 1; ystates(id) = phosphorusstate_vars%sminp(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%som1c(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%som2c(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%som3c(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%som1n(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%som2n(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%som3n(c_l)
-    id = id + 1; ystates(id) = phosphorusstate_vars%som1p(c_l)
-    id = id + 1; ystates(id) = phosphorusstate_vars%som2p(c_l)
-    id = id + 1; ystates(id) = phosphorusstate_vars%som3p(c_l)
+    id = id + 1; ystates(begc:endc,id) = carbonflux_vars%hr(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = nitrogenflux_vars%f_n2o_nit(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = nitrogenflux_vars%f_denit(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = nitrogenflux_vars%f_nit(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = carbonflux_vars%co2_soi_flx(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = nitrogenflux_vars%nh3_soi_flx(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = carbonstate_vars%cwdc(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = carbonstate_vars%totlitc(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = carbonstate_vars%totsomc(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = carbonstate_vars%totlitc_1m(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = carbonstate_vars%totsomc_1m(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = nitrogenstate_vars%cwdn(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = nitrogenstate_vars%totlitn(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = nitrogenstate_vars%totsomn(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = nitrogenstate_vars%totlitn_1m(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = nitrogenstate_vars%totsomn_1m(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = phosphorusstate_vars%cwdp(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = phosphorusstate_vars%totlitp(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = phosphorusstate_vars%totsomp(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = phosphorusstate_vars%totlitp_1m(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = phosphorusstate_vars%totsomp_1m(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = nitrogenstate_vars%smin_nh4(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = nitrogenstate_vars%smin_no3(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = phosphorusstate_vars%sminp(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = carbonstate_vars%som1c(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = carbonstate_vars%som2c(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = carbonstate_vars%som3c(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = nitrogenstate_vars%som1n(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = nitrogenstate_vars%som2n(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = nitrogenstate_vars%som3n(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = phosphorusstate_vars%som1p(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = phosphorusstate_vars%som2p(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = phosphorusstate_vars%som3p(begc:endc)
 
   elseif(index(trim(reaction_method),'cdom')/=0)then
     id = 0
-    id = id + 1; ystates(id) = carbonflux_vars%hr(c_l)
-    id = id + 1; ystates(id) = nitrogenflux_vars%f_n2o_nit(c_l)
-    id = id + 1; ystates(id) = nitrogenflux_vars%f_denit(c_l)
-    id = id + 1; ystates(id) = nitrogenflux_vars%f_nit(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%cwdc(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%totlitc(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%totsomc(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%totlitc_1m(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%totsomc_1m(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%cwdn(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%totlitn(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%totsomn(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%totlitn_1m(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%totsomn_1m(c_l)
-    id = id + 1; ystates(id) = phosphorusstate_vars%cwdp(c_l)
-    id = id + 1; ystates(id) = phosphorusstate_vars%totlitp(c_l)
-    id = id + 1; ystates(id) = phosphorusstate_vars%totsomp(c_l)
-    id = id + 1; ystates(id) = phosphorusstate_vars%totlitp_1m(c_l)
-    id = id + 1; ystates(id) = phosphorusstate_vars%totsomp_1m(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%smin_nh4(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%smin_no3(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%som1c(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%som2c(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%som3c(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%som1n(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%som2n(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%som3n(c_l)
-    id = id + 1; ystates(id) = phosphorusstate_vars%som1p(c_l)
-    id = id + 1; ystates(id) = phosphorusstate_vars%som2p(c_l)
-    id = id + 1; ystates(id) = phosphorusstate_vars%som3p(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%domc(c_l)
-    id = id + 1; ystates(id) = nitrogenstate_vars%domn(c_l)
-    id = id + 1; ystates(id) = phosphorusstate_vars%domp(c_l)
+    id = id + 1; ystates(begc:endc,id) = carbonflux_vars%hr(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = nitrogenflux_vars%f_n2o_nit(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = nitrogenflux_vars%f_denit(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = nitrogenflux_vars%f_nit(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = carbonstate_vars%cwdc(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = carbonstate_vars%totlitc(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = carbonstate_vars%totsomc(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = carbonstate_vars%totlitc_1m(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = carbonstate_vars%totsomc_1m(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = nitrogenstate_vars%cwdn(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = nitrogenstate_vars%totlitn(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = nitrogenstate_vars%totsomn(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = nitrogenstate_vars%totlitn_1m(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = nitrogenstate_vars%totsomn_1m(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = phosphorusstate_vars%cwdp(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = phosphorusstate_vars%totlitp(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = phosphorusstate_vars%totsomp(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = phosphorusstate_vars%totlitp_1m(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = phosphorusstate_vars%totsomp_1m(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = nitrogenstate_vars%smin_nh4(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = nitrogenstate_vars%smin_no3(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = carbonstate_vars%som1c(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = carbonstate_vars%som2c(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = carbonstate_vars%som3c(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = nitrogenstate_vars%som1n(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = nitrogenstate_vars%som2n(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = nitrogenstate_vars%som3n(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = phosphorusstate_vars%som1p(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = phosphorusstate_vars%som2p(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = phosphorusstate_vars%som3p(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = carbonstate_vars%domc(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = nitrogenstate_vars%domn(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = phosphorusstate_vars%domp(begc:endc)
   elseif(index(trim(reaction_method),'simic')/=0)then
-    ystates(:) = 0._r8
+    ystates(:,:) = 0._r8
     id = 0
-    id = id + 1; ystates(id) = carbonflux_vars%hr(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%cwdc(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%totlitc(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%domc(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%som1c(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%som3c(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%som2c(c_l)
-    id = id + 1; ystates(id) = carbonstate_vars%totsomc(c_l)
+    id = id + 1; ystates(begc:endc,id) = carbonflux_vars%hr(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = carbonstate_vars%cwdc(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = carbonstate_vars%totlitc(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = carbonstate_vars%domc(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = carbonstate_vars%som1c(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = carbonstate_vars%som3c(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = carbonstate_vars%som2c(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = carbonstate_vars%totsomc(begc:endc)
   else
-    if(hist%nvars>0)ystates(:) = 0._r8
+    if(hist%nvars>0)ystates(:,:) = 0._r8
   endif
   call hist%hist_wrap(ystates, timer)
   if(allocated(ystates))deallocate(ystates)

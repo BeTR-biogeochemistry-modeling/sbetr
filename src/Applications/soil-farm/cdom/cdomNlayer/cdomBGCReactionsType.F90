@@ -1457,6 +1457,7 @@ contains
         p_loc   => this%cdom_bgc_index%p_loc     , &
         id_trc_beg_Bm=> betrtracer_vars%id_trc_beg_Bm, &
         id_trc_end_Bm=> betrtracer_vars%id_trc_end_Bm, &
+        nfrozen_tracers => betrtracer_vars%nfrozen_tracers, &
         volatileid => betrtracer_vars%volatileid,  &
         n2_ppmv    => biophysforc%n2_ppmv_col       , &
         o2_ppmv    => biophysforc%o2_ppmv_col       , &
@@ -1474,7 +1475,7 @@ contains
       !dual phase tracers
 
       tracerstate_vars%tracer_conc_mobile_col    (c,:, :                                   )  = 0._r8
-      tracerstate_vars%tracer_conc_frozen_col    (c,:, :                                   )  = 0._r8
+      if(nfrozen_tracers>0)tracerstate_vars%tracer_conc_frozen_col    (c,:, :              )  = 0._r8
       tracerstate_vars%tracer_conc_surfwater_col (c,:                                      )  = 0._r8
       tracerstate_vars%tracer_conc_aquifer_col   (c,:                                      )  = 0._r8
       tracerstate_vars%tracer_conc_grndwater_col (c,:                                      )  = 0._r8
