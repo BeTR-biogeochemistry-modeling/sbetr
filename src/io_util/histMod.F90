@@ -288,7 +288,7 @@ contains
 
   integer :: clockid, id, jj
 
-  SHR_ASSERT_ALL((size(yval)   == this%nvars), errMsg(mod_filename,__LINE__))
+  SHR_ASSERT_ALL((size(yval,2)   == this%nvars), errMsg(mod_filename,__LINE__))
 
   ! use daxpy - compute y := alpha * x + y
   ! SUBROUTINE DAXPY(N, ALPHA, X, INCX, Y, INCY)

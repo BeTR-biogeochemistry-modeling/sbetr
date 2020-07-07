@@ -393,6 +393,8 @@ contains
   endif
   call forcing_data%Destroy()
   deallocate(forcing_data)
+  if(allocated(filters))deallocate(filters)
+  if(allocated(grid_data))deallocate(grid_data)
 end subroutine sbetrBGC_driver
 
 ! ----------------------------------------------------------------------
@@ -555,7 +557,7 @@ end subroutine sbetrBGC_driver
     write(gname,'(A)')trim(base_filename)//'.'//trim(case_id)//'.'//trim(reaction_method)
   endif
   call hist%init(ncols, histbgc%varl, histbgc%unitl, histbgc%vartypes, freql, gname)
-
+  if(allocated(freql))deallocate(freql)
   end subroutine init_hist_bgc
 
   !-------------------------------------------------------------------------------
