@@ -100,6 +100,7 @@ contains
   logical :: lread_param
   integer :: ncols,jj
   integer, allocatable :: filters(:)
+  integer, allocatable :: jtops(:)
   integer :: numfls
   call spmd_init
 
@@ -122,6 +123,7 @@ contains
   bounds%ubj  = nlevtrc_soil
   numfls = ncols
   allocate(filters(1:numfls));filters(:)=(/(jj,jj=1,ncols)/)
+  allocate(jtops(1:numfls)); jtops(:)=1
   betr_nlevsno = nlevsno
   betr_nlevsoi = nlevsoi
   !set up grid
@@ -173,7 +175,7 @@ contains
   call forcing_data%UpdateForcing(grid_data, bounds, lbj, ubj, numfls, &
        filters, simulation%betr_time, col, pft, atm2lnd_vars, soilhydrology_vars, &
        soilstate_vars,waterstate_vars, waterflux_vars, temperature_vars, chemstate_vars, &
-       plantMicKinetics_vars, simulation%jtops)
+       plantMicKinetics_vars, jtops)
 
   !x print*,'af init update',forcing_data%t_soi(1,:)
   !print*,'initial water state variable output',simulation%betr_time%tstep
@@ -235,7 +237,7 @@ contains
     call forcing_data%UpdateForcing(grid_data,  bounds, lbj, ubj, numfls, &
       filters, simulation%betr_time, col, pft, atm2lnd_vars, soilhydrology_vars, &
       soilstate_vars,waterstate_vars, waterflux_vars, temperature_vars, chemstate_vars, &
-      plantMicKinetics_vars, simulation%jtops)
+      plantMicKinetics_vars, jtops)
 
     select type(simulation)
 
