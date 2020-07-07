@@ -1914,7 +1914,7 @@ contains
     call ncd_defdim(ncid, 'levtrc', betr_nlevsoi, recordDimID)
 
     !number of columns
-    call ncd_defdim(ncid, 'column', this%num_surfc, recordDimID)
+    call ncd_defdim(ncid, 'column', numf, recordDimID)
 
     call ncd_defvar(ncid, 'hist_naccum',ncd_double, long_name='', &
          units = '',  missing_value=spval, fill_value=spval)

@@ -86,8 +86,10 @@ subroutine run_model(namelist_buffer)
   character(len=hist_unit_str_len), allocatable :: unitl(:)
   character(len=hist_freq_str_len), allocatable :: freql(:)
   integer                         , allocatable :: vartypes(:)
-  real(r8), allocatable :: ystates0(:)
-  real(r8), allocatable :: ystatesf(:)
+  real(r8), allocatable :: ystatesf(:,:)
+  real(r8), allocatable :: ystates0l(:)
+  real(r8), allocatable :: ystatesfl(:)
+
   real(r8) :: dtime
   integer :: nvars
   character(len=14) :: yymmddhhss
@@ -98,9 +100,13 @@ subroutine run_model(namelist_buffer)
   character(len=betr_string_length_long) :: ioerror_msg
   character(len=64) :: case_id
   character(len=256):: gname
+  integer :: ncols, jj
+
   namelist / jar_driver / jarmodel_name, case_id, is_surflit, nitrogen_stress, phosphorus_stress
   logical :: batch_mode
 
+
+  ncols =1
   case_id=''
   if ( .true. )then
      ioerror_msg=''
@@ -109,7 +115,7 @@ subroutine run_model(namelist_buffer)
         call endrun(msg="ERROR reading forcing_inparm namelist "//errmsg(mod_filename, __LINE__))
      end if
   end if
-  print*,'jarmodel_name',jarmodel_name
+  !print*,'jarmodel_name',jarmodel_name
   !create the jar type
 
   jarmodel => create_jar_model(jarmodel_name)
@@ -139,10 +145,11 @@ subroutine run_model(namelist_buffer)
   allocate(varl(nvars)); allocate(unitl(nvars)); allocate(freql(nvars)); allocate(vartypes(nvars))
   call jarmodel%getvarlist(nvars, varl, unitl, vartypes)
   freql(:) = 'day'
-  allocate(ystates0(nvars));ystates0(:)=0._r8
-  allocate(ystatesf(nvars));ystatesf(:)=0._r8
+  allocate(ystatesf(1:ncols,1:nvars));ystatesf(:,:)=0._r8
+  allocate(ystates0l(1:nvars));ystates0l(:) = 0._r8
+  allocate(ystatesfl(1:nvars));ystatesfl(:) = 0._r8
 
-  call jarmodel%init_cold(nvars, ystatesf)
+  call jarmodel%init_cold(nvars, ystatesf(1,:))
 
   !initialize timer
   call timer%Init(namelist_buffer=namelist_buffer)
@@ -154,7 +161,7 @@ subroutine run_model(namelist_buffer)
   else
     write(gname,'(A)')'jarmodel'//'.'//trim(case_id)//'.'//trim(jarmodel_name)
   endif
-  call hist%init(varl, unitl, vartypes, freql, gname, dtime)
+  call hist%init(ncols,varl, unitl, vartypes, freql, gname, dtime)
 
   call bgc_forc%Init(nvars)
   !read in forcing
@@ -166,19 +173,24 @@ subroutine run_model(namelist_buffer)
   !'set constant forcing'
   call SetJarForc(bgc_forc, soil_forc)
 
-  !'run the model'
+  !print*,'run the model'
   do
-    !update forcing'
+    !print*,'update forcing'
     call load_forc(om_forc, nut_forc, atm_forc, soil_forc, timer%tstep)
 
     call SetJarForc(bgc_forc, om_forc, nut_forc, atm_forc, soil_forc, dtime, jarpars)
 
-    call setJarStates(bgc_forc, ystatesf)
+    call setJarStates(bgc_forc, ystatesfl)
 
-    call jarmodel%runbgc(is_surflit, dtime, bgc_forc, nvars, ystates0, ystatesf, bstatus)
-
+    !print*,'runbgc'
+    call jarmodel%runbgc(is_surflit, dtime, bgc_forc, nvars, &
+        ystates0l, ystatesfl, bstatus)
+    !print*,'update_time_stamp'
     call timer%update_time_stamp()
-
+    !print*,'hist_wrap'
+    do jj = 1, nvars
+    ystatesf(1,jj)=ystatesfl(jj)
+    enddo
     call hist%hist_wrap(ystatesf, timer)
 
     if(timer%its_a_new_year())then
