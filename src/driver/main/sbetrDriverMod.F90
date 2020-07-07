@@ -443,7 +443,7 @@ end subroutine sbetrBGC_driver
     !-----------------------------------------------------------------------
 
     namelist / sbetr_driver / simulator_name, continue_run, run_type, &
-        is_nitrogen_active, is_phosphorus_active, case_id, finit, freqall
+        is_nitrogen_active, is_phosphorus_active, case_id, finit, freqall, ncols
 
     namelist / betr_parameters /                  &
          reaction_method,                         &

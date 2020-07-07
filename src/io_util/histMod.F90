@@ -191,31 +191,33 @@ contains
     do n = 1, this%nvars
       select case (trim(this%hrfreq(n)))
       case ('hour')
-        clock_id=clock_hour
+        clock_id = clock_hour
         yes_flag => yes_hour
         nh=nh+1
         this%nh_varid(nh) = n
       case ('day')
-        clock_id=clock_day
+        clock_id = clock_day
         yes_flag => yes_day
         nd=nd+1
         this%nd_varid(nd) = n
+
       case ('week')
-        clock_id=clock_week
+        clock_id = clock_week
         yes_flag => yes_week
         nw=nw+1
         this%nw_varid(nw) = n
       case ('year')
-        clock_id=clock_year
+        clock_id = clock_year
         yes_flag => yes_year
         ny=ny+1
         this%ny_varid(ny) = n
       case default
-        clock_id=clock_month
+        clock_id = clock_month
         yes_flag => yes_mon
         nm=nm+1
         this%nm_varid(nm) = n
       end select
+
       call this%hist_create(loc_gfname, yes_flag,trim(this%hrfreq(n)),ncid(clock_id))
       if(.not. continue_run)then
         call this%hist_add_var(ncid(clock_id),this%varnames(n),this%units(n), trim(this%hrfreq(n)))
@@ -258,12 +260,21 @@ contains
   allocate(this%yvals(this%ncols,this%nvars)); this%yvals(:,:) = 0._r8
   allocate(this%ncfname(nclocks)); this%ncfname(:)=''
   allocate(this%record(nclocks));  this%record(:)=0
-  if(this%nh_vars>0)allocate(this%nh_varid(this%nh_vars))
-  if(this%nd_vars>0)allocate(this%nd_varid(this%nd_vars))
-  if(this%nw_vars>0)allocate(this%nw_varid(this%nw_vars))
-  if(this%nm_vars>0)allocate(this%nm_varid(this%nm_vars))
-  if(this%ny_vars>0)allocate(this%ny_varid(this%ny_vars))
-
+  if(this%nh_vars>0)then
+    allocate(this%nh_varid(this%nh_vars)); this%nh_varid = -1
+  endif
+  if(this%nd_vars>0)then
+    allocate(this%nd_varid(this%nd_vars)); this%nd_varid = -1
+  endif
+  if(this%nw_vars>0)then
+    allocate(this%nw_varid(this%nw_vars)); this%nw_varid = -1
+  endif
+  if(this%nm_vars>0)then
+    allocate(this%nm_varid(this%nm_vars)); this%nm_varid = -1
+  endif
+  if(this%ny_vars>0)then
+    allocate(this%ny_varid(this%ny_vars)); this%ny_varid = -1
+  endif
   end subroutine initAlloc
 
 !--------------------------------------------------------
@@ -345,9 +356,9 @@ contains
   end select
   write(this%ncfname(id),'(A)')trim(gname)//'.hist.'//trim(freq)//'.nc'
   if(continue_run)then
-    this%record(id) = get_dim_len(this%ncfname(id),trim(freq))
+    this%record(id) = get_dim_len(trim(this%ncfname(id)),trim(freq))
   else
-    call ncd_pio_createfile(ncid, this%ncfname(id))
+    call ncd_pio_createfile(ncid, trim(this%ncfname(id)))
     !the temporal dimension is infinite
     call ncd_defdim(ncid,trim(freq),ncd_unlimited,recordDimID)
     !define the column dimension
@@ -366,8 +377,8 @@ contains
   character(len=*), intent(in) :: freq
   type(file_desc_t), intent(inout):: ncid
 
-  call ncd_defvar(ncid, varname, ncd_float,              &
-        dim1name='column',dim2name=trim(freq),long_name=varname,               &
+  call ncd_defvar(ncid, varname, ncd_float,                       &
+        dim1name='column',dim2name=trim(freq),long_name=varname,  &
         units=units, missing_value=spval, fill_value=spval)
 
   end subroutine hist_add_var
@@ -400,6 +411,7 @@ contains
   integer , intent(in) :: clockid
 
   this%record(clockid)=this%record(clockid)+1
+
   end subroutine proc_record
 
 !--------------------------------------------------------
@@ -411,13 +423,17 @@ contains
   integer, intent(in) :: clockid
   integer, intent(in) :: nvars
   integer, intent(in) :: varid(1:nvars)
-
+  real(r8), allocatable :: yvals_loc(:)
   integer :: n, id, jj
   type(file_desc_t) :: ncid
 
   if(nvars==0)return
+  allocate(yvals_loc(1:this%ncols))
+
   call this%proc_record(clockid)
+
   call ncd_pio_openfile_for_write(ncid, this%ncfname(clockid))
+
   do n =1, nvars
     id = varid(n)
     if(this%var_type(n)==var_flux_type)then
@@ -429,7 +445,11 @@ contains
         this%yvals(jj,id) = this%yvals(jj,id)/this%counter(clockid)
       enddo
     endif
-    call ncd_putvar(ncid,this%varnames(id),this%record(clockid),this%yvals(:,id))
+
+    do jj = 1, this%ncols
+      yvals_loc(jj) = this%yvals(jj,id)
+    enddo
+    call ncd_putvar(ncid,this%varnames(id),this%record(clockid),yvals_loc)
     this%yvals(:,id) = 0._r8
   enddo
   call this%reset_counter(clockid)

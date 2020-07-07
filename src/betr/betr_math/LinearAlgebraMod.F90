@@ -114,11 +114,11 @@ contains
  integer, intent(in) :: incy
  real(r8), intent(inout):: dy(:,:)
 
- integer :: szy, jj
+ integer :: szy, jj, nn
 
- szy = size(dx,2)
+ szy = size(dx,2); nn = size(dx,1)
  do jj = 1, szy
-   call taxpy_v(n,da,dx(:,jj),incx,dy(:,jj),incy)
+   call taxpy_v(nn,da,dx(:,jj),incx,dy(:,jj),incy)
  enddo
  end subroutine taxpy_m
 
