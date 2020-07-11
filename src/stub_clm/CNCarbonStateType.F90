@@ -20,7 +20,7 @@ implicit none
     real(r8), pointer :: domc                (:) => null()
     real(r8), pointer :: beg_totomc          (:) => null()
     real(r8), pointer :: totomc              (:) => null()
-    real(r8), pointer :: mass_residual       (:) => null()
+    real(r8), pointer :: cmass_residual       (:) => null()
   contains
 
     procedure, public  :: Init
@@ -76,7 +76,7 @@ contains
     allocate(this%domc(begc:endc)); this%domc(:) = spval
     allocate(this%beg_totomc(begc:endc)); this%beg_totomc(:) = spval
     allocate(this%totomc(begc:endc)); this%totomc(:) = spval
-    allocate(this%mass_residual(begc:endc)); this%mass_residual(:) = spval
+    allocate(this%cmass_residual(begc:endc)); this%cmass_residual(:) = spval
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------

@@ -505,6 +505,7 @@ contains
         this%biogeo_flux(c)%n14flux_vars%smin_nh4_leached_col(c_l) + &
         this%biogeo_flux(c)%n14flux_vars%smin_nh4_qdrain_col(c_l)
 
+
     n14flux_vars%som_n_leached(c) = &
         this%biogeo_flux(c)%n14flux_vars%som_n_leached_col(c_l) + &
         this%biogeo_flux(c)%n14flux_vars%som_n_qdrain_col(c_l)
@@ -548,7 +549,7 @@ contains
     c12state_vars%totlitc_1m(c) = this%biogeo_state(c)%c12state_vars%totlitc_1m_col(c_l)
     c12state_vars%totsomc_1m(c) = this%biogeo_state(c)%c12state_vars%totsomc_1m_col(c_l)
     c12state_vars%totomc(c) = this%biogeo_state(c)%c12state_vars%totomc(c_l)
-    c12state_vars%mass_residual(c) = c12state_vars%totomc(c) - c12state_vars%beg_totomc(c) &
+    c12state_vars%cmass_residual(c) = c12state_vars%totomc(c) - c12state_vars%beg_totomc(c) &
        - (this%biophys_forc(c)%c12flx%cflx_input_col(c_l)-c12flux_vars%hr(c)  &
        - c12flux_vars%fire_decomp_closs(c)+c12flux_vars%som_c_leached(c) &
        - c12flux_vars%som_c_runoff(c)) * this%betr_time%get_step_size()
@@ -561,7 +562,7 @@ contains
       c13state_vars%totlitc_1m(c) = this%biogeo_state(c)%c13state_vars%totlitc_1m_col(c_l)
       c13state_vars%totsomc_1m(c) = this%biogeo_state(c)%c13state_vars%totsomc_1m_col(c_l)
       c13state_vars%totomc(c) = this%biogeo_state(c)%c13state_vars%totomc(c_l)
-      c13state_vars%mass_residual(c) = c13state_vars%totomc(c) - c13state_vars%beg_totomc(c) &
+      c13state_vars%cmass_residual(c) = c13state_vars%totomc(c) - c13state_vars%beg_totomc(c) &
        - (this%biophys_forc(c)%c13flx%cflx_input_col(c_l)-c13flux_vars%hr(c)  &
        - c13flux_vars%fire_decomp_closs(c)+c13flux_vars%som_c_leached(c) &
        - c13flux_vars%som_c_runoff(c)) * this%betr_time%get_step_size()
@@ -575,18 +576,29 @@ contains
       c14state_vars%totlitc_1m(c) = this%biogeo_state(c)%c14state_vars%totlitc_1m_col(c_l)
       c14state_vars%totsomc_1m(c) = this%biogeo_state(c)%c14state_vars%totsomc_1m_col(c_l)
       c14state_vars%totomc(c) = this%biogeo_state(c)%c14state_vars%totomc(c_l)
-      c14state_vars%mass_residual(c) = c14state_vars%totomc(c) - c14state_vars%beg_totomc(c) &
+      c14state_vars%cmass_residual(c) = c14state_vars%totomc(c) - c14state_vars%beg_totomc(c) &
        - (this%biophys_forc(c)%c14flx%cflx_input_col(c_l)-c14flux_vars%hr(c)  &
        - c14flux_vars%fire_decomp_closs(c)+c14flux_vars%som_c_leached(c) &
        - c14flux_vars%som_c_runoff(c)) * this%betr_time%get_step_size()
     endif
-
+    n14state_vars%beg_totsoin(c) = n14state_vars%totsoin(c)
     n14state_vars%cwdn(c) = this%biogeo_state(c)%n14state_vars%cwdn_col(c_l)
     n14state_vars%totlitn(c) = this%biogeo_state(c)%n14state_vars%totlitn_col(c_l)
     n14state_vars%totsomn(c) = this%biogeo_state(c)%n14state_vars%totsomn_col(c_l)
     n14state_vars%totlitn_1m(c) = this%biogeo_state(c)%n14state_vars%totlitn_1m_col(c_l)
     n14state_vars%totsomn_1m(c) = this%biogeo_state(c)%n14state_vars%totsomn_1m_col(c_l)
+    n14state_vars%totsoin(c) = this%biogeo_state(c)%n14state_vars%totsoin(c_l)
+    n14state_vars%nmass_residual(c) = n14state_vars%totsoin(c) - n14state_vars%beg_totsoin(c) &
+       - (this%biophys_forc(c)%n14flx%nflx_input_col(c_l) &
+       + this%biophys_forc(c)%n14flx%nflx_minninput_col(c_l)  &
+       - n14flux_vars%fire_decomp_nloss(c)+n14flux_vars%som_n_leached(c) &
+       - n14flux_vars%som_n_runoff(c)-n14flux_vars%nh3_soi_flx(c) &
+       - n14flux_vars%smin_no3_leached(c) - n14flux_vars%smin_nh4_leached(c) &
+       - n14flux_vars%smin_no3_runoff(c) - n14flux_vars%smin_nh4_runoff(c) &
+       - n14flux_vars%f_n2o_nit(c)-n14flux_vars%denit(c)) * this%betr_time%get_step_size()
 
+
+    p31state_vars%beg_totsoip(c) = p31state_vars%totsoip(c)
     p31state_vars%cwdp(c) = this%biogeo_state(c)%p31state_vars%cwdp_col(c_l)
     p31state_vars%totlitp(c) = this%biogeo_state(c)%p31state_vars%totlitp_col(c_l)
     p31state_vars%totsomp(c) = this%biogeo_state(c)%p31state_vars%totsomp_col(c_l)
@@ -601,6 +613,14 @@ contains
     p31state_vars%sminp(c) = this%biogeo_state(c)%p31state_vars%sminp_col(c_l)
     p31state_vars%occlp(c) = this%biogeo_state(c)%p31state_vars%occlp_col(c_l)
     !print*,'smin_nh4',n14state_vars%smin_nh4_col(c)
+
+    p31state_vars%totsoip(c) = this%biogeo_state(c)%p31state_vars%totsoip(c_l)
+    p31state_vars%pmass_residual(c) = p31state_vars%totsoip(c) - p31state_vars%beg_totsoip(c) &
+       - (this%biophys_forc(c)%p31flx%pflx_input_col(c_l) &
+       + this%biophys_forc(c)%p31flx%pminp_input_col(c_l)  &
+       - p31flux_vars%fire_decomp_ploss(c)+p31flux_vars%som_p_leached(c) &
+       -p31flux_vars%sminp_leached(c) - p31flux_vars%sminp_runoff(c)) &
+       * this%betr_time%get_step_size()
 
     c12state_vars%som1c(c) = this%biogeo_state(c)%c12state_vars%som1c_col(c_l)
     c12state_vars%som2c(c) = this%biogeo_state(c)%c12state_vars%som2c_col(c_l)

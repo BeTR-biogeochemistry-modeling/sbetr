@@ -33,6 +33,7 @@ implicit none
     real(r8), pointer :: decomp_npools_vr(:,:,:) => null()
     real(r8), pointer :: sminn_nh4_vr_col(:,:) => null()
     real(r8), pointer :: sminn_no3_vr_col(:,:) => null()
+    real(r8), pointer :: totsoin(:) => null()
   contains
     procedure, public  :: Init
     procedure, private :: InitAllocate
@@ -79,7 +80,7 @@ implicit none
   SPVAL_ALLOC(this%som1n_col(begc:endc))
   SPVAL_ALLOC(this%som2n_col(begc:endc))
   SPVAL_ALLOC(this%som3n_col(begc:endc))
-
+  SPVAL_ALLOC(this%totsoin(begc:endc))
 !  if(index(bgc_type,'type1_bgc')/=0)then
     SPVAL_ALLOC(this%decomp_npools_vr(begc:endc, lbj:ubj, 7))
 !  else
@@ -181,6 +182,9 @@ implicit none
       endif
     enddo
   enddo
-
+  do c = bounds%begc, bounds%endc
+     this%totsoin(c) = this%totlitn_col(c) + this%totsomn_col(c) + &
+        this%cwdn_col(c) + this%sminn_col(c)
+  enddo
   end subroutine summary
 end module BeTR_nitrogenstateRecvType

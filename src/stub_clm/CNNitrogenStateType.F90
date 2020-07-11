@@ -22,6 +22,9 @@ implicit none
     real(r8), pointer :: som2n                    (:) => null()
     real(r8), pointer :: som3n                    (:) => null()
     real(r8), pointer :: domn                     (:) => null()
+    real(r8), pointer :: beg_totsoin              (:) => null()
+    real(r8), pointer :: totsoin                  (:) => null()
+    real(r8), pointer :: nmass_residual            (:) => null()
   contains
 
     procedure, public  :: Init
@@ -84,6 +87,10 @@ contains
     allocate(this%sminn(begc:endc)); this%sminn(:) = spval
     allocate(this%domn(begc:endc)); this%domn(:) = spval
 
+    allocate(this%beg_totsoin(begc:endc)); this%beg_totsoin(:) = spval
+    allocate(this%totsoin(begc:endc)); this%totsoin(:) = spval
+    allocate(this%nmass_residual(begc:endc)); this%nmass_residual(:) = spval
+
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------
@@ -114,6 +121,10 @@ contains
     integer               :: begc, endc
     integer               :: begg, endg
 
+
+    begc=bounds%begc; endc=bounds%endc
+
+    this%totsoin(begc:endc) = 0._r8
 
   end subroutine initCold
 

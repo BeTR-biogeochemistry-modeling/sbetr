@@ -33,6 +33,7 @@ implicit none
     real(r8), pointer :: domp_vr_col(:,:) => null()
     real(r8), pointer :: decomp_ppools_vr(:,:,:) => null()
     real(r8), pointer :: solutionp_vr_col(:,:) => null()
+    real(r8), pointer :: totsoip(:) => null()
   contains
     procedure, public  :: Init
     procedure, private :: InitAllocate
@@ -77,7 +78,7 @@ implicit none
   SPVAL_ALLOC(this%som1p_col(begc:endc))
   SPVAL_ALLOC(this%som2p_col(begc:endc))
   SPVAL_ALLOC(this%som3p_col(begc:endc))
-
+  SPVAL_ALLOC(this%totsoip(begc:endc))
 !  if(index(bgc_type,'type1_bgc')/=0)then
     SPVAL_ALLOC(this%decomp_ppools_vr(begc:endc, lbj:ubj, 1:7))
     SPVAL_ALLOC(this%solutionp_vr_col(begc:endc, lbj:ubj))
@@ -180,6 +181,9 @@ implicit none
       endif
     enddo
   enddo
-
+  do c = bounds%begc, bounds%endc
+     this%totsoip(c) = this%totlitp_col(c) + this%totsomp_col(c) + &
+        this%cwdp_col(c) + this%sminp_col(c) + this%occlp_col(c)
+  enddo
   end subroutine summary
 end module BeTR_phosphorusstateRecvType

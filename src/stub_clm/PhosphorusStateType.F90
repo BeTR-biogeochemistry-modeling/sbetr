@@ -34,6 +34,9 @@ implicit none
     real(r8), pointer :: som2p                    (:) => null()
     real(r8), pointer :: som3p                    (:) => null()
     real(r8), pointer :: domp                     (:) => null()
+    real(r8), pointer :: beg_totsoip              (:) => null()
+    real(r8), pointer :: totsoip                  (:) => null()
+    real(r8), pointer :: pmass_residual            (:) => null()
   contains
 
     procedure, public  :: Init
@@ -105,6 +108,10 @@ contains
     allocate(this%som2p(begc:endc)); this%som2p(:) = spval
     allocate(this%som3p(begc:endc)); this%som3p(:) = spval
     allocate(this%domp(begc:endc)); this%domp(:) = spval
+    allocate(this%beg_totsoip(begc:endc)); this%beg_totsoip(:) = spval
+    allocate(this%totsoip(begc:endc)); this%totsoip(:) = spval
+    allocate(this%pmass_residual(begc:endc)); this%pmass_residual(:) = spval
+
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------
@@ -135,6 +142,11 @@ contains
     integer               :: begc, endc
     integer               :: begg, endg
 
+
+
+    begc=bounds%begc; endc=bounds%endc
+
+    this%totsoip(begc:endc) = 0._r8
 
   end subroutine initCold
 
