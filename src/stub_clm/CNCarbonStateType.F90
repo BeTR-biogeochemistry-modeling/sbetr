@@ -17,7 +17,10 @@ implicit none
     real(r8), pointer :: som1c               (:) => null()
     real(r8), pointer :: som2c               (:) => null()
     real(r8), pointer :: som3c               (:) => null()
-    real(r8), pointer :: domc               (:) => null()
+    real(r8), pointer :: domc                (:) => null()
+    real(r8), pointer :: beg_totomc          (:) => null()
+    real(r8), pointer :: totomc              (:) => null()
+    real(r8), pointer :: mass_residual       (:) => null()
   contains
 
     procedure, public  :: Init
@@ -61,7 +64,7 @@ contains
     if(nlevdecomp_full>0 .and. ndecomp_pools>0)then
       allocate(this%decomp_cpools_vr(begc:endc,1:nlevdecomp_full,1:ndecomp_pools)); this%decomp_cpools_vr(:,:,:)= spval
     endif
-    allocate(this%frootc_patch             (begp :endp))                   ;     this%frootc_patch             (:)   = spval
+    allocate(this%frootc_patch (begp :endp));     this%frootc_patch(:)   = spval
     allocate(this%cwdc(begc:endc)); this%cwdc(:) = spval
     allocate(this%totlitc(begc:endc)); this%totlitc(:) = spval
     allocate(this%totsomc(begc:endc)); this%totsomc(:) = spval
@@ -71,6 +74,9 @@ contains
     allocate(this%som2c(begc:endc)); this%som2c(:) = spval
     allocate(this%som3c(begc:endc)); this%som3c(:) = spval
     allocate(this%domc(begc:endc)); this%domc(:) = spval
+    allocate(this%beg_totomc(begc:endc)); this%beg_totomc(:) = spval
+    allocate(this%totomc(begc:endc)); this%totomc(:) = spval
+    allocate(this%mass_residual(begc:endc)); this%mass_residual(:) = spval
   end subroutine InitAllocate
 
   !-----------------------------------------------------------------------
@@ -101,8 +107,9 @@ contains
     integer               :: begc, endc
     integer               :: begg, endg
 
+    begc=bounds%begc; endc=bounds%endc
 
-
+    this%totomc(begc:endc) = 0._r8
 
   end subroutine initCold
 

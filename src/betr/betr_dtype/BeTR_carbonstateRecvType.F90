@@ -27,6 +27,7 @@ implicit none
      real(r8), pointer :: som3c_vr_col(:,:) => null()
      real(r8), pointer :: domc_vr_col(:,:) => null()
      real(r8), pointer :: decomp_cpools_vr(:,:,:) => null()
+     real(r8), pointer :: totomc(:) => null()
  contains
     procedure, public  :: Init
     procedure, private :: InitAllocate
@@ -72,10 +73,9 @@ implicit none
   SPVAL_ALLOC(this%som2c_col(begc:endc))
   SPVAL_ALLOC(this%som3c_col(begc:endc))
   SPVAL_ALLOC(this%domc_col(begc:endc))
+  SPVAL_ALLOC(this%totomc(begc:endc))
 
-!  if(index(bgc_type,'type1_bgc')/=0)then
     SPVAL_ALLOC(this%decomp_cpools_vr(begc:endc,lbj:ubj,7))
-!  else
     SPVAL_ALLOC(this%som1c_vr_col(begc:endc, lbj:ubj))
     SPVAL_ALLOC(this%som2c_vr_col(begc:endc, lbj:ubj))
     SPVAL_ALLOC(this%som3c_vr_col(begc:endc, lbj:ubj))
@@ -84,7 +84,7 @@ implicit none
     SPVAL_ALLOC(this%totlitc_vr_col(begc:endc,lbj:ubj))
     SPVAL_ALLOC(this%totsomc_vr_col(begc:endc,lbj:ubj))
     SPVAL_ALLOC(this%domc_vr_col(begc:endc, lbj:ubj))
-!  endif
+
   end subroutine InitAllocate
 
   !------------------------------------------------------------------------
@@ -144,7 +144,10 @@ implicit none
       this%totsomc_col(c) = this%totsomc_col(c) + dz(c,j)*this%totsomc_vr_col(c,j)
     enddo
   enddo
-
+  do c = bounds%begc, bounds%endc
+     this%totomc(c) = this%totlitc_col(c) + this%totsomc_col(c) + &
+        this%cwdc_col(c)
+  enddo
   do j = lbj, ubj
     do c = bounds%begc, bounds%endc
       if(zs(c,j)<1._r8)then

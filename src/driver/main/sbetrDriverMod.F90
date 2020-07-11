@@ -629,7 +629,7 @@ end subroutine sbetrBGC_driver
     id = id + 1; ystates(begc:endc,id) = phosphorusstate_vars%som1p(begc:endc)
     id = id + 1; ystates(begc:endc,id) = phosphorusstate_vars%som2p(begc:endc)
     id = id + 1; ystates(begc:endc,id) = phosphorusstate_vars%som3p(begc:endc)
-
+    id = id + 1; ystates(begc:endc,id) = carbonstate_vars%mass_residual(begc:endc)
   elseif(index(trim(reaction_method),'cdom')/=0)then
     id = 0
     id = id + 1; ystates(begc:endc,id) = carbonflux_vars%hr(begc:endc)
@@ -665,6 +665,7 @@ end subroutine sbetrBGC_driver
     id = id + 1; ystates(begc:endc,id) = carbonstate_vars%domc(begc:endc)
     id = id + 1; ystates(begc:endc,id) = nitrogenstate_vars%domn(begc:endc)
     id = id + 1; ystates(begc:endc,id) = phosphorusstate_vars%domp(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = carbonstate_vars%mass_residual(begc:endc)
   elseif(index(trim(reaction_method),'simic')/=0)then
     ystates(:,:) = 0._r8
     id = 0
@@ -676,6 +677,7 @@ end subroutine sbetrBGC_driver
     id = id + 1; ystates(begc:endc,id) = carbonstate_vars%som3c(begc:endc)
     id = id + 1; ystates(begc:endc,id) = carbonstate_vars%som2c(begc:endc)
     id = id + 1; ystates(begc:endc,id) = carbonstate_vars%totsomc(begc:endc)
+    id = id + 1; ystates(begc:endc,id) = carbonstate_vars%mass_residual(begc:endc)
   else
     if(hist%nvars>0)ystates(:,:) = 0._r8
   endif

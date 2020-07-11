@@ -459,6 +459,9 @@ contains
 
     call this%biogeo_flux(c)%summary(betr_bounds, 1, betr_nlevtrc_soil, &
          this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil),this%do_soibgc())
+
+    call this%biophys_forc(c)%summary(betr_bounds, 1, betr_nlevtrc_soil, &
+         this%betr_col(c)%dz(begc_l:endc_l,1:betr_nlevtrc_soil), this%do_soibgc())
   enddo
 
   if(.not. this%do_soibgc())return
@@ -536,26 +539,46 @@ contains
     !som_p_leached_col as a numerical roundoff
     p31flux_vars%som_p_leached(c) = -p31flux_vars%som_p_leached(c)
 
+    c12state_vars%beg_totomc(c) = c12state_vars%totomc(c)
+
     !recollect soil organic carbon, soil organic nitrogen, and soil organic phosphorus
     c12state_vars%cwdc(c) = this%biogeo_state(c)%c12state_vars%cwdc_col(c_l)
     c12state_vars%totlitc(c) = this%biogeo_state(c)%c12state_vars%totlitc_col(c_l)
     c12state_vars%totsomc(c) = this%biogeo_state(c)%c12state_vars%totsomc_col(c_l)
     c12state_vars%totlitc_1m(c) = this%biogeo_state(c)%c12state_vars%totlitc_1m_col(c_l)
     c12state_vars%totsomc_1m(c) = this%biogeo_state(c)%c12state_vars%totsomc_1m_col(c_l)
-    !print*,'cwdc',c12state_vars%cwdc_col(c)
+    c12state_vars%totomc(c) = this%biogeo_state(c)%c12state_vars%totomc(c_l)
+    c12state_vars%mass_residual(c) = c12state_vars%totomc(c) - c12state_vars%beg_totomc(c) &
+       - (this%biophys_forc(c)%c12flx%cflx_input_col(c_l)-c12flux_vars%hr(c)  &
+       - c12flux_vars%fire_decomp_closs(c)+c12flux_vars%som_c_leached(c) &
+       - c12flux_vars%som_c_runoff(c)) * this%betr_time%get_step_size()
+
     if(use_c13_betr)then
+      c13state_vars%beg_totomc(c) = c13state_vars%totomc(c)
       c13state_vars%cwdc(c) = this%biogeo_state(c)%c13state_vars%cwdc_col(c_l)
       c13state_vars%totlitc(c) = this%biogeo_state(c)%c13state_vars%totlitc_col(c_l)
       c13state_vars%totsomc(c) = this%biogeo_state(c)%c13state_vars%totsomc_col(c_l)
       c13state_vars%totlitc_1m(c) = this%biogeo_state(c)%c13state_vars%totlitc_1m_col(c_l)
       c13state_vars%totsomc_1m(c) = this%biogeo_state(c)%c13state_vars%totsomc_1m_col(c_l)
+      c13state_vars%totomc(c) = this%biogeo_state(c)%c13state_vars%totomc(c_l)
+      c13state_vars%mass_residual(c) = c13state_vars%totomc(c) - c13state_vars%beg_totomc(c) &
+       - (this%biophys_forc(c)%c13flx%cflx_input_col(c_l)-c13flux_vars%hr(c)  &
+       - c13flux_vars%fire_decomp_closs(c)+c13flux_vars%som_c_leached(c) &
+       - c13flux_vars%som_c_runoff(c)) * this%betr_time%get_step_size()
+
     endif
     if(use_c14_betr)then
+      c14state_vars%beg_totomc(c) = c14state_vars%totomc(c)
       c14state_vars%cwdc(c) = this%biogeo_state(c)%c14state_vars%cwdc_col(c_l)
       c14state_vars%totlitc(c) = this%biogeo_state(c)%c14state_vars%totlitc_col(c_l)
       c14state_vars%totsomc(c) = this%biogeo_state(c)%c14state_vars%totsomc_col(c_l)
       c14state_vars%totlitc_1m(c) = this%biogeo_state(c)%c14state_vars%totlitc_1m_col(c_l)
       c14state_vars%totsomc_1m(c) = this%biogeo_state(c)%c14state_vars%totsomc_1m_col(c_l)
+      c14state_vars%totomc(c) = this%biogeo_state(c)%c14state_vars%totomc(c_l)
+      c14state_vars%mass_residual(c) = c14state_vars%totomc(c) - c14state_vars%beg_totomc(c) &
+       - (this%biophys_forc(c)%c14flx%cflx_input_col(c_l)-c14flux_vars%hr(c)  &
+       - c14flux_vars%fire_decomp_closs(c)+c14flux_vars%som_c_leached(c) &
+       - c14flux_vars%som_c_runoff(c)) * this%betr_time%get_step_size()
     endif
 
     n14state_vars%cwdn(c) = this%biogeo_state(c)%n14state_vars%cwdn_col(c_l)
