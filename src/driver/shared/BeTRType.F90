@@ -69,6 +69,7 @@ module BetrType
 
    contains
      procedure, public  :: Init
+     procedure, public  :: SetParCols
      procedure, public  :: UpdateParas
      procedure, public  :: step_without_drainage
      procedure, public  :: step_with_drainage
@@ -119,7 +120,18 @@ contains
     create_betr_type => betr
 
   end function create_betr_type
+!-------------------------------------------------------------------------------
+  subroutine SetParCols(this, parcol)
 
+  use BeTR_decompMod  , only : betr_bounds_type
+  !update parameters after reading customized parameters from external file
+  implicit none
+  class(betr_type)            , intent(inout)        :: this
+  integer, intent(in) :: parcol
+
+  call this%bgc_reaction%SetParCols(parcol)
+
+  end subroutine SetParCols
 !-------------------------------------------------------------------------------
   subroutine UpdateParas(this, bounds, bstatus)
 

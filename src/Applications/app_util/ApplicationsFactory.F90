@@ -21,6 +21,7 @@ module ApplicationsFactory
   public :: AppLoadParameters
   public :: AppInitParameters
   public :: AppSetSpinup
+  public :: AppCopyParas
 contains
 
   subroutine create_betr_usr_application(bgc_reaction, plant_soilbgc, method, asoibgc, bstatus)
@@ -286,4 +287,58 @@ contains
   end select
 
   end subroutine AppSetSpinup
+
+  !-------------------------------------------------------------------------------
+
+  subroutine AppCopyParas(begc, endc, bstatus)
+  !
+  ! DESCRIPTION
+  ! read in the parameters for specified bgc implementation
+  !begin_appadd
+  use ecacnpParaType   , only : ecacnp_para,ecacnp_paras
+  use tracer_varcon    , only : reaction_method
+#if (defined SBETR)
+  use ch4soilParaType   , only : ch4soil_para
+  use cdomParaType     , only : cdom_para
+  use simicParaType    , only : simic_para
+  use kecaParaType     , only : keca_para
+#endif
+  use v1ecaParaType   , only : v1eca_para
+  !end_appadd
+  use betr_constants   , only : betr_namelist_buffer_size_ext
+  use BetrStatusType   , only : betr_status_type
+  implicit none
+  integer, intent(in) :: begc, endc
+  type(betr_status_type), intent(out)   :: bstatus
+  integer :: fl
+   call bstatus%reset()
+
+   select case (trim(reaction_method))
+   !begin_appadd
+   case ("ecacnp","ecacnp_mosart")
+    allocate(ecacnp_paras(begc:endc))
+    do fl = begc, endc
+      call ecacnp_paras(fl)%Init(bstatus)
+      if(bstatus%check_status())return
+      call ecacnp_paras(fl)%deep_copy(ecacnp_para)
+    enddo
+!#if (defined SBETR)
+!   case ("ch4soil")
+!     call ch4soil_para%Init(bstatus)
+!   case ("cdom","cdom_mosart")
+!     call cdom_para%Init(bstatus)
+!   case ("simic")
+!     call simic_para%Init(bstatus)
+!   case ("keca")
+!     call keca_para%Init(bstatus)
+!#endif
+!   case ("v1eca")
+!     call v1eca_para%Init(bstatus)
+   !end_appadd
+   case default
+     !do nothing
+   end select
+
+  end subroutine AppCopyParas
+
 end module ApplicationsFactory

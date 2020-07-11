@@ -54,6 +54,8 @@ module BGCReactionsMod
      procedure(init_iP_prof_interface)                    , deferred :: init_iP_prof
 
      procedure(reset_biostates_interface)                 , deferred :: reset_biostates
+
+     procedure(SetParCols_interface)                      , deferred :: SetParCols
   end type bgc_reaction_type
 
   abstract interface
@@ -429,5 +431,14 @@ module BGCReactionsMod
        type(betr_status_type)           , intent(out)   :: betr_status
 
    end subroutine reset_biostates_interface
+
+   !----------------------------------------------------------------------
+   subroutine SetParCols_interface(this, parcol)
+       ! !ARGUMENTS:
+     import :: bgc_reaction_type
+     class(bgc_reaction_type)   , intent(inout) :: this
+     integer, intent(in):: parcol
+
+   end subroutine SetParCols_interface
   end interface
 end module BGCReactionsMod

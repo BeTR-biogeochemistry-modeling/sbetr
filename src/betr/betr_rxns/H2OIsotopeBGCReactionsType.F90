@@ -41,6 +41,8 @@ module H2OIsotopeBGCReactionsType
   type, extends(bgc_reaction_type) :: &
      bgc_reaction_h2oiso_type
      private
+    integer, public :: parcol
+
    contains
      procedure :: Init_betrbgc                  ! initialize betr bgc
      procedure :: set_boundary_conditions       ! set top/bottom boundary conditions for various tracers
@@ -58,6 +60,7 @@ module H2OIsotopeBGCReactionsType
      procedure :: UpdateParas
      procedure :: init_iP_prof
      procedure :: reset_biostates
+     procedure :: SetParCols
    end type bgc_reaction_h2oiso_type
 
    interface bgc_reaction_h2oiso_type
@@ -230,7 +233,7 @@ module H2OIsotopeBGCReactionsType
   integer :: itemp_frz
 
   call bstatus%reset()
-
+  this%parcol=1
   betrtracer_vars%is_tagged_h2o=.true.
 
   !volatile tracers
@@ -904,4 +907,12 @@ module H2OIsotopeBGCReactionsType
        type(betr_status_type)           , intent(out)   :: betr_status
 
    end subroutine reset_biostates
+   !----------------------------------------------------------------------
+   subroutine SetParCols(this, parcol)
+     implicit none
+       class(bgc_reaction_h2oiso_type) , intent(inout) :: this            !
+     integer, intent(in) :: parcol
+
+     this%parcol = parcol
+   end subroutine SetParCols
 end module H2OIsotopeBGCReactionsType

@@ -47,7 +47,7 @@ module ecacnpBGCReactionsType
   use JarBgcForcType        , only : JarBGC_forc_type
   use BetrStatusType        , only : betr_status_type
   use ecacnpBGCIndexType    , only : ecacnp_bgc_index_type
-  use ecacnpParaType        , only : ecacnp_para
+  use ecacnpParaType        , only : ecacnp_paras
   implicit none
 
   save
@@ -61,7 +61,8 @@ module ecacnpBGCReactionsType
   !integer, private :: lpr
   type, public, extends(bgc_reaction_type) :: &
     ecacnp_bgc_reaction_type
-     private
+    private
+    integer :: parcol
     type(ecacnp_bgc_type), pointer :: ecacnp(:,:)
     type(JarBGC_forc_type), pointer :: ecacnp_forc(:,:)
     type(ecacnp_bgc_index_type) :: ecacnp_bgc_index
@@ -87,6 +88,7 @@ module ecacnpBGCReactionsType
     procedure :: UpdateParas
     procedure :: init_iP_prof
     procedure :: reset_biostates
+    procedure :: SetParCols
     procedure, private :: set_bgc_forc
     procedure, private :: retrieve_output
     procedure, private :: rm_ext_output
@@ -120,10 +122,11 @@ contains
   type(bounds_type)                    , intent(in)    :: bounds
   integer                              , intent(in)    :: lbj, ubj        ! lower and upper bounds, make sure they are > 0
   type(betr_status_type)               , intent(out)   :: bstatus
-  integer :: c, j
+  integer :: j, c
+
   do j = lbj, ubj
     do c = bounds%begc, bounds%endc
-      call this%ecacnp(c,j)%UpdateParas(ecacnp_para, bstatus)
+      call this%ecacnp(c,j)%UpdateParas(ecacnp_paras(this%parcol), bstatus)
       if(bstatus%check_status())return
     enddo
   enddo
@@ -201,12 +204,12 @@ contains
   c_l=1
   latacc=calc_latacc(lat(c_l))
   if(betr_spinup_state/=0)then
-    adv_scalar(tracers%id_trc_Bm)  = ecacnp_para%spinup_factor(7)
-    adv_scalar(tracers%id_trc_som) = ecacnp_para%spinup_factor(8)*latacc
-    adv_scalar(tracers%id_trc_pom) = ecacnp_para%spinup_factor(9)  *latacc
-    difu_scalar(tracers%id_trc_Bm)  = ecacnp_para%spinup_factor(7)
-    difu_scalar(tracers%id_trc_som) = ecacnp_para%spinup_factor(8)*latacc
-    difu_scalar(tracers%id_trc_pom) = ecacnp_para%spinup_factor(9)  *latacc
+    adv_scalar(tracers%id_trc_Bm)  = ecacnp_paras(this%parcol)%spinup_factor(7)
+    adv_scalar(tracers%id_trc_som) = ecacnp_paras(this%parcol)%spinup_factor(8)*latacc
+    adv_scalar(tracers%id_trc_pom) = ecacnp_paras(this%parcol)%spinup_factor(9)  *latacc
+    difu_scalar(tracers%id_trc_Bm)  = ecacnp_paras(this%parcol)%spinup_factor(7)
+    difu_scalar(tracers%id_trc_som) = ecacnp_paras(this%parcol)%spinup_factor(8)*latacc
+    difu_scalar(tracers%id_trc_pom) = ecacnp_paras(this%parcol)%spinup_factor(9)  *latacc
   endif
 
   if(enter_spinup)then
@@ -218,13 +221,13 @@ contains
 
         !som1
         call rescale_tracer_group(c, j, tracers%id_trc_beg_Bm, &
-             tracers%id_trc_end_Bm, nelm, 1._r8/(ecacnp_para%spinup_factor(7)))
+             tracers%id_trc_end_Bm, nelm, 1._r8/(ecacnp_paras(this%parcol)%spinup_factor(7)))
 
         call rescale_tracer_group(c, j, tracers%id_trc_beg_som, &
-             tracers%id_trc_end_som, nelm, 1._r8/(ecacnp_para%spinup_factor(8)*latacc))
+             tracers%id_trc_end_som, nelm, 1._r8/(ecacnp_paras(this%parcol)%spinup_factor(8)*latacc))
 
         call rescale_tracer_group(c, j, tracers%id_trc_beg_pom, &
-             tracers%id_trc_end_pom, nelm, 1._r8/(ecacnp_para%spinup_factor(9)*latacc))
+             tracers%id_trc_end_pom, nelm, 1._r8/(ecacnp_paras(this%parcol)%spinup_factor(9)*latacc))
       enddo
     enddo
   endif
@@ -235,13 +238,13 @@ contains
       do c = bounds%begc, bounds%endc
         !som1
         call rescale_tracer_group(c, j, tracers%id_trc_beg_Bm, &
-             tracers%id_trc_end_Bm, nelm, ecacnp_para%spinup_factor(7))
+             tracers%id_trc_end_Bm, nelm, ecacnp_paras(this%parcol)%spinup_factor(7))
 
         call rescale_tracer_group(c, j, tracers%id_trc_beg_som, &
-             tracers%id_trc_end_som, nelm, ecacnp_para%spinup_factor(8)*latacc)
+             tracers%id_trc_end_som, nelm, ecacnp_paras(this%parcol)%spinup_factor(8)*latacc)
 
         call rescale_tracer_group(c, j, tracers%id_trc_beg_pom, &
-             tracers%id_trc_end_pom, nelm, ecacnp_para%spinup_factor(9)*latacc)
+             tracers%id_trc_end_pom, nelm, ecacnp_paras(this%parcol)%spinup_factor(9)*latacc)
 
       enddo
     enddo
@@ -309,7 +312,7 @@ contains
   real(r8) :: P_weather_flx(bounds%begc:bounds%endc) ! gP/m2/s
   integer :: j, c
 
-  call calc_P_weathering_flux(bounds, biophysforc, ecacnp_para, P_weather_flx)
+  call calc_P_weathering_flux(bounds, biophysforc, ecacnp_paras(this%parcol), P_weather_flx)
 
   do j = 1, ubj
     do c = bounds%begc, bounds%endc
@@ -448,11 +451,10 @@ contains
 
     call bstatus%reset()
     batch_mode = .false.
-
     this%nactpft = 0
-
-    call this%ecacnp_bgc_index%Init(ecacnp_para%use_c13, ecacnp_para%use_c14, &
-       ecacnp_para%non_limit, ecacnp_para%nop_limit, betr_maxpatch_pft)
+    this%parcol = 1
+    call this%ecacnp_bgc_index%Init(ecacnp_paras(this%parcol)%use_c13, ecacnp_paras(this%parcol)%use_c14, &
+       ecacnp_paras(this%parcol)%non_limit, ecacnp_paras(this%parcol)%nop_limit, betr_maxpatch_pft)
 
     if(bstatus%check_status())return
 
@@ -465,16 +467,16 @@ contains
     !initialize
     do j = lbj, ubj
       do c = bounds%begc, bounds%endc
-        call this%ecacnp(c,j)%InitVL(ecacnp_para, batch_mode,this%ecacnp_bgc_index, bstatus)
+        call this%ecacnp(c,j)%InitVL(ecacnp_paras(this%parcol), batch_mode,this%ecacnp_bgc_index, bstatus)
         if(bstatus%check_status())return
 
         call this%ecacnp_forc(c,j)%Init(this%ecacnp_bgc_index%nstvars)
       enddo
     enddo
-    this%use_c13 = ecacnp_para%use_c13
-    this%use_c14 = ecacnp_para%use_c14
-    this%nop_limit=ecacnp_para%nop_limit
-    this%non_limit=ecacnp_para%non_limit
+    this%use_c13 = ecacnp_paras(this%parcol)%use_c13
+    this%use_c14 = ecacnp_paras(this%parcol)%use_c14
+    this%nop_limit=ecacnp_paras(this%parcol)%nop_limit
+    this%non_limit=ecacnp_paras(this%parcol)%non_limit
 
     !set up betr
     nelm =this%ecacnp_bgc_index%nelms
@@ -2778,4 +2780,15 @@ contains
        type(betr_status_type)           , intent(out)   :: betr_status
 
     end subroutine reset_biostates
+
+
+
+   !----------------------------------------------------------------------
+   subroutine SetParCols(this, parcol)
+     implicit none
+       class(ecacnp_bgc_reaction_type) , intent(inout)    :: this
+     integer, intent(in) :: parcol
+
+     this%parcol = parcol
+   end subroutine SetParCols
 end module ecacnpBGCReactionsType

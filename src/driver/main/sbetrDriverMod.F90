@@ -111,7 +111,6 @@ contains
   !create simulations
   simulation => create_betr_simulation(simulator_name)
 
-
   !set up mask
   bounds%begc = 1
   bounds%endc = ncols
@@ -126,6 +125,7 @@ contains
   allocate(jtops(1:numfls)); jtops(:)=1
   betr_nlevsno = nlevsno
   betr_nlevsoi = nlevsoi
+
   !set up grid
   allocate(grid_data)
   call grid_data%Init(namelist_buffer)
@@ -152,6 +152,7 @@ contains
 
   !print*,'set filters to load initialization data from input'
   call simulation%BeTRSetFilter(maxpft_per_col=0, boffline=.true.)
+  simulation%num_parcols = ncols
 
   if(continue_run)then
     ! print*,'continue from restart file'
@@ -170,26 +171,27 @@ contains
     endif
   endif
 
-  call grid_data%UpdateGridConst(bounds, lbj, ubj, numfls, filters, soilstate_vars, cnstate_vars)
+  call grid_data%UpdateGridConst(bounds, lbj, ubj, numfls, filters,  &
+    soilstate_vars, cnstate_vars)
+
   !x print*,'obtain waterstate_vars for initilizations that need it'
   call forcing_data%UpdateForcing(grid_data, bounds, lbj, ubj, numfls, &
        filters, simulation%betr_time, col, pft, atm2lnd_vars, soilhydrology_vars, &
        soilstate_vars,waterstate_vars, waterflux_vars, temperature_vars, chemstate_vars, &
        plantMicKinetics_vars, jtops)
 
-  !x print*,'af init update',forcing_data%t_soi(1,:)
-  !print*,'initial water state variable output',simulation%betr_time%tstep
   call calc_qadv(ubj, numfls, filters, waterstate_vars)
 
   !x print*,'bf sim init'
   !print*,'base_filename:',trim(base_filename)
   call AppInitParameters(reaction_method, bstatus)
-
   if(bstatus%check_status())call endrun(msg=bstatus%print_msg())
 
-  call  simulation%Init(bounds, lun, col, pft, waterstate_vars, namelist_buffer, base_filename, case_id)
+  call  simulation%Init(bounds, lun, col, pft, waterstate_vars, &
+    namelist_buffer, base_filename, case_id)
   !x print*,'af sim init'
-  if(lread_param) call simulation%readParams(bounds)
+
+  if(lread_param)call simulation%readParams(bounds)
 
   select type(simulation)
   class is (betr_simulation_standalone_type)

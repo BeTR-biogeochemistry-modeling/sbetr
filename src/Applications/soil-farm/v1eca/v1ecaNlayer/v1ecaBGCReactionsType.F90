@@ -68,6 +68,7 @@ module v1ecaBGCReactionsType
   type, public, extends(bgc_reaction_type) :: &
     v1eca_bgc_reaction_type
      private
+    integer :: parcol
     type(v1eca_bgc_type), pointer :: v1eca(:,:)
     type(JarBGC_forc_type), pointer :: v1eca_forc(:,:)
     type(v1eca_bgc_index_type) :: v1eca_bgc_index
@@ -93,6 +94,7 @@ module v1ecaBGCReactionsType
     procedure :: UpdateParas
     procedure :: init_iP_prof
     procedure :: reset_biostates
+    procedure :: SetParCols
     procedure, private :: set_bgc_forc
     procedure, private :: retrieve_output
     procedure, private :: precision_filter
@@ -320,7 +322,9 @@ contains
     integer   :: ngroupmems
     logical   :: batch_mode
     logical   :: som_move
+
     call bstatus%reset()
+    this%parcol=1
     batch_mode = .false.
     som_move=.false.
     this%nactpft = 0
@@ -2438,4 +2442,13 @@ contains
 
    end associate
    end subroutine reset_biostates
+
+   !----------------------------------------------------------------------
+   subroutine SetParCols(this, parcol)
+     implicit none
+      class(v1eca_bgc_reaction_type) , intent(inout)    :: this
+     integer, intent(in) :: parcol
+
+     this%parcol = parcol
+   end subroutine SetParCols
 end module v1ecaBGCReactionsType

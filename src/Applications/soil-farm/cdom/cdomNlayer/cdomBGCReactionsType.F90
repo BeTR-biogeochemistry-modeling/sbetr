@@ -65,13 +65,13 @@ module cdomBGCReactionsType
      private
     type(cdom_bgc_type), pointer :: cdom(:,:)
     type(JarBGC_forc_type), pointer :: cdom_forc(:,:)
-
     type(cdom_bgc_index_type) :: cdom_bgc_index
     logical :: use_c13
     logical :: use_c14
     logical :: nop_limit
     logical :: non_limit
     integer :: nactpft               ! number of active pfts
+    integer :: parcol
   contains
     procedure :: Init_betrbgc                 ! initialize betr bgc
     procedure :: set_boundary_conditions      ! set top/bottom boundary conditions for various tracers
@@ -89,6 +89,7 @@ module cdomBGCReactionsType
     procedure :: UpdateParas
     procedure :: init_iP_prof
     procedure :: reset_biostates
+    procedure :: SetParCols
     procedure, private :: set_bgc_forc
     procedure, private :: retrieve_output
     procedure, private :: rm_ext_output
@@ -426,6 +427,7 @@ contains
      nwood   => this%cdom_bgc_index%nwood       &
     )
     call bstatus%reset()
+    this%parcol=1
     batch_mode =.false.
     if (this%dummy_compiler_warning) continue
 
@@ -2664,4 +2666,14 @@ contains
 
 
    end subroutine reset_biostates
+
+
+   !----------------------------------------------------------------------
+   subroutine SetParCols(this, parcol)
+     implicit none
+       class(cdom_bgc_reaction_type) , intent(inout)    :: this
+     integer, intent(in) :: parcol
+
+     this%parcol = parcol
+   end subroutine SetParCols
 end module cdomBGCReactionsType

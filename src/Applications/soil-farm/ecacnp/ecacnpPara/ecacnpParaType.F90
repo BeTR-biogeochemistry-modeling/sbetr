@@ -85,9 +85,11 @@ implicit none
    procedure, private :: set_defpar_default
    procedure, public  :: apply_spinup_factor
    procedure, public  :: set_spinup_factor
+   procedure, public  :: deep_copy => centpara_deep_copy
  end type ecacnp_para_type
 
  type(ecacnp_para_type), public :: ecacnp_para
+ type(ecacnp_para_type), public, pointer :: ecacnp_paras(:)
  public :: create_jarpars_ecacnp
 contains
 
@@ -623,4 +625,83 @@ contains
   print*,'vmax_nit=', this%vmax_nit
   end subroutine centpara_printPars
 
+!--------------------------------------------------------------------
+
+  subroutine centpara_deep_copy(this,mother)
+  implicit none
+  class(ecacnp_para_type), intent(inout) :: this
+  class(BiogeoCon_type), intent(in) :: mother
+
+  call this%deep_copy(mother)
+
+  select type(mother)
+  type is(ecacnp_para_type)
+    this%Q10      =   mother%Q10
+    this%froz_q10 =   mother%froz_q10
+    this%decomp_depth_efolding =  mother%decomp_depth_efolding
+    this%rf_l1s1_bgc(1:2) =   mother%rf_l1s1_bgc(1:2)
+    this%rf_l2s1_bgc(1:2) =   mother%rf_l2s1_bgc(1:2)
+    this%rf_l3s2_bgc =   mother%rf_l3s2_bgc
+    this%rf_s2s1_bgc =   mother%rf_s2s1_bgc
+    this%rf_s3s1_bgc =   mother%rf_s3s1_bgc
+    this%rf_s1s2a_bgc(1:2) =   mother%rf_s1s2a_bgc(1:2)
+    this%rf_s1s2b_bgc(1:2) =   mother%rf_s1s2b_bgc(1:2)
+    this%k_decay_lit1(1:2) =   mother%k_decay_lit1(1:2)
+    this%k_decay_lit2(1:2) = mother%k_decay_lit2(1:2)
+    this%k_decay_lit3(1:2) =   mother%k_decay_lit3(1:2)
+    this%k_decay_som1(1:2) =   mother%k_decay_som1(1:2)
+    this%k_decay_som2 =   mother%k_decay_som2
+    this%k_decay_som3 =   mother%k_decay_som3
+    this%k_decay_cwd =   mother%k_decay_cwd
+    this%k_decay_lwd =   mother%k_decay_lwd
+    this%k_decay_fwd =   mother%k_decay_fwd
+    this%k_m_o2_bgc  =   mother%k_m_o2_bgc
+
+  !nitrification-denitrification
+    this%nitrif_n2o_loss_frac =   mother%nitrif_n2o_loss_frac
+    this%organic_max =   mother%organic_max
+    this%rij_kro_a =   mother%rij_kro_a
+    this%rij_kro_alpha =   mother%rij_kro_alpha
+    this%rij_kro_beta =   mother%rij_kro_beta
+    this%rij_kro_gamma =   mother%rij_kro_gamma
+    this%rij_kro_delta =   mother%rij_kro_delta
+    this%surface_tension_water =   mother%surface_tension_water
+    this%minpsi_bgc =   mother%minpsi_bgc
+
+    this%c14decay_som_const =   mother%c14decay_som_const
+    this%c14decay_dom_const =   mother%c14decay_dom_const
+    this%c14decay_pom_const =   mother%c14decay_pom_const
+    this%c14decay_bm_const =   mother%c14decay_bm_const
+    this%k_nitr_max =   mother%k_nitr_max
+
+    this%init_cn_som1 =   mother%init_cn_som1
+    this%init_cn_som2 =   mother%init_cn_som2
+    this%init_cn_som3 =   mother%init_cn_som3
+
+    this%init_cp_som1 =   mother%init_cp_som1
+    this%init_cp_som2 =   mother%init_cp_som2
+    this%init_cp_som3 =   mother%init_cp_som3
+
+    this%init_cc14_som1 =   mother%init_cc14_som1
+    this%init_cc14_som2 =   mother%init_cc14_som2
+    this%init_cc14_som3 =   mother%init_cc14_som3
+
+    this%init_cc13_som1 =   mother%init_cc13_som1
+    this%init_cc13_som2 =   mother%init_cc13_som2
+    this%init_cc13_som3 =   mother%init_cc13_som3
+    this%c14decay_const =   mother%c14decay_const
+    this%km_decomp_no3 =   mother%km_decomp_no3
+    this%km_decomp_nh4 =   mother%km_decomp_nh4
+    this%km_decomp_p =   mother%km_decomp_p
+    this%km_den =   mother%km_den
+    this%km_nit =   mother%km_nit
+    this%vmax_decomp_n =   mother%vmax_decomp_n
+    this%vmax_decomp_p =   mother%vmax_decomp_p
+    this%vmax_den =   mother%vmax_den
+    this%vmax_nit =   mother%vmax_nit
+    this%spinup_factor(1:9) =   mother%spinup_factor(1:9)
+  class default
+  ! do nothing
+  end select
+  end subroutine centpara_deep_copy
 end module ecacnpParaType

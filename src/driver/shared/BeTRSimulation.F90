@@ -87,6 +87,7 @@ module BeTRSimulation
      integer, public                              :: num_jtops
      integer, public, allocatable                 :: jtops(:)
      integer, public                              :: num_surfc
+     integer, public                              :: num_parcols
      integer, public, allocatable                 :: filter_soilc(:)
      integer, public :: spinup_count
      type(betr_hist_var_type), allocatable :: state_hist1d_var(:)
@@ -253,32 +254,34 @@ contains
   integer, intent(in) :: maxpft_per_col
   integer, optional, intent(in) :: nsoilorder
   logical, optional, intent(in) :: boffline
-    integer :: p
-    !by default, surface litter layer is off
-    this%num_jtops = 1
-    allocate(this%jtops(this%num_jtops))
-    this%jtops(:) = 1
+  integer :: p
 
-    this%num_surfc = 1
-    allocate(this%filter_soilc(this%num_surfc))
-    this%filter_soilc(:) = 1
+  !by default, surface litter layer is off
+  this%num_jtops = 1
+  allocate(this%jtops(this%num_jtops))
+  this%jtops(:) = 1
 
-    this%num_soilp = maxpft_per_col
-    if(this%num_soilp>0)allocate(this%filter_soilp(this%num_soilp))
-    do p = 1, maxpft_per_col
-      this%filter_soilp(p) = p
-    enddo
-    if(present(boffline))then
-      betr_offline=boffline
-    else
-      betr_offline=.true.
-    endif
-    betr_maxpatch_pft = maxpft_per_col
-    if(present(nsoilorder))then
-      betr_max_soilorder= nsoilorder
-    else
-      betr_max_soilorder=1
-    endif
+  this%num_parcols = 1
+  this%num_surfc = 1
+  allocate(this%filter_soilc(this%num_surfc))
+  this%filter_soilc(:) = 1
+
+  this%num_soilp = maxpft_per_col
+  if(this%num_soilp>0)allocate(this%filter_soilp(this%num_soilp))
+  do p = 1, maxpft_per_col
+    this%filter_soilp(p) = p
+  enddo
+  if(present(boffline))then
+    betr_offline=boffline
+  else
+    betr_offline=.true.
+  endif
+  betr_maxpatch_pft = maxpft_per_col
+  if(present(nsoilorder))then
+    betr_max_soilorder= nsoilorder
+  else
+    betr_max_soilorder=1
+  endif
   end subroutine BeTRSetFilter
 
 !-------------------------------------------------------------------------------
@@ -287,7 +290,7 @@ contains
   use ncdio_pio               , only :  file_desc_t
   use ncdio_pio               , only : ncd_pio_closefile, ncd_pio_openfile, &
                                          file_desc_t, ncd_inqdid, ncd_inqdlen
-  use ApplicationsFactory      , only : AppLoadParameters
+  use ApplicationsFactory      , only : AppLoadParameters, AppCopyParas
   use BetrStatusType           , only : betr_status_type
   use decompMod                , only : bounds_type
   use tracer_varcon            , only : bgc_param_file
@@ -322,6 +325,23 @@ contains
 
   !grid horizontal bounds
   call this%BeTRSetBounds(betr_bounds)
+
+  if(this%num_parcols==1)then
+    call AppCopyParas(1, 1, bstatus)
+    do c = bounds%begc, bounds%endc
+      if(.not. this%active_col(c))cycle
+      call this%betr(c)%SetParCols(1)
+    enddo
+  else
+    call AppCopyParas(bounds%begc, bounds%endc, bstatus)
+    do c = bounds%begc, bounds%endc
+      if(.not. this%active_col(c))cycle
+      call this%betr(c)%SetParCols(c)
+    enddo
+  endif
+  if(bstatus%check_status())then
+    call endrun(msg=bstatus%print_msg())
+  endif
 
   do c = bounds%begc, bounds%endc
     if(.not. this%active_col(c))cycle
