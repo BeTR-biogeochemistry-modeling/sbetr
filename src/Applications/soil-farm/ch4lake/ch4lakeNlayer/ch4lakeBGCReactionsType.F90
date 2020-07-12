@@ -62,6 +62,7 @@ module ch4lakeBGCReactionsType
   type, public, extends(bgc_reaction_type) :: &
     ch4lake_bgc_reaction_type
      private
+    integer :: parcol
     type(ch4lake_bgc_type), pointer :: ch4lake(:,:)
     type(JarBGC_forc_type), pointer :: ch4lake_forc(:,:)
     type(ch4lake_bgc_index_type) :: ch4lake_bgc_index
@@ -87,6 +88,7 @@ module ch4lakeBGCReactionsType
     procedure :: UpdateParas
     procedure :: init_iP_prof
     procedure :: reset_biostates
+    procedure :: SetParCols
     procedure, private :: set_bgc_forc
     procedure, private :: retrieve_output
     procedure, private :: rm_ext_output
@@ -448,6 +450,7 @@ contains
     logical   :: batch_mode
 
     call bstatus%reset()
+    this%parcol=1
     batch_mode = .false.
 
     this%nactpft = 0
@@ -2780,4 +2783,13 @@ contains
 
 
    end subroutine reset_biostates
+
+   !----------------------------------------------------------------------
+   subroutine SetParCols(this, parcol)
+     implicit none
+       class(ch4lake_bgc_reaction_type) , intent(inout)    :: this
+     integer, intent(in) :: parcol
+
+     this%parcol = parcol
+   end subroutine SetParCols
 end module ch4lakeBGCReactionsType

@@ -62,6 +62,7 @@ module kecaBGCReactionsType
   type, public, extends(bgc_reaction_type) :: &
     keca_bgc_reaction_type
      private
+    integer :: parcol
     type(keca_bgc_type), pointer :: keca(:,:)
     type(JarBGC_forc_type), pointer :: keca_forc(:,:)
     type(keca_bgc_index_type) :: keca_bgc_index
@@ -87,6 +88,7 @@ module kecaBGCReactionsType
     procedure :: UpdateParas
     procedure :: init_iP_prof
     procedure :: reset_biostates
+    procedure :: SetParCols
     procedure, private :: set_bgc_forc
     procedure, private :: retrieve_output
     procedure, private :: rm_ext_output
@@ -432,6 +434,7 @@ contains
     logical   :: batch_mode
 
     call bstatus%reset()
+    this%parcol=1
     batch_mode = .false.
 
     this%nactpft = 0
@@ -2781,4 +2784,14 @@ contains
        type(betr_status_type)           , intent(out)   :: betr_status
 
     end subroutine reset_biostates
+
+
+   !----------------------------------------------------------------------
+   subroutine SetParCols(this, parcol)
+     implicit none
+      class(keca_bgc_reaction_type) , intent(inout)    :: this
+     integer, intent(in) :: parcol
+
+     this%parcol = parcol
+   end subroutine SetParCols
 end module kecaBGCReactionsType

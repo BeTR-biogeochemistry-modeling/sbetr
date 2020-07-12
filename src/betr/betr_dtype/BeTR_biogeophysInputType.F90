@@ -318,14 +318,16 @@ contains
   end subroutine reset
 
   !------------------------------------------------------------------------
-  subroutine summary(this, bounds, lbj, ubj, dz)
+  subroutine summary(this, bounds, lbj, ubj, dz, do_soibgc)
   use tracer_varcon, only : use_c13_betr, use_c14_betr
   implicit none
   class(betr_biogeophys_input_type),intent(inout)  :: this
   type(betr_bounds_type), intent(in) :: bounds
   integer , intent(in) :: lbj, ubj
   real(r8), intent(in) :: dz(bounds%begc:bounds%endc,lbj:ubj)
+  logical, intent(in) :: do_soibgc
 
+  if(.not. do_soibgc)return
   !integrate
   call this%c12flx%summary(bounds, lbj, ubj, dz(bounds%begc:bounds%endc,lbj:ubj))
 

@@ -38,6 +38,7 @@ implicit none
     procedure, private:: InitAllocate
     procedure, public :: run_compet_phosphorus
     procedure, public :: run_compet_nitrogen
+    procedure, public :: UpdateParas
   end type Compet_ECACNP_type
 
 contains
@@ -69,6 +70,25 @@ contains
     return
   end select
   end subroutine Init
+
+!------------------------------------------
+  subroutine UpdateParas(this,  biogeo_con)
+  use BiogeoConType             , only : BiogeoCon_type
+  use ecacnpParaType            , only : ecacnp_para_type
+  implicit none
+  class(Compet_ECACNP_type), intent(inout) :: this
+  class(BiogeoCon_type)       , intent(in) :: biogeo_con
+
+  select type(biogeo_con)
+  type is(ecacnp_para_type)
+    this%kaff_minn_nh4_mic = biogeo_con%km_decomp_nh4
+    this%kaff_minn_no3_mic = biogeo_con%km_decomp_no3
+    this%kaff_minp_mic     = biogeo_con%km_decomp_p
+    this%kaff_minn_nh4_nit = biogeo_con%km_nit
+    this%kaff_minn_no3_den = biogeo_con%km_den
+  end select
+  end subroutine UpdateParas
+
   !-------------------------------------------------------------------------------
 
   subroutine InitAllocate(this)

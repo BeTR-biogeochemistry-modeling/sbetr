@@ -67,6 +67,9 @@ contains
     call list_insert(hist_list_var,'som1p',id1, itype=var_state_type)     ; call list_insert(hist_list_unit,'gP m-2',id2)
     call list_insert(hist_list_var,'som2p',id1, itype=var_state_type)     ; call list_insert(hist_list_unit,'gP m-2',id2)
     call list_insert(hist_list_var,'som3p',id1, itype=var_state_type)     ; call list_insert(hist_list_unit,'gP m-2',id2)
+    call list_insert(hist_list_var,'cmass_eps',id1, itype=var_state_type) ; call list_insert(hist_list_unit,'gC m-2',id2)
+    call list_insert(hist_list_var,'nmass_eps',id1, itype=var_state_type) ; call list_insert(hist_list_unit,'gN m-2',id2)
+    call list_insert(hist_list_var,'pmass_eps',id1, itype=var_state_type) ; call list_insert(hist_list_unit,'gP m-2',id2)
     this%nhistvars=id1
   elseif(index(trim(reaction_method),'cdom')/=0)then
     call list_init(hist_list_var,'hr',id1, itype=var_flux_type)          ; call list_init(hist_list_unit,'gC m-2 s-1',id2)
@@ -102,6 +105,9 @@ contains
     call list_insert(hist_list_var,'domc',id1, itype=var_state_type)     ; call list_insert(hist_list_unit,'gC m-2',id2)
     call list_insert(hist_list_var,'domn',id1, itype=var_state_type)     ; call list_insert(hist_list_unit,'gN m-2',id2)
     call list_insert(hist_list_var,'domp',id1, itype=var_state_type)     ; call list_insert(hist_list_unit,'gP m-2',id2)
+    call list_insert(hist_list_var,'cmass_eps',id1, itype=var_state_type) ; call list_insert(hist_list_unit,'gC m-2',id2)
+    call list_insert(hist_list_var,'nmass_eps',id1, itype=var_state_type) ; call list_insert(hist_list_unit,'gN m-2',id2)
+    call list_insert(hist_list_var,'pmass_eps',id1, itype=var_state_type) ; call list_insert(hist_list_unit,'gP m-2',id2)
     this%nhistvars=id1
   elseif(index(trim(reaction_method),'simic')/=0)then
     call list_init(hist_list_var,'hr',id1, itype=var_flux_type)          ; call list_init(hist_list_unit,'gC m-2 s-1',id2)
@@ -112,6 +118,9 @@ contains
     call list_insert(hist_list_var,'micb_dead',id1, itype=var_state_type)   ; call list_insert(hist_list_unit,'gC m-2',id2)
     call list_insert(hist_list_var,'POM_C',id1, itype=var_state_type)   ; call list_insert(hist_list_unit,'gC m-2',id2)
     call list_insert(hist_list_var,'totsomc',id1, itype=var_state_type)   ; call list_insert(hist_list_unit,'gC m-2',id2)
+    call list_insert(hist_list_var,'cmass_eps',id1, itype=var_state_type) ; call list_insert(hist_list_unit,'gC m-2',id2)
+    call list_insert(hist_list_var,'nmass_eps',id1, itype=var_state_type) ; call list_insert(hist_list_unit,'gN m-2',id2)
+    call list_insert(hist_list_var,'pmass_eps',id1, itype=var_state_type) ; call list_insert(hist_list_unit,'gP m-2',id2)
     this%nhistvars=id1
   endif
   allocate(this%varl(this%nhistvars)); allocate(this%unitl(this%nhistvars))

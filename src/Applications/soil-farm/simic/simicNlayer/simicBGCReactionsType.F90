@@ -34,6 +34,8 @@ module SimicBGCReactionsType
   type, extends(bgc_reaction_type) :: &
        simic_bgc_reaction_type
   private
+    integer :: parcol
+
     type(simic_bgc_type), pointer :: simic_bgc(:,:)
     type(JarBGC_forc_type), pointer :: simic_forc(:,:)
     type(simic_bgc_index_type) :: simic_bgc_index
@@ -59,6 +61,7 @@ module SimicBGCReactionsType
      procedure :: UpdateParas
      procedure :: init_iP_prof
      procedure :: reset_biostates
+     procedure :: SetParCols
      procedure, private :: set_tracer
      procedure, private :: InitAllocate
      procedure, private :: retrieve_output
@@ -252,6 +255,7 @@ contains
 
 
     call bstatus%reset()
+    this%parcol=1
     ! remove compiler warnings for unused dummy args
     if (this%dummy_compiler_warning)           continue
     if (bounds%begc > 0)                       continue
@@ -1676,4 +1680,13 @@ contains
        type(betr_status_type)           , intent(out)   :: betr_status
 
     end subroutine reset_biostates
+
+   !----------------------------------------------------------------------
+   subroutine SetParCols(this, parcol)
+     implicit none
+       class(simic_bgc_reaction_type) , intent(inout) :: this
+     integer, intent(in) :: parcol
+
+     this%parcol = parcol
+   end subroutine SetParCols
 end module SimicBGCReactionsType

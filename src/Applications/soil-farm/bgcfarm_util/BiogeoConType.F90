@@ -69,6 +69,7 @@ implicit none
    procedure, private :: set_defpar_default_base
    procedure, public  :: readPars_bgc
    procedure, public  :: prtPars_bgc
+   procedure, public  :: deep_copy_bgc
  end type BiogeoCon_type
 
 contains
@@ -281,7 +282,7 @@ contains
   if ( readv ) then !call bstatus%set_msg(msg=trim(errCode)//trim(tString)//' '//errMsg(__FILE__, __LINE__), err=-1)
     this%T_ref_weath=tempr(1)
   endif
- 
+
   call ncd_io('b_weath',temparrs, 'read', ncid, readvar=readv)
   if ( readv ) then !call bstatus%set_msg(msg=' ERROR: error in reading in soil order b_weath'//errMsg(__FILE__, __LINE__), err=-1)
     this%b_weath(1:16) = temparrs(1:16)
@@ -336,4 +337,63 @@ contains
   call this%prtPars_bgc()
 
   end subroutine printPars_bcon
+  !--------------------------------------------------------------------
+  subroutine deep_copy_bgc(this,mother)
+  implicit none
+  class(BiogeoCon_type), intent(inout) :: this
+  class(BiogeoCon_type), intent(in) :: mother
+
+
+  this%cwd_fcel_bgc = mother%cwd_fcel_bgc
+  this%cwd_flig_bgc = mother%cwd_flig_bgc
+  this%lwd_fcel_bgc = mother%lwd_fcel_bgc
+  this%lwd_flig_bgc = mother%lwd_flig_bgc
+  this%fwd_fcel_bgc = mother%fwd_fcel_bgc
+  this%fwd_flig_bgc = mother%fwd_flig_bgc
+
+  this%init_cn_met  = mother%init_cn_met
+  this%init_cn_cel  = mother%init_cn_cel
+  this%init_cn_lig  = mother%init_cn_lig
+  this%init_cn_cwd  = mother%init_cn_cwd
+  this%init_cn_lwd  = mother%init_cn_lwd
+  this%init_cn_fwd  = mother%init_cn_fwd
+
+  this%init_cp_met  = mother%init_cp_met
+  this%init_cp_cel  = mother%init_cp_cel
+  this%init_cp_lig  = mother%init_cp_cel
+  this%init_cp_cwd  = mother%init_cp_cwd
+  this%init_cp_lwd  = mother%init_cp_lwd
+  this%init_cp_fwd  = mother%init_cp_fwd
+
+  this%init_cc13_met= mother%init_cc13_met
+  this%init_cc13_cel= mother%init_cc13_cel
+  this%init_cc13_lig= mother%init_cc13_lig
+  this%init_cc13_cwd= mother%init_cc13_cwd
+  this%init_cc13_lwd= mother%init_cc13_lwd
+  this%init_cc13_fwd= mother%init_cc13_fwd
+
+  this%init_cc14_met= mother%init_cc14_met
+  this%init_cc14_cel= mother%init_cc14_cel
+  this%init_cc14_lig= mother%init_cc14_lig
+  this%init_cc14_cwd= mother%init_cc14_cwd
+  this%init_cc14_lwd= mother%init_cc14_lwd
+  this%init_cc14_fwd= mother%init_cc14_fwd
+
+  this%use_c13 = mother%use_c13
+  this%use_c14 = mother%use_c14
+  this%nop_limit = mother%nop_limit                                              !switch for P limitation
+  this%non_limit = mother%non_limit
+  !ECA nutrient competition
+  this%vmax_minp_soluble_to_secondary(:) = mother%vmax_minp_soluble_to_secondary(:)
+  !inorganic phosphorus cycling
+  this%frac_p_sec_to_sol(:) = mother%frac_p_sec_to_sol(:)
+  this%minp_secondary_decay(:) = mother%minp_secondary_decay(:)
+  this%E_weath(:) = mother%E_weath(:)
+  this%T_ref_weath = mother%T_ref_weath
+  this%b_weath(:) = mother%b_weath(:)
+  this%f_shield(:) = mother%f_shield(:)
+  this%P_weip(:) = mother%P_weip(:)
+  end subroutine deep_copy_bgc
+
+
 end module BiogeoConType

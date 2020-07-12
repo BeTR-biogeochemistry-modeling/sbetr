@@ -30,6 +30,8 @@ module Tracer1beckBGCReactionsType
   type, extends(bgc_reaction_type) :: &
        bgc_reaction_tracer1beck_run_type
   private
+    integer, public :: parcol
+
   contains
      procedure :: Init_betrbgc                          ! initialize betr bgc
      procedure :: set_boundary_conditions               ! set top/bottom boundary conditions for various tracers
@@ -47,6 +49,7 @@ module Tracer1beckBGCReactionsType
      procedure :: UpdateParas
      procedure :: init_iP_prof
      procedure :: reset_biostates
+     procedure :: SetParCols
   end type bgc_reaction_tracer1beck_run_type
 
   interface bgc_reaction_tracer1beck_run_type
@@ -196,6 +199,7 @@ contains
     integer :: itemp_grp, itemp_v, itemp_vgrp, itemp_trc
 
     call bstatus%reset()
+    this%parcol=1
     ! remove compiler warnings for unused dummy args
     if (this%dummy_compiler_warning)           continue
     if (bounds%begc > 0)                       continue
@@ -727,4 +731,14 @@ contains
    endif
 
    end function eerfc
+
+
+   !----------------------------------------------------------------------
+   subroutine SetParCols(this, parcol)
+     implicit none
+       class(bgc_reaction_tracer1beck_run_type) , intent(inout) :: this               !
+     integer, intent(in) :: parcol
+
+     this%parcol = parcol
+   end subroutine SetParCols
 end module Tracer1beckBGCReactionsType

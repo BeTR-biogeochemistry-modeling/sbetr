@@ -327,7 +327,7 @@ contains
   ! create history file for writting
   use ncdio_pio, only : ncd_pio_createfile, get_dim_len
   use betr_varcon, only : spval  => bspval
-  use betr_ctrl  , only : continue_run
+  use betr_ctrl  , only : continue_run, iulog=>biulog
   use ncdio_pio, only : ncd_defvar
   use ncdio_pio, only : ncd_defdim, ncd_unlimited, ncd_float
   implicit none
@@ -355,6 +355,7 @@ contains
       id = clock_month
   end select
   write(this%ncfname(id),'(A)')trim(gname)//'.hist.'//trim(freq)//'.nc'
+  write(iulog,*)'open output file:',this%ncfname(id)
   if(continue_run)then
     this%record(id) = get_dim_len(trim(this%ncfname(id)),trim(freq))
   else

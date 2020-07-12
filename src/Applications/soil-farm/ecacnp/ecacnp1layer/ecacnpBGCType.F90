@@ -232,6 +232,8 @@ contains
 
     call this%decompkf_eca%UpdateParas(biogeo_con)
 
+    call this%competECA%UpdateParas(biogeo_con)
+
   class default
     write(msg,'(A)')'Wrong parameter type passed in for UpdateParas in ' &
       // errMsg(mod_filename,__LINE__)

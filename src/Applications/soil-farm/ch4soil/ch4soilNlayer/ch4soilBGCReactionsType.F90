@@ -62,6 +62,7 @@ module ch4soilBGCReactionsType
   type, public, extends(bgc_reaction_type) :: &
     ch4soil_bgc_reaction_type
      private
+    integer :: parcol
     type(ch4soil_bgc_type), pointer :: ch4soil(:,:)
     type(JarBGC_forc_type), pointer :: ch4soil_forc(:,:)
     type(ch4soil_bgc_index_type) :: ch4soil_bgc_index
@@ -87,6 +88,7 @@ module ch4soilBGCReactionsType
     procedure :: UpdateParas
     procedure :: init_iP_prof
     procedure :: reset_biostates
+    procedure :: SetParCols
     procedure, private :: set_bgc_forc
     procedure, private :: retrieve_output
     procedure, private :: rm_ext_output
@@ -447,6 +449,7 @@ contains
     logical   :: batch_mode
 
     call bstatus%reset()
+    this%parcol=1
     batch_mode = .false.
 
     this%nactpft = 0
@@ -2778,4 +2781,13 @@ contains
        type(betr_status_type)           , intent(out)   :: betr_status
 
    end subroutine reset_biostates
+
+   !----------------------------------------------------------------------
+   subroutine SetParCols(this, parcol)
+     implicit none
+      class(ch4soil_bgc_reaction_type) , intent(inout)    :: this
+     integer, intent(in) :: parcol
+
+     this%parcol = parcol
+   end subroutine SetParCols
 end module ch4soilBGCReactionsType

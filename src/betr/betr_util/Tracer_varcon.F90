@@ -46,6 +46,7 @@ module Tracer_varcon
   logical :: is_phosphorus_active=.true.
   logical :: fix_ip = .false.
   logical :: lbcalib = .false.
+  integer :: nparcols = 0
   integer, parameter :: sorp_isotherm_linear=1
   integer, parameter :: sorp_isotherm_langmuir=2
 
