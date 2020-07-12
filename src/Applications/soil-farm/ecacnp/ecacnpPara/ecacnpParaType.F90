@@ -632,7 +632,7 @@ contains
   class(ecacnp_para_type), intent(inout) :: this
   class(BiogeoCon_type), intent(in) :: mother
 
-  call this%deep_copy(mother)
+  call this%deep_copy_bgc(mother)
 
   select type(mother)
   type is(ecacnp_para_type)

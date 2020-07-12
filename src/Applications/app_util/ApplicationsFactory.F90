@@ -224,6 +224,7 @@ contains
   !end_appadd
   use betr_constants   , only : betr_namelist_buffer_size_ext
   use BetrStatusType   , only : betr_status_type
+  use tracer_varcon    , only : nparcols
   implicit none
   character(len=*), intent(in) :: reaction_method
   type(betr_status_type), intent(out)   :: bstatus
@@ -234,6 +235,7 @@ contains
    select case (trim(reaction_method))
    !begin_appadd
    case ("ecacnp","ecacnp_mosart")
+     nparcols=0
      call ecacnp_para%Init(bstatus)
 #if (defined SBETR)
    case ("ch4soil")
@@ -296,7 +298,7 @@ contains
   ! read in the parameters for specified bgc implementation
   !begin_appadd
   use ecacnpParaType   , only : ecacnp_para,ecacnp_paras
-  use tracer_varcon    , only : reaction_method
+  use tracer_varcon    , only : reaction_method, nparcols
 #if (defined SBETR)
   use ch4soilParaType   , only : ch4soil_para
   use cdomParaType     , only : cdom_para
@@ -317,6 +319,7 @@ contains
    !begin_appadd
    case ("ecacnp","ecacnp_mosart")
     allocate(ecacnp_paras(begc:endc))
+    nparcols=endc-begc+1
     do fl = begc, endc
       call ecacnp_paras(fl)%Init(bstatus)
       if(bstatus%check_status())return

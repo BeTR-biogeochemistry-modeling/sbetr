@@ -69,7 +69,7 @@ implicit none
    procedure, private :: set_defpar_default_base
    procedure, public  :: readPars_bgc
    procedure, public  :: prtPars_bgc
-   procedure, public  :: deep_copy
+   procedure, public  :: deep_copy_bgc
  end type BiogeoCon_type
 
 contains
@@ -338,7 +338,7 @@ contains
 
   end subroutine printPars_bcon
   !--------------------------------------------------------------------
-  subroutine deep_copy(this,mother)
+  subroutine deep_copy_bgc(this,mother)
   implicit none
   class(BiogeoCon_type), intent(inout) :: this
   class(BiogeoCon_type), intent(in) :: mother
@@ -393,7 +393,7 @@ contains
   this%b_weath(:) = mother%b_weath(:)
   this%f_shield(:) = mother%f_shield(:)
   this%P_weip(:) = mother%P_weip(:)
-  end subroutine deep_copy
+  end subroutine deep_copy_bgc
 
 
 end module BiogeoConType

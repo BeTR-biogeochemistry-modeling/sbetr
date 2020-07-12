@@ -47,7 +47,7 @@ module ecacnpBGCReactionsType
   use JarBgcForcType        , only : JarBGC_forc_type
   use BetrStatusType        , only : betr_status_type
   use ecacnpBGCIndexType    , only : ecacnp_bgc_index_type
-  use ecacnpParaType        , only : ecacnp_paras
+  use ecacnpParaType        , only : ecacnp_paras, ecacnp_para
   implicit none
 
   save
@@ -117,6 +117,7 @@ contains
 
   !-------------------------------------------------------------------------------
   subroutine UpdateParas(this, bounds, lbj, ubj, bstatus)
+  use tracer_varcon, only : nparcols
   implicit none
   class(ecacnp_bgc_reaction_type), intent(inout) :: this
   type(bounds_type)                    , intent(in)    :: bounds
@@ -124,13 +125,21 @@ contains
   type(betr_status_type)               , intent(out)   :: bstatus
   integer :: j, c
 
-  do j = lbj, ubj
-    do c = bounds%begc, bounds%endc
-      call this%ecacnp(c,j)%UpdateParas(ecacnp_paras(this%parcol), bstatus)
-      if(bstatus%check_status())return
+  if(nparcols==0)then
+    do j = lbj, ubj
+      do c = bounds%begc, bounds%endc
+        call this%ecacnp(c,j)%UpdateParas(ecacnp_para, bstatus)
+        if(bstatus%check_status())return
+      enddo
     enddo
-  enddo
-
+  else
+    do j = lbj, ubj
+      do c = bounds%begc, bounds%endc
+        call this%ecacnp(c,j)%UpdateParas(ecacnp_paras(this%parcol), bstatus)
+        if(bstatus%check_status())return
+      enddo
+    enddo
+  endif
   end subroutine UpdateParas
   !-------------------------------------------------------------------------------
   subroutine init_boundary_condition_type(this, bounds, betrtracer_vars, tracerboundarycond_vars )
@@ -453,8 +462,8 @@ contains
     batch_mode = .false.
     this%nactpft = 0
     this%parcol = 1
-    call this%ecacnp_bgc_index%Init(ecacnp_paras(this%parcol)%use_c13, ecacnp_paras(this%parcol)%use_c14, &
-       ecacnp_paras(this%parcol)%non_limit, ecacnp_paras(this%parcol)%nop_limit, betr_maxpatch_pft)
+    call this%ecacnp_bgc_index%Init(ecacnp_para%use_c13, ecacnp_para%use_c14, &
+       ecacnp_para%non_limit, ecacnp_para%nop_limit, betr_maxpatch_pft)
 
     if(bstatus%check_status())return
 
@@ -467,16 +476,16 @@ contains
     !initialize
     do j = lbj, ubj
       do c = bounds%begc, bounds%endc
-        call this%ecacnp(c,j)%InitVL(ecacnp_paras(this%parcol), batch_mode,this%ecacnp_bgc_index, bstatus)
+        call this%ecacnp(c,j)%InitVL(ecacnp_para, batch_mode,this%ecacnp_bgc_index, bstatus)
         if(bstatus%check_status())return
 
         call this%ecacnp_forc(c,j)%Init(this%ecacnp_bgc_index%nstvars)
       enddo
     enddo
-    this%use_c13 = ecacnp_paras(this%parcol)%use_c13
-    this%use_c14 = ecacnp_paras(this%parcol)%use_c14
-    this%nop_limit=ecacnp_paras(this%parcol)%nop_limit
-    this%non_limit=ecacnp_paras(this%parcol)%non_limit
+    this%use_c13 = ecacnp_para%use_c13
+    this%use_c14 = ecacnp_para%use_c14
+    this%nop_limit=ecacnp_para%nop_limit
+    this%non_limit=ecacnp_para%non_limit
 
     !set up betr
     nelm =this%ecacnp_bgc_index%nelms
