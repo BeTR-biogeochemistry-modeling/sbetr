@@ -279,9 +279,10 @@ contains
     this%v1eca(c_l,j)%competECA%dsolutionp_dt = plantNutkinetics%dsolutionp_dt_vr_col(c_l,j)
     this%v1eca(c_l,j)%competECA%dlabp_dt = plantNutkinetics%dlabp_dt_vr_col(c_l,j)
     !be carefule about the following lines
-    trcid=tracer_group_memid(id_trc_p_sol,1); gid = adsorbgroupid(trcid)
-    k_sorbsurf(c_l,j,gid) = plantNutkinetics%km_minsurf_p_vr_col(c_l,j)
-    Q_sorbsurf(c_l,j,gid) = plantNutkinetics%minsurf_p_compet_vr_col(c_l,j)
+    trcid=tracer_group_memid(id_trc_p_sol,1)
+    !gid = adsorbgroupid(trcid)
+    !k_sorbsurf(c_l,j,gid) = plantNutkinetics%km_minsurf_p_vr_col(c_l,j)
+    !Q_sorbsurf(c_l,j,gid) = plantNutkinetics%minsurf_p_compet_vr_col(c_l,j)
 
 !    trcid=tracer_group_memid(id_trc_nh3x,1); gid = adsorbgroupid(trcid)
 !    k_sorbsurf(c_l,j,gid) = plantNutkinetics%km_minsurf_nh4_vr_col(c_l,j)
@@ -560,11 +561,10 @@ contains
     if(bstatus%check_status())return
 
     call betrtracer_vars%set_tracer(bstatus=bstatus,trc_id = betrtracer_vars%id_trc_p_sol, &
-         trc_name='P_SOL', is_trc_mobile=.false. .and. (.not. fix_ip), is_trc_advective = .true. .and. (.not. fix_ip), &
+         trc_name='P_SOL', is_trc_mobile=.true. .and. (.not. fix_ip), &
+         is_trc_advective = .true. .and. (.not. fix_ip), &
          trc_group_id = betrtracer_vars%id_trc_p_sol, trc_group_mem = 1, is_trc_volatile=.false., &
-         is_trc_adsorb = .true., trc_adsorbid=addone(itemp_ads), &
-         trc_adsorbgroupid=addone(itemp_ads_grp), trc_sorpisotherm='LANGMUIR', &
-         trc_vtrans_scal=0._r8)
+         is_trc_adsorb = .false., trc_vtrans_scal=0._r8)
     if(bstatus%check_status())return
 
     !------------------------------------------------------------------------------------
