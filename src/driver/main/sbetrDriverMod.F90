@@ -28,7 +28,7 @@ contains
   use BeTRSimulationStandalone, only : betr_simulation_standalone_type
   use BeTRSimulationALM     , only : betr_simulation_alm_type
   use shr_kind_mod          , only : r8 => shr_kind_r8
-  use clm_varpar            , only : nlevtrc_soil
+  use elm_varpar            , only : nlevtrc_soil
   use decompMod             , only : bounds_type
   use bncdio_pio             , only : file_desc_t
   use clm_instMod           , only : atm2lnd_vars
@@ -58,7 +58,7 @@ contains
   use LandunitType          , only : lun
   use PatchType             , only : pft
   use landunit_varcon       , only : istsoil
-  use clm_varpar            , only : nlevsno, nlevsoi
+  use elm_varpar            , only : nlevsno, nlevsoi
 
   implicit none
   !arguments
@@ -484,8 +484,8 @@ end subroutine sbetrBGC_driver
   use CNNitrogenFluxType, only : nitrogenflux_type
   use PhosphorusFluxType, only : phosphorusflux_type
   use CNStateType, only : cnstate_type
-  use clm_varpar, only : i_cwd, i_met_lit, i_cel_lit, i_lig_lit
-  use clm_varpar            , only : nlevsoi
+  use elm_varpar, only : i_cwd, i_met_lit, i_cel_lit, i_lig_lit
+  use elm_varpar            , only : nlevsoi
   implicit none
   logical           , intent(in)  :: yesno
   type(bounds_type) , intent(in)  :: bounds

@@ -77,7 +77,7 @@ contains
     use pftvarcon       , only : noveg, nc4_grass, nc3_arctic_grass, nc3_nonarctic_grass
     use WaterStateType  , only : waterstate_type
     use landunit_varcon , only : istcrop, istice, istsoil
-    use clm_varpar      , only : nlevsno, nlevsoi, nlevtrc_soil
+    use elm_varpar      , only : nlevsno, nlevsoi, nlevtrc_soil
     !betr types
     use betr_constants      , only : betr_filename_length
     use betr_constants      , only : betr_namelist_buffer_size
@@ -127,7 +127,7 @@ contains
     use pftvarcon       , only : noveg, nc4_grass, nc3_arctic_grass, nc3_nonarctic_grass
     use WaterStateType  , only : waterstate_type
     use landunit_varcon , only : istcrop, istice, istsoil
-    use clm_varpar      , only : nlevsno, nlevsoi, nlevtrc_soil
+    use elm_varpar      , only : nlevsno, nlevsoi, nlevtrc_soil
     !betr types
     use betr_constants      , only : betr_filename_length
     use betr_constants      , only : betr_namelist_buffer_size
@@ -169,7 +169,7 @@ contains
    !march one time step without doing drainage
    !
    !USES
-    use clm_varpar        , only : nlevsno, nlevsoi, nlevtrc_soil
+    use elm_varpar        , only : nlevsno, nlevsoi, nlevtrc_soil
     use tracer_varcon     , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
     implicit none
     ! !ARGUMENTS :
@@ -281,7 +281,7 @@ contains
    !USES
     use MathfuncMod   , only : safe_div
     use lnd2atmType    , only : lnd2atm_type
-    use clm_varpar     , only : nlevsno, nlevsoi, nlevtrc_soil
+    use elm_varpar     , only : nlevsno, nlevsoi, nlevtrc_soil
     use tracer_varcon  , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
     implicit none
     !ARGUMENTS
@@ -350,7 +350,7 @@ contains
    !
    !USES
     use subgridAveMod  , only : c2g
-    use clm_varpar     , only : nlevsno, nlevsoi, nlevtrc_soil
+    use elm_varpar     , only : nlevsno, nlevsoi, nlevtrc_soil
     use lnd2atmType    , only : lnd2atm_type
     use betr_decompMod , only : betr_bounds_type
     use tracer_varcon  , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
@@ -437,7 +437,7 @@ contains
   use CNNitrogenFluxType, only : nitrogenflux_type
   use PhosphorusFluxType, only : phosphorusflux_type
   use CNStateType, only : cnstate_type
-  use clm_varpar, only : i_cwd, i_met_lit, i_cel_lit, i_lig_lit
+  use elm_varpar, only : i_cwd, i_met_lit, i_cel_lit, i_lig_lit
   use PlantMicKineticsMod, only : PlantMicKinetics_type
   use mathfuncMod, only : apvb
   use tracer_varcon, only : use_c13_betr, use_c14_betr
@@ -1080,7 +1080,7 @@ contains
   use CNStateType       , only : cnstate_type
   use CNCarbonFluxType  , only : carbonflux_type
   use CanopyStateType   , only : canopystate_type
-  use clm_varpar        , only : nlevsno, nlevsoi
+  use elm_varpar        , only : nlevsno, nlevsoi
   use tracer_varcon     , only : reaction_method
   use CNCarbonStateType , only : carbonstate_type
   use tracer_varcon     , only : catomw

@@ -81,7 +81,7 @@ contains
     use landunit_varcon     , only : istcrop, istice, istsoil
     use BeTR_landvarconType , only : betr_landvarcon
     use tracer_varcon       , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
-    use clm_varpar          , only : nlevsno, nlevsoi, nlevtrc_soil
+    use elm_varpar          , only : nlevsno, nlevsoi, nlevtrc_soil
     implicit none
     !ARGUMENTS
     class(betr_simulation_clm_type)          , intent(inout) :: this
@@ -136,7 +136,7 @@ contains
     use landunit_varcon     , only : istcrop, istice, istsoil
     use BeTR_landvarconType , only : betr_landvarcon
     use tracer_varcon       , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
-    use clm_varpar          , only : nlevsno, nlevsoi, nlevtrc_soil
+    use elm_varpar          , only : nlevsno, nlevsoi, nlevtrc_soil
     implicit none
     !ARGUMENTS
     class(betr_simulation_clm_type)          , intent(inout) :: this
@@ -179,7 +179,7 @@ contains
     use tracer_varcon     , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
     use PatchType         , only : patch_type
     use LandunitType      , only : landunit_type
-    use clm_varpar        , only : nlevsno, nlevsoi, nlevtrc_soil
+    use elm_varpar        , only : nlevsno, nlevsoi, nlevtrc_soil
     implicit none
     ! !ARGUMENTS :
     class(betr_simulation_clm_type) , intent(inout) :: this
@@ -229,7 +229,7 @@ contains
     use betr_decompMod , only : betr_bounds_type
     use LandunitType   , only : landunit_type
     use tracer_varcon  , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil
-    use clm_varpar     , only : nlevsno, nlevsoi, nlevtrc_soil
+    use elm_varpar     , only : nlevsno, nlevsoi, nlevtrc_soil
     implicit none
     ! !ARGUMENTS:
     class(betr_simulation_clm_type) , intent(inout) :: this
@@ -515,7 +515,7 @@ contains
   use SoilHydrologyType , only : soilhydrology_type
   use CNCarbonFluxType  , only : carbonflux_type
   use CanopyStateType   , only : canopystate_type
-  use clm_varpar        , only : nlevsno, nlevsoi
+  use elm_varpar        , only : nlevsno, nlevsoi
   use ColumnType        , only : column_type
   use PatchType         , only : patch_type
   implicit none

@@ -1246,7 +1246,7 @@ contains
   !redistribute tracer in snow layers due to division
   !
   !USES
-  use clm_varpar, only : nlevsno
+  use elm_varpar, only : nlevsno
   use betr_varcon, only : betr_maxpatch_pft
   implicit none
   !ARGUMENTS
@@ -1283,7 +1283,7 @@ contains
   !redistribute tracer in snow layers due to division
   !
   !USES
-  use clm_varpar, only : nlevsno
+  use elm_varpar, only : nlevsno
   use betr_varcon, only : betr_maxpatch_pft
   implicit none
   !ARGUMENTS

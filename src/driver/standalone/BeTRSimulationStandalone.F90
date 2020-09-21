@@ -77,7 +77,7 @@ contains
     use CNStateType         , only : cnstate_type
     use landunit_varcon     , only : istcrop, istice, istsoil
     use BeTR_landvarconType , only : betr_landvarcon
-    use clm_varpar          , only : nlevsno, nlevsoi, nlevtrc_soil
+    use elm_varpar          , only : nlevsno, nlevsoi, nlevtrc_soil
     implicit none
     !ARGUMENTS
     class(betr_simulation_standalone_type)   , intent(inout) :: this
@@ -224,7 +224,7 @@ contains
   use CNStateType       , only : cnstate_type
   use CNCarbonFluxType  , only : carbonflux_type
   use CanopyStateType   , only : canopystate_type
-  use clm_varpar        , only : nlevsno, nlevsoi
+  use elm_varpar        , only : nlevsno, nlevsoi
   implicit none
   !ARGUMENTS
   class(betr_simulation_standalone_type) , intent(inout)        :: this
