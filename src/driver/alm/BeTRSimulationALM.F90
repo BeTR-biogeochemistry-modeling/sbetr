@@ -954,7 +954,7 @@ contains
 
     use WaterfluxType   , only : waterflux_type
     use WaterstateType  , only : waterstate_type
-    use clm_varcon      , only : denh2o,spval
+    use elm_varcon      , only : denh2o,spval
     use landunit_varcon , only : istsoil, istcrop
     use betr_decompMod  , only : betr_bounds_type
     implicit none
@@ -1016,7 +1016,7 @@ contains
   use SoilStateType              , only : soilstate_type
   use WaterStateType             , only : waterstate_type
   use SoilWaterRetentionCurveMod , only : soil_water_retention_curve_type
-  use clm_varcon                 , only : grav,hfus,tfrz
+  use elm_varcon                 , only : grav,hfus,tfrz
   implicit none
   !ARGUMENTS
   class(betr_simulation_alm_type), intent(inout)  :: this
