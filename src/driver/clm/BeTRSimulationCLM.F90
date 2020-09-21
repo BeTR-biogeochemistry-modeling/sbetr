@@ -451,7 +451,7 @@ contains
     use MathfuncMod      , only : dot_sum
     use clm_varcon       , only : denh2o
     use WaterStateType   , only : waterstate_type
-    use clm_time_manager , only : get_nstep
+    use elm_time_manager , only : get_nstep
     implicit none
     !ARGUMENTS
     class(betr_simulation_clm_type) , intent(inout) :: this
