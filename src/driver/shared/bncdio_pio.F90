@@ -20,7 +20,7 @@ module bncdio_pio
   use shr_kind_mod, only : r8 => shr_kind_r8, i4 => shr_kind_i4
   use shr_log_mod , only : errMsg => shr_log_errMsg
   use shr_assert_mod
-  use clm_varctl  , only : single_column, iulog
+  use elm_varctl  , only : single_column, iulog
   use spmdMod     , only : masterproc
   implicit none
 

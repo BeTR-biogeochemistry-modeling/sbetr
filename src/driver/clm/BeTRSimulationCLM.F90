@@ -9,7 +9,7 @@ module BeTRSimulationCLM
 
   use shr_kind_mod        , only : r8 => shr_kind_r8
   use abortutils          , only : endrun
-  use clm_varctl          , only : iulog
+  use elm_varctl          , only : iulog
   use shr_log_mod         , only : errMsg => shr_log_errMsg
   use decompMod           , only : bounds_type
   use EcophysConType      , only : ecophyscon_type

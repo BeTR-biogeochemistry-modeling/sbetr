@@ -24,7 +24,7 @@ contains
     use shr_nl_mod    , only : shr_nl_find_group_name
     use shr_mpi_mod   , only : shr_mpi_bcast
     use betr_utils    , only : log2str
-    use clm_varctl    , only : iulog
+    use elm_varctl    , only : iulog
     use tracer_varcon  , only : advection_on, diffusion_on, reaction_on, ebullition_on, reaction_method
     use ApplicationsFactory, only : AppLoadParameters
     use tracer_varcon , only : use_c13_betr, use_c14_betr

@@ -10,7 +10,7 @@ module BeTRSimulationStandalone
   !  doing much.
   !
   use abortutils          , only : endrun
-  use clm_varctl          , only : iulog
+  use elm_varctl          , only : iulog
   use shr_log_mod         , only : errMsg => shr_log_errMsg
   use betr_decompMod      , only : betr_bounds_type
   use decompMod           , only : bounds_type

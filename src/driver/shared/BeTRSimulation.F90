@@ -10,7 +10,7 @@ module BeTRSimulation
   use VegetationDataType, only : veg_es, veg_wf
   use ColumnDataType    , only : col_es, col_ws, col_wf    
   use abortutils     , only : endrun
-  use clm_varctl     , only : iulog, use_cn
+  use elm_varctl     , only : iulog, use_cn
   use shr_log_mod    , only : errMsg => shr_log_errMsg
   use shr_kind_mod   , only : r8 => shr_kind_r8
   use tracer_varcon  , only : betr_nlevsoi, betr_nlevsno, betr_nlevtrc_soil

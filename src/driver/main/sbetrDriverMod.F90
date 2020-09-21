@@ -318,7 +318,7 @@ end subroutine sbetrBGC_driver
     ! read namelist for betr configuration
     ! !USES:
     use spmdMod        , only : masterproc, mpicom
-    use clm_varctl     , only : iulog
+    use elm_varctl     , only : iulog
     use abortutils     , only : endrun
     use shr_log_mod    , only : errMsg => shr_log_errMsg
     use betr_constants , only : stdout, betr_string_length_long, betr_namelist_buffer_size
