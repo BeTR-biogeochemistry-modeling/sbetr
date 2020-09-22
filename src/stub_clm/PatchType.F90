@@ -35,7 +35,7 @@ module PatchType
   !
   use shr_kind_mod   , only : r8 => shr_kind_r8
   use shr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
-  use clm_varcon     , only : ispval, spval
+  use elm_varcon     , only : ispval, spval
   use decompMod      , only : bounds_type
   !
   ! !PUBLIC TYPES:

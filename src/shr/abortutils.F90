@@ -43,7 +43,7 @@ CONTAINS
   end subroutine endrun_vanilla
 
   !-----------------------------------------------------------------------
-  subroutine endrun_globalindex(decomp_index, clmlevel, msg)
+  subroutine endrun_globalindex(decomp_index, elmlevel, msg)
 
     !-----------------------------------------------------------------------
     ! Description:
@@ -54,14 +54,14 @@ CONTAINS
     ! Arguments:
     implicit none
     integer          , intent(in)           :: decomp_index
-    character(len=*) , intent(in)           :: clmlevel
+    character(len=*) , intent(in)           :: elmlevel
     character(len=*) , intent(in), optional :: msg    ! string to be printed
     !
     ! Local Variables:
     integer :: igrc, ilun, icol
     !-----------------------------------------------------------------------
 
-    write(6,*)'calling getglobalwrite with decomp_index= ',decomp_index,' and clmlevel= ',trim(clmlevel)
+    write(6,*)'calling getglobalwrite with decomp_index= ',decomp_index,' and elmlevel= ',trim(elmlevel)
 
 
     if (present (msg)) then

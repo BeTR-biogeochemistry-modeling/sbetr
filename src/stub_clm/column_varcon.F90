@@ -40,7 +40,7 @@ contains
     ! Convert an icemec class (1..maxpatch_glcmec) into col%itype
     !
     ! !USES:
-    use clm_varpar, only : maxpatch_glcmec
+    use elm_varpar, only : maxpatch_glcmec
     use landunit_varcon, only : istice_mec
     !
     ! !ARGUMENTS:
@@ -66,7 +66,7 @@ contains
     ! Convert a col%itype value (for an icemec landunit) into an icemec class (1..maxpatch_glcmec)
     !
     ! !USES:
-    use clm_varpar, only : maxpatch_glcmec
+    use elm_varpar, only : maxpatch_glcmec
     use landunit_varcon, only : istice_mec
     !
     ! !ARGUMENTS:

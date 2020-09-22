@@ -123,7 +123,7 @@ contains
   !
   !set initial inorganic P profile
   use decompMod       , only : bounds_type
-  use clm_varpar      , only : nlevtrc_soil
+  use elm_varpar      , only : nlevtrc_soil
   implicit none
   class(betr_simulation_alm_type)          , intent(inout) :: this
   type(bounds_type), intent(in) :: bounds
@@ -261,7 +261,7 @@ contains
     use betr_ctrl         , only : betr_spinup_state, enter_spinup
     use MathfuncMod       , only : num2str
     use betr_varcon       , only : kyr_spinup
-    use clm_time_manager  , only : get_curr_date,is_end_curr_day,is_beg_curr_day,get_nstep
+    use elm_time_manager  , only : get_curr_date,is_end_curr_day,is_beg_curr_day,get_nstep
     implicit none
     ! !ARGUMENTS :
     class(betr_simulation_alm_type) , intent(inout) :: this
@@ -553,7 +553,7 @@ contains
   use CNStateType, only : cnstate_type
   use elm_varpar, only : i_cwd, i_met_lit, i_cel_lit, i_lig_lit
   use CNStateType        , only : cnstate_type
-  use clm_varpar         , only : i_cwd, i_met_lit, i_cel_lit, i_lig_lit
+  use elm_varpar         , only : i_cwd, i_met_lit, i_cel_lit, i_lig_lit
   use PlantMicKineticsMod, only : PlantMicKinetics_type
   use mathfuncMod        , only : apvb,bisnan
   use tracer_varcon      , only : use_c13_betr, use_c14_betr, do_bgc_calibration
@@ -901,7 +901,7 @@ contains
 
   !this returns the flux back to ALM after doing soil BGC
   !this specifically returns plant nutrient yield
-  use clm_time_manager    , only : get_nstep
+  use elm_time_manager    , only : get_nstep
 
   use tracer_varcon       , only : use_c13_betr, use_c14_betr
   use MathfuncMod         , only : safe_div
@@ -1457,7 +1457,7 @@ contains
   !set kinetic parameters for column c
   use PlantMicKineticsMod, only : PlantMicKinetics_type
   use tracer_varcon      , only : reaction_method,natomw,patomw
-  use clm_time_manager   , only : get_nstep
+  use elm_time_manager   , only : get_nstep
   use tracer_varcon      , only : lbcalib
   implicit none
   class(betr_simulation_alm_type), intent(inout)  :: this
@@ -1700,7 +1700,7 @@ contains
     phosphorusstate_vars, phosphorusflux_vars, pf_phosphorusflux_vars)
 
   use tracer_varcon   , only : nlevtrc_soil  => betr_nlevtrc_soil
-  use clm_time_manager    , only : get_nstep
+  use elm_time_manager    , only : get_nstep
   implicit none
   class(betr_simulation_alm_type) , intent(inout) :: this
   type(bounds_type)               , intent(in)    :: bounds ! bounds

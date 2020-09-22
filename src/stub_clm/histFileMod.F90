@@ -25,7 +25,7 @@ contains
   ! Create a netcdf file
   !
   use netcdf
-  use clm_varcon, only : spval
+  use elm_varcon, only : spval
   use ncdio_pio, only : check_ret, ncd_defvar, file_desc_t, ncd_defdim
   implicit none
   class(file_desc_t), intent(inout) :: ncid
@@ -61,7 +61,7 @@ contains
   ! define 1d field
   !
   use ncdio_pio,  only : ncd_defvar,file_desc_t
-  use clm_varcon, only : spval
+  use elm_varcon, only : spval
   implicit none
   class(file_desc_t), intent(inout) :: ncid                    !file id
   character(len=*), intent(in) :: varname        !variable name
@@ -86,7 +86,7 @@ contains
   !
   use netcdf
   use ncdio_pio, only : ncd_defvar, file_desc_t
-  use clm_varcon, only : spval
+  use elm_varcon, only : spval
   implicit none
   class(file_desc_t), intent(inout) :: ncid                   !file id
   character(len=*), intent(in) :: varname       !variable name
@@ -183,8 +183,8 @@ contains
     ! initial or branch run to initialize the actual history tapes.
     !
     ! !USES:
-    use clm_varpar      , only : nlevgrnd, nlevsno, nlevlak, numrad, nlevdecomp_full, nlevtrc_soil
-    use clm_varpar      , only : natpft_size, cft_size, maxpatch_glcmec
+    use elm_varpar      , only : nlevgrnd, nlevsno, nlevlak, numrad, nlevdecomp_full, nlevtrc_soil
+    use elm_varpar      , only : natpft_size, cft_size, maxpatch_glcmec
     use landunit_varcon , only : max_lunit
     !
     ! !ARGUMENTS:
@@ -234,8 +234,8 @@ contains
 
     !
     ! !USES:
-    use clm_varpar  , only : nlevdecomp_full, crop_prog
-    use clm_varctl  , only : iulog
+    use elm_varpar  , only : nlevdecomp_full, crop_prog
+    use elm_varctl  , only : iulog
     use abortutils  , only : endrun
     use shr_log_mod , only : errMsg => shr_log_errMsg
     !

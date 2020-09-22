@@ -1,10 +1,10 @@
-module clm_time_manager
+module elm_time_manager
 
    use shr_kind_mod, only: r8 => shr_kind_r8
    use shr_sys_mod , only: shr_sys_abort
    use spmdMod     , only: masterproc
-   use clm_varctl  , only: iulog
-   use clm_varcon  , only: isecspday
+   use elm_varctl  , only: iulog
+   use elm_varcon  , only: isecspday
    use ESMF
    implicit none
    private
@@ -148,7 +148,7 @@ contains
     integer         , optional, intent(OUT) :: stop_tod_out       ! Stop time of day (sec)
     integer         , optional, intent(OUT) :: dtime_out          ! Time-step (sec)
     !
-    character(len=*), parameter :: sub = 'clm::get_timemgr_defaults'
+    character(len=*), parameter :: sub = 'elm::get_timemgr_defaults'
 
     if ( timemgr_set ) call shr_sys_abort( sub//":: timemgr_init or timemgr_restart already called" )
     if (present(calendar_out)      ) calendar_out       = trim(calendar)
@@ -185,7 +185,7 @@ contains
     integer         , optional, intent(IN) :: perpetual_ymd_in  ! Perpetual date   (YYYYMMDD)
     integer         , optional, intent(IN) :: dtime_in          ! Time-step (sec)
     !
-    character(len=*), parameter :: sub = 'clm::set_timemgr_init'
+    character(len=*), parameter :: sub = 'elm::set_timemgr_init'
 
     if ( timemgr_set ) call shr_sys_abort( sub//":: timemgr_init or timemgr_restart already called" )
     if (present(calendar_in)      ) calendar         = trim(calendar_in)
@@ -217,7 +217,7 @@ contains
     !
     ! Arguments
     !
-    character(len=*), parameter :: sub = 'clm::timemgr_init'
+    character(len=*), parameter :: sub = 'elm::timemgr_init'
     integer :: rc                            ! return code
     integer :: yr, mon, day, tod             ! Year, month, day, and second as integers
     type(ESMF_Time) :: start_date            ! start date for run
@@ -336,7 +336,7 @@ contains
     type(ESMF_Time), intent(in) :: curr_date   ! current date (equal to start_date)
     type(ESMF_Time), intent(in) :: stop_date   ! stop date for run
     !
-    character(len=*), parameter :: sub = 'clm::init_clock'
+    character(len=*), parameter :: sub = 'elm::init_clock'
     type(ESMF_TimeInterval)     :: step_size         ! timestep size
     type(ESMF_Time)             :: current           ! current date (from clock)
     integer                     :: rc                ! return code
@@ -347,7 +347,7 @@ contains
 
     ! Initialize the clock
 
-    tm_clock = ESMF_ClockCreate(name="CLM Time-manager clock", timeStep=step_size, startTime=start_date, &
+    tm_clock = ESMF_ClockCreate(name="ELM Time-manager clock", timeStep=step_size, startTime=start_date, &
          stopTime=stop_date, refTime=ref_date, rc=rc)
     call chkrc(rc, sub//': error return from ESMF_ClockSetup')
 
@@ -376,7 +376,7 @@ contains
 
     type(ESMF_Time) :: TimeSetymd    ! Return value
 
-    character(len=*), parameter :: sub = 'clm::TimeSetymd'
+    character(len=*), parameter :: sub = 'elm::TimeSetymd'
     integer :: yr, mon, day          ! Year, month, day as integers
     integer :: rc                    ! return code
     !---------------------------------------------------------------------------------
@@ -403,7 +403,7 @@ contains
     type(ESMF_Time), intent(inout) :: date ! Input date to convert to ymd
     integer, intent(out), optional :: tod  ! Time of day in seconds
 
-    character(len=*), parameter :: sub = 'clm::TimeGetymd'
+    character(len=*), parameter :: sub = 'elm::TimeGetymd'
     integer :: yr, mon, day
     integer :: rc                          ! return code
 
@@ -435,7 +435,7 @@ contains
     character(len=*), intent(in) :: flag  ! 'read' or 'write'
     !
     ! Local variables
-    character(len=*), parameter :: sub = 'clm::timemgr_restart'
+    character(len=*), parameter :: sub = 'elm::timemgr_restart'
     integer :: rc                  ! return code
     logical :: readvar             ! determine if variable is on initial file
     type(ESMF_Time) :: start_date  ! start date for run
@@ -544,7 +544,7 @@ contains
     !---------------------------------------------------------------------------------
     ! Restart the ESMF time manager using the synclock for ending date.
     !
-    character(len=*), parameter :: sub = 'clm::timemgr_restart'
+    character(len=*), parameter :: sub = 'elm::timemgr_restart'
     integer :: rc                            ! return code
     integer :: yr, mon, day, tod             ! Year, month, day, and second as integers
     type(ESMF_Time) :: start_date            ! start date for run
@@ -660,7 +660,7 @@ contains
     ! Calculate ending timestep number
     ! Calculation of ending timestep number (nestep) assumes a constant stepsize.
     !
-    character(len=*), parameter :: sub = 'clm::calc_nestep'
+    character(len=*), parameter :: sub = 'elm::calc_nestep'
     integer :: ntspday               ! Number of time-steps per day
     type(ESMF_TimeInterval) :: diff  !
     type(ESMF_Time) :: start_date    ! start date for run
@@ -688,7 +688,7 @@ contains
     !
     ! Local variables
     !
-    character(len=*), parameter :: sub = 'clm::init_calendar'
+    character(len=*), parameter :: sub = 'elm::init_calendar'
     type(ESMF_CalKind_Flag) :: cal_type        ! calendar type
     character(len=len(calendar)) :: caltmp
     integer :: rc                              ! return code
@@ -712,7 +712,7 @@ contains
   subroutine timemgr_print()
 
     !---------------------------------------------------------------------------------
-    character(len=*), parameter :: sub = 'clm::timemgr_print'
+    character(len=*), parameter :: sub = 'elm::timemgr_print'
     integer :: rc
     integer :: yr, mon, day
     integer :: &                   ! Data required to restart time manager:
@@ -748,7 +748,7 @@ contains
     call chkrc(rc, sub//': error return from ESMF_ClockGet')
     nstep = step_no
 
-    write(iulog,*)' ******** CLM Time Manager Configuration ********'
+    write(iulog,*)' ******** ELM Time Manager Configuration ********'
 
     call ESMF_TimeIntervalGet( step, s=step_sec, rc=rc )
     call chkrc(rc, sub//': error return from ESMF_TimeIntervalGet')
@@ -796,7 +796,7 @@ contains
 
     ! Increment the timestep number.
 
-    character(len=*), parameter :: sub = 'clm::advance_timestep'
+    character(len=*), parameter :: sub = 'elm::advance_timestep'
     integer :: rc
 
     call ESMF_ClockAdvance( tm_clock, rc=rc )
@@ -814,7 +814,7 @@ contains
 
     type(ESMF_Clock), intent(inout) :: clock
 
-    character(len=*), parameter :: sub = 'clm::get_clock'
+    character(len=*), parameter :: sub = 'elm::get_clock'
     type(ESMF_TimeInterval) :: step_size
     type(ESMF_Time) :: start_date, stop_date, ref_date
     integer :: rc
@@ -835,7 +835,7 @@ contains
     ! Return the current time as ESMF_Time
 
     type(ESMF_Time) :: get_curr_ESMF_Time
-    character(len=*), parameter :: sub = 'clm::get_curr_ESMF_Time'
+    character(len=*), parameter :: sub = 'elm::get_curr_ESMF_Time'
     integer :: rc
 
     call ESMF_ClockGet( tm_clock, currTime=get_curr_ESMF_Time, rc=rc )
@@ -849,7 +849,7 @@ contains
 
     ! Return the step size in seconds.
     implicit none
-    character(len=*), parameter :: sub = 'clm::get_step_size'
+    character(len=*), parameter :: sub = 'elm::get_step_size'
     type(ESMF_TimeInterval) :: step_size       ! timestep size
 
 
@@ -907,7 +907,7 @@ contains
 
     ! Return the timestep number.
 
-    character(len=*), parameter :: sub = 'clm::get_nstep'
+    character(len=*), parameter :: sub = 'elm::get_nstep'
     integer :: rc
     integer(ESMF_KIND_I8) :: step_no
 
@@ -938,7 +938,7 @@ contains
     ! Positive for future times, negative
     ! for previous times.
 
-    character(len=*), parameter :: sub = 'clm::get_curr_date'
+    character(len=*), parameter :: sub = 'elm::get_curr_date'
     integer :: rc
     type(ESMF_Time) :: date
     type(ESMF_TimeInterval) :: off
@@ -982,7 +982,7 @@ contains
     ! Positive for future times, negative
     ! for previous times.
 
-    character(len=*), parameter :: sub = 'clm::get_perp_date'
+    character(len=*), parameter :: sub = 'elm::get_perp_date'
     integer :: rc
     type(ESMF_Time) :: date
     type(ESMF_TimeInterval) :: DelTime
@@ -1025,7 +1025,7 @@ contains
          tod     ! time of day (seconds past 0Z)
 
     ! Local variables
-    character(len=*), parameter :: sub = 'clm::get_prev_date'
+    character(len=*), parameter :: sub = 'elm::get_prev_date'
     integer :: rc
     type(ESMF_Time) :: date
     !-----------------------------------------------------------------------------------------
@@ -1052,7 +1052,7 @@ contains
          tod     ! time of day (seconds past 0Z)
 
     ! Local variables
-    character(len=*), parameter :: sub = 'clm::get_start_date'
+    character(len=*), parameter :: sub = 'elm::get_start_date'
     integer :: rc
     type(ESMF_Time) :: date
     !-----------------------------------------------------------------------------------------
@@ -1078,7 +1078,7 @@ contains
          tod     ! time of day (seconds past 0Z)
 
     ! Local variables
-    character(len=*), parameter :: sub = 'clm::get_driver_start_ymd'
+    character(len=*), parameter :: sub = 'elm::get_driver_start_ymd'
     !-----------------------------------------------------------------------------------------
 
     if ( start_ymd == uninit_int )then
@@ -1111,7 +1111,7 @@ contains
          tod     ! time of day (seconds past 0Z)
 
     ! Local variables
-    character(len=*), parameter :: sub = 'clm::get_ref_date'
+    character(len=*), parameter :: sub = 'elm::get_ref_date'
     integer :: rc
     type(ESMF_Time) :: date
     !-----------------------------------------------------------------------------------------
@@ -1137,7 +1137,7 @@ contains
          seconds  ! remaining seconds in time interval
 
     ! Local variables
-    character(len=*), parameter :: sub = 'clm::get_curr_time'
+    character(len=*), parameter :: sub = 'elm::get_curr_time'
     integer :: rc
     type(ESMF_Time) :: cdate, rdate
     type(ESMF_TimeInterval) :: diff
@@ -1169,7 +1169,7 @@ contains
          seconds  ! remaining seconds in time interval
 
     ! Local variables
-    character(len=*), parameter :: sub = 'clm::get_prev_time'
+    character(len=*), parameter :: sub = 'elm::get_prev_time'
     integer :: rc
     type(ESMF_Time) :: date, ref_date
     type(ESMF_TimeInterval) :: diff
@@ -1200,7 +1200,7 @@ contains
     real(r8) :: get_curr_calday
 
     ! Local variables
-    character(len=*), parameter :: sub = 'clm::get_curr_calday'
+    character(len=*), parameter :: sub = 'elm::get_curr_calday'
     integer :: rc
     type(ESMF_Time) :: date
     type(ESMF_TimeInterval) :: off, diurnal
@@ -1268,7 +1268,7 @@ contains
     real(r8) :: get_calday
 
     ! Local variables
-    character(len=*), parameter :: sub = 'clm::get_calday'
+    character(len=*), parameter :: sub = 'elm::get_calday'
     integer :: rc                 ! return code
     type(ESMF_Time) :: date
     !-----------------------------------------------------------------------------------------
@@ -1321,7 +1321,7 @@ contains
     ! Positive for future times, negative
     ! for previous times.
 
-    character(len=*), parameter :: sub = 'clm::get_days_per_year'
+    character(len=*), parameter :: sub = 'elm::get_days_per_year'
     integer         :: yr, mon, day, tod ! current date year, month, day and time-of-day
     type(ESMF_Time) :: eDate             ! ESMF date
     integer         :: rc                ! ESMF return code
@@ -1354,7 +1354,7 @@ contains
     ! Positive for future times, negative
     ! for previous times.
 
-    character(len=*), parameter :: sub = 'clm::get_curr_yearfrac'
+    character(len=*), parameter :: sub = 'elm::get_curr_yearfrac'
     real(r8) :: cday               ! current calendar day (1.0 = 0Z on Jan 1)
     real(r8) :: days_per_year      ! days per year
 
@@ -1411,7 +1411,7 @@ contains
     ! Arguments
     real(r8), intent(IN) :: nextsw_cday_in ! input calday of next radiation computation
 
-    character(len=*), parameter :: sub = 'clm::set_nextsw_cday'
+    character(len=*), parameter :: sub = 'elm::set_nextsw_cday'
 
     nextsw_cday = nextsw_cday_in
 
@@ -1489,7 +1489,7 @@ contains
     ! Return true on first step of initial run only.
 
     ! Local variables
-    character(len=*), parameter :: sub = 'clm::is_first_step'
+    character(len=*), parameter :: sub = 'elm::is_first_step'
     integer :: rc
     integer :: nstep
     integer(ESMF_KIND_I8) :: step_no
@@ -1519,7 +1519,7 @@ contains
     ! Return true on last timestep.
 
     ! Local variables
-    character(len=*), parameter :: sub = 'clm::is_last_step'
+    character(len=*), parameter :: sub = 'elm::is_last_step'
     type(ESMF_Time) :: stop_date
     type(ESMF_Time) :: curr_date
     type(ESMF_TimeInterval) :: time_step
@@ -1562,7 +1562,7 @@ contains
     real(r8) :: days ! (ymd2,tod2)-(ymd1,tod1) in days
 
     ! Local variables
-    character(len=*), parameter :: sub = 'clm::timemgr_datediff'
+    character(len=*), parameter :: sub = 'elm::timemgr_datediff'
     integer :: rc   ! return code
 
     type(ESMF_Time) :: date1
@@ -1620,7 +1620,7 @@ contains
 
   logical function is_restart( )
     ! Determine if restart run
-    use clm_varctl, only : nsrest, nsrContinue
+    use elm_varctl, only : nsrest, nsrContinue
     if (nsrest == nsrContinue) then
        is_restart = .true.
     else
@@ -1630,4 +1630,4 @@ contains
 
   !=========================================================================================
 
-end module clm_time_manager
+end module elm_time_manager

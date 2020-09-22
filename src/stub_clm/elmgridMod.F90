@@ -1,4 +1,4 @@
-module clmgridMod
+module elmgridMod
 !
 ! DESCRIPTION
 !
@@ -11,11 +11,11 @@ implicit none
   real(r8), public, pointer :: zisoi(:) => null() !soil depth, interface,  0 : nlevsoi
   real(r8), public, pointer :: dzsoi(:) => null() !soil layer thickness
 
-  public :: init_clm_vertgrid
+  public :: init_elm_vertgrid
 contains
 
 
-  subroutine init_clm_vertgrid(nlevgrnd)
+  subroutine init_elm_vertgrid(nlevgrnd)
   !
   ! DESCRIPTION
   ! initialize the vertical grid for computation
@@ -48,6 +48,6 @@ contains
   enddo
   zisoi(nlevgrnd) = zsoi(nlevgrnd) + 0.5_r8*dzsoi(nlevgrnd)
 
-  end subroutine init_clm_vertgrid
+  end subroutine init_elm_vertgrid
 
-end module clmgridMod
+end module elmgridMod

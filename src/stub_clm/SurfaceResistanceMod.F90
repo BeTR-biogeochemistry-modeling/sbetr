@@ -35,7 +35,7 @@ contains
   !
   ! USES
   use shr_kind_mod          , only : r8 => shr_kind_r8
-  use clm_varcon            , only : tfrz, denice, denh2o
+  use elm_varcon            , only : tfrz, denice, denh2o
   use decompMod             , only: bounds_type
   use SoilStatetype         , only : soilstate_type
   use WaterStateType        , only : Waterstate_Type

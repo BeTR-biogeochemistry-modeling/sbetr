@@ -1,4 +1,4 @@
-module clm_varcon
+module elm_varcon
 
 !-----------------------------------------------------------------------
   ! !DESCRIPTION:
@@ -19,7 +19,7 @@ module clm_varcon
                            SHR_CONST_PDB, SHR_CONST_PI, SHR_CONST_CDAY,       &
                            SHR_CONST_RGAS
 
-  use clm_varpar, only : ngases
+  use elm_varpar, only : ngases
 
   !
   ! !PUBLIC TYPES:
@@ -184,13 +184,13 @@ contains
 
 
 !------------------------------------------------------------------------------
-  subroutine clm_varcon_init()
-  use clm_varpar, only: nlevgrnd, nlevdecomp_full
+  subroutine elm_varcon_init()
+  use elm_varpar, only: nlevgrnd, nlevdecomp_full
 
   implicit none
 
 
   allocate( zisoi(0:nlevgrnd               ))
   allocate( dzsoi_decomp(1:nlevdecomp_full ))
-  end subroutine clm_varcon_init
-end module clm_varcon
+  end subroutine elm_varcon_init
+end module elm_varcon

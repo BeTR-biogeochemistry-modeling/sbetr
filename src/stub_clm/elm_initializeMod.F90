@@ -1,4 +1,4 @@
-module clm_initializeMod
+module elm_initializeMod
 
   implicit none
   save
@@ -11,11 +11,11 @@ module clm_initializeMod
     ! !DESCRIPTION:
     ! CLM initialization
   use decompMod       , only : bounds_type
-  use clm_instMod     , only : clm_inst
+  use elm_instMod     , only : elm_inst
   implicit none
   type(bounds_type), intent(in) :: bounds
 
-  call clm_inst(bounds)
+  call elm_inst(bounds)
 
   end subroutine initialize
-end module clm_initializeMod
+end module elm_initializeMod

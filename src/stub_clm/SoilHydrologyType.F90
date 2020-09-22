@@ -37,7 +37,7 @@ implicit none
     ! Initialize module data structure
     !
     use shr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
-    use clm_varcon, only : spval
+    use elm_varcon, only : spval
     ! !ARGUMENTS:
     class(soilhydrology_type) :: this
     type(bounds_type), intent(in) :: bounds

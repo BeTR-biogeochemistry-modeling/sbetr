@@ -11,7 +11,7 @@ module fileutils
 !
 ! !USES:
   use abortutils, only : endrun
-  use clm_varctl, only : iulog
+  use elm_varctl, only : iulog
   use spmdMod   , only : masterproc
 !
 ! !PUBLIC TYPES:
@@ -82,7 +82,7 @@ contains
 ! Obtain local copy of file
 ! First check current working directory
 ! Next check full pathname[fulpath] on disk
-! 
+!
 ! !USES:
      use shr_file_mod, only: shr_file_get
 ! !ARGUMENTS:

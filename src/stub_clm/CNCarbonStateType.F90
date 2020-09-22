@@ -1,8 +1,8 @@
 module CNCarbonStateType
-  use clm_varcon     , only : spval, ispval, c14ratio
+  use elm_varcon     , only : spval, ispval, c14ratio
   use shr_kind_mod   , only : r8 => shr_kind_r8
   use decompMod      , only : bounds_type
-  use clm_varpar     , only : nlevdecomp_full, ndecomp_pools
+  use elm_varpar     , only : nlevdecomp_full, ndecomp_pools
 implicit none
 
   type, public :: carbonstate_type
@@ -85,7 +85,7 @@ contains
     ! !USES:
     use spmdMod    , only : masterproc
     use fileutils  , only : getfil
-    use clm_varctl , only : nsrest, nsrStartup
+    use elm_varctl , only : nsrest, nsrStartup
     use ncdio_pio
     !
     ! !ARGUMENTS:

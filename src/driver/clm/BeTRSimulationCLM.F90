@@ -324,7 +324,7 @@ contains
     !
     !USES
     use LandunitType    , only : landunit_type
-    use clm_varcon      , only : denh2o,spval
+    use elm_varcon      , only : denh2o,spval
     use landunit_varcon , only : istsoil, istcrop
     use betr_decompMod  , only : betr_bounds_type
     use BeTR_TimeMod    , only : betr_time_type
@@ -391,7 +391,7 @@ contains
     use WaterStateType             , only : waterstate_type
     use SoilWaterRetentionCurveMod , only : soil_water_retention_curve_type
     use betr_decompMod             , only : betr_bounds_type
-    use clm_varcon                 , only : grav,hfus,tfrz
+    use elm_varcon                 , only : grav,hfus,tfrz
     implicit none
     !ARGUMENTS
     class(betr_simulation_clm_type)        , intent(inout)        :: this
@@ -464,7 +464,7 @@ contains
     !
     !USES
     use MathfuncMod      , only : dot_sum
-    use clm_varcon       , only : denh2o
+    use elm_varcon       , only : denh2o
     use WaterStateType   , only : waterstate_type
     use elm_time_manager , only : get_nstep
     implicit none

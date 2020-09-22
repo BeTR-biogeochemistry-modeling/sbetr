@@ -32,23 +32,23 @@ contains
   use elm_varpar            , only : nlevtrc_soil
   use decompMod             , only : bounds_type
   use bncdio_pio            , only : file_desc_t
-  use clm_instMod           , only : atm2lnd_vars
-  use clm_instMod           , only : canopystate_vars
-  use clm_instMod           , only : carbonstate_vars, c13state_vars, c14state_vars
-  use clm_instMod           , only : carbonflux_vars, c13_cflx_vars, c14_cflx_vars, pf_carbonflux_vars
-  use clm_instMod           , only : chemstate_vars, plantMicKinetics_vars
-  use clm_instMod           , only : soilhydrology_vars
-  use clm_instMod           , only : soilstate_vars
-  use clm_instMod           , only : temperature_vars
-  use clm_instMod           , only : waterflux_vars
-  use clm_instMod           , only : waterstate_vars
-  use clm_instMod           , only : cnstate_vars
-  use clm_instMod           , only : nitrogenflux_vars, nitrogenstate_vars, pf_nitrogenstate_vars, pf_nitrogenflux_vars
-  use clm_instMod           , only : phosphorusflux_vars, phosphorusstate_vars, pf_phosphorusflux_vars
-  use clm_instMod           , only : soil_water_retention_curve
+  use elm_instMod           , only : atm2lnd_vars
+  use elm_instMod           , only : canopystate_vars
+  use elm_instMod           , only : carbonstate_vars, c13state_vars, c14state_vars
+  use elm_instMod           , only : carbonflux_vars, c13_cflx_vars, c14_cflx_vars, pf_carbonflux_vars
+  use elm_instMod           , only : chemstate_vars, plantMicKinetics_vars
+  use elm_instMod           , only : soilhydrology_vars
+  use elm_instMod           , only : soilstate_vars
+  use elm_instMod           , only : temperature_vars
+  use elm_instMod           , only : waterflux_vars
+  use elm_instMod           , only : waterstate_vars
+  use elm_instMod           , only : cnstate_vars
+  use elm_instMod           , only : nitrogenflux_vars, nitrogenstate_vars, pf_nitrogenstate_vars, pf_nitrogenflux_vars
+  use elm_instMod           , only : phosphorusflux_vars, phosphorusstate_vars, pf_phosphorusflux_vars
+  use elm_instMod           , only : soil_water_retention_curve
   use ColumnType            , only : col
-  use clmgridMod            , only : init_clm_vertgrid
-  use clm_initializeMod     , only : initialize
+  use elmgridMod            , only : init_elm_vertgrid
+  use elm_initializeMod     , only : initialize
   use BeTRSimulation        , only : betr_simulation_type
   use BeTRSimulationFactory , only : create_betr_simulation
   use betr_constants        , only : betr_namelist_buffer_size, betr_string_length_long, betr_filename_length
@@ -130,7 +130,7 @@ contains
   !set up grid
   allocate(grid_data)
   call grid_data%Init(namelist_buffer)
-  call init_clm_vertgrid(grid_data%nlevgrnd)
+  call init_elm_vertgrid(grid_data%nlevgrnd)
 
   call initialize(bounds)
 

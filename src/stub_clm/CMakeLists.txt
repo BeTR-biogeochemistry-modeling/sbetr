@@ -36,13 +36,13 @@ set(BETR_STUB_CLM_SOURCES
   WaterStateType.F90
   accumulMod.F90
   atm2lndType.F90
-  clm_initializeMod.F90
-  clm_instMod.F90
-  clm_time_manager.F90
-  clm_varcon.F90
-  clm_varctl.F90
-  clm_varpar.F90
-  clmgridMod.F90
+  elm_initializeMod.F90
+  elm_instMod.F90
+  elm_time_manager.F90
+  elm_varcon.F90
+  elm_varctl.F90
+  elm_varpar.F90
+  elmgridMod.F90
   column_varcon.F90
   debuginfoMod.F90
   decompMod.F90

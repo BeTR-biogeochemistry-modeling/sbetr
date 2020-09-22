@@ -6,7 +6,7 @@ module SoilStateType
   use shr_infnan_mod  , only : nan => shr_infnan_nan, assignment(=)
   use decompMod       , only : bounds_type
   use abortutils      , only : endrun
-  use clm_varcon      , only : spval
+  use elm_varcon      , only : spval
   implicit none
   save
   private

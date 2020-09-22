@@ -9,8 +9,8 @@ module lnd2atmType
   use shr_infnan_mod, only : nan => shr_infnan_nan, assignment(=)
   use shr_log_mod   , only : errMsg => shr_log_errMsg
 
-  use clm_varpar    , only : numrad, nlevgrnd !ndst = number of dust bins.
-  use clm_varctl    , only : iulog
+  use elm_varpar    , only : numrad, nlevgrnd !ndst = number of dust bins.
+  use elm_varctl    , only : iulog
   use decompMod     , only : bounds_type
   !
   ! !PUBLIC TYPES:

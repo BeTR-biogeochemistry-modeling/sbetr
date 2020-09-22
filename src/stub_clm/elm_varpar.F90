@@ -1,4 +1,4 @@
-module clm_varpar
+module elm_varpar
   ! !PUBLIC TYPES:
   implicit none
   save
@@ -30,4 +30,4 @@ module clm_varpar
   integer, parameter :: ivis        =   1     ! index for visible band
   integer, parameter :: inir        =   2     ! index for near-infrared band
   integer :: maxpatch_pft        ! max number of plant functional types in naturally vegetated landunit (namelist setting)
-end module clm_varpar
+end module elm_varpar

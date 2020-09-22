@@ -1,4 +1,4 @@
-module clm_varctl
+module elm_varctl
 
   !-----------------------------------------------------------------------
   ! !DESCRIPTION:
@@ -39,7 +39,7 @@ module clm_varctl
   logical, public :: use_dynroot = .false. ! true => use dynamic root module
 
   character(len=fname_len), public :: paramfile  = ' '        ! ASCII data file with PFT physiological constants
-  character(len=fname_len), public :: fsoilordercon    = ' '  ! ASCII data file with soil order dependent  constants  
+  character(len=fname_len), public :: fsoilordercon    = ' '  ! ASCII data file with soil order dependent  constants
   logical, public :: use_ed = .false.            ! true => use  ED
   character(len=15),public :: nu_com
   public :: CNAllocate_Carbon_only
@@ -61,4 +61,4 @@ module clm_varctl
   logical function CNAllocate_Carbon_only()
     cnallocate_carbon_only = carbon_only
   end function CNAllocate_Carbon_only
-end module clm_varctl
+end module elm_varctl

@@ -370,7 +370,7 @@ contains
 
   logical function is_restart( )
     ! Determine if restart run
-    use clm_varctl, only : nsrest, nsrContinue
+    use elm_varctl, only : nsrest, nsrContinue
 
     if (nsrest == nsrContinue) then
        is_restart = .true.

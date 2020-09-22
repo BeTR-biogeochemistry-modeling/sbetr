@@ -1,4 +1,4 @@
-module clm_instMod
+module elm_instMod
   use ColumnType         , only : col
   use PatchType          , only : pft
   use LandunitType       , only : lun
@@ -55,7 +55,7 @@ module clm_instMod
   class(soil_water_retention_curve_type), allocatable :: soil_water_retention_curve
   contains
 
-  subroutine clm_inst(bounds)
+  subroutine elm_inst(bounds)
     !
     ! !DESCRIPTION:
     ! CLM initialization - first phase
@@ -112,5 +112,5 @@ module clm_instMod
   allocate(soil_water_retention_curve, &
        source=create_soil_water_retention_curve())
 
-  end subroutine clm_inst
-end module clm_instMod
+  end subroutine elm_inst
+end module elm_instMod

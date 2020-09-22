@@ -301,7 +301,7 @@ contains
   use CNNitrogenFluxType , only : nitrogenflux_type
   use PhosphorusFluxType , only : phosphorusflux_type
   use CNStateType        , only : cnstate_type
-  use clm_varpar         , only : i_cwd, i_met_lit, i_cel_lit, i_lig_lit
+  use elm_varpar         , only : i_cwd, i_met_lit, i_cel_lit, i_lig_lit
   use PlantMicKineticsMod, only : PlantMicKinetics_type
   use mathfuncMod        , only : apvb,bisnan
   use tracer_varcon      , only : use_c13_betr, use_c14_betr
@@ -402,7 +402,7 @@ contains
   use CNCarbonStateType   , only : carbonstate_type
   use CNNitrogenFluxType  , only : nitrogenflux_type
   use CNNitrogenStateType , only : nitrogenstate_type
-  use clm_time_manager    , only : get_nstep
+  use elm_time_manager    , only : get_nstep
   use PhosphorusFluxType  , only : phosphorusflux_type
   use PhosphorusStateType , only : phosphorusstate_type
   use tracer_varcon       , only : use_c13_betr, use_c14_betr
@@ -748,7 +748,7 @@ contains
   use SoilStateType              , only : soilstate_type
   use WaterStateType             , only : waterstate_type
   use SoilWaterRetentionCurveMod , only : soil_water_retention_curve_type
-  use clm_varcon                 , only : grav,hfus,tfrz
+  use elm_varcon                 , only : grav,hfus,tfrz
   implicit none
   !ARGUMENTS
   class(betr_simulation_standalone_type) , intent(inout) :: this

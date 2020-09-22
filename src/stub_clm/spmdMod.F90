@@ -16,7 +16,7 @@ module spmdMod
 !-----------------------------------------------------------------------
 
   use shr_kind_mod, only: r8 => shr_kind_r8
-  use clm_varctl  , only: iulog
+  use elm_varctl  , only: iulog
   implicit none
 
   private
@@ -54,7 +54,7 @@ contains
 !-----------------------------------------------------------------------
 !BOP
 !
-! !IROUTINE: spmd_init( clm_mpicom )
+! !IROUTINE: spmd_init( elm_mpicom )
 !
 ! !INTERFACE:
   subroutine spmd_init(  )
