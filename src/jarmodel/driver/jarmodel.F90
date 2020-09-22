@@ -100,9 +100,11 @@ subroutine run_model(namelist_buffer)
   character(len=betr_string_length_long) :: ioerror_msg
   character(len=64) :: case_id
   character(len=256):: gname
+  character(len=hist_freq_str_len) :: hist_freq
   integer :: ncols, jj
 
-  namelist / jar_driver / jarmodel_name, case_id, is_surflit, nitrogen_stress, phosphorus_stress
+  namelist / jar_driver / jarmodel_name, case_id, is_surflit, &
+     nitrogen_stress, phosphorus_stress, hist_freq
   logical :: batch_mode
 
 
@@ -144,7 +146,7 @@ subroutine run_model(namelist_buffer)
   nvars=jarmodel%getvarllen()
   allocate(varl(nvars)); allocate(unitl(nvars)); allocate(freql(nvars)); allocate(vartypes(nvars))
   call jarmodel%getvarlist(nvars, varl, unitl, vartypes)
-  freql(:) = 'day'
+  freql(:) = hist_freq
   allocate(ystatesf(1:ncols,1:nvars));ystatesf(:,:)=0._r8
   allocate(ystates0l(1:nvars));ystates0l(:) = 0._r8
   allocate(ystatesfl(1:nvars));ystatesfl(:) = 0._r8

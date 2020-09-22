@@ -214,14 +214,19 @@ contains
   Dg=1.93e-5_r8*(temp/273.0_r8)**1.82_r8 * taugas
   Dw=2.57e-9_r8*(temp/273.0_r8) * tauaqu
   aren_cond_n2=1._r8/(ra+dzsoi*0.5_r8/(Dg*air_vol+(Dw+Diff_Darcy)*h2osoi_liqvol*bunsencef_n2))
+  aren_cond_n2=aren_cond_n2/dzsoi
+
   !o2
   Dg=1.8e-5_r8*(temp/273.0_r8)**1.82_r8 * taugas
   Dw=2.4e-9_r8*temp/298.0_r8 * tauaqu
   aren_cond_o2=1._r8/(ra+dzsoi*0.5_r8/(Dg*air_vol+(Dw+Diff_Darcy)*h2osoi_liqvol*bunsencef_o2))
+  aren_cond_o2=aren_cond_o2/dzsoi
+
   !n2o
   Dg=0.159e-4_r8*(temp/293.15)**1.5_r8 * taugas
   Dw=2.6e-9_r8*temp/298.15_r8 * tauaqu
   aren_cond_o2=1._r8/(ra+dzsoi*0.5_r8/(Dg*air_vol+(Dw+Diff_Darcy)*h2osoi_liqvol*bunsencef_n2o))
+  aren_cond_o2=aren_cond_o2/dzsoi
 
   !compute diffusivity
   jar_forc%diffusw0_nh4 =1.64e-9_r8*temp/298.15_r8
